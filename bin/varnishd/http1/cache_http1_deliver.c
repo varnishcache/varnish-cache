@@ -298,51 +298,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	}
 	VSLb(req->vsl, SLT_Debug, "RES_MODE %x", req->res_mode);
 
-	if (!(req->res_mode & RES_LEN))
-		http_Unset(req->resp, H_Content_Length);
-
-	if (req->res_mode & RES_GUNZIP)
-		http_Unset(req->resp, H_Content_Encoding);
-
-	if (req->res_mode & RES_CHUNKED)
-		http_SetHeader(req->resp, "Transfer-Encoding: chunked");
-
-	http_SetHeader(req->resp,
-	    req->doclose ? "Connection: close" : "Connection: keep-alive");
-
-	if (req->esi_level == 0) {
-		req->vdp_nxt = 0;
-		VTAILQ_INIT(&req->vdp);
-		VDP_push(req, v1d_bytes, NULL);
-	}
-
-	if (
-	    req->wantbody &&
-	    req->esi_level == 0 &&
-	    cache_param->http_range_support &&
-	    http_IsStatus(req->resp, 200)) {
-		http_SetHeader(req->resp, "Accept-Ranges: bytes");
-		if (http_GetHdr(req->http, H_Range, &r))
-			v1d_dorange(req, bo, r);
-	}
-
-	V1L_Reserve(req->wrk, req->wrk->aws, &req->sp->fd, req->vsl,
-	    req->t_prev);
-
-	/*
-	 * Send HTTP protocol header, unless interior ESI object
-	 */
-	if (!(req->res_mode & RES_ESI_CHILD))
-		req->acct.resp_hdrbytes +=
-		    HTTP1_Write(req->wrk, req->resp, HTTP1_Resp);
-
-	if (req->res_mode & RES_CHUNKED)
-		V1L_Chunked(req->wrk);
-
-	ois = OIS_DONE;
-	if (!req->wantbody) {
-		/* This was a HEAD or conditional request */
-	} else if (req->esi_level > 0) {
+	if (req->esi_level > 0) {
 		if (req->gzip_resp &&
 		    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
 		    !(req->res_mode & RES_ESI)) {
@@ -360,11 +316,50 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 			if (req->res_mode & RES_ESI)
 				ESI_Deliver(req);
 			else
-				ois = v1d_WriteDirObj(req);
+				(void)v1d_WriteDirObj(req);
 		}
-	} else {
-		if (req->res_mode & RES_GUNZIP)
-			VDP_push(req, VDP_gunzip, NULL);
+		(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
+		VDP_close(req);
+		return;
+	}
+
+	if (!(req->res_mode & RES_LEN))
+		http_Unset(req->resp, H_Content_Length);
+
+	if (req->res_mode & RES_GUNZIP)
+		http_Unset(req->resp, H_Content_Encoding);
+
+	if (req->res_mode & RES_CHUNKED)
+		http_SetHeader(req->resp, "Transfer-Encoding: chunked");
+
+	http_SetHeader(req->resp,
+	    req->doclose ? "Connection: close" : "Connection: keep-alive");
+
+	req->vdp_nxt = 0;
+	VTAILQ_INIT(&req->vdp);
+	VDP_push(req, v1d_bytes, NULL);
+
+	if (
+	    req->wantbody &&
+	    cache_param->http_range_support &&
+	    http_IsStatus(req->resp, 200)) {
+		http_SetHeader(req->resp, "Accept-Ranges: bytes");
+		if (http_GetHdr(req->http, H_Range, &r))
+			v1d_dorange(req, bo, r);
+	}
+
+	if (req->res_mode & RES_GUNZIP)
+		VDP_push(req, VDP_gunzip, NULL);
+
+	V1L_Reserve(req->wrk, req->ws, &req->sp->fd, req->vsl, req->t_prev);
+
+	req->acct.resp_hdrbytes += HTTP1_Write(req->wrk, req->resp, HTTP1_Resp);
+
+	if (req->res_mode & RES_CHUNKED)
+		V1L_Chunked(req->wrk);
+
+	ois = OIS_DONE;
+	if (req->wantbody) {
 		if (req->res_mode & RES_ESI)
 			ESI_Deliver(req);
 		else
@@ -372,13 +367,10 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	}
 	(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
 
-	if (ois == OIS_DONE &&
-	    (req->res_mode & RES_CHUNKED) &&
-	    !(req->res_mode & RES_ESI_CHILD))
+	if (ois == OIS_DONE && (req->res_mode & RES_CHUNKED))
 		V1L_EndChunk(req->wrk);
 
-	if ((V1L_FlushRelease(req->wrk) || ois != OIS_DONE) &&
-	    req->sp->fd >= 0)
+	if ((V1L_FlushRelease(req->wrk) || ois != OIS_DONE) && req->sp->fd >= 0)
 		SES_Close(req->sp, SC_REM_CLOSE);
 	VDP_close(req);
 }

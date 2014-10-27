@@ -69,18 +69,12 @@ ved_include(struct req *preq, const char *src, const char *host)
 {
 	struct worker *wrk;
 	struct req *req;
-	char *wrk_ws_wm;
 	enum req_fsm_nxt s;
 
 	wrk = preq->wrk;
 
 	if (preq->esi_level >= cache_param->max_esi_depth)
 		return;
-
-	(void)V1L_FlushRelease(preq->wrk);
-
-	/* Take a workspace snapshot */
-	wrk_ws_wm = WS_Snapshot(wrk->aws); /* XXX ? */
 
 	req = SES_GetReq(wrk, preq->sp);
 	req->req_body_status = REQ_BODY_NONE;
@@ -155,18 +149,9 @@ ved_include(struct req *preq, const char *src, const char *host)
 		AZ(req->wrk);
 		(void)usleep(10000);
 	}
-	AN(V1L_IsReleased(wrk));
 
 	CNT_AcctLogCharge(wrk->stats, req);
 	VSL_End(req->vsl);
-
-	/* Reset the workspace */
-	WS_Reset(wrk->aws, wrk_ws_wm);	/* XXX ? */
-
-	V1L_Reserve(preq->wrk, preq->wrk->aws, &preq->sp->fd, preq->vsl,
-	    preq->t_prev);
-	if (preq->res_mode & RES_CHUNKED)
-		V1L_Chunked(preq->wrk);
 
 	preq->vcl = req->vcl;
 	req->vcl = NULL;
