@@ -188,44 +188,6 @@ v1d_dorange(struct req *req, struct busyobj *bo, const char *r)
 	VDP_push(req, v1d_range_bytes, v1rp, 0);
 }
 
-/*--------------------------------------------------------------------*/
-
-static enum objiter_status
-v1d_WriteDirObj(struct req *req)
-{
-	enum objiter_status ois;
-	ssize_t len;
-	void *oi;
-	void *ptr;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
-	oi = ObjIterBegin(req->wrk, req->objcore);
-	XXXAN(oi);
-	AZ(req->synth_body);
-
-	do {
-		ois = ObjIter(req->objcore, oi, &ptr, &len);
-		switch(ois) {
-		case OIS_DONE:
-			AZ(len);
-			break;
-		case OIS_ERROR:
-			break;
-		case OIS_DATA:
-		case OIS_STREAM:
-			if (VDP_bytes(req,
-			     ois == OIS_DATA ? VDP_NULL : VDP_FLUSH,  ptr, len))
-				ois = OIS_ERROR;
-			break;
-		default:
-			WRONG("Wrong OIS value");
-		}
-	} while (ois == OIS_DATA || ois == OIS_STREAM);
-	ObjIterEnd(req->objcore, &oi);
-	return (ois);
-}
-
 /*--------------------------------------------------------------------
  */
 void
@@ -257,10 +219,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 			else if (!req->gzip_resp && i)
 				VDP_push(req, VDP_gunzip, NULL, 0);
 
-			if (req->res_mode & RES_ESI)
-				ESI_Deliver(req);
-			else
-				(void)v1d_WriteDirObj(req);
+			(void)VDP_DeliverObj(req);
 		}
 		(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
 		VDP_close(req);
@@ -353,12 +312,8 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		V1L_Chunked(req->wrk);
 
 	ois = OIS_DONE;
-	if (req->wantbody) {
-		if (req->res_mode & RES_ESI)
-			ESI_Deliver(req);
-		else
-			ois = v1d_WriteDirObj(req);
-	}
+	if (req->wantbody)
+		ois = VDP_DeliverObj(req);
 	(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
 
 	if (ois == OIS_DONE && (req->res_mode & RES_CHUNKED))
