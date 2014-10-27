@@ -32,8 +32,6 @@
 #include "cache/cache.h"
 #include "cache/cache_filter.h"
 
-#include "vct.h"
-
 /*--------------------------------------------------------------------*/
 
 static int __match_proto__(vdp_bytes)
@@ -57,135 +55,6 @@ v1d_bytes(struct req *req, enum vdp_action act, void **priv,
 	if (len != wl)
 		return (-1);
 	return (0);
-}
-
-/*--------------------------------------------------------------------*/
-
-struct v1rp {
-	unsigned		magic;
-#define V1RP_MAGIC		0xb886e711
-	ssize_t			range_low;
-	ssize_t			range_high;
-	ssize_t			range_off;
-};
-
-static int __match_proto__(vdp_bytes)
-v1d_range_bytes(struct req *req, enum vdp_action act, void **priv,
-    const void *ptr, ssize_t len)
-{
-	int retval = 0;
-	ssize_t l;
-	const char *p = ptr;
-	struct v1rp *v1rp;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	if (act == VDP_INIT)
-		return (0);
-	if (act == VDP_FINI) {
-		*priv = NULL;
-		return (0);
-	}
-	CAST_OBJ_NOTNULL(v1rp, *priv, V1RP_MAGIC);
-	l = v1rp->range_low - v1rp->range_off;
-	if (l > 0) {
-		if (l > len)
-			l = len;
-		v1rp->range_off += l;
-		p += l;
-		len -= l;
-	}
-	l = v1rp->range_high - v1rp->range_off;
-	if (l > len)
-		l = len;
-	if (l > 0)
-		retval = VDP_bytes(req, act, p, l);
-	else if (act > VDP_NULL)
-		retval = VDP_bytes(req, act, p, 0);
-	v1rp->range_off += len;
-	return (retval);
-}
-
-/*--------------------------------------------------------------------*/
-
-
-static void
-v1d_dorange(struct req *req, struct busyobj *bo, const char *r)
-{
-	ssize_t len, low, high, has_low;
-	struct v1rp *v1rp;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-	assert(http_IsStatus(req->resp, 200));
-
-	/* We must snapshot the length if we're streaming from the backend */
-	if (bo != NULL)
-		len = VBO_waitlen(req->wrk, bo, -1);
-	else
-		len = ObjGetLen(req->wrk, req->objcore);
-
-	if (strncmp(r, "bytes=", 6))
-		return;
-	r += 6;
-
-	/* The low end of range */
-	has_low = low = 0;
-	if (!vct_isdigit(*r) && *r != '-')
-		return;
-	while (vct_isdigit(*r)) {
-		has_low = 1;
-		low *= 10;
-		low += *r - '0';
-		r++;
-	}
-
-	if (low >= len)
-		return;
-
-	if (*r != '-')
-		return;
-	r++;
-
-	/* The high end of range */
-	if (vct_isdigit(*r)) {
-		high = 0;
-		while (vct_isdigit(*r)) {
-			high *= 10;
-			high += *r - '0';
-			r++;
-		}
-		if (!has_low) {
-			low = len - high;
-			if (low < 0)
-				low = 0;
-			high = len - 1;
-		}
-	} else
-		high = len - 1;
-	if (*r != '\0')
-		return;
-
-	if (high >= len)
-		high = len - 1;
-
-	if (low > high)
-		return;
-
-	http_PrintfHeader(req->resp, "Content-Range: bytes %jd-%jd/%jd",
-	    (intmax_t)low, (intmax_t)high, (intmax_t)len);
-	http_Unset(req->resp, H_Content_Length);
-	if (req->res_mode & RES_LEN)
-		http_PrintfHeader(req->resp, "Content-Length: %jd",
-		    (intmax_t)(1 + high - low));
-	http_PutResponse(req->resp, "HTTP/1.1", 206, NULL);
-
-	v1rp = WS_Alloc(req->ws, sizeof *v1rp);
-	XXXAN(v1rp);
-	INIT_OBJ(v1rp, V1RP_MAGIC);
-	v1rp->range_off = 0;
-	v1rp->range_low = low;
-	v1rp->range_high = high + 1;
-	VDP_push(req, v1d_range_bytes, v1rp, 0);
 }
 
 /*--------------------------------------------------------------------
@@ -234,7 +103,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	if (cache_param->http_range_support && http_IsStatus(req->resp, 200)) {
 		http_SetHeader(req->resp, "Accept-Ranges: bytes");
 		if (req->wantbody && http_GetHdr(req->http, H_Range, &r))
-			v1d_dorange(req, bo, r);
+			VRG_dorange(req, bo, r);
 	}
 
 	if (cache_param->http_gzip_support &&

@@ -957,6 +957,9 @@ unsigned V1L_Flush(const struct worker *w);
 unsigned V1L_FlushRelease(struct worker *w);
 unsigned V1L_Write(const struct worker *w, const void *ptr, int len);
 
+/* cache_range.c [VRG] */
+void VRG_dorange(struct req *req, struct busyobj *bo, const char *r);
+
 /* cache_session.c [SES] */
 void SES_Close(struct sess *sp, enum sess_close reason);
 void SES_Delete(struct sess *sp, enum sess_close reason, double now);

@@ -36,6 +36,7 @@ varnishd_SOURCES = \
 	cache/cache_req_body.c \
 	cache/cache_req_fsm.c \
 	cache/cache_rfc2616.c \
+	cache/cache_range.c \
 	cache/cache_session.c \
 	cache/cache_shmlog.c \
 	cache/cache_vary.c \
