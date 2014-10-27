@@ -185,7 +185,7 @@ v1d_dorange(struct req *req, struct busyobj *bo, const char *r)
 	v1rp->range_off = 0;
 	v1rp->range_low = low;
 	v1rp->range_high = high + 1;
-	VDP_push(req, v1d_range_bytes, v1rp);
+	VDP_push(req, v1d_range_bytes, v1rp, 0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -308,10 +308,10 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		} else {
 			if (req->gzip_resp &&
 			    !ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED))
-				VDP_push(req, VED_pretend_gzip, NULL);
+				VDP_push(req, VED_pretend_gzip, NULL, 0);
 			else if (!req->gzip_resp &&
 			    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED))
-				VDP_push(req, VDP_gunzip, NULL);
+				VDP_push(req, VDP_gunzip, NULL, 0);
 
 			if (req->res_mode & RES_ESI)
 				ESI_Deliver(req);
@@ -335,10 +335,6 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	http_SetHeader(req->resp,
 	    req->doclose ? "Connection: close" : "Connection: keep-alive");
 
-	req->vdp_nxt = 0;
-	VTAILQ_INIT(&req->vdp);
-	VDP_push(req, v1d_bytes, NULL);
-
 	if (
 	    req->wantbody &&
 	    cache_param->http_range_support &&
@@ -349,7 +345,9 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	}
 
 	if (req->res_mode & RES_GUNZIP)
-		VDP_push(req, VDP_gunzip, NULL);
+		VDP_push(req, VDP_gunzip, NULL, 0);
+
+	VDP_push(req, v1d_bytes, NULL, 1);
 
 	V1L_Reserve(req->wrk, req->ws, &req->sp->fd, req->vsl, req->t_prev);
 

@@ -127,10 +127,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 	req->crc = preq->crc;
 	req->l_crc = preq->l_crc;
 
-
-	req->vdp_nxt = 0;
-	VTAILQ_INIT(&req->vdp);
-	VDP_push(req, ved_vdp_bytes, preq);
+	VDP_push(req, ved_vdp_bytes, preq, 0);
 
 	THR_SetRequest(req);
 

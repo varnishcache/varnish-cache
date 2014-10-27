@@ -106,7 +106,7 @@ struct vdp_entry {
 };
 
 int VDP_bytes(struct req *, enum vdp_action act, const void *ptr, ssize_t len);
-void VDP_push(struct req *, vdp_bytes *func, void *priv);
+void VDP_push(struct req *, vdp_bytes *func, void *priv, int bottom);
 void VDP_close(struct req *req);
 
 vdp_bytes VDP_gunzip;
