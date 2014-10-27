@@ -190,6 +190,7 @@ v1d_dorange(struct req *req, struct busyobj *bo, const char *r)
 
 /*--------------------------------------------------------------------
  */
+
 void
 V1D_Deliver(struct req *req, struct busyobj *bo)
 {
@@ -201,37 +202,39 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 
 	req->res_mode = 0;
 
+	/*
+	 * Determine ESI status first.  Not dependent on wantbody, because
+	 * we want ESI to supress C-L in HEAD too.
+	 */
 	if (!req->disable_esi &&
 	    ObjGetattr(req->wrk, req->objcore, OA_ESIDATA, NULL) != NULL)
 		req->res_mode |= RES_ESI;
 
+	/*
+	 * ESI-childen don't care about headers -> early escape
+	 */
 	if (req->esi_level > 0) {
 		ESI_DeliverChild(req, bo);
 		return;
 	}
 
 	if (req->res_mode & RES_ESI) {
-		/* nothing */
+		RFC2616_Weaken_Etag(req->resp);
+		http_Unset(req->resp, H_Content_Length);
 	} else if (http_IsStatus(req->resp, 304)) {
-		req->res_mode &= ~RES_LEN;
 		http_Unset(req->resp, H_Content_Length);
 		req->wantbody = 0;
-	} else if (bo != NULL) {
-		/* Streaming, decide CHUNKED/EOF later */
-	} else if ((req->objcore->flags & OC_F_PASS) && !req->wantbody) {
-		/*
-		 * if we pass a HEAD the C-L header may already be in the
-		 * object and it will not match the actual storage length
-		 * which is zero.
-		 * Hand that C-L header back to client.
-		 */
-		req->res_mode |= RES_LEN;
-	} else {
-		req->res_mode |= RES_LEN;
-		http_Unset(req->resp, H_Content_Length);
+	} else if (bo == NULL &&
+	    !http_GetHdr(req->resp, H_Content_Length, NULL)) {
 		http_PrintfHeader(req->resp,
 		    "Content-Length: %ju", (uintmax_t)ObjGetLen(
 		    req->wrk, req->objcore));
+	}
+
+	if (cache_param->http_range_support && http_IsStatus(req->resp, 200)) {
+		http_SetHeader(req->resp, "Accept-Ranges: bytes");
+		if (req->wantbody && http_GetHdr(req->http, H_Range, &r))
+			v1d_dorange(req, bo, r);
 	}
 
 	if (cache_param->http_gzip_support &&
@@ -242,49 +245,29 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		 * XXX: we could cache that, but would still deliver
 		 * XXX: with multiple writes because of the gunzip buffer
 		 */
-		req->res_mode &= ~RES_LEN;
 		req->res_mode |= RES_GUNZIP;
+		http_Unset(req->resp, H_Content_Length);
+		http_Unset(req->resp, H_Content_Encoding);
+		VDP_push(req, VDP_gunzip, NULL, 0);
 	}
 
-	if (!(req->res_mode & (RES_LEN|RES_CHUNKED|RES_EOF))) {
-		/* We havn't chosen yet, do so */
-		if (!req->wantbody) {
-			/* Nothing */
-		} else if (req->http->protover >= 11) {
+	if (http_GetHdr(req->resp, H_Content_Length, NULL))
+		req->res_mode |= RES_LEN;
+
+	if (req->wantbody && !(req->res_mode & RES_LEN)) {
+		if (req->http->protover >= 11) {
 			req->res_mode |= RES_CHUNKED;
+			http_SetHeader(req->resp, "Transfer-Encoding: chunked");
 		} else {
 			req->res_mode |= RES_EOF;
 			req->doclose = SC_TX_EOF;
 		}
 	}
+
 	VSLb(req->vsl, SLT_Debug, "RES_MODE %x", req->res_mode);
-
-	if (!(req->res_mode & RES_LEN))
-		http_Unset(req->resp, H_Content_Length);
-
-	if (req->res_mode & RES_GUNZIP)
-		http_Unset(req->resp, H_Content_Encoding);
-
-	if (req->res_mode & RES_CHUNKED)
-		http_SetHeader(req->resp, "Transfer-Encoding: chunked");
-
-	if (req->res_mode & RES_ESI)
-		RFC2616_Weaken_Etag(req->resp);
 
 	http_SetHeader(req->resp,
 	    req->doclose ? "Connection: close" : "Connection: keep-alive");
-
-	if (
-	    req->wantbody &&
-	    cache_param->http_range_support &&
-	    http_IsStatus(req->resp, 200)) {
-		http_SetHeader(req->resp, "Accept-Ranges: bytes");
-		if (http_GetHdr(req->http, H_Range, &r))
-			v1d_dorange(req, bo, r);
-	}
-
-	if (req->res_mode & RES_GUNZIP)
-		VDP_push(req, VDP_gunzip, NULL, 0);
 
 	VDP_push(req, v1d_bytes, NULL, 1);
 
@@ -292,16 +275,17 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 
 	req->acct.resp_hdrbytes += HTTP1_Write(req->wrk, req->resp, HTTP1_Resp);
 
-	if (req->res_mode & RES_CHUNKED)
-		V1L_Chunked(req->wrk);
-
 	ois = OIS_DONE;
-	if (req->wantbody)
-		ois = VDP_DeliverObj(req);
-	(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
+	if (req->wantbody) {
+		if (req->res_mode & RES_CHUNKED)
+			V1L_Chunked(req->wrk);
 
-	if (ois == OIS_DONE && (req->res_mode & RES_CHUNKED))
-		V1L_EndChunk(req->wrk);
+		ois = VDP_DeliverObj(req);
+		(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
+
+		if (ois == OIS_DONE && (req->res_mode & RES_CHUNKED))
+			V1L_EndChunk(req->wrk);
+	}
 
 	if ((V1L_FlushRelease(req->wrk) || ois != OIS_DONE) && req->sp->fd >= 0)
 		SES_Close(req->sp, SC_REM_CLOSE);
