@@ -111,5 +111,3 @@ void VDP_close(struct req *req);
 enum objiter_status VDP_DeliverObj(struct req *req);
 
 vdp_bytes VDP_gunzip;
-vdp_bytes VED_pretend_gzip;
-

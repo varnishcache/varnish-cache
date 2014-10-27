@@ -215,8 +215,8 @@ ved_decode_len(uint8_t **pp)
  * the stream with a bit more overhead.
  */
 
-int __match_proto__(vdp_bytes)
-VED_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
+static int __match_proto__(vdp_bytes)
+ved_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
     const void *pv, ssize_t l)
 {
 	uint8_t buf1[5], buf2[5];
@@ -427,8 +427,8 @@ ESI_Deliver(struct req *req)
  * Include an object in a gzip'ed ESI object delivery
  */
 
-void
-ESI_DeliverChild(struct req *req)
+static void
+ved_stripgzip(struct req *req)
 {
 	ssize_t start, last, stop, lpad;
 	ssize_t l;
@@ -615,4 +615,27 @@ ESI_DeliverChild(struct req *req)
 	ilen = vle32dec(tailbuf + 4);
 	req->crc = crc32_combine(req->crc, icrc, ilen);
 	req->l_crc += ilen;
+}
+
+void
+ESI_DeliverChild(struct req *req, struct busyobj *bo)
+{
+	int i;
+
+	req->res_mode |= RES_ESI_CHILD;
+	i = ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED);
+	if (req->gzip_resp && i && !(req->res_mode & RES_ESI)) {
+		if (bo != NULL)
+			VBO_waitstate(bo, BOS_FINISHED);
+		ved_stripgzip(req);
+	} else {
+		if (req->gzip_resp && !i)
+			VDP_push(req, ved_pretend_gzip, NULL, 0);
+		else if (!req->gzip_resp && i)
+			VDP_push(req, VDP_gunzip, NULL, 0);
+
+		(void)VDP_DeliverObj(req);
+	}
+	(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
+	VDP_close(req);
 }

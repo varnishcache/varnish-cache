@@ -1046,7 +1046,7 @@ char *VRT_StringList(char *d, unsigned dl, const char *p, va_list ap);
 void VRTPRIV_dynamic_kill(struct sess *sp, uintptr_t id);
 
 void ESI_Deliver(struct req *);
-void ESI_DeliverChild(struct req *);
+void ESI_DeliverChild(struct req *, struct busyobj *);
 
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);

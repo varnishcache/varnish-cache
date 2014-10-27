@@ -195,7 +195,6 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 {
 	const char *r;
 	enum objiter_status ois;
-	int i;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
@@ -207,22 +206,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		req->res_mode |= RES_ESI;
 
 	if (req->esi_level > 0) {
-		req->res_mode |= RES_ESI_CHILD;
-		i = ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED);
-		if (req->gzip_resp && i && !(req->res_mode & RES_ESI)) {
-			if (bo != NULL)
-				VBO_waitstate(bo, BOS_FINISHED);
-			ESI_DeliverChild(req);
-		} else {
-			if (req->gzip_resp && !i)
-				VDP_push(req, VED_pretend_gzip, NULL, 0);
-			else if (!req->gzip_resp && i)
-				VDP_push(req, VDP_gunzip, NULL, 0);
-
-			(void)VDP_DeliverObj(req);
-		}
-		(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
-		VDP_close(req);
+		ESI_DeliverChild(req, bo);
 		return;
 	}
 
