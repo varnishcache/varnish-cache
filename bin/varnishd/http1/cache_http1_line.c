@@ -59,29 +59,39 @@ struct v1l {
 	double			t0;
 	struct vsl_log		*vsl;
 	ssize_t			cnt;	/* Flushed byte count */
+	struct ws		*ws;
+	void			*res;
 };
 
 /*--------------------------------------------------------------------
  */
 
 void
-V1L_Reserve(struct worker *wrk, int *fd, struct vsl_log *vsl, double t0)
+V1L_Reserve(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
+    double t0)
 {
 	struct v1l *v1l;
 	unsigned u;
+	void *res;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AZ(wrk->v1l);
-	v1l = WS_Alloc(wrk->aws, sizeof *v1l);
+	
+	res = WS_Snapshot(ws);
+	v1l = WS_Alloc(ws, sizeof *v1l);
 	AN(v1l);
 	INIT_OBJ(v1l, V1L_MAGIC);
-	u = WS_Reserve(wrk->aws, 0);
+
+	v1l->ws = ws;
+	v1l->res = res;
+
+	u = WS_Reserve(ws, 0);
 	u = PRNDDN(u);
 	u /= sizeof(struct iovec);
 	if (u > IOV_MAX)
 		u = IOV_MAX;
 	AN(u);
-	v1l->iov = (void*)PRNDUP(wrk->aws->f);
+	v1l->iov = (void*)PRNDUP(ws->f);
 	v1l->siov = u;
 	v1l->ciov = u;
 	v1l->werr = 0;
@@ -104,8 +114,8 @@ V1L_FlushRelease(struct worker *wrk)
 	v1l = wrk->v1l;
 	wrk->v1l = NULL;
 	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
-	WS_Release(wrk->aws, 0);
-	WS_Reset(wrk->aws, NULL);
+	WS_Release(v1l->ws, 0);
+	WS_Reset(v1l->ws, v1l->res);
 	return (u);
 }
 

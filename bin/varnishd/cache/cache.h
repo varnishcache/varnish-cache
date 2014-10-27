@@ -951,7 +951,7 @@ void Pool_PurgeStat(unsigned nobj);
 #define V1L_IsReleased(w)	((w)->v1l == NULL)
 void V1L_Chunked(const struct worker *w);
 void V1L_EndChunk(const struct worker *w);
-void V1L_Reserve(struct worker *w, int *fd, struct vsl_log *, double t0);
+void V1L_Reserve(struct worker *, struct ws *, int *fd, struct vsl_log *, double t0);
 unsigned V1L_Flush(const struct worker *w);
 unsigned V1L_FlushRelease(struct worker *w);
 unsigned V1L_Write(const struct worker *w, const void *ptr, int len);

@@ -111,7 +111,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo)
 	}
 
 	(void)VTCP_blocking(vc->fd);	/* XXX: we should timeout instead */
-	V1L_Reserve(wrk, &vc->fd, bo->vsl, bo->t_prev);
+	V1L_Reserve(wrk, wrk->aws, &vc->fd, bo->vsl, bo->t_prev);
 	bo->acct.bereq_hdrbytes = HTTP1_Write(wrk, hp, HTTP1_Req);
 
 	/* Deal with any message-body the request might (still) have */

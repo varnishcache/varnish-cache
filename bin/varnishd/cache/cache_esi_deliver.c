@@ -162,7 +162,8 @@ ved_include(struct req *preq, const char *src, const char *host)
 	/* Reset the workspace */
 	WS_Reset(wrk->aws, wrk_ws_wm);	/* XXX ? */
 
-	V1L_Reserve(preq->wrk, &preq->sp->fd, preq->vsl, preq->t_prev);
+	V1L_Reserve(preq->wrk, preq->wrk->aws, &preq->sp->fd, preq->vsl,
+	    preq->t_prev);
 	if (preq->res_mode & RES_CHUNKED)
 		V1L_Chunked(preq->wrk);
 

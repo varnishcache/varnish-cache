@@ -123,7 +123,7 @@ V1P_Process(struct req *req, struct busyobj *bo)
 	bo->director_state = DIR_S_BODY;
 	(void)VTCP_blocking(fd);
 
-	V1L_Reserve(wrk, &fd, bo->vsl, req->t_req);
+	V1L_Reserve(wrk, wrk->aws, &fd, bo->vsl, req->t_req);
 	acct_pipe.bereq += HTTP1_Write(wrk, bo->bereq, HTTP1_Req);
 
 	if (req->htc->pipeline_b != NULL)

@@ -326,7 +326,8 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 			v1d_dorange(req, bo, r);
 	}
 
-	V1L_Reserve(req->wrk, &req->sp->fd, req->vsl, req->t_prev);
+	V1L_Reserve(req->wrk, req->wrk->aws, &req->sp->fd, req->vsl,
+	    req->t_prev);
 
 	/*
 	 * Send HTTP protocol header, unless interior ESI object
