@@ -403,6 +403,7 @@ struct objcore {
 	struct objhead		*objhead;
 	struct busyobj		*busyobj;
 	double			timer_when;
+	long			hits;
 
 	struct exp		exp;
 

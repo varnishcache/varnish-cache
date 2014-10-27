@@ -651,8 +651,7 @@ VRT_r_obj_hits(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->objcore->objhead, OBJHEAD_MAGIC);
-	return (ctx->req->objcore->objhead->hits);
+	return (ctx->req->objcore->hits);
 }
 
 unsigned

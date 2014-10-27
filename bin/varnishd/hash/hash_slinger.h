@@ -94,8 +94,6 @@ struct objhead {
 	uint8_t			digest[DIGEST_LEN];
 	struct waitinglist	*waitinglist;
 
-	long			hits;
-
 	/*----------------------------------------------------
 	 * The fields below are for the sole private use of
 	 * the hash implementation(s).

@@ -31,19 +31,19 @@ client c1 {
 	expect resp.bodylen == 6
 	expect resp.http.hits == 1
 
-	# This is a miss on different vary -> hits still == 1
+	# This is a miss on different vary -> hits == 0
+	txreq -url "/" -hdr "Bar: 2"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 4
+	expect resp.http.hits == 0
+
+	# This is a hit -> hits == 1
 	txreq -url "/" -hdr "Bar: 2"
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 4
 	expect resp.http.hits == 1
-
-	# This is a hit -> hits == 2
-	txreq -url "/" -hdr "Bar: 2"
-	rxresp
-	expect resp.status == 200
-	expect resp.bodylen == 4
-	expect resp.http.hits == 2
 
 } -run
 
