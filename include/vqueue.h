@@ -435,7 +435,7 @@ struct {								\
 	struct type *vtqe_next;	/* next element */			\
 	struct type **vtqe_prev;	/* address of previous next element */\
 	TRACEBUF							\
-}
+} /*lint -e(18) */
 
 /*
  * Tail queue functions.
