@@ -1085,7 +1085,6 @@ unsigned RFC2616_Req_Gzip(const struct http *);
 int RFC2616_Do_Cond(const struct req *sp);
 void RFC2616_Weaken_Etag(struct http *hp);
 void RFC2616_Vary_AE(struct http *hp);
-void RFC5861_Stale(const struct busyobj *);
 
 /* stevedore.c */
 int STV_NewObject(struct objcore *, struct worker *,
