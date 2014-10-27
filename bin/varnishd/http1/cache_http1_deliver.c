@@ -343,7 +343,8 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		/* This was a HEAD or conditional request */
 	} else if (req->esi_level > 0) {
 		if (req->gzip_resp &&
-		    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED)) {
+		    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
+		    !(req->res_mode & RES_ESI)) {
 			if (bo != NULL)
 				VBO_waitstate(bo, BOS_FINISHED);
 			ESI_DeliverChild(req);
