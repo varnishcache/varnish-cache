@@ -48,7 +48,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g request {
 	expect 0 1001	Begin	"^req .* rxreq"
-	expect * =	ReqAcct		"^18 0 18 71 15 86$"
+	expect * =	ReqAcct		"^18 0 18 93 15 108$"
 	expect 0 =	End
 	expect * 1003	Begin		"^req .* esi"
 	expect * =	ReqAcct		"^0 0 0 0 12 12$"
@@ -72,5 +72,5 @@ logexpect l1 -wait
 
 varnish v1 -expect s_req_hdrbytes == 18
 varnish v1 -expect s_req_bodybytes == 0
-varnish v1 -expect s_resp_hdrbytes == 71
+varnish v1 -expect s_resp_hdrbytes == 93
 varnish v1 -expect s_resp_bodybytes == 33

@@ -70,8 +70,8 @@ VDP_push(struct req *req, vdp_bytes *func, void *priv)
 	AZ(vdp->func(req, VDP_INIT, &vdp->priv, NULL, 0));
 }
 
-void
-VDP_pop(struct req *req, vdp_bytes *func)
+static void
+vdp_pop(struct req *req, vdp_bytes *func)
 {
 	struct vdp_entry *vdp;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -91,5 +91,5 @@ VDP_close(struct req *req)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	while (!VTAILQ_EMPTY(&req->vdp))
-		VDP_pop(req, VTAILQ_FIRST(&req->vdp)->func);
+		vdp_pop(req, VTAILQ_FIRST(&req->vdp)->func);
 }

@@ -318,7 +318,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 
 	if (
 	    req->wantbody &&
-	    !(req->res_mode & (RES_ESI|RES_ESI_CHILD)) &&
+	    req->esi_level == 0 &&
 	    cache_param->http_range_support &&
 	    http_IsStatus(req->resp, 200)) {
 		http_SetHeader(req->resp, "Accept-Ranges: bytes");

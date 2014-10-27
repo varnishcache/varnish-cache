@@ -30,7 +30,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g request {
 	expect 0 1001   Begin   "^req .* rxreq"
-	expect * =	ReqAcct	"^18 0 18 154 75 229$"
+	expect * =	ReqAcct	"^18 0 18 176 75 251$"
 	expect 0 =      End
 
 	expect 0 1002   Begin   "^bereq "
@@ -44,7 +44,7 @@ logexpect l1 -v v1 -g request {
 	expect * =      End
 
 	expect 0 1005   Begin   "^req .* rxreq"
-	expect * =	ReqAcct	"^18 0 18 159 75 234$"
+	expect * =	ReqAcct	"^18 0 18 181 75 256$"
 	expect 0 =      End
 } -start
 
