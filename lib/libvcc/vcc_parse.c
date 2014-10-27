@@ -338,7 +338,7 @@ vcc_Parse(struct vcc *tl)
 {
 	struct toplev *tp;
 
-	if (!vcc_IdIs(tl->t, "vcl")) {
+	if (tl->t->tok != ID || !vcc_IdIs(tl->t, "vcl")) {
 		VSB_printf(tl->sb,
 		    "VCL version declaration missing\n"
 		    "Update your VCL to Version 4 syntax, and add\n"
