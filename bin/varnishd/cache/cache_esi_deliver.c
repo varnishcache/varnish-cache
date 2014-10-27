@@ -92,9 +92,10 @@ ved_include(struct req *preq, const char *src, const char *host)
 
 	HTTP_Copy(req->http0, preq->http0);
 
+	req->http0->ws = req->ws;
+	req->http0->vsl = req->vsl;
+	req->http0->logtag = SLT_ReqMethod;
 	req->http0->conds = 0;
-
-	HTTP_Setup(req->http, req->ws, req->vsl, SLT_ReqMethod);
 
 	http_SetH(req->http0, HTTP_HDR_URL, src);
 	if (host != NULL && *host != '\0')  {

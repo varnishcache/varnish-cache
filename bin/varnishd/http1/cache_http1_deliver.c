@@ -356,7 +356,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 			else if (!req->gzip_resp &&
 			    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED))
 				VDP_push(req, VDP_gunzip, NULL);
-		
+
 			if (req->res_mode & RES_ESI)
 				ESI_Deliver(req);
 			else

@@ -76,7 +76,7 @@ V1L_Reserve(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AZ(wrk->v1l);
-	
+
 	res = WS_Snapshot(ws);
 	v1l = WS_Alloc(ws, sizeof *v1l);
 	AN(v1l);
