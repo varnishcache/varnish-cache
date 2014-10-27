@@ -435,8 +435,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			assert(oh->refcnt > 1);
 			assert(oc->objhead == oh);
 			oc->refcnt++;
-			if (oh->hits < LONG_MAX)
-				oh->hits++;
+			if (oc->hits < LONG_MAX)
+				oc->hits++;
 			Lck_Unlock(&oh->mtx);
 			assert(HSH_DerefObjHead(&wrk->stats, &oh));
 			*ocp = oc;
@@ -464,8 +464,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			AZ(req->hash_ignore_busy);
 			retval = HSH_EXP;
 		}
-		if (oh->hits < LONG_MAX)
-			oh->hits++;
+		if (exp_oc->hits < LONG_MAX)
+			exp_oc->hits++;
 		Lck_Unlock(&oh->mtx);
 		if (retval == HSH_EXP)
 			assert(HSH_DerefObjHead(&wrk->stats, &oh));

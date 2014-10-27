@@ -425,6 +425,7 @@ struct objcore {
 	struct objhead		*objhead;
 	struct busyobj		*busyobj;
 	double			timer_when;
+	long			hits;
 
 	uint16_t		flags;
 #define OC_F_BUSY		(1<<1)

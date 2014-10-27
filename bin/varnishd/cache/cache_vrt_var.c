@@ -581,8 +581,7 @@ VRT_r_obj_hits(const struct vrt_ctx *ctx)
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req->obj, OBJECT_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req->obj->objcore, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->obj->objcore->objhead, OBJHEAD_MAGIC);
-	return (ctx->req->obj->objcore->objhead->hits);
+	return (ctx->req->obj->objcore->hits);
 }
 
 unsigned
