@@ -145,12 +145,12 @@ VDI_GetFd(const struct director *d, struct worker *wrk, struct busyobj *bo)
  */
 
 int
-VDI_Healthy(const struct director *d)
+VDI_Healthy(const struct director *d, const struct busyobj *bo)
 {
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	AN(d->healthy);
-	return (d->healthy(d, NULL));
+	return (d->healthy(d, bo, NULL));
 }
 
 /* Get suckaddr ------------------------------------------------------*/

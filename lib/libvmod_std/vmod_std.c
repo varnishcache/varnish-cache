@@ -193,7 +193,7 @@ vmod_healthy(VRT_CTX, VCL_BACKEND be)
 	if (be == NULL)
 		return (0);
 	CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-	return (VDI_Healthy(be));
+	return (VDI_Healthy(be, ctx->bo));
 }
 
 VCL_INT __match_proto__(td_std_port)

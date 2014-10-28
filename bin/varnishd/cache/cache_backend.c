@@ -370,12 +370,14 @@ vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 }
 
 static unsigned __match_proto__(vdi_healthy_f)
-vbe_dir_healthy(const struct director *d, double *changed)
+vbe_dir_healthy(const struct director *d, const struct busyobj *bo,
+    double *changed)
 {
 	struct vbe_dir *vs;
 	struct backend *be;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
 	be = vs->backend;
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);

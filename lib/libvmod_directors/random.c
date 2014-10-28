@@ -50,12 +50,13 @@ struct vmod_directors_random {
 };
 
 static unsigned __match_proto__(vdi_healthy)
-vmod_random_healthy(const struct director *dir, double *changed)
+vmod_random_healthy(const struct director *dir, const struct busyobj *bo,
+    double *changed)
 {
 	struct vmod_directors_random *rr;
 
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_RANDOM_MAGIC);
-	return (vdir_any_healthy(rr->vd, changed));
+	return (vdir_any_healthy(rr->vd, bo, changed));
 }
 
 static const struct director * __match_proto__(vdi_resolve_f)

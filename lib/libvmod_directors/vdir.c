@@ -129,7 +129,7 @@ vdir_add_backend(struct vdir *vd, VCL_BACKEND be, double weight)
 }
 
 unsigned
-vdir_any_healthy(struct vdir *vd, double *changed)
+vdir_any_healthy(struct vdir *vd, const struct busyobj *bo, double *changed)
 {
 	unsigned retval = 0;
 	VCL_BACKEND be;
@@ -137,13 +137,14 @@ vdir_any_healthy(struct vdir *vd, double *changed)
 	double c;
 
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
+	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
 	vdir_lock(vd);
 	if (changed != NULL)
 		*changed = 0;
 	for (u = 0; u < vd->n_backend; u++) {
 		be = vd->backend[u];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		retval = be->healthy(be, &c);
+		retval = be->healthy(be, bo, &c);
 		if (changed != NULL && c > *changed)
 			*changed = c;
 		if (retval)
@@ -190,7 +191,7 @@ vdir_pick_be(struct vdir *vd, double w, unsigned nloops)
 		u = vdir_pick_by_weight(vd, w * tw, vbm);
 		be = vd->backend[u];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		if (be->healthy(be, NULL))
+		if (be->healthy(be, NULL, NULL))
 			break;
 		if (l == 0) {
 			vbm = vd->vbm;
