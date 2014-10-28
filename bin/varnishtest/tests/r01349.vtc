@@ -1,0 +1,66 @@
+varnishtest "Exact matching for varnishadm backend.set_health"
+
+server s1 -repeat 2 {
+	rxreq
+	txresp -hdr "Backend: b1"
+} -start
+
+server s2 -repeat 2 {
+       rxreq
+       txresp -hdr "Backend: b"
+} -start
+
+varnish v1 -vcl {
+	backend b1 {
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+	}
+
+	backend b {
+		.host = "${s2_addr}";
+		.port = "${s2_port}";
+	}
+
+	sub vcl_recv {
+		return(pass);
+	}
+
+	sub vcl_backend_fetch {
+		if (bereq.http.backend == "b1") {
+			set bereq.backend = b1;
+		}
+		else {
+			set bereq.backend = b;
+		}
+	}
+
+} -start
+
+varnish v1 -cliok "backend.list b"
+
+client c1 {
+	txreq -hdr "Backend: b1"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.backend == "b1"
+
+	txreq -hdr "Backend: b"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.backend == "b"
+} -run
+
+varnish v1 -cliok "backend.set_health b sick"
+
+client c1 {
+	txreq -hdr "Backend: b1"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.backend == "b1"
+
+	txreq -hdr "Backend: b"
+	rxresp
+	expect resp.status == 503
+} -run
+
+varnish v1 -clierr 106 "backend.set_health b(1.2.3.4:) healthy"
