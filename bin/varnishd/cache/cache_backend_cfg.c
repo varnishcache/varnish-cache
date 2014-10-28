@@ -288,7 +288,7 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 	const char *port_b = NULL;
 	ssize_t port_l = 0;
 	int found = 0;
-	int i;
+	int i, j;
 
 	name_b = matcher;
 	if (matcher != NULL) {
@@ -342,22 +342,33 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 			}
 		}
 	}
-	VTAILQ_FOREACH(b, &backends, list) {
-		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-		if (port_b != NULL && strncmp(b->port, port_b, port_l) != 0)
+
+	for (j = 0; j < 2; ++j) {
+		if (j == 0 && name_b == NULL)
 			continue;
-		if (name_b != NULL && strncmp(b->vcl_name, name_b, name_l) != 0)
-			continue;
-		if (ip_b != NULL &&
-		    (b->ipv4_addr == NULL ||
-		      strncmp(b->ipv4_addr, ip_b, ip_l)) &&
-		    (b->ipv6_addr == NULL ||
-		      strncmp(b->ipv6_addr, ip_b, ip_l)))
-			continue;
-		found++;
-		i = func(cli, b, priv);
-		if (i)
-			return(i);
+		VTAILQ_FOREACH(b, &backends, list) {
+			CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+			if (port_b != NULL &&
+			    strncmp(b->port, port_b, port_l) != 0)
+				continue;
+			if (name_b != NULL &&
+			    strncmp(b->vcl_name, name_b, name_l) != 0)
+				continue;
+			if (j == 0 && b->vcl_name[name_l] != '\0')
+				continue;
+			if (ip_b != NULL &&
+			    (b->ipv4_addr == NULL ||
+				strncmp(b->ipv4_addr, ip_b, ip_l)) &&
+			    (b->ipv6_addr == NULL ||
+				strncmp(b->ipv6_addr, ip_b, ip_l)))
+				continue;
+			found++;
+			i = func(cli, b, priv);
+			if (i)
+				return(i);
+			if (j == 0)
+				return (1);
+		}
 	}
 	return (found);
 }
