@@ -100,12 +100,6 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		    req->wrk, req->objcore));
 	}
 
-	if (cache_param->http_range_support && http_IsStatus(req->resp, 200)) {
-		http_SetHeader(req->resp, "Accept-Ranges: bytes");
-		if (req->wantbody && http_GetHdr(req->http, H_Range, &r))
-			VRG_dorange(req, bo, r);
-	}
-
 	if (cache_param->http_gzip_support &&
 	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
 	    !RFC2616_Req_Gzip(req->http)) {
@@ -115,10 +109,19 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		 * XXX: with multiple writes because of the gunzip buffer
 		 */
 		req->res_mode |= RES_GUNZIP;
-		http_Unset(req->resp, H_Content_Length);
-		http_Unset(req->resp, H_Content_Encoding);
 		VDP_push(req, VDP_gunzip, NULL, 0);
 	}
+
+	/*
+	 * Range comes after the others and pushes on bottom because it
+	 * can generate a correct C-L header.
+	 */
+	if (cache_param->http_range_support && http_IsStatus(req->resp, 200)) {
+		http_SetHeader(req->resp, "Accept-Ranges: bytes");
+		if (req->wantbody && http_GetHdr(req->http, H_Range, &r))
+			VRG_dorange(req, bo, r);
+	}
+
 
 	if (http_GetHdr(req->resp, H_Content_Length, NULL))
 		req->res_mode |= RES_LEN;

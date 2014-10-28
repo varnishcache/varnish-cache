@@ -148,9 +148,8 @@ VRG_dorange(struct req *req, struct busyobj *bo, const char *r)
 	http_PrintfHeader(req->resp, "Content-Range: bytes %jd-%jd/%jd",
 	    (intmax_t)low, (intmax_t)high, (intmax_t)len);
 	http_Unset(req->resp, H_Content_Length);
-	if (req->res_mode & RES_LEN)
-		http_PrintfHeader(req->resp, "Content-Length: %jd",
-		    (intmax_t)(1 + high - low));
+	http_PrintfHeader(req->resp, "Content-Length: %jd",
+	    (intmax_t)(1 + high - low));
 	http_PutResponse(req->resp, "HTTP/1.1", 206, NULL);
 
 	vrg_priv = WS_Alloc(req->ws, sizeof *vrg_priv);
@@ -159,5 +158,5 @@ VRG_dorange(struct req *req, struct busyobj *bo, const char *r)
 	vrg_priv->range_off = 0;
 	vrg_priv->range_low = low;
 	vrg_priv->range_high = high + 1;
-	VDP_push(req, vrg_range_bytes, vrg_priv, 0);
+	VDP_push(req, vrg_range_bytes, vrg_priv, 1);
 }

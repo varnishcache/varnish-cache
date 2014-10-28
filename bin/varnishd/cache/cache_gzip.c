@@ -289,6 +289,8 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 			return (-1);
 		VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 		*priv = vg;
+		http_Unset(req->resp, H_Content_Length);
+		http_Unset(req->resp, H_Content_Encoding);
 		return (0);
 	}
 
