@@ -132,7 +132,11 @@ backend.list
   List all backends
 
 backend.set_health matcher state
-  Set health status on a backend
+  Set health status on a backend. The matcher expression can be a
+  backend name or a parenthesized "(IP:port)" expression, or both. All
+  fields are optional. If no exact matching backend is found, partial
+  matching will be attempted based on the provided name, IP and port
+  fields.
 
 ban <field> <operator> <arg> [&& <field> <oper> <arg>]...
   All objects where the all the conditions match will be marked obsolete.
