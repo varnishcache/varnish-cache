@@ -7,6 +7,7 @@ New since 4.0.2-rc1:
 - [varnishlog] -k argument is back. (exit after n records)
 - [varnishadm] vcl.show is now listed in help.
 
+
 ============================================
 Changes from 4.0.1 to 4.0.2-rc1 (2014-09-23)
 ============================================
@@ -193,7 +194,6 @@ Bugs fixed
 .. _1519: https://www.varnish-cache.org/trac/ticket/1519
 
 
-
 ==============================================
 Changes from 4.0.0 beta1 to 4.0.0 (2014-04-10)
 ==============================================
@@ -276,7 +276,6 @@ Bugs fixed
 .. _1434: https://www.varnish-cache.org/trac/ticket/1434
 .. _1419: https://www.varnish-cache.org/trac/ticket/1419
 .. _1405: https://www.varnish-cache.org/trac/ticket/1405
-
 
 
 ===================================
@@ -380,6 +379,7 @@ varnishd
 
 .. _bug #1376: http://varnish-cache.org/trac/ticket/1376
 
+
 ================================
 Changes from 3.0.4 to 3.0.5 rc 1
 ================================
@@ -417,6 +417,7 @@ varnishadm
 
 .. _bug #1314: http://varnish-cache.org/trac/ticket/1314
 
+
 ================================
 Changes from 3.0.4 rc 1 to 3.0.4
 ================================
@@ -432,6 +433,7 @@ varnishd
 
 .. _bug #1285: http://varnish-cache.org/trac/ticket/1285
 .. _bug #1312: http://varnish-cache.org/trac/ticket/1312
+
 
 ================================
 Changes from 3.0.3 to 3.0.4 rc 1
@@ -490,6 +492,7 @@ Other
 - Disable PCRE JIT-er, since it's broken in some PCRE versions, at
   least on i386.
 - Make libvarnish prefer exact hits when looking for VSL tags.
+
 
 ===========================
 Changes from 3.0.2 to 3.0.3
@@ -607,6 +610,7 @@ Other
 
 .. _bug #1003: http://varnish-cache.org/trac/ticket/1003
 
+
 ================================
 Changes from 3.0.2 rc 1 to 3.0.2
 ================================
@@ -636,6 +640,7 @@ Other
 - Documentation updates
 
 - Some Solaris portability updates.
+
 
 ================================
 Changes from 3.0.1 to 3.0.2 rc 1
@@ -698,6 +703,7 @@ Other
 
 - Some Solaris portability updates.
 
+
 ================================
 Changes from 3.0.1 rc 1 to 3.0.1
 ================================
@@ -728,6 +734,7 @@ Other
 -----
 
 - Documentation updates
+
 
 ================================
 Changes from 3.0.0 to 3.0.1 rc 1
@@ -805,6 +812,7 @@ Other
 
 .. _bug #961: http://varnish-cache.org/trac/ticket/961
 
+
 ================================
 Changes from 3.0 beta 2 to 3.0.0
 ================================
@@ -831,6 +839,7 @@ varnishadm
   reason.
 
 .. _bug #935: http://varnish-cache.org/trac/ticket/935
+
 
 =====================================
 Changes from 3.0 beta 1 to 3.0 beta 2
@@ -882,6 +891,7 @@ VMODs
 -----
 
 - The std module now has proper documentation, including a manual page
+
 
 ================================
 Changes from 2.1.5 to 3.0 beta 1
@@ -1126,6 +1136,7 @@ Other
 - The documentation has been improved all over and should now be in
   much better shape than before
 
+
 ===========================
 Changes from 2.1.4 to 2.1.5
 ===========================
@@ -1199,6 +1210,7 @@ varnishtest
 -----------
 
 -  Remove no longer existing -L option.
+
 
 ===========================
 Changes from 2.1.3 to 2.1.4
@@ -1349,6 +1361,7 @@ libvarnishapi
 
 -  The -X parameter didn't work correctly. This has been fixed.
 
+
 ===========================
 Changes from 2.1.1 to 2.1.2
 ===========================
@@ -1360,6 +1373,7 @@ varnishd
    bug which would append garbage to objects larger than the chunk size,
    by default 128k. Browsers would do the right thing due to
    Content-Length, but some load balancers would get very confused.
+
 
 ===========================
 Changes from 2.1.1 to 2.1.1
@@ -1592,6 +1606,7 @@ varnishadm
 -  varnishadm now knows how to respond to the secret from a secured
    varnishd
 
+
 ===========================
 Changes from 2.0.5 to 2.0.6
 ===========================
@@ -1620,6 +1635,7 @@ varnishd
    useful on 32 bit systems with their limited address space.
 
 -  Document the -C option to varnishd.
+
 
 ===========================
 Changes from 2.0.4 to 2.0.5
@@ -1718,6 +1734,7 @@ varnishtop
 -  varnishtop previously did not print the name of the tag, which made
    it very hard to understand. We now print out the tag name.
 
+
 ===========================
 Changes from 2.0.3 to 2.0.4
 ===========================
@@ -1774,6 +1791,7 @@ varnishtest
    do not go unnoticed.
 
 -  Make it possible to send NULL bytes through the testing framework.
+
 
 ===========================
 Changes from 2.0.2 to 2.0.3
@@ -1909,6 +1927,7 @@ varnishreplay
 -  varnishreplay did not work correctly on Linux, due to a too small
    stack. This has now been fixed.
 
+
 ===========================
 Changes from 2.0.1 to 2.0.2
 ===========================
@@ -1942,6 +1961,7 @@ Red Hat spec file
 ----------------~
 
 -  A typo in the spec file made the .rpm file names wrong.
+
 
 =========================
 Changes from 1.1.2 to 2.0
@@ -2062,6 +2082,7 @@ Build system
 -  The C compiler invocation is decided by the configure script and can
    now be overridden by passing VCC\_CC when running configure.
 
+
 ===========================
 Changes from 1.1.1 to 1.1.2
 ===========================
@@ -2165,6 +2186,7 @@ Build system
    the default state directory would be garbage and a state directory
    would have to be specified manually with -n. This has been corrected.
 
+
 =========================
 Changes from 1.1 to 1.1.1
 =========================
@@ -2248,6 +2270,7 @@ Build system
 -  The libcompat library has been renamed to libvarnishcompat and is now
    dynamic rather than static. This simplifies the build process and
    resolves an issue with the Mac OS X linker.
+
 
 =========================
 Changes from 1.0.4 to 1.1
@@ -2408,6 +2431,7 @@ varnishtop
    respond correctly to window resize events, and one-shot mode (-1)
    actually works. In addition, the name of the Varnish instance being
    watched is displayed in the upper right corner in curses mode.
+
 
 ===========================
 Changes from 1.0.3 to 1.0.4
