@@ -457,7 +457,7 @@ ved_stripgzip(struct req *req)
 
 	p = ObjGetattr(req->wrk, req->objcore, OA_GZIPBITS, &l);
 	AN(p);
-	assert(l == 24);
+	assert(l == 32);
 	start = vbe64dec(p);
 	last = vbe64dec(p + 8);
 	stop = vbe64dec(p + 16);

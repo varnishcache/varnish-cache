@@ -333,7 +333,7 @@ VGZ_UpdateObj(const struct vfp_ctx *vc, const struct vgz *vg)
 	char *p;
 
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-	p = ObjSetattr(vc->wrk, vc->oc, OA_GZIPBITS, 24, NULL);
+	p = ObjSetattr(vc->wrk, vc->oc, OA_GZIPBITS, 32, NULL);
 	AN(p);
 	vbe64enc(p, vg->vz.start_bit);
 	vbe64enc(p + 8, vg->vz.last_bit);

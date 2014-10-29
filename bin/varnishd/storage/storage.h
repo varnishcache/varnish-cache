@@ -69,7 +69,7 @@ struct object {
 	uint8_t			*oa_vary;
 	uint8_t			*oa_http;
 	uint8_t			oa_flags[1];
-	char			oa_gzipbits[24];
+	char			oa_gzipbits[32];
 	char			oa_lastmodified[8];
 
 	struct storagehead	list;
