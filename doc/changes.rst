@@ -334,6 +334,40 @@ Open issues
 .. _1268: https://www.varnish-cache.org/trac/ticket/1268
 
 
+===========================================
+Changes from 3.0.6rc1 to 3.0.6 (2014-10-16)
+===========================================
+
+- Minor changes to documentation.
+- [varnishadm] Add termcap workaround for libedit. Bug 1514_.
+
+.. _1531: http://varnish-cache.org/trac/ticket/1531
+
+
+===========================================
+Changes from 3.0.5 to 3.0.6rc1 (2014-06-24)
+===========================================
+
+- Document storage.<name>.* VCL variables. Bug 1514_.
+- Fix memory alignment panic when http_max_hdr is not a multiple of 4. Bug 1327_.
+- Avoid negative ReqEnd timestamps with ESI. Bug 1297_.
+- %D format for varnishncsa is now an integer (as documented)
+- Fix compile errors with clang.
+- Clear objectcore flags earlier in ban lurker to avoid spinning thread. Bug 1470_.
+- Patch embedded jemalloc to avoid segfault. Bug 1448_.
+- Allow backend names to start with if, include or else. Bug 1439_.
+- Stop handling gzip after gzip body end. Bug 1086_.
+- Document %D and %T for varnishncsa.
+
+.. _1514: http://varnish-cache.org/trac/ticket/1514
+.. _1327: http://varnish-cache.org/trac/ticket/1327
+.. _1297: http://varnish-cache.org/trac/ticket/1297
+.. _1470: http://varnish-cache.org/trac/ticket/1470
+.. _1448: http://varnish-cache.org/trac/ticket/1448
+.. _1439: http://varnish-cache.org/trac/ticket/1439
+.. _1086: http://varnish-cache.org/trac/ticket/1086
+
+
 ================================
 Changes from 3.0.5 rc 1 to 3.0.5
 ================================
