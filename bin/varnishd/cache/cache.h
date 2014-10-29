@@ -788,7 +788,7 @@ enum vgzret_e VGZ_Gzip(struct vgz *, const void **, ssize_t *len,
     enum vgz_flag);
 // enum vgzret_e VGZ_Gunzip(struct vgz *, const void **, ssize_t *len);
 enum vgzret_e VGZ_Destroy(struct vgz **);
-void VGZ_UpdateObj(const struct vfp_ctx *, const struct vgz*);
+void VGZ_UpdateObj(const struct vfp_ctx *, const struct vgz*, int input);
 
 /* cache_http.c */
 unsigned HTTP_estimate(unsigned nhttp);

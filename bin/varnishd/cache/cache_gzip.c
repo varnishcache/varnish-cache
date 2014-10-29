@@ -45,6 +45,7 @@
 #include "cache_filter.h"
 #include "vend.h"
 
+#include "vend.h"
 #include "vgz.h"
 
 struct vgz {
@@ -277,6 +278,8 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 	const void *dp;
 	struct worker *wrk;
 	struct vgz *vg;
+	char *p;
+	uint64_t u;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	wrk = req->wrk;
@@ -289,7 +292,16 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 			return (-1);
 		VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 		*priv = vg;
+
 		http_Unset(req->resp, H_Content_Length);
+		p = ObjGetattr(req->wrk, req->objcore, OA_GZIPBITS, &dl);
+		if (p != NULL && dl == 32) {
+			u = vbe64dec(p + 24);
+			/* XXX: Zero is suspect: OA_GZIPBITS wasn't set */
+			if (u != 0)
+				http_PrintfHeader(req->resp,
+				    "Content-Length: %ju", u);
+		}
 		http_Unset(req->resp, H_Content_Encoding);
 		return (0);
 	}
@@ -328,7 +340,7 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 /*--------------------------------------------------------------------*/
 
 void
-VGZ_UpdateObj(const struct vfp_ctx *vc, const struct vgz *vg)
+VGZ_UpdateObj(const struct vfp_ctx *vc, const struct vgz *vg, int input)
 {
 	char *p;
 
@@ -338,6 +350,10 @@ VGZ_UpdateObj(const struct vfp_ctx *vc, const struct vgz *vg)
 	vbe64enc(p, vg->vz.start_bit);
 	vbe64enc(p + 8, vg->vz.last_bit);
 	vbe64enc(p + 16, vg->vz.stop_bit);
+	if (input)
+		vbe64enc(p + 24, vg->vz.total_in);
+	else
+		vbe64enc(p + 24, vg->vz.total_out);
 }
 
 /*--------------------------------------------------------------------
@@ -539,7 +555,7 @@ vfp_gzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 
 	if (vr != VGZ_END)
 		return (VFP_Error(vc, "Gzip failed"));
-	VGZ_UpdateObj(vc, vg);
+	VGZ_UpdateObj(vc, vg, 1);
 	return (VFP_END);
 }
 
@@ -584,7 +600,7 @@ vfp_testgunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	if (vp == VFP_END) {
 		if (vr != VGZ_END)
 			return (VFP_Error(vc, "tGunzip failed"));
-		VGZ_UpdateObj(vc, vg);
+		VGZ_UpdateObj(vc, vg, 0);
 	}
 	return (vp);
 }

@@ -89,7 +89,6 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 
 	if (req->res_mode & RES_ESI) {
 		RFC2616_Weaken_Etag(req->resp);
-		http_Unset(req->resp, H_Content_Length);
 	} else if (http_IsStatus(req->resp, 304)) {
 		http_Unset(req->resp, H_Content_Length);
 		req->wantbody = 0;
@@ -110,6 +109,11 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		 */
 		req->res_mode |= RES_GUNZIP;
 		VDP_push(req, VDP_gunzip, NULL, 0);
+	}
+
+	if (req->res_mode & RES_ESI) {
+		/* Gunzip could have added back a C-L */
+		http_Unset(req->resp, H_Content_Length);
 	}
 
 	/*
