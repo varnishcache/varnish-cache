@@ -9,9 +9,8 @@ server s1 {
 
 	rxreq
 	txresp -nolen -hdr "Content-Length: 010"
-	send "01234"
-	delay .5
-	send "56789"
+	sema r2 sync 2
+	send "0123456789"
 } -start
 
 varnish v1 -vcl+backend {
@@ -21,7 +20,7 @@ varnish v1 -vcl+backend {
 			set beresp.do_gzip = true;
 		}
 	}
-} -start -cliok "param.set debug +syncvsl"
+} -start -cliok "param.set debug +syncvsl" -cliok "param.set debug +flush_head"
 
 client c1 {
 	txreq
@@ -33,11 +32,13 @@ client c1 {
 	delay .1
 
 	txreq -url "/2"
-	rxresp
+	rxresphdrs
 	expect resp.http.content-length == "<undef>"
+	sema r2 sync 2
+	rxrespbody
 	expect resp.body == "0123456789"
-
 	delay .1
+
 	txreq -url "/2"
 	rxresp
 	expect resp.http.content-length == "10"
