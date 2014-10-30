@@ -41,7 +41,7 @@ logexpect l2 -v v1 -g request {
 
 logexpect l3 -v v1 -g request {
 	expect * 1003   Begin   "^req .* esi"
-	expect * = 	ReqAcct	"^0 0 0 0 18 18$"
+	expect * =	ReqAcct	"^0 0 0 0 18 18$"
 	expect 0 =      End
 } -start
 
