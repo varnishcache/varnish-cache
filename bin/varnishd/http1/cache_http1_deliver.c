@@ -150,6 +150,8 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	V1L_Reserve(req->wrk, req->ws, &req->sp->fd, req->vsl, req->t_prev);
 
 	req->acct.resp_hdrbytes += HTTP1_Write(req->wrk, req->resp, HTTP1_Resp);
+	if (DO_DEBUG(DBG_FLUSH_HEAD))
+		(void)V1L_Flush(req->wrk);
 
 	ois = OIS_DONE;
 	if (req->wantbody) {
