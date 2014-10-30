@@ -465,10 +465,10 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 	char *p;
 	int i, l, ll;
 
+	hp->body = hp->rxbuf + hp->prxbuf;
 	ll = 0;
 	p = http_find_header(hh, "content-length");
 	if (p != NULL) {
-		hp->body = hp->rxbuf + hp->prxbuf;
 		l = strtoul(p, NULL, 10);
 		(void)http_rxchar(hp, l, 0);
 		vtc_dump(hp->vl, 4, "body", hp->body, l);
@@ -487,7 +487,6 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 		return;
 	}
 	if (body) {
-		hp->body = hp->rxbuf + hp->prxbuf;
 		do  {
 			i = http_rxchar(hp, 1, 1);
 			ll += i;
@@ -558,7 +557,6 @@ cmd_http_rxresp(CMD_ARGS)
 	if (http_count_header(hp->resp, "Content-Length") > 1)
 		vtc_log(hp->vl, 0,
 		    "Multiple Content-Length headers.\n");
-	hp->body = hp->rxbuf + hp->prxbuf;
 	if (!has_obj)
 		return;
 	else if (!strcmp(hp->resp[1], "200"))
@@ -848,7 +846,6 @@ cmd_http_rxreq(CMD_ARGS)
 	if (http_count_header(hp->req, "Content-Length") > 1)
 		vtc_log(hp->vl, 0,
 		    "Multiple Content-Length headers.\n");
-	hp->body = hp->rxbuf + hp->prxbuf;
 	http_swallow_body(hp, hp->req, 0);
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
 }
