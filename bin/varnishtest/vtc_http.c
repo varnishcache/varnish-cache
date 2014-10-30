@@ -168,6 +168,25 @@ http_find_header(char * const *hh, const char *hdr)
 }
 
 /**********************************************************************
+ * count header
+ */
+
+static int
+http_count_header(char * const *hh, const char *hdr)
+{
+	int n, l, r = 0;
+
+	l = strlen(hdr);
+
+	for (n = 3; hh[n] != NULL; n++) {
+		if (strncasecmp(hdr, hh[n], l) || hh[n][l] != ':')
+			continue;
+		r++;
+	}
+	return (r);
+}
+
+/**********************************************************************
  * Expect
  */
 
@@ -536,6 +555,9 @@ cmd_http_rxresp(CMD_ARGS)
 			    "Unknown http rxresp spec: %s\n", *av);
 	http_rxhdr(hp);
 	http_splitheader(hp, 0);
+	if (http_count_header(hp->resp, "Content-Length") > 1)
+		vtc_log(hp->vl, 0,
+		    "Multiple Content-Length headers.\n");
 	hp->body = hp->rxbuf + hp->prxbuf;
 	if (!has_obj)
 		return;
@@ -562,6 +584,9 @@ cmd_http_rxresphdrs(CMD_ARGS)
 		vtc_log(hp->vl, 0, "Unknown http rxreq spec: %s\n", *av);
 	http_rxhdr(hp);
 	http_splitheader(hp, 0);
+	if (http_count_header(hp->resp, "Content-Length") > 1)
+		vtc_log(hp->vl, 0,
+		    "Multiple Content-Length headers.\n");
 }
 
 
@@ -820,6 +845,9 @@ cmd_http_rxreq(CMD_ARGS)
 		vtc_log(hp->vl, 0, "Unknown http rxreq spec: %s\n", *av);
 	http_rxhdr(hp);
 	http_splitheader(hp, 1);
+	if (http_count_header(hp->req, "Content-Length") > 1)
+		vtc_log(hp->vl, 0,
+		    "Multiple Content-Length headers.\n");
 	hp->body = hp->rxbuf + hp->prxbuf;
 	http_swallow_body(hp, hp->req, 0);
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
@@ -840,6 +868,9 @@ cmd_http_rxreqhdrs(CMD_ARGS)
 		vtc_log(hp->vl, 0, "Unknown http rxreq spec: %s\n", *av);
 	http_rxhdr(hp);
 	http_splitheader(hp, 1);
+	if (http_count_header(hp->req, "Content-Length") > 1)
+		vtc_log(hp->vl, 0,
+		    "Multiple Content-Length headers.\n");
 }
 
 static void
