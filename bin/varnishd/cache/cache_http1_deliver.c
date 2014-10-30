@@ -329,6 +329,9 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	if (!(req->res_mode & RES_ESI_CHILD))
 		req->resp_hdrbytes +=
 		    HTTP1_Write(req->wrk, req->resp, HTTP1_Resp);
+	if (DO_DEBUG(DBG_FLUSH_HEAD)) {
+		(void)WRW_Flush(req->wrk);
+	}
 
 	if (req->res_mode & RES_CHUNKED)
 		WRW_Chunked(req->wrk);
@@ -440,6 +443,9 @@ V1D_Deliver_Synth(struct req *req)
 	if (!(req->res_mode & RES_ESI_CHILD))
 		req->resp_hdrbytes +=
 		    HTTP1_Write(req->wrk, req->resp, HTTP1_Resp);
+	if (DO_DEBUG(DBG_FLUSH_HEAD)) {
+		(void)WRW_Flush(req->wrk);
+	}
 
 	if (req->res_mode & RES_CHUNKED)
 		WRW_Chunked(req->wrk);
