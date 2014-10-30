@@ -9,7 +9,9 @@ server s1 {
 
 	rxreq
 	txresp -nolen -hdr "Content-Length: 010"
-	send "0123456789"
+	send "01234"
+	delay .5
+	send "56789"
 } -start
 
 varnish v1 -vcl+backend {
