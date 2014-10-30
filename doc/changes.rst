@@ -189,7 +189,6 @@ Bugs fixed
 .. _1501: https://www.varnish-cache.org/trac/ticket/1501
 .. _1495: https://www.varnish-cache.org/trac/ticket/1495
 .. _1510: https://www.varnish-cache.org/trac/ticket/1510
-.. _1514: https://www.varnish-cache.org/trac/ticket/1514
 .. _1518: https://www.varnish-cache.org/trac/ticket/1518
 .. _1519: https://www.varnish-cache.org/trac/ticket/1519
 
