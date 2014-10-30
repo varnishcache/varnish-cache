@@ -340,8 +340,6 @@ Changes from 3.0.6rc1 to 3.0.6 (2014-10-16)
 - Minor changes to documentation.
 - [varnishadm] Add termcap workaround for libedit. Bug 1531_.
 
-.. _1531: http://varnish-cache.org/trac/ticket/1531
-
 
 ===========================================
 Changes from 3.0.5 to 3.0.6rc1 (2014-06-24)
