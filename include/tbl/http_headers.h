@@ -57,7 +57,7 @@ HTTPH("Cache-Control",		H_Cache_Control,		       HTTPH_R_FETCH		  )	/* RFC2616 1
 HTTPH("Connection",		H_Connection,		HTTPH_R_PASS | HTTPH_R_FETCH | HTTPH_A_INS)	/* RFC2616 14.10 */
 HTTPH("Content-Encoding",	H_Content_Encoding,	0					  )	/* RFC2616 14.11 */
 HTTPH("Content-Language",	H_Content_Language,	0					  )	/* RFC2616 14.12 */
-HTTPH("Content-Length",		H_Content_Length,		       HTTPH_R_FETCH | HTTPH_A_INS)	/* RFC2616 14.13 */
+HTTPH("Content-Length",		H_Content_Length,		       HTTPH_R_FETCH		  )	/* RFC2616 14.13 */
 HTTPH("Content-Location",	H_Content_Location,	0					  )	/* RFC2616 14.14 */
 HTTPH("Content-MD5",		H_Content_MD5,		0					  )	/* RFC2616 14.15 */
 HTTPH("Content-Range",		H_Content_Range,		       HTTPH_R_FETCH | HTTPH_A_INS)	/* RFC2616 14.16 */
