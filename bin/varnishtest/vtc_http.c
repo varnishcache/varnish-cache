@@ -469,7 +469,7 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 	p = http_find_header(hh, "content-length");
 	if (p != NULL) {
 		hp->body = hp->rxbuf + hp->prxbuf;
-		l = strtoul(p, NULL, 0);
+		l = strtoul(p, NULL, 10);
 		(void)http_rxchar(hp, l, 0);
 		vtc_dump(hp->vl, 4, "body", hp->body, l);
 		hp->bodyl = l;
@@ -874,7 +874,7 @@ cmd_http_rxreqhdrs(CMD_ARGS)
 }
 
 static void
-cmd_http_rxbody(CMD_ARGS)
+cmd_http_rxreqbody(CMD_ARGS)
 {
 	struct http *hp;
 
@@ -882,12 +882,30 @@ cmd_http_rxbody(CMD_ARGS)
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_SERVER(hp, av);
-	AZ(strcmp(av[0], "rxbody"));
+	AZ(strcmp(av[0], "rxreqbody"));
 	av++;
 
 	for(; *av != NULL; av++)
 		vtc_log(hp->vl, 0, "Unknown http rxreq spec: %s\n", *av);
 	http_swallow_body(hp, hp->req, 0);
+	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
+}
+
+static void
+cmd_http_rxrespbody(CMD_ARGS)
+{
+	struct http *hp;
+
+	(void)cmd;
+	(void)vl;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	ONLY_CLIENT(hp, av);
+	AZ(strcmp(av[0], "rxrespbody"));
+	av++;
+
+	for(; *av != NULL; av++)
+		vtc_log(hp->vl, 0, "Unknown http rxreq spec: %s\n", *av);
+	http_swallow_body(hp, hp->resp, 0);
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
 }
 
@@ -1225,12 +1243,13 @@ static const struct cmds http_cmds[] = {
 
 	{ "rxreq",		cmd_http_rxreq },
 	{ "rxreqhdrs",		cmd_http_rxreqhdrs },
+	{ "rxreqbody",		cmd_http_rxreqbody },
 	{ "rxchunk",		cmd_http_rxchunk },
-	{ "rxbody",		cmd_http_rxbody },
 
 	{ "txresp",		cmd_http_txresp },
 	{ "rxresp",		cmd_http_rxresp },
 	{ "rxresphdrs",		cmd_http_rxresphdrs },
+	{ "rxrespbody",		cmd_http_rxrespbody },
 	{ "gunzip",		cmd_http_gunzip_body },
 	{ "expect",		cmd_http_expect },
 	{ "send",		cmd_http_send },
