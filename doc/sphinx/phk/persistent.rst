@@ -41,7 +41,7 @@ all the banned objects.
 With persistent storage, we not only have to store the still live
 bans with the cached objects, and keep the two painfully in sync,
 so the bans gets revived with the objects, we also have to worry
-about missing bans duing the downtime, since those might ban objects
+about missing bans during the downtime, since those might ban objects
 we will recover on startup.
 
 Ouch:  Straight into database/filesystem consistency territory.
