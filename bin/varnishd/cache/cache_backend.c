@@ -384,64 +384,6 @@ vbe_dir_healthy(const struct director *d, const struct busyobj *bo,
 	return (VBE_Healthy(be, changed));
 }
 
-static int __match_proto__(vdi_gethdrs_f)
-vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
-    struct busyobj *bo)
-{
-	int i;
-
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-
-	i = vbe_dir_getfd(d, bo);
-	if (i < 0) {
-		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
-		return (-1);
-	}
-	AN(bo->htc);
-
-	i = V1F_fetch_hdr(wrk, bo);
-	/*
-	 * If we recycle a backend connection, there is a finite chance
-	 * that the backend closed it before we get a request to it.
-	 * Do a single retry in that case.
-	 */
-	if (i == 1) {
-		AZ(bo->htc);
-		VSC_C_main->backend_retry++;
-		bo->doclose = SC_NULL;
-		i = vbe_dir_getfd(d, bo);
-		if (i < 0) {
-			VSLb(bo->vsl, SLT_FetchError, "no backend connection");
-			bo->htc = NULL;
-			return (-1);
-		}
-		AN(bo->htc);
-		i = V1F_fetch_hdr(wrk, bo);
-	}
-	if (i != 0) {
-		bo->doclose = SC_NULL;
-		AZ(bo->htc);
-	} else {
-		AN(bo->htc->vbc);
-	}
-	return (i);
-}
-
-static int __match_proto__(vdi_getbody_f)
-vbe_dir_getbody(const struct director *d, struct worker *wrk,
-    struct busyobj *bo)
-{
-
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-
-	V1F_Setup_Fetch(bo->vfc, bo->htc);
-	return (0);
-}
-
 static void __match_proto__(vdi_finish_f)
 vbe_dir_finish(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
@@ -473,6 +415,66 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	}
 	bo->htc->vbc = NULL;
 	bo->htc = NULL;
+}
+
+static int __match_proto__(vdi_gethdrs_f)
+vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
+    struct busyobj *bo)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	i = vbe_dir_getfd(d, bo);
+	if (i < 0) {
+		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
+		return (-1);
+	}
+	AN(bo->htc);
+
+	i = V1F_fetch_hdr(wrk, bo);
+	/*
+	 * If we recycle a backend connection, there is a finite chance
+	 * that the backend closed it before we get a request to it.
+	 * Do a single retry in that case.
+	 */
+	if (i == 1) {
+		vbe_dir_finish(d, wrk, bo);
+		AZ(bo->htc);
+		VSC_C_main->backend_retry++;
+		bo->doclose = SC_NULL;
+		i = vbe_dir_getfd(d, bo);
+		if (i < 0) {
+			VSLb(bo->vsl, SLT_FetchError, "no backend connection");
+			bo->htc = NULL;
+			return (-1);
+		}
+		AN(bo->htc);
+		i = V1F_fetch_hdr(wrk, bo);
+	}
+	if (i != 0) {
+		vbe_dir_finish(d, wrk, bo);
+		bo->doclose = SC_NULL;
+		AZ(bo->htc);
+	} else {
+		AN(bo->htc->vbc);
+	}
+	return (i);
+}
+
+static int __match_proto__(vdi_getbody_f)
+vbe_dir_getbody(const struct director *d, struct worker *wrk,
+    struct busyobj *bo)
+{
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	V1F_Setup_Fetch(bo->vfc, bo->htc);
+	return (0);
 }
 
 static struct suckaddr * __match_proto__(vdi_suckaddr_f)

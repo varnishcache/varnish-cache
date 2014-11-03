@@ -100,6 +100,7 @@ VDI_GetBody(const struct director *d, struct worker *wrk, struct busyobj *bo)
 	AZ(d->resolve);
 	AN(d->getbody);
 
+	assert(bo->director_state == DIR_S_HDRS);
 	bo->director_state = DIR_S_BODY;
 	return (d->getbody(d, wrk, bo));
 }
@@ -118,9 +119,8 @@ VDI_Finish(const struct director *d, struct worker *wrk, struct busyobj *bo)
 	AN(d->finish);
 
 	assert(bo->director_state != DIR_S_NULL);
-	bo->director_state = DIR_S_NULL;
-
 	d->finish(d, wrk, bo);
+	bo->director_state = DIR_S_NULL;
 }
 
 /* Get a connection --------------------------------------------------*/
