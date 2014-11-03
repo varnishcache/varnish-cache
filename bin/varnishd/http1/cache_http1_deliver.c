@@ -142,8 +142,13 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 
 	VSLb(req->vsl, SLT_Debug, "RES_MODE %x", req->res_mode);
 
-	http_SetHeader(req->resp,
-	    req->doclose ? "Connection: close" : "Connection: keep-alive");
+	if (req->doclose) {
+		if (!http_HdrIs(req->resp, H_Connection, "close")) {
+			http_Unset(req->resp, H_Connection);
+			http_SetHeader(req->resp, "Connection: close");
+		}
+	} else if (!http_GetHdr(req->resp, H_Connection, NULL))
+		http_SetHeader(req->resp, "Connection: keep-alive");
 
 	VDP_push(req, v1d_bytes, NULL, 1);
 
