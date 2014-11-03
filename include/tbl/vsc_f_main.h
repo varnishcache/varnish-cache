@@ -101,16 +101,6 @@ VSC_F(client_req_400,		uint64_t, 1, 'a', info,
 	" malformed in some drastic way."
 )
 
-VSC_F(client_req_411,		uint64_t, 1, 'a', info,
-    "Client requests received, subject to 411 errors",
-	"411 means the client did not send a Content-Lenght for the req.body."
-)
-
-VSC_F(client_req_413,		uint64_t, 1, 'a', info,
-    "Client requests received, subject to 413 errors",
-	"413 means that HTTP headers exceeded length or count limits."
-)
-
 VSC_F(client_req_417,		uint64_t, 1, 'a', info,
     "Client requests received, subject to 417 errors",
 	"417 means that something went wrong with an Expect: header."
