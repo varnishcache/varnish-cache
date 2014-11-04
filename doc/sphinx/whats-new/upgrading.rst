@@ -198,7 +198,8 @@ Changes to existing parameters
 
 session_linger
 ~~~~~~~~~~~~~~
-`session_linger` has been renamed to `timeout_linger`.
+`session_linger` has been renamed to `timeout_linger` and it is in
+seconds now (previously was milliseconds).
 
 sess_timeout
 ~~~~~~~~~~~~
