@@ -90,6 +90,9 @@ Changes from 3.0.4 rc 1 to 3.0.4
 varnishd
 --------
 
+Note: In between 3.0.3 and 3.0.4 the VCL truth value for empty strings changed.
+Please see `Bug #1218` and `Bug #1406`_ for the details.
+
 - Set the waiter pipe as non-blocking and record overflows.  `Bug
   #1285`
 - Fix up a bug in the ACL compile code that could lead to false
@@ -98,6 +101,7 @@ varnishd
 
 .. _bug #1285: http://varnish-cache.org/trac/ticket/1285
 .. _bug #1312: http://varnish-cache.org/trac/ticket/1312
+.. _bug #1218: http://varnish-cache.org/trac/ticket/1285
 
 
 ================================
@@ -162,9 +166,6 @@ Other
 ===========================
 Changes from 3.0.2 to 3.0.3
 ===========================
-
-Note: In between 3.0.2 and 3.0.3 the VCL truth value for empty strings changed.
-Please see `Bug #1406`_ for the details.
 
 Varnishd
 --------
