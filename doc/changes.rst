@@ -44,6 +44,7 @@ varnishd
 
 .. _bug #1376: http://varnish-cache.org/trac/ticket/1376
 
+
 ================================
 Changes from 3.0.4 to 3.0.5 rc 1
 ================================
@@ -81,6 +82,7 @@ varnishadm
 
 .. _bug #1314: http://varnish-cache.org/trac/ticket/1314
 
+
 ================================
 Changes from 3.0.4 rc 1 to 3.0.4
 ================================
@@ -96,6 +98,7 @@ varnishd
 
 .. _bug #1285: http://varnish-cache.org/trac/ticket/1285
 .. _bug #1312: http://varnish-cache.org/trac/ticket/1312
+
 
 ================================
 Changes from 3.0.3 to 3.0.4 rc 1
@@ -154,6 +157,7 @@ Other
 - Disable PCRE JIT-er, since it's broken in some PCRE versions, at
   least on i386.
 - Make libvarnish prefer exact hits when looking for VSL tags.
+
 
 ===========================
 Changes from 3.0.2 to 3.0.3
@@ -275,6 +279,7 @@ Other
 
 .. _bug #1003: http://varnish-cache.org/trac/ticket/1003
 
+
 ================================
 Changes from 3.0.2 rc 1 to 3.0.2
 ================================
@@ -304,6 +309,7 @@ Other
 - Documentation updates
 
 - Some Solaris portability updates.
+
 
 ================================
 Changes from 3.0.1 to 3.0.2 rc 1
@@ -366,6 +372,7 @@ Other
 
 - Some Solaris portability updates.
 
+
 ================================
 Changes from 3.0.1 rc 1 to 3.0.1
 ================================
@@ -396,6 +403,7 @@ Other
 -----
 
 - Documentation updates
+
 
 ================================
 Changes from 3.0.0 to 3.0.1 rc 1
@@ -473,6 +481,7 @@ Other
 
 .. _bug #961: http://varnish-cache.org/trac/ticket/961
 
+
 ================================
 Changes from 3.0 beta 2 to 3.0.0
 ================================
@@ -499,6 +508,7 @@ varnishadm
   reason.
 
 .. _bug #935: http://varnish-cache.org/trac/ticket/935
+
 
 =====================================
 Changes from 3.0 beta 1 to 3.0 beta 2
@@ -550,6 +560,7 @@ VMODs
 -----
 
 - The std module now has proper documentation, including a manual page
+
 
 ================================
 Changes from 2.1.5 to 3.0 beta 1
