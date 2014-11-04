@@ -342,7 +342,7 @@ struct parspec mgt_parspec[] = {
 		"VCL can override this default value for each backend and "
 		"backend request.",
 		0,
-		"3.5", "s" },
+		"3.5", "seconds" },
 	{ "first_byte_timeout", tweak_timeout,
 		&mgt_param.first_byte_timeout,
 		"0", NULL,
@@ -353,7 +353,7 @@ struct parspec mgt_parspec[] = {
 		"VCL can override this default value for each backend and "
 		"backend request. This parameter does not apply to pipe.",
 		0,
-		"60", "s" },
+		"60", "seconds" },
 	{ "between_bytes_timeout", tweak_timeout,
 		&mgt_param.between_bytes_timeout,
 		"0", NULL,
@@ -364,7 +364,7 @@ struct parspec mgt_parspec[] = {
 		"VCL can override this default value for each backend request "
 		"and backend request. This parameter does not apply to pipe.",
 		0,
-		"60", "s" },
+		"60", "seconds" },
 	{ "acceptor_sleep_max", tweak_timeout,
 		&mgt_param.acceptor_sleep_max,
 		"0", "10",
@@ -373,7 +373,7 @@ struct parspec mgt_parspec[] = {
 		"This parameter limits how long it can sleep between "
 		"attempts to accept new connections.",
 		EXPERIMENTAL,
-		"0.050", "s" },
+		"0.050", "seconds" },
 	{ "acceptor_sleep_incr", tweak_timeout,
 		&mgt_param.acceptor_sleep_incr,
 		"0", "1",
@@ -382,7 +382,7 @@ struct parspec mgt_parspec[] = {
 		"This parameter control how much longer we sleep, each time "
 		"we fail to accept a new connection.",
 		EXPERIMENTAL,
-		"0.001", "s" },
+		"0.001", "seconds" },
 	{ "acceptor_sleep_decay", tweak_double,
 		&mgt_param.acceptor_sleep_decay,
 		"0", "1",
@@ -397,7 +397,7 @@ struct parspec mgt_parspec[] = {
 		"How much clockskew we are willing to accept between the "
 		"backend and our own clock.",
 		0,
-		"10", "s" },
+		"10", "seconds" },
 	{ "prefer_ipv6", tweak_bool, &mgt_param.prefer_ipv6,
 		NULL, NULL,
 		"Prefer IPv6 address when connecting to backends which "
@@ -454,7 +454,7 @@ struct parspec mgt_parspec[] = {
 		" lookup.  This parameter prevents the ban-lurker from"
 		" kicking in, until the rush is over.",
 		0,
-		"60", "s" },
+		"60", "seconds" },
 	{ "ban_lurker_sleep", tweak_timeout,
 		&mgt_param.ban_lurker_sleep,
 		"0", NULL,
@@ -464,7 +464,7 @@ struct parspec mgt_parspec[] = {
 		" before looking for new work to do.\n"
 		"A value of zero disables the ban lurker.",
 		0,
-		"0.01", "s" },
+		"0.01", "seconds" },
 	{ "ban_lurker_batch", tweak_uint,
 		&mgt_param.ban_lurker_batch,
 		"1", NULL,
@@ -521,14 +521,14 @@ struct parspec mgt_parspec[] = {
 		"Objects created with (ttl+grace+keep) shorter than this"
 		" are always put in transient storage.",
 		0,
-		"10.0", "s" },
+		"10", "seconds" },
 	{ "critbit_cooloff", tweak_timeout,
 		&mgt_param.critbit_cooloff,
 		"60", "254",
 		"How long time the critbit hasher keeps deleted objheads "
 		"on the cooloff list.",
 		WIZARD,
-		"180.0", "s" },
+		"180", "seconds" },
 	{ "sigsegv_handler", tweak_bool, &mgt_param.sigsegv_handler,
 		NULL, NULL,
 		"Install a signal handler which tries to dump debug "
