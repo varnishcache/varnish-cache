@@ -67,7 +67,7 @@ vcl_error is now vcl_backend_error
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To make a distinction between internally generated errors and
-VCL synthetic responses, `vcl_backend_error` will be called when 
+VCL synthetic responses, `vcl_backend_error` will be called when
 varnish encounters an error when trying to fetch an object.
 
 error() is now synth()
@@ -145,14 +145,7 @@ The `purge;` keyword has been retired.
 obj is now read-only
 ~~~~~~~~~~~~~~~~~~~~
 
-`obj` is now read-only. `obj.hits`, if enabled in VCL, now counts per
-objecthead, not per object. `obj.last_use` has been retired.
-
-Note that obj.hits may not be reset in some cases where bans are in use. See
-bug 1492_ for details.
-
-.. _1492: https://www.varnish-cache.org/trac/ticket/1492
-
+`obj` is now read-only.  `obj.last_use` has been retired.
 
 Some return values have been replaced
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -218,6 +211,14 @@ If you are using a lot of VMODs,  you may need to increase
 either `workspace_backend` and `workspace_client` based on where
 your VMOD is doing its work.
 
+thread_pool_purge_delay
+~~~~~~~~~~~~~~~~~~~~~~~
+`thread_pool_purge_delay` has been renamed to `thread_pool_destroy_delay`
+and it is in seconds now (previously was milliseconds).
+
+thread_pool_add_delay and thread_pool_fail_delay
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+They are in seconds now (previously were milliseconds).
 
 New parameters since 3.0
 ========================
