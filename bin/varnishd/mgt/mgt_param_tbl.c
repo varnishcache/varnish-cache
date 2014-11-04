@@ -194,7 +194,7 @@ struct parspec mgt_parspec[] = {
 		"5", "seconds" },
 	{ "timeout_req", tweak_timeout, &mgt_param.timeout_req,
 		"0", NULL,
-		"Max time to receive clients request header, measured"
+		"Max time to receive clients request headers, measured"
 		" from first non-white-space character to double CRNL.",
 		0,
 		"2", "seconds" },
