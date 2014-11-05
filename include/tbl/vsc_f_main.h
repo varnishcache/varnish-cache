@@ -63,7 +63,7 @@
 
 VSC_F(uptime,			uint64_t, 0, 'a', info,
     "Child process uptime",
-	""
+	"How long the child process has been running."
 )
 
 
@@ -108,7 +108,7 @@ VSC_F(client_req_417,		uint64_t, 1, 'a', info,
 
 VSC_F(client_req,		uint64_t, 1, 'a', info,
     "Good client requests received",
-	""
+	"The count of parseable client requests seen."
 )
 
 /*---------------------------------------------------------------------*/
@@ -140,7 +140,8 @@ VSC_F(cache_miss,		uint64_t, 1, 'a', info,
 
 VSC_F(backend_conn,		uint64_t, 0, 'a', info,
     "Backend conn. success",
-	""
+	"How many backend connections have successfully been"
+	" established."
 )
 
 VSC_F(backend_unhealthy,	uint64_t, 0, 'a', info,
@@ -278,7 +279,7 @@ VSC_F(thread_queue_len,		uint64_t, 0, 'g', info,
 
 VSC_F(busy_sleep,		uint64_t, 1, 'c', info,
     "Number of requests sent to sleep on busy objhdr",
-	"Number of requests sent to sleep without a worker threads because"
+	"Number of requests sent to sleep without a worker thread because"
 	" they found a busy object."
 )
 
@@ -309,42 +310,44 @@ VSC_F(sess_dropped,		uint64_t, 0, 'c', info,
 /*---------------------------------------------------------------------*/
 
 VSC_F(n_object,			uint64_t, 1, 'i', info,
-    "Number of object structs made",
-	""
+    "object structs made",
+        "Number of object structs made"
 )
 VSC_F(n_vampireobject,		uint64_t, 1, 'i', diag,
-    "Number of unresurrected objects",
-	""
+    "unresurrected objects",
+	"Number of unresurrected objects"
 )
 VSC_F(n_objectcore,		uint64_t, 1, 'i', info,
-    "Number of objectcore structs made",
-	""
+    "objectcore structs made",
+       "Number of objectcore structs made"
 )
 VSC_F(n_objecthead,		uint64_t, 1, 'i', info,
-    "Number of objecthead structs made",
-	""
+    "objecthead structs made",
+        "Number of objecthead structs made"
 )
 VSC_F(n_waitinglist,		uint64_t, 1, 'i', debug,
-    "Number of waitinglist structs made",
-	""
+    "waitinglist structs made",
+        "Number of waitinglist structs made"
 )
 
 VSC_F(n_backend,		uint64_t, 0, 'i', info,
     "Number of backends",
-	""
+	"Number of backends known to us."
 )
 
 VSC_F(n_expired,		uint64_t, 0, 'i', info,
     "Number of expired objects",
-	""
+	"Number of objects that expired from cache"
+	" because of old age."
 )
 VSC_F(n_lru_nuked,		uint64_t, 0, 'i', info,
     "Number of LRU nuked objects",
-	""
+	"How many objects have been forcefully evicted"
+	" from storage to make room for a new object."
 )
 VSC_F(n_lru_moved,		uint64_t, 0, 'i', diag,
     "Number of LRU moved objects",
-	""
+        "Number of move operations done on the LRU list."
 )
 
 VSC_F(losthdr,			uint64_t, 0, 'a', info,
