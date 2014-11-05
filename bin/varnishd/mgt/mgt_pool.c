@@ -143,7 +143,7 @@ struct parspec WRK_parspec[] = {
 		"\n"
 		"This controls the decay of thread pools when idle(-ish).\n"
 		"\n"
-		"Minimum is 0.01 second.",
+		"Minimum is 0.01 seconds.",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"1", "seconds" },
 	{ "thread_pool_add_delay",
