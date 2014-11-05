@@ -214,6 +214,14 @@ VSC_F(pipe_in,			uint64_t, 0, 'a', info,
 	"Total number of bytes forwarded from backend in"
 	" pipe sessions"
 )
+VSC_F(conn,			uint64_t, 0, 'g', info,
+    "Concurrent connections to backend",
+	""
+)
+VSC_F(req,			uint64_t, 0, 'c', info,
+    "Backend requests sent",
+	""
+)
 
 #endif
 
