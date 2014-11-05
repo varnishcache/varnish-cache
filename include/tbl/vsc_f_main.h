@@ -234,21 +234,22 @@ VSC_F(fetch_no_thread,		uint64_t, 1, 'c', info,
 
 VSC_F(pools,			uint64_t, 0, 'g', info,
     "Number of thread pools",
-	"Number of thread pools.  See also param wthread_pools."
+	"Number of thread pools.  See also parameter thread_pools."
 	"  NB: Presently pools cannot be removed once created."
 )
 
 VSC_F(threads,			uint64_t, 0, 'g', info,
     "Total number of threads",
 	"Number of threads in all pools."
-	"  See also params thread_pools, thread_pool_min & thread_pool_max."
+	"  See also parameters thread_pools, thread_pool_min and"
+	" thread_pool_max."
 )
 
 VSC_F(threads_limited,		uint64_t, 0, 'c', info,
     "Threads hit max",
 	"Number of times more threads were needed, but limit was reached"
 	" in a thread pool."
-	"  See also param thread_pool_max."
+	"  See also parameter thread_pool_max."
 )
 
 VSC_F(threads_created,		uint64_t, 0, 'c', info,
@@ -265,14 +266,14 @@ VSC_F(threads_failed,		uint64_t, 0, 'c', info,
     "Thread creation failed",
 	"Number of times creating a thread failed."
 	"  See VSL::Debug for diagnostics."
-	"  See also param thread_fail_delay."
+	"  See also parameter thread_fail_delay."
 )
 
 VSC_F(thread_queue_len,		uint64_t, 0, 'g', info,
     "Length of session queue",
 	"Length of session queue waiting for threads."
 	"  NB: Only updates once per second."
-	"  See also param queue_max."
+	"  See also parameter queue_max."
 )
 
 VSC_F(busy_sleep,		uint64_t, 1, 'c', info,
@@ -296,14 +297,13 @@ VSC_F(busy_killed,		uint64_t, 1, 'c', info,
 VSC_F(sess_queued,		uint64_t, 0, 'c', info,
     "Sessions queued for thread",
 	"Number of times session was queued waiting for a thread."
-	"  See also param queue_max."
+	"  See also parameter queue_max."
 )
 
 VSC_F(sess_dropped,		uint64_t, 0, 'c', info,
     "Sessions dropped for thread",
 	"Number of times session was dropped because the queue were too"
-	" long already."
-	"  See also param queue_max."
+	" long already. See also parameter queue_max."
 )
 
 /*---------------------------------------------------------------------*/
