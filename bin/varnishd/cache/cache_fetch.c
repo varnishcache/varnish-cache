@@ -360,6 +360,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	AZ(bo->do_esi);
 
 	if (bo->ims_obj != NULL && bo->beresp->status == 304) {
+		http_Unset(bo->beresp, H_Content_Length);
 		http_Merge(bo->ims_obj->http, bo->beresp,
 		    bo->ims_obj->changed_gzip);
 		assert(bo->beresp->status == 200);
@@ -468,19 +469,23 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->do_gunzip || (bo->is_gzip && bo->do_esi)) {
 		RFC2616_Weaken_Etag(bo->beresp);
+		http_Unset(bo->beresp, H_Content_Length);
 		VFP_Push(bo, vfp_gunzip_pull, 0);
 	}
 
 	if (bo->do_esi && bo->do_gzip) {
 		VFP_Push(bo, vfp_esi_gzip_pull, 0);
+		http_Unset(bo->beresp, H_Content_Length);
 		RFC2616_Weaken_Etag(bo->beresp);
 	} else if (bo->do_esi && bo->is_gzip && !bo->do_gunzip) {
 		VFP_Push(bo, vfp_esi_gzip_pull, 0);
+		http_Unset(bo->beresp, H_Content_Length);
 		RFC2616_Weaken_Etag(bo->beresp);
 	} else if (bo->do_esi) {
 		VFP_Push(bo, vfp_esi_pull, 0);
 	} else if (bo->do_gzip) {
 		VFP_Push(bo, vfp_gzip_pull, 0);
+		http_Unset(bo->beresp, H_Content_Length);
 		RFC2616_Weaken_Etag(bo->beresp);
 	} else if (bo->is_gzip && !bo->do_gunzip) {
 		VFP_Push(bo, vfp_testgunzip_pull, 0);

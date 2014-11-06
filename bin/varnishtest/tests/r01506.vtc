@@ -1,0 +1,41 @@
+varnishtest "Streaming of C-L header from backend"
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Content-Length: 020"
+	send "0123456789"
+	sema r1 sync 2
+	send "0123456789"
+
+	rxreq
+	txresp -nolen -hdr "Content-Length: 010"
+	sema r2 sync 2
+	send "0123456789"
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_backend_response {
+		if (bereq.url == "/2") {
+			set beresp.do_gzip = true;
+		}
+	}
+} -start -cliok "param.set debug +syncvsl" -cliok "param.set debug +flush_head"
+
+client c1 {
+	txreq
+	rxresphdrs
+	expect resp.http.content-length == "020"
+	sema r1 sync 2
+	rxrespbody
+	expect resp.body == "01234567890123456789"
+	delay .1
+
+	txreq -url "/2"
+	rxresphdrs
+	expect resp.http.content-length == "<undef>"
+	sema r2 sync 2
+	rxrespbody
+	expect resp.body == "0123456789"
+	delay .1
+} -run

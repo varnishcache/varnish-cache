@@ -24,6 +24,7 @@ varnish v1 -arg "-p nuke_limit=0 -p shortlived=0" \
 		set beresp.do_stream = false;
 		# Unset Date header to not change the object sizes
 		unset beresp.http.Date;
+		unset beresp.http.Content-Length;
 	}
 } -start
 

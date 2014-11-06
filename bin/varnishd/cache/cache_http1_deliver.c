@@ -240,36 +240,23 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 
 	req->res_mode = 0;
 
+	if (!req->disable_esi && req->obj->esidata != NULL)
+		req->res_mode |= RES_ESI;
+
 	if (req->esi_level > 0)
 		req->res_mode |= RES_ESI_CHILD;
 
-	if (!req->disable_esi && req->obj->esidata != NULL) {
-		/* In ESI mode, we can't know the aggregate length */
-		req->res_mode |= RES_ESI;
-		RFC2616_Weaken_Etag(req->resp);
-	}
-
 	if (req->res_mode & (RES_ESI_CHILD|RES_ESI)) {
-		/* nothing */
+		/* In ESI mode, we can't know the aggregate length */
+		http_Unset(req->resp, H_Content_Length);
+		RFC2616_Weaken_Etag(req->resp);
 	} else if (req->resp->status == 304) {
-		req->res_mode &= ~RES_LEN;
 		http_Unset(req->resp, H_Content_Length);
 		req->wantbody = 0;
-	} else if (bo != NULL) {
-		/* Streaming, decide CHUNKED/EOF later */
-	} else if ((req->obj->objcore->flags & OC_F_PASS) && !req->wantbody) {
-		/*
-		 * if we pass a HEAD the C-L header may already be in the
-		 * object and it will not match the actual storage length
-		 * which is zero.
-		 * Hand that C-L header back to client.
-		 */
-		req->res_mode |= RES_LEN;
-	} else {
-		req->res_mode |= RES_LEN;
-		http_Unset(req->resp, H_Content_Length);
-		http_PrintfHeader(req->resp,
-		    "Content-Length: %zd", req->obj->len);
+	} else if (bo == NULL &&
+	    !http_GetHdr(req->resp, H_Content_Length, NULL)) {
+		http_PrintfHeader(req->resp, "Content-Length: %zd",
+		    req->obj->len);
 	}
 
 	if (cache_param->http_gzip_support && req->obj->gziped &&
@@ -279,31 +266,25 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		 * XXX: we could cache that, but would still deliver
 		 * XXX: with multiple writes because of the gunzip buffer
 		 */
-		req->res_mode &= ~RES_LEN;
 		req->res_mode |= RES_GUNZIP;
+		http_Unset(req->resp, H_Content_Encoding);
+		http_Unset(req->resp, H_Content_Length);
 	}
 
-	if (!(req->res_mode & (RES_LEN|RES_CHUNKED|RES_EOF))) {
-		/* We havn't chosen yet, do so */
-		if (!req->wantbody) {
-			/* Nothing */
-		} else if (req->http->protover >= 11) {
+	if (http_GetHdr(req->resp, H_Content_Length, NULL))
+		req->res_mode |= RES_LEN;
+
+	if (req->wantbody && !(req->res_mode & RES_LEN)) {
+		if (req->http->protover >= 11) {
+			http_SetHeader(req->resp, "Transfer-Encoding: chunked");
 			req->res_mode |= RES_CHUNKED;
 		} else {
 			req->res_mode |= RES_EOF;
 			req->doclose = SC_TX_EOF;
 		}
 	}
+
 	VSLb(req->vsl, SLT_Debug, "RES_MODE %x", req->res_mode);
-
-	if (!(req->res_mode & RES_LEN))
-		http_Unset(req->resp, H_Content_Length);
-
-	if (req->res_mode & RES_GUNZIP)
-		http_Unset(req->resp, H_Content_Encoding);
-
-	if (req->res_mode & RES_CHUNKED)
-		http_SetHeader(req->resp, "Transfer-Encoding: chunked");
 
 	http_SetHeader(req->resp,
 	    req->doclose ? "Connection: close" : "Connection: keep-alive");
@@ -380,44 +361,29 @@ V1D_Deliver_Synth(struct req *req)
 	AN(req->synth_body);
 
 	req->res_mode = 0;
-	if (req->resp->status == 304) {
-		req->res_mode &= ~RES_LEN;
-		http_Unset(req->resp, H_Content_Length);
+
+	http_Unset(req->resp, H_Content_Length);
+	if (req->esi_level > 0) {
+		req->res_mode |= RES_ESI_CHILD;
+	} else if (req->resp->status == 304) {
 		req->wantbody = 0;
 	} else {
-		req->res_mode |= RES_LEN;
-		http_Unset(req->resp, H_Content_Length);
 		http_PrintfHeader(req->resp, "Content-Length: %zd",
 		    VSB_len(req->synth_body));
+		req->res_mode |= RES_LEN;
 	}
 
-	if (req->esi_level > 0) {
-		/* Included ESI object, always CHUNKED or EOF */
-		req->res_mode &= ~RES_LEN;
-		req->res_mode |= RES_ESI_CHILD;
-	}
-
-	if (!(req->res_mode & (RES_LEN|RES_CHUNKED|RES_EOF))) {
-		/* We havn't chosen yet, do so */
-		if (!req->wantbody) {
-			/* Nothing */
-		} else if (req->http->protover >= 11) {
+	if (req->wantbody && !(req->res_mode & RES_LEN)) {
+		if (req->http->protover >= 11) {
+			http_SetHeader(req->resp, "Transfer-Encoding: chunked");
 			req->res_mode |= RES_CHUNKED;
 		} else {
 			req->res_mode |= RES_EOF;
 			req->doclose = SC_TX_EOF;
 		}
 	}
+
 	VSLb(req->vsl, SLT_Debug, "RES_MODE %x", req->res_mode);
-
-	if (!(req->res_mode & RES_LEN))
-		http_Unset(req->resp, H_Content_Length);
-
-	if (req->res_mode & RES_GUNZIP)
-		http_Unset(req->resp, H_Content_Encoding);
-
-	if (req->res_mode & RES_CHUNKED)
-		http_SetHeader(req->resp, "Transfer-Encoding: chunked");
 
 	http_SetHeader(req->resp,
 	    req->doclose ? "Connection: close" : "Connection: keep-alive");

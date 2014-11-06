@@ -13,6 +13,7 @@ varnish v1 -vcl+backend {
 	sub vcl_recv { return (pass); }
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
+		unset beresp.http.content-length;
 	}
 } -start
 

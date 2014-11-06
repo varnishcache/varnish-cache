@@ -25,8 +25,9 @@ varnish v1 \
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
 		set beresp.storage_hint = "invalid";
-		# Unset Date header to not change the object sizes
+		# Unset Date and CL header to not change the object sizes
 		unset beresp.http.Date;
+		unset beresp.http.Content-Length;
 	}
 } -start
 
