@@ -92,11 +92,9 @@ varnishd_SOURCES = \
 	waiter/cache_waiter_ports.c 
 
 noinst_HEADERS = \
-	cache/cache_backend.h \
-	cache/cache_director.h \
+	builtin_vcl.h \
 	cache/cache_esi.h \
 	common/heritage.h \
-	builtin_vcl.h \
 	hash/hash_slinger.h \
 	mgt/mgt.h \
 	mgt/mgt_cli.h \
@@ -106,8 +104,7 @@ noinst_HEADERS = \
 	waiter/waiter.h
 
 # Headers for use with vmods
-pkgdataincludedir = $(pkgdatadir)/include
-nobase_pkgdatainclude_HEADERS = \
+nobase_pkginclude_HEADERS = \
 	cache/cache.h \
 	cache/cache_filter.h \
 	cache/cache_backend.h \

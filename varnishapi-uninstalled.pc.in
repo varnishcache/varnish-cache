@@ -8,7 +8,6 @@ pkgincludedir=${includedir}/@PACKAGE@
 datarootdir=@datarootdir@
 datadir=@datadir@
 pkgdatadir=${datadir}/@PACKAGE@
-pkgdataincludedir=${pkgdatadir}/include
 vmoddir=${libdir}/@PACKAGE@/vmods
 builddir=@abs_top_builddir@
 srcdir=@abs_top_srcdir@
