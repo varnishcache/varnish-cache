@@ -37,6 +37,24 @@ nobase_pkginclude_HEADERS = \
 	vapi/vapi_options.h \
 	vcli.h
 
+# Headers for use with vmods
+nobase_pkginclude_HEADERS += \
+	miniobj.h \
+	vas.h \
+	vav.h \
+	vbm.h \
+	vcl.h \
+	vcs.h \
+	vmod_abi.h \
+	vqueue.h \
+	vre.h \
+	vdef.h \
+	vrt.h \
+	vrt_obj.h \
+	vsa.h \
+	vsb.h \
+	vsha256.h
+
 # Private headers
 nobase_noinst_HEADERS = \
 	binary_heap.h \
@@ -67,25 +85,6 @@ nobase_noinst_HEADERS = \
 	vtree.h \
 	vut.h \
 	vut_options.h
-
-# Headers for use with vmods
-pkgdataincludedir = $(pkgdatadir)/include
-nobase_pkgdatainclude_HEADERS = \
-	miniobj.h \
-	vas.h \
-	vav.h \
-	vbm.h \
-	vcl.h \
-	vcs.h \
-	vmod_abi.h \
-	vqueue.h \
-	vre.h \
-	vdef.h \
-	vrt.h \
-	vrt_obj.h \
-	vsa.h \
-	vsb.h \
-	vsha256.h
 
 tbl/vrt_stv_var.h tbl/vcl_returns.h tbl/vcc_types.h vcl.h vrt_obj.h: $(top_srcdir)/lib/libvcc/generate.py $(top_srcdir)/include/vrt.h
 	mkdir -p tbl
