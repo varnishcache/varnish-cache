@@ -107,7 +107,7 @@ struct parspec mgt_parspec[] = {
 	{ "workspace_thread",
 		tweak_bytes_u, &mgt_param.workspace_thread,
 		"256", "8192",
-		"Bytes of auxillary workspace per thread.\n"
+		"Bytes of auxiliary workspace per thread.\n"
 		"This workspace is used for certain temporary data structures"
 		" during the operation of a worker thread.\n"
 		"One use is for the io-vectors for writing requests and"
@@ -144,7 +144,7 @@ struct parspec mgt_parspec[] = {
 	{ "http_resp_size",
 		tweak_bytes_u, &mgt_param.http_resp_size,
 		"256", NULL,
-		"Maximum number of bytes of HTTP backend resonse we will deal "
+		"Maximum number of bytes of HTTP backend response we will deal "
 		"with.  This is a limit on all bytes up to the double blank "
 		"line which ends the HTTP request.\n"
 		"The memory for the request is allocated from the worker "
@@ -283,7 +283,7 @@ struct parspec mgt_parspec[] = {
 		tweak_bytes_u, &mgt_param.cli_limit,
 		"128", "99999999",
 		"Maximum size of CLI response.  If the response exceeds"
-		" this limit, the reponse code will be 201 instead of"
+		" this limit, the response code will be 201 instead of"
 		" 200 and the last line will indicate the truncation.",
 		0,
 		"48k", "bytes" },
@@ -389,7 +389,7 @@ struct parspec mgt_parspec[] = {
 		"If we run out of resources, such as file descriptors or "
 		"worker threads, the acceptor will sleep between accepts.\n"
 		"This parameter (multiplicatively) reduce the sleep duration "
-		"for each succesfull accept. (ie: 0.9 = reduce by 10%)",
+		"for each successful accept. (ie: 0.9 = reduce by 10%)",
 		EXPERIMENTAL,
 		"0.900", "" },
 	{ "clock_skew", tweak_uint, &mgt_param.clock_skew,
@@ -416,7 +416,7 @@ struct parspec mgt_parspec[] = {
 		"100000", "sessions" },
 	{ "timeout_linger", tweak_timeout, &mgt_param.timeout_linger,
 		"0", NULL,
-		"How long time the workerthread lingers on an idle session "
+		"How long the worker thread lingers on an idle session "
 		"before handing it over to the waiter.\n"
 		"When sessions are reused, as much as half of all reuses "
 		"happen within the first 100 msec of the previous request "
@@ -433,7 +433,7 @@ struct parspec mgt_parspec[] = {
 		WAITER_DEFAULT, NULL },
 	{ "ban_dups", tweak_bool, &mgt_param.ban_dups,
 		NULL, NULL,
-		"Elimited older identical bans when new bans are created."
+		"Eliminate older identical bans when new bans are created."
 		"  This test is CPU intensive and scales with the number and"
 		" complexity of active (non-Gone) bans.  If identical bans"
 		" are frequent, the amount of CPU needed to actually test "
@@ -525,7 +525,7 @@ struct parspec mgt_parspec[] = {
 	{ "critbit_cooloff", tweak_timeout,
 		&mgt_param.critbit_cooloff,
 		"60", "254",
-		"How long time the critbit hasher keeps deleted objheads "
+		"How long the critbit hasher keeps deleted objheads "
 		"on the cooloff list.",
 		WIZARD,
 		"180", "seconds" },
