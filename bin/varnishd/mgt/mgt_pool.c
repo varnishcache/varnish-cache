@@ -110,9 +110,7 @@ struct parspec WRK_parspec[] = {
 		"\n"
 		"Do not set this higher than you have to, since excess "
 		"worker threads soak up RAM and CPU and generally just get "
-		"in the way of getting work done.\n"
-		"\n"
-		"Minimum is 10 threads.",
+		"in the way of getting work done.",
 		DELAYED_EFFECT,
 		"5000", "threads" },
 	{ "thread_pool_min", tweak_thread_pool_min, &mgt_param.wthread_min,
@@ -131,9 +129,7 @@ struct parspec WRK_parspec[] = {
 		"Thread idle threshold.\n"
 		"\n"
 		"Threads in excess of thread_pool_min, which have been idle "
-		"for at least this long, will be destroyed.\n"
-		"\n"
-		"Minimum is 10 seconds.",
+		"for at least this long, will be destroyed.",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"300", "seconds" },
 	{ "thread_pool_destroy_delay",
@@ -141,9 +137,7 @@ struct parspec WRK_parspec[] = {
 		"0.01", NULL,
 		"Wait this long after destroying a thread.\n"
 		"\n"
-		"This controls the decay of thread pools when idle(-ish).\n"
-		"\n"
-		"Minimum is 0.01 seconds.",
+		"This controls the decay of thread pools when idle(-ish).",
 		EXPERIMENTAL | DELAYED_EFFECT,
 		"1", "seconds" },
 	{ "thread_pool_add_delay",
