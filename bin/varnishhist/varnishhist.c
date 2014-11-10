@@ -193,7 +193,8 @@ static int /*__match_proto__ (VSLQ_dispatch_f)*/
 accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	void *priv)
 {
-	int i, j, tag, skip, match, hit;
+	int i, tag, skip, match, hit;
+	unsigned u;
 	double value;
 	struct VSL_transaction *tr;
 
@@ -259,13 +260,15 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 
 		/* phase out old data */
 		if (nhist == HIST_N) {
-			j = rr_hist[next_hist];
-			if (j < 0) {
-				assert(bucket_miss[-j] > 0);
-				bucket_miss[-j]--;
+			u = rr_hist[next_hist];
+			if (u >= hist_buckets) {
+				u -= hist_buckets;
+				assert(u < hist_buckets);
+				assert(bucket_hit[u] > 0);
+				bucket_hit[u]--;
 			} else {
-				assert(bucket_hit[j] > 0);
-				bucket_hit[j]--;
+				assert(bucket_miss[u] > 0);
+				bucket_miss[u]--;
 			}
 		} else {
 			++nhist;
@@ -274,10 +277,10 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		/* phase in new data */
 		if (hit) {
 			bucket_hit[i]++;
-			rr_hist[next_hist] = i;
+			rr_hist[next_hist] = i + hist_buckets;
 		} else {
 			bucket_miss[i]++;
-			rr_hist[next_hist] = -i;
+			rr_hist[next_hist] = i;
 		}
 		if (++next_hist == HIST_N) {
 			next_hist = 0;
