@@ -150,6 +150,7 @@ VBE_DropRefConn(struct backend *b, const struct acct_bereq *acct_bereq)
 	Lck_Lock(&b->mtx);
 	assert(b->n_conn > 0);
 	b->n_conn--;
+	b->vsc->conn--;
 	VBE_DropRefLocked(b, acct_bereq);
 }
 

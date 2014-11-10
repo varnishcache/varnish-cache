@@ -151,6 +151,7 @@ bes_conn_try(struct busyobj *bo, struct vbc *vc, const struct vbe_dir *vs)
 	Lck_Lock(&bp->mtx);
 	bp->refcount++;
 	bp->n_conn++;		/* It mostly works */
+	bp->vsc->conn++;
 	Lck_Unlock(&bp->mtx);
 
 	s = -1;
@@ -175,6 +176,7 @@ bes_conn_try(struct busyobj *bo, struct vbc *vc, const struct vbe_dir *vs)
 	if (s < 0) {
 		Lck_Lock(&bp->mtx);
 		bp->n_conn--;
+		bp->vsc->conn--;
 		bp->refcount--;		/* Only keep ref on success */
 		Lck_Unlock(&bp->mtx);
 		vc->addr = NULL;
@@ -359,6 +361,7 @@ vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 		return (-1);
 	}
 
+	vc->backend->vsc->req++;
 	if (bo->htc == NULL)
 		bo->htc = WS_Alloc(bo->ws, sizeof *bo->htc);
 	AN(bo->htc);
