@@ -1,0 +1,40 @@
+varnishtest "broken gunzip delivery"
+
+server s1 {
+	rxreq
+	txresp -nolen \
+		-hdr "Content-Encoding: gzip" \
+		-hdr "Transfer-Encoding: Chunked"
+	send "164\r\n"
+	sendhex "1f 8b 08 00 f3 7e 60 54  00 03 9d 94 d1 6e 82 30"
+	sendhex "14 86 ef fb 14 ff 23 70  0e 28 7a 69 b2 78 61 e2"
+	sendhex "76 c1 92 5d a3 69 e6 12  27 a6 b3 4b f6 f6 93 a3"
+	sendhex "24 a5 2d 16 e9 0d f0 51  4e db bf 1f 05 52 8d 33"
+	sendhex "2a 54 7b b3 a9 4f b6 36  7f ce ab b5 de 99 3e da"
+	sendhex "d6 66 7f e8 7d be 3a 9b  af 63 8f a8 6d 23 d7 39"
+	sendhex "28 bf 56 07 97 dd 9b 1c  94 81 4a 70 11 21 39 09"
+	# Truncated
+	delay .2
+
+	accept
+	rxreq
+	txresp -bodylen 7
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq
+	non-fatal
+	timeout 3
+	rxresp
+} -run
+
+delay .2
+
+client c1 {
+	# Test varnishd is still running
+	txreq -url /2
+	rxresp
+	expect resp.bodylen == 7
+} -run

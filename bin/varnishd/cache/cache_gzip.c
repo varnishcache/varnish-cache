@@ -310,8 +310,8 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 	AN(vg->m_buf);
 
 	if (act == VDP_FINI) {
+		/* NB: Gunzip'ing may or may not have completed successfully. */
 		AZ(len);
-		AZ(vg->m_len);
 		(void)VGZ_Destroy(&vg);
 		*priv = NULL;
 		return (0);
