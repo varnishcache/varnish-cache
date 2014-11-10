@@ -829,7 +829,6 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	if (bo->state == BOS_FINISHED) {
 		AZ(bo->fetch_objcore->flags & OC_F_FAILED);
-		HSH_Complete(bo->fetch_objcore);
 		VSLb(bo->vsl, SLT_Length, "%zd", bo->fetch_obj->len);
 		{
 		/* Sanity check fetch methods accounting */
@@ -846,6 +845,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 			else
 				assert(uu == bo->fetch_obj->len);
 		}
+		HSH_Complete(bo->fetch_objcore);
 	}
 	AZ(bo->fetch_objcore->busyobj);
 
