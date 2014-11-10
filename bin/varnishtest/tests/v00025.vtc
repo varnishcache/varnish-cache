@@ -52,7 +52,6 @@ varnish v1 -arg "-i J.F.Nobody" -vcl+backend {
 	}
 
 	sub vcl_backend_fetch {
-		set bereq.uncacheable = false;
 		if (bereq.between_bytes_timeout < 10s) {
 			set bereq.http.quick = "please";
 		}

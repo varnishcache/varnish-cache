@@ -204,20 +204,6 @@ VRT_r_beresp_##field(VRT_CTX)				\
 
 /*--------------------------------------------------------------------*/
 
-void
-VRT_l_bereq_uncacheable(VRT_CTX, unsigned a)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-
-	if (ctx->bo->do_pass && !a) {
-		VSLb(ctx->vsl, SLT_VCL_Error,
-		    "Ignoring attempt to reset bereq.uncacheable");
-	} else if (a) {
-		ctx->bo->do_pass = 1;
-	}
-}
-
 unsigned
 VRT_r_bereq_uncacheable(VRT_CTX)
 {
