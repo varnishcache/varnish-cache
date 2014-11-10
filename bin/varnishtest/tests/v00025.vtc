@@ -22,6 +22,7 @@ varnish v1 -arg "-i J.F.Nobody" -vcl+backend {
 		set resp.http.esi = req.esi;
 		set resp.http.be = req.backend_hint;
 		set resp.http.c_id = client.identity;
+		if (obj.uncacheable) { }
 	}
 
 	sub vcl_backend_response {
@@ -41,7 +42,6 @@ varnish v1 -arg "-i J.F.Nobody" -vcl+backend {
 	sub vcl_hit {
 		if (obj.proto) { }
 		if (obj.reason) { }
-		if (obj.uncacheable) { }
 		if (obj.keep > 1m) { }
 		if (obj.grace < 3m) {
 			return (deliver);

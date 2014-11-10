@@ -605,9 +605,9 @@ sp_variables = [
 	),
 	('obj.uncacheable',
 		'BOOL',
-		( 'hit', ),
+		( 'deliver', ),
 		( ), """
-		Whether the object is uncacheable (aka hit-for-pass)
+		Whether the object is uncacheable (pass or hit-for-pass).
 		"""
 	),
 	('resp',
