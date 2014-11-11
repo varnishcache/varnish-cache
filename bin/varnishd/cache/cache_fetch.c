@@ -590,6 +590,9 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert(V1L_IsReleased(wrk));
 
 
+	if (bo->do_esi)
+		ObjSetFlag(bo->wrk, bo->fetch_objcore, OF_ESIPROC, 1);
+
 	if (bo->do_gzip || (bo->is_gzip && !bo->do_gunzip))
 		ObjSetFlag(bo->wrk, bo->fetch_objcore, OF_GZIPED, 1);
 
@@ -603,10 +606,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->htc->body_status != BS_NONE)
 		AZ(VDI_GetBody(bo->director_resp, bo->wrk, bo));
-
-	/*
-	 * Ready to fetch the body
-	 */
 
 	assert(bo->refcount >= 1);
 
