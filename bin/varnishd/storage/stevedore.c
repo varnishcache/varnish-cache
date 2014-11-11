@@ -70,11 +70,11 @@ default_oc_freeobj(struct worker *wrk, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	ObjSlim(wrk, oc);
 	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
-	oc->stobj->priv = NULL;
-	oc->stobj->stevedore = NULL;
 	o->magic = 0;
 
-	STV_free(o->objstore);
+	STV_free(oc->stobj->stevedore, o->objstore);
+
+	memset(oc->stobj, 0, sizeof oc->stobj);
 
 	wrk->stats->n_object--;
 }
@@ -291,23 +291,23 @@ STV_NewObject(struct objcore *oc, struct worker *wrk,
 /*-------------------------------------------------------------------*/
 
 void
-STV_trim(struct storage *st, size_t size, int move_ok)
+STV_trim(const struct stevedore *stv, struct storage *st, size_t size,
+    int move_ok)
 {
 
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-	AN(st->stevedore);
-	if (st->stevedore->trim)
-		st->stevedore->trim(st, size, move_ok);
-}
+	if (stv->trim)
+		stv->trim(st, size, move_ok); }
 
 void
-STV_free(struct storage *st)
+STV_free(const struct stevedore *stv, struct storage *st)
 {
 
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-	AN(st->stevedore);
-	AN(st->stevedore->free);
-	st->stevedore->free(st);
+	AN(stv->free);
+	stv->free(st);
 }
 
 void

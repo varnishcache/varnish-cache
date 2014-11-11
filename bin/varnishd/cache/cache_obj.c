@@ -377,9 +377,9 @@ ObjTrimStore(struct worker *wrk, struct objcore *oc)
 		return;
 	if (st->len == 0) {
 		VTAILQ_REMOVE(&o->list, st, list);
-		STV_free(st);
+		STV_free(stv, st);
 	} else if (st->len < st->space) {
-		STV_trim(st, st->len, 1);
+		STV_trim(stv, st, st->len, 1);
 	}
 }
 
@@ -393,6 +393,7 @@ ObjTrimStore(struct worker *wrk, struct objcore *oc)
 void
 ObjSlim(struct worker *wrk, struct objcore *oc)
 {
+	const struct stevedore *stv;
 	struct object *o;
 	struct storage *st, *stn;
 	const struct storeobj_methods *om = obj_getmethods(oc);
@@ -404,17 +405,19 @@ ObjSlim(struct worker *wrk, struct objcore *oc)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	stv = oc->stobj->stevedore;
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	o = obj_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
 	if (o->esidata != NULL) {
-		STV_free(o->esidata);
+		STV_free(stv, o->esidata);
 		o->esidata = NULL;
 	}
 	VTAILQ_FOREACH_SAFE(st, &o->list, list, stn) {
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 		VTAILQ_REMOVE(&o->list, st, list);
-		STV_free(st);
+		STV_free(stv, st);
 	}
 }
 

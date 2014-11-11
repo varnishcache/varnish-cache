@@ -48,7 +48,6 @@ struct storage {
 
 
 	VTAILQ_ENTRY(storage)	list;
-	const struct stevedore	*stevedore;
 	void			*priv;
 
 	unsigned char		*ptr;

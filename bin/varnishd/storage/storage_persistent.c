@@ -493,7 +493,6 @@ smp_allocx(const struct stevedore *st, size_t min_size, size_t max_size,
 	ss->ptr = PRNUP(sc, ss + 1);
 	ss->space = max_size;
 	ss->priv = sc;
-	ss->stevedore = st;
 	if (ssg != NULL)
 		*ssg = sg;
 	return (ss);
