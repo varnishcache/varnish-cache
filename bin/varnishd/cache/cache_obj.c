@@ -214,7 +214,7 @@ ObjIterEnd(struct objcore *oc, void **oix)
  */
 
 static struct storage *
-objallocwithnuke(struct stevedore *stv, struct worker *wrk, size_t size)
+objallocwithnuke(const struct stevedore *stv, struct worker *wrk, size_t size)
 {
 	struct storage *st = NULL;
 	unsigned fail;

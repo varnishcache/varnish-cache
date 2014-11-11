@@ -423,7 +423,7 @@ smp_close(const struct stevedore *st)
  */
 
 static struct storage *
-smp_allocx(struct stevedore *st, size_t min_size, size_t max_size,
+smp_allocx(const struct stevedore *st, size_t min_size, size_t max_size,
     struct smp_object **so, unsigned *idx, struct smp_seg **ssg)
 {
 	struct smp_sc *sc;
@@ -504,7 +504,7 @@ smp_allocx(struct stevedore *st, size_t min_size, size_t max_size,
  */
 
 static int
-smp_allocobj(struct stevedore *stv, struct objcore *oc, unsigned ltot)
+smp_allocobj(const struct stevedore *stv, struct objcore *oc, unsigned ltot)
 {
 	struct object *o;
 	struct storage *st;
@@ -557,7 +557,7 @@ smp_allocobj(struct stevedore *stv, struct objcore *oc, unsigned ltot)
  */
 
 static struct storage *
-smp_alloc(struct stevedore *st, size_t size)
+smp_alloc(const struct stevedore *st, size_t size)
 {
 
 	return (smp_allocx(st,

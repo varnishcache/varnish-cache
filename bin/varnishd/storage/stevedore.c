@@ -154,7 +154,7 @@ stv_pick_stevedore(struct vsl_log *vsl, const char **hint)
 /*-------------------------------------------------------------------*/
 
 struct storage *
-STV_alloc(struct stevedore *stv, size_t size)
+STV_alloc(const struct stevedore *stv, size_t size)
 {
 	struct storage *st;
 
@@ -190,7 +190,7 @@ STV_alloc(struct stevedore *stv, size_t size)
  */
 
 struct object *
-STV_MkObject(struct stevedore *stv, struct objcore *oc, void *ptr)
+STV_MkObject(const struct stevedore *stv, struct objcore *oc, void *ptr)
 {
 	struct object *o;
 
@@ -218,7 +218,8 @@ STV_MkObject(struct stevedore *stv, struct objcore *oc, void *ptr)
  */
 
 int
-stv_default_allocobj(struct stevedore *stv, struct objcore *oc, unsigned ltot)
+stv_default_allocobj(const struct stevedore *stv, struct objcore *oc,
+    unsigned ltot)
 {
 	struct object *o;
 	struct storage *st;

@@ -51,7 +51,7 @@ struct smu {
 };
 
 static struct storage *
-smu_alloc(struct stevedore *st, size_t size)
+smu_alloc(const struct stevedore *st, size_t size)
 {
 	struct smu *smu;
 

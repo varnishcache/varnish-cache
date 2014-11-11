@@ -382,7 +382,7 @@ struct lru {
 struct storeobj {
 	unsigned		magic;
 #define STOREOBJ_MAGIC		0x6faed850
-	struct stevedore	*stevedore;
+	const struct stevedore	*stevedore;
 	void			*priv;
 	uintptr_t		priv2;
 };
@@ -1092,7 +1092,7 @@ void RFC2616_Vary_AE(struct http *hp);
 /* stevedore.c */
 int STV_NewObject(struct objcore *, struct worker *,
     const char *hint, unsigned len);
-struct storage *STV_alloc(struct stevedore *, size_t size);
+struct storage *STV_alloc(const struct stevedore *, size_t size);
 void STV_trim(struct storage *st, size_t size, int move_ok);
 void STV_free(struct storage *st);
 void STV_open(void);

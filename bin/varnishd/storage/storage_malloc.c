@@ -57,7 +57,7 @@ struct sma {
 };
 
 static struct storage *
-sma_alloc(struct stevedore *st, size_t size)
+sma_alloc(const struct stevedore *st, size_t size)
 {
 	struct sma_sc *sma_sc;
 	struct sma *sma = NULL;
