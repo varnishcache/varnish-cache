@@ -82,9 +82,10 @@ default_oc_freeobj(struct worker *wrk, struct objcore *oc)
 static struct lru * __match_proto__(getlru_f)
 default_oc_getlru(const struct objcore *oc)
 {
-	struct stevedore *stv;
+	const struct stevedore *stv;
 
-	CAST_OBJ_NOTNULL(stv, (void *)oc->stobj->priv2, STEVEDORE_MAGIC);
+	stv = oc->stobj->stevedore;
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	return (stv->lru);
 }
 
@@ -208,7 +209,6 @@ STV_MkObject(const struct stevedore *stv, struct objcore *oc, void *ptr)
 	oc->stobj->stevedore = stv;
 	AN(stv->methods);
 	oc->stobj->priv = o;
-	oc->stobj->priv2 = (uintptr_t)stv;
 	return (o);
 }
 
