@@ -288,8 +288,8 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 	ssize_t ip_l = 0;
 	const char *port_b = NULL;
 	ssize_t port_l = 0;
-	int found = 0;
-	int i, j;
+	int all, found = 0;
+	int i;
 
 	name_b = matcher;
 	if (matcher != NULL) {
@@ -344,8 +344,8 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 		}
 	}
 
-	for (j = 0; j < 2; ++j) {
-		if (j == 0 && name_b == NULL)
+	for (all = 0; all < 2 && found == 0; all++) {
+		if (all == 0 && name_b == NULL)
 			continue;
 		VTAILQ_FOREACH(b, &backends, list) {
 			CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
@@ -355,7 +355,7 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 			if (name_b != NULL &&
 			    strncmp(b->vcl_name, name_b, name_l) != 0)
 				continue;
-			if (j == 0 && b->vcl_name[name_l] != '\0')
+			if (all == 0 && b->vcl_name[name_l] != '\0')
 				continue;
 			if (ip_b != NULL &&
 			    (b->ipv4_addr == NULL ||
@@ -366,9 +366,7 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 			found++;
 			i = func(cli, b, priv);
 			if (i)
-				return(i);
-			if (j == 0)
-				return (1);
+				return (i);
 		}
 	}
 	return (found);
@@ -473,11 +471,12 @@ cli_backend_set_health(struct cli *cli, const char * const *av, void *priv)
 /*---------------------------------------------------------------------*/
 
 static struct cli_proto backend_cmds[] = {
-	{ "backend.list", "backend.list",
-	    "\tList all backends\n",
+	{ "backend.list", "backend.list [<backend_expression>]",
+	    "\tList backends.",
 	    0, 1, "", cli_backend_list },
-	{ "backend.set_health", "backend.set_health matcher state",
-	    "\tSet health status on a backend\n",
+	{ "backend.set_health",
+	    "backend.set_health <backend_expression> <state>",
+	    "\tSet health status on the backends.",
 	    2, 2, "", cli_backend_set_health },
 	{ NULL }
 };
