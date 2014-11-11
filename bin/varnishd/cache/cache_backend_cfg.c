@@ -255,11 +255,11 @@ vbe_str2adminhealth(const char *wstate)
 {
 
 	if (strcasecmp(wstate, "healthy") == 0)
-		return(ah_healthy);
+		return (ah_healthy);
 	if (strcasecmp(wstate, "sick") == 0)
-		return(ah_sick);
+		return (ah_sick);
 	if (strcmp(wstate, "auto") == 0)
-		return(ah_probe);
+		return (ah_probe);
 	return (ah_invalid);
 }
 
