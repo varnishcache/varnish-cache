@@ -128,15 +128,12 @@ panic.clear
 storage.list
   List storage devices
 
-backend.list
-  List all backends
+backend.list [<backend_expression>]
+  List backends.
 
-backend.set_health matcher state
-  Set health status on a backend. The matcher expression can be a
-  backend name or a parenthesized "(IP:port)" expression, or both. All
-  fields are optional. If no exact matching backend is found, partial
-  matching will be attempted based on the provided name, IP and port
-  fields.
+backend.set_health <backend_expression> <state>
+  Set health status on the backends.
+  State is any of auto, healthy or sick values.
 
 ban <field> <operator> <arg> [&& <field> <oper> <arg>]...
   All objects where the all the conditions match will be marked obsolete.
@@ -144,6 +141,13 @@ ban <field> <operator> <arg> [&& <field> <oper> <arg>]...
 ban.list
   List the active bans.
 
+Backend Expression
+------------------
+
+A backend expression can be a backend name or a combination of backend
+name, IP address and port in "name(IP address:port)" format. All fields
+are optional. If no exact matching backend is found, partial matching
+will be attempted based on the provided name, IP address and port fields.
 
 Ban Expressions
 ---------------
