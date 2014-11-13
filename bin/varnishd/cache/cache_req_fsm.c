@@ -566,6 +566,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	AZ(req->objcore);
+	AZ(req->err_code);
 
 	AZ(isnan(req->t_first));
 	AZ(isnan(req->t_prev));
@@ -589,11 +590,6 @@ cnt_recv(struct worker *wrk, struct req *req)
 			http_PrintfHeader(req->http, "X-Forwarded-For: %s",
 			    req->sp->client_addr_str);
 		}
-	}
-
-	if (req->err_code) {
-		req->req_step = R_STP_SYNTH;
-		return (REQ_FSM_MORE);
 	}
 
 	req->doclose = http_DoConnection(req->http);
