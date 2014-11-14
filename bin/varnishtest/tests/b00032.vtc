@@ -7,6 +7,24 @@ server s1 {
 	txresp
 } -start
 
-varnish v1 -vcl+backend {} -start
+varnish v1 -vcl+backend {} 
+varnish v1 -vcl+backend {} 
+
+varnish v1 -cliok vcl.list
+
+varnish v1 -cliok start
 
 varnish v1 -cliok debug.sizeof
+
+varnish v1 -cliok "vcl.use vcl1"
+
+varnish v1 -clierr 106 "vcl.discard vcl1"
+
+varnish v1 -clierr 106 "vcl.discard vcl0"
+
+varnish v1 -clierr 106 {vcl.inline vcl2 "vcl 4.0; backend foo {.host = \"127.0.0.1\";} "}
+
+varnish v1 -clierr 106 {vcl.load vcl3 ./nonexistent.vcl}
+
+varnish v1 -cliok "vcl.discard vcl2"
+
