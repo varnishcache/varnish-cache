@@ -1,3 +1,29 @@
+==============================================
+Changes from 4.0.2 to 4.0.3-beta1 (2014-11-14)
+==============================================
+
+
+Changes since 4.0.2:
+
+- A lot of minor documentation fixes.
+- bereq.uncacheable is now read-only.
+- obj.uncacheable is now readable in vcl_deliver.
+- [varnishadm] Prefer exact matches for backend.set_healthy. Bug 1349_.
+- Hard-coded -sfile default size is removed.
+- Truncate duplicate Content-
+- [packaging] EL6 packages are once again built with -O2.
+
+Bugs fixed
+----------
+
+* 1623_ - Fix varnishhist -d segfault.
+* 1607_ - Don't leak reqs on failure to revive from waitinglist.
+* 1610_ - Update forgotten varnishlog example to 4.0 syntax.
+* 1596_ - Delay HSH_Complete() until the storage sanity functions has finished.
+* 1506_ - Keep Content-Length from backend if we can.
+* 1602_ - Fix a cornercase related to empty pass objects.
+
+
 ============================================
 Changes from 4.0.2-rc1 to 4.0.2 (2014-10-08)
 ============================================
