@@ -1,0 +1,20 @@
+varnishtest "#1627, wrong CL for gzipped+streamed content with HTTP/1.0 client"
+
+server s1 {
+	rxreq
+	txresp -body "Testing"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_stream = true;
+		set beresp.do_gzip = true;
+	}
+} -start
+
+client c1 {
+	txreq -proto "HTTP/1.0" -hdr "Accept-Encoding: gzip"
+	rxresp
+	gunzip
+	expect resp.bodylen == 7
+} -run
