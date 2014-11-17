@@ -628,6 +628,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	assert(WRW_IsReleased(wrk));
 	http_Teardown(bo->bereq);
 	VBO_DerefBusyObj(wrk, &bo);
+	THR_SetBusyobj(NULL);
 	return (REQ_FSM_DONE);
 }
 
