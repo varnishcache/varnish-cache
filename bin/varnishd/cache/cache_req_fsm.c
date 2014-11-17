@@ -516,8 +516,8 @@ cnt_pipe(struct worker *wrk, struct req *req)
 
 	V1P_Process(req, bo);
 	http_Teardown(bo->bereq);
-	THR_SetBusyobj(NULL);
 	VBO_DerefBusyObj(wrk, &bo);
+	THR_SetBusyobj(NULL);
 	return (REQ_FSM_DONE);
 }
 

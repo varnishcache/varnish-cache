@@ -973,6 +973,6 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 		}
 	}
 	VSLb_ts_req(req, "Fetch", W_TIM_real(wrk));
-	THR_SetBusyobj(NULL);
 	VBO_DerefBusyObj(wrk, &bo);
+	THR_SetBusyobj(NULL);
 }
