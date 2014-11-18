@@ -185,6 +185,14 @@ The `remove` keyword is gone
 Replaced by `unset`.
 
 
+X-Forwarded-For is now set before vcl_recv
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+In many cases, people unintentionally removed X-Forwarded-For when
+implementing their own vcl_recv. Therefore it has been moved to before
+vcl_recv, so if you don't want an IP added to it, you should remove it
+in vcl_recv.
+
 
 Changes to existing parameters
 ==============================
