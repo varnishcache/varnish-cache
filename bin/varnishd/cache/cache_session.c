@@ -234,14 +234,7 @@ SES_ScheduleReq(struct req *req)
 	sp->task.func = ses_req_pool_task;
 	sp->task.priv = req;
 
-	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT)) {
-		AN (req->vcl);
-		VCL_Rel(&req->vcl);
-		SES_ReleaseReq(req);
-		SES_Delete(sp, SC_OVERLOAD, NAN);
-		return (1);
-	}
-	return (0);
+	return (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT));
 }
 
 /*--------------------------------------------------------------------
