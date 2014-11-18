@@ -952,9 +952,13 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	bo->fetch_task.priv = bo;
 	bo->fetch_task.func = vbf_fetch_thread;
 
-	if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_QUEUE_FRONT))
-		vbf_fetch_thread(wrk, bo);
-	if (mode == VBF_BACKGROUND) {
+	if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_QUEUE_FRONT)) {
+		wrk->stats.fetch_no_thread++;
+		(void)vbf_stp_fail(req->wrk, bo);
+		if (bo->ims_obj != NULL)
+			(void)HSH_DerefObj(&wrk->stats, &bo->ims_obj);
+		VBO_DerefBusyObj(wrk, &bo);
+	} else if (mode == VBF_BACKGROUND) {
 		VBO_waitstate(bo, BOS_REQ_DONE);
 	} else {
 		VBO_waitstate(bo, BOS_STREAM);
