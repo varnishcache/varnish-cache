@@ -246,7 +246,6 @@ struct vmod_priv {
 typedef int vmod_init_f(struct vmod_priv *,  const struct VCL_conf *);
 
 void VRT_priv_fini(const struct vmod_priv *p);
-struct vmod_priv *VRT_priv_sess(VRT_CTX, void *vmod_id);
 struct vmod_priv *VRT_priv_req(VRT_CTX, void *vmod_id);
 
 /* Stevedore related functions */

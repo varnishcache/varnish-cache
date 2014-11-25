@@ -55,10 +55,6 @@ $Function STRING test_priv_req(PRIV_REQ, STRING)
 
 Test function for REQ private pointers
 
-$Function STRING test_priv_sess(PRIV_SESS, STRING)
-
-Test function for SESS private pointers
-
 $Function BLOB str2blob(STRING src)
 
 Turn a string into a blob

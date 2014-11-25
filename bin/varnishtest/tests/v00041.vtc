@@ -1,4 +1,4 @@
-varnishtest "Test priv_sess and priv_req"
+varnishtest "Test priv_req"
 
 server s1 {
 	rxreq
@@ -12,14 +12,11 @@ varnish v1 -vcl+backend {
 
 	sub vcl_recv {
 		set req.http.x0 = debug.test_priv_req(req.url);
-		set req.http.y0 = debug.test_priv_sess(req.url);
 	}
 
 	sub vcl_deliver {
 		set resp.http.x0 = req.http.x0;
 		set resp.http.x1 = debug.test_priv_req("");
-		set resp.http.y0 = req.http.y0;
-		set resp.http.y1 = debug.test_priv_sess("");
 	}
 } -start
 
@@ -29,13 +26,9 @@ client c1 {
 	rxresp
 	expect resp.http.x0 == /foobar
 	expect resp.http.x1 == /foobar
-	expect resp.http.y0 == /foobar
-	expect resp.http.y1 == /foobar
 
 	txreq -url /snafu
 	rxresp
 	expect resp.http.x0 == /snafu
 	expect resp.http.x1 == /snafu
-	expect resp.http.y0 == /foobar
-	expect resp.http.y1 == /foobar
 } -run

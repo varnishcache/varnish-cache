@@ -557,12 +557,6 @@ vcc_priv_arg(struct vcc *tl, const char *p, const char *name)
 		e2 = vcc_mk_expr(VOID,
 		    "VRT_priv_req(ctx, &VGC_vmod_%.*s)",
 		    (int) (r - name), name);
-	} else if (!strcmp(p, "PRIV_SESS")) {
-		r = strchr(name, '.');
-		AN(r);
-		e2 = vcc_mk_expr(VOID,
-		    "VRT_priv_sess(ctx, &VGC_vmod_%.*s)",
-		    (int) (r - name), name);
 	} else {
 		WRONG("Wrong PRIV_ type");
 	}

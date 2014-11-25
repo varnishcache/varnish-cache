@@ -89,20 +89,12 @@ VRTPRIV_dynamic_kill(struct sess *sp, uintptr_t id)
 			FREE_OBJ(vps);
 		}
 	}
-	if (id == 0)
-		assert(VTAILQ_EMPTY(&sp->privs));
 }
 
 struct vmod_priv *
 VRT_priv_req(VRT_CTX, void *vmod_id)
 {
 	return (VRT_priv_dynamic(ctx, (uintptr_t)ctx->req, (uintptr_t)vmod_id));
-}
-
-struct vmod_priv *
-VRT_priv_sess(VRT_CTX, void *vmod_id)
-{
-	return (VRT_priv_dynamic(ctx, (uintptr_t)NULL, (uintptr_t)vmod_id));
 }
 
 /*--------------------------------------------------------------------
