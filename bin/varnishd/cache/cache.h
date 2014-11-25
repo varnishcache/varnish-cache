@@ -119,7 +119,7 @@ struct sess;
 struct sesspool;
 struct vbc;
 struct vrt_backend;
-struct vrt_privs;
+struct vrt_priv;
 struct vsb;
 struct waitinglist;
 struct worker;
@@ -295,6 +295,14 @@ struct vsl_log {
 struct vxid_pool {
 	uint32_t		next;
 	uint32_t		count;
+};
+
+/*--------------------------------------------------------------------*/
+
+struct vrt_privs {
+	unsigned		magic;
+#define VRT_PRIVS_MAGIC		0x03ba7501
+	VTAILQ_HEAD(,vrt_priv)	privs;
 };
 
 /*--------------------------------------------------------------------*/
@@ -663,7 +671,7 @@ struct sess {
 	double			t_open;		/* fd accepted */
 	double			t_idle;		/* fd accepted or resp sent */
 
-	VTAILQ_HEAD(,vrt_privs)	privs;
+	struct vrt_privs	privs[1];
 
 #if defined(HAVE_EPOLL_CTL)
 	struct epoll_event ev;
@@ -1046,7 +1054,8 @@ const char *VCL_Method_Name(unsigned);
  */
 const char *VRT_String(struct ws *ws, const char *h, const char *p, va_list ap);
 char *VRT_StringList(char *d, unsigned dl, const char *p, va_list ap);
-void VRTPRIV_dynamic_kill(struct sess *sp, uintptr_t id);
+void VRTPRIV_init(struct vrt_privs *privs);
+void VRTPRIV_dynamic_kill(struct vrt_privs *privs, uintptr_t id);
 
 void ESI_Deliver(struct req *);
 void ESI_DeliverChild(struct req *, struct busyobj *);

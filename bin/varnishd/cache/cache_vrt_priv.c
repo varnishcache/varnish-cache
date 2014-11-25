@@ -40,10 +40,10 @@
 #include "vcl.h"
 #include "vrt.h"
 
-struct vrt_privs {
+struct vrt_priv {
 	unsigned			magic;
-#define VRT_PRIVS_MAGIC			0x24157a52
-	VTAILQ_ENTRY(vrt_privs)		list;
+#define VRT_PRIV_MAGIC			0x24157a52
+	VTAILQ_ENTRY(vrt_priv)		list;
 	struct vmod_priv		priv[1];
 	const struct VCL_conf		*vcl;
 	uintptr_t			id;
@@ -53,40 +53,51 @@ struct vrt_privs {
 /*--------------------------------------------------------------------
  */
 
+void
+VRTPRIV_init(struct vrt_privs *privs)
+{
+	privs->magic = VRT_PRIVS_MAGIC;
+	VTAILQ_INIT(&privs->privs);
+}
+
 static struct vmod_priv *
 VRT_priv_dynamic(VRT_CTX, uintptr_t id, uintptr_t vmod_id)
 {
-	struct vrt_privs *vps;
+	struct vrt_priv *vp;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	VTAILQ_FOREACH(vps, &ctx->req->sp->privs, list) {
-		CHECK_OBJ_NOTNULL(vps, VRT_PRIVS_MAGIC);
-		if (vps->vcl == ctx->vcl && vps->id == id
-		    && vps->vmod_id == vmod_id)
-			return (vps->priv);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req->sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req->sp->privs, VRT_PRIVS_MAGIC);
+
+	VTAILQ_FOREACH(vp, &ctx->req->sp->privs->privs, list) {
+		CHECK_OBJ_NOTNULL(vp, VRT_PRIV_MAGIC);
+		if (vp->vcl == ctx->vcl && vp->id == id
+		    && vp->vmod_id == vmod_id)
+			return (vp->priv);
 	}
-	ALLOC_OBJ(vps, VRT_PRIVS_MAGIC);
-	AN(vps);
-	vps->vcl = ctx->vcl;
-	vps->id = id;
-	vps->vmod_id = vmod_id;
-	VTAILQ_INSERT_TAIL(&ctx->req->sp->privs, vps, list);
-	return (vps->priv);
+	ALLOC_OBJ(vp, VRT_PRIV_MAGIC);
+	AN(vp);
+	vp->vcl = ctx->vcl;
+	vp->id = id;
+	vp->vmod_id = vmod_id;
+	VTAILQ_INSERT_TAIL(&ctx->req->sp->privs->privs, vp, list);
+	return (vp->priv);
 }
 
 void
-VRTPRIV_dynamic_kill(struct sess *sp, uintptr_t id)
+VRTPRIV_dynamic_kill(struct vrt_privs *privs, uintptr_t id)
 {
-	struct vrt_privs *vps, *vps1;
+	struct vrt_priv *vp, *vp1;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(privs, VRT_PRIVS_MAGIC);
 
-	VTAILQ_FOREACH_SAFE(vps, &sp->privs, list, vps1) {
-		CHECK_OBJ_NOTNULL(vps, VRT_PRIVS_MAGIC);
-		if (id == vps->id) {
-			VTAILQ_REMOVE(&sp->privs, vps, list);
-			VRT_priv_fini(vps->priv);
-			FREE_OBJ(vps);
+	VTAILQ_FOREACH_SAFE(vp, &privs->privs, list, vp1) {
+		CHECK_OBJ_NOTNULL(vp, VRT_PRIV_MAGIC);
+		if (id == vp->id) {
+			VTAILQ_REMOVE(&privs->privs, vp, list);
+			VRT_priv_fini(vp->priv);
+			FREE_OBJ(vp);
 		}
 	}
 }
@@ -107,4 +118,3 @@ VRT_priv_fini(const struct vmod_priv *p)
 	if (p->priv != (void*)0 && p->free != (void*)0)
 		p->free(p->priv);
 }
-
