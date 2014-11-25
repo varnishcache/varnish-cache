@@ -1,0 +1,57 @@
+varnishtest "Test var args"
+
+server s1 {
+	rxreq
+	txresp -bodylen 6
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_debug};
+
+	sub vcl_deliver {
+		set resp.http.foo1 = debug.argtest("1", 2.0, "3");
+		set resp.http.foo2 = debug.argtest("1", two = 2.0, three = "3");
+		set resp.http.foo3 = debug.argtest("1", three = "3", two = 2.0);
+		set resp.http.foo4 = debug.argtest("1", 2.0, three = "3");
+		set resp.http.foo5 = debug.argtest("1", 2.0);
+		set resp.http.foo6 = debug.argtest("1");
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == "6"
+	expect resp.http.foo1 == "1 2 3"
+	expect resp.http.foo2 == "1 2 3"
+	expect resp.http.foo3 == "1 2 3"
+	expect resp.http.foo4 == "1 2 3"
+	expect resp.http.foo5 == "1 2 3"
+	expect resp.http.foo6 == "1 2 3"
+} -run
+
+delay .1
+
+varnish v1 -errvcl {Argument 'one' already used} {
+	import ${vmod_debug};
+	backend b1 {.host = "127.0.0.1";}
+	sub vcl_deliver {
+		set resp.http.foo5 = debug.argtest("1", one = "1");
+	}
+}
+
+varnish v1 -errvcl {Argument 'one' missing} {
+	import ${vmod_debug};
+	backend b1 {.host = "127.0.0.1";}
+	sub vcl_deliver {
+		set resp.http.foo5 = debug.argtest(two = 2.0, three = "3");
+	}
+}
+
+varnish v1 -errvcl {Unknown argument 'four'} {
+	import ${vmod_debug};
+	backend b1 {.host = "127.0.0.1";}
+	sub vcl_deliver {
+		set resp.http.foo5 = debug.argtest("1", two = 2.0, four = "3");
+	}
+}

@@ -171,3 +171,12 @@ vmod_rot52(VRT_CTX, VCL_HTTP hp)
 
 	http_PrintfHeader(hp, "Encrypted: ROT52");
 }
+
+VCL_STRING
+vmod_argtest(VRT_CTX, VCL_STRING one, VCL_REAL two, VCL_STRING three)
+{
+	char buf[100];
+
+	bprintf(buf, "%s %g %s", one, two, three);
+	return WS_Copy(ctx->ws, buf, -1);
+}

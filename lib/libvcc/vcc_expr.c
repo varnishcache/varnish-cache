@@ -579,14 +579,64 @@ struct func_arg {
 };
 
 static void
+vcc_do_arg(struct vcc *tl, struct func_arg *fa)
+{
+	const char *p, *r;
+	struct expr *e2;
+
+	if (fa->type == ENUM) {
+		ExpectErr(tl, ID);
+		ERRCHK(tl);
+		r = p = fa->enum_bits;
+		do {
+			if (vcc_IdIs(tl->t, p))
+				break;
+			p += strlen(p) + 1;
+		} while (*p != '\0');
+		if (*p == '\0') {
+			VSB_printf(tl->sb, "Wrong enum value.");
+			VSB_printf(tl->sb, "  Expected one of:\n");
+			do {
+				VSB_printf(tl->sb, "\t%s\n", r);
+				r += strlen(r) + 1;
+			} while (*r != '\0');
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+		fa->result = vcc_mk_expr(VOID, "\"%.*s\"", PF(tl->t));
+		SkipToken(tl, ID);
+	} else {
+		vcc_expr0(tl, &e2, fa->type);
+		ERRCHK(tl);
+		if (e2->fmt != fa->type) {
+			VSB_printf(tl->sb, "Wrong argument type.");
+			VSB_printf(tl->sb, "  Expected %s.",
+				vcc_Type(fa->type));
+			VSB_printf(tl->sb, "  Got %s.\n",
+				vcc_Type(e2->fmt));
+			vcc_ErrWhere2(tl, e2->t1, tl->t);
+			return;
+		}
+		assert(e2->fmt == fa->type);
+		if (e2->fmt == STRING_LIST) {
+			e2 = vcc_expr_edit(STRING_LIST,
+			    "\v+\n\v1,\nvrt_magic_string_end\v-",
+			    e2, NULL);
+		}
+		fa->result = e2;
+	}
+}
+
+static void
 vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
     const char *extra, const char *name, const char *args)
 {
-	const char *p, *r;
-	struct expr *e1, *e2;
+	const char *p;
+	struct expr *e1;
 	struct func_arg *fa, *fa2;
 	enum var_type rfmt;
 	VTAILQ_HEAD(,func_arg) head;
+	struct token *t1;
 
 	AN(cfunc);
 	AN(args);
@@ -625,63 +675,68 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 	}
 
 	VTAILQ_FOREACH(fa, &head, list) {
+		if (tl->t->tok == ')')
+			break;
 		if (fa->result != NULL)
 			continue;
-		e2 = NULL;
-		if (fa->type == ENUM) {
-			ExpectErr(tl, ID);
-			ERRCHK(tl);
-			r = p = fa->enum_bits;
-			do {
-				if (vcc_IdIs(tl->t, p))
-					break;
-				p += strlen(p) + 1;
-			} while (*p != '\0');
-			if (*p == '\0') {
-				VSB_printf(tl->sb, "Wrong enum value.");
-				VSB_printf(tl->sb, "  Expected one of:\n");
-				do {
-					VSB_printf(tl->sb, "\t%s\n", r);
-					r += strlen(r) + 1;
-				} while (*r != '\0');
-				vcc_ErrWhere(tl, tl->t);
-				return;
-			}
-			fa->result = vcc_mk_expr(VOID, "\"%.*s\"", PF(tl->t));
-			SkipToken(tl, ID);
-		} else {
-			vcc_expr0(tl, &e2, fa->type);
-			ERRCHK(tl);
-			if (e2->fmt != fa->type) {
-				VSB_printf(tl->sb, "Wrong argument type.");
-				VSB_printf(tl->sb, "  Expected %s.",
-					vcc_Type(fa->type));
-				VSB_printf(tl->sb, "  Got %s.\n",
-					vcc_Type(e2->fmt));
-				vcc_ErrWhere2(tl, e2->t1, tl->t);
-				return;
-			}
-			assert(e2->fmt == fa->type);
-			if (e2->fmt == STRING_LIST) {
-				e2 = vcc_expr_edit(STRING_LIST,
-				    "\v+\n\v1,\nvrt_magic_string_end\v-",
-				    e2, NULL);
-			}
-			fa->result = e2;
+		if (tl->t->tok == ID) {
+			t1 = VTAILQ_NEXT(tl->t, list);
+			if (t1->tok == '=')
+				break;
 		}
-		if (VTAILQ_NEXT(fa, list) != NULL)
-			SkipToken(tl, ',');
+		vcc_do_arg(tl, fa);
+		ERRCHK(tl);
+		if (tl->t->tok == ')')
+			break;
+		SkipToken(tl, ',');
 	}
-	SkipToken(tl, ')');
+	while (tl->t->tok == ID) {
+		VTAILQ_FOREACH(fa, &head, list) {
+			if (fa->name == NULL)
+				continue;
+			if (vcc_IdIs(tl->t, fa->name))
+				break;
+		}
+		if (fa == NULL) {
+			VSB_printf(tl->sb, "Unknown argument '%.*s'\n",
+			    PF(tl->t));
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+		if (fa->result != NULL) {
+			VSB_printf(tl->sb, "Argument '%s' already used\n",
+			    fa->name);
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+		vcc_NextToken(tl);
+		SkipToken(tl, '=');
+		vcc_do_arg(tl, fa);
+		ERRCHK(tl);
+		if (tl->t->tok == ')')
+			break;
+		SkipToken(tl, ',');
+	}
 
 	e1 = vcc_mk_expr(rfmt, "%s(ctx%s\v+", cfunc, extra);
 	VTAILQ_FOREACH_SAFE(fa, &head, list, fa2) {
-		AN(fa->result);
-		e1 = vcc_expr_edit(e1->fmt, "\v1,\n\v2", e1, fa->result);
+		if (fa->result == NULL && fa->val != NULL)
+			fa->result = vcc_mk_expr(fa->type, "%s", fa->val);
+		if (fa->result != NULL)
+			e1 = vcc_expr_edit(e1->fmt, "\v1,\n\v2",
+			    e1, fa->result);
+		else {
+			VSB_printf(tl->sb, "Argument '%s' missing\n",
+			    fa->name);
+			vcc_ErrWhere(tl, tl->t);
+		}
 		free(fa);
 	}
 	e1 = vcc_expr_edit(e1->fmt, "\v1\n)\v-", e1, NULL);
 	*e = e1;
+
+	SkipToken(tl, ')');
+
 }
 
 /*--------------------------------------------------------------------
