@@ -103,6 +103,15 @@ def lwrap(s, w=72):
 		l.append(p + s)
 	return l
 
+def quote(s):
+	t = ""
+	for i in s:
+		if i == '"':
+			t += '\\"'
+		else:
+			t += i
+	return t
+
 #######################################################################
 
 def is_c_name(s):
@@ -563,10 +572,14 @@ class Arg(object):
 
 	def c_strspec(self):
 		if self.det == None:
-			return self.typ + "\\0"
+			s = self.typ + "\\0"
 		else:
-			return self.det
-		return "??"
+			s = self.det
+		if self.nam != None:
+			s += '"\n\t\t    "\\1' + self.nam + '\\0'
+		if self.val != None:
+			s += '"\n\t\t\t"\\2' + quote(self.val) + "\\0"
+		return s
 
 #######################################################################
 #

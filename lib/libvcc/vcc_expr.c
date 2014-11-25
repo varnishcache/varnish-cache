@@ -532,15 +532,50 @@ vcc_Eval_Var(struct vcc *tl, struct expr **e, const struct symbol *sym)
 /*--------------------------------------------------------------------
  */
 
+static struct expr *
+vcc_priv_arg(struct vcc *tl, const char *p, const char *name)
+{
+	const char *r;
+	struct expr *e2;
+	char buf[32];
+	struct inifin *ifp;
+
+	if (!strcmp(p, "PRIV_VCL")) {
+		r = strchr(name, '.');
+		AN(r);
+		e2 = vcc_mk_expr(VOID, "&vmod_priv_%.*s",
+		    (int) (r - name), name);
+	} else if (!strcmp(p, "PRIV_CALL")) {
+		bprintf(buf, "vmod_priv_%u", tl->unique++);
+		ifp = New_IniFin(tl);
+		Fh(tl, 0, "static struct vmod_priv %s;\n", buf);
+		VSB_printf(ifp->fin, "\tVRT_priv_fini(&%s);", buf);
+		e2 = vcc_mk_expr(VOID, "&%s", buf);
+	} else if (!strcmp(p, "PRIV_REQ")) {
+		r = strchr(name, '.');
+		AN(r);
+		e2 = vcc_mk_expr(VOID,
+		    "VRT_priv_req(ctx, &VGC_vmod_%.*s)",
+		    (int) (r - name), name);
+	} else if (!strcmp(p, "PRIV_SESS")) {
+		r = strchr(name, '.');
+		AN(r);
+		e2 = vcc_mk_expr(VOID,
+		    "VRT_priv_sess(ctx, &VGC_vmod_%.*s)",
+		    (int) (r - name), name);
+	} else {
+		WRONG("Wrong PRIV_ type");
+	}
+	return (e2);
+}
+
 static void
 vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
     const char *extra, const char *name, const char *args)
 {
 	const char *p, *r;
 	struct expr *e1, *e2;
-	struct inifin *ifp;
 	enum var_type fmt;
-	char buf[32];
 
 	AN(cfunc);
 	AN(args);
@@ -553,34 +588,14 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 	while (*p != '\0') {
 		e2 = NULL;
 		fmt = vcc_arg_type(&p);
-		if (fmt == VOID && !strcmp(p, "PRIV_VCL")) {
-			r = strchr(name, '.');
-			AN(r);
-			e2 = vcc_mk_expr(VOID, "&vmod_priv_%.*s",
-			    (int) (r - name), name);
+		if (!memcmp(p, "PRIV_", 5)) {
+			assert(fmt == VOID);
+			e2 = vcc_priv_arg(tl, p, name);
+			e1 = vcc_expr_edit(e1->fmt, "\v1,\n\v2", e1, e2);
 			p += strlen(p) + 1;
-		} else if (fmt == VOID && !strcmp(p, "PRIV_CALL")) {
-			bprintf(buf, "vmod_priv_%u", tl->unique++);
-			ifp = New_IniFin(tl);
-			Fh(tl, 0, "static struct vmod_priv %s;\n", buf);
-			VSB_printf(ifp->fin, "\tVRT_priv_fini(&%s);", buf);
-			e2 = vcc_mk_expr(VOID, "&%s", buf);
-			p += strlen(p) + 1;
-		} else if (fmt == VOID && !strcmp(p, "PRIV_REQ")) {
-			r = strchr(name, '.');
-			AN(r);
-			e2 = vcc_mk_expr(VOID,
-			    "VRT_priv_req(ctx, &VGC_vmod_%.*s)",
-			    (int) (r - name), name);
-			p += strlen(p) + 1;
-		} else if (fmt == VOID && !strcmp(p, "PRIV_SESS")) {
-			r = strchr(name, '.');
-			AN(r);
-			e2 = vcc_mk_expr(VOID,
-			    "VRT_priv_sess(ctx, &VGC_vmod_%.*s)",
-			    (int) (r - name), name);
-			p += strlen(p) + 1;
-		} else if (fmt == ENUM) {
+			continue;
+		}
+		if (fmt == ENUM) {
 			ExpectErr(tl, ID);
 			ERRCHK(tl);
 			r = p;
@@ -604,8 +619,6 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 				p += strlen(p) + 1;
 			p++;
 			SkipToken(tl, ID);
-			if (*p != '\0')		/*lint !e448 */
-				SkipToken(tl, ',');
 		} else {
 			vcc_expr0(tl, &e2, fmt);
 			ERRCHK(tl);
@@ -624,10 +637,20 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 				    "\v+\n\v1,\nvrt_magic_string_end\v-",
 				    e2, NULL);
 			}
-			if (*p != '\0')
-				SkipToken(tl, ',');
 		}
 		e1 = vcc_expr_edit(e1->fmt, "\v1,\n\v2", e1, e2);
+
+		/* XXX: ignore argument name and default value for now */
+		if (*p == '\1') {
+			/* Argument name */
+			p = strchr(p, '\0') + 1;
+			if (*p == '\2') {
+				/* Argument default value */
+				p = strchr(p, '\0') + 1;
+			}
+		}
+		if (*p != '\0')		/*lint !e448 */
+			SkipToken(tl, ',');
 	}
 	SkipToken(tl, ')');
 	e1 = vcc_expr_edit(e1->fmt, "\v1\n)\v-", e1, NULL);
