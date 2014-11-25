@@ -88,8 +88,8 @@ vmod_test_priv_call(VRT_CTX, struct vmod_priv *priv)
 	}
 }
 
-VCL_STRING __match_proto__(td_debug_test_priv_req)
-vmod_test_priv_req(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
+VCL_STRING __match_proto__(td_debug_test_priv_task)
+vmod_test_priv_task(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);

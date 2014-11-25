@@ -51,9 +51,9 @@ $Function VOID test_priv_vcl(PRIV_VCL)
 
 Test function for VCL private pointers
 
-$Function STRING test_priv_req(PRIV_REQ, STRING)
+$Function STRING test_priv_task(PRIV_TASK, STRING)
 
-Test function for REQ private pointers
+Test function for TASK private pointers
 
 $Function BLOB str2blob(STRING src)
 

@@ -551,11 +551,11 @@ vcc_priv_arg(struct vcc *tl, const char *p, const char *name)
 		Fh(tl, 0, "static struct vmod_priv %s;\n", buf);
 		VSB_printf(ifp->fin, "\tVRT_priv_fini(&%s);", buf);
 		e2 = vcc_mk_expr(VOID, "&%s", buf);
-	} else if (!strcmp(p, "PRIV_REQ")) {
+	} else if (!strcmp(p, "PRIV_TASK")) {
 		r = strchr(name, '.');
 		AN(r);
 		e2 = vcc_mk_expr(VOID,
-		    "VRT_priv_req(ctx, &VGC_vmod_%.*s)",
+		    "VRT_priv_task(ctx, &VGC_vmod_%.*s)",
 		    (int) (r - name), name);
 	} else {
 		WRONG("Wrong PRIV_ type");

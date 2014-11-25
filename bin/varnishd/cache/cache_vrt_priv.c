@@ -63,14 +63,20 @@ VRTPRIV_init(struct vrt_privs *privs)
 static struct vmod_priv *
 VRT_priv_dynamic(VRT_CTX, uintptr_t id, uintptr_t vmod_id)
 {
+	struct vrt_privs *vps;
 	struct vrt_priv *vp;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->sp->privs, VRT_PRIVS_MAGIC);
+	if (ctx->req) {
+		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+		CHECK_OBJ_NOTNULL(ctx->req->sp, SESS_MAGIC);
+		CAST_OBJ_NOTNULL(vps, ctx->req->sp->privs, VRT_PRIVS_MAGIC);
+	} else {
+		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+		CAST_OBJ_NOTNULL(vps, ctx->bo->privs, VRT_PRIVS_MAGIC);
+	}
 
-	VTAILQ_FOREACH(vp, &ctx->req->sp->privs->privs, list) {
+	VTAILQ_FOREACH(vp, &vps->privs, list) {
 		CHECK_OBJ_NOTNULL(vp, VRT_PRIV_MAGIC);
 		if (vp->vcl == ctx->vcl && vp->id == id
 		    && vp->vmod_id == vmod_id)
@@ -81,7 +87,7 @@ VRT_priv_dynamic(VRT_CTX, uintptr_t id, uintptr_t vmod_id)
 	vp->vcl = ctx->vcl;
 	vp->id = id;
 	vp->vmod_id = vmod_id;
-	VTAILQ_INSERT_TAIL(&ctx->req->sp->privs->privs, vp, list);
+	VTAILQ_INSERT_TAIL(&vps->privs, vp, list);
 	return (vp->priv);
 }
 
@@ -103,9 +109,19 @@ VRTPRIV_dynamic_kill(struct vrt_privs *privs, uintptr_t id)
 }
 
 struct vmod_priv *
-VRT_priv_req(VRT_CTX, void *vmod_id)
+VRT_priv_task(VRT_CTX, void *vmod_id)
 {
-	return (VRT_priv_dynamic(ctx, (uintptr_t)ctx->req, (uintptr_t)vmod_id));
+	uintptr_t id;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (ctx->req) {
+		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+		id = (uintptr_t)ctx->req;
+	} else {
+		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+		id = (uintptr_t)ctx->bo;
+	}
+	return (VRT_priv_dynamic(ctx, id, (uintptr_t)vmod_id));
 }
 
 /*--------------------------------------------------------------------

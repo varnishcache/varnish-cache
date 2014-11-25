@@ -525,6 +525,7 @@ struct busyobj {
 	struct vsb		*synth_body;
 
 	uint8_t			digest[DIGEST_LEN];
+	struct vrt_privs	privs[1];
 };
 
 

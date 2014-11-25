@@ -58,7 +58,7 @@ ctypes = {
 	'IP':		"VCL_IP",
 	'PRIV_CALL':	"struct vmod_priv *",
 	'PRIV_VCL':	"struct vmod_priv *",
-	'PRIV_REQ':	"struct vmod_priv *",
+	'PRIV_TASK':	"struct vmod_priv *",
 	'REAL':		"VCL_REAL",
 	'STRING':	"VCL_STRING",
 	'STRING_LIST':	"const char *, ...",

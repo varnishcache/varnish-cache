@@ -154,6 +154,8 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 
 	memcpy(bo->digest, req->digest, sizeof bo->digest);
 
+	VRTPRIV_init(bo->privs);
+
 	return (bo);
 }
 
@@ -189,6 +191,9 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 		return;
 
 	AZ(bo->htc);
+
+	VRTPRIV_dynamic_kill(bo->privs, (uintptr_t)bo);
+	assert(VTAILQ_EMPTY(&bo->privs->privs));
 
 	VSLb(bo->vsl, SLT_BereqAcct, "%ju %ju %ju %ju %ju %ju",
 	    (uintmax_t)bo->acct.bereq_hdrbytes,

@@ -147,6 +147,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 		(void)usleep(10000);
 	}
 
+	VRTPRIV_dynamic_kill(req->sp->privs, (uintptr_t)req);
 	CNT_AcctLogCharge(wrk->stats, req);
 	VSL_End(req->vsl);
 
