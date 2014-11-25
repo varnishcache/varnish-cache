@@ -556,6 +556,7 @@ class Arg(object):
 		self.nam = nam
 		self.typ = typ
 		self.det = det
+		self.val = None
 
 	def __repr__(self):
 		return "<ARG %s %s %s>" % (self.nam, self.typ, str(self.det))
@@ -592,6 +593,44 @@ def parse_enum2(tl):
 			    "Expected \"}\" or \",\" not \"%s\"" % t.str)
 	s += "\\0"
 	return Arg("ENUM", det=s)
+
+def parse_arg(tl, al):
+	t = tl.get_token()
+	assert t != None
+
+	if t.str == ")":
+		return t
+
+	if t.str == "ENUM":
+		al.append(parse_enum2(tl))
+	elif t.str in ctypes:
+		al.append(Arg(t.str))
+	else:
+		raise Exception("ARG? %s", t.str)
+
+	t = tl.get_token()
+	if t.str == "," or t.str == ")":
+		return t
+
+	if not is_c_name(t.str):
+		raise ParseError(
+		    'Expected ")", "," or argument name, not "%s"' % t.str)
+
+	al[-1].nam = t.str
+	t = tl.get_token()
+
+	if t.str == "," or t.str == ")":
+		return t
+
+	if t.str != "=":
+		raise ParseError(
+		    'Expected ")", "," or "=", not "%s"' % t.str)
+
+	t = tl.get_token()
+	al[-1].val = t.str
+
+	t = tl.get_token()
+	return t
 
 #######################################################################
 #
@@ -630,33 +669,13 @@ def parse_func(tl, rt_type=None, pobj=None):
 	if t.str != "(":
 		raise ParseError("Expected \"(\" got \"%s\"", t.str)
 
-	t = None
 	while True:
-		if t == None:
-			t = tl.get_token()
-		assert t != None
+		t = parse_arg(tl, al)
+		if t.str == ")":
+			break
+		if t.str != ",":
+			raise ParseError("End Of Input looking for ')' or ','")
 
-		if t.str == "ENUM":
-			al.append(parse_enum2(tl))
-		elif t.str in ctypes:
-			al.append(Arg(t.str))
-		elif t.str == ")":
-			break
-		else:
-			raise Exception("ARG? %s", t.str)
-		t = tl.get_token()
-		if is_c_name(t.str):
-			al[-1].nam = t.str
-			t = tl.get_token()
-		if t.str == ",":
-			t = None
-		elif t.str == ")":
-			break
-		else:
-			raise ParseError(
-			    "Expected \")\" or \",\" not \"%s\"" % t.str)
-	if t.str != ")":
-		raise ParseError("End Of Input looking for ')'")
 	f = Func(fname, rt_type, al)
 
 	return f
