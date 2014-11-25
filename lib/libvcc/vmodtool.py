@@ -578,7 +578,9 @@ class Arg(object):
 		if self.nam != None:
 			s += '"\n\t\t    "\\1' + self.nam + '\\0'
 		if self.val != None:
-			s += '"\n\t\t\t"\\2' + quote(self.val) + "\\0"
+			# The space before the value is important to
+			# terminate the \2 escape sequence
+			s += '"\n\t\t\t"\\2 ' + quote(self.val) + "\\0"
 		return s
 
 #######################################################################
