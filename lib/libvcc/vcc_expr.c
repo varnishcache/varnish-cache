@@ -569,13 +569,24 @@ vcc_priv_arg(struct vcc *tl, const char *p, const char *name)
 	return (e2);
 }
 
+struct func_arg {
+	enum var_type		type;
+	const char		*enum_bits;
+	const char		*name;
+	const char		*val;
+	struct expr		*result;
+	VTAILQ_ENTRY(func_arg)	list;
+};
+
 static void
 vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
     const char *extra, const char *name, const char *args)
 {
 	const char *p, *r;
 	struct expr *e1, *e2;
-	enum var_type fmt;
+	struct func_arg *fa, *fa2;
+	enum var_type rfmt;
+	VTAILQ_HEAD(,func_arg) head;
 
 	AN(cfunc);
 	AN(args);
@@ -584,21 +595,43 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 	p = args;
 	if (extra == NULL)
 		extra = "";
-	e1 = vcc_mk_expr(vcc_arg_type(&p), "%s(ctx%s\v+", cfunc, extra);
+	rfmt = vcc_arg_type(&p);
+	VTAILQ_INIT(&head);
 	while (*p != '\0') {
-		e2 = NULL;
-		fmt = vcc_arg_type(&p);
-		if (!memcmp(p, "PRIV_", 5)) {
-			assert(fmt == VOID);
-			e2 = vcc_priv_arg(tl, p, name);
-			e1 = vcc_expr_edit(e1->fmt, "\v1,\n\v2", e1, e2);
+		fa = calloc(sizeof *fa, 1);
+		AN(fa);
+		VTAILQ_INSERT_TAIL(&head, fa, list);
+		fa->type = vcc_arg_type(&p);
+		if (fa->type == VOID && !memcmp(p, "PRIV_", 5)) {
+			fa->result = vcc_priv_arg(tl, p, name);
+			fa->name = "";
 			p += strlen(p) + 1;
 			continue;
 		}
-		if (fmt == ENUM) {
+		if (fa->type == ENUM) {
+			fa->enum_bits = p;
+			while (*p != '\0')
+				p += strlen(p) + 1;
+			p += strlen(p) + 1;
+		}
+		if (*p == '\1') {
+			fa->name = p + 1;
+			p = strchr(p, '\0') + 1;
+			if (*p == '\2') {
+				fa->val = p + 1;
+				p = strchr(p, '\0') + 1;
+			}
+		}
+	}
+
+	VTAILQ_FOREACH(fa, &head, list) {
+		if (fa->result != NULL)
+			continue;
+		e2 = NULL;
+		if (fa->type == ENUM) {
 			ExpectErr(tl, ID);
 			ERRCHK(tl);
-			r = p;
+			r = p = fa->enum_bits;
 			do {
 				if (vcc_IdIs(tl->t, p))
 					break;
@@ -614,45 +647,39 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 				vcc_ErrWhere(tl, tl->t);
 				return;
 			}
-			e2 = vcc_mk_expr(VOID, "\"%.*s\"", PF(tl->t));
-			while (*p != '\0')
-				p += strlen(p) + 1;
-			p++;
+			fa->result = vcc_mk_expr(VOID, "\"%.*s\"", PF(tl->t));
 			SkipToken(tl, ID);
 		} else {
-			vcc_expr0(tl, &e2, fmt);
+			vcc_expr0(tl, &e2, fa->type);
 			ERRCHK(tl);
-			if (e2->fmt != fmt) {
+			if (e2->fmt != fa->type) {
 				VSB_printf(tl->sb, "Wrong argument type.");
 				VSB_printf(tl->sb, "  Expected %s.",
-					vcc_Type(fmt));
+					vcc_Type(fa->type));
 				VSB_printf(tl->sb, "  Got %s.\n",
 					vcc_Type(e2->fmt));
 				vcc_ErrWhere2(tl, e2->t1, tl->t);
 				return;
 			}
-			assert(e2->fmt == fmt);
+			assert(e2->fmt == fa->type);
 			if (e2->fmt == STRING_LIST) {
 				e2 = vcc_expr_edit(STRING_LIST,
 				    "\v+\n\v1,\nvrt_magic_string_end\v-",
 				    e2, NULL);
 			}
+			fa->result = e2;
 		}
-		e1 = vcc_expr_edit(e1->fmt, "\v1,\n\v2", e1, e2);
-
-		/* XXX: ignore argument name and default value for now */
-		if (*p == '\1') {
-			/* Argument name */
-			p = strchr(p, '\0') + 1;
-			if (*p == '\2') {
-				/* Argument default value */
-				p = strchr(p, '\0') + 1;
-			}
-		}
-		if (*p != '\0')		/*lint !e448 */
+		if (VTAILQ_NEXT(fa, list) != NULL)
 			SkipToken(tl, ',');
 	}
 	SkipToken(tl, ')');
+
+	e1 = vcc_mk_expr(rfmt, "%s(ctx%s\v+", cfunc, extra);
+	VTAILQ_FOREACH_SAFE(fa, &head, list, fa2) {
+		AN(fa->result);
+		e1 = vcc_expr_edit(e1->fmt, "\v1,\n\v2", e1, fa->result);
+		free(fa);
+	}
 	e1 = vcc_expr_edit(e1->fmt, "\v1\n)\v-", e1, NULL);
 	*e = e1;
 }
