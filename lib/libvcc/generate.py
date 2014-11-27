@@ -564,9 +564,9 @@ sp_variables = [
 		'INT',
 		( 'hit', 'deliver',),
 		( ), """
-                The count of cache-hits on this object. A value of 0 indicates a
+		The count of cache-hits on this object. A value of 0 indicates a
 		cache miss.
-                """
+		"""
 	),
 	('obj.http.',
 		'HEADER',

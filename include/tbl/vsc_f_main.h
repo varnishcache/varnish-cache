@@ -311,7 +311,7 @@ VSC_F(sess_dropped,		uint64_t, 0, 'c', info,
 
 VSC_F(n_object,			uint64_t, 1, 'i', info,
     "object structs made",
-        "Number of object structs made"
+	"Number of object structs made"
 )
 VSC_F(n_vampireobject,		uint64_t, 1, 'i', diag,
     "unresurrected objects",
@@ -319,15 +319,15 @@ VSC_F(n_vampireobject,		uint64_t, 1, 'i', diag,
 )
 VSC_F(n_objectcore,		uint64_t, 1, 'i', info,
     "objectcore structs made",
-       "Number of objectcore structs made"
+	"Number of objectcore structs made"
 )
 VSC_F(n_objecthead,		uint64_t, 1, 'i', info,
     "objecthead structs made",
-        "Number of objecthead structs made"
+	"Number of objecthead structs made"
 )
 VSC_F(n_waitinglist,		uint64_t, 1, 'i', debug,
     "waitinglist structs made",
-        "Number of waitinglist structs made"
+	"Number of waitinglist structs made"
 )
 
 VSC_F(n_backend,		uint64_t, 0, 'i', info,
@@ -347,7 +347,7 @@ VSC_F(n_lru_nuked,		uint64_t, 0, 'i', info,
 )
 VSC_F(n_lru_moved,		uint64_t, 0, 'i', diag,
     "Number of LRU moved objects",
-        "Number of move operations done on the LRU list."
+	"Number of move operations done on the LRU list."
 )
 
 VSC_F(losthdr,			uint64_t, 0, 'a', info,

@@ -126,7 +126,7 @@ Description
 	*fallback* will be returned.
 Example
 	| if (std.integer(beresp.http.x-foo, 0) > 5) {
-	| 	...
+	|	...
 	| }
 
 $Function IP ip(STRING s, IP fallback)
@@ -137,7 +137,7 @@ Description
 	fails, *fallback* will be returned.
 Example
 	| if (std.ip(req.http.X-forwarded-for, "0.0.0.0") ~ my_acl) {
-	| 	...
+	|	...
 	| }
 
 $Function REAL real(STRING s, REAL fallback)
@@ -224,7 +224,7 @@ Description
 	Note that the comparison is case sensitive.
 Example
 	| if (std.strstr(req.url, req.http.x-restrict)) {
-	| 	...
+	|	...
 	| }
 
 
