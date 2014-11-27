@@ -174,16 +174,11 @@ vmod_syslog(VRT_CTX, VCL_INT fac, const char *fmt, ...)
 VCL_VOID __match_proto__(td_std_collect)
 vmod_collect(VRT_CTX, VCL_HEADER hdr)
 {
+	struct http *hp;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (hdr->where == HDR_REQ)
-		http_CollectHdr(ctx->http_req, hdr->what);
-	else if (hdr->where == HDR_BEREQ)
-		http_CollectHdr(ctx->http_bereq, hdr->what);
-	else if (hdr->where == HDR_BERESP)
-		http_CollectHdr(ctx->http_beresp, hdr->what);
-	else if (hdr->where == HDR_RESP)
-		http_CollectHdr(ctx->http_resp, hdr->what);
+	hp = VRT_selecthttp(ctx, hdr->where);
+	http_CollectHdr(hp, hdr->what);
 }
 
 VCL_BOOL __match_proto__(td_std_healthy)

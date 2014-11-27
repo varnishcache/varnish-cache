@@ -90,8 +90,8 @@ VRT_acl_log(VRT_CTX, const char *msg)
 
 /*--------------------------------------------------------------------*/
 
-static struct http *
-vrt_selecthttp(VRT_CTX, enum gethdr_e where)
+struct http *
+VRT_selecthttp(VRT_CTX, enum gethdr_e where)
 {
 	struct http *hp;
 
@@ -110,7 +110,7 @@ vrt_selecthttp(VRT_CTX, enum gethdr_e where)
 		hp = ctx->http_resp;
 		break;
 	default:
-		WRONG("vrt_selecthttp 'where' invalid");
+		WRONG("VRT_selecthttp 'where' invalid");
 	}
 	return (hp);
 }
@@ -130,7 +130,7 @@ VRT_GetHdr(VRT_CTX, const struct gethdr_s *hs)
 		return(HTTP_GetHdrPack(ctx->req->wrk, ctx->req->objcore,
 		    hs->what));
 	}
-	hp = vrt_selecthttp(ctx, hs->where);
+	hp = VRT_selecthttp(ctx, hs->where);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	if (!http_GetHdr(hp, hs->what, &p))
 		return (NULL);
@@ -228,7 +228,7 @@ VRT_SetHdr(VRT_CTX , const struct gethdr_s *hs,
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(hs);
 	AN(hs->what);
-	hp = vrt_selecthttp(ctx, hs->where);
+	hp = VRT_selecthttp(ctx, hs->where);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	va_start(ap, p);
 	if (p == vrt_magic_string_unset) {

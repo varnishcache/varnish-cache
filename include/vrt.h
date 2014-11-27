@@ -208,6 +208,7 @@ int VRT_rewrite(const char *, const char *);
 void VRT_error(VRT_CTX, unsigned, const char *);
 int VRT_switch_config(const char *);
 
+struct http *VRT_selecthttp(VRT_CTX, enum gethdr_e);
 const char *VRT_GetHdr(VRT_CTX, const struct gethdr_s *);
 void VRT_SetHdr(VRT_CTX, const struct gethdr_s *, const char *, ...);
 void VRT_handling(VRT_CTX, unsigned hand);
