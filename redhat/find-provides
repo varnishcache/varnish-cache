@@ -12,9 +12,8 @@ fi
 
 cd $(dirname $0)/..
 
-printf '#include "vmod_abi.h"\nVMOD_ABI_Version\n' \
-	| cpp - -Iinclude \
-	| sed -e '/"Varnish/!d' -e 's/.*\ \(.*\)\"$/varnishabi-strict-\1/'
+printf '#include "vcs_version.h"\nVCS_Version\n' \
+        | cpp - -Iinclude | sed -e '/^"/!d' -e 's/\"//g' -e 's/^/varnishabi-strict-/'
 
 printf '#include "vrt.h"\nvarnishabi- VRT_MAJOR_VERSION . VRT_MINOR_VERSION\n' \
 	| cpp - -Iinclude \
