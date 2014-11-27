@@ -1,4 +1,4 @@
-varnishtest "Test priv_sess and priv_req"
+varnishtest "Test priv_task"
 
 server s1 {
 	rxreq
@@ -9,17 +9,26 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	import ${vmod_debug};
+	import ${vmod_std};
 
 	sub vcl_recv {
-		set req.http.x0 = debug.test_priv_req(req.url);
-		set req.http.y0 = debug.test_priv_sess(req.url);
+		set req.http.x0 = debug.test_priv_task(req.url);
 	}
 
 	sub vcl_deliver {
 		set resp.http.x0 = req.http.x0;
-		set resp.http.x1 = debug.test_priv_req("");
-		set resp.http.y0 = req.http.y0;
-		set resp.http.y1 = debug.test_priv_sess("");
+		set resp.http.x1 = debug.test_priv_task("");
+	}
+
+	sub vcl_backend_fetch {
+		std.log("foo");
+		set bereq.http.bx0 = debug.test_priv_task(bereq.url);
+		std.log("bar");
+	}
+
+	sub vcl_backend_response {
+		set beresp.http.bx0 = bereq.http.bx0;
+		set beresp.http.bx1 = debug.test_priv_task("");
 	}
 } -start
 
@@ -29,13 +38,13 @@ client c1 {
 	rxresp
 	expect resp.http.x0 == /foobar
 	expect resp.http.x1 == /foobar
-	expect resp.http.y0 == /foobar
-	expect resp.http.y1 == /foobar
+	expect resp.http.bx0 == /foobar
+	expect resp.http.bx1 == /foobar
 
 	txreq -url /snafu
 	rxresp
 	expect resp.http.x0 == /snafu
 	expect resp.http.x1 == /snafu
-	expect resp.http.y0 == /foobar
-	expect resp.http.y1 == /foobar
+	expect resp.http.bx0 == /snafu
+	expect resp.http.bx1 == /snafu
 } -run

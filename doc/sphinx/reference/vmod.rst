@@ -194,6 +194,9 @@ PRIV_VCL
 PRIV_CALL
 	See below
 
+PRIV_TASK
+	See below
+
 VOID
 	C-type: ``void``
 
@@ -231,8 +234,8 @@ It is often useful for library functions to maintain local state,
 this can be anything from a precompiled regexp to open file descriptors
 and vast data structures.
 
-The VCL compiler supports two levels of private pointers, "per call"
-and "per VCL"
+The VCL compiler supports three levels of private pointers, "per
+call", "per VCL" and "per task".
 
 "per call" private pointers are useful to cache/store state relative
 to the specific call or its arguments, for instance a compiled regular
@@ -243,9 +246,16 @@ last output of some expensive lookup.
 applies to all calls in this VCL, for instance flags that determine
 if regular expressions are case-sensitive in this vmod or similar.
 
+"per task" private pointers are useful for state that applies to calls
+for either a specific request or a backend request. For instance this
+can be the result of a parsed cookie specific to a client. Note that
+"per task" contexts are separate for the client side and the backend
+side, so use in ``vcl_backend_*`` will yield a different private pointer
+from the one used on the client side.
+
 The way it works in the vmod code, is that a ``struct vmod_priv *`` is
-passed to the functions where argument type PRIV_VCL or PRIV_CALL
-is specified.
+passed to the functions where argument type PRIV_VCL, PRIV_CALL or
+PRIV_TASK is specified.
 
 This structure contains two members::
 

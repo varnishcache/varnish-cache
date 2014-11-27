@@ -1,0 +1,68 @@
+varnishtest "Make sure we also get separate PRIV_TASK contexts in ESI subrequests."
+
+server s1 {
+	rxreq
+	expect req.url == "/a"
+	expect req.http.x0 == "/a0"
+	expect req.http.x1 == "/a0"
+	txresp -body {
+		<html>
+		<esi:include src="/foo"/>
+	}
+
+	rxreq
+	expect req.url == "/foo"
+	expect req.http.x0 == "/foo1"
+	expect req.http.x1 == "/foo1"
+	txresp -body {
+		<html>
+		<esi:include src="/bar"/>
+	}
+
+	rxreq
+	expect req.url == "/bar"
+	expect req.http.x0 == "/bar2"
+	expect req.http.x1 == "/bar2"
+	txresp
+
+	rxreq
+	expect req.url == "/b"
+	expect req.http.x0 == "/b0"
+	expect req.http.x1 == "/b0"
+
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_debug};
+
+	sub vcl_recv {
+		set req.http.x0 = debug.test_priv_task(req.url + req.esi_level);
+	}
+
+	sub vcl_miss {
+		set req.http.x1 = debug.test_priv_task("");
+	}
+
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+
+	}
+
+	sub vcl_deliver {
+		set resp.http.x1 = debug.test_priv_task("");
+	}
+} -start
+
+
+client c1 {
+	txreq -url /a
+	rxresp
+	expect resp.http.x1 == "/a0"
+
+	txreq -url /b
+	rxresp
+	expect resp.http.x1 == "/b0"
+} -run
+
+varnish v1 -expect s_req == 2
