@@ -12,4 +12,10 @@ fi
 
 cd $(dirname $0)/..
 
-printf '#include "vmod_abi.h"\nVMOD_ABI_Version' | cpp - -Iinclude | sed '/^#/D;s/"//g;s/\([A-Z]\)/\L\1/g;s/[^a-z0-9.]/-/g;s/varnish/varnishabi/'
+printf '#include "vmod_abi.h"\nVMOD_ABI_Version\n' \
+	| cpp - -Iinclude \
+	| sed -e '/"Varnish/!d' -e 's/.*\ \(.*\)\"$/varnishabi-strict-\1/'
+
+printf '#include "vrt.h"\nvarnishabi- VRT_MAJOR_VERSION . VRT_MINOR_VERSION\n' \
+	| cpp - -Iinclude \
+	| sed -e '/^varnishabi-/!d' -e 's/U//g' -e 's/ //g'
