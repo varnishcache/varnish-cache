@@ -343,8 +343,8 @@ To achieve a high hitrate whilst using Vary is there therefore
 crucial to normalize the headers the backends varies on. Remember,
 just a difference in casing can force different cache entries.
 
-The following VCL code will normalize the 'Accept-Language' headers,
-to one of either "en", "de" or "fr"::
+The following VCL code will normalize the 'Accept-Language' header to
+either "en", "de" or "fr", in this order of precedence::
 
     if (req.http.Accept-Language) {
         if (req.http.Accept-Language ~ "en") {
@@ -359,9 +359,6 @@ to one of either "en", "de" or "fr"::
             unset req.http.Accept-Language
         }
     }
-
-The code sets the 'Accept-Encoding' header from the client to either
-gzip, deflate with a preference for gzip.
 
 Vary parse errors
 ~~~~~~~~~~~~~~~~~
