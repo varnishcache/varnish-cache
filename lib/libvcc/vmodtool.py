@@ -732,7 +732,7 @@ class FileSection(object):
 			return
 		l = re.sub("[ \t]*#.*$", "", l)
 		l = re.sub("[ \t]*\n", "", l)
-		l = re.sub("([(){},])", r' \1 ', l)
+		l = re.sub("([(){},=])", r' \1 ', l)
 		if l == "":
 			return
 		for j in l.split():

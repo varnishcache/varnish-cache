@@ -39,7 +39,7 @@ $Function VOID panic(STRING_LIST)
 
 Don't.
 
-$Function STRING author(ENUM { phk, des, kristian, mithrandir } person = "phk")
+$Function STRING author(ENUM { phk, des, kristian, mithrandir } person="phk")
 
 Test function for ENUM arguments
 
@@ -55,7 +55,7 @@ $Function STRING test_priv_task(PRIV_TASK, STRING)
 
 Test function for TASK private pointers
 
-$Function BLOB str2blob(STRING src = "foo")
+$Function BLOB str2blob(STRING src="foo")
 
 Turn a string into a blob
 
@@ -90,4 +90,4 @@ $Function VOID rot52(HTTP hdr)
 Encrypt the HTTP header with quad-ROT13 encryption,
 (this is approx 33% better than triple-DES).
 
-$Function STRING argtest(STRING one, REAL two = 2, STRING three = "3")
+$Function STRING argtest(STRING one, REAL two=2, STRING three="3")
