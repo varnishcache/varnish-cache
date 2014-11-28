@@ -242,7 +242,7 @@ struct parspec mgt_parspec[] = {
 		"Internal limits in the storage_file module makes increases "
 		"above 128kb a dubious idea.",
 		EXPERIMENTAL,
-		"128k", "bytes" },
+		"16k", "bytes" },
 	{ "fetch_maxchunksize",
 		tweak_bytes, &mgt_param.fetch_maxchunksize,
 		"65536", NULL,
