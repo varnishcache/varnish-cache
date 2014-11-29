@@ -24,10 +24,9 @@ Tool: varnishtop
 ~~~~~~~~~~~~~~~~
 
 You can use varnishtop to identify what URLs are hitting the backend
-the most. ``varnishtop -i txurl`` is an essential command, showing
-you the top `txurl` requests Varnish is sending to the backend. You
-can see some other examples of `varnishtop` usage in
-:ref:`users-guide-statistics`.
+the most. ``varnishtop -i BereqURL`` is an essential command, showing
+you the top requests Varnish is sending to the backend. You can see some
+other examples of `varnishtop` usage in :ref:`users-guide-statistics`.
 
 
 Tool: varnishlog
@@ -35,8 +34,8 @@ Tool: varnishlog
 
 When you have identified an URL which is frequently sent to the
 backend you can use `varnishlog` to have a look at the request.
-``varnishlog -c -m 'RxURL:^/foo/bar`` will show you the requests
-coming from the client ('-c') matching `/foo/bar`.
+``varnishlog -q 'ReqURL ~ "^/foo/bar"'`` will show you the requests
+coming from the client matching `/foo/bar`.
 
 For more information on how `varnishlog` works please see
 :ref:`users-guide-logging` or man :ref:`ref-varnishlog`.
@@ -241,7 +240,8 @@ Age
 ~~~
 
 Varnish adds an 'Age' header to indicate how long the object has been
-kept inside Varnish. You can grep out 'Age' from `varnishlog` with ``varnishlog -i TxHeader -I ^Age``.
+kept inside Varnish. You can grep out 'Age' from `varnishlog` with
+``varnishlog -I RespHeader:^Age``.
 
 Pragma
 ~~~~~~
