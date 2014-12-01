@@ -37,6 +37,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 
 #include "cache.h"
 #include "common/heritage.h"
@@ -429,10 +430,21 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	const char *q;
 	struct req *req;
 	struct busyobj *bo;
+	struct sigaction sa;
 
 	AZ(pthread_mutex_lock(&panicstr_mtx)); /* Won't be released,
 						  we're going to die
 						  anyway */
+
+	/*
+	 * should we trigger a SIGSEGV while handling a panic, our sigsegv
+	 * handler would hide the panic, so we need to reset the handler to
+	 * default
+	 */
+	memset(&sa, 0, sizeof sa);
+	sa.sa_handler = SIG_DFL;
+	(void)sigaction(SIGSEGV, &sa, NULL);
+
 	switch(kind) {
 	case VAS_WRONG:
 		VSB_printf(pan_vsp,
