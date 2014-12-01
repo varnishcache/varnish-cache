@@ -324,14 +324,18 @@ pan_busyobj(const struct busyobj *bo)
 	pan_ws(bo->ws, 4);
 	VSB_printf(pan_vsp, "  refcnt = %u\n", bo->refcount);
 	VSB_printf(pan_vsp, "  retries = %d\n", bo->retries);
-	VSB_printf(pan_vsp, "  failed = %d\n", bo->vfc->failed);
+	if (bo->vfc != NULL)
+		VSB_printf(pan_vsp, "  failed = %d\n", bo->vfc->failed);
 	VSB_printf(pan_vsp, "  state = %d\n", (int)bo->state);
 #define BO_FLAG(l, r, w, d) if(bo->l) VSB_printf(pan_vsp, "    is_" #l "\n");
 #include "tbl/bo_flags.h"
 #undef BO_FLAG
 
-	VSB_printf(pan_vsp, "    bodystatus = %d (%s),\n",
-	    bo->htc->body_status, body_status_2str(bo->htc->body_status));
+	if (bo->htc != NULL) {
+		VSB_printf(pan_vsp, "    bodystatus = %d (%s),\n",
+		    bo->htc->body_status,
+		    body_status_2str(bo->htc->body_status));
+	}
 	if (!VTAILQ_EMPTY(&bo->vfc->vfp)) {
 		VSB_printf(pan_vsp, "    filters =");
 		VTAILQ_FOREACH(vfe, &bo->vfc->vfp, list)
@@ -340,11 +344,13 @@ pan_busyobj(const struct busyobj *bo)
 		VSB_printf(pan_vsp, "\n");
 	}
 	VSB_printf(pan_vsp, "    },\n");
-	if (VALID_OBJ(bo->htc->vbc, BACKEND_MAGIC))
+
+	if (bo->htc != NULL && bo->htc->vbc != NULL &&
+	    VALID_OBJ(bo->htc->vbc, BACKEND_MAGIC))
 		pan_vbc(bo->htc->vbc);
-	if (bo->bereq->ws != NULL)
+	if (bo->bereq != NULL && bo->bereq->ws != NULL)
 		pan_http("bereq", bo->bereq, 4);
-	if (bo->beresp->ws != NULL)
+	if (bo->beresp != NULL && bo->beresp->ws != NULL)
 		pan_http("beresp", bo->beresp, 4);
 	if (bo->fetch_objcore)
 		pan_objcore("FETCH", bo->fetch_objcore);
