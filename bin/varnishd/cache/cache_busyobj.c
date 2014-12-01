@@ -39,6 +39,7 @@
 #include "cache.h"
 
 #include "hash/hash_slinger.h"
+#include "cache/cache_filter.h"
 
 static struct mempool		*vbopool;
 
@@ -155,6 +156,8 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 	memcpy(bo->digest, req->digest, sizeof bo->digest);
 
 	VRTPRIV_init(bo->privs);
+
+	VFP_Setup(bo->vfc);
 
 	return (bo);
 }

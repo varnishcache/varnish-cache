@@ -389,7 +389,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	} else
 		do_ims = 0;
 
-	VFP_Setup(bo->vfc);
 	bo->vfc->bo = bo;
 	bo->vfc->oc = bo->fetch_objcore;
 	bo->vfc->wrk = bo->wrk;
@@ -776,7 +775,6 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	assert(wrk->handling == VCL_RET_DELIVER);
 
-	VFP_Setup(bo->vfc);
 	bo->vfc->bo = bo;
 	bo->vfc->wrk = bo->wrk;
 	bo->vfc->oc = bo->fetch_objcore;
