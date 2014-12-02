@@ -36,9 +36,9 @@
 	    " overwrite it."						\
 	)
 
-#define LOG_OPT_B							\
-	VOPT("B", "[-B]", "Binary output",				\
-	    "Output binary data suitable for reading with -r."		\
+#define LOG_OPT_A							\
+	VOPT("A", "[-A]", "Text output",				\
+	    "Output data in ascii format."				\
 	)
 
 #define LOG_OPT_w							\
@@ -50,8 +50,8 @@
 	)
 
 LOG_OPT_a
+LOG_OPT_A
 VSL_OPT_b
-LOG_OPT_B
 VSL_OPT_c
 VSL_OPT_C
 VUT_OPT_d

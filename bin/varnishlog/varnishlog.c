@@ -54,7 +54,7 @@ static const char progname[] = "varnishlog";
 struct log {
 	/* Options */
 	int		a_opt;
-	int		B_opt;
+	int		A_opt;
 	char		*w_arg;
 
 	/* State */
@@ -77,13 +77,13 @@ openout(int append)
 {
 
 	AN(LOG.w_arg);
-	if (LOG.B_opt)
-		LOG.fo = VSL_WriteOpen(VUT.vsl, LOG.w_arg, append, 0);
-	else
+	if (LOG.A_opt)
 		LOG.fo = fopen(LOG.w_arg, append ? "a" : "w");
+	else
+		LOG.fo = VSL_WriteOpen(VUT.vsl, LOG.w_arg, append, 0);
 	if (LOG.fo == NULL)
 		VUT_Error(2, "Can't open output file (%s)",
-		    LOG.B_opt ? VSL_Error(VUT.vsl) : strerror(errno));
+		    LOG.A_opt ? strerror(errno) : VSL_Error(VUT.vsl));
 	VUT.dispatch_priv = LOG.fo;
 }
 
@@ -123,9 +123,9 @@ main(int argc, char * const *argv)
 			/* Append to file */
 			LOG.a_opt = 1;
 			break;
-		case 'B':
-			/* Binary output */
-			LOG.B_opt = 1;
+		case 'A':
+			/* Text output */
+			LOG.A_opt = 1;
 			break;
 		case 'h':
 			/* Usage help */
@@ -145,10 +145,10 @@ main(int argc, char * const *argv)
 		usage(1);
 
 	/* Setup output */
-	if (LOG.B_opt)
-		VUT.dispatch_f = VSL_WriteTransactions;
-	else
+	if (LOG.A_opt || !LOG.w_arg)
 		VUT.dispatch_f = VSL_PrintTransactions;
+	else
+		VUT.dispatch_f = VSL_WriteTransactions;
 	if (LOG.w_arg) {
 		openout(LOG.a_opt);
 		AN(LOG.fo);
