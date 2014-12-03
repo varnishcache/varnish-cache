@@ -98,7 +98,7 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 		i = write(v->cli_fd, "\n", 1);
 		assert(i == 1);
 	}
-	i = VCLI_ReadResult(v->cli_fd, &retval, &r, 20.0);
+	i = VCLI_ReadResult(v->cli_fd, &retval, &r, 30.0);
 	if (i != 0) {
 		vtc_log(v->vl, 0, "CLI failed (%s) = %d %u %s",
 		    cmd, i, retval, r);
