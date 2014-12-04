@@ -22,7 +22,7 @@ objects can be accessed and manipulated using VCL.
 *beresp*
  The backend response object. It contains the headers of the object
  coming from the backend. If you want to modify the response coming from the
- server you modify this object in `vcl_backend_reponse`.
+ server you modify this object in `vcl_backend_response`.
 
 *resp*
  The HTTP response right before it is delivered to the client. It is
