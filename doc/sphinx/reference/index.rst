@@ -15,7 +15,6 @@ The Varnish Reference Manual
 	varnishhist.rst
 	varnishlog.rst
 	varnishncsa.rst
-	varnishreplay.rst
 	varnishstat.rst
 	varnishtest.rst
 	varnishtop.rst
