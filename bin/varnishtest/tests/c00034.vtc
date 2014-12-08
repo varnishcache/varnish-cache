@@ -5,13 +5,11 @@ server s1 {
 	txresp -bodylen 100
 } -start
 
-varnish v1 -vcl+backend {
-
+varnish v1 -arg "-p http_range_support=off" -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
 	}
 } -start
-varnish v1 -cliok "param.set http_range_support off"
 
 client c1 {
 	txreq -hdr "Range: bytes=0-9"
@@ -45,61 +43,71 @@ client c1 {
 	expect resp.status == 200
 	expect resp.bodylen == 100
 
-} -run
-
-varnish v1 -expect s_resp_bodybytes == 500
-
-client c1 {
-
-	txreq -hdr "Range: bytes=0-9"
-	rxresp
-	expect resp.status == 206
-	expect resp.bodylen == 10
-
-	txreq -hdr "Range: bytes=10-19"
-	rxresp
-	expect resp.status == 206
-	expect resp.bodylen == 10
-
-	txreq -hdr "Range: bytes=90-"
-	rxresp
-	expect resp.status == 206
-	expect resp.bodylen == 10
-
-	txreq -hdr "Range: bytes=-9"
-	rxresp
-	expect resp.status == 206
-	expect resp.bodylen == 9
-
 	txreq -hdr "Range: bytes=-"
-	rxresp
-	expect resp.status == 206
-	expect resp.bodylen == 100
-
-	txreq -hdr "Range: bytes=102-102"
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 100
 
-	txreq -hdr "Range: bytes=99-"
+	txreq -hdr "Range: bytes=5-2"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 100
+} -run
+
+varnish v1 -expect s_resp_bodybytes == 700
+
+client c1 {
+	txreq -hdr "Range: bytes=-0"
+	rxresp
+	expect resp.status == 416
+	expect resp.bodylen == 0
+	expect resp.http.content-range == "bytes */100"
+
+	txreq -hdr "Range: bytes=100-"
+	rxresp
+	expect resp.status == 416
+	expect resp.bodylen == 0
+	expect resp.http.content-range == "bytes */100"
+} -run
+
+varnish v1 -expect s_resp_bodybytes == 700
+
+client c1 {
+	txreq -hdr "Range: bytes=0-49"
+	rxresp
+	expect resp.status == 206
+	expect resp.bodylen == 50
+	expect resp.http.content-range == "bytes 0-49/100"
+
+	txreq -hdr "Range: bytes=50-99"
+	rxresp
+	expect resp.status == 206
+	expect resp.bodylen == 50
+	expect resp.http.content-range == "bytes 50-99/100"
+
+	txreq -hdr "Range: bytes=-50"
+	rxresp
+	expect resp.status == 206
+	expect resp.bodylen == 50
+	expect resp.http.content-range == "bytes 50-99/100"
+
+	txreq -hdr "Range: bytes=50-"
+	rxresp
+	expect resp.status == 206
+	expect resp.bodylen == 50
+	expect resp.http.content-range == "bytes 50-99/100"
+
+	txreq -hdr "Range: bytes=0-0"
 	rxresp
 	expect resp.status == 206
 	expect resp.bodylen == 1
+	expect resp.http.content-range == "bytes 0-0/100"
 
-	txreq -hdr "Range: bytes=99-70"
-	rxresp
-	expect resp.status == 200
-	expect resp.bodylen == 100
-
-	txreq -hdr "Range: bytes=-"
+	txreq -hdr "Range: bytes=-2000"
 	rxresp
 	expect resp.status == 206
 	expect resp.bodylen == 100
-
-	txreq -hdr "Range: bytes=-101"
-	rxresp
-	expect resp.status == 206
-	expect resp.bodylen == 100
+	expect resp.http.content-range == "bytes 0-99/100"
 } -run
 
-varnish v1 -expect s_resp_bodybytes == 1040
+varnish v1 -expect s_resp_bodybytes == 1001
