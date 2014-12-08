@@ -1423,7 +1423,7 @@ varnishd
 varnishsizes
 -----------~
 
--  varnishsizes, which is like varnishhost, but for the length of
+-  varnishsizes, which is like varnishhist, but for the length of
    objects, has been added..
 
 
