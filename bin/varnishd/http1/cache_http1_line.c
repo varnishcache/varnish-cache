@@ -221,8 +221,8 @@ V1L_Flush(const struct worker *wrk)
 	return (v1l->werr);
 }
 
-unsigned
-V1L_Write(const struct worker *wrk, const void *ptr, int len)
+size_t
+V1L_Write(const struct worker *wrk, const void *ptr, ssize_t len)
 {
 	struct v1l *v1l;
 
