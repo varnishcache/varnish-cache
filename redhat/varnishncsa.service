@@ -1,6 +1,6 @@
 [Unit]
-Description=Varnish NCSA logging
-After=network.target
+Description=Varnish HTTP accelerator NCSA daemon
+After=varnish.service
 
 [Service]
 Type=forking
