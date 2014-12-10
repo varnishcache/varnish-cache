@@ -1,6 +1,6 @@
 [Unit]
 Description=Varnish HTTP accelerator logging daemon
-After=network.target
+After=varnish.service
 
 [Service]
 Type=forking
