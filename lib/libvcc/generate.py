@@ -945,6 +945,12 @@ struct ws;
 struct cli;
 struct worker;
 
+enum vcl_event_e {
+	VCL_EVENT_INIT,
+	VCL_EVENT_FINI,
+};
+
+typedef int vcl_event_f(VRT_CTX, enum vcl_event_e);
 typedef int vcl_init_f(VRT_CTX);
 typedef void vcl_fini_f(VRT_CTX);
 typedef int vcl_func_f(VRT_CTX);
@@ -992,8 +998,7 @@ struct VCL_conf {
 	const char	**srcname;
 	const char	**srcbody;
 
-	vcl_init_f	*init_vcl;
-	vcl_fini_f	*fini_vcl;
+	vcl_event_f	*event_vcl;
 """)
 
 for i in returns:

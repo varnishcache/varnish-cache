@@ -217,9 +217,9 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	ctx.handling = &hand;
 	ctx.cli = cli;
 
-	if (vcl->conf->init_vcl(&ctx)) {
+	if (vcl->conf->event_vcl(&ctx, VCL_EVENT_INIT)) {
 		VCLI_Out(cli, "VCL \"%s\" Failed to initialize", name);
-		vcl->conf->fini_vcl(&ctx);
+		AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_FINI));
 		(void)dlclose(vcl->dlh);
 		FREE_OBJ(vcl);
 		return (1);
@@ -229,7 +229,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 		VCLI_Out(cli, "VCL \"%s\" vcl_init{} failed", name);
 		ctx.method = VCL_MET_FINI;
 		(void)vcl->conf->fini_func(&ctx);
-		vcl->conf->fini_vcl(&ctx);
+		AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_FINI));
 		(void)dlclose(vcl->dlh);
 		FREE_OBJ(vcl);
 		return (1);
@@ -268,7 +268,7 @@ VCL_Nuke(struct vcls *vcl)
 	ctx.handling = &hand;
 	(void)vcl->conf->fini_func(&ctx);
 	assert(hand == VCL_RET_OK);
-	vcl->conf->fini_vcl(&ctx);
+	AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_FINI));
 	free(vcl->name);
 	(void)dlclose(vcl->dlh);
 	FREE_OBJ(vcl);

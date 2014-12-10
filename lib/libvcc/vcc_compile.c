@@ -362,10 +362,21 @@ EmitStruct(const struct vcc *tl)
 	Fc(tl, 0, "\nstatic struct director\t*directors[%d];\n",
 	    tl->ndirector);
 
+	Fc(tl, 0, "\nstatic int\n");
+	Fc(tl, 0, "VGC_Event(VRT_CTX, enum vcl_event_e ev)\n");
+	Fc(tl, 0, "{\n");
+	Fc(tl, 0, "\tif (ev == VCL_EVENT_INIT)\n");
+	Fc(tl, 0, "\t\treturn(VGC_Init(ctx));\n");
+	Fc(tl, 0, "\telse if (ev == VCL_EVENT_FINI) {\n");
+	Fc(tl, 0, "\t\tVGC_Fini(ctx);\n");
+	Fc(tl, 0, "\t\treturn(0);\n");
+	Fc(tl, 0, "\t} else\n");
+	Fc(tl, 0, "\t\treturn (-1);\n");
+	Fc(tl, 0, "}\n");
+
 	Fc(tl, 0, "\nconst struct VCL_conf VCL_conf = {\n");
 	Fc(tl, 0, "\t.magic = VCL_CONF_MAGIC,\n");
-	Fc(tl, 0, "\t.init_vcl = VGC_Init,\n");
-	Fc(tl, 0, "\t.fini_vcl = VGC_Fini,\n");
+	Fc(tl, 0, "\t.event_vcl = VGC_Event,\n");
 	Fc(tl, 0, "\t.ndirector = %d,\n", tl->ndirector);
 	Fc(tl, 0, "\t.director = directors,\n");
 	Fc(tl, 0, "\t.ref = VGC_ref,\n");
