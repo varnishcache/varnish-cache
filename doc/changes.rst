@@ -23,6 +23,14 @@ Bugs fixed
 * 1506_ - Keep Content-Length from backend if we can.
 * 1602_ - Fix a cornercase related to empty pass objects.
 
+.. _1623: https://www.varnish-cache.org/trac/ticket/1623
+.. _1607: https://www.varnish-cache.org/trac/ticket/1607
+.. _1610: https://www.varnish-cache.org/trac/ticket/1610
+.. _1596: https://www.varnish-cache.org/trac/ticket/1596
+.. _1506: https://www.varnish-cache.org/trac/ticket/1506
+.. _1602: https://www.varnish-cache.org/trac/ticket/1602
+.. _1349: https://www.varnish-cache.org/trac/ticket/1349
+
 
 ============================================
 Changes from 4.0.2-rc1 to 4.0.2 (2014-10-08)
