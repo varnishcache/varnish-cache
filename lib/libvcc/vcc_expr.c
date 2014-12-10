@@ -991,6 +991,7 @@ static const struct cmps {
 	NUM_REL(DURATION),
 	NUM_REL(BYTES),
 	NUM_REL(REAL),
+	NUM_REL(TIME),
 
 	{STRING,	T_EQ,	"!VRT_strcmp(\v1, \v2)" },
 	{STRING,	T_NEQ,	"VRT_strcmp(\v1, \v2)" },
