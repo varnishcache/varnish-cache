@@ -97,6 +97,7 @@ varnish v1 -vcl {
 	sub vcl_recv {
 		set req.http.foo = "foo" + "bar";
 		set req.http.foo = "foo" + 1;
+		set req.http.foo = "foo" + 1.5;
 		set req.http.foo = "foo" + now;
 
 		set req.http.foo = now + 1s;
