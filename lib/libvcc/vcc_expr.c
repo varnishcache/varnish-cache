@@ -785,6 +785,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 	const char *ip;
 	const struct symbol *sym;
 	double d;
+	int i;
 
 	*e = NULL;
 	if (tl->t->tok == '(') {
@@ -878,9 +879,15 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		} else if (fmt == REAL) {
 			e1 = vcc_mk_expr(REAL, "%f", vcc_DoubleVal(tl));
 			ERRCHK(tl);
-		} else {
+		} else if (fmt == INT) {
 			e1 = vcc_mk_expr(INT, "%.*s", PF(tl->t));
 			vcc_NextToken(tl);
+		} else {
+			vcc_NumVal(tl, &d, &i);
+			if (i)
+				e1 = vcc_mk_expr(REAL, "%f", d);
+			else
+				e1 = vcc_mk_expr(INT, "%ld", (long)d);
 		}
 		e1->constant = EXPR_CONST;
 		*e = e1;
