@@ -933,6 +933,28 @@ sighup(void)
 	return (1);
 }
 
+static char *
+read_format(const char *formatfile)
+{
+        FILE *fmtfile;
+        size_t len = 0;
+        char *fmt = NULL;
+
+        fmtfile = fopen(formatfile, "r");
+        if (fmtfile == NULL)
+                VUT_Error(1, "Can't open format file (%s)", strerror(errno));
+        if (getline(&fmt, &len, fmtfile) == -1) {
+                free(fmt);
+                if (feof(fmtfile))
+                        VUT_Error(1, "Empty format file");
+                else
+                        VUT_Error(1, "Can't read format from file (%s)",
+			    strerror(errno));
+        }
+        fclose(fmtfile);
+        return (fmt);
+}
+
 int
 main(int argc, char * const *argv)
 {
@@ -960,6 +982,13 @@ main(int argc, char * const *argv)
 			if (format != NULL)
 				free(format);
 			format = strdup(optarg);
+			AN(format);
+			break;
+		case 'f':
+			/* Format string from file */
+			if (format != NULL)
+				free(format);
+			format = read_format(optarg);
 			AN(format);
 			break;
 		case 'h':
