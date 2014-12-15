@@ -40,6 +40,14 @@
 	    "Set the output log format string."				\
 	)
 
+#define NCSA_OPT_f                                                      \
+        VOPT("f:", "[-f formatfile]", "Read output format from file",   \
+            "Read output format from a file. Will read a single line"   \
+            " from the specified file, and use that line as the"	\
+	    " format."							\
+	)
+
+
 #define NCSA_OPT_g							\
 	VOPT("g:", "[-g <request|vxid>]", "Grouping mode (default: vxid)", \
 	    "The grouping of the log records. The default is to group"	\
@@ -60,6 +68,7 @@ VSL_OPT_C
 VUT_OPT_d
 VUT_OPT_D
 NCSA_OPT_F
+NCSA_OPT_f
 NCSA_OPT_g
 VUT_OPT_h
 VUT_OPT_n
