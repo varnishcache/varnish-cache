@@ -32,13 +32,14 @@
  * In the highly unlikely event of performance trouble, handbuilt versions
  * would likely be faster than relying on the OS time functions.
  *
- * We must parse three different formats:
+ * We must parse four different formats:
  *       000000000011111111112222222222
  *       012345678901234567890123456789
  *       ------------------------------
  *	"Sun, 06 Nov 1994 08:49:37 GMT"		RFC822 & RFC1123
  *	"Sunday, 06-Nov-94 08:49:37 GMT"	RFC850
  *	"Sun Nov  6 08:49:37 1994"		ANSI-C asctime()
+ *	"1994-11-06T08:49:37"			ISO 8601
  *
  * And always output the RFC1123 format.
  *
@@ -115,7 +116,7 @@ static const char *fmts[] = {
 	"%a, %d %b %Y %T GMT",	/* RFC 822 & RFC 1123 */
 	"%A, %d-%b-%y %T GMT",	/* RFC 850 */
 	"%a %b %d %T %Y",	/* ANSI-C asctime() */
-	"%F %T",		/* ISO 8601 */
+	"%FT%T",		/* ISO 8601 */
 	NULL
 };
 
