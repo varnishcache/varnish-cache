@@ -213,16 +213,36 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 
 /*--------------------------------------------------------------------
  * Start a new VSL transaction and try again
+ * Prepare the busyobj and fetch processors
  */
 
 static enum fetch_step
 vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 {
+	struct vfp_ctx *vfc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	vfc = bo->vfc;
+	CHECK_OBJ_NOTNULL(vfc, VFP_CTX_MAGIC);
+
+	assert(bo->state == BOS_REQ_DONE);
 
 	VSLb_ts_busyobj(bo, "Retry", W_TIM_real(wrk));
+
+	/* VDI_Finish must have been called before */
+	assert(bo->director_state == DIR_S_NULL);
+	bo->doclose = SC_NULL;
+
+	/* reset other bo attributes - See VBO_GetBusyObj */
+	bo->storage_hint = NULL;
+	bo->do_esi = 0;
+	bo->do_stream = 1;
+
+	/* reset fetch processors */
+	vfc->failed = 0;
+	VFP_Close(vfc);
+	VFP_Setup(vfc);
 
 	// XXX: BereqEnd + BereqAcct ?
 	VSL_ChgId(bo->vsl, "bereq", "retry", VXID_Get(wrk, VSL_BACKENDMARKER));
@@ -405,11 +425,12 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	if (wrk->handling == VCL_RET_RETRY) {
 		bo->doclose = SC_RESP_CLOSE;
-		VDI_Finish(bo->director_resp, bo->wrk, bo);
-		bo->doclose = SC_NULL;
-		bo->retries++;
-		if (bo->retries <= cache_param->max_retries)
+		if (bo->director_state != DIR_S_NULL)
+			VDI_Finish(bo->director_resp, bo->wrk, bo);
+
+		if (bo->retries++ < cache_param->max_retries)
 			return (F_STP_RETRY);
+
 		VSLb(bo->vsl, SLT_VCL_Error,
 		    "Too many retries, delivering 503");
 		assert(bo->director_state == DIR_S_NULL);
@@ -608,7 +629,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	assert(bo->refcount >= 1);
 
-	assert (bo->state == BOS_REQ_DONE);
+	assert(bo->state == BOS_REQ_DONE);
 
 	if (bo->do_stream) {
 		HSH_Unbusy(wrk, bo->fetch_objcore);
@@ -766,8 +787,14 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	if (wrk->handling == VCL_RET_RETRY) {
 		VSB_delete(bo->synth_body);
 		bo->synth_body = NULL;
+
+		bo->doclose = SC_RESP_CLOSE;
+		if (bo->director_state != DIR_S_NULL)
+			VDI_Finish(bo->director_resp, bo->wrk, bo);
+
 		if (bo->retries++ < cache_param->max_retries)
 			return (F_STP_RETRY);
+
 		return (F_STP_FAIL);
 	}
 

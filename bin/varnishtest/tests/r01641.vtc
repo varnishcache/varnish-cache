@@ -1,0 +1,49 @@
+varnishtest "Test retry of straight insufficient bytes pass-fetch : do_esi = true"
+
+server s1 {
+	rxreq
+	txresp -hdr "Content-Length: 10000" -nolen -bodylen 5000
+}
+
+server s2 {
+	rxreq
+	txresp -bodylen 5
+}
+
+server s1 -start
+server s2 -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
+	sub vcl_backend_fetch {
+		set bereq.between_bytes_timeout = 10s;
+		if (bereq.retries == 0) {
+			set bereq.backend = s1;
+		} else {
+			set bereq.backend = s2;
+		}
+	}
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+	}
+	sub vcl_backend_error {
+		if (bereq.retries == 0) {
+			return (retry);
+		} else {
+			return (deliver);
+		}
+	}
+} -start
+
+client c1 {
+	timeout 10
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 5
+} -run
+
+server s1 -wait
+server s2 -wait
