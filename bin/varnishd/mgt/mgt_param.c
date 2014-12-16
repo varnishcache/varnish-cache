@@ -337,7 +337,7 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 		*heritage.param = mgt_param;
 
 	if (cli->result != CLIS_OK) {
-		VCLI_Out(cli, "\n(attempting to set param %s to %s)",
+		VCLI_Out(cli, "\n(attempting to set param '%s' to '%s')",
 		    pp->name, val);
 	} else if (child_pid >= 0 && pp->flags & MUST_RESTART) {
 		VCLI_Out(cli,

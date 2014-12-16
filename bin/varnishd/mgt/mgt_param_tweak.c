@@ -384,17 +384,14 @@ tweak_user(struct vsb *vsb, const struct parspec *par, const char *arg)
 
 	(void)par;
 	if (arg != NULL) {
-		if (*arg != '\0') {
-			pw = getpwnam(arg);
-			if (pw == NULL) {
-				VSB_printf(vsb, "Unknown user");
-				return(-1);
-			}
-			REPLACE(mgt_param.user, pw->pw_name);
-			mgt_param.uid = pw->pw_uid;
-		} else {
-			mgt_param.uid = getuid();
+		pw = getpwnam(arg);
+		if (pw == NULL) {
+			VSB_printf(vsb, "Unknown user '%s'", arg);
+			return(-1);
 		}
+		REPLACE(mgt_param.user, pw->pw_name);
+		mgt_param.uid = pw->pw_uid;
+		endpwent();
 	} else if (mgt_param.user) {
 		VSB_printf(vsb, "%s (%d)", mgt_param.user, (int)mgt_param.uid);
 	} else {
@@ -414,17 +411,14 @@ tweak_group(struct vsb *vsb, const struct parspec *par, const char *arg)
 
 	(void)par;
 	if (arg != NULL) {
-		if (*arg != '\0') {
-			gr = getgrnam(arg);
-			if (gr == NULL) {
-				VSB_printf(vsb, "Unknown group");
-				return(-1);
-			}
-			REPLACE(mgt_param.group, gr->gr_name);
-			mgt_param.gid = gr->gr_gid;
-		} else {
-			mgt_param.gid = getgid();
+		gr = getgrnam(arg);
+		if (gr == NULL) {
+			VSB_printf(vsb, "Unknown group '%s'", arg);
+			return(-1);
 		}
+		REPLACE(mgt_param.group, gr->gr_name);
+		mgt_param.gid = gr->gr_gid;
+		endgrent();
 	} else if (mgt_param.group) {
 		VSB_printf(vsb, "%s (%d)", mgt_param.group, (int)mgt_param.gid);
 	} else {

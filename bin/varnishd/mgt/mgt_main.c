@@ -345,16 +345,40 @@ static void
 init_params(struct cli *cli)
 {
 	ssize_t def, low;
+	struct passwd *pwd;
+	struct group *grp;
 
 	MCF_CollectParams();
 
 	MCF_TcpParams();
 
-	/* If we have nobody/nogroup, use them as defaults */
-	if (getpwnam("nobody") != NULL)
+	/*
+	 * If we have nobody/nogroup, use them as defaults for sandboxes,
+	 * else fall back to whoever we run as.
+	 */
+	if (getpwnam("nobody") != NULL) {
 		MCF_SetDefault("user", "nobody");
-	if (getgrnam("nogroup") != NULL)
+	} else {
+		pwd = getpwuid(getuid());
+		if (pwd == NULL)
+			ARGV_ERR("Neither user 'nobody' or my uid (%jd)"
+			    " found in password database.\n",
+			    (intmax_t)getuid());
+		MCF_SetDefault("user", pwd->pw_name);
+	}
+	endpwent();
+
+	if (getgrnam("nogroup") != NULL) {
 		MCF_SetDefault("group", "nogroup");
+	} else {
+		grp = getgrgid(getgid());
+		if (grp == NULL)
+			ARGV_ERR("Neither group 'nogroup' or my gid (%jd)"
+			    " found in password database.\n",
+			    (intmax_t)getgid());
+		MCF_SetDefault("group", grp->gr_name);
+	}
+	endgrent();
 
 	if (sizeof(void *) < 8) {
 		/*
@@ -431,7 +455,6 @@ main(int argc, char * const *argv)
 
 	/* for ASSERT_MGT() */
 	mgt_pid = getpid();
-
 
 	/*
 	 * Run in UTC timezone, on the off-chance that this operating
