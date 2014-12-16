@@ -227,6 +227,25 @@ Example
 	| 	...
 	| }
 
+$Function TIME time(STRING s, TIME fallback)
+
+Description
+	Converts the string *s* to a time.  If conversion fails,
+	*fallback* will be returned.
+
+	Supported formats:
+
+	| "Sun, 06 Nov 1994 08:49:37 GMT"
+	| "Sunday, 06-Nov-94 08:49:37 GMT"
+	| "Sun Nov  6 08:49:37 1994"
+	| "1994-11-06T08:49:37"
+	| "784111777.00"
+	| "784111777"
+Example
+	| if (std.time(resp.http.last-modified, now) < now - 1w) {
+	| 	...
+	| }
+
 
 SEE ALSO
 ========

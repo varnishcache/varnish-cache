@@ -1,0 +1,40 @@
+varnishtest "Test std.time"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_std};
+
+	sub vcl_deliver {
+		if (std.time(req.http.x-date, now) < now - 1y) {
+			set resp.http.x-past = 1;
+		}
+		if (std.time(req.http.x-date, now) > now + 1y) {
+			set resp.http.x-future = 1;
+		}
+	}
+} -start
+
+client c1 {
+	txreq -hdr "X-Date: Mon, 20 Dec 2010 00:00:00 GMT"
+	rxresp
+	expect resp.http.x-past == 1
+	txreq -hdr "X-Date: Monday, 20-Dec-30 00:00:00 GMT"
+	rxresp
+	expect resp.http.x-future == 1
+	txreq -hdr "X-Date: Mon Dec 20 00:00:00 2010"
+	rxresp
+	expect resp.http.x-past == 1
+	txreq -hdr "X-Date: 2030-12-20T00:00:00"
+	rxresp
+	expect resp.http.x-future == 1
+	txreq -hdr "X-Date: 1292803200.00"
+	rxresp
+	expect resp.http.x-past == 1
+	txreq -hdr "X-Date: 1923955200"
+	rxresp
+	expect resp.http.x-future == 1
+} -run
