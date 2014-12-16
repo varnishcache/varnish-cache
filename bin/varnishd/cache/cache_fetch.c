@@ -709,6 +709,8 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	oi = ObjIterBegin(wrk, bo->ims_oc);
 	do {
 		ois = ObjIter(bo->ims_oc, oi, &sp, &sl);
+		if (ois == OIS_ERROR)
+			VFP_Error(bo->vfc, "Template object failed");
 		while (sl > 0) {
 			l = ObjGetLen(bo->wrk, bo->ims_oc) - al;
 			assert(l > 0);
@@ -724,8 +726,12 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		}
 	} while (!bo->vfc->failed && (ois == OIS_DATA || ois == OIS_STREAM));
 	ObjIterEnd(bo->ims_oc, &oi);
-	if (bo->vfc->failed)
+	if (bo->ims_oc->flags & OC_F_FAILED)
+		VFP_Error(bo->vfc, "Template object failed");
+	if (bo->vfc->failed) {
+		VDI_Finish(bo->director_resp, bo->wrk, bo);
 		return (F_STP_FAIL);
+	}
 
 	if (!bo->do_stream)
 		HSH_Unbusy(wrk, bo->fetch_objcore);
