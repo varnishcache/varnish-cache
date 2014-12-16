@@ -89,7 +89,7 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 
 	/*
 	 * Initial cacheability determination per [RFC2616, 13.4]
-	 * We do not support ranges yet, so 206 is out.
+	 * We do not support ranges to the backend yet, so 206 is out.
 	 */
 
 	if (http_GetHdr(hp, H_Age, &p)) {
