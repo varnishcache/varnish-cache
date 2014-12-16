@@ -665,7 +665,6 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	void *sp;
 	ssize_t sl, al, l;
 	uint8_t *ptr;
-	uint64_t ol;
 	enum objiter_status ois;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -686,12 +685,12 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	}
 
 	al = 0;
-	ol = ObjGetLen(bo->wrk, bo->ims_oc);
 	oi = ObjIterBegin(wrk, bo->ims_oc);
 	do {
 		ois = ObjIter(bo->ims_oc, oi, &sp, &sl);
 		while (sl > 0) {
-			l = ol - al;
+			l = ObjGetLen(bo->wrk, bo->ims_oc) - al;
+			assert(l > 0);
 			if (VFP_GetStorage(bo->vfc, &l, &ptr) != VFP_OK)
 				break;
 			if (sl < l)
@@ -710,7 +709,6 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	if (!bo->do_stream)
 		HSH_Unbusy(wrk, bo->fetch_objcore);
 
-	assert(al == ol);
 	assert(ObjGetLen(bo->wrk, bo->fetch_objcore) == al);
 	EXP_Rearm(bo->ims_oc, bo->ims_oc->exp.t_origin, 0, 0, 0);
 

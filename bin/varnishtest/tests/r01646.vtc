@@ -1,0 +1,54 @@
+varnishtest "cond/stream race ?"
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Transfer-Encoding: chunked" -hdr "Etag: foo"
+	chunkedlen 32
+	sema r1 sync 3
+	chunkedlen 32
+	sema r2 sync 2
+	chunkedlen 32
+	chunkedlen 0
+} -start
+
+server s2 {
+	rxreq
+	expect req.http.if-none-match == "foo"
+	txresp -status 304
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_fetch {
+		if (bereq.http.foo == "s2") {
+			set bereq.backend = s2;
+		}
+	}
+	sub vcl_backend_response {
+		set beresp.ttl = 1s;
+		set beresp.grace = 0s;
+		set beresp.keep = 30s;
+	}
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
+
+client c1 {
+	txreq
+	rxresphdrs
+	sema r1 sync 3
+	rxrespbody
+	expect resp.bodylen == 96
+} -start
+
+client c2 {
+	sema r1 sync 3
+	delay 2
+	txreq -hdr "foo: s2"
+	rxresphdrs
+	sema r2 sync 2
+	rxrespbody
+	expect resp.bodylen == 96
+} -start
+
+client c1 -wait
+client c2 -wait
