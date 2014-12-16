@@ -223,6 +223,7 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 
 /*--------------------------------------------------------------------
  * Start a new VSL transaction and try again
+ * Prepare the busyobj and fetch processors
  */
 
 static enum fetch_step
@@ -233,7 +234,26 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
+	assert(bo->state == BOS_REQ_DONE);
+
 	VSLb_ts_busyobj(bo, "Retry", W_TIM_real(wrk));
+
+	/* VDI_CloseFd must have been called before */
+	AZ(bo->vbc);
+	bo->should_close = 0;
+
+	/* reset other bo attributes - See VBO_GetBusyObj */
+	bo->storage_hint = NULL;
+	bo->do_esi = 0;
+	bo->do_gzip = 0;
+	bo->do_gunzip = 0;
+	bo->do_stream = 1;
+	bo->uncacheable = 0;
+	bo->abandon = 0;
+
+	/* reset fetch processors */
+	bo->failed = 0;
+	bo->vfp_nxt = 0;
 
 	// XXX: BereqEnd + BereqAcct ?
 	wid = VXID_Get(&wrk->vxid_pool);
@@ -380,6 +400,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		bo->retries++;
 		if (bo->retries <= cache_param->max_retries)
 			return (F_STP_RETRY);
+
 		VSLb(bo->vsl, SLT_VCL_Error,
 		    "Too many retries, delivering 503");
 		return (F_STP_ERROR);
@@ -538,6 +559,11 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		VFP_Fetch_Body(bo, est);
 	}
 
+	if (bo->failed) {
+		AN(bo->vbc);
+		VDI_CloseFd(&bo->vbc, &bo->acct);
+	}
+
 	if (bo->failed && !bo->do_stream) {
 		assert(bo->state < BOS_STREAM);
 		if (bo->fetch_obj != NULL) {
@@ -690,6 +716,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	now = W_TIM_real(wrk);
 	VSLb_ts_busyobj(bo, "Error", now);
 
+	AZ(bo->vbc);		/* VDI_CloseFd must have been called before */
 	AN(bo->fetch_objcore->flags & OC_F_BUSY);
 
 	AZ(bo->synth_body);
@@ -716,8 +743,10 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	if (wrk->handling == VCL_RET_RETRY) {
 		VSB_delete(bo->synth_body);
 		bo->synth_body = NULL;
+
 		if (bo->retries++ < cache_param->max_retries)
 			return (F_STP_RETRY);
+
 		return (F_STP_FAIL);
 	}
 
