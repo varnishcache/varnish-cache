@@ -1,0 +1,75 @@
+varnishtest "#1648 - corrupt object in cache through IMS update"
+
+# This server sends a broken response body
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Transfer-Encoding: chunked" -hdr "Etag: \"foo\"" -hdr "Server: s1"
+	sema r1 sync 3
+	delay 1
+	chunked "abc"
+} -start
+
+# This server validates the streaming response from s1 as it hasn't failed yet
+server s2 {
+	rxreq
+	expect req.http.If-None-Match == "\"foo\""
+	sema r1 sync 3
+	txresp -status 304 -nolen -hdr "Server: s2"
+} -start
+
+# This server sends the proper response body
+server s3 {
+	rxreq
+	txresp -hdr "Server: s3" -body "abcdef"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.http.client == "c1") {
+			set req.backend_hint = s1;
+		} else if (req.http.client == "c2") {
+			set req.backend_hint = s2;
+		} else if (req.http.client == "c3") {
+			set req.backend_hint = s3;
+		}
+	}
+	sub vcl_backend_response {
+		if (bereq.http.client == "c1") {
+			set beresp.ttl = 0.1s;
+			set beresp.grace = 0s;
+			set beresp.keep = 60s;
+		}
+	}
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
+
+# This client gets a streaming failing result from s1
+client c1 {
+	txreq -hdr "Client: c1"
+	rxresphdrs
+	expect resp.status == 200
+	expect resp.http.transfer-encoding == "chunked"
+} -start
+
+delay 1
+
+# This client gets a streaming failing result from s1 through
+# IMS update by s2
+client c2 {
+	txreq -hdr "Client: c2"
+	sema r1 sync 3
+	rxresphdrs
+	expect resp.status == 200
+	expect resp.http.transfer-encoding == "chunked"
+} -run
+
+delay 1
+
+# This client should get a fresh fetch from s3
+client c3 {
+	txreq -hdr "Client: c3"
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "abcdef"
+} -run
