@@ -182,16 +182,61 @@ flushout(void)
 	return (0);
 }
 
+static int
+vsb_esc_cat(struct vsb *sb, const char *b, const char *e)
+{
+	AN(b);
+
+	for (; b < e; b++) {
+		if (isspace(*b)) {
+			switch (*b) {
+			case '\n':
+				VSB_cat(sb, "\\n");
+				break;
+			case '\t':
+				VSB_cat(sb, "\\t");
+				break;
+			case '\f':
+				VSB_cat(sb, "\\f");
+				break;
+			case '\r':
+				VSB_cat(sb, "\\r");
+				break;
+			case '\v':
+				VSB_cat(sb, "\\v");
+				break;
+			default:
+				VSB_putc(sb, *b);
+				break;
+			}
+		} else if (isprint(*b)) {
+			switch (*b) {
+			case '"':
+				VSB_cat(sb, "\\\"");
+				break;
+			case '\\':
+				 VSB_cat(sb, "\\\\");
+				 break;
+			default:
+				VSB_putc(sb, *b);
+				break;
+			}
+		} else
+			VSB_printf(sb, "\\x%02x", *b);
+	}
+
+	return (VSB_error(sb));
+}
+
 static inline int
 vsb_fcat(struct vsb *vsb, const struct fragment *f, const char *dflt)
 {
-
 	if (f->gen == CTX.gen) {
 		assert(f->b <= f->e);
-		return (VSB_bcat(vsb, f->b, f->e - f->b));
+		return (vsb_esc_cat(vsb, f->b, f->e));
 	}
 	if (dflt)
-		return (VSB_cat(vsb, dflt));
+		return (vsb_esc_cat(vsb, dflt, dflt + strlen(dflt)));
 	return (-1);
 }
 
@@ -226,10 +271,10 @@ format_fragment(const struct format *format)
 	if (format->frag->gen != CTX.gen) {
 		if (format->string == NULL)
 			return (-1);
-		AZ(VSB_cat(CTX.vsb, format->string));
+		AZ(vsb_esc_cat(CTX.vsb, format->string,
+		       format->string + strlen(format->string)));
 		return (0);
 	}
-
 	AZ(vsb_fcat(CTX.vsb, format->frag, NULL));
 	return (1);
 }
@@ -318,13 +363,14 @@ format_auth(const struct format *format)
 		CTX.frag[F_auth].e)) {
 		if (format->string == NULL)
 			return (-1);
-		AZ(VSB_cat(CTX.vsb, format->string));
+		AZ(vsb_esc_cat(CTX.vsb, format->string,
+			format->string + strlen(format->string)));
 		return (0);
 	}
 	q = strchr(buf, ':');
 	if (q != NULL)
 		*q = '\0';
-	AZ(VSB_cat(CTX.vsb, buf));
+	AZ(vsb_esc_cat(CTX.vsb, buf, buf + strlen(buf)));
 	return (1);
 }
 
