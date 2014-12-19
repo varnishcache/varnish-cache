@@ -222,7 +222,7 @@ vsb_esc_cat(struct vsb *sb, const char *b, const char *e)
 				break;
 			}
 		} else
-			VSB_printf(sb, "\\x%02x", *b);
+			VSB_printf(sb, "\\x%02hhx", *b);
 	}
 
 	return (VSB_error(sb));
