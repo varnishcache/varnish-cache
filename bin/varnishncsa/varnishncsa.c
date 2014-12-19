@@ -215,8 +215,8 @@ vsb_esc_cat(struct vsb *sb, const char *b, const char *e)
 				VSB_cat(sb, "\\\"");
 				break;
 			case '\\':
-				 VSB_cat(sb, "\\\\");
-				 break;
+				VSB_cat(sb, "\\\\");
+				break;
 			default:
 				VSB_putc(sb, *b);
 				break;
@@ -272,7 +272,7 @@ format_fragment(const struct format *format)
 		if (format->string == NULL)
 			return (-1);
 		AZ(vsb_esc_cat(CTX.vsb, format->string,
-		       format->string + strlen(format->string)));
+		    format->string + strlen(format->string)));
 		return (0);
 	}
 	AZ(vsb_fcat(CTX.vsb, format->frag, NULL));

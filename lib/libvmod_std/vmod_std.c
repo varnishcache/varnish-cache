@@ -233,7 +233,7 @@ vmod_cache_req_body(VRT_CTX, VCL_BYTES size)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	result = VRT_CacheReqBody(ctx, size);
-	VSLb(ctx->vsl, SLT_Debug,"VRT_CacheReqBody(%zu): %d",
+	VSLb(ctx->vsl, SLT_Debug, "VRT_CacheReqBody(%zu): %d",
 	    (size_t)size, result);
 }
 
