@@ -12,7 +12,7 @@ SYNOPSIS
 ========
 
 .. include:: ../include/varnishlog_synopsis.rst
-varnishlog |synopsis| <query expression>
+varnishlog |synopsis|
 
 OPTIONS
 =======
