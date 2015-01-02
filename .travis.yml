@@ -1,6 +1,10 @@
 ---
-script: 'make -j3 check'
+language: c
+compiler:
+  - clang
+  - gcc
 before_install:
   - sudo apt-get install python-docutils
   - ./autogen.sh
   - ./configure
+script: 'make -j3 check'
