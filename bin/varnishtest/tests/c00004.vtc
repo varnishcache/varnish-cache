@@ -4,14 +4,22 @@ server s1 {
 	rxreq
 	expect req.http.foobar == "1"
 	txresp -hdr "Vary: Foobar" -hdr "Snafu: 1" -body "1111\n"
+
 	rxreq
 	expect req.http.foobar == "2"
 	txresp -hdr "Vary: Foobar" -hdr "Snafu: 2" -body "2222\n"
+
 	rxreq
 	expect req.http.foobar == "3"
 	txresp -hdr "Vary: Foobar" -hdr "Snafu: 3" -body "3333\n"
+
 	rxreq
+	expect req.http.foobar == <undef>
 	txresp -hdr "Vary: Foobar" -hdr "Snafu: 4" -body "4444\n"
+
+	rxreq
+	expect req.http.foobar == ""
+	txresp -hdr "Vary: Foobar" -hdr "Snafu: 5" -body "5555\n"
 } -start
 
 varnish v1 -vcl+backend {} -start
@@ -46,5 +54,18 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.X-Varnish == "1009 1002"
 	expect resp.http.snafu == "1"
+
+	txreq -hdr "Foobar:  1 "
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1010 1002"
+	expect resp.http.snafu == "1"
+
+	# empty header != no header
+	txreq -hdr "Foobar:  "
+	rxresp
+	expect resp.status == 200
+	expect resp.http.X-Varnish == "1011"
+	expect resp.http.snafu == "5"
 
 } -run
