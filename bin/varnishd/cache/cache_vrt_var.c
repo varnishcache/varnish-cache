@@ -198,7 +198,7 @@ VRT_r_beresp_##field(VRT_CTX)				\
 
 #define BO_FLAG(l, r, w, d) \
 	VBERESPR##r(l) \
-	VBERESPW##r(l)
+	VBERESPW##w(l)
 #include "tbl/bo_flags.h"
 #undef BO_FLAG
 
@@ -588,7 +588,7 @@ VRT_r_req_##field(VRT_CTX)				\
 
 #define REQ_FLAG(l, r, w, d) \
 	VREQR##r(l) \
-	VREQW##r(l)
+	VREQW##w(l)
 #include "tbl/req_flags.h"
 #undef REQ_FLAG
 
