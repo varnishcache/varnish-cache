@@ -32,7 +32,7 @@ Conventions used in this manual include:
   http://www.varnish-cache.org/
     A hyperlink.
 
-Longer listings like example command output and VCL will look like this::
+Longer listings like example command output and VCL look like this::
 
     $ /opt/varnish/sbin/varnishd -V
     varnishd (varnish-4.0.0-tp1 revision ddd00e1)
