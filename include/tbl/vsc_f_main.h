@@ -61,7 +61,7 @@
  * Globals, not related to traffic
  */
 
-VSC_F(uptime,			uint64_t, 0, 'a', info,
+VSC_F(uptime,			uint64_t, 0, 'c', info,
     "Child process uptime",
 	"How long the child process has been running."
 )
@@ -95,32 +95,32 @@ VSC_F(sess_pipe_overflow,	uint64_t, 1, 'c', info,
 
 /*---------------------------------------------------------------------*/
 
-VSC_F(client_req_400,		uint64_t, 1, 'a', info,
+VSC_F(client_req_400,		uint64_t, 1, 'c', info,
     "Client requests received, subject to 400 errors",
 	"400 means we couldn't make sense of the request, it was"
 	" malformed in some drastic way."
 )
 
-VSC_F(client_req_417,		uint64_t, 1, 'a', info,
+VSC_F(client_req_417,		uint64_t, 1, 'c', info,
     "Client requests received, subject to 417 errors",
 	"417 means that something went wrong with an Expect: header."
 )
 
-VSC_F(client_req,		uint64_t, 1, 'a', info,
+VSC_F(client_req,		uint64_t, 1, 'c', info,
     "Good client requests received",
 	"The count of parseable client requests seen."
 )
 
 /*---------------------------------------------------------------------*/
 
-VSC_F(cache_hit,		uint64_t, 1, 'a', info,
+VSC_F(cache_hit,		uint64_t, 1, 'c', info,
     "Cache hits",
 	"Count of cache hits. "
 	"  A cache hit indicates that an object has been delivered to a"
 	"  client without fetching it from a backend server."
 )
 
-VSC_F(cache_hitpass,		uint64_t, 1, 'a', info,
+VSC_F(cache_hitpass,		uint64_t, 1, 'c', info,
     "Cache hits for pass",
 	"Count of hits for pass"
 	"  A cache hit for pass indicates that Varnish is going to"
@@ -129,7 +129,7 @@ VSC_F(cache_hitpass,		uint64_t, 1, 'a', info,
 	"  decision is being used."
 )
 
-VSC_F(cache_miss,		uint64_t, 1, 'a', info,
+VSC_F(cache_miss,		uint64_t, 1, 'c', info,
     "Cache misses",
 	"Count of misses"
 	"  A cache miss indicates the object was fetched from the"
@@ -138,34 +138,34 @@ VSC_F(cache_miss,		uint64_t, 1, 'a', info,
 
 /*---------------------------------------------------------------------*/
 
-VSC_F(backend_conn,		uint64_t, 0, 'a', info,
+VSC_F(backend_conn,		uint64_t, 0, 'c', info,
     "Backend conn. success",
 	"How many backend connections have successfully been"
 	" established."
 )
 
-VSC_F(backend_unhealthy,	uint64_t, 0, 'a', info,
+VSC_F(backend_unhealthy,	uint64_t, 0, 'c', info,
     "Backend conn. not attempted",
 	""
 )
-VSC_F(backend_busy,		uint64_t, 0, 'a', info,
+VSC_F(backend_busy,		uint64_t, 0, 'c', info,
     "Backend conn. too many",
 	""
 )
-VSC_F(backend_fail,		uint64_t, 0, 'a', info,
+VSC_F(backend_fail,		uint64_t, 0, 'c', info,
     "Backend conn. failures",
 	""
 )
-VSC_F(backend_reuse,		uint64_t, 0, 'a', info,
+VSC_F(backend_reuse,		uint64_t, 0, 'c', info,
     "Backend conn. reuses",
 	"Count of backend connection reuses"
 	"  This counter is increased whenever we reuse a recycled connection."
 )
-VSC_F(backend_toolate,		uint64_t, 0, 'a', info,
+VSC_F(backend_toolate,		uint64_t, 0, 'c', info,
     "Backend conn. was closed",
 	""
 )
-VSC_F(backend_recycle,		uint64_t, 0, 'a', info,
+VSC_F(backend_recycle,		uint64_t, 0, 'c', info,
     "Backend conn. recycles",
 	"Count of backend connection recycles"
 	"  This counter is increased whenever we have a keep-alive"
@@ -173,7 +173,7 @@ VSC_F(backend_recycle,		uint64_t, 0, 'a', info,
 	"  It has not yet been used, but it might be, unless the backend"
 	"  closes it."
 )
-VSC_F(backend_retry,		uint64_t, 0, 'a', info,
+VSC_F(backend_retry,		uint64_t, 0, 'c', info,
     "Backend conn. retry",
 	""
 )
@@ -309,165 +309,165 @@ VSC_F(sess_dropped,		uint64_t, 0, 'c', info,
 
 /*---------------------------------------------------------------------*/
 
-VSC_F(n_object,			uint64_t, 1, 'i', info,
+VSC_F(n_object,			uint64_t, 1, 'g', info,
     "object structs made",
 	"Number of object structs made"
 )
-VSC_F(n_vampireobject,		uint64_t, 1, 'i', diag,
+VSC_F(n_vampireobject,		uint64_t, 1, 'g', diag,
     "unresurrected objects",
 	"Number of unresurrected objects"
 )
-VSC_F(n_objectcore,		uint64_t, 1, 'i', info,
+VSC_F(n_objectcore,		uint64_t, 1, 'g', info,
     "objectcore structs made",
 	"Number of objectcore structs made"
 )
-VSC_F(n_objecthead,		uint64_t, 1, 'i', info,
+VSC_F(n_objecthead,		uint64_t, 1, 'g', info,
     "objecthead structs made",
 	"Number of objecthead structs made"
 )
-VSC_F(n_waitinglist,		uint64_t, 1, 'i', debug,
+VSC_F(n_waitinglist,		uint64_t, 1, 'g', debug,
     "waitinglist structs made",
 	"Number of waitinglist structs made"
 )
 
-VSC_F(n_backend,		uint64_t, 0, 'i', info,
+VSC_F(n_backend,		uint64_t, 0, 'g', info,
     "Number of backends",
 	"Number of backends known to us."
 )
 
-VSC_F(n_expired,		uint64_t, 0, 'i', info,
+VSC_F(n_expired,		uint64_t, 0, 'g', info,
     "Number of expired objects",
 	"Number of objects that expired from cache"
 	" because of old age."
 )
-VSC_F(n_lru_nuked,		uint64_t, 0, 'i', info,
+VSC_F(n_lru_nuked,		uint64_t, 0, 'g', info,
     "Number of LRU nuked objects",
 	"How many objects have been forcefully evicted"
 	" from storage to make room for a new object."
 )
-VSC_F(n_lru_moved,		uint64_t, 0, 'i', diag,
+VSC_F(n_lru_moved,		uint64_t, 0, 'g', diag,
     "Number of LRU moved objects",
 	"Number of move operations done on the LRU list."
 )
 
-VSC_F(losthdr,			uint64_t, 0, 'a', info,
+VSC_F(losthdr,			uint64_t, 0, 'c', info,
     "HTTP header overflows",
 	""
 )
 
-VSC_F(s_sess,			uint64_t, 1, 'a', info,
+VSC_F(s_sess,			uint64_t, 1, 'c', info,
     "Total sessions seen",
 	""
 )
-VSC_F(s_req,			uint64_t, 1, 'a', info,
+VSC_F(s_req,			uint64_t, 1, 'c', info,
     "Total requests seen",
 	""
 )
-VSC_F(s_pipe,			uint64_t, 1, 'a', info,
+VSC_F(s_pipe,			uint64_t, 1, 'c', info,
     "Total pipe sessions seen",
 	""
 )
-VSC_F(s_pass,			uint64_t, 1, 'a', info,
+VSC_F(s_pass,			uint64_t, 1, 'c', info,
     "Total pass-ed requests seen",
 	""
 )
-VSC_F(s_fetch,			uint64_t, 1, 'a', info,
+VSC_F(s_fetch,			uint64_t, 1, 'c', info,
     "Total backend fetches initiated",
 	""
 )
-VSC_F(s_synth,			uint64_t, 1, 'a', info,
+VSC_F(s_synth,			uint64_t, 1, 'c', info,
     "Total synthethic responses made",
 	""
 )
-VSC_F(s_req_hdrbytes,		uint64_t, 1, 'a', info,
+VSC_F(s_req_hdrbytes,		uint64_t, 1, 'c', info,
     "Request header bytes",
 	"Total request header bytes received"
 )
-VSC_F(s_req_bodybytes,		uint64_t, 1, 'a', info,
+VSC_F(s_req_bodybytes,		uint64_t, 1, 'c', info,
     "Request body bytes",
 	"Total request body bytes received"
 )
-VSC_F(s_resp_hdrbytes,		uint64_t, 1, 'a', info,
+VSC_F(s_resp_hdrbytes,		uint64_t, 1, 'c', info,
     "Response header bytes",
 	"Total response header bytes transmitted"
 )
-VSC_F(s_resp_bodybytes,		uint64_t, 1, 'a', info,
+VSC_F(s_resp_bodybytes,		uint64_t, 1, 'c', info,
     "Response body bytes",
 	"Total response body bytes transmitted"
 )
-VSC_F(s_pipe_hdrbytes,		uint64_t, 0, 'a', info,
+VSC_F(s_pipe_hdrbytes,		uint64_t, 0, 'c', info,
     "Pipe request header bytes",
 	"Total request bytes received for piped sessions"
 )
-VSC_F(s_pipe_in,		uint64_t, 0, 'a', info,
+VSC_F(s_pipe_in,		uint64_t, 0, 'c', info,
     "Piped bytes from client",
 	"Total number of bytes forwarded from clients in"
 	" pipe sessions"
 )
-VSC_F(s_pipe_out,		uint64_t, 0, 'a', info,
+VSC_F(s_pipe_out,		uint64_t, 0, 'c', info,
     "Piped bytes to client",
 	"Total number of bytes forwarded to clients in"
 	" pipe sessions"
 )
 
-VSC_F(sess_closed,		uint64_t, 1, 'a', info,
+VSC_F(sess_closed,		uint64_t, 1, 'c', info,
     "Session Closed",
 	""
 )
-VSC_F(sess_pipeline,		uint64_t, 1, 'a', info,
+VSC_F(sess_pipeline,		uint64_t, 1, 'c', info,
     "Session Pipeline",
 	""
 )
-VSC_F(sess_readahead,		uint64_t, 1, 'a', info,
+VSC_F(sess_readahead,		uint64_t, 1, 'c', info,
     "Session Read Ahead",
 	""
 )
-VSC_F(sess_herd,		uint64_t, 1, 'a', diag,
+VSC_F(sess_herd,		uint64_t, 1, 'c', diag,
     "Session herd",
 	""
 )
 
 /*--------------------------------------------------------------------*/
 
-VSC_F(shm_records,		uint64_t, 0, 'a', diag,
+VSC_F(shm_records,		uint64_t, 0, 'c', diag,
     "SHM records",
 	""
 )
-VSC_F(shm_writes,		uint64_t, 0, 'a', diag,
+VSC_F(shm_writes,		uint64_t, 0, 'c', diag,
     "SHM writes",
 	""
 )
-VSC_F(shm_flushes,		uint64_t, 0, 'a', diag,
+VSC_F(shm_flushes,		uint64_t, 0, 'c', diag,
     "SHM flushes due to overflow",
 	""
 )
-VSC_F(shm_cont,			uint64_t, 0, 'a', diag,
+VSC_F(shm_cont,			uint64_t, 0, 'c', diag,
     "SHM MTX contention",
 	""
 )
-VSC_F(shm_cycles,		uint64_t, 0, 'a', diag,
+VSC_F(shm_cycles,		uint64_t, 0, 'c', diag,
     "SHM cycles through buffer",
 	""
 )
 
 /*--------------------------------------------------------------------*/
 
-VSC_F(backend_req,		uint64_t, 0, 'a', info,
+VSC_F(backend_req,		uint64_t, 0, 'c', info,
     "Backend requests made",
 	""
 )
 
 /*--------------------------------------------------------------------*/
 
-VSC_F(n_vcl,			uint64_t, 0, 'a', info,
+VSC_F(n_vcl,			uint64_t, 0, 'c', info,
     "Number of loaded VCLs in total",
 	""
 )
-VSC_F(n_vcl_avail,		uint64_t, 0, 'a', diag,
+VSC_F(n_vcl_avail,		uint64_t, 0, 'c', diag,
     "Number of VCLs available",
 	""
 )
-VSC_F(n_vcl_discard,		uint64_t, 0, 'a', diag,
+VSC_F(n_vcl_discard,		uint64_t, 0, 'c', diag,
     "Number of discarded VCLs",
 	""
 )
@@ -555,11 +555,11 @@ VSC_F(bans_persisted_fragmentation,	uint64_t, 0, 'g', diag,
 
 /*--------------------------------------------------------------------*/
 
-VSC_F(n_purges,			uint64_t, 0, 'i', info,
+VSC_F(n_purges,			uint64_t, 0, 'g', info,
     "Number of purge operations executed",
 	""
 )
-VSC_F(n_obj_purged,		uint64_t, 0, 'i', info,
+VSC_F(n_obj_purged,		uint64_t, 0, 'g', info,
     "Number of purged objects",
 	""
 )
@@ -578,44 +578,44 @@ VSC_F(exp_received,			uint64_t, 0, 'c', diag,
 
 /*--------------------------------------------------------------------*/
 
-VSC_F(hcb_nolock,		uint64_t, 1, 'a', debug,
+VSC_F(hcb_nolock,		uint64_t, 1, 'c', debug,
     "HCB Lookups without lock",
 	""
 )
-VSC_F(hcb_lock,			uint64_t, 0, 'a', debug,
+VSC_F(hcb_lock,			uint64_t, 0, 'c', debug,
     "HCB Lookups with lock",
 	""
 )
-VSC_F(hcb_insert,		uint64_t, 0, 'a', debug,
+VSC_F(hcb_insert,		uint64_t, 0, 'c', debug,
     "HCB Inserts",
 	""
 )
 
 /*--------------------------------------------------------------------*/
 
-VSC_F(esi_errors,		uint64_t, 0, 'a', diag,
+VSC_F(esi_errors,		uint64_t, 0, 'c', diag,
     "ESI parse errors (unlock)",
 	""
 )
-VSC_F(esi_warnings,		uint64_t, 0, 'a', diag,
+VSC_F(esi_warnings,		uint64_t, 0, 'c', diag,
     "ESI parse warnings (unlock)",
 	""
 )
 
 /*--------------------------------------------------------------------*/
 
-VSC_F(vmods,			uint64_t, 0, 'i', info,
+VSC_F(vmods,			uint64_t, 0, 'g', info,
     "Loaded VMODs",
 	""
 )
 
 /*--------------------------------------------------------------------*/
 
-VSC_F(n_gzip,			uint64_t, 0, 'a', info,
+VSC_F(n_gzip,			uint64_t, 0, 'c', info,
     "Gzip operations",
 	""
 )
-VSC_F(n_gunzip,			uint64_t, 0, 'a', info,
+VSC_F(n_gunzip,			uint64_t, 0, 'c', info,
     "Gunzip operations",
 	""
 )

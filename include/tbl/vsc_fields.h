@@ -98,15 +98,15 @@ VSC_F(child_panic,		uint64_t, 0, 'c', diag,
 
 #ifdef VSC_DO_LCK
 
-VSC_F(creat,			uint64_t, 0, 'a', debug,
+VSC_F(creat,			uint64_t, 0, 'c', debug,
     "Created locks",
 	""
 )
-VSC_F(destroy,			uint64_t, 0, 'a', debug,
+VSC_F(destroy,			uint64_t, 0, 'c', debug,
     "Destroyed locks",
 	""
 )
-VSC_F(locks,			uint64_t, 0, 'a', debug,
+VSC_F(locks,			uint64_t, 0, 'c', debug,
     "Lock Operations",
 	""
 )
@@ -118,31 +118,31 @@ VSC_F(locks,			uint64_t, 0, 'a', debug,
  */
 
 #if defined(VSC_DO_SMA) || defined (VSC_DO_SMF)
-VSC_F(c_req,			uint64_t, 0, 'a', info,
+VSC_F(c_req,			uint64_t, 0, 'c', info,
     "Allocator requests",
 	""
 )
-VSC_F(c_fail,			uint64_t, 0, 'a', info,
+VSC_F(c_fail,			uint64_t, 0, 'c', info,
     "Allocator failures",
 	""
 )
-VSC_F(c_bytes,			uint64_t, 0, 'a', info,
+VSC_F(c_bytes,			uint64_t, 0, 'c', info,
     "Bytes allocated",
 	""
 )
-VSC_F(c_freed,			uint64_t, 0, 'a', info,
+VSC_F(c_freed,			uint64_t, 0, 'c', info,
     "Bytes freed",
 	""
 )
-VSC_F(g_alloc,			uint64_t, 0, 'i', info,
+VSC_F(g_alloc,			uint64_t, 0, 'g', info,
     "Allocations outstanding",
 	""
 )
-VSC_F(g_bytes,			uint64_t, 0, 'i', info,
+VSC_F(g_bytes,			uint64_t, 0, 'g', info,
     "Bytes outstanding",
 	""
 )
-VSC_F(g_space,			uint64_t, 0, 'i', info,
+VSC_F(g_space,			uint64_t, 0, 'g', info,
     "Bytes available",
 	""
 )
@@ -158,15 +158,15 @@ VSC_F(g_space,			uint64_t, 0, 'i', info,
 /**********************************************************************/
 
 #ifdef VSC_DO_SMF
-VSC_F(g_smf,			uint64_t, 0, 'i', info,
+VSC_F(g_smf,			uint64_t, 0, 'g', info,
     "N struct smf",
 	""
 )
-VSC_F(g_smf_frag,		uint64_t, 0, 'i', info,
+VSC_F(g_smf_frag,		uint64_t, 0, 'g', info,
     "N small free smf",
 	""
 )
-VSC_F(g_smf_large,		uint64_t, 0, 'i', info,
+VSC_F(g_smf_large,		uint64_t, 0, 'g', info,
     "N large free smf",
 	""
 )
@@ -176,7 +176,7 @@ VSC_F(g_smf_large,		uint64_t, 0, 'i', info,
 
 #ifdef VSC_DO_VBE
 
-VSC_F(vcls,			uint64_t, 0, 'i', debug,
+VSC_F(vcls,			uint64_t, 0, 'g', debug,
     "VCL references",
 	""
 )
@@ -184,32 +184,32 @@ VSC_F(happy,			uint64_t, 0, 'b', info,
     "Happy health probes",
 	""
 )
-VSC_F(bereq_hdrbytes,		uint64_t, 0, 'a', info,
+VSC_F(bereq_hdrbytes,		uint64_t, 0, 'c', info,
     "Request header bytes",
 	"Total backend request header bytes sent"
 )
-VSC_F(bereq_bodybytes,		uint64_t, 0, 'a', info,
+VSC_F(bereq_bodybytes,		uint64_t, 0, 'c', info,
     "Request body bytes",
 	"Total backend request body bytes sent"
 )
-VSC_F(beresp_hdrbytes,		uint64_t, 0, 'a', info,
+VSC_F(beresp_hdrbytes,		uint64_t, 0, 'c', info,
     "Response header bytes",
 	"Total backend response header bytes received"
 )
-VSC_F(beresp_bodybytes,		uint64_t, 0, 'a', info,
+VSC_F(beresp_bodybytes,		uint64_t, 0, 'c', info,
     "Response body bytes",
 	"Total backend response body bytes received"
 )
-VSC_F(pipe_hdrbytes,		uint64_t, 0, 'a', info,
+VSC_F(pipe_hdrbytes,		uint64_t, 0, 'c', info,
     "Pipe request header bytes",
 	"Total request bytes sent for piped sessions"
 )
-VSC_F(pipe_out,			uint64_t, 0, 'a', info,
+VSC_F(pipe_out,			uint64_t, 0, 'c', info,
     "Piped bytes to backend",
 	"Total number of bytes forwarded to backend in"
 	" pipe sessions"
 )
-VSC_F(pipe_in,			uint64_t, 0, 'a', info,
+VSC_F(pipe_in,			uint64_t, 0, 'c', info,
     "Piped bytes from backend",
 	"Total number of bytes forwarded from backend in"
 	" pipe sessions"
