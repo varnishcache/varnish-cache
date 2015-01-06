@@ -7,9 +7,19 @@ server s1 {
 	rxreq
 	expect req.url == "/foo"
 	txresp -body foobar1
+	rxreq
+	expect req.url == "/pass"
+	txresp -body foobar12
 } -start
 
 varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/foo") {
+			return(hash);
+		} else {
+			return(pass);
+		}
+	}
 	sub vcl_hit {
 		return(pass);
 	}
@@ -22,10 +32,19 @@ client c1 {
 	expect resp.bodylen == 6
 	expect resp.http.x-varnish == "1001"
 	txreq -url "/foo"
+
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 7
 	expect resp.http.x-varnish == "1003 1004"
+
+	# a pass following a hit on the same wrk should not be
+	# reported as a hit
+	txreq -url "/pass"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 8
+	expect resp.http.x-varnish == "1005"
 }
 
 client c1 -run

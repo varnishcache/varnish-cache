@@ -542,6 +542,7 @@ struct req {
 	int			disable_esi;
 	uint8_t			hash_ignore_busy;
 	uint8_t			hash_always_miss;
+	uint8_t			hit;
 
 	struct sess		*sp;
 	struct worker		*wrk;
