@@ -326,9 +326,11 @@ pan_busyobj(const struct busyobj *bo)
 	VSB_printf(pan_vsp, "  retries = %d\n", bo->retries);
 	VSB_printf(pan_vsp, "  failed = %d\n", bo->vfc->failed);
 	VSB_printf(pan_vsp, "  state = %d\n", (int)bo->state);
-#define BO_FLAG(l, r, w, d) if(bo->l) VSB_printf(pan_vsp, "    is_" #l "\n");
+	VSB_printf(pan_vsp, "  flags = {\n");
+#define BO_FLAG(l, r, w, d) if(bo->l) VSB_printf(pan_vsp, "    " #l "\n");
 #include "tbl/bo_flags.h"
 #undef BO_FLAG
+	VSB_printf(pan_vsp, "  }\n");
 
 	if (bo->htc != NULL) {
 		VSB_printf(pan_vsp, "    bodystatus = %d (%s),\n",
