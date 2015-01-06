@@ -39,7 +39,7 @@
  *				'g' - Gauge, goes up and down
  *				'i' - Integer (deprecated, use 'g')
  *    v - Verbosity:	Counter verbosity level (see vsc_levels.h)
- *    e - Explantion:	Short explanation of field (for screen use)
+ *    e - Explanation:	Short explanation of field (for screen use)
  *    d - Description:	Long explanation of field (for doc use)
  *
  * Please describe Gauge variables as "Number of..." to indicate that
