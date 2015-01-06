@@ -30,7 +30,7 @@ Performance
 Varnish has a modern architecture and is written with performance
 in mind.  It is usually bound by the speed of the network, effectively
 turning performance into a non-issue. You get to focus on how your web
-application work and you can allow yourself, to some degree, to care
+applications work and you can allow yourself, to some degree, to care
 less about performance and scalability.
 
 .. XXX:Not totally sure what the last sentence above means. benc
@@ -58,7 +58,7 @@ About the Varnish development process
 -------------------------------------
 
 Varnish is a community driven project. The development is overseen by
-the Varnish Governing Board which currently consist of Poul-Henning Kamp
+the Varnish Governing Board which currently consists of Poul-Henning Kamp
 (Architect), Rogier Mulhuijzen (Fastly) and Lasse Karstensen (Varnish
 Software).
 
@@ -69,13 +69,13 @@ Getting in touch
 ----------------
 
 You can get in touch with us through many channels. For real time chat
-you can reach us on IRC trough the server irc.linpro.net on the #varnish
+you can reach us on IRC through the server irc.linpro.net on the #varnish
 and #varnish-hacking channels.
-There are two mailing lists available. One for user questions and one
+There are two mailing lists available: one for user questions and one
 for development discussions. See https://www.varnish-cache.org/lists
 for information and signup.  There is also a web forum on the same site.
 
-Now that you have a vague idea on what Varnish Cache is, let see if we
+Now that you have a vague idea on what Varnish Cache is, let's see if we
 can get it up and running.
 
 .. XXX:The above three paragraphs are repetitive this is already handled in previous chapters. The only new information is Governing Board which could be moved to the introduction and the paragraphs scrapped. benc
