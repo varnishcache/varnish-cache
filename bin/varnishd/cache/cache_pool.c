@@ -409,6 +409,9 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 
 		assert(wrk->pool == pp);
 		tp->func(wrk, tp->priv);
+
+		/* cleanup for next task */
+		wrk->seen_methods = 0;
 	}
 	wrk->pool = NULL;
 }
