@@ -74,7 +74,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	    ObjGetattr(req->wrk, req->objcore, OA_HEADERS, NULL)));
 	http_ForceField(req->resp, HTTP_HDR_PROTO, "HTTP/1.1");
 
-	if (req->hit)
+	if (req->is_hit)
 		http_PrintfHeader(req->resp,
 		    "X-Varnish: %u %u", VXID(req->vsl->wid),
 		    ObjGetXID(wrk, req->objcore));
@@ -364,7 +364,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 			(void)VRB_Ignore(req);// XXX: handle err
 		}
 		wrk->stats->cache_hit++;
-		req->hit = 1;
+		req->is_hit = 1;
 		req->req_step = R_STP_DELIVER;
 		return (REQ_FSM_MORE);
 	case VCL_RET_FETCH:
@@ -392,7 +392,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		break;
 	case VCL_RET_PASS:
 		wrk->stats->cache_hit++;
-		req->hit = 1;
+		req->is_hit = 1;
 		req->req_step = R_STP_PASS;
 		break;
 	default:
@@ -548,7 +548,7 @@ cnt_restart(struct worker *wrk, struct req *req)
 		req->err_code = 0;
 		req->req_step = R_STP_RECV;
 	}
-	req->hit = 0;
+	req->is_hit = 0;
 	return (REQ_FSM_MORE);
 }
 

@@ -539,10 +539,10 @@ struct req {
 
 	int			restarts;
 	int			esi_level;
-	int			disable_esi;
-	uint8_t			hash_ignore_busy;
-	uint8_t			hash_always_miss;
-	uint8_t			hit;
+
+#define REQ_FLAG(l, r, w, d) unsigned	l:1;
+#include "tbl/req_flags.h"
+#undef REQ_FLAG
 
 	struct sess		*sp;
 	struct worker		*wrk;
@@ -565,7 +565,6 @@ struct req {
 	enum sess_close		doclose;
 	double			d_ttl;
 
-	unsigned char		wantbody;
 	uint64_t		req_bodybytes;	/* Parsed req bodybytes */
 
 	uint16_t		err_code;
@@ -596,7 +595,6 @@ struct req {
 	struct SHA256Context	*sha256ctx;
 
 	/* ESI delivery stuff */
-	int			gzip_resp;
 	ssize_t			l_crc;
 	uint32_t		crc;
 

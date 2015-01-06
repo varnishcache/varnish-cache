@@ -562,29 +562,35 @@ VRT_r_bereq_xid(VRT_CTX)
 	return (WS_Printf(ctx->bo->bereq->ws, "%u", VXID(ctx->bo->vsl->wid)));
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * req fields
+ */
 
-#define REQ_BOOL(hash_var)					\
-void								\
-VRT_l_req_##hash_var(VRT_CTX, unsigned val)	\
-{								\
-								\
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+#define VREQW0(field)
+#define VREQW1(field)						\
+void									\
+VRT_l_req_##field(VRT_CTX, unsigned a)		\
+{									\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);			\
-	ctx->req->hash_var = val ? 1 : 0;			\
-}								\
-								\
-unsigned							\
-VRT_r_req_##hash_var(VRT_CTX)			\
-{								\
-								\
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);			\
-	return(ctx->req->hash_var);				\
+	ctx->req->field = a ? 1 : 0;					\
 }
 
-REQ_BOOL(hash_ignore_busy)
-REQ_BOOL(hash_always_miss)
+#define VREQR0(field)
+#define VREQR1(field)						\
+unsigned								\
+VRT_r_req_##field(VRT_CTX)				\
+{									\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);			\
+	return (ctx->req->field);					\
+}
+
+#define REQ_FLAG(l, r, w, d) \
+	VREQR##r(l) \
+	VREQW##r(l)
+#include "tbl/req_flags.h"
+#undef REQ_FLAG
 
 /*--------------------------------------------------------------------*/
 

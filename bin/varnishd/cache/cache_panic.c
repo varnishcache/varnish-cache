@@ -412,6 +412,12 @@ pan_req(const struct req *req)
 			pan_busyobj(req->objcore->busyobj);
 	}
 
+	VSB_printf(pan_vsp, "  flags = {\n");
+#define REQ_FLAG(l, r, w, d) if(req->l) VSB_printf(pan_vsp, "    " #l ",\n");
+#include "tbl/req_flags.h"
+#undef REQ_FLAG
+	VSB_printf(pan_vsp, "  }\n");
+
 	VSB_printf(pan_vsp, "},\n");
 }
 

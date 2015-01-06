@@ -186,7 +186,7 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 
 	req->hash_always_miss = 0;
 	req->hash_ignore_busy = 0;
-	req->hit = 0;
+	req->is_hit = 0;
 
 	if (sp->fd >= 0 && req->doclose != SC_NULL)
 		SES_Close(sp, req->doclose);
