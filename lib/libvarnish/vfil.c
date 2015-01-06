@@ -105,8 +105,11 @@ VFIL_readfd(int fd, ssize_t *sz)
 		return (NULL);
 	f = malloc(st.st_size + 1);
 	assert(f != NULL);
-	i = read(fd, f, st.st_size);
-	assert(i == st.st_size);
+	i = read(fd, f, st.st_size + 1);
+	if (i != st.st_size) {
+		free(f);
+		return (NULL);
+	}
 	f[i] = '\0';
 	if (sz != NULL)
 		*sz = st.st_size;

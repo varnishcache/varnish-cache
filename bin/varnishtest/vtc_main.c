@@ -43,6 +43,7 @@
 #include "vtc.h"
 
 #include "vev.h"
+#include "vfil.h"
 #include "vqueue.h"
 #include "vrnd.h"
 #include "vtim.h"
@@ -105,37 +106,6 @@ parse_D_opt(char *arg)
 	extmacro_def(p, "%s", q);
 
 	return (1);
-}
-
-/**********************************************************************
- * Read a file into memory
- */
-
-static char *
-read_file(const char *fn)
-{
-	char *buf;
-	ssize_t sz = MAX_FILESIZE;
-	ssize_t s;
-	int fd;
-
-	fd = open(fn, O_RDONLY);
-	if (fd < 0)
-		return (NULL);
-	buf = malloc(sz);
-	assert(buf != NULL);
-	s = read(fd, buf, sz - 1);
-	if (s <= 0) {
-		free(buf);
-		(void)close(fd);
-		return (NULL);
-	}
-	AZ(close (fd));
-	assert(s < sz);		/* XXX: increase MAX_FILESIZE */
-	buf[s] = '\0';
-	buf = realloc(buf, s + 1);
-	assert(buf != NULL);
-	return (buf);
 }
 
 /**********************************************************************
@@ -345,7 +315,7 @@ i_mode(void)
 
 	vsb = VSB_new_auto();
 
-	q = p = read_file("Makefile");
+	q = p = VFIL_readfile(NULL, "Makefile", NULL);
 	if (p == NULL) {
 		fprintf(stderr, "No Makefile to search for -i flag.\n");
 		VSB_printf(vsb, "%s/../..", cwd);
@@ -492,7 +462,7 @@ main(int argc, char * const *argv)
 	argv += optind;
 
 	for (;argc > 0; argc--, argv++) {
-		p = read_file(*argv);
+		p = VFIL_readfile(NULL, *argv, NULL);
 		if (p == NULL) {
 			fprintf(stderr, "Cannot stat file \"%s\": %s\n",
 			    *argv, strerror(errno));
