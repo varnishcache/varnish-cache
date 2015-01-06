@@ -265,23 +265,6 @@ http_findhdr(const struct http *hp, unsigned l, const char *hdr)
 }
 
 /*--------------------------------------------------------------------
- */
-
-static void
-http_MarkHeader(const struct http *hp, const char *hdr, unsigned hdrlen,
-    uint8_t flag)
-{
-	unsigned u;
-
-	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-
-	u = http_findhdr(hp, hdrlen, hdr);
-	if (u == 0)
-		return;
-	hp->hdf[u] |= flag;
-}
-
-/*--------------------------------------------------------------------
  * Count how many instances we have of this header
  */
 
@@ -655,7 +638,7 @@ http_DoConnection(struct http *hp)
 {
 	const char *h, *b, *e;
 	enum sess_close retval;
-	unsigned u;
+	unsigned u, v;
 
 	if (hp->protover < 11)
 		retval = SC_REQ_HTTP10;
@@ -672,7 +655,20 @@ http_DoConnection(struct http *hp)
 			retval = SC_REQ_CLOSE;
 		if (u == 10 && !strncasecmp(b, "keep-alive", u))
 			retval = SC_NULL;
-		http_MarkHeader(hp, b, u, HDF_FILTER);
+
+		/* Refuse removal of well-known-headers if they would pass. */
+/*lint -save -e506 */
+#define HTTPH(a, x, c)						\
+		if (!((c) & HTTPH_R_PASS) &&			\
+		    strlen(a) == u && !strncasecmp(a, b, u))	\
+				return (SC_RX_BAD);
+#include "tbl/http_headers.h"
+#undef HTTPH
+/*lint -restore */
+
+		v = http_findhdr(hp, u, b);
+		if (v > 0)
+			hp->hdf[v] |= HDF_FILTER;
 	}
 	return (retval);
 }

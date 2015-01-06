@@ -29,18 +29,19 @@
 
 /*lint -save -e525 -e539 */
 
-SESS_CLOSE(REM_CLOSE,	"Client Closed")
-SESS_CLOSE(REQ_CLOSE,	"Client requested close")
-SESS_CLOSE(REQ_HTTP10,	"Proto < HTTP/1.1")
-SESS_CLOSE(RX_BODY,	"Failure receiving req.body")
-SESS_CLOSE(RX_JUNK,	"Received junk data")
-SESS_CLOSE(RX_OVERFLOW,	"Received buffer overflow")
-SESS_CLOSE(RX_TIMEOUT,	"Receive timeout")
-SESS_CLOSE(TX_PIPE,	"Piped transaction")
-SESS_CLOSE(TX_ERROR,	"Error transaction")
-SESS_CLOSE(TX_EOF,	"EOF transmission")
-SESS_CLOSE(RESP_CLOSE,	"Backend/VCL requested close")
-SESS_CLOSE(OVERLOAD,	"Out of some resource")
+SESS_CLOSE(REM_CLOSE,		"Client Closed")
+SESS_CLOSE(REQ_CLOSE,		"Client requested close")
+SESS_CLOSE(REQ_HTTP10,		"Proto < HTTP/1.1")
+SESS_CLOSE(RX_BAD,		"Received bad request")
+SESS_CLOSE(RX_BODY,		"Failure receiving req.body")
+SESS_CLOSE(RX_JUNK,		"Received junk data")
+SESS_CLOSE(RX_OVERFLOW,		"Received buffer overflow")
+SESS_CLOSE(RX_TIMEOUT,		"Receive timeout")
+SESS_CLOSE(TX_PIPE,		"Piped transaction")
+SESS_CLOSE(TX_ERROR,		"Error transaction")
+SESS_CLOSE(TX_EOF,		"EOF transmission")
+SESS_CLOSE(RESP_CLOSE,		"Backend/VCL requested close")
+SESS_CLOSE(OVERLOAD,		"Out of some resource")
 SESS_CLOSE(SESS_PIPE_OVERFLOW,	"Session pipe overflow")
 
 /*lint -restore */
