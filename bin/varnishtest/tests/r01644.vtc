@@ -1,0 +1,33 @@
+varnishtest "test access to cache_param from vmod"
+
+server s1 {
+	rxreq
+	txresp
+
+} -start
+
+varnish v1 -vcl+backend {
+	
+	import ${vmod_debug};
+
+	sub vcl_deliver {
+		set resp.http.foo = debug.vre_limit();
+	}
+
+} -start
+
+varnish v1 -cliok "param.set pcre_match_limit 100"
+
+client c1 {
+	txreq 
+	rxresp
+	expect resp.http.foo == 100
+} -run
+
+varnish v1 -cliok "param.set pcre_match_limit 200"
+
+client c1 {
+	txreq 
+	rxresp
+	expect resp.http.foo == 200
+} -run

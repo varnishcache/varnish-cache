@@ -168,3 +168,10 @@ vmod_argtest(VRT_CTX, VCL_STRING one, VCL_REAL two, VCL_STRING three)
 	bprintf(buf, "%s %g %s", one, two, three);
 	return WS_Copy(ctx->ws, buf, -1);
 }
+
+VCL_INT
+vmod_vre_limit(VRT_CTX)
+{
+	(void)ctx;
+	return (cache_param->vre_limits.match);
+}
