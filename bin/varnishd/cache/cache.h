@@ -540,7 +540,7 @@ struct req {
 	int			restarts;
 	int			esi_level;
 
-#define REQ_FLAG(l, r, w, d) unsigned	l:1;
+#define REQ_FLAG(l, o, r, w, d) unsigned	l:1;
 #include "tbl/req_flags.h"
 #undef REQ_FLAG
 

@@ -29,11 +29,11 @@
 
 /*lint -save -e525 -e539 */
 
-/* lower, vcl_r, vcl_w, doc */
-REQ_FLAG(disable_esi,		0, 0, "")
-REQ_FLAG(hash_ignore_busy,	1, 1, "")
-REQ_FLAG(hash_always_miss,	1, 1, "")
-REQ_FLAG(is_hit,		0, 0, "")
-REQ_FLAG(wantbody,		0, 0, "")
-REQ_FLAG(gzip_resp,		0, 0, "")
+/* lower, vcl_obj, vcl_r, vcl_w, doc */
+REQ_FLAG(disable_esi,		none, 0, 0, "")
+REQ_FLAG(hash_ignore_busy,	req,  1, 1, "")
+REQ_FLAG(hash_always_miss,	req,  1, 1, "")
+REQ_FLAG(is_hit,		resp, 1, 0, "")
+REQ_FLAG(wantbody,		none, 0, 0, "")
+REQ_FLAG(gzip_resp,		none, 0, 0, "")
 /*lint -restore */

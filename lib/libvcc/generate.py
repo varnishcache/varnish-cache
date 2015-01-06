@@ -564,8 +564,10 @@ sp_variables = [
 		'INT',
 		( 'hit', 'deliver',),
 		( ), """
-		The count of cache-hits on this object. A value of 0 indicates a
-		cache miss.
+		The count of cache-hits on this object.
+
+		NB: obj.hits is not a reliable way to determine cache
+		misses. See resp.is_hit.
 		"""
 	),
 	('obj.http.',
@@ -643,6 +645,13 @@ sp_variables = [
 		( 'deliver', 'synth', ),
 		( 'deliver', 'synth', ), """
 		The corresponding HTTP header.
+		"""
+	),
+	('resp.is_hit',
+		'BOOL',
+		( 'deliver',),
+		( ), """
+		If this response is from a cache hit.
 		"""
 	),
 	('now',

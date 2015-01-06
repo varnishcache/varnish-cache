@@ -13,6 +13,11 @@ varnish v1 \
 	-vcl+backend {
 		sub vcl_deliver {
 			set resp.http.hits = obj.hits;
+			if (resp.is_hit) {
+				set resp.http.X-Hit = "yes";
+			} else {
+				set resp.http.X-Hit = "no";
+			}
 		}
 	} -start
 
@@ -23,6 +28,7 @@ client c1 {
 	expect resp.status == 200
 	expect resp.bodylen == 6
 	expect resp.http.hits == 0
+	expect resp.http.X-Hit == "no"
 
 	# This is a hit -> hits == 1
 	txreq -url "/" -hdr "Bar: 1"
@@ -30,6 +36,7 @@ client c1 {
 	expect resp.status == 200
 	expect resp.bodylen == 6
 	expect resp.http.hits == 1
+	expect resp.http.X-Hit == "yes"
 
 	# This is a miss on different vary -> hits == 0
 	txreq -url "/" -hdr "Bar: 2"
@@ -37,6 +44,7 @@ client c1 {
 	expect resp.status == 200
 	expect resp.bodylen == 4
 	expect resp.http.hits == 0
+	expect resp.http.X-Hit == "no"
 
 	# This is a hit -> hits == 1
 	txreq -url "/" -hdr "Bar: 2"
@@ -44,6 +52,7 @@ client c1 {
 	expect resp.status == 200
 	expect resp.bodylen == 4
 	expect resp.http.hits == 1
+	expect resp.http.X-Hit == "yes"
 
 } -run
 

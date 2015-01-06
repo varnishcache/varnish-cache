@@ -566,29 +566,29 @@ VRT_r_bereq_xid(VRT_CTX)
  * req fields
  */
 
-#define VREQW0(field)
-#define VREQW1(field)						\
+#define VREQW0(obj, field)
+#define VREQW1(obj, field)						\
 void									\
-VRT_l_req_##field(VRT_CTX, unsigned a)		\
+VRT_l_##obj##_##field(VRT_CTX, unsigned a)		\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);			\
 	ctx->req->field = a ? 1 : 0;					\
 }
 
-#define VREQR0(field)
-#define VREQR1(field)						\
+#define VREQR0(obj, field)
+#define VREQR1(obj, field)						\
 unsigned								\
-VRT_r_req_##field(VRT_CTX)				\
+VRT_r_##obj##_##field(VRT_CTX)				\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);			\
 	return (ctx->req->field);					\
 }
 
-#define REQ_FLAG(l, r, w, d) \
-	VREQR##r(l) \
-	VREQW##w(l)
+#define REQ_FLAG(l, o, r, w, d)			\
+	VREQR##r(o, l)					\
+	VREQW##w(o, l)
 #include "tbl/req_flags.h"
 #undef REQ_FLAG
 
