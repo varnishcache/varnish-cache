@@ -224,18 +224,16 @@ cmd_var_resolve(struct http *hp, char *spec)
 	} else
 		return (spec);
 	hdr = http_find_header(hh, hdr);
-	if (hdr != NULL)
-		return (hdr);
-	return ("<undef>");
+	return (hdr);
 }
 
 static void
 cmd_http_expect(CMD_ARGS)
 {
 	struct http *hp;
-	const char *lhs;
+	const char *lhs, *clhs;
 	char *cmp;
-	const char *rhs;
+	const char *rhs, *crhs;
 	vre_t *vre;
 	const char *error;
 	int erroroffset;
@@ -252,14 +250,27 @@ cmd_http_expect(CMD_ARGS)
 	AN(av[2]);
 	AZ(av[3]);
 	lhs = cmd_var_resolve(hp, av[0]);
-	if (lhs == NULL)
-		lhs = "<missing>";
 	cmp = av[1];
 	rhs = cmd_var_resolve(hp, av[2]);
-	if (rhs == NULL)
-		rhs = "<missing>";
-	if (!strcmp(cmp, "==")) {
-		retval = strcmp(lhs, rhs) == 0;
+
+	clhs = lhs ? lhs : "<undef>";
+	crhs = rhs ? rhs : "<undef>";
+
+	if (!strcmp(cmp, "~") || !strcmp(cmp, "!~")) {
+		vre = VRE_compile(crhs, 0, &error, &erroroffset);
+		if (vre == NULL)
+			vtc_log(hp->vl, 0, "REGEXP error: %s (@%d) (%s)",
+			    error, erroroffset, crhs);
+		i = VRE_exec(vre, clhs, strlen(clhs), 0, 0, NULL, 0, 0);
+		retval = (i >= 0 && *cmp == '~') || (i < 0 && *cmp == '!');
+		VRE_free(&vre);
+	} else if (!strcmp(cmp, "==")) {
+		retval = strcmp(clhs, crhs) == 0;
+	} else if (!strcmp(cmp, "!=")) {
+		retval = strcmp(clhs, crhs) != 0;
+	} else if (lhs == NULL || rhs == NULL) {
+		// fail inequality comparisons if either side is undef'ed
+		retval = 0;
 	} else if (!strcmp(cmp, "<")) {
 		retval = strcmp(lhs, rhs) < 0;
 	} else if (!strcmp(cmp, "<=")) {
@@ -268,24 +279,15 @@ cmd_http_expect(CMD_ARGS)
 		retval = strcmp(lhs, rhs) >= 0;
 	} else if (!strcmp(cmp, ">")) {
 		retval = strcmp(lhs, rhs) > 0;
-	} else if (!strcmp(cmp, "!=")) {
-		retval = strcmp(lhs, rhs) != 0;
-	} else if (!strcmp(cmp, "~") || !strcmp(cmp, "!~")) {
-		vre = VRE_compile(rhs, 0, &error, &erroroffset);
-		if (vre == NULL)
-			vtc_log(hp->vl, 0, "REGEXP error: %s (@%d) (%s)",
-			    error, erroroffset, rhs);
-		i = VRE_exec(vre, lhs, strlen(lhs), 0, 0, NULL, 0, 0);
-		retval = (i >= 0 && *cmp == '~') || (i < 0 && *cmp == '!');
-		VRE_free(&vre);
 	}
+
 	if (retval == -1)
 		vtc_log(hp->vl, 0,
 		    "EXPECT %s (%s) %s %s (%s) test not implemented",
-		    av[0], lhs, av[1], av[2], rhs);
+		    av[0], clhs, av[1], av[2], crhs);
 	else
 		vtc_log(hp->vl, retval ? 4 : 0, "EXPECT %s (%s) %s \"%s\" %s",
-		    av[0], lhs, cmp, rhs, retval ? "match" : "failed");
+		    av[0], clhs, cmp, crhs, retval ? "match" : "failed");
 }
 
 /**********************************************************************
