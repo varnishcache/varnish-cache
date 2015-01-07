@@ -305,13 +305,21 @@ VRT_r_beresp_backend_name(VRT_CTX)
 	return (NULL);
 }
 
+/*--------------------------------------------------------------------
+ * Backends do not in general have a IP number (any more) and this
+ * variable is really not about the backend, but the backend connection.
+ * XXX: we may need a more general beresp.backend.{details|ident}
+ */
+
 VCL_IP
 VRT_r_beresp_backend_ip(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	return (VDI_Suckaddr(ctx->bo->director_resp, ctx->bo->wrk, ctx->bo));
+	if (ctx->bo->htc != NULL && ctx->bo->htc->vbc != NULL)
+		return(ctx->bo->htc->vbc->addr);
+	return (NULL);
 }
 
 /*--------------------------------------------------------------------*/

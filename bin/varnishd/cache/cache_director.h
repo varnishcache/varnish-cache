@@ -53,8 +53,6 @@ typedef int vdi_getbody_f(const struct director *, struct worker *,
     struct busyobj *);
 typedef void vdi_finish_f(const struct director *, struct worker *,
     struct busyobj *);
-typedef struct suckaddr *vdi_suckaddr_f(const struct director *,
-    struct worker *, struct busyobj *);
 
 struct director {
 	unsigned		magic;
@@ -67,7 +65,6 @@ struct director {
 	vdi_gethdrs_f		*gethdrs;
 	vdi_getbody_f		*getbody;
 	vdi_finish_f		*finish;
-	vdi_suckaddr_f		*suckaddr;
 	void			*priv;
 };
 
@@ -79,8 +76,6 @@ void VDI_Finish(const struct director *d, struct worker *wrk,
     struct busyobj *bo);
 int VDI_GetFd(const struct director *d, struct worker *wrk, struct busyobj *);
 int VDI_Healthy(const struct director *, const struct busyobj *);
-struct suckaddr *VDI_Suckaddr(const struct director *d, struct worker *wrk,
-    struct busyobj *bo);
 void VDI_AddHostHeader(struct http *to, const struct vbc *vbc);
 void VBE_Init(void);
 

@@ -480,19 +480,6 @@ vbe_dir_getbody(const struct director *d, struct worker *wrk,
 	return (0);
 }
 
-static struct suckaddr * __match_proto__(vdi_suckaddr_f)
-vbe_dir_suckaddr(const struct director *d, struct worker *wrk,
-    struct busyobj *bo)
-{
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-
-	if (bo->htc->vbc != NULL)
-		return(bo->htc->vbc->addr);
-	return (NULL);
-}
-
 /*--------------------------------------------------------------------*/
 
 void
@@ -534,7 +521,6 @@ VRT_init_vbe(VRT_CTX, struct director **bp, int idx,
 	vs->dir.gethdrs = vbe_dir_gethdrs;
 	vs->dir.getbody = vbe_dir_getbody;
 	vs->dir.finish = vbe_dir_finish;
-	vs->dir.suckaddr = vbe_dir_suckaddr;
 
 	vs->vrt = t;
 
