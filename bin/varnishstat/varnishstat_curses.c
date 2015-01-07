@@ -867,6 +867,10 @@ handle_keypress(int ch)
 		if (page_start + l_points < n_ptarray - 1)
 			page_start += l_points;
 		break;
+	case 'd':
+		hide_unseen = 1 - hide_unseen;
+		rebuild = 1;
+		break;
 	case 'g':
 		current = 0;
 		page_start = 0;
@@ -875,10 +879,6 @@ handle_keypress(int ch)
 		current = n_ptarray - 1;
 		page_start = current - l_points + 1;
 		break;
-	case 'd':
-		hide_unseen = 1 - hide_unseen;
-		rebuild = 1;
-		break;
 	case 'v':
 		verbosity++;
 		if (VSC_LevelDesc(verbosity) == NULL)
@@ -886,7 +886,6 @@ handle_keypress(int ch)
 		rebuild = 1;
 		break;
 	case 'q':
-	case 'Q':
 		keep_running = 0;
 		return;
 	case '\003':		/* Ctrl-C */
