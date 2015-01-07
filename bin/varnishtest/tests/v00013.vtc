@@ -13,11 +13,6 @@ varnish v1 -vcl+backend {
 
 	sub vcl_deliver {
 		set resp.http.foo = obj.hits;
-		if (resp.is_hit) {
-			set resp.http.X-Hit = "yes";
-		} else {
-			set resp.http.X-Hit = "no";
-		}
 	}
 } -start
 
@@ -26,19 +21,16 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.http.foo == 0
-	expect resp.http.X-hit == "no"
 
 	txreq
 	rxresp
 	expect resp.status == 200
 	expect resp.http.foo == 1
-	expect resp.http.X-hit == "yes"
 
 	txreq -url /foo
 	rxresp
 	expect resp.status == 200
 	expect resp.http.foo == 0
-	expect resp.http.X-hit == "no"
 	delay .1
 
 	txreq
@@ -46,5 +38,4 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.foo == 2
 	expect resp.http.bar >= 0.100
-	expect resp.http.X-hit == "yes"
 } -run
