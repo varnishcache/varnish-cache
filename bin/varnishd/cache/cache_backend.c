@@ -62,19 +62,6 @@ struct vbe_dir {
 	const struct vrt_backend *vrt;
 };
 
-/*--------------------------------------------------------------------
- * Create default Host: header for backend request
- */
-void
-VDI_AddHostHeader(struct http *hp, const struct vbc *vbc)
-{
-
-	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
-	CHECK_OBJ_NOTNULL(vbc->vdis, VDI_SIMPLE_MAGIC);
-	http_PrintfHeader(hp,
-	    "Host: %s", vbc->vdis->vrt->hosthdr);
-}
-
 /*--------------------------------------------------------------------*/
 
 /* Private interface from backend_cfg.c */
@@ -425,10 +412,12 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
 {
 	int i;
+	struct vbe_dir *vs;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
 
 	i = vbe_dir_getfd(d, bo);
 	if (i < 0) {
@@ -437,7 +426,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 	}
 	AN(bo->htc);
 
-	i = V1F_fetch_hdr(wrk, bo);
+	i = V1F_fetch_hdr(wrk, bo, vs->vrt->hosthdr);
 	/*
 	 * If we recycle a backend connection, there is a finite chance
 	 * that the backend closed it before we get a request to it.
@@ -455,7 +444,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 			return (-1);
 		}
 		AN(bo->htc);
-		i = V1F_fetch_hdr(wrk, bo);
+		i = V1F_fetch_hdr(wrk, bo, vs->vrt->hosthdr);
 	}
 	if (i != 0) {
 		vbe_dir_finish(d, wrk, bo);

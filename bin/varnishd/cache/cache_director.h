@@ -74,6 +74,5 @@ int VDI_GetBody(struct worker *wrk, struct busyobj *bo);
 void VDI_Finish(struct worker *wrk, struct busyobj *bo);
 int VDI_GetHttp1Fd(struct worker *wrk, struct busyobj *);
 int VDI_Healthy(const struct director *, const struct busyobj *);
-void VDI_AddHostHeader(struct http *to, const struct vbc *vbc);
 void VBE_Init(void);
 

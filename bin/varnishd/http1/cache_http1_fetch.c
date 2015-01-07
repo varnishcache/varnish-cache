@@ -74,7 +74,7 @@ vbf_iter_req_body(struct req *req, void *priv, void *ptr, size_t l)
  */
 
 int
-V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo)
+V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 {
 	struct vbc *vc;
 	struct http *hp;
@@ -101,8 +101,8 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo)
 	 * header if one is necessary.  This cannot be done in the VCL
 	 * because the backend may be chosen by a director.
 	 */
-	if (!http_GetHdr(bo->bereq, H_Host, NULL))
-		VDI_AddHostHeader(bo->bereq, vc);
+	if (!http_GetHdr(bo->bereq, H_Host, NULL) && def_host != NULL)
+		http_PrintfHeader(hp, "Host: %s", def_host);
 
 	if (bo->req != NULL &&
 	    bo->req->req_body_status == REQ_BODY_WITHOUT_LEN) {
