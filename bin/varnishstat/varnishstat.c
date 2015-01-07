@@ -104,7 +104,10 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 	val = *(const volatile uint64_t*)pt->ptr;
 	sec = pt->section;
 
-	if (*jp) *jp = 0; else printf(",\n");
+	if (*jp)
+		*jp = 0;
+	else
+		printf(",\n");
 
 	printf("\t\"");
 	/* build the JSON key name.  */
@@ -113,19 +116,17 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 	if (sec->fantom->ident[0])
 		printf("%s.", sec->fantom->ident);
 	printf("%s\": {", pt->desc->name);
-
-	if (strcmp(sec->fantom->type, "")) printf("\"type\": \"%s\", ",
-	    sec->fantom->type);
-	if (strcmp(sec->fantom->ident, "")) printf("\"ident\": \"%s\", ",
-	    sec->fantom->ident);
-
+	if (strcmp(sec->fantom->type, ""))
+		printf("\"type\": \"%s\", ", sec->fantom->type);
+	if (strcmp(sec->fantom->ident, ""))
+		printf("\"ident\": \"%s\", ", sec->fantom->ident);
 	printf("\"value\": %ju, ", (uintmax_t)val);
-
 	printf("\"flag\": \"%c\", ", pt->desc->flag);
 	printf("\"description\": \"%s\"", pt->desc->sdesc);
 	printf("}");
 
-	if (*jp) printf("\n");
+	if (*jp)
+		printf("\n");
 	return (0);
 }
 
@@ -325,12 +326,12 @@ main(int argc, char * const *argv)
 			do_once(vd, VSC_Main(vd, NULL));
 		else if (f_list)
 			list_fields(vd);
-		else {
+		else
 			assert(0);
-		}
-		if (!do_repeat) break;
+		if (!do_repeat)
+			break;
 
-		// end of output block marker.
+		/* end of output block marker. */
 		printf("\n");
 
 		(void)usleep(delay * 1e6);
