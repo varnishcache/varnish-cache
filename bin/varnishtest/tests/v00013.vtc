@@ -7,10 +7,17 @@ server s1 {
 	rxreq
 	expect req.url == "/foo"
 	txresp -body "foo"
+	rxreq
+	expect req.url == "/pass"
+	txresp -body "pass"
 } -start
 
 varnish v1 -vcl+backend {
-
+	sub vcl_recv {
+		if (req.url == "/pass") {
+			return (pass);
+		}
+	}
 	sub vcl_deliver {
 		set resp.http.foo = obj.hits;
 	}
@@ -38,4 +45,9 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.foo == 2
 	expect resp.http.bar >= 0.100
+
+	txreq -url /pass
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo == 0
 } -run
