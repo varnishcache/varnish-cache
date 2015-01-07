@@ -42,11 +42,13 @@
  * backends to use.
  */
 
-typedef int vdi_gethttp1fd_f(const struct director *, struct busyobj *);
+
 typedef unsigned vdi_healthy_f(const struct director *, const struct busyobj *,
     double *changed);
+
 typedef const struct director *vdi_resolve_f(const struct director *,
     struct worker *, struct busyobj *);
+
 typedef int vdi_gethdrs_f(const struct director *, struct worker *,
     struct busyobj *);
 typedef int vdi_getbody_f(const struct director *, struct worker *,
@@ -54,12 +56,15 @@ typedef int vdi_getbody_f(const struct director *, struct worker *,
 typedef void vdi_finish_f(const struct director *, struct worker *,
     struct busyobj *);
 
+typedef void vdi_http1pipe_f(const struct director *, struct req *,
+    struct busyobj *);
+
 struct director {
 	unsigned		magic;
 #define DIRECTOR_MAGIC		0x3336351d
 	const char		*name;
 	char			*vcl_name;
-	vdi_gethttp1fd_f	*gethttp1fd;
+	vdi_http1pipe_f		*http1pipe;
 	vdi_healthy_f		*healthy;
 	vdi_resolve_f		*resolve;
 	vdi_gethdrs_f		*gethdrs;
@@ -69,10 +74,14 @@ struct director {
 };
 
 /* cache_director.c */
+
 int VDI_GetHdr(struct worker *wrk, struct busyobj *bo);
 int VDI_GetBody(struct worker *wrk, struct busyobj *bo);
 void VDI_Finish(struct worker *wrk, struct busyobj *bo);
-int VDI_GetHttp1Fd(struct worker *wrk, struct busyobj *);
+
+int VDI_Http1Pipe(struct req *, struct busyobj *);
+
 int VDI_Healthy(const struct director *, const struct busyobj *);
+
 void VBE_Init(void);
 

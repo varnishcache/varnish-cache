@@ -43,6 +43,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "cache_director.h"
 
 #include "hash/hash_slinger.h"
 #include "vcl.h"
@@ -516,7 +517,8 @@ cnt_pipe(struct worker *wrk, struct req *req)
 		INCOMPL();
 	assert(wrk->handling == VCL_RET_PIPE);
 
-	V1P_Process(req, bo);
+	if (VDI_Http1Pipe(req, bo) < 0)
+		VSLb(bo->vsl, SLT_VCL_Error, "Backend does not support pipe");
 	http_Teardown(bo->bereq);
 	VBO_DerefBusyObj(wrk, &bo);
 	THR_SetBusyobj(NULL);

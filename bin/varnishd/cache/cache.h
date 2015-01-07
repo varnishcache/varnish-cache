@@ -731,7 +731,7 @@ void V1D_Deliver(struct req *, struct busyobj *);
 
 /* cache_http1_pipe.c */
 void V1P_Init(void);
-void V1P_Process(struct req *req, struct busyobj *bo);
+void V1P_Process(struct req *req, struct busyobj *bo, int fd);
 
 /* cache_req_body.c */
 int VRB_Ignore(struct req *req);

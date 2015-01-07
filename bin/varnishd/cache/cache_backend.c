@@ -488,6 +488,19 @@ VRT_fini_vbe(VRT_CTX, struct director *d)
 	d->priv = NULL;
 }
 
+static void
+vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	i = vbe_dir_getfd(d, bo);
+	V1P_Process(req, bo, i);
+	vbe_dir_finish(d, bo->wrk, bo);
+}
+
 void
 VRT_init_vbe(VRT_CTX, struct director **bp, int idx,
     const void *priv)
@@ -505,7 +518,7 @@ VRT_init_vbe(VRT_CTX, struct director **bp, int idx,
 	vs->dir.priv = vs;
 	vs->dir.name = "simple";
 	REPLACE(vs->dir.vcl_name, t->vcl_name);
-	vs->dir.gethttp1fd = vbe_dir_getfd;
+	vs->dir.http1pipe = vbe_dir_http1pipe;
 	vs->dir.healthy = vbe_dir_healthy;
 	vs->dir.gethdrs = vbe_dir_gethdrs;
 	vs->dir.getbody = vbe_dir_getbody;

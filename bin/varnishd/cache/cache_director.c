@@ -130,17 +130,18 @@ VDI_Finish(struct worker *wrk, struct busyobj *bo)
 /* Get a connection --------------------------------------------------*/
 
 int
-VDI_GetHttp1Fd(struct worker *wrk, struct busyobj *bo)
+VDI_Http1Pipe(struct req *req, struct busyobj *bo)
 {
 	const struct director *d;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	d = vdi_resolve(wrk, bo);
-	if (d == NULL || d->gethttp1fd == NULL)
+	d = vdi_resolve(req->wrk, bo);
+	if (d == NULL || d->http1pipe == NULL)
 		return (-1);
-	return (d->gethttp1fd(d, bo));
+	d->http1pipe(d, req, bo);
+	return (0);
 }
 
 /* Check health --------------------------------------------------------

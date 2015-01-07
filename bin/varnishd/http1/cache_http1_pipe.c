@@ -93,11 +93,11 @@ pipecharge(struct req *req, const struct acct_pipe *a, struct VSC_C_vbe *b)
 }
 
 void
-V1P_Process(struct req *req, struct busyobj *bo)
+V1P_Process(struct req *req, struct busyobj *bo, int fd)
 {
 	struct worker *wrk;
 	struct pollfd fds[2];
-	int i, fd;
+	int i;
 	struct acct_pipe acct_pipe;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -112,7 +112,6 @@ V1P_Process(struct req *req, struct busyobj *bo)
 	acct_pipe.req = req->acct.req_hdrbytes;
 	req->acct.req_hdrbytes = 0;
 
-	fd = VDI_GetHttp1Fd(wrk, bo);
 	if (fd < 0) {
 		pipecharge(req, &acct_pipe, NULL);
 		SES_Close(req->sp, SC_OVERLOAD);
@@ -172,7 +171,6 @@ V1P_Process(struct req *req, struct busyobj *bo)
 	pipecharge(req, &acct_pipe, bo->htc->vbc->backend->vsc);
 	SES_Close(req->sp, SC_TX_PIPE);
 	bo->doclose = SC_TX_PIPE;
-	VDI_Finish(bo->wrk, bo);
 }
 
 /*--------------------------------------------------------------------*/
