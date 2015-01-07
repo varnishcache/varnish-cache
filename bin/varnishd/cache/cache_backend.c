@@ -516,7 +516,7 @@ VRT_init_vbe(VRT_CTX, struct director **bp, int idx,
 	vs->dir.priv = vs;
 	vs->dir.name = "simple";
 	REPLACE(vs->dir.vcl_name, t->vcl_name);
-	vs->dir.getfd = vbe_dir_getfd;
+	vs->dir.gethttp1fd = vbe_dir_getfd;
 	vs->dir.healthy = vbe_dir_healthy;
 	vs->dir.gethdrs = vbe_dir_gethdrs;
 	vs->dir.getbody = vbe_dir_getbody;

@@ -112,7 +112,7 @@ V1P_Process(struct req *req, struct busyobj *bo)
 	acct_pipe.req = req->acct.req_hdrbytes;
 	req->acct.req_hdrbytes = 0;
 
-	fd = VDI_GetFd(bo->director_req, wrk, bo);
+	fd = VDI_GetHttp1Fd(wrk, bo);
 	if (fd < 0) {
 		pipecharge(req, &acct_pipe, NULL);
 		SES_Close(req->sp, SC_OVERLOAD);
@@ -172,7 +172,7 @@ V1P_Process(struct req *req, struct busyobj *bo)
 	pipecharge(req, &acct_pipe, bo->htc->vbc->backend->vsc);
 	SES_Close(req->sp, SC_TX_PIPE);
 	bo->doclose = SC_TX_PIPE;
-	VDI_Finish(bo->director_resp, bo->wrk, bo);
+	VDI_Finish(bo->wrk, bo);
 }
 
 /*--------------------------------------------------------------------*/

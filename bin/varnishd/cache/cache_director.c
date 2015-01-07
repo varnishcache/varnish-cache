@@ -43,24 +43,24 @@
 /* Resolve director --------------------------------------------------*/
 
 static const struct director *
-vdi_resolve(struct worker *wrk, struct busyobj *bo, const struct director *d)
+vdi_resolve(struct worker *wrk, struct busyobj *bo)
 {
+	const struct director *d;
+	const struct director *d2;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	if (d == NULL) {
-		VSLb(bo->vsl, SLT_FetchError, "No backend");
-		return (NULL);
-	}
-
-	while (d != NULL && d->resolve != NULL) {
+	for (d = bo->director_req; d != NULL && d->resolve != NULL; d = d2) {
 		CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-		d = d->resolve(d, wrk, bo);
+		d2 = d->resolve(d, wrk, bo);
+		if (d2 == NULL)
+			VSLb(bo->vsl, SLT_FetchError,
+			    "Director %s returned no backend", d->vcl_name);
 	}
 	CHECK_OBJ_ORNULL(d, DIRECTOR_MAGIC);
 	if (d == NULL)
-		VSLb(bo->vsl, SLT_FetchError, "Backend selection failed");
+		VSLb(bo->vsl, SLT_FetchError, "No backend");
 	bo->director_resp = d;
 	return (d);
 }
@@ -76,7 +76,7 @@ VDI_GetHdr(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	d = vdi_resolve(wrk, bo, bo->director_req);
+	d = vdi_resolve(wrk, bo);
 	if (d != NULL) {
 		AN(d->gethdrs);
 		bo->director_state = DIR_S_HDRS;
@@ -90,13 +90,15 @@ VDI_GetHdr(struct worker *wrk, struct busyobj *bo)
 /* Setup body fetch --------------------------------------------------*/
 
 int
-VDI_GetBody(const struct director *d, struct worker *wrk, struct busyobj *bo)
+VDI_GetBody(struct worker *wrk, struct busyobj *bo)
 {
+	const struct director *d;
 
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
+	d = bo->director_resp;
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	AZ(d->resolve);
 	AN(d->getbody);
 
@@ -108,12 +110,15 @@ VDI_GetBody(const struct director *d, struct worker *wrk, struct busyobj *bo)
 /* Finish fetch ------------------------------------------------------*/
 
 void
-VDI_Finish(const struct director *d, struct worker *wrk, struct busyobj *bo)
+VDI_Finish(struct worker *wrk, struct busyobj *bo)
 {
+	const struct director *d;
 
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	d = bo->director_resp;
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 
 	AZ(d->resolve);
 	AN(d->finish);
@@ -126,22 +131,22 @@ VDI_Finish(const struct director *d, struct worker *wrk, struct busyobj *bo)
 /* Get a connection --------------------------------------------------*/
 
 int
-VDI_GetFd(const struct director *d, struct worker *wrk, struct busyobj *bo)
+VDI_GetHttp1Fd(struct worker *wrk, struct busyobj *bo)
 {
+	const struct director *d;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 
-	d = vdi_resolve(wrk, bo, d);
-	if (d == NULL)
+	d = vdi_resolve(wrk, bo);
+	if (d == NULL || d->gethttp1fd == NULL)
 		return (-1);
-
-	AN(d->getfd);
-	return (d->getfd(d, bo));
+	return (d->gethttp1fd(d, bo));
 }
 
-/* Check health ------------------------------------------------------
+/* Check health --------------------------------------------------------
+ *
+ * If director has no healthy method, we just assume it is healthy.
  */
 
 int
@@ -149,6 +154,7 @@ VDI_Healthy(const struct director *d, const struct busyobj *bo)
 {
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	AN(d->healthy);
+	if (d->healthy == NULL)
+		return (1);
 	return (d->healthy(d, bo, NULL));
 }
