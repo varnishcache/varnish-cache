@@ -1,5 +1,5 @@
 # varnish.m4 - Macros to locate Varnish header files.            -*- Autoconf -*-
-# serial 2 (varnish-4.0)
+# serial 3 (varnish-4.0)
 
 # Copyright (c) 2013-2014 Varnish Software AS
 # All rights reserved.
