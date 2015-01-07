@@ -22,7 +22,11 @@ client c1 {
 	expect resp.bodylen == 3
 
 	delay 1
+} -run
 
+varnish v1 -expect n_object == 1
+
+client c1 {
 	# We still get old object
 	txreq
 	rxresp
@@ -37,3 +41,6 @@ client c1 {
 	rxresp
 	expect resp.bodylen == 6
 } -run
+
+# and the old one has got superseded
+varnish v1 -expect n_object == 1

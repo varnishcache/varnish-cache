@@ -192,7 +192,8 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 		http_CopyHome(bo->bereq0);
 	}
 
-	if (bo->ims_oc != NULL) {
+	if (bo->ims_oc != NULL &&
+	    ObjCheckFlag(bo->wrk, bo->ims_oc, OF_IMSCAND)) {
 		q = HTTP_GetHdrPack(bo->wrk, bo->ims_oc, H_Last_Modified);
 		if (q != NULL)
 			http_PrintfHeader(bo->bereq0,
@@ -974,7 +975,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	bo->fetch_objcore = oc;
 
 	AZ(bo->ims_oc);
-	if (oldoc != NULL && ObjCheckFlag(req->wrk, oldoc, OF_IMSCAND)) {
+	if (oldoc != NULL) {
 		assert(oldoc->refcnt > 0);
 		HSH_Ref(oldoc);
 		bo->ims_oc = oldoc;
