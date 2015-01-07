@@ -6,8 +6,13 @@
 		<xs:element name="stat" maxOccurs="unbounded">
 		    <xs:complexType>
 			<xs:sequence>
+			    <xs:element name="type" type="xs:string"
+					minOccurs="0" maxOccurs="1"/>
+			    <xs:element name="ident" type="xs:string"
+					minOccurs="0" maxOccurs="1"/>
 			    <xs:element name="name" type="xs:string"/>
 			    <xs:element name="value" type="xs:integer"/>
+			    <xs:element name="flag" type="xs:string"/>
 			    <xs:element name="description" type="xs:string"/>
 			</xs:sequence>
 		    </xs:complexType>
