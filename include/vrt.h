@@ -225,7 +225,7 @@ void VRT_Rollback(VRT_CTX, const struct http *);
 void VRT_synth_page(VRT_CTX, const char *, ...);
 
 /* Backend related */
-void VRT_init_vbe(VRT_CTX, struct director **, int idx, const void *priv);
+void VRT_init_vbe(VRT_CTX, struct director **, int idx, const struct vrt_backend *);
 void VRT_fini_vbe(VRT_CTX, struct director *);
 
 /* Suckaddr related */

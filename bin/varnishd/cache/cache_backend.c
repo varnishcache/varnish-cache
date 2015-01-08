@@ -503,14 +503,12 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 
 void
 VRT_init_vbe(VRT_CTX, struct director **bp, int idx,
-    const void *priv)
+    const struct vrt_backend *t) 
 {
-	const struct vrt_backend *t;
 	struct vbe_dir *vs;
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	t = priv;
 
 	ALLOC_OBJ(vs, VDI_SIMPLE_MAGIC);
 	XXXAN(vs);
