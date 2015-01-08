@@ -155,21 +155,6 @@ VBE_DropRefConn(struct backend *b, const struct acct_bereq *acct_bereq)
 }
 
 /*--------------------------------------------------------------------
- * See lib/libvcc/vcc_backend.c::emit_sockaddr()
- */
-
-static void
-copy_sockaddr(struct suckaddr **sa, const struct suckaddr *src)
-{
-
-	assert(VSA_Sane(src));
-	*sa = calloc(1, vsa_suckaddr_len);
-	XXXAN(*sa);
-	memcpy(*sa, src, vsa_suckaddr_len);
-	assert(VSA_Sane(*sa));
-}
-
-/*--------------------------------------------------------------------
  * Add a backend/director instance when loading a VCL.
  * If an existing backend is matched, grab a refcount and return.
  * Else create a new backend structure with reference initialized to one.
@@ -232,9 +217,9 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	 * Copy over the sockaddrs
 	 */
 	if (vb->ipv4_suckaddr != NULL)
-		copy_sockaddr(&b->ipv4, vb->ipv4_suckaddr);
+		b->ipv4 = VSA_Clone(vb->ipv4_suckaddr);
 	if (vb->ipv6_suckaddr != NULL)
-		copy_sockaddr(&b->ipv6, vb->ipv6_suckaddr);
+		b->ipv6 = VSA_Clone(vb->ipv6_suckaddr);
 
 	assert(b->ipv4 != NULL || b->ipv6 != NULL);
 

@@ -323,6 +323,18 @@ VSA_Compare(const struct suckaddr *sua1, const struct suckaddr *sua2)
 	return (memcmp(sua1, sua2, vsa_suckaddr_len));
 }
 
+struct suckaddr *
+VSA_Clone(const struct suckaddr *sua)
+{
+	struct suckaddr *sua2;
+
+	assert(VSA_Sane(sua));
+	sua2 = calloc(1, vsa_suckaddr_len);
+	XXXAN(sua2);
+	memcpy(sua2, sua, vsa_suckaddr_len);
+	return (sua2);
+}
+
 unsigned
 VSA_Port(const struct suckaddr *sua)
 {
