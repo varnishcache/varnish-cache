@@ -55,11 +55,6 @@ int main(int argc, char **argv)
 	P("---------------------------------");
 	P("Varnish counter field definitions");
 	P("---------------------------------");
-
-	P(":Author: Tollef Fog Heen");
-	P(":Date:   2011-09-20");
-	P(":Version: 1.0");
-	P(":Manual section: 7");
 	P("");
 
 	P("COUNTER LEVELS");
