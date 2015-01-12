@@ -58,7 +58,7 @@ WAIT_GetName(void)
 }
 
 struct waiter *
-WAIT_Init(waiter_handle_f *func)
+WAIT_Init(waiter_handle_f *func, volatile double *tmo)
 {
 	struct waiter *w;
 
@@ -70,7 +70,7 @@ WAIT_Init(waiter_handle_f *func)
 	AN(waiter->name);
 	AN(waiter->init);
 	w->impl = waiter;
-	w->priv = w->impl->init(func, &w->pfd);
+	w->priv = w->impl->init(func, &w->pfd, tmo);
 	AN(waiter->pass || w->pfd >= 0);
 	return (w);
 }

@@ -60,6 +60,7 @@ struct vwe {
 	int			epfd;
 
 	waiter_handle_f		*func;
+	volatile double		*tmo;
 
 	VTAILQ_HEAD(,waited)	sesshead;
 	int			pipes[2];
@@ -178,7 +179,7 @@ vwe_thread(void *priv)
 			continue;
 
 		/* check for timeouts */
-		deadline = now - cache_param->timeout_idle;
+		deadline = now - *vwe->tmo;
 		for (;;) {
 			sp = VTAILQ_FIRST(&vwe->sesshead);
 			if (sp == NULL)
@@ -186,7 +187,6 @@ vwe_thread(void *priv)
 			if (sp->deadline > deadline)
 				break;
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			// XXX: not yet VTCP_linger(sp->fd, 0);
 			vwe->func(sp, WAITER_TIMEOUT, now);
 		}
 	}
@@ -215,14 +215,17 @@ vwe_timeout_idle_ticker(void *priv)
 /*--------------------------------------------------------------------*/
 
 static void * __match_proto__(waiter_init_f)
-vwe_init(waiter_handle_f *func, int *pfd)
+vwe_init(waiter_handle_f *func, int *pfd, volatile double *tmo)
 {
 	struct vwe *vwe;
 
 	AN(func);
 	AN(pfd);
+	AN(tmo);
+
 	ALLOC_OBJ(vwe, VWE_MAGIC);
 	AN(vwe);
+
 	VTAILQ_INIT(&vwe->sesshead);
 	AZ(pipe(vwe->pipes));
 	AZ(pipe(vwe->timer_pipes));
@@ -232,6 +235,7 @@ vwe_init(waiter_handle_f *func, int *pfd)
 	AZ(VFIL_nonblocking(vwe->timer_pipes[0]));
 
 	vwe->func = func;
+	vwe->tmo = tmo;
 	*pfd = vwe->pipes[1];
 
 	AZ(pthread_create(&vwe->timer_thread,

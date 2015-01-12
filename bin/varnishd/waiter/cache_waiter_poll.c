@@ -46,6 +46,7 @@ struct vwp {
 	unsigned		magic;
 #define VWP_MAGIC		0x4b2cc735
 	waiter_handle_f		*func;
+	volatile double		*tmo;
 	int			pipes[2];
 	pthread_t		poll_thread;
 	struct pollfd		*pollfd;
@@ -144,7 +145,7 @@ vwp_main(void *priv)
 		v = poll(vwp->pollfd, vwp->hpoll + 1, 100);
 		assert(v >= 0);
 		now = VTIM_real();
-		deadline = now - cache_param->timeout_idle;
+		deadline = now - *vwp->tmo;
 		v2 = v;
 		VTAILQ_FOREACH_SAFE(sp, &vwp->sesshead, list, sp2) {
 			if (v != 0 && v2 == 0)
@@ -194,7 +195,7 @@ vwp_main(void *priv)
 /*--------------------------------------------------------------------*/
 
 static void * __match_proto__(waiter_init_f)
-vwp_poll_init(waiter_handle_f *func, int *pfd)
+vwp_poll_init(waiter_handle_f *func, int *pfd, volatile double *tmo)
 {
 	struct vwp *vwp;
 
@@ -206,6 +207,7 @@ vwp_poll_init(waiter_handle_f *func, int *pfd)
 	AZ(pipe(vwp->pipes));
 
 	vwp->func = func;
+	vwp->tmo = tmo;
 
 	AZ(VFIL_nonblocking(vwp->pipes[1]));
 	*pfd = vwp->pipes[1];

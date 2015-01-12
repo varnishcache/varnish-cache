@@ -51,6 +51,7 @@ struct vws {
 	unsigned		magic;
 #define VWS_MAGIC		0x0b771473
 	waiter_handle_f		*func;
+	volatile double		*tmo;
 	pthread_t		ports_thread;
 	int			dport;
 	VTAILQ_HEAD(,waited)	sesshead;
@@ -192,7 +193,7 @@ vws_thread(void *priv)
 			vws_port_ev(vws, ev + ei, now);
 
 		/* check for timeouts */
-		deadline = now - cache_param->timeout_idle;
+		deadline = now - *vwk->tmo;
 
 		/*
 		 * This loop assumes that the oldest sessions are always at the
@@ -220,8 +221,7 @@ vws_thread(void *priv)
 		 */
 
 		if (sp) {
-			double tmo =
-			    (sp->deadline + cache_param->timeout_idle) - now;
+			double tmo = (sp->deadline + *vws->tmo) - now;
 
 			if (tmo < min_t) {
 				timeout = &min_ts;
@@ -257,15 +257,17 @@ vws_pass(void *priv, struct waited *sp)
 /*--------------------------------------------------------------------*/
 
 static void * __match_proto__(waiter_init_f)
-vws_init(waiter_handle_f *func, int *pfd)
+vws_init(waiter_handle_f *func, int *pfd, volatile double *tmo)
 {
 	struct vws *vws;
 
 	AN(func);
 	AN(pfd);
+	AN(tmo);
 	ALLOC_OBJ(vws, VWS_MAGIC);
 	AN(vws);
 	vws->func = func;
+	vws->tmo = tmo;
 	VTAILQ_INIT(&vws->sesshead);
 	AZ(pthread_create(&vws->ports_thread, NULL, vws_thread, vws));
 	return (vws);

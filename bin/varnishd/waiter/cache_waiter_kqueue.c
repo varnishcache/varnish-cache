@@ -53,6 +53,7 @@ struct vwk {
 	unsigned		magic;
 #define VWK_MAGIC		0x1cc2acc2
 	waiter_handle_f		*func;
+	volatile double		*tmo;
 	pthread_t		thread;
 	int			pipes[2];
 	int			kq;
@@ -192,7 +193,7 @@ vwk_thread(void *priv)
 		 * would not know we meant "the old fd of this number".
 		 */
 		vwk_kq_flush(vwk);
-		deadline = now - cache_param->timeout_idle;
+		deadline = now - *vwk->tmo;
 		for (;;) {
 			sp = VTAILQ_FIRST(&vwk->sesshead);
 			if (sp == NULL)
@@ -210,16 +211,18 @@ vwk_thread(void *priv)
 /*--------------------------------------------------------------------*/
 
 static void * __match_proto__(waiter_init_f)
-vwk_init(waiter_handle_f *func, int *pfd)
+vwk_init(waiter_handle_f *func, int *pfd, volatile double *tmo)
 {
 	struct vwk *vwk;
 
 	AN(func);
 	AN(pfd);
+	AN(tmo);
 	ALLOC_OBJ(vwk, VWK_MAGIC);
 	AN(vwk);
 
 	vwk->func = func;
+	vwk->tmo = tmo;
 
 	VTAILQ_INIT(&vwk->sesshead);
 	AZ(pipe(vwk->pipes));

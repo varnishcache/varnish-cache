@@ -467,7 +467,7 @@ SES_NewPool(struct pool *wp, unsigned pool_no)
 	bprintf(nb, "sess%u", pool_no);
 	pp->mpl_sess = MPL_New(nb, &cache_param->sess_pool,
 	    &cache_param->workspace_session);
-	pp->http1_waiter = WAIT_Init(ses_handle);
+	pp->http1_waiter = WAIT_Init(ses_handle, &cache_param->timeout_idle);
 	return (pp);
 }
 
