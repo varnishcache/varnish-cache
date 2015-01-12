@@ -61,7 +61,7 @@ struct vwe {
 
 	waiter_handle_f		*func;
 
-	VTAILQ_HEAD(,sess)	sesshead;
+	VTAILQ_HEAD(,waited)	sesshead;
 	int			pipes[2];
 	int			timer_pipes[2];
 };
@@ -81,7 +81,7 @@ vwe_modadd(struct vwe *vwe, int fd, void *data, short arm)
 		};
 		AZ(epoll_ctl(vwe->epfd, arm, fd, &ev));
 	} else {
-		struct sess *sp = (struct sess *)data;
+		struct waited *sp = (struct waited *)data;
 		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 		sp->ev.data.ptr = data;
 		sp->ev.events = EPOLLIN | EPOLLPRI | EPOLLONESHOT | EPOLLRDHUP;
@@ -92,7 +92,7 @@ vwe_modadd(struct vwe *vwe, int fd, void *data, short arm)
 static void
 vwe_cond_modadd(struct vwe *vwe, int fd, void *data)
 {
-	struct sess *sp = (struct sess *)data;
+	struct waited *sp = (struct waited *)data;
 
 	assert(fd >= 0);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
@@ -108,7 +108,7 @@ vwe_cond_modadd(struct vwe *vwe, int fd, void *data)
 static void
 vwe_eev(struct vwe *vwe, const struct epoll_event *ep, double now)
 {
-	struct sess *ss[NEEV], *sp;
+	struct waited *ss[NEEV], *sp;
 	int i, j;
 
 	AN(ep->data.ptr);
@@ -132,16 +132,16 @@ vwe_eev(struct vwe *vwe, const struct epoll_event *ep, double now)
 		CAST_OBJ_NOTNULL(sp, ep->data.ptr, SESS_MAGIC);
 		if (ep->events & EPOLLIN || ep->events & EPOLLPRI) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			vwe->func(sp, sp->fd, WAITER_ACTION, now);
+			vwe->func(sp, WAITER_ACTION, now);
 		} else if (ep->events & EPOLLERR) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			vwe->func(sp, sp->fd, WAITER_REMCLOSE, now);
+			vwe->func(sp, WAITER_REMCLOSE, now);
 		} else if (ep->events & EPOLLHUP) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			vwe->func(sp, sp->fd, WAITER_REMCLOSE, now);
+			vwe->func(sp, WAITER_REMCLOSE, now);
 		} else if (ep->events & EPOLLRDHUP) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			vwe->func(sp, sp->fd, WAITER_REMCLOSE, now);
+			vwe->func(sp, WAITER_REMCLOSE, now);
 		}
 	}
 }
@@ -152,7 +152,7 @@ static void *
 vwe_thread(void *priv)
 {
 	struct epoll_event ev[NEEV], *ep;
-	struct sess *sp;
+	struct waited *sp;
 	char junk;
 	double now, deadline;
 	int dotimer, i, n;
@@ -190,11 +190,11 @@ vwe_thread(void *priv)
 			sp = VTAILQ_FIRST(&vwe->sesshead);
 			if (sp == NULL)
 				break;
-			if (sp->t_idle > deadline)
+			if (sp->deadline > deadline)
 				break;
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
 			// XXX: not yet VTCP_linger(sp->fd, 0);
-			vwe->func(sp, sp->fd, WAITER_TIMEOUT, now);
+			vwe->func(sp, WAITER_TIMEOUT, now);
 		}
 	}
 	return (NULL);

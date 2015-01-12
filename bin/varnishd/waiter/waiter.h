@@ -28,7 +28,7 @@
  *
  */
 
-struct sess;
+struct waited;
 struct waiter;
 
 enum wait_event {
@@ -37,9 +37,9 @@ enum wait_event {
 	WAITER_ACTION
 };
 
-typedef void waiter_handle_f(void *ptr, int fd, enum wait_event, double now);
+typedef void waiter_handle_f(struct waited *, enum wait_event, double now);
 typedef void* waiter_init_f(waiter_handle_f *, int *);
-typedef int waiter_pass_f(void *priv, struct sess *);
+typedef int waiter_pass_f(void *priv, struct waited *);
 
 #define WAITER_DEFAULT		"platform dependent"
 
@@ -50,10 +50,9 @@ struct waiter_impl {
 };
 
 /* cache_waiter.c */
-int WAIT_Enter(const struct waiter *, void *ptr, int fd);
+int WAIT_Enter(const struct waiter *, struct waited *);
 struct waiter *WAIT_Init(waiter_handle_f *);
 const char *WAIT_GetName(void);
-int WAIT_Write_Session(struct sess *sp, int fd);
 
 /* mgt_waiter.c */
 extern struct waiter_impl const * waiter;

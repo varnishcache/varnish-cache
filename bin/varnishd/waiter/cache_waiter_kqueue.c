@@ -58,7 +58,7 @@ struct vwk {
 	int			kq;
 	struct kevent		ki[NKEV];
 	unsigned		nki;
-	VTAILQ_HEAD(,sess)	sesshead;
+	VTAILQ_HEAD(,waited)	sesshead;
 };
 
 /*--------------------------------------------------------------------*/
@@ -76,12 +76,11 @@ vwk_kq_flush(struct vwk *vwk)
 }
 
 static void
-vwk_kq_sess(struct vwk *vwk, struct sess *sp, short arm)
+vwk_kq_sess(struct vwk *vwk, struct waited *sp, short arm)
 {
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp, WAITED_MAGIC);
 	assert(sp->fd >= 0);
-	DSL(DBG_WAITER, sp->vxid, "KQ: EV_SET sp %p arm %x", sp, arm);
 	EV_SET(&vwk->ki[vwk->nki], sp->fd, EVFILT_READ, arm, 0, 0, sp);
 	if (++vwk->nki == NKEV)
 		vwk_kq_flush(vwk);
@@ -93,7 +92,7 @@ static void
 vwk_pipe_ev(struct vwk *vwk, const struct kevent *kp)
 {
 	int i, j;
-	struct sess *ss[NKEV];
+	struct waited *ss[NKEV];
 
 	AN(kp->udata);
 	assert(kp->udata == vwk->pipes);
@@ -102,7 +101,7 @@ vwk_pipe_ev(struct vwk *vwk, const struct kevent *kp)
 	if (i == -1 && errno == EAGAIN)
 		return;
 	while (i >= sizeof ss[0]) {
-		CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
+		CHECK_OBJ_NOTNULL(ss[j], WAITED_MAGIC);
 		assert(ss[j]->fd >= 0);
 		VTAILQ_INSERT_TAIL(&vwk->sesshead, ss[j], list);
 		vwk_kq_sess(vwk, ss[j], EV_ADD | EV_ONESHOT);
@@ -117,28 +116,22 @@ vwk_pipe_ev(struct vwk *vwk, const struct kevent *kp)
 static void
 vwk_sess_ev(struct vwk *vwk, const struct kevent *kp, double now)
 {
-	struct sess *sp;
+	struct waited *sp;
 
 	AN(kp->udata);
 	assert(kp->udata != vwk->pipes);
-	CAST_OBJ_NOTNULL(sp, kp->udata, SESS_MAGIC);
-	DSL(DBG_WAITER, sp->vxid, "KQ: sp %p kev data %lu flags 0x%x%s",
-	    sp, (unsigned long)kp->data, kp->flags,
-	    (kp->flags & EV_EOF) ? " EOF" : "");
+	CAST_OBJ_NOTNULL(sp, kp->udata, WAITED_MAGIC);
 
 	if (kp->data > 0) {
 		VTAILQ_REMOVE(&vwk->sesshead, sp, list);
-		vwk->func(sp, sp->fd, WAITER_ACTION, now);
+		vwk->func(sp, WAITER_ACTION, now);
 		return;
 	} else if (kp->flags & EV_EOF) {
 		VTAILQ_REMOVE(&vwk->sesshead, sp, list);
-		vwk->func(sp, sp->fd, WAITER_REMCLOSE, now);
+		vwk->func(sp, WAITER_REMCLOSE, now);
 		return;
 	} else {
-		VSL(SLT_Debug, sp->vxid,
-		    "KQ: sp %p kev data %lu flags 0x%x%s",
-		    sp, (unsigned long)kp->data, kp->flags,
-		    (kp->flags & EV_EOF) ? " EOF" : "");
+		WRONG("unknown kqueue state");
 	}
 }
 
@@ -151,7 +144,7 @@ vwk_thread(void *priv)
 	struct kevent ke[NKEV], *kp;
 	int j, n, dotimer;
 	double now, deadline;
-	struct sess *sp;
+	struct waited *sp;
 
 	CAST_OBJ_NOTNULL(vwk, priv, VWK_MAGIC);
 	THR_SetName("cache-kqueue");
@@ -204,11 +197,11 @@ vwk_thread(void *priv)
 			sp = VTAILQ_FIRST(&vwk->sesshead);
 			if (sp == NULL)
 				break;
-			if (sp->t_idle > deadline)
+			if (sp->deadline > deadline)
 				break;
 			VTAILQ_REMOVE(&vwk->sesshead, sp, list);
 			// XXX: not yet (void)VTCP_linger(sp->fd, 0);
-			vwk->func(sp, sp->fd, WAITER_TIMEOUT, now);
+			vwk->func(sp, WAITER_TIMEOUT, now);
 		}
 	}
 	NEEDLESS_RETURN(NULL);

@@ -248,13 +248,13 @@ SES_ScheduleReq(struct req *req)
  */
 
 static void __match_proto__(waiter_handle_f)
-SES_Handle(void *ptr, int fd, enum wait_event ev, double now)
+ses_handle(struct waited *wp, enum wait_event ev, double now)
 {
 	struct sess *sp;
 	struct sesspool *pp;
 
-	CAST_OBJ_NOTNULL(sp, ptr, SESS_MAGIC);
-	(void)fd;
+	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
+	CAST_OBJ_NOTNULL(sp, wp->ptr, SESS_MAGIC);
 
 	switch (ev) {
 	case WAITER_TIMEOUT:
@@ -273,7 +273,7 @@ SES_Handle(void *ptr, int fd, enum wait_event ev, double now)
 			SES_Delete(sp, SC_OVERLOAD, now);
 		break;
 	default:
-		WRONG("Wrong event in SES_Handle");
+		WRONG("Wrong event in ses_handle");
 	}
 }
 
@@ -288,7 +288,11 @@ SES_Wait(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->sesspool;
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
-	if (WAIT_Enter(pp->http1_waiter, sp, sp->fd)) {
+	INIT_OBJ(&sp->waited, WAITED_MAGIC);
+	sp->waited.fd = sp->fd;
+	sp->waited.ptr = sp;
+	sp->waited.deadline = sp->t_idle;
+	if (WAIT_Enter(pp->http1_waiter, &sp->waited)) {
 		VSC_C_main->sess_pipe_overflow++;
 		SES_Delete(sp, SC_SESS_PIPE_OVERFLOW, NAN);
 	}
@@ -459,7 +463,7 @@ SES_NewPool(struct pool *wp, unsigned pool_no)
 	bprintf(nb, "sess%u", pool_no);
 	pp->mpl_sess = MPL_New(nb, &cache_param->sess_pool,
 	    &cache_param->workspace_session);
-	pp->http1_waiter = WAIT_Init(SES_Handle);
+	pp->http1_waiter = WAIT_Init(ses_handle);
 	return (pp);
 }
 

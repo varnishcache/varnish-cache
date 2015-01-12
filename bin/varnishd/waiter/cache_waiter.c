@@ -76,32 +76,21 @@ WAIT_Init(waiter_handle_f *func)
 }
 
 int
-WAIT_Enter(const struct waiter *w, void *ptr, int fd)
-{
-	struct sess *sp;
-
-	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
-	CAST_OBJ_NOTNULL(sp, ptr, SESS_MAGIC);
-	assert(fd >= 0);
-	assert(sp->fd >= 0);
-
-	if (w->impl->pass != NULL)
-		return (w->impl->pass(w->priv, sp));
-	assert(w->pfd >= 0);
-	return (WAIT_Write_Session(sp, w->pfd));
-}
-
-/*
- * We do not make sp a const, in order to hint that we actually do take
- * control of it.
- */
-int __match_proto__()
-WAIT_Write_Session(struct sess *sp, int fd)
+WAIT_Enter(const struct waiter *w, struct waited *wp)
 {
 	ssize_t written;
-	written = write(fd, &sp, sizeof sp);
-	if (written != sizeof sp && (errno == EAGAIN || errno == EWOULDBLOCK))
+
+	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
+	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
+	assert(wp->fd >= 0);
+
+	if (w->impl->pass != NULL)
+		return (w->impl->pass(w->priv, wp));
+	assert(w->pfd >= 0);
+
+	written = write(w->pfd, &wp, sizeof wp);
+	if (written != sizeof wp && (errno == EAGAIN || errno == EWOULDBLOCK))
 		return (-1);
-	assert (written == sizeof sp);
+	assert (written == sizeof wp);
 	return (0);
 }

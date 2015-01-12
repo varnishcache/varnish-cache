@@ -383,6 +383,19 @@ struct lru {
 	unsigned		n_objcore;
 };
 
+/* Connection waiter -------------------------------------------------
+ * Describing a file-descriptor/connection being waited on
+ */
+
+struct waited {
+	unsigned		magic;
+#define WAITED_MAGIC		0x1743992d
+	VTAILQ_ENTRY(waited)	list;
+	int			fd;
+	void			*ptr;
+	double			deadline;
+};
+
 /* Stored object -----------------------------------------------------
  * Pointer to a stored object, and the methods it supports
  */
@@ -647,7 +660,7 @@ struct sess {
 	struct sesspool		*sesspool;
 
 	struct pool_task	task;
-	VTAILQ_ENTRY(sess)	list;
+	struct waited		waited;
 
 	/* Session related fields ------------------------------------*/
 

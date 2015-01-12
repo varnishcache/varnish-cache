@@ -53,7 +53,7 @@ struct vws {
 	waiter_handle_f		*func;
 	pthread_t		ports_thread;
 	int			dport;
-	VTAILQ_HEAD(,sess)	sesshead;
+	VTAILQ_HEAD(,waited)	sesshead;
 };
 
 static inline void
@@ -74,20 +74,20 @@ vws_del(struct vws *vws, int fd)
 
 static inline void
 vws_port_ev(struct vws *vws, port_event_t *ev, double now) {
-	struct sess *sp;
+	struct waited *sp;
 	if(ev->portev_source == PORT_SOURCE_USER) {
-		CAST_OBJ_NOTNULL(sp, ev->portev_user, SESS_MAGIC);
+		CAST_OBJ_NOTNULL(sp, ev->portev_user, WAITED_MAGIC);
 		assert(sp->fd >= 0);
 		VTAILQ_INSERT_TAIL(&vws->sesshead, sp, list);
 		vws_add(vws, sp->fd, sp);
 	} else {
 		assert(ev->portev_source == PORT_SOURCE_FD);
-		CAST_OBJ_NOTNULL(sp, ev->portev_user, SESS_MAGIC);
+		CAST_OBJ_NOTNULL(sp, ev->portev_user, WAITED_MAGIC);
 		assert(sp->fd >= 0);
 		if(ev->portev_events & POLLERR) {
 			vws_del(vws, sp->fd);
 			VTAILQ_REMOVE(&vws->sesshead, sp, list);
-			vws->func(sp, sp->fd, WAITER_REMCLOSE, now);
+			vws->func(sp, WAITER_REMCLOSE, now);
 			return;
 		}
 
@@ -108,7 +108,7 @@ vws_port_ev(struct vws *vws, port_event_t *ev, double now) {
 		VTAILQ_REMOVE(&vws->sesshead, sp, list);
 
 		/* also handle errors */
-		vws->func(sp, sp->fd, WAITER_ACTION, now);
+		vws->func(sp, WAITER_ACTION, now);
 	}
 	return;
 }
@@ -116,7 +116,7 @@ vws_port_ev(struct vws *vws, port_event_t *ev, double now) {
 static void *
 vws_thread(void *priv)
 {
-	struct sess *sp;
+	struct waited *sp;
 	struct vws *vws;
 
 	CAST_OBJ_NOTNULL(vws, priv, VWS_MAGIC);
@@ -205,14 +205,14 @@ vws_thread(void *priv)
 			sp = VTAILQ_FIRST(&vws->sesshead);
 			if (sp == NULL)
 				break;
-			if (sp->t_idle > deadline) {
+			if (sp->deadline > deadline) {
 				break;
 			}
 			VTAILQ_REMOVE(&vws->sesshead, sp, list);
 			if(sp->fd != -1) {
 				vws_del(vws, sp->fd);
 			}
-			vws->func(sp, sp->fd, WAITER_TIMEOUT, now);
+			vws->func(sp, WAITER_TIMEOUT, now);
 		}
 
 		/*
@@ -241,7 +241,7 @@ vws_thread(void *priv)
 /*--------------------------------------------------------------------*/
 
 static int
-vws_pass(void *priv, struct sess *sp)
+vws_pass(void *priv, struct waited *sp)
 {
 	int r;
 	struct vws *vws;
