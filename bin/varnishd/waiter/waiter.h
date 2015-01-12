@@ -29,6 +29,7 @@
  */
 
 struct sess;
+struct waiter;
 
 enum wait_event {
 	WAITER_REMCLOSE,
@@ -49,8 +50,8 @@ struct waiter_impl {
 };
 
 /* cache_waiter.c */
-int WAIT_Enter(void *waiter_priv, struct sess *sp);
-void *WAIT_Init(waiter_handle_f *);
+int WAIT_Enter(const struct waiter *, struct sess *sp);
+struct waiter *WAIT_Init(waiter_handle_f *);
 const char *WAIT_GetName(void);
 int WAIT_Write_Session(struct sess *sp, int fd);
 

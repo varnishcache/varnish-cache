@@ -60,7 +60,7 @@ struct sesspool {
 	struct mempool		*mpl_req;
 	struct mempool		*mpl_sess;
 
-	void			*http1_waiter;
+	struct waiter		*http1_waiter;
 };
 
 /*--------------------------------------------------------------------

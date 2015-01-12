@@ -30,6 +30,7 @@
 
 #include "config.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <math.h>
@@ -37,6 +38,13 @@
 #include "cache/cache.h"
 
 #include "waiter/waiter.h"
+
+struct waiter {
+	unsigned			magic;
+#define WAITER_MAGIC			0x17c399db
+	const struct waiter_impl	*impl;
+	void				*priv;
+};
 
 const char *
 WAIT_GetName(void)
@@ -48,25 +56,32 @@ WAIT_GetName(void)
 		return ("no_waiter");
 }
 
-void *
+struct waiter *
 WAIT_Init(waiter_handle_f *func)
 {
+	struct waiter *w;
+
+	ALLOC_OBJ(w, WAITER_MAGIC);
+	AN(w);
 
 	AN(waiter);
 	AN(waiter->name);
 	AN(waiter->init);
 	AN(waiter->pass);
-	return (waiter->init(func));
+	w->impl = waiter;
+	w->priv = w->impl->init(func);
+	return (w);
 }
 
 int
-WAIT_Enter(void *waiter_priv, struct sess *sp)
+WAIT_Enter(const struct waiter *w, struct sess *sp)
 {
 
+	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(sp->fd >= 0);
 
-	return (waiter->pass(waiter_priv, sp));
+	return (w->impl->pass(w->priv, sp));
 }
 
 /*
