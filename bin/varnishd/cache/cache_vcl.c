@@ -381,18 +381,23 @@ ccf_config_show(struct cli *cli, const char * const *av, void *priv)
 	int i;
 
 	(void)priv;
-	if (!strcmp(av[2], "-v")) {
-		verbose = 1;
-		vcl = vcl_find(av[3]);
-	} else if (av[3] != NULL) {
+	if (!strcmp(av[2], "-v") && av[3] == NULL) {
+		VCLI_Out(cli, "Too few parameters");
+		VCLI_SetResult(cli, CLIS_TOOFEW);
+		return;
+	} else if (strcmp(av[2], "-v") && av[3] != NULL) {
 		VCLI_Out(cli, "Unknown options '%s'", av[2]);
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
+	} else if (av[3] != NULL) {
+		verbose = 1;
+		vcl = vcl_find(av[3]);
 	} else
 		vcl = vcl_find(av[2]);
 
 	if (vcl == NULL) {
-		VCLI_Out(cli, "No VCL named '%s'", av[2]);
+		VCLI_Out(cli, "No VCL named '%s'",
+		    av[3] == NULL ? av[2] : av[3]);
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
