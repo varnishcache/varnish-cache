@@ -59,7 +59,7 @@ struct vwe {
 	pthread_t		timer_thread;
 	int			epfd;
 
-	waiter_handle_f		*func
+	waiter_handle_f		*func;
 
 	VTAILQ_HEAD(,sess)	sesshead;
 	int			pipes[2];
