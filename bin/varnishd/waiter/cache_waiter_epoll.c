@@ -82,7 +82,7 @@ vwe_modadd(struct vwe *vwe, int fd, void *data, short arm)
 		AZ(epoll_ctl(vwe->epfd, arm, fd, &ev));
 	} else {
 		struct waited *sp = (struct waited *)data;
-		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+		CHECK_OBJ_NOTNULL(sp, WAITED_MAGIC);
 		sp->ev.data.ptr = data;
 		sp->ev.events = EPOLLIN | EPOLLPRI | EPOLLONESHOT | EPOLLRDHUP;
 		AZ(epoll_ctl(vwe->epfd, arm, fd, &sp->ev));
@@ -95,7 +95,7 @@ vwe_cond_modadd(struct vwe *vwe, int fd, void *data)
 	struct waited *sp = (struct waited *)data;
 
 	assert(fd >= 0);
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(sp, WAITED_MAGIC);
 	if (sp->ev.data.ptr)
 		AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_MOD, fd, &sp->ev));
 	else {
@@ -119,7 +119,7 @@ vwe_eev(struct vwe *vwe, const struct epoll_event *ep, double now)
 			if (i == -1 && errno == EAGAIN)
 				return;
 			while (i >= sizeof ss[0]) {
-				CHECK_OBJ_NOTNULL(ss[j], SESS_MAGIC);
+				CHECK_OBJ_NOTNULL(ss[j], WAITED_MAGIC);
 				assert(ss[j]->fd >= 0);
 				VTAILQ_INSERT_TAIL(&vwe->sesshead, ss[j], list);
 				vwe_cond_modadd(vwe, ss[j]->fd, ss[j]);
@@ -129,7 +129,7 @@ vwe_eev(struct vwe *vwe, const struct epoll_event *ep, double now)
 			AZ(i);
 		}
 	} else {
-		CAST_OBJ_NOTNULL(sp, ep->data.ptr, SESS_MAGIC);
+		CAST_OBJ_NOTNULL(sp, ep->data.ptr, WAITED_MAGIC);
 		if (ep->events & EPOLLIN || ep->events & EPOLLPRI) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
 			vwe->func(sp, WAITER_ACTION, now);
