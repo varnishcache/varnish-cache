@@ -42,7 +42,7 @@ typedef int waiter_pass_f(void *priv, struct sess *);
 
 #define WAITER_DEFAULT		"platform dependent"
 
-struct waiter {
+struct waiter_impl {
 	const char		*name;
 	waiter_init_f		*init;
 	waiter_pass_f		*pass;
@@ -55,19 +55,19 @@ const char *WAIT_GetName(void);
 int WAIT_Write_Session(struct sess *sp, int fd);
 
 /* mgt_waiter.c */
-extern struct waiter const * waiter;
+extern struct waiter_impl const * waiter;
 int WAIT_tweak_waiter(struct vsb *vsb, const char *arg);
 
 #if defined(HAVE_EPOLL_CTL)
-extern const struct waiter waiter_epoll;
+extern const struct waiter_impl waiter_epoll;
 #endif
 
 #if defined(HAVE_KQUEUE)
-extern const struct waiter waiter_kqueue;
+extern const struct waiter_impl waiter_kqueue;
 #endif
 
 #if defined(HAVE_PORT_CREATE)
-extern const struct waiter waiter_ports;
+extern const struct waiter_impl waiter_ports;
 #endif
 
-extern const struct waiter waiter_poll;
+extern const struct waiter_impl waiter_poll;

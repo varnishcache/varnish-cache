@@ -272,7 +272,7 @@ vws_init(waiter_handle_f *func)
 
 /*--------------------------------------------------------------------*/
 
-const struct waiter waiter_ports = {
+const struct waiter_impl waiter_ports = {
 	.name =		"ports",
 	.init =		vws_init,
 	.pass =		vws_pass

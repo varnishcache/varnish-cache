@@ -259,7 +259,7 @@ vwe_init(waiter_handle_f *func)
 
 /*--------------------------------------------------------------------*/
 
-const struct waiter waiter_epoll = {
+const struct waiter_impl waiter_epoll = {
 	.name =		"epoll",
 	.init =		vwe_init,
 	.pass =		vwe_pass,

@@ -37,7 +37,7 @@
 
 #include "waiter/waiter.h"
 
-static const struct waiter *const vca_waiters[] = {
+static const struct waiter_impl *const waiter_impls[] = {
     #if defined(HAVE_KQUEUE)
 	&waiter_kqueue,
     #endif
@@ -51,7 +51,7 @@ static const struct waiter *const vca_waiters[] = {
 	NULL,
 };
 
-struct waiter const *waiter;
+struct waiter_impl const *waiter;
 
 int
 WAIT_tweak_waiter(struct vsb *vsb, const char *arg)
@@ -67,19 +67,19 @@ WAIT_tweak_waiter(struct vsb *vsb, const char *arg)
 			VSB_printf(vsb, "%s", waiter->name);
 
 		VSB_printf(vsb, " (possible values: ");
-		for (i = 0; vca_waiters[i] != NULL; i++)
+		for (i = 0; waiter_impls[i] != NULL; i++)
 			VSB_printf(vsb, "%s%s", i == 0 ? "" : ", ",
-			    vca_waiters[i]->name);
+			    waiter_impls[i]->name);
 		VSB_printf(vsb, ")");
 		return(0);
 	}
 	if (!strcmp(arg, WAITER_DEFAULT)) {
-		waiter = vca_waiters[0];
+		waiter = waiter_impls[0];
 		return(0);
 	}
-	for (i = 0; vca_waiters[i]; i++) {
-		if (!strcmp(arg, vca_waiters[i]->name)) {
-			waiter = vca_waiters[i];
+	for (i = 0; waiter_impls[i]; i++) {
+		if (!strcmp(arg, waiter_impls[i]->name)) {
+			waiter = waiter_impls[i];
 			return(0);
 		}
 	}
