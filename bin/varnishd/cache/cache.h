@@ -975,7 +975,6 @@ struct sesspool *SES_NewPool(struct pool *pp, unsigned pool_no);
 void SES_DeletePool(struct sesspool *sp);
 int SES_ScheduleReq(struct req *);
 struct req *SES_GetReq(const struct worker *, struct sess *);
-void SES_Handle(struct sess *sp, double now);
 void SES_ReleaseReq(struct req *);
 pool_func_t SES_pool_accept_task;
 

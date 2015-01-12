@@ -59,6 +59,8 @@ struct vwe {
 	pthread_t		timer_thread;
 	int			epfd;
 
+	waiter_handle_f		*func
+
 	VTAILQ_HEAD(,sess)	sesshead;
 	int			pipes[2];
 	int			timer_pipes[2];
@@ -130,16 +132,16 @@ vwe_eev(struct vwe *vwe, const struct epoll_event *ep, double now)
 		CAST_OBJ_NOTNULL(sp, ep->data.ptr, SESS_MAGIC);
 		if (ep->events & EPOLLIN || ep->events & EPOLLPRI) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			SES_Handle(sp, now);
+			vwe->func(sp, sp->fd, WAITER_ACTION, now)
 		} else if (ep->events & EPOLLERR) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			SES_Delete(sp, SC_REM_CLOSE, now);
+			vwe->func(sp, sp->fd, WAITER_REMCLOSE, now);
 		} else if (ep->events & EPOLLHUP) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			SES_Delete(sp, SC_REM_CLOSE, now);
+			vwe->func(sp, sp->fd, WAITER_REMCLOSE, now);
 		} else if (ep->events & EPOLLRDHUP) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			SES_Delete(sp, SC_REM_CLOSE, now);
+			vwe->func(sp, sp->fd, WAITER_REMCLOSE, now);
 		}
 	}
 }
@@ -192,7 +194,7 @@ vwe_thread(void *priv)
 				break;
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
 			// XXX: not yet VTCP_linger(sp->fd, 0);
-			SES_Delete(sp, SC_RX_TIMEOUT, now);
+			vwe->func(sp, sp->fd, WAITER_TIMEOUT, now);
 		}
 	}
 	return (NULL);
@@ -236,7 +238,7 @@ vwe_init(waiter_handle_f *func)
 {
 	struct vwe *vwe;
 
-	(void)func;
+	AN(func);
 	ALLOC_OBJ(vwe, VWE_MAGIC);
 	AN(vwe);
 	VTAILQ_INIT(&vwe->sesshead);
@@ -246,6 +248,8 @@ vwe_init(waiter_handle_f *func)
 	AZ(VFIL_nonblocking(vwe->pipes[0]));
 	AZ(VFIL_nonblocking(vwe->pipes[1]));
 	AZ(VFIL_nonblocking(vwe->timer_pipes[0]));
+
+	vwe->func = func;
 
 	AZ(pthread_create(&vwe->timer_thread,
 	    NULL, vwe_timeout_idle_ticker, vwe));

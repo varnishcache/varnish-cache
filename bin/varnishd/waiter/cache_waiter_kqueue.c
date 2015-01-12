@@ -52,6 +52,7 @@
 struct vwk {
 	unsigned		magic;
 #define VWK_MAGIC		0x1cc2acc2
+	waiter_handle_f		*func;
 	pthread_t		thread;
 	int			pipes[2];
 	int			kq;
@@ -127,11 +128,11 @@ vwk_sess_ev(struct vwk *vwk, const struct kevent *kp, double now)
 
 	if (kp->data > 0) {
 		VTAILQ_REMOVE(&vwk->sesshead, sp, list);
-		SES_Handle(sp, now);
+		vwk->func(sp, sp->fd, WAITER_ACTION, now);
 		return;
 	} else if (kp->flags & EV_EOF) {
 		VTAILQ_REMOVE(&vwk->sesshead, sp, list);
-		SES_Delete(sp, SC_REM_CLOSE, now);
+		vwk->func(sp, sp->fd, WAITER_REMCLOSE, now);
 		return;
 	} else {
 		VSL(SLT_Debug, sp->vxid,
@@ -207,7 +208,7 @@ vwk_thread(void *priv)
 				break;
 			VTAILQ_REMOVE(&vwk->sesshead, sp, list);
 			// XXX: not yet (void)VTCP_linger(sp->fd, 0);
-			SES_Delete(sp, SC_RX_TIMEOUT, now);
+			vwk->func(sp, sp->fd, WAITER_TIMEOUT, now);
 		}
 	}
 	NEEDLESS_RETURN(NULL);
@@ -232,9 +233,11 @@ vwk_init(waiter_handle_f *func)
 {
 	struct vwk *vwk;
 
-	(void)func;
+	AN(func);
 	ALLOC_OBJ(vwk, VWK_MAGIC);
 	AN(vwk);
+
+	vwk->func = func;
 
 	VTAILQ_INIT(&vwk->sesshead);
 	AZ(pipe(vwk->pipes));

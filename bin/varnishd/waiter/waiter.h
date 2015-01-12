@@ -36,7 +36,7 @@ enum wait_event {
 	WAITER_ACTION
 };
 
-typedef void waiter_handle_f(void *ptr, int fd, enum wait_event);
+typedef void waiter_handle_f(void *ptr, int fd, enum wait_event, double now);
 typedef void* waiter_init_f(waiter_handle_f *);
 typedef int waiter_pass_f(void *priv, struct sess *);
 
@@ -47,6 +47,8 @@ struct waiter {
 	waiter_init_f		*init;
 	waiter_pass_f		*pass;
 };
+
+waiter_handle_f SES_Handle;
 
 /* cache_waiter.c */
 int WAIT_Enter(struct sess *sp);

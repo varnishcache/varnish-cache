@@ -50,6 +50,7 @@
 struct vws {
 	unsigned		magic;
 #define VWS_MAGIC		0x0b771473
+	waiter_handle_f		*func;
 	pthread_t		ports_thread;
 	int			dport;
 	VTAILQ_HEAD(,sess)	sesshead;
@@ -86,7 +87,7 @@ vws_port_ev(struct vws *vws, port_event_t *ev, double now) {
 		if(ev->portev_events & POLLERR) {
 			vws_del(vws, sp->fd);
 			VTAILQ_REMOVE(&vws->sesshead, sp, list);
-			SES_Delete(sp, SC_REM_CLOSE, now);
+			vws->func(sp, sp->fd, WAITER_REMCLOSE);
 			return;
 		}
 
@@ -106,8 +107,8 @@ vws_port_ev(struct vws *vws, port_event_t *ev, double now) {
 		vws_del(vws, sp->fd);
 		VTAILQ_REMOVE(&vws->sesshead, sp, list);
 
-		/* SES_Handle will also handle errors */
-		SES_Handle(sp, now);
+		/* also handle errors */
+		vws->func(sp, sp->fd, WAITER_ACTION);
 	}
 	return;
 }
@@ -211,7 +212,7 @@ vws_thread(void *priv)
 			if(sp->fd != -1) {
 				vws_del(vws, sp->fd);
 			}
-			SES_Delete(sp, SC_RX_TIMEOUT, now);
+			vws->func(sp, sp->fd, WAITER_TIMEOUT);
 		}
 
 		/*
@@ -260,9 +261,10 @@ vws_init(waiter_handle_f *func)
 {
 	struct vws *vws;
 
-	(void)func
+	AN(func);
 	ALLOC_OBJ(vws, VWS_MAGIC);
 	AN(vws);
+	vws->func = func;
 	VTAILQ_INIT(&vws->sesshead);
 	AZ(pthread_create(&vws->ports_thread, NULL, vws_thread, vws));
 	return (vws);

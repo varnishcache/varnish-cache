@@ -45,6 +45,7 @@
 struct vwp {
 	unsigned		magic;
 #define VWP_MAGIC		0x4b2cc735
+	waiter_handle_f		*func;
 	int			pipes[2];
 	pthread_t		poll_thread;
 	struct pollfd		*pollfd;
@@ -159,12 +160,12 @@ vwp_main(void *priv)
 				vwp->pollfd[fd].revents = 0;
 				VTAILQ_REMOVE(&vwp->sesshead, sp, list);
 				vwp_unpoll(vwp, fd);
-				SES_Handle(sp, now);
+				vwp->func(sp, sp->fd, WAITER_ACTION, now);
 			} else if (sp->t_idle <= deadline) {
 				VTAILQ_REMOVE(&vwp->sesshead, sp, list);
 				vwp_unpoll(vwp, fd);
 				// XXX: not yet (void)VTCP_linger(sp->fd, 0);
-				SES_Delete(sp, SC_RX_TIMEOUT, now);
+				vwp->func(sp, sp->fd, WAITER_TIMEOUT, now);
 			}
 		}
 		if (v2 && vwp->pollfd[vwp->pipes[0]].revents) {
@@ -209,11 +210,13 @@ vwp_poll_init(waiter_handle_f *func)
 {
 	struct vwp *vwp;
 
-	(void)func;
+	AN(func);
 	ALLOC_OBJ(vwp, VWP_MAGIC);
 	AN(vwp);
 	VTAILQ_INIT(&vwp->sesshead);
 	AZ(pipe(vwp->pipes));
+
+	vwp->func = func;
 
 	AZ(VFIL_nonblocking(vwp->pipes[1]));
 

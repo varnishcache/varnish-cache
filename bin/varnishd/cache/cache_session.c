@@ -245,19 +245,34 @@ SES_ScheduleReq(struct req *req)
  * Handle a session (from waiter)
  */
 
-void
-SES_Handle(struct sess *sp, double now)
+void __match_proto__(waiter_handle_f)
+SES_Handle(void *ptr, int fd, enum wait_event ev, double now)
 {
+	struct sess *sp;
 	struct sesspool *pp;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	pp = sp->sesspool;
-	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
-	AN(pp->pool);
-	sp->task.func = ses_sess_pool_task;
-	sp->task.priv = sp;
-	if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT))
-		SES_Delete(sp, SC_OVERLOAD, now);
+	CAST_OBJ_NOTNULL(sp, ptr, SESS_MAGIC);
+	(void)fd;
+
+	switch (ev) {
+	case WAITER_TIMEOUT:
+		SES_Delete(sp, SC_RX_TIMEOUT, now);
+		break;
+	case WAITER_REMCLOSE:
+		SES_Delete(sp, SC_REM_CLOSE, now);
+		break;
+	case WAITER_ACTION:
+		pp = sp->sesspool;
+		CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
+		AN(pp->pool);
+		sp->task.func = ses_sess_pool_task;
+		sp->task.priv = sp;
+		if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT))
+			SES_Delete(sp, SC_OVERLOAD, now);
+		break;
+	default:
+		WRONG("Wrong event in SES_Handle");
+	}
 }
 
 /*--------------------------------------------------------------------
