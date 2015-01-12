@@ -132,7 +132,7 @@ vwe_eev(struct vwe *vwe, const struct epoll_event *ep, double now)
 		CAST_OBJ_NOTNULL(sp, ep->data.ptr, SESS_MAGIC);
 		if (ep->events & EPOLLIN || ep->events & EPOLLPRI) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			vwe->func(sp, sp->fd, WAITER_ACTION, now)
+			vwe->func(sp, sp->fd, WAITER_ACTION, now);
 		} else if (ep->events & EPOLLERR) {
 			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
 			vwe->func(sp, sp->fd, WAITER_REMCLOSE, now);

@@ -970,6 +970,7 @@ void VRG_dorange(struct req *req, struct busyobj *bo, const char *r);
 
 /* cache_session.c [SES] */
 void SES_Close(struct sess *sp, enum sess_close reason);
+void SES_Wait(struct sess *sp);
 void SES_Delete(struct sess *sp, enum sess_close reason, double now);
 struct sesspool *SES_NewPool(struct pool *pp, unsigned pool_no);
 void SES_DeletePool(struct sesspool *sp);

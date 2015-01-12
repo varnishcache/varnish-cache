@@ -48,11 +48,9 @@ struct waiter {
 	waiter_pass_f		*pass;
 };
 
-waiter_handle_f SES_Handle;
-
 /* cache_waiter.c */
-int WAIT_Enter(struct sess *sp);
-void WAIT_Init(waiter_handle_f *);
+int WAIT_Enter(void *waiter_priv, struct sess *sp);
+void *WAIT_Init(waiter_handle_f *);
 const char *WAIT_GetName(void);
 int WAIT_Write_Session(struct sess *sp, int fd);
 

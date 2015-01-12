@@ -38,8 +38,6 @@
 
 #include "waiter/waiter.h"
 
-static void *waiter_priv;
-
 const char *
 WAIT_GetName(void)
 {
@@ -50,7 +48,7 @@ WAIT_GetName(void)
 		return ("no_waiter");
 }
 
-void
+void *
 WAIT_Init(waiter_handle_f *func)
 {
 
@@ -58,11 +56,11 @@ WAIT_Init(waiter_handle_f *func)
 	AN(waiter->name);
 	AN(waiter->init);
 	AN(waiter->pass);
-	waiter_priv = waiter->init(func);
+	return (waiter->init(func));
 }
 
 int
-WAIT_Enter(struct sess *sp)
+WAIT_Enter(void *waiter_priv, struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);

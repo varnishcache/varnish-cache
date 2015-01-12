@@ -44,7 +44,6 @@
 #include "vcl.h"
 #include "vtcp.h"
 #include "vtim.h"
-#include "waiter/waiter.h"
 
 /*----------------------------------------------------------------------
  * Collect a request from the client.
@@ -113,11 +112,8 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 				SES_ReleaseReq(req);
 				if (VTCP_nonblocking(sp->fd))
 					SES_Close(sp, SC_REM_CLOSE);
-				else if (WAIT_Enter(sp)) {
-					VSC_C_main->sess_pipe_overflow++;
-					SES_Delete(sp, SC_SESS_PIPE_OVERFLOW,
-					    NAN);
-				}
+				else
+					SES_Wait(sp);
 				return (REQ_FSM_DONE);
 			}
 		} else {
