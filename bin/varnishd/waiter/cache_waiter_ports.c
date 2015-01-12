@@ -87,7 +87,7 @@ vws_port_ev(struct vws *vws, port_event_t *ev, double now) {
 		if(ev->portev_events & POLLERR) {
 			vws_del(vws, sp->fd);
 			VTAILQ_REMOVE(&vws->sesshead, sp, list);
-			vws->func(sp, sp->fd, WAITER_REMCLOSE);
+			vws->func(sp, sp->fd, WAITER_REMCLOSE, now);
 			return;
 		}
 
@@ -108,7 +108,7 @@ vws_port_ev(struct vws *vws, port_event_t *ev, double now) {
 		VTAILQ_REMOVE(&vws->sesshead, sp, list);
 
 		/* also handle errors */
-		vws->func(sp, sp->fd, WAITER_ACTION);
+		vws->func(sp, sp->fd, WAITER_ACTION, now);
 	}
 	return;
 }
@@ -212,7 +212,7 @@ vws_thread(void *priv)
 			if(sp->fd != -1) {
 				vws_del(vws, sp->fd);
 			}
-			vws->func(sp, sp->fd, WAITER_TIMEOUT);
+			vws->func(sp, sp->fd, WAITER_TIMEOUT, now);
 		}
 
 		/*
