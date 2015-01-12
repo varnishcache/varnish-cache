@@ -233,12 +233,13 @@ vwe_pass(void *priv, struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
-static void *
-vwe_init(waiter_handle_f *func)
+static void * __match_proto__(waiter_init_f)
+vwe_init(waiter_handle_f *func, int *pfd)
 {
 	struct vwe *vwe;
 
 	AN(func);
+	AN(pfd);
 	ALLOC_OBJ(vwe, VWE_MAGIC);
 	AN(vwe);
 	VTAILQ_INIT(&vwe->sesshead);

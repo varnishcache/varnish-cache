@@ -44,6 +44,7 @@ struct waiter {
 #define WAITER_MAGIC			0x17c399db
 	const struct waiter_impl	*impl;
 	void				*priv;
+	int				pfd;
 };
 
 const char *
@@ -63,13 +64,14 @@ WAIT_Init(waiter_handle_f *func)
 
 	ALLOC_OBJ(w, WAITER_MAGIC);
 	AN(w);
+	w->pfd = -1;
 
 	AN(waiter);
 	AN(waiter->name);
 	AN(waiter->init);
-	AN(waiter->pass);
 	w->impl = waiter;
-	w->priv = w->impl->init(func);
+	w->priv = w->impl->init(func, &w->pfd);
+	AN(waiter->pass || w->pfd >= 0);
 	return (w);
 }
 

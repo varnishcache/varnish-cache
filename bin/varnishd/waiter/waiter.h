@@ -38,7 +38,7 @@ enum wait_event {
 };
 
 typedef void waiter_handle_f(void *ptr, int fd, enum wait_event, double now);
-typedef void* waiter_init_f(waiter_handle_f *);
+typedef void* waiter_init_f(waiter_handle_f *, int *);
 typedef int waiter_pass_f(void *priv, struct sess *);
 
 #define WAITER_DEFAULT		"platform dependent"

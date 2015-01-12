@@ -205,12 +205,13 @@ vwp_poll_pass(void *priv, struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
-static void *
-vwp_poll_init(waiter_handle_f *func)
+static void * __match_proto__(waiter_init_f)
+vwp_poll_init(waiter_handle_f *func, int *pfd)
 {
 	struct vwp *vwp;
 
 	AN(func);
+	AN(pfd);
 	ALLOC_OBJ(vwp, VWP_MAGIC);
 	AN(vwp);
 	VTAILQ_INIT(&vwp->sesshead);

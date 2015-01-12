@@ -256,12 +256,13 @@ vws_pass(void *priv, struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
-static void *
-vws_init(waiter_handle_f *func)
+static void * __match_proto__(waiter_init_f)
+vws_init(waiter_handle_f *func, int *pfd)
 {
 	struct vws *vws;
 
 	AN(func);
+	AN(pfd);
 	ALLOC_OBJ(vws, VWS_MAGIC);
 	AN(vws);
 	vws->func = func;
