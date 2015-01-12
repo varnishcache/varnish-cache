@@ -50,7 +50,7 @@ struct waiter_impl {
 };
 
 /* cache_waiter.c */
-int WAIT_Enter(const struct waiter *, struct sess *sp);
+int WAIT_Enter(const struct waiter *, void *ptr, int fd);
 struct waiter *WAIT_Init(waiter_handle_f *);
 const char *WAIT_GetName(void);
 int WAIT_Write_Session(struct sess *sp, int fd);

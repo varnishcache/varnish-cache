@@ -288,7 +288,7 @@ SES_Wait(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->sesspool;
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
-	if (WAIT_Enter(pp->http1_waiter, sp)) {
+	if (WAIT_Enter(pp->http1_waiter, sp, sp->fd)) {
 		VSC_C_main->sess_pipe_overflow++;
 		SES_Delete(sp, SC_SESS_PIPE_OVERFLOW, NAN);
 	}

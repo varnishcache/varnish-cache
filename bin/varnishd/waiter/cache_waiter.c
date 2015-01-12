@@ -74,11 +74,13 @@ WAIT_Init(waiter_handle_f *func)
 }
 
 int
-WAIT_Enter(const struct waiter *w, struct sess *sp)
+WAIT_Enter(const struct waiter *w, void *ptr, int fd)
 {
+	struct sess *sp;
 
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CAST_OBJ_NOTNULL(sp, ptr, SESS_MAGIC);
+	assert(fd >= 0);
 	assert(sp->fd >= 0);
 
 	return (w->impl->pass(w->priv, sp));
