@@ -75,18 +75,11 @@ vwe_modadd(struct vwe *vwe, int fd, void *data, short arm)
 	 * XXX: will hang. See #644.
 	 */
 	assert(fd >= 0);
-	if (data == vwe->pipes || data == vwe->timer_pipes) {
-		struct epoll_event ev = {
-		    EPOLLIN | EPOLLPRI , { data }
-		};
-		AZ(epoll_ctl(vwe->epfd, arm, fd, &ev));
-	} else {
-		struct waited *sp = (struct waited *)data;
-		CHECK_OBJ_NOTNULL(sp, WAITED_MAGIC);
-		sp->ev.data.ptr = data;
-		sp->ev.events = EPOLLIN | EPOLLPRI | EPOLLONESHOT | EPOLLRDHUP;
-		AZ(epoll_ctl(vwe->epfd, arm, fd, &sp->ev));
-	}
+	assert(data == vwe->pipes || data == vwe->timer_pipes);
+	struct epoll_event ev = {
+	    EPOLLIN | EPOLLPRI , { data }
+	};
+	AZ(epoll_ctl(vwe->epfd, arm, fd, &ev));
 }
 
 static void

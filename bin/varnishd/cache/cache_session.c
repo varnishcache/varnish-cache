@@ -288,7 +288,11 @@ SES_Wait(struct sess *sp)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->sesspool;
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
-	INIT_OBJ(&sp->waited, WAITED_MAGIC);
+	/*
+	 * XXX: waiter_epoll prevents us from zeroing the struct because
+	 * XXX: it keeps state across calls.
+	 */
+	sp->waited.magic = WAITED_MAGIC;
 	sp->waited.fd = sp->fd;
 	sp->waited.ptr = sp;
 	sp->waited.deadline = sp->t_idle;
