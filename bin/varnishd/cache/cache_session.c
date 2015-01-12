@@ -59,6 +59,8 @@ struct sesspool {
 	struct pool		*pool;
 	struct mempool		*mpl_req;
 	struct mempool		*mpl_sess;
+
+	void			*http1_waiter;
 };
 
 /*--------------------------------------------------------------------
@@ -245,7 +247,7 @@ SES_ScheduleReq(struct req *req)
  * Handle a session (from waiter)
  */
 
-void __match_proto__(waiter_handle_f)
+static void __match_proto__(waiter_handle_f)
 SES_Handle(void *ptr, int fd, enum wait_event ev, double now)
 {
 	struct sess *sp;
@@ -272,6 +274,23 @@ SES_Handle(void *ptr, int fd, enum wait_event ev, double now)
 		break;
 	default:
 		WRONG("Wrong event in SES_Handle");
+	}
+}
+
+/*--------------------------------------------------------------------
+ */
+
+void
+SES_Wait(struct sess *sp)
+{
+	struct sesspool *pp;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	pp = sp->sesspool;
+	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
+	if (WAIT_Enter(pp->http1_waiter, sp)) {
+		VSC_C_main->sess_pipe_overflow++;
+		SES_Delete(sp, SC_SESS_PIPE_OVERFLOW, NAN);
 	}
 }
 
@@ -440,6 +459,7 @@ SES_NewPool(struct pool *wp, unsigned pool_no)
 	bprintf(nb, "sess%u", pool_no);
 	pp->mpl_sess = MPL_New(nb, &cache_param->sess_pool,
 	    &cache_param->workspace_session);
+	pp->http1_waiter = WAIT_Init(SES_Handle);
 	return (pp);
 }
 
