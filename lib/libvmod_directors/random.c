@@ -46,7 +46,6 @@ struct vmod_directors_random {
 #define VMOD_DIRECTORS_RANDOM_MAGIC		0x4732d092
 	struct vdir				*vd;
 	unsigned				n_backend;
-	struct vbitmap				*vbm;
 };
 
 static unsigned __match_proto__(vdi_healthy)
@@ -88,8 +87,6 @@ vmod_random__init(VRT_CTX, struct vmod_directors_random **rrp,
 	AZ(*rrp);
 	ALLOC_OBJ(rr, VMOD_DIRECTORS_RANDOM_MAGIC);
 	AN(rr);
-	rr->vbm = vbit_init(8);
-	AN(rr->vbm);
 	*rrp = rr;
 	vdir_new(&rr->vd, vcl_name, vmod_random_healthy, vmod_random_resolve,
 	    rr);
@@ -104,7 +101,6 @@ vmod_random__fini(struct vmod_directors_random **rrp)
 	*rrp = NULL;
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_RANDOM_MAGIC);
 	vdir_delete(&rr->vd);
-	vbit_destroy(rr->vbm);
 	FREE_OBJ(rr);
 }
 
