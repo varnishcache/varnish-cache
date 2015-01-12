@@ -120,7 +120,7 @@ mcf_panic(struct cli *cli, const char * const *av, void *priv)
 
 static struct cli_proto cli_debug[] = {
 	{ "debug.panic.master", "debug.panic.master",
-		"\tPanic the master process.\n",
+		"\tPanic the master process.",
 		0, 0, "d", mcf_panic, NULL},
 	{ NULL }
 };

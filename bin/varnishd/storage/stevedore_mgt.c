@@ -70,7 +70,7 @@ stv_cli_list(struct cli *cli, const char * const *av, void *priv)
 /*--------------------------------------------------------------------*/
 
 struct cli_proto cli_stv[] = {
-	{ "storage.list", "storage.list", "List storage devices\n",
+	{ "storage.list", "storage.list", "\tList storage devices.",
 	    0, 0, "", stv_cli_list },
 	{ NULL}
 };

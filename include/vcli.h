@@ -122,7 +122,7 @@
 #define CLI_SERVER_STOP							\
 	"stop",								\
 	"stop",								\
-	"\tStop the Varnish cache process",				\
+	"\tStop the Varnish cache process.",				\
 	0, 0
 
 #define CLI_SERVER_START						\
@@ -133,20 +133,20 @@
 
 #define CLI_PING							\
 	"ping",								\
-	"ping [timestamp]",						\
-	"\tKeep connection alive",					\
+	"ping [<timestamp>]",						\
+	"\tKeep connection alive.",					\
 	0, 1
 
 #define CLI_HELP							\
 	"help",								\
-	"help [command]",						\
-	"\tShow command/protocol help",					\
+	"help [<command>]",						\
+	"\tShow command/protocol help.",				\
 	0, 1
 
 #define CLI_QUIT							\
 	"quit",								\
 	"quit",								\
-	"\tClose connection",						\
+	"\tClose connection.",						\
 	0, 0
 
 #define CLI_SERVER_STATUS						\
@@ -163,7 +163,7 @@
 
 #define CLI_AUTH							\
 	"auth",								\
-	"auth response",						\
+	"auth <response>",						\
 	"\tAuthenticate.",						\
 	1, 1
 

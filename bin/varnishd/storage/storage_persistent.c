@@ -668,12 +668,11 @@ debug_persistent(struct cli *cli, const char * const * av, void *priv)
 static struct cli_proto debug_cmds[] = {
 	{ "debug.persistent", "debug.persistent",
 		"Persistent debugging magic:\n"
-		"\tdebug.persistent [stevedore [cmd]]\n"
+		"\tdebug.persistent [<stevedore> [<cmd>]]\n"
 		"With no cmd arg, a summary of the silo is returned.\n"
 		"Possible commands:\n"
 		"\tsync\tClose current segment, open a new one\n"
-		"\tdump\tinclude objcores in silo summary\n"
-		"",
+		"\tdump\tinclude objcores in silo summary",
 		0, 2, "d", debug_persistent },
 	{ NULL }
 };

@@ -343,7 +343,7 @@ hcb_dump(struct cli *cli, const char * const *av, void *priv)
 }
 
 static struct cli_proto hcb_cmds[] = {
-	{ "hcb.dump", "hcb.dump", "dump HCB tree\n", 0, 0, "d", hcb_dump },
+	{ "hcb.dump", "hcb.dump", "\tDump HCB tree.", 0, 0, "d", hcb_dump },
 	{ NULL }
 };
 

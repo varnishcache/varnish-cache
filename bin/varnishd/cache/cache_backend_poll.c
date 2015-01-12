@@ -430,7 +430,7 @@ vbp_health(struct cli *cli, const char * const *av, void *priv)
 
 static struct cli_proto debug_cmds[] = {
 	{ "debug.health", "debug.health",
-		"\tDump backend health stuff\n",
+		"\tDump backend health information.",
 		0, 0, "d", vbp_health },
 	{ NULL }
 };
