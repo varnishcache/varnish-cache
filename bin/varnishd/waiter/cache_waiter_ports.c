@@ -221,7 +221,7 @@ vws_thread(void *priv)
 
 		if (sp) {
 			double tmo =
-			    (sp->t_idle + cache_param->timeout_idle) - now;
+			    (sp->deadline + cache_param->timeout_idle) - now;
 
 			if (tmo < min_t) {
 				timeout = &min_ts;
