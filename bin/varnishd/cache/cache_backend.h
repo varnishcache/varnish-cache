@@ -88,7 +88,7 @@ struct vbc {
 #define VBC_MAGIC		0x0c5e6592
 	VTAILQ_ENTRY(vbc)	list;
 	struct backend		*backend;
-	struct vbe_dir	*vdis;
+	struct vbe_dir		*vdis;
 	int			fd;
 
 	struct suckaddr		*addr;

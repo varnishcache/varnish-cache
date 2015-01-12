@@ -503,7 +503,7 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 
 void
 VRT_init_vbe(VRT_CTX, struct director **bp, int idx,
-    const struct vrt_backend *t)
+    const struct vrt_backend *vrt)
 {
 	struct vbe_dir *vs;
 
@@ -515,16 +515,16 @@ VRT_init_vbe(VRT_CTX, struct director **bp, int idx,
 	vs->dir.magic = DIRECTOR_MAGIC;
 	vs->dir.priv = vs;
 	vs->dir.name = "simple";
-	REPLACE(vs->dir.vcl_name, t->vcl_name);
+	REPLACE(vs->dir.vcl_name, vrt->vcl_name);
 	vs->dir.http1pipe = vbe_dir_http1pipe;
 	vs->dir.healthy = vbe_dir_healthy;
 	vs->dir.gethdrs = vbe_dir_gethdrs;
 	vs->dir.getbody = vbe_dir_getbody;
 	vs->dir.finish = vbe_dir_finish;
 
-	vs->vrt = t;
+	vs->vrt = vrt;
 
-	vs->backend = VBE_AddBackend(NULL, t);
+	vs->backend = VBE_AddBackend(NULL, vrt);
 	if (vs->vrt->probe != NULL)
 		VBP_Insert(vs->backend, vs->vrt->probe, vs->vrt->hosthdr);
 
