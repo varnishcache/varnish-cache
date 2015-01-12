@@ -221,18 +221,6 @@ vwe_timeout_idle_ticker(void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static int
-vwe_pass(void *priv, struct sess *sp)
-{
-	struct vwe *vwe;
-
-	CAST_OBJ_NOTNULL(vwe, priv, VWE_MAGIC);
-
-	return (WAIT_Write_Session(sp, vwe->pipes[1]));
-}
-
-/*--------------------------------------------------------------------*/
-
 static void * __match_proto__(waiter_init_f)
 vwe_init(waiter_handle_f *func, int *pfd)
 {
@@ -251,6 +239,7 @@ vwe_init(waiter_handle_f *func, int *pfd)
 	AZ(VFIL_nonblocking(vwe->timer_pipes[0]));
 
 	vwe->func = func;
+	*pfd = vwe->pipes[1];
 
 	AZ(pthread_create(&vwe->timer_thread,
 	    NULL, vwe_timeout_idle_ticker, vwe));

@@ -85,7 +85,10 @@ WAIT_Enter(const struct waiter *w, void *ptr, int fd)
 	assert(fd >= 0);
 	assert(sp->fd >= 0);
 
-	return (w->impl->pass(w->priv, sp));
+	if (w->impl->pass != NULL)
+		return (w->impl->pass(w->priv, sp));
+	assert(w->pfd >= 0);
+	return (WAIT_Write_Session(sp, w->pfd));
 }
 
 /*

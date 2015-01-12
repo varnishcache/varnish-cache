@@ -216,18 +216,6 @@ vwk_thread(void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static int
-vwk_pass(void *priv, struct sess *sp)
-{
-	struct vwk *vwk;
-
-	CAST_OBJ_NOTNULL(vwk, priv, VWK_MAGIC);
-
-	return (WAIT_Write_Session(sp, vwk->pipes[1]));
-}
-
-/*--------------------------------------------------------------------*/
-
 static void * __match_proto__(waiter_init_f)
 vwk_init(waiter_handle_f *func, int *pfd)
 {
@@ -245,6 +233,7 @@ vwk_init(waiter_handle_f *func, int *pfd)
 
 	AZ(VFIL_nonblocking(vwk->pipes[0]));
 	AZ(VFIL_nonblocking(vwk->pipes[1]));
+	*pfd = vwk->pipes[1];
 
 	AZ(pthread_create(&vwk->thread, NULL, vwk_thread, vwk));
 	return (vwk);
@@ -255,7 +244,6 @@ vwk_init(waiter_handle_f *func, int *pfd)
 const struct waiter_impl waiter_kqueue = {
 	.name =		"kqueue",
 	.init =		vwk_init,
-	.pass =		vwk_pass,
 };
 
 #endif /* defined(HAVE_KQUEUE) */

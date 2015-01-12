@@ -193,18 +193,6 @@ vwp_main(void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static int
-vwp_poll_pass(void *priv, struct sess *sp)
-{
-	struct vwp *vwp;
-
-	CAST_OBJ_NOTNULL(vwp, priv, VWP_MAGIC);
-
-	return (WAIT_Write_Session(sp, vwp->pipes[1]));
-}
-
-/*--------------------------------------------------------------------*/
-
 static void * __match_proto__(waiter_init_f)
 vwp_poll_init(waiter_handle_f *func, int *pfd)
 {
@@ -220,6 +208,7 @@ vwp_poll_init(waiter_handle_f *func, int *pfd)
 	vwp->func = func;
 
 	AZ(VFIL_nonblocking(vwp->pipes[1]));
+	*pfd = vwp->pipes[1];
 
 	vwp_pollspace(vwp, 256);
 	AZ(pthread_create(&vwp->poll_thread, NULL, vwp_main, vwp));
@@ -231,5 +220,4 @@ vwp_poll_init(waiter_handle_f *func, int *pfd)
 const struct waiter_impl waiter_poll = {
 	.name =		"poll",
 	.init =		vwp_poll_init,
-	.pass =		vwp_poll_pass,
 };
