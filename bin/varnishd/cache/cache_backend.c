@@ -85,49 +85,13 @@ VBE_ReleaseConn(struct vbc *vc)
 			dst = cache_param->tmx;				\
 	} while (0)
 
-/*--------------------------------------------------------------------
- * Attempt to connect to a given addrinfo entry.
- *
- * Must be called with locked backend, but will release the backend
- * lock during the slow/sleeping stuff, so that other worker threads
- * can have a go, while we ponder.
- *
- */
-
-static int
-vbe_TryConnect(const struct busyobj *bo, int pf,
-    const struct suckaddr *sa, const struct vbe_dir *vs)
-{
-	int s, i, tmo;
-	double tmod;
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
-
-	s = socket(pf, SOCK_STREAM, 0);
-	if (s < 0)
-		return (s);
-
-	FIND_TMO(connect_timeout, tmod, bo, vs->vrt);
-
-	tmo = (int)(tmod * 1000.0);
-
-	i = VTCP_connect(s, sa, tmo);
-
-	if (i != 0) {
-		AZ(close(s));
-		return (-1);
-	}
-
-	return (s);
-}
-
 /*--------------------------------------------------------------------*/
 
 static void
 bes_conn_try(struct busyobj *bo, struct vbc *vc, const struct vbe_dir *vs)
 {
-	int s;
+	int s, msec;
+	double tmod;
 	struct backend *bp = vs->backend;
 	char abuf1[VTCP_ADDRBUFSIZE];
 	char pbuf1[VTCP_PORTBUFSIZE];
@@ -146,16 +110,19 @@ bes_conn_try(struct busyobj *bo, struct vbc *vc, const struct vbe_dir *vs)
 
 	/* release lock during stuff that can take a long time */
 
+	FIND_TMO(connect_timeout, tmod, bo, vs->vrt);
+	msec = (int)floor(tmod * 1000.0);
+
 	if (cache_param->prefer_ipv6 && bp->ipv6 != NULL) {
-		s = vbe_TryConnect(bo, PF_INET6, bp->ipv6, vs);
+		s = VTCP_connect(bp->ipv6, msec);
 		vc->addr = bp->ipv6;
 	}
 	if (s == -1 && bp->ipv4 != NULL) {
-		s = vbe_TryConnect(bo, PF_INET, bp->ipv4, vs);
+		s = VTCP_connect(bp->ipv4, msec);
 		vc->addr = bp->ipv4;
 	}
 	if (s == -1 && !cache_param->prefer_ipv6 && bp->ipv6 != NULL) {
-		s = vbe_TryConnect(bo, PF_INET6, bp->ipv6, vs);
+		s = VTCP_connect(bp->ipv6, msec);
 		vc->addr = bp->ipv6;
 	}
 

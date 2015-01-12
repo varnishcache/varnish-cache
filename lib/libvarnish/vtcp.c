@@ -212,26 +212,37 @@ VTCP_nonblocking(int sock)
  */
 
 int
-VTCP_connect(int s, const struct suckaddr *name, int msec)
+VTCP_connect(const struct suckaddr *name, int msec)
 {
-	int i, k;
+	int s, i, k;
 	socklen_t l;
 	struct pollfd fds[1];
 	const struct sockaddr *sa;
 	socklen_t sl;
 
-	assert(s >= 0);
+	if (name == NULL)
+		return (-1);
+	/* Attempt the connect */
+	AN(VSA_Sane(name));
+	sa = VSA_Get_Sockaddr(name, &sl);
+	AN(sa);
+	AN(sl);
+
+	s = socket(sa->sa_family, SOCK_STREAM, 0);
+	if (s < 0)
+		return (s);
 
 	/* Set the socket non-blocking */
 	if (msec > 0)
 		(void)VTCP_nonblocking(s);
 
-	/* Attempt the connect */
-	AN(VSA_Sane(name));
-	sa = VSA_Get_Sockaddr(name, &sl);
 	i = connect(s, sa, sl);
-	if (i == 0 || errno != EINPROGRESS)
-		return (i);
+	if (i == 0)
+		return (s);
+	if (errno != EINPROGRESS) {
+		AZ(close(s));
+		return (-1);
+	}
 
 	assert(msec > 0);
 	/* Exercise our patience, polling for write */
@@ -242,6 +253,7 @@ VTCP_connect(int s, const struct suckaddr *name, int msec)
 
 	if (i == 0) {
 		/* Timeout, close and give up */
+		AZ(close(s));
 		errno = ETIMEDOUT;
 		return (-1);
 	}
@@ -252,11 +264,13 @@ VTCP_connect(int s, const struct suckaddr *name, int msec)
 
 	/* An error means no connection established */
 	errno = k;
-	if (k)
+	if (k) {
+		AZ(close(s));
 		return (-1);
+	}
 
 	(void)VTCP_blocking(s);
-	return (0);
+	return (s);
 }
 
 /*--------------------------------------------------------------------

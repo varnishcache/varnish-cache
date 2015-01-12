@@ -69,7 +69,7 @@ int VTCP_check_hup(int sock);
 #ifdef SOL_SOCKET
 void VTCP_name(const struct suckaddr *addr, char *abuf, unsigned alen,
     char *pbuf, unsigned plen);
-int VTCP_connect(int s, const struct suckaddr *name, int msec);
+int VTCP_connect(const struct suckaddr *name, int msec);
 void VTCP_close(int *s);
 void VTCP_set_read_timeout(int s, double seconds);
 #endif

@@ -104,22 +104,6 @@ static struct lock			vbp_mtx;
  * want to measure the backends response without local distractions.
  */
 
-static int
-vbp_connect(int pf, const struct suckaddr *sa, int tmo)
-{
-	int s, i;
-
-	s = socket(pf, SOCK_STREAM, 0);
-	if (s < 0)
-		return (s);
-
-	i = VTCP_connect(s, sa, tmo);
-	if (i == 0)
-		return (s);
-	VTCP_close(&s);
-	return (-1);
-}
-
 static void
 vbp_poke(struct vbp_target *vt)
 {
@@ -139,21 +123,21 @@ vbp_poke(struct vbp_target *vt)
 
 	s = -1;
 	if (cache_param->prefer_ipv6 && bp->ipv6 != NULL) {
-		s = vbp_connect(PF_INET6, bp->ipv6, tmo);
+		s = VTCP_connect(bp->ipv6, tmo);
 		t_now = VTIM_real();
 		tmo = (int)round((t_end - t_now) * 1e3);
 		if (s >= 0)
 			vt->good_ipv6 |= 1;
 	}
 	if (tmo > 0 && s < 0 && bp->ipv4 != NULL) {
-		s = vbp_connect(PF_INET, bp->ipv4, tmo);
+		s = VTCP_connect(bp->ipv4, tmo);
 		t_now = VTIM_real();
 		tmo = (int)round((t_end - t_now) * 1e3);
 		if (s >= 0)
 			vt->good_ipv4 |= 1;
 	}
 	if (tmo > 0 && s < 0 && bp->ipv6 != NULL) {
-		s = vbp_connect(PF_INET6, bp->ipv6, tmo);
+		s = VTCP_connect(bp->ipv6, tmo);
 		t_now = VTIM_real();
 		tmo = (int)round((t_end - t_now) * 1e3);
 		if (s >= 0)
