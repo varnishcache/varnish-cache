@@ -394,6 +394,9 @@ struct waited {
 	int			fd;
 	void			*ptr;
 	double			deadline;
+#if defined(HAVE_EPOLL_CTL)
+	struct epoll_event ev;
+#endif
 };
 
 /* Stored object -----------------------------------------------------
@@ -686,9 +689,6 @@ struct sess {
 
 	struct vrt_privs	privs[1];
 
-#if defined(HAVE_EPOLL_CTL)
-	struct epoll_event ev;
-#endif
 };
 
 /* Prototypes etc ----------------------------------------------------*/

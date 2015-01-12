@@ -252,7 +252,6 @@ vwe_init(waiter_handle_f *func, int *pfd)
 const struct waiter_impl waiter_epoll = {
 	.name =		"epoll",
 	.init =		vwe_init,
-	.pass =		vwe_pass,
 };
 
 #endif /* defined(HAVE_EPOLL_CTL) */
