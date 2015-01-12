@@ -232,10 +232,11 @@ vwe_pass(void *priv, struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static void *
-vwe_init(void)
+vwe_init(waiter_handle_f *func)
 {
 	struct vwe *vwe;
 
+	(void)func;
 	ALLOC_OBJ(vwe, VWE_MAGIC);
 	AN(vwe);
 	VTAILQ_INIT(&vwe->sesshead);

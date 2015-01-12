@@ -228,10 +228,11 @@ vwk_pass(void *priv, struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static void *
-vwk_init(void)
+vwk_init(waiter_handle_f *func)
 {
 	struct vwk *vwk;
 
+	(void)func;
 	ALLOC_OBJ(vwk, VWK_MAGIC);
 	AN(vwk);
 

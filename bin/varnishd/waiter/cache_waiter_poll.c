@@ -205,10 +205,11 @@ vwp_poll_pass(void *priv, struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static void *
-vwp_poll_init(void)
+vwp_poll_init(waiter_handle_f *func)
 {
 	struct vwp *vwp;
 
+	(void)func;
 	ALLOC_OBJ(vwp, VWP_MAGIC);
 	AN(vwp);
 	VTAILQ_INIT(&vwp->sesshead);

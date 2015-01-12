@@ -256,10 +256,11 @@ vws_pass(void *priv, struct sess *sp)
 /*--------------------------------------------------------------------*/
 
 static void *
-vws_init(void)
+vws_init(waiter_handle_f *func)
 {
 	struct vws *vws;
 
+	(void)func
 	ALLOC_OBJ(vws, VWS_MAGIC);
 	AN(vws);
 	VTAILQ_INIT(&vws->sesshead);

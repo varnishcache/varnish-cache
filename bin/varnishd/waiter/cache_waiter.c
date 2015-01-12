@@ -51,14 +51,14 @@ WAIT_GetName(void)
 }
 
 void
-WAIT_Init(void)
+WAIT_Init(waiter_handle_f *func)
 {
 
 	AN(waiter);
 	AN(waiter->name);
 	AN(waiter->init);
 	AN(waiter->pass);
-	waiter_priv = waiter->init();
+	waiter_priv = waiter->init(func);
 }
 
 int
