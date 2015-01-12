@@ -223,10 +223,10 @@ static struct cli_proto master_cmds[] = {
 	{ CLI_PING,		"i", VCLS_func_ping },
 	{ CLI_HELP,             "i", VCLS_func_help },
 	{ "debug.sizeof", "debug.sizeof",
-		"\tDump sizeof various data structures\n",
+		"\tDump sizeof various data structures.",
 		0, 0, "d", cli_debug_sizeof },
 	{ "debug.panic.worker", "debug.panic.worker",
-		"\tPanic the worker process.\n",
+		"\tPanic the worker process.",
 		0, 0, "d", ccf_panic },
 	{ NULL }
 };

@@ -179,7 +179,7 @@ ccf_debug_vmod(struct cli *cli, const char * const *av, void *priv)
 }
 
 static struct cli_proto vcl_cmds[] = {
-	{ "debug.vmod", "debug.vmod", "show loaded vmods", 0, 0,
+	{ "debug.vmod", "debug.vmod", "\tShow loaded vmods.", 0, 0,
 		"d", ccf_debug_vmod },
 	{ NULL }
 };

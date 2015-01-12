@@ -286,7 +286,7 @@ debug_fragfetch(struct cli *cli, const char * const *av, void *priv)
 
 static struct cli_proto debug_cmds[] = {
 	{ "debug.fragfetch", "debug.fragfetch",
-		"\tEnable fetch fragmentation\n", 1, 1, "d", debug_fragfetch },
+		"\tEnable fetch fragmentation.", 1, 1, "d", debug_fragfetch },
 	{ NULL }
 };
 

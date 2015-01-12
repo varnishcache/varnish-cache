@@ -170,9 +170,9 @@ cli_debug_srandom(struct cli *cli, const char * const *av, void *priv)
 
 static struct cli_proto debug_cmds[] = {
 	{ "debug.xid", "debug.xid",
-		"\tExamine or set XID\n", 0, 1, "d", cli_debug_xid },
+		"\tExamine or set XID.", 0, 1, "d", cli_debug_xid },
 	{ "debug.srandom", "debug.srandom",
-		"\tSeed the random(3) function\n", 0, 1, "d",
+		"\tSeed the random(3) function.", 0, 1, "d",
 		cli_debug_srandom },
 	{ NULL }
 };
