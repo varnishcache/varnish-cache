@@ -49,4 +49,4 @@ void vdir_unlock(struct vdir *vd);
 unsigned vdir_add_backend(struct vdir *, VCL_BACKEND be, double weight);
 unsigned vdir_any_healthy(struct vdir *, const struct busyobj *,
     double *changed);
-VCL_BACKEND vdir_pick_be(struct vdir *, double w, unsigned nloops);
+VCL_BACKEND vdir_pick_be(struct vdir *, double w);

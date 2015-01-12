@@ -47,7 +47,6 @@ struct vmod_directors_hash {
 	unsigned				magic;
 #define VMOD_DIRECTORS_HASH_MAGIC		0xc08dd611
 	struct vdir				*vd;
-	unsigned				n_backend;
 	struct vbitmap				*vbm;
 };
 
@@ -89,7 +88,6 @@ vmod_hash_add_backend(VRT_CTX,
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_HASH_MAGIC);
 	(void)vdir_add_backend(rr->vd, be, w);
-	rr->n_backend++;
 }
 
 VCL_BACKEND __match_proto__()
@@ -120,6 +118,6 @@ vmod_hash_backend(VRT_CTX, struct vmod_directors_hash *rr,
 	r = vbe32dec(sha256);
 	r = scalbn(r, -32);
 	assert(r >= 0 && r <= 1.0);
-	be = vdir_pick_be(rr->vd, r, rr->n_backend);
+	be = vdir_pick_be(rr->vd, r);
 	return (be);
 }

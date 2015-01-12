@@ -175,33 +175,25 @@ vdir_pick_by_weight(const struct vdir *vd, double w,
 }
 
 VCL_BACKEND
-vdir_pick_be(struct vdir *vd, double w, unsigned nloops)
+vdir_pick_be(struct vdir *vd, double w)
 {
-	struct vbitmap *vbm = NULL;
-	unsigned u, v, l;
+	unsigned u;
+	double tw = 0.0;
 	VCL_BACKEND be = NULL;
-	double tw;
-	int nbe;
 
-	tw = vd->total_weight;
-	nbe = vd->n_backend;
-	assert(w >= 0.0 && w < 1.0);
 	vdir_lock(vd);
-	for (l = 0; nbe > 0 && tw > 0.0 && l < nloops; l++) {
-		u = vdir_pick_by_weight(vd, w * tw, vbm);
+	for (u = 0; u < vd->n_backend; u++) {
+		if (vd->backend[u]->healthy(vd->backend[u], NULL, NULL)) {
+			vbit_clr(vd->vbm, u);
+			tw += vd->weight[u];
+		} else
+			vbit_set(vd->vbm, u);
+	}
+	if (tw > 0.0) {
+		u = vdir_pick_by_weight(vd, w * tw, vd->vbm);
+		assert(u < vd->n_backend);
 		be = vd->backend[u];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-		if (be->healthy(be, NULL, NULL))
-			break;
-		if (l == 0) {
-			vbm = vd->vbm;
-			for (v = 0; v < nbe; v++)
-				vbit_clr(vbm, v);
-		}
-		vbit_set(vbm, u);
-		nbe--;
-		tw -= vd->weight[u];
-		be = NULL;
 	}
 	vdir_unlock(vd);
 	return (be);

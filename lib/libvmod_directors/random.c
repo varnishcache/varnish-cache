@@ -45,7 +45,6 @@ struct vmod_directors_random {
 	unsigned				magic;
 #define VMOD_DIRECTORS_RANDOM_MAGIC		0x4732d092
 	struct vdir				*vd;
-	unsigned				n_backend;
 };
 
 static unsigned __match_proto__(vdi_healthy)
@@ -72,7 +71,7 @@ vmod_random_resolve(const struct director *dir, struct worker *wrk,
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_RANDOM_MAGIC);
 	r = scalbn(random(), -31);
 	assert(r >= 0 && r < 1.0);
-	be = vdir_pick_be(rr->vd, r, rr->n_backend);
+	be = vdir_pick_be(rr->vd, r);
 	return (be);
 }
 
@@ -112,7 +111,6 @@ vmod_random_add_backend(VRT_CTX,
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_RANDOM_MAGIC);
 	(void)vdir_add_backend(rr->vd, be, w);
-	rr->n_backend++;
 }
 
 VCL_BACKEND __match_proto__()
