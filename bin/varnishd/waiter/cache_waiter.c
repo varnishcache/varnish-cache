@@ -38,8 +38,6 @@
 
 #include "waiter/waiter.h"
 
-#include "vtcp.h"
-
 static void *waiter_priv;
 
 const char *
@@ -63,31 +61,27 @@ WAIT_Init(void)
 	waiter_priv = waiter->init();
 }
 
-void
+int
 WAIT_Enter(struct sess *sp)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(sp->fd >= 0);
 
-	/*
-	* Set nonblocking in the worker-thread, before passing to the
-	* acceptor thread, to reduce syscall density of the latter.
-	*/
-	if (VTCP_nonblocking(sp->fd))
-		SES_Close(sp, SC_REM_CLOSE);
-	waiter->pass(waiter_priv, sp);
+	return (waiter->pass(waiter_priv, sp));
 }
 
-void
+/*
+ * We do not make sp a const, in order to hint that we actually do take
+ * control of it.
+ */
+int __match_proto__()
 WAIT_Write_Session(struct sess *sp, int fd)
 {
 	ssize_t written;
 	written = write(fd, &sp, sizeof sp);
-	if (written != sizeof sp && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-		VSC_C_main->sess_pipe_overflow++;
-		SES_Delete(sp, SC_SESS_PIPE_OVERFLOW, NAN);
-		return;
-	}
+	if (written != sizeof sp && (errno == EAGAIN || errno == EWOULDBLOCK))
+		return (-1);
 	assert (written == sizeof sp);
+	return (0);
 }

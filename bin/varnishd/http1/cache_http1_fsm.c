@@ -111,7 +111,13 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			if (when < now || tmo == 0) {
 				wrk->stats->sess_herd++;
 				SES_ReleaseReq(req);
-				WAIT_Enter(sp);
+				if (VTCP_nonblocking(sp->fd))
+					SES_Close(sp, SC_REM_CLOSE);
+				else if (WAIT_Enter(sp)) {
+					VSC_C_main->sess_pipe_overflow++;
+					SES_Delete(sp, SC_SESS_PIPE_OVERFLOW,
+					    NAN);
+				}
 				return (REQ_FSM_DONE);
 			}
 		} else {

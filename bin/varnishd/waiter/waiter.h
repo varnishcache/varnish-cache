@@ -31,7 +31,7 @@
 struct sess;
 
 typedef void* waiter_init_f(void);
-typedef void waiter_pass_f(void *priv, struct sess *);
+typedef int waiter_pass_f(void *priv, struct sess *);
 
 #define WAITER_DEFAULT		"platform dependent"
 
@@ -42,10 +42,10 @@ struct waiter {
 };
 
 /* cache_waiter.c */
-void WAIT_Enter(struct sess *sp);
+int WAIT_Enter(struct sess *sp);
 void WAIT_Init(void);
 const char *WAIT_GetName(void);
-void WAIT_Write_Session(struct sess *sp, int fd);
+int WAIT_Write_Session(struct sess *sp, int fd);
 
 /* mgt_waiter.c */
 extern struct waiter const * waiter;

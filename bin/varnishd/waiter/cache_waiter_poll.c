@@ -192,14 +192,14 @@ vwp_main(void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static void
+static int
 vwp_poll_pass(void *priv, struct sess *sp)
 {
 	struct vwp *vwp;
 
 	CAST_OBJ_NOTNULL(vwp, priv, VWP_MAGIC);
 
-	WAIT_Write_Session(sp, vwp->pipes[1]);
+	return (WAIT_Write_Session(sp, vwp->pipes[1]));
 }
 
 /*--------------------------------------------------------------------*/

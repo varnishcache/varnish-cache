@@ -215,14 +215,14 @@ vwk_thread(void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static void
+static int
 vwk_pass(void *priv, struct sess *sp)
 {
 	struct vwk *vwk;
 
 	CAST_OBJ_NOTNULL(vwk, priv, VWK_MAGIC);
 
-	WAIT_Write_Session(sp, vwk->pipes[1]);
+	return (WAIT_Write_Session(sp, vwk->pipes[1]));
 }
 
 /*--------------------------------------------------------------------*/

@@ -219,14 +219,14 @@ vwe_timeout_idle_ticker(void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static void
+static int
 vwe_pass(void *priv, struct sess *sp)
 {
 	struct vwe *vwe;
 
 	CAST_OBJ_NOTNULL(vwe, priv, VWE_MAGIC);
 
-	WAIT_Write_Session(sp, vwe->pipes[1]);
+	return (WAIT_Write_Session(sp, vwe->pipes[1]));
 }
 
 /*--------------------------------------------------------------------*/
