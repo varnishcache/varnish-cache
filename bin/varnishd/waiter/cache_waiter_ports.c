@@ -193,7 +193,7 @@ vws_thread(void *priv)
 			vws_port_ev(vws, ev + ei, now);
 
 		/* check for timeouts */
-		deadline = now - *vwk->tmo;
+		deadline = now - *vws->tmo;
 
 		/*
 		 * This loop assumes that the oldest sessions are always at the
