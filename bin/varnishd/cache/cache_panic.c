@@ -47,6 +47,7 @@
 #include "cache_backend.h"
 #include "storage/storage.h"
 #include "vcl.h"
+#include "waiter/waiter.h"
 
 /*
  * The panic string is constructed in memory, then copied to the

@@ -41,6 +41,12 @@ struct waiter {
 	waiter_pass_f		*pass;
 };
 
+/* cache_waiter.c */
+void WAIT_Enter(struct sess *sp);
+void WAIT_Init(void);
+const char *WAIT_GetName(void);
+void WAIT_Write_Session(struct sess *sp, int fd);
+
 /* mgt_waiter.c */
 extern struct waiter const * waiter;
 int WAIT_tweak_waiter(struct vsb *vsb, const char *arg);

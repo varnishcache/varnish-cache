@@ -44,6 +44,7 @@
 #include "vcl.h"
 #include "vtcp.h"
 #include "vtim.h"
+#include "waiter/waiter.h"
 
 /*----------------------------------------------------------------------
  * Collect a request from the client.

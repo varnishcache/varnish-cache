@@ -503,7 +503,7 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 
 void
 VRT_init_vbe(VRT_CTX, struct director **bp, int idx,
-    const struct vrt_backend *t) 
+    const struct vrt_backend *t)
 {
 	struct vbe_dir *vs;
 

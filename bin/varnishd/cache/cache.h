@@ -1063,12 +1063,6 @@ void ESI_DeliverChild(struct req *, struct busyobj *);
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);
 
-/* cache_waiter.c */
-void WAIT_Enter(struct sess *sp);
-void WAIT_Init(void);
-const char *WAIT_GetName(void);
-void WAIT_Write_Session(struct sess *sp, int fd);
-
 /* cache_wrk.c */
 
 void WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace);
