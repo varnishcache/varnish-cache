@@ -7,7 +7,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	
+
 	import ${vmod_debug};
 
 	sub vcl_deliver {
@@ -19,7 +19,7 @@ varnish v1 -vcl+backend {
 varnish v1 -cliok "param.set pcre_match_limit 100"
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.http.foo == 100
 } -run
@@ -27,7 +27,7 @@ client c1 {
 varnish v1 -cliok "param.set pcre_match_limit 200"
 
 client c1 {
-	txreq 
+	txreq
 	rxresp
 	expect resp.http.foo == 200
 } -run

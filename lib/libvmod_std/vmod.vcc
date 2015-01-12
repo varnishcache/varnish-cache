@@ -224,7 +224,7 @@ Description
 	Note that the comparison is case sensitive.
 Example
 	| if (std.strstr(req.url, req.http.x-restrict)) {
-	|	...
+	|     ...
 	| }
 
 $Function TIME time(STRING s, TIME fallback)
@@ -243,7 +243,7 @@ Description
 	| "784111777"
 Example
 	| if (std.time(resp.http.last-modified, now) < now - 1w) {
-	| 	...
+	|     ...
 	| }
 
 
