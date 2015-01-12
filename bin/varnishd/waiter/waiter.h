@@ -26,6 +26,18 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * Waiters are herders of connections:  The monitor a large number of
+ * connections and react if data arrives, the connection is closed or
+ * if nothing happens for a specified timeout period.
+ *
+ * The "poll" waiter should be portable to just about anything, but it
+ * is not very efficient because it has to setup state on each call to
+ * poll(2).  Almost all kernels have made better facilities for that
+ * reason, needless to say, each with its own NIH-controlled API:
+ *
+ * - kqueue on FreeBSD
+ * - epoll on Linux
+ * - ports on Solaris
  */
 
 struct waited;
