@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Waiters are herders of connections:  The monitor a large number of
+ * Waiters are herders of connections:  They monitor a large number of
  * connections and react if data arrives, the connection is closed or
  * if nothing happens for a specified timeout period.
  *
