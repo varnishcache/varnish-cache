@@ -38,8 +38,4 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.foo == 2
 
-	txreq -url /pass
-	rxresp
-	expect resp.status == 200
-	expect resp.http.foo == 0
 } -run
