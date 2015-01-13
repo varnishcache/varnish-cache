@@ -286,6 +286,14 @@ VSA_Get_Sockaddr(const struct suckaddr *sua, socklen_t *sl)
 }
 
 int
+VSA_Get_Proto(const struct suckaddr *sua)
+{
+
+	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
+	return (sua->sa.sa_family);
+}
+
+int
 VSA_Sane(const struct suckaddr *sua)
 {
 	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
