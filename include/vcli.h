@@ -43,20 +43,7 @@
  *	const char *	request_help (for long help)
  *	unsigned	minimum_arguments
  *	unsigned	maximum_arguments
- *
- * If you only want a subset of these fields do this:
- *	#define CLIF145(a,b,c,d,e)	a,d,e
- *	[...]
- *	CLIF145(CLI_URL_QUERY)
- *
  */
-
-#define CLI_URL_QUERY							\
-	"url.query",							\
-	"url.query <url>",						\
-	"\tQuery the cache status of a specific URL.\n"			\
-	    "\tReturns the TTL, size and checksum of the object.",	\
-	1, 1
 
 #define CLI_BAN								\
 	"ban",								\
