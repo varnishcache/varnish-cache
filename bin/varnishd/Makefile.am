@@ -13,6 +13,7 @@ varnishd_SOURCES = \
 	cache/cache_backend.c \
 	cache/cache_backend_cfg.c \
 	cache/cache_backend_poll.c \
+	cache/cache_backend_tcp.c \
 	cache/cache_ban.c \
 	cache/cache_busyobj.c \
 	cache/cache_cli.c \

@@ -90,7 +90,7 @@ VBE_ReleaseConn(struct vbc *vc)
 static void
 bes_conn_try(struct busyobj *bo, struct vbc *vc, const struct vbe_dir *vs)
 {
-	int s, msec;
+	int s;
 	double tmod;
 	struct backend *bp = vs->backend;
 	char abuf1[VTCP_ADDRBUFSIZE];
@@ -111,20 +111,7 @@ bes_conn_try(struct busyobj *bo, struct vbc *vc, const struct vbe_dir *vs)
 	/* release lock during stuff that can take a long time */
 
 	FIND_TMO(connect_timeout, tmod, bo, vs->vrt);
-	msec = (int)floor(tmod * 1000.0);
-
-	if (cache_param->prefer_ipv6 && bp->ipv6 != NULL) {
-		s = VTCP_connect(bp->ipv6, msec);
-		vc->addr = bp->ipv6;
-	}
-	if (s == -1 && bp->ipv4 != NULL) {
-		s = VTCP_connect(bp->ipv4, msec);
-		vc->addr = bp->ipv4;
-	}
-	if (s == -1 && !cache_param->prefer_ipv6 && bp->ipv6 != NULL) {
-		s = VTCP_connect(bp->ipv6, msec);
-		vc->addr = bp->ipv6;
-	}
+	s = VBT_Open(bp->tcp_pool, tmod, &vc->addr);
 
 	vc->fd = s;
 	if (s < 0) {

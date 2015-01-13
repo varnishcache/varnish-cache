@@ -40,6 +40,7 @@
 struct vbp_target;
 struct vbc;
 struct vrt_backend_probe;
+struct tcp_pool;
 
 /*--------------------------------------------------------------------
  * An instance of a backend from a VCL program.
@@ -78,6 +79,8 @@ struct backend {
 	double			health_changed;
 
 	struct VSC_C_vbe	*vsc;
+
+	struct tcp_pool		*tcp_pool;
 };
 
 /* -------------------------------------------------------------------*/
@@ -91,7 +94,7 @@ struct vbc {
 	struct vbe_dir		*vdis;
 	int			fd;
 
-	struct suckaddr		*addr;
+	const struct suckaddr	*addr;
 
 	uint8_t			recycled;
 };
@@ -119,4 +122,9 @@ void VBP_Summary(struct cli *cli, const struct vbp_target *vt);
 
 /* cache_backend_poll.c */
 void VBP_Init(void);
+
+struct tcp_pool *VBT_Ref(const char *name, const struct suckaddr *ip4,
+    const struct suckaddr *ip6);
+void VBT_Rel(struct tcp_pool **tpp);
+int VBT_Open(struct tcp_pool *tp, double tmo, const struct suckaddr **sa);
 

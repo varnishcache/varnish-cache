@@ -66,6 +66,7 @@ VBE_Nuke(struct backend *b)
 	free(b->ipv6_addr);
 	free(b->port);
 	VSM_Free(b->vsc);
+	VBT_Rel(&b->tcp_pool);
 	FREE_OBJ(b);
 	VSC_C_main->n_backend--;
 }
@@ -212,6 +213,9 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	REPLACE(b->ipv4_addr, vb->ipv4_addr);
 	REPLACE(b->ipv6_addr, vb->ipv6_addr);
 	REPLACE(b->port, vb->port);
+
+	b->tcp_pool = VBT_Ref(vb->vcl_name,
+	    vb->ipv4_suckaddr, vb->ipv6_suckaddr);
 
 	/*
 	 * Copy over the sockaddrs

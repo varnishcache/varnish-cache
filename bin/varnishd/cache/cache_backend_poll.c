@@ -41,14 +41,16 @@
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/socket.h>
 
 #include "cache.h"
 
 #include "cache_backend.h"
 #include "vcli_priv.h"
 #include "vrt.h"
-#include "vtcp.h"
 #include "vtim.h"
+#include "vtcp.h"
+#include "vsa.h"
 
 /* Default averaging rate, we want something pretty responsive */
 #define AVG_RATE			4
@@ -113,6 +115,7 @@ vbp_poke(struct vbp_target *vt)
 	struct backend *bp;
 	char buf[8192], *p;
 	struct pollfd pfda[1], *pfd = pfda;
+	const struct suckaddr *sa;
 
 	bp = vt->backend;
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
@@ -121,32 +124,22 @@ vbp_poke(struct vbp_target *vt)
 	t_end = t_start + vt->probe.timeout;
 	tmo = (int)round((t_end - t_now) * 1e3);
 
-	s = -1;
-	if (cache_param->prefer_ipv6 && bp->ipv6 != NULL) {
-		s = VTCP_connect(bp->ipv6, tmo);
-		t_now = VTIM_real();
-		tmo = (int)round((t_end - t_now) * 1e3);
-		if (s >= 0)
-			vt->good_ipv6 |= 1;
-	}
-	if (tmo > 0 && s < 0 && bp->ipv4 != NULL) {
-		s = VTCP_connect(bp->ipv4, tmo);
-		t_now = VTIM_real();
-		tmo = (int)round((t_end - t_now) * 1e3);
-		if (s >= 0)
-			vt->good_ipv4 |= 1;
-	}
-	if (tmo > 0 && s < 0 && bp->ipv6 != NULL) {
-		s = VTCP_connect(bp->ipv6, tmo);
-		t_now = VTIM_real();
-		tmo = (int)round((t_end - t_now) * 1e3);
-		if (s >= 0)
-			vt->good_ipv6 |= 1;
-	}
+	s = VBT_Open(bp->tcp_pool, t_end - t_now, &sa);
 	if (s < 0) {
 		/* Got no connection: failed */
 		return;
 	}
+
+	i = VSA_Get_Proto(sa);
+	if (i == AF_INET)
+		vt->good_ipv4 |= 1;
+	else if(i == AF_INET6)
+		vt->good_ipv6 |= 1;
+	else
+		WRONG("Wrong probe protocol family");
+
+	t_now = VTIM_real();
+	tmo = (int)round((t_end - t_now) * 1e3);
 	if (tmo <= 0) {
 		/* Spent too long time getting it */
 		VTCP_close(&s);
