@@ -321,6 +321,7 @@ vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 	AN(bo->htc);
 	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
 	bo->htc->vbc = vc;
+	bo->htc->fd = vc->fd;
 	FIND_TMO(first_byte_timeout, vc->first_byte_timeout, bo, vs->vrt);
 	FIND_TMO(between_bytes_timeout, vc->between_bytes_timeout, bo, vs->vrt);
 	return (vc->fd);

@@ -110,8 +110,8 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 		do_chunked = 1;
 	}
 
-	(void)VTCP_blocking(vc->fd);	/* XXX: we should timeout instead */
-	V1L_Reserve(wrk, wrk->aws, &vc->fd, bo->vsl, bo->t_prev);
+	(void)VTCP_blocking(htc->fd);	/* XXX: we should timeout instead */
+	V1L_Reserve(wrk, wrk->aws, &htc->fd, bo->vsl, bo->t_prev);
 	bo->acct.bereq_hdrbytes = HTTP1_Write(wrk, hp, HTTP1_Req);
 
 	/* Deal with any message-body the request might (still) have */
@@ -149,12 +149,12 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 
 	/* Receive response */
 
-	HTTP1_Init(htc, bo->ws, vc->fd, cache_param->http_resp_size,
+	HTTP1_RxInit(htc, bo->ws, cache_param->http_resp_size,
 	    cache_param->http_resp_hdr_len);
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
 
-	VTCP_set_read_timeout(vc->fd, vc->first_byte_timeout);
+	VTCP_set_read_timeout(htc->fd, vc->first_byte_timeout);
 
 	first = 1;
 	do {
@@ -179,7 +179,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 		if (first) {
 			retry = -1;
 			first = 0;
-			VTCP_set_read_timeout(vc->fd,
+			VTCP_set_read_timeout(htc->fd,
 			    vc->between_bytes_timeout);
 		}
 	} while (hs != HTTP1_COMPLETE);

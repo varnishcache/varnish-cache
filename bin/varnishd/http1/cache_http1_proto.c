@@ -60,13 +60,12 @@ const int HTTP1_Resp[3] = {
 /*--------------------------------------------------------------------*/
 
 void
-HTTP1_Init(struct http_conn *htc, struct ws *ws, int fd, unsigned maxbytes,
+HTTP1_RxInit(struct http_conn *htc, struct ws *ws, unsigned maxbytes,
     unsigned maxhdr)
 {
 
 	htc->magic = HTTP_CONN_MAGIC;
 	htc->ws = ws;
-	htc->fd = fd;
 	htc->maxbytes = maxbytes;
 	htc->maxhdr = maxhdr;
 

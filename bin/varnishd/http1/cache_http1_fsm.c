@@ -368,7 +368,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 	}
 
 	if (sp->sess_step == S_STP_NEWREQ) {
-		HTTP1_Init(req->htc, req->ws, sp->fd,
+		req->htc->fd = sp->fd;
+		HTTP1_RxInit(req->htc, req->ws,
 		    cache_param->http_req_size, cache_param->http_req_hdr_len);
 	}
 

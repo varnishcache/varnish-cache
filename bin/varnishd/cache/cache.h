@@ -864,7 +864,7 @@ enum http1_status_e {
 	HTTP1_COMPLETE =	 1
 };
 
-void HTTP1_Init(struct http_conn *htc, struct ws *ws, int fd,
+void HTTP1_RxInit(struct http_conn *htc, struct ws *ws,
     unsigned maxbytes, unsigned maxhdr);
 enum http1_status_e HTTP1_Reinit(struct http_conn *htc);
 enum http1_status_e HTTP1_Rx(struct http_conn *htc);
