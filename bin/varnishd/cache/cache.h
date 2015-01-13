@@ -242,6 +242,10 @@ struct http_conn {
 	enum body_status	body_status;
 	struct vfp_ctx		vfc[1];
 	struct vbc		*vbc;
+
+	/* Timeouts */
+	double			first_byte_timeout;
+	double			between_bytes_timeout;
 };
 
 /*--------------------------------------------------------------------*/

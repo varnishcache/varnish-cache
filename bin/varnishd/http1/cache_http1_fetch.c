@@ -76,10 +76,9 @@ vbf_iter_req_body(struct req *req, void *priv, void *ptr, size_t l)
 int
 V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 {
-	struct vbc *vc;
 	struct http *hp;
 	enum http1_status_e hs;
-	int retry = -1;
+	int retry = 1;
 	int i, j, first;
 	struct http_conn *htc;
 	int do_chunked = 0;
@@ -87,14 +86,10 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->htc->vbc, VBC_MAGIC);
 	CHECK_OBJ_ORNULL(bo->req, REQ_MAGIC);
 
 	htc = bo->htc;
 	hp = bo->bereq;
-	vc = htc->vbc;
-	if (vc->recycled)
-		retry = 1;
 
 	/*
 	 * Now that we know our backend, we can set a default Host:
@@ -154,7 +149,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
 
-	VTCP_set_read_timeout(htc->fd, vc->first_byte_timeout);
+	VTCP_set_read_timeout(htc->fd, htc->first_byte_timeout);
 
 	first = 1;
 	do {
@@ -180,7 +175,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 			retry = -1;
 			first = 0;
 			VTCP_set_read_timeout(htc->fd,
-			    vc->between_bytes_timeout);
+			    htc->between_bytes_timeout);
 		}
 	} while (hs != HTTP1_COMPLETE);
 	bo->acct.beresp_hdrbytes += htc->rxbuf_e - htc->rxbuf_b;

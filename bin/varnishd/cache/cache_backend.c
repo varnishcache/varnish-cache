@@ -322,8 +322,10 @@ vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
 	bo->htc->vbc = vc;
 	bo->htc->fd = vc->fd;
-	FIND_TMO(first_byte_timeout, vc->first_byte_timeout, bo, vs->vrt);
-	FIND_TMO(between_bytes_timeout, vc->between_bytes_timeout, bo, vs->vrt);
+	FIND_TMO(first_byte_timeout,
+	    bo->htc->first_byte_timeout, bo, vs->vrt);
+	FIND_TMO(between_bytes_timeout,
+	    bo->htc->between_bytes_timeout, bo, vs->vrt);
 	return (vc->fd);
 }
 
@@ -400,7 +402,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 	 * that the backend closed it before we get a request to it.
 	 * Do a single retry in that case.
 	 */
-	if (i == 1) {
+	if (i == 1 && bo->htc->vbc->recycled) {
 		vbe_dir_finish(d, wrk, bo);
 		AZ(bo->htc);
 		VSC_C_main->backend_retry++;

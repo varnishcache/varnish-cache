@@ -94,10 +94,6 @@ struct vbc {
 	struct suckaddr		*addr;
 
 	uint8_t			recycled;
-
-	/* Timeouts */
-	double			first_byte_timeout;
-	double			between_bytes_timeout;
 };
 
 /* cache_backend.c */
