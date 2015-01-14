@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2012 Varnish Software AS
+ * Copyright (c) 2006-2015 Varnish Software AS
  * All rights reserved.
  *
  * Author: Dag-Erling Smørgrav <des@des.no>
@@ -44,5 +44,5 @@ VCS_Message(const char *progname)
 {
 	fprintf(stderr, "%s (%s)\n", progname, VCS_version);
 	fprintf(stderr, "Copyright (c) 2006 Verdens Gang AS\n");
-	fprintf(stderr, "Copyright (c) 2006-2014 Varnish Software AS\n");
+	fprintf(stderr, "Copyright (c) 2006-2015 Varnish Software AS\n");
 }
