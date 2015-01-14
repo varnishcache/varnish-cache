@@ -724,6 +724,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 		 * This really should be done earlier, but we want to capture
 		 * it in the VSL log.
 		 */
+		http_CollectHdr(req->http, H_X_Forwarded_For);
 		if (http_GetHdr(req->http, H_X_Forwarded_For, &xff)) {
 			http_Unset(req->http, H_X_Forwarded_For);
 			http_PrintfHeader(req->http, "X-Forwarded-For: %s, %s",

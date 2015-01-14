@@ -1,0 +1,16 @@
+varnishtest "xff handling discards multiple headers"
+
+server s1 {
+	rxreq
+	expect req.http.X-Forwarded-For == "1.2.3.4, 5.6.7.8, 127.0.0.1"
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+client c1 {
+	txreq -hdr "X-Forwarded-For: 1.2.3.4" -hdr "X-Forwarded-For: 5.6.7.8"
+	rxresp
+} -run
+
