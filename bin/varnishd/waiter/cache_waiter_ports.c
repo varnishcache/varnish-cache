@@ -51,10 +51,8 @@
 struct vws {
 	unsigned		magic;
 #define VWS_MAGIC		0x0b771473
-	struct waiter		waiter[1];
+	struct waiter		*waiter;
 
-	waiter_handle_f		*func;
-	volatile double		*tmo;
 	pthread_t		ports_thread;
 	int			dport;
 };
@@ -191,7 +189,7 @@ vws_thread(void *priv)
 			vws_port_ev(vws, ev + ei, now);
 
 		/* check for timeouts */
-		deadline = now - *vws->tmo;
+		deadline = now - *vws->waiter->tmo;
 
 		/*
 		 * This loop assumes that the oldest sessions are always at the
@@ -251,22 +249,17 @@ vws_pass(void *priv, struct waited *sp)
 
 /*--------------------------------------------------------------------*/
 
-static struct waiter * __match_proto__(waiter_init_f)
-vws_init(waiter_handle_f *func, volatile double *tmo)
+static void __match_proto__(waiter_init_f)
+vws_init(struct waiter *w)
 {
 	struct vws *vws;
 
-	AN(func);
-	AN(tmo);
-	ALLOC_OBJ(vws, VWS_MAGIC);
-	AN(vws);
-	INIT_OBJ(vws->waiter, WAITER_MAGIC);
+	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
+	vws = w->priv;
+	INIT_OBJ(vws, VWS_MAGIC);
+	vws->waiter = w;
 
-	vws->func = func;
-	vws->tmo = tmo;
-	VTAILQ_INIT(&vws->waiter->sesshead);
 	AZ(pthread_create(&vws->ports_thread, NULL, vws_thread, vws));
-	return (vws->waiter);
 }
 
 /*--------------------------------------------------------------------*/
@@ -274,7 +267,8 @@ vws_init(waiter_handle_f *func, volatile double *tmo)
 const struct waiter_impl waiter_ports = {
 	.name =		"ports",
 	.init =		vws_init,
-	.pass =		vws_pass
+	.pass =		vws_pass,
+	.size =		sizeof(struct vws),
 };
 
 #endif /* defined(HAVE_PORT_CREATE) */

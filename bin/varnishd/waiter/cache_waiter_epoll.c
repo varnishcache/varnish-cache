@@ -55,14 +55,11 @@
 struct vwe {
 	unsigned		magic;
 #define VWE_MAGIC		0x6bd73424
-	struct waiter		waiter[1];
+	struct waiter		*waiter;
 
 	pthread_t		epoll_thread;
 	pthread_t		timer_thread;
 	int			epfd;
-
-	waiter_handle_f		*func;
-	volatile double		*tmo;
 
 	int			pipes[2];
 	int			timer_pipes[2];
@@ -176,7 +173,7 @@ vwe_thread(void *priv)
 			continue;
 
 		/* check for timeouts */
-		deadline = now - *vwe->tmo;
+		deadline = now - *vwe->waiter->tmo;
 		for (;;) {
 			sp = VTAILQ_FIRST(&vwe->waiter->sesshead);
 			if (sp == NULL)
@@ -210,20 +207,16 @@ vwe_timeout_idle_ticker(void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static struct waiter * __match_proto__(waiter_init_f)
-vwe_init(waiter_handle_f *func, volatile double *tmo)
+static void __match_proto__(waiter_init_f)
+vwe_init(struct waiter *w)
 {
 	struct vwe *vwe;
 
-	AN(func);
-	AN(tmo);
+	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
+	vwe = w->priv;
+	INIT_OBJ(vwe, VWE_MAGIC);
+	vwe->waiter = w;
 
-	ALLOC_OBJ(vwe, VWE_MAGIC);
-	AN(vwe);
-
-	INIT_OBJ(vwe->waiter, WAITER_MAGIC);
-
-	VTAILQ_INIT(&vwe->waiter->sesshead);
 	AZ(pipe(vwe->pipes));
 	AZ(pipe(vwe->timer_pipes));
 
@@ -231,14 +224,11 @@ vwe_init(waiter_handle_f *func, volatile double *tmo)
 	AZ(VFIL_nonblocking(vwe->pipes[1]));
 	AZ(VFIL_nonblocking(vwe->timer_pipes[0]));
 
-	vwe->func = func;
-	vwe->tmo = tmo;
-	vwe->waiter->pfd = vwe->pipes[1];
+	w->pfd = vwe->pipes[1];
 
 	AZ(pthread_create(&vwe->timer_thread,
 	    NULL, vwe_timeout_idle_ticker, vwe));
 	AZ(pthread_create(&vwe->epoll_thread, NULL, vwe_thread, vwe));
-	return(vwe->waiter);
 }
 
 /*--------------------------------------------------------------------*/
@@ -246,6 +236,7 @@ vwe_init(waiter_handle_f *func, volatile double *tmo)
 const struct waiter_impl waiter_epoll = {
 	.name =		"epoll",
 	.init =		vwe_init,
+	.size =		sizeof(struct vwe),
 };
 
 #endif /* defined(HAVE_EPOLL_CTL) */

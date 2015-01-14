@@ -47,7 +47,7 @@ struct waiter {
 	int				pfd;
 };
 
-typedef struct waiter* waiter_init_f(waiter_handle_f *, volatile double *);
+typedef void waiter_init_f(struct waiter *);
 typedef int waiter_pass_f(void *priv, struct waited *);
 typedef void waiter_inject_f(const struct waiter *, struct waited *);
 
@@ -56,6 +56,7 @@ struct waiter_impl {
 	waiter_init_f		*init;
 	waiter_pass_f		*pass;
 	waiter_inject_f		*inject;
+	size_t			size;
 };
 
 /* cache_waiter.c */

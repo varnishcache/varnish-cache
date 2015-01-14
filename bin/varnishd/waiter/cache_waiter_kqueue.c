@@ -52,10 +52,8 @@
 struct vwk {
 	unsigned		magic;
 #define VWK_MAGIC		0x1cc2acc2
-	struct waiter		waiter[1];
+	struct waiter		*waiter;
 
-	waiter_handle_f		*func;
-	volatile double		*tmo;
 	pthread_t		thread;
 	int			kq;
 	struct kevent		ki[NKEV];
@@ -104,7 +102,7 @@ vwk_inject(const struct waiter *w, struct waited *wp)
 /*--------------------------------------------------------------------*/
 
 static void
-vwk_sess_ev(struct vwk *vwk, const struct kevent *kp, double now)
+vwk_sess_ev(const struct vwk *vwk, const struct kevent *kp, double now)
 {
 	struct waited *sp;
 
@@ -171,7 +169,7 @@ vwk_thread(void *priv)
 		 * would not know we meant "the old fd of this number".
 		 */
 		vwk_kq_flush(vwk);
-		deadline = now - *vwk->tmo;
+		deadline = now - *vwk->waiter->tmo;
 		for (;;) {
 			sp = VTAILQ_FIRST(&vwk->waiter->sesshead);
 			if (sp == NULL)
@@ -186,30 +184,22 @@ vwk_thread(void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static struct waiter * __match_proto__(waiter_init_f)
-vwk_init(waiter_handle_f *func, volatile double *tmo)
+static void __match_proto__(waiter_init_f)
+vwk_init(struct waiter *w)
 {
 	struct vwk *vwk;
 
-	AN(func);
-	AN(tmo);
-	ALLOC_OBJ(vwk, VWK_MAGIC);
-	AN(vwk);
+	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
+	vwk = w->priv;
+	INIT_OBJ(vwk, VWK_MAGIC);
+	vwk->waiter = w;
 
-	INIT_OBJ(vwk->waiter, WAITER_MAGIC);
-	VTAILQ_INIT(&vwk->waiter->sesshead);
-	vwk->waiter->priv = vwk;
-	
 	EV_SET(&vwk->ki[vwk->nki], 0, EVFILT_TIMER, EV_ADD, 0, 100, NULL);
 	vwk->nki++;
 
 	WAIT_UsePipe(vwk->waiter);
 
-	vwk->func = func;
-	vwk->tmo = tmo;
-
 	AZ(pthread_create(&vwk->thread, NULL, vwk_thread, vwk));
-	return (vwk->waiter);
 }
 
 /*--------------------------------------------------------------------*/
@@ -218,6 +208,7 @@ const struct waiter_impl waiter_kqueue = {
 	.name =		"kqueue",
 	.init =		vwk_init,
 	.inject =	vwk_inject,
+	.size =		sizeof(struct vwk),
 };
 
 #endif /* defined(HAVE_KQUEUE) */

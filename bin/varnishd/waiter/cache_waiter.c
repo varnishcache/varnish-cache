@@ -62,10 +62,17 @@ WAIT_Init(waiter_handle_f *func, volatile double *tmo)
 	AN(waiter);
 	AN(waiter->name);
 	AN(waiter->init);
-	w = waiter->init(func, tmo);
+
+	w = calloc(1, sizeof (struct waiter) + waiter->size);
+	AN(w);
+	INIT_OBJ(w, WAITER_MAGIC);
+	w->priv = (void*)(w + 1);
 	w->impl = waiter;
 	w->func = func;
 	w->tmo = tmo;
+	VTAILQ_INIT(&w->sesshead);
+
+	waiter->init(w);
 	AN(w->impl->pass || w->pfd > 0);
 	return (w);
 }

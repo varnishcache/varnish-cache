@@ -46,10 +46,8 @@
 struct vwp {
 	unsigned		magic;
 #define VWP_MAGIC		0x4b2cc735
-	struct waiter		waiter[1];
+	struct waiter		*waiter;
 
-	waiter_handle_f		*func;
-	volatile double		*tmo;
 	int			pipes[2];
 	pthread_t		poll_thread;
 	struct pollfd		*pollfd;
@@ -146,7 +144,7 @@ vwp_main(void *priv)
 		v = poll(vwp->pollfd, vwp->hpoll + 1, 100);
 		assert(v >= 0);
 		now = VTIM_real();
-		deadline = now - *vwp->tmo;
+		deadline = now - *vwp->waiter->tmo;
 		v2 = v;
 		VTAILQ_FOREACH_SAFE(sp, &vwp->waiter->sesshead, list, sp2) {
 			if (v != 0 && v2 == 0)
@@ -194,28 +192,23 @@ vwp_main(void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static struct waiter * __match_proto__(waiter_init_f)
-vwp_poll_init(waiter_handle_f *func, volatile double *tmo)
+static void __match_proto__(waiter_init_f)
+vwp_poll_init(struct waiter *w)
 {
 	struct vwp *vwp;
 
-	AN(func);
-	ALLOC_OBJ(vwp, VWP_MAGIC);
-	AN(vwp);
-	INIT_OBJ(vwp->waiter, WAITER_MAGIC);
+	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
+	vwp = w->priv;
+	INIT_OBJ(vwp, VWP_MAGIC);
+	vwp->waiter = w;
 
-	VTAILQ_INIT(&vwp->waiter->sesshead);
 	AZ(pipe(vwp->pipes));
-
-	vwp->func = func;
-	vwp->tmo = tmo;
 
 	AZ(VFIL_nonblocking(vwp->pipes[1]));
 	vwp->waiter->pfd = vwp->pipes[1];
 
 	vwp_pollspace(vwp, 256);
 	AZ(pthread_create(&vwp->poll_thread, NULL, vwp_main, vwp));
-	return (vwp->waiter);
 }
 
 /*--------------------------------------------------------------------*/
@@ -223,4 +216,5 @@ vwp_poll_init(waiter_handle_f *func, volatile double *tmo)
 const struct waiter_impl waiter_poll = {
 	.name =		"poll",
 	.init =		vwp_poll_init,
+	.size =		sizeof(struct vwp),
 };
