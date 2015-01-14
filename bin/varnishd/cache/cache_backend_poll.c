@@ -122,7 +122,6 @@ vbp_poke(struct vbp_target *vt)
 
 	t_start = t_now = VTIM_real();
 	t_end = t_start + vt->probe.timeout;
-	tmo = (int)round((t_end - t_now) * 1e3);
 
 	s = VBT_Open(bp->tcp_pool, t_end - t_now, &sa);
 	if (s < 0) {

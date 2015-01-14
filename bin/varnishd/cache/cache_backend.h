@@ -71,7 +71,6 @@ struct backend {
 	struct suckaddr		*ipv6;
 
 	unsigned		n_conn;
-	VTAILQ_HEAD(, vbc)	connlist;
 
 	struct vbp_target	*probe;
 	unsigned		healthy;
@@ -127,4 +126,7 @@ struct tcp_pool *VBT_Ref(const char *name, const struct suckaddr *ip4,
     const struct suckaddr *ip6);
 void VBT_Rel(struct tcp_pool **tpp);
 int VBT_Open(struct tcp_pool *tp, double tmo, const struct suckaddr **sa);
+void VBT_Recycle(struct tcp_pool *tp, struct vbc **vbc);
+struct vbc *VBT_Get(struct tcp_pool *tp);
+
 

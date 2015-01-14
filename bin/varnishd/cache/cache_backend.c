@@ -105,7 +105,6 @@ bes_conn_try(struct busyobj *bo, struct vbc *vc, const struct vbe_dir *vs)
 	bp->vsc->conn++;
 	Lck_Unlock(&bp->mtx);
 
-	s = -1;
 	assert(bp->ipv6 != NULL || bp->ipv4 != NULL);
 
 	/* release lock during stuff that can take a long time */
@@ -181,23 +180,25 @@ vbe_GetVbe(struct busyobj *bo, struct vbe_dir *vs)
 	bp = vs->backend;
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 
+	if (!VBE_Healthy(bp, NULL)) {
+		VSC_C_main->backend_unhealthy++;
+		return (NULL);
+	}
+
 	/* first look for vbc's we can recycle */
 	while (1) {
-		Lck_Lock(&bp->mtx);
-		vc = VTAILQ_FIRST(&bp->connlist);
-		if (vc != NULL) {
-			bp->refcount++;
-			assert(vc->backend == bp);
-			assert(vc->fd >= 0);
-			AN(vc->addr);
-			VTAILQ_REMOVE(&bp->connlist, vc, list);
-		}
-		Lck_Unlock(&bp->mtx);
+		vc = VBT_Get(bp->tcp_pool);
 		if (vc == NULL)
 			break;
+
+		Lck_Lock(&bp->mtx);
+		bp->refcount++;
+		assert(vc->backend == bp);
+		assert(vc->fd >= 0);
+		AN(vc->addr);
+		Lck_Unlock(&bp->mtx);
+
 		if (vbe_CheckFd(vc->fd)) {
-			/* XXX locking of stats */
-			VSC_C_main->backend_reuse += 1;
 			VSLb(bo->vsl, SLT_Backend, "%d %s %s",
 			    vc->fd, bo->director_resp->vcl_name,
 			    bp->display_name);
@@ -205,7 +206,6 @@ vbe_GetVbe(struct busyobj *bo, struct vbe_dir *vs)
 			vc->recycled = 1;
 			return (vc);
 		}
-		VSC_C_main->backend_toolate++;
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s toolate",
 		    vc->fd, bp->display_name);
 
@@ -213,11 +213,6 @@ vbe_GetVbe(struct busyobj *bo, struct vbe_dir *vs)
 		VBE_DropRefConn(bp, NULL);
 		vc->backend = NULL;
 		VBE_ReleaseConn(vc);
-	}
-
-	if (!VBE_Healthy(bp, NULL)) {
-		VSC_C_main->backend_unhealthy++;
-		return (NULL);
 	}
 
 	if (vs->vrt->max_connections > 0 &&
@@ -357,8 +352,8 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 		    bp->display_name);
 		Lck_Lock(&bp->mtx);
 		VSC_C_main->backend_recycle++;
-		VTAILQ_INSERT_HEAD(&bp->connlist, bo->htc->vbc, list);
 		VBE_DropRefLocked(bp, &bo->acct);
+		VBT_Recycle(bp->tcp_pool, &bo->htc->vbc);
 	}
 	bo->htc->vbc = NULL;
 	bo->htc = NULL;

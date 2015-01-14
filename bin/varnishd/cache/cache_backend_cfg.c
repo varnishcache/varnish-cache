@@ -101,7 +101,6 @@ void
 VBE_DropRefLocked(struct backend *b, const struct acct_bereq *acct_bereq)
 {
 	int i;
-	struct vbc *vbe, *vbe2;
 
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 	assert(b->refcount > 0);
@@ -119,15 +118,6 @@ VBE_DropRefLocked(struct backend *b, const struct acct_bereq *acct_bereq)
 		return;
 
 	ASSERT_CLI();
-	VTAILQ_FOREACH_SAFE(vbe, &b->connlist, list, vbe2) {
-		VTAILQ_REMOVE(&b->connlist, vbe, list);
-		if (vbe->fd >= 0) {
-			AZ(close(vbe->fd));
-			vbe->fd = -1;
-		}
-		vbe->backend = NULL;
-		VBE_ReleaseConn(vbe);
-	}
 	VBE_Nuke(b);
 }
 
@@ -202,7 +192,6 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 	b->vsc = VSM_Alloc(sizeof *b->vsc, VSC_CLASS, VSC_type_vbe, buf);
 	b->vsc->vcls++;
 
-	VTAILQ_INIT(&b->connlist);
 
 	/*
 	 * This backend may live longer than the VCL that instantiated it

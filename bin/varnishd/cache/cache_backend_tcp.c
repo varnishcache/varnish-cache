@@ -54,13 +54,18 @@ struct tcp_pool {
 
 	VTAILQ_ENTRY(tcp_pool)	list;
 	int			refcnt;
+	struct lock		mtx;
 
+	VTAILQ_HEAD(, vbc)	connlist;
+	VTAILQ_HEAD(, vbc)	killlist;
 
 };
 
 static VTAILQ_HEAD(, tcp_pool)	pools = VTAILQ_HEAD_INITIALIZER(pools);
 
 /*--------------------------------------------------------------------
+ * Reference a TCP pool given by {name, ip4, ip6} triplet.  Create if
+ * it doesn't exist already.
  */
 
 struct tcp_pool *
@@ -104,17 +109,22 @@ VBT_Ref(const char *name, const struct suckaddr *ip4,
 	if (ip6 != NULL)
 		tp->ip6 = VSA_Clone(ip6);
 	tp->refcnt = 1;
+	Lck_New(&tp->mtx, lck_backend);
+	VTAILQ_INIT(&tp->connlist);
+	VTAILQ_INIT(&tp->killlist);
 	VTAILQ_INSERT_HEAD(&pools, tp, list);
 	return (tp);
 }
 
 /*--------------------------------------------------------------------
+ * Release TCP pool, destroy if last reference.
  */
 
 void
 VBT_Rel(struct tcp_pool **tpp)
 {
 	struct tcp_pool *tp;
+	struct vbc *vbc, *vbc2;
 
 	AN(tpp);
 	tp = *tpp;
@@ -127,10 +137,27 @@ VBT_Rel(struct tcp_pool **tpp)
 	free(tp->name);
 	free(tp->ip4);
 	free(tp->ip6);
+	Lck_Delete(&tp->mtx);
+	VTAILQ_FOREACH_SAFE(vbc, &tp->connlist, list, vbc2) {
+		VTAILQ_REMOVE(&tp->connlist, vbc, list);
+		vbc->backend = NULL;
+		(void)close(vbc->fd);
+		vbc->fd = -1;
+		VBE_ReleaseConn(vbc);
+	}
+	VTAILQ_FOREACH_SAFE(vbc, &tp->killlist, list, vbc2) {
+		VTAILQ_REMOVE(&tp->killlist, vbc, list);
+		vbc->backend = NULL;
+		(void)close(vbc->fd);
+		vbc->fd = -1;
+		VBE_ReleaseConn(vbc);
+	}
 	FREE_OBJ(tp);
 }
 
 /*--------------------------------------------------------------------
+ * Open a new connection from pool.  This is a distinct function since
+ * probing cannot use a recycled connection.
  */
 
 int
@@ -155,4 +182,70 @@ VBT_Open(struct tcp_pool *tp, double tmo, const struct suckaddr **sa)
 		s = VTCP_connect(tp->ip6, msec);
 	}
 	return(s);
+}
+
+/*--------------------------------------------------------------------
+ * Recycle a connection.
+ */
+
+void
+VBT_Recycle(struct tcp_pool *tp, struct vbc **vbc)
+{
+
+	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
+	CHECK_OBJ_NOTNULL((*vbc), VBC_MAGIC);
+
+	Lck_Lock(&tp->mtx);
+	VTAILQ_INSERT_HEAD(&tp->connlist, *vbc, list);
+	Lck_Unlock(&tp->mtx);
+	*vbc = NULL;
+}
+
+/*--------------------------------------------------------------------
+ * Get a connection
+ */
+
+struct vbc *
+VBT_Get(struct tcp_pool *tp)
+{
+	struct vbc *vbc;
+	struct pollfd pfd;
+
+	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
+
+	Lck_Lock(&tp->mtx);
+	vbc = VTAILQ_FIRST(&tp->connlist);
+	if (vbc != NULL) {
+		CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
+
+		pfd.fd = vbc->fd;
+		pfd.events = POLLIN;
+		pfd.revents = 0;
+		if (poll(&pfd, 1, 0)) {
+			/*
+			 * If this vbc is dead assume the rest of the list
+			 * has also been chopped from the other end.
+			 */
+			VSC_C_main->backend_toolate++;
+			do {
+				VTAILQ_REMOVE(&tp->connlist, vbc, list);
+#if 0
+				VTAILQ_INSERT_TAIL(&tp->killlist, vbc, list);
+#else
+				vbc->backend = NULL;
+				(void)close(vbc->fd);
+				vbc->fd = -1;
+				VBE_ReleaseConn(vbc);
+#endif
+				vbc = VTAILQ_FIRST(&tp->connlist);
+			} while (vbc != NULL);
+		} else {
+			VTAILQ_REMOVE(&tp->connlist, vbc, list);
+			VSC_C_main->backend_reuse += 1;
+		}
+	}
+	Lck_Unlock(&tp->mtx);
+	if (vbc != NULL)
+		return (vbc);
+	return (NULL);
 }
