@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2008-2014 Varnish Software AS
+ * Copyright (c) 2008-2015 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
