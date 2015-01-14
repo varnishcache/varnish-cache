@@ -115,7 +115,8 @@ static const char *fmts[] = {
 	"%a, %d %b %Y %T GMT",	/* RFC 822 & RFC 1123 */
 	"%A, %d-%b-%y %T GMT",	/* RFC 850 */
 	"%a %b %d %T %Y",	/* ANSI-C asctime() */
-	"%F %T",		/* ISO 8601 */
+	"%F %T",		/* ISO 8601 (incorrect, only in 4.0) */
+	"%FT%T",		/* ISO 8601 */
 	NULL
 };
 

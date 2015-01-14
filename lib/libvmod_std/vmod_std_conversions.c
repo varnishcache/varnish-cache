@@ -222,7 +222,7 @@ vmod_time2real(const struct vrt_ctx *ctx, VCL_TIME t)
 }
 
 VCL_TIME __match_proto__(td_std_time)
-vmod_time(VRT_CTX, VCL_STRING p, VCL_TIME d)
+vmod_time(const struct vrt_ctx *ctx, VCL_STRING p, VCL_TIME d)
 {
 	double r;
 

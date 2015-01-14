@@ -28,6 +28,9 @@ client c1 {
 	txreq -hdr "X-Date: Mon Dec 20 00:00:00 2010"
 	rxresp
 	expect resp.http.x-past == 1
+	txreq -hdr "X-Date: 2030-12-20 00:00:00"
+	rxresp
+	expect resp.http.x-future == 1
 	txreq -hdr "X-Date: 2030-12-20T00:00:00"
 	rxresp
 	expect resp.http.x-future == 1
