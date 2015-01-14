@@ -37,6 +37,7 @@
 #include "cache/cache.h"
 
 #include "waiter/waiter.h"
+#include "waiter/waiter_priv.h"
 #include "vtim.h"
 #include "vfil.h"
 

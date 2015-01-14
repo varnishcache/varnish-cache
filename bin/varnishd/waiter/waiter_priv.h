@@ -26,64 +26,41 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * Private interfaces
  */
 
-#include "config.h"
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
+struct waited;
 
-#include "common/common.h"
-
-#include "waiter/waiter.h"
-#include "waiter/waiter_priv.h"
-
-static const struct waiter_impl *const waiter_impls[] = {
-    #if defined(HAVE_KQUEUE)
-	&waiter_kqueue,
-    #endif
-    #if defined(HAVE_EPOLL_CTL)
-	&waiter_epoll,
-    #endif
-    #if defined(HAVE_PORT_CREATE)
-	&waiter_ports,
-    #endif
-	&waiter_poll,
-	NULL,
+struct waiter {
+	unsigned			magic;
+	#define WAITER_MAGIC		0x17c399db
+	const struct waiter_impl	*impl;
+	void				*priv;
+	int				pfd;
 };
 
-struct waiter_impl const *waiter;
+typedef void* waiter_init_f(waiter_handle_f *, int *, volatile double *);
+typedef int waiter_pass_f(void *priv, struct waited *);
 
-int
-WAIT_tweak_waiter(struct vsb *vsb, const char *arg)
-{
-	int i;
+struct waiter_impl {
+	const char		*name;
+	waiter_init_f		*init;
+	waiter_pass_f		*pass;
+};
 
-	ASSERT_MGT();
+/* mgt_waiter.c */
+extern struct waiter_impl const * waiter;
 
-	if (arg == NULL) {
-		if (waiter == NULL)
-			VSB_printf(vsb, "default");
-		else
-			VSB_printf(vsb, "%s", waiter->name);
+#if defined(HAVE_EPOLL_CTL)
+extern const struct waiter_impl waiter_epoll;
+#endif
 
-		VSB_printf(vsb, " (possible values: ");
-		for (i = 0; waiter_impls[i] != NULL; i++)
-			VSB_printf(vsb, "%s%s", i == 0 ? "" : ", ",
-			    waiter_impls[i]->name);
-		VSB_printf(vsb, ")");
-		return(0);
-	}
-	if (!strcmp(arg, WAITER_DEFAULT)) {
-		waiter = waiter_impls[0];
-		return(0);
-	}
-	for (i = 0; waiter_impls[i]; i++) {
-		if (!strcmp(arg, waiter_impls[i]->name)) {
-			waiter = waiter_impls[i];
-			return(0);
-		}
-	}
-	VSB_printf(vsb, "Unknown waiter");
-	return (-1);
-}
+#if defined(HAVE_KQUEUE)
+extern const struct waiter_impl waiter_kqueue;
+#endif
+
+#if defined(HAVE_PORT_CREATE)
+extern const struct waiter_impl waiter_ports;
+#endif
+
+extern const struct waiter_impl waiter_poll;

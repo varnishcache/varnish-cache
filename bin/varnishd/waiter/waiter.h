@@ -38,6 +38,8 @@
  * - kqueue on FreeBSD
  * - epoll on Linux
  * - ports on Solaris
+ *
+ * Public interfaces
  */
 
 struct waited;
@@ -49,17 +51,9 @@ enum wait_event {
 	WAITER_ACTION
 };
 
-typedef void waiter_handle_f(struct waited *, enum wait_event, double now);
-typedef void* waiter_init_f(waiter_handle_f *, int *, volatile double *);
-typedef int waiter_pass_f(void *priv, struct waited *);
-
 #define WAITER_DEFAULT		"platform dependent"
 
-struct waiter_impl {
-	const char		*name;
-	waiter_init_f		*init;
-	waiter_pass_f		*pass;
-};
+typedef void waiter_handle_f(struct waited *, enum wait_event, double now);
 
 /* cache_waiter.c */
 int WAIT_Enter(const struct waiter *, struct waited *);
@@ -67,19 +61,4 @@ struct waiter *WAIT_Init(waiter_handle_f *, volatile double *timeout);
 const char *WAIT_GetName(void);
 
 /* mgt_waiter.c */
-extern struct waiter_impl const * waiter;
 int WAIT_tweak_waiter(struct vsb *vsb, const char *arg);
-
-#if defined(HAVE_EPOLL_CTL)
-extern const struct waiter_impl waiter_epoll;
-#endif
-
-#if defined(HAVE_KQUEUE)
-extern const struct waiter_impl waiter_kqueue;
-#endif
-
-#if defined(HAVE_PORT_CREATE)
-extern const struct waiter_impl waiter_ports;
-#endif
-
-extern const struct waiter_impl waiter_poll;

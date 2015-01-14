@@ -38,14 +38,7 @@
 #include "cache/cache.h"
 
 #include "waiter/waiter.h"
-
-struct waiter {
-	unsigned			magic;
-#define WAITER_MAGIC			0x17c399db
-	const struct waiter_impl	*impl;
-	void				*priv;
-	int				pfd;
-};
+#include "waiter/waiter_priv.h"
 
 const char *
 WAIT_GetName(void)
