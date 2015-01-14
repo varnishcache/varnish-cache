@@ -90,6 +90,7 @@ WAIT_UsePipe(struct waiter *w)
 	ALLOC_OBJ(w->pipe_w, WAITED_MAGIC);
 	w->pipe_w->fd = w->pipes[0];
 	w->pipe_w->deadline = 9e99;
+	VTAILQ_INSERT_HEAD(&w->sesshead, w->pipe_w, list);
 	waiter->inject(w, w->pipe_w);
 }
 

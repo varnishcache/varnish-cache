@@ -197,7 +197,7 @@ vwk_init(struct waiter *w)
 	EV_SET(&vwk->ki[vwk->nki], 0, EVFILT_TIMER, EV_ADD, 0, 100, NULL);
 	vwk->nki++;
 
-	WAIT_UsePipe(vwk->waiter);
+	WAIT_UsePipe(w);
 
 	AZ(pthread_create(&vwk->thread, NULL, vwk_thread, vwk));
 }
