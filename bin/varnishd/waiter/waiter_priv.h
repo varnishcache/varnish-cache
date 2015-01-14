@@ -35,6 +35,11 @@ struct waiter {
 	unsigned			magic;
 	#define WAITER_MAGIC		0x17c399db
 	const struct waiter_impl	*impl;
+	waiter_handle_f *		func;
+
+	volatile double			*tmo;
+	VTAILQ_HEAD(,waited)		sesshead;
+
 	void				*priv;
 	int				pfd;
 };
@@ -47,6 +52,9 @@ struct waiter_impl {
 	waiter_init_f		*init;
 	waiter_pass_f		*pass;
 };
+
+/* cache_waiter.c */
+void WAIT_handle(struct waiter *, struct waited *, enum wait_event, double now);
 
 /* mgt_waiter.c */
 extern struct waiter_impl const * waiter;

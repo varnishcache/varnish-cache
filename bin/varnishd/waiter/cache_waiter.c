@@ -60,6 +60,8 @@ WAIT_Init(waiter_handle_f *func, volatile double *tmo)
 	AN(waiter->init);
 	w = waiter->init(func, tmo);
 	w->impl = waiter;
+	w->func = func;
+	w->tmo = tmo;
 	AN(w->impl->pass || w->pfd > 0);
 	return (w);
 }
@@ -82,4 +84,14 @@ WAIT_Enter(const struct waiter *w, struct waited *wp)
 		return (-1);
 	assert (written == sizeof wp);
 	return (0);
+}
+
+void
+WAIT_handle(struct waiter *w, struct waited *wp, enum wait_event ev, double now)
+{
+	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
+	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
+
+	VTAILQ_REMOVE(&w->sesshead, wp, list);
+	w->func(wp, ev, now);
 }

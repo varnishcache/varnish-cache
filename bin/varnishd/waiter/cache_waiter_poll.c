@@ -55,8 +55,6 @@ struct vwp {
 	struct pollfd		*pollfd;
 	unsigned		npoll;
 	unsigned		hpoll;
-
-	VTAILQ_HEAD(,waited)	sesshead;
 };
 
 /*--------------------------------------------------------------------*/
@@ -150,7 +148,7 @@ vwp_main(void *priv)
 		now = VTIM_real();
 		deadline = now - *vwp->tmo;
 		v2 = v;
-		VTAILQ_FOREACH_SAFE(sp, &vwp->sesshead, list, sp2) {
+		VTAILQ_FOREACH_SAFE(sp, &vwp->waiter->sesshead, list, sp2) {
 			if (v != 0 && v2 == 0)
 				break;
 			CHECK_OBJ_NOTNULL(sp, WAITED_MAGIC);
@@ -162,14 +160,13 @@ vwp_main(void *priv)
 			if (vwp->pollfd[fd].revents) {
 				v2--;
 				vwp->pollfd[fd].revents = 0;
-				VTAILQ_REMOVE(&vwp->sesshead, sp, list);
 				vwp_unpoll(vwp, fd);
-				vwp->func(sp, WAITER_ACTION, now);
+				WAIT_handle(vwp->waiter, sp, WAITER_ACTION,
+				    now);
 			} else if (sp->deadline <= deadline) {
-				VTAILQ_REMOVE(&vwp->sesshead, sp, list);
 				vwp_unpoll(vwp, fd);
-				// XXX: not yet (void)VTCP_linger(sp->fd, 0);
-				vwp->func(sp, WAITER_TIMEOUT, now);
+				WAIT_handle(vwp->waiter, sp, WAITER_TIMEOUT,
+				    now);
 			}
 		}
 		if (v2 && vwp->pollfd[vwp->pipes[0]].revents) {
@@ -186,7 +183,7 @@ vwp_main(void *priv)
 			for (j = 0; j * sizeof ss[0] < i; j++) {
 				CHECK_OBJ_NOTNULL(ss[j], WAITED_MAGIC);
 				assert(ss[j]->fd >= 0);
-				VTAILQ_INSERT_TAIL(&vwp->sesshead, ss[j], list);
+				VTAILQ_INSERT_TAIL(&vwp->waiter->sesshead, ss[j], list);
 				vwp_poll(vwp, ss[j]->fd);
 			}
 		}
@@ -207,7 +204,7 @@ vwp_poll_init(waiter_handle_f *func, volatile double *tmo)
 	AN(vwp);
 	INIT_OBJ(vwp->waiter, WAITER_MAGIC);
 
-	VTAILQ_INIT(&vwp->sesshead);
+	VTAILQ_INIT(&vwp->waiter->sesshead);
 	AZ(pipe(vwp->pipes));
 
 	vwp->func = func;

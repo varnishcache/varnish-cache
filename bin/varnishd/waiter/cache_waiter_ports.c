@@ -57,7 +57,6 @@ struct vws {
 	volatile double		*tmo;
 	pthread_t		ports_thread;
 	int			dport;
-	VTAILQ_HEAD(,waited)	sesshead;
 };
 
 static inline void
@@ -82,7 +81,7 @@ vws_port_ev(struct vws *vws, port_event_t *ev, double now) {
 	if(ev->portev_source == PORT_SOURCE_USER) {
 		CAST_OBJ_NOTNULL(sp, ev->portev_user, WAITED_MAGIC);
 		assert(sp->fd >= 0);
-		VTAILQ_INSERT_TAIL(&vws->sesshead, sp, list);
+		VTAILQ_INSERT_TAIL(&vws->waiter->sesshead, sp, list);
 		vws_add(vws, sp->fd, sp);
 	} else {
 		assert(ev->portev_source == PORT_SOURCE_FD);
@@ -90,8 +89,7 @@ vws_port_ev(struct vws *vws, port_event_t *ev, double now) {
 		assert(sp->fd >= 0);
 		if(ev->portev_events & POLLERR) {
 			vws_del(vws, sp->fd);
-			VTAILQ_REMOVE(&vws->sesshead, sp, list);
-			vws->func(sp, WAITER_REMCLOSE, now);
+			WAIT_handle(vws->waiter, sp, WAITER_REMCLOSE, now);
 			return;
 		}
 
@@ -109,10 +107,7 @@ vws_port_ev(struct vws *vws, port_event_t *ev, double now) {
 		 *          threadID=129476&tstart=0
 		 */
 		vws_del(vws, sp->fd);
-		VTAILQ_REMOVE(&vws->sesshead, sp, list);
-
-		/* also handle errors */
-		vws->func(sp, WAITER_ACTION, now);
+		WAIT_handle(vws->waiter, sp, WAITER_ACTION, now);
 	}
 	return;
 }
@@ -206,17 +201,14 @@ vws_thread(void *priv)
 		 */
 
 		for (;;) {
-			sp = VTAILQ_FIRST(&vws->sesshead);
+			sp = VTAILQ_FIRST(&vws->waiter->sesshead);
 			if (sp == NULL)
 				break;
 			if (sp->deadline > deadline) {
 				break;
 			}
-			VTAILQ_REMOVE(&vws->sesshead, sp, list);
-			if(sp->fd != -1) {
-				vws_del(vws, sp->fd);
-			}
-			vws->func(sp, WAITER_TIMEOUT, now);
+			vws_del(vws, sp->fd);
+			WAIT_handle(vws->waiter, sp, WAITER_TIMEOUT, now);
 		}
 
 		/*
@@ -272,7 +264,7 @@ vws_init(waiter_handle_f *func, volatile double *tmo)
 
 	vws->func = func;
 	vws->tmo = tmo;
-	VTAILQ_INIT(&vws->sesshead);
+	VTAILQ_INIT(&vws->waiter->sesshead);
 	AZ(pthread_create(&vws->ports_thread, NULL, vws_thread, vws));
 	return (vws->waiter);
 }

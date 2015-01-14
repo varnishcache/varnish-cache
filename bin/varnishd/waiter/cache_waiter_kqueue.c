@@ -62,7 +62,6 @@ struct vwk {
 	int			kq;
 	struct kevent		ki[NKEV];
 	unsigned		nki;
-	VTAILQ_HEAD(,waited)	sesshead;
 };
 
 /*--------------------------------------------------------------------*/
@@ -107,7 +106,7 @@ vwk_pipe_ev(struct vwk *vwk, const struct kevent *kp)
 	while (i >= sizeof ss[0]) {
 		CHECK_OBJ_NOTNULL(ss[j], WAITED_MAGIC);
 		assert(ss[j]->fd >= 0);
-		VTAILQ_INSERT_TAIL(&vwk->sesshead, ss[j], list);
+		VTAILQ_INSERT_TAIL(&vwk->waiter->sesshead, ss[j], list);
 		vwk_kq_sess(vwk, ss[j], EV_ADD | EV_ONESHOT);
 		j++;
 		i -= sizeof ss[0];
@@ -127,12 +126,10 @@ vwk_sess_ev(struct vwk *vwk, const struct kevent *kp, double now)
 	CAST_OBJ_NOTNULL(sp, kp->udata, WAITED_MAGIC);
 
 	if (kp->data > 0) {
-		VTAILQ_REMOVE(&vwk->sesshead, sp, list);
-		vwk->func(sp, WAITER_ACTION, now);
+		WAIT_handle(vwk->waiter, sp, WAITER_ACTION, now);
 		return;
 	} else if (kp->flags & EV_EOF) {
-		VTAILQ_REMOVE(&vwk->sesshead, sp, list);
-		vwk->func(sp, WAITER_REMCLOSE, now);
+		WAIT_handle(vwk->waiter, sp, WAITER_REMCLOSE, now);
 		return;
 	} else {
 		WRONG("unknown kqueue state");
@@ -198,14 +195,12 @@ vwk_thread(void *priv)
 		vwk_kq_flush(vwk);
 		deadline = now - *vwk->tmo;
 		for (;;) {
-			sp = VTAILQ_FIRST(&vwk->sesshead);
+			sp = VTAILQ_FIRST(&vwk->waiter->sesshead);
 			if (sp == NULL)
 				break;
 			if (sp->deadline > deadline)
 				break;
-			VTAILQ_REMOVE(&vwk->sesshead, sp, list);
-			// XXX: not yet (void)VTCP_linger(sp->fd, 0);
-			vwk->func(sp, WAITER_TIMEOUT, now);
+			WAIT_handle(vwk->waiter, sp, WAITER_TIMEOUT, now);
 		}
 	}
 	NEEDLESS_RETURN(NULL);
@@ -228,7 +223,7 @@ vwk_init(waiter_handle_f *func, volatile double *tmo)
 	vwk->func = func;
 	vwk->tmo = tmo;
 
-	VTAILQ_INIT(&vwk->sesshead);
+	VTAILQ_INIT(&vwk->waiter->sesshead);
 	AZ(pipe(vwk->pipes));
 
 	AZ(VFIL_nonblocking(vwk->pipes[0]));

@@ -64,7 +64,6 @@ struct vwe {
 	waiter_handle_f		*func;
 	volatile double		*tmo;
 
-	VTAILQ_HEAD(,waited)	sesshead;
 	int			pipes[2];
 	int			timer_pipes[2];
 };
@@ -117,7 +116,7 @@ vwe_eev(struct vwe *vwe, const struct epoll_event *ep, double now)
 			while (i >= sizeof ss[0]) {
 				CHECK_OBJ_NOTNULL(ss[j], WAITED_MAGIC);
 				assert(ss[j]->fd >= 0);
-				VTAILQ_INSERT_TAIL(&vwe->sesshead, ss[j], list);
+				VTAILQ_INSERT_TAIL(&vwe->waiter->sesshead, ss[j], list);
 				vwe_cond_modadd(vwe, ss[j]->fd, ss[j]);
 				j++;
 				i -= sizeof ss[0];
@@ -127,17 +126,13 @@ vwe_eev(struct vwe *vwe, const struct epoll_event *ep, double now)
 	} else {
 		CAST_OBJ_NOTNULL(sp, ep->data.ptr, WAITED_MAGIC);
 		if (ep->events & EPOLLIN || ep->events & EPOLLPRI) {
-			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			vwe->func(sp, WAITER_ACTION, now);
+			WAIT_handle(vwe->waiter, sp, WAITER_ACTION, now);
 		} else if (ep->events & EPOLLERR) {
-			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			vwe->func(sp, WAITER_REMCLOSE, now);
+			WAIT_handle(vwe->waiter, sp, WAITER_REMCLOSE, now);
 		} else if (ep->events & EPOLLHUP) {
-			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			vwe->func(sp, WAITER_REMCLOSE, now);
+			WAIT_handle(vwe->waiter, sp, WAITER_REMCLOSE, now);
 		} else if (ep->events & EPOLLRDHUP) {
-			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			vwe->func(sp, WAITER_REMCLOSE, now);
+			WAIT_handle(vwe->waiter, sp, WAITER_REMCLOSE, now);
 		}
 	}
 }
@@ -183,13 +178,12 @@ vwe_thread(void *priv)
 		/* check for timeouts */
 		deadline = now - *vwe->tmo;
 		for (;;) {
-			sp = VTAILQ_FIRST(&vwe->sesshead);
+			sp = VTAILQ_FIRST(&vwe->waiter->sesshead);
 			if (sp == NULL)
 				break;
 			if (sp->deadline > deadline)
 				break;
-			VTAILQ_REMOVE(&vwe->sesshead, sp, list);
-			vwe->func(sp, WAITER_TIMEOUT, now);
+			WAIT_handle(vwe->waiter, sp, WAITER_TIMEOUT, now);
 		}
 	}
 	return (NULL);
@@ -229,7 +223,7 @@ vwe_init(waiter_handle_f *func, volatile double *tmo)
 
 	INIT_OBJ(vwe->waiter, WAITER_MAGIC);
 
-	VTAILQ_INIT(&vwe->sesshead);
+	VTAILQ_INIT(&vwe->waiter->sesshead);
 	AZ(pipe(vwe->pipes));
 	AZ(pipe(vwe->timer_pipes));
 
