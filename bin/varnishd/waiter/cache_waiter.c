@@ -55,16 +55,12 @@ WAIT_Init(waiter_handle_f *func, volatile double *tmo)
 {
 	struct waiter *w;
 
-	ALLOC_OBJ(w, WAITER_MAGIC);
-	AN(w);
-	w->pfd = -1;
-
 	AN(waiter);
 	AN(waiter->name);
 	AN(waiter->init);
+	w = waiter->init(func, tmo);
 	w->impl = waiter;
-	w->priv = w->impl->init(func, &w->pfd, tmo);
-	AN(waiter->pass || w->pfd >= 0);
+	AN(w->impl->pass || w->pfd > 0);
 	return (w);
 }
 

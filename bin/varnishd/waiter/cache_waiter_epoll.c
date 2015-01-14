@@ -55,6 +55,7 @@
 struct vwe {
 	unsigned		magic;
 #define VWE_MAGIC		0x6bd73424
+	struct waiter		waiter[1];
 
 	pthread_t		epoll_thread;
 	pthread_t		timer_thread;
@@ -215,17 +216,18 @@ vwe_timeout_idle_ticker(void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static void * __match_proto__(waiter_init_f)
-vwe_init(waiter_handle_f *func, int *pfd, volatile double *tmo)
+static struct waiter * __match_proto__(waiter_init_f)
+vwe_init(waiter_handle_f *func, volatile double *tmo)
 {
 	struct vwe *vwe;
 
 	AN(func);
-	AN(pfd);
 	AN(tmo);
 
 	ALLOC_OBJ(vwe, VWE_MAGIC);
 	AN(vwe);
+
+	INIT_OBJ(vwe->waiter, WAITER_MAGIC);
 
 	VTAILQ_INIT(&vwe->sesshead);
 	AZ(pipe(vwe->pipes));
@@ -237,12 +239,12 @@ vwe_init(waiter_handle_f *func, int *pfd, volatile double *tmo)
 
 	vwe->func = func;
 	vwe->tmo = tmo;
-	*pfd = vwe->pipes[1];
+	vwe->waiter->pfd = vwe->pipes[1];
 
 	AZ(pthread_create(&vwe->timer_thread,
 	    NULL, vwe_timeout_idle_ticker, vwe));
 	AZ(pthread_create(&vwe->epoll_thread, NULL, vwe_thread, vwe));
-	return(vwe);
+	return(vwe->waiter);
 }
 
 /*--------------------------------------------------------------------*/

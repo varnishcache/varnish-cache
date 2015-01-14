@@ -53,6 +53,8 @@
 struct vwk {
 	unsigned		magic;
 #define VWK_MAGIC		0x1cc2acc2
+	struct waiter		waiter[1];
+
 	waiter_handle_f		*func;
 	volatile double		*tmo;
 	pthread_t		thread;
@@ -211,16 +213,17 @@ vwk_thread(void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static void * __match_proto__(waiter_init_f)
-vwk_init(waiter_handle_f *func, int *pfd, volatile double *tmo)
+static struct waiter * __match_proto__(waiter_init_f)
+vwk_init(waiter_handle_f *func, volatile double *tmo)
 {
 	struct vwk *vwk;
 
 	AN(func);
-	AN(pfd);
 	AN(tmo);
 	ALLOC_OBJ(vwk, VWK_MAGIC);
 	AN(vwk);
+
+	INIT_OBJ(vwk->waiter, WAITER_MAGIC);
 
 	vwk->func = func;
 	vwk->tmo = tmo;
@@ -230,10 +233,10 @@ vwk_init(waiter_handle_f *func, int *pfd, volatile double *tmo)
 
 	AZ(VFIL_nonblocking(vwk->pipes[0]));
 	AZ(VFIL_nonblocking(vwk->pipes[1]));
-	*pfd = vwk->pipes[1];
+	vwk->waiter->pfd = vwk->pipes[1];
 
 	AZ(pthread_create(&vwk->thread, NULL, vwk_thread, vwk));
-	return (vwk);
+	return (vwk->waiter);
 }
 
 /*--------------------------------------------------------------------*/

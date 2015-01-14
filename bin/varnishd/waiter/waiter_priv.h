@@ -39,7 +39,7 @@ struct waiter {
 	int				pfd;
 };
 
-typedef void* waiter_init_f(waiter_handle_f *, int *, volatile double *);
+typedef struct waiter* waiter_init_f(waiter_handle_f *, volatile double *);
 typedef int waiter_pass_f(void *priv, struct waited *);
 
 struct waiter_impl {

@@ -46,6 +46,8 @@
 struct vwp {
 	unsigned		magic;
 #define VWP_MAGIC		0x4b2cc735
+	struct waiter		waiter[1];
+
 	waiter_handle_f		*func;
 	volatile double		*tmo;
 	int			pipes[2];
@@ -195,15 +197,16 @@ vwp_main(void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static void * __match_proto__(waiter_init_f)
-vwp_poll_init(waiter_handle_f *func, int *pfd, volatile double *tmo)
+static struct waiter * __match_proto__(waiter_init_f)
+vwp_poll_init(waiter_handle_f *func, volatile double *tmo)
 {
 	struct vwp *vwp;
 
 	AN(func);
-	AN(pfd);
 	ALLOC_OBJ(vwp, VWP_MAGIC);
 	AN(vwp);
+	INIT_OBJ(vwp->waiter, WAITER_MAGIC);
+
 	VTAILQ_INIT(&vwp->sesshead);
 	AZ(pipe(vwp->pipes));
 
@@ -211,11 +214,11 @@ vwp_poll_init(waiter_handle_f *func, int *pfd, volatile double *tmo)
 	vwp->tmo = tmo;
 
 	AZ(VFIL_nonblocking(vwp->pipes[1]));
-	*pfd = vwp->pipes[1];
+	vwp->waiter->pfd = vwp->pipes[1];
 
 	vwp_pollspace(vwp, 256);
 	AZ(pthread_create(&vwp->poll_thread, NULL, vwp_main, vwp));
-	return (vwp);
+	return (vwp->waiter);
 }
 
 /*--------------------------------------------------------------------*/

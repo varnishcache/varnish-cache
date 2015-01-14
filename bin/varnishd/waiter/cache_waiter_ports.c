@@ -51,6 +51,8 @@
 struct vws {
 	unsigned		magic;
 #define VWS_MAGIC		0x0b771473
+	struct waiter		waiter[1];
+
 	waiter_handle_f		*func;
 	volatile double		*tmo;
 	pthread_t		ports_thread;
@@ -257,21 +259,22 @@ vws_pass(void *priv, struct waited *sp)
 
 /*--------------------------------------------------------------------*/
 
-static void * __match_proto__(waiter_init_f)
-vws_init(waiter_handle_f *func, int *pfd, volatile double *tmo)
+static struct waiter * __match_proto__(waiter_init_f)
+vws_init(waiter_handle_f *func, volatile double *tmo)
 {
 	struct vws *vws;
 
 	AN(func);
-	AN(pfd);
 	AN(tmo);
 	ALLOC_OBJ(vws, VWS_MAGIC);
 	AN(vws);
+	INIT_OBJ(vws->waiter, WAITER_MAGIC);
+
 	vws->func = func;
 	vws->tmo = tmo;
 	VTAILQ_INIT(&vws->sesshead);
 	AZ(pthread_create(&vws->ports_thread, NULL, vws_thread, vws));
-	return (vws);
+	return (vws->waiter);
 }
 
 /*--------------------------------------------------------------------*/
