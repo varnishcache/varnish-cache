@@ -214,7 +214,7 @@ vws_thread(void *priv)
 		 */
 
 		if (sp) {
-			double tmo = (sp->deadline + *vws->tmo) - now;
+			double tmo = (sp->deadline + *vws->waiter->tmo) - now;
 
 			if (tmo < min_t) {
 				timeout = &min_ts;
