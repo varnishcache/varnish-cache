@@ -46,7 +46,6 @@
 #include "waiter/waiter.h"
 #include "waiter/waiter_priv.h"
 #include "vtim.h"
-#include "vfil.h"
 
 #define NKEV	100
 
@@ -58,7 +57,6 @@ struct vwk {
 	waiter_handle_f		*func;
 	volatile double		*tmo;
 	pthread_t		thread;
-	int			pipes[2];
 	int			kq;
 	struct kevent		ki[NKEV];
 	unsigned		nki;
@@ -92,26 +90,15 @@ vwk_kq_sess(struct vwk *vwk, struct waited *sp, short arm)
 /*--------------------------------------------------------------------*/
 
 static void
-vwk_pipe_ev(struct vwk *vwk, const struct kevent *kp)
+vwk_inject(const struct waiter *w, struct waited *wp)
 {
-	int i, j;
-	struct waited *ss[NKEV];
+	struct vwk *vwk;
 
-	AN(kp->udata);
-	assert(kp->udata == vwk->pipes);
-	j = 0;
-	i = read(vwk->pipes[0], ss, sizeof ss);
-	if (i == -1 && errno == EAGAIN)
-		return;
-	while (i >= sizeof ss[0]) {
-		CHECK_OBJ_NOTNULL(ss[j], WAITED_MAGIC);
-		assert(ss[j]->fd >= 0);
-		VTAILQ_INSERT_TAIL(&vwk->waiter->sesshead, ss[j], list);
-		vwk_kq_sess(vwk, ss[j], EV_ADD | EV_ONESHOT);
-		j++;
-		i -= sizeof ss[0];
-	}
-	AZ(i);
+	CAST_OBJ_NOTNULL(vwk, w->priv, VWK_MAGIC);
+	if (wp == w->pipe_w)
+		vwk_kq_sess(vwk, wp, EV_ADD);
+	else
+		vwk_kq_sess(vwk, wp, EV_ADD | EV_ONESHOT);
 }
 
 /*--------------------------------------------------------------------*/
@@ -122,7 +109,6 @@ vwk_sess_ev(struct vwk *vwk, const struct kevent *kp, double now)
 	struct waited *sp;
 
 	AN(kp->udata);
-	assert(kp->udata != vwk->pipes);
 	CAST_OBJ_NOTNULL(sp, kp->udata, WAITED_MAGIC);
 
 	if (kp->data > 0) {
@@ -153,12 +139,7 @@ vwk_thread(void *priv)
 	vwk->kq = kqueue();
 	assert(vwk->kq >= 0);
 
-	j = 0;
-	EV_SET(&ke[j], 0, EVFILT_TIMER, EV_ADD, 0, 100, NULL);
-	j++;
-	EV_SET(&ke[j], vwk->pipes[0], EVFILT_READ, EV_ADD, 0, 0, vwk->pipes);
-	j++;
-	AZ(kevent(vwk->kq, ke, j, NULL, 0, NULL));
+	vwk_kq_flush(vwk);
 
 	vwk->nki = 0;
 	while (1) {
@@ -175,9 +156,6 @@ vwk_thread(void *priv)
 		for (kp = ke, j = 0; j < n; j++, kp++) {
 			if (kp->filter == EVFILT_TIMER) {
 				dotimer = 1;
-			} else if (kp->filter == EVFILT_READ &&
-			    kp->udata == vwk->pipes) {
-				vwk_pipe_ev(vwk, kp);
 			} else {
 				assert(kp->filter == EVFILT_READ);
 				vwk_sess_ev(vwk, kp, now);
@@ -219,16 +197,16 @@ vwk_init(waiter_handle_f *func, volatile double *tmo)
 	AN(vwk);
 
 	INIT_OBJ(vwk->waiter, WAITER_MAGIC);
+	VTAILQ_INIT(&vwk->waiter->sesshead);
+	vwk->waiter->priv = vwk;
+	
+	EV_SET(&vwk->ki[vwk->nki], 0, EVFILT_TIMER, EV_ADD, 0, 100, NULL);
+	vwk->nki++;
+
+	WAIT_UsePipe(vwk->waiter);
 
 	vwk->func = func;
 	vwk->tmo = tmo;
-
-	VTAILQ_INIT(&vwk->waiter->sesshead);
-	AZ(pipe(vwk->pipes));
-
-	AZ(VFIL_nonblocking(vwk->pipes[0]));
-	AZ(VFIL_nonblocking(vwk->pipes[1]));
-	vwk->waiter->pfd = vwk->pipes[1];
 
 	AZ(pthread_create(&vwk->thread, NULL, vwk_thread, vwk));
 	return (vwk->waiter);
@@ -239,6 +217,7 @@ vwk_init(waiter_handle_f *func, volatile double *tmo)
 const struct waiter_impl waiter_kqueue = {
 	.name =		"kqueue",
 	.init =		vwk_init,
+	.inject =	vwk_inject,
 };
 
 #endif /* defined(HAVE_KQUEUE) */

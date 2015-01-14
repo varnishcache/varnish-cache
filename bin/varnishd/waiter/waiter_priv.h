@@ -37,6 +37,9 @@ struct waiter {
 	const struct waiter_impl	*impl;
 	waiter_handle_f *		func;
 
+	int				pipes[2];
+	struct waited			*pipe_w;
+
 	volatile double			*tmo;
 	VTAILQ_HEAD(,waited)		sesshead;
 
@@ -46,15 +49,18 @@ struct waiter {
 
 typedef struct waiter* waiter_init_f(waiter_handle_f *, volatile double *);
 typedef int waiter_pass_f(void *priv, struct waited *);
+typedef void waiter_inject_f(const struct waiter *, struct waited *);
 
 struct waiter_impl {
 	const char		*name;
 	waiter_init_f		*init;
 	waiter_pass_f		*pass;
+	waiter_inject_f		*inject;
 };
 
 /* cache_waiter.c */
 void WAIT_handle(struct waiter *, struct waited *, enum wait_event, double now);
+void WAIT_UsePipe(struct waiter *w);
 
 /* mgt_waiter.c */
 extern struct waiter_impl const * waiter;

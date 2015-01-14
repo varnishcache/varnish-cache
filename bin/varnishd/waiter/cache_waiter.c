@@ -37,8 +37,12 @@
 
 #include "cache/cache.h"
 
+#include "vfil.h"
+
 #include "waiter/waiter.h"
 #include "waiter/waiter_priv.h"
+
+#define NEV 8192
 
 const char *
 WAIT_GetName(void)
@@ -66,6 +70,22 @@ WAIT_Init(waiter_handle_f *func, volatile double *tmo)
 	return (w);
 }
 
+void
+WAIT_UsePipe(struct waiter *w)
+{
+	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
+
+	AN(waiter->inject);
+	AZ(pipe(w->pipes));
+	AZ(VFIL_nonblocking(w->pipes[0]));
+	AZ(VFIL_nonblocking(w->pipes[1]));
+	w->pfd = w->pipes[1];
+	ALLOC_OBJ(w->pipe_w, WAITED_MAGIC);
+	w->pipe_w->fd = w->pipes[0];
+	w->pipe_w->deadline = 9e99;
+	waiter->inject(w, w->pipe_w);
+}
+
 int
 WAIT_Enter(const struct waiter *w, struct waited *wp)
 {
@@ -89,8 +109,25 @@ WAIT_Enter(const struct waiter *w, struct waited *wp)
 void
 WAIT_handle(struct waiter *w, struct waited *wp, enum wait_event ev, double now)
 {
+	struct waited *ss[NEV];
+	int i, j;
+
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
+
+	if (wp == w->pipe_w) {
+		i = read(w->pipes[0], ss, sizeof ss);
+		if (i == -1 && errno == EAGAIN)
+			return;
+		for (j = 0; i >= sizeof ss[0]; j++, i -= sizeof ss[0]) {
+			CHECK_OBJ_NOTNULL(ss[j], WAITED_MAGIC);
+			assert(ss[j]->fd >= 0);
+			VTAILQ_INSERT_TAIL(&w->sesshead, ss[j], list);
+			w->impl->inject(w, ss[j]);
+		}
+		AZ(i);
+		return;
+	}
 
 	VTAILQ_REMOVE(&w->sesshead, wp, list);
 	w->func(wp, ev, now);
