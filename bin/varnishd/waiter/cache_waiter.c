@@ -132,7 +132,7 @@ Wait_UsePipe(struct waiter *w)
 	AZ(VFIL_nonblocking(w->pipes[1]));
 	ALLOC_OBJ(w->pipe_w, WAITED_MAGIC);
 	w->pipe_w->fd = w->pipes[0];
-	w->pipe_w->idle = 9e99;
+	w->pipe_w->idle = 0;
 	VTAILQ_INSERT_HEAD(&w->waithead, w->pipe_w, list);
 	waiter->inject(w, w->pipe_w);
 }
@@ -159,7 +159,7 @@ Wait_Enter(const struct waiter *w, struct waited *wp)
 }
 
 static void
-wait_updidle(struct waiter *w)
+wait_updidle(struct waiter *w, double now)
 {
 	struct waited *wp;
 
@@ -169,6 +169,7 @@ wait_updidle(struct waiter *w)
 	if (wp == w->pipe_w) {
 		VTAILQ_REMOVE(&w->waithead, wp, list);
 		VTAILQ_INSERT_TAIL(&w->waithead, wp, list);
+		wp->idle = now;
 		wp = VTAILQ_FIRST(&w->waithead);
 	}
 	w->next_idle = wp->idle;
@@ -189,9 +190,13 @@ Wait_Handle(struct waiter *w, struct waited *wp, enum wait_event ev, double now)
 
 		VTAILQ_REMOVE(&w->waithead, wp, list);
 		w->func(wp, ev, now);
-		wait_updidle(w);
+		wait_updidle(w, now);
 		return;
 	}
+
+	VTAILQ_REMOVE(&w->waithead, wp, list);
+	wp->idle = now;
+	VTAILQ_INSERT_TAIL(&w->waithead, wp, list);
 
 	i = read(w->pipes[0], ss, sizeof ss);
 	if (i == -1 && errno == EAGAIN)
@@ -222,7 +227,7 @@ Wait_Handle(struct waiter *w, struct waited *wp, enum wait_event ev, double now)
 		VTAILQ_REMOVE(&w->waithead, wp, list);
 		w->func(wp, WAITER_TIMEOUT, now);
 	}
-	wait_updidle(w);
+	wait_updidle(w, now);
 }
 
 void
