@@ -13,8 +13,7 @@ Changes since 4.0.2:
 - [packaging] EL6 packages are once again built with -O2.
 - [parameter] fetch_chunksize default is reduced to 16KB. (from 128KB)
 - Added std.time() which converts strings to VCL_TIME.
-- [packaging] packages now Provide strictABI (gitref) and ABI (VRT major/minor)
-for VMOD use.
+- [packaging] packages now Provide strictABI (gitref) and ABI (VRT major/minor) for VMOD use.
 
 Bugs fixed
 ----------
@@ -34,6 +33,7 @@ Bugs fixed
 * 1648_ - Avoid partial IMS updates to replace old object.
 * 1650_ - Collapse multiple X-Forwarded-For headers
 
+.. _1349: https://www.varnish-cache.org/trac/ticket/1349
 .. _1378: https://www.varnish-cache.org/trac/ticket/1378
 .. _1596: https://www.varnish-cache.org/trac/ticket/1596
 .. _1506: https://www.varnish-cache.org/trac/ticket/1506
