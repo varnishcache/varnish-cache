@@ -109,14 +109,11 @@ Wait_New(waiter_handle_f *func, volatile double *tmo)
 	waiter->init(w);
 	AN(w->impl->pass || w->pipes[1] >= 0);
 
-	if (w->pipes[1] >= 0 && VTAILQ_EMPTY(&waiters)) {
-		/* Start timer poker thread */
-		AZ(pthread_create(&wait_thr, NULL, wait_poker_thread, NULL));
-	}
-
 	Lck_Lock(&wait_mtx);
 	VTAILQ_INSERT_TAIL(&waiters, w, list);
 	nwaiters++;
+	if (w->pipes[1] >= 0 && nwaiters == 1)
+		AZ(pthread_create(&wait_thr, NULL, wait_poker_thread, NULL));
 	Lck_Unlock(&wait_mtx);
 	return (w);
 }
