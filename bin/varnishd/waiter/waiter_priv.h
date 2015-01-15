@@ -41,7 +41,7 @@ struct waiter {
 	struct waited			*pipe_w;
 
 	volatile double			*tmo;
-	VTAILQ_HEAD(,waited)		sesshead;
+	VTAILQ_HEAD(,waited)		waithead;
 
 	void				*priv;
 	int				pfd;
@@ -62,8 +62,8 @@ struct waiter_impl {
 };
 
 /* cache_waiter.c */
-void WAIT_handle(struct waiter *, struct waited *, enum wait_event, double now);
-void WAIT_UsePipe(struct waiter *w);
+void Wait_Handle(struct waiter *, struct waited *, enum wait_event, double now);
+void Wait_UsePipe(struct waiter *w);
 
 /* mgt_waiter.c */
 extern struct waiter_impl const * waiter;

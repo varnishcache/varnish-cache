@@ -45,7 +45,7 @@
 #define NEV 8192
 
 const char *
-WAIT_GetName(void)
+Wait_GetName(void)
 {
 
 	if (waiter != NULL)
@@ -55,7 +55,7 @@ WAIT_GetName(void)
 }
 
 struct waiter *
-WAIT_Init(waiter_handle_f *func, volatile double *tmo)
+Wait_New(waiter_handle_f *func, volatile double *tmo)
 {
 	struct waiter *w;
 
@@ -70,7 +70,7 @@ WAIT_Init(waiter_handle_f *func, volatile double *tmo)
 	w->impl = waiter;
 	w->func = func;
 	w->tmo = tmo;
-	VTAILQ_INIT(&w->sesshead);
+	VTAILQ_INIT(&w->waithead);
 
 	waiter->init(w);
 	AN(w->impl->pass || w->pfd > 0);
@@ -78,7 +78,7 @@ WAIT_Init(waiter_handle_f *func, volatile double *tmo)
 }
 
 void
-WAIT_UsePipe(struct waiter *w)
+Wait_UsePipe(struct waiter *w)
 {
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 
@@ -90,12 +90,12 @@ WAIT_UsePipe(struct waiter *w)
 	ALLOC_OBJ(w->pipe_w, WAITED_MAGIC);
 	w->pipe_w->fd = w->pipes[0];
 	w->pipe_w->deadline = 9e99;
-	VTAILQ_INSERT_HEAD(&w->sesshead, w->pipe_w, list);
+	VTAILQ_INSERT_HEAD(&w->waithead, w->pipe_w, list);
 	waiter->inject(w, w->pipe_w);
 }
 
 int
-WAIT_Enter(const struct waiter *w, struct waited *wp)
+Wait_Enter(const struct waiter *w, struct waited *wp)
 {
 	ssize_t written;
 
@@ -116,7 +116,7 @@ WAIT_Enter(const struct waiter *w, struct waited *wp)
 }
 
 void
-WAIT_handle(struct waiter *w, struct waited *wp, enum wait_event ev, double now)
+Wait_Handle(struct waiter *w, struct waited *wp, enum wait_event ev, double now)
 {
 	struct waited *ss[NEV];
 	int i, j;
@@ -131,7 +131,7 @@ WAIT_handle(struct waiter *w, struct waited *wp, enum wait_event ev, double now)
 		for (j = 0; i >= sizeof ss[0]; j++, i -= sizeof ss[0]) {
 			CHECK_OBJ_NOTNULL(ss[j], WAITED_MAGIC);
 			assert(ss[j]->fd >= 0);
-			VTAILQ_INSERT_TAIL(&w->sesshead, ss[j], list);
+			VTAILQ_INSERT_TAIL(&w->waithead, ss[j], list);
 			w->impl->inject(w, ss[j]);
 		}
 		AZ(i);
@@ -140,6 +140,6 @@ WAIT_handle(struct waiter *w, struct waited *wp, enum wait_event ev, double now)
 	if (w->impl->evict != NULL)
 		w->impl->evict(w, wp);
 
-	VTAILQ_REMOVE(&w->sesshead, wp, list);
+	VTAILQ_REMOVE(&w->waithead, wp, list);
 	w->func(wp, ev, now);
 }

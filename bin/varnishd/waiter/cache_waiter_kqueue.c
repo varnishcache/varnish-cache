@@ -110,10 +110,10 @@ vwk_sess_ev(const struct vwk *vwk, const struct kevent *kp, double now)
 	CAST_OBJ_NOTNULL(sp, kp->udata, WAITED_MAGIC);
 
 	if (kp->data > 0) {
-		WAIT_handle(vwk->waiter, sp, WAITER_ACTION, now);
+		Wait_Handle(vwk->waiter, sp, WAITER_ACTION, now);
 		return;
 	} else if (kp->flags & EV_EOF) {
-		WAIT_handle(vwk->waiter, sp, WAITER_REMCLOSE, now);
+		Wait_Handle(vwk->waiter, sp, WAITER_REMCLOSE, now);
 		return;
 	} else {
 		WRONG("unknown kqueue state");
@@ -171,12 +171,12 @@ vwk_thread(void *priv)
 		vwk_kq_flush(vwk);
 		deadline = now - *vwk->waiter->tmo;
 		for (;;) {
-			sp = VTAILQ_FIRST(&vwk->waiter->sesshead);
+			sp = VTAILQ_FIRST(&vwk->waiter->waithead);
 			if (sp == NULL)
 				break;
 			if (sp->deadline > deadline)
 				break;
-			WAIT_handle(vwk->waiter, sp, WAITER_TIMEOUT, now);
+			Wait_Handle(vwk->waiter, sp, WAITER_TIMEOUT, now);
 		}
 	}
 	NEEDLESS_RETURN(NULL);
@@ -197,7 +197,7 @@ vwk_init(struct waiter *w)
 	EV_SET(&vwk->ki[vwk->nki], 0, EVFILT_TIMER, EV_ADD, 0, 100, NULL);
 	vwk->nki++;
 
-	WAIT_UsePipe(w);
+	Wait_UsePipe(w);
 
 	AZ(pthread_create(&vwk->thread, NULL, vwk_thread, vwk));
 }

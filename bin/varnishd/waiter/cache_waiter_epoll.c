@@ -92,13 +92,13 @@ vwe_eev(struct vwe *vwe, const struct epoll_event *ep, double now)
 	AN(ep->data.ptr);
 	CAST_OBJ_NOTNULL(sp, ep->data.ptr, WAITED_MAGIC);
 	if (ep->events & EPOLLIN || ep->events & EPOLLPRI) {
-		WAIT_handle(vwe->waiter, sp, WAITER_ACTION, now);
+		Wait_Handle(vwe->waiter, sp, WAITER_ACTION, now);
 	} else if (ep->events & EPOLLERR) {
-		WAIT_handle(vwe->waiter, sp, WAITER_REMCLOSE, now);
+		Wait_Handle(vwe->waiter, sp, WAITER_REMCLOSE, now);
 	} else if (ep->events & EPOLLHUP) {
-		WAIT_handle(vwe->waiter, sp, WAITER_REMCLOSE, now);
+		Wait_Handle(vwe->waiter, sp, WAITER_REMCLOSE, now);
 	} else if (ep->events & EPOLLRDHUP) {
-		WAIT_handle(vwe->waiter, sp, WAITER_REMCLOSE, now);
+		Wait_Handle(vwe->waiter, sp, WAITER_REMCLOSE, now);
 	}
 }
 
@@ -136,9 +136,9 @@ vwe_thread(void *priv)
 
 		/* check for timeouts */
 		deadline = now - *vwe->waiter->tmo;
-		VTAILQ_FOREACH_SAFE(sp, &vwe->waiter->sesshead, list, sp2) {
+		VTAILQ_FOREACH_SAFE(sp, &vwe->waiter->waithead, list, sp2) {
 			if (sp->deadline < deadline)
-				WAIT_handle(vwe->waiter, sp,
+				Wait_Handle(vwe->waiter, sp,
 				    WAITER_TIMEOUT, now);
 		}
 	}
@@ -180,7 +180,7 @@ vwe_init(struct waiter *w)
 	vwe->epfd = epoll_create(1);
 	assert(vwe->epfd >= 0);
 
-	WAIT_UsePipe(w);
+	Wait_UsePipe(w);
 
 	AZ(pipe(vwe->timer_pipes));
 	AZ(VFIL_nonblocking(vwe->timer_pipes[0]));

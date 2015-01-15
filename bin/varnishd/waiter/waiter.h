@@ -56,9 +56,9 @@ enum wait_event {
 typedef void waiter_handle_f(struct waited *, enum wait_event, double now);
 
 /* cache_waiter.c */
-int WAIT_Enter(const struct waiter *, struct waited *);
-struct waiter *WAIT_Init(waiter_handle_f *, volatile double *timeout);
-const char *WAIT_GetName(void);
+int Wait_Enter(const struct waiter *, struct waited *);
+struct waiter *Wait_New(waiter_handle_f *, volatile double *timeout);
+const char *Wait_GetName(void);
 
 /* mgt_waiter.c */
-int WAIT_tweak_waiter(struct vsb *vsb, const char *arg);
+int Wait_Argument(struct vsb *vsb, const char *arg);

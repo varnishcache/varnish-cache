@@ -146,7 +146,7 @@ vwp_main(void *priv)
 		v2 = v;
 		now = VTIM_real();
 		deadline = now - *vwp->waiter->tmo;
-		VTAILQ_FOREACH_SAFE(sp, &vwp->waiter->sesshead, list, sp2) {
+		VTAILQ_FOREACH_SAFE(sp, &vwp->waiter->waithead, list, sp2) {
 			if (v != 0 && v2 == 0)
 				break;
 			CHECK_OBJ_NOTNULL(sp, WAITED_MAGIC);
@@ -158,10 +158,10 @@ vwp_main(void *priv)
 			if (vwp->pollfd[fd].revents) {
 				v2--;
 				vwp->pollfd[fd].revents = 0;
-				WAIT_handle(vwp->waiter, sp, WAITER_ACTION,
+				Wait_Handle(vwp->waiter, sp, WAITER_ACTION,
 				    now);
 			} else if (sp->deadline <= deadline) {
-				WAIT_handle(vwp->waiter, sp, WAITER_TIMEOUT,
+				Wait_Handle(vwp->waiter, sp, WAITER_TIMEOUT,
 				    now);
 			}
 		}
@@ -182,7 +182,7 @@ vwp_poll_init(struct waiter *w)
 	vwp->waiter = w;
 
 	vwp_pollspace(vwp, 256);
-	WAIT_UsePipe(w);
+	Wait_UsePipe(w);
 	AZ(pthread_create(&vwp->poll_thread, NULL, vwp_main, vwp));
 }
 

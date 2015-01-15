@@ -574,7 +574,7 @@ tweak_waiter(struct vsb *vsb, const struct parspec *par, const char *arg)
 
 	/* XXX should have tweak_generic_string */
 	(void)par;
-	return (WAIT_tweak_waiter(vsb, arg));
+	return (Wait_Argument(vsb, arg));
 }
 
 /*--------------------------------------------------------------------*/

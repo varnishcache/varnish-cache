@@ -296,7 +296,7 @@ SES_Wait(struct sess *sp)
 	sp->waited.fd = sp->fd;
 	sp->waited.ptr = sp;
 	sp->waited.deadline = sp->t_idle;
-	if (WAIT_Enter(pp->http1_waiter, &sp->waited)) {
+	if (Wait_Enter(pp->http1_waiter, &sp->waited)) {
 		VSC_C_main->sess_pipe_overflow++;
 		SES_Delete(sp, SC_SESS_PIPE_OVERFLOW, NAN);
 	}
@@ -467,7 +467,7 @@ SES_NewPool(struct pool *wp, unsigned pool_no)
 	bprintf(nb, "sess%u", pool_no);
 	pp->mpl_sess = MPL_New(nb, &cache_param->sess_pool,
 	    &cache_param->workspace_session);
-	pp->http1_waiter = WAIT_Init(ses_handle, &cache_param->timeout_idle);
+	pp->http1_waiter = Wait_New(ses_handle, &cache_param->timeout_idle);
 	return (pp);
 }
 

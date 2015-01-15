@@ -79,7 +79,7 @@ vws_port_ev(struct vws *vws, port_event_t *ev, double now) {
 	if(ev->portev_source == PORT_SOURCE_USER) {
 		CAST_OBJ_NOTNULL(sp, ev->portev_user, WAITED_MAGIC);
 		assert(sp->fd >= 0);
-		VTAILQ_INSERT_TAIL(&vws->waiter->sesshead, sp, list);
+		VTAILQ_INSERT_TAIL(&vws->waiter->waithead, sp, list);
 		vws_add(vws, sp->fd, sp);
 	} else {
 		assert(ev->portev_source == PORT_SOURCE_FD);
@@ -87,7 +87,7 @@ vws_port_ev(struct vws *vws, port_event_t *ev, double now) {
 		assert(sp->fd >= 0);
 		if(ev->portev_events & POLLERR) {
 			vws_del(vws, sp->fd);
-			WAIT_handle(vws->waiter, sp, WAITER_REMCLOSE, now);
+			Wait_Handle(vws->waiter, sp, WAITER_REMCLOSE, now);
 			return;
 		}
 
@@ -105,7 +105,7 @@ vws_port_ev(struct vws *vws, port_event_t *ev, double now) {
 		 *          threadID=129476&tstart=0
 		 */
 		vws_del(vws, sp->fd);
-		WAIT_handle(vws->waiter, sp, WAITER_ACTION, now);
+		Wait_Handle(vws->waiter, sp, WAITER_ACTION, now);
 	}
 	return;
 }
@@ -199,14 +199,14 @@ vws_thread(void *priv)
 		 */
 
 		for (;;) {
-			sp = VTAILQ_FIRST(&vws->waiter->sesshead);
+			sp = VTAILQ_FIRST(&vws->waiter->waithead);
 			if (sp == NULL)
 				break;
 			if (sp->deadline > deadline) {
 				break;
 			}
 			vws_del(vws, sp->fd);
-			WAIT_handle(vws->waiter, sp, WAITER_TIMEOUT, now);
+			Wait_Handle(vws->waiter, sp, WAITER_TIMEOUT, now);
 		}
 
 		/*

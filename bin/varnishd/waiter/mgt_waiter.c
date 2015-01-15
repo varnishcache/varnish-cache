@@ -55,7 +55,7 @@ static const struct waiter_impl *const waiter_impls[] = {
 struct waiter_impl const *waiter;
 
 int
-WAIT_tweak_waiter(struct vsb *vsb, const char *arg)
+Wait_Argument(struct vsb *vsb, const char *arg)
 {
 	int i;
 
