@@ -127,9 +127,8 @@ vwk_thread(void *priv)
 {
 	struct vwk *vwk;
 	struct kevent ke[NKEV], *kp;
-	int j, n, dotimer;
-	double now, deadline;
-	struct waited *sp;
+	int j, n;
+	double now;
 
 	CAST_OBJ_NOTNULL(vwk, priv, VWK_MAGIC);
 	THR_SetName("cache-kqueue");
@@ -141,42 +140,17 @@ vwk_thread(void *priv)
 
 	vwk->nki = 0;
 	while (1) {
-		dotimer = 0;
 		n = kevent(vwk->kq, vwk->ki, vwk->nki, ke, NKEV, NULL);
-		now = VTIM_real();
 		assert(n <= NKEV);
 		if (n == 0) {
 			/* This happens on OSX in m00011.vtc */
-			dotimer = 1;
 			(void)usleep(10000);
 		}
 		vwk->nki = 0;
+		now = VTIM_real();
 		for (kp = ke, j = 0; j < n; j++, kp++) {
-			if (kp->filter == EVFILT_TIMER) {
-				dotimer = 1;
-			} else {
-				assert(kp->filter == EVFILT_READ);
-				vwk_sess_ev(vwk, kp, now);
-			}
-		}
-		if (!dotimer)
-			continue;
-		/*
-		 * Make sure we have no pending changes for the fd's
-		 * we are about to close, in case the accept(2) in the
-		 * other thread creates new fd's betwen our close and
-		 * the kevent(2) at the top of this loop, the kernel
-		 * would not know we meant "the old fd of this number".
-		 */
-		vwk_kq_flush(vwk);
-		deadline = now - *vwk->waiter->tmo;
-		for (;;) {
-			sp = VTAILQ_FIRST(&vwk->waiter->waithead);
-			if (sp == NULL)
-				break;
-			if (sp->deadline > deadline)
-				break;
-			Wait_Handle(vwk->waiter, sp, WAITER_TIMEOUT, now);
+			assert(kp->filter == EVFILT_READ);
+			vwk_sess_ev(vwk, kp, now);
 		}
 	}
 	NEEDLESS_RETURN(NULL);
@@ -193,9 +167,6 @@ vwk_init(struct waiter *w)
 	vwk = w->priv;
 	INIT_OBJ(vwk, VWK_MAGIC);
 	vwk->waiter = w;
-
-	EV_SET(&vwk->ki[vwk->nki], 0, EVFILT_TIMER, EV_ADD, 0, 100, NULL);
-	vwk->nki++;
 
 	Wait_UsePipe(w);
 

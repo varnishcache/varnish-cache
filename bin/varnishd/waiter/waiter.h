@@ -59,6 +59,7 @@ typedef void waiter_handle_f(struct waited *, enum wait_event, double now);
 int Wait_Enter(const struct waiter *, struct waited *);
 struct waiter *Wait_New(waiter_handle_f *, volatile double *timeout);
 const char *Wait_GetName(void);
+void Wait_Init(void);
 
 /* mgt_waiter.c */
 int Wait_Argument(struct vsb *vsb, const char *arg);

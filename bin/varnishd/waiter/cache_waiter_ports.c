@@ -154,7 +154,7 @@ vws_thread(void *priv)
 		port_event_t ev[MAX_EVENTS];
 		u_int nevents;
 		int ei, ret;
-		double now, deadline;
+		double now, idle;
 
 		/*
 		 * XXX Do we want to scale this up dynamically to increase
@@ -189,7 +189,7 @@ vws_thread(void *priv)
 			vws_port_ev(vws, ev + ei, now);
 
 		/* check for timeouts */
-		deadline = now - *vws->waiter->tmo;
+		idle = now - *vws->waiter->tmo;
 
 		/*
 		 * This loop assumes that the oldest sessions are always at the
@@ -202,7 +202,7 @@ vws_thread(void *priv)
 			sp = VTAILQ_FIRST(&vws->waiter->waithead);
 			if (sp == NULL)
 				break;
-			if (sp->deadline > deadline) {
+			if (sp->idle > idle) {
 				break;
 			}
 			vws_del(vws, sp->fd);
@@ -214,7 +214,7 @@ vws_thread(void *priv)
 		 */
 
 		if (sp) {
-			double tmo = (sp->deadline + *vws->waiter->tmo) - now;
+			double tmo = (sp->idle + *vws->waiter->tmo) - now;
 
 			if (tmo < min_t) {
 				timeout = &min_ts;

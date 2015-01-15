@@ -397,7 +397,7 @@ struct waited {
 	VTAILQ_ENTRY(waited)	list;
 	int			fd;
 	void			*ptr;
-	double			deadline;
+	double			idle;
 #if defined(HAVE_EPOLL_CTL)
 	struct epoll_event ev;
 #endif

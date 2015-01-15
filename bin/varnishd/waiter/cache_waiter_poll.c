@@ -131,7 +131,7 @@ vwp_main(void *priv)
 	int v, v2;
 	struct vwp *vwp;
 	struct waited *sp, *sp2;
-	double now, deadline;
+	double now, idle;
 	int fd;
 
 	CAST_OBJ_NOTNULL(vwp, priv, VWP_MAGIC);
@@ -141,11 +141,11 @@ vwp_main(void *priv)
 		assert(vwp->hpoll < vwp->npoll);
 		while (vwp->hpoll > 0 && vwp->pollfd[vwp->hpoll].fd == -1)
 			vwp->hpoll--;
-		v = poll(vwp->pollfd, vwp->hpoll + 1, 100);
+		v = poll(vwp->pollfd, vwp->hpoll + 1, -1);
 		assert(v >= 0);
 		v2 = v;
 		now = VTIM_real();
-		deadline = now - *vwp->waiter->tmo;
+		idle = now - *vwp->waiter->tmo;
 		VTAILQ_FOREACH_SAFE(sp, &vwp->waiter->waithead, list, sp2) {
 			if (v != 0 && v2 == 0)
 				break;
@@ -160,7 +160,7 @@ vwp_main(void *priv)
 				vwp->pollfd[fd].revents = 0;
 				Wait_Handle(vwp->waiter, sp, WAITER_ACTION,
 				    now);
-			} else if (sp->deadline <= deadline) {
+			} else if (sp->idle <= idle) {
 				Wait_Handle(vwp->waiter, sp, WAITER_TIMEOUT,
 				    now);
 			}

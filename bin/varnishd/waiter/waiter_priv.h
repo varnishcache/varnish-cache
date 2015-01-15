@@ -35,6 +35,8 @@ struct waiter {
 	unsigned			magic;
 	#define WAITER_MAGIC		0x17c399db
 	const struct waiter_impl	*impl;
+	VTAILQ_ENTRY(waiter)		list;
+
 	waiter_handle_f *		func;
 
 	int				pipes[2];
@@ -44,7 +46,6 @@ struct waiter {
 	VTAILQ_HEAD(,waited)		waithead;
 
 	void				*priv;
-	int				pfd;
 };
 
 typedef void waiter_init_f(struct waiter *);

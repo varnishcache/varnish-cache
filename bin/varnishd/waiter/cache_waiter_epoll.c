@@ -110,7 +110,7 @@ vwe_thread(void *priv)
 	struct epoll_event ev[NEEV], *ep;
 	struct waited *sp, *sp2;
 	char junk;
-	double now, deadline;
+	double now, idle;
 	int dotimer, i, n;
 	struct vwe *vwe;
 
@@ -135,9 +135,9 @@ vwe_thread(void *priv)
 			continue;
 
 		/* check for timeouts */
-		deadline = now - *vwe->waiter->tmo;
+		idle = now - *vwe->waiter->tmo;
 		VTAILQ_FOREACH_SAFE(sp, &vwe->waiter->waithead, list, sp2) {
-			if (sp->deadline < deadline)
+			if (sp->idle < idle)
 				Wait_Handle(vwe->waiter, sp,
 				    WAITER_TIMEOUT, now);
 		}
