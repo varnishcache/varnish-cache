@@ -105,6 +105,7 @@ WAIT_Enter(const struct waiter *w, struct waited *wp)
 
 	if (w->impl->pass != NULL)
 		return (w->impl->pass(w->priv, wp));
+
 	assert(w->pfd >= 0);
 
 	written = write(w->pfd, &wp, sizeof wp);
@@ -136,6 +137,8 @@ WAIT_handle(struct waiter *w, struct waited *wp, enum wait_event ev, double now)
 		AZ(i);
 		return;
 	}
+	if (w->impl->evict != NULL)
+		w->impl->evict(w, wp);
 
 	VTAILQ_REMOVE(&w->sesshead, wp, list);
 	w->func(wp, ev, now);

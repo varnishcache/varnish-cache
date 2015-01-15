@@ -79,14 +79,18 @@ vwp_pollspace(struct vwp *vwp, unsigned fd)
 
 /*--------------------------------------------------------------------*/
 
-static void
-vwp_poll(struct vwp *vwp, int fd)
+static void __match_proto__(waiter_inject_f)
+vwp_inject(const struct waiter *w, struct waited *wp)
 {
+	struct vwp *vwp;
+	int fd;
 
+	CAST_OBJ_NOTNULL(vwp, w->priv, VWP_MAGIC);
+	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
+	fd = wp->fd;
 	assert(fd >= 0);
 	vwp_pollspace(vwp, (unsigned)fd);
 	assert(fd < vwp->npoll);
-
 	if (vwp->hpoll < fd)
 		vwp->hpoll = fd;
 
@@ -98,19 +102,15 @@ vwp_poll(struct vwp *vwp, int fd)
 	vwp->pollfd[fd].events = POLLIN;
 }
 
-static void __match_proto__(waiter_inject_f)
-vwp_inject(const struct waiter *w, struct waited *wp)
+static void __match_proto__(waiter_evict_f)
+vwp_evict(const struct waiter *w, struct waited *wp)
 {
 	struct vwp *vwp;
+	int fd;
 
 	CAST_OBJ_NOTNULL(vwp, w->priv, VWP_MAGIC);
-	vwp_poll(vwp, wp->fd);
-}
-
-static void
-vwp_unpoll(struct vwp *vwp, int fd)
-{
-
+	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
+	fd = wp->fd;
 	assert(fd >= 0);
 	assert(fd < vwp->npoll);
 	vwp_pollspace(vwp, (unsigned)fd);
@@ -158,12 +158,9 @@ vwp_main(void *priv)
 			if (vwp->pollfd[fd].revents) {
 				v2--;
 				vwp->pollfd[fd].revents = 0;
-				if (sp != vwp->waiter->pipe_w)
-					vwp_unpoll(vwp, fd);
 				WAIT_handle(vwp->waiter, sp, WAITER_ACTION,
 				    now);
 			} else if (sp->deadline <= deadline) {
-				vwp_unpoll(vwp, fd);
 				WAIT_handle(vwp->waiter, sp, WAITER_TIMEOUT,
 				    now);
 			}
@@ -195,5 +192,6 @@ const struct waiter_impl waiter_poll = {
 	.name =		"poll",
 	.init =		vwp_poll_init,
 	.inject =	vwp_inject,
+	.evict =	vwp_evict,
 	.size =		sizeof(struct vwp),
 };
