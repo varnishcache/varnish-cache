@@ -58,10 +58,7 @@ struct vwe {
 	struct waiter		*waiter;
 
 	pthread_t		epoll_thread;
-	pthread_t		timer_thread;
 	int			epfd;
-
-	int			timer_pipes[2];
 };
 
 static void
@@ -108,10 +105,8 @@ static void *
 vwe_thread(void *priv)
 {
 	struct epoll_event ev[NEEV], *ep;
-	struct waited *sp, *sp2;
-	char junk;
-	double now, idle;
-	int dotimer, i, n;
+	double now;
+	int i, n;
 	struct vwe *vwe;
 
 	CAST_OBJ_NOTNULL(vwe, priv, VWE_MAGIC);
@@ -119,47 +114,10 @@ vwe_thread(void *priv)
 	THR_SetName("cache-epoll");
 
 	while (1) {
-		dotimer = 0;
 		n = epoll_wait(vwe->epfd, ev, NEEV, -1);
 		now = VTIM_real();
-		for (ep = ev, i = 0; i < n; i++, ep++) {
-			if (ep->data.ptr == vwe->timer_pipes &&
-			    (ep->events == EPOLLIN || ep->events == EPOLLPRI))
-			{
-				assert(read(vwe->timer_pipes[0], &junk, 1));
-				dotimer = 1;
-			} else
-				vwe_eev(vwe, ep, now);
-		}
-		if (!dotimer)
-			continue;
-
-		/* check for timeouts */
-		idle = now - *vwe->waiter->tmo;
-		VTAILQ_FOREACH_SAFE(sp, &vwe->waiter->waithead, list, sp2) {
-			if (sp->idle < idle)
-				Wait_Handle(vwe->waiter, sp,
-				    WAITER_TIMEOUT, now);
-		}
-	}
-	return (NULL);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void *
-vwe_timeout_idle_ticker(void *priv)
-{
-	char ticker = 'R';
-	struct vwe *vwe;
-
-	CAST_OBJ_NOTNULL(vwe, priv, VWE_MAGIC);
-	THR_SetName("cache-epoll-timeout_idle_ticker");
-
-	while (1) {
-		/* ticking */
-		assert(write(vwe->timer_pipes[1], &ticker, 1));
-		VTIM_sleep(100 * 1e-3);
+		for (ep = ev, i = 0; i < n; i++, ep++)
+			vwe_eev(vwe, ep, now);
 	}
 	return (NULL);
 }
@@ -170,7 +128,6 @@ static void __match_proto__(waiter_init_f)
 vwe_init(struct waiter *w)
 {
 	struct vwe *vwe;
-	struct epoll_event ev;
 
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	vwe = w->priv;
@@ -182,15 +139,7 @@ vwe_init(struct waiter *w)
 
 	Wait_UsePipe(w);
 
-	AZ(pipe(vwe->timer_pipes));
-	AZ(VFIL_nonblocking(vwe->timer_pipes[0]));
-	ev.data.ptr = vwe->timer_pipes;
-	ev.events = EPOLLIN | EPOLLPRI;
-	AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_ADD, vwe->timer_pipes[0], &ev));
-
 	AZ(pthread_create(&vwe->epoll_thread, NULL, vwe_thread, vwe));
-	AZ(pthread_create(&vwe->timer_thread,
-	    NULL, vwe_timeout_idle_ticker, vwe));
 }
 
 /*--------------------------------------------------------------------*/
