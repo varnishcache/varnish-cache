@@ -101,23 +101,18 @@ v1d_dorange(struct req *req, struct busyobj *bo, const char *r)
 	else
 		len = req->obj->len;
 
-	if (strncmp(r, "bytes=", 6))
+	if (strncasecmp(r, "bytes=", 6))
 		return;
 	r += 6;
 
 	/* The low end of range */
 	has_low = low = 0;
-	if (!vct_isdigit(*r) && *r != '-')
-		return;
 	while (vct_isdigit(*r)) {
 		has_low = 1;
 		low *= 10;
 		low += *r - '0';
 		r++;
 	}
-
-	if (low >= len)
-		return;
 
 	if (*r != '-')
 		return;
@@ -131,22 +126,31 @@ v1d_dorange(struct req *req, struct busyobj *bo, const char *r)
 			high += *r - '0';
 			r++;
 		}
+		if (high < low)
+			return;
 		if (!has_low) {
 			low = len - high;
 			if (low < 0)
 				low = 0;
 			high = len - 1;
-		}
-	} else
+		} else if (high >= len)
+			high = len - 1;
+	} else if (has_low)
 		high = len - 1;
+	else
+		return;
+
 	if (*r != '\0')
 		return;
 
-	if (high >= len)
-		high = len - 1;
-
-	if (low > high)
+	if (low >= len) {
+		http_PrintfHeader(req->resp, "Content-Range: bytes */%jd",
+		    (intmax_t)len);
+		http_Unset(req->resp, H_Content_Length);
+		http_PutResponse(req->resp, "HTTP/1.1", 416, NULL);
+		req->wantbody = 0;
 		return;
+	}
 
 	http_PrintfHeader(req->resp, "Content-Range: bytes %jd-%jd/%jd",
 	    (intmax_t)low, (intmax_t)high, (intmax_t)len);
