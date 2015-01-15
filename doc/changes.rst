@@ -1,35 +1,54 @@
 ==============================================
-Changes from 4.0.2 to 4.0.3-beta1 (2014-11-14)
+Changes from 4.0.2 to 4.0.3-beta1 (2015-01-15)
 ==============================================
-
 
 Changes since 4.0.2:
 
+- Support older autoconf (< 2.63b) (el5)
 - A lot of minor documentation fixes.
 - bereq.uncacheable is now read-only.
 - obj.uncacheable is now readable in vcl_deliver.
 - [varnishadm] Prefer exact matches for backend.set_healthy. Bug 1349_.
 - Hard-coded -sfile default size is removed.
-- Truncate duplicate Content-
 - [packaging] EL6 packages are once again built with -O2.
+- [parameter] fetch_chunksize default is reduced to 16KB. (from 128KB)
+- Added std.time() which converts strings to VCL_TIME.
+- [packaging] packages now Provide strictABI (gitref) and ABI (VRT major/minor)
+for VMOD use.
 
 Bugs fixed
 ----------
 
-* 1623_ - Fix varnishhist -d segfault.
-* 1607_ - Don't leak reqs on failure to revive from waitinglist.
-* 1610_ - Update forgotten varnishlog example to 4.0 syntax.
+* 1378_ - Properly escape non-printable characters in varnishncsa.
 * 1596_ - Delay HSH_Complete() until the storage sanity functions has finished.
 * 1506_ - Keep Content-Length from backend if we can.
 * 1602_ - Fix a cornercase related to empty pass objects.
+* 1607_ - Don't leak reqs on failure to revive from waitinglist.
+* 1610_ - Update forgotten varnishlog example to 4.0 syntax.
+* 1612_ - Fix a cornercase related to empty pass objects.
+* 1623_ - Fix varnishhist -d segfault.
+* 1636_ - Outdated paragraph in Vary: documentation
+* 1638_ - Fix panic when retrying a failed backend fetch.
+* 1639_ - Restore the default SIGSEGV handler during pan_ic
+* 1647_ - Relax an assertion for the IMS update candidate object.
+* 1648_ - Avoid partial IMS updates to replace old object.
+* 1650_ - Collapse multiple X-Forwarded-For headers
 
-.. _1623: https://www.varnish-cache.org/trac/ticket/1623
-.. _1607: https://www.varnish-cache.org/trac/ticket/1607
-.. _1610: https://www.varnish-cache.org/trac/ticket/1610
+.. _1378: https://www.varnish-cache.org/trac/ticket/1378
 .. _1596: https://www.varnish-cache.org/trac/ticket/1596
 .. _1506: https://www.varnish-cache.org/trac/ticket/1506
 .. _1602: https://www.varnish-cache.org/trac/ticket/1602
-.. _1349: https://www.varnish-cache.org/trac/ticket/1349
+.. _1607: https://www.varnish-cache.org/trac/ticket/1607
+.. _1610: https://www.varnish-cache.org/trac/ticket/1610
+.. _1612: https://www.varnish-cache.org/trac/ticket/1612
+.. _1623: https://www.varnish-cache.org/trac/ticket/1623
+.. _1636: https://www.varnish-cache.org/trac/ticket/1636
+.. _1638: https://www.varnish-cache.org/trac/ticket/1638
+.. _1639: https://www.varnish-cache.org/trac/ticket/1639
+.. _1647: https://www.varnish-cache.org/trac/ticket/1647
+.. _1648: https://www.varnish-cache.org/trac/ticket/1648
+.. _1650: https://www.varnish-cache.org/trac/ticket/1650
+
 
 
 ============================================
