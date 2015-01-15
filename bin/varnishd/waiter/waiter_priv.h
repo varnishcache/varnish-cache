@@ -41,6 +41,7 @@ struct waiter {
 
 	int				pipes[2];
 	struct waited			*pipe_w;
+	double				next_idle;
 
 	volatile double			*tmo;
 	VTAILQ_HEAD(,waited)		waithead;

@@ -54,7 +54,6 @@ static void *
 wait_poker_thread(void *arg)
 {
 	struct waiter *w;
-	struct waited *wp;
 	double now;
 
 	(void)arg;
@@ -71,14 +70,7 @@ wait_poker_thread(void *arg)
 		VTAILQ_INSERT_TAIL(&waiters, w, list);
 		assert(w->pipes[1] >= 0);
 
-		wp = VTAILQ_FIRST(&w->waithead);
-		CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
-		if (wp == w->pipe_w) {
-			VTAILQ_REMOVE(&w->waithead, wp, list);
-			VTAILQ_INSERT_TAIL(&w->waithead, wp, list);
-			wp = VTAILQ_FIRST(&w->waithead);
-		}
-		if (wp->idle + *w->tmo < now)
+		if (w->next_idle + *w->tmo < now)
 			(void)write(w->pipes[1], &w->pipe_w, sizeof w->pipe_w);
 		Lck_Unlock(&wait_mtx);
 	}
@@ -166,6 +158,22 @@ Wait_Enter(const struct waiter *w, struct waited *wp)
 	return (0);
 }
 
+static void
+wait_updidle(struct waiter *w)
+{
+	struct waited *wp;
+
+	wp = VTAILQ_FIRST(&w->waithead);
+	if (wp == NULL)
+		return;
+	if (wp == w->pipe_w) {
+		VTAILQ_REMOVE(&w->waithead, wp, list);
+		VTAILQ_INSERT_TAIL(&w->waithead, wp, list);
+		wp = VTAILQ_FIRST(&w->waithead);
+	}
+	w->next_idle = wp->idle;
+}
+
 void
 Wait_Handle(struct waiter *w, struct waited *wp, enum wait_event ev, double now)
 {
@@ -181,6 +189,7 @@ Wait_Handle(struct waiter *w, struct waited *wp, enum wait_event ev, double now)
 
 		VTAILQ_REMOVE(&w->waithead, wp, list);
 		w->func(wp, ev, now);
+		wait_updidle(w);
 		return;
 	}
 
@@ -213,6 +222,7 @@ Wait_Handle(struct waiter *w, struct waited *wp, enum wait_event ev, double now)
 		VTAILQ_REMOVE(&w->waithead, wp, list);
 		w->func(wp, WAITER_TIMEOUT, now);
 	}
+	wait_updidle(w);
 }
 
 void
