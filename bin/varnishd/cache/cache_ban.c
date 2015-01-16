@@ -56,7 +56,7 @@
  * In a perfect world, we should vector through VRE to get to PCRE,
  * but since we rely on PCRE's ability to encode the regexp into a
  * byte string, that would be a little bit artificial, so this is
- * the exception that confirmes the rule.
+ * the exception that confirms the rule.
  *
  */
 
@@ -568,7 +568,7 @@ BAN_Insert(struct ban *b)
 	/* Hunt down duplicates, and mark them as completed */
 	bi = b;
 	Lck_Lock(&ban_mtx);
-	while(!ban_shutdown && bi != be) {
+	while (!ban_shutdown && bi != be) {
 		bi = VTAILQ_NEXT(bi, list);
 		if (bi->flags & BANS_FLAG_COMPLETED)
 			continue;
