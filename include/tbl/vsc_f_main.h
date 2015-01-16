@@ -26,35 +26,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Definition of all shared memory statistics below.
+ * Definition of the main shared memory statistics below.
  *
- * Fields (n, t, l, f, e, d):
- *    n - Name:		Field name, in C-source and stats programs
- *    t - Type:		C-type, uint64_t, unless marked in 'f'
- *    l - Local:	Local counter in worker thread.
- *    f - Format:	Semantics of the value in this field
- *				'a' - Accumulator (deprecated, use 'c')
- *				'b' - Bitmap
- *				'c' - Counter, never decreases.
- *				'g' - Gauge, goes up and down
- *				'i' - Integer (deprecated, use 'g')
- *    e - Explanation:	Short explanation of field (for screen use)
- *    d - Description:	Long explanation of field (for doc use)
- *
- * Please describe Gauge variables as "Number of..." to indicate that
- * this is a snapshot, and Counter variables as "Count of" to indicate
- * accumulative count.
- *
- * -----------------------
- * NB: Cleanup in progress
- * -----------------------
- *
- * Insufficient attention has caused this to become a swamp of conflicting
- * conventions, shorthands and general mumbo-jumbo.  I'm trying to clean
- * it up as I go over the code in other business.
- *
- * Please see the sessmem section for how it should look.
- *
+ * See include/tbl/vsc_fields.h for the table definition.
  */
 
 /*--------------------------------------------------------------------

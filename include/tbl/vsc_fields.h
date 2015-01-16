@@ -26,7 +26,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Definition of all shared memory statistics below.
+ * Definition of all shared memory statistics below (except main - see
+ * include/tbl/vsc_f_main.h).
  *
  * Fields (n, t, l, f, v, e, d):
  *    n - Name:		Field name, in C-source and stats programs
