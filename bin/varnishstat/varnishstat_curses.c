@@ -80,6 +80,7 @@ struct pt {
 	char			*key;
 	char			*name;
 	int			semantics;
+	int			format;
 	const volatile uint64_t	*ptr;
 
 	char			seen;
@@ -317,6 +318,7 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 	pt->ptr = vpt->ptr;
 	pt->last = *pt->ptr;
 	pt->semantics = vpt->desc->semantics;
+	pt->format = vpt->desc->format;
 
 	pt->ma_10.nmax = 10;
 	pt->ma_100.nmax = 100;
@@ -692,7 +694,7 @@ draw_line_bitmap(WINDOW *w, int y, int x, int X, struct pt *pt)
 
 	AN(w);
 	AN(pt);
-	assert(pt->semantics == 'b');
+	assert(pt->format == 'b');
 
 	col = 0;
 	while (col < COL_LAST) {
@@ -737,7 +739,7 @@ draw_line(WINDOW *w, int y, struct pt *pt)
 		mvwprintw(w, y, x, "%.*s", colw_name, pt->name);
 	x += colw_name;
 
-	if (pt->semantics == 'b')
+	if (pt->format == 'b')
 		draw_line_bitmap(w, y, x, X, pt);
 	else
 		draw_line_default(w, y, x, X, pt);
