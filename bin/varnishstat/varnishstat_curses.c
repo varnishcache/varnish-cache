@@ -317,10 +317,6 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 	pt->ptr = vpt->ptr;
 	pt->last = *pt->ptr;
 	pt->flag = vpt->desc->flag;
-	if (pt->flag == 'a')
-		pt->flag = 'c';
-	if (pt->flag == 'i')
-		pt->flag = 'g';
 
 	pt->ma_10.nmax = 10;
 	pt->ma_100.nmax = 100;

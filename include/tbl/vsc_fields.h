@@ -34,11 +34,9 @@
  *    t - Type:		C-type, uint64_t, unless marked in 'f'
  *    l - Local:	Local counter in worker thread.
  *    f - Format:	Semantics of the value in this field
- *				'a' - Accumulator (deprecated, use 'c')
  *				'b' - Bitmap
  *				'c' - Counter, never decreases.
  *				'g' - Gauge, goes up and down
- *				'i' - Integer (deprecated, use 'g')
  *    v - Verbosity:	Counter verbosity level (see vsc_levels.h)
  *    e - Explanation:	Short explanation of field (for screen use)
  *    d - Description:	Long explanation of field (for doc use)

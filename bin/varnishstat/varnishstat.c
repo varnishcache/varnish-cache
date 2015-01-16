@@ -180,7 +180,7 @@ do_once_cb(void *priv, const struct VSC_point * const pt)
 	if (i >= op->pad)
 		op->pad = i + 1;
 	printf("%*.*s", op->pad - i, op->pad - i, "");
-	if (pt->desc->flag == 'a' || pt->desc->flag == 'c')
+	if (pt->desc->flag == 'c')
 		printf("%12ju %12.2f %s\n",
 		    (uintmax_t)val, val / op->up, pt->desc->sdesc);
 	else
