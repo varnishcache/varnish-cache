@@ -20,13 +20,13 @@ is logging. `varnishlog` gives you the raw logs, everything that is
 written to the logs. There are other clients that can access the logs as well, we'll show you
 these later.
 
-In the terminal window you started Varnish now type ``varnishlog`` and
-press enter.
+In the terminal window you started Varnish now type ``varnishlog -g raw``
+and press enter.
 
 You'll see lines like these scrolling slowly by.::
 
-    0 CLI          - Rd ping
-    0 CLI          - Wr 200 PONG 1273698726 1.0
+    0 CLI            - Rd ping
+    0 CLI            - Wr 200 19 PONG 1273698726 1.0
 
 These is the Varnish master process checking up on the caching process
 to see that everything is OK.
@@ -37,25 +37,24 @@ app.
 
 You'll see lines like these.::
 
-   11 SessionOpen  c 127.0.0.1 58912 0.0.0.0:8080
-   11 ReqStart     c 127.0.0.1 58912 595005213
-   11 RxRequest    c GET
-   11 RxURL        c /
-   11 RxProtocol   c HTTP/1.1
-   11 RxHeader     c Host: localhost:8080
-   11 RxHeader     c Connection: keep-alive
+   11 SessOpen       c 127.0.0.1 58912 :8080 0.0.0.0 8080 1273698726.933590 14
+   11 ReqStart       c 127.0.0.1 58912
+   11 ReqMethod      c GET
+   11 ReqURL         c /
+   11 ReqProtocol    c HTTP/1.1
+   11 ReqHeader      c Host: localhost:8080
+   11 ReqHeader      c Connection: keep-alive
 
 
 The first column is an arbitrary number, it identifies the
-session. Lines with the same number are coming from the same session
-and are being handled by the same thread. The second column is the
-*tag* of the log message. All log entries are tagged with a tag
-indicating what sort of activity is being logged. Tags starting with
-'Rx' indicate Varnish is receiving data and 'Tx' indicates sending data.
+transaction. Lines with the same number are coming from the same
+transaction. The second column is the *tag* of the log message. All
+log entries are tagged with a tag indicating what sort of activity is
+being logged.
 
-The third column tell us whether this is is data coming or going to
-the client ('c') or to/from the backend ('b'). The forth column is the
-data being logged.
+The third column tell us whether this is is data coming from or going
+to the client ('c'), or the backend ('b'). The forth column is the data
+being logged.
 
 Now, you can filter quite a bit with `varnishlog`. The basic options we think you
 want to know are:
@@ -67,9 +66,11 @@ want to know are:
 '-c'
  Same as '-b' but for client side traffic.
 
-'-m tag\:regex'
- Only list transactions where the tag matches a regular expression. If
- it matches you will get the whole transaction.
+'-g request'
+ Group transactions by request.
+
+'-q query'
+ Only list transactions matching this query.
 
 .. XXX:Maybe a couple of sample commands here? benc
 
