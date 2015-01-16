@@ -190,7 +190,7 @@ const struct VSC_level_desc *VSC_LevelDesc(unsigned level);
 #undef VSC_TYPE_F
 
 #define VSC_DO(U,l,t) extern const struct VSC_desc VSC_desc_##l[];
-#define VSC_F(n,t,l,f,v,d,e)
+#define VSC_F(n,t,l,f,v,e,d)
 #define VSC_DONE(U,l,t)
 #include "tbl/vsc_all.h"
 #undef VSC_DO
