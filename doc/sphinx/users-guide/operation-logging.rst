@@ -67,7 +67,7 @@ want to know are:
 '-c'
  Same as '-b' but for client side traffic.
 
-'-m tag:regex'
+'-m tag\:regex'
  Only list transactions where the tag matches a regular expression. If
  it matches you will get the whole transaction.
 
