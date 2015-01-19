@@ -600,10 +600,10 @@ draw_bar_t(void)
 	x = 0;
 	werase(w_bar_t);
 	if (page_start > 0)
-		mvwaddch(w_bar_t, 0, x, ACS_UARROW);
-	x += 2;
-	mvwprintw(w_bar_t, 0, x, "%.*s", colw_name - 2, "NAME");
-	x += colw_name - 2;
+		mvwprintw(w_bar_t, 0, x, "^^^");
+	x += 4;
+	mvwprintw(w_bar_t, 0, x, "%.*s", colw_name - 4, "NAME");
+	x += colw_name - 4;
 	col = 0;
 	while (col < COL_LAST) {
 		if (X - x < COLW)
@@ -925,8 +925,8 @@ draw_bar_b(void)
 	X = getmaxx(w_bar_b);
 	werase(w_bar_b);
 	if (page_start + l_points < n_ptarray)
-		mvwaddch(w_bar_b, 0, x, ACS_DARROW);
-	x += 2;
+		mvwprintw(w_bar_b, 0, x, "vvv");
+	x += 4;
 	if (current < n_ptarray - 1)
 		mvwprintw(w_bar_b, 0, x, "%s", ptarray[current]->name);
 
