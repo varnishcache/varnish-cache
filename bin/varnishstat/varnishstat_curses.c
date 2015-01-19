@@ -918,6 +918,7 @@ draw_bar_b(void)
 {
 	int x, X;
 	const struct VSC_level_desc *level;
+	char buf[64];
 
 	AN(w_bar_b);
 
@@ -930,12 +931,23 @@ draw_bar_b(void)
 	if (current < n_ptarray - 1)
 		mvwprintw(w_bar_b, 0, x, "%s", ptarray[current]->name);
 
+	snprintf(buf, sizeof(buf) - 1, "%d-%d/%d", page_start + 1,
+	    page_start + l_points < n_ptarray ?
+		page_start + l_points : n_ptarray,
+	    n_ptarray);
+	mvwprintw(w_bar_b, 0, X - strlen(buf), buf);
+	X -= strlen(buf) + 2;
+
 	level = VSC_LevelDesc(verbosity);
-	if (level != NULL)
-		mvwprintw(w_bar_b, 0, X - 7, "%7s", level->label);
-	X -= 7;
-	if (!hide_unseen)
-		mvwprintw(w_bar_b, 0, X - 6, "%6s", "UNSEEN");
+	if (level != NULL) {
+		mvwprintw(w_bar_b, 0, X - strlen(level->label), "%s",
+		    level->label);
+		X -= strlen(level->label) + 2;
+	}
+	if (!hide_unseen) {
+		mvwprintw(w_bar_b, 0, X - 6, "%s", "UNSEEN");
+		X -= 8;
+	}
 
 	wnoutrefresh(w_bar_b);
 }
