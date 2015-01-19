@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Handle backend connections and backend request structures.
+ * The director implementation for VCL backends.
  *
  */
 
@@ -42,12 +42,6 @@
 #include "cache_backend.h"
 #include "cache_director.h"
 #include "vrt.h"
-
-/*--------------------------------------------------------------------
- * The "simple" director really isn't, since thats where all the actual
- * connections happen.  Nonetheless, pretend it is simple by sequestering
- * the directoricity of it under this line.
- */
 
 struct vbe_dir {
 	unsigned		magic;
