@@ -62,7 +62,7 @@
 #define LINES_POINTS_MIN	3
 
 #define N_COL			6
-#define COLW			13
+#define COLW			14
 #define COLW_NAME_MIN		24
 
 struct ma {
