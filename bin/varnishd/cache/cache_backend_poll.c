@@ -463,7 +463,8 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
 	unsigned u;
 
 	ASSERT_CLI();
-	AN(p);
+	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(p, VRT_BACKEND_PROBE_MAGIC);
 
 	if (b->probe == NULL) {
 		ALLOC_OBJ(vt, VBP_TARGET_MAGIC);
@@ -504,8 +505,8 @@ VBP_Use(const struct backend *b, const struct vrt_backend_probe *p)
 	struct vbp_vcl *vcl;
 
 	ASSERT_CLI();
-	AN(p);
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(p, VRT_BACKEND_PROBE_MAGIC);
 	AN(b->probe);
 	vt = b->probe;
 
@@ -531,6 +532,7 @@ VBP_Remove(struct backend *b, struct vrt_backend_probe const *p)
 	ASSERT_CLI();
 	AN(p);
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(p, VRT_BACKEND_PROBE_MAGIC);
 	AN(b->probe);
 	vt = b->probe;
 

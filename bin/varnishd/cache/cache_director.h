@@ -71,6 +71,7 @@ struct director {
 	vdi_getbody_f		*getbody;
 	vdi_finish_f		*finish;
 	void			*priv;
+	const void		*priv2;
 };
 
 /* cache_director.c */
