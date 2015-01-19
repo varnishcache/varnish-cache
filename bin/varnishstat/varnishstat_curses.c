@@ -538,6 +538,14 @@ make_windows(void)
 }
 
 static void
+print_duration(WINDOW *w, time_t t)
+{
+
+	wprintw(w, "%4d+%02d:%02d:%02d",
+	    t / 86400, (t % 86400) / 3600, (t % 3600) / 60, t % 60);
+}
+
+static void
 draw_status(void)
 {
 	time_t up_mgt = 0;
@@ -553,12 +561,10 @@ draw_status(void)
 	if (VSC_C_main != NULL)
 		up_chld = VSC_C_main->uptime;
 
-	mvwprintw(w_status, 0, 0, "Uptime mgt:   %d+%02d:%02d:%02d",
-	    up_mgt / 86400, (up_mgt % 86400) / 3600, (up_mgt % 3600) / 60,
-	    up_mgt % 60);
-	mvwprintw(w_status, 1, 0, "Uptime child: %d+%02d:%02d:%02d",
-	    up_chld / 86400, (up_chld % 86400) / 3600, (up_chld % 3600) / 60,
-	    up_chld % 60);
+	mvwprintw(w_status, 0, 0, "Uptime mgt:  ");
+	print_duration(w_status, up_mgt);
+	mvwprintw(w_status, 1, 0, "Uptime child:");
+	print_duration(w_status, up_chld);
 
 	if (VSC_C_mgt == NULL)
 		mvwprintw(w_status, 0, COLS - strlen(discon), discon);
@@ -809,6 +815,37 @@ draw_line_bitmap(WINDOW *w, int y, int x, int X, struct pt *pt)
 }
 
 static void
+draw_line_duration(WINDOW *w, int y, int x, int X, struct pt *pt)
+{
+	enum {
+		COL_DUR,
+		COL_LAST
+	} col;
+
+	AN(w);
+	AN(pt);
+
+	col = 0;
+	while (col < COL_LAST) {
+		if (X - x < COLW)
+			break;
+		switch (col) {
+		case COL_DUR:
+			wmove(w, y, x);
+			if (scale)
+				print_duration(w, pt->cur);
+			else
+				wprintw(w, " %12ju", (uintmax_t)pt->cur);
+			break;
+		default:
+			break;
+		}
+		x += COLW;
+		col++;
+	}
+}
+
+static void
 draw_line(WINDOW *w, int y, struct pt *pt)
 {
 	int x, X;
@@ -828,6 +865,9 @@ draw_line(WINDOW *w, int y, struct pt *pt)
 		break;
 	case 'B':
 		draw_line_bytes(w, y, x, X, pt);
+		break;
+	case 'd':
+		draw_line_duration(w, y, x, X, pt);
 		break;
 	default:
 		draw_line_default(w, y, x, X, pt);
