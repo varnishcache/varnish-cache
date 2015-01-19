@@ -102,25 +102,6 @@ VBE_UseHealth(const struct director *vdi)
 }
 
 /*--------------------------------------------------------------------
- *
- */
-
-void
-VBE_DiscardHealth(const struct director *vdi)
-{
-	struct vbe_dir *vs;
-
-	ASSERT_CLI();
-
-	if (strcmp(vdi->name, "simple"))
-		return;
-	CAST_OBJ_NOTNULL(vs, vdi->priv, VDI_SIMPLE_MAGIC);
-	if (vs->vrt->probe == NULL)
-		return;
-	VBP_Remove(vs->backend, vs->vrt->probe);
-}
-
-/*--------------------------------------------------------------------
  * Get a connection to the backend
  */
 
@@ -294,23 +275,6 @@ vbe_dir_getbody(const struct director *d, struct worker *wrk,
 
 /*--------------------------------------------------------------------*/
 
-void
-VRT_fini_vbe(VRT_CTX, struct director *d)
-{
-	struct vbe_dir *vs;
-
-	ASSERT_CLI();
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
-
-	VBE_DropRefVcl(vs->backend);
-	free(vs->dir.vcl_name);
-	vs->dir.magic = 0;
-	FREE_OBJ(vs);
-	d->priv = NULL;
-}
-
 static void
 vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 {
@@ -324,9 +288,36 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 	vbe_dir_finish(d, bo->wrk, bo);
 }
 
+/*--------------------------------------------------------------------*/
+
 void
-VRT_init_vbe(VRT_CTX, struct director **bp, int idx,
-    const struct vrt_backend *vrt)
+VRT_fini_vbe(VRT_CTX, struct director **dp, const struct vrt_backend *vrt)
+{
+	struct vbe_dir *vs;
+	struct director *d;
+
+	ASSERT_CLI();
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(dp);
+	(void)vrt;
+
+	d = *dp;
+	*dp = NULL;
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
+
+	if (vs->vrt->probe != NULL)
+		VBP_Remove(vs->backend, vs->vrt->probe);
+
+	VBE_DropRefVcl(vs->backend);
+	free(vs->dir.vcl_name);
+	vs->dir.magic = 0;
+	FREE_OBJ(vs);
+}
+
+
+void
+VRT_init_vbe(VRT_CTX, struct director **bp, const struct vrt_backend *vrt)
 {
 	struct vbe_dir *vs;
 
@@ -351,5 +342,5 @@ VRT_init_vbe(VRT_CTX, struct director **bp, int idx,
 	if (vs->vrt->probe != NULL)
 		VBP_Insert(vs->backend, vs->vrt->probe, vs->vrt->hosthdr);
 
-	bp[idx] = &vs->dir;
+	* bp = &vs->dir;
 }

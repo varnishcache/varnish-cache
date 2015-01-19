@@ -423,9 +423,11 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be)
 
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->ini,
-	    "\tVRT_init_vbe(ctx, VCL_conf.director,\n"
-	    "\t    VGC_backend_%s, &vgc_dir_priv_%s);", vgcname, vgcname);
-	VSB_printf(ifp->fin, "\tVRT_fini_vbe(ctx, VGCDIR(%s));", vgcname);
+	    "\tVRT_init_vbe(ctx, &VGCDIR(%s), &vgc_dir_priv_%s);",
+	    vgcname, vgcname);
+	VSB_printf(ifp->fin,
+	    "\tVRT_fini_vbe(ctx, &VGCDIR(%s), &vgc_dir_priv_%s);",
+	    vgcname, vgcname);
 	tl->ndirector++;
 }
 
