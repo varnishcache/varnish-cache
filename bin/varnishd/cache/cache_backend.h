@@ -96,9 +96,6 @@ struct vbc {
 	struct backend		*backend;
 };
 
-/* cache_backend.c */
-void VBE_UseHealth(const struct director *vdi);
-
 /* cache_backend_cfg.c */
 void VBE_DropRefConn(struct backend *, const struct acct_bereq *);
 void VBE_DropRefVcl(struct backend *);

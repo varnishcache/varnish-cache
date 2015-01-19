@@ -346,17 +346,16 @@ EmitInitFini(const struct vcc *tl)
 	Fc(tl, 0, "{\n");
 	Fc(tl, 0, "\tif (ev == VCL_EVENT_INIT)\n");
 	Fc(tl, 0, "\t\treturn(VGC_Init(ctx));\n");
-	Fc(tl, 0, "\telse if (ev == VCL_EVENT_FINI)\n");
+	Fc(tl, 0, "\tif (ev == VCL_EVENT_FINI)\n");
 	Fc(tl, 0, "\t\treturn(VGC_Fini(ctx));\n");
-	Fc(tl, 0, "\telse {\n");
+	Fc(tl, 0, "\t\n");
 	VTAILQ_FOREACH(p, &tl->inifin, list) {
 		AZ(VSB_finish(p->event));
 		if (VSB_len(p->event))
 			Fc(tl, 0, "\t/* %u */\n%s\n", p->n, VSB_data(p->event));
 		VSB_delete(p->event);
 	}
-	Fc(tl, 0, "\t\treturn (0);\n");
-	Fc(tl, 0, "\t}\n");
+	Fc(tl, 0, "\treturn (0);\n");
 	Fc(tl, 0, "}\n");
 }
 

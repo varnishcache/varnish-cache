@@ -947,6 +947,7 @@ struct worker;
 
 enum vcl_event_e {
 	VCL_EVENT_INIT,
+	VCL_EVENT_ACTIVATE,
 	VCL_EVENT_FINI,
 };
 

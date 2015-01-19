@@ -360,7 +360,8 @@ static void
 ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcls *vcl;
-	int i;
+	struct vrt_ctx ctx;
+	unsigned hand = 0;
 
 	(void)av;
 	(void)priv;
@@ -370,13 +371,19 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
+
+	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
+	ctx.handling = &hand;
+	ctx.cli = cli;
+	if (vcl->conf->event_vcl(&ctx, VCL_EVENT_ACTIVATE)) {
+		VCLI_Out(cli, "VCL \"%s\" Failed to activate", av[2]);
+		VCLI_SetResult(cli, CLIS_CANT);
+		return;
+	}
+
 	Lck_Lock(&vcl_mtx);
 	vcl_active = vcl;
 	Lck_Unlock(&vcl_mtx);
-
-	/* Tickle this VCL's backends to take over health polling */
-	for(i = 1; i < vcl->conf->ndirector; i++)
-		VBE_UseHealth(vcl->conf->director[i]);
 }
 
 static void

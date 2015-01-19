@@ -83,25 +83,6 @@ VBE_Healthy(const struct backend *backend, double *changed)
 }
 
 /*--------------------------------------------------------------------
- *
- */
-
-void
-VBE_UseHealth(const struct director *vdi)
-{
-	struct vbe_dir *vs;
-
-	ASSERT_CLI();
-
-	if (strcmp(vdi->name, "simple"))
-		return;
-	CAST_OBJ_NOTNULL(vs, vdi->priv, VDI_SIMPLE_MAGIC);
-	if (vs->vrt->probe == NULL)
-		return;
-	VBP_Use(vs->backend, vs->vrt->probe);
-}
-
-/*--------------------------------------------------------------------
  * Get a connection to the backend
  */
 
@@ -291,38 +272,14 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_fini_vbe(VRT_CTX, struct director **dp, const struct vrt_backend *vrt)
+VRT_init_vbe(VRT_CTX, struct director **dp, const struct vrt_backend *vrt)
 {
 	struct vbe_dir *vs;
-	struct director *d;
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(dp);
-	(void)vrt;
-
-	d = *dp;
-	*dp = NULL;
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
-
-	if (vs->vrt->probe != NULL)
-		VBP_Remove(vs->backend, vs->vrt->probe);
-
-	VBE_DropRefVcl(vs->backend);
-	free(vs->dir.vcl_name);
-	vs->dir.magic = 0;
-	FREE_OBJ(vs);
-}
-
-
-void
-VRT_init_vbe(VRT_CTX, struct director **bp, const struct vrt_backend *vrt)
-{
-	struct vbe_dir *vs;
-
-	ASSERT_CLI();
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AZ(*dp);
 
 	ALLOC_OBJ(vs, VDI_SIMPLE_MAGIC);
 	XXXAN(vs);
@@ -340,7 +297,48 @@ VRT_init_vbe(VRT_CTX, struct director **bp, const struct vrt_backend *vrt)
 
 	vs->backend = VBE_AddBackend(NULL, vrt);
 	if (vs->vrt->probe != NULL)
-		VBP_Insert(vs->backend, vs->vrt->probe, vs->vrt->hosthdr);
+		VBP_Insert(vs->backend, vrt->probe, vrt->hosthdr);
 
-	* bp = &vs->dir;
+	*dp = &vs->dir;
+}
+
+void
+VRT_use_vbe(VRT_CTX, const struct director *d, const struct vrt_backend *vrt)
+{
+	struct vbe_dir *vs;
+
+	ASSERT_CLI();
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+
+	if (vrt->probe == NULL)
+		return;
+
+	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
+
+	VBP_Use(vs->backend, vrt->probe);
+}
+
+void
+VRT_fini_vbe(VRT_CTX, struct director **dp, const struct vrt_backend *vrt)
+{
+	struct vbe_dir *vs;
+	struct director *d;
+
+	ASSERT_CLI();
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(dp);
+
+	d = *dp;
+	*dp = NULL;
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
+
+	if (vs->vrt->probe != NULL)
+		VBP_Remove(vs->backend, vrt->probe);
+
+	VBE_DropRefVcl(vs->backend);
+	free(vs->dir.vcl_name);
+	vs->dir.magic = 0;
+	FREE_OBJ(vs);
 }
