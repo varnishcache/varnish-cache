@@ -353,32 +353,32 @@ VSC_F(s_synth,			uint64_t, 1, 'c', 'i', info,
     "Total synthethic responses made",
 	""
 )
-VSC_F(s_req_hdrbytes,		uint64_t, 1, 'c', 'i', info,
+VSC_F(s_req_hdrbytes,		uint64_t, 1, 'c', 'B', info,
     "Request header bytes",
 	"Total request header bytes received"
 )
-VSC_F(s_req_bodybytes,		uint64_t, 1, 'c', 'i', info,
+VSC_F(s_req_bodybytes,		uint64_t, 1, 'c', 'B', info,
     "Request body bytes",
 	"Total request body bytes received"
 )
-VSC_F(s_resp_hdrbytes,		uint64_t, 1, 'c', 'i', info,
+VSC_F(s_resp_hdrbytes,		uint64_t, 1, 'c', 'B', info,
     "Response header bytes",
 	"Total response header bytes transmitted"
 )
-VSC_F(s_resp_bodybytes,		uint64_t, 1, 'c', 'i', info,
+VSC_F(s_resp_bodybytes,		uint64_t, 1, 'c', 'B', info,
     "Response body bytes",
 	"Total response body bytes transmitted"
 )
-VSC_F(s_pipe_hdrbytes,		uint64_t, 0, 'c', 'i', info,
+VSC_F(s_pipe_hdrbytes,		uint64_t, 0, 'c', 'B', info,
     "Pipe request header bytes",
 	"Total request bytes received for piped sessions"
 )
-VSC_F(s_pipe_in,		uint64_t, 0, 'c', 'i', info,
+VSC_F(s_pipe_in,		uint64_t, 0, 'c', 'B', info,
     "Piped bytes from client",
 	"Total number of bytes forwarded from clients in"
 	" pipe sessions"
 )
-VSC_F(s_pipe_out,		uint64_t, 0, 'c', 'i', info,
+VSC_F(s_pipe_out,		uint64_t, 0, 'c', 'B', info,
     "Piped bytes to client",
 	"Total number of bytes forwarded to clients in"
 	" pipe sessions"
@@ -517,11 +517,11 @@ VSC_F(bans_lurker_contention,	uint64_t, 0, 'c', 'i', diag,
     "Lurker gave way for lookup",
 	"Number of times the ban-lurker had to wait for lookups."
 )
-VSC_F(bans_persisted_bytes,	uint64_t, 0, 'g', 'i', diag,
+VSC_F(bans_persisted_bytes,	uint64_t, 0, 'g', 'B', diag,
     "Bytes used by the persisted ban lists",
 	"Number of bytes used by the persisted ban lists."
 )
-VSC_F(bans_persisted_fragmentation, uint64_t, 0, 'g', 'i', diag,
+VSC_F(bans_persisted_fragmentation, uint64_t, 0, 'g', 'B', diag,
     "Extra bytes in persisted ban lists due to fragmentation",
 	"Number of extra bytes accumulated through dropped and"
 	" completed bans in the persistent ban lists."
@@ -596,33 +596,33 @@ VSC_F(n_gunzip,			uint64_t, 0, 'c', 'i', info,
 
 /*--------------------------------------------------------------------*/
 
-VSC_F(vsm_free,			uint64_t, 0, 'g', 'i', diag,
+VSC_F(vsm_free,			uint64_t, 0, 'g', 'B', diag,
     "Free VSM space",
 	"Number of bytes free in the shared memory used to communicate"
 	" with tools like varnishstat, varnishlog etc."
 )
 
-VSC_F(vsm_used,			uint64_t, 0, 'g', 'i', diag,
+VSC_F(vsm_used,			uint64_t, 0, 'g', 'B', diag,
     "Used VSM space",
 	"Number of bytes used in the shared memory used to communicate"
 	" with tools like varnishstat, varnishlog etc."
 )
 
-VSC_F(vsm_cooling,		uint64_t, 0, 'g', 'i', debug,
+VSC_F(vsm_cooling,		uint64_t, 0, 'g', 'B', debug,
     "Cooling VSM space",
 	"Number of bytes which will soon (max 1 minute) be freed"
 	" in the shared memory used to communicate"
 	" with tools like varnishstat, varnishlog etc."
 )
 
-VSC_F(vsm_overflow,		uint64_t, 0, 'g', 'i', diag,
+VSC_F(vsm_overflow,		uint64_t, 0, 'g', 'B', diag,
     "Overflow VSM space",
 	"Number of bytes which does not fit"
 	" in the shared memory used to communicate"
 	" with tools like varnishstat, varnishlog etc."
 )
 
-VSC_F(vsm_overflowed,		uint64_t, 0, 'c', 'i', diag,
+VSC_F(vsm_overflowed,		uint64_t, 0, 'c', 'B', diag,
     "Overflowed VSM space",
 	"Total number of bytes which did not fit"
 	" in the shared memory used to communicate"

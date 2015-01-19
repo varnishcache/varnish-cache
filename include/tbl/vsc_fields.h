@@ -128,11 +128,11 @@ VSC_F(c_fail,			uint64_t, 0, 'c', 'i', info,
     "Allocator failures",
 	""
 )
-VSC_F(c_bytes,			uint64_t, 0, 'c', 'i', info,
+VSC_F(c_bytes,			uint64_t, 0, 'c', 'B', info,
     "Bytes allocated",
 	""
 )
-VSC_F(c_freed,			uint64_t, 0, 'c', 'i', info,
+VSC_F(c_freed,			uint64_t, 0, 'c', 'B', info,
     "Bytes freed",
 	""
 )
@@ -140,11 +140,11 @@ VSC_F(g_alloc,			uint64_t, 0, 'g', 'i', info,
     "Allocations outstanding",
 	""
 )
-VSC_F(g_bytes,			uint64_t, 0, 'g', 'i', info,
+VSC_F(g_bytes,			uint64_t, 0, 'g', 'B', info,
     "Bytes outstanding",
 	""
 )
-VSC_F(g_space,			uint64_t, 0, 'g', 'i', info,
+VSC_F(g_space,			uint64_t, 0, 'g', 'B', info,
     "Bytes available",
 	""
 )
@@ -186,32 +186,32 @@ VSC_F(happy,			uint64_t, 0, 'b', 'b', info,
     "Happy health probes",
 	""
 )
-VSC_F(bereq_hdrbytes,		uint64_t, 0, 'c', 'i', info,
+VSC_F(bereq_hdrbytes,		uint64_t, 0, 'c', 'B', info,
     "Request header bytes",
 	"Total backend request header bytes sent"
 )
-VSC_F(bereq_bodybytes,		uint64_t, 0, 'c', 'i', info,
+VSC_F(bereq_bodybytes,		uint64_t, 0, 'c', 'B', info,
     "Request body bytes",
 	"Total backend request body bytes sent"
 )
-VSC_F(beresp_hdrbytes,		uint64_t, 0, 'c', 'i', info,
+VSC_F(beresp_hdrbytes,		uint64_t, 0, 'c', 'B', info,
     "Response header bytes",
 	"Total backend response header bytes received"
 )
-VSC_F(beresp_bodybytes,		uint64_t, 0, 'c', 'i', info,
+VSC_F(beresp_bodybytes,		uint64_t, 0, 'c', 'B', info,
     "Response body bytes",
 	"Total backend response body bytes received"
 )
-VSC_F(pipe_hdrbytes,		uint64_t, 0, 'c', 'i', info,
+VSC_F(pipe_hdrbytes,		uint64_t, 0, 'c', 'B', info,
     "Pipe request header bytes",
 	"Total request bytes sent for piped sessions"
 )
-VSC_F(pipe_out,			uint64_t, 0, 'c', 'i', info,
+VSC_F(pipe_out,			uint64_t, 0, 'c', 'B', info,
     "Piped bytes to backend",
 	"Total number of bytes forwarded to backend in"
 	" pipe sessions"
 )
-VSC_F(pipe_in,			uint64_t, 0, 'c', 'i', info,
+VSC_F(pipe_in,			uint64_t, 0, 'c', 'B', info,
     "Piped bytes from backend",
 	"Total number of bytes forwarded from backend in"
 	" pipe sessions"
@@ -238,11 +238,11 @@ VSC_F(pool,			uint64_t, 0, 'g', 'i', debug,
     "In Pool",
 	""
 )
-VSC_F(sz_wanted,		uint64_t, 0, 'g', 'i', debug,
+VSC_F(sz_wanted,		uint64_t, 0, 'g', 'B', debug,
     "Size requested",
 	""
 )
-VSC_F(sz_needed,		uint64_t, 0, 'g', 'i', debug,
+VSC_F(sz_needed,		uint64_t, 0, 'g', 'B', debug,
     "Size allocated",
 	""
 )
