@@ -352,8 +352,8 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 		    bp->display_name);
 		Lck_Lock(&bp->mtx);
 		VSC_C_main->backend_recycle++;
-		VBE_DropRefLocked(bp, &bo->acct);
 		VBT_Recycle(bp->tcp_pool, &bo->htc->vbc);
+		VBE_DropRefLocked(bp, &bo->acct);
 	}
 	bo->htc->vbc = NULL;
 	bo->htc = NULL;
