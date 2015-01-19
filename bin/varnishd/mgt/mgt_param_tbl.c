@@ -615,13 +615,6 @@ struct parspec mgt_parspec[] = {
 		0,
 		"off", "bool"},
 
-	{ "pool_vbc", tweak_poolparam, &mgt_param.vbc_pool,
-		NULL, NULL,
-		"Parameters for backend connection memory pool.\n"
-		MEMPOOL_TEXT,
-		0,
-		"10,100,10", ""},
-
 	{ "pool_req", tweak_poolparam, &mgt_param.req_pool,
 		NULL, NULL,
 		"Parameters for per worker pool request memory pool.\n"

@@ -42,11 +42,6 @@
 #include "cache_backend.h"
 #include "cache_director.h"
 #include "vrt.h"
-#include "vtcp.h"
-
-static struct mempool	*vbcpool;
-
-static unsigned		vbcps = sizeof(struct vbc);
 
 /*--------------------------------------------------------------------
  * The "simple" director really isn't, since thats where all the actual
@@ -62,19 +57,6 @@ struct vbe_dir {
 	const struct vrt_backend *vrt;
 };
 
-/*--------------------------------------------------------------------*/
-
-/* Private interface from backend_cfg.c */
-void
-VBE_ReleaseConn(struct vbc *vc)
-{
-
-	CHECK_OBJ_NOTNULL(vc, VBC_MAGIC);
-	assert(vc->backend == NULL);
-	assert(vc->fd < 0);
-	MPL_Free(vbcpool, vc);
-}
-
 #define FIND_TMO(tmx, dst, bo, be)					\
 	do {								\
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);			\
@@ -84,65 +66,6 @@ VBE_ReleaseConn(struct vbc *vc)
 		if (dst == 0.0)						\
 			dst = cache_param->tmx;				\
 	} while (0)
-
-/*--------------------------------------------------------------------*/
-
-static void
-bes_conn_try(struct busyobj *bo, struct vbc *vc, const struct vbe_dir *vs)
-{
-	int s;
-	double tmod;
-	struct backend *bp = vs->backend;
-	char abuf1[VTCP_ADDRBUFSIZE];
-	char pbuf1[VTCP_PORTBUFSIZE];
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
-
-	Lck_Lock(&bp->mtx);
-	bp->refcount++;
-	bp->n_conn++;		/* It mostly works */
-	bp->vsc->conn++;
-	Lck_Unlock(&bp->mtx);
-
-	assert(bp->ipv6 != NULL || bp->ipv4 != NULL);
-
-	/* release lock during stuff that can take a long time */
-
-	FIND_TMO(connect_timeout, tmod, bo, vs->vrt);
-	s = VBT_Open(bp->tcp_pool, tmod, &vc->addr);
-
-	vc->fd = s;
-	if (s < 0) {
-		Lck_Lock(&bp->mtx);
-		bp->n_conn--;
-		bp->vsc->conn--;
-		bp->refcount--;		/* Only keep ref on success */
-		Lck_Unlock(&bp->mtx);
-		vc->addr = NULL;
-	} else {
-		VTCP_myname(s, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-		VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s ",
-		    vc->fd, vs->backend->display_name, abuf1, pbuf1);
-	}
-}
-
-/*--------------------------------------------------------------------
- * Check that there is still something at the far end of a given socket.
- * We poll the fd with instant timeout, if there are any events we can't
- * use it (backends are not allowed to pipeline).
- */
-
-static int
-vbe_CheckFd(int fd)
-{
-	struct pollfd pfd;
-
-	pfd.fd = fd;
-	pfd.events = POLLIN;
-	pfd.revents = 0;
-	return(poll(&pfd, 1, 0) == 0);
-}
 
 /*--------------------------------------------------------------------
  * Test if backend is healthy and report when it last changed
@@ -163,80 +86,6 @@ VBE_Healthy(const struct backend *backend, double *changed)
 		return (0);
 
 	return (1);
-}
-
-/*--------------------------------------------------------------------
- * Get a connection to a particular backend.
- */
-
-static struct vbc *
-vbe_GetVbe(struct busyobj *bo, struct vbe_dir *vs)
-{
-	struct vbc *vc;
-	struct backend *bp;
-
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(vs, VDI_SIMPLE_MAGIC);
-	bp = vs->backend;
-	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
-
-	if (!VBE_Healthy(bp, NULL)) {
-		VSC_C_main->backend_unhealthy++;
-		return (NULL);
-	}
-
-	/* first look for vbc's we can recycle */
-	while (1) {
-		vc = VBT_Get(bp->tcp_pool);
-		if (vc == NULL)
-			break;
-
-		Lck_Lock(&bp->mtx);
-		bp->refcount++;
-		assert(vc->backend == bp);
-		assert(vc->fd >= 0);
-		AN(vc->addr);
-		Lck_Unlock(&bp->mtx);
-
-		if (vbe_CheckFd(vc->fd)) {
-			VSLb(bo->vsl, SLT_Backend, "%d %s %s",
-			    vc->fd, bo->director_resp->vcl_name,
-			    bp->display_name);
-			vc->vdis = vs;
-			vc->recycled = 1;
-			return (vc);
-		}
-		VSLb(bo->vsl, SLT_BackendClose, "%d %s toolate",
-		    vc->fd, bp->display_name);
-
-		VTCP_close(&vc->fd);
-		VBE_DropRefConn(bp, NULL);
-		vc->backend = NULL;
-		VBE_ReleaseConn(vc);
-	}
-
-	if (vs->vrt->max_connections > 0 &&
-	    bp->n_conn >= vs->vrt->max_connections) {
-		VSC_C_main->backend_busy++;
-		return (NULL);
-	}
-
-	vc = MPL_Get(vbcpool, NULL);
-	XXXAN(vc);
-	vc->magic = VBC_MAGIC;
-	vc->fd = -1;
-	bes_conn_try(bo, vc, vs);
-	if (vc->fd < 0) {
-		VBE_ReleaseConn(vc);
-		VSC_C_main->backend_fail++;
-		return (NULL);
-	}
-	vc->backend = bp;
-	VSC_C_main->backend_conn++;
-	VSLb(bo->vsl, SLT_Backend, "%d %s %s",
-	    vc->fd, bo->director_resp->vcl_name, bp->display_name);
-	vc->vdis = vs;
-	return (vc);
 }
 
 /*--------------------------------------------------------------------
@@ -278,7 +127,7 @@ VBE_DiscardHealth(const struct director *vdi)
 }
 
 /*--------------------------------------------------------------------
- *
+ * Get a connection to the backend
  */
 
 static int __match_proto__(vdi_getfd_f)
@@ -286,16 +135,46 @@ vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 {
 	struct vbe_dir *vs;
 	struct vbc *vc;
+	struct backend *bp;
+	double tmod;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(vs, d->priv, VDI_SIMPLE_MAGIC);
+	bp = vs->backend;
+	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 
-	vc = vbe_GetVbe(bo, vs);
+	if (!VBE_Healthy(bp, NULL)) {
+		// XXX: per backend stats ?
+		VSC_C_main->backend_unhealthy++;
+		return (-1);
+	}
+
+	if (vs->vrt->max_connections > 0 &&
+	    bp->n_conn >= vs->vrt->max_connections) {
+		// XXX: per backend stats ?
+		VSC_C_main->backend_busy++;
+		return (-1);
+	}
+
+	FIND_TMO(connect_timeout, tmod, bo, vs->vrt);
+	vc = VBT_Get(bp->tcp_pool, tmod);
 	if (vc == NULL) {
+		// XXX: Per backend stats ?
+		VSC_C_main->backend_fail++;
 		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 		return (-1);
 	}
+
+	assert(vc->fd >= 0);
+	vc->backend = bp;
+	AN(vc->addr);
+
+	Lck_Lock(&bp->mtx);
+	bp->refcount++;
+	bp->n_conn++;
+	bp->vsc->conn++;
+	Lck_Unlock(&bp->mtx);
 
 	vc->backend->vsc->req++;
 	if (bo->htc == NULL)
@@ -343,10 +222,8 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	if (bo->doclose != SC_NULL) {
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s", bo->htc->vbc->fd,
 		    bp->display_name);
-		VTCP_close(&bo->htc->vbc->fd);
+		VBT_Close(bp->tcp_pool, &bo->htc->vbc);
 		VBE_DropRefConn(bp, &bo->acct);
-		bo->htc->vbc->backend = NULL;
-		VBE_ReleaseConn(bo->htc->vbc);
 	} else {
 		VSLb(bo->vsl, SLT_BackendReuse, "%d %s", bo->htc->vbc->fd,
 		    bp->display_name);
@@ -481,12 +358,4 @@ VRT_init_vbe(VRT_CTX, struct director **bp, int idx,
 		VBP_Insert(vs->backend, vs->vrt->probe, vs->vrt->hosthdr);
 
 	bp[idx] = &vs->dir;
-}
-
-void
-VBE_Init(void)
-{
-
-	vbcpool = MPL_New("vbc", &cache_param->vbc_pool, &vbcps);
-	AN(vbcpool);
 }

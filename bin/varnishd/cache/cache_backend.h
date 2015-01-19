@@ -89,17 +89,14 @@ struct vbc {
 	unsigned		magic;
 #define VBC_MAGIC		0x0c5e6592
 	VTAILQ_ENTRY(vbc)	list;
-	struct backend		*backend;
-	struct vbe_dir		*vdis;
 	int			fd;
-
 	const struct suckaddr	*addr;
-
 	uint8_t			recycled;
+
+	struct backend		*backend;
 };
 
 /* cache_backend.c */
-void VBE_ReleaseConn(struct vbc *vc);
 void VBE_UseHealth(const struct director *vdi);
 void VBE_DiscardHealth(const struct director *vdi);
 
@@ -127,6 +124,7 @@ struct tcp_pool *VBT_Ref(const char *name, const struct suckaddr *ip4,
 void VBT_Rel(struct tcp_pool **tpp);
 int VBT_Open(struct tcp_pool *tp, double tmo, const struct suckaddr **sa);
 void VBT_Recycle(struct tcp_pool *tp, struct vbc **vbc);
-struct vbc *VBT_Get(struct tcp_pool *tp);
+void VBT_Close(struct tcp_pool *tp, struct vbc **vbc);
+struct vbc *VBT_Get(struct tcp_pool *tp, double tmo);
 
 

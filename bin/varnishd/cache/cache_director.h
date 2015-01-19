@@ -82,6 +82,3 @@ void VDI_Finish(struct worker *wrk, struct busyobj *bo);
 int VDI_Http1Pipe(struct req *, struct busyobj *);
 
 int VDI_Healthy(const struct director *, const struct busyobj *);
-
-void VBE_Init(void);
-

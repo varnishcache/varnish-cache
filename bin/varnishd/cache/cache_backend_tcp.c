@@ -25,7 +25,10 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * TCP connection pools for backends
+ * TCP connection pools.
+ *
+ * These are really a lot more general than just backends, but backends
+ * are all we use them for, so they live here for now.
  *
  */
 
@@ -57,7 +60,12 @@ struct tcp_pool {
 	struct lock		mtx;
 
 	VTAILQ_HEAD(, vbc)	connlist;
+	int			n_conn;
+
 	VTAILQ_HEAD(, vbc)	killlist;
+	int			n_kill;
+
+	int			n_used;
 
 };
 
@@ -133,6 +141,7 @@ VBT_Rel(struct tcp_pool **tpp)
 	assert(tp->refcnt > 0);
 	if (--tp->refcnt > 0)
 		return;
+	AZ(tp->n_used);
 	VTAILQ_REMOVE(&pools, tp, list);
 	free(tp->name);
 	free(tp->ip4);
@@ -140,18 +149,18 @@ VBT_Rel(struct tcp_pool **tpp)
 	Lck_Delete(&tp->mtx);
 	VTAILQ_FOREACH_SAFE(vbc, &tp->connlist, list, vbc2) {
 		VTAILQ_REMOVE(&tp->connlist, vbc, list);
-		vbc->backend = NULL;
-		(void)close(vbc->fd);
-		vbc->fd = -1;
-		VBE_ReleaseConn(vbc);
+		tp->n_conn--;
+		VTCP_close(&vbc->fd);
+		FREE_OBJ(vbc);
 	}
 	VTAILQ_FOREACH_SAFE(vbc, &tp->killlist, list, vbc2) {
 		VTAILQ_REMOVE(&tp->killlist, vbc, list);
-		vbc->backend = NULL;
-		(void)close(vbc->fd);
-		vbc->fd = -1;
-		VBE_ReleaseConn(vbc);
+		tp->n_kill--;
+		VTCP_close(&vbc->fd);
+		FREE_OBJ(vbc);
 	}
+	AZ(tp->n_conn);
+	AZ(tp->n_kill);
 	FREE_OBJ(tp);
 }
 
@@ -189,16 +198,42 @@ VBT_Open(struct tcp_pool *tp, double tmo, const struct suckaddr **sa)
  */
 
 void
-VBT_Recycle(struct tcp_pool *tp, struct vbc **vbc)
+VBT_Recycle(struct tcp_pool *tp, struct vbc **vbcp)
 {
+	struct vbc *vbc;
 
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
-	CHECK_OBJ_NOTNULL((*vbc), VBC_MAGIC);
+	vbc = *vbcp;
+	*vbcp = NULL;
+	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
 
 	Lck_Lock(&tp->mtx);
-	VTAILQ_INSERT_HEAD(&tp->connlist, *vbc, list);
+	vbc->recycled = 1;
+	VTAILQ_INSERT_HEAD(&tp->connlist, vbc, list);
+	tp->n_conn++;
+	tp->n_used--;
 	Lck_Unlock(&tp->mtx);
-	*vbc = NULL;
+}
+
+/*--------------------------------------------------------------------
+ * Close a connection.
+ */
+
+void
+VBT_Close(struct tcp_pool *tp, struct vbc **vbcp)
+{
+	struct vbc *vbc;
+
+	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
+	vbc = *vbcp;
+	*vbcp = NULL;
+	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
+
+	VTCP_close(&vbc->fd);
+	FREE_OBJ(vbc);
+	Lck_Lock(&tp->mtx);
+	tp->n_used--;
+	Lck_Unlock(&tp->mtx);
 }
 
 /*--------------------------------------------------------------------
@@ -206,11 +241,12 @@ VBT_Recycle(struct tcp_pool *tp, struct vbc **vbc)
  */
 
 struct vbc *
-VBT_Get(struct tcp_pool *tp)
+VBT_Get(struct tcp_pool *tp, double tmo)
 {
 	struct vbc *vbc;
 	struct pollfd pfd;
 
+	(void)tmo;
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
 
 	Lck_Lock(&tp->mtx);
@@ -229,23 +265,40 @@ VBT_Get(struct tcp_pool *tp)
 			VSC_C_main->backend_toolate++;
 			do {
 				VTAILQ_REMOVE(&tp->connlist, vbc, list);
+				tp->n_conn--;
 #if 0
 				VTAILQ_INSERT_TAIL(&tp->killlist, vbc, list);
+				tp->n_kill++;
 #else
-				vbc->backend = NULL;
-				(void)close(vbc->fd);
-				vbc->fd = -1;
-				VBE_ReleaseConn(vbc);
+				VTCP_close(&vbc->fd);
+				FREE_OBJ(vbc);
 #endif
 				vbc = VTAILQ_FIRST(&tp->connlist);
 			} while (vbc != NULL);
 		} else {
 			VTAILQ_REMOVE(&tp->connlist, vbc, list);
+			tp->n_conn--;
+			tp->n_used++;
 			VSC_C_main->backend_reuse += 1;
 		}
 	}
+	if (vbc == NULL)
+		tp->n_used++;		// Opening mostly works
 	Lck_Unlock(&tp->mtx);
+
 	if (vbc != NULL)
 		return (vbc);
-	return (NULL);
+
+	ALLOC_OBJ(vbc, VBC_MAGIC);
+	if (vbc != NULL) {
+		vbc->fd = VBT_Open(tp, tmo, &vbc->addr);
+		if (vbc->fd < 0)
+			FREE_OBJ(vbc);
+	}
+	if (vbc == NULL) {
+		Lck_Lock(&tp->mtx);
+		tp->n_used--;
+		Lck_Unlock(&tp->mtx);
+	}
+	return (vbc);
 }
