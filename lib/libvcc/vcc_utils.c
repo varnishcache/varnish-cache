@@ -111,7 +111,7 @@ vcc_sockaddr(struct vcc *tl, const void *sa, unsigned sal)
 	AN(sua);
 
 	Fh(tl, 0, "static const unsigned long long");
-	Fh(tl, 0, " sockaddr_%u[%d] = {\n", tl->unique, n);
+	Fh(tl, 0, " suckaddr_%u[%d] = {\n", tl->unique, n);
 	memcpy(b, sua, vsa_suckaddr_len);
 	free(sua);
 	for (len = 0; len < n; len++)
@@ -121,7 +121,7 @@ vcc_sockaddr(struct vcc *tl, const void *sa, unsigned sal)
 
 	p = TlAlloc(tl, 40);
 	AN(p);
-	sprintf(p, "(const void*)sockaddr_%u", tl->unique);
+	sprintf(p, "(const void*)suckaddr_%u", tl->unique);
 
 	tl->unique++;
 	return (p);
