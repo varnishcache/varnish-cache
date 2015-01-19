@@ -22,6 +22,7 @@
 	do {								\
 		(to)->magic = (0);					\
 		free(to);						\
+		to = NULL;						\
 	} while (0)
 
 #define VALID_OBJ(ptr, type_magic)					\
