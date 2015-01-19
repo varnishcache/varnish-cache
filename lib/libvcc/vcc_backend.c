@@ -126,6 +126,7 @@ vcc_ParseProbeSpec(struct vcc *tl)
 	status = 0;
 	Fh(tl, 0, "static const struct vrt_backend_probe vgc_probe__%d = {\n",
 	    tl->nprobe++);
+	Fh(tl, 0, "\t.magic = VRT_BACKEND_PROBE_MAGIC,\n");
 	while (tl->t->tok != '}') {
 
 		vcc_IsField(tl, &t_field, fs);
@@ -305,6 +306,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be)
 	Fb(tl, 0, "\nstatic const struct vrt_backend vgc_dir_priv_%s = {\n",
 	    vgcname);
 
+	Fb(tl, 0, "\t.magic = VRT_BACKEND_MAGIC,\n");
 	Fb(tl, 0, "\t.vcl_name = \"%.*s", PF(t_be));
 	Fb(tl, 0, "\",\n");
 

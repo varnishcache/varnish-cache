@@ -140,20 +140,24 @@ extern const void * const vrt_magic_string_end;
 extern const void * const vrt_magic_string_unset;
 
 struct vrt_backend_probe {
-	const char	*url;
-	const char	*request;
-	double		timeout;
-	double		interval;
-	unsigned	exp_status;
-	unsigned	window;
-	unsigned	threshold;
-	unsigned	initial;
+	unsigned			magic;
+#define VRT_BACKEND_PROBE_MAGIC		0x84998490
+	const char			*url;
+	const char			*request;
+	double				timeout;
+	double				interval;
+	unsigned			exp_status;
+	unsigned			window;
+	unsigned			threshold;
+	unsigned			initial;
 };
 
 /*
  * A backend is a host+port somewhere on the network
  */
 struct vrt_backend {
+	unsigned			magic;
+#define VRT_BACKEND_MAGIC		0x4799ce6b
 	const char			*vcl_name;
 	const char			*ipv4_addr;
 	const char			*ipv6_addr;
