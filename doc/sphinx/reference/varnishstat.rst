@@ -124,6 +124,9 @@ The following keys control the interactive display:
 	counters are those that has been zero for the entire runtime
 	of varnishstat. Defaults to hide unseen counters.
 
+<e>
+	Toggle scaling of values.
+
 <g>
 	Go to the top of the counter list.
 

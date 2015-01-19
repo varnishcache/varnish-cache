@@ -125,6 +125,7 @@ static int current = 0;
 static int rebuild = 0;
 static int redraw = 0;
 static int sample = 0;
+static int scale = 1;
 static double t_sample = 0.;
 static double interval = 1.;
 
@@ -867,6 +868,10 @@ handle_keypress(int ch)
 		break;
 	case 'd':
 		hide_unseen = 1 - hide_unseen;
+		rebuild = 1;
+		break;
+	case 'e':
+		scale = 1 - scale;
 		rebuild = 1;
 		break;
 	case 'g':
