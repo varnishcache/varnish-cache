@@ -35,7 +35,7 @@
  * Globals, not related to traffic
  */
 
-VSC_F(uptime,			uint64_t, 0, 'c', 'i', info,
+VSC_F(uptime,			uint64_t, 0, 'c', 'd', info,
     "Child process uptime",
 	"How long the child process has been running."
 )

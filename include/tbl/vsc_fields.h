@@ -40,6 +40,7 @@
  *    f - Format:	Display format for the field
  *				'b' - Bitmap
  *				'i' - Integer
+ *				'd' - Duration
  *    v - Verbosity:	Counter verbosity level (see vsc_levels.h)
  *    d - Description:	Short description of field (for screen use)
  *    e - Explanation:	Long explanation of field (for doc use)
@@ -64,7 +65,7 @@
 
 #ifdef VSC_DO_MGT
 
-VSC_F(uptime,			uint64_t, 0, 'c', 'i', info,
+VSC_F(uptime,			uint64_t, 0, 'c', 'd', info,
     "Management process uptime",
 	"Uptime in seconds of the management process"
 )
