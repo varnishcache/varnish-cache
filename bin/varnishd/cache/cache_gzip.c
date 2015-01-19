@@ -288,8 +288,10 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 	if (act == VDP_INIT) {
 		vg = VGZ_NewUngzip(req->vsl, "U D -");
 		AN(vg);
-		if (vgz_getmbuf(vg))
+		if (vgz_getmbuf(vg)) {
+			(void)VGZ_Destroy(&vg);
 			return (-1);
+		}
 		VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 		*priv = vg;
 
