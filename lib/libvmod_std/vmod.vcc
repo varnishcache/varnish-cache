@@ -58,13 +58,14 @@ Example
 $Function VOID set_ip_tos(INT tos)
 
 Description
-	Sets the IP type-of-service (TOS) field for the current session to *tos*.
+	Sets the IP type-of-service (TOS) field for the current session
+	to *tos*.
 	Please note that the TOS field is not removed by the end of the
 	request so probably want to set it on every request should you
 	utilize it.
 Example
 	| if (req.url ~ ^/slow/) {
-	|    std.set_ip_tos(0x0);
+	|	std.set_ip_tos(0x0);
 	| }
 
 $Function REAL random(REAL lo, REAL hi)
@@ -89,7 +90,7 @@ Description
 	is formed by ORing the facility and priority values.  See your
 	system's syslog.h file for priorities and facility codes.
 Example
-	std.syslog(8 + 1, "Something is wrong");
+	std.syslog(9, "Something is wrong");
 
 	This will send a message to syslog using LOG_USER | LOG_PID.
 
@@ -129,7 +130,7 @@ Description
 	Converts the string *s* to an integer.	If conversion fails,
 	*fallback* will be returned.
 Example
-	| if (std.integer(beresp.http.x-foo, 0) > 5) {
+	| if (std.integer(req.http.x-foo, 0) > 5) {
 	|	...
 	| }
 
@@ -150,7 +151,9 @@ Description
 	Converts the string *s* to a real.  If conversion fails,
 	*fallback* will be returned.
 Example
-	set req.http.x-real = std.real(req.http.x-foo, 0.0);
+	| if (std.real(req.http.x-foo, 0.0) > 5.5) {
+	|	...
+	| }
 
 $Function TIME real2time(REAL r)
 
@@ -230,6 +233,9 @@ Example
 	| if (std.strstr(req.url, req.http.x-restrict)) {
 	|     ...
 	| }
+
+	This will check if the content of req.http.x-restrict occurs
+	anywhere in req.url.
 
 $Function TIME time(STRING s, TIME fallback)
 
