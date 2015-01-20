@@ -358,7 +358,6 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 void
 V1D_Deliver_Synth(struct req *req)
 {
-	char *r;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AZ(req->obj);
@@ -394,16 +393,6 @@ V1D_Deliver_Synth(struct req *req)
 
 	req->vdps[0] = v1d_bytes;
 	req->vdp_nxt = 0;
-
-	if (
-	    req->wantbody &&
-	    !(req->res_mode & RES_ESI_CHILD) &&
-	    cache_param->http_range_support &&
-	    http_GetStatus(req->resp) == 200) {
-		http_SetHeader(req->resp, "Accept-Ranges: bytes");
-		if (http_GetHdr(req->http, H_Range, &r))
-			v1d_dorange(req, NULL, r);
-	}
 
 	WRW_Reserve(req->wrk, &req->sp->fd, req->vsl, req->t_prev);
 
