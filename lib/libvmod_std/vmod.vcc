@@ -92,7 +92,7 @@ Description
 Example
 	std.syslog(9, "Something is wrong");
 
-	This will send a message to syslog using LOG_USER | LOG_PID.
+	This will send a message to syslog using LOG_USER | LOG_ALERT.
 
 $Function STRING fileread(PRIV_CALL, STRING)
 
