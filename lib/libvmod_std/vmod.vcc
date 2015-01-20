@@ -77,17 +77,21 @@ Example
 $Function VOID log(STRING_LIST s)
 
 Description
-	Logs the string *s* to the shared memory log, using VSL tag *SLT_VCL_Log*.
+	Logs the string *s* to the shared memory log, using VSL tag
+	*SLT_VCL_Log*.
 Example
 	std.log("Something fishy is going on with the vhost " + req.host);
 
 $Function VOID syslog(INT priority, STRING_LIST s)
 
 Description
-	Logs the string *s* to syslog marked with *priority*.  See your
-	system's syslog.h file for the legal values of *priority*.
+	Logs the string *s* to syslog marked with *priority*. *priority*
+	is formed by ORing the facility and priority values.  See your
+	system's syslog.h file for priorities and facility codes.
 Example
 	std.syslog(8 + 1, "Something is wrong");
+
+	This will send a message to syslog using LOG_USER | LOG_PID.
 
 $Function STRING fileread(PRIV_CALL, STRING)
 
