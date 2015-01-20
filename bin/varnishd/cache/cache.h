@@ -1019,7 +1019,7 @@ void http_SetStatus(struct http *to, uint16_t status);
 const char *http_GetReq(const struct http *hp);
 int http_HdrIs(const struct http *hp, const char *hdr, const char *val);
 int http_IsHdr(const txt *hh, const char *hdr);
-enum sess_close http_DoConnection(const struct http *);
+enum sess_close http_DoConnection(struct http *);
 void http_CopyHome(struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);

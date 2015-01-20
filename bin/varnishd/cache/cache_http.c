@@ -493,12 +493,13 @@ http_GetHdrField(const struct http *hp, const char *hdr,
  */
 
 enum sess_close
-http_DoConnection(const struct http *hp)
+http_DoConnection(struct http *hp)
 {
 	char *p, *q;
 	enum sess_close ret;
 	unsigned u;
 
+	http_CollectHdr(hp, H_Connection);
 	if (!http_GetHdr(hp, H_Connection, &p)) {
 		if (hp->protover < 11)
 			return (SC_REQ_HTTP10);
@@ -517,6 +518,17 @@ http_DoConnection(const struct http *hp)
 		u = pdiff(p, q);
 		if (u == 5 && !strncasecmp(p, "close", u))
 			ret = SC_REQ_CLOSE;
+
+		/* Refuse removal of well-known-headers if they would pass. */
+/*lint -save -e506 */
+#define HTTPH(a, x, c)						\
+		if (!((c) & HTTPH_R_PASS) &&			\
+		    strlen(a) == u && !strncasecmp(a, p, u))	\
+				return (SC_RX_BAD);
+#include "tbl/http_headers.h"
+#undef HTTPH
+/*lint -restore */
+
 		u = http_findhdr(hp, u, p);
 		if (u != 0)
 			hp->hdf[u] |= HDF_FILTER;
