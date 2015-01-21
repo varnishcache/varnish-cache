@@ -57,7 +57,7 @@ struct vwe {
 #define VWE_MAGIC		0x6bd73424
 	struct waiter		*waiter;
 
-	pthread_t		epoll_thread;
+	pthread_t		thread;
 	int			epfd;
 };
 
@@ -113,7 +113,7 @@ vwe_thread(void *priv)
 
 	THR_SetName("cache-epoll");
 
-	while (1) {
+	while (!vew->waiter->dismantle) {
 		n = epoll_wait(vwe->epfd, ev, NEEV, -1);
 		now = VTIM_real();
 		for (ep = ev, i = 0; i < n; i++, ep++)
@@ -139,7 +139,21 @@ vwe_init(struct waiter *w)
 
 	Wait_UsePipe(w);
 
-	AZ(pthread_create(&vwe->epoll_thread, NULL, vwe_thread, vwe));
+	AZ(pthread_create(&vwe->thread, NULL, vwe_thread, vwe));
+}
+
+/*--------------------------------------------------------------------*/
+
+static void __match_proto__(waiter_fini_f)
+vwe_fini(struct waiter *w)
+{
+	struct vwe *vwe;
+	void *vp;
+
+	CAST_OBJ_NOTNULL(vwe, w->priv, VWE_MAGIC);
+
+	AZ(pthread_join(vwe->thread, &vp));
+	WRONG("Not Yet Implemented");
 }
 
 /*--------------------------------------------------------------------*/
@@ -147,6 +161,7 @@ vwe_init(struct waiter *w)
 const struct waiter_impl waiter_epoll = {
 	.name =		"epoll",
 	.init =		vwe_init,
+	.fini =		vwe_fini,
 	.inject =	vwe_inject,
 	.size =		sizeof(struct vwe),
 };

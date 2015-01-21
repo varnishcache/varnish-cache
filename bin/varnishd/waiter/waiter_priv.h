@@ -36,6 +36,7 @@ struct waiter {
 	#define WAITER_MAGIC		0x17c399db
 	const struct waiter_impl	*impl;
 	VTAILQ_ENTRY(waiter)		list;
+	int				dismantle;
 
 	waiter_handle_f *		func;
 

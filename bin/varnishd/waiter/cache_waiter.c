@@ -124,13 +124,42 @@ void
 Wait_Destroy(struct waiter **wp)
 {
 	struct waiter *w;
+	struct waited *wx = NULL;
+	int written;
+	double now;
 
 	AN(wp);
 	w = *wp;
 	*wp = NULL;
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
+
+	Lck_Lock(&wait_mtx);
+	VTAILQ_REMOVE(&waiters, w, list);
+	w->dismantle = 1;
+	Lck_Unlock(&wait_mtx);
+
+	if (w->pipes[1] >= 0) {
+		while (1) {
+			written = write(w->pipes[1], &wx, sizeof wx);
+			if (written == sizeof wx)
+				break;
+			(void)usleep(10000);
+		}
+	}
 	AN(w->impl->fini);
 	w->impl->fini(w);
+	now = VTIM_real();
+	while (1) {
+		wx = VTAILQ_FIRST(&w->waithead);
+		if (wx == NULL)
+			break;
+		VTAILQ_REMOVE(&w->waithead, wx, list);
+		if (wx == w->pipe_w)
+			FREE_OBJ(wx);
+		else
+			w->func(wx, WAITER_CLOSE, now);
+	}
+	FREE_OBJ(w);
 }
 
 void
@@ -157,6 +186,7 @@ Wait_Enter(const struct waiter *w, struct waited *wp)
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	assert(wp->fd >= 0);
+	AZ(w->dismantle);
 
 	if (w->impl->pass != NULL)
 		return (w->impl->pass(w->priv, wp));
@@ -218,11 +248,13 @@ Wait_Handle(struct waiter *w, struct waited *wp, enum wait_event ev, double now)
 		CHECK_OBJ_NOTNULL(ss[j], WAITED_MAGIC);
 		if (ss[j] == w->pipe_w) {
 			dotimer = 1;
-			continue;
+		} else if (ss[j] == NULL) {
+			AN(w->dismantle);
+		} else {
+			assert(ss[j]->fd >= 0);
+			VTAILQ_INSERT_TAIL(&w->waithead, ss[j], list);
+			w->impl->inject(w, ss[j]);
 		}
-		assert(ss[j]->fd >= 0);
-		VTAILQ_INSERT_TAIL(&w->waithead, ss[j], list);
-		w->impl->inject(w, ss[j]);
 	}
 	AZ(i);
 

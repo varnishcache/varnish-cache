@@ -53,7 +53,7 @@ struct vws {
 #define VWS_MAGIC		0x0b771473
 	struct waiter		*waiter;
 
-	pthread_t		ports_thread;
+	pthread_t		thread;
 	int			dport;
 };
 
@@ -150,7 +150,7 @@ vws_thread(void *priv)
 
 	timeout = &max_ts;
 
-	while (1) {
+	while (!vws->waiter->dismantle) {
 		port_event_t ev[MAX_EVENTS];
 		u_int nevents;
 		int ei, ret;
@@ -259,7 +259,20 @@ vws_init(struct waiter *w)
 	INIT_OBJ(vws, VWS_MAGIC);
 	vws->waiter = w;
 
-	AZ(pthread_create(&vws->ports_thread, NULL, vws_thread, vws));
+	AZ(pthread_create(&vws->thread, NULL, vws_thread, vws));
+}
+
+/*--------------------------------------------------------------------*/
+
+static void __match_proto__(waiter_fini_f)
+vws_fini(struct waiter *w)
+{
+	struct vws *vwe;
+	void *vp;
+
+	CAST_OBJ_NOTNULL(vws, w->priv, VWS_MAGIC);
+	AZ(pthread_join(vwp->thread, &vp));
+	WRONG("Not Yet Implemented");
 }
 
 /*--------------------------------------------------------------------*/
@@ -267,6 +280,7 @@ vws_init(struct waiter *w)
 const struct waiter_impl waiter_ports = {
 	.name =		"ports",
 	.init =		vws_init,
+	.fini =		vws_fini,
 	.pass =		vws_pass,
 	.size =		sizeof(struct vws),
 };

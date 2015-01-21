@@ -272,6 +272,8 @@ ses_handle(struct waited *wp, enum wait_event ev, double now)
 		if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT))
 			SES_Delete(sp, SC_OVERLOAD, now);
 		break;
+	case WAITER_CLOSE:
+		WRONG("Should not see WAITER_CLOSE on client side");
 	default:
 		WRONG("Wrong event in ses_handle");
 	}

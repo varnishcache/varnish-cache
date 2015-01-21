@@ -48,7 +48,8 @@ struct waiter;
 enum wait_event {
 	WAITER_REMCLOSE,
 	WAITER_TIMEOUT,
-	WAITER_ACTION
+	WAITER_ACTION,
+	WAITER_CLOSE
 };
 
 #define WAITER_DEFAULT		"platform dependent"

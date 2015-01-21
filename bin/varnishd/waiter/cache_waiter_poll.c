@@ -45,7 +45,7 @@ struct vwp {
 #define VWP_MAGIC		0x4b2cc735
 	struct waiter		*waiter;
 
-	pthread_t		poll_thread;
+	pthread_t		thread;
 	struct pollfd		*pollfd;
 	unsigned		npoll;
 	unsigned		hpoll;
@@ -137,7 +137,7 @@ vwp_main(void *priv)
 	CAST_OBJ_NOTNULL(vwp, priv, VWP_MAGIC);
 	THR_SetName("cache-poll");
 
-	while (1) {
+	while (!vwp->waiter->dismantle) {
 		assert(vwp->hpoll < vwp->npoll);
 		while (vwp->hpoll > 0 && vwp->pollfd[vwp->hpoll].fd == -1)
 			vwp->hpoll--;
@@ -172,7 +172,7 @@ vwp_main(void *priv)
 /*--------------------------------------------------------------------*/
 
 static void __match_proto__(waiter_init_f)
-vwp_poll_init(struct waiter *w)
+vwp_init(struct waiter *w)
 {
 	struct vwp *vwp;
 
@@ -183,14 +183,28 @@ vwp_poll_init(struct waiter *w)
 
 	vwp_pollspace(vwp, 256);
 	Wait_UsePipe(w);
-	AZ(pthread_create(&vwp->poll_thread, NULL, vwp_main, vwp));
+	AZ(pthread_create(&vwp->thread, NULL, vwp_main, vwp));
+}
+
+/*--------------------------------------------------------------------*/
+
+static void __match_proto__(waiter_fini_f)
+vwp_fini(struct waiter *w)
+{
+	struct vwp *vwp;
+	void *vp;
+
+	CAST_OBJ_NOTNULL(vwp, w->priv, VWP_MAGIC);
+	AZ(pthread_join(vwp->thread, &vp));
+	free(vwp->pollfd);
 }
 
 /*--------------------------------------------------------------------*/
 
 const struct waiter_impl waiter_poll = {
 	.name =		"poll",
-	.init =		vwp_poll_init,
+	.init =		vwp_init,
+	.fini =		vwp_fini,
 	.inject =	vwp_inject,
 	.evict =	vwp_evict,
 	.size =		sizeof(struct vwp),

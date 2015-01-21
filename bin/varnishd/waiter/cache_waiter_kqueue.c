@@ -133,13 +133,10 @@ vwk_thread(void *priv)
 	CAST_OBJ_NOTNULL(vwk, priv, VWK_MAGIC);
 	THR_SetName("cache-kqueue");
 
-	vwk->kq = kqueue();
-	assert(vwk->kq >= 0);
-
 	vwk_kq_flush(vwk);
 
 	vwk->nki = 0;
-	while (1) {
+	while (!vwk->waiter->dismantle) {
 		n = kevent(vwk->kq, vwk->ki, vwk->nki, ke, NKEV, NULL);
 		assert(n <= NKEV);
 		if (n == 0) {
@@ -168,6 +165,9 @@ vwk_init(struct waiter *w)
 	INIT_OBJ(vwk, VWK_MAGIC);
 	vwk->waiter = w;
 
+	vwk->kq = kqueue();
+	assert(vwk->kq >= 0);
+
 	Wait_UsePipe(w);
 
 	AZ(pthread_create(&vwk->thread, NULL, vwk_thread, vwk));
@@ -175,9 +175,23 @@ vwk_init(struct waiter *w)
 
 /*--------------------------------------------------------------------*/
 
+static void __match_proto__(waiter_fini_f)
+vwk_fini(struct waiter *w)
+{
+	struct vwk *vwk;
+	void *vp;
+
+	CAST_OBJ_NOTNULL(vwk, w->priv, VWK_MAGIC);
+	AZ(pthread_join(vwk->thread, &vp));
+	AZ(close(vwk->kq));
+}
+
+/*--------------------------------------------------------------------*/
+
 const struct waiter_impl waiter_kqueue = {
 	.name =		"kqueue",
 	.init =		vwk_init,
+	.fini =		vwk_fini,
 	.inject =	vwk_inject,
 	.size =		sizeof(struct vwk),
 };
