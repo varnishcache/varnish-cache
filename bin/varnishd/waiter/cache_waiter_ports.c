@@ -267,11 +267,11 @@ vws_init(struct waiter *w)
 static void __match_proto__(waiter_fini_f)
 vws_fini(struct waiter *w)
 {
-	struct vws *vwe;
+	struct vws *vws;
 	void *vp;
 
 	CAST_OBJ_NOTNULL(vws, w->priv, VWS_MAGIC);
-	AZ(pthread_join(vwp->thread, &vp));
+	AZ(pthread_join(vws->thread, &vp));
 	WRONG("Not Yet Implemented");
 }
 
