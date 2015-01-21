@@ -113,7 +113,7 @@ vwe_thread(void *priv)
 
 	THR_SetName("cache-epoll");
 
-	while (!vew->waiter->dismantle) {
+	while (!vwe->waiter->dismantle) {
 		n = epoll_wait(vwe->epfd, ev, NEEV, -1);
 		now = VTIM_real();
 		for (ep = ev, i = 0; i < n; i++, ep++)
