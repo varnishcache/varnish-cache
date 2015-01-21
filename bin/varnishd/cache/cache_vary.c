@@ -321,7 +321,7 @@ VRY_Match(struct req *req, const uint8_t *vary)
 				lh = 0xffff;
 			}
 
-			if (vsp + ln + 2 >= req->vary_e) {
+			if (vsp + ln + 3 >= req->vary_e) {
 				/*
 				 * Not enough space to build new entry
 				 * and put terminator behind it.
