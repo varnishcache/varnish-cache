@@ -112,10 +112,25 @@ Wait_New(waiter_handle_f *func, volatile double *tmo)
 	Lck_Lock(&wait_mtx);
 	VTAILQ_INSERT_TAIL(&waiters, w, list);
 	nwaiters++;
+
+	/* We assume all waiters either use pipes or don't use pipes */
 	if (w->pipes[1] >= 0 && nwaiters == 1)
 		AZ(pthread_create(&wait_thr, NULL, wait_poker_thread, NULL));
 	Lck_Unlock(&wait_mtx);
 	return (w);
+}
+
+void
+Wait_Destroy(struct waiter **wp)
+{
+	struct waiter *w;
+
+	AN(wp);
+	w = *wp;
+	*wp = NULL;
+	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
+	AN(w->impl->fini);
+	w->impl->fini(w);
 }
 
 void
