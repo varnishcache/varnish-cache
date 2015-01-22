@@ -185,7 +185,7 @@ Wait_Enter(const struct waiter *w, struct waited *wp)
 
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
-	assert(wp->fd >= 0);
+	assert(wp->fd > 0);		// stdin never comes here
 	AZ(w->dismantle);
 
 	if (w->impl->pass != NULL)
@@ -245,11 +245,11 @@ Wait_Handle(struct waiter *w, struct waited *wp, enum wait_event ev, double now)
 		return;
 
 	for (j = 0; i >= sizeof ss[0]; j++, i -= sizeof ss[0]) {
-		CHECK_OBJ_NOTNULL(ss[j], WAITED_MAGIC);
-		if (ss[j] == w->pipe_w) {
-			dotimer = 1;
-		} else if (ss[j] == NULL) {
+		CHECK_OBJ_ORNULL(ss[j], WAITED_MAGIC);
+		if (ss[j] == NULL) {
 			AN(w->dismantle);
+		} else if (ss[j] == w->pipe_w) {
+			dotimer = 1;
 		} else {
 			assert(ss[j]->fd >= 0);
 			VTAILQ_INSERT_TAIL(&w->waithead, ss[j], list);
@@ -257,6 +257,8 @@ Wait_Handle(struct waiter *w, struct waited *wp, enum wait_event ev, double now)
 		}
 	}
 	AZ(i);
+
+	wait_updidle(w, now);
 
 	if (!dotimer)
 		return;
