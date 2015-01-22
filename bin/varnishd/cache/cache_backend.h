@@ -84,6 +84,15 @@ struct backend {
 
 /* -------------------------------------------------------------------*/
 
+enum vbc_waiter {
+	VBC_W_NEW,
+	VBC_W_INWAIT,
+	VBC_W_STOLEN,
+	VBC_W_NOWAIT,
+	VBC_W_PENDING,
+	VBC_W_KILL,
+};
+
 /* Backend connection */
 struct vbc {
 	unsigned		magic;
@@ -92,6 +101,8 @@ struct vbc {
 	int			fd;
 	const struct suckaddr	*addr;
 	uint8_t			recycled;
+	enum vbc_waiter		in_waiter;
+	struct waited		waited[1];
 
 	struct backend		*backend;
 };
