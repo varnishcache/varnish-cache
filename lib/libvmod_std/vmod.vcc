@@ -81,7 +81,7 @@ Description
 	Logs the string *s* to the shared memory log, using VSL tag
 	*SLT_VCL_Log*.
 Example
-	std.log("Something fishy is going on with the vhost " + req.host);
+	std.log("Something fishy is going on with the vhost " + req.http.host);
 
 $Function VOID syslog(INT priority, STRING_LIST s)
 
