@@ -1,3 +1,22 @@
+================================================
+Changes from 4.0.3-rc1 to 4.0.3-rc2 (2015-01-22)
+================================================
+
+Changes since 4.0.3-rc1:
+
+- Assorted documentation updates.
+
+Bugs fixed
+----------
+
+- 1479_ - Fix out-of-tree builds.
+- 1616_ - Correct header file placement.
+- 1620_ - Fail miss properly if out of backend threads. (Also 1621_)
+- 1628_ - Avoid dereferencing null in VBO_DerefBusyObj().
+- 1629_ - Ditch rest of waiting list on failure to reschedule.
+- 1660_ - Don't attempt range delivery on a synth response
+
+
 ============================================
 Changes from 4.0.2 to 4.0.3-rc1 (2015-01-15)
 ============================================
