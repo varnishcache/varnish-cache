@@ -274,6 +274,7 @@ ses_handle(struct waited *wp, enum wait_event ev, double now)
 		break;
 	case WAITER_CLOSE:
 		WRONG("Should not see WAITER_CLOSE on client side");
+		break;
 	default:
 		WRONG("Wrong event in ses_handle");
 	}
