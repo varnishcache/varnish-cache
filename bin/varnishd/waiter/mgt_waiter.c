@@ -43,7 +43,7 @@ static const struct waiter_impl *const waiter_impls[] = {
 	&waiter_kqueue,
     #endif
     #if defined(HAVE_EPOLL_CTL)
-	&waiter_epoll,
+//	&waiter_epoll,
     #endif
     #if defined(HAVE_PORT_CREATE)
 	&waiter_ports,
