@@ -117,10 +117,6 @@ VSL(SLT_Debug, 0, "POLL Evict %d", fd);
 	assert(fd < vwp->npoll);
 	vwp_pollspace(vwp, (unsigned)fd);
 
-	assert(vwp->pollfd[fd].fd == fd);
-	assert(vwp->pollfd[fd].events == POLLIN);
-	AZ(vwp->pollfd[fd].revents);
-
 	vwp->pollfd[fd].fd = -1;
 	vwp->pollfd[fd].events = 0;
 }
