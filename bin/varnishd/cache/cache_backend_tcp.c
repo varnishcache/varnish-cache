@@ -384,6 +384,8 @@ VBT_Get(struct tcp_pool *tp, double tmo)
 		CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
 
 		assert(vbc->in_waiter == VBC_W_INWAIT);
+VSL(SLT_Debug, 0, "------> Steal fd %d", vbc->fd);
+		Wait_Steal(tp->waiter, vbc->waited);
 		vbc->in_waiter = VBC_W_STOLEN;
 		pfd.fd = vbc->fd;
 		pfd.events = POLLIN;

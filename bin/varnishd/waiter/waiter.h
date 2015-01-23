@@ -58,6 +58,7 @@ typedef void waiter_handle_f(struct waited *, enum wait_event, double now);
 
 /* cache_waiter.c */
 int Wait_Enter(const struct waiter *, struct waited *);
+int Wait_Steal(const struct waiter *, struct waited *);
 struct waiter *Wait_New(waiter_handle_f *, volatile double *timeout);
 void Wait_Destroy(struct waiter **);
 const char *Wait_GetName(void);

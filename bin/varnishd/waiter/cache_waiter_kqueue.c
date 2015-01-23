@@ -99,6 +99,17 @@ vwk_inject(const struct waiter *w, struct waited *wp)
 		vwk_kq_sess(vwk, wp, EV_ADD | EV_ONESHOT);
 }
 
+#if 0
+static void
+vwk_evict(const struct waiter *w, struct waited *wp)
+{
+	struct vwk *vwk;
+
+	CAST_OBJ_NOTNULL(vwk, w->priv, VWK_MAGIC);
+	vwk_kq_sess(vwk, wp, EV_DELETE);
+}
+#endif
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -193,6 +204,7 @@ const struct waiter_impl waiter_kqueue = {
 	.init =		vwk_init,
 	.fini =		vwk_fini,
 	.inject =	vwk_inject,
+	// .evict =	vwk_evict,
 	.size =		sizeof(struct vwk),
 };
 
