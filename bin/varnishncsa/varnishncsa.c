@@ -699,7 +699,7 @@ isprefix(const char *str, const char *prefix, const char *end,
 }
 
 static void
-frag_fields(const char *b, const char *e, ...)
+frag_fields(int force, const char *b, const char *e, ...)
 {
 	va_list ap;
 	const char *p, *q;
@@ -726,7 +726,7 @@ frag_fields(const char *b, const char *e, ...)
 			q++;
 
 		if (field == n) {
-			if (frag->gen != CTX.gen) {
+			if (frag->gen != CTX.gen || !force) {
 				/* We only grab the same matching field once */
 				frag->gen = CTX.gen;
 				frag->b = p;
@@ -742,10 +742,10 @@ frag_fields(const char *b, const char *e, ...)
 }
 
 static void
-frag_line(const char *b, const char *e, struct fragment *f)
+frag_line(int force, const char *b, const char *e, struct fragment *f)
 {
 
-	if (f->gen == CTX.gen)
+	if (f->gen == CTX.gen && !force)
 		/* We only grab the same matching record once */
 		return;
 
@@ -770,7 +770,7 @@ process_hdr(const struct watch_head *head, const char *b, const char *e)
 	VTAILQ_FOREACH(w, head, list) {
 		if (strncasecmp(b, w->key, w->keylen))
 			continue;
-		frag_line(b + w->keylen, e, &w->frag);
+		frag_line(0, b + w->keylen, e, &w->frag);
 	}
 }
 
@@ -783,7 +783,6 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	const char *b, *e, *p;
 	struct watch *w;
 	int i, skip;
-
 	(void)vsl;
 	(void)priv;
 
@@ -810,32 +809,34 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				skip = 1;
 				break;
 			case SLT_PipeAcct:
-				frag_fields(b, e,
+				frag_fields(0, b, e,
 				    3, &CTX.frag[F_I],
 				    4, &CTX.frag[F_O],
 				    0, NULL);
 				break;
 			case SLT_ReqStart:
-				frag_fields(b, e, 1, &CTX.frag[F_h], 0, NULL);
+				frag_fields(0, b, e,
+				    1, &CTX.frag[F_h],
+				    0, NULL);
 				break;
 			case SLT_ReqMethod:
-				frag_line(b, e, &CTX.frag[F_m]);
+				frag_line(0, b, e, &CTX.frag[F_m]);
 				break;
 			case SLT_ReqURL:
 				p = memchr(b, '?', e - b);
 				if (p == NULL)
 					p = e;
-				frag_line(b, p, &CTX.frag[F_U]);
-				frag_line(p, e, &CTX.frag[F_q]);
+				frag_line(0, b, p, &CTX.frag[F_U]);
+				frag_line(0, p, e, &CTX.frag[F_q]);
 				break;
 			case SLT_ReqProtocol:
-				frag_line(b, e, &CTX.frag[F_H]);
+				frag_line(0, b, e, &CTX.frag[F_H]);
 				break;
 			case SLT_RespStatus:
-				frag_line(b, e, &CTX.frag[F_s]);
+				frag_line(1, b, e, &CTX.frag[F_s]);
 				break;
 			case SLT_ReqAcct:
-				frag_fields(b, e,
+				frag_fields(0, b, e,
 				    3, &CTX.frag[F_I],
 				    5, &CTX.frag[F_b],
 				    6, &CTX.frag[F_O],
@@ -843,26 +844,26 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case SLT_Timestamp:
 				if (isprefix(b, "Start:", e, &p)) {
-					frag_fields(p, e, 1,
+					frag_fields(0, p, e, 1,
 					    &CTX.frag[F_tstart], 0, NULL);
 
 				} else if (isprefix(b, "Resp:", e, &p) ||
 					isprefix(b, "PipeSess:", e, &p)) {
-					frag_fields(p, e, 1,
+					frag_fields(0, p, e, 1,
 					    &CTX.frag[F_tend], 0, NULL);
 
 				} else if (isprefix(b, "Process:", e, &p) ||
 					isprefix(b, "Pipe:", e, &p)) {
-					frag_fields(p, e, 2,
+					frag_fields(0, p, e, 2,
 					    &CTX.frag[F_ttfb], 0, NULL);
 				}
 				break;
 			case SLT_ReqHeader:
 				if (isprefix(b, "Host:", e, &p))
-					frag_line(p, e, &CTX.frag[F_host]);
+					frag_line(0, p, e, &CTX.frag[F_host]);
 				else if (isprefix(b, "Authorization:", e, &p) &&
 				    isprefix(p, "basic", e, &p))
-					frag_line(p, e, &CTX.frag[F_auth]);
+					frag_line(0, p, e, &CTX.frag[F_auth]);
 				break;
 			case SLT_VCL_call:
 				if (!strcasecmp(b, "recv")) {
@@ -896,7 +897,6 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			default:
 				break;
 			}
-
 			if (tag == SLT_VCL_Log) {
 				VTAILQ_FOREACH(w, &CTX.watch_vcl_log, list) {
 					CHECK_OBJ_NOTNULL(w, WATCH_MAGIC);
@@ -908,7 +908,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 					p++;
 					if (p > e)
 						continue;
-					frag_line(p, e, &w->frag);
+					frag_line(0, p, e, &w->frag);
 				}
 			}
 			if (tag == SLT_ReqHeader)
