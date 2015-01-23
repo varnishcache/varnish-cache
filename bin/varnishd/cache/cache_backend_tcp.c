@@ -286,7 +286,6 @@ VSL(SLT_Debug, 0, "------> Recycle fd %d in_w %d", vbc->fd, vbc->in_waiter);
 	case VBC_W_NEW:
 	case VBC_W_NOWAIT:
 		vbc->in_waiter = VBC_W_INWAIT;
-		INIT_OBJ(vbc->waited, WAITED_MAGIC);
 		vbc->waited->ptr = vbc;
 		vbc->waited->fd = vbc->fd;
 		vbc->waited->idle = VTIM_real();
@@ -419,6 +418,7 @@ VBT_Get(struct tcp_pool *tp, double tmo)
 
 	ALLOC_OBJ(vbc, VBC_MAGIC);
 	AN(vbc);
+	INIT_OBJ(vbc->waited, WAITED_MAGIC);
 	vbc->in_waiter = VBC_W_NEW;
 	if (vbc != NULL) {
 		vbc->fd = VBT_Open(tp, tmo, &vbc->addr);
