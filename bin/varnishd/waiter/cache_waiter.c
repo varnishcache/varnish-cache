@@ -182,6 +182,7 @@ int
 Wait_Enter(const struct waiter *w, struct waited *wp)
 {
 	ssize_t written;
+	uintptr_t up;
 
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
@@ -193,10 +194,12 @@ Wait_Enter(const struct waiter *w, struct waited *wp)
 
 	assert(w->pipes[1] > 0);
 
-	written = write(w->pipes[1], &wp, sizeof wp);
-	if (written != sizeof wp && (errno == EAGAIN || errno == EWOULDBLOCK))
+	up = (uintptr_t)wp;
+	AZ(up & 1);
+	written = write(w->pipes[1], &up, sizeof up);
+	if (written != sizeof up && (errno == EAGAIN || errno == EWOULDBLOCK))
 		return (-1);
-	assert (written == sizeof wp);
+	assert (written == sizeof up);
 	return (0);
 }
 
@@ -220,7 +223,8 @@ wait_updidle(struct waiter *w, double now)
 void
 Wait_Handle(struct waiter *w, struct waited *wp, enum wait_event ev, double now)
 {
-	struct waited *ss[NEV], *wp2;
+	uintptr_t ss[NEV];
+	struct waited *wp2;
 	int i, j, dotimer = 0;
 
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
@@ -245,15 +249,17 @@ Wait_Handle(struct waiter *w, struct waited *wp, enum wait_event ev, double now)
 		return;
 
 	for (j = 0; i >= sizeof ss[0]; j++, i -= sizeof ss[0]) {
-		CHECK_OBJ_ORNULL(ss[j], WAITED_MAGIC);
-		if (ss[j] == NULL) {
+		if (ss[j] == 0) {
 			AN(w->dismantle);
-		} else if (ss[j] == w->pipe_w) {
+			continue;
+		}
+		CAST_OBJ_NOTNULL(wp2, (void*)ss[j], WAITED_MAGIC);
+		if (wp2 == w->pipe_w) {
 			dotimer = 1;
 		} else {
-			assert(ss[j]->fd >= 0);
-			VTAILQ_INSERT_TAIL(&w->waithead, ss[j], list);
-			w->impl->inject(w, ss[j]);
+			assert(wp2->fd >= 0);
+			VTAILQ_INSERT_TAIL(&w->waithead, wp2, list);
+			w->impl->inject(w, wp2);
 		}
 	}
 	AZ(i);

@@ -88,6 +88,7 @@ vwp_inject(const struct waiter *w, struct waited *wp)
 	CAST_OBJ_NOTNULL(vwp, w->priv, VWP_MAGIC);
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	fd = wp->fd;
+VSL(SLT_Debug, 0, "POLL Inject %d", fd);
 	assert(fd >= 0);
 	vwp_pollspace(vwp, (unsigned)fd);
 	assert(fd < vwp->npoll);
@@ -111,6 +112,7 @@ vwp_evict(const struct waiter *w, struct waited *wp)
 	CAST_OBJ_NOTNULL(vwp, w->priv, VWP_MAGIC);
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	fd = wp->fd;
+VSL(SLT_Debug, 0, "POLL Evict %d", fd);
 	assert(fd >= 0);
 	assert(fd < vwp->npoll);
 	vwp_pollspace(vwp, (unsigned)fd);
@@ -151,6 +153,7 @@ vwp_main(void *priv)
 				break;
 			CHECK_OBJ_NOTNULL(sp, WAITED_MAGIC);
 			fd = sp->fd;
+VSL(SLT_Debug, 0, "POLL Handle %d %x", fd, vwp->pollfd[fd].revents);
 			assert(fd >= 0);
 			assert(fd <= vwp->hpoll);
 			assert(fd < vwp->npoll);
