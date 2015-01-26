@@ -346,8 +346,8 @@ VBT_Close(struct tcp_pool *tp, struct vbc **vbcp)
 	assert(vbc->fd > 0);
 VSL(SLT_Debug, 0, "------> Close fd %d in_w %d", vbc->fd, vbc->in_waiter);
 
-	VTCP_close(&vbc->fd);
 	Lck_Lock(&tp->mtx);
+	VTCP_close(&vbc->fd);
 	tp->n_used--;
 	if (vbc->in_waiter) {
 		vbc->state = VBC_STATE_CLEANUP;
