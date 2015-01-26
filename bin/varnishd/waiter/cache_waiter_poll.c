@@ -164,6 +164,7 @@ VSL(SLT_Debug, 0, "POLL Handle %d %x", fd, vwp->pollfd[fd].revents);
 				    now);
 			}
 		}
+		Wait_Handle(vwp->waiter, NULL, WAITER_ACTION, now);
 	}
 	NEEDLESS_RETURN(NULL);
 }

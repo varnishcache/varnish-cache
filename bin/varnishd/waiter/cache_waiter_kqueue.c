@@ -116,16 +116,19 @@ static void
 vwk_sess_ev(const struct vwk *vwk, const struct kevent *kp, double now)
 {
 	struct waited *sp;
+	double idle;
 
 	AN(kp->udata);
 	CAST_OBJ_NOTNULL(sp, kp->udata, WAITED_MAGIC);
 
+	idle = now - *vwk->waiter->tmo;
+
 	if (kp->data > 0) {
 		Wait_Handle(vwk->waiter, sp, WAITER_ACTION, now);
-		return;
+	} else if (sp->idle <= idle) {
+		Wait_Handle(vwk->waiter, sp, WAITER_TIMEOUT, now);
 	} else if (kp->flags & EV_EOF) {
 		Wait_Handle(vwk->waiter, sp, WAITER_REMCLOSE, now);
-		return;
 	} else {
 		WRONG("unknown kqueue state");
 	}
@@ -160,6 +163,7 @@ vwk_thread(void *priv)
 			assert(kp->filter == EVFILT_READ);
 			vwk_sess_ev(vwk, kp, now);
 		}
+		Wait_Handle(vwk->waiter, NULL, WAITER_ACTION, now);
 	}
 	NEEDLESS_RETURN(NULL);
 }
@@ -204,7 +208,6 @@ const struct waiter_impl waiter_kqueue = {
 	.init =		vwk_init,
 	.fini =		vwk_fini,
 	.inject =	vwk_inject,
-	// .evict =	vwk_evict,
 	.size =		sizeof(struct vwk),
 };
 

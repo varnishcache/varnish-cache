@@ -118,6 +118,7 @@ vwe_thread(void *priv)
 		now = VTIM_real();
 		for (ep = ev, i = 0; i < n; i++, ep++)
 			vwe_eev(vwe, ep, now);
+		Wait_Handle(vwe->waiter, NULL, WAITER_ACTION, now);
 	}
 	return (NULL);
 }
