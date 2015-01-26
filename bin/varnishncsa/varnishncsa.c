@@ -726,7 +726,7 @@ frag_fields(int force, const char *b, const char *e, ...)
 			q++;
 
 		if (field == n) {
-			if (frag->gen != CTX.gen || !force) {
+			if (frag->gen != CTX.gen || force) {
 				/* We only grab the same matching field once */
 				frag->gen = CTX.gen;
 				frag->b = p;
