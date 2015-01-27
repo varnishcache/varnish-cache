@@ -149,11 +149,11 @@ reference:
 BUILT_SOURCES += reference
 
 reference/vmod_std.generated.rst: reference $(top_builddir)/lib/libvmod_std/vmod_std.rst
-	install -D $(top_builddir)/lib/libvmod_std/vmod_std.rst $@
+	cp $(top_builddir)/lib/libvmod_std/vmod_std.rst $@
 BUILT_SOURCES += reference/vmod_std.generated.rst
 
 reference/vmod_directors.generated.rst: reference $(top_builddir)/lib/libvmod_directors/vmod_directors.rst
-	install -D $(top_builddir)/lib/libvmod_directors/vmod_directors.rst $@
+	cp $(top_builddir)/lib/libvmod_directors/vmod_directors.rst $@
 BUILT_SOURCES += reference/vmod_directors.generated.rst
 
 EXTRA_DIST += $(BUILT_SOURCES)
