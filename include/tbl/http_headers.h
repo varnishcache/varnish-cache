@@ -40,7 +40,7 @@
 /*lint -save -e525 -e539 */
 
 #ifndef HTTPH_R_PASS
-#define HTTPH_R_PASS	(1 << 0   )	/* Request (c->b) in pass mode */
+#define HTTPH_R_PASS	(1 << 0)	/* Request (c->b) in pass mode */
 #define HTTPH_R_FETCH	(1 << 1)	/* Request (c->b) for fetch */
 #define HTTPH_A_INS	(1 << 2)	/* Response (b->o) for insert */
 #endif

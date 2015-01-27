@@ -661,7 +661,7 @@ http_DoConnection(struct http *hp)
 #define HTTPH(a, x, c)						\
 		if (!((c) & HTTPH_R_PASS) &&			\
 		    strlen(a) == u && !strncasecmp(a, b, u))	\
-				return (SC_RX_BAD);
+			return (SC_RX_BAD);
 #include "tbl/http_headers.h"
 #undef HTTPH
 /*lint -restore */
