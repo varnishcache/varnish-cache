@@ -7,9 +7,6 @@ Built in subroutines
 Various built-in subroutines are called during processing of client-
 and backend requests as well as upon ``vcl.load`` and ``vcl.discard``.
 
-See :ref:`reference-states` for a defailed graphical overview of the
-states and how they relate to core code functions and VCL subroutines.
-
 -----------
 client side
 -----------
