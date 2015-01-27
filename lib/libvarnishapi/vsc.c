@@ -387,7 +387,7 @@ vsc_add_pt(struct vsc *vsc, const volatile void *ptr,
 		CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);			\
 		st = vf->fantom.b;
 
-#define VSC_F(nn,tt,ll,ff,vv,ee,dd)					\
+#define VSC_F(nn,tt,ll,ss,vv,dd,ee)					\
 		vsc_add_pt(vsc, &st->nn, descs++, vf);
 
 #define VSC_DONE(U,l,t)							\
@@ -437,7 +437,7 @@ vsc_build_pt_list(struct VSM_data *vd)
 		CHECK_OBJ_NOTNULL(vf, VSC_VF_MAGIC);		\
 		if (!strcmp(vf->fantom.type, t))		\
 			iter_##l(vsc, VSC_desc_##l, vf);
-#define VSC_F(n,t,l,f,v,e,d)
+#define VSC_F(n,t,l,s,v,d,e)
 #define VSC_DONE(a,b,c)
 #include "tbl/vsc_all.h"
 #undef VSC_DO
@@ -565,7 +565,7 @@ VSC_LevelDesc(unsigned level)
 #undef VSC_TYPE_F
 
 #define VSC_DO(U,l,t)		const struct VSC_desc VSC_desc_##l[] = {
-#define VSC_F(n,t,l,f,v,e,d)		{#n,#t,f,e,d,&VSC_level_desc_##v},
+#define VSC_F(n,t,l,s,v,d,e)		{#n,#t,s,d,e,&VSC_level_desc_##v},
 #define VSC_DONE(U,l,t)		};
 #include "tbl/vsc_all.h"
 #undef VSC_DO

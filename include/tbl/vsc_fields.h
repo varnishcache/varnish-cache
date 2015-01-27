@@ -29,17 +29,17 @@
  * Definition of all shared memory statistics below (except main - see
  * include/tbl/vsc_f_main.h).
  *
- * Fields (n, t, l, f, v, e, d):
+ * Fields (n, t, l, s, v, d, e):
  *    n - Name:		Field name, in C-source and stats programs
- *    t - Type:		C-type, uint64_t, unless marked in 'f'
+ *    t - C-type:	uint64_t, unless marked in 's'
  *    l - Local:	Local counter in worker thread.
- *    f - Format:	Semantics of the value in this field
+ *    s - Semantics:	Semantics of the value in this field
  *				'b' - Bitmap
  *				'c' - Counter, never decreases.
  *				'g' - Gauge, goes up and down
  *    v - Verbosity:	Counter verbosity level (see vsc_levels.h)
- *    e - Explanation:	Short explanation of field (for screen use)
- *    d - Description:	Long explanation of field (for doc use)
+ *    d - Description:	Short description of field (for screen use)
+ *    e - Explanation:	Long explanation of field (for doc use)
  *
  * Please describe Gauge variables as "Number of..." to indicate that
  * this is a snapshot, and Counter variables as "Count of" to indicate

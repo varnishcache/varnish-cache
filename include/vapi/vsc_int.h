@@ -46,7 +46,7 @@ enum VSC_level_e {
 
 /* Define the vsc type structs */
 #define VSC_DO(u,l,t)			struct VSC_C_##l {
-#define VSC_F(n,t,l,f,v,e,d)			t n;
+#define VSC_F(n,t,l,s,v,d,e)			t n;
 #define VSC_DONE(u,l,t)			};
 #include "tbl/vsc_all.h"
 #undef VSC_DO
