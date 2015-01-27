@@ -122,7 +122,7 @@ VSL(SLT_Debug, 0, "------> Handler used");
 		break;
 	case VBC_STATE_CLEANUP:
 VSL(SLT_Debug, 0, "------> Handler cleanup");
-		assert(vbc->fd < 0);
+		VTCP_close(&vbc->fd);
 		tp->n_kill--;
 		VTAILQ_REMOVE(&tp->killlist, vbc, list);
 		FREE_OBJ(vbc);
@@ -214,12 +214,13 @@ VBT_Rel(struct tcp_pool **tpp)
 	VTAILQ_FOREACH_SAFE(vbc, &tp->connlist, list, vbc2) {
 		VTAILQ_REMOVE(&tp->connlist, vbc, list);
 		tp->n_conn--;
-		vbc->state = VBC_STATE_CLEANUP;
-		VTCP_close(&vbc->fd);
 		if (vbc->in_waiter) {
+			vbc->state = VBC_STATE_CLEANUP;
+			shutdown(vbc->fd, SHUT_WR);
 			VTAILQ_INSERT_TAIL(&tp->killlist, vbc, list);
 			tp->n_kill++;
 		} else {
+			VTCP_close(&vbc->fd);
 			FREE_OBJ(vbc);
 		}
 	}
@@ -347,13 +348,14 @@ VBT_Close(struct tcp_pool *tp, struct vbc **vbcp)
 VSL(SLT_Debug, 0, "------> Close fd %d in_w %d", vbc->fd, vbc->in_waiter);
 
 	Lck_Lock(&tp->mtx);
-	VTCP_close(&vbc->fd);
 	tp->n_used--;
 	if (vbc->in_waiter) {
+		shutdown(vbc->fd, SHUT_WR);
 		vbc->state = VBC_STATE_CLEANUP;
 		VTAILQ_INSERT_HEAD(&tp->killlist, vbc, list);
 		tp->n_kill++;
 	} else {
+		VTCP_close(&vbc->fd);
 		FREE_OBJ(vbc);
 	}
 	Lck_Unlock(&tp->mtx);
