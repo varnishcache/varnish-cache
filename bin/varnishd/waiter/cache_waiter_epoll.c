@@ -155,7 +155,6 @@ vwe_fini(struct waiter *w)
 
 	AZ(pthread_join(vwe->thread, &vp));
 	AZ(close(vwe->epfd));
-	FREE_OBJ(vwe);
 }
 
 /*--------------------------------------------------------------------*/
