@@ -279,6 +279,14 @@ cmd_http_expect(CMD_ARGS)
 		retval = strcmp(lhs, rhs) >= 0;
 	} else if (!strcmp(cmp, ">")) {
 		retval = strcmp(lhs, rhs) > 0;
+	} else if (!strcmp(cmp, ".LT.")) {
+		retval = strtod(lhs, NULL) < strtod(rhs, NULL);
+	} else if (!strcmp(cmp, ".GT.")) {
+		retval = strtod(lhs, NULL) > strtod(rhs, NULL);
+	} else if (!strcmp(cmp, ".LE.")) {
+		retval = strtod(lhs, NULL) <= strtod(rhs, NULL);
+	} else if (!strcmp(cmp, ".GE.")) {
+		retval = strtod(lhs, NULL) >= strtod(rhs, NULL);
 	}
 
 	if (retval == -1)
