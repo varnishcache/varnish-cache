@@ -44,6 +44,7 @@
 #include <sys/time.h>
 #include <poll.h>
 #include <stdint.h>
+#include <math.h>
 
 #include "vas.h"
 #include "miniobj.h"
@@ -683,6 +684,87 @@ draw_line_default(WINDOW *w, int y, int x, int X, struct pt *pt)
 	}
 }
 
+static double
+scale_bytes(double val, char *q)
+{
+	const char *p;
+
+	for (p = " KMGTPEZY"; *p; p++) {
+		if (fabs(val) < 1024.)
+			break;
+		val /= 1024.;
+	}
+	*q = *p;
+	return (val);
+}
+
+static void
+print_bytes(WINDOW *w, double val)
+{
+	char q = ' ';
+
+	if (scale)
+		val = scale_bytes(val, &q);
+	wprintw(w, " %12.2f%c", val, q);
+}
+
+static void
+draw_line_bytes(WINDOW *w, int y, int x, int X, struct pt *pt)
+{
+	enum {
+		COL_CUR,
+		COL_CHG,
+		COL_AVG,
+		COL_MA10,
+		COL_MA100,
+		COL_MA1000,
+		COL_LAST
+	} col;
+
+	AN(w);
+	AN(pt);
+
+	col = 0;
+	while (col < COL_LAST) {
+		if (X - x < COLW)
+			break;
+		wmove(w, y, x);
+		switch (col) {
+		case COL_CUR:
+			if (scale && pt->cur > 1024)
+				print_bytes(w, (double)pt->cur);
+			else
+				wprintw(w, " %12ju", (uintmax_t)pt->cur);
+			break;
+		case COL_CHG:
+			if (pt->t_last)
+				print_bytes(w, pt->chg);
+			else
+				wprintw(w, " %12s", ".  ");
+			break;
+		case COL_AVG:
+			if (pt->avg)
+				print_bytes(w, pt->avg);
+			else
+				wprintw(w, " %12s", ".  ");
+			break;
+		case COL_MA10:
+			print_bytes(w, pt->ma_10.acc);
+			break;
+		case COL_MA100:
+			print_bytes(w, pt->ma_100.acc);
+			break;
+		case COL_MA1000:
+			print_bytes(w, pt->ma_1000.acc);
+			break;
+		default:
+			break;
+		}
+		x += COLW;
+		col++;
+	}
+}
+
 static void
 draw_line_bitmap(WINDOW *w, int y, int x, int X, struct pt *pt)
 {
@@ -740,10 +822,17 @@ draw_line(WINDOW *w, int y, struct pt *pt)
 		mvwprintw(w, y, x, "%.*s", colw_name, pt->name);
 	x += colw_name;
 
-	if (pt->format == 'b')
+	switch (pt->format) {
+	case 'b':
 		draw_line_bitmap(w, y, x, X, pt);
-	else
+		break;
+	case 'B':
+		draw_line_bytes(w, y, x, X, pt);
+		break;
+	default:
 		draw_line_default(w, y, x, X, pt);
+		break;
+	}
 }
 
 static void
