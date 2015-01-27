@@ -16,6 +16,14 @@ Bugs fixed
 - 1629_ - Ditch rest of waiting list on failure to reschedule.
 - 1660_ - Don't attempt range delivery on a synth response
 
+.. _1479: https://www.varnish-cache.org/trac/ticket/1479
+.. _1616: https://www.varnish-cache.org/trac/ticket/1616
+.. _1620: https://www.varnish-cache.org/trac/ticket/1620
+.. _1621: https://www.varnish-cache.org/trac/ticket/1621
+.. _1628: https://www.varnish-cache.org/trac/ticket/1628
+.. _1629: https://www.varnish-cache.org/trac/ticket/1629
+.. _1660: https://www.varnish-cache.org/trac/ticket/1660
+
 
 ============================================
 Changes from 4.0.2 to 4.0.3-rc1 (2015-01-15)
