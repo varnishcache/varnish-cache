@@ -154,7 +154,8 @@ vwe_fini(struct waiter *w)
 	CAST_OBJ_NOTNULL(vwe, w->priv, VWE_MAGIC);
 
 	AZ(pthread_join(vwe->thread, &vp));
-	WRONG("Not Yet Implemented");
+	AZ(close(vwe->epfd));
+	FREE_OBJ(vwe);
 }
 
 /*--------------------------------------------------------------------*/
