@@ -151,7 +151,8 @@ When using the -x option, the output is::
       <ident>FIELD IDENT</ident>
       <name>FIELD NAME</name>
       <value>FIELD VALUE</value>
-      <flag>FIELD FORMAT</flag>
+      <flag>FIELD SEMANTICS</flag>
+      <format>FIELD DISPLAY FORMAT</format>
       <description>FIELD DESCRIPTION</description>
     </stat>
     [..]
@@ -164,7 +165,7 @@ With -j the output format is::
 
   {
     "timestamp": "YYYY-MM-DDTHH:mm:SS",
-    "FIELD NAME": {"type": "FIELD TYPE", "ident": "FIELD IDENT", "value": FIELD VALUE, "flag": "FIELD FORMAT", "description": "FIELD DESCRIPTION"},
+    "FIELD NAME": {"type": "FIELD TYPE", "ident": "FIELD IDENT", "value": FIELD VALUE, "flag": "FIELD SEMANTICS", "format": "FIELD DISPLAY FORMAT", "description": "FIELD DESCRIPTION"},
     [..]
   }
 

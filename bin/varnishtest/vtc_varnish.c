@@ -761,7 +761,7 @@ do_stat_cb(void *priv, const struct VSC_point * const pt)
 	if (strcmp(pt->desc->name, p))
 		return (0);
 
-	AZ(strcmp(pt->desc->fmt, "uint64_t"));
+	AZ(strcmp(pt->desc->ctype, "uint64_t"));
 	sp->val = *(const volatile uint64_t*)pt->ptr;
 	return (1);
 }

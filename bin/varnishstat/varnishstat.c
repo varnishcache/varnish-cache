@@ -55,7 +55,7 @@ do_xml_cb(void *priv, const struct VSC_point * const pt)
 	(void)priv;
 	if (pt == NULL)
 		return (0);
-	AZ(strcmp(pt->desc->fmt, "uint64_t"));
+	AZ(strcmp(pt->desc->ctype, "uint64_t"));
 	val = *(const volatile uint64_t*)pt->ptr;
 	sec = pt->section;
 
@@ -66,7 +66,8 @@ do_xml_cb(void *priv, const struct VSC_point * const pt)
 		printf("\t\t<ident>%s</ident>\n", sec->fantom->ident);
 	printf("\t\t<name>%s</name>\n", pt->desc->name);
 	printf("\t\t<value>%ju</value>\n", (uintmax_t)val);
-	printf("\t\t<flag>%c</flag>\n", pt->desc->flag);
+	printf("\t\t<flag>%c</flag>\n", pt->desc->semantics);
+	printf("\t\t<format>%c</format>\n", pt->desc->format);
 	printf("\t\t<description>%s</description>\n", pt->desc->sdesc);
 	printf("\t</stat>\n");
 	return (0);
@@ -100,7 +101,7 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 		return (0);
 
 	jp = priv;
-	AZ(strcmp(pt->desc->fmt, "uint64_t"));
+	AZ(strcmp(pt->desc->ctype, "uint64_t"));
 	val = *(const volatile uint64_t*)pt->ptr;
 	sec = pt->section;
 
@@ -121,7 +122,8 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 	if (strcmp(sec->fantom->ident, ""))
 		printf("\"ident\": \"%s\", ", sec->fantom->ident);
 	printf("\"value\": %ju, ", (uintmax_t)val);
-	printf("\"flag\": \"%c\", ", pt->desc->flag);
+	printf("\"flag\": \"%c\", ", pt->desc->semantics);
+	printf("\"format\": \"%c\", ", pt->desc->format);
 	printf("\"description\": \"%s\"", pt->desc->sdesc);
 	printf("}");
 
@@ -168,7 +170,7 @@ do_once_cb(void *priv, const struct VSC_point * const pt)
 	if (pt == NULL)
 		return (0);
 	op = priv;
-	AZ(strcmp(pt->desc->fmt, "uint64_t"));
+	AZ(strcmp(pt->desc->ctype, "uint64_t"));
 	val = *(const volatile uint64_t*)pt->ptr;
 	sec = pt->section;
 	i = 0;
@@ -180,7 +182,7 @@ do_once_cb(void *priv, const struct VSC_point * const pt)
 	if (i >= op->pad)
 		op->pad = i + 1;
 	printf("%*.*s", op->pad - i, op->pad - i, "");
-	if (pt->desc->flag == 'c')
+	if (pt->desc->semantics == 'c')
 		printf("%12ju %12.2f %s\n",
 		    (uintmax_t)val, val / op->up, pt->desc->sdesc);
 	else

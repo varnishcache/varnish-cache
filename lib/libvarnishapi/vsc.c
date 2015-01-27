@@ -565,7 +565,7 @@ VSC_LevelDesc(unsigned level)
 #undef VSC_TYPE_F
 
 #define VSC_DO(U,l,t)		const struct VSC_desc VSC_desc_##l[] = {
-#define VSC_F(n,t,l,s,f,v,d,e)		{#n,#t,s,d,e,&VSC_level_desc_##v},
+#define VSC_F(n,t,l,s,f,v,d,e)		{#n,#t,s,f,&VSC_level_desc_##v,d,e},
 #define VSC_DONE(U,l,t)		};
 #include "tbl/vsc_all.h"
 #undef VSC_DO

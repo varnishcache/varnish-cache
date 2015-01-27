@@ -79,7 +79,7 @@ struct pt {
 
 	char			*key;
 	char			*name;
-	int			flag;
+	int			semantics;
 	const volatile uint64_t	*ptr;
 
 	char			seen;
@@ -273,7 +273,7 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 
 	CAST_OBJ_NOTNULL(pt_priv, priv, PT_PRIV_MAGIC);
 
-	AZ(strcmp(vpt->desc->fmt, "uint64_t"));
+	AZ(strcmp(vpt->desc->ctype, "uint64_t"));
 	snprintf(buf, sizeof buf, "%s.%s.%s", vpt->section->type,
 	    vpt->section->ident, vpt->desc->name);
 	buf[sizeof buf - 1] = '\0';
@@ -316,7 +316,7 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 
 	pt->ptr = vpt->ptr;
 	pt->last = *pt->ptr;
-	pt->flag = vpt->desc->flag;
+	pt->semantics = vpt->desc->semantics;
 
 	pt->ma_10.nmax = 10;
 	pt->ma_100.nmax = 100;
@@ -384,12 +384,12 @@ sample_points(void)
 			pt->chg = ((intmax_t)pt->cur - (intmax_t)pt->last) /
 			    (pt->t_cur - pt->t_last);
 
-		if (pt->flag == 'g') {
+		if (pt->semantics == 'g') {
 			pt->avg = 0.;
 			update_ma(&pt->ma_10, pt->cur);
 			update_ma(&pt->ma_100, pt->cur);
 			update_ma(&pt->ma_1000, pt->cur);
-		} else if (pt->flag == 'c') {
+		} else if (pt->semantics == 'c') {
 			if (VSC_C_main != NULL && VSC_C_main->uptime)
 				pt->avg = pt->cur / VSC_C_main->uptime;
 			else
@@ -692,7 +692,7 @@ draw_line_bitmap(WINDOW *w, int y, int x, int X, struct pt *pt)
 
 	AN(w);
 	AN(pt);
-	assert(pt->flag == 'b');
+	assert(pt->semantics == 'b');
 
 	col = 0;
 	while (col < COL_LAST) {
@@ -737,7 +737,7 @@ draw_line(WINDOW *w, int y, struct pt *pt)
 		mvwprintw(w, y, x, "%.*s", colw_name, pt->name);
 	x += colw_name;
 
-	if (pt->flag == 'b')
+	if (pt->semantics == 'b')
 		draw_line_bitmap(w, y, x, X, pt);
 	else
 		draw_line_default(w, y, x, X, pt);
