@@ -40,7 +40,7 @@
 	printf(x "\n", ##__VA_ARGS__)
 #define VSC_LEVEL_F(v,l,e,d)		\
 	printf("%s – %s\n\t%s\n\n", l, e, d);
-#define VSC_F(n, t, l, s, v, d, e)	\
+#define VSC_F(n, t, l, s, f, v, d, e)	\
 	printf("%s – %s (%s)\n\t%s\n\n", #n, e, VSC_level_##v, d);
 
 int main(int argc, char **argv)
