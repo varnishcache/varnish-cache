@@ -10,6 +10,7 @@ Bugs fixed
 ----------
 
 - 1479_ - Fix out-of-tree builds.
+- 1566_ - Escape VCL string question marks.
 - 1616_ - Correct header file placement.
 - 1620_ - Fail miss properly if out of backend threads. (Also 1621_)
 - 1628_ - Avoid dereferencing null in VBO_DerefBusyObj().
@@ -17,6 +18,7 @@ Bugs fixed
 - 1660_ - Don't attempt range delivery on a synth response
 
 .. _1479: https://www.varnish-cache.org/trac/ticket/1479
+.. _1566: https://www.varnish-cache.org/trac/ticket/1578
 .. _1616: https://www.varnish-cache.org/trac/ticket/1616
 .. _1620: https://www.varnish-cache.org/trac/ticket/1620
 .. _1621: https://www.varnish-cache.org/trac/ticket/1621
