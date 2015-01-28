@@ -214,6 +214,7 @@ cli_check(const struct cli *cli)
 
 struct symbols {
 	uintptr_t		a;
+	uintptr_t		l;
 	char			*n;
 	VTAILQ_ENTRY(symbols)	list;
 };
@@ -229,14 +230,12 @@ Symbol_Lookup(struct vsb *vsb, void *ptr)
 	pp = (uintptr_t)ptr;
 	s0 = NULL;
 	VTAILQ_FOREACH(s, &symbols, list) {
-		if (s->a > pp)
+		if (s->a > pp || s->a + s->l < pp)
 			continue;
-		if (s0 == NULL || s->a > s0->a)
+		if (s0 == NULL || s->l < s0->l)
 			s0 = s;
 	}
 	if (s0 == NULL)
-		return (-1);
-	if (!strcmp(s0->n, "_end"))
 		return (-1);
 	VSB_printf(vsb, "%p: %s+0x%jx", ptr, s0->n, (uintmax_t)pp - s0->a);
 	return (0);
@@ -245,43 +244,28 @@ Symbol_Lookup(struct vsb *vsb, void *ptr)
 static void
 Symbol_hack(const char *a0)
 {
-	char buf[BUFSIZ], *p, *e;
+	char buf[BUFSIZ];
 	FILE *fi;
-	uintptr_t a;
 	struct symbols *s;
+	uintmax_t aa, ll;
+	char type[10];
+	char name[100];
+	int i;
 
-	bprintf(buf, "nm -an %s 2>/dev/null", a0);
+	bprintf(buf, "nm -t x -n -P %s 2>/dev/null", a0);
 	fi = popen(buf, "r");
 	if (fi == NULL)
 		return;
 	while (fgets(buf, sizeof buf, fi)) {
-		if (buf[0] == ' ')
+		i = sscanf(buf, "%99s\t%9s\t%jx\t%jx\n", name, type, &aa, &ll);
+		if (i != 4)
 			continue;
-		p = NULL;
-		a = strtoul(buf, &p, 16);
-		if (p == NULL)
-			continue;
-		if (a == 0)
-			continue;
-		if (*p++ != ' ')
-			continue;
-		if (*p == '-')
-			continue;
-		p++;
-		if (*p++ != ' ')
-			continue;
-		if (*p <= ' ')
-			continue;
-		e = strchr(p, '\0');
-		AN(e);
-		while (e > p && isspace(e[-1]))
-			e--;
-		*e = '\0';
-		s = malloc(sizeof *s + strlen(p) + 1);
+		s = malloc(sizeof *s + strlen(name) + 1);
 		AN(s);
-		s->a = a;
+		s->a = aa;
+		s->l = ll;
 		s->n = (void*)(s + 1);
-		strcpy(s->n, p);
+		strcpy(s->n, name);
 		VTAILQ_INSERT_TAIL(&symbols, s, list);
 	}
 	(void)pclose(fi);
