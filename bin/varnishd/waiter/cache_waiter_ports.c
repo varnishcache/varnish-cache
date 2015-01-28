@@ -145,9 +145,6 @@ vws_thread(void *priv)
 	struct timespec ts;
 	struct timespec *timeout;
 
-	vws->dport = port_create();
-	assert(vws->dport >= 0);
-
 	timeout = &max_ts;
 
 	while (!vws->waiter->dismantle) {
@@ -181,6 +178,12 @@ vws_thread(void *priv)
 
 		ret = port_getn(vws->dport, ev, MAX_EVENTS, &nevents, timeout);
 		now = VTIM_real();
+
+		if (ret < 0 && errno == EBADF) {
+			/* Our stop signal */
+			AN(vws->waiter->dismantle);
+			break;
+		}
 
 		if (ret < 0)
 			assert((errno == EINTR) || (errno == ETIME));
@@ -258,6 +261,8 @@ vws_init(struct waiter *w)
 	vws = w->priv;
 	INIT_OBJ(vws, VWS_MAGIC);
 	vws->waiter = w;
+	vws->dport = port_create();
+	assert(vws->dport >= 0);
 
 	AZ(pthread_create(&vws->thread, NULL, vws_thread, vws));
 }
@@ -271,8 +276,8 @@ vws_fini(struct waiter *w)
 	void *vp;
 
 	CAST_OBJ_NOTNULL(vws, w->priv, VWS_MAGIC);
+	AZ(close(vws->dport));
 	AZ(pthread_join(vws->thread, &vp));
-	WRONG("Not Yet Implemented");
 }
 
 /*--------------------------------------------------------------------*/
