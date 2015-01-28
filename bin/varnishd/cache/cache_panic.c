@@ -458,6 +458,8 @@ pan_backtrace(void)
 	void *array[10];
 	size_t size;
 	size_t i;
+	char **strings;
+	char *p;
 
 	size = backtrace (array, 10);
 	if (size == 0)
@@ -466,13 +468,17 @@ pan_backtrace(void)
 	for (i = 0; i < size; i++) {
 		VSB_printf (pan_vsp, "  ");
 		if (Symbol_Lookup(pan_vsp, array[i]) < 0) {
-			char **strings;
 			strings = backtrace_symbols(&array[i], 1);
-			if (strings != NULL && strings[0] != NULL)
-				VSB_printf(pan_vsp,
-				     "%p: %s", array[i], strings[0]);
-			else
+			if (strings == NULL || strings[0] == NULL) {
 				VSB_printf(pan_vsp, "%p: (?)", array[i]);
+			} else {
+				p = strrchr(strings[0], '/');
+				if (p == NULL)
+					p = strings[0];
+				else
+					p++;
+				VSB_printf(pan_vsp, "%p: %s", array[i], p);
+			}
 		}
 		VSB_printf (pan_vsp, "\n");
 	}
