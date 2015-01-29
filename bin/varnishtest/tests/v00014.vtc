@@ -41,11 +41,13 @@ client c1 {
 	expect resp.status == 500
 } -run
 
+server s1 -wait
+
 server s1 {
 	rxreq
 	expect req.url == "/"
 	txresp -body "slash"
-} -start
+} -start -wait
 
 server s1 {
 	rxreq
