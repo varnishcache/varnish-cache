@@ -283,7 +283,7 @@ malloc would look like this::
 	if (priv->priv == NULL) {
 		priv->priv = calloc(sizeof(struct myfoo), 1);
 		AN(priv->priv);
-		priv->priv = free;	/* free(3) */
+		priv->free = free;	/* free(3) */
 		mystate = priv->priv;
 		mystate->foo = 21;
 		...
