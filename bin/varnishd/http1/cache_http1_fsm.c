@@ -121,7 +121,7 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			if (isnan(req->t_first))
 				/* Record first byte received time stamp */
 				req->t_first = now;
-			when = sp->t_idle + cache_param->timeout_req;
+			when = req->t_first + cache_param->timeout_req;
 			tmo = (int)(1e3 * (when - now));
 			if (when < now || tmo == 0) {
 				why = SC_RX_TIMEOUT;
