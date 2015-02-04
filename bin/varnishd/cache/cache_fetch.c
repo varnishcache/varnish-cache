@@ -379,7 +379,10 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	AZ(bo->do_esi);
 
-	if (bo->ims_obj != NULL && bo->beresp->status == 304) {
+	if (bo->ims_obj != NULL && bo->ims_obj->http->status == 200 &&
+	    (http_GetHdr(bo->ims_obj->http, H_Last_Modified, NULL) ||
+	     http_GetHdr(bo->ims_obj->http, H_ETag, NULL)) &&
+	    bo->beresp->status == 304) {
 		http_Unset(bo->beresp, H_Content_Length);
 		http_Merge(bo->ims_obj->http, bo->beresp,
 		    bo->ims_obj->changed_gzip);
