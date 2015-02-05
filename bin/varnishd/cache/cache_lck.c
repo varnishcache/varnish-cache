@@ -53,6 +53,8 @@ struct ilck {
 	struct VSC_C_lck	*stat;
 };
 
+static pthread_mutexattr_t attr;
+
 static VTAILQ_HEAD(, ilck)	ilck_head =
     VTAILQ_HEAD_INITIALIZER(ilck_head);
 
@@ -177,7 +179,7 @@ Lck__New(struct lock *lck, struct VSC_C_lck *st, const char *w)
 	ilck->w = w;
 	ilck->stat = st;
 	ilck->stat->creat++;
-	AZ(pthread_mutex_init(&ilck->mtx, NULL));
+	AZ(pthread_mutex_init(&ilck->mtx, &attr));
 	AZ(pthread_mutex_lock(&lck_mtx));
 	VTAILQ_INSERT_TAIL(&ilck_head, ilck, list);
 	AZ(pthread_mutex_unlock(&lck_mtx));
@@ -207,7 +209,9 @@ void
 LCK_Init(void)
 {
 
-	AZ(pthread_mutex_init(&lck_mtx, NULL));
+	AZ(pthread_mutexattr_init(&attr));
+	AZ(pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK));
+	AZ(pthread_mutex_init(&lck_mtx, &attr));
 #define LOCK(nam)						\
 	lck_##nam = VSM_Alloc(sizeof(struct VSC_C_lck),		\
 	   VSC_CLASS, VSC_type_lck, #nam);
