@@ -137,6 +137,8 @@ vfp_esi_end(struct busyobj *bo, struct vef_priv *vef, enum vfp_status retval)
 	}
 	if (vef->ibuf != NULL)
 		free(vef->ibuf);
+	if (vef->error)
+		retval = VFP_ERROR;
 	FREE_OBJ(vef);
 	return (retval);
 }
@@ -160,7 +162,10 @@ vfp_esi_gzip_pull(struct busyobj *bo, void *p, ssize_t *lp, intptr_t *priv)
 		vef->ibuf_i = vef->ibuf;
 		vef->ibuf_o = vef->ibuf;
 		*priv = (uintptr_t)vef;
-		return (VFP_OK);
+		if (vef->error)
+			return (VFP_ERROR);
+		else
+			return (VFP_OK);
 	}
 	if (p == vfp_fini) {
 		if (*priv)

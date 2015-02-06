@@ -1,0 +1,32 @@
+varnishtest "do_esi + do_gzip + out of storage: #1637"
+
+server s1 {
+	# First consume (almost) all of the storage
+	rxreq
+	expect req.url == /url1
+	txresp -bodylen 1040000
+
+	rxreq
+	expect req.url == /url2
+	txresp -bodylen 1040000
+} -start
+
+varnish v1  -arg "-smalloc,1M" -arg "-p nuke_limit=0" -vcl+backend {
+	sub vcl_backend_response {
+		if (bereq.url == "/url2") {
+			set beresp.do_esi = true;
+			set beresp.do_gzip = true;
+		}
+	}
+} -start
+
+
+client c1 {
+	txreq -url /url1
+	rxresp
+	expect resp.status == 200
+
+	txreq -url /url2
+	rxresp
+	expect resp.status == 503
+} -run
