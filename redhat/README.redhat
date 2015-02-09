@@ -15,7 +15,7 @@ git clone git://git.varnish-cache.org/varnish-cache
 cd varnish-cache
 sed -i "s/^Release: .*/Release: 0.git$(date +%Y%m%d)%{?dist}/" \
     redhat/varnish.spec
-./autogen.sh && ./configure 
+./autogen.sh && ./configure
 make dist && rpmbuild -ts varnish-trunk.tar.gz
 
 This builds a source rpm. Then you can, for example on a RHEL5 system,
@@ -65,9 +65,9 @@ To get a package through to Fedora, it has to build in Red Hat's Koji
 build environment. Their ppc and ppc64 builders run mock on a RHEL
 ppc64 kernel. Our use of jemalloc does not work on this kernel, and
 the build stays unsuccessful. As ppc64 is not the primary target of
-varnish development, it may take some time to get this bug fixed. 
+varnish development, it may take some time to get this bug fixed.
 To get the package through to Fedora, jemalloc is disabled in the ppc
-and ppc64 builds. 
+and ppc64 builds.
 
 Now, varnish with jemalloc enabled is known to work at least on the
 ppc (32bit) kernel in Fedora 9. If you run on ppc, and have a workload
