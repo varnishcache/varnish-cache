@@ -150,32 +150,36 @@ fi
 AC_SUBST(PCRE_CFLAGS)
 AC_SUBST(PCRE_LIBS)
 
-PKG_CHECK_MODULES([LIBEDIT], [libedit], 
-	# having the module does not imply having the header
-	[AC_CHECK_HEADERS([editline/readline.h],
-			  [AC_DEFINE([HAVE_LIBEDIT], [1], [Define if we have libedit])],
-			  [AC_MSG_ERROR([Found libedit, but header file is missing. Hint: Install dev package?])])],
-	[
-	 # AX_LIB_READLINE overwrites LIBS which leads to every binary getting
-	 # linked against libreadline uselessly. So we re-use LIBEDIT_LIBS which
-	 # we have for libedit to add the lib specifically where needed
-	 save_LIBS="${LIBS}"
-	 AX_LIB_READLINE
-	 LIBS="${save_LIBS}"
-	 if test "$ax_cv_lib_readline" = "no"; then
-		AC_MSG_ERROR([neither libedit nor another readline compatible library found])
-	 fi
-	 if test "x$ax_cv_lib_readline_history" != "xyes"; then
-		AC_MSG_ERROR([need readline history support])
-	 fi
-	 LIBEDIT_LIBS="$ax_cv_lib_readline"
+AC_CHECK_HEADERS([edit/readline/readline.h],
+	[AC_DEFINE([HAVE_LIBEDIT], [1], [Define if we have libedit])
+	LIBEDIT_LIBS="-ledit"],
+
+	[PKG_CHECK_MODULES([LIBEDIT], [libedit], 
+		# having the module does not imply having the header
+		[AC_CHECK_HEADERS([editline/readline.h],
+				  [AC_DEFINE([HAVE_LIBEDIT], [1], [Define if we have libedit])],
+				  [AC_MSG_ERROR([Found libedit, but header file is missing. Hint: Install dev package?])])],
+		[
+		 # AX_LIB_READLINE overwrites LIBS which leads to every binary getting
+		 # linked against libreadline uselessly. So we re-use LIBEDIT_LIBS which
+		 # we have for libedit to add the lib specifically where needed
+		 save_LIBS="${LIBS}"
+		 AX_LIB_READLINE
+		 LIBS="${save_LIBS}"
+		 if test "$ax_cv_lib_readline" = "no"; then
+			AC_MSG_ERROR([neither libedit nor another readline compatible library found])
+		 fi
+		 if test "x$ax_cv_lib_readline_history" != "xyes"; then
+			AC_MSG_ERROR([need readline history support])
+		 fi
+		 LIBEDIT_LIBS="$ax_cv_lib_readline"
+		])
 	])
 
 # Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_SYS_WAIT
 AC_HEADER_TIME
-AC_CHECK_HEADERS([edit/readline/readline.h])
 AC_CHECK_HEADERS([sys/param.h])
 AC_CHECK_HEADERS([sys/types.h])
 AC_CHECK_HEADERS([sys/endian.h])
