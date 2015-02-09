@@ -2,7 +2,6 @@
 
 EXTRA_DIST =			\
 	README.redhat		\
-	TODO			\
 	varnish.initrc		\
 	varnish.logrotate	\
 	varnish_reload_vcl	\
