@@ -509,7 +509,7 @@ struct busyobj {
 	struct http		*bereq0;
 	struct http		*bereq;
 	struct http		*beresp;
-	struct objcore		*ims_oc;
+	struct objcore		*stale_oc;
 	struct objcore		*fetch_objcore;
 
 	struct http_conn	*htc;
@@ -610,7 +610,7 @@ struct req {
 
 	struct ws		ws[1];
 	struct objcore		*objcore;
-	struct objcore		*ims_oc;
+	struct objcore		*stale_oc;
 	/* Lookup stuff */
 	struct SHA256Context	*sha256ctx;
 

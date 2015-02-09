@@ -356,8 +356,8 @@ pan_busyobj(const struct busyobj *bo)
 		pan_http("beresp", bo->beresp, 4);
 	if (bo->fetch_objcore)
 		pan_objcore("FETCH", bo->fetch_objcore);
-	if (bo->ims_oc)
-		pan_objcore("IMS", bo->ims_oc);
+	if (bo->stale_oc)
+		pan_objcore("IMS", bo->stale_oc);
 	VSB_printf(pan_vsp, "  }\n");
 }
 

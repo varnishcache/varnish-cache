@@ -191,15 +191,15 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 		bo->req = NULL;
 		http_CopyHome(bo->bereq0);
 	} else
-		AZ(bo->ims_oc);
+		AZ(bo->stale_oc);
 
-	if (bo->ims_oc != NULL &&
-	    ObjCheckFlag(bo->wrk, bo->ims_oc, OF_IMSCAND)) {
-		q = HTTP_GetHdrPack(bo->wrk, bo->ims_oc, H_Last_Modified);
+	if (bo->stale_oc != NULL &&
+	    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND)) {
+		q = HTTP_GetHdrPack(bo->wrk, bo->stale_oc, H_Last_Modified);
 		if (q != NULL)
 			http_PrintfHeader(bo->bereq0,
 			    "If-Modified-Since: %s", q);
-		q = HTTP_GetHdrPack(bo->wrk, bo->ims_oc, H_ETag);
+		q = HTTP_GetHdrPack(bo->wrk, bo->stale_oc, H_ETag);
 		if (q != NULL)
 			http_PrintfHeader(bo->bereq0,
 			    "If-None-Match: %s", q);
@@ -395,9 +395,9 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	AZ(bo->do_esi);
 
 	if (http_IsStatus(bo->beresp, 304)) {
-		if (bo->ims_oc != NULL &&
-		    ObjCheckFlag(bo->wrk, bo->ims_oc, OF_IMSCAND)) {
-			if (ObjCheckFlag(bo->wrk, bo->ims_oc, OF_CHGGZIP)) {
+		if (bo->stale_oc != NULL &&
+		    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND)) {
+			if (ObjCheckFlag(bo->wrk, bo->stale_oc, OF_CHGGZIP)) {
 				/*
 				 * If we changed the gzip status of the object
 				 * the stored Content_Encoding controls we
@@ -407,7 +407,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 				RFC2616_Weaken_Etag(bo->beresp);
 			}
 			http_Unset(bo->beresp, H_Content_Length);
-			HTTP_Merge(bo->wrk, bo->ims_oc, bo->beresp);
+			HTTP_Merge(bo->wrk, bo->stale_oc, bo->beresp);
 			assert(http_IsStatus(bo->beresp, 200));
 			do_ims = 1;
 		} else if (!bo->do_pass) {
@@ -684,8 +684,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	VBO_setstate(bo, BOS_FINISHED);
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
-	if (bo->ims_oc != NULL)
-		EXP_Rearm(bo->ims_oc, bo->ims_oc->exp.t_origin, 0, 0, 0);
+	if (bo->stale_oc != NULL)
+		EXP_Rearm(bo->stale_oc, bo->stale_oc->exp.t_origin, 0, 0, 0);
 	return (F_STP_DONE);
 }
 
@@ -706,12 +706,12 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 	AZ(vbf_beresp2obj(bo));
 
-	if (ObjGetattr(bo->wrk, bo->ims_oc, OA_ESIDATA, NULL) != NULL)
-		AZ(ObjCopyAttr(bo->wrk, bo->fetch_objcore, bo->ims_oc,
+	if (ObjGetattr(bo->wrk, bo->stale_oc, OA_ESIDATA, NULL) != NULL)
+		AZ(ObjCopyAttr(bo->wrk, bo->fetch_objcore, bo->stale_oc,
 		    OA_ESIDATA));
 
-	AZ(ObjCopyAttr(bo->wrk, bo->fetch_objcore, bo->ims_oc, OA_FLAGS));
-	AZ(ObjCopyAttr(bo->wrk, bo->fetch_objcore, bo->ims_oc, OA_GZIPBITS));
+	AZ(ObjCopyAttr(bo->wrk, bo->fetch_objcore, bo->stale_oc, OA_FLAGS));
+	AZ(ObjCopyAttr(bo->wrk, bo->fetch_objcore, bo->stale_oc, OA_GZIPBITS));
 
 	if (bo->do_stream) {
 		HSH_Unbusy(wrk, bo->fetch_objcore);
@@ -719,13 +719,13 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	}
 
 	al = 0;
-	oi = ObjIterBegin(wrk, bo->ims_oc);
+	oi = ObjIterBegin(wrk, bo->stale_oc);
 	do {
-		ois = ObjIter(bo->ims_oc, oi, &sp, &sl);
+		ois = ObjIter(bo->stale_oc, oi, &sp, &sl);
 		if (ois == OIS_ERROR)
 			(void)VFP_Error(bo->vfc, "Template object failed");
 		while (sl > 0) {
-			l = ObjGetLen(bo->wrk, bo->ims_oc) - al;
+			l = ObjGetLen(bo->wrk, bo->stale_oc) - al;
 			assert(l > 0);
 			if (VFP_GetStorage(bo->vfc, &l, &ptr) != VFP_OK)
 				break;
@@ -738,8 +738,8 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 			sl -= l;
 		}
 	} while (!bo->vfc->failed && (ois == OIS_DATA || ois == OIS_STREAM));
-	ObjIterEnd(bo->ims_oc, &oi);
-	if (bo->ims_oc->flags & OC_F_FAILED)
+	ObjIterEnd(bo->stale_oc, &oi);
+	if (bo->stale_oc->flags & OC_F_FAILED)
 		(void)VFP_Error(bo->vfc, "Template object failed");
 	if (bo->vfc->failed) {
 		VDI_Finish(bo->wrk, bo);
@@ -750,7 +750,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		HSH_Unbusy(wrk, bo->fetch_objcore);
 
 	assert(ObjGetLen(bo->wrk, bo->fetch_objcore) == al);
-	EXP_Rearm(bo->ims_oc, bo->ims_oc->exp.t_origin, 0, 0, 0);
+	EXP_Rearm(bo->stale_oc, bo->stale_oc->exp.t_origin, 0, 0, 0);
 
 	/* Recycle the backend connection before setting BOS_FINISHED to
 	   give predictable backend reuse behavior for varnishtest */
@@ -930,8 +930,8 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	}
 	AZ(bo->fetch_objcore->busyobj);
 
-	if (bo->ims_oc != NULL)
-		(void)HSH_DerefObjCore(wrk, &bo->ims_oc);
+	if (bo->stale_oc != NULL)
+		(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
 
 
 	wrk->vsl = NULL;
@@ -986,11 +986,11 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 		HSH_Ref(oc);
 	bo->fetch_objcore = oc;
 
-	AZ(bo->ims_oc);
+	AZ(bo->stale_oc);
 	if (oldoc != NULL) {
 		assert(oldoc->refcnt > 0);
 		HSH_Ref(oldoc);
-		bo->ims_oc = oldoc;
+		bo->stale_oc = oldoc;
 	}
 
 	AZ(bo->req);
@@ -1002,8 +1002,8 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	if (Pool_Task(wrk->pool, &bo->fetch_task, POOL_QUEUE_FRONT)) {
 		wrk->stats->fetch_no_thread++;
 		(void)vbf_stp_fail(req->wrk, bo);
-		if (bo->ims_oc != NULL)
-			(void)HSH_DerefObjCore(wrk, &bo->ims_oc);
+		if (bo->stale_oc != NULL)
+			(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
 		VBO_DerefBusyObj(wrk, &bo_fetch);
 	} else {
 		bo_fetch = NULL; /* ref transferred to fetch thread */

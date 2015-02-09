@@ -371,7 +371,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	case VCL_RET_FETCH:
 		if (boc != NULL) {
 			req->objcore = boc;
-			req->ims_oc = oc;
+			req->stale_oc = oc;
 			req->req_step = R_STP_MISS;
 		} else {
 			(void)HSH_DerefObjCore(wrk, &req->objcore);
@@ -428,10 +428,10 @@ cnt_miss(struct worker *wrk, struct req *req)
 	switch (wrk->handling) {
 	case VCL_RET_FETCH:
 		wrk->stats->cache_miss++;
-		VBF_Fetch(wrk, req, req->objcore, req->ims_oc, VBF_NORMAL);
+		VBF_Fetch(wrk, req, req->objcore, req->stale_oc, VBF_NORMAL);
 		req->req_step = R_STP_FETCH;
-		if (req->ims_oc != NULL)
-			(void)HSH_DerefObjCore(wrk, &req->ims_oc);
+		if (req->stale_oc != NULL)
+			(void)HSH_DerefObjCore(wrk, &req->stale_oc);
 		return (REQ_FSM_MORE);
 	case VCL_RET_SYNTH:
 		req->req_step = R_STP_SYNTH;
@@ -446,8 +446,8 @@ cnt_miss(struct worker *wrk, struct req *req)
 		WRONG("Illegal return from vcl_miss{}");
 	}
 	VRY_Clear(req);
-	if (req->ims_oc != NULL)
-		(void)HSH_DerefObjCore(wrk, &req->ims_oc);
+	if (req->stale_oc != NULL)
+		(void)HSH_DerefObjCore(wrk, &req->stale_oc);
 	AZ(HSH_DerefObjCore(wrk, &req->objcore));
 	return (REQ_FSM_MORE);
 }
