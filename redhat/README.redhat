@@ -24,25 +24,6 @@ do something like this:
 rpmbuild --define "dist .el5" --rebuild /path/to/varnish-3.0-0.git20110203.src.rpm
 
 
-Upgrading from 1.x to 2.0
-=========================
-There are a few changes in the vcl language from varnish-1.x to 2.0.
-Because of varnish' dynamic vcl loading feature, there is no way to
-guarantee that the vcl file in use actually exists on disk. Thus,
-there is no way to securely automate this process, and one must do the
-changes by hand.
-
-In vcl, the word "insert" has been replaced by "deliver". 
-
-In the vcl declaration of backends, where one earlier used "set
-backend", backend parts are now just prefixed with a dot, so the
-default localhost configuration will look like this:
-
-backend default {
-  .host = "127.0.0.1";
-  .port = "80";
-}
-
 Configuration of addresses and ports
 ====================================
 In this package, varnish is configured to make the accelerator daemon
