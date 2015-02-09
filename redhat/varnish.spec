@@ -51,8 +51,14 @@ Requires: gcc
 
 %description
 This is Varnish Cache, a high-performance HTTP accelerator.
+
+Varnish Cache stores web pages in memory so web servers don't have to
+create the same web page over and over again. Varnish serves pages
+much faster than any application server; giving the website a
+significant speed up.
+
 Documentation wiki and additional information about Varnish is
-available on the following web site: http://www.varnish-cache.org/
+available on the following web site: https://www.varnish-cache.org/
 
 %package libs
 Summary: Libraries for %{name}
