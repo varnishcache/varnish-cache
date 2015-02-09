@@ -1,0 +1,34 @@
+varnishtest "#1672: Bogus 304 backend reply"
+
+# First serve a non-200 status object to the cache,
+# then revalidate it unconditionally
+
+server s1 {
+	rxreq
+	txresp -status 404
+
+	rxreq
+	txresp -status 304
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.ttl = 0.1s;
+		set beresp.grace = 0s;
+		set beresp.keep = 10s;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 404
+} -run
+
+delay 0.2
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
