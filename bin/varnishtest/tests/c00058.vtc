@@ -2,7 +2,7 @@ varnishtest "Test v4 grace"
 
 server s1 {
 	rxreq
-	txresp -bodylen 3
+	txresp -hdr "Last-Modified: Mon, 09 Feb 2015 09:32:47 GMT" -bodylen 3
 	rxreq
 	txresp -bodylen 6
 	sema r2 sync 2
