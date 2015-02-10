@@ -83,6 +83,58 @@ static const char * const builtin_vcl =
 #include "builtin_vcl.h"
     ""	;
 
+/*--------------------------------------------------------------------*/
+
+static struct vclprog *
+mgt_vcc_add(const char *name, char *file)
+{
+	struct vclprog *vp;
+
+	vp = calloc(sizeof *vp, 1);
+	XXXAN(vp);
+	vp->name = strdup(name);
+	XXXAN(vp->name);
+	vp->fname = file;
+	VTAILQ_INSERT_TAIL(&vclhead, vp, list);
+	return (vp);
+}
+
+static void
+mgt_vcc_del(struct vclprog *vp)
+{
+	VTAILQ_REMOVE(&vclhead, vp, list);
+	printf("unlink %s\n", vp->fname);
+	XXXAZ(unlink(vp->fname));
+	free(vp->fname);
+	free(vp->name);
+	free(vp);
+}
+
+static struct vclprog *
+mgt_vcc_byname(const char *name)
+{
+	struct vclprog *vp;
+
+	VTAILQ_FOREACH(vp, &vclhead, list)
+		if (!strcmp(name, vp->name))
+			return (vp);
+	return (NULL);
+}
+
+
+static int
+mgt_vcc_delbyname(const char *name)
+{
+	struct vclprog *vp;
+
+	vp = mgt_vcc_byname(name);
+	if (vp != NULL) {
+		mgt_vcc_del(vp);
+		return (0);
+	}
+	return (1);
+}
+
 /*--------------------------------------------------------------------
  * Prepare the compiler command line
  */
@@ -328,58 +380,6 @@ mgt_VccCompile(struct vsb **sb, const char *vclname, const char *vclsrc,
 	} else {
 		return (vp.libfile);
 	}
-}
-
-/*--------------------------------------------------------------------*/
-
-static struct vclprog *
-mgt_vcc_add(const char *name, char *file)
-{
-	struct vclprog *vp;
-
-	vp = calloc(sizeof *vp, 1);
-	XXXAN(vp);
-	vp->name = strdup(name);
-	XXXAN(vp->name);
-	vp->fname = file;
-	VTAILQ_INSERT_TAIL(&vclhead, vp, list);
-	return (vp);
-}
-
-static void
-mgt_vcc_del(struct vclprog *vp)
-{
-	VTAILQ_REMOVE(&vclhead, vp, list);
-	printf("unlink %s\n", vp->fname);
-	XXXAZ(unlink(vp->fname));
-	free(vp->fname);
-	free(vp->name);
-	free(vp);
-}
-
-static struct vclprog *
-mgt_vcc_byname(const char *name)
-{
-	struct vclprog *vp;
-
-	VTAILQ_FOREACH(vp, &vclhead, list)
-		if (!strcmp(name, vp->name))
-			return (vp);
-	return (NULL);
-}
-
-
-static int
-mgt_vcc_delbyname(const char *name)
-{
-	struct vclprog *vp;
-
-	vp = mgt_vcc_byname(name);
-	if (vp != NULL) {
-		mgt_vcc_del(vp);
-		return (0);
-	}
-	return (1);
 }
 
 /*--------------------------------------------------------------------*/
