@@ -655,9 +655,11 @@ main(int argc, char * const *argv)
 		ARGV_ERR("Could not open pid/lock (-P) file (%s): %s\n",
 		    P_arg, strerror(errno));
 
-	if (b_arg != NULL || f_arg != NULL)
+	if (b_arg != NULL || f_arg != NULL) {
 		if ((o = mgt_vcc_default(b_arg, vcl, C_flag)) != 0)
 			exit(o);
+		free(vcl);
+	}
 
 	if (C_flag)
 		exit(0);
