@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2006-2015 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -58,6 +58,14 @@ struct vclprog {
 	int			active;
 };
 
+struct vcc_priv {
+	unsigned	magic;
+#define VCC_PRIV_MAGIC	0x70080cb8
+	const char	*src;
+	char		*srcfile;
+	char		*libfile;
+};
+
 static VTAILQ_HEAD(, vclprog) vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
 
 char *mgt_cc_cmd;
@@ -79,22 +87,23 @@ static const char * const builtin_vcl =
  * Prepare the compiler command line
  */
 static struct vsb *
-mgt_make_cc_cmd(const char *sf, const char *of)
+mgt_make_cc_cmd(const struct vcc_priv *vp)
 {
 	struct vsb *sb;
 	int pct;
 	char *p;
 
+	CHECK_OBJ_NOTNULL(vp, VCC_PRIV_MAGIC);
 	sb = VSB_new_auto();
 	XXXAN(sb);
 	for (p = mgt_cc_cmd, pct = 0; *p; ++p) {
 		if (pct) {
 			switch (*p) {
 			case 's':
-				VSB_cat(sb, sf);
+				VSB_cat(sb, vp->srcfile);
 				break;
 			case 'o':
-				VSB_cat(sb, of);
+				VSB_cat(sb, vp->libfile);
 				break;
 			case '%':
 				VSB_putc(sb, '%');
@@ -121,13 +130,6 @@ mgt_make_cc_cmd(const char *sf, const char *of)
  * Invoke system VCC compiler in a sub-process
  */
 
-struct vcc_priv {
-	unsigned	magic;
-#define VCC_PRIV_MAGIC	0x70080cb8
-	char		*sf;
-	const char	*vcl;
-};
-
 static void
 run_vcc(void *priv)
 {
@@ -145,7 +147,7 @@ run_vcc(void *priv)
 	VCC_Err_Unref(vcc, mgt_vcc_err_unref);
 	VCC_Allow_InlineC(vcc, mgt_vcc_allow_inline_c);
 	VCC_Unsafe_Path(vcc, mgt_vcc_unsafe_path);
-	csrc = VCC_Compile(vcc, sb, vp->vcl);
+	csrc = VCC_Compile(vcc, sb, vp->src);
 	AZ(VSB_finish(sb));
 	if (VSB_len(sb))
 		printf("%s", VSB_data(sb));
@@ -153,15 +155,15 @@ run_vcc(void *priv)
 	if (csrc == NULL)
 		exit(2);
 
-	fd = open(vp->sf, O_WRONLY);
+	fd = open(vp->srcfile, O_WRONLY|O_TRUNC|O_CREAT, 0600);
 	if (fd < 0) {
-		fprintf(stderr, "Cannot open %s", vp->sf);
+		fprintf(stderr, "Cannot open %s", vp->srcfile);
 		exit(2);
 	}
 	l = strlen(csrc);
 	i = write(fd, csrc, l);
 	if (i != l) {
-		fprintf(stderr, "Cannot write %s", vp->sf);
+		fprintf(stderr, "Cannot write %s", vp->srcfile);
 		exit(2);
 	}
 	AZ(close(fd));
@@ -176,8 +178,17 @@ run_vcc(void *priv)
 static void
 run_cc(void *priv)
 {
+	struct vcc_priv *vp;
+	struct vsb *cmdsb;
+
 	mgt_sandbox(SANDBOX_CC);
-	(void)execl("/bin/sh", "/bin/sh", "-c", priv, (char*)0);
+	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
+
+	/* Build the C-compiler command line */
+	cmdsb = mgt_make_cc_cmd(vp);
+
+	(void)umask(0177);
+	(void)execl("/bin/sh", "/bin/sh", "-c", VSB_data(cmdsb), (char*)0);
 }
 
 /*--------------------------------------------------------------------
@@ -187,18 +198,16 @@ run_cc(void *priv)
 static void __match_proto__(sub_func_f)
 run_dlopen(void *priv)
 {
-	const char *of;
 	void *dlh;
 	struct VCL_conf const *cnf;
-
-	of = priv;
+	struct vcc_priv *vp;
 
 	mgt_sandbox(SANDBOX_VCLLOAD);
+	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
 
 	/* Try to load the object into this sub-process */
-	if ((dlh = dlopen(of, RTLD_NOW | RTLD_LOCAL)) == NULL) {
-		fprintf(stderr,
-		    "Compiled VCL program failed to load:\n  %s\n",
+	if ((dlh = dlopen(vp->libfile, RTLD_NOW | RTLD_LOCAL)) == NULL) {
+		fprintf(stderr, "Compiled VCL program failed to load:\n  %s\n",
 		    dlerror());
 		exit(1);
 	}
@@ -224,121 +233,101 @@ run_dlopen(void *priv)
 }
 
 /*--------------------------------------------------------------------
- * Compile a VCL program, return shared object, errors in sb.
+ * Touch a filename and make it available to privsep-privs
  */
 
-static char *
-mgt_run_cc(const char *vcl, struct vsb *sb, int C_flag, unsigned *status)
+static int
+mgt_vcc_touchfile(const char *fn, struct vsb *sb)
 {
-	char *csrc;
-	struct vsb *cmdsb;
-	char sf[] = "./vcl.########.c";
-	char of[sizeof sf + 1];
-	char *retval;
-	int sfd, i;
-	unsigned subs;
-	struct vcc_priv vp;
+	int i;
 
-	*status = 0;
-
-	/* Create temporary C source file */
-	sfd = VFIL_tmpfile(sf);
-	if (sfd < 0) {
-		VSB_printf(sb, "Failed to create %s: %s", sf, strerror(errno));
-		*status = 2;
-		return (NULL);
-	}
-	if (fchown(sfd, mgt_param.uid, mgt_param.gid) != 0)
-		if (geteuid() == 0)
-			VSB_printf(sb, "Failed to change owner on %s: %s\n",
-			    sf, strerror(errno));
-	AZ(close(sfd));
-
-
-	/* Run the VCC compiler in a sub-process */
-	INIT_OBJ(&vp, VCC_PRIV_MAGIC);
-	vp.sf = sf;
-	vp.vcl = vcl;
-	subs = VSUB_run(sb, run_vcc, &vp, "VCC-compiler", -1);
-	if (subs) {
-		(void)unlink(sf);
-		*status = subs;
-		return (NULL);
-	}
-
-	if (C_flag) {
-		csrc = VFIL_readfile(NULL, sf, NULL);
-		XXXAN(csrc);
-		(void)fputs(csrc, stdout);
-		free(csrc);
-	}
-
-	/* Name the output shared library by "s/[.]c$/[.]so/" */
-	memcpy(of, sf, sizeof sf);
-	assert(sf[sizeof sf - 2] == 'c');
-	of[sizeof sf - 2] = 's';
-	of[sizeof sf - 1] = 'o';
-	of[sizeof sf] = '\0';
-
-	i = open(of, O_WRONLY|O_CREAT|O_TRUNC, 0600);
+	i = open(fn, O_WRONLY|O_CREAT|O_TRUNC, 0600);
 	if (i < 0) {
-		VSB_printf(sb, "Failed to create %s: %s",
-		    of, strerror(errno));
-		(void)unlink(sf);
-		*status = 2;
-		return (NULL);
+		VSB_printf(sb, "Failed to create %s: %s", fn, strerror(errno));
+		return (2);
 	}
 	if (fchown(i, mgt_param.uid, mgt_param.gid) != 0)
 		if (geteuid() == 0)
 			VSB_printf(sb, "Failed to change owner on %s: %s\n",
-			    of, strerror(errno));
+			    fn, strerror(errno));
 	AZ(close(i));
+	return (0);
+}
 
-	/* Build the C-compiler command line */
-	cmdsb = mgt_make_cc_cmd(sf, of);
+/*--------------------------------------------------------------------
+ * Compile a VCL program, return shared object, errors in sb.
+ */
 
-	/* Run the C-compiler in a sub-shell */
-	subs = VSUB_run(sb, run_cc, VSB_data(cmdsb), "C-compiler", 10);
+static unsigned
+mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
+{
+	char *csrc;
+	unsigned subs;
 
-	(void)unlink(sf);
-	VSB_delete(cmdsb);
+	if (mgt_vcc_touchfile(vp->srcfile, sb))
+		return (2);
+	if (mgt_vcc_touchfile(vp->libfile, sb))
+		return (2);
 
-	if (!subs)
-		subs = VSUB_run(sb, run_dlopen, of, "dlopen", 10);
+	subs = VSUB_run(sb, run_vcc, vp, "VCC-compiler", -1);
+	if (subs)
+		return (subs);
 
-	/* Ensure the file is readable to the unprivileged user */
-	if (!subs) {
-		i = chmod(of, 0755);
-		if (i) {
-			VSB_printf(sb, "Failed to set permissions on %s: %s",
-			    of, strerror(errno));
-			subs = 2;
-		}
+	if (C_flag) {
+		csrc = VFIL_readfile(NULL, vp->srcfile, NULL);
+		AN(csrc);
+		VSB_cat(sb, csrc);
 	}
 
-	if (subs) {
-		(void)unlink(of);
-		*status = subs;
-		return (NULL);
-	}
+	subs = VSUB_run(sb, run_cc, vp, "C-compiler", 10);
+	if (subs)
+		return (subs);
 
-	retval = strdup(of);
-	XXXAN(retval);
-	return (retval);
+	subs = VSUB_run(sb, run_dlopen, vp, "dlopen", 10);
+
+	return (subs);
 }
 
 /*--------------------------------------------------------------------*/
 
 static char *
-mgt_VccCompile(struct vsb **sb, const char *b, int C_flag, unsigned *status)
+mgt_VccCompile(struct vsb **sb, const char *vclname, const char *vclsrc,
+    int C_flag, unsigned *status)
 {
-	char *vf;
+	struct vcc_priv vp;
 
 	*sb = VSB_new_auto();
 	XXXAN(*sb);
-	vf = mgt_run_cc(b, *sb, C_flag, status);
+
+	INIT_OBJ(&vp, VCC_PRIV_MAGIC);
+	vp.src = vclsrc;
+
+	VSB_printf(*sb, "./vcl_%s.c", vclname);
 	AZ(VSB_finish(*sb));
-	return (vf);
+	vp.srcfile = strdup(VSB_data(*sb));
+	AN(vp.srcfile);
+	VSB_clear(*sb);
+
+	VSB_printf(*sb, "./vcl_%s.so", vclname);
+	AZ(VSB_finish(*sb));
+	vp.libfile = strdup(VSB_data(*sb));
+	AN(vp.srcfile);
+	VSB_clear(*sb);
+
+	*status = mgt_vcc_compile(&vp, *sb, C_flag);
+
+	AZ(VSB_finish(*sb));
+
+	(void)unlink(vp.srcfile);
+	free(vp.srcfile);
+
+	if (*status) {
+		(void)unlink(vp.libfile);
+		free(vp.libfile);
+		return (NULL);
+	} else {
+		return (vp.libfile);
+	}
 }
 
 /*--------------------------------------------------------------------*/
@@ -427,7 +416,7 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, char *vcl, int C_flag)
 	}
 	strcpy(buf, "boot");
 
-	vf = mgt_VccCompile(&sb, vcl, C_flag, &status);
+	vf = mgt_VccCompile(&sb, buf, vcl, C_flag, &status);
 	free(vcl);
 	if (VSB_len(sb) > 0)
 		fprintf(stderr, "%s", VSB_data(sb));
@@ -527,7 +516,7 @@ mcf_config_inline(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 
-	vf = mgt_VccCompile(&sb, av[3], 0, &status);
+	vf = mgt_VccCompile(&sb, av[2], av[3], 0, &status);
 	if (VSB_len(sb) > 0)
 		VCLI_Out(cli, "%s\n", VSB_data(sb));
 	VSB_delete(sb);
@@ -572,7 +561,7 @@ mcf_config_load(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 
-	vf = mgt_VccCompile(&sb, vcl, 0, &status);
+	vf = mgt_VccCompile(&sb, av[2], vcl, 0, &status);
 	free(vcl);
 
 	if (VSB_len(sb) > 0)
