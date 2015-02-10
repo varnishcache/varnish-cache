@@ -656,7 +656,7 @@ main(int argc, char * const *argv)
 		    P_arg, strerror(errno));
 
 	if (b_arg != NULL || f_arg != NULL)
-		if ((o = mgt_vcc_default(b_arg, f_arg, vcl, C_flag)) != 0)
+		if ((o = mgt_vcc_default(b_arg, vcl, C_flag)) != 0)
 			exit(o);
 
 	if (C_flag)

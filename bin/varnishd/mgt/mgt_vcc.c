@@ -135,47 +135,11 @@ mgt_vcc_delbyname(const char *name)
 	return (1);
 }
 
-/*--------------------------------------------------------------------
- * Prepare the compiler command line
- */
-static struct vsb *
-mgt_make_cc_cmd(const struct vcc_priv *vp)
+int
+mgt_has_vcl(void)
 {
-	struct vsb *sb;
-	int pct;
-	char *p;
 
-	CHECK_OBJ_NOTNULL(vp, VCC_PRIV_MAGIC);
-	sb = VSB_new_auto();
-	XXXAN(sb);
-	for (p = mgt_cc_cmd, pct = 0; *p; ++p) {
-		if (pct) {
-			switch (*p) {
-			case 's':
-				VSB_cat(sb, vp->srcfile);
-				break;
-			case 'o':
-				VSB_cat(sb, vp->libfile);
-				break;
-			case '%':
-				VSB_putc(sb, '%');
-				break;
-			default:
-				VSB_putc(sb, '%');
-				VSB_putc(sb, *p);
-				break;
-			}
-			pct = 0;
-		} else if (*p == '%') {
-			pct = 1;
-		} else {
-			VSB_putc(sb, *p);
-		}
-	}
-	if (pct)
-		VSB_putc(sb, '%');
-	AZ(VSB_finish(sb));
-	return (sb);
+	return (!VTAILQ_EMPTY(&vclhead));
 }
 
 /*--------------------------------------------------------------------
@@ -231,16 +195,46 @@ static void
 run_cc(void *priv)
 {
 	struct vcc_priv *vp;
-	struct vsb *cmdsb;
+	struct vsb *sb;
+	int pct;
+	char *p;
 
 	mgt_sandbox(SANDBOX_CC);
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
 
-	/* Build the C-compiler command line */
-	cmdsb = mgt_make_cc_cmd(vp);
+	sb = VSB_new_auto();
+	AN(sb);
+	for (p = mgt_cc_cmd, pct = 0; *p; ++p) {
+		if (pct) {
+			switch (*p) {
+			case 's':
+				VSB_cat(sb, vp->srcfile);
+				break;
+			case 'o':
+				VSB_cat(sb, vp->libfile);
+				break;
+			case '%':
+				VSB_putc(sb, '%');
+				break;
+			default:
+				VSB_putc(sb, '%');
+				VSB_putc(sb, *p);
+				break;
+			}
+			pct = 0;
+		} else if (*p == '%') {
+			pct = 1;
+		} else {
+			VSB_putc(sb, *p);
+		}
+	}
+	if (pct)
+		VSB_putc(sb, '%');
+	AZ(VSB_finish(sb));
 
 	(void)umask(0177);
-	(void)execl("/bin/sh", "/bin/sh", "-c", VSB_data(cmdsb), (char*)0);
+	(void)execl("/bin/sh", "/bin/sh", "-c", VSB_data(sb), (char*)0);
+	VSB_delete(sb);				// For flexelint
 }
 
 /*--------------------------------------------------------------------
@@ -385,16 +379,13 @@ mgt_VccCompile(struct vsb **sb, const char *vclname, const char *vclsrc,
 /*--------------------------------------------------------------------*/
 
 unsigned
-mgt_vcc_default(const char *b_arg, const char *f_arg, char *vcl, int C_flag)
+mgt_vcc_default(const char *b_arg, char *vcl, int C_flag)
 {
 	char *vf;
 	struct vsb *sb;
 	struct vclprog *vp;
 	char buf[BUFSIZ];
 	unsigned status = 0;
-
-	/* XXX: annotate vcl with -b/-f arg so people know where it came from */
-	(void)f_arg;
 
 	if (b_arg != NULL) {
 		AZ(vcl);
@@ -436,15 +427,6 @@ mgt_vcc_default(const char *b_arg, const char *f_arg, char *vcl, int C_flag)
 /*--------------------------------------------------------------------*/
 
 int
-mgt_has_vcl(void)
-{
-
-	return (!VTAILQ_EMPTY(&vclhead));
-}
-
-/*--------------------------------------------------------------------*/
-
-int
 mgt_push_vcls_and_start(unsigned *status, char **p)
 {
 	struct vclprog *vp;
@@ -470,8 +452,7 @@ mgt_push_vcls_and_start(unsigned *status, char **p)
 
 /*--------------------------------------------------------------------*/
 
-static
-void
+static void
 mgt_vcc_atexit(void)
 {
 	struct vclprog *vp;
@@ -500,7 +481,7 @@ mgt_vcc_init(void)
 /*--------------------------------------------------------------------*/
 
 void
-mcf_config_inline(struct cli *cli, const char * const *av, void *priv)
+mcf_vcl_inline(struct cli *cli, const char * const *av, void *priv)
 {
 	char *vf, *p = NULL;
 	struct vsb *sb;
@@ -538,7 +519,7 @@ mcf_config_inline(struct cli *cli, const char * const *av, void *priv)
 }
 
 void
-mcf_config_load(struct cli *cli, const char * const *av, void *priv)
+mcf_vcl_load(struct cli *cli, const char * const *av, void *priv)
 {
 	char *vf, *vcl;
 	struct vsb *sb;
@@ -598,7 +579,7 @@ mcf_find_vcl(struct cli *cli, const char *name)
 }
 
 void
-mcf_config_use(struct cli *cli, const char * const *av, void *priv)
+mcf_vcl_use(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned status;
 	char *p = NULL;
@@ -628,7 +609,7 @@ mcf_config_use(struct cli *cli, const char * const *av, void *priv)
 }
 
 void
-mcf_config_discard(struct cli *cli, const char * const *av, void *priv)
+mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned status;
 	char *p = NULL;
@@ -653,7 +634,7 @@ mcf_config_discard(struct cli *cli, const char * const *av, void *priv)
 }
 
 void
-mcf_config_list(struct cli *cli, const char * const *av, void *priv)
+mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned status;
 	char *p;
