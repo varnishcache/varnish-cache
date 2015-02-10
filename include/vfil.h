@@ -30,7 +30,6 @@
 
 /* from libvarnish/vfil.c */
 int seed_random(void);
-int VFIL_tmpfile(char *);
 char *VFIL_readfile(const char *pfx, const char *fn, ssize_t *sz);
 char *VFIL_readfd(int fd, ssize_t *sz);
 int VFIL_nonblocking(int fd);

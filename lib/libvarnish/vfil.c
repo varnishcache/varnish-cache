@@ -56,43 +56,6 @@
 #include "vdef.h"
 #include "vfil.h"
 
-int
-VFIL_tmpfile(char *template)
-{
-	char *b, *e, *p;
-	int fd;
-	char ran;
-
-	for (b = template; *b != '#'; ++b)
-		/* nothing */ ;
-	if (*b == '\0') {
-		errno = EINVAL;
-		return (-1);
-	}
-	for (e = b; *e == '#'; ++e)
-		/* nothing */ ;
-
-	for (;;) {
-		for (p = b; p < e; ++p) {
-			ran = random() % 63;
-			if (ran < 10)
-				*p = '0' + ran;
-			else if (ran < 36)
-				*p = 'A' + ran - 10;
-			else if (ran < 62)
-				*p = 'a' + ran - 36;
-			else
-				*p = '_';
-		}
-		fd = open(template, O_RDWR|O_CREAT|O_EXCL, 0600);
-		if (fd >= 0)
-			return (fd);
-		if (errno != EEXIST)
-			return (-1);
-	}
-	/* not reached */
-}
-
 char *
 VFIL_readfd(int fd, ssize_t *sz)
 {
