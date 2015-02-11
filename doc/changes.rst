@@ -7,12 +7,16 @@ Changes from 4.0.3-rc2 to 4.0.3-rc3 (2015-02-11)
 Bugs fixed
 ----------
 
+- 1462_ - Use first/last log entry in varnishncsa.
 - 1539_ - Avoid panic when expiry thread modifies a candidate object.
 - 1637_ - Fail the fetch processing if the vep callback failed.
+- 1665_ - Be more accurate when computing client RX_TIMEOUT.
 - 1672_ - Do not panic on unsolicited 304 response to non-200 bereq.
 
+.. _1462: https://www.varnish-cache.org/trac/ticket/1462
 .. _1539: https://www.varnish-cache.org/trac/ticket/1539
 .. _1637: https://www.varnish-cache.org/trac/ticket/1637
+.. _1665: https://www.varnish-cache.org/trac/ticket/1665
 .. _1672: https://www.varnish-cache.org/trac/ticket/1672
 
 
