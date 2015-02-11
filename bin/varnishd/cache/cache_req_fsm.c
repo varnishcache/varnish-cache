@@ -427,7 +427,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	case VCL_RET_DELIVER:
 		if (boc != NULL) {
 			AZ(oc->flags & OC_F_PASS);
-			AZ(oc->exp_flags & OC_EF_DYING);
 			AZ(boc->busyobj);
 			VBF_Fetch(wrk, req, boc, o, VBF_BACKGROUND);
 		} else {
