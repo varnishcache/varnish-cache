@@ -1,4 +1,22 @@
 ================================================
+Changes from 4.0.3-rc2 to 4.0.3-rc3 (2015-02-11)
+================================================
+
+- Superseded objects are now expired immediately.
+
+Bugs fixed
+----------
+
+- 1539_ - Avoid panic when expiry thread modifies a candidate object.
+- 1637_ - Fail the fetch processing if the vep callback failed.
+- 1672_ - Do not panic on unsolicited 304 response to non-200 bereq.
+
+.. _1539: https://www.varnish-cache.org/trac/ticket/1539
+.. _1637: https://www.varnish-cache.org/trac/ticket/1637
+.. _1672: https://www.varnish-cache.org/trac/ticket/1672
+
+
+================================================
 Changes from 4.0.3-rc1 to 4.0.3-rc2 (2015-01-28)
 ================================================
 
