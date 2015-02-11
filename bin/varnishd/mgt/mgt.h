@@ -96,6 +96,7 @@ enum sandbox_e {
 
 typedef void mgt_sandbox_f(enum sandbox_e);
 extern mgt_sandbox_f *mgt_sandbox;
+void mgt_sandbox_init(void);
 
 /* mgt_sandbox_solaris.c */
 #ifdef HAVE_SETPPRIV

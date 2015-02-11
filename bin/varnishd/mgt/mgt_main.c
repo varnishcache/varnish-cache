@@ -36,8 +36,6 @@
 
 #include <ctype.h>
 #include <fcntl.h>
-#include <grp.h>
-#include <pwd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -329,40 +327,10 @@ static void
 init_params(struct cli *cli)
 {
 	ssize_t def, low;
-	struct passwd *pwd;
-	struct group *grp;
 
 	MCF_CollectParams();
 
 	MCF_TcpParams();
-
-	/*
-	 * If we have nobody/nogroup, use them as defaults for sandboxes,
-	 * else fall back to whoever we run as.
-	 */
-	if (getpwnam("nobody") != NULL) {
-		MCF_SetDefault("user", "nobody");
-	} else {
-		pwd = getpwuid(getuid());
-		if (pwd == NULL)
-			ARGV_ERR("Neither user 'nobody' or my uid (%jd)"
-			    " found in password database.\n",
-			    (intmax_t)getuid());
-		MCF_SetDefault("user", pwd->pw_name);
-	}
-	endpwent();
-
-	if (getgrnam("nogroup") != NULL) {
-		MCF_SetDefault("group", "nogroup");
-	} else {
-		grp = getgrgid(getgid());
-		if (grp == NULL)
-			ARGV_ERR("Neither group 'nogroup' or my gid (%jd)"
-			    " found in password database.\n",
-			    (intmax_t)getgid());
-		MCF_SetDefault("group", grp->gr_name);
-	}
-	endgrent();
 
 	if (sizeof(void *) < 8) {
 		/*
@@ -456,6 +424,15 @@ main(int argc, char * const *argv)
 	 * Check that our SHA256 works
 	 */
 	SHA256_Test();
+
+	/*
+	 * Find out if we can sandbox
+	 */
+	mgt_sandbox_init();
+
+	/*
+	 * Create a cli for convenience in otherwise CLI functions
+	 */
 
 	INIT_OBJ(cli, CLI_MAGIC);
 	cli[0].sb = VSB_new_auto();
@@ -579,8 +556,6 @@ main(int argc, char * const *argv)
 	argc -= optind;
 	argv += optind;
 
-	mgt_vcc_init();
-
 	if (argc != 0)
 		ARGV_ERR("Too many arguments (%s...)\n", argv[0]);
 
@@ -654,6 +629,8 @@ main(int argc, char * const *argv)
 	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL)
 		ARGV_ERR("Could not open pid/lock (-P) file (%s): %s\n",
 		    P_arg, strerror(errno));
+
+	mgt_vcc_init();
 
 	if (b_arg != NULL || f_arg != NULL) {
 		mgt_vcc_default(cli, b_arg, vcl, C_flag);

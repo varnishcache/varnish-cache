@@ -71,4 +71,3 @@ int tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest,
 extern struct parspec mgt_parspec[]; /* mgt_param_tbl.c */
 extern struct parspec VSL_parspec[]; /* mgt_param_vsl.c */
 extern struct parspec WRK_parspec[]; /* mgt_pool.c */
-extern struct parspec mgt_parspec_sandbox[]; /* mgt_param_sandbox.c */

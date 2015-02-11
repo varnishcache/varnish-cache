@@ -470,7 +470,6 @@ MCF_CollectParams(void)
 	MCF_AddParams(mgt_parspec);
 	MCF_AddParams(WRK_parspec);
 	MCF_AddParams(VSL_parspec);
-	MCF_AddParams(mgt_parspec_sandbox);
 }
 
 /*--------------------------------------------------------------------*/
