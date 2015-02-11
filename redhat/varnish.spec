@@ -9,7 +9,7 @@ Version: 4.0.3
 Release: 1%{?v_rc}%{?dist}
 License: BSD
 Group: System Environment/Daemons
-URL: http://www.varnish-cache.org/
+URL: https://www.varnish-cache.org/
 #Source0: http://repo.varnish-cache.org/source/%{name}-%{version}.tar.gz
 Source0: %{name}-%{version}%{?vd_rc}.tar.gz
 #Source0: %{name}-trunk.tar.gz
