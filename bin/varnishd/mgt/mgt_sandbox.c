@@ -60,6 +60,8 @@
 #include "common/params.h"
 #include "mgt/mgt_param.h"
 
+#include <vsub.h>
+
 mgt_sandbox_f *mgt_sandbox;
 
 /*--------------------------------------------------------------------
@@ -177,49 +179,77 @@ static struct parspec mgt_parspec_sandbox[] = {
 
 /*--------------------------------------------------------------------*/
 
+static void __match_proto__(mgt_sandbox_f)
+mgt_sandbox_null(enum sandbox_e who)
+{
+	(void)who;
+}
+
+/*--------------------------------------------------------------------*/
+
 #ifndef HAVE_SETPPRIV
 static void __match_proto__(mgt_sandbox_f)
 mgt_sandbox_unix(enum sandbox_e who)
 {
 #define NGID 2000
 	int i;
-	gid_t gid_list[NGID];
+	gid_t gid, gid_list[NGID];
+	uid_t uid;
 
-	if (geteuid() != 0) {
-		REPORT0(LOG_INFO, "Not running as root, no priv-sep");
-		return;
+	if (who == SANDBOX_TESTING) {
+		/*
+		 * Test if sandboxing is going to work.
+		 * Do not assert on failure here, but simply exit non-zero.
+		 */
+		gid = getgid();
+		gid += 1;
+		if (setgid(gid))
+			exit(1);
+		uid = getuid();
+		uid += 1;
+		if (setuid(uid))
+			exit(2);
+		exit(0);
 	}
 
-	XXXAZ(setgid(mgt_param.gid));
-	XXXAZ(initgroups(mgt_param.user, mgt_param.gid));
+	/*
+	 * Do the real thing, assert if we fail
+	 */
+
+	AZ(setgid(mgt_param.gid));
+	AZ(initgroups(mgt_param.user, mgt_param.gid));
 
 	if (who == SANDBOX_CC && strlen(mgt_param.group_cc) > 0) {
 		/* Add the optional extra group for the C-compiler access */
 		i = getgroups(NGID, gid_list);
 		assert(i >= 0);
 		gid_list[i++] = mgt_param.gid_cc;
-		XXXAZ(setgroups(i, gid_list));
+		AZ(setgroups(i, gid_list));
 	}
 
-	XXXAZ(setuid(mgt_param.uid));
+	AZ(setuid(mgt_param.uid));
+
+#ifdef __linux__
+	/*
+	 * On linux mucking about with uid/gid disables core-dumps,			 * reenable them again.
+	 */
+	if (prctl(PR_SET_DUMPABLE, 1) != 0) {
+		REPORT0(LOG_INFO,
+		    "Could not set dumpable bit.  Core dumps turned off\n");
+	}
+#endif
 }
 #endif
 
 /*--------------------------------------------------------------------*/
 
-#ifdef __linux__
-static void __match_proto__(mgt_sandbox_f)
-mgt_sandbox_linux(enum sandbox_e who)
+static void __match_proto__(sub_func_f)
+run_sandbox_test(void *priv)
 {
-	mgt_sandbox_unix(who);
 
-	if (prctl(PR_SET_DUMPABLE, 1) != 0) {
-		REPORT0(LOG_INFO,
-		    "Could not set dumpable bit.  Core dumps turned off\n");
-	}
+	(void)priv;
+	mgt_sandbox(SANDBOX_TESTING);
 }
-#endif
-
 
 /*--------------------------------------------------------------------*/
 
@@ -228,7 +258,24 @@ mgt_sandbox_init(void)
 {
 	struct passwd *pwd;
 	struct group *grp;
+	struct vsb *sb;
+	unsigned subs;
 
+	/* Pick a sandbox */
+
+#ifdef HAVE_SETPPRIV
+	mgt_sandbox = mgt_sandbox_solaris;
+#else
+	mgt_sandbox = mgt_sandbox_unix;
+#endif
+
+	/* Test it */
+
+	sb = VSB_new_auto();
+	subs = VSUB_run(sb, run_sandbox_test, NULL, "SANDBOX-test", 10);
+	VSB_delete(sb);
+	if (subs)
+		mgt_sandbox = mgt_sandbox_null;
 
 	MCF_AddParams(mgt_parspec_sandbox);
 
@@ -259,13 +306,4 @@ mgt_sandbox_init(void)
 		MCF_SetDefault("group", grp->gr_name);
 	}
 	endgrent();
-
-
-#ifdef HAVE_SETPPRIV
-	mgt_sandbox = mgt_sandbox_solaris;
-#elif defined (__linux__)
-	mgt_sandbox = mgt_sandbox_linux;
-#else
-	mgt_sandbox = mgt_sandbox_unix;
-#endif
 }

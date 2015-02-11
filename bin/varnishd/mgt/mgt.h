@@ -88,10 +88,11 @@ void MCF_TcpParams(void);
 
 /* mgt_sandbox.c */
 enum sandbox_e {
-	SANDBOX_VCC = 1,
-	SANDBOX_CC = 2,
-	SANDBOX_VCLLOAD = 3,
-	SANDBOX_WORKER = 4,
+	SANDBOX_TESTING,
+	SANDBOX_VCC,
+	SANDBOX_CC,
+	SANDBOX_VCLLOAD,
+	SANDBOX_WORKER,
 };
 
 typedef void mgt_sandbox_f(enum sandbox_e);
