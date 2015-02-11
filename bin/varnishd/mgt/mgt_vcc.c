@@ -335,7 +335,7 @@ mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
 
 /*--------------------------------------------------------------------*/
 
-static unsigned
+static void
 mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
     int C_flag)
 {
@@ -344,7 +344,7 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 	unsigned status;
 	char *p;
 
-	(void)cli;
+	AN(cli);
 	sb = VSB_new_auto();
 	XXXAN(sb);
 
@@ -366,12 +366,8 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 	status = mgt_vcc_compile(&vp, sb, C_flag);
 
 	AZ(VSB_finish(sb));
-	if (VSB_len(sb) > 0) {
-		if (cli != NULL)
-			VCLI_Out(cli, "%s", VSB_data(sb));
-		else
-			fprintf(stderr, "%s", VSB_data(sb));
-	}
+	if (VSB_len(sb) > 0)
+		VCLI_Out(cli, "%s", VSB_data(sb));
 	VSB_delete(sb);
 
 	(void)unlink(vp.srcfile);
@@ -380,63 +376,55 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 	if (status || C_flag) {
 		(void)unlink(vp.libfile);
 		free(vp.libfile);
-		if (cli != NULL) {
+		if (!C_flag) {
 			VCLI_Out(cli, "VCL compilation failed");
-		} else if (!C_flag)
-			fprintf(stderr, "\nVCL compilation failed\n");
-		return (status);
+			VCLI_SetResult(cli, CLIS_PARAM);
+		}
+		return;
 	}
 
-	if (cli != NULL)
-		VCLI_Out(cli, "VCL compiled.\n");
+	VCLI_Out(cli, "VCL compiled.\n");
 
-	if (cli == NULL || child_pid < 0) {
+	if (child_pid < 0) {
 		mgt_vcc_add(vclname, vp.libfile);
 		free(vp.libfile);
-		return (0);
+		return;
 	}
 
 	if (!mgt_cli_askchild(&status, &p,
 	    "vcl.load %s %s\n", vclname, vp.libfile)) {
 		mgt_vcc_add(vclname, vp.libfile);
 		free(vp.libfile);
-		return (0);
+		return;
 	}
 
-	VCLI_SetResult(cli, status);
 	VCLI_Out(cli, "%s", p);
+	VCLI_SetResult(cli, CLIS_PARAM);
 	(void)unlink(vp.libfile);
 	free(vp.libfile);
-	return (status);
 }
 
 /*--------------------------------------------------------------------*/
 
-unsigned
-mgt_vcc_default(const char *b_arg, const char *vcl, int C_flag)
+void
+mgt_vcc_default(struct cli *cli, const char *b_arg, const char *vclsrc,
+    int C_flag)
 {
 	char buf[BUFSIZ];
 
 	if (b_arg == NULL) {
-		AN(vcl);
-		return (mgt_VccCompile(NULL, "boot", vcl, C_flag));
+		AN(vclsrc);
+		mgt_VccCompile(cli, "boot", vclsrc, C_flag);
+		return;
 	}
 
-	AZ(vcl);
-	/*
-	 * XXX: should do a "HEAD /" on the -b argument to see that
-	 * XXX: it even works.  On the other hand, we should do that
-	 * XXX: for all backends in the cache process whenever we
-	 * XXX: change config, but for a complex VCL, it might not be
-	 * XXX: a bug for a backend to not reply at that time, so then
-	 * XXX: again: we should check it here in the "trivial" case.
-	 */
+	AZ(vclsrc);
 	bprintf(buf,
 	    "vcl 4.0;\n"
 	    "backend default {\n"
 	    "    .host = \"%s\";\n"
 	    "}\n", b_arg);
-	return (mgt_VccCompile(NULL, "boot", buf, C_flag));
+	mgt_VccCompile(cli, "boot", buf, C_flag);
 }
 
 /*--------------------------------------------------------------------*/
@@ -509,8 +497,7 @@ mcf_vcl_inline(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 
-	if (mgt_VccCompile(cli, av[2], av[3], 0))
-		VCLI_SetResult(cli, CLIS_PARAM);
+	mgt_VccCompile(cli, av[2], av[3], 0);
 }
 
 void
@@ -534,8 +521,7 @@ mcf_vcl_load(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 
-	if (mgt_VccCompile(cli, av[2], vcl, 0))
-		VCLI_SetResult(cli, CLIS_PARAM);
+	mgt_VccCompile(cli, av[2], vcl, 0);
 	free(vcl);
 }
 

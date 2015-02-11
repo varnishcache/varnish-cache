@@ -656,13 +656,16 @@ main(int argc, char * const *argv)
 		    P_arg, strerror(errno));
 
 	if (b_arg != NULL || f_arg != NULL) {
-		if ((o = mgt_vcc_default(b_arg, vcl, C_flag)) != 0)
-			exit(o);
+		mgt_vcc_default(cli, b_arg, vcl, C_flag);
+		if (C_flag) {
+			AZ(VSB_finish(cli->sb));
+			fprintf(stderr, "%s\n", VSB_data(cli->sb));
+			exit(0);
+		}
+		cli_check(cli);
 		free(vcl);
-	}
-
-	if (C_flag)
-		exit(0);
+	} else if (C_flag)
+		ARGV_ERR("-C only good with -b or -f\n");
 
 	if (!d_flag) {
 		if (MGT_open_sockets())
