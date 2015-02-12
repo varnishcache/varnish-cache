@@ -90,7 +90,7 @@
  *
  * (a value of 0x10000000 indicates that SNOCD is set)
  *
- * Hot to get core dumps of the worker process on Solaris
+ * How to get core dumps of the worker process on Solaris
  * ------------------------------------------------------
  *
  * (see previous paragraph for explanation).
