@@ -323,6 +323,7 @@ mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
 		csrc = VFIL_readfile(NULL, vp->srcfile, NULL);
 		AN(csrc);
 		VSB_cat(sb, csrc);
+		free(csrc);
 	}
 
 	subs = VSUB_run(sb, run_cc, vp, "C-compiler", 10);
@@ -395,10 +396,12 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 	    "vcl.load %s %s\n", vclname, vp.libfile)) {
 		mgt_vcc_add(vclname, vp.libfile);
 		free(vp.libfile);
+		free(p);
 		return;
 	}
 
 	VCLI_Out(cli, "%s", p);
+	free(p);
 	VCLI_SetResult(cli, CLIS_PARAM);
 	(void)unlink(vp.libfile);
 	free(vp.libfile);
