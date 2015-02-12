@@ -28,29 +28,10 @@
  * SUCH DAMAGE.
  *
  * Sandboxing child processes on Solaris
+ * =====================================
  *
- */
-
-#include "config.h"
-
-#ifdef HAVE_SETPPRIV
-
-#ifdef HAVE_PRIV_H
-#include <priv.h>
-#endif
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <syslog.h>
-#include <unistd.h>
-
-#include "mgt/mgt.h"
-
-#include "common/heritage.h"
-#include "common/params.h"
-
-/*--------------------------------------------------------------------
- * SOLARIS PRIVILEGES: Note on use of symbolic PRIV_* constants
+ * Note on use of symbolic PRIV_* constants
+ * ----------------------------------------
  *
  * We assume backwards compatibility only for Solaris Releases after the
  * OpenSolaris Launch. For privileges which existed at the time of the
@@ -58,54 +39,86 @@
  * that priv_addset must succeed.
  *
  * For privileges which have been added later, we need to use priv strings in
- * order not to break builds of varnish on these platforms. To remain binary
+ * order not to break builds of varnish on older platforms. To remain binary
  * compatible, we can't assert that priv_addset succeeds, but we may assert that
  * it either succeeds or fails with EINVAL.
- */
-
-/* for priv_delset() and priv_addset() */
-static inline int
-priv_setop_check(int a) {
-	if (a == 0)
-		return (1);
-	if (errno == EINVAL)
-		return (1);
-	return (0);
-}
-
-#define priv_setop_assert(a) assert(priv_setop_check(a))
-
-/*
- * we try to add all possible privileges to waive them later.
  *
- * when doing so, we need to expect EPERM
- */
-
-/* for setppriv */
-static inline int
-setppriv_check(int a) {
-	if (a == 0)
-		return (1);
-	if (errno == EPERM)
-		return (1);
-	return (0);
-}
-
-#define setppriv_assert(a) assert(setppriv_check(a))
-
-
-/*
- * brief histroy of introduction of privileges since OpenSolaris Launch
+ * See priv_setop_check()
  *
- * (from hg log -gp usr/src/uts/common/os/priv_defs)
+ * Note on introduction of new privileges (or: lack of forward compatibility)
+ * --------------------------------------------------------------------------
+ *
+ * For optimal build and binary forward comatibility, we could use subtractive
+ * set specs like
+ *
+ *       basic,!file_link_any,!proc_exec,!proc_fork,!proc_info,!proc_session
+ *
+ * which would implicitly keep any privileges newly introduced to the 'basic'
+ * set.
+ *
+ * But we have a preference for making an informed decision about which
+ * privileges varnish sandboxes should have, so we prefer to risk breaking
+ * varnish temporarily on newer kernels and be notified of missing privileges
+ * through bug reports.
+ *
+ * Notes on the SNOCD flag
+ * -----------------------
+ *
+ * On Solaris, any uid/gid fiddling which can be interpreted as 'waiving
+ * privileges' will lead to the processes' SNOCD flag being set, disabling core
+ * dumps unless explicitly allowed using coreadm (see below). There is no
+ * equivalent to Linux PR_SET_DUMPABLE. The only way to clear the flag is a call
+ * to some form of exec(). The presence of the SNOCD flag also prevents many
+ * process manipulations from other processes with the same uid/gid unless they
+ * have the proc_owner privilege.
+ *
+ * Thus, if we want to run sandboxes with a different uid/gid than the master
+ * process, we cannot avoid the SNOCD flag for those sandboxes not exec'ing
+ * (VCC, VCLLOAD, WORKER).
+ *
+ *
+ * We should, however, avoid to accidentally set the SNOCD flag when setting
+ * privileges (see https://www.varnish-cache.org/trac/ticket/671 )
+ *
+ * When changing the logic herein, always check with mdb -k. Replace _PID_ with
+ * the pid of your varnish child, the result should be 0, otherwise a regression
+ * has been introduced.
+ *
+ * > 0t_PID_::pid2proc | ::print proc_t p_flag | >a
+ * > (<a & 0x10000000)=X
+ *		0
+ *
+ * (a value of 0x10000000 indicates that SNOCD is set)
+ *
+ * Hot to get core dumps of the worker process on Solaris
+ * ------------------------------------------------------
+ *
+ * (see previous paragraph for explanation).
+ *
+ * Two options:
+ *
+ * - start the varnish master process under the same user/group given for the -u
+ *   / -g command line option and elevated privileges but without proc_setid,
+ *   e.g.:
+ *
+ *	pfexec ppriv -e -s A=basic,net_privaddr,sys_resource varnish ...
+ *
+ * - allow coredumps of setid processes (ignoring SNOCD)
+ *
+ *   See coreadm(1M) - global-setid / proc-setid
+ *
+ * brief histroy of privileges introduced since OpenSolaris Launch
+ * ---------------------------------------------------------------
+ *
+ * (from hg log -gp usr/src/uts/common/os/priv_defs
+ *    or git log -p usr/src/uts/common/os/priv_defs)
  *
  * ARC cases are not necessarily accurate (induced from commit msg)
- * (marked with ?)
  *
  * privileges used here marked with *
  *
- *
- * ARC case	    hg commit	   first release
+ * ILlumos ticket
+ * ARC case	    hg/git commit  first release
  *
  * PSARC/2006/155?  37f4a3e2bd99   onnv_37
  * - file_downgrade_sl
@@ -175,46 +188,61 @@ setppriv_check(int a) {
  * - sys_flow_config
  * - sys_share
  *
- *
- * SOLARIS PRIVILEGES: Note on introtiction of new privileges (forward
- *		       compatibility)
- *
- * For optimal build and binary forward comatibility, we could use subtractive
- * set specs like
- *
- *       basic,!file_link_any,!proc_exec,!proc_fork,!proc_info,!proc_session
- *
- * but I (Nils) have a preference for making an informed decision about which
- * privileges the varnish child should have and which it shouldn't.
- *
- * Newly introduced privileges should be annotated with their PSARC / commit ID
- * (as long as Oracle reveils these :/ )
- *
- * SOLARIS PRIVILEGES: Note on accidentally setting the SNOCD flag
- *
- * When setting privileges, we need to take care not to accidentally set the
- * SNOCD flag which will disable core dumps unnecessarily. (see
- * https://www.varnish-cache.org/trac/ticket/671 )
- *
- * When changing the logic herein, always check with mdb -k. Replace _PID_ with
- * the pid of your varnish child, the result should be 0, otherwise a regression
- * has been introduced.
- *
- * > 0t_PID_::pid2proc | ::print proc_t p_flag | >a
- * > (<a & 0x10000000)=X
- *		0
- *
- * (a value of 0x10000000 indicates that SNOCD is set)
- *
- * NOTE that on Solaris changing the uid will _always_ set SNOCD, so make sure
- * you run this test with appropriate privileges, but without proc_setid, so
- * varnish won't setuid(), e.g.
- *
- * pfexec ppriv -e -s A=basic,net_privaddr,sys_resource varnish ...
- *
- * SOLARIS COREDUMPS with setuid(): See coreadm(1M) - global-setid / proc-setid
+ * IL3923	    24d819e6779c   Illumos
+ * - proc_prioup
  *
  */
+
+#include "config.h"
+
+#ifdef HAVE_SETPPRIV
+
+#ifdef HAVE_PRIV_H
+#include <priv.h>
+#endif
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
+#include <unistd.h>
+
+#include "mgt/mgt.h"
+
+#include "common/heritage.h"
+#include "common/params.h"
+
+/*--------------------------------------------------------------------
+ */
+
+/* for priv_delset() and priv_addset() */
+static inline int
+priv_setop_check(int a) {
+	if (a == 0)
+		return (1);
+	if (errno == EINVAL)
+		return (1);
+	return (0);
+}
+
+#define priv_setop_assert(a) assert(priv_setop_check(a))
+
+/*
+ * we try to add all possible privileges to waive them later.
+ *
+ * when doing so, we need to expect EPERM
+ */
+
+/* for setppriv */
+static inline int
+setppriv_check(int a) {
+	if (a == 0)
+		return (1);
+	if (errno == EPERM)
+		return (1);
+	return (0);
+}
+
+#define setppriv_assert(a) assert(setppriv_check(a))
 
 static void
 mgt_sandbox_solaris_add_inheritable(priv_set_t *pset, enum sandbox_e who)
