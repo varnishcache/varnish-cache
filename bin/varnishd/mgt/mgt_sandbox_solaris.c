@@ -420,6 +420,15 @@ mgt_sandbox_solaris_waive(enum sandbox_e who)
 void __match_proto__(mgt_sandbox_f)
 mgt_sandbox_solaris(enum sandbox_e who)
 {
+	/*
+	 * XXX - clarify with phk:
+	 * there is no "all-or-nothing" for the solaris sandbox, even
+	 * if we cant setuid, we can still do useful things and waive
+	 * most privileges.
+	 */
+	if (who == SANDBOX_TESTING)
+		exit(0);
+
 	mgt_sandbox_solaris_init(who);
 	mgt_sandbox_solaris_privsep(who);
 	mgt_sandbox_solaris_waive(who);

@@ -88,14 +88,16 @@ void MCF_TcpParams(void);
 
 /* mgt_sandbox.c */
 enum sandbox_e {
-	SANDBOX_VCC = 1,
-	SANDBOX_CC = 2,
-	SANDBOX_VCLLOAD = 3,
-	SANDBOX_WORKER = 4,
+	SANDBOX_TESTING,
+	SANDBOX_VCC,
+	SANDBOX_CC,
+	SANDBOX_VCLLOAD,
+	SANDBOX_WORKER,
 };
 
 typedef void mgt_sandbox_f(enum sandbox_e);
 extern mgt_sandbox_f *mgt_sandbox;
+void mgt_sandbox_init(void);
 
 /* mgt_sandbox_solaris.c */
 #ifdef HAVE_SETPPRIV
@@ -118,7 +120,8 @@ void STV_Config_Transient(void);
 
 /* mgt_vcc.c */
 void mgt_vcc_init(void);
-unsigned mgt_vcc_default(const char *bflag, const char *vcl, int Cflag);
+void mgt_vcc_default(struct cli *, const char *b_arg, const char *vclsrc,
+    int Cflag);
 int mgt_push_vcls_and_start(unsigned *status, char **p);
 int mgt_has_vcl(void);
 extern char *mgt_cc_cmd;
