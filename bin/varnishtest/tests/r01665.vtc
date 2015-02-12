@@ -9,9 +9,9 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-		delay 0.1
+		delay 1
 		send "GET "
-		delay 2
+		delay 1.8
 		send "/bar\n\n "
 		delay 0.1
 		send "GET"     
