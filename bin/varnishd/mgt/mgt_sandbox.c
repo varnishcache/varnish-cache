@@ -274,8 +274,13 @@ mgt_sandbox_init(void)
 	sb = VSB_new_auto();
 	subs = VSUB_run(sb, run_sandbox_test, NULL, "SANDBOX-test", 10);
 	VSB_delete(sb);
-	if (subs)
+	if (subs) {
+		REPORT0(LOG_INFO, "Warning: init of platform-specific sandbox "
+		    "failed - sandboxing disabled");
+		REPORT0(LOG_INFO, "Warning: Varnish might run with elevated "
+		    "privileges");
 		mgt_sandbox = mgt_sandbox_null;
+	}
 
 	MCF_AddParams(mgt_parspec_sandbox);
 
