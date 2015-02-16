@@ -44,11 +44,12 @@
  * A "none" jail implementation which doesn't do anything.
  */
 
-static void __match_proto__(jail_init_f)
+static int __match_proto__(jail_init_f)
 vjn_init(char **args)
 {
 	if (*args != NULL)
 		ARGV_ERR("-Jnone takes no arguments.\n");
+	return (0);
 }
 
 static void __match_proto__(jail_master_f)
@@ -84,6 +85,7 @@ void
 VJ_Init(const char *j_arg)
 {
 	char **av;
+	int i;
 
 	if (j_arg != NULL) {
 		av = VAV_Parse(j_arg, NULL, ARGV_COMMA);
@@ -97,10 +99,17 @@ VJ_Init(const char *j_arg)
 		vjt->init(av + 2);
 		VAV_Free(av);
 	} else {
+		/*
+		 * Go through list of jail technologies until one
+		 * succeeds, falling back to "none".
+		 */
 		av = VAV_Parse("", NULL, ARGV_COMMA);
-		vjt = vj_choice[0].ptr;
-		CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);
-		vjt->init(av + 1);
+		for (i = 0; vj_choice[i].name != NULL; i++) {
+			vjt = vj_choice[i].ptr;
+			CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);
+			if (!vjt->init(av + 1))
+				break;
+		}
 		VAV_Free(av);
 	}
 }

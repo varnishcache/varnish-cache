@@ -77,7 +77,7 @@ enum jail_master_e {
 	JAIL_MASTER_HIGH,
 };
 
-typedef void jail_init_f(char **);
+typedef int jail_init_f(char **);
 typedef void jail_master_f(enum jail_master_e);
 typedef void jail_subproc_f(enum jail_subproc_e);
 
