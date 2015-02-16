@@ -154,6 +154,8 @@ usage(void)
 	fprintf(stderr, FMT, "", "  -h classic");
 	fprintf(stderr, FMT, "", "  -h classic,<buckets>");
 	fprintf(stderr, FMT, "-i identity", "Identity of varnish instance");
+	fprintf(stderr, FMT, "-j jail[,jailoptions]", "Jail specification");
+	fprintf(stderr, FMT, "", "  -j none");
 	fprintf(stderr, FMT, "-l shl,free,fill", "Size of shared memory file");
 	fprintf(stderr, FMT, "", "  shl: space for SHL records [80m]");
 	fprintf(stderr, FMT, "", "  free: space for other allocations [1m]");
@@ -382,6 +384,7 @@ main(int argc, char * const *argv)
 	char *dirname;
 	char **av;
 	unsigned clilim;
+	int jailed = 0;
 
 	/* Set up the mgt counters */
 	memset(&static_VSC_C_mgt, 0, sizeof static_VSC_C_mgt);
@@ -447,7 +450,23 @@ main(int argc, char * const *argv)
 	cli_check(cli);
 
 	while ((o = getopt(argc, argv,
-	    "a:b:Cdf:Fg:h:i:l:M:n:P:p:r:S:s:T:t:u:Vx:")) != -1)
+	    "a:b:Cdf:Fg:h:i:j:l:M:n:P:p:r:S:s:T:t:u:Vx:")) != -1) {
+		/*
+		 * -j must be the first argument if specified, because
+		 * it (may) affect subsequent argument processing.
+		 */
+		if (!jailed) {
+			jailed++;
+			if (o == 'j') {
+				VJ_Init(optarg);
+				continue;
+			}
+			VJ_Init(NULL);
+		} else {
+			if (o == 'j')
+				ARGV_ERR("\t-j must be the first argument\n");
+		}
+
 		switch (o) {
 		case 'a':
 			MCF_ParamSet(cli, "listen_address", optarg);
@@ -552,6 +571,7 @@ main(int argc, char * const *argv)
 		default:
 			usage();
 		}
+	}
 
 	argc -= optind;
 	argv += optind;

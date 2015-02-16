@@ -64,6 +64,7 @@ varnishd_SOURCES = \
 	http1/cache_http1_vfp.c \
 	mgt/mgt_child.c \
 	mgt/mgt_cli.c \
+	mgt/mgt_jail.c \
 	mgt/mgt_main.c \
 	mgt/mgt_param.c \
 	mgt/mgt_param_tbl.c \

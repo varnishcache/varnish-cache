@@ -62,6 +62,38 @@ void mgt_cli_master(const char *M_arg);
 void mgt_cli_secret(const char *S_arg);
 void mgt_cli_close_all(void);
 
+/* mgt_jail.c */
+
+enum jail_subproc_e {
+	JAIL_SP_TESTING,
+	JAIL_SP_VCC,
+	JAIL_SP_CC,
+	JAIL_SP_VCLLOAD,
+	JAIL_SP_WORKER,
+};
+
+enum jail_master_e {
+	JAIL_MASTER_LOW,
+	JAIL_MASTER_HIGH,
+};
+
+typedef void jail_init_f(char **);
+typedef void jail_master_f(enum jail_master_e);
+typedef void jail_subproc_f(enum jail_subproc_e);
+
+struct jail_tech {
+	unsigned		magic;
+#define JAIL_TECH_MAGIC		0x4d00fa4d
+	const char		*name;
+	jail_init_f		*init;
+	jail_master_f		*master;
+	jail_subproc_f		*subproc;
+};
+
+void VJ_Init(const char *j_arg);
+void VJ_master(enum jail_master_e jme);
+void VJ_subproc(enum jail_subproc_e jse);
+
 /* mgt_main.c */
 extern struct VSC_C_mgt	*VSC_C_mgt;
 extern struct VSC_C_mgt static_VSC_C_mgt;
