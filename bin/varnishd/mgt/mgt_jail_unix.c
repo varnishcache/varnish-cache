@@ -40,6 +40,7 @@
 #include "mgt/mgt.h"
 
 #ifdef __linux__
+#include <syslog.h>
 #include <sys/prctl.h>
 #endif
 
