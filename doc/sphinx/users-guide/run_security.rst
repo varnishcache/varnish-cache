@@ -13,11 +13,11 @@ partitioned along administrative lines, you need to think about
 security.
 
 Varnish provides four levels of authority, roughly related to
-how and where the command comes into Varnish:
+how and where control comes into Varnish:
 
-  * the command line arguments,
+  * The command line arguments,
 
-  * the CLI interface,
+  * The CLI interface,
 
   * VCL programs, and
 
@@ -26,7 +26,9 @@ how and where the command comes into Varnish:
 Command line arguments
 ----------------------
 
-The top level security decisions is decided and defined when starting Varnish in the form of command line arguments, we use this strategy in order to make them invulnerable to subsequent manipulation.
+The top level security decisions is decided and defined when starting
+Varnish in the form of command line arguments, we use this strategy
+in order to make them invulnerable to subsequent manipulation.
 
 The important decisions to make are:
 
@@ -37,6 +39,8 @@ The important decisions to make are:
 #. Will inline-C code be allowed?
 
 #. If/how VMODs will be restricted?
+
+#. How child processes will be jailed?
 
 CLI interface access
 ^^^^^^^^^^^^^^^^^^^^
@@ -152,8 +156,8 @@ interface.
 Pretty much any parameter can be used to totally mess up your
 HTTP service, but a few can do more damage than others:
 
-:ref:`ref_param_user` and :ref:`ref_param_group`
-	Access to local system via VCL
+.. XXX :ref:`ref_param_user` and :ref:`ref_param_group`
+.. XXX	Access to local system via VCL
 
 :ref:`ref_param_listen_address`
 	Trojan other TCP sockets, like `ssh`
