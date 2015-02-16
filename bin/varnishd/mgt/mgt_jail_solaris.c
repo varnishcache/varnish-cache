@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006-2011 Varnish Software AS
- * Copyright (c) 2011-2012 UPLEX - Nils Goroll Systemoptimierung
+ * Copyright (c) 2011-2015 UPLEX - Nils Goroll Systemoptimierung
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -27,8 +27,17 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Sandboxing child processes on Solaris
- * =====================================
+ * "Jailing" *1) child processes on Solaris and Solaris-derivates *2)
+ * ==================================================================
+ *
+ * *1) The name is motivated by the availability of the -j command line
+ *     option. Jailing Varnish is not to be confused with BSD Jails or
+ *     Solaris Zones.
+ *
+ *     In Solaris parlour, jail == least privileges
+ *
+ * *2) e.g. illumos, SmartOS, OmniOS etc.
+ *
  *
  * Note on use of symbolic PRIV_* constants
  * ----------------------------------------
@@ -48,7 +57,7 @@
  * Note on introduction of new privileges (or: lack of forward compatibility)
  * --------------------------------------------------------------------------
  *
- * For optimal build and binary forward comatibility, we could use subtractive
+ * For optimal build and binary forward compatibility, we could use subtractive
  * set specs like
  *
  *       basic,!file_link_any,!proc_exec,!proc_fork,!proc_info,!proc_session
@@ -57,7 +66,7 @@
  * set.
  *
  * But we have a preference for making an informed decision about which
- * privileges varnish sandboxes should have, so we prefer to risk breaking
+ * privileges varnish subprocesses should have, so we prefer to risk breaking
  * varnish temporarily on newer kernels and be notified of missing privileges
  * through bug reports.
  *
@@ -69,11 +78,11 @@
  * dumps unless explicitly allowed using coreadm (see below). There is no
  * equivalent to Linux PR_SET_DUMPABLE. The only way to clear the flag is a call
  * to some form of exec(). The presence of the SNOCD flag also prevents many
- * process manipulations from other processes with the same uid/gid unless they
- * have the proc_owner privilege.
+ * process manipulations from other processes with the same uid/gid unless the
+ * latter have the proc_owner privilege.
  *
- * Thus, if we want to run sandboxes with a different uid/gid than the master
- * process, we cannot avoid the SNOCD flag for those sandboxes not exec'ing
+ * Thus, if we want to run subprocesses with a different uid/gid than the master
+ * process, we cannot avoid the SNOCD flag for those subprocesses not exec'ing
  * (VCC, VCLLOAD, WORKER).
  *
  *
@@ -101,13 +110,13 @@
  *   / -g command line option and elevated privileges but without proc_setid,
  *   e.g.:
  *
- *	pfexec ppriv -e -s A=basic,net_privaddr,sys_resource varnish ...
+ *	pfexec ppriv -e -s A=basic,net_privaddr,sys_resource varnishd ...
  *
  * - allow coredumps of setid processes (ignoring SNOCD)
  *
  *   See coreadm(1M) - global-setid / proc-setid
  *
- * brief histroy of privileges introduced since OpenSolaris Launch
+ * brief history of privileges introduced since OpenSolaris Launch
  * ---------------------------------------------------------------
  *
  * (from hg log -gp usr/src/uts/common/os/priv_defs
@@ -117,7 +126,7 @@
  *
  * privileges used here marked with *
  *
- * ILlumos ticket
+ * Illumos ticket
  * ARC case	    hg/git commit  first release
  *
  * PSARC/2006/155?  37f4a3e2bd99   onnv_37
@@ -372,7 +381,7 @@ vjs_setup(enum jail_subproc_e jse)
 
 	if (! (priv_all = priv_allocset())) {
 		REPORT(LOG_ERR,
-		    "Sandbox warning: "
+		    "Solaris Jail warning: "
 		    " vjs_setup - priv_allocset failed: errno=%d (%s)",
 		    errno, strerror(errno));
 		return;
@@ -435,8 +444,8 @@ vjs_waive(enum jail_subproc_e jse)
 	    !(inheritable = priv_allocset()) ||
 	    !(permitted = priv_allocset())) {
 		REPORT(LOG_ERR,
-		    "Sandbox warning: "
-		    " mgt_sandbox_waive - priv_allocset failed: errno=%d (%s)",
+		    "Solaris Jail warning: "
+		    " vjs_waive - priv_allocset failed: errno=%d (%s)",
 		    errno, strerror(errno));
 		return;
 	}
