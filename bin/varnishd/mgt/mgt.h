@@ -94,6 +94,7 @@ void VJ_master(enum jail_master_e jme);
 void VJ_subproc(enum jail_subproc_e jse);
 
 extern const struct jail_tech jail_tech_unix;
+extern const struct jail_tech jail_tech_solaris;
 
 /* mgt_main.c */
 extern struct VSC_C_mgt	*VSC_C_mgt;

@@ -66,6 +66,7 @@ varnishd_SOURCES = \
 	mgt/mgt_cli.c \
 	mgt/mgt_jail.c \
 	mgt/mgt_jail_unix.c \
+	mgt/mgt_jail_solaris.c \
 	mgt/mgt_main.c \
 	mgt/mgt_param.c \
 	mgt/mgt_param_tbl.c \

@@ -194,12 +194,6 @@
  */
 
 #include "config.h"
-
-#ifdef HAVE_SETPPRIV
-
-#ifdef HAVE_PRIV_H
-#include <priv.h>
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -211,8 +205,42 @@
 #include "common/heritage.h"
 #include "common/params.h"
 
-/*--------------------------------------------------------------------
+#ifndef HAVE_SETPPRIV
+
+/* ============================================================
+ * on platforms without setppriv, fail the init to mark that
+ * this jail is unavailable
  */
+
+static int __match_proto__(jail_init_f)
+vjs_init(char **args)
+{
+	(void) args;
+	return 1;
+}
+
+const struct jail_tech jail_tech_solaris = {
+	.magic =	JAIL_TECH_MAGIC,
+	.name =	"solaris (unavailable)",
+	.init =	vjs_init,
+};
+
+#else /* HAVE_SETPPRIV */
+
+#ifdef HAVE_PRIV_H
+#include <priv.h>
+#endif
+
+/* ============================================================
+ * the real thing
+ */
+
+static int __match_proto__(jail_init_f)
+vjs_init(char **args)
+{
+	(void) args;
+	return 0;
+}
 
 /* for priv_delset() and priv_addset() */
 static inline int
@@ -245,22 +273,22 @@ setppriv_check(int a) {
 #define setppriv_assert(a) assert(setppriv_check(a))
 
 static void
-mgt_sandbox_solaris_add_inheritable(priv_set_t *pset, enum sandbox_e who)
+vjs_add_inheritable(priv_set_t *pset, enum jail_subproc_e jse)
 {
-	switch (who) {
-	case SANDBOX_VCC:
+	switch (jse) {
+	case JAIL_SUBPROC_VCC:
 		/* for /etc/resolv.conf and /etc/hosts */
 		priv_setop_assert(priv_addset(pset, "file_read"));
 		break;
-	case SANDBOX_CC:
+	case JAIL_SUBPROC_CC:
 		priv_setop_assert(priv_addset(pset, PRIV_PROC_EXEC));
 		priv_setop_assert(priv_addset(pset, PRIV_PROC_FORK));
 		priv_setop_assert(priv_addset(pset, "file_read"));
 		priv_setop_assert(priv_addset(pset, "file_write"));
 		break;
-	case SANDBOX_VCLLOAD:
+	case JAIL_SUBPROC_VCLLOAD:
 		break;
-	case SANDBOX_WORKER:
+	case JAIL_SUBPROC_WORKER:
 		break;
 	default:
 		INCOMPL();
@@ -268,22 +296,22 @@ mgt_sandbox_solaris_add_inheritable(priv_set_t *pset, enum sandbox_e who)
 }
 
 /*
- * effective is initialized from inheritable (see mgt_sandbox_solaris_waive)
+ * effective is initialized from inheritable (see vjs_waive)
  * so only additionally required privileges need to be added here
  */
 
 static void
-mgt_sandbox_solaris_add_effective(priv_set_t *pset, enum sandbox_e who)
+vjs_add_effective(priv_set_t *pset, enum jail_subproc_e jse)
 {
-	switch (who) {
-	case SANDBOX_VCC:
+	switch (jse) {
+	case JAIL_SUBPROC_VCC:
 		priv_setop_assert(priv_addset(pset, "file_write"));
 		break;
-	case SANDBOX_CC:
+	case JAIL_SUBPROC_CC:
 		break;
-	case SANDBOX_VCLLOAD:
+	case JAIL_SUBPROC_VCLLOAD:
 		priv_setop_assert(priv_addset(pset, "file_read"));
-	case SANDBOX_WORKER:
+	case JAIL_SUBPROC_WORKER:
 		priv_setop_assert(priv_addset(pset, "net_access"));
 		priv_setop_assert(priv_addset(pset, "file_read"));
 		priv_setop_assert(priv_addset(pset, "file_write"));
@@ -294,19 +322,19 @@ mgt_sandbox_solaris_add_effective(priv_set_t *pset, enum sandbox_e who)
 }
 
 /*
- * permitted is initialized from effective (see mgt_sandbox_solaris_waive)
+ * permitted is initialized from effective (see vjs_waive)
  * so only additionally required privileges need to be added here
  */
 
 static void
-mgt_sandbox_solaris_add_permitted(priv_set_t *pset, enum sandbox_e who)
+vjs_add_permitted(priv_set_t *pset, enum jail_subproc_e jse)
 {
-	switch (who) {
-	case SANDBOX_VCC:
-	case SANDBOX_CC:
-	case SANDBOX_VCLLOAD:
+	switch (jse) {
+	case JAIL_SUBPROC_VCC:
+	case JAIL_SUBPROC_CC:
+	case JAIL_SUBPROC_VCLLOAD:
 		break;
-	case SANDBOX_WORKER:
+	case JAIL_SUBPROC_WORKER:
 		/* for raising limits in cache_waiter_ports.c */
 		AZ(priv_addset(pset, PRIV_SYS_RESOURCE));
 		break;
@@ -316,13 +344,13 @@ mgt_sandbox_solaris_add_permitted(priv_set_t *pset, enum sandbox_e who)
 }
 
 /*
- * additional privileges needed by mgt_sandbox_solaris_privsep -
- * will get waived in mgt_sandbox_solaris_waive
+ * additional privileges needed by vjs_privsep -
+ * will get waived in vjs_waive
  */
 static void
-mgt_sandbox_solaris_add_initial(priv_set_t *pset, enum sandbox_e who)
+vjs_add_initial(priv_set_t *pset, enum jail_subproc_e jse)
 {
-	(void)who;
+	(void)jse;
 
 	/* for setgid/setuid */
 	AZ(priv_addset(pset, PRIV_PROC_SETID));
@@ -332,30 +360,30 @@ mgt_sandbox_solaris_add_initial(priv_set_t *pset, enum sandbox_e who)
  * if we are not yet privilege-aware already (ie we have been started
  * not-privilege aware with euid 0), we try to grab any privileges we
  * will need later.
- * We will reduce to least privileges in mgt_sandbox_solaris_waive
+ * We will reduce to least privileges in vjs_waive
  *
  * We need to become privilege-aware to avoid setuid resetting them.
  */
 
 static void
-mgt_sandbox_solaris_init(enum sandbox_e who)
+vjs_setup(enum jail_subproc_e jse)
 {
 	priv_set_t *priv_all;
 
 	if (! (priv_all = priv_allocset())) {
 		REPORT(LOG_ERR,
 		    "Sandbox warning: "
-		    " mgt_sandbox_init - priv_allocset failed: errno=%d (%s)",
+		    " vjs_setup - priv_allocset failed: errno=%d (%s)",
 		    errno, strerror(errno));
 		return;
 	}
 
 	priv_emptyset(priv_all);
 
-	mgt_sandbox_solaris_add_inheritable(priv_all, who);
-	mgt_sandbox_solaris_add_effective(priv_all, who);
-	mgt_sandbox_solaris_add_permitted(priv_all, who);
-	mgt_sandbox_solaris_add_initial(priv_all, who);
+	vjs_add_inheritable(priv_all, jse);
+	vjs_add_effective(priv_all, jse);
+	vjs_add_permitted(priv_all, jse);
+	vjs_add_initial(priv_all, jse);
 
 	/* try to get all possible privileges, expect EPERM here */
 	setppriv_assert(setppriv(PRIV_ON, PRIV_PERMITTED, priv_all));
@@ -366,9 +394,9 @@ mgt_sandbox_solaris_init(enum sandbox_e who)
 }
 
 static void
-mgt_sandbox_solaris_privsep(enum sandbox_e who)
+vjs_privsep(enum jail_subproc_e jse)
 {
-	(void)who;
+	(void)jse;
 
 	if (priv_ineffect(PRIV_PROC_SETID)) {
 		if (getgid() != mgt_param.gid)
@@ -399,7 +427,7 @@ mgt_sandbox_solaris_privsep(enum sandbox_e who)
  */
 
 static void
-mgt_sandbox_solaris_waive(enum sandbox_e who)
+vjs_waive(enum jail_subproc_e jse)
 {
 	priv_set_t *effective, *inheritable, *permitted;
 
@@ -419,13 +447,13 @@ mgt_sandbox_solaris_waive(enum sandbox_e who)
 	 */
 
 	priv_emptyset(inheritable);
-	mgt_sandbox_solaris_add_inheritable(inheritable, who);
+	vjs_add_inheritable(inheritable, jse);
 
 	priv_copyset(inheritable, effective);
-	mgt_sandbox_solaris_add_effective(effective, who);
+	vjs_add_effective(effective, jse);
 
 	priv_copyset(effective, permitted);
-	mgt_sandbox_solaris_add_permitted(permitted, who);
+	vjs_add_permitted(permitted, jse);
 
 	/*
 	 * invert the sets and clear privileges such that setppriv will always
@@ -445,20 +473,27 @@ mgt_sandbox_solaris_waive(enum sandbox_e who)
 	priv_freeset(permitted);
 }
 
-void __match_proto__(mgt_sandbox_f)
-mgt_sandbox_solaris(enum sandbox_e who)
+static void __match_proto__(jail_subproc_f)
+vjs_subproc(enum jail_subproc_e jse)
 {
-	/*
-	 * XXX - clarify with phk:
-	 * there is no "all-or-nothing" for the solaris sandbox, even
-	 * if we cant setuid, we can still do useful things and waive
-	 * most privileges.
-	 */
-	if (who == SANDBOX_TESTING)
-		exit(0);
-
-	mgt_sandbox_solaris_init(who);
-	mgt_sandbox_solaris_privsep(who);
-	mgt_sandbox_solaris_waive(who);
+	vjs_setup(jse);
+	vjs_privsep(jse);
+	vjs_waive(jse);
 }
+
+// XXX TODO
+static void __match_proto__(jail_master_f)
+vjs_master(enum jail_master_e jme)
+{
+	(void)jme;
+}
+
+const struct jail_tech jail_tech_solaris = {
+	.magic =	JAIL_TECH_MAGIC,
+	.name =	"solaris",
+	.init =	vjs_init,
+	.master =	vjs_master,
+	.subproc =	vjs_subproc,
+};
+
 #endif /* HAVE_SETPPRIV */

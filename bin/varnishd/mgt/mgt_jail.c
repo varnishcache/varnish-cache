@@ -74,6 +74,7 @@ static const struct jail_tech jail_tech_none = {
 static const struct jail_tech *vjt;
 
 static const struct choice vj_choice[] = {
+	{ "solaris",	&jail_tech_solaris },
 	{ "unix",	&jail_tech_unix },
 	{ "none",	&jail_tech_none },
 	{ NULL,		NULL },
