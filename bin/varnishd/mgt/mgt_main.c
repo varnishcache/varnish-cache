@@ -562,9 +562,13 @@ main(int argc, char * const *argv)
 
 	argc -= optind;
 	argv += optind;
-
 	if (argc != 0)
 		ARGV_ERR("Too many arguments (%s...)\n", argv[0]);
+
+	if (M_arg != NULL && *M_arg == '\0')
+		M_arg = NULL;
+	if (T_arg != NULL && *T_arg == '\0')
+		T_arg = NULL;
 
 	/* XXX: we can have multiple CLI actions above, is this enough ? */
 	if (cli[0].result != CLIS_OK) {
@@ -584,10 +588,10 @@ main(int argc, char * const *argv)
 		ARGV_ERR("At least one of -d, -b, -f, -M or -T "
 		    "must be specified\n");
 
-	if (S_arg != NULL && *S_arg == '\0')
+	if (S_arg != NULL && *S_arg == '\0') {
 		fprintf(stderr,
 		    "Warning: Empty -S argument, no CLI authentication.\n");
-	else if (S_arg != NULL) {
+	} else if (S_arg != NULL) {
 		o = open(S_arg, O_RDONLY, 0);
 		if (o < 0)
 			ARGV_ERR("Cannot open -S file (%s): %s\n",
@@ -605,11 +609,11 @@ main(int argc, char * const *argv)
 	if (VIN_N_Arg(n_arg, &heritage.name, &dirname, NULL) != 0)
 		ARGV_ERR("Invalid instance (-n) name: %s\n", strerror(errno));
 
-	if (i_arg != NULL &&
-	    snprintf(heritage.identity, sizeof heritage.identity, "%s", i_arg)
-	    > sizeof heritage.identity)
-		ARGV_ERR("Invalid identity (-i) name: %s\n",
-		    strerror(ENAMETOOLONG));
+	if (i_arg != NULL) {
+		if (strlen(i_arg) + 1 > sizeof heritage.identity)
+			ARGV_ERR("Identity (-i) name too long.\n");
+		strncpy(heritage.identity, i_arg, sizeof heritage.identity);
+	}
 
 	if (n_arg != NULL)
 		openlog(n_arg, LOG_PID, LOG_LOCAL0);	/* XXX: i_arg ? */
@@ -658,8 +662,10 @@ main(int argc, char * const *argv)
 
 		if (b_arg == NULL && f_arg == NULL) {
 			fprintf(stderr,
-			    "Warning: Neither -b nor -f given, won't start a worker child.\n"
-			    "         Master process started, use varnishadm to control it.\n");
+			    "Warning: Neither -b nor -f given,"
+			    " won't start a worker child.\n"
+			    "         Master process started,"
+			    " use varnishadm to control it.\n");
 		}
 	}
 
