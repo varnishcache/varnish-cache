@@ -416,12 +416,12 @@ mcf_wash_param(struct cli *cli, const struct parspec *pp, const char **val,
 
 	AN(*val);
 	VSB_clear(vsb);
-	VSB_printf(vsb, "FAILED to set %s for param %s = %s\n",
+	VSB_printf(vsb, "FAILED to set %s for param %s:\n\t%s",
 	    name, pp->name, *val);
 	err = pp->func(vsb, pp, *val);
 	AZ(VSB_finish(vsb));
 	if (err) {
-		VCLI_Out(cli, "%s", VSB_data(vsb));
+		VCLI_Out(cli, "%s\n", VSB_data(vsb));
 		VCLI_SetResult(cli, CLIS_CANT);
 		return;
 	}

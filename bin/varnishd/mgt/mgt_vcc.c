@@ -155,7 +155,7 @@ run_vcc(void *priv)
 	int fd, i, l;
 
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
-	mgt_sandbox(SANDBOX_VCC);
+	VJ_subproc(JAIL_SUBPROC_VCC);
 	sb = VSB_new_auto();
 	XXXAN(sb);
 	VCC_VCL_dir(vcc, mgt_vcl_dir);
@@ -199,7 +199,7 @@ run_cc(void *priv)
 	int pct;
 	char *p;
 
-	mgt_sandbox(SANDBOX_CC);
+	VJ_subproc(JAIL_SUBPROC_CC);
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
 
 	sb = VSB_new_auto();
@@ -248,7 +248,7 @@ run_dlopen(void *priv)
 	struct VCL_conf const *cnf;
 	struct vcc_priv *vp;
 
-	mgt_sandbox(SANDBOX_VCLLOAD);
+	VJ_subproc(JAIL_SUBPROC_VCLLOAD);
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
 
 	/* Try to load the object into this sub-process */

@@ -33,9 +33,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <syslog.h>
-#include <string.h>
-#include <unistd.h>
 
 #include "mgt/mgt.h"
 #include "vav.h"
@@ -47,8 +44,8 @@
 static int __match_proto__(jail_init_f)
 vjn_init(char **args)
 {
-	if (*args != NULL)
-		ARGV_ERR("-Jnone takes no arguments.\n");
+	if (args != NULL && *args != NULL)
+		ARGV_ERR("-jnone takes no arguments.\n");
 	return (0);
 }
 
@@ -77,6 +74,7 @@ static const struct jail_tech jail_tech_none = {
 static const struct jail_tech *vjt;
 
 static const struct choice vj_choice[] = {
+	{ "unix",	&jail_tech_unix },
 	{ "none",	&jail_tech_none },
 	{ NULL,		NULL },
 };
@@ -96,22 +94,21 @@ VJ_Init(const char *j_arg)
 			ARGV_ERR("-j argument is emtpy\n");
 		vjt = pick(vj_choice, av[1], "jail");
 		CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);
-		vjt->init(av + 2);
+		(void)vjt->init(av + 2);
 		VAV_Free(av);
 	} else {
 		/*
 		 * Go through list of jail technologies until one
 		 * succeeds, falling back to "none".
 		 */
-		av = VAV_Parse("", NULL, ARGV_COMMA);
 		for (i = 0; vj_choice[i].name != NULL; i++) {
 			vjt = vj_choice[i].ptr;
 			CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);
-			if (!vjt->init(av + 1))
+			if (!vjt->init(NULL))
 				break;
 		}
-		VAV_Free(av);
 	}
+	VSB_printf(vident, ",-j%s", vjt->name);
 }
 
 void

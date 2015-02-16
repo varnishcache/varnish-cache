@@ -421,7 +421,7 @@ mgt_launch_child(struct cli *cli)
 		(void)signal(SIGINT, SIG_DFL);
 		(void)signal(SIGTERM, SIG_DFL);
 
-		mgt_sandbox(SANDBOX_WORKER);
+		VJ_subproc(JAIL_SUBPROC_WORKER);
 
 		child_main();
 

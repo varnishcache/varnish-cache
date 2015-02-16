@@ -42,6 +42,8 @@
  *	FreeBSD: capsicum
  */
 
+#if 0
+
 #include "config.h"
 
 #ifdef __linux__
@@ -312,3 +314,5 @@ mgt_sandbox_init(void)
 	}
 	endgrent();
 }
+
+#endif

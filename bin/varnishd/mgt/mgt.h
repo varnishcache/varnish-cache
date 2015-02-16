@@ -65,11 +65,10 @@ void mgt_cli_close_all(void);
 /* mgt_jail.c */
 
 enum jail_subproc_e {
-	JAIL_SP_TESTING,
-	JAIL_SP_VCC,
-	JAIL_SP_CC,
-	JAIL_SP_VCLLOAD,
-	JAIL_SP_WORKER,
+	JAIL_SUBPROC_VCC,
+	JAIL_SUBPROC_CC,
+	JAIL_SUBPROC_VCLLOAD,
+	JAIL_SUBPROC_WORKER,
 };
 
 enum jail_master_e {
@@ -94,6 +93,8 @@ void VJ_Init(const char *j_arg);
 void VJ_master(enum jail_master_e jme);
 void VJ_subproc(enum jail_subproc_e jse);
 
+extern const struct jail_tech jail_tech_unix;
+
 /* mgt_main.c */
 extern struct VSC_C_mgt	*VSC_C_mgt;
 extern struct VSC_C_mgt static_VSC_C_mgt;
@@ -117,24 +118,6 @@ extern struct params mgt_param;
 
 /* mgt_param_tcp.c */
 void MCF_TcpParams(void);
-
-/* mgt_sandbox.c */
-enum sandbox_e {
-	SANDBOX_TESTING,
-	SANDBOX_VCC,
-	SANDBOX_CC,
-	SANDBOX_VCLLOAD,
-	SANDBOX_WORKER,
-};
-
-typedef void mgt_sandbox_f(enum sandbox_e);
-extern mgt_sandbox_f *mgt_sandbox;
-void mgt_sandbox_init(void);
-
-/* mgt_sandbox_solaris.c */
-#ifdef HAVE_SETPPRIV
-mgt_sandbox_f mgt_sandbox_solaris;
-#endif
 
 /* mgt_shmem.c */
 void mgt_SHM_Init(void);

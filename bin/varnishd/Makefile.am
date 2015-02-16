@@ -65,6 +65,7 @@ varnishd_SOURCES = \
 	mgt/mgt_child.c \
 	mgt/mgt_cli.c \
 	mgt/mgt_jail.c \
+	mgt/mgt_jail_unix.c \
 	mgt/mgt_main.c \
 	mgt/mgt_param.c \
 	mgt/mgt_param_tbl.c \
@@ -72,8 +73,6 @@ varnishd_SOURCES = \
 	mgt/mgt_param_tcp.c \
 	mgt/mgt_param_tweak.c \
 	mgt/mgt_pool.c \
-	mgt/mgt_sandbox.c \
-	mgt/mgt_sandbox_solaris.c \
 	mgt/mgt_shmem.c \
 	mgt/mgt_vcc.c \
 	storage/stevedore.c \

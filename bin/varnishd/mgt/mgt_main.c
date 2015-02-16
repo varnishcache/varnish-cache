@@ -147,7 +147,6 @@ usage(void)
 	fprintf(stderr, FMT, "-d", "debug");
 	fprintf(stderr, FMT, "-f file", "VCL script");
 	fprintf(stderr, FMT, "-F", "Run in foreground");
-	fprintf(stderr, FMT, "-g group", "Privilege separation group id");
 	fprintf(stderr, FMT, "-h kind[,hashoptions]", "Hash specification");
 	fprintf(stderr, FMT, "", "  -h critbit [default]");
 	fprintf(stderr, FMT, "", "  -h simple_list");
@@ -181,7 +180,6 @@ usage(void)
 	fprintf(stderr, FMT, "-T address:port",
 	    "Telnet listen address and port");
 	fprintf(stderr, FMT, "-t", "Default TTL");
-	fprintf(stderr, FMT, "-u user", "Privilege separation user id");
 	fprintf(stderr, FMT, "-V", "version");
 #undef FMT
 	exit(1);
@@ -429,11 +427,6 @@ main(int argc, char * const *argv)
 	SHA256_Test();
 
 	/*
-	 * Find out if we can sandbox
-	 */
-	mgt_sandbox_init();
-
-	/*
 	 * Create a cli for convenience in otherwise CLI functions
 	 */
 
@@ -450,7 +443,7 @@ main(int argc, char * const *argv)
 	cli_check(cli);
 
 	while ((o = getopt(argc, argv,
-	    "a:b:Cdf:Fg:h:i:j:l:M:n:P:p:r:S:s:T:t:u:Vx:")) != -1) {
+	    "a:b:Cdf:Fh:i:j:l:M:n:P:p:r:S:s:T:t:Vx:")) != -1) {
 		/*
 		 * -j must be the first argument if specified, because
 		 * it (may) affect subsequent argument processing.
@@ -486,9 +479,6 @@ main(int argc, char * const *argv)
 			break;
 		case 'F':
 			F_flag = 1 - F_flag;
-			break;
-		case 'g':
-			MCF_ParamSet(cli, "group", optarg);
 			break;
 		case 'h':
 			h_arg = optarg;
@@ -549,9 +539,6 @@ main(int argc, char * const *argv)
 				T_arg = optarg;
 			else
 				T_arg = NULL;
-			break;
-		case 'u':
-			MCF_ParamSet(cli, "user", optarg);
 			break;
 		case 'V':
 			/* XXX: we should print the ident here */
