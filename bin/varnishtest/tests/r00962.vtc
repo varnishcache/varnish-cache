@@ -1,7 +1,7 @@
 varnishtest "Test address remapping"
 
 # VM-remapping is to random on OSX
-feature	not-OSX
+feature	!OSX
 
 server s1 {
 	rxreq
@@ -16,7 +16,7 @@ varnish v1 \
 	-arg "-sdeprecated_persistent,${tmpdir}/_.per2,10m" \
 	-vcl+backend {
 	sub vcl_backend_response {
-		set beresp.storage = "s0";
+		set beresp.storage_hint = "s0";
 	}
 } -start
 
@@ -53,7 +53,7 @@ client c1 -connect ${v2_sock} {
 	rxresp
 	expect resp.msg != "Persistent Object Not Found"
 	expect resp.status == 200
-	expect resp.http.X-Varnish == "1001"
+	expect resp.http.X-Varnish == "1001 1002"
 } -run
 
 # shell "rm -f /tmp/__v1/_.per"
