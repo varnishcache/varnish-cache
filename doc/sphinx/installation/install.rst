@@ -88,7 +88,7 @@ installed. On a Debian or Ubuntu system these are:
 * `pkg-config`
 * `python-docutils`
 * `python-sphinx`
-
+* `graphviz`
 
 Build dependencies on Red Hat / CentOS
 --------------------------------------
@@ -108,7 +108,7 @@ packages installed:
 * `pkgconfig`
 * `python-docutils`
 * `python-sphinx`
-
+* `graphviz`
 
 Compiling Varnish
 -----------------
