@@ -535,7 +535,9 @@ mgt_cli_telnet(const char *T_arg)
 	vsb = VSB_new_auto();
 	XXXAN(vsb);
 	for (i = 0; i < n; ++i) {
+		VJ_master(JAIL_MASTER_HIGH);
 		sock = VSS_listen(ta[i], 10);
+		VJ_master(JAIL_MASTER_LOW);
 		if (sock < 0)
 			continue;
 		VTCP_myname(sock, abuf, sizeof abuf, pbuf, sizeof pbuf);

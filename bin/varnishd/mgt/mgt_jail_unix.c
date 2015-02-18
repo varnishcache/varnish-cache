@@ -31,11 +31,13 @@
 #include "config.h"
 
 #include <pwd.h>
+#include <fcntl.h>
 #include <grp.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include "mgt/mgt.h"
 
@@ -100,6 +102,8 @@ vju_init(char **args)
 			return (1);
 		if (vju_getuid(JAIL_USER))
 			return (1);
+		AZ(setegid(vju_gid));
+		AZ(seteuid(vju_uid));
 		return (0);
 	}
 
@@ -108,17 +112,15 @@ vju_init(char **args)
 
 	for (;*args != NULL; args++) {
 		if (!strncmp(*args, "user=", 5)) {
-			if (vju_getuid((*args) + 5)) {
+			if (vju_getuid((*args) + 5))
 				ARGV_ERR("Unix jail: %s user not found.\n",
 				    (*args) + 5);
-			}
 			continue;
 		}
 		if (!strncmp(*args, "ccgroup=", 8)) {
-			if (vju_getccgid((*args) + 8)) {
+			if (vju_getccgid((*args) + 8))
 				ARGV_ERR("Unix jail: %s group not found.\n",
 				    (*args) + 8);
-			}
 			continue;
 		}
 		ARGV_ERR("Unix jail: unknown sub-argument '%s'\n", *args);
@@ -127,13 +129,19 @@ vju_init(char **args)
 	if (vju_user == NULL && vju_getuid(JAIL_USER))
 		ARGV_ERR("Unix jail: %s user not found.\n", JAIL_USER);
 
+	/* Do an explicit JAIL_MASTER_LOW */
+	AZ(setegid(vju_gid));
+	AZ(seteuid(vju_uid));
 	return (0);
 }
 
 static void __match_proto__(jail_master_f)
 vju_master(enum jail_master_e jme)
 {
-	(void)jme;
+	if (jme == JAIL_MASTER_HIGH)
+		AZ(seteuid(0));
+	else
+		AZ(seteuid(vju_uid));
 }
 
 static void __match_proto__(jail_subproc_f)
@@ -142,6 +150,7 @@ vju_subproc(enum jail_subproc_e jse)
 	int i;
 	gid_t gid_list[NGID];
 
+	AZ(seteuid(0));
 	AZ(setgid(vju_gid));
 	AZ(initgroups(vju_user, vju_gid));
 
@@ -166,10 +175,42 @@ vju_subproc(enum jail_subproc_e jse)
 #endif
 }
 
+static void
+vju_make_workdir(const char *dname)
+{
+	int fd;
+
+	AZ(seteuid(0));
+
+	if (mkdir(dname, 0755) < 0 && errno != EEXIST)
+		ARGV_ERR("Cannot create working directory '%s': %s\n",
+		    dname, strerror(errno));
+
+	if (chown(dname, vju_uid, vju_gid) < 0)
+		ARGV_ERR(
+		    "Cannot set owner/group on working directory '%s': %s\n",
+		    dname, strerror(errno));
+
+	if (chdir(dname) < 0)
+		ARGV_ERR("Cannot change to working directory '%s': %s\n",
+		    dname, strerror(errno));
+
+	AZ(seteuid(vju_uid));
+
+	fd = open("_.testfile", O_RDWR|O_CREAT|O_EXCL, 0600);
+	if (fd < 0)
+		ARGV_ERR("Error: Cannot create test-file in %s (%s)\n"
+		    "Check permissions (or delete old directory)\n",
+		    dname, strerror(errno));
+	AZ(close(fd));
+	AZ(unlink("_.testfile"));
+}
+
 const struct jail_tech jail_tech_unix = {
 	.magic =	JAIL_TECH_MAGIC,
 	.name =		"unix",
 	.init =		vju_init,
 	.master =	vju_master,
+	.make_workdir =	vju_make_workdir,
 	.subproc =	vju_subproc,
 };

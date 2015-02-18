@@ -229,6 +229,7 @@ MGT_open_sockets(void)
 	struct listen_sock *ls;
 	int good = 0;
 
+	VJ_master(JAIL_MASTER_HIGH);
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (ls->sock >= 0) {
 			good++;
@@ -242,6 +243,7 @@ MGT_open_sockets(void)
 
 		good++;
 	}
+	VJ_master(JAIL_MASTER_LOW);
 	if (!good)
 		return (1);
 	return (0);
