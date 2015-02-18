@@ -2,8 +2,7 @@
 Changes from 4.0.3-rc3 to 4.0.3 (2015-02-17)
 ============================================
 
-* Internal VRT_MINOR_VERSION increased due to new VRT_CTX macro.
-
+* No changes.
 
 ================================================
 Changes from 4.0.3-rc2 to 4.0.3-rc3 (2015-02-11)
