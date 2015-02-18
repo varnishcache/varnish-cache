@@ -525,6 +525,7 @@ mgt_cli_telnet(const char *T_arg)
 	char abuf[VTCP_ADDRBUFSIZE];
 	char pbuf[VTCP_PORTBUFSIZE];
 
+	AN(T_arg);
 	n = VSS_resolve(T_arg, NULL, &ta);
 	if (n == 0) {
 		REPORT(LOG_ERR, "-T %s Could not be resolved\n", T_arg);
@@ -639,8 +640,8 @@ Marg_poker(const struct vev *e, int what)
 void
 mgt_cli_master(const char *M_arg)
 {
-	(void)M_arg;
 
+	AN(M_arg);
 	M_nta = VSS_resolve(M_arg, NULL, &M_ta);
 	if (M_nta <= 0) {
 		fprintf(stderr, "Could resolve -M argument to address\n");

@@ -31,7 +31,6 @@
 
 #include "config.h"
 
-#include <sys/stat.h>
 #include <sys/utsname.h>
 
 #include <ctype.h>
@@ -362,7 +361,7 @@ init_params(struct cli *cli)
 int
 main(int argc, char * const *argv)
 {
-	int o, fd;
+	int o;
 	unsigned C_flag = 0;
 	unsigned F_flag = 0;
 	const char *b_arg = NULL;
@@ -535,10 +534,7 @@ main(int argc, char * const *argv)
 			S_arg = optarg;
 			break;
 		case 'T':
-			if (*optarg != '\0')
-				T_arg = optarg;
-			else
-				T_arg = NULL;
+			T_arg = optarg;
 			break;
 		case 'V':
 			/* XXX: we should print the ident here */
@@ -620,21 +616,7 @@ main(int argc, char * const *argv)
 	else
 		openlog("varnishd", LOG_PID, LOG_LOCAL0);
 
-	if (mkdir(dirname, 0755) < 0 && errno != EEXIST)
-		ARGV_ERR("Cannot create working directory '%s': %s\n",
-		    dirname, strerror(errno));
-
-	if (chdir(dirname) < 0)
-		ARGV_ERR("Cannot change to working directory '%s': %s\n",
-		    dirname, strerror(errno));
-
-	fd = open("_.testfile", O_RDWR|O_CREAT|O_EXCL, 0600);
-	if (fd < 0)
-		ARGV_ERR("Error: Cannot create test-file in %s (%s)\n"
-		    "Check permissions (or delete old directory)\n",
-		    dirname, strerror(errno));
-	AZ(close(fd));
-	AZ(unlink("_.testfile"));
+	VJ_make_workdir(dirname);
 
 	/* XXX: should this be relative to the -n arg ? */
 	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL)

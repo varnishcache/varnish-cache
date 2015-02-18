@@ -203,6 +203,9 @@
  */
 
 #include "config.h"
+
+#ifdef HAVE_SETPPRIV
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -213,28 +216,6 @@
 
 #include "common/heritage.h"
 #include "common/params.h"
-
-#ifndef HAVE_SETPPRIV
-
-/* ============================================================
- * on platforms without setppriv, fail the init to mark that
- * this jail is unavailable
- */
-
-static int __match_proto__(jail_init_f)
-vjs_init(char **args)
-{
-	(void) args;
-	return 1;
-}
-
-const struct jail_tech jail_tech_solaris = {
-	.magic =	JAIL_TECH_MAGIC,
-	.name =	"solaris (unavailable)",
-	.init =	vjs_init,
-};
-
-#else /* HAVE_SETPPRIV */
 
 #ifdef HAVE_PRIV_H
 #include <priv.h>

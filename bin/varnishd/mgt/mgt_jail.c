@@ -31,8 +31,13 @@
 
 #include "config.h"
 
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 #include "mgt/mgt.h"
 #include "vav.h"
@@ -74,7 +79,9 @@ static const struct jail_tech jail_tech_none = {
 static const struct jail_tech *vjt;
 
 static const struct choice vj_choice[] = {
+#ifdef HAVE_SETPPRIV
 	{ "solaris",	&jail_tech_solaris },
+#endif
 	{ "unix",	&jail_tech_unix },
 	{ "none",	&jail_tech_none },
 	{ NULL,		NULL },
@@ -124,4 +131,33 @@ VJ_subproc(enum jail_subproc_e jse)
 {
 	CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);
 	vjt->subproc(jse);
+}
+
+void
+VJ_make_workdir(const char *dname)
+{
+	int fd;
+
+	AN(dname);
+	CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);
+	if (vjt->make_workdir != NULL) {
+		vjt->make_workdir(dname);
+		return;
+	}
+
+	if (mkdir(dname, 0755) < 0 && errno != EEXIST)
+		ARGV_ERR("Cannot create working directory '%s': %s\n",
+		    dname, strerror(errno));
+
+	if (chdir(dname) < 0)
+		ARGV_ERR("Cannot change to working directory '%s': %s\n",
+		    dname, strerror(errno));
+
+	fd = open("_.testfile", O_RDWR|O_CREAT|O_EXCL, 0600);
+	if (fd < 0)
+		ARGV_ERR("Error: Cannot create test-file in %s (%s)\n"
+		    "Check permissions (or delete old directory)\n",
+		    dname, strerror(errno));
+	AZ(close(fd));
+	AZ(unlink("_.testfile"));
 }
