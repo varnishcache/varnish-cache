@@ -206,11 +206,21 @@ vju_make_workdir(const char *dname)
 	AZ(unlink("_.testfile"));
 }
 
+static void
+vju_storage_file(int fd)
+{
+	/* Called under JAIL_MASTER_HIGH */
+
+	AZ(fchmod(fd, 0600));
+	AZ(fchown(fd, vju_uid, vju_gid));
+}
+
 const struct jail_tech jail_tech_unix = {
 	.magic =	JAIL_TECH_MAGIC,
 	.name =		"unix",
 	.init =		vju_init,
 	.master =	vju_master,
 	.make_workdir =	vju_make_workdir,
+	.storage_file =	vju_storage_file,
 	.subproc =	vju_subproc,
 };

@@ -161,3 +161,12 @@ VJ_make_workdir(const char *dname)
 	AZ(close(fd));
 	AZ(unlink("_.testfile"));
 }
+
+void
+VJ_storage_file(int fd)
+{
+
+	CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);
+	if (vjt->storage_file != NULL)
+		vjt->storage_file(fd);
+}
