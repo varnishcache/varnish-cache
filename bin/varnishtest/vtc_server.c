@@ -125,8 +125,10 @@ server_new(const char *name)
 	if (*s->name != 's')
 		vtc_log(s->vl, 0, "Server name must start with 's'");
 
-	bprintf(s->listen, "127.0.0.1:%d", 0);
-	AZ(VSS_parse(s->listen, &s->addr, &s->port));
+	s->addr = strdup("127.0.0.1");
+	AN(s->addr);
+	s->port = strdup("0");
+	AN(s->port);
 	s->repeat = 1;
 	s->depth = 10;
 	s->sock = -1;
