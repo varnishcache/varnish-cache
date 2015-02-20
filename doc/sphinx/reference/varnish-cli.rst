@@ -31,7 +31,7 @@ bans
 
 process management
      You can stop and start the cache (child) process though the
-     CLI. You can also retrieve the lastst stack trace if the child
+     CLI. You can also retrieve the latest stack trace if the child
      process has crashed.
 
 If you invoke varnishd(1) with -T, -M or -d the CLI will be
@@ -52,17 +52,17 @@ is::
 	here document
    word
 
-*word* can be any continuous string choosen to make sure it doesn't
+*word* can be any continuous string chosen to make sure it doesn't
 appear naturally in the following *here document*.
 
 When using the here document style of input there are no restrictions
-on lenght. When using newline-terminated commands maximum lenght is
+on length. When using newline-terminated commands maximum length is
 limited by the varnishd parameter *cli_buffer*.
 
 When commands are newline terminated they get *tokenized* before
 parsing so if you have significant spaces enclose your strings in
 double quotes. Within the quotes you can escape characters with
-\\. The \n, \r and \t get translated to newlines, carrage returns and
+\\. The \n, \r and \t get translated to newlines, carriage returns and
 tabs. Double quotes themselves can be escaped with a backslash.
 
 To enter characters in octals use the \\nnn syntax. Hexadecimals can
@@ -71,17 +71,17 @@ be entered with the \\xnn syntax.
 Commands
 --------
 
-help [command]
-  Show command/protocol help
+help [<command>]
+  Show command/protocol help.
 
-ping [timestamp]
-  Keep connection alive
+ping [<timestamp>]
+  Keep connection alive.
 
-auth response
+auth <response>
   Authenticate.
 
 quit
-  Close connection
+  Close connection.
 
 banner
   Print welcome banner.
@@ -93,7 +93,7 @@ start
   Start the Varnish cache process.
 
 stop
-  Stop the Varnish cache process
+  Stop the Varnish cache process.
 
 vcl.load <configname> <filename>
   Compile and load the VCL file under the name provided.
@@ -110,7 +110,7 @@ vcl.discard <configname>
 vcl.list
   List all loaded configuration.
 
-vcl.show <configname>
+vcl.show [-v] <configname>
   Display the source code for the specified configuration.
 
 param.show [-l] [<param>]
@@ -126,7 +126,7 @@ panic.clear
   Clear the last panic, if any.
 
 storage.list
-  List storage devices
+  List storage devices.
 
 backend.list [<backend_expression>]
   List backends.
@@ -135,7 +135,7 @@ backend.set_health <backend_expression> <state>
   Set health status on the backends.
   State is any of auto, healthy or sick values.
 
-ban <field> <operator> <arg> [&& <field> <oper> <arg>]...
+ban <field> <operator> <arg> [&& <field> <oper> <arg> ...]
   All objects where the all the conditions match will be marked obsolete.
 
 ban.list
@@ -159,7 +159,7 @@ ANDed together with "&&".
 A field can be any of the variables from VCL, for instance req.url,
 req.http.host or obj.http.set-cookie.
 
-Operators are "==" for direct comparision, "~" for a regular
+Operators are "==" for direct comparison, "~" for a regular
 expression match, and ">" or "<" for size comparisons.  Prepending
 an operator with "!" negates the expression.
 
@@ -218,7 +218,7 @@ An authenticated session looks like this::
    Type 'start' to launch worker process.
 
 The CLI status of 107 indicates that authentication is necessary. The
-first 32 characters of the reponse text is the challenge
+first 32 characters of the response text is the challenge
 "ixsl...mpg". The challenge is randomly generated for each CLI
 connection, and changes each time a 107 is emitted.
 
