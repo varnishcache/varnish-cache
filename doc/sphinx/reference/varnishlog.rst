@@ -8,6 +8,8 @@ varnishlog
 Display Varnish logs
 --------------------
 
+:Manual section: 1
+
 SYNOPSIS
 ========
 

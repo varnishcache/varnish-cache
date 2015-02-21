@@ -7,10 +7,12 @@ varnishadm
 Control a running Varnish instance
 ----------------------------------
 
+:Manual section: 1
+
 SYNOPSIS
 ========
 
-       varnishadm [-t timeout] [-S secret_file] [-T address:port] [-n name] [command [...]]
+varnishadm [-t timeout] [-S secret_file] [-T address:port] [-n name] [command [...]]
 
 DESCRIPTION
 ===========

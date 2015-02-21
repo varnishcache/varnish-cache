@@ -6,6 +6,8 @@ varnish-cli
 Varnish Command Line Interface
 ------------------------------
 
+:Manual section: 7
+
 DESCRIPTION
 ===========
 

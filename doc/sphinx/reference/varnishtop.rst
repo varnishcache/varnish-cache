@@ -8,6 +8,7 @@ varnishtop
 Varnish log entry ranking
 -------------------------
 
+:Manual section: 1
 
 SYNOPSIS
 ========

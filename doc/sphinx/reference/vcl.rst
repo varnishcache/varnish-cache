@@ -8,6 +8,8 @@ VCL
 Varnish Configuration Language
 ------------------------------
 
+:Manual section: 7
+
 DESCRIPTION
 ===========
 

@@ -57,6 +57,9 @@ int main(int argc, char **argv)
 	P("---------------------------------");
 	P("");
 
+	P(":Manual section: 7");
+	P("");
+
 	P("COUNTER LEVELS");
 	P("==============");
 	P("");

@@ -8,6 +8,8 @@ varnishncsa
 Display Varnish logs in Apache / NCSA combined log format
 ---------------------------------------------------------
 
+:Manual section: 1
+
 SYNOPSIS
 ========
 

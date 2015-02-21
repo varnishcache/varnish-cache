@@ -8,10 +8,12 @@ varnishtest
 Test program for Varnish
 ------------------------
 
+:Manual section: 1
+
 SYNOPSIS
 ========
 
-     varnishtest [-iklLqv] [-n iter] [-D name=val] [-j jobs] [-t duration] file [file ...]
+varnishtest [-iklLqv] [-n iter] [-D name=val] [-j jobs] [-t duration] file [file ...]
 
 DESCRIPTION
 ===========

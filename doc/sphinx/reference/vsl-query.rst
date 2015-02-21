@@ -8,6 +8,8 @@ vsl-query
 Varnish VSL Query Expressions
 -----------------------------
 
+:Manual section: 7
+
 OVERVIEW
 ========
 

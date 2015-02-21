@@ -8,6 +8,8 @@ varnishhist
 Varnish request histogram
 -------------------------
 
+:Manual section: 1
+
 SYNOPSIS
 ========
 

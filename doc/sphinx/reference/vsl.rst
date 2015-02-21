@@ -8,6 +8,8 @@ VSL
 Shared Memory Logging
 ---------------------
 
+:Manual section: 7
+
 OVERVIEW
 ========
 

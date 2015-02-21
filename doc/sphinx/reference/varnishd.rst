@@ -8,16 +8,12 @@ varnishd
 HTTP accelerator daemon
 -----------------------
 
+:Manual section: 1
 
 SYNOPSIS
 ========
 
-varnishd [-a address[:port]] [-b host[:port]] [-C] [-d] [-f config]
-	 [-F] [-g group] [-h type[,options]] [-i identity]
-	 [-l shl[,free[,fill]]] [-M address:port] [-n name] 
-         [-P file] [-p param=value] [-r param[,param...]
-	 [-s [name=]kind[,options]] [-S secret-file] [-T address[:port]] 
-         [-t ttl] [-u user] [-V]
+varnishd [-a address[:port]] [-b host[:port]] [-C] [-d] [-f config] [-F] [-g group] [-h type[,options]] [-i identity] [-l shl[,free[,fill]]] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...] [-s [name=]kind[,options]] [-S secret-file] [-T address[:port]] [-t ttl] [-u user] [-V]
 
 DESCRIPTION
 ===========

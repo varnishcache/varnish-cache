@@ -8,6 +8,8 @@ varnishstat
 Varnish Cache statistics
 ---------------------------
 
+:Manual section: 1
+
 SYNOPSIS
 ========
 
