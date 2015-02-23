@@ -205,13 +205,13 @@ VTIM_timespec(double t)
 
 /*
  * Compile with:
- *  cc -o foo -DTEST_DRIVER -I../.. -I../../include time.c assert.c
- * (Solaris)
- *  cc -o foo -DTEST_DRIVER -I../.. -I../../include -lm time.c assert.c
+ *  cc -o foo -DTEST_DRIVER -I../.. -I../../include vtim.c vas.c -lm
  * Test with:
  *  env TZ=UTC ./foo
  *  env TZ=CET ./foo
  */
+
+#include <stdint.h>
 
 static void
 tst(const char *s, time_t good)
@@ -281,7 +281,7 @@ main(int argc, char **argv)
 	time(&t);
 	memset(buf, 0x55, sizeof buf);
 	VTIM_format(t, buf);
-	printf("scan = %d <%s>\n", VTIM_parse(buf), buf);
+	printf("scan = %.3f <%s>\n", VTIM_parse(buf), buf);
 
 	/* Examples from RFC2616 section 3.3.1 */
 	tst("Sun, 06 Nov 1994 08:49:37 GMT", 784111777);
