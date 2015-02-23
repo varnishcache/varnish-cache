@@ -209,7 +209,7 @@ double
 VTIM_parse(const char *p)
 {
 	double t;
-	int month = 0, year = 0, weekday = 0, mday = 0;
+	int month = 0, year = 0, weekday = -1, mday = 0;
 	int hour = 0, min = 0, sec = 0;
 	int d, leap;
 
@@ -339,6 +339,14 @@ VTIM_parse(const char *p)
 	    (100 * 365 + 24);		/* 24 leapdays per year in a century */
 
 	d += ((year-1) / 400) - 4;	/* And one more every 400 years */
+
+	/*
+	 * Now check weekday, if we have one.
+	 * 6 is because 2000-01-01 was a saturday.
+	 * 10000 is to make sure the modulus argument is always positive
+	 */
+	if (weekday != -1 && (d + 6 + 7 * 10000) % 7 != weekday)
+		FAIL();
 
 	t += d * 86400.;
 

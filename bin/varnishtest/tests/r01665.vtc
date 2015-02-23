@@ -1,21 +1,19 @@
 varnishtest "Ticket 1665 regression test: wrong behavior of timeout_req"
 
 server s1 {
-        rxreq
-       	txresp
+	rxreq
+	txresp
 } -start
 
 varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-		delay 1
-		send "GET "
-		delay 1.8
-		send "/bar\n\n "
-		delay 0.1
-		send "GET"     
-		rxresp
+	delay 1
+	send "GET "
+	delay 1.8
+	send "/bar\n\n "
+	delay 0.1
+	send "GET"
+	rxresp
 } -run
-
-		
