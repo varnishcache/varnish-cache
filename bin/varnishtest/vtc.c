@@ -43,6 +43,7 @@
 #include "vtc.h"
 
 #include "vav.h"
+#include "vnum.h"
 #include "vtim.h"
 
 #define		MAX_TOKENS		200
@@ -433,7 +434,7 @@ cmd_delay(CMD_ARGS)
 		return;
 	AN(av[1]);
 	AZ(av[2]);
-	f = strtod(av[1], NULL);
+	f = VNUM(av[1]);
 	vtc_log(vl, 3, "delaying %g second(s)", f);
 	VTIM_sleep(f);
 }

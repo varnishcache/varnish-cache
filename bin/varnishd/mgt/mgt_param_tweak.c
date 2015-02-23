@@ -58,29 +58,25 @@ tweak_generic_double(struct vsb *vsb, volatile double *dest,
     const char *arg, const char *min, const char *max, const char *fmt)
 {
 	double u, minv = 0, maxv = 0;
-	char *p;
 
 	if (arg != NULL) {
 		if (min != NULL) {
-			p = NULL;
-			minv = strtod(min, &p);
-			if (*arg == '\0' || *p != '\0') {
+			minv = VNUM(min);
+			if (isnan(minv)) {
 				VSB_printf(vsb, "Illegal Min: %s\n", min);
 				return (-1);
 			}
 		}
 		if (max != NULL) {
-			p = NULL;
-			maxv = strtod(max, &p);
-			if (*arg == '\0' || *p != '\0') {
+			maxv = VNUM(max);
+			if (isnan(maxv)) {
 				VSB_printf(vsb, "Illegal Max: %s\n", max);
 				return (-1);
 			}
 		}
 
-		p = NULL;
-		u = strtod(arg, &p);
-		if (*arg == '\0' || *p != '\0') {
+		u = VNUM(arg);
+		if (isnan(u)) {
 			VSB_printf(vsb, "Not a number(%s)\n", arg);
 			return (-1);
 		}

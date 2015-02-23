@@ -31,6 +31,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <math.h>
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,6 +42,7 @@
 
 #include "vct.h"
 #include "vgz.h"
+#include "vnum.h"
 #include "vre.h"
 #include "vtcp.h"
 
@@ -272,13 +274,13 @@ cmd_http_expect(CMD_ARGS)
 		// fail inequality comparisons if either side is undef'ed
 		retval = 0;
 	} else if (!strcmp(cmp, "<")) {
-		retval = strtod(lhs, NULL) < strtod(rhs, NULL);
+		retval = isless(VNUM(lhs), VNUM(rhs));
 	} else if (!strcmp(cmp, ">")) {
-		retval = strtod(lhs, NULL) > strtod(rhs, NULL);
+		retval = isgreater(VNUM(lhs), VNUM(rhs));
 	} else if (!strcmp(cmp, "<=")) {
-		retval = strtod(lhs, NULL) <= strtod(rhs, NULL);
+		retval = islessequal(VNUM(lhs), VNUM(rhs));
 	} else if (!strcmp(cmp, ">=")) {
-		retval = strtod(lhs, NULL) >= strtod(rhs, NULL);
+		retval = isgreaterequal(VNUM(lhs), VNUM(rhs));
 	}
 
 	if (retval == -1)
@@ -1096,13 +1098,17 @@ static void
 cmd_http_timeout(CMD_ARGS)
 {
 	struct http *hp;
+	double d;
 
 	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(av[1]);
 	AZ(av[2]);
-	hp->timeout = (int)(strtod(av[1], NULL) * 1000.0);
+	d = VNUM(av[1]);
+	if (isnan(d))
+		vtc_log(vl, 0, "timeout is not a number (%s)", av[1]);
+	hp->timeout = (int)(d * 1000.0);
 }
 
 /**********************************************************************
