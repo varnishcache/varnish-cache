@@ -141,7 +141,7 @@ STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx)
 /*--------------------------------------------------------------------
  * Decide file size.
  *
- * If the sizespecification is empty and the file exists with non-zero
+ * If the size specification is empty and the file exists with non-zero
  * size, use that, otherwise, interpret the specification.
  *
  * Handle off_t sizes and pointer width limitations.
