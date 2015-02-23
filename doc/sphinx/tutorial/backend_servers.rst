@@ -13,7 +13,7 @@ file. If you installed from source this is
 is probably `/etc/varnish/default.vcl`.
 
 If you've been following the tutorial there is probably a section of
-the configuration that looks like this:::
+the configuration that looks like this::
 
   vcl 4.0;
   

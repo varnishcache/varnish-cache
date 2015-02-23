@@ -37,7 +37,7 @@ the object. This will happen asynchronously and the moment the new
 object is in it will replace the one we've already got.
 
 You can influence how this logic works by adding code in vcl_hit. The
-default looks like this:::
+default looks like this::
 
   sub vcl_hit {
      if (obj.ttl >= 0s) {
@@ -56,7 +56,7 @@ default looks like this:::
 The grace logic is pretty obvious here. If you have enabled
 :ref:`users-guide-advanced_backend_servers-health` you can check if
 the backend is sick and only serve graced object then. Replace the
-second if-clause with something like this:::
+second if-clause with something like this::
 
    if (!std.healthy(req.backend_hint) && (obj.ttl + obj.grace > 0s)) {
          return (deliver);

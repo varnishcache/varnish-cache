@@ -236,7 +236,7 @@ Probes
 ------
 
 Probes will query the backend for status on a regular basis and mark
-the backend as down it they fail. A probe is defined as this:::
+the backend as down it they fail. A probe is defined as this::
 
     probe name {
          .attribute = "value";
@@ -249,8 +249,8 @@ There are no mandatory options. These are the options you can set:
 
   request
     Specify a full HTTP request using multiple strings. .request will
-    have \r\n automatically inserted after every string. If specified,
-    .request will take precedence over .url.
+    have \\r\\n automatically inserted after every string. If
+    specified, .request will take precedence over .url.
 
   expected_response
     The expected HTTP response code. Defaults to 200.

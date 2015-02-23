@@ -84,7 +84,7 @@ explicitly. You set up the routing of incoming HTTP requests in
 `vcl_recv`. If you want this routing to be done on the basis of virtual
 hosts you just need to inspect `req.http.host`.
 
-You can have something like this:::
+You can have something like this::
 
     sub vcl_recv {
         if (req.http.host ~ "foo.com") {
@@ -97,7 +97,7 @@ You can have something like this:::
 Note that the first regular expressions will match "foo.com",
 "www.foo.com", "zoop.foo.com" and any other host ending in "foo.com". In
 this example this is intentional but you might want it to be a bit
-more tight, maybe relying on the ``==`` operator in stead, like this:::
+more tight, maybe relying on the ``==`` operator in stead, like this::
 
     sub vcl_recv {
         if (req.http.host == "foo.com" || req.http.host == "www.foo.com") {

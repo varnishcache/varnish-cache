@@ -37,14 +37,14 @@ also serves as an example on how one could extend the load balancing
 capabilities of Varnish.
 
 To enable load balancing you must import this vmod (directors) in your
-VCL:::
+VCL::
 
   import directors;
 
 Then you define your backends. Once you have the backends declared you
 can add them to a director. This happens in executed VCL code. If you
 want to emulate the previous behavior of Varnish 3.0 you can just
-initialize the directors in vcl_init, like this:::
+initialize the directors in vcl_init, like this::
 
     sub vcl_init {
 	new vdir = directors.round_robin();
