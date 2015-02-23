@@ -30,6 +30,7 @@
 
 #include "config.h"
 
+#include <ctype.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -41,6 +42,55 @@ static const char err_miss_num[] = "Missing number";
 static const char err_invalid_num[] = "Invalid number";
 static const char err_abs_req[] = "Absolute number required";
 static const char err_invalid_suff[] = "Invalid suffix";
+
+/**********************************************************************
+ * Convert (all of!) a string to a floating point number, and if we can
+ * not, return NAN.
+ */
+
+double
+VNUM(const char *p)
+{
+	intmax_t m = 0, ee = 0;
+	double ms = 1.0;
+	double es = 1.0, e = 1.0, ne = 0.0;
+
+	while (isspace(*p))
+		p++;
+
+	if (*p == '-' || *p == '+')
+		ms = (*p++ == '-' ? -1.0 : 1.0);
+
+	for (; *p != '\0'; p++) {
+		if (isdigit(*p)) {
+			m = m * 10 + *p - '0';
+			e = ne;
+			if (e)
+				ne = e - 1.0;
+		} else if (*p == '.' && ne == 0.0) {
+			ne = -1.0;
+		} else
+			break;
+	}
+	if (e > 0.0)
+		return(nan(""));		// No digits
+	if (*p == 'e' || *p == 'E') {
+		p++;
+		if (*p == '-' || *p == '+')
+			es = (*p++ == '-' ? -1.0 : 1.0);
+		if (!isdigit(*p))
+			return (nan(""));
+		for (; isdigit(*p); p++)
+			ee = ee * 10 + *p - '0';
+	}
+	while (isspace(*p))
+		p++;
+	if (*p != '\0')
+		return (nan(""));
+	return (ms * m * pow(10., e + es * ee));
+}
+
+/**********************************************************************/
 
 const char *
 VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
@@ -164,16 +214,65 @@ static struct test_case {
 	{ 0, 0, 0 },
 };
 
+const char *vec[] = {
+	" 1",
+	" 12",
+	" 12.",
+	" 12.3",
+	" 12.34",
+	" 12.34e-3",
+	" 12.34e3",
+	" 12.34e+3",
+	" +12.34e-3",
+	" -12.34e3",
+	"N.",
+	"N.12.",
+	"N12..",
+	"N12.,",
+	"N12e,",
+	"N12e+,",
+	"N12ee,",
+	"N1..2",
+	"NA",
+	"N1A",
+	"Ne-3",
+	NULL
+};
+
 int
 main(int argc, char *argv[])
 {
+	int ec = 0;
 	struct test_case *tc;
 	uintmax_t val;
-	int ec;
+	const char **p;
 	const char *e;
+	double d1, d2;
 
 	(void)argc;
-	for (ec = 0, tc = test_cases; tc->str; ++tc) {
+
+	for (p = vec; *p != NULL; p++) {
+		e = *p;
+		d1 = VNUM(e + 1);
+		if (*e == 'N') {
+			if (!isnan(d1)) {
+				ec++;
+				printf("VNUM(%s) not NAN (%g)\n", e + 1, d1);
+			}
+		} else {
+			d2 = atof(e + 1);
+			if (isnan(d1)) {
+				printf("VNUM(%s) is NAN (%g)\n", e + 1, d1);
+				ec++;
+			} else if (fabs((d1 - d2) / d2) > 1e-15) {
+				printf("VNUM(%s) differs from atof() (%g)\n",
+				    e + 1, d1);
+				ec++;
+			}
+		}
+	}
+
+	for (tc = test_cases; tc->str; ++tc) {
 		e = VNUM_2bytes(tc->str, &val, tc->rel);
 		if (e != tc->err) {
 			printf("%s: VNUM_2bytes(\"%s\", %ju) (%s) != (%s)\n",
