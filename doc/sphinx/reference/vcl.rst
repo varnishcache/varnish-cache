@@ -249,8 +249,8 @@ There are no mandatory options. These are the options you can set:
 
   request
     Specify a full HTTP request using multiple strings. .request will
-    have \r\n automatically inserted after every string. If specified,
-    .request will take precedence over .url.
+    have \\r\\n automatically inserted after every string. If
+    specified, .request will take precedence over .url.
 
   expected_response
     The expected HTTP response code. Defaults to 200.
