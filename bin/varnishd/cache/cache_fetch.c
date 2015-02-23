@@ -262,7 +262,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 {
 	int i, do_ims = 0;
 	double now;
-	char time_str[VTIM_FORMAT_SIZE];
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -313,8 +312,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		 *
 		 * If we didn't get a Date header, we assign one here.
 		 */
-		VTIM_format(now, time_str);
-		http_PrintfHeader(bo->beresp, "Date: %s", time_str);
+		http_TimeHeader(bo->beresp, "Date: ", now);
 	}
 
 	/*
@@ -771,7 +769,6 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	ssize_t l, ll, o;
 	double now;
 	uint8_t *ptr;
-	char time_str[VTIM_FORMAT_SIZE];
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -790,8 +787,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
 	http_PutResponse(bo->beresp, "HTTP/1.1", 503, "Backend fetch failed");
-	VTIM_format(now, time_str);
-	http_PrintfHeader(bo->beresp, "Date: %s", time_str);
+	http_TimeHeader(bo->beresp, "Date: ", now);
 	http_SetHeader(bo->beresp, "Server: Varnish");
 
 	bo->fetch_objcore->exp.t_origin = bo->t_prev;

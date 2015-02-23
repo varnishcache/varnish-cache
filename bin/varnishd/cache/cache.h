@@ -830,6 +830,7 @@ int HTTP_Decode(struct http *to, const uint8_t *fm);
 void http_ForceHeader(struct http *to, const char *hdr, const char *val);
 void http_PrintfHeader(struct http *to, const char *fmt, ...)
     __printflike(2, 3);
+void http_TimeHeader(struct http *to, const char *fmt, double now);
 void http_SetHeader(struct http *to, const char *hdr);
 void http_SetH(const struct http *to, unsigned n, const char *fm);
 void http_ForceField(const struct http *to, unsigned n, const char *t);

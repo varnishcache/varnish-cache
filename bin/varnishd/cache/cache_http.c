@@ -38,6 +38,7 @@
 
 #include "vend.h"
 #include "vct.h"
+#include "vtim.h"
 
 #define HTTPH(a, b, c) char b[] = "*" a ":";
 #include "tbl/http_headers.h"
@@ -1108,6 +1109,27 @@ http_PrintfHeader(struct http *to, const char *fmt, ...)
 	to->hd[to->nhd].e = to->ws->f + n;
 	to->hdf[to->nhd] = 0;
 	WS_Release(to->ws, n + 1);
+	http_VSLH(to, to->nhd);
+	to->nhd++;
+}
+
+void
+http_TimeHeader(struct http *to, const char *fmt, double now)
+{
+	char *p;
+
+	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
+	p = WS_Alloc(to->ws, strlen(fmt) + VTIM_FORMAT_SIZE);
+	if (p == NULL) {
+		http_fail(to);
+		VSLb(to->vsl, SLT_LostHeader, "%s", fmt);
+		return;
+	}
+	strcpy(p, fmt);
+	VTIM_format(now, strchr(p, '\0'));
+	to->hd[to->nhd].b = p;
+	to->hd[to->nhd].e = strchr(p, '\0');
+	to->hdf[to->nhd] = 0;
 	http_VSLH(to, to->nhd);
 	to->nhd++;
 }

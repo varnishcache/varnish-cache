@@ -171,7 +171,6 @@ cnt_deliver(struct worker *wrk, struct req *req)
 static enum req_fsm_nxt
 cnt_synth(struct worker *wrk, struct req *req)
 {
-	char date[40];
 	struct http *h;
 	double now;
 
@@ -189,8 +188,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
 	h = req->resp;
-	VTIM_format(now, date);
-	http_PrintfHeader(h, "Date: %s", date);
+	http_TimeHeader(h, "Date: ", now);
 	http_SetHeader(h, "Server: Varnish");
 	http_PrintfHeader(req->resp, "X-Varnish: %u", VXID(req->vsl->wid));
 	http_PutResponse(h, "HTTP/1.1", req->err_code, req->err_reason);
