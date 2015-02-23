@@ -29,9 +29,6 @@
  * Semi-trivial functions to handle HTTP header timestamps according to
  * RFC 2616 section 3.3.
  *
- * In the highly unlikely event of performance trouble, handbuilt versions
- * would likely be faster than relying on the OS time functions.
- *
  * We must parse four different formats:
  *       000000000011111111112222222222
  *       012345678901234567890123456789
@@ -42,6 +39,16 @@
  *	"1994-11-06T08:49:37"			ISO 8601
  *
  * And always output the RFC1123 format.
+ *
+ * So why are these functions hand-built ?
+ *
+ * Because the people behind POSIX were short-sighted morons who didn't think
+ * anybody would ever need to deal with timestamps in multiple different
+ * timezones at the same time -- for that matter, convert timestamps to
+ * broken down UTC/GMT time.
+ *
+ * We could, and used to, get by by smashing our TZ variable to "UTC" but
+ * that ruins the LOCALE for VMODs.
  *
  */
 
@@ -59,6 +66,27 @@
 
 #include "vas.h"
 #include "vtim.h"
+
+static const char * const weekday_name[] = {
+	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+};
+
+static const char * const more_weekday[] = {
+	"day", "day", "sday", "nesday", "rsday", "day", "urday"
+};
+
+static const char * const month_name[] = {
+	"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+};
+
+static const int days_in_month[] = {
+	31, 29, 31,  30, 31, 30,  31, 31, 30,  31, 30, 31,
+};
+
+static const int days_before_month[] = {
+	0, 31, 59,  90, 120, 151,  181, 212, 243,  273, 304, 334
+};
 
 /*
  * Note on Solaris: for some reason, clock_gettime(CLOCK_MONOTONIC, &ts) is not
@@ -108,55 +136,215 @@ VTIM_format(double t, char *p)
 
 	tt = (time_t) t;
 	(void)gmtime_r(&tt, &tm);
-	AN(strftime(p, VTIM_FORMAT_SIZE, "%a, %d %b %Y %T GMT", &tm));
+	AN(snprintf(p, VTIM_FORMAT_SIZE, "%s, %02d %s %4d %02d:%02d:%02d GMT",
+	    weekday_name[tm.tm_wday], tm.tm_mday, month_name[tm.tm_mon],
+	    tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec));
 }
 
-/* XXX: add statistics ? */
-static const char *fmts[] = {
-	"%a, %d %b %Y %T GMT",	/* RFC 822 & RFC 1123 */
-	"%A, %d-%b-%y %T GMT",	/* RFC 850 */
-	"%a %b %d %T %Y",	/* ANSI-C asctime() */
-	"%FT%T",		/* ISO 8601 */
-	NULL
-};
+#ifdef TEST_DRIVER
+#define FAIL()	\
+	do { printf("\nFAIL <<%d>>\n", __LINE__); return (0); } while (0)
+#else
+#define FAIL()	\
+	do { return (0); } while (0)
+#endif
+
+#define DIGIT(mult, fld)					\
+	do {							\
+		if (*p < '0' || *p > '9')			\
+			FAIL();					\
+		fld += (*p - '0') * mult;			\
+		p++;						\
+	} while(0)
+
+#define MUSTBE(chr)						\
+	do {							\
+		if (*p != chr)					\
+			FAIL();					\
+		p++;						\
+	} while(0)
+
+#define WEEKDAY()						\
+	do {							\
+		int i;						\
+		for(i = 0; i < 7; i++) {			\
+			if (!memcmp(p, weekday_name[i], 3)) {	\
+				weekday = i;			\
+				break;				\
+			}					\
+		}						\
+		if (i == 7)					\
+			FAIL();					\
+		p += 3;						\
+	} while(0)
+
+
+#define MONTH()							\
+	do {							\
+		int i;						\
+		for(i = 0; i < 12; i++) {			\
+			if (!memcmp(p, month_name[i], 3)) {	\
+				month = i + 1;			\
+				break;				\
+			}					\
+		}						\
+		if (i == 12)					\
+			FAIL();					\
+		p += 3;						\
+	} while(0)
+
+#define TIMESTAMP()						\
+	do {							\
+		DIGIT(10, hour);				\
+		DIGIT(1, hour);					\
+		MUSTBE(':');					\
+		DIGIT(10, min);					\
+		DIGIT(1, min);					\
+		MUSTBE(':');					\
+		DIGIT(10, sec);					\
+		DIGIT(1, sec);					\
+	} while(0)
 
 double
 VTIM_parse(const char *p)
 {
 	double t;
-	struct tm tm;
-	const char **r;
+	int month = 0, year = 0, weekday = 0, mday = 0;
+	int hour = 0, min = 0, sec = 0;
+	int d, leap;
 
-	for (r = fmts; *r != NULL; r++) {
-		memset(&tm, 0, sizeof tm);
-		if (strptime(p, *r, &tm) != NULL) {
-			/*
-			 * Make sure this is initialized on the off-chance
-			 * that some raving loonie would apply DST to UTC.
-			 */
-			tm.tm_isdst = -1;
-#if defined(HAVE_TIMEGM)
-			t = timegm(&tm);
-#else
-			/*
-			 * Ahh, another POSIX_STUPIDITY, how unexpected.
-			 * Instead of, as would have been logical, to have
-			 * tm_timezone element, mktime() is standardized as
-			 * always working in localtime.  This brilliant idea
-			 * came from the same people who said "leap-seconds ?
-			 * Naah, screw it!".
-			 *
-			 * On broken systems without a working timegm(),
-			 * it is the responsibility of the calling program
-			 * to set the timezone to UTC.  We check that.
-			 */
-			t = mktime(&tm);
-			AZ(strcmp(tzname[0], "UTC"));
-#endif
-			return (t);
-		}
+	while (*p == ' ')
+		p++;
+
+	if (*p >= '0' && *p <= '9') {
+		/* ISO8601 -- "1994-11-06T08:49:37" */
+		DIGIT(1000, year);
+		DIGIT(100, year);
+		DIGIT(10, year);
+		DIGIT(1, year);
+		MUSTBE('-');
+		DIGIT(10, month);
+		DIGIT(1, month);
+		MUSTBE('-');
+		DIGIT(10, mday);
+		DIGIT(1, mday);
+		MUSTBE('T');
+		TIMESTAMP();
+	} else {
+		WEEKDAY();
+		if (*p == ',') {
+			/* RFC822 & RFC1123 - "Sun, 06 Nov 1994 08:49:37 GMT" */
+			p++;
+			MUSTBE(' ');
+			DIGIT(10, mday);
+			DIGIT(1, mday);
+			MUSTBE(' ');
+			MONTH();
+			MUSTBE(' ');
+			DIGIT(1000, year);
+			DIGIT(100, year);
+			DIGIT(10, year);
+			DIGIT(1, year);
+			MUSTBE(' ');
+			TIMESTAMP();
+			MUSTBE(' ');
+			MUSTBE('G');
+			MUSTBE('M');
+			MUSTBE('T');
+		} else if (*p == ' ') {
+			/* ANSI-C asctime() -- "Sun Nov  6 08:49:37 1994" */
+			p++;
+			MONTH();
+			MUSTBE(' ');
+			if (*p != ' ')
+				DIGIT(10, mday);
+			else
+				p++;
+			DIGIT(1, mday);
+			MUSTBE(' ');
+			TIMESTAMP();
+			MUSTBE(' ');
+			DIGIT(1000, year);
+			DIGIT(100, year);
+			DIGIT(10, year);
+			DIGIT(1, year);
+		} else if (!memcmp(p,
+			    more_weekday[weekday],
+			    strlen(more_weekday[weekday]))) {
+			/* RFC850 -- "Sunday, 06-Nov-94 08:49:37 GMT" */
+			p += strlen(more_weekday[weekday]);
+			MUSTBE(',');
+			MUSTBE(' ');
+			DIGIT(10, mday);
+			DIGIT(1, mday);
+			MUSTBE('-');
+			MONTH();
+			MUSTBE('-');
+			DIGIT(10, year);
+			DIGIT(1, year);
+			year += 1900;
+			if (year < 1969)
+				year += 100;
+			MUSTBE(' ');
+			TIMESTAMP();
+			MUSTBE(' ');
+			MUSTBE('G');
+			MUSTBE('M');
+			MUSTBE('T');
+		} else
+			FAIL();
 	}
-	return (0);
+
+	while (*p == ' ')
+		p++;
+
+	if (*p != '\0')
+		FAIL();
+
+	if (sec < 0 || sec > 60)	// Leapseconds!
+		FAIL();
+	if (min < 0 || min > 59)
+		FAIL();
+	if (hour < 0 || hour > 23)
+		FAIL();
+	if (month < 1 || month > 12)
+		FAIL();
+	if (mday < 1 || mday > days_in_month[month - 1])
+		FAIL();
+	if (year < 1899)
+		FAIL();
+
+	leap =
+	    ((year) % 4) == 0 && (((year) % 100) != 0 || ((year) % 400) == 0);
+
+	if (month == 2 && mday > 28 && !leap)
+		FAIL();
+
+	if (sec == 60)		// Ignore Leapseconds
+		sec--;
+
+	t = ((hour * 60.) + min) * 60. + sec;
+
+	d = (mday - 1) + days_before_month[month - 1];
+
+	if (month > 2 && leap)
+		d++;
+
+	d += (year % 100) * 365;	/* There are 365 days in a year */
+
+	if ((year % 100) > 0)		/* And a leap day every four years */
+		d += (((year % 100) - 1)/4);
+
+	d += ((year / 100) - 20) *	/* Days relative to y2000 */
+	    (100 * 365 + 24);		/* 24 leapdays per year in a century */
+
+	d += ((year-1) / 400) - 4;	/* And one more every 400 years */
+
+	t += d * 86400.;
+
+	t += 10957. * 86400.;		/* 10957 days frm UNIX epoch to y2000 */
+
+	return (t);
 }
 
 void
@@ -203,12 +391,11 @@ VTIM_timespec(double t)
 
 #ifdef TEST_DRIVER
 
-/*
+/**********************************************************************
  * Compile with:
- *  cc -o foo -DTEST_DRIVER -I../.. -I../../include vtim.c vas.c -lm
+ *	cc -o foo -DTEST_DRIVER -I../.. -I../../include vtim.c vas.c -lm
  * Test with:
- *  env TZ=UTC ./foo
- *  env TZ=CET ./foo
+ *	./foo
  */
 
 #include <stdint.h>
@@ -276,17 +463,68 @@ int
 main(int argc, char **argv)
 {
 	time_t t;
+	struct tm tm;
+	double tt;
 	char buf[BUFSIZ];
+	char buf1[BUFSIZ];
 
-	time(&t);
-	memset(buf, 0x55, sizeof buf);
-	VTIM_format(t, buf);
-	printf("scan = %.3f <%s>\n", VTIM_parse(buf), buf);
+	AZ(setenv("TZ", "UTC", 1));
+	assert(sizeof t >= 8);
+
+	/* Brute force test against libc version */
+	for (t = -2209852800; t < 20000000000; t += 3599) {
+		gmtime_r(&t, &tm);
+		strftime(buf1, sizeof buf1, "%a, %d %b %Y %T GMT", &tm);
+		VTIM_format(t, buf);
+		if (strcmp(buf, buf1)) {
+			printf("libc: <%s> Vtim <%s> %jd\n",
+			    buf1, buf, (intmax_t)t);
+			exit(2);
+		}
+		tt = VTIM_parse(buf1);
+		if (tt != t) {
+			VTIM_format(tt, buf);
+			printf("  fm: %12jd <%s>\n", (intmax_t)t, buf1);
+			printf("  to: %12.0f <%s>\n", tt, buf);
+			exit(2);
+		}
+
+		strftime(buf1, sizeof buf1, "%a %b %e %T %Y", &tm);
+		tt = VTIM_parse(buf1);
+		if (tt != t) {
+			VTIM_format(tt, buf);
+			printf("  fm: %12jd <%s>\n", (intmax_t)t, buf1);
+			printf("  to: %12.0f <%s>\n", tt, buf);
+			exit(2);
+		}
+
+		strftime(buf1, sizeof buf1, "%Y-%m-%dT%T", &tm);
+		tt = VTIM_parse(buf1);
+		if (tt != t) {
+			VTIM_format(tt, buf);
+			printf("  fm: %12jd <%s>\n", (intmax_t)t, buf1);
+			printf("  to: %12.0f <%s>\n", tt, buf);
+			exit(2);
+		}
+
+		if (tm.tm_year >= 69 && tm.tm_year < 169) {
+			strftime(buf1, sizeof buf1, "%A, %d-%b-%y %T GMT", &tm);
+			tt = VTIM_parse(buf1);
+			if (tt != t) {
+				VTIM_format(tt, buf);
+				printf("  fm: %12jd <%s>\n", (intmax_t)t, buf1);
+				printf("  to: %12.0f <%s>\n", tt, buf);
+				exit(2);
+			}
+		}
+	}
 
 	/* Examples from RFC2616 section 3.3.1 */
 	tst("Sun, 06 Nov 1994 08:49:37 GMT", 784111777);
 	tst("Sunday, 06-Nov-94 08:49:37 GMT", 784111777);
 	tst("Sun Nov  6 08:49:37 1994", 784111777);
+
+	tst("1994-11-06T08:49:37", 784111777);
 
 	tst_delta();
 
