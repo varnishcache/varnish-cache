@@ -30,4 +30,5 @@
 
 /* from libvarnish/vnum.c */
 double VNUM(const char *p);
+double VNUMpfx(const char *p, const char **e);
 const char *VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel);

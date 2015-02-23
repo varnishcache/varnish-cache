@@ -39,6 +39,7 @@
 
 #include "cache/cache.h"
 
+#include "vnum.h"
 #include "vrt.h"
 #include "vsa.h"
 #include "vtim.h"
@@ -47,7 +48,7 @@
 VCL_DURATION __match_proto__(td_std_duration)
 vmod_duration(VRT_CTX, VCL_STRING p, VCL_DURATION d)
 {
-	char *e;
+	const char *e;
 	double r;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -63,12 +64,9 @@ vmod_duration(VRT_CTX, VCL_STRING p, VCL_DURATION d)
 
 	e = NULL;
 
-	r = strtod(p, &e);
+	r = VNUMpfx(p, &e);
 
-	if (!isfinite(r))
-		return (d);
-
-	if (e == NULL)
+	if (!isfinite(r) || e == NULL)
 		return (d);
 
 	while(isspace(*e))
@@ -170,7 +168,6 @@ vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d)
 VCL_REAL __match_proto__(td_std_real)
 vmod_real(VRT_CTX, VCL_STRING p, VCL_REAL d)
 {
-	char *e;
 	double r;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -178,20 +175,9 @@ vmod_real(VRT_CTX, VCL_STRING p, VCL_REAL d)
 	if (p == NULL)
 		return (d);
 
-	while (isspace(*p))
-		p++;
-
-	if (*p != '+' && *p != '-' && !isdigit(*p))
-		return (d);
-
-	e = NULL;
-
-	r = strtod(p, &e);
+	r = VNUM(p);
 
 	if (!isfinite(r))
-		return (d);
-
-	if (e == NULL || *e != '\0')
 		return (d);
 
 	return (r);

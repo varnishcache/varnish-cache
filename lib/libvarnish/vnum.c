@@ -31,12 +31,14 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <errno.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "vnum.h"
+#include "vas.h"
 
 static const char err_miss_num[] = "Missing number";
 static const char err_invalid_num[] = "Invalid number";
@@ -49,12 +51,15 @@ static const char err_invalid_suff[] = "Invalid suffix";
  */
 
 double
-VNUM(const char *p)
+VNUMpfx(const char *p, const char **t)
 {
 	intmax_t m = 0, ee = 0;
 	double ms = 1.0;
 	double es = 1.0, e = 1.0, ne = 0.0;
 
+	AN(p);
+	AN(t);
+	*t = NULL;
 	while (isspace(*p))
 		p++;
 
@@ -86,8 +91,20 @@ VNUM(const char *p)
 	while (isspace(*p))
 		p++;
 	if (*p != '\0')
-		return (nan(""));
+		*t = p;
 	return (ms * m * pow(10., e + es * ee));
+}
+
+double
+VNUM(const char *p)
+{
+	const char *t;
+	double r;
+
+	r = VNUMpfx(p, &t);
+	if (t != NULL)
+		r = nan("");
+	return (r);
 }
 
 /**********************************************************************/
@@ -96,16 +113,16 @@ const char *
 VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 {
 	double fval;
-	char *end;
+	const char *end;
 
 	if (p == NULL || *p == '\0')
 		return (err_miss_num);
 
-	fval = strtod(p, &end);
-	if (end == p || !isfinite(fval))
+	fval = VNUMpfx(p, &end);
+	if (!isfinite(fval))
 		return (err_invalid_num);
 
-	if (*end == '\0') {
+	if (end == NULL) {
 		*r = (uintmax_t)fval;
 		return (NULL);
 	}

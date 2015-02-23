@@ -44,7 +44,7 @@ TESTS = vnum_c_test
 
 noinst_PROGRAMS = ${TESTS}
 
-vnum_c_test_SOURCES = vnum.c
+vnum_c_test_SOURCES = vnum.c vas.c
 vnum_c_test_CFLAGS = -DNUM_C_TEST -include config.h
 vnum_c_test_LDADD = ${LIBM}
 
