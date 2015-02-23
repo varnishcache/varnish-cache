@@ -19,7 +19,7 @@ Strings
 Basic strings are enclosed in " ... ", and may not contain newlines.
 
 Backslash is not special, so for instance in `regsub()` you do not need
-to do the "count-the-backslashes" polka:::
+to do the "count-the-backslashes" polka::
 
   regsub("barf", "(b)(a)(r)(f)", "\4\3\2p") -> "frap"
 

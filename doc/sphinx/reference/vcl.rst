@@ -236,7 +236,7 @@ Probes
 ------
 
 Probes will query the backend for status on a regular basis and mark
-the backend as down it they fail. A probe is defined as this:::
+the backend as down it they fail. A probe is defined as this::
 
     probe name {
          .attribute = "value";
