@@ -408,14 +408,6 @@ main(int argc, char * const *argv)
 	/* for ASSERT_MGT() */
 	mgt_pid = getpid();
 
-	/*
-	 * Run in UTC timezone, on the off-chance that this operating
-	 * system does not have a timegm() function, and translates
-	 * timestamps on the local timescale.
-	 * See lib/libvarnish/time.c
-	 */
-	AZ(setenv("TZ", "UTC", 1));
-	tzset();
 	assert(VTIM_parse("Sun, 06 Nov 1994 08:49:37 GMT") == 784111777);
 	assert(VTIM_parse("Sunday, 06-Nov-94 08:49:37 GMT") == 784111777);
 	assert(VTIM_parse("Sun Nov  6 08:49:37 1994") == 784111777);
