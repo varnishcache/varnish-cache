@@ -29,17 +29,19 @@
  */
 
 #include <errno.h>
-#include <unistd.h>
-#include <stdlib.h>
+#include <ctype.h>
+#include <math.h>
 #include <stdint.h>
 #include <string.h>
-#include <ctype.h>
+#include <stdlib.h>
+#include <unistd.h>
 
-#include "vas.h"
 #include "miniobj.h"
+#include "vas.h"
+#include "vbm.h"
+#include "vnum.h"
 #include "vre.h"
 #include "vsb.h"
-#include "vbm.h"
 
 #include "vapi/vsl.h"
 #include "vsl_api.h"
@@ -141,11 +143,10 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 			/* Can't parse - no match */
 			return (0);
 		case VEX_FLOAT:
-			lhs_float = strtod(b, &p);
-			if (*p == '\0' || isspace(*p))
-				break;
-			/* Can't parse - no match */
-			return (0);
+			lhs_float = VNUM(b);
+			if (isnan(lhs_float))
+				return (0);
+			break;
 		default:
 			WRONG("Wrong RHS type");
 		}

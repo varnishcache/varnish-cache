@@ -50,6 +50,7 @@
 #endif
 
 #include <errno.h>
+#include <math.h>
 #include <fcntl.h>
 #include <poll.h>
 #include <stdint.h>
@@ -61,6 +62,7 @@
 #include "vapi/vsm.h"
 #include "vas.h"
 #include "vcli.h"
+#include "vnum.h"
 #include "vss.h"
 
 #define RL_EXIT(status) \
@@ -464,7 +466,9 @@ main(int argc, char * const *argv)
 			T_arg = optarg;
 			break;
 		case 't':
-			timeout = strtod(optarg, NULL);
+			timeout = VNUM(optarg);
+			if (isnan(timeout))
+				usage();
 			break;
 		default:
 			usage();

@@ -30,18 +30,19 @@
 
 #include "config.h"
 
+#include <ctype.h>
+#include <errno.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <stdint.h>
 #include <string.h>
-#include <ctype.h>
 #include <stdint.h>
 
-#include "vas.h"
-#include "vsb.h"
-#include "vbm.h"
 #include "miniobj.h"
+#include "vas.h"
+#include "vbm.h"
+#include "vnum.h"
+#include "vsb.h"
 #include "vapi/vsl.h"
 #include "vsl_api.h"
 
@@ -191,10 +192,8 @@ vxp_expr_num(struct vxp *vxp, struct vex_rhs **prhs)
 	AN(*prhs);
 	if (strchr(vxp->t->dec, '.')) {
 		(*prhs)->type = VEX_FLOAT;
-		(*prhs)->val_float = strtod(vxp->t->dec, &endptr);
-		while (isspace(*endptr))
-			endptr++;
-		if (*endptr != '\0') {
+		(*prhs)->val_float = VNUM(vxp->t->dec);
+		if (isnan((*prhs)->val_float)) {
 			VSB_printf(vxp->sb, "Floating point parse error ");
 			vxp_ErrWhere(vxp, vxp->t, -1);
 			return;
