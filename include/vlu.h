@@ -34,6 +34,4 @@ typedef int (vlu_f)(void *, const char *);
 struct vlu *VLU_New(void *priv, vlu_f *func, unsigned bufsize);
 int VLU_Fd(int fd, struct vlu *l);
 void VLU_Destroy(struct vlu *l);
-void VLU_SetTelnet(struct vlu *l, int fd);
-
 #endif

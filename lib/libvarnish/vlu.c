@@ -47,7 +47,6 @@ struct vlu {
 	unsigned	bufl;
 	unsigned	bufp;
 	void		*priv;
-	int		telnet;
 	vlu_f	*func;
 };
 
@@ -63,7 +62,6 @@ VLU_New(void *priv, vlu_f *func, unsigned bufsize)
 		l->func = func;
 		l->priv = priv;
 		l->bufl = bufsize - 1;
-		l->telnet = -1;
 		l->buf = malloc(l->bufl + 1L);
 		if (l->buf == NULL) {
 			FREE_OBJ(l);
@@ -71,14 +69,6 @@ VLU_New(void *priv, vlu_f *func, unsigned bufsize)
 		}
 	}
 	return (l);
-}
-
-void
-VLU_SetTelnet(struct vlu *l, int fd)
-{
-	CHECK_OBJ_NOTNULL(l, LINEUP_MAGIC);
-	assert(fd >= 0);
-	l->telnet = fd;
 }
 
 void
@@ -91,52 +81,6 @@ VLU_Destroy(struct vlu *l)
 }
 
 static int
-vlu_dotelnet(struct vlu *l, char *p)
-{
-	char *e;
-	char tno[3];
-	int i;
-
-	e = l->buf + l->bufp;
-	assert(p >= l->buf && p < e);
-	assert(*p == (char)255);
-
-	/* We need at least two characters */
-	if (p == e - 1)
-		return (1);
-
-	/* And three for will/wont/do/dont */
-	if (p[1] >= (char)251 && p[1] <= (char)254 && p == e - 2)
-		return (1);
-
-	switch (p[1]) {
-	case (char)251:	/* WILL */
-	case (char)252:	/* WONT */
-		/* Ignore these */
-		i = 3;
-		break;
-	case (char)253:	/* DO */
-	case (char)254:	/* DONT */
-		/* Return WONT for these */
-		memcpy(tno, p, 3);
-		tno[1] = (char)252;
-		if (write(l->telnet, tno, 3) != 3)
-			return (1);
-		i = 3;
-		break;
-	default:
-		/* Ignore the rest */
-		/* XXX: only p[1] >= 240 ? */
-		i = 2;
-	}
-
-	/* Remove telnet sequence from buffer */
-	memmove(p, p + i, 1 + e - (p + i));
-	l->bufp -= i;
-	return (0);
-}
-
-static int
 LineUpProcess(struct vlu *l)
 {
 	char *p, *q;
@@ -146,9 +90,6 @@ LineUpProcess(struct vlu *l)
 	for (p = l->buf; *p != '\0'; p = q) {
 		/* Find first CR or NL */
 		for (q = p; *q != '\0'; q++) {
-			while (l->telnet >= 0 && *q == (char)255)
-				if (vlu_dotelnet(l, q))
-					return (0);
 			if (*q == '\n' || *q == '\r')
 				break;
 		}

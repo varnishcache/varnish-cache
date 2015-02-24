@@ -51,7 +51,6 @@
 #include "vcli_priv.h"
 #include "vcli_serve.h"
 #include "vev.h"
-#include "vlu.h"
 #include "vrnd.h"
 #include "vss.h"
 #include "vtcp.h"
@@ -387,10 +386,6 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident,
 	cli = VCLS_AddFd(cls, fdi, fdo, closefunc, priv);
 
 	cli->ident = strdup(ident);
-
-	/* Deal with TELNET options */
-	if (fdi != 0)
-		VLU_SetTelnet(cli->vlu, fdo);
 
 	if (fdi != 0 && secret_file != NULL) {
 		cli->auth = MCF_NOAUTH;
