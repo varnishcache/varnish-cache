@@ -124,3 +124,8 @@ LIBVARNISHAPI_1.3 {
 	VSLQ_grouping;
 	VSL_tagflags;
 } LIBVARNISHAPI_1.0;
+
+LIBVARNISHAPI_1.4 {
+  global:
+	VNUM;
+} LIBVARNISHAPI_1.0;
