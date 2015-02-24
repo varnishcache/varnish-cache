@@ -53,7 +53,7 @@ static const char err_invalid_suff[] = "Invalid suffix";
 double
 VNUMpfx(const char *p, const char **t)
 {
-	intmax_t m = 0, ee = 0;
+	double m = 0., ee = 0.;
 	double ms = 1.0;
 	double es = 1.0, e = 1.0, ne = 0.0;
 
@@ -68,7 +68,7 @@ VNUMpfx(const char *p, const char **t)
 
 	for (; *p != '\0'; p++) {
 		if (isdigit(*p)) {
-			m = m * 10 + *p - '0';
+			m = m * 10. + *p - '0';
 			e = ne;
 			if (e)
 				ne = e - 1.0;
@@ -86,7 +86,7 @@ VNUMpfx(const char *p, const char **t)
 		if (!isdigit(*p))
 			return (nan(""));
 		for (; isdigit(*p); p++)
-			ee = ee * 10 + *p - '0';
+			ee = ee * 10. + *p - '0';
 	}
 	while (isspace(*p))
 		p++;
