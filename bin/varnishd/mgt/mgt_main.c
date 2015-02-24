@@ -75,6 +75,7 @@ mgt_sltm(const char *tag, const char *sdesc, const char *ldesc)
 {
 	int i;
 
+	assert(sdesc != NULL || ldesc != NULL);
 	printf("\n%s\n", tag);
 	i = strlen(tag);
 	printf("%*.*s\n\n", i, i, "------------------------------------");
@@ -82,9 +83,6 @@ mgt_sltm(const char *tag, const char *sdesc, const char *ldesc)
 		printf("%s\n", ldesc);
 	else if (*sdesc != '\0')
 		printf("%s\n", sdesc);
-	else
-		printf("%s\n", "(description not yet written)");
-
 }
 
 /*lint -e{506} constant value boolean */
