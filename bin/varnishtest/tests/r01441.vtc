@@ -16,7 +16,7 @@ varnish v1 -vcl+backend {
 			set beresp.do_esi = true;
 		}
 	}
-} -start
+} -start -cliok "param.set debug +syncvsl"
 
 logexpect l1 -v v1 -g session {
 	expect 0 1000	Begin sess 0 HTTP/1
