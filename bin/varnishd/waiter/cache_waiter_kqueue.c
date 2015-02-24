@@ -123,14 +123,19 @@ vwk_sess_ev(const struct vwk *vwk, const struct kevent *kp, double now)
 
 	idle = now - *vwk->waiter->tmo;
 
-	if (kp->data > 0) {
-		Wait_Handle(vwk->waiter, sp, WAITER_ACTION, now);
-	} else if (sp->idle <= idle) {
+	VSL(SLT_Debug, 0, "KQR d %ju filter %d data %jd flags 0x%x idle %g",
+	    kp->ident, kp->filter, kp->data, kp->flags, sp->idle - idle);
+	if (sp->idle <= idle) {
 		Wait_Handle(vwk->waiter, sp, WAITER_TIMEOUT, now);
 	} else if (kp->flags & EV_EOF) {
 		Wait_Handle(vwk->waiter, sp, WAITER_REMCLOSE, now);
 	} else {
-		WRONG("unknown kqueue state");
+		if (kp->data == 0)
+			VSL(SLT_Debug, 0,
+			    "KQR d %ju filter %d data %jd flags 0x%x idle %g",
+			    kp->ident, kp->filter, kp->data, kp->flags,
+			    sp->idle - idle);
+		Wait_Handle(vwk->waiter, sp, WAITER_ACTION, now);
 	}
 }
 
