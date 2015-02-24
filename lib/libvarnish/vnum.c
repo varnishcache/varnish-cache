@@ -119,7 +119,7 @@ VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 		return (err_miss_num);
 
 	fval = VNUMpfx(p, &end);
-	if (!isfinite(fval))
+	if (isnan(fval))
 		return (err_invalid_num);
 
 	if (end == NULL) {

@@ -66,7 +66,7 @@ vmod_duration(VRT_CTX, VCL_STRING p, VCL_DURATION d)
 
 	r = VNUMpfx(p, &e);
 
-	if (!isfinite(r) || e == NULL)
+	if (isnan(r) || e == NULL)
 		return (d);
 
 	while(isspace(*e))
@@ -177,7 +177,7 @@ vmod_real(VRT_CTX, VCL_STRING p, VCL_REAL d)
 
 	r = VNUM(p);
 
-	if (!isfinite(r))
+	if (isnan(r))
 		return (d);
 
 	return (r);
