@@ -234,29 +234,6 @@ VSB_clear(struct vsb *s)
 }
 
 /*
- * Set the vsb's end position to an arbitrary value.
- * Effectively truncates the vsb at the new position.
- */
-int
-VSB_setpos(struct vsb *s, ssize_t pos)
-{
-
-	assert_VSB_integrity(s);
-	assert_VSB_state(s, 0);
-
-	KASSERT(pos >= 0,
-	    ("attempt to seek to a negative position (%jd)", (intmax_t)pos));
-	KASSERT(pos < s->s_size,
-	    ("attempt to seek past end of vsb (%jd >= %jd)",
-	    (intmax_t)pos, (intmax_t)s->s_size));
-
-	if (pos < 0 || pos > s->s_len)
-		return (-1);
-	s->s_len = pos;
-	return (0);
-}
-
-/*
  * Append a byte to an vsb.  This is the core function for appending
  * to an vsb and is the main place that deals with extending the
  * buffer and marking overflow.
@@ -302,20 +279,6 @@ VSB_bcat(struct vsb *s, const void *buf, size_t len)
 }
 
 /*
- * Copy a byte string into an vsb.
- */
-int
-VSB_bcpy(struct vsb *s, const void *buf, size_t len)
-{
-
-	assert_VSB_integrity(s);
-	assert_VSB_state(s, 0);
-
-	VSB_clear(s);
-	return (VSB_bcat(s, buf, len));
-}
-
-/*
  * Append a string to an vsb.
  */
 int
@@ -334,20 +297,6 @@ VSB_cat(struct vsb *s, const char *str)
 			return (-1);
 	}
 	return (0);
-}
-
-/*
- * Copy a string into an vsb.
- */
-int
-VSB_cpy(struct vsb *s, const char *str)
-{
-
-	assert_VSB_integrity(s);
-	assert_VSB_state(s, 0);
-
-	VSB_clear(s);
-	return (VSB_cat(s, str));
 }
 
 /*
@@ -439,25 +388,6 @@ VSB_putc(struct vsb *s, int c)
 }
 
 /*
- * Trim whitespace characters from end of an vsb.
- */
-int
-VSB_trim(struct vsb *s)
-{
-
-	assert_VSB_integrity(s);
-	assert_VSB_state(s, 0);
-
-	if (s->s_error != 0)
-		return (-1);
-
-	while (s->s_len > 0 && isspace(s->s_buf[s->s_len-1]))
-		--s->s_len;
-
-	return (0);
-}
-
-/*
  * Check if an vsb has an error.
  */
 int
@@ -533,16 +463,6 @@ VSB_delete(struct vsb *s)
 }
 
 /*
- * Check if an vsb has been finished.
- */
-int
-VSB_done(const struct vsb *s)
-{
-
-	return(VSB_ISFINISHED(s));
-}
-
-/*
  * Quote a string
  */
 void
@@ -594,61 +514,4 @@ VSB_quote(struct vsb *s, const char *p, int len, int how)
 		}
 	}
 	(void)VSB_putc(s, '"');
-}
-
-/*
- * Unquote a string
- */
-const char *
-VSB_unquote(struct vsb *s, const char *p, int len, int how)
-{
-	const char *q;
-	char *r;
-	unsigned long u;
-	char c;
-
-	(void)how;	/* For future enhancements */
-
-	if (len == -1)
-		len = strlen(p);
-
-	for (q = p; q < p + len; q++) {
-		if (*q != '\\') {
-			(void)VSB_bcat(s, q, 1);
-			continue;
-		}
-		if (++q >= p + len)
-			return ("Incomplete '\\'-sequence at end of string");
-
-		switch(*q) {
-		case 'n':
-			(void)VSB_bcat(s, "\n", 1);
-			continue;
-		case 'r':
-			(void)VSB_bcat(s, "\r", 1);
-			continue;
-		case 't':
-			(void)VSB_bcat(s, "\t", 1);
-			continue;
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-			errno = 0;
-			u = strtoul(q, &r, 8);
-			if (errno != 0 || (u & ~0xff))
-				return ("\\ooo sequence out of range");
-			c = (char)u;
-			(void)VSB_bcat(s, &c, 1);
-			q = r - 1;
-			continue;
-		default:
-			(void)VSB_bcat(s, q, 1);
-		}
-	}
-	return (NULL);
 }

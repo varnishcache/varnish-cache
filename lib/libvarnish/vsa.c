@@ -307,21 +307,6 @@ VSA_Sane(const struct suckaddr *sua)
 	}
 }
 
-socklen_t
-VSA_Len(const struct suckaddr *sua)
-{
-	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
-
-	switch(sua->sa.sa_family) {
-		case PF_INET:
-			return (sizeof(sua->sa4));
-		case PF_INET6:
-			return (sizeof(sua->sa6));
-		default:
-			return (0);
-	}
-}
-
 int
 VSA_Compare(const struct suckaddr *sua1, const struct suckaddr *sua2)
 {

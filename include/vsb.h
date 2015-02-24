@@ -62,11 +62,8 @@ struct vsb	*VSB_new(struct vsb *, char *, int, int);
 #define		 VSB_new_auto()				\
 	VSB_new(NULL, NULL, 0, VSB_AUTOEXTEND)
 void		 VSB_clear(struct vsb *);
-int		 VSB_setpos(struct vsb *, ssize_t);
 int		 VSB_bcat(struct vsb *, const void *, size_t);
-int		 VSB_bcpy(struct vsb *, const void *, size_t);
 int		 VSB_cat(struct vsb *, const char *);
-int		 VSB_cpy(struct vsb *, const char *);
 int		 VSB_printf(struct vsb *, const char *, ...)
 	__printflike(2, 3);
 #ifdef va_start
@@ -74,15 +71,12 @@ int		 VSB_vprintf(struct vsb *, const char *, va_list)
 	__printflike(2, 0);
 #endif
 int		 VSB_putc(struct vsb *, int);
-int		 VSB_trim(struct vsb *);
 int		 VSB_error(const struct vsb *);
 int		 VSB_finish(struct vsb *);
 char		*VSB_data(const struct vsb *);
 ssize_t		 VSB_len(const struct vsb *);
-int		 VSB_done(const struct vsb *);
 void		 VSB_delete(struct vsb *);
 void		 VSB_quote(struct vsb *s, const char *p, int len, int how);
-const char	*VSB_unquote(struct vsb *s, const char *p, int len, int how);
 #ifdef __cplusplus
 };
 #endif
