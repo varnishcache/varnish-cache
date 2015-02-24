@@ -244,7 +244,7 @@ VBT_Rel(struct tcp_pool **tpp)
  */
 
 int
-VBT_Open(struct tcp_pool *tp, double tmo, const struct suckaddr **sa)
+VBT_Open(const struct tcp_pool *tp, double tmo, const struct suckaddr **sa)
 {
 	int s;
 	int msec;
