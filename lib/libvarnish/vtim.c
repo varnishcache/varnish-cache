@@ -232,6 +232,7 @@ VTIM_parse(const char *p)
 		TIMESTAMP();
 	} else {
 		WEEKDAY();
+		assert(weekday >= 0 && weekday <= 6);
 		if (*p == ',') {
 			/* RFC822 & RFC1123 - "Sun, 06 Nov 1994 08:49:37 GMT" */
 			p++;
