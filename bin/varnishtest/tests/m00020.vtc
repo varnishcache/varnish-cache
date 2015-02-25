@@ -9,6 +9,7 @@ varnish v1 -vcl+backend {
 	import ${vmod_std};
 
 	sub vcl_deliver {
+		set resp.http.x-date = std.time(req.http.x-date, now);
 		if (std.time(req.http.x-date, now) < now - 1y) {
 			set resp.http.x-past = 1;
 		}
@@ -22,19 +23,90 @@ client c1 {
 	txreq -hdr "X-Date: Mon, 20 Dec 2010 00:00:00 GMT"
 	rxresp
 	expect resp.http.x-past == 1
-	txreq -hdr "X-Date: Monday, 23-Dec-30 00:00:00 GMT"
+	expect resp.http.x-date == "Mon, 20 Dec 2010 00:00:00 GMT"
+
+	txreq -hdr "X-Date: Monday, 20-Dec-30 00:00:00 GMT"
+	rxresp
+	expect resp.http.x-past == <undef>
+	expect resp.http.x-future == <undef>
+
+	txreq -hdr "X-Date: Monday, 30-Feb-15 00:00:00 GMT"
+	rxresp
+	expect resp.http.x-past == <undef>
+	expect resp.http.x-future == <undef>
+
+	txreq -hdr "X-Date: Friday, 20-Dec-30 00:00:00 GMT"
 	rxresp
 	expect resp.http.x-future == 1
+	expect resp.http.x-date == "Fri, 20 Dec 2030 00:00:00 GMT"
+
 	txreq -hdr "X-Date: Mon Dec 20 00:00:00 2010"
 	rxresp
 	expect resp.http.x-past == 1
+	expect resp.http.x-date == "Mon, 20 Dec 2010 00:00:00 GMT"
+
 	txreq -hdr "X-Date: 2030-12-20T00:00:00"
 	rxresp
 	expect resp.http.x-future == 1
+	expect resp.http.x-date == "Fri, 20 Dec 2030 00:00:00 GMT"
+
 	txreq -hdr "X-Date: 1292803200.00"
 	rxresp
 	expect resp.http.x-past == 1
+	expect resp.http.x-date == "Mon, 20 Dec 2010 00:00:00 GMT"
+
 	txreq -hdr "X-Date: 1923955200"
 	rxresp
 	expect resp.http.x-future == 1
+	expect resp.http.x-date == "Fri, 20 Dec 2030 00:00:00 GMT"
+
+	delay .2
+
+	# Coverage tests of vtim.c
+
+	# leapsecond
+	txreq -hdr "X-Date: Mon, 20 Dec 2010 00:00:60 GMT"
+	rxresp
+	expect resp.http.x-date == "Mon, 20 Dec 2010 00:00:59 GMT"
+	delay .1
+
+	txreq -hdr "X-Date: Mon, 20 Dec 2010 00:00:61 GMT"
+	rxresp
+	expect resp.http.x-date != "Mon, 20 Dec 2010 00:00:61 GMT"
+	delay .1
+
+	txreq -hdr "X-Date: Mon, 20 Dec 2010 00:60:00 GMT"
+	rxresp
+	expect resp.http.x-date != "Mon, 20 Dec 2010 00:60:00 GMT"
+	delay .1
+
+	txreq -hdr "X-Date: Mon, 20 Dec 2010 24:00:00 GMT"
+	rxresp
+	expect resp.http.x-date != "Mon, 20 Dec 2010 24:00:00 GMT"
+	delay .1
+
+	txreq -hdr "X-Date: Tue, 20 Dec 2010 00:00:00 GMT"
+	rxresp
+	expect resp.http.x-date != "Tue, 20 Dec 2010 00:00:00 GMT"
+	delay .1
+
+	txreq -hdr "X-Date: Mon, 29 Feb 2010 00:00:00 GMT"
+	rxresp
+	expect resp.http.x-date != "Mon, 29 Feb 2010 00:00:00 GMT"
+	delay .1
+
+	txreq -hdr "X-Date: Wed, 29 Feb 2012 00:00:00 GMT"
+	rxresp
+	expect resp.http.x-date == "Wed, 29 Feb 2012 00:00:00 GMT"
+	delay .1
+
+	txreq -hdr "X-Date: 2010-13-20T00:00:00"
+	rxresp
+	delay .1
+
+	txreq -hdr "X-Date: Wedx 29 Feb 2012 00:00:00 GMT"
+	rxresp
+	expect resp.http.x-date != "Wed, 29 Feb 2012 00:00:00 GMT"
+	delay .1
+
 } -run
