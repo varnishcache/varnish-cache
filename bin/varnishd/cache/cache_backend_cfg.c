@@ -264,8 +264,8 @@ do_list(struct cli *cli, struct backend *b, void *priv)
 	AN(priv);
 	hdr = priv;
 	if (!*hdr) {
-		VCLI_Out(cli, "%-30s %-6s %-10s %s",
-		    "Backend name", "Refs", "Admin", "Probe");
+		VCLI_Out(cli, "%-30s %-10s %s",
+		    "Backend name", "Admin", "Probe");
 		*hdr = 1;
 	}
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
