@@ -37,11 +37,9 @@
 
 #include "config.h"
 
-#include <math.h>
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/socket.h>
 
 #include "cache.h"
 
@@ -489,11 +487,14 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
 	Lck_Unlock(&vbp_mtx);
 
 	if (startthread) {
+		vt->probe = vcl->probe;
 		for (u = 0; u < vcl->probe.initial; u++) {
 			vbp_start_poke(vt);
 			vt->happy |= 1;
 			vbp_has_poked(vt);
 		}
+		if (!vcl->probe.initial)
+			vbp_has_poked(vt);
 		AZ(pthread_create(&vt->thread, NULL, vbp_wrk_poll_backend, vt));
 	}
 }
