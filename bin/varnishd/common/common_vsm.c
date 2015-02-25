@@ -384,7 +384,7 @@ VSM_common_copy(struct vsm_sc *to, const struct vsm_sc *from)
  */
 
 void
-VSM_common_ageupdate(struct vsm_sc *sc)
+VSM_common_ageupdate(const struct vsm_sc *sc)
 {
 
 	CHECK_OBJ_NOTNULL(sc, VSM_SC_MAGIC);
