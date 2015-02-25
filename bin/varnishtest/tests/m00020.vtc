@@ -9,7 +9,8 @@ varnish v1 -vcl+backend {
 	import ${vmod_std};
 
 	sub vcl_deliver {
-		set resp.http.x-date = std.time(req.http.x-date, now);
+		set resp.http.x-date = std.time(
+		    regsub(req.http.x-date, "z", " "), now);
 		if (std.time(req.http.x-date, now) < now - 1y) {
 			set resp.http.x-past = 1;
 		}
@@ -70,6 +71,7 @@ client c1 {
 	expect resp.http.x-date == "Mon, 20 Dec 2010 00:00:59 GMT"
 	delay .1
 
+	# Range tests
 	txreq -hdr "X-Date: Mon, 20 Dec 2010 00:00:61 GMT"
 	rxresp
 	expect resp.http.x-date != "Mon, 20 Dec 2010 00:00:61 GMT"
@@ -104,7 +106,23 @@ client c1 {
 	rxresp
 	delay .1
 
+	txreq -hdr "X-Date: Sun 31 Dec 1899 23:59:59 GMT"
+	rxresp
+	expect resp.http.x-date != "Sun 31 Dec 1899 23:59:59 GMT"
+	delay .1
+
+	# White space etc.
+	txreq -hdr "X-Date: z Wed, 29 Feb 2012 00:00:00 GMT"
+	rxresp
+	expect resp.http.x-date == "Wed, 29 Feb 2012 00:00:00 GMT"
+	delay .1
+
 	txreq -hdr "X-Date: Wedx 29 Feb 2012 00:00:00 GMT"
+	rxresp
+	expect resp.http.x-date != "Wed, 29 Feb 2012 00:00:00 GMT"
+	delay .1
+
+	txreq -hdr "X-Date: Wed, 29 Feb 2012 00:00:00 GMT x"
 	rxresp
 	expect resp.http.x-date != "Wed, 29 Feb 2012 00:00:00 GMT"
 	delay .1
