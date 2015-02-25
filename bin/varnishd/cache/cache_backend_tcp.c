@@ -112,9 +112,9 @@ tcp_handle(struct waited *w, enum wait_event ev, double now)
 			    "------> Handler avail + action -> re-wait");
 			vbc->stolen = 0;
 			if (Wait_Enter(tp->waiter, vbc->waited)) {
-			VSL(SLT_Debug, 0,
-			    "------> Handler avail + "
-			    "!timeout -> re-wait failed");
+				VSL(SLT_Debug, 0,
+				    "------> Handler avail + "
+				    "!timeout -> re-wait failed");
 				VTCP_close(&vbc->fd);
 				VTAILQ_REMOVE(&tp->connlist, vbc, list);
 				tp->n_conn--;
