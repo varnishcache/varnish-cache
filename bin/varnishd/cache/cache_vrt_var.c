@@ -38,7 +38,6 @@
 #include "common/heritage.h"
 #include "hash/hash_slinger.h"
 
-#include "cache_backend.h"
 #include "cache_director.h"
 #include "vrt.h"
 #include "vrt_obj.h"
@@ -317,9 +316,7 @@ VRT_r_beresp_backend_ip(VRT_CTX)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	if (ctx->bo->htc != NULL && ctx->bo->htc->vbc != NULL)
-		return(ctx->bo->htc->vbc->addr);
-	return (NULL);
+	return (VDI_GetIP(ctx->bo->wrk, ctx->bo));
 }
 
 /*--------------------------------------------------------------------*/

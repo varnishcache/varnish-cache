@@ -106,6 +106,26 @@ VDI_GetBody(struct worker *wrk, struct busyobj *bo)
 	return (d->getbody(d, wrk, bo));
 }
 
+/* Get IP number (if any ) -------------------------------------------*/
+
+const struct suckaddr *
+VDI_GetIP(struct worker *wrk, struct busyobj *bo)
+{
+	const struct director *d;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	d = bo->director_resp;
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	assert(bo->director_state == DIR_S_HDRS ||
+	   bo->director_state == DIR_S_BODY);
+	AZ(d->resolve);
+	if (d->getip == NULL)
+		return (NULL);
+	return (d->getip(d, wrk, bo));
+}
+
 /* Finish fetch ------------------------------------------------------*/
 
 void

@@ -245,9 +245,25 @@ vbe_dir_getbody(const struct director *d, struct worker *wrk,
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->vfc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
 
 	V1F_Setup_Fetch(bo->vfc, bo->htc);
 	return (0);
+}
+
+static const struct suckaddr * __match_proto__(vdi_getip_f)
+vbe_dir_getip(const struct director *d, struct worker *wrk,
+    struct busyobj *bo)
+{
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->htc->vbc, VBC_MAGIC);
+
+	return (bo->htc->vbc->addr);
 }
 
 /*--------------------------------------------------------------------*/
@@ -291,6 +307,7 @@ VRT_init_vbe(VRT_CTX, struct director **dp, const struct vrt_backend *vrt)
 	d->healthy = vbe_dir_healthy;
 	d->gethdrs = vbe_dir_gethdrs;
 	d->getbody = vbe_dir_getbody;
+	d->getip = vbe_dir_getip;
 	d->finish = vbe_dir_finish;
 
 	if (vrt->probe != NULL)

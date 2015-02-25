@@ -53,6 +53,8 @@ typedef int vdi_gethdrs_f(const struct director *, struct worker *,
     struct busyobj *);
 typedef int vdi_getbody_f(const struct director *, struct worker *,
     struct busyobj *);
+typedef const struct suckaddr *vdi_getip_f(const struct director *,
+    struct worker *, struct busyobj *);
 typedef void vdi_finish_f(const struct director *, struct worker *,
     struct busyobj *);
 
@@ -69,6 +71,7 @@ struct director {
 	vdi_resolve_f		*resolve;
 	vdi_gethdrs_f		*gethdrs;
 	vdi_getbody_f		*getbody;
+	vdi_getip_f		*getip;
 	vdi_finish_f		*finish;
 	void			*priv;
 	const void		*priv2;
@@ -76,8 +79,10 @@ struct director {
 
 /* cache_director.c */
 
-int VDI_GetHdr(struct worker *wrk, struct busyobj *bo);
-int VDI_GetBody(struct worker *wrk, struct busyobj *bo);
+int VDI_GetHdr(struct worker *, struct busyobj *);
+int VDI_GetBody(struct worker *, struct busyobj *);
+const struct suckaddr *VDI_GetIP(struct worker *, struct busyobj *);
+
 void VDI_Finish(struct worker *wrk, struct busyobj *bo);
 
 int VDI_Http1Pipe(struct req *, struct busyobj *);
