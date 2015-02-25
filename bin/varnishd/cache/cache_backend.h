@@ -61,11 +61,11 @@ struct backend {
 	int			refcount;
 	struct lock		mtx;
 
-	char			*vcl_name;
+	const char		*vcl_name;
 	char			*display_name;
-	char			*ipv4_addr;
-	char			*ipv6_addr;
-	char			*port;
+	const char		*ipv4_addr;
+	const char		*ipv6_addr;
+	const char		*port;
 
 	struct suckaddr		*ipv4;
 	struct suckaddr		*ipv6;
@@ -104,12 +104,9 @@ struct vbc {
 };
 
 /* cache_backend_cfg.c */
-void VBE_DropRefConn(struct backend *, const struct acct_bereq *);
-void VBE_DropRefVcl(struct backend *);
-void VBE_DropRefLocked(struct backend *b, const struct acct_bereq *);
+void VBE_Drop(struct backend *);
 unsigned VBE_Healthy(const struct backend *b, double *changed);
 struct backend *VBE_AddBackend(const struct vrt_backend *vb);
-void VBE_Poll(void);
 
 /* cache_backend_poll.c */
 void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,

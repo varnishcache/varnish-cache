@@ -175,15 +175,18 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s", bo->htc->vbc->fd,
 		    bp->display_name);
 		VBT_Close(bp->tcp_pool, &bo->htc->vbc);
-		VBE_DropRefConn(bp, &bo->acct);
+		Lck_Lock(&bp->mtx);
 	} else {
 		VSLb(bo->vsl, SLT_BackendReuse, "%d %s", bo->htc->vbc->fd,
 		    bp->display_name);
 		Lck_Lock(&bp->mtx);
 		VSC_C_main->backend_recycle++;
 		VBT_Recycle(bp->tcp_pool, &bo->htc->vbc);
-		VBE_DropRefLocked(bp, &bo->acct);
 	}
+#define ACCT(foo)	bp->vsc->foo += bo->acct.foo;
+#include "tbl/acct_fields_bereq.h"
+#undef ACCT
+	Lck_Unlock(&bp->mtx);
 	bo->htc->vbc = NULL;
 	bo->htc = NULL;
 }
@@ -356,7 +359,7 @@ VRT_fini_vbe(VRT_CTX, struct director **dp, const struct vrt_backend *vrt)
 	if (vrt->probe != NULL)
 		VBP_Remove(be, vrt->probe);
 
-	VBE_DropRefVcl(be);
+	VBE_Drop(be);
 	free(d->vcl_name);
 	FREE_OBJ(d);
 }

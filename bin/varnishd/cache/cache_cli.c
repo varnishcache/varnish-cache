@@ -39,7 +39,6 @@
 #include "cache.h"
 #include "common/heritage.h"
 
-#include "cache_backend.h"		// struct vbc
 #include "vcli.h"
 #include "vcli_common.h"
 #include "vcli_priv.h"
@@ -79,7 +78,6 @@ cli_cb_before(const struct cli *cli)
 	ASSERT_CLI();
 	VSL(SLT_CLI, 0, "Rd %s", cli->cmd);
 	VCL_Poll();
-	VBE_Poll();
 	Lck_Lock(&cli_mtx);
 }
 

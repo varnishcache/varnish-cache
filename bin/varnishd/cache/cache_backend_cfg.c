@@ -54,95 +54,22 @@ static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
 /*--------------------------------------------------------------------
  */
 
-static void
-VBE_Nuke(struct backend *b)
+void
+VBE_Drop(struct backend *b)
 {
 
 	ASSERT_CLI();
+	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+
+	b->vsc->vcls--;
 	VTAILQ_REMOVE(&backends, b, list);
 	free(b->ipv4);
-	free(b->ipv4_addr);
 	free(b->ipv6);
-	free(b->ipv6_addr);
-	free(b->port);
+	free(b->display_name);
 	VSM_Free(b->vsc);
 	VBT_Rel(&b->tcp_pool);
 	FREE_OBJ(b);
 	VSC_C_main->n_backend--;
-}
-
-/*--------------------------------------------------------------------
- */
-
-void
-VBE_Poll(void)
-{
-	struct backend *b, *b2;
-
-	ASSERT_CLI();
-	VTAILQ_FOREACH_SAFE(b, &backends, list, b2) {
-		assert(
-			b->admin_health == ah_healthy ||
-			b->admin_health == ah_sick ||
-			b->admin_health == ah_probe
-		);
-		if (b->refcount == 0 && b->probe == NULL)
-			VBE_Nuke(b);
-	}
-}
-
-/*--------------------------------------------------------------------
- * Drop a reference to a backend.
- * The last reference must come from the watcher in the CLI thread,
- * as only that thread is allowed to clean up the backend list.
- */
-
-void
-VBE_DropRefLocked(struct backend *b, const struct acct_bereq *acct_bereq)
-{
-	int i;
-
-	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-	assert(b->refcount > 0);
-
-	if (acct_bereq != NULL) {
-#define ACCT(foo) \
-		b->vsc->foo += acct_bereq->foo;
-#include "tbl/acct_fields_bereq.h"
-#undef ACCT
-	}
-
-	i = --b->refcount;
-	Lck_Unlock(&b->mtx);
-	if (i > 0)
-		return;
-
-	ASSERT_CLI();
-	VBE_Nuke(b);
-}
-
-void
-VBE_DropRefVcl(struct backend *b)
-{
-
-	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-
-	Lck_Lock(&b->mtx);
-	b->vsc->vcls--;
-	VBE_DropRefLocked(b, NULL);
-}
-
-void
-VBE_DropRefConn(struct backend *b, const struct acct_bereq *acct_bereq)
-{
-
-	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-
-	Lck_Lock(&b->mtx);
-	assert(b->n_conn > 0);
-	b->n_conn--;
-	b->vsc->conn--;
-	VBE_DropRefLocked(b, acct_bereq);
 }
 
 /*--------------------------------------------------------------------
@@ -161,27 +88,10 @@ VBE_AddBackend(const struct vrt_backend *vb)
 	AN(vb->vcl_name);
 	assert(vb->ipv4_suckaddr != NULL || vb->ipv6_suckaddr != NULL);
 
-	/* Run through the list and see if we already have this backend */
-	VTAILQ_FOREACH(b, &backends, list) {
-		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-		if (strcmp(b->vcl_name, vb->vcl_name))
-			continue;
-		if (vb->ipv4_suckaddr != NULL &&
-		    VSA_Compare(b->ipv4, vb->ipv4_suckaddr))
-			continue;
-		if (vb->ipv6_suckaddr != NULL &&
-		    VSA_Compare(b->ipv6, vb->ipv6_suckaddr))
-			continue;
-		b->refcount++;
-		b->vsc->vcls++;
-		return (b);
-	}
-
 	/* Create new backend */
 	ALLOC_OBJ(b, BACKEND_MAGIC);
 	XXXAN(b);
 	Lck_New(&b->mtx, lck_backend);
-	b->refcount = 1;
 
 	bprintf(buf, "%s(%s,%s,%s)",
 	    vb->vcl_name,
@@ -191,16 +101,11 @@ VBE_AddBackend(const struct vrt_backend *vb)
 	b->vsc = VSM_Alloc(sizeof *b->vsc, VSC_CLASS, VSC_type_vbe, buf);
 	b->vsc->vcls++;
 
-
-	/*
-	 * This backend may live longer than the VCL that instantiated it
-	 * so we cannot simply reference the VCL's copy of things.
-	 */
-	REPLACE(b->vcl_name, vb->vcl_name);
+	b->vcl_name =  vb->vcl_name;
 	REPLACE(b->display_name, buf);
-	REPLACE(b->ipv4_addr, vb->ipv4_addr);
-	REPLACE(b->ipv6_addr, vb->ipv6_addr);
-	REPLACE(b->port, vb->port);
+	b->ipv4_addr = vb->ipv4_addr;
+	b->ipv6_addr = vb->ipv6_addr;
+	b->port = vb->port;
 
 	b->tcp_pool = VBT_Ref(vb->vcl_name,
 	    vb->ipv4_suckaddr, vb->ipv6_suckaddr);
@@ -365,7 +270,7 @@ do_list(struct cli *cli, struct backend *b, void *priv)
 	}
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 
-	VCLI_Out(cli, "\n%-30s %-6d", b->display_name, b->refcount);
+	VCLI_Out(cli, "\n%-30s", b->display_name);
 
 	if (b->admin_health == ah_probe)
 		VCLI_Out(cli, " %-10s", "probe");
