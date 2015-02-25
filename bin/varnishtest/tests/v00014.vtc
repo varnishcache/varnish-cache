@@ -2,8 +2,17 @@ varnishtest "Check req.backend.healthy"
 
 server s1 {
 	rxreq
+	sema r1 sync 2
 	expect req.url == "/"
 	txresp -body "slash"
+	accept
+	rxreq
+	sema r2 sync 2
+	sema r3 sync 2
+	expect req.url == "/"
+	txresp -body "slash"
+	accept
+	sema r4 sync 2
 } -start
 
 varnish v1 -vcl {
@@ -35,28 +44,23 @@ varnish v1 -vcl {
 	}
 } -start
 
+varnish v1 -cliok "backend.list" -cliok "debug.health"
+
 client c1 {
 	txreq
 	rxresp
 	expect resp.status == 500
-} -run
 
-server s1 -wait
+	sema r1 sync 2
 
-server s1 {
-	rxreq
-	expect req.url == "/"
-	txresp -body "slash"
-} -start -wait
+	sema r2 sync 2
+	txreq
+	rxresp
+	expect resp.status == 500
 
-server s1 {
-	rxreq
-	expect req.url == "/foo"
-	txresp -body "foobar"
-} -start
-
-client c1 {
-	txreq -url "/foo"
+	sema r3 sync 2
+	sema r4 sync 2
+	txreq 
 	rxresp
 	expect resp.status == 200
 } -run
