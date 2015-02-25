@@ -42,6 +42,7 @@
 #include "cache_backend.h"
 #include "cache_director.h"
 #include "vrt.h"
+#include "vtcp.h"
 
 #define FIND_TMO(tmx, dst, bo, be)					\
 	do {								\
@@ -85,6 +86,8 @@ vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 	struct backend *bp;
 	double tmod;
 	const struct vrt_backend *vrt;
+	char abuf1[VTCP_ADDRBUFSIZE], abuf2[VTCP_ADDRBUFSIZE];
+	char pbuf1[VTCP_PORTBUFSIZE], pbuf2[VTCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
@@ -122,6 +125,11 @@ vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 	bp->n_conn++;
 	bp->vsc->conn++;
 	Lck_Unlock(&bp->mtx);
+
+	VTCP_myname(vc->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
+	VTCP_hisname(vc->fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
+	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s",
+	    vc->fd, bp->display_name, abuf2, pbuf2, abuf1, pbuf1);
 
 	vc->backend->vsc->req++;
 	if (bo->htc == NULL)
