@@ -148,6 +148,7 @@
 -esym(525, __builtin_return_address)	// Not defined
 
 // cache_vcl.c
+-esym(528, vcl_call_method)	// Not referenced
 -esym(528, vcl_handlingname)	// Not referenced
 -e641	// Converting enum 'cli_status_e' to int
 
