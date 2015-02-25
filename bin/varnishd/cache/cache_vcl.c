@@ -290,7 +290,7 @@ VCL_Poll(void)
 
 /*--------------------------------------------------------------------*/
 
-static void
+static void __match_proto__(cli_func_t)
 ccf_config_list(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcls *vcl;
@@ -313,39 +313,29 @@ ccf_config_list(struct cli *cli, const char * const *av, void *priv)
 	}
 }
 
-static void
+static void __match_proto__(cli_func_t)
 ccf_config_load(struct cli *cli, const char * const *av, void *priv)
 {
 
-	(void)av;
-	(void)priv;
+	AZ(priv);
 	ASSERT_CLI();
 	if (VCL_Load(av[3], av[2], cli))
 		VCLI_SetResult(cli, CLIS_PARAM);
 	return;
 }
 
-static void
+static void __match_proto__(cli_func_t)
 ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcls *vcl;
 
 	ASSERT_CLI();
+	(void)cli;
 	AZ(priv);
-	(void)priv;
 	vcl = vcl_find(av[2]);
-	if (vcl == NULL) {
-		VCLI_SetResult(cli, CLIS_PARAM);
-		VCLI_Out(cli, "VCL '%s' unknown", av[2]);
-		return;
-	}
+	AN(vcl);			// MGT ensures this
 	Lck_Lock(&vcl_mtx);
-	if (vcl == vcl_active) {
-		Lck_Unlock(&vcl_mtx);
-		VCLI_SetResult(cli, CLIS_PARAM);
-		VCLI_Out(cli, "VCL %s is the active VCL", av[2]);
-		return;
-	}
+	assert (vcl != vcl_active);	// MGT ensures this
 	VSC_C_main->n_vcl_discard++;
 	VSC_C_main->n_vcl_avail--;
 	vcl->conf->discard = 1;
@@ -355,22 +345,17 @@ ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 		VCL_Nuke(vcl);
 }
 
-static void
+static void __match_proto__(cli_func_t)
 ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcls *vcl;
 	struct vrt_ctx ctx;
 	unsigned hand = 0;
 
-	(void)av;
-	(void)priv;
+	ASSERT_CLI();
+	AZ(priv);
 	vcl = vcl_find(av[2]);
-	if (vcl == NULL) {
-		VCLI_Out(cli, "No VCL named '%s'", av[2]);
-		VCLI_SetResult(cli, CLIS_PARAM);
-		return;
-	}
-
+	AN(vcl);			// MGT ensures this
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 	ctx.handling = &hand;
 	ctx.cli = cli;
@@ -385,14 +370,15 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 	Lck_Unlock(&vcl_mtx);
 }
 
-static void
+static void __match_proto__(cli_func_t)
 ccf_config_show(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcls *vcl;
 	int verbose = 0;
 	int i;
 
-	(void)priv;
+	ASSERT_CLI();
+	AZ(priv);
 	if (!strcmp(av[2], "-v") && av[3] == NULL) {
 		VCLI_Out(cli, "Too few parameters");
 		VCLI_SetResult(cli, CLIS_TOOFEW);
