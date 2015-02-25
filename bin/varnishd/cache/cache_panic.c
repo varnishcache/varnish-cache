@@ -49,7 +49,6 @@
 #include "cache_backend.h"
 #include "storage/storage.h"
 #include "vcl.h"
-#include "vcli.h"
 #include "vcli_priv.h"
 #include "waiter/waiter.h"
 #include "vsa.h"
