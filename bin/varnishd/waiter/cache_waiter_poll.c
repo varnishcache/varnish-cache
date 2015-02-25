@@ -149,7 +149,8 @@ vwp_main(void *priv)
 				break;
 			CHECK_OBJ_NOTNULL(sp, WAITED_MAGIC);
 			fd = sp->fd;
-VSL(SLT_Debug, 0, "POLL Handle %d %x", fd, vwp->pollfd[fd].revents);
+			VSL(SLT_Debug, 0,
+			    "POLL Handle %d %x", fd, vwp->pollfd[fd].revents);
 			assert(fd >= 0);
 			assert(fd <= vwp->hpoll);
 			assert(fd < vwp->npoll);
