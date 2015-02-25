@@ -43,7 +43,6 @@
 #include "vrt.h"
 #include "vcli.h"
 #include "vcli_priv.h"
-#include "vtim.h"
 
 struct vcls {
 	unsigned		magic;
