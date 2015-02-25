@@ -211,8 +211,8 @@ child_main(void)
 
 	Lck_New(&vxid_lock, lck_vxid);
 
-	PAN_Init();
 	CLI_Init();
+	PAN_Init();
 	VFP_Init();
 
 	Wait_Init();

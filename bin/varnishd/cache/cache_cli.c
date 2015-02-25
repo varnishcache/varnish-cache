@@ -36,19 +36,14 @@
 
 #include "config.h"
 
-#include <stddef.h>			// offsetof
-
 #include "cache.h"
 #include "common/heritage.h"
 
 #include "cache_backend.h"		// struct vbc
-#include "hash/hash_slinger.h"		// struct objhead
-#include "vsa.h"
 #include "vcli.h"
 #include "vcli_common.h"
 #include "vcli_priv.h"
 #include "vcli_serve.h"
-#include "storage/storage.h"		// struct storage
 
 pthread_t		cli_thread;
 static struct lock	cli_mtx;
@@ -116,96 +111,9 @@ CLI_Run(void)
 
 /*--------------------------------------------------------------------*/
 
-static void
-cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
-{
-	(void)av;
-	(void)priv;
-
-#define SZOF(foo)       VCLI_Out(cli, \
-    "sizeof(%s) = %zd = 0x%zx\n", #foo, sizeof(foo), sizeof(foo))
-	SZOF(struct ws);
-	SZOF(struct http);
-	SZOF(struct http_conn);
-	SZOF(struct acct_req);
-	SZOF(struct worker);
-	SZOF(struct wrk_accept);
-	SZOF(struct storage);
-	SZOF(struct busyobj);
-	SZOF(struct object);
-	SZOF(struct objcore);
-	SZOF(struct objhead);
-	SZOF(struct sess);
-	SZOF(struct req);
-	SZOF(struct vbc);
-	SZOF(struct VSC_C_main);
-	SZOF(struct lock);
-	SZOF(struct dstat);
-	VCLI_Out(cli, "sizeof(struct suckaddr) = %d = 0x%x\n",
-	    vsa_suckaddr_len, vsa_suckaddr_len);
-#if 0
-#define OFOF(foo, bar)	{ foo __foo; VCLI_Out(cli, \
-    "%-30s = 0x%4zx @ 0x%4zx\n", \
-	#foo "." #bar, sizeof(__foo.bar), offsetof(foo, bar)); }
-#if 0
-	OFOF(struct objhead, magic);
-	OFOF(struct objhead, refcnt);
-	OFOF(struct objhead, mtx);
-	OFOF(struct objhead, objcs);
-	OFOF(struct objhead, digest);
-	OFOF(struct objhead, waitinglist);
-	OFOF(struct objhead, _u);
-#endif
-#if 0
-	OFOF(struct http, magic);
-	OFOF(struct http, logtag);
-	OFOF(struct http, ws);
-	OFOF(struct http, hd);
-	OFOF(struct http, hdf);
-	OFOF(struct http, shd);
-	OFOF(struct http, nhd);
-	OFOF(struct http, status);
-	OFOF(struct http, protover);
-	OFOF(struct http, conds);
-#endif
-#if 0
-	OFOF(struct storage, magic);
-	OFOF(struct storage, fd);
-	OFOF(struct storage, where);
-	OFOF(struct storage, list);
-	OFOF(struct storage, stevedore);
-	OFOF(struct storage, priv);
-	OFOF(struct storage, ptr);
-	OFOF(struct storage, len);
-	OFOF(struct storage, space);
-#endif
-#undef OFOF
-#endif
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-ccf_panic(struct cli *cli, const char * const *av, void *priv)
-{
-
-	(void)cli;
-	(void)av;
-	(void)priv;
-	AZ(strcmp("", "You asked for it"));
-}
-
-/*--------------------------------------------------------------------*/
-
-static struct cli_proto master_cmds[] = {
+static struct cli_proto cli_cmds[] = {
 	{ CLI_PING,		"i", VCLS_func_ping },
 	{ CLI_HELP,             "i", VCLS_func_help },
-	{ "debug.sizeof", "debug.sizeof",
-		"\tDump sizeof various data structures.",
-		0, 0, "d", cli_debug_sizeof },
-	{ "debug.panic.worker", "debug.panic.worker",
-		"\tPanic the worker process.",
-		0, 0, "d", ccf_panic },
 	{ NULL }
 };
 
@@ -224,5 +132,5 @@ CLI_Init(void)
 	    &cache_param->cli_buffer, &cache_param->cli_limit);
 	AN(cls);
 
-	CLI_AddFuncs(master_cmds);
+	CLI_AddFuncs(cli_cmds);
 }

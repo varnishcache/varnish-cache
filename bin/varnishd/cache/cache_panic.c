@@ -36,18 +36,23 @@
 #endif
 
 #include <stdio.h>
+#include <stddef.h>			// offsetof()
 #include <stdlib.h>
 #include <signal.h>
 
 #include "cache.h"
 #include "cache_filter.h"
+#include "hash/hash_slinger.h"		// struct objhead
 #include "vend.h"
 #include "common/heritage.h"
 
 #include "cache_backend.h"
 #include "storage/storage.h"
 #include "vcl.h"
+#include "vcli.h"
+#include "vcli_priv.h"
 #include "waiter/waiter.h"
+#include "vsa.h"
 
 /*
  * The panic string is constructed in memory, then copied to the
@@ -572,6 +577,99 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 
 /*--------------------------------------------------------------------*/
 
+static void __match_proto__(cli_func_t)
+cli_debug_sizeof(struct cli *cli, const char * const *av, void *priv)
+{
+	(void)av;
+	AZ(priv);
+
+#define SZOF(foo)       VCLI_Out(cli, \
+    "sizeof(%s) = %zd = 0x%zx\n", #foo, sizeof(foo), sizeof(foo))
+	SZOF(struct ws);
+	SZOF(struct http);
+	SZOF(struct http_conn);
+	SZOF(struct acct_req);
+	SZOF(struct worker);
+	SZOF(struct wrk_accept);
+	SZOF(struct storage);
+	SZOF(struct busyobj);
+	SZOF(struct object);
+	SZOF(struct objcore);
+	SZOF(struct objhead);
+	SZOF(struct sess);
+	SZOF(struct req);
+	SZOF(struct vbc);
+	SZOF(struct VSC_C_main);
+	SZOF(struct lock);
+	SZOF(struct dstat);
+	VCLI_Out(cli, "sizeof(struct suckaddr) = %d = 0x%x\n",
+	    vsa_suckaddr_len, vsa_suckaddr_len);
+#if 0
+#define OFOF(foo, bar)	{ foo __foo; VCLI_Out(cli, \
+    "%-30s = 0x%4zx @ 0x%4zx\n", \
+	#foo "." #bar, sizeof(__foo.bar), offsetof(foo, bar)); }
+#if 0
+	OFOF(struct objhead, magic);
+	OFOF(struct objhead, refcnt);
+	OFOF(struct objhead, mtx);
+	OFOF(struct objhead, objcs);
+	OFOF(struct objhead, digest);
+	OFOF(struct objhead, waitinglist);
+	OFOF(struct objhead, _u);
+#endif
+#if 0
+	OFOF(struct http, magic);
+	OFOF(struct http, logtag);
+	OFOF(struct http, ws);
+	OFOF(struct http, hd);
+	OFOF(struct http, hdf);
+	OFOF(struct http, shd);
+	OFOF(struct http, nhd);
+	OFOF(struct http, status);
+	OFOF(struct http, protover);
+	OFOF(struct http, conds);
+#endif
+#if 0
+	OFOF(struct storage, magic);
+	OFOF(struct storage, fd);
+	OFOF(struct storage, where);
+	OFOF(struct storage, list);
+	OFOF(struct storage, stevedore);
+	OFOF(struct storage, priv);
+	OFOF(struct storage, ptr);
+	OFOF(struct storage, len);
+	OFOF(struct storage, space);
+#endif
+#undef OFOF
+#endif
+}
+
+/*--------------------------------------------------------------------*/
+
+static void __match_proto__(cli_func_t)
+ccf_panic(struct cli *cli, const char * const *av, void *priv)
+{
+
+	(void)cli;
+	(void)av;
+	AZ(priv);
+	AZ(strcmp("", "You asked for it"));
+}
+
+/*--------------------------------------------------------------------*/
+
+static struct cli_proto debug_cmds[] = {
+	{ "debug.sizeof", "debug.sizeof",
+		"\tDump sizeof various data structures.",
+		0, 0, "d", cli_debug_sizeof },
+	{ "debug.panic.worker", "debug.panic.worker",
+		"\tPanic the worker process.",
+		0, 0, "d", ccf_panic },
+	{ NULL }
+};
+
+/*--------------------------------------------------------------------*/
+
 void
 PAN_Init(void)
 {
@@ -582,4 +680,5 @@ PAN_Init(void)
 	AN(heritage.panic_str_len);
 	AN(VSB_new(pan_vsp, heritage.panic_str, heritage.panic_str_len,
 	    VSB_FIXEDLEN));
+	CLI_AddFuncs(debug_cmds);
 }
