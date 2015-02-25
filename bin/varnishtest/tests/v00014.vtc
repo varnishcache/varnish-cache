@@ -60,7 +60,7 @@ client c1 {
 
 	sema r3 sync 2
 	sema r4 sync 2
-	txreq 
+	txreq
 	rxresp
 	expect resp.status == 200
 } -run
