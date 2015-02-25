@@ -75,7 +75,8 @@ mgt_sltm(const char *tag, const char *sdesc, const char *ldesc)
 {
 	int i;
 
-	assert(sdesc != NULL || ldesc != NULL);
+	assert(sdesc != NULL && ldesc != NULL);
+	assert(*sdesc != '\0' || *ldesc != '\0');
 	printf("\n%s\n", tag);
 	i = strlen(tag);
 	printf("%*.*s\n\n", i, i, "------------------------------------");
