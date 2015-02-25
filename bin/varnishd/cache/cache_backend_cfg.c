@@ -152,15 +152,14 @@ VBE_DropRefConn(struct backend *b, const struct acct_bereq *acct_bereq)
  */
 
 struct backend *
-VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
+VBE_AddBackend(const struct vrt_backend *vb)
 {
 	struct backend *b;
 	char buf[128];
 
+	ASSERT_CLI();
 	AN(vb->vcl_name);
 	assert(vb->ipv4_suckaddr != NULL || vb->ipv6_suckaddr != NULL);
-	(void)cli;
-	ASSERT_CLI();
 
 	/* Run through the list and see if we already have this backend */
 	VTAILQ_FOREACH(b, &backends, list) {

@@ -37,7 +37,6 @@
 #include <stdlib.h>
 
 #include "cache.h"
-#include "cache_backend.h"
 
 #include "vcl.h"
 #include "vrt.h"

@@ -35,8 +35,6 @@
 #include "cache.h"
 #include "common/heritage.h"
 
-#include "cache_backend.h"	// For wrk->vbc
-
 #include "vmb.h"
 #include "vtim.h"
 

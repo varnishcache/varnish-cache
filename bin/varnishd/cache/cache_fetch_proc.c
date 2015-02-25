@@ -39,7 +39,6 @@
 
 #include "hash/hash_slinger.h"
 
-#include "cache_backend.h"
 #include "vcli_priv.h"
 
 static unsigned fetchfrag;

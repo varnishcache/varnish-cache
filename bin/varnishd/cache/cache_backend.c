@@ -279,7 +279,7 @@ VRT_init_vbe(VRT_CTX, struct director **dp, const struct vrt_backend *vrt)
 	AZ(*dp);
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
 
-	be = VBE_AddBackend(NULL, vrt);
+	be = VBE_AddBackend(vrt);
 	AN(be);
 	ALLOC_OBJ(d, DIRECTOR_MAGIC);
 	XXXAN(d);

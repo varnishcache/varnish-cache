@@ -109,7 +109,7 @@ void VBE_DropRefVcl(struct backend *);
 void VBE_DropRefLocked(struct backend *b, const struct acct_bereq *);
 unsigned VBE_Healthy(const struct backend *b, double *changed);
 void VBE_InitCfg(void);
-struct backend *VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb);
+struct backend *VBE_AddBackend(const struct vrt_backend *vb);
 void VBE_Poll(void);
 
 /* cache_backend_poll.c */
