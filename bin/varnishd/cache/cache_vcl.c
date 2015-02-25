@@ -461,8 +461,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		ctx.bo = bo;
 		ctx.now = bo->t_prev;
 	}
-	if (ctx.now == 0)
-		ctx.now = VTIM_real();
+	assert(ctx.now != 0);
 	ctx.ws = ws;
 	ctx.vsl = vsl;
 	ctx.method = method;
