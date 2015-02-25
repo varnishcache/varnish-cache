@@ -32,10 +32,7 @@
 
 #include "config.h"
 
-#include <poll.h>
 #include <stdlib.h>
-#include <stddef.h>
-#include <stdio.h>
 
 #include "cache.h"
 

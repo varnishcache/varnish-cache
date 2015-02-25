@@ -34,11 +34,7 @@
 
 #include "config.h"
 
-#include <math.h>
-#include <poll.h>
 #include <stdlib.h>
-#include <stddef.h>
-#include <stdio.h>
 
 #include "cache.h"
 
