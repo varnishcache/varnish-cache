@@ -108,7 +108,6 @@ void VBE_DropRefConn(struct backend *, const struct acct_bereq *);
 void VBE_DropRefVcl(struct backend *);
 void VBE_DropRefLocked(struct backend *b, const struct acct_bereq *);
 unsigned VBE_Healthy(const struct backend *b, double *changed);
-void VBE_InitCfg(void);
 struct backend *VBE_AddBackend(const struct vrt_backend *vb);
 void VBE_Poll(void);
 
@@ -118,9 +117,6 @@ void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
 void VBP_Remove(struct backend *b, struct vrt_backend_probe const *p);
 void VBP_Use(const struct backend *b, const struct vrt_backend_probe *p);
 void VBP_Summary(struct cli *cli, const struct vbp_target *vt);
-
-/* cache_backend_poll.c */
-void VBP_Init(void);
 
 struct tcp_pool *VBT_Ref(const char *name, const struct suckaddr *ip4,
     const struct suckaddr *ip6);

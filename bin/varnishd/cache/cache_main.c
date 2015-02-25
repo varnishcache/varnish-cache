@@ -33,8 +33,6 @@
 #include <stdlib.h>
 
 #include "cache.h"
-#include "cache_backend.h"
-#include "cache_director.h"
 #include "common/heritage.h"
 
 #include "vcli_priv.h"
