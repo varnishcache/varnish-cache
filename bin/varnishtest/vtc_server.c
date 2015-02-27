@@ -263,10 +263,8 @@ cmd_server(CMD_ARGS)
 				(void)pthread_cancel(s->tp);
 				server_wait(s);
 			}
-			if (s->sock >= 0) {
+			if (s->sock >= 0)
 				VTCP_close(&s->sock);
-				s->sock = -1;
-			}
 			server_delete(s);
 		}
 		return;
@@ -312,10 +310,8 @@ cmd_server(CMD_ARGS)
 			continue;
 		}
 		if (!strcmp(*av, "-listen")) {
-			if (s->sock >= 0) {
+			if (s->sock >= 0)
 				VTCP_close(&s->sock);
-				s->sock = -1;
-			}
 			bprintf(s->listen, "%s", av[1]);
 			AZ(VSS_parse(s->listen, &s->addr, &s->port));
 			av++;
