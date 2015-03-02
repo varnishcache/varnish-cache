@@ -182,7 +182,7 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 	AZ(VSB_finish(vsb));
 	VCLI_Out(cli, "Using pattern \"%s\"\n", VSB_data(vsb));
 	VTAILQ_FOREACH(b, &backends, list) {
-		if (fnmatch(VSB_data(vsb), b->display_name, FNM_CASEFOLD))
+		if (fnmatch(VSB_data(vsb), b->display_name, 0))
 			continue;
 		found++;
 		i = func(cli, b, priv);
