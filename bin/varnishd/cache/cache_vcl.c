@@ -215,6 +215,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	ctx.method = VCL_MET_INIT;
 	ctx.handling = &hand;
 	ctx.cli = cli;
+	ctx.vcl = vcl->conf;
 
 	if (vcl->conf->event_vcl(&ctx, VCL_EVENT_INIT)) {
 		VCLI_Out(cli, "VCL \"%s\" Failed to initialize", name);
@@ -264,6 +265,7 @@ VCL_Nuke(struct vcls *vcl)
 	VTAILQ_REMOVE(&vcl_head, vcl, list);
 	ctx.method = VCL_MET_FINI;
 	ctx.handling = &hand;
+	ctx.vcl = vcl->conf;
 	(void)vcl->conf->fini_func(&ctx);
 	assert(hand == VCL_RET_OK);
 	AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_FINI));
