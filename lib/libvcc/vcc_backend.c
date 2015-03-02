@@ -48,11 +48,14 @@ Emit_Sockaddr(struct vcc *tl, const struct token *t_host, const char *port)
 {
 	const char *ipv4, *ipv4a, *ipv6, *ipv6a, *pa;
 	const char *err;
+	char *p;
 	char *hop, *pop;
 
 	AN(t_host->dec);
 
-	err = VSS_parse(t_host->dec, &hop, &pop);
+	p = TlDup(tl, t_host->dec);
+	AN(p);
+	err = VSS_parse(p, &hop, &pop);
 	if (err != NULL) {
 		VSB_printf(tl->sb,
 		    "Backend host '%.*s': %s\n", PF(t_host), err);

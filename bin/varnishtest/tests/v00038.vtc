@@ -1,8 +1,14 @@
 varnishtest "VCL compiler coverage test: vcc_backend.c"
 
-varnish v1 -errvcl "IPv6 address [] wrong" {
+varnish v1 -errvcl "IPv6 address lacks ']'" {
 	backend b1 {
 		.host = "[0:0:0:0";
+	}
+}
+
+varnish v1 -errvcl "IPv6 address has wrong port separator" {
+	backend b1 {
+		.host = "[0:0:0:0]/0";
 	}
 }
 

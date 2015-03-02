@@ -72,43 +72,36 @@ struct vss_addr {
  */
 
 const char *
-VSS_parse(const char *str, char **addr, char **port)
+VSS_parse(char *str, char **addr, char **port)
 {
-	const char *p;
+	char *p;
 
 	*addr = *port = NULL;
 
 	if (str[0] == '[') {
 		/* IPv6 address of the form [::1]:80 */
-		if ((p = strchr(str, ']')) == NULL ||
-		    p == str + 1 ||
-		    (p[1] != '\0' && p[1] != ':'))
-			return ("IPv6 address [] wrong.");
-		*addr = strdup(str + 1);
-		XXXAN(*addr);
-		(*addr)[p - (str + 1)] = '\0';
-		if (p[1] == ':') {
-			*port = strdup(p + 2);
-			XXXAN(*port);
-		}
+		*addr = str + 1;
+		p = strchr(str, ']');
+		if (p == NULL)
+			return ("IPv6 address lacks ']'");
+		*p++ = '\0';
+		if (*p == '\0')
+			return (NULL);
+		if (*p != ' ' && *p != ':')
+			return ("IPv6 address has wrong port separator");
 	} else {
 		/* IPv4 address of the form 127.0.0.1:80, or non-numeric */
+		*addr = str;
 		p = strchr(str, ' ');
 		if (p == NULL)
 			p = strchr(str, ':');
-		if (p == NULL) {
-			*addr = strdup(str);
-			XXXAN(*addr);
-		} else {
-			if (p > str) {
-				*addr = strdup(str);
-				XXXAN(*addr);
-				(*addr)[p - str] = '\0';
-			}
-			*port = strdup(p + 1);
-			XXXAN(*port);
-		}
+		if (p == NULL)
+			return (NULL);
+		if (p == str)
+			*addr = NULL;
 	}
+	*p++ = '\0';
+	*port = p;
 	return (NULL);
 }
 
@@ -136,6 +129,7 @@ VSS_resolve(const char *addr, const char *port, struct vss_addr ***vap)
 	struct vss_addr **va;
 	int i, ret;
 	long int ptst;
+	char *h;
 	char *adp, *hop;
 
 	*vap = NULL;
@@ -143,23 +137,25 @@ VSS_resolve(const char *addr, const char *port, struct vss_addr ***vap)
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
-	if (VSS_parse(addr, &hop, &adp) != NULL)
+	h = strdup(addr);
+	AN(h);
+	if (VSS_parse(h, &hop, &adp) != NULL) {
+		free(h);
 		return (0);
+	}
 
 	if (adp == NULL)
 		ret = getaddrinfo(addr, port, &hints, &res0);
 	else {
 		ptst = strtol(adp, NULL, 10);
 		if (ptst < 0 || ptst > 65535) {
-			free(hop);
-			free(adp);
+			free(h);
 			return(0);
 		}
 		ret = getaddrinfo(hop, adp, &hints, &res0);
 	}
 
-	free(hop);
-	free(adp);
+	free(h);
 
 	if (ret != 0)
 		return (0);
