@@ -47,7 +47,6 @@ struct vcls {
 	unsigned		magic;
 #define VVCLS_MAGIC		0x214188f2
 	VTAILQ_ENTRY(vcls)	list;
-	char			*name;
 	void			*dlh;
 	struct VCL_conf		conf[1];
 };
@@ -162,7 +161,7 @@ vcl_find(const char *name)
 	VTAILQ_FOREACH(vcl, &vcl_head, list) {
 		if (vcl->conf->discard)
 			continue;
-		if (!strcmp(vcl->name, name))
+		if (!strcmp(vcl->conf->loaded_name, name))
 			return (vcl);
 	}
 	return (NULL);
@@ -202,6 +201,8 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 		return (1);
 	}
 	memcpy(vcl->conf, cnf, sizeof *cnf);
+	vcl->conf->loaded_name = strdup(name);
+	XXXAN(vcl->conf->loaded_name);
 
 	if (vcl->conf->magic != VCL_CONF_MAGIC) {
 		VCLI_Out(cli, "Wrong VCL_CONF_MAGIC\n");
@@ -233,7 +234,6 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 		return (1);
 	}
 	assert(hand == VCL_RET_OK);
-	REPLACE(vcl->name, name);
 	VCLI_Out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
 	VTAILQ_INSERT_TAIL(&vcl_head, vcl, list);
 	Lck_Lock(&vcl_mtx);
@@ -267,7 +267,7 @@ VCL_Nuke(struct vcls *vcl)
 	(void)vcl->conf->fini_func(&ctx);
 	assert(hand == VCL_RET_OK);
 	AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_FINI));
-	free(vcl->name);
+	free(vcl->conf->loaded_name);
 	(void)dlclose(vcl->dlh);
 	FREE_OBJ(vcl);
 	VSC_C_main->n_vcl--;
@@ -308,7 +308,7 @@ ccf_config_list(struct cli *cli, const char * const *av, void *priv)
 		VCLI_Out(cli, "%-10s %6u %s\n",
 		    flg,
 		    vcl->conf->busy,
-		    vcl->name);
+		    vcl->conf->loaded_name);
 	}
 }
 
