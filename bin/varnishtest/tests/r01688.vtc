@@ -1,0 +1,45 @@
+varnishtest "ESI-included, compressed synthetic responses"
+
+server s1 {
+	rxreq
+	expect req.url == "/bar"
+	txresp -gzipbody {<XYZ><esi:include src="/foo"/></XYZ>}
+	rxreq
+	expect req.url == "/baz"
+	txresp -gzipbody {<XYZ><esi:include src="/quux"/></XYZ>}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+	  if (req.url == "/foo" || req.url == "/quux") {
+	    return(synth(998, "included synthetic reponse"));
+	  }
+	}
+
+	sub vcl_synth {
+	  if (resp.status == 998) {
+	    synthetic("this is the body of an included synthetic response");
+	    return(deliver);
+	  }
+	}
+
+	sub vcl_backend_response {
+	  set beresp.do_esi = true;
+	}
+} -start
+
+client c1 {
+	txreq -url /bar
+	rxresp
+	expect resp.status == 200
+	delay .1
+	expect resp.body == "<XYZ>this is the body of an included synthetic response</XYZ>"
+
+	txreq -url /baz -hdr "Accept-Encoding: gzip"
+	timeout 2
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Content-Encoding == "gzip"
+	gunzip
+	expect resp.body == "<XYZ>this is the body of an included synthetic response</XYZ>"
+} -run

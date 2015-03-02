@@ -633,6 +633,7 @@ cmd_http_gunzip_body(CMD_ARGS)
 
 	assert(Z_OK == inflateInit2(&vz, 31));
 	i = inflate(&vz, Z_FINISH);
+	assert(vz.total_out < l);
 	hp->bodyl = vz.total_out;
 	memcpy(hp->body, p, hp->bodyl);
 	free(p);
@@ -653,6 +654,7 @@ cmd_http_gunzip_body(CMD_ARGS)
 		    "Gunzip error = %d (%s) in:%jd out:%jd",
 		    i, vz.msg, (intmax_t)vz.total_in, (intmax_t)vz.total_out);
 	assert(Z_OK == inflateEnd(&vz));
+	hp->body[hp->bodyl] = '\0';
 }
 
 /**********************************************************************
