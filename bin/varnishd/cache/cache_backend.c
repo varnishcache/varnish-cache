@@ -356,7 +356,7 @@ VRT_fini_vbe(VRT_CTX, struct director **dp, const struct vrt_backend *vrt)
 	if (vrt->probe != NULL)
 		VBP_Remove(be, vrt->probe);
 
-	VBE_Drop(be);
+	VBE_DeleteBackend(be);
 	free(d->vcl_name);
 	FREE_OBJ(d);
 }

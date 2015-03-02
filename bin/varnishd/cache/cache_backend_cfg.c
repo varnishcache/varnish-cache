@@ -55,13 +55,12 @@ static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
  */
 
 void
-VBE_Drop(struct backend *b)
+VBE_DeleteBackend(struct backend *b)
 {
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 
-	b->vsc->vcls--;
 	VTAILQ_REMOVE(&backends, b, list);
 	free(b->ipv4);
 	free(b->ipv6);
@@ -99,7 +98,6 @@ VBE_AddBackend(const struct vrt_backend *vb)
 	    vb->ipv6_addr == NULL ? "" : vb->ipv6_addr, vb->port);
 
 	b->vsc = VSM_Alloc(sizeof *b->vsc, VSC_CLASS, VSC_type_vbe, buf);
-	b->vsc->vcls++;
 
 	b->vcl_name =  vb->vcl_name;
 	REPLACE(b->display_name, buf);

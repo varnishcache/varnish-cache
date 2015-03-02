@@ -179,10 +179,6 @@ VSC_F(g_smf_large,		uint64_t, 0, 'g', 'i', info,
 
 #ifdef VSC_DO_VBE
 
-VSC_F(vcls,			uint64_t, 0, 'g', 'i', debug,
-    "VCL references",
-	""
-)
 VSC_F(happy,			uint64_t, 0, 'b', 'b', info,
     "Happy health probes",
 	""
