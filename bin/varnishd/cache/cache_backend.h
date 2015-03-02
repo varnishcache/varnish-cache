@@ -95,9 +95,10 @@ struct vbc {
 	uint8_t			state;
 #define VBC_STATE_AVAIL		(1<<0)
 #define VBC_STATE_USED		(1<<1)
-#define VBC_STATE_CLEANUP	(1<<2)
+#define VBC_STATE_STOLEN	(1<<2)
+#define VBC_STATE_CLEANUP	(1<<3)
 	uint8_t			in_waiter;
-	uint8_t			stolen;
+	uint8_t			have_been_in_waiter;
 	struct waited		waited[1];
 
 	struct backend		*backend;
