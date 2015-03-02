@@ -7,17 +7,25 @@ server s1 {
 	rxreq
 	expect req.url == "/foo"
 	txresp -hdr "Content-Encoding: gzip"
+	rxreq
+	expect req.url == "/baz"
+	txresp -gzipbody {<esi:include src="/quux"/>}
+	rxreq
+	expect req.url == "/quux"
+	txresp -status 204 -hdr "Content-Encoding: gzip"
 } -start
 
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_esi = true;
-		set beresp.do_gzip = true;
 	}
 } -start
 
 client c1 {
 	txreq -url /bar -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.status == 200
+	txreq -url /baz -hdr "Accept-Encoding: gzip"
 	rxresp
 	expect resp.status == 200
 } -run
