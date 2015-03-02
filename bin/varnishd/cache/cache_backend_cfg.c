@@ -33,6 +33,7 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <fnmatch.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -41,7 +42,9 @@
 #include "cache_backend.h"
 #include "vcli.h"
 #include "vcli_priv.h"
+#include "vcl.h"
 #include "vsa.h"
+#include "vsb.h"
 #include "vrt.h"
 #include "vtim.h"
 
@@ -78,7 +81,7 @@ VBE_DeleteBackend(struct backend *b)
  */
 
 struct backend *
-VBE_AddBackend(const struct vrt_backend *vb)
+VBE_AddBackend(const char *vcl, const struct vrt_backend *vb)
 {
 	struct backend *b;
 	char buf[128];
@@ -92,15 +95,12 @@ VBE_AddBackend(const struct vrt_backend *vb)
 	XXXAN(b);
 	Lck_New(&b->mtx, lck_backend);
 
-	bprintf(buf, "%s(%s,%s,%s)",
-	    vb->vcl_name,
-	    vb->ipv4_addr == NULL ? "" : vb->ipv4_addr,
-	    vb->ipv6_addr == NULL ? "" : vb->ipv6_addr, vb->port);
+	bprintf(buf, "%s.%s", vcl, vb->vcl_name);
+	REPLACE(b->display_name, buf);
 
 	b->vsc = VSM_Alloc(sizeof *b->vsc, VSC_CLASS, VSC_type_vbe, buf);
 
 	b->vcl_name =  vb->vcl_name;
-	REPLACE(b->display_name, buf);
 	b->ipv4_addr = vb->ipv4_addr;
 	b->ipv6_addr = vb->ipv6_addr;
 	b->port = vb->port;
@@ -149,7 +149,7 @@ vbe_str2adminhealth(const char *wstate)
  *
  * Return -1 on match-argument parse errors.
  *
- * If the call-back function returns non-zero, the search is terminated
+ * If the call-back function returns negative, the search is terminated
  * and we relay that return value.
  *
  * Otherwise we return the number of matches.
@@ -160,95 +160,38 @@ typedef int bf_func(struct cli *cli, struct backend *b, void *priv);
 static int
 backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 {
+	int i, found = 0;
+	struct vsb *vsb;
+	struct VCL_conf *vcc = NULL;
 	struct backend *b;
-	const char *s;
-	const char *name_b;
-	ssize_t name_l = 0;
-	const char *ip_b = NULL;
-	ssize_t ip_l = 0;
-	const char *port_b = NULL;
-	ssize_t port_l = 0;
-	int all, found = 0;
-	int i;
 
-	name_b = matcher;
-	if (matcher != NULL) {
-		s = strchr(matcher,'(');
-
-		if (s != NULL)
-			name_l = s - name_b;
-		else
-			name_l = strlen(name_b);
-
-		if (s != NULL) {
-			s++;
-			while (isspace(*s))
-				s++;
-			ip_b = s;
-			while (*s != '\0' &&
-			    *s != ')' &&
-			    *s != ':' &&
-			    !isspace(*s))
-				s++;
-			ip_l = s - ip_b;
-			while (isspace(*s))
-				s++;
-			if (*s == ':') {
-				s++;
-				while (isspace(*s))
-					s++;
-				port_b = s;
-				while (*s != '\0' && *s != ')' && !isspace(*s))
-					s++;
-				port_l = s - port_b;
-			}
-			while (isspace(*s))
-				s++;
-			if (*s != ')') {
-				VCLI_Out(cli,
-				    "Match string syntax error:"
-				    " ')' not found.");
-				VCLI_SetResult(cli, CLIS_CANT);
-				return (-1);
-			}
-			s++;
-			while (isspace(*s))
-				s++;
-			if (*s != '\0') {
-				VCLI_Out(cli,
-				    "Match string syntax error:"
-				    " junk after ')'");
-				VCLI_SetResult(cli, CLIS_CANT);
-				return (-1);
-			}
-		}
+	VCL_Refresh(&vcc);
+	AN(vcc);
+	vsb = VSB_new_auto();
+	AN(vsb);
+	if (matcher == NULL || *matcher == '\0' || !strcmp(matcher, "*")) {
+		// all backends in active VCL
+		VSB_printf(vsb, "%s.*", vcc->loaded_name);
+	} else if (strchr(matcher, '.') != NULL) {
+		// use pattern as is
+		VSB_cat(vsb, matcher);
+	} else {
+		// pattern applies to active vcl
+		VSB_printf(vsb, "%s.%s", vcc->loaded_name, matcher);
 	}
-
-	for (all = 0; all < 2 && found == 0; all++) {
-		if (all == 0 && name_b == NULL)
+	AZ(VSB_finish(vsb));
+	VCLI_Out(cli, "Using pattern \"%s\"\n", VSB_data(vsb));
+	VTAILQ_FOREACH(b, &backends, list) {
+		if (fnmatch(VSB_data(vsb), b->display_name, FNM_CASEFOLD))
 			continue;
-		VTAILQ_FOREACH(b, &backends, list) {
-			CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-			if (port_b != NULL &&
-			    strncmp(b->port, port_b, port_l) != 0)
-				continue;
-			if (name_b != NULL &&
-			    strncmp(b->vcl_name, name_b, name_l) != 0)
-				continue;
-			if (all == 0 && b->vcl_name[name_l] != '\0')
-				continue;
-			if (ip_b != NULL &&
-			    (b->ipv4_addr == NULL ||
-				strncmp(b->ipv4_addr, ip_b, ip_l)) &&
-			    (b->ipv6_addr == NULL ||
-				strncmp(b->ipv6_addr, ip_b, ip_l)))
-				continue;
-			found++;
-			i = func(cli, b, priv);
-			if (i)
-				return (i);
+		found++;
+		i = func(cli, b, priv);
+		if (i < 0) {
+			found = i;
+			break;
 		}
 	}
+	VSB_delete(vsb);
 	return (found);
 }
 

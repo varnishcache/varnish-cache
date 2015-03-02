@@ -38,6 +38,7 @@
 
 #include "cache_backend.h"
 #include "cache_director.h"
+#include "vcl.h"
 #include "vrt.h"
 #include "vtcp.h"
 
@@ -294,8 +295,9 @@ VRT_init_vbe(VRT_CTX, struct director **dp, const struct vrt_backend *vrt)
 	AN(dp);
 	AZ(*dp);
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_CONF_MAGIC);
 
-	be = VBE_AddBackend(vrt);
+	be = VBE_AddBackend(ctx->vcl->loaded_name, vrt);
 	AN(be);
 	ALLOC_OBJ(d, DIRECTOR_MAGIC);
 	XXXAN(d);

@@ -104,9 +104,9 @@ struct vbc {
 };
 
 /* cache_backend_cfg.c */
-void VBE_DeleteBackend(struct backend *);
 unsigned VBE_Healthy(const struct backend *b, double *changed);
-struct backend *VBE_AddBackend(const struct vrt_backend *vb);
+struct backend *VBE_AddBackend(const char *vcl, const struct vrt_backend *vb);
+void VBE_DeleteBackend(struct backend *);
 
 /* cache_backend_poll.c */
 void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,

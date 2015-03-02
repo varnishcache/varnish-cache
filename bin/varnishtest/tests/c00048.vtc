@@ -58,8 +58,8 @@ client c1 {
 varnish v1 -clierr 106 "backend.set_health s1 foo"
 varnish v1 -clierr 106 "backend.set_health s2 foo"
 varnish v1 -clierr 106 "backend.set_health s2 auto"
-varnish v1 -cliok "backend.list (foo)"
-varnish v1 -clierr 300 "backend.list ("
-varnish v1 -clierr 300 {backend.list " ( : ) -"}
-varnish v1 -cliok {backend.list "a ( b : c )"}
+varnish v1 -cliok "vcl.list"
+varnish v1 -cliok "backend.list *"
+varnish v1 -cliok "backend.list *.foo"
+varnish v1 -cliok "backend.list vcl1.*"
 
