@@ -632,8 +632,6 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	/* Macro for accessing directors */
 	Fh(tl, 0, "#define VGCDIR(n) VCL_conf.director[VGC_backend_##n]\n");
 
-	Fh(tl, 0, "#define __match_proto__(xxx)		/*lint -e{818} */\n");
-
 	/* Register and lex the main source */
 	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
 	sp->idx = tl->nsources++;

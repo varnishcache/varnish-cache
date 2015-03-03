@@ -1153,6 +1153,7 @@ vcl_output_lang_h(struct vsb *sb)
 {
 """)
 
+emit_file(fo, buildroot, "include/vdef.h")
 emit_file(fo, buildroot, "include/vcl.h")
 emit_file(fo, srcroot, "include/vrt.h")
 emit_file(fo, buildroot, "include/vrt_obj.h")
