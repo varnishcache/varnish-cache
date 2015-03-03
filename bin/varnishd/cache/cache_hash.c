@@ -693,7 +693,7 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 
 	if (!(oc->flags & OC_F_PRIVATE)) {
 		BAN_NewObjCore(oc);
-		EXP_Insert(oc);
+		EXP_Insert(wrk, oc);
 		AN(oc->exp_flags & OC_EF_EXP);
 		AN(oc->ban);
 	}

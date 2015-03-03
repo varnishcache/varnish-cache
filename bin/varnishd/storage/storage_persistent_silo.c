@@ -166,7 +166,7 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		oc->ban = BAN_RefBan(oc, so->ban, sc->tailban);
 		HSH_Insert(wrk, so->hash, oc);
 		oc->exp = so->exp;
-		EXP_Inject(oc, sg->lru);
+		EXP_Inject(wrk, oc, sg->lru);
 		sg->nobj++;
 	}
 	Pool_Sumstat(wrk);

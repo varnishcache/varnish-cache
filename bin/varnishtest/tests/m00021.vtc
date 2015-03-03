@@ -1,0 +1,49 @@
+varnishtest "Test expiry callbacks"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+varnish v1 -cliok "param.set debug +vclrel"
+
+logexpect l1 -v v1 -g raw {
+	expect * 0 Debug "exp_cb: registered"
+	expect * 0 Debug "exp_cb: event insert 0x[0-9a-f]+"
+	expect * 0 Debug "exp_cb: event remove 0x[0-9a-f]+"
+	expect * 0 Debug "exp_cb: deregistered"
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_debug};
+
+	sub vcl_init {
+		debug.register_exp_callback();
+	}
+
+	sub vcl_recv {
+		if (req.method == "PURGE") {
+			return (purge);
+		}
+	}
+}
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+
+	txreq -req PURGE
+	rxresp
+} -run
+varnish v1 -expect n_object == 0
+
+varnish v1 -vcl+backend {}
+varnish v1 -cliok "vcl.discard vcl2"
+varnish v1 -cliok "debug.vmod"
+varnish v1 -cliok "vcl.list"
+varnish v1 -expect vmods == 0
+
+logexpect l1 -wait

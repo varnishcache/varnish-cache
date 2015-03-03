@@ -778,13 +778,24 @@ void EXP_Clr(struct exp *e);
 
 double EXP_Ttl(const struct req *, const struct exp*);
 double EXP_When(const struct exp *exp);
-void EXP_Insert(struct objcore *oc);
-void EXP_Inject(struct objcore *oc, struct lru *lru);
+void EXP_Insert(struct worker *wrk, struct objcore *oc);
+void EXP_Inject(struct worker *wrk, struct objcore *oc, struct lru *lru);
 void EXP_Init(void);
 void EXP_Rearm(struct objcore *, double now, double ttl, double grace,
     double keep);
 void EXP_Touch(struct objcore *oc, double now);
 int EXP_NukeOne(struct worker *wrk, struct lru *lru);
+
+enum exp_event_e {
+	EXP_INSERT,
+	EXP_INJECT,
+	EXP_REMOVE,
+};
+typedef void exp_callback_f(struct worker *, struct objcore *,
+    enum exp_event_e, void *priv);
+
+uintptr_t EXP_Register_Callback(exp_callback_f *func, void *priv);
+void EXP_Deregister_Callback(uintptr_t*);
 
 /* cache_fetch.c */
 enum vbf_fetch_mode_e {

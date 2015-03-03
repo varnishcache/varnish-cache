@@ -111,6 +111,7 @@
 -emacro(527, NEEDLESS_RETURN)	// unreachable code
 
 -sem(EXP_Inject, custodial(1))
+-sem(HSH_Insert, custodial(3))
 -sem(WS_Init, custodial(2))
 -sem(http_Setup, custodial(2))
 -sem(vfp_esi_end, custodial(2))

@@ -93,3 +93,7 @@ Encrypt the HTTP header with quad-ROT13 encryption,
 $Function STRING argtest(STRING one, REAL two=2, STRING three="3")
 
 $Function INT vre_limit()
+
+$Function VOID register_exp_callback(PRIV_VCL)
+
+Register the vmod to receive expiry callbacks
