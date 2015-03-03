@@ -42,7 +42,7 @@ client c1 {
 #delay 0.1
 varnish v1 -expect bans_lurker_tests_tested == 0
 
-delay 1.0
+delay 1.5
 varnish v1 -expect bans_lurker_tests_tested >= 1
 
 varnish v1 -cliok "param.set ban_lurker_sleep 5.01"
