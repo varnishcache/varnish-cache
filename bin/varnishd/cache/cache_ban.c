@@ -62,13 +62,10 @@
 
 #include "config.h"
 
-#include <math.h>
 #include <pcre.h>
 #include <stdarg.h>
-#include <stdio.h>
 
 #include "cache.h"
-#include "storage/storage.h"
 
 #include "hash/hash_slinger.h"
 #include "vcli.h"

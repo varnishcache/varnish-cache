@@ -39,7 +39,6 @@
 #include "cache.h"
 
 #include "cache_backend.h"
-#include "vrt.h"
 #include "vtcp.h"
 #include "vsa.h"
 #include "waiter/waiter.h"

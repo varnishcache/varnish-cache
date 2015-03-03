@@ -32,7 +32,6 @@
 
 #include "config.h"
 
-#include <ctype.h>
 #include <fnmatch.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,7 +43,6 @@
 #include "vcli_priv.h"
 #include "vcl.h"
 #include "vsa.h"
-#include "vsb.h"
 #include "vrt.h"
 #include "vtim.h"
 

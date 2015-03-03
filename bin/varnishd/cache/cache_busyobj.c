@@ -34,7 +34,6 @@
 
 #include <stdlib.h>
 #include <stddef.h>
-#include <stdio.h>
 
 #include "cache.h"
 
