@@ -35,7 +35,6 @@
 #include <execinfo.h>
 #endif
 
-#include <stdio.h>
 #include <stddef.h>			// offsetof()
 #include <stdlib.h>
 #include <signal.h>

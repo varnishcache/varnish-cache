@@ -29,7 +29,6 @@
 
 #include "config.h"
 
-#include <inttypes.h>
 #include <stdlib.h>
 
 #include "cache.h"

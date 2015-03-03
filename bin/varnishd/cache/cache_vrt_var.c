@@ -30,9 +30,6 @@
  */
 #include "config.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "cache.h"
 #include "common/heritage.h"
 #include "hash/hash_slinger.h"
