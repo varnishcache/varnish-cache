@@ -1,0 +1,17 @@
+varnishtest "Test/coverage of varnish master signal handling"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+server s1 -wait
+
+shell "kill -15 ${v1_pid}"

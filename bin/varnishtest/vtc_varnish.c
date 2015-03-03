@@ -384,7 +384,7 @@ varnish_launch(struct varnish *v)
 	vsb = VSB_new_auto();
 	AN(vsb);
 	VSB_printf(vsb, "cd ${pwd} &&");
-	VSB_printf(vsb, " ${varnishd} -d -d -n %s", v->workdir);
+	VSB_printf(vsb, "exec ${varnishd} -d -d -n %s", v->workdir);
 	VSB_printf(vsb, " -l 2m,1m,-");
 	VSB_printf(vsb, " -p auto_restart=off");
 	VSB_printf(vsb, " -p syslog_cli_traffic=off");
@@ -420,6 +420,7 @@ varnish_launch(struct varnish *v)
 		exit(1);
 	} else {
 		vtc_log(v->vl, 3, "PID: %ld", (long)v->pid);
+		macro_def(v->vl, v->name, "pid", "%ld", (long)v->pid);
 	}
 	AZ(close(v->fds[0]));
 	AZ(close(v->fds[3]));
@@ -461,7 +462,6 @@ varnish_launch(struct varnish *v)
 
 	vtc_log(v->vl, 3, "CLI connection fd = %d", v->cli_fd);
 	assert(v->cli_fd >= 0);
-
 
 	/* Receive the banner or auth response */
 	u = varnish_ask_cli(v, NULL, &r);
