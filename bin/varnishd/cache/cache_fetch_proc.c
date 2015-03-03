@@ -30,14 +30,10 @@
 #include "config.h"
 
 #include <inttypes.h>
-#include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "cache.h"
 #include "cache_filter.h"
-
-#include "hash/hash_slinger.h"
 
 #include "vcli_priv.h"
 

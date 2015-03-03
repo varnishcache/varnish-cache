@@ -38,14 +38,12 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "cache.h"
 #include "cache_filter.h"
 #include "vend.h"
 
-#include "vend.h"
 #include "vgz.h"
 
 struct vgz {

@@ -29,15 +29,9 @@
 
 #include "config.h"
 
-#include <inttypes.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "cache.h"
 #include "cache_director.h"
 #include "cache_filter.h"
-#include "vend.h"
 #include "hash/hash_slinger.h"
 #include "vcl.h"
 #include "vtim.h"

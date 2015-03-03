@@ -41,7 +41,6 @@
 
 #include "config.h"
 
-#include <math.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <netinet/in.h>

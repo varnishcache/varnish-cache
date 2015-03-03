@@ -36,7 +36,6 @@
 #include "config.h"
 
 #include <stdlib.h>
-#include <math.h>
 
 #include "cache.h"
 

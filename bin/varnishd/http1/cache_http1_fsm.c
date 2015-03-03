@@ -33,7 +33,6 @@
 
 #include "config.h"
 
-#include <math.h>
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
