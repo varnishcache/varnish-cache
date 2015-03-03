@@ -192,7 +192,8 @@ exp_cb(struct worker *wrk, struct objcore *oc, enum exp_event_e ev, void *priv)
 	case EXP_REMOVE: what = "remove"; break;
 	default: WRONG("Wrong exp_event");
 	}
-	VSL(SLT_Debug, 0, "exp_cb: event %s %p", what, oc);
+	VSL(SLT_Debug, 0, "exp_cb: event %s 0x%jx", what,
+	    (intmax_t)(uintptr_t)oc);
 }
 
 VCL_VOID __match_proto__()
