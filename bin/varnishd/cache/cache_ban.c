@@ -63,7 +63,6 @@
 #include "config.h"
 
 #include <pcre.h>
-#include <stdarg.h>
 
 #include "cache.h"
 

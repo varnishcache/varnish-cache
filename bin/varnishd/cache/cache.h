@@ -34,6 +34,8 @@
  */
 #define VARNISH_CACHE_CHILD	1
 
+#include <stdarg.h>
+
 #include "common/common.h"
 
 #include "vapi/vsl_int.h"
@@ -44,7 +46,6 @@
 #ifdef HAVE_PTHREAD_NP_H
 #include <pthread_np.h>
 #endif
-#include <stdarg.h>
 #include <string.h>
 #include <limits.h>
 #include <unistd.h>
