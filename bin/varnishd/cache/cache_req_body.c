@@ -42,13 +42,15 @@
  *
  * This can be done exactly once if uncached, and multiple times if the
  * req.body is cached.
+ *
+ * return length or -1 on error
  */
 
-int
+ssize_t
 VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv)
 {
 	char buf[8192];
-	ssize_t l;
+	ssize_t l, ll = 0;
 	void *p;
 	int i;
 	struct vfp_ctx *vfc;
@@ -65,11 +67,12 @@ VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv)
 		AN(oi);
 		do {
 			ois = ObjIter(req->body_oc, oi, &p, &l);
+			ll += l;
 			if (l > 0 && func(req, priv, p, l))
 				break;
 		} while (ois == OIS_DATA);
 		ObjIterEnd(req->body_oc, &oi);
-		return (ois == OIS_DONE ? 0 : -1);
+		return (ois == OIS_DONE ? ll : -1);
 	case REQ_BODY_NONE:
 		return (0);
 	case REQ_BODY_WITH_LEN:
@@ -116,14 +119,16 @@ VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv)
 		vfps = VFP_Suck(vfc, buf, &l);
 		if (vfps == VFP_ERROR) {
 			req->req_body_status = REQ_BODY_FAIL;
-			l = -1;
+			ll = -1;
 			break;
 		} else if (l > 0) {
 			req->req_bodybytes += l;
 			req->acct.req_bodybytes += l;
+			ll += l;
 			l = func(req, priv, buf, l);
 			if (l) {
 				req->req_body_status = REQ_BODY_FAIL;
+				ll = -1;
 				break;
 			}
 		}
@@ -131,7 +136,7 @@ VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv)
 	VFP_Close(vfc);
 	VSLb_ts_req(req, "ReqBody", VTIM_real());
 
-	return (l);
+	return (ll);
 }
 
 /*----------------------------------------------------------------------

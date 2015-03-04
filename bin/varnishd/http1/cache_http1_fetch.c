@@ -77,7 +77,8 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 	struct http *hp;
 	enum http1_status_e hs;
 	int retry = 1;
-	int i, j, first;
+	int j, first;
+	ssize_t i;
 	struct http_conn *htc;
 	int do_chunked = 0;
 
@@ -129,7 +130,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 	}
 
 	j = V1L_FlushRelease(wrk);
-	if (j != 0 || i != 0) {
+	if (j != 0 || i < 0) {
 		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
 		    errno, strerror(errno));
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));

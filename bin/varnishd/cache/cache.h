@@ -761,7 +761,7 @@ void V1P_Process(struct req *req, struct busyobj *bo, int fd);
 /* cache_req_body.c */
 int VRB_Ignore(struct req *req);
 int VRB_Cache(struct req *req, ssize_t maxsize);
-int VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv);
+ssize_t VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv);
 void VRB_Free(struct req *req);
 
 /* cache_req_fsm.c [CNT] */
