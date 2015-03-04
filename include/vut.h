@@ -29,8 +29,6 @@
  * Common functions for the utilities
  */
 
-#include "vdef.h"
-
 typedef int VUT_cb_f(void);
 
 struct VUT {

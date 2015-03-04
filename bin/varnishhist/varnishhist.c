@@ -46,6 +46,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "vdef.h"
 #include "vcurses.h"
 #include "vapi/vsl.h"
 #include "vapi/vsm.h"

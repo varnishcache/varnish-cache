@@ -43,8 +43,10 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "miniobj.h"
+#include "vdef.h"
 #include "vas.h"
+#include "miniobj.h"
+
 #include "vcli.h"
 #include "vcli_common.h"
 #include "vcli_priv.h"

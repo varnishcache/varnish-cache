@@ -41,8 +41,9 @@
 #include <time.h>
 #include <unistd.h>
 
-#include "miniobj.h"
+#include "vdef.h"
 #include "vas.h"
+#include "miniobj.h"
 
 #include "vav.h"
 #include "vcli.h"

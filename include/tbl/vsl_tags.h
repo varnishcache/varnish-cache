@@ -82,7 +82,7 @@ SLTM(SessOpen, 0, "Client connection opened",
  * XXX: If we could, these three lines would have described the
  * XXX: 'reason' field below.
 #define SESS_CLOSE(nm, desc) "    " #nm "\n\t" desc "\n\n"
-#include <tbl/sess_close.h>
+#include "tbl/sess_close.h"
 #undef SESS_CLOSE
 */
 

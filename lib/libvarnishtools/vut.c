@@ -41,6 +41,7 @@
 #include <signal.h>
 
 #include "compat/daemon.h"
+#include "vdef.h"
 #include "vpf.h"
 #include "vapi/vsm.h"
 #include "vapi/vsl.h"

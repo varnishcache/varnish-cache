@@ -34,8 +34,6 @@
 #ifndef VAPI_VSL_H_INCLUDED
 #define VAPI_VSL_H_INCLUDED
 
-#include <stdio.h>
-
 #include "vapi/vsl_int.h"
 
 struct VSM_data;
