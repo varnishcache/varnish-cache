@@ -31,16 +31,17 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 
 #include "vdef.h"
-#include "vsb.h"
 #include "vas.h"
 #include "vqueue.h"
+
 #include "vre.h"
+#include "vsb.h"
 
 #include "vxp.h"
 

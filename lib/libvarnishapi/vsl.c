@@ -41,15 +41,19 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "miniobj.h"
-#include "vas.h"
 #include "vdef.h"
+#include "vas.h"
+#include "miniobj.h"
+
+#include "vbm.h"
+#include "vmb.h"
+#include "vqueue.h"
+#include "vre.h"
+#include "vsb.h"
 
 #include "vapi/vsm.h"
 #include "vapi/vsl.h"
-#include "vbm.h"
-#include "vmb.h"
-#include "vsb.h"
+
 #include "vsl_api.h"
 #include "vsm_api.h"
 

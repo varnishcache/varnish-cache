@@ -28,22 +28,26 @@
  *
  */
 
-#include <errno.h>
 #include <ctype.h>
+#include <errno.h>
 #include <math.h>
 #include <stdint.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
-#include "miniobj.h"
-#include "vas.h"
 #include "vdef.h"
+#include "vas.h"
+#include "miniobj.h"
+
 #include "vbm.h"
 #include "vnum.h"
+#include "vqueue.h"
+#include "vre.h"
 #include "vsb.h"
 
 #include "vapi/vsl.h"
+
 #include "vsl_api.h"
 #include "vxp.h"
 

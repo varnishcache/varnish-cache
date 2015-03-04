@@ -36,21 +36,26 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <limits.h>
 
-#include "miniobj.h"
+#include "vdef.h"
 #include "vas.h"
+#include "miniobj.h"
+
+#include "vbm.h"
+#include "vnum.h"
+#include "vqueue.h"
+#include "vre.h"
 
 #include "vapi/vsl.h"
 #include "vapi/vsm.h"
-#include "vbm.h"
-#include "vnum.h"
+
 #include "vsl_api.h"
 #include "vsm_api.h"
 

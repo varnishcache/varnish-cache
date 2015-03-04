@@ -28,8 +28,8 @@
  * Test what VSL_Name2Tag and VSL_Glob2Tags produces
  */
 
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 

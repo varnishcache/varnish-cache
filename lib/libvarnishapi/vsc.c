@@ -33,18 +33,20 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include <stdio.h>
 #include <errno.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "miniobj.h"
+#include "vdef.h"
 #include "vas.h"
+#include "miniobj.h"
+#include "vqueue.h"
 
 #include "vapi/vsc.h"
 #include "vapi/vsm.h"
-#include "vqueue.h"
+
 #include "vsm_api.h"
 
 enum {

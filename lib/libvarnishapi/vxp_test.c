@@ -26,16 +26,18 @@
  * SUCH DAMAGE.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "vxp.h"
-#include "vas.h"
-#include "vsb.h"
 #include "miniobj.h"
+#include "vas.h"
+
+#include "vsb.h"
+
+#include "vxp.h"
 
 static void
 usage(void)

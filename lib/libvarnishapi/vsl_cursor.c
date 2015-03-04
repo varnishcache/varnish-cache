@@ -29,22 +29,29 @@
  *
  */
 
-#include <stdlib.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <errno.h>
+#include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
+#include <sys/types.h>
+#include <unistd.h>
 
+#include "vdef.h"
 #include "vas.h"
 #include "miniobj.h"
-#include "vsm_api.h"
-#include "vapi/vsl.h"
+
+#include "vqueue.h"
+#include "vre.h"
 #include "vsl_priv.h"
+
+#include "vapi/vsl.h"
+#include "vapi/vsm.h"
+
 #include "vsl_api.h"
+#include "vsm_api.h"
 
 struct vslc_vsm {
 	unsigned			magic;

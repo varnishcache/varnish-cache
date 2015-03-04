@@ -29,11 +29,6 @@
  *
  */
 
-#include "vdef.h"
-#include "vqueue.h"
-#include "vre.h"
-#include "vapi/vsm.h"
-
 #define VSL_FILE_ID			"VSL"
 
 /*lint -esym(534, vsl_diag) */

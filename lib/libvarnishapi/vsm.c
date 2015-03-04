@@ -43,15 +43,17 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "miniobj.h"
-#include "vas.h"
 #include "vdef.h"
+#include "vas.h"
+#include "miniobj.h"
 
-#include "vapi/vsm.h"
-#include "vsm_priv.h"
-#include "vtim.h"
 #include "vin.h"
 #include "vsb.h"
+#include "vsm_priv.h"
+#include "vtim.h"
+
+#include "vapi/vsm.h"
+
 #include "vsm_api.h"
 
 #ifndef MAP_HASSEMAPHORE
