@@ -44,6 +44,7 @@
 #include "vapi/vsl.h"
 #include "vapi/voptget.h"
 #include "vas.h"
+#include "vdef.h"
 #include "vpf.h"
 #include "vsb.h"
 #include "vut.h"

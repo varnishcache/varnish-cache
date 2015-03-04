@@ -36,9 +36,10 @@
 #include <string.h>
 #include <errno.h>
 
-#include "vsb.h"
 #include "vas.h"
+#include "vdef.h"
 #include "miniobj.h"
+#include "vsb.h"
 
 #include "vxp.h"
 

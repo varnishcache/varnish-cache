@@ -36,6 +36,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include "vdef.h"
 #include "vsb.h"
 #include "vas.h"
 

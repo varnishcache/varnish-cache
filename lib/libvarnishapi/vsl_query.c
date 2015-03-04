@@ -38,6 +38,7 @@
 
 #include "miniobj.h"
 #include "vas.h"
+#include "vdef.h"
 #include "vbm.h"
 #include "vnum.h"
 #include "vre.h"
