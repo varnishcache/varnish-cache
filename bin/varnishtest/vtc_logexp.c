@@ -56,8 +56,6 @@
 #include "vapi/vsm.h"
 #include "vapi/vsl.h"
 #include "vtim.h"
-#include "vqueue.h"
-#include "vas.h"
 #include "vre.h"
 
 #include "vtc.h"
