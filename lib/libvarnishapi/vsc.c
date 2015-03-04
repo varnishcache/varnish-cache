@@ -44,7 +44,6 @@
 
 #include "vapi/vsc.h"
 #include "vapi/vsm.h"
-#include "vapi/vsm_int.h"
 #include "vqueue.h"
 #include "vsm_api.h"
 

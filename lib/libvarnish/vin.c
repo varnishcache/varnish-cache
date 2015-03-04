@@ -37,7 +37,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "vapi/vsm_int.h"
+#include "vsm_priv.h"
 #include "vas.h"
 #include "vdef.h"
 #include "vin.h"

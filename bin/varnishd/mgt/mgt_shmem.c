@@ -45,7 +45,7 @@
 #include "common/params.h"
 
 #include "flopen.h"
-#include "vapi/vsm_int.h"
+#include "vsm_priv.h"
 #include "vmb.h"
 #include "vfil.h"
 

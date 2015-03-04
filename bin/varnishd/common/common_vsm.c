@@ -42,7 +42,7 @@
 
 #include "common.h"
 
-#include "vapi/vsm_int.h"
+#include "vsm_priv.h"
 #include "vmb.h"
 #include "vtim.h"
 

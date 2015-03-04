@@ -47,7 +47,7 @@
 #include "vas.h"
 
 #include "vapi/vsm.h"
-#include "vapi/vsm_int.h"
+#include "vsm_priv.h"
 #include "vtim.h"
 #include "vin.h"
 #include "vsb.h"
