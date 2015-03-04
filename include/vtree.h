@@ -30,6 +30,10 @@
 #ifndef	_VTREE_H_
 #define	_VTREE_H_
 
+#ifndef __unused
+define __unused __attribute__((__unused__))
+#endif
+
 /*
  * This file defines data structures for different types of trees:
  * splay trees and red-black trees.

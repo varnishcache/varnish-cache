@@ -247,7 +247,7 @@ vcc_new_expr(void)
 
 static struct expr *
 vcc_mk_expr(enum var_type fmt, const char *str, ...)
-    __printflike(2, 3);
+    __v_printflike(2, 3);
 
 static struct expr *
 vcc_mk_expr(enum var_type fmt, const char *str, ...)

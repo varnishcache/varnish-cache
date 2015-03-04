@@ -848,7 +848,7 @@ void HTTP_Encode(const struct http *fm, uint8_t *, unsigned len, unsigned how);
 int HTTP_Decode(struct http *to, const uint8_t *fm);
 void http_ForceHeader(struct http *to, const char *hdr, const char *val);
 void http_PrintfHeader(struct http *to, const char *fmt, ...)
-    __printflike(2, 3);
+    __v_printflike(2, 3);
 void http_TimeHeader(struct http *to, const char *fmt, double now);
 void http_SetHeader(struct http *to, const char *hdr);
 void http_SetH(const struct http *to, unsigned n, const char *fm);
@@ -1029,10 +1029,10 @@ void VSL_End(struct vsl_log *vsl);
 void VSM_Free(void *ptr);
 #ifdef VSL_ENDMARKER
 void VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
-    __printflike(3, 4);
+    __v_printflike(3, 4);
 void VSLbv(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, va_list va);
 void VSLb(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, ...)
-    __printflike(3, 4);
+    __v_printflike(3, 4);
 void VSLbt(struct vsl_log *, enum VSL_tag_e tag, txt t);
 void VSLb_ts(struct vsl_log *, const char *event, double first, double *pprev,
     double now);
@@ -1120,7 +1120,7 @@ void *WS_Alloc(struct ws *ws, unsigned bytes);
 void *WS_Copy(struct ws *ws, const void *str, int len);
 char *WS_Snapshot(struct ws *ws);
 int WS_Overflowed(const struct ws *ws);
-void *WS_Printf(struct ws *ws, const char *fmt, ...) __printflike(2, 3);
+void *WS_Printf(struct ws *ws, const char *fmt, ...) __v_printflike(2, 3);
 
 /* cache_rfc2616.c */
 void RFC2616_Ttl(struct busyobj *, double now);

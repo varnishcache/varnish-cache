@@ -63,10 +63,10 @@ void		 VSB_clear(struct vsb *);
 int		 VSB_bcat(struct vsb *, const void *, size_t);
 int		 VSB_cat(struct vsb *, const char *);
 int		 VSB_printf(struct vsb *, const char *, ...)
-	__printflike(2, 3);
+	__v_printflike(2, 3);
 #ifdef va_start
 int		 VSB_vprintf(struct vsb *, const char *, va_list)
-	__printflike(2, 0);
+	__v_printflike(2, 0);
 #endif
 int		 VSB_putc(struct vsb *, int);
 int		 VSB_error(const struct vsb *);

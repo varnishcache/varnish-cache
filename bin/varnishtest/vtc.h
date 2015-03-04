@@ -81,7 +81,7 @@ void vtc_loginit(char *buf, unsigned buflen);
 struct vtclog *vtc_logopen(const char *id);
 void vtc_logclose(struct vtclog *vl);
 void vtc_log(struct vtclog *vl, int lvl, const char *fmt, ...)
-    __printflike(3, 4);
+    __v_printflike(3, 4);
 void vtc_dump(struct vtclog *vl, int lvl, const char *pfx,
     const char *str, int len);
 void vtc_hexdump(struct vtclog *vl, int lvl, const char *pfx,
@@ -93,8 +93,8 @@ int exec_file(const char *fn, const char *script, const char *tmpdir,
 void macro_undef(struct vtclog *vl, const char *instance, const char *name);
 void macro_def(struct vtclog *vl, const char *instance, const char *name,
     const char *fmt, ...)
-    __printflike(4, 5);
+    __v_printflike(4, 5);
 struct vsb *macro_expand(struct vtclog *vl, const char *text);
 
 void extmacro_def(const char *name, const char *fmt, ...)
-    __printflike(2, 3);
+    __v_printflike(2, 3);

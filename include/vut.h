@@ -65,7 +65,7 @@ struct VUT {
 extern struct VUT VUT;
 
 void VUT_Error(int status, const char *fmt, ...)
-	__printflike(2, 3);
+	__v_printflike(2, 3);
 
 int VUT_g_Arg(const char *arg);
 

@@ -256,11 +256,11 @@ struct inifin *New_IniFin(struct vcc *tl);
  * F -> Finish function
  */
 void Fh(const struct vcc *tl, int indent, const char *fmt, ...)
-    __printflike(3, 4);
+    __v_printflike(3, 4);
 void Fc(const struct vcc *tl, int indent, const char *fmt, ...)
-    __printflike(3, 4);
+    __v_printflike(3, 4);
 void Fb(const struct vcc *tl, int indent, const char *fmt, ...)
-    __printflike(3, 4);
+    __v_printflike(3, 4);
 void EncToken(struct vsb *sb, const struct token *t);
 int IsMethod(const struct token *t);
 void *TlAlloc(struct vcc *tl, unsigned len);

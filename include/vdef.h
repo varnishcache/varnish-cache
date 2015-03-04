@@ -59,20 +59,12 @@
 # endif
 #endif
 
-#ifndef __printflike
-# if __GNUC_PREREQ(2, 95) || defined(__INTEL_COMPILER)
-#  define __printflike(f,a) __attribute__((format(printf, f, a)))
-# else
-#  define __printflike(f,a)
-# endif
-#endif
-
-#ifndef __unused
-# if __GNUC_PREREQ(2, 95) || defined(__INTEL_COMPILER)
-#  define __unused __attribute__((__unused__))
-# else
-#  define __unused
-# endif
+#ifdef __printflike
+#  define __v_printflike(f,a) __printflike(f,a)
+#elif __GNUC_PREREQ(2, 95) || defined(__INTEL_COMPILER)
+#  define __v_printflike(f,a) __attribute__((format(printf, f, a)))
+#else
+#  define __v_printflike(f,a)
 #endif
 
 /**********************************************************************

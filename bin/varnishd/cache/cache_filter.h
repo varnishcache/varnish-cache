@@ -80,7 +80,7 @@ int VFP_Open(struct vfp_ctx *bo);
 void VFP_Close(struct vfp_ctx *bo);
 enum vfp_status VFP_Suck(struct vfp_ctx *, void *p, ssize_t *lp);
 enum vfp_status VFP_Error(struct vfp_ctx *, const char *fmt, ...)
-    __printflike(2, 3);
+    __v_printflike(2, 3);
 
 /* cache_fetch_proc.c */
 enum vfp_status VFP_GetStorage(struct vfp_ctx *, ssize_t *sz, uint8_t **ptr);
