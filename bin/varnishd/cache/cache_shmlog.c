@@ -35,6 +35,7 @@
 #include "cache.h"
 #include "common/heritage.h"
 
+#include "vsl_priv.h"
 #include "vmb.h"
 #include "vtim.h"
 

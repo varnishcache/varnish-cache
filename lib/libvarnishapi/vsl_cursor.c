@@ -41,9 +41,9 @@
 
 #include "vas.h"
 #include "miniobj.h"
-#include "vapi/vsm.h"
 #include "vsm_api.h"
 #include "vapi/vsl.h"
+#include "vsl_priv.h"
 #include "vsl_api.h"
 
 struct vslc_vsm {

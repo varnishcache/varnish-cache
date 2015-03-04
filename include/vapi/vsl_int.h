@@ -27,32 +27,22 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Define the layout of the shared memory log segment.
+ * Define the layout of the shared memory log segment, which must be kept
+ * in sync between vsl_priv.h and vapi/vsl.h.
+ *
+ * This file SHALL not be included from anywhere but those two files.
  *
  * NB: THIS IS NOT A PUBLIC API TO VARNISH!
  */
 
-#ifndef VAPI_VSL_FMT_H_INCLUDED
-#define VAPI_VSL_FMT_H_INCLUDED
-
-#include "vapi/vsm_int.h"
+#ifndef VAPI_VSL_INT_H_INCLUDED
+#define VAPI_VSL_INT_H_INCLUDED
 
 #define VSL_CLASS		"Log"
 #define VSL_SEGMENTS		8
 
 /*
  * Shared memory log format
- *
- * The segments array has index values providing safe entry points into
- * the log, where each element N gives the index of the first log record
- * in the Nth fraction of the log. An index value of -1 indicated that no
- * log records in this fraction exists.
- *
- * The segment member shows the current segment where Varnish is currently
- * appending log data.
- *
- * The seq member contains a non-zero seq number randomly initialized,
- * which increases whenever writing the log starts from the front.
  *
  * The log member points to an array of 32bit unsigned integers containing
  * log records.
@@ -68,15 +58,6 @@
  * Notice that the constants in these macros cannot be changed without
  * changing corresponding magic numbers in varnishd/cache/cache_shmlog.c
  */
-
-struct VSL_head {
-#define VSL_HEAD_MARKER		"VSLHEAD0"	/* Incr. as version# */
-	char			marker[VSM_MARKER_LEN];
-	volatile ssize_t	segments[VSL_SEGMENTS];
-	volatile unsigned	segment;	/* Current varnishd segment */
-	volatile unsigned	seq;		/* Non-zero seq number */
-	uint32_t		log[];
-};
 
 #define VSL_CLIENTMARKER	(1U<<30)
 #define VSL_BACKENDMARKER	(1U<<31)
@@ -118,4 +99,4 @@ enum VSL_tag_e {
 #define SLT_F_UNUSED		(1 << 0)
 #define SLT_F_BINARY		(1 << 1)
 
-#endif /* VAPI_VSL_FMT_H_INCLUDED */
+#endif /* VAPI_VSL_INT_H_INCLUDED */
