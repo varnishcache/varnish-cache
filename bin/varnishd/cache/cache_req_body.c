@@ -191,7 +191,7 @@ VRB_Free(struct req *req)
  * off to prevent parallelism.
  */
 
-int
+ssize_t
 VRB_Cache(struct req *req, ssize_t maxsize)
 {
 	ssize_t l, yet;
@@ -220,6 +220,7 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 	vfc = req->htc->vfc;
 
 	if (req->htc->content_length > maxsize) {
+		// XXX #1664
 		req->req_body_status = REQ_BODY_FAIL;
 		(void)VFP_Error(vfc, "Request body too big to cache");
 		return (-1);
@@ -240,6 +241,7 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 		return (-1);
 	}
 
+	AZ(req->req_bodybytes);
 	AN(req->htc);
 	yet = req->htc->content_length;
 	if (yet < 0)
@@ -265,7 +267,7 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 	VFP_Close(vfc);
 
 	if (vfps == VFP_END) {
-
+		assert(req->req_bodybytes >= 0);
 		if (req->req_bodybytes != req->htc->content_length) {
 			/* We must update also the "pristine" req.* copy */
 			http_Unset(req->http0, H_Content_Length);

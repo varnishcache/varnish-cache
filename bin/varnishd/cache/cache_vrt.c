@@ -475,6 +475,8 @@ VRT_ban_string(VRT_CTX, const char *str)
 
 /*--------------------------------------------------------------------
  *
+ * XXX this really should be ssize_t VRT_CacheReqBody(VRT_CTX, size_t)
+ * - change with next VRT major bump
  */
 
 int

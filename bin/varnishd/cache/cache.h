@@ -587,7 +587,7 @@ struct req {
 	enum sess_close		doclose;
 	double			d_ttl;
 
-	uint64_t		req_bodybytes;	/* Parsed req bodybytes */
+	ssize_t		req_bodybytes;	/* Parsed req bodybytes */
 
 	uint16_t		err_code;
 	const char		*err_reason;
@@ -760,7 +760,7 @@ void V1P_Process(struct req *req, struct busyobj *bo, int fd);
 
 /* cache_req_body.c */
 int VRB_Ignore(struct req *req);
-int VRB_Cache(struct req *req, ssize_t maxsize);
+ssize_t VRB_Cache(struct req *req, ssize_t maxsize);
 ssize_t VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv);
 void VRB_Free(struct req *req);
 

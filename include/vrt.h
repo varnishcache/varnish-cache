@@ -37,6 +37,9 @@
  * Whenever something is added, increment MINOR version
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
+ *
+ * changes to consider with next VRT_MAJOR_VERSION bump:
+ * - cache_vrt.c: -> ssize_t VRT_CacheReqBody(VRT_CTX, size_t)
  */
 
 #define VRT_MAJOR_VERSION	2U
