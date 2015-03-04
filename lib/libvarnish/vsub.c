@@ -40,6 +40,7 @@
 #include <unistd.h>
 
 #include "vas.h"
+#include "vdef.h"
 #include "vlu.h"
 #include "vsb.h"
 #include "vsub.h"
