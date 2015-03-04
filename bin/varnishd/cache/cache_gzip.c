@@ -300,7 +300,7 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 			/* XXX: Zero is suspect: OA_GZIPBITS wasn't set */
 			if (u != 0)
 				http_PrintfHeader(req->resp,
-				    "Content-Length: %ju", u);
+				    "Content-Length: %ju", (uintmax_t)u);
 		}
 		http_Unset(req->resp, H_Content_Encoding);
 		return (0);
