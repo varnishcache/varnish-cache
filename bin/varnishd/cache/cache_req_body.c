@@ -213,7 +213,7 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 	case REQ_BODY_WITH_LEN:
 		break;
 	default:
-		WRONG("Wrong req_body_status in VRB_CacheReqBody()");
+		WRONG("Wrong req_body_status in VRB_Cache()");
 	}
 
 	CHECK_OBJ_NOTNULL(req->htc, HTTP_CONN_MAGIC);
