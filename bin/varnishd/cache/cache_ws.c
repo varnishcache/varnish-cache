@@ -93,6 +93,14 @@ WS_MarkOverflow(struct ws *ws)
 	ws->id[0] &= ~0x40;		// Cheasy toupper()
 }
 
+static void
+ws_ClearOverflow(struct ws *ws)
+{
+	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
+
+	ws->id[0] |= 0x40;		// Cheasy tolower()
+}
+
 /*
  * Reset a WS to start or a given pointer, likely from WS_Snapshot
  */
@@ -111,6 +119,7 @@ WS_Reset(struct ws *ws, char *p)
 		assert(p < ws->e);
 		ws->f = p;
 	}
+	ws_ClearOverflow(ws);
 	WS_Assert(ws);
 }
 
