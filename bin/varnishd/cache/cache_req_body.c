@@ -199,7 +199,7 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 	assert (req->req_step == R_STP_RECV);
 	switch(req->req_body_status) {
 	case REQ_BODY_CACHED:
-		return (0);
+		return (req->req_bodybytes);
 	case REQ_BODY_FAIL:
 		return (-1);
 	case REQ_BODY_NONE:
@@ -279,5 +279,5 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 		req->req_body_status = REQ_BODY_FAIL;
 	}
 	VSLb_ts_req(req, "ReqBody", VTIM_real());
-	return (vfps == VFP_END ? req->req_bodybytes : 0);
+	return (vfps == VFP_END ? req->req_bodybytes : -1);
 }

@@ -10,18 +10,33 @@ server s1 {
 	txresp -status 200 -hdr "Foo: Foo" -body "56"
 } -start
 
-varnish v1 -vcl+backend {
+varnish v1 -cliok "param.set vcc_allow_inline_c true" -vcl+backend {
 	import ${vmod_std};
 
 	sub vcl_recv {
 		std.cache_req_body(1KB);
+		C{
+			const struct gethdr_s HDR_REQ_X_BodyBytes =
+			    { HDR_REQ, "\014X-BodyBytes:"};
+			VRT_SetHdr(ctx, &HDR_REQ_X_BodyBytes,
+			    VRT_INT_string(ctx, VRT_CacheReqBody(ctx, 1024)),
+			    vrt_magic_string_end);
+		}C
 		return (pass);
 	}
 	sub vcl_deliver {
 		if (resp.http.foo == "BAR") {
 			return (restart);
 		}
+		set resp.http.X-BodyBytes = req.http.X-BodyBytes;
 	}
+} -start
+
+# check log for the aborted POST
+logexpect l1 -v v1 {
+	expect * 1006	Begin
+	expect * =	FetchError	"^straight insufficient bytes"
+	expect * =	ReqHeader	"^X-BodyBytes: -1"
 } -start
 
 varnish v1 -cliok "param.set debug +syncvsl"
@@ -31,6 +46,7 @@ client c1 {
 	rxresp
 	expect resp.http.Foo == "Foo"
 	expect resp.bodylen == 2
+	expect resp.http.X-BodyBytes == 3
 } -run
 
 delay .1
@@ -51,4 +67,7 @@ client c1 {
 	txreq -url "/is_varnish_still_running"
 	rxresp
 	expect resp.status == 200
+	expect resp.http.X-BodyBytes == 0
 } -run
+varnish v1 -stop
+logexpect l1 -wait

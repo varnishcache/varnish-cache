@@ -486,7 +486,7 @@ VRT_CacheReqBody(VRT_CTX, long long maxsize)
 	if (ctx->method != VCL_MET_RECV) {
 		VSLb(ctx->vsl, SLT_VCL_Error,
 		    "req.body can only be cached in vcl_recv{}");
-		return (0);
+		return (-1);
 	}
 	return (VRB_Cache(ctx->req, maxsize));
 }
