@@ -35,7 +35,6 @@
 
 #include "cache.h"
 
-#include "vre.h"
 #include "vrt.h"
 
 static void

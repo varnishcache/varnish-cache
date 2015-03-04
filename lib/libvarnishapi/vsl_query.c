@@ -41,7 +41,6 @@
 #include "vdef.h"
 #include "vbm.h"
 #include "vnum.h"
-#include "vre.h"
 #include "vsb.h"
 
 #include "vapi/vsl.h"

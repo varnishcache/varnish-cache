@@ -49,7 +49,6 @@
 #include "vapi/vsl.h"
 #include "vbm.h"
 #include "vmb.h"
-#include "vre.h"
 #include "vsb.h"
 #include "vsl_api.h"
 #include "vsm_api.h"

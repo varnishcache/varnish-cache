@@ -39,6 +39,8 @@
 #include "vdef.h"
 #include "vsb.h"
 #include "vas.h"
+#include "vqueue.h"
+#include "vre.h"
 
 #include "vxp.h"
 

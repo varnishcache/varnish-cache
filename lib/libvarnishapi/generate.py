@@ -190,6 +190,9 @@ fo.write("""
 #include <ctype.h>
 #include <stdio.h>
 
+#include "vqueue.h"
+#include "vre.h"
+
 #include "vxp.h"
 """)
 

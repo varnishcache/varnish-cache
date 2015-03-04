@@ -28,11 +28,6 @@
  *
  */
 
-#include <sys/types.h>
-
-#include "vqueue.h"
-#include "vre.h"
-
 #include "vxp_tokens.h"
 
 #define isword(c)  (isalpha(c) || isdigit(c) || (c) == '_' || (c) == '-' || \

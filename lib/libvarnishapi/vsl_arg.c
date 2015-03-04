@@ -51,7 +51,6 @@
 #include "vapi/vsm.h"
 #include "vbm.h"
 #include "vnum.h"
-#include "vre.h"
 #include "vsl_api.h"
 #include "vsm_api.h"
 
