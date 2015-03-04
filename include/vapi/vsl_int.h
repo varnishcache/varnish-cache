@@ -27,12 +27,13 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Define the layout of the shared memory log segment, which must be kept
- * in sync between vsl_priv.h and vapi/vsl.h.
+ * Define the layout of the shared memory log segment.
  *
- * This file SHALL not be included from anywhere but those two files.
+ * This file SHALL only be included from:
+ *	bin/varnishd/cache/cache.h
+ *	include/vsl_priv.h
+ *	include/vapi/vsl.h
  *
- * NB: THIS IS NOT A PUBLIC API TO VARNISH!
  */
 
 #ifndef VAPI_VSL_INT_H_INCLUDED
