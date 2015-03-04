@@ -68,6 +68,7 @@ struct varnish {
 	int			cli_fd;
 	int			vcl_nbr;
 	char			*workdir;
+	char			*jail;
 
 	struct VSM_data		*vd;		/* vsc use */
 
@@ -269,6 +270,8 @@ varnish_new(const char *name)
 	AN(v);
 	REPLACE(v->name, name);
 
+	REPLACE(v->jail, "");
+
 	v->vl = vtc_logopen(name);
 	AN(v->vl);
 
@@ -384,7 +387,8 @@ varnish_launch(struct varnish *v)
 	vsb = VSB_new_auto();
 	AN(vsb);
 	VSB_printf(vsb, "cd ${pwd} &&");
-	VSB_printf(vsb, "exec ${varnishd} -d -d -n %s", v->workdir);
+	VSB_printf(vsb, " exec ${varnishd} %s -d -d -n %s",
+	    v->jail, v->workdir);
 	VSB_printf(vsb, " -l 2m,1m,-");
 	VSB_printf(vsb, " -p auto_restart=off");
 	VSB_printf(vsb, " -p syslog_cli_traffic=off");
@@ -863,6 +867,13 @@ cmd_varnish(CMD_ARGS)
 	for (; *av != NULL; av++) {
 		if (vtc_error)
 			break;
+		if (!strcmp(*av, "-jail")) {
+			AN(av[1]);
+			AZ(v->pid);
+			REPLACE(v->jail, av[1]);
+			av++;
+			continue;
+		}
 		if (!strcmp(*av, "-arg")) {
 			AN(av[1]);
 			AZ(v->pid);
