@@ -31,7 +31,7 @@
 #define	_VTREE_H_
 
 #ifndef __unused
-define __unused __attribute__((__unused__))
+#define __unused __attribute__((__unused__))
 #endif
 
 /*
