@@ -19,6 +19,7 @@ Naming scheme
 	id ~ [d] --> Director VMOD tests
 	id ~ [e] --> ESI tests
 	id ~ [g] --> GZIP tests
+	id ~ [j] --> JAIL tests
 	id ~ [l] --> VSL tests
 	id ~ [m] --> VMOD tests excluding director
 	id ~ [p] --> Persistent tests
