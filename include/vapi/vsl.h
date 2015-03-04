@@ -36,8 +36,9 @@
 
 #include <stdio.h>
 
-#include "vapi/vsm.h"
 #include "vapi/vsl_int.h"
+
+struct VSM_data;
 
 /*
  * enum VSL_tag_e enumerates the SHM log tags, where the identifiers are
