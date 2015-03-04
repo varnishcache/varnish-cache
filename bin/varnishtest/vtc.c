@@ -39,6 +39,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pwd.h>
+#include <grp.h>
 
 #include "vtc.h"
 
@@ -513,6 +515,17 @@ cmd_feature(CMD_ARGS)
 #endif
 		}
 		if (!strcmp(av[i], "topbuild") && iflg)
+			continue;
+
+		if (!strcmp(av[i], "root") && !geteuid())
+			continue;
+
+		if (!strcmp(av[i], "user_varnish") &&
+		    getpwnam("varnish") != NULL)
+			continue;
+
+		if (!strcmp(av[i], "group_varnish") &&
+		    getgrnam("varnish") != NULL)
 			continue;
 
 		vtc_log(vl, 1, "SKIPPING test, missing feature: %s", av[i]);
