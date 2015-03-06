@@ -1,4 +1,4 @@
-varnishtest "Test If-Modified-Since"
+varnishtest "Test Client IMS"
 
 server s1 {
 	rxreq

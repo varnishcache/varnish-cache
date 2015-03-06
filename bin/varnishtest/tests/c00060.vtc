@@ -1,4 +1,4 @@
-varnishtest "IMS header merging"
+varnishtest "Backend IMS header merging"
 
 server s1 {
 	rxreq

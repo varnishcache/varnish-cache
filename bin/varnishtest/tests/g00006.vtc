@@ -1,4 +1,4 @@
-varnishtest "IMS'ing g[un]zip'ed objects"
+varnishtest "Backend IMS'ing g[un]zip'ed objects"
 
 server s1 {
 	rxreq

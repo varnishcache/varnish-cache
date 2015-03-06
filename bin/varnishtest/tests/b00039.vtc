@@ -1,4 +1,4 @@
-varnishtest "Test IMS"
+varnishtest "Test Backend IMS"
 
 server s1 {
 	rxreq
