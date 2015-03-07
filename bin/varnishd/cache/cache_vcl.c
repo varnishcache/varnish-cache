@@ -217,9 +217,9 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	ctx.cli = cli;
 	ctx.vcl = vcl->conf;
 
-	if (vcl->conf->event_vcl(&ctx, VCL_EVENT_INIT)) {
+	if (vcl->conf->event_vcl(&ctx, VCL_EVENT_LOAD)) {
 		VCLI_Out(cli, "VCL \"%s\" Failed to initialize", name);
-		AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_FINI));
+		AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_DISCARD));
 		(void)dlclose(vcl->dlh);
 		FREE_OBJ(vcl);
 		return (1);
@@ -229,7 +229,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 		VCLI_Out(cli, "VCL \"%s\" vcl_init{} failed", name);
 		ctx.method = VCL_MET_FINI;
 		(void)vcl->conf->fini_func(&ctx);
-		AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_FINI));
+		AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_DISCARD));
 		(void)dlclose(vcl->dlh);
 		FREE_OBJ(vcl);
 		return (1);
@@ -268,7 +268,7 @@ VCL_Nuke(struct vcls *vcl)
 	ctx.vcl = vcl->conf;
 	(void)vcl->conf->fini_func(&ctx);
 	assert(hand == VCL_RET_OK);
-	AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_FINI));
+	AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_DISCARD));
 	free(vcl->conf->loaded_name);
 	(void)dlclose(vcl->dlh);
 	FREE_OBJ(vcl);
@@ -360,7 +360,7 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 	ctx.handling = &hand;
 	ctx.cli = cli;
-	if (vcl->conf->event_vcl(&ctx, VCL_EVENT_ACTIVATE)) {
+	if (vcl->conf->event_vcl(&ctx, VCL_EVENT_USE)) {
 		VCLI_Out(cli, "VCL \"%s\" Failed to activate", av[2]);
 		VCLI_SetResult(cli, CLIS_CANT);
 		return;

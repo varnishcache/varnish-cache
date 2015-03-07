@@ -344,9 +344,9 @@ EmitInitFini(const struct vcc *tl)
 	Fc(tl, 0, "\nstatic int\n");
 	Fc(tl, 0, "VGC_Event(VRT_CTX, enum vcl_event_e ev)\n");
 	Fc(tl, 0, "{\n");
-	Fc(tl, 0, "\tif (ev == VCL_EVENT_INIT)\n");
+	Fc(tl, 0, "\tif (ev == VCL_EVENT_LOAD)\n");
 	Fc(tl, 0, "\t\treturn(VGC_Init(ctx));\n");
-	Fc(tl, 0, "\tif (ev == VCL_EVENT_FINI)\n");
+	Fc(tl, 0, "\tif (ev == VCL_EVENT_DISCARD)\n");
 	Fc(tl, 0, "\t\treturn(VGC_Fini(ctx));\n");
 	Fc(tl, 0, "\t\n");
 	VTAILQ_FOREACH(p, &tl->inifin, list) {

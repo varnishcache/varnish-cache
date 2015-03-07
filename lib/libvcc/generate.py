@@ -946,9 +946,9 @@ struct cli;
 struct worker;
 
 enum vcl_event_e {
-	VCL_EVENT_INIT,
-	VCL_EVENT_ACTIVATE,
-	VCL_EVENT_FINI,
+	VCL_EVENT_LOAD,
+	VCL_EVENT_USE,
+	VCL_EVENT_DISCARD,
 };
 
 typedef int vcl_event_f(VRT_CTX, enum vcl_event_e);
