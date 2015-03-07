@@ -344,3 +344,26 @@ VTCP_check_hup(int sock)
 		return (1);
 	return (0);
 }
+
+/*--------------------------------------------------------------------
+ * Check if a TCP syscall return value is fatal
+ */
+
+int
+VTCP_Check(int a)
+{
+	if (a == 0)
+		return (1);
+	if (errno == ECONNRESET || errno == ENOTCONN)
+		return (1);
+#if (defined (__SVR4) && defined (__sun)) || defined (__NetBSD__)
+	/*
+	 * Solaris returns EINVAL if the other end unexepectedly reset the
+	 * connection.
+	 * This is a bug in Solaris and documented behaviour on NetBSD.
+	 */
+	if (errno == EINVAL || errno == ETIMEDOUT)
+		return (1);
+#endif
+	return (0);
+}

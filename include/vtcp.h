@@ -35,25 +35,7 @@ struct suckaddr;
 #define VTCP_ADDRBUFSIZE		64
 #define VTCP_PORTBUFSIZE		16
 
-static inline int
-VTCP_Check(int a)
-{
-	if (a == 0)
-		return (1);
-	if (errno == ECONNRESET || errno == ENOTCONN)
-		return (1);
-#if (defined (__SVR4) && defined (__sun)) || defined (__NetBSD__)
-	/*
-	 * Solaris returns EINVAL if the other end unexepectedly reset the
-	 * connection.
-	 * This is a bug in Solaris and documented behaviour on NetBSD.
-	 */
-	if (errno == EINVAL || errno == ETIMEDOUT)
-		return (1);
-#endif
-	return (0);
-}
-
+int VTCP_Check(int a);
 #define VTCP_Assert(a) assert(VTCP_Check(a))
 
 void VTCP_myname(int sock, char *abuf, unsigned alen,
