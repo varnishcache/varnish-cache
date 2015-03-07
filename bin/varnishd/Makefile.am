@@ -62,6 +62,7 @@ varnishd_SOURCES = \
 	http1/cache_http1_pipe.c \
 	http1/cache_http1_proto.c \
 	http1/cache_http1_vfp.c \
+	mgt/mgt_acceptor.c \
 	mgt/mgt_child.c \
 	mgt/mgt_cli.c \
 	mgt/mgt_jail.c \

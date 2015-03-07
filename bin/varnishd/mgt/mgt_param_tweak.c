@@ -40,14 +40,12 @@
 #include <unistd.h>
 
 #include "mgt/mgt.h"
-#include "common/heritage.h"
 #include "common/params.h"
 
 #include "mgt/mgt_param.h"
 #include "waiter/waiter.h"
 #include "vav.h"
 #include "vnum.h"
-#include "vss.h"
 
 /*--------------------------------------------------------------------
  * Generic handling of double typed parameters
@@ -360,96 +358,6 @@ tweak_vsl_reclen(struct vsb *vsb, const struct parspec *par, const char *arg)
 	*d1 = dest;
 	bprintf(buf, "%u", *d1 + 12);
 	MCF_SetMinimum("vsl_buffer", strdup(buf));
-	return (0);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-clean_listen_sock_head(struct listen_sock_head *lsh)
-{
-	struct listen_sock *ls, *ls2;
-
-	VTAILQ_FOREACH_SAFE(ls, lsh, list, ls2) {
-		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
-		VTAILQ_REMOVE(lsh, ls, list);
-		free(ls->name);
-		free(ls->addr);
-		FREE_OBJ(ls);
-	}
-}
-
-int
-tweak_listen_address(struct vsb *vsb, const struct parspec *par,
-    const char *arg)
-{
-	char **av;
-	int i, retval = 0;
-	struct listen_sock		*ls;
-	struct listen_sock_head		lsh;
-
-	(void)par;
-	if (arg == NULL) {
-		VSB_quote(vsb, mgt_param.listen_address, -1, 0);
-		return (0);
-	}
-
-	av = VAV_Parse(arg, NULL, ARGV_COMMA);
-	if (av == NULL) {
-		VSB_printf(vsb, "Parse error: out of memory");
-		return(-1);
-	}
-	if (av[0] != NULL) {
-		VSB_printf(vsb, "Parse error: %s", av[0]);
-		VAV_Free(av);
-		return(-1);
-	}
-	if (av[1] == NULL) {
-		VSB_printf(vsb, "Empty listen address");
-		VAV_Free(av);
-		return(-1);
-	}
-	VTAILQ_INIT(&lsh);
-	for (i = 1; av[i] != NULL; i++) {
-		struct vss_addr **ta;
-		int j, n;
-
-		n = VSS_resolve(av[i], "http", &ta);
-		if (n == 0) {
-			VSB_printf(vsb, "Invalid listen address ");
-			VSB_quote(vsb, av[i], -1, 0);
-			retval = -1;
-			break;
-		}
-		for (j = 0; j < n; ++j) {
-			ALLOC_OBJ(ls, LISTEN_SOCK_MAGIC);
-			AN(ls);
-			ls->sock = -1;
-			ls->addr = ta[j];
-			ls->name = strdup(av[i]);
-			AN(ls->name);
-			VTAILQ_INSERT_TAIL(&lsh, ls, list);
-		}
-		free(ta);
-	}
-	VAV_Free(av);
-	if (retval) {
-		clean_listen_sock_head(&lsh);
-		return (-1);
-	}
-
-	REPLACE(mgt_param.listen_address, arg);
-
-	clean_listen_sock_head(&heritage.socks);
-	heritage.nsocks = 0;
-
-	while (!VTAILQ_EMPTY(&lsh)) {
-		ls = VTAILQ_FIRST(&lsh);
-		VTAILQ_REMOVE(&lsh, ls, list);
-		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
-		VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
-		heritage.nsocks++;
-	}
 	return (0);
 }
 

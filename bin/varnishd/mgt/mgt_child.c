@@ -52,7 +52,6 @@
 #include "vcli_priv.h"
 #include "vev.h"
 #include "vlu.h"
-#include "vss.h"
 #include "vtim.h"
 
 #include "mgt_cli.h"
@@ -218,53 +217,6 @@ mgt_child_inherit(int fd, const char *what)
 }
 
 /*=====================================================================
- * Open and close the accept sockets.
- *
- * (The child is priv-sep'ed, so it can't do it.)
- */
-
-int
-MGT_open_sockets(void)
-{
-	struct listen_sock *ls;
-	int good = 0;
-
-	VJ_master(JAIL_MASTER_HIGH);
-	VTAILQ_FOREACH(ls, &heritage.socks, list) {
-		if (ls->sock >= 0) {
-			good++;
-			continue;
-		}
-		ls->sock = VSS_bind(ls->addr);
-		if (ls->sock < 0)
-			continue;
-
-		mgt_child_inherit(ls->sock, "sock");
-
-		good++;
-	}
-	VJ_master(JAIL_MASTER_LOW);
-	if (!good)
-		return (1);
-	return (0);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-MGT_close_sockets(void)
-{
-	struct listen_sock *ls;
-
-	VTAILQ_FOREACH(ls, &heritage.socks, list) {
-		if (ls->sock < 0)
-			continue;
-		mgt_child_inherit(ls->sock, NULL);
-		closex(&ls->sock);
-	}
-}
-
-/*=====================================================================
  * Listen to stdout+stderr from the child
  */
 
@@ -351,7 +303,7 @@ mgt_launch_child(struct cli *cli)
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
 		return;
 
-	if (MGT_open_sockets() != 0) {
+	if (MAC_open_sockets() != 0) {
 		child_state = CH_STOPPED;
 		if (cli != NULL) {
 			VCLI_SetResult(cli, CLIS_CANT);
@@ -442,7 +394,7 @@ mgt_launch_child(struct cli *cli)
 	mgt_child_inherit(heritage.cli_out, NULL);
 	closex(&heritage.cli_out);
 
-	MGT_close_sockets();
+	MAC_close_sockets();
 
 	child_std_vlu = VLU_New(NULL, child_line, 0);
 	AN(child_std_vlu);

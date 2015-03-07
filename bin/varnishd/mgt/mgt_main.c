@@ -629,9 +629,9 @@ main(int argc, char * const *argv)
 		ARGV_ERR("-C only good with -b or -f\n");
 
 	if (!d_flag) {
-		if (MGT_open_sockets())
+		if (MAC_open_sockets())
 			ARGV_ERR("Failed to open (any) accept sockets.\n");
-		MGT_close_sockets();
+		MAC_close_sockets();
 
 		if (b_arg == NULL && f_arg == NULL) {
 			fprintf(stderr,
