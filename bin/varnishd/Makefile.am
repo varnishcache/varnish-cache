@@ -77,6 +77,7 @@ varnishd_SOURCES = \
 	mgt/mgt_pool.c \
 	mgt/mgt_shmem.c \
 	mgt/mgt_vcc.c \
+	mgt/mgt_vcl.c \
 	storage/stevedore.c \
 	storage/stevedore_mgt.c \
 	storage/stevedore_utils.c \

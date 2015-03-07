@@ -615,6 +615,7 @@ main(int argc, char * const *argv)
 		    P_arg, strerror(errno));
 
 	mgt_vcc_init();
+	mgt_vcl_init();
 
 	if (b_arg != NULL || f_arg != NULL) {
 		mgt_vcc_default(cli, b_arg, vcl, C_flag);
