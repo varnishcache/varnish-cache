@@ -42,6 +42,7 @@ cli_func_t mcf_param_set;
 cli_func_t mcf_vcl_load;
 cli_func_t mcf_vcl_inline;
 cli_func_t mcf_vcl_use;
+cli_func_t mcf_vcl_state;
 cli_func_t mcf_vcl_discard;
 cli_func_t mcf_vcl_list;
 

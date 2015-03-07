@@ -298,6 +298,36 @@ mcf_find_vcl(struct cli *cli, const char *name)
 }
 
 void
+mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
+{
+	struct vclprog *vp;
+
+	(void)priv;
+	vp = mcf_find_vcl(cli, av[2]);
+	if (vp == NULL)
+		return;
+
+	if (!strcmp(vp->state, av[3]))
+		return;
+
+	if (!strcmp(av[3], "auto")) {
+		bprintf(vp->state, "%s", "auto");
+	} else if (!strcmp(av[3], "cold")) {
+		if (vp->active) {
+			VCLI_Out(cli, "Cannot set active VCL cold.");
+			VCLI_SetResult(cli, CLIS_PARAM);
+			return;
+		}
+		bprintf(vp->state, "%s", "auto");
+	} else if (!strcmp(av[3], "warm")) {
+		bprintf(vp->state, "%s", av[3]);
+	} else {
+		VCLI_Out(cli, "State must be one of auto, cold or warm.");
+		VCLI_SetResult(cli, CLIS_PARAM);
+	}
+}
+
+void
 mcf_vcl_use(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned status;
@@ -374,8 +404,8 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 				flg = "active";
 			} else
 				flg = "available";
-			VCLI_Out(cli, "%-10s %6s %s\n",
-			    flg, "N/A", vp->name);
+			VCLI_Out(cli, "%-10s %4s/?    %6s %s\n",
+			    flg, vp->state, "N/A", vp->name);
 		}
 	}
 }

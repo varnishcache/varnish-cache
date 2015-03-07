@@ -70,6 +70,12 @@
 	"\tCompile and load the VCL data under the name provided.",	\
 	2, 3
 
+#define CLI_VCL_STATE							\
+	"vcl.state",							\
+	"vcl.state <configname> [auto,cold,warm]",			\
+	"\tForce the state of the named configuration.",		\
+	2, 2
+
 #define CLI_VCL_DISCARD							\
 	"vcl.discard",							\
 	"vcl.discard <configname>",					\
