@@ -60,15 +60,15 @@
 
 #define CLI_VCL_LOAD							\
 	"vcl.load",							\
-	"vcl.load <configname> <filename>",				\
+	"vcl.load <configname> <filename> [*auto,cold,warm]",		\
 	"\tCompile and load the VCL file under the name provided.",	\
-	2, 2
+	2, 3
 
 #define CLI_VCL_INLINE							\
 	"vcl.inline",							\
-	"vcl.inline <configname> <quoted_VCLstring>",			\
+	"vcl.inline <configname> <quoted_VCLstring> [*auto,cold,warm]",	\
 	"\tCompile and load the VCL data under the name provided.",	\
-	2, 2
+	2, 3
 
 #define CLI_VCL_DISCARD							\
 	"vcl.discard",							\
