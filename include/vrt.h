@@ -233,7 +233,10 @@ void VRT_synth_page(VRT_CTX, const char *, ...);
 
 /* Backend related */
 void VRT_init_vbe(VRT_CTX, struct director **, const struct vrt_backend *);
-void VRT_use_vbe(VRT_CTX, const struct director *, const struct vrt_backend *);
+#ifdef VCL_RET_MAX
+void VRT_event_vbe(VRT_CTX, enum vcl_event_e, const struct director *,
+    const struct vrt_backend *);
+#endif
 void VRT_fini_vbe(VRT_CTX, struct director **, const struct vrt_backend *);
 
 /* Suckaddr related */

@@ -319,7 +319,8 @@ VRT_init_vbe(VRT_CTX, struct director **dp, const struct vrt_backend *vrt)
 }
 
 void
-VRT_use_vbe(VRT_CTX, const struct director *d, const struct vrt_backend *vrt)
+VRT_event_vbe(VRT_CTX, enum vcl_event_e ev, const struct director *d,
+    const struct vrt_backend *vrt)
 {
 	struct backend *be;
 
@@ -334,7 +335,8 @@ VRT_use_vbe(VRT_CTX, const struct director *d, const struct vrt_backend *vrt)
 	if (vrt->probe == NULL)
 		return;
 
-	VBP_Use(be, vrt->probe);
+	if (ev == VCL_EVENT_USE)
+		VBP_Use(be, vrt->probe);
 }
 
 void

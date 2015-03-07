@@ -947,7 +947,9 @@ struct worker;
 
 enum vcl_event_e {
 	VCL_EVENT_LOAD,
+	VCL_EVENT_WARM,
 	VCL_EVENT_USE,
+	VCL_EVENT_COLD,
 	VCL_EVENT_DISCARD,
 };
 

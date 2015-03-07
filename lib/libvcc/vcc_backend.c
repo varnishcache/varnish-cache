@@ -434,8 +434,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be)
 	    "\tVRT_fini_vbe(ctx, &VGCDIR(%s), &vgc_dir_priv_%s);",
 	    vgcname, vgcname);
 	VSB_printf(ifp->event,
-	    "\tif (ev == VCL_EVENT_USE)\n"
-	    "\t\tVRT_use_vbe(ctx, VGCDIR(%s), &vgc_dir_priv_%s);",
+	    "\tVRT_event_vbe(ctx, ev, VGCDIR(%s), &vgc_dir_priv_%s);",
 	    vgcname, vgcname);
 	tl->ndirector++;
 }

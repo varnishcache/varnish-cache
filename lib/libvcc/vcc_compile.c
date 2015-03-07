@@ -312,7 +312,7 @@ EmitInitFini(const struct vcc *tl)
 	/*
 	 * INIT
 	 */
-	Fc(tl, 0, "\nstatic int\nVGC_Init(VRT_CTX)\n{\n\n");
+	Fc(tl, 0, "\nstatic int\nVGC_Load(VRT_CTX)\n{\n\n");
 	VTAILQ_FOREACH(p, &tl->inifin, list) {
 		AZ(VSB_finish(p->ini));
 		if (VSB_len(p->ini))
@@ -326,7 +326,7 @@ EmitInitFini(const struct vcc *tl)
 	/*
 	 * FINI
 	 */
-	Fc(tl, 0, "\nstatic int\nVGC_Fini(VRT_CTX)\n{\n\n");
+	Fc(tl, 0, "\nstatic int\nVGC_Discard(VRT_CTX)\n{\n\n");
 
 	VTAILQ_FOREACH_REVERSE(p, &tl->inifin, inifinhead, list) {
 		AZ(VSB_finish(p->fin));
@@ -345,9 +345,9 @@ EmitInitFini(const struct vcc *tl)
 	Fc(tl, 0, "VGC_Event(VRT_CTX, enum vcl_event_e ev)\n");
 	Fc(tl, 0, "{\n");
 	Fc(tl, 0, "\tif (ev == VCL_EVENT_LOAD)\n");
-	Fc(tl, 0, "\t\treturn(VGC_Init(ctx));\n");
+	Fc(tl, 0, "\t\treturn(VGC_Load(ctx));\n");
 	Fc(tl, 0, "\tif (ev == VCL_EVENT_DISCARD)\n");
-	Fc(tl, 0, "\t\treturn(VGC_Fini(ctx));\n");
+	Fc(tl, 0, "\t\treturn(VGC_Discard(ctx));\n");
 	Fc(tl, 0, "\t\n");
 	VTAILQ_FOREACH(p, &tl->inifin, list) {
 		AZ(VSB_finish(p->event));
