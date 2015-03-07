@@ -56,6 +56,7 @@ struct vclprog {
 	char			*name;
 	char			*fname;
 	int			active;
+	char			state[8];
 };
 
 struct vcc_priv {
@@ -86,7 +87,7 @@ static const char * const builtin_vcl =
 /*--------------------------------------------------------------------*/
 
 static void
-mgt_vcc_add(const char *name, const char *libfile)
+mgt_vcc_add(const char *name, const char *libfile, const char *state)
 {
 	struct vclprog *vp;
 
@@ -94,6 +95,7 @@ mgt_vcc_add(const char *name, const char *libfile)
 	XXXAN(vp);
 	REPLACE(vp->name, name);
 	REPLACE(vp->fname, libfile);
+	bprintf(vp->state, "%s", state);
 	if (VTAILQ_EMPTY(&vclhead))
 		vp->active = 1;
 	VTAILQ_INSERT_TAIL(&vclhead, vp, list);
@@ -338,7 +340,7 @@ mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
 
 static void
 mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
-    int C_flag)
+    const char *state, int C_flag)
 {
 	struct vcc_priv vp;
 	struct vsb *sb;
@@ -346,6 +348,17 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 	char *p;
 
 	AN(cli);
+
+	if (state == NULL)
+		state = "auto";
+
+	if (strcmp(state, "auto") &&
+	    strcmp(state, "cold") && strcmp(state, "warm")) {
+		VCLI_Out(cli, "State must be one of auto, cold or warm.");
+		VCLI_SetResult(cli, CLIS_PARAM);
+		return;
+	}
+
 	sb = VSB_new_auto();
 	XXXAN(sb);
 
@@ -387,14 +400,14 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 	VCLI_Out(cli, "VCL compiled.\n");
 
 	if (child_pid < 0) {
-		mgt_vcc_add(vclname, vp.libfile);
+		mgt_vcc_add(vclname, vp.libfile, state);
 		free(vp.libfile);
 		return;
 	}
 
 	if (!mgt_cli_askchild(&status, &p,
-	    "vcl.load %s %s\n", vclname, vp.libfile)) {
-		mgt_vcc_add(vclname, vp.libfile);
+	    "vcl.load %s %s %s\n", vclname, vp.libfile, state)) {
+		mgt_vcc_add(vclname, vp.libfile, state);
 		free(vp.libfile);
 		free(p);
 		return;
@@ -417,7 +430,7 @@ mgt_vcc_default(struct cli *cli, const char *b_arg, const char *vclsrc,
 
 	if (b_arg == NULL) {
 		AN(vclsrc);
-		mgt_VccCompile(cli, "boot", vclsrc, C_flag);
+		mgt_VccCompile(cli, "boot", vclsrc, NULL, C_flag);
 		return;
 	}
 
@@ -427,7 +440,7 @@ mgt_vcc_default(struct cli *cli, const char *b_arg, const char *vclsrc,
 	    "backend default {\n"
 	    "    .host = \"%s\";\n"
 	    "}\n", b_arg);
-	mgt_VccCompile(cli, "boot", buf, C_flag);
+	mgt_VccCompile(cli, "boot", buf, NULL, C_flag);
 }
 
 /*--------------------------------------------------------------------*/
@@ -439,7 +452,7 @@ mgt_push_vcls_and_start(unsigned *status, char **p)
 
 	VTAILQ_FOREACH(vp, &vclhead, list) {
 		if (mgt_cli_askchild(status, p,
-		    "vcl.load \"%s\" %s\n", vp->name, vp->fname))
+		    "vcl.load \"%s\" %s %s\n", vp->name, vp->fname, vp->state))
 			return (1);
 		free(*p);
 		if (!vp->active)
@@ -500,7 +513,7 @@ mcf_vcl_inline(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 
-	mgt_VccCompile(cli, av[2], av[3], 0);
+	mgt_VccCompile(cli, av[2], av[3], av[4], 0);
 }
 
 void
@@ -524,7 +537,7 @@ mcf_vcl_load(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 
-	mgt_VccCompile(cli, av[2], vcl, 0);
+	mgt_VccCompile(cli, av[2], vcl, av[4], 0);
 	free(vcl);
 }
 
