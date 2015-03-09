@@ -198,6 +198,8 @@ struct params {
 
 	double			critbit_cooloff;
 
+	double			vcl_cooldown;
+
 	double			shortlived;
 
 	struct vre_limits	vre_limits;
