@@ -172,9 +172,22 @@ vcl_find(const char *name)
 static void
 vcl_set_state(struct vcls *vcl, const char *state)
 {
+	struct vrt_ctx ctx;
+	int warm;
+	unsigned hand = 0;
 
-	vcl->warm = state[0] == '1' ? 1 : 0;
+	assert(state[0] == '0' || state[0] == '1');
+	warm = state[0] == '1' ? 1 : 0;
 	bprintf(vcl->state, "%s", state + 1);
+	if (warm == vcl->warm)
+		return;
+
+	vcl->warm = warm;
+
+	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
+	ctx.handling = &hand;
+	(void)vcl->conf->event_vcl(&ctx,
+	    vcl->warm ? VCL_EVENT_WARM : VCL_EVENT_COLD);
 }
 
 static int
@@ -384,6 +397,7 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 	AZ(priv);
 	vcl = vcl_find(av[2]);
 	AN(vcl);			// MGT ensures this
+	AN(vcl->warm);			// MGT ensures this
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 	ctx.handling = &hand;
 	ctx.cli = cli;
