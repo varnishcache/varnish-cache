@@ -325,18 +325,13 @@ VRT_event_vbe(VRT_CTX, enum vcl_event_e ev, const struct director *d,
 	struct backend *be;
 
 	ASSERT_CLI();
+	(void)ev;
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
 	assert(d->priv2 == vrt);
 
 	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
-
-	if (vrt->probe == NULL)
-		return;
-
-	if (ev == VCL_EVENT_USE)
-		VBP_Use(be, vrt->probe);
 }
 
 void
@@ -358,7 +353,7 @@ VRT_fini_vbe(VRT_CTX, struct director **dp, const struct vrt_backend *vrt)
 	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
 
 	if (vrt->probe != NULL)
-		VBP_Remove(be, vrt->probe);
+		VBP_Remove(be);
 
 	VBE_DeleteBackend(be);
 	free(d->vcl_name);

@@ -112,8 +112,7 @@ void VBE_DeleteBackend(struct backend *);
 /* cache_backend_poll.c */
 void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
     const char *hosthdr);
-void VBP_Remove(struct backend *b, struct vrt_backend_probe const *p);
-void VBP_Use(const struct backend *b, const struct vrt_backend_probe *p);
+void VBP_Remove(struct backend *b);
 void VBP_Summary(struct cli *cli, const struct vbp_target *vt);
 
 struct tcp_pool *VBT_Ref(const struct suckaddr *ip4,
