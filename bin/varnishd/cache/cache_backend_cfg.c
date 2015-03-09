@@ -103,8 +103,7 @@ VBE_AddBackend(const char *vcl, const struct vrt_backend *vb)
 	b->ipv6_addr = vb->ipv6_addr;
 	b->port = vb->port;
 
-	b->tcp_pool = VBT_Ref(vb->vcl_name,
-	    vb->ipv4_suckaddr, vb->ipv6_suckaddr);
+	b->tcp_pool = VBT_Ref(vb->ipv4_suckaddr, vb->ipv6_suckaddr);
 
 	/*
 	 * Copy over the sockaddrs

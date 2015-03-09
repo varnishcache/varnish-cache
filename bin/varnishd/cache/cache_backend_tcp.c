@@ -131,21 +131,18 @@ tcp_handle(struct waited *w, enum wait_event ev, double now)
 }
 
 /*--------------------------------------------------------------------
- * Reference a TCP pool given by {name, ip4, ip6} triplet.  Create if
- * it doesn't exist already.
+ * Reference a TCP pool given by {ip4, ip6} pair.  Create if it
+ * doesn't exist already.
  */
 
 struct tcp_pool *
-VBT_Ref(const char *name, const struct suckaddr *ip4,
-    const struct suckaddr *ip6)
+VBT_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6)
 {
 	struct tcp_pool *tp;
 
 	ASSERT_CLI();
 	VTAILQ_FOREACH(tp, &pools, list) {
 		assert(tp->refcnt > 0);
-		if (strcmp(tp->name, name))
-			continue;
 		if (ip4 == NULL) {
 			if (tp->ip4 != NULL)
 				continue;
@@ -170,7 +167,6 @@ VBT_Ref(const char *name, const struct suckaddr *ip4,
 
 	ALLOC_OBJ(tp, TCP_POOL_MAGIC);
 	AN(tp);
-	REPLACE(tp->name, name);
 	if (ip4 != NULL)
 		tp->ip4 = VSA_Clone(ip4);
 	if (ip6 != NULL)

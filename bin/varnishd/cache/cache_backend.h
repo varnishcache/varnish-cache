@@ -116,7 +116,7 @@ void VBP_Remove(struct backend *b, struct vrt_backend_probe const *p);
 void VBP_Use(const struct backend *b, const struct vrt_backend_probe *p);
 void VBP_Summary(struct cli *cli, const struct vbp_target *vt);
 
-struct tcp_pool *VBT_Ref(const char *name, const struct suckaddr *ip4,
+struct tcp_pool *VBT_Ref(const struct suckaddr *ip4,
     const struct suckaddr *ip6);
 void VBT_Rel(struct tcp_pool **tpp);
 int VBT_Open(const struct tcp_pool *tp, double tmo, const struct suckaddr **sa);
