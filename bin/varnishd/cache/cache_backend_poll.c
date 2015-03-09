@@ -58,6 +58,7 @@ struct vbp_target {
 #define VBP_TARGET_MAGIC		0x6b7cb656
 
 	struct lock			mtx;
+	int				disable;
 	int				stop;
 	struct backend			*backend;
 
@@ -259,7 +260,8 @@ vbp_has_poked(struct vbp_target *vt)
 		    vt->backend->vcl_name, logmsg, bits,
 		    vt->good, vt->probe.threshold, vt->probe.window,
 		    vt->last, vt->avg, vt->resp_buf);
-		vt->backend->vsc->happy = vt->happy;
+		if (!vt->disable)
+			vt->backend->vsc->happy = vt->happy;
 	}
 	Lck_Unlock(&vt->mtx);
 }
@@ -281,9 +283,11 @@ vbp_wrk_poll_backend(void *priv)
 		AN(vt->req);
 		assert(vt->req_len > 0);
 
-		vbp_start_poke(vt);
-		vbp_poke(vt);
-		vbp_has_poked(vt);
+		if (!vt->disable) {
+			vbp_start_poke(vt);
+			vbp_poke(vt);
+			vbp_has_poked(vt);
+		}
 
 		if (!vt->stop)
 			VTIM_sleep(vt->probe.interval);
@@ -410,6 +414,24 @@ vbp_set_defaults(struct vbp_target *vt)
 
 	if (vt->probe.initial > vt->probe.threshold)
 		vt->probe.initial = vt->probe.threshold;
+}
+
+/*--------------------------------------------------------------------
+ */
+
+void
+VBP_Control(const struct backend *be, int stop)
+{
+	struct vbp_target *vt;
+
+	ASSERT_CLI();
+	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
+	vt = be->probe;
+	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
+
+	Lck_Lock(&vt->mtx);
+	vt->disable = stop;
+	Lck_Unlock(&vt->mtx);
 }
 
 /*--------------------------------------------------------------------

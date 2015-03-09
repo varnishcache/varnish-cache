@@ -332,6 +332,10 @@ VRT_event_vbe(VRT_CTX, enum vcl_event_e ev, const struct director *d,
 	assert(d->priv2 == vrt);
 
 	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
+	if (be->probe != NULL && ev == VCL_EVENT_WARM)
+		VBP_Control(be, 0);
+	if (be->probe != NULL && ev == VCL_EVENT_COLD)
+		VBP_Control(be, 1);
 }
 
 void
