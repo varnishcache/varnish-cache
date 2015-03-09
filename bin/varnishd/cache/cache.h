@@ -561,6 +561,7 @@ struct req {
 
 	int			restarts;
 	int			esi_level;
+	struct req		*top;	/* esi_level == 0 request */
 
 #define REQ_FLAG(l, r, w, d) unsigned	l:1;
 #include "tbl/req_flags.h"

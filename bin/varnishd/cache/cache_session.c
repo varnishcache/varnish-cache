@@ -376,6 +376,7 @@ SES_GetReq(const struct worker *wrk, struct sess *sp)
 	AN(req);
 	req->magic = REQ_MAGIC;
 	req->sp = sp;
+	req->top = req;	// esi overrides
 
 	e = (char*)req + sz;
 	p = (char*)(req + 1);
