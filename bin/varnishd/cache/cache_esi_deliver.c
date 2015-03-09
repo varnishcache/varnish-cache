@@ -83,12 +83,12 @@ ved_include(struct req *preq, const char *src, const char *host)
 	VSLb(preq->vsl, SLT_Link, "req %u esi", VXID(req->vsl->wid));
 	req->esi_level = preq->esi_level + 1;
 
-	if (preq->esi_level == 0) {
+	if (preq->esi_level == 0)
 		assert(preq->top == preq);
-	} else {
+	else
 		CHECK_OBJ_NOTNULL(preq->top, REQ_MAGIC);
-		req->top = preq->top;
-	}
+
+	req->top = preq->top;
 
 	HTTP_Copy(req->http0, preq->http0);
 
