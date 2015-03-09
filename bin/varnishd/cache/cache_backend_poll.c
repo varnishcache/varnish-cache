@@ -58,6 +58,7 @@ struct vbp_target {
 #define VBP_TARGET_MAGIC		0x6b7cb656
 
 	struct backend			*backend;
+	struct tcp_pool			*tcp_pool;
 
 	struct vrt_backend_probe	probe;
 
@@ -108,7 +109,7 @@ vbp_poke(struct vbp_target *vt)
 	t_start = t_now = VTIM_real();
 	t_end = t_start + vt->probe.timeout;
 
-	s = VBT_Open(bp->tcp_pool, t_end - t_now, &sa);
+	s = VBT_Open(vt->tcp_pool, t_end - t_now, &sa);
 	if (s < 0) {
 		/* Got no connection: failed */
 		return;
@@ -441,6 +442,9 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
 	b->probe = vt;
 	VTAILQ_INSERT_TAIL(&vbp_list, vt, list);
 
+	vt->tcp_pool = VBT_Ref(b->ipv4, b->ipv6);
+	AN(vt->tcp_pool);
+
 	vt->probe = *p;
 
 	vbp_set_defaults(vt);
@@ -464,16 +468,18 @@ VBP_Remove(struct backend *b)
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-	AN(b->probe);
 	vt = b->probe;
+	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
 
 	vt->stop = 1;
+
 	AZ(pthread_cancel(vt->thread));
 	AZ(pthread_join(vt->thread, &ret));
 
 	VTAILQ_REMOVE(&vbp_list, vt, list);
 	b->healthy = 1;
 	b->probe = NULL;
+	VBT_Rel(&vt->tcp_pool);
 	free(vt->req);
 	FREE_OBJ(vt);
 }
