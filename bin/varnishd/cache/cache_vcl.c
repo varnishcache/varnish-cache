@@ -34,6 +34,7 @@
 #include "config.h"
 
 #include <dlfcn.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "cache.h"
@@ -49,6 +50,8 @@ struct vcls {
 	VTAILQ_ENTRY(vcls)	list;
 	void			*dlh;
 	struct VCL_conf		conf[1];
+	char			state[8];
+	int			warm;
 };
 
 /*
@@ -57,7 +60,6 @@ struct vcls {
  */
 static VTAILQ_HEAD(, vcls)	vcl_head =
     VTAILQ_HEAD_INITIALIZER(vcl_head);
-
 
 static struct lock		vcl_mtx;
 static struct vcls		*vcl_active; /* protected by vcl_mtx */
@@ -167,8 +169,16 @@ vcl_find(const char *name)
 	return (NULL);
 }
 
+static void
+vcl_set_state(struct vcls *vcl, const char *state)
+{
+
+	vcl->warm = state[0] == '1' ? 1 : 0;
+	bprintf(vcl->state, "%s", state + 1);
+}
+
 static int
-VCL_Load(const char *fn, const char *name, struct cli *cli)
+VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 {
 	struct vcls *vcl;
 	struct VCL_conf const *cnf;
@@ -184,7 +194,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 	}
 
 	ALLOC_OBJ(vcl, VVCLS_MAGIC);
-	XXXAN(vcl);
+	AN(vcl);
 
 	vcl->dlh = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
 
@@ -234,6 +244,7 @@ VCL_Load(const char *fn, const char *name, struct cli *cli)
 		FREE_OBJ(vcl);
 		return (1);
 	}
+	vcl_set_state(vcl, state);
 	assert(hand == VCL_RET_OK);
 	VCLI_Out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
 	VTAILQ_INSERT_TAIL(&vcl_head, vcl, list);
@@ -307,8 +318,9 @@ ccf_config_list(struct cli *cli, const char * const *av, void *priv)
 			flg = "discarded";
 		} else
 			flg = "available";
-		VCLI_Out(cli, "%-10s %6u %s\n",
+		VCLI_Out(cli, "%-10s %4s/%s  %6u %s\n",
 		    flg,
+		    vcl->state, vcl->warm ? "warm" : "cold",
 		    vcl->conf->busy,
 		    vcl->conf->loaded_name);
 	}
@@ -320,7 +332,7 @@ ccf_config_load(struct cli *cli, const char * const *av, void *priv)
 
 	AZ(priv);
 	ASSERT_CLI();
-	if (VCL_Load(av[3], av[2], cli))
+	if (VCL_Load(cli, av[2], av[3], av[4]))
 		VCLI_SetResult(cli, CLIS_PARAM);
 	return;
 }
@@ -328,12 +340,16 @@ ccf_config_load(struct cli *cli, const char * const *av, void *priv)
 static void __match_proto__(cli_func_t)
 ccf_config_state(struct cli *cli, const char * const *av, void *priv)
 {
+	struct vcls *vcl;
 
+	(void)cli;
 	AZ(priv);
 	ASSERT_CLI();
-	(void)cli;
-	(void)av;
-	return;
+	AN(av[2]);
+	AN(av[3]);
+	vcl = vcl_find(av[2]);
+	AN(vcl);			// MGT ensures this
+	vcl_set_state(vcl, av[3]);
 }
 
 static void __match_proto__(cli_func_t)

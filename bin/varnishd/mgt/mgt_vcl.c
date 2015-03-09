@@ -54,14 +54,14 @@ struct vclprog {
 	VTAILQ_ENTRY(vclprog)	list;
 	char			*name;
 	char			*fname;
-	int			active;
 	int			warm;
 	char			state[8];
 	double			go_cold;
 };
 
 static VTAILQ_HEAD(, vclprog) vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
-
+static struct vclprog		*active_vcl;
+static struct vev *e_poker;
 
 /*--------------------------------------------------------------------*/
 
@@ -81,8 +81,8 @@ mgt_vcl_add(const char *name, const char *libfile, const char *state)
 
 	bprintf(vp->state, "%s", state);
 
-	if (VTAILQ_EMPTY(&vclhead))
-		vp->active = 1;
+	if (active_vcl == NULL)
+		active_vcl = vp;
 	VTAILQ_INSERT_TAIL(&vclhead, vp, list);
 	return (vp);
 }
@@ -134,7 +134,16 @@ static void
 mgt_vcl_setstate(struct vclprog *vp, int warm)
 {
 	unsigned status;
+	double now;
 	char *p;
+
+	if (warm == -1) {
+		now = VTIM_mono();
+		warm = vp->warm;
+		if (vp->go_cold > 0 && !strcmp(vp->state, "auto") &&
+		    vp->go_cold + mgt_param.vcl_cooldown < now)
+			warm = 0;
+	}
 
 	if (vp->warm == warm)
 		return;
@@ -147,8 +156,11 @@ mgt_vcl_setstate(struct vclprog *vp, int warm)
 	if (child_pid < 0)
 		return;
 
-	AZ(mgt_cli_askchild(&status, &p, "vcl.state %s %d%s\n",
-	    vp->name, vp->warm, vp->state));
+	/*
+	 * We ignore the result here so we don't croak if the child did.
+	 */
+	(void)mgt_cli_askchild(&status, &p, "vcl.state %s %d%s\n",
+	    vp->name, vp->warm, vp->state);
 
 	free(p);
 }
@@ -227,19 +239,16 @@ mgt_push_vcls_and_start(unsigned *status, char **p)
 {
 	struct vclprog *vp;
 
+	AN(active_vcl);
 	VTAILQ_FOREACH(vp, &vclhead, list) {
-		if (mgt_cli_askchild(status, p,
-		    "vcl.load \"%s\" %s %d%s\n",
+		if (mgt_cli_askchild(status, p, "vcl.load \"%s\" %s %d%s\n",
 		    vp->name, vp->fname, vp->warm, vp->state))
 			return (1);
 		free(*p);
-		if (!vp->active)
-			continue;
-		if (mgt_cli_askchild(status, p,
-		    "vcl.use \"%s\"\n", vp->name))
-			return (1);
-		free(*p);
 	}
+	if (mgt_cli_askchild(status, p, "vcl.use \"%s\"\n", active_vcl->name))
+		return (1);
+	free(*p);
 	if (mgt_cli_askchild(status, p, "start\n"))
 		return (1);
 	free(*p);
@@ -319,9 +328,10 @@ mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 
 	if (!strcmp(av[3], "auto")) {
 		bprintf(vp->state, "%s", "auto");
+		mgt_vcl_setstate(vp, -1);
 	} else if (!strcmp(av[3], "cold")) {
-		if (vp->active) {
-			VCLI_Out(cli, "Cannot set active VCL cold.");
+		if (vp == active_vcl) {
+			VCLI_Out(cli, "Cannot set the active VCL cold.");
 			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
 		}
@@ -341,13 +351,13 @@ mcf_vcl_use(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned status;
 	char *p = NULL;
-	struct vclprog *vp, *vp2;
+	struct vclprog *vp;
 
 	(void)priv;
 	vp = mcf_find_vcl(cli, av[2]);
 	if (vp == NULL)
 		return;
-	if (vp->active != 0)
+	if (vp == active_vcl)
 		return;
 	mgt_vcl_setstate(vp, 1);
 	if (child_pid >= 0 &&
@@ -356,14 +366,9 @@ mcf_vcl_use(struct cli *cli, const char * const *av, void *priv)
 		VCLI_Out(cli, "%s", p);
 	} else {
 		VCLI_Out(cli, "VCL '%s' now active", av[2]);
-		VTAILQ_FOREACH(vp2, &vclhead, list) {
-			if (vp2->active) {
-				vp2->active = 0;
-				vp2->go_cold = VTIM_mono();
-				break;
-			}
-		}
-		vp->active = 1;
+		if (active_vcl != NULL)
+			active_vcl->go_cold = VTIM_mono();
+		active_vcl = vp;
 	}
 	free(p);
 }
@@ -377,7 +382,7 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 
 	(void)priv;
 	vp = mcf_find_vcl(cli, av[2]);
-	if (vp != NULL && vp->active) {
+	if (vp == active_vcl) {
 		VCLI_SetResult(cli, CLIS_PARAM);
 		VCLI_Out(cli, "Cannot discard active VCL program\n");
 	} else if (vp != NULL) {
@@ -398,7 +403,6 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned status;
 	char *p;
-	const char *flg;
 	struct vclprog *vp;
 
 	(void)av;
@@ -411,12 +415,10 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 		free(p);
 	} else {
 		VTAILQ_FOREACH(vp, &vclhead, list) {
-			if (vp->active) {
-				flg = "active";
-			} else
-				flg = "available";
-			VCLI_Out(cli, "%-10s %4s/%s  %s\n", flg, vp->state,
-			    vp->warm ? "warm" : "cold", vp->name);
+			VCLI_Out(cli, "%-10s %4s/%s  %6s %s\n",
+			    vp == active_vcl ? "active" : "available",
+			    vp->state,
+			    vp->warm ? "warm" : "cold", "", vp->name);
 		}
 	}
 }
@@ -427,18 +429,11 @@ static int __match_proto__(vev_cb_f)
 mgt_vcl_poker(const struct vev *e, int what)
 {
 	struct vclprog *vp;
-	double now = VTIM_mono();
 
 	(void)e;
 	(void)what;
-	VTAILQ_FOREACH(vp, &vclhead, list) {
-		if (vp->go_cold == 0)
-			continue;
-		if (strcmp(vp->state, "auto"))
-			continue;
-		if (vp->go_cold + mgt_param.vcl_cooldown < now)
-			mgt_vcl_setstate(vp, 0);
-	}
+	VTAILQ_FOREACH(vp, &vclhead, list)
+		mgt_vcl_setstate(vp, -1);
 	return (0);
 }
 
@@ -463,14 +458,13 @@ mgt_vcl_atexit(void)
 void
 mgt_vcl_init(void)
 {
-	struct vev *e;
 
-	e = vev_new();
-	AN(e);
-	e->timeout = 23;		// random, prime
-	e->callback = mgt_vcl_poker;
-	e->name = "vcl poker";
-	AZ(vev_add(mgt_evb, e));
+	e_poker = vev_new();
+	AN(e_poker);
+	e_poker->timeout = 3;		// random, prime
+	e_poker->callback = mgt_vcl_poker;
+	e_poker->name = "vcl poker";
+	AZ(vev_add(mgt_evb, e_poker));
 
 	AZ(atexit(mgt_vcl_atexit));
 }
