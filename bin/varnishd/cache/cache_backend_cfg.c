@@ -68,6 +68,7 @@ VBE_DeleteBackend(struct backend *b)
 	free(b->display_name);
 	VSM_Free(b->vsc);
 	VBT_Rel(&b->tcp_pool);
+	Lck_Delete(&b->mtx);
 	FREE_OBJ(b);
 	VSC_C_main->n_backend--;
 }

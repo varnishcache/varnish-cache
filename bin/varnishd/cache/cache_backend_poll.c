@@ -57,12 +57,14 @@ struct vbp_target {
 	unsigned			magic;
 #define VBP_TARGET_MAGIC		0x6b7cb656
 
+	struct lock			mtx;
+	int				stop;
 	struct backend			*backend;
+
 	struct tcp_pool			*tcp_pool;
 
 	struct vrt_backend_probe	probe;
 
-	int				stop;
 	char				*req;
 	int				req_len;
 
@@ -235,27 +237,31 @@ vbp_has_poked(struct vbp_target *vt)
 	}
 	vt->good = j;
 
-	if (vt->good >= vt->probe.threshold) {
-		if (vt->backend->healthy)
-			logmsg = "Still healthy";
-		else {
-			logmsg = "Back healthy";
-			vt->backend->health_changed = VTIM_real();
+	Lck_Lock(&vt->mtx);
+	if (vt->backend != NULL) {
+		if (vt->good >= vt->probe.threshold) {
+			if (vt->backend->healthy)
+				logmsg = "Still healthy";
+			else {
+				logmsg = "Back healthy";
+				vt->backend->health_changed = VTIM_real();
+			}
+			vt->backend->healthy = 1;
+		} else {
+			if (vt->backend->healthy) {
+				logmsg = "Went sick";
+				vt->backend->health_changed = VTIM_real();
+			} else
+				logmsg = "Still sick";
+			vt->backend->healthy = 0;
 		}
-		vt->backend->healthy = 1;
-	} else {
-		if (vt->backend->healthy) {
-			logmsg = "Went sick";
-			vt->backend->health_changed = VTIM_real();
-		} else
-			logmsg = "Still sick";
-		vt->backend->healthy = 0;
+		VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u %.6f %.6f %s",
+		    vt->backend->vcl_name, logmsg, bits,
+		    vt->good, vt->probe.threshold, vt->probe.window,
+		    vt->last, vt->avg, vt->resp_buf);
+		vt->backend->vsc->happy = vt->happy;
 	}
-	VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u %.6f %.6f %s",
-	    vt->backend->vcl_name, logmsg, bits,
-	    vt->good, vt->probe.threshold, vt->probe.window,
-	    vt->last, vt->avg, vt->resp_buf);
-	vt->backend->vsc->happy = vt->happy;
+	Lck_Unlock(&vt->mtx);
 }
 
 /*--------------------------------------------------------------------
@@ -282,6 +288,11 @@ vbp_wrk_poll_backend(void *priv)
 		if (!vt->stop)
 			VTIM_sleep(vt->probe.interval);
 	}
+	Lck_Delete(&vt->mtx);
+	VTAILQ_REMOVE(&vbp_list, vt, list);
+	VBT_Rel(&vt->tcp_pool);
+	free(vt->req);
+	FREE_OBJ(vt);
 	return (NULL);
 }
 
@@ -423,6 +434,7 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
 	vt->backend = b;
 	b->probe = vt;
 	VTAILQ_INSERT_TAIL(&vbp_list, vt, list);
+	Lck_New(&vt->mtx, lck_backend);
 
 	vt->tcp_pool = VBT_Ref(b->ipv4, b->ipv6);
 	AN(vt->tcp_pool);
@@ -440,28 +452,24 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
 	if (!vt->probe.initial)
 		vbp_has_poked(vt);
 	AZ(pthread_create(&vt->thread, NULL, vbp_wrk_poll_backend, vt));
+	AZ(pthread_detach(vt->thread));
 }
 
 void
-VBP_Remove(struct backend *b)
+VBP_Remove(struct backend *be)
 {
 	struct vbp_target *vt;
-	void *ret;
 
 	ASSERT_CLI();
-	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-	vt = b->probe;
+	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
+	vt = be->probe;
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
 
+	Lck_Lock(&vt->mtx);
 	vt->stop = 1;
+	vt->backend = NULL;
+	Lck_Unlock(&vt->mtx);
 
-	AZ(pthread_cancel(vt->thread));
-	AZ(pthread_join(vt->thread, &ret));
-
-	VTAILQ_REMOVE(&vbp_list, vt, list);
-	b->healthy = 1;
-	b->probe = NULL;
-	VBT_Rel(&vt->tcp_pool);
-	free(vt->req);
-	FREE_OBJ(vt);
+	be->healthy = 1;
+	be->probe = NULL;
 }
