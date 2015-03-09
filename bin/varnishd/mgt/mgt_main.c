@@ -411,15 +411,10 @@ main(int argc, char * const *argv)
 	assert(VTIM_parse("Sunday, 06-Nov-94 08:49:37 GMT") == 784111777);
 	assert(VTIM_parse("Sun Nov  6 08:49:37 1994") == 784111777);
 
-	/*
-	 * Check that our SHA256 works
-	 */
+	/* Check that our SHA256 works */
 	SHA256_Test();
 
-	/*
-	 * Create a cli for convenience in otherwise CLI functions
-	 */
-
+	/* Create a cli for convenience in otherwise CLI functions */
 	INIT_OBJ(cli, CLI_MAGIC);
 	cli[0].sb = VSB_new_auto();
 	XXXAN(cli[0].sb);
@@ -427,7 +422,10 @@ main(int argc, char * const *argv)
 	clilim = 32768;
 	cli[0].limit = &clilim;
 
+	/* Various initializations */
 	VTAILQ_INIT(&heritage.socks);
+	mgt_evb = vev_new_base();
+	AN(mgt_evb);
 
 	init_params(cli);
 	cli_check(cli);
@@ -670,9 +668,6 @@ main(int argc, char * const *argv)
 	syslog(LOG_NOTICE, "Platform: %s\n", VSB_data(vident) + 1);
 
 	mgt_pid = getpid();	/* daemon() changed this */
-
-	mgt_evb = vev_new_base();
-	XXXAN(mgt_evb);
 
 	if (d_flag)
 		mgt_cli_setup(0, 1, 1, "debug", cli_stdin_close, NULL);
