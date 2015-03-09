@@ -587,7 +587,7 @@ struct req {
 	enum sess_close		doclose;
 	double			d_ttl;
 
-	ssize_t		req_bodybytes;	/* Parsed req bodybytes */
+	ssize_t			req_bodybytes;	/* Parsed req bodybytes */
 
 	uint16_t		err_code;
 	const char		*err_reason;
