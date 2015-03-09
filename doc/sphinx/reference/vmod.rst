@@ -234,28 +234,29 @@ It is often useful for library functions to maintain local state,
 this can be anything from a precompiled regexp to open file descriptors
 and vast data structures.
 
-The VCL compiler supports three levels of private pointers, "per
-call", "per VCL" and "per task".
+The VCL compiler supports the following private pointers:
 
-"per call" private pointers are useful to cache/store state relative
-to the specific call or its arguments, for instance a compiled regular
-expression specific to a regsub() statement or a simply caching the
-last output of some expensive lookup.
+* ``PRIV_CALL`` "per call" private pointers are useful to cache/store
+  state relative to the specific call or its arguments, for instance a
+  compiled regular expression specific to a regsub() statement or a
+  simply caching the last output of some expensive lookup.
 
-"per vcl" private pointers are useful for such global state that
-applies to all calls in this VCL, for instance flags that determine
-if regular expressions are case-sensitive in this vmod or similar.
+* ``PRIV_VCL`` "per vcl" private pointers are useful for such global
+  state that applies to all calls in this VCL, for instance flags that
+  determine if regular expressions are case-sensitive in this vmod or
+  similar.
 
-"per task" private pointers are useful for state that applies to calls
-for either a specific request or a backend request. For instance this
-can be the result of a parsed cookie specific to a client. Note that
-"per task" contexts are separate for the client side and the backend
-side, so use in ``vcl_backend_*`` will yield a different private pointer
-from the one used on the client side.
+* ``PRIV_TASK`` "per task" private pointers are useful for state that
+  applies to calls for either a specific request or a backend
+  request. For instance this can be the result of a parsed cookie
+  specific to a client. Note that ``PRIV_TASK`` contexts are separate
+  for the client side and the backend side, so use in
+  ``vcl_backend_*`` will yield a different private pointer from the
+  one used on the client side.
 
 The way it works in the vmod code, is that a ``struct vmod_priv *`` is
-passed to the functions where argument type PRIV_VCL, PRIV_CALL or
-PRIV_TASK is specified.
+passed to the functions where one of the ``PRIV_*`` argument types is
+specified.
 
 This structure contains two members::
 
