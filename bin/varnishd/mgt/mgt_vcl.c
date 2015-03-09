@@ -386,6 +386,7 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 		VCLI_SetResult(cli, CLIS_PARAM);
 		VCLI_Out(cli, "Cannot discard active VCL program\n");
 	} else if (vp != NULL) {
+		mgt_vcl_setstate(vp, 0);
 		if (child_pid >= 0 &&
 		    mgt_cli_askchild(&status, &p,
 		    "vcl.discard %s\n", av[2])) {
