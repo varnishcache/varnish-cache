@@ -326,6 +326,17 @@ ccf_config_load(struct cli *cli, const char * const *av, void *priv)
 }
 
 static void __match_proto__(cli_func_t)
+ccf_config_state(struct cli *cli, const char * const *av, void *priv)
+{
+
+	AZ(priv);
+	ASSERT_CLI();
+	(void)cli;
+	(void)av;
+	return;
+}
+
+static void __match_proto__(cli_func_t)
 ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcls *vcl;
@@ -488,10 +499,11 @@ VCL_##func##_method(struct VCL_conf *vcl, struct worker *wrk,		\
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto vcl_cmds[] = {
-	{ CLI_VCL_LOAD,         "i", ccf_config_load },
-	{ CLI_VCL_LIST,         "i", ccf_config_list },
-	{ CLI_VCL_DISCARD,      "i", ccf_config_discard },
-	{ CLI_VCL_USE,          "i", ccf_config_use },
+	{ CLI_VCL_LOAD,		"i", ccf_config_load },
+	{ CLI_VCL_LIST,		"i", ccf_config_list },
+	{ CLI_VCL_STATE,	"i", ccf_config_state },
+	{ CLI_VCL_DISCARD,	"i", ccf_config_discard },
+	{ CLI_VCL_USE,		"i", ccf_config_use },
 	{ CLI_VCL_SHOW,		"", ccf_config_show },
 	{ NULL }
 };
