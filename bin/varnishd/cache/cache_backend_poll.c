@@ -98,13 +98,9 @@ vbp_poke(struct vbp_target *vt)
 	int s, tmo, i;
 	double t_start, t_now, t_end;
 	unsigned rlen, resp;
-	struct backend *bp;
 	char buf[8192], *p;
 	struct pollfd pfda[1], *pfd = pfda;
 	const struct suckaddr *sa;
-
-	bp = vt->backend;
-	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 
 	t_start = t_now = VTIM_real();
 	t_end = t_start + vt->probe.timeout;
@@ -293,20 +289,13 @@ vbp_wrk_poll_backend(void *priv)
  * Cli functions
  */
 
-void
-VBP_Summary(struct cli *cli, const struct vbp_target *vt)
-{
-
-	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
-	VCLI_Out(cli, "%d/%d", vt->good, vt->probe.window);
-}
-
 static void
 vbp_bitmap(struct cli *cli, char c, uint64_t map, const char *lbl)
 {
 	int i;
 	uint64_t u = (1ULL << 63);
 
+	VCLI_Out(cli, "  ");
 	for (i = 0; i < 64; i++) {
 		if (map & u)
 			VCLI_Out(cli, "%c", c);
@@ -323,18 +312,14 @@ static void
 vbp_health_one(struct cli *cli, const struct vbp_target *vt)
 {
 
-	VCLI_Out(cli, "Backend %s is %s\n",
-	    vt->backend->vcl_name,
-	    vt->backend->healthy ? "Healthy" : "Sick");
-	VCLI_Out(cli, "Current states  good: %2u threshold: %2u window: %2u\n",
+	VCLI_Out(cli,
+	    "  Current states  good: %2u threshold: %2u window: %2u\n",
 	    vt->good, vt->probe.threshold, vt->probe.window);
-	VCLI_Out(cli, "Average responsetime of good probes: %.6f\n", vt->avg);
 	VCLI_Out(cli,
-	    "Oldest                       "
-	    "                             Newest\n");
+	    "  Average response time of good probes: %.6f\n", vt->avg);
 	VCLI_Out(cli,
-	    "============================="
-	    "===================================\n");
+	    "  Oldest ======================"
+	    "============================ Newest\n");
 
 #define BITMAP(n, c, t, b)					\
 		if ((vt->n != 0) || (b))			\
@@ -343,25 +328,22 @@ vbp_health_one(struct cli *cli, const struct vbp_target *vt)
 #undef BITMAP
 }
 
-static void
-vbp_health(struct cli *cli, const char * const *av, void *priv)
+void
+VBP_Status(struct cli *cli, const struct backend *be, int details)
 {
 	struct vbp_target *vt;
 
-	ASSERT_CLI();
-	(void)av;
-	(void)priv;
-
-	VTAILQ_FOREACH(vt, &vbp_list, list)
+	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
+	vt = be->probe;
+	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
+	VCLI_Out(cli, "%d/%d", vt->good, vt->probe.window);
+	if (details) {
+		VCLI_Out(cli, "\n");
 		vbp_health_one(cli, vt);
+	} else {
+		VCLI_Out(cli, "%d/%d", vt->good, vt->probe.window);
+	}
 }
-
-static struct cli_proto debug_cmds[] = {
-	{ "debug.health", "debug.health",
-		"\tDump backend health information.",
-		0, 0, "d", vbp_health },
-	{ NULL }
-};
 
 /*--------------------------------------------------------------------
  * Build request from probe spec
@@ -482,15 +464,4 @@ VBP_Remove(struct backend *b)
 	VBT_Rel(&vt->tcp_pool);
 	free(vt->req);
 	FREE_OBJ(vt);
-}
-
-/*--------------------------------------------------------------------
- * Initialize the backend probe subsystem
- */
-
-void
-VBP_Init(void)
-{
-
-	CLI_AddFuncs(debug_cmds);
 }

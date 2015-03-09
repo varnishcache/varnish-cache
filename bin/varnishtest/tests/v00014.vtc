@@ -44,7 +44,7 @@ varnish v1 -vcl {
 	}
 } -start
 
-varnish v1 -cliok "backend.list" -cliok "debug.health"
+varnish v1 -cliok "backend.list -p"
 
 client c1 {
 	txreq

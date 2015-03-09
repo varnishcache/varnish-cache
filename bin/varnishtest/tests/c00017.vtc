@@ -40,4 +40,4 @@ varnish v1 -vcl {
 
 sema r1 sync 2
 
-varnish v1 -cli "debug.health"
+varnish v1 -cli "backend.list -p"

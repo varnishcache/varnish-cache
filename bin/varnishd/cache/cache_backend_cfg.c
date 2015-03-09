@@ -177,7 +177,6 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 		VSB_printf(vsb, "%s.%s", vcc->loaded_name, matcher);
 	}
 	AZ(VSB_finish(vsb));
-	VCLI_Out(cli, "Using pattern \"%s\"\n", VSB_data(vsb));
 	VTAILQ_FOREACH(b, &backends, list) {
 		if (fnmatch(VSB_data(vsb), b->display_name, 0))
 			continue;
@@ -197,15 +196,10 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 static int __match_proto__()
 do_list(struct cli *cli, struct backend *b, void *priv)
 {
-	int *hdr;
+	int *probes;
 
 	AN(priv);
-	hdr = priv;
-	if (!*hdr) {
-		VCLI_Out(cli, "%-30s %-10s %s",
-		    "Backend name", "Admin", "Probe");
-		*hdr = 1;
-	}
+	probes = priv;
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 
 	VCLI_Out(cli, "\n%-30s", b->display_name);
@@ -226,7 +220,7 @@ do_list(struct cli *cli, struct backend *b, void *priv)
 			VCLI_Out(cli, " %s", "Healthy ");
 		else
 			VCLI_Out(cli, " %s", "Sick ");
-		VBP_Summary(cli, b->probe);
+		VBP_Status(cli, b, *probes);
 	}
 
 	/* XXX: report b->health_changed */
@@ -237,12 +231,24 @@ do_list(struct cli *cli, struct backend *b, void *priv)
 static void
 cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 {
-	int hdr = 0;
+	int probes = 0;
 
-	(void)av;
 	(void)priv;
 	ASSERT_CLI();
-	(void)backend_find(cli, av[2], do_list, &hdr);
+	if (av[2] != NULL && !strcmp(av[2], "-p")) {
+		av++;
+		probes = 1;
+	} else if (av[2] != NULL && av[2][0] == '-') {
+		VCLI_Out(cli, "Invalid flags %s", av[2]);
+		VCLI_SetResult(cli, CLIS_PARAM);
+		return;
+	} else if (av[3] != NULL) {
+		VCLI_Out(cli, "Too many arguments");
+		VCLI_SetResult(cli, CLIS_PARAM);
+		return;
+	}
+	VCLI_Out(cli, "%-30s %-10s %s", "Backend name", "Admin", "Probe");
+	(void)backend_find(cli, av[2], do_list, &probes);
 }
 
 /*---------------------------------------------------------------------*/
@@ -293,7 +299,7 @@ cli_backend_set_health(struct cli *cli, const char * const *av, void *priv)
 static struct cli_proto backend_cmds[] = {
 	{ "backend.list", "backend.list [<backend_expression>]",
 	    "\tList backends.",
-	    0, 1, "", cli_backend_list },
+	    0, 2, "", cli_backend_list },
 	{ "backend.set_health",
 	    "backend.set_health <backend_expression> <state>",
 	    "\tSet health status on the backends.",

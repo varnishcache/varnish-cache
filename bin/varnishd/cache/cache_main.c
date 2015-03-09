@@ -221,7 +221,6 @@ child_main(void)
 
 	VBO_Init();
 	VBE_InitCfg();
-	VBP_Init();
 	Pool_Init();
 	V1P_Init();
 
