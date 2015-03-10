@@ -97,13 +97,13 @@ start
 stop
   Stop the Varnish cache process.
 
-vcl.load <configname> <filename>
+vcl.load <configname> <filename> [auto|cold|warm]
   Compile and load the VCL file under the name provided.
 
-vcl.inline <configname> <quoted_VCLstring>
+vcl.inline <configname> <quoted_VCLstring> [auto|cold|warm]
   Compile and load the VCL data under the name provided.
 
-vcl.use <configname>
+vcl.use <configname> [auto|cold|warm]
   Switch to the named configuration immediately.
 
 vcl.discard <configname>
@@ -130,7 +130,7 @@ panic.clear
 storage.list
   List storage devices.
 
-backend.list [<backend_expression>]
+backend.list [-p] [<backend_expression>]
   List backends.
 
 backend.set_health <backend_expression> <state>
@@ -138,7 +138,7 @@ backend.set_health <backend_expression> <state>
   State is any of auto, healthy or sick values.
 
 ban <field> <operator> <arg> [&& <field> <oper> <arg> ...]
-  All objects where the all the conditions match will be marked obsolete.
+  Mark obsolete all objects where all the conditions match.
 
 ban.list
   List the active bans.

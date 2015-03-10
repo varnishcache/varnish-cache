@@ -47,9 +47,8 @@
 
 #define CLI_BAN								\
 	"ban",								\
-	"ban <field> <operator> <arg> [&& <field> <oper> <arg>]...",	\
-	"\tAll objects where the all the conditions match will be "	\
-	    "marked obsolete.",						\
+	"ban <field> <operator> <arg> [&& <field> <oper> <arg> ...]",	\
+	"\tMark obsolete all objects where all the conditions match.",	\
 	3, UINT_MAX
 
 #define CLI_BAN_LIST							\
@@ -60,19 +59,19 @@
 
 #define CLI_VCL_LOAD							\
 	"vcl.load",							\
-	"vcl.load <configname> <filename> [*auto,cold,warm]",		\
+	"vcl.load <configname> <filename> [auto|cold|warm]",		\
 	"\tCompile and load the VCL file under the name provided.",	\
 	2, 3
 
 #define CLI_VCL_INLINE							\
 	"vcl.inline",							\
-	"vcl.inline <configname> <quoted_VCLstring> [*auto,cold,warm]",	\
+	"vcl.inline <configname> <quoted_VCLstring> [auto|cold|warm]",	\
 	"\tCompile and load the VCL data under the name provided.",	\
 	2, 3
 
 #define CLI_VCL_STATE							\
 	"vcl.state",							\
-	"vcl.state <configname> [auto,cold,warm]",			\
+	"vcl.state <configname> [auto|cold|warm]",			\
 	"\tForce the state of the named configuration.",		\
 	2, 2
 

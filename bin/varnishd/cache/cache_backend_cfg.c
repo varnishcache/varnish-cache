@@ -296,7 +296,7 @@ cli_backend_set_health(struct cli *cli, const char * const *av, void *priv)
 /*---------------------------------------------------------------------*/
 
 static struct cli_proto backend_cmds[] = {
-	{ "backend.list", "backend.list [<backend_expression>]",
+	{ "backend.list", "backend.list [-p] [<backend_expression>]",
 	    "\tList backends.",
 	    0, 2, "", cli_backend_list },
 	{ "backend.set_health",
