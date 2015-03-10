@@ -731,39 +731,27 @@ varnish_vclbackend(struct varnish *v, const char *vcl)
  */
 
 struct stat_priv {
-	char target[256];
+	char target_type[256];
+	char target_ident[256];
+	char target_name[256];
 	uintmax_t val;
+	const struct varnish *v;
 };
 
 static int
 do_stat_cb(void *priv, const struct VSC_point * const pt)
 {
 	struct stat_priv *sp = priv;
-	const char *p = sp->target;
-	int i;
 
 	if (pt == NULL)
 		return(0);
-	if (strcmp(pt->section->type, "")) {
-		i = strlen(pt->section->type);
-		if (memcmp(pt->section->type, p, i))
-			return (0);
-		p += i;
-		if (*p != '.')
-			return (0);
-		p++;
-	}
-	if (strcmp(pt->section->ident, "")) {
-		i = strlen(pt->section->ident);
-		if (memcmp(pt->section->ident, p, i))
-			return (0);
-		p += i;
-		if (*p != '.')
-			return (0);
-		p++;
-	}
-	if (strcmp(pt->desc->name, p))
-		return (0);
+
+	if (strcmp(pt->section->type, sp->target_type))
+		return(0);
+	if (strcmp(pt->section->ident, sp->target_ident))
+		return(0);
+	if (strcmp(pt->desc->name, sp->target_name))
+		return(0);
 
 	AZ(strcmp(pt->desc->ctype, "uint64_t"));
 	sp->val = *(const volatile uint64_t*)pt->ptr;
@@ -775,15 +763,28 @@ varnish_expect(const struct varnish *v, char * const *av) {
 	uint64_t ref;
 	int good;
 	char *p;
+	char *q;
 	int i;
-	const char *prefix = "";
 	struct stat_priv sp;
 
-	if (NULL == strchr(av[0], '.'))
-		prefix = "MAIN.";
-	snprintf(sp.target, sizeof sp.target, "%s%s", prefix, av[0]);
-	sp.target[sizeof sp.target - 1] = '\0';
+	p = strchr(av[0], '.');
+	if (p == NULL) {
+		strcpy(sp.target_type, "MAIN");
+		sp.target_ident[0] = '\0';
+		bprintf(sp.target_name, "%s", av[0]);
+	} else {
+		bprintf(sp.target_type, "%.*s", (int)(p - av[0]), av[0]);
+		p++;
+		q = strrchr(p, '.');
+		bprintf(sp.target_name, "%s", q + 1);
+		if (q == p)
+			sp.target_ident[0] = '\0';
+		else
+			bprintf(sp.target_ident, "%.*s", (int)(q - p), p);
+	}
+		
 	sp.val = 0;
+	sp.v = v;
 	ref = 0;
 	good = 0;
 	for (i = 0; i < 10; i++, (void)usleep(100000)) {
