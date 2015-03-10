@@ -305,7 +305,7 @@ Author of Varnish
 
 [1] http://trac.tools.ietf.org/wg/httpbis/trac/wiki/Http2CfI
 
-[2] http://varnish-cache.org/
+[2] https://www.varnish-cache.org/
 
 [3] Yes, I'm that old.
 

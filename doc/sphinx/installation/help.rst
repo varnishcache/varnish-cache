@@ -82,8 +82,8 @@ from people who forgot to check back on already opened Tickets.
 
 .. XXX: Not sure what you want with the last sentence above. benc
 
-We instead track suggestions and feature ideas in our `"Shopping-List" wiki page`_, and through user
-support via email and IRC.
+We instead track suggestions and feature ideas in our `"Future_Feature" wiki page`_,
+and through user support via email and IRC.
 
 Commercial Support
 ==================
@@ -98,7 +98,7 @@ an email to phk@FreeBSD.org.
 	UPLEX
 	info@uplex.de
 
-.. _mailman: http://lists.varnish-cache.org/mailman/listinfo
-.. _pastebin: http://gist.github.com/
-.. _"Shopping-List" wiki page: http://varnish-cache.org/wiki/PostTwoShoppingList
-.. _wiki: https://www.varnish-cache.org/trac   
+.. _mailman: https://www.varnish-cache.org/lists/mailman/listinfo
+.. _pastebin: https://gist.github.com/
+.. _"Future_Feature" wiki page: https://www.varnish-cache.org/trac/wiki/Future_Feature
+.. _wiki: https://www.varnish-cache.org/trac

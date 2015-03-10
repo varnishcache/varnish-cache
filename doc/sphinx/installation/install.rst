@@ -33,7 +33,7 @@ Red Hat / CentOS
 We try to keep the latest version available as prebuilt RPMs (el5 and el6)
 on `repo.varnish-cache.org <http://repo.varnish-cache.org/>`_.  See the online
 `Red Hat installation instructions
-<http://www.varnish-cache.org/installation/redhat>`_ for more information.
+<https://www.varnish-cache.org/installation/redhat>`_ for more information.
 
 Varnish is included in the `EPEL
 <http://fedoraproject.org/wiki/EPEL>`_ repository, however due to
@@ -50,8 +50,8 @@ Varnish up and running type ``sudo apt-get install varnish``. Please
 note that this might not be the latest version of Varnish.  If you
 need a later version of Varnish, please follow the online installation
 instructions for `Debian
-<http://www.varnish-cache.org/installation/debian>`_ or `Ubuntu
-<http://www.varnish-cache.org/installation/ubuntu>`_.
+<https://www.varnish-cache.org/installation/debian>`_ or `Ubuntu
+<https://www.varnish-cache.org/installation/ubuntu>`_.
 
 
 Compiling Varnish from source

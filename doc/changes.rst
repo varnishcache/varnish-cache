@@ -464,13 +464,13 @@ Changes from 3.0.5 to 3.0.6rc1 (2014-06-24)
 - Stop handling gzip after gzip body end. Bug 1086_.
 - Document %D and %T for varnishncsa.
 
-.. _1514: http://varnish-cache.org/trac/ticket/1514
-.. _1327: http://varnish-cache.org/trac/ticket/1327
-.. _1297: http://varnish-cache.org/trac/ticket/1297
-.. _1470: http://varnish-cache.org/trac/ticket/1470
-.. _1448: http://varnish-cache.org/trac/ticket/1448
-.. _1439: http://varnish-cache.org/trac/ticket/1439
-.. _1086: http://varnish-cache.org/trac/ticket/1086
+.. _1514: https://www.varnish-cache.org/trac/ticket/1514
+.. _1327: https://www.varnish-cache.org/trac/ticket/1327
+.. _1297: https://www.varnish-cache.org/trac/ticket/1297
+.. _1470: https://www.varnish-cache.org/trac/ticket/1470
+.. _1448: https://www.varnish-cache.org/trac/ticket/1448
+.. _1439: https://www.varnish-cache.org/trac/ticket/1439
+.. _1086: https://www.varnish-cache.org/trac/ticket/1086
 
 
 =============================================
@@ -483,7 +483,7 @@ varnishd
 - Always check the local address of a socket.  This avoids a crash if
   server.ip is accessed after a client has closed the connection. `Bug #1376`
 
-.. _bug #1376: http://varnish-cache.org/trac/ticket/1376
+.. _bug #1376: https://www.varnish-cache.org/trac/ticket/1376
 
 
 ================================
@@ -503,9 +503,9 @@ varnishd
   and things would go downhill from there. `Bug #1367`
 - Prettify backtraces on panic slightly.
 
-.. _bug #1287: http://varnish-cache.org/trac/ticket/1287
-.. _bug #1272: http://varnish-cache.org/trac/ticket/1272
-.. _bug #1367: http://varnish-cache.org/trac/ticket/1367
+.. _bug #1287: https://www.varnish-cache.org/trac/ticket/1287
+.. _bug #1272: https://www.varnish-cache.org/trac/ticket/1272
+.. _bug #1367: https://www.varnish-cache.org/trac/ticket/1367
 
 varnishlog
 ----------
@@ -514,14 +514,14 @@ varnishlog
   to lack of matches.  Also, emit BackendXID to signify the start of a
   transaction. `Bug #1325`
 
-.. _bug #1325: http://varnish-cache.org/trac/ticket/1325
+.. _bug #1325: https://www.varnish-cache.org/trac/ticket/1325
 
 varnishadm
 ----------
 
 - Handle input from stdin properly. `Bug #1314`
 
-.. _bug #1314: http://varnish-cache.org/trac/ticket/1314
+.. _bug #1314: https://www.varnish-cache.org/trac/ticket/1314
 
 
 =============================================
@@ -537,8 +537,8 @@ varnishd
   negatives.  CVE-2013-4090.    `Bug #1312`
 - Return an error if the client sends multiple Host headers.
 
-.. _bug #1285: http://varnish-cache.org/trac/ticket/1285
-.. _bug #1312: http://varnish-cache.org/trac/ticket/1312
+.. _bug #1285: https://www.varnish-cache.org/trac/ticket/1285
+.. _bug #1312: https://www.varnish-cache.org/trac/ticket/1312
 
 
 ================================
@@ -558,11 +558,11 @@ varnishd
 - Add support for banning on http.status.  `Bug #1076`
 - Make hit-for-pass correctly prefer the transient storage.
 
-.. _bug #1076: http://varnish-cache.org/trac/ticket/1076
-.. _bug #1184: http://varnish-cache.org/trac/ticket/1184
-.. _bug #1224: http://varnish-cache.org/trac/ticket/1224
-.. _bug #1261: http://varnish-cache.org/trac/ticket/1261
-.. _bug #1275: http://varnish-cache.org/trac/ticket/1275
+.. _bug #1076: https://www.varnish-cache.org/trac/ticket/1076
+.. _bug #1184: https://www.varnish-cache.org/trac/ticket/1184
+.. _bug #1224: https://www.varnish-cache.org/trac/ticket/1224
+.. _bug #1261: https://www.varnish-cache.org/trac/ticket/1261
+.. _bug #1275: https://www.varnish-cache.org/trac/ticket/1275
 
 
 varnishlog
@@ -571,7 +571,7 @@ varnishlog
 - If -m, but neither -b or -c is given, assume both.  This filters out
   a lot of noise when -m is used to filter.  `Bug #1071`
 
-.. _bug #1071: http://varnish-cache.org/trac/ticket/1071
+.. _bug #1071: https://www.varnish-cache.org/trac/ticket/1071
 
 varnishadm
 ----------
@@ -659,27 +659,27 @@ Varnishd
 - Better error reporting for some fetch errors.
 - Small performance optimizations.
 
-.. _bug #897: http://varnish-cache.org/trac/ticket/897
-.. _bug #1023: http://varnish-cache.org/trac/ticket/1023
-.. _bug #1029: http://varnish-cache.org/trac/ticket/1029
-.. _bug #1023: http://varnish-cache.org/trac/ticket/1023
-.. _bug #1035: http://varnish-cache.org/trac/ticket/1035
-.. _bug #1037: http://varnish-cache.org/trac/ticket/1037
-.. _bug #1038: http://varnish-cache.org/trac/ticket/1038
-.. _bug #1043: http://varnish-cache.org/trac/ticket/1043
-.. _bug #1044: http://varnish-cache.org/trac/ticket/1044
-.. _bug #1047: http://varnish-cache.org/trac/ticket/1047
-.. _bug #1069: http://varnish-cache.org/trac/ticket/1069
-.. _bug #1073: http://varnish-cache.org/trac/ticket/1073
-.. _bug #1080: http://varnish-cache.org/trac/ticket/1080
-.. _bug #1091: http://varnish-cache.org/trac/ticket/1091
-.. _bug #1092: http://varnish-cache.org/trac/ticket/1092
-.. _bug #1100: http://varnish-cache.org/trac/ticket/1100
-.. _bug #1104: http://varnish-cache.org/trac/ticket/1104
-.. _bug #1109: http://varnish-cache.org/trac/ticket/1109
-.. _bug #1125: http://varnish-cache.org/trac/ticket/1125
-.. _bug #1126: http://varnish-cache.org/trac/ticket/1126
-.. _bug #1140: http://varnish-cache.org/trac/ticket/1140
+.. _bug #897: https://www.varnish-cache.org/trac/ticket/897
+.. _bug #1023: https://www.varnish-cache.org/trac/ticket/1023
+.. _bug #1029: https://www.varnish-cache.org/trac/ticket/1029
+.. _bug #1023: https://www.varnish-cache.org/trac/ticket/1023
+.. _bug #1035: https://www.varnish-cache.org/trac/ticket/1035
+.. _bug #1037: https://www.varnish-cache.org/trac/ticket/1037
+.. _bug #1038: https://www.varnish-cache.org/trac/ticket/1038
+.. _bug #1043: https://www.varnish-cache.org/trac/ticket/1043
+.. _bug #1044: https://www.varnish-cache.org/trac/ticket/1044
+.. _bug #1047: https://www.varnish-cache.org/trac/ticket/1047
+.. _bug #1069: https://www.varnish-cache.org/trac/ticket/1069
+.. _bug #1073: https://www.varnish-cache.org/trac/ticket/1073
+.. _bug #1080: https://www.varnish-cache.org/trac/ticket/1080
+.. _bug #1091: https://www.varnish-cache.org/trac/ticket/1091
+.. _bug #1092: https://www.varnish-cache.org/trac/ticket/1092
+.. _bug #1100: https://www.varnish-cache.org/trac/ticket/1100
+.. _bug #1104: https://www.varnish-cache.org/trac/ticket/1104
+.. _bug #1109: https://www.varnish-cache.org/trac/ticket/1109
+.. _bug #1125: https://www.varnish-cache.org/trac/ticket/1125
+.. _bug #1126: https://www.varnish-cache.org/trac/ticket/1126
+.. _bug #1140: https://www.varnish-cache.org/trac/ticket/1140
 
 varnishncsa
 -----------
@@ -696,7 +696,7 @@ varnishtest
 - Make it possible to test for the absence of an HTTP header. `Bug #1062`_.
 - Log the full panic message instead of shortening it to 512 characters.
 
-.. _bug #1062: http://varnish-cache.org/trac/ticket/1062
+.. _bug #1062: https://www.varnish-cache.org/trac/ticket/1062
 
 varnishstat
 -----------
@@ -714,7 +714,7 @@ Other
 - Fix build on FreeBSD 10-current.
 - Fix libedit detection on \*BSD OSes. `Bug #1003`_.
 
-.. _bug #1003: http://varnish-cache.org/trac/ticket/1003
+.. _bug #1003: https://www.varnish-cache.org/trac/ticket/1003
 
 
 =============================================
@@ -778,13 +778,13 @@ Varnishd
 - `http_req_size` and `http_resp_size` have been increased to 8192
   bytes.  This better matches what other HTTPds have.   `Bug #1016`_.
 
-.. _bug #994: http://varnish-cache.org/trac/ticket/994
-.. _bug #992: http://varnish-cache.org/trac/ticket/992
-.. _bug #996: http://varnish-cache.org/trac/ticket/996
-.. _bug #1007: http://varnish-cache.org/trac/ticket/1007
-.. _bug #1008: http://varnish-cache.org/trac/ticket/1008
-.. _bug #1012: http://varnish-cache.org/trac/ticket/1012
-.. _bug #1016: http://varnish-cache.org/trac/ticket/1016
+.. _bug #994: https://www.varnish-cache.org/trac/ticket/994
+.. _bug #992: https://www.varnish-cache.org/trac/ticket/992
+.. _bug #996: https://www.varnish-cache.org/trac/ticket/996
+.. _bug #1007: https://www.varnish-cache.org/trac/ticket/1007
+.. _bug #1008: https://www.varnish-cache.org/trac/ticket/1008
+.. _bug #1012: https://www.varnish-cache.org/trac/ticket/1012
+.. _bug #1016: https://www.varnish-cache.org/trac/ticket/1016
 
 VCL
 ---
@@ -871,8 +871,8 @@ Varnishd
   object from the same backend unless health probes were enabled.
   This has been fixed and it will now retry a different backend.
 
-.. _bug #965: http://varnish-cache.org/trac/ticket/965
-.. _bug #963: http://varnish-cache.org/trac/ticket/963
+.. _bug #965: https://www.varnish-cache.org/trac/ticket/965
+.. _bug #963: https://www.varnish-cache.org/trac/ticket/963
 
 VCL
 ---
@@ -883,7 +883,7 @@ VCL
 - The VCL compiler would fault if two IP comparisons were done on the
   same line.  This now works correctly.  `Bug #948`_.
 
-.. _bug #948: http://varnish-cache.org/trac/ticket/948
+.. _bug #948: https://www.varnish-cache.org/trac/ticket/948
 
 varnishncsa
 -----------
@@ -916,7 +916,7 @@ Other
 - The ABI of vmods are now checked.  This will require a rebuild of
   all vmods against the new version of Varnish.
 
-.. _bug #961: http://varnish-cache.org/trac/ticket/961
+.. _bug #961: https://www.varnish-cache.org/trac/ticket/961
 
 
 =============================================
@@ -934,7 +934,7 @@ VCL
 - The `synthetic` keyword has now been properly marked as only
   available in `vcl_deliver`.  `Bug #936`_.
 
-.. _bug #936: http://varnish-cache.org/trac/ticket/936
+.. _bug #936: https://www.varnish-cache.org/trac/ticket/936
 
 varnishadm
 ----------
@@ -944,7 +944,7 @@ varnishadm
 - Always exit if `varnishadm` can't connect to the backend for any
   reason.
 
-.. _bug #935: http://varnish-cache.org/trac/ticket/935
+.. _bug #935: https://www.varnish-cache.org/trac/ticket/935
 
 
 =====================================
@@ -966,7 +966,7 @@ Varnishd
   single-threaded so we do not want to do this work there in the first
   place.  Use varnishstat instead.
 
-.. _bug #908: http://varnish-cache.org/trac/ticket/908
+.. _bug #908: https://www.varnish-cache.org/trac/ticket/908
 
 VCL
 ---
@@ -985,7 +985,7 @@ VCL
 - Varnish is now stricter in enforcing no duplication of probes,
   backends and ACLs.
 
-.. _bug #913: http://varnish-cache.org/trac/ticket/913
+.. _bug #913: https://www.varnish-cache.org/trac/ticket/913
 
 varnishncsa
 -----------
@@ -1088,12 +1088,12 @@ Varnishd
   administrator errors when specifying the size of storage where the
   admin might have forgotten to specify units.
 
-.. _bug #693: http://varnish-cache.org/trac/ticket/693
-.. _bug #683: http://varnish-cache.org/trac/ticket/683
-.. _bug #663: http://varnish-cache.org/trac/ticket/663
-.. _bug #880: http://varnish-cache.org/trac/ticket/880
-.. _bug #411: http://varnish-cache.org/trac/ticket/411
-.. _bug #693: http://varnish-cache.org/trac/ticket/693
+.. _bug #693: https://www.varnish-cache.org/trac/ticket/693
+.. _bug #683: https://www.varnish-cache.org/trac/ticket/683
+.. _bug #663: https://www.varnish-cache.org/trac/ticket/663
+.. _bug #880: https://www.varnish-cache.org/trac/ticket/880
+.. _bug #411: https://www.varnish-cache.org/trac/ticket/411
+.. _bug #693: https://www.varnish-cache.org/trac/ticket/693
 
 Tools
 -----
@@ -1115,7 +1115,7 @@ varnishadm
   shared memory log file
 - add libedit support
 
-.. _bug #875: http://varnish-cache.org/trac/ticket/875
+.. _bug #875: https://www.varnish-cache.org/trac/ticket/875
 
 varnishstat
 ***********
@@ -1135,8 +1135,8 @@ varnishncsa
   log formats are supported, as well as some Varnish-specific ones.
   See the documentation for further information.  `Bug #712`_ and `bug #485`_
 
-.. _bug #712: http://varnish-cache.org/trac/ticket/712
-.. _bug #485: http://varnish-cache.org/trac/ticket/485
+.. _bug #712: https://www.varnish-cache.org/trac/ticket/712
+.. _bug #485: https://www.varnish-cache.org/trac/ticket/485
 
 varnishtest
 ***********
@@ -1211,9 +1211,9 @@ VCL
 - Add actual purge support.  Doing ``purge`` will remove an object and
   all its variants.
 
-.. _bug #481: http://varnish-cache.org/trac/ticket/481
-.. _bug #787: http://varnish-cache.org/trac/ticket/787
-.. _bug #782: http://varnish-cache.org/trac/ticket/782
+.. _bug #481: https://www.varnish-cache.org/trac/ticket/481
+.. _bug #787: https://www.varnish-cache.org/trac/ticket/787
+.. _bug #782: https://www.varnish-cache.org/trac/ticket/782
 
 
 Libraries
@@ -2087,7 +2087,7 @@ varnishd
    to POST.
 
 -  Change how backends are defined, to a constant structural defintion
-   style. See http://varnish.projects.linpro.no/wiki/VclSyntaxChanges
+   style. See https://www.varnish-cache.org/wiki/VclSyntaxChanges
    for the details.
 
 -  Add directors, which wrap backends. Currently, there's a random
@@ -2198,18 +2198,18 @@ varnishd
 
 -  When switching to a new VCL configuration, a race condition exists
    which may cause Varnish to reference a backend which no longer exists
-   (see `ticket #144 <http://varnish.projects.linpro.no/ticket/144>`_).
+   (see `ticket #144 <https://www.varnish-cache.org/trac/ticket/144>`_).
    This race condition has not been entirely eliminated, but it should
    occur less frequently.
 
 -  When dropping a TCP session before any requests were processed, an
    assertion would be triggered due to an uninitialized timestamp (see
-   `ticket #132 <http://varnish.projects.linpro.no/ticket/132>`_). The
+   `ticket #132 <https://www.varnish-cache.org/trac/ticket/132>`_). The
    timestamp is now correctly initialized.
 
 -  Varnish will now correctly generate a Date: header for every response
    instead of copying the one it got from the backend (see `ticket
-   #157 <http://varnish.projects.linpro.no/ticket/157>`_).
+   #157 <https://www.varnish-cache.org/trac/ticket/157>`_).
 
 -  Comparisons in VCL which involve a non-existent string (usually a
    header which is not present in the request or object being processed)
@@ -2226,7 +2226,7 @@ varnishd
    end up with a reference to an address structure which no longer
    exists, resulting in a crash. This race condition has been somewhat
    mitigated, but not entirely eliminated (see `ticket
-   #144 <http://varnish.projects.linpro.no/ticket/144>`_.)
+   #144 <https://www.varnish-cache.org/trac/ticket/144>`_.)
 
 -  Varnish will now pass the correct protocol version in pipe mode: the
    backend will get what the client sent, and vice versa.
@@ -2244,12 +2244,12 @@ varnishd
    serviced, resulting in a assertion failure and a crash when the
    worker thread later tried to delete the session. This should no
    longer happen (see `ticket
-   #162 <http://varnish.projects.linpro.no/ticket/162>`_.)
+   #162 <https://www.varnish-cache.org/trac/ticket/162>`_.)
 
 -  A mismatch between the recorded length of a cached object and the
    amount of data actually present in cache for that object can
    occasionally occur (see `ticket
-   #167 <http://varnish.projects.linpro.no/ticket/167>`_.) This has been
+   #167 <https://www.varnish-cache.org/trac/ticket/167>`_.) This has been
    partially fixed, but may still occur for error pages generated by
    Varnish when a problem arises while retrieving an object from the
    backend.
@@ -2552,7 +2552,7 @@ varnishd
    new VCL hooks have been added, though they aren't much use yet. The
    only real user-visible change should be that Varnish now handles
    persistent backend connections correctly (see `ticket
-   #56 <http://varnish.projects.linpro.no/ticket/56>`_).
+   #56 <https://www.varnish-cache.org/trac/ticket/56>`_).
 
 -  Support for multiple listen addresses has been added.
 
@@ -2628,7 +2628,7 @@ varnishlog
    corresponding return from VCL. When two VCL calls were made in
    succession, varnishlog would incorrectly omit the newline between the
    two calls (see `ticket
-   #95 <http://varnish.projects.linpro.no/ticket/95>`_).
+   #95 <https://www.varnish-cache.org/trac/ticket/95>`_).
 
 -  New -D and -P command-line options have been added to daemonize and
    create a pidfile, respectively.

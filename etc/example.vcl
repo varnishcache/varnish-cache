@@ -6,7 +6,7 @@
 # return statement.
 #
 # See the VCL chapters in the Users Guide at https://www.varnish-cache.org/docs/
-# and http://varnish-cache.org/trac/wiki/VCLExamples for more examples.
+# and https://www.varnish-cache.org/trac/wiki/VCLExamples for more examples.
 
 # Marker to tell the VCL compiler that this VCL has been adapted to the
 # new 4.0 format.

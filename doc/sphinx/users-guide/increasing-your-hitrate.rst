@@ -41,7 +41,7 @@ For more information on how `varnishlog` works please see
 :ref:`users-guide-logging` or man :ref:`ref-varnishlog`.
 
 For extended diagnostics headers, see
-http://www.varnish-cache.org/trac/wiki/VCLExampleHitMissHeader
+https://www.varnish-cache.org/trac/wiki/VCLExampleHitMissHeader
 
 
 Tool: lwp-request

@@ -29,7 +29,7 @@ Conventions used in this manual include:
   `/usr/local/`, `varnishadm`, `sess_timeout`
     A utility, Varnish configurable parameter or path.
 
-  http://www.varnish-cache.org/
+  https://www.varnish-cache.org/
     A hyperlink.
 
 Longer listings like example command output and VCL look like this::
