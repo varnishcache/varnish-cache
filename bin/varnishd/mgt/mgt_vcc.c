@@ -162,7 +162,7 @@ run_cc(void *priv)
 		VSB_putc(sb, '%');
 	AZ(VSB_finish(sb));
 
-	(void)umask(0177);
+	(void)umask(077);
 	(void)execl("/bin/sh", "/bin/sh", "-c", VSB_data(sb), (char*)0);
 	VSB_delete(sb);				// For flexelint
 }
