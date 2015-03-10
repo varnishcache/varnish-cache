@@ -769,7 +769,7 @@ process_hdr(const struct watch_head *head, const char *b, const char *e)
 	VTAILQ_FOREACH(w, head, list) {
 		if (strncasecmp(b, w->key, w->keylen))
 			continue;
-		frag_line(0, b + w->keylen, e, &w->frag);
+		frag_line(1, b + w->keylen, e, &w->frag);
 	}
 }
 
