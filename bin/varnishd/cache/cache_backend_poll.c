@@ -357,8 +357,6 @@ VBP_Status(struct cli *cli, const struct backend *be, int details)
 	if (details) {
 		VCLI_Out(cli, "\n");
 		vbp_health_one(cli, vt);
-	} else {
-		VCLI_Out(cli, "%d/%d", vt->good, vt->probe.window);
 	}
 }
 
