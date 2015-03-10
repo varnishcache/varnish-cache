@@ -257,7 +257,7 @@ vbp_has_poked(struct vbp_target *vt)
 			vt->backend->healthy = 0;
 		}
 		VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u %.6f %.6f %s",
-		    vt->backend->vcl_name, logmsg, bits,
+		    vt->backend->display_name, logmsg, bits,
 		    vt->good, vt->probe.threshold, vt->probe.window,
 		    vt->last, vt->avg, vt->resp_buf);
 		if (!vt->disable) {
@@ -453,8 +453,6 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
 
 	ALLOC_OBJ(vt, VBP_TARGET_MAGIC);
 	XXXAN(vt);
-	vt->backend = b;
-	b->probe = vt;
 	VTAILQ_INSERT_TAIL(&vbp_list, vt, list);
 	Lck_New(&vt->mtx, lck_backend);
 	vt->disable = 1;
@@ -467,13 +465,14 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
 	vbp_set_defaults(vt);
 	vbp_build_req(vt, hosthdr);
 
-	for (u = 0; u < vt->probe.initial; u++) {
+	for (u = 1; u < vt->probe.initial; u++) {
 		vbp_start_poke(vt);
 		vt->happy |= 1;
 		vbp_has_poked(vt);
 	}
-	if (!vt->probe.initial)
-		vbp_has_poked(vt);
+	vt->backend = b;
+	b->probe = vt;
+	vbp_has_poked(vt);
 	AZ(pthread_create(&vt->thread, NULL, vbp_wrk_poll_backend, vt));
 	AZ(pthread_detach(vt->thread));
 }
