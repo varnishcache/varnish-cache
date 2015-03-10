@@ -504,7 +504,7 @@ static void
 varnish_start(struct varnish *v)
 {
 	enum VCLI_status_e u;
-	char *resp, *h, *p, *q;
+	char *resp, *h, *p;
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);
@@ -535,9 +535,6 @@ varnish_start(struct varnish *v)
 	p = strchr(h, ' ');
 	AN(p);
 	*p++ = '\0';
-	q = strchr(p, '\n');
-	AN(q);
-	*q = '\0';
 	vtc_log(v->vl, 2, "Listen on %s %s", h, p);
 	macro_def(v->vl, v->name, "addr", "%s", h);
 	macro_def(v->vl, v->name, "port", "%s", p);
