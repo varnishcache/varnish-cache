@@ -429,8 +429,16 @@ VBP_Control(const struct backend *be, int stop)
 	vt = be->probe;
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
 
+VSL(SLT_Debug, 0, "VBP_CONTROL %d", stop);
 	Lck_Lock(&vt->mtx);
-	vt->disable = stop;
+	if (vt->disable == -1 && !stop) {
+		vt->disable = stop;
+		AZ(pthread_create(&vt->thread, NULL, vbp_wrk_poll_backend, vt));
+		AZ(pthread_detach(vt->thread));
+	} else {
+		assert(vt->disable != -1);
+		vt->disable = stop;
+	}
 	Lck_Unlock(&vt->mtx);
 }
 
@@ -455,7 +463,7 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
 	XXXAN(vt);
 	VTAILQ_INSERT_TAIL(&vbp_list, vt, list);
 	Lck_New(&vt->mtx, lck_backend);
-	vt->disable = 1;
+	vt->disable = -1;
 
 	vt->tcp_pool = VBT_Ref(b->ipv4, b->ipv6);
 	AN(vt->tcp_pool);
@@ -465,7 +473,9 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
 	vbp_set_defaults(vt);
 	vbp_build_req(vt, hosthdr);
 
-	for (u = 1; u < vt->probe.initial; u++) {
+	for (u = 0; u < vt->probe.initial; u++) {
+		if (u)
+			vbp_has_poked(vt);
 		vbp_start_poke(vt);
 		vt->happy |= 1;
 		vbp_has_poked(vt);
@@ -473,8 +483,6 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
 	vt->backend = b;
 	b->probe = vt;
 	vbp_has_poked(vt);
-	AZ(pthread_create(&vt->thread, NULL, vbp_wrk_poll_backend, vt));
-	AZ(pthread_detach(vt->thread));
 }
 
 void
