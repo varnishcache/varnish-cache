@@ -25,9 +25,10 @@ varnish v1 -vcl {
 
 delay 1
 
-varnish v1 -cliok "backend.list"
+varnish v1 -cliok "vcl.list"
+varnish v1 -cliok "backend.list -p"
 varnish v1 -cliok "backend.set_health s1 auto"
-varnish v1 -cliok "backend.list s"
+varnish v1 -cliok "backend.list -p"
 
 client c1 {
 	txreq
@@ -35,9 +36,9 @@ client c1 {
 	expect resp.status == 200
 } -run
 
-varnish v1 -cliok "backend.list (:)"
+varnish v1 -cliok "backend.list"
 varnish v1 -cliok "backend.set_health s1 sick"
-varnish v1 -cliok "backend.list (1:)"
+varnish v1 -cliok "backend.list"
 
 client c1 {
 	txreq
