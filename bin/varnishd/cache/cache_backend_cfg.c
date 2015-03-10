@@ -66,7 +66,7 @@ VBE_DeleteBackend(struct backend *b)
 	free(b->ipv4);
 	free(b->ipv6);
 	free(b->display_name);
-	VSM_Free(b->vsc);
+	AZ(b->vsc);
 	VBT_Rel(&b->tcp_pool);
 	Lck_Delete(&b->mtx);
 	FREE_OBJ(b);
@@ -96,8 +96,6 @@ VBE_AddBackend(const char *vcl, const struct vrt_backend *vb)
 
 	bprintf(buf, "%s.%s", vcl, vb->vcl_name);
 	REPLACE(b->display_name, buf);
-
-	b->vsc = VSM_Alloc(sizeof *b->vsc, VSC_CLASS, VSC_type_vbe, buf);
 
 	b->vcl_name =  vb->vcl_name;
 	b->ipv4_addr = vb->ipv4_addr;

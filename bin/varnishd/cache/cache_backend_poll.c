@@ -260,8 +260,10 @@ vbp_has_poked(struct vbp_target *vt)
 		    vt->backend->vcl_name, logmsg, bits,
 		    vt->good, vt->probe.threshold, vt->probe.window,
 		    vt->last, vt->avg, vt->resp_buf);
-		if (!vt->disable)
+		if (!vt->disable) {
+			AN(vt->backend->vsc);
 			vt->backend->vsc->happy = vt->happy;
+		}
 	}
 	Lck_Unlock(&vt->mtx);
 }
@@ -457,6 +459,7 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
 	b->probe = vt;
 	VTAILQ_INSERT_TAIL(&vbp_list, vt, list);
 	Lck_New(&vt->mtx, lck_backend);
+	vt->disable = 1;
 
 	vt->tcp_pool = VBT_Ref(b->ipv4, b->ipv6);
 	AN(vt->tcp_pool);

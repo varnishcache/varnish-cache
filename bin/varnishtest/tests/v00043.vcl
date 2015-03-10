@@ -1,23 +1,56 @@
 varnishtest "vcl.state coverage tests"
 
-server s1 {
+server s1 -repeat 20 {
 	rxreq
 	txresp
+	delay .2
+	close
 } -start
 
-varnish v1 -vcl+backend {} -start
-varnish v1 -vcl+backend {} 
+varnish v1 -vcl {
+	backend default {
+		.host = "${s1_addr}";
+		.probe = { .interval = 1s; .initial = 1;}
+	}
+} -start
 
-varnish v1 -cliok "param.set vcl_cooldown 5"
+varnish v1 -cliok "param.set vcl_cooldown 3"
 
-varnish v1 -cliok "vcl.list"
-varnish v1 -cliok "vcl.use vcl2"
-varnish v1 -cliok "vcl.list"
-delay 5
-varnish v1 -cliok "vcl.list"
-varnish v1 -cliok "vcl.state vcl1 warm"
-varnish v1 -cliok "vcl.list"
+# We only have one vcl yet
+varnish v1 -expect VBE.vcl1.default.happy > 0
+varnish v1 -expect !VBE.vcl2.default.happy
+varnish v1 -cliok "backend.list -p *.*"
+
+varnish v1 -vcl {
+	backend default {
+		.host = "${s1_addr}";
+		.probe = { .interval = 1s; .initial = 1;}
+	}
+}
+
+# Now we have two vcls (and run on the latest loaded)
+varnish v1 -expect VBE.vcl1.default.happy > 0
+varnish v1 -expect VBE.vcl2.default.happy > 0
+
+# Freeze the first VCL
+varnish v1 -cliok "vcl.state vcl1 cold"
+varnish v1 -expect !VBE.vcl1.default.happy
+
+# Set it auto should be a no-op
+varnish v1 -cliok "vcl.state vcl1 auto"
+varnish v1 -expect !VBE.vcl1.default.happy
+
+# Use it, and it should come alive
 varnish v1 -cliok "vcl.use vcl1"
+varnish v1 -expect VBE.vcl1.default.happy > 0
+varnish v1 -expect VBE.vcl2.default.happy > 0
+
+# and the unused one should go cold
+delay 4
+varnish v1 -expect !VBE.vcl2.default.happy 
+
+# Mark the used warm and use it the other
+varnish v1 -cliok "vcl.state vcl1 warm"
 varnish v1 -cliok "vcl.use vcl2"
-delay 5
-varnish v1 -cliok "vcl.list"
+delay 4
+varnish v1 -expect VBE.vcl2.default.happy > 0
