@@ -997,6 +997,34 @@ cmd_http_send(CMD_ARGS)
 }
 
 /**********************************************************************
+ * Send a string many times
+ */
+
+static void
+cmd_http_send_n(CMD_ARGS)
+{
+	struct http *hp;
+	int i, n, l;
+
+	(void)cmd;
+	(void)vl;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	AN(av[1]);
+	AN(av[2]);
+	AZ(av[3]);
+	n = strtoul(av[1], NULL, 0);
+		vtc_dump(hp->vl, 4, "send_n", av[2], -1);
+	l = strlen(av[2]);
+	while (n--) {
+		i = write(hp->fd, av[2], l);
+		if (i != l)
+			vtc_log(hp->vl, hp->fatal,
+			    "Write error in http_send(): %s",
+			    strerror(errno));
+	}
+}
+
+/**********************************************************************
  * Send a hex string
  */
 
@@ -1260,6 +1288,7 @@ static const struct cmds http_cmds[] = {
 	{ "gunzip",		cmd_http_gunzip_body },
 	{ "expect",		cmd_http_expect },
 	{ "send",		cmd_http_send },
+	{ "send_n",		cmd_http_send_n },
 	{ "sendhex",		cmd_http_sendhex },
 	{ "chunked",		cmd_http_chunked },
 	{ "chunkedlen",		cmd_http_chunkedlen },
