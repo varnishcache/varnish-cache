@@ -27,7 +27,10 @@ client c1 {
 	expect resp.bodylen == 12
 	expect resp.http.x-varnish == "1001"
 } -start
+
 sema r1 sync 2
+delay .2
+
 client c2 {
 	txreq -url "/foo"
 	rxresp
