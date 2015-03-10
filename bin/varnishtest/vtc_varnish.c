@@ -762,18 +762,24 @@ static void
 varnish_expect(const struct varnish *v, char * const *av) {
 	uint64_t ref;
 	int good;
+	char *r;
 	char *p;
 	char *q;
-	int i;
+	int i, not = 0;
 	struct stat_priv sp;
 
-	p = strchr(av[0], '.');
+	r = av[0];
+	if (r[0] == '!') {
+		not = 1;
+		r++;
+	}
+	p = strchr(r, '.');
 	if (p == NULL) {
 		strcpy(sp.target_type, "MAIN");
 		sp.target_ident[0] = '\0';
-		bprintf(sp.target_name, "%s", av[0]);
+		bprintf(sp.target_name, "%s", r);
 	} else {
-		bprintf(sp.target_type, "%.*s", (int)(p - av[0]), av[0]);
+		bprintf(sp.target_type, "%.*s", (int)(p - r), r);
 		p++;
 		q = strrchr(p, '.');
 		bprintf(sp.target_name, "%s", q + 1);
@@ -801,6 +807,9 @@ varnish_expect(const struct varnish *v, char * const *av) {
 			continue;
 		}
 
+		if (not)
+			vtc_log(v->vl, 0, "Found (not expected): %s", av[0]+1);
+
 		good = 0;
 		ref = strtoumax(av[2], &p, 0);
 		if (ref == UINTMAX_MAX || *p)
@@ -819,10 +828,17 @@ varnish_expect(const struct varnish *v, char * const *av) {
 	}
 	if (good == -1) {
 		vtc_log(v->vl, 0, "VSM error: %s", VSM_Error(v->vd));
-		VSM_ResetError(v->vd);
-	} else if (good == -2) {
+	}
+	if (good == -2) {
+		if (not) {
+			vtc_log(v->vl, 2, "not found (as expected): %s",
+			    av[0] + 1);
+			return;
+		}
 		vtc_log(v->vl, 0, "stats field %s unknown", av[0]);
-	} else if (good) {
+	}
+
+	if (good == 1) {
 		vtc_log(v->vl, 2, "as expected: %s (%ju) %s %s",
 		    av[0], sp.val, av[1], av[2]);
 	} else {
