@@ -785,7 +785,7 @@ varnish_expect(const struct varnish *v, char * const *av) {
 		else
 			bprintf(sp.target_ident, "%.*s", (int)(q - p), p);
 	}
-		
+
 	sp.val = 0;
 	sp.v = v;
 	ref = 0;
