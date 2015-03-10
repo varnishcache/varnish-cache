@@ -461,6 +461,15 @@ sp_variables = [
 		cache.  Defaults to false.
 		"""
 	),
+	('beresp.was_304',
+		'BOOL',
+		( 'backend_response', 'backend_error'),
+		( ), """
+		Boolean. If this is a successful 304 response to a
+		backend conditional request refreshing an existing
+		cache object.
+		"""
+	),
 	('beresp.uncacheable',
 		'BOOL',
 		( 'backend_response', 'backend_error'),

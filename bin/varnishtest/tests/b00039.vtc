@@ -13,6 +13,7 @@ varnish v1 -vcl+backend {
 		set beresp.ttl = 2s;
 		set beresp.grace = 20s;
 		set beresp.keep = 1m;
+		set beresp.http.was-304 = beresp.was_304;
 	}
 } -start
 
@@ -21,6 +22,7 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.body == "Geoff Rules"
+	expect resp.http.was-304 == "false"
 } -run
 
 delay 3
@@ -30,6 +32,7 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.body == "Geoff Rules"
+	expect resp.http.was-304 == "false"
 } -run
 
 client c1 {
@@ -37,4 +40,5 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.body == "Geoff Rules"
+	expect resp.http.was-304 == "true"
 } -run

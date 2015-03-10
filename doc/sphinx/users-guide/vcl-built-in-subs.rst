@@ -277,6 +277,25 @@ vcl_backend_response
 Called after the response headers have been successfully retrieved from
 the backend.
 
+For a 304 response, varnish core code amends ``beresp`` before calling
+`vcl_backend_response`:
+
+* If the gzip status changed, ``Content-Encoding`` is unset and any
+  ``Etag`` is weakened
+
+* Any headers not present in the 304 response are copied from the
+  existing cache object. ``Content-Length`` is copied if present in
+  the existing cache object and discarded otherwise.
+
+* The status gets set to 200.
+
+`beresp.was_304` marks that this conditional response processing has
+happened.
+
+Note: Backend conditional requests are independend of client
+conditional requests, so clients may receive 304 responses no matter
+if a backend request was conditional.
+
 The `vcl_backend_response` subroutine may terminate with calling
 ``return()`` with one of the following keywords:
 

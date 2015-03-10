@@ -254,7 +254,7 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 static enum fetch_step
 vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 {
-	int i, do_ims = 0;
+	int i;
 	double now;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -385,6 +385,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		bo->fetch_objcore->exp.ttl = -1.;
 
 	AZ(bo->do_esi);
+	AZ(bo->was_304);
 
 	if (http_IsStatus(bo->beresp, 304)) {
 		if (bo->stale_oc != NULL &&
@@ -401,7 +402,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 			http_Unset(bo->beresp, H_Content_Length);
 			HTTP_Merge(bo->wrk, bo->stale_oc, bo->beresp);
 			assert(http_IsStatus(bo->beresp, 200));
-			do_ims = 1;
+			bo->was_304 = 1;
 		} else if (!bo->do_pass) {
 			/*
 			 * Backend sent unallowed 304
@@ -451,7 +452,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	assert(wrk->handling == VCL_RET_DELIVER);
 
-	return (do_ims ? F_STP_CONDFETCH : F_STP_FETCH);
+	return (bo->was_304 ? F_STP_CONDFETCH : F_STP_FETCH);
 }
 
 /*--------------------------------------------------------------------
