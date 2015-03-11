@@ -72,8 +72,8 @@ struct vss_addr {
  * See also RFC5952
  */
 
-const char *
-VSS_parse(char *str, char **addr, char **port)
+static const char *
+vss_parse(char *str, char **addr, char **port)
 {
 	char *p;
 
@@ -126,7 +126,7 @@ VSS_resolver(const char *addr, const char *def_port, resolved_f *func,
 	*err = NULL;
 	h = strdup(addr);
 	AN(h);
-	*err = VSS_parse(h, &hop, &adp);
+	*err = vss_parse(h, &hop, &adp);
 	if (*err != NULL) {
 		free(h);
 		return (-1);
@@ -189,7 +189,7 @@ VSS_resolve(const char *addr, const char *port, struct vss_addr ***vap)
 
 	h = strdup(addr);
 	AN(h);
-	if (VSS_parse(h, &hop, &adp) != NULL) {
+	if (vss_parse(h, &hop, &adp) != NULL) {
 		free(h);
 		return (0);
 	}

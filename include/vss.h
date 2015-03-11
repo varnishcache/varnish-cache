@@ -30,8 +30,6 @@
 struct vss_addr;
 struct suckaddr;
 
-const char *VSS_parse(char *str, char **addr, char **port);
-
 typedef int resolved_f(void *priv, const struct suckaddr *);
 int VSS_resolver(const char *addr, const char *def_port, resolved_f *func,
    void *priv, const char **err);
