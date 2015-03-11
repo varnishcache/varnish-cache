@@ -114,7 +114,7 @@ vss_parse(char *str, char **addr, char **port)
  */
 
 int
-VSS_resolver(const char *addr, const char *def_port, resolved_f *func,
+VSS_resolver(const char *addr, const char *def_port, vss_resolved_f *func,
     void *priv, const char **err)
 {
 	struct addrinfo hints, *res0, *res;

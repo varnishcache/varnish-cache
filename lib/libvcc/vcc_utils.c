@@ -148,7 +148,7 @@ struct rss {
 	struct suckaddr		*vsa6;
 };
 
-static int __match_proto__(resolved_f)
+static int __match_proto__(vss_resolved_f)
 rs_callback(void *priv, const struct suckaddr *vsa)
 {
 	struct rss *rss;
@@ -174,7 +174,7 @@ rs_callback(void *priv, const struct suckaddr *vsa)
 	return (0);
 }
 
-static int __match_proto__(resolved_f)
+static int __match_proto__(vss_resolved_f)
 rs_callback2(void *priv, const struct suckaddr *vsa)
 {
 	struct vcc *tl;
