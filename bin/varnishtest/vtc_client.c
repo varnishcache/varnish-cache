@@ -74,6 +74,7 @@ client_thread(void *priv)
 	struct vsb *vsb;
 	char *p;
 	char mabuf[32], mpbuf[32];
+	const char *err;
 
 	CAST_OBJ_NOTNULL(c, priv, CLIENT_MAGIC);
 	AN(*c->connect);
@@ -91,9 +92,10 @@ client_thread(void *priv)
 		vtc_log(vl, 2, "Started (%u iterations)", c->repeat);
 	for (u = 0; u < c->repeat; u++) {
 		vtc_log(vl, 3, "Connect to %s", VSB_data(vsb));
-		fd = VSS_open(VSB_data(vsb), 10.);
+		fd = VTCP_open(VSB_data(vsb), NULL, 10., &err);
 		if (fd < 0)
-			vtc_log(c->vl, 0, "Failed to open %s", VSB_data(vsb));
+			vtc_log(c->vl, 0, "Failed to open %s: %s",
+			    VSB_data(vsb), err);
 		assert(fd >= 0);
 		VTCP_blocking(fd);
 		VTCP_myname(fd, mabuf, sizeof mabuf, mpbuf, sizeof mpbuf);

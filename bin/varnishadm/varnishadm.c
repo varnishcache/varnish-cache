@@ -63,7 +63,7 @@
 #include "vas.h"
 #include "vcli.h"
 #include "vnum.h"
-#include "vss.h"
+#include "vtcp.h"
 
 #define RL_EXIT(status) \
 	do { \
@@ -101,10 +101,11 @@ cli_sock(const char *T_arg, const char *S_arg)
 	unsigned status;
 	char *answer = NULL;
 	char buf[CLI_AUTH_RESPONSE_LEN + 1];
+	const char *err;
 
-	sock = VSS_open(T_arg, timeout);
+	sock = VTCP_open(T_arg, NULL, timeout, &err);
 	if (sock < 0) {
-		fprintf(stderr, "Connection failed (%s)\n", T_arg);
+		fprintf(stderr, "Connection failed (%s): %s\n", T_arg, err);
 		return (-1);
 	}
 
