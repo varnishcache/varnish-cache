@@ -185,6 +185,8 @@ V1F_Setup_Fetch(struct busyobj *bo)
 	case BS_CHUNKED:
 		VFP_Push(bo, v1f_pull_chunked, -1);
 		return (-1);
+	case BS_NONE:
+		return (0);
 	default:
 		break;
 	}

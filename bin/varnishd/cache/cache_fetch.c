@@ -435,6 +435,9 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	assert(wrk->handling == VCL_RET_DELIVER);
 
+	AN(bo->vbc);
+	est = V1F_Setup_Fetch(bo);
+
 	/*
 	 * The VCL variables beresp.do_g[un]zip tells us how we want the
 	 * object processed before it is stored.
@@ -445,9 +448,17 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	 *	"Content-Encoding: gzip"	--> object is gzip'ed.
 	 *	no Content-Encoding		--> object is not gzip'ed.
 	 *	anything else			--> do nothing wrt gzip
-	 *
-	 * XXX: BS_NONE/cl==0 should avoid gzip/gunzip
 	 */
+
+	/*
+	 * If the length is known to be zero, it's not gziped and no
+	 * action is needed.  A similar issue exists for chunked encoding
+	 * but we don't handle that.  See #1320.
+	 */
+	if (est == 0) {
+		http_Unset(bo->beresp, H_Content_Encoding);
+		bo->do_gzip = bo->do_gunzip = 0;
+	}
 
 	/* We do nothing unless the param is set */
 	if (!cache_param->http_gzip_support)
@@ -467,20 +478,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	/* We wont gzip unless it is ungziped */
 	if (bo->do_gzip && !bo->is_gunzip)
 		bo->do_gzip = 0;
-
-	AN(bo->vbc);
-	est = V1F_Setup_Fetch(bo);
-
-	if (est == 0) {
-		/*
-		 * If the length is known to be zero, it's not gziped.
-		 * A similar issue exists for chunked encoding but we
-		 * don't handle that.  See #1320.
-		 */
-		http_Unset(bo->beresp, H_Content_Encoding);
-		bo->is_gzip = 0;
-		bo->is_gunzip = 1;
-	}
 
 	/* But we can't do both at the same time */
 	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);

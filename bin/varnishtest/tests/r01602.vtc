@@ -1,0 +1,20 @@
+varnishtest "Content-Encoding gzip with no content"
+
+server s1 {
+	rxreq
+	txresp -gzipbody {<esi:include src="/foo"/>}
+	rxreq
+	txresp -status 204
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_gzip = true;
+		set beresp.do_esi = true;
+	}
+} -start
+
+client c1 {
+	txreq -hdr "Accept-Encoding: gzip"
+	rxresp
+} -run
