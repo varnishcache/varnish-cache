@@ -156,8 +156,8 @@ ses_vsl_socket(struct sess *sp, const char *lsockname)
 {
 	struct sockaddr_storage ss;
 	socklen_t sl;
-	char laddr[ADDR_BUFSIZE];
-	char lport[PORT_BUFSIZE];
+	char laddr[VTCP_ADDRBUFSIZE];
+	char lport[VTCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	AN(lsockname);
