@@ -231,8 +231,8 @@ VSS_resolve(const char *addr, const char *port, struct vss_addr ***vap)
  * avoid conflicts between INADDR_ANY and IN6ADDR_ANY.
  */
 
-int
-VSS_bind(const struct vss_addr *va)
+static int
+vss_bind(const struct vss_addr *va)
 {
 	int sd, val;
 
@@ -277,7 +277,7 @@ VSS_listen(const struct vss_addr *va, int depth)
 {
 	int sd;
 
-	sd = VSS_bind(va);
+	sd = vss_bind(va);
 	if (sd >= 0)  {
 		if (listen(sd, depth) != 0) {
 			perror("listen()");
