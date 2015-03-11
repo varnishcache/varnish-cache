@@ -90,7 +90,7 @@ WS_MarkOverflow(struct ws *ws)
 {
 	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
 
-	ws->id[0] &= ~0x40;		// Cheasy toupper()
+	ws->id[0] &= ~0x40;		// cheesy toupper()
 }
 
 static void
@@ -98,7 +98,7 @@ ws_ClearOverflow(struct ws *ws)
 {
 	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
 
-	ws->id[0] |= 0x40;		// Cheasy tolower()
+	ws->id[0] |= 0x40;		// cheesy tolower()
 }
 
 /*
