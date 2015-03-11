@@ -48,7 +48,7 @@ int VTCP_nonblocking(int sock);
 int VTCP_linger(int sock, int linger);
 int VTCP_check_hup(int sock);
 
-#ifdef SOL_SOCKET
+// #ifdef SOL_SOCKET
 void VTCP_name(const struct suckaddr *addr, char *abuf, unsigned alen,
     char *pbuf, unsigned plen);
 int VTCP_connected(int s);
@@ -56,5 +56,7 @@ int VTCP_connect(const struct suckaddr *name, int msec);
 int VTCP_open(const char *addr, const char *def_port, double timeout,
     const char **err);
 void VTCP_close(int *s);
+int VTCP_bind(const struct suckaddr *addr, const char **errp);
+int VTCP_listen(const struct suckaddr *addr, int depth, const char **errp);
 void VTCP_set_read_timeout(int s, double seconds);
-#endif
+// #endif

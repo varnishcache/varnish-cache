@@ -359,6 +359,93 @@ VTCP_open(const char *addr, const char *def_port, double timeout,
 }
 
 /*--------------------------------------------------------------------
+ * Given a struct suckaddr, open a socket of the appropriate type, and bind
+ * it to the requested address.
+ *
+ * If the address is an IPv6 address, the IPV6_V6ONLY option is set to
+ * avoid conflicts between INADDR_ANY and IN6ADDR_ANY.
+ */
+
+int
+VTCP_bind(const struct suckaddr *sa, const char **errp)
+{
+	int sd, val, e;
+	socklen_t sl;
+	const struct sockaddr *so;
+	int proto;
+
+	if (errp != NULL)
+		*errp = NULL;
+
+	proto = VSA_Get_Proto(sa);
+	sd = socket(proto, SOCK_STREAM, 0);
+	if (sd < 0) {
+		if (errp != NULL)
+			*errp = "socket(2)";
+		return (-1);
+	}
+	val = 1;
+	if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof val) != 0) {
+		if (errp != NULL)
+			*errp = "setsockopt(SO_REUSEADDR, 1)";
+		e = errno;
+		AZ(close(sd));
+		errno = e;
+		return (-1);
+	}
+#ifdef IPV6_V6ONLY
+	/* forcibly use separate sockets for IPv4 and IPv6 */
+	val = 1;
+	if (proto == AF_INET6 &&
+	    setsockopt(sd, IPPROTO_IPV6, IPV6_V6ONLY, &val, sizeof val) != 0) {
+		if (errp != NULL)
+			*errp = "setsockopt(IPV6_V6ONLY, 1)";
+		e = errno;
+		AZ(close(sd));
+		errno = e;
+		return (-1);
+	}
+#endif
+	so = VSA_Get_Sockaddr(sa, &sl);
+	if (bind(sd, so, sl) != 0) {
+		if (errp != NULL)
+			*errp = "bind(2)";
+		e = errno;
+		AZ(close(sd));
+		errno = e;
+		return (-1);
+	}
+	return (sd);
+}
+
+/*--------------------------------------------------------------------
+ * Given a struct suckaddr, open a socket of the appropriate type, bind it
+ * to the requested address, and start listening.
+ */
+
+int
+VTCP_listen(const struct suckaddr *sa, int depth, const char **errp)
+{
+	int sd;
+	int e;
+
+	if (errp != NULL)
+		*errp = NULL;
+	sd = VTCP_bind(sa, errp);
+	if (sd >= 0)  {
+		if (listen(sd, depth) != 0) {
+			e = errno;
+			AZ(close(sd));
+			errno = e;
+			if (errp != NULL)
+				*errp = "listen(2)";
+			return (-1);
+		}
+	}
+	return (sd);
+}
+
+/*--------------------------------------------------------------------
  * Set or reset SO_LINGER flag
  */
 
