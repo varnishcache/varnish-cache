@@ -31,6 +31,9 @@
 
 #include "config.h"
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <fcntl.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,7 +46,9 @@
 #include "common/params.h"
 
 #include "vav.h"
+#include "vsa.h"
 #include "vss.h"
+#include "vtcp.h"
 
 /*=====================================================================
  * Open and close the accept sockets.
@@ -63,7 +68,7 @@ MAC_open_sockets(void)
 			good++;
 			continue;
 		}
-		ls->sock = VSS_bind(ls->addr);
+		ls->sock = VTCP_bind(ls->addr, NULL);
 		if (ls->sock < 0)
 			continue;
 
@@ -109,14 +114,32 @@ clean_listen_sock_head(struct listen_sock_head *lsh)
 	}
 }
 
+static struct listen_sock_head lsh;
+
+static int __match_proto__(vss_resolver_f)
+tla_callback(void *priv, const struct suckaddr *sa)
+{
+	struct listen_sock *ls;
+
+	ALLOC_OBJ(ls, LISTEN_SOCK_MAGIC);
+	AN(ls);
+	ls->sock = -1;
+	ls->addr = VSA_Clone(sa);
+	AN(ls->addr);
+	ls->name = strdup(priv);
+	AN(ls->name);
+	VTAILQ_INSERT_TAIL(&lsh, ls, list);
+	return (0);
+}
+
 int
 tweak_listen_address(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
 	char **av;
-	int i, retval = 0;
-	struct listen_sock		*ls;
-	struct listen_sock_head		lsh;
+	int i, error;
+	const char *err;
+	struct listen_sock *ls;
 
 	(void)par;
 	if (arg == NULL) {
@@ -141,31 +164,16 @@ tweak_listen_address(struct vsb *vsb, const struct parspec *par,
 	}
 	VTAILQ_INIT(&lsh);
 	for (i = 1; av[i] != NULL; i++) {
-		struct vss_addr **ta;
-		int j, n;
-
-		n = VSS_resolve(av[i], "http", &ta);
-		if (n == 0) {
+		error = VSS_resolver(av[i], "http", tla_callback, av[i], &err);
+		if (err != NULL) {
 			VSB_printf(vsb, "Invalid listen address ");
 			VSB_quote(vsb, av[i], -1, 0);
-			retval = -1;
-			break;
+			VSB_printf(vsb, ": %s", err);
+			VAV_Free(av);
+			clean_listen_sock_head(&lsh);
+			return (-1);
 		}
-		for (j = 0; j < n; ++j) {
-			ALLOC_OBJ(ls, LISTEN_SOCK_MAGIC);
-			AN(ls);
-			ls->sock = -1;
-			ls->addr = ta[j];
-			ls->name = strdup(av[i]);
-			AN(ls->name);
-			VTAILQ_INSERT_TAIL(&lsh, ls, list);
-		}
-		free(ta);
-	}
-	VAV_Free(av);
-	if (retval) {
-		clean_listen_sock_head(&lsh);
-		return (-1);
+		AZ(error);
 	}
 
 	REPLACE(mgt_param.listen_address, arg);
