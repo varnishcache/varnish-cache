@@ -44,6 +44,7 @@
 #include <unistd.h>
 
 #include "vas.h"
+#include "vsa.h"
 #include "vss.h"
 #include "vtcp.h"
 
@@ -106,6 +107,56 @@ VSS_parse(char *str, char **addr, char **port)
 }
 
 /*
+ * Look up an address, using a default port if provided, and call
+ * the callback function with the suckaddrs we find.
+ * If the callback function returns anything but zero, we terminate
+ * and pass that value.
+ */
+
+int
+VSS_resolver(const char *addr, const char *def_port, resolved_f *func,
+    void *priv, const char **err)
+{
+	struct addrinfo hints, *res0, *res;
+	struct suckaddr *vsa;
+	char *h;
+	char *adp, *hop;
+	int ret;
+
+	*err = NULL;
+	h = strdup(addr);
+	AN(h);
+	*err = VSS_parse(h, &hop, &adp);
+	if (*err != NULL) {
+		free(h);
+		return (-1);
+	}
+	if (adp != NULL)
+		def_port = adp;
+
+	memset(&hints, 0, sizeof hints);
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE;
+	ret = getaddrinfo(hop, def_port, &hints, &res0);
+	free(h);
+	if (ret != 0) {
+		*err = gai_strerror(ret);
+		return (-1);
+	}
+	for (res = res0; res != NULL; res = res->ai_next) {
+		vsa = VSA_Malloc(res->ai_addr, res->ai_addrlen);
+		if (vsa != NULL) {
+			ret = func(priv, vsa);
+			free(vsa);
+			if (ret)
+				break;
+		}
+	}
+	freeaddrinfo(res0);
+	return (ret);
+}
+
+/*
  * For a given host and port, return a list of struct vss_addr, which
  * contains all the information necessary to open and bind a socket.  One
  * vss_addr is returned for each distinct address returned by
@@ -128,7 +179,6 @@ VSS_resolve(const char *addr, const char *port, struct vss_addr ***vap)
 	struct addrinfo hints, *res0, *res;
 	struct vss_addr **va;
 	int i, ret;
-	long int ptst;
 	char *h;
 	char *adp, *hop;
 
@@ -144,25 +194,15 @@ VSS_resolve(const char *addr, const char *port, struct vss_addr ***vap)
 		return (0);
 	}
 
-	if (adp == NULL)
-		ret = getaddrinfo(addr, port, &hints, &res0);
-	else {
-		ptst = strtol(adp, NULL, 10);
-		if (ptst < 0 || ptst > 65535) {
-			free(h);
-			return(0);
-		}
-		ret = getaddrinfo(hop, adp, &hints, &res0);
-	}
-
+	ret = getaddrinfo(hop, adp == NULL ? port : adp, &hints, &res0);
 	free(h);
 
 	if (ret != 0)
 		return (0);
 
 	XXXAN(res0);
-	for (res = res0, i = 0; res != NULL; res = res->ai_next, ++i)
-		/* nothing */ ;
+	for (res = res0, i = 0; res != NULL; res = res->ai_next)
+		i++;
 	if (i == 0) {
 		freeaddrinfo(res0);
 		return (0);
