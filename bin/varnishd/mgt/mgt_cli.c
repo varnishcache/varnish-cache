@@ -578,40 +578,46 @@ Marg_closer(void *priv)
 	M_fd = -1;
 }
 
-static int
-Marg_poker(const struct vev *e, int what)
+static int __match_proto__(vev_cb_f)
+Marg_connect(const struct vev *e, int what)
 {
 	struct vsb *vsb;
-	int s, k;
+	int k;
 	socklen_t l;
 
-	(void)what;	/* XXX: ??? */
+	assert(e == M_conn);
+	(void)what;
 
-	if (e == M_conn) {
-		/* Our connect(2) returned, check result */
-		l = sizeof k;
-		AZ(getsockopt(M_fd, SOL_SOCKET, SO_ERROR, &k, &l));
-		if (k) {
-			errno = k;
-			syslog(LOG_INFO, "Could not connect to CLI-master: %m");
-			(void)close(M_fd);
-			M_fd = -1;
-			/* Try next address */
-			if (++M_nxt >= M_nta) {
-				M_nxt = 0;
-				if (M_poll < 10)
-					M_poll *= 2;
-			}
-			return (1);
+	/* Our connect(2) returned, check result */
+	l = sizeof k;
+	AZ(getsockopt(M_fd, SOL_SOCKET, SO_ERROR, &k, &l));
+	if (k) {
+		errno = k;
+		syslog(LOG_INFO, "Could not connect to CLI-master: %m");
+		(void)close(M_fd);
+		M_fd = -1;
+		/* Try next address */
+		if (++M_nxt >= M_nta) {
+			M_nxt = 0;
+			if (M_poll < 10)
+				M_poll *= 2;
 		}
-		vsb = sock_id("master", M_fd);
-		mgt_cli_setup(M_fd, M_fd, 0, VSB_data(vsb), Marg_closer, NULL);
-		VSB_delete(vsb);
-		M_poll = 1;
 		return (1);
 	}
+	vsb = sock_id("master", M_fd);
+	mgt_cli_setup(M_fd, M_fd, 0, VSB_data(vsb), Marg_closer, NULL);
+	VSB_delete(vsb);
+	M_poll = 1;
+	return (1);
+}
+
+static int __match_proto__(vev_cb_f)
+Marg_poker(const struct vev *e, int what)
+{
+	int s;
 
 	assert(e == M_poker);
+	(void)what;
 
 	M_poker->timeout = M_poll;	/* XXX nasty ? */
 	if (M_fd >= 0)
@@ -626,7 +632,7 @@ Marg_poker(const struct vev *e, int what)
 
 	M_conn = vev_new();
 	AN(M_conn);
-	M_conn->callback = Marg_poker;
+	M_conn->callback = Marg_connect;
 	M_conn->name = "-M connector";
 	M_conn->fd_flags = EV_WR;
 	M_conn->fd = s;
