@@ -293,8 +293,8 @@ VSS_listen(const struct vss_addr *va, int depth)
  * Connect to the socket specified by the address info in va.
  * Return the socket.
  */
-int
-VSS_connect(const struct vss_addr *va, int nonblock)
+static int
+vss_connect(const struct vss_addr *va, int nonblock)
 {
 	int sd, i;
 
@@ -328,7 +328,7 @@ VSS_open(const char *str, double tmo)
 
 	nvaddr = VSS_resolve(str, NULL, &vaddr);
 	for (n = 0; n < nvaddr; n++) {
-		retval = VSS_connect(vaddr[n], tmo != 0.0);
+		retval = vss_connect(vaddr[n], tmo != 0.0);
 		if (retval >= 0 && tmo != 0.0) {
 			pfd.fd = retval;
 			pfd.events = POLLOUT;
