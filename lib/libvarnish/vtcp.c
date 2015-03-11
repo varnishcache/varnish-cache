@@ -50,8 +50,10 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "vdef.h"
 #include "vas.h"
 #include "vsa.h"
+#include "vss.h"
 #include "vtcp.h"
 
 /*--------------------------------------------------------------------*/
@@ -323,6 +325,37 @@ VTCP_set_read_timeout(int s, double seconds)
 #else
 	(void)s;
 #endif
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static int __match_proto__(vss_resolved_f)
+vtcp_open_callback(void *priv, const struct suckaddr *sa)
+{
+	double *p = priv;
+
+	return (VTCP_connect(sa, (int)floor(*p * 1e3)));
+}
+
+int
+VTCP_open(const char *addr, const char *def_port, double timeout,
+    const char **errp)
+{
+	int error;
+	const char *err;
+
+	if (errp != NULL)
+		*errp = NULL;
+	assert(timeout >= 0);
+	error = VSS_resolver(addr, def_port, vtcp_open_callback,
+	    &timeout, &err);
+	if (err != NULL) {
+		if (errp != NULL)
+			*errp = err;
+		return (-1);
+	}
+	return (error);
 }
 
 /*--------------------------------------------------------------------

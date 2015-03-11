@@ -53,6 +53,8 @@ void VTCP_name(const struct suckaddr *addr, char *abuf, unsigned alen,
     char *pbuf, unsigned plen);
 int VTCP_connected(int s);
 int VTCP_connect(const struct suckaddr *name, int msec);
+int VTCP_open(const char *addr, const char *def_port, double timeout,
+    const char **err);
 void VTCP_close(int *s);
 void VTCP_set_read_timeout(int s, double seconds);
 #endif
