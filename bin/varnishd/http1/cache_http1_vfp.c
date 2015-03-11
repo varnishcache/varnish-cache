@@ -55,6 +55,7 @@ v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, size_t len)
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	assert(len >= 0);
 	l = 0;
 	p = d;
 	if (htc->pipeline_b) {
