@@ -420,6 +420,30 @@ cmd_shell(CMD_ARGS)
 	r = system(av[1]);
 	AZ(WEXITSTATUS(r));
 }
+/**********************************************************************
+ * Shell command execution
+ */
+
+static void
+cmd_shell_err(CMD_ARGS)
+{
+	(void)priv;
+	(void)cmd;
+	int r;
+
+	if (av == NULL)
+		return;
+	AN(av[1]);
+	AN(av[2]);
+	AZ(av[3]);
+	vtc_dump(vl, 4, "shell_err", av[2], -1);
+	r = system(av[2]);
+	vtc_log(vl, 4, "shell status: 0x%x", r);
+	if (strtol(av[1], NULL, 0) != r)
+		vtc_log(vl, 0, "Wrong shell status: 0x%x", r);
+	else
+		vtc_log(vl, 4, "Expected shell status: 0x%x", r);
+}
 
 /**********************************************************************
  * Dump command arguments
@@ -545,6 +569,7 @@ static const struct cmds cmds[] = {
 	{ "delay",	cmd_delay },
 	{ "varnishtest",cmd_varnishtest },
 	{ "shell",	cmd_shell },
+	{ "shell_err",	cmd_shell_err },
 	{ "sema",	cmd_sema },
 	{ "random",	cmd_random },
 	{ "feature",	cmd_feature },
