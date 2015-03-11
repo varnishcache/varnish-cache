@@ -2,8 +2,7 @@ varnishtest "Check Pid file locking"
 
 server s1 {
 	rxreq
-	send "HTTP/1.1 200 OK\nContent-Length: dupa"
-	send_n 15865 "\n"
+	txresp
 } -start
 
 varnish v1 -vcl+backend {} -start
