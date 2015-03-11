@@ -212,10 +212,30 @@ VTCP_nonblocking(int sock)
  */
 
 int
+VTCP_connected(int s)
+{
+	int k;
+	socklen_t l;
+
+	/* Find out if we got a connection */
+	l = sizeof k;
+	AZ(getsockopt(s, SOL_SOCKET, SO_ERROR, &k, &l));
+
+	/* An error means no connection established */
+	errno = k;
+	if (k) {
+		AZ(close(s));
+		return (-1);
+	}
+
+	(void)VTCP_blocking(s);
+	return (s);
+}
+
+int
 VTCP_connect(const struct suckaddr *name, int msec)
 {
-	int s, i, k;
-	socklen_t l;
+	int s, i;
 	struct pollfd fds[1];
 	const struct sockaddr *sa;
 	socklen_t sl;
@@ -233,7 +253,7 @@ VTCP_connect(const struct suckaddr *name, int msec)
 		return (s);
 
 	/* Set the socket non-blocking */
-	if (msec > 0)
+	if (msec != 0)
 		(void)VTCP_nonblocking(s);
 
 	i = connect(s, sa, sl);
@@ -242,6 +262,14 @@ VTCP_connect(const struct suckaddr *name, int msec)
 	if (errno != EINPROGRESS) {
 		AZ(close(s));
 		return (-1);
+	}
+
+	if (msec < 0) {
+		/*
+		 * Caller is responsible for waiting and
+		 * calling VTCP_connected
+		 */
+		return (s);
 	}
 
 	assert(msec > 0);
@@ -258,19 +286,7 @@ VTCP_connect(const struct suckaddr *name, int msec)
 		return (-1);
 	}
 
-	/* Find out if we got a connection */
-	l = sizeof k;
-	AZ(getsockopt(s, SOL_SOCKET, SO_ERROR, &k, &l));
-
-	/* An error means no connection established */
-	errno = k;
-	if (k) {
-		AZ(close(s));
-		return (-1);
-	}
-
-	(void)VTCP_blocking(s);
-	return (s);
+	return (VTCP_connected(s));
 }
 
 /*--------------------------------------------------------------------

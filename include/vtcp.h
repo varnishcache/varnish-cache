@@ -51,6 +51,7 @@ int VTCP_check_hup(int sock);
 #ifdef SOL_SOCKET
 void VTCP_name(const struct suckaddr *addr, char *abuf, unsigned alen,
     char *pbuf, unsigned plen);
+int VTCP_connected(int s);
 int VTCP_connect(const struct suckaddr *name, int msec);
 void VTCP_close(int *s);
 void VTCP_set_read_timeout(int s, double seconds);
