@@ -34,7 +34,7 @@ varnish v1 -vcl+backend {
 	import ${vmod_std};
 
 	sub vcl_recv {
-		std.cache_req_body(1000B);
+		std.cache_req_body(110B);
 	}
 }
 
@@ -42,12 +42,6 @@ client c1 {
 	txreq -req POST -nolen -hdr "Transfer-encoding: chunked"
 	chunked {BLAS}
 	delay .2
-	chunkedlen 100
-	delay .2
-	chunked {TFOO}
-	delay .2
-	chunkedlen 0
-	rxresp
-	expect resp.status == 200
-	expect resp.bodylen == 5
+	chunkedlen 110
+	expect_close
 } -run

@@ -69,5 +69,10 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.X-BodyBytes == 0
 } -run
+
+client c2 {
+       txreq -req POST -nolen -hdr "Content-Length: 1025"
+       expect_close
+} -run
 varnish v1 -stop
 logexpect l1 -wait

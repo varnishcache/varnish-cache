@@ -607,8 +607,10 @@ cnt_recv(struct worker *wrk, struct req *req)
 	VCL_recv_method(req->vcl, wrk, req, NULL, req->http->ws);
 
 	/* Attempts to cache req.body may fail */
-	if (req->req_body_status == REQ_BODY_FAIL)
+	if (req->req_body_status == REQ_BODY_FAIL) {
+		req->doclose = SC_RX_BODY;
 		return (REQ_FSM_DONE);
+	}
 
 	recv_handling = wrk->handling;
 

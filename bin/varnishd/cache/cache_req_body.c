@@ -218,9 +218,10 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 
 	CHECK_OBJ_NOTNULL(req->htc, HTTP_CONN_MAGIC);
 	vfc = req->htc->vfc;
+	VFP_Setup(vfc);
+	vfc->wrk = req->wrk;
 
 	if (req->htc->content_length > maxsize) {
-		// XXX #1664
 		req->req_body_status = REQ_BODY_FAIL;
 		(void)VFP_Error(vfc, "Request body too big to cache");
 		return (-1);
@@ -230,9 +231,7 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 	AN(req->body_oc);
 	XXXAN(STV_NewObject(req->body_oc, req->wrk, TRANSIENT_STORAGE, 8));
 
-	VFP_Setup(vfc);
 	vfc->http = req->http;
-	vfc->wrk = req->wrk;
 	vfc->oc = req->body_oc;
 	V1F_Setup_Fetch(vfc, req->htc);
 
@@ -248,6 +247,12 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 		yet = 0;
 	do {
 		AZ(vfc->failed);
+		if (req->req_bodybytes > maxsize) {
+			req->req_body_status = REQ_BODY_FAIL;
+			(void)VFP_Error(vfc, "Request body too big to cache");
+			VFP_Close(vfc);
+			return(-1);
+		}
 		l = yet;
 		if (VFP_GetStorage(vfc, &l, &ptr) != VFP_OK)
 			break;
