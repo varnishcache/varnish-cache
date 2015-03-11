@@ -68,6 +68,8 @@ struct vsb		*vident;
 struct VSC_C_mgt	static_VSC_C_mgt;
 struct VSC_C_mgt	*VSC_C_mgt;
 
+static struct vpf_fh *pfh = NULL;
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -286,6 +288,8 @@ cli_stdin_close(void *priv)
 	if (d_flag) {
 		mgt_stop_child();
 		mgt_cli_close_all();
+		if (pfh != NULL)
+			(void)VPF_Remove(pfh);
 		exit(0);
 	}
 }
@@ -376,7 +380,6 @@ main(int argc, char * const *argv)
 	const char *T_arg = "localhost:0";
 	char *p, *vcl = NULL;
 	struct cli cli[1];
-	struct vpf_fh *pfh = NULL;
 	char *dirname;
 	char **av;
 	unsigned clilim;
