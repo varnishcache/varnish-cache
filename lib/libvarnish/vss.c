@@ -46,7 +46,6 @@
 #include "vas.h"
 #include "vsa.h"
 #include "vss.h"
-#include "vtcp.h"
 
 /* lightweight addrinfo */
 struct vss_addr {
