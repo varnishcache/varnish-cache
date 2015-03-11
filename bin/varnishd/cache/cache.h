@@ -982,6 +982,7 @@ enum vgzret_e VGZ_Gzip(struct vgz *, const void **, size_t *len, enum vgz_flag);
 enum vgzret_e VGZ_Gunzip(struct vgz *, const void **, size_t *len);
 enum vgzret_e VGZ_Destroy(struct vgz **);
 void VGZ_UpdateObj(const struct vgz*, struct object *);
+vdp_bytes VDP_pretend_gzip;
 vdp_bytes VDP_gunzip;
 
 int VGZ_WrwInit(struct vgz *vg);

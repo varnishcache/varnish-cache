@@ -394,6 +394,9 @@ V1D_Deliver_Synth(struct req *req)
 	req->vdps[0] = v1d_bytes;
 	req->vdp_nxt = 0;
 
+	if (req->gzip_resp)
+		req->vdps[++req->vdp_nxt] = VDP_pretend_gzip;
+
 	WRW_Reserve(req->wrk, &req->sp->fd, req->vsl, req->t_prev);
 
 	/*
@@ -411,11 +414,6 @@ V1D_Deliver_Synth(struct req *req)
 
 	if (!req->wantbody) {
 		/* This was a HEAD or conditional request */
-#if 0
-	XXX: Missing pretend GZIP for esi-children
-	} else if (req->res_mode & RES_ESI_CHILD && req->gzip_resp) {
-		ESI_DeliverChild(req);
-#endif
 	} else {
 		(void)VDP_bytes(req, VDP_FLUSH, VSB_data(req->synth_body),
 		    VSB_len(req->synth_body));

@@ -43,6 +43,7 @@
 
 #include "cache.h"
 
+#include "vend.h"
 #include "vgz.h"
 
 struct vgz {
@@ -276,6 +277,47 @@ VGZ_WrwInit(struct vgz *vg)
 		return (-1);
 
 	VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
+	return (0);
+}
+
+/*--------------------------------------------------------------------
+ * VDP for pretend gzip
+ */
+
+int __match_proto__(vdp_bytes)
+VDP_pretend_gzip(struct req *req, enum vdp_action act, const void *ptr,
+    ssize_t len)
+{
+	uint8_t buf[5];
+	const uint8_t *p;
+	uint16_t lx;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->wrk, WORKER_MAGIC);
+
+	if (len == 0) {
+		assert(act > VDP_NULL);
+		return (VDP_bytes(req, act, ptr, len));
+	}
+
+	lx = 65535;
+	p = ptr;
+	while (len > 0) {
+		if (lx > len)
+			lx = (uint16_t)len;
+		buf[0] = 0;
+		vle16enc(buf + 1, lx);
+		vle16enc(buf + 3, ~lx);
+		if (VDP_bytes(req, VDP_NULL, buf, sizeof buf))
+			return (-1);
+		if (VDP_bytes(req, VDP_FLUSH, p, lx))
+			return (-1);
+		req->crc = crc32(req->crc, p, lx);
+		req->l_crc += lx;
+		len -= lx;
+		assert(len >= 0);
+		p += lx;
+	}
 	return (0);
 }
 
