@@ -34,13 +34,14 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netdb.h>
 
 #include "vcc_compile.h"
 
 #include "vre.h"
 #include "vrt.h"
 #include "vsa.h"
+#include "vss.h"
+#include "vtcp.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -94,37 +95,38 @@ vcc_regexp(struct vcc *tl)
  * alignment.
  */
 
-static const char *
-vcc_sockaddr(struct vcc *tl, const void *sa, unsigned sal)
+static void
+vcc_suckaddr(struct vcc *tl, const char *host, const struct suckaddr *vsa,
+    const char **ip, const char **ip_ascii, const char **p_ascii)
 {
+	char a[VTCP_ADDRBUFSIZE];
+	char p[VTCP_PORTBUFSIZE];
 	const int sz = sizeof(unsigned long long);
 	const unsigned n = (vsa_suckaddr_len + sz - 1) / sz;
-	unsigned len;
 	unsigned long long b[n];
-	struct suckaddr *sua;
-	char *p;
+	int len;
+	char *q;
 
-	AN(sa);
-	AN(sal);
-
-	sua = VSA_Malloc(sa, sal);
-	AN(sua);
+	VTCP_name(vsa, a, sizeof a, p, sizeof p);
+	Fh(tl, 0, "\n/* \"%s\" -> %s */\n", host, a);
+	if (ip_ascii != NULL)
+		*ip_ascii = TlDup(tl, a);
+	if (p_ascii != NULL && *p_ascii == NULL)
+		*p_ascii = TlDup(tl, p);
 
 	Fh(tl, 0, "static const unsigned long long");
 	Fh(tl, 0, " suckaddr_%u[%d] = {\n", tl->unique, n);
-	memcpy(b, sua, vsa_suckaddr_len);
-	free(sua);
+	memcpy(b, vsa, vsa_suckaddr_len);
 	for (len = 0; len < n; len++)
 		Fh(tl, 0, "%s    0x%0*llxLL",
 		    len ? ",\n" : "", sz * 2, b[len]);
 	Fh(tl, 0, "\n};\n");
 
-	p = TlAlloc(tl, 40);
-	AN(p);
-	sprintf(p, "(const void*)suckaddr_%u", tl->unique);
-
+	q = TlAlloc(tl, 40);
+	AN(q);
+	sprintf(q, "(const void*)suckaddr_%u", tl->unique);
+	*ip = q;
 	tl->unique++;
-	return (p);
 }
 
 /*--------------------------------------------------------------------
@@ -138,19 +140,57 @@ vcc_sockaddr(struct vcc *tl, const void *sa, unsigned sal)
  * For backends, we accept up to one IPv4 and one IPv6.
  */
 
-struct foo_proto {
-	const char		*name;
-	int			family;
-	struct sockaddr_storage	sa;
-	socklen_t		l;
-	const char		**dst;
-	const char		**dst_ascii;
+struct rss {
+	unsigned		magic;
+#define RSS_MAGIC		0x11e966ab
+
+	struct suckaddr		*vsa4;
+	struct suckaddr		*vsa6;
 };
+
+static int __match_proto__(resolved_f)
+rs_callback(void *priv, const struct suckaddr *vsa)
+{
+	struct rss *rss;
+	int v;
+
+	CAST_OBJ_NOTNULL(rss, priv, RSS_MAGIC);
+	assert(VSA_Sane(vsa));
+
+	v = VSA_Get_Proto(vsa);
+	if (v == AF_INET) {
+		if (rss->vsa4 == NULL)
+			rss->vsa4 = VSA_Clone(vsa);
+		else if (VSA_Compare(vsa, rss->vsa4))
+			return (-2);
+	} else if (v == AF_INET6) {
+		if (rss->vsa6 == NULL)
+			rss->vsa6 = VSA_Clone(vsa);
+		else if (VSA_Compare(vsa, rss->vsa6))
+			return (-2);
+	} else {
+		WRONG("Wrong protocol");
+	}
+	return (0);
+}
+
+static int __match_proto__(resolved_f)
+rs_callback2(void *priv, const struct suckaddr *vsa)
+{
+	struct vcc *tl;
+	char a[VTCP_ADDRBUFSIZE];
+	char p[VTCP_PORTBUFSIZE];
+
+	CAST_OBJ_NOTNULL(tl, priv, VCC_MAGIC);
+	VTCP_name(vsa, a, sizeof a, p, sizeof p);
+	VSB_printf(tl->sb, "\t%s:%s\n", a, p);
+	return (0);
+}
 
 void
 Resolve_Sockaddr(struct vcc *tl,
     const char *host,
-    const char *port,
+    const char *def_port,
     const char **ipv4,
     const char **ipv4_ascii,
     const char **ipv6,
@@ -160,100 +200,63 @@ Resolve_Sockaddr(struct vcc *tl,
     const struct token *t_err,
     const char *errid)
 {
-	struct foo_proto protos[3], *pp;
-	struct addrinfo *res, *res0, *res1, hint;
-	int error, retval;
-	char hbuf[NI_MAXHOST];
+	int error, retval = 0;
+	struct rss *rss;
+	const char *err;
 
-	memset(protos, 0, sizeof protos);
-	protos[0].name = "ipv4";
-	protos[0].family = PF_INET;
-	protos[0].dst = ipv4;
-	protos[0].dst_ascii = ipv4_ascii;
 	*ipv4 = NULL;
-
-	protos[1].name = "ipv6";
-	protos[1].family = PF_INET6;
-	protos[1].dst = ipv6;
-	protos[1].dst_ascii = ipv6_ascii;
 	*ipv6 = NULL;
+	if (p_ascii != NULL)
+		*p_ascii = NULL;
 
-	retval = 0;
-	memset(&hint, 0, sizeof hint);
-	hint.ai_family = PF_UNSPEC;
-	hint.ai_socktype = SOCK_STREAM;
+	ALLOC_OBJ(rss, RSS_MAGIC);
+	AN(rss);
 
-	error = getaddrinfo(host, port, &hint, &res0);
-	if (error) {
+	error = VSS_resolver(host, def_port, rs_callback, rss, &err);
+	if (err != NULL) {
 		VSB_printf(tl->sb,
-		    "%s '%.*s' could not be resolved to an IP address:\n",
-		    errid, PF(t_err));
-		VSB_printf(tl->sb,
+		    "%s '%.*s' could not be resolved to an IP address:\n"
 		    "\t%s\n"
 		    "(Sorry if that error message is gibberish.)\n",
-		    gai_strerror(error));
+		    errid, PF(t_err), err);
+		vcc_ErrWhere(tl, t_err);
+		free(rss->vsa4);
+		free(rss->vsa6);
+		FREE_OBJ(rss);
+		return;
+	}
+	if (rss->vsa4 != NULL) {
+		vcc_suckaddr(tl, host, rss->vsa4, ipv4, ipv4_ascii, p_ascii);
+		free(rss->vsa4);
+		retval++;
+	}
+	if (rss->vsa6 != NULL) {
+		vcc_suckaddr(tl, host, rss->vsa6, ipv6, ipv6_ascii, p_ascii);
+		free(rss->vsa6);
+		retval++;
+	}
+	FREE_OBJ(rss);
+	if (error == -2 || retval > maxips) {
+		VSB_printf(tl->sb,
+		    "%s %.*s: resolves to too many addresses.\n"
+		    "Only one IPv4 %s IPv6 are allowed.\n"
+		    "Please specify which exact address "
+		    "you want to use, we found all of these:\n",
+		    errid, PF(t_err),
+		    maxips > 1 ? "and one" :  "or");
+		(void)VSS_resolver(host, def_port, rs_callback2, tl, &err);
+		if (err != NULL) {
+			VSB_printf(tl->sb,
+			    "%s '%.*s' could not be resolved to an"
+			    " IP address:\n"
+			    "\t%s\n"
+			    "(Sorry if that error message is gibberish.)\n",
+			    errid, PF(t_err), err);
+		}
 		vcc_ErrWhere(tl, t_err);
 		return;
 	}
-
-	for (res = res0; res; res = res->ai_next) {
-		for (pp = protos; pp->name != NULL; pp++)
-			if (res->ai_family == pp->family)
-				break;
-		if (pp->name == NULL) {
-			/* Unknown proto, ignore */
-			continue;
-		}
-		if (pp->l == res->ai_addrlen &&
-		    !memcmp(&pp->sa, res->ai_addr, pp->l)) {
-			/*
-			 * Same address we already emitted.
-			 * This can happen using /etc/hosts
-			 */
-			continue;
-		}
-
-		if (pp->l != 0 || retval == maxips) {
-			VSB_printf(tl->sb,
-			    "%s %.*s: resolves to too many addresses.\n"
-			    "Only one IPv4 %s IPv6 are allowed.\n"
-			    "Please specify which exact address "
-			    "you want to use, we found all of these:\n",
-			    errid, PF(t_err),
-			    maxips > 1 ? "and one" :  "or");
-			for (res1 = res0; res1 != NULL; res1 = res1->ai_next) {
-				error = getnameinfo(res1->ai_addr,
-				    res1->ai_addrlen, hbuf, sizeof hbuf,
-				    NULL, 0, NI_NUMERICHOST);
-				AZ(error);
-				VSB_printf(tl->sb, "\t%s\n", hbuf);
-			}
-			freeaddrinfo(res0);
-			vcc_ErrWhere(tl, t_err);
-			return;
-		}
-
-		pp->l =  res->ai_addrlen;
-		assert(pp->l <= sizeof(struct sockaddr_storage));
-		memcpy(&pp->sa, res->ai_addr, pp->l);
-
-		error = getnameinfo(res->ai_addr, res->ai_addrlen,
-		    hbuf, sizeof hbuf, NULL, 0, NI_NUMERICHOST);
-		AZ(error);
-
-		Fh(tl, 0, "\n/* \"%s\" -> %s */\n", host, hbuf);
-		*(pp->dst) = vcc_sockaddr(tl, &pp->sa, pp->l);
-		if (pp->dst_ascii != NULL)
-			*pp->dst_ascii = TlDup(tl, hbuf);
-		retval++;
-	}
-	if (p_ascii != NULL) {
-		error = getnameinfo(res0->ai_addr,
-		    res0->ai_addrlen, NULL, 0, hbuf, sizeof hbuf,
-		    NI_NUMERICSERV);
-		AZ(error);
-		*p_ascii = TlDup(tl, hbuf);
-	}
+	AZ(error);
 	if (retval == 0) {
 		VSB_printf(tl->sb,
 		    "%s '%.*s': resolves to "

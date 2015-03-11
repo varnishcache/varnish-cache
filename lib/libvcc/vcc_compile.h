@@ -293,8 +293,8 @@ sym_wildcard_t vcc_Stv_Wildcard;
 
 /* vcc_utils.c */
 const char *vcc_regexp(struct vcc *tl);
-void Resolve_Sockaddr(struct vcc *tl, const char *host, const char *port, \
-    const char **ipv4, const char **ipv4_ascii, const char **ipv6, \
+void Resolve_Sockaddr(struct vcc *tl, const char *host, const char *defport,
+    const char **ipv4, const char **ipv4_ascii, const char **ipv6,
     const char **ipv6_ascii, const char **p_ascii, int maxips,
     const struct token *t_err, const char *errid);
 

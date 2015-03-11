@@ -35,8 +35,6 @@
 
 #include "vcc_compile.h"
 
-#include "vss.h"
-
 /*--------------------------------------------------------------------
  * Struct sockaddr is not really designed to be a compile time
  * initialized data structure, so we encode it as a byte-string
@@ -44,27 +42,19 @@
  */
 
 static void
-Emit_Sockaddr(struct vcc *tl, const struct token *t_host, const char *port)
+Emit_Sockaddr(struct vcc *tl, const struct token *t_host,
+    const struct token *t_port)
 {
 	const char *ipv4, *ipv4a, *ipv6, *ipv6a, *pa;
-	const char *err;
-	char *p;
-	char *hop, *pop;
+	char buf[256];
 
 	AN(t_host->dec);
 
-	p = TlDup(tl, t_host->dec);
-	AN(p);
-	err = VSS_parse(p, &hop, &pop);
-	if (err != NULL) {
-		VSB_printf(tl->sb,
-		    "Backend host '%.*s': %s\n", PF(t_host), err);
-		vcc_ErrWhere(tl, t_host);
-		return;
-	}
-	Resolve_Sockaddr(tl,
-	    hop != NULL ? hop : t_host->dec,
-	    pop != NULL ? pop : port,
+	if (t_port != NULL)
+		bprintf(buf, "%s %s", t_host->dec, t_port->dec);
+	else
+		bprintf(buf, "%s", t_host->dec);
+	Resolve_Sockaddr(tl, buf, "http",
 	    &ipv4, &ipv4a, &ipv6, &ipv6a, &pa, 2, t_host, "Backend host");
 	ERRCHK(tl);
 	if (ipv4 != NULL) {
@@ -398,10 +388,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be)
 
 	/* Check that the hostname makes sense */
 	assert(t_host != NULL);
-	if (t_port != NULL)
-		Emit_Sockaddr(tl, t_host, t_port->dec);
-	else
-		Emit_Sockaddr(tl, t_host, "80");
+	Emit_Sockaddr(tl, t_host, t_port);
 	ERRCHK(tl);
 
 	ExpectErr(tl, '}');
