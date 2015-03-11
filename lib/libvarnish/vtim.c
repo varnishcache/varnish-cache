@@ -81,11 +81,11 @@ static const char * const month_name[] = {
 };
 
 static const int days_in_month[] = {
-	31, 29, 31,  30, 31, 30,  31, 31, 30,  31, 30, 31,
+	31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 };
 
 static const int days_before_month[] = {
-	0, 31, 59,  90, 120, 151,  181, 212, 243,  273, 304, 334
+	0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
 };
 
 /*
@@ -269,9 +269,8 @@ VTIM_parse(const char *p)
 			DIGIT(100, year);
 			DIGIT(10, year);
 			DIGIT(1, year);
-		} else if (!memcmp(p,
-			    more_weekday[weekday],
-			    strlen(more_weekday[weekday]))) {
+		} else if (!memcmp(p, more_weekday[weekday],
+		    strlen(more_weekday[weekday]))) {
 			/* RFC850 -- "Sunday, 06-Nov-94 08:49:37 GMT" */
 			p += strlen(more_weekday[weekday]);
 			MUSTBE(',');
@@ -302,7 +301,7 @@ VTIM_parse(const char *p)
 	if (*p != '\0')
 		FAIL();
 
-	if (sec < 0 || sec > 60)	// Leapseconds!
+	if (sec < 0 || sec > 60)	/* Leapseconds! */
 		FAIL();
 	if (min < 0 || min > 59)
 		FAIL();
@@ -321,7 +320,7 @@ VTIM_parse(const char *p)
 	if (month == 2 && mday > 28 && !leap)
 		FAIL();
 
-	if (sec == 60)		// Ignore Leapseconds
+	if (sec == 60)			/* Ignore Leapseconds */
 		sec--;
 
 	t = ((hour * 60.) + min) * 60. + sec;
@@ -334,12 +333,12 @@ VTIM_parse(const char *p)
 	d += (year % 100) * 365;	/* There are 365 days in a year */
 
 	if ((year % 100) > 0)		/* And a leap day every four years */
-		d += (((year % 100) - 1)/4);
+		d += (((year % 100) - 1) / 4);
 
 	d += ((year / 100) - 20) *	/* Days relative to y2000 */
 	    (100 * 365 + 24);		/* 24 leapdays per year in a century */
 
-	d += ((year-1) / 400) - 4;	/* And one more every 400 years */
+	d += ((year - 1) / 400) - 4;	/* And one more every 400 years */
 
 	/*
 	 * Now check weekday, if we have one.
