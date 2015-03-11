@@ -1,0 +1,18 @@
+varnishtest "Check Pid file locking"
+
+server s1 {
+	rxreq
+	send "HTTP/1.1 200 OK\nContent-Length: dupa"
+	send_n 15865 "\n"
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+delay .2
+
+shell_err 0x200 "${varnishd} -P ${tmpdir}/v1/varnishd.pid -b 127.0.0.1:80 -a :0 -n ${tmpdir} > /dev/null 2>&1"
