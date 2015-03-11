@@ -512,51 +512,51 @@ mgt_cli_secret(const char *S_arg)
 	secret_file = S_arg;
 }
 
-void
-mgt_cli_telnet(const char *T_arg)
+static int __match_proto__(vss_resolver_f)
+mct_callback(void *priv, const struct suckaddr *sa)
 {
-	struct vss_addr **ta;
-	int i, n, sock, good;
-	struct telnet *tn;
-	struct vsb *vsb;
+	int sock;
+	struct vsb *vsb = priv;
+	const char *err;
 	char abuf[VTCP_ADDRBUFSIZE];
 	char pbuf[VTCP_PORTBUFSIZE];
+	struct telnet *tn;
 
-	AN(T_arg);
-	n = VSS_resolve(T_arg, NULL, &ta);
-	if (n == 0) {
-		REPORT(LOG_ERR, "-T %s Could not be resolved\n", T_arg);
-		exit(2);
-	}
-	good = 0;
-	vsb = VSB_new_auto();
-	XXXAN(vsb);
-	for (i = 0; i < n; ++i) {
-		VJ_master(JAIL_MASTER_HIGH);
-		sock = VSS_listen(ta[i], 10);
-		VJ_master(JAIL_MASTER_LOW);
-		if (sock < 0)
-			continue;
+	VJ_master(JAIL_MASTER_HIGH);
+	sock = VTCP_listen(sa, 10, &err);
+	VJ_master(JAIL_MASTER_LOW);
+	if (sock > 0) {
 		VTCP_myname(sock, abuf, sizeof abuf, pbuf, sizeof pbuf);
 		VSB_printf(vsb, "%s %s\n", abuf, pbuf);
-		good++;
 		tn = telnet_new(sock);
 		tn->ev = vev_new();
-		XXXAN(tn->ev);
+		AN(tn->ev);
 		tn->ev->fd = sock;
 		tn->ev->fd_flags = POLLIN;
 		tn->ev->callback = telnet_accept;
 		tn->ev->priv = tn;
 		AZ(vev_add(mgt_evb, tn->ev));
-		free(ta[i]);
-		ta[i] = NULL;
 	}
-	free(ta);
-	if (good == 0) {
-		REPORT(LOG_ERR, "-T %s could not be listened on.", T_arg);
-		exit(2);
-	}
+	return (0);
+}
+
+void
+mgt_cli_telnet(const char *T_arg)
+{
+	int error;
+	const char *err;
+	struct vsb *vsb;
+
+	AN(T_arg);
+	vsb = VSB_new_auto();
+	AN(vsb);
+	error = VSS_resolver(T_arg, NULL, mct_callback, vsb, &err);
+	if (err != NULL)
+		ARGV_ERR("Could resolve -T argument to address\n\t%s\n", err);
+	AZ(error);
 	AZ(VSB_finish(vsb));
+	if (VSB_len(vsb) == 0)
+		ARGV_ERR("-T %s could not be listened on.", T_arg);
 	/* Save in shmem */
 	mgt_SHM_static_alloc(VSB_data(vsb), VSB_len(vsb) + 1, "Arg", "-T", "");
 	VSB_delete(vsb);
