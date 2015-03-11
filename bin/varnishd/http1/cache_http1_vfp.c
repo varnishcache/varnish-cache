@@ -47,7 +47,7 @@
  */
 
 static ssize_t
-v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, size_t len)
+v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, ssize_t len)
 {
 	ssize_t l;
 	unsigned char *p;
