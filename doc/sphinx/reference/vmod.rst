@@ -197,6 +197,9 @@ PRIV_CALL
 PRIV_TASK
 	See below
 
+PRIV_TOP
+	See below
+
 VOID
 	C-type: ``void``
 
@@ -253,6 +256,11 @@ The VCL compiler supports the following private pointers:
   for the client side and the backend side, so use in
   ``vcl_backend_*`` will yield a different private pointer from the
   one used on the client side.
+
+* ``PRIV_TOP`` "per top-request" private pointers live for the
+  duration of one request and all its ESI-includes. They are only
+  defined for the client side. When used from backend VCL subs, a NULL
+  pointer will be passed.
 
 The way it works in the vmod code, is that a ``struct vmod_priv *`` is
 passed to the functions where one of the ``PRIV_*`` argument types is

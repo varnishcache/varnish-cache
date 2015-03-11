@@ -557,6 +557,12 @@ vcc_priv_arg(struct vcc *tl, const char *p, const char *name)
 		e2 = vcc_mk_expr(VOID,
 		    "VRT_priv_task(ctx, &VGC_vmod_%.*s)",
 		    (int) (r - name), name);
+	} else if (!strcmp(p, "PRIV_TOP")) {
+		r = strchr(name, '.');
+		AN(r);
+		e2 = vcc_mk_expr(VOID,
+		    "VRT_priv_top(ctx, &VGC_vmod_%.*s)",
+		    (int) (r - name), name);
 	} else {
 		WRONG("Wrong PRIV_ type");
 	}

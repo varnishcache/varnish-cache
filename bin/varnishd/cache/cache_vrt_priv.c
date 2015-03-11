@@ -122,6 +122,22 @@ VRT_priv_task(VRT_CTX, void *vmod_id)
 	return (VRT_priv_dynamic(ctx, id, (uintptr_t)vmod_id));
 }
 
+struct vmod_priv *
+VRT_priv_top(VRT_CTX, void *vmod_id)
+{
+	uintptr_t id;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (ctx->req) {
+		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+		CHECK_OBJ_NOTNULL(ctx->req->top, REQ_MAGIC);
+		id = (uintptr_t)&ctx->req->top->top;
+	} else {
+		return NULL;
+	}
+	return (VRT_priv_dynamic(ctx, id, (uintptr_t)vmod_id));
+}
+
 /*--------------------------------------------------------------------
  */
 

@@ -160,6 +160,7 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->restarts = 0;
 
 	AZ(req->esi_level);
+	assert(req->top == req);
 
 	if (req->vcl != NULL) {
 		if (wrk->vcl != NULL)
@@ -169,6 +170,8 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 
 	VRTPRIV_dynamic_kill(sp->privs, (uintptr_t)req);
+	VRTPRIV_dynamic_kill(sp->privs, (uintptr_t)&req->top);
+
 	/* Charge and log byte counters */
 	AN(req->vsl->wid);
 	CNT_AcctLogCharge(wrk->stats, req);

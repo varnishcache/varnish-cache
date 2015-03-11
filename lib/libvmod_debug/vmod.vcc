@@ -55,6 +55,10 @@ $Function STRING test_priv_task(PRIV_TASK, STRING)
 
 Test function for TASK private pointers
 
+$Function STRING test_priv_top(PRIV_TOP, STRING)
+
+Test function for TOP private pointers
+
 $Function BLOB str2blob(STRING src="foo")
 
 Turn a string into a blob

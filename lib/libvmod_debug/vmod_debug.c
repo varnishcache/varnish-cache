@@ -97,6 +97,18 @@ vmod_test_priv_task(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 	return (priv->priv);
 }
 
+VCL_STRING __match_proto__(td_debug_test_priv_top)
+vmod_test_priv_top(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (priv->priv == NULL) {
+		priv->priv = strdup(s);
+		priv->free = free;
+	}
+	return (priv->priv);
+}
+
 VCL_VOID __match_proto__(td_debug_test_priv_vcl)
 vmod_test_priv_vcl(VRT_CTX, struct vmod_priv *priv)
 {
