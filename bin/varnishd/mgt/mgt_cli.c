@@ -52,6 +52,7 @@
 #include "vcli_serve.h"
 #include "vev.h"
 #include "vrnd.h"
+#include "vsa.h"
 #include "vss.h"
 #include "vtcp.h"
 
@@ -563,11 +564,19 @@ mgt_cli_telnet(const char *T_arg)
 
 /* Reverse CLI ("Master") connections --------------------------------*/
 
+struct m_addr {
+	unsigned		magic;
+#define M_ADDR_MAGIC		0xbc6217ed
+	struct suckaddr		*sa;
+	VTAILQ_ENTRY(m_addr)	list;
+};
+
 static int M_fd = -1;
 static struct vev *M_poker, *M_conn;
-static struct vss_addr **M_ta;
-static int M_nta, M_nxt;
 static double M_poll = 0.1;
+
+static VTAILQ_HEAD(,m_addr)	m_addr_list =
+    VTAILQ_HEAD_INITIALIZER(m_addr_list);
 
 static void
 Marg_closer(void *priv)
@@ -582,26 +591,20 @@ static int __match_proto__(vev_cb_f)
 Marg_connect(const struct vev *e, int what)
 {
 	struct vsb *vsb;
-	int k;
-	socklen_t l;
+	struct m_addr *ma;
 
 	assert(e == M_conn);
 	(void)what;
 
-	/* Our connect(2) returned, check result */
-	l = sizeof k;
-	AZ(getsockopt(M_fd, SOL_SOCKET, SO_ERROR, &k, &l));
-	if (k) {
-		errno = k;
+	M_fd = VTCP_connected(M_fd);
+	if (M_fd < 0) {
 		syslog(LOG_INFO, "Could not connect to CLI-master: %m");
-		(void)close(M_fd);
-		M_fd = -1;
-		/* Try next address */
-		if (++M_nxt >= M_nta) {
-			M_nxt = 0;
-			if (M_poll < 10)
-				M_poll *= 2;
-		}
+		ma = VTAILQ_FIRST(&m_addr_list);
+		AN(ma);
+		VTAILQ_REMOVE(&m_addr_list, ma, list);
+		VTAILQ_INSERT_TAIL(&m_addr_list, ma, list);
+		if (M_poll < 10)
+			M_poll++;
 		return (1);
 	}
 	vsb = sock_id("master", M_fd);
@@ -615,16 +618,20 @@ static int __match_proto__(vev_cb_f)
 Marg_poker(const struct vev *e, int what)
 {
 	int s;
+	struct m_addr *ma;
 
 	assert(e == M_poker);
 	(void)what;
 
 	M_poker->timeout = M_poll;	/* XXX nasty ? */
-	if (M_fd >= 0)
+	if (M_fd > 0)
 		return (0);
 
+	ma = VTAILQ_FIRST(&m_addr_list);
+	AN(ma);
+
 	/* Try to connect asynchronously */
-	s = VSS_connect(M_ta[M_nxt], 1);
+	s = VTCP_connect(ma->sa, -1);
 	if (s < 0)
 		return (0);
 
@@ -641,17 +648,33 @@ Marg_poker(const struct vev *e, int what)
 	return (0);
 }
 
+static int __match_proto__(vss_resolved_f)
+marg_cb(void *priv, const struct suckaddr *sa)
+{
+	struct m_addr *ma;
+
+	(void)priv;
+	ALLOC_OBJ(ma, M_ADDR_MAGIC);
+	AN(ma);
+	ma->sa = VSA_Clone(sa);
+	VTAILQ_INSERT_TAIL(&m_addr_list, ma, list);
+	return(0);
+}
+
 void
 mgt_cli_master(const char *M_arg)
 {
+	const char *err;
+	int error;
 
 	AN(M_arg);
-	M_nta = VSS_resolve(M_arg, NULL, &M_ta);
-	if (M_nta <= 0) {
-		fprintf(stderr, "Could resolve -M argument to address\n");
-		exit(2);
-	}
-	M_nxt = 0;
+
+	error = VSS_resolver(M_arg, NULL, marg_cb, NULL, &err);
+	if (err != NULL)
+		ARGV_ERR("Could resolve -M argument to address\n\t%s\n", err);
+	AZ(error);
+	if (VTAILQ_EMPTY(&m_addr_list))
+		ARGV_ERR("Could not resolve -M argument to address\n");
 	AZ(M_poker);
 	M_poker = vev_new();
 	AN(M_poker);
