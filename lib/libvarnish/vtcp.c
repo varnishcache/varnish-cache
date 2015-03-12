@@ -102,6 +102,19 @@ VTCP_name(const struct suckaddr *addr, char *abuf, unsigned alen,
 
 /*--------------------------------------------------------------------*/
 
+struct suckaddr *
+VTCP_my_suckaddr(int sock)
+{
+	struct sockaddr_storage addr_s;
+	socklen_t l;
+
+	l = sizeof addr_s;
+	AZ(getsockname(sock, (void *)&addr_s, &l));
+	return (VSA_Malloc(&addr_s, l));
+}
+
+/*--------------------------------------------------------------------*/
+
 void
 VTCP_myname(int sock, char *abuf, unsigned alen, char *pbuf, unsigned plen)
 {

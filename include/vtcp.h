@@ -38,6 +38,7 @@ struct suckaddr;
 int VTCP_Check(int a);
 #define VTCP_Assert(a) assert(VTCP_Check(a))
 
+struct suckaddr *VTCP_my_suckaddr(int sock);
 void VTCP_myname(int sock, char *abuf, unsigned alen,
     char *pbuf, unsigned plen);
 void VTCP_hisname(int sock, char *abuf, unsigned alen,
