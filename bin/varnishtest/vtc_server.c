@@ -55,7 +55,6 @@ struct server {
 	int			depth;
 	int			sock;
 	char			listen[256];
-	struct vss_addr		**vss_addr;
 	char			aaddr[32];
 	char			aport[32];
 
