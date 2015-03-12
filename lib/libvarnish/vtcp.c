@@ -445,6 +445,44 @@ VTCP_listen(const struct suckaddr *sa, int depth, const char **errp)
 	return (sd);
 }
 
+/*--------------------------------------------------------------------*/
+
+struct helper {
+	int		depth;
+	const char	**errp;
+};
+
+static int __match_proto__(vss_resolved_f)
+vtcp_lo_cb(void *priv, const struct suckaddr *sa)
+{
+	int sock;
+	struct helper *hp = priv;
+
+	sock = VTCP_listen(sa, hp->depth, hp->errp);
+	if (sock > 0) {
+		*hp->errp = NULL;
+		return (sock);
+	}
+	AN(*hp->errp);
+	return (0);
+}
+
+int
+VTCP_listen_on(const char *addr, const char *def_port, int depth,
+    const char **errp)
+{
+	struct helper h;
+	int sock;
+
+	h.depth = depth;
+	h.errp = errp;
+
+	sock = VSS_resolver(addr, def_port, vtcp_lo_cb, &h, errp);
+	if (*errp != NULL)
+		return (-1);
+	return(sock);
+}
+
 /*--------------------------------------------------------------------
  * Set or reset SO_LINGER flag
  */
