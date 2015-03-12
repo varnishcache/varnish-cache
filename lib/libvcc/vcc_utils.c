@@ -146,6 +146,9 @@ struct rss {
 
 	struct suckaddr		*vsa4;
 	struct suckaddr		*vsa6;
+	struct vsb		*vsb;
+	int			retval;
+	int			wrong;
 };
 
 static int __match_proto__(vss_resolved_f)
@@ -153,37 +156,30 @@ rs_callback(void *priv, const struct suckaddr *vsa)
 {
 	struct rss *rss;
 	int v;
+	char a[VTCP_ADDRBUFSIZE];
+	char p[VTCP_PORTBUFSIZE];
 
 	CAST_OBJ_NOTNULL(rss, priv, RSS_MAGIC);
 	assert(VSA_Sane(vsa));
 
 	v = VSA_Get_Proto(vsa);
+	VTCP_name(vsa, a, sizeof a, p, sizeof p);
+	VSB_printf(rss->vsb, "\t%s:%s\n", a, p);
 	if (v == AF_INET) {
 		if (rss->vsa4 == NULL)
 			rss->vsa4 = VSA_Clone(vsa);
 		else if (VSA_Compare(vsa, rss->vsa4))
-			return (-2);
+			rss->wrong++;
+		rss->retval++;
 	} else if (v == AF_INET6) {
 		if (rss->vsa6 == NULL)
 			rss->vsa6 = VSA_Clone(vsa);
 		else if (VSA_Compare(vsa, rss->vsa6))
-			return (-2);
+			rss->wrong++;
+		rss->retval++;
 	} else {
 		WRONG("Wrong protocol");
 	}
-	return (0);
-}
-
-static int __match_proto__(vss_resolved_f)
-rs_callback2(void *priv, const struct suckaddr *vsa)
-{
-	struct vcc *tl;
-	char a[VTCP_ADDRBUFSIZE];
-	char p[VTCP_PORTBUFSIZE];
-
-	CAST_OBJ_NOTNULL(tl, priv, VCC_MAGIC);
-	VTCP_name(vsa, a, sizeof a, p, sizeof p);
-	VSB_printf(tl->sb, "\t%s:%s\n", a, p);
 	return (0);
 }
 
@@ -200,7 +196,7 @@ Resolve_Sockaddr(struct vcc *tl,
     const struct token *t_err,
     const char *errid)
 {
-	int error, retval = 0;
+	int error;
 	struct rss *rss;
 	const char *err;
 
@@ -211,8 +207,11 @@ Resolve_Sockaddr(struct vcc *tl,
 
 	ALLOC_OBJ(rss, RSS_MAGIC);
 	AN(rss);
+	rss->vsb = VSB_new_auto();
+	AN(rss->vsb);
 
 	error = VSS_resolver(host, def_port, rs_callback, rss, &err);
+	AZ(VSB_finish(rss->vsb));
 	if (err != NULL) {
 		VSB_printf(tl->sb,
 		    "%s '%.*s' could not be resolved to an IP address:\n"
@@ -222,46 +221,37 @@ Resolve_Sockaddr(struct vcc *tl,
 		vcc_ErrWhere(tl, t_err);
 		free(rss->vsa4);
 		free(rss->vsa6);
+		VSB_delete(rss->vsb);
 		FREE_OBJ(rss);
 		return;
 	}
+	AZ(error);
 	if (rss->vsa4 != NULL) {
 		vcc_suckaddr(tl, host, rss->vsa4, ipv4, ipv4_ascii, p_ascii);
 		free(rss->vsa4);
-		retval++;
 	}
 	if (rss->vsa6 != NULL) {
 		vcc_suckaddr(tl, host, rss->vsa6, ipv6, ipv6_ascii, p_ascii);
 		free(rss->vsa6);
-		retval++;
 	}
-	FREE_OBJ(rss);
-	if (error == -2 || retval > maxips) {
-		VSB_printf(tl->sb,
-		    "%s %.*s: resolves to too many addresses.\n"
-		    "Only one IPv4 %s IPv6 are allowed.\n"
-		    "Please specify which exact address "
-		    "you want to use, we found all of these:\n",
-		    errid, PF(t_err),
-		    maxips > 1 ? "and one" :  "or");
-		(void)VSS_resolver(host, def_port, rs_callback2, tl, &err);
-		if (err != NULL) {
-			VSB_printf(tl->sb,
-			    "%s '%.*s' could not be resolved to an"
-			    " IP address:\n"
-			    "\t%s\n"
-			    "(Sorry if that error message is gibberish.)\n",
-			    errid, PF(t_err), err);
-		}
-		vcc_ErrWhere(tl, t_err);
-		return;
-	}
-	AZ(error);
-	if (retval == 0) {
+	if (rss->retval == 0) {
 		VSB_printf(tl->sb,
 		    "%s '%.*s': resolves to "
 		    "neither IPv4 nor IPv6 addresses.\n",
 		    errid, PF(t_err) );
 		vcc_ErrWhere(tl, t_err);
 	}
+	if (rss->wrong || rss->retval > maxips) {
+		VSB_printf(tl->sb,
+		    "%s %.*s: resolves to too many addresses.\n"
+		    "Only one IPv4 %s IPv6 are allowed.\n"
+		    "Please specify which exact address "
+		    "you want to use, we found all of these:\n%s",
+		    errid, PF(t_err),
+		    maxips > 1 ? "and one" :  "or",
+		    VSB_data(rss->vsb));
+		vcc_ErrWhere(tl, t_err);
+	}
+	VSB_delete(rss->vsb);
+	FREE_OBJ(rss);
 }
