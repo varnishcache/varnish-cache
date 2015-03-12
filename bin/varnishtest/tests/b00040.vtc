@@ -1,0 +1,24 @@
+varnishtest "Do not consider CR as a valid line separator"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_deliver {
+		if (req.http.foo) {
+			set resp.http.Foo = req.http.foo;
+		}
+		if (req.http.bar) {
+			set resp.http.Bar = req.http.bar;
+		}
+	}
+} -start
+
+client c1 {
+	send "GET / HTTP/1.1\r\nFoo: foo\rBar: bar\r\n\r\n"
+	rxresp
+	expect resp.http.foo == "foo\rBar: bar"
+	expect resp.http.bar == "<undef>"
+} -run

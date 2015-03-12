@@ -502,7 +502,7 @@ http_dissect_hdrs(struct worker *w, struct http *hp, int fd, char *p,
 		/* Find end of next header */
 		q = r = p;
 		while (r < t.e) {
-			if (!vct_iscrlf(*r)) {
+			if (!vct_iscrlf(r)) {
 				r++;
 				continue;
 			}
@@ -611,8 +611,8 @@ http_splitline(struct worker *w, int fd, struct http *hp,
 
 	/* Third field is optional and cannot contain CTL */
 	q = p;
-	if (!vct_iscrlf(*p)) {
-		for (; !vct_iscrlf(*p); p++)
+	if (!vct_iscrlf(p)) {
+		for (; !vct_iscrlf(p); p++)
 			if (!vct_issep(*p) && vct_isctl(*p))
 				return (400);
 	}
