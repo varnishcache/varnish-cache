@@ -156,19 +156,17 @@ server_delete(struct server *s)
 static void
 server_start(struct server *s)
 {
-	int naddr;
+	const char *err;
 
 	CHECK_OBJ_NOTNULL(s, SERVER_MAGIC);
 	vtc_log(s->vl, 2, "Starting server");
 	if (s->sock < 0) {
-		naddr = VSS_resolve(s->listen, "0", &s->vss_addr);
-		if (naddr != 1)
+		s->sock = VTCP_listen_on(s->listen, "0", s->depth, &err);
+		if (err != NULL)
 			vtc_log(s->vl, 0,
-			    "Server s listen address not unique"
-			    " \"%s\" resolves to (%d) sockets",
-			    s->listen, naddr);
-		s->sock = VSS_listen(s->vss_addr[0], s->depth);
-		assert(s->sock >= 0);
+			    "Server s listen address cannot be resolved: %s",
+			    err);
+		assert(s->sock > 0);
 		VTCP_myname(s->sock, s->aaddr, sizeof s->aaddr,
 		    s->aport, sizeof s->aport);
 		macro_def(s->vl, s->name, "addr", "%s", s->aaddr);

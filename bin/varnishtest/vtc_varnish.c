@@ -371,6 +371,7 @@ varnish_launch(struct varnish *v)
 	char abuf[128], pbuf[128];
 	struct pollfd fd[2];
 	enum VCLI_status_e u;
+	const char *err;
 	char *r;
 
 	v->vd = VSM_New();
@@ -378,7 +379,9 @@ varnish_launch(struct varnish *v)
 	/* Create listener socket */
 	nap = VSS_resolve("127.0.0.1", "0", &ap);
 	AN(nap);
-	v->cli_fd = VSS_listen(ap[0], 1);
+	v->cli_fd = VTCP_listen_on("127.0.0.1:0", NULL, 1, &err);
+	if (err != NULL)
+		vtc_log(v->vl, 0, "Create CLI listen socket failed: %s", err);
 	assert(v->cli_fd > 0);
 	VTCP_myname(v->cli_fd, abuf, sizeof abuf, pbuf, sizeof pbuf);
 
