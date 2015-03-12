@@ -27,11 +27,8 @@
  */
 
 /* vss.c */
-struct vss_addr;
 struct suckaddr;
 
 typedef int vss_resolved_f(void *priv, const struct suckaddr *);
 int VSS_resolver(const char *addr, const char *def_port, vss_resolved_f *func,
    void *priv, const char **err);
-
-int VSS_resolve(const char *addr, const char *port, struct vss_addr ***ta);

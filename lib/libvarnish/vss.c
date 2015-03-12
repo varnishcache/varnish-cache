@@ -46,15 +46,6 @@
 #include "vsa.h"
 #include "vss.h"
 
-/* lightweight addrinfo */
-struct vss_addr {
-	int			 va_family;
-	int			 va_socktype;
-	int			 va_protocol;
-	socklen_t		 va_addrlen;
-	struct sockaddr_storage	 va_addr;
-};
-
 /*lint -esym(754, _storage) not ref */
 
 /*
@@ -152,72 +143,4 @@ VSS_resolver(const char *addr, const char *def_port, vss_resolved_f *func,
 	}
 	freeaddrinfo(res0);
 	return (ret);
-}
-
-/*
- * For a given host and port, return a list of struct vss_addr, which
- * contains all the information necessary to open and bind a socket.  One
- * vss_addr is returned for each distinct address returned by
- * getaddrinfo().
- *
- * The value pointed to by the tap parameter receives a pointer to an
- * array of pointers to struct vss_addr.  The caller is responsible for
- * freeing each individual struct vss_addr as well as the array.
- *
- * The return value is the number of addresses resoved, or zero.
- *
- * If the addr argument contains a port specification, that takes
- * precedence over the port argument.
- *
- * XXX: We need a function to free the allocated addresses.
- */
-int
-VSS_resolve(const char *addr, const char *port, struct vss_addr ***vap)
-{
-	struct addrinfo hints, *res0, *res;
-	struct vss_addr **va;
-	int i, ret;
-	char *h;
-	char *adp, *hop;
-
-	*vap = NULL;
-	memset(&hints, 0, sizeof hints);
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags = AI_PASSIVE;
-
-	h = strdup(addr);
-	AN(h);
-	if (vss_parse(h, &hop, &adp) != NULL) {
-		free(h);
-		return (0);
-	}
-
-	ret = getaddrinfo(hop, adp == NULL ? port : adp, &hints, &res0);
-	free(h);
-
-	if (ret != 0)
-		return (0);
-
-	XXXAN(res0);
-	for (res = res0, i = 0; res != NULL; res = res->ai_next)
-		i++;
-	if (i == 0) {
-		freeaddrinfo(res0);
-		return (0);
-	}
-	va = calloc(i, sizeof *va);
-	XXXAN(va);
-	*vap = va;
-	for (res = res0, i = 0; res != NULL; res = res->ai_next, ++i) {
-		va[i] = calloc(1, sizeof(**va));
-		XXXAN(va[i]);
-		va[i]->va_family = res->ai_family;
-		va[i]->va_socktype = res->ai_socktype;
-		va[i]->va_protocol = res->ai_protocol;
-		va[i]->va_addrlen = res->ai_addrlen;
-		xxxassert(va[i]->va_addrlen <= sizeof va[i]->va_addr);
-		memcpy(&va[i]->va_addr, res->ai_addr, va[i]->va_addrlen);
-	}
-	freeaddrinfo(res0);
-	return (i);
 }
