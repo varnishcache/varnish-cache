@@ -37,7 +37,6 @@
 
 #include <errno.h>
 #include <netdb.h>
-#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -221,69 +220,4 @@ VSS_resolve(const char *addr, const char *port, struct vss_addr ***vap)
 	}
 	freeaddrinfo(res0);
 	return (i);
-}
-
-/*
- * Given a struct vss_addr, open a socket of the appropriate type, and bind
- * it to the requested address.
- *
- * If the address is an IPv6 address, the IPV6_V6ONLY option is set to
- * avoid conflicts between INADDR_ANY and IN6ADDR_ANY.
- */
-
-static int
-vss_bind(const struct vss_addr *va)
-{
-	int sd, val;
-
-	sd = socket(va->va_family, va->va_socktype, va->va_protocol);
-	if (sd < 0) {
-		perror("socket()");
-		return (-1);
-	}
-	val = 1;
-	if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof val) != 0) {
-		perror("setsockopt(SO_REUSEADDR, 1)");
-		(void)close(sd);
-		return (-1);
-	}
-#ifdef IPV6_V6ONLY
-	/* forcibly use separate sockets for IPv4 and IPv6 */
-	val = 1;
-	if (va->va_family == AF_INET6 &&
-	    setsockopt(sd, IPPROTO_IPV6, IPV6_V6ONLY, &val, sizeof val) != 0) {
-		perror("setsockopt(IPV6_V6ONLY, 1)");
-		(void)close(sd);
-		return (-1);
-	}
-#endif
-	if (bind(sd, (const void*)&va->va_addr, va->va_addrlen) != 0) {
-		perror("bind()");
-		(void)close(sd);
-		return (-1);
-	}
-	return (sd);
-}
-
-/*
- * Given a struct vss_addr, open a socket of the appropriate type, bind it
- * to the requested address, and start listening.
- *
- * If the address is an IPv6 address, the IPV6_V6ONLY option is set to
- * avoid conflicts between INADDR_ANY and IN6ADDR_ANY.
- */
-int
-VSS_listen(const struct vss_addr *va, int depth)
-{
-	int sd;
-
-	sd = vss_bind(va);
-	if (sd >= 0)  {
-		if (listen(sd, depth) != 0) {
-			perror("listen()");
-			(void)close(sd);
-			return (-1);
-		}
-	}
-	return (sd);
 }

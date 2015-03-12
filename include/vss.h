@@ -35,4 +35,3 @@ int VSS_resolver(const char *addr, const char *def_port, vss_resolved_f *func,
    void *priv, const char **err);
 
 int VSS_resolve(const char *addr, const char *port, struct vss_addr ***ta);
-int VSS_listen(const struct vss_addr *addr, int depth);
