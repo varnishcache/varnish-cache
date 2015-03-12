@@ -47,6 +47,7 @@
 #include "common/params.h"
 
 #include "vss.h"
+#include "vtcp.h"
 
 #include "mgt/mgt_param.h"
 
@@ -93,26 +94,28 @@ tcp_probe(int sock, int nam, const char *param, unsigned def)
 	MCF_SetDefault(param, p);
 }
 
-static void
-tcp_keep_probes(void)
+static int __match_proto__(vss_resolve_f)
+tkp_callback(void *priv, const struct suckaddr *sa)
 {
-	int i, s;
-	struct vss_addr **ta = NULL;
+	int s;
 
-	/* Probe a dummy socket for default values */
-
-	i = VSS_resolve(":0", NULL, &ta);
-	if (i == 0)
-		return;		// XXX: log
-	assert (i > 0);
-	s = VSS_listen(ta[0], 10);
+	(void)priv;
+	s = VTCP_listen(sa, 10, NULL);
 	if (s >= 0) {
 		tcp_probe(s, TCP_KEEPIDLE, "tcp_keepalive_time",	600);
 		tcp_probe(s, TCP_KEEPCNT, "tcp_keepalive_probes",	5);
 		tcp_probe(s, TCP_KEEPINTVL, "tcp_keepalive_intvl",	5);
 		AZ(close(s));
+		return (1);
 	}
-	free(ta);
+	return (0);
+}
+
+static void
+tcp_keep_probes(void)
+{
+	/* Probe a dummy socket for default values */
+	(void)VSS_resolver(":0", NULL, tkp_callback, NULL, NULL);
 }
 #endif
 
