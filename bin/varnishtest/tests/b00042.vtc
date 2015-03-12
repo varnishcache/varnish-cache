@@ -22,9 +22,6 @@ varnish v1 -clierr "106" "param.set workspace_thread 1x"
 varnish v1 -clierr "106" "param.set workspace_thread x"
 varnish v1 -clierr "106" "param.set user ///"
 varnish v1 -clierr "106" "param.set user ///"
-varnish v1 -clierr "106" {param.set listen_address ""}
-varnish v1 -clierr "106" {param.set listen_address "&&"}
-varnish v1 -clierr "106" {param.set listen_address "\""}
 varnish v1 -clierr "106" {param.set pool_sess "\""}
 varnish v1 -clierr "200" {param.set thread_pool_max 110}
 varnish v1 -clierr "106" {param.set thread_pool_min 111}
