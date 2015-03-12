@@ -420,29 +420,47 @@ cmd_shell(CMD_ARGS)
 	r = system(av[1]);
 	AZ(WEXITSTATUS(r));
 }
+
 /**********************************************************************
  * Shell command execution
  */
 
 static void
-cmd_shell_err(CMD_ARGS)
+cmd_err_shell(CMD_ARGS)
 {
 	(void)priv;
 	(void)cmd;
-	int r;
+	struct vsb *vsb;
+	FILE *fp;
+	int r, c;
 
 	if (av == NULL)
 		return;
 	AN(av[1]);
 	AN(av[2]);
 	AZ(av[3]);
-	vtc_dump(vl, 4, "shell_err", av[2], -1);
-	r = system(av[2]);
-	vtc_log(vl, 4, "shell status: 0x%x", r);
-	if (strtol(av[1], NULL, 0) != r)
-		vtc_log(vl, 0, "Wrong shell status: 0x%x", r);
+	vsb = VSB_new_auto();
+	AN(vsb);
+	vtc_dump(vl, 4, "cmd", av[2], -1);
+	fp = popen(av[2], "r");
+	if (fp == NULL)
+		vtc_log(vl, 0, "popen fails: %s", strerror(errno));
+	do {
+		c = getc(fp);
+		if (c != EOF)
+			VSB_putc(vsb, c);
+	} while (c != EOF);
+	r = pclose(fp);
+	vtc_log(vl, 4, "Status = %d", r);
+	AZ(VSB_finish(vsb));
+	vtc_dump(vl, 4, "stdout", VSB_data(vsb), VSB_len(vsb));
+	if (strstr(VSB_data(vsb), av[1]) == NULL)
+		vtc_log(vl, 0,
+		    "Did not find expected string: (\"%s\")", av[1]);
 	else
-		vtc_log(vl, 4, "Expected shell status: 0x%x", r);
+		vtc_log(vl, 4,
+		    "Found expected string: (\"%s\")", av[1]);
+	VSB_delete(vsb);
 }
 
 /**********************************************************************
@@ -569,7 +587,7 @@ static const struct cmds cmds[] = {
 	{ "delay",	cmd_delay },
 	{ "varnishtest",cmd_varnishtest },
 	{ "shell",	cmd_shell },
-	{ "shell_err",	cmd_shell_err },
+	{ "err_shell",	cmd_err_shell },
 	{ "sema",	cmd_sema },
 	{ "random",	cmd_random },
 	{ "feature",	cmd_feature },
