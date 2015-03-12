@@ -175,6 +175,7 @@ tweak_listen_address(struct vsb *vsb, const struct parspec *par,
 		}
 		AZ(error);
 	}
+	VAV_Free(av);
 
 	REPLACE(mgt_param.listen_address, arg);
 
