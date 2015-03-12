@@ -164,7 +164,7 @@ tweak_listen_address(struct vsb *vsb, const struct parspec *par,
 	}
 	VTAILQ_INIT(&lsh);
 	for (i = 1; av[i] != NULL; i++) {
-		error = VSS_resolver(av[i], "http", tla_callback, av[i], &err);
+		error = VSS_resolver(av[i], "80", tla_callback, av[i], &err);
 		if (err != NULL) {
 			VSB_printf(vsb, "Invalid listen address ");
 			VSB_quote(vsb, av[i], -1, 0);

@@ -54,7 +54,7 @@ Emit_Sockaddr(struct vcc *tl, const struct token *t_host,
 		bprintf(buf, "%s %s", t_host->dec, t_port->dec);
 	else
 		bprintf(buf, "%s", t_host->dec);
-	Resolve_Sockaddr(tl, buf, "http",
+	Resolve_Sockaddr(tl, buf, "80",
 	    &ipv4, &ipv4a, &ipv6, &ipv6a, &pa, 2, t_host, "Backend host");
 	ERRCHK(tl);
 	if (ipv4 != NULL) {
