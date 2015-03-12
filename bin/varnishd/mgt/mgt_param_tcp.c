@@ -114,8 +114,11 @@ tkp_callback(void *priv, const struct suckaddr *sa)
 static void
 tcp_keep_probes(void)
 {
+	const char *err;
 	/* Probe a dummy socket for default values */
-	(void)VSS_resolver(":0", NULL, tkp_callback, NULL, NULL);
+	(void)VSS_resolver(":0", NULL, tkp_callback, NULL, &err);
+	if (err != NULL)
+		ARGV_ERR("Could not probe TCP keepalives: %s", err);
 }
 #endif
 
