@@ -525,6 +525,7 @@ mct_callback(void *priv, const struct suckaddr *sa)
 	VJ_master(JAIL_MASTER_HIGH);
 	sock = VTCP_listen(sa, 10, &err);
 	VJ_master(JAIL_MASTER_LOW);
+	assert(sock != 0);		// We know where stdin is
 	if (sock > 0) {
 		VTCP_myname(sock, abuf, sizeof abuf, pbuf, sizeof pbuf);
 		VSB_printf(vsb, "%s %s\n", abuf, pbuf);
