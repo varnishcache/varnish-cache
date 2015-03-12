@@ -532,6 +532,9 @@ varnish_start(struct varnish *v)
 		vtc_log(v->vl, 0,
 		    "CLI debug.listen_address command failed: %u %s", u, resp);
 	h = resp;
+	p = strchr(h, '\n');
+	if (p != NULL)
+		*p = '\0';
 	p = strchr(h, ' ');
 	AN(p);
 	*p++ = '\0';
