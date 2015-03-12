@@ -416,7 +416,7 @@ mcf_wash_param(struct cli *cli, const struct parspec *pp, const char **val,
 
 	AN(*val);
 	VSB_clear(vsb);
-	VSB_printf(vsb, "FAILED to set %s for param %s:\n\t%s",
+	VSB_printf(vsb, "FAILED to set %s for param %s: %s\n",
 	    name, pp->name, *val);
 	err = pp->func(vsb, pp, *val);
 	AZ(VSB_finish(vsb));
@@ -452,11 +452,11 @@ MCF_InitParams(struct cli *cli)
 		pp = parspecs[i];
 
 		if (pp->min != NULL)
-			mcf_wash_param(cli, pp, &pp->min, "Minimum", vsb);
+			mcf_wash_param(cli, pp, &pp->min, "minimum", vsb);
 		if (pp->max != NULL)
-			mcf_wash_param(cli, pp, &pp->max, "Maximum", vsb);
+			mcf_wash_param(cli, pp, &pp->max, "maximum", vsb);
 		AN(pp->def);
-		mcf_wash_param(cli, pp, &pp->def, "Default", vsb);
+		mcf_wash_param(cli, pp, &pp->def, "default", vsb);
 	}
 	VSB_delete(vsb);
 }
