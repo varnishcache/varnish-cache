@@ -1,0 +1,23 @@
+varnishtest "Fail request on duplicate Content-Length headers in requests"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_deliver {
+		if (req.http.foo) {
+			set resp.http.Foo = req.http.foo;
+		}
+		if (req.http.bar) {
+			set resp.http.Bar = req.http.bar;
+		}
+	}
+} -start
+
+client c1 {
+	txreq -req POST -hdr "Content-Length: 5" -body "12345"
+	rxresp
+	expect resp.status == 400
+} -run
