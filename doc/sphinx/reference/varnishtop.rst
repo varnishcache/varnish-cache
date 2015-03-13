@@ -1,4 +1,6 @@
-.. _ref-varnishtop:
+.. role:: ref(emphasis)
+
+.. _varnishtop(1):
 
 ==========
 varnishtop
@@ -19,7 +21,7 @@ varnishtop |synopsis|
 DESCRIPTION
 ===========
 
-The varnishtop utility reads ``varnishd(1)`` shared memory logs and
+The varnishtop utility reads :ref:`varnishd(1)` shared memory logs and
 presents a continuously updated list of the most commonly occurring
 log entries.  With suitable filtering using the ``-I``, ``-i``, ``-X``
 and ``-x`` options, it can be used to display a ranking of requested
@@ -46,11 +48,11 @@ commonly used user agents::
 SEE ALSO
 ========
 
-* varnishd(1)
-* varnishhist(1)
-* varnishlog(1)
-* varnishncsa(1)
-* varnishstat(1)
+* :ref:`varnishd(1)`
+* :ref:`varnishhist(1)`
+* :ref:`varnishlog(1)`
+* :ref:`varnishncsa(1)`
+* :ref:`varnishstat(1)`
 
 HISTORY
 =======

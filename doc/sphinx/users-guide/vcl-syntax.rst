@@ -11,7 +11,7 @@ Note that VCL doesn't contain any loops or jump statements.
 
 This section provides an outline of the more important parts of the
 syntax. For a full documentation of VCL syntax please see
-:ref:`reference-vcl` in the reference.
+:ref:`vcl(7)` in the reference.
 
 Strings
 ~~~~~~~
@@ -60,10 +60,10 @@ Operators
 The following operators are available in VCL. See the examples further
 down for, uhm, examples.
 
-= 
+=
  Assignment operator.
 
-== 
+==
  Comparison.
 
 ~

@@ -1,4 +1,6 @@
-.. _ref-varnishadm:
+.. role:: ref(emphasis)
+
+.. _varnishadm(1):
 
 ==========
 varnishadm
@@ -43,13 +45,13 @@ OPTIONS
 -n name
     Connect to the instance of varnishd with this name.
 
--T address:port
+-T <address:port>
     Connect to the management interface at the specified address and port.
 
 
 The syntax and operation of the actual CLI interface is described in
-the varnish-cli(7) manual page. Parameteres are described in
-varnishd(1) manual page.
+the :ref:`varnish-cli(7)` manual page. Parameteres are described in
+:ref:`varnishd(1)` manual page.
 
 Additionally, a summary of commands can be obtained by issuing the
 *help* command, and a summary of parameters can be obtained by issuing
@@ -73,7 +75,7 @@ Some ways you can use varnishadm::
 SEE ALSO
 ========
 
-* varnishd(1)
+* :ref:`varnishd(1)`
 
 HISTORY
 =======

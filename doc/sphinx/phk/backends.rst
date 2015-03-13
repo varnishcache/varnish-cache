@@ -87,8 +87,9 @@ is a wildcard-ish scheme, where you can write things like::
 (Input very much welcome)
 
 The final question is if we use shortcut notation for output from
-varnishd, and the answer is no, because we do not want the stats-counters
-to change name because we load another VCL and suddenly need disabiguation.
+:ref:`varnishd(1)`, and the answer is no, because we do not want the
+stats-counters to change name because we load another VCL and suddenly
+need disabiguation.
 
 
 Sharing Health Status

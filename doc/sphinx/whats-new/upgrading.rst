@@ -243,7 +243,6 @@ Other changes
 New log filtering
 ~~~~~~~~~~~~~~~~~
 
-The logging framework has a new filtering language, which means
-that the -m switch has been replaced with a new -q switch.
-See :ref:`ref-vsl-query` for more information about the new
-query language.
+The logging framework has a new filtering language, which means that
+the -m switch has been replaced with a new -q switch.  See
+:ref:`vsl-query(7)` for more information about the new query language.

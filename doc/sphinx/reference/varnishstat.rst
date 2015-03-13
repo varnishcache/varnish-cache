@@ -1,4 +1,6 @@
-.. _ref-varnishstat:
+.. role:: ref(emphasis)
+
+.. _varnishstat(1):
 
 ===========
 varnishstat
@@ -184,11 +186,11 @@ between each block of output.
 SEE ALSO
 ========
 
-* varnishd(1)
-* varnishhist(1)
-* varnishlog(1)
-* varnishncsa(1)
-* varnishtop(1)
+* :ref:`varnishd(1)`
+* :ref:`varnishhist(1)`
+* :ref:`varnishlog(1)`
+* :ref:`varnishncsa(1)`
+* :ref:`varnishtop(1)`
 * curses(3)
 
 HISTORY

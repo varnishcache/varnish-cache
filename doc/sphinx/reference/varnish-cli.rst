@@ -1,3 +1,7 @@
+.. role:: ref(emphasis)
+
+.. _varnish-cli(7):
+
 ===========
 varnish-cli
 ===========
@@ -40,7 +44,7 @@ If you invoke varnishd(1) with -T, -M or -d the CLI will be
 available. In debug mode (-d) the CLI will be in the foreground, with
 -T you can connect to it with varnishadm or telnet and with -M
 varnishd will connect back to a listening service *pushing* the CLI to
-that service. Please see varnishd(1) for details.
+that service. Please see :ref:`varnishd(1)` for details.
 
 
 Syntax
@@ -278,16 +282,16 @@ the backend contains "USERID=1663"::
 SEE ALSO
 ========
 
-* varnishd(1)
-* vanrishadm(1)
-* vcl(7)
+* :ref:`varnishd(1)`
+* :ref:`varnishadm(1)`
+* :ref:`vcl(7)`
 
 HISTORY
 =======
 
 The Varnish manual page was written by Per Buer in 2011. Some of the
-text was taken from the Varnish Cache wiki, the varnishd(7) man page
-or the Varnish source code.
+text was taken from the Varnish Cache wiki, the :ref:`varnishd(1)` man
+page or the Varnish source code.
 
 COPYRIGHT
 =========

@@ -3,11 +3,13 @@
 Troubleshooting Varnish
 =======================
 
-Sometimes Varnish misbehaves or rather behaves the way you told it to behave but not necessarily the way you want it to behave. In order for you to understand whats
-going on there are a couple of places you can check. `varnishlog`,
-`/var/log/syslog`, `/var/log/messages` are all good places where Varnish might
-leave clues of whats going on. This section will guide you through
-basic troubleshooting in Varnish.
+Sometimes Varnish misbehaves or rather behaves the way you told it to
+behave but not necessarily the way you want it to behave. In order for
+you to understand whats going on there are a couple of places you can
+check. :ref:`varnishlog(1)`, `/var/log/syslog`, `/var/log/messages`
+are all good places where Varnish might leave clues of whats going
+on. This section will guide you through basic troubleshooting in
+Varnish.
 
 
 When Varnish won't start
@@ -101,26 +103,26 @@ to get a stack trace of the thread that caused the segfault.
 Varnish gives me Guru meditation
 --------------------------------
 
-First find the relevant log entries in `varnishlog`. That will probably
-give you a clue. Since `varnishlog` logs a lot of data it might be hard
-to track the entries down. You can set `varnishlog` to log all your 503
-errors by issuing the following command::
+First find the relevant log entries in :ref:`varnishlog(1)`. That will
+probably give you a clue. Since :ref:`varnishlog(1)` logs a lot of
+data it might be hard to track the entries down. You can set
+:ref:`varnishlog(1)` to log all your 503 errors by issuing the
+following command::
 
    $ varnishlog -q 'RespStatus == 503' -g request
 
-If the error happened just a short time ago the transaction might still
-be in the shared memory log segment. To get `varnishlog` to process the
-whole shared memory log just add the '-d' parameter::
+If the error happened just a short time ago the transaction might
+still be in the shared memory log segment. To get :ref:`varnishlog(1)`
+to process the whole shared memory log just add the '-d' parameter::
 
    $ varnishlog -d -q 'RespStatus == 503' -g request
 
-Please see the `vsl-query` and `varnishlog` man pages for elaborations
-on further filtering capabilities and explanation of the various
-options.
+Please see the :ref:`vsl-query(7)` and :ref:`varnishlog(1)` man pages
+for elaborations on further filtering capabilities and explanation of
+the various options.
 
 
 Varnish doesn't cache
 ---------------------
 
 See :ref:`users-guide-increasing_your_hitrate`.
-

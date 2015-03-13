@@ -186,7 +186,7 @@ poll will send a GET request to /. If 3 out of the last 5 polls succeeded
 the backend is considered healthy, otherwise it will be marked as sick.
 
 Refer to the :ref:`reference-vcl_probes` section in the
-:ref:`reference-vcl` documentation for more information.
+:ref:`vcl(7)` documentation for more information.
 
 Now we define the 'director'::
 

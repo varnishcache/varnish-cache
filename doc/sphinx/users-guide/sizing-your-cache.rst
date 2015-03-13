@@ -13,10 +13,10 @@ Deciding on cache size can be a tricky task. A few things to consider:
    they are cheap to serve from the backend and you have a limited
    amount of memory.
 
- * Watch the `n_lru_nuked` counter with :ref:`ref-varnishstat` or
-   some other tool. If you have a lot of LRU activity then your cache
-   is evicting objects due to space constraints and you should
-   consider increasing the size of the cache.
+ * Watch the `n_lru_nuked` counter with :ref:`varnishstat(1)` or some
+   other tool. If you have a lot of LRU activity then your cache is
+   evicting objects due to space constraints and you should consider
+   increasing the size of the cache.
 
 Be aware that every object that is stored also carries overhead that
 is kept outside the actually storage area. So, even if you specify ``-s

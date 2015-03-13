@@ -1,4 +1,6 @@
-.. _reference-vsl:
+.. role:: ref(emphasis)
+
+.. _vsl(7):
 
 ===
 VSL
@@ -109,7 +111,8 @@ Martin Blix Grydeland.
 
 SEE ALSO
 ========
-* varnishlog(1)
-* varnishhist(1)
-* varnishncsa(1)
-* varnishtop(1)
+
+* :ref:`varnishlog(1)`
+* :ref:`varnishhist(1)`
+* :ref:`varnishncsa(1)`
+* :ref:`varnishtop(1)`

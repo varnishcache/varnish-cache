@@ -1,4 +1,6 @@
-.. _reference-vcl:
+.. role:: ref(emphasis)
+
+.. _vcl(7):
 
 ===
 VCL
@@ -220,7 +222,7 @@ are available:
     Timeout between bytes.
 
   probe
-    Attach a probe to the backend. See Probes.
+    Attach a probe to the backend. See `Probes`_
 
   max_connections
     Maximum number of open connections towards this backend. If
@@ -228,7 +230,7 @@ are available:
     connections.
 
 Backends can be used with *directors*. Please see the
-vmod_directors(3) man page for more information.
+:ref:`vmod_directors(3)` man page for more information.
 
 .. _reference-vcl_probes:
 
@@ -418,9 +420,9 @@ For examples, please see the online documentation.
 SEE ALSO
 ========
 
-* varnishd(1)
-* vmod_directors(3)
-* vmod_std(3)
+* :ref:`varnishd(1)`
+* :ref:`vmod_directors(3)`
+* :ref:`vmod_std(3)`
 
 HISTORY
 =======

@@ -1,4 +1,6 @@
-.. _ref-varnishlog:
+.. role:: ref(emphasis)
+
+.. _varnishlog(1):
 
 ==========
 varnishlog
@@ -36,13 +38,13 @@ SIGNALS
 
 SEE ALSO
 ========
-* varnishd(1)
-* varnishhist(1)
-* varnishncsa(1)
-* varnishstat(1)
-* varnishtop(1)
-* vsl(7)
-* vsl-query(7)
+* :ref:`varnishd(1)`
+* :ref:`varnishhist(1)`
+* :ref:`varnishncsa(1)`
+* :ref:`varnishstat(1)`
+* :ref:`varnishtop(1)`
+* :ref:`vsl(7)`
+* :ref:`vsl-query(7)`
 
 HISTORY
 =======

@@ -23,8 +23,8 @@ varnishadm
 ~~~~~~~~~~
 
 Varnish Cache has an admin console. You can connect it it through the
-``varnishadm`` command. In order to connect the user needs to be able to
-read `/etc/varnish/secret` in order to authenticate.
+:ref:`varnishadm(1)` command. In order to connect the user needs to be
+able to read `/etc/varnish/secret` in order to authenticate.
 
 Once you've started the console you can do quite a few operations on
 Varnish, like stopping and starting the cache process, load VCL,
@@ -39,11 +39,7 @@ varnishlog
 ~~~~~~~~~~
 
 Varnish does not log to disk. Instead it logs to a chunk of memory. It
-is actually streaming the logs. At any time you'll be able to connect to the
-stream and see what is going on. Varnish logs quite a bit of
+is actually streaming the logs. At any time you'll be able to connect
+to the stream and see what is going on. Varnish logs quite a bit of
 information. You can have a look at the logstream with the command
-``varnishlog``.
-
-
-
-
+:ref:`varnishlog(1)`.

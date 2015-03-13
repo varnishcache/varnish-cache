@@ -74,4 +74,4 @@ want to know are:
 
 .. XXX:Maybe a couple of sample commands here? benc
 
-For more information on this topic please see :ref:`ref-varnishlog`.
+For more information on this topic please see :ref:`varnishlog(1)`.

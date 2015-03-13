@@ -358,13 +358,13 @@ The `varnishd` master process may also OR its exit code
 SEE ALSO
 ========
 
-* varnish-cli(7)
-* varnishlog(1)
-* varnishhist(1)
-* varnishncsa(1)
-* varnishstat(1)
-* varnishtop(1)
-* vcl(7)
+* :ref:`varnish-cli(7)`
+* :ref:`varnishlog(1)`
+* :ref:`varnishhist(1)`
+* :ref:`varnishncsa(1)`
+* :ref:`varnishstat(1)`
+* :ref:`varnishtop(1)`
+* :ref:`vcl(7)`
 
 HISTORY
 =======

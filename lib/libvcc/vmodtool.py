@@ -309,7 +309,9 @@ class Vmod(object):
 		self.doc_str.append(l)
 
 	def doc_dump(self, fo, suf):
+		fo.write(".. role:: ref(emphasis)\n\n")
 		i = "vmod_" + self.nam
+		fo.write(".. _" + i + "(" + self.sec + "):\n\n")
 		fo.write("=" * len(i) + "\n")
 		fo.write(i + "\n")
 		fo.write("=" * len(i) + "\n")

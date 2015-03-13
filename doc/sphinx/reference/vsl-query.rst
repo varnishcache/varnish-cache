@@ -1,4 +1,6 @@
-.. _ref-vsl-query:
+.. role:: ref(emphasis)
+
+.. _vsl-query(7):
 
 =========
 vsl-query
