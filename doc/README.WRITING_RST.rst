@@ -9,9 +9,10 @@ cross-references using::
 
   :ref:`reference name`
 
-Trouble is that ``rst2man`` and ``rst2pdf`` refuse to parse `ref`
-roles (and wouldn't know where to create a link for cross-document
-references anyway), so we need to do something of both:
+Trouble is that ``rst2man`` and ``rst2pdf`` working on individual
+files cannot parse `ref` roles to anything outside the current rst
+file, so we need to differenciate link targets depending on the kind
+of documentation:
 
 * set link targets on the top of documents ending up in man-pages
   following the manpage naming scheme, e.g.::
@@ -24,19 +25,19 @@ references anyway), so we need to do something of both:
     .. _ref-varnishd-opt_T:
 
   These can be referenced from other documents making up the html
-  documentation, but not from documents creating man-pages.
+  documentation, but not from stand-alone documents (like man-pages).
 
 * in all documents which are used to create man-pages, add the
   following definition at the top::
 
     .. role:: ref(emphasis)
 
-  This will allow the use of `ref` in a compatible manner, IF refences
-  follow the man-page naming scheme
+  This will allow the use of `ref` in a compatible manner, IF
+  references follow the man-page naming scheme
 
 * to be compatible both with ``sphinx`` and ``rst2man``, use `implicit
-  link targets`_ only, like this one creating `References are
-  tricky`_::
+  link targets`_ in stand-alone documents, like this one creating
+  `References are tricky`_::
 
     `References are tricky`_
 
