@@ -311,11 +311,6 @@ vjs_add_inheritable(priv_set_t *pset, enum jail_gen_e jge)
 	}
 }
 
-/*
- * effective is initialized from inheritable (see vjs_waive)
- * so only additionally required privileges need to be added here
- */
-
 static void
 vjs_add_effective(priv_set_t *pset, enum jail_gen_e jge)
 {
@@ -327,6 +322,10 @@ vjs_add_effective(priv_set_t *pset, enum jail_gen_e jge)
 		priv_setop_assert(priv_addset(pset, "file_write"));
 		break;
 	case JAILG_SUBPROC_CC:
+		priv_setop_assert(priv_addset(pset, PRIV_PROC_EXEC));
+		priv_setop_assert(priv_addset(pset, PRIV_PROC_FORK));
+		priv_setop_assert(priv_addset(pset, "file_read"));
+		priv_setop_assert(priv_addset(pset, "file_write"));
 		break;
 	case JAILG_SUBPROC_VCLLOAD:
 		priv_setop_assert(priv_addset(pset, "file_read"));
@@ -448,11 +447,12 @@ vjs_privsep(enum jail_gen_e jge)
 static void
 vjs_waive(enum jail_gen_e jge)
 {
-	priv_set_t *effective, *inheritable, *permitted;
+	priv_set_t *effective, *inheritable, *permitted, *limited;
 
 	if (!(effective = priv_allocset()) ||
 	    !(inheritable = priv_allocset()) ||
-	    !(permitted = priv_allocset())) {
+	    !(permitted = priv_allocset()) ||
+	    !(limited = priv_allocset())) {
 		REPORT(LOG_ERR,
 		    "Solaris Jail warning: "
 		    " vjs_waive - priv_allocset failed: errno=%d (%s)",
@@ -461,35 +461,40 @@ vjs_waive(enum jail_gen_e jge)
 	}
 
 	/*
-	 * simple scheme:
-	 *     (inheritable subset-of effective) subset-of permitted
+	 * inheritable and effective are distinct sets
+	 * effective is a subset of permitted
+	 * limit is the union of all
 	 */
 
 	priv_emptyset(inheritable);
 	vjs_add_inheritable(inheritable, jge);
 
-	priv_copyset(inheritable, effective);
+	priv_emptyset(effective);
 	vjs_add_effective(effective, jge);
 
 	priv_copyset(effective, permitted);
 	vjs_add_permitted(permitted, jge);
 
+	priv_copyset(inheritable, limited);
+	priv_union(permitted, limited);
 	/*
 	 * invert the sets and clear privileges such that setppriv will always
 	 * succeed
 	 */
-	priv_inverse(inheritable);
-	priv_inverse(effective);
+	priv_inverse(limited);
 	priv_inverse(permitted);
+	priv_inverse(effective);
+	priv_inverse(inheritable);
 
-	AZ(setppriv(PRIV_OFF, PRIV_LIMIT, permitted));
+	AZ(setppriv(PRIV_OFF, PRIV_LIMIT, limited));
 	AZ(setppriv(PRIV_OFF, PRIV_PERMITTED, permitted));
 	AZ(setppriv(PRIV_OFF, PRIV_EFFECTIVE, effective));
 	AZ(setppriv(PRIV_OFF, PRIV_INHERITABLE, inheritable));
 
-	priv_freeset(inheritable);
-	priv_freeset(effective);
+	priv_freeset(limited);
 	priv_freeset(permitted);
+	priv_freeset(effective);
+	priv_freeset(inheritable);
 }
 
 static void __match_proto__(jail_subproc_f)
