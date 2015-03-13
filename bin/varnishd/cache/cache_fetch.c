@@ -243,6 +243,7 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	// XXX: BereqEnd + BereqAcct ?
 	VSL_ChgId(bo->vsl, "bereq", "retry", VXID_Get(wrk, VSL_BACKENDMARKER));
 	VSLb_ts_busyobj(bo, "Start", bo->t_prev);
+	http_VSL_log(bo->bereq);
 
 	return (F_STP_STARTFETCH);
 }
@@ -269,6 +270,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		AZ(bo->req);
 
 	http_PrintfHeader(bo->bereq, "X-Varnish: %u", VXID(bo->vsl->wid));
+	bo->bereq->nhd--;
 
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
 
