@@ -1,4 +1,6 @@
-.. _ref-varnishd:
+.. role:: ref(emphasis)
+
+.. _varnishd(1):
 
 ========
 varnishd
@@ -58,7 +60,7 @@ OPTIONS
 -f config
 
   Use the specified VCL configuration file instead of the builtin
-  default.  See :ref:`users_vcl` for details on VCL syntax. When no
+  default.  See :ref:`vcl(7)` for details on VCL syntax. When no
   configuration is supplied varnishd will not start the cache process.
 
 -F
@@ -73,7 +75,7 @@ OPTIONS
 
 -h <type[,options]>
 
-  Specifies the hash algorithm.  See :ref:`ref-varnishd-opt_s` for a
+  Specifies the hash algorithm.  See `Hash Algorithm Options`_ for a
   list of supported algorithms.
 
 -i identity
@@ -112,9 +114,9 @@ OPTIONS
 
 -p <param=value>
 
-  Set the parameter specified by param to the specified value.  See
-  :ref:`ref-varnishd-params` for a list of parameters. This option can
-  be used multiple times to specify multiple parameters.
+  Set the parameter specified by param to the specified value, see
+  `List of Parameters`_ for details. This option can be used multiple
+  times to specify multiple parameters.
 
 -r <param[,param...]>
 
@@ -127,7 +129,7 @@ OPTIONS
 
 -s <[name=]type[,options]>
 
-  Use the specified storage backend, see :ref:`ref-varnishd-opt_s`
+  Use the specified storage backend, see `Storage Backend Options`_.
 
   This option can be used multiple times to specify multiple storage
   files. Names are referenced in logs, vcl, statistics, etc.
@@ -140,7 +142,7 @@ OPTIONS
 -T <address[:port]>
 
   Offer a management interface on the specified address and port.  See
-  :ref:`ref-varnishd-opt_T` for a list of management commands.
+  `Management Interface`_ for a list of management commands.
 
 -t ttl
 
