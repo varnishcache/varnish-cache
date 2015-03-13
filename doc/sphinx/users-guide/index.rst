@@ -20,7 +20,7 @@ following the major interfaces to Varnish as a service:
 respect to storage, sockets, security and how you can control and
 communicate with Varnish once it is running.
 
-:ref:`vcl(7)` is about getting Varnish to handle the
+:ref:`users_vcl` is about getting Varnish to handle the
 HTTP requests the way you want, what to cache, how to cache it,
 modifying HTTP headers etc. etc.
 

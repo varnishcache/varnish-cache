@@ -73,7 +73,7 @@ VCL code can be extended using external modules, called VMODs or
 even by inline C-code if you are brave, so in terms of what Varnish
 can do for your HTTP traffic, there really is no limit.
 
-:ref:`vcl(7)` describes VCL and what it can do in great detail.
+:ref:`users_vcl` describes VCL and what it can do in great detail.
 
 Varnish uses a segment of shared memory to report and log its activities and
 status. For each HTTP request, a number of very detailed records will

@@ -1,4 +1,5 @@
-.. _vcl(7):
+
+.. _users_vcl:
 
 VCL - Varnish Configuration Language
 ------------------------------------
