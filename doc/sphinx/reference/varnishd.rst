@@ -70,6 +70,44 @@ OPTIONS
             Specify the identity of the Varnish server.  This can be accessed using server.identity
             from VCL
 
+-j jail[,jailoptions]
+            Specify the jailing technology to use.
+
+            Jails generalize over various options to reduce the
+            privileges of varnish sub-processes. They may have
+            specific options and may be platform specific. Available
+            jails are:
+
+            * -j solaris
+
+              Reduce privileges(5) for varnishd and sub-process to the
+              minimally required set. Only available on platforms
+              which have the setppriv(2) call.
+
+            * -j unix[,user=<user>][,ccgroup=<group>]
+
+              Default on all other platforms if `varnishd` is either
+              started with an effective uid of 0 (e.g. as root) or as
+              user ``varnish``.
+
+              With the ``unix`` jail technology activated, varnish
+              will switch to an alternative user for subprocesses and
+              change the effective uid of the master process whenever
+              possible.
+
+              The optional `user` argument specifies which alternative
+              user to use. It defauls to ``varnish``
+
+              The optional `ccgroup` argument specifies a group to add
+              to varnish subprocesses requiring access to a
+              c-compiler. There is no default.
+
+            * -j none
+
+              last resort jail choice: With jail technology ``none``,
+              varnish will run all processes with the privileges it
+              was started with.
+
 -l shl[,free[,fill]]
             Specifies size of shmlog file. shl is the store for the
             shared memory log records [80M], free is the store for other
@@ -293,7 +331,7 @@ The varnishd daemon was developed by Poul-Henning Kamp in cooperation
 with Verdens Gang AS and Varnish Software.
 
 This manual page was written by Dag-Erling Smørgrav with updates by
-Stig Sandbeck Mathisen <ssm@debian.org>.
+Stig Sandbeck Mathisen <ssm@debian.org> and others.
 
 
 COPYRIGHT

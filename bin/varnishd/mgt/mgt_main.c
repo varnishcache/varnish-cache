@@ -154,6 +154,10 @@ usage(void)
 	fprintf(stderr, FMT, "", "  -h classic,<buckets>");
 	fprintf(stderr, FMT, "-i identity", "Identity of varnish instance");
 	fprintf(stderr, FMT, "-j jail[,jailoptions]", "Jail specification");
+#ifdef HAVE_SETPPRIV
+	fprintf(stderr, FMT, "", "  -j solaris");
+#endif
+	fprintf(stderr, FMT, "", "  -j unix[,user=<user>][,ccgroup=<group>]");
 	fprintf(stderr, FMT, "", "  -j none");
 	fprintf(stderr, FMT, "-l shl,free,fill", "Size of shared memory file");
 	fprintf(stderr, FMT, "", "  shl: space for SHL records [80m]");
