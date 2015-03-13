@@ -73,7 +73,8 @@ enum jail_subproc_e {
 
 enum jail_master_e {
 	JAIL_MASTER_LOW,
-	JAIL_MASTER_HIGH,
+	JAIL_MASTER_STORAGE,
+	JAIL_MASTER_PRIVPORT,
 };
 
 typedef int jail_init_f(char **);

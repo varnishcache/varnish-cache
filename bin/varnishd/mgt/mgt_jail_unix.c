@@ -138,7 +138,8 @@ vju_init(char **args)
 static void __match_proto__(jail_master_f)
 vju_master(enum jail_master_e jme)
 {
-	if (jme == JAIL_MASTER_HIGH)
+	if (jme == JAIL_MASTER_STORAGE ||
+	    jme == JAIL_MASTER_PRIVPORT)
 		AZ(seteuid(0));
 	else
 		AZ(seteuid(vju_uid));
@@ -209,7 +210,7 @@ vju_make_workdir(const char *dname)
 static void
 vju_storage_file(int fd)
 {
-	/* Called under JAIL_MASTER_HIGH */
+	/* Called under JAIL_MASTER_STORAGE */
 
 	AZ(fchmod(fd, 0600));
 	AZ(fchown(fd, vju_uid, vju_gid));

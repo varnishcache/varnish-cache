@@ -522,7 +522,7 @@ mct_callback(void *priv, const struct suckaddr *sa)
 	char pbuf[VTCP_PORTBUFSIZE];
 	struct telnet *tn;
 
-	VJ_master(JAIL_MASTER_HIGH);
+	VJ_master(JAIL_MASTER_PRIVPORT);
 	sock = VTCP_listen(sa, 10, &err);
 	VJ_master(JAIL_MASTER_LOW);
 	assert(sock != 0);		// We know where stdin is

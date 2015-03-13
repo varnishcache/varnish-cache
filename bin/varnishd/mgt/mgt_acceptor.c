@@ -62,7 +62,7 @@ MAC_open_sockets(void)
 	struct listen_sock *ls;
 	int good = 0;
 
-	VJ_master(JAIL_MASTER_HIGH);
+	VJ_master(JAIL_MASTER_PRIVPORT);
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (ls->sock >= 0) {
 			good++;

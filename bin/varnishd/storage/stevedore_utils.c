@@ -91,7 +91,7 @@ STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx)
 	*fdp = -1;
 
 	/* try to create a new file of this name */
-	VJ_master(JAIL_MASTER_HIGH);
+	VJ_master(JAIL_MASTER_STORAGE);
 	fd = open(fn, O_RDWR | O_CREAT | O_EXCL | O_LARGEFILE, 0600);
 	if (fd >= 0) {
 		VJ_storage_file(fd);
