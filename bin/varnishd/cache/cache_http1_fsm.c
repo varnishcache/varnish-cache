@@ -262,22 +262,22 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 static enum req_body_state_e
 http1_req_body_status(struct req *req)
 {
-	char *ptr, *endp;
+	ssize_t cl;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	if (http_GetHdr(req->http, H_Content_Length, &ptr)) {
-		AN(ptr);
-		if (*ptr == '\0')
-			return (REQ_BODY_FAIL);
-		req->req_bodybytes = strtoul(ptr, &endp, 10);
-		if (*endp != '\0' && !vct_islws(*endp))
-			return (REQ_BODY_FAIL);
-		if (req->req_bodybytes == 0)
-			return (REQ_BODY_NONE);
+	req->req_bodybytes = 0;
+	cl = http_GetContentLength(req->http);
+	if (cl == -2)
+		return (REQ_BODY_FAIL);
+	else if (cl == 0)
+		return (REQ_BODY_NONE);
+	else if (cl > 0) {
+		req->req_bodybytes = cl;
 		req->h1.bytes_yet = req->req_bodybytes - req->h1.bytes_done;
 		return (REQ_BODY_PRESENT);
 	}
+	assert(cl == -1);	/* No Content-Length header */
 	if (http_HdrIs(req->http, H_Transfer_Encoding, "chunked")) {
 		req->chunk_ctr = -1;
 		return (REQ_BODY_CHUNKED);

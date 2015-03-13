@@ -191,14 +191,15 @@ HTTP1_Rx(struct http_conn *htc)
  * Read up to len bytes, returning pipelined data first.
  */
 
-ssize_t
-HTTP1_Read(struct http_conn *htc, void *d, size_t len)
+ssize_t __match_proto__(htc_read)
+HTTP1_Read(struct http_conn *htc, void *d, ssize_t len)
 {
 	size_t l;
 	unsigned char *p;
 	ssize_t i = 0;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	assert(len > 0);
 	l = 0;
 	p = d;
 	if (htc->pipeline.b) {

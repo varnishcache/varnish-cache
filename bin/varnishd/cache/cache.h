@@ -208,7 +208,7 @@ struct http {
  *
  */
 
-typedef ssize_t htc_read(struct http_conn *, void *, size_t);
+typedef ssize_t htc_read(struct http_conn *, void *, ssize_t);
 
 struct http_conn {
 	unsigned		magic;
@@ -560,7 +560,7 @@ struct busyobj {
 
 	struct pool_task	fetch_task;
 
-	char			*h_content_length;
+	ssize_t			content_length;
 
 #define BO_FLAG(l, r, w, d) unsigned	l:1;
 #include "tbl/bo_flags.h"
@@ -1015,6 +1015,7 @@ int http_GetHdrData(const struct http *hp, const char *hdr,
 int http_GetHdrField(const struct http *hp, const char *hdr,
     const char *field, char **ptr);
 double http_GetHdrQ(const struct http *hp, const char *hdr, const char *field);
+ssize_t http_GetContentLength(const struct http *hp);
 uint16_t http_GetStatus(const struct http *hp);
 void http_SetStatus(struct http *to, uint16_t status);
 const char *http_GetReq(const struct http *hp);
@@ -1041,7 +1042,7 @@ void HTTP1_Init(struct http_conn *htc, struct ws *ws, int fd, struct vsl_log *,
     unsigned maxbytes, unsigned maxhdr);
 enum htc_status_e HTTP1_Reinit(struct http_conn *htc);
 enum htc_status_e HTTP1_Rx(struct http_conn *htc);
-ssize_t HTTP1_Read(struct http_conn *htc, void *d, size_t len);
+ssize_t HTTP1_Read(struct http_conn *htc, void *d, ssize_t len);
 enum htc_status_e HTTP1_Complete(struct http_conn *htc);
 uint16_t HTTP1_DissectRequest(struct req *);
 uint16_t HTTP1_DissectResponse(struct http *sp, const struct http_conn *htc);

@@ -188,6 +188,7 @@ enum body_status
 RFC2616_Body(struct busyobj *bo, struct dstat *stats)
 {
 	struct http *hp;
+	ssize_t cl;
 	char *b;
 
 	hp = bo->beresp;
@@ -198,6 +199,8 @@ RFC2616_Body(struct busyobj *bo, struct dstat *stats)
 		bo->should_close = 1;
 	else
 		bo->should_close = 0;
+
+	bo->content_length = -1;
 
 	if (!strcasecmp(http_GetReq(bo->bereq), "head")) {
 		/*
@@ -246,9 +249,18 @@ RFC2616_Body(struct busyobj *bo, struct dstat *stats)
 		return (BS_ERROR);
 	}
 
-	if (http_GetHdr(hp, H_Content_Length, &bo->h_content_length)) {
-		stats->fetch_length++;
-		return (BS_LENGTH);
+	cl = http_GetContentLength(hp);
+	if (cl == -2)
+		return (BS_ERROR);
+	if (cl >= 0) {
+		bo->content_length = cl;
+		if (cl == 0) {
+			stats->fetch_zero++;
+			return (BS_NONE);
+		} else {
+			stats->fetch_length++;
+			return (BS_LENGTH);
+		}
 	}
 
 	if (http_HdrIs(hp, H_Connection, "keep-alive")) {
