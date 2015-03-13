@@ -269,8 +269,10 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	else
 		AZ(bo->req);
 
+	if (bo->retries > 0)
+		http_Unset(bo->bereq, "\012X-Varnish:");
+
 	http_PrintfHeader(bo->bereq, "X-Varnish: %u", VXID(bo->vsl->wid));
-	bo->bereq->nhd--;
 
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
 
