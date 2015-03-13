@@ -29,147 +29,176 @@ OPTIONS
 
 -a <address[:port][,address[:port][...]>
 
-            Listen for client requests on the specified address and
-            port.  The address can be a host name (“localhost”), an
-            IPv4 dotted-quad (“127.0.0.1”), or an IPv6 address
-            enclosed in square brackets (“[::1]”).  If address is not
-            specified, varnishd will listen on all available IPv4 and
-            IPv6 interfaces.  If port is not specified, the default
-            HTTP port as listed in /etc/services is used.  Multiple
-            listening addresses and ports can be specified as a
-            whitespace or comma -separated list.
+  Listen for client requests on the specified address and port.  The
+  address can be a host name (“localhost”), an IPv4 dotted-quad
+  (“127.0.0.1”), or an IPv6 address enclosed in square brackets
+  (“[::1]”).  If address is not specified, varnishd will listen on all
+  available IPv4 and IPv6 interfaces.  If port is not specified, the
+  default HTTP port as listed in /etc/services is used.  Multiple
+  listening addresses and ports can be specified as a whitespace or
+  comma -separated list.
 
 -b <host[:port]>
-            Use the specified host as backend server.  If port is not
-	    specified, the default is 8080.
 
--C	    Print VCL code compiled to C language and exit. Specify the VCL file
-	    to compile with the -f option.
+  Use the specified host as backend server.  If port is not specified,
+  the default is 8080.
 
--d          Enables debugging mode: The parent process runs in the foreground
-            with a CLI connection on stdin/stdout, and the child
-            process must be started explicitly with a CLI command.
-            Terminating the parent process will also terminate the
-            child.
+-C
 
--f config   Use the specified VCL configuration file instead of the
-            builtin default.  See vcl(7) for details on VCL
-            syntax. When no configuration is supplied varnishd will
-            not start the cache process.
+  Print VCL code compiled to C language and exit. Specify the VCL file
+  to compile with the -f option.
 
--F          Run in the foreground.
+-d
 
--g group    Specifies the name of an unprivileged group to which the
-            child process should switch before it starts accepting
-            connections.  This is a shortcut for specifying the group
-            run-time parameter.
+  Enables debugging mode: The parent process runs in the foreground
+  with a CLI connection on stdin/stdout, and the child process must be
+  started explicitly with a CLI command.  Terminating the parent
+  process will also terminate the child.
+
+-f config
+
+  Use the specified VCL configuration file instead of the builtin
+  default.  See vcl(7) for details on VCL syntax. When no
+  configuration is supplied varnishd will not start the cache process.
+
+-F
+
+  Run in the foreground.
+
+-g group
+
+  Specifies the name of an unprivileged group to which the child
+  process should switch before it starts accepting connections.  This
+  is a shortcut for specifying the group run-time parameter.
 
 -h <type[,options]>
-            Specifies the hash algorithm.  See Hash Algorithms for a list of supported algorithms.
+
+  Specifies the hash algorithm.  See Hash Algorithms for a list of
+  supported algorithms.
 
 -i identity
-            Specify the identity of the Varnish server.  This can be accessed using server.identity
-            from VCL
+
+  Specify the identity of the Varnish server.  This can be accessed
+  using server.identity from VCL
 
 -j <jail[,jailoptions]>
-            Specify the jailing technology to use.
 
-            Jails generalize over various options to reduce the
-            privileges of varnish sub-processes. They may have
-            specific options and may be platform specific. Available
-            jails are:
+  Specify the jailing technology to use.
 
-            -j solaris
-                Reduce privileges(5) for varnishd and sub-process to
-                the minimally required set. Only available on
-                platforms which have the setppriv(2) call.
+  Jails generalize over various options to reduce the privileges of
+  varnish sub-processes. They may have specific options and may be
+  platform specific. Available jails are:
 
-            -j <unix[,user=`user`][,ccgroup=`group`]>
-                Default on all other platforms if `varnishd` is either
-                started with an fe
-                as user ``varnish``.
+  -j solaris
 
-                With the ``unix`` jail technology activated, varnish
-                will switch to an alternative user for subprocesses
-                and change the effective uid of the master process
-                whenever possible.
+    Reduce privileges(5) for varnishd and sub-process to the minimally
+    required set. Only available on platforms which have the
+    setppriv(2) call.
 
-                The optional `user` argument specifies which
-                alternative user to use. It defauls to ``varnish``
+  -j <unix[,user=`user`][,ccgroup=`group`]>
 
-                The optional `ccgroup` argument specifies a group to
-                add to varnish subprocesses requiring access to a
-                c-compiler. There is no default.
+    Default on all other platforms if `varnishd` is either started
+    with an fe as user ``varnish``.
 
-            -j none
-                last resort jail choice: With jail technology
-                ``none``, varnish will run all processes with the
-                privileges it was started with.
+    With the ``unix`` jail technology activated, varnish will switch
+    to an alternative user for subprocesses and change the effective
+    uid of the master process whenever possible.
+
+    The optional `user` argument specifies which alternative user to
+    use. It defauls to ``varnish``
+
+    The optional `ccgroup` argument specifies a group to add to
+    varnish subprocesses requiring access to a c-compiler. There is no
+    default.
+
+  -j none
+
+    last resort jail choice: With jail technology ``none``, varnish
+    will run all processes with the privileges it was started with.
 
 -l <shl[,free[,fill]]>
-            Specifies size of shmlog file. shl is the store for the
-            shared memory log records [80M], free is the store for other
-            allocations [1M] and fill determines how the log is [+].
-            Scaling suffixes like 'k', 'M' can be used up to
-            (E)xabytes.  Default is 80 Megabytes.
+
+  Specifies size of shmlog file. shl is the store for the shared
+  memory log records [80M], free is the store for other allocations
+  [1M] and fill determines how the log is [+].  Scaling suffixes like
+  'k', 'M' can be used up to (E)xabytes.  Default is 80 Megabytes.
 
 -M <address:port>
-            Connect to this port and offer the command line interface.
-            Think of it as a reverse shell. When running with -M and there is
-            no backend defined the child process (the cache) will not start
-            initially.
 
--n name     Specify the name for this instance.  Amonst other things, this
-            name is used to construct the name of the directory in
-            which varnishd keeps temporary files and persistent state.
-            If the specified name begins with a forward slash, it is
-            interpreted as the absolute path to the directory which
-            should be used for this purpose.
+  Connect to this port and offer the command line interface.  Think of
+  it as a reverse shell. When running with -M and there is no backend
+  defined the child process (the cache) will not start initially.
 
--P file     Write the process's PID to the specified file.
+-n name
+
+  Specify the name for this instance.  Amonst other things, this name
+  is used to construct the name of the directory in which varnishd
+  keeps temporary files and persistent state.  If the specified name
+  begins with a forward slash, it is interpreted as the absolute path
+  to the directory which should be used for this purpose.
+
+-P file
+
+  Write the process's PID to the specified file.
 
 -p <param=value>
-            Set the parameter specified by param to the specified value.  See
-            Run-Time Parameters for a list of parameters. This option can be
-            used multiple times to specify multiple parameters.
+
+  Set the parameter specified by param to the specified value.  See
+  Run-Time Parameters for a list of parameters. This option can be
+  used multiple times to specify multiple parameters.
 
 -r <param[,param...]>
-            Make the listed parameters read only. This gives the
-            system administrator a way to limit what the Varnish CLI can do.
-            Consider making parameters such as *user*, *group*, *cc_command*,
-            *vcc_allow_inline_c* read only as these can potentially be used
-            to escalate privileges from the CLI.
-            Protecting *listen_address* may also be a good idea.
+
+  Make the listed parameters read only. This gives the system
+  administrator a way to limit what the Varnish CLI can do.  Consider
+  making parameters such as *user*, *group*, *cc_command*,
+  *vcc_allow_inline_c* read only as these can potentially be used to
+  escalate privileges from the CLI.  Protecting *listen_address* may
+  also be a good idea.
 
 -s <[name=]type[,options]>
-            Use the specified storage backend. The storage backends can be one of the following:
-               * malloc[,size]
-               * file,path[,size[,granularity]]
-               * persistent,path,size
 
-            See Storage Types in the Users Guide for more information
-            on the various storage backends.  This option can be used
-            multiple times to specify multiple storage files. Names
-            are referenced in logs, vcl, statistics, etc.
+  Use the specified storage backend. The storage backends can be one
+  of the following:
 
--S file     Path to a file containing a secret used for authorizing access to the management port.
+  -s <malloc[,size]>
+
+  -s <file,path[,size[,granularity]]>
+
+  -s <persistent,path,size>
+
+  See Storage Types in the Users Guide for more information on the
+  various storage backends.  This option can be used multiple times to
+  specify multiple storage files. Names are referenced in logs, vcl,
+  statistics, etc.
+
+-S file
+
+  Path to a file containing a secret used for authorizing access to
+  the management port.
 
 -T <address[:port]>
-            Offer a management interface on the specified address and port.  See Management
-            Interface for a list of management commands.
 
--t ttl      Specifies a hard minimum time to live for cached documents. This
-            is a shortcut for specifying the default_ttl run-time parameter.
+  Offer a management interface on the specified address and port.  See
+  Management Interface for a list of management commands.
 
--u user     Specifies the name of an unprivileged user to which the child
-            process should switch before it starts accepting
-            connections. This is a shortcut for specifying the user
-            runtime parameter.
+-t ttl
 
-            If specifying both a user and a group, the user should be
-            specified first.
+  Specifies a hard minimum time to live for cached documents. This is
+  a shortcut for specifying the default_ttl run-time parameter.
 
--V          Display the version number and exit.
+-u user
+
+  Specifies the name of an unprivileged user to which the child
+  process should switch before it starts accepting connections. This
+  is a shortcut for specifying the user runtime parameter.
+
+  If specifying both a user and a group, the user should be specified
+  first.
+
+-V
+
+  Display the version number and exit.
 
 
 Hash Algorithms
@@ -177,21 +206,24 @@ Hash Algorithms
 
 The following hash algorithms are available:
 
-critbit 
-   A self-scaling tree structure. The default hash algorithm in
-    Varnish Cache 2.1 and onwards. In comparison to a more traditional
-    B tree the critbit tree is almost completely lockless. Do not 
-    change this unless you are certain what you're doing.
+-h critbit
 
-simple_list
-    A simple doubly-linked list.  Not recommended for production use.
+  self-scaling tree structure. The default hash algorithm in Varnish
+  Cache 2.1 and onwards. In comparison to a more traditional B tree
+  the critbit tree is almost completely lockless. Do not change this
+  unless you are certain what you're doing.
 
-classic[,buckets]
-    A standard hash table. The hash key is the CRC32 of the object's
-    URL modulo the size of the hash table.  Each table entry points to
-    a list of elements which share the same hash key. The buckets
-    parameter specifies the number of entries in the hash table.  The
-    default is 16383.
+-h simple_list
+
+  A simple doubly-linked list.  Not recommended for production use.
+
+-h <classic[,buckets]>
+
+  A standard hash table. The hash key is the CRC32 of the object's URL
+  modulo the size of the hash table.  Each table entry points to a
+  list of elements which share the same hash key. The buckets
+  parameter specifies the number of entries in the hash table.  The
+  default is 16383.
 
 
 Storage Types
@@ -199,42 +231,33 @@ Storage Types
 
 The following storage types are available:
 
-malloc
-~~~~~~
+-s <malloc[,size]>
 
-syntax: malloc[,size]
+  malloc is a memory based backend.
 
-malloc is a memory based backend.
+-s <file,path[,size[,granularity]]>
 
-file
-~~~~
+  The file backend stores data in a file on disk. The file will be
+  accessed using mmap.
 
-syntax: file,path[,size[,granularity]]
+  The path is mandatory. If path points to a directory, a temporary
+  file will be created in that directory and immediately unlinked. If
+  path points to a non-existing file, the file will be created.
 
-The file backend stores data in a file on disk. The file will be
-accessed using mmap.
+  If size is omitted, and path points to an existing file with a size
+  greater than zero, the size of that file will be used. If not, an
+  error is reported.
 
-The path is mandatory. If path points to a directory, a temporary file
-will be created in that directory and immediately unlinked. If path
-points to a non-existing file, the file will be created.
+  Granularity sets the allocation block size. Defaults to the system
+  page size or the filesystem block size, whichever is larger.
 
-If size is omitted, and path points to an existing file with a size
-greater than zero, the size of that file will be used. If not, an
-error is reported.
+-s <persistent,path,size>
 
-Granularity sets the allocation block size. Defaults to the system
-page size or the filesystem block size, whichever is larger.
-
-persistent (experimental)
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-syntax: persistent,path,size
-
-Persistent storage. Varnish will store objects in a file in a manner
-that will secure the survival of *most* of the objects in the event of
-a planned or unplanned shutdown of Varnish. The persistent storage
-backend has multiple issues with it and will likely be removed from a
-future version of Varnish.
+  Persistent storage. Varnish will store objects in a file in a manner
+  that will secure the survival of *most* of the objects in the event
+  of a planned or unplanned shutdown of Varnish. The persistent
+  storage backend has multiple issues with it and will likely be
+  removed from a future version of Varnish.
 
 
 Management Interface
