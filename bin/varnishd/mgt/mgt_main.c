@@ -657,6 +657,10 @@ main(int argc, char * const *argv)
 
 	AZ(VSB_finish(vident));
 
+	if (S_arg == NULL)
+		S_arg = make_secret(dirname);
+	AN(S_arg);
+
 	if (!d_flag && !F_flag)
 		AZ(varnish_daemon(1, 0));
 
@@ -674,10 +678,6 @@ main(int argc, char * const *argv)
 
 	if (d_flag)
 		mgt_cli_setup(0, 1, 1, "debug", cli_stdin_close, NULL);
-
-	if (S_arg == NULL)
-		S_arg = make_secret(dirname);
-	AN(S_arg);
 
 	if (*S_arg != '\0')
 		mgt_cli_secret(S_arg);
