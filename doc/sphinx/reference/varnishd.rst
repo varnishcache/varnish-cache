@@ -27,7 +27,8 @@ satisfy future requests for the same document.
 OPTIONS
 =======
 
--a address[:port][,address[:port][...]
+-a <address[:port][,address[:port][...]>
+
             Listen for client requests on the specified address and
             port.  The address can be a host name (“localhost”), an
             IPv4 dotted-quad (“127.0.0.1”), or an IPv6 address
@@ -38,7 +39,7 @@ OPTIONS
             listening addresses and ports can be specified as a
             whitespace or comma -separated list.
 
--b host[:port]
+-b <host[:port]>
             Use the specified host as backend server.  If port is not
 	    specified, the default is 8080.
 
@@ -63,14 +64,14 @@ OPTIONS
             connections.  This is a shortcut for specifying the group
             run-time parameter.
 
--h type[,options]
+-h <type[,options]>
             Specifies the hash algorithm.  See Hash Algorithms for a list of supported algorithms.
 
 -i identity
             Specify the identity of the Varnish server.  This can be accessed using server.identity
             from VCL
 
--j jail[,jailoptions]
+-j <jail[,jailoptions]>
             Specify the jailing technology to use.
 
             Jails generalize over various options to reduce the
@@ -78,44 +79,41 @@ OPTIONS
             specific options and may be platform specific. Available
             jails are:
 
-            * -j solaris
+            -j solaris
+                Reduce privileges(5) for varnishd and sub-process to
+                the minimally required set. Only available on
+                platforms which have the setppriv(2) call.
 
-              Reduce privileges(5) for varnishd and sub-process to the
-              minimally required set. Only available on platforms
-              which have the setppriv(2) call.
+            -j <unix[,user=`user`][,ccgroup=`group`]>
+                Default on all other platforms if `varnishd` is either
+                started with an fe
+                as user ``varnish``.
 
-            * -j unix[,user=<user>][,ccgroup=<group>]
+                With the ``unix`` jail technology activated, varnish
+                will switch to an alternative user for subprocesses
+                and change the effective uid of the master process
+                whenever possible.
 
-              Default on all other platforms if `varnishd` is either
-              started with an effective uid of 0 (e.g. as root) or as
-              user ``varnish``.
+                The optional `user` argument specifies which
+                alternative user to use. It defauls to ``varnish``
 
-              With the ``unix`` jail technology activated, varnish
-              will switch to an alternative user for subprocesses and
-              change the effective uid of the master process whenever
-              possible.
+                The optional `ccgroup` argument specifies a group to
+                add to varnish subprocesses requiring access to a
+                c-compiler. There is no default.
 
-              The optional `user` argument specifies which alternative
-              user to use. It defauls to ``varnish``
+            -j none
+                last resort jail choice: With jail technology
+                ``none``, varnish will run all processes with the
+                privileges it was started with.
 
-              The optional `ccgroup` argument specifies a group to add
-              to varnish subprocesses requiring access to a
-              c-compiler. There is no default.
-
-            * -j none
-
-              last resort jail choice: With jail technology ``none``,
-              varnish will run all processes with the privileges it
-              was started with.
-
--l shl[,free[,fill]]
+-l <shl[,free[,fill]]>
             Specifies size of shmlog file. shl is the store for the
             shared memory log records [80M], free is the store for other
             allocations [1M] and fill determines how the log is [+].
             Scaling suffixes like 'k', 'M' can be used up to
             (E)xabytes.  Default is 80 Megabytes.
 
--M address:port
+-M <address:port>
             Connect to this port and offer the command line interface.
             Think of it as a reverse shell. When running with -M and there is
             no backend defined the child process (the cache) will not start
@@ -130,12 +128,12 @@ OPTIONS
 
 -P file     Write the process's PID to the specified file.
 
--p param=value
+-p <param=value>
             Set the parameter specified by param to the specified value.  See
             Run-Time Parameters for a list of parameters. This option can be
             used multiple times to specify multiple parameters.
 
--r param[,param...]
+-r <param[,param...]>
             Make the listed parameters read only. This gives the
             system administrator a way to limit what the Varnish CLI can do.
             Consider making parameters such as *user*, *group*, *cc_command*,
@@ -143,7 +141,7 @@ OPTIONS
             to escalate privileges from the CLI.
             Protecting *listen_address* may also be a good idea.
 
--s [name=]type[,options]
+-s <[name=]type[,options]>
             Use the specified storage backend. The storage backends can be one of the following:
                * malloc[,size]
                * file,path[,size[,granularity]]
@@ -156,7 +154,7 @@ OPTIONS
 
 -S file     Path to a file containing a secret used for authorizing access to the management port.
 
--T address[:port]
+-T <address[:port]>
             Offer a management interface on the specified address and port.  See Management
             Interface for a list of management commands.
 
