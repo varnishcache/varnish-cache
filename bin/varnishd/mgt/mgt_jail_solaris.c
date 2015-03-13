@@ -225,6 +225,33 @@
  * the real thing
  */
 
+// XXX @phk can we merge jail_subproc_e and jail_master_e please?
+
+#define JAILG_SHIFT 16
+
+enum jail_gen_e {
+	JAILG_SUBPROC_VCC = JAIL_SUBPROC_VCC,
+	JAILG_SUBPROC_CC = JAIL_SUBPROC_CC,
+	JAILG_SUBPROC_VCLLOAD = JAIL_SUBPROC_VCLLOAD,
+	JAILG_SUBPROC_WORKER = JAIL_SUBPROC_WORKER,
+
+	JAILG_MASTER_LOW = JAIL_MASTER_LOW << JAILG_SHIFT,
+	JAILG_MASTER_HIGH = JAIL_MASTER_HIGH << JAILG_SHIFT
+};
+
+static inline enum jail_gen_e
+jail_subproc_gen(enum jail_subproc_e e)
+{
+	assert(e < (1 << JAILG_SHIFT));
+	return (enum jail_gen_e)e;
+}
+
+static inline enum jail_gen_e
+jail_master_gen(enum jail_master_e e)
+{
+	return (enum jail_gen_e)(e << JAILG_SHIFT);
+}
+
 static int __match_proto__(jail_init_f)
 vjs_init(char **args)
 {
@@ -263,22 +290,22 @@ setppriv_check(int a) {
 #define setppriv_assert(a) assert(setppriv_check(a))
 
 static void
-vjs_add_inheritable(priv_set_t *pset, enum jail_subproc_e jse)
+vjs_add_inheritable(priv_set_t *pset, enum jail_gen_e jge)
 {
-	switch (jse) {
-	case JAIL_SUBPROC_VCC:
+	switch (jge) {
+	case JAILG_SUBPROC_VCC:
 		/* for /etc/resolv.conf and /etc/hosts */
 		priv_setop_assert(priv_addset(pset, "file_read"));
 		break;
-	case JAIL_SUBPROC_CC:
+	case JAILG_SUBPROC_CC:
 		priv_setop_assert(priv_addset(pset, PRIV_PROC_EXEC));
 		priv_setop_assert(priv_addset(pset, PRIV_PROC_FORK));
 		priv_setop_assert(priv_addset(pset, "file_read"));
 		priv_setop_assert(priv_addset(pset, "file_write"));
 		break;
-	case JAIL_SUBPROC_VCLLOAD:
+	case JAILG_SUBPROC_VCLLOAD:
 		break;
-	case JAIL_SUBPROC_WORKER:
+	case JAILG_SUBPROC_WORKER:
 		break;
 	default:
 		INCOMPL();
@@ -291,17 +318,17 @@ vjs_add_inheritable(priv_set_t *pset, enum jail_subproc_e jse)
  */
 
 static void
-vjs_add_effective(priv_set_t *pset, enum jail_subproc_e jse)
+vjs_add_effective(priv_set_t *pset, enum jail_gen_e jge)
 {
-	switch (jse) {
-	case JAIL_SUBPROC_VCC:
+	switch (jge) {
+	case JAILG_SUBPROC_VCC:
 		priv_setop_assert(priv_addset(pset, "file_write"));
 		break;
-	case JAIL_SUBPROC_CC:
+	case JAILG_SUBPROC_CC:
 		break;
-	case JAIL_SUBPROC_VCLLOAD:
+	case JAILG_SUBPROC_VCLLOAD:
 		priv_setop_assert(priv_addset(pset, "file_read"));
-	case JAIL_SUBPROC_WORKER:
+	case JAILG_SUBPROC_WORKER:
 		priv_setop_assert(priv_addset(pset, "net_access"));
 		priv_setop_assert(priv_addset(pset, "file_read"));
 		priv_setop_assert(priv_addset(pset, "file_write"));
@@ -317,14 +344,14 @@ vjs_add_effective(priv_set_t *pset, enum jail_subproc_e jse)
  */
 
 static void
-vjs_add_permitted(priv_set_t *pset, enum jail_subproc_e jse)
+vjs_add_permitted(priv_set_t *pset, enum jail_gen_e jge)
 {
-	switch (jse) {
-	case JAIL_SUBPROC_VCC:
-	case JAIL_SUBPROC_CC:
-	case JAIL_SUBPROC_VCLLOAD:
+	switch (jge) {
+	case JAILG_SUBPROC_VCC:
+	case JAILG_SUBPROC_CC:
+	case JAILG_SUBPROC_VCLLOAD:
 		break;
-	case JAIL_SUBPROC_WORKER:
+	case JAILG_SUBPROC_WORKER:
 		/* for raising limits in cache_waiter_ports.c */
 		AZ(priv_addset(pset, PRIV_SYS_RESOURCE));
 		break;
@@ -338,9 +365,9 @@ vjs_add_permitted(priv_set_t *pset, enum jail_subproc_e jse)
  * will get waived in vjs_waive
  */
 static void
-vjs_add_initial(priv_set_t *pset, enum jail_subproc_e jse)
+vjs_add_initial(priv_set_t *pset, enum jail_gen_e jge)
 {
-	(void)jse;
+	(void)jge;
 
 	/* for setgid/setuid */
 	AZ(priv_addset(pset, PRIV_PROC_SETID));
@@ -356,7 +383,7 @@ vjs_add_initial(priv_set_t *pset, enum jail_subproc_e jse)
  */
 
 static void
-vjs_setup(enum jail_subproc_e jse)
+vjs_setup(enum jail_gen_e jge)
 {
 	priv_set_t *priv_all;
 
@@ -370,10 +397,10 @@ vjs_setup(enum jail_subproc_e jse)
 
 	priv_emptyset(priv_all);
 
-	vjs_add_inheritable(priv_all, jse);
-	vjs_add_effective(priv_all, jse);
-	vjs_add_permitted(priv_all, jse);
-	vjs_add_initial(priv_all, jse);
+	vjs_add_inheritable(priv_all, jge);
+	vjs_add_effective(priv_all, jge);
+	vjs_add_permitted(priv_all, jge);
+	vjs_add_initial(priv_all, jge);
 
 	/* try to get all possible privileges, expect EPERM here */
 	setppriv_assert(setppriv(PRIV_ON, PRIV_PERMITTED, priv_all));
@@ -384,9 +411,9 @@ vjs_setup(enum jail_subproc_e jse)
 }
 
 static void
-vjs_privsep(enum jail_subproc_e jse)
+vjs_privsep(enum jail_gen_e jge)
 {
-	(void)jse;
+	(void)jge;
 
 	if (priv_ineffect(PRIV_PROC_SETID)) {
 		if (getgid() != mgt_param.gid)
@@ -417,7 +444,7 @@ vjs_privsep(enum jail_subproc_e jse)
  */
 
 static void
-vjs_waive(enum jail_subproc_e jse)
+vjs_waive(enum jail_gen_e jge)
 {
 	priv_set_t *effective, *inheritable, *permitted;
 
@@ -437,13 +464,13 @@ vjs_waive(enum jail_subproc_e jse)
 	 */
 
 	priv_emptyset(inheritable);
-	vjs_add_inheritable(inheritable, jse);
+	vjs_add_inheritable(inheritable, jge);
 
 	priv_copyset(inheritable, effective);
-	vjs_add_effective(effective, jse);
+	vjs_add_effective(effective, jge);
 
 	priv_copyset(effective, permitted);
-	vjs_add_permitted(permitted, jse);
+	vjs_add_permitted(permitted, jge);
 
 	/*
 	 * invert the sets and clear privileges such that setppriv will always
@@ -466,16 +493,23 @@ vjs_waive(enum jail_subproc_e jse)
 static void __match_proto__(jail_subproc_f)
 vjs_subproc(enum jail_subproc_e jse)
 {
-	vjs_setup(jse);
-	vjs_privsep(jse);
-	vjs_waive(jse);
+	enum jail_gen_e jge = jail_subproc_gen(jse);
+	vjs_setup(jge);
+	vjs_privsep(jge);
+	vjs_waive(jge);
 }
 
-// XXX TODO
 static void __match_proto__(jail_master_f)
 vjs_master(enum jail_master_e jme)
 {
-	(void)jme;
+	enum jail_gen_e jge = jail_master_gen(jme);
+	(void)jge;
+/*
+	if (jme == JAILG_MASTER_HIGH)
+		AZ(seteuid(0));
+	else
+		AZ(seteuid(vju_uid));
+*/
 }
 
 const struct jail_tech jail_tech_solaris = {
@@ -483,6 +517,8 @@ const struct jail_tech jail_tech_solaris = {
 	.name =	"solaris",
 	.init =	vjs_init,
 	.master =	vjs_master,
+//	.make_workdir =	vjs_make_workdir,
+//	.storage_file =	vjs_storage_file,
 	.subproc =	vjs_subproc,
 };
 
