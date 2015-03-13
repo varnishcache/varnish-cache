@@ -295,8 +295,6 @@ vjs_add_inheritable(priv_set_t *pset, enum jail_gen_e jge)
 {
 	switch (jge) {
 	case JAILG_SUBPROC_VCC:
-		/* for /etc/resolv.conf and /etc/hosts */
-		priv_setop_assert(priv_addset(pset, "file_read"));
 		break;
 	case JAILG_SUBPROC_CC:
 		priv_setop_assert(priv_addset(pset, PRIV_PROC_EXEC));
@@ -323,6 +321,9 @@ vjs_add_effective(priv_set_t *pset, enum jail_gen_e jge)
 {
 	switch (jge) {
 	case JAILG_SUBPROC_VCC:
+		// open vmods
+		priv_setop_assert(priv_addset(pset, "file_read"));
+		// write .c output
 		priv_setop_assert(priv_addset(pset, "file_write"));
 		break;
 	case JAILG_SUBPROC_CC:
