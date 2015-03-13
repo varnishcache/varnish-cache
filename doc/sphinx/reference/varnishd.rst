@@ -58,7 +58,7 @@ OPTIONS
 -f config
 
   Use the specified VCL configuration file instead of the builtin
-  default.  See vcl(7) for details on VCL syntax. When no
+  default.  See :ref:`users_vcl` for details on VCL syntax. When no
   configuration is supplied varnishd will not start the cache process.
 
 -F
@@ -73,8 +73,8 @@ OPTIONS
 
 -h <type[,options]>
 
-  Specifies the hash algorithm.  See Hash Algorithms for a list of
-  supported algorithms.
+  Specifies the hash algorithm.  See :ref:`ref-varnishd-opt_s` for a
+  list of supported algorithms.
 
 -i identity
 
@@ -84,37 +84,6 @@ OPTIONS
 -j <jail[,jailoptions]>
 
   Specify the jailing technology to use.
-
-  Jails generalize over various options to reduce the privileges of
-  varnish sub-processes. They may have specific options and may be
-  platform specific. Available jails are:
-
-  -j solaris
-
-    Reduce privileges(5) for varnishd and sub-process to the minimally
-    required set. Only available on platforms which have the
-    setppriv(2) call.
-
-  -j <unix[,user=`user`][,ccgroup=`group`]>
-
-    Default on all other platforms if `varnishd` is either started
-    with an fe as user ``varnish``.
-
-    With the ``unix`` jail technology activated, varnish will switch
-    to an alternative user for subprocesses and change the effective
-    uid of the master process whenever possible.
-
-    The optional `user` argument specifies which alternative user to
-    use. It defauls to ``varnish``
-
-    The optional `ccgroup` argument specifies a group to add to
-    varnish subprocesses requiring access to a c-compiler. There is no
-    default.
-
-  -j none
-
-    last resort jail choice: With jail technology ``none``, varnish
-    will run all processes with the privileges it was started with.
 
 -l <shl[,free[,fill]]>
 
@@ -144,8 +113,8 @@ OPTIONS
 -p <param=value>
 
   Set the parameter specified by param to the specified value.  See
-  Run-Time Parameters for a list of parameters. This option can be
-  used multiple times to specify multiple parameters.
+  :ref:`ref-varnishd-params` for a list of parameters. This option can
+  be used multiple times to specify multiple parameters.
 
 -r <param[,param...]>
 
@@ -158,19 +127,10 @@ OPTIONS
 
 -s <[name=]type[,options]>
 
-  Use the specified storage backend. The storage backends can be one
-  of the following:
+  Use the specified storage backend, see :ref:`ref-varnishd-opt_s`
 
-  -s <malloc[,size]>
-
-  -s <file,path[,size[,granularity]]>
-
-  -s <persistent,path,size>
-
-  See Storage Types in the Users Guide for more information on the
-  various storage backends.  This option can be used multiple times to
-  specify multiple storage files. Names are referenced in logs, vcl,
-  statistics, etc.
+  This option can be used multiple times to specify multiple storage
+  files. Names are referenced in logs, vcl, statistics, etc.
 
 -S file
 
@@ -180,7 +140,7 @@ OPTIONS
 -T <address[:port]>
 
   Offer a management interface on the specified address and port.  See
-  Management Interface for a list of management commands.
+  :ref:`ref-varnishd-opt_T` for a list of management commands.
 
 -t ttl
 
@@ -200,9 +160,10 @@ OPTIONS
 
   Display the version number and exit.
 
+.. _opt_h:
 
-Hash Algorithms
----------------
+Hash Algorithm Options
+----------------------
 
 The following hash algorithms are available:
 
@@ -226,8 +187,10 @@ The following hash algorithms are available:
   default is 16383.
 
 
-Storage Types
--------------
+.. _ref-varnishd-opt_s:
+
+Storage Backend Options
+-----------------------
 
 The following storage types are available:
 
@@ -259,6 +222,43 @@ The following storage types are available:
   storage backend has multiple issues with it and will likely be
   removed from a future version of Varnish.
 
+.. _ref-varnishd-opt_j:
+
+Jail Options
+------------
+
+Varnish jails are a generalization over various platform specific
+methods to reduce the privileges of varnish processes. They may have
+specific options. Available jails are:
+
+-j solaris
+
+  Reduce privileges(5) for varnishd and sub-process to the minimally
+  required set. Only available on platforms which have the setppriv(2)
+  call.
+
+-j <unix[,user=`user`][,ccgroup=`group`]>
+
+  Default on all other platforms if `varnishd` is either started with
+  an effective uid of 0 ("as root") or as user ``varnish``.
+
+  With the ``unix`` jail technology activated, varnish will switch to
+  an alternative user for subprocesses and change the effective uid of
+  the master process whenever possible.
+
+  The optional `user` argument specifies which alternative user to
+  use. It defauls to ``varnish``
+
+  The optional `ccgroup` argument specifies a group to add to varnish
+  subprocesses requiring access to a c-compiler. There is no default.
+
+-j none
+
+  last resort jail choice: With jail technology ``none``, varnish will
+  run all processes with the privileges it was started with.
+
+
+.. _ref-varnishd-opt_T:
 
 Management Interface
 --------------------
@@ -270,49 +270,68 @@ is through varnishadm(1).
 
 The commands available are documented in varnish(7).
 
-Run-Time Parameters
--------------------
+.. _ref-varnishd-params:
+
+RUN TIME PARAMETERS
+===================
+
+Run Time Parameter Flags
+------------------------
 
 Runtime parameters are marked with shorthand flags to avoid repeating
 the same text over and over in the table below.  The meaning of the
 flags are:
 
-experimental
-      We have no solid information about good/bad/optimal values for
-      this parameter.  Feedback with experience and observations are
-      most welcome.
+* `experimental`
 
-delayed
-      This parameter can be changed on the fly, but will not take
-      effect immediately.
+  We have no solid information about good/bad/optimal values for this
+  parameter.  Feedback with experience and observations are most
+  welcome.
 
-restart
-      The worker process must be stopped and restarted, before this
-      parameter takes effect.
+* `delayed`
 
-reload
-      The VCL programs must be reloaded for this parameter to take effect.
+  This parameter can be changed on the fly, but will not take effect
+  immediately.
 
-experimental
-      We're not really sure about this parameter, tell us what you find.
+* `restart`
 
-wizard
-      Do not touch unless you *really* know what you're doing.
+  The worker process must be stopped and restarted, before this
+  parameter takes effect.
 
-only_root
-      Only works if varnishd is running as root.
+* `reload`
 
-Here is a list of all parameters, current as of last time we
-remembered to update the manual page.  This text is produced from the
-same text you will find in the CLI if you use the param.show command,
-so should there be a new parameter which is not listed here, you can
-find the description using the CLI commands.
+  The VCL programs must be reloaded for this parameter to take effect.
 
-Be aware that on 32 bit systems, certain default values, such as
-workspace_client (=16k), thread_pool_workspace (=16k), http_resp_size
-(=8k), http_req_size (=12k), gzip_stack_buffer (=4k) and
-thread_pool_stack (=64k) are reduced relative to the values listed
-here, in order to conserve VM space.
+* `experimental`
+
+  We're not really sure about this parameter, tell us what you find.
+
+* `wizard`
+
+  Do not touch unless you *really* know what you're doing.
+
+* `only_root`
+
+  Only works if varnishd is running as root.
+
+Default Value Exceptions on 32 bit Systems
+------------------------------------------
+
+Be aware that on 32 bit systems, certain default values are reduced
+relative to the values listed below, in order to conserve VM space:
+
+* workspace_client: 16k
+* thread_pool_workspace: 16k
+* http_resp_size: 8k
+* http_req_size: 12k
+* gzip_stack_buffer: 4k
+* thread_pool_stack: 64k
+
+List of Parameters
+------------------
+
+This text is produced from the same text you will find in the CLI if
+you use the param.show command:
 
 .. include:: ../include/params.rst
 
