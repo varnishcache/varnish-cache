@@ -351,9 +351,9 @@ RES_StreamStart(struct sess *sp)
 	if (sp->wrk->res_mode & RES_GUNZIP)
 		http_Unset(sp->wrk->resp, H_Content_Encoding);
 
-	if (!(sp->wrk->res_mode & RES_CHUNKED) &&
-	    sp->wrk->h_content_length != NULL) {
-		http_Unset(sp->wrk->resp, H_Content_Length);
+	http_Unset(sp->wrk->resp, H_Content_Length);
+	if (sp->wrk->res_mode & RES_LEN) {
+		AN(sp->wrk->h_content_length);
 		http_PrintfHeader(sp->wrk, sp->fd, sp->wrk->resp,
 		    "Content-Length: %s", sp->wrk->h_content_length);
 	}

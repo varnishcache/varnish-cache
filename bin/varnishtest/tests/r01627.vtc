@@ -1,0 +1,21 @@
+varnishtest "Regression test for #1627: Wrong Content-Length for gzipped+streamed content with HTTP/1.0 client"
+
+server s1 {
+	rxreq
+	txresp -body {Testing}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_fetch {
+		set beresp.do_stream = true;
+		set beresp.do_gzip = true;
+	}
+} -start
+
+client c1 {
+	txreq -proto "HTTP/1.0" -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.content-length == "<undef>"
+	gunzip
+	expect resp.bodylen == 7
+} -run
