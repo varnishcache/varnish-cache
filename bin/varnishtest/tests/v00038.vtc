@@ -86,3 +86,9 @@ varnish v1 -errvcl "Unknown field:" {
 		.fourscoreandsevenyearsago = "NONE";
 	}
 }
+
+varnish v1 -errvcl "Mandatory field 'host' missing." {
+	backend b1 {
+		.port = "NONE";
+	}
+}
