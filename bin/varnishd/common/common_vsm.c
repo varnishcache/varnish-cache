@@ -388,5 +388,5 @@ VSM_common_ageupdate(const struct vsm_sc *sc)
 {
 
 	CHECK_OBJ_NOTNULL(sc, VSM_SC_MAGIC);
-	sc->head->age = VTIM_mono() - sc->t0;
+	sc->head->age = (uint64_t)(VTIM_mono() - sc->t0);
 }
