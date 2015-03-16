@@ -433,6 +433,7 @@ mgt_vcl_poker(const struct vev *e, int what)
 
 	(void)e;
 	(void)what;
+	e_poker->timeout = mgt_param.vcl_cooldown * .45;
 	VTAILQ_FOREACH(vp, &vclhead, list)
 		mgt_vcl_setstate(vp, -1);
 	return (0);
@@ -463,6 +464,7 @@ mgt_vcl_init(void)
 	e_poker = vev_new();
 	AN(e_poker);
 	e_poker->timeout = 3;		// random, prime
+
 	e_poker->callback = mgt_vcl_poker;
 	e_poker->name = "vcl poker";
 	AZ(vev_add(mgt_evb, e_poker));
