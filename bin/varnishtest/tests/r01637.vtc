@@ -1,0 +1,57 @@
+varnishtest "do_esi + do_gzip + out of storage: #1637"
+
+server s1 {
+	# First consume (almost) all of the storage
+	rxreq
+	expect req.url == /url1
+	txresp -bodylen 260000
+
+	rxreq
+	expect req.url == /url2
+	txresp -bodylen 260000
+
+	rxreq
+	expect req.url == /url3
+	txresp -bodylen 260000
+
+	rxreq
+	expect req.url == /url4
+	txresp -bodylen 260000
+
+	rxreq
+	expect req.url == /url5
+	txresp -bodylen 9000
+} -start
+
+varnish v1  -arg "-smalloc,1M" -arg "-p nuke_limit=0 -p gzip_level=0" \
+    -vcl+backend {
+	sub vcl_backend_response {
+		if (bereq.url == "/url5") {
+			set beresp.do_esi = true;
+			set beresp.do_gzip = true;
+		}
+	}
+} -start
+
+
+client c1 {
+	txreq -url /url1
+	rxresp
+	expect resp.status == 200
+
+	txreq -url /url2
+	rxresp
+	expect resp.status == 200
+
+	txreq -url /url3
+	rxresp
+	expect resp.status == 200
+
+	txreq -url /url4
+	rxresp
+	expect resp.status == 200
+
+	txreq -url /url5
+	rxresp
+	expect resp.status == 503
+} -run

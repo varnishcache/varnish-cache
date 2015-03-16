@@ -1,0 +1,21 @@
+varnishtest "Test bogus Content-Length header"
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Content-Length: bogus"
+} -start
+
+varnish v1 -vcl+backend {
+
+} -start
+
+logexpect l1 -v v1 {
+	  expect * 1002	Error "Body cannot be fetched"
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+logexpect l1 -wait
