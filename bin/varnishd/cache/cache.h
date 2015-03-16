@@ -86,7 +86,7 @@ enum req_body_state_e {
 
 enum sess_close {
 	SC_NULL = 0,
-#define SESS_CLOSE(nm, desc)	SC_##nm,
+#define SESS_CLOSE(nm, stat, desc)	SC_##nm,
 #include "tbl/sess_close.h"
 #undef SESS_CLOSE
 };

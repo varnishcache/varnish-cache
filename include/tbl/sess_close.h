@@ -29,19 +29,20 @@
 
 /*lint -save -e525 -e539 */
 
-SESS_CLOSE(REM_CLOSE,		"Client Closed")
-SESS_CLOSE(REQ_CLOSE,		"Client requested close")
-SESS_CLOSE(REQ_HTTP10,		"Proto < HTTP/1.1")
-SESS_CLOSE(RX_BAD,		"Received bad req/resp")
-SESS_CLOSE(RX_BODY,		"Failure receiving req.body")
-SESS_CLOSE(RX_JUNK,		"Received junk data")
-SESS_CLOSE(RX_OVERFLOW,		"Received buffer overflow")
-SESS_CLOSE(RX_TIMEOUT,		"Receive timeout")
-SESS_CLOSE(TX_PIPE,		"Piped transaction")
-SESS_CLOSE(TX_ERROR,		"Error transaction")
-SESS_CLOSE(TX_EOF,		"EOF transmission")
-SESS_CLOSE(RESP_CLOSE,		"Backend/VCL requested close")
-SESS_CLOSE(OVERLOAD,		"Out of some resource")
-SESS_CLOSE(PIPE_OVERFLOW,	"Session pipe overflow")
+// enum sess_close		SC.* stat	Verbose error
+SESS_CLOSE(REM_CLOSE,		rem_close,	"Client Closed")
+SESS_CLOSE(REQ_CLOSE,		req_close,	"Client requested close")
+SESS_CLOSE(REQ_HTTP10,		req_http10,	"Proto < HTTP/1.1")
+SESS_CLOSE(RX_BAD,		rx_bad,	"Received bad req/resp")
+SESS_CLOSE(RX_BODY,		rx_body,	"Failure receiving req.body")
+SESS_CLOSE(RX_JUNK,		rx_junk,	"Received junk data")
+SESS_CLOSE(RX_OVERFLOW, 	rx_overflow,	"Received buffer overflow")
+SESS_CLOSE(RX_TIMEOUT,		rx_timeout,	"Receive timeout")
+SESS_CLOSE(TX_PIPE,		tx_pipe,	"Piped transaction")
+SESS_CLOSE(TX_ERROR,		tx_error,	"Error transaction")
+SESS_CLOSE(TX_EOF,		tx_eof,	"EOF transmission")
+SESS_CLOSE(RESP_CLOSE,		resp_close,	"Backend/VCL requested close")
+SESS_CLOSE(OVERLOAD,		overload,	"Out of some resource")
+SESS_CLOSE(PIPE_OVERFLOW,	pipe_overflow,	"Session pipe overflow")
 
 /*lint -restore */

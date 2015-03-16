@@ -101,7 +101,7 @@ sess_close_2str(enum sess_close sc, int want_desc)
 {
 	switch (sc) {
 	case SC_NULL:		return(want_desc ? "(null)": "NULL");
-#define SESS_CLOSE(nm, desc)	case SC_##nm: return(want_desc ? desc : #nm);
+#define SESS_CLOSE(nm, s, desc) case SC_##nm: return(want_desc ? desc : #nm);
 #include "tbl/sess_close.h"
 #undef SESS_CLOSE
 
