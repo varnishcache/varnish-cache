@@ -17,7 +17,7 @@ varnish v1 -vcl {
 varnish v1 -cliok "param.set vcl_cooldown 3"
 
 # We only have one vcl yet
-varnish v1 -expect VBE.vcl1.default.happy > 0
+varnish v1 -expect VBE.vcl1.default.happy >= 0
 varnish v1 -expect !VBE.vcl2.default.happy
 varnish v1 -cliok "backend.list -p *.*"
 
@@ -29,8 +29,8 @@ varnish v1 -vcl {
 }
 
 # Now we have two vcls (and run on the latest loaded)
-varnish v1 -expect VBE.vcl1.default.happy > 0
-varnish v1 -expect VBE.vcl2.default.happy > 0
+varnish v1 -expect VBE.vcl1.default.happy >= 0
+varnish v1 -expect VBE.vcl2.default.happy >= 0
 
 # Freeze the first VCL
 varnish v1 -cliok "vcl.state vcl1 cold"
@@ -44,7 +44,7 @@ varnish v1 -expect !VBE.vcl1.default.happy
 varnish v1 -cliok "vcl.use vcl1"
 delay .4
 varnish v1 -expect VBE.vcl1.default.happy >= 0
-varnish v1 -expect VBE.vcl2.default.happy > 0
+varnish v1 -expect VBE.vcl2.default.happy >= 0
 
 # and the unused one should go cold
 delay 4
