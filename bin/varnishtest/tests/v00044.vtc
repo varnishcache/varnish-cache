@@ -51,7 +51,7 @@ varnish v1 -expect VBE.vcl2.default.happy >= 0
 
 # and the unused one should go cold
 delay 4
-varnish v1 -expect !VBE.vcl2.default.happy 
+varnish v1 -expect !VBE.vcl2.default.happy
 
 # Mark the used warm and use it the other
 varnish v1 -cliok "vcl.state vcl1 warm"
