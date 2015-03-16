@@ -769,6 +769,10 @@ varnish_expect(const struct varnish *v, char * const *av) {
 	if (r[0] == '!') {
 		not = 1;
 		r++;
+		AZ(av[1]);
+	} else {
+		AN(av[1]);
+		AN(av[2]);
 	}
 	p = strchr(r, '.');
 	if (p == NULL) {
@@ -804,8 +808,10 @@ varnish_expect(const struct varnish *v, char * const *av) {
 			continue;
 		}
 
-		if (not)
+		if (not) {
 			vtc_log(v->vl, 0, "Found (not expected): %s", av[0]+1);
+			return;
+		}
 
 		good = 0;
 		ref = strtoumax(av[2], &p, 0);
