@@ -124,8 +124,7 @@ OPTIONS
   administrator a way to limit what the Varnish CLI can do.  Consider
   making parameters such as *user*, *group*, *cc_command*,
   *vcc_allow_inline_c* read only as these can potentially be used to
-  escalate privileges from the CLI.  Protecting *listen_address* may
-  also be a good idea.
+  escalate privileges from the CLI.
 
 -s <[name=]type[,options]>
 

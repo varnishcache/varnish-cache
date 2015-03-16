@@ -156,12 +156,6 @@ interface.
 Pretty much any parameter can be used to totally mess up your
 HTTP service, but a few can do more damage than others:
 
-.. XXX :ref:`ref_param_user` and :ref:`ref_param_group`
-.. XXX	Access to local system via VCL
-
-:ref:`ref_param_listen_address`
-	Trojan other TCP sockets, like `ssh`
-
 :ref:`ref_param_cc_command`
 	Execute arbitrary programs
 
