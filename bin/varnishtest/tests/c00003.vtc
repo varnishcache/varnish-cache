@@ -4,7 +4,7 @@ varnishtest "Check that we fail to start if any listen address does not work"
 # and are on Linux, ensure /proc/net/ipv4/ip_nonlocal_bind is set to 0.
 
 # All bad listen addresses
-err_shell "Failed to open (any) accept sockets" {${varnishd} -F -a "${bad_ip}:0" -b 127.0.0.1:80 -n ${tmpdir} 2>&1 & pid=$! ; sleep 1 ; kill $pid ; wait }
+err_shell "Failed to open (any) accept sockets" {${varnishd} -F -a "${bad_ip}:0" -b /// -n ${tmpdir} 2>&1 }
 
 # Just one bad listen addresses
-# err_shell "Invalid listen address" {${varnishd} -F -a "127.0.0.1:0,${bad_ip}:0" -b 127.0.0.1:80 -n ${tmpdir} 2>&1 & pid=$! ; sleep 1 ; kill $pid ; wait }
+# err_shell "Invalid listen address" {${varnishd} -F -a "127.0.0.1:0,${bad_ip}:0" -b /// -n ${tmpdir} 2>&1 }
