@@ -264,6 +264,26 @@ http_findhdr(const struct http *hp, unsigned l, const char *hdr)
 }
 
 /*--------------------------------------------------------------------
+ * Count how many instances we have of this header
+ */
+
+unsigned
+http_CountHdr(const struct http *hp, const char *hdr)
+{
+	unsigned retval = 0;
+	unsigned u;
+
+	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+
+	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
+		Tcheck(hp->hd[u]);
+		if (http_IsHdr(&hp->hd[u], hdr))
+			retval++;
+	}
+	return (retval);
+}
+
+/*--------------------------------------------------------------------
  * This function collapses multiple headerlines of the same name.
  * The lines are joined with a comma, according to [rfc2616, 4.2bot, p32]
  */

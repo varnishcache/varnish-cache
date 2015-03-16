@@ -1024,6 +1024,7 @@ int http_IsHdr(const txt *hh, const char *hdr);
 enum sess_close http_DoConnection(struct http *);
 void http_CopyHome(struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
+unsigned http_CountHdr(const struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
 void http_VSL_log(const struct http *hp);
 void http_Merge(const struct http *fm, struct http *to, int not_ce);
