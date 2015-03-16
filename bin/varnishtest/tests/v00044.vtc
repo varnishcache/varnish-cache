@@ -14,7 +14,7 @@ varnish v1 -vcl {
 	}
 } -start
 
-varnish v1 -cliok "param.set vcl_cooldown 3"
+varnish v1 -cliok "param.set vcl_cooldown 1"
 
 # We only have one vcl yet
 varnish v1 -expect VBE.vcl1.default.happy >= 0
@@ -50,7 +50,7 @@ varnish v1 -expect VBE.vcl1.default.happy >= 0
 varnish v1 -expect VBE.vcl2.default.happy >= 0
 
 # and the unused one should go cold
-delay 4
+delay 3
 varnish v1 -expect !VBE.vcl2.default.happy
 
 # Mark the used warm and use it the other
