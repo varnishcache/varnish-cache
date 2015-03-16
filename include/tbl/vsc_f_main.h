@@ -388,6 +388,11 @@ VSC_F(sess_closed,		uint64_t, 1, 'c', 'i', info,
     "Session Closed",
 	""
 )
+VSC_F(sess_closed_err,		uint64_t, 0, 'c', 'i', info,
+    "Session Closed with error",
+	"Total number of sessions closed with errors."
+	" See sc_* diag counters for detailed breakdown"
+)
 VSC_F(sess_pipeline,		uint64_t, 1, 'c', 'i', info,
     "Session Pipeline",
 	""
@@ -400,6 +405,23 @@ VSC_F(sess_herd,		uint64_t, 1, 'c', 'i', diag,
     "Session herd",
 	""
 )
+
+#define SESS_CLOSE_ERR0 "OK  "
+#define SESS_CLOSE_ERR1 "Err "
+#define SESS_CLOSE_ERROR0 ""
+#define SESS_CLOSE_ERROR1 "Error "
+#define SESS_CLOSE(r, f, e, s)					\
+VSC_F(sc_ ## f, uint64_t, 0, 'c', 'i', diag,			\
+    "Session " SESS_CLOSE_ERR ## e #r,				\
+	"Number of session closes with "			\
+	SESS_CLOSE_ERROR ## e #r " (" s ")"			\
+)
+#include "tbl/sess_close.h"
+#undef SESS_CLOSE
+#undef SESS_CLOSE_ERROR1
+#undef SESS_CLOSE_ERROR0
+#undef SESS_CLOSE_ERR1
+#undef SESS_CLOSE_ERR0
 
 /*--------------------------------------------------------------------*/
 

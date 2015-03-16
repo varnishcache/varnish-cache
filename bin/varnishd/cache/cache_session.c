@@ -305,6 +305,30 @@ SES_Wait(struct sess *sp)
 }
 
 /*--------------------------------------------------------------------
+ * Update sc_ counters by reason
+ *
+ * assuming that the approximation of non-atomic global counters is sufficient.
+ * if not: update to per-wrk
+ */
+static void
+ses_close_acct(enum sess_close reason)
+{
+	assert(reason != SC_NULL);
+	switch (reason) {
+#define SESS_CLOSE(reason, stat, err, desc)		\
+	case SC_ ## reason:				\
+		VSC_C_main->sc_ ## stat++;		\
+		if (err)				\
+			VSC_C_main->sess_closed_err++;	\
+		break;
+#include "tbl/sess_close.h"
+#undef SESS_CLOSE
+	default:
+		WRONG("Wrong event in ses_close_acct");
+	}
+}
+
+/*--------------------------------------------------------------------
  * Close a sessions connection.
  * XXX: Technically speaking we should catch a t_end timestamp here
  * XXX: for SES_Delete() to use.
@@ -320,6 +344,8 @@ SES_Close(struct sess *sp, enum sess_close reason)
 	i = close(sp->fd);
 	assert(i == 0 || errno != EBADF); /* XXX EINVAL seen */
 	sp->fd = -1;
+	if (reason != SC_NULL)
+		ses_close_acct(reason);
 }
 
 /*--------------------------------------------------------------------
