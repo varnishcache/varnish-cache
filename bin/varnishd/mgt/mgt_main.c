@@ -619,6 +619,10 @@ main(int argc, char * const *argv)
 		ARGV_ERR("Could not open pid/lock (-P) file (%s): %s\n",
 		    P_arg, strerror(errno));
 
+	if (MAC_open_sockets())
+		ARGV_ERR("Failed to open (any) accept sockets.\n");
+	MAC_close_sockets();
+
 	mgt_vcc_init();
 	mgt_vcl_init();
 
@@ -635,10 +639,6 @@ main(int argc, char * const *argv)
 		ARGV_ERR("-C only good with -b or -f\n");
 
 	if (!d_flag) {
-		if (MAC_open_sockets())
-			ARGV_ERR("Failed to open (any) accept sockets.\n");
-		MAC_close_sockets();
-
 		if (b_arg == NULL && f_arg == NULL) {
 			fprintf(stderr,
 			    "Warning: Neither -b nor -f given,"
