@@ -66,43 +66,57 @@ int main(int argc, char **argv)
 #include "tbl/vsc_levels.h"
 
 	P("");
-	P("MAIN COUNTERS");
-	P("=============");
+	P("MAIN COUNTERS (MAIN.*)");
+	P("======================");
 	P("");
 #include "tbl/vsc_f_main.h"
 
+	P("MANAGEMENT PROCESS COUNTERS (MGT.*)");
+	P("===================================");
 	P("");
-	P("LOCK COUNTERS");
-	P("=============");
-	P("");
-#define VSC_DO_LCK
+#define VSC_DO_MGT
 #include "tbl/vsc_fields.h"
-#undef VSC_DO_LCK
+#undef VSC_DO_MGT
 
 	P("");
-	P("PER MALLOC STORAGE COUNTERS");
-	P("===========================");
+	P("PER MEMORY POOL COUNTERS (MEMPOOL.*)");
+	P("====================================");
+	P("");
+#define VSC_DO_MEMPOOL
+#include "tbl/vsc_fields.h"
+#undef VSC_DO_MEMPOOL
+
+	P("");
+	P("PER MALLOC STORAGE COUNTERS (SMA.*)");
+	P("===================================");
 	P("");
 #define VSC_DO_SMA
 #include "tbl/vsc_fields.h"
 #undef  VSC_DO_SMA
 
 	P("");
-	P("PER FILE STORAGE COUNTERS");
-	P("=========================");
+	P("PER FILE STORAGE COUNTERS (SMF.*)");
+	P("=================================");
 	P("");
 #define VSC_DO_SMF
 #include "tbl/vsc_fields.h"
 #undef VSC_DO_SMF
 
 	P("");
-	P("PER BACKEND COUNTERS");
-	P("====================");
+	P("PER BACKEND COUNTERS (VBE.*)");
+	P("============================");
 	P("");
 #define VSC_DO_VBE
 #include "tbl/vsc_fields.h"
 #undef VSC_DO_VBE
 
+	P("");
+	P("LOCK COUNTERS (LCK.*)");
+	P("=====================");
+	P("");
+#define VSC_DO_LCK
+#include "tbl/vsc_fields.h"
+#undef VSC_DO_LCK
+
 	return (0);
 }
-
