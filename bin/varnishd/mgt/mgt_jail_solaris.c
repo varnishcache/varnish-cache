@@ -329,6 +329,7 @@ vjs_add_effective(priv_set_t *pset, enum jail_gen_e jge)
 		break;
 	case JAILG_SUBPROC_VCLLOAD:
 		priv_setop_assert(priv_addset(pset, "file_read"));
+		break;
 	case JAILG_SUBPROC_WORKER:
 		priv_setop_assert(priv_addset(pset, "net_access"));
 		priv_setop_assert(priv_addset(pset, "file_read"));
