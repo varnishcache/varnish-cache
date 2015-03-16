@@ -56,7 +56,6 @@ tweak_t tweak_bool;
 tweak_t tweak_bytes;
 tweak_t tweak_bytes_u;
 tweak_t tweak_double;
-tweak_t tweak_listen_address;
 tweak_t tweak_poolparam;
 tweak_t tweak_string;
 tweak_t tweak_timeout;

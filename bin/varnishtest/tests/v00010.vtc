@@ -39,9 +39,6 @@ varnish v1 -arg "-smalloc,1m" -vcl+backend {
 
 varnish v1 -cliok "param.set feature +no_coredump"
 
-# Force the (random) port selected to be used again after restart.
-varnish v1 -cliok "param.set listen_address ${v1_addr}:${v1_port}"
-
 client c1 {
 	txreq -url "/"
 	rxresp

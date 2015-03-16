@@ -39,6 +39,10 @@ extern struct vev_base	*mgt_evb;
 extern unsigned		d_flag;
 extern int		exit_status;
 
+/* mgt_acceptor.c */
+
+void MAC_Arg(const char *);
+
 /* mgt_child.c */
 extern pid_t child_pid;
 void MGT_Run(void);

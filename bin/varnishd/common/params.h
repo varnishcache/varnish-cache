@@ -131,9 +131,6 @@ struct params {
 
 	unsigned		accept_filter;
 
-	/* Listen address */
-	char			*listen_address;
-
 	/* Listen depth */
 	unsigned		listen_depth;
 

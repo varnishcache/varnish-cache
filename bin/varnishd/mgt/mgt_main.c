@@ -457,8 +457,7 @@ main(int argc, char * const *argv)
 
 		switch (o) {
 		case 'a':
-			MCF_ParamSet(cli, "listen_address", optarg);
-			cli_check(cli);
+			MAC_Arg(optarg);
 			break;
 		case 'b':
 			b_arg = optarg;
@@ -618,12 +617,6 @@ main(int argc, char * const *argv)
 	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL)
 		ARGV_ERR("Could not open pid/lock (-P) file (%s): %s\n",
 		    P_arg, strerror(errno));
-
-	if (!C_flag) {
-		if (MAC_open_sockets())
-			ARGV_ERR("Failed to open (any) accept sockets.\n");
-		MAC_close_sockets();
-	}
 
 	mgt_vcc_init();
 	mgt_vcl_init();

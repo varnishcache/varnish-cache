@@ -41,9 +41,7 @@
 #include <unistd.h>
 
 #include "mgt/mgt.h"
-#include "mgt/mgt_param.h"
 #include "common/heritage.h"
-#include "common/params.h"
 
 #include "vav.h"
 #include "vsa.h"
@@ -100,94 +98,67 @@ MAC_close_sockets(void)
 
 /*--------------------------------------------------------------------*/
 
-static void
-clean_listen_sock_head(struct listen_sock_head *lsh)
-{
-	struct listen_sock *ls, *ls2;
-
-	VTAILQ_FOREACH_SAFE(ls, lsh, list, ls2) {
-		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
-		VTAILQ_REMOVE(lsh, ls, list);
-		free(ls->name);
-		free(ls->addr);
-		FREE_OBJ(ls);
-	}
-}
-
-static struct listen_sock_head lsh;
+struct mac_help {
+	unsigned		magic;
+#define MAC_HELP_MAGIC		0x1e00a9d9
+	const char		*name;
+	int			good;
+	const char		**err;
+};
 
 static int __match_proto__(vss_resolver_f)
-tla_callback(void *priv, const struct suckaddr *sa)
+mac_callback(void *priv, const struct suckaddr *sa)
 {
+	struct mac_help *mh;
 	struct listen_sock *ls;
+	int sock;
 
-	ALLOC_OBJ(ls, LISTEN_SOCK_MAGIC);
-	AN(ls);
-	ls->sock = -1;
-	ls->addr = VSA_Clone(sa);
-	AN(ls->addr);
-	ls->name = strdup(priv);
-	AN(ls->name);
-	VTAILQ_INSERT_TAIL(&lsh, ls, list);
-	return (0);
-}
-
-int
-tweak_listen_address(struct vsb *vsb, const struct parspec *par,
-    const char *arg)
-{
-	char **av;
-	int i, error;
-	const char *err;
-	struct listen_sock *ls;
-
-	(void)par;
-	if (arg == NULL) {
-		VSB_quote(vsb, mgt_param.listen_address, -1, 0);
+	CAST_OBJ_NOTNULL(mh, priv, MAC_HELP_MAGIC);
+	sock = VTCP_bind(sa, NULL);
+	if (sock < 0) {
+		*(mh->err) = strerror(errno);
 		return (0);
 	}
 
-	av = VAV_Parse(arg, NULL, ARGV_COMMA);
-	if (av == NULL) {
-		VSB_printf(vsb, "Parse error: out of memory");
-		return(-1);
-	}
-	if (av[0] != NULL) {
-		VSB_printf(vsb, "Parse error: %s", av[0]);
-		VAV_Free(av);
-		return(-1);
-	}
-	if (av[1] == NULL) {
-		VSB_printf(vsb, "Empty listen address");
-		VAV_Free(av);
-		return(-1);
-	}
-	VTAILQ_INIT(&lsh);
-	for (i = 1; av[i] != NULL; i++) {
-		error = VSS_resolver(av[i], "80", tla_callback, av[i], &err);
-		if (err != NULL) {
-			VSB_printf(vsb, "Invalid listen address ");
-			VSB_quote(vsb, av[i], -1, 0);
-			VSB_printf(vsb, ": %s", err);
-			VAV_Free(av);
-			clean_listen_sock_head(&lsh);
-			return (-1);
-		}
-		AZ(error);
-	}
-	VAV_Free(av);
-
-	REPLACE(mgt_param.listen_address, arg);
-
-	clean_listen_sock_head(&heritage.socks);
-	heritage.nsocks = 0;
-
-	while (!VTAILQ_EMPTY(&lsh)) {
-		ls = VTAILQ_FIRST(&lsh);
-		VTAILQ_REMOVE(&lsh, ls, list);
-		CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
-		VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
-		heritage.nsocks++;
-	}
+	ALLOC_OBJ(ls, LISTEN_SOCK_MAGIC);
+	AN(ls);
+	if (VSA_Port(sa) == 0)
+		ls->addr = VTCP_my_suckaddr(sock);
+	else
+		ls->addr = VSA_Clone(sa);
+	AN(ls->addr);
+	AZ(close(sock));
+	ls->sock = -1;
+	ls->name = strdup(priv);
+	AN(ls->name);
+	VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
+	mh->good++;
 	return (0);
+}
+
+void
+MAC_Arg(const char *arg)
+{
+	char **av;
+	struct mac_help *mh;
+	const char *err;
+	int error;
+
+	av = VAV_Parse(arg, NULL, ARGV_COMMA);
+	if (av == NULL)
+		ARGV_ERR("Parse error: out of memory\n");
+	if (av[0] != NULL)
+		ARGV_ERR("%s\n", av[0]);
+	if (av[2] != NULL)
+		ARGV_ERR("XXX: not yet\n");
+
+	ALLOC_OBJ(mh, MAC_HELP_MAGIC);
+	AN(mh);
+	mh->name = av[1];
+	mh->err = &err;
+	error = VSS_resolver(av[1], "80", mac_callback, mh, &err);
+	if (mh->good == 0 || err != NULL)
+		ARGV_ERR("Could not open %s: %s\n", av[1], err);
+	AZ(error);
+	FREE_OBJ(mh);
 }

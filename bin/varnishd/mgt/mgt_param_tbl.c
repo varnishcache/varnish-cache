@@ -242,13 +242,6 @@ struct parspec mgt_parspec[] = {
 		MUST_RESTART,
 		"on", "bool" },
 #endif
-	{ "listen_address", tweak_listen_address, NULL,
-		NULL, NULL,
-		"Whitespace separated list of network endpoints where "
-		"Varnish will accept requests.\n"
-		"Possible formats: host, host:port, :port",
-		MUST_RESTART,
-		":80" },
 	{ "listen_depth", tweak_uint, &mgt_param.listen_depth,
 		"0", NULL,
 		"Listen queue depth.",
