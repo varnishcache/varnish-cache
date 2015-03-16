@@ -100,12 +100,12 @@ struct format {
 	unsigned		magic;
 #define FORMAT_MAGIC		0xC3119CDA
 
+	char			time_type;
 	VTAILQ_ENTRY(format)	list;
 	format_f		*func;
 	struct fragment		*frag;
 	char			*string;
 	const char *const	*strptr;
-	char			time_type;
 	char			*time_fmt;
 };
 
