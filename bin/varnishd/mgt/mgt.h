@@ -42,6 +42,8 @@ extern int		exit_status;
 /* mgt_acceptor.c */
 
 void MAC_Arg(const char *);
+int MAC_open_sockets(struct cli *);
+void MAC_close_sockets(void);
 
 /* mgt_child.c */
 extern pid_t child_pid;
@@ -49,8 +51,6 @@ void MGT_Run(void);
 void mgt_stop_child(void);
 void mgt_got_fd(int fd);
 void MGT_Child_Cli_Fail(void);
-int MAC_open_sockets(void);
-void MAC_close_sockets(void);
 
 /* mgt_cli.c */
 

@@ -303,11 +303,10 @@ mgt_launch_child(struct cli *cli)
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
 		return;
 
-	if (MAC_open_sockets() != 0) {
+	if (MAC_open_sockets(cli) != 0) {
 		child_state = CH_STOPPED;
 		if (cli != NULL) {
 			VCLI_SetResult(cli, CLIS_CANT);
-			VCLI_Out(cli, "Could not open sockets");
 			return;
 		}
 		REPORT0(LOG_ERR,

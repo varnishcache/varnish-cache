@@ -44,6 +44,7 @@
 #include "common/heritage.h"
 
 #include "vav.h"
+#include "vcli_priv.h"
 #include "vsa.h"
 #include "vss.h"
 #include "vtcp.h"
@@ -55,7 +56,7 @@
  */
 
 int
-MAC_open_sockets(void)
+MAC_open_sockets(struct cli *cli)
 {
 	struct listen_sock *ls;
 	int fail;
@@ -73,6 +74,8 @@ MAC_open_sockets(void)
 	if (ls == NULL)
 		return (0);
 	MAC_close_sockets();
+	VCLI_Out(cli, "Could not get socket %s: %s\n",
+	    ls->name, strerror(fail));
 	errno = fail;
 	return (-1);
 }
@@ -109,6 +112,8 @@ mac_callback(void *priv, const struct suckaddr *sa)
 	struct mac_help *mh;
 	struct listen_sock *ls;
 	int sock;
+	char abuf[VTCP_ADDRBUFSIZE], pbuf[VTCP_PORTBUFSIZE];
+	char nbuf[VTCP_ADDRBUFSIZE+VTCP_PORTBUFSIZE+2];
 
 	CAST_OBJ_NOTNULL(mh, priv, MAC_HELP_MAGIC);
 	sock = VTCP_bind(sa, NULL);
@@ -119,15 +124,23 @@ mac_callback(void *priv, const struct suckaddr *sa)
 
 	ALLOC_OBJ(ls, LISTEN_SOCK_MAGIC);
 	AN(ls);
-	if (VSA_Port(sa) == 0)
+	if (VSA_Port(sa) == 0) {
+		/*
+		 * If the port number is zero, we adopt whatever port number
+		 * this VTCP_bind() found us, as if specified by argument.
+		 */
 		ls->addr = VTCP_my_suckaddr(sock);
-	else
+		VTCP_myname(sock, abuf, sizeof abuf, pbuf, sizeof pbuf);
+		bprintf(nbuf, "%s:%s", abuf, pbuf);
+		ls->name = strdup(nbuf);
+	} else {
 		ls->addr = VSA_Clone(sa);
+		ls->name = strdup(mh->name);
+	}
 	AN(ls->addr);
+	AN(ls->name);
 	AZ(close(sock));
 	ls->sock = -1;
-	ls->name = strdup(priv);
-	AN(ls->name);
 	VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
 	mh->good++;
 	return (0);
