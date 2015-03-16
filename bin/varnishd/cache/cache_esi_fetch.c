@@ -44,12 +44,12 @@
 struct vef_priv {
 	unsigned		magic;
 #define VEF_MAGIC		0xf104b51f
+	int			error;
+	ssize_t			tot;
+
 	struct vgz		*vgz;
 
 	struct vep_state	*vep;
-
-	ssize_t			tot;
-	int			error;
 
 	char			*ibuf;
 	char			*ibuf_i;
