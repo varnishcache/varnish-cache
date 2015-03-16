@@ -309,22 +309,26 @@ SES_Wait(struct sess *sp)
  * assuming that the approximation of non-atomic global counters is sufficient.
  * if not: update to per-wrk
  */
+
 static void
 ses_close_acct(enum sess_close reason)
 {
+	int i = 0;
+
 	assert(reason != SC_NULL);
 	switch (reason) {
 #define SESS_CLOSE(reason, stat, err, desc)		\
 	case SC_ ## reason:				\
 		VSC_C_main->sc_ ## stat++;		\
-		if (err)				\
-			VSC_C_main->sess_closed_err++;	\
+		i = err;				\
 		break;
 #include "tbl/sess_close.h"
 #undef SESS_CLOSE
 	default:
 		WRONG("Wrong event in ses_close_acct");
 	}
+	if (i)
+		VSC_C_main->sess_closed_err++;
 }
 
 /*--------------------------------------------------------------------
