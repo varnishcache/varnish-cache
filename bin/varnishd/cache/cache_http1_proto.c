@@ -416,6 +416,11 @@ HTTP1_DissectRequest(struct req *req)
 		return (400);
 	}
 
+	if (http_CountHdr(hp, H_Content_Length) > 1) {
+		VSLb(hp->vsl, SLT_Error, "Duplicate Content-Length header");
+		return (400);
+	}
+
 	/* RFC2616, section 5.2, point 1 */
 	if (!strncasecmp(hp->hd[HTTP_HDR_URL].b, "http://", 7)) {
 		b = e = hp->hd[HTTP_HDR_URL].b + 7;
