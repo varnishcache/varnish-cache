@@ -288,13 +288,14 @@ struct vslc_file {
 	unsigned			magic;
 #define VSLC_FILE_MAGIC			0x1D65FFEF
 
-	struct VSL_cursor		cursor;
-
 	int				error;
 	int				fd;
 	int				close_fd;
 	ssize_t				buflen;
 	uint32_t			*buf;
+
+	struct VSL_cursor		cursor;
+
 };
 
 static void
