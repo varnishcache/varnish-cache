@@ -29,15 +29,18 @@ varnish v1 -vcl {
 }
 
 # Now we have two vcls (and run on the latest loaded)
+delay .4
 varnish v1 -expect VBE.vcl1.default.happy >= 0
 varnish v1 -expect VBE.vcl2.default.happy >= 0
 
 # Freeze the first VCL
 varnish v1 -cliok "vcl.state vcl1 cold"
+delay .4
 varnish v1 -expect !VBE.vcl1.default.happy
 
 # Set it auto should be a no-op
 varnish v1 -cliok "vcl.state vcl1 auto"
+delay .4
 varnish v1 -expect !VBE.vcl1.default.happy
 
 # Use it, and it should come alive
