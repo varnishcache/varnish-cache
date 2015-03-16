@@ -53,8 +53,8 @@ struct client {
 
 	unsigned		repeat;
 
-	pthread_t		tp;
 	unsigned		running;
+	pthread_t		tp;
 };
 
 static VTAILQ_HEAD(, client)	clients =
