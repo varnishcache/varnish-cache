@@ -71,3 +71,18 @@ varnish v1 -errvcl "Expected '{' or name of probe, got" {
 		.probe = "NONE";
 	}
 }
+
+varnish v1 -errvcl "Field 'port' redefined at:" {
+	backend b1 {
+		.host = "127.0.0.1";
+		.port = "NONE";
+		.port = "NONE";
+	}
+}
+
+varnish v1 -errvcl "Unknown field:" {
+	backend b1 {
+		.host = "127.0.0.1";
+		.fourscoreandsevenyearsago = "NONE";
+	}
+}
