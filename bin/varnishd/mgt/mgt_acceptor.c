@@ -33,7 +33,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <fcntl.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,26 +58,23 @@ int
 MAC_open_sockets(void)
 {
 	struct listen_sock *ls;
-	int good = 0;
+	int fail;
 
 	VJ_master(JAIL_MASTER_PRIVPORT);
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
-		if (ls->sock >= 0) {
-			good++;
-			continue;
-		}
+		assert(ls->sock < 0);
 		ls->sock = VTCP_bind(ls->addr, NULL);
 		if (ls->sock < 0)
-			continue;
-
+			break;
 		mgt_child_inherit(ls->sock, "sock");
-
-		good++;
 	}
+	fail = errno;
 	VJ_master(JAIL_MASTER_LOW);
-	if (!good)
-		return (1);
-	return (0);
+	if (ls == NULL)
+		return (0);
+	MAC_close_sockets();
+	errno = fail;
+	return (-1);
 }
 
 /*--------------------------------------------------------------------*/
@@ -158,7 +155,7 @@ MAC_Arg(const char *arg)
 	mh->err = &err;
 	error = VSS_resolver(av[1], "80", mac_callback, mh, &err);
 	if (mh->good == 0 || err != NULL)
-		ARGV_ERR("Could not open %s: %s\n", av[1], err);
+		ARGV_ERR("Could not bind to address %s: %s\n", av[1], err);
 	AZ(error);
 	FREE_OBJ(mh);
 }
