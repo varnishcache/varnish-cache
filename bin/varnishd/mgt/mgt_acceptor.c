@@ -49,51 +49,62 @@
 #include "vss.h"
 #include "vtcp.h"
 
+
+static int
+mac_opensocket(struct listen_sock *ls, struct cli *cli)
+{
+	int fail;
+
+	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
+	if (ls->sock > 0) {
+		mgt_child_inherit(ls->sock, NULL);
+		AZ(close(ls->sock));
+	}
+	ls->sock = VTCP_bind(ls->addr, NULL);
+	fail = errno;
+	if (ls->sock >= 0)
+		mgt_child_inherit(ls->sock, "sock");
+	if (cli != NULL && ls->sock < 0) {
+		VCLI_Out(cli, "Could not get socket %s: %s\n",
+		    ls->name, strerror(errno));
+	}
+	return (fail);
+}
+
 /*=====================================================================
- * Open and close the accept sockets.
- *
- * (The child is priv-sep'ed, so it can't do it.)
+ * Reopen the accept sockets to get rid of listen status.
+ */
+
+void
+MAC_reopen_sockets(struct cli *cli)
+{
+	struct listen_sock *ls;
+
+	VJ_master(JAIL_MASTER_PRIVPORT);
+	VTAILQ_FOREACH(ls, &heritage.socks, list)
+		(void)mac_opensocket(ls, cli);
+	VJ_master(JAIL_MASTER_LOW);
+}
+
+/*=====================================================================
+ * Make sure we have all our sockets (and try once more to get them)
  */
 
 int
-MAC_open_sockets(struct cli *cli)
+MAC_sockets_ready(struct cli *cli)
 {
+	int retval = 1;
 	struct listen_sock *ls;
-	int fail;
 
 	VJ_master(JAIL_MASTER_PRIVPORT);
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
-		assert(ls->sock < 0);
-		ls->sock = VTCP_bind(ls->addr, NULL);
 		if (ls->sock < 0)
-			break;
-		mgt_child_inherit(ls->sock, "sock");
+			(void)mac_opensocket(ls, cli);
+		if (ls->sock < 0)
+			retval = 0;
 	}
-	fail = errno;
 	VJ_master(JAIL_MASTER_LOW);
-	if (ls == NULL)
-		return (0);
-	MAC_close_sockets();
-	VCLI_Out(cli, "Could not get socket %s: %s\n",
-	    ls->name, strerror(fail));
-	errno = fail;
-	return (-1);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-MAC_close_sockets(void)
-{
-	struct listen_sock *ls;
-
-	VTAILQ_FOREACH(ls, &heritage.socks, list) {
-		if (ls->sock < 0)
-			continue;
-		mgt_child_inherit(ls->sock, NULL);
-		AZ(close(ls->sock));
-		ls->sock = -1;
-	}
+	return (retval);
 }
 
 /*--------------------------------------------------------------------*/
@@ -111,26 +122,29 @@ mac_callback(void *priv, const struct suckaddr *sa)
 {
 	struct mac_help *mh;
 	struct listen_sock *ls;
-	int sock;
+	int fail;
 	char abuf[VTCP_ADDRBUFSIZE], pbuf[VTCP_PORTBUFSIZE];
 	char nbuf[VTCP_ADDRBUFSIZE+VTCP_PORTBUFSIZE+2];
 
 	CAST_OBJ_NOTNULL(mh, priv, MAC_HELP_MAGIC);
-	sock = VTCP_bind(sa, NULL);
-	if (sock < 0) {
-		*(mh->err) = strerror(errno);
-		return (0);
-	}
 
 	ALLOC_OBJ(ls, LISTEN_SOCK_MAGIC);
 	AN(ls);
+	ls->sock = -1;
+	ls->addr = sa;
+	fail = mac_opensocket(ls, NULL);
+	if (ls->sock < 0) {
+		*(mh->err) = strerror(fail);
+		FREE_OBJ(ls);
+		return (0);
+	}
 	if (VSA_Port(sa) == 0) {
 		/*
 		 * If the port number is zero, we adopt whatever port number
 		 * this VTCP_bind() found us, as if specified by argument.
 		 */
-		ls->addr = VTCP_my_suckaddr(sock);
-		VTCP_myname(sock, abuf, sizeof abuf, pbuf, sizeof pbuf);
+		ls->addr = VTCP_my_suckaddr(ls->sock);
+		VTCP_myname(ls->sock, abuf, sizeof abuf, pbuf, sizeof pbuf);
 		bprintf(nbuf, "%s:%s", abuf, pbuf);
 		ls->name = strdup(nbuf);
 	} else {
@@ -139,8 +153,6 @@ mac_callback(void *priv, const struct suckaddr *sa)
 	}
 	AN(ls->addr);
 	AN(ls->name);
-	AZ(close(sock));
-	ls->sock = -1;
 	VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
 	mh->good++;
 	return (0);

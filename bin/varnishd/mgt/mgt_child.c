@@ -303,7 +303,7 @@ mgt_launch_child(struct cli *cli)
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
 		return;
 
-	if (MAC_open_sockets(cli) != 0) {
+	if (!MAC_sockets_ready(cli)) {
 		child_state = CH_STOPPED;
 		if (cli != NULL) {
 			VCLI_SetResult(cli, CLIS_CANT);
@@ -393,7 +393,7 @@ mgt_launch_child(struct cli *cli)
 	mgt_child_inherit(heritage.cli_out, NULL);
 	closex(&heritage.cli_out);
 
-	MAC_close_sockets();
+	MAC_reopen_sockets(cli);
 
 	child_std_vlu = VLU_New(NULL, child_line, 0);
 	AN(child_std_vlu);

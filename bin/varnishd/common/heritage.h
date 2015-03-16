@@ -37,8 +37,8 @@ struct listen_sock {
 #define LISTEN_SOCK_MAGIC		0x999e4b57
 	VTAILQ_ENTRY(listen_sock)	list;
 	int				sock;
-	char				*name;
-	struct suckaddr			*addr;
+	const char			*name;
+	const struct suckaddr		*addr;
 };
 
 VTAILQ_HEAD(listen_sock_head, listen_sock);
