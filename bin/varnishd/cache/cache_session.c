@@ -161,10 +161,10 @@ SES_ScheduleReq(struct req *req)
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
 
-	sp->task.func = ses_req_pool_task;
-	sp->task.priv = req;
+	req->task.func = ses_req_pool_task;
+	req->task.priv = req;
 
-	return (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT));
+	return (Pool_Task(pp->pool, &req->task, POOL_QUEUE_FRONT));
 }
 
 /*--------------------------------------------------------------------

@@ -556,6 +556,7 @@ struct req {
 
 	struct sess		*sp;
 	struct worker		*wrk;
+	struct pool_task	task;
 	enum req_step		req_step;
 	VTAILQ_ENTRY(req)	w_list;
 
