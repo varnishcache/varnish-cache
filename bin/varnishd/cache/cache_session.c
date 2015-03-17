@@ -505,6 +505,8 @@ SES_NewPool(struct pool *wp, unsigned pool_no)
 	pp->mpl_sess = MPL_New(nb, &cache_param->sess_pool,
 	    &cache_param->workspace_session);
 	pp->http1_waiter = Wait_New(ses_handle, &cache_param->timeout_idle);
+
+	VCA_New_SessPool(wp, pp);
 	return (pp);
 }
 

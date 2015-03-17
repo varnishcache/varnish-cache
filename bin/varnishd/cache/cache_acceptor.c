@@ -29,9 +29,6 @@
  * This source file has the various trickery surrounding the accept/listen
  * sockets.
  *
- * The actual acceptance is done from cache_pool.c, by calling
- * into VCA_Accept() in this file.
- *
  * Once the session is allocated we move into it with a call to
  * VCA_SetupSess().
  *
@@ -56,9 +53,17 @@
 #include "vtim.h"
 
 static pthread_t	VCA_thread;
-static int hack_ready;
 static double vca_pace = 0.0;
 static struct lock pace_mtx;
+static unsigned pool_accepting;
+
+struct poolsock {
+	unsigned			magic;
+#define POOLSOCK_MAGIC			0x1b0a2d38
+	struct listen_sock		*lsock;
+	struct pool_task		task;
+	struct sesspool			*sesspool;
+};
 
 /*--------------------------------------------------------------------
  * TCP options we want to control
@@ -269,49 +274,6 @@ vca_pace_good(void)
 }
 
 /*--------------------------------------------------------------------
- * Accept on a listen socket, and handle error returns.
- *
- * Called from a worker thread from a pool
- */
-
-int
-VCA_Accept(struct listen_sock *ls, struct wrk_accept *wa)
-{
-	int i;
-
-	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
-	vca_pace_check();
-
-	while(!hack_ready)
-		(void)usleep(100*1000);
-
-	wa->acceptaddrlen = sizeof wa->acceptaddr;
-	do {
-		i = accept(ls->sock, (void*)&wa->acceptaddr,
-			   &wa->acceptaddrlen);
-	} while (i < 0 && errno == EAGAIN);
-
-	if (i < 0) {
-		switch (errno) {
-		case ECONNABORTED:
-			break;
-		case EMFILE:
-			VSL(SLT_Debug, ls->sock, "Too many open files");
-			vca_pace_bad();
-			break;
-		default:
-			VSL(SLT_Debug, ls->sock, "Accept failed: %s",
-			    strerror(errno));
-			vca_pace_bad();
-			break;
-		}
-	}
-	wa->acceptlsock = ls;
-	wa->acceptsock = i;
-	return (i);
-}
-
-/*--------------------------------------------------------------------
  * Fail a session
  *
  * This happens if we accept the socket, but cannot get a session
@@ -365,6 +327,103 @@ VCA_SetupSess(struct worker *wrk, struct sess *sp)
 	return (retval);
 }
 
+/*--------------------------------------------------------------------
+ * Nobody is accepting on this socket, so we do.
+ *
+ * As long as we can stick the accepted connection to another thread
+ * we do so, otherwise we put the socket back on the "BACK" queue
+ * and handle the new connection ourselves.
+ *
+ * We store data about the accept in reserved workspace on the reserved
+ * worker workspace.  SES_pool_accept_task() knows about this.
+ */
+
+static void __match_proto__(task_func_t)
+vca_accept_task(struct worker *wrk, void *arg)
+{
+	struct wrk_accept wa;
+	struct poolsock *ps;
+	struct listen_sock *ls;
+	int i;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(ps, arg, POOLSOCK_MAGIC);
+	ls = ps->lsock;
+	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
+
+	/* Delay until we are ready (flag is set when all
+	 * initialization has finished) */
+	while (!pool_accepting)
+		VTIM_sleep(.1);
+
+	while (1) {
+		INIT_OBJ(&wa, WRK_ACCEPT_MAGIC);
+		wa.sesspool = ps->sesspool;
+		wa.acceptlsock = ls;
+
+		assert(ls->sock > 0);	// We know where stdin is
+
+		vca_pace_check();
+
+		wa.acceptaddrlen = sizeof wa.acceptaddr;
+		do {
+			i = accept(ls->sock, (void*)&wa.acceptaddr,
+				   &wa.acceptaddrlen);
+		} while (i < 0 && errno == EAGAIN);
+
+		if (i < 0) {
+			switch (errno) {
+			case ECONNABORTED:
+				break;
+			case EMFILE:
+				VSL(SLT_Debug, ls->sock, "Too many open files");
+				vca_pace_bad();
+				break;
+			default:
+				VSL(SLT_Debug, ls->sock, "Accept failed: %s",
+				    strerror(errno));
+				vca_pace_bad();
+				break;
+			}
+			wrk->stats->sess_fail++;
+			(void)Pool_TrySumstat(wrk);
+			continue;
+		}
+
+		wa.acceptsock = i;
+
+		if (!Pool_Task_Arg(wrk, SES_pool_accept_task, &wa, sizeof wa)) {
+			AZ(Pool_Task(wrk->pool, &ps->task, POOL_QUEUE_BACK));
+			return;
+		}
+
+		/*
+		 * We were able to hand off, so release this threads VCL
+		 * reference (if any) so we don't hold on to discarded VCLs.
+		 */
+		if (wrk->vcl != NULL)
+			VCL_Rel(&wrk->vcl);
+	}
+}
+
+void
+VCA_New_SessPool(struct pool *pp, struct sesspool *sp)
+{
+	struct listen_sock *ls;
+	struct poolsock *ps;
+
+	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+		assert(ls->sock > 0);		// We know where stdin is
+		ALLOC_OBJ(ps, POOLSOCK_MAGIC);
+		AN(ps);
+		ps->lsock = ls;
+		ps->task.func = vca_accept_task;
+		ps->task.priv = ps;
+		ps->sesspool = sp;
+		AZ(Pool_Task(pp, &ps->task, POOL_QUEUE_BACK));
+	}
+}
+
 /*--------------------------------------------------------------------*/
 
 static void *
@@ -380,8 +439,7 @@ vca_acct(void *arg)
 	(void)vca_tcp_opt_init();
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
-		if (ls->sock < 0)
-			continue;
+		assert (ls->sock > 0);		// We know where stdin is
 		AZ(listen(ls->sock, cache_param->listen_depth));
 		vca_tcp_opt_set(ls->sock, 1);
 		if (cache_param->accept_filter) {
@@ -393,25 +451,21 @@ vca_acct(void *arg)
 		}
 	}
 
-	hack_ready = 1;
+	pool_accepting = 1;
 
 	need_test = 1;
 	t0 = VTIM_real();
 	while (1) {
 		(void)sleep(1);
 		if (vca_tcp_opt_init()) {
-			VTAILQ_FOREACH(ls, &heritage.socks, list) {
-				if (ls->sock < 0)
-					continue;
+			VTAILQ_FOREACH(ls, &heritage.socks, list)
 				vca_tcp_opt_set(ls->sock, 1);
-			}
 		}
 		now = VTIM_real();
 		VSC_C_main->uptime = (uint64_t)(now - t0);
 	}
 	NEEDLESS_RETURN(NULL);
 }
-
 
 /*--------------------------------------------------------------------*/
 
@@ -444,7 +498,7 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 	 * a race where varnishtest::client would attempt to connect(2)
 	 * before listen(2) has been called.
 	 */
-	while(!hack_ready)
+	while(!pool_accepting)
 		(void)usleep(100*1000);
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {

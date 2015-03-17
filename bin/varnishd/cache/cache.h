@@ -704,9 +704,9 @@ struct sess {
 /* cache_acceptor.c */
 void VCA_Init(void);
 void VCA_Shutdown(void);
-int VCA_Accept(struct listen_sock *ls, struct wrk_accept *wa);
 const char *VCA_SetupSess(struct worker *w, struct sess *sp);
 void VCA_FailSess(struct worker *w);
+void VCA_New_SessPool(struct pool *pp, struct sesspool *sp);
 
 /* cache_backend_cfg.c */
 void VBE_InitCfg(void);
@@ -987,10 +987,12 @@ const char *sess_close_2str(enum sess_close sc, int want_desc);
 
 /* cache_pool.c */
 void Pool_Init(void);
-void Pool_Accept(void);
 void Pool_Work_Thread(struct pool *, struct worker *w);
 int Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how);
+int Pool_Task_Arg(struct worker *, task_func_t *,
+    const void *arg, size_t arg_len);
 void Pool_Sumstat(struct worker *w);
+int Pool_TrySumstat(struct worker *wrk);
 void Pool_PurgeStat(unsigned nobj);
 
 #define V1L_IsReleased(w)	((w)->v1l == NULL)

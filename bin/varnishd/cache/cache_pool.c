@@ -38,19 +38,10 @@
 #include <stdlib.h>
 
 #include "cache.h"
-#include "common/heritage.h"
 
 #include "vtim.h"
 
 VTAILQ_HEAD(taskhead, pool_task);
-
-struct poolsock {
-	unsigned			magic;
-#define POOLSOCK_MAGIC			0x1b0a2d38
-	struct listen_sock		*lsock;
-	struct pool_task		task;
-	struct sesspool			*sesspool;
-};
 
 /* Number of work requests queued in excess of worker threads available */
 
@@ -78,7 +69,6 @@ struct pool {
 
 static struct lock		pool_mtx;
 static pthread_t		thr_pool_herder;
-static unsigned			pool_accepting = 0;
 
 static struct lock		wstat_mtx;
 
@@ -110,7 +100,7 @@ Pool_Sumstat(struct worker *wrk)
 	memset(wrk->stats, 0, sizeof *wrk->stats);
 }
 
-static int
+int
 Pool_TrySumstat(struct worker *wrk)
 {
 	if (Lck_Trylock(&wstat_mtx))
@@ -185,8 +175,9 @@ pool_getidleworker(struct pool *pp)
  * Return one if another thread was scheduled, otherwise zero.
  */
 
-static int
-Pool_Task_Arg(struct worker *wrk, const void *arg, size_t arg_len)
+int
+Pool_Task_Arg(struct worker *wrk, task_func_t *func,
+    const void *arg, size_t arg_len)
 {
 	struct pool *pp;
 	struct worker *wrk2;
@@ -212,65 +203,11 @@ Pool_Task_Arg(struct worker *wrk, const void *arg, size_t arg_len)
 
 	assert(arg_len == WS_Reserve(wrk2->aws, arg_len));
 	memcpy(wrk2->aws->f, arg, arg_len);
-	wrk2->task.func = SES_pool_accept_task;
+	wrk2->task.func = func;
 	wrk2->task.priv = wrk2->aws->f;
 	if (retval)
 		AZ(pthread_cond_signal(&wrk2->cond));
 	return (retval);
-}
-
-/*--------------------------------------------------------------------
- * Nobody is accepting on this socket, so we do.
- *
- * As long as we can stick the accepted connection to another thread
- * we do so, otherwise we put the socket back on the "BACK" queue
- * and handle the new connection ourselves.
- *
- * We store data about the accept in reserved workspace on the reserved
- * worker workspace.  SES_pool_accept_task() knows about this.
- */
-
-static void __match_proto__(task_func_t)
-pool_accept(struct worker *wrk, void *arg)
-{
-	struct wrk_accept wa;
-	struct poolsock *ps;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(ps, arg, POOLSOCK_MAGIC);
-
-	CHECK_OBJ_NOTNULL(ps->lsock, LISTEN_SOCK_MAGIC);
-
-	/* Delay until we are ready (flag is set when all
-	 * initialization has finished) */
-	while (!pool_accepting)
-		VTIM_sleep(.1);
-
-	while (1) {
-		INIT_OBJ(&wa, WRK_ACCEPT_MAGIC);
-		wa.sesspool = ps->sesspool;
-
-		assert(ps->lsock->sock > 0);	// We know where stdin is
-
-		if (VCA_Accept(ps->lsock, &wa) < 0) {
-			wrk->stats->sess_fail++;
-			/* We're going to pace in vca anyway... */
-			(void)Pool_TrySumstat(wrk);
-			continue;
-		}
-
-		if (!Pool_Task_Arg(wrk, &wa, sizeof wa)) {
-			AZ(Pool_Task(wrk->pool, &ps->task, POOL_QUEUE_BACK));
-			return;
-		}
-
-		/*
-		 * We were able to hand off, so release this threads VCL
-		 * reference (if any) so we don't hold on to discarded VCLs.
-		 */
-		if (wrk->vcl != NULL)
-			VCL_Rel(&wrk->vcl);
-	}
 }
 
 /*--------------------------------------------------------------------
@@ -596,8 +533,6 @@ static struct pool *
 pool_mkpool(unsigned pool_no)
 {
 	struct pool *pp;
-	struct listen_sock *ls;
-	struct poolsock *ps;
 
 	ALLOC_OBJ(pp, POOL_MAGIC);
 	if (pp == NULL)
@@ -616,17 +551,6 @@ pool_mkpool(unsigned pool_no)
 
 	pp->sesspool = SES_NewPool(pp, pool_no);
 	AN(pp->sesspool);
-
-	VTAILQ_FOREACH(ls, &heritage.socks, list) {
-		assert(ls->sock > 0);		// We know where stdin is
-		ALLOC_OBJ(ps, POOLSOCK_MAGIC);
-		AN(ps);
-		ps->lsock = ls;
-		ps->task.func = pool_accept;
-		ps->task.priv = ps;
-		ps->sesspool = pp->sesspool;
-		AZ(Pool_Task(pp, &ps->task, POOL_QUEUE_BACK));
-	}
 
 	return (pp);
 }
@@ -671,14 +595,6 @@ pool_poolherder(void *priv)
 }
 
 /*--------------------------------------------------------------------*/
-
-void
-Pool_Accept(void)
-{
-
-	ASSERT_CLI();
-	pool_accepting = 1;
-}
 
 void
 Pool_Init(void)
