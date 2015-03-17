@@ -298,7 +298,6 @@ vca_make_session(struct worker *wrk, void *arg)
 	char laddr[VTCP_ADDRBUFSIZE];
 	char lport[VTCP_PORTBUFSIZE];
 
-
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(wa, arg, WRK_ACCEPT_MAGIC);
 	pp = wa->sesspool;
@@ -387,8 +386,6 @@ vca_accept_task(struct worker *wrk, void *arg)
 	ls = ps->lsock;
 	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
 
-	/* Delay until we are ready (flag is set when all
-	 * initialization has finished) */
 	while (!pool_accepting)
 		VTIM_sleep(.1);
 
@@ -427,6 +424,12 @@ vca_accept_task(struct worker *wrk, void *arg)
 		wa.acceptsock = i;
 
 		if (!Pool_Task_Arg(wrk, vca_make_session, &wa, sizeof wa)) {
+			/*
+			 * We couldn't get another thread, so we will handle
+			 * the request in this worker thread, but first we
+			 * must reschedule the listening task so it will be
+			 * taken up by another thread again.
+			 */
 			AZ(Pool_Task(wrk->pool, &ps->task, POOL_QUEUE_BACK));
 			return;
 		}
@@ -439,6 +442,11 @@ vca_accept_task(struct worker *wrk, void *arg)
 			VCL_Rel(&wrk->vcl);
 	}
 }
+
+/*--------------------------------------------------------------------
+ * Called when a worker and attached session pool is created, to
+ * allocate the tasks which will listen to sockets for that pool.
+ */
 
 void
 VCA_New_SessPool(struct pool *pp, struct sesspool *sp)
@@ -532,7 +540,7 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 	 * before listen(2) has been called.
 	 */
 	while(!pool_accepting)
-		(void)usleep(100*1000);
+		VTIM_sleep(.1);
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		VTCP_myname(ls->sock, h, sizeof h, p, sizeof p);

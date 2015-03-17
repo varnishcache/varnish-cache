@@ -443,5 +443,7 @@ SES_DeletePool(struct sesspool *pp)
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	MPL_Destroy(&pp->mpl_sess);
 	MPL_Destroy(&pp->mpl_req);
+	/* Delete session pool must stop acceptor threads */
+	INCOMPL();
 	FREE_OBJ(pp);
 }
