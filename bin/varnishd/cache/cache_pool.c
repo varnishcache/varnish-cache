@@ -188,7 +188,7 @@ pool_getidleworker(struct pool *pp)
  * worker workspace.  SES_pool_accept_task() knows about this.
  */
 
-static void
+static void __match_proto__(task_func_t)
 pool_accept(struct worker *wrk, void *arg)
 {
 	struct worker *wrk2;
@@ -228,7 +228,8 @@ pool_accept(struct worker *wrk, void *arg)
 			/* No idle threads, do it ourselves */
 			Lck_Unlock(&pp->mtx);
 			AZ(Pool_Task(pp, &ps->task, POOL_QUEUE_BACK));
-			SES_pool_accept_task(wrk, pp->sesspool);
+			wrk->task.func = SES_pool_accept_task;
+			wrk->task.priv = pp->sesspool;
 			return;
 		}
 		VTAILQ_REMOVE(&pp->idle_queue, &wrk2->task, list);
@@ -310,7 +311,7 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how)
  * Empty function used as a pointer value for the thread exit condition.
  */
 
-static void
+static void __match_proto__(task_func_t)
 pool_kiss_of_death(struct worker *wrk, void *priv)
 {
 	(void)wrk;
@@ -321,7 +322,7 @@ pool_kiss_of_death(struct worker *wrk, void *priv)
  * Special function to summ stats
  */
 
-static void __match_proto__(pool_func_t)
+static void __match_proto__(task_func_t)
 pool_stat_summ(struct worker *wrk, void *priv)
 {
 	struct dstat *src;
@@ -345,7 +346,7 @@ void
 Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 {
 	struct pool_task *tp;
-	struct pool_task tps;
+	struct pool_task tpx, tps;
 	int i;
 
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
@@ -394,7 +395,8 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 				if (i == ETIMEDOUT)
 					VCL_Rel(&wrk->vcl);
 			} while (wrk->task.func == NULL);
-			tp = &wrk->task;
+			tpx = wrk->task;
+			tp = &tpx;
 			wrk->stats->summs++;
 		}
 		Lck_Unlock(&pp->mtx);
@@ -402,8 +404,13 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 		if (tp->func == pool_kiss_of_death)
 			break;
 
-		assert(wrk->pool == pp);
-		tp->func(wrk, tp->priv);
+		do {
+			memset(&wrk->task, 0, sizeof wrk->task);
+			assert(wrk->pool == pp);
+			tp->func(wrk, tp->priv);
+			tpx = wrk->task;
+			tp = &tpx;
+		} while (tp->func != NULL);
 
 		/* cleanup for next task */
 		wrk->seen_methods = 0;
@@ -588,10 +595,9 @@ pool_mkpool(unsigned pool_no)
 	AZ(pthread_create(&pp->herder_thr, NULL, pool_herder, pp));
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
-		if (ls->sock < 0)
-			continue;
+		assert(ls->sock > 0);		// We know where stdin is
 		ALLOC_OBJ(ps, POOLSOCK_MAGIC);
-		XXXAN(ps);
+		AN(ps);
 		ps->lsock = ls;
 		ps->task.func = pool_accept;
 		ps->task.priv = ps;

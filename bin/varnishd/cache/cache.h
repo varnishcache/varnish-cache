@@ -326,11 +326,11 @@ struct wrk_accept {
 
 /* Worker pool stuff -------------------------------------------------*/
 
-typedef void pool_func_t(struct worker *wrk, void *priv);
+typedef void task_func_t(struct worker *wrk, void *priv);
 
 struct pool_task {
 	VTAILQ_ENTRY(pool_task)		list;
-	pool_func_t			*func;
+	task_func_t			*func;
 	void				*priv;
 };
 
@@ -1012,7 +1012,7 @@ void SES_DeletePool(struct sesspool *sp);
 int SES_ScheduleReq(struct req *);
 struct req *SES_GetReq(const struct worker *, struct sess *);
 void SES_ReleaseReq(struct req *);
-pool_func_t SES_pool_accept_task;
+task_func_t SES_pool_accept_task;
 
 
 /* cache_shmlog.c */

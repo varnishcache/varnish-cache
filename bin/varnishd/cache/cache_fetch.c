@@ -875,7 +875,7 @@ vbf_stp_done(void)
 	return (F_STP_DONE);
 }
 
-static void
+static void __match_proto__(task_func_t)
 vbf_fetch_thread(struct worker *wrk, void *priv)
 {
 	struct busyobj *bo;

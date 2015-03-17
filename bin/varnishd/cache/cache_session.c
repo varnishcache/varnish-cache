@@ -102,7 +102,7 @@ ses_new(struct sesspool *pp)
  * Process new/existing request on this session.
  */
 
-static void
+static void __match_proto__(task_func_t)
 ses_req_pool_task(struct worker *wrk, void *arg)
 {
 	struct req *req;
@@ -125,7 +125,7 @@ ses_req_pool_task(struct worker *wrk, void *arg)
  * Allocate a request + vxid, call ses_req_pool_task()
  */
 
-static void
+static void __match_proto__(task_func_t)
 ses_sess_pool_task(struct worker *wrk, void *arg)
 {
 	struct req *req;
@@ -138,7 +138,9 @@ ses_sess_pool_task(struct worker *wrk, void *arg)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	sp->sess_step = S_STP_NEWREQ;
-	ses_req_pool_task(wrk, req);
+
+	wrk->task.func = ses_req_pool_task;
+	wrk->task.priv = req;
 }
 
 /*--------------------------------------------------------------------
@@ -188,7 +190,7 @@ ses_vsl_socket(struct sess *sp, const char *lsockname)
  * Called from assigned worker thread
  */
 
-void
+void __match_proto__(task_func_t)
 SES_pool_accept_task(struct worker *wrk, void *arg)
 {
 	struct sesspool *pp;
@@ -214,7 +216,8 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 	lsockname = VCA_SetupSess(wrk, sp);
 	ses_vsl_socket(sp, lsockname);
 
-	ses_sess_pool_task(wrk, sp);
+	wrk->task.func = ses_sess_pool_task;
+	wrk->task.priv = sp;
 }
 
 /*--------------------------------------------------------------------
