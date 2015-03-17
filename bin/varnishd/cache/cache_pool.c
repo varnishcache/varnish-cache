@@ -213,12 +213,8 @@ pool_accept(struct worker *wrk, void *arg)
 	while (1) {
 		INIT_OBJ(wa, WRK_ACCEPT_MAGIC);
 
-		if (ps->lsock->sock < 0) {
-			/* Socket Shutdown */
-			FREE_OBJ(ps);
-			WS_Release(wrk->aws, 0);
-			return;
-		}
+		assert(ps->lsock->sock > 0);	// We know where stdin is
+
 		if (VCA_Accept(ps->lsock, wa) < 0) {
 			wrk->stats->sess_fail++;
 			/* We're going to pace in vca anyway... */
