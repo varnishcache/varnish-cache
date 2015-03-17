@@ -222,10 +222,14 @@ QUERY EXPRESSION EXAMPLES
 
     not ReqHeader:cookie
 
+* Client request where internal handling took more than 800ms.::
+
+    Timestamp:Process[2] > 0.8
+
 * Transaction group contains a request user-agent header that contains
   "iPod" and the request delivery time exceeds 1 second ::
 
-    ReqHeader:user-agent ~ "iPod" and ReqEnd[5] > 1.
+    ReqHeader:user-agent ~ "iPod" and Timestamp:Resp[2] > 1.
 
 * Transaction group contains a backend response status larger than or
   equal to 500 ::
@@ -240,7 +244,7 @@ QUERY EXPRESSION EXAMPLES
 * Transactions that have had backend failures or long delivery time on
   their ESI subrequests. (Assumes request grouping mode). ::
 
-    BerespStatus >= 500 or {2+}ReqEnd[5] > 1.
+    BerespStatus >= 500 or {2+}Timestamp:Process[2] > 1.
 
 HISTORY
 =======
