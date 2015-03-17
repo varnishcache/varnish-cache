@@ -196,9 +196,11 @@ SES_pool_accept_task(struct worker *wrk, void *arg)
 	struct sesspool *pp;
 	struct sess *sp;
 	const char *lsockname;
+	struct wrk_accept *wa;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(pp, arg, SESSPOOL_MAGIC);
+	CAST_OBJ_NOTNULL(wa, arg, WRK_ACCEPT_MAGIC);
+	pp = wa->sesspool;
 
 	/* Turn accepted socket into a session */
 	AN(wrk->aws->r);

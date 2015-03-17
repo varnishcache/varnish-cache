@@ -322,6 +322,7 @@ struct wrk_accept {
 	socklen_t		acceptaddrlen;
 	int			acceptsock;
 	struct listen_sock	*acceptlsock;
+	struct sesspool		*sesspool;
 };
 
 /* Worker pool stuff -------------------------------------------------*/
