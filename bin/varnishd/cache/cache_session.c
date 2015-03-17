@@ -132,6 +132,7 @@ SES_sess_pool_task(struct worker *wrk, void *arg)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
+	WS_Release(sp->ws, 0);
 
 	req = SES_GetReq(wrk, sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -176,9 +177,12 @@ ses_handle(struct waited *wp, enum wait_event ev, double now)
 {
 	struct sess *sp;
 	struct sesspool *pp;
+	struct pool_task *tp;
 
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	CAST_OBJ_NOTNULL(sp, wp->ptr, SESS_MAGIC);
+
+	AZ(sp->ws->r);
 
 	switch (ev) {
 	case WAITER_TIMEOUT:
@@ -191,9 +195,11 @@ ses_handle(struct waited *wp, enum wait_event ev, double now)
 		pp = sp->sesspool;
 		CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 		AN(pp->pool);
-		sp->task.func = SES_sess_pool_task;
-		sp->task.priv = sp;
-		if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT))
+		assert(sizeof *tp == WS_Reserve(sp->ws, sizeof *tp));
+		tp = (void*)sp->ws->f;
+		tp->func = SES_sess_pool_task;
+		tp->priv = sp;
+		if (Pool_Task(pp->pool, tp, POOL_QUEUE_FRONT))
 			SES_Delete(sp, SC_OVERLOAD, now);
 		break;
 	case WAITER_CLOSE:

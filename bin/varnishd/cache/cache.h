@@ -657,7 +657,6 @@ struct sess {
 
 	struct sesspool		*sesspool;
 
-	struct pool_task	task;
 	struct waited		waited;
 
 	/* Session related fields ------------------------------------*/

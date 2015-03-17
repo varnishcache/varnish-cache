@@ -360,6 +360,8 @@ vca_make_session(struct worker *wrk, void *arg)
 	    sp->client_addr_str, sp->client_port_str, lsockname, laddr, lport,
 	    sp->t_open, sp->fd);
 
+	/* SES_sess_pool_task() must be sceduled with reserved WS */
+	assert(8 == WS_Reserve(sp->ws, 8));
 	wrk->task.func = SES_sess_pool_task;
 	wrk->task.priv = sp;
 }
