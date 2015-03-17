@@ -294,6 +294,7 @@ ban_parse_regexp(struct cli *cli, const struct ban *b, const char *a3)
 	rc = pcre_fullinfo(re, NULL, PCRE_INFO_SIZE, &sz);
 	AZ(rc);
 	ban_add_lump(b, re, sz);
+	pcre_free(re);
 	return (0);
 }
 
