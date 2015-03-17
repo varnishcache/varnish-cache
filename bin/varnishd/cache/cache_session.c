@@ -47,7 +47,6 @@
 
 #include "waiter/waiter.h"
 #include "vsa.h"
-#include "vtcp.h"
 #include "vtim.h"
 
 /*--------------------------------------------------------------------*/
@@ -141,47 +140,6 @@ SES_sess_pool_task(struct worker *wrk, void *arg)
 
 	wrk->task.func = ses_req_pool_task;
 	wrk->task.priv = req;
-}
-
-/*--------------------------------------------------------------------
- * VSL log the endpoints of the TCP connection.
- *
- * We use VSL() to get the sessions vxid and to make sure tha this
- * VSL comes before anything else for this session.
- *
- * This is a separate procedure only to isolate the two stack buffers.
- *
- */
-
-void
-SES_vsl_socket(struct sess *sp, const char *lsockname)
-{
-	struct sockaddr_storage ss;
-	socklen_t sl;
-	char laddr[VTCP_ADDRBUFSIZE];
-	char lport[VTCP_PORTBUFSIZE];
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	AN(lsockname);
-
-	AN(sp->addrs);
-	sl = sizeof ss;
-	AZ(getsockname(sp->fd, (void*)&ss, &sl));
-	AN(VSA_Build(sess_local_addr(sp), &ss, sl));
-	assert(VSA_Sane(sess_local_addr(sp)));
-
-	VTCP_name(sess_remote_addr(sp), laddr, sizeof laddr,
-	    lport, sizeof lport);
-	sp->client_addr_str = WS_Copy(sp->ws, laddr, -1);
-	AN(sp->client_addr_str);
-	sp->client_port_str = WS_Copy(sp->ws, lport, -1);
-	AN(sp->client_port_str);
-	VTCP_name(sess_local_addr(sp), laddr, sizeof laddr,
-	    lport, sizeof lport);
-	VSL(SLT_Begin, sp->vxid, "sess 0 HTTP/1");
-	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f %d",
-	    sp->client_addr_str, sp->client_port_str, lsockname, laddr, lport,
-	    sp->t_open, sp->fd);
 }
 
 /*--------------------------------------------------------------------

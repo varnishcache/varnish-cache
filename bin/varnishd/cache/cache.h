@@ -1000,7 +1000,6 @@ void SES_DeletePool(struct sesspool *sp);
 int SES_ScheduleReq(struct req *);
 struct req *SES_GetReq(const struct worker *, struct sess *);
 void SES_ReleaseReq(struct req *);
-void SES_vsl_socket(struct sess *sp, const char *lsockname);
 void SES_sess_pool_task(struct worker *wrk, void *arg);
 
 /* cache_shmlog.c */
