@@ -311,20 +311,6 @@ struct vrt_privs {
 	VTAILQ_HEAD(,vrt_priv)	privs;
 };
 
-/*--------------------------------------------------------------------*/
-
-struct wrk_accept {
-	unsigned		magic;
-#define WRK_ACCEPT_MAGIC	0x8c4b4d59
-
-	/* Accept stuff */
-	struct sockaddr_storage	acceptaddr;
-	socklen_t		acceptaddrlen;
-	int			acceptsock;
-	struct listen_sock	*acceptlsock;
-	struct sesspool		*sesspool;
-};
-
 /* Worker pool stuff -------------------------------------------------*/
 
 typedef void task_func_t(struct worker *wrk, void *priv);
@@ -704,8 +690,6 @@ struct sess {
 /* cache_acceptor.c */
 void VCA_Init(void);
 void VCA_Shutdown(void);
-const char *VCA_SetupSess(struct worker *w, struct sess *sp);
-void VCA_FailSess(struct worker *w);
 void VCA_New_SessPool(struct pool *pp, struct sesspool *sp);
 
 /* cache_backend_cfg.c */
@@ -1007,6 +991,7 @@ size_t V1L_Write(const struct worker *w, const void *ptr, ssize_t len);
 void VRG_dorange(struct req *req, struct busyobj *bo, const char *r);
 
 /* cache_session.c [SES] */
+struct sess *SES_New(struct sesspool *);
 void SES_Close(struct sess *sp, enum sess_close reason);
 void SES_Wait(struct sess *sp);
 void SES_Delete(struct sess *sp, enum sess_close reason, double now);
@@ -1015,8 +1000,8 @@ void SES_DeletePool(struct sesspool *sp);
 int SES_ScheduleReq(struct req *);
 struct req *SES_GetReq(const struct worker *, struct sess *);
 void SES_ReleaseReq(struct req *);
-task_func_t SES_pool_accept_task;
-
+void SES_vsl_socket(struct sess *sp, const char *lsockname);
+void SES_sess_pool_task(struct worker *wrk, void *arg);
 
 /* cache_shmlog.c */
 extern struct VSC_C_main *VSC_C_main;

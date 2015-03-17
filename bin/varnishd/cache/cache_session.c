@@ -70,8 +70,8 @@ struct sesspool {
  *	workspace
  */
 
-static struct sess *
-ses_new(struct sesspool *pp)
+struct sess *
+SES_New(struct sesspool *pp)
 {
 	struct sess *sp;
 	unsigned sz;
@@ -125,8 +125,8 @@ ses_req_pool_task(struct worker *wrk, void *arg)
  * Allocate a request + vxid, call ses_req_pool_task()
  */
 
-static void __match_proto__(task_func_t)
-ses_sess_pool_task(struct worker *wrk, void *arg)
+void __match_proto__(task_func_t)
+SES_sess_pool_task(struct worker *wrk, void *arg)
 {
 	struct req *req;
 	struct sess *sp;
@@ -153,8 +153,8 @@ ses_sess_pool_task(struct worker *wrk, void *arg)
  *
  */
 
-static void
-ses_vsl_socket(struct sess *sp, const char *lsockname)
+void
+SES_vsl_socket(struct sess *sp, const char *lsockname)
 {
 	struct sockaddr_storage ss;
 	socklen_t sl;
@@ -182,44 +182,6 @@ ses_vsl_socket(struct sess *sp, const char *lsockname)
 	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f %d",
 	    sp->client_addr_str, sp->client_port_str, lsockname, laddr, lport,
 	    sp->t_open, sp->fd);
-}
-
-/*--------------------------------------------------------------------
- * The pool-task for a newly accepted session
- *
- * Called from assigned worker thread
- */
-
-void __match_proto__(task_func_t)
-SES_pool_accept_task(struct worker *wrk, void *arg)
-{
-	struct sesspool *pp;
-	struct sess *sp;
-	const char *lsockname;
-	struct wrk_accept *wa;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(wa, arg, WRK_ACCEPT_MAGIC);
-	pp = wa->sesspool;
-
-	/* Turn accepted socket into a session */
-	AN(wrk->aws->r);
-	sp = ses_new(pp);
-	if (sp == NULL) {
-		VCA_FailSess(wrk);
-		return;
-	}
-	wrk->stats->s_sess++;
-
-	sp->t_open = VTIM_real();
-	sp->t_idle = sp->t_open;
-	sp->vxid = VXID_Get(wrk, VSL_CLIENTMARKER);
-
-	lsockname = VCA_SetupSess(wrk, sp);
-	ses_vsl_socket(sp, lsockname);
-
-	wrk->task.func = ses_sess_pool_task;
-	wrk->task.priv = sp;
 }
 
 /*--------------------------------------------------------------------
@@ -271,7 +233,7 @@ ses_handle(struct waited *wp, enum wait_event ev, double now)
 		pp = sp->sesspool;
 		CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 		AN(pp->pool);
-		sp->task.func = ses_sess_pool_task;
+		sp->task.func = SES_sess_pool_task;
 		sp->task.priv = sp;
 		if (Pool_Task(pp->pool, &sp->task, POOL_QUEUE_FRONT))
 			SES_Delete(sp, SC_OVERLOAD, now);
