@@ -413,12 +413,15 @@ http_GetHdrField(const struct http *hp, const char *hdr,
  */
 
 const char *
-http_DoConnection(const struct http *hp)
+http_DoConnection(struct http *hp, uint16_t *p_err_code)
 {
 	char *p, *q;
 	const char *ret;
 	unsigned u;
 
+	AN(p_err_code);
+
+	http_CollectHdr(hp, H_Connection);
 	if (!http_GetHdr(hp, H_Connection, &p)) {
 		if (hp->protover < 11)
 			return ("not HTTP/1.1");
@@ -437,6 +440,19 @@ http_DoConnection(const struct http *hp)
 		u = pdiff(p, q);
 		if (u == 5 && !strncasecmp(p, "close", u))
 			ret = "Connection: close";
+
+		/* Refuse removal of well-known-headers if they would pass. */
+/*lint -save -e506 */
+#define HTTPH(a,b,c,d,e,f,g)			\
+		if (!((e) & HTTPH_R_PASS) &&	\
+		    strlen(a) == u && !strncasecmp(a, p, u)) {	\
+			*p_err_code = 400;			\
+			return ("Bad request");			\
+		}
+#include "http_headers.h"
+#undef HTTPH
+/*lint -restore */
+
 		u = http_findhdr(hp, u, p);
 		if (u != 0)
 			hp->hdf[u] |= HDF_FILTER;

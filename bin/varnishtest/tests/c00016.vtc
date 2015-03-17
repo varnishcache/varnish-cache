@@ -23,3 +23,9 @@ client c1 {
 	rxresp
 	expect req.http.Bar == <undef>
 } -run
+
+client c1 {
+	txreq -hdr "foo: 1" -hdr "Age: 200" -hdr "Connection: Age"
+	rxresp
+	expect resp.status == 400
+} -run

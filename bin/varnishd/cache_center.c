@@ -1517,7 +1517,14 @@ cnt_start(struct sess *sp)
 	/* Catch original request, before modification */
 	HTTP_Copy(sp->http0, sp->http);
 
-	sp->doclose = http_DoConnection(sp->http);
+	sp->doclose = http_DoConnection(sp->http, &err_code);
+	if (err_code == 400)
+		(void)write(sp->fd, r_400, strlen(r_400));
+	if (err_code != 0) {
+		sp->step = STP_DONE;
+		vca_close_session(sp, sp->doclose);
+		return (0);
+	}
 
 	/* XXX: Handle TRACE & OPTIONS of Max-Forwards = 0 */
 

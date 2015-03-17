@@ -773,7 +773,7 @@ int http_IsHdr(const txt *hh, const char *hdr);
 uint16_t http_DissectRequest(struct sess *sp);
 uint16_t http_DissectResponse(struct worker *w, const struct http_conn *htc,
     struct http *sp);
-const char *http_DoConnection(const struct http *hp);
+const char *http_DoConnection(struct http *hp, uint16_t *pstatus);
 void http_CopyHome(struct worker *w, int fd, const struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
