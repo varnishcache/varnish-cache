@@ -471,6 +471,7 @@ pool_herder(void *priv)
 			pool_breed(pp);
 			continue;
 		}
+		assert(pp->nthr >= cache_param->wthread_min);
 
 		if (pp->nthr > cache_param->wthread_min) {
 
@@ -548,6 +549,9 @@ pool_mkpool(unsigned pool_no)
 	VTAILQ_INIT(&pp->back_queue);
 	AZ(pthread_cond_init(&pp->herder_cond, NULL));
 	AZ(pthread_create(&pp->herder_thr, NULL, pool_herder, pp));
+
+	while (VTAILQ_EMPTY(&pp->idle_queue))
+		usleep(10000);
 
 	pp->sesspool = SES_NewPool(pp, pool_no);
 	AN(pp->sesspool);
