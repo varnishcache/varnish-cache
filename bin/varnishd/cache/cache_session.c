@@ -61,6 +61,58 @@ struct sesspool {
 	struct waiter		*http1_waiter;
 };
 
+/*--------------------------------------------------------------------*/
+
+static int
+ses_get_attr(const struct sess *sp, enum sess_attr a, void **dst)
+{
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	assert(a < SA_LAST);
+	AN(dst);
+
+	if (sp->sattr[a] == 0xffff) {
+		*dst = NULL;
+		return (-1);
+	} else {
+		*dst = sp->ws->s + sp->sattr[a];
+		return (0);
+	}
+}
+
+static void
+ses_reserve_attr(struct sess *sp, enum sess_attr a, void **dst, int sz)
+{
+	ssize_t o;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	assert(a < SA_LAST);
+	assert(sz >= 0);
+	AN(dst);
+	o = WS_Reserve(sp->ws, sz);
+	assert(o >= sz);
+	*dst = sp->ws->f;
+	o = sp->ws->f - sp->ws->s;
+	WS_Release(sp->ws, sz);
+	assert(o >= 0 && o <= 0xffff);
+	sp->sattr[a] = (uint16_t)o;
+}
+
+#define SESS_ATTR(UP, low, typ, len)					\
+	int								\
+	SES_Get_##low(const struct sess *sp, typ *dst)			\
+	{								\
+		return (ses_get_attr(sp, SA_##UP, (void**)dst));	\
+	}								\
+									\
+	void								\
+	SES_Reserve_##low(struct sess *sp, typ *dst)			\
+	{								\
+		ses_reserve_attr(sp, SA_##UP, (void*)dst, len);		\
+	}
+
+#include "tbl/sess_attr.h"
+#undef SESS_ATTR
+
 /*--------------------------------------------------------------------
  * Get a new session, preferably by recycling an already ready one
  *
@@ -80,14 +132,13 @@ SES_New(struct sesspool *pp)
 	sp = MPL_Get(pp->mpl_sess, &sz);
 	sp->magic = SESS_MAGIC;
 	sp->sesspool = pp;
+	memset(sp->sattr, 0xff, sizeof sp->sattr);
 
 	e = (char*)sp + sz;
 	p = (char*)(sp + 1);
 	p = (void*)PRNDUP(p);
 	assert(p < e);
 	WS_Init(sp->ws, "ses", p, e - p);
-	sp->addrs = WS_Alloc(sp->ws, vsa_suckaddr_len * 2);
-	AN(sp->addrs);
 
 	sp->t_open = NAN;
 	sp->t_idle = NAN;
@@ -444,6 +495,6 @@ SES_DeletePool(struct sesspool *pp)
 	MPL_Destroy(&pp->mpl_sess);
 	MPL_Destroy(&pp->mpl_req);
 	/* Delete session pool must stop acceptor threads */
-	INCOMPL();
 	FREE_OBJ(pp);
+	INCOMPL();
 }

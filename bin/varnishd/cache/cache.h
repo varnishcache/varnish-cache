@@ -119,6 +119,7 @@ struct poolparam;
 struct req;
 struct sess;
 struct sesspool;
+struct suckaddr;
 struct vbc;
 struct vrt_backend;
 struct vrt_priv;
@@ -643,6 +644,14 @@ struct req {
  * works, is not realistic without a lot of code changes.
  */
 
+
+enum sess_attr {
+#define SESS_ATTR(UP, low, typ, len)	SA_##UP,
+#include "tbl/sess_attr.h"
+#undef SESS_ATTR
+	SA_LAST
+};
+
 struct sess {
 	unsigned		magic;
 #define SESS_MAGIC		0x2c2f9c5a
@@ -663,15 +672,7 @@ struct sess {
 
 	struct ws		ws[1];
 
-	/*
-	 * This gets quite involved, but we don't want to waste space
-	 * on up to 4 pointers of 8 bytes in struct sess.
-	 */
-	char			*addrs;
-#define sess_remote_addr(sp) \
-	((struct suckaddr *)(void*)((sp)->addrs))
-#define sess_local_addr(sp) \
-	((struct suckaddr *)(void*)((sp)->addrs + vsa_suckaddr_len))
+	uint16_t		sattr[SA_LAST];
 
 	/* formatted ascii client address */
 	char			*client_addr_str;
@@ -1001,6 +1002,12 @@ int SES_ScheduleReq(struct req *);
 struct req *SES_GetReq(const struct worker *, struct sess *);
 void SES_ReleaseReq(struct req *);
 void SES_sess_pool_task(struct worker *wrk, void *arg);
+
+#define SESS_ATTR(UP, low, typ, len)				\
+	int SES_Get_##low(const struct sess *sp, typ *dst);	\
+	void SES_Reserve_##low(struct sess *sp, typ *dst);
+#include "tbl/sess_attr.h"
+#undef SESS_ATTR
 
 /* cache_shmlog.c */
 extern struct VSC_C_main *VSC_C_main;

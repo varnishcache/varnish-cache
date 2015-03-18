@@ -291,9 +291,9 @@ vca_make_session(struct worker *wrk, void *arg)
 {
 	struct sesspool *pp;
 	struct sess *sp;
-	const char *lsockname;
 	struct wrk_accept *wa;
 	struct sockaddr_storage ss;
+	struct suckaddr *sa;
 	socklen_t sl;
 	char laddr[VTCP_ADDRBUFSIZE];
 	char lport[VTCP_PORTBUFSIZE];
@@ -326,39 +326,44 @@ vca_make_session(struct worker *wrk, void *arg)
 
 	sp->fd = wa->acceptsock;
 	wa->acceptsock = -1;
-	lsockname = wa->acceptlsock->name;
-	AN(lsockname);
+
 	assert(wa->acceptaddrlen <= vsa_suckaddr_len);
-	AN(VSA_Build(sess_remote_addr(sp), &wa->acceptaddr, wa->acceptaddrlen));
+	SES_Reserve_remote_addr(sp, &sa);
+	AN(VSA_Build(sa, &wa->acceptaddr, wa->acceptaddrlen));
+	SES_Reserve_client_addr(sp, &sa);
+	AN(VSA_Build(sa, &wa->acceptaddr, wa->acceptaddrlen));
+
+	VTCP_name(sa, laddr, sizeof laddr, lport, sizeof lport);
+	sp->client_addr_str = WS_Copy(sp->ws, laddr, -1);
+	AN(sp->client_addr_str);
+	sp->client_port_str = WS_Copy(sp->ws, lport, -1);
+	AN(sp->client_port_str);
+
+	sl = sizeof ss;
+	AZ(getsockname(sp->fd, (void*)&ss, &sl));
+	SES_Reserve_local_addr(sp, &sa);
+	AN(VSA_Build(sa, &ss, sl));
+	SES_Reserve_server_addr(sp, &sa);
+	AN(VSA_Build(sa, &ss, sl));
+
+	VTCP_name(sa, laddr, sizeof laddr, lport, sizeof lport);
+
+	VSL(SLT_Begin, sp->vxid, "sess 0 HTTP/1");
+	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f %d",
+	    sp->client_addr_str, sp->client_port_str,
+	    wa->acceptlsock->name, laddr, lport,
+	    sp->t_open, sp->fd);
+
+	WS_Release(wrk->aws, 0);
+
 	vca_pace_good();
 	wrk->stats->sess_conn++;
-	WS_Release(wrk->aws, 0);
 
 	if (need_test) {
 		vca_tcp_opt_test(sp->fd);
 		need_test = 0;
 	}
 	vca_tcp_opt_set(sp->fd, 0);
-
-	AN(sp->addrs);
-	sl = sizeof ss;
-	AZ(getsockname(sp->fd, (void*)&ss, &sl));
-	AN(VSA_Build(sess_local_addr(sp), &ss, sl));
-	assert(VSA_Sane(sess_local_addr(sp)));
-
-	VTCP_name(sess_remote_addr(sp), laddr, sizeof laddr,
-	    lport, sizeof lport);
-	sp->client_addr_str = WS_Copy(sp->ws, laddr, -1);
-	AN(sp->client_addr_str);
-	sp->client_port_str = WS_Copy(sp->ws, lport, -1);
-	AN(sp->client_port_str);
-	VTCP_name(sess_local_addr(sp), laddr, sizeof laddr,
-	    lport, sizeof lport);
-	VSL(SLT_Begin, sp->vxid, "sess 0 HTTP/1");
-	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f %d",
-	    sp->client_addr_str, sp->client_port_str, lsockname, laddr, lport,
-	    sp->t_open, sp->fd);
-
 	/* SES_sess_pool_task() must be sceduled with reserved WS */
 	assert(8 == WS_Reserve(sp->ws, 8));
 	wrk->task.func = SES_sess_pool_task;
