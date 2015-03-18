@@ -14,8 +14,6 @@ varnish v1 -cliok vcl.list
 
 varnish v1 -cliok start
 
-varnish v1 -cliok debug.sizeof
-
 varnish v1 -cliok "vcl.use vcl1"
 
 varnish v1 -clierr 106 "vcl.discard vcl1"
