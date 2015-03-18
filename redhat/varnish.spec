@@ -1,9 +1,10 @@
+%define v_rc rc1
 %define    _use_internal_dependency_generator 0
 %define __find_provides %{_builddir}/varnish-%{version}%{?v_rc:-%{?v_rc}}/redhat/find-provides
 Summary: High-performance HTTP accelerator
 Name: varnish
-Version: 3.0.6
-Release: 1%{?dist}
+Version: 3.0.7
+Release: 1%{?v_rc}%{?dist}
 License: BSD
 Group: System Environment/Daemons
 URL: https://www.varnish-cache.org/
