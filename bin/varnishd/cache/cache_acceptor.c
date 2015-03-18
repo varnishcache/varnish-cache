@@ -332,8 +332,7 @@ vca_make_session(struct worker *wrk, void *arg)
 	assert(wa->acceptaddrlen <= vsa_suckaddr_len);
 	SES_Reserve_remote_addr(sp, &sa);
 	AN(VSA_Build(sa, &wa->acceptaddr, wa->acceptaddrlen));
-	SES_Reserve_client_addr(sp, &sa);
-	AN(VSA_Build(sa, &wa->acceptaddr, wa->acceptaddrlen));
+	sp->sattr[SA_CLIENT_ADDR] = sp->sattr[SA_REMOTE_ADDR];
 
 	VTCP_name(sa, raddr, sizeof raddr, rport, sizeof rport);
 	SES_Set_String_Attr(sp, SA_CLIENT_IP, raddr);
@@ -343,8 +342,7 @@ vca_make_session(struct worker *wrk, void *arg)
 	AZ(getsockname(sp->fd, (void*)&ss, &sl));
 	SES_Reserve_local_addr(sp, &sa);
 	AN(VSA_Build(sa, &ss, sl));
-	SES_Reserve_server_addr(sp, &sa);
-	AN(VSA_Build(sa, &ss, sl));
+	sp->sattr[SA_SERVER_ADDR] = sp->sattr[SA_LOCAL_ADDR];
 
 	VTCP_name(sa, laddr, sizeof laddr, lport, sizeof lport);
 
