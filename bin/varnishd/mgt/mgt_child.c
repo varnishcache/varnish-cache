@@ -282,7 +282,6 @@ child_sigsegv_handler(int s, siginfo_t *si, void *c)
 		 __FILE__,
 		 __LINE__,
 		 buf,
-		 errno,
 		 VAS_ASSERT);
 }
 

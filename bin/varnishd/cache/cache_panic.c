@@ -491,12 +491,13 @@ pan_backtrace(void)
 
 static void __attribute__((__noreturn__))
 pan_ic(const char *func, const char *file, int line, const char *cond,
-    int err, enum vas_e kind)
+    enum vas_e kind)
 {
 	const char *q;
 	struct req *req;
 	struct busyobj *bo;
 	struct sigaction sa;
+	int err = errno;
 
 	AZ(pthread_mutex_lock(&panicstr_mtx)); /* Won't be released,
 						  we're going to die
