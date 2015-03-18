@@ -551,7 +551,7 @@ pool_mkpool(unsigned pool_no)
 	AZ(pthread_create(&pp->herder_thr, NULL, pool_herder, pp));
 
 	while (VTAILQ_EMPTY(&pp->idle_queue))
-		usleep(10000);
+		(void)usleep(10000);
 
 	pp->sesspool = SES_NewPool(pp, pool_no);
 	AN(pp->sesspool);

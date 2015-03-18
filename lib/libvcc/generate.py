@@ -157,6 +157,15 @@ returns =(
 # 'both' means all methods tagged "B" or "C"
 
 sp_variables = [
+	('remote.ip',
+		'IP',
+		( 'client',),
+		( ), """
+		The IP address of the other end of the TCP connection.
+		This can either be the clients IP, or the outgoing IP
+		of a proxy server.
+		"""
+	),
 	('client.ip',
 		'IP',
 		( 'client',),
@@ -170,6 +179,13 @@ sp_variables = [
 		( 'client',), """
 		Identification of the client, used to load balance
 		in the client director.
+		"""
+	),
+	('local.ip',
+		'IP',
+		( 'client',),
+		( ), """
+		The IP address of the local end of the TCP connection.
 		"""
 	),
 	('server.ip',

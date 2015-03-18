@@ -593,29 +593,26 @@ VRT_r_req_##field(VRT_CTX)				\
 
 /*--------------------------------------------------------------------*/
 
-VCL_IP
-VRT_r_client_ip(VRT_CTX)
-{
-	struct suckaddr *sa;
+#define GIP(fld)						\
+	VCL_IP							\
+	VRT_r_##fld##_ip(VRT_CTX)				\
+	{							\
+		struct suckaddr *sa;				\
+								\
+		CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
+		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);		\
+		CHECK_OBJ_NOTNULL(ctx->req->sp, SESS_MAGIC);	\
+		AZ(SES_Get_##fld##_addr(ctx->req->sp, &sa));	\
+		return (sa);					\
+	}
 
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->sp, SESS_MAGIC);
-	AZ(SES_Get_remote_addr(ctx->req->sp, &sa));
-	return (sa);
-}
+GIP(local)
+GIP(remote)
+GIP(client)
+GIP(server)
+#undef GIP
 
-VCL_IP
-VRT_r_server_ip(VRT_CTX)
-{
-	struct suckaddr *sa;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->req->sp, SESS_MAGIC);
-	AZ(SES_Get_local_addr(ctx->req->sp, &sa));
-	return (sa);
-}
+/*--------------------------------------------------------------------*/
 
 const char*
 VRT_r_server_identity(VRT_CTX)
