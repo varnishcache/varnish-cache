@@ -393,8 +393,6 @@ mgt_launch_child(struct cli *cli)
 	mgt_child_inherit(heritage.cli_out, NULL);
 	closex(&heritage.cli_out);
 
-	MAC_reopen_sockets(cli);
-
 	child_std_vlu = VLU_New(NULL, child_line, 0);
 	AN(child_std_vlu);
 
@@ -485,6 +483,8 @@ mgt_reap_child(void)
 	if (r != child_pid)
 		fprintf(stderr, "WAIT 0x%jx\n", (uintmax_t)r);
 	assert(r == child_pid);
+
+	MAC_reopen_sockets(NULL);
 
 	/* Compose obituary */
 	vsb = VSB_new_auto();
