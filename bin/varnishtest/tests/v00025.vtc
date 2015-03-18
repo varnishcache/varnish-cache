@@ -22,6 +22,8 @@ varnish v1 -arg "-i J.F.Nobody" -vcl+backend {
 		set resp.http.esi = req.esi;
 		set resp.http.be = req.backend_hint;
 		set resp.http.c_id = client.identity;
+		set resp.http.l_ip = local.ip;
+		set resp.http.r_ip = remote.ip;
 		if (obj.uncacheable) { }
 	}
 
