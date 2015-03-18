@@ -11,7 +11,8 @@ Changes from 3.0.6 to 3.0.7-rc1 (2015-03-18)
 - Improved error detection on master-child process communication, leading to
   faster recovery (child restart) if communication loses sync.
 
-- Only emit passed Content_Length header when response mode is RES_LEN.  Bug 1627_.
+- Fix a corner-case where Content-Length was wrong for HTTP 1.0 clients,
+  when using gzip and streaming. Bug 1627_.
 
 - More robust handling of hop-by-hop headers.
 
