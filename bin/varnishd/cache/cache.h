@@ -674,10 +674,6 @@ struct sess {
 
 	uint16_t		sattr[SA_LAST];
 
-	/* formatted ascii client address */
-	char			*client_addr_str;
-	char			*client_port_str;
-
 	/* Timestamps, all on TIM_real() timescale */
 	double			t_open;		/* fd accepted */
 	double			t_idle;		/* fd accepted or resp sent */
@@ -1008,6 +1004,8 @@ void SES_sess_pool_task(struct worker *wrk, void *arg);
 	void SES_Reserve_##low(struct sess *sp, typ *dst);
 #include "tbl/sess_attr.h"
 #undef SESS_ATTR
+void SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src);
+const char *SES_Get_String_Attr(const struct sess *sp, enum sess_attr a);
 
 /* cache_shmlog.c */
 extern struct VSC_C_main *VSC_C_main;

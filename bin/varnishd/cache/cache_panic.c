@@ -430,12 +430,15 @@ static void
 pan_sess(const struct sess *sp)
 {
 	const char *stp;
+	char *ci;
+	char *cp;
 
 	VSB_printf(pan_vsp, "  sp = %p {\n", sp);
 	VSB_printf(pan_vsp, "    fd = %d, vxid = %u,\n",
 	    sp->fd, VXID(sp->vxid));
-	VSB_printf(pan_vsp, "    client = %s %s,\n", sp->client_addr_str,
-		sp->client_port_str);
+	AZ(SES_Get_client_ip(sp, &ci));
+	AZ(SES_Get_client_port(sp, &cp));
+	VSB_printf(pan_vsp, "    client = %s %s,\n", ci, cp);
 	switch (sp->sess_step) {
 #define SESS_STEP(l, u) case S_STP_##u: stp = "S_STP_" #u; break;
 #include "tbl/steps.h"

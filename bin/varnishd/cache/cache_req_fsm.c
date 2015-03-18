@@ -559,6 +559,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	unsigned recv_handling;
 	struct SHA256Context sha256ctx;
 	const char *xff;
+	char *ci, *cp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -570,8 +571,9 @@ cnt_recv(struct worker *wrk, struct req *req)
 	AZ(isnan(req->t_prev));
 	AZ(isnan(req->t_req));
 
-	VSLb(req->vsl, SLT_ReqStart, "%s %s",
-	    req->sp->client_addr_str, req->sp->client_port_str);
+	AZ(SES_Get_client_ip(req->sp, &ci));
+	AZ(SES_Get_client_port(req->sp, &cp));
+	VSLb(req->vsl, SLT_ReqStart, "%s %s", ci, cp);
 
 	http_VSL_log(req->http);
 
@@ -584,10 +586,9 @@ cnt_recv(struct worker *wrk, struct req *req)
 		if (http_GetHdr(req->http, H_X_Forwarded_For, &xff)) {
 			http_Unset(req->http, H_X_Forwarded_For);
 			http_PrintfHeader(req->http, "X-Forwarded-For: %s, %s",
-			    xff, req->sp->client_addr_str);
+			    xff, ci);
 		} else {
-			http_PrintfHeader(req->http, "X-Forwarded-For: %s",
-			    req->sp->client_addr_str);
+			http_PrintfHeader(req->http, "X-Forwarded-For: %s", ci);
 		}
 	}
 

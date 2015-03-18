@@ -107,11 +107,50 @@ ses_reserve_attr(struct sess *sp, enum sess_attr a, void **dst, int sz)
 	void								\
 	SES_Reserve_##low(struct sess *sp, typ *dst)			\
 	{								\
+		assert(len >= 0);					\
 		ses_reserve_attr(sp, SA_##UP, (void*)dst, len);		\
 	}
 
 #include "tbl/sess_attr.h"
 #undef SESS_ATTR
+
+void
+SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src)
+{
+	void *q;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	AN(src);
+
+	switch (a) {
+#define SESS_ATTR(UP, low, typ, len)	case SA_##UP: assert(len < 0); break;
+#include "tbl/sess_attr.h"
+#undef SESS_ATTR
+	default:  WRONG("wrong sess_attr");
+	}
+
+	ses_reserve_attr(sp, a, &q, strlen(src) + 1);
+	strcpy(q, src);
+}
+
+const char *
+SES_Get_String_Attr(const struct sess *sp, enum sess_attr a)
+{
+	void *q;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+
+	switch (a) {
+#define SESS_ATTR(UP, low, typ, len)	case SA_##UP: assert(len < 0); break;
+#include "tbl/sess_attr.h"
+#undef SESS_ATTR
+	default:  WRONG("wrong sess_attr");
+	}
+
+	if (ses_get_attr(sp, a, &q) < 0)
+		return (NULL);
+	return (q);
+}
 
 /*--------------------------------------------------------------------
  * Get a new session, preferably by recycling an already ready one

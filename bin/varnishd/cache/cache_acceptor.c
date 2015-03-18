@@ -297,6 +297,8 @@ vca_make_session(struct worker *wrk, void *arg)
 	socklen_t sl;
 	char laddr[VTCP_ADDRBUFSIZE];
 	char lport[VTCP_PORTBUFSIZE];
+	char raddr[VTCP_ADDRBUFSIZE];
+	char rport[VTCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(wa, arg, WRK_ACCEPT_MAGIC);
@@ -333,11 +335,9 @@ vca_make_session(struct worker *wrk, void *arg)
 	SES_Reserve_client_addr(sp, &sa);
 	AN(VSA_Build(sa, &wa->acceptaddr, wa->acceptaddrlen));
 
-	VTCP_name(sa, laddr, sizeof laddr, lport, sizeof lport);
-	sp->client_addr_str = WS_Copy(sp->ws, laddr, -1);
-	AN(sp->client_addr_str);
-	sp->client_port_str = WS_Copy(sp->ws, lport, -1);
-	AN(sp->client_port_str);
+	VTCP_name(sa, raddr, sizeof raddr, rport, sizeof rport);
+	SES_Set_String_Attr(sp, SA_CLIENT_IP, raddr);
+	SES_Set_String_Attr(sp, SA_CLIENT_PORT, rport);
 
 	sl = sizeof ss;
 	AZ(getsockname(sp->fd, (void*)&ss, &sl));
@@ -350,8 +350,7 @@ vca_make_session(struct worker *wrk, void *arg)
 
 	VSL(SLT_Begin, sp->vxid, "sess 0 HTTP/1");
 	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f %d",
-	    sp->client_addr_str, sp->client_port_str,
-	    wa->acceptlsock->name, laddr, lport,
+	    raddr, rport, wa->acceptlsock->name, laddr, lport,
 	    sp->t_open, sp->fd);
 
 	WS_Release(wrk->aws, 0);

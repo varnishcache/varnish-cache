@@ -238,8 +238,7 @@ VRT_r_client_identity(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	if (ctx->req->client_identity != NULL)
 		return (ctx->req->client_identity);
-	else
-		return (ctx->req->sp->client_addr_str);
+	return(SES_Get_String_Attr(ctx->req->sp, SA_CLIENT_IP));
 }
 
 void
