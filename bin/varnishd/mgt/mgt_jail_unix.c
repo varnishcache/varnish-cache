@@ -30,9 +30,10 @@
 
 #include "config.h"
 
-#include <pwd.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <grp.h>
+#include <pwd.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

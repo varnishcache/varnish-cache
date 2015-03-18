@@ -37,6 +37,7 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 
+#include <errno.h>
 #include <stdio.h>
 
 #include "cache/cache.h"

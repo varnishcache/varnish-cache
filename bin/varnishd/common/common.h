@@ -28,7 +28,6 @@
  *
  */
 
-#include <errno.h>
 #include <stdint.h>
 
 #include <sys/types.h>

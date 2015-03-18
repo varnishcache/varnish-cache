@@ -35,6 +35,7 @@
 
 #include "config.h"
 
+#include <errno.h>
 #include <inttypes.h>
 
 #include "cache/cache.h"

@@ -39,7 +39,6 @@
 #  define VBIG_ENDIAN	__BIG_ENDIAN
 #endif
 
-#include <errno.h>
 #include <stdint.h>
 #include <string.h>
 

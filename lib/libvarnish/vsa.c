@@ -33,7 +33,6 @@
 
 #include "config.h"
 
-#include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 #include <sys/socket.h>

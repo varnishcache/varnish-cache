@@ -28,7 +28,6 @@
 
 #include "config.h"
 
-#include <errno.h>
 #include <pcre.h>
 #include <string.h>
 
