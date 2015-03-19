@@ -365,7 +365,6 @@ SES_Close(struct sess *sp, enum sess_close reason)
 	int i;
 
 	assert(sp->fd >= 0);
-	sp->reason = reason;
 	i = close(sp->fd);
 	assert(i == 0 || errno != EBADF); /* XXX EINVAL seen */
 	sp->fd = -1;
@@ -397,7 +396,7 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
 
 	assert(VTAILQ_EMPTY(&sp->privs->privs));
 	VSL(SLT_SessClose, sp->vxid, "%s %.3f",
-	    sess_close_2str(sp->reason, 0), now - sp->t_open);
+	    sess_close_2str(reason, 0), now - sp->t_open);
 	VSL(SLT_End, sp->vxid, "%s", "");
 
 	Lck_Delete(&sp->mtx);

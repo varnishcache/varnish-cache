@@ -659,7 +659,6 @@ struct sess {
 	enum sess_step		sess_step;
 	struct lock		mtx;
 	int			fd;
-	enum sess_close		reason;
 	uint32_t		vxid;
 
 	/* Cross references ------------------------------------------*/
