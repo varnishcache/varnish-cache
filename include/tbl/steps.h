@@ -31,8 +31,8 @@
 /*lint -save -e525 -e539 */
 
 #ifdef SESS_STEP
-SESS_STEP(newreq,	NEWREQ)
-SESS_STEP(working,	WORKING)
+SESS_STEP(h1newreq,	H1NEWREQ)
+SESS_STEP(h1working,	H1WORKING)
 #endif
 
 #ifdef REQ_STEP

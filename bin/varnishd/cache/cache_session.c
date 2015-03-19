@@ -228,7 +228,7 @@ SES_sess_pool_task(struct worker *wrk, void *arg)
 	req = SES_GetReq(wrk, sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	sp->sess_step = S_STP_NEWREQ;
+	sp->sess_step = S_STP_H1NEWREQ;
 
 	wrk->task.func = ses_req_pool_task;
 	wrk->task.priv = req;

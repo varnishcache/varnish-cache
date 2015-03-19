@@ -347,7 +347,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 	 * or waiter, but we'd rather do the syscall in the worker thread.
 	 * On systems which return errors for ioctl, we close early
 	 */
-	if (sp->sess_step == S_STP_NEWREQ && VTCP_blocking(sp->fd)) {
+	if (sp->sess_step == S_STP_H1NEWREQ && VTCP_blocking(sp->fd)) {
 		if (errno == ECONNRESET)
 			SES_Close(sp, SC_REM_CLOSE);
 		else
@@ -370,7 +370,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 		return;
 	}
 
-	if (sp->sess_step == S_STP_NEWREQ) {
+	if (sp->sess_step == S_STP_H1NEWREQ) {
 		req->htc->fd = sp->fd;
 		HTTP1_RxInit(req->htc, req->ws,
 		    cache_param->http_req_size, cache_param->http_req_hdr_len);
@@ -378,11 +378,11 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 
 	while (1) {
 		assert(
-		    sp->sess_step == S_STP_NEWREQ ||
+		    sp->sess_step == S_STP_H1NEWREQ ||
 		    req->req_step == R_STP_LOOKUP ||
 		    req->req_step == R_STP_RECV);
 
-		if (sp->sess_step == S_STP_WORKING) {
+		if (sp->sess_step == S_STP_H1WORKING) {
 			if (req->req_step == R_STP_RECV)
 				nxt = http1_dissect(wrk, req);
 			if (nxt == REQ_FSM_MORE)
@@ -395,10 +395,10 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			case SESS_DONE_RET_GONE:
 				return;
 			case SESS_DONE_RET_WAIT:
-				sp->sess_step = S_STP_NEWREQ;
+				sp->sess_step = S_STP_H1NEWREQ;
 				break;
 			case SESS_DONE_RET_START:
-				sp->sess_step = S_STP_WORKING;
+				sp->sess_step = S_STP_H1WORKING;
 				req->req_step = R_STP_RECV;
 				break;
 			default:
@@ -406,11 +406,11 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			}
 		}
 
-		if (sp->sess_step == S_STP_NEWREQ) {
+		if (sp->sess_step == S_STP_H1NEWREQ) {
 			nxt = http1_wait(sp, wrk, req);
 			if (nxt != REQ_FSM_MORE)
 				return;
-			sp->sess_step = S_STP_WORKING;
+			sp->sess_step = S_STP_H1WORKING;
 			req->req_step = R_STP_RECV;
 		}
 	}
