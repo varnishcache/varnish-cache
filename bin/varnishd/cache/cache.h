@@ -384,8 +384,8 @@ struct lru {
 struct waited {
 	unsigned		magic;
 #define WAITED_MAGIC		0x1743992d
-	VTAILQ_ENTRY(waited)	list;
 	int			fd;
+	VTAILQ_ENTRY(waited)	list;
 	void			*ptr;
 	double			idle;
 #if defined(HAVE_EPOLL_CTL)
