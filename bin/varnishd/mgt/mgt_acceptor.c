@@ -133,6 +133,7 @@ mac_callback(void *priv, const struct suckaddr *sa)
 	ls->sock = -1;
 	ls->addr = sa;
 	ls->first_step = S_STP_H1NEWSESS;
+	ls->proto_name = "HTTP/1";
 	fail = mac_opensocket(ls, NULL);
 	if (ls->sock < 0) {
 		*(mh->err) = strerror(fail);

@@ -40,6 +40,7 @@ struct listen_sock {
 	const char			*name;
 	const struct suckaddr		*addr;
 	enum sess_step			first_step;
+	const char			*proto_name;
 };
 
 VTAILQ_HEAD(listen_sock_head, listen_sock);

@@ -296,6 +296,8 @@ vca_make_session(struct worker *wrk, void *arg)
 	struct wrk_accept *wa;
 	struct sockaddr_storage ss;
 	struct suckaddr *sa;
+	enum sess_step first_step;
+	const char *proto_name;
 	socklen_t sl;
 	char laddr[VTCP_ADDRBUFSIZE];
 	char lport[VTCP_PORTBUFSIZE];
@@ -305,6 +307,8 @@ vca_make_session(struct worker *wrk, void *arg)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(wa, arg, WRK_ACCEPT_MAGIC);
 	pp = wa->sesspool;
+	first_step = wa->acceptlsock->first_step;
+	proto_name = wa->acceptlsock->proto_name;
 
 	/* Turn accepted socket into a session */
 	AN(wrk->aws->r);
@@ -348,7 +352,7 @@ vca_make_session(struct worker *wrk, void *arg)
 
 	VTCP_name(sa, laddr, sizeof laddr, lport, sizeof lport);
 
-	VSL(SLT_Begin, sp->vxid, "sess 0 HTTP/1");
+	VSL(SLT_Begin, sp->vxid, "sess 0 %s", proto_name);
 	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f %d",
 	    raddr, rport, wa->acceptlsock->name, laddr, lport,
 	    sp->t_open, sp->fd);
@@ -363,6 +367,8 @@ vca_make_session(struct worker *wrk, void *arg)
 		need_test = 0;
 	}
 	vca_tcp_opt_set(sp->fd, 0);
+
+	assert(first_step == S_STP_H1NEWSESS);
 	/* SES_sess_pool_task() must be sceduled with reserved WS */
 	assert(8 == WS_Reserve(sp->ws, 8));
 	wrk->task.func = SES_sess_pool_task;
