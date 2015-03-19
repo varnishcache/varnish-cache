@@ -62,6 +62,12 @@ enum obj_flags {
 #undef OBJ_FLAG
 };
 
+enum sess_step {
+#define SESS_STEP(l, u)		S_STP_##u,
+#include "tbl/steps.h"
+#undef SESS_STEP
+};
+
 struct cli;
 
 /**********************************************************************

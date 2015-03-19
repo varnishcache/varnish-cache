@@ -139,12 +139,6 @@ typedef struct {
 
 /*--------------------------------------------------------------------*/
 
-enum sess_step {
-#define SESS_STEP(l, u)		S_STP_##u,
-#include "tbl/steps.h"
-#undef SESS_STEP
-};
-
 enum req_step {
 #define REQ_STEP(l, u, arg)	R_STP_##u,
 #include "tbl/steps.h"

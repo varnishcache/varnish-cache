@@ -31,6 +31,7 @@
 /*lint -save -e525 -e539 */
 
 #ifdef SESS_STEP
+SESS_STEP(h1newsess,	H1NEWSESS)
 SESS_STEP(h1newreq,	H1NEWREQ)
 SESS_STEP(h1working,	H1WORKING)
 #endif
