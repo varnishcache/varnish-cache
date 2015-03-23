@@ -115,6 +115,8 @@ struct mac_help {
 	const char		*name;
 	int			good;
 	const char		**err;
+	const char		*proto_name;
+	enum sess_step		first_step;
 };
 
 static int __match_proto__(vss_resolver_f)
@@ -132,8 +134,8 @@ mac_callback(void *priv, const struct suckaddr *sa)
 	AN(ls);
 	ls->sock = -1;
 	ls->addr = sa;
-	ls->first_step = S_STP_H1NEWSESS;
-	ls->proto_name = "HTTP/1";
+	ls->proto_name = mh->proto_name;
+	ls->first_step = mh->first_step;
 	fail = mac_opensocket(ls, NULL);
 	if (ls->sock < 0) {
 		*(mh->err) = strerror(fail);
@@ -180,6 +182,8 @@ MAC_Arg(const char *arg)
 	AN(mh);
 	mh->name = av[1];
 	mh->err = &err;
+	mh->first_step = S_STP_H1NEWSESS;
+	mh->proto_name = "HTTP/1";
 	error = VSS_resolver(av[1], "80", mac_callback, mh, &err);
 	if (mh->good == 0 || err != NULL)
 		ARGV_ERR("Could not bind to address %s: %s\n", av[1], err);
