@@ -296,8 +296,6 @@ vca_make_session(struct worker *wrk, void *arg)
 	struct wrk_accept *wa;
 	struct sockaddr_storage ss;
 	struct suckaddr *sa;
-	enum sess_step first_step;
-	const char *proto_name;
 	socklen_t sl;
 	char laddr[VTCP_ADDRBUFSIZE];
 	char lport[VTCP_PORTBUFSIZE];
@@ -307,8 +305,6 @@ vca_make_session(struct worker *wrk, void *arg)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(wa, arg, WRK_ACCEPT_MAGIC);
 	pp = wa->sesspool;
-	first_step = wa->acceptlsock->first_step;
-	proto_name = wa->acceptlsock->proto_name;
 
 	/* Turn accepted socket into a session */
 	AN(wrk->aws->r);
@@ -334,6 +330,7 @@ vca_make_session(struct worker *wrk, void *arg)
 
 	sp->fd = wa->acceptsock;
 	wa->acceptsock = -1;
+	sp->sess_step = wa->acceptlsock->first_step;
 
 	assert(wa->acceptaddrlen <= vsa_suckaddr_len);
 	SES_Reserve_remote_addr(sp, &sa);
@@ -352,7 +349,7 @@ vca_make_session(struct worker *wrk, void *arg)
 
 	VTCP_name(sa, laddr, sizeof laddr, lport, sizeof lport);
 
-	VSL(SLT_Begin, sp->vxid, "sess 0 %s", proto_name);
+	VSL(SLT_Begin, sp->vxid, "sess 0 %s", wa->acceptlsock->proto_name);
 	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f %d",
 	    raddr, rport, wa->acceptlsock->name, laddr, lport,
 	    sp->t_open, sp->fd);
@@ -368,7 +365,6 @@ vca_make_session(struct worker *wrk, void *arg)
 	}
 	vca_tcp_opt_set(sp->fd, 0);
 
-	xxxassert(first_step == S_STP_H1NEWSESS);
 	/* SES_Proto_Sess() must be sceduled with reserved WS */
 	assert(8 == WS_Reserve(sp->ws, 8));
 	wrk->task.func = SES_Proto_Sess;

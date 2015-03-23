@@ -175,15 +175,19 @@ MAC_Arg(const char *arg)
 		ARGV_ERR("Parse error: out of memory\n");
 	if (av[0] != NULL)
 		ARGV_ERR("%s\n", av[0]);
-	if (av[2] != NULL)
-		ARGV_ERR("XXX: not yet\n");
 
 	ALLOC_OBJ(mh, MAC_HELP_MAGIC);
 	AN(mh);
 	mh->name = av[1];
+
+	if (av[2] == NULL || !strcmp(av[2], "HTTP/1")) {
+		mh->first_step = S_STP_H1NEWSESS;
+		mh->proto_name = "HTTP/1";
+	} else {
+		ARGV_ERR("Unknown protocol '%s'\n", av[2]);
+	}
+
 	mh->err = &err;
-	mh->first_step = S_STP_H1NEWSESS;
-	mh->proto_name = "HTTP/1";
 	error = VSS_resolver(av[1], "80", mac_callback, mh, &err);
 	if (mh->good == 0 || err != NULL)
 		ARGV_ERR("Could not bind to address %s: %s\n", av[1], err);

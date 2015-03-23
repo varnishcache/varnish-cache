@@ -6,5 +6,5 @@ varnishtest "Check that we fail to start if any listen address does not work"
 # All bad listen addresses
 err_shell "Could not bind to address 192.0.2.255:0" {${varnishd} -F -a "${bad_ip}:0" -b /// -n ${tmpdir} 2>&1 }
 
-# Just one bad listen addresses
-err_shell "Error: XXX: not yet" {${varnishd} -F -a "127.0.0.1:0,${bad_ip}:0" -b /// -n ${tmpdir} 2>&1 }
+# old style address list
+err_shell "Unknown protocol" {${varnishd} -F -a "127.0.0.1:0,${bad_ip}:0" -b /// -n ${tmpdir} 2>&1 }
