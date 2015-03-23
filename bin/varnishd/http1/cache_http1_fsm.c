@@ -56,7 +56,7 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 	struct pollfd pfd[1];
 	double now, when;
 	enum sess_close why = SC_NULL;
-	enum http1_status_e hs;
+	enum htc_status_e hs;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -80,10 +80,12 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 		assert(j >= 0);
 		now = VTIM_real();
 		if (j != 0)
-			hs = HTTP1_Rx(req->htc);
+			hs = SES_Rx(req->htc);
 		else
+			hs = HTC_S_OK;			// XXX HTC_S_TIMEOUT ?
+		if (hs == HTC_S_OK)
 			hs = HTTP1_Complete(req->htc);
-		if (hs == HTTP1_COMPLETE) {
+		if (hs == HTC_S_COMPLETE) {
 			/* Got it, run with it */
 			if (isnan(req->t_first))
 				req->t_first = now;
@@ -92,13 +94,13 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			req->acct.req_hdrbytes +=
 			    req->htc->rxbuf_e - req->htc->rxbuf_b;
 			return (REQ_FSM_MORE);
-		} else if (hs == HTTP1_ERROR_EOF) {
+		} else if (hs == HTC_S_EOF) {
 			why = SC_REM_CLOSE;
 			break;
-		} else if (hs == HTTP1_OVERFLOW) {
+		} else if (hs == HTC_S_OVERFLOW) {
 			why = SC_RX_OVERFLOW;
 			break;
-		} else if (hs == HTTP1_ALL_WHITESPACE) {
+		} else if (hs == HTC_S_EMPTY) {
 			/* Nothing but whitespace */
 			when = sp->t_idle + cache_param->timeout_idle;
 			if (when < now) {
@@ -208,7 +210,8 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	WS_Reset(req->ws, NULL);
 	WS_Reset(wrk->aws, NULL);
 
-	if (HTTP1_Reinit(req->htc) == HTTP1_COMPLETE) {
+	SES_RxReInit(req->htc);
+	if (HTTP1_Complete(req->htc) == HTC_S_COMPLETE) {
 		AZ(req->vsl->wid);
 		req->t_first = req->t_req = sp->t_idle;
 		wrk->stats->sess_pipeline++;
@@ -372,7 +375,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 
 	if (sp->sess_step == S_STP_H1NEWREQ) {
 		req->htc->fd = sp->fd;
-		HTTP1_RxInit(req->htc, req->ws,
+		SES_RxInit(req->htc, req->ws,
 		    cache_param->http_req_size, cache_param->http_req_hdr_len);
 	}
 

@@ -76,7 +76,7 @@ int
 V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 {
 	struct http *hp;
-	enum http1_status_e hs;
+	enum htc_status_e hs;
 	int retry = 1;
 	int j, first;
 	ssize_t i;
@@ -144,7 +144,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 
 	/* Receive response */
 
-	HTTP1_RxInit(htc, bo->ws, cache_param->http_resp_size,
+	SES_RxInit(htc, bo->ws, cache_param->http_resp_size,
 	    cache_param->http_resp_hdr_len);
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
@@ -153,8 +153,10 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 
 	first = 1;
 	do {
-		hs = HTTP1_Rx(htc);
-		if (hs == HTTP1_OVERFLOW) {
+		hs = SES_Rx(htc);
+		if (hs == HTC_S_OK)
+			hs = HTTP1_Complete(htc);
+		if (hs == HTC_S_OVERFLOW) {
 			bo->acct.beresp_hdrbytes +=
 			    htc->rxbuf_e - htc->rxbuf_b;
 			VSLb(bo->vsl, SLT_FetchError,
@@ -163,7 +165,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 			bo->doclose = SC_RX_OVERFLOW;
 			return (-1);
 		}
-		if (hs == HTTP1_ERROR_EOF) {
+		if (hs == HTC_S_EOF) {
 			bo->acct.beresp_hdrbytes +=
 			    htc->rxbuf_e - htc->rxbuf_b;
 			VSLb(bo->vsl, SLT_FetchError, "http %sread error: EOF",
@@ -177,7 +179,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 			VTCP_set_read_timeout(htc->fd,
 			    htc->between_bytes_timeout);
 		}
-	} while (hs != HTTP1_COMPLETE);
+	} while (hs != HTC_S_COMPLETE);
 	bo->acct.beresp_hdrbytes += htc->rxbuf_e - htc->rxbuf_b;
 
 	hp = bo->beresp;

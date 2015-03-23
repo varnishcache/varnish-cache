@@ -853,19 +853,7 @@ enum sess_close http_DoConnection(struct http *hp);
 
 /* cache_http1_proto.c */
 
-enum http1_status_e {
-	HTTP1_ALL_WHITESPACE =	-3,
-	HTTP1_OVERFLOW =	-2,
-	HTTP1_ERROR_EOF =	-1,
-	HTTP1_NEED_MORE =	 0,
-	HTTP1_COMPLETE =	 1
-};
-
-void HTTP1_RxInit(struct http_conn *htc, struct ws *ws,
-    unsigned maxbytes, unsigned maxhdr);
-enum http1_status_e HTTP1_Reinit(struct http_conn *htc);
-enum http1_status_e HTTP1_Rx(struct http_conn *htc);
-enum http1_status_e HTTP1_Complete(struct http_conn *htc);
+enum htc_status_e HTTP1_Complete(struct http_conn *htc);
 uint16_t HTTP1_DissectRequest(struct http_conn *htc, struct http *hp);
 uint16_t HTTP1_DissectResponse(struct http *sp, struct http_conn *htc);
 unsigned HTTP1_Write(const struct worker *w, const struct http *hp, const int*);
@@ -994,6 +982,19 @@ int SES_Reschedule_Req(struct req *);
 struct req *SES_GetReq(const struct worker *, struct sess *);
 void SES_ReleaseReq(struct req *);
 task_func_t SES_Proto_Sess;
+
+enum htc_status_e {
+	HTC_S_EMPTY =	-3,
+	HTC_S_OVERFLOW =	-2,
+	HTC_S_EOF =	-1,
+	HTC_S_OK =	 0,
+	HTC_S_COMPLETE =	 1
+};
+
+void SES_RxInit(struct http_conn *htc, struct ws *ws,
+    unsigned maxbytes, unsigned maxhdr);
+void SES_RxReInit(struct http_conn *htc);
+enum htc_status_e SES_Rx(struct http_conn *htc);
 
 #define SESS_ATTR(UP, low, typ, len)				\
 	int SES_Get_##low(const struct sess *sp, typ *dst);	\

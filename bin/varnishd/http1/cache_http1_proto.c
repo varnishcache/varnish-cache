@@ -57,58 +57,11 @@ const int HTTP1_Resp[3] = {
 	HTTP_HDR_PROTO, HTTP_HDR_STATUS, HTTP_HDR_REASON
 };
 
-/*--------------------------------------------------------------------*/
-
-void
-HTTP1_RxInit(struct http_conn *htc, struct ws *ws, unsigned maxbytes,
-    unsigned maxhdr)
-{
-
-	htc->magic = HTTP_CONN_MAGIC;
-	htc->ws = ws;
-	htc->maxbytes = maxbytes;
-	htc->maxhdr = maxhdr;
-
-	(void)WS_Reserve(htc->ws, htc->maxbytes);
-	htc->rxbuf_b = ws->f;
-	htc->rxbuf_e = ws->f;
-	*htc->rxbuf_e = '\0';
-	htc->pipeline_b = NULL;
-	htc->pipeline_e = NULL;
-}
-
-/*--------------------------------------------------------------------
- * Start over, and recycle any pipelined input.
- * The WS_Reset is safe, even though the pipelined input is stored in
- * the ws somewhere, because WS_Reset only fiddles pointers.
- */
-
-enum http1_status_e
-HTTP1_Reinit(struct http_conn *htc)
-{
-	ssize_t l;
-
-	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	(void)WS_Reserve(htc->ws, htc->maxbytes);
-	htc->rxbuf_b = htc->ws->f;
-	htc->rxbuf_e = htc->ws->f;
-	if (htc->pipeline_b != NULL) {
-		l = htc->pipeline_e - htc->pipeline_b;
-		assert(l > 0);
-		memmove(htc->rxbuf_b, htc->pipeline_b, l);
-		htc->rxbuf_e += l;
-		htc->pipeline_b = NULL;
-		htc->pipeline_e = NULL;
-	}
-	*htc->rxbuf_e = '\0';
-	return (HTTP1_Complete(htc));
-}
-
 /*--------------------------------------------------------------------
  * Check if we have a complete HTTP request or response yet
  */
 
-enum http1_status_e
+enum htc_status_e
 HTTP1_Complete(struct http_conn *htc)
 {
 	char *p;
@@ -127,12 +80,12 @@ HTTP1_Complete(struct http_conn *htc)
 		/* All white space */
 		htc->rxbuf_e = htc->rxbuf_b;
 		*htc->rxbuf_e = '\0';
-		return (HTTP1_ALL_WHITESPACE);
+		return (HTC_S_EMPTY);
 	}
 	while (1) {
 		p = strchr(p, '\n');
 		if (p == NULL)
-			return (HTTP1_NEED_MORE);
+			return (HTC_S_OK);
 		p++;
 		if (*p == '\r')
 			p++;
@@ -146,39 +99,7 @@ HTTP1_Complete(struct http_conn *htc)
 		htc->pipeline_e = htc->rxbuf_e;
 		htc->rxbuf_e = p;
 	}
-	return (HTTP1_COMPLETE);
-}
-
-/*--------------------------------------------------------------------
- * Receive more HTTP protocol bytes
- */
-
-enum http1_status_e
-HTTP1_Rx(struct http_conn *htc)
-{
-	int i;
-
-	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	AN(htc->ws->r);
-	AZ(htc->pipeline_b);
-	AZ(htc->pipeline_e);
-	i = (htc->ws->r - htc->rxbuf_e) - 1;	/* space for NUL */
-	if (i <= 0) {
-		WS_ReleaseP(htc->ws, htc->rxbuf_b);
-		return (HTTP1_OVERFLOW);
-	}
-	i = read(htc->fd, htc->rxbuf_e, i);
-	if (i <= 0) {
-		/*
-		 * We wouldn't come here if we had a complete HTTP header
-		 * so consequently an EOF can not be OK
-		 */
-		WS_ReleaseP(htc->ws, htc->rxbuf_b);
-		return (HTTP1_ERROR_EOF);
-	}
-	htc->rxbuf_e += i;
-	*htc->rxbuf_e = '\0';
-	return (HTTP1_Complete(htc));
+	return (HTC_S_COMPLETE);
 }
 
 /*--------------------------------------------------------------------

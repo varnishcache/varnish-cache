@@ -153,6 +153,84 @@ SES_Get_String_Attr(const struct sess *sp, enum sess_attr a)
 	return (q);
 }
 
+/*--------------------------------------------------------------------*/
+
+void
+SES_RxInit(struct http_conn *htc, struct ws *ws, unsigned maxbytes,
+    unsigned maxhdr)
+{
+
+	htc->magic = HTTP_CONN_MAGIC;
+	htc->ws = ws;
+	htc->maxbytes = maxbytes;
+	htc->maxhdr = maxhdr;
+
+	(void)WS_Reserve(htc->ws, htc->maxbytes);
+	htc->rxbuf_b = ws->f;
+	htc->rxbuf_e = ws->f;
+	*htc->rxbuf_e = '\0';
+	htc->pipeline_b = NULL;
+	htc->pipeline_e = NULL;
+}
+
+/*--------------------------------------------------------------------
+ * Start over, and recycle any pipelined input.
+ * The WS_Reset is safe, even though the pipelined input is stored in
+ * the ws somewhere, because WS_Reset only fiddles pointers.
+ */
+
+void
+SES_RxReInit(struct http_conn *htc)
+{
+	ssize_t l;
+
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	(void)WS_Reserve(htc->ws, htc->maxbytes);
+	htc->rxbuf_b = htc->ws->f;
+	htc->rxbuf_e = htc->ws->f;
+	if (htc->pipeline_b != NULL) {
+		l = htc->pipeline_e - htc->pipeline_b;
+		assert(l > 0);
+		memmove(htc->rxbuf_b, htc->pipeline_b, l);
+		htc->rxbuf_e += l;
+		htc->pipeline_b = NULL;
+		htc->pipeline_e = NULL;
+	}
+	*htc->rxbuf_e = '\0';
+}
+
+/*--------------------------------------------------------------------
+ * Receive more HTTP protocol bytes
+ */
+
+enum htc_status_e
+SES_Rx(struct http_conn *htc)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	AN(htc->ws->r);
+	AZ(htc->pipeline_b);
+	AZ(htc->pipeline_e);
+	i = (htc->ws->r - htc->rxbuf_e) - 1;	/* space for NUL */
+	if (i <= 0) {
+		WS_ReleaseP(htc->ws, htc->rxbuf_b);
+		return (HTC_S_OVERFLOW);
+	}
+	i = read(htc->fd, htc->rxbuf_e, i);
+	if (i <= 0) {
+		/*
+		 * We wouldn't come here if we had a complete HTTP header
+		 * so consequently an EOF can not be OK
+		 */
+		WS_ReleaseP(htc->ws, htc->rxbuf_b);
+		return (HTC_S_EOF);
+	}
+	htc->rxbuf_e += i;
+	*htc->rxbuf_e = '\0';
+	return (HTC_S_OK);
+}
+
 /*--------------------------------------------------------------------
  * Get a new session, preferably by recycling an already ready one
  *
