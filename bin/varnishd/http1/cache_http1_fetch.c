@@ -153,7 +153,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 
 	first = 1;
 	do {
-		hs = SES_Rx(htc);
+		hs = SES_Rx(htc, 0);
 		if (hs == HTC_S_OK)
 			hs = HTTP1_Complete(htc);
 		if (hs == HTC_S_OVERFLOW) {

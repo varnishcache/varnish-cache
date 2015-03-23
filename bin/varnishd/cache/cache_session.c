@@ -41,6 +41,7 @@
 #include "config.h"
 
 #include <errno.h>
+#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -205,9 +206,10 @@ SES_RxReInit(struct http_conn *htc)
  */
 
 enum htc_status_e
-SES_Rx(struct http_conn *htc)
+SES_Rx(struct http_conn *htc, double tmo)
 {
-	int i;
+	int i, j;
+	struct pollfd pfd[1];
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	AN(htc->ws->r);
@@ -216,6 +218,17 @@ SES_Rx(struct http_conn *htc)
 	i = (htc->ws->r - htc->rxbuf_e) - 1;	/* space for NUL */
 	if (i <= 0)
 		return (HTC_S_OVERFLOW);
+	if (tmo > 0.0) {
+		pfd[0].fd = htc->fd;
+		pfd[0].events = POLLIN;
+		pfd[0].revents = 0;
+		j = (int)floor(tmo * 1e3);
+		if (j == 0)
+			j++;
+		j = poll(pfd, 1, j);
+		if (j == 0)
+			return (HTC_S_TIMEOUT);
+	}
 	i = read(htc->fd, htc->rxbuf_e, i);
 	if (i <= 0)
 		return (HTC_S_EOF);
