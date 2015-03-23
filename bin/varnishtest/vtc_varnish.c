@@ -69,6 +69,7 @@ struct varnish {
 	int			vcl_nbr;
 	char			*workdir;
 	char			*jail;
+	char			*proto;
 
 	struct VSM_data		*vd;		/* vsc use */
 
@@ -396,6 +397,8 @@ varnish_launch(struct varnish *v)
 	VSB_printf(vsb, " -p thread_pool_min=10");
 	VSB_printf(vsb, " -p debug=+vtc_mode");
 	VSB_printf(vsb, " -a '%s'", "127.0.0.1:0");
+	if (v->proto != NULL)
+		VSB_printf(vsb, ",%s", v->proto);
 	VSB_printf(vsb, " -M '%s %s'", abuf, pbuf);
 	VSB_printf(vsb, " -P %s/varnishd.pid", v->workdir);
 	VSB_printf(vsb, " %s", VSB_data(v->args));
@@ -887,13 +890,6 @@ cmd_varnish(CMD_ARGS)
 	for (; *av != NULL; av++) {
 		if (vtc_error)
 			break;
-		if (!strcmp(*av, "-jail")) {
-			AN(av[1]);
-			AZ(v->pid);
-			REPLACE(v->jail, av[1]);
-			av++;
-			continue;
-		}
 		if (!strcmp(*av, "-arg")) {
 			AN(av[1]);
 			AZ(v->pid);
@@ -908,12 +904,6 @@ cmd_varnish(CMD_ARGS)
 			av++;
 			continue;
 		}
-		if (!strcmp(*av, "-cliok")) {
-			AN(av[1]);
-			varnish_cli(v, av[1], (unsigned)CLIS_OK);
-			av++;
-			continue;
-		}
 		if (!strcmp(*av, "-clierr")) {
 			AN(av[1]);
 			AN(av[2]);
@@ -921,13 +911,9 @@ cmd_varnish(CMD_ARGS)
 			av += 2;
 			continue;
 		}
-		if (!strcmp(*av, "-start")) {
-			varnish_start(v);
-			continue;
-		}
-		if (!strcmp(*av, "-vcl+backend")) {
+		if (!strcmp(*av, "-cliok")) {
 			AN(av[1]);
-			varnish_vclbackend(v, av[1]);
+			varnish_cli(v, av[1], (unsigned)CLIS_OK);
 			av++;
 			continue;
 		}
@@ -948,14 +934,44 @@ cmd_varnish(CMD_ARGS)
 			av += 2;
 			continue;
 		}
+		if (!strcmp(*av, "-expect")) {
+			av++;
+			varnish_expect(v, av);
+			av += 2;
+			continue;
+		}
+		if (!strcmp(*av, "-jail")) {
+			AN(av[1]);
+			AZ(v->pid);
+			REPLACE(v->jail, av[1]);
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-proto")) {
+			AN(av[1]);
+			AZ(v->pid);
+			REPLACE(v->proto, av[1]);
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-start")) {
+			varnish_start(v);
+			continue;
+		}
+		if (!strcmp(*av, "-stop")) {
+			varnish_stop(v);
+			continue;
+		}
 		if (!strcmp(*av, "-vcl")) {
 			AN(av[1]);
 			varnish_vcl(v, av[1], CLIS_OK, NULL);
 			av++;
 			continue;
 		}
-		if (!strcmp(*av, "-stop")) {
-			varnish_stop(v);
+		if (!strcmp(*av, "-vcl+backend")) {
+			AN(av[1]);
+			varnish_vclbackend(v, av[1]);
+			av++;
 			continue;
 		}
 		if (!strcmp(*av, "-wait-stopped")) {
@@ -968,12 +984,6 @@ cmd_varnish(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-wait")) {
 			varnish_wait(v);
-			continue;
-		}
-		if (!strcmp(*av, "-expect")) {
-			av++;
-			varnish_expect(v, av);
-			av += 2;
 			continue;
 		}
 		vtc_log(v->vl, 0, "Unknown varnish argument: %s", *av);
