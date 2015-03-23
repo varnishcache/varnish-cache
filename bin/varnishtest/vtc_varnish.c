@@ -786,11 +786,13 @@ varnish_expect(const struct varnish *v, char * const *av) {
 		bprintf(sp.target_type, "%.*s", (int)(p - r), r);
 		p++;
 		q = strrchr(p, '.');
-		bprintf(sp.target_name, "%s", q + 1);
-		if (q == p)
+		if (q == NULL) {
 			sp.target_ident[0] = '\0';
-		else
+			bprintf(sp.target_name, "%s", p);
+		} else {
 			bprintf(sp.target_ident, "%.*s", (int)(q - p), p);
+			bprintf(sp.target_name, "%s", q + 1);
+		}
 	}
 
 	sp.val = 0;
