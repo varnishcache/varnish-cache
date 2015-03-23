@@ -533,7 +533,7 @@ hsh_rush(struct worker *wrk, struct objhead *oh)
 		AZ(req->wrk);
 		VTAILQ_REMOVE(&wl->list, req, w_list);
 		DSL(DBG_WAITINGLIST, req->vsl->wid, "off waiting list");
-		if (SES_ScheduleReq(req)) {
+		if (SES_Reschedule_Req(req)) {
 			/*
 			 * In case of overloads, we ditch the entire
 			 * waiting list.

@@ -987,10 +987,10 @@ void SES_Wait(struct sess *sp);
 void SES_Delete(struct sess *sp, enum sess_close reason, double now);
 struct sesspool *SES_NewPool(struct pool *pp, unsigned pool_no);
 void SES_DeletePool(struct sesspool *sp);
-int SES_ScheduleReq(struct req *);
+int SES_Reschedule_Req(struct req *);
 struct req *SES_GetReq(const struct worker *, struct sess *);
 void SES_ReleaseReq(struct req *);
-void SES_sess_pool_task(struct worker *wrk, void *arg);
+void SES_Proto_Sess(struct worker *wrk, void *arg);
 
 #define SESS_ATTR(UP, low, typ, len)				\
 	int SES_Get_##low(const struct sess *sp, typ *dst);	\

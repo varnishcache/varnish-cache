@@ -34,6 +34,7 @@
 SESS_STEP(h1newsess,	H1NEWSESS)
 SESS_STEP(h1newreq,	H1NEWREQ)
 SESS_STEP(h1working,	H1WORKING)
+SESS_STEP(h1_last,	H1_LAST)
 #endif
 
 #ifdef REQ_STEP

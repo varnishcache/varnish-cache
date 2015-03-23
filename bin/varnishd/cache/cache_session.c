@@ -189,11 +189,11 @@ SES_New(struct sesspool *pp)
 }
 
 /*--------------------------------------------------------------------
- * Process new/existing request on this session.
+ * Call protocol for this request
  */
 
 static void __match_proto__(task_func_t)
-ses_req_pool_task(struct worker *wrk, void *arg)
+ses_proto_req(struct worker *wrk, void *arg)
 {
 	struct req *req;
 
@@ -202,21 +202,30 @@ ses_req_pool_task(struct worker *wrk, void *arg)
 
 	THR_SetRequest(req);
 	AZ(wrk->aws->r);
-	wrk->lastused = NAN;
-	HTTP1_Session(wrk, req);
+	if (req->sp->sess_step < S_STP_H1_LAST) {
+		HTTP1_Session(wrk, req);
+		AZ(wrk->v1l);
+	} else {
+		WRONG("Wrong session step");
+	}
 	WS_Assert(wrk->aws);
-	AZ(wrk->v1l);
 	if (DO_DEBUG(DBG_VCLREL) && wrk->vcl != NULL)
 		VCL_Rel(&wrk->vcl);
 	THR_SetRequest(NULL);
 }
 
 /*--------------------------------------------------------------------
- * Allocate a request + vxid, call ses_req_pool_task()
+ * Call protocol for this session (new or from waiter)
+ *
+ * When sessions are rescheduled from the waiter, a struct pool_task
+ * is put on the reserved session workspace (for reasons of memory
+ * conservation).  This reservation is released as the first thing.
+ * The acceptor and any other code which schedules this function
+ * must obey this calling convention with a dummy reservation.
  */
 
 void __match_proto__(task_func_t)
-SES_sess_pool_task(struct worker *wrk, void *arg)
+SES_Proto_Sess(struct worker *wrk, void *arg)
 {
 	struct req *req;
 	struct sess *sp;
@@ -225,23 +234,25 @@ SES_sess_pool_task(struct worker *wrk, void *arg)
 	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
 	WS_Release(sp->ws, 0);
 
-	req = SES_GetReq(wrk, sp);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
-	sp->sess_step = S_STP_H1NEWREQ;
-
-	wrk->task.func = ses_req_pool_task;
-	wrk->task.priv = req;
+	if (sp->sess_step < S_STP_H1_LAST) {
+		req = SES_GetReq(wrk, sp);
+		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+		sp->sess_step = S_STP_H1NEWREQ;
+		wrk->task.func = ses_proto_req;
+		wrk->task.priv = req;
+	} else {
+		WRONG("Wrong session step");
+	}
 }
 
 /*--------------------------------------------------------------------
- * Schedule a request back on a work-thread from its sessions pool
+ * Reschedule a request on a work-thread from its sessions pool
  *
  * This is used to reschedule requests waiting on busy objects
  */
 
 int
-SES_ScheduleReq(struct req *req)
+SES_Reschedule_Req(struct req *req)
 {
 	struct sess *sp;
 	struct sesspool *pp;
@@ -253,7 +264,7 @@ SES_ScheduleReq(struct req *req)
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
 
-	req->task.func = ses_req_pool_task;
+	req->task.func = ses_proto_req;
 	req->task.priv = req;
 
 	return (Pool_Task(pp->pool, &req->task, POOL_QUEUE_FRONT));
@@ -288,7 +299,7 @@ ses_handle(struct waited *wp, enum wait_event ev, double now)
 		AN(pp->pool);
 		assert(sizeof *tp == WS_Reserve(sp->ws, sizeof *tp));
 		tp = (void*)sp->ws->f;
-		tp->func = SES_sess_pool_task;
+		tp->func = SES_Proto_Sess;
 		tp->priv = sp;
 		if (Pool_Task(pp->pool, tp, POOL_QUEUE_FRONT))
 			SES_Delete(sp, SC_OVERLOAD, now);

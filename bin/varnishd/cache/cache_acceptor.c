@@ -368,10 +368,10 @@ vca_make_session(struct worker *wrk, void *arg)
 	}
 	vca_tcp_opt_set(sp->fd, 0);
 
-	assert(first_step == S_STP_H1NEWSESS);
-	/* SES_sess_pool_task() must be sceduled with reserved WS */
+	xxxassert(first_step == S_STP_H1NEWSESS);
+	/* SES_Proto_Sess() must be sceduled with reserved WS */
 	assert(8 == WS_Reserve(sp->ws, 8));
-	wrk->task.func = SES_sess_pool_task;
+	wrk->task.func = SES_Proto_Sess;
 	wrk->task.priv = sp;
 }
 
