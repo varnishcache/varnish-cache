@@ -167,9 +167,9 @@
 
 #define CLI_PANIC_CLEAR							\
 	"panic.clear",							\
-	"panic.clear",							\
+	"panic.clear [-z]",						\
 	"\tClear the last panic, if any.",				\
-	0, 0
+	0, 1
 
 /*
  * Status/return codes in the CLI protocol

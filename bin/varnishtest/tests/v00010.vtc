@@ -49,6 +49,7 @@ client c1 {
 varnish v1 -wait-stopped
 varnish v1 -cliok "panic.show"
 varnish v1 -cliok "panic.clear"
+varnish v1 -expect MGT.child_panic == 1
 varnish v1 -clierr 300 "panic.clear"
 varnish v1 -cliok "start"
 varnish v1 -wait-running
@@ -65,7 +66,8 @@ client c1 {
 
 varnish v1 -wait-stopped
 varnish v1 -cliok "panic.show"
-varnish v1 -cliok "panic.clear"
+varnish v1 -cliok "panic.clear -z"
+varnish v1 -expect MGT.child_panic == 0
 varnish v1 -clierr 300 "panic.clear"
 varnish v1 -cliok "start"
 varnish v1 -wait-running
@@ -78,3 +80,5 @@ client c1 {
 	rxresp
 	expect resp.http.foo == "foo"
 } -run
+
+varnish v1 -cliok "panic.clear -z"

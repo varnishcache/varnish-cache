@@ -159,9 +159,17 @@ mcf_panic_show(struct cli *cli, const char * const *av, void *priv)
 void __match_proto__(cli_func_t)
 mcf_panic_clear(struct cli *cli, const char * const *av, void *priv)
 {
-	(void)av;
 	(void)priv;
 
+	if (av[2] != NULL && strcmp(av[2], "-z")) {
+		VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_Out(cli, "Unknown parameter \"%s\".", av[2]);
+		return;
+	} else if (av[2] != NULL) {
+		VSC_C_mgt->child_panic = static_VSC_C_mgt.child_panic = 0;
+		if (child_panic == NULL)
+			return;
+	}
 	if (child_panic == NULL) {
 		VCLI_SetResult(cli, CLIS_CANT);
 		VCLI_Out(cli, "No panic to clear");

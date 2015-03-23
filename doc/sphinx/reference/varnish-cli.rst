@@ -128,7 +128,7 @@ param.set <param> <value>
 panic.show
   Return the last panic, if any.
 
-panic.clear
+panic.clear [-z]
   Clear the last panic, if any.
 
 storage.list
