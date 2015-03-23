@@ -334,7 +334,7 @@ SLTM(ESI_xmlerror, 0, "ESI parser error or warning message",
 	" The log record describes the problem encountered."
 )
 
-SLTM(Hash, 0, "Value added to hash",
+SLTM(Hash, SLT_F_BINARY, "Value added to hash",
 	"This value was added to the object lookup hash.\n\n"
 	NODEF_NOTICE
 )
