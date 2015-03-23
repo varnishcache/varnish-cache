@@ -95,9 +95,11 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 			    req->htc->rxbuf_e - req->htc->rxbuf_b;
 			return (REQ_FSM_MORE);
 		} else if (hs == HTC_S_EOF) {
+			WS_ReleaseP(req->htc->ws, req->htc->rxbuf_b);
 			why = SC_REM_CLOSE;
 			break;
 		} else if (hs == HTC_S_OVERFLOW) {
+			WS_ReleaseP(req->htc->ws, req->htc->rxbuf_b);
 			why = SC_RX_OVERFLOW;
 			break;
 		} else if (hs == HTC_S_EMPTY) {

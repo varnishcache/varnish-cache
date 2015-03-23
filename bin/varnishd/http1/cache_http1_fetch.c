@@ -157,6 +157,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 		if (hs == HTC_S_OK)
 			hs = HTTP1_Complete(htc);
 		if (hs == HTC_S_OVERFLOW) {
+			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			bo->acct.beresp_hdrbytes +=
 			    htc->rxbuf_e - htc->rxbuf_b;
 			VSLb(bo->vsl, SLT_FetchError,
@@ -166,6 +167,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 			return (-1);
 		}
 		if (hs == HTC_S_EOF) {
+			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			bo->acct.beresp_hdrbytes +=
 			    htc->rxbuf_e - htc->rxbuf_b;
 			VSLb(bo->vsl, SLT_FetchError, "http %sread error: EOF",

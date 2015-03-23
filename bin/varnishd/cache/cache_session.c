@@ -214,19 +214,11 @@ SES_Rx(struct http_conn *htc)
 	AZ(htc->pipeline_b);
 	AZ(htc->pipeline_e);
 	i = (htc->ws->r - htc->rxbuf_e) - 1;	/* space for NUL */
-	if (i <= 0) {
-		WS_ReleaseP(htc->ws, htc->rxbuf_b);
+	if (i <= 0)
 		return (HTC_S_OVERFLOW);
-	}
 	i = read(htc->fd, htc->rxbuf_e, i);
-	if (i <= 0) {
-		/*
-		 * We wouldn't come here if we had a complete HTTP header
-		 * so consequently an EOF can not be OK
-		 */
-		WS_ReleaseP(htc->ws, htc->rxbuf_b);
+	if (i <= 0)
 		return (HTC_S_EOF);
-	}
 	htc->rxbuf_e += i;
 	*htc->rxbuf_e = '\0';
 	return (HTC_S_OK);
