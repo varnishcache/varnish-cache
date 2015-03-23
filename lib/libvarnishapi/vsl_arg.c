@@ -349,7 +349,7 @@ VSL_Arg(struct VSL_data *vsl, int opt, const char *arg)
 		return (1);
 	case 'T':
 		d = VNUM(arg);
-		if (!isnan(d))
+		if (isnan(d))
 			return (vsl_diag(vsl, "-T: Syntax error"));
 		if (d < 0.)
 			return (vsl_diag(vsl, "-T: Range error"));
