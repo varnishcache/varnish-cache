@@ -51,7 +51,7 @@
 static enum req_fsm_nxt
 http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 {
-	int tmo;
+	double tmo;
 	double now, when;
 	enum sess_close why = SC_NULL;
 	enum htc_status_e hs;
@@ -69,9 +69,9 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 	assert(isnan(req->t_prev));
 	assert(isnan(req->t_req));
 
-	tmo = (int)floor(1e3 * cache_param->timeout_linger);
+	tmo = cache_param->timeout_linger;
 	while (1) {
-		hs = SES_Rx(req->htc, tmo * 1e3);
+		hs = SES_Rx(req->htc, tmo);
 		now = VTIM_real();
 		if (hs == HTC_S_OK || hs == HTC_S_TIMEOUT)
 			hs = HTTP1_Complete(req->htc);
@@ -100,8 +100,8 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 				break;
 			}
 			when = sp->t_idle + cache_param->timeout_linger;
-			tmo = (int)floor(1e3 * (when - now));
-			if (when < now || tmo == 0) {
+			tmo = when - now;
+			if (tmo <= 0) {
 				wrk->stats->sess_herd++;
 				SES_ReleaseReq(req);
 				if (VTCP_nonblocking(sp->fd))
@@ -116,8 +116,8 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 				/* Record first byte received time stamp */
 				req->t_first = now;
 			when = req->t_first + cache_param->timeout_req;
-			tmo = (int)floor(1e3 * (when - now));
-			if (when < now || tmo == 0) {
+			tmo = when - now;
+			if (tmo <= 0) {
 				why = SC_RX_TIMEOUT;
 				break;
 			}
