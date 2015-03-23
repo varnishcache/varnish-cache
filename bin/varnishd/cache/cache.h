@@ -977,6 +977,9 @@ unsigned V1L_Flush(const struct worker *w);
 unsigned V1L_FlushRelease(struct worker *w);
 size_t V1L_Write(const struct worker *w, const void *ptr, ssize_t len);
 
+/* cache_proxy.c [VPX] */
+task_func_t VPX_Proto_Sess;
+
 /* cache_range.c [VRG] */
 void VRG_dorange(struct req *req, struct busyobj *bo, const char *r);
 
@@ -990,7 +993,7 @@ void SES_DeletePool(struct sesspool *sp);
 int SES_Reschedule_Req(struct req *);
 struct req *SES_GetReq(const struct worker *, struct sess *);
 void SES_ReleaseReq(struct req *);
-void SES_Proto_Sess(struct worker *wrk, void *arg);
+task_func_t SES_Proto_Sess;
 
 #define SESS_ATTR(UP, low, typ, len)				\
 	int SES_Get_##low(const struct sess *sp, typ *dst);	\

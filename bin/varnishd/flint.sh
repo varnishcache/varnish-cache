@@ -20,11 +20,12 @@ flexelint \
 	-DVARNISH_VCL_DIR=\"foo\" \
 	cache/*.c \
 	common/*.c \
-	storage/*.c \
-	waiter/*.c \
 	hash/*.c \
 	http1/*.c \
 	mgt/*.c \
+	proxy/*.c \
+	storage/*.c \
+	waiter/*.c \
 	../../lib/libvarnish/*.c \
 	../../lib/libvarnishcompat/execinfo.c \
 	../../lib/libvcc/*.c \

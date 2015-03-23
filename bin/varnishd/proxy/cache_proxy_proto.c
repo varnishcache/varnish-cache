@@ -1,6 +1,5 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2014 Varnish Software AS
+ * Copyright (c) 2015 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -28,40 +27,15 @@
  *
  */
 
-/*lint -save -e525 -e539 */
+#include "config.h"
 
-#ifdef SESS_STEP
-SESS_STEP(h1newsess,	H1NEWSESS)
-SESS_STEP(h1newreq,	H1NEWREQ)
-SESS_STEP(h1working,	H1WORKING)
-SESS_STEP(h1_last,	H1_LAST)
+#include "../cache/cache.h"
 
-SESS_STEP(proxynewsess,	PROXYNEWSESS)
-SESS_STEP(proxy_last,	PROXY_LAST)
-#endif
+void __match_proto__(task_func_t)
+VPX_Proto_Sess(struct worker *wrk, void *priv)
+{
 
-#ifdef REQ_STEP
-REQ_STEP(restart,	RESTART,	(wrk, req))
-REQ_STEP(recv,		RECV,		(wrk, req))
-REQ_STEP(pipe,		PIPE,		(wrk, req))
-REQ_STEP(pass,		PASS,		(wrk, req))
-REQ_STEP(lookup,	LOOKUP,		(wrk, req))
-REQ_STEP(purge,		PURGE,		(wrk, req))
-REQ_STEP(miss,		MISS,		(wrk, req))
-REQ_STEP(fetch,		FETCH,		(wrk, req))
-REQ_STEP(deliver,	DELIVER,	(wrk, req))
-REQ_STEP(synth,		SYNTH,		(wrk, req))
-#endif
-
-#ifdef FETCH_STEP
-FETCH_STEP(mkbereq,	MKBEREQ,	(wrk, bo))
-FETCH_STEP(retry,	RETRY,		(wrk, bo))
-FETCH_STEP(startfetch,	STARTFETCH,	(wrk, bo))
-FETCH_STEP(condfetch,	CONDFETCH,	(wrk, bo))
-FETCH_STEP(fetch,	FETCH,		(wrk, bo))
-FETCH_STEP(error,	ERROR,		(wrk, bo))
-FETCH_STEP(fail,	FAIL,		(wrk, bo))
-FETCH_STEP(done,	DONE,		())
-#endif
-
-/*lint -restore */
+	(void)wrk;
+	(void)priv;
+	INCOMPL();
+}

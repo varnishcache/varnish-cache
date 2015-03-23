@@ -240,6 +240,9 @@ SES_Proto_Sess(struct worker *wrk, void *arg)
 		sp->sess_step = S_STP_H1NEWREQ;
 		wrk->task.func = ses_proto_req;
 		wrk->task.priv = req;
+	} else if (sp->sess_step < S_STP_PROXY_LAST) {
+		wrk->task.func = VPX_Proto_Sess;
+		wrk->task.priv = sp;
 	} else {
 		WRONG("Wrong session step");
 	}

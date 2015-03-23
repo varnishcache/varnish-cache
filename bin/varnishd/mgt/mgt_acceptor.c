@@ -183,6 +183,9 @@ MAC_Arg(const char *arg)
 	if (av[2] == NULL || !strcmp(av[2], "HTTP/1")) {
 		mh->first_step = S_STP_H1NEWSESS;
 		mh->proto_name = "HTTP/1";
+	} else if (!strcmp(av[2], "PROXY")) {
+		mh->first_step = S_STP_PROXYNEWSESS;
+		mh->proto_name = "PROXY";
 	} else {
 		ARGV_ERR("Unknown protocol '%s'\n", av[2]);
 	}

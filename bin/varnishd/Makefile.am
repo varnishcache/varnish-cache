@@ -78,6 +78,7 @@ varnishd_SOURCES = \
 	mgt/mgt_shmem.c \
 	mgt/mgt_vcc.c \
 	mgt/mgt_vcl.c \
+	proxy/cache_proxy_proto.c \
 	storage/stevedore.c \
 	storage/stevedore_mgt.c \
 	storage/stevedore_utils.c \
