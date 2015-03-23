@@ -202,7 +202,7 @@ VSM_Delete(struct VSM_data *vd)
 }
 
 /*--------------------------------------------------------------------
- * The internal VSM open function
+ * The VSM open function
  *
  * Return:
  *	0 = success
