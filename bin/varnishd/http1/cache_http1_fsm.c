@@ -373,12 +373,6 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 		return;
 	}
 
-	if (sp->sess_step == S_STP_H1NEWREQ) {
-		req->htc->fd = sp->fd;
-		SES_RxInit(req->htc, req->ws,
-		    cache_param->http_req_size, cache_param->http_req_hdr_len);
-	}
-
 	while (1) {
 		assert(
 		    sp->sess_step == S_STP_H1NEWREQ ||

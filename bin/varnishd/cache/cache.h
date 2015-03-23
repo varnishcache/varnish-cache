@@ -982,6 +982,7 @@ int SES_Reschedule_Req(struct req *);
 struct req *SES_GetReq(const struct worker *, struct sess *);
 void SES_ReleaseReq(struct req *);
 task_func_t SES_Proto_Sess;
+task_func_t SES_Proto_Req;
 
 enum htc_status_e {
 	HTC_S_EMPTY =	-3,

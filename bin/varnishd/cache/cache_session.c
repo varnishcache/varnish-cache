@@ -48,6 +48,7 @@
 
 #include "waiter/waiter.h"
 #include "vsa.h"
+#include "vtcp.h"
 #include "vtim.h"
 
 /*--------------------------------------------------------------------*/
@@ -270,8 +271,8 @@ SES_New(struct sesspool *pp)
  * Call protocol for this request
  */
 
-static void __match_proto__(task_func_t)
-ses_proto_req(struct worker *wrk, void *arg)
+void __match_proto__(task_func_t)
+SES_Proto_Req(struct worker *wrk, void *arg)
 {
 	struct req *req;
 
@@ -312,15 +313,24 @@ SES_Proto_Sess(struct worker *wrk, void *arg)
 	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
 	WS_Release(sp->ws, 0);
 
+	/*
+	 * Assume we're going to receive something that will likely
+	 * involve a request...
+	 */
+	(void)VTCP_blocking(sp->fd);
+	req = SES_GetReq(wrk, sp);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	req->htc->fd = sp->fd;
+	SES_RxInit(req->htc, req->ws,
+	    cache_param->http_req_size, cache_param->http_req_hdr_len);
+
 	if (sp->sess_step < S_STP_H1_LAST) {
-		req = SES_GetReq(wrk, sp);
-		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		sp->sess_step = S_STP_H1NEWREQ;
-		wrk->task.func = ses_proto_req;
+		wrk->task.func = SES_Proto_Req;
 		wrk->task.priv = req;
 	} else if (sp->sess_step < S_STP_PROXY_LAST) {
 		wrk->task.func = VPX_Proto_Sess;
-		wrk->task.priv = sp;
+		wrk->task.priv = req;
 	} else {
 		WRONG("Wrong session step");
 	}
@@ -345,7 +355,7 @@ SES_Reschedule_Req(struct req *req)
 	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
 	AN(pp->pool);
 
-	req->task.func = ses_proto_req;
+	req->task.func = SES_Proto_Req;
 	req->task.priv = req;
 
 	return (Pool_Task(pp->pool, &req->task, POOL_QUEUE_FRONT));
