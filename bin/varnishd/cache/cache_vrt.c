@@ -271,7 +271,6 @@ VRT_hashdata(VRT_CTX, const char *str, ...)
 		if (p == vrt_magic_string_end)
 			break;
 		HSH_AddString(ctx->req, p);
-		VSLb(ctx->vsl, SLT_Hash, "%s", str);
 	}
 	va_end(ap);
 	/*

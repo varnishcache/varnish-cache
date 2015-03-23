@@ -67,7 +67,7 @@ enum lookup_e HSH_Lookup(struct req *, struct objcore **, struct objcore **,
     int wait_for_busy, int always_insert);
 void HSH_Ref(struct objcore *o);
 void HSH_Init(const struct hash_slinger *slinger);
-void HSH_AddString(const struct req *, const char *str);
+void HSH_AddString(struct req *, const char *str);
 void HSH_Insert(struct worker *, const void *hash, struct objcore *);
 void HSH_Purge(struct worker *, struct objhead *, double ttl, double grace,
     double keep);

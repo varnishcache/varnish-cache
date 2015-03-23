@@ -1,0 +1,27 @@
+varnishtest "Check hash is logged when the Hash bit is set"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-p vsl_mask=+Hash" -vcl+backend {
+	sub vcl_hash {
+		hash_data("1" + req.http.foo + "3");
+	}
+} -start
+
+logexpect l1 -v v1 {
+	expect * 1001 Hash "1"
+	expect 0 1001 Hash "bar"
+	expect 0 1001 Hash "3"
+	expect 0 1001 Hash "/"
+	expect 0 1001 Hash "127.0.0.1"
+} -start
+
+client c1 {
+	txreq -hdr "foo: bar"
+	rxresp
+} -run
+
+logexpect l1 -wait
