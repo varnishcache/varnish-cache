@@ -989,7 +989,7 @@ enum htc_status_e {
 	HTC_S_TIMEOUT =		-3,
 	HTC_S_OVERFLOW =	-2,
 	HTC_S_EOF =		-1,
-	HTC_S_OK =	 	0,
+	HTC_S_OK =		0,
 	HTC_S_COMPLETE =	 1
 };
 

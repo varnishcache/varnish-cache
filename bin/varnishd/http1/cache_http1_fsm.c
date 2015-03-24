@@ -331,31 +331,55 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 		return;
 	}
 
-	/*
-	 * Return from waitinglist. Check to see if the remote has left.
-	 */
-	if (req->req_step == R_STP_LOOKUP && VTCP_check_hup(sp->fd)) {
-		AN(req->hash_objhead);
-		(void)HSH_DerefObjHead(wrk, &req->hash_objhead);
-		AZ(req->hash_objhead);
-		SES_Close(sp, SC_REM_CLOSE);
-		AN(http1_cleanup(sp, wrk, req));
-		return;
-	}
 
 	while (1) {
-		assert(
-		    sp->sess_step == S_STP_H1NEWREQ ||
-		    req->req_step == R_STP_LOOKUP ||
-		    req->req_step == R_STP_RECV);
+		switch (sp->sess_step) {
+		case S_STP_H1NEWSESS:
+			if (VTCP_blocking(sp->fd)) {
+				if (errno == ECONNRESET)
+					SES_Close(sp, SC_REM_CLOSE);
+				else
+					SES_Close(sp, SC_TX_ERROR);
+				AN(http1_cleanup(sp, wrk, req));
+				return;
+			}
+			sp->sess_step = S_STP_H1NEWREQ;
+			break;
+		case S_STP_H1NEWREQ:
+			nxt = http1_wait(sp, wrk, req);
+			if (nxt != REQ_FSM_MORE)
+				return;
+			sp->sess_step = S_STP_H1WORKING;
+			req->req_step = R_STP_RECV;
+			break;
+		case S_STP_H1BUSY:
+			/*
+			 * Return from waitinglist.
+			 * Check to see if the remote has left.
+			 */
+			if (VTCP_check_hup(sp->fd)) {
+				AN(req->hash_objhead);
+				(void)HSH_DerefObjHead(wrk, &req->hash_objhead);
+				AZ(req->hash_objhead);
+				SES_Close(sp, SC_REM_CLOSE);
+				AN(http1_cleanup(sp, wrk, req));
+				return;
+			}
+			sp->sess_step = S_STP_H1WORKING;
+			break;
+		case S_STP_H1WORKING:
+			assert(
+			    req->req_step == R_STP_LOOKUP ||
+			    req->req_step == R_STP_RECV);
 
-		if (sp->sess_step == S_STP_H1WORKING) {
 			if (req->req_step == R_STP_RECV)
 				nxt = http1_dissect(wrk, req);
 			if (nxt == REQ_FSM_MORE)
 				nxt = CNT_Request(wrk, req);
-			if (nxt == REQ_FSM_DISEMBARK)
+			if (nxt == REQ_FSM_DISEMBARK) {
+				sp->sess_step = S_STP_H1BUSY;
 				return;
+			}
 			assert(nxt == REQ_FSM_DONE);
 			if (http1_cleanup(sp, wrk, req))
 				return;
@@ -373,14 +397,10 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 					wrk->stats->sess_readahead++;
 				sp->sess_step = S_STP_H1NEWREQ;
 			}
+			break;
+		default:
+			WRONG("Wrong H1 session state");
 		}
 
-		if (sp->sess_step == S_STP_H1NEWREQ) {
-			nxt = http1_wait(sp, wrk, req);
-			if (nxt != REQ_FSM_MORE)
-				return;
-			sp->sess_step = S_STP_H1WORKING;
-			req->req_step = R_STP_RECV;
-		}
 	}
 }

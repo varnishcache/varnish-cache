@@ -330,7 +330,6 @@ SES_Proto_Sess(struct worker *wrk, void *arg)
 	    cache_param->http_req_size, cache_param->http_req_hdr_len);
 
 	if (sp->sess_step < S_STP_H1_LAST) {
-		sp->sess_step = S_STP_H1NEWREQ;
 		wrk->task.func = SES_Proto_Req;
 		wrk->task.priv = req;
 	} else if (sp->sess_step < S_STP_PROXY_LAST) {
