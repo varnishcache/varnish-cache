@@ -3,10 +3,11 @@ varnishtest "Increment counter if http_req_size is exhausted"
 server s1 {
 } -start
 
-varnish v1 -arg "-p http_req_size=2048" -vcl+backend {
+varnish v1 -arg "-p http_req_size=1024" -vcl+backend {
 } -start
 
 client c1 {
+	non-fatal
 	send "GET /"
 	send_n 2048 "A"
 	send " HTTP/1.1\r\n\r\n"
