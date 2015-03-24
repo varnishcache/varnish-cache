@@ -349,7 +349,6 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			if (nxt != REQ_FSM_MORE)
 				return;
 			sp->sess_step = S_STP_H1WORKING;
-			req->req_step = R_STP_RECV;
 			break;
 		case S_STP_H1BUSY:
 			/*
@@ -364,28 +363,25 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				AN(http1_cleanup(sp, wrk, req));
 				return;
 			}
-			sp->sess_step = S_STP_H1WORKING;
+			sp->sess_step = S_STP_H1PROC;
 			break;
 		case S_STP_H1WORKING:
-			assert(
-			    req->req_step == R_STP_LOOKUP ||
-			    req->req_step == R_STP_RECV);
-
-			if (req->req_step == R_STP_RECV) {
-				if (http1_dissect(wrk, req)) {
-					SES_Close(req->sp, req->doclose);
-					nxt = REQ_FSM_DONE;
-				} else {
-					nxt = REQ_FSM_MORE;
-				}
+			if (http1_dissect(wrk, req)) {
+				SES_Close(req->sp, req->doclose);
+				sp->sess_step = S_STP_H1CLEANUP;
+				break;
 			}
-			if (nxt == REQ_FSM_MORE)
-				nxt = CNT_Request(wrk, req);
-			if (nxt == REQ_FSM_DISEMBARK) {
+			req->req_step = R_STP_RECV;
+			sp->sess_step = S_STP_H1PROC;
+			break;
+		case S_STP_H1PROC:
+			if (CNT_Request(wrk, req) == REQ_FSM_DISEMBARK) {
 				sp->sess_step = S_STP_H1BUSY;
 				return;
 			}
-			assert(nxt == REQ_FSM_DONE);
+			sp->sess_step = S_STP_H1CLEANUP;
+			break;
+		case S_STP_H1CLEANUP:
 			if (http1_cleanup(sp, wrk, req))
 				return;
 			SES_RxReInit(req->htc);
@@ -396,7 +392,6 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				req->acct.req_hdrbytes +=
 				    req->htc->rxbuf_e - req->htc->rxbuf_b;
 				sp->sess_step = S_STP_H1WORKING;
-				req->req_step = R_STP_RECV;
 			} else {
 				if (req->htc->rxbuf_e != req->htc->rxbuf_b)
 					wrk->stats->sess_readahead++;
