@@ -73,44 +73,18 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 	while (1) {
 		hs = SES_Rx(req->htc, tmo);
 		now = VTIM_real();
-		if (hs == HTC_S_OK || hs == HTC_S_TIMEOUT)
-			hs = HTTP1_Complete(req->htc);
-		if (hs == HTC_S_COMPLETE) {
-			/* Got it, run with it */
-			if (isnan(req->t_first))
-				req->t_first = now;
-			if (isnan(req->t_req))
-				req->t_req = now;
-			req->acct.req_hdrbytes +=
-			    req->htc->rxbuf_e - req->htc->rxbuf_b;
-			return (REQ_FSM_MORE);
-		} else if (hs == HTC_S_EOF) {
+		if (hs == HTC_S_EOF) {
 			WS_ReleaseP(req->htc->ws, req->htc->rxbuf_b);
 			why = SC_REM_CLOSE;
 			break;
-		} else if (hs == HTC_S_OVERFLOW) {
+		}
+		if (hs == HTC_S_OVERFLOW) {
 			WS_ReleaseP(req->htc->ws, req->htc->rxbuf_b);
 			why = SC_RX_OVERFLOW;
 			break;
-		} else if (hs == HTC_S_EMPTY) {
-			/* Nothing but whitespace */
-			when = sp->t_idle + cache_param->timeout_idle;
-			if (when < now) {
-				why = SC_RX_TIMEOUT;
-				break;
-			}
-			when = sp->t_idle + cache_param->timeout_linger;
-			tmo = when - now;
-			if (tmo <= 0) {
-				wrk->stats->sess_herd++;
-				SES_ReleaseReq(req);
-				if (VTCP_nonblocking(sp->fd))
-					SES_Close(sp, SC_REM_CLOSE);
-				else
-					SES_Wait(sp);
-				return (REQ_FSM_DONE);
-			}
-		} else {
+		}
+		hs = HTTP1_Complete(req->htc);
+		if (hs == HTC_S_OK) {
 			/* Working on it */
 			if (isnan(req->t_first))
 				/* Record first byte received time stamp */
@@ -121,7 +95,38 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 				why = SC_RX_TIMEOUT;
 				break;
 			}
+			continue;
 		}
+		if (hs == HTC_S_COMPLETE) {
+			/* Got it, run with it */
+			if (isnan(req->t_first))
+				req->t_first = now;
+			if (isnan(req->t_req))
+				req->t_req = now;
+			req->acct.req_hdrbytes +=
+			    req->htc->rxbuf_e - req->htc->rxbuf_b;
+			return (REQ_FSM_MORE);
+		}
+		assert(hs == HTC_S_EMPTY);
+		/* Nothing but whitespace */
+		when = sp->t_idle + cache_param->timeout_idle;
+		if (when < now) {
+			why = SC_RX_TIMEOUT;
+			break;
+		}
+		when = sp->t_idle + cache_param->timeout_linger;
+		tmo = when - now;
+		if (tmo > 0)
+			continue;
+
+		wrk->stats->sess_herd++;
+		SES_ReleaseReq(req);
+		if (VTCP_nonblocking(sp->fd)) {
+			why = SC_REM_CLOSE;
+			break;
+		}
+		SES_Wait(sp);
+		return (REQ_FSM_DONE);
 	}
 	req->acct.req_hdrbytes += req->htc->rxbuf_e - req->htc->rxbuf_b;
 	CNT_AcctLogCharge(wrk->stats, req);
@@ -329,7 +334,6 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 		AN(http1_cleanup(sp, wrk, req));
 		return;
 	}
-
 
 	while (1) {
 		switch (sp->sess_step) {
