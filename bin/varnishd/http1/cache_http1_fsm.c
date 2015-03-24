@@ -136,13 +136,7 @@ http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
  * the client connection
  */
 
-enum http1_cleanup_ret {
-	SESS_DONE_RET_GONE,
-	SESS_DONE_RET_WAIT,
-	SESS_DONE_RET_START,
-};
-
-static enum http1_cleanup_ret
+static int
 http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 {
 
@@ -196,25 +190,12 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 		AZ(req->vcl);
 		SES_ReleaseReq(req);
 		SES_Delete(sp, SC_NULL, NAN);
-		return (SESS_DONE_RET_GONE);
+		return (1);
 	}
 
 	WS_Reset(req->ws, NULL);
 	WS_Reset(wrk->aws, NULL);
-
-	SES_RxReInit(req->htc);
-	if (HTTP1_Complete(req->htc) == HTC_S_COMPLETE) {
-		AZ(req->vsl->wid);
-		req->t_first = req->t_req = sp->t_idle;
-		wrk->stats->sess_pipeline++;
-		req->acct.req_hdrbytes +=
-		    req->htc->rxbuf_e - req->htc->rxbuf_b;
-		return (SESS_DONE_RET_START);
-	} else {
-		if (req->htc->rxbuf_e != req->htc->rxbuf_b)
-			wrk->stats->sess_readahead++;
-		return (SESS_DONE_RET_WAIT);
-	}
+	return (0);
 }
 
 /*----------------------------------------------------------------------
@@ -329,7 +310,6 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 {
 	enum req_fsm_nxt nxt = REQ_FSM_MORE;
 	struct sess *sp;
-	enum http1_cleanup_ret sdr;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -347,8 +327,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			SES_Close(sp, SC_REM_CLOSE);
 		else
 			SES_Close(sp, SC_TX_ERROR);
-		sdr = http1_cleanup(sp, wrk, req);
-		assert(sdr == SESS_DONE_RET_GONE);
+		AN(http1_cleanup(sp, wrk, req));
 		return;
 	}
 
@@ -360,8 +339,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 		(void)HSH_DerefObjHead(wrk, &req->hash_objhead);
 		AZ(req->hash_objhead);
 		SES_Close(sp, SC_REM_CLOSE);
-		sdr = http1_cleanup(sp, wrk, req);
-		assert(sdr == SESS_DONE_RET_GONE);
+		AN(http1_cleanup(sp, wrk, req));
 		return;
 	}
 
@@ -379,19 +357,21 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			if (nxt == REQ_FSM_DISEMBARK)
 				return;
 			assert(nxt == REQ_FSM_DONE);
-			sdr = http1_cleanup(sp, wrk, req);
-			switch (sdr) {
-			case SESS_DONE_RET_GONE:
+			if (http1_cleanup(sp, wrk, req))
 				return;
-			case SESS_DONE_RET_WAIT:
-				sp->sess_step = S_STP_H1NEWREQ;
-				break;
-			case SESS_DONE_RET_START:
+			SES_RxReInit(req->htc);
+			if (HTTP1_Complete(req->htc) == HTC_S_COMPLETE) {
+				AZ(req->vsl->wid);
+				req->t_first = req->t_req = sp->t_idle;
+				wrk->stats->sess_pipeline++;
+				req->acct.req_hdrbytes +=
+				    req->htc->rxbuf_e - req->htc->rxbuf_b;
 				sp->sess_step = S_STP_H1WORKING;
 				req->req_step = R_STP_RECV;
-				break;
-			default:
-				WRONG("Illegal enum http1_cleanup_ret");
+			} else {
+				if (req->htc->rxbuf_e != req->htc->rxbuf_b)
+					wrk->stats->sess_readahead++;
+				sp->sess_step = S_STP_H1NEWREQ;
 			}
 		}
 
