@@ -201,7 +201,7 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 /*----------------------------------------------------------------------
  */
 
-static enum req_fsm_nxt
+static int
 http1_dissect(struct worker *wrk, struct req *req)
 {
 	const char *r_100 = "HTTP/1.1 100 Continue\r\n\r\n";
@@ -242,8 +242,8 @@ http1_dissect(struct worker *wrk, struct req *req)
 		r = write(req->sp->fd, r_400, strlen(r_400));
 		if (r > 0)
 			req->acct.resp_hdrbytes += r;
-		SES_Close(req->sp, SC_RX_JUNK);
-		return (REQ_FSM_DONE);
+		req->doclose = SC_RX_JUNK;
+		return (-1);
 	}
 
 	assert (req->req_body_status == REQ_BODY_INIT);
@@ -267,15 +267,15 @@ http1_dissect(struct worker *wrk, struct req *req)
 			r = write(req->sp->fd, r_417, strlen(r_417));
 			if (r > 0)
 				req->acct.resp_hdrbytes += r;
-			SES_Close(req->sp, SC_RX_JUNK);
-			return (REQ_FSM_DONE);
+			req->doclose = SC_RX_JUNK;
+			return (-1);
 		}
 		r = write(req->sp->fd, r_100, strlen(r_100));
 		if (r > 0)
 			req->acct.resp_hdrbytes += r;
 		if (r != strlen(r_100)) {
-			SES_Close(req->sp, SC_REM_CLOSE);
-			return (REQ_FSM_DONE);
+			req->doclose = SC_REM_CLOSE;
+			return (-1);
 		}
 		http_Unset(req->http, H_Expect);
 	}
@@ -291,15 +291,14 @@ http1_dissect(struct worker *wrk, struct req *req)
 		r = write(req->sp->fd, r_400, strlen(r_400));
 		if (r > 0)
 			req->acct.resp_hdrbytes += r;
-		SES_Close(req->sp, req->doclose);
-		return (REQ_FSM_DONE);
+		return (-1);
 	}
 
 	assert(req->req_body_status != REQ_BODY_INIT);
 
 	HTTP_Copy(req->http0, req->http);	// For ESI & restart
 
-	return (REQ_FSM_MORE);
+	return (0);
 }
 
 /*----------------------------------------------------------------------
@@ -372,8 +371,14 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			    req->req_step == R_STP_LOOKUP ||
 			    req->req_step == R_STP_RECV);
 
-			if (req->req_step == R_STP_RECV)
-				nxt = http1_dissect(wrk, req);
+			if (req->req_step == R_STP_RECV) {
+				if (http1_dissect(wrk, req)) {
+					SES_Close(req->sp, req->doclose);
+					nxt = REQ_FSM_DONE;
+				} else {
+					nxt = REQ_FSM_MORE;
+				}
+			}
 			if (nxt == REQ_FSM_MORE)
 				nxt = CNT_Request(wrk, req);
 			if (nxt == REQ_FSM_DISEMBARK) {
