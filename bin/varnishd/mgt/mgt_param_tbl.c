@@ -172,16 +172,10 @@ struct parspec mgt_parspec[] = {
 	{ "timeout_idle", tweak_timeout, &mgt_param.timeout_idle,
 		"0", NULL,
 		"Idle timeout for client connections.\n"
-		"A connection is considered idle, until we receive"
-		" a non-white-space character on it.",
+		"A connection is considered idle, until we have"
+		"received the full request headers.",
 		0,
 		"5", "seconds" },
-	{ "timeout_req", tweak_timeout, &mgt_param.timeout_req,
-		"0", NULL,
-		"Max time to receive clients request headers, measured"
-		" from first non-white-space character to double CRNL.",
-		0,
-		"2", "seconds" },
 	{ "pipe_timeout", tweak_timeout, &mgt_param.pipe_timeout,
 		"0", NULL,
 		"Idle timeout for PIPE sessions. "

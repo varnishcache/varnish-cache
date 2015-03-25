@@ -234,7 +234,65 @@ SES_Rx(struct http_conn *htc, double tmo)
 		return (HTC_S_EOF);
 	htc->rxbuf_e += i;
 	*htc->rxbuf_e = '\0';
-	return (HTC_S_OK);
+	return (HTC_S_MORE);
+}
+
+/*----------------------------------------------------------------------
+ * Receive a request/packet/whatever, with timeouts
+ */
+
+enum htc_status_e
+SES_RxReq(const struct worker *wrk, struct req *req, htc_complete_f *func)
+{
+	double tmo;
+	double now, when;
+	struct sess *sp;
+	enum htc_status_e hs;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	sp = req->sp;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+
+	AZ(isnan(sp->t_idle));
+	assert(isnan(req->t_first));
+
+	when = sp->t_idle + cache_param->timeout_idle;
+	tmo = cache_param->timeout_linger;
+	while (1) {
+		hs = SES_Rx(req->htc, tmo);
+		now = VTIM_real();
+		if (hs == HTC_S_EOF) {
+			WS_ReleaseP(req->htc->ws, req->htc->rxbuf_b);
+			return (HTC_S_CLOSE);
+		}
+		if (hs == HTC_S_OVERFLOW) {
+			WS_ReleaseP(req->htc->ws, req->htc->rxbuf_b);
+			return (HTC_S_OVERFLOW);
+		}
+		hs = func(req->htc);
+		if (hs == HTC_S_COMPLETE) {
+			/* Got it, run with it */
+			if (isnan(req->t_first))
+				req->t_first = now;
+			req->t_req = now;
+			return (HTC_S_COMPLETE);
+		}
+		if (when < now)
+			return (HTC_S_TIMEOUT);
+		if (hs == HTC_S_MORE) {
+			/* Working on it */
+			if (isnan(req->t_first))
+				req->t_first = now;
+			tmo = when - now;
+			continue;
+		}
+		assert(hs == HTC_S_EMPTY);
+		/* Nothing but whitespace */
+		tmo = sp->t_idle + cache_param->timeout_linger - now;
+		if (tmo < 0)
+			return (HTC_S_IDLE);
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -422,13 +480,16 @@ SES_Wait(struct sess *sp)
 	 * XXX: waiter_epoll prevents us from zeroing the struct because
 	 * XXX: it keeps state across calls.
 	 */
+	if (VTCP_nonblocking(sp->fd)) {
+		SES_Delete(sp, SC_REM_CLOSE, NAN);
+		return;
+	}
 	sp->waited.magic = WAITED_MAGIC;
 	sp->waited.fd = sp->fd;
 	sp->waited.ptr = sp;
 	sp->waited.idle = sp->t_idle;
-	if (Wait_Enter(pp->http1_waiter, &sp->waited)) {
+	if (Wait_Enter(pp->http1_waiter, &sp->waited))
 		SES_Delete(sp, SC_PIPE_OVERFLOW, NAN);
-	}
 }
 
 /*--------------------------------------------------------------------

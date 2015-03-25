@@ -51,89 +51,39 @@
 static enum req_fsm_nxt
 http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
 {
-	double tmo;
-	double now, when;
-	enum sess_close why = SC_NULL;
 	enum htc_status_e hs;
 
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
-	assert(req->sp == sp);
-
-	AZ(req->vcl);
-	AZ(req->esi_level);
-	AZ(isnan(sp->t_idle));
-	assert(isnan(req->t_first));
 	assert(isnan(req->t_prev));
 	assert(isnan(req->t_req));
+	AZ(req->vcl);
+	AZ(req->esi_level);
 
-	tmo = cache_param->timeout_linger;
-	while (1) {
-		hs = SES_Rx(req->htc, tmo);
-		now = VTIM_real();
-		if (hs == HTC_S_EOF) {
-			WS_ReleaseP(req->htc->ws, req->htc->rxbuf_b);
-			why = SC_REM_CLOSE;
-			break;
+	hs = SES_RxReq(wrk, req, HTTP1_Complete);
+	if (hs < HTC_S_EMPTY) {
+		req->acct.req_hdrbytes += req->htc->rxbuf_e - req->htc->rxbuf_b;
+		CNT_AcctLogCharge(wrk->stats, req);
+		SES_ReleaseReq(req);
+		switch(hs) {
+		case HTC_S_CLOSE: SES_Delete(sp, SC_REM_CLOSE, 0.0); break;
+		case HTC_S_TIMEOUT: SES_Delete(sp, SC_RX_TIMEOUT, 0.0); break;
+		case HTC_S_OVERFLOW: SES_Delete(sp, SC_RX_OVERFLOW, 0.0); break;
+		case HTC_S_EOF: SES_Delete(sp, SC_REM_CLOSE, 0.0); break;
+		default: WRONG("htc_status (bad)");
 		}
-		if (hs == HTC_S_OVERFLOW) {
-			WS_ReleaseP(req->htc->ws, req->htc->rxbuf_b);
-			why = SC_RX_OVERFLOW;
-			break;
-		}
-		hs = HTTP1_Complete(req->htc);
-		if (hs == HTC_S_OK) {
-			/* Working on it */
-			if (isnan(req->t_first))
-				/* Record first byte received time stamp */
-				req->t_first = now;
-			when = req->t_first + cache_param->timeout_req;
-			tmo = when - now;
-			if (tmo <= 0) {
-				why = SC_RX_TIMEOUT;
-				break;
-			}
-			continue;
-		}
-		if (hs == HTC_S_COMPLETE) {
-			/* Got it, run with it */
-			if (isnan(req->t_first))
-				req->t_first = now;
-			if (isnan(req->t_req))
-				req->t_req = now;
-			req->acct.req_hdrbytes +=
-			    req->htc->rxbuf_e - req->htc->rxbuf_b;
-			return (REQ_FSM_MORE);
-		}
-		assert(hs == HTC_S_EMPTY);
-		/* Nothing but whitespace */
-		when = sp->t_idle + cache_param->timeout_idle;
-		if (when < now) {
-			why = SC_RX_TIMEOUT;
-			break;
-		}
-		when = sp->t_idle + cache_param->timeout_linger;
-		tmo = when - now;
-		if (tmo > 0)
-			continue;
-
+		return (REQ_FSM_DONE);
+	}
+	if (hs == HTC_S_COMPLETE) {
+		req->acct.req_hdrbytes +=
+		    req->htc->rxbuf_e - req->htc->rxbuf_b;
+		return (REQ_FSM_MORE);
+	}
+	if (hs == HTC_S_IDLE) {
 		wrk->stats->sess_herd++;
 		SES_ReleaseReq(req);
-		if (VTCP_nonblocking(sp->fd)) {
-			why = SC_REM_CLOSE;
-			break;
-		}
 		SES_Wait(sp);
 		return (REQ_FSM_DONE);
 	}
-	req->acct.req_hdrbytes += req->htc->rxbuf_e - req->htc->rxbuf_b;
-	CNT_AcctLogCharge(wrk->stats, req);
-	SES_ReleaseReq(req);
-	assert(why != SC_NULL);
-	SES_Delete(sp, why, now);
-	return (REQ_FSM_DONE);
+	WRONG("htc_status (nonbad)");
 }
 
 /*----------------------------------------------------------------------

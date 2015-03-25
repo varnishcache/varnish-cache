@@ -111,7 +111,6 @@ struct params {
 
 	double			timeout_linger;
 	double			timeout_idle;
-	double			timeout_req;
 	double			pipe_timeout;
 	double			send_timeout;
 	double			idle_send_timeout;
