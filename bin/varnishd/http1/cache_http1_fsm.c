@@ -45,48 +45,6 @@
 #include "vtim.h"
 
 /*----------------------------------------------------------------------
- * Collect a request from the client.
- */
-
-static enum req_fsm_nxt
-http1_wait(struct sess *sp, struct worker *wrk, struct req *req)
-{
-	enum htc_status_e hs;
-
-	assert(isnan(req->t_prev));
-	assert(isnan(req->t_req));
-	AZ(req->vcl);
-	AZ(req->esi_level);
-
-	hs = SES_RxReq(wrk, req, HTTP1_Complete);
-	if (hs < HTC_S_EMPTY) {
-		req->acct.req_hdrbytes += req->htc->rxbuf_e - req->htc->rxbuf_b;
-		CNT_AcctLogCharge(wrk->stats, req);
-		SES_ReleaseReq(req);
-		switch(hs) {
-		case HTC_S_CLOSE: SES_Delete(sp, SC_REM_CLOSE, 0.0); break;
-		case HTC_S_TIMEOUT: SES_Delete(sp, SC_RX_TIMEOUT, 0.0); break;
-		case HTC_S_OVERFLOW: SES_Delete(sp, SC_RX_OVERFLOW, 0.0); break;
-		case HTC_S_EOF: SES_Delete(sp, SC_REM_CLOSE, 0.0); break;
-		default: WRONG("htc_status (bad)");
-		}
-		return (REQ_FSM_DONE);
-	}
-	if (hs == HTC_S_COMPLETE) {
-		req->acct.req_hdrbytes +=
-		    req->htc->rxbuf_e - req->htc->rxbuf_b;
-		return (REQ_FSM_MORE);
-	}
-	if (hs == HTC_S_IDLE) {
-		wrk->stats->sess_herd++;
-		SES_ReleaseReq(req);
-		SES_Wait(sp);
-		return (REQ_FSM_DONE);
-	}
-	WRONG("htc_status (nonbad)");
-}
-
-/*----------------------------------------------------------------------
  * This is the final state, figure out if we should close or recycle
  * the client connection
  */
@@ -262,7 +220,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 void
 HTTP1_Session(struct worker *wrk, struct req *req)
 {
-	enum req_fsm_nxt nxt = REQ_FSM_MORE;
+	enum htc_status_e hs;
 	struct sess *sp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -299,9 +257,46 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			sp->sess_step = S_STP_H1NEWREQ;
 			break;
 		case S_STP_H1NEWREQ:
-			nxt = http1_wait(sp, wrk, req);
-			if (nxt != REQ_FSM_MORE)
+			assert(isnan(req->t_prev));
+			assert(isnan(req->t_req));
+			AZ(req->vcl);
+			AZ(req->esi_level);
+
+			hs = SES_RxReq(wrk, req, HTTP1_Complete);
+			if (hs < HTC_S_EMPTY) {
+				req->acct.req_hdrbytes +=
+				    req->htc->rxbuf_e - req->htc->rxbuf_b;
+				CNT_AcctLogCharge(wrk->stats, req);
+				SES_ReleaseReq(req);
+				switch(hs) {
+				case HTC_S_CLOSE:
+					SES_Delete(sp, SC_REM_CLOSE, 0.0);
+					return;
+				case HTC_S_TIMEOUT:
+					SES_Delete(sp, SC_RX_TIMEOUT, 0.0);
+					return;
+				case HTC_S_OVERFLOW:
+					SES_Delete(sp, SC_RX_OVERFLOW, 0.0);
+					return;
+				case HTC_S_EOF:
+					SES_Delete(sp, SC_REM_CLOSE, 0.0);
+					return;
+				default:
+					WRONG("htc_status (bad)");
+				}
+			}
+			if (hs == HTC_S_IDLE) {
+				wrk->stats->sess_herd++;
+				SES_ReleaseReq(req);
+				SES_Wait(sp);
 				return;
+			}
+			if (hs != HTC_S_COMPLETE)
+				WRONG("htc_status (nonbad)");
+
+			req->acct.req_hdrbytes +=
+			    req->htc->rxbuf_e - req->htc->rxbuf_b;
+
 			sp->sess_step = S_STP_H1WORKING;
 			break;
 		case S_STP_H1BUSY:
