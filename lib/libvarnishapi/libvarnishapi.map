@@ -129,4 +129,5 @@ LIBVARNISHAPI_1.4 {
   global:
 	VNUM;
 	VSLQ_SetCursor;
+	VSM_IsOpen;
 } LIBVARNISHAPI_1.0;

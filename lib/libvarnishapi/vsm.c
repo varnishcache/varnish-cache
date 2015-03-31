@@ -287,6 +287,16 @@ VSM_Open(struct VSM_data *vd)
 
 /*--------------------------------------------------------------------*/
 
+int
+VSM_IsOpen(const struct VSM_data *vd)
+{
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	return (vd->head != NULL);
+}
+
+/*--------------------------------------------------------------------*/
+
 void
 VSM_Close(struct VSM_data *vd)
 {
