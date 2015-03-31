@@ -463,12 +463,14 @@ VSLQ_dispatch_f VSL_WriteTransactions;
 struct VSLQ *VSLQ_New(struct VSL_data *vsl, struct VSL_cursor **cp,
     enum VSL_grouping_e grouping, const char *query);
 	/*
-	 * Create a new query context using cp. On success cp is NULLed,
-	 * and will be deleted when deleting the query.
+	 * Create a new query context.
+	 *
+	 * If cp is not NULL, the cursor pointed to by cp will be
+	 * transferred to the query, and *cp set to NULL.
 	 *
 	 * Arguments:
 	 *       vsl: The VSL_data context
-	 *        cp: The cursor to use
+	 *        cp: Pointer to the cursor to use or NULL
 	 *  grouping: VXID grouping to report on
 	 *     query: Query match expression
 	 *

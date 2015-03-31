@@ -1054,7 +1054,6 @@ VSLQ_New(struct VSL_data *vsl, struct VSL_cursor **cp,
 	struct VSLQ *vslq;
 
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
-	AN(cp);
 	if (grouping > VSL_g_session) {
 		(void)vsl_diag(vsl, "Illegal query grouping");
 		return (NULL);
@@ -1069,8 +1068,10 @@ VSLQ_New(struct VSL_data *vsl, struct VSL_cursor **cp,
 	ALLOC_OBJ(vslq, VSLQ_MAGIC);
 	AN(vslq);
 	vslq->vsl = vsl;
-	vslq->c = *cp;
-	*cp = NULL;
+	if (cp != NULL) {
+		vslq->c = *cp;
+		*cp = NULL;
+	}
 	vslq->grouping = grouping;
 	vslq->query = query;
 
@@ -1109,8 +1110,10 @@ VSLQ_Delete(struct VSLQ **pvslq)
 	(void)VSLQ_Flush(vslq, NULL, NULL);
 	AZ(vslq->n_outstanding);
 
-	VSL_DeleteCursor(vslq->c);
-	vslq->c = NULL;
+	if (vslq->c != NULL) {
+		VSL_DeleteCursor(vslq->c);
+		vslq->c = NULL;
+	}
 
 	if (vslq->query != NULL)
 		vslq_deletequery(&vslq->query);
@@ -1289,6 +1292,10 @@ VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 	struct vtx *vtx;
 
 	CHECK_OBJ_NOTNULL(vslq, VSLQ_MAGIC);
+
+	/* Check that we have a cursor */
+	if (vslq->c == NULL)
+		return (-2);
 
 	if (vslq->grouping == VSL_g_raw)
 		return (vslq_raw(vslq, func, priv));
