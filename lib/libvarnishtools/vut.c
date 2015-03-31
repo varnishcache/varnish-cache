@@ -213,10 +213,15 @@ VUT_Setup(void)
 	struct VSL_cursor *c;
 
 	AN(VUT.vsl);
-
-	/* Input */
 	if (VUT.r_arg && VUT.vsm)
 		VUT_Error(1, "Can't have both -n and -r options");
+
+	/* Create query */
+	VUT.vslq = VSLQ_New(VUT.vsl, NULL, VUT.g_arg, VUT.q_arg);
+	if (VUT.vslq == NULL)
+		VUT_Error(1, "Query expression error:\n%s", VSL_Error(VUT.vsl));
+
+	/* Input cursor */
 	if (VUT.r_arg) {
 		REPLACE(VUT.name, VUT.r_arg);
 		c = VSL_CursorFile(VUT.vsl, VUT.r_arg, 0);
@@ -235,11 +240,7 @@ VUT_Setup(void)
 	}
 	if (c == NULL)
 		VUT_Error(1, "Can't open log (%s)", VSL_Error(VUT.vsl));
-
-	/* Create query */
-	VUT.vslq = VSLQ_New(VUT.vsl, &c, VUT.g_arg, VUT.q_arg);
-	if (VUT.vslq == NULL)
-		VUT_Error(1, "Query expression error:\n%s", VSL_Error(VUT.vsl));
+	VSLQ_SetCursor(VUT.vslq, &c);
 	AZ(c);
 
 	/* Signal handlers */
