@@ -1107,15 +1107,6 @@ VSLQ_Delete(struct VSLQ **pvslq)
 	CHECK_OBJ_NOTNULL(vslq, VSLQ_MAGIC);
 
 	(void)VSLQ_Flush(vslq, NULL, NULL);
-	AN(VTAILQ_EMPTY(&vslq->incomplete));
-
-	while (!VTAILQ_EMPTY(&vslq->ready)) {
-		vtx = VTAILQ_FIRST(&vslq->ready);
-		CHECK_OBJ_NOTNULL(vtx, VTX_MAGIC);
-		VTAILQ_REMOVE(&vslq->ready, vtx, list_vtx);
-		AN(vtx->flags & VTX_F_READY);
-		vtx_retire(vslq, &vtx);
-	}
 	AZ(vslq->n_outstanding);
 
 	VSL_DeleteCursor(vslq->c);
