@@ -39,6 +39,7 @@
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
+#include <math.h>
 
 #include "compat/daemon.h"
 #include "vdef.h"
@@ -49,6 +50,7 @@
 #include "vas.h"
 #include "miniobj.h"
 #include "vcs.h"
+#include "vnum.h"
 
 #include "vut.h"
 
@@ -134,6 +136,7 @@ VUT_Arg(int opt, const char *arg)
 {
 	int i;
 	char *p;
+	double d;
 
 	switch (opt) {
 	case 'd':
@@ -182,6 +185,13 @@ VUT_Arg(int opt, const char *arg)
 		/* Binary file input */
 		REPLACE(VUT.r_arg, arg);
 		return (1);
+	case 't':
+		/* VSM connect timeout */
+		d = VNUM(arg);
+		if (isnan(d))
+			VUT_Error(1, "-t: Syntax error");
+		VUT.t_arg = d;
+		return (1);
 	case 'V':
 		/* Print version number and exit */
 		VCS_Message(VUT.progname);
@@ -205,6 +215,7 @@ VUT_Init(const char *progname)
 	VUT.vsl = VSL_New();
 	AN(VUT.vsl);
 	VUT.k_arg = -1;
+	VUT.t_arg = 5.;
 }
 
 void

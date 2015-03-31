@@ -84,6 +84,18 @@
 	    "Read log in binary file format from this file."		\
 	)
 
+#define VUT_OPT_t							\
+	VOPT("t:", "[-t seconds|<off>]", "VSM connection timeout",	\
+	    "Timeout before returning error on initial VSM connection."	\
+	    " If set the VSM connection is retried every 0.5 seconds"	\
+	    " for this many seconds. If zero the connection is"		\
+	    " attempted only once and will fail immediately if"		\
+	    " unsuccessful. If set to \"off\", the connection will not"	\
+	    " fail, allowing the utility to start and wait"		\
+	    " indefinetely for the Varnish instance to appear. "	\
+	    " Defaults to 5 seconds."					\
+	)
+
 #define VUT_OPT_V							\
 	VOPT("V", "[-V]", "Version",					\
 	    "Print version information and exit."			\
