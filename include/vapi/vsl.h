@@ -479,7 +479,9 @@ struct VSLQ *VSLQ_New(struct VSL_data *vsl, struct VSL_cursor **cp,
 
 void VSLQ_Delete(struct VSLQ **pvslq);
 	/*
-	 * Delete the query pointed to by pvslq, freeing up the resources
+	 * Delete the query pointed to by pvslq, freeing up the resources.
+	 *
+	 * Any cursor owned by the query will be deleted.
 	 */
 
 int VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv);
