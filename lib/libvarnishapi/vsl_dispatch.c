@@ -1340,8 +1340,7 @@ VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 	return (i);
 }
 
-/* Flush incomplete any incomplete vtx held on to. Do callbacks if func !=
-   NULL */
+/* Flush any incomplete vtx held on to. Do callbacks if func != NULL */
 int
 VSLQ_Flush(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 {
