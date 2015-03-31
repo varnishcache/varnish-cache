@@ -1130,6 +1130,26 @@ VSLQ_Delete(struct VSLQ **pvslq)
 	FREE_OBJ(vslq);
 }
 
+void
+VSLQ_SetCursor(struct VSLQ *vslq, struct VSL_cursor **cp)
+{
+
+	CHECK_OBJ_NOTNULL(vslq, VSLQ_MAGIC);
+
+	if (vslq->c != NULL) {
+		(void)VSLQ_Flush(vslq, NULL, NULL);
+		AZ(vslq->n_outstanding);
+		VSL_DeleteCursor(vslq->c);
+		vslq->c = NULL;
+	}
+
+	if (cp != NULL) {
+		AN(*cp);
+		vslq->c = *cp;
+		*cp = NULL;
+	}
+}
+
 /* Regard each log line as a single transaction, feed it through the query
    and do the callback */
 static int

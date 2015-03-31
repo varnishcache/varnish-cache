@@ -486,6 +486,18 @@ void VSLQ_Delete(struct VSLQ **pvslq);
 	 * Any cursor owned by the query will be deleted.
 	 */
 
+void VSLQ_SetCursor(struct VSLQ *vslq, struct VSL_cursor **cp);
+	/*
+	 * Set the cursor to use.
+	 *
+	 * Any previous cursor owned by the query will be deleted. Will
+	 * call VSLQ_Flush.
+	 *
+	 * Arguments:
+	 *      vslq: The VSLQ query
+	 *        cp: Pointer to the cursor to use or NULL
+	 */
+
 int VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv);
 	/*
 	 * Process log and call func for each set matching the specified
