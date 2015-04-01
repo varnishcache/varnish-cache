@@ -308,14 +308,12 @@ VUT_Main(void)
 		if (VUT.sigusr1) {
 			/* Flush and report any incomplete records */
 			VUT.sigusr1 = 0;
-			if (VUT.vslq != NULL)
-				VSLQ_Flush(VUT.vslq, vut_dispatch, NULL);
+			VSLQ_Flush(VUT.vslq, vut_dispatch, NULL);
 		}
 
-		if (VUT.vslq == NULL) {
+		if (VUT.vsm != NULL && !VSM_IsOpen(VUT.vsm)) {
 			/* Reconnect VSM */
 			AZ(VUT.r_arg);
-			AN(VUT.vsm);
 			VTIM_sleep(0.1);
 			if (VSM_Open(VUT.vsm)) {
 				VSM_ResetError(VUT.vsm);
@@ -328,8 +326,7 @@ VUT_Main(void)
 				VSM_Close(VUT.vsm);
 				continue;
 			}
-			VUT.vslq = VSLQ_New(VUT.vsl, &c, VUT.g_arg, VUT.q_arg);
-			AN(VUT.vslq);
+			VSLQ_SetCursor(VUT.vslq, &c);
 			AZ(c);
 			VUT_Error(0, "Log reacquired");
 		}
@@ -358,17 +355,15 @@ VUT_Main(void)
 		/* XXX: Make continuation optional */
 
 		VSLQ_Flush(VUT.vslq, vut_dispatch, NULL);
-		VSLQ_Delete(&VUT.vslq);
-		AZ(VUT.vslq);
 
-		if (i == -2) {
+		if (i == -2)
 			/* Abandoned */
 			VUT_Error(0, "Log abandoned");
-			VSM_Close(VUT.vsm);
-		} else if (i < -2) {
+		else if (i < -2)
 			/* Overrun */
 			VUT_Error(0, "Log overrun");
-		}
+
+		VSM_Close(VUT.vsm);
 	}
 
 	return (i);
