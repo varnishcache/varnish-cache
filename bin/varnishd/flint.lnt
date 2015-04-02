@@ -3,8 +3,6 @@
 
 -printf(3, VSL)
 -printf(2, http_PrintfHeader)
--printf(4, WSL)
--printf(3, WSLB)
 -printf(2, VSB_printf)
 
 -esym(755, vct_*)
