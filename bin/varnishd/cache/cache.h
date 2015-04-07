@@ -986,6 +986,7 @@ void VRG_dorange(struct req *req, struct busyobj *bo, const char *r);
 /* cache_req.c */
 struct req *Req_New(const struct worker *, struct sess *);
 void Req_Release(struct req *);
+int Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req);
 
 /* cache_session.c [SES] */
 struct sess *SES_New(struct sesspool *);

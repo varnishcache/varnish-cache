@@ -39,6 +39,8 @@
 
 #include "cache.h"
 
+#include "vtim.h"
+
 /*--------------------------------------------------------------------
  * Alloc/Free a request
  */
@@ -135,4 +137,69 @@ Req_Release(struct req *req)
 	VSL_Flush(req->vsl, 0);
 	req->sp = NULL;
 	MPL_Free(pp->mpl_req, req);
+}
+
+/*----------------------------------------------------------------------
+ */
+
+int
+Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	assert(sp == req->sp);
+
+	req->director_hint = NULL;
+	req->restarts = 0;
+
+	AZ(req->esi_level);
+	assert(req->top == req);
+
+	if (req->vcl != NULL) {
+		if (wrk->vcl != NULL)
+			VCL_Rel(&wrk->vcl);
+		wrk->vcl = req->vcl;
+		req->vcl = NULL;
+	}
+
+	VRTPRIV_dynamic_kill(sp->privs, (uintptr_t)req);
+	VRTPRIV_dynamic_kill(sp->privs, (uintptr_t)&req->top);
+
+	/* Charge and log byte counters */
+	AN(req->vsl->wid);
+	CNT_AcctLogCharge(wrk->stats, req);
+	req->req_bodybytes = 0;
+
+	VSL_End(req->vsl);
+
+	if (!isnan(req->t_prev) && req->t_prev > 0.)
+		sp->t_idle = req->t_prev;
+	else
+		sp->t_idle = W_TIM_real(wrk);
+
+	req->t_first = NAN;
+	req->t_prev = NAN;
+	req->t_req = NAN;
+	req->req_body_status = REQ_BODY_INIT;
+
+	req->hash_always_miss = 0;
+	req->hash_ignore_busy = 0;
+	req->is_hit = 0;
+
+	if (sp->fd >= 0 && req->doclose != SC_NULL)
+		SES_Close(sp, req->doclose);
+
+	if (sp->fd < 0) {
+		wrk->stats->sess_closed++;
+		AZ(req->vcl);
+		Req_Release(req);
+		SES_Delete(sp, SC_NULL, NAN);
+		return (1);
+	}
+
+	WS_Reset(req->ws, NULL);
+	WS_Reset(wrk->aws, NULL);
+	return (0);
 }

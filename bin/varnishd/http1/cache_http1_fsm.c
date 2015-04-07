@@ -40,76 +40,7 @@
 #include "cache/cache.h"
 #include "hash/hash_slinger.h"
 
-#include "vcl.h"
 #include "vtcp.h"
-#include "vtim.h"
-
-/*----------------------------------------------------------------------
- * This is the final state, figure out if we should close or recycle
- * the client connection
- */
-
-static int
-http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
-{
-
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_ORNULL(req->vcl, VCL_CONF_MAGIC);
-
-	req->director_hint = NULL;
-	req->restarts = 0;
-
-	AZ(req->esi_level);
-	assert(req->top == req);
-
-	if (req->vcl != NULL) {
-		if (wrk->vcl != NULL)
-			VCL_Rel(&wrk->vcl);
-		wrk->vcl = req->vcl;
-		req->vcl = NULL;
-	}
-
-	VRTPRIV_dynamic_kill(sp->privs, (uintptr_t)req);
-	VRTPRIV_dynamic_kill(sp->privs, (uintptr_t)&req->top);
-
-	/* Charge and log byte counters */
-	AN(req->vsl->wid);
-	CNT_AcctLogCharge(wrk->stats, req);
-	req->req_bodybytes = 0;
-
-	VSL_End(req->vsl);
-
-	if (!isnan(req->t_prev) && req->t_prev > 0.)
-		sp->t_idle = req->t_prev;
-	else
-		sp->t_idle = W_TIM_real(wrk);
-
-	req->t_first = NAN;
-	req->t_prev = NAN;
-	req->t_req = NAN;
-	req->req_body_status = REQ_BODY_INIT;
-
-	req->hash_always_miss = 0;
-	req->hash_ignore_busy = 0;
-	req->is_hit = 0;
-
-	if (sp->fd >= 0 && req->doclose != SC_NULL)
-		SES_Close(sp, req->doclose);
-
-	if (sp->fd < 0) {
-		wrk->stats->sess_closed++;
-		AZ(req->vcl);
-		Req_Release(req);
-		SES_Delete(sp, SC_NULL, NAN);
-		return (1);
-	}
-
-	WS_Reset(req->ws, NULL);
-	WS_Reset(wrk->aws, NULL);
-	return (0);
-}
 
 /*----------------------------------------------------------------------
  */
@@ -239,7 +170,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			SES_Close(sp, SC_REM_CLOSE);
 		else
 			SES_Close(sp, SC_TX_ERROR);
-		AN(http1_cleanup(sp, wrk, req));
+		AN(Req_Cleanup(sp, wrk, req));
 		return;
 	}
 
@@ -251,7 +182,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 					SES_Close(sp, SC_REM_CLOSE);
 				else
 					SES_Close(sp, SC_TX_ERROR);
-				AN(http1_cleanup(sp, wrk, req));
+				AN(Req_Cleanup(sp, wrk, req));
 				return;
 			}
 			sp->sess_step = S_STP_H1NEWREQ;
@@ -309,7 +240,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				(void)HSH_DerefObjHead(wrk, &req->hash_objhead);
 				AZ(req->hash_objhead);
 				SES_Close(sp, SC_REM_CLOSE);
-				AN(http1_cleanup(sp, wrk, req));
+				AN(Req_Cleanup(sp, wrk, req));
 				return;
 			}
 			sp->sess_step = S_STP_H1PROC;
@@ -331,7 +262,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			sp->sess_step = S_STP_H1CLEANUP;
 			break;
 		case S_STP_H1CLEANUP:
-			if (http1_cleanup(sp, wrk, req))
+			if (Req_Cleanup(sp, wrk, req))
 				return;
 			SES_RxReInit(req->htc);
 			if (HTTP1_Complete(req->htc) == HTC_S_COMPLETE) {
