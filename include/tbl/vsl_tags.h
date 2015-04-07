@@ -138,6 +138,10 @@ SLTM(HttpGarbage, SLT_F_BINARY, "Unparseable HTTP request",
 	"Logs the content of unparseable HTTP requests.\n\n"
 )
 
+SLTM(ProxyGarbage, 0, "Unparseable PROXY request",
+	"A PROXY protocol header was unparseable.\n\n"
+)
+
 SLTM(Backend, 0, "Backend selected",
 	"Logged when a connection is selected for handling a backend"
 	" request.\n\n"

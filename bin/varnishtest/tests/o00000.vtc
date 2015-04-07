@@ -1,0 +1,159 @@
+varnishtest "PROXY1 protocol tests"
+
+server s1 {
+	rxreq
+	txresp
+	rxreq
+	txresp
+} -start
+
+varnish v1 -proto "PROXY" -vcl+backend {
+	import ${vmod_std};
+
+	sub vcl_deliver {
+		set resp.http.li = local.ip;
+		set resp.http.lp = std.port(local.ip);
+		set resp.http.ri = remote.ip;
+		set resp.http.rp = std.port(remote.ip);
+		set resp.http.ci = client.ip;
+		set resp.http.cp = std.port(client.ip);
+		set resp.http.si = server.ip;
+		set resp.http.sp = std.port(server.ip);
+	}
+} -start
+
+client c1 {
+	send "XYZ\r\n"
+	expect_close
+} -run
+delay .1
+
+client c1 {
+	send "PROXY "
+	timeout 8
+	expect_close
+} -run
+delay .1
+
+client c1 {
+	send "PROXY A B C D\r\n"
+	timeout 8
+	expect_close
+} -run
+delay .1
+
+client c1 {
+	send "PROXY A B C D E F\r\n"
+	timeout 8
+	expect_close
+} -run
+delay .1
+
+client c1 {
+	send "PROXY A B C D E\r\n"
+	timeout 8
+	expect_close
+} -run
+delay .1
+
+client c1 {
+	send "PROXY TCP4 B C D E\r\n"
+	timeout 8
+	expect_close
+} -run
+delay .1
+
+client c1 {
+	send "PROXY TCP4 1.2.3.4 C D E\r\n"
+	timeout 8
+	expect_close
+} -run
+delay .1
+
+client c1 {
+	send "PROXY TCP4 1.2.3.4 1234 D E\r\n"
+	timeout 8
+	expect_close
+} -run
+delay .1
+
+client c1 {
+	send "PROXY TCP4 1.2.3.4 1234 5.6.7.8 E\r\n"
+	timeout 8
+	expect_close
+} -run
+delay .1
+
+client c1 {
+	send "PROXY TCP6 B C D E\r\n"
+	timeout 8
+	expect_close
+} -run
+delay .1
+
+client c1 {
+	send "PROXY TCP6 1:f::2 C D E\r\n"
+	timeout 8
+	expect_close
+} -run
+delay .1
+
+client c1 {
+	send "PROXY TCP6 1:f::2 1234 D E\r\n"
+	timeout 8
+	expect_close
+} -run
+delay .1
+
+client c1 {
+	send "PROXY TCP6 1:f::2 1234 5:a::8 E\r\n"
+	timeout 8
+	expect_close
+} -run
+delay .1
+
+client c1 {
+	send "PROXY TCP4 1:f::2 1234 5:a::8 5678\r\n"
+	timeout 8
+	expect_close
+} -run
+delay .1
+
+client c1 {
+	send "PROXY TCP6 1.2.3.4 1234 5.6.7.8 5678\r\n"
+	timeout 8
+	expect_close
+} -run
+delay .1
+
+# Finally try something which works...
+client c1 {
+	send "PROXY TCP4 1.2.3.4 1234 5.6.7.8 5678\r\n"
+	txreq
+	rxresp
+	expect resp.http.ci == "1.2.3.4"
+	expect resp.http.cp == "1234"
+	expect resp.http.si == "5.6.7.8"
+	expect resp.http.sp == "5678"
+	expect resp.http.li == ${v1_addr}
+	expect resp.http.lp == ${v1_port}
+	expect resp.http.ri != "1.2.3.4"
+	expect resp.http.rp != "1234"
+} -run
+delay .1
+
+client c1 {
+	send "PROXY TCP6 1:f::2 1234 5:a::8 5678\r\n"
+	txreq
+	rxresp
+	expect resp.http.ci == "1:f::2"
+	expect resp.http.cp == "1234"
+	expect resp.http.si == "5:a::8"
+	expect resp.http.sp == "5678"
+	expect resp.http.li == ${v1_addr}
+	expect resp.http.lp == ${v1_port}
+	expect resp.http.ri != "1:f::2"
+	expect resp.http.rp != "1234"
+} -run
+delay .1
+
