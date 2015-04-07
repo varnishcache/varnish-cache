@@ -1000,6 +1000,7 @@ task_func_t SES_Proto_Sess;
 task_func_t SES_Proto_Req;
 
 enum htc_status_e {
+	HTC_S_JUNK =		-5,
 	HTC_S_CLOSE =		-4,
 	HTC_S_TIMEOUT =		-3,
 	HTC_S_OVERFLOW =	-2,
