@@ -75,7 +75,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 	if (preq->esi_level >= cache_param->max_esi_depth)
 		return;
 
-	req = SES_GetReq(wrk, preq->sp);
+	req = Req_New(wrk, preq->sp);
 	req->req_body_status = REQ_BODY_NONE;
 	AZ(req->vsl->wid);
 	req->vsl->wid = VXID_Get(wrk, VSL_CLIENTMARKER);
@@ -166,7 +166,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 	req->wrk = NULL;
 
 	THR_SetRequest(preq);
-	SES_ReleaseReq(req);
+	Req_Release(req);
 }
 
 /*--------------------------------------------------------------------*/

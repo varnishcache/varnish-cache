@@ -118,7 +118,6 @@ struct pool;
 struct poolparam;
 struct req;
 struct sess;
-struct sesspool;
 struct suckaddr;
 struct vbc;
 struct vrt_backend;
@@ -638,6 +637,15 @@ struct req {
  * works, is not realistic without a lot of code changes.
  */
 
+struct sesspool {
+	unsigned		magic;
+#define SESSPOOL_MAGIC		0xd916e202
+	struct pool		*pool;
+	struct mempool		*mpl_req;
+	struct mempool		*mpl_sess;
+
+	struct waiter		*http1_waiter;
+};
 
 enum sess_attr {
 #define SESS_ATTR(UP, low, typ, len)	SA_##UP,
@@ -975,6 +983,10 @@ task_func_t VPX_Proto_Sess;
 /* cache_range.c [VRG] */
 void VRG_dorange(struct req *req, struct busyobj *bo, const char *r);
 
+/* cache_req.c */
+struct req *Req_New(const struct worker *, struct sess *);
+void Req_Release(struct req *);
+
 /* cache_session.c [SES] */
 struct sess *SES_New(struct sesspool *);
 void SES_Close(struct sess *sp, enum sess_close reason);
@@ -983,8 +995,6 @@ void SES_Delete(struct sess *sp, enum sess_close reason, double now);
 struct sesspool *SES_NewPool(struct pool *pp, unsigned pool_no);
 void SES_DeletePool(struct sesspool *sp);
 int SES_Reschedule_Req(struct req *);
-struct req *SES_GetReq(const struct worker *, struct sess *);
-void SES_ReleaseReq(struct req *);
 task_func_t SES_Proto_Sess;
 task_func_t SES_Proto_Req;
 

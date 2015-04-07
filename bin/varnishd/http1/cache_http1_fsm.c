@@ -101,7 +101,7 @@ http1_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	if (sp->fd < 0) {
 		wrk->stats->sess_closed++;
 		AZ(req->vcl);
-		SES_ReleaseReq(req);
+		Req_Release(req);
 		SES_Delete(sp, SC_NULL, NAN);
 		return (1);
 	}
@@ -267,7 +267,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				req->acct.req_hdrbytes +=
 				    req->htc->rxbuf_e - req->htc->rxbuf_b;
 				CNT_AcctLogCharge(wrk->stats, req);
-				SES_ReleaseReq(req);
+				Req_Release(req);
 				switch(hs) {
 				case HTC_S_CLOSE:
 					SES_Delete(sp, SC_REM_CLOSE, 0.0);
@@ -287,7 +287,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			}
 			if (hs == HTC_S_IDLE) {
 				wrk->stats->sess_herd++;
-				SES_ReleaseReq(req);
+				Req_Release(req);
 				SES_Wait(sp);
 				return;
 			}

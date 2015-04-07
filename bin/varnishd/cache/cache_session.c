@@ -54,18 +54,6 @@
 
 /*--------------------------------------------------------------------*/
 
-struct sesspool {
-	unsigned		magic;
-#define SESSPOOL_MAGIC		0xd916e202
-	struct pool		*pool;
-	struct mempool		*mpl_req;
-	struct mempool		*mpl_sess;
-
-	struct waiter		*http1_waiter;
-};
-
-/*--------------------------------------------------------------------*/
-
 static int
 ses_get_attr(const struct sess *sp, enum sess_attr a, void **dst)
 {
@@ -381,7 +369,7 @@ SES_Proto_Sess(struct worker *wrk, void *arg)
 	 * involve a request...
 	 */
 	(void)VTCP_blocking(sp->fd);
-	req = SES_GetReq(wrk, sp);
+	req = Req_New(wrk, sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	req->htc->fd = sp->fd;
 	SES_RxInit(req->htc, req->ws,
@@ -568,104 +556,6 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
 
 	Lck_Delete(&sp->mtx);
 	MPL_Free(pp->mpl_sess, sp);
-}
-
-/*--------------------------------------------------------------------
- * Alloc/Free a request
- */
-
-struct req *
-SES_GetReq(const struct worker *wrk, struct sess *sp)
-{
-	struct sesspool *pp;
-	struct req *req;
-	uint16_t nhttp;
-	unsigned sz, hl;
-	char *p, *e;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	pp = sp->sesspool;
-	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
-	AN(pp->pool);
-
-	req = MPL_Get(pp->mpl_req, &sz);
-	AN(req);
-	req->magic = REQ_MAGIC;
-	req->sp = sp;
-	req->top = req;	// esi overrides
-
-	e = (char*)req + sz;
-	p = (char*)(req + 1);
-	p = (void*)PRNDUP(p);
-	assert(p < e);
-
-	nhttp = (uint16_t)cache_param->http_max_hdr;
-	hl = HTTP_estimate(nhttp);
-
-	req->http = HTTP_create(p, nhttp);
-	p += hl;
-	p = (void*)PRNDUP(p);
-	assert(p < e);
-
-	req->http0 = HTTP_create(p, nhttp);
-	p += hl;
-	p = (void*)PRNDUP(p);
-	assert(p < e);
-
-	req->resp = HTTP_create(p, nhttp);
-	p += hl;
-	p = (void*)PRNDUP(p);
-	assert(p < e);
-
-	sz = cache_param->vsl_buffer;
-	VSL_Setup(req->vsl, p, sz);
-	p += sz;
-	p = (void*)PRNDUP(p);
-
-	assert(p < e);
-
-	WS_Init(req->ws, "req", p, e - p);
-
-	req->req_bodybytes = 0;
-
-	req->t_first = NAN;
-	req->t_prev = NAN;
-	req->t_req = NAN;
-
-	req->vdp_nxt = 0;
-	VTAILQ_INIT(&req->vdp);
-
-	return (req);
-}
-
-void
-SES_ReleaseReq(struct req *req)
-{
-	struct sess *sp;
-	struct sesspool *pp;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
-	/* Make sure the request counters have all been zeroed */
-#define ACCT(foo) \
-	AZ(req->acct.foo);
-#include "tbl/acct_fields_req.h"
-#undef ACCT
-
-	AZ(req->vcl);
-	if (req->vsl->wid)
-		VSL_End(req->vsl);
-	sp = req->sp;
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	pp = sp->sesspool;
-	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
-	AN(pp->pool);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	MPL_AssertSane(req);
-	VSL_Flush(req->vsl, 0);
-	req->sp = NULL;
-	MPL_Free(pp->mpl_req, req);
 }
 
 /*--------------------------------------------------------------------

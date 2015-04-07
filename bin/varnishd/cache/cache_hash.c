@@ -547,7 +547,7 @@ hsh_rush(struct worker *wrk, struct objhead *oh)
 				sp = req->sp;
 				CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 				CNT_AcctLogCharge(wrk->stats, req);
-				SES_ReleaseReq(req);
+				Req_Release(req);
 				SES_Delete(sp, SC_OVERLOAD, NAN);
 				req = VTAILQ_FIRST(&wl->list);
 				if (req == NULL)
