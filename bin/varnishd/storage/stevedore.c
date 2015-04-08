@@ -298,7 +298,8 @@ STV_trim(const struct stevedore *stv, struct storage *st, size_t size,
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	if (stv->trim)
-		stv->trim(st, size, move_ok); }
+		stv->trim(st, size, move_ok);
+}
 
 void
 STV_free(const struct stevedore *stv, struct storage *st)
