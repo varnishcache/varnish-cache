@@ -70,10 +70,12 @@ struct parspec mgt_parspec[] = {
 	{ "workspace_session",
 		tweak_bytes_u, &mgt_param.workspace_session,
 		"256", NULL,
-		"Bytes of workspace for session and TCP connection addresses."
+		"Allocation size for session structure and workspace.  "
+		"  The workspace is primarily used for TCP connection "
+		"addresses."
 		"  If larger than 4k, use a multiple of 4k for VM efficiency.",
 		DELAYED_EFFECT,
-		"384", "bytes" },
+		"512", "bytes" },
 	{ "workspace_client",
 		tweak_bytes_u, &mgt_param.workspace_client,
 		"9k", NULL,
