@@ -42,13 +42,3 @@ client c1 {
 	expect resp.status == 200
 	expect resp.bodylen == 1
 } -run
-
-varnish v1 -errvcl {'beresp.http.bar': Not available in method 'vcl_recv'}  {
-	import ${vmod_std};
-
-	backend b { .host = "127.0.0.1"; }
-
-	sub vcl_recv {
-		std.collect(beresp.http.bar);
-	}
-}
