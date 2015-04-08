@@ -150,6 +150,8 @@ vpx_proto1(const struct worker *wrk, struct req *req)
 	AN(VSA_Build(sa, res->ai_addr, res->ai_addrlen));
 	freeaddrinfo(res);
 
+	VSLb(req->vsl, SLT_Proxy, "1 %s %s %s %s",
+	    fld[1], fld[2], fld[3], fld[4]);
 	req->htc->pipeline_b = q;
 	return (0);
 }
@@ -172,6 +174,8 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	struct sockaddr_in sin4;
 	struct sockaddr_in6 sin6;
 	struct suckaddr *sa = NULL;
+	char ha[VTCP_ADDRBUFSIZE];
+	char pa[VTCP_PORTBUFSIZE];
 	char hb[VTCP_ADDRBUFSIZE];
 	char pb[VTCP_PORTBUFSIZE];
 
@@ -247,6 +251,7 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 		memcpy(&sin4.sin_port, p + 26, 2);
 		SES_Reserve_server_addr(req->sp, &sa);
 		AN(VSA_Build(sa, &sin4, sizeof sin4));
+		VTCP_name(sa, ha, sizeof ha, pa, sizeof pa);
 
 		/* src/client */
 		memcpy(&sin4.sin_addr, p + 16, 4);
@@ -263,6 +268,7 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 		memcpy(&sin6.sin6_port, p + 50, 2);
 		SES_Reserve_server_addr(req->sp, &sa);
 		AN(VSA_Build(sa, &sin6, sizeof sin6));
+		VTCP_name(sa, ha, sizeof ha, pa, sizeof pa);
 
 		/* src/client */
 		memcpy(&sin6.sin6_addr, p + 16, 16);
@@ -278,8 +284,8 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	VTCP_name(sa, hb, sizeof hb, pb, sizeof pb);
 	SES_Set_String_Attr(req->sp, SA_CLIENT_IP, hb);
 	SES_Set_String_Attr(req->sp, SA_CLIENT_PORT, pb);
-	VSLb(req->vsl, SLT_Debug, "PROXY2 %s %s", hb, pb);
 
+	VSLb(req->vsl, SLT_Proxy, "2 %s %s %s %s", hb, pb, ha, pa);
 	return (0);
 }
 

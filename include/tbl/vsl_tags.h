@@ -70,9 +70,9 @@ SLTM(SessOpen, 0, "Client connection opened",
 	"\t|  |  |  |  |  +- File descriptor number\n"
 	"\t|  |  |  |  +---- Local TCP port ('-' if !$log_local_addr)\n"
 	"\t|  |  |  +------- Local IPv4/6 address ('-' if !$log_local_addr)\n"
-	"\t|  |  +---------- Listen socket\n"
-	"\t|  +------------- Client TCP socket\n"
-	"\t+---------------- Client IPv4/6 address\n"
+	"\t|  |  +---------- Listen socket (-a argument)\n"
+	"\t|  +------------- Remote TCP port\n"
+	"\t+---------------- Remote IPv4/6 address\n"
 	"\n"
 )
 
@@ -136,6 +136,19 @@ SLTM(BackendClose, 0, "Backend connection closed",
 
 SLTM(HttpGarbage, SLT_F_BINARY, "Unparseable HTTP request",
 	"Logs the content of unparseable HTTP requests.\n\n"
+)
+
+SLTM(Proxy, 0, "PROXY protocol information",
+	"PROXY protocol information.\n\n"
+	"The format is::\n\n"
+	"\t%d %s %d %s %d [key value]...\n"
+	"\t|  |  |  |  |  |\n"
+	"\t|  |  |  |  |  +- optional information\n"
+	"\t|  |  |  |  +- server port\n"
+	"\t|  |  |  +- server ip\n"
+	"\t|  |  +- client port\n"
+	"\t|  +- client ip\n"
+	"\t+---- PROXY protocol version\n"
 )
 
 SLTM(ProxyGarbage, 0, "Unparseable PROXY request",
@@ -263,8 +276,8 @@ SLTM(ReqStart, 0, "Client request start",
 	"The format is::\n\n"
 	"\t%s %s\n"
 	"\t|  |\n"
-	"\t|  +- Port number\n"
-	"\t+---- IP address\n"
+	"\t|  +- Client Port number\n"
+	"\t+---- Client IP4/6 address\n"
 	"\n"
 )
 
