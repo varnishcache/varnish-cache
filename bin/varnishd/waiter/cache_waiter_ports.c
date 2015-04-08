@@ -35,6 +35,7 @@
 
 #include <sys/time.h>
 
+#include <errno.h>
 #include <port.h>
 #include <stdio.h>
 #include <stdlib.h>
