@@ -75,12 +75,12 @@ mpl_alloc(const struct mempool *mpl)
 
 	CHECK_OBJ_NOTNULL(mpl, MEMPOOL_MAGIC);
 	tsz = *mpl->cur_size;
-	mi = calloc(sizeof *mi + tsz, 1);
+	mi = calloc(tsz, 1);
 	AN(mi);
 	mi->magic = MEMITEM_MAGIC;
 	mi->size = tsz;
 	mpl->vsc->sz_wanted = tsz;
-	mpl->vsc->sz_needed = tsz + sizeof *mi;
+	mpl->vsc->sz_actual = tsz - sizeof *mi;
 	return (mi);
 }
 
@@ -115,7 +115,6 @@ mpl_guard(void *priv)
 
 		if (mi == NULL && mpl->n_pool < mpl->param->min_pool)
 			mi = mpl_alloc(mpl);
-
 
 		if (mpl->n_pool < mpl->param->min_pool && mi != NULL) {
 			/* can do */
@@ -273,6 +272,7 @@ MPL_Get(struct mempool *mpl, unsigned *size)
 	struct memitem *mi;
 
 	CHECK_OBJ_NOTNULL(mpl, MEMPOOL_MAGIC);
+	AN(size);
 
 	Lck_Lock(&mpl->mtx);
 
@@ -301,8 +301,7 @@ MPL_Get(struct mempool *mpl, unsigned *size)
 
 	if (mi == NULL)
 		mi = mpl_alloc(mpl);
-	if (size != NULL)
-		*size = mi->size;
+	*size = mi->size - sizeof *mi;
 
 	CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
 	/* Throw away sizeof info for FlexeLint: */
@@ -319,7 +318,7 @@ MPL_Free(struct mempool *mpl, void *item)
 
 	mi = (void*)((uintptr_t)item - sizeof(*mi));
 	CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
-	memset(item, 0, mi->size);
+	memset(item, 0, mi->size - sizeof *mi);
 
 	Lck_Lock(&mpl->mtx);
 

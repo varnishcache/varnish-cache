@@ -239,7 +239,7 @@ VSC_F(sz_wanted,		uint64_t, 0, 'g', 'B', debug,
     "Size requested",
 	""
 )
-VSC_F(sz_needed,		uint64_t, 0, 'g', 'B', debug,
+VSC_F(sz_actual,		uint64_t, 0, 'g', 'B', debug,
     "Size allocated",
 	""
 )
