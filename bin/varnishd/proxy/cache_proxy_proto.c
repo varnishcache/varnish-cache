@@ -32,6 +32,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <netinet/in.h>
+
 #include <netdb.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,11 +42,7 @@
 
 #include "vend.h"
 #include "vsa.h"
-
-static const char vpx2_sig[] = {
-	'\r', '\n', '\r', '\n', '\0', '\r', '\n',
-	'Q', 'U', 'I', 'T', '\n',
-};
+#include "vtcp.h"
 
 /**********************************************************************
  * PROXY 1 protocol
@@ -60,7 +58,7 @@ vpx_proto1(const struct worker *wrk, struct req *req)
 	char *p, *q;
 	struct addrinfo hints, *res;
 	struct suckaddr *sa;
-	int pfam = 0;
+	int pfam = -1;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -156,20 +154,138 @@ vpx_proto1(const struct worker *wrk, struct req *req)
 	return (0);
 }
 
+/**********************************************************************
+ * PROXY 2 protocol
+ */
+
+static const char vpx2_sig[] = {
+	'\r', '\n', '\r', '\n', '\0', '\r', '\n',
+	'Q', 'U', 'I', 'T', '\n',
+};
+
 static int
 vpx_proto2(const struct worker *wrk, struct req *req)
 {
 	int l;
+	const uint8_t *p;
+	sa_family_t pfam = 0xff;
+	struct sockaddr_in sin4;
+	struct sockaddr_in6 sin6;
+	struct suckaddr *sa = NULL;
+	char hb[VTCP_ADDRBUFSIZE];
+	char pb[VTCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	VSL(SLT_Debug, req->sp->fd, "PROXY2");
 
-	assert(req->htc->rxbuf_e - req->htc->rxbuf_b >= 16);
+	assert(req->htc->rxbuf_e - req->htc->rxbuf_b >= 16L);
 	l = vbe16dec(req->htc->rxbuf_b + 14);
-	req->htc->pipeline_b = req->htc->rxbuf_b + 16 + l;
+	assert(req->htc->rxbuf_e - req->htc->rxbuf_b >= 16L + l);
+	req->htc->pipeline_b = req->htc->rxbuf_b + 16L + l;
+	p = (const void *)req->htc->rxbuf_b;
+
+	/* Version @12 top half */
+	if ((p[12] >> 4) != 2) {
+		VSLb(req->vsl, SLT_ProxyGarbage,
+		    "PROXY2: bad version (%d)", p[12] >> 4);
+		return (-1);
+	}
+
+	/* Command @12 bottom half */
+	switch(p[12] & 0x0f) {
+	case 0x0:
+		/* Local connection from proxy, ignore addresses */
+		return (0);
+	case 0x1:
+		/* Proxied connection */
+		break;
+	default:
+		VSLb(req->vsl, SLT_ProxyGarbage,
+		    "PROXY2: bad command (%d)", p[12] & 0x0f);
+		return (-1);
+	}
+
+	/* Address family & protocol @13 */
+	switch(p[13]) {
+	case 0x00:
+		/* UNSPEC|UNSPEC, ignore proxy header */
+		VSLb(req->vsl, SLT_ProxyGarbage,
+		    "PROXY2: Ignoring UNSPEC|UNSPEC addresses");
+		return (0);
+	case 0x11:
+		/* IPv4|TCP */
+		pfam = AF_INET;
+		if (l < 12) {
+			VSLb(req->vsl, SLT_ProxyGarbage,
+			    "PROXY2: Ignoring short IPv4 addresses (%d)", l);
+			return (0);
+		}
+		break;
+	case 0x21:
+		/* IPv6|TCP */
+		pfam = AF_INET6;
+		if (l < 36) {
+			VSLb(req->vsl, SLT_ProxyGarbage,
+			    "PROXY2: Ignoring short IPv6 addresses (%d)", l);
+			return (0);
+		}
+		break;
+	default:
+		/* Ignore proxy header */
+		VSLb(req->vsl, SLT_ProxyGarbage,
+		    "PROXY2: Ignoring unsupported protocol (0x%02x)", p[13]);
+		return (0);
+	}
+
+	switch (pfam) {
+	case AF_INET:
+		memset(&sin4, 0, sizeof sin4);
+		sin4.sin_family = pfam;
+
+		/* dst/server */
+		memcpy(&sin4.sin_addr, p + 20, 4);
+		memcpy(&sin4.sin_port, p + 26, 2);
+		SES_Reserve_server_addr(req->sp, &sa);
+		AN(VSA_Build(sa, &sin4, sizeof sin4));
+
+		/* src/client */
+		memcpy(&sin4.sin_addr, p + 16, 4);
+		memcpy(&sin4.sin_port, p + 24, 2);
+		SES_Reserve_client_addr(req->sp, &sa);
+		AN(VSA_Build(sa, &sin4, sizeof sin4));
+		break;
+	case AF_INET6:
+		memset(&sin6, 0, sizeof sin6);
+		sin6.sin6_family = pfam;
+
+		/* dst/server */
+		memcpy(&sin6.sin6_addr, p + 32, 16);
+		memcpy(&sin6.sin6_port, p + 50, 2);
+		SES_Reserve_server_addr(req->sp, &sa);
+		AN(VSA_Build(sa, &sin6, sizeof sin6));
+
+		/* src/client */
+		memcpy(&sin6.sin6_addr, p + 16, 16);
+		memcpy(&sin6.sin6_port, p + 48, 2);
+		SES_Reserve_client_addr(req->sp, &sa);
+		AN(VSA_Build(sa, &sin6, sizeof sin6));
+		break;
+	default:
+		WRONG("Wrong pfam");
+	}
+
+	AN(sa);
+	VTCP_name(sa, hb, sizeof hb, pb, sizeof pb);
+	SES_Set_String_Attr(req->sp, SA_CLIENT_IP, hb);
+	SES_Set_String_Attr(req->sp, SA_CLIENT_PORT, pb);
+	VSLb(req->vsl, SLT_Debug, "PROXY2 %s %s", hb, pb);
+
 	return (0);
 }
+
+/**********************************************************************
+ * HTC_Rx completion detector
+ */
 
 static enum htc_status_e __match_proto__(htc_complete_f)
 vpx_complete(struct http_conn *htc)
@@ -192,6 +308,8 @@ vpx_complete(struct http_conn *htc)
 		if (j == 0)
 			return (HTC_S_JUNK);
 		if (j == 1 && i == sizeof vpx1_sig) {
+			if (l > 107)
+				return (HTC_S_OVERFLOW);
 			if (strchr(p + i, '\n') == NULL)
 				return (HTC_S_MORE);
 			return (HTC_S_COMPLETE);
@@ -207,7 +325,6 @@ vpx_complete(struct http_conn *htc)
 	}
 	return (HTC_S_MORE);
 }
-
 
 void __match_proto__(task_func_t)
 VPX_Proto_Sess(struct worker *wrk, void *priv)

@@ -1,0 +1,169 @@
+varnishtest "PROXY v2 test"
+
+server s1 {
+	# The server address is part of the hash-key
+	# so we need three responses
+	rxreq
+	expect req.http.x-forwarded-for == "127.0.0.1"
+	txresp -hdr "Obj: 1"
+	rxreq
+	expect req.http.x-forwarded-for == "1.2.3.4"
+	txresp -hdr "Obj: 2"
+	rxreq
+	expect req.http.x-forwarded-for == "102:304:506::d0e:f10"
+	txresp -hdr "Obj: 3"
+} -start
+
+varnish v1 -proto "PROXY" -vcl+backend {
+	import ${vmod_std};
+
+	acl fwd_client {
+		"1.2.3.4";
+		"102:304:506::d0e:f10";
+	}
+	acl fwd_server {
+		"5.6.7.8";
+		"8182:8384:8586::8d8e:8f80";
+	}
+
+	sub vcl_deliver {
+		set resp.http.li = local.ip;
+		set resp.http.lp = std.port(local.ip);
+		set resp.http.ri = remote.ip;
+		set resp.http.rp = std.port(remote.ip);
+		set resp.http.ci = client.ip;
+		set resp.http.cp = std.port(client.ip);
+		set resp.http.si = server.ip;
+		set resp.http.sp = std.port(server.ip);
+		set resp.http.fc = (client.ip ~ fwd_client);
+		set resp.http.fs = (server.ip ~ fwd_server);
+	}
+} -start
+
+client c1 {
+	# LOCAL command
+	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
+	sendhex "20 00 00 00"
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.si == "${v1_addr}"
+	expect resp.http.sp == "${v1_port}"
+	expect resp.http.ci == "127.0.0.1"
+} -run
+delay .1
+
+client c1 {
+	# unknown command
+	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
+	sendhex "22 00 00 00"
+	timeout 8
+	expect_close
+} -run
+delay .1
+
+client c1 {
+	# UNSPEC proto
+	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
+	sendhex "21 00 00 00"
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.si == "${v1_addr}"
+	expect resp.http.sp == "${v1_port}"
+	expect resp.http.ci == "127.0.0.1"
+} -run
+delay .1
+
+client c1 {
+	# unknown proto
+	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
+	sendhex "21 99 00 00"
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.si == "${v1_addr}"
+	expect resp.http.sp == "${v1_port}"
+	expect resp.http.ci == "127.0.0.1"
+} -run
+delay .1
+
+client c1 {
+	# short IPv4
+	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
+	sendhex "21 11 00 0b"
+	sendhex "01 02 03 04 05 06 07 08 09 0a 0b"
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.si == "${v1_addr}"
+	expect resp.http.sp == "${v1_port}"
+	expect resp.http.ci == "127.0.0.1"
+} -run
+delay .1
+
+client c1 {
+	# short IPv6
+	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
+	sendhex "21 21 00 23"
+	sendhex "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f"
+	sendhex "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f"
+	sendhex "01 02 03"
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.fs == false
+	expect resp.http.fc == false
+	expect resp.http.si == "${v1_addr}"
+	expect resp.http.sp == "${v1_port}"
+	expect resp.http.ci == "127.0.0.1"
+} -run
+delay .1
+
+client c1 {
+	# good IPv4
+	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
+	sendhex "21 11 00 0c"
+	sendhex "01 02 03 04"
+	sendhex "05 06 07 08"
+	sendhex "09 0a"
+	sendhex "0b 0c"
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.obj == 2
+	expect resp.http.fs == true
+	expect resp.http.fc == true
+	expect resp.http.ci == "1.2.3.4"
+	expect resp.http.cp == "2314"
+	expect resp.http.si == "5.6.7.8"
+	expect resp.http.sp == "2828"
+	expect resp.http.li == "${v1_addr}"
+	expect resp.http.lp == "${v1_port}"
+	expect resp.http.ri != "1.2.3.4"
+} -run
+delay .1
+
+client c1 {
+	# good IPv6
+	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
+	sendhex "21 21 00 24"
+	sendhex "01 02 03 04  05 06 00 00  00 00 00 00  0d 0e 0f 10"
+	sendhex "81 82 83 84  85 86 00 00  00 00 00 00  8d 8e 8f 80"
+	sendhex "09 0a"
+	sendhex "0b 0c"
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.obj == 3
+	expect resp.http.fs == true
+	expect resp.http.fc == true
+	expect resp.http.ci == "102:304:506::d0e:f10"
+	expect resp.http.cp == "2314"
+	expect resp.http.si == "8182:8384:8586::8d8e:8f80"
+	expect resp.http.sp == "2828"
+	expect resp.http.li == "${v1_addr}"
+	expect resp.http.lp == "${v1_port}"
+	expect resp.http.ri != "102:304:506::d0e:f10"
+} -run
+delay .1
