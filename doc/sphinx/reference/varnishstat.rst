@@ -52,6 +52,15 @@ The following options are available:
 	Specify a the filename of a stale VSM instance. When using
         this option the abandonment checking is disabled.
 
+-t seconds|<off>
+	Timeout before returning error on initial VSM connection.  If
+	set the VSM connection is retried every 0.5 seconds for this
+	any seconds. If zero the connection is attempted only once and
+	will fail immediately if unsuccessful. If set to "off", the
+	connection will not fail, allowing the utility to start and
+	wait indefinetely for the Varnish instance to appear.
+	Defaults to 5 seconds.
+
 -V
 	Display the version number and exit.
 
