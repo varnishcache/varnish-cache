@@ -33,12 +33,16 @@
 #include "config.h"
 
 #include <sys/time.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <math.h>
+#include <stdint.h>
+
+#include "vnum.h"
+#include "vtim.h"
 
 #include "varnishstat.h"
 
@@ -275,10 +279,12 @@ main(int argc, char * const *argv)
 {
 	int c;
 	struct VSM_data *vd;
-	double delay = 1.0;
-	int   once = 0, xml = 0, json = 0, do_repeat = 0, f_list = 0;
+	double delay = 1.0, t_arg = 5.0, t_start = NAN;
+	int once = 0, xml = 0, json = 0, do_repeat = 0, f_list = 0, curses = 0;
+	int i;
 
 	vd = VSM_New();
+	AN(vd);
 
 	while ((c = getopt(argc, argv, VSC_ARGS "1f:lVw:xjt:")) != -1) {
 		switch (c) {
@@ -288,12 +294,31 @@ main(int argc, char * const *argv)
 		case 'l':
 			f_list = 1;
 			break;
+		case 't':
+			if (!strcasecmp(optarg, "off"))
+				t_arg = -1.;
+			else {
+				t_arg = VNUM(optarg);
+				if (isnan(t_arg)) {
+					fprintf(stderr, "-t: Syntax error");
+					exit(1);
+				}
+				if (t_arg < 0.) {
+					fprintf(stderr, "-t: Range error");
+					exit(1);
+				}
+			}
+			break;
 		case 'V':
 			VCS_Message("varnishstat");
 			exit(0);
 		case 'w':
 			do_repeat = 1;
-			delay = atof(optarg);
+			delay = VNUM(optarg);
+			if (isnan(delay)) {
+				fprintf(stderr, "-w: Syntax error");
+				exit(1);
+			}
 			break;
 		case 'x':
 			xml = 1;
@@ -309,13 +334,38 @@ main(int argc, char * const *argv)
 		}
 	}
 
-	if (VSM_Open(vd)) {
-		fprintf(stderr, "%s\n", VSM_Error(vd));
-		exit(1);
+	if (!(xml || json || once || f_list))
+		curses = 1;
+
+	while (1) {
+		i = VSM_Open(vd);
+		if (!i)
+			break;
+		if (isnan(t_start) && t_arg > 0.) {
+			fprintf(stderr, "Can't open log -"
+			    " retrying for %.0f seconds\n", t_arg);
+			t_start = VTIM_real();
+		}
+		if (t_arg <= 0.)
+			break;
+		if (VTIM_real() - t_start > t_arg)
+			break;
+		VSM_ResetError(vd);
+		VTIM_sleep(0.5);
 	}
-	if (!(xml || json || once || f_list)) {
+
+	if (curses) {
+		if (i && t_arg >= 0.) {
+			fprintf(stderr, "%s\n", VSM_Error(vd));
+			exit(1);
+		}
 		do_curses(vd, delay);
 		exit(0);
+	}
+
+	if (i) {
+		fprintf(stderr, "%s\n", VSM_Error(vd));
+		exit(1);
 	}
 
 	while (1) {
