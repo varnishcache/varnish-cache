@@ -1,0 +1,33 @@
+varnishtest "Check that TCP OOB urgent data doesn't cause ill effects"
+
+server s1 {
+	rxreq
+	send_urgent " "
+	txresp
+	send_urgent " "
+	
+	rxreq
+	send_urgent " "
+	txresp
+	send_urgent " "
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	delay 0.5
+	send_urgent " "
+	expect_close
+} -run
+
+client c1 {
+	send_urgent " "
+	txreq -url /1
+	send_urgent " "
+	rxresp
+	send_urgent " "
+	txreq -url /2
+	send_urgent " "
+	rxresp
+	send_urgent " "
+} -run

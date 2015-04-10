@@ -1026,6 +1026,28 @@ cmd_http_send_n(CMD_ARGS)
 }
 
 /**********************************************************************
+ * Send an OOB urgent message
+ */
+
+static void
+cmd_http_send_urgent(CMD_ARGS)
+{
+	struct http *hp;
+	int i;
+
+	(void)cmd;
+	(void)vl;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	AN(av[1]);
+	AZ(av[2]);
+	vtc_dump(hp->vl, 4, "send_urgent", av[1], -1);
+	i = send(hp->fd, av[1], strlen(av[1]), MSG_OOB);
+	if (i != strlen(av[1]))
+		vtc_log(hp->vl, hp->fatal,
+		    "Write error in http_send_urgent(): %s", strerror(errno));
+}
+
+/**********************************************************************
  * Send a hex string
  */
 
@@ -1290,6 +1312,7 @@ static const struct cmds http_cmds[] = {
 	{ "expect",		cmd_http_expect },
 	{ "send",		cmd_http_send },
 	{ "send_n",		cmd_http_send_n },
+	{ "send_urgent",	cmd_http_send_urgent },
 	{ "sendhex",		cmd_http_sendhex },
 	{ "chunked",		cmd_http_chunked },
 	{ "chunkedlen",		cmd_http_chunkedlen },
