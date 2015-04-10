@@ -74,7 +74,7 @@ vwe_inject(const struct waiter *w, struct waited *wp)
 		AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_MOD, wp->fd, &wp->ev));
 	else {
 		wp->ev.data.ptr = wp;
-		wp->ev.events = EPOLLIN | EPOLLPRI | EPOLLRDHUP;
+		wp->ev.events = EPOLLIN | EPOLLRDHUP;
 		if (wp != w->pipe_w)
 			wp->ev.events |= EPOLLONESHOT;
 		AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_ADD, wp->fd, &wp->ev));
@@ -88,7 +88,7 @@ vwe_eev(struct vwe *vwe, const struct epoll_event *ep, double now)
 
 	AN(ep->data.ptr);
 	CAST_OBJ_NOTNULL(sp, ep->data.ptr, WAITED_MAGIC);
-	if (ep->events & EPOLLIN || ep->events & EPOLLPRI) {
+	if (ep->events & EPOLLIN) {
 		Wait_Handle(vwe->waiter, sp, WAITER_ACTION, now);
 	} else if (ep->events & EPOLLERR) {
 		Wait_Handle(vwe->waiter, sp, WAITER_REMCLOSE, now);
