@@ -70,7 +70,7 @@ vpx_proto1(const struct worker *wrk, struct req *req)
 		return (-1);
 
 	*q++ = '\0';
-	/* Nuke the CRNL */
+	/* Nuke the CRLF */
 	if (*q != '\n')
 		return (-1);
 	*q++ = '\0';
