@@ -136,7 +136,9 @@ mac_callback(void *priv, const struct suckaddr *sa)
 	ls->addr = sa;
 	ls->proto_name = mh->proto_name;
 	ls->first_step = mh->first_step;
+	VJ_master(JAIL_MASTER_PRIVPORT);
 	fail = mac_opensocket(ls, NULL);
+	VJ_master(JAIL_MASTER_LOW);
 	if (ls->sock < 0) {
 		*(mh->err) = strerror(fail);
 		FREE_OBJ(ls);
