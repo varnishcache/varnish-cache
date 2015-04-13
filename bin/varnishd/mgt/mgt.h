@@ -77,6 +77,7 @@ enum jail_subproc_e {
 
 enum jail_master_e {
 	JAIL_MASTER_LOW,
+	JAIL_MASTER_FILE,
 	JAIL_MASTER_STORAGE,
 	JAIL_MASTER_PRIVPORT,
 };

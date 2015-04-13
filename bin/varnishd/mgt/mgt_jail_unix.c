@@ -139,11 +139,10 @@ vju_init(char **args)
 static void __match_proto__(jail_master_f)
 vju_master(enum jail_master_e jme)
 {
-	if (jme == JAIL_MASTER_STORAGE ||
-	    jme == JAIL_MASTER_PRIVPORT)
-		AZ(seteuid(0));
-	else
+	if (jme == JAIL_MASTER_LOW)
 		AZ(seteuid(vju_uid));
+	else
+		AZ(seteuid(0));
 }
 
 static void __match_proto__(jail_subproc_f)
