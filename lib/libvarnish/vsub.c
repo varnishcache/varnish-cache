@@ -100,13 +100,13 @@ VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
 		assert(dup2(p[1], STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(p[1], STDERR_FILENO) == STDERR_FILENO);
 		/* Close all other fds */
-		for (sfd = STDERR_FILENO + 1; sfd < 100; sfd++)
+		for (sfd = STDERR_FILENO+1; sfd < sysconf(_SC_OPEN_MAX); sfd++)
 			(void)close(sfd);
 		func(priv);
 		/*
 		 * func should either exec or exit, so getting here should be
 		 * treated like an assertion failure - except that we don't know
-		 * if it's save to trigger an acutal assertion
+		 * if it's safe to trigger an acutal assertion
 		 */
 		_exit(4);
 	}

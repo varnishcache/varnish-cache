@@ -77,7 +77,7 @@ static const char * const builtin_vcl =
  * Invoke system VCC compiler in a sub-process
  */
 
-static void
+static void __match_proto__(vsub_func_f)
 run_vcc(void *priv)
 {
 	char *csrc;
@@ -122,7 +122,7 @@ run_vcc(void *priv)
  * Invoke system C compiler in a sub-process
  */
 
-static void
+static void __match_proto__(vsub_func_f)
 run_cc(void *priv)
 {
 	struct vcc_priv *vp;
@@ -172,7 +172,7 @@ run_cc(void *priv)
  * Attempt to open compiled VCL in a sub-process
  */
 
-static void __match_proto__(sub_func_f)
+static void __match_proto__(vsub_func_f)
 run_dlopen(void *priv)
 {
 	void *dlh;

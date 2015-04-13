@@ -5,7 +5,7 @@ server s1 {
 	send_urgent " "
 	txresp
 	send_urgent " "
-	
+
 	rxreq
 	send_urgent " "
 	txresp

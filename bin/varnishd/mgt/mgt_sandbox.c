@@ -245,7 +245,7 @@ mgt_sandbox_unix(enum sandbox_e who)
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(sub_func_f)
+static void __match_proto__(vsub_func_f)
 run_sandbox_test(void *priv)
 {
 
