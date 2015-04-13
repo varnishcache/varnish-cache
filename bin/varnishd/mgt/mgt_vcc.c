@@ -283,13 +283,19 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 	INIT_OBJ(&vp, VCC_PRIV_MAGIC);
 	vp.src = vclsrc;
 
-	VSB_printf(sb, "./vcl_%s.c", vclname);
+	VSB_printf(sb, "vcl_%s", vclname);
+	AZ(VSB_finish(sb));
+	VJ_make_vcldir(VSB_data(sb));
+
+
+	VSB_clear(sb);
+	VSB_printf(sb, "vcl_%s/vgc.c", vclname);
 	AZ(VSB_finish(sb));
 	vp.srcfile = strdup(VSB_data(sb));
 	AN(vp.srcfile);
 	VSB_clear(sb);
 
-	VSB_printf(sb, "./vcl_%s.so", vclname);
+	VSB_printf(sb, "vcl_%s/vgc.so", vclname);
 	AZ(VSB_finish(sb));
 	vp.libfile = strdup(VSB_data(sb));
 	AN(vp.srcfile);

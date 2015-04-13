@@ -163,6 +163,22 @@ VJ_make_workdir(const char *dname)
 }
 
 void
+VJ_make_vcldir(const char *dname)
+{
+
+	AN(dname);
+	CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);
+	if (vjt->make_vcldir != NULL) {
+		vjt->make_vcldir(dname);
+		return;
+	}
+
+	if (mkdir(dname, 0755) < 0 && errno != EEXIST)
+		ARGV_ERR("Cannot create VCL directory '%s': %s\n",
+		    dname, strerror(errno));
+}
+
+void
 VJ_storage_file(int fd)
 {
 

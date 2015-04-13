@@ -177,7 +177,7 @@ vju_subproc(enum jail_subproc_e jse)
 #endif
 }
 
-static void
+static void __match_proto__(jail_make_dir_f)
 vju_make_workdir(const char *dname)
 {
 	int fd;
@@ -208,6 +208,16 @@ vju_make_workdir(const char *dname)
 	AZ(unlink("_.testfile"));
 }
 
+static void __match_proto__(jail_make_dir_f)
+vju_make_vcldir(const char *dname)
+{
+	AZ(seteuid(0));
+
+	AZ(mkdir(dname, 0755));
+	AZ(chown(dname, vju_uid, vju_gid));
+	AZ(seteuid(vju_uid));
+}
+
 static void
 vju_storage_file(int fd)
 {
@@ -223,6 +233,7 @@ const struct jail_tech jail_tech_unix = {
 	.init =		vju_init,
 	.master =	vju_master,
 	.make_workdir =	vju_make_workdir,
+	.make_vcldir =	vju_make_vcldir,
 	.storage_file =	vju_storage_file,
 	.subproc =	vju_subproc,
 };
