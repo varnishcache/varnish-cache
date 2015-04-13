@@ -7,14 +7,12 @@ server s1 -repeat 20 {
 	close
 } -start
 
-varnish v1 -vcl {
+varnish v1 -arg "-p vcl_cooldown=1" -vcl {
 	backend default {
 		.host = "${s1_addr}";
 		.probe = { .interval = 1s; .initial = 1;}
 	}
 } -start
-
-varnish v1 -cliok "param.set vcl_cooldown 1"
 
 # We only have one vcl yet
 varnish v1 -expect VBE.vcl1.default.happy >= 0
@@ -50,7 +48,7 @@ varnish v1 -expect VBE.vcl1.default.happy >= 0
 varnish v1 -expect VBE.vcl2.default.happy >= 0
 
 # and the unused one should go cold
-delay 3
+delay 4
 varnish v1 -expect !VBE.vcl2.default.happy
 
 # Mark the used warm and use it the other
