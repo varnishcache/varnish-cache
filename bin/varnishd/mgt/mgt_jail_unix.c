@@ -160,6 +160,10 @@ vju_init(char **args)
 	if (vju_user == NULL && vju_getuid(JAIL_USER))
 		ARGV_ERR("Unix jail: %s user not found.\n", JAIL_USER);
 
+	if (vju_wrkuser != NULL && vju_wrkgid != vju_gid)
+		ARGV_ERR("Unix jail: %s and %s have different login groups\n",
+		    vju_user, vju_wrkuser);
+
 	/* Do an explicit JAIL_MASTER_LOW */
 	AZ(setegid(vju_gid));
 	AZ(seteuid(vju_uid));
