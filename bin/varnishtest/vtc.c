@@ -455,6 +455,10 @@ cmd_err_shell(CMD_ARGS)
 	vtc_log(vl, 4, "Status = %d", WEXITSTATUS(r));
 	if (WIFSIGNALED(r))
 		vtc_log(vl, 4, "Signal = %d", WTERMSIG(r));
+	if (WEXITSTATUS(r) == 0) {
+		vtc_log(vl, 0,
+		    "expected error from shell");
+	}
 	AZ(VSB_finish(vsb));
 	vtc_dump(vl, 4, "stdout", VSB_data(vsb), VSB_len(vsb));
 	if (strstr(VSB_data(vsb), av[1]) == NULL)
