@@ -1,0 +1,24 @@
+varnishtest "Run worker with different uid in UNIX jail"
+
+# The "vrun" user must have login group "varnish"
+
+feature user_varnish
+feature user_vrun
+feature group_varnish
+feature root
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 \
+	-jail "-junix,user=varnish,ccgroup=varnish,workuser=vrun" \
+	-vcl+backend {
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run

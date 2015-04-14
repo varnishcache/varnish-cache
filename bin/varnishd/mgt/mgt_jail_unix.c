@@ -51,6 +51,11 @@ static gid_t vju_mgr_gid;
 static uid_t vju_uid;
 static gid_t vju_gid;
 static const char *vju_user;
+
+static uid_t vju_wrkuid;
+static gid_t vju_wrkgid;
+static const char *vju_wrkuser;
+
 static gid_t vju_cc_gid;
 static int vju_cc_gid_set;
 
@@ -73,6 +78,22 @@ vju_getuid(const char *arg)
 		AN(vju_user);
 		vju_uid = pw->pw_uid;
 		vju_gid = pw->pw_gid;
+	}
+	endpwent();
+	return (pw == NULL ? -1 : 0);
+}
+
+static int
+vju_getwrkuid(const char *arg)
+{
+	struct passwd *pw;
+
+	pw = getpwnam(arg);
+	if (pw != NULL) {
+		vju_wrkuser = strdup(arg);
+		AN(vju_wrkuser);
+		vju_wrkuid = pw->pw_uid;
+		vju_wrkgid = pw->pw_gid;
 	}
 	endpwent();
 	return (pw == NULL ? -1 : 0);
@@ -121,6 +142,12 @@ vju_init(char **args)
 				    (*args) + 5);
 			continue;
 		}
+		if (!strncmp(*args, "workuser=", 9)) {
+			if (vju_getwrkuid((*args) + 9))
+				ARGV_ERR("Unix jail: %s user not found.\n",
+				    (*args) + 5);
+			continue;
+		}
 		if (!strncmp(*args, "ccgroup=", 8)) {
 			if (vju_getccgid((*args) + 8))
 				ARGV_ERR("Unix jail: %s group not found.\n",
@@ -158,8 +185,14 @@ vju_subproc(enum jail_subproc_e jse)
 	gid_t gid_list[NGID];
 
 	AZ(seteuid(0));
-	AZ(setgid(vju_gid));
-	AZ(initgroups(vju_user, vju_gid));
+	if (vju_wrkuser != NULL &&
+	    (jse == JAIL_SUBPROC_VCLLOAD || jse == JAIL_SUBPROC_WORKER)) {
+		AZ(setgid(vju_wrkgid));
+		AZ(initgroups(vju_wrkuser, vju_wrkgid));
+	} else {
+		AZ(setgid(vju_gid));
+		AZ(initgroups(vju_user, vju_gid));
+	}
 
 	if (jse == JAIL_SUBPROC_CC && vju_cc_gid_set) {
 		/* Add the optional extra group for the C-compiler access */
@@ -169,7 +202,12 @@ vju_subproc(enum jail_subproc_e jse)
 		AZ(setgroups(i, gid_list));
 	}
 
-	AZ(setuid(vju_uid));
+	if (vju_wrkuser != NULL &&
+	    (jse == JAIL_SUBPROC_VCLLOAD || jse == JAIL_SUBPROC_WORKER)) {
+		AZ(setuid(vju_wrkuid));
+	} else {
+		AZ(setuid(vju_uid));
+	}
 
 #ifdef __linux__
 	/*

@@ -172,7 +172,7 @@ run_cc(void *priv)
 		VSB_putc(sb, '%');
 	AZ(VSB_finish(sb));
 
-	(void)umask(077);
+	(void)umask(027);
 	(void)execl("/bin/sh", "/bin/sh", "-c", VSB_data(sb), (char*)0);
 	VSB_delete(sb);				// For flexelint
 }
@@ -227,7 +227,7 @@ mgt_vcc_touchfile(const char *fn, struct vsb *sb)
 {
 	int i;
 
-	i = open(fn, O_WRONLY|O_CREAT|O_TRUNC, 0600);
+	i = open(fn, O_WRONLY|O_CREAT|O_TRUNC, 0640);
 	if (i < 0) {
 		VSB_printf(sb, "Failed to create %s: %s", fn, strerror(errno));
 		return (2);
