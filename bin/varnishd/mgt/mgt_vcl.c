@@ -96,7 +96,7 @@ mgt_vcl_del(struct vclprog *vp)
 	XXXAZ(unlink(vp->fname));
 	bprintf(dn, "vcl_%s", vp->name);
 	VJ_master(JAIL_MASTER_FILE);
-	XXXAZ(rmdir(dn));
+	(void)rmdir(dn);		// compiler droppings, eg gcov
 	VJ_master(JAIL_MASTER_LOW);
 	free(vp->fname);
 	free(vp->name);

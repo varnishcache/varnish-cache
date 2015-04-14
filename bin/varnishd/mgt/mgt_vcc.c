@@ -53,6 +53,7 @@
 struct vcc_priv {
 	unsigned	magic;
 #define VCC_PRIV_MAGIC	0x70080cb8
+	char		*dir;
 	const char	*src;
 	char		*srcfile;
 	char		*libfile;
@@ -66,6 +67,9 @@ unsigned mgt_vcc_allow_inline_c;
 unsigned mgt_vcc_unsafe_path;
 
 static struct vcc *vcc;
+
+#define VGC_SRC		"vgc.c"
+#define VGC_LIB		"vgc.so"
 
 /*--------------------------------------------------------------------*/
 
@@ -85,8 +89,11 @@ run_vcc(void *priv)
 	struct vcc_priv *vp;
 	int fd, i, l;
 
-	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
 	VJ_subproc(JAIL_SUBPROC_VCC);
+	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
+
+	AZ(chdir(vp->dir));
+
 	sb = VSB_new_auto();
 	XXXAN(sb);
 	VCC_VCL_dir(vcc, mgt_vcl_dir);
@@ -102,15 +109,15 @@ run_vcc(void *priv)
 	if (csrc == NULL)
 		exit(2);
 
-	fd = open(vp->srcfile, O_WRONLY|O_TRUNC|O_CREAT, 0600);
+	fd = open(VGC_SRC, O_WRONLY|O_TRUNC|O_CREAT, 0600);
 	if (fd < 0) {
-		fprintf(stderr, "Cannot open %s", vp->srcfile);
+		fprintf(stderr, "VCC cannot open %s", vp->srcfile);
 		exit(2);
 	}
 	l = strlen(csrc);
 	i = write(fd, csrc, l);
 	if (i != l) {
-		fprintf(stderr, "Cannot write %s", vp->srcfile);
+		fprintf(stderr, "VCC cannot write %s", vp->srcfile);
 		exit(2);
 	}
 	AZ(close(fd));
@@ -133,16 +140,18 @@ run_cc(void *priv)
 	VJ_subproc(JAIL_SUBPROC_CC);
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
 
+	AZ(chdir(vp->dir));
+
 	sb = VSB_new_auto();
 	AN(sb);
 	for (p = mgt_cc_cmd, pct = 0; *p; ++p) {
 		if (pct) {
 			switch (*p) {
 			case 's':
-				VSB_cat(sb, vp->srcfile);
+				VSB_cat(sb, VGC_SRC);
 				break;
 			case 'o':
-				VSB_cat(sb, vp->libfile);
+				VSB_cat(sb, VGC_LIB);
 				break;
 			case '%':
 				VSB_putc(sb, '%');
@@ -285,17 +294,19 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 
 	VSB_printf(sb, "vcl_%s", vclname);
 	AZ(VSB_finish(sb));
-	VJ_make_vcldir(VSB_data(sb));
+	vp.dir = strdup(VSB_data(sb));
+	AN(vp.dir);
+	VJ_make_vcldir(vp.dir);
 
 
 	VSB_clear(sb);
-	VSB_printf(sb, "vcl_%s/vgc.c", vclname);
+	VSB_printf(sb, "%s/%s", vp.dir, VGC_SRC);
 	AZ(VSB_finish(sb));
 	vp.srcfile = strdup(VSB_data(sb));
 	AN(vp.srcfile);
 	VSB_clear(sb);
 
-	VSB_printf(sb, "vcl_%s/vgc.so", vclname);
+	VSB_printf(sb, "%s/%s", vp.dir, VGC_LIB);
 	AZ(VSB_finish(sb));
 	vp.libfile = strdup(VSB_data(sb));
 	AN(vp.srcfile);
@@ -310,6 +321,8 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 
 	(void)unlink(vp.srcfile);
 	free(vp.srcfile);
+
+	free(vp.dir);
 
 	if (status || C_flag) {
 		(void)unlink(vp.libfile);
