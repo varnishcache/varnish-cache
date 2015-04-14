@@ -47,6 +47,7 @@
 #include <sys/prctl.h>
 #endif
 
+static gid_t vju_mgr_gid;
 static uid_t vju_uid;
 static gid_t vju_gid;
 static const char *vju_user;
@@ -111,6 +112,8 @@ vju_init(char **args)
 	if (geteuid() != 0)
 		ARGV_ERR("Unix Jail: Must be root.\n");
 
+	vju_mgr_gid = getgid();
+
 	for (;*args != NULL; args++) {
 		if (!strncmp(*args, "user=", 5)) {
 			if (vju_getuid((*args) + 5))
@@ -139,10 +142,13 @@ vju_init(char **args)
 static void __match_proto__(jail_master_f)
 vju_master(enum jail_master_e jme)
 {
-	if (jme == JAIL_MASTER_LOW)
+	if (jme == JAIL_MASTER_LOW) {
+		AZ(setegid(vju_gid));
 		AZ(seteuid(vju_uid));
-	else
+	} else {
 		AZ(seteuid(0));
+		AZ(setegid(vju_mgr_gid));
+	}
 }
 
 static void __match_proto__(jail_subproc_f)
@@ -178,42 +184,11 @@ vju_subproc(enum jail_subproc_e jse)
 }
 
 static void __match_proto__(jail_make_dir_f)
-vju_make_workdir(const char *dname)
-{
-	int fd;
-
-	AZ(seteuid(0));
-
-	if (mkdir(dname, 0755) < 0 && errno != EEXIST)
-		ARGV_ERR("Cannot create working directory '%s': %s\n",
-		    dname, strerror(errno));
-
-	if (chown(dname, vju_uid, vju_gid) < 0)
-		ARGV_ERR(
-		    "Cannot set owner/group on working directory '%s': %s\n",
-		    dname, strerror(errno));
-
-	if (chdir(dname) < 0)
-		ARGV_ERR("Cannot change to working directory '%s': %s\n",
-		    dname, strerror(errno));
-
-	AZ(seteuid(vju_uid));
-
-	fd = open("_.testfile", O_RDWR|O_CREAT|O_EXCL, 0600);
-	if (fd < 0)
-		ARGV_ERR("Error: Cannot create test-file in %s (%s)\n"
-		    "Check permissions (or delete old directory)\n",
-		    dname, strerror(errno));
-	AZ(close(fd));
-	AZ(unlink("_.testfile"));
-}
-
-static void __match_proto__(jail_make_dir_f)
 vju_make_vcldir(const char *dname)
 {
 	AZ(seteuid(0));
 
-	AZ(mkdir(dname, 0755));
+	assert((mkdir(dname, 0755) == 0) || errno == EEXIST);
 	AZ(chown(dname, vju_uid, vju_gid));
 	AZ(seteuid(vju_uid));
 }
@@ -232,7 +207,6 @@ const struct jail_tech jail_tech_unix = {
 	.name =		"unix",
 	.init =		vju_init,
 	.master =	vju_master,
-	.make_workdir =	vju_make_workdir,
 	.make_vcldir =	vju_make_vcldir,
 	.storage_file =	vju_storage_file,
 	.subproc =	vju_subproc,

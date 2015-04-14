@@ -197,7 +197,9 @@ mgt_SHM_Create(void)
 
 	bprintf(fnbuf, "%s.%jd", VSM_FILENAME, (intmax_t)getpid());
 
+	VJ_master(JAIL_MASTER_FILE);
 	vsm_fd = vsm_zerofile(fnbuf, size);
+	VJ_master(JAIL_MASTER_LOW);
 	if (vsm_fd < 0)
 		exit(1);
 
@@ -255,12 +257,14 @@ mgt_SHM_Commit(void)
 	char fnbuf[64];
 
 	bprintf(fnbuf, "%s.%jd", VSM_FILENAME, (intmax_t)getpid());
+	VJ_master(JAIL_MASTER_FILE);
 	if (rename(fnbuf, VSM_FILENAME)) {
 		fprintf(stderr, "Rename failed %s -> %s: %s\n",
 		    fnbuf, VSM_FILENAME, strerror(errno));
 		(void)unlink(fnbuf);
 		exit(1);
 	}
+	VJ_master(JAIL_MASTER_LOW);
 }
 
 /*--------------------------------------------------------------------

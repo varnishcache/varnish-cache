@@ -145,6 +145,7 @@ VJ_make_workdir(const char *dname)
 		return;
 	}
 
+	VJ_master(JAIL_MASTER_FILE);
 	if (mkdir(dname, 0755) < 0 && errno != EEXIST)
 		ARGV_ERR("Cannot create working directory '%s': %s\n",
 		    dname, strerror(errno));
@@ -160,6 +161,7 @@ VJ_make_workdir(const char *dname)
 		    dname, strerror(errno));
 	AZ(close(fd));
 	AZ(unlink("_.testfile"));
+	VJ_master(JAIL_MASTER_LOW);
 }
 
 void

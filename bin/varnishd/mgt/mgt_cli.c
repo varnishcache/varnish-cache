@@ -284,13 +284,16 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 		VCLI_SetResult(cli, CLIS_CANT);
 		return;
 	}
+	VJ_master(JAIL_MASTER_FILE);
 	fd = open(secret_file, O_RDONLY);
 	if (fd < 0) {
 		VCLI_Out(cli, "Cannot open secret file (%s)\n",
 		    strerror(errno));
 		VCLI_SetResult(cli, CLIS_CANT);
+		VJ_master(JAIL_MASTER_LOW);
 		return;
 	}
+	VJ_master(JAIL_MASTER_LOW);
 	mgt_got_fd(fd);
 	VCLI_AuthResponse(fd, cli->challenge, buf);
 	AZ(close(fd));
@@ -494,11 +497,13 @@ mgt_cli_secret(const char *S_arg)
 	/* Save in shmem */
 	mgt_SHM_static_alloc(S_arg, strlen(S_arg) + 1L, "Arg", "-S", "");
 
+	VJ_master(JAIL_MASTER_FILE);
 	fd = open(S_arg, O_RDONLY);
 	if (fd < 0) {
 		fprintf(stderr, "Can not open secret-file \"%s\"\n", S_arg);
 		exit(2);
 	}
+	VJ_master(JAIL_MASTER_LOW);
 	mgt_got_fd(fd);
 	i = read(fd, buf, sizeof buf);
 	if (i == 0) {

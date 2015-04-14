@@ -324,7 +324,7 @@ make_secret(const char *dirname)
 	assert(asprintf(&fn, "%s/_.secret", dirname) > 0);
 
 	VJ_master(JAIL_MASTER_FILE);
-	fd = open(fn, O_RDWR|O_CREAT|O_TRUNC, 0600);
+	fd = open(fn, O_RDWR|O_CREAT|O_TRUNC, 0640);
 	if (fd < 0) {
 		fprintf(stderr, "Cannot create secret-file in %s (%s)\n",
 		    dirname, strerror(errno));
@@ -630,9 +630,11 @@ main(int argc, char * const *argv)
 	VJ_make_workdir(dirname);
 
 	/* XXX: should this be relative to the -n arg ? */
+	VJ_master(JAIL_MASTER_FILE);
 	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL)
 		ARGV_ERR("Could not open pid/lock (-P) file (%s): %s\n",
 		    P_arg, strerror(errno));
+	VJ_master(JAIL_MASTER_LOW);
 
 	mgt_vcc_init();
 	mgt_vcl_init();
