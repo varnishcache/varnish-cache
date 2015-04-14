@@ -599,11 +599,13 @@ main(int argc, char * const *argv)
 		fprintf(stderr,
 		    "Warning: Empty -S argument, no CLI authentication.\n");
 	} else if (S_arg != NULL) {
+		VJ_master(JAIL_MASTER_FILE);
 		o = open(S_arg, O_RDONLY, 0);
 		if (o < 0)
 			ARGV_ERR("Cannot open -S file (%s): %s\n",
 			    S_arg, strerror(errno));
 		AZ(close(o));
+		VJ_master(JAIL_MASTER_LOW);
 	}
 
 	if (f_arg != NULL) {
@@ -650,6 +652,9 @@ main(int argc, char * const *argv)
 		free(vcl);
 	} else if (C_flag)
 		ARGV_ERR("-C only good with -b or -f\n");
+
+	if (VTAILQ_EMPTY(&heritage.socks))
+		ARGV_ERR("Need -a argument(s)\n");
 
 	if (!d_flag) {
 		if (b_arg == NULL && f_arg == NULL) {
