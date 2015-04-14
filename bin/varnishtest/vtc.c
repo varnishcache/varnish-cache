@@ -452,7 +452,9 @@ cmd_err_shell(CMD_ARGS)
 			VSB_putc(vsb, c);
 	} while (c != EOF);
 	r = pclose(fp);
-	vtc_log(vl, 4, "Status = %d", r);
+	vtc_log(vl, 4, "Status = %d", WEXITSTATUS(r));
+	if (WIFSIGNALED(r))
+		vtc_log(vl, 4, "Signal = %d", WTERMSIG(r));
 	AZ(VSB_finish(vsb));
 	vtc_dump(vl, 4, "stdout", VSB_data(vsb), VSB_len(vsb));
 	if (strstr(VSB_data(vsb), av[1]) == NULL)
