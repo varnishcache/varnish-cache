@@ -327,7 +327,7 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 	if (status || C_flag) {
 		(void)unlink(vp.libfile);
 		free(vp.libfile);
-		if (!C_flag) {
+		if (status) {
 			VCLI_Out(cli, "VCL compilation failed");
 			VCLI_SetResult(cli, CLIS_PARAM);
 		}

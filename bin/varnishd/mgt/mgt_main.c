@@ -644,6 +644,7 @@ main(int argc, char * const *argv)
 	if (b_arg != NULL || f_arg != NULL) {
 		mgt_vcc_default(cli, b_arg, vcl, C_flag);
 		if (C_flag) {
+			cli_check(cli);
 			AZ(VSB_finish(cli->sb));
 			fprintf(stderr, "%s\n", VSB_data(cli->sb));
 			exit(0);
