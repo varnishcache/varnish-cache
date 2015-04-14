@@ -90,9 +90,14 @@ mgt_vcl_add(const char *name, const char *libfile, const char *state)
 static void
 mgt_vcl_del(struct vclprog *vp)
 {
+	char dn[256];
+
 	VTAILQ_REMOVE(&vclhead, vp, list);
-	printf("unlink %s\n", vp->fname);
 	XXXAZ(unlink(vp->fname));
+	bprintf(dn, "vcl_%s", vp->name);
+	VJ_master(JAIL_MASTER_FILE);
+	XXXAZ(rmdir(dn));
+	VJ_master(JAIL_MASTER_LOW);
 	free(vp->fname);
 	free(vp->name);
 	free(vp);
@@ -448,13 +453,11 @@ mgt_vcl_atexit(void)
 
 	if (getpid() != mgt_pid)
 		return;
-	while (1) {
+	do {
 		vp = VTAILQ_FIRST(&vclhead);
-		if (vp == NULL)
-			break;
-		(void)unlink(vp->fname);
-		VTAILQ_REMOVE(&vclhead, vp, list);
-	}
+		if (vp != NULL)
+			mgt_vcl_del(vp);
+	} while (vp != NULL);
 }
 
 void

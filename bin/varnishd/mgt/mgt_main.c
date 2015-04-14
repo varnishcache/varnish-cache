@@ -301,6 +301,18 @@ cli_stdin_close(void *priv)
 
 /*--------------------------------------------------------------------*/
 
+static void
+mgt_secret_atexit(void)
+{
+
+	/* Only master process */
+	if (getpid() != mgt_pid)
+		return;
+	VJ_master(JAIL_MASTER_FILE);
+	AZ(unlink("_.secret"));
+	VJ_master(JAIL_MASTER_LOW);
+}
+
 static const char *
 make_secret(const char *dirname)
 {
@@ -311,6 +323,7 @@ make_secret(const char *dirname)
 
 	assert(asprintf(&fn, "%s/_.secret", dirname) > 0);
 
+	VJ_master(JAIL_MASTER_FILE);
 	fd = open(fn, O_RDWR|O_CREAT|O_TRUNC, 0600);
 	if (fd < 0) {
 		fprintf(stderr, "Cannot create secret-file in %s (%s)\n",
@@ -322,6 +335,8 @@ make_secret(const char *dirname)
 		buf[i] = random() & 0xff;
 	assert(sizeof buf == write(fd, buf, sizeof buf));
 	AZ(close(fd));
+	VJ_master(JAIL_MASTER_LOW);
+	AZ(atexit(mgt_secret_atexit));
 	return (fn);
 }
 

@@ -305,8 +305,7 @@ mgt_SHM_Size_Adjust(void)
  * Exit handler that clears the owning pid from the SHMLOG
  */
 
-static
-void
+static void
 mgt_shm_atexit(void)
 {
 
