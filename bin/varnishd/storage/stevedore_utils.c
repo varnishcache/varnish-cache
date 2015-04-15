@@ -95,7 +95,7 @@ STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx)
 	VJ_master(JAIL_MASTER_STORAGE);
 	fd = open(fn, O_RDWR | O_CREAT | O_EXCL | O_LARGEFILE, 0600);
 	if (fd >= 0) {
-		VJ_storage_file(fd);
+		VJ_fix_storage_file(fd);
 		*fdp = fd;
 		*fnp = fn;
 		VJ_master(JAIL_MASTER_LOW);
@@ -134,7 +134,7 @@ STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx)
 		    ctx, fn);
 
 	*fdp = fd;
-	VJ_storage_file(fd);
+	VJ_fix_storage_file(fd);
 	VJ_master(JAIL_MASTER_LOW);
 	return (retval);
 }

@@ -235,7 +235,17 @@ vju_make_vcldir(const char *dname)
 	AZ(seteuid(vju_uid));
 }
 
-static void
+
+static void __match_proto__(jail_fixfile_f)
+vju_vsm_file(int fd)
+{
+	/* Called under JAIL_MASTER_FILE */
+
+	AZ(fchmod(fd, 0640));
+	AZ(fchown(fd, 0, vju_gid));
+}
+
+static void __match_proto__(jail_fixfile_f)
 vju_storage_file(int fd)
 {
 	/* Called under JAIL_MASTER_STORAGE */
@@ -250,6 +260,7 @@ const struct jail_tech jail_tech_unix = {
 	.init =		vju_init,
 	.master =	vju_master,
 	.make_vcldir =	vju_make_vcldir,
+	.vsm_file =	vju_vsm_file,
 	.storage_file =	vju_storage_file,
 	.subproc =	vju_subproc,
 };

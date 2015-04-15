@@ -181,10 +181,19 @@ VJ_make_vcldir(const char *dname)
 }
 
 void
-VJ_storage_file(int fd)
+VJ_fix_storage_file(int fd)
 {
 
 	CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);
 	if (vjt->storage_file != NULL)
 		vjt->storage_file(fd);
+}
+
+void
+VJ_fix_vsm_file(int fd)
+{
+
+	CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);
+	if (vjt->vsm_file != NULL)
+		vjt->vsm_file(fd);
 }

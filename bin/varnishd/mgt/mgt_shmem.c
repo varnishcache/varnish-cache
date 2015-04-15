@@ -151,12 +151,13 @@ vsm_zerofile(const char *fn, ssize_t size)
 	int fd;
 	int flags;
 
-	fd = flopen(fn, O_RDWR | O_CREAT | O_EXCL | O_NONBLOCK, 0644);
+	fd = flopen(fn, O_RDWR | O_CREAT | O_EXCL | O_NONBLOCK, 0640);
 	if (fd < 0) {
 		fprintf(stderr, "Could not create %s: %s\n",
 		    fn, strerror(errno));
 		return (-1);
 	}
+	VJ_fix_vsm_file(fd);
 	flags = fcntl(fd, F_GETFL);
 	assert(flags != -1);
 	flags &= ~O_NONBLOCK;
