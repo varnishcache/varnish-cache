@@ -319,7 +319,7 @@ make_secret(const char *dirname)
 	char *fn;
 	int fd;
 	int i;
-	unsigned char buf[256];
+	unsigned char b;
 
 	assert(asprintf(&fn, "%s/_.secret", dirname) > 0);
 
@@ -331,9 +331,10 @@ make_secret(const char *dirname)
 		exit(1);
 	}
 	VRND_Seed();
-	for (i = 0; i < sizeof buf; i++)
-		buf[i] = random() & 0xff;
-	assert(sizeof buf == write(fd, buf, sizeof buf));
+	for (i = 0; i < 256; i++) {
+		b = random() & 0xff;
+		assert(1 == write(fd, &b, 1));
+	}
 	AZ(close(fd));
 	VJ_master(JAIL_MASTER_LOW);
 	AZ(atexit(mgt_secret_atexit));

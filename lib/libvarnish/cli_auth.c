@@ -43,7 +43,7 @@ VCLI_AuthResponse(int S_fd, const char *challenge,
     char response[CLI_AUTH_RESPONSE_LEN + 1])
 {
 	SHA256_CTX ctx;
-	uint8_t buf[BUFSIZ];
+	uint8_t buf[SHA256_LEN];
 	int i;
 
 	assert(CLI_AUTH_RESPONSE_LEN == (SHA256_LEN * 2));
@@ -52,8 +52,8 @@ VCLI_AuthResponse(int S_fd, const char *challenge,
 	SHA256_Update(&ctx, challenge, 32);
 	SHA256_Update(&ctx, "\n", 1);
 	do {
-		i = read(S_fd, buf, sizeof buf);
-		if (i > 0)
+		i = read(S_fd, buf, 1);
+		if (i == 1)
 			SHA256_Update(&ctx, buf, i);
 	} while (i > 0);
 	SHA256_Update(&ctx, challenge, 32);
