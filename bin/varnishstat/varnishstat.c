@@ -250,11 +250,11 @@ usage(void)
 {
 #define FMT "    %-28s # %s\n"
 	fprintf(stderr, "usage: varnishstat "
-	    "[-1lV] [-f field_list] "
+	    "[-1lV] [-f field] "
 	    VSC_n_USAGE " "
 	    "[-w delay]\n");
 	fprintf(stderr, FMT, "-1", "Print the statistics to stdout.");
-	fprintf(stderr, FMT, "-f field_list", "Field inclusion glob");
+	fprintf(stderr, FMT, "-f field", "Field inclusion glob");
 	fprintf(stderr, FMT, "",
 	    "If it starts with '^' it is used as an exclusion list");
 	fprintf(stderr, FMT, "-l",
