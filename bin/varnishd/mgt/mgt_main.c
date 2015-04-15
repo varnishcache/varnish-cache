@@ -406,7 +406,7 @@ identify(const char *i_arg)
 		strncpy(heritage.identity, i_arg, sizeof heritage.identity);
 		i = strlen(id);
 		id[i++] = '/';
-		for (; i + 1 < sizeof(id); i++) {
+		for (; i < (sizeof(id) - 1L); i++) {
 			if (!isalnum(*i_arg))
 				break;
 			id[i] = *i_arg++;
