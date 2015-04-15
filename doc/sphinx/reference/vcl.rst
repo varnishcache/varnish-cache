@@ -241,7 +241,7 @@ Probes will query the backend for status on a regular basis and mark
 the backend as down it they fail. A probe is defined as this::
 
     probe name {
-         .attribute = "value";
+        .attribute = "value";
     }
 
 There are no mandatory options. These are the options you can set:
@@ -375,19 +375,12 @@ ban(expression)
   Invalidates all objects in cache that match the expression with the
   ban mechanism.
 
-call(subroutine)
-  Run a VCL subroutine within the current scope.
-
 hash_data(input)
   Adds an input to the hash input. In the built-in VCL hash_data()
   is called on the host and URL of the *request*. Available in vcl_hash.
 
 new()
   Instanciate a new VCL object. Available in vcl_init.
-
-return()
-  End execution of the current VCL subroutine, and continue to the next step
-  in the request handling state machine.
 
 rollback()
   Restore *req* HTTP headers to their original state. This function is
