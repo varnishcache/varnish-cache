@@ -573,8 +573,8 @@ cmd_feature(CMD_ARGS)
 		    getpwnam("varnish") != NULL)
 			continue;
 
-		if (!strcmp(av[i], "user_vrun") &&
-		    getpwnam("vrun") != NULL)
+		if (!strcmp(av[i], "user_vcache") &&
+		    getpwnam("vcache") != NULL)
 			continue;
 
 		if (!strcmp(av[i], "group_varnish") &&

@@ -59,8 +59,12 @@ static const char *vju_wrkuser;
 static gid_t vju_cc_gid;
 static int vju_cc_gid_set;
 
-#ifndef JAIL_USER
-#define JAIL_USER "varnish"
+#ifndef VARNISH_USER
+#define VARNISH_USER "varnish"
+#endif
+
+#ifndef VCACHE_USER
+#define VCACHE_USER "vcache"
 #endif
 
 #ifndef NGID
@@ -123,46 +127,54 @@ vju_init(char **args)
 		/* Autoconfig */
 		if (geteuid() != 0)
 			return (1);
-		if (vju_getuid(JAIL_USER))
+		if (vju_getuid(VARNISH_USER))
 			return (1);
-		AZ(setegid(vju_gid));
-		AZ(seteuid(vju_uid));
-		return (0);
+	} else {
+
+		if (geteuid() != 0)
+			ARGV_ERR("Unix Jail: Must be root.\n");
+
+		for (;*args != NULL; args++) {
+			if (!strncmp(*args, "user=", 5)) {
+				if (vju_getuid((*args) + 5))
+					ARGV_ERR(
+					    "Unix jail: %s user not found.\n",
+					    (*args) + 5);
+				continue;
+			}
+			if (!strncmp(*args, "workuser=", 9)) {
+				if (vju_getwrkuid((*args) + 9))
+					ARGV_ERR(
+					    "Unix jail: %s user not found.\n",
+					    (*args) + 9);
+				continue;
+			}
+			if (!strncmp(*args, "ccgroup=", 8)) {
+				if (vju_getccgid((*args) + 8))
+					ARGV_ERR(
+					    "Unix jail: %s group not found.\n",
+					    (*args) + 8);
+				continue;
+			}
+			ARGV_ERR("Unix jail: unknown sub-argument '%s'\n",
+			    *args);
+		}
+
+		if (vju_user == NULL && vju_getuid(VARNISH_USER))
+			ARGV_ERR("Unix jail: %s user not found.\n",
+			    VARNISH_USER);
 	}
 
-	if (geteuid() != 0)
-		ARGV_ERR("Unix Jail: Must be root.\n");
+	AN(vju_user);
 
 	vju_mgr_gid = getgid();
 
-	for (;*args != NULL; args++) {
-		if (!strncmp(*args, "user=", 5)) {
-			if (vju_getuid((*args) + 5))
-				ARGV_ERR("Unix jail: %s user not found.\n",
-				    (*args) + 5);
-			continue;
-		}
-		if (!strncmp(*args, "workuser=", 9)) {
-			if (vju_getwrkuid((*args) + 9))
-				ARGV_ERR("Unix jail: %s user not found.\n",
-				    (*args) + 5);
-			continue;
-		}
-		if (!strncmp(*args, "ccgroup=", 8)) {
-			if (vju_getccgid((*args) + 8))
-				ARGV_ERR("Unix jail: %s group not found.\n",
-				    (*args) + 8);
-			continue;
-		}
-		ARGV_ERR("Unix jail: unknown sub-argument '%s'\n", *args);
-	}
-
-	if (vju_user == NULL && vju_getuid(JAIL_USER))
-		ARGV_ERR("Unix jail: %s user not found.\n", JAIL_USER);
+	if (vju_wrkuser == NULL)
+		(void)vju_getwrkuid(VCACHE_USER);
 
 	if (vju_wrkuser != NULL && vju_wrkgid != vju_gid)
-		ARGV_ERR("Unix jail: %s and %s have different login groups\n",
-		    vju_user, vju_wrkuser);
+		ARGV_ERR("Unix jail: user %s and %s have "
+		    "different login groups\n", vju_user, vju_wrkuser);
 
 	/* Do an explicit JAIL_MASTER_LOW */
 	AZ(setegid(vju_gid));
