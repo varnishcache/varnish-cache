@@ -299,7 +299,9 @@ cli_stdin_close(void *priv)
 	}
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * Autogenerate a -S file using strong random bits from the kernel.
+ */
 
 static void
 mgt_secret_atexit(void)
@@ -317,25 +319,32 @@ static const char *
 make_secret(const char *dirname)
 {
 	char *fn;
-	int fd;
-	int i;
+	int fdo;
+	int i, j;
 	unsigned char b;
+	int fdi;
 
 	assert(asprintf(&fn, "%s/_.secret", dirname) > 0);
 
 	VJ_master(JAIL_MASTER_FILE);
-	fd = open(fn, O_RDWR|O_CREAT|O_TRUNC, 0640);
-	if (fd < 0) {
-		fprintf(stderr, "Cannot create secret-file in %s (%s)\n",
+	fdo = open(fn, O_RDWR|O_CREAT|O_TRUNC, 0640);
+	if (fdo < 0)
+		ARGV_ERR("Cannot create secret-file in %s (%s)\n",
 		    dirname, strerror(errno));
-		exit(1);
-	}
-	VRND_Seed();
+
+	fdi = open("/dev/random", O_RDONLY);
+	if (fdi < 0)
+		fdi = open("/dev/urandom", O_RDONLY);
+	if (fdi < 0)
+		ARGV_ERR("No /dev/[u]random, cannot autogenerate -S file\n");
+
 	for (i = 0; i < 256; i++) {
-		b = random() & 0xff;
-		assert(1 == write(fd, &b, 1));
+		j = read(fdi, &b, 1);
+		assert(j == 1);
+		assert(1 == write(fdo, &b, 1));
 	}
-	AZ(close(fd));
+	AZ(close(fdi));
+	AZ(close(fdo));
 	VJ_master(JAIL_MASTER_LOW);
 	AZ(atexit(mgt_secret_atexit));
 	return (fn);
@@ -378,6 +387,36 @@ init_params(struct cli *cli)
 	MCF_SetDefault("thread_pool_stack", stackdef);
 
 	MCF_InitParams(cli);
+}
+
+
+/*--------------------------------------------------------------------*/
+
+static void
+identify(const char *i_arg)
+{
+	char id[17], *p;
+	int i;
+
+	strcpy(id, "varnishd");
+
+	if (i_arg != NULL) {
+		if (strlen(i_arg) + 1 > sizeof heritage.identity)
+			ARGV_ERR("Identity (-i) name too long.\n");
+		strncpy(heritage.identity, i_arg, sizeof heritage.identity);
+		i = strlen(id);
+		id[i++] = '/';
+		for (; i + 1 < sizeof(id); i++) {
+			if (!isalnum(*i_arg))
+				break;
+			id[i] = *i_arg++;
+		}
+		id[i] = '\0';
+	}
+	p = strdup(id);
+	AN(p);
+
+	openlog(p, LOG_PID, LOG_LOCAL0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -619,16 +658,7 @@ main(int argc, char * const *argv)
 	if (VIN_N_Arg(n_arg, &heritage.name, &dirname, NULL) != 0)
 		ARGV_ERR("Invalid instance (-n) name: %s\n", strerror(errno));
 
-	if (i_arg != NULL) {
-		if (strlen(i_arg) + 1 > sizeof heritage.identity)
-			ARGV_ERR("Identity (-i) name too long.\n");
-		strncpy(heritage.identity, i_arg, sizeof heritage.identity);
-	}
-
-	if (n_arg != NULL)
-		openlog(n_arg, LOG_PID, LOG_LOCAL0);	/* XXX: i_arg ? */
-	else
-		openlog("varnishd", LOG_PID, LOG_LOCAL0);
+	identify(i_arg);
 
 	VJ_make_workdir(dirname);
 

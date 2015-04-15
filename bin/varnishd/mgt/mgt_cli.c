@@ -298,7 +298,9 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 	VCLI_AuthResponse(fd, cli->challenge, buf);
 	AZ(close(fd));
 	if (strcasecmp(buf, av[2])) {
-		mgt_cli_challenge(cli);
+		syslog(LOG_WARNING|LOG_AUTHPRIV,
+		    "CLI Authentication failure from %s", cli->ident);
+		VCLI_SetResult(cli, CLIS_CLOSE);
 		return;
 	}
 	cli->auth = MCF_AUTH;
