@@ -196,6 +196,7 @@ MAC_Arg(const char *arg)
 	error = VSS_resolver(av[1], "80", mac_callback, mh, &err);
 	if (mh->good == 0 || err != NULL)
 		ARGV_ERR("Could not bind to address %s: %s\n", av[1], err);
+	VAV_Free(av);
 	AZ(error);
 	FREE_OBJ(mh);
 }
