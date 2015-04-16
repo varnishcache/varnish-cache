@@ -311,7 +311,7 @@ mgt_secret_atexit(void)
 	if (getpid() != mgt_pid)
 		return;
 	VJ_master(JAIL_MASTER_FILE);
-	AZ(unlink("_.secret"));
+	(void)unlink("_.secret");
 	VJ_master(JAIL_MASTER_LOW);
 }
 
