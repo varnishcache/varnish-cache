@@ -332,9 +332,9 @@ make_secret(const char *dirname)
 		ARGV_ERR("Cannot create secret-file in %s (%s)\n",
 		    dirname, strerror(errno));
 
-	fdi = open("/dev/random", O_RDONLY);
+	fdi = open("/dev/urandom", O_RDONLY);
 	if (fdi < 0)
-		fdi = open("/dev/urandom", O_RDONLY);
+		fdi = open("/dev/random", O_RDONLY);
 	if (fdi < 0)
 		ARGV_ERR("No /dev/[u]random, cannot autogenerate -S file\n");
 

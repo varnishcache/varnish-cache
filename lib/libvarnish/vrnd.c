@@ -51,9 +51,9 @@ VRND_Seed(void)
 	int fd;
 	ssize_t sz;
 
-	fd = open("/dev/random", O_RDONLY);
+	fd = open("/dev/urandom", O_RDONLY);
 	if (fd < 0)
-		fd = open("/dev/urandom", O_RDONLY);
+		fd = open("/dev/random", O_RDONLY);
 	if (fd >= 0) {
 		sz = read(fd, &seed, sizeof seed);
 		AZ(close(fd));
