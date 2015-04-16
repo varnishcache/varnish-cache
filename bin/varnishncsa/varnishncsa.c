@@ -59,7 +59,6 @@
 #include "vas.h"
 #include "vdef.h"
 #include "vcs.h"
-#include "vnum.h"
 #include "vsb.h"
 #include "vut.h"
 #include "vqueue.h"
@@ -285,13 +284,16 @@ static int __match_proto__(format_f)
 format_time(const struct format *format)
 {
 	double t_start, t_end;
+	char *p;
 	char buf[64];
 	time_t t;
 	struct tm tm;
 
 	CHECK_OBJ_NOTNULL(format, FORMAT_MAGIC);
 	if (CTX.frag[F_tstart].gen == CTX.gen) {
-		t_start = VNUM(CTX.frag[F_tstart].b);
+		t_start = strtod(CTX.frag[F_tstart].b, &p);
+		if (p != CTX.frag[F_tstart].e)
+			t_start = NAN;
 	} else
 		t_start = NAN;
 	if (isnan(t_start)) {
@@ -304,8 +306,8 @@ format_time(const struct format *format)
 
 	/* Missing t_end defaults to t_start */
 	if (CTX.frag[F_tend].gen == CTX.gen) {
-		t_end = VNUM(CTX.frag[F_tend].b);
-		if (isnan(t_end))
+		t_end = strtod(CTX.frag[F_tend].b, &p);
+		if (p != CTX.frag[F_tend].e)
 			t_end = t_start;
 	} else
 		t_end = t_start;
