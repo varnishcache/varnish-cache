@@ -401,7 +401,7 @@ identify(const char *i_arg)
 	strcpy(id, "varnishd");
 
 	if (i_arg != NULL) {
-		if (strlen(i_arg) + 1 > sizeof heritage.identity)
+		if (strlen(i_arg) + 1 >= sizeof heritage.identity)
 			ARGV_ERR("Identity (-i) name too long.\n");
 		strncpy(heritage.identity, i_arg, sizeof heritage.identity);
 		i = strlen(id);
