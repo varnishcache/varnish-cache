@@ -60,7 +60,7 @@
 #include "mgt_cli.h"
 
 #ifndef LOG_AUTHPRIV
-#  define LOG_AUTHPRIV
+#  define LOG_AUTHPRIV	0
 #endif
 
 static int		cli_i = -1, cli_o = -1;
