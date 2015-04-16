@@ -59,6 +59,10 @@
 
 #include "mgt_cli.h"
 
+#ifndef LOG_AUTHPRIV
+#  define LOG_AUTHPRIV
+#endif
+
 static int		cli_i = -1, cli_o = -1;
 static struct VCLS	*cls;
 static const char	*secret_file;
