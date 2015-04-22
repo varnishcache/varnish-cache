@@ -343,7 +343,7 @@ VSL_Arg(struct VSL_data *vsl, int opt, const char *arg)
 			p++;
 		if (*p != '\0')
 			return (vsl_diag(vsl, "-L: Syntax error"));
-		if (l < 0 || l > INT_MAX)
+		if (l <= 0 || l > INT_MAX)
 			return (vsl_diag(vsl, "-L: Range error"));
 		vsl->L_opt = (int)l;
 		return (1);

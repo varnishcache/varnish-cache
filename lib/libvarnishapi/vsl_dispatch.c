@@ -1344,7 +1344,8 @@ VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 	}
 
 	/* Check store limit */
-	while (vslq->n_outstanding > vslq->vsl->L_opt) {
+	while (vslq->n_outstanding > vslq->vsl->L_opt &&
+	    !(VTAILQ_EMPTY(&vslq->incomplete))) {
 		vtx = VTAILQ_FIRST(&vslq->incomplete);
 		CHECK_OBJ_NOTNULL(vtx, VTX_MAGIC);
 		vtx_force(vslq, vtx, "store overflow");
