@@ -66,7 +66,8 @@ vpx_proto1(const struct worker *wrk, struct req *req)
 	VSL(SLT_Debug, req->sp->fd, "PROXY1");
 
 	q = strchr(req->htc->rxbuf_b, '\r');
-	AN(q);
+	if (!q)
+		return (-1);
 
 	*q++ = '\0';
 	/* Nuke the CRNL */
