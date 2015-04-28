@@ -284,6 +284,8 @@ vcc_ParseDirector(struct vcc *tl)
 }
 
 /*--------------------------------------------------------------------
+ * TODO when bumping the vcl version:
+ * #1603 remove return(fetch) from vcl_hit{}
  */
 
 static void
@@ -298,6 +300,7 @@ vcc_ParseVcl(struct vcc *tl)
 	ver = vcc_DoubleVal(tl);
 	ERRCHK(tl);
 	if (ver != 4.0) {
+		// see TODO above
 		VSB_printf(tl->sb, "VCL version %.1f not supported.\n", ver);
 		vcc_ErrWhere(tl, tok);
 		ERRCHK(tl);
