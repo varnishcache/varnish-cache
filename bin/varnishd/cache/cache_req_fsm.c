@@ -363,7 +363,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		return (REQ_FSM_MORE);
 	case VCL_RET_FETCH:
 		VSLb(req->vsl, SLT_VCL_Error,
-		    "change return(fetch) to return(hit) in vcl_hit{}");
+		    "change return(fetch) to return(miss) in vcl_hit{}");
 		/* FALL-THROUGH */
 	case VCL_RET_MISS:
 		if (boc != NULL) {
