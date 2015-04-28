@@ -120,7 +120,7 @@ digraph cache_req_fsm {
 		]
 		lookup2 [
 			 shape=record
-			 label="{<top>cnt_lookup:|{vcl_hit\{\}|{req.*|obj.*}}|{<deliver>deliver|<fetch>fetch|restart|synth|<pass>pass}}"
+			 label="{<top>cnt_lookup:|{vcl_hit\{\}|{req.*|obj.*}}|{<deliver>deliver|<miss>miss|restart|synth|<pass>pass}}"
 		]
 	}
 	lookup:busy:e -> lookup:top:e [label="(waitinglist)",
@@ -131,9 +131,9 @@ digraph cache_req_fsm {
 	lookup:h:s -> lookup2 [style=bold,color=green]
 
 	lookup2:deliver:s -> deliver:n [style=bold,color=green]
-	lookup2:fetch:s -> miss [style=bold,color=blue]
+	lookup2:miss:s -> miss [style=bold,color=blue]
 	// XXX should not happen
-	// lookup2:fetch:s -> pass [style=bold,color=red,label="(no busy obj)"]
+	// lookup2:miss:s -> pass [style=bold,color=red,label="(no busy obj)"]
 	lookup2:pass:s -> pass [style=bold,color=red]
 
 	/* cnt_miss */

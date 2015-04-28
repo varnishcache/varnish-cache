@@ -111,7 +111,7 @@ with one of the following keywords:
     Deliver the object. If it is stale, a background fetch to refresh
     it is triggered.
 
-  ``fetch``
+  ``miss``
     Synchronously refresh the object from the backend despite the
     cache hit. Control will eventually pass to :ref:`vcl_miss`.
 
@@ -127,7 +127,9 @@ with one of the following keywords:
     Transition to :ref:`vcl_synth` with ``resp.status`` and
     ``resp.reason`` being preset to the arguments of ``synth()``.
 
-.. XXX: #1603 hit should not go to miss
+  ``fetch`` (deprecated)
+    same as ``miss``. Will get removed in a future version, triggers a
+    VCL_Error log message.
 
 .. _vcl_miss:
 
