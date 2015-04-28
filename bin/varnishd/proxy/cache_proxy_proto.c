@@ -110,7 +110,7 @@ vpx_proto1(const struct worker *wrk, struct req *req)
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV;
 
-	i = getaddrinfo(fld[1], fld[2], &hints, &res);
+	i = getaddrinfo(fld[1], fld[3], &hints, &res);
 	if (i != 0) {
 		VSLb(req->vsl, SLT_ProxyGarbage,
 		    "PROXY1: Cannot resolve source address (%s)",
@@ -131,7 +131,7 @@ vpx_proto1(const struct worker *wrk, struct req *req)
 	SES_Set_String_Attr(req->sp, SA_CLIENT_PORT, fld[2]);
 	freeaddrinfo(res);
 
-	i = getaddrinfo(fld[3], fld[4], &hints, &res);
+	i = getaddrinfo(fld[2], fld[4], &hints, &res);
 	if (i != 0) {
 		VSLb(req->vsl, SLT_ProxyGarbage,
 		    "PROXY1: Cannot resolve destination address (%s)",
@@ -151,7 +151,7 @@ vpx_proto1(const struct worker *wrk, struct req *req)
 	freeaddrinfo(res);
 
 	VSLb(req->vsl, SLT_Proxy, "1 %s %s %s %s",
-	    fld[1], fld[2], fld[3], fld[4]);
+	    fld[1], fld[3], fld[2], fld[4]);
 	req->htc->pipeline_b = q;
 	return (0);
 }
