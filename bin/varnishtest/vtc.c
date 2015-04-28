@@ -51,7 +51,6 @@
 
 #define		MAX_TOKENS		200
 
-static char		*vtc_desc;
 volatile sig_atomic_t	vtc_error;	/* Error encountered */
 int			vtc_stop;	/* Stops current test without error */
 pthread_t		vtc_thread;
@@ -276,6 +275,9 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 		/* Start of line */
 		if (isspace(*p))
 			continue;
+		if (*p == '\n')
+			continue;
+
 		if (*p == '#') {
 			for (; *p != '\0' && *p != '\n'; p++)
 				;
@@ -283,6 +285,14 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 				break;
 			continue;
 		}
+
+		q = strchr(p, '\n');
+		if (q == NULL)
+			q = strchr(p, '\0');
+		if (q - p > 60)
+			vtc_log(vl, 2, "=== %.60s...", p);
+		else
+			vtc_log(vl, 2, "=== %.*s", (int)(q - p), p);
 
 		/* First content on line, collect tokens */
 		tn = 0;
@@ -362,7 +372,6 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 			vtc_log(vl, 0, "Unknown command: \"%s\"", token_s[0]);
 			return;
 		}
-		vtc_log(vl, 3, "%s", token_s[0]);
 
 		assert(cp->cmd != NULL);
 		cp->cmd(token_s, priv, cmd, vl);
@@ -399,7 +408,6 @@ cmd_varnishtest(CMD_ARGS)
 
 	vtc_log(vl, 1, "TEST %s", av[1]);
 	AZ(av[2]);
-	vtc_desc = strdup(av[1]);
 }
 
 /**********************************************************************
@@ -648,7 +656,6 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	AZ(fclose(f));
 
 	vtc_stop = 0;
-	vtc_desc = NULL;
 	vtc_log(vltop, 1, "TEST %s starting", fn);
 
 	p = strdup(script);
@@ -667,6 +674,5 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	else
 		vtc_log(vltop, 1, "TEST %s completed", fn);
 
-	free(vtc_desc);
 	return (vtc_error);
 }
