@@ -109,7 +109,7 @@ sub vcl_hit {
         return (deliver);
     }
     // fetch & deliver once we get the result
-    return (fetch);
+    return (miss);
 }
 
 sub vcl_miss {

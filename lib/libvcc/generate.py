@@ -108,7 +108,7 @@ returns =(
 	),
 	('hit',
 		"C",
-		('synth', 'restart', 'pass', 'fetch', 'deliver',)
+		('synth', 'restart', 'pass', 'fetch', 'miss', 'deliver',)
 	),
 	('deliver',
 		"C",
