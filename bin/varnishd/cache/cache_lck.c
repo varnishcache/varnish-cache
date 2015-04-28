@@ -55,8 +55,7 @@ struct ilck {
 
 static pthread_mutexattr_t attr;
 
-static VTAILQ_HEAD(, ilck)	ilck_head =
-    VTAILQ_HEAD_INITIALIZER(ilck_head);
+static VTAILQ_HEAD(, ilck)	ilck_head = VTAILQ_HEAD_INITIALIZER(ilck_head);
 
 static pthread_mutex_t		lck_mtx;
 
@@ -210,7 +209,9 @@ LCK_Init(void)
 {
 
 	AZ(pthread_mutexattr_init(&attr));
+#if !defined(__APPLE__)
 	AZ(pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK));
+#endif
 	AZ(pthread_mutex_init(&lck_mtx, &attr));
 #define LOCK(nam)						\
 	lck_##nam = VSM_Alloc(sizeof(struct VSC_C_lck),		\
