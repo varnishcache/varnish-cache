@@ -40,6 +40,8 @@ VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	assert(act == VDP_NULL || act == VDP_FLUSH);
+	if (req->vdp_errval)
+		return (req->vdp_errval);
 	vdp = req->vdp_nxt;
 	CHECK_OBJ_NOTNULL(vdp, VDP_ENTRY_MAGIC);
 	req->vdp_nxt = VTAILQ_NEXT(vdp, list);
@@ -47,6 +49,8 @@ VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 	assert(act > VDP_NULL || len > 0);
 	/* Call the present layer, while pointing to the next layer down */
 	retval = vdp->func(req, act, &vdp->priv, ptr, len);
+	if (retval)
+		req->vdp_errval = retval; /* Latch error value */
 	req->vdp_nxt = vdp;
 	return (retval);
 }

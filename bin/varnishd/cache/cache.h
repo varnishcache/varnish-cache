@@ -616,6 +616,7 @@ struct req {
 	/* Deliver pipeline */
 	struct vdp_entry_s	vdp;
 	struct vdp_entry	*vdp_nxt;
+	unsigned		vdp_errval;
 
 	/* Transaction VSL buffer */
 	struct vsl_log		vsl[1];
