@@ -2,8 +2,15 @@ varnishtest "PROXY1 protocol tests"
 
 server s1 {
 	rxreq
+	expect req.http.X-Forwarded-For == 1.2.3.4
 	txresp
+
 	rxreq
+	expect req.http.X-Forwarded-For == 1:f::2
+	txresp
+
+	rxreq
+	expect req.http.X-Forwarded-For == 1:f::3
 	txresp
 } -start
 
@@ -11,6 +18,7 @@ varnish v1 -proto "PROXY" -vcl+backend {
 	import ${vmod_std};
 
 	sub vcl_deliver {
+		set resp.http.url = req.url;
 		set resp.http.li = local.ip;
 		set resp.http.lp = std.port(local.ip);
 		set resp.http.ri = remote.ip;
@@ -129,8 +137,9 @@ delay .1
 # Finally try something which works...
 client c1 {
 	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678\r\n"
-	txreq
+	txreq -url /1
 	rxresp
+	expect resp.http.url == "/1"
 	expect resp.http.ci == "1.2.3.4"
 	expect resp.http.cp == "1234"
 	expect resp.http.si == "5.6.7.8"
@@ -144,8 +153,9 @@ delay .1
 
 client c1 {
 	send "PROXY TCP6 1:f::2 5:a::8 1234 5678\r\n"
-	txreq
+	txreq -url /2
 	rxresp
+	expect resp.http.url == "/2"
 	expect resp.http.ci == "1:f::2"
 	expect resp.http.cp == "1234"
 	expect resp.http.si == "5:a::8"
@@ -157,9 +167,40 @@ client c1 {
 } -run
 delay .1
 
+# Try with appended request (See also: #1728)
+client c1 {
+	send "PROXY TCP6 1:f::3 5:a::8 1234 5678\r\nGET /3 HTTP/1.1\r\nHdr1: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n\r\n"
+	rxresp
+	expect resp.http.url == "/3"
+} -run
+
 # Malformed (missing \r)
 client c1 {
 	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678\n"
+	expect_close
+} -run
+delay .1
+
+# Malformed, too long (106)
+# NB: Should check VSL for proper disposal
+client c1 {
+	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678                                                                     \r\n"
+	expect_close
+} -run
+delay .1
+
+# Malformed, too long (107)
+# NB: Should check VSL for proper disposal
+client c1 {
+	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678                                                                      \r\n"
+	expect_close
+} -run
+delay .1
+
+# Malformed, too long (108)
+# NB: Should check VSL for proper disposal
+client c1 {
+	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678                                                                       \r\n"
 	expect_close
 } -run
 delay .1
