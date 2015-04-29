@@ -66,7 +66,7 @@ vpx_proto1(const struct worker *wrk, struct req *req)
 	VSL(SLT_Debug, req->sp->fd, "PROXY1");
 
 	q = strchr(req->htc->rxbuf_b, '\r');
-	if (!q)
+	if (q == NULL)
 		return (-1);
 
 	*q++ = '\0';
@@ -298,7 +298,7 @@ static enum htc_status_e __match_proto__(htc_complete_f)
 vpx_complete(struct http_conn *htc)
 {
 	int i, l, j;
-	char *p;
+	char *p, *q;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	AZ(htc->pipeline_b);
@@ -315,9 +315,10 @@ vpx_complete(struct http_conn *htc)
 		if (j == 0)
 			return (HTC_S_JUNK);
 		if (j == 1 && i == sizeof vpx1_sig) {
-			if (l > 107)
+			q = strchr(p + i, '\n');
+			if (q != NULL && (q - htc->rxbuf_b) > 107)
 				return (HTC_S_OVERFLOW);
-			if (strchr(p + i, '\n') == NULL)
+			if (q == NULL)
 				return (HTC_S_MORE);
 			return (HTC_S_COMPLETE);
 		}
