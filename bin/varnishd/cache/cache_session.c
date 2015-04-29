@@ -259,6 +259,10 @@ SES_RxReq(const struct worker *wrk, struct req *req, htc_complete_f *func)
 			return (HTC_S_OVERFLOW);
 		}
 		hs = func(req->htc);
+		if (hs == HTC_S_OVERFLOW) {
+			WS_ReleaseP(req->htc->ws, req->htc->rxbuf_b);
+			return (HTC_S_OVERFLOW);
+		}
 		if (hs == HTC_S_JUNK) {
 			WS_ReleaseP(req->htc->ws, req->htc->rxbuf_b);
 			return (HTC_S_JUNK);
