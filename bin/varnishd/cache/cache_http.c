@@ -641,7 +641,7 @@ http_DoConnection(struct http *hp)
 	enum sess_close retval;
 	unsigned u, v;
 
-	if (hp->protover < 11)
+	if (hp->protover == 10)
 		retval = SC_REQ_HTTP10;
 	else
 		retval = SC_NULL;

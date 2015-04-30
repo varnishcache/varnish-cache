@@ -36,10 +36,4 @@ client c1 {
 	expect resp.bodylen == 67
 } -run
 
-client c1 {
-	txreq -url /foo/bar -proto ""
-	rxresp
-	expect resp.status == 200
-	expect resp.bodylen == 67
-} -run
 varnish v1 -expect esi_errors == 0

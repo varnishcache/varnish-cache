@@ -325,7 +325,7 @@ http1_proto_ver(struct http *hp)
 	else if (!strcasecmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.1"))
 		hp->protover = 11;
 	else
-		hp->protover = 9;
+		hp->protover = 0;
 }
 
 /*--------------------------------------------------------------------*/
@@ -344,6 +344,8 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 	if (retval != 0)
 		return (retval);
 	http1_proto_ver(hp);
+	if (hp->protover == 0)
+		return (400);
 
 	if (http_CountHdr(hp, H_Host) > 1)
 		return (400);
@@ -399,7 +401,7 @@ HTTP1_DissectResponse(struct http *hp, struct http_conn *htc)
 
 	if (retval == 0) {
 		http1_proto_ver(hp);
-		if (hp->protover != 10 && hp->protover != 11)
+		if (hp->protover == 0)
 			retval = 503;
 	}
 

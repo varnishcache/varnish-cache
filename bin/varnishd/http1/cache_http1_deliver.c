@@ -131,7 +131,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		req->res_mode |= RES_LEN;
 
 	if (req->wantbody && !(req->res_mode & RES_LEN)) {
-		if (req->http->protover >= 11) {
+		if (req->http->protover == 11) {
 			req->res_mode |= RES_CHUNKED;
 			http_SetHeader(req->resp, "Transfer-Encoding: chunked");
 		} else {
