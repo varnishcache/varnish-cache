@@ -1331,7 +1331,7 @@ int
 http_process(struct vtclog *vl, const char *spec, int sock, int *sfd)
 {
 	struct http *hp;
-	char *s, *q;
+	char *s;
 	int retval;
 
 	(void)sfd;
@@ -1350,10 +1350,9 @@ http_process(struct vtclog *vl, const char *spec, int sock, int *sfd)
 	AN(hp->vsb);
 
 	s = strdup(spec);
-	q = strchr(s, '\0');
-	assert(q > s);
 	AN(s);
 	parse_string(s, http_cmds, hp, vl);
+	free(s);
 	retval = hp->fd;
 	VSB_delete(hp->vsb);
 	free(hp->rxbuf);
