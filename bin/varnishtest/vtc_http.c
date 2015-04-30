@@ -1256,7 +1256,6 @@ cmd_http_loop(CMD_ARGS)
 {
 	struct http *hp;
 	unsigned n, m;
-	char *s;
 
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(av[1]);
@@ -1265,9 +1264,7 @@ cmd_http_loop(CMD_ARGS)
 	n = strtoul(av[1], NULL, 0);
 	for (m = 1 ; m <= n; m++) {
 		vtc_log(vl, 4, "Loop #%u", m);
-		s = strdup(av[2]);
-		AN(s);
-		parse_string(s, cmd, hp, vl);
+		parse_string(av[2], cmd, hp, vl);
 	}
 }
 
@@ -1331,7 +1328,6 @@ int
 http_process(struct vtclog *vl, const char *spec, int sock, int *sfd)
 {
 	struct http *hp;
-	char *s;
 	int retval;
 
 	(void)sfd;
@@ -1349,10 +1345,7 @@ http_process(struct vtclog *vl, const char *spec, int sock, int *sfd)
 	AN(hp->rxbuf);
 	AN(hp->vsb);
 
-	s = strdup(spec);
-	AN(s);
-	parse_string(s, http_cmds, hp, vl);
-	free(s);
+	parse_string(spec, http_cmds, hp, vl);
 	retval = hp->fd;
 	VSB_delete(hp->vsb);
 	free(hp->rxbuf);

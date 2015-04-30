@@ -453,16 +453,11 @@ static const struct cmds logexp_cmds[] = {
 static void
 logexp_spec(struct logexp *le, const char *spec)
 {
-	char *s;
-
 	CHECK_OBJ_NOTNULL(le, LOGEXP_MAGIC);
 
 	logexp_delete_tests(le);
 
-	s = strdup(spec);
-	AN(s);
-	parse_string(s, logexp_cmds, le, le->vl);
-	free(s);
+	parse_string(spec, logexp_cmds, le, le->vl);
 }
 
 void

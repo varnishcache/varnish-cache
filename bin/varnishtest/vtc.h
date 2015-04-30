@@ -54,7 +54,7 @@ struct cmds {
 	cmd_f		*cmd;
 };
 
-void parse_string(char *buf, const struct cmds *cmd, void *priv,
+void parse_string(const char *spec, const struct cmds *cmd, void *priv,
     struct vtclog *vl);
 
 cmd_f cmd_delay;

@@ -255,20 +255,28 @@ extmacro_def(const char *name, const char *fmt, ...)
 }
 
 /**********************************************************************
- * Execute a file
+ * Parse a string
+ *
+ * We make a copy of the string and deliberately leak it, so that all
+ * the cmd functions we call don't have to strdup(3) all over the place.
+ *
+ * Static checkers like Coverity may bitch about this, but we don't care.
  */
 
 void
-parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
+parse_string(const char *spec, const struct cmds *cmd, void *priv,
+    struct vtclog *vl)
 {
 	char *token_s[MAX_TOKENS], *token_e[MAX_TOKENS];
 	struct vsb *token_exp[MAX_TOKENS];
-	char *p, *q, *f;
+	char *p, *q, *f, *buf;
 	int nest_brace;
 	int tn;
 	const struct cmds *cp;
 
-	assert(buf != NULL);
+	AN(spec);
+	buf = strdup(spec);
+	AN(buf);
 	for (p = buf; *p != '\0'; p++) {
 		if (vtc_error || vtc_stop)
 			break;
@@ -359,8 +367,9 @@ parse_string(char *buf, const struct cmds *cmd, void *priv, struct vtclog *vl)
 			if (NULL == strstr(token_s[tn], "${"))
 				continue;
 			token_exp[tn] = macro_expand(vl, token_s[tn]);
-			if (vtc_error)
+			if (vtc_error) {
 				return;
+			}
 			token_s[tn] = VSB_data(token_exp[tn]);
 			token_e[tn] = strchr(token_s[tn], '\0');
 		}
@@ -619,7 +628,6 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
     char *logbuf, unsigned loglen)
 {
 	unsigned old_err;
-	char *p;
 	FILE *f;
 	struct extmacro *m;
 
@@ -658,11 +666,8 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	vtc_stop = 0;
 	vtc_log(vltop, 1, "TEST %s starting", fn);
 
-	p = strdup(script);
-	AN(p);
-
 	vtc_thread = pthread_self();
-	parse_string(p, cmds, NULL, vltop);
+	parse_string(script, cmds, NULL, vltop);
 	old_err = vtc_error;
 	vtc_stop = 1;
 	vtc_log(vltop, 1, "RESETTING after %s", fn);

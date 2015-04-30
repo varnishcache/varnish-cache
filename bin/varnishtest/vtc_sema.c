@@ -61,9 +61,10 @@ sema_new(char *name, struct vtclog *vl)
 
 	ALLOC_OBJ(r, SEMA_MAGIC);
 	AN(r);
-	r->name = name;
+	AN(name);
 	if (*name != 'r')
 		vtc_log(vl, 0, "Sema name must start with 'r' (%s)", name);
+	r->name = name;
 
 	AZ(pthread_mutex_init(&r->mtx, NULL));
 	AZ(pthread_cond_init(&r->cond, NULL));

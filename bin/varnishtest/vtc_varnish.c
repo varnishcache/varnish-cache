@@ -75,7 +75,6 @@ struct varnish {
 	struct VSM_data		*vd;		/* vsc use */
 
 	unsigned		vsl_tag_count[256];
-	unsigned		vsl_sleep;
 };
 
 #define NONSENSE	"%XJEIFLH|)Xspa8P"
