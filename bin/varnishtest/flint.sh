@@ -10,5 +10,4 @@ flexelint \
 	../../flint.lnt \
 	../flint.lnt \
 	flint.lnt \
-	*.c \
-	../../lib/libvarnishapi/*.c
+	*.c

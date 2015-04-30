@@ -1,4 +1,7 @@
 
+// vtc_log's arg2 acts like an assert
+-function(__assert(1), vtc_log(2))
+
 -esym(850, av)
 -esym(528, iter_call)		// Flexelint bug
 
