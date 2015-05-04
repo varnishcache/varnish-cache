@@ -1,0 +1,15 @@
+varnishtest "Test connection error on pipe"
+
+varnish v1 -vcl {
+       backend default { .host = "${bad_ip}"; }
+       sub vcl_recv {
+               return (pipe);
+       }
+} -start
+
+client c1 {
+       txreq
+       expect_close
+} -run
+
+varnish v1 -expect sc_rx_timeout == 1

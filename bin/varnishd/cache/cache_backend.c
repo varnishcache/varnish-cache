@@ -277,6 +277,10 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	i = vbe_dir_getfd(d, bo);
+	if (i < 0) {
+		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
+		return;
+	}
 	V1P_Process(req, bo, i);
 	vbe_dir_finish(d, bo->wrk, bo);
 }
