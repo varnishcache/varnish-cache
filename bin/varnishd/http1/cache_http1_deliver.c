@@ -70,6 +70,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
 	req->res_mode = 0;
+	req->resp_len = -2;
 
 	/*
 	 * Determine ESI status first.  Not dependent on wantbody, because
@@ -92,12 +93,8 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	} else if (http_IsStatus(req->resp, 304)) {
 		http_Unset(req->resp, H_Content_Length);
 		req->wantbody = 0;
-	} else if (bo == NULL &&
-	    !http_GetHdr(req->resp, H_Content_Length, NULL)) {
-		http_PrintfHeader(req->resp,
-		    "Content-Length: %ju", (uintmax_t)ObjGetLen(
-		    req->wrk, req->objcore));
-	}
+	} else if (bo == NULL && req->wantbody)
+		req->resp_len = ObjGetLen(req->wrk, req->objcore);
 
 	if (cache_param->http_gzip_support &&
 	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
@@ -114,6 +111,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	if (req->res_mode & RES_ESI) {
 		/* Gunzip could have added back a C-L */
 		http_Unset(req->resp, H_Content_Length);
+		req->resp_len = -1;
 	}
 
 	/*
@@ -126,11 +124,15 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 			VRG_dorange(req, bo, r);
 	}
 
+	if (req->resp_len >= -1 && req->wantbody)
+		http_Unset(req->resp, H_Content_Length);
+	if (req->resp_len >= 0 && req->wantbody)
+		http_PrintfHeader(req->resp,
+		    "Content-Length: %jd", req->resp_len);
 
 	if (http_GetHdr(req->resp, H_Content_Length, NULL))
 		req->res_mode |= RES_LEN;
-
-	if (req->wantbody && !(req->res_mode & RES_LEN)) {
+	else if (req->wantbody) {
 		if (req->http->protover == 11) {
 			req->res_mode |= RES_CHUNKED;
 			http_SetHeader(req->resp, "Transfer-Encoding: chunked");
@@ -162,10 +164,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	if (req->wantbody) {
 		if (req->res_mode & RES_CHUNKED)
 			V1L_Chunked(req->wrk);
-
 		ois = VDP_DeliverObj(req);
-		(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
-
 		if (ois == OIS_DONE && (req->res_mode & RES_CHUNKED))
 			V1L_EndChunk(req->wrk);
 	}

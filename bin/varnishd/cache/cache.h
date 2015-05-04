@@ -591,7 +591,10 @@ struct req {
 	/* HTTP request */
 	struct http		*http;
 	struct http		*http0;
+
+	/* HTTP response */
 	struct http		*resp;
+	intmax_t		resp_len;
 
 	struct ws		ws[1];
 	struct objcore		*objcore;

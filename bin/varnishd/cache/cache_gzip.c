@@ -293,14 +293,14 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 		VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 		*priv = vg;
 
-		http_Unset(req->resp, H_Content_Length);
 		p = ObjGetattr(req->wrk, req->objcore, OA_GZIPBITS, &dl);
 		if (p != NULL && dl == 32) {
 			u = vbe64dec(p + 24);
 			/* XXX: Zero is suspect: OA_GZIPBITS wasn't set */
 			if (u != 0)
-				http_PrintfHeader(req->resp,
-				    "Content-Length: %ju", (uintmax_t)u);
+				req->resp_len = u;
+			else
+				req->resp_len = -1;
 		}
 		http_Unset(req->resp, H_Content_Encoding);
 		return (0);

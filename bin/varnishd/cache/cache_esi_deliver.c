@@ -635,6 +635,7 @@ ESI_DeliverChild(struct req *req, struct busyobj *bo)
 		if (bo != NULL)
 			VBO_waitstate(bo, BOS_FINISHED);
 		ved_stripgzip(req);
+		(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
 	} else {
 		if (req->gzip_resp && !i)
 			VDP_push(req, ved_pretend_gzip, NULL, 0);
@@ -643,6 +644,5 @@ ESI_DeliverChild(struct req *req, struct busyobj *bo)
 
 		(void)VDP_DeliverObj(req);
 	}
-	(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
 	VDP_close(req);
 }
