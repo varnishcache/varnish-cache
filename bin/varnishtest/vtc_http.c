@@ -984,7 +984,7 @@ cmd_http_recv(CMD_ARGS)
 {
 	struct http *hp;
 	int i, n;
-	uint8_t u[32];
+	char u[32];
 
 	(void)cmd;
 	(void)vl;
