@@ -976,6 +976,34 @@ cmd_http_txreq(CMD_ARGS)
 }
 
 /**********************************************************************
+ * Receive N characters
+ */
+
+static void
+cmd_http_recv(CMD_ARGS)
+{
+	struct http *hp;
+	int i, n;
+	uint8_t u[32];
+
+	(void)cmd;
+	(void)vl;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	AN(av[1]);
+	AZ(av[2]);
+	n = strtoul(av[1], NULL, 0);
+	while (n > 0) {
+		i = read(hp->fd, u, n > 32 ? 32 : n);
+		if (i > 0)
+			vtc_dump(hp->vl, 4, "recv", u, i);
+		else 
+			vtc_log(hp->vl, hp->fatal, "recv() got %d (%s)", i,
+			    strerror(errno));
+		n -= i;
+	}
+}
+
+/**********************************************************************
  * Send a string
  */
 
@@ -1307,6 +1335,7 @@ static const struct cmds http_cmds[] = {
 	{ "rxrespbody",		cmd_http_rxrespbody },
 	{ "gunzip",		cmd_http_gunzip_body },
 	{ "expect",		cmd_http_expect },
+	{ "recv",		cmd_http_recv },
 	{ "send",		cmd_http_send },
 	{ "send_n",		cmd_http_send_n },
 	{ "send_urgent",	cmd_http_send_urgent },
