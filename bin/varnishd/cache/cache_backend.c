@@ -110,7 +110,6 @@ vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 	if (vc == NULL) {
 		// XXX: Per backend stats ?
 		VSC_C_main->backend_fail++;
-		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 		return (-1);
 	}
 
