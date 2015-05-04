@@ -58,6 +58,7 @@ struct cli;
 struct director;
 struct VCL_conf;
 struct suckaddr;
+struct vmod;
 
 /***********************************************************************
  * This is the central definition of the mapping from VCL types to
@@ -243,9 +244,9 @@ void VRT_fini_vbe(VRT_CTX, struct director **, const struct vrt_backend *);
 int VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst);
 
 /* VMOD/Modules related */
-int VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
+int VRT_Vmod_Init(struct vmod **hdl, void *ptr, int len, const char *nm,
     const char *path, const char *file_id, VRT_CTX);
-void VRT_Vmod_Fini(void **hdl);
+void VRT_Vmod_Fini(struct vmod **hdl);
 
 struct vmod_priv;
 typedef void vmod_priv_free_f(void *);

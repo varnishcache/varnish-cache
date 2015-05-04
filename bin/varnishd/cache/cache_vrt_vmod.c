@@ -62,7 +62,7 @@ struct vmod {
 static VTAILQ_HEAD(,vmod)	vmods = VTAILQ_HEAD_INITIALIZER(vmods);
 
 int
-VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
+VRT_Vmod_Init(struct vmod **hdl, void *ptr, int len, const char *nm,
     const char *path, const char *file_id, VRT_CTX)
 {
 	struct vmod *v;
@@ -73,6 +73,8 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(ctx->cli);
+	AN(hdl);
+	AZ(*hdl);
 
 	dlhdl = dlopen(path, RTLD_NOW | RTLD_LOCAL);
 	if (dlhdl == NULL) {
@@ -141,15 +143,16 @@ VRT_Vmod_Init(void **hdl, void *ptr, int len, const char *nm,
 }
 
 void
-VRT_Vmod_Fini(void **hdl)
+VRT_Vmod_Fini(struct vmod **hdl)
 {
 	struct vmod *v;
 
 	ASSERT_CLI();
 
-	AN(*hdl);
-	CAST_OBJ_NOTNULL(v, *hdl, VMOD_MAGIC);
+	AN(hdl);
+	v = *hdl;
 	*hdl = NULL;
+	CHECK_OBJ_NOTNULL(v, VMOD_MAGIC);
 
 #ifndef DONT_DLCLOSE_VMODS
 	/*

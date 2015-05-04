@@ -218,7 +218,7 @@ vcc_ParseImport(struct vcc *tl)
 	}
 
 	Fh(tl, 0, "\n/* --- BEGIN VMOD %.*s --- */\n\n", PF(mod));
-	Fh(tl, 0, "static void *VGC_vmod_%.*s;\n", PF(mod));
+	Fh(tl, 0, "static struct vmod *VGC_vmod_%.*s;\n", PF(mod));
 	Fh(tl, 0, "static struct vmod_priv vmod_priv_%.*s;\n", PF(mod));
 	Fh(tl, 0, "\n%s\n", vmd->proto);
 	Fh(tl, 0, "\n/* --- END VMOD %.*s --- */\n\n", PF(mod));
