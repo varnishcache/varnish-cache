@@ -1,45 +1,72 @@
-varnishtest "Streaming of C-L header from backend"
+varnishtest "range requests on streamed response"
 
-server s1 {
+server s1 -repeat 4 {
 	rxreq
-	txresp -nolen -hdr "Content-Length: 020"
-	send "0123456789"
+	txresp -nolen \
+	    -hdr "Transfer-Encoding: chunked" \
+	    -hdr "Connection: close"
+	send "11\r\n0_23456789abcdef\n"
+	send "11\r\n1_23456789abcdef\n"
+	send "11\r\n2_23456789abcdef\n"
+	send "11\r\n3_23456789abcdef\n"
 	sema r1 sync 2
-	send "0123456789"
+	send "11\r\n4_23456789abcdef\n"
+	send "11\r\n5_23456789abcdef\n"
+	send "11\r\n6_23456789abcdef\n"
+	send "11\r\n7_23456789abcdef\n"
+	chunkedlen 0
 
-	rxreq
-	txresp -nolen -hdr "Content-Length: 010"
-	sema r2 sync 2
-	send "0123456789"
 } -start
 
-varnish v1 -vcl+backend {
+varnish v1 -vcl+backend {} -start
 
-	sub vcl_backend_response {
-		if (bereq.url == "/2") {
-			set beresp.do_gzip = true;
-		}
-	}
-} -start -cliok "param.set debug +syncvsl" -cliok "param.set debug +flush_head"
+varnish v1 -cliok "param.set debug +syncvsl"
+
+logexpect l1 -v v1 -g session {
+	expect 0 1000	Begin		sess
+	expect * =	SessClose	RANGE_SHORT
+} -start
 
 client c1 {
-	txreq
+	txreq -url /1 -hdr "Range: bytes=17-101"
 	rxresphdrs
-	expect resp.http.content-length == "020"
+	expect resp.status == 206
+	expect resp.http.content-length == 85
 	sema r1 sync 2
 	rxrespbody
-	expect resp.body == "01234567890123456789"
+	expect resp.bodylen == 85
 	delay .1
 
-	txreq -url "/2"
+	# We cannot do tail-ranges when streaming
+	txreq -url /2 -hdr "Range: bytes=-10"
 	rxresphdrs
-	expect resp.http.content-length == "<undef>"
-	sema r2 sync 2
+	expect resp.status == 200
+	expect resp.http.Transfer-Encoding == chunked
+	sema r1 sync 2
 	rxrespbody
-	expect resp.body == "0123456789"
+	expect resp.bodylen == 136
 	delay .1
 
-	txreq -url "/2"
-	rxresp
-	expect resp.http.content-length == "10"
+	# We cannot do open-ranges when streaming
+	txreq -url /3 -hdr "Range: bytes=17-"
+	rxresphdrs
+	expect resp.status == 200
+	expect resp.http.Transfer-Encoding == chunked
+	sema r1 sync 2
+	rxrespbody
+	expect resp.bodylen == 136
+	delay .1
+
+	# Invalid range
+	txreq -url /4 -hdr "Range: bytes=102-200"
+	rxresphdrs
+	expect resp.status == 206
+	expect resp.http.content-length == 99
+	sema r1 sync 2
+	recv 34
+	delay .3
+	expect_close
 } -run
+
+varnish v1 -expect sc_range_short == 1
+logexpect l1 -wait

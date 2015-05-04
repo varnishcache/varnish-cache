@@ -56,11 +56,14 @@ vrg_range_bytes(struct req *req, enum vdp_action act, void **priv,
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	if (act == VDP_INIT)
 		return (0);
+	CAST_OBJ_NOTNULL(vrg_priv, *priv, VRG_PRIV_MAGIC);
 	if (act == VDP_FINI) {
-		*priv = NULL;
+		if (vrg_priv->range_off < vrg_priv->range_high)
+			SES_Close(req->sp, SC_RANGE_SHORT);
+		*priv = NULL;	/* struct on ws, no need to free */
 		return (0);
 	}
-	CAST_OBJ_NOTNULL(vrg_priv, *priv, VRG_PRIV_MAGIC);
+
 	l = vrg_priv->range_low - vrg_priv->range_off;
 	if (l > 0) {
 		if (l > len)
@@ -126,19 +129,29 @@ vrg_dorange(struct req *req, const struct busyobj *bo, ssize_t len,
 		return (__LINE__);
 
 	if (!has_low) {
+		if (bo != NULL)
+			return (0);		// Allow 200 response
 		if (high == 0)
 			return (__LINE__);
 		low = len - high;
 		if (low < 0)
 			low = 0;
 		high = len - 1;
-	} else if (high >= len || !has_high)
+	} else if (bo == NULL && (high >= len || !has_high))
 		high = len - 1;
+	else if (!has_high)
+		return (0);			// Allow 200 response
+	/*
+	 * else (bo != NULL) {
+	 *    We assume that the client knows what it's doing and trust
+	 *    that both low and high make sense.
+	 * }
+	 */
 
 	if (high < low)
 		return (__LINE__);
 
-	if (low >= len)
+	if (bo == NULL && low >= len)
 		return (__LINE__);
 
 	http_PrintfHeader(req->resp, "Content-Range: bytes %jd-%jd/%jd",
