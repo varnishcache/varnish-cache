@@ -614,9 +614,9 @@ AC_DEFINE_UNQUOTED([VCC_CC],"$VCC_CC",[C compiler command line for VCL code])
 # --enable-pcre-jit
 AC_ARG_ENABLE(pcre-jit,
     AS_HELP_STRING([--enable-pcre-jit],
-	[use the PCRE JIT compiler (default is NO)]),
+	[use the PCRE JIT compiler (default is YES)]),
     ,
-    [enable_pcre_jit=no])
+    [enable_pcre_jit=yes])
 
 if test "$enable_pcre_jit" = yes; then
    AC_DEFINE([USE_PCRE_JIT],[1],[use the PCRE JIT compiler])
