@@ -348,7 +348,7 @@ EmitInitFini(const struct vcc *tl)
 	Fc(tl, 0, "\t\treturn(VGC_Load(ctx));\n");
 	Fc(tl, 0, "\tif (ev == VCL_EVENT_DISCARD)\n");
 	Fc(tl, 0, "\t\treturn(VGC_Discard(ctx));\n");
-	Fc(tl, 0, "\t\n");
+	Fc(tl, 0, "\n");
 	VTAILQ_FOREACH(p, &tl->inifin, list) {
 		AZ(VSB_finish(p->event));
 		if (VSB_len(p->event))
