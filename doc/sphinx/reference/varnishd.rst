@@ -15,7 +15,7 @@ HTTP accelerator daemon
 SYNOPSIS
 ========
 
-varnishd [-a address[:port]] [-b host[:port]] [-C] [-d] [-f config] [-F] [-g group] [-h type[,options]] [-i identity] [-l shl[,free[,fill]]] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...] [-s [name=]kind[,options]] [-S secret-file] [-T address[:port]] [-t ttl] [-u user] [-V]
+varnishd [-a address[:port][,PROTO]] [-b host[:port]] [-C] [-d] [-f config] [-F] [-g group] [-h type[,options]] [-i identity] [-l shl[,free[,fill]]] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...] [-s [name=]kind[,options]] [-S secret-file] [-T address[:port]] [-t ttl] [-u user] [-V]
 
 DESCRIPTION
 ===========
@@ -29,16 +29,17 @@ satisfy future requests for the same document.
 OPTIONS
 =======
 
--a <address[:port][,address[:port][...]>
+-a <address[:port][,PROTO]>
 
   Listen for client requests on the specified address and port.  The
-  address can be a host name (“localhost”), an IPv4 dotted-quad
-  (“127.0.0.1”), or an IPv6 address enclosed in square brackets
-  (“[::1]”).  If address is not specified, varnishd will listen on all
+  address can be a host name ("localhost"), an IPv4 dotted-quad
+  ("127.0.0.1"), or an IPv6 address enclosed in square brackets
+  ("[::1]").  If address is not specified, varnishd will listen on all
   available IPv4 and IPv6 interfaces.  If port is not specified, the
-  default HTTP port as listed in /etc/services is used.  Multiple
-  listening addresses and ports can be specified as a whitespace or
-  comma -separated list.
+  default HTTP port as listed in /etc/services is used.
+  An additional protocol type can be set for the listening socket with PROTO.
+  Valid protocol types are: HTTP/1 (default), and PROXY.
+  Multiple listening adresses can be specificed by using multiple -a arguments.
 
 -b <host[:port]>
 
