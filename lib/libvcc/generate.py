@@ -670,6 +670,14 @@ sp_variables = [
 		The corresponding HTTP header.
 		"""
 	),
+        ('resp.is_streaming',
+                'BOOL',
+                ( 'deliver', 'synth', ),
+                ( ), """
+                Returns true when the response will be streamed
+                from the backend.
+                """
+        ),
 	('now',
 		'TIME',
 		( 'all',),

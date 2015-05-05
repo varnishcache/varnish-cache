@@ -1,0 +1,39 @@
+varnishtest "Test resp.is_streaming"
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Content-Length: 10"
+	delay 1
+	send "1234567890"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/synth") {
+			return(synth(200, "OK"));
+		}
+	}
+	sub vcl_synth {
+		set resp.http.streaming = resp.is_streaming;
+	}
+	sub vcl_deliver {
+		set resp.http.streaming = resp.is_streaming;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.streaming == "true"
+
+	delay 0.1
+
+	txreq
+	rxresp
+	expect resp.http.streaming == "false"
+
+	txreq -url /synth
+	rxresp
+	expect resp.http.streaming == "false"
+} -run
+

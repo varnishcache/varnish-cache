@@ -658,6 +658,19 @@ VRT_r_obj_uncacheable(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
+unsigned
+VRT_r_resp_is_streaming(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	if (ctx->req->objcore == NULL)
+		return (0);	/* When called from vcl_synth */
+	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
+	return (ctx->req->objcore->busyobj != NULL ? 1 : 0);
+}
+
+/*--------------------------------------------------------------------*/
+
 #define HTTP_VAR(x)						\
 struct http *							\
 VRT_r_##x(VRT_CTX)				\
