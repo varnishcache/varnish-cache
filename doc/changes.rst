@@ -1,3 +1,13 @@
+====================================
+Varnish Cache 4.1.0-dev (unreleased)
+====================================
+
+This is a placeholder entry for the upcoming 4.1.0 prereleases.
+
+Changes between 4.0 and 4.1 are numerous. Please read the upgrade
+section in the documentation for a general overview.
+
+
 ============================================
 Changes from 4.0.3-rc3 to 4.0.3 (2015-02-17)
 ============================================
