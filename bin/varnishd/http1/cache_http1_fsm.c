@@ -201,16 +201,16 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				Req_Release(req);
 				switch(hs) {
 				case HTC_S_CLOSE:
-					SES_Delete(sp, SC_REM_CLOSE, 0.0);
+					SES_Delete(sp, SC_REM_CLOSE, NAN);
 					return;
 				case HTC_S_TIMEOUT:
-					SES_Delete(sp, SC_RX_TIMEOUT, 0.0);
+					SES_Delete(sp, SC_RX_TIMEOUT, NAN);
 					return;
 				case HTC_S_OVERFLOW:
-					SES_Delete(sp, SC_RX_OVERFLOW, 0.0);
+					SES_Delete(sp, SC_RX_OVERFLOW, NAN);
 					return;
 				case HTC_S_EOF:
-					SES_Delete(sp, SC_REM_CLOSE, 0.0);
+					SES_Delete(sp, SC_REM_CLOSE, NAN);
 					return;
 				default:
 					WRONG("htc_status (bad)");

@@ -560,6 +560,7 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
 	if (reason == SC_NULL)
 		reason = (enum sess_close)-sp->fd;
 
+	assert(now > sp->t_open);
 	assert(VTAILQ_EMPTY(&sp->privs->privs));
 	VSL(SLT_SessClose, sp->vxid, "%s %.3f",
 	    sess_close_2str(reason, 0), now - sp->t_open);
