@@ -72,7 +72,7 @@ proxy can signal the real client address.
 
 The ``-a`` startup argument syntax has been expanded to allow for this::
 
-    $ varnishd -f /etc/varnish/default.vcl -a :6081,proxy@127.0.0.1:6086
+    $ varnishd -f /etc/varnish/default.vcl -a :6081 -a 127.0.0.1:6086,PROXY
 
 
 Both PROXY1 and PROXY2 protocols are supported on the resulting listening
