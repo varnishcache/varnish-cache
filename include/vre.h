@@ -51,6 +51,8 @@ typedef struct vre vre_t;
 extern const unsigned VRE_CASELESS;
 extern const unsigned VRE_NOTEMPTY;
 
+extern const int vre__jit;
+
 vre_t *VRE_compile(const char *, int, const char **, int *);
 int VRE_exec(const vre_t *code, const char *subject, int length,
     int startoffset, int options, int *ovector, int ovecsize,

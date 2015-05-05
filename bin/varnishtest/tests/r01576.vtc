@@ -1,5 +1,7 @@
 varnishtest "Test certain regex fail before consuming all the stack"
 
+feature pcre_jit
+
 server s1 {
 	rxreq
 	expect req.http.found == "1"

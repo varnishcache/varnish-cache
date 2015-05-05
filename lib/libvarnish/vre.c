@@ -46,6 +46,8 @@
 #  define pcre_free_study pcre_free
 #endif
 
+const int vre__jit = VRE_STUDY_JIT_COMPILE;
+
 struct vre {
 	unsigned		magic;
 #define VRE_MAGIC		0xe83097dc
