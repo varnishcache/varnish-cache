@@ -36,7 +36,7 @@
 
 #include "vre.h"
 
-#if USE_PCRE_JIT
+#if defined(USE_PCRE_JIT) && defined (PCRE_STUDY_JIT_COMPILE)
 #define VRE_STUDY_JIT_COMPILE PCRE_STUDY_JIT_COMPILE
 #else
 #define VRE_STUDY_JIT_COMPILE 0
