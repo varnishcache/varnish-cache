@@ -113,3 +113,60 @@ client c1 {
 } -run
 
 varnish v1 -expect s_resp_bodybytes == 401
+
+# Test Range streaming with streaming objects with C-L
+
+server s1 -repeat 2 {
+	rxreq
+	txresp -nolen -hdr "Content-Length: 100"
+	send "0123456789"
+	send "0123456789"
+	send "0123456789"
+	send "0123456789"
+	send "0123456789"
+	sema r1 sync 2
+	send "0123456789"
+	send "0123456789"
+	send "0123456789"
+	send "0123456789"
+	send "0123456789"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		if (bereq.url == "/2") {
+			set beresp.do_gzip = true;
+		}
+	}
+}
+
+client c1 {
+	# Open ended range to force C-L usage
+	txreq -url /1 \
+		-hdr "Range: bytes=20-" \
+		-hdr "Connection: close"
+	rxresphdrs
+	expect resp.status == 206
+	expect resp.http.Content-Range == "bytes 20-99/100"
+	recv 10
+	sema r1 sync 2
+	recv 70
+	expect_close
+} -run
+
+delay .1
+
+client c1 {
+	# Closed C-L because we cannot use C-L
+	txreq -url /2 \
+		-hdr "Range: bytes=20-29" \
+		-hdr "Connection: close" \
+		-hdr "Accept-encoding: gzip"
+	rxresphdrs
+	expect resp.status == 206
+	expect resp.http.Content-Range == "bytes 20-29/*"
+	expect resp.http.Content-Length == 10
+	sema r1 sync 2
+	recv 10
+	expect_close
+} -run

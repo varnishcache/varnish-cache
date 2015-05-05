@@ -86,13 +86,11 @@ vrg_range_bytes(struct req *req, enum vdp_action act, void **priv,
 /*--------------------------------------------------------------------*/
 
 static int
-vrg_dorange(struct req *req, const struct busyobj *bo, ssize_t len,
-    const char *r)
+vrg_dorange(struct req *req, ssize_t len, const char *r)
 {
 	ssize_t low, high, has_low, has_high, t;
 	struct vrg_priv *vrg_priv;
 
-	(void)bo;
 	if (strncasecmp(r, "bytes=", 6))
 		return (__LINE__);
 	r += 6;
@@ -129,7 +127,7 @@ vrg_dorange(struct req *req, const struct busyobj *bo, ssize_t len,
 		return (__LINE__);
 
 	if (!has_low) {
-		if (bo != NULL)
+		if (len < 0)
 			return (0);		// Allow 200 response
 		if (high == 0)
 			return (__LINE__);
@@ -137,7 +135,7 @@ vrg_dorange(struct req *req, const struct busyobj *bo, ssize_t len,
 		if (low < 0)
 			low = 0;
 		high = len - 1;
-	} else if (bo == NULL && (high >= len || !has_high))
+	} else if (len >= 0 && (high >= len || !has_high))
 		high = len - 1;
 	else if (!has_high)
 		return (0);			// Allow 200 response
@@ -151,11 +149,15 @@ vrg_dorange(struct req *req, const struct busyobj *bo, ssize_t len,
 	if (high < low)
 		return (__LINE__);
 
-	if (bo == NULL && low >= len)
+	if (len >= 0 && low >= len)
 		return (__LINE__);
 
-	http_PrintfHeader(req->resp, "Content-Range: bytes %jd-%jd/%jd",
-	    (intmax_t)low, (intmax_t)high, (intmax_t)len);
+	if (len >= 0)
+		http_PrintfHeader(req->resp, "Content-Range: bytes %jd-%jd/%jd",
+		    (intmax_t)low, (intmax_t)high, (intmax_t)len);
+	else
+		http_PrintfHeader(req->resp, "Content-Range: bytes %jd-%jd/*",
+		    (intmax_t)low, (intmax_t)high);
 	req->resp_len = (intmax_t)(1 + high - low);
 	http_PutResponse(req->resp, "HTTP/1.1", 206, NULL);
 
@@ -172,7 +174,7 @@ vrg_dorange(struct req *req, const struct busyobj *bo, ssize_t len,
 void
 VRG_dorange(struct req *req, struct busyobj *bo, const char *r)
 {
-	size_t len;
+	ssize_t len;
 	int i;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -180,12 +182,17 @@ VRG_dorange(struct req *req, struct busyobj *bo, const char *r)
 	assert(http_IsStatus(req->resp, 200));
 
 	/* We must snapshot the length if we're streaming from the backend */
-	if (bo != NULL)
-		len = VBO_waitlen(req->wrk, bo, -1);
-	else
+	if (bo != NULL) {
+		len = http_GetContentLength(bo->beresp);
+VSLb(req->vsl, SLT_Debug, "UUU 1 %jd", (intmax_t)len);
+#if 0
+		if (len < 0)
+			len = VBO_waitlen(req->wrk, bo, -1);
+#endif
+	} else
 		len = ObjGetLen(req->wrk, req->objcore);
 
-	i = vrg_dorange(req, bo, len, r);
+	i = vrg_dorange(req, len, r);
 	if (i) {
 		VSLb(req->vsl, SLT_Debug, "RANGE_FAIL line %d", i);
 		http_Unset(req->resp, H_Content_Length);
