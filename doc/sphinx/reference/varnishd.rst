@@ -15,12 +15,12 @@ HTTP accelerator daemon
 SYNOPSIS
 ========
 
-varnishd [-a address[:port][,PROTO]] [-b host[:port]] [-C] [-d] [-f config] [-F] [-g group] [-h type[,options]] [-i identity] [-l shl[,free[,fill]]] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...] [-s [name=]kind[,options]] [-S secret-file] [-T address[:port]] [-t ttl] [-u user] [-V]
+varnishd [-a address[:port][,PROTO]] [-b host[:port]] [-C] [-d] [-f config] [-F] [-g group] [-h type[,options]] [-i identity] [-l shl[,free[,fill]]] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...] [-s [name=]kind[,options]] [-S secret-file] [-T address[:port]] [-t TTL] [-u user] [-V]
 
 DESCRIPTION
 ===========
 
-The varnishd daemon accepts HTTP requests from clients, passes them on
+The `varnishd` daemon accepts HTTP requests from clients, passes them on
 to a backend server and caches the returned documents to better
 satisfy future requests for the same document.
 
@@ -31,19 +31,19 @@ OPTIONS
 
 -a <address[:port][,PROTO]>
 
-  Listen for client requests on the specified address and port.  The
+  Listen for client requests on the specified address and port. The
   address can be a host name ("localhost"), an IPv4 dotted-quad
   ("127.0.0.1"), or an IPv6 address enclosed in square brackets
-  ("[::1]").  If address is not specified, varnishd will listen on all
-  available IPv4 and IPv6 interfaces.  If port is not specified, the
-  default HTTP port as listed in /etc/services is used.
+  ("[::1]"). If address is not specified, `varnishd` will listen on all
+  available IPv4 and IPv6 interfaces. If port is not specified, the
+  default HTTP port as listed in ``/etc/services`` is used.
   An additional protocol type can be set for the listening socket with PROTO.
   Valid protocol types are: HTTP/1 (default), and PROXY.
   Multiple listening adresses can be specificed by using multiple -a arguments.
 
 -b <host[:port]>
 
-  Use the specified host as backend server.  If port is not specified,
+  Use the specified host as backend server. If port is not specified,
   the default is 8080.
 
 -C
@@ -55,34 +55,34 @@ OPTIONS
 
   Enables debugging mode: The parent process runs in the foreground
   with a CLI connection on stdin/stdout, and the child process must be
-  started explicitly with a CLI command.  Terminating the parent
+  started explicitly with a CLI command. Terminating the parent
   process will also terminate the child.
 
 -f config
 
   Use the specified VCL configuration file instead of the builtin
   default.  See :ref:`vcl(7)` for details on VCL syntax. When no
-  configuration is supplied varnishd will not start the cache process.
+  configuration is supplied `varnishd` will not start the child process.
 
 -F
 
-  Run in the foreground.
+  Do not fork, run in the foreground.
 
 -g group
 
   Specifies the name of an unprivileged group to which the child
-  process should switch before it starts accepting connections.  This
+  process should switch before it starts accepting connections. This
   is a shortcut for specifying the group run-time parameter.
 
 -h <type[,options]>
 
-  Specifies the hash algorithm.  See `Hash Algorithm Options`_ for a
+  Specifies the hash algorithm. See `Hash Algorithm Options`_ for a
   list of supported algorithms.
 
 -i identity
 
-  Specify the identity of the Varnish server.  This can be accessed
-  using server.identity from VCL
+  Specify the identity of the Varnish server. This can be accessed
+  using ``server.identity`` from VCL.
 
 -j <jail[,jailoptions]>
 
@@ -103,15 +103,15 @@ OPTIONS
 
 -n name
 
-  Specify the name for this instance.  Amonst other things, this name
-  is used to construct the name of the directory in which varnishd
-  keeps temporary files and persistent state.  If the specified name
+  Specify the name for this instance.  Amongst other things, this name
+  is used to construct the name of the directory in which `varnishd`
+  keeps temporary files and persistent state. If the specified name
   begins with a forward slash, it is interpreted as the absolute path
   to the directory which should be used for this purpose.
 
 -P file
 
-  Write the process's PID to the specified file.
+  Write the PID of the process to the specified file.
 
 -p <param=value>
 
@@ -132,22 +132,23 @@ OPTIONS
   Use the specified storage backend, see `Storage Backend Options`_.
 
   This option can be used multiple times to specify multiple storage
-  files. Names are referenced in logs, vcl, statistics, etc.
+  files. Names are referenced in logs, VCL, statistics, etc.
 
 -S file
 
   Path to a file containing a secret used for authorizing access to
-  the management port.
+  the management port. If not provided a new secret will be drawn
+  from the system PRNG.
 
 -T <address[:port]>
 
-  Offer a management interface on the specified address and port.  See
+  Offer a management interface on the specified address and port. See
   `Management Interface`_ for a list of management commands.
 
--t ttl
+-t TTL
 
-  Specifies a hard minimum time to live for cached documents. This is
-  a shortcut for specifying the default_ttl run-time parameter.
+  Specifies the default time to live (TTL) for cached objects. This is
+  a shortcut for specifying the *default_ttl* run-time parameter.
 
 -u user
 
@@ -235,7 +236,7 @@ specific options. Available jails are:
 
 -j solaris
 
-  Reduce privileges(5) for varnishd and sub-process to the minimally
+  Reduce privileges(5) for `varnishd` and sub-process to the minimally
   required set. Only available on platforms which have the setppriv(2)
   call.
 
@@ -265,7 +266,7 @@ specific options. Available jails are:
 Management Interface
 --------------------
 
-If the -T option was specified, varnishd will offer a command-line
+If the -T option was specified, `varnishd` will offer a command-line
 management interface on the specified address and port.  The
 recommended way of connecting to the command-line management interface
 is through varnishadm(1).
@@ -281,13 +282,13 @@ Run Time Parameter Flags
 ------------------------
 
 Runtime parameters are marked with shorthand flags to avoid repeating
-the same text over and over in the table below.  The meaning of the
+the same text over and over in the table below. The meaning of the
 flags are:
 
 * `experimental`
 
   We have no solid information about good/bad/optimal values for this
-  parameter.  Feedback with experience and observations are most
+  parameter. Feedback with experience and observations are most
   welcome.
 
 * `delayed`
@@ -314,7 +315,7 @@ flags are:
 
 * `only_root`
 
-  Only works if varnishd is running as root.
+  Only works if `varnishd` is running as root.
 
 Default Value Exceptions on 32 bit Systems
 ------------------------------------------
@@ -369,7 +370,7 @@ SEE ALSO
 HISTORY
 =======
 
-The varnishd daemon was developed by Poul-Henning Kamp in cooperation
+The `varnishd` daemon was developed by Poul-Henning Kamp in cooperation
 with Verdens Gang AS and Varnish Software.
 
 This manual page was written by Dag-Erling Smørgrav with updates by
@@ -382,4 +383,4 @@ COPYRIGHT
 This document is licensed under the same licence as Varnish
 itself. See LICENCE for details.
 
-* Copyright (c) 2007-2014 Varnish Software AS
+* Copyright (c) 2007-2015 Varnish Software AS
