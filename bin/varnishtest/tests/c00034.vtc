@@ -127,7 +127,6 @@ server s1 {
 	send "0123456789"
 	send "0123456789"
 	send "0123456789"
-	sema r1 sync 2
 	send "0123456789"
 	send "0123456789"
 
@@ -161,9 +160,7 @@ client c1 {
 	rxresphdrs
 	expect resp.status == 206
 	expect resp.http.Content-Range == "bytes 20-99/100"
-	recv 10
-	sema r1 sync 2
-	recv 70
+	recv 80
 	expect_close
 } -run
 
