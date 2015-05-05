@@ -1,0 +1,75 @@
+varnishtest "C-L/T-E:chunked conflict"
+
+server s1 {
+	rxreqhdrs
+	expect req.http.content-length == <undef>
+	expect req.http.transfer-encoding == chunked
+	rxreqbody
+	expect req.url == /1
+	expect req.bodylen == 20
+
+	send "HTTP/1.1 200 OK"
+	send "Content-Length: 31\r\n"
+	send "Transfer-Encoding: chunked\r\n"
+	send "\r\n"
+	send "14\r\n"
+	send "0123456789"
+	send "0123456789"
+	send "0\r\n"
+	send "\r\n"
+
+	rxreqhdrs
+	expect req.http.content-length == 20
+	expect req.http.transfer-encoding == <undef>
+	expect req.url == /2
+	expect req.bodylen == 20
+
+	send "HTTP/1.1 200 OK"
+	send "Content-Length: 31\r\n"
+	send "Transfer-Encoding: chunked\r\n"
+	send "\r\n"
+	send "14\r\n"
+	send "0123456789"
+	send "0123456789"
+	send "0\r\n"
+	send "\r\n"
+
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_std};
+	sub vcl_recv {
+		if (req.url == "/2") {
+			std.cache_req_body(1KB);
+		}
+	}
+} -start
+
+client c1 {
+
+	send "PUT /1 HTTP/1.1\r\n"
+	send "Content-Length: 31\r\n"
+	send "Transfer-Encoding: chunked\r\n"
+	send "\r\n"
+	send "14\r\n"
+	send "0123456789"
+	send "0123456789"
+	send "0\r\n"
+	send "\r\n"
+	rxresp
+	expect resp.bodylen == 20
+
+
+	send "PUT /2 HTTP/1.1\r\n"
+	send "Content-Length: 31\r\n"
+	send "Transfer-Encoding: chunked\r\n"
+	send "\r\n"
+	send "14\r\n"
+	send "0123456789"
+	send "0123456789"
+	send "0\r\n"
+	send "\r\n"
+	rxresp
+	expect resp.bodylen == 20
+
+} -run

@@ -263,7 +263,7 @@ http1_splitline(struct http *hp, const struct http_conn *htc, const int *hf)
 /*--------------------------------------------------------------------*/
 
 static enum body_status
-http1_body_status(const struct http *hp, struct http_conn *htc)
+http1_body_status(struct http *hp, struct http_conn *htc)
 {
 	ssize_t cl;
 	const char *b;
@@ -273,8 +273,10 @@ http1_body_status(const struct http *hp, struct http_conn *htc)
 
 	htc->content_length = -1;
 
-	if (http_HdrIs(hp, H_Transfer_Encoding, "chunked"))
+	if (http_HdrIs(hp, H_Transfer_Encoding, "chunked")) {
+		http_Unset(hp, H_Content_Length);
 		return (BS_CHUNKED);
+	}
 
 	if (http_GetHdr(hp, H_Transfer_Encoding, &b))
 		return (BS_ERROR);
