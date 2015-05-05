@@ -128,6 +128,7 @@ server s1 {
 	send "0123456789"
 	send "0123456789"
 	send "0123456789"
+	delay 2
 	send "0123456789"
 
 	rxreq
@@ -141,6 +142,7 @@ server s1 {
 	send "0123456789"
 	send "0123456789"
 	send "0123456789"
+	delay 2
 	send "0123456789"
 } -start
 
