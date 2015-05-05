@@ -141,7 +141,6 @@ server s1 {
 	send "0123456789"
 	send "0123456789"
 	send "0123456789"
-	sema r2 sync 2
 	send "0123456789"
 	send "0123456789"
 } -start
@@ -174,13 +173,9 @@ client c1 {
 	# Closed C-L because we cannot use C-L
 	txreq -url /2 \
 		-hdr "Range: bytes=2-5" \
-		-hdr "Connection: close" \
 		-hdr "Accept-encoding: gzip"
-	rxresphdrs
+	rxresp
 	expect resp.status == 206
 	expect resp.http.Content-Range == "bytes 2-5/*"
 	expect resp.http.Content-Length == 4
-	sema r2 sync 2
-	recv 4
-	expect_close
 } -run
