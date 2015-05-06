@@ -31,6 +31,7 @@
 #include "config.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "cache.h"
 #include "cache_filter.h"
@@ -276,26 +277,51 @@ static const uint8_t gzip_hdr[] = {
 };
 
 struct ecx {
+	unsigned	magic;
+#define ECX_MAGIC	0x0b0f9163
 	uint8_t		*p;
 	uint8_t		*e;
-
 	int		state;
 	ssize_t		l;
-
 	int		isgzip;
 };
 
-static void
-esi_deliver(struct req *req, struct ecx *ecx, const uint8_t *pp, ssize_t sl)
+static int __match_proto__(vdp_bytes)
+VDP_ESI(struct req *req, enum vdp_action act, void **priv,
+    const void *ptr, ssize_t len)
 {
 	uint8_t *q, *r;
-	ssize_t l_icrc = 0;
+	ssize_t l = 0;
 	uint32_t icrc = 0;
 	uint8_t tailbuf[8 + 5];
+	const uint8_t *pp;
+	struct ecx *ecx;
+	int retval = 0;
+
+	if (act == VDP_INIT) {
+		AZ(*priv);
+		ALLOC_OBJ(ecx, ECX_MAGIC);
+		AN(ecx);
+		*priv = ecx;
+		return (0);
+	}
+	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);
+	if (act == VDP_FINI) {
+		FREE_OBJ(ecx);
+		*priv = NULL;
+		return (0);
+	}
+	pp = ptr;
 
 	while (1) {
 		switch (ecx->state) {
 		case 0:
+			ecx->p = ObjGetattr(req->wrk, req->objcore,
+			    OA_ESIDATA, &l);
+			AN(ecx->p);
+			assert(l > 0);
+			ecx->e = ecx->p + l;
+
 			if (*ecx->p == VEC_GZ) {
 				ecx->isgzip = 1;
 				ecx->p++;
@@ -310,7 +336,7 @@ esi_deliver(struct req *req, struct ecx *ecx, const uint8_t *pp, ssize_t sl)
 				if (ecx->isgzip) {
 					assert(sizeof gzip_hdr == 10);
 					/* Send out the gzip header */
-					(void)VDP_bytes(req, VDP_NULL,
+					retval = VDP_bytes(req, VDP_NULL,
 					    gzip_hdr, 10);
 					req->l_crc = 0;
 					req->gzip_resp = 1;
@@ -334,13 +360,13 @@ esi_deliver(struct req *req, struct ecx *ecx, const uint8_t *pp, ssize_t sl)
 					assert(*ecx->p == VEC_C1 ||
 					    *ecx->p == VEC_C2 ||
 					    *ecx->p == VEC_C8);
-					l_icrc = ved_decode_len(&ecx->p);
+					l = ved_decode_len(&ecx->p);
 					icrc = vbe32dec(ecx->p);
 					ecx->p += 4;
 					if (req->gzip_resp) {
 						req->crc = crc32_combine(
-						    req->crc, icrc, l_icrc);
-						req->l_crc += l_icrc;
+						    req->crc, icrc, l);
+						req->l_crc += l;
 					}
 				}
 				ecx->state = 3;
@@ -395,9 +421,9 @@ esi_deliver(struct req *req, struct ecx *ecx, const uint8_t *pp, ssize_t sl)
 
 				(void)VDP_bytes(req, VDP_NULL, tailbuf, 13);
 			}
-			(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
+			retval = VDP_bytes(req, VDP_FLUSH, NULL, 0);
 			ecx->state = 99;
-			return;
+			return (retval);
 		case 3:
 		case 4:
 			/*
@@ -405,29 +431,31 @@ esi_deliver(struct req *req, struct ecx *ecx, const uint8_t *pp, ssize_t sl)
 			 * in the same storage segment, so loop over storage
 			 * until we have processed them all.
 			 */
-			if (ecx->l <= sl) {
+			if (ecx->l <= len) {
 				if (ecx->state == 3)
-					(void)VDP_bytes(req, VDP_NULL,
+					retval = VDP_bytes(req, act,
 					    pp, ecx->l);
-				sl -= ecx->l;
+				len -= ecx->l;
 				pp += ecx->l;
 				ecx->state = 1;
 				break;
 			}
-			if (ecx->state == 3 && sl > 0)
-				(void)VDP_bytes(req, VDP_NULL, pp, sl);
-			ecx->l -= sl;
-			return;
+			if (ecx->state == 3 && len > 0)
+				retval = VDP_bytes(req, act, pp, len);
+			ecx->l -= len;
+			return (retval);
 		case 99:
 			/*
 			 * VEP does not account for the PAD+CRC+LEN
 			 * so we can see up to approx 15 bytes here.
 			 */
-			return;
+			return (retval);
 		default:
 			WRONG("FOO");
 			break;
 		}
+		if (retval)
+			return (retval);
 	}
 }
 
@@ -437,31 +465,23 @@ esi_deliver(struct req *req, struct ecx *ecx, const uint8_t *pp, ssize_t sl)
 void
 ESI_Deliver(struct req *req)
 {
-	struct ecx ecx;
-	ssize_t l;
 	enum objiter_status ois;
 	void *sp = NULL;
 	ssize_t sl;
 	void *oi;
-	uint8_t dummy = 0;
+	void *vp = NULL;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
-	memset(&ecx, 0, sizeof ecx);
-
-	ecx.p = ObjGetattr(req->wrk, req->objcore, OA_ESIDATA, &l);
-	AN(ecx.p);
-	assert(l > 0);
-	ecx.e = ecx.p + l;
-
+	(void)VDP_ESI(req, VDP_INIT, &vp, NULL, 0);
 	oi = ObjIterBegin(req->wrk, req->objcore);
 	do {
 		ois = ObjIter(req->objcore, oi, &sp, &sl);
 		assert(ois != OIS_ERROR);
-		esi_deliver(req, &ecx, sp, sl);
+		(void)VDP_ESI(req, VDP_FLUSH, &vp, sp, sl);
 	} while (ois != OIS_DONE);
-	assert(ecx.state == 99);
+	(void)VDP_ESI(req, VDP_FINI, &vp, NULL, 0);
 	ObjIterEnd(req->objcore, &oi);
 }
 
