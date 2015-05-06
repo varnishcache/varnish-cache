@@ -1086,6 +1086,7 @@ VEP_Finish(struct vep_state *vep)
 		lcb = vep->cb(vep->vc, vep->cb_priv, 0, VGZ_ALIGN);
 		vep_emit_common(vep, lcb - vep->o_last, vep->last_mark);
 	}
+	// NB: We don't acount for PAD+SUM+LEN in gzip'ed objects
 	(void)vep->cb(vep->vc, vep->cb_priv, 0, VGZ_FINISH);
 
 	AZ(VSB_finish(vep->vsb));

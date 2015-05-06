@@ -275,160 +275,196 @@ static const uint8_t gzip_hdr[] = {
 	0x02, 0x03
 };
 
+struct ecx {
+	uint8_t		*p;
+	uint8_t		*e;
+
+	int		state;
+	ssize_t		l;
+
+	int		isgzip;
+};
+
+static void
+esi_deliver(struct req *req, struct ecx *ecx, const uint8_t *pp, ssize_t sl)
+{
+	uint8_t *q, *r;
+	ssize_t l_icrc = 0;
+	uint32_t icrc = 0;
+	uint8_t tailbuf[8 + 5];
+
+	while (1) {
+		switch (ecx->state) {
+		case 0:
+			if (*ecx->p == VEC_GZ) {
+				ecx->isgzip = 1;
+				ecx->p++;
+			}
+
+			if (req->esi_level == 0) {
+				/*
+				 * Only the top level document gets to
+				 * decide this.
+				 */
+				req->gzip_resp = 0;
+				if (ecx->isgzip) {
+					assert(sizeof gzip_hdr == 10);
+					/* Send out the gzip header */
+					(void)VDP_bytes(req, VDP_NULL,
+					    gzip_hdr, 10);
+					req->l_crc = 0;
+					req->gzip_resp = 1;
+					req->crc = crc32(0L, Z_NULL, 0);
+				}
+			}
+			ecx->state = 1;
+
+			break;
+		case 1:
+			if (ecx->p >= ecx->e) {
+				ecx->state = 2;
+				break;
+			}
+			switch (*ecx->p) {
+			case VEC_V1:
+			case VEC_V2:
+			case VEC_V8:
+				ecx->l = ved_decode_len(&ecx->p);
+				if (ecx->isgzip) {
+					assert(*ecx->p == VEC_C1 ||
+					    *ecx->p == VEC_C2 ||
+					    *ecx->p == VEC_C8);
+					l_icrc = ved_decode_len(&ecx->p);
+					icrc = vbe32dec(ecx->p);
+					ecx->p += 4;
+					if (req->gzip_resp) {
+						req->crc = crc32_combine(
+						    req->crc, icrc, l_icrc);
+						req->l_crc += l_icrc;
+					}
+				}
+				ecx->state = 3;
+				break;
+			case VEC_S1:
+			case VEC_S2:
+			case VEC_S8:
+				ecx->l = ved_decode_len(&ecx->p);
+				Debug("SKIP1(%d)\n", (int)ecx->l);
+				ecx->state = 4;
+				break;
+			case VEC_INCL:
+				ecx->p++;
+				q = (void*)strchr((const char*)ecx->p, '\0');
+				AN(q);
+				q++;
+				r = (void*)strchr((const char*)q, '\0');
+				AN(r);
+				if (VDP_bytes(req, VDP_FLUSH, NULL, 0)) {
+					SES_Close(req->sp, SC_REM_CLOSE);
+					ecx->p = ecx->e;
+					break;
+				}
+				Debug("INCL [%s][%s] BEGIN\n", q, ecx->p);
+				ved_include(req,
+				    (const char*)q, (const char*)ecx->p);
+				Debug("INCL [%s][%s] END\n", q, ecx->p);
+				ecx->p = r + 1;
+				break;
+			default:
+				printf("XXXX 0x%02x [%s]\n", *ecx->p, ecx->p);
+				INCOMPL();
+			}
+			break;
+		case 2:
+			if (req->gzip_resp && req->esi_level == 0) {
+				/*
+				 * We are bytealigned here, so simply emit
+				 * a gzip literal block with finish bit set.
+				 */
+				tailbuf[0] = 0x01;
+				tailbuf[1] = 0x00;
+				tailbuf[2] = 0x00;
+				tailbuf[3] = 0xff;
+				tailbuf[4] = 0xff;
+
+				/* Emit CRC32 */
+				vle32enc(tailbuf + 5, req->crc);
+
+				/* MOD(2^32) length */
+				vle32enc(tailbuf + 9, req->l_crc);
+
+				(void)VDP_bytes(req, VDP_NULL, tailbuf, 13);
+			}
+			(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
+			ecx->state = 99;
+			return;
+		case 3:
+		case 4:
+			/*
+			 * There is no guarantee that the 'l' bytes are all
+			 * in the same storage segment, so loop over storage
+			 * until we have processed them all.
+			 */
+			if (ecx->l <= sl) {
+				if (ecx->state == 3)
+					(void)VDP_bytes(req, VDP_NULL,
+					    pp, ecx->l);
+				sl -= ecx->l;
+				pp += ecx->l;
+				ecx->state = 1;
+				break;
+			}
+			if (ecx->state == 3 && sl > 0)
+				(void)VDP_bytes(req, VDP_NULL, pp, sl);
+			ecx->l -= sl;
+			return;
+		case 99:
+			/*
+			 * VEP does not account for the PAD+CRC+LEN
+			 * so we can see up to approx 15 bytes here.
+			 */
+			return;
+		default:
+			WRONG("FOO");
+			break;
+		}
+	}
+}
+
+/*---------------------------------------------------------------------
+ */
+
 void
 ESI_Deliver(struct req *req)
 {
-	uint8_t *p, *e, *q, *r;
-	ssize_t l, l2, l_icrc = 0;
-	uint32_t icrc = 0;
-	uint8_t tailbuf[8 + 5];
-	int isgzip;
-	void *oi;
+	struct ecx ecx;
+	ssize_t l;
 	enum objiter_status ois;
-	void *sp;
-	uint8_t *pp;
+	void *sp = NULL;
 	ssize_t sl;
+	void *oi;
+	uint8_t dummy = 0;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-	p = ObjGetattr(req->wrk, req->objcore, OA_ESIDATA, &l);
-	AN(p);
+
+	memset(&ecx, 0, sizeof ecx);
+
+	ecx.p = ObjGetattr(req->wrk, req->objcore, OA_ESIDATA, &l);
+	AN(ecx.p);
 	assert(l > 0);
-	e = p + l;
-
-	if (*p == VEC_GZ) {
-		isgzip = 1;
-		p++;
-	} else {
-		isgzip = 0;
-	}
-
-	if (req->esi_level == 0) {
-		/*
-		 * Only the top level document gets to decide this.
-		 */
-		req->gzip_resp = 0;
-		if (isgzip) {
-			assert(sizeof gzip_hdr == 10);
-			/* Send out the gzip header */
-			(void)VDP_bytes(req, VDP_NULL, gzip_hdr, 10);
-			req->l_crc = 0;
-			req->gzip_resp = 1;
-			req->crc = crc32(0L, Z_NULL, 0);
-		}
-	}
+	ecx.e = ecx.p + l;
 
 	oi = ObjIterBegin(req->wrk, req->objcore);
-	ois = ObjIter(req->objcore, oi, &sp, &sl);
-	assert(ois != OIS_ERROR);
-	pp = sp;
-
-	while (p < e) {
-		switch (*p) {
-		case VEC_V1:
-		case VEC_V2:
-		case VEC_V8:
-			l = ved_decode_len(&p);
-			if (isgzip) {
-				assert(*p == VEC_C1 || *p == VEC_C2 ||
-				    *p == VEC_C8);
-				l_icrc = ved_decode_len(&p);
-				icrc = vbe32dec(p);
-				p += 4;
-				if (req->gzip_resp) {
-					req->crc = crc32_combine(
-					    req->crc, icrc, l_icrc);
-					req->l_crc += l_icrc;
-				}
-			}
-			/*
-			 * There is no guarantee that the 'l' bytes are all
-			 * in the same storage segment, so loop over storage
-			 * until we have processed them all.
-			 */
-			while (l > 0) {
-				l2 = l;
-				if (l2 > sl)
-					l2 = sl;
-				sl -= l2;
-				l -= l2;
-
-				(void)VDP_bytes(req, VDP_NULL, pp, l2);
-				pp += l2;
-				if (sl == 0) {
-					ois = ObjIter(req->objcore, oi,
-					    &sp, &sl);
-					assert(ois != OIS_ERROR);
-					pp = sp;
-				}
-			}
-			break;
-		case VEC_S1:
-		case VEC_S2:
-		case VEC_S8:
-			l = ved_decode_len(&p);
-			Debug("SKIP1(%d)\n", (int)l);
-			/*
-			 * There is no guarantee that the 'l' bytes are all
-			 * in the same storage segment, so loop over storage
-			 * until we have processed them all.
-			 */
-			while (l > 0) {
-				l2 = l;
-				if (l2 > sl)
-					l2 = sl;
-				sl -= l2;
-				l -= l2;
-				pp += l2;
-				if (sl == 0) {
-					ois = ObjIter(req->objcore, oi,
-					    &sp, &sl);
-					assert(ois != OIS_ERROR);
-					pp = sp;
-				}
-			}
-			break;
-		case VEC_INCL:
-			p++;
-			q = (void*)strchr((const char*)p, '\0');
-			AN(q);
-			q++;
-			r = (void*)strchr((const char*)q, '\0');
-			AN(r);
-			if (VDP_bytes(req, VDP_FLUSH, NULL, 0)) {
-				SES_Close(req->sp, SC_REM_CLOSE);
-				p = e;
-				break;
-			}
-			Debug("INCL [%s][%s] BEGIN\n", q, p);
-			ved_include(req, (const char*)q, (const char*)p);
-			Debug("INCL [%s][%s] END\n", q, p);
-			p = r + 1;
-			break;
-		default:
-			printf("XXXX 0x%02x [%s]\n", *p, p);
-			INCOMPL();
-		}
-	}
-	if (req->gzip_resp && req->esi_level == 0) {
-		/* Emit a gzip literal block with finish bit set */
-		tailbuf[0] = 0x01;
-		tailbuf[1] = 0x00;
-		tailbuf[2] = 0x00;
-		tailbuf[3] = 0xff;
-		tailbuf[4] = 0xff;
-
-		/* Emit CRC32 */
-		vle32enc(tailbuf + 5, req->crc);
-
-		/* MOD(2^32) length */
-		vle32enc(tailbuf + 9, req->l_crc);
-
-		(void)VDP_bytes(req, VDP_NULL, tailbuf, 13);
-	}
-	(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
+	do {
+		ois = ObjIter(req->objcore, oi, &sp, &sl);
+		assert(ois != OIS_ERROR);
+		esi_deliver(req, &ecx, sp, sl);
+	} while (ois != OIS_DONE);
+	assert(ecx.state == 99);
 	ObjIterEnd(req->objcore, &oi);
 }
+
 
 /*---------------------------------------------------------------------
  * Include an object in a gzip'ed ESI object delivery
