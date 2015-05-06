@@ -985,7 +985,7 @@ size_t V1L_Write(const struct worker *w, const void *ptr, ssize_t len);
 task_func_t VPX_Proto_Sess;
 
 /* cache_range.c [VRG] */
-void VRG_dorange(struct req *req, struct busyobj *bo, const char *r);
+void VRG_dorange(struct req *req, const struct busyobj *bo, const char *r);
 
 /* cache_req.c */
 struct req *Req_New(const struct worker *, struct sess *);

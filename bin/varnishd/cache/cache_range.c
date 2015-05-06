@@ -172,7 +172,7 @@ vrg_dorange(struct req *req, ssize_t len, const char *r)
 }
 
 void
-VRG_dorange(struct req *req, struct busyobj *bo, const char *r)
+VRG_dorange(struct req *req, const struct busyobj *bo, const char *r)
 {
 	ssize_t len;
 	int i;
@@ -182,14 +182,9 @@ VRG_dorange(struct req *req, struct busyobj *bo, const char *r)
 	assert(http_IsStatus(req->resp, 200));
 
 	/* We must snapshot the length if we're streaming from the backend */
-	if (bo != NULL) {
+	if (bo != NULL)
 		len = http_GetContentLength(bo->beresp);
-VSLb(req->vsl, SLT_Debug, "UUU 1 %jd", (intmax_t)len);
-#if 0
-		if (len < 0)
-			len = VBO_waitlen(req->wrk, bo, -1);
-#endif
-	} else
+	else
 		len = ObjGetLen(req->wrk, req->objcore);
 
 	i = vrg_dorange(req, len, r);
