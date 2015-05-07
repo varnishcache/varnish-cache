@@ -3,7 +3,7 @@ varnishtest "Test connection error on pipe"
 varnish v1 -vcl {
        backend default { .host = "${bad_ip}"; }
        sub vcl_recv {
-               return (pipe);
+		return (pipe);
        }
 } -start
 
