@@ -741,7 +741,7 @@ extern const int HTTP1_Req[3];
 extern const int HTTP1_Resp[3];
 
 /* cache_http1_deliver.c */
-void V1D_Deliver(struct req *, struct busyobj *);
+void V1D_Deliver(struct req *);
 
 /* cache_http1_pipe.c */
 void V1P_Init(void);
@@ -1107,7 +1107,7 @@ char *VRT_StringList(char *d, unsigned dl, const char *p, va_list ap);
 void VRTPRIV_init(struct vrt_privs *privs);
 void VRTPRIV_dynamic_kill(struct vrt_privs *privs, uintptr_t id);
 
-void ESI_DeliverChild(struct req *, struct busyobj *);
+int VED_Setup(struct req *req, struct busyobj *bo);
 
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);

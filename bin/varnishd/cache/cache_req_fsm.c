@@ -40,11 +40,48 @@
 
 #include "cache.h"
 #include "cache_director.h"
+#include "cache_filter.h"
 
 #include "hash/hash_slinger.h"
 #include "vcl.h"
 #include "vsha256.h"
 #include "vtim.h"
+
+static void
+cnt_vdp(struct req *req, struct busyobj *bo)
+{
+	const char *r;
+
+	req->res_mode = 0;
+	if (bo != NULL)
+		req->resp_len = http_GetContentLength(bo->beresp);
+	else
+		req->resp_len = ObjGetLen(req->wrk, req->objcore);
+
+	if (VED_Setup(req, bo))
+		return;
+
+	if (cache_param->http_gzip_support &&
+	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
+	    !RFC2616_Req_Gzip(req->http)) {
+		req->res_mode |= RES_GUNZIP;
+		VDP_push(req, VDP_gunzip, NULL, 1);
+	}
+
+	/*
+	 * Range comes after the others and pushes on bottom because
+	 * it can generate a correct C-L header.
+	 */
+	if (cache_param->http_range_support &&
+	    http_IsStatus(req->resp, 200)) {
+		http_SetHeader(req->resp, "Accept-Ranges: bytes");
+		if (req->wantbody &&
+		    http_GetHdr(req->http, H_Range, &r))
+			VRG_dorange(req, r);
+	}
+
+	V1D_Deliver(req);
+}
 
 /*--------------------------------------------------------------------
  * Deliver an object to client
@@ -144,7 +181,9 @@ cnt_deliver(struct worker *wrk, struct req *req)
 			VBO_DerefBusyObj(wrk, &bo);
 		}
 	}
-	V1D_Deliver(req, bo);
+
+	cnt_vdp(req, bo);
+
 	if (bo != NULL)
 		VBO_DerefBusyObj(wrk, &bo);
 
@@ -235,7 +274,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 		VSB_delete(req->synth_body);
 		req->synth_body = NULL;
 
-		V1D_Deliver(req, NULL);
+		cnt_vdp(req, NULL);
 		(void)HSH_DerefObjCore(wrk, &req->objcore);
 	}
 

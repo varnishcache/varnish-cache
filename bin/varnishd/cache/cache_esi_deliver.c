@@ -653,10 +653,29 @@ ved_stripgzip(struct req *req)
 	req->l_crc += ilen;
 }
 
-void
-ESI_DeliverChild(struct req *req, struct busyobj *bo)
+int
+VED_Setup(struct req *req, struct busyobj *bo)
 {
 	int i;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+
+	/*
+	 * Determine ESI status first.  Not dependent on wantbody, because
+	 * we want ESI to supress C-L in HEAD too.
+	 */
+	if (!req->disable_esi &&
+	    ObjGetattr(req->wrk, req->objcore, OA_ESIDATA, NULL) != NULL) {
+		req->res_mode |= RES_ESI;
+		RFC2616_Weaken_Etag(req->resp);
+		req->resp_len = -1;
+		VDP_push(req, VDP_ESI, NULL, 0);
+	}
+
+	/* ESI-childen need special treatment */
+	if (req->esi_level == 0)
+		return (0);
 
 	req->res_mode |= RES_ESI_CHILD;
 	i = ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED);
@@ -666,8 +685,6 @@ ESI_DeliverChild(struct req *req, struct busyobj *bo)
 		ved_stripgzip(req);
 		(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
 	} else {
-		if (req->res_mode & RES_ESI)
-			VDP_push(req, VDP_ESI, NULL, 0);
 		if (req->gzip_resp && !i)
 			VDP_push(req, ved_pretend_gzip, NULL, 0);
 		else if (!req->gzip_resp && i)
@@ -676,4 +693,5 @@ ESI_DeliverChild(struct req *req, struct busyobj *bo)
 		(void)VDP_DeliverObj(req);
 	}
 	VDP_close(req);
+	return (1);
 }

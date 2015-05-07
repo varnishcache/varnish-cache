@@ -61,66 +61,12 @@ v1d_bytes(struct req *req, enum vdp_action act, void **priv,
  */
 
 void
-V1D_Deliver(struct req *req, struct busyobj *bo)
+V1D_Deliver(struct req *req)
 {
-	const char *r;
 	enum objiter_status ois;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-
-	req->res_mode = 0;
-	if (bo != NULL)
-		req->resp_len = http_GetContentLength(bo->beresp);
-	else
-		req->resp_len = ObjGetLen(req->wrk, req->objcore);
-
-	/*
-	 * Determine ESI status first.  Not dependent on wantbody, because
-	 * we want ESI to supress C-L in HEAD too.
-	 */
-	if (!req->disable_esi &&
-	    ObjGetattr(req->wrk, req->objcore, OA_ESIDATA, NULL) != NULL)
-		req->res_mode |= RES_ESI;
-
-	/*
-	 * ESI-childen don't care about headers -> early escape
-	 */
-	if (req->esi_level > 0) {
-		ESI_DeliverChild(req, bo);
-		return;
-	}
-
-	if (req->res_mode & RES_ESI) {
-		RFC2616_Weaken_Etag(req->resp);
-		req->resp_len = -1;
-		VDP_push(req, VDP_ESI, NULL, 0);
-	}
-
-	if (cache_param->http_gzip_support &&
-	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
-	    !RFC2616_Req_Gzip(req->http)) {
-		/*
-		 * We don't know what it uncompresses to
-		 * XXX: we could cache that, but would still deliver
-		 * XXX: with multiple writes because of the gunzip buffer
-		 */
-		req->res_mode |= RES_GUNZIP;
-		VDP_push(req, VDP_gunzip, NULL, 1);
-	}
-
-	if (req->res_mode & RES_ESI)
-		assert(req->resp_len < 0);
-
-	/*
-	 * Range comes after the others and pushes on bottom because it
-	 * can generate a correct C-L header.
-	 */
-	if (cache_param->http_range_support && http_IsStatus(req->resp, 200)) {
-		http_SetHeader(req->resp, "Accept-Ranges: bytes");
-		if (req->wantbody && http_GetHdr(req->http, H_Range, &r))
-			VRG_dorange(req, r);
-	}
 
 	if ((req->objcore->flags & OC_F_PRIVATE) &&
 	    !strcasecmp(http_GetMethod(req->http0), "HEAD")) {
