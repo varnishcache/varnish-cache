@@ -1107,7 +1107,6 @@ char *VRT_StringList(char *d, unsigned dl, const char *p, va_list ap);
 void VRTPRIV_init(struct vrt_privs *privs);
 void VRTPRIV_dynamic_kill(struct vrt_privs *privs, uintptr_t id);
 
-void ESI_Deliver(struct req *);
 void ESI_DeliverChild(struct req *, struct busyobj *);
 
 /* cache_vrt_vmod.c */

@@ -296,8 +296,12 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 		p = ObjGetattr(req->wrk, req->objcore, OA_GZIPBITS, &dl);
 		if (p != NULL && dl == 32) {
 			u = vbe64dec(p + 24);
-			/* XXX: Zero is suspect: OA_GZIPBITS wasn't set */
-			if (u != 0)
+			/*
+			 * If the size is non-zero, and we are the top
+			 * VDP, we know what size the output will be.
+			 */
+			if (u != 0 &&
+			    VTAILQ_FIRST(&req->vdp)->func == VDP_gunzip)
 				req->resp_len = u;
 			else
 				req->resp_len = -1;

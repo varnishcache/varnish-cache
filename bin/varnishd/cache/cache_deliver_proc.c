@@ -113,11 +113,6 @@ VDP_DeliverObj(struct req *req)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	if (req->res_mode & RES_ESI) {
-		ESI_Deliver(req);
-		return (OIS_DONE);
-	}
-
 	oi = ObjIterBegin(req->wrk, req->objcore);
 	XXXAN(oi);
 	AZ(req->synth_body);

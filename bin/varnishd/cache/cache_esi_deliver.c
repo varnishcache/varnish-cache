@@ -286,7 +286,7 @@ struct ecx {
 	int		isgzip;
 };
 
-static int __match_proto__(vdp_bytes)
+int __match_proto__(vdp_bytes)
 VDP_ESI(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
@@ -458,33 +458,6 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 			return (retval);
 	}
 }
-
-/*---------------------------------------------------------------------
- */
-
-void
-ESI_Deliver(struct req *req)
-{
-	enum objiter_status ois;
-	void *sp = NULL;
-	ssize_t sl;
-	void *oi;
-	void *vp = NULL;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-
-	(void)VDP_ESI(req, VDP_INIT, &vp, NULL, 0);
-	oi = ObjIterBegin(req->wrk, req->objcore);
-	do {
-		ois = ObjIter(req->objcore, oi, &sp, &sl);
-		assert(ois != OIS_ERROR);
-		(void)VDP_ESI(req, VDP_FLUSH, &vp, sp, sl);
-	} while (ois != OIS_DONE);
-	(void)VDP_ESI(req, VDP_FINI, &vp, NULL, 0);
-	ObjIterEnd(req->objcore, &oi);
-}
-
 
 /*---------------------------------------------------------------------
  * Include an object in a gzip'ed ESI object delivery
@@ -693,6 +666,8 @@ ESI_DeliverChild(struct req *req, struct busyobj *bo)
 		ved_stripgzip(req);
 		(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
 	} else {
+		if (req->res_mode & RES_ESI)
+			VDP_push(req, VDP_ESI, NULL, 0);
 		if (req->gzip_resp && !i)
 			VDP_push(req, ved_pretend_gzip, NULL, 0);
 		else if (!req->gzip_resp && i)
