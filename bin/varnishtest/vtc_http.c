@@ -996,7 +996,7 @@ cmd_http_recv(CMD_ARGS)
 		i = read(hp->fd, u, n > 32 ? 32 : n);
 		if (i > 0)
 			vtc_dump(hp->vl, 4, "recv", u, i);
-		else 
+		else
 			vtc_log(hp->vl, hp->fatal, "recv() got %d (%s)", i,
 			    strerror(errno));
 		n -= i;
