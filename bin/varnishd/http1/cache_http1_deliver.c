@@ -70,7 +70,10 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
 	req->res_mode = 0;
-	req->resp_len = -2;
+	if (bo != NULL)
+		req->resp_len = http_GetContentLength(bo->beresp);
+	else
+		req->resp_len = ObjGetLen(req->wrk, req->objcore);
 
 	/*
 	 * Determine ESI status first.  Not dependent on wantbody, because
@@ -90,6 +93,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 
 	if (req->res_mode & RES_ESI) {
 		RFC2616_Weaken_Etag(req->resp);
+		req->resp_len = -1;
 		VDP_push(req, VDP_ESI, NULL, 0);
 	} else if (http_IsStatus(req->resp, 304)) {
 		http_Unset(req->resp, H_Content_Length);
@@ -109,11 +113,8 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		VDP_push(req, VDP_gunzip, NULL, 1);
 	}
 
-	if (req->res_mode & RES_ESI) {
-		/* Gunzip could have added back a C-L */
-		http_Unset(req->resp, H_Content_Length);
+	if (req->res_mode & RES_ESI)
 		assert(req->resp_len < 0);
-	}
 
 	/*
 	 * Range comes after the others and pushes on bottom because it
@@ -122,17 +123,22 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	if (cache_param->http_range_support && http_IsStatus(req->resp, 200)) {
 		http_SetHeader(req->resp, "Accept-Ranges: bytes");
 		if (req->wantbody && http_GetHdr(req->http, H_Range, &r))
-			VRG_dorange(req, bo, r);
+			VRG_dorange(req, r);
 	}
 
-	if (req->resp_len >= -1 && req->wantbody)
+	if ((req->objcore->flags & OC_F_PRIVATE) &&
+	    !strcasecmp(http_GetMethod(req->http0), "HEAD")) {
+		/* HEAD+pass is allowed to send the C-L through unmolested. */
+	} else {
 		http_Unset(req->resp, H_Content_Length);
-	if (req->resp_len >= 0 && req->wantbody)
-		http_PrintfHeader(req->resp,
-		    "Content-Length: %jd", req->resp_len);
+		if (req->resp_len >= 0 && !http_IsStatus(req->resp, 304)) 
+			http_PrintfHeader(req->resp,
+			    "Content-Length: %jd", req->resp_len);
+	}
 
 	if (http_GetHdr(req->resp, H_Content_Length, NULL))
 		req->res_mode |= RES_LEN;
+
 	else if (req->wantbody) {
 		if (req->http->protover == 11) {
 			req->res_mode |= RES_CHUNKED;

@@ -86,7 +86,7 @@ vrg_range_bytes(struct req *req, enum vdp_action act, void **priv,
 /*--------------------------------------------------------------------*/
 
 static int
-vrg_dorange(struct req *req, ssize_t len, const char *r)
+vrg_dorange(struct req *req, const char *r)
 {
 	ssize_t low, high, has_low, has_high, t;
 	struct vrg_priv *vrg_priv;
@@ -127,16 +127,16 @@ vrg_dorange(struct req *req, ssize_t len, const char *r)
 		return (__LINE__);
 
 	if (!has_low) {
-		if (len < 0)
+		if (req->resp_len < 0)
 			return (0);		// Allow 200 response
 		if (high == 0)
 			return (__LINE__);
-		low = len - high;
+		low = req->resp_len - high;
 		if (low < 0)
 			low = 0;
-		high = len - 1;
-	} else if (len >= 0 && (high >= len || !has_high))
-		high = len - 1;
+		high = req->resp_len - 1;
+	} else if (req->resp_len >= 0 && (high >= req->resp_len || !has_high))
+		high = req->resp_len - 1;
 	else if (!has_high)
 		return (0);			// Allow 200 response
 	/*
@@ -149,12 +149,12 @@ vrg_dorange(struct req *req, ssize_t len, const char *r)
 	if (high < low)
 		return (__LINE__);
 
-	if (len >= 0 && low >= len)
+	if (req->resp_len >= 0 && low >= req->resp_len)
 		return (__LINE__);
 
-	if (len >= 0)
+	if (req->resp_len >= 0)
 		http_PrintfHeader(req->resp, "Content-Range: bytes %jd-%jd/%jd",
-		    (intmax_t)low, (intmax_t)high, (intmax_t)len);
+		    (intmax_t)low, (intmax_t)high, (intmax_t)req->resp_len);
 	else
 		http_PrintfHeader(req->resp, "Content-Range: bytes %jd-%jd/*",
 		    (intmax_t)low, (intmax_t)high);
@@ -172,9 +172,8 @@ vrg_dorange(struct req *req, ssize_t len, const char *r)
 }
 
 void
-VRG_dorange(struct req *req, const struct busyobj *bo, const char *r)
+VRG_dorange(struct req *req, const char *r)
 {
-	ssize_t len;
 	int i;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -182,19 +181,17 @@ VRG_dorange(struct req *req, const struct busyobj *bo, const char *r)
 	assert(http_IsStatus(req->resp, 200));
 
 	/* We must snapshot the length if we're streaming from the backend */
-	if (bo != NULL)
-		len = http_GetContentLength(bo->beresp);
-	else
-		len = ObjGetLen(req->wrk, req->objcore);
 
-	i = vrg_dorange(req, len, r);
+	i = vrg_dorange(req, r);
 	if (i) {
 		VSLb(req->vsl, SLT_Debug, "RANGE_FAIL line %d", i);
 		http_Unset(req->resp, H_Content_Length);
-		if (bo == NULL)
+		if (req->resp_len >= 0)
 			http_PrintfHeader(req->resp,
-			    "Content-Range: bytes */%jd", (intmax_t)len);
+			    "Content-Range: bytes */%jd",
+			    (intmax_t)req->resp_len);
 		http_PutResponse(req->resp, "HTTP/1.1", 416, NULL);
+		req->resp_len = -1;
 		req->wantbody = 0;
 	}
 }
