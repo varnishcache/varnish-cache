@@ -95,11 +95,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		RFC2616_Weaken_Etag(req->resp);
 		req->resp_len = -1;
 		VDP_push(req, VDP_ESI, NULL, 0);
-	} else if (http_IsStatus(req->resp, 304)) {
-		http_Unset(req->resp, H_Content_Length);
-		req->wantbody = 0;
-	} else if (bo == NULL && req->wantbody)
-		req->resp_len = ObjGetLen(req->wrk, req->objcore);
+	}
 
 	if (cache_param->http_gzip_support &&
 	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
@@ -131,7 +127,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		/* HEAD+pass is allowed to send the C-L through unmolested. */
 	} else {
 		http_Unset(req->resp, H_Content_Length);
-		if (req->resp_len >= 0 && !http_IsStatus(req->resp, 304)) 
+		if (req->resp_len >= 0 && !http_IsStatus(req->resp, 304))
 			http_PrintfHeader(req->resp,
 			    "Content-Length: %jd", req->resp_len);
 	}

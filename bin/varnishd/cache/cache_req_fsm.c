@@ -131,6 +131,9 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		req->wantbody = 0;
 	}
 
+	if (http_IsStatus(req->resp, 304))
+		req->wantbody = 0;
+
 	/* Grab a ref to the bo if there is one, and hand it down */
 	bo = HSH_RefBusy(req->objcore);
 	if (bo != NULL) {
