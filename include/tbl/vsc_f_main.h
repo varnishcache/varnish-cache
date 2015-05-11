@@ -130,10 +130,6 @@ VSC_F(backend_reuse,		uint64_t, 0, 'c', 'i', info,
 	"Count of backend connection reuses"
 	"  This counter is increased whenever we reuse a recycled connection."
 )
-VSC_F(backend_toolate,		uint64_t, 0, 'c', 'i', info,
-    "Backend conn. was closed",
-	""
-)
 VSC_F(backend_recycle,		uint64_t, 0, 'c', 'i', info,
     "Backend conn. recycles",
 	"Count of backend connection recycles"
