@@ -286,6 +286,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	assert(bo->state <= BOS_REQ_DONE);
 
+	AZ(bo->htc);
 	i = VDI_GetHdr(wrk, bo);
 
 	now = W_TIM_real(wrk);
@@ -434,7 +435,8 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	}
 
 	if (wrk->handling == VCL_RET_RETRY) {
-		bo->doclose = SC_RESP_CLOSE;
+		if (bo->htc->body_status != BS_NONE)
+			bo->doclose = SC_RESP_CLOSE;
 		if (bo->director_state != DIR_S_NULL)
 			VDI_Finish(bo->wrk, bo);
 
