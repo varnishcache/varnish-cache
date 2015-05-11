@@ -129,9 +129,11 @@ vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 	    vc->fd, bp->display_name, abuf2, pbuf2, abuf1, pbuf1);
 
 	vc->backend->vsc->req++;
+	AZ(bo->htc);
+	bo->htc = WS_Alloc(bo->ws, sizeof *bo->htc);
 	if (bo->htc == NULL)
-		bo->htc = WS_Alloc(bo->ws, sizeof *bo->htc);
-	AN(bo->htc);
+		/* XXX: counter ? */
+		return (-1);
 	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
 	bo->htc->vbc = vc;
 	bo->htc->fd = vc->fd;
