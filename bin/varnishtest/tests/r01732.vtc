@@ -1,0 +1,38 @@
+varnishtest "range related panic"
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Transfer-Encoding: chunked"
+	chunkedlen 10
+	chunkedlen 10
+	sema r1 sync 2
+	chunkedlen 10
+	chunkedlen 10
+	chunkedlen 10
+	chunkedlen 0
+	delay .1
+	sema r2 sync 2
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+client c1 {
+	txreq -hdr "Range: bytes=0-100"
+	rxresphdrs
+	expect resp.status == 206
+	expect resp.http.Content-Range == "bytes 0-100/*"
+} -run
+
+delay .1
+sema r1 sync 2
+sema r2 sync 2
+delay .4
+
+client c1 {
+	txreq -hdr "Range: bytes=0-100"
+	rxresp
+	expect resp.status == 206
+	expect resp.http.Content-Range == "bytes 0-49/50"
+} -run
+

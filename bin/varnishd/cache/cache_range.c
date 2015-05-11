@@ -59,7 +59,7 @@ vrg_range_bytes(struct req *req, enum vdp_action act, void **priv,
 	CAST_OBJ_NOTNULL(vrg_priv, *priv, VRG_PRIV_MAGIC);
 	if (act == VDP_FINI) {
 		if (vrg_priv->range_off < vrg_priv->range_high)
-			SES_Close(req->sp, SC_RANGE_SHORT);
+			Req_Fail(req, SC_RANGE_SHORT);
 		*priv = NULL;	/* struct on ws, no need to free */
 		return (0);
 	}

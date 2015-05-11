@@ -203,3 +203,15 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	WS_Reset(wrk->aws, NULL);
 	return (0);
 }
+
+/*----------------------------------------------------------------------
+ */
+
+void __match_proto__()
+Req_Fail(struct req *req, enum sess_close reason)
+{
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	if (req->sp->fd >= 0)
+		SES_Close(req->sp, reason);
+}
