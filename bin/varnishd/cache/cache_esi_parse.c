@@ -295,7 +295,9 @@ static void
 vep_emit_common(struct vep_state *vep, ssize_t l, enum vep_mark mark)
 {
 
-	assert(l > 0);
+	assert(l >= 0);
+	if (l == 0)
+		return;
 	assert(mark == SKIP || mark == VERBATIM);
 	if (mark == SKIP)
 		vep_emit_skip(vep, l);
@@ -330,8 +332,7 @@ vep_mark_common(struct vep_state *vep, const char *p, enum vep_mark mark)
 	if (vep->last_mark != mark && (vep->o_wait > 0 || vep->startup)) {
 		lcb = vep->cb(vep->vc, vep->cb_priv, 0,
 		    mark == VERBATIM ? VGZ_RESET : VGZ_ALIGN);
-		if (lcb - vep->o_last > 0)
-			vep_emit_common(vep, lcb - vep->o_last, vep->last_mark);
+		vep_emit_common(vep, lcb - vep->o_last, vep->last_mark);
 		vep->o_last = lcb;
 		vep->o_wait = 0;
 	}
