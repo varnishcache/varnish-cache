@@ -52,10 +52,6 @@
 #include <unistd.h>
 #include <math.h>
 
-#if defined(HAVE_EPOLL_CTL)
-#include <sys/epoll.h>
-#endif
-
 #include "common/params.h"
 
 /*--------------------------------------------------------------------*/
@@ -381,9 +377,6 @@ struct waited {
 	VTAILQ_ENTRY(waited)	list;
 	void			*ptr;
 	double			idle;
-#if defined(HAVE_EPOLL_CTL)
-	struct epoll_event ev;
-#endif
 };
 
 /* Stored object -----------------------------------------------------

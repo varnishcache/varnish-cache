@@ -65,37 +65,34 @@ static void
 vwe_inject(const struct waiter *w, struct waited *wp)
 {
 	struct vwe *vwe;
+	struct epoll_event ev;
 
 	CAST_OBJ_NOTNULL(vwe, w->priv, VWE_MAGIC);
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	assert(wp->fd >= 0);
 
-	if (wp->ev.data.ptr)
-		AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_MOD, wp->fd, &wp->ev));
-	else {
-		wp->ev.data.ptr = wp;
-		wp->ev.events = EPOLLIN | EPOLLRDHUP;
-		if (wp != w->pipe_w)
-			wp->ev.events |= EPOLLONESHOT;
-		AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_ADD, wp->fd, &wp->ev));
-	}
+	ev.data.ptr = wp;
+	ev.events = EPOLLIN | EPOLLRDHUP;
+	AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_ADD, wp->fd, &ev));
 }
 
 static void
 vwe_eev(struct vwe *vwe, const struct epoll_event *ep, double now)
 {
-	struct waited *sp;
+	struct waited *wp;
 
 	AN(ep->data.ptr);
-	CAST_OBJ_NOTNULL(sp, ep->data.ptr, WAITED_MAGIC);
+	CAST_OBJ_NOTNULL(wp, ep->data.ptr, WAITED_MAGIC);
+	if (wp != vwe->waiter->pipe_w)
+		AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_DEL, wp->fd, NULL));
 	if (ep->events & EPOLLIN) {
-		Wait_Handle(vwe->waiter, sp, WAITER_ACTION, now);
+		Wait_Handle(vwe->waiter, wp, WAITER_ACTION, now);
 	} else if (ep->events & EPOLLERR) {
-		Wait_Handle(vwe->waiter, sp, WAITER_REMCLOSE, now);
+		Wait_Handle(vwe->waiter, wp, WAITER_REMCLOSE, now);
 	} else if (ep->events & EPOLLHUP) {
-		Wait_Handle(vwe->waiter, sp, WAITER_REMCLOSE, now);
+		Wait_Handle(vwe->waiter, wp, WAITER_REMCLOSE, now);
 	} else if (ep->events & EPOLLRDHUP) {
-		Wait_Handle(vwe->waiter, sp, WAITER_REMCLOSE, now);
+		Wait_Handle(vwe->waiter, wp, WAITER_REMCLOSE, now);
 	}
 }
 
