@@ -149,13 +149,10 @@ tst_cb(const struct vev *ve, int what)
 	CAST_OBJ_NOTNULL(jp, ve->priv, JOB_MAGIC);
 
 	// printf("%p %s %d\n", ve, jp->tst->filename, what);
-	if (what == 0) {
-		/* XXX: Timeout */
-		AZ(kill(jp->child, SIGKILL));
-		jp->evt = NULL;
-		return (1);
-	}
-	assert(what & (EV_RD | EV_HUP));
+	if (what == 0)
+		AZ(kill(jp->child, SIGKILL)); /* XXX: Timeout */
+	else
+		assert(what & (EV_RD | EV_HUP));
 
 	*buf = '\0';
 	i = read(ve->fd, buf, sizeof buf - 1);
