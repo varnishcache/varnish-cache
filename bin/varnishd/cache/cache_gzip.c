@@ -293,20 +293,24 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 		VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 		*priv = vg;
 
-		p = ObjGetattr(req->wrk, req->objcore, OA_GZIPBITS, &dl);
-		if (p != NULL && dl == 32) {
-			u = vbe64dec(p + 24);
-			/*
-			 * If the size is non-zero, and we are the top
-			 * VDP, we know what size the output will be.
-			 */
-			if (u != 0 &&
-			    VTAILQ_FIRST(&req->vdp)->func == VDP_gunzip)
-				req->resp_len = u;
-			else
-				req->resp_len = -1;
-		}
 		http_Unset(req->resp, H_Content_Encoding);
+
+		req->resp_len = -1;
+		if (req->objcore->busyobj != NULL)
+			return (0); /* Incomplete, no idea about length */
+
+		p = ObjGetattr(req->wrk, req->objcore, OA_GZIPBITS, &dl);
+		if (p == NULL || dl != 32)
+			return (0); /* No OA_GZIPBITS yet */
+
+		u = vbe64dec(p + 24);
+		/*
+		 * If the size is non-zero AND we are the top
+		 * VDP (ie: no ESI), we know what size the output will be.
+		 */
+		if (u != 0 && VTAILQ_FIRST(&req->vdp)->func == VDP_gunzip)
+			req->resp_len = u;
+
 		return (0);
 	}
 
