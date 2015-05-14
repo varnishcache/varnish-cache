@@ -466,10 +466,25 @@ ved_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
 
 /*---------------------------------------------------------------------
  * Include an object in a gzip'ed ESI object delivery
+ *
+ * This is not written as a VDP (yet) because it relies on the
+ * OA_GZIPBITS which only becomes available when the input side
+ * has fully digested the object and located the magic bit positions.
+ *
+ * We can improve this two ways.
+ *
+ * One is to run a gunzip instance here, to find the stopbit ourselves,
+ * but that would be double work, in particular when passing a gziped
+ * object, where we would have two null-gunzips.
+ *
+ * The other is to have the input side guarantee that OA_GZIPBITS::stopbit
+ * always is committed before the chunk of data containing it.  We would
+ * be required to poll OA_GZIPBITS on every chunk presented, but that is
+ * much cheaper than running a gunzip instance.
  */
 
 static void
-ved_stripgzip(struct req *req)
+ved_stripgzip(struct req *req, struct busyobj *bo)
 {
 	ssize_t start, last, stop, lpad;
 	ssize_t l;
@@ -489,6 +504,9 @@ ved_stripgzip(struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	CAST_OBJ_NOTNULL(ecx, req->transport_priv, ECX_MAGIC);
+
+	if (bo != NULL)
+		VBO_waitstate(bo, BOS_FINISHED);
 
 	AN(ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED));
 
@@ -699,9 +717,7 @@ VED_Deliver(struct req *req, struct busyobj *bo)
 	req->res_mode |= RES_ESI_CHILD;
 	i = ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED);
 	if (ecx->isgzip && i && !(req->res_mode & RES_ESI)) {
-		if (bo != NULL)
-			VBO_waitstate(bo, BOS_FINISHED);
-		ved_stripgzip(req);
+		ved_stripgzip(req, bo);
 	} else {
 		if (ecx->isgzip && !i)
 			VDP_push(req, ved_pretend_gzip, ecx, 1);
