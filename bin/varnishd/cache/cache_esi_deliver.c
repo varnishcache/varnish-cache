@@ -70,6 +70,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 	struct worker *wrk;
 	struct req *req;
 	enum req_fsm_nxt s;
+	struct transport xp;
 
 	wrk = preq->wrk;
 
@@ -134,7 +135,9 @@ ved_include(struct req *preq, const char *src, const char *host)
 	req->crc = preq->crc;
 	req->l_crc = preq->l_crc;
 
-	VDP_push(req, ved_vdp_bytes, preq, 0);
+	INIT_OBJ(&xp, TRANSPORT_MAGIC);
+	req->transport = &xp;
+	req->transport_priv = preq;
 
 	THR_SetRequest(req);
 
@@ -657,6 +660,7 @@ int
 VED_Setup(struct req *req, struct busyobj *bo)
 {
 	int i;
+	struct req *preq;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
@@ -676,6 +680,10 @@ VED_Setup(struct req *req, struct busyobj *bo)
 	/* ESI-childen need special treatment */
 	if (req->esi_level == 0)
 		return (0);
+
+	CAST_OBJ_NOTNULL(preq, req->transport_priv, REQ_MAGIC);
+
+	VDP_push(req, ved_vdp_bytes, preq, 1);
 
 	req->res_mode |= RES_ESI_CHILD;
 	i = ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED);
