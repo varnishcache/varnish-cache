@@ -42,6 +42,11 @@
 
 #include "vtcp.h"
 
+static const struct transport http1_transport = {
+	.magic = TRANSPORT_MAGIC,
+	.deliver = V1D_Deliver,
+};
+
 /*----------------------------------------------------------------------
  */
 
@@ -255,10 +260,12 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			sp->sess_step = S_STP_H1PROC;
 			break;
 		case S_STP_H1PROC:
+			req->transport = &http1_transport;
 			if (CNT_Request(wrk, req) == REQ_FSM_DISEMBARK) {
 				sp->sess_step = S_STP_H1BUSY;
 				return;
 			}
+			req->transport = NULL;
 			sp->sess_step = S_STP_H1CLEANUP;
 			break;
 		case S_STP_H1CLEANUP:

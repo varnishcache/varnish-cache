@@ -80,7 +80,8 @@ cnt_vdp(struct req *req, struct busyobj *bo)
 			VRG_dorange(req, r);
 	}
 
-	V1D_Deliver(req);
+	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
+	req->transport->deliver(req);
 }
 
 /*--------------------------------------------------------------------

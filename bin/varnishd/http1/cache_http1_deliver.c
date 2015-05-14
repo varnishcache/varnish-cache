@@ -60,7 +60,7 @@ v1d_bytes(struct req *req, enum vdp_action act, void **priv,
 /*--------------------------------------------------------------------
  */
 
-void
+void __match_proto__(vtr_deliver_f)
 V1D_Deliver(struct req *req)
 {
 	enum objiter_status ois;

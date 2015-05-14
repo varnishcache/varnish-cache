@@ -111,6 +111,7 @@ struct object;
 struct objhead;
 struct pool;
 struct poolparam;
+struct transport;
 struct req;
 struct sess;
 struct suckaddr;
@@ -541,6 +542,10 @@ struct req {
 	struct sess		*sp;
 	struct worker		*wrk;
 	struct pool_task	task;
+
+	const struct transport	*transport;
+	void			*transport_priv;
+
 	enum req_step		req_step;
 	VTAILQ_ENTRY(req)	w_list;
 
@@ -670,6 +675,21 @@ struct sess {
 
 	struct vrt_privs	privs[1];
 
+};
+
+/*--------------------------------------------------------------------
+ * A transport is how we talk HTTP for a given request.
+ * This is different from a protocol because ESI child requests have
+ * their own "protocol" to talk to the parent ESI request, which may
+ * or may not, be talking a "real" HTTP protocol itself.
+ */
+
+typedef void vtr_deliver_f (struct req *);
+
+struct transport {
+	unsigned		magic;
+#define TRANSPORT_MAGIC		0xf157f32f
+	vtr_deliver_f		*deliver;
 };
 
 /* Prototypes etc ----------------------------------------------------*/
