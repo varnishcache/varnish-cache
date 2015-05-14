@@ -233,14 +233,16 @@ Symbol_Lookup(struct vsb *vsb, void *ptr)
 	pp = (uintptr_t)ptr;
 	s0 = NULL;
 	VTAILQ_FOREACH(s, &symbols, list) {
-		if (s->a > pp || s->a + s->l < pp)
+		if (s->a > pp || s->a + s->l <= pp)
 			continue;
 		if (s0 == NULL || s->l < s0->l)
 			s0 = s;
 	}
 	if (s0 == NULL)
 		return (-1);
-	VSB_printf(vsb, "%p: %s+0x%jx", ptr, s0->n, (uintmax_t)pp - s0->a);
+	VSB_printf(vsb, "%p: %s", ptr, s0->n);
+	if ((uintmax_t)pp != s0->a)
+		VSB_printf(vsb, "+0x%jx", (uintmax_t)pp - s0->a);
 	return (0);
 }
 
