@@ -43,26 +43,22 @@
 
 static vtr_deliver_f VED_Deliver;
 
-/*--------------------------------------------------------------------*/
+static const uint8_t gzip_hdr[] = {
+	0x1f, 0x8b, 0x08,
+	0x00, 0x00, 0x00, 0x00,
+	0x00,
+	0x02, 0x03
+};
 
-static int __match_proto__(vdp_bytes)
-ved_vdp_bytes(struct req *req, enum vdp_action act, void **priv,
-    const void *ptr, ssize_t len)
-{
-	struct req *preq;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	if (act == VDP_INIT)
-		return (0);
-	if (act == VDP_FINI) {
-		*priv = NULL;
-		return (0);
-	}
-	CAST_OBJ_NOTNULL(preq, *priv, REQ_MAGIC);
-	req->acct.resp_bodybytes += len;
-	return (VDP_bytes(preq, act, ptr, len));
-}
-
+struct ecx {
+	unsigned	magic;
+#define ECX_MAGIC	0x0b0f9163
+	uint8_t		*p;
+	uint8_t		*e;
+	int		state;
+	ssize_t		l;
+	int		isgzip;
+};
 
 /*--------------------------------------------------------------------*/
 
@@ -186,7 +182,6 @@ ved_include(struct req *preq, const char *src, const char *host)
 
 /*--------------------------------------------------------------------*/
 
-
 //#define Debug(fmt, ...) printf(fmt, __VA_ARGS__)
 #define Debug(fmt, ...) /**/
 
@@ -221,23 +216,6 @@ ved_decode_len(uint8_t **pp)
 
 /*---------------------------------------------------------------------
  */
-
-static const uint8_t gzip_hdr[] = {
-	0x1f, 0x8b, 0x08,
-	0x00, 0x00, 0x00, 0x00,
-	0x00,
-	0x02, 0x03
-};
-
-struct ecx {
-	unsigned	magic;
-#define ECX_MAGIC	0x0b0f9163
-	uint8_t		*p;
-	uint8_t		*e;
-	int		state;
-	ssize_t		l;
-	int		isgzip;
-};
 
 int __match_proto__(vdp_bytes)
 VDP_ESI(struct req *req, enum vdp_action act, void **priv,
@@ -666,6 +644,28 @@ ved_stripgzip(struct req *req)
 	req->crc = crc32_combine(req->crc, icrc, ilen);
 	req->l_crc += ilen;
 }
+
+/*--------------------------------------------------------------------*/
+
+static int __match_proto__(vdp_bytes)
+ved_vdp_bytes(struct req *req, enum vdp_action act, void **priv,
+    const void *ptr, ssize_t len)
+{
+	struct req *preq;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	if (act == VDP_INIT)
+		return (0);
+	if (act == VDP_FINI) {
+		*priv = NULL;
+		return (0);
+	}
+	CAST_OBJ_NOTNULL(preq, *priv, REQ_MAGIC);
+	req->acct.resp_bodybytes += len;
+	return (VDP_bytes(preq, act, ptr, len));
+}
+
+/*--------------------------------------------------------------------*/
 
 static void __match_proto__(vtr_deliver_f)
 VED_Deliver(struct req *req, struct busyobj *bo)
