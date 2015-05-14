@@ -63,13 +63,16 @@ struct ecx {
 /*--------------------------------------------------------------------*/
 
 static void
-ved_include(struct req *preq, const char *src, const char *host)
+ved_include(struct req *preq, const char *src, const char *host,
+    struct ecx *ecx)
 {
 	struct worker *wrk;
 	struct req *req;
 	enum req_fsm_nxt s;
 	struct transport xp;
 
+	CHECK_OBJ_NOTNULL(preq, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ecx, ECX_MAGIC);
 	wrk = preq->wrk;
 
 	if (preq->esi_level >= cache_param->max_esi_depth)
@@ -115,7 +118,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 
 	/* Set Accept-Encoding according to what we want */
 	http_Unset(req->http0, H_Accept_Encoding);
-	if (preq->gzip_resp)
+	if (ecx->isgzip)
 		http_ForceHeader(req->http0, H_Accept_Encoding, "gzip");
 
 	/* Client content already taken care of */
@@ -137,9 +140,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 	req->t_req = preq->t_req;
 	assert(isnan(req->t_first));
 	assert(isnan(req->t_prev));
-	req->gzip_resp = preq->gzip_resp;
-	req->crc = preq->crc;
-	req->l_crc = preq->l_crc;
+	req->gzip_resp = ecx->isgzip;
 
 	INIT_OBJ(&xp, TRANSPORT_MAGIC);
 	xp.deliver = VED_Deliver;
@@ -171,8 +172,11 @@ ved_include(struct req *preq, const char *src, const char *host)
 	preq->vcl = req->vcl;
 	req->vcl = NULL;
 
-	preq->crc = req->crc;
-	preq->l_crc = req->l_crc;
+	if (ecx->isgzip && req->l_crc) {
+		preq->crc = crc32_combine(
+		    preq->crc, req->crc, req->l_crc);
+		preq->l_crc += req->l_crc;
+	}
 
 	req->wrk = NULL;
 
@@ -323,7 +327,7 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 				}
 				Debug("INCL [%s][%s] BEGIN\n", q, ecx->p);
 				ved_include(req,
-				    (const char*)q, (const char*)ecx->p);
+				    (const char*)q, (const char*)ecx->p, ecx);
 				Debug("INCL [%s][%s] END\n", q, ecx->p);
 				ecx->p = r + 1;
 				break;
