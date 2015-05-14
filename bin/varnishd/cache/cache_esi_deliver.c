@@ -144,7 +144,6 @@ ved_include(struct req *preq, const char *src, const char *host,
 	req->t_req = preq->t_req;
 	assert(isnan(req->t_first));
 	assert(isnan(req->t_prev));
-	req->gzip_resp = ecx->isgzip;
 
 	INIT_OBJ(&xp, TRANSPORT_MAGIC);
 	xp.deliver = VED_Deliver;
@@ -266,13 +265,11 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 				 * Only the top level document gets to
 				 * decide this.
 				 */
-				req->gzip_resp = 0;
 				if (ecx->isgzip) {
 					assert(sizeof gzip_hdr == 10);
 					/* Send out the gzip header */
 					retval = VDP_bytes(req, VDP_NULL,
 					    gzip_hdr, 10);
-					req->gzip_resp = 1;
 					ecx->l_crc = 0;
 					ecx->crc = crc32(0L, Z_NULL, 0);
 				}
@@ -297,7 +294,7 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 					l = ved_decode_len(&ecx->p);
 					icrc = vbe32dec(ecx->p);
 					ecx->p += 4;
-					if (req->gzip_resp) {
+					if (ecx->isgzip) {
 						ecx->crc = crc32_combine(
 						    ecx->crc, icrc, l);
 						ecx->l_crc += l;
@@ -336,7 +333,7 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 			}
 			break;
 		case 2:
-			if (req->gzip_resp && req->esi_level == 0) {
+			if (ecx->isgzip && req->esi_level == 0) {
 				/*
 				 * We are bytealigned here, so simply emit
 				 * a gzip literal block with finish bit set.
@@ -431,7 +428,7 @@ ved_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
 		return (0);
 	}
 	if (l == 0)
-		return (VDP_bytes(req, act, pv, l));
+		return (VDP_bytes(ecx->preq, act, pv, l));
 
 	p = pv;
 
@@ -448,23 +445,23 @@ ved_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
 	while (l > 0) {
 		if (l >= 65535) {
 			lx = 65535;
-			if (VDP_bytes(req, VDP_NULL, buf1, sizeof buf1))
+			if (VDP_bytes(ecx->preq, VDP_NULL, buf1, sizeof buf1))
 				return (-1);
 		} else {
 			lx = (uint16_t)l;
 			buf2[0] = 0;
 			vle16enc(buf2 + 1, lx);
 			vle16enc(buf2 + 3, ~lx);
-			if (VDP_bytes(req, VDP_NULL, buf2, sizeof buf2))
+			if (VDP_bytes(ecx->preq, VDP_NULL, buf2, sizeof buf2))
 				return (-1);
 		}
-		if (VDP_bytes(req, VDP_NULL, p, lx))
+		if (VDP_bytes(ecx->preq, VDP_NULL, p, lx))
 			return (-1);
 		l -= lx;
 		p += lx;
 	}
 	/* buf2 is local, have to flush */
-	return (VDP_bytes(req, VDP_FLUSH, NULL, 0));
+	return (VDP_bytes(ecx->preq, VDP_FLUSH, NULL, 0));
 }
 
 /*---------------------------------------------------------------------
@@ -548,7 +545,7 @@ ved_stripgzip(struct req *req)
 			if (dl > 0) {
 				if (dl > sl)
 					dl = sl;
-				if (VDP_bytes(req, VDP_NULL, pp, dl))
+				if (VDP_bytes(ecx->preq, VDP_NULL, pp, dl))
 					break;
 				ll += dl;
 				sl -= dl;
@@ -559,7 +556,7 @@ ved_stripgzip(struct req *req)
 			/* Remove the "LAST" bit */
 			dbits[0] = *pp;
 			dbits[0] &= ~(1U << (last & 7));
-			if (VDP_bytes(req, VDP_NULL, dbits, 1))
+			if (VDP_bytes(ecx->preq, VDP_NULL, dbits, 1))
 				break;
 			ll++;
 			sl--;
@@ -571,7 +568,7 @@ ved_stripgzip(struct req *req)
 			if (dl > 0) {
 				if (dl > sl)
 					dl = sl;
-				if (VDP_bytes(req, VDP_NULL, pp, dl))
+				if (VDP_bytes(ecx->preq, VDP_NULL, pp, dl))
 					break;
 				ll += dl;
 				sl -= dl;
@@ -633,7 +630,7 @@ ved_stripgzip(struct req *req)
 			default:
 				WRONG("compiler must be broken");
 			}
-			if (VDP_bytes(req, VDP_NULL, dbits + 1, lpad))
+			if (VDP_bytes(ecx->preq, VDP_NULL, dbits + 1, lpad))
 				break;
 		}
 		if (sl > 0) {
@@ -656,6 +653,7 @@ ved_stripgzip(struct req *req)
 		}
 	} while (ois == OIS_DATA || ois == OIS_STREAM);
 	ObjIterEnd(req->objcore, &oi);
+	(void)VDP_bytes(ecx->preq, VDP_FLUSH, NULL, 0);
 
 	icrc = vle32dec(tailbuf);
 	ilen = vle32dec(tailbuf + 4);
@@ -700,18 +698,15 @@ VED_Deliver(struct req *req, struct busyobj *bo)
 
 	req->res_mode |= RES_ESI_CHILD;
 	i = ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED);
-	if (req->gzip_resp && i && !(req->res_mode & RES_ESI)) {
-		VDP_push(req, ved_vdp_bytes, ecx->preq, 1);
-
+	if (ecx->isgzip && i && !(req->res_mode & RES_ESI)) {
 		if (bo != NULL)
 			VBO_waitstate(bo, BOS_FINISHED);
 		ved_stripgzip(req);
-		(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
 	} else {
-		if (req->gzip_resp && !i)
+		if (ecx->isgzip && !i)
 			VDP_push(req, ved_pretend_gzip, ecx, 1);
-
-		VDP_push(req, ved_vdp_bytes, ecx->preq, 1);
+		else
+			VDP_push(req, ved_vdp_bytes, ecx->preq, 1);
 		(void)VDP_DeliverObj(req);
 	}
 	VDP_close(req);
