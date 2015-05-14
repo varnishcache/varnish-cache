@@ -2,16 +2,27 @@ varnishtest "fun esi includes and ranges"
 
 server s1 {
 	rxreq
+	expect req.url == "/1"
 	txresp -body {<html><esi:include src="/bar"/></html>}
-	rxreq 
+
+	rxreq
 	expect req.url == /bar
+	txresp -body {<html><esi:include src="/foo"/></html>}
+
+	rxreq
+	expect req.url == /foo
 	txresp -body "ABCD"
+
+	rxreq
+	expect req.url == "/2"
+	txresp -gzipbody {<html><esi:include src="/bar"/></html>}
+
 } -start
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.url == "/bar") {
-			set req.http.Range = "bytes=1-2";
+			set req.http.Range = "bytes=7-8";
 		}
 	}
 	sub vcl_backend_response {
@@ -20,7 +31,12 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq
+	txreq -url /1 -hdr "Accept-encoding: gzip"
 	rxresp
+	expect resp.body == "<html>BC</html>"
+	delay .1
+	txreq -url /2 -hdr "Accept-encoding: gzip"
+	rxresp
+	gunzip
 	expect resp.body == "<html>BC</html>"
 } -run
