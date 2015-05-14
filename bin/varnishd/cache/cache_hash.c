@@ -187,16 +187,16 @@ HSH_DeleteObjHead(struct worker *wrk, struct objhead *oh)
 }
 
 void
-HSH_AddString(struct req *req, const char *str)
+HSH_AddString(struct req *req, void *ctx, const char *str)
 {
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	AN(req->sha256ctx);
+	AN(ctx);
 	if (str != NULL) {
-		SHA256_Update(req->sha256ctx, str, strlen(str));
+		SHA256_Update(ctx, str, strlen(str));
 		VSLb(req->vsl, SLT_Hash, "%s", str);
 	} else
-		SHA256_Update(req->sha256ctx, &str, sizeof str);
+		SHA256_Update(ctx, &str, 1);
 }
 
 /*---------------------------------------------------------------------

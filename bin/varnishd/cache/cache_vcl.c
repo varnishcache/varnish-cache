@@ -461,7 +461,7 @@ ccf_config_show(struct cli *cli, const char * const *av, void *priv)
 
 static void
 vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
-    unsigned method, vcl_func_f *func)
+    void *specific, unsigned method, vcl_func_f *func)
 {
 	char *aws;
 	struct vsl_log *vsl = NULL;
@@ -492,6 +492,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	}
 	assert(ctx.now != 0);
 	ctx.vsl = vsl;
+	ctx.specific = specific;
 	ctx.method = method;
 	ctx.handling = &wrk->handling;
 	aws = WS_Snapshot(wrk->aws);
@@ -514,13 +515,13 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 #define VCL_MET_MAC(func, upper, bitmap)				\
 void									\
 VCL_##func##_method(struct VCL_conf *vcl, struct worker *wrk,		\
-     struct req *req, struct busyobj *bo)				\
+     struct req *req, struct busyobj *bo, void *specific)		\
 {									\
 									\
 	CHECK_OBJ_NOTNULL(vcl, VCL_CONF_MAGIC);				\
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);				\
-	vcl_call_method(wrk, req, bo, VCL_MET_ ## upper,		\
-	    vcl->func##_func);						\
+	vcl_call_method(wrk, req, bo, specific,				\
+	    VCL_MET_ ## upper, vcl->func##_func);			\
 	AN((1U << wrk->handling) & bitmap);				\
 }
 

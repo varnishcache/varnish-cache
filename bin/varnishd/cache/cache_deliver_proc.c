@@ -115,7 +115,6 @@ VDP_DeliverObj(struct req *req)
 
 	oi = ObjIterBegin(req->wrk, req->objcore);
 	XXXAN(oi);
-	AZ(req->synth_body);
 
 	do {
 		ois = ObjIter(req->objcore, oi, &ptr, &len);

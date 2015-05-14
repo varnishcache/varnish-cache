@@ -264,20 +264,21 @@ VRT_hashdata(VRT_CTX, const char *str, ...)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	HSH_AddString(ctx->req, str);
+	AN(ctx->specific);
+	HSH_AddString(ctx->req, ctx->specific, str);
 	va_start(ap, str);
 	while (1) {
 		p = va_arg(ap, const char *);
 		if (p == vrt_magic_string_end)
 			break;
-		HSH_AddString(ctx->req, p);
+		HSH_AddString(ctx->req, ctx->specific, p);
 	}
 	va_end(ap);
 	/*
 	 * Add a 'field-separator' to make it more difficult to
 	 * manipulate the hash.
 	 */
-	HSH_AddString(ctx->req, NULL);
+	HSH_AddString(ctx->req, ctx->specific, NULL);
 }
 
 /*--------------------------------------------------------------------*/
@@ -386,16 +387,7 @@ VRT_synth_page(VRT_CTX, const char *str, ...)
 	const char *p;
 	struct vsb *vsb;
 
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (ctx->method == VCL_MET_BACKEND_ERROR) {
-		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-		vsb = ctx->bo->synth_body;
-	} else {
-		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-		vsb = ctx->req->synth_body;
-	}
-	AN(vsb);
-
+	CAST_OBJ_NOTNULL(vsb, ctx->specific, VSB_MAGIC);
 	va_start(ap, str);
 	p = str;
 	while (p != vrt_magic_string_end) {

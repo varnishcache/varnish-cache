@@ -133,7 +133,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	    !RFC2616_Req_Gzip(req->http))
 		RFC2616_Weaken_Etag(req->resp);
 
-	VCL_deliver_method(req->vcl, wrk, req, NULL);
+	VCL_deliver_method(req->vcl, wrk, req, NULL, NULL);
 	VSLb_ts_req(req, "Process", W_TIM_real(wrk));
 
 	/* Stop the insanity before it turns "Hotel California" on us */
@@ -211,6 +211,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 {
 	struct http *h;
 	double now;
+	struct vsb *synth_body;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -231,23 +232,21 @@ cnt_synth(struct worker *wrk, struct req *req)
 	http_PrintfHeader(req->resp, "X-Varnish: %u", VXID(req->vsl->wid));
 	http_PutResponse(h, "HTTP/1.1", req->err_code, req->err_reason);
 
-	AZ(req->synth_body);
-	req->synth_body = VSB_new_auto();
-	AN(req->synth_body);
+	synth_body = VSB_new_auto();
+	AN(synth_body);
 
-	VCL_synth_method(req->vcl, wrk, req, NULL);
+	VCL_synth_method(req->vcl, wrk, req, NULL, synth_body);
 
 	http_Unset(h, H_Content_Length);
 
-	AZ(VSB_finish(req->synth_body));
+	AZ(VSB_finish(synth_body));
 
 	/* Discard any lingering request body before delivery */
 	(void)VRB_Ignore(req);
 
 	if (wrk->handling == VCL_RET_RESTART) {
 		HTTP_Setup(h, req->ws, req->vsl, SLT_RespMethod);
-		VSB_delete(req->synth_body);
-		req->synth_body = NULL;
+		VSB_delete(synth_body);
 		req->req_step = R_STP_RESTART;
 		return (REQ_FSM_MORE);
 	}
@@ -262,21 +261,20 @@ cnt_synth(struct worker *wrk, struct req *req)
 		ssize_t sz, szl;
 		uint8_t *ptr;
 
-		szl = VSB_len(req->synth_body);
+		szl = VSB_len(synth_body);
 		assert(szl >= 0);
 		if (szl > 0) {
 			sz = szl;
 			AN(ObjGetSpace(wrk, req->objcore, &sz, &ptr));
 			assert(sz >= szl);
-			memcpy(ptr, VSB_data(req->synth_body), szl);
+			memcpy(ptr, VSB_data(synth_body), szl);
 			ObjExtend(wrk, req->objcore, szl);
 		}
-		VSB_delete(req->synth_body);
-		req->synth_body = NULL;
 
 		cnt_vdp(req, NULL);
 		(void)HSH_DerefObjCore(wrk, &req->objcore);
 	}
+	VSB_delete(synth_body);
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
@@ -388,7 +386,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	VSLb(req->vsl, SLT_Hit, "%u", ObjGetXID(wrk, req->objcore));
 
-	VCL_hit_method(req->vcl, wrk, req, NULL);
+	VCL_hit_method(req->vcl, wrk, req, NULL, NULL);
 
 	switch (wrk->handling) {
 	case VCL_RET_DELIVER:
@@ -463,7 +461,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
-	VCL_miss_method(req->vcl, wrk, req, NULL);
+	VCL_miss_method(req->vcl, wrk, req, NULL, NULL);
 	switch (wrk->handling) {
 	case VCL_RET_FETCH:
 		wrk->stats->cache_miss++;
@@ -504,7 +502,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
 	AZ(req->objcore);
 
-	VCL_pass_method(req->vcl, wrk, req, NULL);
+	VCL_pass_method(req->vcl, wrk, req, NULL, NULL);
 	switch (wrk->handling) {
 	case VCL_RET_SYNTH:
 		req->req_step = R_STP_SYNTH;
@@ -550,7 +548,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	http_PrintfHeader(bo->bereq, "X-Varnish: %u", VXID(req->vsl->wid));
 	http_SetHeader(bo->bereq, "Connection: close");
 
-	VCL_pipe_method(req->vcl, wrk, req, bo);
+	VCL_pipe_method(req->vcl, wrk, req, bo, NULL);
 
 	if (wrk->handling == VCL_RET_SYNTH)
 		INCOMPL();
@@ -651,7 +649,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	http_CollectHdr(req->http, H_Cache_Control);
 
-	VCL_recv_method(req->vcl, wrk, req, NULL);
+	VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 
 	/* Attempts to cache req.body may fail */
 	if (req->req_body_status == REQ_BODY_FAIL) {
@@ -672,12 +670,10 @@ cnt_recv(struct worker *wrk, struct req *req)
 		}
 	}
 
-	req->sha256ctx = &sha256ctx;	/* so HSH_AddString() can find it */
-	SHA256_Init(req->sha256ctx);
-	VCL_hash_method(req->vcl, wrk, req, NULL);
+	SHA256_Init(&sha256ctx);
+	VCL_hash_method(req->vcl, wrk, req, NULL, &sha256ctx);
 	assert(wrk->handling == VCL_RET_LOOKUP);
-	SHA256_Final(req->digest, req->sha256ctx);
-	req->sha256ctx = NULL;
+	SHA256_Final(req->digest, &sha256ctx);
 
 	if (!strcmp(req->http->hd[HTTP_HDR_METHOD].b, "HEAD"))
 		req->wantbody = 0;
@@ -743,7 +739,7 @@ cnt_purge(struct worker *wrk, struct req *req)
 
 	AZ(HSH_DerefObjCore(wrk, &boc));
 
-	VCL_purge_method(req->vcl, wrk, req, NULL);
+	VCL_purge_method(req->vcl, wrk, req, NULL, NULL);
 	switch (wrk->handling) {
 	case VCL_RET_RESTART:
 		req->req_step = R_STP_RESTART;

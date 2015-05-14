@@ -107,6 +107,13 @@ struct vrt_ctx {
 	struct http			*http_beresp;
 
 	double				now;
+
+	/*
+	 * method specific argument:
+	 *    hash:		struct SHA256ctx
+	 *    synth+error:	struct vsb *
+	 */
+	void				*specific;
 };
 
 #define VRT_CTX		const struct vrt_ctx *ctx

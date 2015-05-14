@@ -274,7 +274,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	http_PrintfHeader(bo->bereq, "X-Varnish: %u", VXID(bo->vsl->wid));
 
-	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo);
+	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, NULL);
 
 	bo->uncacheable = bo->do_pass;
 	if (wrk->handling == VCL_RET_ABANDON)
@@ -426,7 +426,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	bo->vfc->http = bo->beresp;
 	bo->vfc->esi_req = bo->bereq;
 
-	VCL_backend_response_method(bo->vcl, wrk, NULL, bo);
+	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, NULL);
 
 	if (wrk->handling == VCL_RET_ABANDON) {
 		bo->doclose = SC_RESP_CLOSE;
@@ -770,6 +770,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	ssize_t l, ll, o;
 	double now;
 	uint8_t *ptr;
+	struct vsb *synth_body;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -780,9 +781,8 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	AN(bo->fetch_objcore->flags & OC_F_BUSY);
 
-	AZ(bo->synth_body);
-	bo->synth_body = VSB_new_auto();
-	AN(bo->synth_body);
+	synth_body = VSB_new_auto();
+	AN(synth_body);
 
 	// XXX: reset all beresp flags ?
 
@@ -796,13 +796,12 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	bo->fetch_objcore->exp.grace = 0;
 	bo->fetch_objcore->exp.keep = 0;
 
-	VCL_backend_error_method(bo->vcl, wrk, NULL, bo);
+	VCL_backend_error_method(bo->vcl, wrk, NULL, bo, synth_body);
 
-	AZ(VSB_finish(bo->synth_body));
+	AZ(VSB_finish(synth_body));
 
 	if (wrk->handling == VCL_RET_RETRY) {
-		VSB_delete(bo->synth_body);
-		bo->synth_body = NULL;
+		VSB_delete(synth_body);
 
 		bo->doclose = SC_RESP_CLOSE;
 		if (bo->director_state != DIR_S_NULL)
@@ -822,22 +821,23 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	bo->vfc->http = bo->beresp;
 	bo->vfc->esi_req = bo->bereq;
 
-	if (vbf_beresp2obj(bo))
+	if (vbf_beresp2obj(bo)) {
+		VSB_delete(synth_body);
 		return (F_STP_FAIL);
+	}
 
-	ll = VSB_len(bo->synth_body);
+	ll = VSB_len(synth_body);
 	o = 0;
 	while (ll > 0) {
 		l = ll;
 		if (VFP_GetStorage(bo->vfc, &l, &ptr) != VFP_OK)
 			break;
-		memcpy(ptr, VSB_data(bo->synth_body) + o, l);
+		memcpy(ptr, VSB_data(synth_body) + o, l);
 		VBO_extend(bo, l);
 		ll -= l;
 		o += l;
 	}
-	VSB_delete(bo->synth_body);
-	bo->synth_body = NULL;
+	VSB_delete(synth_body);
 
 	HSH_Unbusy(wrk, bo->fetch_objcore);
 	VBO_setstate(bo, BOS_FINISHED);

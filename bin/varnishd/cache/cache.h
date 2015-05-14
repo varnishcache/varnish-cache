@@ -98,7 +98,6 @@ enum {
 
 /*--------------------------------------------------------------------*/
 
-struct SHA256Context;
 struct VSC_C_lck;
 struct ban;
 struct busyobj;
@@ -518,8 +517,6 @@ struct busyobj {
 
 	struct vsl_log		vsl[1];
 
-	struct vsb		*synth_body;
-
 	uint8_t			digest[DIGEST_LEN];
 	struct vrt_privs	privs[1];
 };
@@ -592,8 +589,6 @@ struct req {
 	struct ws		ws[1];
 	struct objcore		*objcore;
 	struct objcore		*stale_oc;
-	/* Lookup stuff */
-	struct SHA256Context	*sha256ctx;
 
 	/* ESI delivery stuff */
 	ssize_t			l_crc;
@@ -619,9 +614,6 @@ struct req {
 
 	/* Temporary accounting */
 	struct acct_req		acct;
-
-	/* Synth content in vcl_synth */
-	struct vsb		*synth_body;
 };
 
 /*--------------------------------------------------------------------
@@ -1086,7 +1078,7 @@ const char *VCL_Method_Name(unsigned);
 
 #define VCL_MET_MAC(l,u,b) \
     void VCL_##l##_method(struct VCL_conf *, struct worker *, struct req *, \
-	struct busyobj *bo);
+	struct busyobj *bo, void *specific);
 #include "tbl/vcl_returns.h"
 #undef VCL_MET_MAC
 
