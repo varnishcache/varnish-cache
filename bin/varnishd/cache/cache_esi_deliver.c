@@ -220,67 +220,6 @@ ved_decode_len(uint8_t **pp)
 }
 
 /*---------------------------------------------------------------------
- * If a gzip'ed ESI object includes a ungzip'ed object, we need to make
- * it looked like a gzip'ed data stream.  The official way to do so would
- * be to fire up libvgz and gzip it, but we don't, we fake it.
- *
- * First, we cannot know if it is ungzip'ed on purpose, the admin may
- * know something we don't.
- *
- * What do you mean "BS ?"
- *
- * All right then...
- *
- * The matter of the fact is that we simply will not fire up a gzip in
- * the output path because it costs too much memory and CPU, so we simply
- * wrap the data in very convenient "gzip copy-blocks" and send it down
- * the stream with a bit more overhead.
- */
-
-static int __match_proto__(vdp_bytes)
-ved_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
-    const void *pv, ssize_t l)
-{
-	uint8_t buf1[5], buf2[5];
-	const uint8_t *p;
-	uint16_t lx;
-
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	(void)priv;
-	if (act == VDP_INIT || act == VDP_FINI)
-		return (0);
-	p = pv;
-
-	lx = 65535;
-	buf1[0] = 0;
-	vle16enc(buf1 + 1, lx);
-	vle16enc(buf1 + 3, ~lx);
-
-	while (l > 0) {
-		if (l >= 65535) {
-			lx = 65535;
-			if (VDP_bytes(req, VDP_NULL, buf1, sizeof buf1))
-				return (-1);
-		} else {
-			lx = (uint16_t)l;
-			buf2[0] = 0;
-			vle16enc(buf2 + 1, lx);
-			vle16enc(buf2 + 3, ~lx);
-			if (VDP_bytes(req, VDP_NULL, buf2, sizeof buf2))
-				return (-1);
-		}
-		if (VDP_bytes(req, VDP_NULL, p, lx))
-			return (-1);
-		req->crc = crc32(req->crc, p, lx);
-		req->l_crc += lx;
-		l -= lx;
-		p += lx;
-	}
-	/* buf2 is local, have to flush */
-	return (VDP_bytes(req, VDP_FLUSH, NULL, 0));
-}
-
-/*---------------------------------------------------------------------
  */
 
 static const uint8_t gzip_hdr[] = {
@@ -471,6 +410,67 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 		if (retval)
 			return (retval);
 	}
+}
+
+/*---------------------------------------------------------------------
+ * If a gzip'ed ESI object includes a ungzip'ed object, we need to make
+ * it looked like a gzip'ed data stream.  The official way to do so would
+ * be to fire up libvgz and gzip it, but we don't, we fake it.
+ *
+ * First, we cannot know if it is ungzip'ed on purpose, the admin may
+ * know something we don't.
+ *
+ * What do you mean "BS ?"
+ *
+ * All right then...
+ *
+ * The matter of the fact is that we simply will not fire up a gzip in
+ * the output path because it costs too much memory and CPU, so we simply
+ * wrap the data in very convenient "gzip copy-blocks" and send it down
+ * the stream with a bit more overhead.
+ */
+
+static int __match_proto__(vdp_bytes)
+ved_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
+    const void *pv, ssize_t l)
+{
+	uint8_t buf1[5], buf2[5];
+	const uint8_t *p;
+	uint16_t lx;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	(void)priv;
+	if (act == VDP_INIT || act == VDP_FINI)
+		return (0);
+	p = pv;
+
+	lx = 65535;
+	buf1[0] = 0;
+	vle16enc(buf1 + 1, lx);
+	vle16enc(buf1 + 3, ~lx);
+
+	while (l > 0) {
+		if (l >= 65535) {
+			lx = 65535;
+			if (VDP_bytes(req, VDP_NULL, buf1, sizeof buf1))
+				return (-1);
+		} else {
+			lx = (uint16_t)l;
+			buf2[0] = 0;
+			vle16enc(buf2 + 1, lx);
+			vle16enc(buf2 + 3, ~lx);
+			if (VDP_bytes(req, VDP_NULL, buf2, sizeof buf2))
+				return (-1);
+		}
+		if (VDP_bytes(req, VDP_NULL, p, lx))
+			return (-1);
+		req->crc = crc32(req->crc, p, lx);
+		req->l_crc += lx;
+		l -= lx;
+		p += lx;
+	}
+	/* buf2 is local, have to flush */
+	return (VDP_bytes(req, VDP_FLUSH, NULL, 0));
 }
 
 /*---------------------------------------------------------------------
