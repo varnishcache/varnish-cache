@@ -274,7 +274,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	http_PrintfHeader(bo->bereq, "X-Varnish: %u", VXID(bo->vsl->wid));
 
-	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
+	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo);
 
 	bo->uncacheable = bo->do_pass;
 	if (wrk->handling == VCL_RET_ABANDON)
@@ -426,7 +426,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	bo->vfc->http = bo->beresp;
 	bo->vfc->esi_req = bo->bereq;
 
-	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, bo->beresp->ws);
+	VCL_backend_response_method(bo->vcl, wrk, NULL, bo);
 
 	if (wrk->handling == VCL_RET_ABANDON) {
 		bo->doclose = SC_RESP_CLOSE;
@@ -796,7 +796,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	bo->fetch_objcore->exp.grace = 0;
 	bo->fetch_objcore->exp.keep = 0;
 
-	VCL_backend_error_method(bo->vcl, wrk, NULL, bo, bo->bereq->ws);
+	VCL_backend_error_method(bo->vcl, wrk, NULL, bo);
 
 	AZ(VSB_finish(bo->synth_body));
 

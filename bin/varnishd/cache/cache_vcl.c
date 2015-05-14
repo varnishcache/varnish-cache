@@ -461,7 +461,7 @@ ccf_config_show(struct cli *cli, const char * const *av, void *priv)
 
 static void
 vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
-    struct ws *ws, unsigned method, vcl_func_f *func)
+    unsigned method, vcl_func_f *func)
 {
 	char *aws;
 	struct vsl_log *vsl = NULL;
@@ -478,6 +478,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		ctx.http_resp = req->resp;
 		ctx.req = req;
 		ctx.now = req->t_prev;
+		ctx.ws = req->ws;
 	}
 	if (bo != NULL) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -487,9 +488,9 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		ctx.http_beresp = bo->beresp;
 		ctx.bo = bo;
 		ctx.now = bo->t_prev;
+		ctx.ws = bo->ws;
 	}
 	assert(ctx.now != 0);
-	ctx.ws = ws;
 	ctx.vsl = vsl;
 	ctx.method = method;
 	ctx.handling = &wrk->handling;
@@ -513,12 +514,12 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 #define VCL_MET_MAC(func, upper, bitmap)				\
 void									\
 VCL_##func##_method(struct VCL_conf *vcl, struct worker *wrk,		\
-     struct req *req, struct busyobj *bo, struct ws *ws)		\
+     struct req *req, struct busyobj *bo)				\
 {									\
 									\
 	CHECK_OBJ_NOTNULL(vcl, VCL_CONF_MAGIC);				\
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);				\
-	vcl_call_method(wrk, req, bo, ws, VCL_MET_ ## upper,		\
+	vcl_call_method(wrk, req, bo, VCL_MET_ ## upper,		\
 	    vcl->func##_func);						\
 	AN((1U << wrk->handling) & bitmap);				\
 }
