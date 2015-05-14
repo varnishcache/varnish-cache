@@ -63,6 +63,16 @@ VDP_push(struct req *req, vdp_bytes *func, void *priv, int bottom)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(func);
 
+#if 0
+	// Gross hack for debugging
+	struct vsb *vsb;
+	vsb = VSB_new_auto();
+	AN(vsb);
+	Symbol_Lookup(vsb, func);
+	AZ(VSB_finish(vsb));
+	VSLb(req->vsl, SLT_Debug, "VDP %s %p %d", VSB_data(vsb), priv, bottom);
+	VSB_delete(vsb);
+#endif
 	vdp = WS_Alloc(req->ws, sizeof *vdp);
 	AN(vdp);
 	INIT_OBJ(vdp, VDP_ENTRY_MAGIC);
