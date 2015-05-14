@@ -110,7 +110,7 @@ struct vrt_ctx {
 
 	/*
 	 * method specific argument:
-	 *    hash:		struct SHA256ctx
+	 *    hash:		struct SHA256Context
 	 *    synth+error:	struct vsb *
 	 */
 	void				*specific;
