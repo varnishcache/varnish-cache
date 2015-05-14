@@ -41,6 +41,8 @@
 #include "vend.h"
 #include "vgz.h"
 
+static vtr_deliver_f VED_Deliver;
+
 /*--------------------------------------------------------------------*/
 
 static int __match_proto__(vdp_bytes)
@@ -108,9 +110,17 @@ ved_include(struct req *preq, const char *src, const char *host)
 	http_ForceField(req->http0, HTTP_HDR_METHOD, "GET");
 	http_ForceField(req->http0, HTTP_HDR_PROTO, "HTTP/1.1");
 
-	/* Don't allow Conditions, we can't use a 304 */
+	/* Don't allow conditionalss, we can't use a 304 */
 	http_Unset(req->http0, H_If_Modified_Since);
 	http_Unset(req->http0, H_If_None_Match);
+
+	/* Don't allow Range */
+	http_Unset(req->http0, H_Range);
+
+	/* Set Accept-Encoding according to what we want */
+	http_Unset(req->http0, H_Accept_Encoding);
+	if (preq->gzip_resp)
+		http_ForceHeader(req->http0, H_Accept_Encoding, "gzip");
 
 	/* Client content already taken care of */
 	http_Unset(req->http0, H_Content_Length);
@@ -136,6 +146,7 @@ ved_include(struct req *preq, const char *src, const char *host)
 	req->l_crc = preq->l_crc;
 
 	INIT_OBJ(&xp, TRANSPORT_MAGIC);
+	xp.deliver = VED_Deliver;
 	req->transport = &xp;
 	req->transport_priv = preq;
 
@@ -656,50 +667,33 @@ ved_stripgzip(struct req *req)
 	req->l_crc += ilen;
 }
 
-int
-VED_Setup(struct req *req, struct busyobj *bo)
+static void __match_proto__(vtr_deliver_f)
+VED_Deliver(struct req *req, struct busyobj *bo)
 {
 	int i;
 	struct req *preq;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
-	/*
-	 * Determine ESI status first.  Not dependent on wantbody, because
-	 * we want ESI to supress C-L in HEAD too.
-	 */
-	if (!req->disable_esi &&
-	    ObjGetattr(req->wrk, req->objcore, OA_ESIDATA, NULL) != NULL) {
-		req->res_mode |= RES_ESI;
-		RFC2616_Weaken_Etag(req->resp);
-		req->resp_len = -1;
-		VDP_push(req, VDP_ESI, NULL, 0);
-	}
-
-	/* ESI-childen need special treatment */
-	if (req->esi_level == 0)
-		return (0);
-
 	CAST_OBJ_NOTNULL(preq, req->transport_priv, REQ_MAGIC);
-
-	VDP_push(req, ved_vdp_bytes, preq, 1);
 
 	req->res_mode |= RES_ESI_CHILD;
 	i = ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED);
 	if (req->gzip_resp && i && !(req->res_mode & RES_ESI)) {
+		VDP_push(req, ved_vdp_bytes, preq, 1);
+
 		if (bo != NULL)
 			VBO_waitstate(bo, BOS_FINISHED);
 		ved_stripgzip(req);
 		(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
 	} else {
 		if (req->gzip_resp && !i)
-			VDP_push(req, ved_pretend_gzip, NULL, 0);
-		else if (!req->gzip_resp && i)
-			VDP_push(req, VDP_gunzip, NULL, 0);
+			VDP_push(req, ved_pretend_gzip, NULL, 1);
 
+		VDP_push(req, ved_vdp_bytes, preq, 1);
 		(void)VDP_DeliverObj(req);
 	}
 	VDP_close(req);
-	return (1);
 }

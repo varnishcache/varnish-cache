@@ -684,7 +684,7 @@ struct sess {
  * or may not, be talking a "real" HTTP protocol itself.
  */
 
-typedef void vtr_deliver_f (struct req *);
+typedef void vtr_deliver_f (struct req *, struct busyobj *);
 
 struct transport {
 	unsigned		magic;
@@ -746,7 +746,7 @@ extern const int HTTP1_Req[3];
 extern const int HTTP1_Resp[3];
 
 /* cache_http1_deliver.c */
-void V1D_Deliver(struct req *);
+vtr_deliver_f V1D_Deliver;
 
 /* cache_http1_pipe.c */
 void V1P_Init(void);
@@ -1112,8 +1112,6 @@ const char *VRT_String(struct ws *ws, const char *h, const char *p, va_list ap);
 char *VRT_StringList(char *d, unsigned dl, const char *p, va_list ap);
 void VRTPRIV_init(struct vrt_privs *privs);
 void VRTPRIV_dynamic_kill(struct vrt_privs *privs, uintptr_t id);
-
-int VED_Setup(struct req *req, struct busyobj *bo);
 
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);

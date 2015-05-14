@@ -61,11 +61,12 @@ v1d_bytes(struct req *req, enum vdp_action act, void **priv,
  */
 
 void __match_proto__(vtr_deliver_f)
-V1D_Deliver(struct req *req)
+V1D_Deliver(struct req *req, struct busyobj *bo)
 {
 	enum objiter_status ois;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
 	if ((req->objcore->flags & OC_F_PRIVATE) &&

@@ -58,8 +58,18 @@ cnt_vdp(struct req *req, struct busyobj *bo)
 	else
 		req->resp_len = ObjGetLen(req->wrk, req->objcore);
 
-	if (VED_Setup(req, bo))
-		return;
+	/*
+	 * Determine ESI status first.  Not dependent on wantbody, because
+	 * we want ESI to supress C-L in HEAD too.
+	 */
+	if (!req->disable_esi &&
+	    ObjGetattr(req->wrk, req->objcore, OA_ESIDATA, NULL) != NULL) {
+		req->res_mode |= RES_ESI;
+		RFC2616_Weaken_Etag(req->resp);
+		req->resp_len = -1;
+		VDP_push(req, VDP_ESI, NULL, 0);
+	}
+
 
 	if (cache_param->http_gzip_support &&
 	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
@@ -81,7 +91,7 @@ cnt_vdp(struct req *req, struct busyobj *bo)
 	}
 
 	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
-	req->transport->deliver(req);
+	req->transport->deliver(req, bo);
 }
 
 /*--------------------------------------------------------------------
