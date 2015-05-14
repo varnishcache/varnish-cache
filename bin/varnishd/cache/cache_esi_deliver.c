@@ -58,6 +58,10 @@ struct ecx {
 	int		state;
 	ssize_t		l;
 	int		isgzip;
+
+	struct req	*preq;
+	ssize_t		l_crc;
+	uint32_t	crc;
 };
 
 /*--------------------------------------------------------------------*/
@@ -145,7 +149,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 	INIT_OBJ(&xp, TRANSPORT_MAGIC);
 	xp.deliver = VED_Deliver;
 	req->transport = &xp;
-	req->transport_priv = preq;
+	req->transport_priv = ecx;
 
 	THR_SetRequest(req);
 
@@ -171,12 +175,6 @@ ved_include(struct req *preq, const char *src, const char *host,
 
 	preq->vcl = req->vcl;
 	req->vcl = NULL;
-
-	if (ecx->isgzip && req->l_crc) {
-		preq->crc = crc32_combine(
-		    preq->crc, req->crc, req->l_crc);
-		preq->l_crc += req->l_crc;
-	}
 
 	req->wrk = NULL;
 
@@ -237,6 +235,7 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 		AZ(*priv);
 		ALLOC_OBJ(ecx, ECX_MAGIC);
 		AN(ecx);
+		ecx->preq = req;
 		*priv = ecx;
 		return (0);
 	}
@@ -273,9 +272,9 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 					/* Send out the gzip header */
 					retval = VDP_bytes(req, VDP_NULL,
 					    gzip_hdr, 10);
-					req->l_crc = 0;
 					req->gzip_resp = 1;
-					req->crc = crc32(0L, Z_NULL, 0);
+					ecx->l_crc = 0;
+					ecx->crc = crc32(0L, Z_NULL, 0);
 				}
 			}
 			ecx->state = 1;
@@ -299,9 +298,9 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 					icrc = vbe32dec(ecx->p);
 					ecx->p += 4;
 					if (req->gzip_resp) {
-						req->crc = crc32_combine(
-						    req->crc, icrc, l);
-						req->l_crc += l;
+						ecx->crc = crc32_combine(
+						    ecx->crc, icrc, l);
+						ecx->l_crc += l;
 					}
 				}
 				ecx->state = 3;
@@ -349,10 +348,10 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 				tailbuf[4] = 0xff;
 
 				/* Emit CRC32 */
-				vle32enc(tailbuf + 5, req->crc);
+				vle32enc(tailbuf + 5, ecx->crc);
 
 				/* MOD(2^32) length */
-				vle32enc(tailbuf + 9, req->l_crc);
+				vle32enc(tailbuf + 9, ecx->l_crc);
 
 				(void)VDP_bytes(req, VDP_NULL, tailbuf, 13);
 			}
@@ -419,12 +418,27 @@ ved_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
 	uint8_t buf1[5], buf2[5];
 	const uint8_t *p;
 	uint16_t lx;
+	struct ecx *ecx;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);
+
 	(void)priv;
-	if (act == VDP_INIT || act == VDP_FINI)
+	if (act == VDP_INIT)
 		return (0);
+	if (act == VDP_FINI) {
+		*priv = NULL;
+		return (0);
+	}
+	if (l == 0)
+		return (VDP_bytes(req, act, pv, l));
+
 	p = pv;
+
+	if (ecx->isgzip) {
+		ecx->crc = crc32(ecx->crc, p, l);
+		ecx->l_crc += l;
+	}
 
 	lx = 65535;
 	buf1[0] = 0;
@@ -446,8 +460,6 @@ ved_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
 		}
 		if (VDP_bytes(req, VDP_NULL, p, lx))
 			return (-1);
-		req->crc = crc32(req->crc, p, lx);
-		req->l_crc += lx;
 		l -= lx;
 		p += lx;
 	}
@@ -475,9 +487,11 @@ ved_stripgzip(struct req *req)
 	void *oi;
 	void *sp;
 	ssize_t sl, ll, dl;
+	struct ecx *ecx;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+	CAST_OBJ_NOTNULL(ecx, req->transport_priv, ECX_MAGIC);
 
 	AN(ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED));
 
@@ -645,8 +659,9 @@ ved_stripgzip(struct req *req)
 
 	icrc = vle32dec(tailbuf);
 	ilen = vle32dec(tailbuf + 4);
-	req->crc = crc32_combine(req->crc, icrc, ilen);
-	req->l_crc += ilen;
+
+	ecx->crc = crc32_combine(ecx->crc, icrc, ilen);
+	ecx->l_crc += ilen;
 }
 
 /*--------------------------------------------------------------------*/
@@ -675,18 +690,18 @@ static void __match_proto__(vtr_deliver_f)
 VED_Deliver(struct req *req, struct busyobj *bo)
 {
 	int i;
-	struct req *preq;
+	struct ecx *ecx;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
-	CAST_OBJ_NOTNULL(preq, req->transport_priv, REQ_MAGIC);
+	CAST_OBJ_NOTNULL(ecx, req->transport_priv, ECX_MAGIC);
 
 	req->res_mode |= RES_ESI_CHILD;
 	i = ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED);
 	if (req->gzip_resp && i && !(req->res_mode & RES_ESI)) {
-		VDP_push(req, ved_vdp_bytes, preq, 1);
+		VDP_push(req, ved_vdp_bytes, ecx->preq, 1);
 
 		if (bo != NULL)
 			VBO_waitstate(bo, BOS_FINISHED);
@@ -694,9 +709,9 @@ VED_Deliver(struct req *req, struct busyobj *bo)
 		(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
 	} else {
 		if (req->gzip_resp && !i)
-			VDP_push(req, ved_pretend_gzip, NULL, 1);
+			VDP_push(req, ved_pretend_gzip, ecx, 1);
 
-		VDP_push(req, ved_vdp_bytes, preq, 1);
+		VDP_push(req, ved_vdp_bytes, ecx->preq, 1);
 		(void)VDP_DeliverObj(req);
 	}
 	VDP_close(req);

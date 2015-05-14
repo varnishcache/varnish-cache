@@ -595,10 +595,6 @@ struct req {
 	struct objcore		*objcore;
 	struct objcore		*stale_oc;
 
-	/* ESI delivery stuff */
-	ssize_t			l_crc;
-	uint32_t		crc;
-
 	/* Delivery mode */
 	unsigned		res_mode;
 #define RES_LEN			(1<<1)
