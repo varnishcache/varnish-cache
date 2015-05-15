@@ -100,6 +100,7 @@ struct vbc {
 	uint8_t			in_waiter;
 	uint8_t			have_been_in_waiter;
 	struct waited		waited[1];
+	struct tcp_pool		*tcp_pool;
 
 	struct backend		*backend;
 };

@@ -85,7 +85,8 @@ tcp_handle(struct waited *w, enum wait_event ev, double now)
 	CAST_OBJ_NOTNULL(vbc, w->ptr, VBC_MAGIC);
 	(void)ev;
 	(void)now;
-	tp = vbc->backend->tcp_pool;			// NB: Incestous
+	CHECK_OBJ_NOTNULL(vbc->tcp_pool, TCP_POOL_MAGIC);
+	tp = vbc->tcp_pool;
 
 	Lck_Lock(&tp->mtx);
 	VSL(SLT_Debug, 0,
@@ -388,6 +389,7 @@ VBT_Get(struct tcp_pool *tp, double tmo)
 		tp->n_conn--;
 		VSC_C_main->backend_reuse += 1;
 		vbc->state = VBC_STATE_USED;
+		assert(vbc->tcp_pool == tp);
 	}
 	tp->n_used++;			// Opening mostly works
 	Lck_Unlock(&tp->mtx);
@@ -399,6 +401,7 @@ VBT_Get(struct tcp_pool *tp, double tmo)
 	AN(vbc);
 	INIT_OBJ(vbc->waited, WAITED_MAGIC);
 	vbc->state = VBC_STATE_USED;
+	vbc->tcp_pool = tp;
 	vbc->fd = VBT_Open(tp, tmo, &vbc->addr);
 	if (vbc->fd < 0)
 		FREE_OBJ(vbc);

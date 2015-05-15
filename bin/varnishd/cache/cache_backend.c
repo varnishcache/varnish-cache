@@ -135,7 +135,7 @@ vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s",
 	    vc->fd, bp->display_name, abuf2, pbuf2, abuf1, pbuf1);
 
-	vc->backend->vsc->req++;
+	bp->vsc->req++;
 	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
 	bo->htc->vbc = vc;
 	bo->htc->fd = vc->fd;
@@ -167,11 +167,12 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
 	if (bo->htc->vbc == NULL)
 		return;
-	bp = bo->htc->vbc->backend;
+	bo->htc->vbc->backend = NULL;
 	if (bo->doclose != SC_NULL) {
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s", bo->htc->vbc->fd,
 		    bp->display_name);
@@ -187,8 +188,8 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 #define ACCT(foo)	bp->vsc->foo += bo->acct.foo;
 #include "tbl/acct_fields_bereq.h"
 #undef ACCT
-	Lck_Unlock(&bp->mtx);
 	bo->htc->vbc = NULL;
+	Lck_Unlock(&bp->mtx);
 	bo->htc = NULL;
 }
 
