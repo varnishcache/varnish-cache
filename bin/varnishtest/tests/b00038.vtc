@@ -1,18 +1,37 @@
-varnishtest "vcl_backend_fetch abandon"
+varnishtest "Test abandon from vcl_backend_xxx"
 
 server s1 {
 	rxreq
+	expect req.url == "/bar"
 	txresp
 } -start
 
-varnish v1 -vcl+backend {
+varnish v1 -arg "-pfirst_byte_timeout=0.1" -vcl+backend {
 	sub vcl_backend_fetch {
+		if (bereq.url == "/foo") {
+			return (abandon);
+		}
+	}
+	sub vcl_backend_response {
+		if (bereq.url == "/bar") {
+			return (abandon);
+		}
+	}
+	sub vcl_backend_error {
 		return (abandon);
 	}
 } -start
 
 client c1 {
-	txreq
+	txreq -url /foo
+	rxresp
+	expect resp.status == 503
+
+	txreq -url /bar
+	rxresp
+	expect resp.status == 503
+
+	txreq -url /baz
 	rxresp
 	expect resp.status == 503
 } -run

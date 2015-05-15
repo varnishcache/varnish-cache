@@ -800,14 +800,16 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	AZ(VSB_finish(synth_body));
 
-	if (wrk->handling == VCL_RET_RETRY) {
+	if (wrk->handling == VCL_RET_RETRY ||
+	    wrk->handling == VCL_RET_ABANDON) {
 		VSB_delete(synth_body);
 
 		bo->doclose = SC_RESP_CLOSE;
 		if (bo->director_state != DIR_S_NULL)
 			VDI_Finish(bo->wrk, bo);
 
-		if (bo->retries++ < cache_param->max_retries)
+		if (wrk->handling == VCL_RET_RETRY &&
+		    bo->retries++ < cache_param->max_retries)
 			return (F_STP_RETRY);
 
 		return (F_STP_FAIL);

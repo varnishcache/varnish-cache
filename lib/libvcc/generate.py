@@ -132,7 +132,7 @@ returns =(
 	),
 	('backend_error',
 		"B",
-		('deliver', 'retry')
+		('deliver', 'retry', 'abandon')
 	),
 
 	###############################################################
