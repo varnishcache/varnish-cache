@@ -78,6 +78,19 @@ The ``-a`` startup argument syntax has been expanded to allow for this::
 Both PROXY1 and PROXY2 protocols are supported on the resulting listening
 socket.
 
+For connections coming in over a PROXY socket, ``client.ip`` and
+``server.ip`` will contain the adresses given to Varnish in the PROXY
+header/preamble. (the "real" client IP.)
+
+The new VCL variables ``remote.ip`` and ``local.ip`` contains the local TCP
+connection endpoints. On non-PROXY connections these will be identical to
+``client.ip`` and ``server.ip``.
+
+An expected pattern following this is `if (std.port(local.ip) == 80) { }` in
+``vcl_recv`` to see if traffic came in over the HTTP listening socket. (so a client
+redirect to HTTPS can be served.)
+
+
 
 VMOD backends
 =============
