@@ -1,0 +1,76 @@
+varnishtest "Test req_top.* in an ESI context"
+
+varnish v1 -errvcl {Variable 'req_top.url' is read only.} {
+	sub vcl_recv {
+		set req_top.url = "/foo";
+	}
+}
+
+server s1 {
+	rxreq
+	expect req.http.top-url == "/"
+	expect req.http.top-method == "GET"
+	expect req.http.top-proto == "HTTP/1.1"
+	expect req.http.top-foo == "bar"
+	txresp -body {
+		<html>
+		Before include
+		<esi:include src="/a"/>
+		<esi:include src="/b"/>
+		After include
+		</html>
+	}
+
+	rxreq
+	expect req.url == "/a1"
+	expect req.http.top-url == "/"
+	expect req.http.top-method == "GET"
+	expect req.http.top-proto == "HTTP/1.1"
+	expect req.http.top-foo == "bar"
+	txresp -body {
+		Included file
+		<esi:include src="/c"/>
+	}
+
+	rxreq
+	expect req.http.top-url == "/"
+	expect req.http.top-method == "GET"
+	expect req.http.top-proto == "HTTP/1.1"
+	expect req.http.top-foo == "bar"
+	expect req.url == "/b1"
+	txresp
+
+	rxreq
+	expect req.http.top-url == "/"
+	expect req.http.top-method == "GET"
+	expect req.http.top-proto == "HTTP/1.1"
+	expect req.http.top-foo == "bar"
+	expect req.url == "/c2"
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.esi_level > 0) {
+			set req.url = req.url + req.esi_level;
+		} else {
+			set req.http.foo = "bar";
+		}
+
+		set req.http.top-url = req_top.url;
+		set req.http.top-method = req_top.method;
+		set req.http.top-proto = req_top.proto;
+		set req.http.top-foo = req_top.http.foo;
+	}
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -expect esi_errors == 0

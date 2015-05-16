@@ -317,6 +317,41 @@ sp_variables = [
 		always (re)fetch from the backend.
 		"""
 	),
+	('req_top.method',
+		'STRING',
+		( 'client',),
+		(), """
+		The request method of the top-level request in a tree
+		of ESI requests. (e.g. "GET", "HEAD").
+		Identical to req.method in non-ESI requests.
+		"""
+	),
+	('req_top.url',
+		'STRING',
+		( 'client',),
+		(), """
+		The requested URL of the top-level request in a tree
+		of ESI requests.
+		Identical to req.url in non-ESI requests.
+		"""
+	),
+	('req_top.http.',
+		'HEADER',
+		( 'client',),
+		(), """
+		HTTP headers of the top-level request in a tree of ESI requests.
+		Identical to req.http. in non-ESI requests.
+		"""
+	),
+	('req_top.proto',
+		'STRING',
+		( 'client',),
+		(), """
+		HTTP protocol version of the top-level request in a tree of
+		ESI requests.
+		Identical to req.proto in non-ESI requests.
+		"""
+	),
 	('bereq',
 		'HTTP',
 		( 'backend',),

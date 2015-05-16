@@ -100,6 +100,7 @@ struct vrt_ctx {
 
 	struct req			*req;
 	struct http			*http_req;
+	struct http			*http_req_top;
 	struct http			*http_resp;
 
 	struct busyobj			*bo;
@@ -136,7 +137,8 @@ struct vmod_data {
 
 /***********************************************************************/
 
-enum gethdr_e { HDR_REQ, HDR_RESP, HDR_OBJ, HDR_BEREQ, HDR_BERESP };
+enum gethdr_e { HDR_REQ, HDR_REQ_TOP, HDR_RESP, HDR_OBJ, HDR_BEREQ,
+		HDR_BERESP };
 
 struct gethdr_s {
 	enum gethdr_e	where;
