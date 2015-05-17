@@ -292,6 +292,9 @@ ban_add_lump(const struct ban *b, const void *p, uint32_t len)
 {
 	uint8_t buf[sizeof len];
 
+	buf[0] = 0xff;
+	while (VSB_len(b->vsb) & PALGN)
+		VSB_bcat(b->vsb, buf, 1);
 	vbe32enc(buf, len);
 	VSB_bcat(b->vsb, buf, sizeof buf);
 	VSB_bcat(b->vsb, p, len);
@@ -303,6 +306,8 @@ ban_get_lump(const uint8_t **bs)
 	const void *r;
 	unsigned ln;
 
+	while (**bs == 0xff)
+		*bs += 1;
 	ln = vbe32dec(*bs);
 	*bs += 4;
 	r = (const void*)*bs;
