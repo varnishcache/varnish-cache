@@ -22,11 +22,30 @@ server s1 {
 
 	delay .2
 
-	non-fatal
 	chunked "FOOBAR"
+	non-fatal
 	chunkedlen 0
+} -start
 
-	accept
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		if (beresp.http.set-cookie == "BAR") {
+			set beresp.do_stream = false;
+		}
+	}
+} -start
+
+client c1 {
+	txreq -hdr "Cookie: FOO"
+	rxresphdrs
+	expect resp.status == 200
+	expect_close
+} -run
+
+delay .1
+
+server s1 -wait {
 	fatal
 
 	# This one will not be streamed
@@ -50,30 +69,11 @@ server s1 {
 
 	delay .2
 
-	non-fatal
 	chunked "FOOBAR"
+	non-fatal
 	chunkedlen 0
 
-	accept
-
 } -start
-
-varnish v1 -vcl+backend {
-	sub vcl_backend_response {
-		if (beresp.http.set-cookie == "BAR") {
-			set beresp.do_stream = false;
-		}
-	}
-} -start
-
-client c1 {
-	txreq -hdr "Cookie: FOO"
-	rxresphdrs
-	expect resp.status == 200
-	expect_close
-} -run
-
-delay .1
 
 client c1 {
 	txreq -hdr "Cookie: BAR"
