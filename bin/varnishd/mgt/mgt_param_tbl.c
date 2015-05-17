@@ -505,7 +505,7 @@ struct parspec mgt_parspec[] = {
 	{ "sigsegv_handler", tweak_bool, &mgt_param.sigsegv_handler,
 		NULL, NULL,
 		"Install a signal handler which tries to dump debug "
-		"information on segmentation faults.",
+		"information on segmentation and buserror faults.",
 		MUST_RESTART,
 		"off", "bool" },
 	{ "vcl_dir", tweak_string, &mgt_vcl_dir,
