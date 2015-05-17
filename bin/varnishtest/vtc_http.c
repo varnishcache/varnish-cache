@@ -1217,7 +1217,7 @@ cmd_http_expect_close(CMD_ARGS)
 		i = poll(fds, 1, hp->timeout);
 		if (i == 0)
 			vtc_log(vl, hp->fatal, "Expected close: timeout");
-		if (i != 1 || !(fds[0].revents & POLLIN))
+		if (i != 1 || !(fds[0].revents & (POLLIN|POLLERR)))
 			vtc_log(vl, hp->fatal,
 			    "Expected close: poll = %d, revents = 0x%x",
 			    i, fds[0].revents);
