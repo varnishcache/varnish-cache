@@ -3,10 +3,6 @@ varnishtest	"Object/LRU/Stevedores with hinting and body alloc failures"
 server s1 {
 	rxreq
 	txresp -bodylen 1000000
-	rxreq
-	txresp -bodylen 1000001
-	rxreq
-	txresp -bodylen 1000002
 } -start
 
 varnish v1 \
@@ -35,6 +31,12 @@ varnish v1 -expect SMA.s1.g_space > 1000000
 varnish v1 -expect SMA.s2.g_bytes == 0
 varnish v1 -expect SMA.s2.g_space > 1000000
 
+server s1 -wait {
+	rxreq
+	non-fatal
+	txresp -bodylen 1000001
+} -start
+
 client c1 {
 	txreq -url /bar
 	rxresp
@@ -50,6 +52,12 @@ varnish v1 -expect SMA.s1.g_bytes == 0
 varnish v1 -expect SMA.s1.g_space > 1000000
 varnish v1 -expect SMA.s2.g_bytes == 0
 varnish v1 -expect SMA.s2.g_space > 1000000
+
+server s1 -wait {
+	rxreq
+	# non-fatal
+	txresp -bodylen 1000002
+} -start
 
 client c1 {
 	txreq -url /foo
