@@ -80,7 +80,7 @@
 #define BANS_TIMESTAMP		0
 #define BANS_LENGTH		8
 #define BANS_FLAGS		12
-#define BANS_HEAD_LEN		13
+#define BANS_HEAD_LEN		16
 
 #define BANS_FLAG_REQ		(1<<0)
 #define BANS_FLAG_OBJ		(1<<1)
@@ -514,6 +514,7 @@ BAN_Insert(struct ban *b)
 		return (ban_ins_error(NULL));
 	}
 
+	memset(b->spec, 0, BANS_HEAD_LEN);
 	t0 = VTIM_real();
 	memcpy(b->spec + BANS_TIMESTAMP, &t0, sizeof t0);
 	b->spec[BANS_FLAGS] = b->flags & 0xff;
@@ -832,7 +833,7 @@ ban_evaluate(struct worker *wrk, const uint8_t *bs, struct objcore *oc,
 	const char *arg1;
 
 	be = bs + ban_len(bs);
-	bs += 13;
+	bs += BANS_HEAD_LEN;
 	while (bs < be) {
 		(*tests)++;
 		ban_iter(&bs, &bt);
