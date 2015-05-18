@@ -111,15 +111,18 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 	default:
 		expp->ttl = -1.;
 		break;
+	case 302: /* Moved Temporarily */
+	case 307: /* Temporary Redirect */
+		expp->ttl = -1.;
 	case 200: /* OK */
 	case 203: /* Non-Authoritative Information */
+	case 204: /* No Content */
 	case 300: /* Multiple Choices */
 	case 301: /* Moved Permanently */
-	case 302: /* Moved Temporarily */
-	case 304: /* Not Modified */
-	case 307: /* Temporary Redirect */
-	case 410: /* Gone */
+	case 304: /* Not Modified - handled like 200 */
 	case 404: /* Not Found */
+	case 410: /* Gone */
+	case 414: /* Request-URI Too Large */
 		/*
 		 * First find any relative specification from the backend
 		 * These take precedence according to RFC2616, 13.2.4

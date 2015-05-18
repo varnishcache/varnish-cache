@@ -32,7 +32,7 @@ varnish v1 -cliok "ban req.url ~ .*"
 
 server s1 {
 	rxreq
-	txresp -status 302
+	txresp -status 301
 } -start
 
 varnish v1 -vcl+backend {
@@ -45,7 +45,7 @@ varnish v1 -vcl+backend {
 client c1 {
 	txreq -url "/"
 	rxresp
-	expect resp.status == 302
+	expect resp.status == 301
 	expect resp.http.X-varnish == "1007"
 } -run
 
@@ -54,7 +54,7 @@ delay .1
 client c1 {
 	txreq -url "/"
 	rxresp
-	expect resp.status == 302
+	expect resp.status == 301
 	expect resp.http.X-varnish == "1010 1008"
 } -run
 
