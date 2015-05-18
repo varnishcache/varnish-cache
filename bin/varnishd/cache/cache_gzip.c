@@ -64,6 +64,13 @@ struct vgz {
 	z_stream		vz;
 };
 
+static inline z_const char *
+vgz_msg(const struct vgz *vg)
+{
+	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
+	return vg->vz.msg ? vg->vz.msg : "(null)";
+}
+
 /*--------------------------------------------------------------------
  * Set up a gunzip instance
  */
@@ -220,7 +227,7 @@ VGZ_Gunzip(struct vgz *vg, const void **pptr, ssize_t *plen)
 		return (VGZ_END);
 	if (i == Z_BUF_ERROR)
 		return (VGZ_STUCK);
-	VSLb(vg->vsl, SLT_Gzip, "Gunzip error: %d (%s)", i, vg->vz.msg);
+	VSLb(vg->vsl, SLT_Gzip, "Gunzip error: %d (%s)", i, vgz_msg(vg));
 	return (VGZ_ERROR);
 }
 
@@ -261,7 +268,7 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, ssize_t *plen, enum vgz_flag flags)
 		return (VGZ_END);
 	if (i == Z_BUF_ERROR)
 		return (VGZ_STUCK);
-	VSLb(vg->vsl, SLT_Gzip, "Gzip error: %d (%s)", i, vg->vz.msg);
+	VSLb(vg->vsl, SLT_Gzip, "Gzip error: %d (%s)", i, vgz_msg(vg));
 	return (VGZ_ERROR);
 }
 
@@ -385,6 +392,7 @@ VGZ_Destroy(struct vgz **vgp)
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
 	*vgp = NULL;
 
+	AN(vg->id);
 	VSLb(vg->vsl, SLT_Gzip, "%s %jd %jd %jd %jd %jd",
 	    vg->id,
 	    (intmax_t)vg->vz.total_in,
@@ -408,7 +416,7 @@ VGZ_Destroy(struct vgz **vgp)
 		vr = VGZ_STUCK;
 	else {
 		VSLb(vg->vsl, SLT_Gzip, "G(un)zip error: %d (%s)",
-		    i, vg->vz.msg);
+		    i, vgz_msg(vg));
 		vr = VGZ_ERROR;
 	}
 	FREE_OBJ(vg);
@@ -505,7 +513,7 @@ vfp_gunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 				return(VFP_Error(vc, "Junk after gzip data"));
 			if (vr < VGZ_OK)
 				return (VFP_Error(vc,
-				    "Invalid Gzip data: %s", vg->vz.msg));
+				    "Invalid Gzip data: %s", vgz_msg(vg)));
 			if (dl > 0) {
 				*lp = dl;
 				assert(dp == p);
@@ -610,7 +618,7 @@ vfp_testgunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 				return(VFP_Error(vc, "Junk after gzip data"));
 			if (vr < VGZ_OK)
 				return (VFP_Error(vc,
-				    "Invalid Gzip data: %s", vg->vz.msg));
+				    "Invalid Gzip data: %s", vgz_msg(vg)));
 		} while (!VGZ_IbufEmpty(vg));
 	}
 	VGZ_UpdateObj(vc, vg, VUA_UPDATE);
