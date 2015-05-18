@@ -256,6 +256,7 @@ server_dispatch_thread(void *priv)
 		s2->run = 1;
 		AZ(pthread_create(&s2->tp, NULL, server_dispatch_wrk, s2));
 	}
+	return(NULL);
 }
 
 static void
