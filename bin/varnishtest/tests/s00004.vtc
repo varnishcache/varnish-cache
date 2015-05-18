@@ -36,7 +36,7 @@ logexpect l1 -v v1 -g request {
 	expect 0 1002	Begin		bereq
 	expect * =	Timestamp	{Start: \S+ 0\.000000 0\.000000}
 	expect * =	Timestamp	{Bereq: \S+ 0\.\d+ 0\.\d+}
-	expect * =	Timestamp	{Beresp: \S+ 1\.\d+ 1\.\d+}
+	expect * =	Timestamp	{Beresp: \S+ 1\.\d+ [01]\.\d+}
 	expect * =	Timestamp	{BerespBody: \S+ 2\.\d+ 1\.\d+}
 	expect * =	End
 	expect 0 1003	Begin		req 1001 restart
