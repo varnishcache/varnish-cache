@@ -49,9 +49,9 @@ logexpect l1 -v v1 -g session {
 	expect * =	End
 	expect 0 1003	Begin		"^req .* rxreq"
 	expect * =	End
-        expect 0 1002   Begin           "^bereq "
-        expect * =      BereqAcct       "^54 4 58 41 1000 1041$"
-        expect 0 =      End
+	expect 0 1002   Begin		"^bereq "
+	expect * =      BereqAcct       "^54 4 58 41 1000 1041$"
+	expect 0 =      End
 	expect 0 1004	Begin		"^bereq"
 	expect * =	BereqAcct	"^54 4 58 12 0 12$"
 	expect * =	End
