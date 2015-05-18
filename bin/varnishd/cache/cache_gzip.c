@@ -64,7 +64,7 @@ struct vgz {
 	z_stream		vz;
 };
 
-static inline z_const char *
+static const char *
 vgz_msg(const struct vgz *vg)
 {
 	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
