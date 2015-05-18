@@ -67,21 +67,17 @@ varnish v1 -vcl+backend {
 # HTTP/1.1 400 Bad Request\r\n	 26 bytes
 # \r\n				  2 bytes
 # Total:			 28 bytes
-logexpect l1 -v v1 -g request {
-	expect 0 1001	Begin	"^req .* rxreq"
+logexpect l1 -v v1 -g session {
+	expect * 1001	Begin	"^req .* rxreq"
 	expect * =	ReqAcct	"^38 4 42 87 1000 1087$"
 	expect 0 =	End
-	expect 0 1002	Begin	"^bereq "
-	expect * =	End
-	expect 0 1003	Begin	"^req .* rxreq"
+	expect * 1003	Begin	"^req .* rxreq"
 	expect * =	ReqAcct "^19 0 19 87 2000 2087$"
 	expect 0 =	End
-	expect 0 1004	Begin	"^bereq"
-	expect * =	End
-	expect 0 1005	Begin	"^req .* rxreq"
+	expect * 1005	Begin	"^req .* rxreq"
 	expect * =	ReqAcct "^19 0 19 87 2000 2087$"
 	expect 0 =	End
-	expect 0 1006	Begin	"^req .* rxreq"
+	expect * 1006	Begin	"^req .* rxreq"
 	expect * =	ReqAcct	"^7 0 7 28 0 28$"
 	expect 0 =	End
 } -start
