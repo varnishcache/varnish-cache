@@ -643,6 +643,7 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 
 	init_macro();
 	init_sema();
+	init_server();
 
 	/* Apply extmacro definitions */
 	VTAILQ_FOREACH(m, &extmacro_list, list)

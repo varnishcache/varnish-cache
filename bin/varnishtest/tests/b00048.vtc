@@ -1,0 +1,49 @@
+varnishtest "Run a lot of transactions through"
+
+server s0 {
+	loop 10 {
+		rxreq
+		txresp -body "foo1"
+	}
+	rxreq
+	txresp -hdr "Connection: close" -body "foo1"
+	expect_close
+} -dispatch
+
+varnish v1 -arg "-p waiter=poll" -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
+	sub vcl_backend_fetch {
+		set bereq.backend = s0;
+	}
+
+} -start
+
+client c1 {
+	loop 20 {
+		txreq -url /c1
+		rxresp
+		expect resp.status == 200
+	}
+} -start
+
+client c2 {
+	loop 20 {
+		txreq -url /c2
+		rxresp
+		expect resp.status == 200
+	}
+} -start
+
+client c3 {
+	loop 20 {
+		txreq -url /c3
+		rxresp
+		expect resp.status == 200
+	}
+} -start
+
+client c1 -wait
+client c2 -wait
+client c3 -wait

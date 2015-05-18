@@ -71,6 +71,7 @@ extern int iflg;
 extern unsigned vtc_maxdur;
 
 void init_sema(void);
+void init_server(void);
 
 int http_process(struct vtclog *vl, const char *spec, int sock, int *sfd);
 
