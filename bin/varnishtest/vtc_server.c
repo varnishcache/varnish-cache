@@ -163,8 +163,8 @@ server_start(struct server *s)
 		s->sock = VTCP_listen_on(s->listen, "0", s->depth, &err);
 		if (err != NULL)
 			vtc_log(s->vl, 0,
-			    "Server s listen address cannot be resolved: %s",
-			    err);
+			    "Server listen address (%s) cannot be resolved: %s",
+			    s->listen, err);
 		assert(s->sock > 0);
 		VTCP_myname(s->sock, s->aaddr, sizeof s->aaddr,
 		    s->aport, sizeof s->aport);
