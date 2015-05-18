@@ -141,7 +141,6 @@ vwp_main(void *priv)
 			vwp->hpoll--;
 		v = poll(vwp->pollfd, vwp->hpoll + 1, -1);
 		assert(v >= 0);
-usleep(1500000);
 		v2 = v;
 		now = VTIM_real();
 		idle = now - *vwp->waiter->tmo;
