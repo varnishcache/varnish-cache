@@ -44,17 +44,18 @@ varnish v1 -vcl+backend {
 # \r\n				  2 bytes
 # Total:			 12 bytes
 
-logexpect l1 -v v1 -g request {
-	expect 0 1001	Begin		"^req .* rxreq"
+logexpect l1 -v v1 -g session {
+	expect * 1001	Begin		"^req .* rxreq"
 	expect * =	End
-	expect 0 1002	Begin		"^bereq "
-	expect * =	BereqAcct	"^54 4 58 41 1000 1041$"
-	expect 0 =	End
 	expect 0 1003	Begin		"^req .* rxreq"
 	expect * =	End
+        expect 0 1002   Begin           "^bereq "
+        expect * =      BereqAcct       "^54 4 58 41 1000 1041$"
+        expect 0 =      End
 	expect 0 1004	Begin		"^bereq"
 	expect * =	BereqAcct	"^54 4 58 12 0 12$"
 	expect * =	End
+
 } -start
 
 # Request 1001
