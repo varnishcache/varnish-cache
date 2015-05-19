@@ -550,7 +550,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 
 	VSB_printf(pan_vsp, "version = %s\n", VCS_version);
 	VSB_printf(pan_vsp, "ident = %s,%s\n",
-	    VSB_data(vident) + 1, Wait_GetName());
+	    VSB_data(vident) + 1, Waiter_GetName());
 
 	pan_backtrace();
 

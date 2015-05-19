@@ -77,7 +77,7 @@ wait_poker_thread(void *arg)
 }
 
 const char *
-Wait_GetName(void)
+Waiter_GetName(void)
 {
 
 	if (waiter != NULL)
@@ -87,7 +87,7 @@ Wait_GetName(void)
 }
 
 struct waiter *
-Wait_New(waiter_handle_f *func, volatile double *tmo)
+Waiter_New(waiter_handle_f *func, volatile double *tmo)
 {
 	struct waiter *w;
 
@@ -120,7 +120,7 @@ Wait_New(waiter_handle_f *func, volatile double *tmo)
 }
 
 void
-Wait_Destroy(struct waiter **wp)
+Waiter_Destroy(struct waiter **wp)
 {
 	struct waiter *w;
 	struct waited *wx = NULL;
@@ -292,7 +292,7 @@ Wait_Handle(struct waiter *w, struct waited *wp, enum wait_event ev, double now)
 }
 
 void
-Wait_Init(void)
+Waiter_Init(void)
 {
 
 	Lck_New(&wait_mtx, lck_misc);

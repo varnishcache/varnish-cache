@@ -58,10 +58,10 @@ typedef void waiter_handle_f(struct waited *, enum wait_event, double now);
 
 /* cache_waiter.c */
 int Wait_Enter(const struct waiter *, struct waited *);
-struct waiter *Wait_New(waiter_handle_f *, volatile double *timeout);
-void Wait_Destroy(struct waiter **);
-const char *Wait_GetName(void);
-void Wait_Init(void);
+struct waiter *Waiter_New(waiter_handle_f *, volatile double *timeout);
+void Waiter_Destroy(struct waiter **);
+const char *Waiter_GetName(void);
+void Waiter_Init(void);
 
 /* mgt_waiter.c */
 int Wait_Argument(struct vsb *vsb, const char *arg);

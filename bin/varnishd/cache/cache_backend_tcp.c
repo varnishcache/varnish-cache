@@ -178,7 +178,7 @@ VBT_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6)
 	VTAILQ_INIT(&tp->killlist);
 	VTAILQ_INSERT_HEAD(&pools, tp, list);
 	tp->timeout = 60;
-	tp->waiter = Wait_New(tcp_handle, &tp->timeout);
+	tp->waiter = Waiter_New(tcp_handle, &tp->timeout);
 	return (tp);
 }
 
@@ -228,7 +228,7 @@ VBT_Rel(struct tcp_pool **tpp)
 	Lck_Delete(&tp->mtx);
 	AZ(tp->n_conn);
 	AZ(tp->n_kill);
-	Wait_Destroy(&tp->waiter);
+	Waiter_Destroy(&tp->waiter);
 
 	FREE_OBJ(tp);
 }

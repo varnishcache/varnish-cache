@@ -213,7 +213,7 @@ child_main(void)
 	PAN_Init();
 	VFP_Init();
 
-	Wait_Init();
+	Waiter_Init();
 
 	VCL_Init();
 
