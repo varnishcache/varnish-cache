@@ -76,91 +76,6 @@ wait_poker_thread(void *arg)
 	NEEDLESS_RETURN(NULL);
 }
 
-const char *
-Waiter_GetName(void)
-{
-
-	if (waiter != NULL)
-		return (waiter->name);
-	else
-		return ("no_waiter");
-}
-
-struct waiter *
-Waiter_New(waiter_handle_f *func, volatile double *tmo)
-{
-	struct waiter *w;
-
-	AN(waiter);
-	AN(waiter->name);
-	AN(waiter->init);
-
-	w = calloc(1, sizeof (struct waiter) + waiter->size);
-	AN(w);
-	INIT_OBJ(w, WAITER_MAGIC);
-	w->priv = (void*)(w + 1);
-	w->impl = waiter;
-	w->func = func;
-	w->tmo = tmo;
-	w->pipes[0] = w->pipes[1] = -1;
-	VTAILQ_INIT(&w->waithead);
-
-	waiter->init(w);
-	AN(w->impl->pass || w->pipes[1] >= 0);
-
-	Lck_Lock(&wait_mtx);
-	VTAILQ_INSERT_TAIL(&waiters, w, list);
-	nwaiters++;
-
-	/* We assume all waiters either use pipes or don't use pipes */
-	if (w->pipes[1] >= 0 && nwaiters == 1)
-		AZ(pthread_create(&wait_thr, NULL, wait_poker_thread, NULL));
-	Lck_Unlock(&wait_mtx);
-	return (w);
-}
-
-void
-Waiter_Destroy(struct waiter **wp)
-{
-	struct waiter *w;
-	struct waited *wx = NULL;
-	int written;
-	double now;
-
-	AN(wp);
-	w = *wp;
-	*wp = NULL;
-	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
-
-	Lck_Lock(&wait_mtx);
-	VTAILQ_REMOVE(&waiters, w, list);
-	w->dismantle = 1;
-	Lck_Unlock(&wait_mtx);
-
-	if (w->pipes[1] >= 0) {
-		while (1) {
-			written = write(w->pipes[1], &wx, sizeof wx);
-			if (written == sizeof wx)
-				break;
-			(void)usleep(10000);
-		}
-	}
-	AN(w->impl->fini);
-	w->impl->fini(w);
-	now = VTIM_real();
-	while (1) {
-		wx = VTAILQ_FIRST(&w->waithead);
-		if (wx == NULL)
-			break;
-		VTAILQ_REMOVE(&w->waithead, wx, list);
-		if (wx == w->pipe_w)
-			FREE_OBJ(wx);
-		else
-			w->func(wx, WAITER_CLOSE, now);
-	}
-	FREE_OBJ(w);
-}
-
 void
 Wait_UsePipe(struct waiter *w)
 {
@@ -289,6 +204,93 @@ Wait_Handle(struct waiter *w, struct waited *wp, enum wait_event ev, double now)
 		w->func(wp, WAITER_TIMEOUT, now);
 	}
 	wait_updidle(w, now);
+}
+
+/**********************************************************************/
+
+const char *
+Waiter_GetName(void)
+{
+
+	if (waiter != NULL)
+		return (waiter->name);
+	else
+		return ("no_waiter");
+}
+
+struct waiter *
+Waiter_New(waiter_handle_f *func, volatile double *tmo)
+{
+	struct waiter *w;
+
+	AN(waiter);
+	AN(waiter->name);
+	AN(waiter->init);
+
+	w = calloc(1, sizeof (struct waiter) + waiter->size);
+	AN(w);
+	INIT_OBJ(w, WAITER_MAGIC);
+	w->priv = (void*)(w + 1);
+	w->impl = waiter;
+	w->func = func;
+	w->tmo = tmo;
+	w->pipes[0] = w->pipes[1] = -1;
+	VTAILQ_INIT(&w->waithead);
+
+	waiter->init(w);
+	AN(w->impl->pass || w->pipes[1] >= 0);
+
+	Lck_Lock(&wait_mtx);
+	VTAILQ_INSERT_TAIL(&waiters, w, list);
+	nwaiters++;
+
+	/* We assume all waiters either use pipes or don't use pipes */
+	if (w->pipes[1] >= 0 && nwaiters == 1)
+		AZ(pthread_create(&wait_thr, NULL, wait_poker_thread, NULL));
+	Lck_Unlock(&wait_mtx);
+	return (w);
+}
+
+void
+Waiter_Destroy(struct waiter **wp)
+{
+	struct waiter *w;
+	struct waited *wx = NULL;
+	int written;
+	double now;
+
+	AN(wp);
+	w = *wp;
+	*wp = NULL;
+	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
+
+	Lck_Lock(&wait_mtx);
+	VTAILQ_REMOVE(&waiters, w, list);
+	w->dismantle = 1;
+	Lck_Unlock(&wait_mtx);
+
+	if (w->pipes[1] >= 0) {
+		while (1) {
+			written = write(w->pipes[1], &wx, sizeof wx);
+			if (written == sizeof wx)
+				break;
+			(void)usleep(10000);
+		}
+	}
+	AN(w->impl->fini);
+	w->impl->fini(w);
+	now = VTIM_real();
+	while (1) {
+		wx = VTAILQ_FIRST(&w->waithead);
+		if (wx == NULL)
+			break;
+		VTAILQ_REMOVE(&w->waithead, wx, list);
+		if (wx == w->pipe_w)
+			FREE_OBJ(wx);
+		else
+			w->func(wx, WAITER_CLOSE, now);
+	}
+	FREE_OBJ(w);
 }
 
 void
