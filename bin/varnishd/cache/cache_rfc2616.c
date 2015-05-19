@@ -120,6 +120,7 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 		 * or Expires are present. Uncacheable otherwise.
 		 */
 		expp->ttl = -1.;	/* fall through */
+		/* FALL-THROUGH */
 	case 200: /* OK */
 	case 203: /* Non-Authoritative Information */
 	case 204: /* No Content */
