@@ -31,6 +31,7 @@
  * write the session pointer to a pipe which the event engine monitors.
  */
 
+#if 0
 #include "config.h"
 
 #if defined(HAVE_KQUEUE)
@@ -214,3 +215,4 @@ const struct waiter_impl waiter_kqueue = {
 };
 
 #endif /* defined(HAVE_KQUEUE) */
+#endif

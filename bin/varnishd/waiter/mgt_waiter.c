@@ -39,6 +39,7 @@
 #include "waiter/waiter_priv.h"
 
 static const struct waiter_impl *const waiter_impls[] = {
+#if 0
     #if defined(HAVE_KQUEUE)
 	&waiter_kqueue,
     #endif
@@ -48,6 +49,7 @@ static const struct waiter_impl *const waiter_impls[] = {
     #if defined(HAVE_PORT_CREATE)
 	&waiter_ports,
     #endif
+#endif
 	&waiter_poll,
 	NULL,
 };

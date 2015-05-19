@@ -31,6 +31,7 @@
  * write the session pointer to a pipe which the event engine monitors.
  */
 
+#if 0
 #include "config.h"
 
 #if defined(HAVE_EPOLL_CTL)
@@ -165,3 +166,4 @@ const struct waiter_impl waiter_epoll = {
 };
 
 #endif /* defined(HAVE_EPOLL_CTL) */
+#endif

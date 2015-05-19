@@ -29,6 +29,7 @@
  *
  */
 
+#if 0
 #include "config.h"
 
 #if defined(HAVE_PORT_CREATE)
@@ -291,3 +292,4 @@ const struct waiter_impl waiter_ports = {
 };
 
 #endif /* defined(HAVE_PORT_CREATE) */
+#endif
