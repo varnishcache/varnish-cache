@@ -45,7 +45,7 @@ Requires(postun): systemd-units
 BuildRequires: systemd-units
 %endif
 
-# Varnish actually needs gcc installed to work. It uses the C compiler 
+# Varnish actually needs gcc installed to work. It uses the C compiler
 # at runtime to compile the VCL configuration files. This is by design.
 Requires: gcc
 
@@ -272,13 +272,13 @@ exit 0
 %else
 /sbin/chkconfig --add varnish
 /sbin/chkconfig --add varnishlog
-/sbin/chkconfig --add varnishncsa 
+/sbin/chkconfig --add varnishncsa
 %endif
 test -f /etc/varnish/secret || (uuidgen > /etc/varnish/secret && chmod 0600 /etc/varnish/secret)
 
 %triggerun -- varnish < 3.0.2-1
 # Save the current service runlevel info
-# User must manually run systemd-sysv-convert --apply varnish 
+# User must manually run systemd-sysv-convert --apply varnish
 # to migrate them to systemd targets
 %{_bindir}/systemd-sysv-convert --save varnish >/dev/null 2>&1 ||:
 
@@ -301,7 +301,7 @@ if [ $1 -lt 1 ]; then
   /sbin/service varnishncsa stop > /dev/null 2>%1
   /sbin/chkconfig --del varnish
   /sbin/chkconfig --del varnishlog
-  /sbin/chkconfig --del varnishncsa 
+  /sbin/chkconfig --del varnishncsa
   %endif
 fi
 
@@ -317,10 +317,10 @@ fi
 * Tue Mar 06 2012 Ingvar Hagelund <ingvar@redpill-linpro.com> - 3.0.2-1
 - New upstream version 3.0.2
 - Removed INSTALL as requested by rpmlint
-- Added a ld.so.conf.d fragment file listing libdir/varnish 
+- Added a ld.so.conf.d fragment file listing libdir/varnish
 - Removed redundant doc/html/_sources
 - systemd support from fedora 17
-- Stopped using macros for make and install, according to 
+- Stopped using macros for make and install, according to
   Fedora's packaging guidelines
 - Changes merged from upstream:
   - Added suse_version macro
@@ -408,8 +408,8 @@ fi
 
 * Tue Apr 06 2010 Ingvar Hagelund <ingvar@linpro.no> - 2.1.0-1
 - New upstream release; note: Configuration changes, see the README
-- Removed unneeded patches 
-- CVE-2009-2936: Added a patch from Debian that adds the -S option 
+- Removed unneeded patches
+- CVE-2009-2936: Added a patch from Debian that adds the -S option
   to the varnisdh(1) manpage and to the sysconfig defaults, thus
   password-protecting the admin interface port (#579536,#579533)
 - Generates that password in the post script, requires mkpasswd
@@ -440,7 +440,7 @@ fi
 - Added a s390 specific patch to libjemalloc.
 
 * Fri Mar 27 2009 Ingvar Hagelund <ingvar@linpro.no> - 2.0.4-1
-  New upstream release 2.0.4 
+  New upstream release 2.0.4
 
 * Wed Feb 25 2009 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.0.3-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_11_Mass_Rebuild
@@ -539,7 +539,7 @@ fi
 
 * Fri Sep 07 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.1.1-3
 - Added a patch, changeset 1913 from svn trunk. This makes varnish
-  more stable under specific loads. 
+  more stable under specific loads.
 
 * Thu Sep 06 2007 Ingvar Hagelund <ingvar@linpro.no> - 1.1.1-2
 - Removed autogen call (only diff from relase tarball)
@@ -584,7 +584,7 @@ fi
 - Fixed inconsistently use of brackets in macros
 - Added a condrestart to the initscript
 - All manfiles included, not just the compressed ones
-- Removed explicit requirement for ncurses. rpmbuild figures out the 
+- Removed explicit requirement for ncurses. rpmbuild figures out the
   correct deps by itself.
 - Added ulimit value to initskript and sysconfig file
 - Many thanks to Matthias Saou for valuable input
