@@ -113,7 +113,13 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 		break;
 	case 302: /* Moved Temporarily */
 	case 307: /* Temporary Redirect */
-		expp->ttl = -1.;
+		/*
+		 * https://tools.ietf.org/html/rfc7231#section-6.1
+		 *
+		 * Do not apply the default ttl, only set a ttl if Cache-Control
+		 * or Expires are present. Uncacheable otherwise.
+		 */
+		expp->ttl = -1.;	/* fall through */
 	case 200: /* OK */
 	case 203: /* Non-Authoritative Information */
 	case 204: /* No Content */
