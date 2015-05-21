@@ -55,6 +55,7 @@ struct vwk {
 
 	VTAILQ_HEAD(,waited)	list;
 	struct lock		mtx;
+	int			die;
 };
 
 /*--------------------------------------------------------------------*/
@@ -78,45 +79,44 @@ vwk_thread(void *priv)
 		ts.tv_sec = (time_t)floor(now);
 		ts.tv_nsec = (long)(1e9 * (now - ts.tv_sec));
 		n = kevent(vwk->kq, NULL, 0, ke, NKEV, &ts);
-		if (n < 0 && errno == EBADF)
+		if (n < 0 && vwk->die)
 			break;
+		assert(n >= 0);
 		assert(n <= NKEV);
 		now = VTIM_real();
-		idle = now - *vwk->waiter->tmo;
 		for (kp = ke, j = 0; j < n; j++, kp++) {
 			assert(kp->filter == EVFILT_READ);
 			CAST_OBJ_NOTNULL(wp, ke[j].udata, WAITED_MAGIC);
 			Lck_Lock(&vwk->mtx);
 			VTAILQ_REMOVE(&vwk->list, wp, list);
 			Lck_Unlock(&vwk->mtx);
-			if (wp->idle <= idle)
-				vwk->waiter->func(wp, WAITER_TIMEOUT, now);
-			else if (kp->flags & EV_EOF)
+			if (kp->flags & EV_EOF)
 				vwk->waiter->func(wp, WAITER_REMCLOSE, now);
 			else
 				vwk->waiter->func(wp, WAITER_ACTION, now);
 		}
-		if (now - last_idle > .3 * *vwk->waiter->tmo) {
-			last_idle = now;
-			n = 0;
-			Lck_Lock(&vwk->mtx);
-			VTAILQ_FOREACH_SAFE(wp, &vwk->list, list, wp2) {
-				if (wp->idle > idle)
-					continue;
-				EV_SET(ke + n, wp->fd,
-				    EVFILT_READ, EV_DELETE, 0, 0, wp);
-				if (++n == NKEV)
-					break;
-			}
-			if (n > 0)
-				AZ(kevent(vwk->kq, ke, n, NULL, 0, NULL));
-			for (j = 0; j < n; j++) {
-				CAST_OBJ_NOTNULL(wp, ke[j].udata, WAITED_MAGIC);
-				VTAILQ_REMOVE(&vwk->list, wp, list);
-				vwk->waiter->func(wp, WAITER_TIMEOUT, now);
-			}
-			Lck_Unlock(&vwk->mtx);
+		idle = now - *vwk->waiter->tmo;
+		if (now - last_idle < .3 * *vwk->waiter->tmo)
+			continue;
+		last_idle = now;
+		n = 0;
+		Lck_Lock(&vwk->mtx);
+		VTAILQ_FOREACH_SAFE(wp, &vwk->list, list, wp2) {
+			if (wp->idle > idle)
+				continue;
+			EV_SET(ke + n, wp->fd,
+			    EVFILT_READ, EV_DELETE, 0, 0, wp);
+			if (++n == NKEV)
+				break;
 		}
+		if (n > 0)
+			AZ(kevent(vwk->kq, ke, n, NULL, 0, NULL));
+		for (j = 0; j < n; j++) {
+			CAST_OBJ_NOTNULL(wp, ke[j].udata, WAITED_MAGIC);
+			VTAILQ_REMOVE(&vwk->list, wp, list);
+			vwk->waiter->func(wp, WAITER_TIMEOUT, now);
+		}
+		Lck_Unlock(&vwk->mtx);
 	}
 	return(NULL);
 }
@@ -168,6 +168,7 @@ vwk_fini(struct waiter *w)
 {
 	struct vwk *vwk;
 	void *vp;
+	int i;
 
 	CAST_OBJ_NOTNULL(vwk, w->priv, VWK_MAGIC);
 	Lck_Lock(&vwk->mtx);
@@ -176,8 +177,10 @@ vwk_fini(struct waiter *w)
 		(void)usleep(100000);
 		Lck_Lock(&vwk->mtx);
 	}
-	AZ(close(vwk->kq));
+	vwk->die = 1;
+	i = vwk->kq;
 	vwk->kq = -1;
+	AZ(close(i));
 	Lck_Unlock(&vwk->mtx);
 	AZ(pthread_join(vwk->thread, &vp));
 	Lck_Delete(&vwk->mtx);
