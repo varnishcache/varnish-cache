@@ -42,10 +42,10 @@ static const struct waiter_impl *const waiter_impls[] = {
     #if defined(HAVE_KQUEUE)
 	&waiter_kqueue,
     #endif
-#if 0
     #if defined(HAVE_EPOLL_CTL)
 	&waiter_epoll,
     #endif
+#if 0
     #if defined(HAVE_PORT_CREATE)
 	&waiter_ports,
     #endif
