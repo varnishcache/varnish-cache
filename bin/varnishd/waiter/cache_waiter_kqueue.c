@@ -180,6 +180,7 @@ vwk_fini(struct waiter *w)
 	vwk->kq = -1;
 	Lck_Unlock(&vwk->mtx);
 	AZ(pthread_join(vwk->thread, &vp));
+	Lck_Delete(&vwk->mtx);
 }
 
 /*--------------------------------------------------------------------*/
