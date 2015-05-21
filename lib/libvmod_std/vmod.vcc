@@ -30,7 +30,7 @@ $Module std 3 Varnish Standard Module
 DESCRIPTION
 ===========
 
-Vmod_std contains basic functions which are part and parcel of Varnish,
+`vmod_std` contains basic functions which are part and parcel of Varnish,
 but which for reasons of architecture fit better in a VMOD.
 
 One particular class of functions in vmod_std is the conversions functions
