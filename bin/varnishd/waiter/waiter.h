@@ -61,7 +61,6 @@ int Wait_Enter(const struct waiter *, struct waited *);
 struct waiter *Waiter_New(waiter_handle_f *, volatile double *timeout);
 void Waiter_Destroy(struct waiter **);
 const char *Waiter_GetName(void);
-void Waiter_Init(void);
 
 /* mgt_waiter.c */
 int Wait_Argument(struct vsb *vsb, const char *arg);

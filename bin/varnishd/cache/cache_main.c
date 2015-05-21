@@ -37,7 +37,6 @@
 
 #include "vcli_priv.h"
 #include "vrnd.h"
-#include "waiter/waiter.h"
 
 #include "hash/hash_slinger.h"
 
@@ -212,8 +211,6 @@ child_main(void)
 	CLI_Init();
 	PAN_Init();
 	VFP_Init();
-
-	Waiter_Init();
 
 	VCL_Init();
 

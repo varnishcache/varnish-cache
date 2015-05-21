@@ -33,27 +33,25 @@ struct waited;
 
 struct waiter {
 	unsigned			magic;
-	#define WAITER_MAGIC		0x17c399db
+#define WAITER_MAGIC			0x17c399db
 	const struct waiter_impl	*impl;
 	VTAILQ_ENTRY(waiter)		list;
+	VTAILQ_HEAD(,waited)		waithead;
+
 	int				dismantle;
 
 	waiter_handle_f *		func;
 
-	int				pipes[2];
-	struct waited			*pipe_w;
 	double				next_idle;
-	int				do_pipe;
 
 	volatile double			*tmo;
-	VTAILQ_HEAD(,waited)		waithead;
 
 	void				*priv;
 };
 
 typedef void waiter_init_f(struct waiter *);
 typedef void waiter_fini_f(struct waiter *);
-typedef int waiter_pass_f(void *priv, struct waited *);
+typedef int waiter_enter_f(void *priv, struct waited *);
 typedef void waiter_inject_f(const struct waiter *, struct waited *);
 typedef void waiter_evict_f(const struct waiter *, struct waited *);
 
@@ -61,15 +59,10 @@ struct waiter_impl {
 	const char		*name;
 	waiter_init_f		*init;
 	waiter_fini_f		*fini;
-	waiter_pass_f		*pass;
+	waiter_enter_f		*enter;
 	waiter_inject_f		*inject;
-	waiter_evict_f		*evict;
 	size_t			size;
 };
-
-/* cache_waiter.c */
-void Wait_Handle(struct waiter *, struct waited *, enum wait_event, double now);
-void Wait_UsePipe(struct waiter *w);
 
 /* mgt_waiter.c */
 extern struct waiter_impl const * waiter;

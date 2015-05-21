@@ -374,7 +374,6 @@ struct waited {
 	unsigned		magic;
 #define WAITED_MAGIC		0x1743992d
 	int			fd;
-	VTAILQ_ENTRY(waited)	list;
 	void			*ptr;
 	double			idle;
 };
