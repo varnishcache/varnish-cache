@@ -105,6 +105,7 @@ V1P_Process(struct req *req, struct busyobj *bo, int fd)
 	wrk = req->wrk;
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	assert(fd > 0);
 
 	req->res_mode = RES_PIPE;
 
@@ -112,12 +113,8 @@ V1P_Process(struct req *req, struct busyobj *bo, int fd)
 	acct_pipe.req = req->acct.req_hdrbytes;
 	req->acct.req_hdrbytes = 0;
 
-	if (fd < 0) {
-		pipecharge(req, &acct_pipe, NULL);
-		SES_Close(req->sp, SC_OVERLOAD);
-		return;
-	}
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->htc->vbc, VBC_MAGIC);
 	bo->wrk = req->wrk;
 	bo->director_state = DIR_S_BODY;
 	(void)VTCP_blocking(fd);
@@ -134,6 +131,9 @@ V1P_Process(struct req *req, struct busyobj *bo, int fd)
 	VSLb_ts_req(req, "Pipe", W_TIM_real(wrk));
 
 	if (i == 0) {
+		if (bo->htc->vbc->state == VBC_STATE_STOLEN)
+			VBT_Wait(req->wrk, bo->htc->vbc);
+
 		memset(fds, 0, sizeof fds);
 		fds[0].fd = fd;
 		fds[0].events = POLLIN | POLLERR;

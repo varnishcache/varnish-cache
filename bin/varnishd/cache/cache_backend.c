@@ -78,7 +78,7 @@ VBE_Healthy(const struct backend *backend, double *changed)
  */
 
 static int __match_proto__(vdi_getfd_f)
-vbe_dir_getfd(const struct director *d, struct busyobj *bo)
+vbe_dir_getfd(struct worker *wrk, const struct director *d, struct busyobj *bo)
 {
 	struct vbc *vc;
 	struct backend *bp;
@@ -87,6 +87,7 @@ vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 	char abuf1[VTCP_ADDRBUFSIZE], abuf2[VTCP_ADDRBUFSIZE];
 	char pbuf1[VTCP_PORTBUFSIZE], pbuf2[VTCP_PORTBUFSIZE];
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
@@ -112,7 +113,7 @@ vbe_dir_getfd(const struct director *d, struct busyobj *bo)
 		return (-1);
 
 	FIND_TMO(connect_timeout, tmod, bo, vrt);
-	vc = VBT_Get(bp->tcp_pool, tmod);
+	vc = VBT_Get(bp->tcp_pool, tmod, bp, wrk);
 	if (vc == NULL) {
 		// XXX: Per backend stats ?
 		VSC_C_main->backend_fail++;
@@ -197,7 +198,7 @@ static int __match_proto__(vdi_gethdrs_f)
 vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
 {
-	int i;
+	int i, extrachance = 0;
 	const struct vrt_backend *vrt;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
@@ -205,12 +206,14 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CAST_OBJ_NOTNULL(vrt, d->priv2, VRT_BACKEND_MAGIC);
 
-	i = vbe_dir_getfd(d, bo);
+	i = vbe_dir_getfd(wrk, d, bo);
 	if (i < 0) {
 		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 		return (-1);
 	}
 	AN(bo->htc);
+	if (bo->htc->vbc->state == VBC_STATE_STOLEN)
+		extrachance = 1;
 
 	i = V1F_fetch_hdr(wrk, bo, vrt->hosthdr);
 	/*
@@ -218,12 +221,12 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 	 * that the backend closed it before we get a request to it.
 	 * Do a single retry in that case.
 	 */
-	if (i == 1 && bo->htc->vbc->recycled) {
+	if (i == 1 && extrachance) {
 		vbe_dir_finish(d, wrk, bo);
 		AZ(bo->htc);
 		VSC_C_main->backend_retry++;
 		bo->doclose = SC_NULL;
-		i = vbe_dir_getfd(d, bo);
+		i = vbe_dir_getfd(wrk, d, bo);
 		if (i < 0) {
 			VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 			bo->htc = NULL;
@@ -281,13 +284,15 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	i = vbe_dir_getfd(d, bo);
+	i = vbe_dir_getfd(req->wrk, d, bo);
 	if (i < 0) {
 		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
+		SES_Close(req->sp, SC_RX_TIMEOUT);
 		return;
+	} else {
+		V1P_Process(req, bo, i);
+		vbe_dir_finish(d, req->wrk, bo);
 	}
-	V1P_Process(req, bo, i);
-	vbe_dir_finish(d, bo->wrk, bo);
 }
 
 /*--------------------------------------------------------------------*/

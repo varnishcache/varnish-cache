@@ -62,7 +62,16 @@ struct vwp {
 static void
 vwp_extend_pollspace(struct vwp *vwp)
 {
-	size_t inc = (1<<16);
+	size_t inc;
+
+	if (vwp->npoll < (1<<12))
+		inc = (1<<10);
+	else if (vwp->npoll < (1<<14))
+		inc = (1<<12);
+	else if (vwp->npoll < (1<<16))
+		inc = (1<<14);
+	else
+		inc = (1<<16);
 
 	VSL(SLT_Debug, 0, "Acceptor poll space increased by %zu to %zu",
 	    inc, vwp->npoll + inc);
@@ -86,6 +95,8 @@ static void
 vwp_add(struct vwp *vwp, struct waited *w)
 {
 
+	CHECK_OBJ_NOTNULL(w, WAITED_MAGIC);
+	CHECK_OBJ_NOTNULL(vwp, VWP_MAGIC);
 	if (vwp->hpoll == vwp->npoll)
 		vwp_extend_pollspace(vwp);
 	assert(vwp->hpoll < vwp->npoll);
@@ -123,9 +134,15 @@ vwp_dopipe(struct vwp *vwp)
 	assert(ss > 0);
 	i = 0;
 	while (ss) {
+		if (w[i] == NULL) {
+			assert(ss == sizeof w[0]);
+			assert(vwp->hpoll == 1);
+			pthread_exit(NULL);
+		}
 		CHECK_OBJ_NOTNULL(w[i], WAITED_MAGIC);
 		assert(w[i]->fd > 0);			// no stdin
 		vwp_add(vwp, w[i++]);
+		ss -= sizeof w[0];
 	}
 }
 
@@ -134,47 +151,49 @@ vwp_dopipe(struct vwp *vwp)
 static void *
 vwp_main(void *priv)
 {
-	int v, v2;
+	int v;
 	struct vwp *vwp;
 	struct waited *wp;
 	double now, idle;
-	int i;
+	int i, dopipe;
 
-	CAST_OBJ_NOTNULL(vwp, priv, VWP_MAGIC);
 	THR_SetName("cache-poll");
+	CAST_OBJ_NOTNULL(vwp, priv, VWP_MAGIC);
 
 	while (1) {
-		// Try to keep the high point as low as possible
-		assert(vwp->hpoll < vwp->npoll);
-		while (vwp->hpoll > 0 && vwp->pollfd[vwp->hpoll].fd == -1)
-			vwp->hpoll--;
-
-		// XXX: sleep on ->tmo
-		v = poll(vwp->pollfd, vwp->hpoll + 1, -1);
+		v = poll(vwp->pollfd, vwp->hpoll,
+		    (int)floor(1e3 * *vwp->waiter->tmo));
 		assert(v >= 0);
-		v2 = v;
+		if (v == 0)
+			v = vwp->hpoll;
 		now = VTIM_real();
 		idle = now - *vwp->waiter->tmo;
-		i = 1;
-		while (v2 > 0 && i < vwp->hpoll) {
+		i = 0;
+		dopipe = 0;
+		while (v > 0 && i < vwp->hpoll) {
+			if (vwp->pollfd[i].revents)
+				v--;
+			if (vwp->pollfd[i].fd == vwp->pipes[0]) {
+				if (vwp->pollfd[i].revents)
+					dopipe = 1;
+				i++;
+				continue;
+			}
 			wp = vwp->idx[i];
 			CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
-			if (vwp->pollfd[i].revents != 0) {
-				v2--;
+			if (wp->idle <= idle) {
+				vwp->waiter->func(wp, WAITER_TIMEOUT, now);
+				vwp_del(vwp, i);
+			} else if (vwp->pollfd[i].revents & POLLIN) {
 				assert(wp->fd > 0);
 				assert(wp->fd == vwp->pollfd[i].fd);
-				VSL(SLT_Debug, wp->fd, "POLL Handle %d %x",
-				    wp->fd, vwp->pollfd[i].revents);
-				vwp_del(vwp, i);
 				vwp->waiter->func(wp, WAITER_ACTION, now);
-			} else if (wp->idle <= idle) {
 				vwp_del(vwp, i);
-				vwp->waiter->func(wp, WAITER_TIMEOUT, now);
 			} else {
 				i++;
 			}
 		}
-		if (vwp->pollfd[0].revents)
+		if (dopipe)
 			vwp_dopipe(vwp);
 	}
 	NEEDLESS_RETURN(NULL);
@@ -208,10 +227,10 @@ vwp_init(struct waiter *w)
 	AZ(pipe(vwp->pipes));
 	// XXX: set write pipe non-blocking
 
+	vwp->hpoll = 1;
 	vwp_extend_pollspace(vwp);
 	vwp->pollfd[0].fd = vwp->pipes[0];
 	vwp->pollfd[0].events = POLLIN;
-	vwp->hpoll = 1;
 	AZ(pthread_create(&vwp->thread, NULL, vwp_main, vwp));
 }
 
@@ -228,7 +247,10 @@ vwp_fini(struct waiter *w)
 	// XXX: set write pipe blocking
 	assert(write(vwp->pipes[1], &vp, sizeof vp) == sizeof vp);
 	AZ(pthread_join(vwp->thread, &vp));
+	AZ(close(vwp->pipes[0]));
+	AZ(close(vwp->pipes[1]));
 	free(vwp->pollfd);
+	free(vwp->idx);
 }
 
 /*--------------------------------------------------------------------*/

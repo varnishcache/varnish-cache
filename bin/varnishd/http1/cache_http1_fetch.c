@@ -37,6 +37,7 @@
 
 #include "hash/hash_slinger.h"
 
+#include "cache/cache_backend.h"
 #include "cache/cache_director.h"
 #include "vcli_priv.h"
 #include "vtcp.h"
@@ -143,6 +144,11 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 	VSC_C_main->backend_req++;
 
 	/* Receive response */
+
+	if (htc->vbc->state != VBC_STATE_USED)
+		VBT_Wait(wrk, htc->vbc);
+
+	assert(htc->vbc->state == VBC_STATE_USED);
 
 	SES_RxInit(htc, bo->ws, cache_param->http_resp_size,
 	    cache_param->http_resp_hdr_len);

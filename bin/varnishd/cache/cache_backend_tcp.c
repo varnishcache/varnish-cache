@@ -44,7 +44,6 @@
 #include "waiter/waiter.h"
 #include "vtim.h"
 
-
 struct tcp_pool {
 	unsigned		magic;
 #define TCP_POOL_MAGIC		0x28b0e42a
@@ -89,34 +88,20 @@ tcp_handle(struct waited *w, enum wait_event ev, double now)
 	tp = vbc->tcp_pool;
 
 	Lck_Lock(&tp->mtx);
-	VSL(SLT_Debug, 0,
-	    "------> Handler fd %d in_w %d state 0x%x ev %d have_been %d",
-	    vbc->fd, vbc->in_waiter, vbc->state, ev, vbc->have_been_in_waiter);
-	AN(vbc->in_waiter);
 
 	switch(vbc->state) {
 	case VBC_STATE_STOLEN:
-		vbc->state = VBC_STATE_AVAIL;
+		vbc->state = VBC_STATE_USED;
 		VTAILQ_REMOVE(&tp->connlist, vbc, list);
-		if (Wait_Enter(tp->waiter, vbc->waited)) {
-			VSL(SLT_Debug, 0,
-			    "------> Handler stolen -> re-wait failed");
-			VTCP_close(&vbc->fd);
-			tp->n_conn--;
-			FREE_OBJ(vbc);
-		} else {
-			VTAILQ_INSERT_HEAD(&tp->connlist, vbc, list);
-		}
+		CHECK_OBJ_NOTNULL(vbc->backend, BACKEND_MAGIC);
+		CHECK_OBJ_NOTNULL(vbc->wrk, WORKER_MAGIC);
+		AZ(pthread_cond_signal(&vbc->wrk->cond));
 		break;
 	case VBC_STATE_AVAIL:
 		VTCP_close(&vbc->fd);
 		VTAILQ_REMOVE(&tp->connlist, vbc, list);
 		tp->n_conn--;
 		FREE_OBJ(vbc);
-		break;
-	case VBC_STATE_USED:
-		vbc->in_waiter = 0;
-		vbc->have_been_in_waiter = 1;
 		break;
 	case VBC_STATE_CLEANUP:
 		VTCP_close(&vbc->fd);
@@ -208,16 +193,11 @@ VBT_Rel(struct tcp_pool **tpp)
 	VTAILQ_FOREACH_SAFE(vbc, &tp->connlist, list, vbc2) {
 		VTAILQ_REMOVE(&tp->connlist, vbc, list);
 		tp->n_conn--;
-		if (vbc->in_waiter) {
-			vbc->state = VBC_STATE_CLEANUP;
-			shutdown(vbc->fd, SHUT_WR);
-			VTAILQ_INSERT_TAIL(&tp->killlist, vbc, list);
-			tp->n_kill++;
-		} else {
-			VTCP_close(&vbc->fd);
-			memset(vbc, 0x22, sizeof *vbc);
-			free(vbc);
-		}
+		assert(vbc->state == VBC_STATE_AVAIL);
+		vbc->state = VBC_STATE_CLEANUP;
+		(void)shutdown(vbc->fd, SHUT_WR);
+		VTAILQ_INSERT_TAIL(&tp->killlist, vbc, list);
+		tp->n_kill++;
 	}
 	while (tp->n_kill) {
 		Lck_Unlock(&tp->mtx);
@@ -279,39 +259,30 @@ VBT_Recycle(struct tcp_pool *tp, struct vbc **vbcp)
 
 	assert(vbc->state == VBC_STATE_USED);
 	assert(vbc->fd > 0);
+	AZ(vbc->backend);
 
 	Lck_Lock(&tp->mtx);
 	tp->n_used--;
 
-	VSL(SLT_Debug, 0, "------> Recycle fd %d in_w %d",
-	    vbc->fd, vbc->in_waiter);
-
-	if (!vbc->in_waiter) {
-		vbc->in_waiter = 1;
-		vbc->waited->ptr = vbc;
-		vbc->waited->fd = vbc->fd;
-		vbc->waited->idle = VTIM_real();
-		vbc->state = VBC_STATE_AVAIL;
-		VSL(SLT_Debug, 0, "------> Recycle fd %d Wait_Enter", vbc->fd);
-		if (Wait_Enter(tp->waiter, vbc->waited)) {
-			VTCP_close(&vbc->fd);
-			memset(vbc, 0x33, sizeof *vbc);
-			free(vbc);
-			vbc = NULL;
-		} else {
-			VTAILQ_INSERT_HEAD(&tp->connlist, vbc, list);
-		}
-		i = 1;
+	vbc->waited->ptr = vbc;
+	vbc->waited->fd = vbc->fd;
+	vbc->waited->idle = VTIM_real();
+	vbc->state = VBC_STATE_AVAIL;
+	if (Wait_Enter(tp->waiter, vbc->waited)) {
+		VTCP_close(&vbc->fd);
+		memset(vbc, 0x33, sizeof *vbc);
+		free(vbc);
+		// XXX: stats
+		vbc = NULL;
 	} else {
-		vbc->state = VBC_STATE_STOLEN;
-		VTAILQ_INSERT_TAIL(&tp->connlist, vbc, list);
+		VTAILQ_INSERT_HEAD(&tp->connlist, vbc, list);
+		i++;
 	}
 
-	if (vbc != NULL) {
+	if (vbc != NULL)
 		tp->n_conn++;
-		vbc->recycled = 1;
-	}
 	Lck_Unlock(&tp->mtx);
+
 	if (i && DO_DEBUG(DBG_VTC_MODE)) {
 		/*
 		 * In varnishtest we do not have the luxury of using
@@ -346,17 +317,17 @@ VBT_Close(struct tcp_pool *tp, struct vbc **vbcp)
 
 	assert(vbc->state == VBC_STATE_USED);
 	assert(vbc->fd > 0);
-	VSL(SLT_Debug, 0, "------> Close fd %d in_w %d",
-	    vbc->fd, vbc->in_waiter);
+	AZ(vbc->backend);
 
 	Lck_Lock(&tp->mtx);
 	tp->n_used--;
-	if (vbc->in_waiter) {
-		shutdown(vbc->fd, SHUT_WR);
+	if (vbc->state == VBC_STATE_STOLEN) {
+		(void)shutdown(vbc->fd, SHUT_WR);
 		vbc->state = VBC_STATE_CLEANUP;
 		VTAILQ_INSERT_HEAD(&tp->killlist, vbc, list);
 		tp->n_kill++;
 	} else {
+		assert(vbc->state == VBC_STATE_USED);
 		VTCP_close(&vbc->fd);
 		memset(vbc, 0x44, sizeof *vbc);
 		free(vbc);
@@ -369,27 +340,29 @@ VBT_Close(struct tcp_pool *tp, struct vbc **vbcp)
  */
 
 struct vbc *
-VBT_Get(struct tcp_pool *tp, double tmo)
+VBT_Get(struct tcp_pool *tp, double tmo, struct backend *be, struct worker *wrk)
 {
 	struct vbc *vbc;
 
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
+	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	Lck_Lock(&tp->mtx);
 	vbc = VTAILQ_FIRST(&tp->connlist);
-	if (vbc != NULL) {
-		CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
-
-		VSL(SLT_Debug, 0, "------> Steal fd %d state 0x%x",
-		    vbc->fd, vbc->state);
-		assert(vbc->state == VBC_STATE_AVAIL ||
-		    vbc->state == VBC_STATE_STOLEN);
-
+	CHECK_OBJ_ORNULL(vbc, VBC_MAGIC);
+	if (vbc == NULL || vbc->backend != NULL)
+		vbc = NULL;
+	else {
+		assert(vbc->tcp_pool == tp);
+		assert(vbc->state == VBC_STATE_AVAIL);
 		VTAILQ_REMOVE(&tp->connlist, vbc, list);
+		VTAILQ_INSERT_TAIL(&tp->connlist, vbc, list);
 		tp->n_conn--;
 		VSC_C_main->backend_reuse += 1;
-		vbc->state = VBC_STATE_USED;
-		assert(vbc->tcp_pool == tp);
+		vbc->state = VBC_STATE_STOLEN;
+		vbc->backend = be;
+		vbc->wrk = wrk;
 	}
 	tp->n_used++;			// Opening mostly works
 	Lck_Unlock(&tp->mtx);
@@ -402,15 +375,33 @@ VBT_Get(struct tcp_pool *tp, double tmo)
 	INIT_OBJ(vbc->waited, WAITED_MAGIC);
 	vbc->state = VBC_STATE_USED;
 	vbc->tcp_pool = tp;
+	vbc->backend = be;
 	vbc->fd = VBT_Open(tp, tmo, &vbc->addr);
 	if (vbc->fd < 0)
 		FREE_OBJ(vbc);
 	if (vbc == NULL) {
-		VSL(SLT_Debug, 0, "------> No new fd");
 		Lck_Lock(&tp->mtx);
 		tp->n_used--;		// Nope, didn't work after all.
 		Lck_Unlock(&tp->mtx);
-	} else
-		VSL(SLT_Debug, 0, "------> New fd %d", vbc->fd);
+	}
 	return (vbc);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+void
+VBT_Wait(struct worker *wrk, const struct vbc *vbc)
+{
+	struct tcp_pool *tp;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
+	tp = vbc->tcp_pool;
+	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
+	assert(vbc->wrk == wrk);
+	Lck_Lock(&tp->mtx);
+	while (vbc->state == VBC_STATE_STOLEN)
+		AZ(Lck_CondWait(&wrk->cond, &tp->mtx, 0));
+	Lck_Unlock(&tp->mtx);
 }

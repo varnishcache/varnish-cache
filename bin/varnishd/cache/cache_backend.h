@@ -88,21 +88,19 @@ struct backend {
 struct vbc {
 	unsigned		magic;
 #define VBC_MAGIC		0x0c5e6592
-	VTAILQ_ENTRY(vbc)	list;
 	int			fd;
+	VTAILQ_ENTRY(vbc)	list;
 	const struct suckaddr	*addr;
-	uint8_t			recycled;
 	uint8_t			state;
 #define VBC_STATE_AVAIL		(1<<0)
 #define VBC_STATE_USED		(1<<1)
 #define VBC_STATE_STOLEN	(1<<2)
 #define VBC_STATE_CLEANUP	(1<<3)
-	uint8_t			in_waiter;
-	uint8_t			have_been_in_waiter;
 	struct waited		waited[1];
 	struct tcp_pool		*tcp_pool;
 
 	struct backend		*backend;
+	struct worker		*wrk;
 };
 
 /* cache_backend_cfg.c */
@@ -123,6 +121,7 @@ void VBT_Rel(struct tcp_pool **tpp);
 int VBT_Open(const struct tcp_pool *tp, double tmo, const struct suckaddr **sa);
 void VBT_Recycle(struct tcp_pool *tp, struct vbc **vbc);
 void VBT_Close(struct tcp_pool *tp, struct vbc **vbc);
-struct vbc *VBT_Get(struct tcp_pool *tp, double tmo);
-
+struct vbc *VBT_Get(struct tcp_pool *, double tmo, struct backend *,
+    struct worker *);
+void VBT_Wait(struct worker *wrk, const struct vbc *vbc);
 
