@@ -25,7 +25,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-$Module directors 3 Backend traffic directors
+$Module directors 3 Varnish Directors Module
 
 DESCRIPTION
 ===========
@@ -36,10 +36,7 @@ The module implements a set of basic load balancing techniques, and
 also serves as an example on how one could extend the load balancing
 capabilities of Varnish.
 
-To enable load balancing you must import this vmod (directors) in your
-VCL::
-
-  import directors;
+To enable load balancing you must import this vmod (directors).
 
 Then you define your backends. Once you have the backends declared you
 can add them to a director. This happens in executed VCL code. If you
