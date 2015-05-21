@@ -44,11 +44,13 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.msg == "OK"
+	delay .1
 
 	txreq -url "/synth"
 	rxresp
 	expect resp.status == 200
 	expect resp.msg == "Synth test"
+	delay .1
 
 	txreq -url "/error"
 	rxresp
