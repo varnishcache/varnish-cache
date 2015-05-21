@@ -81,6 +81,10 @@ AC_SUBST([VMOD_DIR])
 
 AC_DEFUN([VARNISH_VMODTOOL],
 [
+AC_CHECK_PROGS(PYTHON, [python3 python3.1 python3.2 python2.7 python2.6 python2.5 python2 python], "no")
+if test "x$PYTHON" = "xno"; then
+  AC_MSG_ERROR([Python is needed to build, please install python.])
+fi
 VARNISH_PKG_GET_VAR([VMODTOOL], [vmodtool])
 AC_SUBST([VMODTOOL])
 ])
