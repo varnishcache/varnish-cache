@@ -248,7 +248,7 @@ vwp_fini(struct waiter *w)
 	CAST_OBJ_NOTNULL(vwp, w->priv, VWP_MAGIC);
 	vp = NULL;
 	while (vwp->hpoll > 1)
-		usleep(100000);
+		(void)usleep(100000);
 	// XXX: set write pipe blocking
 	assert(write(vwp->pipes[1], &vp, sizeof vp) == sizeof vp);
 	AZ(pthread_join(vwp->thread, &vp));
