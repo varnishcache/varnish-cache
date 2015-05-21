@@ -376,6 +376,7 @@ struct waited {
 	int			fd;
 	void			*ptr;
 	double			idle;
+	VTAILQ_ENTRY(waited)	list;
 };
 
 /* Stored object -----------------------------------------------------
