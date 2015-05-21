@@ -234,7 +234,10 @@ vwp_init(struct waiter *w)
 	AZ(pthread_create(&vwp->thread, NULL, vwp_main, vwp));
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * It is the callers responsibility to trigger all fd's waited on to
+ * fail somehow.
+ */
 
 static void __match_proto__(waiter_fini_f)
 vwp_fini(struct waiter *w)
@@ -244,6 +247,8 @@ vwp_fini(struct waiter *w)
 
 	CAST_OBJ_NOTNULL(vwp, w->priv, VWP_MAGIC);
 	vp = NULL;
+	while (vwp->hpoll > 1)
+		usleep(100000);
 	// XXX: set write pipe blocking
 	assert(write(vwp->pipes[1], &vp, sizeof vp) == sizeof vp);
 	AZ(pthread_join(vwp->thread, &vp));
