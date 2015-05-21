@@ -119,7 +119,7 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 		 * Do not apply the default ttl, only set a ttl if Cache-Control
 		 * or Expires are present. Uncacheable otherwise.
 		 */
-		expp->ttl = -1.;	/* fall through */
+		expp->ttl = -1.;
 		/* FALL-THROUGH */
 	case 200: /* OK */
 	case 203: /* Non-Authoritative Information */
