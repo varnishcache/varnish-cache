@@ -46,11 +46,8 @@
 #include "vrt.h"
 #include "vtim.h"
 
-/*
- * The list of backends is not locked, it is only ever accessed from
- * the CLI thread, so there is no need.
- */
 static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
+static struct lock backends_mtx;
 
 /*--------------------------------------------------------------------
  */
@@ -59,10 +56,13 @@ void
 VBE_DeleteBackend(struct backend *b)
 {
 
-	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 
+	Lck_Lock(&backends_mtx);
 	VTAILQ_REMOVE(&backends, b, list);
+	VSC_C_main->n_backend--;
+	Lck_Unlock(&backends_mtx);
+
 	free(b->ipv4);
 	free(b->ipv6);
 	free(b->display_name);
@@ -70,7 +70,6 @@ VBE_DeleteBackend(struct backend *b)
 	VBT_Rel(&b->tcp_pool);
 	Lck_Delete(&b->mtx);
 	FREE_OBJ(b);
-	VSC_C_main->n_backend--;
 }
 
 /*--------------------------------------------------------------------
@@ -85,7 +84,6 @@ VBE_AddBackend(const char *vcl, const struct vrt_backend *vb)
 	struct backend *b;
 	char buf[128];
 
-	ASSERT_CLI();
 	AN(vb->vcl_name);
 	assert(vb->ipv4_suckaddr != NULL || vb->ipv6_suckaddr != NULL);
 
@@ -118,8 +116,10 @@ VBE_AddBackend(const char *vcl, const struct vrt_backend *vb)
 	b->health_changed = VTIM_real();
 	b->admin_health = ah_probe;
 
+	Lck_Lock(&backends_mtx);
 	VTAILQ_INSERT_TAIL(&backends, b, list);
 	VSC_C_main->n_backend++;
+	Lck_Unlock(&backends_mtx);
 	return (b);
 }
 
@@ -176,6 +176,7 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 		VSB_printf(vsb, "%s.%s", vcc->loaded_name, matcher);
 	}
 	AZ(VSB_finish(vsb));
+	Lck_Lock(&backends_mtx);
 	VTAILQ_FOREACH(b, &backends, list) {
 		if (fnmatch(VSB_data(vsb), b->display_name, 0))
 			continue;
@@ -186,6 +187,7 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 			break;
 		}
 	}
+	Lck_Unlock(&backends_mtx);
 	VSB_delete(vsb);
 	return (found);
 }
@@ -313,4 +315,5 @@ VBE_InitCfg(void)
 {
 
 	CLI_AddFuncs(backend_cmds);
+	Lck_New(&backends_mtx, lck_vbe);
 }
