@@ -489,6 +489,7 @@ vca_acct(void *arg)
 		assert (ls->sock > 0);		// We know where stdin is
 		AZ(listen(ls->sock, cache_param->listen_depth));
 		vca_tcp_opt_set(ls->sock, 1);
+#ifdef HAVE_ACCEPT_FILTERS
 		if (cache_param->accept_filter) {
 			i = VTCP_filter_http(ls->sock);
 			if (i)
@@ -496,6 +497,7 @@ vca_acct(void *arg)
 				    "Kernel filtering: sock=%d, ret=%d %s",
 				    ls->sock, i, strerror(errno));
 		}
+#endif /* HAVE_ACCEPT_FILTERS */
 	}
 
 	need_test = 1;
