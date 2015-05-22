@@ -1147,9 +1147,8 @@ PARAM(
 	"The minimum number of worker threads in each pool.\n"
 	"\n"
 	"Increasing this may help ramp up faster from low load situations "
-	"or when threads have expired.
-
-Minimum is 10 threads.\n",
+	"or when threads have expired."
+	"Minimum is 10 threads.\n",
 	/* l-text */	"",
 	/* func */	NULL
 )
