@@ -81,7 +81,7 @@ VRE_compile(const char *pattern, int options,
 		VRE_free(&v);
 		return (NULL);
 	}
-	v->re_extra = pcre_study(v->re, VRE_STUDY_JIT_COMPILE, errptr);
+	v->re_extra = pcre_study(v->re, vre__jit, errptr);
 	if (*errptr != NULL) {
 		VRE_free(&v);
 		return (NULL);
