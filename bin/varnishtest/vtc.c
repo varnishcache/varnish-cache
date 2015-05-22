@@ -47,7 +47,6 @@
 
 #include "vav.h"
 #include "vnum.h"
-#include "vre.h"
 #include "vtim.h"
 
 #define		MAX_TOKENS		200
@@ -597,9 +596,6 @@ cmd_feature(CMD_ARGS)
 
 		if (!strcmp(av[i], "group_varnish") &&
 		    getgrnam("varnish") != NULL)
-			continue;
-
-		if (!strcmp(av[i], "pcre_jit") && vre__jit)
 			continue;
 
 		vtc_log(vl, 1, "SKIPPING test, missing feature: %s", av[i]);
