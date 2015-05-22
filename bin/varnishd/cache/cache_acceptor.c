@@ -416,6 +416,10 @@ vca_accept_task(struct worker *wrk, void *arg)
 				VSL(SLT_Debug, ls->sock, "Too many open files");
 				vca_pace_bad();
 				break;
+			case EBADF:
+				VSL(SLT_Debug, ls->sock, "Accept failed: %s",
+				    strerror(errno));
+				return;
 			default:
 				VSL(SLT_Debug, ls->sock, "Accept failed: %s",
 				    strerror(errno));
