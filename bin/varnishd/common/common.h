@@ -130,7 +130,7 @@ void VSM_common_ageupdate(const struct vsm_sc *sc);
  * Pointer aligment magic
  */
 
-#define PALGN	    (sizeof(uintmax_t) - 1)	/* size of alignment */
+#define PALGN	    (sizeof(void *) - 1)	/* size of alignment */
 #define PAOK(p)	    (((uintptr_t)(p) & PALGN) == 0)	/* is aligned */
 #define PRNDDN(p)   ((uintptr_t)(p) & ~PALGN)		/* Round down */
 #define PRNDUP(p)   (((uintptr_t)(p) + PALGN) & ~PALGN)	/* Round up */
