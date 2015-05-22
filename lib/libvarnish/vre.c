@@ -46,8 +46,6 @@
 #  define pcre_free_study pcre_free
 #endif
 
-const int vre__jit = VRE_STUDY_JIT_COMPILE;
-
 struct vre {
 	unsigned		magic;
 #define VRE_MAGIC		0xe83097dc
@@ -81,7 +79,7 @@ VRE_compile(const char *pattern, int options,
 		VRE_free(&v);
 		return (NULL);
 	}
-	v->re_extra = pcre_study(v->re, vre__jit, errptr);
+	v->re_extra = pcre_study(v->re, VRE_STUDY_JIT_COMPILE, errptr);
 	if (*errptr != NULL) {
 		VRE_free(&v);
 		return (NULL);
