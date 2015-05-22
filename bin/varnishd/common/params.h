@@ -57,6 +57,16 @@ struct poolparam {
 
 struct params {
 
+#define	ptyp_bool	unsigned
+#define	ptyp_double	double
+#define	ptyp_timeout	double
+#define PARAM(nm, ty, mi, ma, de, un, fl, st, lt, fn) ptyp_##ty nm;
+#include <tbl/params.h>
+#undef PARAM
+#undef ptyp_bool
+#undef ptyp_double
+#undef ptyp_timeout
+
 	/* Unprivileged user / group */
 	char			*user;
 	uid_t			uid;
@@ -128,8 +138,6 @@ struct params {
 	ssize_t			fetch_maxchunksize;
 	unsigned		nuke_limit;
 
-	unsigned		accept_filter;
-
 	/* Listen depth */
 	unsigned		listen_depth;
 
@@ -168,11 +176,6 @@ struct params {
 
 	/* Acceptable clockskew with backends */
 	unsigned		clock_skew;
-
-	/* Acceptor pacer parameters */
-	double			acceptor_sleep_max;
-	double			acceptor_sleep_incr;
-	double			acceptor_sleep_decay;
 
 	/* Get rid of duplicate bans */
 	unsigned		ban_dups;

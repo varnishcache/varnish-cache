@@ -45,6 +45,11 @@
 	"\tmax_age\tmax age of free element."
 
 struct parspec mgt_parspec[] = {
+#define PARAM(nm, ty, mi, ma, de, un, fl, st, lt, fn)		\
+	{ #nm, tweak_##ty, &mgt_param.nm, mi, ma, st, fl, de, un },
+#include "tbl/params.h"
+#undef PARAM
+
 	{ "default_ttl", tweak_timeout, &mgt_param.default_ttl,
 		"0", NULL,
 		"The TTL assigned to objects if neither the backend nor "
@@ -231,13 +236,6 @@ struct parspec mgt_parspec[] = {
 		"fragmentation.",
 		EXPERIMENTAL,
 		"256m", "bytes" },
-#ifdef HAVE_ACCEPT_FILTERS
-	{ "accept_filter", tweak_bool, &mgt_param.accept_filter,
-		NULL, NULL,
-		"Enable kernel accept-filters, (if available in the kernel).",
-		MUST_RESTART,
-		"on", "bool" },
-#endif
 	{ "listen_depth", tweak_uint, &mgt_param.listen_depth,
 		"0", NULL,
 		"Listen queue depth.",
@@ -338,33 +336,6 @@ struct parspec mgt_parspec[] = {
 		"and backend request. This parameter does not apply to pipe.",
 		0,
 		"60", "seconds" },
-	{ "acceptor_sleep_max", tweak_timeout,
-		&mgt_param.acceptor_sleep_max,
-		"0", "10",
-		"If we run out of resources, such as file descriptors or "
-		"worker threads, the acceptor will sleep between accepts.\n"
-		"This parameter limits how long it can sleep between "
-		"attempts to accept new connections.",
-		EXPERIMENTAL,
-		"0.050", "seconds" },
-	{ "acceptor_sleep_incr", tweak_timeout,
-		&mgt_param.acceptor_sleep_incr,
-		"0", "1",
-		"If we run out of resources, such as file descriptors or "
-		"worker threads, the acceptor will sleep between accepts.\n"
-		"This parameter control how much longer we sleep, each time "
-		"we fail to accept a new connection.",
-		EXPERIMENTAL,
-		"0.001", "seconds" },
-	{ "acceptor_sleep_decay", tweak_double,
-		&mgt_param.acceptor_sleep_decay,
-		"0", "1",
-		"If we run out of resources, such as file descriptors or "
-		"worker threads, the acceptor will sleep between accepts.\n"
-		"This parameter (multiplicatively) reduce the sleep duration "
-		"for each successful accept. (ie: 0.9 = reduce by 10%)",
-		EXPERIMENTAL,
-		"0.900", "" },
 	{ "clock_skew", tweak_uint, &mgt_param.clock_skew,
 		"0", NULL,
 		"How much clockskew we are willing to accept between the "
