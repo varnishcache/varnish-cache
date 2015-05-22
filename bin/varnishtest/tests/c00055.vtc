@@ -3,11 +3,11 @@ varnishtest "test caching of req.body"
 server s1 {
 	rxreq
 	expect req.bodylen == 3
-	txresp -status 200 -hdr "Foo: BAR" -body "1234"
+	txresp -hdr "Connection: close" -hdr "Foo: BAR" -body "1234"
 	accept
 	rxreq
 	expect req.bodylen == 3
-	txresp -status 200 -hdr "Foo: Foo" -body "56"
+	txresp -hdr "Foo: Foo" -body "56"
 } -start
 
 varnish v1 -cliok "param.set vcc_allow_inline_c true" -vcl+backend {
