@@ -478,7 +478,6 @@ vca_acct(void *arg)
 {
 	struct listen_sock *ls;
 	double t0, now;
-	int i;
 
 	THR_SetName("cache-acceptor");
 	(void)arg;
@@ -491,6 +490,7 @@ vca_acct(void *arg)
 		vca_tcp_opt_set(ls->sock, 1);
 #ifdef HAVE_ACCEPT_FILTERS
 		if (cache_param->accept_filter) {
+			int i;
 			i = VTCP_filter_http(ls->sock);
 			if (i)
 				VSL(SLT_Error, ls->sock,
