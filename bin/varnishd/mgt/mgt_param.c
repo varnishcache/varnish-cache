@@ -245,8 +245,9 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 			VCLI_Out(cli, " (default)");
 		VCLI_Out(cli, "\n");
 		if (lfmt) {
-			VCLI_Out(cli, "%-*sDefault is: %s\n",
-			    margin1, "", pp->def);
+			if (pp->def != NULL && strcmp(pp->def, VSB_data(vsb)))
+				VCLI_Out(cli, "%-*sDefault is: %s\n",
+				    margin1, "", pp->def);
 			if (pp->min != NULL)
 				VCLI_Out(cli, "%-*sMinimum is: %s\n",
 				    margin1, "", pp->min);
