@@ -30,7 +30,7 @@ varnish v1 -vcl+backend {
 
 # This should succeed with default params and JIT/no-JIT
 client c1 {
-	txreq -url /aaaaaaaaa
+	txreq -url /aaaaaaaa
 	rxresp
 } -run
 
