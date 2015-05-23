@@ -420,7 +420,7 @@ cmd_server(CMD_ARGS)
 		if (!strcmp(*av, "-dispatch")) {
 			if (strcmp(s->name, "s0")) {
 				fprintf(stderr,
-				    "server -parallel only works on s0\n");
+				    "server -dispatch only works on s0\n");
 				exit(1);
 			}
 			server_dispatch(s);
