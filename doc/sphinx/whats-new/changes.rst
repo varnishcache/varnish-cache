@@ -9,7 +9,7 @@ Varnish 4.1 is the continuation of the new streaming architecture seen in Varnis
 Proactive security features
 ===========================
 
-New in 4.1 is support for different kinds of privilege seperation methods,
+New in 4.1 is support for different kinds of privilege separation methods,
 collectively described as jails.
 
 On most systems, the Varnish parent process will now drop effective privileges
@@ -42,7 +42,8 @@ Output from `vcl.list`::
     available  auto/warm       0 62f5275f-a937-4df9-9fbb-c12336bdfdb8
 
 
-A single VCL's state can be chanced with the `vcl.state` call in ``varnishadm``::
+A single VCL's state can be chanced with the `vcl.state` call in
+``varnishadm``::
 
     vcl.state <configname> [auto|cold|warm]
         Force the state of the named configuration.
@@ -74,22 +75,20 @@ The ``-a`` startup argument syntax has been expanded to allow for this::
 
     $ varnishd -f /etc/varnish/default.vcl -a :6081 -a 127.0.0.1:6086,PROXY
 
-
 Both PROXY1 and PROXY2 protocols are supported on the resulting listening
 socket.
 
 For connections coming in over a PROXY socket, ``client.ip`` and
-``server.ip`` will contain the adresses given to Varnish in the PROXY
-header/preamble. (the "real" client IP.)
+``server.ip`` will contain the addresses given to Varnish in the PROXY
+header/preamble (the "real" IPs).
 
-The new VCL variables ``remote.ip`` and ``local.ip`` contains the local TCP
-connection endpoints. On non-PROXY connections these will be identical to
-``client.ip`` and ``server.ip``.
+The new VCL variables ``remote.ip`` and ``local.ip`` contains the local
+TCP connection endpoints. On non-PROXY connections these will be identical
+to ``client.ip`` and ``server.ip``.
 
-An expected pattern following this is `if (std.port(local.ip) == 80) { }` in
-``vcl_recv`` to see if traffic came in over the HTTP listening socket. (so a client
-redirect to HTTPS can be served.)
-
+An expected pattern following this is `if (std.port(local.ip) == 80) { }`
+in ``vcl_recv`` to see if traffic came in over the HTTP listening socket
+(so a client redirect to HTTPS can be served).
 
 
 VMOD backends
