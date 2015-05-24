@@ -2,7 +2,7 @@ varnishtest	"Object/LRU/Stevedores with hinting and body alloc failures"
 
 server s1 {
 	rxreq
-	txresp -bodylen 1000000
+	txresp -hdr "Connection: close" -bodylen 1000000
 } -start
 
 varnish v1 \
@@ -34,7 +34,7 @@ varnish v1 -expect SMA.s2.g_space > 1000000
 server s1 -wait {
 	rxreq
 	non-fatal
-	txresp -bodylen 1000001
+	txresp -hdr "Connection: close" -bodylen 1000001
 } -start
 
 client c1 {
@@ -56,7 +56,7 @@ varnish v1 -expect SMA.s2.g_space > 1000000
 server s1 -wait {
 	rxreq
 	# non-fatal
-	txresp -bodylen 1000002
+	txresp -hdr "Connection: close" -bodylen 1000002
 } -start
 
 client c1 {
