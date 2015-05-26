@@ -38,6 +38,7 @@
 
 #include "waiter/waiter.h"
 #include "waiter/waiter_priv.h"
+#include "waiter/mgt_waiter.h"
 
 int
 Wait_Enter(const struct waiter *w, struct waited *wp)

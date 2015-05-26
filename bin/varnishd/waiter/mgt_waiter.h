@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2006-2015 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -26,42 +26,26 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * Private interfaces
  */
 
-#include "config.h"
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
+struct waiter_impl;
 
-#include "mgt/mgt.h"
-#include "waiter/mgt_waiter.h"
+/* mgt_waiter.c */
+extern struct waiter_impl const * waiter;
 
-static const struct choice waiter_choice[] = {
-    #if defined(HAVE_KQUEUE)
-	{ "kqueue",	&waiter_kqueue },
-    #endif
-    #if defined(HAVE_EPOLL_CTL)
-	{ "epoll",	&waiter_epoll },
-    #endif
-#if 0
-    #if defined(HAVE_PORT_CREATE)
-	{ "ports",	&waiter_ports },
-    #endif
+#if defined(HAVE_EPOLL_CTL)
+extern const struct waiter_impl waiter_epoll;
 #endif
-	{ "poll",	&waiter_poll },
-	{ NULL,		NULL}
-};
 
-struct waiter_impl const *waiter;
+#if defined(HAVE_KQUEUE)
+extern const struct waiter_impl waiter_kqueue;
+#endif
 
-void
-Wait_config(const char *arg)
-{
+#if defined(HAVE_PORT_CREATE)
+extern const struct waiter_impl waiter_ports;
+#endif
 
-	ASSERT_MGT();
+extern const struct waiter_impl waiter_poll;
 
-	if (arg != NULL)
-		waiter = pick(waiter_choice, arg, "waiter");
-	else
-		waiter = waiter_choice[0].ptr;
-}
+void Wait_config(const char *arg);

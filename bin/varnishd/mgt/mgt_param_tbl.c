@@ -35,7 +35,6 @@
 #include "common/params.h"
 
 #include "mgt/mgt_param.h"
-#include "waiter/waiter.h"
 
 
 #define MEMPOOL_TEXT							\
@@ -370,11 +369,6 @@ struct parspec mgt_parspec[] = {
 		"more sessions take a detour around the waiter.",
 		EXPERIMENTAL,
 		"0.050", "seconds" },
-	{ "waiter", tweak_waiter, NULL,
-		NULL, NULL,
-		"Select the waiter kernel interface.",
-		WIZARD | MUST_RESTART,
-		WAITER_DEFAULT, NULL },
 	{ "ban_dups", tweak_bool, &mgt_param.ban_dups,
 		NULL, NULL,
 		"Eliminate older identical bans when new bans are created."

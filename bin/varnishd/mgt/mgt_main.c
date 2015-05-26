@@ -57,6 +57,7 @@
 #include "vrnd.h"
 #include "vsha256.h"
 #include "vtim.h"
+#include "waiter/mgt_waiter.h"
 
 #include "compat/daemon.h"
 
@@ -186,6 +187,18 @@ usage(void)
 	    "Telnet listen address and port");
 	fprintf(stderr, FMT, "-t", "Default TTL");
 	fprintf(stderr, FMT, "-V", "version");
+	fprintf(stderr, FMT, "-W waiter", "Waiter implementation");
+#if defined(HAVE_KQUEUE)
+	fprintf(stderr, FMT, "", "  -W kqueue");
+#endif
+#if defined(HAVE_EPOLL_CTL)
+	fprintf(stderr, FMT, "", "  -W epoll");
+#endif
+#if defined(HAVE_PORT_CREATE)
+	fprintf(stderr, FMT, "", "  -W ports");
+#endif
+	fprintf(stderr, FMT, "", "  -W poll");
+
 #undef FMT
 	exit(1);
 }
@@ -438,6 +451,7 @@ main(int argc, char * const *argv)
 	const char *P_arg = NULL;
 	const char *S_arg = NULL;
 	const char *s_arg = "malloc,100m";
+	const char *W_arg = NULL;
 	int s_arg_given = 0;
 	const char *T_arg = "localhost:0";
 	char *p, *vcl = NULL;
@@ -496,7 +510,7 @@ main(int argc, char * const *argv)
 	cli_check(cli);
 
 	while ((o = getopt(argc, argv,
-	    "a:b:Cdf:Fh:i:j:l:M:n:P:p:r:S:s:T:t:Vx:")) != -1) {
+	    "a:b:Cdf:Fh:i:j:l:M:n:P:p:r:S:s:T:t:VW:x:")) != -1) {
 		/*
 		 * -j must be the first argument if specified, because
 		 * it (may) affect subsequent argument processing.
@@ -593,6 +607,9 @@ main(int argc, char * const *argv)
 			/* XXX: we should print the ident here */
 			VCS_Message("varnishd");
 			exit(0);
+		case 'W':
+			W_arg = optarg;
+			break;
 		case 'x':
 			if (!strcmp(optarg, "dumprstparam")) {
 				MCF_DumpRstParam();
@@ -707,6 +724,8 @@ main(int argc, char * const *argv)
 	STV_Config_Transient();
 
 	HSH_config(h_arg);
+
+	Wait_config(W_arg);
 
 	mgt_SHM_Init();
 

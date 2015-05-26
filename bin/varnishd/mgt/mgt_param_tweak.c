@@ -43,7 +43,6 @@
 #include "common/params.h"
 
 #include "mgt/mgt_param.h"
-#include "waiter/waiter.h"
 #include "vav.h"
 #include "vnum.h"
 
@@ -376,17 +375,6 @@ tweak_string(struct vsb *vsb, const struct parspec *par, const char *arg)
 		REPLACE(*p, arg);
 	}
 	return (0);
-}
-
-/*--------------------------------------------------------------------*/
-
-int
-tweak_waiter(struct vsb *vsb, const struct parspec *par, const char *arg)
-{
-
-	/* XXX should have tweak_generic_string */
-	(void)par;
-	return (Wait_Argument(vsb, arg));
 }
 
 /*--------------------------------------------------------------------*/

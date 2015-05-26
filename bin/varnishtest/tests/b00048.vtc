@@ -10,7 +10,7 @@ server s0 {
 	expect_close
 } -dispatch
 
-varnish v1 -arg "-p waiter=poll" -vcl+backend {
+varnish v1 -arg "-Wpoll" -vcl+backend {
 	sub vcl_recv {
 		return (pass);
 	}

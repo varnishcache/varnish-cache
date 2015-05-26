@@ -109,6 +109,7 @@ noinst_HEADERS = \
 	storage/storage_persistent.h \
 	waiter/waiter.h \
 	waiter/waiter_priv.h
+	waiter/mgt_waiter.h
 
 # Headers for use with vmods
 nobase_pkginclude_HEADERS = \
