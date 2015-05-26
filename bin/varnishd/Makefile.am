@@ -54,7 +54,7 @@ varnishd_SOURCES = \
 	common/common_vsc.c \
 	hash/hash_classic.c \
 	hash/hash_critbit.c \
-	hash/hash_mgt.c \
+	hash/mgt_hash.c \
 	hash/hash_simple_list.c \
 	http1/cache_http1_deliver.c \
 	http1/cache_http1_fetch.c \
@@ -81,12 +81,12 @@ varnishd_SOURCES = \
 	mgt/mgt_vcl.c \
 	proxy/cache_proxy_proto.c \
 	storage/stevedore.c \
-	storage/stevedore_mgt.c \
+	storage/mgt_stevedore.c \
 	storage/stevedore_utils.c \
 	storage/storage_file.c \
 	storage/storage_malloc.c \
 	storage/storage_persistent.c \
-	storage/storage_persistent_mgt.c \
+	storage/mgt_storage_persistent.c \
 	storage/storage_persistent_silo.c \
 	storage/storage_persistent_subr.c \
 	storage/storage_umem.c \
