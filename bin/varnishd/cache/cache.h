@@ -41,6 +41,8 @@
 #include "vapi/vsl_int.h"
 #include "vapi/vsm_int.h"
 
+#include "waiter/waiter.h"
+
 #include <sys/socket.h>
 
 #include <pthread.h>
@@ -364,19 +366,6 @@ struct lru {
 #define LRU_F_DONTMOVE		(1<<1)
 #define LRU_F_CONDEMMED		(1<<2)
 	unsigned		n_objcore;
-};
-
-/* Connection waiter -------------------------------------------------
- * Describing a file-descriptor/connection being waited on
- */
-
-struct waited {
-	unsigned		magic;
-#define WAITED_MAGIC		0x1743992d
-	int			fd;
-	void			*ptr;
-	double			idle;
-	VTAILQ_ENTRY(waited)	list;
 };
 
 /* Stored object -----------------------------------------------------

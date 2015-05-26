@@ -47,7 +47,6 @@
 
 #include "cache.h"
 
-#include "waiter/waiter.h"
 #include "vsa.h"
 #include "vtcp.h"
 #include "vtim.h"

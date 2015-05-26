@@ -41,7 +41,6 @@
 #include "cache_backend.h"
 #include "vtcp.h"
 #include "vsa.h"
-#include "waiter/waiter.h"
 #include "vtim.h"
 
 struct tcp_pool {

@@ -42,8 +42,20 @@
  * Public interfaces
  */
 
-struct waited;
 struct waiter;
+
+/* Connection waiter -------------------------------------------------
+ * Describing a file-descriptor/connection being waited on
+ */
+
+struct waited {
+	unsigned		magic;
+#define WAITED_MAGIC		0x1743992d
+	int			fd;
+	void			*ptr;
+	double			idle;
+	VTAILQ_ENTRY(waited)	list;
+};
 
 enum wait_event {
 	WAITER_REMCLOSE,
