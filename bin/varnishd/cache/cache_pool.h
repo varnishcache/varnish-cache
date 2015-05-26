@@ -54,3 +54,7 @@ struct pool {
 	struct dstat			*a_stat;
 	struct dstat			*b_stat;
 };
+
+void *pool_herder(void*);
+task_func_t pool_stat_summ;
+extern struct lock			pool_mtx;

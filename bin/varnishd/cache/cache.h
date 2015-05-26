@@ -962,7 +962,6 @@ const char *sess_close_2str(enum sess_close sc, int want_desc);
 
 /* cache_pool.c */
 void Pool_Init(void);
-void Pool_Work_Thread(struct pool *, struct worker *w);
 int Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how);
 int Pool_Task_Arg(struct worker *, task_func_t *,
     const void *arg, size_t arg_len);
@@ -1110,7 +1109,6 @@ void VMOD_Init(void);
 
 /* cache_wrk.c */
 
-void WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace);
 typedef void *bgthread_t(struct worker *, void *priv);
 void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func,
     void *priv);
