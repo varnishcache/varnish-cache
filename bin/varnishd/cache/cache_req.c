@@ -38,6 +38,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "cache_pool.h"
 
 #include "vtim.h"
 
@@ -48,7 +49,7 @@
 struct req *
 Req_New(const struct worker *wrk, struct sess *sp)
 {
-	struct sesspool *pp;
+	struct pool *pp;
 	struct req *req;
 	uint16_t nhttp;
 	unsigned sz, hl;
@@ -56,9 +57,8 @@ Req_New(const struct worker *wrk, struct sess *sp)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	pp = sp->sesspool;
-	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
-	AN(pp->pool);
+	pp = sp->pool;
+	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 
 	req = MPL_Get(pp->mpl_req, &sz);
 	AN(req);
@@ -114,7 +114,7 @@ void
 Req_Release(struct req *req)
 {
 	struct sess *sp;
-	struct sesspool *pp;
+	struct pool *pp;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
@@ -129,9 +129,8 @@ Req_Release(struct req *req)
 		VSL_End(req->vsl);
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	pp = sp->sesspool;
-	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
-	AN(pp->pool);
+	pp = sp->pool;
+	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	MPL_AssertSane(req);
 	VSL_Flush(req->vsl, 0);

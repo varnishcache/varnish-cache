@@ -50,11 +50,16 @@ struct pool {
 	unsigned			lqueue;
 	uintmax_t			ndropped;
 	uintmax_t			nqueued;
-	struct sesspool			*sesspool;
 	struct dstat			*a_stat;
 	struct dstat			*b_stat;
+
+	struct waitfor			wf;
+	struct mempool			*mpl_req;
+	struct mempool			*mpl_sess;
+	struct waiter			*waiter;
 };
 
 void *pool_herder(void*);
 task_func_t pool_stat_summ;
 extern struct lock			pool_mtx;
+void VCA_NewPool(struct pool *pp);

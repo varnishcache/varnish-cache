@@ -616,16 +616,6 @@ struct req {
  * works, is not realistic without a lot of code changes.
  */
 
-struct sesspool {
-	unsigned		magic;
-#define SESSPOOL_MAGIC		0xd916e202
-	struct pool		*pool;
-	struct mempool		*mpl_req;
-	struct mempool		*mpl_sess;
-
-	struct waiter		*http1_waiter;
-};
-
 enum sess_attr {
 #define SESS_ATTR(UP, low, typ, len)	SA_##UP,
 #include "tbl/sess_attr.h"
@@ -644,7 +634,7 @@ struct sess {
 
 	/* Cross references ------------------------------------------*/
 
-	struct sesspool		*sesspool;
+	struct pool		*pool;
 
 	struct waited		waited;
 
@@ -686,7 +676,6 @@ typedef enum htc_status_e htc_complete_f(struct http_conn *);
 /* cache_acceptor.c */
 void VCA_Init(void);
 void VCA_Shutdown(void);
-void VCA_New_SessPool(struct pool *pp, struct sesspool *sp);
 
 /* cache_backend_cfg.c */
 void VBE_InitCfg(void);
@@ -990,12 +979,11 @@ int Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req);
 void Req_Fail(struct req *req, enum sess_close reason);
 
 /* cache_session.c [SES] */
-struct sess *SES_New(struct sesspool *);
+struct sess *SES_New(struct pool *);
 void SES_Close(struct sess *sp, enum sess_close reason);
 void SES_Wait(struct sess *sp);
 void SES_Delete(struct sess *sp, enum sess_close reason, double now);
-struct sesspool *SES_NewPool(struct pool *pp, unsigned pool_no);
-void SES_DeletePool(struct sesspool *sp);
+void SES_NewPool(struct pool *pp, unsigned pool_no);
 int SES_Reschedule_Req(struct req *);
 task_func_t SES_Proto_Sess;
 task_func_t SES_Proto_Req;

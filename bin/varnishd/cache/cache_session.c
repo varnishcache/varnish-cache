@@ -46,6 +46,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "cache_pool.h"
 
 #include "vsa.h"
 #include "vtcp.h"
@@ -299,16 +300,16 @@ SES_RxReq(const struct worker *wrk, struct req *req, htc_complete_f *func)
  */
 
 struct sess *
-SES_New(struct sesspool *pp)
+SES_New(struct pool *pp)
 {
 	struct sess *sp;
 	unsigned sz;
 	char *p, *e;
 
-	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
+	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	sp = MPL_Get(pp->mpl_sess, &sz);
 	sp->magic = SESS_MAGIC;
-	sp->sesspool = pp;
+	sp->pool = pp;
 	memset(sp->sattr, 0xff, sizeof sp->sattr);
 
 	e = (char*)sp + sz;
@@ -403,19 +404,18 @@ int
 SES_Reschedule_Req(struct req *req)
 {
 	struct sess *sp;
-	struct sesspool *pp;
+	struct pool *pp;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	pp = sp->sesspool;
-	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
-	AN(pp->pool);
+	pp = sp->pool;
+	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 
 	req->task.func = SES_Proto_Req;
 	req->task.priv = req;
 
-	return (Pool_Task(pp->pool, &req->task, POOL_QUEUE_FRONT));
+	return (Pool_Task(pp, &req->task, POOL_QUEUE_FRONT));
 }
 
 /*--------------------------------------------------------------------
@@ -426,7 +426,7 @@ static void __match_proto__(waiter_handle_f)
 ses_handle(struct waited *wp, enum wait_event ev, double now)
 {
 	struct sess *sp;
-	struct sesspool *pp;
+	struct pool *pp;
 	struct pool_task *tp;
 
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
@@ -442,14 +442,13 @@ ses_handle(struct waited *wp, enum wait_event ev, double now)
 		SES_Delete(sp, SC_REM_CLOSE, now);
 		break;
 	case WAITER_ACTION:
-		pp = sp->sesspool;
-		CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
-		AN(pp->pool);
+		pp = sp->pool;
+		CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 		assert(sizeof *tp == WS_Reserve(sp->ws, sizeof *tp));
 		tp = (void*)sp->ws->f;
 		tp->func = SES_Proto_Sess;
 		tp->priv = sp;
-		if (Pool_Task(pp->pool, tp, POOL_QUEUE_FRONT))
+		if (Pool_Task(pp, tp, POOL_QUEUE_FRONT))
 			SES_Delete(sp, SC_OVERLOAD, now);
 		break;
 	case WAITER_CLOSE:
@@ -466,11 +465,11 @@ ses_handle(struct waited *wp, enum wait_event ev, double now)
 void
 SES_Wait(struct sess *sp)
 {
-	struct sesspool *pp;
+	struct pool *pp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	pp = sp->sesspool;
-	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
+	pp = sp->pool;
+	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	/*
 	 * XXX: waiter_epoll prevents us from zeroing the struct because
 	 * XXX: it keeps state across calls.
@@ -483,7 +482,7 @@ SES_Wait(struct sess *sp)
 	sp->waited.fd = sp->fd;
 	sp->waited.ptr = sp;
 	sp->waited.idle = sp->t_idle;
-	if (Wait_Enter(pp->http1_waiter, &sp->waited))
+	if (Wait_Enter(pp->waiter, &sp->waited))
 		SES_Delete(sp, SC_PIPE_OVERFLOW, NAN);
 }
 
@@ -541,12 +540,11 @@ SES_Close(struct sess *sp, enum sess_close reason)
 void
 SES_Delete(struct sess *sp, enum sess_close reason, double now)
 {
-	struct sesspool *pp;
+	struct pool *pp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	pp = sp->sesspool;
-	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
-	AN(pp->pool);
+	pp = sp->pool;
+	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 
 	if (reason != SC_NULL)
 		SES_Close(sp, reason);
@@ -573,17 +571,12 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
  * Create and delete pools
  */
 
-static struct waitfor ses_wf;
-
-struct sesspool *
-SES_NewPool(struct pool *wp, unsigned pool_no)
+void
+SES_NewPool(struct pool *pp, unsigned pool_no)
 {
-	struct sesspool *pp;
 	char nb[8];
 
-	ALLOC_OBJ(pp, SESSPOOL_MAGIC);
-	AN(pp);
-	pp->pool = wp;
+	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	bprintf(nb, "req%u", pool_no);
 	pp->mpl_req = MPL_New(nb, &cache_param->req_pool,
 	    &cache_param->workspace_client);
@@ -591,23 +584,8 @@ SES_NewPool(struct pool *wp, unsigned pool_no)
 	pp->mpl_sess = MPL_New(nb, &cache_param->sess_pool,
 	    &cache_param->workspace_session);
 
-	INIT_OBJ(&ses_wf, WAITFOR_MAGIC);
-	ses_wf.func = ses_handle;
-	ses_wf.tmo = &cache_param->timeout_idle;
-	pp->http1_waiter = Waiter_New(&ses_wf);
-
-	VCA_New_SessPool(wp, pp);
-	return (pp);
-}
-
-void
-SES_DeletePool(struct sesspool *pp)
-{
-
-	CHECK_OBJ_NOTNULL(pp, SESSPOOL_MAGIC);
-	MPL_Destroy(&pp->mpl_sess);
-	MPL_Destroy(&pp->mpl_req);
-	/* Delete session pool must stop acceptor threads */
-	FREE_OBJ(pp);
-	INCOMPL();
+	INIT_OBJ(&pp->wf, WAITFOR_MAGIC);
+	pp->wf.func = ses_handle;
+	pp->wf.tmo = &cache_param->timeout_idle;
+	pp->waiter = Waiter_New(&pp->wf);
 }

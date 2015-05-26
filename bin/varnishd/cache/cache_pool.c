@@ -145,8 +145,8 @@ pool_mkpool(unsigned pool_no)
 	while (VTAILQ_EMPTY(&pp->idle_queue))
 		(void)usleep(10000);
 
-	pp->sesspool = SES_NewPool(pp, pool_no);
-	AN(pp->sesspool);
+	SES_NewPool(pp, pool_no);
+	VCA_NewPool(pp);
 
 	return (pp);
 }
@@ -182,8 +182,13 @@ pool_poolherder(void *priv)
 			}
 		}
 		/* XXX: remove pools */
-		if (0)
-			SES_DeletePool(NULL);
+		if (0) {
+			pp = VTAILQ_FIRST(&pools);
+			AN(pp);
+			MPL_Destroy(&pp->mpl_sess);
+			MPL_Destroy(&pp->mpl_req);
+			INCOMPL();
+		}
 		(void)sleep(1);
 		u = 0;
 		VTAILQ_FOREACH(pp, &pools, list)

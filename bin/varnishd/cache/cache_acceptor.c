@@ -41,6 +41,7 @@
 #include <netinet/tcp.h>
 
 #include "cache.h"
+#include "cache_pool.h"
 #include "common/heritage.h"
 
 #include "vcli.h"
@@ -63,7 +64,6 @@ struct wrk_accept {
 	socklen_t		acceptaddrlen;
 	int			acceptsock;
 	struct listen_sock	*acceptlsock;
-	struct sesspool		*sesspool;
 };
 
 struct poolsock {
@@ -71,7 +71,7 @@ struct poolsock {
 #define POOLSOCK_MAGIC			0x1b0a2d38
 	struct listen_sock		*lsock;
 	struct pool_task		task;
-	struct sesspool			*sesspool;
+	struct pool			*pool;
 };
 
 /*--------------------------------------------------------------------
@@ -291,7 +291,6 @@ vca_pace_good(void)
 static void __match_proto__(task_func_t)
 vca_make_session(struct worker *wrk, void *arg)
 {
-	struct sesspool *pp;
 	struct sess *sp;
 	struct wrk_accept *wa;
 	struct sockaddr_storage ss;
@@ -304,11 +303,10 @@ vca_make_session(struct worker *wrk, void *arg)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(wa, arg, WRK_ACCEPT_MAGIC);
-	pp = wa->sesspool;
 
 	/* Turn accepted socket into a session */
 	AN(wrk->aws->r);
-	sp = SES_New(pp);
+	sp = SES_New(wrk->pool);
 	if (sp == NULL) {
 		/*
 		 * We consider this a DoS situation and silently close the
@@ -397,7 +395,6 @@ vca_accept_task(struct worker *wrk, void *arg)
 
 	while (1) {
 		INIT_OBJ(&wa, WRK_ACCEPT_MAGIC);
-		wa.sesspool = ps->sesspool;
 		wa.acceptlsock = ls;
 
 		vca_pace_check();
@@ -459,7 +456,7 @@ vca_accept_task(struct worker *wrk, void *arg)
  */
 
 void
-VCA_New_SessPool(struct pool *pp, struct sesspool *sp)
+VCA_NewPool(struct pool *pp)
 {
 	struct listen_sock *ls;
 	struct poolsock *ps;
@@ -470,7 +467,7 @@ VCA_New_SessPool(struct pool *pp, struct sesspool *sp)
 		ps->lsock = ls;
 		ps->task.func = vca_accept_task;
 		ps->task.priv = ps;
-		ps->sesspool = sp;
+		ps->pool = pp;
 		AZ(Pool_Task(pp, &ps->task, POOL_QUEUE_BACK));
 	}
 }
