@@ -39,34 +39,9 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "cache_pool.h"
 
 #include "vtim.h"
-
-VTAILQ_HEAD(taskhead, pool_task);
-
-/* Number of work requests queued in excess of worker threads available */
-
-struct pool {
-	unsigned			magic;
-#define POOL_MAGIC			0x606658fa
-	VTAILQ_ENTRY(pool)		list;
-
-	pthread_cond_t			herder_cond;
-	pthread_t			herder_thr;
-
-	struct lock			mtx;
-	struct taskhead			idle_queue;
-	struct taskhead			front_queue;
-	struct taskhead			back_queue;
-	unsigned			nthr;
-	unsigned			dry;
-	unsigned			lqueue;
-	uintmax_t			ndropped;
-	uintmax_t			nqueued;
-	struct sesspool			*sesspool;
-	struct dstat			*a_stat;
-	struct dstat			*b_stat;
-};
 
 static struct lock		pool_mtx;
 static pthread_t		thr_pool_herder;
