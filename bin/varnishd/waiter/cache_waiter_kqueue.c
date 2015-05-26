@@ -75,7 +75,7 @@ vwk_thread(void *priv)
 
 	last_idle = 0.0;
 	while (1) {
-		now = .3 * *vwk->waiter->tmo;
+		now = .3 * Wait_Tmo(vwk->waiter, NULL);
 		ts.tv_sec = (time_t)floor(now);
 		ts.tv_nsec = (long)(1e9 * (now - ts.tv_sec));
 		n = kevent(vwk->kq, NULL, 0, ke, NKEV, &ts);
@@ -91,12 +91,12 @@ vwk_thread(void *priv)
 			VTAILQ_REMOVE(&vwk->list, wp, list);
 			Lck_Unlock(&vwk->mtx);
 			if (kp->flags & EV_EOF)
-				vwk->waiter->func(wp, WAITER_REMCLOSE, now);
+				Wait_Call(vwk->waiter, wp, WAITER_REMCLOSE, now);
 			else
-				vwk->waiter->func(wp, WAITER_ACTION, now);
+				Wait_Call(vwk->waiter, wp, WAITER_ACTION, now);
 		}
-		idle = now - *vwk->waiter->tmo;
-		if (now - last_idle < .3 * *vwk->waiter->tmo)
+		idle = now - Wait_Tmo(vwk->waiter, NULL);
+		if (now - last_idle < .3 * Wait_Tmo(vwk->waiter, NULL))
 			continue;
 		last_idle = now;
 		n = 0;
@@ -114,7 +114,7 @@ vwk_thread(void *priv)
 		for (j = 0; j < n; j++) {
 			CAST_OBJ_NOTNULL(wp, ke[j].udata, WAITED_MAGIC);
 			VTAILQ_REMOVE(&vwk->list, wp, list);
-			vwk->waiter->func(wp, WAITER_TIMEOUT, now);
+			Wait_Call(vwk->waiter, wp, WAITER_TIMEOUT, now);
 		}
 		Lck_Unlock(&vwk->mtx);
 	}

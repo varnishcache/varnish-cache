@@ -162,12 +162,12 @@ vwp_main(void *priv)
 
 	while (1) {
 		v = poll(vwp->pollfd, vwp->hpoll,
-		    (int)floor(1e3 * *vwp->waiter->tmo));
+		    (int)floor(1e3 * Wait_Tmo(vwp->waiter, NULL)));
 		assert(v >= 0);
 		if (v == 0)
 			v = vwp->hpoll;
 		now = VTIM_real();
-		idle = now - *vwp->waiter->tmo;
+		idle = now - Wait_Tmo(vwp->waiter, NULL);
 		i = 0;
 		dopipe = 0;
 		while (v > 0 && i < vwp->hpoll) {
@@ -182,12 +182,12 @@ vwp_main(void *priv)
 			wp = vwp->idx[i];
 			CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 			if (wp->idle <= idle) {
-				vwp->waiter->func(wp, WAITER_TIMEOUT, now);
+				Wait_Call(vwp->waiter, wp, WAITER_TIMEOUT, now);
 				vwp_del(vwp, i);
 			} else if (vwp->pollfd[i].revents & POLLIN) {
 				assert(wp->fd > 0);
 				assert(wp->fd == vwp->pollfd[i].fd);
-				vwp->waiter->func(wp, WAITER_ACTION, now);
+				Wait_Call(vwp->waiter, wp, WAITER_ACTION, now);
 				vwp_del(vwp, i);
 			} else {
 				i++;

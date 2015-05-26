@@ -40,11 +40,9 @@ struct waiter {
 
 	int				dismantle;
 
-	waiter_handle_f *		func;
+	struct waitfor			*waitfor;
 
 	double				next_idle;
-
-	volatile double			*tmo;
 
 	void				*priv;
 };
@@ -56,10 +54,31 @@ typedef void waiter_inject_f(const struct waiter *, struct waited *);
 typedef void waiter_evict_f(const struct waiter *, struct waited *);
 
 struct waiter_impl {
-	const char		*name;
-	waiter_init_f		*init;
-	waiter_fini_f		*fini;
-	waiter_enter_f		*enter;
-	waiter_inject_f		*inject;
-	size_t			size;
+	const char			*name;
+	waiter_init_f			*init;
+	waiter_fini_f			*fini;
+	waiter_enter_f			*enter;
+	waiter_inject_f			*inject;
+	size_t				size;
 };
+
+static inline double
+Wait_Tmo(const struct waiter *w, const struct waited *wp)
+{
+	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
+	CHECK_OBJ_ORNULL(wp, WAITED_MAGIC);
+	CHECK_OBJ_NOTNULL(w->waitfor, WAITFOR_MAGIC);
+	AN(w->waitfor->tmo);
+	return (*w->waitfor->tmo);
+}
+
+static inline void
+Wait_Call(const struct waiter *w,
+    struct waited *wp, enum wait_event ev, double now)
+{
+	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
+	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
+	CHECK_OBJ_NOTNULL(w->waitfor, WAITFOR_MAGIC);
+	AN(w->waitfor->func);
+	w->waitfor->func(wp, ev, now);
+}

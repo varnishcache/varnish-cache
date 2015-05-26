@@ -573,6 +573,8 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
  * Create and delete pools
  */
 
+static struct waitfor ses_wf;
+
 struct sesspool *
 SES_NewPool(struct pool *wp, unsigned pool_no)
 {
@@ -588,7 +590,11 @@ SES_NewPool(struct pool *wp, unsigned pool_no)
 	bprintf(nb, "sess%u", pool_no);
 	pp->mpl_sess = MPL_New(nb, &cache_param->sess_pool,
 	    &cache_param->workspace_session);
-	pp->http1_waiter = Waiter_New(ses_handle, &cache_param->timeout_idle);
+
+	INIT_OBJ(&ses_wf, WAITFOR_MAGIC);
+	ses_wf.func = ses_handle;
+	ses_wf.tmo = &cache_param->timeout_idle;
+	pp->http1_waiter = Waiter_New(&ses_wf);
 
 	VCA_New_SessPool(wp, pp);
 	return (pp);

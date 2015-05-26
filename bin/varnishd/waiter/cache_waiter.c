@@ -62,7 +62,7 @@ Waiter_GetName(void)
 }
 
 struct waiter *
-Waiter_New(waiter_handle_f *func, volatile double *tmo)
+Waiter_New(struct waitfor *wf)
 {
 	struct waiter *w;
 
@@ -77,8 +77,7 @@ Waiter_New(waiter_handle_f *func, volatile double *tmo)
 	INIT_OBJ(w, WAITER_MAGIC);
 	w->priv = (void*)(w + 1);
 	w->impl = waiter;
-	w->func = func;
-	w->tmo = tmo;
+	w->waitfor = wf;
 	VTAILQ_INIT(&w->waithead);
 
 	waiter->init(w);

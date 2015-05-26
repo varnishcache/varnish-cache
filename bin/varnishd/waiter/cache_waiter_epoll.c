@@ -71,13 +71,13 @@ vwe_eev(struct vwe *vwe, const struct epoll_event *ep, double now)
 	AN(ep->data.ptr);
 	CAST_OBJ_NOTNULL(wp, ep->data.ptr, WAITED_MAGIC);
 	if (ep->events & EPOLLIN) {
-		vwe->waiter->func(wp, WAITER_ACTION, now);
+		Wait_Call(vwe->waiter, wp, WAITER_ACTION, now);
 	} else if (ep->events & EPOLLERR) {
-		vwe->waiter->func(wp, WAITER_REMCLOSE, now);
+		Wait_Call(vwe->waiter, wp, WAITER_REMCLOSE, now);
 	} else if (ep->events & EPOLLHUP) {
-		vwe->waiter->func(wp, WAITER_REMCLOSE, now);
+		Wait_Call(vwe->waiter, wp, WAITER_REMCLOSE, now);
 	} else if (ep->events & EPOLLRDHUP) {
-		vwe->waiter->func(wp, WAITER_REMCLOSE, now);
+		Wait_Call(vwe->waiter, wp, WAITER_REMCLOSE, now);
 	}
 }
 
@@ -99,7 +99,7 @@ vwe_thread(void *priv)
 
 	last_idle = 0.0;
 	while (1) {
-		i = floor(.3 * 1e3 * *vwe->waiter->tmo);
+		i = floor(.3 * 1e3 * Wait_Tmo(vwe->waiter, NULL));
 		n = epoll_wait(vwe->epfd, ev, NEEV, i);
 		if (n < 0 && vwe->die)
 			break;
@@ -113,8 +113,8 @@ vwe_thread(void *priv)
 			Lck_Unlock(&vwe->mtx);
 			vwe_eev(vwe, ep, now);
 		}
-		idle = now - *vwe->waiter->tmo;
-		if (now - last_idle < .3 * *vwe->waiter->tmo)
+		idle = now - Wait_Tmo(vwe->waiter, NULL);
+		if (now - last_idle < .3 * Wait_Tmo(vwe->waiter, NULL))
 			continue;
 		last_idle = now;
 		VTAILQ_INIT(&tlist);
@@ -132,7 +132,7 @@ vwe_thread(void *priv)
 			if (wp == NULL)
 				break;
 			VTAILQ_REMOVE(&tlist, wp, list);
-			vwe->waiter->func(wp, WAITER_TIMEOUT, now);
+			Wait_Call(vwe->waiter, wp, WAITER_TIMEOUT, now);
 		}
 	}
 	return (NULL);

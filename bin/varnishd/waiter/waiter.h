@@ -42,11 +42,24 @@
  * Public interfaces
  */
 
+struct waited;
 struct waiter;
 
-/* Connection waiter -------------------------------------------------
- * Describing a file-descriptor/connection being waited on
- */
+enum wait_event {
+	WAITER_REMCLOSE,
+	WAITER_TIMEOUT,
+	WAITER_ACTION,
+	WAITER_CLOSE
+};
+
+typedef void waiter_handle_f(struct waited *, enum wait_event, double now);
+
+struct waitfor {
+	unsigned		magic;
+#define WAITFOR_MAGIC		0x16b79246
+	waiter_handle_f		*func;
+	volatile double		*tmo;
+};
 
 struct waited {
 	unsigned		magic;
@@ -57,19 +70,8 @@ struct waited {
 	VTAILQ_ENTRY(waited)	list;
 };
 
-enum wait_event {
-	WAITER_REMCLOSE,
-	WAITER_TIMEOUT,
-	WAITER_ACTION,
-	WAITER_CLOSE
-};
-
-#define WAITER_DEFAULT		"platform dependent"
-
-typedef void waiter_handle_f(struct waited *, enum wait_event, double now);
-
 /* cache_waiter.c */
 int Wait_Enter(const struct waiter *, struct waited *);
-struct waiter *Waiter_New(waiter_handle_f *, volatile double *timeout);
+struct waiter *Waiter_New(struct waitfor *);
 void Waiter_Destroy(struct waiter **);
 const char *Waiter_GetName(void);
