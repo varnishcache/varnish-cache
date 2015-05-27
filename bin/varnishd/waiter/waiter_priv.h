@@ -38,11 +38,7 @@ struct waiter {
 	VTAILQ_ENTRY(waiter)		list;
 	VTAILQ_HEAD(,waited)		waithead;
 
-	int				dismantle;
-
 	struct waitfor			*waitfor;
-
-	double				next_idle;
 
 	void				*priv;
 };
