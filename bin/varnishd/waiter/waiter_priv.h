@@ -30,6 +30,7 @@
  */
 
 struct waited;
+struct binheap;
 
 struct waiter {
 	unsigned			magic;
@@ -41,6 +42,7 @@ struct waiter {
 	struct waitfor			*waitfor;
 
 	void				*priv;
+	struct binheap			*heap;
 };
 
 typedef void waiter_init_f(struct waiter *);
@@ -68,13 +70,7 @@ Wait_Tmo(const struct waiter *w, const struct waited *wp)
 	return (*w->waitfor->tmo);
 }
 
-static inline void
-Wait_Call(const struct waiter *w,
-    struct waited *wp, enum wait_event ev, double now)
-{
-	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
-	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
-	CHECK_OBJ_NOTNULL(w->waitfor, WAITFOR_MAGIC);
-	AN(w->waitfor->func);
-	w->waitfor->func(wp, ev, now);
-}
+void Wait_Call(const struct waiter *, struct waited *,
+    enum wait_event ev, double now);
+void Wait_HeapInsert(const struct waiter *, struct waited *);
+double Wait_HeapDue(const struct waiter *, struct waited **);

@@ -52,6 +52,8 @@ struct vwk {
 	int			kq;
 	struct waiter		*waiter;
 	pthread_t		thread;
+	double			next;
+	int			pipe[2];
 
 	VTAILQ_HEAD(,waited)	list;
 	struct lock		mtx;
@@ -66,58 +68,67 @@ vwk_thread(void *priv)
 	struct vwk *vwk;
 	struct kevent ke[NKEV], *kp;
 	int j, n;
-	double now, idle, last_idle;
+	double now, then;
 	struct timespec ts;
-	struct waited *wp, *wp2;
+	struct waited *wp;
+	struct waiter *w;
+	char c;
 
 	CAST_OBJ_NOTNULL(vwk, priv, VWK_MAGIC);
+	w = vwk->waiter;
+	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	THR_SetName("cache-kqueue");
 
-	last_idle = 0.0;
+	now = VTIM_real();
+	Lck_Lock(&vwk->mtx);
 	while (1) {
-		now = .3 * Wait_Tmo(vwk->waiter, NULL);
-		ts.tv_sec = (time_t)floor(now);
-		ts.tv_nsec = (long)(1e9 * (now - ts.tv_sec));
+		while (1) {
+			/*
+			 * XXX: We could avoid many syscalls here if we were
+			 * XXX: allowed to just close the fd's on timeout.
+			 */
+			then = Wait_HeapDue(w, &wp);
+			if (wp == NULL) {
+				vwk->next = now + 100;
+				break;
+			} else if (then > now) {
+				vwk->next = then;
+				break;
+			}
+			CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
+			EV_SET(ke, wp->fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+			AZ(kevent(vwk->kq, ke, 1, NULL, 0, NULL));
+			Wait_Call(w, wp, WAITER_TIMEOUT, now);
+		}
+		then = vwk->next - now;
+		ts.tv_sec = (time_t)floor(then);
+		ts.tv_nsec = (long)(1e9 * (then - ts.tv_sec));
+		Lck_Unlock(&vwk->mtx);
 		n = kevent(vwk->kq, NULL, 0, ke, NKEV, &ts);
-		if (n < 0 && vwk->die)
-			break;
 		assert(n >= 0);
 		assert(n <= NKEV);
 		now = VTIM_real();
+		Lck_Lock(&vwk->mtx);
 		for (kp = ke, j = 0; j < n; j++, kp++) {
 			assert(kp->filter == EVFILT_READ);
-			CAST_OBJ_NOTNULL(wp, ke[j].udata, WAITED_MAGIC);
-			Lck_Lock(&vwk->mtx);
-			VTAILQ_REMOVE(&vwk->list, wp, list);
-			Lck_Unlock(&vwk->mtx);
-			if (kp->flags & EV_EOF)
-				Wait_Call(vwk->waiter, wp, WAITER_REMCLOSE, now);
-			else
-				Wait_Call(vwk->waiter, wp, WAITER_ACTION, now);
-		}
-		idle = now - Wait_Tmo(vwk->waiter, NULL);
-		if (now - last_idle < .3 * Wait_Tmo(vwk->waiter, NULL))
-			continue;
-		last_idle = now;
-		n = 0;
-		Lck_Lock(&vwk->mtx);
-		VTAILQ_FOREACH_SAFE(wp, &vwk->list, list, wp2) {
-			if (wp->idle > idle)
+			if (ke[j].udata == vwk) {
+				assert(read(vwk->pipe[0], &c, 1) == 1);
 				continue;
-			EV_SET(ke + n, wp->fd,
-			    EVFILT_READ, EV_DELETE, 0, 0, wp);
-			if (++n == NKEV)
-				break;
-		}
-		if (n > 0)
-			AZ(kevent(vwk->kq, ke, n, NULL, 0, NULL));
-		for (j = 0; j < n; j++) {
+			}
 			CAST_OBJ_NOTNULL(wp, ke[j].udata, WAITED_MAGIC);
 			VTAILQ_REMOVE(&vwk->list, wp, list);
-			Wait_Call(vwk->waiter, wp, WAITER_TIMEOUT, now);
+			if (kp->flags & EV_EOF)
+				Wait_Call(w, wp, WAITER_REMCLOSE, now);
+			else
+				Wait_Call(w, wp, WAITER_ACTION, now);
 		}
-		Lck_Unlock(&vwk->mtx);
+		if (VTAILQ_EMPTY(&vwk->list) && vwk->die)
+			break;
 	}
+	Lck_Unlock(&vwk->mtx);
+	AZ(close(vwk->pipe[0]));
+	AZ(close(vwk->pipe[1]));
+	AZ(close(vwk->kq));
 	return(NULL);
 }
 
@@ -133,7 +144,13 @@ vwk_enter(void *priv, struct waited *wp)
 	EV_SET(&ke, wp->fd, EVFILT_READ, EV_ADD|EV_ONESHOT, 0, 0, wp);
 	Lck_Lock(&vwk->mtx);
 	VTAILQ_INSERT_TAIL(&vwk->list, wp, list);
+	Wait_HeapInsert(vwk->waiter, wp);
 	AZ(kevent(vwk->kq, &ke, 1, NULL, 0, NULL));
+
+	/* If the kqueue isn't due before our timeout, poke it via the pipe */
+	if (Wait_Tmo(vwk->waiter, wp) < vwk->next)
+		assert(write(vwk->pipe[1], "X", 1) == 1);
+
 	Lck_Unlock(&vwk->mtx);
 	return(0);
 }
@@ -144,6 +161,7 @@ static void __match_proto__(waiter_init_f)
 vwk_init(struct waiter *w)
 {
 	struct vwk *vwk;
+	struct kevent ke;
 
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	vwk = w->priv;
@@ -154,6 +172,9 @@ vwk_init(struct waiter *w)
 	assert(vwk->kq >= 0);
 	VTAILQ_INIT(&vwk->list);
 	Lck_New(&vwk->mtx, lck_misc);
+	AZ(pipe(vwk->pipe));
+	EV_SET(&ke, vwk->pipe[0], EVFILT_READ, EV_ADD, 0, 0, vwk);
+	AZ(kevent(vwk->kq, &ke, 1, NULL, 0, NULL));
 
 	AZ(pthread_create(&vwk->thread, NULL, vwk_thread, vwk));
 }
@@ -168,19 +189,11 @@ vwk_fini(struct waiter *w)
 {
 	struct vwk *vwk;
 	void *vp;
-	int i;
 
 	CAST_OBJ_NOTNULL(vwk, w->priv, VWK_MAGIC);
 	Lck_Lock(&vwk->mtx);
-	while (!VTAILQ_EMPTY(&vwk->list)) {
-		Lck_Unlock(&vwk->mtx);
-		(void)usleep(100000);
-		Lck_Lock(&vwk->mtx);
-	}
 	vwk->die = 1;
-	i = vwk->kq;
-	vwk->kq = -1;
-	AZ(close(i));
+	assert(write(vwk->pipe[1], "Y", 1) == 1);
 	Lck_Unlock(&vwk->mtx);
 	AZ(pthread_join(vwk->thread, &vp));
 	Lck_Delete(&vwk->mtx);
