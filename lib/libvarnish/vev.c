@@ -38,6 +38,7 @@
 #include <string.h>
 #include <time.h>
 
+#include "vdef.h"
 #include "miniobj.h"
 #include "vas.h"
 
@@ -93,7 +94,7 @@ struct vev_base {
 
 /*--------------------------------------------------------------------*/
 
-static void
+static void __match_proto__(binheap_update_t)
 vev_bh_update(void *priv, void *a, unsigned u)
 {
 	struct vev_base *evb;
@@ -104,11 +105,11 @@ vev_bh_update(void *priv, void *a, unsigned u)
 	e->__binheap_idx = u;
 }
 
-static int
-vev_bh_cmp(void *priv, void *a, void *b)
+static int __match_proto__(binheap_cmp_t)
+vev_bh_cmp(void *priv, const void *a, const void *b)
 {
 	struct vev_base *evb;
-	struct vev *ea, *eb;
+	const struct vev *ea, *eb;
 
 	CAST_OBJ_NOTNULL(evb, priv, VEV_BASE_MAGIC);
 	CAST_OBJ_NOTNULL(ea, a, VEV_MAGIC);

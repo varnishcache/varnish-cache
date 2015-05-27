@@ -35,7 +35,7 @@
 
 struct binheap;
 
-typedef int binheap_cmp_t(void *priv, void *a, void *b);
+typedef int binheap_cmp_t(void *priv, const void *a, const void *b);
 	/*
 	 * Comparison function.
 	 * Should return true if item 'a' should be closer to the root

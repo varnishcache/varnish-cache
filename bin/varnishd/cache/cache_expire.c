@@ -550,10 +550,10 @@ exp_expire(struct exp_priv *ep, double now)
  * object expires, accounting also for graceability, it is killed.
  */
 
-static int
-object_cmp(void *priv, void *a, void *b)
+static int __match_proto__(binheap_cmp_t)
+object_cmp(void *priv, const void *a, const void *b)
 {
-	struct objcore *aa, *bb;
+	const struct objcore *aa, *bb;
 
 	(void)priv;
 	CAST_OBJ_NOTNULL(aa, a, OBJCORE_MAGIC);
@@ -561,7 +561,7 @@ object_cmp(void *priv, void *a, void *b)
 	return (aa->timer_when < bb->timer_when);
 }
 
-static void
+static void __match_proto__(binheap_update_t)
 object_update(void *priv, void *p, unsigned u)
 {
 	struct objcore *oc;
