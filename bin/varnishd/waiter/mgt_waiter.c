@@ -40,10 +40,10 @@ static const struct choice waiter_choice[] = {
     #if defined(HAVE_KQUEUE)
 	{ "kqueue",	&waiter_kqueue },
     #endif
-#if 0
     #if defined(HAVE_EPOLL_CTL)
 	{ "epoll",	&waiter_epoll },
     #endif
+#if 0
     #if defined(HAVE_PORT_CREATE)
 	{ "ports",	&waiter_ports },
     #endif

@@ -58,28 +58,12 @@ struct vwe {
 	int			epfd;
 	struct waiter		*waiter;
 	pthread_t		thread;
-	VTAILQ_HEAD(,waited)	list;
-	struct lock		mtx;
+	double			next;
+	int			pipe[2];
+	unsigned		nwaited;
 	int			die;
+	struct lock		mtx;
 };
-
-static void
-vwe_eev(struct vwe *vwe, const struct epoll_event *ep, double now)
-{
-	struct waited *wp;
-
-	AN(ep->data.ptr);
-	CAST_OBJ_NOTNULL(wp, ep->data.ptr, WAITED_MAGIC);
-	if (ep->events & EPOLLIN) {
-		Wait_Call(vwe->waiter, wp, WAITER_ACTION, now);
-	} else if (ep->events & EPOLLERR) {
-		Wait_Call(vwe->waiter, wp, WAITER_REMCLOSE, now);
-	} else if (ep->events & EPOLLHUP) {
-		Wait_Call(vwe->waiter, wp, WAITER_REMCLOSE, now);
-	} else if (ep->events & EPOLLRDHUP) {
-		Wait_Call(vwe->waiter, wp, WAITER_REMCLOSE, now);
-	}
-}
 
 /*--------------------------------------------------------------------*/
 
@@ -87,54 +71,72 @@ static void *
 vwe_thread(void *priv)
 {
 	struct epoll_event ev[NEEV], *ep;
-	struct waited *wp, *wp2;
-	double now, idle, last_idle;
+	struct waited *wp;
+	struct waiter *w;
+	double now, then;
 	int i, n;
 	struct vwe *vwe;
-	VTAILQ_HEAD(,waited) tlist;
+	char c;
 
 	CAST_OBJ_NOTNULL(vwe, priv, VWE_MAGIC);
-
+	w = vwe->waiter;
+	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	THR_SetName("cache-epoll");
 
-	last_idle = 0.0;
+	now = VTIM_real();
+	Lck_Lock(&vwe->mtx);
 	while (1) {
-		i = floor(.3 * 1e3 * Wait_Tmo(vwe->waiter, NULL));
+		while (1) {
+			/*
+			 * XXX: We could avoid many syscalls here if we were
+			 * XXX: allowed to just close the fd's on timeout.
+			 */
+			then = Wait_HeapDue(w, &wp);
+			if (wp == NULL) {
+				vwe->next = now + 100;
+				break;
+			} else if (then > now) {
+				vwe->next = then;
+				break;
+			}
+			CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
+			AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_DEL, wp->fd, NULL));
+			vwe->nwaited--;
+			Wait_Call(w, wp, WAITER_TIMEOUT, now);
+		}
+		then = vwe->next - now;
+		i = (int)floor(1e3 * then);
+		assert(i > 0);
+		Lck_Unlock(&vwe->mtx);
 		n = epoll_wait(vwe->epfd, ev, NEEV, i);
-		if (n < 0 && vwe->die)
-			break;
 		assert(n >= 0);
+		assert(n <= NEEV);
 		now = VTIM_real();
+		Lck_Lock(&vwe->mtx);
 		for (ep = ev, i = 0; i < n; i++, ep++) {
+			if (ep->data.ptr == vwe) {
+				assert(read(vwe->pipe[0], &c, 1) == 1);
+				continue;
+			}
 			CAST_OBJ_NOTNULL(wp, ep->data.ptr, WAITED_MAGIC);
 			AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_DEL, wp->fd, NULL));
-			Lck_Lock(&vwe->mtx);
-			VTAILQ_REMOVE(&vwe->list, wp, list);
-			Lck_Unlock(&vwe->mtx);
-			vwe_eev(vwe, ep, now);
+			vwe->nwaited--;
+			if (ep->events & EPOLLIN)
+				Wait_Call(w, wp, WAITER_ACTION, now);
+			else if (ep->events & EPOLLERR)
+				Wait_Call(w, wp, WAITER_REMCLOSE, now);
+			else if (ep->events & EPOLLHUP)
+				Wait_Call(w, wp, WAITER_REMCLOSE, now);
+			else
+				Wait_Call(w, wp, WAITER_REMCLOSE, now);
 		}
-		idle = now - Wait_Tmo(vwe->waiter, NULL);
-		if (now - last_idle < .3 * Wait_Tmo(vwe->waiter, NULL))
-			continue;
-		last_idle = now;
-		VTAILQ_INIT(&tlist);
-		Lck_Lock(&vwe->mtx);
-		VTAILQ_FOREACH_SAFE(wp, &vwe->list, list, wp2) {
-			if (wp->idle > idle)
-				continue;
-			VTAILQ_REMOVE(&vwe->list, wp, list);
-			VTAILQ_INSERT_TAIL(&tlist, wp, list);
-			AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_DEL, wp->fd, NULL));
-		}
-		Lck_Unlock(&vwe->mtx);
-		while(1) {
-			wp = VTAILQ_FIRST(&tlist);
-			if (wp == NULL)
-				break;
-			VTAILQ_REMOVE(&tlist, wp, list);
-			Wait_Call(vwe->waiter, wp, WAITER_TIMEOUT, now);
-		}
+		if (vwe->nwaited == 0 && vwe->die)
+			break;
 	}
+	Lck_Unlock(&vwe->mtx);
+	AZ(close(vwe->pipe[0]));
+	AZ(close(vwe->pipe[1]));
+	AZ(close(vwe->epfd));
 	return (NULL);
 }
 
@@ -150,8 +152,12 @@ vwe_enter(void *priv, struct waited *wp)
 	ee.events = EPOLLIN | EPOLLRDHUP;
 	ee.data.ptr = wp;
 	Lck_Lock(&vwe->mtx);
-	VTAILQ_INSERT_TAIL(&vwe->list, wp, list);
+	vwe->nwaited++;
+	Wait_HeapInsert(vwe->waiter, wp);
 	AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_ADD, wp->fd, &ee));
+	/* If the epoll isn't due before our timeout, poke it via the pipe */
+	if (Wait_When(wp) < vwe->next)
+		assert(write(vwe->pipe[1], "X", 1) == 1);
 	Lck_Unlock(&vwe->mtx);
 	return(0);
 }
@@ -162,6 +168,7 @@ static void __match_proto__(waiter_init_f)
 vwe_init(struct waiter *w)
 {
 	struct vwe *vwe;
+	struct epoll_event ee;
 
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	vwe = w->priv;
@@ -170,8 +177,11 @@ vwe_init(struct waiter *w)
 
 	vwe->epfd = epoll_create(1);
 	assert(vwe->epfd >= 0);
-	VTAILQ_INIT(&vwe->list);
 	Lck_New(&vwe->mtx, lck_misc);
+	AZ(pipe(vwe->pipe));
+	ee.events = EPOLLIN | EPOLLRDHUP;
+	ee.data.ptr = vwe;
+	AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_ADD, vwe->pipe[0], &ee));
 
 	AZ(pthread_create(&vwe->thread, NULL, vwe_thread, vwe));
 }
@@ -186,20 +196,12 @@ vwe_fini(struct waiter *w)
 {
 	struct vwe *vwe;
 	void *vp;
-	int i;
 
 	CAST_OBJ_NOTNULL(vwe, w->priv, VWE_MAGIC);
 
 	Lck_Lock(&vwe->mtx);
-	while (!VTAILQ_EMPTY(&vwe->list)) {
-		Lck_Unlock(&vwe->mtx);
-		(void)usleep(100000);
-		Lck_Lock(&vwe->mtx);
-	}
 	vwe->die = 1;
-	i = vwe->epfd;
-	vwe->epfd = -1;
-	AZ(close(i));
+	assert(write(vwe->pipe[1], "Y", 1) == 1);
 	Lck_Unlock(&vwe->mtx);
 	AZ(pthread_join(vwe->thread, &vp));
 	Lck_Delete(&vwe->mtx);
