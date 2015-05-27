@@ -70,6 +70,12 @@ Wait_Tmo(const struct waiter *w, const struct waited *wp)
 	return (*w->waitfor->tmo);
 }
 
+static inline double
+Wait_When(const struct waiter *w, const struct waited *wp)
+{
+	return (Wait_Tmo(w, wp) + wp->idle);
+}
+
 void Wait_Call(const struct waiter *, struct waited *,
     enum wait_event ev, double now);
 void Wait_HeapInsert(const struct waiter *, struct waited *);

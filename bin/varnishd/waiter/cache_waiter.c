@@ -51,7 +51,7 @@ waited_cmp(void *priv, const void *a, const void *b)
 	CAST_OBJ_NOTNULL(aa, a, WAITED_MAGIC);
 	CAST_OBJ_NOTNULL(bb, b, WAITED_MAGIC);
 
-	return (aa->idle + Wait_Tmo(ww, aa) < bb->idle + Wait_Tmo(ww, bb));
+	return (Wait_When(ww, aa) < Wait_When(ww, bb));
 }
 
 static void __match_proto__(binheap_update_t)
@@ -99,11 +99,13 @@ Wait_HeapDue(const struct waiter *w, struct waited **wpp)
 	wp = binheap_root(w->heap);
 	CHECK_OBJ_ORNULL(wp, WAITED_MAGIC);
 	if (wp == NULL) {
-		*wpp = NULL;
+		if (wpp != NULL)
+			*wpp = NULL;
 		return (0);
 	}
-	*wpp = wp;
-	return(wp->idle + Wait_Tmo(w, wp));
+	if (wpp != NULL)
+		*wpp = wp;
+	return(Wait_When(w, wp));
 }
 
 /**********************************************************************/
