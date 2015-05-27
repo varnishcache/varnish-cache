@@ -184,7 +184,7 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 		    bp->display_name);
 		Lck_Lock(&bp->mtx);
 		VSC_C_main->backend_recycle++;
-		VBT_Recycle(bp->tcp_pool, &bo->htc->vbc);
+		VBT_Recycle(wrk, bp->tcp_pool, &bo->htc->vbc);
 	}
 #define ACCT(foo)	bp->vsc->foo += bo->acct.foo;
 #include "tbl/acct_fields_bereq.h"

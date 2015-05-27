@@ -148,7 +148,7 @@ vwk_enter(void *priv, struct waited *wp)
 	AZ(kevent(vwk->kq, &ke, 1, NULL, 0, NULL));
 
 	/* If the kqueue isn't due before our timeout, poke it via the pipe */
-	if (Wait_When(vwk->waiter, wp) < vwk->next)
+	if (Wait_When(wp) < vwk->next)
 		assert(write(vwk->pipe[1], "X", 1) == 1);
 
 	Lck_Unlock(&vwk->mtx);

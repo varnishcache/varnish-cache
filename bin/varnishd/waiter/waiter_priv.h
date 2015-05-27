@@ -39,8 +39,6 @@ struct waiter {
 	VTAILQ_ENTRY(waiter)		list;
 	VTAILQ_HEAD(,waited)		waithead;
 
-	struct waitfor			*waitfor;
-
 	void				*priv;
 	struct binheap			*heap;
 };
@@ -61,19 +59,20 @@ struct waiter_impl {
 };
 
 static inline double
-Wait_Tmo(const struct waiter *w, const struct waited *wp)
+Wait_Tmo(const struct waited *wp)
 {
-	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	CHECK_OBJ_ORNULL(wp, WAITED_MAGIC);
-	CHECK_OBJ_NOTNULL(w->waitfor, WAITFOR_MAGIC);
-	AN(w->waitfor->tmo);
-	return (*w->waitfor->tmo);
+	CHECK_OBJ_NOTNULL(wp->waitfor, WAITFOR_MAGIC);
+	AN(wp->waitfor->tmo);
+	return (*wp->waitfor->tmo);
 }
 
 static inline double
-Wait_When(const struct waiter *w, const struct waited *wp)
+Wait_When(const struct waited *wp)
 {
-	return (Wait_Tmo(w, wp) + wp->idle);
+	CHECK_OBJ_ORNULL(wp, WAITED_MAGIC);
+	CHECK_OBJ_NOTNULL(wp->waitfor, WAITFOR_MAGIC);
+	return (wp->idle + *wp->waitfor->tmo);
 }
 
 void Wait_Call(const struct waiter *, struct waited *,

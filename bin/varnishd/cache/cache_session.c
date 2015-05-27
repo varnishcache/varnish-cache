@@ -482,6 +482,7 @@ SES_Wait(struct sess *sp)
 	sp->waited.fd = sp->fd;
 	sp->waited.ptr = sp;
 	sp->waited.idle = sp->t_idle;
+	sp->waited.waitfor = &pp->wf;
 	if (Wait_Enter(pp->waiter, &sp->waited))
 		SES_Delete(sp, SC_PIPE_OVERFLOW, NAN);
 }
@@ -587,5 +588,5 @@ SES_NewPool(struct pool *pp, unsigned pool_no)
 	INIT_OBJ(&pp->wf, WAITFOR_MAGIC);
 	pp->wf.func = ses_handle;
 	pp->wf.tmo = &cache_param->timeout_idle;
-	pp->waiter = Waiter_New(&pp->wf);
+	pp->waiter = Waiter_New();
 }

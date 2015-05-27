@@ -39,6 +39,7 @@
 #include "cache.h"
 
 #include "cache_backend.h"
+#include "cache_pool.h"
 #include "vtcp.h"
 #include "vsa.h"
 #include "vtim.h"
@@ -56,7 +57,6 @@ struct tcp_pool {
 	struct lock		mtx;
 
 	struct waitfor		waitfor;
-	struct waiter		*waiter;
 	volatile double		timeout;
 
 	VTAILQ_HEAD(, vbc)	connlist;
@@ -166,7 +166,6 @@ VBT_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6)
 	INIT_OBJ(&tp->waitfor, WAITFOR_MAGIC);
 	tp->waitfor.func = tcp_handle;
 	tp->waitfor.tmo = &tp->timeout;
-	tp->waiter = Waiter_New(&tp->waitfor);
 	return (tp);
 }
 
@@ -211,7 +210,6 @@ VBT_Rel(struct tcp_pool **tpp)
 	Lck_Delete(&tp->mtx);
 	AZ(tp->n_conn);
 	AZ(tp->n_kill);
-	Waiter_Destroy(&tp->waiter);
 
 	FREE_OBJ(tp);
 }
@@ -250,11 +248,12 @@ VBT_Open(const struct tcp_pool *tp, double tmo, const struct suckaddr **sa)
  */
 
 void
-VBT_Recycle(struct tcp_pool *tp, struct vbc **vbcp)
+VBT_Recycle(const struct worker *wrk, struct tcp_pool *tp, struct vbc **vbcp)
 {
 	struct vbc *vbc;
 	int i = 0;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
 	vbc = *vbcp;
 	*vbcp = NULL;
@@ -271,7 +270,8 @@ VBT_Recycle(struct tcp_pool *tp, struct vbc **vbcp)
 	vbc->waited->fd = vbc->fd;
 	vbc->waited->idle = VTIM_real();
 	vbc->state = VBC_STATE_AVAIL;
-	if (Wait_Enter(tp->waiter, vbc->waited)) {
+	vbc->waited->waitfor =  &tp->waitfor;
+	if (Wait_Enter(wrk->pool->waiter, vbc->waited)) {
 		VTCP_close(&vbc->fd);
 		memset(vbc, 0x33, sizeof *vbc);
 		free(vbc);

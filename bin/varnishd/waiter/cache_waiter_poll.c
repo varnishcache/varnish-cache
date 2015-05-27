@@ -183,7 +183,7 @@ vwp_main(void *priv)
 				break;
 			if (vwp->pollfd[i].revents)
 				v--;
-			then = Wait_When(vwp->waiter, wp);
+			then = Wait_When(wp);
 			if (then <= now) {
 				Wait_Call(vwp->waiter, wp, WAITER_TIMEOUT, now);
 				vwp_del(vwp, i);

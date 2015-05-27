@@ -67,12 +67,13 @@ struct waited {
 	int			fd;
 	unsigned		idx;
 	void			*ptr;
+	const struct waitfor	*waitfor;
 	double			idle;
 	VTAILQ_ENTRY(waited)	list;
 };
 
 /* cache_waiter.c */
 int Wait_Enter(const struct waiter *, struct waited *);
-struct waiter *Waiter_New(struct waitfor *);
+struct waiter *Waiter_New(void);
 void Waiter_Destroy(struct waiter **);
 const char *Waiter_GetName(void);

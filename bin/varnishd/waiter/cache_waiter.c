@@ -51,7 +51,7 @@ waited_cmp(void *priv, const void *a, const void *b)
 	CAST_OBJ_NOTNULL(aa, a, WAITED_MAGIC);
 	CAST_OBJ_NOTNULL(bb, b, WAITED_MAGIC);
 
-	return (Wait_When(ww, aa) < Wait_When(ww, bb));
+	return (Wait_When(aa) < Wait_When(bb));
 }
 
 static void __match_proto__(binheap_update_t)
@@ -72,12 +72,12 @@ Wait_Call(const struct waiter *w,
 {
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
-	CHECK_OBJ_NOTNULL(w->waitfor, WAITFOR_MAGIC);
-	AN(w->waitfor->func);
+	CHECK_OBJ_NOTNULL(wp->waitfor, WAITFOR_MAGIC);
+	AN(wp->waitfor->func);
 	if (wp->idx != BINHEAP_NOIDX)
 		binheap_delete(w->heap, wp->idx);
 	assert(wp->idx == BINHEAP_NOIDX);
-	w->waitfor->func(wp, ev, now);
+	wp->waitfor->func(wp, ev, now);
 }
 
 /**********************************************************************/
@@ -105,7 +105,7 @@ Wait_HeapDue(const struct waiter *w, struct waited **wpp)
 	}
 	if (wpp != NULL)
 		*wpp = wp;
-	return(Wait_When(w, wp));
+	return(Wait_When(wp));
 }
 
 /**********************************************************************/
@@ -117,6 +117,7 @@ Wait_Enter(const struct waiter *w, struct waited *wp)
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	assert(wp->fd > 0);			// stdin never comes here
+	CHECK_OBJ_NOTNULL(wp->waitfor, WAITFOR_MAGIC);
 	wp->idx = BINHEAP_NOIDX;
 	return (w->impl->enter(w->priv, wp));
 }
@@ -134,7 +135,7 @@ Waiter_GetName(void)
 }
 
 struct waiter *
-Waiter_New(struct waitfor *wf)
+Waiter_New(void)
 {
 	struct waiter *w;
 
@@ -149,7 +150,6 @@ Waiter_New(struct waitfor *wf)
 	INIT_OBJ(w, WAITER_MAGIC);
 	w->priv = (void*)(w + 1);
 	w->impl = waiter;
-	w->waitfor = wf;
 	VTAILQ_INIT(&w->waithead);
 	w->heap = binheap_new(w, waited_cmp, waited_update);
 
