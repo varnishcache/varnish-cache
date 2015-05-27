@@ -54,10 +54,9 @@ struct vwk {
 	pthread_t		thread;
 	double			next;
 	int			pipe[2];
-
-	VTAILQ_HEAD(,waited)	list;
-	struct lock		mtx;
+	unsigned		nwaited;
 	int			die;
+	struct lock		mtx;
 };
 
 /*--------------------------------------------------------------------*/
@@ -116,13 +115,13 @@ vwk_thread(void *priv)
 				continue;
 			}
 			CAST_OBJ_NOTNULL(wp, ke[j].udata, WAITED_MAGIC);
-			VTAILQ_REMOVE(&vwk->list, wp, list);
+			vwk->nwaited--;
 			if (kp->flags & EV_EOF)
 				Wait_Call(w, wp, WAITER_REMCLOSE, now);
 			else
 				Wait_Call(w, wp, WAITER_ACTION, now);
 		}
-		if (VTAILQ_EMPTY(&vwk->list) && vwk->die)
+		if (vwk->nwaited == 0 && vwk->die)
 			break;
 	}
 	Lck_Unlock(&vwk->mtx);
@@ -143,7 +142,7 @@ vwk_enter(void *priv, struct waited *wp)
 	CAST_OBJ_NOTNULL(vwk, priv, VWK_MAGIC);
 	EV_SET(&ke, wp->fd, EVFILT_READ, EV_ADD|EV_ONESHOT, 0, 0, wp);
 	Lck_Lock(&vwk->mtx);
-	VTAILQ_INSERT_TAIL(&vwk->list, wp, list);
+	vwk->nwaited++;
 	Wait_HeapInsert(vwk->waiter, wp);
 	AZ(kevent(vwk->kq, &ke, 1, NULL, 0, NULL));
 
@@ -170,7 +169,6 @@ vwk_init(struct waiter *w)
 
 	vwk->kq = kqueue();
 	assert(vwk->kq >= 0);
-	VTAILQ_INIT(&vwk->list);
 	Lck_New(&vwk->mtx, lck_misc);
 	AZ(pipe(vwk->pipe));
 	EV_SET(&ke, vwk->pipe[0], EVFILT_READ, EV_ADD, 0, 0, vwk);

@@ -69,7 +69,6 @@ struct waited {
 	void			*ptr;
 	const struct waitfor	*waitfor;
 	double			idle;
-	VTAILQ_ENTRY(waited)	list;
 };
 
 /* cache_waiter.c */
