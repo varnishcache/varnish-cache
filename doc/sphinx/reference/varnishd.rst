@@ -61,8 +61,10 @@ OPTIONS
 -f config
 
   Use the specified VCL configuration file instead of the builtin
-  default.  See :ref:`vcl(7)` for details on VCL syntax. When no
-  configuration is supplied `varnishd` will not start the child process.
+  default.  See :ref:`vcl(7)` for details on VCL syntax.
+
+  When neither a -f nor a -b argument are given, `varnishd` will not
+  start the worker process but process cli commands.
 
 -F
 
