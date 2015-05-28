@@ -141,7 +141,8 @@ usage(void)
 #define FMT "    %-28s # %s\n"
 
 	fprintf(stderr, "usage: varnishd [options]\n");
-	fprintf(stderr, FMT, "-a address:port", "HTTP listen address and port");
+	fprintf(stderr, FMT, "-a address:port", "HTTP listen address and port"
+	    " (default: *:80)");
 	fprintf(stderr, FMT, "-b address:port", "backend address and port");
 	fprintf(stderr, FMT, "", "   -b <hostname_or_IP>");
 	fprintf(stderr, FMT, "", "   -b '<hostname_or_IP>:<port_or_service>'");
@@ -708,7 +709,9 @@ main(int argc, char * const *argv)
 		ARGV_ERR("-C only good with -b or -f\n");
 
 	if (VTAILQ_EMPTY(&heritage.socks))
-		ARGV_ERR("Need -a argument(s)\n");
+		MAC_Arg("*:80");
+
+	assert(! VTAILQ_EMPTY(&heritage.socks));
 
 	if (!d_flag) {
 		if (b_arg == NULL && f_arg == NULL) {
