@@ -105,7 +105,7 @@ vwe_thread(void *priv)
 			Wait_Call(w, wp, WAITER_TIMEOUT, now);
 		}
 		then = vwe->next - now;
-		i = (int)floor(1e3 * then);
+		i = (int)ceil(1e3 * then);
 		assert(i > 0);
 		Lck_Unlock(&vwe->mtx);
 		n = epoll_wait(vwe->epfd, ev, NEEV, i);
