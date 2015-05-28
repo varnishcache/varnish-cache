@@ -655,10 +655,6 @@ main(int argc, char * const *argv)
 	if (b_arg != NULL && f_arg != NULL)
 		ARGV_ERR("Only one of -b or -f can be specified\n");
 
-	if (d_flag == 0 && b_arg == NULL && f_arg == NULL && M_arg == NULL)
-		ARGV_ERR("At least one of -d, -b, -f or -M "
-		    "must be specified\n");
-
 	if (S_arg != NULL && *S_arg == '\0') {
 		fprintf(stderr,
 		    "Warning: Empty -S argument, no CLI authentication.\n");
