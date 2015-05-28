@@ -509,6 +509,11 @@ main(int argc, char * const *argv)
 	init_params(cli);
 	cli_check(cli);
 
+	if (argc == 1) {
+		jailed++;
+		VJ_Init(NULL);
+	}
+
 	while ((o = getopt(argc, argv,
 	    "a:b:Cdf:Fh:i:j:l:M:n:P:p:r:S:s:T:t:VW:x:")) != -1) {
 		/*
