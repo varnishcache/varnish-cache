@@ -35,8 +35,8 @@ OPTIONS
   address can be a host name ("localhost"), an IPv4 dotted-quad
   ("127.0.0.1"), or an IPv6 address enclosed in square brackets
   ("[::1]"). If address is not specified, `varnishd` will listen on all
-  available IPv4 and IPv6 interfaces. If port is not specified, the
-  default HTTP port as listed in ``/etc/services`` is used.
+  available IPv4 and IPv6 interfaces. If port is not specified, port
+  80 (http) is used.
   An additional protocol type can be set for the listening socket with PROTO.
   Valid protocol types are: HTTP/1 (default), and PROXY.
   Multiple listening adresses can be specificed by using multiple -a arguments.
