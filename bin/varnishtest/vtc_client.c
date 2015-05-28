@@ -61,7 +61,7 @@ static VTAILQ_HEAD(, client)	clients =
     VTAILQ_HEAD_INITIALIZER(clients);
 
 /**********************************************************************
- * Server thread
+ * Client thread
  */
 
 static void *
@@ -196,7 +196,7 @@ client_run(struct client *c)
 
 
 /**********************************************************************
- * Server command dispatch
+ * Client command dispatch
  */
 
 void
