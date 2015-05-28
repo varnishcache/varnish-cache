@@ -654,9 +654,8 @@ main(int argc, char * const *argv)
 	if (b_arg != NULL && f_arg != NULL)
 		ARGV_ERR("Only one of -b or -f can be specified\n");
 
-	if (T_arg == NULL && d_flag == 0 && b_arg == NULL &&
-	    f_arg == NULL && M_arg == NULL)
-		ARGV_ERR("At least one of -d, -b, -f, -M or -T "
+	if (d_flag == 0 && b_arg == NULL && f_arg == NULL && M_arg == NULL)
+		ARGV_ERR("At least one of -d, -b, -f or -M "
 		    "must be specified\n");
 
 	if (S_arg != NULL && *S_arg == '\0') {
