@@ -36,18 +36,16 @@
 #include "mgt/mgt.h"
 #include "waiter/mgt_waiter.h"
 
-static const struct choice waiter_choice[] = {
+const struct choice waiter_choice[] = {
     #if defined(HAVE_KQUEUE)
 	{ "kqueue",	&waiter_kqueue },
     #endif
     #if defined(HAVE_EPOLL_CTL)
 	{ "epoll",	&waiter_epoll },
     #endif
-#if 0
     #if defined(HAVE_PORT_CREATE)
 	{ "ports",	&waiter_ports },
     #endif
-#endif
 	{ "poll",	&waiter_poll },
 	{ NULL,		NULL}
 };

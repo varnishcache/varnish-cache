@@ -3,7 +3,7 @@
  * Copyright (c) 2006 Varnish Software AS
  * Copyright (c) 2007 OmniTI Computer Consulting, Inc.
  * Copyright (c) 2007 Theo Schlossnagle
- * Copyright (c) 2010-2012 UPLEX, Nils Goroll
+ * Copyright (c) 2010-2015 UPLEX, Nils Goroll
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,36 @@
  *
  */
 
-#if 0
+
+/*
+ * XXX questions to discuss with phk - is it really better
+ *
+ * - to share the binheap (requiring the mtx), which epoll / kq do now
+ *
+ * - than to send events to be entered through the events interface and keep the
+ *   binheap private to the waiter thread (which we still do here) ?
+ *
+ * at best, we can save two port syscalls, but not always:
+ *
+ * - if the waited event has a timeout earlier than the first element on the
+ *   binheap, we need to kick the waiter thread anyway
+ *
+ * - if the waiter thread is busy, it will get the passed waited event together
+ *   with other events
+ *
+ * on the other end we need to sync on the mtx to protect the binheap.  Solaris
+ * uses userland adaptive mutexes: if the thread holding the lock is running,
+ * spinlock, otherwise syscall.
+ *
+ * and the critical section for the mtx is basically "whenever not blocking in
+ * port_getn", which does not sound too good with respect to scalability.
+ *
+ * At any rate, we could save even more syscalls by increasing nevents
+ * (port_getn returns when nevents exist or the timeout is reached). This would
+ * increase our latency reacting on POLLIN events.
+ *
+ */
+
 #include "config.h"
 
 #if defined(HAVE_PORT_CREATE)
@@ -47,24 +76,24 @@
 #include "waiter/mgt_waiter.h"
 #include "vtim.h"
 
+// XXX replace with process.max-port-events bound to a sensible maximum
 #define MAX_EVENTS 256
 
 struct vws {
 	unsigned		magic;
 #define VWS_MAGIC		0x0b771473
 	struct waiter		*waiter;
-
 	pthread_t		thread;
+	double			next;
 	int			dport;
+	unsigned		nwaited;
+	int			die;
 };
 
 static inline void
 vws_add(struct vws *vws, int fd, void *data)
 {
-	/*
-	 * POLLIN should be all we need here
-	 *
-	 */
+	// POLLIN should be all we need here
 	AZ(port_associate(vws->dport, PORT_SOURCE_FD, fd, POLLIN, data));
 }
 
@@ -75,38 +104,29 @@ vws_del(struct vws *vws, int fd)
 }
 
 static inline void
-vws_port_ev(struct vws *vws, port_event_t *ev, double now) {
-	struct waited *sp;
+vws_port_ev(struct vws *vws, struct waiter *w, port_event_t *ev, double now) {
+	struct waited *wp;
 	if(ev->portev_source == PORT_SOURCE_USER) {
-		CAST_OBJ_NOTNULL(sp, ev->portev_user, WAITED_MAGIC);
-		assert(sp->fd >= 0);
-		VTAILQ_INSERT_TAIL(&vws->waiter->waithead, sp, list);
-		vws_add(vws, sp->fd, sp);
+		CAST_OBJ_NOTNULL(wp, ev->portev_user, WAITED_MAGIC);
+		assert(wp->fd >= 0);
+		vws->nwaited++;
+		Wait_HeapInsert(vws->waiter, wp);
+		vws_add(vws, wp->fd, wp);
 	} else {
 		assert(ev->portev_source == PORT_SOURCE_FD);
-		CAST_OBJ_NOTNULL(sp, ev->portev_user, WAITED_MAGIC);
-		assert(sp->fd >= 0);
-		if(ev->portev_events & POLLERR) {
-			vws_del(vws, sp->fd);
-			Wait_Handle(vws->waiter, sp, WAITER_REMCLOSE, now);
-			return;
-		}
-
+		CAST_OBJ_NOTNULL(wp, ev->portev_user, WAITED_MAGIC);
+		assert(wp->fd >= 0);
+		vws->nwaited--;
 		/*
-		 * note: the original man page for port_associate(3C) states:
-		 *
-		 *    When an event for a PORT_SOURCE_FD object is retrieved,
-		 *    the object no longer has an association with the port.
-		 *
-		 * This can be read along the lines of sparing the
-		 * port_dissociate after port_getn(), but in fact,
-		 * port_dissociate should be used
+		 * port_getn does not implicitly disassociate
 		 *
 		 * Ref: http://opensolaris.org/jive/thread.jspa?\
 		 *          threadID=129476&tstart=0
 		 */
-		vws_del(vws, sp->fd);
-		Wait_Handle(vws->waiter, sp, WAITER_ACTION, now);
+		vws_del(vws, wp->fd);
+		Wait_Call(w, wp, ev->portev_events & POLLERR ?
+		    WAITER_REMCLOSE : WAITER_ACTION,
+		    now);
 	}
 	return;
 }
@@ -114,53 +134,46 @@ vws_port_ev(struct vws *vws, port_event_t *ev, double now) {
 static void *
 vws_thread(void *priv)
 {
-	struct waited *sp;
+	struct waited *wp;
+	struct waiter *w;
 	struct vws *vws;
+	double now, then;
+	struct timespec ts;
+	const double	max_t  = 100.0;
+	port_event_t ev[MAX_EVENTS];
+	u_int nevents;
+	int ei, ret;
 
 	CAST_OBJ_NOTNULL(vws, priv, VWS_MAGIC);
-	/*
-	 * timeouts:
-	 *
-	 * min_ts : Minimum timeout for port_getn
-	 * min_t  : ^ equivalent in floating point representation
-	 *
-	 * max_ts : Maximum timeout for port_getn
-	 * max_t  : ^ equivalent in floating point representation
-	 *
-	 * with (nevents == 1), we should always choose the correct port_getn
-	 * timeout to check session timeouts, so max is just a safety measure
-	 * (if this implementation is correct, it could be set to an "infinte"
-	 *  value)
-	 *
-	 * with (nevents > 1), min and max define the acceptable range for
-	 * - additional latency of keep-alive connections and
-	 * - additional tolerance for handling session timeouts
-	 *
-	 */
-	static struct timespec min_ts = {0L, 100L * 1000L * 1000L /*ns*/};
-	static double          min_t  = 0.1; /* 100    ms*/
-	static struct timespec max_ts = {1L, 0L};		/* 1 second */
-	static double	       max_t  = 1.0;			/* 1 second */
+	w = vws->waiter;
+	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
+	THR_SetName("cache-ports");
 
-	/* XXX: These should probably go in vws ? */
-	struct timespec ts;
-	struct timespec *timeout;
+	now = VTIM_real();
 
-	timeout = &max_ts;
-
-	while (!vws->waiter->dismantle) {
-		port_event_t ev[MAX_EVENTS];
-		u_int nevents;
-		int ei, ret;
-		double now, idle;
+	while (!vws->die) {
+		while (1) {
+			then = Wait_HeapDue(w, &wp);
+			if (wp == NULL) {
+				vws->next = now + max_t;
+				break;
+			} else if (then > now) {
+				vws->next = then;
+				break;
+			}
+			CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
+			vws_del(vws, wp->fd);
+			Wait_Call(w, wp, WAITER_TIMEOUT, now);
+		}
+		then = vws->next - now;
+		ts.tv_sec = (time_t)floor(then);
+		ts.tv_nsec = (long)(1e9 * (then - ts.tv_sec));
 
 		/*
-		 * XXX Do we want to scale this up dynamically to increase
-		 *     efficiency in high throughput situations? - would need to
-		 *     start with one to keep latency low at any rate
-		 *
-		 *     Note: when increasing nevents, we must lower min_ts
-		 *	     and max_ts
+		 * min number of events we accept.  could consider to scale up
+		 * for efficiency, but as we always get all waiting events up to
+		 * the maximum, we'd only optimize the idle case sacrificing
+		 * some latency
 		 */
 		nevents = 1;
 
@@ -177,12 +190,12 @@ vws_thread(void *priv)
 		 *
 		 */
 
-		ret = port_getn(vws->dport, ev, MAX_EVENTS, &nevents, timeout);
+		ret = port_getn(vws->dport, ev, MAX_EVENTS, &nevents, &ts);
 		now = VTIM_real();
 
 		if (ret < 0 && errno == EBADF) {
-			/* Our stop signal */
-			AN(vws->waiter->dismantle);
+			/* close on dport is our stop signal */
+			AN(vws->die);
 			break;
 		}
 
@@ -190,61 +203,21 @@ vws_thread(void *priv)
 			assert((errno == EINTR) || (errno == ETIME));
 
 		for (ei = 0; ei < nevents; ei++)
-			vws_port_ev(vws, ev + ei, now);
-
-		/* check for timeouts */
-		idle = now - *vws->waiter->tmo;
-
-		/*
-		 * This loop assumes that the oldest sessions are always at the
-		 * beginning of the list (which is the case if we guarantee to
-		 * enqueue at the tail only
-		 *
-		 */
-
-		for (;;) {
-			sp = VTAILQ_FIRST(&vws->waiter->waithead);
-			if (sp == NULL)
-				break;
-			if (sp->idle > idle) {
-				break;
-			}
-			vws_del(vws, sp->fd);
-			Wait_Handle(vws->waiter, sp, WAITER_TIMEOUT, now);
-		}
-
-		/*
-		 * Calculate the timeout for the next get_portn
-		 */
-
-		if (sp) {
-			double tmo = (sp->idle + *vws->waiter->tmo) - now;
-
-			if (tmo < min_t) {
-				timeout = &min_ts;
-			} else if (tmo > max_t) {
-				timeout = &max_ts;
-			} else {
-				ts = VTIM_timespec(tmo);
-				timeout = &ts;
-			}
-		} else {
-			timeout = &max_ts;
-		}
+			vws_port_ev(vws, w, &ev[ei], now);
 	}
-	return(0);
+	return NULL;
 }
 
 /*--------------------------------------------------------------------*/
 
 static int
-vws_pass(void *priv, struct waited *sp)
+vws_enter(void *priv, struct waited *wp)
 {
 	int r;
 	struct vws *vws;
 
 	CAST_OBJ_NOTNULL(vws, priv, VWS_MAGIC);
-	r = port_send(vws->dport, 0, TRUST_ME(sp));
+	r = port_send(vws->dport, 0, TRUST_ME(wp));
 	if (r == -1 && errno == EAGAIN)
 		return (-1);
 	AZ(r);
@@ -277,6 +250,7 @@ vws_fini(struct waiter *w)
 	void *vp;
 
 	CAST_OBJ_NOTNULL(vws, w->priv, VWS_MAGIC);
+	vws->die = 1;
 	AZ(close(vws->dport));
 	AZ(pthread_join(vws->thread, &vp));
 }
@@ -287,9 +261,8 @@ const struct waiter_impl waiter_ports = {
 	.name =		"ports",
 	.init =		vws_init,
 	.fini =		vws_fini,
-	.pass =		vws_pass,
+	.enter =		vws_enter,
 	.size =		sizeof(struct vws),
 };
 
 #endif /* defined(HAVE_PORT_CREATE) */
-#endif
