@@ -431,10 +431,9 @@ ses_handle(struct waited *wp, enum wait_event ev, double now)
 
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	CAST_OBJ_NOTNULL(sp, wp->ptr, SESS_MAGIC);
-	assert(sp->waited == wp);
+	assert((void *)sp->ws->f == wp);
 	wp->magic = 0;
 	wp = NULL;
-	sp->waited = NULL;
 
 	WS_Release(sp->ws, 0);
 
@@ -470,6 +469,7 @@ void
 SES_Wait(struct sess *sp)
 {
 	struct pool *pp;
+	struct waited *wp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	pp = sp->pool;
@@ -483,18 +483,20 @@ SES_Wait(struct sess *sp)
 		return;
 	}
 
-	AZ(sp->waited);
+	/*
+	 * put struct waited on the workspace
+	 */
 	if (WS_Reserve(sp->ws, sizeof(struct waited))
 	    < sizeof(struct waited)) {
 		SES_Delete(sp, SC_OVERLOAD, NAN);
 	}
-	sp->waited = (void*)sp->ws->f;
-	INIT_OBJ(sp->waited, WAITED_MAGIC);
-	sp->waited->fd = sp->fd;
-	sp->waited->ptr = sp;
-	sp->waited->idle = sp->t_idle;
-	sp->waited->waitfor = &pp->wf;
-	if (Wait_Enter(pp->waiter, sp->waited))
+	wp = (void*)sp->ws->f;
+	INIT_OBJ(wp, WAITED_MAGIC);
+	wp->fd = sp->fd;
+	wp->ptr = sp;
+	wp->idle = sp->t_idle;
+	wp->waitfor = &pp->wf;
+	if (Wait_Enter(pp->waiter, wp))
 		SES_Delete(sp, SC_PIPE_OVERFLOW, NAN);
 }
 
