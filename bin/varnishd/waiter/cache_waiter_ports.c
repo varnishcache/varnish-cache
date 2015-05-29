@@ -27,18 +27,20 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- */
-
-
-/*
- * XXX questions to discuss with phk - is it really better
+ * On concurrency:
  *
- * - to share the binheap (requiring the mtx), which epoll / kq do now
+ * There are several options for the enter method to add an fd for the waiter
+ * thread to look after:
  *
- * - than to send events to be entered through the events interface and keep the
- *   binheap private to the waiter thread (which we still do here) ?
+ * - share the binheap (requiring a mutex) - implemented for epoll and kqueues
  *
- * at best, we can save two port syscalls, but not always:
+ * - send events to be entered through the events interface and keep the binheap
+ *   private to the waiter thread - implemented here.
+ *
+ * - some other message passing / mailbox
+ *
+ * It has not yet been determined which option is best. In the best case, by
+ * sharing the binheap, we can save two port syscalls - but not always:
  *
  * - if the waited event has a timeout earlier than the first element on the
  *   binheap, we need to kick the waiter thread anyway
