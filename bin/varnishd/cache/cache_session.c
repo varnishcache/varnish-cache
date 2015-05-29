@@ -431,8 +431,12 @@ ses_handle(struct waited *wp, enum wait_event ev, double now)
 
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	CAST_OBJ_NOTNULL(sp, wp->ptr, SESS_MAGIC);
+	assert(sp->waited == wp);
+	wp->magic = 0;
+	wp = NULL;
+	sp->waited = NULL;
 
-	AZ(sp->ws->r);
+	WS_Release(sp->ws, 0);
 
 	switch (ev) {
 	case WAITER_TIMEOUT:
@@ -478,12 +482,19 @@ SES_Wait(struct sess *sp)
 		SES_Delete(sp, SC_REM_CLOSE, NAN);
 		return;
 	}
-	sp->waited.magic = WAITED_MAGIC;
-	sp->waited.fd = sp->fd;
-	sp->waited.ptr = sp;
-	sp->waited.idle = sp->t_idle;
-	sp->waited.waitfor = &pp->wf;
-	if (Wait_Enter(pp->waiter, &sp->waited))
+
+	AZ(sp->waited);
+	if (WS_Reserve(sp->ws, sizeof(struct waited))
+	    < sizeof(struct waited)) {
+		SES_Delete(sp, SC_OVERLOAD, NAN);
+	}
+	sp->waited = (void*)sp->ws->f;
+	INIT_OBJ(sp->waited, WAITED_MAGIC);
+	sp->waited->fd = sp->fd;
+	sp->waited->ptr = sp;
+	sp->waited->idle = sp->t_idle;
+	sp->waited->waitfor = &pp->wf;
+	if (Wait_Enter(pp->waiter, sp->waited))
 		SES_Delete(sp, SC_PIPE_OVERFLOW, NAN);
 }
 

@@ -636,7 +636,7 @@ struct sess {
 
 	struct pool		*pool;
 
-	struct waited		waited;
+	struct waited		*waited;	// on ws while waiting
 
 	/* Session related fields ------------------------------------*/
 
