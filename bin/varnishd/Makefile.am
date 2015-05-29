@@ -108,7 +108,6 @@ noinst_HEADERS = \
 	mgt/mgt_param.h \
 	storage/storage.h \
 	storage/storage_persistent.h \
-	waiter/waiter.h \
 	waiter/waiter_priv.h \
 	waiter/mgt_waiter.h
 
@@ -119,7 +118,8 @@ nobase_pkginclude_HEADERS = \
 	cache/cache_backend.h \
 	cache/cache_director.h \
 	common/common.h \
-	common/params.h
+	common/params.h \
+	waiter/waiter.h
 
 varnishd_CFLAGS = \
 	@PCRE_CFLAGS@ \
