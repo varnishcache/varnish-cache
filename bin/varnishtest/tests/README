@@ -22,6 +22,7 @@ Naming scheme
 	id ~ [j] --> JAIL tests
 	id ~ [l] --> VSL tests
 	id ~ [m] --> VMOD tests excluding director
+	id ~ [o] --> prOxy protocol
 	id ~ [p] --> Persistent tests
 	id ~ [r] --> Regression tests, same number as ticket
 	id ~ [s] --> Slow tests, expiry, grace etc.
