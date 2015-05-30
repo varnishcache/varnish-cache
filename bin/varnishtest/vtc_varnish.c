@@ -392,7 +392,7 @@ varnish_launch(struct varnish *v)
 	vsb = VSB_new_auto();
 	AN(vsb);
 	VSB_printf(vsb, "cd ${pwd} &&");
-	VSB_printf(vsb, " exec ${varnishd} %s -d -d -n %s",
+	VSB_printf(vsb, " exec ${varnishd} %s -d -n %s",
 	    v->jail, v->workdir);
 	VSB_printf(vsb, " -l 2m,1m,-");
 	VSB_printf(vsb, " -p auto_restart=off");
@@ -763,7 +763,8 @@ do_stat_cb(void *priv, const struct VSC_point * const pt)
 }
 
 static void
-varnish_expect(const struct varnish *v, char * const *av) {
+varnish_expect(const struct varnish *v, char * const *av)
+{
 	uint64_t ref;
 	int good;
 	char *r;
