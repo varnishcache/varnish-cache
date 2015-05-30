@@ -36,7 +36,7 @@
 #include "mgt/mgt.h"
 #include "waiter/mgt_waiter.h"
 
-const struct choice waiter_choice[] = {
+static const struct choice waiter_choice[] = {
     #if defined(HAVE_KQUEUE)
 	{ "kqueue",	&waiter_kqueue },
     #endif
