@@ -73,8 +73,8 @@ vbo_New(void)
 	return (bo);
 }
 
-void
-VBO_Free(struct busyobj **bop)
+static void
+vbo_Free(struct busyobj **bop)
 {
 	struct busyobj *bo;
 
@@ -215,7 +215,7 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 	memset(&bo->refcount, 0,
 	    sizeof *bo - offsetof(struct busyobj, refcount));
 
-	VBO_Free(&bo);
+	vbo_Free(&bo);
 }
 
 void
