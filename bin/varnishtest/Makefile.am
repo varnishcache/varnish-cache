@@ -34,7 +34,8 @@ varnishtest_SOURCES = \
 		vtc_sema.c \
 		vtc_server.c \
 		vtc_varnish.c \
-		vtc_logexp.c
+		vtc_logexp.c \
+		vtc_process.c
 
 varnishtest_LDADD = \
 		$(top_builddir)/lib/libvarnish/libvarnish.la \

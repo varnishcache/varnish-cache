@@ -432,6 +432,7 @@ varnish_launch(struct varnish *v)
 	} else {
 		vtc_log(v->vl, 3, "PID: %ld", (long)v->pid);
 		macro_def(v->vl, v->name, "pid", "%ld", (long)v->pid);
+		macro_def(v->vl, v->name, "name", "%s", v->workdir);
 	}
 	AZ(close(v->fds[0]));
 	AZ(close(v->fds[3]));

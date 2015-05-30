@@ -27,4 +27,5 @@ Naming scheme
 	id ~ [r] --> Regression tests, same number as ticket
 	id ~ [s] --> Slow tests, expiry, grace etc.
 	id ~ [t] --> sTreaming tests
+	id ~ [u] --> Unusual background processes
 	id ~ [v] --> VCL tests: execute VRT functions

@@ -1,0 +1,34 @@
+varnishtest "Simple process tests"
+
+# new & start
+process p1 "cat" -start
+process p2 "cat" -start
+process p3 "cat" -start
+
+# write
+process p1 -writeln "foo"
+process p2 -writeln "bar"
+process p3 -writeln "baz"
+
+# give enough time for the writes
+delay 0.5
+
+# stop
+process p1 -stop
+process p2 -close
+process p3 -kill "HUP"
+
+# wait
+process p1 -wait
+process p2 -wait
+process p3 -wait
+
+# check stdout
+shell "grep foo ${tmpdir}/p1/stdout >/dev/null 2>&1"
+shell "grep bar ${tmpdir}/p2/stdout >/dev/null 2>&1"
+shell "grep baz ${tmpdir}/p3/stdout >/dev/null 2>&1"
+
+# check stderr
+shell "test -f ${tmpdir}/p1/stderr -a ! -s ${tmpdir}/p1/stderr"
+shell "test -f ${tmpdir}/p2/stderr -a ! -s ${tmpdir}/p2/stderr"
+shell "test -f ${tmpdir}/p3/stderr -a ! -s ${tmpdir}/p3/stderr"

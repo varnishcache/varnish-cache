@@ -1,0 +1,43 @@
+varnishtest "varnishncsa log file rotation"
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	txresp -status 200
+
+	rxreq
+	expect req.url == "/bar"
+	txresp -status 404
+} -start
+
+varnish v1 -vcl+backend "" -start
+
+process p1 "${varnishncsa} -n ${v1_name} -w ${tmpdir}/ncsa.log -F %s" -start
+
+# give varnishncsa enough time to open the VSM
+delay 1
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+} -run
+
+# give varnishncsa enough time to write
+delay 1
+
+# rotate logs
+shell "mv ${tmpdir}/ncsa.log ${tmpdir}/ncsa.old.log >/dev/null 2>&1"
+process p1 -kill "HUP"
+
+client c1 {
+	txreq -url "/bar"
+	rxresp
+} -run
+
+# give varnishncsa enough time to write
+delay 1
+
+process p1 -stop
+
+shell "grep 200 ${tmpdir}/ncsa.old.log >/dev/null"
+shell "grep 404 ${tmpdir}/ncsa.log >/dev/null"
