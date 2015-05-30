@@ -97,108 +97,107 @@ PARAM(
 	/* func */	NULL
 )
 
-/**********************************************************************/
-#if 0 /* NOT YET */
 PARAM(
 	/* name */	auto_restart,
-	/* tweak */	tweak_bool,
-	/* var */	auto_restart,
-	/* min */	none,
-	/* max */	none,
-	/* default */	on,
-	/* units */	bool,
-	/* flags */	00,
+	/* typ */	bool,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	"on",
+	/* units */	"bool",
+	/* flags */	0,
 	/* s-text */
-	"Restart child process automatically if it dies.\n",
+	"Automatically restart the child/worker process if it dies.",
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	ban_dups,
-	/* tweak */	tweak_bool,
-	/* var */	ban_dups,
-	/* min */	none,
-	/* max */	none,
-	/* default */	on,
-	/* units */	bool,
-	/* flags */	00,
+	/* typ */	bool,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	"on",
+	/* units */	"bool",
+	/* flags */	0,
 	/* s-text */
-	"Eliminate older identical bans when new bans are created.  This "
-	"test is CPU intensive and scales with the number and complexity "
-	"of active (non-Gone) bans.  If identical bans are frequent, the "
-	"amount of CPU needed to actually test  the bans will be similarly "
-	"reduced.\n",
+	"Eliminate older identical bans when a new ban is added.  This saves "
+	"CPU cycles by not comparing objects to identical bans.\n"
+	"This is a waste of time if you have many bans which are never "
+	"identical.",
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	ban_lurker_age,
-	/* tweak */	tweak_timeout,
-	/* var */	ban_lurker_age,
-	/* min */	0.000,
-	/* max */	none,
-	/* default */	60.000,
-	/* units */	seconds,
-	/* flags */	00,
+	/* tweak */	timeout,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"60",
+	/* units */	"seconds",
+	/* flags */	0,
 	/* s-text */
-	"The ban lurker does not process bans until they are this old.  "
-	"Right when a ban is added, the most frequently hit objects will "
+	"The ban lurker only process bans when they are this old.  "
+	"When a ban is added, the most frequently hit objects will "
 	"get tested against it as part of object lookup.  This parameter "
-	"prevents the ban-lurker from kicking in, until the rush is over.\n",
+	"prevents the ban-lurker from kicking in, until the rush is over.",
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	ban_lurker_batch,
-	/* tweak */	tweak_uint,
-	/* var */	ban_lurker_batch,
-	/* min */	1,
-	/* max */	none,
-	/* default */	1000,
-	/* units */	,
-	/* flags */	00,
+	/* tweak */	uint,
+	/* min */	"1",
+	/* max */	NULL,
+	/* default */	"1000",
+	/* units */	NULL,
+	/* flags */	0,
 	/* s-text */
-	"How many objects the ban lurker examines before taking a "
-	"ban_lurker_sleep.  Use this to pace the ban lurker so it does not "
-	"eat too much CPU.\n",
+	"The ban lurker slees ${ban_lurker_sleep} after examining this "
+	"many objects.  Use this to pace the ban-lurker if it eats too "
+	"many resources.",
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	ban_lurker_sleep,
-	/* tweak */	tweak_timeout,
-	/* var */	ban_lurker_sleep,
-	/* min */	0.000,
-	/* max */	none,
-	/* default */	0.010,
-	/* units */	seconds,
-	/* flags */	00,
+	/* tweak */	timeout,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"0.010",
+	/* units */	"seconds",
+	/* flags */	0,
 	/* s-text */
-	"The ban lurker thread sleeps between work batches, in order to "
-	"not monopolize CPU power.  When nothing is done, it sleeps a "
-	"fraction of a second before looking for new work to do.\n"
-	"A value of zero disables the ban lurker.\n",
+	"How long the ban lurker sleeps after examining ${ban_lurker_batch} "
+	"objects.\n"
+	"A value of zero will disable the ban lurker entirely.",
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	between_bytes_timeout,
-	/* tweak */	tweak_timeout,
-	/* var */	between_bytes_timeout,
-	/* min */	0.000,
-	/* max */	none,
-	/* default */	60.000,
-	/* units */	seconds,
-	/* flags */	00,
+	/* tweak */	timeout,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"60",
+	/* units */	"seconds",
+	/* flags */	0,
 	/* s-text */
-	"Default timeout between bytes when receiving data from backend. "
-	"We only wait for this many seconds between bytes before giving "
-	"up. A value of 0 means it will never time out. VCL can override "
-	"this default value for each backend request and backend request. "
-	"This parameter does not apply to pipe.\n",
+	"We only wait for this many seconds between bytes received from "
+	"the backend before giving up the fetch.\n"
+	"A value of zero means never give up.\n"
+	"VCL values, per backend or per backend request take precedence.\n"
+	"This parameter does not apply to pipe'ed requests.",
 	/* l-text */	"",
 	/* func */	NULL
 )
+
+/**********************************************************************/
+#if 0 /* NOT YET */
+
 #if 0
 PARAM(
 	/* name */	busyobj_worker_cache,

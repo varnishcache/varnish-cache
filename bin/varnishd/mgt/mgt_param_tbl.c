@@ -205,11 +205,6 @@ struct parspec mgt_parspec[] = {
 		"See setsockopt(2) under SO_SNDTIMEO for more information.",
 		DELAYED_EFFECT,
 		"60", "seconds" },
-	{ "auto_restart", tweak_bool, &mgt_param.auto_restart,
-		NULL, NULL,
-		"Restart child process automatically if it dies.",
-		0,
-		"on", "bool" },
 	{ "nuke_limit",
 		tweak_uint, &mgt_param.nuke_limit,
 		"0", NULL,
@@ -324,17 +319,6 @@ struct parspec mgt_parspec[] = {
 		"backend request. This parameter does not apply to pipe.",
 		0,
 		"60", "seconds" },
-	{ "between_bytes_timeout", tweak_timeout,
-		&mgt_param.between_bytes_timeout,
-		"0", NULL,
-		"Default timeout between bytes when receiving data from "
-		"backend. "
-		"We only wait for this many seconds between bytes "
-		"before giving up. A value of 0 means it will never time out. "
-		"VCL can override this default value for each backend request "
-		"and backend request. This parameter does not apply to pipe.",
-		0,
-		"60", "seconds" },
 	{ "clock_skew", tweak_uint, &mgt_param.clock_skew,
 		"0", NULL,
 		"How much clockskew we are willing to accept between the "
@@ -369,48 +353,11 @@ struct parspec mgt_parspec[] = {
 		"more sessions take a detour around the waiter.",
 		EXPERIMENTAL,
 		"0.050", "seconds" },
-	{ "ban_dups", tweak_bool, &mgt_param.ban_dups,
-		NULL, NULL,
-		"Eliminate older identical bans when new bans are created."
-		"  This test is CPU intensive and scales with the number and"
-		" complexity of active (non-Gone) bans.  If identical bans"
-		" are frequent, the amount of CPU needed to actually test "
-		" the bans will be similarly reduced.",
-		0,
-		"on", "bool" },
 	{ "syslog_cli_traffic", tweak_bool, &mgt_param.syslog_cli_traffic,
 		NULL, NULL,
 		"Log all CLI traffic to syslog(LOG_INFO).",
 		0,
 		"on", "bool" },
-	{ "ban_lurker_age", tweak_timeout,
-		&mgt_param.ban_lurker_age,
-		"0", NULL,
-		"The ban lurker does not process bans until they are this"
-		" old.  Right when a ban is added, the most frequently hit"
-		" objects will get tested against it as part of object"
-		" lookup.  This parameter prevents the ban-lurker from"
-		" kicking in, until the rush is over.",
-		0,
-		"60", "seconds" },
-	{ "ban_lurker_sleep", tweak_timeout,
-		&mgt_param.ban_lurker_sleep,
-		"0", NULL,
-		"The ban lurker thread sleeps between work batches, in order"
-		" to not monopolize CPU power."
-		"  When nothing is done, it sleeps a fraction of a second"
-		" before looking for new work to do.\n"
-		"A value of zero disables the ban lurker.",
-		0,
-		"0.01", "seconds" },
-	{ "ban_lurker_batch", tweak_uint,
-		&mgt_param.ban_lurker_batch,
-		"1", NULL,
-		"How many objects the ban lurker examines before taking a"
-		" ban_lurker_sleep.  Use this to pace the ban lurker so it"
-		" does not eat too much CPU.",
-		0,
-		"1000", "" },
 	{ "http_range_support", tweak_bool, &mgt_param.http_range_support,
 		NULL, NULL,
 		"Enable support for HTTP Range headers.",

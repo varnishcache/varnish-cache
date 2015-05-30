@@ -60,12 +60,14 @@ struct params {
 #define	ptyp_bool	unsigned
 #define	ptyp_double	double
 #define	ptyp_timeout	double
+#define	ptyp_uint	unsigned
 #define PARAM(nm, ty, mi, ma, de, un, fl, st, lt, fn) ptyp_##ty nm;
 #include <tbl/params.h>
 #undef PARAM
 #undef ptyp_bool
 #undef ptyp_double
 #undef ptyp_timeout
+#undef ptyp_uint
 
 	/* Unprivileged user / group */
 	char			*user;
@@ -130,9 +132,6 @@ struct params {
 	double			tcp_keepalive_intvl;
 #endif
 
-	/* Management hints */
-	unsigned		auto_restart;
-
 	/* Fetcher hints */
 	ssize_t			fetch_chunksize;
 	ssize_t			fetch_maxchunksize;
@@ -166,7 +165,6 @@ struct params {
 
 	/* Read timeouts for backend */
 	double			first_byte_timeout;
-	double			between_bytes_timeout;
 
 	/* CLI buffer size */
 	unsigned		cli_buffer;
@@ -176,13 +174,6 @@ struct params {
 
 	/* Acceptable clockskew with backends */
 	unsigned		clock_skew;
-
-	/* Get rid of duplicate bans */
-	unsigned		ban_dups;
-
-	double			ban_lurker_age;
-	double			ban_lurker_sleep;
-	unsigned		ban_lurker_batch;
 
 	unsigned		syslog_cli_traffic;
 
