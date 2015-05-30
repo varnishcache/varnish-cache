@@ -194,8 +194,6 @@ struct params {
 
 	struct vre_limits	vre_limits;
 
-	unsigned		bo_cache;
-
 	/* Install a SIGSEGV handler */
 	unsigned		sigsegv_handler;
 

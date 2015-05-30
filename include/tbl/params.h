@@ -198,43 +198,6 @@ PARAM(
 /**********************************************************************/
 #if 0 /* NOT YET */
 
-#if 0
-PARAM(
-	/* name */	busyobj_worker_cache,
-	/* tweak */	tweak_bool,
-	/* var */	busyobj_worker_cache,
-	/* min */	none,
-	/* max */	none,
-	/* default */	off,
-	/* units */	bool,
-	/* flags */	00,
-	/* s-text */
-	"Cache free busyobj per worker thread. Disable this if you have "
-	"very high hitrates and want to save the memory of one busyobj per "
-	"worker thread.\n",
-	/* l-text */	"",
-	/* func */	NULL
-)
-#endif
-#if 0
-PARAM(
-	/* name */	cc_command,
-	/* tweak */	tweak_string,
-	/* var */	cc_command,
-	/* min */	none,
-	/* max */	none,
-	/* default */	"exec clang -std=gnu99 -g -O2 -Wall -Werror -Wno-error=unused-result  \t-Werror \t-Wall \t-Wno-format-y2k \t-W \t-Wstrict-prototypes \t-Wmissing-prototypes \t-Wpointer-arith \t-Wreturn-type \t-Wcast-qual \t-Wwrite-strings \t-Wswitch \t-Wshadow \t-Wunused-parameter \t-Wcast-align \t-Wchar-subscripts \t-Wnested-externs \t-Wextra \t-Wno-sign-compare  -fstack-protector -Wno-pointer-sign -Wno-address -Wno-missing-field-initializers -D_THREAD_SAFE -pthread -fpic -shared -Wl,-x -o %o %s",
-	/* units */	(null),
-	/* flags */	0| MUST_RELOAD,
-	/* s-text */
-	"Command used for compiling the C source code to a dlopen(3) "
-	"loadable object.  Any occurrence of %s in the string will be "
-	"replaced with the source file name, and %o will be replaced with "
-	"the output file name.\n",
-	/* l-text */	"",
-	/* func */	NULL
-)
-#endif
 PARAM(
 	/* name */	cli_buffer,
 	/* tweak */	tweak_bytes_u,

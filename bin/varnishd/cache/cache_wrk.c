@@ -125,8 +125,6 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 	if (w->vcl != NULL)
 		VCL_Rel(&w->vcl);
 	AZ(pthread_cond_destroy(&w->cond));
-	if (w->nbo != NULL)
-		VBO_Free(&w->nbo);
 	HSH_Cleanup(w);
 	Pool_Sumstat(w);
 }

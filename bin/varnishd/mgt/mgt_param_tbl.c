@@ -506,15 +506,6 @@ struct parspec mgt_parspec[] = {
 		MUST_RESTART,
 		"1M", "bytes"},
 
-	{ "busyobj_worker_cache", tweak_bool,
-		&mgt_param.bo_cache,
-		NULL, NULL,
-		"Cache free busyobj per worker thread. "
-		"Disable this if you have very high hitrates and want "
-		"to save the memory of one busyobj per worker thread.",
-		0,
-		"off", "bool"},
-
 	{ "pool_req", tweak_poolparam, &mgt_param.req_pool,
 		NULL, NULL,
 		"Parameters for per worker pool request memory pool.\n"

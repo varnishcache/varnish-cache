@@ -328,7 +328,6 @@ struct worker {
 	struct objhead		*nobjhead;
 	struct objcore		*nobjcore;
 	struct waitinglist	*nwaitinglist;
-	struct busyobj		*nbo;
 	void			*nhashpriv;
 	struct dstat		stats[1];
 	struct vsl_log		*vsl;		// borrowed from req/bo

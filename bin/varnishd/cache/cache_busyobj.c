@@ -92,21 +92,14 @@ VBO_Free(struct busyobj **bop)
 struct busyobj *
 VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 {
-	struct busyobj *bo = NULL;
+	struct busyobj *bo;
 	uint16_t nhttp;
 	unsigned sz;
 	char *p;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
-	if (wrk->nbo != NULL) {
-		bo = wrk->nbo;
-		wrk->nbo = NULL;
-	}
-
-	if (bo == NULL)
-		bo = vbo_New();
-
+	bo = vbo_New();
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AZ(bo->refcount);
 
@@ -222,10 +215,7 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 	memset(&bo->refcount, 0,
 	    sizeof *bo - offsetof(struct busyobj, refcount));
 
-	if (cache_param->bo_cache && wrk != NULL && wrk->nbo == NULL)
-		wrk->nbo = bo;
-	else
-		VBO_Free(&bo);
+	VBO_Free(&bo);
 }
 
 void
