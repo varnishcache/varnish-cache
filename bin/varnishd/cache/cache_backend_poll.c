@@ -41,6 +41,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "binary_heap.h"
+
 #include "cache.h"
 
 #include "cache_backend.h"
@@ -57,9 +59,6 @@ struct vbp_target {
 	unsigned			magic;
 #define VBP_TARGET_MAGIC		0x6b7cb656
 
-	struct lock			mtx;
-	int				disable;
-	int				stop;
 	struct backend			*backend;
 
 	struct tcp_pool			*tcp_pool;
@@ -81,12 +80,15 @@ struct vbp_target {
 	double				avg;
 	double				rate;
 
-	VTAILQ_ENTRY(vbp_target)	list;
-	pthread_t			thread;
+	double				due;
+	int				running;
+	int				heap_idx;
+	struct pool_task		task;
 };
 
-static VTAILQ_HEAD(, vbp_target)	vbp_list =
-    VTAILQ_HEAD_INITIALIZER(vbp_list);
+static struct lock			vbp_mtx;
+static pthread_cond_t			vbp_cond;
+static struct binheap			*vbp_heap;
 
 /*--------------------------------------------------------------------
  * Poke one backend, once, but possibly at both IPv4 and IPv6 addresses.
@@ -238,7 +240,7 @@ vbp_has_poked(struct vbp_target *vt)
 	}
 	vt->good = j;
 
-	Lck_Lock(&vt->mtx);
+	Lck_Lock(&vbp_mtx);
 	if (vt->backend != NULL) {
 		if (vt->good >= vt->probe.threshold) {
 			if (vt->backend->healthy)
@@ -260,47 +262,84 @@ vbp_has_poked(struct vbp_target *vt)
 		    vt->backend->display_name, logmsg, bits,
 		    vt->good, vt->probe.threshold, vt->probe.window,
 		    vt->last, vt->avg, vt->resp_buf);
-		if (!vt->disable) {
-			AN(vt->backend->vsc);
+		if (vt->backend != NULL && vt->backend->vsc != NULL)
 			vt->backend->vsc->happy = vt->happy;
-		}
 	}
-	Lck_Unlock(&vt->mtx);
+	Lck_Unlock(&vbp_mtx);
 }
 
 /*--------------------------------------------------------------------
- * One thread per backend to be poked.
  */
 
-static void *
-vbp_wrk_poll_backend(void *priv)
+static void __match_proto__(task_func_t)
+vbp_task(struct worker *wrk, void *priv)
 {
 	struct vbp_target *vt;
 
-	THR_SetName("backend poll");
-
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(vt, priv, VBP_TARGET_MAGIC);
 
-	while (!vt->stop) {
-		AN(vt->req);
-		assert(vt->req_len > 0);
+	AN(vt->req);
+	assert(vt->req_len > 0);
 
-		if (!vt->disable) {
-			vbp_start_poke(vt);
-			vbp_poke(vt);
-			vbp_has_poked(vt);
-		}
+	vbp_start_poke(vt);
+	vbp_poke(vt);
+	vbp_has_poked(vt);
 
-		if (!vt->stop)
-			VTIM_sleep(vt->probe.interval);
+	Lck_Lock(&vbp_mtx);
+	if (vt->running < 0) {
+		VBT_Rel(&vt->tcp_pool);
+		free(vt->req);
+		FREE_OBJ(vt);
+	} else {
+		vt->running = 0;
 	}
-	Lck_Delete(&vt->mtx);
-	VTAILQ_REMOVE(&vbp_list, vt, list);
-	VBT_Rel(&vt->tcp_pool);
-	free(vt->req);
-	FREE_OBJ(vt);
-	return (NULL);
+	Lck_Unlock(&vbp_mtx);
 }
+/*--------------------------------------------------------------------
+ */
+
+static void * __match_proto__()
+vbp_thread(struct worker *wrk, void *priv)
+{
+	double now, nxt;
+	struct vbp_target *vt;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AZ(priv);
+	while (1) {
+		Lck_Lock(&vbp_mtx);
+		while (1) {
+			now = VTIM_real();
+			vt = binheap_root(vbp_heap);
+			if (vt == NULL) {
+				nxt = 8.192 + now;
+			} else if (vt->due > now) {
+				nxt = vt->due;
+				vt = NULL;
+			} else {
+				binheap_delete(vbp_heap, vt->heap_idx);
+				vt->running = 1;
+				vt->due = now + vt->probe.interval;
+				binheap_insert(vbp_heap, vt);
+				nxt = 0.0;
+				break;
+			}
+			(void)Lck_CondWait(&vbp_cond, &vbp_mtx, nxt);
+		}
+		Lck_Unlock(&vbp_mtx);
+		vt->task.func = vbp_task;
+		vt->task.priv = vt;
+
+		if (Pool_Task_Any(&vt->task, POOL_QUEUE_FRONT)) {
+			Lck_Lock(&vbp_mtx);
+			vt->running = 0;
+			Lck_Unlock(&vbp_mtx);
+			// XXX: ehh... ?
+		}
+	}
+}
+
 
 /*--------------------------------------------------------------------
  * Cli functions
@@ -420,7 +459,7 @@ vbp_set_defaults(struct vbp_target *vt)
  */
 
 void
-VBP_Control(const struct backend *be, int stop)
+VBP_Control(const struct backend *be, int enable)
 {
 	struct vbp_target *vt;
 
@@ -429,17 +468,18 @@ VBP_Control(const struct backend *be, int stop)
 	vt = be->probe;
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
 
-VSL(SLT_Debug, 0, "VBP_CONTROL %d", stop);
-	Lck_Lock(&vt->mtx);
-	if (vt->disable == -1 && !stop) {
-		vt->disable = stop;
-		AZ(pthread_create(&vt->thread, NULL, vbp_wrk_poll_backend, vt));
-		AZ(pthread_detach(vt->thread));
+VSL(SLT_Debug, 0, "VBP_CONTROL %d", enable);
+	Lck_Lock(&vbp_mtx);
+	if (enable) {
+		assert(vt->heap_idx == BINHEAP_NOIDX);
+		vt->due = VTIM_real();
+		binheap_insert(vbp_heap, vt);
+		AZ(pthread_cond_signal(&vbp_cond));
 	} else {
-		assert(vt->disable != -1);
-		vt->disable = stop;
+		assert(vt->heap_idx != BINHEAP_NOIDX);
+		binheap_delete(vbp_heap, vt->heap_idx);
 	}
-	Lck_Unlock(&vt->mtx);
+	Lck_Unlock(&vbp_mtx);
 }
 
 /*--------------------------------------------------------------------
@@ -461,14 +501,12 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
 
 	ALLOC_OBJ(vt, VBP_TARGET_MAGIC);
 	XXXAN(vt);
-	VTAILQ_INSERT_TAIL(&vbp_list, vt, list);
-	Lck_New(&vt->mtx, lck_backend);
-	vt->disable = -1;
 
 	vt->tcp_pool = VBT_Ref(b->ipv4, b->ipv6);
 	AN(vt->tcp_pool);
 
 	vt->probe = *p;
+	vt->backend = b;
 
 	vbp_set_defaults(vt);
 	vbp_build_req(vt, hosthdr);
@@ -480,7 +518,6 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
 		vt->happy |= 1;
 		vbp_has_poked(vt);
 	}
-	vt->backend = b;
 	b->probe = vt;
 	vbp_has_poked(vt);
 }
@@ -495,11 +532,57 @@ VBP_Remove(struct backend *be)
 	vt = be->probe;
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
 
-	Lck_Lock(&vt->mtx);
-	vt->stop = 1;
-	vt->backend = NULL;
-	Lck_Unlock(&vt->mtx);
-
+	Lck_Lock(&vbp_mtx);
 	be->healthy = 1;
 	be->probe = NULL;
+	vt->backend = NULL;
+	if (vt->running) {
+		vt->running = -1;
+		vt = NULL;
+	}
+	Lck_Unlock(&vbp_mtx);
+	if (vt != NULL) {
+		VBT_Rel(&vt->tcp_pool);
+		free(vt->req);
+		FREE_OBJ(vt);
+	}
+}
+/*--------------------------------------------------------------------
+ */
+
+static int __match_proto__(binheap_cmp_t)
+vbp_cmp(void *priv, const void *a, const void *b)
+{
+	const struct vbp_target *aa, *bb;
+
+	AZ(priv);
+	CAST_OBJ_NOTNULL(aa, a, VBP_TARGET_MAGIC);
+	CAST_OBJ_NOTNULL(bb, b, VBP_TARGET_MAGIC);
+
+	return (aa->due < bb->due);
+}
+
+static void __match_proto__(binheap_update_t)
+vbp_update(void *priv, void *p, unsigned u)
+{
+	struct vbp_target *vt;
+
+	AZ(priv);
+	CAST_OBJ_NOTNULL(vt, p, VBP_TARGET_MAGIC);
+	vt->heap_idx = u;
+}
+
+/*--------------------------------------------------------------------
+ */
+
+void
+VBP_Init(void)
+{
+	pthread_t thr;
+
+	Lck_New(&vbp_mtx, lck_backend);
+	vbp_heap = binheap_new(NULL, vbp_cmp, vbp_update);
+	AN(vbp_heap);
+	AZ(pthread_cond_init(&vbp_cond, NULL));
+	WRK_BgThread(&thr, "Backend poller", vbp_thread, NULL);
 }

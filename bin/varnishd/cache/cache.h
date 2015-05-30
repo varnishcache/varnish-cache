@@ -953,6 +953,7 @@ int Pool_Task_Arg(struct worker *, task_func_t *,
 void Pool_Sumstat(struct worker *w);
 int Pool_TrySumstat(struct worker *wrk);
 void Pool_PurgeStat(unsigned nobj);
+int Pool_Task_Any(struct pool_task *task, enum pool_how how);
 
 #define V1L_IsReleased(w)	((w)->v1l == NULL)
 void V1L_Chunked(const struct worker *w);

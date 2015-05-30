@@ -45,6 +45,7 @@ static pthread_t		thr_pool_herder;
 
 static struct lock		wstat_mtx;
 struct lock			pool_mtx;
+static VTAILQ_HEAD(,pool)	pools = VTAILQ_HEAD_INITIALIZER(pools);
 
 /*--------------------------------------------------------------------
  * Summing of stats into global stats counters
@@ -83,6 +84,28 @@ Pool_TrySumstat(struct worker *wrk)
 	Lck_Unlock(&wstat_mtx);
 	memset(wrk->stats, 0, sizeof *wrk->stats);
 	return (1);
+}
+
+/*--------------------------------------------------------------------
+ * Facility for scheduling a task on any convenient pool.
+ */
+
+int
+Pool_Task_Any(struct pool_task *task, enum pool_how how)
+{
+	struct pool *pp;
+
+	Lck_Lock(&pool_mtx);
+	pp = VTAILQ_FIRST(&pools);
+	if (pp != NULL) {
+		VTAILQ_REMOVE(&pools, pp, list);
+		VTAILQ_INSERT_TAIL(&pools, pp, list);
+	}
+	Lck_Unlock(&pool_mtx);
+	if (pp == NULL)
+		return (-1);
+	// NB: When we remove pools, is there a race here ?
+	return (Pool_Task(pp, task, how));
 }
 
 /*--------------------------------------------------------------------
@@ -163,7 +186,6 @@ static void *
 pool_poolherder(void *priv)
 {
 	unsigned nwq;
-	VTAILQ_HEAD(,pool)	pools = VTAILQ_HEAD_INITIALIZER(pools);
 	struct pool *pp;
 	uint64_t u;
 
@@ -175,7 +197,9 @@ pool_poolherder(void *priv)
 		if (nwq < cache_param->wthread_pools) {
 			pp = pool_mkpool(nwq);
 			if (pp != NULL) {
+				Lck_Lock(&pool_mtx);
 				VTAILQ_INSERT_TAIL(&pools, pp, list);
+				Lck_Unlock(&pool_mtx);
 				VSC_C_main->pools++;
 				nwq++;
 				continue;
@@ -183,7 +207,10 @@ pool_poolherder(void *priv)
 		}
 		/* XXX: remove pools */
 		if (0) {
+			Lck_Lock(&pool_mtx);
 			pp = VTAILQ_FIRST(&pools);
+			VTAILQ_REMOVE(&pools, pp, list);
+			Lck_Unlock(&pool_mtx);
 			AN(pp);
 			MPL_Destroy(&pp->mpl_sess);
 			MPL_Destroy(&pp->mpl_req);
@@ -191,8 +218,10 @@ pool_poolherder(void *priv)
 		}
 		(void)sleep(1);
 		u = 0;
+		Lck_Lock(&pool_mtx);
 		VTAILQ_FOREACH(pp, &pools, list)
 			u += pp->lqueue;
+		Lck_Unlock(&pool_mtx);
 		VSC_C_main->thread_queue_len = u;
 	}
 	NEEDLESS_RETURN(NULL);
@@ -207,4 +236,6 @@ Pool_Init(void)
 	Lck_New(&wstat_mtx, lck_wstat);
 	Lck_New(&pool_mtx, lck_wq);
 	AZ(pthread_create(&thr_pool_herder, NULL, pool_poolherder, NULL));
+	while (!VSC_C_main->pools)
+		(void)usleep(10000);
 }

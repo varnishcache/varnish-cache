@@ -33,6 +33,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "cache_backend.h"
 #include "common/heritage.h"
 
 #include "vcli_priv.h"
@@ -217,6 +218,7 @@ child_main(void)
 	HTTP_Init();
 
 	VBO_Init();
+	VBP_Init();
 	VBE_InitCfg();
 	Pool_Init();
 	V1P_Init();

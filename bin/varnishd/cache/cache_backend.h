@@ -114,6 +114,7 @@ void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
 void VBP_Remove(struct backend *b);
 void VBP_Control(const struct backend *b, int stop);
 void VBP_Status(struct cli *cli, const struct backend *, int details);
+void VBP_Init(void);
 
 struct tcp_pool *VBT_Ref(const struct suckaddr *ip4,
     const struct suckaddr *ip6);

@@ -352,10 +352,10 @@ VRT_event_vbe(VRT_CTX, enum vcl_event_e ev, const struct director *d,
 	}
 
 	if (be->probe != NULL && ev == VCL_EVENT_WARM)
-		VBP_Control(be, 0);
+		VBP_Control(be, 1);
 
 	if (be->probe != NULL && ev == VCL_EVENT_COLD)
-		VBP_Control(be, 1);
+		VBP_Control(be, 0);
 
 	if (ev == VCL_EVENT_COLD) {
 		VSM_Free(be->vsc);
