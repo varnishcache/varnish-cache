@@ -338,6 +338,7 @@ vbp_thread(struct worker *wrk, void *priv)
 			// XXX: ehh... ?
 		}
 	}
+	NEEDLESS_RETURN(NULL);
 }
 
 
