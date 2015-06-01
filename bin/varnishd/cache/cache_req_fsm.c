@@ -649,7 +649,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	/* By default we use the first backend */
 	AZ(req->director_hint);
-	req->director_hint = req->vcl->director[0];
+	req->director_hint = *req->vcl->default_director;
 	AN(req->director_hint);
 
 	req->d_ttl = -1;

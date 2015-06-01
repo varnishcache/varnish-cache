@@ -189,7 +189,6 @@ struct vcc {
 	struct vsb		*fm[VCL_MET_MAX];	/* Method bodies */
 	struct vsb		*sb;
 	int			err;
-	int			ndirector;
 	struct proc		*curproc;
 	struct proc		*mprocs[VCL_MET_MAX];
 
@@ -197,8 +196,8 @@ struct vcc {
 
 	int			nprobe;
 
-	int			defaultdir;
-	struct token		*t_defaultdir;
+	const char		*default_director;
+	struct token		*t_default_director;
 
 	unsigned		unique;
 

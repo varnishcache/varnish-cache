@@ -508,7 +508,7 @@ vcc_Eval_Backend(struct vcc *tl, struct expr **e, const struct symbol *sym)
 
 	vcc_ExpectCid(tl);
 	vcc_AddRef(tl, tl->t, SYM_BACKEND);
-	*e = vcc_mk_expr(BACKEND, "VGCDIR(_%.*s)", PF(tl->t));
+	*e = vcc_mk_expr(BACKEND, "%s", sym->eval_priv);
 	(*e)->constant = EXPR_VAR;	/* XXX ? */
 	vcc_NextToken(tl);
 }
@@ -1129,6 +1129,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 	const char *re;
 	const char *not;
 	struct token *tk;
+	struct symbol *sym;
 
 	*e = NULL;
 
@@ -1188,10 +1189,19 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 	}
 	if ((*e)->fmt == BACKEND &&
 	    (tl->t->tok == T_EQ || tl->t->tok == T_NEQ)) {
+		// XXX: just ask for a BACKEND expression instead ?
 		vcc_NextToken(tl);
 		ExpectErr(tl, ID);
+		sym = VCC_FindSymbol(tl, tl->t, SYM_BACKEND);
+		if (sym == NULL) {
+			VSB_printf(tl->sb, "Backend not found: ");
+			vcc_ErrToken(tl, tl->t);
+			VSB_printf(tl->sb, "\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
 		vcc_AddRef(tl, tl->t, SYM_BACKEND);
-		bprintf(buf, "(\v1 %.*s VGCDIR(_%.*s))", PF(tk), PF(tl->t));
+		bprintf(buf, "(\v1 %.*s %s)", PF(tk), sym->eval_priv);
 		vcc_NextToken(tl);
 		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
 		return;

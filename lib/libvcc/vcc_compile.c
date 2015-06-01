@@ -387,14 +387,10 @@ EmitStruct(const struct vcc *tl)
 	}
 	Fc(tl, 0, "};\n");
 
-	Fc(tl, 0, "\nstatic struct director\t*directors[%d];\n",
-	    tl->ndirector);
-
 	Fc(tl, 0, "\nconst struct VCL_conf VCL_conf = {\n");
 	Fc(tl, 0, "\t.magic = VCL_CONF_MAGIC,\n");
 	Fc(tl, 0, "\t.event_vcl = VGC_Event,\n");
-	Fc(tl, 0, "\t.ndirector = %d,\n", tl->ndirector);
-	Fc(tl, 0, "\t.director = directors,\n");
+	Fc(tl, 0, "\t.default_director = &%s,\n", tl->default_director);
 	Fc(tl, 0, "\t.ref = VGC_ref,\n");
 	Fc(tl, 0, "\t.nref = VGC_NREFS,\n");
 	Fc(tl, 0, "\t.nsrc = %u,\n", tl->nsources);
@@ -535,7 +531,6 @@ vcc_NewVcc(const struct vcc *tl0)
 	VTAILQ_INIT(&tl->sources);
 
 	tl->nsources = 0;
-	tl->ndirector = 1;
 
 	/* General C code */
 	tl->fc = VSB_new_auto();
@@ -600,7 +595,6 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	struct vcc *tl;
 	struct symbol *sym;
 	const struct var *v;
-	struct inifin *ifp;
 	char *of;
 	int i;
 
@@ -628,9 +622,6 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	vcl_output_lang_h(tl->fh);
 	Fh(tl, 0, "/* ---===### VCC generated code ###===---*/\n");
 	Fh(tl, 0, "\nextern const struct VCL_conf VCL_conf;\n");
-
-	/* Macro for accessing directors */
-	Fh(tl, 0, "#define VGCDIR(n) VCL_conf.director[VGC_backend_##n]\n");
 
 	/* Register and lex the main source */
 	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
@@ -665,7 +656,7 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 		return (vcc_DestroyTokenList(tl, NULL));
 
 	/* Check if we have any backends at all */
-	if (tl->ndirector == 1) {
+	if (tl->default_director == NULL) {
 		VSB_printf(tl->sb,
 		    "No backends or directors found in VCL program, "
 		    "at least one is necessary.\n");
@@ -674,11 +665,7 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	}
 
 	/* Configure the default director */
-	ifp = New_IniFin(tl);
-	VSB_printf(ifp->ini,
-	    "\tVCL_conf.director[0] = VCL_conf.director[%d];",
-	    tl->defaultdir);
-	vcc_AddRef(tl, tl->t_defaultdir, SYM_BACKEND);
+	vcc_AddRef(tl, tl->t_default_director, SYM_BACKEND);
 
 	/* Check for orphans */
 	if (vcc_CheckReferences(tl))

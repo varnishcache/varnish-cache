@@ -262,7 +262,7 @@ vcc_ParseProbe(struct vcc *tl)
  */
 
 static void
-vcc_ParseHostDef(struct vcc *tl, const struct token *t_be)
+vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 {
 	struct token *t_field;
 	struct token *t_host = NULL;
@@ -273,11 +273,6 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be)
 	struct vsb *vsb;
 	unsigned u;
 	double t;
-	char vgcname[MAX_BACKEND_NAME + 8];
-
-	sprintf(vgcname, "_%.*s", PF(t_be));
-
-	Fh(tl, 1, "\n#define VGC_backend_%s %d\n", vgcname, tl->ndirector);
 
 	fs = vcc_FldSpec(tl,
 	    "!host",
@@ -415,15 +410,14 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be)
 
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->ini,
-	    "\tVRT_init_vbe(ctx, &VGCDIR(%s), &vgc_dir_priv_%s);",
+	    "\tVRT_init_vbe(ctx, &%s, &vgc_dir_priv_%s);",
 	    vgcname, vgcname);
 	VSB_printf(ifp->fin,
-	    "\tVRT_fini_vbe(ctx, &VGCDIR(%s), &vgc_dir_priv_%s);",
+	    "\tVRT_fini_vbe(ctx, &%s, &vgc_dir_priv_%s);",
 	    vgcname, vgcname);
 	VSB_printf(ifp->event,
-	    "\tVRT_event_vbe(ctx, ev, VGCDIR(%s), &vgc_dir_priv_%s);",
+	    "\tVRT_event_vbe(ctx, ev, %s, &vgc_dir_priv_%s);",
 	    vgcname, vgcname);
-	tl->ndirector++;
 }
 
 /*--------------------------------------------------------------------
@@ -434,8 +428,8 @@ void
 vcc_ParseBackend(struct vcc *tl)
 {
 	struct token *t_first, *t_be;
-	int isfirst;
 	struct symbol *sym;
+	char vgcname[MAX_BACKEND_NAME + 20];
 
 	t_first = tl->t;
 	vcc_NextToken(tl);		/* ID: backend */
@@ -455,7 +449,8 @@ vcc_ParseBackend(struct vcc *tl)
 	t_be = tl->t;
 	vcc_NextToken(tl);
 
-	isfirst = tl->ndirector;
+	sprintf(vgcname, "vgc_backend_%.*s", PF(t_be));
+	Fh(tl, 0, "static struct director *%s;\n", vgcname);
 
 	sym = VCC_GetSymbolTok(tl, t_be, SYM_BACKEND);
 	AN(sym);
@@ -466,10 +461,11 @@ vcc_ParseBackend(struct vcc *tl)
 	}
 	sym->fmt = BACKEND;
 	sym->eval = vcc_Eval_Backend;
+	sym->eval_priv = TlDup(tl, vgcname);
 	sym->ndef++;
 	ERRCHK(tl);
 
-	vcc_ParseHostDef(tl, t_be);
+	vcc_ParseHostDef(tl, t_be, vgcname);
 	ERRCHK(tl);
 
 	if (tl->err) {
@@ -479,8 +475,8 @@ vcc_ParseBackend(struct vcc *tl)
 		return;
 	}
 
-	if (isfirst == 1 || vcc_IdIs(t_be, "default")) {
-		tl->defaultdir = tl->ndirector - 1;
-		tl->t_defaultdir = t_be;
+	if (tl->default_director == NULL || vcc_IdIs(t_be, "default")) {
+		tl->default_director = sym->eval_priv;
+		tl->t_default_director = t_be;
 	}
 }

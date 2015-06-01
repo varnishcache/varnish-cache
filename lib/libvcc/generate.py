@@ -1060,8 +1060,7 @@ struct VCL_conf {
 
 	char		*loaded_name;
 
-	struct director	**director;
-	unsigned	ndirector;
+	struct director	**default_director;
 	struct vrt_ref	*ref;
 	unsigned	nref;
 	unsigned	busy;
