@@ -42,6 +42,7 @@
  *	Long Description (in RST "definition list" format)
  */
 
+/*lint -save -e525 -e539 */
 #define NODEF_NOTICE \
     "NB: This log record is masked by default.\n\n"
 
@@ -518,3 +519,4 @@ SLTM(VfpAcct, 0, "Fetch filter accounting",
 )
 
 #undef NODEF_NOTICE
+/*lint -restore */

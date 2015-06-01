@@ -43,6 +43,7 @@
  *
  */
 
+/*lint -save -e525 -e539 */
 SLTH(Method,	HTTP_HDR_METHOD,	1, 0, "method",
 	"The HTTP request method used.\n\n"
 )
@@ -79,3 +80,4 @@ SLTH(Unset,	HTTP_HDR_UNSET,		0, 0, "unset header",
 SLTH(Lost,	HTTP_HDR_LOST,		0, 0, "lost header",
 	""
 )
+/*lint -restore */

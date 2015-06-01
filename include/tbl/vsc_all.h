@@ -28,6 +28,7 @@
  */
 
 
+/*lint -save -e525 -e539 */
 VSC_DO(MAIN, main, VSC_type_main)
 #include "tbl/vsc_f_main.h"
 VSC_DONE(MAIN, main, VSC_type_main)
@@ -67,3 +68,4 @@ VSC_DO(LCK, lck, VSC_type_lck)
 #include "tbl/vsc_fields.h"
 #undef VSC_DO_LCK
 VSC_DONE(LCK, lck, VSC_type_lck)
+/*lint -restore */

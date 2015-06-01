@@ -432,7 +432,6 @@ vsc_build_pt_list(struct VSM_data *vd)
 	vsc_delete_pt_list(vsc);
 
 	VTAILQ_FOREACH(vf, &vsc->vf_list, list) {
-		/*lint -save -e525 -e539 */
 #define VSC_DO(U,l,t)						\
 		CHECK_OBJ_NOTNULL(vf, VSC_VF_MAGIC);		\
 		if (!strcmp(vf->fantom.type, t))		\
@@ -443,7 +442,6 @@ vsc_build_pt_list(struct VSM_data *vd)
 #undef VSC_DO
 #undef VSC_F
 #undef VSC_DONE
-		/*lint -restore */
 	}
 }
 

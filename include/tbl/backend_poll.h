@@ -27,6 +27,7 @@
  *
  */
 
+/*lint -save -e525 -e539 */
 BITMAP(good_ipv4, '4', "Good IPv4", 0)
 BITMAP(good_ipv6, '6', "Good IPv6", 0)
 BITMAP( err_xmit, 'x', "Error Xmit", 0)
@@ -34,3 +35,4 @@ BITMAP(good_xmit, 'X', "Good Xmit", 0)
 BITMAP( err_recv, 'r', "Error Recv", 0)
 BITMAP(good_recv, 'R', "Good Recv", 0)
 BITMAP(happy,     'H', "Happy", 1)
+/* lint -restore */

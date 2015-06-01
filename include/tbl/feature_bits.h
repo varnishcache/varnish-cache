@@ -29,6 +29,7 @@
  *
  */
 
+/*lint -save -e525 -e539 */
 FEATURE_BIT(SHORT_PANIC,		short_panic,
     "Short panic message.",
     "Reduce level of detail for panic messages."
@@ -58,3 +59,4 @@ FEATURE_BIT(ESI_REMOVE_BOM,		esi_remove_bom,
     "Remove UTF-8 BOM from front of object."
     "Ignore and remove the UTF-8 BOM (0xeb 0xbb 0xbf) from front of object."
 )
+/*lint -restore */
