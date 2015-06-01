@@ -167,11 +167,12 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	VRTPRIV_dynamic_kill(sp->privs, (uintptr_t)&req->top);
 
 	/* Charge and log byte counters */
-	AN(req->vsl->wid);
-	CNT_AcctLogCharge(wrk->stats, req);
+	if (req->vsl->wid) {
+		CNT_AcctLogCharge(wrk->stats, req);
+		VSL_End(req->vsl);
+	}
 	req->req_bodybytes = 0;
 
-	VSL_End(req->vsl);
 
 	if (!isnan(req->t_prev) && req->t_prev > 0.)
 		sp->t_idle = req->t_prev;
