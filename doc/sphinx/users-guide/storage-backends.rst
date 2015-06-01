@@ -69,10 +69,9 @@ suffixes:
 
       T, t    The size is expressed in tebibytes.
 
-      %       The size is expressed as a percentage of the free space on the
-              file system where it resides.
-
-The default size is to use 50% of the space available on the device.
+If 'path' points to an existing file and no size is specified, the
+size of the existing file will be used. If 'path' does not point to an
+existing file it is an error to not specify the size.
 
 If the backing file already exists, it will be truncated or expanded
 to the specified size.
