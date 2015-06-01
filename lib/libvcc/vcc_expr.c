@@ -508,7 +508,7 @@ vcc_Eval_Backend(struct vcc *tl, struct expr **e, const struct symbol *sym)
 
 	vcc_ExpectCid(tl);
 	vcc_AddRef(tl, tl->t, SYM_BACKEND);
-	*e = vcc_mk_expr(BACKEND, "%s", sym->eval_priv);
+	*e = vcc_mk_expr(BACKEND, "%s", (const char *)sym->eval_priv);
 	(*e)->constant = EXPR_VAR;	/* XXX ? */
 	vcc_NextToken(tl);
 }
@@ -1201,7 +1201,8 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 			return;
 		}
 		vcc_AddRef(tl, tl->t, SYM_BACKEND);
-		bprintf(buf, "(\v1 %.*s %s)", PF(tk), sym->eval_priv);
+		bprintf(buf, "(\v1 %.*s %s)", PF(tk),
+		    (const char *)sym->eval_priv);
 		vcc_NextToken(tl);
 		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
 		return;
