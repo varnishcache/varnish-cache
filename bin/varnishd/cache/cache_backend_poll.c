@@ -91,6 +91,112 @@ static pthread_cond_t			vbp_cond;
 static struct binheap			*vbp_heap;
 
 /*--------------------------------------------------------------------
+ * Record pokings...
+ */
+
+static void
+vbp_start_poke(struct vbp_target *vt)
+{
+	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
+
+#define BITMAP(n, c, t, b) \
+	vt->n <<= 1;
+#include "tbl/backend_poll.h"
+#undef BITMAP
+
+	vt->last = 0;
+	vt->resp_buf[0] = '\0';
+}
+
+static void
+vbp_has_poked(struct vbp_target *vt)
+{
+	unsigned i, j;
+	uint64_t u;
+
+	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
+
+	/* Calculate exponential average */
+	if (vt->happy & 1) {
+		if (vt->rate < AVG_RATE)
+			vt->rate += 1.0;
+		vt->avg += (vt->last - vt->avg) / vt->rate;
+	}
+
+	u = vt->happy;
+	for (i = j = 0; i < vt->probe.window; i++) {
+		if (u & 1)
+			j++;
+		u >>= 1;
+	}
+	vt->good = j;
+}
+
+static void
+vbp_update_backend(struct vbp_target *vt)
+{
+	unsigned i;
+	char bits[10];
+	const char *logmsg;
+
+	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
+
+	Lck_Lock(&vbp_mtx);
+	if (vt->backend != NULL) {
+		i = 0;
+#define BITMAP(n, c, t, b) \
+		bits[i++] = (vt->n & 1) ? c : '-';
+#include "tbl/backend_poll.h"
+#undef BITMAP
+		bits[i] = '\0';
+
+		if (vt->good >= vt->probe.threshold) {
+			if (vt->backend->healthy)
+				logmsg = "Still healthy";
+			else {
+				logmsg = "Back healthy";
+				vt->backend->health_changed = VTIM_real();
+			}
+			vt->backend->healthy = 1;
+		} else {
+			if (vt->backend->healthy) {
+				logmsg = "Went sick";
+				vt->backend->health_changed = VTIM_real();
+			} else
+				logmsg = "Still sick";
+			vt->backend->healthy = 0;
+		}
+		VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u %.6f %.6f %s",
+		    vt->backend->display_name, logmsg, bits,
+		    vt->good, vt->probe.threshold, vt->probe.window,
+		    vt->last, vt->avg, vt->resp_buf);
+		if (vt->backend != NULL && vt->backend->vsc != NULL)
+			vt->backend->vsc->happy = vt->happy;
+	}
+	Lck_Unlock(&vbp_mtx);
+}
+
+static void
+vbp_reset(struct vbp_target *vt)
+{
+	unsigned u;
+
+	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
+	vt->avg = 0.0;
+	vt->rate = 0.0;
+#define BITMAP(n, c, t, b) \
+	vt->n = 0;
+#include "tbl/backend_poll.h"
+#undef BITMAP
+
+	for (u = 0; u < vt->probe.initial; u++) {
+		vbp_start_poke(vt);
+		vt->happy |= 1;
+		vbp_has_poked(vt);
+	}
+}
+
+/*--------------------------------------------------------------------
  * Poke one backend, once, but possibly at both IPv4 and IPv6 addresses.
  *
  * We do deliberately not use the stuff in cache_backend.c, because we
@@ -193,82 +299,6 @@ vbp_poke(struct vbp_target *vt)
 }
 
 /*--------------------------------------------------------------------
- * Record pokings...
- */
-
-static void
-vbp_start_poke(struct vbp_target *vt)
-{
-	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
-
-#define BITMAP(n, c, t, b)	vt->n <<= 1;
-#include "tbl/backend_poll.h"
-#undef BITMAP
-
-	vt->last = 0;
-	vt->resp_buf[0] = '\0';
-}
-
-static void
-vbp_has_poked(struct vbp_target *vt)
-{
-	unsigned i, j;
-	uint64_t u;
-	const char *logmsg;
-	char bits[10];
-
-	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
-
-	/* Calculate exponential average */
-	if (vt->happy & 1) {
-		if (vt->rate < AVG_RATE)
-			vt->rate += 1.0;
-		vt->avg += (vt->last - vt->avg) / vt->rate;
-	}
-
-	i = 0;
-#define BITMAP(n, c, t, b)	bits[i++] = (vt->n & 1) ? c : '-';
-#include "tbl/backend_poll.h"
-#undef BITMAP
-	bits[i] = '\0';
-
-	u = vt->happy;
-	for (i = j = 0; i < vt->probe.window; i++) {
-		if (u & 1)
-			j++;
-		u >>= 1;
-	}
-	vt->good = j;
-
-	Lck_Lock(&vbp_mtx);
-	if (vt->backend != NULL) {
-		if (vt->good >= vt->probe.threshold) {
-			if (vt->backend->healthy)
-				logmsg = "Still healthy";
-			else {
-				logmsg = "Back healthy";
-				vt->backend->health_changed = VTIM_real();
-			}
-			vt->backend->healthy = 1;
-		} else {
-			if (vt->backend->healthy) {
-				logmsg = "Went sick";
-				vt->backend->health_changed = VTIM_real();
-			} else
-				logmsg = "Still sick";
-			vt->backend->healthy = 0;
-		}
-		VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u %.6f %.6f %s",
-		    vt->backend->display_name, logmsg, bits,
-		    vt->good, vt->probe.threshold, vt->probe.window,
-		    vt->last, vt->avg, vt->resp_buf);
-		if (vt->backend != NULL && vt->backend->vsc != NULL)
-			vt->backend->vsc->happy = vt->happy;
-	}
-	Lck_Unlock(&vbp_mtx);
-}
-
-/*--------------------------------------------------------------------
  */
 
 static void __match_proto__(task_func_t)
@@ -285,6 +315,7 @@ vbp_task(struct worker *wrk, void *priv)
 	vbp_start_poke(vt);
 	vbp_poke(vt);
 	vbp_has_poked(vt);
+	vbp_update_backend(vt);
 
 	Lck_Lock(&vbp_mtx);
 	if (vt->running < 0) {
@@ -296,6 +327,7 @@ vbp_task(struct worker *wrk, void *priv)
 	}
 	Lck_Unlock(&vbp_mtx);
 }
+
 /*--------------------------------------------------------------------
  */
 
@@ -469,7 +501,9 @@ VBP_Control(const struct backend *be, int enable)
 	vt = be->probe;
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
 
-VSL(SLT_Debug, 0, "VBP_CONTROL %d", enable);
+	vbp_reset(vt);
+	vbp_update_backend(vt);
+
 	Lck_Lock(&vbp_mtx);
 	if (enable) {
 		assert(vt->heap_idx == BINHEAP_NOIDX);
@@ -492,7 +526,6 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
     const char *hosthdr)
 {
 	struct vbp_target *vt;
-	unsigned u;
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
@@ -507,20 +540,15 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
 	AN(vt->tcp_pool);
 
 	vt->probe = *p;
-	vt->backend = b;
-
 	vbp_set_defaults(vt);
+
 	vbp_build_req(vt, hosthdr);
 
-	for (u = 0; u < vt->probe.initial; u++) {
-		if (u)
-			vbp_has_poked(vt);
-		vbp_start_poke(vt);
-		vt->happy |= 1;
-		vbp_has_poked(vt);
-	}
+	vt->backend = b;
 	b->probe = vt;
-	vbp_has_poked(vt);
+
+	vbp_reset(vt);
+	vbp_update_backend(vt);
 }
 
 void
@@ -548,8 +576,8 @@ VBP_Remove(struct backend *be)
 		FREE_OBJ(vt);
 	}
 }
-/*--------------------------------------------------------------------
- */
+
+/*-------------------------------------------------------------------*/
 
 static int __match_proto__(binheap_cmp_t)
 vbp_cmp(void *priv, const void *a, const void *b)
@@ -573,8 +601,7 @@ vbp_update(void *priv, void *p, unsigned u)
 	vt->heap_idx = u;
 }
 
-/*--------------------------------------------------------------------
- */
+/*-------------------------------------------------------------------*/
 
 void
 VBP_Init(void)
