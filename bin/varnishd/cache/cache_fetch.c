@@ -563,19 +563,24 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->htc->content_length == 0)
 		http_Unset(bo->beresp, H_Content_Encoding);
 
-	bo->is_gzip = http_HdrIs(bo->beresp, H_Content_Encoding, "gzip");
-
-	bo->is_gunzip = !http_GetHdr(bo->beresp, H_Content_Encoding, NULL);
-
-	/* It can't be both */
-	assert(bo->is_gzip == 0 || bo->is_gunzip == 0);
+	if (bo->htc->body_status != BS_NONE) {
+		bo->is_gzip =
+		    http_HdrIs(bo->beresp, H_Content_Encoding, "gzip");
+		bo->is_gunzip =
+		    !http_GetHdr(bo->beresp, H_Content_Encoding, NULL);
+		assert(bo->is_gzip == 0 || bo->is_gunzip == 0);
+	}
 
 	/* We won't gunzip unless it is non-empty and gzip'ed */
-	if (bo->htc->content_length == 0 || (bo->do_gunzip && !bo->is_gzip))
+	if (bo->htc->body_status == BS_NONE ||
+	    bo->htc->content_length == 0 ||
+	    (bo->do_gunzip && !bo->is_gzip))
 		bo->do_gunzip = 0;
 
 	/* We wont gzip unless it is non-empty and ungziped */
-	if (bo->htc->content_length == 0 || (bo->do_gzip && !bo->is_gunzip))
+	if (bo->htc->body_status == BS_NONE ||
+	    bo->htc->content_length == 0 ||
+	    (bo->do_gzip && !bo->is_gunzip))
 		bo->do_gzip = 0;
 
 	/* But we can't do both at the same time */
