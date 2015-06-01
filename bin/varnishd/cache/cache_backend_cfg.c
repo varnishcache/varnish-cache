@@ -73,9 +73,7 @@ VBE_DeleteBackend(struct backend *b)
 }
 
 /*--------------------------------------------------------------------
- * Add a backend/director instance when loading a VCL.
- * If an existing backend is matched, grab a refcount and return.
- * Else create a new backend structure with reference initialized to one.
+ * Create a new director::backend instance.
  */
 
 struct backend *
@@ -102,9 +100,6 @@ VBE_AddBackend(const char *vcl, const struct vrt_backend *vb)
 
 	b->tcp_pool = VBT_Ref(vb->ipv4_suckaddr, vb->ipv6_suckaddr);
 
-	/*
-	 * Copy over the sockaddrs
-	 */
 	if (vb->ipv4_suckaddr != NULL)
 		b->ipv4 = VSA_Clone(vb->ipv4_suckaddr);
 	if (vb->ipv6_suckaddr != NULL)
