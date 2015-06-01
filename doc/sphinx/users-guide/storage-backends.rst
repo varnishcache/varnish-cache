@@ -86,7 +86,7 @@ the storage file using `dd(1)` will reduce fragmentation to a minimum.
 The 'granularity' parameter specifies the granularity of
 allocation. All allocations are rounded up to this size. The granularity is
 is assumed to be expressed in bytes, unless followed by one of the
-suffixes described for size except for %.
+suffixes described for size.
 
 The default granularity is the VM page size. The size should be reduced if you
 have many small objects.
