@@ -21,3 +21,5 @@ client c1 {
 	rxresp
 	expect resp.body == "<A></A>"
 } -run
+
+varnish v1 -expect esi_errors == 0
