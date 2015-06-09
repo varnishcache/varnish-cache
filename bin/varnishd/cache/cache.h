@@ -313,9 +313,9 @@ struct pool_task {
 	void				*priv;
 };
 
-enum pool_how {
-	POOL_QUEUE_FRONT,
-	POOL_QUEUE_BACK
+enum task_how {
+	TASK_QUEUE_FRONT,
+	TASK_QUEUE_BACK
 };
 
 /*--------------------------------------------------------------------*/
@@ -946,13 +946,13 @@ const char *sess_close_2str(enum sess_close sc, int want_desc);
 
 /* cache_pool.c */
 void Pool_Init(void);
-int Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how);
+int Pool_Task(struct pool *pp, struct pool_task *task, enum task_how how);
 int Pool_Task_Arg(struct worker *, task_func_t *,
     const void *arg, size_t arg_len);
 void Pool_Sumstat(struct worker *w);
 int Pool_TrySumstat(struct worker *wrk);
 void Pool_PurgeStat(unsigned nobj);
-int Pool_Task_Any(struct pool_task *task, enum pool_how how);
+int Pool_Task_Any(struct pool_task *task, enum task_how how);
 
 #define V1L_IsReleased(w)	((w)->v1l == NULL)
 void V1L_Chunked(const struct worker *w);

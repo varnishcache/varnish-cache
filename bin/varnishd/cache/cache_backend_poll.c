@@ -363,7 +363,7 @@ vbp_thread(struct worker *wrk, void *priv)
 		vt->task.func = vbp_task;
 		vt->task.priv = vt;
 
-		if (Pool_Task_Any(&vt->task, POOL_QUEUE_FRONT)) {
+		if (Pool_Task_Any(&vt->task, TASK_QUEUE_FRONT)) {
 			Lck_Lock(&vbp_mtx);
 			vt->running = 0;
 			Lck_Unlock(&vbp_mtx);

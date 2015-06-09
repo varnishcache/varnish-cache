@@ -91,7 +91,7 @@ Pool_TrySumstat(struct worker *wrk)
  */
 
 int
-Pool_Task_Any(struct pool_task *task, enum pool_how how)
+Pool_Task_Any(struct pool_task *task, enum task_how how)
 {
 	struct pool *pp;
 

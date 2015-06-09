@@ -415,7 +415,7 @@ SES_Reschedule_Req(struct req *req)
 	req->task.func = SES_Proto_Req;
 	req->task.priv = req;
 
-	return (Pool_Task(pp, &req->task, POOL_QUEUE_FRONT));
+	return (Pool_Task(pp, &req->task, TASK_QUEUE_FRONT));
 }
 
 /*--------------------------------------------------------------------
@@ -451,7 +451,7 @@ ses_handle(struct waited *wp, enum wait_event ev, double now)
 		tp = (void*)sp->ws->f;
 		tp->func = SES_Proto_Sess;
 		tp->priv = sp;
-		if (Pool_Task(pp, tp, POOL_QUEUE_FRONT))
+		if (Pool_Task(pp, tp, TASK_QUEUE_FRONT))
 			SES_Delete(sp, SC_OVERLOAD, now);
 		break;
 	case WAITER_CLOSE:

@@ -218,7 +218,7 @@ Pool_Task_Arg(struct worker *wrk, task_func_t *func,
  */
 
 int
-Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how)
+Pool_Task(struct pool *pp, struct pool_task *task, enum task_how how)
 {
 	struct worker *wrk;
 	int retval = 0;
@@ -245,7 +245,7 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how)
 	}
 
 	switch (how) {
-	case POOL_QUEUE_FRONT:
+	case TASK_QUEUE_FRONT:
 		/* If we have too much in the queue already, refuse. */
 		if (pp->lqueue > cache_param->wthread_queue_limit) {
 			pp->ndropped++;
@@ -256,11 +256,11 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how)
 			pp->lqueue++;
 		}
 		break;
-	case POOL_QUEUE_BACK:
+	case TASK_QUEUE_BACK:
 		VTAILQ_INSERT_TAIL(&pp->back_queue, task, list);
 		break;
 	default:
-		WRONG("Unknown enum pool_how");
+		WRONG("Unknown enum task_how");
 	}
 	Lck_Unlock(&pp->mtx);
 	return (retval);
