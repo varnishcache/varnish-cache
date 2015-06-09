@@ -437,7 +437,7 @@ vca_accept_task(struct worker *wrk, void *arg)
 			 * must reschedule the listening task so it will be
 			 * taken up by another thread again.
 			 */
-			AZ(Pool_Task(wrk->pool, &ps->task, TASK_QUEUE_BACK));
+			AZ(Pool_Task(wrk->pool, &ps->task, TASK_QUEUE_VCA));
 			return;
 		}
 
@@ -468,7 +468,7 @@ VCA_NewPool(struct pool *pp)
 		ps->task.func = vca_accept_task;
 		ps->task.priv = ps;
 		ps->pool = pp;
-		AZ(Pool_Task(pp, &ps->task, TASK_QUEUE_BACK));
+		AZ(Pool_Task(pp, &ps->task, TASK_QUEUE_VCA));
 	}
 }
 

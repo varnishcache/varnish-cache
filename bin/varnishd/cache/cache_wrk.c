@@ -226,7 +226,7 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_how how)
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	AN(task);
 	AN(task->func);
-	assert(how >= TASK_QUEUE_FRONT && how <= TASK_QUEUE_BACK);
+	assert(how >= TASK_QUEUE_BO && how <= TASK_QUEUE_VCA);
 
 	Lck_Lock(&pp->mtx);
 
@@ -244,7 +244,7 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_how how)
 	}
 
 	/* Acceptors are not subject to queue limits */
-	if (how == TASK_QUEUE_BACK ||
+	if (how == TASK_QUEUE_VCA ||
 	    pp->lqueue < cache_param->wthread_max +
 	    cache_param->wthread_queue_limit + pp->nthr) {
 		pp->nqueued++;
