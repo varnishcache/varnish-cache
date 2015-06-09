@@ -38,7 +38,8 @@
 
 #define LOG_OPT_B							\
 	VOPT("B", "[-B]", "Binary output",				\
-	    "Output binary data suitable for reading with -r."		\
+	    "Output binary data suitable for reading with -r. The -w"	\
+	    " option specifies where the binary output is written."	\
 	)
 
 #define LOG_OPT_w							\

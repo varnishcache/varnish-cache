@@ -81,7 +81,8 @@
 
 #define VUT_OPT_r							\
 	VOPT("r:", "[-r filename]", "Binary file input",		\
-	    "Read log in binary file format from this file."		\
+	    "Read log in binary file format from this file. The file"   \
+	    " can be created with ``varnishlog -B -w filename``."	\
 	)
 
 #define VUT_OPT_V							\
