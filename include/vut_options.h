@@ -85,7 +85,7 @@
 	)
 
 #define VUT_OPT_t							\
-	VOPT("t:", "[-t seconds|<off>]", "VSM connection timeout",	\
+	VOPT("t:", "[-t <seconds|off>]", "VSM connection timeout",	\
 	    "Timeout before returning error on initial VSM connection."	\
 	    " If set the VSM connection is retried every 0.5 seconds"	\
 	    " for this many seconds. If zero the connection is"		\
