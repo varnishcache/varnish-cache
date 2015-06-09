@@ -43,8 +43,7 @@ struct pool {
 
 	struct lock			mtx;
 	struct taskhead			idle_queue;
-	struct taskhead			front_queue;
-	struct taskhead			back_queue;
+	struct taskhead			queues[TASK_QUEUE_END];
 	unsigned			nthr;
 	unsigned			dry;
 	unsigned			lqueue;

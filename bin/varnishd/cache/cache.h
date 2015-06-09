@@ -315,7 +315,8 @@ struct pool_task {
 
 enum task_how {
 	TASK_QUEUE_FRONT,
-	TASK_QUEUE_BACK
+	TASK_QUEUE_BACK,
+	TASK_QUEUE_END
 };
 
 /*--------------------------------------------------------------------*/

@@ -251,13 +251,14 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_how how)
 			pp->ndropped++;
 			retval = -1;
 		} else {
-			VTAILQ_INSERT_TAIL(&pp->front_queue, task, list);
+			VTAILQ_INSERT_TAIL(&pp->queues[how], task, list);
 			pp->nqueued++;
 			pp->lqueue++;
 		}
 		break;
 	case TASK_QUEUE_BACK:
-		VTAILQ_INSERT_TAIL(&pp->back_queue, task, list);
+		VTAILQ_INSERT_TAIL(&pp->queues[how], task, list);
+		pp->lqueue++;
 		break;
 	default:
 		WRONG("Unknown enum task_how");
@@ -299,14 +300,13 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 		WS_Reset(wrk->aws, NULL);
 		AZ(wrk->vsl);
 
-		tp = VTAILQ_FIRST(&pp->front_queue);
-		if (tp != NULL) {
-			pp->lqueue--;
-			VTAILQ_REMOVE(&pp->front_queue, tp, list);
-		} else {
-			tp = VTAILQ_FIRST(&pp->back_queue);
-			if (tp != NULL)
-				VTAILQ_REMOVE(&pp->back_queue, tp, list);
+		for (i = 0; i < TASK_QUEUE_END; i++) {
+			tp = VTAILQ_FIRST(&pp->queues[i]);
+			if (tp != NULL) {
+				pp->lqueue--;
+				VTAILQ_REMOVE(&pp->queues[i], tp, list);
+				break;
+			}
 		}
 
 		if ((tp == NULL && wrk->stats->summs > 0) ||
