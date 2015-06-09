@@ -314,7 +314,6 @@ struct pool_task {
 };
 
 enum pool_how {
-	POOL_NO_QUEUE,
 	POOL_QUEUE_FRONT,
 	POOL_QUEUE_BACK
 };

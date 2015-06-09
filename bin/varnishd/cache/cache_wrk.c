@@ -245,9 +245,6 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum pool_how how)
 	}
 
 	switch (how) {
-	case POOL_NO_QUEUE:
-		retval = -1;
-		break;
 	case POOL_QUEUE_FRONT:
 		/* If we have too much in the queue already, refuse. */
 		if (pp->lqueue > cache_param->wthread_queue_limit) {
