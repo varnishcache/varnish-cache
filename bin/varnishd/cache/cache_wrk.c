@@ -226,12 +226,11 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_how how)
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	AN(task);
 	AN(task->func);
+	assert(how >= TASK_QUEUE_FRONT && how <= TASK_QUEUE_BACK);
 
 	Lck_Lock(&pp->mtx);
 
-	/*
-	 * The common case first:  Take an idle thread, do it.
-	 */
+	/* The common case first:  Take an idle thread, do it. */
 
 	wrk = pool_getidleworker(pp);
 	if (wrk != NULL) {
@@ -244,24 +243,16 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_how how)
 		return (0);
 	}
 
-	switch (how) {
-	case TASK_QUEUE_FRONT:
-		/* If we have too much in the queue already, refuse. */
-		if (pp->lqueue > cache_param->wthread_queue_limit) {
-			pp->ndropped++;
-			retval = -1;
-		} else {
-			VTAILQ_INSERT_TAIL(&pp->queues[how], task, list);
-			pp->nqueued++;
-			pp->lqueue++;
-		}
-		break;
-	case TASK_QUEUE_BACK:
-		VTAILQ_INSERT_TAIL(&pp->queues[how], task, list);
+	/* Acceptors are not subject to queue limits */
+	if (how == TASK_QUEUE_BACK ||
+	    pp->lqueue < cache_param->wthread_max +
+	    cache_param->wthread_queue_limit + pp->nthr) {
+		pp->nqueued++;
 		pp->lqueue++;
-		break;
-	default:
-		WRONG("Unknown enum task_how");
+		VTAILQ_INSERT_TAIL(&pp->queues[how], task, list);
+	} else {
+		pp->ndropped++;
+		retval = -1;
 	}
 	Lck_Unlock(&pp->mtx);
 	return (retval);
