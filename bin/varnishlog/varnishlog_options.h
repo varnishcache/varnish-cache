@@ -32,13 +32,14 @@
 
 #define LOG_OPT_a							\
 	VOPT("a", "[-a]", "Append to file",				\
-	    "When writing output to a file, append to it rather than"	\
-	    " overwrite it."						\
+	    "When writing output to a file with the -w option, append"	\
+	    " to it rather than overwrite it."				\
 	)
 
 #define LOG_OPT_A							\
 	VOPT("A", "[-A]", "Text output",				\
-	    "Output data in ascii format."				\
+	    "When writing output to a file with the -w option, output"	\
+	    " data in ascii format."					\
 	)
 
 #define LOG_OPT_w							\
@@ -46,7 +47,9 @@
 	    "Redirect output to file. The file will be overwritten"	\
 	    " unless the -a option was specified. If the application"	\
 	    " receives a SIGHUP the file will be reopened allowing"	\
-	    " the old one to be rotated away."				\
+	    " the old one to be rotated away. The file can then be"	\
+	    " read by varnishlog and other tools with the -r option,"   \
+	    " unless the -A option was specified."			\
 	)
 
 LOG_OPT_a
