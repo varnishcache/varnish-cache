@@ -226,7 +226,7 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_how how)
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	AN(task);
 	AN(task->func);
-	assert(how <= TASK_QUEUE_VCA);
+	assert(how < TASK_QUEUE_END);
 
 	Lck_Lock(&pp->mtx);
 
