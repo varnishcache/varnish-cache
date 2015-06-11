@@ -413,7 +413,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	    "\tVRT_init_vbe(ctx, &%s, &vgc_dir_priv_%s);",
 	    vgcname, vgcname);
 	VSB_printf(ifp->fin,
-	    "\tVRT_fini_vbe(ctx, &%s, &vgc_dir_priv_%s);",
+	    "\t\tVRT_fini_vbe(ctx, &%s,\n\t\t    &vgc_dir_priv_%s);",
 	    vgcname, vgcname);
 	VSB_printf(ifp->event,
 	    "\tVRT_event_vbe(ctx, ev, %s, &vgc_dir_priv_%s);",

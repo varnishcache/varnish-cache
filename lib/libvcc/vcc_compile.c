@@ -309,14 +309,19 @@ EmitInitFini(const struct vcc *tl)
 {
 	struct inifin *p;
 
+	Fh(tl, 0, "\nstatic unsigned vgc_inistep;\n");
+
 	/*
 	 * INIT
 	 */
 	Fc(tl, 0, "\nstatic int\nVGC_Load(VRT_CTX)\n{\n\n");
+	Fc(tl, 0, "\tvgc_inistep = 0;\n\n");
 	VTAILQ_FOREACH(p, &tl->inifin, list) {
 		AZ(VSB_finish(p->ini));
+		assert(p->n > 0);
 		if (VSB_len(p->ini))
 			Fc(tl, 0, "\t/* %u */\n%s\n", p->n, VSB_data(p->ini));
+		Fc(tl, 0, "\tvgc_inistep = %u;\n\n", p->n);
 		VSB_delete(p->ini);
 	}
 
@@ -330,8 +335,12 @@ EmitInitFini(const struct vcc *tl)
 
 	VTAILQ_FOREACH_REVERSE(p, &tl->inifin, inifinhead, list) {
 		AZ(VSB_finish(p->fin));
-		if (VSB_len(p->fin))
-			Fc(tl, 0, "\t/* %u */\n%s\n", p->n, VSB_data(p->fin));
+		if (VSB_len(p->fin)) {
+			Fc(tl, 0, "\t/* %u */\n", p->n);
+			Fc(tl, 0, "\tif (vgc_inistep >= %u) {\n", p->n);
+			Fc(tl, 0, "%s\n", VSB_data(p->fin));
+			Fc(tl, 0, "\t}\n\n");
+		}
 		VSB_delete(p->fin);
 	}
 
