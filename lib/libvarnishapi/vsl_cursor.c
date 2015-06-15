@@ -42,6 +42,7 @@
 #include "vdef.h"
 #include "vas.h"
 #include "miniobj.h"
+#include "vmb.h"
 
 #include "vqueue.h"
 #include "vre.h"
@@ -66,7 +67,6 @@ struct vslc_vsm {
 
 	const struct VSL_head		*head;
 	const uint32_t			*end;
-	ssize_t				segsize;
 	struct VSLC_ptr			next;
 };
 
@@ -80,11 +80,21 @@ vslc_vsm_delete(const struct VSL_cursor *cursor)
 	FREE_OBJ(c);
 }
 
+/*
+ * We tolerate the fact that segment_n wraps around eventually: for the default
+ * vsl_space of 80MB and 8 segments, each segement is 10MB long, so we wrap
+ * roughly after 40 pebibytes (32bit) or 160 yobibytes (64bit) worth of vsl
+ * written.
+ *
+ * The vsm_check would fail if a vslc paused while this amount of data was
+ * written
+ */
+
 static int
 vslc_vsm_check(const struct VSL_cursor *cursor, const struct VSLC_ptr *ptr)
 {
 	const struct vslc_vsm *c;
-	unsigned seqdiff, segment, segdiff;
+	unsigned dist;
 
 	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_VSM_MAGIC);
 	assert(&c->cursor == cursor);
@@ -92,28 +102,12 @@ vslc_vsm_check(const struct VSL_cursor *cursor, const struct VSLC_ptr *ptr)
 	if (ptr->ptr == NULL)
 		return (0);
 
-	/* Check sequence number */
-	seqdiff = c->head->seq - ptr->priv;
-	if (c->head->seq < ptr->priv)
-		/* Wrap around skips 0 */
-		seqdiff -= 1;
-	if (seqdiff > 1)
-		/* Too late */
-		return (0);
+	dist = c->head->segment_n - ptr->priv;
 
-	/* Check overrun */
-	segment = (ptr->ptr - c->head->log) / c->segsize;
-	if (segment >= VSL_SEGMENTS)
-		/* Rounding error spills to last segment */
-		segment = VSL_SEGMENTS - 1;
-	segdiff = (segment - c->head->segment) % VSL_SEGMENTS;
-	if (segdiff == 0 && seqdiff == 0)
-		/* In same segment, but close to tail */
-		return (2);
-	if (segdiff <= 2)
+	if (dist >= VSL_SEGMENTS - 2)
 		/* Too close to continue */
 		return (0);
-	if (segdiff <= 4)
+	if (dist >= VSL_SEGMENTS - 4)
 		/* Warning level */
 		return (1);
 	/* Safe */
@@ -131,11 +125,6 @@ vslc_vsm_next(const struct VSL_cursor *cursor)
 	assert(&c->cursor == cursor);
 	CHECK_OBJ_NOTNULL(c->vsm, VSM_MAGIC);
 
-	/* Assert pointers */
-	AN(c->next.ptr);
-	assert(c->next.ptr >= c->head->log);
-	assert(c->next.ptr < c->end);
-
 	i = vslc_vsm_check(&c->cursor, &c->next);
 	if (i <= 0)
 		/* Overrun */
@@ -149,9 +138,6 @@ vslc_vsm_next(const struct VSL_cursor *cursor)
 	}
 
 	while (1) {
-		assert(c->next.ptr >= c->head->log);
-		assert(c->next.ptr < c->end);
-		AN(c->head->seq);
 		t = *(volatile const uint32_t *)c->next.ptr;
 		AN(t);
 
@@ -159,17 +145,12 @@ vslc_vsm_next(const struct VSL_cursor *cursor)
 			/* Wrap around not possible at front */
 			assert(c->next.ptr != c->head->log);
 			c->next.ptr = c->head->log;
+			while (c->next.priv % VSL_SEGMENTS)
+				c->next.priv++;
 			continue;
 		}
 
 		if (t == VSL_ENDMARKER) {
-			if (c->next.ptr != c->head->log &&
-			    c->next.priv != c->head->seq) {
-				/* ENDMARKER not at front and seq wrapped */
-				/* XXX: assert on this? */
-				c->next.ptr = c->head->log;
-				continue;
-			}
 			if (c->options & VSL_COPT_TAILSTOP)
 				/* EOF */
 				return (-1);
@@ -177,11 +158,9 @@ vslc_vsm_next(const struct VSL_cursor *cursor)
 				return (0);
 		}
 
-		if (c->next.ptr == c->head->log)
-			c->next.priv = c->head->seq;
-
 		c->cursor.rec = c->next;
 		c->next.ptr = VSL_NEXT(c->next.ptr);
+
 		if (VSL_TAG(c->cursor.rec.ptr) == SLT__Batch) {
 			if (!(c->options & VSL_COPT_BATCH))
 				/* Skip the batch record */
@@ -191,6 +170,14 @@ vslc_vsm_next(const struct VSL_cursor *cursor)
 			c->next.ptr +=
 			    VSL_WORDS(VSL_BATCHLEN(c->cursor.rec.ptr));
 		}
+
+		while ((c->next.ptr - c->head->log) / c->head->segsize >
+		    c->next.priv % VSL_SEGMENTS)
+			c->next.priv++;
+
+		assert(c->next.ptr >= c->head->log);
+		assert(c->next.ptr < c->end);
+
 		return (1);
 	}
 }
@@ -199,25 +186,53 @@ static int
 vslc_vsm_reset(const struct VSL_cursor *cursor)
 {
 	struct vslc_vsm *c;
-	unsigned segment;
+	unsigned u, segment_n;
+	int i;
 
 	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_VSM_MAGIC);
 	assert(&c->cursor == cursor);
-
-	/*
-	 * Starting (VSL_SEGMENTS - 3) behind varnishd. This way
-	 * even if varnishd wraps immediately, we'll still have a
-	 * full segment worth of log before the general constraint
-	 * of at least 2 segments apart will be broken
-	 */
-	segment = (c->head->segment + 3) % VSL_SEGMENTS;
-	if (c->head->segments[segment] < 0)
-		segment = 0;
-	assert(c->head->segments[segment] >= 0);
-	c->next.ptr = c->head->log + c->head->segments[segment];
-	c->next.priv = c->head->seq;
 	c->cursor.rec.ptr = NULL;
 
+	segment_n = c->head->segment_n;
+	VRMB();			/* Make sure offset table is not stale
+				   compared to segment_n */
+
+	if (c->options & VSL_COPT_TAIL) {
+		/* Start in the same segment varnishd currently is in and
+		   run forward until we see the end */
+		u = c->next.priv = segment_n;
+		assert(c->head->offset[c->next.priv % VSL_SEGMENTS] >= 0);
+		c->next.ptr = c->head->log +
+		    c->head->offset[c->next.priv % VSL_SEGMENTS];
+		do {
+			if (c->head->segment_n - u > 1) {
+				/* Give up if varnishd is moving faster
+				   than us */
+				return (-3); /* overrun */
+			}
+			i = vslc_vsm_next(&c->cursor);
+		} while (i == 1);
+		if (i)
+			return (i);
+	} else {
+		/* Starting (VSL_SEGMENTS - 3) behind varnishd. This way
+		 * even if varnishd advances segment_n immediately, we'll
+		 * still have a full segment worth of log before the
+		 * general constraint of at least 2 segments apart will be
+		 * broken.
+		 */
+		c->next.priv = segment_n - (VSL_SEGMENTS - 3);
+		while (c->head->offset[c->next.priv % VSL_SEGMENTS] < 0) {
+			/* seg 0 must be initialized */
+			assert(c->next.priv % VSL_SEGMENTS != 0);
+			c->next.priv++;
+		}
+		assert(c->head->offset[c->next.priv % VSL_SEGMENTS] >= 0);
+		c->next.ptr = c->head->log +
+		    c->head->offset[c->next.priv % VSL_SEGMENTS];
+	}
+	assert(c->next.ptr >= c->head->log);
+	assert(c->next.ptr < c->end);
 	return (0);
 }
 
@@ -235,28 +250,25 @@ VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, unsigned options)
 	struct vslc_vsm *c;
 	struct VSM_fantom vf;
 	struct VSL_head *head;
+	int i;
 
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 	CHECK_OBJ_NOTNULL(vsm, VSM_MAGIC);
 
 	if (!VSM_Get(vsm, &vf, VSL_CLASS, "", "")) {
-		vsl_diag(vsl, "No VSL chunk found (child not started ?)\n");
+		(void)vsl_diag(vsl,
+		    "No VSL chunk found (child not started ?)\n");
 		return (NULL);
 	}
 
 	head = vf.b;
 	if (memcmp(head->marker, VSL_HEAD_MARKER, sizeof head->marker)) {
-		vsl_diag(vsl, "Not a VSL chunk\n");
+		(void)vsl_diag(vsl, "Not a VSL chunk\n");
 		return (NULL);
 	}
-	if (head->seq == 0) {
-		vsl_diag(vsl, "VSL chunk not initialized\n");
-		return (NULL);
-	}
-
 	ALLOC_OBJ(c, VSLC_VSM_MAGIC);
 	if (c == NULL) {
-		vsl_diag(vsl, "Out of memory\n");
+		(void)vsl_diag(vsl, "Out of memory\n");
 		return (NULL);
 	}
 	c->cursor.priv_tbl = &vslc_vsm_tbl;
@@ -266,19 +278,15 @@ VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, unsigned options)
 	c->vsm = vsm;
 	c->vf = vf;
 	c->head = head;
-	c->end = vf.e;
-	c->segsize = (c->end - c->head->log) / VSL_SEGMENTS;
+	c->end = c->head->log + c->head->segsize * VSL_SEGMENTS;
+	assert(c->end <= (const uint32_t *)vf.e);
 
-	if (c->options & VSL_COPT_TAIL) {
-		/* Locate tail of log */
-		c->next.ptr = c->head->log +
-		    c->head->segments[c->head->segment];
-		while (c->next.ptr < c->end &&
-		    *(volatile const uint32_t *)c->next.ptr != VSL_ENDMARKER)
-			c->next.ptr = VSL_NEXT(c->next.ptr);
-		c->next.priv = c->head->seq;
-	} else
-		AZ(vslc_vsm_reset(&c->cursor));
+	i = vslc_vsm_reset(&c->cursor);
+	if (i) {
+		(void)vsl_diag(vsl, "Cursor initialization failure (%d)\n", i);
+		FREE_OBJ(c);
+		return (NULL);
+	}
 
 	return (&c->cursor);
 }

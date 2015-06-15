@@ -39,32 +39,30 @@
 #include "vapi/vsm_int.h"
 
 #define VSL_CLASS		"Log"
-#define VSL_SEGMENTS		8
+#define VSL_SEGMENTS		8U	// power of two
 
 /*
  * Shared memory log format
  *
  * The segments array has index values providing safe entry points into
  * the log, where each element N gives the index of the first log record
- * in the Nth fraction of the log. An index value of -1 indicated that no
- * log records in this fraction exists.
+ * in the Nth segment of the log. An index value of -1 indicates that no
+ * log records in this segment exists.
  *
- * The segment member shows the current segment where Varnish is currently
- * appending log data.
- *
- * The seq member contains a non-zero seq number randomly initialized,
- * which increases whenever writing the log starts from the front.
+ * The segment_n member is incremented only, natively wrapping at
+ * UINT_MAX. When taken modulo VSL_SEGMENTS, it gives the current index
+ * into the offset array.
  *
  * The format of the actual log is in vapi/vsl_int.h
  *
  */
 
 struct VSL_head {
-#define VSL_HEAD_MARKER		"VSLHEAD0"	/* Incr. as version# */
+#define VSL_HEAD_MARKER		"VSLHEAD1"	/* Incr. as version# */
 	char			marker[VSM_MARKER_LEN];
-	volatile ssize_t	segments[VSL_SEGMENTS];
-	volatile unsigned	segment;	/* Current varnishd segment */
-	volatile unsigned	seq;		/* Non-zero seq number */
+	ssize_t			segsize;
+	unsigned		segment_n;
+	ssize_t			offset[VSL_SEGMENTS];
 	uint32_t		log[];
 };
 

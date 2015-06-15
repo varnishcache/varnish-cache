@@ -40,7 +40,7 @@
 #define VAPI_VSL_INT_H_INCLUDED
 
 #define VSL_CLASS		"Log"
-#define VSL_SEGMENTS		8
+#define VSL_SEGMENTS		8U
 
 /*
  * Shared memory log format
