@@ -334,6 +334,7 @@ EmitInitFini(const struct vcc *tl)
 	 */
 	Fc(tl, 0, "\nstatic int\nVGC_Discard(VRT_CTX)\n{\n\n");
 
+	Fc(tl, 0, "\t(void)VGC_function_vcl_fini(ctx);\n\n");
 	VTAILQ_FOREACH_REVERSE(p, &tl->inifin, inifinhead, list) {
 		AZ(VSB_finish(p->fin));
 		if (VSB_len(p->fin)) {

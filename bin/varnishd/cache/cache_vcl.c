@@ -290,8 +290,6 @@ VCL_Nuke(struct vcls *vcl)
 	ctx.method = VCL_MET_FINI;
 	ctx.handling = &hand;
 	ctx.vcl = vcl->conf;
-	(void)vcl->conf->fini_func(&ctx);
-	assert(hand == VCL_RET_OK);
 	AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_DISCARD));
 	free(vcl->conf->loaded_name);
 	(void)dlclose(vcl->dlh);
