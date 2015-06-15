@@ -248,11 +248,16 @@ priv_vcl_free(void *priv)
 }
 
 int __match_proto__(vmod_init_f)
-init_function(struct vmod_priv *priv, const struct VCL_conf *cfg)
+init_function(VRT_CTX, struct vmod_priv *priv)
 {
 	struct priv_vcl *priv_vcl;
 
-	(void)cfg;
+	AN(ctx->msg);
+
+	if (cache_param->nuke_limit == 42) {
+		VSB_printf(ctx->msg, "nuke_limit is not the answer.");
+		return (-1);
+	}
 
 	ALLOC_OBJ(priv_vcl, PRIV_VCL_MAGIC);
 	AN(priv_vcl);

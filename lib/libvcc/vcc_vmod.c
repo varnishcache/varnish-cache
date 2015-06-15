@@ -199,7 +199,7 @@ vcc_ParseImport(struct vcc *tl)
 			if (ifp == NULL)
 				ifp = New_IniFin(tl);
 			VSB_printf(ifp->ini,
-			    "\tif (%s(&vmod_priv_%.*s, &VCL_conf))\n"
+			    "\tif (%s(ctx, &vmod_priv_%.*s))\n"
 			    "\t\treturn(1);",
 			    p, PF(mod));
 		} else {

@@ -189,7 +189,7 @@ class Vmod(object):
 			fo.write("\n")
 			fo.write("int " + self.init)
 			fo.write(
-			    "(struct vmod_priv *, const struct VCL_conf *);\n")
+			    "(VRT_CTX, struct vmod_priv *);\n")
 
 	def c_typedefs_(self):
 		l = list()

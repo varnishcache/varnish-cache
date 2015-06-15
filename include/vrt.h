@@ -42,9 +42,9 @@
  * - cache_vrt.c: -> ssize_t VRT_CacheReqBody(VRT_CTX, size_t)
  */
 
-#define VRT_MAJOR_VERSION	2U
+#define VRT_MAJOR_VERSION	3U
 
-#define VRT_MINOR_VERSION	2U
+#define VRT_MINOR_VERSION	0U
 
 
 /***********************************************************************/
@@ -265,7 +265,7 @@ struct vmod_priv {
 	vmod_priv_free_f	*free;
 };
 
-typedef int vmod_init_f(struct vmod_priv *,  const struct VCL_conf *);
+typedef int vmod_init_f(VRT_CTX, struct vmod_priv *);
 
 void VRT_priv_fini(const struct vmod_priv *p);
 struct vmod_priv *VRT_priv_task(VRT_CTX, void *vmod_id);
