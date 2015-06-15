@@ -75,7 +75,7 @@ primary action, something functions which return a value can not::
 		std.set_ip_tos(32);
 	}
 
-Running vmodtool.py on the vmod.vcc file, produces an "vcc_if.c" and
+Running vmodtool.py on the vmod.vcc file, produces a "vcc_if.c" and
 "vcc_if.h" files, which you must use to build your shared library
 file.
 
@@ -88,15 +88,13 @@ the functions you want to export to VCL.
 
 For the std VMOD, the compiled vcc_if.h file looks like this::
 
-	struct vrt_ctx;
-	struct VCL_conf;
 	struct vmod_priv;
 
-	VCL_STRING vmod_toupper(const struct vrt_ctx *, const char *, ...);
-	VCL_STRING vmod_tolower(const struct vrt_ctx *, const char *, ...);
-	VCL_VOID vmod_set_ip_tos(const struct vrt_ctx *, VCL_INT);
+	VCL_STRING vmod_toupper(VRT_CTX, const char *, ...);
+	VCL_STRING vmod_tolower(VRT_CTX, const char *, ...);
+	VCL_VOID vmod_set_ip_tos(VRT_CTX, VCL_INT);
 
-	int init_function(struct vmod_priv *, const struct VCL_conf *);
+	int init_function(VRT_CTX, struct vmod_priv *);
 
 Those are your C prototypes.  Notice the ``vmod_`` prefix on the function
 names and the C-types as arguments.
@@ -108,31 +106,32 @@ VCL data types are targeted at the job, so for instance, we have data
 types like "DURATION" and "HEADER", but they all have some kind of C
 language representation.  Here is a description of them.
 
-All but the STRING_LIST type have typedefs:  VCL_INT, VCL_REAL etc.
+All but the STRING_LIST type have typedefs: VCL_INT, VCL_REAL etc.
 
 INT
-	C-type: ``int``
+	C-type: ``long``
 
 	An integer as we know and love them.
 
 REAL
 	C-type: ``double``
 
-	A floating point value
+	A floating point value.
 
 DURATION
 	C-type: ``double``
 
-	Units: seconds
+	Unit: seconds
 
-	A time interval, as in "25 minutes".
+	A time interval, as in 25 seconds.
 
 TIME
 	C-type: ``double``
 
-	Units: seconds since UNIX epoch
+	Unit: seconds since UNIX epoch
 
-	An absolute time, as in "Mon Sep 13 19:06:01 UTC 2010".
+	An absolute time, as in 1284401161.  When used in a string
+	context is formatted as "Mon, 13 Sep 2010 19:06:01 GMT".
 
 STRING
 	C-type: ``const char *``
@@ -229,6 +228,12 @@ BOOL
 
 	Zero means false, anything else means true.
 
+BLOB
+	C-type: ``const struct vmod_priv *``
+
+	An opaque type to pass random bits of memory between VMOD
+	functions.
+
 
 Private Pointers
 ================
@@ -266,16 +271,19 @@ The way it works in the vmod code, is that a ``struct vmod_priv *`` is
 passed to the functions where one of the ``PRIV_*`` argument types is
 specified.
 
-This structure contains two members::
+This structure contains three members::
 
 	typedef void vmod_priv_free_f(void *);
 	struct vmod_priv {
 		void                    *priv;
+		int			len;
 		vmod_priv_free_f        *free;
 	};
 
 The "priv" element can be used for whatever the vmod code wants to
 use it for, it defaults to a NULL pointer.
+
+The "len" element is used primarily for BLOBs to indicate its size.
 
 The "free" element defaults to NULL, and it is the modules responsibility
 to set it to a suitable function, which can clean up whatever the "priv"
