@@ -101,3 +101,7 @@ $Function INT vre_limit()
 $Function VOID register_exp_callback(PRIV_VCL)
 
 Register the vmod to receive expiry callbacks
+
+$Function VOID init_fail()
+
+Function to fail vcl_init{}

@@ -54,7 +54,7 @@ struct busyobj;
 struct vsl_log;
 struct http;
 struct ws;
-struct cli;
+struct vsb;
 struct director;
 struct VCL_conf;
 struct suckaddr;
@@ -93,7 +93,7 @@ struct vrt_ctx {
 	unsigned			method;
 	unsigned			*handling;
 
-	struct cli			*cli;	// Only in ...init()
+	struct vsb			*msg;	// Only in ...init()
 	struct vsl_log			*vsl;
 	struct VCL_conf			*vcl;
 	struct ws			*ws;

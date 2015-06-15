@@ -34,6 +34,7 @@
 #include "cache/cache.h"
 
 #include "vrt.h"
+#include "vsb.h"
 #include "vcc_if.h"
 
 struct priv_vcl {
@@ -218,6 +219,14 @@ vmod_register_exp_callback(VRT_CTX, struct vmod_priv *priv)
 	AZ(priv_vcl->exp_cb);
 	priv_vcl->exp_cb = EXP_Register_Callback(exp_cb, priv_vcl);
 	VSL(SLT_Debug, 0, "exp_cb: registered");
+}
+
+VCL_VOID __match_proto__()
+vmod_init_fail(VRT_CTX)
+{
+
+	AN(ctx->msg);
+	VSB_printf(ctx->msg, "Planned failure in vcl_init{}");
 }
 
 static void __match_proto__(vmod_priv_free_f)

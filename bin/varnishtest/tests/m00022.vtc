@@ -1,0 +1,28 @@
+varnishtest "Test std & debug vmod"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+varnish v1 -errvcl "Planned failure in vcl_init" {
+
+	import ${vmod_debug};
+
+	backend default {
+		.host = "${s1_addr}";
+	}
+
+	sub vcl_init {
+		debug.init_fail();
+		return (fail);
+	}
+}
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run

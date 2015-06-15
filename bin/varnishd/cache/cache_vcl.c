@@ -197,6 +197,8 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 	struct VCL_conf const *cnf;
 	struct vrt_ctx ctx;
 	unsigned hand = 0;
+	struct vsb *vsb;
+	int i;
 
 	ASSERT_CLI();
 
@@ -237,26 +239,39 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 	ctx.method = VCL_MET_INIT;
 	ctx.handling = &hand;
-	ctx.cli = cli;
 	ctx.vcl = vcl->conf;
 
-	if (vcl->conf->event_vcl(&ctx, VCL_EVENT_LOAD)) {
+	vsb = VSB_new_auto();
+	AN(vsb);
+	ctx.msg = vsb;
+	i = vcl->conf->event_vcl(&ctx, VCL_EVENT_LOAD);
+	AZ(VSB_finish(vsb));
+	if (i) {
 		VCLI_Out(cli, "VCL \"%s\" Failed to initialize", name);
+		if (VSB_len(vsb))
+			VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(vsb));
 		AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_DISCARD));
 		(void)dlclose(vcl->dlh);
 		FREE_OBJ(vcl);
+		VSB_delete(vsb);
 		return (1);
 	}
+	VSB_clear(vsb);
 	(void)vcl->conf->init_func(&ctx);
+	AZ(VSB_finish(vsb));
 	if (hand == VCL_RET_FAIL) {
 		VCLI_Out(cli, "VCL \"%s\" vcl_init{} failed", name);
+		if (VSB_len(vsb))
+			VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(vsb));
 		ctx.method = VCL_MET_FINI;
 		(void)vcl->conf->fini_func(&ctx);
 		AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_DISCARD));
 		(void)dlclose(vcl->dlh);
 		FREE_OBJ(vcl);
+		VSB_delete(vsb);
 		return (1);
 	}
+	VSB_delete(vsb);
 	vcl_set_state(vcl, state);
 	assert(hand == VCL_RET_OK);
 	VCLI_Out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
@@ -392,6 +407,8 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 	struct vcls *vcl;
 	struct vrt_ctx ctx;
 	unsigned hand = 0;
+	struct vsb *vsb;
+	int i;
 
 	ASSERT_CLI();
 	AZ(priv);
@@ -400,16 +417,23 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 	AN(vcl->warm);			// MGT ensures this
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 	ctx.handling = &hand;
-	ctx.cli = cli;
-	if (vcl->conf->event_vcl(&ctx, VCL_EVENT_USE)) {
+	vsb = VSB_new_auto();
+	AN(vsb);
+	ctx.msg = vsb;
+	i = vcl->conf->event_vcl(&ctx, VCL_EVENT_USE);
+	AZ(VSB_finish(vsb));
+	if (i) {
 		VCLI_Out(cli, "VCL \"%s\" Failed to activate", av[2]);
+		if (VSB_len(vsb) > 0)
+			VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(vsb));
 		VCLI_SetResult(cli, CLIS_CANT);
-		return;
+	} else {
+		Lck_Lock(&vcl_mtx);
+		vcl_active = vcl;
+		Lck_Unlock(&vcl_mtx);
 	}
-
-	Lck_Lock(&vcl_mtx);
-	vcl_active = vcl;
-	Lck_Unlock(&vcl_mtx);
+	VSB_delete(vsb);
+	return;
 }
 
 static void __match_proto__(cli_func_t)
