@@ -897,7 +897,6 @@ def runmain(inputvcc, outputname="vcc_if"):
 	write_c_file_warning(fc)
 	write_c_file_warning(fh)
 
-	fh.write('struct VCL_conf;\n')
 	fh.write('struct vmod_priv;\n')
 	fh.write("\n")
 
