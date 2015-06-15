@@ -33,6 +33,7 @@
 
 #include "cache/cache.h"
 
+#include "vcl.h"
 #include "vrt.h"
 #include "vsb.h"
 #include "vcc_if.h"
@@ -227,6 +228,7 @@ vmod_init_fail(VRT_CTX)
 
 	AN(ctx->msg);
 	VSB_printf(ctx->msg, "Planned failure in vcl_init{}");
+	VRT_handling(ctx, VCL_RET_FAIL);
 }
 
 static void __match_proto__(vmod_priv_free_f)

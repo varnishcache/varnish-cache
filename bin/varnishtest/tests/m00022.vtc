@@ -1,4 +1,4 @@
-varnishtest "Test std & debug vmod"
+varnishtest "Test vmod failure in vcl_init{}"
 
 server s1 {
 	rxreq
@@ -17,7 +17,6 @@ varnish v1 -errvcl "Planned failure in vcl_init" {
 
 	sub vcl_init {
 		debug.init_fail();
-		return (fail);
 	}
 }
 

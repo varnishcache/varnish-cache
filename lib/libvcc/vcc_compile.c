@@ -700,7 +700,16 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 		    method_tab[i].name);
 		AZ(VSB_finish(tl->fm[i]));
 		Fc(tl, 1, "{\n");
+		/*
+		 * We want vmods to be able set a FAIL return value
+		 * in members called from vcl_init, so set OK up front
+		 * and return with whatever was set last.
+		 */
+		if (method_tab[i].bitval == VCL_MET_INIT)
+			Fc(tl, 1, "  VRT_handling(ctx, VCL_RET_OK);\n");
 		Fc(tl, 1, "%s", VSB_data(tl->fm[i]));
+		if (method_tab[i].bitval == VCL_MET_INIT)
+			Fc(tl, 1, "  return(1);\n");
 		Fc(tl, 1, "}\n");
 	}
 
