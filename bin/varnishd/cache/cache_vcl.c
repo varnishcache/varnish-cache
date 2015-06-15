@@ -247,24 +247,9 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 	i = vcl->conf->event_vcl(&ctx, VCL_EVENT_LOAD);
 	AZ(VSB_finish(vsb));
 	if (i) {
-		VCLI_Out(cli, "VCL \"%s\" Failed to initialize", name);
+		VCLI_Out(cli, "VCL \"%s\" Failed initialization", name);
 		if (VSB_len(vsb))
 			VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(vsb));
-		AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_DISCARD));
-		(void)dlclose(vcl->dlh);
-		FREE_OBJ(vcl);
-		VSB_delete(vsb);
-		return (1);
-	}
-	VSB_clear(vsb);
-	(void)vcl->conf->init_func(&ctx);
-	AZ(VSB_finish(vsb));
-	if (hand == VCL_RET_FAIL) {
-		VCLI_Out(cli, "VCL \"%s\" vcl_init{} failed", name);
-		if (VSB_len(vsb))
-			VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(vsb));
-		ctx.method = VCL_MET_FINI;
-		(void)vcl->conf->fini_func(&ctx);
 		AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_DISCARD));
 		(void)dlclose(vcl->dlh);
 		FREE_OBJ(vcl);

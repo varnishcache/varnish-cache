@@ -325,7 +325,8 @@ EmitInitFini(const struct vcc *tl)
 		VSB_delete(p->ini);
 	}
 
-	Fc(tl, 0, "\treturn(0);\n");
+	Fc(tl, 0, "\t(void)VGC_function_vcl_init(ctx);\n");
+	Fc(tl, 0, "\treturn(*ctx->handling == VCL_RET_OK ? 0: -1);\n");
 	Fc(tl, 0, "}\n");
 
 	/*

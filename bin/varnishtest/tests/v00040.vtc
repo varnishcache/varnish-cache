@@ -12,7 +12,7 @@ client c1 {
 	rxresp
 } -run
 
-varnish v1 -errvcl {VCL "vcl2" vcl_init{} failed} {
+varnish v1 -errvcl {VCL "vcl2" Failed initialization} {
 	sub vcl_init {
 		return (fail);
 	}
