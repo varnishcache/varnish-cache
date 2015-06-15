@@ -86,9 +86,9 @@ Example
 $Function VOID syslog(INT priority, STRING_LIST s)
 
 Description
-	Logs the string *s* to syslog marked with *priority*. *priority*
-	is formed by ORing the facility and priority values.  See your
-	system's syslog.h file for priorities and facility codes.
+	Logs the string *s* to syslog tagged with *priority*. *priority*
+	is formed by ORing the facility and level values. See your
+	system's syslog.h file for possible values.
 Example
 	std.syslog(9, "Something is wrong");
 
@@ -107,12 +107,13 @@ Example
 $Function VOID collect(HEADER hdr)
 
 Description
-	Collapses the header *hdr*, joining them into one.
+	Collapses multiple *hdr* headers into one long header.
+
+	Care should be taken when collapsing headers.  In particular
+	collapsing Set-Cookie will lead to unexpected results on the
+	browser side.
 Example
 	std.collect(req.http.cookie);
-
-	This will collapse several Cookie: headers into one, long
-	cookie header.
 
 $Function DURATION duration(STRING s, DURATION fallback)
 
