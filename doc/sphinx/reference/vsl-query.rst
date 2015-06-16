@@ -35,12 +35,11 @@ GROUPING
 ========
 
 When grouping transactions, there is a hierarchy structure showing
-which transaction initiated what. The level increases by one by an
+which transaction initiated what. The level increases by one on an
 'initiated by' relation, so for example a backend transaction will
 have one higher level than the client transaction that initiated it on
-a cache miss. Request restart transactions does not have it's level
-increased. This is to help predicting the level for a given
-transaction.
+a cache miss. Request restart transactions don't get their level
+increased to make it predictable.
 
 Levels start counting at 1, except when using raw where it will always
 be 0.
@@ -75,14 +74,27 @@ The grouping modes are:
   Every log record will make up a transaction of it's own. All data,
   including non-transactional data will be reported.
 
-The API will when possible use shared memory pointers for the log
-data. This keeps the memory usage low as there will be no local
-buffering of log data. Though the shared memory log is a ring buffer,
-and the data will be overwritten on the next wrap of the ring
-buffer. The API will start to buffer data when the Varnish daemon
-comes close to overwriting still unreported content. When using
-session grouping together with long lasting client connections the
-memory usage of the logging process can increase.
+Memory Usage
+------------
+
+The API will use pointers to shared memory log data as long as
+possible to keep memory usage at a minimum. But as the shared memory
+log is a ring buffer, data will get overwritten eventually, so the API
+creates local copies of referenced log data when varnishd comes close
+to overwriting still unreported content.
+
+This process avoids loss of log data in many scenarios, but it is not
+failsafe: Overruns where varnishd "overtakes" the log reader process
+in the ring buffer can still happen when API clients cannot keep up
+reading and/or copying, for instance due to output blocking.
+
+Though being unrelated to grouping in principle, copying of log data
+is particularly relevant for session grouping together with long
+lasting client connections - for this grouping, the logging API client
+process is likely to consume relevant amounts of memory. As the vxid
+grouping also logs (potentially long lasting) sessions, it is also
+likely to require memory for copies of log entries, but far less than
+session grouping.
 
 Example transaction hierarchy using request grouping mode ::
 
