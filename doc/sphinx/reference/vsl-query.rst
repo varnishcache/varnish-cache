@@ -50,15 +50,18 @@ The grouping modes are:
 * Session
 
   All transactions initiated by a client connection are reported
-  together. All log data is buffered until the client connection is
-  closed, which can cause session grouping mode to potentially consume
-  a lot of memory.
+  together. Client connections are open ended when using HTTP
+  keep-alives, so it is undefined when the session will be
+  reported. If the transaction timeout period is exceeded an
+  incomplete session will be reported. Non-transactional data (VXID
+  == 0) is not reported.
 
 * Request
 
   Transactions are grouped by request, where the set will include the
   request itself as well as any backend requests or ESI-subrequests.
-  Session data is not reported. This is the default.
+  Session data and non-transactional data (VXID == 0) is not
+  reported. This is the default.
 
 * VXID
 
@@ -72,7 +75,16 @@ The grouping modes are:
   Every log record will make up a transaction of it's own. All data,
   including non-transactional data will be reported.
 
-Example transaction hierarchy ::
+The API will when possible use shared memory pointers for the log
+data. This keeps the memory usage low as there will be no local
+buffering of log data. Though the shared memory log is a ring buffer,
+and the data will be overwritten on the next wrap of the ring
+buffer. The API will start to buffer data when the Varnish daemon
+comes close to overwriting still unreported content. When using
+session grouping together with long lasting client connections the
+memory usage of the logging process can increase.
+
+Example transaction hierarchy using request grouping mode ::
 
   Lvl 1: Client request (cache miss)
     Lvl 2: Backend request
