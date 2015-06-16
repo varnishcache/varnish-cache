@@ -41,7 +41,6 @@
 #include "mgt/mgt.h"
 #include "common/params.h"
 
-#include "vcl.h"
 #include "vcli.h"
 #include "vcli_priv.h"
 #include "vev.h"

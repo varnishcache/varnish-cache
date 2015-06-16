@@ -105,6 +105,8 @@ void mgt_child_inherit(int fd, const char *what);
 
 #define NEEDLESS_RETURN(foo)	return (foo)
 
+/* cache/cache_vcl.c */
+int VCL_TestLoad(const char *);
 
 /* vsm.c */
 struct vsm_sc;

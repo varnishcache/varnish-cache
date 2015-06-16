@@ -44,7 +44,6 @@
 #include "mgt/mgt.h"
 
 #include "libvcc.h"
-#include "vcl.h"
 #include "vcli.h"
 #include "vcli_priv.h"
 #include "vfil.h"
@@ -184,37 +183,12 @@ run_cc(void *priv)
 static void __match_proto__(vsub_func_f)
 run_dlopen(void *priv)
 {
-	void *dlh;
-	struct VCL_conf const *cnf;
 	struct vcc_priv *vp;
 
 	VJ_subproc(JAIL_SUBPROC_VCLLOAD);
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
-
-	/* Try to load the object into this sub-process */
-	if ((dlh = dlopen(vp->libfile, RTLD_NOW | RTLD_LOCAL)) == NULL) {
-		fprintf(stderr, "Compiled VCL program failed to load:\n  %s\n",
-		    dlerror());
+	if (VCL_TestLoad(vp->libfile))
 		exit(1);
-	}
-
-	cnf = dlsym(dlh, "VCL_conf");
-	if (cnf == NULL) {
-		fprintf(stderr, "Compiled VCL program, metadata not found\n");
-		exit(1);
-	}
-
-	if (cnf->magic != VCL_CONF_MAGIC) {
-		fprintf(stderr, "Compiled VCL program, mangled metadata\n");
-		exit(1);
-	}
-
-	if (dlclose(dlh)) {
-		fprintf(stderr,
-		    "Compiled VCL program failed to unload:\n  %s\n",
-		    dlerror());
-		exit(1);
-	}
 	exit(0);
 }
 

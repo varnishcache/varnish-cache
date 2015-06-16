@@ -155,6 +155,79 @@ VCL_Rel(struct VCL_conf **vcc)
 /*--------------------------------------------------------------------*/
 
 static struct vcls *
+VCL_Open(const char *fn, struct vsb *msg)
+{
+	struct vcls *vcl;
+	void *dlh;
+	struct VCL_conf const *cnf;
+
+	AN(fn);
+	AN(msg);
+
+	dlh = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
+	if (dlh == NULL) {
+		VSB_printf(msg, "Could not load compiled VCL.\n");
+		VSB_printf(msg, "\tdlopen(%s) = %s\n", fn, dlerror());
+		return (NULL);
+	}
+	cnf = dlsym(dlh, "VCL_conf");
+	if (cnf == NULL) {
+		VSB_printf(msg, "Compiled VCL lacks metadata.\n");
+		(void)dlclose(dlh);
+		return (NULL);
+	}
+	if (cnf->magic != VCL_CONF_MAGIC) {
+		VSB_printf(msg, "Compiled VCL has mangled metadata.\n");
+		(void)dlclose(dlh);
+		return (NULL);
+	}
+	ALLOC_OBJ(vcl, VVCLS_MAGIC);
+	AN(vcl);
+	vcl->dlh = dlh;
+	memcpy(vcl->conf, cnf, sizeof *cnf);
+	return (vcl);
+}
+
+static void
+VCL_Close(struct vcls **vclp)
+{
+	struct vcls *vcl;
+
+	CHECK_OBJ_NOTNULL(*vclp, VVCLS_MAGIC);
+	vcl = *vclp;
+	*vclp = NULL;
+	AZ(dlclose(vcl->dlh));
+	FREE_OBJ(vcl);
+}
+
+/*--------------------------------------------------------------------
+ * NB: This function is called from the test-load subprocess.
+ */
+
+int
+VCL_TestLoad(const char *fn)
+{
+	struct vsb *vsb;
+	struct vcls *vcl;
+	int retval = 0;
+
+	AN(fn);
+	vsb = VSB_new_auto();
+	AN(vsb);
+	vcl = VCL_Open(fn, vsb);
+	if (vcl == NULL) {
+		AZ(VSB_finish(vsb));
+		fprintf(stderr, "%s", VSB_data(vsb));
+		retval = -1;
+	} else
+		VCL_Close(&vcl);
+	VSB_delete(vsb);
+	return (retval);
+}
+
+/*--------------------------------------------------------------------*/
+
+static struct vcls *
 vcl_find(const char *name)
 {
 	struct vcls *vcl;
@@ -194,7 +267,6 @@ static int
 VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 {
 	struct vcls *vcl;
-	struct VCL_conf const *cnf;
 	struct vrt_ctx ctx;
 	unsigned hand = 0;
 	struct vsb *vsb;
@@ -208,41 +280,26 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 		return (1);
 	}
 
-	ALLOC_OBJ(vcl, VVCLS_MAGIC);
-	AN(vcl);
+	vsb = VSB_new_auto();
+	AN(vsb);
 
-	vcl->dlh = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
-
-	if (vcl->dlh == NULL) {
-		VCLI_Out(cli, "dlopen(%s): %s\n", fn, dlerror());
-		FREE_OBJ(vcl);
+	vcl = VCL_Open(fn, vsb);
+	if (vcl == NULL) {
+		AZ(VSB_finish(vsb));
+		VCLI_Out(cli, "%s", VSB_data(vsb));
+		VSB_delete(vsb);
 		return (1);
 	}
-	cnf = dlsym(vcl->dlh, "VCL_conf");
-	if (cnf == NULL) {
-		VCLI_Out(cli, "Internal error: No VCL_conf symbol\n");
-		(void)dlclose(vcl->dlh);
-		FREE_OBJ(vcl);
-		return (1);
-	}
-	memcpy(vcl->conf, cnf, sizeof *cnf);
+
 	vcl->conf->loaded_name = strdup(name);
 	XXXAN(vcl->conf->loaded_name);
-
-	if (vcl->conf->magic != VCL_CONF_MAGIC) {
-		VCLI_Out(cli, "Wrong VCL_CONF_MAGIC\n");
-		(void)dlclose(vcl->dlh);
-		FREE_OBJ(vcl);
-		return (1);
-	}
 
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 	ctx.method = VCL_MET_INIT;
 	ctx.handling = &hand;
 	ctx.vcl = vcl->conf;
 
-	vsb = VSB_new_auto();
-	AN(vsb);
+	VSB_clear(vsb);
 	ctx.msg = vsb;
 	i = vcl->conf->event_vcl(&ctx, VCL_EVENT_LOAD);
 	AZ(VSB_finish(vsb));
@@ -251,8 +308,7 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 		if (VSB_len(vsb))
 			VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(vsb));
 		AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_DISCARD));
-		(void)dlclose(vcl->dlh);
-		FREE_OBJ(vcl);
+		VCL_Close(&vcl);
 		VSB_delete(vsb);
 		return (1);
 	}
@@ -292,8 +348,7 @@ VCL_Nuke(struct vcls *vcl)
 	ctx.vcl = vcl->conf;
 	AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_DISCARD));
 	free(vcl->conf->loaded_name);
-	(void)dlclose(vcl->dlh);
-	FREE_OBJ(vcl);
+	VCL_Close(&vcl);
 	VSC_C_main->n_vcl--;
 	VSC_C_main->n_vcl_discard--;
 }
