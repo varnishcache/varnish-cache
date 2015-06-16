@@ -88,8 +88,8 @@ Example transaction hierarchy using request grouping mode ::
         Lvl 4: Backend request
     Lvl 2: ESI subrequest (cache hit)
 
-Memory Usage
-------------
+MEMORY USAGE
+============
 
 The API will use pointers to shared memory log data as long as
 possible to keep memory usage at a minimum. But as the shared memory
