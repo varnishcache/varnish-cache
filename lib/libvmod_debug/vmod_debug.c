@@ -248,12 +248,14 @@ priv_vcl_free(void *priv)
 }
 
 int __match_proto__(vmod_init_f)
-init_function(VRT_CTX, struct vmod_priv *priv)
+event_function(VRT_CTX, struct vmod_priv *priv, enum vcl_event_e e)
 {
 	struct priv_vcl *priv_vcl;
 
-	AN(ctx->msg);
+	if (e != VCL_EVENT_LOAD)
+		return (0);
 
+	AN(ctx->msg);
 	if (cache_param->nuke_limit == 42) {
 		VSB_printf(ctx->msg, "nuke_limit is not the answer.");
 		return (-1);

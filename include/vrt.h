@@ -265,7 +265,9 @@ struct vmod_priv {
 	vmod_priv_free_f	*free;
 };
 
-typedef int vmod_init_f(VRT_CTX, struct vmod_priv *);
+#ifdef VCL_RET_MAX
+typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
+#endif
 
 void VRT_priv_fini(const struct vmod_priv *p);
 struct vmod_priv *VRT_priv_task(VRT_CTX, void *vmod_id);

@@ -189,19 +189,22 @@ vcc_ParseImport(struct vcc *tl)
 	spec = vmd->spec;
 	for (; *spec != NULL; spec++) {
 		p = *spec;
-		if (!strcmp(p, "OBJ")) {
+		if (!strcmp(p, "$OBJ")) {
 			p += strlen(p) + 1;
 			sym = VCC_AddSymbolStr(tl, p, SYM_OBJECT);
 			XXXAN(sym);
 			sym->args = p;
-		} else if (!strcmp(p, "INIT")) {
+		} else if (!strcmp(p, "$EVENT")) {
 			p += strlen(p) + 1;
 			if (ifp == NULL)
 				ifp = New_IniFin(tl);
 			VSB_printf(ifp->ini,
-			    "\tif (%s(ctx, &vmod_priv_%.*s))\n"
+			    "\tif (%s(ctx, &vmod_priv_%.*s, VCL_EVENT_LOAD))\n"
 			    "\t\treturn(1);",
 			    p, PF(mod));
+			VSB_printf(ifp->fin,
+			    "\t\t(void)%s(ctx, &vmod_priv_%.*s,\n"
+			    "\t\t    VCL_EVENT_DISCARD);\n", p, PF(mod));
 		} else {
 			sym = VCC_AddSymbolStr(tl, p, SYM_FUNC);
 			ERRCHK(tl);

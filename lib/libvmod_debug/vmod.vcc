@@ -34,7 +34,7 @@ This vmod is used to develop, test and debug the various aspects
 of VMOD handling in Varnish.
 
 
-$Init init_function
+$Event event_function
 $Function VOID panic(STRING_LIST)
 
 Don't.

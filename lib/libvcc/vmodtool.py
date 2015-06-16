@@ -153,18 +153,19 @@ class Vmod(object):
 		self.nam = nam
 		self.dnam = dnam
 		self.sec = sec
-		self.init = None
+		self.event = None
 		self.funcs = list()
 		self.objs = list()
 		self.doc_str = []
 		self.doc_order = []
 
-	def set_init(self, nam):
-		if self.init != None:
-			raise ParseError("Module %s already has Init", self.nam)
+	def set_event(self, nam):
+		if self.event != None:
+			raise ParseError("Module %s already has $Event",
+			    self.nam)
 		if not is_c_name(nam):
-			raise ParseError("Init name '%s' is illegal", nam)
-		self.init = nam
+			raise ParseError("$Event name '%s' is illegal", nam)
+		self.event = nam
 
 	def add_func(self, fn):
 		self.funcs.append(fn)
@@ -185,11 +186,11 @@ class Vmod(object):
 		for f in self.funcs:
 			for i in lwrap(f.c_proto()):
 				fo.write(i + "\n")
-		if self.init != None:
+		if self.event != None:
 			fo.write("\n")
-			fo.write("int " + self.init)
-			fo.write(
-			    "(VRT_CTX, struct vmod_priv *);\n")
+			fo.write("#ifdef VCL_MET_MAX\n")
+			fo.write("vmod_event_f " + self.event + ";\n")
+			fo.write("#endif\n")
 
 	def c_typedefs_(self):
 		l = list()
@@ -265,8 +266,8 @@ class Vmod(object):
 			s += f.c_initializer()
 
 		s += "\n\t/* Init/Fini */\n"
-		if self.init != None:
-			s += "\t" + self.init + ",\n"
+		if self.event != None:
+			s += "\t" + self.event + ",\n"
 		s += "};"
 
 		return s
@@ -281,8 +282,8 @@ class Vmod(object):
 			s += f.c_struct(self.nam)
 
 		s += "\n\t/* Init/Fini */\n"
-		if self.init != None:
-			s += "\tvmod_init_f\t*_init;\n"
+		if self.event != None:
+			s += "\tvmod_event_f\t*_event;\n"
 		s += '}'
 		return s
 
@@ -297,9 +298,9 @@ class Vmod(object):
 		for f in self.funcs:
 			s += f.c_strspec(self.nam) + ',\n\n'
 
-		if self.init != None:
+		if self.event != None:
 			s += "\t/* Init/Fini */\n"
-			s += '\t"INIT\\0Vmod_' + self.nam + '_Func._init",\n'
+			s += '\t"$EVENT\\0Vmod_' + self.nam + '_Func._event",\n'
 
 		s += "\t0\n"
 		s += "};\n"
@@ -525,7 +526,7 @@ class Obj(object):
 
 	def c_strspec(self, modnam):
 		s = "\t/* Object " + self.nam + " */\n"
-		s += '\t"OBJ\\0"\n'
+		s += '\t"$OBJ\\0"\n'
 		s += self.init.c_strspec(modnam, pfx="\t\t") + '\n'
 		s += '\t\t"' + self.st + '\\0"\n'
 		s += self.fini.c_strspec(modnam, pfx="\t\t") + '\n'
@@ -749,9 +750,9 @@ class FileSection(object):
 		if t.str == "$Module":
 			o = parse_module(self)
 			vx.append(o)
-		elif t.str == "$Init":
+		elif t.str == "$Event":
 			x = self.get_token()
-			vx[0].set_init(x.str)
+			vx[0].set_event(x.str)
 			o = None
 		elif t.str == "$Function":
 			if len(vx) == 2:
@@ -854,7 +855,7 @@ def runmain(inputvcc, outputname="vcc_if"):
 		"$Function":	True,
 		"$Object":	True,
 		"$Method":	True,
-		"$Init":	True,
+		"$Event":	True,
 	}
 
 	sl = []
@@ -903,6 +904,7 @@ def runmain(inputvcc, outputname="vcc_if"):
 	vx[0].c_proto(fh)
 
 	fc.write('#include "config.h"\n')
+	fc.write('#include "vcl.h"\n')
 	fc.write('#include "vrt.h"\n')
 	fc.write('#include "vcc_if.h"\n')
 	fc.write('#include "vmod_abi.h"\n')
