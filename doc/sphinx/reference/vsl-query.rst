@@ -74,6 +74,20 @@ The grouping modes are:
   Every log record will make up a transaction of it's own. All data,
   including non-transactional data will be reported.
 
+Transaction Hierarchy
+---------------------
+
+Example transaction hierarchy using request grouping mode ::
+
+  Lvl 1: Client request (cache miss)
+    Lvl 2: Backend request
+    Lvl 2: ESI subrequest (cache miss)
+      Lvl 3: Backend request
+      Lvl 3: Backend request (VCL restart)
+      Lvl 3: ESI subrequest (cache miss)
+        Lvl 4: Backend request
+    Lvl 2: ESI subrequest (cache hit)
+
 Memory Usage
 ------------
 
@@ -95,17 +109,6 @@ process is likely to consume relevant amounts of memory. As the vxid
 grouping also logs (potentially long lasting) sessions, it is also
 likely to require memory for copies of log entries, but far less than
 session grouping.
-
-Example transaction hierarchy using request grouping mode ::
-
-  Lvl 1: Client request (cache miss)
-    Lvl 2: Backend request
-    Lvl 2: ESI subrequest (cache miss)
-      Lvl 3: Backend request
-      Lvl 3: Backend request (VCL restart)
-      Lvl 3: ESI subrequest (cache miss)
-        Lvl 4: Backend request
-    Lvl 2: ESI subrequest (cache hit)
 
 QUERY LANGUAGE
 ==============
