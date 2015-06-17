@@ -199,7 +199,6 @@ struct vrt_ref {
 	unsigned	offset;
 	unsigned	line;
 	unsigned	pos;
-	unsigned	count;
 	const char	*token;
 };
 

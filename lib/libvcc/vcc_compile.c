@@ -312,7 +312,7 @@ EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
 				pos++;
 
 		}
-		VSB_printf(vsb, "  [%3u] = { %u, %8tu, %4u, %3u, 0, ",
+		VSB_printf(vsb, "  [%3u] = { %u, %8tu, %4u, %3u, ",
 		    t->cnt, sp->idx, t->b - sp->b, lin, pos + 1);
 		if (t->tok == CSRC)
 			VSB_printf(vsb, " \"C{\"},\n");
