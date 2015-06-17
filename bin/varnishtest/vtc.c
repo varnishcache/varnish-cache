@@ -428,7 +428,7 @@ cmd_shell(CMD_ARGS)
 {
 	(void)priv;
 	(void)cmd;
-	int r;
+	int r, s;
 
 	if (av == NULL)
 		return;
@@ -436,7 +436,11 @@ cmd_shell(CMD_ARGS)
 	AZ(av[2]);
 	vtc_dump(vl, 4, "shell", av[1], -1);
 	r = system(av[1]);
-	AZ(WEXITSTATUS(r));
+	s = WEXITSTATUS(r);
+	if (s != 0) {
+		vtc_log(vl, 0, "CMD '%s' failed with status %d",
+		    av[1], s);
+	}
 }
 
 /**********************************************************************
