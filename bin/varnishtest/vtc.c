@@ -437,10 +437,9 @@ cmd_shell(CMD_ARGS)
 	vtc_dump(vl, 4, "shell", av[1], -1);
 	r = system(av[1]);
 	s = WEXITSTATUS(r);
-	if (s != 0) {
+	if (s != 0)
 		vtc_log(vl, 0, "CMD '%s' failed with status %d",
 		    av[1], s);
-	}
 }
 
 /**********************************************************************
