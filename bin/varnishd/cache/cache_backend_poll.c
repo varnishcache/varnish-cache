@@ -45,6 +45,7 @@
 
 #include "cache.h"
 
+#include "cache_director.h"
 #include "cache_backend.h"
 #include "vcli_priv.h"
 #include "vrt.h"

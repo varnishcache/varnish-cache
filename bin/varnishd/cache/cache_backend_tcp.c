@@ -38,6 +38,7 @@
 
 #include "cache.h"
 
+#include "cache_director.h"
 #include "cache_backend.h"
 #include "cache_pool.h"
 #include "vtcp.h"

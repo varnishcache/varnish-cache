@@ -678,6 +678,9 @@ void VCA_Shutdown(void);
 /* cache_backend_cfg.c */
 void VBE_InitCfg(void);
 
+/* cache_backend_poll.c */
+void VBP_Init(void);
+
 /* cache_ban.c */
 struct ban *BAN_New(void);
 int BAN_AddTest(struct ban *, const char *, const char *, const char *);

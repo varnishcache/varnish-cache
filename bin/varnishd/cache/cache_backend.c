@@ -36,9 +36,8 @@
 
 #include "cache.h"
 
-#include "cache_backend.h"
 #include "cache_director.h"
-#include "vcl.h"
+#include "cache_backend.h"
 #include "vrt.h"
 #include "vtcp.h"
 
@@ -297,21 +296,16 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 
 /*--------------------------------------------------------------------*/
 
-struct director *
-VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
+void
+VBE_fill_director(struct backend *be, const struct vrt_backend *vrt)
 {
 	struct director *d;
-	struct backend *be;
 
-	ASSERT_CLI();
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
-	AN(ctx->vcl);
 
-	be = VBE_AddBackend(ctx, vrt);
-	AN(be);
-	ALLOC_OBJ(d, DIRECTOR_MAGIC);
-	XXXAN(d);
+	INIT_OBJ(be->director, DIRECTOR_MAGIC);
+	d = be->director;
 	d->priv = be;
 	d->priv2 = vrt;
 	d->name = "backend";
@@ -322,65 +316,4 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 	d->getbody = vbe_dir_getbody;
 	d->getip = vbe_dir_getip;
 	d->finish = vbe_dir_finish;
-
-	if (vrt->probe != NULL)
-		VBP_Insert(be, vrt->probe, vrt->hosthdr);
-
-	return (d);
-}
-
-void
-VRT_event_vbe(VRT_CTX, enum vcl_event_e ev, const struct director *d,
-    const struct vrt_backend *vrt)
-{
-	struct backend *be;
-
-	ASSERT_CLI();
-	(void)ev;
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
-	assert(d->priv2 == vrt);
-
-	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
-	if (ev == VCL_EVENT_WARM) {
-		be->vsc = VSM_Alloc(sizeof *be->vsc,
-		    VSC_CLASS, VSC_type_vbe, be->display_name);
-		AN(be->vsc);
-	}
-
-	if (be->probe != NULL && ev == VCL_EVENT_WARM)
-		VBP_Control(be, 1);
-
-	if (be->probe != NULL && ev == VCL_EVENT_COLD)
-		VBP_Control(be, 0);
-
-	if (ev == VCL_EVENT_COLD) {
-		VSM_Free(be->vsc);
-		be->vsc = NULL;
-	}
-}
-
-void
-VRT_delete_backend(VRT_CTX, struct director **dp)
-{
-	struct director *d;
-	struct backend *be;
-
-	ASSERT_CLI();
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(dp);
-	AN(*dp);
-
-	d = *dp;
-	*dp = NULL;
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
-
-	if (be->probe != NULL)
-		VBP_Remove(be);
-
-	VBE_DeleteBackend(be);
-	free(d->vcl_name);
-	FREE_OBJ(d);
 }

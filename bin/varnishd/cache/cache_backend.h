@@ -82,6 +82,8 @@ struct backend {
 	struct VSC_C_vbe	*vsc;
 
 	struct tcp_pool		*tcp_pool;
+
+	struct director		director[1];
 };
 
 /* -------------------------------------------------------------------*/
@@ -105,11 +107,11 @@ struct vbc {
 	struct worker		*wrk;
 };
 
+/* cache_backend.c */
+void VBE_fill_director(struct backend *be, const struct vrt_backend *vrt);
+
 /* cache_backend_cfg.c */
 unsigned VBE_Healthy(const struct backend *b, double *changed);
-struct backend *VBE_AddBackend(const struct vrt_ctx *,
-    const struct vrt_backend *);
-void VBE_DeleteBackend(struct backend *);
 
 /* cache_backend_poll.c */
 void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
@@ -117,7 +119,6 @@ void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
 void VBP_Remove(struct backend *b);
 void VBP_Control(const struct backend *b, int stop);
 void VBP_Status(struct cli *cli, const struct backend *, int details);
-void VBP_Init(void);
 
 struct tcp_pool *VBT_Ref(const struct suckaddr *ip4,
     const struct suckaddr *ip6);

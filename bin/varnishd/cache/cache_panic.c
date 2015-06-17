@@ -43,6 +43,7 @@
 #include "cache_filter.h"
 #include "common/heritage.h"
 
+#include "cache_director.h"
 #include "cache_backend.h"
 #include "storage/storage.h"
 #include "vcli_priv.h"

@@ -38,76 +38,56 @@
 
 #include "cache.h"
 
+#include "cache_director.h"
 #include "cache_backend.h"
 #include "vcli.h"
 #include "vcli_priv.h"
 #include "vsa.h"
+#include "vcl.h"
 #include "vrt.h"
 #include "vtim.h"
 
 static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
 static struct lock backends_mtx;
-
-/*--------------------------------------------------------------------
- */
-
-void
-VBE_DeleteBackend(struct backend *b)
-{
-
-	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-
-	Lck_Lock(&backends_mtx);
-	VTAILQ_REMOVE(&backends, b, list);
-	VSC_C_main->n_backend--;
-	Lck_Unlock(&backends_mtx);
-
-	free(b->ipv4);
-	free(b->ipv6);
-	free(b->display_name);
-	AZ(b->vsc);
-	VBT_Rel(&b->tcp_pool);
-	Lck_Delete(&b->mtx);
-	FREE_OBJ(b);
-}
-
 /*--------------------------------------------------------------------
  * Create a new director::backend instance.
  */
 
-struct backend *
-VBE_AddBackend(const struct vrt_ctx *ctx, const struct vrt_backend *vb)
+struct director *
+VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 {
 	struct backend *b;
 	char buf[128];
 	struct vcl *vcl;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
+
 	vcl = ctx->vcl;
 	AN(vcl);
-	AN(vb->vcl_name);
-	assert(vb->ipv4_suckaddr != NULL || vb->ipv6_suckaddr != NULL);
+	AN(vrt->vcl_name);
+	assert(vrt->ipv4_suckaddr != NULL || vrt->ipv6_suckaddr != NULL);
 
 	/* Create new backend */
 	ALLOC_OBJ(b, BACKEND_MAGIC);
 	XXXAN(b);
 	Lck_New(&b->mtx, lck_backend);
 
-	bprintf(buf, "%s.%s", VCL_Name(vcl), vb->vcl_name);
+	bprintf(buf, "%s.%s", VCL_Name(vcl), vrt->vcl_name);
 	REPLACE(b->display_name, buf);
 
 	b->vcl = vcl;
-	b->vcl_name =  vb->vcl_name;
-	b->ipv4_addr = vb->ipv4_addr;
-	b->ipv6_addr = vb->ipv6_addr;
-	b->port = vb->port;
+	b->vcl_name =  vrt->vcl_name;
+	b->ipv4_addr = vrt->ipv4_addr;
+	b->ipv6_addr = vrt->ipv6_addr;
+	b->port = vrt->port;
 
-	b->tcp_pool = VBT_Ref(vb->ipv4_suckaddr, vb->ipv6_suckaddr);
+	b->tcp_pool = VBT_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr);
 
-	if (vb->ipv4_suckaddr != NULL)
-		b->ipv4 = VSA_Clone(vb->ipv4_suckaddr);
-	if (vb->ipv6_suckaddr != NULL)
-		b->ipv6 = VSA_Clone(vb->ipv6_suckaddr);
+	if (vrt->ipv4_suckaddr != NULL)
+		b->ipv4 = VSA_Clone(vrt->ipv4_suckaddr);
+	if (vrt->ipv6_suckaddr != NULL)
+		b->ipv6 = VSA_Clone(vrt->ipv6_suckaddr);
 
 	assert(b->ipv4 != NULL || b->ipv6 != NULL);
 
@@ -119,7 +99,80 @@ VBE_AddBackend(const struct vrt_ctx *ctx, const struct vrt_backend *vb)
 	VTAILQ_INSERT_TAIL(&backends, b, list);
 	VSC_C_main->n_backend++;
 	Lck_Unlock(&backends_mtx);
-	return (b);
+
+	VBE_fill_director(b, vrt);
+
+	if (vrt->probe != NULL)
+		VBP_Insert(b, vrt->probe, vrt->hosthdr);
+
+	return (b->director);
+}
+
+void
+VRT_event_vbe(VRT_CTX, enum vcl_event_e ev, const struct director *d,
+    const struct vrt_backend *vrt)
+{
+	struct backend *be;
+
+	ASSERT_CLI();
+	(void)ev;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
+	assert(d->priv2 == vrt);
+
+	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
+	if (ev == VCL_EVENT_WARM) {
+		be->vsc = VSM_Alloc(sizeof *be->vsc,
+		    VSC_CLASS, VSC_type_vbe, be->display_name);
+		AN(be->vsc);
+	}
+
+	if (be->probe != NULL && ev == VCL_EVENT_WARM)
+		VBP_Control(be, 1);
+
+	if (be->probe != NULL && ev == VCL_EVENT_COLD)
+		VBP_Control(be, 0);
+
+	if (ev == VCL_EVENT_COLD) {
+		VSM_Free(be->vsc);
+		be->vsc = NULL;
+	}
+}
+
+void
+VRT_delete_backend(VRT_CTX, struct director **dp)
+{
+	struct director *d;
+	struct backend *be;
+
+	ASSERT_CLI();
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(dp);
+	AN(*dp);
+
+	d = *dp;
+	*dp = NULL;
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
+
+	if (be->probe != NULL)
+		VBP_Remove(be);
+
+	free(d->vcl_name);
+
+	Lck_Lock(&backends_mtx);
+	VTAILQ_REMOVE(&backends, be, list);
+	VSC_C_main->n_backend--;
+	Lck_Unlock(&backends_mtx);
+
+	free(be->ipv4);
+	free(be->ipv6);
+	free(be->display_name);
+	AZ(be->vsc);
+	VBT_Rel(&be->tcp_pool);
+	Lck_Delete(&be->mtx);
+	FREE_OBJ(be);
 }
 
 /*---------------------------------------------------------------------
