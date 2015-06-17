@@ -49,7 +49,7 @@ struct vcl {
 #define VCL_MAGIC		0x214188f2
 	VTAILQ_ENTRY(vcl)	list;
 	void			*dlh;
-	struct VCL_conf		conf[1];
+	const struct VCL_conf	*conf;
 	char			state[8];
 	char			*loaded_name;
 	unsigned		busy;
@@ -205,7 +205,7 @@ VCL_Open(const char *fn, struct vsb *msg)
 	ALLOC_OBJ(vcl, VCL_MAGIC);
 	AN(vcl);
 	vcl->dlh = dlh;
-	memcpy(vcl->conf, cnf, sizeof *cnf);
+	vcl->conf = cnf;
 	return (vcl);
 }
 
