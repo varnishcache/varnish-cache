@@ -35,12 +35,11 @@ GROUPING
 ========
 
 When grouping transactions, there is a hierarchy structure showing
-which transaction initiated what. The level increases by one by an
+which transaction initiated what. The level increases by one on an
 'initiated by' relation, so for example a backend transaction will
 have one higher level than the client transaction that initiated it on
-a cache miss. Request restart transactions does not have it's level
-increased. This is to help predicting the level for a given
-transaction.
+a cache miss. Request restart transactions don't get their level
+increased to make it predictable.
 
 Levels start counting at 1, except when using raw where it will always
 be 0.
@@ -50,15 +49,18 @@ The grouping modes are:
 * Session
 
   All transactions initiated by a client connection are reported
-  together. All log data is buffered until the client connection is
-  closed, which can cause session grouping mode to potentially consume
-  a lot of memory.
+  together. Client connections are open ended when using HTTP
+  keep-alives, so it is undefined when the session will be
+  reported. If the transaction timeout period is exceeded an
+  incomplete session will be reported. Non-transactional data (VXID
+  == 0) is not reported.
 
 * Request
 
   Transactions are grouped by request, where the set will include the
   request itself as well as any backend requests or ESI-subrequests.
-  Session data is not reported. This is the default.
+  Session data and non-transactional data (VXID == 0) is not
+  reported. This is the default.
 
 * VXID
 
@@ -72,7 +74,10 @@ The grouping modes are:
   Every log record will make up a transaction of it's own. All data,
   including non-transactional data will be reported.
 
-Example transaction hierarchy ::
+Transaction Hierarchy
+---------------------
+
+Example transaction hierarchy using request grouping mode ::
 
   Lvl 1: Client request (cache miss)
     Lvl 2: Backend request
@@ -82,6 +87,28 @@ Example transaction hierarchy ::
       Lvl 3: ESI subrequest (cache miss)
         Lvl 4: Backend request
     Lvl 2: ESI subrequest (cache hit)
+
+MEMORY USAGE
+============
+
+The API will use pointers to shared memory log data as long as
+possible to keep memory usage at a minimum. But as the shared memory
+log is a ring buffer, data will get overwritten eventually, so the API
+creates local copies of referenced log data when varnishd comes close
+to overwriting still unreported content.
+
+This process avoids loss of log data in many scenarios, but it is not
+failsafe: Overruns where varnishd "overtakes" the log reader process
+in the ring buffer can still happen when API clients cannot keep up
+reading and/or copying, for instance due to output blocking.
+
+Though being unrelated to grouping in principle, copying of log data
+is particularly relevant for session grouping together with long
+lasting client connections - for this grouping, the logging API client
+process is likely to consume relevant amounts of memory. As the vxid
+grouping also logs (potentially long lasting) sessions, it is also
+likely to require memory for copies of log entries, but far less than
+session grouping.
 
 QUERY LANGUAGE
 ==============
