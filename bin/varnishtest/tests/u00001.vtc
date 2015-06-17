@@ -15,7 +15,7 @@ varnish v1 -vcl+backend "" -start
 process p1 "exec ${varnishncsa} -n ${v1_name} -w ${tmpdir}/ncsa.log -F %s" -start
 
 # give varnishncsa enough time to open the VSM
-delay 1
+delay 2
 
 client c1 {
 	txreq -url "/foo"
@@ -23,7 +23,7 @@ client c1 {
 } -run
 
 # give varnishncsa enough time to write
-delay 1
+delay 2
 
 # rotate logs
 shell "mv ${tmpdir}/ncsa.log ${tmpdir}/ncsa.old.log >/dev/null 2>&1"
@@ -35,7 +35,7 @@ client c1 {
 } -run
 
 # give varnishncsa enough time to write
-delay 1
+delay 2
 
 process p1 -stop
 
