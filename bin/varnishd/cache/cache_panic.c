@@ -45,7 +45,6 @@
 
 #include "cache_backend.h"
 #include "storage/storage.h"
-#include "vcl.h"
 #include "vcli_priv.h"
 
 /*
@@ -257,22 +256,6 @@ pan_objcore(const char *typ, const struct objcore *oc)
 /*--------------------------------------------------------------------*/
 
 static void
-pan_vcl(const struct VCL_conf *vcl)
-{
-	int i;
-
-	VSB_printf(pan_vsp, "  vcl = {\n");
-	VSB_printf(pan_vsp, "    srcname = {\n");
-	for (i = 0; i < vcl->nsrc; ++i)
-		VSB_printf(pan_vsp, "      \"%s\",\n", vcl->srcname[i]);
-	VSB_printf(pan_vsp, "    },\n");
-	VSB_printf(pan_vsp, "  },\n");
-}
-
-
-/*--------------------------------------------------------------------*/
-
-static void
 pan_wrk(const struct worker *wrk)
 {
 	const char *hand;
@@ -406,8 +389,7 @@ pan_req(const struct req *req)
 	if (req->resp->ws != NULL)
 		pan_http("resp", req->resp, 2);
 
-	if (VALID_OBJ(req->vcl, VCL_CONF_MAGIC))
-		pan_vcl(req->vcl);
+	VCL_Panic(pan_vsp, req->vcl);
 
 	if (req->objcore != NULL) {
 		pan_objcore("REQ", req->objcore);

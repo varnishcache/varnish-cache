@@ -66,6 +66,24 @@ static struct vcl		*vcl_active; /* protected by vcl_mtx */
 
 /*--------------------------------------------------------------------*/
 
+void
+VCL_Panic(struct vsb *vsb, const struct VCL_conf *vcl)
+{
+	int i;
+
+	AN(vsb);
+	if (vcl == NULL)
+		return;
+	VSB_printf(vsb, "  vcl = {\n");
+	VSB_printf(vsb, "    srcname = {\n");
+	for (i = 0; i < vcl->nsrc; ++i)
+		VSB_printf(vsb, "      \"%s\",\n", vcl->srcname[i]);
+	VSB_printf(vsb, "    },\n");
+	VSB_printf(vsb, "  },\n");
+}
+
+/*--------------------------------------------------------------------*/
+
 const char *
 VCL_Return_Name(unsigned r)
 {

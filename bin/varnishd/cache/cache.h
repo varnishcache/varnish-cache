@@ -1066,6 +1066,7 @@ void VRY_Finish(struct req *req, enum vry_finish_flag);
 
 /* cache_vcl.c */
 void VCL_Init(void);
+void VCL_Panic(struct vsb *, const struct VCL_conf *);
 void VCL_Refresh(struct VCL_conf **vcc);
 void VCL_Ref(struct VCL_conf *vcc);
 void VCL_Rel(struct VCL_conf **vcc);
