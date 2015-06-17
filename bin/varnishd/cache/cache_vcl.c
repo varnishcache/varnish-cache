@@ -44,10 +44,10 @@
 #include "vcli.h"
 #include "vcli_priv.h"
 
-struct vcls {
+struct vcl {
 	unsigned		magic;
 #define VVCLS_MAGIC		0x214188f2
-	VTAILQ_ENTRY(vcls)	list;
+	VTAILQ_ENTRY(vcl)	list;
 	void			*dlh;
 	struct VCL_conf		conf[1];
 	char			state[8];
@@ -58,11 +58,11 @@ struct vcls {
  * XXX: Presently all modifications to this list happen from the
  * CLI event-engine, so no locking is necessary
  */
-static VTAILQ_HEAD(, vcls)	vcl_head =
+static VTAILQ_HEAD(, vcl)	vcl_head =
     VTAILQ_HEAD_INITIALIZER(vcl_head);
 
 static struct lock		vcl_mtx;
-static struct vcls		*vcl_active; /* protected by vcl_mtx */
+static struct vcl		*vcl_active; /* protected by vcl_mtx */
 
 /*--------------------------------------------------------------------*/
 
@@ -154,10 +154,10 @@ VCL_Rel(struct VCL_conf **vcc)
 
 /*--------------------------------------------------------------------*/
 
-static struct vcls *
+static struct vcl *
 VCL_Open(const char *fn, struct vsb *msg)
 {
-	struct vcls *vcl;
+	struct vcl *vcl;
 	void *dlh;
 	struct VCL_conf const *cnf;
 
@@ -189,9 +189,9 @@ VCL_Open(const char *fn, struct vsb *msg)
 }
 
 static void
-VCL_Close(struct vcls **vclp)
+VCL_Close(struct vcl **vclp)
 {
-	struct vcls *vcl;
+	struct vcl *vcl;
 
 	CHECK_OBJ_NOTNULL(*vclp, VVCLS_MAGIC);
 	vcl = *vclp;
@@ -208,7 +208,7 @@ int
 VCL_TestLoad(const char *fn)
 {
 	struct vsb *vsb;
-	struct vcls *vcl;
+	struct vcl *vcl;
 	int retval = 0;
 
 	AN(fn);
@@ -227,10 +227,10 @@ VCL_TestLoad(const char *fn)
 
 /*--------------------------------------------------------------------*/
 
-static struct vcls *
+static struct vcl *
 vcl_find(const char *name)
 {
-	struct vcls *vcl;
+	struct vcl *vcl;
 
 	ASSERT_CLI();
 	VTAILQ_FOREACH(vcl, &vcl_head, list) {
@@ -243,7 +243,7 @@ vcl_find(const char *name)
 }
 
 static void
-vcl_set_state(struct vcls *vcl, const char *state)
+vcl_set_state(struct vcl *vcl, const char *state)
 {
 	struct vrt_ctx ctx;
 	int warm;
@@ -266,7 +266,7 @@ vcl_set_state(struct vcls *vcl, const char *state)
 static int
 VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 {
-	struct vcls *vcl;
+	struct vcl *vcl;
 	struct vrt_ctx ctx;
 	unsigned hand = 0;
 	struct vsb *vsb;
@@ -332,7 +332,7 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
  */
 
 static void
-VCL_Nuke(struct vcls *vcl)
+VCL_Nuke(struct vcl *vcl)
 {
 	struct vrt_ctx ctx;
 	unsigned hand = 0;
@@ -358,7 +358,7 @@ VCL_Nuke(struct vcls *vcl)
 void
 VCL_Poll(void)
 {
-	struct vcls *vcl, *vcl2;
+	struct vcl *vcl, *vcl2;
 
 	ASSERT_CLI();
 	VTAILQ_FOREACH_SAFE(vcl, &vcl_head, list, vcl2)
@@ -371,7 +371,7 @@ VCL_Poll(void)
 static void __match_proto__(cli_func_t)
 ccf_config_list(struct cli *cli, const char * const *av, void *priv)
 {
-	struct vcls *vcl;
+	struct vcl *vcl;
 	const char *flg;
 
 	(void)av;
@@ -406,7 +406,7 @@ ccf_config_load(struct cli *cli, const char * const *av, void *priv)
 static void __match_proto__(cli_func_t)
 ccf_config_state(struct cli *cli, const char * const *av, void *priv)
 {
-	struct vcls *vcl;
+	struct vcl *vcl;
 
 	(void)cli;
 	AZ(priv);
@@ -421,7 +421,7 @@ ccf_config_state(struct cli *cli, const char * const *av, void *priv)
 static void __match_proto__(cli_func_t)
 ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 {
-	struct vcls *vcl;
+	struct vcl *vcl;
 
 	ASSERT_CLI();
 	(void)cli;
@@ -442,7 +442,7 @@ ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 static void __match_proto__(cli_func_t)
 ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 {
-	struct vcls *vcl;
+	struct vcl *vcl;
 	struct vrt_ctx ctx;
 	unsigned hand = 0;
 	struct vsb *vsb;
@@ -477,7 +477,7 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 static void __match_proto__(cli_func_t)
 ccf_config_show(struct cli *cli, const char * const *av, void *priv)
 {
-	struct vcls *vcl;
+	struct vcl *vcl;
 	int verbose = 0;
 	int i;
 
