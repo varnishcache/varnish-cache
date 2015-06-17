@@ -65,18 +65,6 @@ VRT_error(VRT_CTX, unsigned code, const char *reason)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_count(VRT_CTX, unsigned u)
-{
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (ctx->vsl != NULL)
-		VSLb(ctx->vsl, SLT_VCL_trace, "%u %u.%u", u,
-		    ctx->vcl->ref[u].line, ctx->vcl->ref[u].pos);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
 VRT_acl_log(VRT_CTX, const char *msg)
 {
 

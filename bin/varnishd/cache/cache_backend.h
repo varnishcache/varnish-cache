@@ -39,6 +39,7 @@
 
 struct vbp_target;
 struct vbc;
+struct vrt_ctx;
 struct vrt_backend_probe;
 struct tcp_pool;
 
@@ -105,7 +106,8 @@ struct vbc {
 
 /* cache_backend_cfg.c */
 unsigned VBE_Healthy(const struct backend *b, double *changed);
-struct backend *VBE_AddBackend(const char *vcl, const struct vrt_backend *vb);
+struct backend *VBE_AddBackend(const struct vrt_ctx *,
+    const struct vrt_backend *);
 void VBE_DeleteBackend(struct backend *);
 
 /* cache_backend_poll.c */

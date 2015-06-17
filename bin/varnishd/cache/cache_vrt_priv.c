@@ -43,7 +43,7 @@ struct vrt_priv {
 #define VRT_PRIV_MAGIC			0x24157a52
 	VTAILQ_ENTRY(vrt_priv)		list;
 	struct vmod_priv		priv[1];
-	const struct VCL_conf		*vcl;
+	const struct vcl		*vcl;
 	uintptr_t			id;
 	uintptr_t			vmod_id;
 };

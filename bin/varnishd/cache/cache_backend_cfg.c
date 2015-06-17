@@ -76,11 +76,13 @@ VBE_DeleteBackend(struct backend *b)
  */
 
 struct backend *
-VBE_AddBackend(const char *vcl, const struct vrt_backend *vb)
+VBE_AddBackend(const struct vrt_ctx *ctx, const struct vrt_backend *vb)
 {
 	struct backend *b;
 	char buf[128];
+	struct vcl *vcl;
 
+	vcl = ctx->vcl;
 	AN(vb->vcl_name);
 	assert(vb->ipv4_suckaddr != NULL || vb->ipv6_suckaddr != NULL);
 
@@ -89,7 +91,7 @@ VBE_AddBackend(const char *vcl, const struct vrt_backend *vb)
 	XXXAN(b);
 	Lck_New(&b->mtx, lck_backend);
 
-	bprintf(buf, "%s.%s", vcl, vb->vcl_name);
+	bprintf(buf, "%s.%s", VCL_Name(vcl), vb->vcl_name);
 	REPLACE(b->display_name, buf);
 
 	b->vcl_name =  vb->vcl_name;

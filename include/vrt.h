@@ -49,16 +49,17 @@
 
 /***********************************************************************/
 
-struct req;
-struct busyobj;
-struct vsl_log;
-struct http;
-struct ws;
-struct vsb;
-struct director;
 struct VCL_conf;
+struct busyobj;
+struct director;
+struct http;
+struct req;
 struct suckaddr;
+struct vcl;
 struct vmod;
+struct vsb;
+struct vsl_log;
+struct ws;
 
 /***********************************************************************
  * This is the central definition of the mapping from VCL types to
@@ -95,7 +96,7 @@ struct vrt_ctx {
 
 	struct vsb			*msg;	// Only in ...init()
 	struct vsl_log			*vsl;
-	struct VCL_conf			*vcl;
+	struct vcl			*vcl;
 	struct ws			*ws;
 
 	struct req			*req;

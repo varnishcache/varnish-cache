@@ -262,6 +262,20 @@ VCL_Name(const struct vcl *vcc)
 
 /*--------------------------------------------------------------------*/
 
+void
+VRT_count(VRT_CTX, unsigned u)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
+	assert(u < ctx->vcl->conf->nref);
+	if (ctx->vsl != NULL)
+		VSLb(ctx->vsl, SLT_VCL_trace, "%u %u.%u", u,
+		    ctx->vcl->conf->ref[u].line, ctx->vcl->conf->ref[u].pos);
+}
+
+/*--------------------------------------------------------------------*/
+
 static struct vcl *
 vcl_find(const char *name)
 {
@@ -332,7 +346,7 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 	ctx.method = VCL_MET_INIT;
 	ctx.handling = &hand;
-	ctx.vcl = vcl->conf;
+	ctx.vcl = vcl;
 
 	VSB_clear(vsb);
 	ctx.msg = vsb;
@@ -380,7 +394,7 @@ VCL_Nuke(struct vcl *vcl)
 	VTAILQ_REMOVE(&vcl_head, vcl, list);
 	ctx.method = VCL_MET_FINI;
 	ctx.handling = &hand;
-	ctx.vcl = vcl->conf;
+	ctx.vcl = vcl;
 	AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_DISCARD));
 	free(vcl->conf->loaded_name);
 	VCL_Close(&vcl);
@@ -569,8 +583,9 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	if (req != NULL) {
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
+		CHECK_OBJ_NOTNULL(req->vcl, VCL_MAGIC);
 		vsl = req->vsl;
-		ctx.vcl = req->vcl->conf;
+		ctx.vcl = req->vcl;
 		ctx.http_req = req->http;
 		ctx.http_req_top = req->top->http;
 		ctx.http_resp = req->resp;
@@ -580,8 +595,9 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	}
 	if (bo != NULL) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+		CHECK_OBJ_NOTNULL(bo->vcl, VCL_MAGIC);
 		vsl = bo->vsl;
-		ctx.vcl = bo->vcl->conf;
+		ctx.vcl = bo->vcl;
 		ctx.http_bereq = bo->bereq;
 		ctx.http_beresp = bo->beresp;
 		ctx.bo = bo;
