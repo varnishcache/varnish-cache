@@ -1065,15 +1065,16 @@ enum vry_finish_flag { KEEP, DISCARD };
 void VRY_Finish(struct req *req, enum vry_finish_flag);
 
 /* cache_vcl.c */
-void VCL_Init(void);
-void VCL_Panic(struct vsb *, const struct VCL_conf *);
-void VCL_Refresh(struct VCL_conf **vcc);
-void VCL_Ref(struct VCL_conf *vcc);
-void VCL_Rel(struct VCL_conf **vcc);
-void VCL_Poll(void);
 struct director *VCL_DefaultDirector(const struct VCL_conf *);
-const char *VCL_Return_Name(unsigned);
+void VCL_Init(void);
 const char *VCL_Method_Name(unsigned);
+const char *VCL_Name(const struct VCL_conf *);
+void VCL_Panic(struct vsb *, const struct VCL_conf *);
+void VCL_Poll(void);
+void VCL_Ref(struct VCL_conf *);
+void VCL_Refresh(struct VCL_conf **);
+void VCL_Rel(struct VCL_conf **);
+const char *VCL_Return_Name(unsigned);
 
 #define VCL_MET_MAC(l,u,b) \
     void VCL_##l##_method(struct VCL_conf *, struct worker *, struct req *, \

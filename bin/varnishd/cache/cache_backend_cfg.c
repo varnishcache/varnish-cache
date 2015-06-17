@@ -41,7 +41,6 @@
 #include "cache_backend.h"
 #include "vcli.h"
 #include "vcli_priv.h"
-#include "vcl.h"
 #include "vsa.h"
 #include "vrt.h"
 #include "vtim.h"
@@ -162,13 +161,13 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 	AN(vsb);
 	if (matcher == NULL || *matcher == '\0' || !strcmp(matcher, "*")) {
 		// all backends in active VCL
-		VSB_printf(vsb, "%s.*", vcc->loaded_name);
+		VSB_printf(vsb, "%s.*", VCL_Name(vcc));
 	} else if (strchr(matcher, '.') != NULL) {
 		// use pattern as is
 		VSB_cat(vsb, matcher);
 	} else {
 		// pattern applies to active vcl
-		VSB_printf(vsb, "%s.%s", vcc->loaded_name, matcher);
+		VSB_printf(vsb, "%s.%s", VCL_Name(vcc), matcher);
 	}
 	AZ(VSB_finish(vsb));
 	Lck_Lock(&backends_mtx);

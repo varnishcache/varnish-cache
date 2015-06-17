@@ -253,6 +253,13 @@ VCL_DefaultDirector(const struct VCL_conf *vcc)
 	return (*vcc->default_director);
 }
 
+const char *
+VCL_Name(const struct VCL_conf *vcc)
+{
+	AN(vcc);
+	return (vcc->loaded_name);
+}
+
 /*--------------------------------------------------------------------*/
 
 static struct vcl *
