@@ -245,6 +245,16 @@ VCL_TestLoad(const char *fn)
 
 /*--------------------------------------------------------------------*/
 
+struct director *
+VCL_DefaultDirector(const struct VCL_conf *vcc)
+{
+
+	AN(vcc);
+	return (*vcc->default_director);
+}
+
+/*--------------------------------------------------------------------*/
+
 static struct vcl *
 vcl_find(const char *name)
 {

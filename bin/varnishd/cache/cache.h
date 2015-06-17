@@ -1071,6 +1071,7 @@ void VCL_Refresh(struct VCL_conf **vcc);
 void VCL_Ref(struct VCL_conf *vcc);
 void VCL_Rel(struct VCL_conf **vcc);
 void VCL_Poll(void);
+struct director *VCL_DefaultDirector(const struct VCL_conf *);
 const char *VCL_Return_Name(unsigned);
 const char *VCL_Method_Name(unsigned);
 

@@ -107,7 +107,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore->objhead, OBJHEAD_MAGIC);
-	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
+	AN(req->vcl);
 
 	assert(req->objcore->refcnt > 0);
 
@@ -337,7 +337,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AZ(req->objcore);
 
-	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
+	AN(req->vcl);
 
 	VRY_Prep(req);
 
@@ -469,7 +469,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
+	AN(req->vcl);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
 	VCL_miss_method(req->vcl, wrk, req, NULL, NULL);
@@ -510,7 +510,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
+	AN(req->vcl);
 	AZ(req->objcore);
 
 	VCL_pass_method(req->vcl, wrk, req, NULL, NULL);
@@ -545,7 +545,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
+	AN(req->vcl);
 
 	wrk->stats->s_pipe++;
 	bo = VBO_GetBusyObj(wrk, req);
@@ -618,7 +618,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
+	AN(req->vcl);
 	AZ(req->objcore);
 	AZ(req->err_code);
 
@@ -649,7 +649,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	/* By default we use the first backend */
 	AZ(req->director_hint);
-	req->director_hint = *req->vcl->default_director;
+	req->director_hint = VCL_DefaultDirector(req->vcl);
 	AN(req->director_hint);
 
 	req->d_ttl = -1;
@@ -735,7 +735,7 @@ cnt_purge(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AZ(req->objcore);
 
-	CHECK_OBJ_NOTNULL(req->vcl, VCL_CONF_MAGIC);
+	AN(req->vcl);
 
 	VRY_Prep(req);
 
