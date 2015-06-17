@@ -362,7 +362,7 @@ VRT_event_vbe(VRT_CTX, enum vcl_event_e ev, const struct director *d,
 }
 
 void
-VRT_fini_vbe(VRT_CTX, struct director **dp, const struct vrt_backend *vrt)
+VRT_delete_backend(VRT_CTX, struct director **dp)
 {
 	struct director *d;
 	struct backend *be;
@@ -371,15 +371,13 @@ VRT_fini_vbe(VRT_CTX, struct director **dp, const struct vrt_backend *vrt)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(dp);
 	AN(*dp);
-	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
 
 	d = *dp;
 	*dp = NULL;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	assert(d->priv2 == vrt);
 	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
 
-	if (vrt->probe != NULL)
+	if (be->probe != NULL)
 		VBP_Remove(be);
 
 	VBE_DeleteBackend(be);

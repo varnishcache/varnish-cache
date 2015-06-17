@@ -413,8 +413,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	    "\t%s =\n\t    VRT_new_backend(ctx, &vgc_dir_priv_%s);",
 	    vgcname, vgcname);
 	VSB_printf(ifp->fin,
-	    "\t\tVRT_fini_vbe(ctx, &%s,\n\t\t    &vgc_dir_priv_%s);",
-	    vgcname, vgcname);
+	    "\t\tVRT_delete_backend(ctx, &%s);\n", vgcname);
 	VSB_printf(ifp->event,
 	    "\tVRT_event_vbe(ctx, ev, %s, &vgc_dir_priv_%s);",
 	    vgcname, vgcname);

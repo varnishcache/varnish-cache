@@ -247,7 +247,7 @@ struct director *VRT_new_backend(VRT_CTX, const struct vrt_backend *);
 void VRT_event_vbe(VRT_CTX, enum vcl_event_e, const struct director *,
     const struct vrt_backend *);
 #endif
-void VRT_fini_vbe(VRT_CTX, struct director **, const struct vrt_backend *);
+void VRT_delete_backend(VRT_CTX, struct director **);
 
 /* Suckaddr related */
 int VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst);
