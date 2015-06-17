@@ -1058,13 +1058,9 @@ struct VCL_conf {
 	unsigned	magic;
 #define VCL_CONF_MAGIC	0x7406c509	/* from /dev/random */
 
-	char		*loaded_name;
-
 	struct director	**default_director;
-	struct vrt_ref	*ref;
 	unsigned	nref;
-	unsigned	busy;
-	unsigned	discard;
+	struct vrt_ref	*ref;
 
 	unsigned	nsrc;
 	const char	**srcname;

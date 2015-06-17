@@ -51,6 +51,9 @@ struct vcl {
 	void			*dlh;
 	struct VCL_conf		conf[1];
 	char			state[8];
+	char			*loaded_name;
+	unsigned		busy;
+	unsigned		discard;
 	int			warm;
 };
 
@@ -126,8 +129,8 @@ VCL_Get(struct vcl **vcc)
 	AN(vcl_active);
 	*vcc = vcl_active;
 	AN(*vcc);
-	AZ((*vcc)->conf->discard);
-	(*vcc)->conf->busy++;
+	AZ((*vcc)->discard);
+	(*vcc)->busy++;
 	Lck_Unlock(&vcl_mtx);
 }
 
@@ -146,8 +149,8 @@ VCL_Ref(struct vcl *vc)
 {
 
 	Lck_Lock(&vcl_mtx);
-	assert(vc->conf->busy > 0);
-	vc->conf->busy++;
+	assert(vc->busy > 0);
+	vc->busy++;
 	Lck_Unlock(&vcl_mtx);
 }
 
@@ -161,8 +164,8 @@ VCL_Rel(struct vcl **vcc)
 	*vcc = NULL;
 
 	Lck_Lock(&vcl_mtx);
-	assert(vc->conf->busy > 0);
-	vc->conf->busy--;
+	assert(vc->busy > 0);
+	vc->busy--;
 	/*
 	 * We do not garbage collect discarded VCL's here, that happens
 	 * in VCL_Poll() which is called from the CLI thread.
@@ -257,7 +260,7 @@ const char *
 VCL_Name(const struct vcl *vcc)
 {
 	AN(vcc);
-	return (vcc->conf->loaded_name);
+	return (vcc->loaded_name);
 }
 
 /*--------------------------------------------------------------------*/
@@ -283,9 +286,9 @@ vcl_find(const char *name)
 
 	ASSERT_CLI();
 	VTAILQ_FOREACH(vcl, &vcl_head, list) {
-		if (vcl->conf->discard)
+		if (vcl->discard)
 			continue;
-		if (!strcmp(vcl->conf->loaded_name, name))
+		if (!strcmp(vcl->loaded_name, name))
 			return (vcl);
 	}
 	return (NULL);
@@ -340,8 +343,8 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 		return (1);
 	}
 
-	vcl->conf->loaded_name = strdup(name);
-	XXXAN(vcl->conf->loaded_name);
+	vcl->loaded_name = strdup(name);
+	XXXAN(vcl->loaded_name);
 
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 	ctx.method = VCL_MET_INIT;
@@ -389,14 +392,14 @@ VCL_Nuke(struct vcl *vcl)
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 	ASSERT_CLI();
 	assert(vcl != vcl_active);
-	assert(vcl->conf->discard);
-	AZ(vcl->conf->busy);
+	assert(vcl->discard);
+	AZ(vcl->busy);
 	VTAILQ_REMOVE(&vcl_head, vcl, list);
 	ctx.method = VCL_MET_FINI;
 	ctx.handling = &hand;
 	ctx.vcl = vcl;
 	AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_DISCARD));
-	free(vcl->conf->loaded_name);
+	free(vcl->loaded_name);
 	VCL_Close(&vcl);
 	VSC_C_main->n_vcl--;
 	VSC_C_main->n_vcl_discard--;
@@ -411,7 +414,7 @@ VCL_Poll(void)
 
 	ASSERT_CLI();
 	VTAILQ_FOREACH_SAFE(vcl, &vcl_head, list, vcl2)
-		if (vcl->conf->discard && vcl->conf->busy == 0)
+		if (vcl->discard && vcl->busy == 0)
 			VCL_Nuke(vcl);
 }
 
@@ -429,15 +432,14 @@ ccf_config_list(struct cli *cli, const char * const *av, void *priv)
 	VTAILQ_FOREACH(vcl, &vcl_head, list) {
 		if (vcl == vcl_active) {
 			flg = "active";
-		} else if (vcl->conf->discard) {
+		} else if (vcl->discard) {
 			flg = "discarded";
 		} else
 			flg = "available";
 		VCLI_Out(cli, "%-10s %4s/%s  %6u %s\n",
 		    flg,
 		    vcl->state, vcl->warm ? "warm" : "cold",
-		    vcl->conf->busy,
-		    vcl->conf->loaded_name);
+		    vcl->busy, vcl->loaded_name);
 	}
 }
 
@@ -481,10 +483,10 @@ ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 	assert (vcl != vcl_active);	// MGT ensures this
 	VSC_C_main->n_vcl_discard++;
 	VSC_C_main->n_vcl_avail--;
-	vcl->conf->discard = 1;
+	vcl->discard = 1;
 	Lck_Unlock(&vcl_mtx);
 
-	if (vcl->conf->busy == 0)
+	if (vcl->busy == 0)
 		VCL_Nuke(vcl);
 }
 
