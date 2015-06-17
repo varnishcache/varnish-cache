@@ -312,7 +312,7 @@ EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
 				pos++;
 
 		}
-		VSB_printf(vsb, "  [%3u] = { %d, %8tu, %4u, %3u, 0, ",
+		VSB_printf(vsb, "  [%3u] = { %u, %8tu, %4u, %3u, 0, ",
 		    t->cnt, sp->idx, t->b - sp->b, lin, pos + 1);
 		if (t->tok == CSRC)
 			VSB_printf(vsb, " \"C{\"},\n");
@@ -617,9 +617,6 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	tl = vcc_NewVcc(tl0);
 	tl->sb = sb;
 
-	vsb = VSB_new_auto();
-	AN(vsb);
-
 	vcc_Expr_Init(tl);
 
 	for (v = tl->vars; v->name != NULL; v++) {
@@ -638,7 +635,6 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	sym = VCC_AddSymbolStr(tl, "storage.", SYM_WILDCARD);
 	sym->wildcard = vcc_Stv_Wildcard;
 
-	vcl_output_lang_h(vsb);
 	Fh(tl, 0, "/* ---===### VCC generated .h code ###===---*/\n");
 	Fc(tl, 0, "\n/* ---===### VCC generated .c code ###===---*/\n");
 	Fh(tl, 0, "\nextern const struct VCL_conf VCL_conf;\n");
@@ -729,7 +725,12 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 
 	EmitStruct(tl);
 
-	/* Combine it all in the vsb */
+	/* Combine it all */
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+
+	vcl_output_lang_h(vsb);
 
 	EmitCoordinates(tl, vsb);
 
