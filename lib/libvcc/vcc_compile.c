@@ -250,15 +250,41 @@ EncToken(struct vsb *sb, const struct token *t)
  */
 
 static void
-LocTable(const struct vcc *tl)
+EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
 {
 	struct token *t;
 	unsigned lin, pos;
 	struct source *sp;
 	const char *p;
 
-	Fh(tl, 0, "\n#define VGC_NREFS %u\n", tl->cnt + 1);
-	Fc(tl, 0, "\nstatic struct vrt_ref VGC_ref[VGC_NREFS] = {\n");
+	VSB_printf(vsb, "/* ---===### Source Code ###===---*/\n");
+
+	VSB_printf(vsb, "\n#define VGC_NSRCS %u\n", tl->nsources);
+
+	VSB_printf(vsb, "\nstatic const char *srcname[VGC_NSRCS] = {\n");
+	VTAILQ_FOREACH(sp, &tl->sources, list) {
+		VSB_printf(vsb, "\t");
+		EncString(vsb, sp->name, NULL, 0);
+		VSB_printf(vsb, ",\n");
+	}
+	VSB_printf(vsb, "};\n");
+
+	VSB_printf(vsb, "\nstatic const char *srcbody[%u] = {\n", tl->nsources);
+	VTAILQ_FOREACH(sp, &tl->sources, list) {
+		VSB_printf(vsb, "    /* ");
+		EncString(vsb, sp->name, NULL, 0);
+		VSB_printf(vsb, "*/\n");
+		VSB_printf(vsb, "\t");
+		EncString(vsb, sp->b, sp->e, 1);
+		VSB_printf(vsb, ",\n");
+	}
+	VSB_printf(vsb, "};\n\n");
+
+	VSB_printf(vsb, "/* ---===### Location Counters ###===---*/\n");
+
+	VSB_printf(vsb, "\n#define VGC_NREFS %u\n", tl->cnt + 1);
+
+	VSB_printf(vsb, "\nstatic struct vrt_ref VGC_ref[VGC_NREFS] = {\n");
 	lin = 1;
 	pos = 0;
 	sp = 0;
@@ -286,14 +312,14 @@ LocTable(const struct vcc *tl)
 				pos++;
 
 		}
-		Fc(tl, 0, "  [%3u] = { %d, %8tu, %4u, %3u, 0, ",
+		VSB_printf(vsb, "  [%3u] = { %d, %8tu, %4u, %3u, 0, ",
 		    t->cnt, sp->idx, t->b - sp->b, lin, pos + 1);
 		if (t->tok == CSRC)
-			Fc(tl, 0, " \"C{\"},\n");
+			VSB_printf(vsb, " \"C{\"},\n");
 		else
-			Fc(tl, 0, " \"%.*s\" },\n", PF(t));
+			VSB_printf(vsb, " \"%.*s\" },\n", PF(t));
 	}
-	Fc(tl, 0, "};\n");
+	VSB_printf(vsb, "};\n\n");
 }
 
 /*--------------------------------------------------------------------
@@ -375,36 +401,13 @@ EmitInitFini(const struct vcc *tl)
 static void
 EmitStruct(const struct vcc *tl)
 {
-	struct source *sp;
-
-	Fc(tl, 0, "\nextern const char *srcname[];\n");
-	Fc(tl, 0, "\nconst char *srcname[%u] = {\n", tl->nsources);
-	VTAILQ_FOREACH(sp, &tl->sources, list) {
-		Fc(tl, 0, "\t");
-		EncString(tl->fc, sp->name, NULL, 0);
-		Fc(tl, 0, ",\n");
-	}
-	Fc(tl, 0, "};\n");
-
-	Fc(tl, 0, "\nextern const char *srcbody[];\n");
-	Fc(tl, 0, "\nconst char *srcbody[%u] = {\n", tl->nsources);
-	VTAILQ_FOREACH(sp, &tl->sources, list) {
-		Fc(tl, 0, "    /* ");
-		EncString(tl->fc, sp->name, NULL, 0);
-		Fc(tl, 0, "*/\n");
-		Fc(tl, 0, "\t");
-		EncString(tl->fc, sp->b, sp->e, 1);
-		Fc(tl, 0, ",\n");
-	}
-	Fc(tl, 0, "};\n");
-
 	Fc(tl, 0, "\nconst struct VCL_conf VCL_conf = {\n");
 	Fc(tl, 0, "\t.magic = VCL_CONF_MAGIC,\n");
 	Fc(tl, 0, "\t.event_vcl = VGC_Event,\n");
 	Fc(tl, 0, "\t.default_director = &%s,\n", tl->default_director);
 	Fc(tl, 0, "\t.ref = VGC_ref,\n");
 	Fc(tl, 0, "\t.nref = VGC_NREFS,\n");
-	Fc(tl, 0, "\t.nsrc = %u,\n", tl->nsources);
+	Fc(tl, 0, "\t.nsrc = VGC_NSRCS,\n");
 	Fc(tl, 0, "\t.srcname = srcname,\n");
 	Fc(tl, 0, "\t.srcbody = srcbody,\n");
 #define VCL_MET_MAC(l,u,b) \
@@ -606,11 +609,16 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	struct vcc *tl;
 	struct symbol *sym;
 	const struct var *v;
+	struct vsb *vsb;
+
 	char *of;
 	int i;
 
 	tl = vcc_NewVcc(tl0);
 	tl->sb = sb;
+
+	vsb = VSB_new_auto();
+	AN(vsb);
 
 	vcc_Expr_Init(tl);
 
@@ -630,8 +638,9 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	sym = VCC_AddSymbolStr(tl, "storage.", SYM_WILDCARD);
 	sym->wildcard = vcc_Stv_Wildcard;
 
-	vcl_output_lang_h(tl->fh);
-	Fh(tl, 0, "/* ---===### VCC generated code ###===---*/\n");
+	vcl_output_lang_h(vsb);
+	Fh(tl, 0, "/* ---===### VCC generated .h code ###===---*/\n");
+	Fc(tl, 0, "\n/* ---===### VCC generated .c code ###===---*/\n");
 	Fh(tl, 0, "\nextern const struct VCL_conf VCL_conf;\n");
 
 	/* Register and lex the main source */
@@ -691,9 +700,10 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 		return (vcc_DestroyTokenList(tl, NULL));
 
 	/* Emit method functions */
+	Fh(tl, 1, "\n");
 	for (i = 1; i < VCL_MET_MAX; i++) {
-		Fh(tl, 1, "\nint __match_proto__(vcl_func_f)\n");
 		Fh(tl, 1,
+		    "int __match_proto__(vcl_func_f) "
 		    "VGC_function_%s(VRT_CTX);\n",
 		    method_tab[i].name);
 		Fc(tl, 1, "\nint __match_proto__(vcl_func_f)\n");
@@ -715,19 +725,26 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 		Fc(tl, 1, "}\n");
 	}
 
-	LocTable(tl);
-
 	EmitInitFini(tl);
 
 	EmitStruct(tl);
 
-	/* Combine it all in the fh vsb */
-	AZ(VSB_finish(tl->fc));
-	VSB_cat(tl->fh, VSB_data(tl->fc));
-	AZ(VSB_finish(tl->fh));
+	/* Combine it all in the vsb */
 
-	of = strdup(VSB_data(tl->fh));
+	EmitCoordinates(tl, vsb);
+
+	AZ(VSB_finish(tl->fh));
+	VSB_cat(vsb, VSB_data(tl->fh));
+
+	AZ(VSB_finish(tl->fc));
+	VSB_cat(vsb, VSB_data(tl->fc));
+
+	AZ(VSB_finish(vsb));
+
+	of = strdup(VSB_data(vsb));
 	AN(of);
+
+	VSB_delete(vsb);
 
 	/* done */
 	return (vcc_DestroyTokenList(tl, of));
