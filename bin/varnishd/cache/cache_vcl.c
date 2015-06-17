@@ -46,7 +46,7 @@
 
 struct vcl {
 	unsigned		magic;
-#define VVCLS_MAGIC		0x214188f2
+#define VCL_MAGIC		0x214188f2
 	VTAILQ_ENTRY(vcl)	list;
 	void			*dlh;
 	struct VCL_conf		conf[1];
@@ -67,7 +67,7 @@ static struct vcl		*vcl_active; /* protected by vcl_mtx */
 /*--------------------------------------------------------------------*/
 
 void
-VCL_Panic(struct vsb *vsb, const struct VCL_conf *vcl)
+VCL_Panic(struct vsb *vsb, const struct vcl *vcl)
 {
 	int i;
 
@@ -76,8 +76,8 @@ VCL_Panic(struct vsb *vsb, const struct VCL_conf *vcl)
 		return;
 	VSB_printf(vsb, "  vcl = {\n");
 	VSB_printf(vsb, "    srcname = {\n");
-	for (i = 0; i < vcl->nsrc; ++i)
-		VSB_printf(vsb, "      \"%s\",\n", vcl->srcname[i]);
+	for (i = 0; i < vcl->conf->nsrc; ++i)
+		VSB_printf(vsb, "      \"%s\",\n", vcl->conf->srcname[i]);
 	VSB_printf(vsb, "    },\n");
 	VSB_printf(vsb, "  },\n");
 }
@@ -113,7 +113,7 @@ VCL_Method_Name(unsigned m)
 /*--------------------------------------------------------------------*/
 
 static void
-VCL_Get(struct VCL_conf **vcc)
+VCL_Get(struct vcl **vcc)
 {
 	static int once = 0;
 
@@ -124,17 +124,17 @@ VCL_Get(struct VCL_conf **vcc)
 
 	Lck_Lock(&vcl_mtx);
 	AN(vcl_active);
-	*vcc = vcl_active->conf;
+	*vcc = vcl_active;
 	AN(*vcc);
-	AZ((*vcc)->discard);
-	(*vcc)->busy++;
+	AZ((*vcc)->conf->discard);
+	(*vcc)->conf->busy++;
 	Lck_Unlock(&vcl_mtx);
 }
 
 void
-VCL_Refresh(struct VCL_conf **vcc)
+VCL_Refresh(struct vcl **vcc)
 {
-	if (*vcc == vcl_active->conf)
+	if (*vcc == vcl_active)
 		return;
 	if (*vcc != NULL)
 		VCL_Rel(vcc);	/* XXX: optimize locking */
@@ -142,27 +142,27 @@ VCL_Refresh(struct VCL_conf **vcc)
 }
 
 void
-VCL_Ref(struct VCL_conf *vc)
+VCL_Ref(struct vcl *vc)
 {
 
 	Lck_Lock(&vcl_mtx);
-	assert(vc->busy > 0);
-	vc->busy++;
+	assert(vc->conf->busy > 0);
+	vc->conf->busy++;
 	Lck_Unlock(&vcl_mtx);
 }
 
 void
-VCL_Rel(struct VCL_conf **vcc)
+VCL_Rel(struct vcl **vcc)
 {
-	struct VCL_conf *vc;
+	struct vcl *vc;
 
 	AN(*vcc);
 	vc = *vcc;
 	*vcc = NULL;
 
 	Lck_Lock(&vcl_mtx);
-	assert(vc->busy > 0);
-	vc->busy--;
+	assert(vc->conf->busy > 0);
+	vc->conf->busy--;
 	/*
 	 * We do not garbage collect discarded VCL's here, that happens
 	 * in VCL_Poll() which is called from the CLI thread.
@@ -199,7 +199,7 @@ VCL_Open(const char *fn, struct vsb *msg)
 		(void)dlclose(dlh);
 		return (NULL);
 	}
-	ALLOC_OBJ(vcl, VVCLS_MAGIC);
+	ALLOC_OBJ(vcl, VCL_MAGIC);
 	AN(vcl);
 	vcl->dlh = dlh;
 	memcpy(vcl->conf, cnf, sizeof *cnf);
@@ -211,7 +211,7 @@ VCL_Close(struct vcl **vclp)
 {
 	struct vcl *vcl;
 
-	CHECK_OBJ_NOTNULL(*vclp, VVCLS_MAGIC);
+	CHECK_OBJ_NOTNULL(*vclp, VCL_MAGIC);
 	vcl = *vclp;
 	*vclp = NULL;
 	AZ(dlclose(vcl->dlh));
@@ -246,18 +246,18 @@ VCL_TestLoad(const char *fn)
 /*--------------------------------------------------------------------*/
 
 struct director *
-VCL_DefaultDirector(const struct VCL_conf *vcc)
+VCL_DefaultDirector(const struct vcl *vcc)
 {
 
 	AN(vcc);
-	return (*vcc->default_director);
+	return (*vcc->conf->default_director);
 }
 
 const char *
-VCL_Name(const struct VCL_conf *vcc)
+VCL_Name(const struct vcl *vcc)
 {
 	AN(vcc);
-	return (vcc->loaded_name);
+	return (vcc->conf->loaded_name);
 }
 
 /*--------------------------------------------------------------------*/
@@ -570,7 +570,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
 		vsl = req->vsl;
-		ctx.vcl = req->vcl;
+		ctx.vcl = req->vcl->conf;
 		ctx.http_req = req->http;
 		ctx.http_req_top = req->top->http;
 		ctx.http_resp = req->resp;
@@ -581,7 +581,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	if (bo != NULL) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 		vsl = bo->vsl;
-		ctx.vcl = bo->vcl;
+		ctx.vcl = bo->vcl->conf;
 		ctx.http_bereq = bo->bereq;
 		ctx.http_beresp = bo->beresp;
 		ctx.bo = bo;
@@ -612,14 +612,15 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 
 #define VCL_MET_MAC(func, upper, bitmap)				\
 void									\
-VCL_##func##_method(struct VCL_conf *vcl, struct worker *wrk,		\
+VCL_##func##_method(struct vcl *vcl, struct worker *wrk,		\
      struct req *req, struct busyobj *bo, void *specific)		\
 {									\
 									\
-	CHECK_OBJ_NOTNULL(vcl, VCL_CONF_MAGIC);				\
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);				\
+	CHECK_OBJ_NOTNULL(vcl->conf, VCL_CONF_MAGIC);			\
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);				\
 	vcl_call_method(wrk, req, bo, specific,				\
-	    VCL_MET_ ## upper, vcl->func##_func);			\
+	    VCL_MET_ ## upper, vcl->conf->func##_func);			\
 	AN((1U << wrk->handling) & bitmap);				\
 }
 

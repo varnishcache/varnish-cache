@@ -341,7 +341,7 @@ struct worker {
 
 	pthread_cond_t		cond;
 
-	struct VCL_conf		*vcl;
+	struct vcl		*vcl;
 
 	struct ws		aws[1];
 
@@ -503,7 +503,7 @@ struct busyobj {
 	const struct director	*director_req;
 	const struct director	*director_resp;
 	enum director_state_e	director_state;
-	struct VCL_conf		*vcl;
+	struct vcl		*vcl;
 
 	struct vsl_log		vsl[1];
 
@@ -560,7 +560,7 @@ struct req {
 	const char		*err_reason;
 
 	const struct director	*director_hint;
-	struct VCL_conf		*vcl;
+	struct vcl		*vcl;
 
 	char			*ws_req;	/* WS above request data */
 
@@ -1065,19 +1065,19 @@ enum vry_finish_flag { KEEP, DISCARD };
 void VRY_Finish(struct req *req, enum vry_finish_flag);
 
 /* cache_vcl.c */
-struct director *VCL_DefaultDirector(const struct VCL_conf *);
+struct director *VCL_DefaultDirector(const struct vcl *);
 void VCL_Init(void);
 const char *VCL_Method_Name(unsigned);
-const char *VCL_Name(const struct VCL_conf *);
-void VCL_Panic(struct vsb *, const struct VCL_conf *);
+const char *VCL_Name(const struct vcl *);
+void VCL_Panic(struct vsb *, const struct vcl *);
 void VCL_Poll(void);
-void VCL_Ref(struct VCL_conf *);
-void VCL_Refresh(struct VCL_conf **);
-void VCL_Rel(struct VCL_conf **);
+void VCL_Ref(struct vcl *);
+void VCL_Refresh(struct vcl **);
+void VCL_Rel(struct vcl **);
 const char *VCL_Return_Name(unsigned);
 
 #define VCL_MET_MAC(l,u,b) \
-    void VCL_##l##_method(struct VCL_conf *, struct worker *, struct req *, \
+    void VCL_##l##_method(struct vcl *, struct worker *, struct req *, \
 	struct busyobj *bo, void *specific);
 #include "tbl/vcl_returns.h"
 #undef VCL_MET_MAC

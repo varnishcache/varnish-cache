@@ -978,7 +978,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 
 	oc->busyobj = bo;
 
-	CHECK_OBJ_NOTNULL(bo->vcl, VCL_CONF_MAGIC);
+	AN(bo->vcl);
 
 	if (mode == VBF_PASS)
 		bo->do_pass = 1;

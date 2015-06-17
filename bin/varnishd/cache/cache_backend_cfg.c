@@ -152,7 +152,7 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 {
 	int i, found = 0;
 	struct vsb *vsb;
-	struct VCL_conf *vcc = NULL;
+	struct vcl *vcc = NULL;
 	struct backend *b;
 
 	VCL_Refresh(&vcc);
