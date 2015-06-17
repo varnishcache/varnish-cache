@@ -297,16 +297,14 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 
 /*--------------------------------------------------------------------*/
 
-void
-VRT_init_vbe(VRT_CTX, struct director **dp, const struct vrt_backend *vrt)
+struct director *
+VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 {
 	struct director *d;
 	struct backend *be;
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(dp);
-	AZ(*dp);
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
 	AN(ctx->vcl);
 
@@ -328,7 +326,7 @@ VRT_init_vbe(VRT_CTX, struct director **dp, const struct vrt_backend *vrt)
 	if (vrt->probe != NULL)
 		VBP_Insert(be, vrt->probe, vrt->hosthdr);
 
-	*dp = d;
+	return (d);
 }
 
 void

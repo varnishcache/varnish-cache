@@ -62,6 +62,7 @@ struct backend {
 	int			refcount;
 	struct lock		mtx;
 
+	const struct vcl	*vcl;
 	const char		*vcl_name;
 	char			*display_name;
 	const char		*ipv4_addr;

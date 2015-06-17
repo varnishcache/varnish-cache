@@ -82,7 +82,9 @@ VBE_AddBackend(const struct vrt_ctx *ctx, const struct vrt_backend *vb)
 	char buf[128];
 	struct vcl *vcl;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	vcl = ctx->vcl;
+	AN(vcl);
 	AN(vb->vcl_name);
 	assert(vb->ipv4_suckaddr != NULL || vb->ipv6_suckaddr != NULL);
 
@@ -94,6 +96,7 @@ VBE_AddBackend(const struct vrt_ctx *ctx, const struct vrt_backend *vb)
 	bprintf(buf, "%s.%s", VCL_Name(vcl), vb->vcl_name);
 	REPLACE(b->display_name, buf);
 
+	b->vcl = vcl;
 	b->vcl_name =  vb->vcl_name;
 	b->ipv4_addr = vb->ipv4_addr;
 	b->ipv6_addr = vb->ipv6_addr;
