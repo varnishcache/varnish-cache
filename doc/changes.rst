@@ -1,3 +1,30 @@
+
+==================================
+Changes from 4.0.3 to (unreleased)
+==================================
+
+* Percent-based storage size configuration was broken
+  and have been retired.
+* Requests with multiple Content-Length headers are now dropped.
+* Python is now a dependency of varnish-libs-devel on Redhat systems. (vmodtool.py)
+* varnishreplay documentation have been retired.
+
+Bugs fixed
+----------
+
+.. _1744: https://www.varnish-cache.org/trac/ticket/1744
+.. _1742: https://www.varnish-cache.org/trac/ticket/1742
+.. _1691: https://www.varnish-cache.org/trac/ticket/1691
+.. _1688: https://www.varnish-cache.org/trac/ticket/1688
+.. _1602: https://www.varnish-cache.org/trac/ticket/1602
+
+- 1744_ - Update the users guide to for new -sfile syntax
+- 1742_ - Document varnishlog -w/-r with more details
+- 1691_ - Fail fetch on malformed Content-Length header
+- 1688_ - Add a VDP_pretend_gzip for use with synth bodies in ESI includes with gzip
+- 1602_ - Deal with known zero length objects properly when handling do_gzip/do_gunzip
+
+
 ============================================
 Changes from 4.0.3-rc3 to 4.0.3 (2015-02-17)
 ============================================
