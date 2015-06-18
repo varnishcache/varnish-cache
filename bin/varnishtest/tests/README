@@ -29,3 +29,15 @@ Naming scheme
 	id ~ [t] --> sTreaming tests
 	id ~ [u] --> Unusual background processes
 	id ~ [v] --> VCL tests: execute VRT functions
+
+
+Private test scope
+------------------
+
+	Test cases matching
+
+		[id]1%04d.vtc
+
+	are reserved for private tests.
+
+
