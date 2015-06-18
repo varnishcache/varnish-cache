@@ -79,7 +79,7 @@ digraph cache_fetch {
 		/* vbf_stp_error */
 		v_b_e [
 			    shape=record
-			    label="{vbf_stp_error:|{vcl_backend_error\{\}|{bereq.*|beresp.*}}|{{retry|{<max>max?|<retry>ok?}}|<deliver>deliver}}}"
+			    label="{vbf_stp_error:|{vcl_backend_error\{\}|{bereq.*|beresp.*}}|{{retry|{<max>max?|<retry>ok?}}|abandon|<deliver>deliver}}}"
 			    ]
 		// v_b_e:deliver aka "backend synth" - goes into cache
 		v_b_e:deliver -> FETCH_DONE [label="\"backend synth\""]
