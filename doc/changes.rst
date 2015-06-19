@@ -4,7 +4,7 @@ Changes from 4.0.3 to (unreleased)
 ==================================
 
 * Percent-based storage size configuration was broken
-  and have been retired.
+  and has been retired.
 * Requests with multiple Content-Length headers are now dropped.
 * Python is now a dependency of varnish-libs-devel on Redhat systems. (vmodtool.py)
 * varnishreplay documentation have been retired.
