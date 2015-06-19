@@ -7,7 +7,7 @@ Changes from 4.0.3 to (unreleased)
   and has been retired.
 * Requests with multiple Content-Length headers are now dropped.
 * Python is now a dependency of varnish-libs-devel on Redhat systems. (vmodtool.py)
-* varnishreplay documentation have been retired.
+* varnishreplay documentation has been retired.
 
 Bugs fixed
 ----------
