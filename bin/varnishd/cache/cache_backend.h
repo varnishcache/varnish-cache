@@ -63,15 +63,10 @@ struct backend {
 	int			refcount;
 	struct lock		mtx;
 
-	const struct vcl	*vcl;
-	const char		*vcl_name;
-	char			*display_name;
-	const char		*ipv4_addr;
-	const char		*ipv6_addr;
-	const char		*port;
+	VRT_BACKEND_FIELDS()
 
-	struct suckaddr		*ipv4;
-	struct suckaddr		*ipv6;
+	const struct vcl	*vcl;
+	char			*display_name;
 
 	unsigned		n_conn;
 
@@ -109,7 +104,7 @@ struct vbc {
 };
 
 /* cache_backend.c */
-void VBE_fill_director(struct backend *be, const struct vrt_backend *vrt);
+void VBE_fill_director(struct backend *be);
 
 /* cache_backend_cfg.c */
 unsigned VBE_Healthy(const struct backend *b, double *changed);

@@ -62,8 +62,6 @@ struct vbp_target {
 
 	struct backend			*backend;
 
-	struct tcp_pool			*tcp_pool;
-
 	struct vrt_backend_probe	probe;
 
 	char				*req;
@@ -217,7 +215,7 @@ vbp_poke(struct vbp_target *vt)
 	t_start = t_now = VTIM_real();
 	t_end = t_start + vt->probe.timeout;
 
-	s = VBT_Open(vt->tcp_pool, t_end - t_now, &sa);
+	s = VBT_Open(vt->backend->tcp_pool, t_end - t_now, &sa);
 	if (s < 0) {
 		/* Got no connection: failed */
 		return;
@@ -320,7 +318,6 @@ vbp_task(struct worker *wrk, void *priv)
 
 	Lck_Lock(&vbp_mtx);
 	if (vt->running < 0) {
-		VBT_Rel(&vt->tcp_pool);
 		free(vt->req);
 		FREE_OBJ(vt);
 	} else {
@@ -537,9 +534,6 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
 	ALLOC_OBJ(vt, VBP_TARGET_MAGIC);
 	XXXAN(vt);
 
-	vt->tcp_pool = VBT_Ref(b->ipv4, b->ipv6);
-	AN(vt->tcp_pool);
-
 	vt->probe = *p;
 	vbp_set_defaults(vt);
 
@@ -572,7 +566,6 @@ VBP_Remove(struct backend *be)
 	}
 	Lck_Unlock(&vbp_mtx);
 	if (vt != NULL) {
-		VBT_Rel(&vt->tcp_pool);
 		free(vt->req);
 		FREE_OBJ(vt);
 	}

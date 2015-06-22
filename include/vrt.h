@@ -166,28 +166,50 @@ struct vrt_backend_probe {
 	unsigned			initial;
 };
 
-/*
- * A backend is a host+port somewhere on the network
+/***********************************************************************
+ * We want the VCC to spit this structs out as const, but when VMODs
+ * come up with them we want to clone them into malloc'ed space which
+ * we can free again.
+ * We collect all the knowledge here by macroizing the fields and make
+ * a macro for handling them all.
+ * See also:  cache_backend.h & cache_backend_cfg.c
+ * One of those things...
  */
+
+#define VRT_BACKEND_FIELDS(rigid)				\
+	rigid char			*vcl_name;		\
+	rigid char			*ipv4_addr;		\
+	rigid char			*ipv6_addr;		\
+	rigid char			*port;			\
+	rigid char			*hosthdr;		\
+	double				connect_timeout;	\
+	double				first_byte_timeout;	\
+	double				between_bytes_timeout;	\
+	unsigned			max_connections;
+
+#define VRT_BACKEND_HANDLE()			\
+	do {					\
+		DA(vcl_name);			\
+		DA(ipv4_addr);			\
+		DA(ipv6_addr);			\
+		DA(port);			\
+		DA(hosthdr);			\
+		DN(connect_timeout);		\
+		DN(first_byte_timeout);		\
+		DN(between_bytes_timeout);	\
+		DN(max_connections);		\
+	} while(0)
+
 struct vrt_backend {
 	unsigned			magic;
 #define VRT_BACKEND_MAGIC		0x4799ce6b
-	const char			*vcl_name;
-	const char			*ipv4_addr;
-	const char			*ipv6_addr;
-	const char			*port;
-
+	VRT_BACKEND_FIELDS(const)
 	const struct suckaddr		*ipv4_suckaddr;
 	const struct suckaddr		*ipv6_suckaddr;
-
-	const char			*hosthdr;
-
-	double				connect_timeout;
-	double				first_byte_timeout;
-	double				between_bytes_timeout;
-	unsigned			max_connections;
 	const struct vrt_backend_probe	*probe;
 };
+
+/***********************************************************************/
 
 /*
  * other stuff.

@@ -119,7 +119,6 @@ struct req;
 struct sess;
 struct suckaddr;
 struct vbc;
-struct vrt_backend;
 struct vrt_priv;
 struct vsb;
 struct waitinglist;

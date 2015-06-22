@@ -42,7 +42,6 @@
 #include "vcli.h"
 #include "vcli_priv.h"
 #include "vrt.h"
-#include "vsa.h"
 #include "vtim.h"
 
 #include "cache_director.h"
@@ -64,6 +63,8 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
 
+	assert(vrt->ipv4_suckaddr != NULL || vrt->ipv6_suckaddr != NULL);
+
 	vcl = ctx->vcl;
 	AN(vcl);
 	AN(vrt->vcl_name);
@@ -74,23 +75,18 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 	XXXAN(b);
 	Lck_New(&b->mtx, lck_backend);
 
+#define DA(x)	do { if (vrt->x != NULL) REPLACE((b->x), (vrt->x)); } while (0)
+#define DN(x)	do { b->x = vrt->x; } while (0)
+	VRT_BACKEND_HANDLE();
+#undef DA
+#undef DN
+
 	bprintf(buf, "%s.%s", VCL_Name(vcl), vrt->vcl_name);
 	REPLACE(b->display_name, buf);
 
 	b->vcl = vcl;
-	b->vcl_name =  vrt->vcl_name;
-	b->ipv4_addr = vrt->ipv4_addr;
-	b->ipv6_addr = vrt->ipv6_addr;
-	b->port = vrt->port;
 
 	b->tcp_pool = VBT_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr);
-
-	if (vrt->ipv4_suckaddr != NULL)
-		b->ipv4 = VSA_Clone(vrt->ipv4_suckaddr);
-	if (vrt->ipv6_suckaddr != NULL)
-		b->ipv6 = VSA_Clone(vrt->ipv6_suckaddr);
-
-	assert(b->ipv4 != NULL || b->ipv6 != NULL);
 
 	b->healthy = 1;
 	b->health_changed = VTIM_real();
@@ -101,7 +97,7 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 	VSC_C_main->n_backend++;
 	Lck_Unlock(&backends_mtx);
 
-	VBE_fill_director(b, vrt);
+	VBE_fill_director(b);
 
 	if (vrt->probe != NULL)
 		VBP_Insert(b, vrt->probe, vrt->hosthdr);
@@ -170,8 +166,12 @@ VBE_Delete(struct backend *be)
 	VSC_C_main->n_backend--;
 	Lck_Unlock(&backends_mtx);
 
-	free(be->ipv4);
-	free(be->ipv6);
+#define DA(x)	do { if (be->x != NULL) free(be->x); } while (0)
+#define DN(x)	/**/
+	VRT_BACKEND_HANDLE();
+#undef DA
+#undef DN
+
 	free(be->display_name);
 	AZ(be->vsc);
 	VBT_Rel(&be->tcp_pool);

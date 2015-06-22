@@ -83,7 +83,6 @@ vbe_dir_getfd(struct worker *wrk, const struct director *d, struct busyobj *bo)
 	struct vbc *vc;
 	struct backend *bp;
 	double tmod;
-	const struct vrt_backend *vrt;
 	char abuf1[VTCP_ADDRBUFSIZE], abuf2[VTCP_ADDRBUFSIZE];
 	char pbuf1[VTCP_PORTBUFSIZE], pbuf2[VTCP_PORTBUFSIZE];
 
@@ -92,7 +91,6 @@ vbe_dir_getfd(struct worker *wrk, const struct director *d, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 	AN(bp->vsc);
-	CAST_OBJ_NOTNULL(vrt, d->priv2, VRT_BACKEND_MAGIC);
 
 	if (!VBE_Healthy(bp, NULL)) {
 		// XXX: per backend stats ?
@@ -100,8 +98,7 @@ vbe_dir_getfd(struct worker *wrk, const struct director *d, struct busyobj *bo)
 		return (-1);
 	}
 
-	if (vrt->max_connections > 0 &&
-	    bp->n_conn >= vrt->max_connections) {
+	if (bp->max_connections > 0 && bp->n_conn >= bp->max_connections) {
 		// XXX: per backend stats ?
 		VSC_C_main->backend_busy++;
 		return (-1);
@@ -113,7 +110,7 @@ vbe_dir_getfd(struct worker *wrk, const struct director *d, struct busyobj *bo)
 		/* XXX: counter ? */
 		return (-1);
 
-	FIND_TMO(connect_timeout, tmod, bo, vrt);
+	FIND_TMO(connect_timeout, tmod, bo, bp);
 	vc = VBT_Get(bp->tcp_pool, tmod, bp, wrk);
 	if (vc == NULL) {
 		// XXX: Per backend stats ?
@@ -142,9 +139,9 @@ vbe_dir_getfd(struct worker *wrk, const struct director *d, struct busyobj *bo)
 	bo->htc->vbc = vc;
 	bo->htc->fd = vc->fd;
 	FIND_TMO(first_byte_timeout,
-	    bo->htc->first_byte_timeout, bo, vrt);
+	    bo->htc->first_byte_timeout, bo, bp);
 	FIND_TMO(between_bytes_timeout,
-	    bo->htc->between_bytes_timeout, bo, vrt);
+	    bo->htc->between_bytes_timeout, bo, bp);
 	return (vc->fd);
 }
 
@@ -200,12 +197,12 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
 {
 	int i, extrachance = 0;
-	const struct vrt_backend *vrt;
+	struct backend *bp;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CAST_OBJ_NOTNULL(vrt, d->priv2, VRT_BACKEND_MAGIC);
+	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
 	i = vbe_dir_getfd(wrk, d, bo);
 	if (i < 0) {
@@ -216,7 +213,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 	if (bo->htc->vbc->state == VBC_STATE_STOLEN)
 		extrachance = 1;
 
-	i = V1F_fetch_hdr(wrk, bo, vrt->hosthdr);
+	i = V1F_fetch_hdr(wrk, bo, bp->hosthdr);
 	/*
 	 * If we recycle a backend connection, there is a finite chance
 	 * that the backend closed it before we get a request to it.
@@ -234,7 +231,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 			return (-1);
 		}
 		AN(bo->htc);
-		i = V1F_fetch_hdr(wrk, bo, vrt->hosthdr);
+		i = V1F_fetch_hdr(wrk, bo, bp->hosthdr);
 	}
 	if (i != 0) {
 		vbe_dir_finish(d, wrk, bo);
@@ -299,19 +296,17 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 /*--------------------------------------------------------------------*/
 
 void
-VBE_fill_director(struct backend *be, const struct vrt_backend *vrt)
+VBE_fill_director(struct backend *be)
 {
 	struct director *d;
 
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
-	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
 
 	INIT_OBJ(be->director, DIRECTOR_MAGIC);
 	d = be->director;
 	d->priv = be;
-	d->priv2 = vrt;
 	d->name = "backend";
-	REPLACE(d->vcl_name, vrt->vcl_name);
+	d->vcl_name = be->vcl_name;
 	d->http1pipe = vbe_dir_http1pipe;
 	d->healthy = vbe_dir_healthy;
 	d->gethdrs = vbe_dir_gethdrs;
