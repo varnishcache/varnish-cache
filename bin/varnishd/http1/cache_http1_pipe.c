@@ -36,10 +36,12 @@
 
 #include "cache/cache.h"
 
-#include "cache/cache_director.h"
-#include "cache/cache_backend.h"
+#include "vrt.h"
 #include "vtcp.h"
 #include "vtim.h"
+
+#include "cache/cache_director.h"
+#include "cache/cache_backend.h"
 
 static struct lock pipestat_mtx;
 

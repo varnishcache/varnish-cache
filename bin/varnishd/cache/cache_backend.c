@@ -36,10 +36,11 @@
 
 #include "cache.h"
 
-#include "cache_director.h"
-#include "cache_backend.h"
 #include "vrt.h"
 #include "vtcp.h"
+
+#include "cache_director.h"
+#include "cache_backend.h"
 
 #define FIND_TMO(tmx, dst, bo, be)					\
 	do {								\

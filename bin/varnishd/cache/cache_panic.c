@@ -40,9 +40,11 @@
 #include <signal.h>
 
 #include "cache.h"
+
 #include "cache_filter.h"
 #include "common/heritage.h"
 
+#include "vrt.h"
 #include "cache_director.h"
 #include "cache_backend.h"
 #include "storage/storage.h"

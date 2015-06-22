@@ -41,17 +41,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "binary_heap.h"
-
 #include "cache.h"
+
+#include "binary_heap.h"
+#include "vcli_priv.h"
+#include "vrt.h"
+#include "vsa.h"
+#include "vtcp.h"
+#include "vtim.h"
 
 #include "cache_director.h"
 #include "cache_backend.h"
-#include "vcli_priv.h"
-#include "vrt.h"
-#include "vtim.h"
-#include "vtcp.h"
-#include "vsa.h"
 
 /* Default averaging rate, we want something pretty responsive */
 #define AVG_RATE			4

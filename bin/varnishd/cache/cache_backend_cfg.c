@@ -39,14 +39,14 @@
 #include "cache.h"
 
 #include "vcl.h"
+#include "vcli.h"
+#include "vcli_priv.h"
 #include "vrt.h"
+#include "vsa.h"
+#include "vtim.h"
 
 #include "cache_director.h"
 #include "cache_backend.h"
-#include "vcli.h"
-#include "vcli_priv.h"
-#include "vsa.h"
-#include "vtim.h"
 
 static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
 static struct lock backends_mtx;

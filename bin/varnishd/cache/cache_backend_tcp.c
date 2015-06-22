@@ -38,12 +38,14 @@
 
 #include "cache.h"
 
+#include "vrt.h"
+#include "vsa.h"
+#include "vtcp.h"
+#include "vtim.h"
+
 #include "cache_director.h"
 #include "cache_backend.h"
 #include "cache_pool.h"
-#include "vtcp.h"
-#include "vsa.h"
-#include "vtim.h"
 
 struct tcp_pool {
 	unsigned		magic;
