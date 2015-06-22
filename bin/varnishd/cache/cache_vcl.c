@@ -39,15 +39,16 @@
 
 #include "cache.h"
 
-#include "cache_director.h"
-#include "cache_backend.h"
 #include "vcl.h"
 #include "vrt.h"
+
+#include "cache_director.h"
+#include "cache_backend.h"
 #include "vcli.h"
 #include "vcli_priv.h"
 
 static const char * const vcl_temp_cold = "cold";
-static const char * const vcl_temp_warm = "warn";
+static const char * const vcl_temp_warm = "warm";
 static const char * const vcl_temp_cooling = "cooling";
 
 struct vcl {
@@ -197,13 +198,42 @@ VCL_AddBackend(struct vcl *vcl, struct backend *be)
 }
 
 void
-VCL_DelBackend(struct vcl *vcl, const struct backend *be)
+VCL_DelBackend(struct vcl *vcl, struct backend *be)
 {
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 	Lck_Lock(&vcl_mtx);
 	VTAILQ_REMOVE(&vcl->backend_list, be, vcl_list);
 	Lck_Unlock(&vcl_mtx);
+	VBE_Delete(be);
+}
+
+static void
+vcl_BackendEvent(const struct vcl *vcl, enum vcl_event_e e)
+{
+	struct backend *be;
+
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	AZ(vcl->busy);
+
+	VTAILQ_FOREACH(be, &vcl->backend_list, vcl_list)
+		VBE_Event(be, e);
+}
+
+static void
+vcl_KillBackends(struct vcl *vcl)
+{
+	struct backend *be;
+
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	AZ(vcl->busy);
+	while (1) {
+		be = VTAILQ_FIRST(&vcl->backend_list);
+		if (be == NULL)
+			break;
+		VTAILQ_REMOVE(&vcl->backend_list, be, vcl_list);
+		VBE_Delete(be);
+	}
 }
 
 /*--------------------------------------------------------------------*/
@@ -346,6 +376,7 @@ vcl_set_state(struct vcl *vcl, const char *state)
 		if (vcl->busy == 0) {
 			vcl->temp = vcl_temp_cold;
 			(void)vcl->conf->event_vcl(&ctx, VCL_EVENT_COLD);
+			vcl_BackendEvent(vcl, VCL_EVENT_COLD);
 		} else {
 			vcl->temp = vcl_temp_cooling;
 		}
@@ -356,6 +387,7 @@ vcl_set_state(struct vcl *vcl, const char *state)
 		else {
 			vcl->temp = vcl_temp_warm;
 			(void)vcl->conf->event_vcl(&ctx, VCL_EVENT_WARM);
+			vcl_BackendEvent(vcl, VCL_EVENT_WARM);
 		}
 		break;
 	default:
@@ -411,6 +443,7 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 		if (VSB_len(vsb))
 			VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(vsb));
 		AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_DISCARD));
+		vcl_KillBackends(vcl);
 		VCL_Close(&vcl);
 		VSB_delete(vsb);
 		return (1);
@@ -451,6 +484,7 @@ VCL_Nuke(struct vcl *vcl)
 	ctx.handling = &hand;
 	ctx.vcl = vcl;
 	AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_DISCARD));
+	vcl_KillBackends(vcl);
 	free(vcl->loaded_name);
 	VCL_Close(&vcl);
 	VSC_C_main->n_vcl--;

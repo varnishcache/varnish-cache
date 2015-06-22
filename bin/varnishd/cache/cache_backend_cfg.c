@@ -38,19 +38,20 @@
 
 #include "cache.h"
 
+#include "vcl.h"
+#include "vrt.h"
+
 #include "cache_director.h"
 #include "cache_backend.h"
 #include "vcli.h"
 #include "vcli_priv.h"
 #include "vsa.h"
-#include "vcl.h"
-#include "vrt.h"
 #include "vtim.h"
 
 static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
 static struct lock backends_mtx;
 /*--------------------------------------------------------------------
- * Create a new director::backend instance.
+ * Create/Delete a new director::backend instance.
  */
 
 struct director *
@@ -111,19 +112,31 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 }
 
 void
-VRT_event_vbe(VRT_CTX, enum vcl_event_e ev, const struct director *d,
-    const struct vrt_backend *vrt)
+VRT_delete_backend(VRT_CTX, struct director **dp)
 {
+	struct director *d;
 	struct backend *be;
 
-	ASSERT_CLI();
-	(void)ev;
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(dp);
+	d = *dp;
+	*dp = NULL;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
-	assert(d->priv2 == vrt);
-
 	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
+	VCL_DelBackend(ctx->vcl, be);
+}
+
+/*---------------------------------------------------------------------
+ * These are for cross-calls with cache_vcl.c only.
+ */
+
+void
+VBE_Event(struct backend *be, enum vcl_event_e ev)
+{
+
+	ASSERT_CLI();
+	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
+
 	if (ev == VCL_EVENT_WARM) {
 		be->vsc = VSM_Alloc(sizeof *be->vsc,
 		    VSC_CLASS, VSC_type_vbe, be->display_name);
@@ -143,25 +156,14 @@ VRT_event_vbe(VRT_CTX, enum vcl_event_e ev, const struct director *d,
 }
 
 void
-VRT_delete_backend(VRT_CTX, struct director **dp)
+VBE_Delete(struct backend *be)
 {
-	struct director *d;
-	struct backend *be;
-
-	ASSERT_CLI();
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(dp);
-	d = *dp;
-	*dp = NULL;
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
-
-	VCL_DelBackend(ctx->vcl, be);
+	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 
 	if (be->probe != NULL)
 		VBP_Remove(be);
 
-	free(d->vcl_name);
+	free(be->director->vcl_name);
 
 	Lck_Lock(&backends_mtx);
 	VTAILQ_REMOVE(&backends, be, list);

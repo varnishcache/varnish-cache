@@ -113,6 +113,10 @@ void VBE_fill_director(struct backend *be, const struct vrt_backend *vrt);
 
 /* cache_backend_cfg.c */
 unsigned VBE_Healthy(const struct backend *b, double *changed);
+#ifdef VCL_MET_MAX
+void VBE_Event(struct backend *, enum vcl_event_e);
+#endif
+void VBE_Delete(struct backend *be);
 
 /* cache_backend_poll.c */
 void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
