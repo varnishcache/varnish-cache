@@ -146,25 +146,8 @@ struct gethdr_s {
 	const char	*what;
 };
 
-/*
- * A backend probe specification
- */
-
 extern const void * const vrt_magic_string_end;
 extern const void * const vrt_magic_string_unset;
-
-struct vrt_backend_probe {
-	unsigned			magic;
-#define VRT_BACKEND_PROBE_MAGIC		0x84998490
-	const char			*url;
-	const char			*request;
-	double				timeout;
-	double				interval;
-	unsigned			exp_status;
-	unsigned			window;
-	unsigned			threshold;
-	unsigned			initial;
-};
 
 /***********************************************************************
  * We want the VCC to spit this structs out as const, but when VMODs
@@ -207,6 +190,32 @@ struct vrt_backend {
 	const struct suckaddr		*ipv4_suckaddr;
 	const struct suckaddr		*ipv6_suckaddr;
 	const struct vrt_backend_probe	*probe;
+};
+
+#define VRT_BACKEND_PROBE_FIELDS(rigid)				\
+	double				timeout;		\
+	double				interval;		\
+	unsigned			exp_status;		\
+	unsigned			window;			\
+	unsigned			threshold;		\
+	unsigned			initial;
+
+#define VRT_BACKEND_PROBE_HANDLE()		\
+	do {					\
+		DN(timeout);			\
+		DN(interval);			\
+		DN(exp_status);			\
+		DN(window);			\
+		DN(threshold);			\
+		DN(initial);			\
+	} while (0)
+
+struct vrt_backend_probe {
+	unsigned			magic;
+#define VRT_BACKEND_PROBE_MAGIC		0x84998490
+	const char			*url;
+	const char			*request;
+	VRT_BACKEND_PROBE_FIELDS(const)
 };
 
 /***********************************************************************/

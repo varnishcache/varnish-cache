@@ -60,9 +60,10 @@ struct vbp_target {
 	unsigned			magic;
 #define VBP_TARGET_MAGIC		0x6b7cb656
 
-	struct backend			*backend;
+	VRT_BACKEND_PROBE_FIELDS()
 
-	struct vrt_backend_probe	probe;
+	struct backend			*backend;
+	struct tcp_pool			*tcp_pool;
 
 	char				*req;
 	int				req_len;
@@ -88,6 +89,20 @@ struct vbp_target {
 static struct lock			vbp_mtx;
 static pthread_cond_t			vbp_cond;
 static struct binheap			*vbp_heap;
+
+/*--------------------------------------------------------------------*/
+
+static void
+vbp_delete(struct vbp_target *vt)
+{
+#define DN(x)	/**/
+	VRT_BACKEND_PROBE_HANDLE();
+#undef DN
+	VBT_Rel(&vt->tcp_pool);
+	free(vt->req);
+	FREE_OBJ(vt);
+}
+
 
 /*--------------------------------------------------------------------
  * Record pokings...
@@ -123,7 +138,7 @@ vbp_has_poked(struct vbp_target *vt)
 	}
 
 	u = vt->happy;
-	for (i = j = 0; i < vt->probe.window; i++) {
+	for (i = j = 0; i < vt->window; i++) {
 		if (u & 1)
 			j++;
 		u >>= 1;
@@ -149,7 +164,7 @@ vbp_update_backend(struct vbp_target *vt)
 #undef BITMAP
 		bits[i] = '\0';
 
-		if (vt->good >= vt->probe.threshold) {
+		if (vt->good >= vt->threshold) {
 			if (vt->backend->healthy)
 				logmsg = "Still healthy";
 			else {
@@ -167,7 +182,7 @@ vbp_update_backend(struct vbp_target *vt)
 		}
 		VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u %.6f %.6f %s",
 		    vt->backend->display_name, logmsg, bits,
-		    vt->good, vt->probe.threshold, vt->probe.window,
+		    vt->good, vt->threshold, vt->window,
 		    vt->last, vt->avg, vt->resp_buf);
 		if (vt->backend != NULL && vt->backend->vsc != NULL)
 			vt->backend->vsc->happy = vt->happy;
@@ -188,7 +203,7 @@ vbp_reset(struct vbp_target *vt)
 #include "tbl/backend_poll.h"
 #undef BITMAP
 
-	for (u = 0; u < vt->probe.initial; u++) {
+	for (u = 0; u < vt->initial; u++) {
 		vbp_start_poke(vt);
 		vt->happy |= 1;
 		vbp_has_poked(vt);
@@ -213,9 +228,9 @@ vbp_poke(struct vbp_target *vt)
 	const struct suckaddr *sa;
 
 	t_start = t_now = VTIM_real();
-	t_end = t_start + vt->probe.timeout;
+	t_end = t_start + vt->timeout;
 
-	s = VBT_Open(vt->backend->tcp_pool, t_end - t_now, &sa);
+	s = VBT_Open(vt->tcp_pool, t_end - t_now, &sa);
 	if (s < 0) {
 		/* Got no connection: failed */
 		return;
@@ -293,7 +308,7 @@ vbp_poke(struct vbp_target *vt)
 
 	i = sscanf(vt->resp_buf, "HTTP/%*f %u %s", &resp, buf);
 
-	if ((i == 1 || i == 2) && resp == vt->probe.exp_status)
+	if ((i == 1 || i == 2) && resp == vt->exp_status)
 		vt->happy |= 1;
 }
 
@@ -317,12 +332,10 @@ vbp_task(struct worker *wrk, void *priv)
 	vbp_update_backend(vt);
 
 	Lck_Lock(&vbp_mtx);
-	if (vt->running < 0) {
-		free(vt->req);
-		FREE_OBJ(vt);
-	} else {
+	if (vt->running < 0)
+		vbp_delete(vt);
+	else
 		vt->running = 0;
-	}
 	Lck_Unlock(&vbp_mtx);
 }
 
@@ -350,7 +363,7 @@ vbp_thread(struct worker *wrk, void *priv)
 			} else {
 				binheap_delete(vbp_heap, vt->heap_idx);
 				vt->running = 1;
-				vt->due = now + vt->probe.interval;
+				vt->due = now + vt->interval;
 				binheap_insert(vbp_heap, vt);
 				nxt = 0.0;
 				break;
@@ -401,7 +414,7 @@ vbp_health_one(struct cli *cli, const struct vbp_target *vt)
 
 	VCLI_Out(cli,
 	    "  Current states  good: %2u threshold: %2u window: %2u\n",
-	    vt->good, vt->probe.threshold, vt->probe.window);
+	    vt->good, vt->threshold, vt->window);
 	VCLI_Out(cli,
 	    "  Average response time of good probes: %.6f\n", vt->avg);
 	VCLI_Out(cli,
@@ -423,7 +436,7 @@ VBP_Status(struct cli *cli, const struct backend *be, int details)
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 	vt = be->probe;
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
-	VCLI_Out(cli, "%d/%d", vt->good, vt->probe.window);
+	VCLI_Out(cli, "%d/%d", vt->good, vt->window);
 	if (details) {
 		VCLI_Out(cli, "\n");
 		vbp_health_one(cli, vt);
@@ -435,20 +448,21 @@ VBP_Status(struct cli *cli, const struct backend *be, int details)
  */
 
 static void
-vbp_build_req(struct vbp_target *vt, const char *hosthdr)
+vbp_build_req(struct vbp_target *vt, const struct vrt_backend_probe *vbp,
+    const struct backend *be)
 {
 	struct vsb *vsb;
 
 	vsb = VSB_new_auto();
 	AN(vsb);
 	VSB_clear(vsb);
-	if(vt->probe.request != NULL) {
-		VSB_cat(vsb, vt->probe.request);
+	if(vbp->request != NULL) {
+		VSB_cat(vsb, vbp->request);
 	} else {
 		VSB_printf(vsb, "GET %s HTTP/1.1\r\n",
-		    vt->probe.url != NULL ?  vt->probe.url : "/");
-		if (hosthdr != NULL)
-			VSB_printf(vsb, "Host: %s\r\n", hosthdr);
+		    vbp->url != NULL ?  vbp->url : "/");
+		if (be->hosthdr != NULL)
+			VSB_printf(vsb, "Host: %s\r\n", be->hosthdr);
 		VSB_printf(vsb, "Connection: close\r\n");
 		VSB_printf(vsb, "\r\n");
 	}
@@ -465,25 +479,29 @@ vbp_build_req(struct vbp_target *vt, const char *hosthdr)
  */
 
 static void
-vbp_set_defaults(struct vbp_target *vt)
+vbp_set_defaults(struct vbp_target *vt, const struct vrt_backend_probe *vp)
 {
 
-	if (vt->probe.timeout == 0.0)
-		vt->probe.timeout = 2.0;
-	if (vt->probe.interval == 0.0)
-		vt->probe.interval = 5.0;
-	if (vt->probe.window == 0)
-		vt->probe.window = 8;
-	if (vt->probe.threshold == 0)
-		vt->probe.threshold = 3;
-	if (vt->probe.exp_status == 0)
-		vt->probe.exp_status = 200;
+#define DN(x)	do { vt->x = vp->x; } while (0)
+	VRT_BACKEND_PROBE_HANDLE();
+#undef DN
 
-	if (vt->probe.initial == ~0U)
-		vt->probe.initial = vt->probe.threshold - 1;
+	if (vt->timeout == 0.0)
+		vt->timeout = 2.0;
+	if (vt->interval == 0.0)
+		vt->interval = 5.0;
+	if (vt->window == 0)
+		vt->window = 8;
+	if (vt->threshold == 0)
+		vt->threshold = 3;
+	if (vt->exp_status == 0)
+		vt->exp_status = 200;
 
-	if (vt->probe.initial > vt->probe.threshold)
-		vt->probe.initial = vt->probe.threshold;
+	if (vt->initial == ~0U)
+		vt->initial = vt->threshold - 1;
+
+	if (vt->initial > vt->threshold)
+		vt->initial = vt->threshold;
 }
 
 /*--------------------------------------------------------------------
@@ -520,27 +538,26 @@ VBP_Control(const struct backend *be, int enable)
  */
 
 void
-VBP_Insert(struct backend *b, const struct vrt_backend_probe *p,
-    const char *hosthdr)
+VBP_Insert(struct backend *b, const struct vrt_backend_probe *vp,
+    struct tcp_pool *tp)
 {
 	struct vbp_target *vt;
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-	CHECK_OBJ_NOTNULL(p, VRT_BACKEND_PROBE_MAGIC);
+	CHECK_OBJ_NOTNULL(vp, VRT_BACKEND_PROBE_MAGIC);
 
 	AZ(b->probe);
 
 	ALLOC_OBJ(vt, VBP_TARGET_MAGIC);
 	XXXAN(vt);
 
-	vt->probe = *p;
-	vbp_set_defaults(vt);
-
-	vbp_build_req(vt, hosthdr);
-
+	vt->tcp_pool = tp;
 	vt->backend = b;
 	b->probe = vt;
+
+	vbp_set_defaults(vt, vp);
+	vbp_build_req(vt, vp, b);
 
 	vbp_reset(vt);
 	vbp_update_backend(vt);
@@ -565,10 +582,8 @@ VBP_Remove(struct backend *be)
 		vt = NULL;
 	}
 	Lck_Unlock(&vbp_mtx);
-	if (vt != NULL) {
-		free(vt->req);
-		FREE_OBJ(vt);
-	}
+	if (vt != NULL)
+		vbp_delete(vt);
 }
 
 /*-------------------------------------------------------------------*/

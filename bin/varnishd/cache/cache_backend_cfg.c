@@ -100,7 +100,8 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 	VBE_fill_director(b);
 
 	if (vrt->probe != NULL)
-		VBP_Insert(b, vrt->probe, vrt->hosthdr);
+		VBP_Insert(b, vrt->probe,
+		    VBT_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr));
 
 	VCL_AddBackend(ctx->vcl, b);
 
