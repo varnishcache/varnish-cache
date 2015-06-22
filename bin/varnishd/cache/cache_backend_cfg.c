@@ -105,6 +105,8 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 	if (vrt->probe != NULL)
 		VBP_Insert(b, vrt->probe, vrt->hosthdr);
 
+	VCL_AddBackend(ctx->vcl, b);
+
 	return (b->director);
 }
 
@@ -149,12 +151,12 @@ VRT_delete_backend(VRT_CTX, struct director **dp)
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(dp);
-	AN(*dp);
-
 	d = *dp;
 	*dp = NULL;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
+
+	VCL_DelBackend(ctx->vcl, be);
 
 	if (be->probe != NULL)
 		VBP_Remove(be);

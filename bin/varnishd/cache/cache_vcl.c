@@ -39,6 +39,8 @@
 
 #include "cache.h"
 
+#include "cache_director.h"
+#include "cache_backend.h"
 #include "vcl.h"
 #include "vrt.h"
 #include "vcli.h"
@@ -59,6 +61,7 @@ struct vcl {
 	unsigned		busy;
 	unsigned		discard;
 	const char		*temp;
+	VTAILQ_HEAD(,backend)	backend_list;
 };
 
 /*
@@ -177,6 +180,29 @@ VCL_Rel(struct vcl **vcc)
 	 * We do not garbage collect discarded VCL's here, that happens
 	 * in VCL_Poll() which is called from the CLI thread.
 	 */
+	Lck_Unlock(&vcl_mtx);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VCL_AddBackend(struct vcl *vcl, struct backend *be)
+{
+
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
+	Lck_Lock(&vcl_mtx);
+	VTAILQ_INSERT_TAIL(&vcl->backend_list, be, vcl_list);
+	Lck_Unlock(&vcl_mtx);
+}
+
+void
+VCL_DelBackend(struct vcl *vcl, const struct backend *be)
+{
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
+	Lck_Lock(&vcl_mtx);
+	VTAILQ_REMOVE(&vcl->backend_list, be, vcl_list);
 	Lck_Unlock(&vcl_mtx);
 }
 
@@ -367,6 +393,7 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 
 	vcl->loaded_name = strdup(name);
 	XXXAN(vcl->loaded_name);
+	VTAILQ_INIT(&vcl->backend_list);
 
 	vcl->temp = vcl_temp_cold;
 

@@ -102,6 +102,7 @@ enum {
 
 struct VSC_C_lck;
 struct ban;
+struct backend;
 struct busyobj;
 struct cli;
 struct cli_proto;
@@ -1077,6 +1078,8 @@ void VCL_Poll(void);
 void VCL_Ref(struct vcl *);
 void VCL_Refresh(struct vcl **);
 void VCL_Rel(struct vcl **);
+void VCL_AddBackend(struct vcl *, struct backend *);
+void VCL_DelBackend(struct vcl *, const struct backend *);
 const char *VCL_Return_Name(unsigned);
 
 #define VCL_MET_MAC(l,u,b) \

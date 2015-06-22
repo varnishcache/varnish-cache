@@ -59,6 +59,7 @@ struct backend {
 #define BACKEND_MAGIC		0x64c4c7c6
 
 	VTAILQ_ENTRY(backend)	list;
+	VTAILQ_ENTRY(backend)	vcl_list;
 	int			refcount;
 	struct lock		mtx;
 
