@@ -241,6 +241,7 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 	}
 	Lck_Unlock(&backends_mtx);
 	VSB_delete(vsb);
+	VCL_Rel(&vcc);
 	return (found);
 }
 
