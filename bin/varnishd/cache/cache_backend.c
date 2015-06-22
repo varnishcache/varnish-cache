@@ -90,6 +90,7 @@ vbe_dir_getfd(struct worker *wrk, const struct director *d, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
+	AN(bp->vsc);
 	CAST_OBJ_NOTNULL(vrt, d->priv2, VRT_BACKEND_MAGIC);
 
 	if (!VBE_Healthy(bp, NULL)) {
