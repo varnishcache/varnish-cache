@@ -195,6 +195,20 @@ PARAM(
 	/* func */	NULL
 )
 
+PARAM(
+	/* name */	backend_idle_timeout,
+	/* tweak */	timeout,
+	/* min */	"1",
+	/* max */	NULL,
+	/* default */	"60",
+	/* units */	"seconds",
+	/* flags */	0,
+	/* s-text */
+	"Timeout before we close unused backend connections.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
 /**********************************************************************/
 #if 0 /* NOT YET */
 

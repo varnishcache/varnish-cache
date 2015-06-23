@@ -330,7 +330,7 @@ VCL_Name(const struct vcl *vcl)
 const struct vrt_backend_probe *
 VCL_DefaultProbe(const struct vcl *vcl)
 {
-	
+
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	return (vcl->conf->default_probe);
 }

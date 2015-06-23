@@ -60,7 +60,6 @@ struct tcp_pool {
 	struct lock		mtx;
 
 	struct waitfor		waitfor;
-	volatile double		timeout;
 
 	VTAILQ_HEAD(, vbc)	connlist;
 	int			n_conn;
@@ -165,10 +164,9 @@ VBT_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6)
 	VTAILQ_INIT(&tp->connlist);
 	VTAILQ_INIT(&tp->killlist);
 	VTAILQ_INSERT_HEAD(&pools, tp, list);
-	tp->timeout = 60;
 	INIT_OBJ(&tp->waitfor, WAITFOR_MAGIC);
 	tp->waitfor.func = tcp_handle;
-	tp->waitfor.tmo = &tp->timeout;
+	tp->waitfor.tmo = &cache_param->backend_idle_timeout;
 	return (tp);
 }
 
