@@ -370,7 +370,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	AZ(req->objcore);
 	if (lr == HSH_MISS) {
 		/* Found nothing */
-		VSLb(req->vsl, SLT_Debug, "XXXX MISS");
 		AZ(oc);
 		AN(boc);
 		AN(boc->flags & OC_F_BUSY);
