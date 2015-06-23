@@ -160,8 +160,6 @@ VBE_Delete(struct backend *be)
 	if (be->probe != NULL)
 		VBP_Remove(be);
 
-	free(be->director->vcl_name);
-
 	Lck_Lock(&backends_mtx);
 	VTAILQ_REMOVE(&backends, be, list);
 	VSC_C_main->n_backend--;
