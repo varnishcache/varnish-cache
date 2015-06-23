@@ -91,12 +91,14 @@ vcc_ProbeRedef(struct vcc *tl, struct token **t_did,
 }
 
 static void
-vcc_ParseProbeSpec(struct vcc *tl)
+vcc_ParseProbeSpec(struct vcc *tl, const struct token *nm, char **name)
 {
 	struct fld_spec *fs;
 	struct token *t_field;
 	struct token *t_did = NULL, *t_window = NULL, *t_threshold = NULL;
 	struct token *t_initial = NULL;
+	struct vsb *vsb;
+	char *retval;
 	unsigned window, threshold, initial, status;
 	double t;
 
@@ -113,12 +115,23 @@ vcc_ParseProbeSpec(struct vcc *tl)
 
 	SkipToken(tl, '{');
 
+	vsb = VSB_new_auto();
+	AN(vsb);
+	if (nm != NULL)
+		VSB_printf(vsb, "vgc_probe_%.*s", PF(nm));
+	else
+		VSB_printf(vsb, "vgc_probe__%d", tl->nprobe++);
+	AZ(VSB_finish(vsb));
+	retval = TlDup(tl, VSB_data(vsb));
+	VSB_delete(vsb);
+	if (name != NULL)
+		*name = retval;
+
 	window = 0;
 	threshold = 0;
 	initial = 0;
 	status = 0;
-	Fh(tl, 0, "static const struct vrt_backend_probe vgc_probe__%d = {\n",
-	    tl->nprobe++);
+	Fh(tl, 0, "static const struct vrt_backend_probe %s = {\n", retval);
 	Fh(tl, 0, "\t.magic = VRT_BACKEND_PROBE_MAGIC,\n");
 	while (tl->t->tok != '}') {
 
@@ -237,6 +250,7 @@ vcc_ParseProbe(struct vcc *tl)
 {
 	struct token *t_probe;
 	int i;
+	char *p;
 
 	vcc_NextToken(tl);		/* ID: probe */
 
@@ -250,9 +264,11 @@ vcc_ParseProbe(struct vcc *tl)
 		vcc_ErrWhere(tl, t_probe);
 	}
 
-	Fh(tl, 0, "\n#define vgc_probe_%.*s\tvgc_probe__%d\n",
-	    PF(t_probe), tl->nprobe);
-	vcc_ParseProbeSpec(tl);
+	vcc_ParseProbeSpec(tl, t_probe, &p);
+	if (vcc_IdIs(t_probe, "default")) {
+		vcc_AddRef(tl, t_probe, SYM_PROBE);
+		tl->default_probe = p;
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -271,6 +287,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	struct fld_spec *fs;
 	struct inifin *ifp;
 	struct vsb *vsb;
+	char *p;
 	unsigned u;
 	double t;
 
@@ -356,8 +373,8 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			SkipToken(tl, ';');
 			Fb(tl, 0, "\t.max_connections = %u,\n", u);
 		} else if (vcc_IdIs(t_field, "probe") && tl->t->tok == '{') {
-			Fb(tl, 0, "\t.probe = &vgc_probe__%d,\n", tl->nprobe);
-			vcc_ParseProbeSpec(tl);
+			vcc_ParseProbeSpec(tl, NULL, &p);
+			Fb(tl, 0, "\t.probe = &%s,\n", p);
 			ERRCHK(tl);
 		} else if (vcc_IdIs(t_field, "probe") && tl->t->tok == ID) {
 			Fb(tl, 0, "\t.probe = &vgc_probe_%.*s,\n", PF(tl->t));
@@ -444,7 +461,7 @@ vcc_ParseBackend(struct vcc *tl)
 	vcc_NextToken(tl);
 
 	sprintf(vgcname, "vgc_backend_%.*s", PF(t_be));
-	Fh(tl, 0, "static struct director *%s;\n", vgcname);
+	Fh(tl, 0, "\nstatic struct director *%s;\n", vgcname);
 
 	sym = VCC_GetSymbolTok(tl, t_be, SYM_BACKEND);
 	AN(sym);

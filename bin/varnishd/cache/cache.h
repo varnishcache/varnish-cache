@@ -1069,6 +1069,7 @@ void VRY_Finish(struct req *req, enum vry_finish_flag);
 
 /* cache_vcl.c */
 struct director *VCL_DefaultDirector(const struct vcl *);
+const struct vrt_backend_probe *VCL_DefaultProbe(const struct vcl *);
 void VCL_Init(void);
 const char *VCL_Method_Name(unsigned);
 const char *VCL_Name(const struct vcl *);

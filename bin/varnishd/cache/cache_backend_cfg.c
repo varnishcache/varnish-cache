@@ -59,6 +59,7 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 	struct backend *b;
 	char buf[128];
 	struct vcl *vcl;
+	const struct vrt_backend_probe *vbp;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
@@ -99,8 +100,11 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 
 	VBE_fill_director(b);
 
-	if (vrt->probe != NULL)
-		VBP_Insert(b, vrt->probe,
+	vbp = vrt->probe;
+	if (vbp == NULL)
+		vbp = VCL_DefaultProbe(vcl);
+	if (vbp != NULL)
+		VBP_Insert(b, vbp,
 		    VBT_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr));
 
 	VCL_AddBackend(ctx->vcl, b);

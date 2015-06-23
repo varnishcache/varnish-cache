@@ -198,6 +198,7 @@ struct vcc {
 
 	const char		*default_director;
 	struct token		*t_default_director;
+	const char		*default_probe;
 
 	unsigned		unique;
 

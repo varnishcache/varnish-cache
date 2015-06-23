@@ -1055,18 +1055,19 @@ fo.write("\n" + tbl40("#define VCL_RET_MAX", "%d\n" % n))
 
 fo.write("""
 struct VCL_conf {
-	unsigned	magic;
-#define VCL_CONF_MAGIC	0x7406c509	/* from /dev/random */
+	unsigned			magic;
+#define VCL_CONF_MAGIC			0x7406c509	/* from /dev/random */
 
-	struct director	**default_director;
-	unsigned	nref;
-	struct vrt_ref	*ref;
+	struct director			**default_director;
+	const struct vrt_backend_probe	*default_probe;
+	unsigned			nref;
+	struct vrt_ref			*ref;
 
-	unsigned	nsrc;
-	const char	**srcname;
-	const char	**srcbody;
+	unsigned			nsrc;
+	const char			**srcname;
+	const char			**srcbody;
 
-	vcl_event_f	*event_vcl;
+	vcl_event_f			*event_vcl;
 """)
 
 for i in returns:

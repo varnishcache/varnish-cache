@@ -312,18 +312,27 @@ VCL_TestLoad(const char *fn)
 /*--------------------------------------------------------------------*/
 
 struct director *
-VCL_DefaultDirector(const struct vcl *vcc)
+VCL_DefaultDirector(const struct vcl *vcl)
 {
 
-	AN(vcc);
-	return (*vcc->conf->default_director);
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	return (*vcl->conf->default_director);
 }
 
 const char *
-VCL_Name(const struct vcl *vcc)
+VCL_Name(const struct vcl *vcl)
 {
-	AN(vcc);
-	return (vcc->loaded_name);
+
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	return (vcl->loaded_name);
+}
+
+const struct vrt_backend_probe *
+VCL_DefaultProbe(const struct vcl *vcl)
+{
+	
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	return (vcl->conf->default_probe);
 }
 
 /*--------------------------------------------------------------------*/
