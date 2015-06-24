@@ -61,6 +61,8 @@ typedef void vdi_finish_f(const struct director *, struct worker *,
 typedef void vdi_http1pipe_f(const struct director *, struct req *,
     struct busyobj *);
 
+typedef void vdi_panic_f(const struct director *, struct vsb *);
+
 struct director {
 	unsigned		magic;
 #define DIRECTOR_MAGIC		0x3336351d
@@ -73,6 +75,7 @@ struct director {
 	vdi_getbody_f		*getbody;
 	vdi_getip_f		*getip;
 	vdi_finish_f		*finish;
+	vdi_panic_f		*panic;
 	void			*priv;
 	const void		*priv2;
 };
@@ -88,3 +91,4 @@ void VDI_Finish(struct worker *wrk, struct busyobj *bo);
 int VDI_Http1Pipe(struct req *, struct busyobj *);
 
 int VDI_Healthy(const struct director *, const struct busyobj *);
+void VDI_Panic(const struct director *, struct vsb *, const char *nm);

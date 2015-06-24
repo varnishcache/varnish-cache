@@ -277,6 +277,7 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 	int i;
 	struct backend *bp;
 
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
@@ -290,6 +291,36 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 		V1P_Process(req, bo, i, bp->vsc);
 		vbe_dir_finish(d, req->wrk, bo);
 	}
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+vbe_panic(const struct director *d, struct vsb *vsb)
+{
+	struct backend *bp;
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
+
+	VSB_printf(vsb, "      display_name = %s\n", bp->display_name);
+	if (bp->ipv4_addr != NULL)
+		VSB_printf(vsb, "      ipv4 = %s\n", bp->ipv4_addr);
+	if (bp->ipv6_addr != NULL)
+		VSB_printf(vsb, "      ipv6 = %s\n", bp->ipv6_addr);
+	VSB_printf(vsb, "      port = %s\n", bp->port);
+	VSB_printf(vsb, "      hosthdr = %s\n", bp->hosthdr);
+	VSB_printf(vsb, "      health=%s, admin_health=",
+	    bp->healthy ? "healthy" : "sick");
+	if (bp->admin_health == ah_probe)
+		VSB_printf(vsb, "probe");
+	else if (bp->admin_health == ah_sick)
+		VSB_printf(vsb, "sick");
+	else if (bp->admin_health == ah_healthy)
+		VSB_printf(vsb, "healthy");
+	else
+		VSB_printf(vsb, "*invalid*");
+	VSB_printf(vsb, ", changed=%.1f\n", bp->health_changed);
 }
 
 /*--------------------------------------------------------------------*/
@@ -312,4 +343,5 @@ VBE_fill_director(struct backend *be)
 	d->getbody = vbe_dir_getbody;
 	d->getip = vbe_dir_getip;
 	d->finish = vbe_dir_finish;
+	d->panic = vbe_panic;
 }

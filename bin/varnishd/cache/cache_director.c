@@ -178,3 +178,19 @@ VDI_Healthy(const struct director *d, const struct busyobj *bo)
 		return (1);
 	return (d->healthy(d, bo, NULL));
 }
+
+/* Dump panic info -----------------------------------------------------
+ */
+
+void
+VDI_Panic(const struct director *d, struct vsb *vsb, const char *nm)
+{
+	if (d == NULL)
+		return;
+	VSB_printf(vsb, "    %s = %p {\n", nm, d);
+	VSB_printf(vsb, "      vcl_name = %s\n", d->vcl_name);
+	VSB_printf(vsb, "      name = %s\n", d->name);
+	if (d->panic != NULL)
+		d->panic(d, vsb);
+	VSB_printf(vsb, "    }\n");
+}

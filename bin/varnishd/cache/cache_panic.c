@@ -46,7 +46,6 @@
 
 #include "vrt.h"
 #include "cache_director.h"
-#include "cache_backend.h"
 #include "storage/storage.h"
 #include "vcli_priv.h"
 
@@ -145,16 +144,12 @@ pan_ws(const struct ws *ws, int indent)
 /*--------------------------------------------------------------------*/
 
 static void
-pan_vbc(const struct vbc *vbc)
+pan_htc(const struct http_conn *htc)
 {
 
-	struct backend *be;
-
-	be = vbc->backend;
-
-	VSB_printf(pan_vsp, "  backend = %p fd = %d {\n", be, vbc->fd);
-	VSB_printf(pan_vsp, "    display_name = \"%s\",\n", be->display_name);
-	VSB_printf(pan_vsp, "  },\n");
+	VSB_printf(pan_vsp, "    http_conn = %p {\n", htc);
+	VSB_printf(pan_vsp, "      fd = %d,\n", htc->fd);
+	VSB_printf(pan_vsp, "    },\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -309,15 +304,15 @@ pan_busyobj(const struct busyobj *bo)
 
 	VSB_printf(pan_vsp, "  busyobj = %p {\n", bo);
 	pan_ws(bo->ws, 4);
-	VSB_printf(pan_vsp, "  refcnt = %u\n", bo->refcount);
-	VSB_printf(pan_vsp, "  retries = %d\n", bo->retries);
-	VSB_printf(pan_vsp, "  failed = %d\n", bo->vfc->failed);
-	VSB_printf(pan_vsp, "  state = %d\n", (int)bo->state);
-	VSB_printf(pan_vsp, "  flags = {\n");
-#define BO_FLAG(l, r, w, d) if(bo->l) VSB_printf(pan_vsp, "    " #l "\n");
+	VSB_printf(pan_vsp, "    refcnt = %u\n", bo->refcount);
+	VSB_printf(pan_vsp, "    retries = %d\n", bo->retries);
+	VSB_printf(pan_vsp, "    failed = %d\n", bo->vfc->failed);
+	VSB_printf(pan_vsp, "    state = %d\n", (int)bo->state);
+	VSB_printf(pan_vsp, "    flags = {\n");
+#define BO_FLAG(l, r, w, d) if(bo->l) VSB_printf(pan_vsp, "      " #l "\n");
 #include "tbl/bo_flags.h"
 #undef BO_FLAG
-	VSB_printf(pan_vsp, "  }\n");
+	VSB_printf(pan_vsp, "    }\n");
 
 	if (bo->htc != NULL) {
 		VSB_printf(pan_vsp, "    bodystatus = %d (%s),\n",
@@ -331,11 +326,14 @@ pan_busyobj(const struct busyobj *bo)
 			    vfe->vfp->name, (int)vfe->closed);
 		VSB_printf(pan_vsp, "\n");
 	}
-	VSB_printf(pan_vsp, "    },\n");
 
-	if (bo->htc != NULL && bo->htc->vbc != NULL &&
-	    VALID_OBJ(bo->htc->vbc, BACKEND_MAGIC))
-		pan_vbc(bo->htc->vbc);
+	if (VALID_OBJ(bo->htc, HTTP_CONN_MAGIC))
+		pan_htc(bo->htc);
+	VDI_Panic(bo->director_req, pan_vsp, "director_req");
+	if (bo->director_resp == bo->director_req)
+		VSB_printf(pan_vsp, "    director_resp = director_req\n");
+	else
+		VDI_Panic(bo->director_resp, pan_vsp, "director_resp");
 	if (bo->bereq != NULL && bo->bereq->ws != NULL)
 		pan_http("bereq", bo->bereq, 4);
 	if (bo->beresp != NULL && bo->beresp->ws != NULL)
