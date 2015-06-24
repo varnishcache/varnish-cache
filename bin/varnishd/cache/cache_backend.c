@@ -205,6 +205,14 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
+	/*
+	 * Now that we know our backend, we can set a default Host:
+	 * header if one is necessary.  This cannot be done in the VCL
+	 * because the backend may be chosen by a director.
+	 */
+	if (!http_GetHdr(bo->bereq, H_Host, NULL) && bp->hosthdr != NULL)
+		http_PrintfHeader(bo->bereq, "Host: %s", bp->hosthdr);
+
 	do {
 		i = vbe_dir_getfd(wrk, bp, bo);
 		if (i < 0) {
@@ -215,7 +223,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		if (bo->htc->vbc->state != VBC_STATE_STOLEN)
 			extrachance = 0;
 
-		i = V1F_SendReq(wrk, bo, bp->hosthdr);
+		i = V1F_SendReq(wrk, bo);
 
 		if (bo->htc->vbc->state != VBC_STATE_USED)
 			VBT_Wait(wrk, bo->htc->vbc);

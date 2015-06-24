@@ -75,7 +75,7 @@ vbf_iter_req_body(struct req *req, void *priv, void *ptr, size_t l)
  */
 
 int
-V1F_SendReq(struct worker *wrk, struct busyobj *bo, const char *def_host)
+V1F_SendReq(struct worker *wrk, struct busyobj *bo)
 {
 	struct http *hp;
 	int j;
@@ -90,14 +90,6 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, const char *def_host)
 
 	htc = bo->htc;
 	hp = bo->bereq;
-
-	/*
-	 * Now that we know our backend, we can set a default Host:
-	 * header if one is necessary.  This cannot be done in the VCL
-	 * because the backend may be chosen by a director.
-	 */
-	if (!http_GetHdr(bo->bereq, H_Host, NULL) && def_host != NULL)
-		http_PrintfHeader(hp, "Host: %s", def_host);
 
 	if (bo->req != NULL &&
 	    bo->req->req_body_status == REQ_BODY_WITHOUT_LEN) {
