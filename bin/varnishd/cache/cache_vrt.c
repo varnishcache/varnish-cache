@@ -53,8 +53,6 @@ VRT_error(VRT_CTX, unsigned code, const char *reason)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	VSLb(ctx->vsl, SLT_Debug, "VCL_error(%u, %s)", code,
-	    reason ?  reason : "(null)");
 	if (code < 100 || code > 999)
 		code = 503;
 	ctx->req->err_code = (uint16_t)code;
