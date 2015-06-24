@@ -48,7 +48,7 @@ const void * const vrt_magic_string_unset = &vrt_magic_string_unset;
 /*--------------------------------------------------------------------*/
 
 void
-VRT_error(VRT_CTX, unsigned code, const char *reason)
+VRT_synth(VRT_CTX, unsigned code, const char *reason)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);

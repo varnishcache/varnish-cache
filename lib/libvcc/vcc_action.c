@@ -324,7 +324,7 @@ parse_return(struct vcc *tl)
 		}
 		ExpectErr(tl, '(');
 		vcc_NextToken(tl);
-		Fb(tl, 1, "VRT_error(ctx,\n");
+		Fb(tl, 1, "VRT_synth(ctx,\n");
 		tl->indent += INDENT;
 		vcc_Expr(tl, INT);
 		ERRCHK(tl);
