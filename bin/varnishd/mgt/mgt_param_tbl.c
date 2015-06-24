@@ -435,8 +435,8 @@ struct parspec mgt_parspec[] = {
 		NULL },
 	{ "vcl_cooldown", tweak_timeout, &mgt_param.vcl_cooldown,
 		"0", NULL,
-		"How long time a VCL is kept warm after being replaced as the"
-		" active VCL.  (Granularity approximately 30 seconds.)",
+		"How long a VCL is kept warm after being replaced as the"
+		" active VCL (granularity approximately 30 seconds).",
 		0,
 		"600", "seconds" },
 	{ "vcc_err_unref", tweak_bool, &mgt_vcc_err_unref,
