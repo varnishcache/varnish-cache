@@ -401,11 +401,13 @@ VBT_Wait(struct worker *wrk, const struct vbc *vbc)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
+	CHECK_OBJ_NOTNULL(vbc->backend, BACKEND_MAGIC);
 	tp = vbc->tcp_pool;
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
 	assert(vbc->wrk == wrk);
 	Lck_Lock(&tp->mtx);
 	while (vbc->state == VBC_STATE_STOLEN)
 		AZ(Lck_CondWait(&wrk->cond, &tp->mtx, 0));
+	assert(vbc->state == VBC_STATE_USED);
 	Lck_Unlock(&tp->mtx);
 }

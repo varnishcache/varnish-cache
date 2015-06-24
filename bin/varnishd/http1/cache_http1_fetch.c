@@ -80,7 +80,6 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 {
 	struct http *hp;
 	enum htc_status_e hs;
-	int retry = 1;
 	int j, first;
 	ssize_t i;
 	struct http_conn *htc;
@@ -120,14 +119,12 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 			V1L_Chunked(wrk);
 		i = VRB_Iterate(bo->req, vbf_iter_req_body, bo);
 
-		if (bo->req->req_body_status == REQ_BODY_TAKEN) {
-			retry = -1;
-		} else if (bo->req->req_body_status == REQ_BODY_FAIL) {
+		if (bo->req->req_body_status == REQ_BODY_FAIL) {
+			assert(i < 0);
 			VSLb(bo->vsl, SLT_FetchError,
 			    "req.body read error: %d (%s)",
 			    errno, strerror(errno));
 			bo->req->doclose = SC_RX_BODY;
-			retry = -1;
 		}
 		if (do_chunked)
 			V1L_EndChunk(wrk);
@@ -139,7 +136,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 		    errno, strerror(errno));
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 		bo->doclose = SC_TX_ERROR;
-		return (retry);
+		return (1);
 	}
 	VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 
@@ -181,10 +178,9 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 			VSLb(bo->vsl, SLT_FetchError, "http %sread error: EOF",
 			    first ? "first " : "");
 			bo->doclose = SC_RX_TIMEOUT;
-			return (retry);
+			return (first ? 1 : -1);
 		}
 		if (first) {
-			retry = -1;
 			first = 0;
 			VTCP_set_read_timeout(htc->fd,
 			    htc->between_bytes_timeout);

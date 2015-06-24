@@ -169,8 +169,12 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
+	CHECK_OBJ_ORNULL(bo->htc->vbc, VBC_MAGIC);
 	if (bo->htc->vbc == NULL)
 		return;
+	if (bo->htc->vbc->state != VBC_STATE_USED)
+		VBT_Wait(wrk, bo->htc->vbc);
+	CHECK_OBJ_NOTNULL(bo->htc->vbc->backend, BACKEND_MAGIC);
 	bo->htc->vbc->backend = NULL;
 	if (bo->doclose != SC_NULL) {
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s", bo->htc->vbc->fd,
@@ -196,7 +200,7 @@ static int __match_proto__(vdi_gethdrs_f)
 vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
 {
-	int i, extrachance = 0;
+	int i, extrachance = 1;
 	struct backend *bp;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
@@ -204,43 +208,38 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
-	i = vbe_dir_getfd(wrk, d, bo);
-	if (i < 0) {
-		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
-		return (-1);
-	}
-	AN(bo->htc);
-	if (bo->htc->vbc->state == VBC_STATE_STOLEN)
-		extrachance = 1;
-
-	i = V1F_fetch_hdr(wrk, bo, bp->hosthdr);
-	/*
-	 * If we recycle a backend connection, there is a finite chance
-	 * that the backend closed it before we get a request to it.
-	 * Do a single retry in that case.
-	 */
-	if (i == 1 && extrachance) {
-		vbe_dir_finish(d, wrk, bo);
-		AZ(bo->htc);
-		VSC_C_main->backend_retry++;
-		bo->doclose = SC_NULL;
+	do {
 		i = vbe_dir_getfd(wrk, d, bo);
 		if (i < 0) {
 			VSLb(bo->vsl, SLT_FetchError, "no backend connection");
-			bo->htc = NULL;
 			return (-1);
 		}
 		AN(bo->htc);
+		if (bo->htc->vbc->state != VBC_STATE_STOLEN)
+			extrachance = 0;
+
 		i = V1F_fetch_hdr(wrk, bo, bp->hosthdr);
-	}
-	if (i != 0) {
+		/*
+		 * If we recycled a backend connection, there is a finite chance
+		 * that the backend closed it before we got the bereq to it.
+		 * In that case do a single automatic retry if req.boy allows.
+		 */
+		if (i == 0) {
+			AN(bo->htc->vbc);
+			return (0);
+		}
 		vbe_dir_finish(d, wrk, bo);
-		bo->doclose = SC_NULL;
 		AZ(bo->htc);
-	} else {
-		AN(bo->htc->vbc);
-	}
-	return (i);
+		if (i < 0)
+			break;
+		if (bo->req != NULL &&
+		    bo->req->req_body_status != REQ_BODY_NONE &&
+		    bo->req->req_body_status != REQ_BODY_CACHED)
+			break;
+		VSC_C_main->backend_retry++;
+		bo->doclose = SC_NULL;
+	} while (extrachance);
+	return (-1);
 }
 
 static int __match_proto__(vdi_getbody_f)
