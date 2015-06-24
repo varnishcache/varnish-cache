@@ -28,7 +28,8 @@
  */
 
 /* cache_http1_fetch.c [V1F] */
-int V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host);
+int V1F_SendReq(struct worker *, struct busyobj *, const char *def_host);
+int V1F_FetchRespHdr(struct busyobj *);
 void V1F_Setup_Fetch(struct vfp_ctx *vfc, struct http_conn *htc);
 
 /* cache_http1_fsm.c [HTTP1] */

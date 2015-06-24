@@ -215,7 +215,16 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		if (bo->htc->vbc->state != VBC_STATE_STOLEN)
 			extrachance = 0;
 
-		i = V1F_fetch_hdr(wrk, bo, bp->hosthdr);
+		i = V1F_SendReq(wrk, bo, bp->hosthdr);
+
+		if (bo->htc->vbc->state != VBC_STATE_USED)
+			VBT_Wait(wrk, bo->htc->vbc);
+
+		assert(bo->htc->vbc->state == VBC_STATE_USED);
+
+		if (!i)
+			i = V1F_FetchRespHdr(bo);
+
 		/*
 		 * If we recycled a backend connection, there is a finite chance
 		 * that the backend closed it before we got the bereq to it.

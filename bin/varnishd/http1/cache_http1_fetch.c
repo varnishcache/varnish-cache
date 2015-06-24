@@ -67,21 +67,18 @@ vbf_iter_req_body(struct req *req, void *priv, void *ptr, size_t l)
 }
 
 /*--------------------------------------------------------------------
- * Send request, and receive the HTTP protocol response, but not the
- * response body.
+ * Send request to backend, including any req.body
  *
  * Return value:
- *	-1 failure, not retryable
  *	 0 success
- *	 1 failure which can be retried.
+ *	 1 failure
  */
 
 int
-V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
+V1F_SendReq(struct worker *wrk, struct busyobj *bo, const char *def_host)
 {
 	struct http *hp;
-	enum htc_status_e hs;
-	int j, first;
+	int j;
 	ssize_t i;
 	struct http_conn *htc;
 	int do_chunked = 0;
@@ -140,15 +137,27 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 		return (1);
 	}
 	VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
+	return (0);
+}
+
+int
+V1F_FetchRespHdr(struct busyobj *bo)
+{
+
+	struct http *hp;
+	enum htc_status_e hs;
+	int first;
+	struct http_conn *htc;
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
+	CHECK_OBJ_ORNULL(bo->req, REQ_MAGIC);
+
+	htc = bo->htc;
 
 	VSC_C_main->backend_req++;
 
 	/* Receive response */
-
-	if (htc->vbc->state != VBC_STATE_USED)
-		VBT_Wait(wrk, htc->vbc);
-
-	assert(htc->vbc->state == VBC_STATE_USED);
 
 	SES_RxInit(htc, bo->ws, cache_param->http_resp_size,
 	    cache_param->http_resp_hdr_len);
