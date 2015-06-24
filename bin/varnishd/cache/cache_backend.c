@@ -77,19 +77,17 @@ VBE_Healthy(const struct backend *backend, double *changed)
  * Get a connection to the backend
  */
 
-static int __match_proto__(vdi_getfd_f)
-vbe_dir_getfd(struct worker *wrk, const struct director *d, struct busyobj *bo)
+static int
+vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 {
 	struct vbc *vc;
-	struct backend *bp;
 	double tmod;
 	char abuf1[VTCP_ADDRBUFSIZE], abuf2[VTCP_ADDRBUFSIZE];
 	char pbuf1[VTCP_PORTBUFSIZE], pbuf2[VTCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 	AN(bp->vsc);
 
 	if (!VBE_Healthy(bp, NULL)) {
@@ -210,7 +208,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
 	do {
-		i = vbe_dir_getfd(wrk, d, bo);
+		i = vbe_dir_getfd(wrk, bp, bo);
 		if (i < 0) {
 			VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 			return (-1);
@@ -277,17 +275,19 @@ static void
 vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 {
 	int i;
+	struct backend *bp;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
-	i = vbe_dir_getfd(req->wrk, d, bo);
+	i = vbe_dir_getfd(req->wrk, bp, bo);
 	if (i < 0) {
 		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 		SES_Close(req->sp, SC_RX_TIMEOUT);
 		return;
 	} else {
-		V1P_Process(req, bo, i);
+		V1P_Process(req, bo, i, bp->vsc);
 		vbe_dir_finish(d, req->wrk, bo);
 	}
 }
