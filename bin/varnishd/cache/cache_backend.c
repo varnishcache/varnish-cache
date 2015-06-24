@@ -119,7 +119,6 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	}
 
 	assert(vc->fd >= 0);
-	vc->backend = bp;
 	AN(vc->addr);
 
 	Lck_Lock(&bp->mtx);
@@ -173,8 +172,6 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 		return;
 	if (bo->htc->vbc->state != VBC_STATE_USED)
 		VBT_Wait(wrk, bo->htc->vbc);
-	CHECK_OBJ_NOTNULL(bo->htc->vbc->backend, BACKEND_MAGIC);
-	bo->htc->vbc->backend = NULL;
 	if (bo->htc->doclose != SC_NULL) {
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s", bo->htc->vbc->fd,
 		    bp->display_name);

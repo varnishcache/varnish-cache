@@ -95,7 +95,6 @@ tcp_handle(struct waited *w, enum wait_event ev, double now)
 	case VBC_STATE_STOLEN:
 		vbc->state = VBC_STATE_USED;
 		VTAILQ_REMOVE(&tp->connlist, vbc, list);
-		CHECK_OBJ_NOTNULL(vbc->backend, BACKEND_MAGIC);
 		AN(vbc->cond);
 		AZ(pthread_cond_signal(vbc->cond));
 		break;
@@ -262,7 +261,6 @@ VBT_Recycle(const struct worker *wrk, struct tcp_pool *tp, struct vbc **vbcp)
 
 	assert(vbc->state == VBC_STATE_USED);
 	assert(vbc->fd > 0);
-	AZ(vbc->backend);
 
 	Lck_Lock(&tp->mtx);
 	tp->n_used--;
@@ -321,7 +319,6 @@ VBT_Close(struct tcp_pool *tp, struct vbc **vbcp)
 
 	assert(vbc->state == VBC_STATE_USED);
 	assert(vbc->fd > 0);
-	AZ(vbc->backend);
 
 	Lck_Lock(&tp->mtx);
 	tp->n_used--;
@@ -344,7 +341,8 @@ VBT_Close(struct tcp_pool *tp, struct vbc **vbcp)
  */
 
 struct vbc *
-VBT_Get(struct tcp_pool *tp, double tmo, struct backend *be, struct worker *wrk)
+VBT_Get(struct tcp_pool *tp, double tmo, const struct backend *be,
+    struct worker *wrk)
 {
 	struct vbc *vbc;
 
@@ -355,7 +353,7 @@ VBT_Get(struct tcp_pool *tp, double tmo, struct backend *be, struct worker *wrk)
 	Lck_Lock(&tp->mtx);
 	vbc = VTAILQ_FIRST(&tp->connlist);
 	CHECK_OBJ_ORNULL(vbc, VBC_MAGIC);
-	if (vbc == NULL || vbc->backend != NULL)
+	if (vbc == NULL || vbc->state == VBC_STATE_STOLEN)
 		vbc = NULL;
 	else {
 		assert(vbc->tcp_pool == tp);
@@ -365,7 +363,6 @@ VBT_Get(struct tcp_pool *tp, double tmo, struct backend *be, struct worker *wrk)
 		tp->n_conn--;
 		VSC_C_main->backend_reuse += 1;
 		vbc->state = VBC_STATE_STOLEN;
-		vbc->backend = be;
 		vbc->cond = &wrk->cond;
 	}
 	tp->n_used++;			// Opening mostly works
@@ -379,7 +376,6 @@ VBT_Get(struct tcp_pool *tp, double tmo, struct backend *be, struct worker *wrk)
 	INIT_OBJ(vbc->waited, WAITED_MAGIC);
 	vbc->state = VBC_STATE_USED;
 	vbc->tcp_pool = tp;
-	vbc->backend = be;
 	vbc->fd = VBT_Open(tp, tmo, &vbc->addr);
 	if (vbc->fd < 0)
 		FREE_OBJ(vbc);
@@ -401,7 +397,6 @@ VBT_Wait(struct worker *wrk, struct vbc *vbc)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
-	CHECK_OBJ_NOTNULL(vbc->backend, BACKEND_MAGIC);
 	tp = vbc->tcp_pool;
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
 	assert(vbc->cond == &wrk->cond);
