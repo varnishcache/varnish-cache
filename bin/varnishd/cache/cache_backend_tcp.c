@@ -96,8 +96,8 @@ tcp_handle(struct waited *w, enum wait_event ev, double now)
 		vbc->state = VBC_STATE_USED;
 		VTAILQ_REMOVE(&tp->connlist, vbc, list);
 		CHECK_OBJ_NOTNULL(vbc->backend, BACKEND_MAGIC);
-		CHECK_OBJ_NOTNULL(vbc->wrk, WORKER_MAGIC);
-		AZ(pthread_cond_signal(&vbc->wrk->cond));
+		AN(vbc->cond);
+		AZ(pthread_cond_signal(vbc->cond));
 		break;
 	case VBC_STATE_AVAIL:
 		VTCP_close(&vbc->fd);
@@ -366,7 +366,7 @@ VBT_Get(struct tcp_pool *tp, double tmo, struct backend *be, struct worker *wrk)
 		VSC_C_main->backend_reuse += 1;
 		vbc->state = VBC_STATE_STOLEN;
 		vbc->backend = be;
-		vbc->wrk = wrk;
+		vbc->cond = &wrk->cond;
 	}
 	tp->n_used++;			// Opening mostly works
 	Lck_Unlock(&tp->mtx);
@@ -395,7 +395,7 @@ VBT_Get(struct tcp_pool *tp, double tmo, struct backend *be, struct worker *wrk)
  */
 
 void
-VBT_Wait(struct worker *wrk, const struct vbc *vbc)
+VBT_Wait(struct worker *wrk, struct vbc *vbc)
 {
 	struct tcp_pool *tp;
 
@@ -404,10 +404,11 @@ VBT_Wait(struct worker *wrk, const struct vbc *vbc)
 	CHECK_OBJ_NOTNULL(vbc->backend, BACKEND_MAGIC);
 	tp = vbc->tcp_pool;
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
-	assert(vbc->wrk == wrk);
+	assert(vbc->cond == &wrk->cond);
 	Lck_Lock(&tp->mtx);
 	while (vbc->state == VBC_STATE_STOLEN)
 		AZ(Lck_CondWait(&wrk->cond, &tp->mtx, 0));
 	assert(vbc->state == VBC_STATE_USED);
+	vbc->cond = NULL;
 	Lck_Unlock(&tp->mtx);
 }

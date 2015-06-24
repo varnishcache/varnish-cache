@@ -100,7 +100,7 @@ struct vbc {
 	struct tcp_pool		*tcp_pool;
 
 	struct backend		*backend;
-	struct worker		*wrk;
+	pthread_cond_t		*cond;
 };
 
 /* cache_backend.c */
@@ -128,5 +128,5 @@ void VBT_Recycle(const struct worker *, struct tcp_pool *, struct vbc **);
 void VBT_Close(struct tcp_pool *tp, struct vbc **vbc);
 struct vbc *VBT_Get(struct tcp_pool *, double tmo, struct backend *,
     struct worker *);
-void VBT_Wait(struct worker *wrk, const struct vbc *vbc);
+void VBT_Wait(struct worker *, struct vbc *);
 
