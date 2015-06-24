@@ -76,6 +76,7 @@ static void
 pipecharge(struct req *req, const struct acct_pipe *a, struct VSC_C_vbe *b)
 {
 
+	AN(b);
 	VSLb(req->vsl, SLT_PipeAcct, "%ju %ju %ju %ju",
 	    (uintmax_t)a->req,
 	    (uintmax_t)a->bereq,
@@ -86,16 +87,14 @@ pipecharge(struct req *req, const struct acct_pipe *a, struct VSC_C_vbe *b)
 	VSC_C_main->s_pipe_hdrbytes += a->req;
 	VSC_C_main->s_pipe_in += a->in;
 	VSC_C_main->s_pipe_out += a->out;
-	if (b != NULL) {
-		b->pipe_hdrbytes += a->bereq;
-		b->pipe_out += a->in;
-		b->pipe_in += a->out;
-	}
+	b->pipe_hdrbytes += a->bereq;
+	b->pipe_out += a->in;
+	b->pipe_in += a->out;
 	Lck_Unlock(&pipestat_mtx);
 }
 
 void
-V1P_Process(struct req *req, struct busyobj *bo, int fd)
+V1P_Process(struct req *req, struct busyobj *bo, int fd, struct VSC_C_vbe *vsc)
 {
 	struct worker *wrk;
 	struct pollfd fds[2];
@@ -170,7 +169,7 @@ V1P_Process(struct req *req, struct busyobj *bo, int fd)
 		}
 	}
 	VSLb_ts_req(req, "PipeSess", W_TIM_real(wrk));
-	pipecharge(req, &acct_pipe, bo->htc->vbc->backend->vsc);
+	pipecharge(req, &acct_pipe, vsc);
 	SES_Close(req->sp, SC_TX_PIPE);
 	bo->htc->doclose = SC_TX_PIPE;
 }

@@ -723,7 +723,7 @@ vtr_deliver_f V1D_Deliver;
 
 /* cache_http1_pipe.c */
 void V1P_Init(void);
-void V1P_Process(struct req *req, struct busyobj *bo, int fd);
+void V1P_Process(struct req *, struct busyobj *, int fd, struct VSC_C_vbe *);
 
 /* cache_req_body.c */
 int VRB_Ignore(struct req *req);
