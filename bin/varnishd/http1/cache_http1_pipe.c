@@ -172,7 +172,7 @@ V1P_Process(struct req *req, struct busyobj *bo, int fd)
 	VSLb_ts_req(req, "PipeSess", W_TIM_real(wrk));
 	pipecharge(req, &acct_pipe, bo->htc->vbc->backend->vsc);
 	SES_Close(req->sp, SC_TX_PIPE);
-	bo->doclose = SC_TX_PIPE;
+	bo->htc->doclose = SC_TX_PIPE;
 }
 
 /*--------------------------------------------------------------------*/

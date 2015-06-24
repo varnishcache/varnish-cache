@@ -109,6 +109,7 @@ vbe_dir_getfd(struct worker *wrk, const struct director *d, struct busyobj *bo)
 	if (bo->htc == NULL)
 		/* XXX: counter ? */
 		return (-1);
+	bo->htc->doclose = SC_NULL;
 
 	FIND_TMO(connect_timeout, tmod, bo, bp);
 	vc = VBT_Get(bp->tcp_pool, tmod, bp, wrk);
@@ -176,7 +177,7 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 		VBT_Wait(wrk, bo->htc->vbc);
 	CHECK_OBJ_NOTNULL(bo->htc->vbc->backend, BACKEND_MAGIC);
 	bo->htc->vbc->backend = NULL;
-	if (bo->doclose != SC_NULL) {
+	if (bo->htc->doclose != SC_NULL) {
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s", bo->htc->vbc->fd,
 		    bp->display_name);
 		VBT_Close(bp->tcp_pool, &bo->htc->vbc);
@@ -237,7 +238,6 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		    bo->req->req_body_status != REQ_BODY_CACHED)
 			break;
 		VSC_C_main->backend_retry++;
-		bo->doclose = SC_NULL;
 	} while (extrachance);
 	return (-1);
 }

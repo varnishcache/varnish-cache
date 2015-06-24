@@ -225,6 +225,7 @@ struct http_conn {
 #define HTTP_CONN_MAGIC		0x3e19edd1
 
 	int			fd;
+	enum sess_close		doclose;
 	unsigned		maxbytes;
 	unsigned		maxhdr;
 	struct ws		*ws;
@@ -480,8 +481,6 @@ struct busyobj {
 	struct http_conn	*htc;
 
 	struct pool_task	fetch_task;
-
-	enum sess_close		doclose;
 
 #define BO_FLAG(l, r, w, d) unsigned	l:1;
 #include "tbl/bo_flags.h"

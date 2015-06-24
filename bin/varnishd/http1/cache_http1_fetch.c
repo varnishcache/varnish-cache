@@ -135,7 +135,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
 		    errno, strerror(errno));
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
-		bo->doclose = SC_TX_ERROR;
+		htc->doclose = SC_TX_ERROR;
 		return (1);
 	}
 	VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
@@ -168,7 +168,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 			VSLb(bo->vsl, SLT_FetchError,
 			    "http %sread error: overflow",
 			    first ? "first " : "");
-			bo->doclose = SC_RX_OVERFLOW;
+			htc->doclose = SC_RX_OVERFLOW;
 			return (-1);
 		}
 		if (hs == HTC_S_EOF) {
@@ -177,7 +177,7 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 			    htc->rxbuf_e - htc->rxbuf_b;
 			VSLb(bo->vsl, SLT_FetchError, "http %sread error: EOF",
 			    first ? "first " : "");
-			bo->doclose = SC_RX_TIMEOUT;
+			htc->doclose = SC_RX_TIMEOUT;
 			return (first ? 1 : -1);
 		}
 		if (first) {
@@ -192,11 +192,11 @@ V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host)
 
 	if (HTTP1_DissectResponse(hp, htc)) {
 		VSLb(bo->vsl, SLT_FetchError, "http format error");
-		bo->doclose = SC_RX_JUNK;
+		htc->doclose = SC_RX_JUNK;
 		return (-1);
 	}
 
-	bo->doclose = http_DoConnection(hp);
+	htc->doclose = http_DoConnection(hp);
 
 	return (0);
 }

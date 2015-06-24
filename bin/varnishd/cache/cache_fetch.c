@@ -169,7 +169,6 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo->req, REQ_MAGIC);
 
 	assert(bo->state == BOS_INVALID);
-	assert(bo->doclose == SC_NULL);
 	AZ(bo->storage_hint);
 
 	HTTP_Setup(bo->bereq0, bo->ws, bo->vsl, SLT_BereqMethod);
@@ -228,7 +227,6 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 
 	/* VDI_Finish must have been called before */
 	assert(bo->director_state == DIR_S_NULL);
-	bo->doclose = SC_NULL;
 
 	/* reset other bo attributes - See VBO_GetBusyObj */
 	bo->storage_hint = NULL;
@@ -261,7 +259,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	assert(bo->doclose == SC_NULL);
 	AZ(bo->storage_hint);
 
 	if (bo->do_pass)
@@ -372,7 +369,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	}
 
 	if (bo->htc->body_status == BS_ERROR) {
-		bo->doclose = SC_RX_BODY;
+		bo->htc->doclose = SC_RX_BODY;
 		VDI_Finish(bo->wrk, bo);
 		VSLb(bo->vsl, SLT_Error, "Body cannot be fetched");
 		assert(bo->director_state == DIR_S_NULL);
@@ -414,7 +411,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 			 */
 			VSLb(bo->vsl, SLT_Error,
 			    "304 response but not conditional fetch");
-			bo->doclose = SC_RX_BAD;
+			bo->htc->doclose = SC_RX_BAD;
 			VDI_Finish(bo->wrk, bo);
 			return (F_STP_FAIL);
 		}
@@ -429,14 +426,14 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, NULL);
 
 	if (wrk->handling == VCL_RET_ABANDON) {
-		bo->doclose = SC_RESP_CLOSE;
+		bo->htc->doclose = SC_RESP_CLOSE;
 		VDI_Finish(bo->wrk, bo);
 		return (F_STP_FAIL);
 	}
 
 	if (wrk->handling == VCL_RET_RETRY) {
 		if (bo->htc->body_status != BS_NONE)
-			bo->doclose = SC_RESP_CLOSE;
+			bo->htc->doclose = SC_RESP_CLOSE;
 		if (bo->director_state != DIR_S_NULL)
 			VDI_Finish(bo->wrk, bo);
 
@@ -494,14 +491,14 @@ vbf_fetch_body_helper(struct busyobj *bo)
 			VSLb(vfc->wrk->vsl, SLT_FetchError,
 			    "Pass delivery abandoned");
 			vfps = VFP_END;
-			bo->doclose = SC_RX_BODY;
+			bo->htc->doclose = SC_RX_BODY;
 			break;
 		}
 		AZ(vfc->failed);
 		l = est;
 		assert(l >= 0);
 		if (VFP_GetStorage(vfc, &l, &ptr) != VFP_OK) {
-			bo->doclose = SC_RX_BODY;
+			bo->htc->doclose = SC_RX_BODY;
 			break;
 		}
 
@@ -522,7 +519,7 @@ vbf_fetch_body_helper(struct busyobj *bo)
 	if (vfps == VFP_ERROR) {
 		AN(vfc->failed);
 		(void)VFP_Error(vfc, "Fetch pipeline failed to process");
-		bo->doclose = SC_RX_BODY;
+		bo->htc->doclose = SC_RX_BODY;
 	}
 
 	if (!bo->do_stream)
@@ -612,14 +609,14 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (VFP_Open(bo->vfc)) {
 		(void)VFP_Error(bo->vfc, "Fetch pipeline failed to open");
-		bo->doclose = SC_RX_BODY;
+		bo->htc->doclose = SC_RX_BODY;
 		VDI_Finish(bo->wrk, bo);
 		return (F_STP_ERROR);
 	}
 
 	if (vbf_beresp2obj(bo)) {
 		(void)VFP_Error(bo->vfc, "Could not get storage");
-		bo->doclose = SC_RX_BODY;
+		bo->htc->doclose = SC_RX_BODY;
 		VDI_Finish(bo->wrk, bo);
 		return (F_STP_ERROR);
 	}
@@ -809,9 +806,10 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	    wrk->handling == VCL_RET_ABANDON) {
 		VSB_delete(synth_body);
 
-		bo->doclose = SC_RESP_CLOSE;
-		if (bo->director_state != DIR_S_NULL)
+		if (bo->director_state != DIR_S_NULL) {
+			bo->htc->doclose = SC_RESP_CLOSE;
 			VDI_Finish(bo->wrk, bo);
+		}
 
 		if (wrk->handling == VCL_RET_RETRY &&
 		    bo->retries++ < cache_param->max_retries)
@@ -897,7 +895,6 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	THR_SetBusyobj(bo);
 	stp = F_STP_MKBEREQ;
-	assert(bo->doclose == SC_NULL);
 	assert(isnan(bo->t_first));
 	assert(isnan(bo->t_prev));
 	VSLb_ts_busyobj(bo, "Start", W_TIM_real(wrk));
