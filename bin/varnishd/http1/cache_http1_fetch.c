@@ -67,7 +67,7 @@ vbf_iter_req_body(struct req *req, void *priv, void *ptr, size_t l)
 }
 
 /*--------------------------------------------------------------------
- * Send request to backend, including any req.body
+ * Send request to backend, including any (cached) req.body
  *
  * Return value:
  *	 0 success
@@ -75,7 +75,8 @@ vbf_iter_req_body(struct req *req, void *priv, void *ptr, size_t l)
  */
 
 int
-V1F_SendReq(struct worker *wrk, struct busyobj *bo)
+V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr,
+    int onlycached)
 {
 	struct http *hp;
 	int j;
@@ -99,12 +100,13 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo)
 
 	(void)VTCP_blocking(htc->fd);	/* XXX: we should timeout instead */
 	V1L_Reserve(wrk, wrk->aws, &htc->fd, bo->vsl, bo->t_prev);
-	bo->acct.bereq_hdrbytes = HTTP1_Write(wrk, hp, HTTP1_Req);
+	*ctr += HTTP1_Write(wrk, hp, HTTP1_Req);
 
 	/* Deal with any message-body the request might (still) have */
 	i = 0;
 
-	if (bo->req != NULL) {
+	if (bo->req != NULL &&
+	    (bo->req->req_body_status == REQ_BODY_CACHED || !onlycached)) {
 		if (do_chunked)
 			V1L_Chunked(wrk);
 		i = VRB_Iterate(bo->req, vbf_iter_req_body, bo);
@@ -126,7 +128,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo)
 		    errno, strerror(errno));
 		VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 		htc->doclose = SC_TX_ERROR;
-		return (1);
+		return (-1);
 	}
 	VSLb_ts_busyobj(bo, "Bereq", W_TIM_real(wrk));
 	return (0);

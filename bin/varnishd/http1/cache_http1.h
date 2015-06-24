@@ -28,7 +28,8 @@
  */
 
 /* cache_http1_fetch.c [V1F] */
-int V1F_SendReq(struct worker *, struct busyobj *);
+int V1F_SendReq(struct worker *, struct busyobj *, uint64_t *ctr,
+    int onlycached);
 int V1F_FetchRespHdr(struct busyobj *);
 void V1F_Setup_Fetch(struct vfp_ctx *vfc, struct http_conn *htc);
 
@@ -41,8 +42,16 @@ extern const int HTTP1_Resp[3];
 vtr_deliver_f V1D_Deliver;
 
 /* cache_http1_pipe.c */
+struct v1p_acct {
+	uint64_t        req;
+	uint64_t        bereq;
+	uint64_t        in;
+	uint64_t        out;
+};
+
 void V1P_Init(void);
-void V1P_Process(struct req *, struct busyobj *, int fd, struct VSC_C_vbe *);
+void V1P_Process(struct req *, int fd, struct v1p_acct *);
+void V1P_Charge(struct req *, const struct v1p_acct *, struct VSC_C_vbe *);
 
 /* cache_http1_line.c */
 void V1L_Chunked(const struct worker *w);

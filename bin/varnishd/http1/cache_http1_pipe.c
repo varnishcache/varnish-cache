@@ -37,21 +37,12 @@
 #include "cache/cache.h"
 
 #include "vrt.h"
-#include "vtcp.h"
-#include "vtim.h"
 
 #include "cache_http1.h"
 #include "cache/cache_director.h"
 #include "cache/cache_backend.h"
 
 static struct lock pipestat_mtx;
-
-struct acct_pipe {
-	uint64_t	req;
-	uint64_t	bereq;
-	uint64_t	in;
-	uint64_t	out;
-};
 
 static int
 rdf(int fd0, int fd1, uint64_t *pcnt)
@@ -73,8 +64,8 @@ rdf(int fd0, int fd1, uint64_t *pcnt)
 	return (0);
 }
 
-static void
-pipecharge(struct req *req, const struct acct_pipe *a, struct VSC_C_vbe *b)
+void
+V1P_Charge(struct req *req, const struct v1p_acct *a, struct VSC_C_vbe *b)
 {
 
 	AN(b);
@@ -95,84 +86,56 @@ pipecharge(struct req *req, const struct acct_pipe *a, struct VSC_C_vbe *b)
 }
 
 void
-V1P_Process(struct req *req, struct busyobj *bo, int fd, struct VSC_C_vbe *vsc)
+V1P_Process(struct req *req, int fd, struct v1p_acct *v1a)
 {
-	struct worker *wrk;
 	struct pollfd fds[2];
-	int i;
-	struct acct_pipe acct_pipe;
+	int i, j;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
-	wrk = req->wrk;
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	assert(fd > 0);
 
-	req->res_mode = RES_PIPE;
-
-	memset(&acct_pipe, 0, sizeof acct_pipe);
-	acct_pipe.req = req->acct.req_hdrbytes;
-	req->acct.req_hdrbytes = 0;
-
-	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->htc->vbc, VBC_MAGIC);
-	bo->wrk = req->wrk;
-	bo->director_state = DIR_S_BODY;
-	(void)VTCP_blocking(fd);
-
-	V1L_Reserve(wrk, wrk->aws, &fd, bo->vsl, req->t_req);
-	acct_pipe.bereq += HTTP1_Write(wrk, bo->bereq, HTTP1_Req);
-
-	if (req->htc->pipeline_b != NULL)
-		acct_pipe.in += V1L_Write(wrk, req->htc->pipeline_b,
+	if (req->htc->pipeline_b != NULL) {
+		j = write(fd,  req->htc->pipeline_b,
 		    req->htc->pipeline_e - req->htc->pipeline_b);
+		if (j < 0)
+			return;
+		req->htc->pipeline_b = NULL;
+		req->htc->pipeline_e = NULL;
+		v1a->in += j;
+	}
+	memset(fds, 0, sizeof fds);
+	fds[0].fd = fd;
+	fds[0].events = POLLIN | POLLERR;
+	fds[1].fd = req->sp->fd;
+	fds[1].events = POLLIN | POLLERR;
 
-	i = V1L_FlushRelease(wrk);
-
-	VSLb_ts_req(req, "Pipe", W_TIM_real(wrk));
-
-	if (i == 0) {
-		if (bo->htc->vbc->state == VBC_STATE_STOLEN)
-			VBT_Wait(req->wrk, bo->htc->vbc);
-
-		memset(fds, 0, sizeof fds);
-		fds[0].fd = fd;
-		fds[0].events = POLLIN | POLLERR;
-		fds[1].fd = req->sp->fd;
-		fds[1].events = POLLIN | POLLERR;
-
-		while (fds[0].fd > -1 || fds[1].fd > -1) {
-			fds[0].revents = 0;
-			fds[1].revents = 0;
-			i = poll(fds, 2,
-			    (int)(cache_param->pipe_timeout * 1e3));
-			if (i < 1)
+	while (fds[0].fd > -1 || fds[1].fd > -1) {
+		fds[0].revents = 0;
+		fds[1].revents = 0;
+		i = poll(fds, 2,
+		    (int)(cache_param->pipe_timeout * 1e3));
+		if (i < 1)
+			break;
+		if (fds[0].revents &&
+		    rdf(fd, req->sp->fd, &v1a->out)) {
+			if (fds[1].fd == -1)
 				break;
-			if (fds[0].revents &&
-			    rdf(fd, req->sp->fd, &acct_pipe.out)) {
-				if (fds[1].fd == -1)
-					break;
-				(void)shutdown(fd, SHUT_RD);
-				(void)shutdown(req->sp->fd, SHUT_WR);
-				fds[0].events = 0;
-				fds[0].fd = -1;
-			}
-			if (fds[1].revents &&
-			    rdf(req->sp->fd, fd, &acct_pipe.in)) {
-				if (fds[0].fd == -1)
-					break;
-				(void)shutdown(req->sp->fd, SHUT_RD);
-				(void)shutdown(fd, SHUT_WR);
-				fds[1].events = 0;
-				fds[1].fd = -1;
-			}
+			(void)shutdown(fd, SHUT_RD);
+			(void)shutdown(req->sp->fd, SHUT_WR);
+			fds[0].events = 0;
+			fds[0].fd = -1;
+		}
+		if (fds[1].revents &&
+		    rdf(req->sp->fd, fd, &v1a->in)) {
+			if (fds[0].fd == -1)
+				break;
+			(void)shutdown(req->sp->fd, SHUT_RD);
+			(void)shutdown(fd, SHUT_WR);
+			fds[1].events = 0;
+			fds[1].fd = -1;
 		}
 	}
-	VSLb_ts_req(req, "PipeSess", W_TIM_real(wrk));
-	pipecharge(req, &acct_pipe, vsc);
-	SES_Close(req->sp, SC_TX_PIPE);
-	bo->htc->doclose = SC_TX_PIPE;
 }
 
 /*--------------------------------------------------------------------*/

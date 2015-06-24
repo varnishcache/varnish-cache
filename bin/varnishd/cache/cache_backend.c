@@ -38,6 +38,7 @@
 
 #include "vrt.h"
 #include "vtcp.h"
+#include "vtim.h"
 
 #include "cache_director.h"
 #include "cache_backend.h"
@@ -223,7 +224,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		if (bo->htc->vbc->state != VBC_STATE_STOLEN)
 			extrachance = 0;
 
-		i = V1F_SendReq(wrk, bo);
+		i = V1F_SendReq(wrk, bo, &bo->acct.bereq_hdrbytes, 0);
 
 		if (bo->htc->vbc->state != VBC_STATE_USED)
 			VBT_Wait(wrk, bo->htc->vbc);
@@ -289,23 +290,39 @@ vbe_dir_getip(const struct director *d, struct worker *wrk,
 static void
 vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 {
-	int i;
+	int i, fd;
 	struct backend *bp;
+	struct v1p_acct v1a;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
-	i = vbe_dir_getfd(req->wrk, bp, bo);
-	if (i < 0) {
+	memset(&v1a, 0, sizeof v1a);
+	req->res_mode = RES_PIPE;
+
+	fd = vbe_dir_getfd(req->wrk, bp, bo);
+	/* This is hackish... */
+	v1a.req = req->acct.req_hdrbytes;
+	req->acct.req_hdrbytes = 0;
+
+	if (fd < 0) {
 		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 		SES_Close(req->sp, SC_RX_TIMEOUT);
-		return;
 	} else {
-		V1P_Process(req, bo, i, bp->vsc);
+		i = V1F_SendReq(req->wrk, bo, &v1a.bereq, 1);
+		VSLb_ts_req(req, "Pipe", W_TIM_real(req->wrk));
+		if (bo->htc->vbc->state == VBC_STATE_STOLEN)
+			VBT_Wait(req->wrk, bo->htc->vbc);
+		if (i == 0)
+			V1P_Process(req, fd, &v1a);
+		VSLb_ts_req(req, "PipeSess", W_TIM_real(req->wrk));
+		SES_Close(req->sp, SC_TX_PIPE);
+		bo->htc->doclose = SC_TX_PIPE;
 		vbe_dir_finish(d, req->wrk, bo);
 	}
+	V1P_Charge(req, &v1a, bp->vsc);
 }
 
 /*--------------------------------------------------------------------*/
