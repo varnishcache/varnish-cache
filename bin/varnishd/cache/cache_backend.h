@@ -38,7 +38,6 @@
  */
 
 struct vbp_target;
-struct vbc;
 struct vrt_ctx;
 struct vrt_backend_probe;
 struct tcp_pool;
@@ -82,9 +81,10 @@ struct backend {
 	struct director		director[1];
 };
 
-/* -------------------------------------------------------------------*/
+/*---------------------------------------------------------------------
+ * Backend connection -- private to cache_backend*.c 
+ */
 
-/* Backend connection */
 struct vbc {
 	unsigned		magic;
 #define VBC_MAGIC		0x0c5e6592
@@ -101,6 +101,10 @@ struct vbc {
 
 	pthread_cond_t		*cond;
 };
+
+/*---------------------------------------------------------------------
+ * Prototypes
+ */
 
 /* cache_backend.c */
 void VBE_fill_director(struct backend *be);

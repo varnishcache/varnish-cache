@@ -118,7 +118,6 @@ struct transport;
 struct req;
 struct sess;
 struct suckaddr;
-struct vbc;
 struct vrt_priv;
 struct vsb;
 struct waitinglist;
@@ -236,7 +235,7 @@ struct http_conn {
 	ssize_t			content_length;
 	enum body_status	body_status;
 	struct vfp_ctx		vfc[1];
-	struct vbc		*vbc;
+	void			*priv;
 
 	/* Timeouts */
 	double			first_byte_timeout;

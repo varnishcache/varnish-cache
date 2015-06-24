@@ -39,8 +39,6 @@
 #include "vrt.h"
 
 #include "cache_http1.h"
-#include "cache/cache_director.h"
-#include "cache/cache_backend.h"
 
 static struct lock pipestat_mtx;
 

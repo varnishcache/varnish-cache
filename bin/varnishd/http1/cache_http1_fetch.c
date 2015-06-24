@@ -42,8 +42,6 @@
 
 #include "hash/hash_slinger.h"
 
-#include "cache/cache_director.h"
-#include "cache/cache_backend.h"
 #include "cache_http1.h"
 
 /*--------------------------------------------------------------------
