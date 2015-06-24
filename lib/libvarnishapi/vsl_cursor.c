@@ -125,18 +125,6 @@ vslc_vsm_next(const struct VSL_cursor *cursor)
 	assert(&c->cursor == cursor);
 	CHECK_OBJ_NOTNULL(c->vsm, VSM_MAGIC);
 
-	i = vslc_vsm_check(&c->cursor, &c->next);
-	if (i <= 0)
-		/* Overrun */
-		return (-3);
-
-	/* Check VSL fantom and abandonment */
-	if (*(volatile const uint32_t *)c->next.ptr == VSL_ENDMARKER) {
-		if (VSM_invalid == VSM_StillValid(c->vsm, &c->vf) ||
-		    VSM_Abandoned(c->vsm))
-			return (-2);
-	}
-
 	while (1) {
 		t = *(volatile const uint32_t *)c->next.ptr;
 		AN(t);
@@ -151,12 +139,17 @@ vslc_vsm_next(const struct VSL_cursor *cursor)
 		}
 
 		if (t == VSL_ENDMARKER) {
+			if (VSM_invalid == VSM_StillValid(c->vsm, &c->vf) ||
+			    VSM_Abandoned(c->vsm))
+				return (-2); /* VSL abandoned */
 			if (c->options & VSL_COPT_TAILSTOP)
-				/* EOF */
-				return (-1);
-			else
-				return (0);
+				return (-1); /* EOF */
+			return (0);	/* No new records available */
 		}
+
+		i = vslc_vsm_check(&c->cursor, &c->next);
+		if (i <= 0)
+			return (-3); /* Overrun */
 
 		c->cursor.rec = c->next;
 		c->next.ptr = VSL_NEXT(c->next.ptr);

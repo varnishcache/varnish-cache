@@ -1320,17 +1320,17 @@ VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 	if (vslq->grouping == VSL_g_raw)
 		return (vslq_raw(vslq, func, priv));
 
+	/* Process next cursor input */
+	i = vslq_next(vslq);
+	if (i <= 0)
+		/* At end of log or cursor reports error condition */
+		return (i);
+
 	/* Check shmref list and buffer if necessary */
 	r = vslq_shmref_check(vslq);
 	if (r)
 		/* Buffering of shm ref failed */
 		return (r);
-
-	/* Process next cursor input */
-	i = vslq_next(vslq);
-	if (i < 0)
-		/* Cursor reports error condition */
-		return (i);
 
 	/* Check vtx timeout */
 	now = VTIM_mono();
