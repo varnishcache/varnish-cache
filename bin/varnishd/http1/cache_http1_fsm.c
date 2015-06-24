@@ -38,6 +38,7 @@
 #include <stdlib.h>
 
 #include "cache/cache.h"
+#include "cache_http1.h"
 #include "hash/hash_slinger.h"
 
 #include "vtcp.h"

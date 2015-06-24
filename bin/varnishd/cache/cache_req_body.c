@@ -33,6 +33,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "http1/cache_http1.h"
 #include "cache_filter.h"
 #include "vtim.h"
 #include "hash/hash_slinger.h"

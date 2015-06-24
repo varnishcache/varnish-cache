@@ -40,6 +40,7 @@
 
 #include "cache/cache.h"
 #include "cache/cache_filter.h"
+#include "cache_http1.h"
 
 #include "vct.h"
 

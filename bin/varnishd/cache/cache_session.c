@@ -47,6 +47,7 @@
 
 #include "cache.h"
 #include "cache_pool.h"
+#include "http1/cache_http1.h"
 
 #include "vsa.h"
 #include "vtcp.h"

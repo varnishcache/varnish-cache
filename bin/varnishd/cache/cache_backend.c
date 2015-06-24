@@ -41,6 +41,7 @@
 
 #include "cache_director.h"
 #include "cache_backend.h"
+#include "http1/cache_http1.h"
 
 #define FIND_TMO(tmx, dst, bo, be)					\
 	do {								\

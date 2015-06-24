@@ -621,9 +621,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_ERROR);
 	}
 
-	assert(V1L_IsReleased(wrk));
-
-
 	if (bo->do_esi)
 		ObjSetFlag(bo->wrk, bo->fetch_objcore, OF_ESIPROC, 1);
 
@@ -916,7 +913,6 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 			WRONG("Illegal fetch_step");
 		}
 	}
-	assert(V1L_IsReleased(wrk));
 
 	assert(bo->director_state == DIR_S_NULL);
 

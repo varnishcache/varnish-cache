@@ -103,6 +103,7 @@ noinst_HEADERS = \
 	cache/cache_pool.h \
 	common/heritage.h \
 	hash/hash_slinger.h \
+	http1/cache_http1.h \
 	mgt/mgt.h \
 	mgt/mgt_cli.h \
 	mgt/mgt_param.h \

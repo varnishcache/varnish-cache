@@ -44,6 +44,7 @@
 
 #include "cache/cache_director.h"
 #include "cache/cache_backend.h"
+#include "cache_http1.h"
 
 /*--------------------------------------------------------------------
  * Pass the request body to the backend

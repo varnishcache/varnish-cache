@@ -707,27 +707,10 @@ ssize_t VBO_waitlen(struct worker *, struct busyobj *, ssize_t l);
 void VBO_setstate(struct busyobj *bo, enum busyobj_state_e next);
 void VBO_waitstate(struct busyobj *bo, enum busyobj_state_e want);
 
-
-/* cache_http1_fetch.c [V1F] */
-int V1F_fetch_hdr(struct worker *wrk, struct busyobj *bo, const char *def_host);
-void V1F_Setup_Fetch(struct vfp_ctx *vfc, struct http_conn *htc);
-
-/* cache_http1_fsm.c [HTTP1] */
-typedef int (req_body_iter_f)(struct req *, void *priv, void *ptr, size_t);
-void HTTP1_Session(struct worker *, struct req *);
-extern const int HTTP1_Req[3];
-extern const int HTTP1_Resp[3];
-
-/* cache_http1_deliver.c */
-vtr_deliver_f V1D_Deliver;
-
-/* cache_http1_pipe.c */
-void V1P_Init(void);
-void V1P_Process(struct req *, struct busyobj *, int fd, struct VSC_C_vbe *);
-
 /* cache_req_body.c */
 int VRB_Ignore(struct req *req);
 ssize_t VRB_Cache(struct req *req, ssize_t maxsize);
+typedef int (req_body_iter_f)(struct req *, void *priv, void *ptr, size_t);
 ssize_t VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv);
 void VRB_Free(struct req *req);
 
@@ -957,14 +940,6 @@ void Pool_Sumstat(struct worker *w);
 int Pool_TrySumstat(struct worker *wrk);
 void Pool_PurgeStat(unsigned nobj);
 int Pool_Task_Any(struct pool_task *task, enum task_how how);
-
-#define V1L_IsReleased(w)	((w)->v1l == NULL)
-void V1L_Chunked(const struct worker *w);
-void V1L_EndChunk(const struct worker *w);
-void V1L_Reserve(struct worker *, struct ws *, int *fd, struct vsl_log *, double t0);
-unsigned V1L_Flush(const struct worker *w);
-unsigned V1L_FlushRelease(struct worker *w);
-size_t V1L_Write(const struct worker *w, const void *ptr, ssize_t len);
 
 /* cache_proxy.c [VPX] */
 task_func_t VPX_Proto_Sess;

@@ -40,6 +40,7 @@
 #include "vtcp.h"
 #include "vtim.h"
 
+#include "cache_http1.h"
 #include "cache/cache_director.h"
 #include "cache/cache_backend.h"
 
