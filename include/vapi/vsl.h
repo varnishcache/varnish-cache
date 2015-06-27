@@ -518,12 +518,13 @@ int VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv);
 
 int VSLQ_Flush(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv);
 	/*
-	 * Flush any pending record sets from the query.
+	 * Flush any pending record sets from the query until func
+	 * (if given) returns non-zero.
 	 *
 	 * Arguments:
 	 *  vslq: The VSL context
 	 *  func: The callback function to call. Pass NULL to discard the
-	 *        pending messages
+	 *        pending messages or call repeatedly until 0 is returned.
 	 *  priv: An argument passed to func
 	 *
 	 * Return values:
