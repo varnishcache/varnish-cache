@@ -223,6 +223,8 @@ cnt_synth(struct worker *wrk, struct req *req)
 	struct http *h;
 	double now;
 	struct vsb *synth_body;
+	ssize_t sz, szl;
+	uint8_t *ptr;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -269,22 +271,25 @@ cnt_synth(struct worker *wrk, struct req *req)
 	req->objcore = HSH_Private(wrk);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	if (STV_NewObject(req->objcore, wrk, TRANSIENT_STORAGE, 1024)) {
-		ssize_t sz, szl;
-		uint8_t *ptr;
-
 		szl = VSB_len(synth_body);
 		assert(szl >= 0);
-		if (szl > 0) {
-			sz = szl;
-			AN(ObjGetSpace(wrk, req->objcore, &sz, &ptr));
-			assert(sz >= szl);
+	} else
+		szl = -1;
+	if (szl > 0) {
+		sz = szl;
+		if (ObjGetSpace(wrk, req->objcore, &sz, &ptr) && sz >= szl) {
 			memcpy(ptr, VSB_data(synth_body), szl);
 			ObjExtend(wrk, req->objcore, szl);
-		}
-
-		cnt_vdp(req, NULL);
-		(void)HSH_DerefObjCore(wrk, &req->objcore);
+		} else
+			szl = -1;
 	}
+	if (szl < 0) {
+		VSLb(req->vsl, SLT_Error, "Could not get storage");
+		req->doclose = SC_OVERLOAD;
+	} else
+		cnt_vdp(req, NULL);
+
+	(void)HSH_DerefObjCore(wrk, &req->objcore);
 	VSB_delete(synth_body);
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));

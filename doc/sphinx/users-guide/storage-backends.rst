@@ -132,8 +132,9 @@ previously banned objects to reappear.
 Transient Storage
 -----------------
 
-If you name any of your storage backend "Transient" it will be
-used for transient (short lived) objects. By default Varnish
+If you name any of your storage backend "Transient" it will be used
+for transient (short lived) objects. This includes the temporary
+objects created when returning a synthetic object. By default Varnish
 would use an unlimited malloc backend for this.
 
 .. XXX: Is this another paramater? In that case handled in the same manner as above? benc
