@@ -456,8 +456,8 @@ VSM_Init(void)
 
 	vsl_head = VSM_Alloc(cache_param->vsl_space, VSL_CLASS, "", "");
 	AN(vsl_head);
-	vsl_segsize = (cache_param->vsl_space - sizeof *vsl_head) /
-	    sizeof *vsl_end / VSL_SEGMENTS;
+	vsl_segsize = ((cache_param->vsl_space - sizeof *vsl_head) /
+	    sizeof *vsl_end) / VSL_SEGMENTS;
 	vsl_end = vsl_head->log + vsl_segsize * VSL_SEGMENTS;
 	/* Make segment_n always overflow on first log wrap to make any
 	   problems with regard to readers on that event visible */
