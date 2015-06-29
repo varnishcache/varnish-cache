@@ -461,7 +461,7 @@ VSM_Init(void)
 	vsl_end = vsl_head->log + vsl_segsize * VSL_SEGMENTS;
 	/* Make segment_n always overflow on first log wrap to make any
 	   problems with regard to readers on that event visible */
-	vsl_segment_n = 0U - VSL_SEGMENTS;
+	vsl_segment_n = UINT_MAX - VSL_SEGMENTS + 1;
 	AZ(vsl_segment_n % VSL_SEGMENTS);
 	vsl_head->segment_n = vsl_segment_n;
 	vsl_ptr = vsl_head->log;
