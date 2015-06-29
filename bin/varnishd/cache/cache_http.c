@@ -201,7 +201,7 @@ void
 http_SetH(const struct http *to, unsigned n, const char *fm)
 {
 
-	assert(n < to->shd);
+	assert(n < to->nhd);
 	AN(fm);
 	to->hd[n].b = TRUST_ME(fm);
 	to->hd[n].e = strchr(to->hd[n].b, '\0');
@@ -816,7 +816,7 @@ HTTP_Encode(const struct http *fm, uint8_t *p0, unsigned l, unsigned how)
 	p = p0;
 	e = p + l;
 	assert(p + 5 <= e);
-	assert(fm->nhd < fm->shd);
+	assert(fm->nhd <= fm->shd);
 	n = HTTP_HDR_FIRST - 3;
 	vbe16enc(p + 2, fm->status);
 	p += 4;
