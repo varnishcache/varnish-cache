@@ -82,7 +82,7 @@ vslc_vsm_delete(const struct VSL_cursor *cursor)
 
 /*
  * We tolerate the fact that segment_n wraps around eventually: for the default
- * vsl_space of 80MB and 8 segments, each segement is 10MB long, so we wrap
+ * vsl_space of 80MB and 8 segments, each segment is 10MB long, so we wrap
  * roughly after 40 pebibytes (32bit) or 160 yobibytes (64bit) worth of vsl
  * written.
  *
