@@ -247,4 +247,3 @@ vmod_strstr(VRT_CTX, VCL_STRING s1, VCL_STRING s2)
 		return (NULL);
 	return (strstr(s1, s2));
 }
-

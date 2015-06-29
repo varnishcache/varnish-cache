@@ -233,7 +233,8 @@ mgt_sandbox_unix(enum sandbox_e who)
 
 #ifdef __linux__
 	/*
-	 * On linux mucking about with uid/gid disables core-dumps,			 * reenable them again.
+	 * On linux mucking about with uid/gid disables core-dumps,
+	 * reenable them again.
 	 */
 	if (prctl(PR_SET_DUMPABLE, 1) != 0) {
 		REPORT0(LOG_INFO,

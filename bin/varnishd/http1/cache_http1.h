@@ -61,4 +61,3 @@ void V1L_Reserve(struct worker *, struct ws *, int *fd, struct vsl_log *,
 unsigned V1L_Flush(const struct worker *w);
 unsigned V1L_FlushRelease(struct worker *w);
 size_t V1L_Write(const struct worker *w, const void *ptr, ssize_t len);
-

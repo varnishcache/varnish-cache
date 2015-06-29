@@ -132,4 +132,3 @@ void VBT_Close(struct tcp_pool *tp, struct vbc **vbc);
 struct vbc *VBT_Get(struct tcp_pool *, double tmo, const struct backend *,
     struct worker *);
 void VBT_Wait(struct worker *, struct vbc *);
-

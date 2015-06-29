@@ -79,7 +79,8 @@ vcc_TimeUnit(struct vcc *tl)
 	else {
 		VSB_printf(tl->sb, "Unknown time unit ");
 		vcc_ErrToken(tl, tl->t);
-		VSB_printf(tl->sb, ".  Legal are 'ms', 's', 'm', 'h', 'd', 'w' and 'y'\n");
+		VSB_printf(tl->sb,
+		    ".  Legal are 'ms', 's', 'm', 'h', 'd', 'w' and 'y'\n");
 		vcc_ErrWhere(tl, tl->t);
 		return (1.0);
 	}

@@ -178,5 +178,5 @@ Description
 
 	Use the string or list of strings provided to pick the backend.
 Example
-	set req.backend_hint = vdir.backend(req.http.cookie);  # pick a backend based on the cookie header from the client
-
+	# pick a backend based on the cookie header from the client
+	set req.backend_hint = vdir.backend(req.http.cookie);

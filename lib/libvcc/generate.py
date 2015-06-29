@@ -976,24 +976,28 @@ fo.write("\n/*lint -save -e525 -e539 */\n")
 fo.write("\n#ifdef VCL_RET_MAC\n")
 l = list(rets.keys())
 l.sort()
+ll = list(returns)
+ll.sort()
 for i in l:
 	fo.write("VCL_RET_MAC(%s, %s" % (i.lower(), i.upper()))
-	s=", "
-	for j in returns:
+	s=",\n\t"
+	for j in ll:
 		if i in j[2]:
 			fo.write("%sVCL_MET_%s" % (s, j[0].upper()))
-			s = " | "
-	fo.write(")\n")
+			s = " |\n\t"
+	fo.write("\n)\n")
 fo.write("#endif\n")
 
 fo.write("\n#ifdef VCL_MET_MAC\n")
-for i in returns:
-	fo.write("VCL_MET_MAC(%s,%s,\n" % (i[0].lower(), i[0].upper()))
-	p = " ("
-	for j in i[2]:
-		fo.write("    %s(1U << VCL_RET_%s)\n" % (p, j.upper()))
-		p = "| "
-	fo.write("))\n")
+for i in ll:
+	fo.write("VCL_MET_MAC(%s, %s," % (i[0].lower(), i[0].upper()))
+	p = " (\n\t"
+	lll = list(i[2])
+	lll.sort()
+	for j in lll:
+		fo.write("%s(1U << VCL_RET_%s)" % (p, j.upper()))
+		p = " |\n\t"
+	fo.write("\n))\n")
 fo.write("#endif\n")
 fo.write("\n/*lint -restore */\n")
 fo.close()
@@ -1035,7 +1039,9 @@ def tbl40(a, b):
 fo.write("\n/* VCL Methods */\n")
 n = 1
 for i in returns:
-	fo.write(tbl40("#define VCL_MET_%s" % i[0].upper(),  "(1U << %d)\n" % n))
+	fo.write(
+	    tbl40("#define VCL_MET_%s" % i[0].upper(), "(1U << %d)\n" % n)
+	)
 	n += 1
 
 fo.write("\n" + tbl40("#define VCL_MET_MAX", "%d\n" % n))
