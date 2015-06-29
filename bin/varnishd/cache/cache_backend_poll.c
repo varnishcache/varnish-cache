@@ -323,6 +323,7 @@ vbp_task(struct worker *wrk, void *priv)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(vt, priv, VBP_TARGET_MAGIC);
 
+	AN(vt->running);
 	AN(vt->req);
 	assert(vt->req_len > 0);
 
@@ -332,10 +333,17 @@ vbp_task(struct worker *wrk, void *priv)
 	vbp_update_backend(vt);
 
 	Lck_Lock(&vbp_mtx);
-	if (vt->running < 0)
+	if (vt->running < 0) {
+		assert(vt->heap_idx == BINHEAP_NOIDX);
 		vbp_delete(vt);
-	else
+	} else {
 		vt->running = 0;
+		if (vt->heap_idx != BINHEAP_NOIDX) {
+			vt->due = VTIM_real() + vt->interval;
+			binheap_delete(vbp_heap, vt->heap_idx);
+			binheap_insert(vbp_heap, vt);
+		}
+	}
 	Lck_Unlock(&vbp_mtx);
 }
 
@@ -350,37 +358,31 @@ vbp_thread(struct worker *wrk, void *priv)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AZ(priv);
+	Lck_Lock(&vbp_mtx);
 	while (1) {
-		Lck_Lock(&vbp_mtx);
-		while (1) {
-			now = VTIM_real();
-			vt = binheap_root(vbp_heap);
-			if (vt == NULL) {
-				nxt = 8.192 + now;
-			} else if (vt->due > now) {
-				nxt = vt->due;
-				vt = NULL;
-			} else {
-				binheap_delete(vbp_heap, vt->heap_idx);
-				vt->running = 1;
-				vt->due = now + vt->interval;
-				binheap_insert(vbp_heap, vt);
-				nxt = 0.0;
-				break;
-			}
+		now = VTIM_real();
+		vt = binheap_root(vbp_heap);
+		if (vt == NULL) {
+			nxt = 8.192 + now;
 			(void)Lck_CondWait(&vbp_cond, &vbp_mtx, nxt);
-		}
-		Lck_Unlock(&vbp_mtx);
-		vt->task.func = vbp_task;
-		vt->task.priv = vt;
-
-		if (Pool_Task_Any(&vt->task, TASK_QUEUE_REQ)) {
-			Lck_Lock(&vbp_mtx);
-			vt->running = 0;
-			Lck_Unlock(&vbp_mtx);
-			// XXX: ehh... ?
+		} else if (vt->due > now) {
+			nxt = vt->due;
+			vt = NULL;
+			(void)Lck_CondWait(&vbp_cond, &vbp_mtx, nxt);
+		} else {
+			binheap_delete(vbp_heap, vt->heap_idx);
+			vt->due = now + vt->interval;
+			if (!vt->running) {
+				vt->running = 1;
+				vt->task.func = vbp_task;
+				vt->task.priv = vt;
+				if (Pool_Task_Any(&vt->task, TASK_QUEUE_REQ))
+					vt->running = 0;
+			}
+			binheap_insert(vbp_heap, vt);
 		}
 	}
+	Lck_Unlock(&vbp_mtx);
 	NEEDLESS_RETURN(NULL);
 }
 
@@ -582,8 +584,10 @@ VBP_Remove(struct backend *be)
 		vt = NULL;
 	}
 	Lck_Unlock(&vbp_mtx);
-	if (vt != NULL)
+	if (vt != NULL) {
+		assert(vt->heap_idx == BINHEAP_NOIDX);
 		vbp_delete(vt);
+	}
 }
 
 /*-------------------------------------------------------------------*/
@@ -596,6 +600,9 @@ vbp_cmp(void *priv, const void *a, const void *b)
 	AZ(priv);
 	CAST_OBJ_NOTNULL(aa, a, VBP_TARGET_MAGIC);
 	CAST_OBJ_NOTNULL(bb, b, VBP_TARGET_MAGIC);
+
+	if (aa->running && !bb->running)
+		return (0);
 
 	return (aa->due < bb->due);
 }

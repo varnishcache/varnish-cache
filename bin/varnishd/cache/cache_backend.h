@@ -82,7 +82,7 @@ struct backend {
 };
 
 /*---------------------------------------------------------------------
- * Backend connection -- private to cache_backend*.c 
+ * Backend connection -- private to cache_backend*.c
  */
 
 struct vbc {
