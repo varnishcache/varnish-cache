@@ -49,6 +49,7 @@
 
 static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
 static struct lock backends_mtx;
+
 /*--------------------------------------------------------------------
  * Create/Delete a new director::backend instance.
  */
@@ -59,6 +60,7 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 	struct backend *b;
 	char buf[128];
 	struct vcl *vcl;
+	struct tcp_pool *tp = NULL;
 	const struct vrt_backend_probe *vbp;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -87,25 +89,28 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 
 	b->vcl = vcl;
 
-	b->tcp_pool = VBT_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr);
-
 	b->healthy = 1;
 	b->health_changed = VTIM_real();
 	b->admin_health = ah_probe;
 
+	vbp = vrt->probe;
+	if (vbp == NULL)
+		vbp = VCL_DefaultProbe(vcl);
+
 	Lck_Lock(&backends_mtx);
 	VTAILQ_INSERT_TAIL(&backends, b, list);
 	VSC_C_main->n_backend++;
+	b->tcp_pool = VBT_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr);
+	if (vbp != NULL) {
+		tp = VBT_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr);
+		assert(b->tcp_pool == tp);
+	}
 	Lck_Unlock(&backends_mtx);
 
 	VBE_fill_director(b);
 
-	vbp = vrt->probe;
-	if (vbp == NULL)
-		vbp = VCL_DefaultProbe(vcl);
 	if (vbp != NULL)
-		VBP_Insert(b, vbp,
-		    VBT_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr));
+		VBP_Insert(b, vbp, tp);
 
 	VCL_AddBackend(ctx->vcl, b);
 
@@ -167,6 +172,7 @@ VBE_Delete(struct backend *be)
 	Lck_Lock(&backends_mtx);
 	VTAILQ_REMOVE(&backends, be, list);
 	VSC_C_main->n_backend--;
+	VBT_Rel(&be->tcp_pool);
 	Lck_Unlock(&backends_mtx);
 
 #define DA(x)	do { if (be->x != NULL) free(be->x); } while (0)
@@ -177,7 +183,6 @@ VBE_Delete(struct backend *be)
 
 	free(be->display_name);
 	AZ(be->vsc);
-	VBT_Rel(&be->tcp_pool);
 	Lck_Delete(&be->mtx);
 	FREE_OBJ(be);
 }

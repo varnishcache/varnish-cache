@@ -127,7 +127,6 @@ VBT_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6)
 {
 	struct tcp_pool *tp;
 
-	ASSERT_CLI();
 	VTAILQ_FOREACH(tp, &pools, list) {
 		assert(tp->refcnt > 0);
 		if (ip4 == NULL) {
