@@ -295,6 +295,7 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 		pan_objcore(vsb, "fetch", bo->fetch_objcore);
 	if (bo->stale_oc)
 		pan_objcore(vsb, "ims", bo->stale_oc);
+	VCL_Panic(vsb, bo->vcl);
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "}\n");
 }
