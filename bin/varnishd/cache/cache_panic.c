@@ -116,7 +116,7 @@ pan_ws(struct vsb *vsb, const struct ws *ws)
 	VSB_printf(vsb, "ws = %p {\n", ws);
 	VSB_indent(vsb, 2);
 	if (WS_Overflowed(ws))
-		VSB_printf(vsb, " OVERFLOW");
+		VSB_printf(vsb, "OVERFLOW ");
 	VSB_printf(vsb, "id = \"%s\",\n",  ws->id);
 	VSB_printf(vsb, "{s,f,r,e} = {%p",  ws->s);
 	if (ws->f > ws->s)
@@ -365,10 +365,12 @@ pan_req(struct vsb *vsb, const struct req *req)
 	}
 
 	VSB_printf(vsb, "flags = {\n");
-#define REQ_FLAG(l, r, w, d) if(req->l) VSB_printf(vsb, "    " #l ",\n");
+	VSB_indent(vsb, 2);
+#define REQ_FLAG(l, r, w, d) if(req->l) VSB_printf(vsb, #l ",\n");
 #include "tbl/req_flags.h"
 #undef REQ_FLAG
-	VSB_printf(vsb, "}\n");
+	VSB_indent(vsb, -2);
+	VSB_printf(vsb, "},\n");
 
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
