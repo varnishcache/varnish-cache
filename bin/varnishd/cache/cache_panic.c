@@ -171,7 +171,7 @@ pan_http(struct vsb *vsb, const char *id, const struct http *h)
 
 	VSB_printf(vsb, "http[%s] = %p {\n", id, h);
 	VSB_indent(vsb, 2);
-	VSB_printf(vsb, "ws[%s] = %p\n", h->ws ? h->ws->id : "", h->ws);
+	VSB_printf(vsb, "ws[%s] = %p,\n", h->ws ? h->ws->id : "", h->ws);
 	VSB_printf(vsb, "hdrs {\n");
 	VSB_indent(vsb, 2);
 	for (i = 0; i < h->nhd; ++i) {
@@ -194,9 +194,9 @@ pan_objcore(struct vsb *vsb, const char *typ, const struct objcore *oc)
 
 	VSB_printf(vsb, "objcore[%s] = %p {\n", typ, oc);
 	VSB_indent(vsb, 2);
-	VSB_printf(vsb, "refcnt = %d\n", oc->refcnt);
-	VSB_printf(vsb, "flags = 0x%x\n", oc->flags);
-	VSB_printf(vsb, "objhead = %p\n", oc->objhead);
+	VSB_printf(vsb, "refcnt = %d,\n", oc->refcnt);
+	VSB_printf(vsb, "flags = 0x%x,\n", oc->flags);
+	VSB_printf(vsb, "objhead = %p,\n", oc->objhead);
 	VSB_printf(vsb, "stevedore = %p", oc->stobj->stevedore);
 	if (oc->stobj->stevedore != NULL) {
 		VSB_printf(vsb, " (%s", oc->stobj->stevedore->name);
@@ -204,9 +204,9 @@ pan_objcore(struct vsb *vsb, const char *typ, const struct objcore *oc)
 			VSB_printf(vsb, " %s", oc->stobj->stevedore->ident);
 		VSB_printf(vsb, ")");
 	}
-	VSB_printf(vsb, "\n");
+	VSB_printf(vsb, ",\n");
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "}\n");
+	VSB_printf(vsb, "},\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -220,7 +220,7 @@ pan_wrk(struct vsb *vsb, const struct worker *wrk)
 
 	VSB_printf(vsb, "worker = %p {\n", wrk);
 	VSB_indent(vsb, 2);
-	VSB_printf(vsb, "stack = {0x%jx -> 0x%jx}\n",
+	VSB_printf(vsb, "stack = {0x%jx -> 0x%jx},\n",
 	    (uintmax_t)wrk->stack_start, (uintmax_t)wrk->stack_end);
 	pan_ws(vsb, wrk->aws);
 
@@ -268,17 +268,17 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	VSB_printf(vsb, "busyobj = %p {\n", bo);
 	VSB_indent(vsb, 2);
 	pan_ws(vsb, bo->ws);
-	VSB_printf(vsb, "refcnt = %u\n", bo->refcount);
+	VSB_printf(vsb, "refcnt = %u,\n", bo->refcount);
 	VSB_printf(vsb, "retries = %d, ", bo->retries);
 	VSB_printf(vsb, "failed = %d, ", bo->vfc->failed);
-	VSB_printf(vsb, "state = %d\n", (int)bo->state);
+	VSB_printf(vsb, "state = %d,\n", (int)bo->state);
 	VSB_printf(vsb, "flags = {");
 	p = "";
 #define BO_FLAG(l, r, w, d) \
 	if(bo->l) { VSB_printf(vsb,  "%s" #l, p); p = ", "; }
 #include "tbl/bo_flags.h"
 #undef BO_FLAG
-	VSB_printf(vsb, "}\n");
+	VSB_printf(vsb, "},\n");
 
 	if (VALID_OBJ(bo->htc, HTTP_CONN_MAGIC))
 		pan_htc(vsb, bo->htc);
@@ -293,7 +293,7 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 
 	VDI_Panic(bo->director_req, vsb, "director_req");
 	if (bo->director_resp == bo->director_req)
-		VSB_printf(vsb, "director_resp = director_req\n");
+		VSB_printf(vsb, "director_resp = director_req,\n");
 	else
 		VDI_Panic(bo->director_resp, vsb, "director_resp");
 	if (bo->bereq != NULL && bo->bereq->ws != NULL)
@@ -306,7 +306,7 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 		pan_objcore(vsb, "ims", bo->stale_oc);
 	VCL_Panic(vsb, bo->vcl);
 	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "}\n");
+	VSB_printf(vsb, "},\n");
 }
 
 /*--------------------------------------------------------------------*/
