@@ -330,6 +330,7 @@ vbe_panic(const struct director *d, struct vsb *vsb)
 	VSB_printf(vsb, "      health=%s, admin_health=%s",
 	    bp->healthy ? "healthy" : "sick", bp->admin_health);
 	VSB_printf(vsb, ", changed=%.1f\n", bp->health_changed);
+	VSB_printf(vsb, "      refcount = %d\n", bp->refcount);
 }
 
 /*--------------------------------------------------------------------*/
