@@ -263,7 +263,7 @@ const struct waiter_impl waiter_ports = {
 	.name =		"ports",
 	.init =		vws_init,
 	.fini =		vws_fini,
-	.enter =		vws_enter,
+	.enter =	vws_enter,
 	.size =		sizeof(struct vws),
 };
 
