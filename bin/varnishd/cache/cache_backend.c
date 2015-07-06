@@ -241,7 +241,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		/*
 		 * If we recycled a backend connection, there is a finite chance
 		 * that the backend closed it before we got the bereq to it.
-		 * In that case do a single automatic retry if req.boy allows.
+		 * In that case do a single automatic retry if req.body allows.
 		 */
 		vbe_dir_finish(d, wrk, bo);
 		AZ(bo->htc);
