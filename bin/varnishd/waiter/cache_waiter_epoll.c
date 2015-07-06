@@ -84,9 +84,9 @@ vwe_thread(void *priv)
 	THR_SetName("cache-epoll");
 
 	now = VTIM_real();
-	Lck_Lock(&vwe->mtx);
 	while (1) {
 		while (1) {
+			Lck_Lock(&vwe->mtx);
 			/*
 			 * XXX: We could avoid many syscalls here if we were
 			 * XXX: allowed to just close the fd's on timeout.
@@ -103,6 +103,7 @@ vwe_thread(void *priv)
 			AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_DEL, wp->fd, NULL));
 			vwe->nwaited--;
 			Wait_HeapDelete(w, wp);
+			Lck_Unlock(&vwe->mtx);
 			Wait_Call(w, wp, WAITER_TIMEOUT, now);
 		}
 		then = vwe->next - now;
@@ -113,14 +114,15 @@ vwe_thread(void *priv)
 		assert(n >= 0);
 		assert(n <= NEEV);
 		now = VTIM_real();
-		Lck_Lock(&vwe->mtx);
 		for (ep = ev, i = 0; i < n; i++, ep++) {
 			if (ep->data.ptr == vwe) {
 				assert(read(vwe->pipe[0], &c, 1) == 1);
 				continue;
 			}
 			CAST_OBJ_NOTNULL(wp, ep->data.ptr, WAITED_MAGIC);
+			Lck_Lock(&vwe->mtx);
 			Wait_HeapDelete(w, wp);
+			Lck_Unlock(&vwe->mtx);
 			AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_DEL, wp->fd, NULL));
 			vwe->nwaited--;
 			if (ep->events & EPOLLIN)
@@ -135,7 +137,6 @@ vwe_thread(void *priv)
 		if (vwe->nwaited == 0 && vwe->die)
 			break;
 	}
-	Lck_Unlock(&vwe->mtx);
 	AZ(close(vwe->pipe[0]));
 	AZ(close(vwe->pipe[1]));
 	AZ(close(vwe->epfd));

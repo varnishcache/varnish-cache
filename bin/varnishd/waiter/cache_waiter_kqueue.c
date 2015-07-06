@@ -79,9 +79,9 @@ vwk_thread(void *priv)
 	THR_SetName("cache-kqueue");
 
 	now = VTIM_real();
-	Lck_Lock(&vwk->mtx);
 	while (1) {
 		while (1) {
+			Lck_Lock(&vwk->mtx);
 			/*
 			 * XXX: We could avoid many syscalls here if we were
 			 * XXX: allowed to just close the fd's on timeout.
@@ -98,6 +98,7 @@ vwk_thread(void *priv)
 			EV_SET(ke, wp->fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
 			AZ(kevent(vwk->kq, ke, 1, NULL, 0, NULL));
 			Wait_HeapDelete(w, wp);
+			Lck_Unlock(&vwk->mtx);
 			Wait_Call(w, wp, WAITER_TIMEOUT, now);
 		}
 		then = vwk->next - now;
@@ -108,7 +109,6 @@ vwk_thread(void *priv)
 		assert(n >= 0);
 		assert(n <= NKEV);
 		now = VTIM_real();
-		Lck_Lock(&vwk->mtx);
 		for (kp = ke, j = 0; j < n; j++, kp++) {
 			assert(kp->filter == EVFILT_READ);
 			if (ke[j].udata == vwk) {
@@ -116,7 +116,9 @@ vwk_thread(void *priv)
 				continue;
 			}
 			CAST_OBJ_NOTNULL(wp, ke[j].udata, WAITED_MAGIC);
+			Lck_Lock(&vwk->mtx);
 			Wait_HeapDelete(w, wp);
+			Lck_Unlock(&vwk->mtx);
 			vwk->nwaited--;
 			if (kp->flags & EV_EOF)
 				Wait_Call(w, wp, WAITER_REMCLOSE, now);
@@ -126,7 +128,6 @@ vwk_thread(void *priv)
 		if (vwk->nwaited == 0 && vwk->die)
 			break;
 	}
-	Lck_Unlock(&vwk->mtx);
 	AZ(close(vwk->pipe[0]));
 	AZ(close(vwk->pipe[1]));
 	AZ(close(vwk->kq));
