@@ -113,22 +113,23 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 	else
 		printf(",\n");
 
-	printf("\t\"");
+	printf("  \"");
 	/* build the JSON key name.  */
 	if (sec->fantom->type[0])
 		printf("%s.", sec->fantom->type);
 	if (sec->fantom->ident[0])
 		printf("%s.", sec->fantom->ident);
-	printf("%s\": {", pt->desc->name);
+	printf("%s\": {\n", pt->desc->name);
+	printf("    \"description\": \"%s\",\n", pt->desc->sdesc);
+
 	if (strcmp(sec->fantom->type, ""))
-		printf("\"type\": \"%s\", ", sec->fantom->type);
+		printf("    \"type\": \"%s\", ", sec->fantom->type);
 	if (strcmp(sec->fantom->ident, ""))
 		printf("\"ident\": \"%s\", ", sec->fantom->ident);
-	printf("\"value\": %ju, ", (uintmax_t)val);
 	printf("\"flag\": \"%c\", ", pt->desc->semantics);
-	printf("\"format\": \"%c\", ", pt->desc->format);
-	printf("\"description\": \"%s\"", pt->desc->sdesc);
-	printf("}");
+	printf("\"format\": \"%c\",\n", pt->desc->format);
+	printf("    \"value\": %ju", (uintmax_t)val);
+	printf("\n  }");
 
 	if (*jp)
 		printf("\n");
@@ -148,7 +149,7 @@ do_json(struct VSM_data *vd)
 	now = time(NULL);
 
 	(void)strftime(time_stamp, 20, "%Y-%m-%dT%H:%M:%S", localtime(&now));
-	printf("\t\"timestamp\": \"%s\",\n", time_stamp);
+	printf("  \"timestamp\": \"%s\",\n", time_stamp);
 	(void)VSC_Iter(vd, NULL, do_json_cb, &jp);
 	printf("\n}\n");
 	fflush(stdout);
