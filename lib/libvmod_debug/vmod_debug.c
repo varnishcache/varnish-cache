@@ -36,6 +36,7 @@
 #include "vcl.h"
 #include "vrt.h"
 #include "vsb.h"
+#include "vtim.h"
 #include "vcc_if.h"
 
 struct priv_vcl {
@@ -268,4 +269,12 @@ event_function(VRT_CTX, struct vmod_priv *priv, enum vcl_event_e e)
 	priv->priv = priv_vcl;
 	priv->free = priv_vcl_free;
 	return (0);
+}
+
+VCL_VOID __match_proto__(td_debug_sleep)
+vmod_sleep(VRT_CTX, VCL_DURATION t)
+{
+
+	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
+	VTIM_sleep(t);
 }
