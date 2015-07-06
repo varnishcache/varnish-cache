@@ -156,15 +156,17 @@ vwp_main(void *priv)
 {
 	int v;
 	struct vwp *vwp;
+	struct waiter *w;
 	struct waited *wp;
 	double now, then;
 	int i;
 
 	THR_SetName("cache-poll");
 	CAST_OBJ_NOTNULL(vwp, priv, VWP_MAGIC);
+	w = vwp->waiter;
 
 	while (1) {
-		then = Wait_HeapDue(vwp->waiter, &wp);
+		then = Wait_HeapDue(w, &wp);
 		if (wp == NULL)
 			i = -1;
 		else
@@ -179,18 +181,20 @@ vwp_main(void *priv)
 			wp = vwp->idx[i];
 			CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 
-			if (v == 0 && Wait_HeapDue(vwp->waiter, NULL) > now)
+			if (v == 0 && Wait_HeapDue(w, NULL) > now)
 				break;
 			if (vwp->pollfd[i].revents)
 				v--;
 			then = Wait_When(wp);
 			if (then <= now) {
-				Wait_Call(vwp->waiter, wp, WAITER_TIMEOUT, now);
+				Wait_HeapDelete(w, wp);
+				Wait_Call(w, wp, WAITER_TIMEOUT, now);
 				vwp_del(vwp, i);
 			} else if (vwp->pollfd[i].revents & POLLIN) {
 				assert(wp->fd > 0);
 				assert(wp->fd == vwp->pollfd[i].fd);
-				Wait_Call(vwp->waiter, wp, WAITER_ACTION, now);
+				Wait_HeapDelete(w, wp);
+				Wait_Call(w, wp, WAITER_ACTION, now);
 				vwp_del(vwp, i);
 			} else {
 				i++;

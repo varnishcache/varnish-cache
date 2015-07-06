@@ -102,6 +102,7 @@ vwe_thread(void *priv)
 			CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 			AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_DEL, wp->fd, NULL));
 			vwe->nwaited--;
+			Wait_HeapDelete(w, wp);
 			Wait_Call(w, wp, WAITER_TIMEOUT, now);
 		}
 		then = vwe->next - now;
@@ -119,6 +120,7 @@ vwe_thread(void *priv)
 				continue;
 			}
 			CAST_OBJ_NOTNULL(wp, ep->data.ptr, WAITED_MAGIC);
+			Wait_HeapDelete(w, wp);
 			AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_DEL, wp->fd, NULL));
 			vwe->nwaited--;
 			if (ep->events & EPOLLIN)

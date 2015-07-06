@@ -97,6 +97,7 @@ vwk_thread(void *priv)
 			CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 			EV_SET(ke, wp->fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
 			AZ(kevent(vwk->kq, ke, 1, NULL, 0, NULL));
+			Wait_HeapDelete(w, wp);
 			Wait_Call(w, wp, WAITER_TIMEOUT, now);
 		}
 		then = vwk->next - now;
@@ -115,6 +116,7 @@ vwk_thread(void *priv)
 				continue;
 			}
 			CAST_OBJ_NOTNULL(wp, ke[j].udata, WAITED_MAGIC);
+			Wait_HeapDelete(w, wp);
 			vwk->nwaited--;
 			if (kp->flags & EV_EOF)
 				Wait_Call(w, wp, WAITER_REMCLOSE, now);

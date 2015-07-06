@@ -67,15 +67,13 @@ waited_update(void *priv, void *p, unsigned u)
 /**********************************************************************/
 
 void
-Wait_Call(const struct waiter *w,
-    struct waited *wp, enum wait_event ev, double now)
+Wait_Call(const struct waiter *w, struct waited *wp,
+    enum wait_event ev, double now)
 {
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	CHECK_OBJ_NOTNULL(wp->waitfor, WAITFOR_MAGIC);
 	AN(wp->waitfor->func);
-	if (wp->idx != BINHEAP_NOIDX)
-		binheap_delete(w->heap, wp->idx);
 	assert(wp->idx == BINHEAP_NOIDX);
 	wp->waitfor->func(wp, ev, now);
 }
@@ -89,6 +87,23 @@ Wait_HeapInsert(const struct waiter *w, struct waited *wp)
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	assert(wp->idx == BINHEAP_NOIDX);
 	binheap_insert(w->heap, wp);
+}
+
+/*
+ * XXX: wp is const because otherwise FlexeLint complains.  However, *wp
+ * XXX: will actually change as a result of calling this function, via
+ * XXX: the pointer stored in the bin-heap.  I can see how this const
+ * XXX: could maybe confuse a compilers optimizer, but I do not expect
+ * XXX: any harm to come from it.  Caveat Emptor.
+ */
+
+void
+Wait_HeapDelete(const struct waiter *w, const struct waited *wp)
+{
+	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
+	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
+	if (wp->idx != BINHEAP_NOIDX)
+		binheap_delete(w->heap, wp->idx);
 }
 
 double
