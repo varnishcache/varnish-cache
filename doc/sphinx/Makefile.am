@@ -117,9 +117,7 @@ EXTRA_DIST = \
 dist-hook:
 	$(MAKE) html
 	rm -rf $(BUILDDIR)/doctrees
-	cp -r $(BUILDDIR) $(distdir)
-# Remove any extra non-rst files we may have copied over.
-	find $(distdir) -mindepth 2 -type f ! -name \*.rst | grep -v '/build/' | xargs rm -f
+	cp -r $(BUILDDIR)/html $(distdir)/../
 
 distclean-local:
 	rm -rf $(BUILDDIR)
