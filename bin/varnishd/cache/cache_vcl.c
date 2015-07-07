@@ -210,7 +210,6 @@ VCL_DelBackend(struct vcl *vcl, struct backend *be)
 	Lck_Lock(&vcl_mtx);
 	VTAILQ_REMOVE(&vcl->backend_list, be, vcl_list);
 	Lck_Unlock(&vcl_mtx);
-	VBE_Delete(be);
 }
 
 static void

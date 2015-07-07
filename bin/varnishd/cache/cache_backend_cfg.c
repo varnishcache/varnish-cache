@@ -51,7 +51,7 @@ static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
 static struct lock backends_mtx;
 
 /*--------------------------------------------------------------------
- * Create/Delete a new director::backend instance.
+ * Create a new static or dynamic director::backend instance.
  */
 
 struct director *
@@ -117,6 +117,11 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 	return (b->director);
 }
 
+/*--------------------------------------------------------------------
+ * Delete a dynamic director::backend instance.  Undeleted dynamic and
+ * static instances are GC'ed when the VCL is discarded (in cache_vcl.c)
+ */
+
 void
 VRT_delete_backend(VRT_CTX, struct director **dp)
 {
@@ -130,6 +135,7 @@ VRT_delete_backend(VRT_CTX, struct director **dp)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
 	VCL_DelBackend(ctx->vcl, be);
+	VBE_Delete(be);
 }
 
 /*---------------------------------------------------------------------
