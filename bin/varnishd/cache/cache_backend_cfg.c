@@ -50,9 +50,9 @@
 static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
 static struct lock backends_mtx;
 
-const char * const vbe_ah_healthy	= "healthy";
-const char * const vbe_ah_sick		= "sick";
-const char * const vbe_ah_probe		= "probe";
+static const char * const vbe_ah_healthy	= "healthy";
+static const char * const vbe_ah_sick		= "sick";
+static const char * const vbe_ah_probe		= "probe";
 
 /*--------------------------------------------------------------------
  * Create a new static or dynamic director::backend instance.
@@ -205,12 +205,36 @@ vbe_str2adminhealth(const char *wstate)
 {
 
 #define FOO(x, y) if (strcasecmp(wstate, #x) == 0) return (vbe_ah_##y)
-	FOO(healthy, 	healthy);
+	FOO(healthy,	healthy);
 	FOO(sick,	sick);
 	FOO(probe,	probe);
 	FOO(auto,	probe);
 	return (NULL);
 #undef FOO
+}
+
+/*--------------------------------------------------------------------
+ * Test if backend is healthy and report when it last changed
+ */
+
+unsigned
+VBE_Healthy(const struct backend *backend, double *changed)
+{
+	CHECK_OBJ_NOTNULL(backend, BACKEND_MAGIC);
+
+	if (changed != NULL)
+		*changed = backend->health_changed;
+
+	if (backend->admin_health == vbe_ah_probe)
+		return (backend->healthy);
+
+	if (backend->admin_health == vbe_ah_sick)
+		return (0);
+
+	if (backend->admin_health == vbe_ah_healthy)
+		return (1);
+
+	WRONG("Wrong admin health");
 }
 
 /*---------------------------------------------------------------------

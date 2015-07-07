@@ -46,10 +46,6 @@ struct tcp_pool;
  * An instance of a backend from a VCL program.
  */
 
-extern const char * const vbe_ah_healthy;
-extern const char * const vbe_ah_sick;
-extern const char * const vbe_ah_probe;
-
 struct backend {
 	unsigned		magic;
 #define BACKEND_MAGIC		0x64c4c7c6

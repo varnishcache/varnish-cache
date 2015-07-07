@@ -1053,7 +1053,7 @@ void VCL_Ref(struct vcl *);
 void VCL_Refresh(struct vcl **);
 void VCL_Rel(struct vcl **);
 void VCL_AddBackend(struct vcl *, struct backend *);
-void VCL_DelBackend(struct vcl *, struct backend *);
+void VCL_DelBackend(struct vcl *, const struct backend *);
 const char *VCL_Return_Name(unsigned);
 
 #define VCL_MET_MAC(l,u,b) \

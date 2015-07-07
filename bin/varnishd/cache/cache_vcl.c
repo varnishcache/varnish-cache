@@ -203,7 +203,7 @@ VCL_AddBackend(struct vcl *vcl, struct backend *be)
 }
 
 void
-VCL_DelBackend(struct vcl *vcl, struct backend *be)
+VCL_DelBackend(struct vcl *vcl, const struct backend *be)
 {
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);

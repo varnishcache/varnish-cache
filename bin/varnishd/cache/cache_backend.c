@@ -55,27 +55,6 @@
 	} while (0)
 
 /*--------------------------------------------------------------------
- * Test if backend is healthy and report when it last changed
- */
-
-unsigned
-VBE_Healthy(const struct backend *backend, double *changed)
-{
-	CHECK_OBJ_NOTNULL(backend, BACKEND_MAGIC);
-
-	if (changed != NULL)
-		*changed = backend->health_changed;
-
-	if (backend->admin_health == vbe_ah_probe && !backend->healthy)
-		return (0);
-
-	if (backend->admin_health == vbe_ah_sick)
-		return (0);
-
-	return (1);
-}
-
-/*--------------------------------------------------------------------
  * Get a connection to the backend
  */
 
