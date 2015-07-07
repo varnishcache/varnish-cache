@@ -37,6 +37,7 @@
 
 #include <errno.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "cache.h"
 
@@ -59,16 +60,63 @@ static VTAILQ_HEAD(, ilck)	ilck_head = VTAILQ_HEAD_INITIALIZER(ilck_head);
 
 static pthread_mutex_t		lck_mtx;
 
+/*--------------------------------------------------------------------*/
+
+static void
+Lck_Witness_Lock(const struct ilck *il, const char *p, int l, const char *try)
+{
+	char *q, t[10];
+	int emit;
+
+	AN(p);
+	q = pthread_getspecific(witness_key);
+	if (q == NULL) {
+		q = calloc(1, 1024);
+		AN(q);
+		AZ(pthread_setspecific(witness_key, q));
+	}
+	emit = *q != '\0';
+	strcat(q, " ");
+	strcat(q, il->w);
+	strcat(q, try);
+	strcat(q, ",");
+	strcat(q, p);
+	strcat(q, ",");
+	bprintf(t, "%d", l);
+	strcat(q, t);
+	if (emit)
+		VSL(SLT_Witness, 0, "%s", q);
+}
+
+static void
+Lck_Witness_Unlock(const struct ilck *il)
+{
+	char *q, *r;
+
+	q = pthread_getspecific(witness_key);
+	if (q == NULL)
+		return;
+	r = strrchr(q, ' ');
+	if (r == NULL)
+		r = q;
+	else
+		*r++ = '\0';
+	if (memcmp(r, il->w, strlen(il->w)))
+		VSL(SLT_Witness, 0, "Unlock %s @ %s <%s>", il->w, r, q);
+	else
+		*r = '\0';
+}
+
+/*--------------------------------------------------------------------*/
+
 void __match_proto__()
-Lck__Lock(struct lock *lck, const char *p, const char *f, int l)
+Lck__Lock(struct lock *lck, const char *p, int l)
 {
 	struct ilck *ilck;
 
-	(void)p;
-	(void)f;
-	(void)l;
-
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
+	if (DO_DEBUG(DBG_WITNESS))
+		Lck_Witness_Lock(ilck, p, l, "");
 	AZ(pthread_mutex_lock(&ilck->mtx));
 	AZ(ilck->held);
 	ilck->stat->locks++;
@@ -77,12 +125,11 @@ Lck__Lock(struct lock *lck, const char *p, const char *f, int l)
 }
 
 void __match_proto__()
-Lck__Unlock(struct lock *lck, const char *p, const char *f, int l)
+Lck__Unlock(struct lock *lck, const char *p, int l)
 {
 	struct ilck *ilck;
 
 	(void)p;
-	(void)f;
 	(void)l;
 
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
@@ -101,19 +148,19 @@ Lck__Unlock(struct lock *lck, const char *p, const char *f, int l)
 	 */
 	memset(&ilck->owner, 0, sizeof ilck->owner);
 	AZ(pthread_mutex_unlock(&ilck->mtx));
+	if (DO_DEBUG(DBG_WITNESS))
+		Lck_Witness_Unlock(ilck);
 }
 
 int __match_proto__()
-Lck__Trylock(struct lock *lck, const char *p, const char *f, int l)
+Lck__Trylock(struct lock *lck, const char *p, int l)
 {
 	struct ilck *ilck;
 	int r;
 
-	(void)p;
-	(void)f;
-	(void)l;
-
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
+	if (DO_DEBUG(DBG_WITNESS))
+		Lck_Witness_Lock(ilck, p, l, "?");
 	r = pthread_mutex_trylock(&ilck->mtx);
 	assert(r == 0 || r == EBUSY);
 	if (r == 0) {

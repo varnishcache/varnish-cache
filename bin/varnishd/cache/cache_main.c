@@ -51,6 +51,7 @@ volatile struct params	*cache_param;
 
 static pthread_key_t req_key;
 static pthread_key_t bo_key;
+pthread_key_t witness_key;
 
 void
 THR_SetBusyobj(const struct busyobj *bo)
@@ -199,6 +200,7 @@ child_main(void)
 
 	AZ(pthread_key_create(&req_key, NULL));
 	AZ(pthread_key_create(&bo_key, NULL));
+	AZ(pthread_key_create(&witness_key, NULL));
 	AZ(pthread_key_create(&name_key, NULL));
 
 	THR_SetName("cache-main");

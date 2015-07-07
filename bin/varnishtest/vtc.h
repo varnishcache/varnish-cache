@@ -70,6 +70,7 @@ extern int vtc_stop;		/* Abandon current test, no error */
 extern pthread_t	vtc_thread;
 extern int iflg;
 extern unsigned vtc_maxdur;
+extern int vtc_witness;
 
 void init_sema(void);
 void init_server(void);

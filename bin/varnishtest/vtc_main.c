@@ -88,6 +88,7 @@ static int vtc_fail;
 static int leave_temp;
 static char *tmppath;
 static char *cwd = NULL;
+int vtc_witness = 0;
 
 /**********************************************************************
  * Parse a -D option argument into a name/val pair, and insert
@@ -414,7 +415,7 @@ main(int argc, char * const *argv)
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
-	while ((ch = getopt(argc, argv, "D:ij:klLn:qt:v")) != -1) {
+	while ((ch = getopt(argc, argv, "D:ij:klLn:qt:vW")) != -1) {
 		switch (ch) {
 		case 'D':
 			if (!parse_D_opt(optarg)) {
@@ -451,6 +452,9 @@ main(int argc, char * const *argv)
 		case 'v':
 			if (vtc_verbosity < 2)
 				vtc_verbosity++;
+			break;
+		case 'W':
+			vtc_witness++;
 			break;
 		default:
 			usage();

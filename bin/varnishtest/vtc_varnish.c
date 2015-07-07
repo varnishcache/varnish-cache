@@ -394,6 +394,8 @@ varnish_launch(struct varnish *v)
 	VSB_printf(vsb, "cd ${pwd} &&");
 	VSB_printf(vsb, " exec ${varnishd} %s -d -n %s",
 	    v->jail, v->workdir);
+	if (vtc_witness)
+		VSB_cat(vsb, " -p debug=+witness");
 	VSB_printf(vsb, " -l 2m,1m,-");
 	VSB_printf(vsb, " -p auto_restart=off");
 	VSB_printf(vsb, " -p syslog_cli_traffic=off");

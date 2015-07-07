@@ -518,5 +518,9 @@ SLTM(VfpAcct, 0, "Fetch filter accounting",
 	NODEF_NOTICE
 )
 
+SLTM(Witness, 0, "Lock order witness records",
+	"Diagnostic recording of locking order.\n"
+)
+
 #undef NODEF_NOTICE
 /*lint -restore */

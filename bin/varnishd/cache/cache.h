@@ -849,6 +849,7 @@ unsigned HTTP1_Write(const struct worker *w, const struct http *hp, const int*);
 #define VXID(u) ((u) & VSL_IDENTMASK)
 uint32_t VXID_Get(struct worker *, uint32_t marker);
 extern volatile struct params * cache_param;
+extern pthread_key_t witness_key;
 void THR_SetName(const char *name);
 const char* THR_GetName(void);
 void THR_SetBusyobj(const struct busyobj *);
@@ -859,9 +860,9 @@ struct req * THR_GetRequest(void);
 /* cache_lck.c */
 
 /* Internal functions, call only through macros below */
-void Lck__Lock(struct lock *lck, const char *p, const char *f, int l);
-void Lck__Unlock(struct lock *lck, const char *p, const char *f, int l);
-int Lck__Trylock(struct lock *lck, const char *p, const char *f, int l);
+void Lck__Lock(struct lock *lck, const char *p,  int l);
+void Lck__Unlock(struct lock *lck, const char *p,  int l);
+int Lck__Trylock(struct lock *lck, const char *p,  int l);
 void Lck__New(struct lock *lck, struct VSC_C_lck *, const char *);
 void Lck__Assert(const struct lock *lck, int held);
 
@@ -871,9 +872,9 @@ void Lck_Delete(struct lock *lck);
 int Lck_CondWait(pthread_cond_t *cond, struct lock *lck, double);
 
 #define Lck_New(a, b) Lck__New(a, b, #b)
-#define Lck_Lock(a) Lck__Lock(a, __func__, __FILE__, __LINE__)
-#define Lck_Unlock(a) Lck__Unlock(a, __func__, __FILE__, __LINE__)
-#define Lck_Trylock(a) Lck__Trylock(a, __func__, __FILE__, __LINE__)
+#define Lck_Lock(a) Lck__Lock(a, __func__, __LINE__)
+#define Lck_Unlock(a) Lck__Unlock(a, __func__, __LINE__)
+#define Lck_Trylock(a) Lck__Trylock(a, __func__, __LINE__)
 #define Lck_AssertHeld(a) Lck__Assert(a, 1)
 
 #define LOCK(nam) extern struct VSC_C_lck *lck_##nam;
