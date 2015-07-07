@@ -1,0 +1,29 @@
+varnishtest "The (struct backend).n_conn counter is never decremented"
+
+server s1 {
+	rxreq
+	txresp
+
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl {
+	backend s1 {
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+		.max_connections = 1;
+	}
+} -start
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/bar"
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -expect backend_busy == 0
