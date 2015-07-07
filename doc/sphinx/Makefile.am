@@ -35,7 +35,7 @@ clean:
 link_srcdir:
 	if test "x$(srcdir)" != "x$(builddir)" && test ! -f index.rst ; then \
 		d=`pwd`/$(builddir) ; \
-		cd $(srcdir) && find . -name \*.rst -type f | cpio -ldmp $${d} ; \
+		cd $(srcdir) && find . -type f | cpio -ldmp $${d} ; \
 	fi
 
 # work around for make html called within doc/sphinx
