@@ -45,9 +45,9 @@ The important decisions to make are:
 CLI interface access
 ^^^^^^^^^^^^^^^^^^^^
 
-The command line interface can be accessed three ways.
+The command line interface can be accessed in three ways.
 
-`Varnishd` can be told til listen and offer CLI connections
+`Varnishd` can be told to listen and offer CLI connections
 on a TCP socket. You can bind the socket to pretty
 much anything the kernel will accept::
 
@@ -227,12 +227,12 @@ HTTP requests
 -------------
 
 We have gone to great lengths to make Varnish resistant to anything
-coming in throught the socket where HTTP requests are received, and
+coming in through the socket where HTTP requests are received, and
 you should, generally speaking, not need to protect it any further.
 
 The caveat is that since VCL is a programming language which lets you
 decide exactly what to do with HTTP requests, you can also decide
-to do stupid and potentially dangerous things with them, including opening youself up
+to do stupid and potentially dangerous things with them, including opening yourself up
 to various kinds of attacks and subversive activities.
 
 If you have "administrative" HTTP requests, for instance PURGE
