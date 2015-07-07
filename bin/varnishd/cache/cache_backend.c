@@ -165,6 +165,8 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 		VSC_C_main->backend_recycle++;
 		VBT_Recycle(wrk, bp->tcp_pool, &vbc);
 	}
+	assert(bp->n_conn > 0);
+	bp->n_conn--;
 #define ACCT(foo)	bp->vsc->foo += bo->acct.foo;
 #include "tbl/acct_fields_bereq.h"
 #undef ACCT
