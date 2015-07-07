@@ -675,6 +675,7 @@ void VCA_Shutdown(void);
 
 /* cache_backend_cfg.c */
 void VBE_InitCfg(void);
+void VBE_Poll(void);
 
 /* cache_backend_poll.c */
 void VBP_Init(void);
@@ -1052,8 +1053,6 @@ void VCL_Poll(void);
 void VCL_Ref(struct vcl *);
 void VCL_Refresh(struct vcl **);
 void VCL_Rel(struct vcl **);
-void VCL_AddBackend(struct vcl *, struct backend *);
-void VCL_DelBackend(struct vcl *, const struct backend *);
 const char *VCL_Return_Name(unsigned);
 
 #define VCL_MET_MAC(l,u,b) \

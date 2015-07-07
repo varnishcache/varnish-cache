@@ -57,7 +57,7 @@ struct backend {
 
 	VRT_BACKEND_FIELDS()
 
-	const struct vcl	*vcl;
+	struct vcl		*vcl;
 	char			*display_name;
 
 	unsigned		n_conn;
@@ -109,13 +109,14 @@ void VBE_Event(struct backend *, enum vcl_event_e);
 #endif
 void VBE_Delete(struct backend *be);
 
-/* cache_backend_poll.c */
+/* cache_backend_probe.c */
 void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
     struct tcp_pool *);
 void VBP_Remove(struct backend *b);
 void VBP_Control(const struct backend *b, int stop);
 void VBP_Status(struct cli *cli, const struct backend *, int details);
 
+/* cache_backend_tcp.c */
 struct tcp_pool *VBT_Ref(const struct suckaddr *ip4,
     const struct suckaddr *ip6);
 void VBT_Rel(struct tcp_pool **tpp);
@@ -125,3 +126,7 @@ void VBT_Close(struct tcp_pool *tp, struct vbc **vbc);
 struct vbc *VBT_Get(struct tcp_pool *, double tmo, const struct backend *,
     struct worker *);
 void VBT_Wait(struct worker *, struct vbc *);
+
+/* cache_vcl.c */
+void VCL_AddBackend(struct vcl *, struct backend *);
+void VCL_DelBackend(const struct backend *);

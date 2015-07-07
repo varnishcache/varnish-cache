@@ -53,6 +53,7 @@ static struct lock backends_mtx;
 static const char * const vbe_ah_healthy	= "healthy";
 static const char * const vbe_ah_sick		= "sick";
 static const char * const vbe_ah_probe		= "probe";
+static const char * const vbe_ah_deleted	= "deleted";
 
 /*--------------------------------------------------------------------
  * Create a new static or dynamic director::backend instance.
@@ -131,6 +132,7 @@ VRT_delete_backend(VRT_CTX, struct director **dp)
 {
 	struct director *d;
 	struct backend *be;
+	int r;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(dp);
@@ -138,8 +140,20 @@ VRT_delete_backend(VRT_CTX, struct director **dp)
 	*dp = NULL;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
-	VCL_DelBackend(ctx->vcl, be);
-	VBE_Delete(be);
+	Lck_Lock(&be->mtx);
+	be->admin_health = vbe_ah_deleted;
+	be->health_changed = VTIM_real();
+	r = be->n_conn;
+	if (r > 0) {
+		/* move to front of list for fast access */
+		VTAILQ_REMOVE(&backends, be, list);
+		VTAILQ_INSERT_HEAD(&backends, be, list);
+	}
+	Lck_Unlock(&be->mtx);
+	if (r == 0) {
+		VCL_DelBackend(be);
+		VBE_Delete(be);
+	}
 }
 
 /*---------------------------------------------------------------------
@@ -231,6 +245,9 @@ VBE_Healthy(const struct backend *backend, double *changed)
 	if (backend->admin_health == vbe_ah_sick)
 		return (0);
 
+	if (backend->admin_health == vbe_ah_deleted)
+		return (0);
+
 	if (backend->admin_health == vbe_ah_healthy)
 		return (1);
 
@@ -275,6 +292,8 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 	AZ(VSB_finish(vsb));
 	Lck_Lock(&backends_mtx);
 	VTAILQ_FOREACH(b, &backends, list) {
+		if (b->admin_health == vbe_ah_deleted)
+			continue;
 		if (fnmatch(VSB_data(vsb), b->display_name, 0))
 			continue;
 		found++;
@@ -357,7 +376,8 @@ do_set_health(struct cli *cli, struct backend *b, void *priv)
 	AN(*ah);
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 	prev = VBE_Healthy(b, NULL);
-	b->admin_health = *ah;
+	if (b->admin_health != vbe_ah_deleted)
+		b->admin_health = *ah;
 	if (prev != VBE_Healthy(b, NULL))
 		b->health_changed = VTIM_real();
 
@@ -400,6 +420,27 @@ static struct cli_proto backend_cmds[] = {
 	    2, 2, "", cli_backend_set_health },
 	{ NULL }
 };
+
+/*---------------------------------------------------------------------*/
+
+void
+VBE_Poll(void)
+{
+	struct backend *be;
+	Lck_Lock(&backends_mtx);
+	while (1) {
+		be = VTAILQ_FIRST(&backends);
+		if (be == NULL)
+			break;
+		if (be->admin_health != vbe_ah_deleted)
+			break;
+		if (be->n_conn > 0)
+			break;
+		VCL_DelBackend(be);
+		VBE_Delete(be);
+	}
+	Lck_Unlock(&backends_mtx);
+}
 
 /*---------------------------------------------------------------------*/
 

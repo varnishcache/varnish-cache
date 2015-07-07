@@ -47,6 +47,7 @@
 #include "vcli.h"
 #include "vcli_priv.h"
 
+static const char * const vcl_temp_init = "init";
 static const char * const vcl_temp_cold = "cold";
 static const char * const vcl_temp_warm = "warm";
 static const char * const vcl_temp_cooling = "cooling";
@@ -199,14 +200,18 @@ VCL_AddBackend(struct vcl *vcl, struct backend *be)
 	if (vcl->temp == vcl_temp_warm) {
 		/* Only when adding backend to already warm VCL */
 		VBE_Event(be, VCL_EVENT_WARM);
-	}
+	} else if (vcl->temp != vcl_temp_init)
+		WRONG("Dynamic Backends can only be added to warm VCLs");
 }
 
 void
-VCL_DelBackend(struct vcl *vcl, const struct backend *be)
+VCL_DelBackend(const struct backend *be)
 {
-	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	struct vcl *vcl;
+
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
+	vcl = be->vcl;
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	Lck_Lock(&vcl_mtx);
 	VTAILQ_REMOVE(&vcl->backend_list, be, vcl_list);
 	Lck_Unlock(&vcl_mtx);
@@ -395,7 +400,7 @@ vcl_set_state(struct vcl *vcl, const char *state)
 		}
 		break;
 	case '1':
-		if (vcl->temp != vcl_temp_cold)
+		if (vcl->temp == vcl_temp_cooling)
 			vcl->temp = vcl_temp_warm;
 		else {
 			vcl->temp = vcl_temp_warm;
@@ -440,7 +445,7 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 	XXXAN(vcl->loaded_name);
 	VTAILQ_INIT(&vcl->backend_list);
 
-	vcl->temp = vcl_temp_cold;
+	vcl->temp = vcl_temp_init;
 
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 	ctx.method = VCL_MET_INIT;

@@ -78,6 +78,7 @@ cli_cb_before(const struct cli *cli)
 	ASSERT_CLI();
 	VSL(SLT_CLI, 0, "Rd %s", cli->cmd);
 	VCL_Poll();
+	VBE_Poll();
 	Lck_Lock(&cli_mtx);
 }
 
