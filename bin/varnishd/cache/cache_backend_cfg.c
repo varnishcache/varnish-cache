@@ -50,6 +50,10 @@
 static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
 static struct lock backends_mtx;
 
+const char * const vbe_ah_healthy	= "healthy";
+const char * const vbe_ah_sick		= "sick";
+const char * const vbe_ah_probe		= "probe";
+
 /*--------------------------------------------------------------------
  * Create a new static or dynamic director::backend instance.
  */
@@ -91,7 +95,7 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 
 	b->healthy = 1;
 	b->health_changed = VTIM_real();
-	b->admin_health = ah_probe;
+	b->admin_health = vbe_ah_probe;
 
 	vbp = vrt->probe;
 	if (vbp == NULL)
@@ -196,17 +200,17 @@ VBE_Delete(struct backend *be)
  * String to admin_health
  */
 
-static enum admin_health
+static const char *
 vbe_str2adminhealth(const char *wstate)
 {
 
-	if (strcasecmp(wstate, "healthy") == 0)
-		return (ah_healthy);
-	if (strcasecmp(wstate, "sick") == 0)
-		return (ah_sick);
-	if (strcmp(wstate, "auto") == 0)
-		return (ah_probe);
-	return (ah_invalid);
+#define FOO(x, y) if (strcasecmp(wstate, #x) == 0) return (vbe_ah_##y)
+	FOO(healthy, 	healthy);
+	FOO(sick,	sick);
+	FOO(probe,	probe);
+	FOO(auto,	probe);
+	return (NULL);
+#undef FOO
 }
 
 /*---------------------------------------------------------------------
@@ -275,14 +279,7 @@ do_list(struct cli *cli, struct backend *b, void *priv)
 
 	VCLI_Out(cli, "\n%-30s", b->display_name);
 
-	if (b->admin_health == ah_probe)
-		VCLI_Out(cli, " %-10s", "probe");
-	else if (b->admin_health == ah_sick)
-		VCLI_Out(cli, " %-10s", "sick");
-	else if (b->admin_health == ah_healthy)
-		VCLI_Out(cli, " %-10s", "healthy");
-	else
-		VCLI_Out(cli, " %-10s", "invalid");
+	VCLI_Out(cli, " %-10s", b->admin_health);
 
 	if (b->probe == NULL)
 		VCLI_Out(cli, " %s", "Healthy (no probe)");
@@ -327,14 +324,16 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 static int __match_proto__()
 do_set_health(struct cli *cli, struct backend *b, void *priv)
 {
-	enum admin_health state;
+	const char **ah;
 	unsigned prev;
 
 	(void)cli;
-	state = *(enum admin_health*)priv;
+	AN(priv);
+	ah = priv;
+	AN(*ah);
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 	prev = VBE_Healthy(b, NULL);
-	b->admin_health = state;
+	b->admin_health = *ah;
 	if (prev != VBE_Healthy(b, NULL))
 		b->health_changed = VTIM_real();
 
@@ -344,7 +343,7 @@ do_set_health(struct cli *cli, struct backend *b, void *priv)
 static void
 cli_backend_set_health(struct cli *cli, const char * const *av, void *priv)
 {
-	enum admin_health state;
+	const char *ah;
 	int n;
 
 	(void)av;
@@ -352,13 +351,13 @@ cli_backend_set_health(struct cli *cli, const char * const *av, void *priv)
 	ASSERT_CLI();
 	AN(av[2]);
 	AN(av[3]);
-	state = vbe_str2adminhealth(av[3]);
-	if (state == ah_invalid) {
+	ah = vbe_str2adminhealth(av[3]);
+	if (ah == NULL) {
 		VCLI_Out(cli, "Invalid state %s", av[3]);
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
-	n = backend_find(cli, av[2], do_set_health, &state);
+	n = backend_find(cli, av[2], do_set_health, &ah);
 	if (n == 0) {
 		VCLI_Out(cli, "No Backends matches");
 		VCLI_SetResult(cli, CLIS_PARAM);

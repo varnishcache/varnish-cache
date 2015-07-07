@@ -66,10 +66,10 @@ VBE_Healthy(const struct backend *backend, double *changed)
 	if (changed != NULL)
 		*changed = backend->health_changed;
 
-	if (backend->admin_health == ah_probe && !backend->healthy)
+	if (backend->admin_health == vbe_ah_probe && !backend->healthy)
 		return (0);
 
-	if (backend->admin_health == ah_sick)
+	if (backend->admin_health == vbe_ah_sick)
 		return (0);
 
 	return (1);
@@ -346,16 +346,8 @@ vbe_panic(const struct director *d, struct vsb *vsb)
 		VSB_printf(vsb, "      ipv6 = %s\n", bp->ipv6_addr);
 	VSB_printf(vsb, "      port = %s\n", bp->port);
 	VSB_printf(vsb, "      hosthdr = %s\n", bp->hosthdr);
-	VSB_printf(vsb, "      health=%s, admin_health=",
-	    bp->healthy ? "healthy" : "sick");
-	if (bp->admin_health == ah_probe)
-		VSB_printf(vsb, "probe");
-	else if (bp->admin_health == ah_sick)
-		VSB_printf(vsb, "sick");
-	else if (bp->admin_health == ah_healthy)
-		VSB_printf(vsb, "healthy");
-	else
-		VSB_printf(vsb, "*invalid*");
+	VSB_printf(vsb, "      health=%s, admin_health=%s",
+	    bp->healthy ? "healthy" : "sick", bp->admin_health);
 	VSB_printf(vsb, ", changed=%.1f\n", bp->health_changed);
 }
 

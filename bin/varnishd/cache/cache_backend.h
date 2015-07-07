@@ -46,12 +46,9 @@ struct tcp_pool;
  * An instance of a backend from a VCL program.
  */
 
-enum admin_health {
-	ah_invalid = 0,
-	ah_healthy,
-	ah_sick,
-	ah_probe
-};
+extern const char * const vbe_ah_healthy;
+extern const char * const vbe_ah_sick;
+extern const char * const vbe_ah_probe;
 
 struct backend {
 	unsigned		magic;
@@ -71,7 +68,7 @@ struct backend {
 
 	struct vbp_target	*probe;
 	unsigned		healthy;
-	enum admin_health	admin_health;
+	const char		*admin_health;
 	double			health_changed;
 
 	struct VSC_C_vbe	*vsc;
