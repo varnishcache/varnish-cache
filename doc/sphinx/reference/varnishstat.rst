@@ -184,12 +184,12 @@ With -j the output format is::
     "FIELD NAME": {
       "description": "FIELD DESCRIPTION",
       "type": "FIELD TYPE", "ident": "FIELD IDENT", "flag": "FIELD SEMANTICS", "format": "FIELD DISPLAY FORMAT",
-      "value": FIELD VALUE,
+      "value": FIELD VALUE
     },
     "FIELD2 NAME": {
       "description": "FIELD2 DESCRIPTION",
       "type": "FIELD2 TYPE", "ident": "FIELD2 IDENT", "flag": "FIELD2 SEMANTICS", "format": "FIELD2 DISPLAY FORMAT",
-      "value": FIELD2 VALUE,
+      "value": FIELD2 VALUE
     },
     [..]
   }
