@@ -180,7 +180,7 @@ vwe_init(struct waiter *w)
 
 	vwe->epfd = epoll_create(1);
 	assert(vwe->epfd >= 0);
-	Lck_New(&vwe->mtx, lck_misc);
+	Lck_New(&vwe->mtx, lck_waiter);
 	AZ(pipe(vwe->pipe));
 	ee.events = EPOLLIN | EPOLLRDHUP;
 	ee.data.ptr = vwe;

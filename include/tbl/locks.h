@@ -29,6 +29,7 @@
 
 /*lint -save -e525 -e539 */
 LOCK(backend)
+LOCK(backend_tcp)
 LOCK(ban)
 LOCK(busyobj)
 LOCK(cli)
@@ -38,7 +39,6 @@ LOCK(hcl)
 LOCK(hsl)
 LOCK(lru)
 LOCK(mempool)
-LOCK(misc)
 LOCK(objhdr)
 LOCK(pipestat)
 LOCK(sess)
@@ -49,6 +49,7 @@ LOCK(vbe)
 LOCK(vcapace)
 LOCK(vcl)
 LOCK(vxid)
+LOCK(waiter)
 LOCK(wq)
 LOCK(wstat)
 /*lint -restore */

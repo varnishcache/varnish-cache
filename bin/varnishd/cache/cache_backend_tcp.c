@@ -158,7 +158,7 @@ VBT_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6)
 	if (ip6 != NULL)
 		tp->ip6 = VSA_Clone(ip6);
 	tp->refcnt = 1;
-	Lck_New(&tp->mtx, lck_backend);
+	Lck_New(&tp->mtx, lck_backend_tcp);
 	VTAILQ_INIT(&tp->connlist);
 	VTAILQ_INIT(&tp->killlist);
 	VTAILQ_INSERT_HEAD(&pools, tp, list);

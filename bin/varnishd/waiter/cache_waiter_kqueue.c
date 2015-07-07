@@ -172,7 +172,7 @@ vwk_init(struct waiter *w)
 
 	vwk->kq = kqueue();
 	assert(vwk->kq >= 0);
-	Lck_New(&vwk->mtx, lck_misc);
+	Lck_New(&vwk->mtx, lck_waiter);
 	AZ(pipe(vwk->pipe));
 	EV_SET(&ke, vwk->pipe[0], EVFILT_READ, EV_ADD, 0, 0, vwk);
 	AZ(kevent(vwk->kq, &ke, 1, NULL, 0, NULL));
