@@ -140,7 +140,6 @@ void
 VBE_Event(struct backend *be, enum vcl_event_e ev)
 {
 
-	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 
 	if (ev == VCL_EVENT_WARM) {

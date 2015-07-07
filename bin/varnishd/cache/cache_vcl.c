@@ -195,6 +195,11 @@ VCL_AddBackend(struct vcl *vcl, struct backend *be)
 	Lck_Lock(&vcl_mtx);
 	VTAILQ_INSERT_TAIL(&vcl->backend_list, be, vcl_list);
 	Lck_Unlock(&vcl_mtx);
+
+	if (vcl->temp == vcl_temp_warm) {
+		/* Only when adding backend to already warm VCL */
+		VBE_Event(be, VCL_EVENT_WARM);
+	}
 }
 
 void
