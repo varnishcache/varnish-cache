@@ -427,8 +427,8 @@ void
 VBE_Poll(void)
 {
 	struct backend *be;
-	Lck_Lock(&backends_mtx);
 	while (1) {
+		Lck_Lock(&backends_mtx);
 		be = VTAILQ_FIRST(&backends);
 		if (be == NULL)
 			break;
@@ -436,6 +436,7 @@ VBE_Poll(void)
 			break;
 		if (be->n_conn > 0)
 			break;
+		Lck_Unlock(&backends_mtx);
 		VCL_DelBackend(be);
 		VBE_Delete(be);
 	}
