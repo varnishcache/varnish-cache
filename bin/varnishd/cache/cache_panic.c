@@ -145,6 +145,19 @@ pan_htc(struct vsb *vsb, const struct http_conn *htc)
 	VSB_printf(vsb, "http_conn = %p {\n", htc);
 	VSB_indent(vsb, 2);
 	VSB_printf(vsb, "fd = %d,\n", htc->fd);
+	VSB_printf(vsb, "doclose = %s,\n", sess_close_2str(htc->doclose, 0));
+	VSB_printf(vsb, "ws = %p,\n", htc->ws);
+	VSB_printf(vsb, "{rxbuf_b, rxbuf_e} = {%p, %p},\n",
+	    htc->rxbuf_b, htc->rxbuf_e);
+	VSB_printf(vsb, "{pipeline_b, pipeline_e} = {%p, %p},\n",
+	    htc->pipeline_b, htc->pipeline_e);
+	VSB_printf(vsb, "content_length = %jd,\n", htc->content_length);
+	VSB_printf(vsb, "body_status = %s,\n",
+	    body_status_2str(htc->body_status));
+	VSB_printf(vsb, "first_byte_timeout = %f,\n",
+	    htc->first_byte_timeout);
+	VSB_printf(vsb, "between_bytes_timeout = %f,\n",
+	    htc->between_bytes_timeout);
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
 }
@@ -267,11 +280,9 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 #undef BO_FLAG
 	VSB_printf(vsb, "}\n");
 
-	if (bo->htc != NULL) {
-		VSB_printf(vsb, "bodystatus = %d (%s),\n",
-		    bo->htc->body_status,
-		    body_status_2str(bo->htc->body_status));
-	}
+	if (VALID_OBJ(bo->htc, HTTP_CONN_MAGIC))
+		pan_htc(vsb, bo->htc);
+
 	if (!VTAILQ_EMPTY(&bo->vfc->vfp)) {
 		VSB_printf(vsb, "filters =");
 		VTAILQ_FOREACH(vfe, &bo->vfc->vfp, list)
@@ -280,8 +291,6 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 		VSB_printf(vsb, "\n");
 	}
 
-	if (VALID_OBJ(bo->htc, HTTP_CONN_MAGIC))
-		pan_htc(vsb, bo->htc);
 	VDI_Panic(bo->director_req, vsb, "director_req");
 	if (bo->director_resp == bo->director_req)
 		VSB_printf(vsb, "director_resp = director_req\n");
