@@ -24,7 +24,7 @@
 # detectdevice.vcl - regex based device detection for Varnish
 # https://github.com/varnish/varnish-devicedetect/
 #
-# Author: Lasse Karstensen <lasse@varnish-software.com>
+# Author: Lasse Karstensen <lkarsten@varnish-software.com>
 
 sub devicedetect {
 	unset req.http.X-UA-Device;
@@ -39,7 +39,10 @@ sub devicedetect {
 		/* If the cookie header is now empty, or just whitespace, unset it. */
 		if (req.http.Cookie ~ "^ *$") { unset req.http.Cookie; }
 	} else {
-		if (req.http.User-Agent ~ "(?i)(ads|google|bing|msn|yandex|baidu|ro|career|)bot" ||
+        if (req.http.User-Agent ~ "\(compatible; Googlebot-Mobile/2.1; \+http://www.google.com/bot.html\)" ||
+            (req.http.User-Agent ~ "iPhone" && req.http.User-Agent ~ "\(compatible; Googlebot/2.1; \+http://www.google.com/bot.html")) {
+            set req.http.X-UA-Device = "mobile-bot"; }
+		elsif (req.http.User-Agent ~ "(?i)(ads|google|bing|msn|yandex|baidu|ro|career|)bot" ||
 		    req.http.User-Agent ~ "(?i)(baidu|jike|symantec)spider" ||
 		    req.http.User-Agent ~ "(?i)scanner" ||
 		    req.http.User-Agent ~ "(?i)(web)crawler") {
@@ -51,13 +54,14 @@ sub devicedetect {
 		elsif (req.http.User-Agent ~ "(?i)android.*(mobile|mini)") { set req.http.X-UA-Device = "mobile-android"; }
 		// android 3/honeycomb was just about tablet-only, and any phones will probably handle a bigger page layout.
 		elsif (req.http.User-Agent ~ "(?i)android 3")              { set req.http.X-UA-Device = "tablet-android"; }
-		/* see http://my.opera.com/community/openweb/idopera/ */
+		/* Opera Mobile */
 		elsif (req.http.User-Agent ~ "Opera Mobi")                  { set req.http.X-UA-Device = "mobile-smartphone"; }
 		// May very well give false positives towards android tablets. Suggestions welcome.
 		elsif (req.http.User-Agent ~ "(?i)android")         { set req.http.X-UA-Device = "tablet-android"; }
 		elsif (req.http.User-Agent ~ "PlayBook; U; RIM Tablet")         { set req.http.X-UA-Device = "tablet-rim"; }
 		elsif (req.http.User-Agent ~ "hp-tablet.*TouchPad")         { set req.http.X-UA-Device = "tablet-hp"; }
 		elsif (req.http.User-Agent ~ "Kindle/3")         { set req.http.X-UA-Device = "tablet-kindle"; }
+		elsif (req.http.User-Agent ~ "Touch.+Tablet PC")            { set req.http.X-UA-Device = "tablet-microsoft"; }
 		elsif (req.http.User-Agent ~ "Mobile.+Firefox")     { set req.http.X-UA-Device = "mobile-firefoxos"; }
 		elsif (req.http.User-Agent ~ "^HTC" ||
 		    req.http.User-Agent ~ "Fennec" ||
