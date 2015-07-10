@@ -808,9 +808,12 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 			VDI_Finish(bo->wrk, bo);
 		}
 
-		if (wrk->handling == VCL_RET_RETRY &&
-		    bo->retries++ < cache_param->max_retries)
-			return (F_STP_RETRY);
+		if (wrk->handling == VCL_RET_RETRY) {
+			if (bo->retries++ < cache_param->max_retries)
+				return (F_STP_RETRY);
+			VSLb(bo->vsl, SLT_VCL_Error,
+			    "Too many retries, delivering 503");
+		}
 
 		return (F_STP_FAIL);
 	}
