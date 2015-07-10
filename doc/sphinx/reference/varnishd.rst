@@ -39,7 +39,7 @@ OPTIONS
   80 (http) is used.
   An additional protocol type can be set for the listening socket with PROTO.
   Valid protocol types are: HTTP/1 (default), and PROXY.
-  Multiple listening adresses can be specificed by using multiple -a arguments.
+  Multiple listening addresses can be specified by using multiple -a arguments.
 
 -b <host[:port]>
 
@@ -252,7 +252,7 @@ specific options. Available jails are:
   the master process whenever possible.
 
   The optional `user` argument specifies which alternative user to
-  use. It defauls to ``varnish``
+  use. It defaults to ``varnish``
 
   The optional `ccgroup` argument specifies a group to add to varnish
   subprocesses requiring access to a c-compiler. There is no default.
@@ -347,7 +347,7 @@ Varnish and bundled tools will, in most cases, exit with one of the
 following codes
 
 * `0` OK
-* `1` Some error which could be system-dependend and/or transient
+* `1` Some error which could be system-dependent and/or transient
 * `2` Serious configuration / parameter error - retrying with the same
   configuration / parameters is most likely useless
 
