@@ -227,13 +227,13 @@ struct http_conn {
 	enum sess_close		doclose;
 	unsigned		maxbytes;
 	unsigned		maxhdr;
+	enum body_status	body_status;
 	struct ws		*ws;
 	char			*rxbuf_b;
 	char			*rxbuf_e;
 	char			*pipeline_b;
 	char			*pipeline_e;
 	ssize_t			content_length;
-	enum body_status	body_status;
 	struct vfp_ctx		vfc[1];
 	void			*priv;
 
@@ -518,6 +518,9 @@ struct req {
 	unsigned		magic;
 #define REQ_MAGIC		0x2751aaa1
 
+	enum req_step		req_step;
+	volatile enum req_body_state_e	req_body_status;
+	enum sess_close		doclose;
 	int			restarts;
 	int			esi_level;
 	struct req		*top;	/* esi_level == 0 request */
@@ -526,6 +529,9 @@ struct req {
 #include "tbl/req_flags.h"
 #undef REQ_FLAG
 
+	uint16_t		err_code;
+	const char		*err_reason;
+
 	struct sess		*sp;
 	struct worker		*wrk;
 	struct pool_task	task;
@@ -533,10 +539,8 @@ struct req {
 	const struct transport	*transport;
 	void			*transport_priv;
 
-	enum req_step		req_step;
 	VTAILQ_ENTRY(req)	w_list;
 
-	volatile enum req_body_state_e	req_body_status;
 	struct objcore		*body_oc;
 
 	/* The busy objhead we sleep on */
@@ -549,13 +553,9 @@ struct req {
 
 	uint8_t			digest[DIGEST_LEN];
 
-	enum sess_close		doclose;
 	double			d_ttl;
 
 	ssize_t			req_bodybytes;	/* Parsed req bodybytes */
-
-	uint16_t		err_code;
-	const char		*err_reason;
 
 	const struct director	*director_hint;
 	struct vcl		*vcl;
@@ -582,6 +582,11 @@ struct req {
 	struct objcore		*objcore;
 	struct objcore		*stale_oc;
 
+	/* Deliver pipeline */
+	struct vdp_entry_s	vdp;
+	struct vdp_entry	*vdp_nxt;
+	unsigned		vdp_errval;
+
 	/* Delivery mode */
 	unsigned		res_mode;
 #define RES_LEN			(1<<1)
@@ -591,11 +596,6 @@ struct req {
 #define RES_ESI_CHILD		(1<<5)
 #define RES_GUNZIP		(1<<6)
 #define RES_PIPE		(1<<7)
-
-	/* Deliver pipeline */
-	struct vdp_entry_s	vdp;
-	struct vdp_entry	*vdp_nxt;
-	unsigned		vdp_errval;
 
 	/* Transaction VSL buffer */
 	struct vsl_log		vsl[1];

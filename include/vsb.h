@@ -37,8 +37,8 @@
 struct vsb {
 	unsigned	magic;
 #define VSB_MAGIC	0x4a82dd8a
-	char		*s_buf;		/* storage buffer */
 	int		 s_error;	/* current error code */
+	char		*s_buf;		/* storage buffer */
 	ssize_t		 s_size;	/* size of storage buffer */
 	ssize_t		 s_len;		/* current length of string */
 #define	VSB_FIXEDLEN	0x00000000	/* fixed length buffer (default) */
