@@ -260,7 +260,7 @@ Poul-Henning, 2014-04-11
 
 .. _Varnish Moral License: http://phk.freebsd.dk/VML
 
-.. _solicited the FreeBSD community: http://people.freebsd.org/~phk/funding.html
+.. _solicited the FreeBSD community: https://people.freebsd.org/~phk/funding.html
 
 .. _Extremely Large Telescope: http://www.eso.org/public/teles-instr/e-elt/
 

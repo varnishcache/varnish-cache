@@ -47,7 +47,7 @@ Platform specific bug reports gets acted on.
 *Linux*
 
 Obviously you can forget about running Varnish on your
-`WRT54G <http://en.wikipedia.org/wiki/Linksys_WRT54G_series>`_
+`WRT54G <https://en.wikipedia.org/wiki/Linksys_WRT54G_series>`_
 but if you have a real computer, you can expect Varnish to work
 "ok or better" on any distro that has a package available.
 

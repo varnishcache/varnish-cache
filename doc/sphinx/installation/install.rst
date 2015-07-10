@@ -36,7 +36,7 @@ on `repo.varnish-cache.org <http://repo.varnish-cache.org/>`_.  See the online
 <https://www.varnish-cache.org/installation/redhat>`_ for more information.
 
 Varnish is included in the `EPEL
-<http://fedoraproject.org/wiki/EPEL>`_ repository, however due to
+<https://fedoraproject.org/wiki/EPEL>`_ repository, however due to
 incompatible syntax changes in newer versions of Varnish, only older
 versions are available.
 

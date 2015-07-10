@@ -64,7 +64,7 @@ link at the bottom of the left menu:
 
 (link to random python doc page:)
 
-        http://docs.python.org/py3k/reference/expressions.html
+        https://docs.python.org/py3k/reference/expressions.html
 
 Dependency wise, that means you can edit docs with no special
 tools, you need python+docutils+sphinx to format HTML and a LaTex

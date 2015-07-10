@@ -48,7 +48,7 @@ PKG_CHECK_EXISTS([varnishapi],[],[
 is in your PATH or set the PKG_CONFIG environment variable to the full
 path to pkg-config.
 
-To get pkg-config, see <http://pkg-config.freedesktop.org/>.])
+To get pkg-config, see <http://www.freedesktop.org/wiki/Software/pkg-config/>.])
 	else
 		AC_MSG_FAILURE(
 [pkg-config was unable to locate the varnishapi configuration data.
