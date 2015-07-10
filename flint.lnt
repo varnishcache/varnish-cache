@@ -15,11 +15,16 @@
 // General stylistic issues
 -e726		// Extraneous comma ignored
 -e641		// Converting enum '...' to int
--e763		// // Redundant declaration for symbol '...' previously declared
+-e763		// Redundant declaration for symbol '...' previously declared
+
+// +e958		// padding
 
 ///////////////////////////////////////////////////////////////////////
-// Ignored return values in system libraries
+// System/Posix/Iso-C library related
 
+-emacro(747, isnan)     // significant coersion
+
+// ignore retval
 -esym(534, printf)
 -esym(534, fprintf)
 -esym(534, sprintf)
@@ -86,3 +91,13 @@
 ///////////////////////////////////////////////////////////////////////
 
 -esym(785,VSL_tags)				// Sparse array
+
+///////////////////////////////////////////////////////////////////////
+// Noise reduction, review periodically
+
+-e459	// unlocked access from func-ptr
+-e679	// Suspicious Truncation in arithmetic expression combining with pointer
+-e712	// Loss of precision (___) (___ to ___)
+-e732	// Loss of sign (___) (___ to ___)
+-e747	// Significant prototype coercion (___) ___ to ___
+

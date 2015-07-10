@@ -63,11 +63,9 @@
 //-sem (pthread_mutex_lock, thread_lock)
 -sem (pthread_mutex_trylock, thread_lock)
 -sem (VBE_DropRefLocked, thread_unlock)
--e459	// unlocked access from func-ptr
 -e454	// mutex not released (...ReleaseLocked)
 -e457	// unprotected access
 -e777	// float equality comparison
--e679	// Suspicious Truncation in arithmetic expression combining with pointer
 
 -esym(458, params)	// unlocked access
 
@@ -133,7 +131,6 @@
 
 -emacro(506, isnan, isfinite)	// constant value boolean
 -emacro(736, isfinite)	// loss of precision
--emacro(747, isnan)	// significant coersion
 -emacro(774, HTTPH)	// always false
 -emacro(527, ARGV_ERR)	// unreachable
 
@@ -153,12 +150,9 @@
 
 // Review all below this line ///////////////////////////////////////////////
 
--e732   // 183 Loss of sign (___) (___ to ___)
 -e737	// 143 Loss of sign in promotion from ___ to ___
 -e713	// 42 Loss of precision (___) (___ to ___)
 -e574	// 48 Signed-unsigned mix with relational
--e712	// 96 Loss of precision (___) (___ to ___)
--e747	// 297 Significant prototype coercion (___) ___ to ___
 -e840	// Use of nul character in a string literal (see: vcc_if.c)
 -e663	// Suspicious array to pointer conversion
 -e778   // Constant expression evaluates to 0 in operation '___'

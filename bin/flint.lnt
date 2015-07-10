@@ -22,9 +22,6 @@
 // System library/POSIX related
 ///////////////////////////////////////////////////////////////////////
 
-// vararg simulation is imperfect (XXX: why ??)
--emacro((???), va_arg)	// 415, 416, 416, 661, 662, 796, 797 ...
-
 // Fix strchr() semtics, it can only return NULL if arg2 != 0
 -sem(strchr, 1p, type(1), 2n == 0 ? (@p < 1p) : (@p < 1p || @p == 0 ))
 
