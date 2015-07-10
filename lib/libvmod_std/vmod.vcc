@@ -46,14 +46,14 @@ $Function STRING toupper(STRING_LIST s)
 Description
 	Converts the string *s* to uppercase.
 Example
-	set beresp.http.x-scream = std.toupper("yes!");
+	set beresp.http.scream = std.toupper("yes!");
 
 $Function STRING tolower(STRING_LIST s)
 
 Description
 	Converts the string *s* to lowercase.
 Example
-	set beresp.http.x-nice = std.tolower("VerY");
+	set beresp.http.nice = std.tolower("VerY");
 
 $Function VOID set_ip_tos(INT tos)
 
@@ -73,7 +73,7 @@ $Function REAL random(REAL lo, REAL hi)
 Description
 	Returns a random real number between *lo* and *hi*.
 Example
-	set beresp.http.x-random-number = std.random(1, 100);
+	set beresp.http.random-number = std.random(1, 100);
 
 $Function VOID log(STRING_LIST s)
 
@@ -102,7 +102,7 @@ Description
 	function the caching in the function doesn't take this into
 	account. Also, files are not re-read.
 Example
-	set beresp.http.x-served-by = std.fileread("/etc/hostname");
+	set beresp.http.served-by = std.fileread("/etc/hostname");
 
 $Function VOID collect(HEADER hdr)
 
@@ -131,7 +131,7 @@ Description
 	Converts the string *s* to an integer.	If conversion fails,
 	*fallback* will be returned.
 Example
-	| if (std.integer(req.http.x-foo, 0) > 5) {
+	| if (std.integer(req.http.foo, 0) > 5) {
 	|	...
 	| }
 
@@ -152,7 +152,7 @@ Description
 	Converts the string *s* to a real.  If conversion fails,
 	*fallback* will be returned.
 Example
-	| if (std.real(req.http.x-foo, 0.0) > 5.5) {
+	| if (std.real(req.http.foo, 0.0) > 5.5) {
 	|	...
 	| }
 
@@ -161,21 +161,21 @@ $Function TIME real2time(REAL r)
 Description
 	Converts the real *r* to a time.
 Example
-	set req.http.x-time = std.real2time(1140618699.00);
+	set req.http.time = std.real2time(1140618699.00);
 
 $Function INT time2integer(TIME t)
 
 Description
 	Converts the time *t* to a integer.
 Example
-	set req.http.x-int = std.time2integer(now);
+	set req.http.int = std.time2integer(now);
 
 $Function REAL time2real(TIME t)
 
 Description
 	Converts the time *t* to a real.
 Example
-	set req.http.x-real = std.time2real(now);
+	set req.http.real = std.time2real(now);
 
 $Function BOOL healthy(BACKEND be)
 
@@ -231,11 +231,11 @@ Description
 
 	Note that the comparison is case sensitive.
 Example
-	| if (std.strstr(req.url, req.http.x-restrict)) {
+	| if (std.strstr(req.url, req.http.restrict)) {
 	|     ...
 	| }
 
-	This will check if the content of req.http.x-restrict occurs
+	This will check if the content of req.http.restrict occurs
 	anywhere in req.url.
 
 $Function TIME time(STRING s, TIME fallback)

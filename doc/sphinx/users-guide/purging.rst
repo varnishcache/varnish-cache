@@ -121,11 +121,11 @@ object is not available in the `ban lurker` thread.
 You can use the following template to write `ban lurker` friendly bans::
 
   sub vcl_backend_response {
-    set beresp.http.x-url = bereq.url;
+    set beresp.http.url = bereq.url;
   }
 
   sub vcl_deliver {
-    unset resp.http.x-url; # Optional
+    unset resp.http.url; # Optional
   }
 
   sub vcl_recv {
@@ -133,15 +133,15 @@ You can use the following template to write `ban lurker` friendly bans::
       if (client.ip !~ purge) {
         return(synth(403, "Not allowed"));
       }
-      ban("obj.http.x-url ~ " + req.url); # Assumes req.url is a regex. This might be a bit too simple
+      ban("obj.http.url ~ " + req.url); # Assumes req.url is a regex. This might be a bit too simple
     }
   }
 
 To inspect the current ban list, issue the ``ban.list`` command in the CLI. This
 will produce a status of all current bans::
 
-  0xb75096d0 1318329475.377475    10      obj.http.x-url ~ test
-  0xb7509610 1318329470.785875    20G     obj.http.x-url ~ test
+  0xb75096d0 1318329475.377475    10      obj.http.url ~ test
+  0xb7509610 1318329470.785875    20G     obj.http.url ~ test
 
 The ban list contains the ID of the ban, the timestamp when the ban
 entered the ban list. A count of the objects that has reached this point
