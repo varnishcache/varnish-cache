@@ -217,6 +217,7 @@ class Vmod(object):
 
 		vfn = 'Vmod_%s_Func' % self.nam
 
+		fo.write("/*lint -esym(754, %s::*) */\n" % vfn)
 		fo.write("\nstatic const struct %s Vmod_Func =" % vfn)
 		fo.write(self.c_initializer())
 		fo.write("\n")
@@ -235,7 +236,7 @@ class Vmod(object):
 		fo.write("\n")
 
 		nm = "Vmod_" + self.nam + "_Data"
-		fo.write("extern const struct vmod_data " + nm + ";\n\n")
+		fo.write("/*lint -esym(759, %s) */\n" % nm)
 		fo.write("const struct vmod_data " + nm + " = {\n")
 		fo.write("\t.vrt_major = VRT_MAJOR_VERSION,\n");
 		fo.write("\t.vrt_minor = VRT_MINOR_VERSION,\n");
@@ -288,7 +289,8 @@ class Vmod(object):
 		return s
 
 	def c_strspec(self):
-		s = "static const char * const Vmod_Spec[] = {\n"
+		s = "/*lint -save -e786 -e840 */\n"
+		s += "static const char * const Vmod_Spec[] = {\n"
 
 		for o in self.objs:
 			s += o.c_strspec(self.nam) + ",\n\n"
@@ -304,6 +306,7 @@ class Vmod(object):
 
 		s += "\t0\n"
 		s += "};\n"
+		s += "/*lint -restore */\n"
 		return s
 
 	def doc(self, l):
@@ -898,8 +901,9 @@ def runmain(inputvcc, outputname="vcc_if"):
 	write_c_file_warning(fc)
 	write_c_file_warning(fh)
 
-	fh.write('struct vmod_priv;\n')
-	fh.write("\n")
+	fh.write('struct vmod_priv;\n\n')
+
+	fh.write('extern const struct vmod_data Vmod_%s_Data;\n\n' % vx[0].nam)
 
 	vx[0].c_proto(fh)
 

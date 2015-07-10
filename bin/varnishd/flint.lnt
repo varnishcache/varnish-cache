@@ -118,7 +118,6 @@
 
 -e455	// thread lock
 -e458	// unprotected read
--e763	// Redundant declaration for symbol '...' previously declared
 -e728	// Symbol ... not explicitly initialized
 -e716	// while(1) ... 
 -e785	// Too few initializers for aggregate 
@@ -149,7 +148,6 @@
 // cache_vcl.c
 -esym(528, vcl_call_method)	// Not referenced
 -esym(528, vcl_handlingname)	// Not referenced
--e641	// Converting enum 'cli_status_e' to int
 
 -e441	//  for clause irregularity: loop variable '___' not found in 2nd for expression
 

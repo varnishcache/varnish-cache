@@ -4,27 +4,6 @@
 
 -printf(2, VSB_printf)
 
-
-///////////////////////////////////////////////////////////////////////
-// Weirdness relating to varnish includes etc.
-
--header(../../config.h)
-+libh ../../config.h
--efile(451, ../../config.h)	// No include guard
-
--efile(451, "tbl/*.h")		// No include guard
-
-///////////////////////////////////////////////////////////////////////
-// assert() support, common to libvarnish and libvarnishapi
--sem(VAS_Fail, r_no)
--emacro(506, assert)    // constant value boolean
--emacro(827, assert)    // loop not reachable
--emacro(774, assert)    // booelan always true
--emacro(731, assert)    // booelan arg to eq/non-eq
--emacro(731, xxxassert)	// arg to eq/non-eq
--emacro(527, WRONG)     // unreachable code
-
-
 ///////////////////////////////////////////////////////////////////////
 // miniobj
 
@@ -40,22 +19,6 @@
 -emacro(755, VWMB)		// glob macro not ref
 
 ///////////////////////////////////////////////////////////////////////
-// VSB
-
--esym(759, VSB_*)	// header decl could be moved
--esym(765, VSB_*)	// exten could be made static
--esym(714, VSB_*)	// symb not ref
--sem(VSB_new, @p == (1p ? 1p : malloc(1)))
--sem(VSB_delete, custodial(1))
-
--esym(534, VSB_cat)	// Ignore retval
--esym(534, VSB_bcat)
--esym(534, VSB_putc)
--esym(534, VSB_printf)
--esym(534, VSB_vprintf)
--esym(534, VSB_putc)
-
-///////////////////////////////////////////////////////////////////////
 // System library/POSIX related
 ///////////////////////////////////////////////////////////////////////
 
@@ -64,19 +27,6 @@
 
 // Fix strchr() semtics, it can only return NULL if arg2 != 0
 -sem(strchr, 1p, type(1), 2n == 0 ? (@p < 1p) : (@p < 1p || @p == 0 ))
-
--esym(534, printf)	// Ignore retval
--esym(534, fprintf)
--esym(534, sprintf)
-
--esym(534, memset)
--esym(534, memcpy)
--esym(534, memmove)
-
--esym(534, strcat)
--esym(534, strcpy)
--esym(534, strlcpy)
--esym(534, strncpy)
 
 +typename(844)
 -etype(844, struct pthread *)
