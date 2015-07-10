@@ -65,10 +65,10 @@ memory.
 By using a "localhost" address, you restrict CLI access
 to the local machine.
 
-You can also bind the CLI port to an IP number reachable across
+You can also bind the CLI port to an IP address reachable across
 the net, and let other machines connect directly.
 
-This gives you no secrecy, ie, the CLI commands will
+This gives you no secrecy, i.e. the CLI commands will
 go across the network as ASCII text with no encryption, but
 the -S/PSK authentication requires the remote end to know
 the shared secret.
@@ -88,10 +88,8 @@ to your central Varnish management facility.
 
 .. XXX:Maybe a sample command here with a brief explanation? benc
 
-The connection is also in this case without secrecy, but
-the remote end must still satisfy -S/PSK authentication.
-
-.. XXX:Without encryption instead of secrecy? benc
+The connection in this case is also without encryption, but
+the remote end must still authenticate using -S/PSK.
 
 Finally, if you run varnishd with the '-d' option, you get a CLI
 command on stdin/stdout, but since you started the process, it
