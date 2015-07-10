@@ -12,7 +12,7 @@ from __future__ import print_function
 d = dict()
 a = dict()
 
-fi = open("_w")
+fi = open("_.w")
 fo = open("/tmp/_.dot", "w")
 
 fo.write('''digraph {
