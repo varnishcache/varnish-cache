@@ -50,6 +50,8 @@ The following options are available:
 
 -v               Verbose mode: always report test log
 
+-W               Enable the witness facility for locking
+
 -h               Show help
 
 file             File to use as a script
