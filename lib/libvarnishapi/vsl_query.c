@@ -51,8 +51,6 @@
 #include "vsl_api.h"
 #include "vxp.h"
 
-#define NEEDLESS_RETURN(foo) return(foo)
-
 struct vslq_query {
 	unsigned		magic;
 #define VSLQ_QUERY_MAGIC	0x122322A5

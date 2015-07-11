@@ -103,8 +103,6 @@ void mgt_child_inherit(int fd, const char *what);
 		exit(2);					\
 	} while (0)
 
-#define NEEDLESS_RETURN(foo)	return (foo)
-
 /* cache/cache_vcl.c */
 int VCL_TestLoad(const char *);
 
