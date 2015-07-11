@@ -438,8 +438,8 @@ cmd_shell(CMD_ARGS)
 	r = system(av[1]);
 	s = WEXITSTATUS(r);
 	if (s != 0)
-		vtc_log(vl, 0, "CMD '%s' failed with status %d",
-		    av[1], s);
+		vtc_log(vl, 0, "CMD '%s' failed with status %d (%s)",
+		    av[1], s, strerror(errno));
 }
 
 /**********************************************************************
@@ -635,7 +635,7 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	FILE *f;
 	struct extmacro *m;
 
-	signal(SIGPIPE, SIG_IGN);
+	(void)signal(SIGPIPE, SIG_IGN);
 
 	vtc_loginit(logbuf, loglen);
 	vltop = vtc_logopen("top");

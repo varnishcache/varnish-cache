@@ -43,8 +43,6 @@
 
 #include "vtc.h"
 
-#include "vss.h"
-
 struct process {
 	unsigned		magic;
 #define PROCESS_MAGIC		0x1617b43e
@@ -225,7 +223,7 @@ process_start(struct process *p)
  */
 
 static void
-process_wait(struct process *p)
+process_wait(const struct process *p)
 {
 	void *v;
 
@@ -238,37 +236,34 @@ process_wait(struct process *p)
  */
 
 static void
-process_kill(struct process *p, const char *sig)
+process_kill(const struct process *p, const char *sig)
 {
-	int s, l;
+	int s;
 	char buf[64];
 
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
 	AN(sig);
 
-	if (!p->running || !p->pid) {
+	if (!p->running || !p->pid)
 		vtc_log(p->vl, 0, "Cannot signal a non-running process");
-		return;
-	}
 
-	vtc_log(p->vl, 4, "CMD: kill -%s %d", sig, p->pid);
+	bprintf(buf, "kill -%s %d", sig, p->pid);
+	vtc_log(p->vl, 4, "CMD: %s", buf);
 
-	l = snprintf(buf, sizeof buf, "kill -%s %d", sig, p->pid);
-	AN(l < sizeof buf);
 	s = system(buf);
 	if (s != 0)
 		vtc_log(p->vl, 0, "Failed to send signal (exit status: %d)", s);
 }
 
 static inline void
-process_stop(struct process *p)
+process_stop(const struct process *p)
 {
 
 	process_kill(p, "TERM");
 }
 
 static inline void
-process_terminate(struct process *p)
+process_terminate(const struct process *p)
 {
 
 	process_kill(p, "TERM");
@@ -282,14 +277,12 @@ process_terminate(struct process *p)
  */
 
 static void
-process_write(struct process *p, const char *text)
+process_write(const struct process *p, const char *text)
 {
 	int r, len;
 
-	if (!p->running || !p->pid) {
+	if (!p->running || !p->pid)
 		vtc_log(p->vl, 0, "Cannot write to a non-running process");
-		return;
-	}
 
 	len = strlen(text);
 	vtc_log(p->vl, 4, "Writing %d bytes", len);
@@ -303,10 +296,8 @@ static void
 process_close(struct process *p)
 {
 
-	if (!p->running || !p->pid) {
+	if (!p->running || !p->pid)
 		vtc_log(p->vl, 0, "Cannot close on a non-running process");
-		return;
-	}
 
 	AZ(close(p->fds[1]));
 	p->fds[1] = -1;
