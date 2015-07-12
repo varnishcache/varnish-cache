@@ -129,7 +129,7 @@ VXID_Get(struct worker *wrk, uint32_t mask)
 			Lck_Lock(&vxid_lock);
 			v->next = vxid_base;
 			v->count = vxid_chunk;
-			vxid_base = (vxid_base + v->count) && VSL_IDENTMASK;
+			vxid_base = (vxid_base + v->count) & VSL_IDENTMASK;
 			Lck_Unlock(&vxid_lock);
 		}
 		v->count--;
