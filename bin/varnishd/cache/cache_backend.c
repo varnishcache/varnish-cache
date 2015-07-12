@@ -103,7 +103,6 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	AN(vc->addr);
 
 	Lck_Lock(&bp->mtx);
-	bp->refcount++;
 	bp->n_conn++;
 	bp->vsc->conn++;
 	Lck_Unlock(&bp->mtx);
@@ -330,7 +329,7 @@ vbe_panic(const struct director *d, struct vsb *vsb)
 	VSB_printf(vsb, "      health=%s, admin_health=%s",
 	    bp->healthy ? "healthy" : "sick", bp->admin_health);
 	VSB_printf(vsb, ", changed=%.1f\n", bp->health_changed);
-	VSB_printf(vsb, "      refcount = %d\n", bp->refcount);
+	VSB_printf(vsb, "      n_conn = %u\n", bp->n_conn);
 }
 
 /*--------------------------------------------------------------------*/

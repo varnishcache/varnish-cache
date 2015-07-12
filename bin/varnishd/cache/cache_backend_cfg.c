@@ -70,13 +70,11 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
-
 	assert(vrt->ipv4_suckaddr != NULL || vrt->ipv6_suckaddr != NULL);
 
 	vcl = ctx->vcl;
 	AN(vcl);
 	AN(vrt->vcl_name);
-	assert(vrt->ipv4_suckaddr != NULL || vrt->ipv6_suckaddr != NULL);
 
 	/* Create new backend */
 	ALLOC_OBJ(b, BACKEND_MAGIC);

@@ -52,7 +52,6 @@ struct backend {
 
 	VTAILQ_ENTRY(backend)	list;
 	VTAILQ_ENTRY(backend)	vcl_list;
-	int			refcount;
 	struct lock		mtx;
 
 	VRT_BACKEND_FIELDS()
@@ -129,4 +128,4 @@ void VBT_Wait(struct worker *, struct vbc *);
 
 /* cache_vcl.c */
 void VCL_AddBackend(struct vcl *, struct backend *);
-void VCL_DelBackend(const struct backend *);
+void VCL_DelBackend(struct backend *);

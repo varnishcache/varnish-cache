@@ -205,7 +205,7 @@ VCL_AddBackend(struct vcl *vcl, struct backend *be)
 }
 
 void
-VCL_DelBackend(const struct backend *be)
+VCL_DelBackend(struct backend *be)
 {
 	struct vcl *vcl;
 
@@ -215,6 +215,8 @@ VCL_DelBackend(const struct backend *be)
 	Lck_Lock(&vcl_mtx);
 	VTAILQ_REMOVE(&vcl->backend_list, be, vcl_list);
 	Lck_Unlock(&vcl_mtx);
+	if (vcl->temp == vcl_temp_warm)
+		VBE_Event(be, VCL_EVENT_COLD);
 }
 
 static void
