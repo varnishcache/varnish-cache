@@ -50,6 +50,8 @@ struct backend {
 	unsigned		magic;
 #define BACKEND_MAGIC		0x64c4c7c6
 
+	unsigned		n_conn;
+
 	VTAILQ_ENTRY(backend)	list;
 	VTAILQ_ENTRY(backend)	vcl_list;
 	struct lock		mtx;
@@ -59,7 +61,6 @@ struct backend {
 	struct vcl		*vcl;
 	char			*display_name;
 
-	unsigned		n_conn;
 
 	struct vbp_target	*probe;
 	unsigned		healthy;
@@ -71,6 +72,8 @@ struct backend {
 	struct tcp_pool		*tcp_pool;
 
 	struct director		director[1];
+
+	double			cooled;
 };
 
 /*---------------------------------------------------------------------

@@ -48,6 +48,8 @@
 #include "cache_backend.h"
 
 static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
+static VTAILQ_HEAD(, backend) cool_backends =
+    VTAILQ_HEAD_INITIALIZER(cool_backends);
 static struct lock backends_mtx;
 
 static const char * const vbe_ah_healthy	= "healthy";
@@ -130,7 +132,6 @@ VRT_delete_backend(VRT_CTX, struct director **dp)
 {
 	struct director *d;
 	struct backend *be;
-	int r;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(dp);
@@ -141,17 +142,10 @@ VRT_delete_backend(VRT_CTX, struct director **dp)
 	Lck_Lock(&be->mtx);
 	be->admin_health = vbe_ah_deleted;
 	be->health_changed = VTIM_real();
-	r = be->n_conn;
-	if (r > 0) {
-		/* move to front of list for fast access */
-		VTAILQ_REMOVE(&backends, be, list);
-		VTAILQ_INSERT_HEAD(&backends, be, list);
-	}
+	be->cooled = VTIM_real() + 60.;
+	VTAILQ_REMOVE(&backends, be, list);
+	VTAILQ_INSERT_TAIL(&cool_backends, be, list);
 	Lck_Unlock(&be->mtx);
-	if (r == 0) {
-		VCL_DelBackend(be);
-		VBE_Delete(be);
-	}
 }
 
 /*---------------------------------------------------------------------
@@ -191,7 +185,10 @@ VBE_Delete(struct backend *be)
 		VBP_Remove(be);
 
 	Lck_Lock(&backends_mtx);
-	VTAILQ_REMOVE(&backends, be, list);
+	if (be->cooled > 0)
+		VTAILQ_REMOVE(&cool_backends, be, list);
+	else
+		VTAILQ_REMOVE(&backends, be, list);
 	VSC_C_main->n_backend--;
 	VBT_Rel(&be->tcp_pool);
 	Lck_Unlock(&backends_mtx);
@@ -425,18 +422,21 @@ void
 VBE_Poll(void)
 {
 	struct backend *be;
+	double now = VTIM_real();
+
+	Lck_Lock(&backends_mtx);
 	while (1) {
-		Lck_Lock(&backends_mtx);
-		be = VTAILQ_FIRST(&backends);
+		be = VTAILQ_FIRST(&cool_backends);
 		if (be == NULL)
 			break;
-		if (be->admin_health != vbe_ah_deleted)
+		if (be->cooled > now)
 			break;
 		if (be->n_conn > 0)
-			break;
+			continue;
 		Lck_Unlock(&backends_mtx);
 		VCL_DelBackend(be);
 		VBE_Delete(be);
+		Lck_Lock(&backends_mtx);
 	}
 	Lck_Unlock(&backends_mtx);
 }
