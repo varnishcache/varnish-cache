@@ -1,0 +1,52 @@
+varnishtest "Test dynamic backends hot swap"
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	txresp
+} -start
+
+server s2 {
+	rxreq
+	expect req.url == "/bar"
+	txresp
+} -start
+
+varnish v1 -vcl {
+	import ${vmod_debug};
+
+	backend dummy { .host = "${bad_ip}"; }
+
+	sub vcl_init {
+		new s1 = debug.dyn("${s1_addr}", "${s1_port}");
+	}
+
+	sub vcl_recv {
+		if (req.method == "SWAP") {
+			s1.refresh(req.http.X-Addr, req.http.X-Port);
+			return (synth(200));
+		}
+		set req.backend_hint = s1.backend();
+	}
+} -start
+
+varnish v1 -expect MAIN.n_backend == 2
+
+client c1 {
+	txreq -url "/foo"
+	rxresp
+	expect resp.status == 200
+
+	txreq -req "SWAP" -hdr "X-Addr: ${s2_addr}" -hdr "X-Port: ${s2_port}"
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/bar"
+	rxresp
+	expect resp.status == 200
+} -run
+
+delay 1
+
+varnish v1 -cli backend.list
+# varnish v1 -expect MAIN.n_backend == 2

@@ -108,4 +108,16 @@ Function to fail vcl_init{}
 
 $Function VOID sleep(DURATION)
 
-Block the current worker thread.
+Sleep the current worker thread.
+
+$Object dyn(STRING addr, STRING port)
+
+Dynamically create a single-backend director
+
+$Method BACKEND .backend()
+
+Return the dynamic backend.
+
+$Method VOID .refresh(STRING addr, STRING port)
+
+Dynamically refresh & (always!) replace the backend by a new one.

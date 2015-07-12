@@ -1,0 +1,28 @@
+varnishtest "Test dynamic backends"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl {
+	import ${vmod_debug};
+
+	backend dummy { .host = "${bad_ip}"; }
+
+	sub vcl_init {
+		new s1 = debug.dyn("${s1_addr}", "${s1_port}");
+	}
+
+	sub vcl_recv {
+		set req.backend_hint = s1.backend();
+	}
+} -start
+
+varnish v1 -expect MAIN.n_backend == 2
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
