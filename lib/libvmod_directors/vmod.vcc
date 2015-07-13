@@ -132,8 +132,8 @@ Description
 	to this director.
 
 Example
-	vdir.add_backend(backend1, 10);
-	vdir.add_backend(backend2, 5);
+	vdir.add_backend(backend1, 10.0);
+	vdir.add_backend(backend2, 5.0);
 	# 2/3 to backend1, 1/3 to backend2.
 
 
