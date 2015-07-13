@@ -123,7 +123,7 @@ VXID_Get(struct vxid_pool *v)
 			Lck_Lock(&vxid_lock);
 			v->next = vxid_base;
 			v->count = vxid_chunk;
-			vxid_base += v->count;
+			vxid_base = (vxid_base + v->count) & VSL_IDENTMASK;
 			Lck_Unlock(&vxid_lock);
 		}
 		v->count--;
