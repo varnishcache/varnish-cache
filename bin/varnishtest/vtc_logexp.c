@@ -33,6 +33,16 @@
  *   -g <grouping-mode>
  *   -q <query>
  *
+ *   vsl arguments (vsl_arg.c)
+ *   -b                   Only display backend records
+ *   -c                   Only display client records
+ *   -C                   Caseless regular expressions
+ *   -i <taglist>         Include tags
+ *   -I <[taglist:]regex> Include by regex
+ *   -L <limit>           Incomplete transaction limit
+ *   -T <seconds>         Transaction end timeout
+ *
+ *
  * logexpect lN -v <id> [-g <grouping>] [-d 0|1] [-q query] {
  *    expect <skip> <vxid> <tag> <regex>
  * }
@@ -127,7 +137,8 @@ logexp_delete(struct logexp *le)
 {
 	CHECK_OBJ_NOTNULL(le, LOGEXP_MAGIC);
 	AZ(le->run);
-	AZ(le->vsl);
+	AN(le->vsl);
+	VSL_Delete(le->vsl);
 	AZ(le->vslq);
 	logexp_delete_tests(le);
 	free(le->name);
@@ -153,7 +164,9 @@ logexp_new(const char *name)
 	le->d_arg = 0;
 	le->g_arg = VSL_g_vxid;
 	le->vsm = VSM_New();
+	le->vsl = VSL_New();
 	AN(le->vsm);
+	AN(le->vsl);
 
 	VTAILQ_INSERT_TAIL(&logexps, le, list);
 	return (le);
@@ -299,10 +312,6 @@ logexp_close(struct logexp *le)
 	if (le->vslq)
 		VSLQ_Delete(&le->vslq);
 	AZ(le->vslq);
-	if (le->vsl) {
-		VSL_Delete(le->vsl);
-		le->vsl = NULL;
-	}
 	VSM_Close(le->vsm);
 }
 
@@ -312,7 +321,7 @@ logexp_start(struct logexp *le)
 	struct VSL_cursor *c;
 
 	CHECK_OBJ_NOTNULL(le, LOGEXP_MAGIC);
-	AZ(le->vsl);
+	AN(le->vsl);
 	AZ(le->vslq);
 
 	if (le->n_arg == NULL) {
@@ -328,7 +337,6 @@ logexp_start(struct logexp *le)
 		vtc_log(le->vl, 0, "VSM_Open: %s", VSM_Error(le->vsm));
 		return;
 	}
-	le->vsl = VSL_New();
 	AN(le->vsl);
 	c = VSL_CursorVSM(le->vsl, le->vsm,
 	    (le->d_arg ? 0 : VSL_COPT_TAIL) | VSL_COPT_BATCH);
@@ -584,6 +592,14 @@ cmd_logexp(CMD_ARGS)
 			continue;
 		}
 		if (**av == '-') {
+			if (av[1] != NULL) {
+				if (VSL_Arg(le->vsl, av[0][1], av[1])) {
+					av++;
+					continue;
+				}
+				vtc_log(le->vl, 0, VSL_Error(le->vsl));
+				return;
+			}
 			vtc_log(le->vl, 0, "Unknown logexp argument: %s", *av);
 			return;
 		}
