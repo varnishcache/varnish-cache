@@ -592,7 +592,7 @@ cmd_logexp(CMD_ARGS)
 					av++;
 					continue;
 				}
-				vtc_log(le->vl, 0, VSL_Error(le->vsl));
+				vtc_log(le->vl, 0, "%s", VSL_Error(le->vsl));
 				return;
 			}
 			vtc_log(le->vl, 0, "Unknown logexp argument: %s", *av);
