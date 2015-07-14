@@ -1,0 +1,106 @@
+varnishtest "test vsl api handling of incomplete vtxes combined with bad vxids"
+
+server s1 {
+	rxreq
+	txresp
+
+	accept
+	rxreq
+	delay 5
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		if (bereq.url == "/retry" &&
+		    bereq.retries == 0) {
+			return (retry);
+		}
+	}
+	sub vcl_deliver {
+		if (req.url == "/restart" &&
+		    req.restarts == 0) {
+			return (restart);
+		}
+	}
+
+} -start
+
+# xid spill into client marker emitting a bad SLT_Link for bereq retry
+# triggering vtx_force by way of a timeout
+#
+#    VSLb(bo->vsl, SLT_Link, "bereq %u retry", wid);
+
+varnish v1 -cliok "param.set debug +syncvsl"
+# vxid wrap at 1<<30
+varnish v1 -cliok "debug.xid 1073741823"
+
+logexpect l1 -v v1 -g request -T 2 {
+	expect 0 1	Begin		"req 0"
+	expect * =	ReqStart
+	expect 0 =	ReqMethod	GET
+	expect 0 =	ReqURL		/
+	expect 0 =	ReqProtocol	HTTP/1.1
+	expect * =	ReqHeader	"Foo: bar"
+	expect * =	Link		"bereq 2 fetch"
+	expect * =	VSL		"timeout"
+	expect * =	End		"synth"
+
+	expect 0 2	Begin		"bereq 1"
+	expect * 2	Link		"bereq 3 retry"
+	expect * =	End
+
+	expect 0 3	Begin		"bereq 2 retry"
+	expect * =	End
+} -start
+
+client c1 {
+	txreq -url "/retry" -hdr "Foo: bar"
+	rxresp
+	expect resp.status == 200
+} -run
+
+logexpect l1 -wait
+
+
+################################################################################
+
+# case xid spill into client marker emitting a bad SLT_Link for restart
+#
+#          VSLb(req->vsl, SLT_Link, "req %u restart", wid);
+
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
+# vxid wrap at 1<<30
+varnish v1 -cliok "debug.xid 1073741823"
+
+logexpect l1 -v v1 -g request {
+	expect 0 1	Begin		"req 0"
+	expect * =	ReqStart
+	expect 0 =	ReqMethod	GET
+	expect 0 =	ReqURL		/
+	expect 0 =	ReqProtocol	HTTP/1.1
+	expect * =	ReqHeader	"Foo: bar"
+	expect * =	Link		"bereq 2 fetch"
+	expect * =	Link		"req 3 restart"
+	expect * =	End
+
+	expect 0 2	Begin		"bereq 1"
+	expect * =	End
+
+	expect 0 3	Begin		"req 1 restart"
+	expect * =	End
+} -start
+
+client c1 {
+	txreq -url "/restart" -hdr "Foo: bar"
+	rxresp
+	expect resp.status == 200
+} -run
+
+logexpect l1 -wait
