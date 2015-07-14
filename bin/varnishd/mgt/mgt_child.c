@@ -94,6 +94,12 @@ MGT_FEATURE(enum feature_bits x)
 	return (mgt_param.feature_bits[(unsigned)x>>3] &
 	    (0x80U >> ((unsigned)x & 7)));
 }
+static inline int
+MGT_DO_DEBUG(enum debug_bits x)
+{
+	return (mgt_param.debug_bits[(unsigned)x>>3] &
+	    (0x80U >> ((unsigned)x & 7)));
+}
 
 static void mgt_reap_child(void);
 
@@ -528,7 +534,7 @@ mgt_reap_child(void)
 		mgt_SHM_Destroy(1);
 		VSC_C_mgt->child_panic = ++static_VSC_C_mgt.child_panic;
 	} else {
-		mgt_SHM_Destroy(0);
+		mgt_SHM_Destroy(MGT_DO_DEBUG(DBG_VSM_KEEP));
 	}
 	mgt_SHM_Create();
 	mgt_SHM_Commit();
