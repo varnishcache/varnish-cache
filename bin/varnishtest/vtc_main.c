@@ -85,9 +85,9 @@ static int vtc_continue;		/* Continue on error */
 static int vtc_verbosity = 1;		/* Verbosity Level */
 static int vtc_good;
 static int vtc_fail;
-static int leave_temp;
 static char *tmppath;
 static char *cwd = NULL;
+int leave_temp;
 int vtc_witness = 0;
 
 /**********************************************************************
