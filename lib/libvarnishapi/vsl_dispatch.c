@@ -700,6 +700,7 @@ vtx_parse_link(const char *str, enum VSL_transaction_e *ptype,
 		*ptype = VSL_t_unknown;
 	if (i == 1)
 		return (1);
+	assert((vxid & ~VSL_IDENTMASK) == 0);
 	*pvxid = vxid;
 	if (i == 2)
 		return (2);
