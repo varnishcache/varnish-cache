@@ -681,7 +681,9 @@ vtx_parse_link(const char *str, enum VSL_transaction_e *ptype,
 {
 	char type[16], reason[16];
 	unsigned vxid;
-	int i, j;
+	int i;
+	enum VSL_transaction_e et;
+	enum VSL_reason_e er;
 
 	AN(str);
 	AN(ptype);
@@ -691,26 +693,30 @@ vtx_parse_link(const char *str, enum VSL_transaction_e *ptype,
 	i = sscanf(str, "%15s %u %15s", type, &vxid, reason);
 	if (i < 1)
 		return (0);
-	for (j = 0; j < VSL_t__MAX; j++)
-		if (!strcmp(type, vsl_t_names[j]))
+
+	/* transaction type */
+	for (et = 0; et < VSL_t__MAX; et++)
+		if (!strcmp(type, vsl_t_names[et]))
 			break;
-	if (j < VSL_t__MAX)
-		*ptype = j;
-	else
-		*ptype = VSL_t_unknown;
+	if (et >= VSL_t__MAX)
+		et = VSL_t_unknown;
+	*ptype = et;
 	if (i == 1)
 		return (1);
+
+	/* vxid */
 	assert((vxid & ~VSL_IDENTMASK) == 0);
 	*pvxid = vxid;
 	if (i == 2)
 		return (2);
-	for (j = 0; j < VSL_r__MAX; j++)
-		if (!strcmp(reason, vsl_r_names[j]))
+
+	/* transaction reason */
+	for (er = 0; er < VSL_r__MAX; er++)
+		if (!strcmp(reason, vsl_r_names[er]))
 			break;
-	if (j < VSL_r__MAX)
-		*preason = j;
-	else
-		*preason = VSL_r_unknown;
+	if (er >= VSL_r__MAX)
+		er = VSL_r_unknown;
+	*preason = er;
 	return (3);
 }
 
