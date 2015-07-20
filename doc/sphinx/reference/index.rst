@@ -32,9 +32,9 @@ The Varnish Reference Manual
         . - counters explained
         . common filtering options for shmlog tools
         . varnishlog ..
-        . varnsihtop ..
-        . varnsihncsa ..
-        . varnsihhist ..
+        . varnishtop ..
+        . varnishncsa ..
+        . varnishhist ..
         The CLI:
         . connections: -T -S -M
         . varnishadm

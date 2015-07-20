@@ -50,7 +50,7 @@ OPTIONS
 
 
 The syntax and operation of the actual CLI interface is described in
-the :ref:`varnish-cli(7)` manual page. Parameteres are described in
+the :ref:`varnish-cli(7)` manual page. Parameters are described in
 :ref:`varnishd(1)` manual page.
 
 Additionally, a summary of commands can be obtained by issuing the

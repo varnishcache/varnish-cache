@@ -65,7 +65,7 @@ usually quite focused on source-code and such. Everybody on
 the `-dev` list is also on `-misc`, so cross-posting only serves to annoy
 those people.
 
-We also maintain a community wiki_ for Varnish, there you will find information on planned events, meetings, current backlog, troube tickets ,  and links to resources and documentation. 
+We also maintain a community wiki_ for Varnish, there you will find information on planned events, meetings, current backlog, trouble tickets ,  and links to resources and documentation.
 
 .. XXX: we should introduce the wiki (if we care about it) before
 .. we start referring to it (below). Make a wiki chapter?

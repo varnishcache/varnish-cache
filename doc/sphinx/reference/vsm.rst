@@ -34,7 +34,7 @@ tricky in ways a regular logfile is not.
 
 When you open a file in "append" mode, the operating system guarantees
 that whatever you write will not overwrite existing data in the file.
-The neat result of this is that multiple procesess or threads writing
+The neat result of this is that multiple processes or threads writing
 to the same file does not even need to know about each other, it all
 works just as you would expect.
 

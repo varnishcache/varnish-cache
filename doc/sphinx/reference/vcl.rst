@@ -306,15 +306,14 @@ To match an IP address against an ACL, simply use the match operator::
 VCL objects
 -----------
 
-A VCL object can be made with the *new* keyword.
-
-Example::
+A VCL object can be instantiated with the *new* keyword::
 
     sub vcl_init {
         new b = directors.round_robin()
         b.add_backend(node1);
     }
 
+This is only available in vcl_init.
 
 Subroutines
 -----------
@@ -378,9 +377,6 @@ ban(expression)
 hash_data(input)
   Adds an input to the hash input. In the built-in VCL hash_data()
   is called on the host and URL of the *request*. Available in vcl_hash.
-
-new()
-  Instanciate a new VCL object. Available in vcl_init.
 
 rollback()
   Restore *req* HTTP headers to their original state. This function is

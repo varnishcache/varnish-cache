@@ -58,7 +58,7 @@ The following options are available:
 	any seconds. If zero the connection is attempted only once and
 	will fail immediately if unsuccessful. If set to "off", the
 	connection will not fail, allowing the utility to start and
-	wait indefinetely for the Varnish instance to appear.
+	wait indefinitely for the Varnish instance to appear.
 	Defaults to 5 seconds.
 
 -V
