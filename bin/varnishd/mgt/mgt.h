@@ -42,6 +42,7 @@ extern int		exit_status;
 /* mgt_acceptor.c */
 
 void MAC_Arg(const char *);
+void MAC_Validate(void);
 void MAC_reopen_sockets(struct cli *);
 int MAC_sockets_ready(struct cli *);
 

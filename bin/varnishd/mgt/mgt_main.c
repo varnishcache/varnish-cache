@@ -497,7 +497,7 @@ main(int argc, char * const *argv)
 	/* Create a cli for convenience in otherwise CLI functions */
 	INIT_OBJ(cli, CLI_MAGIC);
 	cli[0].sb = VSB_new_auto();
-	XXXAN(cli[0].sb);
+	AN(cli[0].sb);
 	cli[0].result = CLIS_OK;
 	clilim = 32768;
 	cli[0].limit = &clilim;
@@ -509,11 +509,6 @@ main(int argc, char * const *argv)
 
 	init_params(cli);
 	cli_check(cli);
-
-	if (argc == 1) {
-		jailed++;
-		VJ_Init(NULL);
-	}
 
 	while ((o = getopt(argc, argv,
 	    "a:b:Cdf:Fh:i:j:l:M:n:P:p:r:S:s:T:t:VW:x:")) != -1) {
@@ -632,6 +627,9 @@ main(int argc, char * const *argv)
 		}
 	}
 
+	if (!jailed)
+		VJ_Init(NULL);
+
 	argc -= optind;
 	argv += optind;
 	if (argc != 0)
@@ -705,7 +703,9 @@ main(int argc, char * const *argv)
 		ARGV_ERR("-C only good with -b or -f\n");
 
 	if (VTAILQ_EMPTY(&heritage.socks))
-		MAC_Arg("*:80");
+		MAC_Arg(":80");
+
+	MAC_Validate();
 
 	assert(! VTAILQ_EMPTY(&heritage.socks));
 

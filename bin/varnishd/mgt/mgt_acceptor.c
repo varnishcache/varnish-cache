@@ -112,9 +112,8 @@ MAC_sockets_ready(struct cli *cli)
 struct mac_help {
 	unsigned		magic;
 #define MAC_HELP_MAGIC		0x1e00a9d9
-	const char		*name;
 	int			good;
-	const char		**err;
+	const char		*name;
 	const char		*proto_name;
 	enum sess_step		first_step;
 };
@@ -124,44 +123,52 @@ mac_callback(void *priv, const struct suckaddr *sa)
 {
 	struct mac_help *mh;
 	struct listen_sock *ls;
-	int fail;
-	char abuf[VTCP_ADDRBUFSIZE], pbuf[VTCP_PORTBUFSIZE];
-	char nbuf[VTCP_ADDRBUFSIZE+VTCP_PORTBUFSIZE+2];
 
 	CAST_OBJ_NOTNULL(mh, priv, MAC_HELP_MAGIC);
 
 	ALLOC_OBJ(ls, LISTEN_SOCK_MAGIC);
 	AN(ls);
 	ls->sock = -1;
-	ls->addr = sa;
+	ls->addr = VSA_Clone(sa);
+	AN(ls->addr);
+	ls->name = strdup(mh->name);
+	AN(ls->name);
 	ls->proto_name = mh->proto_name;
 	ls->first_step = mh->first_step;
-	VJ_master(JAIL_MASTER_PRIVPORT);
-	fail = mac_opensocket(ls, NULL);
-	VJ_master(JAIL_MASTER_LOW);
-	if (ls->sock < 0) {
-		*(mh->err) = strerror(fail);
-		FREE_OBJ(ls);
-		return (0);
-	}
-	if (VSA_Port(sa) == 0) {
-		/*
-		 * If the port number is zero, we adopt whatever port number
-		 * this VTCP_bind() found us, as if specified by argument.
-		 */
-		ls->addr = VTCP_my_suckaddr(ls->sock);
-		VTCP_myname(ls->sock, abuf, sizeof abuf, pbuf, sizeof pbuf);
-		bprintf(nbuf, "%s:%s", abuf, pbuf);
-		ls->name = strdup(nbuf);
-	} else {
-		ls->addr = VSA_Clone(sa);
-		ls->name = strdup(mh->name);
-	}
-	AN(ls->addr);
-	AN(ls->name);
 	VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
 	mh->good++;
 	return (0);
+}
+
+void
+MAC_Validate(void)
+{
+	struct listen_sock *ls;
+	int fail;
+	char abuf[VTCP_ADDRBUFSIZE], pbuf[VTCP_PORTBUFSIZE];
+	char nbuf[VTCP_ADDRBUFSIZE+VTCP_PORTBUFSIZE+2];
+
+	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+		VJ_master(JAIL_MASTER_PRIVPORT);
+		fail = mac_opensocket(ls, NULL);
+		VJ_master(JAIL_MASTER_LOW);
+		if (ls->sock < 0)
+			ARGV_ERR("Cannot open socket: %s: %s\n",
+			    ls->name, strerror(fail));
+		if (VSA_Port(ls->addr) == 0) {
+			/*
+			 * If the port number is zero, we adopt whatever
+			 * port number this VTCP_bind() found us, as if
+			 * specified by argument.
+			 */
+			free(ls->addr);
+			ls->addr = VTCP_my_suckaddr(ls->sock);
+			VTCP_myname(ls->sock, abuf, sizeof abuf,
+			    pbuf, sizeof pbuf);
+			bprintf(nbuf, "%s:%s", abuf, pbuf);
+			REPLACE(ls->name, nbuf);
+		}
+	}
 }
 
 void
@@ -192,11 +199,9 @@ MAC_Arg(const char *arg)
 		ARGV_ERR("Unknown protocol '%s'\n", av[2]);
 	}
 
-	mh->err = &err;
 	error = VSS_resolver(av[1], "80", mac_callback, mh, &err);
-	if (mh->good == 0 || err != NULL)
-		ARGV_ERR("Could not bind to address %s: %s\n", av[1], err);
+	if (mh->good == 0 || error)
+		ARGV_ERR("socket %s didn't resolve \n", av[1]);
 	VAV_Free(av);
-	AZ(error);
 	FREE_OBJ(mh);
 }
