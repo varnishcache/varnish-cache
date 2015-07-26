@@ -6,8 +6,7 @@ server s1 {
 	rxreq
 	expect req.url == /b
 	txresp -status 204 -nolen \
-	    -hdr "Content-encoding: gzip" \
-	    -hdr "content-length: 10"
+	    -hdr "Content-encoding: gzip"
 } -start
 
 varnish v1 -vcl+backend {

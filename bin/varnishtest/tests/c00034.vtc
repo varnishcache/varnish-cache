@@ -31,6 +31,8 @@ client c1 {
 	rxresp
 	expect resp.status == 416
 	expect resp.bodylen == 0
+	expect resp.http.content-length == "0"
+	expect resp.http.transfer-encoding == "<undef>"
 	expect resp.http.content-range == "bytes */100"
 
 	txreq -hdr "Range: bytes=0- 9"

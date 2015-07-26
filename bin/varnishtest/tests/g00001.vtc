@@ -22,12 +22,16 @@ client c1 {
 	expect resp.bodylen == "3"
 } -run
 
+delay .1
+
 client c1 {
 	txreq -proto HTTP/1.0
 	rxresp
 	expect resp.bodylen == "3"
 	expect resp.http.content-encoding == <undef>
 } -run
+
+delay .1
 
 client c1 {
 	txreq -req HEAD

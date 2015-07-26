@@ -62,7 +62,7 @@ v1d_bytes(struct req *req, enum vdp_action act, void **priv,
  */
 
 void __match_proto__(vtr_deliver_f)
-V1D_Deliver(struct req *req, struct busyobj *bo)
+V1D_Deliver(struct req *req, struct busyobj *bo, int wantbody)
 {
 	enum objiter_status ois;
 
@@ -70,20 +70,18 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
-	if ((req->objcore->flags & OC_F_PRIVATE) &&
-	    !strcasecmp(http_GetMethod(req->http0), "HEAD")) {
-		/* HEAD+pass is allowed to send the C-L through unmolested. */
-	} else {
+	if (wantbody) {
 		http_Unset(req->resp, H_Content_Length);
-		if (req->resp_len >= 0 && !http_IsStatus(req->resp, 304))
+		if (req->resp_len >= 0)
 			http_PrintfHeader(req->resp,
 			    "Content-Length: %jd", req->resp_len);
 	}
 
-	if (http_GetHdr(req->resp, H_Content_Length, NULL))
+	if (req->resp_len == 0)
+		wantbody = 0;
+	else if (http_GetHdr(req->resp, H_Content_Length, NULL))
 		req->res_mode |= RES_LEN;
-
-	else if (req->wantbody) {
+	else if (wantbody) {
 		if (req->http->protover == 11) {
 			req->res_mode |= RES_CHUNKED;
 			http_SetHeader(req->resp, "Transfer-Encoding: chunked");
@@ -112,7 +110,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		(void)V1L_Flush(req->wrk);
 
 	ois = OIS_DONE;
-	if (req->wantbody) {
+	if (wantbody) {
 		if (req->res_mode & RES_CHUNKED)
 			V1L_Chunked(req->wrk);
 		ois = VDP_DeliverObj(req);

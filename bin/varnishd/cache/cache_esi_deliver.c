@@ -703,7 +703,7 @@ ved_vdp_bytes(struct req *req, enum vdp_action act, void **priv,
 /*--------------------------------------------------------------------*/
 
 static void __match_proto__(vtr_deliver_f)
-VED_Deliver(struct req *req, struct busyobj *bo)
+VED_Deliver(struct req *req, struct busyobj *bo, int wantbody)
 {
 	int i;
 	struct ecx *ecx;
@@ -713,6 +713,9 @@ VED_Deliver(struct req *req, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
 	CAST_OBJ_NOTNULL(ecx, req->transport_priv, ECX_MAGIC);
+
+	if (wantbody == 0)
+		return;
 
 	req->res_mode |= RES_ESI_CHILD;
 	i = ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED);

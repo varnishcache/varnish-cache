@@ -51,9 +51,23 @@ static void
 cnt_vdp(struct req *req, struct busyobj *bo)
 {
 	const char *r;
+	uint16_t status;
+	int wantbody;
 
+	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
 	req->res_mode = 0;
-	if (bo != NULL)
+	wantbody = 1;
+	status = http_GetStatus(req->resp);
+	if (!strcmp(req->http0->hd[HTTP_HDR_METHOD].b, "HEAD")) {
+		wantbody = 0;
+	} else if (status < 200 || status == 204) {
+		req->resp_len = 0;
+		http_Unset(req->resp, H_Content_Length);
+		wantbody = 0;
+	} else if (status == 304) {
+		http_Unset(req->resp, H_Content_Length);
+		wantbody = 0;
+	} else if (bo != NULL)
 		req->resp_len = http_GetContentLength(req->resp);
 	else
 		req->resp_len = ObjGetLen(req->wrk, req->objcore);
@@ -62,14 +76,13 @@ cnt_vdp(struct req *req, struct busyobj *bo)
 	 * Determine ESI status first.  Not dependent on wantbody, because
 	 * we want ESI to supress C-L in HEAD too.
 	 */
-	if (!req->disable_esi &&
+	if (!req->disable_esi && req->resp_len != 0 && wantbody &&
 	    ObjGetattr(req->wrk, req->objcore, OA_ESIDATA, NULL) != NULL) {
 		req->res_mode |= RES_ESI;
 		RFC2616_Weaken_Etag(req->resp);
 		req->resp_len = -1;
 		VDP_push(req, VDP_ESI, NULL, 0);
 	}
-
 
 	if (cache_param->http_gzip_support &&
 	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
@@ -80,18 +93,15 @@ cnt_vdp(struct req *req, struct busyobj *bo)
 
 	/*
 	 * Range comes after the others and pushes on bottom because
-	 * it can generate a correct C-L header.
+	 * it can (maybe) generate a correct C-L header.
 	 */
-	if (cache_param->http_range_support &&
-	    http_IsStatus(req->resp, 200)) {
+	if (cache_param->http_range_support && http_IsStatus(req->resp, 200)) {
 		http_SetHeader(req->resp, "Accept-Ranges: bytes");
-		if (req->wantbody &&
-		    http_GetHdr(req->http, H_Range, &r))
+		if (wantbody && http_GetHdr(req->http, H_Range, &r))
 			VRG_dorange(req, r);
 	}
 
-	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
-	req->transport->deliver(req, bo);
+	req->transport->deliver(req, bo, wantbody);
 }
 
 /*--------------------------------------------------------------------
@@ -174,13 +184,8 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	if (!(req->objcore->flags & OC_F_PASS)
 	    && req->esi_level == 0
 	    && http_IsStatus(req->resp, 200)
-	    && req->http->conds && RFC2616_Do_Cond(req)) {
+	    && req->http->conds && RFC2616_Do_Cond(req))
 		http_PutResponse(req->resp, "HTTP/1.1", 304, NULL);
-		req->wantbody = 0;
-	}
-
-	if (http_IsStatus(req->resp, 304))
-		req->wantbody = 0;
 
 	/* Grab a ref to the bo if there is one, and hand it down */
 	bo = HSH_RefBusy(req->objcore);
@@ -689,11 +694,6 @@ cnt_recv(struct worker *wrk, struct req *req)
 	VCL_hash_method(req->vcl, wrk, req, NULL, &sha256ctx);
 	assert(wrk->handling == VCL_RET_LOOKUP);
 	SHA256_Final(req->digest, &sha256ctx);
-
-	if (!strcmp(req->http->hd[HTTP_HDR_METHOD].b, "HEAD"))
-		req->wantbody = 0;
-	else
-		req->wantbody = 1;
 
 	switch(recv_handling) {
 	case VCL_RET_PURGE:

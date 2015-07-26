@@ -655,7 +655,7 @@ struct sess {
  * or may not, be talking a "real" HTTP protocol itself.
  */
 
-typedef void vtr_deliver_f (struct req *, struct busyobj *);
+typedef void vtr_deliver_f (struct req *, struct busyobj *, int wantbody);
 
 struct transport {
 	unsigned		magic;

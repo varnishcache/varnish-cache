@@ -345,7 +345,11 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		 * [RFC2616 10.2.5 p60]
 		 */
 		wrk->stats->fetch_204++;
-		bo->htc->body_status = BS_NONE;
+		if (http_GetHdr(bo->beresp, H_Content_Length, NULL) ||
+		    http_GetHdr(bo->beresp, H_Transfer_Encoding, NULL))
+			bo->htc->body_status = BS_ERROR;
+		else
+			bo->htc->body_status = BS_NONE;
 	} else if (http_IsStatus(bo->beresp, 304)) {
 		/*
 		 * 304 is "Not Modified" it has no body.

@@ -191,7 +191,10 @@ VRG_dorange(struct req *req, const char *r)
 			    "Content-Range: bytes */%jd",
 			    (intmax_t)req->resp_len);
 		http_PutResponse(req->resp, "HTTP/1.1", 416, NULL);
-		req->resp_len = -1;
-		req->wantbody = 0;
+		/*
+		 * XXX: We ought to produce a body explaining things.
+		 * XXX: That really calls for us to hit vcl_synth{}
+		 */
+		req->resp_len = 0;
 	}
 }
