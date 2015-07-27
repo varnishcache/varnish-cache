@@ -105,6 +105,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	Lck_Lock(&bp->mtx);
 	bp->n_conn++;
 	bp->vsc->conn++;
+	bp->vsc->req++;
 	Lck_Unlock(&bp->mtx);
 
 	VTCP_myname(vc->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
@@ -112,7 +113,6 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s",
 	    vc->fd, bp->display_name, abuf2, pbuf2, abuf1, pbuf1);
 
-	bp->vsc->req++;
 	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
 	bo->htc->priv = vc;
 	bo->htc->fd = vc->fd;
