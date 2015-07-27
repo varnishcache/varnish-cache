@@ -883,7 +883,7 @@ static enum fetch_step
 vbf_stp_done(void)
 {
 	WRONG("Just plain wrong");
-	return (F_STP_DONE);
+	NEEDLESS_RETURN(F_STP_DONE);
 }
 
 static void __match_proto__(task_func_t)
