@@ -57,7 +57,8 @@ nobase_pkginclude_HEADERS += \
 	vrt_obj.h \
 	vsa.h \
 	vsb.h \
-	vsha256.h
+	vsha256.h \
+	vtim.h
 
 # Private headers
 nobase_noinst_HEADERS = \
@@ -86,7 +87,6 @@ nobase_noinst_HEADERS = \
 	vsub.h \
 	vss.h \
 	vtcp.h \
-	vtim.h \
 	vtree.h \
 	vut.h \
 	vut_options.h
