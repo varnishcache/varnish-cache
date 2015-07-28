@@ -16,7 +16,7 @@ it, and we don't presently have the development resources to fix that.
 
 If you think you have these circumstances, you need to specify
 
-	-sdeprecated_persistence
+	-sdeprecated_persistent
 
 in order to use it.
 
