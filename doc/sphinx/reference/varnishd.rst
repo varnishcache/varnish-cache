@@ -150,7 +150,7 @@ OPTIONS
 
   Display the version number and exit.
 
--W
+-W waiter
 
   Specifies the waiter type to use.
 
