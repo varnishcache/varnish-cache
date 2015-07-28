@@ -141,15 +141,15 @@ usage(void)
 #define FMT "    %-28s # %s\n"
 
 	fprintf(stderr, "usage: varnishd [options]\n");
-	fprintf(stderr, FMT, "-a address:port", "HTTP listen address and port"
-	    " (default: *:80)");
+	fprintf(stderr, FMT, "-a address:port,proto",
+	    "HTTP listen address and port (default: *:80)");
 	fprintf(stderr, FMT, "-b address:port", "backend address and port");
 	fprintf(stderr, FMT, "", "   -b <hostname_or_IP>");
 	fprintf(stderr, FMT, "", "   -b '<hostname_or_IP>:<port_or_service>'");
 	fprintf(stderr, FMT, "-C", "print VCL code compiled to C language");
 	fprintf(stderr, FMT, "-d", "debug");
-	fprintf(stderr, FMT, "-f file", "VCL script");
 	fprintf(stderr, FMT, "-F", "Run in foreground");
+	fprintf(stderr, FMT, "-f file", "VCL script");
 	fprintf(stderr, FMT, "-h kind[,hashoptions]", "Hash specification");
 	fprintf(stderr, FMT, "", "  -h critbit [default]");
 	fprintf(stderr, FMT, "", "  -h simple_list");
@@ -162,15 +162,17 @@ usage(void)
 #endif
 	fprintf(stderr, FMT, "", "  -j unix[,user=<user>][,ccgroup=<group>]");
 	fprintf(stderr, FMT, "", "  -j none");
-	fprintf(stderr, FMT, "-l shl,free,fill", "Size of shared memory file");
+	fprintf(stderr, FMT, "-l shl,free", "Size of shared memory file");
 	fprintf(stderr, FMT, "", "  shl: space for SHL records [80m]");
 	fprintf(stderr, FMT, "", "  free: space for other allocations [1m]");
-	fprintf(stderr, FMT, "", "  fill: prefill new file [+]");
-	fprintf(stderr, FMT, "-M address:port", "Reverse CLI destination.");
+	fprintf(stderr, FMT, "-M address:port", "Reverse CLI destination");
 	fprintf(stderr, FMT, "-n dir", "varnishd working directory");
 	fprintf(stderr, FMT, "-P file", "PID file");
 	fprintf(stderr, FMT, "-p param=value", "set parameter");
-	fprintf(stderr, FMT, "-r param[,param...]", "make parameter read-only");
+	fprintf(stderr, FMT,
+	    "-r param[,param...]", "make parameter read-only");
+	fprintf(stderr, FMT, "-S secret-file",
+	    "Secret file for CLI authentication");
 	fprintf(stderr, FMT,
 	    "-s [name=]kind[,options]", "Backend storage specification");
 	fprintf(stderr, FMT, "", "  -s malloc[,<size>]");
@@ -181,12 +183,10 @@ usage(void)
 	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>,<size>");
 	fprintf(stderr, FMT, "",
 	    "  -s file,<dir_or_file>,<size>,<granularity>");
-	fprintf(stderr, FMT, "", "  -s persist{experimental}");
-	fprintf(stderr, FMT, "-S secret-file",
-	    "Secret file for CLI authentication");
+	fprintf(stderr, FMT, "", "  -s persistent (experimental)");
 	fprintf(stderr, FMT, "-T address:port",
 	    "Telnet listen address and port");
-	fprintf(stderr, FMT, "-t", "Default TTL");
+	fprintf(stderr, FMT, "-t TTL", "Default TTL");
 	fprintf(stderr, FMT, "-V", "version");
 	fprintf(stderr, FMT, "-W waiter", "Waiter implementation");
 #if defined(HAVE_KQUEUE)
@@ -541,11 +541,11 @@ main(int argc, char * const *argv)
 		case 'd':
 			d_flag++;
 			break;
-		case 'f':
-			f_arg = optarg;
-			break;
 		case 'F':
 			F_flag = 1 - F_flag;
+			break;
+		case 'f':
+			f_arg = optarg;
 			break;
 		case 'h':
 			h_arg = optarg;
@@ -591,18 +591,18 @@ main(int argc, char * const *argv)
 			MCF_ParamProtect(cli, optarg);
 			cli_check(cli);
 			break;
+		case 'S':
+			S_arg = optarg;
+			break;
 		case 's':
 			s_arg_given = 1;
 			STV_Config(optarg);
 			break;
-		case 't':
-			MCF_ParamSet(cli, "default_ttl", optarg);
-			break;
-		case 'S':
-			S_arg = optarg;
-			break;
 		case 'T':
 			T_arg = optarg;
+			break;
+		case 't':
+			MCF_ParamSet(cli, "default_ttl", optarg);
 			break;
 		case 'V':
 			/* XXX: we should print the ident here */

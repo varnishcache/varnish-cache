@@ -15,7 +15,7 @@ HTTP accelerator daemon
 SYNOPSIS
 ========
 
-varnishd [-a address[:port][,PROTO]] [-b host[:port]] [-C] [-d] [-f config] [-F] [-g group] [-h type[,options]] [-i identity] [-l shl[,free[,fill]]] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...] [-s [name=]kind[,options]] [-S secret-file] [-T address[:port]] [-t TTL] [-u user] [-V]
+varnishd [-a address[:port][,PROTO]] [-b host[:port]] [-C] [-d] [-F] [-f config] [-h type[,options]] [-i identity] [-j jail[,jailoptions]] [-l shl[,free]] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...]] [-S secret-file] [-s [name=]kind[,options]] [-T address[:port]] [-t TTL] [-V] [-W waiter]
 
 DESCRIPTION
 ===========
@@ -58,6 +58,10 @@ OPTIONS
   started explicitly with a CLI command. Terminating the parent
   process will also terminate the child.
 
+-F
+
+  Do not fork, run in the foreground.
+
 -f config
 
   Use the specified VCL configuration file instead of the builtin
@@ -65,16 +69,6 @@ OPTIONS
 
   When neither a -f nor a -b argument are given, `varnishd` will not
   start the worker process but process cli commands.
-
--F
-
-  Do not fork, run in the foreground.
-
--g group
-
-  Specifies the name of an unprivileged group to which the child
-  process should switch before it starts accepting connections. This
-  is a shortcut for specifying the group run-time parameter.
 
 -h <type[,options]>
 
@@ -90,12 +84,12 @@ OPTIONS
 
   Specify the jailing technology to use.
 
--l <shl[,free[,fill]]>
+-l <shl[,free]>
 
   Specifies size of shmlog file. shl is the store for the shared
-  memory log records [80M], free is the store for other allocations
-  [1M] and fill determines how the log is [+].  Scaling suffixes like
-  'k', 'M' can be used up to (E)xabytes.  Default is 80 Megabytes.
+  memory log records [80M] and free is the store for other allocations
+  [1M]. Scaling suffixes like 'k', 'M' can be used up to (E)xabytes.
+  Default is 81 Megabytes.
 
 -M <address:port>
 
@@ -129,18 +123,18 @@ OPTIONS
   *vcc_allow_inline_c* read only as these can potentially be used to
   escalate privileges from the CLI.
 
+-S file
+
+  Path to a file containing a secret used for authorizing access to
+  the management port. If not provided a new secret will be drawn
+  from the system PRNG.
+
 -s <[name=]type[,options]>
 
   Use the specified storage backend, see `Storage Backend Options`_.
 
   This option can be used multiple times to specify multiple storage
   files. Names are referenced in logs, VCL, statistics, etc.
-
--S file
-
-  Path to a file containing a secret used for authorizing access to
-  the management port. If not provided a new secret will be drawn
-  from the system PRNG.
 
 -T <address[:port]>
 
@@ -152,18 +146,13 @@ OPTIONS
   Specifies the default time to live (TTL) for cached objects. This is
   a shortcut for specifying the *default_ttl* run-time parameter.
 
--u user
-
-  Specifies the name of an unprivileged user to which the child
-  process should switch before it starts accepting connections. This
-  is a shortcut for specifying the user runtime parameter.
-
-  If specifying both a user and a group, the user should be specified
-  first.
-
 -V
 
   Display the version number and exit.
+
+-W
+
+  Specifies the waiter type to use.
 
 .. _opt_h:
 
