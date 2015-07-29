@@ -177,11 +177,12 @@ vmod_rot52(VRT_CTX, VCL_HTTP hp)
 }
 
 VCL_STRING
-vmod_argtest(VRT_CTX, VCL_STRING one, VCL_REAL two, VCL_STRING three)
+vmod_argtest(VRT_CTX, VCL_STRING one, VCL_REAL two, VCL_STRING three,
+    VCL_STRING comma)
 {
 	char buf[100];
 
-	bprintf(buf, "%s %g %s", one, two, three);
+	bprintf(buf, "%s %g %s %s", one, two, three, comma);
 	return WS_Copy(ctx->ws, buf, -1);
 }
 

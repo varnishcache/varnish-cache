@@ -22,12 +22,12 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.bodylen == "6"
-	expect resp.http.foo1 == "1 2 3"
-	expect resp.http.foo2 == "1 2 3"
-	expect resp.http.foo3 == "1 2 3"
-	expect resp.http.foo4 == "1 2 3"
-	expect resp.http.foo5 == "1 2 3"
-	expect resp.http.foo6 == "1 2 3"
+	expect resp.http.foo1 == "1 2 3 ,"
+	expect resp.http.foo2 == "1 2 3 ,"
+	expect resp.http.foo3 == "1 2 3 ,"
+	expect resp.http.foo4 == "1 2 3 ,"
+	expect resp.http.foo5 == "1 2 3 ,"
+	expect resp.http.foo6 == "1 2 3 ,"
 } -run
 
 delay .1

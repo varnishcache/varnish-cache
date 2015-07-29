@@ -94,7 +94,8 @@ $Function VOID rot52(HTTP hdr)
 Encrypt the HTTP header with quad-ROT13 encryption,
 (this is approx 33% better than triple-DES).
 
-$Function STRING argtest(STRING one, REAL two=2, STRING three="3")
+$Function STRING argtest(STRING one, REAL two=2, STRING three="3",
+	  STRING comma=",")
 
 $Function INT vre_limit()
 

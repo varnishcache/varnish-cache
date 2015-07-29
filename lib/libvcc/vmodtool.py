@@ -739,6 +739,22 @@ class FileSection(object):
 			return
 		l = re.sub("[ \t]*#.*$", "", l)
 		l = re.sub("[ \t]*\n", "", l)
+
+		if re.match("['\"]", l):
+			m = re.match("(['\"]).*?(\\1)", l)
+			if not m:
+			        raise FormatError("Unbalanced quote",
+					  "Unbalanced quote on line %d" % ln)
+			self.tl.append(Token(ln, 0, l[:m.end()]))
+			self.l.insert(0, (ln, l[m.end():]))
+			return
+
+		m = re.search("['\"]", l)
+		if m:
+			rest = l[m.start():]
+			self.l.insert(0, (ln, rest))
+			l = l[:m.start()]
+
 		l = re.sub("([(){},=])", r' \1 ', l)
 		if l == "":
 			return
