@@ -249,7 +249,7 @@ priv_vcl_free(void *priv)
 	AZ(priv_vcl);
 }
 
-int __match_proto__(vmod_init_f)
+int __match_proto__(vmod_event_f)
 event_function(VRT_CTX, struct vmod_priv *priv, enum vcl_event_e e)
 {
 	struct priv_vcl *priv_vcl;
