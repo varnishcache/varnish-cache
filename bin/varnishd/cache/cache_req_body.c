@@ -179,7 +179,7 @@ VRB_Free(struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	if (req->body_oc != NULL) {
-		ObjFreeObj(req->wrk,req->body_oc);
+		ObjFreeObj(req->wrk, req->body_oc);
 		FREE_OBJ(req->body_oc);
 		req->body_oc = NULL;
 	}

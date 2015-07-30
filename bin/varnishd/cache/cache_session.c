@@ -530,7 +530,7 @@ ses_close_acct(enum sess_close reason)
 }
 
 /*--------------------------------------------------------------------
- * Close a sessions connection.
+ * Close a session's connection.
  * XXX: Technically speaking we should catch a t_end timestamp here
  * XXX: for SES_Delete() to use.
  */
