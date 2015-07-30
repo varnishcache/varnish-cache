@@ -78,7 +78,7 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 	ws->e = ws->s + len;
 	*ws->e = 0x15;
 	ws->f = ws->s;
-	assert(id[0] & 0x40);
+	assert(id[0] & 0x20);
 	assert(strlen(id) < sizeof ws->id);
 	strcpy(ws->id, id);
 	WS_Assert(ws);
@@ -90,7 +90,7 @@ WS_MarkOverflow(struct ws *ws)
 {
 	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
 
-	ws->id[0] &= ~0x40;		// cheesy toupper()
+	ws->id[0] &= ~0x20;		// cheesy toupper()
 }
 
 static void
@@ -98,7 +98,7 @@ ws_ClearOverflow(struct ws *ws)
 {
 	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
 
-	ws->id[0] |= 0x40;		// cheesy tolower()
+	ws->id[0] |= 0x20;		// cheesy tolower()
 }
 
 /*
@@ -255,7 +255,7 @@ WS_Overflowed(const struct ws *ws)
 {
 	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
 
-	if (ws->id[0] & 0x40)
+	if (ws->id[0] & 0x20)
 		return (0);
 	return (1);
 }
