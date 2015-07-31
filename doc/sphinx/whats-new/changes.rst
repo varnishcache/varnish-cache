@@ -102,6 +102,16 @@ Surrogate keys
 
 Not yet documented.
 
+Passing data between ESI requests
+=================================
+
+A new `req_top` identifier is available in VCL, which is a reference
+to `req` in the top-level ESI request.
+
+This is useful to pass data back and forth between the main ESI request
+and any ESI subrequests it lead to.
+
+
 Other noteworthy small changes
 ==============================
 
