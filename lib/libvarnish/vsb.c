@@ -159,7 +159,7 @@ static void
 _vsb_indent(struct vsb *s)
 {
 	if (s->s_indent == 0 || s->s_error != 0 ||
-	    s->s_buf[s->s_len - 1] != '\n')
+	    (s->s_len > 0 && s->s_buf[s->s_len - 1] != '\n'))
 		return;
 	if (VSB_FREESPACE(s) <= s->s_indent &&
 	    VSB_extend(s, s->s_indent) < 0) {
