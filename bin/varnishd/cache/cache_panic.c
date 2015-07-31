@@ -337,7 +337,7 @@ pan_req(struct vsb *vsb, const struct req *req)
 
 	if (req->err_code)
 		VSB_printf(vsb,
-		    "  err_code = %d, err_reason = %s,\n", req->err_code,
+		    "err_code = %d, err_reason = %s,\n", req->err_code,
 		    req->err_reason ? req->err_reason : "(null)");
 
 	VSB_printf(vsb, "restarts = %d, esi_level = %d,\n",
