@@ -86,12 +86,16 @@ VCL_Panic(struct vsb *vsb, const struct vcl *vcl)
 	AN(vsb);
 	if (vcl == NULL)
 		return;
-	VSB_printf(vsb, "  vcl = {\n");
-	VSB_printf(vsb, "    srcname = {\n");
+	VSB_printf(vsb, "vcl = {\n");
+	VSB_indent(vsb, 2);
+	VSB_printf(vsb, "srcname = {\n");
+	VSB_indent(vsb, 2);
 	for (i = 0; i < vcl->conf->nsrc; ++i)
-		VSB_printf(vsb, "      \"%s\",\n", vcl->conf->srcname[i]);
-	VSB_printf(vsb, "    },\n");
-	VSB_printf(vsb, "  },\n");
+		VSB_printf(vsb, "\"%s\",\n", vcl->conf->srcname[i]);
+	VSB_indent(vsb, -2);
+	VSB_printf(vsb, "},\n");
+	VSB_indent(vsb, -2);
+	VSB_printf(vsb, "},\n");
 }
 
 /*--------------------------------------------------------------------*/
