@@ -350,6 +350,8 @@ pan_req(struct vsb *vsb, const struct req *req)
 		pan_wrk(vsb, req->wrk);
 
 	pan_ws(vsb, req->ws);
+	if (VALID_OBJ(req->htc, HTTP_CONN_MAGIC))
+		pan_htc(vsb, req->htc);
 	pan_http(vsb, "req", req->http);
 	if (req->resp->ws != NULL)
 		pan_http(vsb, "resp", req->resp);
