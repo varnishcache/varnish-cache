@@ -114,7 +114,6 @@ CTASSERT(powerof2(VSB_MAXEXTENDSIZE));
 CTASSERT(powerof2(VSB_MAXEXTENDINCR));
 #endif
 
-
 static int
 VSB_extendsize(int size)
 {
@@ -154,6 +153,21 @@ VSB_extend(struct vsb *s, int addlen)
 	s->s_buf = newbuf;
 	s->s_size = newsize;
 	return (0);
+}
+
+static void
+_vsb_indent(struct vsb *s)
+{
+	if (s->s_indent == 0 || s->s_error != 0 ||
+	    s->s_buf[s->s_len - 1] != '\n')
+		return;
+	if (VSB_FREESPACE(s) <= s->s_indent &&
+	    VSB_extend(s, s->s_indent) < 0) {
+		s->s_error = ENOMEM;
+		return;
+	}
+	memset(s->s_buf + s->s_len, ' ', s->s_indent);
+	s->s_len += s->s_indent;
 }
 
 /*
@@ -231,6 +245,7 @@ VSB_clear(struct vsb *s)
 	VSB_CLEARFLAG(s, VSB_FINISHED);
 	s->s_error = 0;
 	s->s_len = 0;
+	s->s_indent = 0;
 }
 
 /*
@@ -247,6 +262,7 @@ VSB_put_byte(struct vsb *s, int c)
 
 	if (s->s_error != 0)
 		return;
+	_vsb_indent(s);
 	if (VSB_FREESPACE(s) <= 0) {
 		if (VSB_extend(s, 1) < 0)
 			s->s_error = ENOMEM;
@@ -270,6 +286,7 @@ VSB_bcat(struct vsb *s, const void *buf, size_t len)
 
 	if (s->s_error != 0)
 		return (-1);
+	_vsb_indent(s);
 	for (; str < end; str++) {
 		VSB_put_byte(s, *str);
 		if (s->s_error != 0)
@@ -316,6 +333,7 @@ VSB_vprintf(struct vsb *s, const char *fmt, va_list ap)
 
 	if (s->s_error != 0)
 		return (-1);
+	_vsb_indent(s);
 
 	/*
 	 * For the moment, there is no way to get vsnprintf(3) to hand
@@ -514,4 +532,19 @@ VSB_quote(struct vsb *s, const char *p, int len, int how)
 		}
 	}
 	(void)VSB_putc(s, '"');
+}
+
+/*
+ * Indentation
+ */
+
+void
+VSB_indent(struct vsb * s, int i)
+{
+
+	assert_VSB_integrity(s);
+	if (s->s_indent + i < 0)
+		s->s_error = EINVAL;
+	else
+		s->s_indent += i;
 }
