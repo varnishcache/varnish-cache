@@ -141,11 +141,14 @@ usage(void)
 #define FMT "    %-28s # %s\n"
 
 	fprintf(stderr, "usage: varnishd [options]\n");
-	fprintf(stderr, FMT, "-a address:port,proto",
+	fprintf(stderr, FMT, "-a address[:port][,proto]",
 	    "HTTP listen address and port (default: *:80)");
-	fprintf(stderr, FMT, "-b address:port", "backend address and port");
-	fprintf(stderr, FMT, "", "   -b <hostname_or_IP>");
-	fprintf(stderr, FMT, "", "   -b '<hostname_or_IP>:<port_or_service>'");
+	fprintf(stderr, FMT, "", "  address: defaults to loopback");
+	fprintf(stderr, FMT, "", "  port: port or service (default: 80)");
+	fprintf(stderr, FMT, "", "  proto: HTTP/1 (default), PROXY");
+	fprintf(stderr, FMT, "-b address[:port]", "backend address and port");
+	fprintf(stderr, FMT, "", "  address: hostname or IP");
+	fprintf(stderr, FMT, "", "  port: port or service (default: 80)");
 	fprintf(stderr, FMT, "-C", "print VCL code compiled to C language");
 	fprintf(stderr, FMT, "-d", "debug");
 	fprintf(stderr, FMT, "-F", "Run in foreground");
@@ -162,7 +165,7 @@ usage(void)
 #endif
 	fprintf(stderr, FMT, "", "  -j unix[,user=<user>][,ccgroup=<group>]");
 	fprintf(stderr, FMT, "", "  -j none");
-	fprintf(stderr, FMT, "-l vsl,vsm", "Size of shared memory file");
+	fprintf(stderr, FMT, "-l vsl[,vsm]", "Size of shared memory file");
 	fprintf(stderr, FMT, "", "  vsl: space for VSL records [80m]");
 	fprintf(stderr, FMT, "", "  vsm: space for stats counters [1m]");
 	fprintf(stderr, FMT, "-M address:port", "Reverse CLI destination");
