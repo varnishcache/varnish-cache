@@ -119,9 +119,9 @@ OPTIONS
 
   Make the listed parameters read only. This gives the system
   administrator a way to limit what the Varnish CLI can do.  Consider
-  making parameters such as *user*, *group*, *cc_command*,
-  *vcc_allow_inline_c* read only as these can potentially be used to
-  escalate privileges from the CLI.
+  making parameters such as *cc_command*, *vcc_allow_inline_c* and
+  *vmod_dir* read only as these can potentially be used to escalate
+  privileges from the CLI.
 
 -S file
 
