@@ -84,11 +84,11 @@ OPTIONS
 
   Specify the jailing technology to use.
 
--l <shl[,free]>
+-l <vsl[,vsm]>
 
-  Specifies size of shmlog file. shl is the store for the shared
-  memory log records [80M] and free is the store for other allocations
-  [1M]. Scaling suffixes like 'k', 'M' can be used up to (E)xabytes.
+  Specifies size of shmlog file. vsl is the space for the VSL records
+  [80M] and vsm is the space for stats counters [1M]. Scaling suffixes
+  like 'K' and 'M' can be used up to (G)igabytes.
   Default is 81 Megabytes.
 
 -M <address:port>

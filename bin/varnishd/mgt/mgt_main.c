@@ -162,9 +162,9 @@ usage(void)
 #endif
 	fprintf(stderr, FMT, "", "  -j unix[,user=<user>][,ccgroup=<group>]");
 	fprintf(stderr, FMT, "", "  -j none");
-	fprintf(stderr, FMT, "-l shl,free", "Size of shared memory file");
-	fprintf(stderr, FMT, "", "  shl: space for SHL records [80m]");
-	fprintf(stderr, FMT, "", "  free: space for other allocations [1m]");
+	fprintf(stderr, FMT, "-l vsl,vsm", "Size of shared memory file");
+	fprintf(stderr, FMT, "", "  vsl: space for VSL records [80m]");
+	fprintf(stderr, FMT, "", "  vsm: space for stats counters [1m]");
 	fprintf(stderr, FMT, "-M address:port", "Reverse CLI destination");
 	fprintf(stderr, FMT, "-n dir", "varnishd working directory");
 	fprintf(stderr, FMT, "-P file", "PID file");
