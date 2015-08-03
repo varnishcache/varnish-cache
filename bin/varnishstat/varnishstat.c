@@ -252,8 +252,7 @@ usage(void)
 #define FMT "    %-28s # %s\n"
 	fprintf(stderr, "usage: varnishstat "
 	    "[-1lV] [-f field] "
-	    VSC_n_USAGE " "
-	    "[-w delay]\n");
+	    VSC_n_USAGE "\n");
 	fprintf(stderr, FMT, "-1", "Print the statistics to stdout.");
 	fprintf(stderr, FMT, "-f field", "Field inclusion glob");
 	fprintf(stderr, FMT, "",
@@ -263,10 +262,6 @@ usage(void)
 	fprintf(stderr, FMT, "-n varnish_name",
 	    "The varnishd instance to get logs from");
 	fprintf(stderr, FMT, "-V", "Display the version number and exit");
-	fprintf(stderr, FMT, "-w delay",
-	    "Wait delay seconds between updates."
-	    "  Default is 1 second."
-	    " Can also be be used with -1, -x or -j for repeated output.");
 	fprintf(stderr, FMT, "-x",
 	    "Print statistics to stdout as XML.");
 	fprintf(stderr, FMT, "-j",
@@ -280,14 +275,14 @@ main(int argc, char * const *argv)
 {
 	int c;
 	struct VSM_data *vd;
-	double delay = 1.0, t_arg = 5.0, t_start = NAN;
-	int once = 0, xml = 0, json = 0, do_repeat = 0, f_list = 0, curses = 0;
+	double t_arg = 5.0, t_start = NAN;
+	int once = 0, xml = 0, json = 0, f_list = 0, curses = 0;
 	int i;
 
 	vd = VSM_New();
 	AN(vd);
 
-	while ((c = getopt(argc, argv, VSC_ARGS "1f:lVw:xjt:")) != -1) {
+	while ((c = getopt(argc, argv, VSC_ARGS "1f:lVxjt:")) != -1) {
 		switch (c) {
 		case '1':
 			once = 1;
@@ -313,14 +308,6 @@ main(int argc, char * const *argv)
 		case 'V':
 			VCS_Message("varnishstat");
 			exit(0);
-		case 'w':
-			do_repeat = 1;
-			delay = VNUM(optarg);
-			if (isnan(delay)) {
-				fprintf(stderr, "-w: Syntax error");
-				exit(1);
-			}
-			break;
 		case 'x':
 			xml = 1;
 			break;
@@ -360,7 +347,7 @@ main(int argc, char * const *argv)
 			fprintf(stderr, "%s\n", VSM_Error(vd));
 			exit(1);
 		}
-		do_curses(vd, delay);
+		do_curses(vd, 1.0);
 		exit(0);
 	}
 
@@ -369,24 +356,19 @@ main(int argc, char * const *argv)
 		exit(1);
 	}
 
-	while (1) {
-		if (xml)
-			do_xml(vd);
-		else if (json)
-			do_json(vd);
-		else if (once)
-			do_once(vd, VSC_Main(vd, NULL));
-		else if (f_list)
-			list_fields(vd);
-		else
-			assert(0);
-		if (!do_repeat)
-			break;
+	if (xml)
+		do_xml(vd);
+	else if (json)
+		do_json(vd);
+	else if (once)
+		do_once(vd, VSC_Main(vd, NULL));
+	else if (f_list)
+		list_fields(vd);
+	else
+		assert(0);
 
-		/* end of output block marker. */
-		printf("\n");
+	/* end of output block marker. */
+	printf("\n");
 
-		(void)usleep(delay * 1e6);
-	}
 	exit(0);
 }

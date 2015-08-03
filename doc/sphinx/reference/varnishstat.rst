@@ -15,7 +15,7 @@ Varnish Cache statistics
 SYNOPSIS
 ========
 
-varnishstat [-1] [-x] [-j] [-f field] [-l] [-n varnish_name] [-N filename] [-V] [-w delay]
+varnishstat [-1] [-x] [-j] [-f field] [-l] [-n varnish_name] [-N filename] [-V]
 
 .. TODO: autogenerate this synopsis like the others.
 
@@ -63,10 +63,6 @@ The following options are available:
 
 -V
 	Display the version number and exit.
-
--w delay
-	Wait delay seconds between updates.  The default is 1. Can
-	also be used with -1, -x or -j for repeated output.
 
 -x
 	Displays the result as XML.
