@@ -118,7 +118,7 @@ struct mac_help {
 	enum sess_step		first_step;
 };
 
-static int __match_proto__(vss_resolver_f)
+static int __match_proto__(vss_resolved_f)
 mac_callback(void *priv, const struct suckaddr *sa)
 {
 	struct mac_help *mh;

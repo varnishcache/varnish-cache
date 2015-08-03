@@ -524,7 +524,7 @@ mgt_cli_secret(const char *S_arg)
 	secret_file = S_arg;
 }
 
-static int __match_proto__(vss_resolver_f)
+static int __match_proto__(vss_resolved_f)
 mct_callback(void *priv, const struct suckaddr *sa)
 {
 	int sock;
