@@ -1,0 +1,33 @@
+varnishtest "204 response with body"
+
+server s1 {
+	rxreq
+	txresp -status 204 -body "HiHo"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		if (beresp.http.foo == "bar") {
+			set beresp.status = 204;
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+server s1 {
+	rxreq
+	txresp -hdr "Foo: bar" -body "HiHo"
+} -start
+
+client c1 {
+	txreq -url /2
+	rxresp
+	expect resp.status == 204
+	expect resp.http.content-length == "<undef>"
+	expect resp.http.transfer-encoding == "<undef>"
+} -run
