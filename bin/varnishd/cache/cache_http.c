@@ -927,9 +927,8 @@ HTTP_GetHdrPack(struct worker *wrk, struct objcore *oc, const char *hdr)
 	while (*ptr != '\0') {
 		if (!strncasecmp(ptr, hdr, l)) {
 			ptr += l;
-			assert (vct_issp(*ptr));
-			ptr++;
-			assert (!vct_issp(*ptr));
+			while (vct_islws(*ptr))
+				ptr++;
 			return (ptr);
 		}
 		ptr = strchr(ptr, '\0') + 1;
