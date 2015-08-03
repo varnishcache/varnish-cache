@@ -743,8 +743,8 @@ class FileSection(object):
 		if re.match("['\"]", l):
 			m = re.match("(['\"]).*?(\\1)", l)
 			if not m:
-			        raise FormatError("Unbalanced quote",
-					  "Unbalanced quote on line %d" % ln)
+				raise FormatError("Unbalanced quote",
+				    "Unbalanced quote on line %d" % ln)
 			self.tl.append(Token(ln, 0, l[:m.end()]))
 			self.l.insert(0, (ln, l[m.end():]))
 			return
