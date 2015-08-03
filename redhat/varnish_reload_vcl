@@ -33,8 +33,10 @@ VARNISH_SECRET_FILE=\"$VARNISH_SECRET_FILE\"
 "
 }
 
-# Read configuration
-. /etc/sysconfig/varnish
+# Fallback to the default configuration
+if [ -z "$VARNISH_VCL_CONF" ]; then
+	. /etc/sysconfig/varnish
+fi
 
 $debug && print_debug
 
