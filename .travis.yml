@@ -3,8 +3,12 @@ language: c
 compiler:
   - clang
   - gcc
+addons:
+  apt:
+    packages:
+    - python-docutils
 before_install:
-  - sudo apt-get install python-docutils
   - ./autogen.sh
   - ./configure
+sudo: false
 script: 'make -j3 check VERBOSE=1'
