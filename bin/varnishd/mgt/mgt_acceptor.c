@@ -192,9 +192,13 @@ MAC_Arg(const char *arg)
 	if (av[2] == NULL || !strcmp(av[2], "HTTP/1")) {
 		mh->first_step = S_STP_H1NEWSESS;
 		mh->proto_name = "HTTP/1";
+		if (av[2] != NULL && av[3] != NULL)
+			ARGV_ERR("Too many sub-arguments to -a(HTTP/1))\n");
 	} else if (!strcmp(av[2], "PROXY")) {
 		mh->first_step = S_STP_PROXYNEWSESS;
 		mh->proto_name = "PROXY";
+		if (av[3] != NULL)
+			ARGV_ERR("Too many sub-arguments to -a(PROXY))\n");
 	} else {
 		ARGV_ERR("Unknown protocol '%s'\n", av[2]);
 	}
