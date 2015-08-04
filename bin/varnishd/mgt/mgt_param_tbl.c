@@ -419,7 +419,7 @@ struct parspec mgt_parspec[] = {
 		"Install a signal handler which tries to dump debug "
 		"information on segmentation and buserror faults.",
 		MUST_RESTART,
-		"off", "bool" },
+		"on", "bool" },
 	{ "vcl_dir", tweak_string, &mgt_vcl_dir,
 		NULL, NULL,
 		"Directory from which relative VCL filenames (vcl.load and "
