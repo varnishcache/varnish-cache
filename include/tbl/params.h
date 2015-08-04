@@ -962,12 +962,12 @@ PARAM(
 	/* var */	sigsegv_handler,
 	/* min */	none,
 	/* max */	none,
-	/* default */	off,
+	/* default */	on,
 	/* units */	bool,
 	/* flags */	0| MUST_RESTART,
 	/* s-text */
 	"Install a signal handler which tries to dump debug information on "
-	"segmentation and buserror faults.\n",
+	"segmentation faults, bus errors and abort signals.\n",
 	/* l-text */	"",
 	/* func */	NULL
 )
