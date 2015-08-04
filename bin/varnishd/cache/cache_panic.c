@@ -465,6 +465,9 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	memset(&sa, 0, sizeof sa);
 	sa.sa_handler = SIG_DFL;
 	(void)sigaction(SIGSEGV, &sa, NULL);
+	/* Set SIGABRT back to default so the final abort() has the
+	   desired effect */
+	(void)sigaction(SIGABRT, &sa, NULL);
 
 	switch(kind) {
 	case VAS_WRONG:
