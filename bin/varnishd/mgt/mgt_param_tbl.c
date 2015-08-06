@@ -178,7 +178,7 @@ struct parspec mgt_parspec[] = {
 	{ "timeout_idle", tweak_timeout, &mgt_param.timeout_idle,
 		"0", NULL,
 		"Idle timeout for client connections.\n"
-		"A connection is considered idle, until we have"
+		"A connection is considered idle, until we have "
 		"received the full request headers.",
 		0,
 		"5", "seconds" },

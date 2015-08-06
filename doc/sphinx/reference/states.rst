@@ -21,7 +21,7 @@ into the respective VCL subroutine. These can then be modified from
 VCL where necessary.
 
 The following graphs attempt to provide an overview over the
-processing states, their transisions and the most relevant functions
+processing states, their transitions and the most relevant functions
 in core code. They represent a compromise between usefulness for
 core/VMOD developers and administrators and are intended to serve as
 the reference basis for deriavtive work, such as more VCL-centric

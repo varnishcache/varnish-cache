@@ -1232,7 +1232,7 @@ PARAM(
 	/* flags */	00,
 	/* s-text */
 	"Idle timeout for client connections.\n"
-	"A connection is considered idle, until we havereceived the full "
+	"A connection is considered idle, until we have received the full "
 	"request headers.\n",
 	/* l-text */	"",
 	/* func */	NULL

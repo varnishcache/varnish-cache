@@ -33,7 +33,7 @@
 
 #define TOP_OPT_1							\
 	VOPT("1", "[-1]", "Run once",					\
-	    "Instead of a continously updated display, print the"	\
+	    "Instead of a continuously updated display, print the"	\
 	    " statistics once and exit. Implies ``-d``."		\
 	)
 
