@@ -879,12 +879,12 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				} else if (!strcasecmp(b, "pass")) {
 					CTX.hitmiss = "miss";
 					CTX.handling = "pass";
-				} else if (!strcasecmp(b, "error")) {
-					/* Arguably, error isn't a hit or
+				} else if (!strcasecmp(b, "synth")) {
+					/* Arguably, synth isn't a hit or
 					   a miss, but miss is less
 					   wrong */
 					CTX.hitmiss = "miss";
-					CTX.handling = "error";
+					CTX.handling = "synth";
 				}
 				break;
 			case SLT_VCL_return:

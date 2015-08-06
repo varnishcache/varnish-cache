@@ -119,7 +119,7 @@ Supported formatters are:
 
   Varnish:handling
     How the request was handled, whether it was a cache hit, miss,
-    pass, pipe or error.
+    pass, pipe or synth.
 
   VCL_Log:key
     Output value set by std.log("key:value") in VCL.
