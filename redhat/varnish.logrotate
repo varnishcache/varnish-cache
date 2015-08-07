@@ -1,4 +1,4 @@
-/var/log/varnish/*.log {
+/var/log/varnish/varnish.log /var/log/varnish/varnishncsa.log {
     missingok
     notifempty
     sharedscripts
