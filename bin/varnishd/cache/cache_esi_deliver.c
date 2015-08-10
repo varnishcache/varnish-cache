@@ -317,7 +317,6 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 				r = (void*)strchr((const char*)q, '\0');
 				AN(r);
 				if (VDP_bytes(req, VDP_FLUSH, NULL, 0)) {
-					SES_Close(req->sp, SC_REM_CLOSE);
 					ecx->p = ecx->e;
 					break;
 				}
