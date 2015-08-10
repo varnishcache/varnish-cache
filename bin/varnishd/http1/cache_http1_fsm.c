@@ -199,7 +199,10 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			AZ(req->vcl);
 			AZ(req->esi_level);
 
-			hs = SES_RxReq(wrk, req, HTTP1_Complete);
+			hs = SES_RxStuff(req->htc, HTTP1_Complete, sp->t_idle,
+			    &req->t_first, &req->t_req,
+			    sp->t_idle + cache_param->timeout_linger,
+			    sp->t_idle + cache_param->timeout_idle);
 			if (hs < HTC_S_EMPTY) {
 				req->acct.req_hdrbytes +=
 				    req->htc->rxbuf_e - req->htc->rxbuf_b;

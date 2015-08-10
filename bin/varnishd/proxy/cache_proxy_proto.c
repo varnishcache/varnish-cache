@@ -351,7 +351,8 @@ VPX_Proto_Sess(struct worker *wrk, void *priv)
 	assert(sizeof vpx1_sig == 5);
 	assert(sizeof vpx2_sig == 12);
 
-	hs = SES_RxReq(wrk, req, vpx_complete);
+	hs = SES_RxStuff(req->htc, vpx_complete, sp->t_idle,
+	    NULL, NULL, NAN, sp->t_idle + cache_param->timeout_idle);
 	if (hs != HTC_S_COMPLETE) {
 		Req_Release(req);
 		SES_Delete(sp, SC_RX_JUNK, NAN);
@@ -377,8 +378,6 @@ VPX_Proto_Sess(struct worker *wrk, void *priv)
 		req->htc->pipeline_e = req->htc->rxbuf_e;
 	WS_Release(req->htc->ws, 0);
 	SES_RxReInit(req->htc);
-	req->t_req = NAN;
-	req->t_first = NAN;
 	req->sp->sess_step = S_STP_H1NEWREQ;
 	wrk->task.func = SES_Proto_Req;
 	wrk->task.priv = req;

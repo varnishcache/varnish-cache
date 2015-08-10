@@ -217,66 +217,73 @@ SES_Rx(struct http_conn *htc, double tmo)
 
 /*----------------------------------------------------------------------
  * Receive a request/packet/whatever, with timeouts
+ *
+ * t0 is when we start
+ * *t1 becomes time of first non-idle rx 
+ * *t2 becomes time of complete rx
+ * ti is when we return IDLE if nothing has arrived
+ * tn is when we timeout on non-complete
  */
 
 enum htc_status_e
-SES_RxReq(const struct worker *wrk, struct req *req, htc_complete_f *func)
+SES_RxStuff(struct http_conn *htc, htc_complete_f *func, double t0,
+    double *t1, double *t2, double ti, double tn)
 {
 	double tmo;
-	double now, when;
-	struct sess *sp;
+	double now;
 	enum htc_status_e hs;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	sp = req->sp;
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 
-	AZ(isnan(sp->t_idle));
-	assert(isnan(req->t_first));
+	AZ(isnan(t0));
+	AZ(isnan(tn));
+	if (t1 != NULL)
+		assert(isnan(*t1));
 
-	when = sp->t_idle + cache_param->timeout_idle;
-	tmo = cache_param->timeout_linger;
+	now = t0;
 	while (1) {
-		hs = SES_Rx(req->htc, tmo);
-		now = VTIM_real();
+		if (!isnan(ti))
+			tmo = ti - t0;
+		else
+			tmo = tn - t0;
+		hs = SES_Rx(htc, tmo);
 		if (hs == HTC_S_EOF) {
-			WS_ReleaseP(req->htc->ws, req->htc->rxbuf_b);
+			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			return (HTC_S_CLOSE);
 		}
 		if (hs == HTC_S_OVERFLOW) {
-			WS_ReleaseP(req->htc->ws, req->htc->rxbuf_b);
+			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			return (HTC_S_OVERFLOW);
 		}
-		hs = func(req->htc);
+		now = VTIM_real();
+		hs = func(htc);
 		if (hs == HTC_S_OVERFLOW) {
-			WS_ReleaseP(req->htc->ws, req->htc->rxbuf_b);
+			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			return (HTC_S_OVERFLOW);
 		}
 		if (hs == HTC_S_JUNK) {
-			WS_ReleaseP(req->htc->ws, req->htc->rxbuf_b);
+			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			return (HTC_S_JUNK);
 		}
 		if (hs == HTC_S_COMPLETE) {
 			/* Got it, run with it */
-			if (isnan(req->t_first))
-				req->t_first = now;
-			req->t_req = now;
+			if (t1 != NULL && isnan(*t1))
+				*t1 = now;
+			if (t2 != NULL)
+				*t2 = now;
 			return (HTC_S_COMPLETE);
 		}
-		if (when < now)
+		if (tn < now)
 			return (HTC_S_TIMEOUT);
 		if (hs == HTC_S_MORE) {
 			/* Working on it */
-			if (isnan(req->t_first))
-				req->t_first = now;
-			tmo = when - now;
+			if (t1 != NULL && isnan(*t1))
+				*t1 = now;
+			tmo = tn - now;
 			continue;
 		}
 		assert(hs == HTC_S_EMPTY);
-		/* Nothing but whitespace */
-		tmo = sp->t_idle + cache_param->timeout_linger - now;
-		if (tmo < 0)
+		if (ti < now)
 			return (HTC_S_IDLE);
 	}
 }
