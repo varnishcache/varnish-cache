@@ -448,7 +448,7 @@ ses_handle(struct waited *wp, enum wait_event ev, double now)
 	case WAITER_ACTION:
 		pp = sp->pool;
 		CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
-		assert(sizeof *tp == WS_Reserve(sp->ws, sizeof *tp));
+		assert(sizeof *tp <= WS_Reserve(sp->ws, sizeof *tp));
 		tp = (void*)sp->ws->f;
 		tp->func = SES_Proto_Sess;
 		tp->priv = sp;
