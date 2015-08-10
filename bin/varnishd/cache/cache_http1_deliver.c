@@ -254,7 +254,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo)
 		/* In ESI mode, we can't know the aggregate length */
 		http_Unset(req->resp, H_Content_Length);
 		RFC2616_Weaken_Etag(req->resp);
-	} else if (req->resp->status == 304) {
+	} else if (req->resp->status == 204 || req->resp->status == 304) {
 		http_Unset(req->resp, H_Content_Length);
 		req->wantbody = 0;
 	} else if (bo == NULL &&
