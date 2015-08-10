@@ -62,4 +62,5 @@ int VTCP_listen(const struct suckaddr *addr, int depth, const char **errp);
 int VTCP_listen_on(const char *addr, const char *def_port, int depth,
     const char **errp);
 void VTCP_set_read_timeout(int s, double seconds);
+int VTCP_read(int fd, void *ptr, size_t len, double tmo);
 // #endif
