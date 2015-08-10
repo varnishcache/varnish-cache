@@ -62,13 +62,15 @@ mac_opensocket(struct listen_sock *ls, struct cli *cli)
 	}
 	ls->sock = VTCP_bind(ls->addr, NULL);
 	fail = errno;
-	if (ls->sock >= 0)
-		mgt_child_inherit(ls->sock, "sock");
-	if (cli != NULL && ls->sock < 0) {
-		VCLI_Out(cli, "Could not get socket %s: %s\n",
-		    ls->name, strerror(errno));
+	if (ls->sock < 0) {
+		if (cli != NULL)
+			VCLI_Out(cli, "Could not get socket %s: %s\n",
+			    ls->name, strerror(errno));
+		AN(fail);
+		return (fail);
 	}
-	return (fail);
+	mgt_child_inherit(ls->sock, "sock");
+	return (0);
 }
 
 /*=====================================================================
@@ -152,7 +154,7 @@ MAC_Validate(void)
 		VJ_master(JAIL_MASTER_PRIVPORT);
 		fail = mac_opensocket(ls, NULL);
 		VJ_master(JAIL_MASTER_LOW);
-		if (ls->sock < 0)
+		if (fail)
 			ARGV_ERR("Cannot open socket: %s: %s\n",
 			    ls->name, strerror(fail));
 		if (VSA_Port(ls->addr) == 0) {
