@@ -64,7 +64,7 @@ vmod_hash__init(VRT_CTX, struct vmod_directors_hash **rrp,
 	rr->vbm = vbit_init(8);
 	AN(rr->vbm);
 	*rrp = rr;
-	vdir_new(&rr->vd, vcl_name, NULL, NULL, rr);
+	vdir_new(&rr->vd, "hash", vcl_name, NULL, NULL, rr);
 }
 
 VCL_VOID __match_proto__()
