@@ -193,16 +193,16 @@ STRING_LIST
 	are big enough.
 
 PRIV_VCL
-	See below
+	See :ref:`ref-vmod-private-pointers` below
 
 PRIV_CALL
-	See below
+	See :ref:`ref-vmod-private-pointers` below
 
 PRIV_TASK
-	See below
+	See :ref:`ref-vmod-private-pointers` below
 
 PRIV_TOP
-	See below
+	See :ref:`ref-vmod-private-pointers` below
 
 VOID
 	C-type: ``void``
@@ -239,6 +239,8 @@ BLOB
 	An opaque type to pass random bits of memory between VMOD
 	functions.
 
+
+.. _ref-vmod-private-pointers:
 
 Private Pointers
 ================
