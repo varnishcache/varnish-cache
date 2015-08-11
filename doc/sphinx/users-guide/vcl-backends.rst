@@ -143,8 +143,9 @@ call certain actions in `vcl_init`.::
 
 This director is a round-robin director. This means the director will
 distribute the incoming requests on a round-robin basis. There is
-also a *random* director which distributes requests in a, you guessed
-it, random fashion.
+also a *random* director which distributes requests in a, you guessed it,
+random fashion. If that is not enough, you can also write your own director
+(see :ref:`ref-writing-a-director`).
 
 But what if one of your servers goes down? Can Varnish direct all the
 requests to the healthy server? Sure it can. This is where the Health

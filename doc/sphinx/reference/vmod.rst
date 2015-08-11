@@ -239,6 +239,12 @@ BLOB
 	An opaque type to pass random bits of memory between VMOD
 	functions.
 
+BACKEND
+	C-type: ``const struct director *``
+
+        A type for backend and director implementations. See
+        :ref:`ref-writing-a-director`
+
 
 .. _ref-vmod-private-pointers:
 

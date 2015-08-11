@@ -22,6 +22,7 @@ The Varnish Reference Manual
 	vmod.rst
 	vmod_std.generated.rst
 	vmod_directors.generated.rst
+	directors.rst
 	vsl.rst
 	vsl-query.rst
 
