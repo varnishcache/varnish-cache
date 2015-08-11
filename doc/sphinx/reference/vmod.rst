@@ -1,3 +1,5 @@
+.. _ref-vmod:
+
 %%%%%%%%%%%%%%%%%%%%%%
 VMOD - Varnish Modules
 %%%%%%%%%%%%%%%%%%%%%%
@@ -98,6 +100,9 @@ For the std VMOD, the compiled vcc_if.h file looks like this::
 
 Those are your C prototypes.  Notice the ``vmod_`` prefix on the function
 names and the C-types as arguments.
+
+
+.. _ref-vmod-vcl-c-types:
 
 VCL and C data types
 ====================
@@ -334,6 +339,20 @@ or files opened, any memory allocated to global or private variables
 in the C-code etc, it is the VMODs own responsibility to track how
 many VCLs have called init (& fini) and free this global state
 when the count reaches zero.
+
+.. _ref-vmod-event-functions:
+
+Event functions
+===============
+
+TODO
+
+.. _ref-vmod-objects:
+
+VMOD Objects
+============
+
+TODO
 
 When to lock, and when not to lock
 ==================================
