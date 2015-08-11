@@ -34,20 +34,14 @@
 .Sh NAME
 .Nm vsb_new ,
 .Nm vsb_clear ,
-.Nm vsb_setpos ,
 .Nm vsb_bcat ,
-.Nm vsb_bcpy ,
 .Nm vsb_cat ,
-.Nm vsb_cpy ,
 .Nm vsb_printf ,
 .Nm vsb_vprintf ,
 .Nm vsb_putc ,
-.Nm vsb_trim ,
-.Nm vsb_overflowed ,
 .Nm vsb_finish ,
 .Nm vsb_data ,
 .Nm vsb_len ,
-.Nm vsb_done ,
 .Nm vsb_delete
 .Nd safe string formatting
 .Sh LIBRARY
@@ -59,33 +53,21 @@
 .Ft void
 .Fn vsb_clear "struct vsb *s"
 .Ft int
-.Fn vsb_setpos "struct vsb *s" "int pos"
-.Ft int
 .Fn vsb_bcat "struct vsb *s" "const void *buf" "size_t len"
 .Ft int
-.Fn vsb_bcpy "struct vsb *s" "const void *buf" "size_t len"
-.Ft int
 .Fn vsb_cat "struct vsb *s" "const char *str"
-.Ft int
-.Fn vsb_cpy "struct vsb *s" "const char *str"
 .Ft int
 .Fn vsb_printf "struct vsb *s" "const char *fmt" "..."
 .Ft int
 .Fn vsb_vprintf "struct vsb *s" "const char *fmt" "va_list ap"
 .Ft int
 .Fn vsb_putc "struct vsb *s" "int c"
-.Ft int
-.Fn vsb_trim "struct vsb *s"
-.Ft int
-.Fn vsb_overflowed "struct vsb *s"
 .Ft void
 .Fn vsb_finish "struct vsb *s"
 .Ft char *
 .Fn vsb_data "struct vsb *s"
 .Ft int
 .Fn vsb_len "struct vsb *s"
-.Ft int
-.Fn vsb_done "struct vsb *s"
 .Ft void
 .Fn vsb_delete "struct vsb *s"
 .Sh DESCRIPTION
@@ -162,16 +144,6 @@ function invalidates the contents of the
 and resets its position to zero.
 .Pp
 The
-.Fn vsb_setpos
-function sets the
-.Fa vsb Ns 's
-end position to
-.Fa pos ,
-which is a value between zero and one less than the size of the
-storage buffer.
-This effectively truncates the vsb at the new position.
-.Pp
-The
 .Fn vsb_bcat
 function appends the first
 .Fa len
@@ -181,36 +153,12 @@ to the
 .Fa vsb .
 .Pp
 The
-.Fn vsb_bcpy
-function replaces the contents of the
-.Fa vsb
-with the first
-.Fa len
-bytes from the buffer
-.Fa buf .
-.Pp
-The
 .Fn vsb_cat
 function appends the NUL-terminated string
 .Fa str
 to the
 .Fa vsb
 at the current position.
-.Pp
-The
-.Fn vsb_cpy
-function replaces the contents of the
-.Fa vsb
-with those of the NUL-terminated string
-.Fa str .
-This is equivalent to calling
-.Fn vsb_cat
-with a fresh
-.Fa vsb
-or one which position has been reset to zero with
-.Fn vsb_clear
-or
-.Fn vsb_setpos .
 .Pp
 The
 .Fn vsb_printf
@@ -237,25 +185,12 @@ to the
 at the current position.
 .Pp
 The
-.Fn vsb_trim
-function removes trailing whitespace from the
-.Fa vsb .
-.Pp
-The
-.Fn vsb_overflowed
-function returns a non-zero value if the
-.Fa vsb
-overflowed.
-.Pp
-The
 .Fn vsb_finish
 function null-terminates the
 .Fa vsb
 and marks it as finished, which means that it may no longer be
 modified using
-.Fn vsb_setpos ,
 .Fn vsb_cat ,
-.Fn vsb_cpy ,
 .Fn vsb_printf
 or
 .Fn vsb_putc .
@@ -268,8 +203,6 @@ functions return the actual string and its length, respectively;
 .Fn vsb_data
 only works on a finished
 .Fa vsb .
-.Fn vsb_done
-returns non-zero if the vsb is finished.
 .Sh NOTES
 If an operation caused an
 .Fa vsb
@@ -278,12 +211,7 @@ to overflow, most subsequent operations on it will fail until the
 is finished using
 .Fn vsb_finish
 or reset using
-.Fn vsb_clear ,
-or its position is reset to a value between 0 and one less than the
-size of its storage buffer using
-.Fn vsb_setpos ,
-or it is reinitialized to a sufficiently short string using
-.Fn vsb_cpy .
+.Fn vsb_clear .
 .Sh RETURN VALUES
 .Fn vsb_new
 returns
@@ -292,21 +220,11 @@ if it failed to allocate a storage buffer, and a pointer to the new
 .Fa vsb
 otherwise.
 .Pp
-.Fn vsb_setpos
-returns \-1 if
-.Fa pos
-was invalid, and zero otherwise.
-.Pp
 .Fn vsb_cat ,
-.Fn vsb_cpy ,
 .Fn vsb_printf ,
-.Fn vsb_putc ,
 and
-.Fn vsb_trim
+.Fn vsb_putc
 all return \-1 if the buffer overflowed, and zero otherwise.
-.Pp
-.Fn vsb_overflowed
-returns a non-zero value if the buffer overflowed, and zero otherwise.
 .Pp
 .Fn vsb_data
 and
