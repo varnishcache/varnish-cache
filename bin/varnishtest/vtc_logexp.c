@@ -182,7 +182,7 @@ logexp_next(struct logexp *le)
 
 	CHECK_OBJ_ORNULL(le->test, LOGEXP_TEST_MAGIC);
 	if (le->test)
-		vtc_log(le->vl, 3, "tst| %s", VSB_data(le->test->str));
+		vtc_log(le->vl, 3, "waitfor| %s", VSB_data(le->test->str));
 }
 
 static int __match_proto__(VSLQ_dispatch_f)
@@ -239,7 +239,7 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				skip = 1;
 
 			if (ok)
-				legend = "ok";
+				legend = "match";
 			else if (skip)
 				legend = NULL;
 			else
@@ -450,7 +450,6 @@ cmd_logexp_expect(CMD_ARGS)
 	test->tag = tag;
 	test->vre = vre;
 	VTAILQ_INSERT_TAIL(&le->tests, test, list);
-	vtc_log(vl, 4, "%s", VSB_data(test->str));
 }
 
 static const struct cmds logexp_cmds[] = {
