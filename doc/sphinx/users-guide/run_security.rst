@@ -47,7 +47,7 @@ CLI interface access
 
 The command line interface can be accessed in three ways.
 
-`Varnishd` can be told to listen and offer CLI connections
+`varnishd` can be told to listen and offer CLI connections
 on a TCP socket. You can bind the socket to pretty
 much anything the kernel will accept::
 

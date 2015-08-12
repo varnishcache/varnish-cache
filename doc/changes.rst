@@ -614,7 +614,7 @@ Other
 Changes from 3.0.2 to 3.0.3 (2012-08-20)
 ========================================
 
-Varnishd
+varnishd
 --------
 
 - Fix a race on the n_sess counter. This race made varnish do excessive
@@ -731,7 +731,7 @@ Other
 Changes from 3.0.2 rc 1 to 3.0.2 (2011-10-26)
 =============================================
 
-Varnishd
+varnishd
 --------
 
 - Make the size of the synthetic object workspace equal to
@@ -762,7 +762,7 @@ Other
 Changes from 3.0.1 to 3.0.2 rc 1 (2011-10-06)
 =============================================
 
-Varnishd
+varnishd
 --------
 
 - Only log the first 20 bytes of extra headers to prevent overflows.
@@ -824,7 +824,7 @@ Other
 Changes from 3.0.1 rc 1 to 3.0.1 (2011-08-30)
 =============================================
 
-Varnishd
+varnishd
 --------
 
 - Fix crash in streaming code.
@@ -856,7 +856,7 @@ Other
 Changes from 3.0.0 to 3.0.1 rc 1 (2011-08-24)
 =============================================
 
-Varnishd
+varnishd
 --------
 
 - Avoid sending an empty end-chunk when sending bodyless responsed.
@@ -933,7 +933,7 @@ Other
 Changes from 3.0 beta 2 to 3.0.0 (2011-06-16)
 =============================================
 
-Varnishd
+varnishd
 --------
 
 - Avoid sending an empty end-chunk when sending bodyless responsed.
@@ -961,7 +961,7 @@ varnishadm
 Changes from 3.0 beta 1 to 3.0 beta 2
 =====================================
 
-Varnishd
+varnishd
 --------
 
 - thread_pool_min and thread_pool_max now each refer to the number of
@@ -1023,7 +1023,7 @@ Upcoming changes
   to do ``ban("req.url == " + req.url)`` instead.  This syntax already
   works and is recommended.
 
-Varnishd
+varnishd
 --------
 
 - Add streaming on ``pass`` and ``miss``.  This is controlled by the
@@ -1296,7 +1296,7 @@ varnishd
 
 -  Do not filter out Content-Range headers in pass.
 
--  Require -d, -b, -f, -S or -T when starting Varnishd. In human terms,
+-  Require -d, -b, -f, -S or -T when starting varnishd. In human terms,
    this means that it is legal to start varnishd without a Vcl or
    backend, but only if you have a CLI channel of some kind.
 
