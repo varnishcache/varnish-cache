@@ -219,7 +219,7 @@ SES_Rx(struct http_conn *htc, double tmo)
  * Receive a request/packet/whatever, with timeouts
  *
  * t0 is when we start
- * *t1 becomes time of first non-idle rx 
+ * *t1 becomes time of first non-idle rx
  * *t2 becomes time of complete rx
  * ti is when we return IDLE if nothing has arrived
  * tn is when we timeout on non-complete
@@ -266,6 +266,7 @@ SES_RxStuff(struct http_conn *htc, htc_complete_f *func, double t0,
 			return (HTC_S_JUNK);
 		}
 		if (hs == HTC_S_COMPLETE) {
+			WS_ReleaseP(htc->ws, htc->rxbuf_e);
 			/* Got it, run with it */
 			if (t1 != NULL && isnan(*t1))
 				*t1 = now;

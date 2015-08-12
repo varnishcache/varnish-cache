@@ -376,7 +376,6 @@ VPX_Proto_Sess(struct worker *wrk, void *priv)
 		req->htc->pipeline_b = NULL;
 	else
 		req->htc->pipeline_e = req->htc->rxbuf_e;
-	WS_Release(req->htc->ws, 0);
 	SES_RxReInit(req->htc);
 	req->sp->sess_step = S_STP_H1NEWREQ;
 	wrk->task.func = SES_Proto_Req;

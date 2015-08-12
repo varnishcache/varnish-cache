@@ -138,7 +138,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 
 	struct http *hp;
 	enum htc_status_e hs;
-	int first;
+	int first, i;
 	struct http_conn *htc;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -188,11 +188,13 @@ V1F_FetchRespHdr(struct busyobj *bo)
 			    htc->between_bytes_timeout);
 		}
 	} while (hs != HTC_S_COMPLETE);
-	bo->acct.beresp_hdrbytes += htc->rxbuf_e - htc->rxbuf_b;
+	WS_ReleaseP(htc->ws, htc->rxbuf_e);
 
 	hp = bo->beresp;
 
-	if (HTTP1_DissectResponse(hp, htc)) {
+	i = HTTP1_DissectResponse(htc, hp);
+	bo->acct.beresp_hdrbytes += htc->rxbuf_e - htc->rxbuf_b;
+	if (i) {
 		VSLb(bo->vsl, SLT_FetchError, "http format error");
 		htc->doclose = SC_RX_JUNK;
 		return (-1);
