@@ -179,17 +179,22 @@ IP
 	This is an opaque type, see the ``include/vsa.h`` file for
 	which primitives we support on this type.
 
+PRIV_CALL
+	See :ref:`ref-vmod-private-pointers` below.
+
+PRIV_TASK
+	See :ref:`ref-vmod-private-pointers` below.
+
+PRIV_TOP
+	See :ref:`ref-vmod-private-pointers` below.
+
+PRIV_VCL
+	See :ref:`ref-vmod-private-pointers` below.
+
 REAL
 	C-type: ``double``
 
 	A floating point value.
-
-TIME
-	C-type: ``double``
-
-	Unit: seconds since UNIX epoch.
-
-	An absolute time, as in 1284401161.
 
 STRING
 	C-type: ``const char *``
@@ -244,23 +249,18 @@ STRING_LIST
 	and make sure your workspace_client and workspace_backend params
 	are big enough.
 
+TIME
+	C-type: ``double``
+
+	Unit: seconds since UNIX epoch.
+
+	An absolute time, as in 1284401161.
+
 VOID
 	C-type: ``void``
 
 	Can only be used for return-value, which makes the function a VCL
 	procedure.
-
-PRIV_VCL
-	See :ref:`ref-vmod-private-pointers` below.
-
-PRIV_CALL
-	See :ref:`ref-vmod-private-pointers` below.
-
-PRIV_TASK
-	See :ref:`ref-vmod-private-pointers` below.
-
-PRIV_TOP
-	See :ref:`ref-vmod-private-pointers` below.
 
 
 .. _ref-vmod-private-pointers:
@@ -279,11 +279,6 @@ The VCL compiler supports the following private pointers:
   compiled regular expression specific to a regsub() statement or a
   simply caching the last output of some expensive lookup.
 
-* ``PRIV_VCL`` "per vcl" private pointers are useful for such global
-  state that applies to all calls in this VCL, for instance flags that
-  determine if regular expressions are case-sensitive in this vmod or
-  similar.
-
 * ``PRIV_TASK`` "per task" private pointers are useful for state that
   applies to calls for either a specific request or a backend
   request. For instance this can be the result of a parsed cookie
@@ -296,6 +291,11 @@ The VCL compiler supports the following private pointers:
   duration of one request and all its ESI-includes. They are only
   defined for the client side. When used from backend VCL subs, a NULL
   pointer will be passed.
+
+* ``PRIV_VCL`` "per vcl" private pointers are useful for such global
+  state that applies to all calls in this VCL, for instance flags that
+  determine if regular expressions are case-sensitive in this vmod or
+  similar.
 
 The way it works in the vmod code, is that a ``struct vmod_priv *`` is
 passed to the functions where one of the ``PRIV_*`` argument types is
