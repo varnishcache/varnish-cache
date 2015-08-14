@@ -204,6 +204,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			    &req->t_first, &req->t_req,
 			    sp->t_idle + cache_param->timeout_linger,
 			    sp->t_idle + cache_param->timeout_idle);
+			XXXAZ(req->htc->ws->r);
 			if (hs < HTC_S_EMPTY) {
 				req->acct.req_hdrbytes +=
 				    req->htc->rxbuf_e - req->htc->rxbuf_b;

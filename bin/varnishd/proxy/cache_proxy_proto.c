@@ -353,6 +353,7 @@ VPX_Proto_Sess(struct worker *wrk, void *priv)
 
 	hs = SES_RxStuff(req->htc, vpx_complete,
 	    NULL, NULL, NAN, sp->t_idle + cache_param->timeout_idle);
+	XXXAZ(req->htc->ws->r);
 	if (hs != HTC_S_COMPLETE) {
 		Req_Release(req);
 		SES_Delete(sp, SC_RX_JUNK, NAN);

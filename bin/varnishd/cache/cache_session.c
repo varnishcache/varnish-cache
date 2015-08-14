@@ -284,8 +284,10 @@ SES_RxStuff(struct http_conn *htc, htc_complete_f *func,
 			htc->rxbuf_e += i;
 			*htc->rxbuf_e = '\0';
 		} else if (i == -2) {
-			if (hs == HTC_S_EMPTY && ti < now)
+			if (hs == HTC_S_EMPTY && ti < now) {
+				WS_ReleaseP(htc->ws, htc->rxbuf_b);
 				return (HTC_S_IDLE);
+			}
 		}
 	}
 }
