@@ -51,17 +51,17 @@ data structures that does all the hard work.
 The std VMODs vmod.vcc file looks somewhat like this::
 
 	$Module std 3
-	$Init init_function
+	$Event event_function
 	$Function STRING toupper(STRING_LIST)
 	$Function STRING tolower(STRING_LIST)
 	$Function VOID set_ip_tos(INT)
 
 The first line gives the name of the module, nothing special there.
 
-The second line specifies an optional "Init" function, which will
-be called whenever a VCL program which imports this VMOD is loaded.
-This gives a chance to initialize the module before any of the
-functions it implements are called.  More on this below.
+The second line specifies an optional "Event" function, which will be
+called whenever a VCL program which imports this VMOD is initially loaded
+or transitions to any of the warm, active, cold and discarded states.
+More on this below.
 
 The next three lines specify two functions in the VMOD, along with the
 types of the arguments, and that is probably where the hardest bit
@@ -96,7 +96,7 @@ For the std VMOD, the compiled vcc_if.h file looks like this::
 	VCL_STRING vmod_tolower(VRT_CTX, const char *, ...);
 	VCL_VOID vmod_set_ip_tos(VRT_CTX, VCL_INT);
 
-	int init_function(VRT_CTX, struct vmod_priv *);
+	vmod_event_f event_function;
 
 Those are your C prototypes.  Notice the ``vmod_`` prefix on the function
 names and the C-types as arguments.
@@ -242,8 +242,8 @@ BLOB
 BACKEND
 	C-type: ``const struct director *``
 
-        A type for backend and director implementations. See
-        :ref:`ref-writing-a-director`
+	A type for backend and director implementations. See
+	:ref:`ref-writing-a-director`.
 
 
 .. _ref-vmod-private-pointers:
@@ -326,34 +326,30 @@ malloc would look like this::
 
 The per-call vmod_privs are freed before the per-vcl vmod_priv.
 
-Init functions
-==============
-
-VMODs can have an "init" method which is called when a VCL
-which imports the VMOD is loaded.
-
-The first argument to the init function is the vmod_priv specific
-to this particular VCL, and if necessary, a VCL specific VMOD "fini"
-function can be attached to its "free" hook.
-
-The second argument is a pointer to the VCL's config structure,
-which allows you to tell different VCLs which import this module
-apart.
-
-Please notice that there is no "global" fini method.
-
-If the VMOD has private global state, which includes any sockets
-or files opened, any memory allocated to global or private variables
-in the C-code etc, it is the VMODs own responsibility to track how
-many VCLs have called init (& fini) and free this global state
-when the count reaches zero.
-
 .. _ref-vmod-event-functions:
 
 Event functions
 ===============
 
-TODO
+VMODs can have an "event" function which is called when a VCL which
+imports the VMOD is loaded, made active, or discarded.  This corresponds
+to the VCL_EVENT_LOAD, VCL_EVENT_USE, and VCL_EVENT_DISCARD events,
+respectively.  In addition, this function will be called when the VCL
+state is changed to cold or warm, corresponding to the VCL_EVENT_COLD
+and VCL_EVENT_WARM events.
+
+The first argument to the event function is the VRT context.
+
+The second argument is the vmod_priv specific to this particular VCL,
+and if necessary, a VCL specific VMOD "fini" function can be attached
+to its "free" hook.
+
+The third argument is the event.
+
+If the VMOD has private global state, which includes any sockets or files
+opened, any memory allocated to global or private variables in the C-code
+etc, it is the VMODs own responsibility to track how many VCLs have called
+init (& fini) and free this global state when the count reaches zero
 
 .. _ref-vmod-objects:
 
@@ -368,7 +364,7 @@ When to lock, and when not to lock
 Varnish is heavily multithreaded, so by default VMODs must implement
 their own locking to protect shared resources.
 
-When a VCL is loaded or unloaded, the init and priv->free are
+When a VCL is loaded or unloaded, the event and priv->free are
 run sequentially all in a single thread, and there is guaranteed
 to be no other activity related to this particular VCL, nor are
 there  init/fini activity in any other VCL or VMOD at this time.
@@ -396,7 +392,7 @@ times it will give you the same single copy of the shared library
 file, without checking if it was updated in the meantime.
 
 This is obviously an oversight in the design of the dlopen(3) library
-function, but back in the late 1980ies nobody could imagine why a
+function, but back in the late 1980s nobody could imagine why a
 program would ever want to have multiple different versions of the
 same shared library mapped at the same time.
 
