@@ -235,7 +235,16 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			if (hs != HTC_S_COMPLETE)
 				WRONG("htc_status (nonbad)");
 
-			sp->sess_step = S_STP_H1WORKING;
+			i = http1_dissect(wrk, req);
+			req->acct.req_hdrbytes +=
+			    req->htc->rxbuf_e - req->htc->rxbuf_b;
+			if (i) {
+				SES_Close(req->sp, req->doclose);
+				sp->sess_step = S_STP_H1CLEANUP;
+				break;
+			}
+			req->req_step = R_STP_RECV;
+			sp->sess_step = S_STP_H1PROC;
 			break;
 		case S_STP_H1BUSY:
 			/*
@@ -252,18 +261,6 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			}
 			sp->sess_step = S_STP_H1PROC;
 			break;
-		case S_STP_H1WORKING:
-			i = http1_dissect(wrk, req);
-			req->acct.req_hdrbytes +=
-			    req->htc->rxbuf_e - req->htc->rxbuf_b;
-			if (i) {
-				SES_Close(req->sp, req->doclose);
-				sp->sess_step = S_STP_H1CLEANUP;
-				break;
-			}
-			req->req_step = R_STP_RECV;
-			sp->sess_step = S_STP_H1PROC;
-			break;
 		case S_STP_H1PROC:
 			req->transport = &http1_transport;
 			if (CNT_Request(wrk, req) == REQ_FSM_DISEMBARK) {
@@ -277,18 +274,9 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			if (Req_Cleanup(sp, wrk, req))
 				return;
 			SES_RxReInit(req->htc);
-			if (HTTP1_Complete(req->htc) == HTC_S_COMPLETE) {
-				WS_ReleaseP(req->htc->ws, req->htc->rxbuf_e);
-				AZ(req->vsl->wid);
-				req->t_first = req->t_req = sp->t_idle;
-				wrk->stats->sess_pipeline++;
-				sp->sess_step = S_STP_H1WORKING;
-			} else {
-				if (req->htc->rxbuf_e != req->htc->rxbuf_b)
-					wrk->stats->sess_readahead++;
-				sp->sess_step = S_STP_H1NEWREQ;
-
-			}
+			if (req->htc->rxbuf_e != req->htc->rxbuf_b)
+				wrk->stats->sess_readahead++;
+			sp->sess_step = S_STP_H1NEWREQ;
 			break;
 		default:
 			WRONG("Wrong H1 session state");

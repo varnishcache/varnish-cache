@@ -232,6 +232,7 @@ SES_RxStuff(struct http_conn *htc, htc_complete_f *func, double t0,
 	double tmo;
 	double now;
 	enum htc_status_e hs;
+	int i;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 
@@ -240,30 +241,12 @@ SES_RxStuff(struct http_conn *htc, htc_complete_f *func, double t0,
 	if (t1 != NULL)
 		assert(isnan(*t1));
 
-	now = t0;
 	while (1) {
-		if (!isnan(ti))
-			tmo = ti - t0;
-		else
-			tmo = tn - t0;
-		hs = SES_Rx(htc, tmo);
-		if (hs == HTC_S_EOF) {
-			WS_ReleaseP(htc->ws, htc->rxbuf_b);
-			return (HTC_S_CLOSE);
-		}
-		if (hs == HTC_S_OVERFLOW) {
-			WS_ReleaseP(htc->ws, htc->rxbuf_b);
-			return (HTC_S_OVERFLOW);
-		}
 		now = VTIM_real();
 		hs = func(htc);
-		if (hs == HTC_S_OVERFLOW) {
+		if (hs == HTC_S_OVERFLOW || hs == HTC_S_JUNK) {
 			WS_ReleaseP(htc->ws, htc->rxbuf_b);
-			return (HTC_S_OVERFLOW);
-		}
-		if (hs == HTC_S_JUNK) {
-			WS_ReleaseP(htc->ws, htc->rxbuf_b);
-			return (HTC_S_JUNK);
+			return (hs);
 		}
 		if (hs == HTC_S_COMPLETE) {
 			WS_ReleaseP(htc->ws, htc->rxbuf_e);
@@ -274,18 +257,37 @@ SES_RxStuff(struct http_conn *htc, htc_complete_f *func, double t0,
 				*t2 = now;
 			return (HTC_S_COMPLETE);
 		}
-		if (tn < now)
+		if (tn < now) {
+			/* XXX: WS_ReleaseP(htc->ws, htc->rxbuf_b); ? */
 			return (HTC_S_TIMEOUT);
+		}
 		if (hs == HTC_S_MORE) {
 			/* Working on it */
 			if (t1 != NULL && isnan(*t1))
 				*t1 = now;
 			tmo = tn - now;
-			continue;
+		} else if (hs != HTC_S_EMPTY)
+			WRONG("htc_status_e");
+
+		tmo = tn - t0;
+		if (!isnan(ti) && ti < tn)
+			tmo = ti - t0;
+		i = (htc->ws->r - htc->rxbuf_e) - 1;	/* space for NUL */
+		if (i <= 0) {
+			WS_ReleaseP(htc->ws, htc->rxbuf_b);
+			return (HTC_S_OVERFLOW);
 		}
-		assert(hs == HTC_S_EMPTY);
-		if (ti < now)
-			return (HTC_S_IDLE);
+		i = VTCP_read(htc->fd, htc->rxbuf_e, i, tmo);
+		if (i == 0 || i == -1) {
+			WS_ReleaseP(htc->ws, htc->rxbuf_b);
+			return (HTC_S_EOF);
+		} else if (i > 0) {
+			htc->rxbuf_e += i;
+			*htc->rxbuf_e = '\0';
+		} else if (i == -2) {
+			if (hs == HTC_S_EMPTY && ti < now)
+				return (HTC_S_IDLE);
+		}
 	}
 }
 
