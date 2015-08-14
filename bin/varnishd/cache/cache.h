@@ -980,7 +980,7 @@ void SES_RxInit(struct http_conn *htc, struct ws *ws,
     unsigned maxbytes, unsigned maxhdr);
 void SES_RxReInit(struct http_conn *htc);
 enum htc_status_e SES_Rx(struct http_conn *htc, double tmo);
-enum htc_status_e SES_RxStuff(struct http_conn *, htc_complete_f *, double t0,
+enum htc_status_e SES_RxStuff(struct http_conn *, htc_complete_f *,
     double *t1, double *t2, double ti, double tn);
 
 #define SESS_ATTR(UP, low, typ, len)				\

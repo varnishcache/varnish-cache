@@ -351,7 +351,7 @@ VPX_Proto_Sess(struct worker *wrk, void *priv)
 	assert(sizeof vpx1_sig == 5);
 	assert(sizeof vpx2_sig == 12);
 
-	hs = SES_RxStuff(req->htc, vpx_complete, sp->t_idle,
+	hs = SES_RxStuff(req->htc, vpx_complete,
 	    NULL, NULL, NAN, sp->t_idle + cache_param->timeout_idle);
 	if (hs != HTC_S_COMPLETE) {
 		Req_Release(req);

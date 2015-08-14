@@ -200,7 +200,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			AZ(req->vcl);
 			AZ(req->esi_level);
 
-			hs = SES_RxStuff(req->htc, HTTP1_Complete, sp->t_idle,
+			hs = SES_RxStuff(req->htc, HTTP1_Complete,
 			    &req->t_first, &req->t_req,
 			    sp->t_idle + cache_param->timeout_linger,
 			    sp->t_idle + cache_param->timeout_idle);

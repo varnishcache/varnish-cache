@@ -226,7 +226,7 @@ SES_Rx(struct http_conn *htc, double tmo)
  */
 
 enum htc_status_e
-SES_RxStuff(struct http_conn *htc, htc_complete_f *func, double t0,
+SES_RxStuff(struct http_conn *htc, htc_complete_f *func,
     double *t1, double *t2, double ti, double tn)
 {
 	double tmo;
@@ -236,7 +236,6 @@ SES_RxStuff(struct http_conn *htc, htc_complete_f *func, double t0,
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 
-	AZ(isnan(t0));
 	AZ(isnan(tn));
 	if (t1 != NULL)
 		assert(isnan(*t1));
@@ -258,7 +257,7 @@ SES_RxStuff(struct http_conn *htc, htc_complete_f *func, double t0,
 			return (HTC_S_COMPLETE);
 		}
 		if (tn < now) {
-			/* XXX: WS_ReleaseP(htc->ws, htc->rxbuf_b); ? */
+			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			return (HTC_S_TIMEOUT);
 		}
 		if (hs == HTC_S_MORE) {
@@ -269,9 +268,9 @@ SES_RxStuff(struct http_conn *htc, htc_complete_f *func, double t0,
 		} else if (hs != HTC_S_EMPTY)
 			WRONG("htc_status_e");
 
-		tmo = tn - t0;
+		tmo = tn - now;
 		if (!isnan(ti) && ti < tn)
-			tmo = ti - t0;
+			tmo = ti - now;
 		i = (htc->ws->r - htc->rxbuf_e) - 1;	/* space for NUL */
 		if (i <= 0) {
 			WS_ReleaseP(htc->ws, htc->rxbuf_b);
