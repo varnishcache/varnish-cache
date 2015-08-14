@@ -56,22 +56,23 @@ The std VMODs vmod.vcc file looks somewhat like this::
 	$Function STRING tolower(STRING_LIST)
 	$Function VOID set_ip_tos(INT)
 
-The first line gives the name of the module, nothing special there.
+The first line gives the name of the module and the manual section where
+the documentation will reside.
 
 The second line specifies an optional "Event" function, which will be
-called whenever a VCL program which imports this VMOD is initially loaded
-or transitions to any of the warm, active, cold and discarded states.
+called whenever a VCL program which imports this VMOD is loaded or
+transitions to any of the warm, active, cold or discarded states.
 More on this below.
 
-The next three lines specify two functions in the VMOD, along with the
-types of the arguments, and that is probably where the hardest bit
-of writing a VMOD is to be found, so we will talk about that at length
-in a moment.
+The next three lines define three functions in the VMOD, along with the
+types of the arguments, and that is probably where the hardest bit of
+writing a VMOD is to be found, so we will talk about that at length in
+a moment.
 
 Notice that the third function returns VOID, that makes it a "procedure"
-in VCL lingo, meaning that it cannot be used in expressions, right
-side of assignments and such places.  Instead it can be used as a
-primary action, something functions which return a value can not::
+in VCL lingo, meaning that it cannot be used in expressions, right side
+of assignments and such.  Instead it can be used as a primary action,
+something functions which return a value can not::
 
 	sub vcl_recv {
 		std.set_ip_tos(32);
@@ -98,8 +99,8 @@ For the std VMOD, the compiled vcc_if.h file looks like this::
 
 	vmod_event_f event_function;
 
-Those are your C prototypes.  Notice the ``vmod_`` prefix on the function
-names and the C-types as arguments.
+Those are your C prototypes.  Notice the ``vmod_`` prefix on the
+function names.
 
 
 .. _ref-vmod-vcl-c-types:
@@ -111,40 +112,91 @@ VCL data types are targeted at the job, so for instance, we have data
 types like "DURATION" and "HEADER", but they all have some kind of C
 language representation.  Here is a description of them.
 
-All but the STRING_LIST type have typedefs: VCL_INT, VCL_REAL etc.
+All but the PRIV and STRING_LIST types have typedefs: VCL_INT, VCL_REAL,
+etc.
+
+BACKEND
+	C-type: ``const struct director *``
+
+	A type for backend and director implementations. See
+	:ref:`ref-writing-a-director`.
+
+BLOB
+	C-type: ``const struct vmod_priv *``
+
+	An opaque type to pass random bits of memory between VMOD
+	functions.
+
+BOOL
+	C-type: ``unsigned``
+
+	Zero means false, anything else means true.
+
+BYTES
+	C-type: ``double``
+
+	Unit: bytes.
+
+	A storage space, as in 1024 bytes.
+
+DURATION
+	C-type: ``double``
+
+	Unit: seconds.
+
+	A time interval, as in 25 seconds.
+
+ENUM
+        C-type: ``const char *``
+
+        TODO
+
+HEADER
+	C-type: ``const struct gethdr_s *``
+
+	These are VCL compiler generated constants referencing a
+	particular header in a particular HTTP entity, for instance
+	``req.http.cookie`` or ``beresp.http.last-modified``.  By passing
+	a reference to the header, the VMOD code can both read and write
+	the header in question.
+
+	If the header was passed as STRING, the VMOD code only sees
+	the value, but not where it came from.
+
+HTTP
+        C-type: ``struct http *``
+
+        TODO
 
 INT
 	C-type: ``long``
 
-	An integer as we know and love them.
+	A (long) integer as we know and love them.
+
+IP
+	C-type: ``const struct suckaddr *``
+
+	This is an opaque type, see the ``include/vsa.h`` file for
+	which primitives we support on this type.
 
 REAL
 	C-type: ``double``
 
 	A floating point value.
 
-DURATION
-	C-type: ``double``
-
-	Unit: seconds
-
-	A time interval, as in 25 seconds.
-
 TIME
 	C-type: ``double``
 
-	Unit: seconds since UNIX epoch
+	Unit: seconds since UNIX epoch.
 
-	An absolute time, as in 1284401161.  When used in a string
-	context is formatted as "Mon, 13 Sep 2010 19:06:01 GMT".
+	An absolute time, as in 1284401161.
 
 STRING
 	C-type: ``const char *``
 
 	A NUL-terminated text-string.
 
-	Can be NULL to indicate that the nonexistent string, for
-	instance::
+	Can be NULL to indicate a nonexistent string, for instance in::
 
 		mymod.foo(req.http.foobar);
 
@@ -192,58 +244,23 @@ STRING_LIST
 	and make sure your workspace_client and workspace_backend params
 	are big enough.
 
-PRIV_VCL
-	See :ref:`ref-vmod-private-pointers` below
-
-PRIV_CALL
-	See :ref:`ref-vmod-private-pointers` below
-
-PRIV_TASK
-	See :ref:`ref-vmod-private-pointers` below
-
-PRIV_TOP
-	See :ref:`ref-vmod-private-pointers` below
-
 VOID
 	C-type: ``void``
 
 	Can only be used for return-value, which makes the function a VCL
 	procedure.
 
-HEADER
-	C-type: ``const struct gethdr_s *``
+PRIV_VCL
+	See :ref:`ref-vmod-private-pointers` below.
 
-	These are VCL compiler generated constants referencing
-	a particular header in a particular HTTP entity, for instance
-	``req.http.cookie`` or ``beresp.http.last-modified``.
-	By passing a reference to the header, the VMOD code can
-	both read and write the header in question.
+PRIV_CALL
+	See :ref:`ref-vmod-private-pointers` below.
 
-	If the header was passed as STRING, the VMOD code only sees
-	the value, but not where it came from.
+PRIV_TASK
+	See :ref:`ref-vmod-private-pointers` below.
 
-IP
-	C-type: ``const struct suckaddr *``
-
-	This is an opaque type, see the ``include/vsa.h`` file for
-	which primitives we support on this type.
-
-BOOL
-	C-type: ``unsigned``
-
-	Zero means false, anything else means true.
-
-BLOB
-	C-type: ``const struct vmod_priv *``
-
-	An opaque type to pass random bits of memory between VMOD
-	functions.
-
-BACKEND
-	C-type: ``const struct director *``
-
-	A type for backend and director implementations. See
-	:ref:`ref-writing-a-director`.
+PRIV_TOP
+	See :ref:`ref-vmod-private-pointers` below.
 
 
 .. _ref-vmod-private-pointers:
