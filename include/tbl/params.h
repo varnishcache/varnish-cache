@@ -178,6 +178,24 @@ PARAM(
 )
 
 PARAM(
+	/* name */	first_byte_timeout,
+	/* tweak */	timeout,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"60",
+	/* units */	"seconds",
+	/* flags */	0,
+	/* s-text */
+	"Default timeout for receiving first byte from backend. We only "
+	"wait for this many seconds for the first byte before giving up. A "
+	"value of 0 means it will never time out. VCL can override this "
+	"default value for each backend and backend request. This "
+	"parameter does not apply to pipe.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
+PARAM(
 	/* name */	between_bytes_timeout,
 	/* tweak */	timeout,
 	/* min */	"0",
@@ -440,24 +458,6 @@ PARAM(
 	/* s-text */
 	"The maximum chunksize we attempt to allocate from storage. Making "
 	"this too large may cause delays and storage fragmentation.\n",
-	/* l-text */	"",
-	/* func */	NULL
-)
-PARAM(
-	/* name */	first_byte_timeout,
-	/* tweak */	tweak_timeout,
-	/* var */	first_byte_timeout,
-	/* min */	0.000,
-	/* max */	none,
-	/* default */	60.000,
-	/* units */	seconds,
-	/* flags */	00,
-	/* s-text */
-	"Default timeout for receiving first byte from backend. We only "
-	"wait for this many seconds for the first byte before giving up. A "
-	"value of 0 means it will never time out. VCL can override this "
-	"default value for each backend and backend request. This "
-	"parameter does not apply to pipe.\n",
 	/* l-text */	"",
 	/* func */	NULL
 )

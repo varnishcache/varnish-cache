@@ -308,17 +308,6 @@ struct parspec mgt_parspec[] = {
 		"backend request.",
 		0,
 		"3.5", "seconds" },
-	{ "first_byte_timeout", tweak_timeout,
-		&mgt_param.first_byte_timeout,
-		"0", NULL,
-		"Default timeout for receiving first byte from backend. "
-		"We only wait for this many seconds for the first "
-		"byte before giving up. A value of 0 means it will never time "
-		"out. "
-		"VCL can override this default value for each backend and "
-		"backend request. This parameter does not apply to pipe.",
-		0,
-		"60", "seconds" },
 	{ "clock_skew", tweak_uint, &mgt_param.clock_skew,
 		"0", NULL,
 		"How much clockskew we are willing to accept between the "

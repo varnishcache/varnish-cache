@@ -163,9 +163,6 @@ struct params {
 	/* Default connection_timeout */
 	double			connect_timeout;
 
-	/* Read timeouts for backend */
-	double			first_byte_timeout;
-
 	/* CLI buffer size */
 	unsigned		cli_buffer;
 
