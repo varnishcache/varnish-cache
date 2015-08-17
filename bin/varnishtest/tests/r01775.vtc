@@ -1,0 +1,12 @@
+varnishtest "Test loading a VCL in cold state"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+
+} -start
+
+varnish v1 -cliok {vcl.inline vcl2 "vcl 4.0; backend b { .host = \":80\";}" cold}
