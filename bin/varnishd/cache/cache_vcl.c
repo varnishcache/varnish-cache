@@ -163,7 +163,7 @@ VCL_Ref(struct vcl *vcl)
 {
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	assert(vcl->temp == vcl_temp_warm);
+	assert(vcl->temp == vcl_temp_warm || vcl->temp == vcl_temp_cooling);
 	Lck_Lock(&vcl_mtx);
 	assert(vcl->busy > 0);
 	vcl->busy++;
