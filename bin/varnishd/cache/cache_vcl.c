@@ -396,12 +396,10 @@ vcl_set_state(struct vcl *vcl, const char *state)
 
 	switch(state[0]) {
 	case '0':
+		if (vcl->temp == vcl_temp_init)
+			vcl->temp = vcl_temp_cold;
 		if (vcl->temp == vcl_temp_cold)
 			break;
-		if (vcl->temp == vcl_temp_init) {
-			vcl->temp = vcl_temp_cold;
-			break;
-		}
 		if (vcl->busy == 0) {
 			vcl->temp = vcl_temp_cold;
 			(void)vcl->conf->event_vcl(&ctx, VCL_EVENT_COLD);
