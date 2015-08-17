@@ -189,32 +189,6 @@ SES_RxReInit(struct http_conn *htc)
 	*htc->rxbuf_e = '\0';
 }
 
-/*--------------------------------------------------------------------
- * Receive more HTTP protocol bytes
- */
-
-enum htc_status_e
-SES_Rx(struct http_conn *htc, double tmo)
-{
-	int i;
-
-	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	AN(htc->ws->r);
-	AZ(htc->pipeline_b);
-	AZ(htc->pipeline_e);
-	i = (htc->ws->r - htc->rxbuf_e) - 1;	/* space for NUL */
-	if (i <= 0)
-		return (HTC_S_OVERFLOW);
-	i = VTCP_read(htc->fd, htc->rxbuf_e, i, tmo);
-	if (i == -2)
-		return (HTC_S_TIMEOUT);
-	if (i <= 0)
-		return (HTC_S_EOF);
-	htc->rxbuf_e += i;
-	*htc->rxbuf_e = '\0';
-	return (HTC_S_MORE);
-}
-
 /*----------------------------------------------------------------------
  * Receive a request/packet/whatever, with timeouts
  *

@@ -137,7 +137,6 @@ V1F_FetchRespHdr(struct busyobj *bo)
 {
 
 	struct http *hp;
-	enum htc_status_e hs;
 	int first, i;
 	struct http_conn *htc;
 
@@ -160,23 +159,22 @@ V1F_FetchRespHdr(struct busyobj *bo)
 
 	first = 1;
 	do {
-		hs = SES_Rx(htc, 0);
-		if (hs == HTC_S_MORE)
-			hs = HTTP1_Complete(htc);
-		if (hs == HTC_S_OVERFLOW) {
-			WS_ReleaseP(htc->ws, htc->rxbuf_b);
+		i = (htc->ws->r - htc->rxbuf_e) - 1;	/* space for NUL */
+		if (i <= 0) {
 			bo->acct.beresp_hdrbytes +=
 			    htc->rxbuf_e - htc->rxbuf_b;
+			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			VSLb(bo->vsl, SLT_FetchError,
 			    "http %sread error: overflow",
 			    first ? "first " : "");
 			htc->doclose = SC_RX_OVERFLOW;
 			return (-1);
 		}
-		if (hs == HTC_S_EOF) {
-			WS_ReleaseP(htc->ws, htc->rxbuf_b);
+		i = read(htc->fd, htc->rxbuf_e, i);
+		if (i <= 0) {
 			bo->acct.beresp_hdrbytes +=
 			    htc->rxbuf_e - htc->rxbuf_b;
+			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			VSLb(bo->vsl, SLT_FetchError, "http %sread error: EOF",
 			    first ? "first " : "");
 			htc->doclose = SC_RX_TIMEOUT;
@@ -187,7 +185,10 @@ V1F_FetchRespHdr(struct busyobj *bo)
 			VTCP_set_read_timeout(htc->fd,
 			    htc->between_bytes_timeout);
 		}
-	} while (hs != HTC_S_COMPLETE);
+		htc->rxbuf_e += i;
+		*htc->rxbuf_e = '\0';
+	} while (HTTP1_Complete(htc) != HTC_S_COMPLETE);
+
 	WS_ReleaseP(htc->ws, htc->rxbuf_e);
 
 	hp = bo->beresp;
