@@ -159,15 +159,18 @@ vrg_dorange(struct req *req, const char *r)
 		http_PrintfHeader(req->resp, "Content-Range: bytes %jd-%jd/*",
 		    (intmax_t)low, (intmax_t)high);
 	req->resp_len = (intmax_t)(1 + high - low);
-	http_PutResponse(req->resp, "HTTP/1.1", 206, NULL);
 
 	vrg_priv = WS_Alloc(req->ws, sizeof *vrg_priv);
+	if (vrg_priv == NULL)
+		return (-1);
+
 	XXXAN(vrg_priv);
 	INIT_OBJ(vrg_priv, VRG_PRIV_MAGIC);
 	vrg_priv->range_off = 0;
 	vrg_priv->range_low = low;
 	vrg_priv->range_high = high + 1;
 	VDP_push(req, vrg_range_bytes, vrg_priv, 1);
+	http_PutResponse(req->resp, "HTTP/1.1", 206, NULL);
 	return (0);
 }
 
@@ -183,7 +186,7 @@ VRG_dorange(struct req *req, const char *r)
 	/* We must snapshot the length if we're streaming from the backend */
 
 	i = vrg_dorange(req, r);
-	if (i) {
+	if (i > 0) {
 		VSLb(req->vsl, SLT_Debug, "RANGE_FAIL line %d", i);
 		http_Unset(req->resp, H_Content_Length);
 		if (req->resp_len >= 0)
