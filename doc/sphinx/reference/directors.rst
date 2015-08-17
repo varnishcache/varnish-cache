@@ -82,6 +82,8 @@ below (:ref:`ref-writing-a-director-cluster`).
 Dynamic Backends
 ----------------
 
+.. TODO document the VRT_BACKEND_FIELDS dance
+
 If you want to speak HTTP/1 over TCP, but for some reason VCL does not fit the
 bill, you can instead reuse the whole backend facility. It allows you for
 instance to add and remove backends on-demand without the need to reload your
@@ -108,8 +110,9 @@ care of it.
 
 Consider using an object (see :ref:`ref-vmod-objects`) to manipulate dynamic
 backends. They are tied to the VCL life cycle and make a handy data structure
-to keep track of backends. It is also true for *cluster* directors that may
-reference native backends.
+to keep track of backends and objects have a VCL name you can reuse for the
+director. It is also true for *cluster* directors that may reference native
+backends.
 
 Finally, Varnish will take care of event propagation for *all* native backends.
 
@@ -133,4 +136,18 @@ request.
 Health Probes
 =============
 
-TODO
+It is possible in a VCL program to query the health of a director (see
+:ref:`func_healthy`). A director can report its health if it implements the
+``healthy`` function, it is otherwise always considered healthy.
+
+Unless you are making a dynamic backend, you need to take care of the health
+probes yourselves. For *cluster* directors, being healthy typically means
+having at least one healthy underlying backend or director.
+
+For dynamic backends, it is just a matter of assigning the ``probe`` field in
+the ``struct vrt_backend``. Once the director is created, the probe definition
+too is no longer needed. It is then Varnish that will take care of health
+probing and disabling the feature on cold VCL (see
+:ref:`ref-vmod-event-functions`).
+
+.. TODO document VCL_PROBE if patchwork #310 is merged

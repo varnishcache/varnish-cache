@@ -115,6 +115,8 @@ language representation.  Here is a description of them.
 All but the PRIV and STRING_LIST types have typedefs: VCL_INT, VCL_REAL,
 etc.
 
+.. TODO document ACL if patchwork #314 is merged
+
 BACKEND
 	C-type: ``const struct director *``
 
@@ -190,6 +192,8 @@ PRIV_TOP
 
 PRIV_VCL
 	See :ref:`ref-vmod-private-pointers` below.
+
+.. TODO document PROBE if patchwork #310 is merged
 
 REAL
 	C-type: ``double``
