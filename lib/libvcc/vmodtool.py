@@ -870,14 +870,6 @@ def runmain(inputvcc, outputname="vcc_if"):
 	#######################################################################
 	# Break into sections
 
-	keywords = {
-		"$Module":	True,
-		"$Function":	True,
-		"$Object":	True,
-		"$Method":	True,
-		"$Event":	True,
-	}
-
 	sl = []
 	sc = FileSection()
 	sl.append(sc)
@@ -885,7 +877,7 @@ def runmain(inputvcc, outputname="vcc_if"):
 		ln += 1
 		l = lines.pop(0)
 		j = l.split()
-		if len(j) > 0 and j[0] in keywords:
+		if len(j) > 0 and re.match("^\$", j[0]):
 			sc = FileSection()
 			sl.append(sc)
 		sc.add_line(ln, l)
