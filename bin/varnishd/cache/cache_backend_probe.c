@@ -514,7 +514,6 @@ VBP_Control(const struct backend *be, int enable)
 {
 	struct vbp_target *vt;
 
-	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 	vt = be->probe;
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
@@ -545,7 +544,6 @@ VBP_Insert(struct backend *b, const struct vrt_backend_probe *vp,
 {
 	struct vbp_target *vt;
 
-	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 	CHECK_OBJ_NOTNULL(vp, VRT_BACKEND_PROBE_MAGIC);
 
@@ -570,7 +568,6 @@ VBP_Remove(struct backend *be)
 {
 	struct vbp_target *vt;
 
-	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 	vt = be->probe;
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
