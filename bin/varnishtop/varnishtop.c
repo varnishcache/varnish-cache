@@ -109,10 +109,10 @@ static int f_flag = 0;
 
 static unsigned maxfieldlen = 0;
 
-VRB_PROTOTYPE(t_order, top, e_order, cmp_order);
-VRB_GENERATE(t_order, top, e_order, cmp_order);
-VRB_PROTOTYPE(t_key, top, e_key, cmp_key);
-VRB_GENERATE(t_key, top, e_key, cmp_key);
+VRB_PROTOTYPE_STATIC(t_order, top, e_order, cmp_order);
+VRB_GENERATE_STATIC(t_order, top, e_order, cmp_order);
+VRB_PROTOTYPE_STATIC(t_key, top, e_key, cmp_key);
+VRB_GENERATE_STATIC(t_key, top, e_key, cmp_key);
 
 static int __match_proto__(VSLQ_dispatch_f)
 accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
