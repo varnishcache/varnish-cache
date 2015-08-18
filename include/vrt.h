@@ -67,20 +67,21 @@ struct ws;
  * (alphabetic order)
  */
 
-typedef const struct director *		VCL_BACKEND;
-typedef const struct vmod_priv *	VCL_BLOB;
-typedef unsigned			VCL_BOOL;
-typedef double				VCL_BYTES;
-typedef double				VCL_DURATION;
-typedef const char *			VCL_ENUM;
-typedef const struct gethdr_s *		VCL_HEADER;
-typedef struct http *			VCL_HTTP;
-typedef long				VCL_INT;
-typedef const struct suckaddr *		VCL_IP;
-typedef double				VCL_REAL;
-typedef const char *			VCL_STRING;
-typedef double				VCL_TIME;
-typedef void				VCL_VOID;
+typedef const struct director *			VCL_BACKEND;
+typedef const struct vmod_priv *		VCL_BLOB;
+typedef unsigned				VCL_BOOL;
+typedef double					VCL_BYTES;
+typedef double					VCL_DURATION;
+typedef const char *				VCL_ENUM;
+typedef const struct gethdr_s *			VCL_HEADER;
+typedef struct http *				VCL_HTTP;
+typedef long					VCL_INT;
+typedef const struct suckaddr *			VCL_IP;
+typedef const struct vrt_backend_probe *	VCL_PROBE;
+typedef double					VCL_REAL;
+typedef const char *				VCL_STRING;
+typedef double					VCL_TIME;
+typedef void					VCL_VOID;
 
 /***********************************************************************
  * This is the composite argument we pass to compiled VCL and VRT

@@ -150,4 +150,5 @@ too is no longer needed. It is then Varnish that will take care of health
 probing and disabling the feature on cold VCL (see
 :ref:`ref-vmod-event-functions`).
 
-.. TODO document VCL_PROBE if patchwork #310 is merged
+Instead of initializing your own probe definition, you can get a ``VCL_PROBE``
+directly built from VCL (see :ref:`ref-vmod-vcl-c-types`).

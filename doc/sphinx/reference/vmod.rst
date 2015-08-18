@@ -193,7 +193,10 @@ PRIV_TOP
 PRIV_VCL
 	See :ref:`ref-vmod-private-pointers` below.
 
-.. TODO document PROBE if patchwork #310 is merged
+PROBE
+	C-type: ``const struct vrt_backend_probe *``
+
+	A named standalone backend probe definition.
 
 REAL
 	C-type: ``double``

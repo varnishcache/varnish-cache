@@ -249,7 +249,7 @@ void
 vcc_ParseProbe(struct vcc *tl)
 {
 	struct token *t_probe;
-	int i;
+	struct symbol *sym;
 	char *p;
 
 	vcc_NextToken(tl);		/* ID: probe */
@@ -258,11 +258,18 @@ vcc_ParseProbe(struct vcc *tl)
 	ERRCHK(tl);
 	t_probe = tl->t;
 	vcc_NextToken(tl);
-	i = vcc_AddDef(tl, t_probe, SYM_PROBE);
-	if (i > 1) {
+
+	sym = VCC_GetSymbolTok(tl, t_probe, SYM_PROBE);
+	AN(sym);
+	if (sym->ndef > 0) {
 		VSB_printf(tl->sb, "Probe %.*s redefined\n", PF(t_probe));
 		vcc_ErrWhere(tl, t_probe);
+		return;
 	}
+	sym->fmt = PROBE;
+	sym->eval = vcc_Eval_Probe;
+	sym->ndef++;
+	ERRCHK(tl);
 
 	vcc_ParseProbeSpec(tl, t_probe, &p);
 	if (vcc_IdIs(t_probe, "default")) {

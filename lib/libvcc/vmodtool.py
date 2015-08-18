@@ -60,6 +60,7 @@ ctypes = {
 	'PRIV_VCL':	"struct vmod_priv *",
 	'PRIV_TASK':	"struct vmod_priv *",
 	'PRIV_TOP':	"struct vmod_priv *",
+	'PROBE':	"VCL_PROBE",
 	'REAL':		"VCL_REAL",
 	'STRING':	"VCL_STRING",
 	'STRING_LIST':	"const char *, ...",
