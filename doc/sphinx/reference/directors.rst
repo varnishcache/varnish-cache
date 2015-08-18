@@ -114,7 +114,11 @@ to keep track of backends and objects have a VCL name you can reuse for the
 director. It is also true for *cluster* directors that may reference native
 backends.
 
-Finally, Varnish will take care of event propagation for *all* native backends.
+Finally, Varnish will take care of event propagation for *all* native backends,
+but dynamic backends can only be created when the VCL is warm. If your backends
+are created by an independant thread (basically outside of VCL scope) you must
+subscribe to VCL events and watch for VCL state (see
+:ref:`ref-vmod-event-functions`).
 
 
 .. _ref-writing-a-director-cluster:
