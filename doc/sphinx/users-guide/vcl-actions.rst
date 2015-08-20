@@ -18,6 +18,7 @@ The most common actions to return are these:
   should be passed. 
 
 *pipe*
+
 .. XXX:What is pipe? benc
 
   Pipe can be returned from `vcl_recv` as well. Pipe short circuits the
