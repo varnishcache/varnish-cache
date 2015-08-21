@@ -393,6 +393,7 @@ vcl_set_state(struct vcl *vcl, const char *state)
 
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 	ctx.handling = &hand;
+	ctx.vcl = vcl;
 
 	switch(state[0]) {
 	case '0':
