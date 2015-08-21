@@ -625,6 +625,7 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 	vsb = VSB_new_auto();
 	AN(vsb);
 	ctx.msg = vsb;
+	ctx.vcl = vcl;
 	i = vcl->conf->event_vcl(&ctx, VCL_EVENT_USE);
 	AZ(VSB_finish(vsb));
 	if (i) {
