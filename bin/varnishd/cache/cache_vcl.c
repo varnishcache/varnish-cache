@@ -229,6 +229,7 @@ vcl_BackendEvent(const struct vcl *vcl, enum vcl_event_e e)
 {
 	struct backend *be;
 
+	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	AZ(vcl->busy);
 
