@@ -1,6 +1,5 @@
 varnishtest "Test std.ip"
 
-
 server s1 {
 	rxreq
 	txresp -body "1"

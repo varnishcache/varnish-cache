@@ -30,6 +30,7 @@
 
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -47,6 +48,9 @@
 #include "vfil.h"
 #include "vqueue.h"
 #include "vrnd.h"
+#include "vsa.h"
+#include "vss.h"
+#include "vtcp.h"
 #include "vtim.h"
 
 #define		MAX_FILESIZE		(1024 * 1024)
@@ -89,6 +93,7 @@ static char *tmppath;
 static char *cwd = NULL;
 int leave_temp;
 int vtc_witness = 0;
+int feature_dns;
 
 /**********************************************************************
  * Parse a -D option argument into a name/val pair, and insert
@@ -384,6 +389,41 @@ i_mode(void)
 }
 
 /**********************************************************************
+ * Most test-cases use only numeric IP#'s but a few requires non-demented
+ * DNS services.  This is a basic sanity check for those.
+ */
+
+static int __match_proto__(vss_resolved_f)
+dns_cb(void *priv, const struct suckaddr *sa)
+{
+	char abuf[VTCP_ADDRBUFSIZE];
+	char pbuf[VTCP_PORTBUFSIZE];
+	int *ret = priv;
+
+	VTCP_name(sa, abuf, sizeof abuf, pbuf, sizeof pbuf);
+	if (strcmp(abuf, "130.225.244.222")) {
+		fprintf(stderr, "DNS-test: Wrong response: %s\n", abuf);
+		*ret = -1;
+	} else if (*ret == 0)
+		*ret = 1;
+	return (0);
+}
+
+static int
+dns_works(void)
+{
+	int ret = 0, error;
+	const char *msg;
+
+	error = VSS_resolver("phk.freebsd.dk", NULL, dns_cb, &ret, &msg);
+	if (error || msg != NULL || ret != 1) {
+		fprintf(stderr, "DNS-test fails\n");
+		return (0);
+	}
+	return (1);
+}
+
+/**********************************************************************
  * Main
  */
 
@@ -479,6 +519,8 @@ main(int argc, char * const *argv)
 		tp->ntodo = ntest;
 		VTAILQ_INSERT_TAIL(&tst_head, tp, list);
 	}
+
+	feature_dns = dns_works();
 
 	if (iflg)
 		i_mode();

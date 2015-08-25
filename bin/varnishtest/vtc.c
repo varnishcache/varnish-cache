@@ -583,6 +583,9 @@ cmd_feature(CMD_ARGS)
 			continue;
 #endif
 		}
+		if (!strcmp(av[i], "dns") && feature_dns)
+			continue;
+
 		if (!strcmp(av[i], "topbuild") && iflg)
 			continue;
 
