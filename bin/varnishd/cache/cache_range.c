@@ -85,14 +85,14 @@ vrg_range_bytes(struct req *req, enum vdp_action act, void **priv,
 
 /*--------------------------------------------------------------------*/
 
-static int
+static const char *
 vrg_dorange(struct req *req, const char *r)
 {
 	ssize_t low, high, has_low, has_high, t;
 	struct vrg_priv *vrg_priv;
 
 	if (strncasecmp(r, "bytes=", 6))
-		return (__LINE__);
+		return ("Not Bytes");
 	r += 6;
 
 	/* The low end of range */
@@ -103,11 +103,11 @@ vrg_dorange(struct req *req, const char *r)
 		low *= 10;
 		low += *r++ - '0';
 		if (low < t)
-			return (__LINE__);
+			return ("Low number too big");
 	}
 
 	if (*r++ != '-')
-		return (__LINE__);
+		return ("Missing hyphen");
 
 	/* The high end of range */
 	has_high = high = 0;
@@ -117,20 +117,20 @@ vrg_dorange(struct req *req, const char *r)
 		high *= 10;
 		high += *r++ - '0';
 		if (high < t)
-			return (__LINE__);
+			return ("High number too big");
 	}
 
 	if (*r != '\0')
-		return (__LINE__);
+		return ("Trailing stuff");
 
 	if (has_high + has_low == 0)
-		return (__LINE__);
+		return ("Neither high nor low");
 
 	if (!has_low) {
 		if (req->resp_len < 0)
-			return (0);		// Allow 200 response
+			return (NULL);		// Allow 200 response
 		if (high == 0)
-			return (__LINE__);
+			return ("No low, high is zero");
 		low = req->resp_len - high;
 		if (low < 0)
 			low = 0;
@@ -138,7 +138,7 @@ vrg_dorange(struct req *req, const char *r)
 	} else if (req->resp_len >= 0 && (high >= req->resp_len || !has_high))
 		high = req->resp_len - 1;
 	else if (!has_high)
-		return (0);			// Allow 200 response
+		return (NULL);			// Allow 200 response
 	/*
 	 * else (bo != NULL) {
 	 *    We assume that the client knows what it's doing and trust
@@ -147,10 +147,10 @@ vrg_dorange(struct req *req, const char *r)
 	 */
 
 	if (high < low)
-		return (__LINE__);
+		return ("high smaller than low");
 
 	if (req->resp_len >= 0 && low >= req->resp_len)
-		return (__LINE__);
+		return ("low range beyond object");
 
 	if (req->resp_len >= 0)
 		http_PrintfHeader(req->resp, "Content-Range: bytes %jd-%jd/%jd",
@@ -162,7 +162,7 @@ vrg_dorange(struct req *req, const char *r)
 
 	vrg_priv = WS_Alloc(req->ws, sizeof *vrg_priv);
 	if (vrg_priv == NULL)
-		return (-1);
+		return ("WS too small");
 
 	XXXAN(vrg_priv);
 	INIT_OBJ(vrg_priv, VRG_PRIV_MAGIC);
@@ -171,13 +171,13 @@ vrg_dorange(struct req *req, const char *r)
 	vrg_priv->range_high = high + 1;
 	VDP_push(req, vrg_range_bytes, vrg_priv, 1);
 	http_PutResponse(req->resp, "HTTP/1.1", 206, NULL);
-	return (0);
+	return (NULL);
 }
 
 void
 VRG_dorange(struct req *req, const char *r)
 {
-	int i;
+	const char *err;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
@@ -185,9 +185,9 @@ VRG_dorange(struct req *req, const char *r)
 
 	/* We must snapshot the length if we're streaming from the backend */
 
-	i = vrg_dorange(req, r);
-	if (i > 0) {
-		VSLb(req->vsl, SLT_Debug, "RANGE_FAIL line %d", i);
+	err = vrg_dorange(req, r);
+	if (err != NULL) {
+		VSLb(req->vsl, SLT_Debug, "RANGE_FAIL %s", err);
 		http_Unset(req->resp, H_Content_Length);
 		if (req->resp_len >= 0)
 			http_PrintfHeader(req->resp,
