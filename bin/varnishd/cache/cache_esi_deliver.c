@@ -187,7 +187,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 #define Debug(fmt, ...) /**/
 
 static ssize_t
-ved_decode_len(uint8_t **pp)
+ved_decode_len(struct req *req, uint8_t **pp)
 {
 	uint8_t *p;
 	ssize_t l;
@@ -207,8 +207,9 @@ ved_decode_len(uint8_t **pp)
 		p += 9;
 		break;
 	default:
-		Debug("Illegal Length %d %d\n", *p, (*p & 15));
-		INCOMPL();
+		VSLb(req->vsl, SLT_Error,
+		    "ESI-corruption: Illegal Length %d %d\n", *p, (*p & 15));
+		WRONG("ESI-codes: illegal length");
 	}
 	*pp = p;
 	assert(l > 0);
@@ -286,12 +287,16 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 			case VEC_V1:
 			case VEC_V2:
 			case VEC_V8:
-				ecx->l = ved_decode_len(&ecx->p);
+				ecx->l = ved_decode_len(req, &ecx->p);
+				if (ecx->l < 0)
+					return (-1);
 				if (ecx->isgzip) {
 					assert(*ecx->p == VEC_C1 ||
 					    *ecx->p == VEC_C2 ||
 					    *ecx->p == VEC_C8);
-					l = ved_decode_len(&ecx->p);
+					l = ved_decode_len(req, &ecx->p);
+					if (l < 0)
+						return (-1);
 					icrc = vbe32dec(ecx->p);
 					ecx->p += 4;
 					if (ecx->isgzip) {
@@ -305,7 +310,9 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 			case VEC_S1:
 			case VEC_S2:
 			case VEC_S8:
-				ecx->l = ved_decode_len(&ecx->p);
+				ecx->l = ved_decode_len(req, &ecx->p);
+				if (ecx->l < 0)
+					return (-1);
 				Debug("SKIP1(%d)\n", (int)ecx->l);
 				ecx->state = 4;
 				break;
@@ -327,8 +334,10 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 				ecx->p = r + 1;
 				break;
 			default:
-				Debug("XXXX 0x%02x [%s]\n", *ecx->p, ecx->p);
-				INCOMPL();
+				VSLb(req->vsl, SLT_Error,
+				    "ESI corruption line %d 0x%02x [%s]\n",
+				    __LINE__, *ecx->p, ecx->p);
+				WRONG("ESI-codes: Illegal code");
 			}
 			break;
 		case 2:
