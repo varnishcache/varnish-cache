@@ -137,7 +137,7 @@ vrg_dorange(struct req *req, const char *r)
 		high = req->resp_len - 1;
 	} else if (req->resp_len >= 0 && (high >= req->resp_len || !has_high))
 		high = req->resp_len - 1;
-	else if (!has_high)
+	else if (!has_high || req->resp_len < 0)
 		return (NULL);			// Allow 200 response
 	/*
 	 * else (bo != NULL) {
