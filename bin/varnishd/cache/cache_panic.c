@@ -275,10 +275,12 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	VSB_printf(vsb, "state = %d,\n", (int)bo->state);
 	VSB_printf(vsb, "flags = {");
 	p = "";
+	/*lint -save -esym(438,p) */
 #define BO_FLAG(l, r, w, d) \
 	if(bo->l) { VSB_printf(vsb,  "%s" #l, p); p = ", "; }
 #include "tbl/bo_flags.h"
 #undef BO_FLAG
+	/*lint -restore */
 	VSB_printf(vsb, "},\n");
 
 	if (VALID_OBJ(bo->htc, HTTP_CONN_MAGIC))
