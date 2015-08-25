@@ -207,7 +207,7 @@ ved_decode_len(uint8_t **pp)
 		p += 9;
 		break;
 	default:
-		printf("Illegal Length %d %d\n", *p, (*p & 15));
+		Debug("Illegal Length %d %d\n", *p, (*p & 15));
 		INCOMPL();
 	}
 	*pp = p;
@@ -327,7 +327,7 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 				ecx->p = r + 1;
 				break;
 			default:
-				printf("XXXX 0x%02x [%s]\n", *ecx->p, ecx->p);
+				Debug("XXXX 0x%02x [%s]\n", *ecx->p, ecx->p);
 				INCOMPL();
 			}
 			break;
