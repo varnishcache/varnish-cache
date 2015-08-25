@@ -22,8 +22,8 @@ Backends vs Directors
 
 The intuitive classification for backend and director is an endpoint for the
 former and a cluster for the latter, but the actual implementation is a bit
-more subtle. VMODs can accept backend arguments return backends in VCL (see
-:ref:`ref-vmod-vcl-c-types`), but he underlying C type is ``struct director``.
+more subtle. VMODs can accept backend arguments and return backends in VCL (see
+:ref:`ref-vmod-vcl-c-types`), but the underlying C type is ``struct director``.
 Under the hood director is a generic concept, and a backend is a kind of
 director.
 
@@ -69,8 +69,8 @@ implements native backends. It is the canonical implementation, and though it
 provides other services like connection pooling or statistics, it is
 essentially a director which state is a ``struct backend``. Varnish native
 backends currently speak HTTP/1 over TCP, and as such, you need to make your
-own custom backend if you want Varnish to do otherwise such as connecting over
-UDP or UNIX-domain sockets or speaking a different protocol.
+own custom backend if you want Varnish to do otherwise such as connect over
+UDP or UNIX-domain sockets or speak a different protocol.
 
 You may also consider making your custom backend compliant with regards to the
 VCL state (see :ref:`ref-vmod-event-functions`).
@@ -150,8 +150,8 @@ having at least one healthy underlying backend or director.
 
 For dynamic backends, it is just a matter of assigning the ``probe`` field in
 the ``struct vrt_backend``. Once the director is created, the probe definition
-too is no longer needed. It is then Varnish that will take care of health
-probing and disabling the feature on cold VCL (see
+too is no longer needed. It is then Varnish that will take care of the health
+probe and disable the feature on a cold VCL (see
 :ref:`ref-vmod-event-functions`).
 
 Instead of initializing your own probe definition, you can get a ``VCL_PROBE``
