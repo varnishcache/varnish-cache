@@ -116,9 +116,10 @@ backends.
 
 Finally, Varnish will take care of event propagation for *all* native backends,
 but dynamic backends can only be created when the VCL is warm. If your backends
-are created by an independant thread (basically outside of VCL scope) you must
+are created by an independent thread (basically outside of VCL scope) you must
 subscribe to VCL events and watch for VCL state (see
-:ref:`ref-vmod-event-functions`).
+:ref:`ref-vmod-event-functions`). You are also encouraged to comply with the
+:ref:`ref_vcl_temperature` in general.
 
 
 .. _ref-writing-a-director-cluster:

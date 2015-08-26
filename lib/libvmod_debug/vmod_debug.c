@@ -253,6 +253,17 @@ int __match_proto__(vmod_event_f)
 event_function(VRT_CTX, struct vmod_priv *priv, enum vcl_event_e e)
 {
 	struct priv_vcl *priv_vcl;
+	const char *ev;
+
+	switch (e) {
+		case VCL_EVENT_COLD: ev = "VCL_EVENT_COLD"; break;
+		case VCL_EVENT_WARM: ev = "VCL_EVENT_WARM"; break;
+		case VCL_EVENT_USE:  ev = "VCL_EVENT_USE";  break;
+		default: ev = NULL;
+	}
+
+	if (ev != NULL)
+		VSL(SLT_Debug, 0, "%s: %s", VCL_Name(ctx->vcl), ev);
 
 	if (e != VCL_EVENT_LOAD)
 		return (0);

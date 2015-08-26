@@ -107,7 +107,7 @@ vcl.load <configname> <filename> [auto|cold|warm]
 vcl.inline <configname> <quoted_VCLstring> [auto|cold|warm]
   Compile and load the VCL data under the name provided.
 
-vcl.use <configname> [auto|cold|warm]
+vcl.use <configname>
   Switch to the named configuration immediately.
 
 vcl.discard <configname>
@@ -172,6 +172,28 @@ an operator with "!" negates the expression.
 The argument could be a quoted string, a regexp, or an integer.
 Integers can have "KB", "MB", "GB" or "TB" appended for size related
 fields.
+
+
+.. _ref_vcl_temperature:
+
+VCL Temperature
+---------------
+
+A VCL program goes through several states related to the different commands: it
+can be loaded, used, and later discarded. You can load several VCL programs and
+switch at any time from one to another. There is only one active VCL, but the
+previous active VCL will be maintained active until all its transactions are
+over.
+
+Over time, if you often refresh your VCL and keep the previous versions around,
+resource consumption will increase, you can't escape that. However, most of the
+time you want only one to pay the price only for the active VCL and keep older
+VCLs in case you'd need to rollback to a previous version.
+
+The VCL temperature allows you to minimize the footprint of inactive VCLs. Once
+a VCL becomes cold, Varnish will release all the resources that can be be later
+reacquired. You can manually set the temperature of a VCL or let varnish
+automatically handle it.
 
 
 Scripting

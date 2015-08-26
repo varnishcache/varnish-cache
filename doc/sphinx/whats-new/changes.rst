@@ -61,7 +61,7 @@ Example::
 
 
 VMOD writers should read up on the new vcl_event system to release unnecessary
-state when a VCL is transitioned to cold.
+state when a VCL is transitioned to cold (see ref:`ref-vmod-event-functions`).
 
 
 PROXY protocol support
