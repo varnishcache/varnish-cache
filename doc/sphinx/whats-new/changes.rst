@@ -94,7 +94,11 @@ in ``vcl_recv`` to see if traffic came in over the HTTP listening socket
 VMOD backends
 =============
 
-Not yet documented.
+Before Varnish 4.1, backends could only be declared in native VCL. Varnish 4.0
+moved directors from VCL to VMODs, and VMODs can now also create backends. It
+is possible to both create the same backends than VCL but dynamically, or
+create backends that don't necesserally speak HTTP/1 over TCP to fetch
+resources. More details in the :ref:`ref-writing-a-director` documentation.
 
 
 Surrogate keys
