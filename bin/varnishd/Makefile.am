@@ -99,8 +99,6 @@ varnishd_SOURCES = \
 
 noinst_HEADERS = \
 	builtin_vcl.h \
-	cache/cache_backend.h \
-	cache/cache_director.h \
 	cache/cache_esi.h \
 	cache/cache_pool.h \
 	common/heritage.h \
@@ -118,6 +116,8 @@ noinst_HEADERS = \
 nobase_pkginclude_HEADERS = \
 	cache/cache.h \
 	cache/cache_filter.h \
+	cache/cache_backend.h \
+	cache/cache_director.h \
 	common/common.h \
 	common/params.h \
 	waiter/waiter.h

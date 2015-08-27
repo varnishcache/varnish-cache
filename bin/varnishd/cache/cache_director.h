@@ -37,6 +37,49 @@
  *
  */
 
+/*--------------------------------------------------------------------
+ * A director is a piece of code which selects one of possibly multiple
+ * backends to use.
+ */
+
+
+typedef unsigned vdi_healthy_f(const struct director *, const struct busyobj *,
+    double *changed);
+
+typedef const struct director *vdi_resolve_f(const struct director *,
+    struct worker *, struct busyobj *);
+
+typedef int vdi_gethdrs_f(const struct director *, struct worker *,
+    struct busyobj *);
+typedef int vdi_getbody_f(const struct director *, struct worker *,
+    struct busyobj *);
+typedef const struct suckaddr *vdi_getip_f(const struct director *,
+    struct worker *, struct busyobj *);
+typedef void vdi_finish_f(const struct director *, struct worker *,
+    struct busyobj *);
+
+typedef void vdi_http1pipe_f(const struct director *, struct req *,
+    struct busyobj *);
+
+typedef void vdi_panic_f(const struct director *, struct vsb *);
+
+struct director {
+	unsigned		magic;
+#define DIRECTOR_MAGIC		0x3336351d
+	const char		*name;
+	char			*vcl_name;
+	vdi_http1pipe_f		*http1pipe;
+	vdi_healthy_f		*healthy;
+	vdi_resolve_f		*resolve;
+	vdi_gethdrs_f		*gethdrs;
+	vdi_getbody_f		*getbody;
+	vdi_getip_f		*getip;
+	vdi_finish_f		*finish;
+	vdi_panic_f		*panic;
+	void			*priv;
+	const void		*priv2;
+};
+
 /* cache_director.c */
 
 int VDI_GetHdr(struct worker *, struct busyobj *);
