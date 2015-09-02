@@ -253,9 +253,7 @@ void VRT_ban_string(VRT_CTX, const char *);
 void VRT_purge(VRT_CTX, double ttl, double grace, double keep);
 
 void VRT_count(VRT_CTX, unsigned);
-int VRT_rewrite(const char *, const char *);
 void VRT_synth(VRT_CTX, unsigned, const char *);
-int VRT_switch_config(const char *);
 
 struct http *VRT_selecthttp(VRT_CTX, enum gethdr_e);
 const char *VRT_GetHdr(VRT_CTX, const struct gethdr_s *);
