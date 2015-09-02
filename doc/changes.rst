@@ -451,6 +451,38 @@ Open issues
 .. _1268: https://www.varnish-cache.org/trac/ticket/1268
 
 
+============================================
+Changes from 3.0.7-rc1 to 3.0.7 (2015-03-23)
+============================================
+
+- No changes.
+
+============================================
+Changes from 3.0.6 to 3.0.7-rc1 (2015-03-18)
+============================================
+
+- Requests with multiple Content-Length headers will now fail.
+
+- Stop recognizing a single CR (\r) as a HTTP line separator.
+  This opened up a possible cache poisioning attack in stacked installations
+  where sslterminator/varnish/backend had different CR handling.
+
+- Improved error detection on master-child process communication, leading to
+  faster recovery (child restart) if communication loses sync.
+
+- Fix a corner-case where Content-Length was wrong for HTTP 1.0 clients,
+  when using gzip and streaming. Bug 1627_.
+
+- More robust handling of hop-by-hop headers.
+
+- [packaging] Coherent Redhat pidfile in init script. Bug 1690_.
+
+- Avoid memory leak when adding bans.
+
+.. _1627: http://varnish-cache.org/trac/ticket/1627
+.. _1690: http://varnish-cache.org/trac/ticket/1690
+
+
 ===========================================
 Changes from 3.0.6rc1 to 3.0.6 (2014-10-16)
 ===========================================
