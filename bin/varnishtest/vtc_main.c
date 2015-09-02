@@ -416,10 +416,8 @@ dns_works(void)
 	const char *msg;
 
 	error = VSS_resolver("phk.freebsd.dk", NULL, dns_cb, &ret, &msg);
-	if (error || msg != NULL || ret != 1) {
-		fprintf(stderr, "DNS-test fails\n");
+	if (error || msg != NULL || ret != 1)
 		return (0);
-	}
 	return (1);
 }
 
