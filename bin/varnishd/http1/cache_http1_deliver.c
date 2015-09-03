@@ -59,7 +59,8 @@ v1d_bytes(struct req *req, enum vdp_action act, void **priv,
 }
 
 static void
-v1d_error(struct req *req, const char *msg) {
+v1d_error(struct req *req, const char *msg)
+{
         static const char r_500[] =
                 "HTTP/1.1 500 Internal Server Error\r\n"
                 "Server: Varnish\r\n"
@@ -72,7 +73,6 @@ v1d_error(struct req *req, const char *msg) {
 
 	(void)write(req->sp->fd, r_500, sizeof r_500 - 1);
 	req->doclose = SC_TX_EOF;
-	return;
 }
 
 /*--------------------------------------------------------------------

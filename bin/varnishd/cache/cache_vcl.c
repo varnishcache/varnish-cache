@@ -567,7 +567,6 @@ ccf_config_load(struct cli *cli, const char * const *av, void *priv)
 	ASSERT_CLI();
 	if (VCL_Load(cli, av[2], av[3], av[4]))
 		VCLI_SetResult(cli, CLIS_PARAM);
-	return;
 }
 
 static void __match_proto__(cli_func_t)
@@ -640,7 +639,6 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 		Lck_Unlock(&vcl_mtx);
 	}
 	VSB_delete(vsb);
-	return;
 }
 
 static void __match_proto__(cli_func_t)

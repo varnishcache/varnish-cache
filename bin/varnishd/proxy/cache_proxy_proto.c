@@ -381,5 +381,4 @@ VPX_Proto_Sess(struct worker *wrk, void *priv)
 	req->sp->sess_step = S_STP_H1NEWREQ;
 	wrk->task.func = SES_Proto_Req;
 	wrk->task.priv = req;
-	return;
 }

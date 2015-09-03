@@ -106,7 +106,6 @@ V1L_Reserve(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	v1l->t0 = t0;
 	v1l->vsl = vsl;
 	wrk->v1l = v1l;
-	return;
 }
 
 unsigned

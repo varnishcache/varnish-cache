@@ -78,7 +78,6 @@ hcl_init(int ac, char * const *av)
 	}
 	hcl_nhash = u;
 	fprintf(stderr, "Classic hash: %u buckets\n", hcl_nhash);
-	return;
 }
 
 /*--------------------------------------------------------------------
