@@ -1,0 +1,47 @@
+varnishtest "Test actual client workspace overflow"
+
+server s1 {
+	rxreq
+	txresp
+
+	rxreq
+	txresp
+
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_debug};
+	sub vcl_deliver {
+		debug.workspace_allocate(client, debug.workspace_free(client) - 200);
+
+		if (req.url ~ "/bar") {
+			set resp.http.x-foo = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		}
+		else if (req.url ~ "/baz") {
+			set resp.http.x-foo = regsub(req.url, "baz", "baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz");
+		}
+		set resp.http.x-of = debug.workspace_overflowed(client);
+	}
+} -start
+
+client c1 {
+	txreq -url /foo
+	rxresp
+	expect resp.status == 200
+	expect resp.http.x-of == "false"
+
+	txreq -url /bar
+	rxresp
+	expect resp.status == 500
+	expect resp.http.x-of == <undef>
+} -run
+
+client c2 {
+	txreq -url /baz
+	rxresp
+	expect resp.status == 500
+	expect resp.http.x-of == <undef>
+} -run
+

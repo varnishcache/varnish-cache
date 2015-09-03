@@ -122,3 +122,19 @@ Return the dynamic backend.
 $Method VOID .refresh(STRING addr, STRING port)
 
 Dynamically refresh & (always!) replace the backend by a new one.
+
+$Function VOID workspace_allocate(ENUM { client, backend, session, thread }, INT SIZE)
+
+Allocate and zero out SIZE bytes from a workspace.
+
+$Function BOOL workspace_overflowed(ENUM { client, backend, session, thread })
+
+Return if the workspace overflow mark is set or not.
+
+$Function VOID workspace_overflow(ENUM { client, backend, session, thread })
+
+Mark a workspace as overflowed.
+
+$Function INT workspace_free(ENUM { client, backend, session, thread })
+
+Find how much unallocated space there is left in a workspace.

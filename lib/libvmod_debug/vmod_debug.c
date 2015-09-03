@@ -290,3 +290,72 @@ vmod_sleep(VRT_CTX, VCL_DURATION t)
 	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
 	VTIM_sleep(t);
 }
+
+static struct ws *wsfind(VRT_CTX, VCL_ENUM which) {
+	if (!strcmp(which, "client")) {
+		return ctx->ws;
+	} else if (!strcmp(which, "backend")) {
+		return ctx->bo->ws;
+	} else if (!strcmp(which, "session")) {
+		return ctx->req->sp->ws;
+	} else if (!strcmp(which, "thread")) {
+		return ctx->req->wrk->aws;
+	} else
+		WRONG("No such workspace.");
+}
+
+void
+vmod_workspace_allocate(VRT_CTX, VCL_ENUM which, VCL_INT size)
+{
+	struct ws *ws;
+	char *s;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	ws = wsfind(ctx, which);
+
+	WS_Assert(ws);
+	AZ(ws->r);
+
+	s = WS_Alloc(ws, size);
+	if (!s)
+		return;
+	memset(s, '\0', size);
+}
+
+VCL_INT
+vmod_workspace_free(VRT_CTX, VCL_ENUM which)
+{
+	struct ws *ws;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	ws = wsfind(ctx, which);
+
+	WS_Assert(ws);
+	AZ(ws->r);
+
+	return pdiff(ws->f, ws->e);
+}
+
+VCL_BOOL
+vmod_workspace_overflowed(VRT_CTX, VCL_ENUM which)
+{
+	struct ws *ws;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	ws = wsfind(ctx, which);
+	WS_Assert(ws);
+
+	return (WS_Overflowed(ws));
+}
+
+void
+vmod_workspace_overflow(VRT_CTX, VCL_ENUM which)
+{
+	struct ws *ws;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	ws = wsfind(ctx, which);
+	WS_Assert(ws);
+
+	WS_MarkOverflow(ws);
+}
