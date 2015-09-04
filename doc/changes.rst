@@ -1,8 +1,25 @@
-====================================
-Varnish Cache 4.1.0-dev (unreleased)
-====================================
+======================================
+Varnish Cache 4.1.0-beta1 (unreleased)
+======================================
 
-This is a placeholder entry for the upcoming 4.1.0 prereleases.
+- Redhat packaging files are now separate from the normal tree.
+
+- Client workspace overflow should now result in a 500 response
+  instead of panic.
+
+- [varnishstat] -w option has been retired.
+
+Bugs fixed
+----------
+
+- 1777_ - Disable speculative Range handling on streaming transactions.
+
+.. _1777: https://www.varnish-cache.org/trac/ticket/1777
+
+
+====================================
+Varnish Cache 4.1.0-tp1 (2015-07-08)
+====================================
 
 Changes between 4.0 and 4.1 are numerous. Please read the upgrade
 section in the documentation for a general overview.
