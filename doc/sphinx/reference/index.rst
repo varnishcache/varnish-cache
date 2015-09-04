@@ -22,39 +22,40 @@ The Varnish Reference Manual
 	vmod.rst
 	vmod_std.generated.rst
 	vmod_directors.generated.rst
+	directors.rst
 	vsl.rst
 	vsl-query.rst
 
 .. todo::
-        The programs:
-        . varnishd manual page
-        . varnishstat
-        . - counters explained
-        . common filtering options for shmlog tools
-        . varnishlog ..
-        . varnishtop ..
-        . varnishncsa ..
-        . varnishhist ..
-        The CLI:
-        . connections: -T -S -M
-        . varnishadm
-        . CLI commands and what they do
-        . - vcl.load
-        . - stop
-        . - start
-        . - ...
-        VCL language
-        . The functions:
-        . - vcl_recv
-        . - vcl_miss
-        . ---
-        . The things you can do
-        . - set
-        . - unset
-        . - esi
-        . - rollback
-        Varnishtest
-        . syntax etc.
+	The programs:
+	. varnishd manual page
+	. varnishstat
+	. - counters explained
+	. common filtering options for shmlog tools
+	. varnishlog ..
+	. varnishtop ..
+	. varnishncsa ..
+	. varnishhist ..
+	The CLI:
+	. connections: -T -S -M
+	. varnishadm
+	. CLI commands and what they do
+	. - vcl.load
+	. - stop
+	. - start
+	. - ...
+	VCL language
+	. The functions:
+	. - vcl_recv
+	. - vcl_miss
+	. ---
+	. The things you can do
+	. - set
+	. - unset
+	. - esi
+	. - rollback
+	Varnishtest
+	. syntax etc.
 	Shared Memory
 	. internals
 	. Log records

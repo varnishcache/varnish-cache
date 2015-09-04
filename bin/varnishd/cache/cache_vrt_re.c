@@ -171,6 +171,7 @@ VRT_regsub(VRT_CTX, int all, const char *str, void *re,
 	/* Copy suffix to match */
 	Tadd(&res_b, res_e, str + offset, 1 + len - offset);
 	if (res_b >= res_e) {
+		WS_MarkOverflow(ctx->ws);
 		WS_Release(ctx->ws, 0);
 		return (str);
 	}

@@ -117,7 +117,6 @@ vcc_IsField(struct vcc *tl, struct token **t, struct fld_spec *fs)
 	vcc_ErrToken(tl, t_field);
 	VSB_printf(tl->sb, " at\n");
 	vcc_ErrWhere(tl, t_field);
-	return;
 }
 
 void

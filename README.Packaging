@@ -1,0 +1,35 @@
+Packaging
+=========
+
+Varnish Cache packaging files are kept outside of the main distribution.
+
+The main reason for this is to decouple the development work from the packaging work.
+
+We want to be able to tag a release and do a tarball release without having
+to wait for the packagers to finish their work/changes.
+
+
+Official packages
+-----------------
+
+The official Debian and Redhat packages are built by the Varnish Cache team
+and made available on http://repo.varnish-cache.org/ .
+
+Packaging files for Debian:
+
+    git://git.varnish-cache.org/varnish-cache-debian.git
+
+Packaging files for Redhat:
+
+    https://github.com/varnish/varnish-cache-redhat
+
+Scripts that run the builds are available on:
+
+    https://github.com/varnish/pkg-varnish-cache
+
+
+Third-party packages
+--------------------
+
+Varnish Cache is built and packaged in many different operating systems and
+distributions. Please see the wiki for more information.

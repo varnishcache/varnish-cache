@@ -15,7 +15,7 @@ HTTP accelerator daemon
 SYNOPSIS
 ========
 
-varnishd [-a address[:port][,PROTO]] [-b host[:port]] [-C] [-d] [-F] [-f config] [-h type[,options]] [-i identity] [-j jail[,jailoptions]] [-l shl[,free]] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...]] [-S secret-file] [-s [name=]kind[,options]] [-T address[:port]] [-t TTL] [-V] [-W waiter]
+varnishd [-a address[:port][,PROTO]] [-b host[:port]] [-C] [-d] [-F] [-f config] [-h type[,options]] [-i identity] [-j jail[,jailoptions]] [-l vsl[,vsm]] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...]] [-S secret-file] [-s [name=]kind[,options]] [-T address[:port]] [-t TTL] [-V] [-W waiter]
 
 DESCRIPTION
 ===========
@@ -84,11 +84,11 @@ OPTIONS
 
   Specify the jailing technology to use.
 
--l <shl[,free]>
+-l <vsl[,vsm]>
 
-  Specifies size of shmlog file. shl is the store for the shared
-  memory log records [80M] and free is the store for other allocations
-  [1M]. Scaling suffixes like 'k', 'M' can be used up to (E)xabytes.
+  Specifies size of shmlog file. vsl is the space for the VSL records
+  [80M] and vsm is the space for stats counters [1M]. Scaling suffixes
+  like 'K' and 'M' can be used up to (G)igabytes.
   Default is 81 Megabytes.
 
 -M <address:port>
@@ -119,9 +119,9 @@ OPTIONS
 
   Make the listed parameters read only. This gives the system
   administrator a way to limit what the Varnish CLI can do.  Consider
-  making parameters such as *user*, *group*, *cc_command*,
-  *vcc_allow_inline_c* read only as these can potentially be used to
-  escalate privileges from the CLI.
+  making parameters such as *cc_command*, *vcc_allow_inline_c* and
+  *vmod_dir* read only as these can potentially be used to escalate
+  privileges from the CLI.
 
 -S file
 

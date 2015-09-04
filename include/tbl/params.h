@@ -178,6 +178,24 @@ PARAM(
 )
 
 PARAM(
+	/* name */	first_byte_timeout,
+	/* tweak */	timeout,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"60",
+	/* units */	"seconds",
+	/* flags */	0,
+	/* s-text */
+	"Default timeout for receiving first byte from backend. We only "
+	"wait for this many seconds for the first byte before giving up. A "
+	"value of 0 means it will never time out. VCL can override this "
+	"default value for each backend and backend request. This "
+	"parameter does not apply to pipe.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
+PARAM(
 	/* name */	between_bytes_timeout,
 	/* tweak */	timeout,
 	/* min */	"0",
@@ -440,24 +458,6 @@ PARAM(
 	/* s-text */
 	"The maximum chunksize we attempt to allocate from storage. Making "
 	"this too large may cause delays and storage fragmentation.\n",
-	/* l-text */	"",
-	/* func */	NULL
-)
-PARAM(
-	/* name */	first_byte_timeout,
-	/* tweak */	tweak_timeout,
-	/* var */	first_byte_timeout,
-	/* min */	0.000,
-	/* max */	none,
-	/* default */	60.000,
-	/* units */	seconds,
-	/* flags */	00,
-	/* s-text */
-	"Default timeout for receiving first byte from backend. We only "
-	"wait for this many seconds for the first byte before giving up. A "
-	"value of 0 means it will never time out. VCL can override this "
-	"default value for each backend and backend request. This "
-	"parameter does not apply to pipe.\n",
 	/* l-text */	"",
 	/* func */	NULL
 )
@@ -962,12 +962,12 @@ PARAM(
 	/* var */	sigsegv_handler,
 	/* min */	none,
 	/* max */	none,
-	/* default */	off,
+	/* default */	on,
 	/* units */	bool,
 	/* flags */	0| MUST_RESTART,
 	/* s-text */
 	"Install a signal handler which tries to dump debug information on "
-	"segmentation and buserror faults.\n",
+	"segmentation faults, bus errors and abort signals.\n",
 	/* l-text */	"",
 	/* func */	NULL
 )
@@ -1232,7 +1232,7 @@ PARAM(
 	/* flags */	00,
 	/* s-text */
 	"Idle timeout for client connections.\n"
-	"A connection is considered idle, until we havereceived the full "
+	"A connection is considered idle, until we have received the full "
 	"request headers.\n",
 	/* l-text */	"",
 	/* func */	NULL

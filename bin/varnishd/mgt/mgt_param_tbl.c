@@ -178,7 +178,7 @@ struct parspec mgt_parspec[] = {
 	{ "timeout_idle", tweak_timeout, &mgt_param.timeout_idle,
 		"0", NULL,
 		"Idle timeout for client connections.\n"
-		"A connection is considered idle, until we have"
+		"A connection is considered idle, until we have "
 		"received the full request headers.",
 		0,
 		"5", "seconds" },
@@ -308,17 +308,6 @@ struct parspec mgt_parspec[] = {
 		"backend request.",
 		0,
 		"3.5", "seconds" },
-	{ "first_byte_timeout", tweak_timeout,
-		&mgt_param.first_byte_timeout,
-		"0", NULL,
-		"Default timeout for receiving first byte from backend. "
-		"We only wait for this many seconds for the first "
-		"byte before giving up. A value of 0 means it will never time "
-		"out. "
-		"VCL can override this default value for each backend and "
-		"backend request. This parameter does not apply to pipe.",
-		0,
-		"60", "seconds" },
 	{ "clock_skew", tweak_uint, &mgt_param.clock_skew,
 		"0", NULL,
 		"How much clockskew we are willing to accept between the "
@@ -416,10 +405,11 @@ struct parspec mgt_parspec[] = {
 		"180", "seconds" },
 	{ "sigsegv_handler", tweak_bool, &mgt_param.sigsegv_handler,
 		NULL, NULL,
-		"Install a signal handler which tries to dump debug "
-		"information on segmentation and buserror faults.",
+		"Install a signal handler which tries to dump debug"
+		" information on segmentation faults, bus errors and abort"
+		" signals.",
 		MUST_RESTART,
-		"off", "bool" },
+		"on", "bool" },
 	{ "vcl_dir", tweak_string, &mgt_vcl_dir,
 		NULL, NULL,
 		"Directory from which relative VCL filenames (vcl.load and "

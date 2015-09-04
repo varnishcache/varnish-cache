@@ -41,7 +41,6 @@
 #include "config.h"
 
 #include <errno.h>
-#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -190,105 +189,80 @@ SES_RxReInit(struct http_conn *htc)
 	*htc->rxbuf_e = '\0';
 }
 
-/*--------------------------------------------------------------------
- * Receive more HTTP protocol bytes
- */
-
-enum htc_status_e
-SES_Rx(struct http_conn *htc, double tmo)
-{
-	int i, j;
-	struct pollfd pfd[1];
-
-	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	AN(htc->ws->r);
-	AZ(htc->pipeline_b);
-	AZ(htc->pipeline_e);
-	i = (htc->ws->r - htc->rxbuf_e) - 1;	/* space for NUL */
-	if (i <= 0)
-		return (HTC_S_OVERFLOW);
-	if (tmo > 0.0) {
-		pfd[0].fd = htc->fd;
-		pfd[0].events = POLLIN;
-		pfd[0].revents = 0;
-		j = (int)floor(tmo * 1e3);
-		if (j == 0)
-			j++;
-		j = poll(pfd, 1, j);
-		if (j == 0)
-			return (HTC_S_TIMEOUT);
-	}
-	i = read(htc->fd, htc->rxbuf_e, i);
-	if (i <= 0)
-		return (HTC_S_EOF);
-	htc->rxbuf_e += i;
-	*htc->rxbuf_e = '\0';
-	return (HTC_S_MORE);
-}
-
 /*----------------------------------------------------------------------
  * Receive a request/packet/whatever, with timeouts
+ *
+ * t0 is when we start
+ * *t1 becomes time of first non-idle rx
+ * *t2 becomes time of complete rx
+ * ti is when we return IDLE if nothing has arrived
+ * tn is when we timeout on non-complete
  */
 
 enum htc_status_e
-SES_RxReq(const struct worker *wrk, struct req *req, htc_complete_f *func)
+SES_RxStuff(struct http_conn *htc, htc_complete_f *func,
+    double *t1, double *t2, double ti, double tn)
 {
 	double tmo;
-	double now, when;
-	struct sess *sp;
+	double now;
 	enum htc_status_e hs;
+	int i;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	sp = req->sp;
-	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 
-	AZ(isnan(sp->t_idle));
-	assert(isnan(req->t_first));
+	AZ(isnan(tn));
+	if (t1 != NULL)
+		assert(isnan(*t1));
 
-	when = sp->t_idle + cache_param->timeout_idle;
-	tmo = cache_param->timeout_linger;
 	while (1) {
-		hs = SES_Rx(req->htc, tmo);
 		now = VTIM_real();
-		if (hs == HTC_S_EOF) {
-			WS_ReleaseP(req->htc->ws, req->htc->rxbuf_b);
-			return (HTC_S_CLOSE);
-		}
-		if (hs == HTC_S_OVERFLOW) {
-			WS_ReleaseP(req->htc->ws, req->htc->rxbuf_b);
-			return (HTC_S_OVERFLOW);
-		}
-		hs = func(req->htc);
-		if (hs == HTC_S_OVERFLOW) {
-			WS_ReleaseP(req->htc->ws, req->htc->rxbuf_b);
-			return (HTC_S_OVERFLOW);
-		}
-		if (hs == HTC_S_JUNK) {
-			WS_ReleaseP(req->htc->ws, req->htc->rxbuf_b);
-			return (HTC_S_JUNK);
+		hs = func(htc);
+		if (hs == HTC_S_OVERFLOW || hs == HTC_S_JUNK) {
+			WS_ReleaseP(htc->ws, htc->rxbuf_b);
+			return (hs);
 		}
 		if (hs == HTC_S_COMPLETE) {
+			WS_ReleaseP(htc->ws, htc->rxbuf_e);
 			/* Got it, run with it */
-			if (isnan(req->t_first))
-				req->t_first = now;
-			req->t_req = now;
+			if (t1 != NULL && isnan(*t1))
+				*t1 = now;
+			if (t2 != NULL)
+				*t2 = now;
 			return (HTC_S_COMPLETE);
 		}
-		if (when < now)
+		if (tn < now) {
+			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			return (HTC_S_TIMEOUT);
+		}
 		if (hs == HTC_S_MORE) {
 			/* Working on it */
-			if (isnan(req->t_first))
-				req->t_first = now;
-			tmo = when - now;
-			continue;
+			if (t1 != NULL && isnan(*t1))
+				*t1 = now;
+			tmo = tn - now;
+		} else if (hs != HTC_S_EMPTY)
+			WRONG("htc_status_e");
+
+		tmo = tn - now;
+		if (!isnan(ti) && ti < tn)
+			tmo = ti - now;
+		i = (htc->ws->r - htc->rxbuf_e) - 1;	/* space for NUL */
+		if (i <= 0) {
+			WS_ReleaseP(htc->ws, htc->rxbuf_b);
+			return (HTC_S_OVERFLOW);
 		}
-		assert(hs == HTC_S_EMPTY);
-		/* Nothing but whitespace */
-		tmo = sp->t_idle + cache_param->timeout_linger - now;
-		if (tmo < 0)
-			return (HTC_S_IDLE);
+		i = VTCP_read(htc->fd, htc->rxbuf_e, i, tmo);
+		if (i == 0 || i == -1) {
+			WS_ReleaseP(htc->ws, htc->rxbuf_b);
+			return (HTC_S_EOF);
+		} else if (i > 0) {
+			htc->rxbuf_e += i;
+			*htc->rxbuf_e = '\0';
+		} else if (i == -2) {
+			if (hs == HTC_S_EMPTY && ti < now) {
+				WS_ReleaseP(htc->ws, htc->rxbuf_b);
+				return (HTC_S_IDLE);
+			}
+		}
 	}
 }
 
@@ -448,7 +422,7 @@ ses_handle(struct waited *wp, enum wait_event ev, double now)
 	case WAITER_ACTION:
 		pp = sp->pool;
 		CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
-		assert(sizeof *tp == WS_Reserve(sp->ws, sizeof *tp));
+		assert(sizeof *tp <= WS_Reserve(sp->ws, sizeof *tp));
 		tp = (void*)sp->ws->f;
 		tp->func = SES_Proto_Sess;
 		tp->priv = sp;

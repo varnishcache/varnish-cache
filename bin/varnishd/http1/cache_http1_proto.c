@@ -83,6 +83,10 @@ HTTP1_Complete(struct http_conn *htc)
 		*htc->rxbuf_e = '\0';
 		return (HTC_S_EMPTY);
 	}
+	/*
+	 * Here we just look for NL[CR]NL to see that reception
+	 * is completed.  More stringent validation happens later.
+	 */
 	while (1) {
 		p = strchr(p, '\n');
 		if (p == NULL)
@@ -93,13 +97,6 @@ HTTP1_Complete(struct http_conn *htc)
 		if (*p == '\n')
 			break;
 	}
-	p++;
-	WS_ReleaseP(htc->ws, htc->rxbuf_e);
-	if (p < htc->rxbuf_e) {
-		htc->pipeline_b = p;
-		htc->pipeline_e = htc->rxbuf_e;
-		htc->rxbuf_e = p;
-	}
 	return (HTC_S_COMPLETE);
 }
 
@@ -109,7 +106,7 @@ HTTP1_Complete(struct http_conn *htc)
  */
 
 static uint16_t
-http1_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
+http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc)
 {
 	char *q, *r;
 
@@ -122,6 +119,8 @@ http1_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 
 		/* Find end of next header */
 		q = r = p;
+		if (vct_iscrlf(p))
+			break;
 		while (r < htc->rxbuf_e) {
 			if (!vct_iscrlf(r)) {
 				r++;
@@ -131,6 +130,8 @@ http1_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 			assert(r < htc->rxbuf_e);
 			r += vct_skipcrlf(r);
 			if (r >= htc->rxbuf_e)
+				break;
+			if (vct_iscrlf(r))
 				break;
 			/* If line does not continue: got it. */
 			if (!vct_issp(*r))
@@ -184,6 +185,13 @@ http1_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
 			return (400);
 		}
 	}
+	if (p < htc->rxbuf_e)
+		p += vct_skipcrlf(p);
+	if (p < htc->rxbuf_e) {
+		htc->pipeline_b = p;
+		htc->pipeline_e = htc->rxbuf_e;
+		htc->rxbuf_e = p;
+	}
 	return (0);
 }
 
@@ -192,7 +200,7 @@ http1_dissect_hdrs(struct http *hp, char *p, const struct http_conn *htc)
  */
 
 static uint16_t
-http1_splitline(struct http *hp, const struct http_conn *htc, const int *hf)
+http1_splitline(struct http *hp, struct http_conn *htc, const int *hf)
 {
 	char *p;
 	int i;
@@ -390,7 +398,7 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 /*--------------------------------------------------------------------*/
 
 uint16_t
-HTTP1_DissectResponse(struct http *hp, struct http_conn *htc)
+HTTP1_DissectResponse(struct http_conn *htc, struct http *hp)
 {
 	uint16_t retval = 0;
 	const char *p;

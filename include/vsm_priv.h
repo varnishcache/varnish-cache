@@ -56,7 +56,7 @@
  * Subscribers will have to monitor three things to make sure they look at
  * the right thing: The alloc_seq field, the age counter and the dev+inode
  * of the path-name.  The former check is by far the cheaper, the second
- * can be used to check that Varnishd is still alive and the last check
+ * can be used to check that varnishd is still alive and the last check
  * should only be employed when lack of activity in the VSM segment raises
  * suspicion that something has happened.
  *

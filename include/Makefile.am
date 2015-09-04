@@ -58,6 +58,7 @@ nobase_pkginclude_HEADERS += \
 	vsa.h \
 	vsb.h \
 	vsha256.h \
+	vtcp.h \
 	vtim.h
 
 # Private headers

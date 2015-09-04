@@ -7,7 +7,9 @@ server s1 -repeat 20 {
 	close
 } -start
 
+# The debug vmod logs some vcl events
 varnish v1 -arg "-p vcl_cooldown=1" -vcl {
+	import ${vmod_debug};
 	backend default {
 		.host = "${s1_addr}";
 		.probe = { .interval = 1s; .initial = 1;}
@@ -51,8 +53,34 @@ varnish v1 -expect VBE.vcl2.default.happy >= 0
 delay 4
 varnish v1 -expect !VBE.vcl2.default.happy
 
-# Mark the used warm and use it the other
+# Mark the used warm and use the other
 varnish v1 -cliok "vcl.state vcl1 warm"
 varnish v1 -cliok "vcl.use vcl2"
+
+# It will stay warm even after the cooldown period
 delay 4
+varnish v1 -expect VBE.vcl1.default.happy >= 0
 varnish v1 -expect VBE.vcl2.default.happy >= 0
+
+# You can't freeze the active VCL
+varnish v1 -clierr 106 "vcl.state vcl2 cold"
+
+# However a warm event is guaranteed...
+logexpect l1 -v v1 -g raw {
+	expect * 0 Debug "vcl1: VCL_EVENT_COLD"
+	expect * 0 Debug "vcl1: VCL_EVENT_WARM"
+	expect * 0 Debug "vcl1: VCL_EVENT_USE"
+} -start
+
+# ...when you use a cold VCL
+varnish v1 -cliok "vcl.state vcl1 cold"
+varnish v1 -cliok "vcl.use vcl1"
+
+logexpect l1 -wait
+
+# It will apply the cooldown period once inactive
+varnish v1 -cliok "vcl.use vcl2"
+delay .4
+varnish v1 -expect VBE.vcl1.default.happy >= 0
+delay 4
+varnish v1 -expect !VBE.vcl1.default.happy

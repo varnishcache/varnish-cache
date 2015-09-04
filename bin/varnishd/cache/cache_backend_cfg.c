@@ -65,7 +65,7 @@ struct director *
 VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 {
 	struct backend *b;
-	char buf[128];
+	struct vsb *vsb;
 	struct vcl *vcl;
 	struct tcp_pool *tp = NULL;
 	const struct vrt_backend_probe *vbp;
@@ -89,8 +89,14 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 #undef DA
 #undef DN
 
-	bprintf(buf, "%s.%s", VCL_Name(vcl), vrt->vcl_name);
-	REPLACE(b->display_name, buf);
+	vsb = VSB_new_auto();
+	AN(vsb);
+	VSB_printf(vsb, "%s.%s", VCL_Name(vcl), vrt->vcl_name);
+	AZ(VSB_finish(vsb));
+
+	b->display_name = strdup(VSB_data(vsb));
+	AN(b->display_name);
+	VSB_delete(vsb);
 
 	b->vcl = vcl;
 

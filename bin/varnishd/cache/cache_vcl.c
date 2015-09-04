@@ -86,12 +86,17 @@ VCL_Panic(struct vsb *vsb, const struct vcl *vcl)
 	AN(vsb);
 	if (vcl == NULL)
 		return;
-	VSB_printf(vsb, "  vcl = {\n");
-	VSB_printf(vsb, "    srcname = {\n");
+	VSB_printf(vsb, "vcl = {\n");
+	VSB_indent(vsb, 2);
+	VSB_printf(vsb, "temp = %s\n", vcl->temp);
+	VSB_printf(vsb, "srcname = {\n");
+	VSB_indent(vsb, 2);
 	for (i = 0; i < vcl->conf->nsrc; ++i)
-		VSB_printf(vsb, "      \"%s\",\n", vcl->conf->srcname[i]);
-	VSB_printf(vsb, "    },\n");
-	VSB_printf(vsb, "  },\n");
+		VSB_printf(vsb, "\"%s\",\n", vcl->conf->srcname[i]);
+	VSB_indent(vsb, -2);
+	VSB_printf(vsb, "},\n");
+	VSB_indent(vsb, -2);
+	VSB_printf(vsb, "},\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -158,7 +163,7 @@ VCL_Ref(struct vcl *vcl)
 {
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	assert(vcl->temp == vcl_temp_warm);
+	assert(vcl->temp == vcl_temp_warm || vcl->temp == vcl_temp_cooling);
 	Lck_Lock(&vcl_mtx);
 	assert(vcl->busy > 0);
 	vcl->busy++;
@@ -224,6 +229,7 @@ vcl_BackendEvent(const struct vcl *vcl, enum vcl_event_e e)
 {
 	struct backend *be;
 
+	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	AZ(vcl->busy);
 
@@ -388,9 +394,12 @@ vcl_set_state(struct vcl *vcl, const char *state)
 
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 	ctx.handling = &hand;
+	ctx.vcl = vcl;
 
 	switch(state[0]) {
 	case '0':
+		if (vcl->temp == vcl_temp_init)
+			vcl->temp = vcl_temp_cold;
 		if (vcl->temp == vcl_temp_cold)
 			break;
 		if (vcl->busy == 0) {
@@ -558,7 +567,6 @@ ccf_config_load(struct cli *cli, const char * const *av, void *priv)
 	ASSERT_CLI();
 	if (VCL_Load(cli, av[2], av[3], av[4]))
 		VCLI_SetResult(cli, CLIS_PARAM);
-	return;
 }
 
 static void __match_proto__(cli_func_t)
@@ -617,6 +625,7 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 	vsb = VSB_new_auto();
 	AN(vsb);
 	ctx.msg = vsb;
+	ctx.vcl = vcl;
 	i = vcl->conf->event_vcl(&ctx, VCL_EVENT_USE);
 	AZ(VSB_finish(vsb));
 	if (i) {
@@ -630,7 +639,6 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 		Lck_Unlock(&vcl_mtx);
 	}
 	VSB_delete(vsb);
-	return;
 }
 
 static void __match_proto__(cli_func_t)

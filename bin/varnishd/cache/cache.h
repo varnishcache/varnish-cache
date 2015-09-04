@@ -838,8 +838,8 @@ enum sess_close http_DoConnection(struct http *hp);
 /* cache_http1_proto.c */
 
 htc_complete_f HTTP1_Complete;
-uint16_t HTTP1_DissectRequest(struct http_conn *htc, struct http *hp);
-uint16_t HTTP1_DissectResponse(struct http *sp, struct http_conn *htc);
+uint16_t HTTP1_DissectRequest(struct http_conn *, struct http *);
+uint16_t HTTP1_DissectResponse(struct http_conn *, struct http *);
 unsigned HTTP1_Write(const struct worker *w, const struct http *hp, const int*);
 
 #define HTTPH(a, b, c) extern char b[];
@@ -979,9 +979,8 @@ enum htc_status_e {
 void SES_RxInit(struct http_conn *htc, struct ws *ws,
     unsigned maxbytes, unsigned maxhdr);
 void SES_RxReInit(struct http_conn *htc);
-enum htc_status_e SES_Rx(struct http_conn *htc, double tmo);
-enum htc_status_e SES_RxReq(const struct worker *, struct req *,
-    htc_complete_f *func);
+enum htc_status_e SES_RxStuff(struct http_conn *, htc_complete_f *,
+    double *t1, double *t2, double ti, double tn);
 
 #define SESS_ATTR(UP, low, typ, len)				\
 	int SES_Get_##low(const struct sess *sp, typ *dst);	\

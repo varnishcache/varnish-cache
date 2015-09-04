@@ -123,31 +123,31 @@ VSC_F(locks,			uint64_t, 0, 'c', 'i', debug,
 #if defined(VSC_DO_SMA) || defined (VSC_DO_SMF)
 VSC_F(c_req,			uint64_t, 0, 'c', 'i', info,
     "Allocator requests",
-	""
+	"Number of times the storage has been asked to provide a storage segment."
 )
 VSC_F(c_fail,			uint64_t, 0, 'c', 'i', info,
     "Allocator failures",
-	""
+	"Number of times the storage has failed to provide a storage segment."
 )
 VSC_F(c_bytes,			uint64_t, 0, 'c', 'B', info,
     "Bytes allocated",
-	""
+	"Number of total bytes allocated by this storage."
 )
 VSC_F(c_freed,			uint64_t, 0, 'c', 'B', info,
     "Bytes freed",
-	""
+	"Number of total bytes returned to this storage."
 )
 VSC_F(g_alloc,			uint64_t, 0, 'g', 'i', info,
     "Allocations outstanding",
-	""
+	"Number of storage allocations outstanding."
 )
 VSC_F(g_bytes,			uint64_t, 0, 'g', 'B', info,
     "Bytes outstanding",
-	""
+	"Number of bytes allocated from the storage."
 )
 VSC_F(g_space,			uint64_t, 0, 'g', 'B', info,
     "Bytes available",
-	""
+	"Number of bytes left in the storage."
 )
 #endif
 

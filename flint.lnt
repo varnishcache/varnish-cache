@@ -22,7 +22,7 @@
 ///////////////////////////////////////////////////////////////////////
 // System/Posix/Iso-C library related
 
--emacro(747, isnan)     // significant coersion
+-emacro(747, isnan)     // significant coercion
 
 // ignore retval
 -esym(534, printf)
@@ -47,16 +47,17 @@
 -sem(VAS_Fail, r_no)		// does not return
 -emacro(506, assert)		// constant value boolean
 -emacro(827, assert)		// loop not reachable
--emacro(774, assert)		// booelan always true
--emacro(731, assert)		// booelan arg to eq/non-eq
+-emacro(774, assert)		// boolean always true
+-emacro(731, assert)		// boolean arg to eq/non-eq
 -emacro(731, xxxassert)		// arg to eq/non-eq
 -emacro(527, WRONG)		// unreachable code
+-emacro(774, VALID_OBJ)		// boolean always true
 
 ///////////////////////////////////////////////////////////////////////
 // <vsb.h>
 
 -esym(759, VSB_*)		// header decl could be moved
--esym(765, VSB_*)		// exten could be made static
+-esym(765, VSB_*)		// extern could be made static
 -esym(714, VSB_*)		// symb not ref
 -sem(VSB_new, @p == (1p ? 1p : malloc(1)))
 -sem(VSB_delete, custodial(1))

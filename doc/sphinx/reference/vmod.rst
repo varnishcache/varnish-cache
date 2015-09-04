@@ -1,3 +1,5 @@
+.. _ref-vmod:
+
 %%%%%%%%%%%%%%%%%%%%%%
 VMOD - Varnish Modules
 %%%%%%%%%%%%%%%%%%%%%%
@@ -49,27 +51,28 @@ data structures that does all the hard work.
 The std VMODs vmod.vcc file looks somewhat like this::
 
 	$Module std 3
-	$Init init_function
+	$Event event_function
 	$Function STRING toupper(STRING_LIST)
 	$Function STRING tolower(STRING_LIST)
 	$Function VOID set_ip_tos(INT)
 
-The first line gives the name of the module, nothing special there.
+The first line gives the name of the module and the manual section where
+the documentation will reside.
 
-The second line specifies an optional "Init" function, which will
-be called whenever a VCL program which imports this VMOD is loaded.
-This gives a chance to initialize the module before any of the
-functions it implements are called.  More on this below.
+The second line specifies an optional "Event" function, which will be
+called whenever a VCL program which imports this VMOD is loaded or
+transitions to any of the warm, active, cold or discarded states.
+More on this below.
 
-The next three lines specify two functions in the VMOD, along with the
-types of the arguments, and that is probably where the hardest bit
-of writing a VMOD is to be found, so we will talk about that at length
-in a moment.
+The next three lines define three functions in the VMOD, along with the
+types of the arguments, and that is probably where the hardest bit of
+writing a VMOD is to be found, so we will talk about that at length in
+a moment.
 
 Notice that the third function returns VOID, that makes it a "procedure"
-in VCL lingo, meaning that it cannot be used in expressions, right
-side of assignments and such places.  Instead it can be used as a
-primary action, something functions which return a value can not::
+in VCL lingo, meaning that it cannot be used in expressions, right side
+of assignments and such.  Instead it can be used as a primary action,
+something functions which return a value can not::
 
 	sub vcl_recv {
 		std.set_ip_tos(32);
@@ -94,10 +97,13 @@ For the std VMOD, the compiled vcc_if.h file looks like this::
 	VCL_STRING vmod_tolower(VRT_CTX, const char *, ...);
 	VCL_VOID vmod_set_ip_tos(VRT_CTX, VCL_INT);
 
-	int init_function(VRT_CTX, struct vmod_priv *);
+	vmod_event_f event_function;
 
-Those are your C prototypes.  Notice the ``vmod_`` prefix on the function
-names and the C-types as arguments.
+Those are your C prototypes.  Notice the ``vmod_`` prefix on the
+function names.
+
+
+.. _ref-vmod-vcl-c-types:
 
 VCL and C data types
 ====================
@@ -106,40 +112,103 @@ VCL data types are targeted at the job, so for instance, we have data
 types like "DURATION" and "HEADER", but they all have some kind of C
 language representation.  Here is a description of them.
 
-All but the STRING_LIST type have typedefs: VCL_INT, VCL_REAL etc.
+All but the PRIV and STRING_LIST types have typedefs: VCL_INT, VCL_REAL,
+etc.
+
+.. TODO document ACL if patchwork #314 is merged
+
+BACKEND
+	C-type: ``const struct director *``
+
+	A type for backend and director implementations. See
+	:ref:`ref-writing-a-director`.
+
+BLOB
+	C-type: ``const struct vmod_priv *``
+
+	An opaque type to pass random bits of memory between VMOD
+	functions.
+
+BOOL
+	C-type: ``unsigned``
+
+	Zero means false, anything else means true.
+
+BYTES
+	C-type: ``double``
+
+	Unit: bytes.
+
+	A storage space, as in 1024 bytes.
+
+DURATION
+	C-type: ``double``
+
+	Unit: seconds.
+
+	A time interval, as in 25 seconds.
+
+ENUM
+        C-type: ``const char *``
+
+        TODO
+
+HEADER
+	C-type: ``const struct gethdr_s *``
+
+	These are VCL compiler generated constants referencing a
+	particular header in a particular HTTP entity, for instance
+	``req.http.cookie`` or ``beresp.http.last-modified``.  By passing
+	a reference to the header, the VMOD code can both read and write
+	the header in question.
+
+	If the header was passed as STRING, the VMOD code only sees
+	the value, but not where it came from.
+
+HTTP
+        C-type: ``struct http *``
+
+        TODO
 
 INT
 	C-type: ``long``
 
-	An integer as we know and love them.
+	A (long) integer as we know and love them.
+
+IP
+	C-type: ``const struct suckaddr *``
+
+	This is an opaque type, see the ``include/vsa.h`` file for
+	which primitives we support on this type.
+
+PRIV_CALL
+	See :ref:`ref-vmod-private-pointers` below.
+
+PRIV_TASK
+	See :ref:`ref-vmod-private-pointers` below.
+
+PRIV_TOP
+	See :ref:`ref-vmod-private-pointers` below.
+
+PRIV_VCL
+	See :ref:`ref-vmod-private-pointers` below.
+
+PROBE
+	C-type: ``const struct vrt_backend_probe *``
+
+	A named standalone backend probe definition.
 
 REAL
 	C-type: ``double``
 
 	A floating point value.
 
-DURATION
-	C-type: ``double``
-
-	Unit: seconds
-
-	A time interval, as in 25 seconds.
-
-TIME
-	C-type: ``double``
-
-	Unit: seconds since UNIX epoch
-
-	An absolute time, as in 1284401161.  When used in a string
-	context is formatted as "Mon, 13 Sep 2010 19:06:01 GMT".
-
 STRING
 	C-type: ``const char *``
 
 	A NUL-terminated text-string.
 
-	Can be NULL to indicate that the nonexistent string, for
-	instance::
+	Can be NULL to indicate a nonexistent string, for instance in::
 
 		mymod.foo(req.http.foobar);
 
@@ -187,17 +256,12 @@ STRING_LIST
 	and make sure your workspace_client and workspace_backend params
 	are big enough.
 
-PRIV_VCL
-	See below
+TIME
+	C-type: ``double``
 
-PRIV_CALL
-	See below
+	Unit: seconds since UNIX epoch.
 
-PRIV_TASK
-	See below
-
-PRIV_TOP
-	See below
+	An absolute time, as in 1284401161.
 
 VOID
 	C-type: ``void``
@@ -205,35 +269,8 @@ VOID
 	Can only be used for return-value, which makes the function a VCL
 	procedure.
 
-HEADER
-	C-type: ``const struct gethdr_s *``
 
-	These are VCL compiler generated constants referencing
-	a particular header in a particular HTTP entity, for instance
-	``req.http.cookie`` or ``beresp.http.last-modified``.
-	By passing a reference to the header, the VMOD code can
-	both read and write the header in question.
-
-	If the header was passed as STRING, the VMOD code only sees
-	the value, but not where it came from.
-
-IP
-	C-type: ``const struct suckaddr *``
-
-	This is an opaque type, see the ``include/vsa.h`` file for
-	which primitives we support on this type.
-
-BOOL
-	C-type: ``unsigned``
-
-	Zero means false, anything else means true.
-
-BLOB
-	C-type: ``const struct vmod_priv *``
-
-	An opaque type to pass random bits of memory between VMOD
-	functions.
-
+.. _ref-vmod-private-pointers:
 
 Private Pointers
 ================
@@ -249,11 +286,6 @@ The VCL compiler supports the following private pointers:
   compiled regular expression specific to a regsub() statement or a
   simply caching the last output of some expensive lookup.
 
-* ``PRIV_VCL`` "per vcl" private pointers are useful for such global
-  state that applies to all calls in this VCL, for instance flags that
-  determine if regular expressions are case-sensitive in this vmod or
-  similar.
-
 * ``PRIV_TASK`` "per task" private pointers are useful for state that
   applies to calls for either a specific request or a backend
   request. For instance this can be the result of a parsed cookie
@@ -266,6 +298,11 @@ The VCL compiler supports the following private pointers:
   duration of one request and all its ESI-includes. They are only
   defined for the client side. When used from backend VCL subs, a NULL
   pointer will be passed.
+
+* ``PRIV_VCL`` "per vcl" private pointers are useful for such global
+  state that applies to all calls in this VCL, for instance flags that
+  determine if regular expressions are case-sensitive in this vmod or
+  similar.
 
 The way it works in the vmod code, is that a ``struct vmod_priv *`` is
 passed to the functions where one of the ``PRIV_*`` argument types is
@@ -313,27 +350,44 @@ malloc would look like this::
 
 The per-call vmod_privs are freed before the per-vcl vmod_priv.
 
-Init functions
-==============
+.. _ref-vmod-event-functions:
 
-VMODs can have an "init" method which is called when a VCL
-which imports the VMOD is loaded.
+Event functions
+===============
 
-The first argument to the init function is the vmod_priv specific
-to this particular VCL, and if necessary, a VCL specific VMOD "fini"
-function can be attached to its "free" hook.
+VMODs can have an "event" function which is called when a VCL which imports
+the VMOD is loaded, made active, or discarded.  This corresponds to the
+``VCL_EVENT_LOAD``, ``VCL_EVENT_USE``, and ``VCL_EVENT_DISCARD`` events,
+respectively.  In addition, this function will be called when the VCL state is
+changed to cold or warm, corresponding to the ``VCL_EVENT_COLD`` and
+``VCL_EVENT_WARM`` events.
 
-The second argument is a pointer to the VCL's config structure,
-which allows you to tell different VCLs which import this module
-apart.
+The first argument to the event function is a VRT context.
 
-Please notice that there is no "global" fini method.
+The second argument is the vmod_priv specific to this particular VCL,
+and if necessary, a VCL specific VMOD "fini" function can be attached
+to its "free" hook.
 
-If the VMOD has private global state, which includes any sockets
-or files opened, any memory allocated to global or private variables
-in the C-code etc, it is the VMODs own responsibility to track how
-many VCLs have called init (& fini) and free this global state
-when the count reaches zero.
+The third argument is the event.
+
+If the VMOD has private global state, which includes any sockets or files
+opened, any memory allocated to global or private variables in the C-code etc,
+it is the VMODs own responsibility to track how many VCLs were loaded or
+discarded and free this global state when the count reaches zero.
+
+VMOD writers are *strongly* encouraged to release all per-VCL resources for a
+given VCL when it emits a ``VCL_EVENT_COLD`` event. You will get a chance to
+reacquire the resources before the VCL becomes active again and be notified
+first with a ``VCL_EVENT_WARM`` event, and then a ``VCL_EVENT_USE`` event.
+Unless a user decides that a given VCL should always be warm, an inactive VMOD
+will eventually become cold and should manage resources accordingly.
+
+.. _ref-vmod-objects:
+
+VMOD Objects
+============
+
+TODO
 
 When to lock, and when not to lock
 ==================================
@@ -341,7 +395,7 @@ When to lock, and when not to lock
 Varnish is heavily multithreaded, so by default VMODs must implement
 their own locking to protect shared resources.
 
-When a VCL is loaded or unloaded, the init and priv->free are
+When a VCL is loaded or unloaded, the event and priv->free are
 run sequentially all in a single thread, and there is guaranteed
 to be no other activity related to this particular VCL, nor are
 there  init/fini activity in any other VCL or VMOD at this time.
@@ -369,7 +423,7 @@ times it will give you the same single copy of the shared library
 file, without checking if it was updated in the meantime.
 
 This is obviously an oversight in the design of the dlopen(3) library
-function, but back in the late 1980ies nobody could imagine why a
+function, but back in the late 1980s nobody could imagine why a
 program would ever want to have multiple different versions of the
 same shared library mapped at the same time.
 

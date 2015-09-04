@@ -6,9 +6,9 @@
 VSL
 ===
 
----------------------
-Shared Memory Logging
----------------------
+-----------------------------
+Varnish Shared Memory Logging
+-----------------------------
 
 :Manual section: 7
 

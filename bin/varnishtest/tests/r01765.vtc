@@ -1,0 +1,27 @@
+varnishtest "subset headers in packed format"
+
+server s1 {
+	rxreq
+	txresp	-hdr "Foo:bar"
+	rxreq
+	txresp	-hdr "Foo:bax"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_hit {
+		if (obj.http.foo == "bar") {
+			return (pass);
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.foo == bar
+	txreq
+	rxresp
+	expect resp.http.foo == bax
+} -run
+
+delay 1

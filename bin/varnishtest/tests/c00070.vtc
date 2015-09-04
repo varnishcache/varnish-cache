@@ -1,0 +1,55 @@
+varnishtest "Test workspace functions in vmod_debug"
+
+server s1 {
+	rxreq
+	txresp
+
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_debug};
+	sub vcl_backend_response {
+		set beresp.http.free_backend = debug.workspace_free(backend);
+	}
+
+	sub vcl_deliver {
+		set resp.http.free_client = debug.workspace_free(client);
+		set resp.http.free_session = debug.workspace_free(session);
+		set resp.http.free_thread = debug.workspace_free(thread);
+
+		set resp.http.overflowed = debug.workspace_overflowed(client);
+		debug.workspace_allocate(client, 2048);
+
+		if (req.url == "/bar") {
+			debug.workspace_overflow(client);
+		}
+	}
+} -start
+
+logexpect l1 -v v1 -d 1 -g vxid -q "Error ~ 'overflow'" {
+        expect 0 *      Begin
+        expect * =      Error	"workspace_client overflow"
+        expect * =      End
+} -start
+
+client c1 {
+	txreq -url /foo
+	rxresp
+	expect resp.http.overflowed == "false"
+
+	expect resp.http.free_client > 57000
+	expect resp.http.free_backend > 57000
+	expect resp.http.free_session > 250
+	expect resp.http.free_thread > 2000
+} -run
+
+client c2 {
+	txreq -url /bar
+	rxresp
+	expect resp.status == 500
+} -run
+
+logexpect l1 -wait
+

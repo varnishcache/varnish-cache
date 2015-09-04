@@ -80,7 +80,8 @@ V1L_Reserve(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 
 	res = WS_Snapshot(ws);
 	v1l = WS_Alloc(ws, sizeof *v1l);
-	AN(v1l);
+	if (v1l == NULL)
+		return;
 	INIT_OBJ(v1l, V1L_MAGIC);
 
 	v1l->ws = ws;
@@ -89,9 +90,12 @@ V1L_Reserve(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	u = WS_Reserve(ws, 0);
 	u = PRNDDN(u);
 	u /= sizeof(struct iovec);
-	if (u > IOV_MAX)
+	if (u == 0) {
+		WS_Release(ws, 0);
+		WS_MarkOverflow(ws);
+		return;
+	} else if (u > IOV_MAX)
 		u = IOV_MAX;
-	AN(u);
 	v1l->iov = (void*)PRNDUP(ws->f);
 	v1l->siov = u;
 	v1l->ciov = u;

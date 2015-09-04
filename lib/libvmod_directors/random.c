@@ -87,8 +87,8 @@ vmod_random__init(VRT_CTX, struct vmod_directors_random **rrp,
 	ALLOC_OBJ(rr, VMOD_DIRECTORS_RANDOM_MAGIC);
 	AN(rr);
 	*rrp = rr;
-	vdir_new(&rr->vd, vcl_name, vmod_random_healthy, vmod_random_resolve,
-	    rr);
+	vdir_new(&rr->vd, "random", vcl_name, vmod_random_healthy,
+	    vmod_random_resolve, rr);
 }
 
 VCL_VOID __match_proto__()

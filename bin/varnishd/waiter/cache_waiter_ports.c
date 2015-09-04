@@ -131,7 +131,6 @@ vws_port_ev(struct vws *vws, struct waiter *w, port_event_t *ev, double now) {
 		    WAITER_REMCLOSE : WAITER_ACTION,
 		    now);
 	}
-	return;
 }
 
 static void *

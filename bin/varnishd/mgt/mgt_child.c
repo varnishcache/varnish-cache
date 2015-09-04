@@ -384,6 +384,7 @@ mgt_launch_child(struct cli *cli)
 			sa.sa_flags = SA_SIGINFO;
 			(void)sigaction(SIGSEGV, &sa, NULL);
 			(void)sigaction(SIGBUS, &sa, NULL);
+			(void)sigaction(SIGABRT, &sa, NULL);
 		}
 		(void)signal(SIGINT, SIG_DFL);
 		(void)signal(SIGTERM, SIG_DFL);

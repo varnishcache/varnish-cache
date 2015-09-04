@@ -27,4 +27,4 @@ client c1 {
 	expect resp.http.x-varnish == "1005 1004"
 } -run
 
-varnish v1 -expect sess_pipeline == 2
+varnish v1 -expect sess_readahead == 2

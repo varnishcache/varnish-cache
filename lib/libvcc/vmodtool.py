@@ -60,6 +60,7 @@ ctypes = {
 	'PRIV_VCL':	"struct vmod_priv *",
 	'PRIV_TASK':	"struct vmod_priv *",
 	'PRIV_TOP':	"struct vmod_priv *",
+	'PROBE':	"VCL_PROBE",
 	'REAL':		"VCL_REAL",
 	'STRING':	"VCL_STRING",
 	'STRING_LIST':	"const char *, ...",
@@ -743,8 +744,8 @@ class FileSection(object):
 		if re.match("['\"]", l):
 			m = re.match("(['\"]).*?(\\1)", l)
 			if not m:
-			        raise FormatError("Unbalanced quote",
-					  "Unbalanced quote on line %d" % ln)
+				raise FormatError("Unbalanced quote",
+				    "Unbalanced quote on line %d" % ln)
 			self.tl.append(Token(ln, 0, l[:m.end()]))
 			self.l.insert(0, (ln, l[m.end():]))
 			return
@@ -869,14 +870,6 @@ def runmain(inputvcc, outputname="vcc_if"):
 	#######################################################################
 	# Break into sections
 
-	keywords = {
-		"$Module":	True,
-		"$Function":	True,
-		"$Object":	True,
-		"$Method":	True,
-		"$Event":	True,
-	}
-
 	sl = []
 	sc = FileSection()
 	sl.append(sc)
@@ -884,7 +877,7 @@ def runmain(inputvcc, outputname="vcc_if"):
 		ln += 1
 		l = lines.pop(0)
 		j = l.split()
-		if len(j) > 0 and j[0] in keywords:
+		if len(j) > 0 and re.match("^\$", j[0]):
 			sc = FileSection()
 			sl.append(sc)
 		sc.add_line(ln, l)

@@ -554,3 +554,28 @@ VTCP_Check(int a)
 #endif
 	return (0);
 }
+
+/*--------------------------------------------------------------------
+ *
+ */
+
+int
+VTCP_read(int fd, void *ptr, size_t len, double tmo)
+{
+	struct pollfd pfd[1];
+	int i, j;
+
+	if (tmo > 0.0) {
+		pfd[0].fd = fd;
+		pfd[0].events = POLLIN;
+		pfd[0].revents = 0;
+		j = (int)floor(tmo * 1e3);
+		if (j == 0)
+			j++;
+		j = poll(pfd, 1, j);
+		if (j == 0)
+			return (-2);
+	}
+	i = read(fd, ptr, len);
+	return (i < 0 ? -1 : i);
+}

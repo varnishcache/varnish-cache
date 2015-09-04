@@ -67,7 +67,7 @@ off" period.
 The Varnish way:
 ----------------
 
-If Varnishd starts, and finds a locked shared memory file, it will
+If varnishd starts, and finds a locked shared memory file, it will
 exit with a message about using different -n arguments if you want
 multiple instances of varnishd.
 

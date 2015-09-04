@@ -71,6 +71,7 @@ extern pthread_t	vtc_thread;
 extern int iflg;
 extern unsigned vtc_maxdur;
 extern int vtc_witness;
+extern int feature_dns;
 
 void init_sema(void);
 void init_server(void);

@@ -1,0 +1,4 @@
+varnishtest "bad protocol specs for -a"
+
+err_shell "Too many sub-arguments" "${varnishd} -a 127.0.0.1:80000,PROXY,FOO -d 2>&1"
+err_shell "Too many sub-arguments" "${varnishd} -a 127.0.0.1:80000,HTTP/1,FOO -d 2>&1"

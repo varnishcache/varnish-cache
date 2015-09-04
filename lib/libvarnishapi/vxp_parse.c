@@ -397,7 +397,6 @@ vxp_expr_not(struct vxp *vxp, struct vex **pvex)
 	}
 
 	vxp_expr_group(vxp, pvex);
-	return;
 }
 
 /*

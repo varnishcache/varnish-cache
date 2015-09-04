@@ -171,12 +171,15 @@ vwp_main(void *priv)
 			i = -1;
 		else
 			i = (int)floor(1e3 * (then - VTIM_real()));
+		assert(vwp->hpoll > 0);
+		AN(vwp->pollfd);
 		v = poll(vwp->pollfd, vwp->hpoll, i);
 		assert(v >= 0);
 		now = VTIM_real();
 		if (vwp->pollfd[0].revents)
 			v--;
 		for (i = 1; i < vwp->hpoll;) {
+VSL(SLT_Debug, vwp->pollfd[i].fd, "POLL loop i=%d revents=0x%x", i, vwp->pollfd[i].revents);
 			assert(vwp->pollfd[i].fd != vwp->pipes[0]);
 			wp = vwp->idx[i];
 			CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);

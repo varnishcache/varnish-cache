@@ -51,11 +51,12 @@ vdir_expand(struct vdir *vd, unsigned n)
 }
 
 void
-vdir_new(struct vdir **vdp, const char *vcl_name, vdi_healthy_f *healthy,
-    vdi_resolve_f *resolve, void *priv)
+vdir_new(struct vdir **vdp, const char *name, const char *vcl_name,
+    vdi_healthy_f *healthy, vdi_resolve_f *resolve, void *priv)
 {
 	struct vdir *vd;
 
+	AN(name);
 	AN(vcl_name);
 	AN(vdp);
 	AZ(*vdp);
@@ -66,6 +67,7 @@ vdir_new(struct vdir **vdp, const char *vcl_name, vdi_healthy_f *healthy,
 
 	ALLOC_OBJ(vd->dir, DIRECTOR_MAGIC);
 	AN(vd->dir);
+	vd->dir->name = name;
 	REPLACE(vd->dir->vcl_name, vcl_name);
 	vd->dir->priv = priv;
 	vd->dir->healthy = healthy;

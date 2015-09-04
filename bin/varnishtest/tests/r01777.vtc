@@ -1,0 +1,18 @@
+varnishtest "range asked longer than object"
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Transfer-Encoding: chunked"
+	delay .5
+	chunkedlen 64
+	chunkedlen 64
+	chunkedlen 0
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+	txreq -hdr "Range: bytes=0-129"
+	rxresp
+	expect resp.status == 200
+} -run

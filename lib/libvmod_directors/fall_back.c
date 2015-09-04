@@ -91,7 +91,7 @@ vmod_fallback__init(VRT_CTX,
 	ALLOC_OBJ(rr, VMOD_DIRECTORS_FALLBACK_MAGIC);
 	AN(rr);
 	*rrp = rr;
-	vdir_new(&rr->vd, vcl_name, vmod_fallback_healthy,
+	vdir_new(&rr->vd, "fallback", vcl_name, vmod_fallback_healthy,
 	    vmod_fallback_resolve, rr);
 }
 

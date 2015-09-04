@@ -74,7 +74,8 @@ VDP_push(struct req *req, vdp_bytes *func, void *priv, int bottom)
 	VSB_delete(vsb);
 #endif
 	vdp = WS_Alloc(req->ws, sizeof *vdp);
-	AN(vdp);
+	if (vdp == NULL)
+		return;
 	INIT_OBJ(vdp, VDP_ENTRY_MAGIC);
 	vdp->func = func;
 	vdp->priv = priv;

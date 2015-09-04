@@ -384,10 +384,6 @@ VSC_F(sess_closed_err,		uint64_t, 0, 'c', 'i', info,
 	"Total number of sessions closed with errors."
 	" See sc_* diag counters for detailed breakdown"
 )
-VSC_F(sess_pipeline,		uint64_t, 1, 'c', 'i', info,
-    "Session Pipeline",
-	""
-)
 VSC_F(sess_readahead,		uint64_t, 1, 'c', 'i', info,
     "Session Read Ahead",
 	""

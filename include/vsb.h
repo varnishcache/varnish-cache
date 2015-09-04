@@ -48,6 +48,7 @@ struct vsb {
 #define	VSB_FINISHED	0x00020000	/* set by VSB_finish() */
 #define	VSB_DYNSTRUCT	0x00080000	/* vsb must be freed */
 	int		 s_flags;	/* flags */
+	int		 s_indent;	/* Ident level */
 };
 
 #ifdef __cplusplus
@@ -75,6 +76,7 @@ char		*VSB_data(const struct vsb *);
 ssize_t		 VSB_len(const struct vsb *);
 void		 VSB_delete(struct vsb *);
 void		 VSB_quote(struct vsb *s, const char *p, int len, int how);
+void		 VSB_indent(struct vsb *, int);
 #ifdef __cplusplus
 };
 #endif

@@ -21,7 +21,7 @@ Varnish Glossary
 
    master (process)
 	One of the two processes in the varnishd program.
-	The master proces is a manager/nanny process which handles
+	The master process is a manager/nanny process which handles
 	configuration, parameters, compilation of :term:VCL etc.
 	but it does never get near the actual HTTP traffic.
 
@@ -55,7 +55,7 @@ Varnish Glossary
 	Program which presents varnish transaction log in "NCSA" format.
 
    varnishhist
-	Eye-candy program showing responsetime histogram in 1980ies
+	Eye-candy program showing response time histogram in 1980s
 	ASCII-art style.
 
    varnishtest
@@ -86,8 +86,8 @@ Varnish Glossary
 	to varnishd they are just bytes.
 
    object
-	The (possibly) cached version of a backend response. Varnishd
-	receives a reponse from the backend and creates an object,
+	The (possibly) cached version of a backend response. varnishd
+	receives a response from the backend and creates an object,
 	from which it may deliver cached responses to clients. If the
 	object is created as a result of a request which is passed, it
 	will not be stored for caching.

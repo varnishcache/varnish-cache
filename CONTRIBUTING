@@ -13,5 +13,11 @@ Official development tree is here:
 
 Patches can be sent to varnish-dev@varnish-cache.org.
 
-Documentation fixes and other small items for the documentation team may be
-sent as Github pull requests.
+
+Github pull requests
+--------------------
+
+Documentation updates and other non-trivial items for the documentation
+team may be sent as Github pull requests.
+
+Pull requests outside of this scope will be closed without review.

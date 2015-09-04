@@ -62,13 +62,15 @@ mac_opensocket(struct listen_sock *ls, struct cli *cli)
 	}
 	ls->sock = VTCP_bind(ls->addr, NULL);
 	fail = errno;
-	if (ls->sock >= 0)
-		mgt_child_inherit(ls->sock, "sock");
-	if (cli != NULL && ls->sock < 0) {
-		VCLI_Out(cli, "Could not get socket %s: %s\n",
-		    ls->name, strerror(errno));
+	if (ls->sock < 0) {
+		if (cli != NULL)
+			VCLI_Out(cli, "Could not get socket %s: %s\n",
+			    ls->name, strerror(errno));
+		AN(fail);
+		return (fail);
 	}
-	return (fail);
+	mgt_child_inherit(ls->sock, "sock");
+	return (0);
 }
 
 /*=====================================================================
@@ -118,7 +120,7 @@ struct mac_help {
 	enum sess_step		first_step;
 };
 
-static int __match_proto__(vss_resolver_f)
+static int __match_proto__(vss_resolved_f)
 mac_callback(void *priv, const struct suckaddr *sa)
 {
 	struct mac_help *mh;
@@ -152,7 +154,7 @@ MAC_Validate(void)
 		VJ_master(JAIL_MASTER_PRIVPORT);
 		fail = mac_opensocket(ls, NULL);
 		VJ_master(JAIL_MASTER_LOW);
-		if (ls->sock < 0)
+		if (fail)
 			ARGV_ERR("Cannot open socket: %s: %s\n",
 			    ls->name, strerror(fail));
 		if (VSA_Port(ls->addr) == 0) {
@@ -192,9 +194,13 @@ MAC_Arg(const char *arg)
 	if (av[2] == NULL || !strcmp(av[2], "HTTP/1")) {
 		mh->first_step = S_STP_H1NEWSESS;
 		mh->proto_name = "HTTP/1";
+		if (av[2] != NULL && av[3] != NULL)
+			ARGV_ERR("Too many sub-arguments to -a(HTTP/1))\n");
 	} else if (!strcmp(av[2], "PROXY")) {
 		mh->first_step = S_STP_PROXYNEWSESS;
 		mh->proto_name = "PROXY";
+		if (av[3] != NULL)
+			ARGV_ERR("Too many sub-arguments to -a(PROXY))\n");
 	} else {
 		ARGV_ERR("Unknown protocol '%s'\n", av[2]);
 	}

@@ -105,6 +105,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	Lck_Lock(&bp->mtx);
 	bp->n_conn++;
 	bp->vsc->conn++;
+	bp->vsc->req++;
 	Lck_Unlock(&bp->mtx);
 
 	VTCP_myname(vc->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
@@ -112,7 +113,6 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s",
 	    vc->fd, bp->display_name, abuf2, pbuf2, abuf1, pbuf1);
 
-	bp->vsc->req++;
 	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
 	bo->htc->priv = vc;
 	bo->htc->fd = vc->fd;
@@ -319,17 +319,17 @@ vbe_panic(const struct director *d, struct vsb *vsb)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
-	VSB_printf(vsb, "      display_name = %s\n", bp->display_name);
+	VSB_printf(vsb, "display_name = %s,\n", bp->display_name);
 	if (bp->ipv4_addr != NULL)
-		VSB_printf(vsb, "      ipv4 = %s\n", bp->ipv4_addr);
+		VSB_printf(vsb, "ipv4 = %s,\n", bp->ipv4_addr);
 	if (bp->ipv6_addr != NULL)
-		VSB_printf(vsb, "      ipv6 = %s\n", bp->ipv6_addr);
-	VSB_printf(vsb, "      port = %s\n", bp->port);
-	VSB_printf(vsb, "      hosthdr = %s\n", bp->hosthdr);
-	VSB_printf(vsb, "      health=%s, admin_health=%s",
+		VSB_printf(vsb, "ipv6 = %s,\n", bp->ipv6_addr);
+	VSB_printf(vsb, "port = %s,\n", bp->port);
+	VSB_printf(vsb, "hosthdr = %s,\n", bp->hosthdr);
+	VSB_printf(vsb, "health=%s, admin_health=%s",
 	    bp->healthy ? "healthy" : "sick", bp->admin_health);
-	VSB_printf(vsb, ", changed=%.1f\n", bp->health_changed);
-	VSB_printf(vsb, "      n_conn = %u\n", bp->n_conn);
+	VSB_printf(vsb, ", changed=%.1f,\n", bp->health_changed);
+	VSB_printf(vsb, "n_conn = %u,\n", bp->n_conn);
 }
 
 /*--------------------------------------------------------------------*/

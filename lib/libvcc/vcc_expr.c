@@ -516,6 +516,23 @@ vcc_Eval_Backend(struct vcc *tl, struct expr **e, const struct symbol *sym)
 
 /*--------------------------------------------------------------------
  */
+
+void
+vcc_Eval_Probe(struct vcc *tl, struct expr **e, const struct symbol *sym)
+{
+
+	assert(sym->kind == SYM_PROBE);
+
+	vcc_ExpectCid(tl);
+	vcc_AddRef(tl, tl->t, SYM_PROBE);
+	*e = vcc_mk_expr(PROBE, "&vgc_probe_%.*s", PF(tl->t));
+	(*e)->constant = EXPR_VAR;      /* XXX ? */
+	vcc_NextToken(tl);
+}
+
+/*--------------------------------------------------------------------
+ */
+
 void
 vcc_Eval_Var(struct vcc *tl, struct expr **e, const struct symbol *sym)
 {
@@ -812,6 +829,8 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		sym = NULL;
 		if (fmt == BACKEND)
 			sym = VCC_FindSymbol(tl, tl->t, SYM_BACKEND);
+		if (fmt == PROBE)
+			sym = VCC_FindSymbol(tl, tl->t, SYM_PROBE);
 		if (sym == NULL)
 			sym = VCC_FindSymbol(tl, tl->t, SYM_VAR);
 		if (sym == NULL)
@@ -831,6 +850,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		case SYM_VAR:
 		case SYM_FUNC:
 		case SYM_BACKEND:
+		case SYM_PROBE:
 			AN(sym->eval);
 			AZ(*e);
 			sym->eval(tl, e, sym);
