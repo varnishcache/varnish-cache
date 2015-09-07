@@ -831,8 +831,10 @@ void http_CollectHdr(struct http *hp, const char *hdr);
 void http_VSL_log(const struct http *hp);
 void HTTP_Merge(struct worker *, struct objcore *, struct http *to);
 uint16_t HTTP_GetStatusPack(struct worker *, struct objcore *oc);
-const char *HTTP_GetHdrPack(struct worker *, struct objcore *,
-    const char *hdr);
+int HTTP_IterHdrPack(struct worker *, struct objcore *, const char **);
+#define HTTP_FOREACH_PACK(wrk, oc, ptr) \
+	 for ((ptr) = NULL; HTTP_IterHdrPack(wrk, oc, &(ptr));)
+const char *HTTP_GetHdrPack(struct worker *, struct objcore *, const char *hdr);
 enum sess_close http_DoConnection(struct http *hp);
 
 /* cache_http1_proto.c */
