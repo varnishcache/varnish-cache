@@ -101,6 +101,7 @@ noinst_HEADERS = \
 	builtin_vcl.h \
 	cache/cache_esi.h \
 	cache/cache_pool.h \
+	cache/cache_priv.h \
 	common/heritage.h \
 	hash/hash_slinger.h \
 	http1/cache_http1.h \
@@ -124,6 +125,7 @@ nobase_pkginclude_HEADERS = \
 
 varnishd_CFLAGS = \
 	@PCRE_CFLAGS@ \
+	-DVARNISHD_IS_NOT_A_VMOD \
         -DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
 	-DVARNISH_VMOD_DIR='"${pkglibdir}/vmods"' \
 	-DVARNISH_VCL_DIR='"${varnishconfdir}"'

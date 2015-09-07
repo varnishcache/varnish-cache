@@ -648,37 +648,11 @@ struct sess {
 
 };
 
-/*--------------------------------------------------------------------
- * A transport is how we talk HTTP for a given request.
- * This is different from a protocol because ESI child requests have
- * their own "protocol" to talk to the parent ESI request, which may
- * or may not, be talking a "real" HTTP protocol itself.
- */
-
-typedef void vtr_deliver_f (struct req *, struct busyobj *, int wantbody);
-
-struct transport {
-	unsigned		magic;
-#define TRANSPORT_MAGIC		0xf157f32f
-	vtr_deliver_f		*deliver;
-};
-
 /* Prototypes etc ----------------------------------------------------*/
 
 /* Cross file typedefs */
 
 typedef enum htc_status_e htc_complete_f(struct http_conn *);
-
-/* cache_acceptor.c */
-void VCA_Init(void);
-void VCA_Shutdown(void);
-
-/* cache_backend_cfg.c */
-void VBE_InitCfg(void);
-void VBE_Poll(void);
-
-/* cache_backend_poll.c */
-void VBP_Init(void);
 
 /* cache_ban.c */
 struct ban *BAN_New(void);
@@ -686,8 +660,6 @@ int BAN_AddTest(struct ban *, const char *, const char *, const char *);
 void BAN_Free(struct ban *b);
 char *BAN_Insert(struct ban *b);
 void BAN_Free_Errormsg(char *);
-void BAN_Init(void);
-void BAN_Shutdown(void);
 void BAN_NewObjCore(struct objcore *oc);
 void BAN_DestroyObj(struct objcore *oc);
 int BAN_CheckObject(struct worker *, struct objcore *, struct req *);
@@ -699,7 +671,6 @@ void BAN_TailDeref(struct ban **ban);
 double BAN_Time(const struct ban *ban);
 
 /* cache_busyobj.c */
-void VBO_Init(void);
 struct busyobj *VBO_GetBusyObj(struct worker *, const struct req *);
 void VBO_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
 void VBO_extend(struct busyobj *, ssize_t);
@@ -719,9 +690,6 @@ enum req_fsm_nxt CNT_Request(struct worker *, struct req *);
 void CNT_AcctLogCharge(struct dstat *, struct req *);
 
 /* cache_cli.c [CLI] */
-void CLI_Init(void);
-void CLI_Run(void);
-void CLI_AddFuncs(struct cli_proto *p);
 extern pthread_t cli_thread;
 #define ASSERT_CLI() do {assert(pthread_self() == cli_thread);} while (0)
 
@@ -732,7 +700,6 @@ double EXP_Ttl(const struct req *, const struct exp*);
 double EXP_When(const struct exp *exp);
 void EXP_Insert(struct worker *wrk, struct objcore *oc);
 void EXP_Inject(struct worker *wrk, struct objcore *oc, struct lru *lru);
-void EXP_Init(void);
 void EXP_Rearm(struct objcore *, double now, double ttl, double grace,
     double keep);
 void EXP_Touch(struct objcore *oc, double now);
@@ -757,9 +724,6 @@ enum vbf_fetch_mode_e {
 };
 void VBF_Fetch(struct worker *wrk, struct req *req,
     struct objcore *oc, struct objcore *oldoc, enum vbf_fetch_mode_e);
-
-/* cache_fetch_proc.c */
-void VFP_Init(void);
 
 /* cache_gzip.c */
 struct vgz;
@@ -797,7 +761,6 @@ void HTTP_Copy(struct http *to, const struct http * const fm);
 struct http *HTTP_create(void *p, uint16_t nhttp);
 const char *http_Status2Reason(unsigned);
 unsigned http_EstimateWS(const struct http *fm, unsigned how);
-void HTTP_Init(void);
 void http_PutResponse(struct http *to, const char *proto, uint16_t status,
     const char *response);
 void http_FilterReq(struct http *to, const struct http *fm, unsigned how);
@@ -856,12 +819,6 @@ extern const char H__Reason[];
 uint32_t VXID_Get(struct worker *, uint32_t marker);
 extern volatile struct params * cache_param;
 extern pthread_key_t witness_key;
-void THR_SetName(const char *name);
-const char* THR_GetName(void);
-void THR_SetBusyobj(const struct busyobj *);
-struct busyobj * THR_GetBusyobj(void);
-void THR_SetRequest(const struct req *);
-struct req * THR_GetRequest(void);
 
 /* cache_lck.c */
 
@@ -873,7 +830,6 @@ void Lck__New(struct lock *lck, struct VSC_C_lck *, const char *);
 void Lck__Assert(const struct lock *lck, int held);
 
 /* public interface: */
-void LCK_Init(void);
 void Lck_Delete(struct lock *lck);
 int Lck_CondWait(pthread_cond_t *cond, struct lock *lck, double);
 
@@ -933,12 +889,10 @@ int ObjCheckFlag(struct worker *, struct objcore *oc, enum obj_flags of);
 void ObjSetFlag(struct worker *, struct objcore *, enum obj_flags of, int val);
 
 /* cache_panic.c */
-void PAN_Init(void);
 const char *body_status_2str(enum body_status e);
 const char *sess_close_2str(enum sess_close sc, int want_desc);
 
 /* cache_pool.c */
-void Pool_Init(void);
 int Pool_Task(struct pool *pp, struct pool_task *task, enum task_how how);
 int Pool_Task_Arg(struct worker *, task_func_t *,
     const void *arg, size_t arg_len);
@@ -946,9 +900,6 @@ void Pool_Sumstat(struct worker *w);
 int Pool_TrySumstat(struct worker *wrk);
 void Pool_PurgeStat(unsigned nobj);
 int Pool_Task_Any(struct pool_task *task, enum task_how how);
-
-/* cache_proxy.c [VPX] */
-task_func_t VPX_Proto_Sess;
 
 /* cache_range.c [VRG] */
 void VRG_dorange(struct req *req, const char *r);
@@ -997,13 +948,8 @@ const char *SES_Get_String_Attr(const struct sess *sp, enum sess_attr a);
 
 /* cache_shmlog.c */
 extern struct VSC_C_main *VSC_C_main;
-void VSM_Init(void);
 void *VSM_Alloc(unsigned size, const char *class, const char *type,
     const char *ident);
-void VSL_Setup(struct vsl_log *vsl, void *ptr, size_t len);
-void VSL_ChgId(struct vsl_log *vsl, const char *typ, const char *why,
-    uint32_t vxid);
-void VSL_End(struct vsl_log *vsl);
 void VSM_Free(void *ptr);
 #ifdef VSL_ENDMARKER
 void VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
@@ -1047,13 +993,8 @@ enum vry_finish_flag { KEEP, DISCARD };
 void VRY_Finish(struct req *req, enum vry_finish_flag);
 
 /* cache_vcl.c */
-struct director *VCL_DefaultDirector(const struct vcl *);
-const struct vrt_backend_probe *VCL_DefaultProbe(const struct vcl *);
-void VCL_Init(void);
 const char *VCL_Method_Name(unsigned);
 const char *VCL_Name(const struct vcl *);
-void VCL_Panic(struct vsb *, const struct vcl *);
-void VCL_Poll(void);
 void VCL_Ref(struct vcl *);
 void VCL_Refresh(struct vcl **);
 void VCL_Rel(struct vcl **);
@@ -1073,11 +1014,6 @@ const char *VCL_Return_Name(unsigned);
  */
 const char *VRT_String(struct ws *ws, const char *h, const char *p, va_list ap);
 char *VRT_StringList(char *d, unsigned dl, const char *p, va_list ap);
-void VRTPRIV_init(struct vrt_privs *privs);
-void VRTPRIV_dynamic_kill(struct vrt_privs *privs, uintptr_t id);
-
-/* cache_vrt_vmod.c */
-void VMOD_Init(void);
 
 /* cache_wrk.c */
 
@@ -1118,10 +1054,6 @@ void STV_open(void);
 void STV_close(void);
 int STV_BanInfo(enum baninfo event, const uint8_t *ban, unsigned len);
 void STV_BanExport(const uint8_t *bans, unsigned len);
-
-/* storage_persistent.c */
-void SMP_Init(void);
-void SMP_Ready(void);
 
 /*
  * A normal pointer difference is signed, but we never want a negative value
@@ -1183,3 +1115,8 @@ DO_DEBUG(enum debug_bits x)
 		if (DO_DEBUG(debug_bit))			\
 			VSL(SLT_Debug, (id), __VA_ARGS__);	\
 	} while (0)
+
+#ifdef VARNISHD_IS_NOT_A_VMOD
+#  include "cache/cache_priv.h"
+#endif
+

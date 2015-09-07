@@ -15,6 +15,7 @@ flexelint \
 	-I../../lib/libvgz \
 	-I../.. \
 	-I/usr/local/include \
+	-DVARNISHD_IS_NOT_A_VMOD \
 	-DVARNISH_STATE_DIR=\"foo\" \
 	-DVARNISH_VMOD_DIR=\"foo\" \
 	-DVARNISH_VCL_DIR=\"foo\" \
