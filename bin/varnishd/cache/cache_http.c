@@ -806,6 +806,11 @@ http_EstimateWS(const struct http *fm, unsigned how)
 
 /*--------------------------------------------------------------------
  * Encode http struct as byte string.
+ *
+ * XXX: We could save considerable special-casing below by encoding also
+ * XXX: H__Status, H__Reason and H__Proto into the string, but it would
+ * XXX: add 26-30 bytes to all encoded objects to save a little code.
+ * XXX: It could possibly be a good idea for later HTTP versions.
  */
 
 void
@@ -895,6 +900,32 @@ HTTP_GetStatusPack(struct worker *wrk, struct objcore *oc)
 
 /*--------------------------------------------------------------------*/
 
+/* Get the first packed header */
+int
+HTTP_IterHdrPack(struct worker *wrk, struct objcore *oc, const char **p)
+{
+	const char *ptr;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(p);
+
+	if (*p == NULL) {
+		ptr = ObjGetattr(wrk, oc, OA_HEADERS, NULL);
+		AN(ptr);
+		ptr += 4;	/* Skip nhd and status */
+		ptr = strchr(ptr, '\0') + 1;	/* Skip :proto: */
+		ptr = strchr(ptr, '\0') + 1;	/* Skip :status: */
+		ptr = strchr(ptr, '\0') + 1;	/* Skip :reason: */
+		*p = ptr;
+	} else {
+		*p = strchr(*p, '\0') + 1;	/* Skip to next header */
+	}
+	if (**p == '\0')
+		return (0);
+	return (1);
+}
+
 const char *
 HTTP_GetHdrPack(struct worker *wrk, struct objcore *oc, const char *hdr)
 {
@@ -911,33 +942,32 @@ HTTP_GetHdrPack(struct worker *wrk, struct objcore *oc, const char *hdr)
 	assert(hdr[l] == ':');
 	hdr++;
 
-	ptr = ObjGetattr(wrk, oc, OA_HEADERS, NULL);
-	AN(ptr);
+	if (hdr[0] == ':') {
+		/* Special cases */
+		ptr = ObjGetattr(wrk, oc, OA_HEADERS, NULL);
+		AN(ptr);
+		ptr += 4;	/* Skip nhd and status */
 
-	/* Skip nhd and status */
-	ptr += 4;
-	VSL(SLT_Debug, 0, "%d %s", __LINE__, ptr);
+		if (!strcmp(hdr, ":proto:"))
+			return (ptr);
+		ptr = strchr(ptr, '\0') + 1;
+		if (!strcmp(hdr, ":status:"))
+			return (ptr);
+		ptr = strchr(ptr, '\0') + 1;
+		if (!strcmp(hdr, ":reason:"))
+			return (ptr);
+		WRONG("Unknown magic packed header");
+	}
 
-	/* Skip PROTO, STATUS and REASON */
-	if (!strcmp(hdr, ":proto:"))
-		return (ptr);
-	ptr = strchr(ptr, '\0') + 1;
-	if (!strcmp(hdr, ":status:"))
-		return (ptr);
-	ptr = strchr(ptr, '\0') + 1;
-	if (!strcmp(hdr, ":reason:"))
-		return (ptr);
-	ptr = strchr(ptr, '\0') + 1;
-
-	while (*ptr != '\0') {
+	HTTP_FOREACH_PACK(wrk, oc, ptr) {
 		if (!strncasecmp(ptr, hdr, l)) {
 			ptr += l;
 			while (vct_islws(*ptr))
 				ptr++;
 			return (ptr);
 		}
-		ptr = strchr(ptr, '\0') + 1;
 	}
+
 	return (NULL);
 }
 
