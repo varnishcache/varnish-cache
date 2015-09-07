@@ -845,6 +845,9 @@ unsigned HTTP1_Write(const struct worker *w, const struct http *hp, const int*);
 #define HTTPH(a, b, c) extern char b[];
 #include "tbl/http_headers.h"
 #undef HTTPH
+extern const char H__Status[];
+extern const char H__Proto[];
+extern const char H__Reason[];
 
 /* cache_main.c */
 #define VXID(u) ((u) & VSL_IDENTMASK)
