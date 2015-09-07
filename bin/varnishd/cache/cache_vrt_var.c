@@ -157,7 +157,7 @@ VRT_r_obj_proto(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
 
-	return (HTTP_GetHdrPack(ctx->req->wrk, ctx->req->objcore, ":proto"));
+	return (HTTP_GetHdrPack(ctx->req->wrk, ctx->req->objcore, H__Proto));
 }
 
 const char *
@@ -167,7 +167,7 @@ VRT_r_obj_reason(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
 
-	return (HTTP_GetHdrPack(ctx->req->wrk, ctx->req->objcore, ":reason"));
+	return (HTTP_GetHdrPack(ctx->req->wrk, ctx->req->objcore, H__Reason));
 }
 
 /*--------------------------------------------------------------------

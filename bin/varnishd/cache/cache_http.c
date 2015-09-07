@@ -44,6 +44,10 @@
 #include "tbl/http_headers.h"
 #undef HTTPH
 
+const char H__Status[]	= "\010:status:";
+const char H__Proto[]	= "\007:proto:";
+const char H__Reason[]	= "\010:reason:";
+
 /*--------------------------------------------------------------------
  * These two functions are in an incestous relationship with the
  * order of macros in include/tbl/vsl_tags_http.h
@@ -901,6 +905,12 @@ HTTP_GetHdrPack(struct worker *wrk, struct objcore *oc, const char *hdr)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(hdr);
 
+	l = hdr[0];
+	assert(l > 0);
+	assert(l == strlen(hdr + 1));
+	assert(hdr[l] == ':');
+	hdr++;
+
 	ptr = ObjGetattr(wrk, oc, OA_HEADERS, NULL);
 	AN(ptr);
 
@@ -909,20 +919,15 @@ HTTP_GetHdrPack(struct worker *wrk, struct objcore *oc, const char *hdr)
 	VSL(SLT_Debug, 0, "%d %s", __LINE__, ptr);
 
 	/* Skip PROTO, STATUS and REASON */
-	if (!strcmp(hdr, ":proto"))
+	if (!strcmp(hdr, ":proto:"))
 		return (ptr);
 	ptr = strchr(ptr, '\0') + 1;
-	if (!strcmp(hdr, ":status"))
+	if (!strcmp(hdr, ":status:"))
 		return (ptr);
 	ptr = strchr(ptr, '\0') + 1;
-	if (!strcmp(hdr, ":reason"))
+	if (!strcmp(hdr, ":reason:"))
 		return (ptr);
 	ptr = strchr(ptr, '\0') + 1;
-
-	l = hdr[0];
-	assert(l == strlen(hdr + 1));
-	assert(hdr[l] == ':');
-	hdr++;
 
 	while (*ptr != '\0') {
 		if (!strncasecmp(ptr, hdr, l)) {

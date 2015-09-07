@@ -857,7 +857,7 @@ ban_evaluate(struct worker *wrk, const uint8_t *bs, struct objcore *oc,
 			arg1 = HTTP_GetHdrPack(wrk, oc, bt.arg1_spec);
 			break;
 		case BANS_ARG_OBJSTATUS:
-			arg1 = HTTP_GetHdrPack(wrk, oc, ":status");
+			arg1 = HTTP_GetHdrPack(wrk, oc, H__Status);
 			break;
 		default:
 			WRONG("Wrong BAN_ARG code");
