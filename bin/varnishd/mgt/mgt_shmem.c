@@ -104,7 +104,7 @@ vsm_n_check(void)
 	struct VSM_head vsmh;
 	int retval = 1;
 
-	fd = open(VSM_FILENAME, O_RDWR, 0644);
+	fd = open(VSM_FILENAME, O_RDWR);
 	if (fd < 0)
 		return (0);
 

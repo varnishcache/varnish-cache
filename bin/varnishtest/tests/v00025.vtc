@@ -42,6 +42,7 @@ varnish v1 -arg "-i J.F.Nobody" -vcl+backend {
 	}
 
 	sub vcl_hit {
+		if (obj.status != 200) { return(synth(700)); }
 		if (obj.proto) { }
 		if (obj.reason) { }
 		if (obj.keep > 1m) { }

@@ -61,10 +61,10 @@ v1d_bytes(struct req *req, enum vdp_action act, void **priv,
 static void
 v1d_error(struct req *req, const char *msg)
 {
-        static const char r_500[] =
-                "HTTP/1.1 500 Internal Server Error\r\n"
-                "Server: Varnish\r\n"
-                "Connection: close\r\n\r\n";
+	static const char r_500[] =
+	    "HTTP/1.1 500 Internal Server Error\r\n"
+	    "Server: Varnish\r\n"
+	    "Connection: close\r\n\r\n";
 
 	VSLb(req->vsl, SLT_Error, "%s", msg);
 	VSLb(req->vsl, SLT_RespProtocol, "HTTP/1.1");
@@ -122,7 +122,7 @@ V1D_Deliver(struct req *req, struct busyobj *bo, int wantbody)
 
 	V1L_Reserve(req->wrk, req->ws, &req->sp->fd, req->vsl, req->t_prev);
 
-        if (WS_Overflowed(req->ws)) {
+	if (WS_Overflowed(req->ws)) {
 		v1d_error(req, "workspace_client overflow");
 		return;
 	}
