@@ -118,6 +118,8 @@ dist-hook:
 	$(MAKE) html
 	rm -rf $(BUILDDIR)/doctrees
 	cp -r $(BUILDDIR)/html $(distdir)/../
+	@ # Remove build artifacts.
+	rm $(distdir)/../html/.buildinfo $(distdir)/../html/*.inv
 
 distclean-local:
 	rm -rf $(BUILDDIR)
