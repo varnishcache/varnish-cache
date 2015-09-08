@@ -15,7 +15,6 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_deliver {
-		set resp.http.free_client = debug.workspace_free(client);
 		set resp.http.free_session = debug.workspace_free(session);
 		set resp.http.free_thread = debug.workspace_free(thread);
 
@@ -39,8 +38,7 @@ client c1 {
 	rxresp
 	expect resp.http.overflowed == "false"
 
-	expect resp.http.free_client > 57000
-	expect resp.http.free_backend > 57000
+	expect resp.http.free_backend > 9000
 	expect resp.http.free_session > 250
 	expect resp.http.free_thread > 2000
 } -run
@@ -52,4 +50,3 @@ client c2 {
 } -run
 
 logexpect l1 -wait
-
