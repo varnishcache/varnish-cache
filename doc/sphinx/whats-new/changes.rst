@@ -108,7 +108,7 @@ documentation.
 Backend connection timeout
 ==========================
 
-Backend connections will now ble closed by Varnish after `backend_idle_timeout`
+Backend connections will now be closed by Varnish after `backend_idle_timeout`
 seconds of inactivity.
 
 Previously they were kept around forever and the backend servers would close
@@ -129,7 +129,7 @@ A new `req_top` identifier is available in VCL, which is a reference to
 `req` in the top-level ESI request.
 
 This is useful to pass data back and forth between the main ESI request
-and any ESI subrequests it lead to.
+and any ESI sub-requests it lead to.
 
 
 Other noteworthy small changes
