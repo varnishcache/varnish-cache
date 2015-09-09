@@ -105,6 +105,18 @@ TCP to fetch resources. More details in the :ref:`ref-writing-a-director`
 documentation.
 
 
+Backend connection timeout
+==========================
+
+Backend connections will now ble closed by Varnish after `backend_idle_timeout`
+seconds of inactivity.
+
+Previously they were kept around forever and the backend servers would close
+the connection without Varnish noticing it. On the next traffic spike needing
+these extra backend connections, the request would fail, perhaps multiple
+times, before a working backend connection was found/created.
+
+
 Surrogate keys
 ==============
 
@@ -125,7 +137,5 @@ Other noteworthy small changes
 
 * Varnish will now use the ``stale-while-revalidate`` defined in RFC5861
   to set object grace time.
-* Varnish will now discard remaining/older open backend connections when
-  a failing connection is found.
 * -smalloc storage is now recommended over -sfile on Linux systems.
 
