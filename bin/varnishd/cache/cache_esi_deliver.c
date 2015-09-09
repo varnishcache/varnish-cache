@@ -228,7 +228,7 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 	uint32_t icrc = 0;
 	uint8_t tailbuf[8 + 5];
 	const uint8_t *pp;
-	struct ecx *ecx;
+	struct ecx *ecx, *pecx;
 	int retval = 0;
 
 	if (act == VDP_INIT) {
@@ -359,6 +359,13 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 				vle32enc(tailbuf + 9, ecx->l_crc);
 
 				(void)VDP_bytes(req, VDP_NULL, tailbuf, 13);
+			}
+			if (req->transport->deliver == VED_Deliver) {
+				CAST_OBJ_NOTNULL(pecx, req->transport_priv,
+				    ECX_MAGIC);
+				pecx->crc = crc32_combine(pecx->crc,
+				    ecx->crc, ecx->l_crc);
+				pecx->l_crc += ecx->l_crc;
 			}
 			retval = VDP_bytes(req, VDP_FLUSH, NULL, 0);
 			ecx->state = 99;
