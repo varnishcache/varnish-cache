@@ -129,7 +129,7 @@ A new `req_top` identifier is available in VCL, which is a reference to
 `req` in the top-level ESI request.
 
 This is useful to pass data back and forth between the main ESI request
-and any ESI sub-requests it lead to.
+and any ESI sub-requests it leads to.
 
 
 Other noteworthy small changes
