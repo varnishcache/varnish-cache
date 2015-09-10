@@ -165,11 +165,11 @@ process_thread(void *priv)
 	if (WIFEXITED(p->status) && WEXITSTATUS(p->status) == 0)
 		return (NULL);
 #ifdef WCOREDUMP
-	vtc_log(p->vl, 2, "Bad exit code: %04x sig %x exit %x core %x",
+	vtc_log(p->vl, 2, "Bad exit code: %04x sig %d exit %d core %d",
 	    p->status, WTERMSIG(p->status), WEXITSTATUS(p->status),
 	    WCOREDUMP(p->status));
 #else
-	vtc_log(p->vl, 2, "Bad exit code: %04x sig %x exit %x",
+	vtc_log(p->vl, 2, "Bad exit code: %04x sig %d exit %d",
 	    p->status, WTERMSIG(p->status), WEXITSTATUS(p->status));
 #endif
 
@@ -202,7 +202,7 @@ process_start(struct process *p)
 	if (p->pid == 0) {
 		assert(dup2(p->fds[0], 0) == 0);
 		assert(dup2(out_fd, 1) == 1);
-		assert(dup2(out_fd, 2) == 2);
+		assert(dup2(err_fd, 2) == 2);
 		for (i = 3; i <getdtablesize(); i++)
 			(void)close(i);
 		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(cl), (char*)0));
