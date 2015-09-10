@@ -15,7 +15,7 @@ Varnish Cache statistics
 SYNOPSIS
 ========
 
-varnishstat [-1] [-x] [-j] [-f field] [-l] [-n varnish_name] [-N filename] [-V]
+varnishstat [-1] [-x] [-j] [-f field] [-l] [-n varnish_name] [-N filename] [-t seconds|<off>] [-V]
 
 .. TODO: autogenerate this synopsis like the others.
 
