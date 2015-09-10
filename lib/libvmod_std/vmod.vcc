@@ -109,7 +109,7 @@ $Function VOID collect(HEADER hdr)
 Description
 	Collapses multiple *hdr* headers into one long header.
 
-	Care should be taken when collapsing headers.  In particular
+	Care should be taken when collapsing headers. In particular
 	collapsing Set-Cookie will lead to unexpected results on the
 	browser side.
 Example

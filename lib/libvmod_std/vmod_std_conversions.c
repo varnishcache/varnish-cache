@@ -142,7 +142,7 @@ vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d)
 	p = WS_Alloc(ctx->ws, vsa_suckaddr_len);
 	if (p == NULL) {
 		VSLb(ctx->vsl, SLT_VCL_Error,
-		     "vmod std.ip(): insufficient workspace");
+		    "vmod std.ip(): insufficient workspace");
 		return d;
 	}
 	r = NULL;
