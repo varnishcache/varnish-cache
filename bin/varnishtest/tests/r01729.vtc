@@ -1,6 +1,7 @@
 varnishtest "C-L/T-E:chunked conflict"
 
 server s1 {
+	non-fatal
 	rxreq
 	expect req.bodylen == 20
 
