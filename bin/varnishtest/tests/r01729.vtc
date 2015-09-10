@@ -20,6 +20,7 @@ varnish v1 -vcl+backend { } -start
 
 client c1 {
 
+	non-fatal
 	send "PUT /1 HTTP/1.1\r\n"
 	send "Content-Length: 31\r\n"
 	send "Transfer-Encoding: chunked\r\n"
@@ -35,7 +36,7 @@ client c1 {
 } -run
 
 client c1 {
-
+	fatal
 	send "PUT /2 HTTP/1.1\r\n"
 	send "Transfer-Encoding: chunked\r\n"
 	send "\r\n"
