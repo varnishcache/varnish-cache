@@ -4,7 +4,7 @@ server s1 {
 	rxreq
 	expect req.http.accept-encoding == "gzip"
 	expect req.url == "/foo"
-	txresp -nolen -gziplen 4100
+	txresp -proto HTTP/1.0 -nolen -gziplen 4100
 	accept
 	rxreq
 	expect req.url == "/bar"

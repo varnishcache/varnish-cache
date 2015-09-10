@@ -1,0 +1,19 @@
+varnishtest "POST with no body"
+
+server s1 {
+	rxreq
+	txresp -hdr "foo: 1"
+	rxreq
+	txresp -hdr "foo: 2"
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq -req "POST" -nolen
+	rxresp
+	expect resp.http.foo == 1
+	txreq -req "POST" -nolen
+	rxresp
+	expect resp.http.foo == 2
+} -run
