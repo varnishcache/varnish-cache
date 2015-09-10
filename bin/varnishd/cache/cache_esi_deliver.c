@@ -405,6 +405,18 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 	}
 }
 
+/*
+ * Account body bytes on req
+ * Push bytes to preq
+ */
+static inline int
+ved_bytes(struct req *req, struct req *preq, enum vdp_action act,
+    const void *ptr, ssize_t len)
+{
+	req->acct.resp_bodybytes += len;
+	return (VDP_bytes(preq, act, ptr, len));
+}
+
 /*---------------------------------------------------------------------
  * If a gzip'ed ESI object includes a ungzip'ed object, we need to make
  * it looked like a gzip'ed data stream.  The official way to do so would
@@ -431,9 +443,11 @@ ved_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
 	const uint8_t *p;
 	uint16_t lx;
 	struct ecx *ecx;
+	struct req *preq;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);
+	preq = ecx->preq;
 
 	(void)priv;
 	if (act == VDP_INIT)
@@ -443,7 +457,7 @@ ved_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
 		return (0);
 	}
 	if (l == 0)
-		return (VDP_bytes(ecx->preq, act, pv, l));
+		return (ved_bytes(req, ecx->preq, act, pv, l));
 
 	p = pv;
 
@@ -460,23 +474,23 @@ ved_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
 	while (l > 0) {
 		if (l >= 65535) {
 			lx = 65535;
-			if (VDP_bytes(ecx->preq, VDP_NULL, buf1, sizeof buf1))
+			if (ved_bytes(req, preq, VDP_NULL, buf1, sizeof buf1))
 				return (-1);
 		} else {
 			lx = (uint16_t)l;
 			buf2[0] = 0;
 			vle16enc(buf2 + 1, lx);
 			vle16enc(buf2 + 3, ~lx);
-			if (VDP_bytes(ecx->preq, VDP_NULL, buf2, sizeof buf2))
+			if (ved_bytes(req, preq, VDP_NULL, buf2, sizeof buf2))
 				return (-1);
 		}
-		if (VDP_bytes(ecx->preq, VDP_NULL, p, lx))
+		if (ved_bytes(req, preq, VDP_NULL, p, lx))
 			return (-1);
 		l -= lx;
 		p += lx;
 	}
 	/* buf2 is local, have to flush */
-	return (VDP_bytes(ecx->preq, VDP_FLUSH, NULL, 0));
+	return (ved_bytes(req, preq, VDP_FLUSH, NULL, 0));
 }
 
 /*---------------------------------------------------------------------
@@ -515,10 +529,12 @@ ved_stripgzip(struct req *req, struct busyobj *bo)
 	void *sp;
 	ssize_t sl, ll, dl;
 	struct ecx *ecx;
+	struct req *preq;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	CAST_OBJ_NOTNULL(ecx, req->transport_priv, ECX_MAGIC);
+	preq = ecx->preq;
 
 	if (bo != NULL)
 		VBO_waitstate(bo, BOS_FINISHED);
@@ -578,7 +594,7 @@ ved_stripgzip(struct req *req, struct busyobj *bo)
 			if (dl > 0) {
 				if (dl > sl)
 					dl = sl;
-				if (VDP_bytes(ecx->preq, VDP_NULL, pp, dl))
+				if (ved_bytes(req, preq, VDP_NULL, pp, dl))
 					break;
 				ll += dl;
 				sl -= dl;
@@ -589,7 +605,7 @@ ved_stripgzip(struct req *req, struct busyobj *bo)
 			/* Remove the "LAST" bit */
 			dbits[0] = *pp;
 			dbits[0] &= ~(1U << (last & 7));
-			if (VDP_bytes(ecx->preq, VDP_NULL, dbits, 1))
+			if (ved_bytes(req, preq, VDP_NULL, dbits, 1))
 				break;
 			ll++;
 			sl--;
@@ -601,7 +617,7 @@ ved_stripgzip(struct req *req, struct busyobj *bo)
 			if (dl > 0) {
 				if (dl > sl)
 					dl = sl;
-				if (VDP_bytes(ecx->preq, VDP_NULL, pp, dl))
+				if (ved_bytes(req, preq, VDP_NULL, pp, dl))
 					break;
 				ll += dl;
 				sl -= dl;
@@ -663,7 +679,7 @@ ved_stripgzip(struct req *req, struct busyobj *bo)
 			default:
 				WRONG("compiler must be broken");
 			}
-			if (VDP_bytes(ecx->preq, VDP_NULL, dbits + 1, lpad))
+			if (ved_bytes(req, preq, VDP_NULL, dbits + 1, lpad))
 				break;
 		}
 		if (sl > 0) {
@@ -686,7 +702,7 @@ ved_stripgzip(struct req *req, struct busyobj *bo)
 		}
 	} while (ois == OIS_DATA || ois == OIS_STREAM);
 	ObjIterEnd(req->objcore, &oi);
-	(void)VDP_bytes(ecx->preq, VDP_FLUSH, NULL, 0);
+	(void)ved_bytes(req, preq, VDP_FLUSH, NULL, 0);
 
 	icrc = vle32dec(tailbuf);
 	ilen = vle32dec(tailbuf + 4);
@@ -711,8 +727,7 @@ ved_vdp_bytes(struct req *req, enum vdp_action act, void **priv,
 		return (0);
 	}
 	CAST_OBJ_NOTNULL(preq, *priv, REQ_MAGIC);
-	req->acct.resp_bodybytes += len;
-	return (VDP_bytes(preq, act, ptr, len));
+	return (ved_bytes(req, preq, act, ptr, len));
 }
 
 /*--------------------------------------------------------------------*/
