@@ -299,7 +299,7 @@ process_close(struct process *p)
 	if (!p->running || !p->pid)
 		vtc_log(p->vl, 0, "Cannot close on a non-running process");
 
-	AZ(close(p->fds[1]));
+	(void)close(p->fds[1]);
 	p->fds[1] = -1;
 }
 
