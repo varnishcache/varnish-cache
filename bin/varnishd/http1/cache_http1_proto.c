@@ -282,15 +282,19 @@ http1_body_status(struct http *hp, struct http_conn *htc)
 
 	htc->content_length = -1;
 
-	if (http_HdrIs(hp, H_Transfer_Encoding, "chunked")) {
-		http_Unset(hp, H_Content_Length);
+	cl = http_GetContentLength(hp);
+	if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
+		if (strcasecmp(b, "chunked"))
+			return (BS_ERROR);
+		if (cl != -1) {
+			/*
+			 * RFC7230 3.3.3 allows more lenient handling
+			 * but we're going to be strict.
+			 */
+			return (BS_ERROR);
+		}
 		return (BS_CHUNKED);
 	}
-
-	if (http_GetHdr(hp, H_Transfer_Encoding, &b))
-		return (BS_ERROR);
-
-	cl = http_GetContentLength(hp);
 	if (cl == -2)
 		return (BS_ERROR);
 	if (cl >= 0) {
@@ -298,26 +302,15 @@ http1_body_status(struct http *hp, struct http_conn *htc)
 		return (cl == 0 ? BS_NONE : BS_LENGTH);
 	}
 
+	if (hp->protover == 11)
+		return (BS_NONE);
+
 	if (http_HdrIs(hp, H_Connection, "keep-alive")) {
 		/*
 		 * Keep alive with neither TE=Chunked or C-Len is impossible.
 		 * We assume a zero length body.
 		 */
 		return (BS_NONE);
-	}
-
-	if (http_HdrIs(hp, H_Connection, "close")) {
-		/*
-		 * In this case, it is safe to just read what comes.
-		 */
-		return (BS_EOF);
-	}
-
-	if (hp->protover < 11) {
-		/*
-		 * With no Connection header, assume EOF.
-		 */
-		return (BS_EOF);
 	}
 
 	/*

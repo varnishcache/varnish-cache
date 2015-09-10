@@ -28,9 +28,9 @@ varnish v1 -vcl+backend {
 } -start
 
 logexpect l1 -v v1 -d 1 -g vxid -q "Error ~ 'overflow'" {
-        expect 0 *      Begin
-        expect * =      Error	"workspace_client overflow"
-        expect * =      End
+	expect 0 *	Begin
+	expect * =	Error	"workspace_client overflow"
+	expect * =	End
 } -start
 
 client c1 {

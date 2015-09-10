@@ -63,12 +63,12 @@ replaced as the active VCL.
 
 The following parameters have been retired:
 
-* `group` (security rewamp)
-* `group_cc` (security rewamp)
-* `listen_address` (security rewamp)
+* `group` (security revamp)
+* `group_cc` (security revamp)
+* `listen_address` (security revamp)
 * `pool_vbc`
 * `timeout_req` - merged with `timeout_idle`.
-* `user` (security rewamp)
+* `user` (security revamp)
 
 Minor changes of default values on `workspace_session` and `vsl_mask`.
 

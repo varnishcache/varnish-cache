@@ -109,7 +109,7 @@ $Function VOID collect(HEADER hdr)
 Description
 	Collapses multiple *hdr* headers into one long header.
 
-	Care should be taken when collapsing headers.  In particular
+	Care should be taken when collapsing headers. In particular
 	collapsing Set-Cookie will lead to unexpected results on the
 	browser side.
 Example
@@ -128,7 +128,7 @@ Example
 $Function INT integer(STRING s, INT fallback)
 
 Description
-	Converts the string *s* to an integer.	If conversion fails,
+	Converts the string *s* to an integer. If conversion fails,
 	*fallback* will be returned.
 Example
 	| if (std.integer(req.http.foo, 0) > 5) {
@@ -139,7 +139,7 @@ $Function IP ip(STRING s, IP fallback)
 
 Description
 	Converts the string *s* to the first IP number returned by
-	the system library function getaddrinfo(3).  If conversion
+	the system library function getaddrinfo(3). If conversion
 	fails, *fallback* will be returned.
 Example
 	| if (std.ip(req.http.X-forwarded-for, "0.0.0.0") ~ my_acl) {
@@ -149,33 +149,44 @@ Example
 $Function REAL real(STRING s, REAL fallback)
 
 Description
-	Converts the string *s* to a real.  If conversion fails,
+	Converts the string *s* to a real. If conversion fails,
 	*fallback* will be returned.
 Example
 	| if (std.real(req.http.foo, 0.0) > 5.5) {
 	|	...
 	| }
 
-$Function TIME real2time(REAL r)
+$Function INT real2integer(REAL r, INT fallback)
 
 Description
-	Converts the real *r* to a time.
+	Converts the real *r* to an integer. If conversion fails,
+	*fallback* will be returned.
 Example
-	set req.http.time = std.real2time(1140618699.00);
+	set req.http.integer = std.real2integer(1140618699.00, 0);
 
-$Function INT time2integer(TIME t)
+$Function TIME real2time(REAL r, TIME fallback)
 
 Description
-	Converts the time *t* to a integer.
+	Converts the real *r* to a time. If conversion fails,
+	*fallback* will be returned.
 Example
-	set req.http.int = std.time2integer(now);
+	set req.http.time = std.real2time(1140618699.00, now);
 
-$Function REAL time2real(TIME t)
+$Function INT time2integer(TIME t, INT fallback)
 
 Description
-	Converts the time *t* to a real.
+	Converts the time *t* to a integer. If conversion fails,
+	*fallback* will be returned.
 Example
-	set req.http.real = std.time2real(now);
+	set req.http.int = std.time2integer(now, 0);
+
+$Function REAL time2real(TIME t, REAL fallback)
+
+Description
+	Converts the time *t* to a real. If conversion fails,
+	*fallback* will be returned.
+Example
+	set req.http.real = std.time2real(now, 1.0);
 
 $Function BOOL healthy(BACKEND be)
 
@@ -241,7 +252,7 @@ Example
 $Function TIME time(STRING s, TIME fallback)
 
 Description
-	Converts the string *s* to a time.  If conversion fails,
+	Converts the string *s* to a time. If conversion fails,
 	*fallback* will be returned.
 
 	Supported formats:

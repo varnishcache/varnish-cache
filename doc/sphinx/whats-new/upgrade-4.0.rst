@@ -132,7 +132,7 @@ Remember to import the std module if you're not doing so already.
 client.port, and server.port replaced by respectively std.port(client.ip) and std.port(server.ip)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-`client.ip` and `server.ip` are now proper datatypes, which renders
+`client.ip` and `server.ip` are now proper data types, which renders
 as an IP address by default. You need to use the `std.port()`
 function to get the port number.
 

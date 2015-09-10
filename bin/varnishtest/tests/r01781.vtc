@@ -1,0 +1,27 @@
+varnishtest "#1781 gzip checksum with multilevel esi"
+
+server s1 {
+	rxreq
+	txresp -body {<esi:include src="/1"/>Baz}
+
+	rxreq
+	txresp -body {<esi:include src="/2"/>Bar}
+
+	rxreq
+	txresp -body {Foo}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_gzip = true;
+		set beresp.do_esi = true;
+	}
+} -start
+
+client c1 {
+	txreq -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.content-encoding == "gzip"
+	gunzip
+	expect resp.body == "FooBarBaz"
+} -run

@@ -1,4 +1,4 @@
-varnishtest "Test std.real2time, std.time2integer and std.time2real"
+varnishtest "Test real2integer, real2time, time2integer and time2real in std"
 
 server s1 {
 	rxreq
@@ -10,8 +10,18 @@ varnish v1 -vcl+backend {
 
 	sub vcl_deliver {
 		set resp.http.x-foo = std.integer(req.http.foo, 0);
-		set resp.http.x-bar = std.time2integer(std.real2time(std.real(resp.http.x-foo, 0.0)));
-		set resp.http.x-baz = std.time2real(std.real2time(std.real(resp.http.x-foo, 0.0)));
+		set resp.http.x-bar = std.time2integer(std.real2time(
+		    std.real(resp.http.x-foo, 0.0), now), 1);
+
+		set resp.http.x-baz = std.time2real(std.real2time(
+		    std.real(resp.http.x-foo, 0.0), now), 1.0);
+
+		set resp.http.x-qux = std.real2integer(
+		    std.real(req.http.foo, 2.0), 2);
+
+		# Representation of 9e99, which is larger than what fits in the
+		# 128bit integers on $exotic_platform.
+		set resp.http.x-int-fallback = std.real2integer(9000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.000, 2);
 	}
 } -start
 
@@ -20,4 +30,15 @@ client c1 {
 	rxresp
 	expect resp.http.x-foo == resp.http.x-bar
 	expect resp.http.x-baz == 1140618699.000
+	expect resp.http.x-qux == 1140618699
+	expect resp.http.x-int-fallback == 2
+} -run
+
+# check we get the fallback if the conversion fails
+client c2 {
+	txreq -hdr "foo: -9e99+1"
+	rxresp
+	expect resp.http.x-bar == 0
+	expect resp.http.x-baz == 0.000
+	expect resp.http.x-qux == 2
 } -run
