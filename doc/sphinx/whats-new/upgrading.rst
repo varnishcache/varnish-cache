@@ -49,12 +49,6 @@ Additionally, the ``varnishlog``, ``varnishncsa`` and other Varnish shared log
 utilities must now be run in a context with `varnish` group membership.
 
 
-Protocol support
-================
-
-Support for HTTP/0.9 on the client side has been retired.
-
-
 Changes to parameters
 =====================
 
