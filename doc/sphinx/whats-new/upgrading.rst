@@ -7,7 +7,12 @@ Upgrading to Varnish 4.1 (unreleased)
 Changes to VCL
 ==============
 
-Not documented yet.
+Data type conversion functions now take a fallback
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Data type conversion functions in the std vmod now takes an additional
+argument *fallback*, which is returned if the conversion does not succeed.
+
 
 Version statement is kept
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -32,11 +37,11 @@ preamble. On normal HTTP listeners the behaviour is unchanged.
 Management interface
 ====================
 
-The management interface enabled with ``-M`` used to support the telnet
+The management interface enabled with ``-M`` previously supported the telnet
 protocol.
 
-Support for telnet control sequences have been retired. Replacements are netcat
-or (preferred) ``varnishadm``.
+Support for telnet control sequences have been retired. Replacement clients
+like netcat or (preferred) ``varnishadm`` should be used instead.
 
 
 Runtime users and groups
@@ -65,4 +70,3 @@ The following parameters have been retired:
 * `user` (security revamp)
 
 Minor changes of default values on `workspace_session` and `vsl_mask`.
-

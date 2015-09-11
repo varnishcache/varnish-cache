@@ -400,6 +400,10 @@ regsuball(str, regex, sub)
 
 .. regsub* is in vcc_expr.c
 
+For converting or casting VCL values between data types use the functions
+available in the std VMOD.
+
+
 
 EXAMPLES
 ========
