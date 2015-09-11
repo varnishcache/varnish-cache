@@ -141,4 +141,4 @@ COPYRIGHT
 This document is licensed under the same licence as Varnish
 itself. See LICENCE for details.
 
-* Copyright (c) 2007-2014 Varnish Software AS
+* Copyright (c) 2007-2015 Varnish Software AS
