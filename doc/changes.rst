@@ -1,20 +1,29 @@
 ======================================
-Varnish Cache 4.1.0-beta1 (unreleased)
+Varnish Cache 4.1.0-beta1 (2015-09-11)
 ======================================
 
-- Redhat packaging files are now separate from the normal tree.
+Changes since 4.1.0-tp1:
 
+- Redhat packaging files are now separate from the normal tree.
 - Client workspace overflow should now result in a 500 response
   instead of panic.
-
 - [varnishstat] -w option has been retired.
+- libvarnishapi release number is increased.
+- Body bytes sent on ESI subrequests with gzip are now counted correctly.
+- [vmod-std] Data type conversion functions now take additional fallback argument.
 
 Bugs fixed
 ----------
 
 - 1777_ - Disable speculative Range handling on streaming transactions.
+- 1778_ - [varnishstat] Cast to integer to prevent negative values messing the statistics
+- 1781_ - Propagate gzip CRC upwards from nested ESI includes.
+- 1783_ - Align code with RFC7230 section 3.3.3 which allows POST without a body.
 
 .. _1777: https://www.varnish-cache.org/trac/ticket/1777
+.. _1778: https://www.varnish-cache.org/trac/ticket/1778
+.. _1781: https://www.varnish-cache.org/trac/ticket/1781
+.. _1783: https://www.varnish-cache.org/trac/ticket/1783
 
 
 ====================================
