@@ -247,7 +247,7 @@ SLTM(Fetch_Body, 0, "Body fetched from backend",
 	"\n"
 )
 
-SLTM(VCL_acl, 0, "VSL ACL check results",
+SLTM(VCL_acl, 0, "VCL ACL check results",
 	"Logs VCL ACL evaluation results.\n\n"
 )
 
