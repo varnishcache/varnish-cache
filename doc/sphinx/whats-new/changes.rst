@@ -117,6 +117,11 @@ these extra backend connections, the request would fail, perhaps multiple
 times, before a working backend connection was found/created.
 
 
+Protocol support
+================
+
+Support for HTTP/0.9 on the client side has been retired.
+
 Surrogate keys
 ==============
 
