@@ -432,4 +432,4 @@ This document is licensed under the same license as Varnish
 itself. See LICENSE for details.
 
 * Copyright (c) 2006 Verdens Gang AS
-* Copyright (c) 2006-2014 Varnish Software AS
+* Copyright (c) 2006-2015 Varnish Software AS
