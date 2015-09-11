@@ -384,14 +384,14 @@ sample_points(void)
 		pt->t_cur = VTIM_mono();
 
 		if (pt->t_last)
-			pt->chg = ((intmax_t)pt->cur - (intmax_t)pt->last) /
+			pt->chg = ((int64_t)pt->cur - (int64_t)pt->last) /
 			    (pt->t_cur - pt->t_last);
 
 		if (pt->semantics == 'g') {
 			pt->avg = 0.;
-			update_ma(&pt->ma_10, pt->cur);
-			update_ma(&pt->ma_100, pt->cur);
-			update_ma(&pt->ma_1000, pt->cur);
+			update_ma(&pt->ma_10, (int64_t)pt->cur);
+			update_ma(&pt->ma_100, (int64_t)pt->cur);
+			update_ma(&pt->ma_1000, (int64_t)pt->cur);
 		} else if (pt->semantics == 'c') {
 			if (VSC_C_main != NULL && VSC_C_main->uptime)
 				pt->avg = pt->cur / VSC_C_main->uptime;

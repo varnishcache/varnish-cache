@@ -251,17 +251,21 @@ usage(void)
 {
 #define FMT "    %-28s # %s\n"
 	fprintf(stderr, "usage: varnishstat "
-	    "[-1lV] [-f field] "
+	    "[-1lV] [-f field] [-t seconds|<off>] "
 	    VSC_n_USAGE "\n");
 	fprintf(stderr, FMT, "-1", "Print the statistics to stdout.");
 	fprintf(stderr, FMT, "-f field", "Field inclusion glob");
 	fprintf(stderr, FMT, "",
-	    "If it starts with '^' it is used as an exclusion list");
+	    "If it starts with '^' it is used as an exclusion list.");
 	fprintf(stderr, FMT, "-l",
-	    "Lists the available fields to use with the -f option");
+	    "Lists the available fields to use with the -f option.");
 	fprintf(stderr, FMT, "-n varnish_name",
-	    "The varnishd instance to get logs from");
-	fprintf(stderr, FMT, "-V", "Display the version number and exit");
+	    "The varnishd instance to get logs from.");
+	fprintf(stderr, FMT, "-N filename",
+	    "Filename of a stale VSM instance.");
+	fprintf(stderr, FMT, "-t seconds|<off>",
+	    "Timeout before returning error on initial VSM connection.");
+	fprintf(stderr, FMT, "-V", "Display the version number and exit.");
 	fprintf(stderr, FMT, "-x",
 	    "Print statistics to stdout as XML.");
 	fprintf(stderr, FMT, "-j",

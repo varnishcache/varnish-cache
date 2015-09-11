@@ -2,7 +2,7 @@ varnishtest "Check lack of response-string"
 
 server s1 {
 	rxreq
-	send "HTTP/1.1 200 \r\n"
+	send "HTTP/1.0 200 \r\n"
 	send "Connection: close\r\n"
 	send "\r\n"
 	send "\r\n"
@@ -20,7 +20,7 @@ client c1 {
 
 server s1 {
 	rxreq
-	send "HTTP/1.1 200\r\n"
+	send "HTTP/1.0 200\r\n"
 	send "Connection: close\r\n"
 	send "\r\n"
 	send "\r\n"
