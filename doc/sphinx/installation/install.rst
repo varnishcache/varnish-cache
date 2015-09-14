@@ -154,4 +154,4 @@ This tutorial is written for installations from binary packages.
 In practice, it means that some configurations are not in place for installations from source code.
 For example, instead of calling ``service varnish start``, you start the varnish daemon manually by typing::
 
-        varnishd -a :6081 -T localhost:6082 -b localhost:8080 -f /path/my_file.vcl
+        varnishd -a :6081 -T localhost:6082 -b localhost:8080
