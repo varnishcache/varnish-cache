@@ -1,11 +1,9 @@
 [Unit]
-Description=Varnish a high-perfomance HTTP accelerator
+Description=Varnish Cache, a high-performance HTTP accelerator
 After=syslog.target network.target
 
 [Service]
-
-#
-# If you want to make changes to this file, please copy it to 
+# If you want to make changes to this file, please copy it to
 # /etc/systemd/system/varnish.service and make your changes there.
 # This will override the file kept at /lib/systemd/system/varnish.service
 #
@@ -19,7 +17,7 @@ LimitNOFILE=131072
 # Default log size is 82MB + header
 LimitMEMLOCK=82000
 
-# Maximum size of the corefile. 
+# Maximum size of the corefile.
 LimitCORE=infinity
 
 EnvironmentFile=/etc/varnish/varnish.params
@@ -44,4 +42,3 @@ ExecReload=/usr/sbin/varnish_reload_vcl
 
 [Install]
 WantedBy=multi-user.target
-
