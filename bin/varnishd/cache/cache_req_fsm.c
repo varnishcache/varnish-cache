@@ -79,8 +79,6 @@ cnt_vdp(struct req *req, struct busyobj *bo)
 	if (!req->disable_esi && req->resp_len != 0 && wantbody &&
 	    ObjGetattr(req->wrk, req->objcore, OA_ESIDATA, NULL) != NULL) {
 		req->res_mode |= RES_ESI;
-		RFC2616_Weaken_Etag(req->resp);
-		req->resp_len = -1;
 		VDP_push(req, VDP_ESI, NULL, 0);
 	}
 
