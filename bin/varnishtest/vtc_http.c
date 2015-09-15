@@ -490,7 +490,7 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 		(void)http_rxchar(hp, l, 0);
 		vtc_dump(hp->vl, 4, "body", hp->body, l);
 		hp->bodyl = l;
-		sprintf(hp->bodylen, "%d", l);
+		bprintf(hp->bodylen, "%d", l);
 		return;
 	}
 	if (body) {
@@ -517,6 +517,7 @@ http_rxhdr(struct http *hp)
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	hp->prxbuf = 0;
 	hp->body = NULL;
+	bprintf(hp->bodylen, "%s", "<undef>");
 	while (1) {
 		(void)http_rxchar(hp, 1, 0);
 		p = hp->rxbuf + hp->prxbuf - 1;
