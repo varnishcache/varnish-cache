@@ -36,7 +36,7 @@
  * or may not, be talking a "real" HTTP protocol itself.
  */
 
-typedef void vtr_deliver_f (struct req *, struct busyobj *, int wantbody);
+typedef void vtr_deliver_f (struct req *, struct busyobj *, int sendbody);
 
 struct transport {
 	unsigned		magic;

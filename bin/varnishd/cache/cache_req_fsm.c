@@ -52,54 +52,60 @@ cnt_vdp(struct req *req, struct busyobj *bo)
 {
 	const char *r;
 	uint16_t status;
-	int wantbody;
+	int sendbody;
+	intmax_t resp_len;
 
 	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
-	req->res_mode = 0;
-	wantbody = 1;
-	status = http_GetStatus(req->resp);
-	if (!strcmp(req->http0->hd[HTTP_HDR_METHOD].b, "HEAD")) {
-		wantbody = 0;
-	} else if (status < 200 || status == 204) {
-		req->resp_len = 0;
-		http_Unset(req->resp, H_Content_Length);
-		wantbody = 0;
-	} else if (status == 304) {
-		http_Unset(req->resp, H_Content_Length);
-		wantbody = 0;
-	} else if (bo != NULL)
-		req->resp_len = http_GetContentLength(req->resp);
-	else
+
+	resp_len = http_GetContentLength(req->resp);
+	if (bo != NULL)
+		req->resp_len = resp_len;
+	else 
 		req->resp_len = ObjGetLen(req->wrk, req->objcore);
 
-	/*
-	 * Determine ESI status first.  Not dependent on wantbody, because
-	 * we want ESI to supress C-L in HEAD too.
-	 */
-	if (!req->disable_esi && req->resp_len != 0 && wantbody &&
-	    ObjGetattr(req->wrk, req->objcore, OA_ESIDATA, NULL) != NULL) {
-		req->res_mode |= RES_ESI;
+	req->res_mode = 0;
+
+	/* RFC 7230, 3.3.3 */
+	status = http_GetStatus(req->resp);
+	if (!strcmp(req->http0->hd[HTTP_HDR_METHOD].b, "HEAD")) {
+		if (req->objcore->flags & OC_F_PASS)
+			sendbody = -1;
+		else
+			sendbody = 0;
+	} else if (status < 200 || status == 204 || status == 304) {
+		req->resp_len = 0;
+		sendbody = 0;
+	} else
+		sendbody = 1;
+
+	if (!req->disable_esi && req->resp_len != 0 &&
+	    ObjGetattr(req->wrk, req->objcore, OA_ESIDATA, NULL) != NULL)
 		VDP_push(req, VDP_ESI, NULL, 0);
-	}
 
 	if (cache_param->http_gzip_support &&
 	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
-	    !RFC2616_Req_Gzip(req->http)) {
-		req->res_mode |= RES_GUNZIP;
+	    !RFC2616_Req_Gzip(req->http))
 		VDP_push(req, VDP_gunzip, NULL, 1);
-	}
 
-	/*
-	 * Range comes after the others and pushes on bottom because
-	 * it can (maybe) generate a correct C-L header.
-	 */
 	if (cache_param->http_range_support && http_IsStatus(req->resp, 200)) {
 		http_SetHeader(req->resp, "Accept-Ranges: bytes");
-		if (wantbody && http_GetHdr(req->http, H_Range, &r))
+		if (sendbody && http_GetHdr(req->http, H_Range, &r))
 			VRG_dorange(req, r);
 	}
 
-	req->transport->deliver(req, bo, wantbody);
+	if (sendbody < 0) {
+		/* Don't touch pass+HEAD C-L */
+		sendbody = 0;
+	} else if (resp_len >= 0 && resp_len == req->resp_len) {
+		/* Reuse C-L header */
+	} else {
+		http_Unset(req->resp, H_Content_Length);
+		if (req->resp_len >= 0 && sendbody)
+			http_PrintfHeader(req->resp,
+			    "Content-Length: %jd", req->resp_len);
+	}
+
+	req->transport->deliver(req, bo, sendbody);
 }
 
 /*--------------------------------------------------------------------
@@ -254,9 +260,11 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	VCL_synth_method(req->vcl, wrk, req, NULL, synth_body);
 
-	http_Unset(h, H_Content_Length);
-
 	AZ(VSB_finish(synth_body));
+
+	http_Unset(h, H_Content_Length);
+	http_PrintfHeader(req->resp, "Content-Length: %zd",
+	    VSB_len(synth_body));
 
 	/* Discard any lingering request body before delivery */
 	(void)VRB_Ignore(req);
