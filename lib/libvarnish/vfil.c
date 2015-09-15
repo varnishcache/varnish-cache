@@ -51,6 +51,9 @@
 #ifdef HAVE_SYS_VFS_H
 #  include <sys/vfs.h>
 #endif
+#if defined(__linux__) && defined(HAVE_FALLOCATE)
+#  include <linux/magic.h>
+#endif
 
 #include "vas.h"
 #include "vdef.h"
@@ -182,11 +185,24 @@ VFIL_allocate(int fd, off_t size, int insist)
 		errno = ENOSPC;
 		return (-1);
 	}
-#ifdef HAVE_FALLOCATE
-	if (!fallocate(fd, 0, 0, size))
-		return (0);
-	if (errno == ENOSPC)
-		return (-1);
+#if defined(__linux__) && defined(HAVE_FALLOCATE)
+	{
+		/* fallocate will for some filesystems (e.g. xfs) not take
+		   the already allocated blocks of the file into
+		   account. This will cause fallocate to report ENOSPC
+		   when called on an existing fully allocated file unless
+		   the filesystem has enough free space to accomodate the
+		   complete new file size. Because of this we enable
+		   fallocate only on filesystems that are known to work as
+		   we expect. */
+		struct statfs stfs;
+		if (!fstatfs(fd, &stfs) && stfs.f_type == EXT4_SUPER_MAGIC) {
+			if (!fallocate(fd, 0, 0, size))
+				return (0);
+			if (errno == ENOSPC)
+				return (-1);
+		}
+	}
 #endif
 	if (!insist)
 		return (0);
