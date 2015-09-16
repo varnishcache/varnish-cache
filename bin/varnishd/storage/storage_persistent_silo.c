@@ -508,6 +508,7 @@ smp_oc_freeobj(struct worker *wrk, struct objcore *oc)
 	}
 
 	Lck_Unlock(&sg->sc->mtx);
+	memset(oc->stobj, 0, sizeof oc->stobj);
 }
 
 /*--------------------------------------------------------------------

@@ -52,6 +52,7 @@ obj_getmethods(const struct objcore *oc)
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(oc->stobj->stevedore);
 	CHECK_OBJ_NOTNULL(oc->stobj->stevedore, STEVEDORE_MAGIC);
 	AN(oc->stobj->stevedore->methods);
 	return (oc->stobj->stevedore->methods);
@@ -443,6 +444,7 @@ ObjFreeObj(struct worker *wrk, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(m->freeobj);
 	m->freeobj(wrk, oc);
+	AZ(oc->stobj->stevedore);
 }
 
 /*====================================================================
