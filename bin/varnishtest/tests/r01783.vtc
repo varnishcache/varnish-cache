@@ -4,7 +4,8 @@ server s1 {
 	rxreq
 	txresp -hdr "foo: 1"
 	rxreq
-	txresp -hdr "foo: 2"
+	txresp -nolen -hdr "foo: 2" -hdr "Transfer-Encoding: chunked"
+	chunkedlen 0
 } -start
 
 varnish v1 -vcl+backend {} -start
