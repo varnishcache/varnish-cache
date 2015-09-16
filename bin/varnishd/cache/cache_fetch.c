@@ -186,8 +186,7 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 	} else
 		AZ(bo->stale_oc);
 
-	if (bo->stale_oc != NULL &&
-	    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND)) {
+	if (bo->stale_oc != NULL) {
 		q = HTTP_GetHdrPack(bo->wrk, bo->stale_oc, H_Last_Modified);
 		if (q != NULL)
 			http_PrintfHeader(bo->bereq0,
@@ -394,8 +393,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	AZ(bo->was_304);
 
 	if (http_IsStatus(bo->beresp, 304)) {
-		if (bo->stale_oc != NULL &&
-		    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND)) {
+		if (bo->stale_oc != NULL) {
 			if (ObjCheckFlag(bo->wrk, bo->stale_oc, OF_CHGGZIP)) {
 				/*
 				 * If we changed the gzip status of the object
@@ -906,6 +904,13 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	bo->wrk = wrk;
 	wrk->vsl = bo->vsl;
 
+	if (bo->stale_oc != NULL) {
+		CHECK_OBJ_NOTNULL(bo->stale_oc, OBJCORE_MAGIC);
+		/* We don't want the oc/stevedore ops in fetching thread */
+		if (!ObjCheckFlag(wrk, bo->stale_oc, OF_IMSCAND))
+			(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
+	}
+
 	while (stp != F_STP_DONE) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 		assert(bo->refcount >= 1);
@@ -936,7 +941,6 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	if (bo->stale_oc != NULL)
 		(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
-
 
 	wrk->vsl = NULL;
 	VBO_DerefBusyObj(wrk, &bo);

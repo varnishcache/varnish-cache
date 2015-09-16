@@ -60,7 +60,7 @@ cnt_vdp(struct req *req, struct busyobj *bo)
 	resp_len = http_GetContentLength(req->resp);
 	if (bo != NULL)
 		req->resp_len = resp_len;
-	else 
+	else
 		req->resp_len = ObjGetLen(req->wrk, req->objcore);
 
 	req->res_mode = 0;
