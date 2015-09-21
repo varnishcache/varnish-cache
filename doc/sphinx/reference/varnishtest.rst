@@ -15,7 +15,7 @@ Test program for Varnish
 SYNOPSIS
 ========
 
-varnishtest [-iklLqv] [-n iter] [-b size] [-D name=val] [-j jobs] [-t duration] file [file ...]
+varnishtest [-hikLlqvW] [-b size] [-D name=val] [-j jobs] [-n iter] [-t duration] file [file ...]
 
 DESCRIPTION
 ===========
@@ -34,15 +34,17 @@ The following options are available:
 
 -D name=val      Define macro for use in scripts
 
+-h               Show help
+
 -i               Find varnishd in build tree
 
 -j jobs          Run this many tests in parallel
 
 -k               Continue on test failure
 
--l               Leave temporary vtc.* if test fails
-
 -L               Always leave temporary vtc.*
+
+-l               Leave temporary vtc.* if test fails
 
 -n iterations    Run tests this many times
 
@@ -53,8 +55,6 @@ The following options are available:
 -v               Verbose mode: always report test log
 
 -W               Enable the witness facility for locking
-
--h               Show help
 
 file             File to use as a script
 
