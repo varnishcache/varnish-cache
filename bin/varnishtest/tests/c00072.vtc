@@ -1,0 +1,50 @@
+varnishtest "purge stale on refresh with and without IMS"
+
+server s1 {
+	rxreq
+	txresp -hdr "foo: bar"
+	rxreq
+	txresp -hdr "foo: bar" -hdr {ETag: "asdf"}
+
+	rxreq
+	txresp -hdr "foo: baz"
+	rxreq
+	expect req.http.if-none-match == {"asdf"}
+	txresp -status 304 -nolen -hdr "foo: baz"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.ttl = 0.1s;
+		set beresp.grace = 0s;
+		set beresp.keep = 60s;
+	}
+} -start
+
+client c1 {
+	txreq -url /no-ims
+	rxresp
+	expect resp.http.foo == "bar"
+	txreq -url /ims
+	rxresp
+	expect resp.http.foo == "bar"
+} -run
+
+# Wait for ttl to expire on both objects
+delay 0.2
+varnish v1 -expect n_object == 2
+
+client c1 {
+	txreq -url /no-ims
+	rxresp
+	expect resp.http.foo == "baz"
+	txreq -url /ims
+	rxresp
+	expect resp.http.foo == "baz"
+} -run
+
+# Make sure expiry is done
+delay 1
+
+# Only one of each of /no-ims and /ims should be left
+varnish v1 -expect n_object == 2
