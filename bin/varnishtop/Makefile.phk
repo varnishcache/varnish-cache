@@ -5,7 +5,7 @@ LD_ADD	+= ${LIB_VARNISHTOOLS}
 LD_ADD	+= ${LIB_VARNISHAPI}
 LD_ADD	+= ${LIB_VARNISH}
 LD_ADD	+= ${LIB_PCRE}
-LD_ADD	+= -lm
+LD_ADD	+= -lm -lpthread -lncurses
 
 TODO_ALL += build_man
 

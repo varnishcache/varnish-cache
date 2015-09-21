@@ -156,7 +156,6 @@ EXTRA_DIST = \
 	users-guide/intro.rst \
 	users-guide/operation-logging.rst \
 	users-guide/operation-statistics.rst \
-	users-guide/params.rst \
 	users-guide/performance.rst \
 	users-guide/purging.rst \
 	users-guide/report.rst \
@@ -179,7 +178,19 @@ EXTRA_DIST = \
 	users-guide/vcl-saint-and-grace.rst \
 	users-guide/vcl-syntax.rst \
 	users-guide/vcl-variables.rst \
-	users-guide/vcl.rst
+	users-guide/vcl.rst \
+	include/params.rst \
+	include/varnishncsa_options.rst \
+	include/varnishncsa_synopsis.rst \
+	include/varnishlog_options.rst \
+	include/varnishlog_synopsis.rst \
+	include/varnishtop_options.rst \
+	include/varnishtop_synopsis.rst \
+	include/varnishhist_options.rst \
+	include/varnishhist_synopsis.rst \
+	reference/vmod_std.generated.rst \
+	reference/vmod_directors.generated.rst 
+
 
 dist-hook:
 	$(MAKE) html
@@ -188,6 +199,41 @@ dist-hook:
 distclean-local:
 	rm -rf $(BUILDDIR)
 
-# XXX: doesn't work...
-#reference/params.rst: $(top_builddir)/bin/varnishd/varnishd
-#	$(top_builddir)/bin/varnishd/varnishd -x dumprstparam > reference/params.rst
+# XXX: here be dragons
+include/params.rst: ../../bin/varnishd/varnishd
+	../../bin/varnishd/varnishd -x dumprstparam > $@
+
+
+# only sphinx needs the opt2rst stuff anyway
+%_opt2rst: ../../bin/%/%_options.h %_options.c
+
+include/varnishncsa_options.rst: varnishncsa_opt2rst
+	../../bin/varnishncsa/varnishncsa_opt2rst options > $@
+
+include/varnishncsa_synopsis.rst: varnishncsa_opt2rst
+	../../bin/varnishncsa/varnishncsa_opt2rst synopsis > $@
+
+include/varnishlog_options.rst: varnishlog_opt2rst
+	../../bin/varnishlog/varnishlog_opt2rst options > $@
+
+include/varnishlog_synopsis.rst: varnishlog_opt2rst
+	../../bin/varnishlog/varnishlog_opt2rst synopsis > $@
+
+include/varnishtop_options.rst: varnishtop_opt2rst
+	../../bin/varnishtop/varnishtop_opt2rst options > $@
+
+include/varnishtop_synopsis.rst: varnishtop_opt2rst
+	../../bin/varnishtop/varnishtop_opt2rst synopsis > $@
+
+include/varnishhist_options.rst: varnishhist_opt2rst
+	./varnishhist_opt2rst options > $@
+
+include/varnishhist_synopsis.rst: varnishhist_opt2rst
+	./varnishhist_opt2rst synopsis > $@
+
+reference/vmod_std.generated.rst: reference ../../lib/libvmod_std/vmod_std.rst
+	cp ../../lib/libvmod_std/vmod_std.rst $@
+
+reference/vmod_directors.generated.rst: reference ../../lib/libvmod_directors/vmod_directors.rst
+	cp ../../lib/libvmod_directors/vmod_directors.rst $@
+
