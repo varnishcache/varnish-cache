@@ -396,11 +396,12 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 	uint64_t l;
 	int bad;
 
-	/* Some calls are direct, but they should match anyway */
-	assert(oc->stobj->stevedore->methods->getobj == smp_oc_getobj);
-
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(oc->stobj->stevedore);
+
+	/* Some calls are direct, but they should match anyway */
+	assert(oc->stobj->stevedore->methods->getobj == smp_oc_getobj);
 
 	CAST_OBJ_NOTNULL(sg, oc->stobj->priv, SMP_SEG_MAGIC);
 	so = smp_find_so(sg, oc->stobj->priv2);
