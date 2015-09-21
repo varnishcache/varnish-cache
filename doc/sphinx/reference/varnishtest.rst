@@ -15,7 +15,7 @@ Test program for Varnish
 SYNOPSIS
 ========
 
-varnishtest [-iklLqv] [-n iter] [-D name=val] [-j jobs] [-t duration] file [file ...]
+varnishtest [-iklLqv] [-n iter] [-b size] [-D name=val] [-j jobs] [-t duration] file [file ...]
 
 DESCRIPTION
 ===========
@@ -29,6 +29,8 @@ threads representing clients, and a varnishd process. This is then used to
 simulate a transaction to provoke a specific behavior.
 
 The following options are available:
+
+-b size          Set internal buffer size (default: 512K)
 
 -D name=val      Define macro for use in scripts
 

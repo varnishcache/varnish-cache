@@ -46,6 +46,7 @@
 
 #include "vev.h"
 #include "vfil.h"
+#include "vnum.h"
 #include "vqueue.h"
 #include "vrnd.h"
 #include "vsa.h"
@@ -80,6 +81,7 @@ struct vtc_job {
 
 int iflg = 0;
 unsigned vtc_maxdur = 60;
+unsigned vtc_bufsiz = 512 * 1024;
 
 static VTAILQ_HEAD(, vtc_tst) tst_head = VTAILQ_HEAD_INITIALIZER(tst_head);
 static struct vev_base *vb;
@@ -124,6 +126,7 @@ usage(void)
 {
 	fprintf(stderr, "usage: varnishtest [options] file ...\n");
 #define FMT "    %-28s # %s\n"
+	fprintf(stderr, FMT, "-b size", "Set internal buffer size (default: 512K)");
 	fprintf(stderr, FMT, "-D name=val", "Define macro");
 	fprintf(stderr, FMT, "-i", "Find varnishd in build tree");
 	fprintf(stderr, FMT, "-j jobs", "Run this many tests in parallel");
@@ -234,7 +237,7 @@ start_test(void)
 	ALLOC_OBJ(jp, JOB_MAGIC);
 	AN(jp);
 
-	jp->bufsiz = 512*1024;		/* XXX */
+	jp->bufsiz = vtc_bufsiz;
 
 	jp->buf = mmap(NULL, jp->bufsiz, PROT_READ|PROT_WRITE,
 	    MAP_ANON | MAP_SHARED, -1, 0);
@@ -432,6 +435,7 @@ main(int argc, char * const *argv)
 	int ntest = 1;			/* Run tests this many times */
 	struct vtc_tst *tp;
 	char *p;
+	uintmax_t bufsiz;
 
 	/* Default names of programs */
 #define VTC_PROG(l)	extmacro_def(#l, #l);
@@ -453,8 +457,21 @@ main(int argc, char * const *argv)
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
-	while ((ch = getopt(argc, argv, "D:ij:klLn:qt:vW")) != -1) {
+	while ((ch = getopt(argc, argv, "b:D:ij:klLn:qt:vW")) != -1) {
 		switch (ch) {
+		case 'b':
+			if (VNUM_2bytes(optarg, &bufsiz, 0)) {
+				fprintf(stderr, "Cannot parse b opt '%s'\n",
+					optarg);
+				exit(2);
+			}
+			if (bufsiz > UINT_MAX) {
+				fprintf(stderr, "Invalid b opt '%s'\n",
+					optarg);
+				exit(2);
+			}
+			vtc_bufsiz = (unsigned)bufsiz;
+			break;
 		case 'D':
 			if (!parse_D_opt(optarg)) {
 				fprintf(stderr, "Cannot parse D opt '%s'\n",
