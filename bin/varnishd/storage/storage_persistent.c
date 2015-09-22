@@ -502,7 +502,7 @@ smp_allocx(const struct stevedore *st, size_t min_size, size_t max_size,
  */
 
 static int
-smp_allocobj(const struct stevedore *stv, struct objcore *oc, unsigned ltot)
+smp_allocobj(const struct stevedore *stv, struct objcore *oc, unsigned wsl)
 {
 	struct object *o;
 	struct storage *st;
@@ -510,6 +510,7 @@ smp_allocobj(const struct stevedore *stv, struct objcore *oc, unsigned ltot)
 	struct smp_seg *sg;
 	struct smp_object *so;
 	unsigned objidx;
+	unsigned ltot;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
@@ -518,6 +519,7 @@ smp_allocobj(const struct stevedore *stv, struct objcore *oc, unsigned ltot)
 	if ((oc->exp.ttl + oc->exp.grace + oc->exp.keep) <= 0.)
 		return (0);
 
+	ltot = sizeof(struct object) + PRNDUP(wsl);
 	ltot = IRNUP(sc, ltot);
 
 	st = smp_allocx(stv, ltot, ltot, &so, &objidx, &sg);

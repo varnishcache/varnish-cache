@@ -219,12 +219,14 @@ STV_MkObject(const struct stevedore *stv, struct objcore *oc, void *ptr)
 
 int
 stv_default_allocobj(const struct stevedore *stv, struct objcore *oc,
-    unsigned ltot)
+    unsigned wsl)
 {
 	struct object *o;
 	struct storage *st;
+	unsigned ltot;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	ltot = sizeof(struct object) + PRNDUP(wsl);
 	st = stv->alloc(stv, ltot);
 	if (st == NULL)
 		return (0);
@@ -250,24 +252,20 @@ STV_NewObject(struct objcore *oc, struct worker *wrk,
     const char *hint, unsigned wsl)
 {
 	struct stevedore *stv, *stv0;
-	unsigned ltot;
 	int i, j;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	assert(wsl > 0);
-	wsl = PRNDUP(wsl);
-
-	ltot = sizeof(struct object) + wsl;
 
 	stv = stv0 = stv_pick_stevedore(wrk->vsl, &hint);
 	AN(stv->allocobj);
-	j = stv->allocobj(stv, oc, ltot);
+	j = stv->allocobj(stv, oc, wsl);
 	if (j == 0 && hint == NULL) {
 		do {
 			stv = stv_pick_stevedore(wrk->vsl, &hint);
 			AN(stv->allocobj);
-			j = stv->allocobj(stv, oc, ltot);
+			j = stv->allocobj(stv, oc, wsl);
 		} while (j == 0 && stv != stv0);
 	}
 	if (j == 0) {
@@ -275,7 +273,7 @@ STV_NewObject(struct objcore *oc, struct worker *wrk,
 		for (i = 0; j == 0 && i < cache_param->nuke_limit; i++) {
 			if (EXP_NukeOne(wrk, stv->lru) == -1)
 				break;
-			j = stv->allocobj(stv, oc, ltot);
+			j = stv->allocobj(stv, oc, wsl);
 		}
 	}
 
