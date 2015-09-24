@@ -98,7 +98,9 @@ are *owned* by VCLs. Though a dynamic backend can't outlive its VCL, it can be
 deleted any time with ``VRT_delete_backend``. The VCL will delete the remaining
 backends once discarded, you don't need to take care of it.
 
-Consider using an object (see :ref:`ref-vmod-objects`) to manipulate dynamic
+.. XXX Consider using an object (see :ref:`ref-vmod-objects`) to manipulate dynamic
+
+Consider using an object to manipulate dynamic
 backends. They are tied to the VCL life cycle and make a handy data structure
 to keep track of backends and objects have a VCL name you can reuse for the
 director. It is also true for *cluster* directors that may reference native
