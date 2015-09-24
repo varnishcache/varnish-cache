@@ -382,12 +382,7 @@ first with a ``VCL_EVENT_WARM`` event, and then a ``VCL_EVENT_USE`` event.
 Unless a user decides that a given VCL should always be warm, an inactive VMOD
 will eventually become cold and should manage resources accordingly.
 
-.. _ref-vmod-objects:
-
-VMOD Objects
-============
-
-TODO
+.. TODO vmod objects
 
 When to lock, and when not to lock
 ==================================
