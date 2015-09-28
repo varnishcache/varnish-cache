@@ -21,6 +21,10 @@ client c1 {
 	gunzip
 	expect resp.bodylen == "10"
 
+	# This delay attempts to ensure that the busyobj
+	# is completed before we attempt the range request
+	delay .2
+
 	txreq -hdr "Range: bytes=3-5"
 	rxresp
 	expect resp.http.content-encoding == "<undef>"
