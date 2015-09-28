@@ -177,8 +177,6 @@ rs_callback(void *priv, const struct suckaddr *vsa)
 		else if (VSA_Compare(vsa, rss->vsa6))
 			rss->wrong++;
 		rss->retval++;
-	} else {
-		WRONG("Wrong protocol");
 	}
 	return (0);
 }
