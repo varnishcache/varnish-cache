@@ -1,3 +1,17 @@
+====================================
+Varnish Cache 4.1.0-rc1 (2015-09-28)
+====================================
+
+Changes since 4.1.0-beta1:
+
+- Documentation updates.
+- Stabilization fixes on testcase p00005.vtc.
+- Avoid compiler warning in zlib.
+- Bug 1792_: Avoid using fallocate() with -sfile on non-EXT4.
+
+.. _1792: https://www.varnish-cache.org/trac/ticket/1792
+
+
 ======================================
 Varnish Cache 4.1.0-beta1 (2015-09-11)
 ======================================
