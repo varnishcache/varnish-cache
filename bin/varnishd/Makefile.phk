@@ -1,13 +1,14 @@
-VPATH += cache common mgt waiter storage hash
+VPATH += cache common mgt waiter storage hash http1 proxy
 
 PROG_SRC += cache/cache_acceptor.c
 PROG_SRC += cache/cache_backend.c
 PROG_SRC += cache/cache_backend_cfg.c
-PROG_SRC += cache/cache_backend_poll.c
+PROG_SRC += cache/cache_backend_tcp.c
+PROG_SRC += cache/cache_backend_probe.c
 PROG_SRC += cache/cache_ban.c
 PROG_SRC += cache/cache_busyobj.c
 PROG_SRC += cache/cache_cli.c
-PROG_SRC += cache/cache_dir.c
+PROG_SRC += cache/cache_director.c
 PROG_SRC += cache/cache_esi_deliver.c
 PROG_SRC += cache/cache_esi_fetch.c
 PROG_SRC += cache/cache_esi_parse.c
@@ -17,18 +18,23 @@ PROG_SRC += cache/cache_fetch_proc.c
 PROG_SRC += cache/cache_gzip.c
 PROG_SRC += cache/cache_hash.c
 PROG_SRC += cache/cache_http.c
-PROG_SRC += cache/cache_http1_deliver.c
-PROG_SRC += cache/cache_http1_fetch.c
-PROG_SRC += cache/cache_http1_fsm.c
-PROG_SRC += cache/cache_http1_proto.c
+PROG_SRC += http1/cache_http1_deliver.c
+PROG_SRC += http1/cache_http1_fetch.c
+PROG_SRC += http1/cache_http1_fsm.c
+PROG_SRC += http1/cache_http1_proto.c
+PROG_SRC += http1/cache_http1_pipe.c
+PROG_SRC += http1/cache_http1_line.c
+PROG_SRC += http1/cache_http1_vfp.c
 PROG_SRC += cache/cache_lck.c
 PROG_SRC += cache/cache_main.c
 PROG_SRC += cache/cache_mempool.c
 PROG_SRC += cache/cache_obj.c
 PROG_SRC += cache/cache_panic.c
-PROG_SRC += cache/cache_pipe.c
 PROG_SRC += cache/cache_pool.c
+PROG_SRC += cache/cache_range.c
+PROG_SRC += cache/cache_req.c
 PROG_SRC += cache/cache_req_fsm.c
+PROG_SRC += cache/cache_req_body.c
 PROG_SRC += cache/cache_rfc2616.c
 PROG_SRC += cache/cache_session.c
 PROG_SRC += cache/cache_shmlog.c
@@ -38,16 +44,19 @@ PROG_SRC += cache/cache_vrt.c
 PROG_SRC += cache/cache_vrt_re.c
 PROG_SRC += cache/cache_vrt_var.c
 PROG_SRC += cache/cache_vrt_vmod.c
+PROG_SRC += cache/cache_vrt_priv.c
 PROG_SRC += cache/cache_wrk.c
-PROG_SRC += cache/cache_wrw.c
 PROG_SRC += cache/cache_ws.c
+PROG_SRC += cache/cache_deliver_proc.c
+
+PROG_SRC += proxy/cache_proxy_proto.c
 
 PROG_SRC += common/common_vsc.c
 PROG_SRC += common/common_vsm.c
 
 PROG_SRC += hash/hash_classic.c
 PROG_SRC += hash/hash_critbit.c
-PROG_SRC += hash/hash_mgt.c
+PROG_SRC += hash/mgt_hash.c
 PROG_SRC += hash/hash_simple_list.c
 
 PROG_SRC += mgt/mgt_child.c
@@ -59,18 +68,21 @@ PROG_SRC += mgt/mgt_param_tbl.c
 PROG_SRC += mgt/mgt_param_tcp.c
 PROG_SRC += mgt/mgt_param_tweak.c
 PROG_SRC += mgt/mgt_pool.c
-PROG_SRC += mgt/mgt_sandbox.c
-PROG_SRC += mgt/mgt_sandbox_solaris.c
+PROG_SRC += mgt/mgt_jail.c
+PROG_SRC += mgt/mgt_jail_unix.c
+PROG_SRC += mgt/mgt_jail_solaris.c
 PROG_SRC += mgt/mgt_shmem.c
 PROG_SRC += mgt/mgt_vcc.c
+PROG_SRC += mgt/mgt_vcl.c
+PROG_SRC += mgt/mgt_acceptor.c
 
 PROG_SRC += storage/stevedore.c
-PROG_SRC += storage/stevedore_mgt.c
+PROG_SRC += storage/mgt_stevedore.c
 PROG_SRC += storage/stevedore_utils.c
 PROG_SRC += storage/storage_file.c
 PROG_SRC += storage/storage_malloc.c
 PROG_SRC += storage/storage_persistent.c
-PROG_SRC += storage/storage_persistent_mgt.c
+PROG_SRC += storage/mgt_storage_persistent.c
 PROG_SRC += storage/storage_persistent_silo.c
 PROG_SRC += storage/storage_persistent_subr.c
 PROG_SRC += storage/storage_umem.c
@@ -97,6 +109,8 @@ RST_MAN += $(TOPDIR)/doc/sphinx/reference/varnishd.rst
 MADE_FILES += builtin_vcl.h
 
 TODO_INSTALL += install_etc
+
+CFLAGS	+= -DVARNISHD_IS_NOT_A_VMOD
 
 TOPDIR  = $(CURDIR)/../..
 include $(TOPDIR)/Makefile.inc.phk

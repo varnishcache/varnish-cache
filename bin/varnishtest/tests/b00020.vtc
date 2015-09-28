@@ -28,8 +28,9 @@ varnish v1 -expect n_object == 0
 varnish v1 -expect n_objectcore == 0
 
 server s1 -wait {
+	non-fatal
 	rxreq
-	send "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n"
+	send "HTTP/1.0 200 OK\r\nConnection: close\r\n\r\n"
 	delay 0.5
 	send "Baba\n"
 	delay 0.5
@@ -40,6 +41,7 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.status == 200
+	expect resp.bodylen == 10
 } -run
 
 varnish v1 -expect n_object == 1

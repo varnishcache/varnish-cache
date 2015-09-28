@@ -166,8 +166,8 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		oc->ban = BAN_RefBan(oc, so->ban, sc->tailban);
 		HSH_Insert(wrk, so->hash, oc);
 		oc->exp = so->exp;
-		EXP_Inject(wrk, oc, sg->lru);
 		sg->nobj++;
+		EXP_Inject(wrk, oc, sg->lru);
 	}
 	Pool_Sumstat(wrk);
 	sg->flags |= SMP_SEG_LOADED;
@@ -396,11 +396,12 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 	uint64_t l;
 	int bad;
 
-	/* Some calls are direct, but they should match anyway */
-	assert(oc->stobj->stevedore->methods->getobj == smp_oc_getobj);
-
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(oc->stobj->stevedore);
+
+	/* Some calls are direct, but they should match anyway */
+	assert(oc->stobj->stevedore->methods->getobj == smp_oc_getobj);
 
 	CAST_OBJ_NOTNULL(sg, oc->stobj->priv, SMP_SEG_MAGIC);
 	so = smp_find_so(sg, oc->stobj->priv2);
@@ -508,6 +509,7 @@ smp_oc_freeobj(struct worker *wrk, struct objcore *oc)
 	}
 
 	Lck_Unlock(&sg->sc->mtx);
+	memset(oc->stobj, 0, sizeof oc->stobj);
 }
 
 /*--------------------------------------------------------------------

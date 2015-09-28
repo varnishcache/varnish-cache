@@ -60,10 +60,11 @@ obj_getmethods(const struct objcore *oc)
 static struct object *
 obj_getobj(struct worker *wrk, struct objcore *oc)
 {
-	const struct storeobj_methods *m = obj_getmethods(oc);
+	const struct storeobj_methods *m;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	m = obj_getmethods(oc);
 	AN(m->getobj);
 	return (m->getobj(wrk, oc));
 }
@@ -443,6 +444,7 @@ ObjFreeObj(struct worker *wrk, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(m->freeobj);
 	m->freeobj(wrk, oc);
+	AZ(oc->stobj->stevedore);
 }
 
 /*====================================================================

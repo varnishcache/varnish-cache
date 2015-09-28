@@ -237,6 +237,10 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 		AN(ecx);
 		ecx->preq = req;
 		*priv = ecx;
+		RFC2616_Weaken_Etag(req->resp);
+		req->res_mode |= RES_ESI;
+		if (req->resp_len != 0)
+			req->resp_len = -1;
 		return (0);
 	}
 	CAST_OBJ_NOTNULL(ecx, *priv, ECX_MAGIC);

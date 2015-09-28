@@ -660,17 +660,15 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		vbf_fetch_body_helper(bo);
 	}
 
-	if (bo->vfc->failed && !bo->do_stream) {
-		assert(bo->state < BOS_STREAM);
-		ObjFreeObj(bo->wrk, bo->fetch_objcore);
-		// XXX: doclose = ?
-		VDI_Finish(bo->wrk, bo);
-		return (F_STP_ERROR);
-	}
-
 	if (bo->vfc->failed) {
 		VDI_Finish(bo->wrk, bo);
-		return (F_STP_FAIL);
+		if (!bo->do_stream) {
+			assert(bo->state < BOS_STREAM);
+			// XXX: doclose = ?
+			return (F_STP_ERROR);
+		} else {
+			return (F_STP_FAIL);
+		}
 	}
 
 	if (bo->do_stream)
@@ -777,7 +775,11 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
 	assert(bo->director_state == DIR_S_NULL);
+
+	if(bo->fetch_objcore->stobj->stevedore != NULL)
+		ObjFreeObj(bo->wrk, bo->fetch_objcore);
 
 	now = W_TIM_real(wrk);
 	VSLb_ts_busyobj(bo, "Error", now);
@@ -794,10 +796,8 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	http_TimeHeader(bo->beresp, "Date: ", now);
 	http_SetHeader(bo->beresp, "Server: Varnish");
 
+	EXP_Clr(&bo->fetch_objcore->exp);
 	bo->fetch_objcore->exp.t_origin = bo->t_prev;
-	bo->fetch_objcore->exp.ttl = 0;
-	bo->fetch_objcore->exp.grace = 0;
-	bo->fetch_objcore->exp.keep = 0;
 
 	VCL_backend_error_method(bo->vcl, wrk, NULL, bo, synth_body);
 
@@ -906,6 +906,15 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	bo->wrk = wrk;
 	wrk->vsl = bo->vsl;
 
+#if 0
+	if (bo->stale_oc != NULL) {
+		CHECK_OBJ_NOTNULL(bo->stale_oc, OBJCORE_MAGIC);
+		/* We don't want the oc/stevedore ops in fetching thread */
+		if (!ObjCheckFlag(wrk, bo->stale_oc, OF_IMSCAND))
+			(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
+	}
+#endif
+
 	while (stp != F_STP_DONE) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 		assert(bo->refcount >= 1);
@@ -936,7 +945,6 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	if (bo->stale_oc != NULL)
 		(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
-
 
 	wrk->vsl = NULL;
 	VBO_DerefBusyObj(wrk, &bo);

@@ -3,8 +3,9 @@ varnishtest "All white-space object, in multiple storage segments"
 server s1 {
 	rxreq
 	expect req.url == "/foo"
-	txresp -nolen -hdr "Connection: close"
-	send {<x>                                      }
+	txresp -nolen -hdr "Transfer-Encoding: chunked"
+	chunked {<x>                                      }
+	chunkedlen 0
 } -start
 
 varnish v1 -vcl+backend {

@@ -196,6 +196,8 @@ vcc_if.c vcc_if.h: vmod.vcc $(TOPDIR)/lib/libvcc/vmodtool.py
 
 $(VMODNAME).so:	$(VMOD_OBJ)
 	$(CC) $(VMOD_LDFLAGS) -o $(VMODNAME).so $^
+	mkdir -p .libs
+	(cd .libs && ln -sf ../$(VMODNAME).so)
 
 .PHONY: vmod_install
 vmod_install:	$(VMODNAME).so

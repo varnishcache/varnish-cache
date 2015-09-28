@@ -188,7 +188,6 @@ VRG_dorange(struct req *req, const char *r)
 	err = vrg_dorange(req, r);
 	if (err != NULL) {
 		VSLb(req->vsl, SLT_Debug, "RANGE_FAIL %s", err);
-		http_Unset(req->resp, H_Content_Length);
 		if (req->resp_len >= 0)
 			http_PrintfHeader(req->resp,
 			    "Content-Range: bytes */%jd",

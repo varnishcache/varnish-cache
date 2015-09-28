@@ -7,6 +7,7 @@ PROG_SRC += vtc_main.c
 PROG_SRC += vtc_sema.c
 PROG_SRC += vtc_server.c
 PROG_SRC += vtc_varnish.c
+PROG_SRC += vtc_process.c
 
 LD_ADD	+= ${LIB_VARNISHAPI}
 LD_ADD	+= ${LIB_VARNISH}
@@ -26,4 +27,4 @@ include $(TOPDIR)/Makefile.inc.phk
 .PHONY:	all_tests
 
 all_tests:
-	./varnishtest -i -j 4 tests/*.vtc
+	./varnishtest -i -j 24 tests/*.vtc

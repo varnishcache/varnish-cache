@@ -1,4 +1,4 @@
-varnishtest "Check that HEAD returns Content-Length: if backend provides"
+varnishtest "Check that HEAD returns Content-Length if backend provides it"
 
 server s1 {
 	rxreq
@@ -8,6 +8,11 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/2") {
+			return (pass);
+		}
+	}
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
 	}
@@ -19,18 +24,8 @@ client c1 {
 	expect resp.http.content-length == 5
 } -run
 
-
-varnish v1 -vcl+backend {
-	sub vcl_recv {
-		return (pass);
-	}
-	sub vcl_backend_response {
-		set beresp.do_stream = false;
-	}
-}
-
 client c1 {
-	txreq -req HEAD
+	txreq -req HEAD -url /2
 	rxresp -no_obj
 	expect resp.http.content-length == 6
 } -run

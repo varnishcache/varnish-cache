@@ -185,6 +185,7 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 		return;
 
 	AZ(bo->htc);
+	AZ(bo->stale_oc);
 
 	VRTPRIV_dynamic_kill(bo->privs, (uintptr_t)bo);
 	assert(VTAILQ_EMPTY(&bo->privs->privs));

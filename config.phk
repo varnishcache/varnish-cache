@@ -63,7 +63,9 @@ if true ; then
 		ncursesw/curses.h \
 		priv.h \
 		pthread_np.h \
+		edit/readline/readline.h \
 		readline/history.h \
+		editline/readline.h \
 		readline/readline.h \
 		sys/endian.h \
 		sys/filio.h \
@@ -88,7 +90,10 @@ if true ; then
 	echo "#define PACKAGE_VERSION \"${ADM_VERSION}\"" >> ${CONFIG_H}_
 
 	echo '
+    #define VARNISH_VCL_DIR         "/etc/varnish"
 		#define VARNISH_STATE_DIR       "/tmp/phk/"
+		#define VARNISH_VMOD_DIR        "/usr/lib/varnish/vmods"
+		#define VCS_Branch "master"
 	' >> ${CONFIG_H}_
 	if [ ! -f ${CONFIG_H} ] ; then
 		mv ${CONFIG_H}_ ${CONFIG_H}
@@ -107,8 +112,10 @@ VMAV=include/vmod_abi.h
 
 if [ -d ./.git ] ; then 
 	V=`git show -s --pretty=format:%h`
+	B=`git rev-parse --abbrev-ref HEAD`
 else
 	V="NOGIT"
+	B="NOGIT"
 fi
 (
 echo "/* $V */"
@@ -119,6 +126,7 @@ echo " * make(1) updates this when necessary"
 echo " *"
 echo " */"
 echo "#define VCS_Version \"$V\""
+echo "#define VCS_Branch \"$B\""
 ) > ${VCSF}_
 if [ ! -f ${VCSF} ] ; then
 	mv ${VCSF}_ ${VCSF}
