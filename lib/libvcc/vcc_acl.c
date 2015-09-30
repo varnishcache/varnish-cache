@@ -241,7 +241,7 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 /*--------------------------------------------------------------------
  * Ancient stupidity on the part of X/Open and other standards orgs
  * dictate that "192.168" be translated to 192.0.0.168.  Ever since
- * CIDR happened, "192.168/16" notation has been used, but appearantly
+ * CIDR happened, "192.168/16" notation has been used, but apparently
  * no API supports parsing this, so roll our own.
  */
 
