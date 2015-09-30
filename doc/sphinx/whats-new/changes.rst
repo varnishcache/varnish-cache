@@ -158,4 +158,8 @@ Other noteworthy small changes
 * Varnish will now use the ``stale-while-revalidate`` defined in RFC5861
   to set object grace time.
 * -smalloc storage is now recommended over -sfile on Linux systems.
+* New VCL variable ``beresp.was_304`` has been introduced in
+  ``vcl_backend_response``. Will be set to ``true`` if the response
+  from the backend was a positive result of a conditional fetch (``304
+  Not Modified``).
 
