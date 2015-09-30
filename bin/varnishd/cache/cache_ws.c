@@ -187,6 +187,7 @@ WS_Printf(struct ws *ws, const char *fmt, ...)
 	va_end(ap);
 	if (v >= u) {
 		WS_Release(ws, 0);
+		WS_MarkOverflow(ws);
 		p = NULL;
 	} else {
 		WS_Release(ws, v + 1);
