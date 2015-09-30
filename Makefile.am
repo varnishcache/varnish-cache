@@ -9,7 +9,7 @@ m4dir = $(datadir)/aclocal
 m4_DATA = varnish.m4
 
 CLEANFILES = cscope.in.out cscope.out cscope.po.out
-EXTRA_DIST = LICENSE autogen.sh varnishapi.pc.in varnish.m4
+EXTRA_DIST = README.Packaging LICENSE autogen.sh varnishapi.pc.in varnish.m4
 
 DISTCHECK_CONFIGURE_FLAGS = \
     --enable-developer-warnings \
