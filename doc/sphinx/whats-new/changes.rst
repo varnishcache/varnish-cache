@@ -1,7 +1,7 @@
 .. _whatsnew_changes:
 
-Changes in Varnish 4.1 (unreleased)
-===================================
+Changes in Varnish 4.1
+======================
 
 Varnish 4.1 is the continuation of the new streaming architecture seen
 in Varnish 4.0.
@@ -122,10 +122,24 @@ Protocol support
 
 Support for HTTP/0.9 on the client side has been retired.
 
-Surrogate keys
-==============
 
-Not yet documented.
+More modules available
+======================
+
+Varnish has an ecosystem for third-party modules (vmods). New since
+the last release, these are worth knowing about:
+
+libvmod-saintmode: Saint mode ("inferred health probes from traffic") was taken
+out of Varnish core in 4.0, and is now back as a separate vmod. This is useful
+for detecting failing backends before the health probes pick it up.
+
+libvmod-xkey: Secondary hash keys for cache objects, based on the hashtwo vmod
+written by Varnish Software. Allows for arbitrary grouping of objects to be
+purged in one go, avoiding use of ban invalidation. Also known as Cache Keys or
+Surrogate Key support.
+
+libvmod-rtstatus: Real time statistics dashboard.
+
 
 Passing data between ESI requests
 =================================
