@@ -626,6 +626,9 @@ vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 	} else {
 		vcc_expr0(tl, &e2, fa->type);
 		ERRCHK(tl);
+		if (e2->fmt != fa->type &&
+		    (fa->type == STRING || fa->type == STRING_LIST))
+			vcc_expr_tostring(tl, &e2, fa->type);
 		if (e2->fmt != fa->type) {
 			VSB_printf(tl->sb, "Wrong argument type.");
 			VSB_printf(tl->sb, "  Expected %s.",

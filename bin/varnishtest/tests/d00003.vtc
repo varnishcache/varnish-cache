@@ -5,6 +5,8 @@ server s1 {
 	txresp -hdr "Foo: 1" -body "1"
 	rxreq
 	txresp -hdr "Foo: 3" -body "3"
+	rxreq
+	txresp -hdr "Foo: 9" -body "9"
 } -start
 
 server s2 {
@@ -28,19 +30,18 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_recv {
-		return(pass);
-	}
-
-	sub vcl_backend_fetch {
-		if (bereq.url == "/nohdr") {
-			set bereq.backend = h1.backend(bereq.http.Void);
-		} else if (bereq.url == "/emptystring") {
-			set bereq.backend = h1.backend("");
-		} else if (bereq.url == "/13") {
-			set bereq.backend = h1.backend(bereq.http.Void + "" + bereq.url);
+		if (req.url == "/nohdr") {
+			set req.backend_hint = h1.backend(req.http.Void);
+		} else if (req.url == "/emptystring") {
+			set req.backend_hint = h1.backend("");
+		} else if (req.url == "/13") {
+			set req.backend_hint = h1.backend(req.http.Void + "" + req.url);
+		} else if (req.url == "/ip") {
+			set req.backend_hint = h1.backend(client.ip);
 		} else {
-			set bereq.backend = h1.backend(bereq.url);
+			set req.backend_hint = h1.backend(req.url);
 		}
+		return (pass);
 	}
 } -start
 
@@ -68,4 +69,8 @@ client c1 {
 	txreq -url /nohdr
 	rxresp
 	expect resp.http.foo == "8"
+
+	txreq -url /ip
+	rxresp
+	expect resp.http.foo == "9"
 } -run
