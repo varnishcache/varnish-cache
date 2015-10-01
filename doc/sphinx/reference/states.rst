@@ -24,7 +24,7 @@ The following graphs attempt to provide an overview over the
 processing states, their transitions and the most relevant functions
 in core code. They represent a compromise between usefulness for
 core/VMOD developers and administrators and are intended to serve as
-the reference basis for deriavtive work, such as more VCL-centric
+the reference basis for derivative work, such as more VCL-centric
 views.
 
 -----------
