@@ -27,6 +27,7 @@ client c1 {
 
 	txreq -hdr "Range: bytes=3-5"
 	rxresp
+	expect resp.status == 206
 	expect resp.http.content-encoding == "<undef>"
 	expect resp.bodylen == "3"
 	expect resp.body == "BAR"
