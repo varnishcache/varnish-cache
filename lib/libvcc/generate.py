@@ -689,6 +689,9 @@ sp_variables = [
 		( 'deliver', 'synth', ),
 		( 'deliver', 'synth', ), """
 		The HTTP status code that will be returned.
+
+                Assigning a HTTP standardized code to resp.status will also
+                set resp.reason to the corresponding status message.
 		"""
 	),
 	('resp.reason',
