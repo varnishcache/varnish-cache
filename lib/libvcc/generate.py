@@ -674,7 +674,7 @@ sp_variables = [
 		'HTTP',
 		( 'deliver', 'synth'),
 		( ), """
-		The entire response HTTP data structure
+		The entire response HTTP data structure.
 		"""
 	),
 	('resp.proto',
