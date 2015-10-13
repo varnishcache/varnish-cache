@@ -30,21 +30,23 @@
 
 /*lint -save -e525 -e539 */
 
-#ifdef HAVE_ACCEPT_FILTERS
 PARAM(
 	/* name */	accept_filter,
 	/* typ */	bool,
 	/* min */	NULL,
 	/* max */	NULL,
+#if defined(HAVE_ACCEPT_FILTERS) || defined(__linux)
 	/* default */	"on",
+#else
+	/* default */	"off",
+#endif /* HAVE_ACCEPT_FILTERS || __linux */
 	/* units */	"bool",
 	/* flags */	MUST_RESTART,
 	/* s-text */
-	"Enable kernel accept-filters, (if available in the kernel).",
+	"Enable kernel accept-filters (if available in the kernel).",
 	/* l-text */	NULL,
 	/* func */	NULL
 )
-#endif /* HAVE_ACCEPT_FILTERS */
 
 PARAM(
 	/* name */	acceptor_sleep_decay,
