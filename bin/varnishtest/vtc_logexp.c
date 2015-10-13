@@ -43,7 +43,7 @@
  *   -T <seconds>         Transaction end timeout
  *
  *
- * logexpect lN -v <id> [-g <grouping>] [-d 0|1] [-q query] {
+ * logexpect lN -v <id> [-g <grouping>] [-d 0|1] [-q query] [vsl arguments] {
  *    expect <skip> <vxid> <tag> <regex>
  * }
  *
