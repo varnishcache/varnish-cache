@@ -16,6 +16,8 @@ varnish v1 -arg "-Wpoll" -vcl+backend {
 		set resp.http.foo1 = std.ip("9.9.9.*", server.ip);
 		set resp.http.foo2 = std.ip("1.2.3.*", "127.0.0.2");
 		set resp.http.foo3 = std.ip("1.2.3.5", "127.0.0.3");
+		set resp.http.foo4 = std.ip("2001:db8::", "[::1]");
+		set resp.http.foo5 = std.ip("2001::db8::", "[::1]");
 	}
 } -start
 
@@ -27,6 +29,8 @@ client c1 {
 	expect resp.http.foo1 == "127.0.0.1"
 	expect resp.http.foo2 == "127.0.0.2"
 	expect resp.http.foo3 == "1.2.3.5"
+	expect resp.http.foo4 == "2001:db8::"
+	expect resp.http.foo5 == "::1"
 	txreq -url "/foo2"
 	rxresp
 	expect resp.bodylen == 2
