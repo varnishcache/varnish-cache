@@ -44,11 +44,12 @@ Output from `vcl.list`::
     available  auto/warm       0 62f5275f-a937-4df9-9fbb-c12336bdfdb8
 
 
-A single VCL's state can be chanced with the `vcl.state` call in
+A single VCL's state can be changed with the `vcl.state` call in
 ``varnishadm``::
 
-    vcl.state <configname> [auto|cold|warm]
-        Force the state of the named configuration.
+    vcl.state <configname> <state>
+        Force the state of the specified configuration.
+        State is any of auto, warm or cold values.
 
 Example::
 

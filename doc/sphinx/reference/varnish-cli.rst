@@ -119,6 +119,10 @@ vcl.list
 vcl.show [-v] <configname>
   Display the source code for the specified configuration.
 
+vcl.state <configname> <state>
+  Force the state of the specified configuration.
+  State is any of auto, warm or cold values.
+
 param.show [-l] [<param>]
   Show parameters and their values.
 
