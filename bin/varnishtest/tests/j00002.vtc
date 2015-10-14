@@ -6,4 +6,7 @@ err_shell "unknown sub-argument" "${varnishd} -junix,bla=foo 2>&1"
 err_shell "user not found" "${varnishd} -junix,user=/// 2>&1"
 err_shell "user not found" "${varnishd} -junix,workuser=/// 2>&1"
 err_shell "group not found" "${varnishd} -junix,ccgroup=/// 2>&1"
+
+feature user_varnish
+
 err_shell "have different login groups" "${varnishd} -junix,workuser=root 2>&1"
