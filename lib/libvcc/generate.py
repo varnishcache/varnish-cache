@@ -690,8 +690,8 @@ sp_variables = [
 		( 'deliver', 'synth', ), """
 		The HTTP status code that will be returned.
 
-                Assigning a HTTP standardized code to resp.status will also
-                set resp.reason to the corresponding status message.
+		Assigning a HTTP standardized code to resp.status will also
+		set resp.reason to the corresponding status message.
 		"""
 	),
 	('resp.reason',
@@ -1315,6 +1315,8 @@ def rst_where(fo, h, l):
 		elif j == "client":
 			ll.append(j)
 		elif j == "backend":
+			ll.append(j)
+		elif j == "all":
 			ll.append(j)
 		else:
 			ll.append("vcl_" + j)
