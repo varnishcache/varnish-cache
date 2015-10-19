@@ -395,6 +395,10 @@ init_params(struct cli *cli)
 		MCF_SetDefault("gzip_buffer", "4k");
 	}
 
+#if !defined(HAVE_ACCEPT_FILTERS) || defined(__linux)
+	MCF_SetDefault("accept_filter", "off");
+#endif
+
 	low = sysconf(_SC_THREAD_STACK_MIN);
 	bprintf(stackmin, "%jd", (intmax_t)low);
 	MCF_SetMinimum("thread_pool_stack", stackmin);
