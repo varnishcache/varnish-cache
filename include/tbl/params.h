@@ -35,11 +35,7 @@ PARAM(
 	/* typ */	bool,
 	/* min */	NULL,
 	/* max */	NULL,
-#if defined(HAVE_ACCEPT_FILTERS) || defined(__linux)
 	/* default */	"on",
-#else
-	/* default */	"off",
-#endif /* HAVE_ACCEPT_FILTERS || __linux */
 	/* units */	"bool",
 	/* flags */	MUST_RESTART,
 	/* s-text */
