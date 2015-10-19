@@ -1,0 +1,39 @@
+varnishtest "#1598 - Missing ':' in server response headers with backend IMS"
+
+server s1 {
+	rxreq
+	txresp -hdr "ETag: \"tag\"" -hdr "foo"
+
+	rxreq
+	expect req.http.if-none-match == "\"tag\""
+	txresp -status 304 -nolen \
+		-hdr "ETag: \"tag\"" \
+		-hdr "foo"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.ttl = 1s;
+		set beresp.grace = 0s;
+		set beresp.keep = 60s;
+	}
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	# varnishtest doesn't accept the faulty header, and there
+	# is no "resp.headers" to do a regex match against.
+	expect resp.http.foo == <undef>
+} -run
+
+delay 1
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run

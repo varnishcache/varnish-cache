@@ -805,7 +805,8 @@ http_Merge(const struct http *fm, struct http *to, int not_ce)
 	}
 	for (v = HTTP_HDR_FIRST; v < to->nhd; v++) {
 		p = strchr(to->hd[v].b, ':');
-		AN(p);
+		if (!p)
+			p = 0;
 		u = http_findhdr(fm, p - to->hd[v].b, to->hd[v].b);
 		if (u)
 			fm->hdf[u] &= ~HDF_MARKER;

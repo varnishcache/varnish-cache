@@ -17,12 +17,14 @@ Bugs fixed
 .. _1691: https://www.varnish-cache.org/trac/ticket/1691
 .. _1688: https://www.varnish-cache.org/trac/ticket/1688
 .. _1602: https://www.varnish-cache.org/trac/ticket/1602
+.. _1598: https://www.varnish-cache.org/trac/ticket/1598
 
 - 1744_ - Update the users guide to for new -sfile syntax
 - 1742_ - Document varnishlog -w/-r with more details
 - 1691_ - Fail fetch on malformed Content-Length header
 - 1688_ - Add a VDP_pretend_gzip for use with synth bodies in ESI includes with gzip
 - 1602_ - Deal with known zero length objects properly when handling do_gzip/do_gunzip
+- 1598_ - Allow invalid headers in 304 backend responses.
 
 
 ============================================
