@@ -39,7 +39,6 @@
 #include <sys/stat.h>
 
 #include "mgt/mgt.h"
-#include "common/params.h"
 
 #include "vcli.h"
 #include "vcli_priv.h"

@@ -43,7 +43,6 @@
 
 #include "mgt/mgt.h"
 #include "common/heritage.h"
-#include "common/params.h"
 
 #include "flopen.h"
 #include "vsm_priv.h"

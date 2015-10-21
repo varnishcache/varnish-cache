@@ -40,7 +40,6 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#include "common/params.h"
 #include "mgt/mgt.h"
 
 #include "libvcc.h"
