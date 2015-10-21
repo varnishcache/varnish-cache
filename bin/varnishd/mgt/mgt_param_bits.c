@@ -33,7 +33,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "common/params.h"
 #include "mgt/mgt.h"
 #include "mgt/mgt_param.h"
 

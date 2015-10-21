@@ -44,7 +44,6 @@
 #include <unistd.h>
 
 #include "mgt/mgt.h"
-#include "common/params.h"
 
 #include "vtcp.h"
 

@@ -45,7 +45,6 @@
 
 #include "mgt/mgt.h"
 #include "common/heritage.h"
-#include "common/params.h"
 
 #include "vbm.h"
 #include "vcli.h"

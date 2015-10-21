@@ -216,7 +216,6 @@
 #include "mgt/mgt.h"
 
 #include "common/heritage.h"
-#include "common/params.h"
 
 #ifdef HAVE_PRIV_H
 #include <priv.h>
