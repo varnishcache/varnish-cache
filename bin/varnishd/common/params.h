@@ -29,6 +29,11 @@
  * This file contains the heritage passed when mgt forks cache
  */
 
+#ifdef COMMON_PARAMS_H
+#error "Multiple includes of common/params.h"
+#endif
+#define COMMON_PARAMS_H
+
 #include <stdint.h>
 
 #include "vre.h"

@@ -43,7 +43,6 @@
 #include "mgt/mgt.h"
 
 #ifdef __linux__
-#include <syslog.h>
 #include <sys/prctl.h>
 #endif
 
@@ -231,7 +230,7 @@ vju_subproc(enum jail_subproc_e jse)
 	 * reenable them again.
 	 */
 	if (prctl(PR_SET_DUMPABLE, 1) != 0) {
-		REPORT0(LOG_INFO,
+		MGT_complain(C_INFO,
 		    "Could not set dumpable bit.  Core dumps turned off\n");
 	}
 #endif

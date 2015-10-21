@@ -210,7 +210,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <syslog.h>
 #include <unistd.h>
 
 #include "mgt/mgt.h"
@@ -390,7 +389,7 @@ vjs_setup(enum jail_gen_e jge)
 	priv_set_t *priv_all;
 
 	if (! (priv_all = priv_allocset())) {
-		REPORT(LOG_ERR,
+		MGT_complain(C_SECURITY,
 		    "Solaris Jail warning: "
 		    " vjs_setup - priv_allocset failed: errno=%d (%s)",
 		    errno, strerror(errno));
@@ -423,7 +422,7 @@ vjs_privsep(enum jail_gen_e jge)
 		if (getuid() != mgt_param.uid)
 			XXXAZ(setuid(mgt_param.uid));
 	} else {
-		REPORT(LOG_INFO,
+		MGT_complain(C_SECURITY,
 		    "Privilege %s missing, will not change uid/gid",
 		    PRIV_PROC_SETID);
 	}
@@ -454,7 +453,7 @@ vjs_waive(enum jail_gen_e jge)
 	    !(inheritable = priv_allocset()) ||
 	    !(permitted = priv_allocset()) ||
 	    !(limited = priv_allocset())) {
-		REPORT(LOG_ERR,
+		MGT_complain(C_SECURITY,
 		    "Solaris Jail warning: "
 		    " vjs_waive - priv_allocset failed: errno=%d (%s)",
 		    errno, strerror(errno));
