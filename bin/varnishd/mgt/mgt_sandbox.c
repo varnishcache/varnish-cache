@@ -54,7 +54,6 @@
 #include <grp.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <syslog.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -236,7 +235,7 @@ mgt_sandbox_unix(enum sandbox_e who)
 	 * reenable them again.
 	 */
 	if (prctl(PR_SET_DUMPABLE, 1) != 0) {
-		REPORT0(LOG_INFO,
+		MGT_complain(C_INFO,
 		    "Could not set dumpable bit.  Core dumps turned off\n");
 	}
 #endif
@@ -277,10 +276,10 @@ mgt_sandbox_init(void)
 	subs = VSUB_run(sb, run_sandbox_test, NULL, "SANDBOX-test", 10);
 	VSB_delete(sb);
 	if (subs) {
-		REPORT0(LOG_INFO, "Warning: init of platform-specific sandbox "
-		    "failed - sandboxing disabled");
-		REPORT0(LOG_INFO, "Warning: Varnish might run with elevated "
-		    "privileges");
+		MGT_complain(C_SECURITY,
+		    "Platform-specific sandbox failed - sandboxing disabled");
+		MGT_complain(C_SECURITY,
+		    "Varnish runs with elevated privileges");
 		mgt_sandbox = mgt_sandbox_null;
 	}
 

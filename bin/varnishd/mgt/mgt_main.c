@@ -37,6 +37,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
@@ -118,6 +119,57 @@ build_vident(void)
 		VSB_printf(vident, ",%s", uts.release);
 		VSB_printf(vident, ",%s", uts.machine);
 	}
+}
+
+/*--------------------------------------------------------------------
+ * 'Ello, I wish to register a complaint...
+ */
+
+#ifndef LOG_AUTHPRIV
+#  define LOG_AUTHPRIV 0
+#endif
+
+const char C_ERR[] = "Error:";
+const char C_INFO[] = "Info:";
+const char C_DEBUG[] = "Debug:";
+const char C_SECURITY[] = "Security:";
+const char C_CLI[] = "Cli:";
+
+void
+MGT_complain(const char *loud, const char *fmt, ...)
+{
+	va_list ap;
+	struct vsb *vsb;
+	int sf;
+
+	if (loud == C_CLI && !mgt_param.syslog_cli_traffic)
+		return;
+	vsb = VSB_new_auto();
+	AN(vsb);
+	va_start(ap, fmt);
+	VSB_vprintf(vsb, fmt, ap);
+	va_end(ap);
+	AZ(VSB_finish(vsb));
+
+	if (loud == C_ERR)
+		sf = LOG_ERR;
+	else if (loud == C_INFO)
+		sf = LOG_INFO;
+	else if (loud == C_DEBUG)
+		sf = LOG_DEBUG;
+	else if (loud == C_SECURITY)
+		sf = LOG_WARNING | LOG_AUTHPRIV;
+	else if (loud == C_CLI)
+		sf = LOG_INFO;
+	else
+		WRONG("Wrong complaint loudness");
+
+	if (loud != C_CLI)
+		fprintf(stderr, "%s %s\n", loud, VSB_data(vsb));
+
+	if (!MGT_DO_DEBUG(DBG_VTC_MODE))
+		syslog(sf, "%s", VSB_data(vsb));
+	VSB_delete(vsb);
 }
 
 /*--------------------------------------------------------------------*/
@@ -755,9 +807,7 @@ main(int argc, char * const *argv)
 
 	assert(pfh == NULL || !VPF_Write(pfh));
 
-	if (d_flag)
-		fprintf(stderr, "Platform: %s\n", VSB_data(vident) + 1);
-	syslog(LOG_NOTICE, "Platform: %s\n", VSB_data(vident) + 1);
+	MGT_complain(C_DEBUG, "Platform: %s\n", VSB_data(vident) + 1);
 
 	mgt_pid = getpid();	/* daemon() changed this */
 

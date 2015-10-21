@@ -41,7 +41,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <syslog.h>
 #include <unistd.h>
 
 #include "mgt/mgt.h"
@@ -57,10 +56,6 @@
 #include "vtcp.h"
 
 #include "mgt_cli.h"
-
-#ifndef LOG_AUTHPRIV
-#  define LOG_AUTHPRIV	0
-#endif
 
 static int		cli_i = -1, cli_o = -1;
 static struct VCLS	*cls;
@@ -301,7 +296,7 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 	VCLI_AuthResponse(fd, cli->challenge, buf);
 	AZ(close(fd));
 	if (strcasecmp(buf, av[2])) {
-		syslog(LOG_WARNING|LOG_AUTHPRIV,
+		MGT_complain(C_SECURITY,
 		    "CLI Authentication failure from %s", cli->ident);
 		VCLI_SetResult(cli, CLIS_CLOSE);
 		return;
@@ -321,21 +316,20 @@ static struct cli_proto cli_auth[] = {
 };
 
 /*--------------------------------------------------------------------*/
+
 static void
 mgt_cli_cb_before(const struct cli *cli)
 {
 
-	if (mgt_param.syslog_cli_traffic)
-		syslog(LOG_NOTICE, "CLI %s Rd %s", cli->ident, cli->cmd);
+	MGT_complain(C_CLI, "CLI %s Rd %s", cli->ident, cli->cmd);
 }
 
 static void
 mgt_cli_cb_after(const struct cli *cli)
 {
 
-	if (mgt_param.syslog_cli_traffic)
-		syslog(LOG_NOTICE, "CLI %s Wr %03u %s",
-		    cli->ident, cli->result, VSB_data(cli->sb));
+	MGT_complain(C_CLI, "CLI %s Wr %03u %s",
+	    cli->ident, cli->result, VSB_data(cli->sb));
 }
 
 /*--------------------------------------------------------------------*/
@@ -610,7 +604,7 @@ Marg_connect(const struct vev *e, int what)
 
 	M_fd = VTCP_connected(M_fd);
 	if (M_fd < 0) {
-		syslog(LOG_INFO, "Could not connect to CLI-master: %m");
+		MGT_complain(C_INFO, "Could not connect to CLI-master: %m");
 		ma = VTAILQ_FIRST(&m_addr_list);
 		AN(ma);
 		VTAILQ_REMOVE(&m_addr_list, ma, list);
