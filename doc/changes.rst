@@ -1,8 +1,48 @@
-====================================
-Varnish Cache 4.1.0-dev (unreleased)
-====================================
+================================
+Varnish Cache 4.1.0 (2015-09-30)
+================================
 
-This is a placeholder entry for the upcoming 4.1.0 prereleases.
+Changes since 4.1.0-beta1:
+
+- Documentation updates.
+- Stabilization fixes on testcase p00005.vtc.
+- Avoid compiler warning in zlib.
+- Bug 1792_: Avoid using fallocate() with -sfile on non-EXT4.
+
+.. _1792: https://www.varnish-cache.org/trac/ticket/1792
+
+
+======================================
+Varnish Cache 4.1.0-beta1 (2015-09-11)
+======================================
+
+Changes since 4.1.0-tp1:
+
+- Redhat packaging files are now separate from the normal tree.
+- Client workspace overflow should now result in a 500 response
+  instead of panic.
+- [varnishstat] -w option has been retired.
+- libvarnishapi release number is increased.
+- Body bytes sent on ESI subrequests with gzip are now counted correctly.
+- [vmod-std] Data type conversion functions now take additional fallback argument.
+
+Bugs fixed
+----------
+
+- 1777_ - Disable speculative Range handling on streaming transactions.
+- 1778_ - [varnishstat] Cast to integer to prevent negative values messing the statistics
+- 1781_ - Propagate gzip CRC upwards from nested ESI includes.
+- 1783_ - Align code with RFC7230 section 3.3.3 which allows POST without a body.
+
+.. _1777: https://www.varnish-cache.org/trac/ticket/1777
+.. _1778: https://www.varnish-cache.org/trac/ticket/1778
+.. _1781: https://www.varnish-cache.org/trac/ticket/1781
+.. _1783: https://www.varnish-cache.org/trac/ticket/1783
+
+
+====================================
+Varnish Cache 4.1.0-tp1 (2015-07-08)
+====================================
 
 Changes between 4.0 and 4.1 are numerous. Please read the upgrade
 section in the documentation for a general overview.
