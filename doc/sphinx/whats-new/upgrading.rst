@@ -1,8 +1,8 @@
 .. _whatsnew_upgrade41:
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Upgrading to Varnish 4.1 (unreleased)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%
+Upgrading to Varnish 4.1
+%%%%%%%%%%%%%%%%%%%%%%%%
 
 Changes to VCL
 ==============
