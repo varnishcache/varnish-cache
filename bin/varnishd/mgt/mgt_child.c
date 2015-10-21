@@ -125,18 +125,17 @@ mgt_panic_record(pid_t r)
 {
 	char time_str[30];
 
-	AN(heritage.panic_str[0]);
-	REPORT(LOG_ERR, "Child (%jd) Panic message:\n%s",
-	    (intmax_t)r, heritage.panic_str);
-
 	if (child_panic != NULL)
 		VSB_delete(child_panic);
 	child_panic = VSB_new_auto();
 	AN(child_panic);
 	VTIM_format(VTIM_real(), time_str);
-	VSB_printf(child_panic, "Last panic at: %s\n", time_str);
-	VSB_cat(child_panic, heritage.panic_str);
+	VSB_printf(child_panic, "Panic at: %s\n", time_str);
+	VSB_quote(child_panic, heritage.panic_str,
+	    strnlen(heritage.panic_str, heritage.panic_str_len), 0);
 	AZ(VSB_finish(child_panic));
+	REPORT(LOG_ERR, "Child (%jd) %s",
+	    (intmax_t)r, VSB_data(child_panic));
 }
 
 static void

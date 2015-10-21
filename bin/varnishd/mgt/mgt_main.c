@@ -424,9 +424,10 @@ identify(const char *i_arg)
 	strcpy(id, "varnishd");
 
 	if (i_arg != NULL) {
-		if (strlen(i_arg) + 1 > sizeof heritage.identity)
-			ARGV_ERR("Identity (-i) name too long.\n");
-		strcpy(heritage.identity, i_arg);
+		if (strlen(i_arg) + 1 > 1024)
+			ARGV_ERR("Identity (-i) name too long (max 1023).\n");
+		heritage.identity = strdup(i_arg);
+		AN(heritage.identity);
 		i = strlen(id);
 		id[i++] = '/';
 		for (; i < (sizeof(id) - 1L); i++) {
