@@ -50,6 +50,14 @@ struct ban * volatile ban_start;
 static struct ban *ban_magic;
 static pthread_t ban_thread;
 
+struct ban_test {
+	uint8_t			arg1;
+	const char		*arg1_spec;
+	uint8_t			oper;
+	const char		*arg2;
+	const void		*arg2_spec;
+};
+
 /*--------------------------------------------------------------------
  * Variables we can purge on
  */
