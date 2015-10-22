@@ -268,8 +268,8 @@ The `vcl_backend_fetch` subroutine may terminate with calling
 
   ``abandon``
     Abandon the backend request. Unless the backend request was a
-    background fetch, control is passed to :ref:`vcl_backend_error`
-    with ``resp.status`` preset to 503.
+    background fetch, control is passed to :ref:`vcl_synth` on the
+    client side with ``resp.status`` preset to 503.
 
 .. _vcl_backend_response:
 
