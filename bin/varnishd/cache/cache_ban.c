@@ -45,7 +45,6 @@ struct lock ban_mtx;
 int ban_shutdown;
 struct banhead_s ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
 struct ban * volatile ban_start;
-struct ban *ban_magic;
 
 static pthread_t ban_thread;
 static int ban_holds;
@@ -73,23 +72,6 @@ ban_alloc(void)
 	return (b);
 }
 
-struct ban *
-BAN_New(void)
-{
-	struct ban *b;
-
-	b = ban_alloc();
-	if (b != NULL) {
-		b->vsb = VSB_new_auto();
-		if (b->vsb == NULL) {
-			FREE_OBJ(b);
-			return (NULL);
-		}
-		VTAILQ_INIT(&b->objcore);
-	}
-	return (b);
-}
-
 void
 BAN_Free(struct ban *b)
 {
@@ -98,8 +80,6 @@ BAN_Free(struct ban *b)
 	AZ(b->refcount);
 	assert(VTAILQ_EMPTY(&b->objcore));
 
-	if (b->vsb != NULL)
-		VSB_delete(b->vsb);
 	if (b->spec != NULL)
 		free(b->spec);
 	FREE_OBJ(b);
@@ -595,8 +575,8 @@ static void
 ccf_ban(struct cli *cli, const char * const *av, void *priv)
 {
 	int narg, i;
-	struct ban *b;
-	char *p;
+	struct ban_proto *bp;
+	const char *err = NULL;
 
 	(void)priv;
 
@@ -616,19 +596,24 @@ ccf_ban(struct cli *cli, const char * const *av, void *priv)
 		}
 	}
 
-	b = BAN_New();
-	if (b == NULL) {
+	bp = BAN_Build();
+	if (bp == NULL) {
 		VCLI_Out(cli, "Out of Memory");
 		VCLI_SetResult(cli, CLIS_CANT);
 		return;
 	}
-	for (i = 0; i < narg; i += 4)
-		if (BAN_AddTest(b, av[i + 2], av[i + 3], av[i + 4]))
+	for (i = 0; i < narg; i += 4) {
+		err = BAN_AddTest(bp, av[i + 2], av[i + 3], av[i + 4]);
+		if (err)
 			break;
-	p = BAN_Insert(b);
-	if (p != NULL) {
-		VCLI_Out(cli, "%s", p);
-		BAN_Free_Errormsg(p);
+	}
+
+	if (err == NULL)
+		err = BAN_Commit(bp);
+
+	if (err != NULL) {
+		VCLI_Out(cli, "%s", err);
+		BAN_Abandon(bp);
 		VCLI_SetResult(cli, CLIS_PARAM);
 	}
 }
@@ -679,6 +664,7 @@ static void
 ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 {
 	struct ban *b, *bl;
+	int64_t o;
 
 	(void)av;
 	(void)priv;
@@ -691,14 +677,14 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 
 	VCLI_Out(cli, "Present bans:\n");
 	VTAILQ_FOREACH(b, &ban_head, list) {
-		VCLI_Out(cli, "%10.6f %5u %s", ban_time(b->spec),
-		    bl == b ? b->refcount - 1 : b->refcount,
+		o = bl == b ? 1 : 0;
+		VCLI_Out(cli, "%10.6f %5ju %s", ban_time(b->spec),
+		    (intmax_t)b->refcount - o,
 		    b->flags & BANS_FLAG_COMPLETED ? "C" : " ");
 		if (DO_DEBUG(DBG_LURKER)) {
-			VCLI_Out(cli, "%s%s%s %p ",
+			VCLI_Out(cli, "%s%s %p ",
 			    b->flags & BANS_FLAG_REQ ? "R" : "-",
 			    b->flags & BANS_FLAG_OBJ ? "O" : "-",
-			    b->flags & BANS_FLAG_ERROR ? "E" : "-",
 			    b);
 		}
 		VCLI_Out(cli, "  ");
@@ -732,6 +718,7 @@ static struct cli_proto ban_cmds[] = {
 void
 BAN_Compile(void)
 {
+	struct ban *b;
 
 	/*
 	 * All bans have been read from all persistent stevedores. Export
@@ -743,8 +730,9 @@ BAN_Compile(void)
 
 	Lck_Lock(&ban_mtx);
 
-	/* Do late reporting of ban_magic */
-	AZ(STV_BanInfo(BI_NEW, ban_magic->spec, ban_len(ban_magic->spec)));
+	/* Report the place-holder ban */
+	b = VTAILQ_FIRST(&ban_head);
+	AZ(STV_BanInfo(BI_NEW, b->spec, ban_len(b->spec)));
 
 	ban_export();
 
@@ -757,16 +745,19 @@ BAN_Compile(void)
 void
 BAN_Init(void)
 {
+	struct ban_proto *bp;
 
 	Lck_New(&ban_mtx, lck_ban);
 	CLI_AddFuncs(ban_cmds);
 
-	ban_magic = BAN_New();
-	AN(ban_magic);
-	AZ(BAN_Insert(ban_magic));
-	Lck_Lock(&ban_mtx);
-	ban_mark_completed(ban_magic);
 	ban_holds = 1;
+
+	/* Add a placeholder ban */
+	bp = BAN_Build();
+	AN(bp);
+	AZ(BAN_Commit(bp));
+	Lck_Lock(&ban_mtx);
+	ban_mark_completed(VTAILQ_FIRST(&ban_head));
 	Lck_Unlock(&ban_mtx);
 }
 

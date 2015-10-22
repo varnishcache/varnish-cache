@@ -102,6 +102,7 @@ enum {
 
 struct VSC_C_lck;
 struct ban;
+struct ban_proto;
 struct backend;
 struct busyobj;
 struct cli;
@@ -657,11 +658,11 @@ typedef enum htc_status_e htc_complete_f(struct http_conn *);
 /* cache_ban.c */
 
 /* for constructing bans */
-struct ban *BAN_New(void);
-int BAN_AddTest(struct ban *, const char *, const char *, const char *);
-void BAN_Free(struct ban *b);
-char *BAN_Insert(struct ban *b);
-void BAN_Free_Errormsg(char *);
+struct ban_proto *BAN_Build(void);
+const char *BAN_AddTest(struct ban_proto *,
+    const char *, const char *, const char *);
+const char *BAN_Commit(struct ban_proto *b);
+void BAN_Abandon(struct ban_proto *b);
 
 /* for stevedoes resurrecting bans */
 void BAN_Hold(void);

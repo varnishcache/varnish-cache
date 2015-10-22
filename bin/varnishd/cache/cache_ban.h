@@ -73,7 +73,6 @@
 #define BANS_FLAG_OBJ		(1<<1)
 #define BANS_FLAG_COMPLETED	(1<<2)
 #define BANS_FLAG_HTTP		(1<<3)
-#define BANS_FLAG_ERROR		(1<<4)
 
 #define BANS_OPER_EQ		0x10
 #define BANS_OPER_NEQ		0x11
@@ -90,13 +89,12 @@
 struct ban {
 	unsigned		magic;
 #define BAN_MAGIC		0x700b08ea
+	unsigned		flags;		/* BANS_FLAG_* */
 	VTAILQ_ENTRY(ban)	list;
 	VTAILQ_ENTRY(ban)	l_list;
-	int			refcount;
-	unsigned		flags;		/* BANS_FLAG_* */
+	int64_t			refcount;
 
 	VTAILQ_HEAD(,objcore)	objcore;
-	struct vsb		*vsb;
 	uint8_t			*spec;
 };
 
@@ -107,7 +105,6 @@ extern struct lock ban_mtx;
 extern int ban_shutdown;
 extern struct banhead_s ban_head;
 extern struct ban * volatile ban_start;
-extern struct ban *ban_magic;
 
 void ban_mark_completed(struct ban *b);
 unsigned ban_len(const uint8_t *banspec);
@@ -116,3 +113,4 @@ int ban_evaluate(struct worker *wrk, const uint8_t *bs, struct objcore *oc,
     const struct http *reqhttp, unsigned *tests);
 double ban_time(const uint8_t *banspec);
 int ban_equal(const uint8_t *bs1, const uint8_t *bs2);
+void BAN_Free(struct ban *b);

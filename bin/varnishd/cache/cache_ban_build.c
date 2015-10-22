@@ -38,6 +38,15 @@
 #include "vend.h"
 #include "vtim.h"
 
+struct ban_proto {
+	unsigned		magic;
+#define BAN_PROTO_MAGIC		0xd8adc494
+	unsigned		flags;		/* BANS_FLAG_* */
+
+	struct vsb		*vsb;
+	char			*err;
+};
+
 /*--------------------------------------------------------------------
  * Variables we can purge on
  */
@@ -53,41 +62,83 @@ static const struct pvar {
 	{ 0, 0, 0}
 };
 
-static void
-ban_add_lump(const struct ban *b, const void *p, uint32_t len)
-{
-	uint8_t buf[sizeof len];
+/*--------------------------------------------------------------------
+ */
 
-	buf[0] = 0xff;
-	while (VSB_len(b->vsb) & PALGN)
-		VSB_bcat(b->vsb, buf, 1);
-	vbe32enc(buf, len);
-	VSB_bcat(b->vsb, buf, sizeof buf);
-	VSB_bcat(b->vsb, p, len);
+static char ban_build_err_no_mem[] = "No Memory";
+
+/*--------------------------------------------------------------------
+ */
+
+struct ban_proto *
+BAN_Build(void)
+{
+	struct ban_proto *bp;
+
+	ALLOC_OBJ(bp, BAN_PROTO_MAGIC);
+	if (bp == NULL)
+		return (bp);
+	bp->vsb = VSB_new_auto();
+	if (bp->vsb == NULL) {
+		FREE_OBJ(bp);
+		return (NULL);
+	}
+	return (bp);
+}
+
+void
+BAN_Abandon(struct ban_proto *bp)
+{
+
+	CHECK_OBJ_NOTNULL(bp, BAN_PROTO_MAGIC);
+	VSB_delete(bp->vsb);
+	if (bp->err != NULL && bp->err != ban_build_err_no_mem)
+		REPLACE(bp->err, NULL);
+	FREE_OBJ(bp);
 }
 
 /*--------------------------------------------------------------------
  */
 
-static int
-ban_error(struct ban *b, const char *fmt, ...)
+static void
+ban_add_lump(const struct ban_proto *bp, const void *p, uint32_t len)
+{
+	uint8_t buf[sizeof len];
+
+	buf[0] = 0xff;
+	while (VSB_len(bp->vsb) & PALGN)
+		VSB_bcat(bp->vsb, buf, 1);
+	vbe32enc(buf, len);
+	VSB_bcat(bp->vsb, buf, sizeof buf);
+	VSB_bcat(bp->vsb, p, len);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static const char *
+ban_error(struct ban_proto *bp, const char *fmt, ...)
 {
 	va_list ap;
 
-	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
-	AN(b->vsb);
+	CHECK_OBJ_NOTNULL(bp, BAN_PROTO_MAGIC);
+	AN(bp->vsb);
 
 	/* First error is sticky */
-	if (!(b->flags & BANS_FLAG_ERROR)) {
-		b->flags |= BANS_FLAG_ERROR;
-
-		/* Record the error message in the vsb */
-		VSB_clear(b->vsb);
-		va_start(ap, fmt);
-		(void)VSB_vprintf(b->vsb, fmt, ap);
-		va_end(ap);
+	if (bp->err == NULL) {
+		if (fmt == ban_build_err_no_mem) {
+			bp->err = ban_build_err_no_mem;
+		} else {
+			/* Record the error message in the vsb */
+			VSB_clear(bp->vsb);
+			va_start(ap, fmt);
+			(void)VSB_vprintf(bp->vsb, fmt, ap);
+			va_end(ap);
+			AZ(VSB_finish(bp->vsb));
+			bp->err = VSB_data(bp->vsb);
+		}
 	}
-	return (-1);
+	return (bp->err);
 }
 
 /*--------------------------------------------------------------------
@@ -96,24 +147,24 @@ ban_error(struct ban *b, const char *fmt, ...)
  */
 
 static void
-ban_parse_http(const struct ban *b, const char *a1)
+ban_parse_http(const struct ban_proto *bp, const char *a1)
 {
 	int l;
 
 	l = strlen(a1) + 1;
 	assert(l <= 127);
-	VSB_putc(b->vsb, (char)l);
-	VSB_cat(b->vsb, a1);
-	VSB_putc(b->vsb, ':');
-	VSB_putc(b->vsb, '\0');
+	VSB_putc(bp->vsb, (char)l);
+	VSB_cat(bp->vsb, a1);
+	VSB_putc(bp->vsb, ':');
+	VSB_putc(bp->vsb, '\0');
 }
 
 /*--------------------------------------------------------------------
  * Parse and add a ban test specification
  */
 
-static int
-ban_parse_regexp(struct ban *b, const char *a3)
+static const char *
+ban_parse_regexp(struct ban_proto *bp, const char *a3)
 {
 	const char *error;
 	int erroroffset, rc;
@@ -122,10 +173,10 @@ ban_parse_regexp(struct ban *b, const char *a3)
 
 	re = pcre_compile(a3, 0, &error, &erroroffset, NULL);
 	if (re == NULL)
-		return (ban_error(b, "Regex compile error: %s", error));
+		return (ban_error(bp, "Regex compile error: %s", error));
 	rc = pcre_fullinfo(re, NULL, PCRE_INFO_SIZE, &sz);
 	AZ(rc);
-	ban_add_lump(b, re, sz);
+	ban_add_lump(bp, re, sz);
 	pcre_free(re);
 	return (0);
 }
@@ -134,55 +185,56 @@ ban_parse_regexp(struct ban *b, const char *a3)
  * Add a (and'ed) test-condition to a ban
  */
 
-int
-BAN_AddTest(struct ban *b, const char *a1, const char *a2, const char *a3)
+const char *
+BAN_AddTest(struct ban_proto *bp,
+    const char *a1, const char *a2, const char *a3)
 {
 	const struct pvar *pv;
-	int i;
+	const char *err;
 
-	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
-	AN(b->vsb);
+	CHECK_OBJ_NOTNULL(bp, BAN_PROTO_MAGIC);
+	AN(bp->vsb);
 	AN(a1);
 	AN(a2);
 	AN(a3);
 
-	if (b->flags & BANS_FLAG_ERROR)
-		return (-1);
+	if (bp->err != NULL)
+		return (bp->err);
 
 	for (pv = pvars; pv->name != NULL; pv++)
 		if (!strncmp(a1, pv->name, strlen(pv->name)))
 			break;
 
 	if (pv->name == NULL)
-		return (ban_error(b,
+		return (ban_error(bp,
 		    "Unknown or unsupported field \"%s\"", a1));
 
-	b->flags |= pv->flag;
+	bp->flags |= pv->flag;
 
-	VSB_putc(b->vsb, pv->tag);
+	VSB_putc(bp->vsb, pv->tag);
 	if (pv->flag & BANS_FLAG_HTTP)
-		ban_parse_http(b, a1 + strlen(pv->name));
+		ban_parse_http(bp, a1 + strlen(pv->name));
 
-	ban_add_lump(b, a3, strlen(a3) + 1);
+	ban_add_lump(bp, a3, strlen(a3) + 1);
 	if (!strcmp(a2, "~")) {
-		VSB_putc(b->vsb, BANS_OPER_MATCH);
-		i = ban_parse_regexp(b, a3);
-		if (i)
-			return (i);
+		VSB_putc(bp->vsb, BANS_OPER_MATCH);
+		err = ban_parse_regexp(bp, a3);
+		if (err)
+			return (err);
 	} else if (!strcmp(a2, "!~")) {
-		VSB_putc(b->vsb, BANS_OPER_NMATCH);
-		i = ban_parse_regexp(b, a3);
-		if (i)
-			return (i);
+		VSB_putc(bp->vsb, BANS_OPER_NMATCH);
+		err = ban_parse_regexp(bp, a3);
+		if (err)
+			return (err);
 	} else if (!strcmp(a2, "==")) {
-		VSB_putc(b->vsb, BANS_OPER_EQ);
+		VSB_putc(bp->vsb, BANS_OPER_EQ);
 	} else if (!strcmp(a2, "!=")) {
-		VSB_putc(b->vsb, BANS_OPER_NEQ);
+		VSB_putc(bp->vsb, BANS_OPER_NEQ);
 	} else {
-		return (ban_error(b,
+		return (ban_error(bp,
 		    "expected conditional (~, !~, == or !=) got \"%s\"", a2));
 	}
-	return (0);
+	return (NULL);
 }
 
 /*--------------------------------------------------------------------
@@ -197,121 +249,80 @@ BAN_AddTest(struct ban *b, const char *a1, const char *a2, const char *a3)
  *      deleted.
  */
 
-static char ban_error_nomem[] = "Could not get memory";
-
-static char *
-ban_ins_error(const char *p)
+const char *
+BAN_Commit(struct ban_proto *bp)
 {
-	char *r = NULL;
-
-	if (p != NULL)
-		r = strdup(p);
-	if (r == NULL)
-		r = ban_error_nomem;
-	return (r);
-}
-
-void
-BAN_Free_Errormsg(char *p)
-{
-	if (p != ban_error_nomem)
-		free(p);
-}
-
-char *
-BAN_Insert(struct ban *b)
-{
-	struct ban  *bi, *be;
+	struct ban  *b, *bi;
 	ssize_t ln;
 	double t0;
-	char *p;
 
-	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
-	AN(b->vsb);
+	CHECK_OBJ_NOTNULL(bp, BAN_PROTO_MAGIC);
+	AN(bp->vsb);
 
-	if (ban_shutdown) {
-		BAN_Free(b);
-		return (ban_ins_error("Shutting down"));
-	}
+	if (ban_shutdown)
+		return (ban_error(bp, "Shutting down"));
 
-	AZ(VSB_finish(b->vsb));
-	ln = VSB_len(b->vsb);
+	AZ(VSB_finish(bp->vsb));
+	ln = VSB_len(bp->vsb);
 	assert(ln >= 0);
 
-	if (b->flags & BANS_FLAG_ERROR) {
-		p = ban_ins_error(VSB_data(b->vsb));
-		BAN_Free(b);
-		return (p);
-	}
+	ALLOC_OBJ(b, BAN_MAGIC);
+	if (b == NULL)
+		return (ban_error(bp, ban_build_err_no_mem));
+	VTAILQ_INIT(&b->objcore);
 
 	b->spec = malloc(ln + BANS_HEAD_LEN);
 	if (b->spec == NULL) {
-		BAN_Free(b);
-		return (ban_ins_error(NULL));
+		free(b);
+		return (ban_error(bp, ban_build_err_no_mem));
 	}
+
+	b->flags = bp->flags;
 
 	memset(b->spec, 0, BANS_HEAD_LEN);
 	t0 = VTIM_real();
 	memcpy(b->spec + BANS_TIMESTAMP, &t0, sizeof t0);
 	b->spec[BANS_FLAGS] = b->flags & 0xff;
-	memcpy(b->spec + BANS_HEAD_LEN, VSB_data(b->vsb), ln);
+	memcpy(b->spec + BANS_HEAD_LEN, VSB_data(bp->vsb), ln);
 	ln += BANS_HEAD_LEN;
 	vbe32enc(b->spec + BANS_LENGTH, ln);
 
-	VSB_delete(b->vsb);
-	b->vsb = NULL;
-
 	Lck_Lock(&ban_mtx);
 	if (ban_shutdown) {
-		/* Check again, we might have raced */
+		/* We could have raced a shutdown */
 		Lck_Unlock(&ban_mtx);
 		BAN_Free(b);
-		return (ban_ins_error("Shutting down"));
+		return (ban_error(bp, "Shutting down"));
 	}
+	bi = VTAILQ_FIRST(&ban_head);
 	VTAILQ_INSERT_HEAD(&ban_head, b, list);
 	ban_start = b;
+
 	VSC_C_main->bans++;
 	VSC_C_main->bans_added++;
+	VSC_C_main->bans_persisted_bytes += ln;
+
 	if (b->flags & BANS_FLAG_OBJ)
 		VSC_C_main->bans_obj++;
 	if (b->flags & BANS_FLAG_REQ)
 		VSC_C_main->bans_req++;
 
-	be = VTAILQ_LAST(&ban_head, banhead_s);
-	if (cache_param->ban_dups && be != b)
-		be->refcount++;
-	else
-		be = NULL;
+	if (bi != NULL)
+		ban_info(BI_NEW, b->spec, ln);	/* Notify stevedores */
 
-	/* ban_magic is magic, and needs to be inserted early to give
-	 * a handle to grab a ref on. We don't report it here as the
-	 * stevedores will not be opened and ready to accept it
-	 * yet. Instead it is reported on BAN_Compile, which is after
-	 * the stevedores has been opened, but before any new objects
-	 * can have entered the cache (thus no objects in the mean
-	 * time depending on ban_magic in the list) */
-	VSC_C_main->bans_persisted_bytes += ln;
-	if (b != ban_magic)
-		ban_info(BI_NEW, b->spec, ln); /* Notify stevedores */
-	Lck_Unlock(&ban_mtx);
-
-	if (be == NULL)
-		return (NULL);
-
-	/* Hunt down duplicates, and mark them as completed */
-	bi = b;
-	Lck_Lock(&ban_mtx);
-	while (!ban_shutdown && bi != be) {
-		bi = VTAILQ_NEXT(bi, list);
-		if (bi->flags & BANS_FLAG_COMPLETED)
-			continue;
-		if (!ban_equal(b->spec, bi->spec))
-			continue;
-		ban_mark_completed(bi);
-		VSC_C_main->bans_dups++;
+	if (cache_param->ban_dups) {
+		/* Hunt down duplicates, and mark them as completed */
+		for (bi = VTAILQ_NEXT(b, list); bi != NULL;
+		    bi = VTAILQ_NEXT(bi, list)) {
+			if (!(bi->flags & BANS_FLAG_COMPLETED) &&
+			    ban_equal(b->spec, bi->spec)) {
+				ban_mark_completed(bi);
+				VSC_C_main->bans_dups++;
+			}
+		}
 	}
-	be->refcount--;
 	Lck_Unlock(&ban_mtx);
 
+	BAN_Abandon(bp);
 	return (NULL);
 }

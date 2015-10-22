@@ -395,15 +395,16 @@ VRT_ban_string(VRT_CTX, const char *str)
 {
 	char *a1, *a2, *a3;
 	char **av;
-	struct ban *b;
+	struct ban_proto *bp;
+	const char *err;
 	int i;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(ctx->vsl);
 	AN(str);
 
-	b = BAN_New();
-	if (b == NULL) {
+	bp = BAN_Build();
+	if (bp == NULL) {
 		VSLb(ctx->vsl, SLT_VCL_Error, "ban(): Out of Memory");
 		return;
 	}
@@ -412,7 +413,7 @@ VRT_ban_string(VRT_CTX, const char *str)
 	if (av[0] != NULL) {
 		VSLb(ctx->vsl, SLT_VCL_Error, "ban(): %s", av[0]);
 		VAV_Free(av);
-		BAN_Free(b);
+		BAN_Abandon(bp);
 		return;
 	}
 	for (i = 0; ;) {
@@ -434,13 +435,17 @@ VRT_ban_string(VRT_CTX, const char *str)
 			    "ban(): Expected second operand.");
 			break;
 		}
-		if (BAN_AddTest(b, a1, a2, a3) || av[++i] == NULL) {
-			a1 = BAN_Insert(b);
-			if (a1 != NULL) {
-				VSLb(ctx->vsl, SLT_VCL_Error,
-				    "ban(): %s", a1);
-				BAN_Free_Errormsg(a1);
-			}
+		err = BAN_AddTest(bp, a1, a2, a3);
+		if (err) {
+			VSLb(ctx->vsl, SLT_VCL_Error, "ban(): %s", err);
+			break;
+		}
+		if (av[++i] == NULL) {
+			err = BAN_Commit(bp);
+			if (err == NULL)
+				bp = NULL;
+			else
+				VSLb(ctx->vsl, SLT_VCL_Error, "ban(): %s", err);
 			break;
 		}
 		if (strcmp(av[i], "&&")) {
@@ -450,6 +455,8 @@ VRT_ban_string(VRT_CTX, const char *str)
 			break;
 		}
 	}
+	if (bp != NULL)
+		BAN_Abandon(bp);
 	VAV_Free(av);
 }
 
