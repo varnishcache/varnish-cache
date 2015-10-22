@@ -665,7 +665,6 @@ void BAN_DestroyObj(struct objcore *oc);
 int BAN_CheckObject(struct worker *, struct objcore *, struct req *);
 void BAN_Reload(const uint8_t *ban, unsigned len);
 struct ban *BAN_TailRef(void);
-void BAN_Compile(void);
 struct ban *BAN_RefBan(struct objcore *oc, double t0, const struct ban *tail);
 void BAN_TailDeref(struct ban **ban);
 double BAN_Time(const struct ban *ban);

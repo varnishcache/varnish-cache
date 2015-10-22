@@ -59,6 +59,7 @@ void VBP_Init(void);
 
 /* cache_ban.c */
 void BAN_Init(void);
+void BAN_Compile(void);
 void BAN_Shutdown(void);
 
 /* cache_busyobj.c */
