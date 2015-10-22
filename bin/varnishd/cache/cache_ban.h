@@ -105,6 +105,7 @@ extern struct lock ban_mtx;
 extern int ban_shutdown;
 extern struct banhead_s ban_head;
 extern struct ban * volatile ban_start;
+extern pthread_cond_t	ban_lurker_cond;
 
 void ban_mark_completed(struct ban *b);
 unsigned ban_len(const uint8_t *banspec);
@@ -114,3 +115,4 @@ int ban_evaluate(struct worker *wrk, const uint8_t *bs, struct objcore *oc,
 double ban_time(const uint8_t *banspec);
 int ban_equal(const uint8_t *bs1, const uint8_t *bs2);
 void BAN_Free(struct ban *b);
+void ban_kick_lurker(void);

@@ -38,6 +38,18 @@
 
 static struct objcore oc_marker = { .magic = OBJCORE_MAGIC, };
 static unsigned ban_batch;
+static unsigned ban_generation;
+
+pthread_cond_t	ban_lurker_cond;
+
+void
+ban_kick_lurker(void)
+{
+	Lck_Lock(&ban_mtx);
+	ban_generation++;
+	AZ(pthread_cond_signal(&ban_lurker_cond));
+	Lck_Unlock(&ban_mtx);
+}
 
 static void
 ban_cleantail(void)
@@ -254,7 +266,10 @@ ban_lurker(struct worker *wrk, void *priv)
 		if (d <= 0.0 || !ban_lurker_work(wrk, &vsl))
 			d = 0.609;	// Random, non-magic
 		ban_cleantail();
-		VTIM_sleep(d);
+		d += VTIM_real();
+		Lck_Lock(&ban_mtx);
+		(void)Lck_CondWait(&ban_lurker_cond, &ban_mtx, d);
+		Lck_Unlock(&ban_mtx);
 	}
 	pthread_exit(0);
 	NEEDLESS_RETURN(NULL);
