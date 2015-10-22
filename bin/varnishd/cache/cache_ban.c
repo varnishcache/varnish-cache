@@ -756,6 +756,7 @@ BAN_Init(void)
 	bp = BAN_Build();
 	AN(bp);
 	AZ(BAN_Commit(bp));
+	AZ(pthread_cond_init(&ban_lurker_cond, NULL));
 	Lck_Lock(&ban_mtx);
 	ban_mark_completed(VTAILQ_FIRST(&ban_head));
 	Lck_Unlock(&ban_mtx);
@@ -774,9 +775,8 @@ BAN_Shutdown(void)
 {
 	void *status;
 
-	Lck_Lock(&ban_mtx);
 	ban_shutdown = 1;
-	Lck_Unlock(&ban_mtx);
+	ban_kick_lurker();
 
 	AZ(pthread_join(ban_thread, &status));
 	AZ(status);
