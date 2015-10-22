@@ -655,18 +655,19 @@ struct sess {
 typedef enum htc_status_e htc_complete_f(struct http_conn *);
 
 /* cache_ban.c */
+
+/* for constructing bans */
 struct ban *BAN_New(void);
 int BAN_AddTest(struct ban *, const char *, const char *, const char *);
 void BAN_Free(struct ban *b);
 char *BAN_Insert(struct ban *b);
 void BAN_Free_Errormsg(char *);
-void BAN_NewObjCore(struct objcore *oc);
-void BAN_DestroyObj(struct objcore *oc);
-int BAN_CheckObject(struct worker *, struct objcore *, struct req *);
+
+/* for stevedoes resurrecting bans */
+void BAN_Hold(void);
+void BAN_Release(void);
 void BAN_Reload(const uint8_t *ban, unsigned len);
-struct ban *BAN_TailRef(void);
-struct ban *BAN_RefBan(struct objcore *oc, double t0, const struct ban *tail);
-void BAN_TailDeref(struct ban **ban);
+struct ban *BAN_RefBan(struct objcore *oc, double t0);
 double BAN_Time(const struct ban *ban);
 
 /* cache_busyobj.c */
