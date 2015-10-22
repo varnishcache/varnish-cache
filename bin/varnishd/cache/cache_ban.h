@@ -107,6 +107,7 @@ extern struct lock ban_mtx;
 extern int ban_shutdown;
 extern struct banhead_s ban_head;
 extern struct ban * volatile ban_start;
+extern struct ban *ban_magic;
 
 void ban_mark_completed(struct ban *b);
 unsigned ban_len(const uint8_t *banspec);
@@ -114,3 +115,4 @@ void ban_info(enum baninfo event, const uint8_t *ban, unsigned len);
 int ban_evaluate(struct worker *wrk, const uint8_t *bs, struct objcore *oc,
     const struct http *reqhttp, unsigned *tests);
 double ban_time(const uint8_t *banspec);
+int ban_equal(const uint8_t *bs1, const uint8_t *bs2);
