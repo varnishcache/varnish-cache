@@ -135,10 +135,10 @@ PARAM(
 	/* units */	"seconds",
 	/* flags */	0,
 	/* s-text */
-	"The ban lurker only process bans when they are this old.  "
-	"When a ban is added, the most frequently hit objects will "
-	"get tested against it as part of object lookup.  This parameter "
-	"prevents the ban-lurker from kicking in, until the rush is over.",
+	"The ban lurker will ignore bans until they are this old.  "
+	"When a ban is added, the active traffic will be tested against it "
+	"as part of object lookup.  This parameter "
+	"holds the ban-lurker off, until the rush is over.",
 	/* l-text */	"",
 	/* func */	NULL
 )
@@ -152,9 +152,9 @@ PARAM(
 	/* units */	NULL,
 	/* flags */	0,
 	/* s-text */
-	"The ban lurker slees ${ban_lurker_sleep} after examining this "
-	"many objects.  Use this to pace the ban-lurker if it eats too "
-	"many resources.",
+	"The ban lurker sleeps ${ban_lurker_sleep} after examining this "
+	"many objects."
+	"  Use this to pace the ban-lurker if it eats too many resources.",
 	/* l-text */	"",
 	/* func */	NULL
 )
@@ -169,7 +169,8 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"How long the ban lurker sleeps after examining ${ban_lurker_batch} "
-	"objects.\n"
+	"objects."
+	"  Use this to pace the ban-lurker if it eats too many resources.\n"
 	"A value of zero will disable the ban lurker entirely.",
 	/* l-text */	"",
 	/* func */	NULL

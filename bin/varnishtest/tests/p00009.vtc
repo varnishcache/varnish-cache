@@ -53,5 +53,4 @@ client c1 {
 
 # Expect our duplicate
 varnish v1 -expect bans_dups == 1
-# One more than before restart due to the new ban_magic
-varnish v1 -expect bans_completed == 3
+varnish v1 -expect bans_completed == 1
