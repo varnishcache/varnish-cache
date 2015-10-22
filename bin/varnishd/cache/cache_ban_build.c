@@ -319,6 +319,8 @@ BAN_Commit(struct ban_proto *bp)
 			}
 		}
 	}
+	if (!(b->flags & BANS_FLAG_REQ))
+		ban_kick_lurker();
 	Lck_Unlock(&ban_mtx);
 
 	BAN_Abandon(bp);

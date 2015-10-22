@@ -45,10 +45,10 @@ pthread_cond_t	ban_lurker_cond;
 void
 ban_kick_lurker(void)
 {
-	Lck_Lock(&ban_mtx);
+
+	Lck_AssertHeld(&ban_mtx);
 	ban_generation++;
 	AZ(pthread_cond_signal(&ban_lurker_cond));
-	Lck_Unlock(&ban_mtx);
 }
 
 static void
@@ -191,14 +191,17 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
  * Ban lurker thread
  */
 
-static int
+static double
 ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 {
 	struct ban *b, *bt;
 	struct banhead_s obans;
-	double d;
+	double d, dt, n;
 	int i;
 
+	dt = 49.62;		// Random, non-magic
+	if (cache_param->ban_lurker_sleep == 0)
+		return (dt);
 	/* Make a list of the bans we can do something about */
 	VTAILQ_INIT(&obans);
 	Lck_Lock(&ban_mtx);
@@ -206,26 +209,27 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 	Lck_Unlock(&ban_mtx);
 	i = 0;
 	d = VTIM_real() - cache_param->ban_lurker_age;
-	while (b != NULL) {
-		if (b->flags & BANS_FLAG_COMPLETED) {
-			;
-		} else if (b->flags & BANS_FLAG_REQ) {
-			;
-		} else if (b == VTAILQ_LAST(&ban_head, banhead_s)) {
-			;
-		} else if (ban_time(b->spec) > d) {
-			;
-		} else {
+	for (; b != NULL; b = VTAILQ_NEXT(b, list)) {
+		if (b->flags & BANS_FLAG_COMPLETED)
+			continue;
+		if (b->flags & BANS_FLAG_REQ)
+			continue;
+		if (b == VTAILQ_LAST(&ban_head, banhead_s))
+			continue;	// XXX: why ?
+		n = ban_time(b->spec) - d;
+		if (n < 0) {
 			VTAILQ_INSERT_TAIL(&obans, b, l_list);
 			i++;
+		} else if (n < dt) {
+			dt = n;
 		}
-		b = VTAILQ_NEXT(b, list);
 	}
 	if (DO_DEBUG(DBG_LURKER))
-		VSLb(vsl, SLT_Debug, "lurker: %d actionable bans", i);
+		VSLb(vsl, SLT_Debug, "lurker: %d actionable bans, dt = %lf", i, dt);
 	if (i == 0)
-		return (0);
+		return (dt);
 
+	dt = cache_param->ban_lurker_sleep;
 	/* Go though all the bans to test the objects */
 	VTAILQ_FOREACH_REVERSE(bt, &ban_head, banhead_s, list) {
 		if (bt == VTAILQ_LAST(&obans, banhead_s)) {
@@ -247,7 +251,7 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 		if (VTAILQ_EMPTY(&obans))
 			break;
 	}
-	return (1);
+	return (dt);
 }
 
 void * __match_proto__(bgthread_t)
@@ -255,6 +259,7 @@ ban_lurker(struct worker *wrk, void *priv)
 {
 	struct vsl_log vsl;
 	volatile double d;
+	unsigned gen = ban_generation + 1;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AZ(priv);
@@ -262,13 +267,17 @@ ban_lurker(struct worker *wrk, void *priv)
 	VSL_Setup(&vsl, NULL, 0);
 
 	while (!ban_shutdown) {
-		d = cache_param->ban_lurker_sleep;
-		if (d <= 0.0 || !ban_lurker_work(wrk, &vsl))
-			d = 0.609;	// Random, non-magic
+		d = ban_lurker_work(wrk, &vsl);
+		if (DO_DEBUG(DBG_LURKER))
+			VSLb(&vsl, SLT_Debug, "lurker: sleep = %lf", d);
 		ban_cleantail();
 		d += VTIM_real();
 		Lck_Lock(&ban_mtx);
-		(void)Lck_CondWait(&ban_lurker_cond, &ban_mtx, d);
+		if (gen == ban_generation) {
+			(void)Lck_CondWait(&ban_lurker_cond, &ban_mtx, d);
+			ban_batch = 0;
+		}
+		gen = ban_generation;
 		Lck_Unlock(&ban_mtx);
 	}
 	pthread_exit(0);

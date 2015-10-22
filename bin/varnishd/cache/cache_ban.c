@@ -552,6 +552,9 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 		b0->refcount++;
 	}
 
+	if (oc->ban->refcount == 0 && VTAILQ_NEXT(oc->ban, list) == NULL)
+		ban_kick_lurker();
+
 	Lck_Unlock(&ban_mtx);
 
 	if (b == oc->ban) {	/* not banned */
@@ -703,6 +706,7 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 
 	Lck_Lock(&ban_mtx);
 	bl->refcount--;
+	ban_kick_lurker();	// XXX: Mostly for testcase b00009.vtc
 	Lck_Unlock(&ban_mtx);
 }
 
@@ -775,8 +779,10 @@ BAN_Shutdown(void)
 {
 	void *status;
 
+	Lck_Lock(&ban_mtx);
 	ban_shutdown = 1;
 	ban_kick_lurker();
+	Lck_Unlock(&ban_mtx);
 
 	AZ(pthread_join(ban_thread, &status));
 	AZ(status);
