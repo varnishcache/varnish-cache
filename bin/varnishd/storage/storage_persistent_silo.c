@@ -163,7 +163,7 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		oc->stobj->stevedore = sc->parent;
 		smp_init_oc(oc, sg, no);
 		oc->stobj->priv2 |= NEED_FIXUP;
-		oc->ban = BAN_RefBan(oc, so->ban, sc->tailban);
+		oc->ban = BAN_RefBan(oc, so->ban);
 		HSH_Insert(wrk, so->hash, oc);
 		oc->exp = so->exp;
 		sg->nobj++;

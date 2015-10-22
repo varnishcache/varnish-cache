@@ -253,8 +253,6 @@ struct smp_sc {
 	struct smp_signspace	seg1;
 	struct smp_signspace	seg2;
 
-	struct ban		*tailban;
-
 	struct lock		mtx;
 
 	/* Cleaner metrics */

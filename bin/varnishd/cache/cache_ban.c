@@ -43,12 +43,13 @@
 #include "vtim.h"
 
 struct lock ban_mtx;
-int ban_shutdown = 0;
+int ban_shutdown;
 struct banhead_s ban_head = VTAILQ_HEAD_INITIALIZER(ban_head);
 struct ban * volatile ban_start;
 
 static struct ban *ban_magic;
 static pthread_t ban_thread;
+static int ban_holds;
 
 struct ban_test {
 	uint8_t			arg1;
@@ -121,34 +122,31 @@ BAN_Free(struct ban *b)
 }
 
 /*--------------------------------------------------------------------
- * Get & Release a tail reference, used to hold the list stable for
- * traversals etc.
+ * Get/release holds which prevent the ban_lurker from starting.
+ * Holds are held while stevedores load zombie objects.
  */
 
-struct ban *
-BAN_TailRef(void)
+void
+BAN_Hold(void)
 {
-	struct ban *b;
 
-	ASSERT_CLI();
 	Lck_Lock(&ban_mtx);
-	b = VTAILQ_LAST(&ban_head, banhead_s);
-	AN(b);
-	b->refcount++;
+	/* Once holds are released, we allow no more */
+	assert(ban_holds > 0);
+	ban_holds++;
 	Lck_Unlock(&ban_mtx);
-	return (b);
 }
 
 void
-BAN_TailDeref(struct ban **bb)
+BAN_Release(void)
 {
-	struct ban *b;
 
-	b = *bb;
-	*bb = NULL;
 	Lck_Lock(&ban_mtx);
-	b->refcount--;
+	assert(ban_holds > 0);
+	ban_holds--;
 	Lck_Unlock(&ban_mtx);
+	if (ban_holds == 0)
+		WRK_BgThread(&ban_thread, "ban-lurker", ban_lurker, NULL);
 }
 
 /*--------------------------------------------------------------------
@@ -549,11 +547,11 @@ BAN_DestroyObj(struct objcore *oc)
 
 /*--------------------------------------------------------------------
  * Find and/or Grab a reference to an objects ban based on timestamp
- * Assume we hold a TailRef, so list traversal is safe.
+ * Assume we have a BAN_Hold, so list traversal is safe.
  */
 
 struct ban *
-BAN_RefBan(struct objcore *oc, double t0, const struct ban *tail)
+BAN_RefBan(struct objcore *oc, double t0)
 {
 	struct ban *b;
 	double t1 = 0;
@@ -562,12 +560,11 @@ BAN_RefBan(struct objcore *oc, double t0, const struct ban *tail)
 		t1 = ban_time(b->spec);
 		if (t1 <= t0)
 			break;
-		if (b == tail)
-			break;
 	}
 	AN(b);
 	assert(t1 == t0);
 	Lck_Lock(&ban_mtx);
+	assert(ban_holds > 0);
 	b->refcount++;
 	VTAILQ_INSERT_TAIL(&b->objcore, oc, ban_list);
 	Lck_Unlock(&ban_mtx);
@@ -966,7 +963,10 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 	(void)priv;
 
 	/* Get a reference so we are safe to traverse the list */
-	bl = BAN_TailRef();
+	Lck_Lock(&ban_mtx);
+	bl = VTAILQ_LAST(&ban_head, banhead_s);
+	bl->refcount++;
+	Lck_Unlock(&ban_mtx);
 
 	VCLI_Out(cli, "Present bans:\n");
 	VTAILQ_FOREACH(b, &ban_head, list) {
@@ -994,7 +994,9 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 		}
 	}
 
-	BAN_TailDeref(&bl);
+	Lck_Lock(&ban_mtx);
+	bl->refcount--;
+	Lck_Unlock(&ban_mtx);
 }
 
 static struct cli_proto ban_cmds[] = {
@@ -1010,7 +1012,8 @@ void
 BAN_Compile(void)
 {
 
-	/* All bans have been read from all persistent stevedores. Export
+	/*
+	 * All bans have been read from all persistent stevedores. Export
 	 * the compiled list
 	 */
 
@@ -1027,9 +1030,8 @@ BAN_Compile(void)
 	Lck_Unlock(&ban_mtx);
 
 	ban_start = VTAILQ_FIRST(&ban_head);
-	WRK_BgThread(&ban_thread, "ban-lurker", ban_lurker, NULL);
+	BAN_Release();
 }
-
 
 void
 BAN_Init(void)
@@ -1043,6 +1045,7 @@ BAN_Init(void)
 	AZ(BAN_Insert(ban_magic));
 	Lck_Lock(&ban_mtx);
 	ban_mark_completed(ban_magic);
+	ban_holds = 1;
 	Lck_Unlock(&ban_mtx);
 }
 

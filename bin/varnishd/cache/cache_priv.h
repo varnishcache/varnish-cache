@@ -57,10 +57,18 @@ void VBE_Poll(void);
 /* cache_backend_poll.c */
 void VBP_Init(void);
 
-/* cache_ban.c */
+/* == cache_ban.c == */
+
+/* From cache_main.c */
 void BAN_Init(void);
 void BAN_Compile(void);
 void BAN_Shutdown(void);
+
+/* From cache_hash.c */
+void BAN_NewObjCore(struct objcore *oc);
+void BAN_DestroyObj(struct objcore *oc);
+int BAN_CheckObject(struct worker *, struct objcore *, struct req *);
+
 
 /* cache_busyobj.c */
 void VBO_Init(void);

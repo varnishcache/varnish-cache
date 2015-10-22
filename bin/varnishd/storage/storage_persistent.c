@@ -287,8 +287,7 @@ smp_thread(struct worker *wrk, void *priv)
 			smp_load_seg(wrk, sc, sg);
 
 	sc->flags |= SMP_SC_LOADED;
-	BAN_TailDeref(&sc->tailban);
-	AZ(sc->tailban);
+	BAN_Release();
 	printf("Silo completely loaded\n");
 
 	/* Housekeeping loop */
@@ -358,8 +357,7 @@ smp_open(const struct stevedore *st)
 	 * has loaded all objects, so we can be sure that all of our
 	 * proto-bans survive until then.
 	 */
-	sc->tailban = BAN_TailRef();
-	AN(sc->tailban);
+	BAN_Hold();
 
 	/* XXX: save segments to ensure consistency between seg1 & seg2 ? */
 
