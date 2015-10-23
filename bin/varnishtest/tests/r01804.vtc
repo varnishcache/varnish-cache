@@ -1,0 +1,39 @@
+varnishtest "#1804: varnishapi transaction grouping fails for PROXY"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+
+varnish v1 -proto "PROXY" -vcl+backend {
+} -start
+
+logexpect l1 -v v1 -d 0 -g session {
+	expect * *	Begin	{^sess .* PROXY$}
+	expect * =	Proxy	{^1 }
+	expect * *	Begin	{^req}
+	expect * *	Begin	{^sess .* PROXY$}
+	expect * =	Proxy	{^2 }
+	expect * *	Begin	{^req}
+} -start
+
+client c1 {
+	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678\r\n"
+	txreq
+	rxresp
+} -run
+
+client c2 {
+	# good IPv4
+	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
+	sendhex "21 11 00 0c"
+	sendhex "01 02 03 04"
+	sendhex "05 06 07 08"
+	sendhex "09 0a"
+	sendhex "0b 0c"
+	txreq
+	rxresp
+} -run
+
+logexpect l1 -wait
