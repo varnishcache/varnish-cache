@@ -302,7 +302,8 @@ The VCL compiler supports the following private pointers:
 * ``PRIV_VCL`` "per vcl" private pointers are useful for such global
   state that applies to all calls in this VCL, for instance flags that
   determine if regular expressions are case-sensitive in this vmod or
-  similar.
+  similar. The ``PRIV_VCL`` object is the same object that is passed
+  to the VMOD's event function.
 
 The way it works in the vmod code, is that a ``struct vmod_priv *`` is
 passed to the functions where one of the ``PRIV_*`` argument types is
