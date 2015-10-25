@@ -342,7 +342,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	} else if (http_IsStatus(bo->beresp, 204)) {
 		/*
 		 * 204 is "No Content", obviously don't expect a body.
-		 * [RFC2616 10.2.5 p60]
+		 * [RFC7230 3.3.1 p28 and 3.3.2 p30]
 		 */
 		wrk->stats->fetch_204++;
 		if (http_GetHdr(bo->beresp, H_Content_Length, NULL) ||
