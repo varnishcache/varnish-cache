@@ -61,8 +61,7 @@
 
 #define REPLACE(ptr, val)						\
 	do {								\
-		if ((ptr) != NULL)					\
-			free(ptr);					\
+		free(ptr);						\
 		if ((val) != NULL) {					\
 			ptr = strdup(val);				\
 			AN((ptr));					\
