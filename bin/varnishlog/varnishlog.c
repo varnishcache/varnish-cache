@@ -145,6 +145,9 @@ main(int argc, char * const *argv)
 	if (optind != argc)
 		usage(1);
 
+	if (VUT.D_opt && !LOG.w_arg)
+		VUT_Error(1, "Missing -w option");
+
 	/* Setup output */
 	if (LOG.A_opt || !LOG.w_arg)
 		VUT.dispatch_f = VSL_PrintTransactions;
