@@ -927,6 +927,12 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	return (0);
 }
 
+static int __match_proto__(VUT_cb_f)
+sighup(void)
+{
+	return (1);
+}
+
 int
 main(int argc, char * const *argv)
 {
@@ -991,10 +997,12 @@ main(int argc, char * const *argv)
 	/* Setup output */
 	VUT.dispatch_f = &dispatch_f;
 	VUT.dispatch_priv = NULL;
+	VUT.sighup_f = sighup;
 	if (CTX.w_arg) {
 		openout(CTX.a_opt);
 		AN(CTX.fo);
-		VUT.sighup_f = &rotateout;
+		if (VUT.D_opt)
+			VUT.sighup_f = &rotateout;
 	} else
 		CTX.fo = stdout;
 	VUT.idle_f = &flushout;

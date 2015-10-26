@@ -41,7 +41,7 @@
 	)
 
 #define NCSA_OPT_g							\
-	VOPT("g:", "[-g <request|vxid>]", "Grouping mode (default: vxid)",		\
+	VOPT("g:", "[-g <request|vxid>]", "Grouping mode (default: vxid)", \
 	    "The grouping of the log records. The default is to group"	\
 	    " by vxid."							\
 	)
@@ -50,9 +50,9 @@
 	VOPT("w:", "[-w filename]", "Output filename",			\
 	    "Redirect output to file. The file will be overwritten"	\
 	    " unless the -a option was specified. If the application"	\
-	    " receives a SIGHUP the file will be reopened allowing"	\
-	    " the old one to be rotated away. This option is required"	\
-	    " when running in daemon mode."				\
+	    " receives a SIGHUP in daemon mode the file will be"	\
+	    " reopened allowing the old one to be rotated away. This"	\
+	    " option is required when running in daemon mode."		\
 	)
 
 NCSA_OPT_a

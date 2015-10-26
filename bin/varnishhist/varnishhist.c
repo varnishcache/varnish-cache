@@ -291,6 +291,12 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	return (0);
 }
 
+static int __match_proto__(VUT_cb_f)
+sighup(void)
+{
+	return (1);
+}
+
 static void *
 do_curses(void *arg)
 {
@@ -465,6 +471,7 @@ main(int argc, char **argv)
 	}
 	VUT.dispatch_f = &accumulate;
 	VUT.dispatch_priv = NULL;
+	VUT.sighup_f = sighup;
 	VUT_Main();
 	end_of_file = 1;
 	AZ(pthread_join(thr, NULL));
