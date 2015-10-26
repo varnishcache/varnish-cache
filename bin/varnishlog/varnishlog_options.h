@@ -46,11 +46,11 @@
 	VOPT("w:", "[-w filename]", "Output filename",			\
 	    "Redirect output to file. The file will be overwritten"	\
 	    " unless the -a option was specified. If the application"	\
-	    " receives a SIGHUP the file will be reopened allowing"	\
-	    " the old one to be rotated away. The file can then be"	\
-	    " read by varnishlog and other tools with the -r option,"   \
-	    " unless the -A option was specified. This option is"	\
-	    " required when running in daemon mode."			\
+	    " receives a SIGHUP in daemon mode the file will be "	\
+	    " reopened allowing the old one to be rotated away. The"	\
+	    " file can then be read by varnishlog and other tools with"	\
+	    " the -r option, unless the -A option was specified. This"	\
+	    " option is required when running in daemon mode."		\
 	)
 
 LOG_OPT_a

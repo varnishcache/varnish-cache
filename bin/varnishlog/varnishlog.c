@@ -110,6 +110,12 @@ flushout(void)
 	return (0);
 }
 
+static int __match_proto__(VUT_cb_f)
+sighup(void)
+{
+	return (1);
+}
+
 int
 main(int argc, char * const *argv)
 {
@@ -153,10 +159,12 @@ main(int argc, char * const *argv)
 		VUT.dispatch_f = VSL_PrintTransactions;
 	else
 		VUT.dispatch_f = VSL_WriteTransactions;
+	VUT.sighup_f = sighup;
 	if (LOG.w_arg) {
 		openout(LOG.a_opt);
 		AN(LOG.fo);
-		VUT.sighup_f = rotateout;
+		if (VUT.D_opt)
+			VUT.sighup_f = rotateout;
 	} else
 		LOG.fo = stdout;
 	VUT.idle_f = flushout;
