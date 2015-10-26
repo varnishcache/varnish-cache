@@ -51,7 +51,8 @@
 	    "Redirect output to file. The file will be overwritten"	\
 	    " unless the -a option was specified. If the application"	\
 	    " receives a SIGHUP the file will be reopened allowing"	\
-	    " the old one to be rotated away."				\
+	    " the old one to be rotated away. This option is required"	\
+	    " when running in daemon mode."				\
 	)
 
 NCSA_OPT_a

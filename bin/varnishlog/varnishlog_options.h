@@ -49,7 +49,8 @@
 	    " receives a SIGHUP the file will be reopened allowing"	\
 	    " the old one to be rotated away. The file can then be"	\
 	    " read by varnishlog and other tools with the -r option,"   \
-	    " unless the -A option was specified."			\
+	    " unless the -A option was specified. This option is"	\
+	    " required when running in daemon mode."			\
 	)
 
 LOG_OPT_a
