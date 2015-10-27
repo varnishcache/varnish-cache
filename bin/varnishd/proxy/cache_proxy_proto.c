@@ -64,8 +64,6 @@ vpx_proto1(const struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
 
-	VSL(SLT_Debug, req->sp->vxid, "PROXY1");
-
 	q = strchr(req->htc->rxbuf_b, '\r');
 	if (q == NULL)
 		return (-1);
@@ -94,9 +92,6 @@ vpx_proto1(const struct worker *wrk, struct req *req)
 		    "PROXY1: Too many fields");
 		return (-1);
 	}
-
-	VSL(SLT_Debug, req->sp->fd, "PROXY1 <%s> <%s> <%s> <%s> <%s>",
-	    fld[0], fld[1], fld[2], fld[3], fld[4]);
 
 	if (!strcmp(fld[0], "TCP4"))
 		pfam = AF_INET;
