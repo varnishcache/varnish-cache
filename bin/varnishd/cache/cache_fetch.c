@@ -129,8 +129,8 @@ vbf_beresp2obj(struct busyobj *bo)
 		return (-1);
 
 	if (vary != NULL) {
-		b = ObjSetAttr(bo->wrk, bo->fetch_objcore, OA_VARY, varyl,
-		    VSB_data(vary));
+		AN(ObjSetAttr(bo->wrk, bo->fetch_objcore, OA_VARY, varyl,
+			VSB_data(vary)));
 		VSB_delete(vary);
 	}
 
