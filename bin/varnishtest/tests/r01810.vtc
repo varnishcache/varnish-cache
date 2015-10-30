@@ -1,0 +1,21 @@
+varnishtest "POST HTTP/1.0 response"
+
+server s1 {
+	non-fatal
+	rxreq
+	txresp -proto HTTP/1.1 -nolen -hdr "Connection: close"
+	send "Hello World\n"
+	delay .4
+} -start
+
+varnish v1 -vcl+backend { 
+	sub vcl_backend_fetch {
+		set bereq.proto = "HTTP/1.0";
+	}
+} -start
+
+client c1 {
+	txreq -req POST -hdr "Content-Length: 0"
+	rxresp
+	expect resp.bodylen == 12
+} -run

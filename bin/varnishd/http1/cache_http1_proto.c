@@ -321,15 +321,15 @@ http1_body_status(const struct http *hp, struct http_conn *htc)
 
 /*--------------------------------------------------------------------*/
 
-static void
-http1_proto_ver(struct http *hp)
+static int8_t
+http1_proto_ver(const struct http *hp)
 {
 	if (!strcasecmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.0"))
-		hp->protover = 10;
+		return (10);
 	else if (!strcasecmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.1"))
-		hp->protover = 11;
+		return (11);
 	else
-		hp->protover = 0;
+		return (0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -347,7 +347,7 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 	retval = http1_splitline(hp, htc, HTTP1_Req);
 	if (retval != 0)
 		return (retval);
-	http1_proto_ver(hp);
+	hp->protover = http1_proto_ver(hp);
 	if (hp->protover == 0)
 		return (400);
 
@@ -391,22 +391,28 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 /*--------------------------------------------------------------------*/
 
 uint16_t
-HTTP1_DissectResponse(struct http_conn *htc, struct http *hp)
+HTTP1_DissectResponse(struct http_conn *htc, struct http *hp,
+    const struct http *req)
 {
 	uint16_t retval = 0;
 	const char *p;
+	int8_t rv;
 
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(req, HTTP_MAGIC);
 
 	if (http1_splitline(hp, htc, HTTP1_Resp))
 		retval = 503;
 
 	if (retval == 0) {
-		http1_proto_ver(hp);
+		hp->protover = http1_proto_ver(hp);
 		if (hp->protover == 0)
 			retval = 503;
+		rv = http1_proto_ver(req);
+		if (hp->protover > rv)
+			hp->protover = rv;
 	}
 
 	if (retval == 0 && Tlen(hp->hd[HTTP_HDR_STATUS]) != 3)
