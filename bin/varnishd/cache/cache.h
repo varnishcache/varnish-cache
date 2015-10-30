@@ -391,9 +391,14 @@ struct boc {
  */
 
 enum obj_attr {
-#define OBJ_ATTR(U, l)  OA_##U,
+#define OBJ_FIXATTR(U, l, s)	OA_##U,
+#define OBJ_VARATTR(U, l)	OA_##U,
+#define OBJ_AUXATTR(U, l)	OA_##U,
 #include "tbl/obj_attr.h"
-#undef OBJ_ATTR
+#undef OBJ_AUXATTR
+#undef OBJ_VARATTR
+#undef OBJ_FIXATTR
+				OA__MAX,
 };
 
 enum obj_flags {

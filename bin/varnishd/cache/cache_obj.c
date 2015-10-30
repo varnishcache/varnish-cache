@@ -369,6 +369,10 @@ ObjHasAttr(struct worker *wrk, struct objcore *oc, enum obj_attr attr)
  * ObjGetAttr()
  *
  * Get an attribute of the object.
+ *
+ * Returns NULL on unset or zero length attributes and len set to
+ * zero. Returns Non-NULL otherwise and len is updated with the attributes
+ * length.
  */
 
 const void *
@@ -386,8 +390,23 @@ ObjGetAttr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 /*====================================================================
  * ObjSetAttr()
  *
+ * Setting fixed size attributes always succeeds.
+ *
+ * Setting a variable size attribute asserts if the combined size of the
+ * variable attributes exceeds the total variable attribute space set at
+ * object creation. If there is space it always succeeds.
+ *
+ * Setting an auxiliary attribute can fail.
+ *
+ * Resetting any variable asserts if the new length does not match the
+ * previous length exactly.
+ *
  * If ptr is Non-NULL, it points to the new content which is copied into
  * the attribute.  Otherwise the caller will have to do the copying.
+ *
+ * Return value is non-NULL on success and NULL on failure. If ptr was
+ * non-NULL, it is an error to use the returned pointer to set the
+ * attribute data, it is only a success indicator in that case.
  */
 
 void *

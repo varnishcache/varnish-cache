@@ -40,17 +40,29 @@ struct object {
 #define OBJECT_MAGIC		0x32851d42
 	struct storage		*objstore;
 
-	uint8_t			oa_len[8];
-	uint8_t			oa_vxid[4];
-	uint8_t			*oa_vary;
-	uint8_t			*oa_http;
-	uint8_t			oa_flags[1];
-	char			oa_gzipbits[32];
-	char			oa_lastmodified[8];
+	/* Fixed size attributes */
+#define OBJ_FIXATTR(U, l, s)			\
+	uint8_t			fa_##l[s];
+#include "tbl/obj_attr.h"
+#undef OBJ_FIXATTR
+
+	/* Variable size attributes */
+#define OBJ_VARATTR(U, l)			\
+	uint8_t			*va_##l;
+#include "tbl/obj_attr.h"
+#undef OBJ_VARATTR
+#define OBJ_VARATTR(U, l)			\
+	unsigned		va_##l##_len;
+#include "tbl/obj_attr.h"
+#undef OBJ_VARATTR
+
+	/* Auxiliary attributes */
+#define OBJ_AUXATTR(U, l)			\
+	struct storage		*aa_##l;
+#include "tbl/obj_attr.h"
+#undef OBJ_AUXATTR
 
 	struct storagehead	list;
-
-	struct storage		*esidata;
 };
 
 extern const struct obj_methods SML_methods;
@@ -59,4 +71,3 @@ struct object *SML_MkObject(const struct stevedore *, struct objcore *,
     void *ptr);
 
 storage_allocobj_f SML_allocobj;
-

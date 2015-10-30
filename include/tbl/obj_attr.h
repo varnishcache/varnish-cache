@@ -29,17 +29,24 @@
 
 /*lint -save -e525 -e539 */
 
+/* upper, lower, size */
+#ifdef OBJ_FIXATTR
+OBJ_FIXATTR(LEN, len, 8)
+OBJ_FIXATTR(VXID, vxid, 4)
+OBJ_FIXATTR(FLAGS, flags, 1)
+OBJ_FIXATTR(GZIPBITS, gzipbits, 32)
+OBJ_FIXATTR(LASTMODIFIED, lastmodified, 8)
+#endif
+
 /* upper, lower */
-#ifdef OBJ_ATTR
-OBJ_ATTR(LEN,		len)
-OBJ_ATTR(VXID,		vxid)
-OBJ_ATTR(EXP,		exp)
-OBJ_ATTR(VARY,		vary)
-OBJ_ATTR(HEADERS,	headers)
-OBJ_ATTR(FLAGS,		flags)
-OBJ_ATTR(GZIPBITS,	gzipbits)
-OBJ_ATTR(ESIDATA,	esidata)
-OBJ_ATTR(LASTMODIFIED,	lastmodified)
+#ifdef OBJ_VARATTR
+OBJ_VARATTR(VARY, vary)
+OBJ_VARATTR(HEADERS, headers)
+#endif
+
+/* upper, lower */
+#ifdef OBJ_AUXATTR
+OBJ_AUXATTR(ESIDATA, esidata)
 #endif
 
 #ifdef OBJ_FLAG

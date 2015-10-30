@@ -187,10 +187,14 @@ sml_slim(struct worker *wrk, struct objcore *oc)
 	o = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
-	if (o->esidata != NULL) {
-		sml_stv_free(stv, o->esidata);
-		o->esidata = NULL;
+#define OBJ_AUXATTR(U, l)						\
+	if (o->aa_##l != NULL) {					\
+		sml_stv_free(stv, o->aa_##l);				\
+		o->aa_##l = NULL;					\
 	}
+#include "tbl/obj_attr.h"
+#undef OBJ_AUXATTR
+
 	VTAILQ_FOREACH_SAFE(st, &o->list, list, stn) {
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 		VTAILQ_REMOVE(&o->list, st, list);
@@ -489,33 +493,37 @@ sml_getattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 		len = &dummy;
 	o = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+
 	switch (attr) {
-	case OA_ESIDATA:
-		if (o->esidata == NULL)
-			return (NULL);
-		*len = o->esidata->len;
-		return (o->esidata->ptr);
-	case OA_FLAGS:
-		*len = sizeof o->oa_flags;
-		return (o->oa_flags);
-	case OA_GZIPBITS:
-		*len = sizeof o->oa_gzipbits;
-		return (o->oa_gzipbits);
-	case OA_HEADERS:
-		*len = 0;			// XXX: hack
-		return (o->oa_http);
-	case OA_LASTMODIFIED:
-		*len = sizeof o->oa_lastmodified;
-		return (o->oa_lastmodified);
-	case OA_VARY:
-		*len = 4;			// XXX: hack
-		return (o->oa_vary);
-	case OA_LEN:
-		*len = sizeof o->oa_len;
-		return (o->oa_len);
-	case OA_VXID:
-		*len = sizeof o->oa_vxid;
-		return (o->oa_vxid);
+		/* Fixed size attributes */
+#define OBJ_FIXATTR(U, l, s)						\
+	case OA_##U:							\
+		*len = sizeof o->fa_##l;				\
+		return (o->fa_##l);
+#include "tbl/obj_attr.h"
+#undef OBJ_FIXATTR
+
+		/* Variable size attributes */
+#define OBJ_VARATTR(U, l)						\
+	case OA_##U:							\
+		if (o->va_##l == NULL)					\
+			return (NULL);					\
+		*len = o->va_##l##_len;					\
+		return (o->va_##l);
+#include "tbl/obj_attr.h"
+#undef OBJ_VARATTR
+
+		/* Auxiliary attributes */
+#define OBJ_AUXATTR(U, l)						\
+	case OA_##U:							\
+		if (o->aa_##l == NULL)					\
+			return (NULL);					\
+		CHECK_OBJ_NOTNULL(o->aa_##l, STORAGE_MAGIC);		\
+		*len = o->aa_##l->len;					\
+		return (o->aa_##l->ptr);
+#include "tbl/obj_attr.h"
+#undef OBJ_AUXATTR
+
 	default:
 		break;
 	}
@@ -535,53 +543,63 @@ sml_setattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 	o = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st = o->objstore;
+
 	switch (attr) {
-	case OA_ESIDATA:
-		o->esidata = objallocwithnuke(wrk, oc->stobj->stevedore, len);
-		if (o->esidata == NULL)
-			return (NULL);
-		o->esidata->len = len;
-		retval = o->esidata->ptr;
+		/* Fixed size attributes */
+#define OBJ_FIXATTR(U, l, s)						\
+	case OA_##U:							\
+		assert(len == sizeof o->fa_##l);			\
+		retval = o->fa_##l;					\
 		break;
-	case OA_FLAGS:
-		assert(len == sizeof o->oa_flags);
-		retval = o->oa_flags;
+#include "tbl/obj_attr.h"
+#undef OBJ_FIXATTR
+
+		/* Variable size attributes */
+#define OBJ_VARATTR(U, l)						\
+	case OA_##U:							\
+		if (o->va_##l##_len > 0) {				\
+			AN(o->va_##l);					\
+			assert(len == o->va_##l##_len);			\
+			retval = o->va_##l;				\
+		} else if (len > 0) {					\
+			assert(len <= UINT_MAX);			\
+			assert(st->len + len <= st->space);		\
+			o->va_##l = st->ptr + st->len;			\
+			st->len += len;					\
+			retval = o->va_##l;				\
+		}							\
 		break;
-	case OA_GZIPBITS:
-		assert(len == sizeof o->oa_gzipbits);
-		retval = o->oa_gzipbits;
+#include "tbl/obj_attr.h"
+#undef OBJ_VARATTR
+
+		/* Auxiliary attributes */
+#define OBJ_AUXATTR(U, l)						\
+	case OA_##U:							\
+		if (o->aa_##l != NULL) {				\
+			CHECK_OBJ_NOTNULL(o->aa_##l, STORAGE_MAGIC);	\
+			assert(len == o->aa_##l->len);			\
+			retval = o->aa_##l->ptr;			\
+			break;						\
+		}							\
+		if (len == 0)						\
+			break;						\
+		o->aa_##l = objallocwithnuke(wrk, oc->stobj->stevedore,	len); \
+		if (o->aa_##l == NULL)					\
+			break;						\
+		CHECK_OBJ_NOTNULL(o->aa_##l, STORAGE_MAGIC);		\
+		assert(len <= o->aa_##l->space);			\
+		o->aa_##l->len = len;					\
+		retval = o->aa_##l->ptr;				\
 		break;
-	case OA_HEADERS:
-		len = PRNDUP(len);
-		assert(st->len + len <= st->space);
-		o->oa_http = (void*)(st->ptr + st->len);
-		st->len += len;
-		retval = o->oa_http;
-		break;
-	case OA_LASTMODIFIED:
-		assert(len == sizeof o->oa_lastmodified);
-		retval = o->oa_lastmodified;
-		break;
-	case OA_VARY:
-		len = PRNDUP(len);
-		assert(st->len + len <= st->space);
-		o->oa_vary = (void*)(st->ptr + st->len);
-		st->len += len;
-		retval = o->oa_vary;
-		break;
-	case OA_LEN:
-		assert(len == sizeof o->oa_len);
-		retval = o->oa_len;
-		break;
-	case OA_VXID:
-		assert(len == sizeof o->oa_vxid);
-		retval = o->oa_vxid;
-		break;
+#include "tbl/obj_attr.h"
+#undef OBJ_AUXATTR
+
 	default:
 		WRONG("Unsupported OBJ_ATTR");
 		break;
 	}
-	if (ptr != NULL)
+
+	if (retval != NULL && ptr != NULL)
 		memcpy(retval, ptr, len);
 	return (retval);
 }

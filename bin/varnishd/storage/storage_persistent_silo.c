@@ -435,7 +435,7 @@ smp_sml_getobj(struct worker *wrk, struct objcore *oc)
 				break;
 			l += st->len;
 		}
-		if (l != vbe64dec(o->oa_len))
+		if (l != vbe64dec(o->fa_len))
 			bad |= 0x100;
 
 		if(bad) {
