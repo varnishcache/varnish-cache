@@ -112,10 +112,12 @@ V1D_Deliver(struct req *req, struct busyobj *bo, int sendbody)
 	if (sendbody && req->resp_len != 0)
 		VDP_push(req, v1d_bytes, NULL, 1);
 
+	AZ(req->wrk->v1l);
 	V1L_Reserve(req->wrk, req->ws, &req->sp->fd, req->vsl, req->t_prev);
 
 	if (WS_Overflowed(req->ws)) {
 		v1d_error(req, "workspace_client overflow");
+		AZ(req->wrk->v1l);
 		return;
 	}
 
@@ -134,5 +136,6 @@ V1D_Deliver(struct req *req, struct busyobj *bo, int sendbody)
 
 	if ((V1L_FlushRelease(req->wrk) || ois != OIS_DONE) && req->sp->fd >= 0)
 		SES_Close(req->sp, SC_REM_CLOSE);
+	AZ(req->wrk->v1l);
 	VDP_close(req);
 }
