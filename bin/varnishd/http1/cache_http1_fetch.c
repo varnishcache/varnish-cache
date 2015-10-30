@@ -193,7 +193,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 
 	hp = bo->beresp;
 
-	i = HTTP1_DissectResponse(htc, hp);
+	i = HTTP1_DissectResponse(htc, hp, bo->bereq);
 	bo->acct.beresp_hdrbytes += htc->rxbuf_e - htc->rxbuf_b;
 	if (i) {
 		VSLb(bo->vsl, SLT_FetchError, "http format error");
