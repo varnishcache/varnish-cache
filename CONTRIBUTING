@@ -5,11 +5,10 @@ To contribute to Varnish, read
 https://www.varnish-cache.org/trac/wiki/Contributing as a starting
 point and follow relevant parts linked there.
 
-Varnish Cache is developed with Git hosted on our own infrastructure.
-
 Official development tree is here:
 
     git://git.varnish-cache.org/varnish-cache
+    (soon: https://github.com/varnishcache/varnish-cache )
 
 Patches can be sent to varnish-dev@varnish-cache.org.
 
