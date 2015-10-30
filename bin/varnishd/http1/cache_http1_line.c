@@ -78,6 +78,8 @@ V1L_Reserve(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AZ(wrk->v1l);
 
+	if (WS_Overflowed(ws))
+		return;
 	res = WS_Snapshot(ws);
 	v1l = WS_Alloc(ws, sizeof *v1l);
 	if (v1l == NULL)
