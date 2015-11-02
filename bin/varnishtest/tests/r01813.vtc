@@ -1,0 +1,3 @@
+varnishtest "Duplicate -a arguments"
+
+err_shell {have same address} "${varnishd} -d -a 127.0.0.1:38484 -a 127.0.0.1:38484 -b localhost:80 2>&1"
