@@ -67,17 +67,17 @@ Example
 $Method VOID .add_backend(BACKEND)
 
 Description
-       Add a backend to the round-robin director.
+	Add a backend to the round-robin director.
 Example
-       vdir.add_backend(backend1);
-       vdir.add_backend(backend2);
+	vdir.add_backend(backend1);
+	vdir.add_backend(backend2);
 
 $Method BACKEND .backend()
 
 Description
-       Pick a backend from the director.
+	Pick a backend from the director.
 Example
-       set req.backend_hint = vdir.backend();
+	set req.backend_hint = vdir.backend();
 
 
 $Object fallback()
@@ -106,9 +106,9 @@ Example
 $Method BACKEND .backend()
 
 Description
-       Pick a backend from the director.
+	Pick a backend from the director.
 Example
-       set req.backend_hint = vdir.backend();
+	set req.backend_hint = vdir.backend();
 
 
 $Object random()
@@ -149,10 +149,10 @@ $Object hash()
 Description
 	Create a hashing backend director.
 
-	The director chooses the backend server by computing a hash/digest of
-	the string given to .backend().
+	The director chooses the backend server by computing a hash/digest
+	of the string given to .backend().
 
-	Commonly used with ``client.identity`` or a session cookie to get
+	Commonly used with ``client.ip`` or a session cookie to get
 	sticky sessions.
 
 Example
