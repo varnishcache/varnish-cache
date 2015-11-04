@@ -1,0 +1,58 @@
+varnishtest "Test parsing IP constants"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_std};
+
+	sub vcl_deliver {
+		set resp.http.foo1 = std.ip("..", "1.2.3.4");
+		set resp.http.foo2 = std.ip("..", "1.2.3.4:8000");
+		set resp.http.foo3 = std.ip("..", "1.2.3.4 8000");
+		set resp.http.foo4 = std.ip("..", "::1");
+		set resp.http.foo5 = std.ip("..", "[::1]");
+		set resp.http.foo6 = std.ip("..", "[::1]:8000");
+		set resp.http.bar1 = std.port("1.2.3.4");
+		set resp.http.bar2 = std.port("1.2.3.4:8000");
+		set resp.http.bar3 = std.port("1.2.3.4 8000");
+		set resp.http.bar4 = std.port("::1");
+		set resp.http.bar5 = std.port("[::1]");
+		set resp.http.bar6 = std.port("[::1]:8000");
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.foo1 == "1.2.3.4"
+	expect resp.http.foo2 == "1.2.3.4"
+	expect resp.http.foo3 == "1.2.3.4"
+	expect resp.http.foo4 == "::1"
+	expect resp.http.foo5 == "::1"
+	expect resp.http.foo6 == "::1"
+	expect resp.http.bar1 == "80"
+	expect resp.http.bar2 == "8000"
+	expect resp.http.bar3 == "8000"
+	expect resp.http.bar4 == "80"
+	expect resp.http.bar5 == "80"
+	expect resp.http.bar6 == "8000"
+} -run
+
+varnish v1 -errvcl "could not be resolved to an IP address" {
+	import ${vmod_std};
+
+	sub vcl_deliver {
+		set resp.http.foo = std.ip("..", "::1::2");
+	}
+}
+
+varnish v1 -errvcl "could not be resolved to an IP address" {
+	import ${vmod_std};
+
+	sub vcl_deliver {
+		set resp.http.foo = std.ip("..", "1.2.3.4::80");
+	}
+}
