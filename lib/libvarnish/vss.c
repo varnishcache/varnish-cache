@@ -56,6 +56,7 @@
  * "0.0.0.0" - "0.0.0.0:80"
  * "[::1]" - "[::1]:80"
  * "[::]" - "[::]:80"
+ * "::1"
  *
  * See also RFC5952
  */
@@ -85,6 +86,8 @@ vss_parse(char *str, char **addr, char **port)
 		if (p == NULL)
 			p = strchr(str, ':');
 		if (p == NULL)
+			return (NULL);
+		if (p[0] == ':' && strchr(&p[1], ':'))
 			return (NULL);
 		if (p == str)
 			*addr = NULL;
