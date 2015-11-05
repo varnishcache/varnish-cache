@@ -461,10 +461,6 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	vcc_expr0(tl, &e2, STRING);
 	if (e2 == NULL)
 		return;
-	if (e2->fmt != STRING) {
-		vcc_expr_tostring(tl, &e2, STRING);
-		ERRCHK(tl);
-	}
 
 	SkipToken(tl, ',');
 	ExpectErr(tl, CSTR);
@@ -478,10 +474,6 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym)
 	vcc_expr0(tl, &e2, STRING);
 	if (e2 == NULL)
 		return;
-	if (e2->fmt != STRING) {
-		vcc_expr_tostring(tl, &e2, STRING);
-		ERRCHK(tl);
-	}
 	*e = vcc_expr_edit(STRING, "\v1,\n\v2)\v-", *e, e2);
 	SkipToken(tl, ')');
 }
@@ -626,9 +618,6 @@ vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 	} else {
 		vcc_expr0(tl, &e2, fa->type);
 		ERRCHK(tl);
-		if (e2->fmt != fa->type &&
-		    (fa->type == STRING || fa->type == STRING_LIST))
-			vcc_expr_tostring(tl, &e2, fa->type);
 		if (e2->fmt != fa->type) {
 			VSB_printf(tl->sb, "Wrong argument type.");
 			VSB_printf(tl->sb, "  Expected %s.",
@@ -1334,24 +1323,28 @@ vcc_expr0(struct vcc *tl, struct expr **e, enum var_type fmt)
 	*e = NULL;
 	vcc_expr_cand(tl, e, fmt);
 	ERRCHK(tl);
-	if ((*e)->fmt != BOOL || tl->t->tok != T_COR)
-		return;
-	*e = vcc_expr_edit(BOOL, "(\v+\n\v1", *e, NULL);
-	while (tl->t->tok == T_COR) {
-		vcc_NextToken(tl);
-		tk = tl->t;
-		vcc_expr_cand(tl, &e2, fmt);
-		ERRCHK(tl);
-		if (e2->fmt != BOOL) {
-			VSB_printf(tl->sb,
-			    "'||' must be followed by BOOL, found ");
-			VSB_printf(tl->sb, "%s.\n", vcc_Type(e2->fmt));
-			vcc_ErrWhere2(tl, tk, tl->t);
-			return;
+	if ((*e)->fmt == BOOL && tl->t->tok == T_COR) {
+		*e = vcc_expr_edit(BOOL, "(\v+\n\v1", *e, NULL);
+		while (tl->t->tok == T_COR) {
+			vcc_NextToken(tl);
+			tk = tl->t;
+			vcc_expr_cand(tl, &e2, fmt);
+			ERRCHK(tl);
+			if (e2->fmt != BOOL) {
+				VSB_printf(tl->sb,
+				    "'||' must be followed by BOOL, found ");
+				VSB_printf(tl->sb, "%s.\n", vcc_Type(e2->fmt));
+				vcc_ErrWhere2(tl, tk, tl->t);
+				return;
+			}
+			*e = vcc_expr_edit(BOOL, "\v1\v-\n||\v+\n\v2", *e, e2);
 		}
-		*e = vcc_expr_edit(BOOL, "\v1\v-\n||\v+\n\v2", *e, e2);
+		*e = vcc_expr_edit(BOOL, "\v1\v-\n)", *e, NULL);
 	}
-	*e = vcc_expr_edit(BOOL, "\v1\v-\n)", *e, NULL);
+	if (fmt == STRING || fmt == STRING_LIST) {
+		vcc_expr_tostring(tl, e, fmt);
+		ERRCHK(tl);
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -1373,10 +1366,6 @@ vcc_Expr(struct vcc *tl, enum var_type fmt)
 	vcc_expr0(tl, &e, fmt);
 	ERRCHK(tl);
 	e->t1 = t1;
-	if (fmt == STRING || fmt == STRING_LIST) {
-		vcc_expr_tostring(tl, &e, fmt);
-		ERRCHK(tl);
-	}
 	if (!tl->err && fmt != e->fmt)  {
 		VSB_printf(tl->sb, "Expression has type %s, expected %s\n",
 		    vcc_Type(e->fmt), vcc_Type(fmt));
