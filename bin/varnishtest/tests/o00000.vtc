@@ -134,6 +134,11 @@ client c1 {
 } -run
 delay .1
 
+logexpect l1 -v v1 {
+	expect * * 	ReqStart	"1.2.3.4 1234"
+	expect * * 	ReqStart	"1:f::2 1234"
+} -start
+
 # Finally try something which works...
 client c1 {
 	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678\r\n"
@@ -166,6 +171,8 @@ client c1 {
 	expect resp.http.rp != "1234"
 } -run
 delay .1
+
+logexpect l1 -wait
 
 # Try with appended request (See also: #1728)
 client c1 {
