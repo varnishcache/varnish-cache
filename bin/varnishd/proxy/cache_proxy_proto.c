@@ -125,7 +125,7 @@ vpx_proto1(const struct worker *wrk, struct req *req)
 	SES_Reserve_client_addr(req->sp, &sa);
 	AN(VSA_Build(sa, res->ai_addr, res->ai_addrlen));
 	SES_Set_String_Attr(req->sp, SA_CLIENT_IP, fld[1]);
-	SES_Set_String_Attr(req->sp, SA_CLIENT_PORT, fld[2]);
+	SES_Set_String_Attr(req->sp, SA_CLIENT_PORT, fld[3]);
 	freeaddrinfo(res);
 
 	i = getaddrinfo(fld[2], fld[4], &hints, &res);
