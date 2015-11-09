@@ -129,8 +129,12 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		EXP_Touch(req->objcore, req->t_prev);
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
-	AZ(HTTP_Decode(req->resp,
-	    ObjGetattr(req->wrk, req->objcore, OA_HEADERS, NULL)));
+	if (HTTP_Decode(req->resp,
+	    ObjGetattr(req->wrk, req->objcore, OA_HEADERS, NULL))) {
+		req->err_code = 500;
+		req->req_step = R_STP_SYNTH;
+		return (REQ_FSM_MORE);
+	}
 	http_ForceField(req->resp, HTTP_HDR_PROTO, "HTTP/1.1");
 
 	if (req->is_hit)
@@ -493,9 +497,9 @@ cnt_miss(struct worker *wrk, struct req *req)
 	case VCL_RET_FETCH:
 		wrk->stats->cache_miss++;
 		VBF_Fetch(wrk, req, req->objcore, req->stale_oc, VBF_NORMAL);
-		req->req_step = R_STP_FETCH;
 		if (req->stale_oc != NULL)
 			(void)HSH_DerefObjCore(wrk, &req->stale_oc);
+		req->req_step = R_STP_FETCH;
 		return (REQ_FSM_MORE);
 	case VCL_RET_SYNTH:
 		req->req_step = R_STP_SYNTH;

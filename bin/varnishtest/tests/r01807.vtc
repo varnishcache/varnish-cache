@@ -1,0 +1,50 @@
+varnishtest "Decreasing http_max_hdr"
+
+server s1 {
+	rxreq
+	txresp \
+		-hdr "h00: 00" \
+		-hdr "h01: 01" \
+		-hdr "h02: 02" \
+		-hdr "h03: 03" \
+		-hdr "h04: 04" \
+		-hdr "h05: 05" \
+		-hdr "h06: 06" \
+		-hdr "h07: 07" \
+		-hdr "h08: 08" \
+		-hdr "h09: 09" \
+		-hdr "h10: 10" \
+		-hdr "h11: 11" \
+		-hdr "h12: 12" \
+		-hdr "h13: 13" \
+		-hdr "h14: 14" \
+		-hdr "h15: 15" \
+		-hdr "h16: 16" \
+		-hdr "h17: 17" \
+		-hdr "h18: 18" \
+		-hdr "h19: 19" \
+		-hdr "h20: 20" \
+		-hdr "h21: 21" \
+		-hdr "h22: 22" \
+		-hdr "h23: 23" \
+		-hdr "h24: 24"
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.h24 == 24
+} -run
+
+varnish v1 -cliok {param.set http_max_hdr 32}
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 500
+} -run
+
