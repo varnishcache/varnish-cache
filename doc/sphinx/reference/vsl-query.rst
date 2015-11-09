@@ -278,3 +278,12 @@ HISTORY
 
 This document was written by Martin Blix Grydeland.
 
+
+COPYRIGHT
+=========
+
+This document is licensed under the same licence as Varnish
+itself. See LICENCE for details.
+
+* Copyright (c) 2006 Verdens Gang AS
+* Copyright (c) 2006-2015 Varnish Software AS

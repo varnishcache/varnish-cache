@@ -308,8 +308,8 @@ the backend contains "USERID=1663"::
 SEE ALSO
 ========
 
-* :ref:`varnishd(1)`
 * :ref:`varnishadm(1)`
+* :ref:`varnishd(1)`
 * :ref:`vcl(7)`
 
 HISTORY
