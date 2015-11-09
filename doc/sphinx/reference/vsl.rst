@@ -112,7 +112,16 @@ Martin Blix Grydeland.
 SEE ALSO
 ========
 
-* :ref:`varnishlog(1)`
 * :ref:`varnishhist(1)`
+* :ref:`varnishlog(1)`
 * :ref:`varnishncsa(1)`
 * :ref:`varnishtop(1)`
+
+COPYRIGHT
+=========
+
+This document is licensed under the same licence as Varnish
+itself. See LICENCE for details.
+
+* Copyright (c) 2006 Verdens Gang AS
+* Copyright (c) 2006-2015 Varnish Software AS
