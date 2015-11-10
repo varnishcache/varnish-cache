@@ -159,14 +159,16 @@ ban_mark_completed(struct ban *b)
 	Lck_AssertHeld(&ban_mtx);
 
 	AN(b->spec);
-	AZ(b->flags & BANS_FLAG_COMPLETED);
-	ln = ban_len(b->spec);
-	b->flags |= BANS_FLAG_COMPLETED;
-	b->spec[BANS_FLAGS] |= BANS_FLAG_COMPLETED;
-	VWMB();
-	vbe32enc(b->spec + BANS_LENGTH, BANS_HEAD_LEN);
-	VSC_C_main->bans_completed++;
-	VSC_C_main->bans_persisted_fragmentation += ln - ban_len(b->spec);
+	if (!(b->flags & BANS_FLAG_COMPLETED)) {
+		ln = ban_len(b->spec);
+		b->flags |= BANS_FLAG_COMPLETED;
+		b->spec[BANS_FLAGS] |= BANS_FLAG_COMPLETED;
+		VWMB();
+		vbe32enc(b->spec + BANS_LENGTH, BANS_HEAD_LEN);
+		VSC_C_main->bans_completed++;
+		VSC_C_main->bans_persisted_fragmentation +=
+		    ln - ban_len(b->spec);
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -683,7 +685,7 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 		o = bl == b ? 1 : 0;
 		VCLI_Out(cli, "%10.6f %5ju %s", ban_time(b->spec),
 		    (intmax_t)b->refcount - o,
-		    b->flags & BANS_FLAG_COMPLETED ? "C" : " ");
+		    b->flags & BANS_FLAG_COMPLETED ? "C" : "-");
 		if (DO_DEBUG(DBG_LURKER)) {
 			VCLI_Out(cli, "%s%s %p ",
 			    b->flags & BANS_FLAG_REQ ? "R" : "-",
