@@ -47,6 +47,7 @@
 
 #include "vav.h"
 #include "vnum.h"
+#include "vre.h"
 #include "vtim.h"
 
 #define		MAX_TOKENS		200
@@ -576,6 +577,9 @@ cmd_feature(CMD_ARGS)
 			continue;
 #endif
 		if (sizeof(void*) == 8 && !strcmp(av[i], "64bit"))
+			continue;
+
+		if (!strcmp(av[i], "pcre_jit") && VRE_has_jit)
 			continue;
 
 		if (!strcmp(av[i], "!OSX")) {
