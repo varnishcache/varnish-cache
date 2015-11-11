@@ -127,7 +127,7 @@ void VSM_common_ageupdate(const struct vsm_sc *sc);
 #define RUP2(x, y)  (((x)+((y)-1))&(~((uintptr_t)(y)-1UL))) /* PWR2(y) true */
 
 /*--------------------------------------------------------------------
- * Pointer aligment magic
+ * Pointer alignment magic
  */
 
 #if defined(__sparc__)

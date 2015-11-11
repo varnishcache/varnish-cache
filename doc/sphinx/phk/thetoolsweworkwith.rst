@@ -153,7 +153,7 @@ duration for the call, because then it doesn't matter what time
 it is, only how long time has transpired.
 
 Ohh, and setting the stack-size for a new thread ?
-That is appearantly "too dangerous" so there is no argument in the
+That is apparently "too dangerous" so there is no argument in the
 C1X API for doing so, a clear step backwards from pthreads.
 
 But guess what:  Thread stacks are like T-shirts:  There is no "one
@@ -177,7 +177,7 @@ compiler can understand and use to issue warnings.
 Heck, even a simple basic object facility would be good addition,
 now that C++ have become this huge bloated monster language.
 
-But none of that is appearantly as important as <stdnoreturn.h>
+But none of that is apparently as important as <stdnoreturn.h>
 and a new, crippled and therefore useless thread API.
 
 The neat thing about the C language, and the one feature that made

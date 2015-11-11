@@ -1557,7 +1557,7 @@ Changes from 2.1.1 to 2.1.2
 varnishd
 --------
 
--  When adding Range support for 2.1.1, we accidentially introduced a
+-  When adding Range support for 2.1.1, we accidentally introduced a
    bug which would append garbage to objects larger than the chunk size,
    by default 128k. Browsers would do the right thing due to
    Content-Length, but some load balancers would get very confused.
@@ -1964,7 +1964,7 @@ varnishd
    send out a zero-sized chunk which signifies end-of-transmission. We
    now ignore zero-sized chunks.
 
--  We accidentially slept for far too long when we reached the maximum
+-  We accidentally slept for far too long when we reached the maximum
    number of open file descriptors. This has been corrected and
    accept\_fd\_holdoff now works correctly.
 
@@ -2196,7 +2196,7 @@ varnishd
 -  Solaris is now supported.
 
 -  There is now a regsuball function, which works like regsub except it
-   replaces all occurences of the regex, not just the first.
+   replaces all occurrences of the regex, not just the first.
 
 -  Backend and director declarations can have a .connect\_timeout
    parameter, which tells us how long to wait for a successful

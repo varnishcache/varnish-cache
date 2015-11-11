@@ -578,7 +578,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	    (bo->do_gunzip && !bo->is_gzip))
 		bo->do_gunzip = 0;
 
-	/* We wont gzip unless it is non-empty and ungziped */
+	/* We wont gzip unless it is non-empty and ungzip'ed */
 	if (bo->htc->body_status == BS_NONE ||
 	    bo->htc->content_length == 0 ||
 	    (bo->do_gzip && !bo->is_gunzip))

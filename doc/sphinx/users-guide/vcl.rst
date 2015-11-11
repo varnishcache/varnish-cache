@@ -13,7 +13,7 @@ switches. We have instead chosen to use a domain specific language called VCL fo
 
 Every inbound request flows through Varnish and you can influence how
 the request is being handled by altering the VCL code. You can direct
-certain requests to certains backends, you can alter the requests and
+certain requests to particular backends, you can alter the requests and
 the responses or have Varnish take various actions depending on
 arbitrary properties of the request or the response. This makes
 Varnish an extremely powerful HTTP processor, not just for caching.

@@ -19,7 +19,7 @@ server s1 {
 # varnish v1 -arg "-p pcre_match_limit=1000"
 # varnish v1 -arg "-p pcre_match_limit_recursion=89"
 
-# Approximate formua for FreeBSD/amd64:
+# Approximate formula for FreeBSD/amd64:
 #	pcre_match_limit_recursion = thread_pool_stack * 2 - 9
 
 varnish v1 -vcl+backend {

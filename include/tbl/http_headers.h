@@ -86,7 +86,7 @@ H("If-Match",		H_If_Match,		  F  )	// 2616 14.24
 H("If-Modified-Since",	H_If_Modified_Since,	  F  )	// 2616 14.25
 H("If-None-Match",	H_If_None_Match,	  F  )	// 2616 14.26
 H("If-Range",		H_If_Range,		  F  )	// 2616 14.27
-H("If-Unmodified-Since",H_If_Unmodifed_Since,	  F  )	// 2616 14.28
+H("If-Unmodified-Since",H_If_Unmodified_Since,	  F  )	// 2616 14.28
 H("Last-Modified",	H_Last_Modified,	0    )	// 2616 14.29
 H("Location",		H_Location,		0    )	// 2616 14.30
 H("Max-Forwards",	H_Max_Forwards,		0    )	// 2616 14.31

@@ -59,7 +59,7 @@ What if they made a new protocol, and nobody used it ?
 We have learned, painfully, that an IPv6 which is only marginally
 better than IPv4 and which offers no tangible benefit for the people
 who have the cost/trouble of the upgrade, does not penetrate the
-network on its own, and barely even on goverments mandate.
+network on its own, and barely even on governments mandate.
 
 We have also learned that a protocol which delivers the goods can
 replace all competition in virtually no time.
@@ -86,16 +86,16 @@ Most notably HTTP/1.1 lacks a working session/endpoint-identity
 facility, a shortcoming which people have pasted over with the
 ill-conceived Cookie hack.
 
-Cookies are, as the EU commision correctly noted, fundamentally
+Cookies are, as the EU commission correctly noted, fundamentally
 flawed, because they store potentially sensitive information on
 whatever computer the user happens to use, and as a result of various
 abuses and incompetences, EU felt compelled to legislate a "notice
 and announce" policy for HTTP-cookies.
 
 But it doesn't stop there:  The information stored in cookies have
-potentialiiy very high value for the HTTP server, and because the
+potentially very high value for the HTTP server, and because the
 server has no control over the integrity of the storage, we are now
-seing cookies being crypto-signed, to prevent forgeries.
+seeing cookies being crypto-signed, to prevent forgeries.
 
 The term "bass ackwards" comes to mind.
 
@@ -124,7 +124,7 @@ new layer of complexity without removing any of the old complexity
 from the protocol.
 
 My conclusion is that HTTP/2.0 is really just a grandiose name for
-HTTP/1.2:  An attempt to smoothe out some sharp corners, to save a
+HTTP/1.2:  An attempt to smooth out some sharp corners, to save a
 bit of bandwidth, but not get anywhere near all the architectural
 problems of HTTP/1.1 and to preserve faithfully its heritage of
 badly thought out sedimentary hacks.
@@ -151,7 +151,7 @@ mobs and special event traffic spikes.
 
 In the time frame where HTTP/2.0 will become standardized, HTTP
 routers will routinely deal with 40Gbit/s traffic and people will
-start to arcitect for 1Tbit/s traffic.
+start to architect for 1Tbit/s traffic.
 
 HTTP routers are usually only interested in a small part of the
 HTTP request and barely in the response at all, usually only the
@@ -217,7 +217,7 @@ expend resources, and foresee a lot of complexity in implementing
 the server side to mitigate and deflect malicious traffic.
 
 Server Push breaks the HTTP transaction model, and opens a pile of
-cans of security and privacy issues, which whould not be sneaked
+cans of security and privacy issues, which would not be sneaked
 in during the design of a transport-encoding for HTTP/1+ traffic,
 but rather be standardized as an independent and well analysed
 extension to HTTP in general.
@@ -228,7 +228,7 @@ HTTP Speed+Mobility
 
 Is really just SPDY with WebSockets underneath.
 
-I'm really not sure I see any benefit to that, execept that the
+I'm really not sure I see any benefit to that, except that the
 encoding chosen is marginally more efficient to implement in
 hardware than SPDY.
 
@@ -268,7 +268,7 @@ Overall, I don't see any of the three proposals offer anything that
 will make the majority of web-sites go "Ohh we've been waiting for
 that!"
 
-Bigger sites will be entised by small bandwidth savings, but the
+Bigger sites will be enticed by small bandwidth savings, but the
 majority of the HTTP users will see scant or no net positive benefit
 if one or more of these three proposals were to become HTTP/2.0
 

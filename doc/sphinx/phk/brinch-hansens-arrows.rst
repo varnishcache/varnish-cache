@@ -16,7 +16,7 @@ lock B trying to get lock A.
 
 Brinch-Hansen did a lot of both theoretical and practical work in the
 area of multiprogramming and being both good at it and one of the
-pioneers, he was awardede the ACM Turing Prize for it.
+pioneers, he was awarded the ACM Turing Prize for it.
 
 You can read more about him here:
 `Brinch-Hansen Archive <http://brinch-hansen.net/>`_
@@ -26,7 +26,7 @@ that a given multiprogramming system was free of deadlocks:  Draw
 the locking order and make sure all the arrows point to the right.
 
 When we started working with multi-core systems in FreeBSD, we were
-sure to have deadlocks in our future, and we adobted and expanded
+sure to have deadlocks in our future, and we adopted and expanded
 a facility called "WITNESS" originally written for BSDI, which
 keeps an eye on Brinch-Hansens arrows in real time.
 

@@ -55,7 +55,7 @@ different dialects to just a handful: Linux, \*BSD, Solaris and AIX
 and the autocrap tools have become part of the portability problem,
 rather than part of the solution.
 
-Amongst the silly activites of the autocrap generated configure script
+Amongst the silly activities of the autocrap generated configure script
 in Varnish are:
 
 * Looks for ANSI-C header files (show me a system later

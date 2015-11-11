@@ -158,7 +158,7 @@ VFIL_fsinfo(int fd, unsigned *pbs, uintmax_t *psize, uintmax_t *pspace)
 	return (0);
 }
 
-/* Make sure that the file system can accomodate the file of the given
+/* Make sure that the file system can accommodate the file of the given
  * size. Will use fallocate if available. If fallocate is not available
  * and insist is true, it will write size zero bytes.
  *
@@ -191,7 +191,7 @@ VFIL_allocate(int fd, off_t size, int insist)
 		   the already allocated blocks of the file into
 		   account. This will cause fallocate to report ENOSPC
 		   when called on an existing fully allocated file unless
-		   the filesystem has enough free space to accomodate the
+		   the filesystem has enough free space to accommodate the
 		   complete new file size. Because of this we enable
 		   fallocate only on filesystems that are known to work as
 		   we expect. */
