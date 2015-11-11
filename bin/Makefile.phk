@@ -2,7 +2,6 @@ SUBDIRS += varnishadm
 SUBDIRS += varnishd 
 SUBDIRS += varnishlog
 SUBDIRS += varnishncsa
-# varnishreplay
 SUBDIRS += varnishtest 
 SUBDIRS += varnishstat
 SUBDIRS += varnishhist 
