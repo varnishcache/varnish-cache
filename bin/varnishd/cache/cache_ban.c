@@ -684,7 +684,7 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 	VTAILQ_FOREACH(b, &ban_head, list) {
 		o = bl == b ? 1 : 0;
 		VCLI_Out(cli, "%10.6f %5ju %s", ban_time(b->spec),
-		    (intmax_t)b->refcount - o,
+		    (intmax_t)(b->refcount - o),
 		    b->flags & BANS_FLAG_COMPLETED ? "C" : "-");
 		if (DO_DEBUG(DBG_LURKER)) {
 			VCLI_Out(cli, "%s%s %p ",
