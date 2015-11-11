@@ -344,7 +344,7 @@ VPX_Proto_Sess(struct worker *wrk, void *priv)
 	CAST_OBJ_NOTNULL(req, priv, REQ_MAGIC);
 	sp = req->sp;
 
-	/* Per specifiction */
+	/* Per specification */
 	assert(sizeof vpx1_sig == 5);
 	assert(sizeof vpx2_sig == 12);
 

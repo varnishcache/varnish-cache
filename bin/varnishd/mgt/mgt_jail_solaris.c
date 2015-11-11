@@ -27,8 +27,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * "Jailing" *1) child processes on Solaris and Solaris-derivates *2)
- * ==================================================================
+ * "Jailing" *1) child processes on Solaris and Solaris-derivatives *2)
+ * ====================================================================
  *
  * *1) The name is motivated by the availability of the -j command line
  *     option. Jailing Varnish is not to be confused with BSD Jails or

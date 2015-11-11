@@ -382,7 +382,7 @@ usage(void)
 	fprintf(stderr,
 	    "usage: varnishadm [-n ident] [-t timeout] [-S secretfile] "
 	    "-T [address]:port command [...]\n");
-	fprintf(stderr, "\t-n is mutually exlusive with -S and -T\n");
+	fprintf(stderr, "\t-n is mutually exclusive with -S and -T\n");
 	exit(1);
 }
 

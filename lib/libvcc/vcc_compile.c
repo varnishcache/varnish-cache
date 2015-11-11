@@ -30,7 +30,7 @@
 /*
  * XXX:
  *	Better error messages, throughout.
- *	>It also accured to me that we could link the errors to the error
+ *	>It also occurred to me that we could link the errors to the error
  *	>documentation.
  *	>
  *	>Unreferenced  function 'request_policy', first mention is

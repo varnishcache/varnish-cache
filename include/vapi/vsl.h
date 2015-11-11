@@ -215,7 +215,7 @@ int VSL_List2Tags(const char *list, int l, VSL_tagfind_f *func, void *priv);
 	 *   func: The function to call (can be NULL)
 	 *   priv: An argument that will be passed to func.
 	 *
-	 * Return valus:
+	 * Return values:
 	 *     >0: Number of times func was called for matching tags.
 	 *     -1: No tag matches for list element
 	 *     -2: Multiple tags match non-glob list element

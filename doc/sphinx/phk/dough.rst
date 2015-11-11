@@ -184,7 +184,7 @@ the message to other communities, that Free and Open Source Software
 does not materialize out of empty space, it is written by people.
 
 People who love what we do, which is why I'm sitting here,
-way past midnight on a friday evening, writing this phamplet.
+way past midnight on a friday evening, writing this pamphlet.
 
 But software *is* written by people, real people with kids, cars,
 mortgages, leaky roofs, sick pets, infirm parents and all other

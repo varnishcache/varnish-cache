@@ -3,7 +3,7 @@
 set -e
 
 #######################################################################
-# Adminstrative settings
+# Administrative settings
 
 ADM_PROJECT=varnish
 ADM_VERSION=trunk

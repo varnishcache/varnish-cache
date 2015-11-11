@@ -44,7 +44,7 @@
 static void Pool_Work_Thread(struct pool *pp, struct worker *wrk);
 
 /*--------------------------------------------------------------------
- * Create and starte a back-ground thread which as its own worker and
+ * Create and start a back-ground thread which as its own worker and
  * session data structures;
  */
 

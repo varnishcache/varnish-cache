@@ -106,7 +106,7 @@ VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
 		/*
 		 * func should either exec or exit, so getting here should be
 		 * treated like an assertion failure - except that we don't know
-		 * if it's safe to trigger an acutal assertion
+		 * if it's safe to trigger an actual assertion
 		 */
 		_exit(4);
 	}

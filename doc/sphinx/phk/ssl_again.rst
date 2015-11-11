@@ -54,7 +54,7 @@ The next morning `CloudFlare announced the very same thing`_:
 
 .. _CloudFlare announced the very same thing: https://blog.cloudflare.com/keyless-ssl-the-nitty-gritty-technical-details/
 
-This could conceiveably be a way to terminate TLS/SSL in the Varnish-worker
+This could conceivably be a way to terminate TLS/SSL in the Varnish-worker
 process, while keeping the most valuable crypto-bits away from it.
 
 But it's still a bad idea
@@ -117,7 +117,7 @@ I'm not too thrilled about the "SSL Everywhere" idea, for a large
 number of reasons.
 
 The most obvious example is that you don't want to bog down your
-countrys civil defence agency with SSL/TLS protocol negotiations,
+country's civil defence agency with SSL/TLS protocol negotiations,
 if their website is being deluged by people trying to survive a
 natural disaster.
 

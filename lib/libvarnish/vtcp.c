@@ -545,7 +545,7 @@ VTCP_Check(int a)
 		return (1);
 #if (defined (__SVR4) && defined (__sun)) || defined (__NetBSD__)
 	/*
-	 * Solaris returns EINVAL if the other end unexepectedly reset the
+	 * Solaris returns EINVAL if the other end unexpectedly reset the
 	 * connection.
 	 * This is a bug in Solaris and documented behaviour on NetBSD.
 	 */
