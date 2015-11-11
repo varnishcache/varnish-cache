@@ -40,10 +40,10 @@
 	    "Set the output log format string."				\
 	)
 
-#define NCSA_OPT_f                                                      \
-        VOPT("f:", "[-f formatfile]", "Read output format from file",   \
-            "Read output format from a file. Will read a single line"   \
-            " from the specified file, and use that line as the"	\
+#define NCSA_OPT_f							\
+	VOPT("f:", "[-f formatfile]", "Read output format from file",   \
+	    "Read output format from a file. Will read a single line"   \
+	    " from the specified file, and use that line as the"	\
 	    " format."							\
 	)
 
