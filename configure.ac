@@ -151,6 +151,27 @@ fi
 AC_SUBST(PCRE_CFLAGS)
 AC_SUBST(PCRE_LIBS)
 
+# --enable-pcre-jit
+AC_ARG_ENABLE(pcre-jit,
+  AS_HELP_STRING([--enable-pcre-jit],
+    [use the PCRE JIT compiler (default is YES)]),
+    [],
+    [enable_pcre_jit=yes])
+if test "$enable_pcre_jit" = yes; then
+  AC_MSG_CHECKING(for PCRE JIT usability)
+  AC_PREPROC_IFELSE(
+    [AC_LANG_PROGRAM([[#include "pcre.h"
+                       #if PCRE_MAJOR != 8 || PCRE_MINOR < 32
+                       #error no jit
+                       #endif]])],
+    [AC_MSG_RESULT(yes)
+     AC_DEFINE([USE_PCRE_JIT], [1], [Use the PCRE JIT compiler])
+    ],
+    [AC_MSG_RESULT(no)]
+  )
+fi
+
+
 AC_CHECK_HEADERS([edit/readline/readline.h],
 	[AC_DEFINE([HAVE_LIBEDIT], [1], [Define if we have libedit])
 	LIBEDIT_LIBS="-ledit"],
@@ -610,17 +631,6 @@ else
 fi
 
 AC_DEFINE_UNQUOTED([VCC_CC],"$VCC_CC",[C compiler command line for VCL code])
-
-# --enable-pcre-jit
-AC_ARG_ENABLE(pcre-jit,
-    AS_HELP_STRING([--enable-pcre-jit],
-	[use the PCRE JIT compiler (default is YES)]),
-    ,
-    [enable_pcre_jit=yes])
-
-if test "$enable_pcre_jit" = yes; then
-   AC_DEFINE([USE_PCRE_JIT],[1],[use the PCRE JIT compiler])
-fi
 
 # Stupid automake needs this
 VTC_TESTS="$(cd $srcdir/bin/varnishtest && echo tests/*.vtc)"
