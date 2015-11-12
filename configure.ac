@@ -159,7 +159,9 @@ AC_ARG_ENABLE(pcre-jit,
     [enable_pcre_jit=yes])
 if test "$enable_pcre_jit" = yes; then
   AC_MSG_CHECKING(for PCRE JIT usability)
-  AC_PREPROC_IFELSE(
+  save_CFLAGS="${CFLAGS}"
+  CFLAGS="${PCRE_CFLAGS}"
+  AC_COMPILE_IFELSE(
     [AC_LANG_PROGRAM([[#include "pcre.h"
                        #if PCRE_MAJOR != 8 || PCRE_MINOR < 32
                        #error no jit
@@ -169,6 +171,7 @@ if test "$enable_pcre_jit" = yes; then
     ],
     [AC_MSG_RESULT(no)]
   )
+  CFLAGS="${save_CFLAGS}"
 fi
 
 
