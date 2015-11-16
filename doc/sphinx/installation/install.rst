@@ -141,9 +141,17 @@ Installing
 
 And finally, the true test of a brave heart: ``sudo make install``
 
-Varnish will now be installed in `/usr/local`. The `varnishd` binary is in
-`/usr/local/sbin/varnishd` and its default configuration will be
-`/usr/local/etc/varnish/default.vcl`.
+Varnish will now be installed in ``/usr/local``. The ``varnishd`` binary is in
+`/usr/local/sbin/varnishd`. To make sure that the necessary links and caches
+of the most recent shared libraries are found, run ``sudo ldconfig``.
+
+Next steps
+==========
 
 After successful installation you are ready to proceed to the :ref:`tutorial-index`.
 
+This tutorial is written for installations from binary packages.
+In practice, it means that some configurations are not in place for installations from source code.
+For example, instead of calling ``service varnish start``, you start the varnish daemon manually by typing::
+
+        varnishd -a :6081 -T localhost:6082 -b localhost:8080
