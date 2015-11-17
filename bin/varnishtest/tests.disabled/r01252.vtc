@@ -22,19 +22,19 @@ server s2 {
 varnish v1 -arg "-p debug=+waitinglist" -vcl+backend {
 	sub vcl_recv {
 		if (req.http.x-client == "2") {
-			set req.backend = s2;
+			set req.backend_hint = s2;
 		}
 	}
 } -start
 
 varnish v1 -cliok "param.show tcp_keepalive_time"
-varnish v1 -cliok "param.set tcp_keepalive_time 1s"
+varnish v1 -cliok "param.set tcp_keepalive_time 1"
 
 varnish v1 -cliok "param.show tcp_keepalive_probes"
 varnish v1 -cliok "param.set tcp_keepalive_probes 1"
 
 varnish v1 -cliok "param.show tcp_keepalive_intvl"
-varnish v1 -cliok "param.set tcp_keepalive_intvl 1s"
+varnish v1 -cliok "param.set tcp_keepalive_intvl 1"
 
 varnish v1 -cliok "param.show first_byte_timeout"
 varnish v1 -cliok "param.set first_byte_timeout 70"
