@@ -35,7 +35,6 @@
 #include "cache/cache_director.h"
 
 #include "vrt.h"
-#include "vbm.h"
 #include "vend.h"
 #include "vsha256.h"
 
@@ -47,7 +46,6 @@ struct vmod_directors_hash {
 	unsigned				magic;
 #define VMOD_DIRECTORS_HASH_MAGIC		0xc08dd611
 	struct vdir				*vd;
-	struct vbitmap				*vbm;
 };
 
 VCL_VOID __match_proto__()
@@ -61,8 +59,6 @@ vmod_hash__init(VRT_CTX, struct vmod_directors_hash **rrp,
 	AZ(*rrp);
 	ALLOC_OBJ(rr, VMOD_DIRECTORS_HASH_MAGIC);
 	AN(rr);
-	rr->vbm = vbit_init(8);
-	AN(rr->vbm);
 	*rrp = rr;
 	vdir_new(&rr->vd, "hash", vcl_name, NULL, NULL, rr);
 }
@@ -76,7 +72,6 @@ vmod_hash__fini(struct vmod_directors_hash **rrp)
 	*rrp = NULL;
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_HASH_MAGIC);
 	vdir_delete(&rr->vd);
-	vbit_destroy(rr->vbm);
 	FREE_OBJ(rr);
 }
 
