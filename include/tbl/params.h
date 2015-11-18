@@ -733,7 +733,7 @@ PARAM(
 	/* units */	allocations,
 	/* flags */	0| EXPERIMENTAL,
 	/* s-text */
-	"Maximum number of objects we attempt to nuke in orderto make "
+	"Maximum number of objects we attempt to nuke in order to make "
 	"space for a object body.\n",
 	/* l-text */	"",
 	/* func */	NULL
