@@ -435,8 +435,6 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Inbox p=%p e=%.9f f=0x%x", oc,
 	    oc->timer_when, oc->flags);
 
-	// AZ(oc->flags & OC_F_BUSY);
-
 	lru = ObjGetLRU(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
@@ -519,7 +517,7 @@ exp_expire(struct exp_priv *ep, double now)
 	lru = ObjGetLRU(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 	Lck_Lock(&lru->mtx);
-	// AZ(oc->flags & OC_F_BUSY);
+
 	oc->exp_flags |= OC_EF_DYING;
 	if (oc->exp_flags & OC_EF_OFFLRU)
 		oc = NULL;
