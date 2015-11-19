@@ -237,14 +237,14 @@ BAN_DestroyObj(struct objcore *oc)
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	if (oc->ban == NULL)
-		return;
-	CHECK_OBJ_NOTNULL(oc->ban, BAN_MAGIC);
 	Lck_Lock(&ban_mtx);
-	assert(oc->ban->refcount > 0);
-	oc->ban->refcount--;
-	VTAILQ_REMOVE(&oc->ban->objcore, oc, ban_list);
-	oc->ban = NULL;
+	CHECK_OBJ_ORNULL(oc->ban, BAN_MAGIC);
+	if (oc->ban != NULL) {
+		assert(oc->ban->refcount > 0);
+		oc->ban->refcount--;
+		VTAILQ_REMOVE(&oc->ban->objcore, oc, ban_list);
+		oc->ban = NULL;
+	}
 	Lck_Unlock(&ban_mtx);
 }
 
@@ -549,22 +549,26 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 
 	oc->ban->refcount--;
 	VTAILQ_REMOVE(&oc->ban->objcore, oc, ban_list);
-	if (b == oc->ban) {	/* not banned */
+	if (b == oc->ban) {
+		/* not banned */
 		VTAILQ_INSERT_TAIL(&b0->objcore, oc, ban_list);
 		b0->refcount++;
+		oc->ban = b0;
+		b = NULL;
+	} else {
+		oc->ban = NULL;
 	}
 
-	if (oc->ban->refcount == 0 && VTAILQ_NEXT(oc->ban, list) == NULL)
+	if (VTAILQ_LAST(&ban_head, banhead_s)->refcount == 0)
 		ban_kick_lurker();
 
 	Lck_Unlock(&ban_mtx);
 
-	if (b == oc->ban) {	/* not banned */
-		oc->ban = b0;
+	if (b == NULL) {
+		/* not banned */
 		ObjUpdateMeta(wrk, oc);
 		return (0);
 	} else {
-		oc->ban = NULL;
 		VSLb(vsl, SLT_ExpBan, "%u banned lookup", ObjGetXID(wrk, oc));
 		VSC_C_main->bans_obj_killed++;
 		EXP_Rearm(oc, oc->exp.t_origin, 0, 0, 0);	// XXX fake now
