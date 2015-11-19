@@ -1,4 +1,4 @@
-varnishtest "Check the between_bytes_timeout behaves from parameters"
+varnishtest "Check that between_bytes_timeout behaves from parameters"
 
 feature SO_RCVTIMEO_WORKS
 
