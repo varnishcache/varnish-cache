@@ -68,6 +68,7 @@ default_oc_freeobj(struct worker *wrk, struct objcore *oc)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->stobj, STOREOBJ_MAGIC);
 	ObjSlim(wrk, oc);
 	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
 	o->magic = 0;
