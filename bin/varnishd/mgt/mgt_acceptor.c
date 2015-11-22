@@ -202,19 +202,19 @@ MAC_Arg(const char *arg)
 		mh->first_step = S_STP_H1NEWSESS;
 		mh->proto_name = "HTTP/1";
 		if (av[2] != NULL && av[3] != NULL)
-			ARGV_ERR("Too many sub-arguments to -a(HTTP/1))\n");
+			ARGV_ERR("Too many sub-arguments to -a(HTTP/1)\n");
 	} else if (!strcmp(av[2], "PROXY")) {
 		mh->first_step = S_STP_PROXYNEWSESS;
 		mh->proto_name = "PROXY";
 		if (av[3] != NULL)
-			ARGV_ERR("Too many sub-arguments to -a(PROXY))\n");
+			ARGV_ERR("Too many sub-arguments to -a(PROXY)\n");
 	} else {
 		ARGV_ERR("Unknown protocol '%s'\n", av[2]);
 	}
 
 	error = VSS_resolver(av[1], "80", mac_callback, mh, &err);
 	if (mh->good == 0 || error)
-		ARGV_ERR("socket %s didn't resolve \n", av[1]);
+		ARGV_ERR("socket %s didn't resolve\n", av[1]);
 	VAV_Free(av);
 	FREE_OBJ(mh);
 }
