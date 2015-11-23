@@ -1,0 +1,75 @@
+varnishtest "#1818: verify that grace works for hit_for_pass objects"
+
+server s1 {
+	rxreq
+	expect req.http.a == "1"
+	txresp
+
+	rxreq
+	expect req.http.b == "1"
+	sema r2 sync 2
+	sema r1 sync 2
+ 	txresp
+} -start
+
+server s2 {
+	rxreq
+	expect req.http.c == "1"
+	sema r1 sync 2
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.http.c) {
+			set req.backend_hint = s2;
+		}
+	}
+
+	sub vcl_miss {
+		set req.http.miss = "1";
+	}
+
+	sub vcl_pass {
+		set req.http.pass = "1";
+	}
+
+	sub vcl_deliver {
+		if (req.http.miss) {
+			set resp.http.miss = req.http.miss;
+		}
+		if (req.http.pass) {
+			set resp.http.pass = req.http.pass;
+		}
+	}
+
+	sub vcl_backend_response {
+		set beresp.ttl = 0.1s;
+		set beresp.grace = 1m;
+		set beresp.uncacheable = true;
+	}
+} -start 
+
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -cliok "param.set debug +waitinglist"
+varnish v1 -cliok "param.show debug"
+
+client c1 {
+	# This is a plain miss
+	txreq -hdr "a: 1"
+	rxresp
+	expect resp.http.miss == "1"
+	delay .2
+
+	# This should also miss, because the HFP is expired
+	txreq -hdr "b: 1"
+	rxresp
+	expect resp.http.miss == "1"
+} -start
+
+client c2 {
+	sema r2 sync 2
+	txreq -hdr "c: 1"
+	rxresp
+	expect resp.http.pass == "1"
+} -run

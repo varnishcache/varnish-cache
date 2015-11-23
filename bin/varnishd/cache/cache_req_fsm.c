@@ -403,16 +403,22 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	AZ(oc->flags & OC_F_BUSY);
 	req->objcore = oc;
 
-	if (oc->flags & OC_F_PASS) {
+	if ((oc->flags & OC_F_PASS) && boc != NULL) {
+		/* Treat a graced Hit-For-Pass as a miss */
+		req->objcore = boc;
+		req->stale_oc = oc;
+		req->req_step = R_STP_MISS;
+		return (REQ_FSM_MORE);
+	} else if (oc->flags & OC_F_PASS) {
 		/* Found a hit-for-pass */
 		VSLb(req->vsl, SLT_Debug, "XXXX HIT-FOR-PASS");
 		VSLb(req->vsl, SLT_HitPass, "%u",
 		    ObjGetXID(wrk, req->objcore));
-		AZ(boc);
 		(void)HSH_DerefObjCore(wrk, &req->objcore);
 		wrk->stats->cache_hitpass++;
 		req->req_step = R_STP_PASS;
 		return (REQ_FSM_MORE);
+	} else if (oc->flags & OC_F_PASS) {
 	}
 
 	VSLb(req->vsl, SLT_Hit, "%u", ObjGetXID(wrk, req->objcore));
