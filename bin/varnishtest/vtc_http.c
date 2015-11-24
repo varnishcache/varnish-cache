@@ -61,6 +61,8 @@ struct http {
 
 	int			nrxbuf;
 	char			*rxbuf;
+	char			*rem_ip;
+	char			*rem_port;
 	int			prxbuf;
 	char			*body;
 	unsigned		bodyl;
@@ -197,7 +199,10 @@ static const char *
 cmd_var_resolve(struct http *hp, char *spec)
 {
 	char **hh, *hdr;
-
+	if (!strcmp(spec, "remote.ip"))
+		return(hp->rem_ip);
+	if (!strcmp(spec, "remote.port"))
+		return(hp->rem_port);
 	if (!strcmp(spec, "req.method"))
 		return(hp->req[0]);
 	if (!strcmp(spec, "req.url"))
@@ -1369,20 +1374,33 @@ http_process(struct vtclog *vl, const char *spec, int sock, int *sfd)
 	AN(hp);
 	hp->fd = sock;
 	hp->timeout = vtc_maxdur * 1000 / 2;
+
 	hp->nrxbuf = 2048*1024;
-	hp->vsb = VSB_new_auto();
 	hp->rxbuf = malloc(hp->nrxbuf);		/* XXX */
+	AN(hp->rxbuf);
+
+	hp->vsb = VSB_new_auto();
+	AN(hp->vsb);
+
 	hp->sfd = sfd;
+
+	hp->rem_ip = malloc(VTCP_ADDRBUFSIZE);
+	AN(hp->rem_ip);
+
+	hp->rem_port = malloc(VTCP_PORTBUFSIZE);
+	AN(hp->rem_port);
+
 	hp->vl = vl;
 	hp->gziplevel = 0;
 	hp->gzipresidual = -1;
-	AN(hp->rxbuf);
-	AN(hp->vsb);
 
+	VTCP_hisname(sock, hp->rem_ip, VTCP_ADDRBUFSIZE, hp->rem_port, VTCP_PORTBUFSIZE);
 	parse_string(spec, http_cmds, hp, vl);
 	retval = hp->fd;
 	VSB_delete(hp->vsb);
 	free(hp->rxbuf);
+	free(hp->rem_ip);
+	free(hp->rem_port);
 	free(hp);
 	return (retval);
 }
