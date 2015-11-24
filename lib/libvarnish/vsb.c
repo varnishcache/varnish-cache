@@ -519,7 +519,10 @@ VSB_quote(struct vsb *s, const char *p, int len, int how)
 			(void)VSB_putc(s, *q);
 			break;
 		case '\n':
-			(void)VSB_cat(s, "\\n");
+			if (how & VSB_QUOTE_NONL)
+				(void)VSB_cat(s, "\n");
+			else
+				(void)VSB_cat(s, "\\n");
 			break;
 		case '\r':
 			(void)VSB_cat(s, "\\r");
