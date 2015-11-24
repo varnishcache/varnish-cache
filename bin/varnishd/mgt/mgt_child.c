@@ -117,7 +117,8 @@ mgt_panic_record(pid_t r)
 	VTIM_format(VTIM_real(), time_str);
 	VSB_printf(child_panic, "Last panic at: %s\n", time_str);
 	VSB_quote(child_panic, heritage.panic_str,
-	    strnlen(heritage.panic_str, heritage.panic_str_len), 0);
+	    strnlen(heritage.panic_str, heritage.panic_str_len),
+	    VSB_QUOTE_NONL);
 	AZ(VSB_finish(child_panic));
 	MGT_complain(C_ERR, "Child (%jd) %s",
 	    (intmax_t)r, VSB_data(child_panic));
