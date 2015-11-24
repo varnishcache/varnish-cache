@@ -209,18 +209,19 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	cnt_vdp(req, bo);
 
-	if (bo != NULL)
-		VBO_DerefBusyObj(wrk, &bo);
-
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
 	if (http_HdrIs(req->resp, H_Connection, "close"))
 		req->doclose = SC_RESP_CLOSE;
 
-	if ((req->objcore->flags & OC_F_PASS) && bo != NULL) {
-		VBO_waitstate(bo, BOS_FINISHED);
+	if (req->objcore->flags & (OC_F_PRIVATE | OC_F_PASS)) {
+		if (bo != NULL)
+			VBO_waitstate(bo, BOS_FINISHED);
 		ObjSlim(wrk, req->objcore);
 	}
+
+	if (bo != NULL)
+		VBO_DerefBusyObj(wrk, &bo);
 
 	(void)HSH_DerefObjCore(wrk, &req->objcore);
 	http_Teardown(req->resp);
