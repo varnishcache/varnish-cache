@@ -1,0 +1,28 @@
+varnishtest	"Slim down hit-for-pass objects"
+
+server s1 -repeat 2 {
+	rxreq
+	txresp -hdr "Cache-Control: max-age=5" -bodylen 65535
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.uncacheable = true;
+	}
+} -start
+
+logexpect l1 -v v1 {
+	expect * * Storage Transient
+} -start
+
+client c1 {
+	txreq -url /foo
+	rxresp
+	txreq -url /bar
+	rxresp
+} -run
+
+logexpect l1 -wait
+
+varnish v1 -expect SMA.Transient.c_bytes != 0
+varnish v1 -expect SMA.Transient.g_bytes < 65536
