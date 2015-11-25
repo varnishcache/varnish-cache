@@ -93,7 +93,6 @@ if true ; then
     #define VARNISH_VCL_DIR         "/etc/varnish"
 		#define VARNISH_STATE_DIR       "/tmp/phk/"
 		#define VARNISH_VMOD_DIR        "/usr/lib/varnish/vmods"
-		#define VCS_Branch "master"
 	' >> ${CONFIG_H}_
 	if [ ! -f ${CONFIG_H} ] ; then
 		mv ${CONFIG_H}_ ${CONFIG_H}
