@@ -41,6 +41,8 @@
 
 #include "config.h"
 
+#define _WITH_GETLINE
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>

@@ -6,6 +6,8 @@ PROG_SRC += cache/cache_backend_cfg.c
 PROG_SRC += cache/cache_backend_tcp.c
 PROG_SRC += cache/cache_backend_probe.c
 PROG_SRC += cache/cache_ban.c
+PROG_SRC += cache/cache_ban_build.c
+PROG_SRC += cache/cache_ban_lurker.c
 PROG_SRC += cache/cache_busyobj.c
 PROG_SRC += cache/cache_cli.c
 PROG_SRC += cache/cache_director.c
@@ -110,10 +112,20 @@ MADE_FILES += builtin_vcl.h
 
 TODO_INSTALL += install_etc
 
+PARST=$(TOPDIR)/doc/sphinx/include/params.rst
+
+TODO_ALL += $(PARST)
+CLEAN_FILES += $(PARST)
+
 CFLAGS	+= -DVARNISHD_IS_NOT_A_VMOD
 
 TOPDIR  = $(CURDIR)/../..
 include $(TOPDIR)/Makefile.inc.phk
+
+$(PARST): $(PROGNAME)
+	-ls -l $(PARST) $(PROGNAME)
+	mkdir -p $(TOPDIR)/doc/sphinx/include
+	./varnishd -x dumprstparam > $(PARST)
 
 #
 # Turn the builtin.vcl file into a C-string we can include in the program.
