@@ -288,6 +288,7 @@ ObjGetSpace(struct worker *wrk, struct objcore *oc, ssize_t *sz, uint8_t **ptr)
 		VTAILQ_INSERT_TAIL(&o->list, st, list);
 		Lck_Unlock(&oc->busyobj->mtx);
 	} else {
+		AN(oc->flags & (OC_F_PRIVATE));
 		VTAILQ_INSERT_TAIL(&o->list, st, list);
 	}
 	*sz = st->space - st->len;

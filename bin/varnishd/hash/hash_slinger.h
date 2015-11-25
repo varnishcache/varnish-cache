@@ -74,7 +74,6 @@ void HSH_Purge(struct worker *, struct objhead *, double ttl, double grace,
 void HSH_config(const char *h_arg);
 struct busyobj *HSH_RefBusy(const struct objcore *oc);
 struct objcore *HSH_Private(struct worker *wrk);
-struct objcore *HSH_NewObjCore(struct worker *wrk);
 
 #ifdef VARNISH_CACHE_CHILD
 

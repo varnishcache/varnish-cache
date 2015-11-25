@@ -67,8 +67,8 @@ static struct objhead *private_oh;
 
 /*---------------------------------------------------------------------*/
 
-struct objcore *
-HSH_NewObjCore(struct worker *wrk)
+static struct objcore *
+hsh_NewObjCore(struct worker *wrk)
 {
 	struct objcore *oc;
 
@@ -104,7 +104,7 @@ hsh_prealloc(struct worker *wrk)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	if (wrk->nobjcore == NULL)
-		wrk->nobjcore = HSH_NewObjCore(wrk);
+		wrk->nobjcore = hsh_NewObjCore(wrk);
 	CHECK_OBJ_NOTNULL(wrk->nobjcore, OBJCORE_MAGIC);
 
 	if (wrk->nobjhead == NULL) {
@@ -135,11 +135,11 @@ HSH_Private(struct worker *wrk)
 
 	CHECK_OBJ_NOTNULL(private_oh, OBJHEAD_MAGIC);
 
-	oc = HSH_NewObjCore(wrk);
+	oc = hsh_NewObjCore(wrk);
 	AN(oc);
 	oc->refcnt = 1;
 	oc->objhead = private_oh;
-	oc->flags |= OC_F_PRIVATE;
+	oc->flags |= OC_F_PRIVATE | OC_F_BUSY;
 	Lck_Lock(&private_oh->mtx);
 	VTAILQ_INSERT_TAIL(&private_oh->objcs, oc, list);
 	private_oh->refcnt++;
