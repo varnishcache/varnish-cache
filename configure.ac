@@ -248,7 +248,7 @@ AC_CHECK_FUNCS([fallocate])
 
 save_LIBS="${LIBS}"
 LIBS="${PTHREAD_LIBS}"
-AC_CHECK_FUNCS([pthread_set_name_np])
+AC_CHECK_FUNCS([pthread_setname_np])
 AC_CHECK_FUNCS([pthread_mutex_isowned_np])
 AC_CHECK_FUNCS([pthread_timedjoin_np])
 LIBS="${save_LIBS}"

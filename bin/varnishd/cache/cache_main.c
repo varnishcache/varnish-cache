@@ -92,8 +92,8 @@ THR_SetName(const char *name)
 {
 
 	AZ(pthread_setspecific(name_key, name));
-#ifdef HAVE_PTHREAD_SET_NAME_NP
-	pthread_set_name_np(pthread_self(), name);
+#ifdef HAVE_PTHREAD_SETNAME_NP
+	pthread_setname_np(pthread_self(), name);
 #endif
 }
 
