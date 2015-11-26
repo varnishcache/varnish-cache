@@ -102,6 +102,8 @@ ObjIterBegin(struct worker *wrk, struct objcore *oc)
 	struct object *obj;
 	const struct storeobj_methods *om = obj_getmethods(oc);
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
 	if (om->objiterbegin != NULL)
 		return (om->objiterbegin(wrk, oc));
 
@@ -127,13 +129,15 @@ ObjIter(struct objcore *oc, void *oix, void **p, ssize_t *l)
 	ssize_t nl;
 	const struct storeobj_methods *om = obj_getmethods(oc);
 
+	AN(oix);
+	AN(p);
+	AN(l);
+
 	if (om->objiter != NULL)
 		return (om->objiter(oc, oix, p, l));
 
 	CAST_OBJ_NOTNULL(oi, oix, OBJITER_MAGIC);
 	CHECK_OBJ_NOTNULL(oi->obj, OBJECT_MAGIC);
-	AN(p);
-	AN(l);
 	*p = NULL;
 	*l = 0;
 
@@ -193,13 +197,13 @@ ObjIterEnd(struct objcore *oc, void **oix)
 	struct objiter *oi;
 	const struct storeobj_methods *om = obj_getmethods(oc);
 
+	AN(oix);
+
 	if (om->objiterend != NULL) {
 		om->objiterend(oc, oix);
 		return;
 	}
 
-	AN(oc);
-	AN(oix);
 	CAST_OBJ_NOTNULL(oi, (*oix), OBJITER_MAGIC);
 	*oix = NULL;
 	CHECK_OBJ_NOTNULL(oi->obj, OBJECT_MAGIC);
@@ -215,11 +219,12 @@ ObjIterEnd(struct objcore *oc, void **oix)
  */
 
 static struct storage *
-objallocwithnuke(const struct stevedore *stv, struct worker *wrk, size_t size)
+objallocwithnuke(struct worker *wrk, const struct stevedore *stv, size_t size)
 {
 	struct storage *st = NULL;
 	unsigned fail;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
 	if (size > cache_param->fetch_maxchunksize)
@@ -259,14 +264,14 @@ ObjGetSpace(struct worker *wrk, struct objcore *oc, ssize_t *sz, uint8_t **ptr)
 	struct storage *st;
 	const struct storeobj_methods *om = obj_getmethods(oc);
 
-	if (om->objgetspace != NULL)
-		return (om->objgetspace(wrk, oc, sz, ptr));
-
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(sz);
 	AN(ptr);
 	assert(*sz > 0);
+
+	if (om->objgetspace != NULL)
+		return (om->objgetspace(wrk, oc, sz, ptr));
+
 	o = obj_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
@@ -278,7 +283,7 @@ ObjGetSpace(struct worker *wrk, struct objcore *oc, ssize_t *sz, uint8_t **ptr)
 		return (1);
 	}
 
-	st = objallocwithnuke(oc->stobj->stevedore, wrk, *sz);
+	st = objallocwithnuke(wrk, oc->stobj->stevedore, *sz);
 	if (st == NULL)
 		return (0);
 
@@ -311,13 +316,14 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l)
 	struct storage *st;
 	const struct storeobj_methods *om = obj_getmethods(oc);
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	assert(l > 0);
+
 	if (om->objextend != NULL) {
 		om->objextend(wrk, oc, l);
 		return;
 	}
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	o = obj_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st = VTAILQ_LAST(&o->list, storagehead);
@@ -338,6 +344,8 @@ ObjGetLen(struct worker *wrk, struct objcore *oc)
 {
 	struct object *o;
 	const struct storeobj_methods *om = obj_getmethods(oc);
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	if (om->objgetlen != NULL)
 		return (om->objgetlen(wrk, oc));
@@ -363,13 +371,13 @@ ObjTrimStore(struct worker *wrk, struct objcore *oc)
 	struct object *o;
 	const struct storeobj_methods *om = obj_getmethods(oc);
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
 	if (om->objtrimstore != NULL) {
 		om->objtrimstore(wrk, oc);
 		return;
 	}
 
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	stv = oc->stobj->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	o = obj_getobj(wrk, oc);
@@ -400,13 +408,13 @@ ObjSlim(struct worker *wrk, struct objcore *oc)
 	struct storage *st, *stn;
 	const struct storeobj_methods *om = obj_getmethods(oc);
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
 	if (om->objslim != NULL) {
 		om->objslim(wrk, oc);
 		return;
 	}
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	stv = oc->stobj->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	o = obj_getobj(wrk, oc);
@@ -430,6 +438,8 @@ ObjUpdateMeta(struct worker *wrk, struct objcore *oc)
 {
 	const struct storeobj_methods *m = obj_getmethods(oc);
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
 	if (m->updatemeta != NULL)
 		m->updatemeta(wrk, oc);
 }
@@ -442,7 +452,7 @@ ObjFreeObj(struct worker *wrk, struct objcore *oc)
 	const struct storeobj_methods *m = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
 	AN(m->freeobj);
 	m->freeobj(wrk, oc);
 	AZ(oc->stobj->stevedore);
@@ -455,7 +465,6 @@ ObjGetLRU(const struct objcore *oc)
 {
 	const struct storeobj_methods *m = obj_getmethods(oc);
 
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(m->getlru);
 	return (m->getlru(oc));
 }
@@ -474,11 +483,11 @@ ObjGetattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 	ssize_t dummy;
 	const struct storeobj_methods *om = obj_getmethods(oc);
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
 	if (om->objgetattr != NULL)
 		return (om->objgetattr(wrk, oc, attr, len));
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	if (len == NULL)
 		len = &dummy;
 	o = obj_getobj(wrk, oc);
@@ -529,17 +538,17 @@ ObjSetattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 	struct storage *st;
 	const struct storeobj_methods *om = obj_getmethods(oc);
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
 	if (om->objsetattr != NULL)
 		return (om->objsetattr(wrk, oc, attr, len, ptr));
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	o = obj_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st = o->objstore;
 	switch (attr) {
 	case OA_ESIDATA:
-		o->esidata = objallocwithnuke(oc->stobj->stevedore, wrk, len);
+		o->esidata = objallocwithnuke(wrk, oc->stobj->stevedore, len);
 		if (o->esidata == NULL)
 			return (NULL);
 		o->esidata->len = len;
@@ -597,6 +606,7 @@ ObjCopyAttr(struct worker *wrk, struct objcore *oc, struct objcore *ocs,
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(ocs, OBJCORE_MAGIC);
 
 	vps = ObjGetattr(wrk, ocs, attr, &l);
 	// XXX: later we want to have zero-length OA's too
