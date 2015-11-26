@@ -997,6 +997,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 
 	if (mode != VBF_BACKGROUND)
 		HSH_Ref(oc);
+	AZ(bo->fetch_objcore);
 	bo->fetch_objcore = oc;
 
 	AZ(bo->stale_oc);

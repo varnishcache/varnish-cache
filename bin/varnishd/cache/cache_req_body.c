@@ -268,6 +268,12 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 
 	} while (vfps == VFP_OK);
 	VFP_Close(vfc);
+	ObjTrimStore(req->wrk, req->body_oc);
+
+	/* XXX: check missing:
+	    if (req->htc->content_length >= 0)
+		MUSTBE (req->req_bodybytes == req->htc->content_length);
+	*/
 
 	if (vfps == VFP_END) {
 		assert(req->req_bodybytes >= 0);

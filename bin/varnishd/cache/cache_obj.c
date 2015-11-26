@@ -116,8 +116,7 @@ ObjIterBegin(struct worker *wrk, struct objcore *oc)
 	oi->oc = oc;
 	oi->obj = obj;
 	oi->wrk = wrk;
-	if (oc->objhead != NULL)
-		oi->bo = HSH_RefBusy(oc);
+	oi->bo = HSH_RefBusy(oc);
 	return (oi);
 }
 
