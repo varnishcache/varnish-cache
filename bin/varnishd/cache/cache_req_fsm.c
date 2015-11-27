@@ -419,7 +419,6 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		wrk->stats->cache_hitpass++;
 		req->req_step = R_STP_PASS;
 		return (REQ_FSM_MORE);
-	} else if (oc->flags & OC_F_PASS) {
 	}
 
 	VSLb(req->vsl, SLT_Hit, "%u", ObjGetXID(wrk, req->objcore));
