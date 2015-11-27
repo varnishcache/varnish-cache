@@ -1,21 +1,14 @@
 
-Implementing websocket support
-------------------------------
+Adding WebSockets support
+-------------------------
 
-Websockets is a technology for creating a bidirectional stream-based channel over HTTP.
+WebSockets is a technology for creating a bidirectional stream-based
+channel over HTTP.
 
-To run websockets through Varnish you need to pipe it, and copy the Upgrade header. Use the following
-VCL config to do so::
+To run WebSockets through Varnish you need to pipe it as follows::
 
-    sub vcl_pipe {
-         if (req.http.upgrade) {
-             set bereq.http.upgrade = req.http.upgrade;
-         }
-    }
     sub vcl_recv {
-         if (req.http.Upgrade ~ "(?i)websocket") {
-             return (pipe);
-         }
+        if (req.http.upgrade ~ "(?i)websocket") {
+            return (pipe);
+        }
     }
-
-.. XXX: Pipe it? maybe a bit more explanation here? benc
