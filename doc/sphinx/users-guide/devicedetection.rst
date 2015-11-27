@@ -127,8 +127,8 @@ VCL::
     }
 
     # override the header before it is sent to the backend
-    sub vcl_miss { if (req.http.X-UA-Device) { set bereq.http.User-Agent = req.http.X-UA-Device; } }
-    sub vcl_pass { if (req.http.X-UA-Device) { set bereq.http.User-Agent = req.http.X-UA-Device; } }
+    sub vcl_miss { if (req.http.X-UA-Device) { set req.http.User-Agent = req.http.X-UA-Device; } }
+    sub vcl_pass { if (req.http.X-UA-Device) { set req.http.User-Agent = req.http.X-UA-Device; } }
 
     # standard Vary handling code from previous examples.
     sub vcl_backend_response {

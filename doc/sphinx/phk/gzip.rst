@@ -151,7 +151,7 @@ compression efficiency, you should::
 
 	sub vcl_miss {
 		if (object needs ESI processing) {
-			unset bereq.http.accept-encoding;
+			unset req.http.accept-encoding;
 		}
 	}
 
