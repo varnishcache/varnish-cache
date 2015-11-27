@@ -642,7 +642,6 @@ AC_CONFIG_FILES([
     lib/libvmod_std/Makefile
     lib/libvmod_directors/Makefile
     man/Makefile
-    redhat/Makefile
     varnishapi.pc
     varnishapi-uninstalled.pc
 ])
