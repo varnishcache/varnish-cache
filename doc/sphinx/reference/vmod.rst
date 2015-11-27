@@ -231,7 +231,7 @@ STRING_LIST
 
 	Consider this contrived example::
 
-		set bereq.http.foo = std.toupper(req.http.foo + req.http.bar);
+		set req.http.foo = std.toupper(req.http.foo + req.http.bar);
 
 	The usual way to do this, would be be to allocate memory for
 	the concatenated string, then pass that to ``toupper()`` which in
