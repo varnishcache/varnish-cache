@@ -327,14 +327,14 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		/*
 		 * A HEAD request can never have a body in the reply,
 		 * no matter what the headers might say.
-		 * [RFC2516 4.3 p33]
+		 * [RFC7231 4.3.2 p25]
 		 */
 		wrk->stats->fetch_head++;
 		bo->htc->body_status = BS_NONE;
 	} else if (http_GetStatus(bo->beresp) <= 199) {
 		/*
 		 * 1xx responses never have a body.
-		 * [RFC2616 4.3 p33]
+		 * [RFC7230 3.3.2 p31]
 		 * ... but we should never see them.
 		 */
 		wrk->stats->fetch_1xx++;
@@ -342,7 +342,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	} else if (http_IsStatus(bo->beresp, 204)) {
 		/*
 		 * 204 is "No Content", obviously don't expect a body.
-		 * [RFC7230 3.3.1 p28 and 3.3.2 p30]
+		 * [RFC7230 3.3.1 p29 and 3.3.2 p31]
 		 */
 		wrk->stats->fetch_204++;
 		if (http_GetHdr(bo->beresp, H_Content_Length, NULL) ||
@@ -353,7 +353,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	} else if (http_IsStatus(bo->beresp, 304)) {
 		/*
 		 * 304 is "Not Modified" it has no body.
-		 * [RFC2616 10.3.5 p63]
+		 * [RFC7230 3.3 p28]
 		 */
 		wrk->stats->fetch_304++;
 		bo->htc->body_status = BS_NONE;
