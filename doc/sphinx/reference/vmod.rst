@@ -358,10 +358,10 @@ Event functions
 
 VMODs can have an "event" function which is called when a VCL which imports
 the VMOD is loaded, made active, or discarded.  This corresponds to the
-``VCL_EVENT_LOAD``, ``VCL_EVENT_USE``, and ``VCL_EVENT_DISCARD`` events,
-respectively.  In addition, this function will be called when the VCL state is
-changed to cold or warm, corresponding to the ``VCL_EVENT_COLD`` and
-``VCL_EVENT_WARM`` events.
+``VCL_EVENT_LOAD``, and ``VCL_EVENT_DISCARD`` events, respectively.  In
+addition, this function will be called when the VCL temperature is changed to
+cold or warm, corresponding to the ``VCL_EVENT_COLD`` and ``VCL_EVENT_WARM``
+events.
 
 The first argument to the event function is a VRT context.
 
@@ -379,11 +379,13 @@ discarded and free this global state when the count reaches zero.
 VMOD writers are *strongly* encouraged to release all per-VCL resources for a
 given VCL when it emits a ``VCL_EVENT_COLD`` event. You will get a chance to
 reacquire the resources before the VCL becomes active again and be notified
-first with a ``VCL_EVENT_WARM`` event, and then a ``VCL_EVENT_USE`` event.
-Unless a user decides that a given VCL should always be warm, an inactive VMOD
-will eventually become cold and should manage resources accordingly.
+first with a ``VCL_EVENT_WARM`` event. Unless a user decides that a given VCL
+should always be warm, an inactive VMOD will eventually become cold and should
+manage resources accordingly.
 
-.. TODO vmod objects
+There is also a ``VCL_EVENT_USE`` event. Please note that this event is now
+deprecated and may be removed in a future release. A warm VCL should be ready
+to use so no additional task should be postponed at use time.
 
 When to lock, and when not to lock
 ==================================
