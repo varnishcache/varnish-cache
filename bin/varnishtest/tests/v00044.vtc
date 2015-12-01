@@ -7,7 +7,7 @@ server s1 -repeat 20 {
 	close
 } -start
 
-# The debug vmod logs some vcl events
+# The debug vmod logs temperature vcl events
 varnish v1 -arg "-p vcl_cooldown=1" -vcl {
 	import ${vmod_debug};
 	backend default {
@@ -69,7 +69,6 @@ varnish v1 -clierr 106 "vcl.state vcl2 cold"
 logexpect l1 -v v1 -g raw {
 	expect * 0 Debug "vcl1: VCL_EVENT_COLD"
 	expect * 0 Debug "vcl1: VCL_EVENT_WARM"
-	expect * 0 Debug "vcl1: VCL_EVENT_USE"
 } -start
 
 # ...when you use a cold VCL
