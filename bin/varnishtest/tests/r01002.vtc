@@ -3,7 +3,7 @@ varnishtest "Real relational comparisons"
 varnish v1 -vcl {
 	import ${vmod_std};
 
-	backend foo { .host = "${bad_ip}"; }
+	backend foo { .host = "${bad_ip}"; .port = "9080"; }
 	sub vcl_recv {
 		if (std.random(0,5) < 1.0) {
 			return (pipe);
