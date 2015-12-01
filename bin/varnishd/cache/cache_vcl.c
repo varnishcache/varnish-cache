@@ -404,7 +404,7 @@ vcl_set_state(struct vcl *vcl, const char *state)
 			break;
 		if (vcl->busy == 0) {
 			vcl->temp = vcl_temp_cold;
-			(void)vcl->conf->event_vcl(&ctx, VCL_EVENT_COLD);
+			AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_COLD));
 			vcl_BackendEvent(vcl, VCL_EVENT_COLD);
 		} else {
 			vcl->temp = vcl_temp_cooling;
