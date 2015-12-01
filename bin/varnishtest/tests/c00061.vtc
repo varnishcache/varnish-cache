@@ -2,7 +2,7 @@ varnishtest "retry in vcl_backend_error"
 
 varnish v1 -vcl {
 
-	backend b1 { .host = "${bad_ip}"; }
+	backend b1 { .host = "${bad_ip}"; .port = "9080"; }
 
 	sub vcl_backend_error {
 		return (retry);

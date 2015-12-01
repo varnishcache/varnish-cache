@@ -11,7 +11,7 @@ varnish v1 -errvcl {Object name 'first' already used.} {
 varnish v1 -errvcl {Object name 'first' already used.} {
 	import ${vmod_debug};
 
-	backend first { .host = "${bad_ip}"; }
+	backend first { .host = "${bad_ip}"; .port = "9080"; }
 
 	sub vcl_init {
 		new first = debug.obj("FOO");

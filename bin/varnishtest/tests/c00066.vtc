@@ -6,7 +6,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	backend bad { .host = "${bad_ip}"; }
+	backend bad { .host = "${bad_ip}"; .port = "9080"; }
 	sub vcl_recv {
 		if (req.url == "/synth") {
 			return (synth(200, "Synth test"));

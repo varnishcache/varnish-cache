@@ -2,7 +2,8 @@ varnishtest "Test vcl_synth is called even if vcl_backend_fetch failed"
 
 varnish v1 -vcl {
 	backend default {
-		.host = "${bad_ip}"; .port = "9090";
+		.host = "${bad_ip}";
+		.port = "9090";
 	}
 
 	sub vcl_backend_error {
