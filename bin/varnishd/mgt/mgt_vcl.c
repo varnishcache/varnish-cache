@@ -414,7 +414,7 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 		free(p);
 	} else {
 		VTAILQ_FOREACH(vp, &vclhead, list) {
-			VCLI_Out(cli, "%-10s %4s/%s  %6s %s\n",
+			VCLI_Out(cli, "%-10s %4s/%-8s %6s %s\n",
 			    vp == active_vcl ? "active" : "available",
 			    vp->state,
 			    vp->warm ? "warm" : "cold", "", vp->name);

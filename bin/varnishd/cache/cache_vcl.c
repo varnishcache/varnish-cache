@@ -554,7 +554,7 @@ ccf_config_list(struct cli *cli, const char * const *av, void *priv)
 			flg = "discarded";
 		} else
 			flg = "available";
-		VCLI_Out(cli, "%-10s %4s/%s  %6u %s\n",
+		VCLI_Out(cli, "%-10s %4s/%-8s %6u %s\n",
 		    flg, vcl->state, vcl->temp, vcl->busy, vcl->loaded_name);
 	}
 }
