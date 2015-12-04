@@ -193,12 +193,16 @@ VCL_Rel(struct vcl **vcc)
 
 /*--------------------------------------------------------------------*/
 
-void
+int
 VCL_AddBackend(struct vcl *vcl, struct backend *be)
 {
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
+
+	if (vcl->temp == vcl_temp_cooling)
+		return (1);
+
 	Lck_Lock(&vcl_mtx);
 	VTAILQ_INSERT_TAIL(&vcl->backend_list, be, vcl_list);
 	Lck_Unlock(&vcl_mtx);
@@ -208,6 +212,8 @@ VCL_AddBackend(struct vcl *vcl, struct backend *be)
 		VBE_Event(be, VCL_EVENT_WARM);
 	} else if (vcl->temp != vcl_temp_init)
 		WRONG("Dynamic Backends can only be added to warm VCLs");
+
+	return (0);
 }
 
 void

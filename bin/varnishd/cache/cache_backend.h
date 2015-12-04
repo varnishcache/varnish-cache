@@ -130,5 +130,5 @@ struct vbc *VBT_Get(struct tcp_pool *, double tmo, const struct backend *,
 void VBT_Wait(struct worker *, struct vbc *);
 
 /* cache_vcl.c */
-void VCL_AddBackend(struct vcl *, struct backend *);
+int VCL_AddBackend(struct vcl *, struct backend *);
 void VCL_DelBackend(struct backend *);

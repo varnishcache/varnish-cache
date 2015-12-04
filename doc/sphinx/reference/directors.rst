@@ -110,7 +110,9 @@ Finally, Varnish will take care of event propagation for *all* native backends,
 but dynamic backends can only be created when the VCL is warm. If your backends
 are created by an independent thread (basically outside of VCL scope) you must
 subscribe to VCL events and watch for VCL state (see
-:ref:`ref-vmod-event-functions`). You are also encouraged to comply with the
+:ref:`ref-vmod-event-functions`). Varnish will panic if you try to create a
+backend on a cold VCL, and ``VRT_new_backend`` will return ``NULL`` if the VCL
+is cooling. You are also encouraged to comply with the
 :ref:`ref_vcl_temperature` in general.
 
 
