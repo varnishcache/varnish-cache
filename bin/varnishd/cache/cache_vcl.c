@@ -429,17 +429,16 @@ vcl_find(const char *name)
 }
 
 static void
-vcl_set_state(struct vcl *vcl, const char *state)
+vcl_set_state(VRT_CTX, const char *state)
 {
-	struct vrt_ctx ctx;
-	unsigned hand = 0;
+	struct vcl *vcl;
 
 	ASSERT_CLI();
-	AN(vcl->temp);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(ctx->handling);
 
-	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
-	ctx.handling = &hand;
-	ctx.vcl = vcl;
+	vcl = ctx->vcl;
+	AN(vcl->temp);
 
 	switch(state[0]) {
 	case '0':
@@ -449,7 +448,7 @@ vcl_set_state(struct vcl *vcl, const char *state)
 
 			vcl->temp = vcl->refcount ? VCL_TEMP_COOLING :
 			    VCL_TEMP_COLD;
-			AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_COLD));
+			AZ(vcl->conf->event_vcl(ctx, VCL_EVENT_COLD));
 			vcl_BackendEvent(vcl, VCL_EVENT_COLD);
 		}
 		else if (vcl->busy)
@@ -466,7 +465,7 @@ vcl_set_state(struct vcl *vcl, const char *state)
 		/* The VCL must first reach a stable cold state */
 		else if (vcl->temp != VCL_TEMP_COOLING) {
 			vcl->temp = VCL_TEMP_WARM;
-			(void)vcl->conf->event_vcl(&ctx, VCL_EVENT_WARM);
+			(void)vcl->conf->event_vcl(ctx, VCL_EVENT_WARM);
 			vcl_BackendEvent(vcl, VCL_EVENT_WARM);
 		}
 		break;
@@ -529,7 +528,7 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 		return (1);
 	}
 	VSB_delete(vsb);
-	vcl_set_state(vcl, state);
+	vcl_set_state(&ctx, state);
 	bprintf(vcl->state, "%s", state + 1);
 	assert(hand == VCL_RET_OK);
 	VCLI_Out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
@@ -577,13 +576,19 @@ VCL_Nuke(struct vcl *vcl)
 void
 VCL_Poll(void)
 {
+	struct vrt_ctx ctx;
 	struct vcl *vcl, *vcl2;
+	unsigned hand;
 
 	ASSERT_CLI();
 	VTAILQ_FOREACH_SAFE(vcl, &vcl_head, list, vcl2) {
 		if (vcl->temp == VCL_TEMP_BUSY ||
-		    vcl->temp == VCL_TEMP_COOLING)
-			vcl_set_state(vcl, "0");
+		    vcl->temp == VCL_TEMP_COOLING) {
+			INIT_OBJ(&ctx, VRT_CTX_MAGIC);
+			ctx.vcl = vcl;
+			ctx.handling = &hand;
+			vcl_set_state(&ctx, "0");
+		}
 		if (vcl->discard && vcl->temp == VCL_TEMP_COLD)
 			VCL_Nuke(vcl);
 	}
@@ -625,17 +630,21 @@ ccf_config_load(struct cli *cli, const char * const *av, void *priv)
 static void __match_proto__(cli_func_t)
 ccf_config_state(struct cli *cli, const char * const *av, void *priv)
 {
-	struct vcl *vcl;
+	struct vrt_ctx ctx;
+	unsigned hand;
+
+	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
+	ctx.handling = &hand;
 
 	(void)cli;
 	AZ(priv);
 	ASSERT_CLI();
 	AN(av[2]);
 	AN(av[3]);
-	vcl = vcl_find(av[2]);
-	AN(vcl);			// MGT ensures this
-	vcl_set_state(vcl, av[3]);
-	bprintf(vcl->state, "%s", av[3] + 1);
+	ctx.vcl = vcl_find(av[2]);
+	AN(ctx.vcl);			// MGT ensures this
+	vcl_set_state(&ctx, av[3]);
+	bprintf(ctx.vcl->state, "%s", av[3] + 1);
 }
 
 static void __match_proto__(cli_func_t)
