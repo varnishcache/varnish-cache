@@ -380,8 +380,8 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-	    "usage: varnishadm [-n ident] [-t timeout] [-S secretfile] "
-	    "-T [address]:port command [...]\n");
+	    "Usage: varnishadm [-n ident] [-t timeout] [-S secretfile] "
+	    "[-T [address]:port] [command [...]]\n");
 	fprintf(stderr, "\t-n is mutually exclusive with -S and -T\n");
 	exit(1);
 }
