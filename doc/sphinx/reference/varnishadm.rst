@@ -14,15 +14,16 @@ Control a running Varnish instance
 SYNOPSIS
 ========
 
-varnishadm [-t timeout] [-S secret_file] [-T address:port] [-n name] [command [...]]
+varnishadm [-n ident] [-t timeout] [-S secretfile] -T [address]:port [command [...]]
+
 
 DESCRIPTION
 ===========
 
-The varnishadm utility establishes a CLI connection to varnishd either
+The `varnishadm` utility establishes a CLI connection to varnishd either
 using -n *name* or using the -T and -S arguments. If -n *name* is
 given the location of the secret file and the address:port is looked
-up in shared memory. If neither is given varnishadm will look for an
+up in shared memory. If neither is given `varnishadm` will look for an
 instance without a given name.
 
 If a command is given, the command and arguments are sent over the CLI
@@ -34,16 +35,16 @@ replies between the CLI socket and stdin/stdout.
 OPTIONS
 =======
 
--t timeout
-    Wait no longer than this many seconds for an operation to finish.
+-n ident
+    Connect to the instance of `varnishd` with this name.
 
--S secret_file
+-S secretfile
     Specify the authentication secret file. This should be the same -S
-    argument as was given to varnishd. Only processes which can read
+    argument as was given to `varnishd`. Only processes which can read
     the contents of this file, will be able to authenticate the CLI connection.
 
--n name
-    Connect to the instance of varnishd with this name.
+-t timeout
+    Wait no longer than this many seconds for an operation to finish.
 
 -T <address:port>
     Connect to the management interface at the specified address and port.
@@ -60,7 +61,7 @@ the *param.show* command.
 EXIT STATUS
 ===========
 
-If a command is given, the exit status of the varnishadm utility is
+If a command is given, the exit status of the `varnishadm` utility is
 zero if the command succeeded, and non-zero otherwise.
 
 EXAMPLES
@@ -76,6 +77,7 @@ SEE ALSO
 ========
 
 * :ref:`varnishd(1)`
+* :ref:`varnish-cli(7)`
 
 HISTORY
 =======
