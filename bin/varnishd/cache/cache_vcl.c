@@ -50,6 +50,7 @@
 static const char * const vcl_temp_init = "init";
 static const char * const vcl_temp_cold = "cold";
 static const char * const vcl_temp_warm = "warm";
+static const char * const vcl_temp_busy = "busy";
 static const char * const vcl_temp_cooling = "cooling";
 
 struct vcl {
@@ -164,7 +165,7 @@ VCL_Ref(struct vcl *vcl)
 {
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	assert(vcl->temp == vcl_temp_warm || vcl->temp == vcl_temp_cooling);
+	assert(vcl->temp != vcl_temp_init && vcl->temp != vcl_temp_cold);
 	Lck_Lock(&vcl_mtx);
 	assert(vcl->busy > 0);
 	vcl->busy++;
@@ -207,10 +208,10 @@ VCL_AddBackend(struct vcl *vcl, struct backend *be)
 	VTAILQ_INSERT_TAIL(&vcl->backend_list, be, vcl_list);
 	Lck_Unlock(&vcl_mtx);
 
-	if (vcl->temp == vcl_temp_warm) {
+	if (vcl->temp == vcl_temp_warm || vcl->temp == vcl_temp_busy)
 		/* Only when adding backend to already warm VCL */
 		VBE_Event(be, VCL_EVENT_WARM);
-	} else if (vcl->temp != vcl_temp_init)
+	else if (vcl->temp != vcl_temp_init)
 		WRONG("Dynamic Backends can only be added to warm VCLs");
 
 	return (0);
@@ -400,7 +401,8 @@ VRT_rel_vcl(VRT_CTX)
 
 	vcl = ctx->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	assert(vcl->temp == vcl_temp_warm || vcl->temp == vcl_temp_cooling);
+	assert(vcl->temp == vcl_temp_warm || vcl->temp == vcl_temp_busy ||
+	    vcl->temp == vcl_temp_cooling);
 
 	Lck_Lock(&vcl_mtx);
 	assert(vcl->refcount > 0);
@@ -430,6 +432,7 @@ static void
 vcl_set_state(struct vcl *vcl, const char *state)
 {
 	struct vrt_ctx ctx;
+	const char *target;
 	unsigned hand = 0;
 
 	ASSERT_CLI();
@@ -441,22 +444,29 @@ vcl_set_state(struct vcl *vcl, const char *state)
 
 	switch(state[0]) {
 	case '0':
-		if (vcl->temp == vcl_temp_init)
-			vcl->temp = vcl_temp_cold;
-		if (vcl->temp == vcl_temp_cold)
-			break;
-		if (vcl->busy == 0 && vcl->refcount == 0) {
-			vcl->temp = vcl_temp_cold;
+		assert(vcl->temp != vcl_temp_cold);
+		target = vcl->busy ? vcl_temp_busy : vcl_temp_cold;
+		if (target == vcl_temp_cold && (vcl->temp == vcl_temp_warm ||
+		    vcl->temp == vcl_temp_busy)) {
+
+			vcl->temp = vcl->refcount ? vcl_temp_cooling :
+			    vcl_temp_cold;
 			AZ(vcl->conf->event_vcl(&ctx, VCL_EVENT_COLD));
 			vcl_BackendEvent(vcl, VCL_EVENT_COLD);
-		} else {
-			vcl->temp = vcl_temp_cooling;
 		}
+		else if (vcl->busy)
+			vcl->temp = vcl_temp_busy;
+		else
+			vcl->temp = vcl->refcount ? vcl_temp_cooling :
+			    vcl_temp_cold;
 		break;
 	case '1':
-		if (vcl->temp == vcl_temp_cooling)
+		assert(vcl->temp != vcl_temp_warm);
+		/* The warm VCL hasn't seen a cold event yet */
+		if (vcl->temp == vcl_temp_busy)
 			vcl->temp = vcl_temp_warm;
-		else {
+		/* The VCL must first reach a stable cold state */
+		else if (vcl->temp != vcl_temp_cooling) {
 			vcl->temp = vcl_temp_warm;
 			(void)vcl->conf->event_vcl(&ctx, VCL_EVENT_WARM);
 			vcl_BackendEvent(vcl, VCL_EVENT_WARM);
@@ -573,9 +583,10 @@ VCL_Poll(void)
 
 	ASSERT_CLI();
 	VTAILQ_FOREACH_SAFE(vcl, &vcl_head, list, vcl2) {
-		if (vcl->temp == vcl_temp_cooling)
+		if (vcl->temp == vcl_temp_busy ||
+		    vcl->temp == vcl_temp_cooling)
 			vcl_set_state(vcl, "0");
-		if (vcl->discard && vcl->busy == 0 && vcl->refcount == 0)
+		if (vcl->discard && vcl->temp == vcl_temp_cold)
 			VCL_Nuke(vcl);
 	}
 }
