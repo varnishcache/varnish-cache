@@ -113,7 +113,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 	http_ForceField(req->http0, HTTP_HDR_METHOD, "GET");
 	http_ForceField(req->http0, HTTP_HDR_PROTO, "HTTP/1.1");
 
-	/* Don't allow conditionalss, we can't use a 304 */
+	/* Don't allow conditionals, we can't use a 304 */
 	http_Unset(req->http0, H_If_Modified_Since);
 	http_Unset(req->http0, H_If_None_Match);
 
