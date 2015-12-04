@@ -383,6 +383,13 @@ first with a ``VCL_EVENT_WARM`` event. Unless a user decides that a given VCL
 should always be warm, an inactive VMOD will eventually become cold and should
 manage resources accordingly.
 
+If your VMOD is running an asynchronous background job you can hold a reference
+to the VCL to prevent it from going cold too soon and get the same guarantees
+as backends with ongoing requests for instance. For that, you must acquire the
+reference by calling ``VRT_ref_vcl`` when you receive a ``VCL_EVENT_WARM`` and
+later calling ``VRT_rel_vcl`` once the background job is over. Receiving a
+``VCL_EVENT_COLD`` is your cue to terminate any background job bound to a VCL.
+
 There is also a ``VCL_EVENT_USE`` event. Please note that this event is now
 deprecated and may be removed in a future release. A warm VCL should be ready
 to use so no additional task should be postponed at use time.
@@ -396,7 +403,7 @@ their own locking to protect shared resources.
 When a VCL is loaded or unloaded, the event and priv->free are
 run sequentially all in a single thread, and there is guaranteed
 to be no other activity related to this particular VCL, nor are
-there  init/fini activity in any other VCL or VMOD at this time.
+there init/fini activity in any other VCL or VMOD at this time.
 
 That means that the VMOD init, and any object init/fini functions
 are already serialized in sensible order, and won't need any locking,
