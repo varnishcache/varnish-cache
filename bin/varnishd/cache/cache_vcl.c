@@ -438,7 +438,7 @@ vcl_setup_event(VRT_CTX, enum vcl_event_e ev)
 	assert(ev == VCL_EVENT_LOAD || ev == VCL_EVENT_WARM ||
 	    ev == VCL_EVENT_USE);
 
-	if (ev == VCL_EVENT_LOAD)
+	if (ev != VCL_EVENT_USE)
 		AN(ctx->msg);
 
 	return (ctx->vcl->conf->event_vcl(ctx, ev));
@@ -457,14 +457,18 @@ vcl_failsafe_event(VRT_CTX, enum vcl_event_e ev)
 		WRONG("A VMOD cannot fail COLD or DISCARD events");
 }
 
-static void
+static int
 vcl_set_state(VRT_CTX, const char *state)
 {
 	struct vcl *vcl;
+	int i = 0;
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(ctx->handling);
+	AN(ctx->vcl);
+	AN(state);
+	assert(ctx->msg != NULL || *state == '0');
 
 	vcl = ctx->vcl;
 	AN(vcl->temp);
@@ -494,16 +498,36 @@ vcl_set_state(VRT_CTX, const char *state)
 		/* The VCL must first reach a stable cold state */
 		else if (vcl->temp != VCL_TEMP_COOLING) {
 			vcl->temp = VCL_TEMP_WARM;
-			(void)vcl_setup_event(ctx, VCL_EVENT_WARM);
-			vcl_BackendEvent(vcl, VCL_EVENT_WARM);
+			i = vcl_setup_event(ctx, VCL_EVENT_WARM);
+			if (i == 0)
+				vcl_BackendEvent(vcl, VCL_EVENT_WARM);
+			else
+				AZ(vcl->conf->event_vcl(ctx, VCL_EVENT_COLD));
 		}
 		break;
 	default:
 		WRONG("Wrong enum state");
 	}
+	return (i);
 }
 
-static int
+static void
+vcl_cancel_load(VRT_CTX, struct cli *cli, const char *name, const char *step)
+{
+	struct vcl *vcl = ctx->vcl;
+
+	AZ(VSB_finish(ctx->msg));
+	VCLI_SetResult(cli, CLIS_CANT);
+	VCLI_Out(cli, "VCL \"%s\" Failed %s", name, step);
+	if (VSB_len(ctx->msg))
+		VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(ctx->msg));
+	AZ(vcl->conf->event_vcl(ctx, VCL_EVENT_DISCARD));
+	vcl_KillBackends(vcl);
+	VCL_Close(&vcl);
+	VSB_delete(ctx->msg);
+}
+
+static void
 VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 {
 	struct vcl *vcl;
@@ -516,8 +540,9 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 
 	vcl = vcl_find(name);
 	if (vcl != NULL) {
+		VCLI_SetResult(cli, CLIS_PARAM);
 		VCLI_Out(cli, "Config '%s' already loaded", name);
-		return (1);
+		return;
 	}
 
 	vsb = VSB_new_auto();
@@ -526,9 +551,10 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 	vcl = VCL_Open(fn, vsb);
 	if (vcl == NULL) {
 		AZ(VSB_finish(vsb));
+		VCLI_SetResult(cli, CLIS_PARAM);
 		VCLI_Out(cli, "%s", VSB_data(vsb));
 		VSB_delete(vsb);
-		return (1);
+		return;
 	}
 
 	vcl->loaded_name = strdup(name);
@@ -545,19 +571,18 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 	VSB_clear(vsb);
 	ctx.msg = vsb;
 	i = vcl_setup_event(&ctx, VCL_EVENT_LOAD);
-	AZ(VSB_finish(vsb));
 	if (i) {
-		VCLI_Out(cli, "VCL \"%s\" Failed initialization", name);
-		if (VSB_len(vsb))
-			VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(vsb));
-		vcl_failsafe_event(&ctx, VCL_EVENT_DISCARD);
-		vcl_KillBackends(vcl);
-		VCL_Close(&vcl);
-		VSB_delete(vsb);
-		return (1);
+		vcl_cancel_load(&ctx, cli, name, "initialization");
+		return;
+	}
+	VSB_clear(vsb);
+	i = vcl_set_state(&ctx, state);
+	if (i) {
+		assert(*state == '1');
+		vcl_cancel_load(&ctx, cli, name, "warmup");
+		return;
 	}
 	VSB_delete(vsb);
-	vcl_set_state(&ctx, state);
 	bprintf(vcl->state, "%s", state + 1);
 	assert(hand == VCL_RET_OK);
 	VCLI_Out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
@@ -568,7 +593,6 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 	Lck_Unlock(&vcl_mtx);
 	VSC_C_main->n_vcl++;
 	VSC_C_main->n_vcl_avail++;
-	return (0);
 }
 
 /*--------------------------------------------------------------------
@@ -616,7 +640,7 @@ VCL_Poll(void)
 			INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 			ctx.vcl = vcl;
 			ctx.handling = &hand;
-			vcl_set_state(&ctx, "0");
+			(void)vcl_set_state(&ctx, "0");
 		}
 		if (vcl->discard && vcl->temp == VCL_TEMP_COLD)
 			VCL_Nuke(vcl);
@@ -652,8 +676,7 @@ ccf_config_load(struct cli *cli, const char * const *av, void *priv)
 
 	AZ(priv);
 	ASSERT_CLI();
-	if (VCL_Load(cli, av[2], av[3], av[4]))
-		VCLI_SetResult(cli, CLIS_PARAM);
+	VCL_Load(cli, av[2], av[3], av[4]);
 }
 
 static void __match_proto__(cli_func_t)
@@ -663,6 +686,8 @@ ccf_config_state(struct cli *cli, const char * const *av, void *priv)
 	unsigned hand;
 
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
+	ctx.msg = VSB_new_auto();
+	AN(ctx.msg);
 	ctx.handling = &hand;
 
 	(void)cli;
@@ -672,8 +697,18 @@ ccf_config_state(struct cli *cli, const char * const *av, void *priv)
 	AN(av[3]);
 	ctx.vcl = vcl_find(av[2]);
 	AN(ctx.vcl);			// MGT ensures this
-	vcl_set_state(&ctx, av[3]);
-	bprintf(ctx.vcl->state, "%s", av[3] + 1);
+	if (vcl_set_state(&ctx, av[3]) == 0) {
+		bprintf(ctx.vcl->state, "%s", av[3] + 1);
+		VSB_delete(ctx.msg);
+		return;
+	}
+	AZ(VSB_finish(ctx.msg));
+	VCLI_SetResult(cli, CLIS_CANT);
+	VCLI_Out(cli, "Failed <vcl.state %s %s>", ctx.vcl->loaded_name,
+	    av[3] + 1);
+	if (VSB_len(ctx.msg))
+		VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(ctx.msg));
+	VSB_delete(ctx.msg);
 }
 
 static void __match_proto__(cli_func_t)
