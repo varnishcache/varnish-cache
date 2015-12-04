@@ -305,24 +305,16 @@ the backend contains "USERID=1663"::
 
     req.http.host ~ "^(?i)(www\.)example.com$" && obj.http.set-cookie ~ "USERID=1663"
 
+AUTHORS
+=======
+
+This manual page was originally written by Per Buer and later modified by
+Federico G. Schwindt, Dridi Boukelmoune, Lasse Karstensen and Poul-Henning
+Kamp.
+
 SEE ALSO
 ========
 
 * :ref:`varnishadm(1)`
 * :ref:`varnishd(1)`
 * :ref:`vcl(7)`
-
-HISTORY
-=======
-
-The Varnish manual page was written by Per Buer in 2011. Some of the
-text was taken from the Varnish Cache wiki, the :ref:`varnishd(1)` man
-page or the Varnish source code.
-
-COPYRIGHT
-=========
-
-This document is licensed under the same licence as Varnish
-itself. See LICENCE for details.
-
-* Copyright (c) 2011-2015 Varnish Software AS
