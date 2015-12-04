@@ -168,7 +168,7 @@
 #define CLI_PANIC_CLEAR							\
 	"panic.clear",							\
 	"panic.clear [-z]",						\
-	"\tClear the last panic, if any.",				\
+	"\tClear the last panic, if any. -z will clear related varnishstat counter(s)",	\
 	0, 1
 
 /*
