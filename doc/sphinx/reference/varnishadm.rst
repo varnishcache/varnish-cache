@@ -29,7 +29,7 @@ instance without a given name.
 If a command is given, the command and arguments are sent over the CLI
 connection and the result returned on stdout.
 
-If no command argument is given varnishadm will pass commands and
+If no command argument is given `varnishadm` will pass commands and
 replies between the CLI socket and stdin/stdout.
 
 OPTIONS
@@ -79,17 +79,9 @@ SEE ALSO
 * :ref:`varnishd(1)`
 * :ref:`varnish-cli(7)`
 
-HISTORY
+AUTHORS
 =======
 
-The varnishadm utility and this manual page were written by Cecilie
-Fritzvold. Converted to reStructuredText and updated in 2010 by Per
-Buer.
-
-COPYRIGHT
-=========
-
-This document is licensed under the same licence as Varnish
-itself. See LICENCE for details.
-
-* Copyright (c) 2007-2015 Varnish Software AS
+The `varnishadm` utility and this manual page were written by Cecilie
+Fritzvold. This man page has later been modified by Per Buer, Federico G.
+Schwindt and Lasse Karstensen.
