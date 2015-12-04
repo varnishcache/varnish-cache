@@ -390,6 +390,10 @@ reference by calling ``VRT_ref_vcl`` when you receive a ``VCL_EVENT_WARM`` and
 later calling ``VRT_rel_vcl`` once the background job is over. Receiving a
 ``VCL_EVENT_COLD`` is your cue to terminate any background job bound to a VCL.
 
+In the case where properly releasing resources may take some time, you can
+opt for an asynchronous worker, either by spawning a thread and tracking it, or
+by using Varnish's worker pools.
+
 There is also a ``VCL_EVENT_USE`` event. Please note that this event is now
 deprecated and may be removed in a future release. A warm VCL should be ready
 to use so no additional task should be postponed at use time.
