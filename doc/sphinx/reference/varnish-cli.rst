@@ -133,7 +133,7 @@ panic.show
   Return the last panic, if any.
 
 panic.clear [-z]
-  Clear the last panic, if any.
+  Clear the last panic, if any. -z will clear related varnishstat counter(s).
 
 storage.list
   List storage devices.
