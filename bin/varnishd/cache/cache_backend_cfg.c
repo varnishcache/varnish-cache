@@ -152,6 +152,9 @@ VRT_delete_backend(VRT_CTX, struct director **dp)
 	VTAILQ_REMOVE(&backends, be, list);
 	VTAILQ_INSERT_TAIL(&cool_backends, be, list);
 	Lck_Unlock(&be->mtx);
+
+	// NB. The backend is still usable for the ongoing transactions,
+	// this is why we don't bust the director's magic number.
 }
 
 /*---------------------------------------------------------------------
