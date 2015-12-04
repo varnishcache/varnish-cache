@@ -345,7 +345,8 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		 * [RFC7230 3.3.1 p29 and 3.3.2 p31]
 		 */
 		wrk->stats->fetch_204++;
-		if (http_GetHdr(bo->beresp, H_Content_Length, NULL) ||
+		if ((http_GetHdr(bo->beresp, H_Content_Length, NULL) &&
+		    bo->htc->content_length != 0) ||
 		    http_GetHdr(bo->beresp, H_Transfer_Encoding, NULL))
 			bo->htc->body_status = BS_ERROR;
 		else
