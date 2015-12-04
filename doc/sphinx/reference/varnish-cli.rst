@@ -159,6 +159,14 @@ name, IP address and port in "name(IP address:port)" format. All fields
 are optional. If no exact matching backend is found, partial matching
 will be attempted based on the provided name, IP address and port fields.
 
+Examples::
+
+   backend.list def*
+   backend.set_health default sick
+   backend.set_health def* healthy
+   backend.set_health * auto
+
+
 Ban Expressions
 ---------------
 
