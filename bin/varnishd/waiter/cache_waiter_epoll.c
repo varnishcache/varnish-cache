@@ -38,6 +38,7 @@
 #include <sys/epoll.h>
 
 #include <stdlib.h>
+#include <errno.h>
 
 #include "cache/cache.h"
 
@@ -110,7 +111,12 @@ vwe_thread(void *priv)
 		i = (int)ceil(1e3 * then);
 		assert(i > 0);
 		Lck_Unlock(&vwe->mtx);
-		n = epoll_wait(vwe->epfd, ev, NEEV, i);
+		do {
+			/* Due to a linux kernel bug, epoll_wait can
+			   return EINTR when the process is subjected to
+			   ptrace or waking from OS suspend. */
+			n = epoll_wait(vwe->epfd, ev, NEEV, i);
+		} while (n < 0 && errno == EINTR);
 		assert(n >= 0);
 		assert(n <= NEEV);
 		now = VTIM_real();
