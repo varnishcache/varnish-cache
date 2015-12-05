@@ -1,0 +1,29 @@
+varnishtest "Hold a reference to a VCL after a COLD event"
+
+server s1 -start
+
+# Load and use a new VCL that will hold a reference
+varnish v1 -vcl+backend {
+	import ${vmod_debug};
+	sub vcl_init {
+		debug.vcl_release_delay(2s);
+	}
+} -start
+
+# Load and use a new VCL, freeze the first
+varnish v1 -vcl+backend {}
+varnish v1 -cliok "vcl.state vcl1 cold"
+
+# We should now see it as cooling
+delay 1
+shell {
+	${varnishadm} -n ${v1_name} vcl.list |
+	grep "auto/cooling.*vcl1" >/dev/null
+}
+
+# It will eventually cool down
+delay 2
+shell {
+	${varnishadm} -n ${v1_name} vcl.list |
+	grep "auto/cold.*vcl1" >/dev/null
+}
