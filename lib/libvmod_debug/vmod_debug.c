@@ -28,6 +28,7 @@
 
 #include "config.h"
 
+#include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -45,6 +46,8 @@ struct priv_vcl {
 	char			*foo;
 	uintptr_t		exp_cb;
 };
+
+VCL_DURATION vcl_release_delay = 0.0;
 
 VCL_VOID __match_proto__(td_debug_panic)
 vmod_panic(VRT_CTX, const char *str, ...)
@@ -280,14 +283,38 @@ event_warm(VRT_CTX)
 		return (-1);
 	}
 
+	VRT_ref_vcl(ctx);
 	return (0);
+}
+
+static void*
+cooldown_thread(void *priv)
+{
+	struct vrt_ctx ctx;
+
+	AN(priv);
+	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
+	ctx.vcl = (struct vcl*)priv;
+
+	VTIM_sleep(vcl_release_delay);
+	VRT_rel_vcl(&ctx);
+	return (NULL);
 }
 
 static int
 event_cold(VRT_CTX)
 {
+	pthread_t thread;
 
 	VSL(SLT_Debug, 0, "%s: VCL_EVENT_COLD", VCL_Name(ctx->vcl));
+
+	if (vcl_release_delay == 0.0) {
+		VRT_rel_vcl(ctx);
+		return (0);
+	}
+
+	AZ(pthread_create(&thread, NULL, cooldown_thread, ctx->vcl));
+	AZ(pthread_detach(thread));
 	return (0);
 }
 
@@ -378,4 +405,13 @@ vmod_workspace_overflow(VRT_CTX, VCL_ENUM which)
 	WS_Assert(ws);
 
 	WS_MarkOverflow(ws);
+}
+
+void
+vmod_vcl_release_delay(VRT_CTX, VCL_DURATION delay)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	assert(delay > 0.0);
+	vcl_release_delay = delay;
 }

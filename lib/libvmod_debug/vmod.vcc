@@ -138,3 +138,7 @@ Mark a workspace as overflowed.
 $Function INT workspace_free(ENUM { client, backend, session, thread })
 
 Find how much unallocated space there is left in a workspace.
+
+$Function VOID vcl_release_delay(DURATION)
+
+Hold a reference to the VCL when it goes cold for the given delay.
