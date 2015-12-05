@@ -111,7 +111,7 @@ vcc_ParseImport(struct vcc *tl)
 	if (hdl == NULL) {
 		VSB_printf(tl->sb, "Could not load VMOD %.*s\n", PF(mod));
 		VSB_printf(tl->sb, "\tFile name: %s\n", fn);
-		VSB_printf(tl->sb, "\tdlerror:: %s\n", dlerror());
+		VSB_printf(tl->sb, "\tdlerror: %s\n", dlerror());
 		vcc_ErrWhere(tl, mod);
 		return;
 	}
