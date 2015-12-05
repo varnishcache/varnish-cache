@@ -432,7 +432,6 @@ static void
 vcl_set_state(struct vcl *vcl, const char *state)
 {
 	struct vrt_ctx ctx;
-	const char *target;
 	unsigned hand = 0;
 
 	ASSERT_CLI();
@@ -445,8 +444,7 @@ vcl_set_state(struct vcl *vcl, const char *state)
 	switch(state[0]) {
 	case '0':
 		assert(vcl->temp != vcl_temp_cold);
-		target = vcl->busy ? vcl_temp_busy : vcl_temp_cold;
-		if (target == vcl_temp_cold && (vcl->temp == vcl_temp_warm ||
+		if (vcl->busy == 0 && (vcl->temp == vcl_temp_warm ||
 		    vcl->temp == vcl_temp_busy)) {
 
 			vcl->temp = vcl->refcount ? vcl_temp_cooling :
