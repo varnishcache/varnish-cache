@@ -2,7 +2,7 @@ varnishtest "Hold a reference to a VCL after a COLD event"
 
 server s1 -start
 
-# Load and use a new VCL that will hold a reference
+# Load and use a VCL that will hold a reference
 varnish v1 -vcl+backend {
 	import ${vmod_debug};
 	sub vcl_init {
