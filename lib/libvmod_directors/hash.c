@@ -97,6 +97,7 @@ vmod_hash_backend(VRT_CTX, struct vmod_directors_hash *rr,
 	double r;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_ORNULL(ctx->bo, BUSYOBJ_MAGIC);
 
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_HASH_MAGIC);
 	SHA256_Init(&sha_ctx);
@@ -113,6 +114,6 @@ vmod_hash_backend(VRT_CTX, struct vmod_directors_hash *rr,
 	r = vbe32dec(sha256);
 	r = scalbn(r, -32);
 	assert(r >= 0 && r <= 1.0);
-	be = vdir_pick_be(rr->vd, r);
+	be = vdir_pick_be(rr->vd, r, ctx->bo);
 	return (be);
 }

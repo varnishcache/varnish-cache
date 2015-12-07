@@ -177,7 +177,7 @@ vdir_pick_by_weight(const struct vdir *vd, double w,
 }
 
 VCL_BACKEND
-vdir_pick_be(struct vdir *vd, double w)
+vdir_pick_be(struct vdir *vd, double w, const struct busyobj *bo)
 {
 	unsigned u;
 	double tw = 0.0;
@@ -185,7 +185,7 @@ vdir_pick_be(struct vdir *vd, double w)
 
 	vdir_lock(vd);
 	for (u = 0; u < vd->n_backend; u++) {
-		if (vd->backend[u]->healthy(vd->backend[u], NULL, NULL)) {
+		if (vd->backend[u]->healthy(vd->backend[u], bo, NULL)) {
 			vbit_clr(vd->vbm, u);
 			tw += vd->weight[u];
 		} else
