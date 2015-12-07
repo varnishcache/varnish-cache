@@ -45,6 +45,8 @@ struct priv_vcl {
 #define PRIV_VCL_MAGIC		0x8E62FA9D
 	char			*foo;
 	uintptr_t		exp_cb;
+	struct vcl		*vcl;
+	struct vclref		*vclref;
 };
 
 static VCL_DURATION vcl_release_delay = 0.0;
@@ -248,6 +250,8 @@ priv_vcl_free(void *priv)
 		EXP_Deregister_Callback(&priv_vcl->exp_cb);
 		VSL(SLT_Debug, 0, "exp_cb: deregistered");
 	}
+	AZ(priv_vcl->vcl);
+	AZ(priv_vcl->vclref);
 	FREE_OBJ(priv_vcl);
 	AZ(priv_vcl);
 }
@@ -273,8 +277,10 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 }
 
 static int
-event_warm(VRT_CTX)
+event_warm(VRT_CTX, struct vmod_priv *priv)
 {
+	struct priv_vcl *priv_vcl;
+	char buf[32];
 
 	VSL(SLT_Debug, 0, "%s: VCL_EVENT_WARM", VCL_Name(ctx->vcl));
 
@@ -284,7 +290,13 @@ event_warm(VRT_CTX)
 		return (-1);
 	}
 
-	VRT_ref_vcl(ctx);
+	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
+	AZ(priv_vcl->vcl);
+	AZ(priv_vcl->vclref);
+
+	snprintf(buf, sizeof buf, "vmod-debug ref on %s", VCL_Name(ctx->vcl));
+	priv_vcl->vcl = ctx->vcl;
+	priv_vcl->vclref = VRT_ref_vcl(ctx, buf);
 	return (0);
 }
 
@@ -292,29 +304,40 @@ static void*
 cooldown_thread(void *priv)
 {
 	struct vrt_ctx ctx;
+	struct priv_vcl *priv_vcl;
 
-	AN(priv);
+	CAST_OBJ_NOTNULL(priv_vcl, priv, PRIV_VCL_MAGIC);
+	AN(priv_vcl->vcl);
+	AN(priv_vcl->vclref);
+
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
-	ctx.vcl = (struct vcl*)priv;
+	ctx.vcl = priv_vcl->vcl;
 
 	VTIM_sleep(vcl_release_delay);
-	VRT_rel_vcl(&ctx);
+	VRT_rel_vcl(&ctx, &priv_vcl->vclref);
+	priv_vcl->vcl = NULL;
 	return (NULL);
 }
 
 static int
-event_cold(VRT_CTX)
+event_cold(VRT_CTX, struct vmod_priv *priv)
 {
 	pthread_t thread;
+	struct priv_vcl *priv_vcl;
+
+	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
+	AN(priv_vcl->vcl);
+	AN(priv_vcl->vclref);
 
 	VSL(SLT_Debug, 0, "%s: VCL_EVENT_COLD", VCL_Name(ctx->vcl));
 
 	if (vcl_release_delay == 0.0) {
-		VRT_rel_vcl(ctx);
+		VRT_rel_vcl(ctx, &priv_vcl->vclref);
+		priv_vcl->vcl = NULL;
 		return (0);
 	}
 
-	AZ(pthread_create(&thread, NULL, cooldown_thread, ctx->vcl));
+	AZ(pthread_create(&thread, NULL, cooldown_thread, priv_vcl));
 	AZ(pthread_detach(thread));
 	return (0);
 }
@@ -325,8 +348,8 @@ event_function(VRT_CTX, struct vmod_priv *priv, enum vcl_event_e e)
 
 	switch (e) {
 		case VCL_EVENT_LOAD: return event_load(ctx, priv);
-		case VCL_EVENT_COLD: return event_cold(ctx);
-		case VCL_EVENT_WARM: return event_warm(ctx);
+		case VCL_EVENT_WARM: return event_warm(ctx, priv);
+		case VCL_EVENT_COLD: return event_cold(ctx, priv);
 		default: return (0);
 	}
 }

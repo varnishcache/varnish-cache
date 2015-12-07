@@ -397,6 +397,28 @@ reference by calling ``VRT_ref_vcl`` when you receive a ``VCL_EVENT_WARM`` and
 later calling ``VRT_rel_vcl`` once the background job is over. Receiving a
 ``VCL_EVENT_COLD`` is your cue to terminate any background job bound to a VCL.
 
+You can find an example of VCL references in vmod-debug::
+
+	priv_vcl->vclref = VRT_ref_vcl(ctx, "vmod-debug");
+	...
+	VRT_rel_vcl(&ctx, &priv_vcl->vclref);
+
+In this simplified version, you can see that you need at least a VCL-bound data
+structure like a ``PRIV_VCL`` or a VMOD object to keep track of the reference
+and later release it. You also have to provide a description, it will be printed
+to the user if they try to warm up a cooling VCL::
+
+	$ varnishadm vcl.list
+	available  auto/cooling       0 vcl1
+	active     auto/warm          0 vcl2
+
+	$ varnishadm vcl.state vcl1 warm
+	Command failed with error code 300
+	Failed <vcl.state vcl1 auto>
+	Message:
+		VCL vcl1 is waiting for:
+		- vmod-debug
+
 In the case where properly releasing resources may take some time, you can
 opt for an asynchronous worker, either by spawning a thread and tracking it, or
 by using Varnish's worker pools.
