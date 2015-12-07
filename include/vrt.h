@@ -296,8 +296,9 @@ struct vmod_priv {
 typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
 #endif
 
-void VRT_ref_vcl(VRT_CTX);
-void VRT_rel_vcl(VRT_CTX);
+struct vclref;
+struct vclref * VRT_ref_vcl(VRT_CTX, const char *);
+void VRT_rel_vcl(VRT_CTX, struct vclref **);
 
 void VRT_priv_fini(const struct vmod_priv *p);
 struct vmod_priv *VRT_priv_task(VRT_CTX, void *vmod_id);

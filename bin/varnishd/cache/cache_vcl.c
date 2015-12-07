@@ -62,10 +62,18 @@ struct vcl {
 	char			state[8];
 	char			*loaded_name;
 	unsigned		busy;
-	unsigned		refcount;
 	unsigned		discard;
 	const char		*temp;
 	VTAILQ_HEAD(,backend)	backend_list;
+	VTAILQ_HEAD(,vclref)	ref_list;
+};
+
+struct vclref {
+	unsigned		magic;
+#define VCLREF_MAGIC		0x47fb6848
+	const struct vcl	*vcl;
+	VTAILQ_ENTRY(vclref)	list;
+	char			desc[32];
 };
 
 /*
@@ -252,7 +260,7 @@ vcl_KillBackends(struct vcl *vcl)
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	AZ(vcl->busy);
-	AZ(vcl->refcount);
+	assert(VTAILQ_EMPTY(&vcl->ref_list));
 	while (1) {
 		be = VTAILQ_FIRST(&vcl->backend_list);
 		if (be == NULL)
@@ -375,40 +383,59 @@ VRT_count(VRT_CTX, unsigned u)
 		    ctx->vcl->conf->ref[u].line, ctx->vcl->conf->ref[u].pos);
 }
 
-void
-VRT_ref_vcl(VRT_CTX)
+struct vclref *
+VRT_ref_vcl(VRT_CTX, const char *desc)
 {
 	struct vcl *vcl;
+	struct vclref* ref;
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(desc);
+	AN(*desc);
 
 	vcl = ctx->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	xxxassert(vcl->temp == VCL_TEMP_WARM);
 
+	ALLOC_OBJ(ref, VCLREF_MAGIC);
+	AN(ref);
+	ref->vcl = vcl;
+	snprintf(ref->desc, sizeof ref->desc, "%s", desc);
+
 	Lck_Lock(&vcl_mtx);
-	vcl->refcount++;
+	VTAILQ_INSERT_TAIL(&vcl->ref_list, ref, list);
 	Lck_Unlock(&vcl_mtx);
+
+	return (ref);
 }
 
 void
-VRT_rel_vcl(VRT_CTX)
+VRT_rel_vcl(VRT_CTX, struct vclref **refp)
 {
 	struct vcl *vcl;
+	struct vclref *ref;
+
+	AN(refp);
+	ref = *refp;
+	*refp = NULL;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ref, VCLREF_MAGIC);
 
 	vcl = ctx->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	assert(vcl == ref->vcl);
 	assert(vcl->temp == VCL_TEMP_WARM || vcl->temp == VCL_TEMP_BUSY ||
 	    vcl->temp == VCL_TEMP_COOLING);
 
 	Lck_Lock(&vcl_mtx);
-	assert(vcl->refcount > 0);
-	vcl->refcount--;
+	assert(!VTAILQ_EMPTY(&vcl->ref_list));
+	VTAILQ_REMOVE(&vcl->ref_list, ref, list);
 	/* No garbage collection here, for the same reasons as in VCL_Rel. */
 	Lck_Unlock(&vcl_mtx);
+
+	FREE_OBJ(ref);
 }
 
 /*--------------------------------------------------------------------*/
@@ -455,6 +482,23 @@ vcl_failsafe_event(VRT_CTX, enum vcl_event_e ev)
 		WRONG("A VMOD cannot fail USE, COLD or DISCARD events");
 }
 
+static void
+vcl_print_refs(VRT_CTX)
+{
+	struct vcl *vcl;
+	struct vclref *ref;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
+	AN(ctx->msg);
+	vcl = ctx->vcl;
+	VSB_printf(ctx->msg, "VCL %s is waiting for:", vcl->loaded_name);
+	Lck_Lock(&vcl_mtx);
+	VTAILQ_FOREACH(ref, &ctx->vcl->ref_list, list)
+		VSB_printf(ctx->msg, "\n\t- %s", ref->desc);
+	Lck_Unlock(&vcl_mtx);
+}
+
 static int
 vcl_set_state(VRT_CTX, const char *state)
 {
@@ -477,16 +521,17 @@ vcl_set_state(VRT_CTX, const char *state)
 		if (vcl->busy == 0 && (vcl->temp == VCL_TEMP_WARM ||
 		    vcl->temp == VCL_TEMP_BUSY)) {
 
-			vcl->temp = vcl->refcount ? VCL_TEMP_COOLING :
-			    VCL_TEMP_COLD;
+			vcl->temp = VTAILQ_EMPTY(&vcl->ref_list) ?
+			    VCL_TEMP_COLD : VCL_TEMP_COOLING;
 			vcl_failsafe_event(ctx, VCL_EVENT_COLD);
 			vcl_BackendEvent(vcl, VCL_EVENT_COLD);
 		}
 		else if (vcl->busy)
 			vcl->temp = VCL_TEMP_BUSY;
+		else if (VTAILQ_EMPTY(&vcl->ref_list))
+			vcl->temp = VCL_TEMP_COLD;
 		else
-			vcl->temp = vcl->refcount ? VCL_TEMP_COOLING :
-			    VCL_TEMP_COLD;
+			vcl->temp = VCL_TEMP_COOLING;
 		break;
 	case '1':
 		assert(vcl->temp != VCL_TEMP_WARM);
@@ -494,7 +539,11 @@ vcl_set_state(VRT_CTX, const char *state)
 		if (vcl->temp == VCL_TEMP_BUSY)
 			vcl->temp = VCL_TEMP_WARM;
 		/* The VCL must first reach a stable cold state */
-		else if (vcl->temp != VCL_TEMP_COOLING) {
+		else if (vcl->temp == VCL_TEMP_COOLING) {
+			vcl_print_refs(ctx);
+			i = -1;
+		}
+		else {
 			vcl->temp = VCL_TEMP_WARM;
 			i = vcl_setup_event(ctx, VCL_EVENT_WARM);
 			if (i == 0)
@@ -558,6 +607,7 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 	vcl->loaded_name = strdup(name);
 	XXXAN(vcl->loaded_name);
 	VTAILQ_INIT(&vcl->backend_list);
+	VTAILQ_INIT(&vcl->ref_list);
 
 	vcl->temp = VCL_TEMP_INIT;
 
@@ -609,7 +659,7 @@ VCL_Nuke(struct vcl *vcl)
 	assert(vcl != vcl_active);
 	assert(vcl->discard);
 	AZ(vcl->busy);
-	AZ(vcl->refcount);
+	assert(VTAILQ_EMPTY(&vcl->ref_list));
 	VTAILQ_REMOVE(&vcl_head, vcl, list);
 	ctx.method = VCL_MET_FINI;
 	ctx.handling = &hand;
@@ -726,7 +776,7 @@ ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 	vcl->discard = 1;
 	Lck_Unlock(&vcl_mtx);
 
-	if (vcl->busy == 0 && vcl->refcount == 0)
+	if (vcl->temp == VCL_TEMP_COLD)
 		VCL_Nuke(vcl);
 }
 
