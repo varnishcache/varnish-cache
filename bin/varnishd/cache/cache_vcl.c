@@ -435,11 +435,8 @@ vcl_setup_event(VRT_CTX, enum vcl_event_e ev)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(ctx->handling);
 	AN(ctx->vcl);
-	assert(ev == VCL_EVENT_LOAD || ev == VCL_EVENT_WARM ||
-	    ev == VCL_EVENT_USE);
-
-	if (ev != VCL_EVENT_USE)
-		AN(ctx->msg);
+	AN(ctx->msg);
+	assert(ev == VCL_EVENT_LOAD || ev == VCL_EVENT_WARM);
 
 	return (ctx->vcl->conf->event_vcl(ctx, ev));
 }
@@ -451,10 +448,11 @@ vcl_failsafe_event(VRT_CTX, enum vcl_event_e ev)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(ctx->handling);
 	AN(ctx->vcl);
-	assert(ev == VCL_EVENT_COLD || ev == VCL_EVENT_DISCARD);
+	assert(ev == VCL_EVENT_COLD || ev == VCL_EVENT_DISCARD ||
+	    ev == VCL_EVENT_USE);
 
 	if (ctx->vcl->conf->event_vcl(ctx, ev) != 0)
-		WRONG("A VMOD cannot fail COLD or DISCARD events");
+		WRONG("A VMOD cannot fail USE, COLD or DISCARD events");
 }
 
 static int
@@ -738,33 +736,20 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 	struct vcl *vcl;
 	struct vrt_ctx ctx;
 	unsigned hand = 0;
-	struct vsb *vsb;
-	int i;
 
 	ASSERT_CLI();
+	AN(cli);
 	AZ(priv);
 	vcl = vcl_find(av[2]);
 	AN(vcl);				// MGT ensures this
 	assert(vcl->temp == VCL_TEMP_WARM);	// MGT ensures this
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 	ctx.handling = &hand;
-	vsb = VSB_new_auto();
-	AN(vsb);
-	ctx.msg = vsb;
 	ctx.vcl = vcl;
-	i = vcl_setup_event(&ctx, VCL_EVENT_USE);
-	AZ(VSB_finish(vsb));
-	if (i) {
-		VCLI_Out(cli, "VCL \"%s\" Failed to activate", av[2]);
-		if (VSB_len(vsb) > 0)
-			VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(vsb));
-		VCLI_SetResult(cli, CLIS_CANT);
-	} else {
-		Lck_Lock(&vcl_mtx);
-		vcl_active = vcl;
-		Lck_Unlock(&vcl_mtx);
-	}
-	VSB_delete(vsb);
+	vcl_failsafe_event(&ctx, VCL_EVENT_USE);
+	Lck_Lock(&vcl_mtx);
+	vcl_active = vcl;
+	Lck_Unlock(&vcl_mtx);
 }
 
 static void __match_proto__(cli_func_t)
