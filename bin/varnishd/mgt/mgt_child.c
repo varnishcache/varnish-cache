@@ -418,7 +418,8 @@ mgt_launch_child(struct cli *cli)
 
 	mgt_cli_start_child(child_cli_in, child_cli_out);
 	child_pid = pid;
-	if (mgt_push_vcls_and_start(&u, &p)) {
+	if (mgt_push_vcls_and_start(cli, &u, &p)) {
+		VCLI_SetResult(cli, u);
 		MGT_complain(C_ERR, "Child (%jd) Pushing vcls failed:\n%s",
 		    (intmax_t)child_pid, p);
 		free(p);

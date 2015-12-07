@@ -83,3 +83,11 @@ delay .4
 varnish v1 -expect VBE.vcl1.default.happy >= 0
 delay 4
 varnish v1 -expect !VBE.vcl1.default.happy
+
+# A VMOD's warm-up can fail
+varnish v1 -cliok "param.set max_esi_depth 42"
+varnish v1 -clierr 300 "vcl.state vcl1 warm"
+
+# A warm-up failure can also fail a child start
+varnish v1 -cliok stop
+varnish v1 -clierr 300 start

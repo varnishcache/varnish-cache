@@ -122,12 +122,13 @@ mgt_has_vcl(void)
 	return (!VTAILQ_EMPTY(&vclhead));
 }
 
-static void
-mgt_vcl_setstate(struct vclprog *vp, const char *vs)
+static int
+mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 {
 	unsigned status, warm;
 	double now;
 	char *p;
+	int i;
 
 	if (vs == VCL_STATE_AUTO) {
 		assert(vp != active_vcl);
@@ -142,7 +143,7 @@ mgt_vcl_setstate(struct vclprog *vp, const char *vs)
 	warm = vs == VCL_STATE_WARM ? 1 : 0;
 
 	if (vp->warm == warm)
-		return;
+		return (0);
 
 	vp->warm = warm;
 
@@ -150,15 +151,19 @@ mgt_vcl_setstate(struct vclprog *vp, const char *vs)
 		vp->go_cold = 0;
 
 	if (child_pid < 0)
-		return;
+		return (0);
 
-	/*
-	 * We ignore the result here so we don't croak if the child did.
-	 */
-	(void)mgt_cli_askchild(&status, &p, "vcl.state %s %d%s\n",
+	i = mgt_cli_askchild(&status, &p, "vcl.state %s %d%s\n",
 	    vp->name, vp->warm, vp->state);
+	if (i) {
+		AN(cli);
+		AN(vp->warm);
+		VCLI_SetResult(cli, status);
+		VCLI_Out(cli, "%s", p);
+	}
 
 	free(p);
+	return (i);
 }
 
 /*--------------------------------------------------------------------*/
@@ -239,12 +244,15 @@ mgt_vcc_startup(struct cli *cli, const char *b_arg, const char *f_arg,
 /*--------------------------------------------------------------------*/
 
 int
-mgt_push_vcls_and_start(unsigned *status, char **p)
+mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
 {
 	struct vclprog *vp;
 
 	AN(active_vcl);
-	mgt_vcl_setstate(active_vcl, VCL_STATE_WARM);
+
+	/* The VCL has not been loaded yet, it cannot fail */
+	AZ(mgt_vcl_setstate(cli, active_vcl, VCL_STATE_WARM));
+
 	VTAILQ_FOREACH(vp, &vclhead, list) {
 		if (mgt_cli_askchild(status, p, "vcl.load \"%s\" %s %d%s\n",
 		    vp->name, vp->fname, vp->warm, vp->state))
@@ -326,7 +334,7 @@ mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 		bprintf(vp->state, "%s", "auto");
 		if (vp != active_vcl) {
 			vp->go_cold = VTIM_mono();
-			mgt_vcl_setstate(vp, VCL_STATE_AUTO);
+			(void)mgt_vcl_setstate(cli, vp, VCL_STATE_AUTO);
 		}
 	} else if (!strcmp(av[3], "cold")) {
 		if (vp == active_vcl) {
@@ -335,10 +343,10 @@ mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 			return;
 		}
 		bprintf(vp->state, "%s", "auto");
-		mgt_vcl_setstate(vp, VCL_STATE_COLD);
+		(void)mgt_vcl_setstate(cli, vp, VCL_STATE_COLD);
 	} else if (!strcmp(av[3], "warm")) {
-		bprintf(vp->state, "%s", av[3]);
-		mgt_vcl_setstate(vp, VCL_STATE_WARM);
+		if (mgt_vcl_setstate(cli, vp, VCL_STATE_WARM) == 0)
+			bprintf(vp->state, "%s", av[3]);
 	} else {
 		VCLI_Out(cli, "State must be one of auto, cold or warm.");
 		VCLI_SetResult(cli, CLIS_PARAM);
@@ -358,20 +366,21 @@ mcf_vcl_use(struct cli *cli, const char * const *av, void *priv)
 		return;
 	if (vp == active_vcl)
 		return;
-	mgt_vcl_setstate(vp, VCL_STATE_WARM);
+	if (mgt_vcl_setstate(cli, vp, VCL_STATE_WARM))
+		return;
 	if (child_pid >= 0 &&
 	    mgt_cli_askchild(&status, &p, "vcl.use %s\n", av[2])) {
 		VCLI_SetResult(cli, status);
 		VCLI_Out(cli, "%s", p);
 		vp->go_cold = VTIM_mono();
-		mgt_vcl_setstate(vp, VCL_STATE_AUTO);
+		(void)mgt_vcl_setstate(cli, vp, VCL_STATE_AUTO);
 	} else {
 		VCLI_Out(cli, "VCL '%s' now active", av[2]);
 		vp2 = active_vcl;
 		active_vcl = vp;
 		if (vp2 != NULL) {
 			vp2->go_cold = VTIM_mono();
-			mgt_vcl_setstate(vp2, VCL_STATE_AUTO);
+			(void)mgt_vcl_setstate(cli, vp2, VCL_STATE_AUTO);
 		}
 	}
 	free(p);
@@ -393,9 +402,9 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 		VCLI_Out(cli, "Cannot discard active VCL program\n");
 		return;
 	}
-	mgt_vcl_setstate(vp, VCL_STATE_COLD);
+	(void)mgt_vcl_setstate(cli, vp, VCL_STATE_COLD);
 	if (child_pid >= 0) {
-		/* If this fails the child is crashing, figure that later */
+		/* XXX If this fails the child is crashing, figure that later */
 		(void)mgt_cli_askchild(&status, &p, "vcl.discard %s\n", av[2]);
 		free(p);
 	}
@@ -439,7 +448,7 @@ mgt_vcl_poker(const struct vev *e, int what)
 	e_poker->timeout = mgt_param.vcl_cooldown * .45;
 	VTAILQ_FOREACH(vp, &vclhead, list) {
 		if (vp != active_vcl)
-			mgt_vcl_setstate(vp, VCL_STATE_AUTO);
+			(void)mgt_vcl_setstate(NULL, vp, VCL_STATE_AUTO);
 	}
 	return (0);
 }
