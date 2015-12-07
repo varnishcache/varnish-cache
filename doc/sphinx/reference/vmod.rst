@@ -383,6 +383,13 @@ first with a ``VCL_EVENT_WARM`` event. Unless a user decides that a given VCL
 should always be warm, an inactive VMOD will eventually become cold and should
 manage resources accordingly.
 
+An event function must return zero upon success. It is only possible to fail
+an initialization with the ``VCL_EVENT_LOAD`` or ``VCL_EVENT_WARM`` events.
+Should such a failure happen, a ``VCL_EVENT_DISCARD`` or ``VCL_EVENT_COLD``
+event will be sent to the VMODs that succeeded to put them back in a cold
+state. The VMOD that failed will not receive this event, and therefore must
+not be left half-initialized should a failure occur.
+
 If your VMOD is running an asynchronous background job you can hold a reference
 to the VCL to prevent it from going cold too soon and get the same guarantees
 as backends with ongoing requests for instance. For that, you must acquire the
