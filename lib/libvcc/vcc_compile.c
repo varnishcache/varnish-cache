@@ -325,20 +325,22 @@ EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
 /*--------------------------------------------------------------------
  * Init/Fini/Event
  *
- * We call Fini-s in the opposite order of init-s.
- * Other events are called in same order as init-s, no matter which
- * event it might be.
+ * We call DISCARD and COLD events in the opposite order of LOAD and
+ * WARM.
  */
 
 static void
 EmitInitFini(const struct vcc *tl)
 {
 	struct inifin *p;
+	unsigned has_event = 0;
 
-	Fh(tl, 0, "\nstatic unsigned vgc_inistep;\n");
+	Fh(tl, 0, "\n");
+	Fh(tl, 0, "static unsigned vgc_inistep;\n");
+	Fh(tl, 0, "static unsigned vgc_warmupstep;\n");
 
 	/*
-	 * INIT
+	 * LOAD
 	 */
 	Fc(tl, 0, "\nstatic int\nVGC_Load(VRT_CTX)\n{\n\n");
 	Fc(tl, 0, "\tvgc_inistep = 0;\n\n");
@@ -349,6 +351,10 @@ EmitInitFini(const struct vcc *tl)
 			Fc(tl, 0, "\t/* %u */\n%s\n", p->n, VSB_data(p->ini));
 		Fc(tl, 0, "\tvgc_inistep = %u;\n\n", p->n);
 		VSB_delete(p->ini);
+
+		AZ(VSB_finish(p->event));
+		if (VSB_len(p->event))
+			has_event = 1;
 	}
 
 	Fc(tl, 0, "\t(void)VGC_function_vcl_init(ctx);\n");
@@ -356,7 +362,7 @@ EmitInitFini(const struct vcc *tl)
 	Fc(tl, 0, "}\n");
 
 	/*
-	 * FINI
+	 * DISCARD
 	 */
 	Fc(tl, 0, "\nstatic int\nVGC_Discard(VRT_CTX)\n{\n\n");
 
@@ -375,6 +381,66 @@ EmitInitFini(const struct vcc *tl)
 	Fc(tl, 0, "\treturn(0);\n");
 	Fc(tl, 0, "}\n");
 
+	if (has_event) {
+		/*
+		 * WARM
+		 */
+		Fc(tl, 0, "\nstatic int\n");
+		Fc(tl, 0, "VGC_Warmup(VRT_CTX, enum vcl_event_e ev)\n{\n\n");
+
+		Fc(tl, 0, "\tvgc_warmupstep = 0;\n\n");
+		VTAILQ_FOREACH(p, &tl->inifin, list) {
+			assert(p->n > 0);
+			if (VSB_len(p->event)) {
+				Fc(tl, 0, "\t/* %u */\n", p->n);
+				Fc(tl, 0, "\tif (%s)\n", VSB_data(p->event));
+				Fc(tl, 0, "\t\treturn (1);\n");
+				Fc(tl, 0, "\tvgc_warmupstep = %u;\n\n", p->n);
+			}
+		}
+
+		Fc(tl, 0, "\treturn (0);\n");
+		Fc(tl, 0, "}\n");
+
+		/*
+		 * USE (deprecated)
+		 */
+		Fc(tl, 0, "\nstatic int\n");
+		Fc(tl, 0, "VGC_Use(VRT_CTX, enum vcl_event_e ev)\n{\n\n");
+
+		VTAILQ_FOREACH(p, &tl->inifin, list) {
+			assert(p->n > 0);
+			if (VSB_len(p->event)) {
+				Fc(tl, 0, "\t/* %u */\n", p->n);
+				Fc(tl, 0, "\tif (%s)\n", VSB_data(p->event));
+				Fc(tl, 0, "\t\treturn (1);\n\n");
+			}
+		}
+
+		Fc(tl, 0, "\treturn (0);\n");
+		Fc(tl, 0, "}\n");
+
+		/*
+		 * COLD
+		 */
+		Fc(tl, 0, "\nstatic int\n");
+		Fc(tl, 0, "VGC_Cooldown(VRT_CTX, enum vcl_event_e ev)\n{\n");
+		Fc(tl, 0, "\tint retval = 0;\n\n");
+
+		VTAILQ_FOREACH_REVERSE(p, &tl->inifin, inifinhead, list) {
+			if (VSB_len(p->event)) {
+				Fc(tl, 0, "\t/* %u */\n", p->n);
+				Fc(tl, 0, "\tif (vgc_warmupstep >= %u &&\n", p->n);
+				Fc(tl, 0, "\t    %s != 0)\n", VSB_data(p->event));
+				Fc(tl, 0, "\t\tretval = 1;\n\n");
+			}
+			VSB_delete(p->event);
+		}
+
+		Fc(tl, 0, "\treturn (retval);\n");
+		Fc(tl, 0, "}\n");
+	}
+
 	/*
 	 * EVENTS
 	 */
@@ -383,16 +449,20 @@ EmitInitFini(const struct vcc *tl)
 	Fc(tl, 0, "{\n");
 	Fc(tl, 0, "\tif (ev == VCL_EVENT_LOAD)\n");
 	Fc(tl, 0, "\t\treturn(VGC_Load(ctx));\n");
+	if (has_event) {
+		Fc(tl, 0, "\tif (ev == VCL_EVENT_WARM)\n");
+		Fc(tl, 0, "\t\treturn(VGC_Warmup(ctx, ev));\n");
+		Fc(tl, 0, "\tif (ev == VCL_EVENT_USE)\n");
+		Fc(tl, 0, "\t\treturn(VGC_Use(ctx, ev));\n");
+		Fc(tl, 0, "\tif (ev == VCL_EVENT_COLD)\n");
+		Fc(tl, 0, "\t\treturn(VGC_Cooldown(ctx, ev));\n");
+	}
 	Fc(tl, 0, "\tif (ev == VCL_EVENT_DISCARD)\n");
 	Fc(tl, 0, "\t\treturn(VGC_Discard(ctx));\n");
 	Fc(tl, 0, "\n");
-	VTAILQ_FOREACH(p, &tl->inifin, list) {
-		AZ(VSB_finish(p->event));
-		if (VSB_len(p->event))
-			Fc(tl, 0, "\t/* %u */\n%s\n", p->n, VSB_data(p->event));
-		VSB_delete(p->event);
-	}
-	Fc(tl, 0, "\treturn (0);\n");
+	if (!has_event)
+		Fc(tl, 0, "\t(void)vgc_warmupstep;\n");
+	Fc(tl, 0, "\treturn (%d);\n", has_event ? 1 : 0);
 	Fc(tl, 0, "}\n");
 }
 
