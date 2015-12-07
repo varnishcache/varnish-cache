@@ -278,6 +278,7 @@ event_warm(VRT_CTX)
 
 	VSL(SLT_Debug, 0, "%s: VCL_EVENT_WARM", VCL_Name(ctx->vcl));
 
+	AN(ctx->msg);
 	if (cache_param->max_esi_depth == 42) {
 		VSB_printf(ctx->msg, "max_esi_depth is not the answer.");
 		return (-1);

@@ -326,7 +326,8 @@ EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
  * Init/Fini/Event
  *
  * We call DISCARD and COLD events in the opposite order of LOAD and
- * WARM.
+ * WARM. The child will panic if a USE event fails, since a WARM event
+ * leads to a usable state.
  */
 
 static void
