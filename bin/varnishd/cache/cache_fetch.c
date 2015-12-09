@@ -693,14 +693,35 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 /*--------------------------------------------------------------------
  */
 
+static int
+vbf_objiterator(void *priv, int flush, const void *ptr, ssize_t len)
+{
+	struct busyobj *bo;
+	ssize_t l;
+	const uint8_t *ps = ptr;
+	uint8_t *pd;
+
+	(void)flush;
+	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
+
+	while (len > 0) {
+		l = ObjGetLen(bo->wrk, bo->stale_oc);
+		assert(l > 0);
+		if (VFP_GetStorage(bo->vfc, &l, &pd) != VFP_OK)
+			return (1);
+		if (len < l)
+			l = len;
+		memcpy(pd, ps, l);
+		VBO_extend(bo, l);
+		ps += l;
+		len -= l;
+	}
+	return (0);
+}
+
 static enum fetch_step
 vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 {
-	void *oi;
-	void *sp;
-	ssize_t sl, al, l;
-	uint8_t *ptr;
-	enum objiter_status ois;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -719,27 +740,9 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		VBO_setstate(bo, BOS_STREAM);
 	}
 
-	al = 0;
-	oi = ObjIterBegin(wrk, bo->stale_oc);
-	do {
-		ois = ObjIter(bo->stale_oc, oi, &sp, &sl);
-		if (ois == OIS_ERROR)
-			(void)VFP_Error(bo->vfc, "Template object failed");
-		while (sl > 0) {
-			l = ObjGetLen(bo->wrk, bo->stale_oc) - al;
-			assert(l > 0);
-			if (VFP_GetStorage(bo->vfc, &l, &ptr) != VFP_OK)
-				break;
-			if (sl < l)
-				l = sl;
-			memcpy(ptr, sp, l);
-			VBO_extend(bo, l);
-			al += l;
-			sp = (char *)sp + l;
-			sl -= l;
-		}
-	} while (!bo->vfc->failed && (ois == OIS_DATA || ois == OIS_STREAM));
-	ObjIterEnd(bo->stale_oc, &oi);
+	if (ObjIterate(wrk, bo->stale_oc, bo, vbf_objiterator))
+		(void)VFP_Error(bo->vfc, "Template object failed");
+
 	if (bo->stale_oc->flags & OC_F_FAILED)
 		(void)VFP_Error(bo->vfc, "Template object failed");
 	if (bo->vfc->failed) {
@@ -750,7 +753,6 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	if (!bo->do_stream)
 		HSH_Unbusy(wrk, bo->fetch_objcore);
 
-	assert(ObjGetLen(bo->wrk, bo->fetch_objcore) == al);
 	EXP_Rearm(bo->stale_oc, bo->stale_oc->exp.t_origin, 0, 0, 0);
 
 	/* Recycle the backend connection before setting BOS_FINISHED to
