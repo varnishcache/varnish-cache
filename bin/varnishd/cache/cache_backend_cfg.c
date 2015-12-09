@@ -136,7 +136,9 @@ VBE_DropRefVcl(struct backend *b)
 
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 
+	ASSERT_CLI();
 	Lck_Lock(&b->mtx);
+	assert(b->vsc->vcls > 0);
 	b->vsc->vcls--;
 	VBE_DropRefLocked(b, NULL);
 }
@@ -196,7 +198,9 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 		if (vb->ipv6_suckaddr != NULL &&
 		    VSA_Compare(b->ipv6, vb->ipv6_suckaddr))
 			continue;
+		Lck_Lock(&b->mtx);
 		b->refcount++;
+		Lck_Unlock(&b->mtx);
 		b->vsc->vcls++;
 		return (b);
 	}
