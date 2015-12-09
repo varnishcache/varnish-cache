@@ -147,7 +147,7 @@ VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv)
  */
 
 static int __match_proto__(req_body_iter_f)
-httpq_req_body_discard(struct req *req, void *priv, void *ptr, size_t len)
+httpq_req_body_discard(struct req *req, void *priv, const void *ptr, size_t len)
 {
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);

@@ -49,7 +49,7 @@
  */
 
 static int __match_proto__(req_body_iter_f)
-vbf_iter_req_body(struct req *req, void *priv, void *ptr, size_t l)
+vbf_iter_req_body(struct req *req, void *priv, const void *ptr, size_t l)
 {
 	struct busyobj *bo;
 
