@@ -79,6 +79,8 @@ struct object {
 
 /* Methods on objcore ------------------------------------------------*/
 
+#ifdef VARNISH_CACHE_CHILD
+
 typedef void updatemeta_f(struct worker *, struct objcore *oc);
 typedef void freeobj_f(struct worker *, struct objcore *oc);
 typedef struct lru *getlru_f(const struct objcore *oc);
@@ -93,10 +95,8 @@ typedef struct object *getobj_f(struct worker *, struct objcore *oc);
  * Or the can be "complex" and provide all of these methods:
  * (Described in comments in cache_obj.c)
  */
-typedef void *objiterbegin_f(struct worker *, struct objcore *oc);
-typedef enum objiter_status objiter_f(struct objcore *oc, void *oix,
-    void **p, ssize_t *l);
-typedef void objiterend_f(struct objcore *, void **oix);
+typedef int objiterator_f(struct worker *, struct objcore *oc,
+    void *priv, objiterate_f *func);
 typedef int objgetspace_f(struct worker *, struct objcore *,
      ssize_t *sz, uint8_t **ptr);
 typedef void objextend_f(struct worker *, struct objcore *, ssize_t l);
@@ -115,9 +115,7 @@ struct storeobj_methods {
 
 	getobj_f	*getobj;
 
-	objiterbegin_f	*objiterbegin;
-	objiter_f	*objiter;
-	objiterend_f	*objiterend;
+	objiterator_f	*objiterator;
 	objgetspace_f	*objgetspace;
 	objextend_f	*objextend;
 	objgetlen_f	*objgetlen;
@@ -126,6 +124,12 @@ struct storeobj_methods {
 	objgetattr_f	*objgetattr;
 	objsetattr_f	*objsetattr;
 };
+
+#else
+
+struct storeobj_methods;
+
+#endif
 
 /* Prototypes --------------------------------------------------------*/
 

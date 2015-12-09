@@ -84,6 +84,13 @@ obj_getobj(struct worker *wrk, struct objcore *oc)
  * is entirely up to the implementation.
  */
 
+enum objiter_status {
+	OIS_DONE,
+	OIS_DATA,
+	OIS_STREAM,
+	OIS_ERROR,
+};
+
 struct objiter {
 	unsigned			magic;
 #define OBJITER_MAGIC			0x745fb151
@@ -97,17 +104,13 @@ struct objiter {
 	ssize_t				checkpoint_len;
 };
 
-void *
+static void *
 ObjIterBegin(struct worker *wrk, struct objcore *oc)
 {
 	struct objiter *oi;
 	struct object *obj;
-	const struct storeobj_methods *om = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-
-	if (om->objiterbegin != NULL)
-		return (om->objiterbegin(wrk, oc));
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	obj = obj_getobj(wrk, oc);
@@ -122,21 +125,17 @@ ObjIterBegin(struct worker *wrk, struct objcore *oc)
 	return (oi);
 }
 
-enum objiter_status
-ObjIter(struct objcore *oc, void *oix, void **p, ssize_t *l)
+static enum objiter_status
+ObjIter(void *oix, void **p, ssize_t *l)
 {
 	struct objiter *oi;
 	ssize_t ol;
 	ssize_t nl;
 	ssize_t sl;
-	const struct storeobj_methods *om = obj_getmethods(oc);
 
 	AN(oix);
 	AN(p);
 	AN(l);
-
-	if (om->objiter != NULL)
-		return (om->objiter(oc, oix, p, l));
 
 	CAST_OBJ_NOTNULL(oi, oix, OBJITER_MAGIC);
 	CHECK_OBJ_NOTNULL(oi->obj, OBJECT_MAGIC);
@@ -207,18 +206,12 @@ ObjIter(struct objcore *oc, void *oix, void **p, ssize_t *l)
 	}
 }
 
-void
-ObjIterEnd(struct objcore *oc, void **oix)
+static void
+ObjIterEnd(void **oix)
 {
 	struct objiter *oi;
-	const struct storeobj_methods *om = obj_getmethods(oc);
 
 	AN(oix);
-
-	if (om->objiterend != NULL) {
-		om->objiterend(oc, oix);
-		return;
-	}
 
 	CAST_OBJ_NOTNULL(oi, (*oix), OBJITER_MAGIC);
 	*oix = NULL;
@@ -239,10 +232,14 @@ ObjIterate(struct worker *wrk, struct objcore *oc,
 	enum objiter_status ois;
 	void *ptr;
 	ssize_t len;
+	const struct storeobj_methods *om = obj_getmethods(oc);
+
+	if (om->objiterator != NULL)
+		return (om->objiterator(wrk, oc, priv, func));
 
 	oi = ObjIterBegin(wrk, oc);
 	do {
-		ois = ObjIter(oc, oi, &ptr, &len);
+		ois = ObjIter(oi, &ptr, &len);
 		switch(ois) {
 		case OIS_DONE:
 			AZ(len);
@@ -261,7 +258,7 @@ ObjIterate(struct worker *wrk, struct objcore *oc,
 			WRONG("Wrong OIS value");
 		}
 	} while (ois == OIS_DATA || ois == OIS_STREAM);
-	ObjIterEnd(oc, &oi);
+	ObjIterEnd(&oi);
 	return (ois == OIS_DONE ? 0 : -1);
 }
 

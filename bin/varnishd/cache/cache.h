@@ -858,15 +858,6 @@ void MPL_Free(struct mempool *mpl, void *item);
 typedef int objiterate_f(void *priv, int flush, const void *ptr, ssize_t len);
 int ObjIterate(struct worker *, struct objcore *,
     void *priv, objiterate_f *func);
-enum objiter_status {
-	OIS_DONE,
-	OIS_DATA,
-	OIS_STREAM,
-	OIS_ERROR,
-};
-void *ObjIterBegin(struct worker *, struct objcore *);
-enum objiter_status ObjIter(struct objcore *, void *, void **, ssize_t *);
-void ObjIterEnd(struct objcore *, void **);
 int ObjGetSpace(struct worker *, struct objcore *, ssize_t *sz, uint8_t **ptr);
 void ObjExtend(struct worker *, struct objcore *, ssize_t l);
 void ObjTrimStore(struct worker *, struct objcore *);
