@@ -47,33 +47,51 @@
  * return length or -1 on error
  */
 
+struct vrb_foo {
+	unsigned	magic;
+#define VRB_FOO_MAGIC	0x30240389
+	struct req	*req;
+	void		*priv;
+	req_body_iter_f	*func;
+	ssize_t		ll;
+};
+
+static int
+vrb_objiterator(void *priv, int flush, const void *ptr, ssize_t len)
+{
+	struct vrb_foo *foo;
+
+	CAST_OBJ_NOTNULL(foo, priv, VRB_FOO_MAGIC);
+
+	(void)flush;
+	foo->ll += len;
+	return (foo->func(foo->req, foo->priv, ptr, len));
+}
+
 ssize_t
 VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv)
 {
 	char buf[8192];
 	ssize_t l, ll = 0;
-	void *p;
 	int i;
 	struct vfp_ctx *vfc;
 	enum vfp_status vfps = VFP_ERROR;
-	void *oi;
-	enum objiter_status ois;
+	struct vrb_foo foo;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(func);
 
 	switch(req->req_body_status) {
 	case REQ_BODY_CACHED:
-		oi = ObjIterBegin(req->wrk, req->body_oc);
-		AN(oi);
-		do {
-			ois = ObjIter(req->body_oc, oi, &p, &l);
-			ll += l;
-			if (l > 0 && func(req, priv, p, l))
-				break;
-		} while (ois == OIS_DATA);
-		ObjIterEnd(req->body_oc, &oi);
-		return (ois == OIS_DONE ? ll : -1);
+		INIT_OBJ(&foo, VRB_FOO_MAGIC);
+		foo.req = req;
+		foo.priv = priv;
+		foo.func = func;
+		foo.ll = 0;
+
+		if (ObjIterate(req->wrk, req->body_oc, &foo, vrb_objiterator))
+			return (-1);
+		return (foo.ll);
 	case REQ_BODY_NONE:
 		return (0);
 	case REQ_BODY_WITH_LEN:
