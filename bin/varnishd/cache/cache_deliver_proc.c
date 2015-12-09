@@ -114,10 +114,11 @@ VDP_close(struct req *req)
 
 /*--------------------------------------------------------------------*/
 
-enum objiter_status
+int
 VDP_DeliverObj(struct req *req)
 {
 	enum objiter_status ois;
+	int err = 0;
 	ssize_t len;
 	void *oi;
 	void *ptr;
@@ -134,6 +135,7 @@ VDP_DeliverObj(struct req *req)
 			AZ(len);
 			break;
 		case OIS_ERROR:
+			err = -1;
 			break;
 		case OIS_DATA:
 		case OIS_STREAM:
@@ -147,5 +149,5 @@ VDP_DeliverObj(struct req *req)
 	} while (ois == OIS_DATA || ois == OIS_STREAM);
 	(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
 	ObjIterEnd(req->objcore, &oi);
-	return (ois);
+	return (err);
 }
