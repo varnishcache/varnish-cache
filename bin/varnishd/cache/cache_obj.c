@@ -231,6 +231,40 @@ ObjIterEnd(struct objcore *oc, void **oix)
 	FREE_OBJ(oi);
 }
 
+int
+ObjIterate(struct worker *wrk, struct objcore *oc,
+    void *priv, objiterate_f *func)
+{
+	void *oi;
+	enum objiter_status ois;
+	void *ptr;
+	ssize_t len;
+
+	oi = ObjIterBegin(wrk, oc);
+	do {
+		ois = ObjIter(oc, oi, &ptr, &len);
+		switch(ois) {
+		case OIS_DONE:
+			AZ(len);
+			break;
+		case OIS_ERROR:
+			break;
+		case OIS_DATA:
+			if (func(priv, 0, ptr, len))
+				ois = OIS_ERROR;
+			break;
+		case OIS_STREAM:
+			if (func(priv, 1, ptr, len))
+				ois = OIS_ERROR;
+			break;
+		default:
+			WRONG("Wrong OIS value");
+		}
+	} while (ois == OIS_DATA || ois == OIS_STREAM);
+	ObjIterEnd(oc, &oi);
+	return (ois == OIS_DONE ? 0 : -1);
+}
+
 /*--------------------------------------------------------------------
  */
 

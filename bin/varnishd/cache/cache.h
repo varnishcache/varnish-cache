@@ -855,6 +855,9 @@ void *MPL_Get(struct mempool *mpl, unsigned *size);
 void MPL_Free(struct mempool *mpl, void *item);
 
 /* cache_obj.c */
+typedef int objiterate_f(void *priv, int flush, const void *ptr, ssize_t len);
+int ObjIterate(struct worker *, struct objcore *,
+    void *priv, objiterate_f *func);
 enum objiter_status {
 	OIS_DONE,
 	OIS_DATA,
