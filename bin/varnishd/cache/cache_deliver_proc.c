@@ -114,40 +114,17 @@ VDP_close(struct req *req)
 
 /*--------------------------------------------------------------------*/
 
+static int __match_proto__(objiterate_f)
+vdp_objiterator(void *priv, int flush, const void *ptr, ssize_t len)
+{
+	return (VDP_bytes(priv, flush ? VDP_FLUSH : VDP_NULL, ptr, len));
+}
+
+
 int
 VDP_DeliverObj(struct req *req)
 {
-	enum objiter_status ois;
-	int err = 0;
-	ssize_t len;
-	void *oi;
-	void *ptr;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
-	oi = ObjIterBegin(req->wrk, req->objcore);
-	XXXAN(oi);
-
-	do {
-		ois = ObjIter(req->objcore, oi, &ptr, &len);
-		switch(ois) {
-		case OIS_DONE:
-			AZ(len);
-			break;
-		case OIS_ERROR:
-			err = -1;
-			break;
-		case OIS_DATA:
-		case OIS_STREAM:
-			if (VDP_bytes(req,
-			     ois == OIS_DATA ? VDP_NULL : VDP_FLUSH,  ptr, len))
-				ois = OIS_ERROR;
-			break;
-		default:
-			WRONG("Wrong OIS value");
-		}
-	} while (ois == OIS_DATA || ois == OIS_STREAM);
-	(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
-	ObjIterEnd(req->objcore, &oi);
-	return (err);
+	return (ObjIterate(req->wrk, req->objcore, req, vdp_objiterator));
 }
