@@ -56,16 +56,15 @@ struct vrb_foo {
 	ssize_t		ll;
 };
 
-static int
+static int __match_proto__(objiterate_f)
 vrb_objiterator(void *priv, int flush, const void *ptr, ssize_t len)
 {
 	struct vrb_foo *foo;
 
 	CAST_OBJ_NOTNULL(foo, priv, VRB_FOO_MAGIC);
 
-	(void)flush;
 	foo->ll += len;
-	return (foo->func(foo->req, foo->priv, ptr, len));
+	return (foo->func(foo->priv, flush, ptr, len));
 }
 
 ssize_t
@@ -144,7 +143,7 @@ VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv)
 			req->req_bodybytes += l;
 			req->acct.req_bodybytes += l;
 			ll += l;
-			l = func(req, priv, buf, l);
+			l = func(priv, 1, buf, l);
 			if (l) {
 				req->req_body_status = REQ_BODY_FAIL;
 				ll = -1;
@@ -165,11 +164,11 @@ VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv)
  */
 
 static int __match_proto__(req_body_iter_f)
-httpq_req_body_discard(struct req *req, void *priv, const void *ptr, size_t len)
+httpq_req_body_discard(void *priv, int flush, const void *ptr, ssize_t len)
 {
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	(void)priv;
+	(void)flush;
 	(void)ptr;
 	(void)len;
 	return (0);

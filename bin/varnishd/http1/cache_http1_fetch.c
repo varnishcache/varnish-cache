@@ -49,16 +49,15 @@
  */
 
 static int __match_proto__(req_body_iter_f)
-vbf_iter_req_body(struct req *req, void *priv, const void *ptr, size_t l)
+vbf_iter_req_body(void *priv, int flush, const void *ptr, ssize_t l)
 {
 	struct busyobj *bo;
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 
 	if (l > 0) {
 		bo->acct.bereq_bodybytes += V1L_Write(bo->wrk, ptr, l);
-		if (V1L_Flush(bo->wrk))
+		if (flush && V1L_Flush(bo->wrk))
 			return (-1);
 	}
 	return (0);
