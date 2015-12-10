@@ -679,17 +679,6 @@ ssize_t VBO_waitlen(struct worker *, struct busyobj *, ssize_t l);
 void VBO_setstate(struct busyobj *bo, enum busyobj_state_e next);
 void VBO_waitstate(struct busyobj *bo, enum busyobj_state_e want);
 
-/* cache_req_body.c */
-int VRB_Ignore(struct req *req);
-ssize_t VRB_Cache(struct req *req, ssize_t maxsize);
-typedef int (req_body_iter_f)(struct req *, void *priv, void *ptr, size_t);
-ssize_t VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv);
-void VRB_Free(struct req *req);
-
-/* cache_req_fsm.c [CNT] */
-enum req_fsm_nxt CNT_Request(struct worker *, struct req *);
-void CNT_AcctLogCharge(struct dstat *, struct req *);
-
 /* cache_cli.c [CLI] */
 extern pthread_t cli_thread;
 #define ASSERT_CLI() do {assert(pthread_self() == cli_thread);} while (0)
@@ -911,6 +900,17 @@ struct req *Req_New(const struct worker *, struct sess *);
 void Req_Release(struct req *);
 int Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req);
 void Req_Fail(struct req *req, enum sess_close reason);
+
+/* cache_req_body.c */
+int VRB_Ignore(struct req *req);
+ssize_t VRB_Cache(struct req *req, ssize_t maxsize);
+typedef int (req_body_iter_f)(struct req *, void *priv, void *ptr, size_t);
+ssize_t VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv);
+void VRB_Free(struct req *req);
+
+/* cache_req_fsm.c [CNT] */
+enum req_fsm_nxt CNT_Request(struct worker *, struct req *);
+void CNT_AcctLogCharge(struct dstat *, struct req *);
 
 /* cache_session.c [SES] */
 struct sess *SES_New(struct pool *);
