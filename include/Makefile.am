@@ -98,7 +98,7 @@ vcl.h: $(top_srcdir)/lib/libvcc/generate.py $(top_srcdir)/include/vrt.h
 	@PYTHON@ $(top_srcdir)/lib/libvcc/generate.py $(top_srcdir) $(top_builddir)
 
 BUILT_SOURCES = vcs_version.h vmod_abi.h
-MAINTAINERCLEANFILES = vcs_version.h 
+MAINTAINERCLEANFILES = vcs_version.h
 vcs_version.h: FORCE
 	@if [ -d "$(top_srcdir)/.git" ]; then \
 		V="$$(git show -s --pretty=format:%h)" \

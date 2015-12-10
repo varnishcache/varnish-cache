@@ -1,10 +1,10 @@
-SUBDIRS += varnishadm 
-SUBDIRS += varnishd 
+SUBDIRS += varnishadm
+SUBDIRS += varnishd
 SUBDIRS += varnishlog
 SUBDIRS += varnishncsa
-SUBDIRS += varnishtest 
+SUBDIRS += varnishtest
 SUBDIRS += varnishstat
-SUBDIRS += varnishhist 
+SUBDIRS += varnishhist
 SUBDIRS += varnishtop
 
 TOPDIR = $(CURDIR)/..

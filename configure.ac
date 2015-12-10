@@ -179,7 +179,7 @@ AC_CHECK_HEADERS([edit/readline/readline.h],
 	[AC_DEFINE([HAVE_LIBEDIT], [1], [Define if we have libedit])
 	LIBEDIT_LIBS="-ledit"],
 
-	[PKG_CHECK_MODULES([LIBEDIT], [libedit], 
+	[PKG_CHECK_MODULES([LIBEDIT], [libedit],
 		# having the module does not imply having the header
 		[AC_CHECK_HEADERS([editline/readline.h],
 				  [AC_DEFINE([HAVE_LIBEDIT], [1], [Define if we have libedit])],
@@ -274,7 +274,7 @@ AC_CACHE_CHECK([whether we have support for visibility attributes],
 if test "$ac_cv_have_viz" = no; then
 	libvgz_extra_cflags="-DNO_VIZ"
 	AC_SUBST(libvgz_extra_cflags)
-fi 
+fi
 CFLAGS="${save_CFLAGS}"
 
 # Use jemalloc on Linux
@@ -333,7 +333,7 @@ AC_SYS_LARGEFILE
 save_LIBS="${LIBS}"
 LIBS="${LIBS} ${RT_LIBS}"
 AC_CHECK_FUNCS([clock_gettime])
-AC_CHECK_FUNCS([gethrtime]) 
+AC_CHECK_FUNCS([gethrtime])
 LIBS="${save_LIBS}"
 
 # --enable-kqueue

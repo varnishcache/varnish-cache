@@ -16,7 +16,7 @@ If you've been following the tutorial there is probably a section of
 the configuration that looks like this::
 
   vcl 4.0;
-  
+
   backend default {
       .host = "www.varnish-cache.org";
       .port = "80";
@@ -43,7 +43,7 @@ localhost, port 8080.::
 
 Varnish can have several backends defined and can even join several backends
 together into clusters of backends for load balancing purposes, having Varnish
-pick one backend based on different algorithms. 
+pick one backend based on different algorithms.
 
 Next, let's have a look at some of what makes Varnish unique and what you can do with it.
 

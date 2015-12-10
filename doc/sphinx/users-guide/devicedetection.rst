@@ -7,7 +7,7 @@ Device detection is figuring out what kind of content to serve to a
 client based on the User-Agent string supplied in a request.
 
 Use cases for this are for example to send size reduced files to mobile
-clients with small screens and on high latency networks, or to 
+clients with small screens and on high latency networks, or to
 provide a streaming video codec that the client understands.
 
 There are a couple of typical strategies to use for this type of scenario:
@@ -16,7 +16,7 @@ There are a couple of typical strategies to use for this type of scenario:
 3) Change the backend request so that the backend sends tailored content.
 
 To perhaps make the strategies easier to understand, we, in this context, assume
-that the `req.http.X-UA-Device` header is present and unique per client class. 
+that the `req.http.X-UA-Device` header is present and unique per client class.
 
 Setting this header can be as simple as::
 
@@ -35,7 +35,7 @@ https://github.com/varnish/varnish-devicedetect/.
 Serve the different content on the same URL
 -------------------------------------------
 
-The tricks involved are: 
+The tricks involved are:
 1. Detect the client (pretty simple, just include `devicedetect.vcl` and call
 it).
 2. Figure out how to signal the backend the client class. This
@@ -55,7 +55,7 @@ Example 1: Send HTTP header to backend
 
 The basic case is that Varnish adds the 'X-UA-Device' HTTP header on the backend
 requests, and the backend mentions in the response 'Vary' header that the content
-is dependant on this header. 
+is dependant on this header.
 
 Everything works out of the box from Varnish' perspective.
 
@@ -63,7 +63,7 @@ Everything works out of the box from Varnish' perspective.
 
 VCL::
 
-    sub vcl_recv { 
+    sub vcl_recv {
         # call some detection engine that set req.http.X-UA-Device
     }
     # req.http.X-UA-Device is copied by Varnish into bereq.http.X-UA-Device
@@ -73,15 +73,15 @@ VCL::
     # use the same cached object for all U-As that map to the same X-UA-Device.
     #
     # If the backend does not mention in Vary that it has crafted special
-    # content based on the User-Agent (==X-UA-Device), add it. 
+    # content based on the User-Agent (==X-UA-Device), add it.
     # If your backend does set Vary: User-Agent, you may have to remove that here.
     sub vcl_backend_response {
         if (bereq.http.X-UA-Device) {
             if (!beresp.http.Vary) { # no Vary at all
-                set beresp.http.Vary = "X-UA-Device"; 
+                set beresp.http.Vary = "X-UA-Device";
             } elseif (beresp.http.Vary !~ "X-UA-Device") { # add to existing Vary
-                set beresp.http.Vary = beresp.http.Vary + ", X-UA-Device"; 
-            } 
+                set beresp.http.Vary = beresp.http.Vary + ", X-UA-Device";
+            }
         }
         # comment this out if you don't want the client to know your
         # classification
@@ -122,7 +122,7 @@ headers are (by default) available for the script.
 
 VCL::
 
-    sub vcl_recv { 
+    sub vcl_recv {
         # call some detection engine that set req.http.X-UA-Device
     }
 
@@ -163,7 +163,7 @@ is changed.
 
 VCL::
 
-    sub vcl_recv { 
+    sub vcl_recv {
         # call some detection engine that set req.http.X-UA-Device
     }
 
@@ -172,7 +172,7 @@ VCL::
             # if there are existing GET arguments;
             if (req.url ~ "\?") {
                 set req.http.X-get-devicetype = "&devicetype=" + req.http.X-UA-Device;
-            } else { 
+            } else {
                 set req.http.X-get-devicetype = "?devicetype=" + req.http.X-UA-Device;
             }
             set req.url = req.url + req.http.X-get-devicetype;
@@ -253,7 +253,7 @@ VCL::
             return(synth(750, "Moved Temporarily"));
         }
     }
-     
+
     sub vcl_synth {
         if (obj.status == 750) {
             set obj.http.Location = "http://m.example.com" + req.url;

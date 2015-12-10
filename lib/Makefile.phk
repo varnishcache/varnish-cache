@@ -1,5 +1,5 @@
 SUBDIRS = libvcc libvarnish libvarnishapi libvarnishtools libvcc
-SUBDIRS += libvgz 
+SUBDIRS += libvgz
 SUBDIRS += libvmod_debug libvmod_directors libvmod_std
 
 TOPDIR	= $(CURDIR)/..

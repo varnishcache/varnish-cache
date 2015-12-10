@@ -12,12 +12,12 @@ in all the other pages.
 .. XXX:What other pages? benc
 
 Used properly this strategy can dramatically increase
-your hit rate and reduce the load on your servers. 
+your hit rate and reduce the load on your servers.
 
 In Varnish we've only so far implemented a small subset of ESI. As of version 2.1 we
 have three ESI statements::
 
- esi:include 
+ esi:include
  esi:remove
  <!--esi ...-->
 
@@ -34,7 +34,7 @@ Lets see an example how this could be used. This simple cgi script
 outputs the date::
 
      #!/bin/sh
-     
+
      echo 'Content-type: text/html'
      echo ''
      date "+%Y-%m-%d %H:%M"
@@ -73,10 +73,10 @@ in them, allowing you to only render the content when the page is not
 being ESI-processed.
 For example::
 
-  <esi:remove> 
+  <esi:remove>
     <a href="http://www.example.com/LICENSE">The license</a>
   </esi:remove>
-  <!--esi  
+  <!--esi
   <p>The full text of the license:</p>
   <esi:include src="http://example.com/LICENSE" />
   -->

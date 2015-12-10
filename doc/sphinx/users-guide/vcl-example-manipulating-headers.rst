@@ -17,5 +17,5 @@ Now, when the request is handled to the backend server there will be
 no cookie header. The interesting line is the one with the
 if-statement. It matches the URL, taken from the request object, and
 matches it against the regular expression. Note the match operator. If
-it matches the Cookie: header of the request is unset (deleted). 
+it matches the Cookie: header of the request is unset (deleted).
 

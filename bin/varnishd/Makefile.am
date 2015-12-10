@@ -97,7 +97,7 @@ varnishd_SOURCES = \
 	waiter/cache_waiter_epoll.c \
 	waiter/cache_waiter_kqueue.c \
 	waiter/cache_waiter_poll.c \
-	waiter/cache_waiter_ports.c 
+	waiter/cache_waiter_ports.c
 
 noinst_HEADERS = \
 	builtin_vcl.h \

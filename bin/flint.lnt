@@ -35,7 +35,7 @@
 -elib(659)		// no tokens after struct def.
 -elib(123)		// macro def. with arg at, (just warn)
 
--emacro(702, WEXITSTATUS)	// signed shift right 
+-emacro(702, WEXITSTATUS)	// signed shift right
 
 -e786	// String concatenation within initializer
 -e726	// Extraneous comma ignored

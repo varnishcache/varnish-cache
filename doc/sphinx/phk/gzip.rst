@@ -47,7 +47,7 @@ always set to:
 
 	Accept-Encoding: gzip
 
-Even if this particular client does not support 
+Even if this particular client does not support
 
 To always entice the backend into sending us gzip'ed content.
 

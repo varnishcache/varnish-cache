@@ -8,7 +8,7 @@ The Varnish documentation consists of three main documents:
 * :ref:`tutorial-index` explains the basics and gets you started with Varnish.
 
 * :ref:`users-guide-index` (this document), explains how Varnish works
-  and how you can use it to improve your website. 
+  and how you can use it to improve your website.
 
 * :ref:`reference-index` contains hard facts and is useful for
   looking up specific questions.

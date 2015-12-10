@@ -28,7 +28,7 @@ objects can be accessed and manipulated using VCL.
  The HTTP response right before it is delivered to the client. It is
  typically modified in `vcl_deliver`.
 
-*obj* 
+*obj*
  The object as it is stored in cache. Read only.
 
 .. XXX:What object? the current request? benc

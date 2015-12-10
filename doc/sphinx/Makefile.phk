@@ -189,7 +189,7 @@ EXTRA_DIST = \
 	include/varnishhist_options.rst \
 	include/varnishhist_synopsis.rst \
 	reference/vmod_std.generated.rst \
-	reference/vmod_directors.generated.rst 
+	reference/vmod_directors.generated.rst
 
 
 dist-hook:

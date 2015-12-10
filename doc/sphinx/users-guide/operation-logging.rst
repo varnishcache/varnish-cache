@@ -6,7 +6,7 @@ Logging in Varnish
 One of the really nice features in Varnish is the way logging
 works. Instead of logging to a normal log file Varnish logs to a shared
 memory segment, called the VSL - the Varnish Shared Log. When the end
-of the segment is reached we start over, overwriting old data. 
+of the segment is reached we start over, overwriting old data.
 
 This is much, much faster than logging to a file and it doesn't
 require disk space. Besides it gives you much, much more information
@@ -32,7 +32,7 @@ These is the Varnish master process checking up on the caching process
 to see that everything is OK.
 
 Now go to the browser and reload the page displaying your web
-app. 
+app.
 .. XXX:Doesn't this require a setup of a running varnishd and a web application being cached? benc
 
 You'll see lines like these.::

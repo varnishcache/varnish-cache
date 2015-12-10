@@ -53,7 +53,7 @@ shows a nice trend on Google and #varnish confuses the heck out of
 teenage girls and wood workers on Twitter, so clearly I am doing
 something right.
 
-I still worry about the `The Fraud Police 
+I still worry about the `The Fraud Police
 <http://www.theshadowbox.net/forum/index.php?topic=18041.0>`_ though,
 "I have no idea what I'm doing, and I totally make shit up as I go
 along." is a disturbingly precise summary of how I feel about my

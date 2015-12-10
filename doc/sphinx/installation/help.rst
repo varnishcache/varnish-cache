@@ -8,7 +8,7 @@ this process as much as possible.
 
 But before you grab hold of us, spend a moment composing your thoughts and
 formulate your question. From our perspective there is nothing as pointless as simply telling
-us "Varnish does not work for me" with no further information. This does not give us any relevant information to use when trying to figure out whats wrong. 
+us "Varnish does not work for me" with no further information. This does not give us any relevant information to use when trying to figure out whats wrong.
 
 And before you even do that, do a couple of searches to see if your
 question is already answered, if it has been, you will get your answer
@@ -78,7 +78,7 @@ bug in Varnish.  Ask on IRC first if you are in doubt.
 
 The reason for this policy, is to avoid bugs being drowned in a
 pile of other `issues`, feature suggestions for future releases, and double postings of calls for help
-from people who forgot to check back on already opened Tickets. 
+from people who forgot to check back on already opened Tickets.
 
 .. XXX: Not sure what you want with the last sentence above. benc
 
