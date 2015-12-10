@@ -72,7 +72,7 @@ if true ; then
 		sys/mount.h \
 		sys/statvfs.h \
 		sys/vfs.h \
-		umem.h 
+		umem.h
 	do
 		if [ -f /usr/include/$i ] ; then
 			n=`echo $i | tr '[a-z/.]' '[A-Z__]'`
@@ -109,7 +109,7 @@ fi
 VCSF=include/vcs_version.h
 VMAV=include/vmod_abi.h
 
-if [ -d ./.git ] ; then 
+if [ -d ./.git ] ; then
 	V=`git show -s --pretty=format:%h`
 	B=`git rev-parse --abbrev-ref HEAD`
 else
@@ -147,7 +147,7 @@ fi
 ask_compiler() {
 	a=`echo "$2" |
 	    ${CC-cc} -E - -DWARNS=${WARNS-1} |
-	    sed -e '/^#/d' -e '/^$/d' -e 's/"//g' -e 's/~/"/g' ` 
+	    sed -e '/^#/d' -e '/^$/d' -e 's/"//g' -e 's/~/"/g' `
 	echo "$1='" $a "'" >> _.cache
 }
 
@@ -302,5 +302,5 @@ exit 0
 # HAVE_LIBUMEM -
 # USE_PCRE_JIT -
 # _FILE_OFFSET_BITS -
-# 
+#
 # #echo 'CF_CFLAGS="-Wall"'

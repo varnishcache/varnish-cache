@@ -11,7 +11,7 @@ the IP address of the client against an ACL with the match operator.::
       "192.168.1.0"/24; /* and everyone on the local network */
       ! "192.168.1.23"; /* except for the dialin router */
   }
-  
+
   sub vcl_recv {
     if (req.method == "PURGE") {
       if (client.ip ~ local) {
@@ -19,6 +19,6 @@ the IP address of the client against an ACL with the match operator.::
       } else {
          return(synth(403, "Access denied."));
       }
-    } 
+    }
   }
- 
+

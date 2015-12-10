@@ -4,7 +4,7 @@
 Varnish Glossary
 ================
 
-.. glossary:: 
+.. glossary::
    :sorted:
 
    ..

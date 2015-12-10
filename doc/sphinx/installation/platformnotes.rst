@@ -13,7 +13,7 @@ On RHEL6 Transparent Hugepage kernel support is enabled by default.
 This is known to cause sporadic crashes of Varnish.
 
 It is recommended to disable transparent hugepages on affected systems. This
-can be done with 
+can be done with
 ``echo "never" > /sys/kernel/mm/redhat_transparent_hugepage/enabled`` (runtime) and changes to
 `/etc/sysctl.conf` (persisted.)
 

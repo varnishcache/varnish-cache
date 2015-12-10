@@ -7,11 +7,11 @@
 -e747	// 16      Info    747     Significant prototype coercion (___) ___ to ___
 
 -e763	// Redundant declaration for symbol '...' previously declared
--e716	// while(1) ... 
+-e716	// while(1) ...
 
--e457 // unprotected write access 
--e459 // unprotected access 
--e458 // unprotected access 
+-e457 // unprotected write access
+-e459 // unprotected access
+-e458 // unprotected access
 
 -e732   // Loss of sign (arg. no. 2) (int to unsigned
 -e737	// [45]  Loss of sign in promotion from int to unsigned

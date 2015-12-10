@@ -61,7 +61,7 @@ Treaty and the convention about chemical and biological weapons.)
 
 So my insight about Varnish, that it has to become a socket-wrench-like
 toolchest for doing things with HTTP traffic, will probably elicit a lot
-of "duh!" reactions, until people, including me, understand the 
+of "duh!" reactions, until people, including me, understand the
 ramifications more fully.
 
 Things you cannot do with Varnish today

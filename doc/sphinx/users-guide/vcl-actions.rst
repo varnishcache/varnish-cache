@@ -13,9 +13,9 @@ The most common actions to return are these:
   `vcl_recv`.
 
 *hash*
-  When you return hash from `vcl_recv` you tell Varnish to deliver content 
-  from cache even if the request othervise indicates that the request 
-  should be passed. 
+  When you return hash from `vcl_recv` you tell Varnish to deliver content
+  from cache even if the request othervise indicates that the request
+  should be passed.
 
 *pipe*
 
@@ -23,11 +23,11 @@ The most common actions to return are these:
 
   Pipe can be returned from `vcl_recv` as well. Pipe short circuits the
   client and the backend connections and Varnish will just sit there
-  and shuffle bytes back and forth. Varnish will not look at the data being 
-  send back and forth - so your logs will be incomplete. 
+  and shuffle bytes back and forth. Varnish will not look at the data being
+  send back and forth - so your logs will be incomplete.
 
 *deliver*
-  Deliver the object to the client. Usually returned from `vcl_backend_response`. 
+  Deliver the object to the client. Usually returned from `vcl_backend_response`.
 
 *restart*
   Restart processing of the request. You can restart the processing of
@@ -35,5 +35,5 @@ The most common actions to return are these:
 
 *retry*
   Retry the request against the backend. This can be returned from
-  `vcl_backend_response` or `vcl_backend_error` if you don't like the response 
+  `vcl_backend_response` or `vcl_backend_error` if you don't like the response
   that the backend delivered.

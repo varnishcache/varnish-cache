@@ -19,7 +19,7 @@ do not have a way to simulate high levels of real-life web-traffic,
 so telling us to "have 10.000 clients hit at once" does not really
 allow us to reproduce.
 
-To report a bug please follow the suggested procedure described in the "Trouble Tickets" 
+To report a bug please follow the suggested procedure described in the "Trouble Tickets"
 section of the documentation (above).
 
 Roughly we categorize bugs in to three kinds of bugs (described below) with Varnish. The information
@@ -119,7 +119,7 @@ furiously on some futile condition.
 Commands like ``top -H`` or ``ps -Haxlw`` or ``ps -efH`` should be
 able to figure that out.
 
-.. XXX:Maybe a short description of what valuable information the various commands above generates? /benc 
+.. XXX:Maybe a short description of what valuable information the various commands above generates? /benc
 
 
 If one or more threads are spinning, use ``strace`` or ``ktrace`` or ``truss``

@@ -52,7 +52,7 @@ VCLs where backend "b1" points at two different physical machines,
 for instance when we migrate or upgrade the backend.
 
 The identity of the state than can be shared is therefore the triplet:
-	{VCL-name, IPv4+port, IPv6+port} 
+	{VCL-name, IPv4+port, IPv6+port}
 
 No Information without Representation
 =====================================

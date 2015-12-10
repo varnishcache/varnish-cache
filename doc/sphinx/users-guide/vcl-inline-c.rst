@@ -16,7 +16,7 @@ One of the first uses of inline C was logging to `syslog`.::
         C{
                 #include <syslog.h>
         }C
-        
+
         sub vcl_something {
                 C{
                         syslog(LOG_INFO, "Something happened at VCL line XX.");

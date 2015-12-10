@@ -4,7 +4,7 @@ Compression
 -----------
 
 In Varnish 3.0 we introduced native support for compression, using gzip
-encoding. *Before* 3.0, Varnish would never compress objects. 
+encoding. *Before* 3.0, Varnish would never compress objects.
 
 In Varnish 4.0 compression defaults to "on", meaning that it tries to
 be smart and do the sensible thing.

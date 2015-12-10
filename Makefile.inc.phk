@@ -1,6 +1,6 @@
 
 .PHONY: default
-default:	all 
+default:	all
 
 WARNS	?=	1
 
@@ -39,7 +39,7 @@ LIB_READLINE = ${CFG_LINEDISC}
 #######################################################################
 ifdef USE_THREADS
 CFLAGS	+= -pthread -D_THREAD_SAFE -g -O2
-PROG_LDFLAGS += -pthread -D_THREAD_SAFE -g -O2 
+PROG_LDFLAGS += -pthread -D_THREAD_SAFE -g -O2
 endif
 
 ifdef USE_DLOPEN
@@ -164,7 +164,7 @@ ifeq ($(TGT), all)
 include _.deplib
 endif
 
-$(LIBNAME).a:	$(LIB_OBJ) 
+$(LIBNAME).a:	$(LIB_OBJ)
 	$(AR) -rc $(LIBNAME).a $^
 	ranlib $(LIBNAME).a
 

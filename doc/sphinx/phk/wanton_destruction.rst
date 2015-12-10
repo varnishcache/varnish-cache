@@ -24,7 +24,7 @@ rebuild it, to become the house we want now.
 
 For one thing, doing major surgery on a house while you live in it
 is double-minus-fun and it always slows the rebuild project down
-when you have to keep at least one toilet working and sanitary and 
+when you have to keep at least one toilet working and sanitary and
 be able to cook and sleep on the building site.
 
 So we'll be building a new house on a plot of land on the other
@@ -40,7 +40,7 @@ Using a major piece of software, is like moving into a house: You
 need to adapt your life and the house or the software to each other,
 since nothing is ever quite perfect, there will be limitations.
 
-And those limitations affect how you think:  If you live in a 
+And those limitations affect how you think:  If you live in a
 2 bedroom apartment, you won't even be considering inviting 80
 guests to a party.
 
@@ -55,7 +55,7 @@ the next couple of years, it'll be called Varnish V4 and that means
 that you will have to decide who gets which room and where to store
 the towels and grandmothers old china, all over again.
 
-I'm sure you'll hate me for it, "Why do we have to move ?", "It 
+I'm sure you'll hate me for it, "Why do we have to move ?", "It
 really wasn't that bad after all" and so on and so forth.
 But if I do my job right, that will soon turn into "Ohh, that's
 pretty neat, I always wanted one of those..." and "Hey... Watch me

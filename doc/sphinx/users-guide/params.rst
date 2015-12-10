@@ -20,7 +20,7 @@ a somewhat longer description on what it does and what the default is
 type ``param.show`` and the name of the parameter, like this::
 
   varnish> param.show shortlived
-  200        
+  200
   shortlived                  10.000000 [s]
                               Default is 10.0
                               Objects created with TTL shorter than this are

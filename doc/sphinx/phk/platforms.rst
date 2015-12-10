@@ -39,7 +39,7 @@ We care about these platforms because our users use them and
 because they deliver a lot of bang for the buck with Varnish.
 
 These platforms are in our "tinderbox" tests, we use them ourselves
-and they pass all regression tests all the time. 
+and they pass all regression tests all the time.
 Platform specific bug reports gets acted on.
 
 *FreeBSD*

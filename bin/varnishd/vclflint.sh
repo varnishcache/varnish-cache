@@ -10,4 +10,4 @@ else
 	echo "usage!" 1>&2
 fi
 
-flexelint vclflint.lnt /tmp/_.c 
+flexelint vclflint.lnt /tmp/_.c

@@ -257,7 +257,7 @@ and repeat markers, rather than throwing everything after deflate
 and hope for a miracle.
 
 I think this protocol is the best basis to start from, but like
-the other two, it has a long way to go, before it can truly 
+the other two, it has a long way to go, before it can truly
 earn the name HTTP/2.0.
 
 
