@@ -95,7 +95,13 @@ THR_SetName(const char *name)
 #if defined(HAVE_PTHREAD_SET_NAME_NP)
 	pthread_set_name_np(pthread_self(), name);
 #elif defined(HAVE_PTHREAD_SETNAME_NP)
+#if defined(__APPLE__)
+	pthread_setname_np(name);
+#elif defined(__NetBSD__)
+	pthread_setname_np(pthread_self(), "%s", name);
+#else
 	pthread_setname_np(pthread_self(), name);
+#endif
 #endif
 }
 
