@@ -47,50 +47,25 @@
  * return length or -1 on error
  */
 
-struct vrb_foo {
-	unsigned	magic;
-#define VRB_FOO_MAGIC	0x30240389
-	struct req	*req;
-	void		*priv;
-	req_body_iter_f	*func;
-	ssize_t		ll;
-};
-
-static int __match_proto__(objiterate_f)
-vrb_objiterator(void *priv, int flush, const void *ptr, ssize_t len)
-{
-	struct vrb_foo *foo;
-
-	CAST_OBJ_NOTNULL(foo, priv, VRB_FOO_MAGIC);
-
-	foo->ll += len;
-	return (foo->func(foo->priv, flush, ptr, len));
-}
-
-ssize_t
-VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv)
+int
+VRB_Iterate(struct req *req, objiterate_f *func, void *priv)
 {
 	char buf[8192];
-	ssize_t l, ll = 0;
+	ssize_t l;
 	int i;
 	struct vfp_ctx *vfc;
 	enum vfp_status vfps = VFP_ERROR;
-	struct vrb_foo foo;
+	int ret = 0;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(func);
 
 	switch(req->req_body_status) {
 	case REQ_BODY_CACHED:
-		INIT_OBJ(&foo, VRB_FOO_MAGIC);
-		foo.req = req;
-		foo.priv = priv;
-		foo.func = func;
-		foo.ll = 0;
 
-		if (ObjIterate(req->wrk, req->body_oc, &foo, vrb_objiterator))
+		if (ObjIterate(req->wrk, req->body_oc, priv, func))
 			return (-1);
-		return (foo.ll);
+		return (0);
 	case REQ_BODY_NONE:
 		return (0);
 	case REQ_BODY_WITH_LEN:
@@ -137,16 +112,15 @@ VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv)
 		vfps = VFP_Suck(vfc, buf, &l);
 		if (vfps == VFP_ERROR) {
 			req->req_body_status = REQ_BODY_FAIL;
-			ll = -1;
+			ret = -1;
 			break;
 		} else if (l > 0) {
 			req->req_bodybytes += l;
 			req->acct.req_bodybytes += l;
-			ll += l;
 			l = func(priv, 1, buf, l);
 			if (l) {
 				req->req_body_status = REQ_BODY_FAIL;
-				ll = -1;
+				ret = -1;
 				break;
 			}
 		}
@@ -154,7 +128,7 @@ VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv)
 	VFP_Close(vfc);
 	VSLb_ts_req(req, "ReqBody", VTIM_real());
 
-	return (ll);
+	return (ret);
 }
 
 /*----------------------------------------------------------------------
@@ -163,7 +137,7 @@ VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv)
  * For HTTP1 we have no such luck, and we just iterate it into oblivion.
  */
 
-static int __match_proto__(req_body_iter_f)
+static int __match_proto__(objiterate_f)
 httpq_req_body_discard(void *priv, int flush, const void *ptr, ssize_t len)
 {
 

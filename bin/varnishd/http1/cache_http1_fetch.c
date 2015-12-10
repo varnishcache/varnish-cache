@@ -48,7 +48,7 @@
  * Pass the request body to the backend
  */
 
-static int __match_proto__(req_body_iter_f)
+static int __match_proto__(objiterate_f)
 vbf_iter_req_body(void *priv, int flush, const void *ptr, ssize_t l)
 {
 	struct busyobj *bo;
