@@ -64,7 +64,7 @@ Description
 	request so probably want to set it on every request should you
 	utilize it.
 Example
-	| if (req.url ~ ^/slow/) {
+	| if (req.url ~ "^/slow/") {
 	|	std.set_ip_tos(0);
 	| }
 
