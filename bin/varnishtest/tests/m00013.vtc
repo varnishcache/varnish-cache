@@ -1,4 +1,4 @@
-varnishtest "Timestamps from std vmod"
+varnishtest "Test std.timestamp()"
 
 server s1 {
 	rxreq
@@ -38,7 +38,6 @@ logexpect l1 -v v1 -g request {
 client c1 {
 	txreq
 	rxresp
-	expect resp.status == 200
 } -run
 
 logexpect l1 -wait

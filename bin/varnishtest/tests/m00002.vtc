@@ -1,21 +1,21 @@
-varnishtest "Test std.random"
+varnishtest "Test std.random()"
 
 # needs random generator
 random
 
 server s1 {
 	rxreq
-	txresp -proto HTTP/1.0 -nolen -bodylen 9
+	txresp
 } -start
 
 varnish v1 -vcl+backend {
 	import ${vmod_std};
 
-	sub vcl_backend_response {
-		set beresp.http.rnd1 = std.random(0,1);
-		set beresp.http.rnd2 = std.random(0,10);
-		set beresp.http.rnd3 = std.random(8,10);
-		set beresp.http.rnd4 = std.random(99,100);
+	sub vcl_deliver {
+		set resp.http.rnd1 = std.random(0, 1);
+		set resp.http.rnd2 = std.random(0, 10);
+		set resp.http.rnd3 = std.random(8, 10);
+		set resp.http.rnd4 = std.random(99, 100);
 	}
 } -start
 
@@ -30,5 +30,4 @@ client c1 {
 	expect resp.http.rnd2 == 7.478
 	expect resp.http.rnd3 == 9.034
 	expect resp.http.rnd4 == 99.502
-	expect resp.bodylen == 9
 } -run

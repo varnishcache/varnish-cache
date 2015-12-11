@@ -2,30 +2,24 @@ varnishtest "Test If-None-Match"
 
 server s1 {
 	rxreq
-	expect req.url == "/foo"
-	txresp -hdr {ETag: "123456789"} \
-	    -body "11111\n"
+	expect req.url == /
+	txresp -hdr {ETag: "123456789"} -bodylen 10
 } -start
 
 varnish v1 -vcl+backend { } -start
 
 client c1 {
-	txreq -url "/foo"
+	txreq
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 6
+	expect resp.bodylen == 10
+	expect resp.http.etag == {"123456789"}
 
-	txreq -url "/foo" \
-	    -hdr {If-None-Match: "12345678"}
+	txreq -hdr {If-None-Match: "12345678"}
 	rxresp
 	expect resp.status == 200
 
-	txreq -url "/foo" \
-	    -hdr {If-None-Match: "123456789"}
+	txreq -hdr {If-None-Match: "123456789"}
 	rxresp -no_obj
 	expect resp.status == 304
-}
-
-client c1 -run
-
-client c1 -run
+} -run

@@ -1,53 +1,47 @@
-varnishtest "test vmod_std.integer conversion"
+varnishtest "Test std.integer()"
 
 server s1 {
 	rxreq
-	expect req.url == "/1"
-	txresp -bodylen 1
-
+	txresp
 } -start
 
 varnish v1 -vcl+backend {
 	import ${vmod_std};
 
 	sub vcl_deliver {
-		set resp.http.biggerthanzero = (std.integer(req.http.foo,0) > 0);
-		set resp.http.smallerthanzero = (std.integer(req.http.foo,0) < 0);
-		set resp.http.iszero = (std.integer(req.http.foo,0) == 0);
-		set resp.http.converted = std.integer(req.http.foo,0);
+		set resp.http.gtzero = (std.integer(req.http.foo, 0) > 0);
+		set resp.http.ltzero = (std.integer(req.http.foo, 0) < 0);
+		set resp.http.iszero = (std.integer(req.http.foo, 0) == 0);
+		set resp.http.converted = std.integer(req.http.foo, 0);
 	}
 } -start
 
 client c1 {
-	txreq -url "/1"  -hdr "foo: 1"
+	txreq -hdr "foo: 1"
 	rxresp
-	expect resp.status == 200
-	expect resp.http.biggerthanzero == true
-	expect resp.http.smallerthanzero == false
+	expect resp.http.gtzero == true
+	expect resp.http.ltzero == false
 	expect resp.http.iszero == false
 	expect resp.http.converted == 1
 
-	txreq -url "/1"  -hdr "foo: -1"
+	txreq -hdr "foo: -1"
 	rxresp
-	expect resp.status == 200
-	expect resp.http.biggerthanzero == false
-	expect resp.http.smallerthanzero == true
+	expect resp.http.gtzero == false
+	expect resp.http.ltzero == true
 	expect resp.http.iszero == false
 	expect resp.http.converted == -1
 
-	txreq -url "/1"
+	txreq -hdr "foo: 0"
 	rxresp
-	expect resp.status == 200
-	expect resp.http.biggerthanzero == false
-	expect resp.http.smallerthanzero == false
+	expect resp.http.gtzero == false
+	expect resp.http.ltzero == false
 	expect resp.http.iszero == true
 	expect resp.http.converted == 0
 
-	txreq -url "/1"  -hdr "foo: bar"
+	txreq -hdr "foo: bar"
 	rxresp
-	expect resp.status == 200
-	expect resp.http.biggerthanzero == false
-	expect resp.http.smallerthanzero == false
+	expect resp.http.gtzero == false
+	expect resp.http.ltzero == false
 	expect resp.http.iszero == true
 	expect resp.http.converted == 0
 } -run

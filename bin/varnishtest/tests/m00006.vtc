@@ -2,14 +2,9 @@ varnishtest "test vmod_std.collect()"
 
 server s1 {
 	rxreq
-	expect req.url == "/1"
 	expect req.http.foo == "1, 2"
-	txresp -hdr "bar: a" -hdr "bar: b" -bodylen 1
-
-	rxreq
-	expect req.url == "/2"
-	expect req.http.baz == "1, 2"
-	txresp -hdr "qux: a" -hdr "qux: b" -bodylen 1
+	expect req.http.baz == "3, 4"
+	txresp -hdr "bar: a" -hdr "bar: b" -hdr "qux: c" -hdr "qux: d"
 } -start
 
 varnish v1 -vcl+backend {
@@ -30,15 +25,8 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq  -url "/1" -hdr "Foo: 1" -hdr "Foo: 2"
+	txreq -hdr "Foo: 1" -hdr "Foo: 2" -hdr "Baz: 3" -hdr "Baz: 4"
 	rxresp
 	expect resp.http.bar == "a, b"
-	expect resp.status == 200
-	expect resp.bodylen == 1
-
-	txreq -url "/2" -hdr "Baz: 1" -hdr "Baz: 2"
-	rxresp
-	expect resp.http.qux == "a, b"
-	expect resp.status == 200
-	expect resp.bodylen == 1
+	expect resp.http.qux == "c, d"
 } -run
