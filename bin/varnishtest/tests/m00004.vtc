@@ -13,9 +13,7 @@ server s1 {
 	}
 } -start
 
-varnish v1 \
-	-arg "-pthread_pools=1" \
-	-vcl+backend {
+varnish v1 -vcl+backend {
 	import ${vmod_std};
 
 	sub vcl_deliver {

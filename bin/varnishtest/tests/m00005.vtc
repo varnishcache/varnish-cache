@@ -1,106 +1,72 @@
-varnishtest "test vmod_std.duration conversion"
+varnishtest "Test std.duration()"
 
 server s1 {
 	rxreq
-	expect req.url == "/1"
-	txresp -bodylen 1
-
+	txresp
 } -start
 
 varnish v1 -vcl+backend {
 	import ${vmod_std};
 
-	sub vcl_recv {
-		set req.ttl = 1000000s + std.duration(req.http.ttl, 1s);
-	}
 	sub vcl_deliver {
-		set resp.http.ttl = (req.ttl + 1s);
+		set resp.http.ttl = std.duration(req.http.ttl, 1s) + 1000000s;
 	}
 } -start
 
 client c1 {
-	txreq -url "/1"  -hdr "ttl: 10ms "
+	txreq -hdr "ttl: 10ms"
 	rxresp
-	expect resp.status == 200
-	expect resp.http.ttl == 1000001.010
-	expect resp.bodylen == 1
+	expect resp.http.ttl == 1000000.010
 
-	txreq -url "/1"  -hdr "ttl: 10s "
+	txreq -hdr "ttl: 10s"
 	rxresp
-	expect resp.status == 200
-	expect resp.http.ttl == 1000011.000
-	expect resp.bodylen == 1
+	expect resp.http.ttl == 1000010.000
 
-	txreq -url "/1"  -hdr "ttl: 10m "
+	txreq -hdr "ttl: 10m"
 	rxresp
-	expect resp.status == 200
-	expect resp.http.ttl == 1000601.000
-	expect resp.bodylen == 1
+	expect resp.http.ttl == 1000600.000
 
-	txreq -url "/1"  -hdr "ttl: 10h "
+	txreq -hdr "ttl: 10h"
 	rxresp
-	expect resp.status == 200
-	expect resp.http.ttl == 1036001.000
-	expect resp.bodylen == 1
+	expect resp.http.ttl == 1036000.000
 
-	txreq -url "/1"  -hdr "ttl: 10d "
+	txreq -hdr "ttl: 10d"
 	rxresp
-	expect resp.status == 200
-	expect resp.http.ttl == 1864001.000
-	expect resp.bodylen == 1
+	expect resp.http.ttl == 1864000.000
 
-	txreq -url "/1"  -hdr "ttl: 10w "
+	txreq -hdr "ttl: 10w"
 	rxresp
-	expect resp.status == 200
-	expect resp.http.ttl == 7048001.000
-	expect resp.bodylen == 1
+	expect resp.http.ttl == 7048000.000
 
-	txreq -url "/1"  -hdr "ttl: -100s "
+	txreq -hdr "ttl: 1y"
 	rxresp
-	expect resp.status == 200
-	expect resp.http.ttl ==  999901.000
-	expect resp.bodylen == 1
+	expect resp.http.ttl == 32536000.000
 
-	txreq -url "/1"  -hdr "ttl: s "
+	txreq -hdr "ttl: -100s"
 	rxresp
-	expect resp.status == 200
-	expect resp.http.ttl ==  1000002.000
-	expect resp.bodylen == 1
+	expect resp.http.ttl ==  999900.000
 
-	txreq -url "/1"  -hdr "ttl: 3wx "
+	txreq -hdr "ttl: s"
 	rxresp
-	expect resp.status == 200
-	expect resp.http.ttl ==  1000002.000
-	expect resp.bodylen == 1
+	expect resp.http.ttl ==  1000001.000
 
-	txreq -url "/1"  -hdr "ttl: -inf "
+	txreq -hdr "ttl: 3wx"
 	rxresp
-	expect resp.status == 200
-	expect resp.http.ttl ==  1000002.000
-	expect resp.bodylen == 1
+	expect resp.http.ttl ==  1000001.000
 
-	txreq -url "/1"  -hdr "ttl: 2x "
+	txreq -hdr "ttl: -inf"
 	rxresp
-	expect resp.status == 200
-	expect resp.http.ttl ==  1000002.000
-	expect resp.bodylen == 1
+	expect resp.http.ttl ==  1000001.000
 
-	txreq -url "/1"  -hdr "ttl: 2h x "
+	txreq -hdr "ttl: 2x"
 	rxresp
-	expect resp.status == 200
-	expect resp.http.ttl ==  1000002.000
-	expect resp.bodylen == 1
+	expect resp.http.ttl ==  1000001.000
 
-	txreq -url "/1"  -hdr "ttl: 100"
+	txreq -hdr "ttl: 2h x"
 	rxresp
-	expect resp.status == 200
-	expect resp.http.ttl == 1000002.000
-	expect resp.bodylen == 1
+	expect resp.http.ttl ==  1000001.000
 
-	txreq -url "/1"  -hdr "ttl: 1y"
+	txreq -hdr "ttl: 100"
 	rxresp
-	expect resp.status == 200
-	expect resp.http.ttl == 32536001.000
-	expect resp.bodylen == 1
-
+	expect resp.http.ttl == 1000001.000
 } -run

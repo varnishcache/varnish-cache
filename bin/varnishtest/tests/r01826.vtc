@@ -2,7 +2,7 @@ varnishtest "Check we ignore a zero C-L with a 204"
 
 server s1 {
 	rxreq
-	txresp -status 204 -nolen -hdr "Content-Length: 0"
+	txresp -status 204
 } -start
 
 varnish v1 -vcl+backend {

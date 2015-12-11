@@ -1,51 +1,34 @@
-varnishtest "Client IMS/INM: Test Combination of If-None-Match and If-Modified-Since"
+varnishtest "Test client If-None-Match and If-Modified-Since together"
 
 server s1 {
 	rxreq
-	expect req.url == "/foo"
+	expect req.url == /
 	txresp -hdr {ETag: "123456789"} \
-	       -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
-	    -body "11111\n"
+	    -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+	    -bodylen 10
 } -start
 
 varnish v1 -vcl+backend { } -start
 
 client c1 {
-	txreq -url "/foo"
+	txreq
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 6
+	expect resp.bodylen == 10
+	expect resp.http.etag == {"123456789"}
 
-	txreq -url "/foo" \
-	    -hdr {If-None-Match: "123456789"}
-	rxresp -no_obj
-	expect resp.status == 304
-
-	txreq -url "/foo" \
-	    -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:01 GMT"
-	rxresp -no_obj
-	expect resp.status == 304
-
-	txreq -url "/foo" \
-	    -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:00 GMT" \
+	txreq -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:00 GMT" \
 	    -hdr {If-None-Match: "123456789"}
 	rxresp
 	expect resp.status == 200
 
-	txreq -url "/foo" \
-	    -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:01 GMT" \
+	txreq -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:01 GMT" \
 	    -hdr {If-None-Match: "12345678"}
 	rxresp
 	expect resp.status == 200
 
-	txreq -url "/foo" \
-	    -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:01 GMT" \
+	txreq -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:01 GMT" \
 	    -hdr {If-None-Match: "123456789"}
 	rxresp -no_obj
 	expect resp.status == 304
-
-}
-
-client c1 -run
-
-client c1 -run
+} -run

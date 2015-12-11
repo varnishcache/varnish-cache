@@ -1,16 +1,13 @@
-varnishtest "Test std.ip"
+varnishtest "Test std.ip()"
 
 server s1 {
 	rxreq
-	txresp -body "1"
-	rxreq
-	txresp -body "22"
+	txresp
 } -start
 
-
-varnish v1 -arg "-Wpoll" -vcl+backend {
-
+varnish v1 -vcl+backend {
 	import ${vmod_std};
+
 	sub vcl_deliver {
 		set resp.http.foo0 = std.ip("8.8.8.*", client.ip);
 		set resp.http.foo1 = std.ip("9.9.9.*", server.ip);
@@ -22,16 +19,12 @@ varnish v1 -arg "-Wpoll" -vcl+backend {
 } -start
 
 client c1 {
-	txreq -url "/foo1"
+	txreq
 	rxresp
-	expect resp.bodylen == 1
 	expect resp.http.foo0 == "127.0.0.1"
 	expect resp.http.foo1 == "127.0.0.1"
 	expect resp.http.foo2 == "127.0.0.2"
 	expect resp.http.foo3 == "1.2.3.5"
 	expect resp.http.foo4 == "2001:db8::"
 	expect resp.http.foo5 == "::1"
-	txreq -url "/foo2"
-	rxresp
-	expect resp.bodylen == 2
 } -run
