@@ -4,6 +4,10 @@ server s1 {
 	rxreq
 	expect req.url == /
 	txresp -hdr {ETag: "123456789"} -bodylen 10
+
+	rxreq
+	expect req.url == /other
+	txresp -hdr {ETag: W/"123456789"} -bodylen 10
 } -start
 
 varnish v1 -vcl+backend { } -start
@@ -20,6 +24,38 @@ client c1 {
 	expect resp.status == 200
 
 	txreq -hdr {If-None-Match: "123456789"}
+	rxresp -no_obj
+	expect resp.status == 304
+
+	txreq -hdr {If-None-Match: W/"12345678"}
+	rxresp
+	expect resp.status == 200
+
+	txreq -hdr {If-None-Match: W/"123456789"}
+	rxresp -no_obj
+	expect resp.status == 304
+} -run
+
+client c2 {
+	txreq -url /other
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 10
+	expect resp.http.etag == {W/"123456789"}
+
+	txreq -url /other -hdr {If-None-Match: "12345678"}
+	rxresp
+	expect resp.status == 200
+
+	txreq -url /other -hdr {If-None-Match: "123456789"}
+	rxresp -no_obj
+	expect resp.status == 304
+
+	txreq -url /other -hdr {If-None-Match: W/"12345678"}
+	rxresp
+	expect resp.status == 200
+
+	txreq -url /other -hdr {If-None-Match: W/"123456789"}
 	rxresp -no_obj
 	expect resp.status == 304
 } -run

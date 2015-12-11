@@ -232,6 +232,16 @@ RFC2616_Req_Gzip(const struct http *hp)
 
 /*--------------------------------------------------------------------*/
 
+static inline int
+rfc2616_weak_compare(const char *p, const char *e)
+{
+	if (p[0] == 'W' && p[1] == '/')
+		p += 2;
+	if (e[0] == 'W' && e[1] == '/')
+		e += 2;
+	return (strcmp(p, e) != 0);
+}
+
 int
 RFC2616_Do_Cond(const struct req *req)
 {
@@ -239,22 +249,23 @@ RFC2616_Do_Cond(const struct req *req)
 	double ims, lm;
 	int do_cond = 0;
 
-	/* RFC 2616 13.3.4 states we need to match both ETag
-	   and If-Modified-Since if present*/
-
-	if (http_GetHdr(req->http, H_If_Modified_Since, &p) ) {
-		ims = VTIM_parse(p);
-		if (ims > req->t_req)	/* [RFC2616 14.25] */
-			return (0);
-		AZ(ObjGetDouble(req->wrk, req->objcore, OA_LASTMODIFIED, &lm));
-		if (lm > ims)
+	/*
+	 * RFC 2616 13.3.4 states we need to match both ETag and
+	 * If-Modified-Since if present.
+	 */
+	if (http_GetHdr(req->http, H_If_None_Match, &p) &&
+	    http_GetHdr(req->resp, H_ETag, &e)) {
+		if (rfc2616_weak_compare(p, e))
 			return (0);
 		do_cond = 1;
 	}
 
-	if (http_GetHdr(req->http, H_If_None_Match, &p) &&
-	    http_GetHdr(req->resp, H_ETag, &e)) {
-		if (strcmp(p,e) != 0)
+	if (http_GetHdr(req->http, H_If_Modified_Since, &p)) {
+		ims = VTIM_parse(p);
+		if (!ims || ims > req->t_req)	/* [RFC2616 14.25] */
+			return (0);
+		AZ(ObjGetDouble(req->wrk, req->objcore, OA_LASTMODIFIED, &lm));
+		if (lm > ims)
 			return (0);
 		do_cond = 1;
 	}
