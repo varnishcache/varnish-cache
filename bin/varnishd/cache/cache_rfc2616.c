@@ -233,13 +233,22 @@ RFC2616_Req_Gzip(const struct http *hp)
 /*--------------------------------------------------------------------*/
 
 static inline int
+rfc2616_strong_compare(const char *p, const char *e)
+{
+	if ((p[0] == 'W' && p[1] == '/') ||
+	    (e[0] == 'W' && e[1] == '/'))
+		return (0);
+	return (strcmp(p, e) == 0);
+}
+
+static inline int
 rfc2616_weak_compare(const char *p, const char *e)
 {
 	if (p[0] == 'W' && p[1] == '/')
 		p += 2;
 	if (e[0] == 'W' && e[1] == '/')
 		e += 2;
-	return (strcmp(p, e) != 0);
+	return (strcmp(p, e) == 0);
 }
 
 int
@@ -255,9 +264,12 @@ RFC2616_Do_Cond(const struct req *req)
 	 */
 	if (http_GetHdr(req->http, H_If_None_Match, &p) &&
 	    http_GetHdr(req->resp, H_ETag, &e)) {
-		if (rfc2616_weak_compare(p, e))
+		if (http_GetHdr(req->http, H_Range, NULL))
+			do_cond = rfc2616_strong_compare(p, e);
+		else
+			do_cond = rfc2616_weak_compare(p, e);
+		if (!do_cond)
 			return (0);
-		do_cond = 1;
 	}
 
 	if (http_GetHdr(req->http, H_If_Modified_Since, &p)) {
