@@ -27,6 +27,10 @@ client c1 {
 	rxresp -no_obj
 	expect resp.status == 304
 
+	txreq -hdr "Range: bytes=1-2" -hdr {If-None-Match: "123456789"}
+	rxresp -no_obj
+	expect resp.status == 304
+
 	txreq -hdr {If-None-Match: W/"12345678"}
 	rxresp
 	expect resp.status == 200
@@ -34,9 +38,11 @@ client c1 {
 	txreq -hdr {If-None-Match: W/"123456789"}
 	rxresp -no_obj
 	expect resp.status == 304
-} -run
 
-client c2 {
+	txreq -hdr "Range: bytes=1-2" -hdr {If-None-Match: W/"123456789"}
+	rxresp
+	expect resp.status == 206
+
 	txreq -url /other
 	rxresp
 	expect resp.status == 200
@@ -51,6 +57,11 @@ client c2 {
 	rxresp -no_obj
 	expect resp.status == 304
 
+	txreq -url /other -hdr "Range: bytes=1-2" \
+	    -hdr {If-None-Match: "123456789"}
+	rxresp
+	expect resp.status == 206
+
 	txreq -url /other -hdr {If-None-Match: W/"12345678"}
 	rxresp
 	expect resp.status == 200
@@ -58,4 +69,9 @@ client c2 {
 	txreq -url /other -hdr {If-None-Match: W/"123456789"}
 	rxresp -no_obj
 	expect resp.status == 304
+
+	txreq -url /other -hdr "Range: bytes=1-2" \
+	    -hdr {If-None-Match: W/"123456789"}
+	rxresp
+	expect resp.status == 206
 } -run
