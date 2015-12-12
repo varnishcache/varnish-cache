@@ -256,33 +256,31 @@ RFC2616_Do_Cond(const struct req *req)
 {
 	const char *p, *e;
 	double ims, lm;
-	int do_cond = 0;
 
 	/*
-	 * RFC 2616 13.3.4 states we need to match both ETag and
-	 * If-Modified-Since if present.
+	 * We MUST ignore If-Modified-Since if we have an If-None-Match
+	 * header [RFC7232 3.3 p16].
 	 */
-	if (http_GetHdr(req->http, H_If_None_Match, &p) &&
-	    http_GetHdr(req->resp, H_ETag, &e)) {
-		if (http_GetHdr(req->http, H_Range, NULL))
-			do_cond = rfc2616_strong_compare(p, e);
-		else
-			do_cond = rfc2616_weak_compare(p, e);
-		if (!do_cond)
+	if (http_GetHdr(req->http, H_If_None_Match, &p)) {
+		if (!http_GetHdr(req->resp, H_ETag, &e))
 			return (0);
+		if (http_GetHdr(req->http, H_Range, NULL))
+			return (rfc2616_strong_compare(p, e));
+		else
+			return (rfc2616_weak_compare(p, e));
 	}
 
 	if (http_GetHdr(req->http, H_If_Modified_Since, &p)) {
 		ims = VTIM_parse(p);
-		if (!ims || ims > req->t_req)	/* [RFC2616 14.25] */
+		if (!ims || ims > req->t_req)	/* [RFC7232 3.3 p16] */
 			return (0);
 		AZ(ObjGetDouble(req->wrk, req->objcore, OA_LASTMODIFIED, &lm));
 		if (lm > ims)
 			return (0);
-		do_cond = 1;
+		return (1);
 	}
 
-	return (do_cond);
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
