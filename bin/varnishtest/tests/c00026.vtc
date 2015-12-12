@@ -6,6 +6,11 @@ server s1 {
 	txresp -hdr {ETag: "123456789"} \
 	    -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
 	    -bodylen 10
+
+	rxreq
+	expect req.url == /other
+	txresp -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+	    -bodylen 10
 } -start
 
 varnish v1 -vcl+backend { } -start
@@ -19,8 +24,8 @@ client c1 {
 
 	txreq -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:00 GMT" \
 	    -hdr {If-None-Match: "123456789"}
-	rxresp
-	expect resp.status == 200
+	rxresp -no_obj
+	expect resp.status == 304
 
 	txreq -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:01 GMT" \
 	    -hdr {If-None-Match: "12345678"}
@@ -31,4 +36,10 @@ client c1 {
 	    -hdr {If-None-Match: "123456789"}
 	rxresp -no_obj
 	expect resp.status == 304
+
+	txreq -url /other \
+	    -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:01 GMT" \
+	    -hdr {If-None-Match: "123456789"}
+	rxresp
+	expect resp.status == 200
 } -run
