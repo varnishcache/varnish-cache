@@ -526,7 +526,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 		}
 	}
 	VSB_printf(pan_vsb, "\n");
-	VSB_bcat(pan_vsb, "", 1);	/* NUL termination */
+	VSB_putc(pan_vsb, '\0');	/* NUL termination */
 
 	if (FEATURE(FEATURE_NO_COREDUMP))
 		exit(4);

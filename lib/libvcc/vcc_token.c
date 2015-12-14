@@ -135,13 +135,13 @@ vcc_quoteline(const struct vcc *tl, const char *l, const char *le)
 			y &= ~7;
 			y += 8;
 			while (x < y) {
-				VSB_bcat(tl->sb, " ", 1);
+				VSB_putc(tl->sb, ' ');
 				x++;
 			}
 		} else {
 			x++;
 			y++;
-			VSB_bcat(tl->sb, p, 1);
+			VSB_putc(tl->sb, *p);
 		}
 	}
 	VSB_putc(tl->sb, '\n');

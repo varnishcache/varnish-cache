@@ -105,7 +105,7 @@ ban_add_lump(const struct ban_proto *bp, const void *p, uint32_t len)
 
 	buf[0] = 0xff;
 	while (VSB_len(bp->vsb) & PALGN)
-		VSB_bcat(bp->vsb, buf, 1);
+		VSB_putc(bp->vsb, buf[0]);
 	vbe32enc(buf, len);
 	VSB_bcat(bp->vsb, buf, sizeof buf);
 	VSB_bcat(bp->vsb, p, len);
