@@ -33,6 +33,8 @@
 #elif defined HAVE_NCURSES_CURSES_H
 #  include <ncurses/curses.h>
 #elif defined HAVE_NCURSES_H
+#  define GCC_PRINTF
+#  define GCC_SCANF
 #  include <ncurses.h>
 #elif defined HAVE_CURSES_H
 #  include <curses.h>
