@@ -934,7 +934,7 @@ draw_bar_b(void)
 	    page_start + l_points < n_ptarray ?
 		page_start + l_points : n_ptarray,
 	    n_ptarray);
-	mvwprintw(w_bar_b, 0, X - strlen(buf), buf);
+	mvwprintw(w_bar_b, 0, X - strlen(buf), "%s", buf);
 	X -= strlen(buf) + 2;
 
 	level = VSC_LevelDesc(verbosity);
