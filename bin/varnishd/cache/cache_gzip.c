@@ -307,8 +307,8 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 		http_Unset(req->resp, H_Content_Encoding);
 
 		req->resp_len = -1;
-		if (req->objcore->busyobj != NULL)
-			return (0); /* Incomplete, no idea about length */
+		if (req->objcore->flags & OC_F_INCOMPLETE)
+			return (0);	/* No idea about length */
 
 		p = ObjGetattr(req->wrk, req->objcore, OA_GZIPBITS, &dl);
 		if (p == NULL || dl != 32)
