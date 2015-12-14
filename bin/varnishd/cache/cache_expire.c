@@ -231,7 +231,7 @@ EXP_Touch(struct objcore *oc, double now)
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	if (oc->busyobj != NULL)
+	if (oc->flags & OC_F_INCOMPLETE)
 		return;
 
 	if (now - oc->last_lru < cache_param->lru_interval)

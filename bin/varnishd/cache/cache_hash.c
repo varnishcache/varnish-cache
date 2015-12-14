@@ -75,7 +75,7 @@ hsh_NewObjCore(struct worker *wrk)
 	ALLOC_OBJ(oc, OBJCORE_MAGIC);
 	XXXAN(oc);
 	wrk->stats->n_objectcore++;
-	oc->flags |= OC_F_BUSY;
+	oc->flags |= OC_F_BUSY | OC_F_INCOMPLETE;
 	return (oc);
 }
 
@@ -650,6 +650,7 @@ HSH_Fail(struct objcore *oc)
 
 	Lck_Lock(&oh->mtx);
 	oc->flags |= OC_F_FAILED;
+	oc->flags &= ~OC_F_INCOMPLETE;
 	oc->busyobj = NULL;
 	Lck_Unlock(&oh->mtx);
 }
@@ -669,6 +670,7 @@ HSH_Complete(struct objcore *oc)
 
 	Lck_Lock(&oh->mtx);
 	oc->busyobj = NULL;
+	oc->flags &= ~OC_F_INCOMPLETE;
 	Lck_Unlock(&oh->mtx);
 }
 
