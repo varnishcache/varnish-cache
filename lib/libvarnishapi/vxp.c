@@ -82,9 +82,9 @@ vxp_quote(const struct vxp *vxp, const char *b, const char *e, int tokoff)
 	assert(e <= vxp->e);
 	for (p = vxp->b; p < vxp->e; p++) {
 		if (isspace(*p))
-			VSB_bcat(vxp->sb, " ", 1);
+			VSB_putc(vxp->sb, ' ');
 		else
-			VSB_bcat(vxp->sb, p, 1);
+			VSB_putc(vxp->sb, *p);
 	}
 	VSB_putc(vxp->sb, '\n');
 	for (p = vxp->b; p < vxp->e; p++) {

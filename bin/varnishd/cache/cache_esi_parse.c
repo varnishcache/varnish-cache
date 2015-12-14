@@ -906,7 +906,7 @@ VEP_Parse(struct vep_state *vep, const char *p, size_t l)
 			while (p < e && *p != '>' && *p != vep->attr_delim &&
 			   (vep->attr_delim != ' ' || !vct_issp(*p))) {
 				if (vep->attr_vsb != NULL)
-					VSB_bcat(vep->attr_vsb, p, 1);
+					VSB_putc(vep->attr_vsb, *p);
 				p++;
 			}
 			if (p < e && *p == '>') {
