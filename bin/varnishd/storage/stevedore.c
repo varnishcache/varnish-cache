@@ -131,65 +131,6 @@ STV_alloc(const struct stevedore *stv, size_t size)
 	return (st);
 }
 
-/*--------------------------------------------------------------------
- * This function is called by stevedores ->allocobj() method, which
- * very often will be stv_default_allocobj() below, to convert a slab
- * of storage into object which the stevedore can then register in its
- * internal state, before returning it to STV_NewObject().
- * As you probably guessed: All this for persistence.
- */
-
-struct object *
-STV_MkObject(const struct stevedore *stv, struct objcore *oc, void *ptr)
-{
-	struct object *o;
-
-	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-
-	assert(PAOK(ptr));
-
-	o = ptr;
-	INIT_OBJ(o, OBJECT_MAGIC);
-
-	VTAILQ_INIT(&o->list);
-
-	oc->stobj->magic = STOREOBJ_MAGIC;
-	oc->stobj->stevedore = stv;
-	AN(stv->methods);
-	oc->stobj->priv = o;
-	return (o);
-}
-
-/*--------------------------------------------------------------------
- * This is the default ->allocobj() which all stevedores who do not
- * implement persistent storage can rely on.
- */
-
-int
-stv_default_allocobj(const struct stevedore *stv, struct objcore *oc,
-    unsigned wsl)
-{
-	struct object *o;
-	struct storage *st;
-	unsigned ltot;
-
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	ltot = sizeof(struct object) + PRNDUP(wsl);
-	st = stv->alloc(stv, ltot);
-	if (st == NULL)
-		return (0);
-	if (st->space < ltot) {
-		stv->free(st);
-		return (0);
-	}
-	o = STV_MkObject(stv, oc, st->ptr);
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	st->len = sizeof(*o);
-	o->objstore = st;
-	return (1);
-}
-
 /*-------------------------------------------------------------------
  * Allocate storage for an object, based on the header information.
  * XXX: If we know (a hint of) the length, we could allocate space

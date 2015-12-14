@@ -36,6 +36,7 @@
 
 #include "cache/cache.h"
 #include "storage/storage.h"
+#include "storage/storage_simple.h"
 
 #include "vnum.h"
 
@@ -251,7 +252,8 @@ const struct stevedore sma_stevedore = {
 	.alloc		=	sma_alloc,
 	.free		=	sma_free,
 	.trim		=	sma_trim,
-	.methods	=	&default_oc_methods,
+	.allocobj	=	SML_allocobj,
+	.methods	=	&SML_methods,
 	.var_free_space =	sma_free_space,
 	.var_used_space =	sma_used_space,
 };

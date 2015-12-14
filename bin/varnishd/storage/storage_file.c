@@ -39,6 +39,7 @@
 
 #include "cache/cache.h"
 #include "storage/storage.h"
+#include "storage/storage_simple.h"
 
 #include "vnum.h"
 #include "vfil.h"
@@ -535,7 +536,8 @@ const struct stevedore smf_stevedore = {
 	.alloc		=	smf_alloc,
 	.trim		=	smf_trim,
 	.free		=	smf_free,
-	.methods	=	&default_oc_methods,
+	.allocobj	=	SML_allocobj,
+	.methods	=	&SML_methods,
 };
 
 #ifdef INCLUDE_TEST_DRIVER

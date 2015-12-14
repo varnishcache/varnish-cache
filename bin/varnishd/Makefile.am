@@ -113,6 +113,7 @@ noinst_HEADERS = \
 	mgt/mgt_cli.h \
 	mgt/mgt_param.h \
 	storage/storage.h \
+	storage/storage_simple.h \
 	storage/storage_persistent.h \
 	waiter/waiter_priv.h \
 	waiter/mgt_waiter.h

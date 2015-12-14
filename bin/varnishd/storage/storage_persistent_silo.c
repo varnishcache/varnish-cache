@@ -40,6 +40,7 @@
 
 #include "cache/cache.h"
 #include "storage/storage.h"
+#include "storage/storage_simple.h"
 
 #include "hash/hash_slinger.h"
 #include "vsha256.h"
@@ -387,7 +388,7 @@ smp_loaded_st(const struct smp_sc *sc, const struct smp_seg *sg,
  */
 
 static struct object *
-smp_oc_getobj(struct worker *wrk, struct objcore *oc)
+smp_oc_sml_getobj(struct worker *wrk, struct objcore *oc)
 {
 	struct object *o;
 	struct smp_seg *sg;
@@ -401,7 +402,7 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 	AN(oc->stobj->stevedore);
 
 	/* Some calls are direct, but they should match anyway */
-	assert(oc->stobj->stevedore->methods->getobj == smp_oc_getobj);
+	assert(oc->stobj->stevedore->methods->sml_getobj == smp_oc_sml_getobj);
 
 	CAST_OBJ_NOTNULL(sg, oc->stobj->priv, SMP_SEG_MAGIC);
 	so = smp_find_so(sg, oc->stobj->priv2);
@@ -455,7 +456,7 @@ smp_oc_getobj(struct worker *wrk, struct objcore *oc)
 }
 
 static void
-smp_oc_updatemeta(struct worker *wrk, struct objcore *oc)
+smp_oc_objupdatemeta(struct worker *wrk, struct objcore *oc)
 {
 	struct object *o;
 	struct smp_seg *sg;
@@ -463,7 +464,7 @@ smp_oc_updatemeta(struct worker *wrk, struct objcore *oc)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	o = smp_oc_getobj(wrk, oc);
+	o = smp_oc_sml_getobj(wrk, oc);
 	AN(o);
 
 	CAST_OBJ_NOTNULL(sg, oc->stobj->priv, SMP_SEG_MAGIC);
@@ -482,8 +483,8 @@ smp_oc_updatemeta(struct worker *wrk, struct objcore *oc)
 	}
 }
 
-static void __match_proto__(freeobj_f)
-smp_oc_freeobj(struct worker *wrk, struct objcore *oc)
+static void __match_proto__(objfree_f)
+smp_oc_objfree(struct worker *wrk, struct objcore *oc)
 {
 	struct smp_seg *sg;
 	struct smp_object *so;
@@ -516,8 +517,8 @@ smp_oc_freeobj(struct worker *wrk, struct objcore *oc)
  * Find the per-segment lru list for this object
  */
 
-static struct lru * __match_proto__(getlru_f)
-smp_oc_getlru(const struct objcore *oc)
+static struct lru * __match_proto__(objgetlru_f)
+smp_oc_objgetlru(const struct objcore *oc)
 {
 	struct smp_seg *sg;
 
@@ -526,10 +527,10 @@ smp_oc_getlru(const struct objcore *oc)
 }
 
 const struct storeobj_methods smp_oc_methods = {
-	.getobj =		smp_oc_getobj,
-	.updatemeta =		smp_oc_updatemeta,
-	.freeobj =		smp_oc_freeobj,
-	.getlru =		smp_oc_getlru,
+	.sml_getobj =		smp_oc_sml_getobj,
+	.objupdatemeta =		smp_oc_objupdatemeta,
+	.objfree =		smp_oc_objfree,
+	.objgetlru =		smp_oc_objgetlru,
 };
 
 /*--------------------------------------------------------------------*/

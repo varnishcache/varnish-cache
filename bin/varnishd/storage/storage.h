@@ -55,46 +55,17 @@ struct storage {
 	unsigned		space;
 };
 
-/* Object ------------------------------------------------------------*/
-
-VTAILQ_HEAD(storagehead, storage);
-
-struct object {
-	unsigned		magic;
-#define OBJECT_MAGIC		0x32851d42
-	struct storage		*objstore;
-
-	char			oa_vxid[4];
-	uint8_t			*oa_vary;
-	uint8_t			*oa_http;
-	uint8_t			oa_flags[1];
-	char			oa_gzipbits[32];
-	char			oa_lastmodified[8];
-
-	struct storagehead	list;
-	ssize_t			len;
-
-	struct storage		*esidata;
-};
-
 /* Methods on objcore ------------------------------------------------*/
 
 #ifdef VARNISH_CACHE_CHILD
 
-typedef void updatemeta_f(struct worker *, struct objcore *oc);
-typedef void freeobj_f(struct worker *, struct objcore *oc);
-typedef struct lru *getlru_f(const struct objcore *oc);
+typedef void objupdatemeta_f(struct worker *, struct objcore *oc);
+typedef void objfree_f(struct worker *, struct objcore *oc);
+typedef struct lru *objgetlru_f(const struct objcore *oc);
 
-/*
- * Stevedores can either be simple, and provide just this method:
- */
+/* This method is only used by SML (...to get to persistent) */
+typedef struct object *sml_getobj_f(struct worker *, struct objcore *oc);
 
-typedef struct object *getobj_f(struct worker *, struct objcore *oc);
-
-/*
- * Or the can be "complex" and provide all of these methods:
- * (Described in comments in cache_obj.c)
- */
 typedef int objiterator_f(struct worker *, struct objcore *oc,
     void *priv, objiterate_f *func);
 typedef int objgetspace_f(struct worker *, struct objcore *,
@@ -109,11 +80,11 @@ typedef void *objsetattr_f(struct worker *, struct objcore *,
 typedef uint64_t objgetlen_f(struct worker *, struct objcore *);
 
 struct storeobj_methods {
-	freeobj_f	*freeobj;
-	getlru_f	*getlru;
-	updatemeta_f	*updatemeta;
+	objfree_f	*objfree;
+	objgetlru_f	*objgetlru;
+	objupdatemeta_f	*objupdatemeta;
 
-	getobj_f	*getobj;
+	sml_getobj_f	*sml_getobj;
 
 	objiterator_f	*objiterator;
 	objgetspace_f	*objgetspace;
@@ -151,10 +122,6 @@ typedef void storage_banexport_f(const struct stevedore *, const uint8_t *bans,
 #define VRTSTVTYPE(ct) typedef ct storage_var_##ct(const struct stevedore *);
 #include "tbl/vrt_stv_var.h"
 #undef VRTSTVTYPE
-
-extern storage_allocobj_f stv_default_allocobj;
-
-extern const struct storeobj_methods default_oc_methods;
 
 /*--------------------------------------------------------------------*/
 
@@ -199,8 +166,6 @@ extern struct stevedore *stv_transient;
 int STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx);
 uintmax_t STV_FileSize(int fd, const char *size, unsigned *granularity,
     const char *ctx);
-struct object *STV_MkObject(const struct stevedore *, struct objcore *,
-    void *ptr);
 
 struct lru *LRU_Alloc(void);
 void LRU_Free(struct lru *lru);

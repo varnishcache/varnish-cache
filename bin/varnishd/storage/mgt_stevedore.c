@@ -183,8 +183,8 @@ STV_Config(const char *spec)
 		ARGV_ERR("(-s%s) too many arguments\n", stv->name);
 
 	AN(stv->alloc);
-	if (stv->allocobj == NULL)
-		stv->allocobj = stv_default_allocobj;
+	AN(stv->allocobj);
+	AN(stv->methods);
 
 	if (!strcmp(stv->ident, TRANSIENT_STORAGE)) {
 		stv->transient = 1;

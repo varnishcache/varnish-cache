@@ -44,6 +44,7 @@
 
 #include "cache/cache.h"
 #include "storage/storage.h"
+#include "storage/storage_simple.h"
 
 #include "hash/hash_slinger.h"
 #include "vcli.h"
@@ -52,6 +53,8 @@
 #include "vtim.h"
 
 #include "storage/storage_persistent.h"
+
+static struct storeobj_methods smp_oc_realmethods;
 
 /*--------------------------------------------------------------------*/
 
@@ -526,7 +529,7 @@ smp_allocobj(const struct stevedore *stv, struct objcore *oc, unsigned wsl)
 
 	assert(st->space >= ltot);
 
-	o = STV_MkObject(stv, oc, st->ptr);
+	o = SML_MkObject(stv, oc, st->ptr);
 	AN(oc->stobj->stevedore);
 	assert(oc->stobj->stevedore == stv);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
@@ -592,7 +595,7 @@ const struct stevedore smp_stevedore = {
 	.signal_close = smp_signal_close,
 	.baninfo =	smp_baninfo,
 	.banexport =	smp_banexport,
-	.methods =	&smp_oc_methods,
+	.methods =	&smp_oc_realmethods,
 };
 
 /*--------------------------------------------------------------------
@@ -682,6 +685,11 @@ void
 SMP_Init(void)
 {
 	CLI_AddFuncs(debug_cmds);
+	smp_oc_realmethods = SML_methods;
+	smp_oc_realmethods.sml_getobj = smp_oc_methods.sml_getobj;
+	smp_oc_realmethods.objupdatemeta =	smp_oc_methods.objupdatemeta;
+	smp_oc_realmethods.objfree = smp_oc_methods.objfree;
+	smp_oc_realmethods.objgetlru = smp_oc_methods.objgetlru;
 }
 
 /*--------------------------------------------------------------------

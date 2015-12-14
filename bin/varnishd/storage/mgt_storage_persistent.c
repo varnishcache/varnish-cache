@@ -44,6 +44,7 @@
 
 #include "cache/cache.h"
 #include "storage/storage.h"
+#include "storage/storage_simple.h"
 
 #include "vsha256.h"
 

@@ -41,6 +41,7 @@
 
 #include "cache/cache.h"
 #include "storage/storage.h"
+#include "storage/storage_simple.h"
 
 static size_t			smu_max = SIZE_MAX;
 static MTX			smu_mtx;
@@ -161,7 +162,8 @@ const struct stevedore smu_stevedore = {
 	.alloc		=	smu_alloc,
 	.free		=	smu_free,
 	.trim		=	smu_trim,
-	.methods	=	&default_oc_methods,
+	.allocobj	=	SML_allocobj,
+	.methods	=	&SML_methods,
 };
 
 #endif /* HAVE_UMEM_H */
