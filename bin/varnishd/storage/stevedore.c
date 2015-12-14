@@ -44,58 +44,6 @@
 
 static const struct stevedore * volatile stv_next;
 
-/*---------------------------------------------------------------------
- * Default objcore methods
- */
-
-static struct object * __match_proto__(getobj_f)
-default_oc_getobj(struct worker *wrk, struct objcore *oc)
-{
-	struct object *o;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	if (oc->stobj->priv == NULL)
-		return (NULL);
-	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
-	return (o);
-}
-
-static void __match_proto__(freeobj_f)
-default_oc_freeobj(struct worker *wrk, struct objcore *oc)
-{
-	struct object *o;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(oc->stobj, STOREOBJ_MAGIC);
-	ObjSlim(wrk, oc);
-	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
-	o->magic = 0;
-
-	STV_free(oc->stobj->stevedore, o->objstore);
-
-	memset(oc->stobj, 0, sizeof oc->stobj);
-
-	wrk->stats->n_object--;
-}
-
-static struct lru * __match_proto__(getlru_f)
-default_oc_getlru(const struct objcore *oc)
-{
-	const struct stevedore *stv;
-
-	stv = oc->stobj->stevedore;
-	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-	return (stv->lru);
-}
-
-const struct storeobj_methods default_oc_methods = {
-	.getobj = default_oc_getobj,
-	.freeobj = default_oc_freeobj,
-	.getlru = default_oc_getlru,
-};
-
 /*--------------------------------------------------------------------
  */
 
