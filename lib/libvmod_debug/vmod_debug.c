@@ -47,7 +47,7 @@ struct priv_vcl {
 	uintptr_t		exp_cb;
 };
 
-VCL_DURATION vcl_release_delay = 0.0;
+static VCL_DURATION vcl_release_delay = 0.0;
 
 VCL_VOID __match_proto__(td_debug_panic)
 vmod_panic(VRT_CTX, const char *str, ...)
