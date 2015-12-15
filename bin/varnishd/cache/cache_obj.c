@@ -43,11 +43,12 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "cache_obj.h"
 #include "vend.h"
 #include "storage/storage.h"
 #include "hash/hash_slinger.h"
 
-static const struct storeobj_methods *
+static const struct obj_methods *
 obj_getmethods(const struct objcore *oc)
 {
 
@@ -66,7 +67,7 @@ int
 ObjIterate(struct worker *wrk, struct objcore *oc,
     void *priv, objiterate_f *func)
 {
-	const struct storeobj_methods *om = obj_getmethods(oc);
+	const struct obj_methods *om = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(func);
@@ -86,7 +87,7 @@ ObjIterate(struct worker *wrk, struct objcore *oc,
 int
 ObjGetSpace(struct worker *wrk, struct objcore *oc, ssize_t *sz, uint8_t **ptr)
 {
-	const struct storeobj_methods *om = obj_getmethods(oc);
+	const struct obj_methods *om = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(sz);
@@ -107,7 +108,7 @@ ObjGetSpace(struct worker *wrk, struct objcore *oc, ssize_t *sz, uint8_t **ptr)
 void
 ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l)
 {
-	const struct storeobj_methods *om = obj_getmethods(oc);
+	const struct obj_methods *om = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	assert(l > 0);
@@ -125,7 +126,7 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l)
 uint64_t
 ObjGetLen(struct worker *wrk, struct objcore *oc)
 {
-	const struct storeobj_methods *om = obj_getmethods(oc);
+	const struct obj_methods *om = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
@@ -143,7 +144,7 @@ ObjGetLen(struct worker *wrk, struct objcore *oc)
 void
 ObjTrimStore(struct worker *wrk, struct objcore *oc)
 {
-	const struct storeobj_methods *om = obj_getmethods(oc);
+	const struct obj_methods *om = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
@@ -162,7 +163,7 @@ ObjTrimStore(struct worker *wrk, struct objcore *oc)
 void
 ObjSlim(struct worker *wrk, struct objcore *oc)
 {
-	const struct storeobj_methods *om = obj_getmethods(oc);
+	const struct obj_methods *om = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
@@ -175,7 +176,7 @@ ObjSlim(struct worker *wrk, struct objcore *oc)
 void
 ObjUpdateMeta(struct worker *wrk, struct objcore *oc)
 {
-	const struct storeobj_methods *m = obj_getmethods(oc);
+	const struct obj_methods *m = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
@@ -188,7 +189,7 @@ ObjUpdateMeta(struct worker *wrk, struct objcore *oc)
 void
 ObjFreeObj(struct worker *wrk, struct objcore *oc)
 {
-	const struct storeobj_methods *m = obj_getmethods(oc);
+	const struct obj_methods *m = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
@@ -202,7 +203,7 @@ ObjFreeObj(struct worker *wrk, struct objcore *oc)
 struct lru *
 ObjGetLRU(const struct objcore *oc)
 {
-	const struct storeobj_methods *m = obj_getmethods(oc);
+	const struct obj_methods *m = obj_getmethods(oc);
 
 	AN(m->objgetlru);
 	return (m->objgetlru(oc));
@@ -218,7 +219,7 @@ void *
 ObjGetattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
    ssize_t *len)
 {
-	const struct storeobj_methods *om = obj_getmethods(oc);
+	const struct obj_methods *om = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
@@ -237,7 +238,7 @@ void *
 ObjSetattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
     ssize_t len, const void *ptr)
 {
-	const struct storeobj_methods *om = obj_getmethods(oc);
+	const struct obj_methods *om = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 

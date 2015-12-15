@@ -39,6 +39,7 @@
 #include <stdlib.h>
 
 #include "cache/cache.h"
+#include "cache/cache_obj.h"
 #include "storage/storage.h"
 #include "storage/storage_simple.h"
 
@@ -526,7 +527,7 @@ smp_oc_objgetlru(const struct objcore *oc)
 	return (sg->lru);
 }
 
-const struct storeobj_methods smp_oc_methods = {
+const struct obj_methods smp_oc_methods = {
 	.sml_getobj =		smp_oc_sml_getobj,
 	.objupdatemeta =		smp_oc_objupdatemeta,
 	.objfree =		smp_oc_objfree,

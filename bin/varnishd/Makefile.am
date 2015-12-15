@@ -104,6 +104,7 @@ noinst_HEADERS = \
 	builtin_vcl.h \
 	cache/cache_ban.h \
 	cache/cache_esi.h \
+	cache/cache_obj.h \
 	cache/cache_pool.h \
 	cache/cache_priv.h \
 	common/heritage.h \

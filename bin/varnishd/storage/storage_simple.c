@@ -33,6 +33,7 @@
 #include <stdlib.h>
 
 #include "cache/cache.h"
+#include "cache/cache_obj.h"
 #include "hash/hash_slinger.h"
 
 #include "storage/storage.h"
@@ -103,7 +104,7 @@ SML_allocobj(const struct stevedore *stv, struct objcore *oc,
 static struct object *
 getobj(struct worker *wrk, struct objcore *oc)
 {
-	const struct storeobj_methods *m;
+	const struct obj_methods *m;
 	struct object *o;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -494,7 +495,7 @@ sml_setattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 }
 
 
-const struct storeobj_methods SML_methods = {
+const struct obj_methods SML_methods = {
 	.objfree	= sml_objfree,
 	.objgetlru	= sml_objgetlru,
 	.objiterator	= sml_iterator,

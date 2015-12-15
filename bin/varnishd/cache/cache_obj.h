@@ -26,37 +26,43 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * SML is a set of methods for simple stevedores which just do simple
- * memory allocation and leave all the high-level stuff to SML.
- *
  */
 
-/* Object ------------------------------------------------------------*/
+/* Methods on objcore ------------------------------------------------*/
 
-VTAILQ_HEAD(storagehead, storage);
+typedef void objupdatemeta_f(struct worker *, struct objcore *);
+typedef void objfree_f(struct worker *, struct objcore *);
+typedef struct lru *objgetlru_f(const struct objcore *);
 
-struct object {
-	unsigned		magic;
-#define OBJECT_MAGIC		0x32851d42
-	struct storage		*objstore;
+/* This method is only used by SML (...to get to persistent) */
+typedef struct object *sml_getobj_f(struct worker *, struct objcore *);
 
-	char			oa_vxid[4];
-	uint8_t			*oa_vary;
-	uint8_t			*oa_http;
-	uint8_t			oa_flags[1];
-	char			oa_gzipbits[32];
-	char			oa_lastmodified[8];
+typedef int objiterator_f(struct worker *, struct objcore *,
+    void *priv, objiterate_f *func);
+typedef int objgetspace_f(struct worker *, struct objcore *,
+     ssize_t *sz, uint8_t **ptr);
+typedef void objextend_f(struct worker *, struct objcore *, ssize_t l);
+typedef void objtrimstore_f(struct worker *, struct objcore *);
+typedef void objslim_f(struct worker *, struct objcore *);
+typedef void *objgetattr_f(struct worker *, struct objcore *,
+    enum obj_attr attr, ssize_t *len);
+typedef void *objsetattr_f(struct worker *, struct objcore *,
+    enum obj_attr attr, ssize_t len, const void *ptr);
+typedef uint64_t objgetlen_f(struct worker *, struct objcore *);
 
-	struct storagehead	list;
-	ssize_t			len;
+struct obj_methods {
+	objfree_f	*objfree;
+	objgetlru_f	*objgetlru;
+	objupdatemeta_f	*objupdatemeta;
 
-	struct storage		*esidata;
+	sml_getobj_f	*sml_getobj;
+
+	objiterator_f	*objiterator;
+	objgetspace_f	*objgetspace;
+	objextend_f	*objextend;
+	objgetlen_f	*objgetlen;
+	objtrimstore_f	*objtrimstore;
+	objslim_f	*objslim;
+	objgetattr_f	*objgetattr;
+	objsetattr_f	*objsetattr;
 };
-
-extern const struct obj_methods SML_methods;
-
-struct object *SML_MkObject(const struct stevedore *, struct objcore *,
-    void *ptr);
-
-storage_allocobj_f SML_allocobj;
-

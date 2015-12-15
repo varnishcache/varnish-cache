@@ -43,6 +43,7 @@
 #include <stdlib.h>
 
 #include "cache/cache.h"
+#include "cache/cache_obj.h"
 #include "storage/storage.h"
 #include "storage/storage_simple.h"
 
@@ -54,7 +55,7 @@
 
 #include "storage/storage_persistent.h"
 
-static struct storeobj_methods smp_oc_realmethods;
+static struct obj_methods smp_oc_realmethods;
 
 /*--------------------------------------------------------------------*/
 

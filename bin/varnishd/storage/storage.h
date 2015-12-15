@@ -39,6 +39,7 @@ struct worker;
 struct lru;
 struct vsl_log;
 struct vfp_ctx;
+struct obj_methods;
 
 /* Storage -----------------------------------------------------------*/
 
@@ -54,53 +55,6 @@ struct storage {
 	unsigned		len;
 	unsigned		space;
 };
-
-/* Methods on objcore ------------------------------------------------*/
-
-#ifdef VARNISH_CACHE_CHILD
-
-typedef void objupdatemeta_f(struct worker *, struct objcore *oc);
-typedef void objfree_f(struct worker *, struct objcore *oc);
-typedef struct lru *objgetlru_f(const struct objcore *oc);
-
-/* This method is only used by SML (...to get to persistent) */
-typedef struct object *sml_getobj_f(struct worker *, struct objcore *oc);
-
-typedef int objiterator_f(struct worker *, struct objcore *oc,
-    void *priv, objiterate_f *func);
-typedef int objgetspace_f(struct worker *, struct objcore *,
-     ssize_t *sz, uint8_t **ptr);
-typedef void objextend_f(struct worker *, struct objcore *, ssize_t l);
-typedef void objtrimstore_f(struct worker *, struct objcore *);
-typedef void objslim_f(struct worker *, struct objcore *);
-typedef void *objgetattr_f(struct worker *, struct objcore *,
-    enum obj_attr attr, ssize_t *len);
-typedef void *objsetattr_f(struct worker *, struct objcore *,
-    enum obj_attr attr, ssize_t len, const void *ptr);
-typedef uint64_t objgetlen_f(struct worker *, struct objcore *);
-
-struct storeobj_methods {
-	objfree_f	*objfree;
-	objgetlru_f	*objgetlru;
-	objupdatemeta_f	*objupdatemeta;
-
-	sml_getobj_f	*sml_getobj;
-
-	objiterator_f	*objiterator;
-	objgetspace_f	*objgetspace;
-	objextend_f	*objextend;
-	objgetlen_f	*objgetlen;
-	objtrimstore_f	*objtrimstore;
-	objslim_f	*objslim;
-	objgetattr_f	*objgetattr;
-	objsetattr_f	*objsetattr;
-};
-
-#else
-
-struct storeobj_methods;
-
-#endif
 
 /* Prototypes --------------------------------------------------------*/
 
@@ -141,7 +95,7 @@ struct stevedore {
 	storage_baninfo_f	*baninfo;	/* --//-- */
 	storage_banexport_f	*banexport;	/* --//-- */
 
-	const struct storeobj_methods
+	const struct obj_methods
 				*methods;
 
 	struct lru		*lru;
