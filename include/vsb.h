@@ -61,7 +61,7 @@ struct vsb	*VSB_new(struct vsb *, char *, int, int);
 #define		 VSB_new_auto()				\
 	VSB_new(NULL, NULL, 0, VSB_AUTOEXTEND)
 void		 VSB_clear(struct vsb *);
-int		 VSB_bcat(struct vsb *, const void *, size_t);
+int		 VSB_bcat(struct vsb *, const void *, ssize_t);
 int		 VSB_cat(struct vsb *, const char *);
 int		 VSB_printf(struct vsb *, const char *, ...)
 	__v_printflike(2, 3);

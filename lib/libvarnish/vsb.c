@@ -276,13 +276,16 @@ VSB_put_byte(struct vsb *s, int c)
  * Append a byte string to an vsb.
  */
 int
-VSB_bcat(struct vsb *s, const void *buf, size_t len)
+VSB_bcat(struct vsb *s, const void *buf, ssize_t len)
 {
 	assert_VSB_integrity(s);
 	assert_VSB_state(s, 0);
 
+	assert(len >= 0);
 	if (s->s_error != 0)
 		return (-1);
+	if (len == 0)
+		return (0);
 	_vsb_indent(s);
 	if (len > VSB_FREESPACE(s)) {
 		if (VSB_extend(s, len - VSB_FREESPACE(s)) < 0)
