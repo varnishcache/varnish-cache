@@ -287,7 +287,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	req->objcore = HSH_Private(wrk);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
-	if (STV_NewObject(req->objcore, wrk, TRANSIENT_STORAGE, 1024)) {
+	if (STV_NewObject(wrk, req->objcore, TRANSIENT_STORAGE, 1024)) {
 		szl = VSB_len(synth_body);
 		assert(szl >= 0);
 	} else

@@ -218,7 +218,7 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 
 	req->body_oc = HSH_Private(req->wrk);
 	AN(req->body_oc);
-	XXXAN(STV_NewObject(req->body_oc, req->wrk, TRANSIENT_STORAGE, 8));
+	XXXAN(STV_NewObject(req->wrk, req->body_oc, TRANSIENT_STORAGE, 8));
 
 	vfc->http = req->http;
 	vfc->oc = req->body_oc;

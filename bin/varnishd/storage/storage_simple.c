@@ -74,15 +74,17 @@ SML_MkObject(const struct stevedore *stv, struct objcore *oc, void *ptr)
  * implement persistent storage can rely on.
  */
 
-int
-SML_allocobj(const struct stevedore *stv, struct objcore *oc,
-    unsigned wsl)
+int __match_proto__(storage_allocobj_f)
+SML_allocobj(struct worker *wrk, const struct stevedore *stv,
+    struct objcore *oc, unsigned wsl, int really)
 {
 	struct object *o;
 	struct storage *st;
 	unsigned ltot;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	(void)really;
 	ltot = sizeof(struct object) + PRNDUP(wsl);
 	st = stv->alloc(stv, ltot);
 	if (st == NULL)

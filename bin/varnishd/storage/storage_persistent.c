@@ -503,8 +503,9 @@ smp_allocx(const struct stevedore *st, size_t min_size, size_t max_size,
  * Allocate an object
  */
 
-static int
-smp_allocobj(const struct stevedore *stv, struct objcore *oc, unsigned wsl)
+static int __match_proto__(storage_allocobj_f)
+smp_allocobj(struct worker *wrk, const struct stevedore *stv,
+    struct objcore *oc, unsigned wsl, int really)
 {
 	struct object *o;
 	struct storage *st;
@@ -514,7 +515,9 @@ smp_allocobj(const struct stevedore *stv, struct objcore *oc, unsigned wsl)
 	unsigned objidx;
 	unsigned ltot;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	(void)really;
 	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
 
 	/* Don't entertain already dead objects */

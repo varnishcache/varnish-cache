@@ -138,7 +138,7 @@ STV_alloc(const struct stevedore *stv, size_t size)
  */
 
 int
-STV_NewObject(struct objcore *oc, struct worker *wrk,
+STV_NewObject(struct worker *wrk, struct objcore *oc,
     const char *hint, unsigned wsl)
 {
 	struct stevedore *stv, *stv0;
@@ -150,12 +150,12 @@ STV_NewObject(struct objcore *oc, struct worker *wrk,
 
 	stv = stv0 = stv_pick_stevedore(wrk->vsl, &hint);
 	AN(stv->allocobj);
-	j = stv->allocobj(stv, oc, wsl);
+	j = stv->allocobj(wrk, stv, oc, wsl, 0);
 	if (j == 0 && hint == NULL) {
 		do {
 			stv = stv_pick_stevedore(wrk->vsl, &hint);
 			AN(stv->allocobj);
-			j = stv->allocobj(stv, oc, wsl);
+			j = stv->allocobj(wrk, stv, oc, wsl, 0);
 		} while (j == 0 && stv != stv0);
 	}
 	if (j == 0) {
@@ -163,7 +163,7 @@ STV_NewObject(struct objcore *oc, struct worker *wrk,
 		for (i = 0; j == 0 && i < cache_param->nuke_limit; i++) {
 			if (EXP_NukeOne(wrk, stv->lru) == -1)
 				break;
-			j = stv->allocobj(stv, oc, wsl);
+			j = stv->allocobj(wrk, stv, oc, wsl, 0);
 		}
 	}
 

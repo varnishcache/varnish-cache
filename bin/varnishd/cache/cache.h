@@ -1040,7 +1040,7 @@ void RFC2616_Weaken_Etag(struct http *hp);
 void RFC2616_Vary_AE(struct http *hp);
 
 /* stevedore.c */
-int STV_NewObject(struct objcore *, struct worker *,
+int STV_NewObject(struct worker *, struct objcore *,
     const char *hint, unsigned len);
 struct storage *STV_alloc(const struct stevedore *, size_t size);
 void STV_trim(const struct stevedore *, struct storage *, size_t size,
