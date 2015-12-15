@@ -278,20 +278,20 @@ VSB_put_byte(struct vsb *s, int c)
 int
 VSB_bcat(struct vsb *s, const void *buf, size_t len)
 {
-	const char *str = buf;
-	const char *end = str + len;
-
 	assert_VSB_integrity(s);
 	assert_VSB_state(s, 0);
 
 	if (s->s_error != 0)
 		return (-1);
 	_vsb_indent(s);
-	for (; str < end; str++) {
-		VSB_put_byte(s, *str);
+	if (len > VSB_FREESPACE(s)) {
+		if (VSB_extend(s, len - VSB_FREESPACE(s)) < 0)
+			s->s_error = ENOMEM;
 		if (s->s_error != 0)
 			return (-1);
 	}
+	memcpy(s->s_buf + s->s_len, buf, len);
+	s->s_len += len;
 	return (0);
 }
 
