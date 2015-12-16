@@ -690,7 +690,6 @@ void EXP_Insert(struct worker *wrk, struct objcore *oc);
 void EXP_Inject(struct worker *wrk, struct objcore *oc, struct lru *lru);
 void EXP_Rearm(struct objcore *, double now, double ttl, double grace,
     double keep);
-void EXP_Touch(struct objcore *oc, double now);
 int EXP_NukeOne(struct worker *wrk, struct lru *lru);
 
 enum exp_event_e {

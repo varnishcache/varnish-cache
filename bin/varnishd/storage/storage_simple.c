@@ -560,10 +560,40 @@ sml_setattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 static void __match_proto__(objtouch_f)
 sml_touch(struct worker *wrk, struct objcore *oc, double now)
 {
+	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	EXP_Touch(oc, now);
+
+	/*
+	 * To avoid the exphdl->mtx becoming a hotspot, we only
+	 * attempt to move objects if they have not been moved
+	 * recently and if the lock is available.  This optimization
+	 * obviously leaves the LRU list imperfectly sorted.
+	 */
+
+	if (oc->flags & OC_F_INCOMPLETE)
+		return;
+
+	if (now - oc->last_lru < cache_param->lru_interval)
+		return;
+
+	lru = ObjGetLRU(oc);
+	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
+
+	if (Lck_Trylock(&lru->mtx))
+		return;
+
+	AN(oc->exp_flags & OC_EF_EXP);
+
+	if (!(oc->exp_flags & OC_EF_OFFLRU)) {
+		/* Can only touch it while it's actually on the LRU list */
+		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
+		VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
+		VSC_C_main->n_lru_moved++;
+	}
+	oc->last_lru = now;
+	Lck_Unlock(&lru->mtx);
 }
 
 const struct obj_methods SML_methods = {
