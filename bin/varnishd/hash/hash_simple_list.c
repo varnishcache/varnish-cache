@@ -35,6 +35,8 @@
 
 #include "hash/hash_slinger.h"
 
+static struct VSC_C_lck *lck_hsl;
+
 /*--------------------------------------------------------------------*/
 
 static VTAILQ_HEAD(, objhead)	hsl_head = VTAILQ_HEAD_INITIALIZER(hsl_head);
@@ -49,6 +51,7 @@ static void __match_proto__(hash_start_f)
 hsl_start(void)
 {
 
+	lck_hsl = Lck_CreateClass("hsl");
 	Lck_New(&hsl_mtx, lck_hsl);
 }
 
