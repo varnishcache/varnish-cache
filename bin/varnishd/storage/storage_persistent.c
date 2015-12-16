@@ -57,6 +57,8 @@
 
 static struct obj_methods smp_oc_realmethods;
 
+static struct VSC_C_lck *lck_smp;
+
 /*--------------------------------------------------------------------*/
 
 /*
@@ -702,10 +704,11 @@ static struct cli_proto debug_cmds[] = {
 void
 SMP_Init(void)
 {
+	lck_smp = Lck_CreateClass("smp");
 	CLI_AddFuncs(debug_cmds);
 	smp_oc_realmethods = SML_methods;
 	smp_oc_realmethods.sml_getobj = smp_oc_methods.sml_getobj;
-	smp_oc_realmethods.objupdatemeta =	smp_oc_methods.objupdatemeta;
+	smp_oc_realmethods.objupdatemeta = smp_oc_methods.objupdatemeta;
 	smp_oc_realmethods.objfree = smp_oc_methods.objfree;
 	smp_oc_realmethods.objgetlru = smp_oc_methods.objgetlru;
 	smp_oc_realmethods.objtouch = NULL;
