@@ -49,6 +49,7 @@ typedef void *objgetattr_f(struct worker *, struct objcore *,
 typedef void *objsetattr_f(struct worker *, struct objcore *,
     enum obj_attr attr, ssize_t len, const void *ptr);
 typedef uint64_t objgetlen_f(struct worker *, struct objcore *);
+typedef void objtouch_f(struct worker *, struct objcore *, double now);
 
 struct obj_methods {
 	objfree_f	*objfree;
@@ -65,4 +66,5 @@ struct obj_methods {
 	objslim_f	*objslim;
 	objgetattr_f	*objgetattr;
 	objsetattr_f	*objsetattr;
+	objtouch_f	*objtouch;
 };

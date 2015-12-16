@@ -557,6 +557,14 @@ sml_setattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 	return (retval);
 }
 
+static void __match_proto__(objtouch_f)
+sml_touch(struct worker *wrk, struct objcore *oc, double now)
+{
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	EXP_Touch(oc, now);
+}
 
 const struct obj_methods SML_methods = {
 	.objfree	= sml_objfree,
@@ -569,4 +577,5 @@ const struct obj_methods SML_methods = {
 	.objslim	= sml_slim,
 	.objgetattr	= sml_getattr,
 	.objsetattr	= sml_setattr,
+	.objtouch	= sml_touch,
 };

@@ -708,6 +708,7 @@ SMP_Init(void)
 	smp_oc_realmethods.objupdatemeta =	smp_oc_methods.objupdatemeta;
 	smp_oc_realmethods.objfree = smp_oc_methods.objfree;
 	smp_oc_realmethods.objgetlru = smp_oc_methods.objgetlru;
+	smp_oc_realmethods.objtouch = NULL;
 }
 
 /*--------------------------------------------------------------------

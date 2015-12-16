@@ -363,9 +363,6 @@ struct lru {
 #define LRU_MAGIC		0x3fec7bb0
 	VTAILQ_HEAD(,objcore)	lru_head;
 	struct lock		mtx;
-	unsigned		flags;
-#define LRU_F_DONTMOVE		(1<<1)
-#define LRU_F_CONDEMMED		(1<<2)
 	unsigned		n_objcore;
 };
 
@@ -850,6 +847,7 @@ int ObjIterate(struct worker *, struct objcore *,
 int ObjGetSpace(struct worker *, struct objcore *, ssize_t *sz, uint8_t **ptr);
 void ObjExtend(struct worker *, struct objcore *, ssize_t l);
 void ObjTrimStore(struct worker *, struct objcore *);
+void ObjTouch(struct worker *wrk, struct objcore *oc, double now);
 unsigned ObjGetXID(struct worker *, struct objcore *);
 uint64_t ObjGetLen(struct worker *, struct objcore *oc);
 void ObjUpdateMeta(struct worker *, struct objcore *);

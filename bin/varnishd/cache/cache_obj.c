@@ -36,6 +36,7 @@
  *	ObjSetAttr	Set attr now
  *	ObjGetAttr	Get attr no
  *	ObjRelease	Done with attr ptr
+ *	ObjTouch	Object was used
  */
 
 #include "config.h"
@@ -244,6 +245,20 @@ ObjSetattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 
 	AN(om->objsetattr);
 	return (om->objsetattr(wrk, oc, attr, len, ptr));
+}
+
+/*====================================================================
+ * ObjTouch()
+ */
+
+void
+ObjTouch(struct worker *wrk, struct objcore *oc, double now)
+{
+	const struct obj_methods *om = obj_getmethods(oc);
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	if (om->objtouch != NULL)
+		om->objtouch(wrk, oc, now);
 }
 
 /*====================================================================

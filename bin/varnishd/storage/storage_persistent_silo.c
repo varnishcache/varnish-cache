@@ -225,7 +225,6 @@ smp_new_seg(struct smp_sc *sc)
 	*sg = tmpsg;
 	sg->lru = LRU_Alloc();
 	CHECK_OBJ_NOTNULL(sg->lru, LRU_MAGIC);
-	sg->lru->flags |= LRU_F_DONTMOVE;
 
 	sg->p.offset = IRNUP(sc, sg->p.offset);
 	sg->p.length -= sg->p.offset - tmpsg.p.offset;

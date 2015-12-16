@@ -240,13 +240,6 @@ EXP_Touch(struct objcore *oc, double now)
 	lru = ObjGetLRU(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
-	/*
-	 * For -spersistent (and possibly other stevedores, we don't move
-	 * objects on the lru list, since LRU doesn't really help much.
-	 */
-	if (lru->flags & LRU_F_DONTMOVE)
-		return;
-
 	if (Lck_Trylock(&lru->mtx))
 		return;
 
