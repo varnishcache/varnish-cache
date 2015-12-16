@@ -38,6 +38,8 @@
 
 #include "hash/hash_slinger.h"
 
+static struct VSC_C_lck *lck_hcl;
+
 /*--------------------------------------------------------------------*/
 
 struct hcl_hd {
@@ -90,6 +92,7 @@ hcl_start(void)
 {
 	unsigned u;
 
+	lck_hcl = Lck_CreateClass("hcl");
 	hcl_head = calloc(sizeof *hcl_head, hcl_nhash);
 	XXXAN(hcl_head);
 

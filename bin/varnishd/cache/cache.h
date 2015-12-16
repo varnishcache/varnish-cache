@@ -831,6 +831,8 @@ int Lck_CondWait(pthread_cond_t *cond, struct lock *lck, double);
 #define Lck_Trylock(a) Lck__Trylock(a, __func__, __LINE__)
 #define Lck_AssertHeld(a) Lck__Assert(a, 1)
 
+struct VSC_C_lck *Lck_CreateClass(const char *name);
+
 #define LOCK(nam) extern struct VSC_C_lck *lck_##nam;
 #include "tbl/locks.h"
 #undef LOCK
