@@ -517,8 +517,8 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	(void)really;
 	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
+	assert(really >= 0);
 
 	/* Don't entertain already dead objects */
 	if ((oc->exp.ttl + oc->exp.grace + oc->exp.keep) <= 0.)
@@ -527,10 +527,24 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
 	ltot = sizeof(struct object) + PRNDUP(wsl);
 	ltot = IRNUP(sc, ltot);
 
-	st = smp_allocx(stv, ltot, ltot, &so, &objidx, &sg);
-	if (st == NULL)
-		return (0);
+	while (1) {
+		if (really > 0) {
+			if (EXP_NukeOne(wrk, stv->lru) == -1)
+				return (0);
+			really--;
+		}
+		st = smp_allocx(stv, ltot, ltot, &so, &objidx, &sg);
+		if (st != NULL && st->space < ltot) {
+			stv->free(st);		// NOP
+			st = NULL;
+		}
+		if (st != NULL)
+			break;
+		if (!really)
+			return (0);
+	}
 
+	AN(st);
 	assert(st->space >= ltot);
 
 	o = SML_MkObject(stv, oc, st->ptr);

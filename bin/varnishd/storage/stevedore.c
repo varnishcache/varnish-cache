@@ -142,7 +142,7 @@ STV_NewObject(struct worker *wrk, struct objcore *oc,
     const char *hint, unsigned wsl)
 {
 	struct stevedore *stv, *stv0;
-	int i, j;
+	int j;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -158,13 +158,9 @@ STV_NewObject(struct worker *wrk, struct objcore *oc,
 			j = stv->allocobj(wrk, stv, oc, wsl, 0);
 		} while (j == 0 && stv != stv0);
 	}
-	if (j == 0) {
+	if (j == 0 && cache_param->nuke_limit > 0) {
 		/* no luck; try to free some space and keep trying */
-		for (i = 0; j == 0 && i < cache_param->nuke_limit; i++) {
-			if (EXP_NukeOne(wrk, stv->lru) == -1)
-				break;
-			j = stv->allocobj(wrk, stv, oc, wsl, 0);
-		}
+		j = stv->allocobj(wrk, stv, oc, wsl, cache_param->nuke_limit);
 	}
 
 	if (j == 0)

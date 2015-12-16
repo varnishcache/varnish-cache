@@ -84,15 +84,25 @@ SML_allocobj(struct worker *wrk, const struct stevedore *stv,
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	(void)really;
+	assert(really >= 0);
 	ltot = sizeof(struct object) + PRNDUP(wsl);
-	st = stv->alloc(stv, ltot);
-	if (st == NULL)
-		return (0);
-	if (st->space < ltot) {
-		stv->free(st);
-		return (0);
+	while (1) {
+		if (really > 0) {
+			if (EXP_NukeOne(wrk, stv->lru) == -1)
+				return (0);
+			really--;
+		}
+		st = stv->alloc(stv, ltot);
+		if (st != NULL && st->space < ltot) {
+			stv->free(st);
+			st = NULL;
+		}
+		if (st != NULL)
+			break;
+		if (!really)
+			return (0);
 	}
+	AN(st);
 	o = SML_MkObject(stv, oc, st->ptr);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st->len = sizeof(*o);
