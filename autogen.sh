@@ -12,6 +12,9 @@ Darwin)
 FreeBSD)
     LIBTOOLIZE=libtoolize
     ;;
+NetBSD)
+    LIBTOOLIZE=libtoolize
+    ;;
 OpenBSD)
     LIBTOOLIZE=libtoolize
     ;;
