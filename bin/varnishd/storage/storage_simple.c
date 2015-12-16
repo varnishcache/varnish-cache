@@ -181,6 +181,31 @@ getobj(struct worker *wrk, struct objcore *oc)
 	return (o);
 }
 
+static void __match_proto__(objslim_f)
+sml_slim(struct worker *wrk, struct objcore *oc)
+{
+	const struct stevedore *stv;
+	struct object *o;
+	struct storage *st, *stn;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
+	stv = oc->stobj->stevedore;
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+	o = getobj(wrk, oc);
+	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+
+	if (o->esidata != NULL) {
+		sml_stv_free(stv, o->esidata);
+		o->esidata = NULL;
+	}
+	VTAILQ_FOREACH_SAFE(st, &o->list, list, stn) {
+		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+		VTAILQ_REMOVE(&o->list, st, list);
+		sml_stv_free(stv, st);
+	}
+}
+
 static void __match_proto__(objfree_f)
 sml_objfree(struct worker *wrk, struct objcore *oc)
 {
@@ -189,7 +214,7 @@ sml_objfree(struct worker *wrk, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->stobj, STOREOBJ_MAGIC);
-	ObjSlim(wrk, oc);
+	sml_slim(wrk, oc);
 	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
 	o->magic = 0;
 
@@ -426,31 +451,6 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 		sml_stv_free(stv, st);
 	} else if (st->len < st->space) {
 		sml_stv_trim(stv, st, st->len, 1);
-	}
-}
-
-static void __match_proto__(objslim_f)
-sml_slim(struct worker *wrk, struct objcore *oc)
-{
-	const struct stevedore *stv;
-	struct object *o;
-	struct storage *st, *stn;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-
-	stv = oc->stobj->stevedore;
-	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-	o = getobj(wrk, oc);
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-
-	if (o->esidata != NULL) {
-		sml_stv_free(stv, o->esidata);
-		o->esidata = NULL;
-	}
-	VTAILQ_FOREACH_SAFE(st, &o->list, list, stn) {
-		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-		VTAILQ_REMOVE(&o->list, st, list);
-		sml_stv_free(stv, st);
 	}
 }
 
