@@ -212,6 +212,7 @@ Lck__New(struct lock *lck, struct VSC_C_lck *st, const char *w)
 	struct ilck *ilck;
 
 	AN(st);
+	AN(w);
 	AZ(lck->priv);
 	ALLOC_OBJ(ilck, ILCK_MAGIC);
 	AN(ilck);
@@ -234,6 +235,13 @@ Lck_Delete(struct lock *lck)
 	FREE_OBJ(ilck);
 }
 
+struct VSC_C_lck *
+Lck_CreateClass(const char *name)
+{
+	return(VSM_Alloc(sizeof(struct VSC_C_lck),
+	   VSC_CLASS, VSC_type_lck, name));
+}
+
 #define LOCK(nam) struct VSC_C_lck *lck_##nam;
 #include "tbl/locks.h"
 #undef LOCK
@@ -246,9 +254,7 @@ LCK_Init(void)
 #if !defined(__APPLE__) && !defined(__MACH__)
 	AZ(pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK));
 #endif
-#define LOCK(nam)						\
-	lck_##nam = VSM_Alloc(sizeof(struct VSC_C_lck),		\
-	   VSC_CLASS, VSC_type_lck, #nam);
+#define LOCK(nam)	lck_##nam = Lck_CreateClass(#nam);
 #include "tbl/locks.h"
 #undef LOCK
 }
