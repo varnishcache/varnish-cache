@@ -101,35 +101,6 @@ stv_pick_stevedore(struct vsl_log *vsl, const char **hint)
 	return (stv);
 }
 
-/*-------------------------------------------------------------------*/
-
-struct storage *
-STV_alloc(const struct stevedore *stv, size_t size)
-{
-	struct storage *st;
-
-	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-
-	if (size > cache_param->fetch_maxchunksize)
-		size = cache_param->fetch_maxchunksize;
-
-	assert(size <= UINT_MAX);	/* field limit in struct storage */
-
-	for (;;) {
-		/* try to allocate from it */
-		AN(stv->alloc);
-		st = stv->alloc(stv, size);
-		if (st != NULL)
-			break;
-
-		if (size <= cache_param->fetch_chunksize)
-			break;
-
-		size >>= 1;
-	}
-	CHECK_OBJ_ORNULL(st, STORAGE_MAGIC);
-	return (st);
-}
 
 /*-------------------------------------------------------------------
  * Allocate storage for an object, based on the header information.
@@ -173,27 +144,6 @@ STV_NewObject(struct worker *wrk, struct objcore *oc,
 }
 
 /*-------------------------------------------------------------------*/
-
-void
-STV_trim(const struct stevedore *stv, struct storage *st, size_t size,
-    int move_ok)
-{
-
-	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-	if (stv->trim)
-		stv->trim(st, size, move_ok);
-}
-
-void
-STV_free(const struct stevedore *stv, struct storage *st)
-{
-
-	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-	AN(stv->free);
-	stv->free(st);
-}
 
 void
 STV_open(void)

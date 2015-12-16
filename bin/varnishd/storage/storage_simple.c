@@ -39,6 +39,57 @@
 #include "storage/storage.h"
 #include "storage/storage_simple.h"
 
+/*-------------------------------------------------------------------*/
+
+static struct storage *
+sml_stv_alloc(const struct stevedore *stv, size_t size)
+{
+	struct storage *st;
+
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+
+	if (size > cache_param->fetch_maxchunksize)
+		size = cache_param->fetch_maxchunksize;
+
+	assert(size <= UINT_MAX);	/* field limit in struct storage */
+
+	for (;;) {
+		/* try to allocate from it */
+		AN(stv->alloc);
+		st = stv->alloc(stv, size);
+		if (st != NULL)
+			break;
+
+		if (size <= cache_param->fetch_chunksize)
+			break;
+
+		size >>= 1;
+	}
+	CHECK_OBJ_ORNULL(st, STORAGE_MAGIC);
+	return (st);
+}
+
+static void
+sml_stv_free(const struct stevedore *stv, struct storage *st)
+{
+
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+	AN(stv->free);
+	stv->free(st);
+}
+
+static void
+sml_stv_trim(const struct stevedore *stv, struct storage *st, size_t size,
+    int move_ok)
+{
+
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+	if (stv->trim)
+		stv->trim(st, size, move_ok);
+}
+
 /*--------------------------------------------------------------------
  * This function is called by stevedores ->allocobj() method, which
  * very often will be SML_allocobj() below, to convert a slab
@@ -142,7 +193,7 @@ sml_objfree(struct worker *wrk, struct objcore *oc)
 	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
 	o->magic = 0;
 
-	STV_free(oc->stobj->stevedore, o->objstore);
+	sml_stv_free(oc->stobj->stevedore, o->objstore);
 
 	memset(oc->stobj, 0, sizeof oc->stobj);
 
@@ -269,7 +320,7 @@ objallocwithnuke(struct worker *wrk, const struct stevedore *stv, size_t size)
 	for (fail = 0; fail <= cache_param->nuke_limit; fail++) {
 		/* try to allocate from it */
 		AN(stv->alloc);
-		st = STV_alloc(stv, size);
+		st = sml_stv_alloc(stv, size);
 		if (st != NULL)
 			break;
 
@@ -372,9 +423,9 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 		return;
 	if (st->len == 0) {
 		VTAILQ_REMOVE(&o->list, st, list);
-		STV_free(stv, st);
+		sml_stv_free(stv, st);
 	} else if (st->len < st->space) {
-		STV_trim(stv, st, st->len, 1);
+		sml_stv_trim(stv, st, st->len, 1);
 	}
 }
 
@@ -393,13 +444,13 @@ sml_slim(struct worker *wrk, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
 	if (o->esidata != NULL) {
-		STV_free(stv, o->esidata);
+		sml_stv_free(stv, o->esidata);
 		o->esidata = NULL;
 	}
 	VTAILQ_FOREACH_SAFE(st, &o->list, list, stn) {
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 		VTAILQ_REMOVE(&o->list, st, list);
-		STV_free(stv, st);
+		sml_stv_free(stv, st);
 	}
 }
 

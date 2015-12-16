@@ -1042,10 +1042,6 @@ void RFC2616_Vary_AE(struct http *hp);
 /* stevedore.c */
 int STV_NewObject(struct worker *, struct objcore *,
     const char *hint, unsigned len);
-struct storage *STV_alloc(const struct stevedore *, size_t size);
-void STV_trim(const struct stevedore *, struct storage *, size_t size,
-    int move_ok);
-void STV_free(const struct stevedore *, struct storage *st);
 void STV_open(void);
 void STV_close(void);
 int STV_BanInfo(enum baninfo event, const uint8_t *ban, unsigned len);
