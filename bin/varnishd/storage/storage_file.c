@@ -62,6 +62,8 @@
  */
 #define NBUCKET			(128 / 4 + 1)
 
+static struct VSC_C_lck *lck_smf;
+
 /*--------------------------------------------------------------------*/
 
 VTAILQ_HEAD(smfhead, smf);
@@ -419,6 +421,9 @@ smf_open(const struct stevedore *st)
 	off_t fail = 1 << 30;	/* XXX: where is OFF_T_MAX ? */
 	off_t sum = 0;
 
+	ASSERT_CLI();
+	if (lck_smf == NULL)
+		lck_smf = Lck_CreateClass("smf");
 	CAST_OBJ_NOTNULL(sc, st->priv, SMF_SC_MAGIC);
 	sc->stats = VSM_Alloc(sizeof *sc->stats,
 	    VSC_CLASS, VSC_type_smf, st->ident);

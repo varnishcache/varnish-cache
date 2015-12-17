@@ -56,6 +56,8 @@ struct sma {
 	struct sma_sc		*sc;
 };
 
+static struct VSC_C_lck *lck_sma;
+
 static struct storage *
 sma_alloc(const struct stevedore *st, size_t size)
 {
@@ -234,6 +236,9 @@ sma_open(const struct stevedore *st)
 {
 	struct sma_sc *sma_sc;
 
+	ASSERT_CLI();
+	if (lck_sma == NULL)
+		lck_sma = Lck_CreateClass("sma");
 	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
 	Lck_New(&sma_sc->sma_mtx, lck_sma);
 	sma_sc->stats = VSM_Alloc(sizeof *sma_sc->stats,
