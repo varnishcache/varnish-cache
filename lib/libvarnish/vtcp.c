@@ -324,10 +324,10 @@ VTCP_close(int *s)
 void
 VTCP_set_read_timeout(int s, double seconds)
 {
+#ifdef SO_RCVTIMEO_WORKS
 	struct timeval timeout;
 	timeout.tv_sec = (int)floor(seconds);
 	timeout.tv_usec = (int)(1e6 * (seconds - timeout.tv_sec));
-#ifdef SO_RCVTIMEO_WORKS
 	/*
 	 * Solaris bug (present at least in snv_151 and older): If this fails
 	 * with EINVAL, the socket is half-closed (SS_CANTSENDMORE) and the
@@ -338,6 +338,7 @@ VTCP_set_read_timeout(int s, double seconds)
 	    &timeout, sizeof timeout));
 #else
 	(void)s;
+	(void)seconds;
 #endif
 }
 
