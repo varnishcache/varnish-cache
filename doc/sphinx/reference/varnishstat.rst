@@ -201,6 +201,7 @@ between each block of output.
 SEE ALSO
 ========
 
+* :ref:`varnish-counters(7)`
 * :ref:`varnishd(1)`
 * :ref:`varnishhist(1)`
 * :ref:`varnishlog(1)`
