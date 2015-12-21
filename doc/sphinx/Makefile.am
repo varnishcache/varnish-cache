@@ -159,12 +159,17 @@ include/varnishhist_synopsis.rst: $(top_builddir)/bin/varnishhist/varnishhist_op
 BUILT_SOURCES += include/varnishhist_options.rst \
 	 include/varnishhist_synopsis.rst
 
+.PHONY: reference
+reference:
+	test -d $@ || mkdir $@
+BUILT_SOURCES += reference
+
 reference/vmod_std.generated.rst: $(top_builddir)/lib/libvmod_std/vmod_std.rst
-	mkdir -p reference && cp $(top_builddir)/lib/libvmod_std/vmod_std.rst $@
+	cp $(top_builddir)/lib/libvmod_std/vmod_std.rst $@
 BUILT_SOURCES += reference/vmod_std.generated.rst
 
 reference/vmod_directors.generated.rst: $(top_builddir)/lib/libvmod_directors/vmod_directors.rst
-	mkdir -p reference && cp $(top_builddir)/lib/libvmod_directors/vmod_directors.rst $@
+	cp $(top_builddir)/lib/libvmod_directors/vmod_directors.rst $@
 BUILT_SOURCES += reference/vmod_directors.generated.rst
 
 EXTRA_DIST += $(BUILT_SOURCES)
