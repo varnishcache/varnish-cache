@@ -209,20 +209,9 @@ SEE ALSO
 * :ref:`varnishtop(1)`
 * curses(3)
 
-HISTORY
+
+AUTHORS
 =======
 
-The varnishstat utility was originally developed by Poul-Henning Kamp
-<phk@phk.freebsd.dk> in cooperation with Verdens Gang AS and Varnish
-Software AS. Manual page written by Dag-Erling Smørgrav, Per Buer,
+This manual page was written by Dag-Erling Smørgrav, Per Buer,
 Lasse Karstensen and Martin Blix Grydeland.
-
-
-COPYRIGHT
-=========
-
-This document is licensed under the same licence as Varnish
-itself. See LICENCE for details.
-
-* Copyright (c) 2006 Verdens Gang AS
-* Copyright (c) 2006-2015 Varnish Software AS
