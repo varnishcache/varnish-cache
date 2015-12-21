@@ -201,13 +201,13 @@ between each block of output.
 SEE ALSO
 ========
 
-* :ref:`varnish-counters(7)`
 * :ref:`varnishd(1)`
 * :ref:`varnishhist(1)`
 * :ref:`varnishlog(1)`
 * :ref:`varnishncsa(1)`
 * :ref:`varnishtop(1)`
 * curses(3)
+* :ref:`varnish-counters(7)`
 
 
 AUTHORS
