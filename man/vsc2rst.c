@@ -47,6 +47,8 @@ int main(int argc, char **argv)
 {
 	(void)argc;
 	(void)argv;
+	P(".. _varnish-counters(7): ");
+	P("");
 	P("================");
 	P("varnish-counters");
 	P("================");
