@@ -76,7 +76,6 @@ cscope.*out
 
 
 # Man-files and binaries
-/man/vsc2rst
 /man/*.1
 /man/*.3
 /man/*.7
@@ -90,6 +89,7 @@ cscope.*out
 /bin/varnishncsa/varnishncsa
 /bin/varnishreplay/varnishreplay
 /bin/varnishstat/varnishstat
+/bin/varnishstat/vsc2rst
 /bin/varnishtest/varnishtest
 /bin/varnishtop/varnishtop
 

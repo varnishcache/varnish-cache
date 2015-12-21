@@ -1,11 +1,5 @@
 #
 
-noinst_PROGRAMS = vsc2rst
-vsc2rst_SOURCES = vsc2rst.c \
-	$(top_srcdir)/include/tbl/vsc_fields.h
-
-AM_CPPFLAGS = -I$(top_srcdir)/include
-
 dist_man_MANS = \
 	varnish-cli.7 \
 	varnish-counters.7 \
@@ -30,8 +24,8 @@ RST2ANY_FLAGS = --halt=2
 varnish-cli.7: $(top_srcdir)/doc/sphinx/reference/varnish-cli.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/varnish-cli.rst $@
 
-varnish-counters.7: vsc2rst
-	./vsc2rst | ${RST2MAN} $(RST2ANY_FLAGS) - $@
+varnish-counters.7: $(top_srcdir)/doc/sphinx/reference/varnish-counters.rst
+	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/varnish-counters.rst $@
 
 vcl.7: $(top_srcdir)/doc/sphinx/reference/vcl.rst \
 	$(top_srcdir)/bin/varnishd/builtin.vcl

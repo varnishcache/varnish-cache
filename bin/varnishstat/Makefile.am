@@ -19,3 +19,6 @@ varnishstat_LDADD = \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
 	@CURSES_LIB@ ${RT_LIBS} ${LIBM} ${PTHREAD_LIBS}
+
+noinst_PROGRAMS = vsc2rst
+vsc2rst_SOURCES = vsc2rst.c $(top_srcdir)/include/tbl/vsc_fields.h

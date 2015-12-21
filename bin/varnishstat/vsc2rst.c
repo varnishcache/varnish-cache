@@ -47,21 +47,6 @@ int main(int argc, char **argv)
 {
 	(void)argc;
 	(void)argv;
-	P(".. _varnish-counters(7): ");
-	P("");
-	P("================");
-	P("varnish-counters");
-	P("================");
-	P("");
-
-	P("---------------------------------");
-	P("Varnish counter field definitions");
-	P("---------------------------------");
-	P("");
-
-	P(":Manual section: 7");
-	P("");
-
 	P("COUNTER LEVELS");
 	P("==============");
 	P("");
@@ -120,13 +105,5 @@ int main(int argc, char **argv)
 #include "tbl/vsc_fields.h"
 #undef VSC_DO_LCK
 
-	P("");
-	P("COPYRIGHT");
-	P("=========");
-	P("This document is licensed under the same licence as Varnish");
-	P("itself. See LICENCE for details.");
-	P("");
-	P("* Copyright (c) 2006 Verdens Gang AS");
-	P("* Copyright (c) 2006-2015 Varnish Software AS");
 	return (0);
 }

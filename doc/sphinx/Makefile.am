@@ -128,6 +128,10 @@ include/params.rst: $(top_builddir)/bin/varnishd/varnishd
 	$(top_builddir)/bin/varnishd/varnishd -x dumprstparam > include/params.rst
 BUILT_SOURCES = include/params.rst
 
+include/counters.rst: $(top_builddir)/bin/varnishstat/vsc2rst
+	$(top_builddir)/bin/varnishstat/vsc2rst > $@
+BUILT_SOURCES += include/counters.rst
+
 # XXX add varnishstat here when it's been _opt2rst'ed
 
 include/varnishncsa_options.rst: $(top_builddir)/bin/varnishncsa/varnishncsa_opt2rst
