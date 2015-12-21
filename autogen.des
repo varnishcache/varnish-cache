@@ -13,7 +13,8 @@ if [ -f /usr/bin/clang -a "x${CC}" = "x" ] ; then
 fi
 
 rm -f configure
-. ./autogen.sh
+. ./autogen.sh 2>&1 | egrep -v "(subdir-objects|is in a subdirectory)"
+
 
 # autoconf prior to 2.62 has issues with zsh 4.2 and newer
 export CONFIG_SHELL=/bin/sh
