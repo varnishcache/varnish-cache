@@ -619,6 +619,7 @@ static const struct cmds cmds[] = {
 	{ "shell",	cmd_shell },
 	{ "err_shell",	cmd_err_shell },
 	{ "sema",	cmd_sema },
+	{ "barrier",	cmd_barrier },
 	{ "random",	cmd_random },
 	{ "feature",	cmd_feature },
 	{ "logexpect",	cmd_logexp },
@@ -641,6 +642,7 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 
 	init_macro();
 	init_sema();
+	init_barrier();
 	init_server();
 
 	/* Move into our tmpdir */

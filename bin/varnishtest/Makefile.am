@@ -27,6 +27,7 @@ varnishtest_SOURCES = \
 		vtc.h \
 		vmods.h \
 		programs.h \
+		vtc_barrier.c \
 		vtc_client.c \
 		vtc_http.c \
 		vtc_main.c \

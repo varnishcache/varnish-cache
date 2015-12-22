@@ -62,6 +62,7 @@ cmd_f cmd_server;
 cmd_f cmd_client;
 cmd_f cmd_varnish;
 cmd_f cmd_sema;
+cmd_f cmd_barrier;
 cmd_f cmd_logexp;
 cmd_f cmd_process;
 
@@ -74,6 +75,7 @@ extern int vtc_witness;
 extern int feature_dns;
 
 void init_sema(void);
+void init_barrier(void);
 void init_server(void);
 
 int http_process(struct vtclog *vl, const char *spec, int sock, int *sfd);
