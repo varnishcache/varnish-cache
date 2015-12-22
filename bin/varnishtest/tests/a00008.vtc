@@ -1,22 +1,25 @@
-varnishtest "Sema operations"
+varnishtest "Barrier operations"
+
+barrier b1 cond 4
+barrier b2 cond 4
 
 server s1 {
 	rxreq
-	sema r1 sync 4
+	barrier b1 sync
 	delay .9
 	txresp
 } -start
 
 server s2 {
 	rxreq
-	sema r1 sync 4
+	barrier b1 sync
 	delay .6
 	txresp
 } -start
 
 server s3 {
 	rxreq
-	sema r1 sync 4
+	barrier b1 sync
 	delay .2
 	txresp
 } -start
@@ -25,25 +28,25 @@ client c1 -connect ${s1_sock} {
 	delay .2
 	txreq
 	rxresp
-	sema r1 sync 4
+	barrier b2 sync
 } -start
 
 client c2 -connect ${s2_sock} {
 	delay .6
 	txreq
 	rxresp
-	sema r1 sync 4
+	barrier b2 sync
 } -start
 
 client c3 -connect ${s3_sock} {
 	delay .9
 	txreq
 	rxresp
-	sema r1 sync 4
+	barrier b2 sync
 } -start
 
 # Wait for all servers to have received requests
-sema r1 sync 4
+barrier b1 sync
 
 # Wait for all clients to have received responses
-sema r1 sync 4
+barrier b2 sync

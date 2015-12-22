@@ -1,0 +1,32 @@
+varnishtest "Test object trimming"
+
+barrier b1 cond 2
+barrier b2 cond 2
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Transfer-encoding: chunked"
+	delay .2
+	chunkedlen 4096
+	barrier b1 sync
+	barrier b2 sync
+	chunkedlen 0
+} -start
+
+varnish v1 \
+	-arg "-s malloc,1m" -vcl+backend { } -start
+
+client c1 {
+	txreq
+	rxresp
+} -start
+
+barrier b1 sync
+varnish v1 -expect SMA.s0.g_bytes > 10000
+
+barrier b2 sync
+
+client c1 -wait
+
+# Removed when adopting to 4.1. VTC kept since it uses barriers.
+#varnish v1 -expect SMA.s0.g_bytes < 6000
