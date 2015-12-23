@@ -70,6 +70,9 @@ barrier_new(char *name, struct vtclog *vl)
 	AN(name);
 	if (*name != 'b')
 		vtc_log(vl, 0, "Barrier name must start with 'b' (%s)", name);
+	if (pthread_self() != vtc_thread)
+		vtc_log(vl, 0,
+		    "Barrier %s can only be created on the top thread", name);
 	REPLACE(b->name, name);
 
 	AZ(pthread_mutex_init(&b->mtx, NULL));
