@@ -5,10 +5,12 @@ varnishtest "#1252 - Drop remote closed connections returning from waitinglists"
 # because it requires "-t 80" argument to varnishtest (remote closed
 # state will only be detected after FIN timeout has passed (60s))
 
+barrier b1 cond 2
+
 server s1 {
 	rxreq
 	expect req.http.X-Client == "1"
-	sema r1 sync 2
+	barrier b1 sync
 	delay 75
 	close
 } -start
@@ -50,7 +52,7 @@ client c1 {
 } -start
 
 client c2 {
-	sema r1 sync 2
+	barrier b1 sync
 	txreq -hdr "X-Client: 2"
 	delay 1
 } -start

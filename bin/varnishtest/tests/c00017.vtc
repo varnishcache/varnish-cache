@@ -1,5 +1,7 @@
 varnishtest "Test Backend Polling"
 
+barrier b1 cond 2
+
 server s1 {
 	# Probes
 	loop 8 {
@@ -22,7 +24,7 @@ server s1 {
 		accept
 	}
 
-	sema r1 sync 2
+	barrier b1 sync
 } -start
 
 varnish v1 -vcl {
@@ -38,6 +40,6 @@ varnish v1 -vcl {
 
 } -start
 
-sema r1 sync 2
+barrier b1 sync
 
 varnish v1 -cli "backend.list -p"

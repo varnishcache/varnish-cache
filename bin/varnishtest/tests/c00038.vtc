@@ -1,8 +1,10 @@
 varnishtest "Test req.hash_ignore_busy in vcl_recv"
 
+barrier b1 cond 2
+
 server s1 {
 	rxreq
-	sema r1 sync 2
+	barrier b1 sync
 	delay 1
 	txresp -hdr "Server: 1"
 } -start
@@ -36,7 +38,7 @@ client c1 {
 } -start
 
 client c2 {
-    sema r1 sync 2
+	barrier b1 sync
 	txreq -url "/" -hdr "x-client: 2" -hdr "x-ignorebusy: 1"
 	txreq -url "/" -hdr "x-client: 2"
 	rxresp

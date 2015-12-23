@@ -1,5 +1,8 @@
 varnishtest "client close in ESI delivery"
 
+barrier b1 cond 2
+barrier b2 cond 2
+
 server s1 {
 	rxreq
 	txresp -body {
@@ -10,8 +13,8 @@ server s1 {
 
 	rxreq
 	expect req.url == "/foo"
-	sema r1 sync 2
-	sema r1 sync 2
+	barrier b1 sync
+	barrier b2 sync
 	txresp -body "[foo]"
 
 	rxreq
@@ -31,11 +34,11 @@ varnish v1 -vcl+backend {
 
 client c1 {
 	txreq
-	sema r1 sync 2
+	barrier b1 sync
 } -run
 
 client c1 {
-	sema r1 sync 2
+	barrier b2 sync
 	txreq
 	rxresp
 } -run

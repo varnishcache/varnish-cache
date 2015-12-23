@@ -1,9 +1,12 @@
 varnishtest "things stuck on busy object"
 
+barrier b1 cond 2
+barrier b2 cond 2
+
 server s1 {
 	rxreq
-	sema r1 sync 2
-	sema r1 sync 2
+	barrier b1 sync
+	barrier b2 sync
 	# There is a race in varnish between the first request releasing
 	# the backend connection, and the second request trying to get it
 	# which makes reuse of backend connection sometimes work and
@@ -29,9 +32,9 @@ client c1 {
 } -start
 
 client c2 {
-	sema r1 sync 2
+	barrier b1 sync
 	txreq
-	sema r1 sync 2
+	barrier b2 sync
 	rxresp
 	expect resp.bodylen == 5
 } -start

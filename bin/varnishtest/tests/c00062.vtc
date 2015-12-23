@@ -1,12 +1,15 @@
 varnishtest "Check that aborted backend body aborts client in streaming mode"
 
+barrier b1 cond 2
+barrier b2 cond 2
+
 server s1 {
 	rxreq
 	txresp -nolen -hdr "Transfer-encoding: chunked"
 	chunked {<HTML>}
-	sema r1 sync 2
+	barrier b1 sync
 	chunked {<HTML>}
-	sema r1 sync 2
+	barrier b2 sync
 } -start
 
 varnish v1 -cliok "param.set debug +syncvsl" -vcl+backend {
@@ -19,9 +22,9 @@ client c1 {
 	rxresphdrs
 	expect resp.status == 200
 	rxchunk
-	sema r1 sync 2
+	barrier b1 sync
 	rxchunk
-	sema r1 sync 2
+	barrier b2 sync
 	expect_close
 } -run
 

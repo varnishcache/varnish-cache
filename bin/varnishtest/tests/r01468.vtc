@@ -1,11 +1,14 @@
 varnishtest "#1468 - freeing failed obj"
 
+barrier b1 cond 2
+barrier b2 cond 2
+
 server s1 {
 	rxreq
 	expect req.url == "/1"
 	txresp -nolen -hdr "Transfer-Encoding: chunked"
 	chunked {<HTML>}
-	sema r1 sync 2
+	barrier b1 sync
 	close
 
 	accept
@@ -13,7 +16,7 @@ server s1 {
 	expect req.url == "/2"
 	txresp -nolen -hdr "Transfer-Encoding: chunked"
 	chunked {<HTML>}
-	sema r1 sync 2
+	barrier b2 sync
 } -start
 
 varnish v1 -vcl+backend {
@@ -33,7 +36,7 @@ client c1 {
 	rxresphdrs
 	expect resp.status == 200
 	rxchunk
-	sema r1 sync 2
+	barrier b1 sync
 	expect_close
 } -run
 
@@ -43,7 +46,7 @@ client c1 {
 	rxresphdrs
 	expect resp.status == 200
 	rxchunk
-	sema r1 sync 2
+	barrier b2 sync
 	expect_close
 } -run
 

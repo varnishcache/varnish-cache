@@ -1,17 +1,20 @@
 varnishtest "Test dynamic backends hot swap during a pipe"
 
+barrier b1 cond 2
+barrier b2 cond 2
+
 server s1 {
 	rxreq
 	expect req.url == "/foo"
-	sema r1 sync 2
-	sema r2 sync 2
+	barrier b1 sync
+	barrier b2 sync
 	txresp
 } -start
 
 server s2 {
 	rxreq
 	expect req.url == "/bar"
-	sema r2 sync 2
+	barrier b2 sync
 	txresp
 } -start
 
@@ -43,7 +46,7 @@ client c1 {
 } -start
 
 client c2 {
-	sema r1 sync 2
+	barrier b1 sync
 	txreq -req "SWAP" -hdr "X-Addr: ${s2_addr}" -hdr "X-Port: ${s2_port}"
 	rxresp
 	expect resp.status == 200

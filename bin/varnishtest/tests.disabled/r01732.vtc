@@ -1,17 +1,20 @@
 varnishtest "range related panic"
 
+barrier b1 cond 2
+barrier b2 cond 2
+
 server s1 {
 	rxreq
 	txresp -nolen -hdr "Transfer-Encoding: chunked"
 	chunkedlen 10
 	chunkedlen 10
-	sema r1 sync 2
+	barrier b1 sync
 	chunkedlen 10
 	chunkedlen 10
 	chunkedlen 10
 	chunkedlen 0
 	delay .1
-	sema r2 sync 2
+	barrier b2 sync
 } -start
 
 varnish v1 -vcl+backend {
@@ -25,8 +28,8 @@ client c1 {
 } -run
 
 delay .1
-sema r1 sync 2
-sema r2 sync 2
+barrier b1 sync
+barrier b2 sync
 delay .4
 
 client c1 {

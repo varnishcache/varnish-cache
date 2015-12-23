@@ -1,8 +1,10 @@
 varnishtest "Test hsh_rush"
 
+barrier b1 cond 5
+
 server s1 {
 	rxreq
-	sema r1 sync 5
+	barrier b1 sync
 	txresp -bodylen 10
 } -start
 
@@ -13,28 +15,28 @@ varnish v1 -cliok "param.set rush_exponent 2"
 
 client c1 {
 	txreq
-	sema r1 sync 5
+	barrier b1 sync
 	rxresp
 	expect resp.bodylen == 10
 } -start
 
 client c2 {
 	txreq
-	sema r1 sync 5
+	barrier b1 sync
 	rxresp
 	expect resp.bodylen == 10
 } -start
 
 client c3 {
 	txreq
-	sema r1 sync 5
+	barrier b1 sync
 	rxresp
 	expect resp.bodylen == 10
 } -start
 
 client c4 {
 	txreq
-	sema r1 sync 5
+	barrier b1 sync
 	rxresp
 	expect resp.bodylen == 10
 } -start

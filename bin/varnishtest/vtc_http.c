@@ -1381,7 +1381,6 @@ static const struct cmds http_cmds[] = {
 	{ "chunkedlen",		cmd_http_chunkedlen },
 	{ "delay",		cmd_delay },
 	{ "barrier",		cmd_barrier },
-	{ "sema",		cmd_sema },
 	{ "expect_close",	cmd_http_expect_close },
 	{ "close",		cmd_http_close },
 	{ "accept",		cmd_http_accept },

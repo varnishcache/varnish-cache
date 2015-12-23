@@ -2,10 +2,12 @@ varnishtest "Test a dynamic backend discard during a request"
 
 # vcl.discard testing inspired by v00006.vtc from commit e1f7207
 
+barrier b1 cond 2
+
 server s1 {
 	rxreq
 	expect req.url == "/foo"
-	sema r1 sync 2
+	barrier b1 sync
 	txresp
 } -start
 
@@ -53,7 +55,7 @@ varnish v1 -vcl {
 }
 
 varnish v1 -cli "vcl.discard vcl1"
-sema r1 sync 2
+barrier b1 sync
 
 client c1 -wait
 delay 2

@@ -1,16 +1,21 @@
 varnishtest "Ticket #873"
 
+barrier b1 cond 2
+barrier b2 cond 2
+barrier b3 cond 2
+barrier b4 cond 2
+
 server s1 {
 	rxreq
 	txresp -nolen -hdr "Transfer-encoding: chunked"
 	chunked "<1>------------------------<1>\n"
-	sema r1 sync 2
+	barrier b1 sync
 	chunked "<2>------------------------<2>\n"
-	sema r2 sync 2
+	barrier b2 sync
 	chunked "<3>------------------------<3>\n"
-	sema r1 sync 2
+	barrier b3 sync
 	chunked "<4>------------------------<4>\n"
-	sema r2 sync 2
+	barrier b4 sync
 	chunkedlen 0
 } -start
 
@@ -28,19 +33,19 @@ client c1 {
 
 	rxchunk
 	expect resp.chunklen == 31
-	sema r1 sync 2
+	barrier b1 sync
 
 	rxchunk
 	expect resp.chunklen == 31
-	sema r2 sync 2
+	barrier b2 sync
 
 	rxchunk
 	expect resp.chunklen == 31
-	sema r1 sync 2
+	barrier b3 sync
 
 	rxchunk
 	expect resp.chunklen == 31
-	sema r2 sync 2
+	barrier b4 sync
 
 	rxchunk
 	expect resp.chunklen == 0

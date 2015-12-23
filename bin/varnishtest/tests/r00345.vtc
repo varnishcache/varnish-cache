@@ -1,10 +1,12 @@
 varnishtest "#345, ESI waitinglist trouble"
 
+barrier b1 cond 2
+
 server s1 {
 	rxreq
 	txresp -body {<esi:include src="someurl">}
 	rxreq
-	sema r1 sync 2
+	barrier b1 sync
 	delay 1
 	txresp -body {DATA}
 } -start
@@ -25,7 +27,7 @@ client c1 {
 
 client c2 {
 	txreq
-	sema r1 sync 2
+	barrier b1 sync
 	rxresp
 	expect resp.bodylen == 4
 } -run

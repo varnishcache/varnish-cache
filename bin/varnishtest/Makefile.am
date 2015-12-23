@@ -32,7 +32,6 @@ varnishtest_SOURCES = \
 		vtc_http.c \
 		vtc_main.c \
 		vtc_log.c \
-		vtc_sema.c \
 		vtc_server.c \
 		vtc_varnish.c \
 		vtc_logexp.c \

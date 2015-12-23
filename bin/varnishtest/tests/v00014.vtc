@@ -1,18 +1,23 @@
 varnishtest "Check req.backend.healthy"
 
+barrier b1 cond 2
+barrier b2 cond 2
+barrier b3 cond 2
+barrier b4 cond 2
+
 server s1 {
 	rxreq
-	sema r1 sync 2
+	barrier b1 sync
 	expect req.url == "/"
 	txresp -body "slash"
 	accept
 	rxreq
-	sema r2 sync 2
-	sema r3 sync 2
+	barrier b2 sync
+	barrier b3 sync
 	expect req.url == "/"
 	txresp -body "slash"
 	accept
-	sema r4 sync 2
+	barrier b4 sync
 } -start
 
 varnish v1 -vcl {
@@ -51,15 +56,15 @@ client c1 {
 	rxresp
 	expect resp.status == 500
 
-	sema r1 sync 2
+	barrier b1 sync
 
-	sema r2 sync 2
+	barrier b2 sync
 	txreq
 	rxresp
 	expect resp.status == 500
 
-	sema r3 sync 2
-	sema r4 sync 2
+	barrier b3 sync
+	barrier b4 sync
 	txreq
 	rxresp
 	expect resp.status == 200

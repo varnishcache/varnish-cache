@@ -1,23 +1,28 @@
 varnishtest "panic due to hash_ignore_busy"
 
+barrier b1 cond 2
+barrier b2 cond 2
+barrier b3 cond 2
+barrier b4 cond 2
+
 server s1 {
 	rxreq
 	txresp -nolen -hdr "Transfer-Encoding: chunked"
 	chunkedlen 10
 	delay .5
-	sema r1 sync 2
+	barrier b1 sync
 	delay .5
 	chunkedlen 10
 	delay .5
-	sema r2 sync 2
+	barrier b2 sync
 	delay .5
 	chunkedlen 10
 	delay .5
-	sema r3 sync 2
+	barrier b3 sync
 	delay .5
 	chunkedlen 10
 	delay .5
-	sema r4 sync 2
+	barrier b4 sync
 	delay .5
 	chunkedlen 10
 	delay .5
@@ -41,17 +46,17 @@ client c1 {
 	rxresp
 } -start
 
-sema r1 sync 2
+barrier b1 sync
 client c2 {
 	txreq -hdr "client: c2"
-	sema r2 sync 2
+	barrier b2 sync
 	rxresp
 } -start
 
-sema r3 sync 2
+barrier b3 sync
 client c3 {
 	txreq -hdr "client: c3"
-	sema r4 sync 2
+	barrier b4 sync
 	rxresp
 } -start
 

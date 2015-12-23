@@ -1,12 +1,13 @@
 varnishtest "client abandoning hit-for-pass"
 
+barrier b1 cond 2
 
 server s1 {
 	non-fatal
 	rxreq
 	txresp -nolen -hdr "Transfer-Encoding: chunked" -hdr "Set-Cookie: foo=bar"
 	chunked "foo"
-	sema r1 sync 2
+	barrier b1 sync
 	chunked "bar"
 	delay .1
 	chunkedlen 64
@@ -21,7 +22,7 @@ client c1 {
 	txreq
 	rxresphdrs
 	rxchunk
-	sema r1 sync 2
+	barrier b1 sync
 } -run
 
 delay 2

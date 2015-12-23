@@ -1,5 +1,8 @@
 varnishtest "#1818: verify that grace works for hit_for_pass objects"
 
+barrier b1 cond 2
+barrier b2 cond 2
+
 server s1 {
 	rxreq
 	expect req.http.a == "1"
@@ -7,15 +10,15 @@ server s1 {
 
 	rxreq
 	expect req.http.b == "1"
-	sema r2 sync 2
-	sema r1 sync 2
+	barrier b2 sync
+	barrier b1 sync
 	txresp
 } -start
 
 server s2 {
 	rxreq
 	expect req.http.c == "1"
-	sema r1 sync 2
+	barrier b1 sync
 	txresp
 } -start
 
@@ -68,7 +71,7 @@ client c1 {
 } -start
 
 client c2 {
-	sema r2 sync 2
+	barrier b2 sync
 	txreq -hdr "c: 1"
 	rxresp
 	expect resp.http.pass == "1"

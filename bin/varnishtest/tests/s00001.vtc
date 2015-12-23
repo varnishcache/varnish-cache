@@ -1,10 +1,12 @@
 varnishtest "Simple expiry test (fully reaped object)"
 
+barrier b1 cond 2
+
 server s1 {
 	rxreq
 	expect req.url == "/"
 	txresp -hdr "Cache-control: max-age = 1" -body "1111\n"
-	sema r1 sync 2
+	barrier b1 sync
 	rxreq
 	expect req.url == "/"
 	txresp -hdr "Cache-control: max-age = 1" -body "22222\n"
@@ -23,7 +25,7 @@ client c1 {
 	expect resp.status == 200
 } -run
 
-sema r1 sync 2
+barrier b1 sync
 delay 1.1
 
 client c2 {

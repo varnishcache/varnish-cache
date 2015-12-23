@@ -1,9 +1,12 @@
 varnishtest "Check backend connection limit"
 
+barrier b1 cond 2
+barrier b2 cond 2
+
 server s1 {
 	rxreq
-	sema r1 sync 2
-	sema r2 sync 2
+	barrier b1 sync
+	barrier b2 sync
 	txresp
 } -start
 
@@ -27,13 +30,13 @@ client c1 {
 
 
 client c2 {
-	sema r1 sync 2
+	barrier b1 sync
 	txreq
 	rxresp
 	expect resp.status == 503
 } -run
 
-sema r2 sync 2
+barrier b2 sync
 client c1 -wait
 
 varnish v1 -expect backend_busy == 1

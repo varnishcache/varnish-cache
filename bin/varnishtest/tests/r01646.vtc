@@ -1,12 +1,15 @@
 varnishtest "cond/stream race ?"
 
+barrier b1 cond 3
+barrier b2 cond 2
+
 server s1 {
 	rxreq
 	txresp -nolen -hdr "Transfer-Encoding: chunked" -hdr "Etag: foo"
 	chunkedlen 32
-	sema r1 sync 3
+	barrier b1 sync
 	chunkedlen 32
-	sema r2 sync 2
+	barrier b2 sync
 	chunkedlen 32
 	chunkedlen 0
 } -start
@@ -35,17 +38,17 @@ varnish v1 -cliok "param.set debug +syncvsl"
 client c1 {
 	txreq
 	rxresphdrs
-	sema r1 sync 3
+	barrier b1 sync
 	rxrespbody
 	expect resp.bodylen == 96
 } -start
 
 client c2 {
-	sema r1 sync 3
+	barrier b1 sync
 	delay 2
 	txreq -hdr "foo: s2"
 	rxresphdrs
-	sema r2 sync 2
+	barrier b2 sync
 	rxrespbody
 	expect resp.bodylen == 96
 } -start

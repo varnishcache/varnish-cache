@@ -1,12 +1,14 @@
 varnishtest "predictive vary"
 
+barrier b1 cond 2
+barrier b2 cond 2
 
 server s1 {
 	rxreq
 	txresp -hdr "Vary: foo" -bodylen 1
 	rxreq
-	sema r2 sync 2
-	sema r1 sync 2
+	barrier b2 sync
+	barrier b1 sync
 	txresp -hdr "Vary: foo" -bodylen 2
 } -start
 
@@ -33,10 +35,10 @@ client c1 {
 } -start
 
 client c2 {
-	sema r2 sync 2
+	barrier b2 sync
 	txreq -hdr "Foo: vary3" -hdr "bar: yes"
 	rxresp
-	sema r1 sync 2
+	barrier b1 sync
 	expect resp.bodylen == 3
 } -start
 

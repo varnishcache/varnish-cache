@@ -1,10 +1,12 @@
 varnishtest "#1648 - corrupt object in cache through IMS update"
 
+barrier b1 cond 3
+
 # This server sends a broken response body
 server s1 {
 	rxreq
 	txresp -nolen -hdr "Transfer-Encoding: chunked" -hdr "Etag: \"foo\"" -hdr "Server: s1"
-	sema r1 sync 3
+	barrier b1 sync
 	delay 1
 	chunked "abc"
 } -start
@@ -13,7 +15,7 @@ server s1 {
 server s2 {
 	rxreq
 	expect req.http.If-None-Match == "\"foo\""
-	sema r1 sync 3
+	barrier b1 sync
 	txresp -status 304 -nolen -hdr "Server: s2"
 } -start
 
@@ -58,7 +60,7 @@ delay 1
 # IMS update by s2
 client c2 {
 	txreq -hdr "Client: c2"
-	sema r1 sync 3
+	barrier b1 sync
 	rxresphdrs
 	expect resp.status == 200
 	expect resp.http.transfer-encoding == "chunked"

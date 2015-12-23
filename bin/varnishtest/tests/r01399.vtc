@@ -1,10 +1,12 @@
 varnishtest "1399 race issue with bg-fetches"
 
+barrier b1 cond 2
+
 server s1 {
 	rxreq
 	txresp -bodylen 1
 
-	sema r1 sync 2
+	barrier b1 sync
 
 	# Delay here, to stall the bgfetch for a while, to give the req time to finish
 	# delivery and cleanup up struct req
@@ -43,7 +45,7 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.http.content-length == 1
-	sema r1 sync 2
+	barrier b1 sync
 } -run
 
 # Wait for the server to not explode

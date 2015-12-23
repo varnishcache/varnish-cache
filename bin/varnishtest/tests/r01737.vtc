@@ -1,5 +1,7 @@
 varnishtest "#1737 - ESI sublevel session close"
 
+barrier b1 cond 2
+
 # Build a esi request tree that fails on flush before include at two different
 # levels. Synchronize a client close after the response headers have been
 # received by the client. This produces write erros for the body parts in all
@@ -7,7 +9,7 @@ varnishtest "#1737 - ESI sublevel session close"
 server s1 {
 	rxreq
 	txresp -body {<esi:include src="/bar"/><esi:include src="/bar"/>}
-	sema r1 sync 2
+	barrier b1 sync
 
 	rxreq
 	delay 1
@@ -31,7 +33,7 @@ varnish v1 -vcl+backend {
 client c1 {
 	txreq
 	rxresp -no_obj
-	sema r1 sync 2
+	barrier b1 sync
 } -run
 
 delay 3

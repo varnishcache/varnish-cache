@@ -1,5 +1,7 @@
 varnishtest "Test a dynamic backend hot swap after it was picked by a bereq"
 
+barrier b1 cond 2
+
 server s1 {
 } -start
 
@@ -41,13 +43,13 @@ varnish v1 -expect MAIN.n_backend == 2
 
 client c1 {
 	txreq
-	sema r2 sync 2
+	barrier b1 sync
 	rxresp
 	expect resp.status == 200
 }
 
 client c2 {
-	sema r2 sync 2
+	barrier b1 sync
 	delay 0.1
 	txreq -req "SWAP" -hdr "X-Addr: ${s2_addr}" -hdr "X-Port: ${s2_port}"
 	rxresp

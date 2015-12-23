@@ -1,5 +1,8 @@
 varnishtest "test reload of object spanning incomplete segment"
 
+barrier b1 cond 2
+barrier b2 cond 2
+
 server s1 {
 	rxreq
 	expect req.url == "/1"
@@ -8,9 +11,9 @@ server s1 {
 	send "\n"
 	chunkedlen 32
 	# Tell top-level that it can sync the stevedore
-	sema r1 sync 2
+	barrier b1 sync
 	# Top-level tells us it has synched the stevedore
-	sema r1 sync 2
+	barrier b2 sync
 	chunkedlen 32
 	chunkedlen 0
 	accept
@@ -36,14 +39,14 @@ client c1 {
 } -start
 
 # Wait for first chunk to have been sent
-sema r1 sync 2
+barrier b1 sync
 delay .2
 
 # Sync the stevedore, so the next chunk ends up i segment 2
 varnish v1 -cliok "debug.persistent s0 sync"
 
 # Tell server to continue
-sema r1 sync 2
+barrier b2 sync
 
 # Get the result
 client c1 -wait
