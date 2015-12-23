@@ -3,7 +3,7 @@
 Content composition with Edge Side Includes
 -------------------------------------------
 
-Varnish can cache create web pages by assembling different pages, called `fragments`,
+Varnish can create web pages by assembling different pages, called `fragments`,
 together into one page. These `fragments` can have individual cache policies. If you
 have a web site with a list showing the five most popular articles on
 your site, this list can probably be cached as a `fragment` and included
