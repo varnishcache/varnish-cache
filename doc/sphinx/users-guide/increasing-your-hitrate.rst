@@ -193,7 +193,9 @@ A somewhat simpler example that can accomplish almost the same functionality can
 found below. Instead of filtering out "other" cookies it instead picks out
 "the one" cookie that is needed, copies it to another header and then
 copies it back to the request, deleting the original cookie header.
+
 .. XXX:Verify correctness of request above! benc
+
 ::
 
     sub vcl_recv {
@@ -298,11 +300,9 @@ Normalizing your namespace
 Some sites are accessed via lots of hostnames.
 http://www.varnish-software.com/, http://varnish-software.com/ and
 http://varnishsoftware.com/ all point at the same site. Since Varnish
-doesn't know they are the same,
-.. XXX: heavy meaning change above. benc
-Varnish will cache different versions of every page for every
-hostname. You can mitigate this in your web server configuration
-by setting up redirects or by using the following VCL::
+doesn't know they are the same, Varnish will cache different versions of
+every page for every hostname. You can mitigate this in your web server
+configuration by setting up redirects or by using the following VCL::
 
     if (req.http.host ~ "(?i)^(www.)?varnish-?software.com") {
         set req.http.host = "varnish-software.com";
