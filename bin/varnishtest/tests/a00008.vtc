@@ -1,25 +1,30 @@
 varnishtest "Barrier operations"
 
-barrier b1 cond 4
-barrier b2 cond 4
+# bs -> server, bc -> client, bb -> both
+barrier bs cond 4
+barrier bc cond 4
+barrier bb cond 4 -cyclic
 
 server s1 {
 	rxreq
-	barrier b1 sync
+	barrier bs sync
+	barrier bb sync
 	delay .9
 	txresp
 } -start
 
 server s2 {
 	rxreq
-	barrier b1 sync
+	barrier bs sync
+	barrier bb sync
 	delay .6
 	txresp
 } -start
 
 server s3 {
 	rxreq
-	barrier b1 sync
+	barrier bs sync
+	barrier bb sync
 	delay .2
 	txresp
 } -start
@@ -28,25 +33,30 @@ client c1 -connect ${s1_sock} {
 	delay .2
 	txreq
 	rxresp
-	barrier b2 sync
+	barrier bc sync
+	barrier bb sync
 } -start
 
 client c2 -connect ${s2_sock} {
 	delay .6
 	txreq
 	rxresp
-	barrier b2 sync
+	barrier bc sync
+	barrier bb sync
 } -start
 
 client c3 -connect ${s3_sock} {
 	delay .9
 	txreq
 	rxresp
-	barrier b2 sync
+	barrier bc sync
+	barrier bb sync
 } -start
 
 # Wait for all servers to have received requests
-barrier b1 sync
+barrier bs sync
+barrier bb sync
 
 # Wait for all clients to have received responses
-barrier b2 sync
+barrier bc sync
+barrier bb sync

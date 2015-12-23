@@ -52,6 +52,7 @@ struct barrier {
 
 	unsigned		waiters;
 	unsigned		expected;
+	unsigned		cyclic;
 
 	enum barrier_e		type;
 };
@@ -122,6 +123,23 @@ barrier_sock(struct barrier *b, const char *av, struct vtclog *vl)
 	INCOMPL();
 }
 
+static void
+barrier_cyclic(struct barrier *b, struct vtclog *vl)
+{
+
+	CHECK_OBJ_NOTNULL(b, BARRIER_MAGIC);
+
+	if (b->type == BARRIER_NONE)
+		vtc_log(vl, 0,
+		    "Barrier(%s) use error: not initialized", b->name);
+
+	if (b->waiters != 0)
+		vtc_log(vl, 0,
+		    "Barrier(%s) use error: already in use", b->name);
+
+	b->cyclic = 1;
+}
+
 /**********************************************************************
  * Sync a barrier
  */
@@ -148,6 +166,9 @@ barrier_cond_sync(struct barrier *b, struct vtclog *vl)
 		    b->name, b->waiters, b->expected);
 		AZ(pthread_cond_wait(&b->cond, &b->mtx));
 	}
+
+	if (b->cyclic)
+		b->waiters = 0;
 }
 
 static void
@@ -189,7 +210,10 @@ cmd_barrier(CMD_ARGS)
 		VTAILQ_FOREACH_SAFE(b, &barriers, list, b2) {
 			AZ(pthread_mutex_lock(&b->mtx));
 			assert(b->type != BARRIER_NONE);
-			assert(b->waiters == b->expected);
+			if (b->cyclic)
+				AZ(b->waiters);
+			else
+				assert(b->waiters == b->expected);
 			AZ(pthread_mutex_unlock(&b->mtx));
 		}
 		AZ(pthread_mutex_unlock(&barrier_mtx));
@@ -224,6 +248,10 @@ cmd_barrier(CMD_ARGS)
 		}
 		if (!strcmp(*av, "sync")) {
 			barrier_sync(b, vl);
+			continue;
+		}
+		if (!strcmp(*av, "-cyclic")) {
+			barrier_cyclic(b, vl);
 			continue;
 		}
 		vtc_log(vl, 0, "Unknown barrier argument: %s", *av);
