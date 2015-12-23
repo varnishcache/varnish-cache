@@ -29,11 +29,9 @@ varnishhist
 The :ref:`varnishhist(1)` utility reads :ref:`varnishd(1)` shared
 memory logs and presents a continuously updated histogram showing the
 distribution of the last N requests by their processing.
-.. XXX:1? benc
-The value of N and the
-vertical scale are displayed in the top left corner.  The horizontal
-scale is logarithmic.  Hits are marked with a pipe character ("|"),
-and misses are marked with a hash character ("#").
+The value of N and the vertical scale are displayed in the top left
+corner.  The horizontal scale is logarithmic.  Hits are marked with a
+pipe character ("|"), and misses are marked with a hash character ("#").
 
 varnishstat
 ~~~~~~~~~~~

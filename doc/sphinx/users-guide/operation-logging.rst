@@ -31,8 +31,8 @@ You'll see lines like these scrolling slowly by.::
 These is the Varnish master process checking up on the caching process
 to see that everything is OK.
 
-Now go to the browser and reload the page displaying your web
-app.
+Now go to the browser and reload the page displaying your web app.
+
 .. XXX:Doesn't this require a setup of a running varnishd and a web application being cached? benc
 
 You'll see lines like these.::
