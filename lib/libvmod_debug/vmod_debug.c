@@ -486,7 +486,7 @@ vmod_barrier_sync(VRT_CTX, VCL_STRING addr)
 {
 	const char *err;
 	char buf[32];
-	int sock;
+	int sock, i;
 	ssize_t sz;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -501,12 +501,13 @@ vmod_barrier_sync(VRT_CTX, VCL_STRING addr)
 	}
 
 	sz = read(sock, buf, sizeof buf);
+	i = errno;
+	AZ(close(sock));
 	if (sz == 0)
 		return (1);
 	if (sz < 0)
 		VSLb(ctx->vsl, SLT_Error,
-		    "Barrier connection failed: %s (errno=%d)",
-		    strerror(errno), errno);
+		    "Barrier connection failed: %s (errno=%d)", strerror(i), i);
 	if (sz > 0)
 		VSLb(ctx->vsl, SLT_Error, "Barrier unexpected data (%ldB)", sz);
 	return (0);
