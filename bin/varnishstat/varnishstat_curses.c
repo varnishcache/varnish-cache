@@ -943,10 +943,8 @@ draw_bar_b(void)
 		    level->label);
 		X -= strlen(level->label) + 2;
 	}
-	if (!hide_unseen) {
+	if (!hide_unseen)
 		mvwprintw(w_bar_b, 0, X - 6, "%s", "UNSEEN");
-		X -= 8;
-	}
 
 	wnoutrefresh(w_bar_b);
 }

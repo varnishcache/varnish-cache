@@ -348,7 +348,6 @@ vcc_acl_emit(struct vcc *tl, const char *acln, int anon)
 	struct acl_e *ae;
 	int depth, l, m, i;
 	unsigned at[VRT_ACL_MAXADDR + 1];
-	const char *oc;
 	struct token *t;
 	struct inifin *ifp;
 
@@ -371,7 +370,6 @@ vcc_acl_emit(struct vcc *tl, const char *acln, int anon)
 			"\tif (0) match_acl_named_%s(0, 0);\n", acln);
 	}
 	depth = -1;
-	oc = 0;
 	at[0] = 256;
 	VTAILQ_FOREACH(ae, &tl->acl, list) {
 
@@ -383,7 +381,6 @@ vcc_acl_emit(struct vcc *tl, const char *acln, int anon)
 		}
 
 		/* Back down, if necessary */
-		oc = "";
 		while (l <= depth) {
 			Fh(tl, 0, "\t%*s}\n", -depth, "");
 			depth--;
@@ -397,23 +394,21 @@ vcc_acl_emit(struct vcc *tl, const char *acln, int anon)
 		for (i = l; m >= 8; m -= 8, i++) {
 			if (i == 0)
 				Fh(tl, 0, "\t%*s%sif (fam == %d) {\n",
-				    -i, "", oc, ae->data[i]);
+				    -i, "", "", ae->data[i]);
 			else
 				Fh(tl, 0, "\t%*s%sif (a[%d] == %d) {\n",
-				    -i, "", oc, i - 1, ae->data[i]);
+				    -i, "", "", i - 1, ae->data[i]);
 			at[i] = ae->data[i];
 			depth = i;
-			oc = "";
 		}
 
 		if (m > 0) {
 			/* Do fractional byte compares */
 			Fh(tl, 0, "\t%*s%sif ((a[%d] & 0x%x) == %d) {\n",
-			    -i, "", oc, i - 1, (0xff00 >> m) & 0xff,
+			    -i, "", "", i - 1, (0xff00 >> m) & 0xff,
 			    ae->data[i] & ((0xff00 >> m) & 0xff));
 			at[i] = 256;
 			depth = i;
-			oc = "";
 		}
 
 		i = (ae->mask + 7) / 8;

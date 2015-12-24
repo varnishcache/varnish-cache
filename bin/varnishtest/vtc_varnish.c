@@ -237,14 +237,10 @@ varnishlog_thread(void *priv)
 
 		tag = VSL_TAG(c->rec.ptr);
 		vxid = VSL_ID(c->rec.ptr);
-		if (tag == SLT__Batch) {
-			tagname = "Batch";
-			len = 0;
+		if (tag == SLT__Batch)
 			continue;
-		} else {
-			tagname = VSL_tags[tag];
-			len = VSL_LEN(c->rec.ptr);
-		}
+		tagname = VSL_tags[tag];
+		len = VSL_LEN(c->rec.ptr);
 		type = VSL_CLIENT(c->rec.ptr) ? 'c' : VSL_BACKEND(c->rec.ptr) ?
 		    'b' : '-';
 		data = VSL_CDATA(c->rec.ptr);
