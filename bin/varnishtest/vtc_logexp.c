@@ -283,7 +283,6 @@ logexp_thread(void *priv)
 	AN(le->vsm);
 	AN(le->vslq);
 
-	i = 0;
 	AZ(le->test);
 	vtc_log(le->vl, 4, "beg|");
 	if (le->query != NULL)
