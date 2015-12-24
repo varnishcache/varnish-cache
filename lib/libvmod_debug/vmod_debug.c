@@ -28,6 +28,7 @@
 
 #include "config.h"
 
+#include <errno.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -38,6 +39,7 @@
 #include "vrt.h"
 #include "vsa.h"
 #include "vsb.h"
+#include "vtcp.h"
 #include "vtim.h"
 #include "vcc_if.h"
 
@@ -477,4 +479,35 @@ vmod_match_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip)
 	assert(VSA_Sane(ip));
 
 	return (VRT_acl_match(ctx, acl, ip));
+}
+
+VCL_BOOL
+vmod_barrier_sync(VRT_CTX, VCL_STRING addr)
+{
+	const char *err;
+	char buf[32];
+	int sock;
+	ssize_t sz;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(addr);
+	AN(*addr);
+
+	VSLb(ctx->vsl, SLT_VCL_call, "barrier_sync(\"%s\")", addr);
+	sock = VTCP_open(addr, NULL, 0., &err);
+	if (sock < 0) {
+		VSLb(ctx->vsl, SLT_Error, "Barrier connection failed: %s", err);
+		return (0);
+	}
+
+	sz = read(sock, buf, sizeof buf);
+	if (sz == 0)
+		return (1);
+	if (sz < 0)
+		VSLb(ctx->vsl, SLT_Error,
+		    "Barrier connection failed: %s (errno=%d)",
+		    strerror(errno), errno);
+	if (sz > 0)
+		VSLb(ctx->vsl, SLT_Error, "Barrier unexpected data (%ldB)", sz);
+	return (0);
 }
