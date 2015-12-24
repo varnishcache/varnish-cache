@@ -154,3 +154,7 @@ Hold a reference to the VCL when it goes cold for the given delay.
 $Function BOOL match_acl(ACL acl, IP ip)
 
 Perform an IP match against a named ACL.
+
+$Function BOOL barrier_sync(STRING)
+
+Synchronize with a varnishtest shared barrier.

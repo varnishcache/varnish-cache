@@ -1,0 +1,39 @@
+varnishtest "Test debug.barrier_sync"
+
+barrier b1 sock 2
+barrier b2 sock 2
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import debug;
+
+	sub vcl_recv {
+		if (!debug.barrier_sync("${b1_sock}")) {
+			return (synth(400));
+		}
+	}
+
+	sub vcl_backend_response {
+		if (!debug.barrier_sync("${b2_sock}")) {
+			return (abandon);
+		}
+	}
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -start
+
+barrier b1 sync
+delay 0.5
+barrier b2 sync
+
+client c1 -wait
