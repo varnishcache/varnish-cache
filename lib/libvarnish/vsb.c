@@ -142,14 +142,16 @@ VSB_extend(struct vsb *s, int addlen)
 	if (!VSB_CANEXTEND(s))
 		return (-1);
 	newsize = VSB_extendsize(s->s_size + addlen);
-	newbuf = SBMALLOC(newsize);
+	if (VSB_ISDYNAMIC(s))
+		newbuf = realloc(s->s_buf, newsize);
+	else
+		newbuf = SBMALLOC(newsize);
 	if (newbuf == NULL)
 		return (-1);
-	memcpy(newbuf, s->s_buf, s->s_size);
-	if (VSB_ISDYNAMIC(s))
-		SBFREE(s->s_buf);
-	else
+	if (!VSB_ISDYNAMIC(s)) {
+		memcpy(newbuf, s->s_buf, s->s_size);
 		VSB_SETFLAG(s, VSB_DYNAMIC);
+	}
 	s->s_buf = newbuf;
 	s->s_size = newsize;
 	return (0);
