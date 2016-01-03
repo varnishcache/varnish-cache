@@ -73,7 +73,7 @@ cnt_vdp(struct req *req, struct busyobj *bo)
 		else
 			sendbody = 0;
 	} else if (status < 200 || status == 204 || status == 304) {
-		req->resp_len = 0;
+		req->resp_len = -1;
 		sendbody = 0;
 	} else
 		sendbody = 1;
