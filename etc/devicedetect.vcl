@@ -1,4 +1,4 @@
-# Copyright (c) 2012-2015 Varnish Software AS
+# Copyright (c) 2012-2014 Varnish Software AS
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -22,7 +22,7 @@
 # SUCH DAMAGE.
 #
 # detectdevice.vcl - regex based device detection for Varnish
-# https://github.com/varnish/varnish-devicedetect/
+# https://github.com/varnishcache/varnish-devicedetect/
 #
 # Author: Lasse Karstensen <lkarsten@varnish-software.com>
 
