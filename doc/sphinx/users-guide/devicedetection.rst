@@ -29,7 +29,7 @@ Setting this header can be as simple as::
 There are different commercial and free offerings in doing grouping and
 identifying clients in further detail. For a basic and community
 based regular expression set, see
-https://github.com/varnish/varnish-devicedetect/.
+https://github.com/varnishcache/varnish-devicedetect/.
 
 
 Serve the different content on the same URL
