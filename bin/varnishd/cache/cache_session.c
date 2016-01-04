@@ -321,8 +321,6 @@ SES_Proto_Req(struct worker *wrk, void *arg)
 		WRONG("Wrong session step");
 	}
 	WS_Assert(wrk->aws);
-	if (DO_DEBUG(DBG_VCLREL) && wrk->vcl != NULL)
-		VCL_Rel(&wrk->vcl);
 	THR_SetRequest(NULL);
 }
 
