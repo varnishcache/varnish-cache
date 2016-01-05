@@ -128,7 +128,7 @@ PARAM(
 
 PARAM(
 	/* name */	ban_lurker_age,
-	/* tweak */	timeout,
+	/* typ */	timeout,
 	/* min */	"0",
 	/* max */	NULL,
 	/* default */	"60",
@@ -145,7 +145,7 @@ PARAM(
 
 PARAM(
 	/* name */	ban_lurker_batch,
-	/* tweak */	uint,
+	/* typ */	uint,
 	/* min */	"1",
 	/* max */	NULL,
 	/* default */	"1000",
@@ -161,7 +161,7 @@ PARAM(
 
 PARAM(
 	/* name */	ban_lurker_sleep,
-	/* tweak */	timeout,
+	/* typ */	timeout,
 	/* min */	"0",
 	/* max */	NULL,
 	/* default */	"0.010",
@@ -178,7 +178,7 @@ PARAM(
 
 PARAM(
 	/* name */	first_byte_timeout,
-	/* tweak */	timeout,
+	/* typ */	timeout,
 	/* min */	"0",
 	/* max */	NULL,
 	/* default */	"60",
@@ -196,7 +196,7 @@ PARAM(
 
 PARAM(
 	/* name */	between_bytes_timeout,
-	/* tweak */	timeout,
+	/* typ */	timeout,
 	/* min */	"0",
 	/* max */	NULL,
 	/* default */	"60",
@@ -214,7 +214,7 @@ PARAM(
 
 PARAM(
 	/* name */	backend_idle_timeout,
-	/* tweak */	timeout,
+	/* typ */	timeout,
 	/* min */	"1",
 	/* max */	NULL,
 	/* default */	"60",
@@ -231,108 +231,101 @@ PARAM(
 
 PARAM(
 	/* name */	cli_buffer,
-	/* tweak */	tweak_bytes_u,
-	/* var */	cli_buffer,
-	/* min */	4k,
-	/* max */	none,
-	/* default */	8k,
-	/* units */	bytes,
-	/* flags */	00,
+	/* typ */	bytes_u,
+	/* min */	"4k",
+	/* max */	NULL,
+	/* default */	"8k",
+	/* units */	"bytes",
+	/* flags */	0,
 	/* s-text */
 	"Size of buffer for CLI command input.\n"
 	"You may need to increase this if you have big VCL files and use "
 	"the vcl.inline CLI command.\n"
-	"NB: Must be specified with -p to have effect.\n",
+	"NB: Must be specified with -p to have effect.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	cli_limit,
-	/* tweak */	tweak_bytes_u,
-	/* var */	cli_limit,
-	/* min */	128b,
-	/* max */	99999999b,
-	/* default */	48k,
-	/* units */	bytes,
-	/* flags */	00,
+	/* typ */	bytes_u,
+	/* min */	"128b",
+	/* max */	"99999999b",
+	/* default */	"48k",
+	/* units */	"bytes",
+	/* flags */	0,
 	/* s-text */
 	"Maximum size of CLI response.  If the response exceeds this "
 	"limit, the response code will be 201 instead of 200 and the last "
-	"line will indicate the truncation.\n",
+	"line will indicate the truncation.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	cli_timeout,
-	/* tweak */	tweak_timeout,
-	/* var */	cli_timeout,
-	/* min */	0.000,
-	/* max */	none,
-	/* default */	60.000,
-	/* units */	seconds,
-	/* flags */	00,
+	/* typ */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* default */	"60.000",
+	/* units */	"seconds",
+	/* flags */	0,
 	/* s-text */
 	"Timeout for the childs replies to CLI requests from the "
-	"mgt_param.\n",
+	"mgt_param.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	clock_skew,
-	/* tweak */	tweak_uint,
-	/* var */	clock_skew,
-	/* min */	0,
-	/* max */	none,
-	/* default */	10,
-	/* units */	seconds,
-	/* flags */	00,
+	/* typ */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"10",
+	/* units */	"seconds",
+	/* flags */	0,
 	/* s-text */
 	"How much clockskew we are willing to accept between the backend "
-	"and our own clock.\n",
+	"and our own clock.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	connect_timeout,
-	/* tweak */	tweak_timeout,
-	/* var */	connect_timeout,
-	/* min */	0.000,
-	/* max */	none,
-	/* default */	3.500,
-	/* units */	seconds,
-	/* flags */	00,
+	/* typ */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* default */	"3.500",
+	/* units */	"seconds",
+	/* flags */	0,
 	/* s-text */
 	"Default connection timeout for backend connections. We only try "
 	"to connect to the backend for this many seconds before giving up. "
 	"VCL can override this default value for each backend and backend "
-	"request.\n",
+	"request.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	critbit_cooloff,
-	/* tweak */	tweak_timeout,
-	/* var */	critbit_cooloff,
-	/* min */	60.000,
-	/* max */	254.000,
-	/* default */	180.000,
-	/* units */	seconds,
-	/* flags */	0| WIZARD,
+	/* typ */	timeout,
+	/* min */	"60.000",
+	/* max */	"254.000",
+	/* default */	"180.000",
+	/* units */	"seconds",
+	/* flags */	WIZARD,
 	/* s-text */
 	"How long the critbit hasher keeps deleted objheads on the cooloff "
-	"list.\n",
+	"list.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #if 0
 PARAM(
 	/* name */	debug,
-	/* tweak */	tweak_mask,
-	/* var */	debug,
-	/* min */	none,
-	/* max */	none,
-	/* default */	none,
-	/* units */	,
+	/* typ */	debug,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	NULL,
+	/* units */	NULL,
 	/* flags */	0,
 	/* s-text */
 	"Enable/Disable various kinds of debugging.\n"
@@ -349,69 +342,65 @@ PARAM(
 	"	lurker	VSL Ban lurker\n"
 	"	esi_chop	Chop ESI fetch to bits\n"
 	"	flush_head	Flush after http1 head\n"
-	"	vtc_mode	Varnishtest Mode\n",
+	"	vtc_mode	Varnishtest Mode",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #endif
 PARAM(
 	/* name */	default_grace,
-	/* tweak */	tweak_timeout,
-	/* var */	default_grace,
-	/* min */	0.000,
-	/* max */	none,
-	/* default */	10.000,
-	/* units */	seconds,
-	/* flags */	0,
+	/* typ */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* default */	"10.000",
+	/* units */	"seconds",
+	/* flags */	OBJ_STICKY,
 	/* s-text */
 	"Default grace period.  We will deliver an object this long after "
 	"it has expired, provided another thread is attempting to get a "
-	"new copy.\n",
+	"new copy.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	default_keep,
-	/* tweak */	tweak_timeout,
-	/* var */	default_keep,
-	/* min */	0.000,
-	/* max */	none,
-	/* default */	0.000,
-	/* units */	seconds,
-	/* flags */	0,
+	/* typ */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* default */	"0.000",
+	/* units */	"seconds",
+	/* flags */	OBJ_STICKY,
 	/* s-text */
 	"Default keep period.  We will keep a useless object around this "
 	"long, making it available for conditional backend fetches.  That "
 	"means that the object will be removed from the cache at the end "
-	"of ttl+grace+keep.\n",
+	"of ttl+grace+keep.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	default_ttl,
-	/* tweak */	tweak_timeout,
-	/* var */	default_ttl,
-	/* min */	0.000,
-	/* max */	none,
-	/* default */	120.000,
-	/* units */	seconds,
-	/* flags */	0,
+	/* typ */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* default */	"120.000",
+	/* units */	"seconds",
+	/* flags */	OBJ_STICKY,
 	/* s-text */
 	"The TTL assigned to objects if neither the backend nor the VCL "
-	"code assigns one.\n",
+	"code assigns one.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #if 0
 PARAM(
 	/* name */	feature,
-	/* tweak */	tweak_mask
-	/* var */	feature,
-	/* min */	none,
-	/* max */	none,
-	/* default */	none,
-	/* units */	,
-	/* flags */	00,
+	/* typ */	feature,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	NULL,
+	/* units */	NULL,
+	/* flags */	0,
 	/* s-text */
 	"Enable/Disable various minor features.\n"
 	"	none	Disable all features.\n"
@@ -423,99 +412,93 @@ PARAM(
 	"	esi_ignore_https	Treat HTTPS as HTTP in ESI:includes\n"
 	"	esi_disable_xml_check	Don't check of body looks like XML\n"
 	"	esi_ignore_other_elements	Ignore non-esi XML-elements\n"
-	"	esi_remove_bom	Remove UTF-8 BOM\n",
+	"	esi_remove_bom	Remove UTF-8 BOM",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #endif
 PARAM(
 	/* name */	fetch_chunksize,
-	/* tweak */	tweak_bytes,
-	/* var */	fetch_chunksize,
-	/* min */	4k,
-	/* max */	none,
-	/* default */	16k,
-	/* units */	bytes,
-	/* flags */	0| EXPERIMENTAL,
+	/* typ */	bytes,
+	/* min */	"4k",
+	/* max */	NULL,
+	/* default */	"16k",
+	/* units */	"bytes",
+	/* flags */	EXPERIMENTAL,
 	/* s-text */
 	"The default chunksize used by fetcher. This should be bigger than "
 	"the majority of objects with short TTLs.\n"
 	"Internal limits in the storage_file module makes increases above "
-	"128kb a dubious idea.\n",
+	"128kb a dubious idea.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	fetch_maxchunksize,
-	/* tweak */	tweak_bytes,
-	/* var */	fetch_maxchunksize,
-	/* min */	64k,
-	/* max */	none,
-	/* default */	0.25G,
-	/* units */	bytes,
-	/* flags */	0| EXPERIMENTAL,
+	/* typ */	bytes,
+	/* min */	"64k",
+	/* max */	NULL,
+	/* default */	"0.25G",
+	/* units */	"bytes",
+	/* flags */	EXPERIMENTAL,
 	/* s-text */
 	"The maximum chunksize we attempt to allocate from storage. Making "
-	"this too large may cause delays and storage fragmentation.\n",
+	"this too large may cause delays and storage fragmentation.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	gzip_buffer,
-	/* tweak */	tweak_bytes_u,
-	/* var */	gzip_buffer,
-	/* min */	2k,
-	/* max */	none,
-	/* default */	32k,
-	/* units */	bytes,
-	/* flags */	0| EXPERIMENTAL,
+	/* typ */	bytes_u,
+	/* min */	"2k",
+	/* max */	NULL,
+	/* default */	"32k",
+	/* units */	"bytes",
+	/* flags */	EXPERIMENTAL,
 	/* s-text */
 	"Size of malloc buffer used for gzip processing.\n"
 	"These buffers are used for in-transit data, for instance "
 	"gunzip'ed data being sent to a client.Making this space to small "
 	"results in more overhead, writes to sockets etc, making it too "
-	"big is probably just a waste of memory.\n",
+	"big is probably just a waste of memory.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	gzip_level,
-	/* tweak */	tweak_uint,
-	/* var */	gzip_level,
-	/* min */	0,
-	/* max */	9,
-	/* default */	6,
-	/* units */	,
-	/* flags */	00,
+	/* typ */	uint,
+	/* min */	"0",
+	/* max */	"9",
+	/* default */	"6",
+	/* units */	NULL,
+	/* flags */	0,
 	/* s-text */
-	"Gzip compression level: 0=debug, 1=fast, 9=best\n",
+	"Gzip compression level: 0=debug, 1=fast, 9=best",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	gzip_memlevel,
-	/* tweak */	tweak_uint,
-	/* var */	gzip_memlevel,
-	/* min */	1,
-	/* max */	9,
-	/* default */	8,
-	/* units */	,
-	/* flags */	00,
+	/* typ */	uint,
+	/* min */	"1",
+	/* max */	"9",
+	/* default */	"8",
+	/* units */	NULL,
+	/* flags */	0,
 	/* s-text */
 	"Gzip memory level 1=slow/least, 9=fast/most compression.\n"
-	"Memory impact is 1=1k, 2=2k, ... 9=256k.\n",
+	"Memory impact is 1=1k, 2=2k, ... 9=256k.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	http_gzip_support,
-	/* tweak */	tweak_bool,
-	/* var */	http_gzip_support,
-	/* min */	none,
-	/* max */	none,
-	/* default */	on,
-	/* units */	bool,
-	/* flags */	00,
+	/* typ */	bool,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	"on",
+	/* units */	"bool",
+	/* flags */	0,
 	/* s-text */
 	"Enable gzip support. When enabled Varnish request compressed "
 	"objects from the backend and store them compressed. If a client "
@@ -526,519 +509,478 @@ PARAM(
 	"\n"
 	"Clients that do not support gzip will have their Accept-Encoding "
 	"header removed. For more information on how gzip is implemented "
-	"please see the chapter on gzip in the Varnish reference.\n",
+	"please see the chapter on gzip in the Varnish reference.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	http_max_hdr,
-	/* tweak */	tweak_uint,
-	/* var */	http_max_hdr,
-	/* min */	32,
-	/* max */	65535,
-	/* default */	64,
-	/* units */	header lines,
-	/* flags */	00,
+	/* typ */	uint,
+	/* min */	"32",
+	/* max */	"65535",
+	/* default */	"64",
+	/* units */	"header lines",
+	/* flags */	0,
 	/* s-text */
 	"Maximum number of HTTP header lines we allow in "
 	"{req|resp|bereq|beresp}.http (obj.http is autosized to the exact "
 	"number of headers).\n"
 	"Cheap, ~20 bytes, in terms of workspace memory.\n"
-	"Note that the first line occupies five header lines.\n",
+	"Note that the first line occupies five header lines.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	http_range_support,
-	/* tweak */	tweak_bool,
-	/* var */	http_range_support,
-	/* min */	none,
-	/* max */	none,
-	/* default */	on,
-	/* units */	bool,
-	/* flags */	00,
+	/* typ */	bool,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	"on",
+	/* units */	"bool",
+	/* flags */	0,
 	/* s-text */
-	"Enable support for HTTP Range headers.\n",
+	"Enable support for HTTP Range headers.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	http_req_hdr_len,
-	/* tweak */	tweak_bytes_u,
-	/* var */	http_req_hdr_len,
-	/* min */	40b,
-	/* max */	none,
-	/* default */	8k,
-	/* units */	bytes,
-	/* flags */	00,
+	/* typ */	bytes_u,
+	/* min */	"40b",
+	/* max */	NULL,
+	/* default */	"8k",
+	/* units */	"bytes",
+	/* flags */	0,
 	/* s-text */
 	"Maximum length of any HTTP client request header we will allow.  "
-	"The limit is inclusive its continuation lines.\n",
+	"The limit is inclusive its continuation lines.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	http_req_size,
-	/* tweak */	tweak_bytes_u,
-	/* var */	http_req_size,
-	/* min */	0.25k,
-	/* max */	none,
-	/* default */	32k,
-	/* units */	bytes,
-	/* flags */	00,
+	/* typ */	bytes_u,
+	/* min */	"0.25k",
+	/* max */	NULL,
+	/* default */	"32k",
+	/* units */	"bytes",
+	/* flags */	0,
 	/* s-text */
 	"Maximum number of bytes of HTTP client request we will deal with. "
 	" This is a limit on all bytes up to the double blank line which "
 	"ends the HTTP request.\n"
 	"The memory for the request is allocated from the client workspace "
 	"(param: workspace_client) and this parameter limits how much of "
-	"that the request is allowed to take up.\n",
+	"that the request is allowed to take up.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	http_resp_hdr_len,
-	/* tweak */	tweak_bytes_u,
-	/* var */	http_resp_hdr_len,
-	/* min */	40b,
-	/* max */	none,
-	/* default */	8k,
-	/* units */	bytes,
-	/* flags */	00,
+	/* typ */	bytes_u,
+	/* min */	"40b",
+	/* max */	NULL,
+	/* default */	"8k",
+	/* units */	"bytes",
+	/* flags */	0,
 	/* s-text */
 	"Maximum length of any HTTP backend response header we will allow. "
-	" The limit is inclusive its continuation lines.\n",
+	" The limit is inclusive its continuation lines.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	http_resp_size,
-	/* tweak */	tweak_bytes_u,
-	/* var */	http_resp_size,
-	/* min */	0.25k,
-	/* max */	none,
-	/* default */	32k,
-	/* units */	bytes,
-	/* flags */	00,
+	/* typ */	bytes_u,
+	/* min */	"0.25k",
+	/* max */	NULL,
+	/* default */	"32k",
+	/* units */	"bytes",
+	/* flags */	0,
 	/* s-text */
 	"Maximum number of bytes of HTTP backend response we will deal "
 	"with.  This is a limit on all bytes up to the double blank line "
 	"which ends the HTTP request.\n"
 	"The memory for the request is allocated from the worker workspace "
 	"(param: thread_pool_workspace) and this parameter limits how much "
-	"of that the request is allowed to take up.\n",
+	"of that the request is allowed to take up.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	idle_send_timeout,
-	/* tweak */	tweak_timeout,
-	/* var */	idle_send_timeout,
-	/* min */	0.000,
-	/* max */	none,
-	/* default */	60.000,
-	/* units */	seconds,
-	/* flags */	0| DELAYED_EFFECT,
+	/* typ */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* default */	"60.000",
+	/* units */	"seconds",
+	/* flags */	DELAYED_EFFECT,
 	/* s-text */
 	"Time to wait with no data sent. If no data has been transmitted "
 	"in this many\n"
 	"seconds the session is closed.\n"
-	"See setsockopt(2) under SO_SNDTIMEO for more information.\n",
+	"See setsockopt(2) under SO_SNDTIMEO for more information.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	listen_depth,
-	/* tweak */	tweak_uint,
-	/* var */	listen_depth,
-	/* min */	0,
-	/* max */	none,
-	/* default */	1024,
-	/* units */	connections,
-	/* flags */	0| MUST_RESTART,
+	/* typ */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"1024",
+	/* units */	"connections",
+	/* flags */	MUST_RESTART,
 	/* s-text */
-	"Listen queue depth.\n",
+	"Listen queue depth.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	lru_interval,
-	/* tweak */	tweak_timeout,
-	/* var */	lru_interval,
-	/* min */	0.000,
-	/* max */	none,
-	/* default */	2.000,
-	/* units */	seconds,
-	/* flags */	0| EXPERIMENTAL,
+	/* typ */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* default */	"2.000",
+	/* units */	"seconds",
+	/* flags */	EXPERIMENTAL,
 	/* s-text */
 	"Grace period before object moves on LRU list.\n"
 	"Objects are only moved to the front of the LRU list if they have "
 	"not been moved there already inside this timeout period.  This "
 	"reduces the amount of lock operations necessary for LRU list "
-	"access.\n",
+	"access.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	max_esi_depth,
-	/* tweak */	tweak_uint,
-	/* var */	max_esi_depth,
-	/* min */	0,
-	/* max */	none,
-	/* default */	5,
-	/* units */	levels,
-	/* flags */	00,
+	/* typ */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"5",
+	/* units */	"levels",
+	/* flags */	0,
 	/* s-text */
-	"Maximum depth of esi:include processing.\n",
+	"Maximum depth of esi:include processing.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	max_restarts,
-	/* tweak */	tweak_uint,
-	/* var */	max_restarts,
-	/* min */	0,
-	/* max */	none,
-	/* default */	4,
-	/* units */	restarts,
-	/* flags */	00,
+	/* typ */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"4",
+	/* units */	"restarts",
+	/* flags */	0,
 	/* s-text */
 	"Upper limit on how many times a request can restart.\n"
 	"Be aware that restarts are likely to cause a hit against the "
-	"backend, so don't increase thoughtlessly.\n",
+	"backend, so don't increase thoughtlessly.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	max_retries,
-	/* tweak */	tweak_uint,
-	/* var */	max_retries,
-	/* min */	0,
-	/* max */	none,
-	/* default */	4,
-	/* units */	retries,
-	/* flags */	00,
+	/* typ */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"4",
+	/* units */	"retries",
+	/* flags */	0,
 	/* s-text */
-	"Upper limit on how many times a backend fetch can retry.\n",
+	"Upper limit on how many times a backend fetch can retry.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	nuke_limit,
-	/* tweak */	tweak_uint,
-	/* var */	nuke_limit,
-	/* min */	0,
-	/* max */	none,
-	/* default */	50,
-	/* units */	allocations,
-	/* flags */	0| EXPERIMENTAL,
+	/* typ */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"50",
+	/* units */	"allocations",
+	/* flags */	EXPERIMENTAL,
 	/* s-text */
 	"Maximum number of objects we attempt to nuke in order to make "
-	"space for a object body.\n",
+	"space for a object body.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #if 0
 PARAM(
 	/* name */	pcre_match_limit,
-	/* tweak */	tweak_uint,
-	/* var */	pcre_match_limit,
-	/* min */	1,
-	/* max */	none,
-	/* default */	10000,
-	/* units */	,
-	/* flags */	00,
+	/* typ */	uint,
+	/* min */	"1",
+	/* max */	NULL,
+	/* default */	"1.000",
+	/* units */	NULL,
+	/* flags */	0,
 	/* s-text */
 	"The limit for the  number of internal matching function calls in "
-	"a pcre_exec() execution.\n",
+	"a pcre_exec() execution.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	pcre_match_limit_recursion,
-	/* tweak */	tweak_uint,
-	/* var */	pcre_match_limit_recursion,
-	/* min */	1,
-	/* max */	none,
-	/* default */	10000,
-	/* units */	,
-	/* flags */	00,
+	/* typ */	uint,
+	/* min */	"1",
+	/* max */	NULL,
+	/* default */	"1.000",
+	/* units */	NULL,
+	/* flags */	0,
 	/* s-text */
 	"The limit for the  number of internal matching function "
-	"recursions in a pcre_exec() execution.\n",
+	"recursions in a pcre_exec() execution.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #endif
 PARAM(
 	/* name */	ping_interval,
-	/* tweak */	tweak_uint,
-	/* var */	ping_interval,
-	/* min */	0,
-	/* max */	none,
-	/* default */	3,
-	/* units */	seconds,
-	/* flags */	0| MUST_RESTART,
+	/* typ */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"3",
+	/* units */	"seconds",
+	/* flags */	MUST_RESTART,
 	/* s-text */
 	"Interval between pings from parent to child.\n"
 	"Zero will disable pinging entirely, which makes it possible to "
-	"attach a debugger to the child.\n",
+	"attach a debugger to the child.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	pipe_timeout,
-	/* tweak */	tweak_timeout,
-	/* var */	pipe_timeout,
-	/* min */	0.000,
-	/* max */	none,
-	/* default */	60.000,
-	/* units */	seconds,
-	/* flags */	00,
+	/* typ */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* default */	"60.000",
+	/* units */	"seconds",
+	/* flags */	0,
 	/* s-text */
 	"Idle timeout for PIPE sessions. If nothing have been received in "
-	"either direction for this many seconds, the session is closed.\n",
+	"either direction for this many seconds, the session is closed.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #if 0
 PARAM(
 	/* name */	pool_req,
-	/* tweak */	tweak_poolparam,
-	/* var */	pool_req,
-	/* min */	none,
-	/* max */	none,
-	/* default */	10\,100\,10,
-	/* units */	none,
-	/* flags */	00,
+	/* typ */	poolparam,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	"10,100,10",
+	/* units */	NULL,
+	/* flags */	0,
 	/* s-text */
 	"Parameters for per worker pool request memory pool.\n"
-	"The three numbers are:\n"
-	"	min_pool	minimum size of free pool.\n"
-	"	max_pool	maximum size of free pool.\n"
-	"	max_age		max age of free element.\n",
+	MEMPOOL_TEXT,
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	pool_sess,
-	/* tweak */	tweak_poolparam,
-	/* var */	pool_sess,
-	/* min */	none,
-	/* max */	none,
-	/* default */	10,100,10,
-	/* units */	,
-	/* flags */	00,
+	/* typ */	poolparam,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	"10,100,10",
+	/* units */	NULL,
+	/* flags */	0,
 	/* s-text */
 	"Parameters for per worker pool session memory pool.\n"
-	"The three numbers are:\n"
-	"	min_pool	minimum size of free pool.\n"
-	"	max_pool	maximum size of free pool.\n"
-	"	max_age	max age of free element.\n",
+	MEMPOOL_TEXT,
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	pool_vbo,
-	/* tweak */	tweak_poolparam,
-	/* var */	pool_vbo,
-	/* min */	none,
-	/* max */	none,
-	/* default */	10,100,10,
-	/* units */	,
-	/* flags */	00,
+	/* typ */	poolparam,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	"10,100,10",
+	/* units */	NULL,
+	/* flags */	0,
 	/* s-text */
 	"Parameters for backend object fetch memory pool.\n"
-	"The three numbers are:\n"
-	"	min_pool	minimum size of free pool.\n"
-	"	max_pool	maximum size of free pool.\n"
-	"	max_age	max age of free element.\n",
+	MEMPOOL_TEXT,
 	/* l-text */	"",
 	/* func */	NULL
 )
 #endif
 PARAM(
 	/* name */	prefer_ipv6,
-	/* tweak */	tweak_bool,
-	/* var */	prefer_ipv6,
-	/* min */	none,
-	/* max */	none,
-	/* default */	off,
-	/* units */	bool,
-	/* flags */	00,
+	/* typ */	bool,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	"off",
+	/* units */	"bool",
+	/* flags */	0,
 	/* s-text */
 	"Prefer IPv6 address when connecting to backends which have both "
-	"IPv4 and IPv6 addresses.\n",
+	"IPv4 and IPv6 addresses.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	rush_exponent,
-	/* tweak */	tweak_uint,
-	/* var */	rush_exponent,
-	/* min */	2,
-	/* max */	none,
-	/* default */	3,
-	/* units */	requests per request,
-	/* flags */	0| EXPERIMENTAL,
+	/* typ */	uint,
+	/* min */	"2",
+	/* max */	NULL,
+	/* default */	"3",
+	/* units */	"requests per request",
+	/* flags */	EXPERIMENTAL,
 	/* s-text */
 	"How many parked request we start for each completed request on "
 	"the object.\n"
 	"NB: Even with the implict delay of delivery, this parameter "
-	"controls an exponential increase in number of worker threads.\n",
+	"controls an exponential increase in number of worker threads.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	send_timeout,
-	/* tweak */	tweak_timeout,
-	/* var */	send_timeout,
-	/* min */	0.000,
-	/* max */	none,
-	/* default */	600.000,
-	/* units */	seconds,
-	/* flags */	0| DELAYED_EFFECT,
+	/* typ */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* default */	"600.000",
+	/* units */	"seconds",
+	/* flags */	DELAYED_EFFECT,
 	/* s-text */
 	"Send timeout for client connections. If the HTTP response hasn't "
 	"been transmitted in this many\n"
 	"seconds the session is closed.\n"
-	"See setsockopt(2) under SO_SNDTIMEO for more information.\n",
+	"See setsockopt(2) under SO_SNDTIMEO for more information.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #if 0
 PARAM(
 	/* name */	session_max,
-	/* tweak */	tweak_uint,
-	/* var */	session_max,
-	/* min */	1000,
-	/* max */	none,
-	/* default */	100000,
-	/* units */	sessions,
-	/* flags */	00,
+	/* typ */	uint,
+	/* min */	"1000",
+	/* max */	NULL,
+	/* default */	"10.000",
+	/* units */	"sessions",
+	/* flags */	0,
 	/* s-text */
 	"Maximum number of sessions we will allocate from one pool before "
 	"just dropping connections.\n"
 	"This is mostly an anti-DoS measure, and setting it plenty high "
-	"should not hurt, as long as you have the memory for it.\n",
+	"should not hurt, as long as you have the memory for it.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 
 PARAM(
 	/* name */	shm_reclen,
-	/* tweak */	tweak_vsl_reclen,
-	/* var */	shm_reclen,
-	/* min */	16b,
-	/* max */	4084,
-	/* default */	255b,
-	/* units */	bytes,
-	/* flags */	00,
+	/* typ */	vsl_reclen,
+	/* min */	"16b",
+	/* max */	"4084",
+	/* default */	"255b",
+	/* units */	"bytes",
+	/* flags */	0,
 	/* s-text */
-	"Old name for vsl_reclen, use that instead.\n",
+	"Old name for vsl_reclen, use that instead.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #endif
 PARAM(
 	/* name */	shortlived,
-	/* tweak */	tweak_timeout,
-	/* var */	shortlived,
-	/* min */	0.000,
-	/* max */	none,
-	/* default */	10.000,
-	/* units */	seconds,
-	/* flags */	00,
+	/* typ */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* default */	"10.000",
+	/* units */	"seconds",
+	/* flags */	0,
 	/* s-text */
 	"Objects created with (ttl+grace+keep) shorter than this are "
-	"always put in transient storage.\n",
+	"always put in transient storage.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	sigsegv_handler,
-	/* tweak */	tweak_bool,
-	/* var */	sigsegv_handler,
-	/* min */	none,
-	/* max */	none,
-	/* default */	on,
-	/* units */	bool,
-	/* flags */	0| MUST_RESTART,
+	/* typ */	bool,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	"on",
+	/* units */	"bool",
+	/* flags */	MUST_RESTART,
 	/* s-text */
 	"Install a signal handler which tries to dump debug information on "
-	"segmentation faults, bus errors and abort signals.\n",
+	"segmentation faults, bus errors and abort signals.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	syslog_cli_traffic,
-	/* tweak */	tweak_bool,
-	/* var */	syslog_cli_traffic,
-	/* min */	none,
-	/* max */	none,
-	/* default */	on,
-	/* units */	bool,
-	/* flags */	00,
+	/* typ */	bool,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	"on",
+	/* units */	"bool",
+	/* flags */	0,
 	/* s-text */
-	"Log all CLI traffic to syslog(LOG_INFO).\n",
+	"Log all CLI traffic to syslog(LOG_INFO).",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	tcp_keepalive_intvl,
-	/* tweak */	tweak_timeout,
-	/* var */	tcp_keepalive_intvl,
-	/* min */	1.000,
-	/* max */	100.000,
-	/* default */	5.000,
-	/* units */	seconds,
-	/* flags */	0| EXPERIMENTAL,
+	/* typ */	timeout,
+	/* min */	"1.000",
+	/* max */	"100.000",
+	/* default */	"5.000",
+	/* units */	"seconds",
+	/* flags */	EXPERIMENTAL,
 	/* s-text */
-	"The number of seconds between TCP keep-alive probes.\n",
+	"The number of seconds between TCP keep-alive probes.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	tcp_keepalive_probes,
-	/* tweak */	tweak_uint,
-	/* var */	tcp_keepalive_probes,
-	/* min */	1,
-	/* max */	100,
-	/* default */	5,
-	/* units */	probes,
-	/* flags */	0| EXPERIMENTAL,
+	/* typ */	uint,
+	/* min */	"1",
+	/* max */	"100",
+	/* default */	"5",
+	/* units */	"probes",
+	/* flags */	EXPERIMENTAL,
 	/* s-text */
 	"The maximum number of TCP keep-alive probes to send before giving "
 	"up and killing the connection if no response is obtained from the "
-	"other end.\n",
+	"other end.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	tcp_keepalive_time,
-	/* tweak */	tweak_timeout,
-	/* var */	tcp_keepalive_time,
-	/* min */	1.000,
-	/* max */	7200.000,
-	/* default */	600.000,
-	/* units */	seconds,
-	/* flags */	0| EXPERIMENTAL,
+	/* typ */	timeout,
+	/* min */	"1.000",
+	/* max */	"7200.000",
+	/* default */	"600.000",
+	/* units */	"seconds",
+	/* flags */	EXPERIMENTAL,
 	/* s-text */
 	"The number of seconds a connection needs to be idle before TCP "
-	"begins sending out keep-alive probes.\n",
+	"begins sending out keep-alive probes.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #if 0
 PARAM(
 	/* name */	thread_pool_add_delay,
-	/* tweak */	tweak_timeout,
-	/* var */	thread_pool_add_delay,
-	/* min */	0.000,
-	/* max */	none,
-	/* default */	0.000,
-	/* units */	seconds,
-	/* flags */	0| EXPERIMENTAL,
+	/* typ */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* default */	"0.000",
+	/* units */	"seconds",
+	/* flags */	EXPERIMENTAL,
 	/* s-text */
 	"Wait at least this long after creating a thread.\n"
 	"\n"
@@ -1046,34 +988,32 @@ PARAM(
 	"creating threads.\n"
 	"Set this to a few milliseconds if you see the 'threads_failed' "
 	"counter grow too much.\n"
-	"Setting this too high results in insuffient worker threads.\n",
+	"Setting this too high results in insuffient worker threads.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	thread_pool_destroy_delay,
-	/* tweak */	tweak_timeout,
-	/* var */	thread_pool_destroy_delay,
-	/* min */	0.010,
-	/* max */	none,
-	/* default */	1.000,
-	/* units */	seconds,
-	/* flags */	0| DELAYED_EFFECT| EXPERIMENTAL,
+	/* typ */	timeout,
+	/* min */	"0.010",
+	/* max */	NULL,
+	/* default */	"1.000",
+	/* units */	"seconds",
+	/* flags */	DELAYED_EFFECT| EXPERIMENTAL,
 	/* s-text */
 	"Wait this long after destroying a thread.\n"
-	"This controls the decay of thread pools when idle(-ish).\n",
+	"This controls the decay of thread pools when idle(-ish).",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	thread_pool_fail_delay,
-	/* tweak */	tweak_timeout,
-	/* var */	thread_pool_fail_delay,
-	/* min */	0.010,
-	/* max */	none,
-	/* default */	0.200,
-	/* units */	seconds,
-	/* flags */	0| EXPERIMENTAL,
+	/* typ */	timeout,
+	/* min */	"0.010",
+	/* max */	NULL,
+	/* default */	"0.200",
+	/* units */	"seconds",
+	/* flags */	EXPERIMENTAL,
 	/* s-text */
 	"Wait at least this long after a failed thread creation before "
 	"trying to create another thread.\n"
@@ -1087,88 +1027,83 @@ PARAM(
 	"\n"
 	"It may also help to increase thread_pool_timeout and "
 	"thread_pool_min, to reduce the rate at which treads are destroyed "
-	"and later recreated.\n",
+	"and later recreated.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	thread_pool_max,
-	/* tweak */	tweak_***,
-	/* var */	thread_pool_max,
-	/* min */	100,
-	/* max */	none,
-	/* default */	5000,
-	/* units */	threads,
-	/* flags */	0| DELAYED_EFFECT,
+	/* typ */	thread_pool_max,
+	/* min */	"100",
+	/* max */	NULL,
+	/* default */	"5000",
+	/* units */	"threads",
+	/* flags */	DELAYED_EFFECT,
 	/* s-text */
 	"The maximum number of worker threads in each pool.\n"
 	"\n"
 	"Do not set this higher than you have to, since excess worker "
 	"threads soak up RAM and CPU and generally just get in the way of "
-	"getting work done.\n",
+	"getting work done.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	thread_pool_min,
-	/* tweak */	tweak_***,
-	/* var */	thread_pool_min,
-	/* min */	none,
-	/* max */	5000,
-	/* default */	100,
-	/* units */	threads,
-	/* flags */	0| DELAYED_EFFECT,
+	/* typ */	thread_pool_min,
+	/* min */	NULL,
+	/* max */	"5000",
+	/* default */	"100",
+	/* units */	"threads",
+	/* flags */	DELAYED_EFFECT,
 	/* s-text */
 	"The minimum number of worker threads in each pool.\n"
 	"\n"
 	"Increasing this may help ramp up faster from low load situations "
 	"or when threads have expired."
-	"Minimum is 10 threads.\n",
+	"Minimum is 10 threads.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	thread_pool_stack,
-	/* tweak */	tweak_bytes,
-	/* var */	thread_pool_stack,
-	/* min */	2k,
-	/* max */	none,
-	/* default */	48k,
-	/* units */	bytes,
-	/* flags */	0| EXPERIMENTAL,
+	/* typ */	bytes,
+	/* min */	"2k",
+	/* max */	NULL,
+	/* default */	"48k",
+	/* units */	"bytes",
+	/* flags */	EXPERIMENTAL,
 	/* s-text */
 	"Worker thread stack size.\n"
 	"This will likely be rounded up to a multiple of 4k (or whatever "
-	"the page_size might be) by the kernel.\n",
+	"the page_size might be) by the kernel.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	thread_pool_timeout,
-	/* tweak */	tweak_timeout,
-	/* var */	thread_pool_timeout,
-	/* min */	10.000,
-	/* max */	none,
-	/* default */	300.000,
-	/* units */	seconds,
-	/* flags */	0| DELAYED_EFFECT| EXPERIMENTAL,
+	/* typ */	timeout,
+	/* min */	"10.000",
+	/* max */	NULL,
+	/* default */	"300.000",
+	/* units */	"seconds",
+	/* flags */	DELAYED_EFFECT| EXPERIMENTAL,
 	/* s-text */
 	"Thread idle threshold.\n"
 	"\n"
 	"Threads in excess of thread_pool_min, which have been idle for at "
-	"least this long, will be destroyed.\n",
+	"least this long, will be destroyed.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	thread_pools,
-	/* tweak */	tweak_uint,
-	/* var */	thread_pools,
-	/* min */	1,
-	/* max */	none,
-	/* default */	2,
-	/* units */	pools,
-	/* flags */	0| DELAYED_EFFECT| EXPERIMENTAL,
+	/* typ */	uint,
+	/* min */	"1",
+	/* max */	NULL,
+	/* default */	"2",
+	/* units */	"pools",
+	/* flags */	DELAYED_EFFECT| EXPERIMENTAL,
 	/* s-text */
 	"Number of worker thread pools.\n"
 	"\n"
@@ -1178,73 +1113,69 @@ PARAM(
 	"pool for each CPU is probably detrimal to performance.\n"
 	"\n"
 	"Can be increased on the fly, but decreases require a restart to "
-	"take effect.\n",
+	"take effect.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	thread_queue_limit,
-	/* tweak */	tweak_uint,
-	/* var */	thread_queue_limit,
-	/* min */	0,
-	/* max */	none,
-	/* default */	20,
-	/* units */	,
-	/* flags */	0| EXPERIMENTAL,
+	/* typ */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"20",
+	/* units */	NULL,
+	/* flags */	EXPERIMENTAL,
 	/* s-text */
 	"Permitted queue length per thread-pool.\n"
 	"\n"
 	"This sets the number of requests we will queue, waiting for an "
 	"available thread.  Above this limit sessions will be dropped "
-	"instead of queued.\n",
+	"instead of queued.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	thread_stats_rate,
-	/* tweak */	tweak_uint,
-	/* var */	thread_stats_rate,
-	/* min */	0,
-	/* max */	none,
-	/* default */	10,
-	/* units */	requests,
-	/* flags */	0| EXPERIMENTAL,
+	/* typ */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"10",
+	/* units */	"requests",
+	/* flags */	EXPERIMENTAL,
 	/* s-text */
 	"Worker threads accumulate statistics, and dump these into the "
 	"global stats counters if the lock is free when they finish a job "
 	"(request/fetch etc.)\n"
 	"This parameters defines the maximum number of jobs a worker "
 	"thread may handle, before it is forced to dump its accumulated "
-	"stats into the global counters.\n",
+	"stats into the global counters.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #endif
 PARAM(
 	/* name */	timeout_idle,
-	/* tweak */	tweak_timeout,
-	/* var */	timeout_idle,
-	/* min */	0.000,
-	/* max */	none,
-	/* default */	5.000,
-	/* units */	seconds,
-	/* flags */	00,
+	/* typ */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* default */	"5.000",
+	/* units */	"seconds",
+	/* flags */	0,
 	/* s-text */
 	"Idle timeout for client connections.\n"
 	"A connection is considered idle, until we have received the full "
-	"request headers.\n",
+	"request headers.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	timeout_linger,
-	/* tweak */	tweak_timeout,
-	/* var */	timeout_linger,
-	/* min */	0.000,
-	/* max */	none,
-	/* default */	0.050,
-	/* units */	seconds,
-	/* flags */	0| EXPERIMENTAL,
+	/* typ */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* default */	"0.050",
+	/* units */	"seconds",
+	/* flags */	EXPERIMENTAL,
 	/* s-text */
 	"How long the worker thread lingers on an idle session before "
 	"handing it over to the waiter.\n"
@@ -1252,22 +1183,21 @@ PARAM(
 	"within the first 100 msec of the previous request completing.\n"
 	"Setting this too high results in worker threads not doing "
 	"anything for their keep, setting it too low just means that more "
-	"sessions take a detour around the waiter.\n",
+	"sessions take a detour around the waiter.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #if 0
 PARAM(
 	/* name */	vcc_allow_inline_c,
-	/* tweak */	tweak_bool,
-	/* var */	vcc_allow_inline_c,
-	/* min */	none,
-	/* max */	none,
-	/* default */	off,
-	/* units */	bool,
-	/* flags */	00,
+	/* typ */	bool,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	"off",
+	/* units */	"bool",
+	/* flags */	0,
 	/* s-text */
-	"Allow inline C code in VCL.\n",
+	"Allow inline C code in VCL.",
 	/* l-text */	"",
 	/* func */	NULL
 )
@@ -1275,15 +1205,14 @@ PARAM(
 #if 0
 PARAM(
 	/* name */	vcc_err_unref,
-	/* tweak */	tweak_bool,
-	/* var */	vcc_err_unref,
-	/* min */	none,
-	/* max */	none,
-	/* default */	on,
-	/* units */	bool,
-	/* flags */	00,
+	/* typ */	bool,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	"on",
+	/* units */	"bool",
+	/* flags */	0,
 	/* s-text */
-	"Unreferenced VCL objects result in error.\n",
+	"Unreferenced VCL objects result in error.",
 	/* l-text */	"",
 	/* func */	NULL
 )
@@ -1291,231 +1220,217 @@ PARAM(
 #if 0
 PARAM(
 	/* name */	vcc_unsafe_path,
-	/* tweak */	tweak_bool,
-	/* var */	vcc_unsafe_path,
-	/* min */	none,
-	/* max */	none,
-	/* default */	on,
-	/* units */	bool,
-	/* flags */	00,
+	/* typ */	bool,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	"on",
+	/* units */	"bool",
+	/* flags */	0,
 	/* s-text */
 	"Allow '/' in vmod & include paths.\n"
-	"Allow 'import ... from ...'.\n",
+	"Allow 'import ... from ...'.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #endif
 PARAM(
 	/* name */	vcl_cooldown,
-	/* tweak */	tweak_timeout,
-	/* var */	vcl_cooldown,
-	/* min */	0.000,
-	/* max */	none,
-	/* default */	600.000,
-	/* units */	seconds,
-	/* flags */	00,
+	/* typ */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* default */	"600.000",
+	/* units */	"seconds",
+	/* flags */	0,
 	/* s-text */
 	"How long time a VCL is kept warm after being replaced as the "
-	"active VCL.  (Granularity approximately 30 seconds.)\n",
+	"active VCL.  (Granularity approximately 30 seconds.)",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #if 0
 PARAM(
 	/* name */	vcl_dir,
-	/* tweak */	tweak_string,
-	/* var */	vcl_dir,
-	/* min */	none,
-	/* max */	none,
+	/* typ */	string,
+	/* min */	NULL,
+	/* max */	NULL,
 	/* default */	/opt/varnish/etc/varnish,
-	/* units */	(null),
-	/* flags */	00,
+	/* units */	NULL,
+	/* flags */	0,
 	/* s-text */
 	"Directory from which relative VCL filenames (vcl.load and "
-	"include) are opened.\n",
+	"include) are opened.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	vmod_dir,
-	/* tweak */	tweak_string,
-	/* var */	vmod_dir,
-	/* min */	none,
-	/* max */	none,
+	/* typ */	string,
+	/* min */	NULL,
+	/* max */	NULL,
 	/* default */	/opt/varnish/lib/varnish/vmods,
-	/* units */	(null),
-	/* flags */	00,
+	/* units */	NULL,
+	/* flags */	0,
 	/* s-text */
-	"Directory where VCL modules are to be found.\n",
+	"Directory where VCL modules are to be found.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #endif
 PARAM(
 	/* name */	vsl_buffer,
-	/* tweak */	tweak_vsl_buffer,
-	/* var */	vsl_buffer,
-	/* min */	267,
-	/* max */	none,
-	/* default */	4k,
-	/* units */	bytes,
-	/* flags */	00,
+	/* typ */	vsl_buffer,
+	/* min */	"267",
+	/* max */	NULL,
+	/* default */	"4k",
+	/* units */	"bytes",
+	/* flags */	0,
 	/* s-text */
 	"Bytes of (req-/backend-)workspace dedicated to buffering VSL "
 	"records.\n"
 	"Setting this too high costs memory, setting it too low will cause "
 	"more VSL flushes and likely increase lock-contention on the VSL "
 	"mutex.\n"
-	"The minimum tracks the vsl_reclen parameter + 12 bytes.\n",
+	"The minimum tracks the vsl_reclen parameter + 12 bytes.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #if 0
 PARAM(
 	/* name */	vsl_mask,
-	/* tweak */	tweak_mask
-	/* var */	vsl_mask,
-	/* min */	none,
-	/* max */	none,
-	/* default */	-VCL_trace,-WorkThread,-Hash,-VfpAcct,
-	/* units */	,
-	/* flags */	00,
+	/* typ */	vsl_mask,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	"default",
+	/* units */	NULL,
+	/* flags */	0,
 	/* s-text */
 	"Mask individual VSL messages from being logged.\n"
 	"	default	Set default value\n"
 	"\n"
 	"Use +/- prefixe in front of VSL tag name, to mask/unmask "
-	"individual VSL messages.\n",
+	"individual VSL messages.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #endif
 PARAM(
 	/* name */	vsl_reclen,
-	/* tweak */	tweak_vsl_reclen,
-	/* var */	vsl_reclen,
-	/* min */	16b,
-	/* max */	4084b,
-	/* default */	255b,
-	/* units */	bytes,
-	/* flags */	00,
+	/* typ */	vsl_reclen,
+	/* min */	"16b",
+	/* max */	"4084b",
+	/* default */	"255b",
+	/* units */	"bytes",
+	/* flags */	0,
 	/* s-text */
 	"Maximum number of bytes in SHM log record.\n"
-	"The maximum tracks the vsl_buffer parameter - 12 bytes.\n",
+	"The maximum tracks the vsl_buffer parameter - 12 bytes.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	vsl_space,
-	/* tweak */	tweak_bytes,
-	/* var */	vsl_space,
-	/* min */	1M,
-	/* max */	none,
-	/* default */	80M,
-	/* units */	bytes,
-	/* flags */	0| MUST_RESTART,
+	/* typ */	bytes,
+	/* min */	"1M",
+	/* max */	NULL,
+	/* default */	"80M",
+	/* units */	"bytes",
+	/* flags */	MUST_RESTART,
 	/* s-text */
 	"The amount of space to allocate for the VSL fifo buffer in the "
 	"VSM memory segment.  If you make this too small, "
 	"varnish{ncsa|log} etc will not be able to keep up.  Making it too "
-	"large just costs memory resources.\n",
+	"large just costs memory resources.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	vsm_space,
-	/* tweak */	tweak_bytes,
-	/* var */	vsm_space,
-	/* min */	1M,
-	/* max */	none,
-	/* default */	1M,
-	/* units */	bytes,
-	/* flags */	0| MUST_RESTART,
+	/* typ */	bytes,
+	/* min */	"1M",
+	/* max */	NULL,
+	/* default */	"1M",
+	/* units */	"bytes",
+	/* flags */	MUST_RESTART,
 	/* s-text */
 	"The amount of space to allocate for stats counters in the VSM "
 	"memory segment.  If you make this too small, some counters will "
-	"be invisible.  Making it too large just costs memory resources.\n",
+	"be invisible.  Making it too large just costs memory resources.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #if 0
 PARAM(
 	/* name */	waiter,
-	/* tweak */	tweak_waiter,
-	/* var */	waiter,
-	/* min */	none,
-	/* max */	none,
+	/* typ */	waiter,
+	/* min */	NULL,
+	/* max */	NULL,
 	/* default */	kqueue (possible values: kqueue, poll),
-	/* units */	(null),
-	/* flags */	0| MUST_RESTART| WIZARD,
+	/* units */	NULL,
+	/* flags */	MUST_RESTART| WIZARD,
 	/* s-text */
-	"Select the waiter kernel interface.\n",
+	"Select the waiter kernel interface.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #endif
 PARAM(
 	/* name */	workspace_backend,
-	/* tweak */	tweak_bytes_u,
-	/* var */	workspace_backend,
-	/* min */	1k,
-	/* max */	none,
-	/* default */	64k,
-	/* units */	bytes,
-	/* flags */	0| DELAYED_EFFECT,
+	/* typ */	bytes_u,
+	/* min */	"1k",
+	/* max */	NULL,
+	/* default */	"64k",
+	/* units */	"bytes",
+	/* flags */	DELAYED_EFFECT,
 	/* s-text */
 	"Bytes of HTTP protocol workspace for backend HTTP req/resp.  If "
-	"larger than 4k, use a multiple of 4k for VM efficiency.\n",
+	"larger than 4k, use a multiple of 4k for VM efficiency.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	workspace_client,
-	/* tweak */	tweak_bytes_u,
-	/* var */	workspace_client,
-	/* min */	9k,
-	/* max */	none,
-	/* default */	64k,
-	/* units */	bytes,
-	/* flags */	0| DELAYED_EFFECT,
+	/* typ */	bytes_u,
+	/* min */	"9k",
+	/* max */	NULL,
+	/* default */	"64k",
+	/* units */	"bytes",
+	/* flags */	DELAYED_EFFECT,
 	/* s-text */
 	"Bytes of HTTP protocol workspace for clients HTTP req/resp.  If "
-	"larger than 4k, use a multiple of 4k for VM efficiency.\n",
+	"larger than 4k, use a multiple of 4k for VM efficiency.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	workspace_session,
-	/* tweak */	tweak_bytes_u,
-	/* var */	workspace_session,
-	/* min */	0.25k,
-	/* max */	none,
-	/* default */	0.50k,
-	/* units */	bytes,
-	/* flags */	0| DELAYED_EFFECT,
+	/* typ */	bytes_u,
+	/* min */	"0.25k",
+	/* max */	NULL,
+	/* default */	"0.50k",
+	/* units */	"bytes",
+	/* flags */	DELAYED_EFFECT,
 	/* s-text */
 	"Allocation size for session structure and workspace.    The "
 	"workspace is primarily used for TCP connection addresses.  If "
-	"larger than 4k, use a multiple of 4k for VM efficiency.\n",
+	"larger than 4k, use a multiple of 4k for VM efficiency.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 PARAM(
 	/* name */	workspace_thread,
-	/* tweak */	tweak_bytes_u,
-	/* var */	workspace_thread,
-	/* min */	0.25k,
-	/* max */	8k,
-	/* default */	2k,
-	/* units */	bytes,
-	/* flags */	0| DELAYED_EFFECT,
+	/* typ */	bytes_u,
+	/* min */	"0.25k",
+	/* max */	"8k",
+	/* default */	"2k",
+	/* units */	"bytes",
+	/* flags */	DELAYED_EFFECT,
 	/* s-text */
 	"Bytes of auxiliary workspace per thread.\n"
 	"This workspace is used for certain temporary data structures "
 	"during the operation of a worker thread.\n"
 	"One use is for the io-vectors for writing requests and responses "
 	"to sockets, having too little space will result in more writev(2) "
-	"system calls, having too much just wastes the space.\n",
+	"system calls, having too much just wastes the space.",
 	/* l-text */	"",
 	/* func */	NULL
 )
