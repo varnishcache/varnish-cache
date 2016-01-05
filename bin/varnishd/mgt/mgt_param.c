@@ -138,7 +138,7 @@ mcf_addpar(struct parspec *ps)
 
 /*--------------------------------------------------------------------
  * Wrap the text nicely.
- * Lines are allowed to contain to TABS and we render that as a table
+ * Lines are allowed to contain two TABS and we render that as a table
  * taking the width of the first column into account.
  */
 

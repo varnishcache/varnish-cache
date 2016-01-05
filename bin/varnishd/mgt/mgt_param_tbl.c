@@ -207,7 +207,7 @@ struct parspec mgt_parspec[] = {
 	{ "nuke_limit",
 		tweak_uint, &mgt_param.nuke_limit,
 		"0", NULL,
-		"Maximum number of objects we attempt to nuke in order"
+		"Maximum number of objects we attempt to nuke in order "
 		"to make space for a object body.",
 		EXPERIMENTAL,
 		"50", "allocations" },
