@@ -531,6 +531,7 @@ addf_auth(const char *str)
 	struct format *f;
 
 	ALLOC_OBJ(f, FORMAT_MAGIC);
+	AN(f);
 	f->func = &format_auth;
 	if (str != NULL) {
 		f->string = strdup(str);

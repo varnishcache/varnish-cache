@@ -105,6 +105,7 @@ vsc_setup(struct VSM_data *vd)
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	if (vd->vsc == NULL) {
 		ALLOC_OBJ(vd->vsc, VSC_MAGIC);
+		AN(vd->vsc);
 		VTAILQ_INIT(&vd->vsc->vf_list);
 		VTAILQ_INIT(&vd->vsc->pt_list);
 		VTAILQ_INIT(&vd->vsc->sf_list);
