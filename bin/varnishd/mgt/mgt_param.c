@@ -575,6 +575,10 @@ MCF_DumpRstParam(void)
 				printf("%sonly_root", q);
 				q = ", ";
 			}
+			if (pp->flags & OBJ_STICKY) {
+				printf("%sobj_sticky", q);
+				q = ", ";
+			}
 			printf("\n");
 		}
 		printf("\n");
