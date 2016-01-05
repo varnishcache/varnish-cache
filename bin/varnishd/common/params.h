@@ -85,14 +85,8 @@ struct params {
 #undef ptyp_vsl_reclen
 
 	/* Unprivileged user / group */
-	char			*user;
 	uid_t			uid;
-	char			*group;
 	gid_t			gid;
-
-	/* Extra group for compiler access */
-	char			*group_cc;
-	gid_t			gid_cc;
 
 	/* TTL used for lack of anything better */
 	double			default_ttl;
@@ -111,7 +105,6 @@ struct params {
 	unsigned		wthread_max;
 	double			wthread_timeout;
 	unsigned		wthread_pools;
-	unsigned		wthread_add_threshold;
 	double			wthread_add_delay;
 	double			wthread_fail_delay;
 	double			wthread_destroy_delay;
@@ -127,7 +120,6 @@ struct params {
 
 	unsigned		vsl_buffer;
 
-	unsigned		shm_workspace;
 	unsigned		http_req_size;
 	unsigned		http_req_hdr_len;
 	unsigned		http_resp_size;
@@ -195,8 +187,6 @@ struct params {
 	unsigned		gzip_buffer;
 	unsigned		gzip_level;
 	unsigned		gzip_memlevel;
-
-	unsigned		obj_readonly;
 
 	double			critbit_cooloff;
 
