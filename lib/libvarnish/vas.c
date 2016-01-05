@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2006-2016 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -46,7 +46,7 @@ VAS_Fail_default(const char *func, const char *file, int line,
 
 	if (kind == VAS_MISSING) {
 		fprintf(stderr,
-		    "Missing errorhandling code in %s(), %s line %d:\n"
+		    "Missing error handling code in %s(), %s line %d:\n"
 		    "  Condition(%s) not true.\n",
 		    func, file, line, cond);
 	} else if (kind == VAS_INCOMPLETE) {
@@ -55,8 +55,8 @@ VAS_Fail_default(const char *func, const char *file, int line,
 		    func, file, line);
 	} else if (kind == VAS_WRONG) {
 		fprintf(stderr,
-		    "Wrong turn in %s(), %s line %d:\n",
-		    func, file, line);
+		    "Wrong turn in %s(), %s line %d: %s\n",
+		    func, file, line, cond);
 	} else {
 		fprintf(stderr,
 		    "Assert error in %s(), %s line %d:\n"
