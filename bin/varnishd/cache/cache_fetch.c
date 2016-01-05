@@ -777,18 +777,14 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
+	AN(bo->fetch_objcore->flags & OC_F_BUSY);
 	assert(bo->director_state == DIR_S_NULL);
-
-	if(bo->fetch_objcore->stobj->stevedore != NULL)
-		ObjFreeObj(bo->wrk, bo->fetch_objcore);
 
 	now = W_TIM_real(wrk);
 	VSLb_ts_busyobj(bo, "Error", now);
 
-	AN(bo->fetch_objcore->flags & OC_F_BUSY);
-
-	synth_body = VSB_new_auto();
-	AN(synth_body);
+	if(bo->fetch_objcore->stobj->stevedore != NULL)
+		ObjFreeObj(bo->wrk, bo->fetch_objcore);
 
 	// XXX: reset all beresp flags ?
 
@@ -800,26 +796,23 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	EXP_Clr(&bo->fetch_objcore->exp);
 	bo->fetch_objcore->exp.t_origin = bo->t_prev;
 
+	synth_body = VSB_new_auto();
+	AN(synth_body);
+
 	VCL_backend_error_method(bo->vcl, wrk, NULL, bo, synth_body);
 
 	AZ(VSB_finish(synth_body));
 
-	if (wrk->handling == VCL_RET_RETRY ||
-	    wrk->handling == VCL_RET_ABANDON) {
+	if (wrk->handling == VCL_RET_ABANDON) {
 		VSB_delete(synth_body);
+		return (F_STP_FAIL);
+	}
 
-		if (bo->director_state != DIR_S_NULL) {
-			bo->htc->doclose = SC_RESP_CLOSE;
-			VDI_Finish(bo->wrk, bo);
-		}
-
-		if (wrk->handling == VCL_RET_RETRY) {
-			if (bo->retries++ < cache_param->max_retries)
-				return (F_STP_RETRY);
-			VSLb(bo->vsl, SLT_VCL_Error,
-			    "Too many retries, delivering 503");
-		}
-
+	if (wrk->handling == VCL_RET_RETRY) {
+		VSB_delete(synth_body);
+		if (bo->retries++ < cache_param->max_retries)
+			return (F_STP_RETRY);
+		VSLb(bo->vsl, SLT_VCL_Error, "Too many retries, failing");
 		return (F_STP_FAIL);
 	}
 

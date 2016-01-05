@@ -814,6 +814,7 @@ HSH_DerefObjHead(struct worker *wrk, struct objhead **poh)
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
 	if (oh == private_oh) {
+		AZ(oh->waitinglist);
 		Lck_Lock(&oh->mtx);
 		assert(oh->refcnt > 1);
 		oh->refcnt--;
