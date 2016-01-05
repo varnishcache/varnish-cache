@@ -63,16 +63,26 @@ struct poolparam {
 struct params {
 
 #define	ptyp_bool	unsigned
+#define	ptyp_bytes	ssize_t
+#define	ptyp_bytes_u	unsigned
 #define	ptyp_double	double
+#define	ptyp_poolparam	struct poolparam
 #define	ptyp_timeout	double
 #define	ptyp_uint	unsigned
+#define	ptyp_vsl_buffer	unsigned
+#define	ptyp_vsl_reclen	unsigned
 #define PARAM(nm, ty, mi, ma, de, un, fl, st, lt, fn) ptyp_##ty nm;
 #include <tbl/params.h>
 #undef PARAM
 #undef ptyp_bool
+#undef ptyp_bytes
+#undef ptyp_bytes_u
 #undef ptyp_double
+#undef ptyp_poolparam
 #undef ptyp_timeout
 #undef ptyp_uint
+#undef ptyp_vsl_buffer
+#undef ptyp_vsl_reclen
 
 	/* Unprivileged user / group */
 	char			*user;
