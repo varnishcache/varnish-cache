@@ -70,7 +70,7 @@ unsigned
 VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
     int maxlines)
 {
-	int rv, p[2], sfd, status;
+	int rv, p[2], sfd, hfd, status;
 	pid_t pid;
 	struct vlu *vlu;
 	struct vsub_priv sp;
@@ -100,7 +100,8 @@ VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
 		assert(dup2(p[1], STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(p[1], STDERR_FILENO) == STDERR_FILENO);
 		/* Close all other fds */
-		for (sfd = STDERR_FILENO+1; sfd < sysconf(_SC_OPEN_MAX); sfd++)
+		hfd = sysconf(_SC_OPEN_MAX);
+		for (sfd = STDERR_FILENO+1; sfd < hfd; sfd++)
 			(void)close(sfd);
 		func(priv);
 		/*
