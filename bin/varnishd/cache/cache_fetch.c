@@ -795,8 +795,22 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	http_TimeHeader(bo->beresp, "Date: ", now);
 	http_SetHeader(bo->beresp, "Server: Varnish");
 
-	EXP_Clr(&bo->fetch_objcore->exp);
-	bo->fetch_objcore->exp.t_origin = bo->t_prev;
+	if (bo->fetch_objcore->objhead->waitinglist != NULL) {
+		/*
+		 * If there is a waitinglist, it means that there is no
+		 * grace-able object, so cache the error return for a
+		 * short time, so the waiting list can drain, rather than
+		 * each objcore on the waiting list sequentially attempt
+		 * to fetch from the backend.
+		 */
+		bo->fetch_objcore->exp.t_origin = now;
+		bo->fetch_objcore->exp.ttl = 1;
+		bo->fetch_objcore->exp.grace = 5;
+		bo->fetch_objcore->exp.keep = 5;
+	} else {
+		EXP_Clr(&bo->fetch_objcore->exp);
+		bo->fetch_objcore->exp.t_origin = now;
+	}
 
 	synth_body = VSB_new_auto();
 	AN(synth_body);
