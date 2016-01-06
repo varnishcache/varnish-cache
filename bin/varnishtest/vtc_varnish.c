@@ -77,6 +77,8 @@ struct varnish {
 	struct VSM_data		*vd;		/* vsc use */
 
 	unsigned		vsl_tag_count[256];
+	
+	volatile int		vsl_idle;
 };
 
 #define NONSENSE	"%XJEIFLH|)Xspa8P"
@@ -223,8 +225,9 @@ varnishlog_thread(void *priv)
 
 		i = VSL_Next(c);
 		if (i == 0) {
+			v->vsl_idle++;
 			/* Nothing to do but wait */
-			VTIM_sleep(0.01);
+			VTIM_sleep(0.1);
 			continue;
 		} else if (i == -2) {
 			/* Abandoned - try reconnect */
@@ -234,6 +237,8 @@ varnishlog_thread(void *priv)
 			continue;
 		} else if (i != 1)
 			break;
+
+		v->vsl_idle = 0;
 
 		tag = VSL_TAG(c->rec.ptr);
 		vxid = VSL_ID(c->rec.ptr);
@@ -595,9 +600,11 @@ varnish_wait(struct varnish *v)
 
 	if (v->cli_fd < 0)
 		return;
+	varnish_ask_cli(v, "backend.list", &resp);
+	while (v->vsl_idle < 10)
+		(void)usleep(200000);
 	if (vtc_error)
 		(void)sleep(1);	/* give panic messages a chance */
-	varnish_ask_cli(v, "backend.list", &resp);
 	varnish_stop(v);
 	vtc_log(v->vl, 2, "Wait");
 	AZ(close(v->cli_fd));
