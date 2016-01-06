@@ -58,8 +58,8 @@ VSUB_closefrom(int fd)
 #ifdef HAVE_CLOSEFROM
 	closefrom(fd);
 #else
-	int i;= sysconf(_SC_OPEN_MAX);
-	for (i = sysconf(_SC_OPEN_MAX); i > STDERR_FILENO; i--)
+	int i = sysconf(_SC_OPEN_MAX);
+	for (i = sysconf(_SC_OPEN_MAX); i > fd; i--)
 		(void)close(i);
 #endif
 }
