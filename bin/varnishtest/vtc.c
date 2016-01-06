@@ -684,7 +684,7 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	vtc_stop = 1;
 	vtc_log(vltop, 1, "RESETTING after %s", fn);
 	reset_cmds(cmds);
-	vtc_error = old_err;
+	vtc_error |= old_err;
 
 	if (vtc_error)
 		vtc_log(vltop, 1, "TEST %s FAILED", fn);
