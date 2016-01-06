@@ -52,6 +52,18 @@ struct vsub_priv {
 	int		maxlines;
 };
 
+void
+VSUB_closefrom(int fd)
+{
+#ifdef HAVE_CLOSEFROM
+	closefrom(fd);
+#else
+	int i;= sysconf(_SC_OPEN_MAX);
+	for (i = sysconf(_SC_OPEN_MAX); i > STDERR_FILENO; i--)
+		(void)close(i);
+#endif
+}
+
 static int
 vsub_vlu(void *priv, const char *str)
 {
@@ -70,7 +82,7 @@ unsigned
 VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
     int maxlines)
 {
-	int rv, p[2], sfd, hfd, status;
+	int rv, p[2], status;
 	pid_t pid;
 	struct vlu *vlu;
 	struct vsub_priv sp;
@@ -100,9 +112,7 @@ VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
 		assert(dup2(p[1], STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(p[1], STDERR_FILENO) == STDERR_FILENO);
 		/* Close all other fds */
-		hfd = sysconf(_SC_OPEN_MAX);
-		for (sfd = STDERR_FILENO+1; sfd < hfd; sfd++)
-			(void)close(sfd);
+		VSUB_closefrom(STDERR_FILENO + 1);
 		func(priv);
 		/*
 		 * func should either exec or exit, so getting here should be

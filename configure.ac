@@ -245,6 +245,7 @@ AC_CHECK_FUNCS([getdtablesize])
 AC_CHECK_FUNCS([nanosleep])
 AC_CHECK_FUNCS([setppriv])
 AC_CHECK_FUNCS([fallocate])
+AC_CHECK_FUNCS([closefrom])
 
 save_LIBS="${LIBS}"
 LIBS="${PTHREAD_LIBS}"
