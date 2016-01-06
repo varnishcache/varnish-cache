@@ -51,6 +51,7 @@
 #include "vrnd.h"
 #include "vsa.h"
 #include "vss.h"
+#include "vsub.h"
 #include "vtcp.h"
 #include "vtim.h"
 
@@ -232,7 +233,7 @@ static void
 start_test(void)
 {
 	struct vtc_tst *tp;
-	int p[2], sfd, retval;
+	int p[2], retval;
 	struct vtc_job *jp;
 	char tmpdir[PATH_MAX];
 
@@ -274,8 +275,7 @@ start_test(void)
 		assert(open("/dev/null", O_RDONLY) == STDIN_FILENO);
 		assert(dup2(p[1], STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(p[1], STDERR_FILENO) == STDERR_FILENO);
-		for (sfd = STDERR_FILENO + 1; sfd < 100; sfd++)
-			(void)close(sfd);
+		VSUB_closefrom(STDERR_FILENO + 1);
 		retval = exec_file(jp->tst->filename, jp->tst->script,
 		    jp->tmpdir, jp->buf, jp->bufsiz);
 		exit(retval);
