@@ -226,9 +226,6 @@ PARAM(
 	/* func */	NULL
 )
 
-/**********************************************************************/
-#if 0 /* NOT YET */
-
 PARAM(
 	/* name */	cli_buffer,
 	/* typ */	bytes_u,
@@ -245,6 +242,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	cli_limit,
 	/* typ */	bytes_u,
@@ -260,6 +258,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	cli_timeout,
 	/* typ */	timeout,
@@ -274,6 +273,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	clock_skew,
 	/* typ */	uint,
@@ -288,6 +288,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	connect_timeout,
 	/* typ */	timeout,
@@ -304,6 +305,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	critbit_cooloff,
 	/* typ */	timeout,
@@ -318,6 +320,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 #if 0
 PARAM(
 	/* name */	debug,
@@ -347,6 +350,7 @@ PARAM(
 	/* func */	NULL
 )
 #endif
+
 PARAM(
 	/* name */	default_grace,
 	/* typ */	timeout,
@@ -362,6 +366,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	default_keep,
 	/* typ */	timeout,
@@ -378,6 +383,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	default_ttl,
 	/* typ */	timeout,
@@ -392,6 +398,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 #if 0
 PARAM(
 	/* name */	feature,
@@ -417,6 +424,7 @@ PARAM(
 	/* func */	NULL
 )
 #endif
+
 PARAM(
 	/* name */	fetch_chunksize,
 	/* typ */	bytes,
@@ -433,6 +441,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	fetch_maxchunksize,
 	/* typ */	bytes,
@@ -447,6 +456,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	gzip_buffer,
 	/* typ */	bytes_u,
@@ -464,6 +474,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	gzip_level,
 	/* typ */	uint,
@@ -477,6 +488,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	gzip_memlevel,
 	/* typ */	uint,
@@ -491,6 +503,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	http_gzip_support,
 	/* typ */	bool,
@@ -513,6 +526,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	http_max_hdr,
 	/* typ */	uint,
@@ -530,6 +544,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	http_range_support,
 	/* typ */	bool,
@@ -543,6 +558,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	http_req_hdr_len,
 	/* typ */	bytes_u,
@@ -557,6 +573,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	http_req_size,
 	/* typ */	bytes_u,
@@ -575,6 +592,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	http_resp_hdr_len,
 	/* typ */	bytes_u,
@@ -589,6 +607,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	http_resp_size,
 	/* typ */	bytes_u,
@@ -607,6 +626,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	idle_send_timeout,
 	/* typ */	timeout,
@@ -623,6 +643,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	listen_depth,
 	/* typ */	uint,
@@ -636,6 +657,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	lru_interval,
 	/* typ */	timeout,
@@ -653,6 +675,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	max_esi_depth,
 	/* typ */	uint,
@@ -666,6 +689,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	max_restarts,
 	/* typ */	uint,
@@ -681,6 +705,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	max_retries,
 	/* typ */	uint,
@@ -694,6 +719,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	nuke_limit,
 	/* typ */	uint,
@@ -708,6 +734,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 #if 0
 PARAM(
 	/* name */	pcre_match_limit,
@@ -723,6 +750,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	pcre_match_limit_recursion,
 	/* typ */	uint,
@@ -738,6 +766,7 @@ PARAM(
 	/* func */	NULL
 )
 #endif
+
 PARAM(
 	/* name */	ping_interval,
 	/* typ */	uint,
@@ -753,6 +782,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	pipe_timeout,
 	/* typ */	timeout,
@@ -767,6 +797,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 #if 0
 PARAM(
 	/* name */	pool_req,
@@ -782,6 +813,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	pool_sess,
 	/* typ */	poolparam,
@@ -796,6 +828,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	pool_vbo,
 	/* typ */	poolparam,
@@ -811,6 +844,7 @@ PARAM(
 	/* func */	NULL
 )
 #endif
+
 PARAM(
 	/* name */	prefer_ipv6,
 	/* typ */	bool,
@@ -825,6 +859,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	rush_exponent,
 	/* typ */	uint,
@@ -841,6 +876,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	send_timeout,
 	/* typ */	timeout,
@@ -857,13 +893,13 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
-#if 0
+
 PARAM(
 	/* name */	session_max,
 	/* typ */	uint,
 	/* min */	"1000",
 	/* max */	NULL,
-	/* default */	"10.000",
+	/* default */	"100000",
 	/* units */	"sessions",
 	/* flags */	0,
 	/* s-text */
@@ -888,7 +924,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
-#endif
+
 PARAM(
 	/* name */	shortlived,
 	/* typ */	timeout,
@@ -903,6 +939,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	sigsegv_handler,
 	/* typ */	bool,
@@ -917,6 +954,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	syslog_cli_traffic,
 	/* typ */	bool,
@@ -930,6 +968,8 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
+#if 0
 PARAM(
 	/* name */	tcp_keepalive_intvl,
 	/* typ */	timeout,
@@ -943,6 +983,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	tcp_keepalive_probes,
 	/* typ */	uint,
@@ -958,6 +999,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	tcp_keepalive_time,
 	/* typ */	timeout,
@@ -972,7 +1014,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
-#if 0
+
 PARAM(
 	/* name */	thread_pool_add_delay,
 	/* typ */	timeout,
@@ -992,6 +1034,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	thread_pool_destroy_delay,
 	/* typ */	timeout,
@@ -1006,6 +1049,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	thread_pool_fail_delay,
 	/* typ */	timeout,
@@ -1031,6 +1075,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	thread_pool_max,
 	/* typ */	thread_pool_max,
@@ -1048,6 +1093,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	thread_pool_min,
 	/* typ */	thread_pool_min,
@@ -1065,6 +1111,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	thread_pool_stack,
 	/* typ */	bytes,
@@ -1080,6 +1127,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	thread_pool_timeout,
 	/* typ */	timeout,
@@ -1096,6 +1144,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	thread_pools,
 	/* typ */	uint,
@@ -1117,6 +1166,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	thread_queue_limit,
 	/* typ */	uint,
@@ -1134,6 +1184,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	thread_stats_rate,
 	/* typ */	uint,
@@ -1145,7 +1196,7 @@ PARAM(
 	/* s-text */
 	"Worker threads accumulate statistics, and dump these into the "
 	"global stats counters if the lock is free when they finish a job "
-	"(request/fetch etc.)\n"
+	"(request/fetch etc).\n"
 	"This parameters defines the maximum number of jobs a worker "
 	"thread may handle, before it is forced to dump its accumulated "
 	"stats into the global counters.",
@@ -1153,6 +1204,7 @@ PARAM(
 	/* func */	NULL
 )
 #endif
+
 PARAM(
 	/* name */	timeout_idle,
 	/* typ */	timeout,
@@ -1168,6 +1220,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	timeout_linger,
 	/* typ */	timeout,
@@ -1187,6 +1240,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 #if 0
 PARAM(
 	/* name */	vcc_allow_inline_c,
@@ -1201,8 +1255,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
-#endif
-#if 0
+
 PARAM(
 	/* name */	vcc_err_unref,
 	/* typ */	bool,
@@ -1216,8 +1269,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
-#endif
-#if 0
+
 PARAM(
 	/* name */	vcc_unsafe_path,
 	/* typ */	bool,
@@ -1233,6 +1285,7 @@ PARAM(
 	/* func */	NULL
 )
 #endif
+
 PARAM(
 	/* name */	vcl_cooldown,
 	/* typ */	timeout,
@@ -1242,11 +1295,12 @@ PARAM(
 	/* units */	"seconds",
 	/* flags */	0,
 	/* s-text */
-	"How long time a VCL is kept warm after being replaced as the "
-	"active VCL.  (Granularity approximately 30 seconds.)",
+	"How long a VCL is kept warm after being replaced as the "
+	"active VCL (granularity approximately 30 seconds).",
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 #if 0
 PARAM(
 	/* name */	vcl_dir,
@@ -1262,6 +1316,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	vmod_dir,
 	/* typ */	string,
@@ -1276,6 +1331,7 @@ PARAM(
 	/* func */	NULL
 )
 #endif
+
 PARAM(
 	/* name */	vsl_buffer,
 	/* typ */	vsl_buffer,
@@ -1289,11 +1345,12 @@ PARAM(
 	"records.\n"
 	"Setting this too high costs memory, setting it too low will cause "
 	"more VSL flushes and likely increase lock-contention on the VSL "
-	"mutex.\n"
+	"mutex.\n\n"
 	"The minimum tracks the vsl_reclen parameter + 12 bytes.",
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 #if 0
 PARAM(
 	/* name */	vsl_mask,
@@ -1307,12 +1364,13 @@ PARAM(
 	"Mask individual VSL messages from being logged.\n"
 	"	default	Set default value\n"
 	"\n"
-	"Use +/- prefixe in front of VSL tag name, to mask/unmask "
+	"Use +/- prefix in front of VSL tag name, to mask/unmask "
 	"individual VSL messages.",
 	/* l-text */	"",
 	/* func */	NULL
 )
 #endif
+
 PARAM(
 	/* name */	vsl_reclen,
 	/* typ */	vsl_reclen,
@@ -1322,11 +1380,12 @@ PARAM(
 	/* units */	"bytes",
 	/* flags */	0,
 	/* s-text */
-	"Maximum number of bytes in SHM log record.\n"
+	"Maximum number of bytes in SHM log record.\n\n"
 	"The maximum tracks the vsl_buffer parameter - 12 bytes.",
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	vsl_space,
 	/* typ */	bytes,
@@ -1343,6 +1402,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	vsm_space,
 	/* typ */	bytes,
@@ -1358,6 +1418,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 #if 0
 PARAM(
 	/* name */	waiter,
@@ -1373,6 +1434,7 @@ PARAM(
 	/* func */	NULL
 )
 #endif
+
 PARAM(
 	/* name */	workspace_backend,
 	/* typ */	bytes_u,
@@ -1387,6 +1449,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	workspace_client,
 	/* typ */	bytes_u,
@@ -1401,6 +1464,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	workspace_session,
 	/* typ */	bytes_u,
@@ -1416,6 +1480,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 PARAM(
 	/* name */	workspace_thread,
 	/* typ */	bytes_u,
@@ -1434,5 +1499,5 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
-#endif
+
 /*lint -restore */
