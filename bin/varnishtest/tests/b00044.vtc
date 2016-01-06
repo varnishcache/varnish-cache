@@ -15,3 +15,5 @@ client c1 {
 server s1 -wait
 
 shell "kill -15 ${v1_pid}"
+
+varnish v1 -cleanup

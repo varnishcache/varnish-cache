@@ -78,7 +78,7 @@ struct varnish {
 	struct VSM_data		*vd;		/* vsc use */
 
 	unsigned		vsl_tag_count[256];
-	
+
 	volatile int		vsl_idle;
 };
 
@@ -209,6 +209,7 @@ varnishlog_thread(void *priv)
 	opt = 0;
 	while (v->pid) {
 		if (c == NULL) {
+			v->vsl_idle++;
 			VTIM_sleep(0.1);
 			if (VSM_Open(vsm)) {
 				VSM_ResetError(vsm);
@@ -256,6 +257,8 @@ varnishlog_thread(void *priv)
 		vtc_log(v->vl, 4, "vsl| %10u %-15s %c %.*s", vxid, tagname,
 		    type, (int)len, data);
 	}
+
+	v->vsl_idle = 100;
 
 	if (c)
 		VSL_DeleteCursor(c);
@@ -343,28 +346,29 @@ varnish_thread(void *priv)
 {
 	struct varnish *v;
 	char buf[65536];
-	struct pollfd *fds, fd;
+	struct pollfd fds[1];
 	int i;
 
 	CAST_OBJ_NOTNULL(v, priv, VARNISH_MAGIC);
 	(void)VTCP_nonblocking(v->fds[0]);
 	while (1) {
-		fds = &fd;
-		memset(fds, 0, sizeof *fds);
+		memset(fds, 0, sizeof fds);
 		fds->fd = v->fds[0];
 		fds->events = POLLIN;
 		i = poll(fds, 1, 1000);
 		if (i == 0)
 			continue;
+		if (fds->revents & POLLIN) {
+			i = read(v->fds[0], buf, sizeof buf - 1);
+			if (i > 0) {
+				buf[i] = '\0';
+				vtc_dump(v->vl, 3, "debug", buf, -2);
+			}
+		}
 		if (fds->revents & (POLLERR|POLLHUP)) {
 			vtc_log(v->vl, 4, "STDOUT poll 0x%x", fds->revents);
 			break;
 		}
-		i = read(v->fds[0], buf, sizeof buf - 1);
-		if (i <= 0)
-			break;
-		buf[i] = '\0';
-		vtc_dump(v->vl, 3, "debug", buf, -2);
 	}
 	return (NULL);
 }
@@ -589,41 +593,42 @@ varnish_stop(struct varnish *v)
 }
 
 /**********************************************************************
- * Wait for a Varnish
+ * Cleanup
  */
 
 static void
-varnish_wait(struct varnish *v)
+varnish_cleanup(struct varnish *v)
 {
 	void *p;
 	int status, r;
 	struct rusage ru;
-	char *resp;
 
-	if (v->cli_fd < 0)
-		return;
-	varnish_ask_cli(v, "backend.list", &resp);
+	/* Give the VSL log time to finish */
 	while (v->vsl_idle < 10)
 		(void)usleep(200000);
-	if (vtc_error)
-		(void)sleep(1);	/* give panic messages a chance */
-	varnish_stop(v);
-	vtc_log(v->vl, 2, "Wait");
+
+	/* Close the CLI connection */
 	AZ(close(v->cli_fd));
 	v->cli_fd = -1;
 
-	(void)close(v->fds[1]);		/* May already have been closed */
+	/* Close the STDIN connection. */
+	AZ(close(v->fds[1]));
 
+	/* Wait until STDOUT+STDERR closes */
 	AZ(pthread_join(v->tp, &p));
 	AZ(close(v->fds[0]));
+
 	r = wait4(v->pid, &status, 0, &ru);
 	v->pid = 0;
 	vtc_log(v->vl, 2, "R %d Status: %04x (u %.6f s %.6f)", r, status,
 	    ru.ru_utime.tv_sec + 1e-6 * ru.ru_utime.tv_usec,
 	    ru.ru_stime.tv_sec + 1e-6 * ru.ru_stime.tv_usec
 	);
+
+	/* Pick up the VSL thread */
 	AZ(pthread_join(v->tp_vsl, &p));
-	if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+
+	if (WIFEXITED(status) && (WEXITSTATUS(status) == 0))
 		return;
 #ifdef WCOREDUMP
 	vtc_log(v->vl, 0, "Bad exit code: %04x sig %x exit %x core %x",
@@ -634,6 +639,30 @@ varnish_wait(struct varnish *v)
 	    status, WTERMSIG(status), WEXITSTATUS(status));
 #endif
 }
+
+/**********************************************************************
+ * Wait for a Varnish
+ */
+
+static void
+varnish_wait(struct varnish *v)
+{
+	char *resp;
+
+	if (v->cli_fd < 0)
+		return;
+
+	vtc_log(v->vl, 2, "Wait");
+
+	/* Do a backend.list to log if child is still running */
+	varnish_ask_cli(v, "backend.list", &resp);
+
+	/* Then stop it */
+	varnish_stop(v);
+
+	varnish_cleanup(v);
+}
+
 
 /**********************************************************************
  * Ask a CLI question
@@ -928,6 +957,11 @@ cmd_varnish(CMD_ARGS)
 			AN(av[2]);
 			varnish_cli(v, av[2], atoi(av[1]));
 			av += 2;
+			continue;
+		}
+		if (!strcmp(*av, "-cleanup")) {
+			AZ(av[1]);
+			varnish_cleanup(v);
 			continue;
 		}
 		if (!strcmp(*av, "-cliok")) {

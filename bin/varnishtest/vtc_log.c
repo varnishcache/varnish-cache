@@ -112,8 +112,6 @@ vtc_log_emit(const struct vtclog *vl, int lvl)
 
 	if (lvl < 0)
 		lvl = 0;
-	if (vtc_stop && lvl == 0)
-		return;
 	l = VSB_len(vl->vsb);
 	AZ(pthread_mutex_lock(&vtclog_mtx));
 	assert(vtclog_left > l);
