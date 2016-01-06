@@ -242,6 +242,8 @@ varnishlog_thread(void *priv)
 
 		tag = VSL_TAG(c->rec.ptr);
 		vxid = VSL_ID(c->rec.ptr);
+		if (tag != SLT_CLI)
+			v->vsl_idle = 0;
 		if (tag == SLT__Batch)
 			continue;
 		tagname = VSL_tags[tag];
