@@ -21,10 +21,11 @@ varnish v1 -vcl+backend {
 } -start
 
 # check log for the aborted POST
-logexpect l1 -v v1 {
-	expect * =	BereqHeader "^X-Varnish:"
+logexpect l1 -v v1 -g request {
+	expect * *	Begin		"^bereq .* retry"
+	expect * =	BereqHeader	"^X-Varnish:"
 	expect * =	BereqUnset	"^X-Varnish:"
-	expect * =	BereqHeader	"^X-Varnish"
+	expect * =	BereqHeader	"^X-Varnish:"
 } -start
 
 varnish v1 -cliok "param.set debug +syncvsl"
@@ -35,3 +36,5 @@ client c1 {
 	rxresp
 	expect resp.http.foo == 3
 } -run
+
+logexpect l1 -wait
