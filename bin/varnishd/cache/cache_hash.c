@@ -864,6 +864,11 @@ HSH_DerefObjHead(struct dstat *ds, struct objhead **poh)
 		oh->refcnt--;
 		Lck_Unlock(&oh->mtx);
 		return(1);
+	} else if (oh->waitinglist != NULL) {
+		Lck_Lock(&oh->mtx);
+		if (oh->waitinglist != NULL)
+			hsh_rush(ds, oh);
+		Lck_Unlock(&oh->mtx);
 	}
 
 	assert(oh->refcnt > 0);
