@@ -191,15 +191,6 @@ struct parspec WRK_parspec[] = {
 		"be dropped instead of queued.",
 		EXPERIMENTAL,
 		"20", "" },
-	{ "rush_exponent", tweak_uint, &mgt_param.rush_exponent,
-		"2", NULL,
-		"How many parked request we start for each completed "
-		"request on the object.\n"
-		"NB: Even with the implict delay of delivery, "
-		"this parameter controls an exponential increase in "
-		"number of worker threads.",
-		EXPERIMENTAL,
-		"3", "requests per request" },
 	{ "thread_pool_stack",
 		tweak_bytes, &mgt_param.wthread_stacksize,
 		NULL, NULL,
