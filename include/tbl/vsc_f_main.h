@@ -290,10 +290,6 @@ VSC_F(n_objecthead,		uint64_t, 1, 'g', 'i', info,
     "objecthead structs made",
 	"Number of objecthead structs made"
 )
-VSC_F(n_waitinglist,		uint64_t, 1, 'g', 'i', debug,
-    "waitinglist structs made",
-	"Number of waitinglist structs made"
-)
 
 VSC_F(n_backend,		uint64_t, 0, 'g', 'i', info,
     "Number of backends",
