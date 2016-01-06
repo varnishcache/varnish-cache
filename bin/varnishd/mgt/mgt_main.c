@@ -355,12 +355,6 @@ cli_stdin_close(void *priv)
 {
 
 	(void)priv;
-	(void)close(0);
-	(void)close(1);
-	(void)close(2);
-	AZ(open("/dev/null", O_RDONLY));
-	assert(open("/dev/null", O_WRONLY) == 1);
-	assert(open("/dev/null", O_WRONLY) == 2);
 
 	if (d_flag) {
 		mgt_stop_child();
@@ -368,6 +362,13 @@ cli_stdin_close(void *priv)
 		if (pfh != NULL)
 			(void)VPF_Remove(pfh);
 		exit(0);
+	} else {
+		(void)close(0);
+		(void)close(1);
+		(void)close(2);
+		AZ(open("/dev/null", O_RDONLY));
+		assert(open("/dev/null", O_WRONLY) == 1);
+		assert(open("/dev/null", O_WRONLY) == 2);
 	}
 }
 
