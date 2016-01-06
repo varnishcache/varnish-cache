@@ -90,6 +90,7 @@ hsh_newobjhead(void)
 	XXXAN(oh);
 	oh->refcnt = 1;
 	VTAILQ_INIT(&oh->objcs);
+	VTAILQ_INIT(&oh->waitinglist);
 	Lck_New(&oh->mtx, lck_objhdr);
 	return (oh);
 }
@@ -99,7 +100,6 @@ hsh_newobjhead(void)
 static void
 hsh_prealloc(struct worker *wrk)
 {
-	struct waitinglist *wl;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
@@ -112,15 +112,6 @@ hsh_prealloc(struct worker *wrk)
 		wrk->stats->n_objecthead++;
 	}
 	CHECK_OBJ_NOTNULL(wrk->nobjhead, OBJHEAD_MAGIC);
-
-	if (wrk->nwaitinglist == NULL) {
-		ALLOC_OBJ(wl, WAITINGLIST_MAGIC);
-		XXXAN(wl);
-		VTAILQ_INIT(&wl->list);
-		wrk->nwaitinglist = wl;
-		wrk->stats->n_waitinglist++;
-	}
-	CHECK_OBJ_NOTNULL(wrk->nwaitinglist, WAITINGLIST_MAGIC);
 
 	if (hash->prep != NULL)
 		hash->prep(wrk);
@@ -163,11 +154,6 @@ HSH_Cleanup(struct worker *wrk)
 		wrk->nobjhead = NULL;
 		wrk->stats->n_objecthead--;
 	}
-	if (wrk->nwaitinglist != NULL) {
-		FREE_OBJ(wrk->nwaitinglist);
-		wrk->nwaitinglist = NULL;
-		wrk->stats->n_waitinglist--;
-	}
 	if (wrk->nhashpriv != NULL) {
 		/* XXX: If needed, add slinger method for this */
 		free(wrk->nhashpriv);
@@ -181,6 +167,7 @@ HSH_DeleteObjHead(struct worker *wrk, struct objhead *oh)
 
 	AZ(oh->refcnt);
 	assert(VTAILQ_EMPTY(&oh->objcs));
+	assert(VTAILQ_EMPTY(&oh->waitinglist));
 	Lck_Delete(&oh->mtx);
 	wrk->stats->n_objecthead--;
 	FREE_OBJ(oh);
@@ -482,13 +469,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	AZ(req->hash_ignore_busy);
 
 	if (wait_for_busy) {
-		CHECK_OBJ_NOTNULL(wrk->nwaitinglist, WAITINGLIST_MAGIC);
-		if (oh->waitinglist == NULL) {
-			oh->waitinglist = wrk->nwaitinglist;
-			wrk->nwaitinglist = NULL;
-		}
-		VTAILQ_INSERT_TAIL(&oh->waitinglist->list,
-		    req, w_list);
+		VTAILQ_INSERT_TAIL(&oh->waitinglist, req, w_list);
 		if (DO_DEBUG(DBG_WAITINGLIST))
 			VSLb(req->vsl, SLT_Debug, "on waiting list <%p>", oh);
 	} else {
@@ -517,21 +498,18 @@ hsh_rush(struct worker *wrk, struct objhead *oh)
 	unsigned u;
 	struct req *req;
 	struct sess *sp;
-	struct waitinglist *wl;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_AssertHeld(&oh->mtx);
-	wl = oh->waitinglist;
-	CHECK_OBJ_NOTNULL(wl, WAITINGLIST_MAGIC);
 	for (u = 0; u < cache_param->rush_exponent; u++) {
-		req = VTAILQ_FIRST(&wl->list);
+		req = VTAILQ_FIRST(&oh->waitinglist);
 		if (req == NULL)
 			break;
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		wrk->stats->busy_wakeup++;
 		AZ(req->wrk);
-		VTAILQ_REMOVE(&wl->list, req, w_list);
+		VTAILQ_REMOVE(&oh->waitinglist, req, w_list);
 		DSL(DBG_WAITINGLIST, req->vsl->wid, "off waiting list");
 		if (SES_Reschedule_Req(req)) {
 			/*
@@ -548,21 +526,16 @@ hsh_rush(struct worker *wrk, struct objhead *oh)
 				CNT_AcctLogCharge(wrk->stats, req);
 				Req_Release(req);
 				SES_Delete(sp, SC_OVERLOAD, NAN);
-				req = VTAILQ_FIRST(&wl->list);
+				req = VTAILQ_FIRST(&oh->waitinglist);
 				if (req == NULL)
 					break;
 				CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-				VTAILQ_REMOVE(&wl->list, req, w_list);
+				VTAILQ_REMOVE(&oh->waitinglist, req, w_list);
 				DSL(DBG_WAITINGLIST, req->vsl->wid,
 				    "kill from waiting list");
 			}
 			break;
 		}
-	}
-	if (VTAILQ_EMPTY(&wl->list)) {
-		oh->waitinglist = NULL;
-		FREE_OBJ(wl);
-		wrk->stats->n_waitinglist--;
 	}
 }
 
@@ -706,7 +679,7 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 	VTAILQ_REMOVE(&oh->objcs, oc, list);
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, list);
 	oc->flags &= ~OC_F_BUSY;
-	if (oh->waitinglist != NULL)
+	if (!VTAILQ_EMPTY(&oh->waitinglist))
 		hsh_rush(wrk, oh);
 	Lck_Unlock(&oh->mtx);
 }
@@ -781,7 +754,7 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
 	r = --oc->refcnt;
 	if (!r)
 		VTAILQ_REMOVE(&oh->objcs, oc, list);
-	if (oh->waitinglist != NULL)
+	if (!VTAILQ_EMPTY(&oh->waitinglist))
 		hsh_rush(wrk, oh);
 	Lck_Unlock(&oh->mtx);
 	if (r != 0)
@@ -814,13 +787,13 @@ HSH_DerefObjHead(struct worker *wrk, struct objhead **poh)
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 
 	if (oh == private_oh) {
-		AZ(oh->waitinglist);
+		assert(VTAILQ_EMPTY(&oh->waitinglist));
 		Lck_Lock(&oh->mtx);
 		assert(oh->refcnt > 1);
 		oh->refcnt--;
 		Lck_Unlock(&oh->mtx);
 		return(1);
-	} else if (oh->waitinglist != NULL) {
+	} else if (!VTAILQ_EMPTY(&oh->waitinglist)) {
 		Lck_Lock(&oh->mtx);
 		hsh_rush(wrk, oh);
 		Lck_Unlock(&oh->mtx);

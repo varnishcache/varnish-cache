@@ -121,7 +121,6 @@ struct sess;
 struct suckaddr;
 struct vrt_priv;
 struct vsb;
-struct waitinglist;
 struct worker;
 struct v1l;
 
@@ -329,7 +328,6 @@ struct worker {
 	struct pool		*pool;
 	struct objhead		*nobjhead;
 	struct objcore		*nobjcore;
-	struct waitinglist	*nwaitinglist;
 	void			*nhashpriv;
 	struct dstat		stats[1];
 	struct vsl_log		*vsl;		// borrowed from req/bo

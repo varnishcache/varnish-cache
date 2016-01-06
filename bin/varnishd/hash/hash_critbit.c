@@ -406,8 +406,6 @@ hcb_deref(struct objhead *oh)
 		hcb_delete(&hcb_root, oh);
 		VTAILQ_INSERT_TAIL(&cool_h, oh, hoh_list);
 		Lck_Unlock(&hcb_mtx);
-		assert(VTAILQ_EMPTY(&oh->objcs));
-		AZ(oh->waitinglist);
 	}
 	Lck_Unlock(&oh->mtx);
 #ifdef PHK

@@ -77,12 +77,6 @@ struct objcore *HSH_Private(struct worker *wrk);
 
 #ifdef VARNISH_CACHE_CHILD
 
-struct waitinglist {
-	unsigned		magic;
-#define WAITINGLIST_MAGIC	0x063a477a
-	VTAILQ_HEAD(, req)	list;
-};
-
 struct objhead {
 	unsigned		magic;
 #define OBJHEAD_MAGIC		0x1b96615d
@@ -91,7 +85,7 @@ struct objhead {
 	struct lock		mtx;
 	VTAILQ_HEAD(,objcore)	objcs;
 	uint8_t			digest[DIGEST_LEN];
-	struct waitinglist	*waitinglist;
+	VTAILQ_HEAD(, req)	waitinglist;
 
 	/*----------------------------------------------------
 	 * The fields below are for the sole private use of
