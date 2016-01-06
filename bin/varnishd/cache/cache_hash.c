@@ -820,6 +820,10 @@ HSH_DerefObjHead(struct worker *wrk, struct objhead **poh)
 		oh->refcnt--;
 		Lck_Unlock(&oh->mtx);
 		return(1);
+	} else if (oh->waitinglist != NULL) {
+		Lck_Lock(&oh->mtx);
+		hsh_rush(wrk, oh);
+		Lck_Unlock(&oh->mtx);
 	}
 
 	assert(oh->refcnt > 0);
