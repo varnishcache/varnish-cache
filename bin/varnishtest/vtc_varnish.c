@@ -49,6 +49,7 @@
 #include "vapi/vsm.h"
 #include "vcli.h"
 #include "vss.h"
+#include "vsub.h"
 #include "vtcp.h"
 #include "vtim.h"
 
@@ -434,8 +435,7 @@ varnish_launch(struct varnish *v)
 		AZ(close(v->fds[1]));
 		AZ(close(v->fds[2]));
 		AZ(close(v->fds[3]));
-		for (i = 3; i <getdtablesize(); i++)
-			(void)close(i);
+		VSUB_closefrom(STDERR_FILENO + 1);
 		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(vsb), (char*)0));
 		exit(1);
 	} else {
