@@ -530,7 +530,7 @@ main(int argc, char * const *argv)
 	 * Start out by closing all unwanted file descriptors we might
 	 * have inherited from sloppy process control daemons.
 	 */
-	for (o = getdtablesize(); o > STDERR_FILENO; o--)
+	for (o = sysconf(_SC_OPEN_MAX); o > STDERR_FILENO; o--)
 		(void)close(o);
 
 	VRND_Seed();
