@@ -93,7 +93,6 @@ mgt_vcl_del(struct vclprog *vp)
 	VTAILQ_REMOVE(&vclhead, vp, list);
 	XXXAZ(unlink(vp->fname));
 	bprintf(dn, "vcl_%s", vp->name);
-	WRONG("TEST");
 	VJ_master(JAIL_MASTER_FILE);
 	(void)rmdir(dn);		// compiler droppings, eg gcov
 	VJ_master(JAIL_MASTER_LOW);
