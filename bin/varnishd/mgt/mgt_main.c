@@ -57,6 +57,7 @@
 #include "vpf.h"
 #include "vrnd.h"
 #include "vsha256.h"
+#include "vsub.h"
 #include "vtim.h"
 #include "waiter/mgt_waiter.h"
 
@@ -530,8 +531,7 @@ main(int argc, char * const *argv)
 	 * Start out by closing all unwanted file descriptors we might
 	 * have inherited from sloppy process control daemons.
 	 */
-	for (o = sysconf(_SC_OPEN_MAX); o > STDERR_FILENO; o--)
-		(void)close(o);
+	VSUB_closefrom(STDERR_FILENO + 1);
 
 	VRND_Seed();
 
