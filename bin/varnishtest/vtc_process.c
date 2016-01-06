@@ -203,7 +203,7 @@ process_start(struct process *p)
 		assert(dup2(p->fds[0], 0) == 0);
 		assert(dup2(out_fd, 1) == 1);
 		assert(dup2(err_fd, 2) == 2);
-		for (i = 3; i <getdtablesize(); i++)
+		for (i = sysconf(_SC_OPEN_MAX); i > STDERR_FILENO; i--)
 			(void)close(i);
 		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(cl), (char*)0));
 		exit(1);
