@@ -42,6 +42,7 @@
 #include <unistd.h>
 
 #include "vtc.h"
+#include "vsub.h"
 
 struct process {
 	unsigned		magic;
@@ -183,7 +184,7 @@ static void
 process_start(struct process *p)
 {
 	struct vsb *cl;
-	int i, out_fd, err_fd;
+	int out_fd, err_fd;
 
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
 
@@ -203,8 +204,7 @@ process_start(struct process *p)
 		assert(dup2(p->fds[0], 0) == 0);
 		assert(dup2(out_fd, 1) == 1);
 		assert(dup2(err_fd, 2) == 2);
-		for (i = sysconf(_SC_OPEN_MAX); i > STDERR_FILENO; i--)
-			(void)close(i);
+		VSUB_closefrom(STDERR_FILENO + 1);
 		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(cl), (char*)0));
 		exit(1);
 	}
