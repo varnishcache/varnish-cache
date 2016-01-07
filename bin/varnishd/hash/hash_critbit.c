@@ -394,9 +394,7 @@ hcb_start(void)
 static int __match_proto__(hash_deref_f)
 hcb_deref(struct objhead *oh)
 {
-	int r;
 
-	r = 1;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
@@ -413,7 +411,7 @@ hcb_deref(struct objhead *oh)
 #ifdef PHK
 	fprintf(stderr, "hcb_defef %d %d <%s>\n", __LINE__, r, oh->hash);
 #endif
-	return (r);
+	return (1);
 }
 
 static struct objhead * __match_proto__(hash_lookup_f)
