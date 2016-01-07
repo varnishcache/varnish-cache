@@ -864,11 +864,26 @@ HSH_DerefObjHead(struct dstat *ds, struct objhead **poh)
 		oh->refcnt--;
 		Lck_Unlock(&oh->mtx);
 		return(1);
-	} else if (oh->waitinglist != NULL) {
+	}
+
+	/*
+	 * Make absolutely certain that we do not let the final ref
+	 * disappear until the waitinglist is empty.
+	 * This is necessary because the req's on the waiting list do
+	 * not hold any ref on the objhead of their own, and we cannot
+	 * just make the hold the same ref's as objcore, that would
+	 * confuse hashers.
+	 */
+	while (oh->waitinglist != NULL) {
 		Lck_Lock(&oh->mtx);
+		assert(oh->refcnt > 0);
+		r = oh->refcnt;
 		if (oh->waitinglist != NULL)
 			hsh_rush(ds, oh);
 		Lck_Unlock(&oh->mtx);
+		if (r > 1)
+			break;
+		usleep(100000);
 	}
 
 	assert(oh->refcnt > 0);
