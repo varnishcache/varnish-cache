@@ -364,7 +364,7 @@ vcc_acl_emit(struct vcc *tl, const char *acln, int anon)
 	Fh(tl, 0, "\t\tVRT_acl_log(ctx, \"NO_FAM %s\");\n", acln);
 	Fh(tl, 0, "\t\treturn(0);\n");
 	Fh(tl, 0, "\t}\n\n");
-	if (!tl->err_unref && !anon ) {
+	if (!tl->param->err_unref && !anon ) {
 		ifp = New_IniFin(tl);
 		VSB_printf(ifp->ini,
 			"\tif (0) match_acl_named_%s(0, 0);\n", acln);

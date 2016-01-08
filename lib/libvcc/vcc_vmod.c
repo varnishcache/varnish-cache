@@ -85,7 +85,7 @@ vcc_ParseImport(struct vcc *tl)
 	sym->def_e = tl->t;
 
 	if (tl->t->tok == ID) {
-		if (!tl->unsafe_path) {
+		if (!tl->param->unsafe_path) {
 			VSB_printf(tl->sb,
 			    "'import ... from path ...' not allowed.\nAt:");
 			vcc_ErrToken(tl, tl->t);
@@ -102,7 +102,7 @@ vcc_ParseImport(struct vcc *tl)
 		bprintf(fn, "%s", tl->t->dec);
 		vcc_NextToken(tl);
 	} else {
-		bprintf(fn, "%s/libvmod_%.*s.so", tl->vmod_dir, PF(mod));
+		bprintf(fn, "%s/libvmod_%.*s.so", tl->param->vmod_dir, PF(mod));
 	}
 
 	SkipToken(tl, ';');

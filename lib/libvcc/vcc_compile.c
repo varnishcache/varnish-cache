@@ -450,16 +450,16 @@ vcc_destroy_source(struct source *sp)
 /*--------------------------------------------------------------------*/
 
 static struct source *
-vcc_file_source(const struct vcc *tl, struct vsb *sb, const char *fn)
+vcc_file_source(const struct vcp * const vcp, struct vsb *sb, const char *fn)
 {
 	char *f;
 	struct source *sp;
 
-	if (!tl->unsafe_path && strchr(fn, '/') != NULL) {
+	if (!vcp->unsafe_path && strchr(fn, '/') != NULL) {
 		VSB_printf(sb, "Include path is unsafe '%s'\n", fn);
 		return (NULL);
 	}
-	f = VFIL_readfile(tl->vcl_dir, fn, NULL);
+	f = VFIL_readfile(vcp->vcl_dir, fn, NULL);
 	if (f == NULL) {
 		VSB_printf(sb, "Cannot read file '%s': %s\n",
 		    fn, strerror(errno));
@@ -500,7 +500,7 @@ vcc_resolve_includes(struct vcc *tl)
 			return;
 		}
 
-		sp = vcc_file_source(tl, tl->sb, t1->dec);
+		sp = vcc_file_source(tl->param, tl->sb, t1->dec);
 		if (sp == NULL) {
 			vcc_ErrWhere(tl, t1);
 			return;
@@ -522,24 +522,16 @@ vcc_resolve_includes(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static struct vcc *
-vcc_NewVcc(const struct vcc *tl0)
+vcc_NewVcc(const struct vcp *vcp)
 {
 	struct vcc *tl;
 	int i;
 
+	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
 	ALLOC_OBJ(tl, VCC_MAGIC);
 	AN(tl);
-	if (tl0 != NULL) {
-		REPLACE(tl->builtin_vcl, tl0->builtin_vcl);
-		REPLACE(tl->vcl_dir, tl0->vcl_dir);
-		REPLACE(tl->vmod_dir, tl0->vmod_dir);
-		tl->vars = tl0->vars;
-		tl->err_unref = tl0->err_unref;
-		tl->allow_inline_c = tl0->allow_inline_c;
-		tl->unsafe_path = tl0->unsafe_path;
-	} else {
-		tl->err_unref = 1;
-	}
+	tl->param = vcp;
+	tl->vars = vcc_vars;
 	VTAILQ_INIT(&tl->symbols);
 	VTAILQ_INIT(&tl->inifin);
 	VTAILQ_INIT(&tl->membits);
@@ -606,7 +598,8 @@ vcc_DestroyTokenList(struct vcc *tl, char *ret)
  */
 
 static char *
-vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
+vcc_CompileSource(const struct vcp * const vcp, struct vsb *sb,
+    struct source *sp)
 {
 	struct vcc *tl;
 	struct symbol *sym;
@@ -616,7 +609,7 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 	char *of;
 	int i;
 
-	tl = vcc_NewVcc(tl0);
+	tl = vcc_NewVcc(vcp);
 	tl->sb = sb;
 
 	vcc_Expr_Init(tl);
@@ -649,7 +642,7 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
 		return (vcc_DestroyTokenList(tl, NULL));
 
 	/* Register and lex the builtin VCL */
-	sp = vcc_new_source(tl->builtin_vcl, NULL, "Builtin");
+	sp = vcc_new_source(tl->param->builtin_vcl, NULL, "Builtin");
 	assert(sp != NULL);
 	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
 	sp->idx = tl->nsources++;
@@ -759,7 +752,7 @@ vcc_CompileSource(const struct vcc *tl0, struct vsb *sb, struct source *sp)
  */
 
 char *
-VCC_Compile(const struct vcc *tl, struct vsb *sb, const char *b)
+VCC_Compile(const struct vcp *vcp, struct vsb *sb, const char *b)
 {
 	struct source *sp;
 	char *r;
@@ -767,7 +760,7 @@ VCC_Compile(const struct vcc *tl, struct vsb *sb, const char *b)
 	sp = vcc_new_source(b, NULL, "input");
 	if (sp == NULL)
 		return (NULL);
-	r = vcc_CompileSource(tl, sb, sp);
+	r = vcc_CompileSource(vcp, sb, sp);
 	return (r);
 }
 
@@ -775,16 +768,15 @@ VCC_Compile(const struct vcc *tl, struct vsb *sb, const char *b)
  * Allocate a compiler instance
  */
 
-struct vcc *
-VCC_New(void)
+struct vcp *
+VCP_New(void)
 {
-	struct vcc *tl;
+	struct vcp *vcp;
 
-	tl = vcc_NewVcc(NULL);
+	ALLOC_OBJ(vcp, VCP_MAGIC);
+	AN(vcp);
 
-	tl->vars = vcc_vars;
-
-	return (tl);
+	return (vcp);
 }
 
 /*--------------------------------------------------------------------
@@ -792,11 +784,11 @@ VCC_New(void)
  */
 
 void
-VCC_Builtin_VCL(struct vcc *tl, const char *str)
+VCP_Builtin_VCL(struct vcp *vcp, const char *str)
 {
 
-	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
-	REPLACE(tl->builtin_vcl, str);
+	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
+	REPLACE(vcp->builtin_vcl, str);
 }
 
 /*--------------------------------------------------------------------
@@ -804,11 +796,11 @@ VCC_Builtin_VCL(struct vcc *tl, const char *str)
  */
 
 void
-VCC_VCL_dir(struct vcc *tl, const char *str)
+VCP_VCL_dir(struct vcp *vcp, const char *str)
 {
 
-	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
-	REPLACE(tl->vcl_dir, str);
+	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
+	REPLACE(vcp->vcl_dir, str);
 }
 
 /*--------------------------------------------------------------------
@@ -816,11 +808,11 @@ VCC_VCL_dir(struct vcc *tl, const char *str)
  */
 
 void
-VCC_VMOD_dir(struct vcc *tl, const char *str)
+VCP_VMOD_dir(struct vcp *vcp, const char *str)
 {
 
-	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
-	REPLACE(tl->vmod_dir, str);
+	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
+	REPLACE(vcp->vmod_dir, str);
 }
 
 /*--------------------------------------------------------------------
@@ -828,25 +820,25 @@ VCC_VMOD_dir(struct vcc *tl, const char *str)
  */
 
 void
-VCC_Err_Unref(struct vcc *tl, unsigned u)
+VCP_Err_Unref(struct vcp *vcp, unsigned u)
 {
 
-	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
-	tl->err_unref = u;
+	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
+	vcp->err_unref = u;
 }
 
 void
-VCC_Allow_InlineC(struct vcc *tl, unsigned u)
+VCP_Allow_InlineC(struct vcp *vcp, unsigned u)
 {
 
-	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
-	tl->allow_inline_c = u;
+	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
+	vcp->allow_inline_c = u;
 }
 
 void
-VCC_Unsafe_Path(struct vcc *tl, unsigned u)
+VCP_Unsafe_Path(struct vcp *vcp, unsigned u)
 {
 
-	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
-	tl->unsafe_path = u;
+	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
+	vcp->unsafe_path = u;
 }

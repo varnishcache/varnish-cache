@@ -160,7 +160,7 @@ vcc_Compound(struct vcc *tl)
 			Fb(tl, 1, "}\n");
 			return;
 		case CSRC:
-			if (tl->allow_inline_c) {
+			if (tl->param->allow_inline_c) {
 				Fb(tl, 1, "%.*s\n",
 				    (int) (tl->t->e - (tl->t->b + 2)),
 				    tl->t->b + 1);
@@ -357,7 +357,7 @@ vcc_Parse(struct vcc *tl)
 		ERRCHK(tl);
 		switch (tl->t->tok) {
 		case CSRC:
-			if (tl->allow_inline_c) {
+			if (tl->param->allow_inline_c) {
 				Fc(tl, 0, "%.*s\n",
 				    (int) (tl->t->e - (tl->t->b + 4)),
 				    tl->t->b + 2);
