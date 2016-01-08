@@ -298,41 +298,38 @@ vfil_path_openfile(void *priv, const char *fn)
 
 int
 VFIL_searchpath(const struct vfil_path *vp, vfil_path_func_f *func, void *priv,
-    char **fnp)
+    const char *fni, char **fno)
 {
 	struct vsb *vsb;
 	struct vfil_dir *vd;
-	const char *fn;
 	int i, e;
 
 	CHECK_OBJ_NOTNULL(vp, VFIL_PATH_MAGIC);
-	AN(fnp);
-	AN(*fnp);
-	fn = *fnp;
-	*fnp = NULL;
+	AN(fno);
+	*fno = NULL;
 
 	if (func == NULL) {
 		func = vfil_path_openfile;
 		AN(priv);
 	}
 
-	if (*fn == '/') {
-		i = func(priv, fn);
+	if (*fni == '/') {
+		i = func(priv, fni);
 		if (i <= 0)
-			REPLACE(*fnp, fn);
+			REPLACE(*fno, fni);
 		return (i);
 	}
 	vsb = VSB_new_auto();
 	AN(vsb);
 	VTAILQ_FOREACH(vd, &vp->paths, list) {
 		VSB_clear(vsb);
-		VSB_printf(vsb, "%s/%s", vd->dir, fn);
+		VSB_printf(vsb, "%s/%s", vd->dir, fni);
 		AZ(VSB_finish(vsb));
 		i = func(priv, VSB_data(vsb));
 		if (i <= 0) {
 			e = errno;
-			*fnp = strdup(VSB_data(vsb));
-			AN(*fnp);
+			*fno = strdup(VSB_data(vsb));
+			AN(*fno);
 			VSB_delete(vsb);
 			errno = e;
 			return (i);

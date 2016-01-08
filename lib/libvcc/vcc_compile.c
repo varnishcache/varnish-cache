@@ -450,7 +450,7 @@ vcc_destroy_source(struct source *sp)
 /*--------------------------------------------------------------------*/
 
 static struct source *
-vcc_file_source(const struct vcp * const vcp, struct vsb *sb, char *fn)
+vcc_file_source(const struct vcp * const vcp, struct vsb *sb, const char *fn)
 {
 	char *f, *fnp;
 	struct source *sp;
@@ -460,8 +460,7 @@ vcc_file_source(const struct vcp * const vcp, struct vsb *sb, char *fn)
 		return (NULL);
 	}
 	f = NULL;
-	fnp = fn;
-	if (VFIL_searchpath(vcp->vcl_path, NULL, &f, &fnp) || f == NULL) {
+	if (VFIL_searchpath(vcp->vcl_path, NULL, &f, fn, &fnp) || f == NULL) {
 		VSB_printf(sb, "Cannot read file '%s' (%s)\n",
 		    fnp != NULL ? fnp : fn, strerror(errno));
 		return (NULL);

@@ -282,12 +282,13 @@ mcf_vcl_load(struct cli *cli, const char * const *av, void *priv)
 	}
 
 	VFIL_setpath(&vcl_path, mgt_vcl_dir);
-	fn = TRUST_ME(av[3]);
-	if (VFIL_searchpath(vcl_path, NULL, &vcl, &fn)) {
+	if (VFIL_searchpath(vcl_path, NULL, &vcl, av[3], &fn)) {
 		VCLI_Out(cli, "Cannot open '%s'", fn != NULL ? fn : av[3]);
+		REPLACE(fn, NULL);
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
+	REPLACE(fn, NULL);
 
 	mgt_new_vcl(cli, av[2], vcl, av[4], 0);
 	free(vcl);

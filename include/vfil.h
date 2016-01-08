@@ -39,5 +39,5 @@ int VFIL_allocate(int fd, off_t size, int insist);
 void VFIL_setpath(struct vfil_path**, const char *path);
 typedef int vfil_path_func_f(void *priv, const char *fn);
 int VFIL_searchpath(const struct vfil_path *, vfil_path_func_f *func,
-    void *priv, char **fn);
+    void *priv, const char *fni, char **fno);
 
