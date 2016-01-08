@@ -114,7 +114,7 @@ vmod_random_add_backend(VRT_CTX,
 }
 
 VCL_VOID vmod_random_remove_backend(VRT_CTX,
-    struct vmod_directors_random *rr, VCL_BACKEND be)
+    struct vmod_directors_random *rr, VCL_BACKEND be) __match_proto__()
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_RANDOM_MAGIC);
