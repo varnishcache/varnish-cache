@@ -450,22 +450,24 @@ vcc_destroy_source(struct source *sp)
 /*--------------------------------------------------------------------*/
 
 static struct source *
-vcc_file_source(const struct vcp * const vcp, struct vsb *sb, const char *fn)
+vcc_file_source(const struct vcp * const vcp, struct vsb *sb, char *fn)
 {
-	char *f;
+	char *f, *fnp;
 	struct source *sp;
 
 	if (!vcp->unsafe_path && strchr(fn, '/') != NULL) {
 		VSB_printf(sb, "Include path is unsafe '%s'\n", fn);
 		return (NULL);
 	}
-	f = VFIL_readfile(vcp->vcl_dir, fn, NULL);
-	if (f == NULL) {
-		VSB_printf(sb, "Cannot read file '%s': %s\n",
-		    fn, strerror(errno));
+	f = NULL;
+	fnp = fn;
+	if (VFIL_searchpath(vcp->vcl_path, NULL, &f, &fnp) || f == NULL) {
+		VSB_printf(sb, "Cannot read file '%s' (%s)\n",
+		    fnp != NULL ? fnp : fn, strerror(errno));
 		return (NULL);
 	}
-	sp = vcc_new_source(f, NULL, fn);
+	sp = vcc_new_source(f, NULL, fnp);
+	free(fnp);
 	sp->freeit = f;
 	return (sp);
 }
@@ -801,6 +803,7 @@ VCP_VCL_dir(struct vcp *vcp, const char *str)
 
 	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
 	REPLACE(vcp->vcl_dir, str);
+	VFIL_setpath(&vcp->vcl_path, str);
 }
 
 /*--------------------------------------------------------------------
@@ -813,6 +816,7 @@ VCP_VMOD_dir(struct vcp *vcp, const char *str)
 
 	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
 	REPLACE(vcp->vmod_dir, str);
+	VFIL_setpath(&vcp->vmod_path, str);
 }
 
 /*--------------------------------------------------------------------

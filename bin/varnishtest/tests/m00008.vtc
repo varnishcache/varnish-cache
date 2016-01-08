@@ -13,12 +13,12 @@ varnish v1 -vcl+backend {
 
 varnish v1 -cliok "param.set vcc_unsafe_path off"
 
-varnish v1 -errvcl {'import ... from path ...' not allowed.} {
+varnish v1 -errvcl {'import ... from path ...' is unsafe.} {
 	backend default { .host = "${s1_sock}"; }
 	import ${vmod_std};
 }
 
-varnish v1 -cliok "param.set vmod_dir ${topbuild}/lib/libvmod_std/.libs/"
+varnish v1 -cliok "param.set vmod_dir /nowhere:${topbuild}/lib/libvmod_std/.libs/:/else"
 
 varnish v1 -vcl+backend {
 	import std;

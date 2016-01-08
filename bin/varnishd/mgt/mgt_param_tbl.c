@@ -58,14 +58,16 @@ struct parspec mgt_parspec[] = {
 		VCC_CC , NULL },
 	{ "vcl_dir", tweak_string, &mgt_vcl_dir,
 		NULL, NULL,
-		"Directory from which relative VCL filenames (vcl.load and "
-		"include) are opened.",
+		"Directory (or colon separated list of directories) "
+		"from which relative VCL filenames (vcl.load and "
+		"include) are to be found.",
 		0,
 		VARNISH_VCL_DIR,
 		NULL },
 	{ "vmod_dir", tweak_string, &mgt_vmod_dir,
 		NULL, NULL,
-		"Directory where VCL modules are to be found.",
+		"Directory (or colon separated list of directories) "
+		"where VMODs are to be found.",
 		0,
 		VARNISH_VMOD_DIR,
 		NULL },
