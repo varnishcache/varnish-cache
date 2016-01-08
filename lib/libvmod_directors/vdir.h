@@ -31,7 +31,7 @@ struct vbitmap;
 struct vdir {
 	unsigned				magic;
 #define VDIR_MAGIC				0x99f4b726
-	pthread_mutex_t				mtx;
+	pthread_rwlock_t			mtx;
 	unsigned				n_backend;
 	unsigned				l_backend;
 	VCL_BACKEND				*backend;
@@ -44,7 +44,8 @@ struct vdir {
 void vdir_new(struct vdir **vdp, const char *name, const char *vcl_name,
     vdi_healthy_f *healthy, vdi_resolve_f *resolve, void *priv);
 void vdir_delete(struct vdir **vdp);
-void vdir_lock(struct vdir *vd);
+void vdir_rdlock(struct vdir *vd);
+void vdir_wrlock(struct vdir *vd);
 void vdir_unlock(struct vdir *vd);
 unsigned vdir_add_backend(struct vdir *, VCL_BACKEND be, double weight);
 unsigned vdir_any_healthy(struct vdir *, const struct busyobj *,

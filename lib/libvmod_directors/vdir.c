@@ -63,7 +63,7 @@ vdir_new(struct vdir **vdp, const char *name, const char *vcl_name,
 	ALLOC_OBJ(vd, VDIR_MAGIC);
 	AN(vd);
 	*vdp = vd;
-	AZ(pthread_mutex_init(&vd->mtx, NULL));
+	AZ(pthread_rwlock_init(&vd->mtx, NULL));
 
 	ALLOC_OBJ(vd->dir, DIRECTOR_MAGIC);
 	AN(vd->dir);
@@ -89,7 +89,7 @@ vdir_delete(struct vdir **vdp)
 
 	free(vd->backend);
 	free(vd->weight);
-	AZ(pthread_mutex_destroy(&vd->mtx));
+	AZ(pthread_rwlock_destroy(&vd->mtx));
 	free(vd->dir->vcl_name);
 	FREE_OBJ(vd->dir);
 	vbit_destroy(vd->vbm);
@@ -97,17 +97,24 @@ vdir_delete(struct vdir **vdp)
 }
 
 void
-vdir_lock(struct vdir *vd)
+vdir_rdlock(struct vdir *vd)
 {
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
-	AZ(pthread_mutex_lock(&vd->mtx));
+	AZ(pthread_rwlock_rdlock(&vd->mtx));
+}
+
+void
+vdir_wrlock(struct vdir *vd)
+{
+	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
+	AZ(pthread_rwlock_wrlock(&vd->mtx));
 }
 
 void
 vdir_unlock(struct vdir *vd)
 {
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
-	AZ(pthread_mutex_unlock(&vd->mtx));
+	AZ(pthread_rwlock_unlock(&vd->mtx));
 }
 
 
@@ -118,7 +125,7 @@ vdir_add_backend(struct vdir *vd, VCL_BACKEND be, double weight)
 
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
 	AN(be);
-	vdir_lock(vd);
+	vdir_wrlock(vd);
 	if (vd->n_backend >= vd->l_backend)
 		vdir_expand(vd, vd->l_backend + 16);
 	assert(vd->n_backend < vd->l_backend);
@@ -140,7 +147,7 @@ vdir_any_healthy(struct vdir *vd, const struct busyobj *bo, double *changed)
 
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
 	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
-	vdir_lock(vd);
+	vdir_rdlock(vd);
 	if (changed != NULL)
 		*changed = 0;
 	for (u = 0; u < vd->n_backend; u++) {
@@ -183,7 +190,7 @@ vdir_pick_be(struct vdir *vd, double w, const struct busyobj *bo)
 	double tw = 0.0;
 	VCL_BACKEND be = NULL;
 
-	vdir_lock(vd);
+	vdir_rdlock(vd);
 	for (u = 0; u < vd->n_backend; u++) {
 		if (vd->backend[u]->healthy(vd->backend[u], bo, NULL)) {
 			vbit_clr(vd->vbm, u);

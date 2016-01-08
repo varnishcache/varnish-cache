@@ -66,7 +66,7 @@ vmod_fallback_resolve(const struct director *dir, struct worker *wrk,
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_FALLBACK_MAGIC);
-	vdir_lock(rr->vd);
+	vdir_rdlock(rr->vd);
 	for (u = 0; u < rr->vd->n_backend; u++) {
 		be = rr->vd->backend[u];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
