@@ -56,10 +56,14 @@ struct vsub_priv {
 void
 VSUB_closefrom(int fd)
 {
+
+	assert(fd >= 0);
+
 #ifdef HAVE_CLOSEFROM
 	closefrom(fd);
 #else
-	int i;
+	int i = sysconf(_SC_OPEN_MAX);
+	assert(i > 0);
 	for (i = sysconf(_SC_OPEN_MAX); i > fd; i--)
 		(void)close(i);
 #endif
