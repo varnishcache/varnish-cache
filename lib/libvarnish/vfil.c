@@ -55,12 +55,16 @@
 #  include <linux/magic.h>
 #endif
 
-#include "vas.h"
 #include "vdef.h"
-#include "vfil.h"
 
-char *
-VFIL_readfd(int fd, ssize_t *sz)
+#include "miniobj.h"
+#include "vas.h"
+#include "vsb.h"
+#include "vfil.h"
+#include "vqueue.h"
+
+static char *
+vfil_readfd(int fd, ssize_t *sz)
 {
 	struct stat st;
 	char *f;
@@ -99,7 +103,7 @@ VFIL_readfile(const char *pfx, const char *fn, ssize_t *sz)
 		fd = open(fn, O_RDONLY);
 	if (fd < 0)
 		return (NULL);
-	r = VFIL_readfd(fd, sz);
+	r = vfil_readfd(fd, sz);
 	err = errno;
 	AZ(close(fd));
 	errno = err;
@@ -158,7 +162,8 @@ VFIL_fsinfo(int fd, unsigned *pbs, uintmax_t *psize, uintmax_t *pspace)
 	return (0);
 }
 
-/* Make sure that the file system can accommodate the file of the given
+/*
+ * Make sure that the file system can accommodate the file of the given
  * size. Will use fallocate if available. If fallocate is not available
  * and insist is true, it will write size zero bytes.
  *
@@ -221,4 +226,118 @@ VFIL_allocate(int fd, off_t size, int insist)
 	}
 	assert(lseek(fd, 0, SEEK_SET) == 0);
 	return (0);
+}
+
+struct vfil_dir {
+	unsigned		magic;
+#define VFIL_DIR_MAGIC		0x3e214967
+	char			*dir;
+	VTAILQ_ENTRY(vfil_dir)	list;
+};
+
+struct vfil_path {
+	unsigned		magic;
+#define VFIL_PATH_MAGIC		0x92dbcc31
+	char			*str;
+	VTAILQ_HEAD(,vfil_dir)	paths;
+};
+
+/*
+ * Path searching functions
+ */
+
+void
+VFIL_setpath(struct vfil_path **pp, const char *path)
+{
+	struct vfil_path *vp;
+	struct vfil_dir *vd;
+	char *p, *q;
+
+	AN(pp);
+	AN(path);
+
+	vp = *pp;
+	if (vp == NULL) {
+		ALLOC_OBJ(vp, VFIL_PATH_MAGIC);
+		AN(vp);
+		VTAILQ_INIT(&vp->paths);
+		*pp = vp;
+	}
+	REPLACE(vp->str, path);
+	while (!VTAILQ_EMPTY(&vp->paths)) {
+		vd = VTAILQ_FIRST(&vp->paths);
+		VTAILQ_REMOVE(&vp->paths, vd, list);
+		FREE_OBJ(vd);
+	}
+	for (p = vp->str; p != NULL; p = q) {
+		q = strchr(p, ':');
+		if (q != NULL)
+			*q++ = '\0';
+		ALLOC_OBJ(vd, VFIL_DIR_MAGIC);
+		AN(vd);
+		vd->dir = p;
+		VTAILQ_INSERT_TAIL(&vp->paths, vd, list);
+	}
+}
+
+static int
+vfil_path_openfile(void *priv, const char *fn)
+{
+	char *p, **pp;
+
+	AN(priv);
+	AN(fn);
+	p = VFIL_readfile(NULL, fn, NULL);
+	if (p == NULL)
+		return (1);
+
+	pp = priv;
+	*pp = p;
+	return (0);
+}
+
+int
+VFIL_searchpath(const struct vfil_path *vp, vfil_path_func_f *func, void *priv,
+    char **fnp)
+{
+	struct vsb *vsb;
+	struct vfil_dir *vd;
+	const char *fn;
+	int i, e;
+
+	CHECK_OBJ_NOTNULL(vp, VFIL_PATH_MAGIC);
+	AN(fnp);
+	AN(*fnp);
+	fn = *fnp;
+	*fnp = NULL;
+
+	if (func == NULL) {
+		func = vfil_path_openfile;
+		AN(priv);
+	}
+
+	if (*fn == '/') {
+		i = func(priv, fn);
+		if (i <= 0)
+			REPLACE(*fnp, fn);
+		return (i);
+	}
+	vsb = VSB_new_auto();
+	AN(vsb);
+	VTAILQ_FOREACH(vd, &vp->paths, list) {
+		VSB_clear(vsb);
+		VSB_printf(vsb, "%s/%s", vd->dir, fn);
+		AZ(VSB_finish(vsb));
+		i = func(priv, VSB_data(vsb));
+		if (i <= 0) {
+			e = errno;
+			*fnp = strdup(VSB_data(vsb));
+			AN(*fnp);
+			VSB_delete(vsb);
+			errno = e;
+			return (i);
+		}
+	}
+	VSB_delete(vsb);
+	return (-1);
 }
