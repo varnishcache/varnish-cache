@@ -30,20 +30,39 @@
 
 #include <dlfcn.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "vcc_compile.h"
 
 #include "vcs_version.h"
 
+#include "vfil.h"
 #include "vmod_abi.h"
 #include "vrt.h"
+
+static int
+vcc_path_dlopen(void *priv, const char *fn)
+{
+	void *hdl, **pp;
+
+	AN(priv);
+	AN(fn);
+
+fprintf(stderr, "TRY <%s>\n", fn);
+	hdl = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
+	if (hdl == NULL)
+		return (1);
+	pp = priv;
+	*pp = hdl;
+	return (0);
+}
 
 void
 vcc_ParseImport(struct vcc *tl)
 {
 	void *hdl;
-	char fn[1024];
+	char fn[1024], *fnp;
 	char buf[256];
 	struct token *mod, *t1;
 	struct inifin *ifp;
@@ -85,32 +104,33 @@ vcc_ParseImport(struct vcc *tl)
 	sym->def_e = tl->t;
 
 	if (tl->t->tok == ID) {
-		if (!tl->param->unsafe_path) {
-			VSB_printf(tl->sb,
-			    "'import ... from path ...' not allowed.\nAt:");
-			vcc_ErrToken(tl, tl->t);
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
 		if (!vcc_IdIs(tl->t, "from")) {
 			VSB_printf(tl->sb, "Expected 'from path ...'\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
 		vcc_NextToken(tl);
+		if (!tl->param->unsafe_path && strchr(tl->t->dec, '/')) {
+			VSB_printf(tl->sb,
+			    "'import ... from path ...' is unsafe.\nAt:");
+			vcc_ErrToken(tl, tl->t);
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
 		ExpectErr(tl, CSTR);
 		bprintf(fn, "%s", tl->t->dec);
 		vcc_NextToken(tl);
 	} else {
-		bprintf(fn, "%s/libvmod_%.*s.so", tl->param->vmod_dir, PF(mod));
+		bprintf(fn, "libvmod_%.*s.so", PF(mod));
 	}
 
 	SkipToken(tl, ';');
 
-	hdl = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
-	if (hdl == NULL) {
+	fnp = fn;
+	if (VFIL_searchpath(tl->param->vmod_path,
+	    vcc_path_dlopen, &hdl, &fnp)) {
 		VSB_printf(tl->sb, "Could not load VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fn);
+		VSB_printf(tl->sb, "\tFile name: %s\n", fnp != NULL ? fnp : fn);
 		VSB_printf(tl->sb, "\tdlerror: %s\n", dlerror());
 		vcc_ErrWhere(tl, mod);
 		return;
@@ -120,7 +140,7 @@ vcc_ParseImport(struct vcc *tl)
 	vmd = dlsym(hdl, buf);
 	if (vmd == NULL) {
 		VSB_printf(tl->sb, "Malformed VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fn);
+		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
 		VSB_printf(tl->sb, "\t(no Vmod_Data symbol)\n");
 		vcc_ErrWhere(tl, mod);
 		return;
@@ -128,7 +148,7 @@ vcc_ParseImport(struct vcc *tl)
 	if (strcmp(VCS_Branch, "master") == 0 &&
 	    strcmp(vmd->abi, VMOD_ABI_Version) != 0) {
 		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fn);
+		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
 		VSB_printf(tl->sb, "\tABI mismatch, expected <%s>, got <%s>\n",
 			   VMOD_ABI_Version, vmd->abi);
 		vcc_ErrWhere(tl, mod);
@@ -137,7 +157,7 @@ vcc_ParseImport(struct vcc *tl)
 	if (vmd->vrt_major != VRT_MAJOR_VERSION ||
 	    vmd->vrt_minor > VRT_MINOR_VERSION) {
 		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fn);
+		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
 		VSB_printf(tl->sb, "\tVMOD version %u.%u\n",
 		    vmd->vrt_major, vmd->vrt_minor);
 		VSB_printf(tl->sb, "\tvarnishd version %u.%u\n",
@@ -151,7 +171,7 @@ vcc_ParseImport(struct vcc *tl)
 	    vmd->proto == NULL ||
 	    vmd->abi == NULL) {
 		VSB_printf(tl->sb, "Mangled VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fn);
+		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
 		VSB_printf(tl->sb, "\tInconsistent metadata\n");
 		vcc_ErrWhere(tl, mod);
 		return;
@@ -159,7 +179,7 @@ vcc_ParseImport(struct vcc *tl)
 
 	if (!vcc_IdIs(mod, vmd->name)) {
 		VSB_printf(tl->sb, "Wrong VMOD file %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fn);
+		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
 		VSB_printf(tl->sb, "\tContains vmod \"%s\"\n", vmd->name);
 		vcc_ErrWhere(tl, mod);
 		return;
@@ -172,7 +192,8 @@ vcc_ParseImport(struct vcc *tl)
 	VSB_printf(ifp->ini, "\t    sizeof(Vmod_%.*s_Func),\n", PF(mod));
 	VSB_printf(ifp->ini, "\t    \"%.*s\",\n", PF(mod));
 	VSB_printf(ifp->ini, "\t    ");
-	EncString(ifp->ini, fn, NULL, 0);
+	EncString(ifp->ini, fnp, NULL, 0);
+	free(fnp);
 	VSB_printf(ifp->ini, ",\n");
 	AN(vmd);
 	AN(vmd->file_id);
