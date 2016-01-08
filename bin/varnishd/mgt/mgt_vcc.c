@@ -53,7 +53,7 @@ struct vcc_priv {
 #define VCC_PRIV_MAGIC	0x70080cb8
 	char		*dir;
 	const char	*src;
-	char		*srcfile;
+	char		*csrcfile;
 	char		*libfile;
 };
 
@@ -109,13 +109,13 @@ run_vcc(void *priv)
 
 	fd = open(VGC_SRC, O_WRONLY|O_TRUNC|O_CREAT, 0600);
 	if (fd < 0) {
-		fprintf(stderr, "VCC cannot open %s", vp->srcfile);
+		fprintf(stderr, "VCC cannot open %s", vp->csrcfile);
 		exit(2);
 	}
 	l = strlen(csrc);
 	i = write(fd, csrc, l);
 	if (i != l) {
-		fprintf(stderr, "VCC cannot write %s", vp->srcfile);
+		fprintf(stderr, "VCC cannot write %s", vp->csrcfile);
 		exit(2);
 	}
 	AZ(close(fd));
@@ -223,7 +223,7 @@ mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
 	char *csrc;
 	unsigned subs;
 
-	if (mgt_vcc_touchfile(vp->srcfile, sb))
+	if (mgt_vcc_touchfile(vp->csrcfile, sb))
 		return (2);
 	if (mgt_vcc_touchfile(vp->libfile, sb))
 		return (2);
@@ -233,7 +233,7 @@ mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
 		return (subs);
 
 	if (C_flag) {
-		csrc = VFIL_readfile(NULL, vp->srcfile, NULL);
+		csrc = VFIL_readfile(NULL, vp->csrcfile, NULL);
 		AN(csrc);
 		VSB_cat(sb, csrc);
 		free(csrc);
@@ -275,14 +275,14 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 	VSB_clear(sb);
 	VSB_printf(sb, "%s/%s", vp.dir, VGC_SRC);
 	AZ(VSB_finish(sb));
-	vp.srcfile = strdup(VSB_data(sb));
-	AN(vp.srcfile);
+	vp.csrcfile = strdup(VSB_data(sb));
+	AN(vp.csrcfile);
 	VSB_clear(sb);
 
 	VSB_printf(sb, "%s/%s", vp.dir, VGC_LIB);
 	AZ(VSB_finish(sb));
 	vp.libfile = strdup(VSB_data(sb));
-	AN(vp.srcfile);
+	AN(vp.csrcfile);
 	VSB_clear(sb);
 
 	status = mgt_vcc_compile(&vp, sb, C_flag);
@@ -292,8 +292,8 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 		VCLI_Out(cli, "%s", VSB_data(sb));
 	VSB_delete(sb);
 
-	(void)unlink(vp.srcfile);
-	free(vp.srcfile);
+	(void)unlink(vp.csrcfile);
+	free(vp.csrcfile);
 
 	free(vp.dir);
 
