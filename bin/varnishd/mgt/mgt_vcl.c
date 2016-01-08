@@ -201,14 +201,15 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 /*--------------------------------------------------------------------*/
 
 void
-mgt_vcc_default(struct cli *cli, const char *b_arg, const char *vclsrc,
-    int C_flag)
+mgt_vcc_startup(struct cli *cli, const char *b_arg, const char *f_arg,
+    const char *vclsrc, int C_flag)
 {
 	char buf[BUFSIZ];
 
 	if (b_arg == NULL) {
 		AN(vclsrc);
-		mgt_new_vcl(cli, "boot", vclsrc, NULL, NULL, C_flag);
+		AN(f_arg);
+		mgt_new_vcl(cli, "boot", vclsrc, f_arg, NULL, C_flag);
 		return;
 	}
 
@@ -218,7 +219,7 @@ mgt_vcc_default(struct cli *cli, const char *b_arg, const char *vclsrc,
 	    "backend default {\n"
 	    "    .host = \"%s\";\n"
 	    "}\n", b_arg);
-	mgt_new_vcl(cli, "boot", buf, NULL, NULL, C_flag);
+	mgt_new_vcl(cli, "boot", buf, "<-b argument>", NULL, C_flag);
 }
 
 /*--------------------------------------------------------------------*/
@@ -262,7 +263,7 @@ mcf_vcl_inline(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 
-	mgt_new_vcl(cli, av[2], av[3], NULL, av[4], 0);
+	mgt_new_vcl(cli, av[2], av[3], "<vcl.inline>", av[4], 0);
 }
 
 void
