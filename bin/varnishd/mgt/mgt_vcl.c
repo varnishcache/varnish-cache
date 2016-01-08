@@ -43,7 +43,6 @@
 #include "vcli.h"
 #include "vcli_priv.h"
 #include "vev.h"
-#include "vfil.h"
 #include "vtim.h"
 
 #include "mgt_cli.h"
@@ -60,7 +59,6 @@ struct vclprog {
 static VTAILQ_HEAD(, vclprog) vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
 static struct vclprog		*active_vcl;
 static struct vev *e_poker;
-static struct vfil_path *vcl_path;
 
 /*--------------------------------------------------------------------*/
 
@@ -160,7 +158,7 @@ mgt_vcl_setstate(struct vclprog *vp, int warm)
 
 static void
 mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
-    const char *state, int C_flag)
+    const char *vclsrcfile, const char *state, int C_flag)
 {
 	unsigned status;
 	char *lib, *p;
@@ -178,7 +176,7 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 		return;
 	}
 
-	lib = mgt_VccCompile(cli, vclname, vclsrc, C_flag);
+	lib = mgt_VccCompile(cli, vclname, vclsrc, vclsrcfile, C_flag);
 	if (lib == NULL)
 		return;
 
@@ -210,7 +208,7 @@ mgt_vcc_default(struct cli *cli, const char *b_arg, const char *vclsrc,
 
 	if (b_arg == NULL) {
 		AN(vclsrc);
-		mgt_new_vcl(cli, "boot", vclsrc, NULL, C_flag);
+		mgt_new_vcl(cli, "boot", vclsrc, NULL, NULL, C_flag);
 		return;
 	}
 
@@ -220,7 +218,7 @@ mgt_vcc_default(struct cli *cli, const char *b_arg, const char *vclsrc,
 	    "backend default {\n"
 	    "    .host = \"%s\";\n"
 	    "}\n", b_arg);
-	mgt_new_vcl(cli, "boot", buf, NULL, C_flag);
+	mgt_new_vcl(cli, "boot", buf, NULL, NULL, C_flag);
 }
 
 /*--------------------------------------------------------------------*/
@@ -264,13 +262,12 @@ mcf_vcl_inline(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 
-	mgt_new_vcl(cli, av[2], av[3], av[4], 0);
+	mgt_new_vcl(cli, av[2], av[3], NULL, av[4], 0);
 }
 
 void
 mcf_vcl_load(struct cli *cli, const char * const *av, void *priv)
 {
-	char *vcl, *fn;
 	struct vclprog *vp;
 
 	(void)priv;
@@ -281,17 +278,7 @@ mcf_vcl_load(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 
-	VFIL_setpath(&vcl_path, mgt_vcl_dir);
-	if (VFIL_searchpath(vcl_path, NULL, &vcl, av[3], &fn)) {
-		VCLI_Out(cli, "Cannot open '%s'", fn != NULL ? fn : av[3]);
-		REPLACE(fn, NULL);
-		VCLI_SetResult(cli, CLIS_PARAM);
-		return;
-	}
-	REPLACE(fn, NULL);
-
-	mgt_new_vcl(cli, av[2], vcl, av[4], 0);
-	free(vcl);
+	mgt_new_vcl(cli, av[2], NULL, av[3], av[4], 0);
 }
 
 static struct vclprog *

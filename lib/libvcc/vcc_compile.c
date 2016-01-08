@@ -456,7 +456,7 @@ vcc_file_source(const struct vcp * const vcp, struct vsb *sb, const char *fn)
 	struct source *sp;
 
 	if (!vcp->unsafe_path && strchr(fn, '/') != NULL) {
-		VSB_printf(sb, "Include path is unsafe '%s'\n", fn);
+		VSB_printf(sb, "VCL filename '%s' is unsafe.\n", fn);
 		return (NULL);
 	}
 	f = NULL;
@@ -753,12 +753,19 @@ vcc_CompileSource(const struct vcp * const vcp, struct vsb *sb,
  */
 
 char *
-VCC_Compile(const struct vcp *vcp, struct vsb *sb, const char *b)
+VCC_Compile(const struct vcp *vcp, struct vsb *sb,
+    const char *vclsrc, const char *vclsrcfile)
 {
 	struct source *sp;
 	char *r;
 
-	sp = vcc_new_source(b, NULL, "input");
+	if (vclsrc != NULL) {
+		AZ(vclsrcfile);
+		sp = vcc_new_source(vclsrc, NULL, "input");
+	} else {
+		AN(vclsrcfile);
+		sp = vcc_file_source(vcp, sb, vclsrcfile);
+	}
 	if (sp == NULL)
 		return (NULL);
 	r = vcc_CompileSource(vcp, sb, sp);

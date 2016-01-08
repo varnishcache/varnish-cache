@@ -38,4 +38,5 @@ void VCP_Err_Unref(struct vcp *tl, unsigned u);
 void VCP_Allow_InlineC(struct vcp *tl, unsigned u);
 void VCP_Unsafe_Path(struct vcp *tl, unsigned u);
 
-char *VCC_Compile(const struct vcp *, struct vsb *sb, const char *b);
+char *VCC_Compile(const struct vcp *, struct vsb *sb,
+    const char *vclsrc, const char *vclsrcfile);
