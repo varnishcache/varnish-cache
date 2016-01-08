@@ -67,7 +67,7 @@ varnish v1 -errvcl {Found: 'zool' at} {
 shell "rm -f ${tmpdir}/a"
 shell "rm -f ${tmpdir}/_start.vcl"
 
-varnish v1 -errvcl {only works in nested VCL include files} {
+varnish v1 -errvcl {needs absolute filename of including file.} {
 	include "./foobar";
 }
 

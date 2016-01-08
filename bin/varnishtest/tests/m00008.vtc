@@ -23,3 +23,11 @@ varnish v1 -cliok "param.set vmod_dir /nowhere:${topbuild}/lib/libvmod_std/.libs
 varnish v1 -vcl+backend {
 	import std;
 }
+
+varnish v1 -cliok "param.set vcc_unsafe_path on"
+
+varnish v1 -cliok "param.set vmod_dir /nowhere:/else"
+
+varnish v1 -vcl+backend {
+	import std from "${topbuild}/lib/libvmod_std/.libs/";
+}
