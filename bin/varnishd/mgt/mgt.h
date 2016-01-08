@@ -165,8 +165,8 @@ char *mgt_VccCompile(struct cli *, const char *vclname, const char *vclsrc,
 void mgt_vcc_init(void);
 
 void mgt_vcl_init(void);
-void mgt_vcc_default(struct cli *, const char *b_arg, const char *vclsrc,
-    int Cflag);
+void mgt_vcc_startup(struct cli *, const char *b_arg, const char *f_arg,
+    const char *vclsrc, int Cflag);
 int mgt_push_vcls_and_start(unsigned *status, char **p);
 int mgt_has_vcl(void);
 extern char *mgt_cc_cmd;
