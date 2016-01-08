@@ -49,7 +49,6 @@ vcc_path_dlopen(void *priv, const char *fn)
 	AN(priv);
 	AN(fn);
 
-fprintf(stderr, "TRY <%s>\n", fn);
 	hdl = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
 	if (hdl == NULL)
 		return (1);
@@ -126,9 +125,8 @@ vcc_ParseImport(struct vcc *tl)
 
 	SkipToken(tl, ';');
 
-	fnp = fn;
 	if (VFIL_searchpath(tl->param->vmod_path,
-	    vcc_path_dlopen, &hdl, &fnp)) {
+	    vcc_path_dlopen, &hdl, fn, &fnp)) {
 		VSB_printf(tl->sb, "Could not load VMOD %.*s\n", PF(mod));
 		VSB_printf(tl->sb, "\tFile name: %s\n", fnp != NULL ? fnp : fn);
 		VSB_printf(tl->sb, "\tdlerror: %s\n", dlerror());
