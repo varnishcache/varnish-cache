@@ -60,6 +60,7 @@ struct vclprog {
 static VTAILQ_HEAD(, vclprog) vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
 static struct vclprog		*active_vcl;
 static struct vev *e_poker;
+static struct vfil_path *vcl_path;
 
 /*--------------------------------------------------------------------*/
 
@@ -269,7 +270,7 @@ mcf_vcl_inline(struct cli *cli, const char * const *av, void *priv)
 void
 mcf_vcl_load(struct cli *cli, const char * const *av, void *priv)
 {
-	char *vcl;
+	char *vcl, *fn;
 	struct vclprog *vp;
 
 	(void)priv;
@@ -280,9 +281,10 @@ mcf_vcl_load(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 
-	vcl = VFIL_readfile(mgt_vcl_dir, av[3], NULL);
-	if (vcl == NULL) {
-		VCLI_Out(cli, "Cannot open '%s'", av[3]);
+	VFIL_setpath(&vcl_path, mgt_vcl_dir);
+	fn = TRUST_ME(av[3]);
+	if (VFIL_searchpath(vcl_path, NULL, &vcl, &fn)) {
+		VCLI_Out(cli, "Cannot open '%s'", fn != NULL ? fn : av[3]);
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
