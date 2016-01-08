@@ -64,7 +64,7 @@ VSUB_closefrom(int fd)
 #else
 	int i = sysconf(_SC_OPEN_MAX);
 	assert(i > 0);
-	for (i = sysconf(_SC_OPEN_MAX); i > fd; i--)
+	for (; i > fd; i--)
 		(void)close(i);
 #endif
 }
