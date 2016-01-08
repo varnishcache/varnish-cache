@@ -1,0 +1,73 @@
+varnishtest "Test relative to vcl_dir, dot-include and absolute includes"
+
+# relative plain
+shell "true > ${tmpdir}/_start.vcl"
+varnish v1 -arg "-p vcl_dir=${tmpdir}" -vcl {
+	backend b { .host = "127.0.0.1"; }
+	include "_start.vcl" ;
+}
+
+# absolute include
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	include "${tmpdir}/_start.vcl" ;
+}
+
+# absolute -> relative include
+shell "mkdir -p ${tmpdir}/1/2/3"
+shell "true  > ${tmpdir}/1/2/b.vcl"
+shell "echo 'include \"./2/b.vcl\";' > ${tmpdir}/1/a.vcl"
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	include "${tmpdir}/1/a.vcl" ;
+}
+
+# same but relative to vcl_dir
+shell "echo 'include \"1/2/b.vcl\";' > ${tmpdir}/1/ab.vcl"
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	include "1/ab.vcl" ;
+}
+
+# dot-relative -> relative
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	include "1/a.vcl" ;
+}
+
+# relative -> relative -> relative
+shell "echo 'include \"./3/c.vcl\";' > ${tmpdir}/1/2/b.vcl"
+shell "true  > ${tmpdir}/1/2/3/c.vcl"
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	include "1/a.vcl" ;
+}
+
+# relative -> absolute
+shell "echo 'include \"${tmpdir}/1/2/3/c.vcl\";' > ${tmpdir}/1/aa.vcl"
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	include "1/aa.vcl" ;
+}
+
+# relative -> absolute -> relative
+shell "echo 'include \"${tmpdir}/1/2/b.vcl\";' > ${tmpdir}/1/aaa.vcl"
+varnish v1 -vcl {
+	backend b { .host = "127.0.0.1"; }
+	include "1/aaa.vcl" ;
+}
+
+# includes and parses out
+shell "echo 'zool' > ${tmpdir}/1/2/3/c.vcl"
+varnish v1 -errvcl {Found: 'zool' at} {
+	backend b { .host = "127.0.0.1"; }
+	include "1/a.vcl";
+}
+
+shell "rm -f ${tmpdir}/a"
+shell "rm -f ${tmpdir}/_start.vcl"
+
+varnish v1 -errvcl {only works in nested VCL include files} {
+	include "./foobar";
+}
+

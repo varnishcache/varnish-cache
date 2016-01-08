@@ -478,6 +478,8 @@ vcc_resolve_includes(struct vcc *tl)
 {
 	struct token *t, *t1, *t2;
 	struct source *sp;
+	struct vsb *vsb;
+	const char *p;
 
 	VTAILQ_FOREACH(t, &tl->tokens, list) {
 		if (t->tok != ID || !vcc_IdIs(t, "include"))
@@ -501,7 +503,31 @@ vcc_resolve_includes(struct vcc *tl)
 			return;
 		}
 
-		sp = vcc_file_source(tl->param, tl->sb, t1->dec);
+		if (t1->dec[0] == '.' && t1->dec[1] == '/') {
+			/*
+			 * Nested include filenames, starting with "./" are
+			 * resolved relative to the VCL file which contains
+			 * the include directive.
+			 */
+			if (t1->src->name[0] != '/') {
+				VSB_printf(tl->sb,
+				    "include \"./xxxxx\"; only works in "
+				    "nested VCL include files\n");
+				vcc_ErrWhere(tl, t1);
+				return;
+			}
+			vsb = VSB_new_auto();
+			AN(vsb);
+			p = strrchr(t1->src->name, '/');
+			AN(p);
+			VSB_bcat(vsb, t1->src->name, p - t1->src->name);
+			VSB_cat(vsb, t1->dec + 1);
+			AZ(VSB_finish(vsb));
+			sp = vcc_file_source(tl->param, tl->sb, VSB_data(vsb));
+			VSB_delete(vsb);
+		} else {
+			sp = vcc_file_source(tl->param, tl->sb, t1->dec);
+		}
 		if (sp == NULL) {
 			vcc_ErrWhere(tl, t1);
 			return;
@@ -761,7 +787,7 @@ VCC_Compile(const struct vcp *vcp, struct vsb *sb,
 
 	if (vclsrc != NULL) {
 		AZ(vclsrcfile);
-		sp = vcc_new_source(vclsrc, NULL, "input");
+		sp = vcc_new_source(vclsrc, NULL, "<input>");
 	} else {
 		AN(vclsrcfile);
 		sp = vcc_file_source(vcp, sb, vclsrcfile);
