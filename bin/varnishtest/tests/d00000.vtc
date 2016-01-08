@@ -31,6 +31,15 @@ varnish v1 -vcl+backend {
 		rr.add_backend(s4);
 	}
 
+	sub vcl_recv {
+		if (req.method == "DELETE") {
+			rr.remove_backend(s1);
+			rr.remove_backend(s2);
+			rr.remove_backend(s3);
+			return(synth(204));
+		}
+	}
+
 	sub vcl_backend_fetch {
 		set bereq.backend = rr.backend();
 	}
@@ -63,4 +72,15 @@ client c2 {
 	txreq -url "/foo22"
 	rxresp
 	expect resp.bodylen == 2
+} -run
+
+server s4 -start
+
+client c3 {
+	txreq -req "DELETE"
+	rxresp
+	expect resp.status == 204
+	txreq -url "/foo31"
+	rxresp
+	expect resp.bodylen == 4
 } -run

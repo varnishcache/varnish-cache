@@ -26,6 +26,10 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_recv {
+		if (req.method == "DELETE") {
+			fb1.remove_backend(s2);
+			return(synth(204));
+		}
 		return (pass);
 	}
 
@@ -58,4 +62,16 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.http.foo == "1"
+} -run
+
+varnish v1 -cliok "backend.set_health s1 sick"
+server s3 -start
+
+client c1 {
+	txreq -req "DELETE"
+	rxresp
+	expect resp.status == 204
+	txreq
+	rxresp
+	expect resp.http.foo == "3"
 } -run
