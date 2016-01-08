@@ -117,7 +117,11 @@ vcc_ParseImport(struct vcc *tl)
 			return;
 		}
 		ExpectErr(tl, CSTR);
-		bprintf(fn, "%s", tl->t->dec);
+		p = strrchr(tl->t->dec, '/');
+		if (p != NULL && p[1] == '\0')
+			bprintf(fn, "%slibvmod_%.*s.so", tl->t->dec, PF(mod));
+		else
+			bprintf(fn, "%s", tl->t->dec);
 		vcc_NextToken(tl);
 	} else {
 		bprintf(fn, "libvmod_%.*s.so", PF(mod));

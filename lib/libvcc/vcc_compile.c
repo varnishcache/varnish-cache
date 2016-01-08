@@ -511,8 +511,8 @@ vcc_resolve_includes(struct vcc *tl)
 			 */
 			if (t1->src->name[0] != '/') {
 				VSB_printf(tl->sb,
-				    "include \"./xxxxx\"; only works in "
-				    "nested VCL include files\n");
+				    "include \"./xxxxx\"; needs absolute "
+				    "filename of including file.\n");
 				vcc_ErrWhere(tl, t1);
 				return;
 			}
@@ -784,14 +784,14 @@ VCC_Compile(const struct vcp *vcp, struct vsb *sb,
 {
 	struct source *sp;
 	char *r;
+	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
+	AN(sb);
+	AN(vclsrcfile);
 
-	if (vclsrc != NULL) {
-		AZ(vclsrcfile);
-		sp = vcc_new_source(vclsrc, NULL, "<input>");
-	} else {
-		AN(vclsrcfile);
+	if (vclsrc != NULL)
+		sp = vcc_new_source(vclsrc, NULL, vclsrcfile);
+	else
 		sp = vcc_file_source(vcp, sb, vclsrcfile);
-	}
 	if (sp == NULL)
 		return (NULL);
 	r = vcc_CompileSource(vcp, sb, sp);
