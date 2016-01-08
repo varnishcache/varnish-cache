@@ -28,10 +28,16 @@
  *
  */
 
+struct vfil_path;
+
 /* from libvarnish/vfil.c */
 int seed_random(void);
 char *VFIL_readfile(const char *pfx, const char *fn, ssize_t *sz);
-char *VFIL_readfd(int fd, ssize_t *sz);
 int VFIL_nonblocking(int fd);
 int VFIL_fsinfo(int fd, unsigned *pbs, uintmax_t *size, uintmax_t *space);
 int VFIL_allocate(int fd, off_t size, int insist);
+void VFIL_setpath(struct vfil_path**, const char *path);
+typedef int vfil_path_func_f(void *priv, const char *fn);
+int VFIL_searchpath(const struct vfil_path *, vfil_path_func_f *func,
+    void *priv, char **fn);
+
