@@ -30,12 +30,12 @@
 
 struct vcc;
 
-struct vcc *VCC_New(void);
-void VCC_Builtin_VCL(struct vcc *, const char *str);
-void VCC_VCL_dir(struct vcc *, const char *str);
-void VCC_VMOD_dir(struct vcc *, const char *str);
-void VCC_Err_Unref(struct vcc *tl, unsigned u);
-void VCC_Allow_InlineC(struct vcc *tl, unsigned u);
-void VCC_Unsafe_Path(struct vcc *tl, unsigned u);
+struct vcp *VCP_New(void);
+void VCP_Builtin_VCL(struct vcp *, const char *str);
+void VCP_VCL_dir(struct vcp *, const char *str);
+void VCP_VMOD_dir(struct vcp *, const char *str);
+void VCP_Err_Unref(struct vcp *tl, unsigned u);
+void VCP_Allow_InlineC(struct vcp *tl, unsigned u);
+void VCP_Unsafe_Path(struct vcp *tl, unsigned u);
 
-char *VCC_Compile(const struct vcc *, struct vsb *sb, const char *b);
+char *VCC_Compile(const struct vcp *, struct vsb *sb, const char *b);

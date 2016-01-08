@@ -64,7 +64,7 @@ unsigned mgt_vcc_err_unref;
 unsigned mgt_vcc_allow_inline_c;
 unsigned mgt_vcc_unsafe_path;
 
-static struct vcc *vcc;
+static struct vcp *vcp;
 
 #define VGC_SRC		"vgc.c"
 #define VGC_LIB		"vgc.so"
@@ -94,12 +94,12 @@ run_vcc(void *priv)
 
 	sb = VSB_new_auto();
 	XXXAN(sb);
-	VCC_VCL_dir(vcc, mgt_vcl_dir);
-	VCC_VMOD_dir(vcc, mgt_vmod_dir);
-	VCC_Err_Unref(vcc, mgt_vcc_err_unref);
-	VCC_Allow_InlineC(vcc, mgt_vcc_allow_inline_c);
-	VCC_Unsafe_Path(vcc, mgt_vcc_unsafe_path);
-	csrc = VCC_Compile(vcc, sb, vp->src);
+	VCP_VCL_dir(vcp, mgt_vcl_dir);
+	VCP_VMOD_dir(vcp, mgt_vmod_dir);
+	VCP_Err_Unref(vcp, mgt_vcc_err_unref);
+	VCP_Allow_InlineC(vcp, mgt_vcc_allow_inline_c);
+	VCP_Unsafe_Path(vcp, mgt_vcc_unsafe_path);
+	csrc = VCC_Compile(vcp, sb, vp->src);
 	AZ(VSB_finish(sb));
 	if (VSB_len(sb))
 		printf("%s", VSB_data(sb));
@@ -318,7 +318,7 @@ void
 mgt_vcc_init(void)
 {
 
-	vcc = VCC_New();
-	AN(vcc);
-	VCC_Builtin_VCL(vcc, builtin_vcl);
+	vcp = VCP_New();
+	AN(vcp);
+	VCP_Builtin_VCL(vcp, builtin_vcl);
 }
