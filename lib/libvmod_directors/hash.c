@@ -85,6 +85,16 @@ vmod_hash_add_backend(VRT_CTX,
 	(void)vdir_add_backend(rr->vd, be, w);
 }
 
+VCL_VOID __match_proto__()
+vmod_hash_remove_backend(VRT_CTX,
+    struct vmod_directors_hash *rr, VCL_BACKEND be)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_HASH_MAGIC);
+	(void)vdir_remove_backend(rr->vd, be);
+}
+
 VCL_BACKEND __match_proto__()
 vmod_hash_backend(VRT_CTX, struct vmod_directors_hash *rr,
     const char *arg, ...)

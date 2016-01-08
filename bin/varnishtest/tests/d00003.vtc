@@ -30,6 +30,10 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_recv {
+		if (req.method == "DELETE") {
+			h1.remove_backend(s1);
+			return(synth(204));
+		}
 		if (req.url == "/nohdr") {
 			set req.backend_hint = h1.backend(req.http.Void);
 		} else if (req.url == "/emptystring") {
@@ -73,4 +77,28 @@ client c1 {
 	txreq -url /ip
 	rxresp
 	expect resp.http.foo == "9"
+} -run
+
+server s2 -start
+
+client c1 {
+	txreq -req "DELETE"
+	rxresp
+	expect resp.status == 204
+
+	txreq
+	rxresp
+	expect resp.http.foo == "2"
+
+	txreq
+	rxresp
+	expect resp.http.foo == "4"
+
+	txreq
+	rxresp
+	expect resp.http.foo == "6"
+
+	txreq
+	rxresp
+	expect resp.http.foo == "8"
 } -run

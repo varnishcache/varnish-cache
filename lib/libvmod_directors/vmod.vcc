@@ -72,6 +72,14 @@ Example
 	vdir.add_backend(backend1);
 	vdir.add_backend(backend2);
 
+$Method VOID .remove_backend(BACKEND)
+
+Description
+	Remove a backend from the round-robin director.
+Example
+	vdir.remove_backend(backend1);
+	vdir.remove_backend(backend2);
+
 $Method BACKEND .backend()
 
 Description
@@ -102,6 +110,14 @@ Description
 Example
 	vdir.add_backend(backend1);
 	vdir.add_backend(backend2);
+
+$Method VOID .remove_backend(BACKEND)
+
+Description
+	Remove a backend from the director.
+Example
+	vdir.remove_backend(backend1);
+	vdir.remove_backend(backend2);
 
 $Method BACKEND .backend()
 
@@ -136,6 +152,13 @@ Example
 	vdir.add_backend(backend1, 10.0);
 	vdir.add_backend(backend2, 5.0);
 
+$Method VOID .remove_backend(BACKEND)
+
+Description
+	Remove a backend from the director.
+Example
+	vdir.remove_backend(backend1);
+	vdir.remove_backend(backend2);
 
 $Method BACKEND .backend()
 
@@ -170,6 +193,13 @@ Example
 	vdir.add_backend(backend1, 1.0);
 	vdir.add_backend(backend2, 1.0);
 
+$Method VOID .remove_backend(BACKEND)
+
+Description
+	Remove a backend from the director.
+Example
+	vdir.remove_backend(backend1);
+	vdir.remove_backend(backend2);
 
 $Method BACKEND .backend(STRING_LIST)
 

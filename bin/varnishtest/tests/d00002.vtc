@@ -33,3 +33,46 @@ client c1 {
 	rxresp
 	expect resp.http.where == "foo-->s1"
 } -run
+
+server s1 -start
+server s2 {
+	loop 20 {
+		rxreq
+		txresp
+	}
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_directors};
+
+	sub vcl_init {
+		new foo = directors.random();
+		foo.add_backend(s1, 1);
+		foo.add_backend(s2, 1);
+	}
+
+	sub vcl_recv {
+		if (req.method == "DELETE") {
+			foo.remove_backend(s1);
+			return(synth(204));
+		}
+		set req.backend_hint = foo.backend();
+		return (pass);
+	}
+
+	sub vcl_backend_response {
+		set beresp.http.where = bereq.backend + "-->" + beresp.backend;
+	}
+}
+
+client c1 {
+	txreq -req "DELETE"
+	rxresp
+	expect resp.status == 204
+	loop 20 {
+		txreq
+		rxresp
+		expect resp.status == 200
+		expect resp.http.where == "foo-->s2"
+	}
+} -run

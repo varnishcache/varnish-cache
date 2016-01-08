@@ -120,6 +120,15 @@ vmod_round_robin_add_backend(VRT_CTX,
 	(void)vdir_add_backend(rr->vd, be, 0.0);
 }
 
+VCL_VOID __match_proto__()
+vmod_round_robin_remove_backend(VRT_CTX,
+    struct vmod_directors_round_robin *rr, VCL_BACKEND be)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
+	(void)vdir_remove_backend(rr->vd, be);
+}
+
 VCL_BACKEND __match_proto__()
 vmod_round_robin_backend(VRT_CTX,
     struct vmod_directors_round_robin *rr)
