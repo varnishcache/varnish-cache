@@ -106,6 +106,7 @@ sma_alloc(const struct stevedore *st, size_t size)
 		 * XXX: Not want to pick up the lock twice just for stats.
 		 */
 		sma_sc->stats->c_fail++;
+		sma_sc->sma_alloc -= size;
 		sma_sc->stats->c_bytes -= size;
 		sma_sc->stats->g_alloc--;
 		sma_sc->stats->g_bytes -= size;
