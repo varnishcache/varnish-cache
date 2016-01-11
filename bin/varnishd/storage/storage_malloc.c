@@ -147,41 +147,6 @@ sma_free(struct storage *s)
 	free(sma);
 }
 
-static void
-sma_trim(struct storage *s, size_t size, int move_ok)
-{
-	struct sma_sc *sma_sc;
-	struct sma *sma;
-	void *p;
-	size_t delta;
-
-	CHECK_OBJ_NOTNULL(s, STORAGE_MAGIC);
-	CAST_OBJ_NOTNULL(sma, s->priv, SMA_MAGIC);
-	sma_sc = sma->sc;
-
-	assert(sma->sz == sma->s.space);
-	assert(size < sma->sz);
-
-	if (!move_ok)
-		return;
-
-	delta = sma->sz - size;
-	if (delta < 256)
-		return;
-	if ((p = realloc(sma->s.ptr, size)) != NULL) {
-		Lck_Lock(&sma_sc->sma_mtx);
-		sma_sc->sma_alloc -= delta;
-		sma_sc->stats->g_bytes -= delta;
-		sma_sc->stats->c_freed += delta;
-		if (sma_sc->sma_max != SIZE_MAX)
-			sma_sc->stats->g_space += delta;
-		sma->sz = size;
-		Lck_Unlock(&sma_sc->sma_mtx);
-		sma->s.ptr = p;
-		s->space = size;
-	}
-}
-
 static double
 sma_used_space(const struct stevedore *st)
 {
@@ -257,7 +222,6 @@ const struct stevedore sma_stevedore = {
 	.open		=	sma_open,
 	.alloc		=	sma_alloc,
 	.free		=	sma_free,
-	.trim		=	sma_trim,
 	.allocobj	=	SML_allocobj,
 	.methods	=	&SML_methods,
 	.var_free_space =	sma_free_space,

@@ -87,7 +87,6 @@ struct stevedore {
 	storage_init_f		*init;		/* called by mgt process */
 	storage_open_f		*open;		/* called by cache process */
 	storage_alloc_f		*alloc;		/* --//-- only if SML */
-	storage_trim_f		*trim;		/* --//-- only if SML */
 	storage_free_f		*free;		/* --//-- only if SML */
 	storage_close_f		*close;		/* --//-- */
 	storage_allocobj_f	*allocobj;	/* --//-- */

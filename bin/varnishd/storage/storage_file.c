@@ -307,36 +307,6 @@ free_smf(struct smf *sp)
 }
 
 /*--------------------------------------------------------------------
- * Trim the tail of a range.
- */
-
-static void
-trim_smf(struct smf *sp, size_t bytes)
-{
-	struct smf *sp2;
-	struct smf_sc *sc = sp->sc;
-
-	AN(sp->alloc);
-	assert(bytes > 0);
-	assert(bytes < sp->size);
-	AZ(bytes % sc->pagesize);
-	AZ(sp->size % sc->pagesize);
-	CHECK_OBJ_NOTNULL(sp, SMF_MAGIC);
-	sp2 = malloc(sizeof *sp2);
-	XXXAN(sp2);
-	sc->stats->g_smf++;
-	*sp2 = *sp;
-
-	sp2->size -= bytes;
-	sp->size = bytes;
-	sp2->ptr += bytes;
-	sp2->offset += bytes;
-	VTAILQ_INSERT_AFTER(&sc->order, sp, sp2, order);
-	VTAILQ_INSERT_TAIL(&sc->used, sp2, status);
-	free_smf(sp2);
-}
-
-/*--------------------------------------------------------------------
  * Insert a newly created range as busy, then free it to do any collapses
  */
 
@@ -480,39 +450,6 @@ smf_alloc(const struct stevedore *st, size_t size)
 
 /*--------------------------------------------------------------------*/
 
-static void
-smf_trim(struct storage *s, size_t size, int move_ok)
-{
-	struct smf *smf;
-	struct smf_sc *sc;
-
-	CHECK_OBJ_NOTNULL(s, STORAGE_MAGIC);
-	assert(size > 0);
-	assert(size <= s->space);
-	xxxassert(size > 0);	/* XXX: seen */
-	CAST_OBJ_NOTNULL(smf, s->priv, SMF_MAGIC);
-	assert(size <= smf->size);
-
-	if (!move_ok)
-		return;		/* XXX: trim_smf needs fixed */
-
-	sc = smf->sc;
-	size += (sc->pagesize - 1);
-	size &= ~(sc->pagesize - 1);
-	if (smf->size > size) {
-		Lck_Lock(&sc->mtx);
-		sc->stats->c_freed += (smf->size - size);
-		sc->stats->g_bytes -= (smf->size - size);
-		sc->stats->g_space += (smf->size - size);
-		trim_smf(smf, size);
-		assert(smf->size == size);
-		Lck_Unlock(&sc->mtx);
-		s->space = size;
-	}
-}
-
-/*--------------------------------------------------------------------*/
-
 static void __match_proto__(storage_free_f)
 smf_free(struct storage *s)
 {
@@ -539,7 +476,6 @@ const struct stevedore smf_stevedore = {
 	.init		=	smf_init,
 	.open		=	smf_open,
 	.alloc		=	smf_alloc,
-	.trim		=	smf_trim,
 	.free		=	smf_free,
 	.allocobj	=	SML_allocobj,
 	.methods	=	&SML_methods,
@@ -597,9 +533,6 @@ main(int argc, char **argv)
 		if (s[i] == NULL) {
 			s[i] = smf_alloc(&smf_stevedore, j);
 			printf("A %10p %12d\n", s[i], j);
-		} else if (j < s[i]->space) {
-			smf_trim(s[i], j);
-			printf("T %10p %12d\n", s[i], j);
 		} else {
 			smf_free(s[i]);
 			printf("D %10p\n", s[i]);

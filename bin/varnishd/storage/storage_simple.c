@@ -79,17 +79,6 @@ sml_stv_free(const struct stevedore *stv, struct storage *st)
 	stv->free(st);
 }
 
-static void
-sml_stv_trim(const struct stevedore *stv, struct storage *st, size_t size,
-    int move_ok)
-{
-
-	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-	if (stv->trim)
-		stv->trim(st, size, move_ok);
-}
-
 /*--------------------------------------------------------------------
  * This function is called by stevedores ->allocobj() method, which
  * very often will be SML_allocobj() below, to convert a slab
@@ -104,6 +93,7 @@ SML_MkObject(const struct stevedore *stv, struct objcore *oc, void *ptr)
 	struct object *o;
 
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+	AN(stv->methods);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	assert(PAOK(ptr));
@@ -113,9 +103,8 @@ SML_MkObject(const struct stevedore *stv, struct objcore *oc, void *ptr)
 
 	VTAILQ_INIT(&o->list);
 
-	oc->stobj->magic = STOREOBJ_MAGIC;
+	INIT_OBJ(oc->stobj, STOREOBJ_MAGIC);
 	oc->stobj->stevedore = stv;
-	AN(stv->methods);
 	oc->stobj->priv = o;
 	return (o);
 }
@@ -434,7 +423,7 @@ static void __match_proto__(objtrimstore_f)
 sml_trimstore(struct worker *wrk, struct objcore *oc)
 {
 	const struct stevedore *stv;
-	struct storage *st;
+	struct storage *st, *st1;
 	struct object *o;
 	struct busyobj *bo;
 
@@ -453,14 +442,33 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 	o = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st = VTAILQ_LAST(&o->list, storagehead);
+
 	if (st == NULL)
 		return;
+
 	if (st->len == 0) {
 		VTAILQ_REMOVE(&o->list, st, list);
 		sml_stv_free(stv, st);
-	} else if (st->len < st->space) {
-		sml_stv_trim(stv, st, st->len, 1);
+		return;
 	}
+
+	if (st->space - st->len < 512)
+		return;
+
+	st1 = sml_stv_alloc(stv, st->len);
+	if (st1 == NULL)
+		return;
+
+	if (st1->space < st->len) {
+		sml_stv_free(stv, st1);
+		return;
+	}
+
+	memcpy(st1->ptr, st->ptr, st->len);
+	st1->len = st->len;
+	VTAILQ_REMOVE(&o->list, st, list);
+	VTAILQ_INSERT_TAIL(&o->list, st1, list);
+	sml_stv_free(stv, st);
 }
 
 static void * __match_proto__(objgetattr_f)
