@@ -1,0 +1,27 @@
+varnishtest "Test object trimming"
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Transfer-encoding: chunked"
+	delay .2
+	chunkedlen 4096
+	sema r1 sync 2
+	sema r2 sync 2
+	chunkedlen 0
+} -start
+
+varnish v1 \
+	-arg "-s malloc,1m" -vcl+backend { } -start
+
+client c1 {
+	txreq
+	rxresp
+} -start
+
+sema r1 sync 2
+varnish v1 -expect SMA.s0.g_bytes > 10000
+
+sema r2 sync 2
+
+client c1 -wait
+varnish v1 -expect SMA.s0.g_bytes < 6000

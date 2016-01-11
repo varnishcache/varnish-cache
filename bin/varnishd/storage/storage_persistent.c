@@ -585,22 +585,6 @@ smp_alloc(const struct stevedore *st, size_t size)
 	    size > 4096 ? 4096 : size, size, NULL, NULL, NULL));
 }
 
-/*--------------------------------------------------------------------
- * We don't track frees of storage, we track the objects which own the
- * storage and when there are no more objects in in the first segment,
- * it can be reclaimed.
- * XXX: We could free the last allocation, but does that happen ?
- */
-
-static void __match_proto__(storage_free_f)
-smp_free(struct storage *st)
-{
-
-	/* XXX */
-	(void)st;
-}
-
-
 /*--------------------------------------------------------------------*/
 
 const struct stevedore smp_stevedore = {
@@ -611,7 +595,7 @@ const struct stevedore smp_stevedore = {
 	.close	=	smp_close,
 	.alloc	=	smp_alloc,
 	.allocobj =	smp_allocobj,
-	.free	=	smp_free,
+	.free	=	NULL,
 	.signal_close = smp_signal_close,
 	.baninfo =	smp_baninfo,
 	.banexport =	smp_banexport,

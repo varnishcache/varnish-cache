@@ -528,7 +528,7 @@ smp_oc_objgetlru(const struct objcore *oc)
 
 const struct obj_methods smp_oc_methods = {
 	.sml_getobj =		smp_oc_sml_getobj,
-	.objupdatemeta =		smp_oc_objupdatemeta,
+	.objupdatemeta =	smp_oc_objupdatemeta,
 	.objfree =		smp_oc_objfree,
 	.objgetlru =		smp_oc_objgetlru,
 };

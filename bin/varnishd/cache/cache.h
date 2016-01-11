@@ -365,12 +365,10 @@ struct lru {
 };
 
 /* Stored object -----------------------------------------------------
- * Pointer to a stored object, and the methods it supports
+ * This is just to encapsulate the fields owned by the stevedore
  */
 
 struct storeobj {
-	unsigned		magic;
-#define STOREOBJ_MAGIC		0x6faed850
 	const struct stevedore	*stevedore;
 	void			*priv;
 	uintptr_t		priv2;
@@ -501,6 +499,8 @@ struct busyobj {
 	struct vcl		*vcl;
 
 	struct vsl_log		vsl[1];
+
+	void			*stevedore_priv;
 
 	uint8_t			digest[DIGEST_LEN];
 	struct vrt_privs	privs[1];

@@ -75,8 +75,8 @@ sml_stv_free(const struct stevedore *stv, struct storage *st)
 
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-	AN(stv->free);
-	stv->free(st);
+	if (stv->free != NULL)
+		stv->free(st);
 }
 
 /*--------------------------------------------------------------------
@@ -103,9 +103,9 @@ SML_MkObject(const struct stevedore *stv, struct objcore *oc, void *ptr)
 
 	VTAILQ_INIT(&o->list);
 
-	INIT_OBJ(oc->stobj, STOREOBJ_MAGIC);
 	oc->stobj->stevedore = stv;
 	oc->stobj->priv = o;
+	oc->stobj->priv2 = 0;
 	return (o);
 }
 
@@ -202,7 +202,6 @@ sml_objfree(struct worker *wrk, struct objcore *oc)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(oc->stobj, STOREOBJ_MAGIC);
 	sml_slim(wrk, oc);
 	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
 	o->magic = 0;
@@ -425,20 +424,16 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 	const struct stevedore *stv;
 	struct storage *st, *st1;
 	struct object *o;
-	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	bo = oc->busyobj;
-	if (bo != NULL) {
-		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-		if (bo->do_stream)
-			return;
-	}
-
 	stv = oc->stobj->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+
+	if (stv->free == NULL)
+		return;
+
 	o = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st = VTAILQ_LAST(&o->list, storagehead);
@@ -468,6 +463,32 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 	st1->len = st->len;
 	VTAILQ_REMOVE(&o->list, st, list);
 	VTAILQ_INSERT_TAIL(&o->list, st1, list);
+	if (oc->busyobj == NULL) {
+		sml_stv_free(stv, st);
+	} else {
+		/* sml_stable frees this */
+		AZ(oc->busyobj->stevedore_priv);
+		oc->busyobj->stevedore_priv = st;
+	}
+}
+
+static void __match_proto__(objstable_f)
+sml_stable(struct worker *wrk, struct objcore *oc, struct busyobj *bo)
+{
+	const struct stevedore *stv;
+	struct storage *st;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	if (bo->stevedore_priv == NULL)
+		return;
+	CAST_OBJ_NOTNULL(st, bo->stevedore_priv, STORAGE_MAGIC);
+	bo->stevedore_priv = 0;
+	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+	stv = oc->stobj->stevedore;
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	sml_stv_free(stv, st);
 }
 
@@ -621,6 +642,7 @@ const struct obj_methods SML_methods = {
 	.objextend	= sml_extend,
 	.objgetlen	= sml_getlen,
 	.objtrimstore	= sml_trimstore,
+	.objstable	= sml_stable,
 	.objslim	= sml_slim,
 	.objgetattr	= sml_getattr,
 	.objsetattr	= sml_setattr,
