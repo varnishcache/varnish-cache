@@ -192,6 +192,10 @@ VBE_AddBackend(struct cli *cli, const struct vrt_backend *vb)
 		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 		if (strcmp(b->vcl_name, vb->vcl_name))
 			continue;
+		if ((vb->ipv4_suckaddr != NULL) ^ (b->ipv4 != NULL))
+			continue;
+		if ((vb->ipv6_suckaddr != NULL) ^ (b->ipv6 != NULL))
+			continue;
 		if (vb->ipv4_suckaddr != NULL &&
 		    VSA_Compare(b->ipv4, vb->ipv4_suckaddr))
 			continue;
