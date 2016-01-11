@@ -411,60 +411,6 @@ VRT_rel_vcl(VRT_CTX)
 	Lck_Unlock(&vcl_mtx);
 }
 
-/*--------------------------------------------------------------------
- * Wrapper functions to send events to VCL and guarantee semantics.
- */
-
-static int
-vcl_event_load(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(ctx->handling);
-	AN(ctx->vcl);
-	AN(ctx->msg);
-	return (ctx->vcl->conf->event_vcl(ctx, VCL_EVENT_LOAD));
-}
-
-static int
-vcl_event_warm(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(ctx->handling);
-	AN(ctx->vcl);
-	// AN/AZ(ctx->msg);		// XXX: Dridi: which is it ?
-	return (ctx->vcl->conf->event_vcl(ctx, VCL_EVENT_WARM));
-}
-
-static int
-vcl_event_use(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(ctx->handling);
-	AN(ctx->vcl);
-	AN(ctx->msg);
-	return (ctx->vcl->conf->event_vcl(ctx, VCL_EVENT_USE));
-}
-
-static void
-vcl_event_cold(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(ctx->handling);
-	AN(ctx->vcl);
-	AZ(ctx->msg);
-	AZ(ctx->vcl->conf->event_vcl(ctx, VCL_EVENT_COLD));
-}
-
-static void
-vcl_event_discard(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(ctx->handling);
-	AN(ctx->vcl);
-	// AN/AZ(ctx->msg);		// XXX:  Dridi: which is it ?
-	AZ(ctx->vcl->conf->event_vcl(ctx, VCL_EVENT_DISCARD));
-}
-
 /*--------------------------------------------------------------------*/
 
 static struct vcl *
@@ -480,6 +426,35 @@ vcl_find(const char *name)
 			return (vcl);
 	}
 	return (NULL);
+}
+
+static int
+vcl_setup_event(VRT_CTX, enum vcl_event_e ev)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(ctx->handling);
+	AN(ctx->vcl);
+	assert(ev == VCL_EVENT_LOAD || ev == VCL_EVENT_WARM ||
+	    ev == VCL_EVENT_USE);
+
+	if (ev == VCL_EVENT_LOAD)
+		AN(ctx->msg);
+
+	return (ctx->vcl->conf->event_vcl(ctx, ev));
+}
+
+static void
+vcl_failsafe_event(VRT_CTX, enum vcl_event_e ev)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(ctx->handling);
+	AN(ctx->vcl);
+	assert(ev == VCL_EVENT_COLD || ev == VCL_EVENT_DISCARD);
+
+	if (ctx->vcl->conf->event_vcl(ctx, ev) != 0)
+		WRONG("A VMOD cannot fail COLD or DISCARD events");
 }
 
 static void
@@ -502,7 +477,7 @@ vcl_set_state(VRT_CTX, const char *state)
 
 			vcl->temp = vcl->refcount ? VCL_TEMP_COOLING :
 			    VCL_TEMP_COLD;
-			vcl_event_cold(ctx);
+			vcl_failsafe_event(ctx, VCL_EVENT_COLD);
 			vcl_BackendEvent(vcl, VCL_EVENT_COLD);
 		}
 		else if (vcl->busy)
@@ -519,7 +494,7 @@ vcl_set_state(VRT_CTX, const char *state)
 		/* The VCL must first reach a stable cold state */
 		else if (vcl->temp != VCL_TEMP_COOLING) {
 			vcl->temp = VCL_TEMP_WARM;
-			vcl_event_warm(ctx);	// XXX: Dridi: what if it fails?
+			(void)vcl_setup_event(ctx, VCL_EVENT_WARM);
 			vcl_BackendEvent(vcl, VCL_EVENT_WARM);
 		}
 		break;
@@ -569,13 +544,13 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 
 	VSB_clear(vsb);
 	ctx.msg = vsb;
-	i = vcl_event_load(&ctx);
+	i = vcl_setup_event(&ctx, VCL_EVENT_LOAD);
 	AZ(VSB_finish(vsb));
 	if (i) {
 		VCLI_Out(cli, "VCL \"%s\" Failed initialization", name);
 		if (VSB_len(vsb))
 			VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(vsb));
-		vcl_event_discard(&ctx);
+		vcl_failsafe_event(&ctx, VCL_EVENT_DISCARD);
 		vcl_KillBackends(vcl);
 		VCL_Close(&vcl);
 		VSB_delete(vsb);
@@ -617,7 +592,7 @@ VCL_Nuke(struct vcl *vcl)
 	ctx.method = VCL_MET_FINI;
 	ctx.handling = &hand;
 	ctx.vcl = vcl;
-	vcl_event_discard(&ctx);
+	vcl_failsafe_event(&ctx, VCL_EVENT_DISCARD);
 	vcl_KillBackends(vcl);
 	free(vcl->loaded_name);
 	VCL_Close(&vcl);
@@ -742,7 +717,7 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 	AN(vsb);
 	ctx.msg = vsb;
 	ctx.vcl = vcl;
-	i = vcl_event_use(&ctx);
+	i = vcl_setup_event(&ctx, VCL_EVENT_USE);
 	AZ(VSB_finish(vsb));
 	if (i) {
 		VCLI_Out(cli, "VCL \"%s\" Failed to activate", av[2]);
