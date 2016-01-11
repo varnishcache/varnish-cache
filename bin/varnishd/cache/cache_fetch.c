@@ -527,8 +527,7 @@ vbf_fetch_body_helper(struct busyobj *bo)
 		bo->htc->doclose = SC_RX_BODY;
 	}
 
-	if (!bo->do_stream)
-		ObjTrimStore(bo->wrk, vfc->oc);
+	ObjTrimStore(bo->wrk, vfc->oc);
 }
 
 /*--------------------------------------------------------------------

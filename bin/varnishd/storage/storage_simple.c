@@ -165,7 +165,7 @@ SML_allocobj(struct worker *wrk, const struct stevedore *stv,
  */
 
 static struct object *
-getobj(struct worker *wrk, struct objcore *oc)
+sml_getobj(struct worker *wrk, struct objcore *oc)
 {
 	const struct obj_methods *m;
 	struct object *o;
@@ -192,7 +192,7 @@ sml_slim(struct worker *wrk, struct objcore *oc)
 
 	stv = oc->stobj->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-	o = getobj(wrk, oc);
+	o = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
 	if (o->esidata != NULL) {
@@ -252,7 +252,7 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 	void *p;
 	ssize_t l;
 
-	obj = getobj(wrk, oc);
+	obj = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 
 	bo = HSH_RefBusy(oc);
@@ -370,7 +370,7 @@ sml_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
 	AN(ptr);
 	assert(*sz > 0);
 
-	o = getobj(wrk, oc);
+	o = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 
 	st = VTAILQ_LAST(&o->list, storagehead);
@@ -409,7 +409,7 @@ sml_extend(struct worker *wrk, struct objcore *oc, ssize_t l)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	assert(l > 0);
 
-	o = getobj(wrk, oc);
+	o = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st = VTAILQ_LAST(&o->list, storagehead);
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
@@ -425,7 +425,7 @@ sml_getlen(struct worker *wrk, struct objcore *oc)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
-	o = getobj(wrk, oc);
+	o = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	return (o->len);
 }
@@ -436,12 +436,21 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 	const struct stevedore *stv;
 	struct storage *st;
 	struct object *o;
+	struct busyobj *bo;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	bo = oc->busyobj;
+	if (bo != NULL) {
+		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+		if (bo->do_stream)
+			return;
+	}
 
 	stv = oc->stobj->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-	o = getobj(wrk, oc);
+	o = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st = VTAILQ_LAST(&o->list, storagehead);
 	if (st == NULL)
@@ -465,7 +474,7 @@ sml_getattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 
 	if (len == NULL)
 		len = &dummy;
-	o = getobj(wrk, oc);
+	o = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	switch (attr) {
 	case OA_ESIDATA:
@@ -507,7 +516,7 @@ sml_setattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
-	o = getobj(wrk, oc);
+	o = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st = o->objstore;
 	switch (attr) {
