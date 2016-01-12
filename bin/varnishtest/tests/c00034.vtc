@@ -112,9 +112,15 @@ client c1 {
 	expect resp.status == 206
 	expect resp.bodylen == 100
 	expect resp.http.content-range == "bytes 0-99/100"
+
+	txreq -hdr "Range: bytes=0-"
+	rxresp
+	expect resp.status == 206
+	expect resp.bodylen == 100
+	expect resp.http.content-range == "bytes 0-99/100"
 } -run
 
-varnish v1 -expect s_resp_bodybytes == 401
+varnish v1 -expect s_resp_bodybytes == 501
 
 # Test Range streaming with streaming objects with C-L
 
