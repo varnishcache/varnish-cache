@@ -134,7 +134,6 @@ WS_Alloc(struct ws *ws, unsigned bytes)
 	assert(ws->r == NULL);
 	if (ws->f + bytes > ws->e) {
 		WS_MarkOverflow(ws);
-		WS_Assert(ws);
 		return(NULL);
 	}
 	r = ws->f;
@@ -160,7 +159,6 @@ WS_Copy(struct ws *ws, const void *str, int len)
 	bytes = PRNDUP((unsigned)len);
 	if (ws->f + bytes > ws->e) {
 		WS_MarkOverflow(ws);
-		WS_Assert(ws);
 		return(NULL);
 	}
 	r = ws->f;
