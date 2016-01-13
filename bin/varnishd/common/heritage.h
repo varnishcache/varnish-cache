@@ -56,7 +56,6 @@ struct heritage {
 
 	/* Sockets from which to accept connections */
 	struct listen_sock_head		socks;
-	unsigned			nsocks;
 
 	/* Hash method */
 	const struct hash_slinger	*hash;
@@ -66,7 +65,7 @@ struct heritage {
 	struct params			*param;
 
 	char				*name;
-	char                            identity[1024];
+	const char			*identity;
 
 	char				*panic_str;
 	ssize_t				panic_str_len;

@@ -623,7 +623,7 @@ VRT_r_server_identity(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (heritage.identity[0] != '\0')
+	if (heritage.identity != NULL)
 		return (heritage.identity);
 	else
 		return (heritage.name);
