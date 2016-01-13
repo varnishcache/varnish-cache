@@ -442,7 +442,13 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 		return;
 
 	if (st->len == 0) {
-		VTAILQ_REMOVE(&o->list, st, list);
+		if (oc->busyobj != NULL) {
+			Lck_Lock(&oc->busyobj->mtx);
+			VTAILQ_REMOVE(&o->list, st, list);
+			Lck_Unlock(&oc->busyobj->mtx);
+		} else {
+			VTAILQ_REMOVE(&o->list, st, list);
+		}
 		sml_stv_free(stv, st);
 		return;
 	}
@@ -461,8 +467,15 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 
 	memcpy(st1->ptr, st->ptr, st->len);
 	st1->len = st->len;
-	VTAILQ_REMOVE(&o->list, st, list);
-	VTAILQ_INSERT_TAIL(&o->list, st1, list);
+	if (oc->busyobj != NULL) {
+		Lck_Lock(&oc->busyobj->mtx);
+		VTAILQ_REMOVE(&o->list, st, list);
+		VTAILQ_INSERT_TAIL(&o->list, st1, list);
+		Lck_Unlock(&oc->busyobj->mtx);
+	} else {
+		VTAILQ_REMOVE(&o->list, st, list);
+		VTAILQ_INSERT_TAIL(&o->list, st1, list);
+	}
 	if (oc->busyobj == NULL) {
 		sml_stv_free(stv, st);
 	} else {
