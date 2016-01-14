@@ -1,3 +1,43 @@
+======================================
+Varnish Cache 4.1.1-beta1 (unreleased)
+======================================
+
+Changes since 4.1.0:
+
+- Format of "ban.list" has changed slightly.
+- [varnishncsa] -w is now required when running deamonized.
+- [varnishncsa] Log format can now be read from file.
+- Port fields extracted from PROXY1 header now work as expected.
+- New VCL state "busy" introduced (mostly for vmod writers.)
+- New configure option: --enable-pcre-jit. Enabled by default.
+- Last traces of varnishreplay removed.
+- If-Modified-Since is now ignored if we have If-None-Match.
+- Zero Content-Length is no longer sent on empty 204 and 304 responses.
+
+
+Bugs fixed
+----------
+
+- 1763_ - Restart epoll_wait on EINTR error
+- 1788_ - ObjIter has terrible performance profile when busyobj != NULL
+- 1798_ - Varnish requests painfully slow with large files
+- 1816_ - Use a weak comparison function for If-None-Match
+- 1818_ - Allow grace-hits on hit-for-pass objects, [..]
+- 1821_ - Always slim private & pass objects after delivery.
+- 1823_ - Rush the objheader if there is a waiting list when it is deref'ed.
+- 1826_ - Ignore 0 Content-Lengths in 204 responses
+
+.. _1763: https://www.varnish-cache.org/trac/ticket/1763
+.. _1788: https://www.varnish-cache.org/trac/ticket/1788
+.. _1798: https://www.varnish-cache.org/trac/ticket/1798
+.. _1816: https://www.varnish-cache.org/trac/ticket/1816
+.. _1818: https://www.varnish-cache.org/trac/ticket/1818
+.. _1821: https://www.varnish-cache.org/trac/ticket/1821
+.. _1823: https://www.varnish-cache.org/trac/ticket/1823
+.. _1826: https://www.varnish-cache.org/trac/ticket/1826
+
+
+
 ================================
 Varnish Cache 4.1.0 (2015-09-30)
 ================================
