@@ -41,13 +41,11 @@
  * changes to consider with next VRT_MAJOR_VERSION bump:
  * - cache_vrt.c: -> ssize_t VRT_CacheReqBody(VRT_CTX, size_t)
  *
- * changes to consider with next VRT_MINOR_VERSION bump for 4.1:
- * - cache_vcl.c: -> VRT_ref_vcl, VRT_rel_vcl
  */
 
 #define VRT_MAJOR_VERSION	3U
 
-#define VRT_MINOR_VERSION	0U
+#define VRT_MINOR_VERSION	1U
 
 
 /***********************************************************************/
