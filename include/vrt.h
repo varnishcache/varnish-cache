@@ -44,7 +44,7 @@
 
 #define VRT_MAJOR_VERSION	3U
 
-#define VRT_MINOR_VERSION	0U
+#define VRT_MINOR_VERSION	1U
 
 
 /***********************************************************************/
