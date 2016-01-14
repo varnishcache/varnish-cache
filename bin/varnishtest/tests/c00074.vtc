@@ -1,0 +1,25 @@
+varnishtest "Test WS_Reset off-by-one when workspace is full"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_debug};
+	import ${vmod_std};
+
+	sub vcl_recv {
+		set req.http.ws-free = debug.workspace_free(session);
+		debug.workspace_allocate(session, std.integer(req.http.ws-free, 0));
+		debug.workspace_snap(session);
+		debug.workspace_reset(session);
+	}
+} -start
+
+client c1 {
+	txreq -url /foo
+	rxresp
+	expect resp.status == 200
+} -run
+

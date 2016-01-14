@@ -116,7 +116,7 @@ WS_Reset(struct ws *ws, char *p)
 		ws->f = ws->s;
 	else {
 		assert(p >= ws->s);
-		assert(p < ws->e);
+		assert(p <= ws->e);
 		ws->f = p;
 	}
 	ws_ClearOverflow(ws);
