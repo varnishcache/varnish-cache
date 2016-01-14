@@ -419,6 +419,31 @@ vmod_workspace_overflowed(VRT_CTX, VCL_ENUM which)
 	return (WS_Overflowed(ws));
 }
 
+static char *debug_ws_snap;
+void
+vmod_workspace_snap(VRT_CTX, VCL_ENUM which)
+{
+	struct ws *ws;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	ws = wsfind(ctx, which);
+	WS_Assert(ws);
+
+	debug_ws_snap = WS_Snapshot(ws);
+}
+
+void
+vmod_workspace_reset(VRT_CTX, VCL_ENUM which)
+{
+	struct ws *ws;
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	ws = wsfind(ctx, which);
+	WS_Assert(ws);
+
+	WS_Reset(ws, debug_ws_snap);
+}
+
 void
 vmod_workspace_overflow(VRT_CTX, VCL_ENUM which)
 {
