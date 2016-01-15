@@ -8,11 +8,10 @@ Changes since 4.1.0:
 - [varnishncsa] -w is now required when running deamonized.
 - [varnishncsa] Log format can now be read from file.
 - Port fields extracted from PROXY1 header now work as expected.
-- New VCL state "busy" introduced (mostly for vmod writers.)
-- New configure option: --enable-pcre-jit. Enabled by default.
+- New VCL state "busy" introduced (mostly for vmod writers).
 - Last traces of varnishreplay removed.
 - If-Modified-Since is now ignored if we have If-None-Match.
-- Zero Content-Length is no longer sent on empty 204 and 304 responses.
+- Zero Content-Length is no longer sent on 304 responses.
 
 
 Bugs fixed
@@ -35,7 +34,6 @@ Bugs fixed
 .. _1821: https://www.varnish-cache.org/trac/ticket/1821
 .. _1823: https://www.varnish-cache.org/trac/ticket/1823
 .. _1826: https://www.varnish-cache.org/trac/ticket/1826
-
 
 
 ================================
@@ -2641,7 +2639,7 @@ varnishreplay
 varnishstat
 -----------
 
--  Don't print lifetime averages when it doesn't make any sense—for
+-  Don't print lifetime averages when it doesn't make any sense, for
    instance, there is no point in dividing the amount in bytes of free
    cache space by the lifetime in seconds of the varnishd process.
 
@@ -2774,7 +2772,7 @@ varnishncsa
 Documentation
 -------------
 
--  The documentation—especially the VCL documentation—has been greatly
+-  The documentation, especially the VCL documentation, has been greatly
    extended and improved.
 
 Build system
