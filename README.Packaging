@@ -13,19 +13,11 @@ Official packages
 -----------------
 
 The official Debian and Redhat packages are built by the Varnish Cache team
-and made available on http://repo.varnish-cache.org/ .
+and made available on https://repo.varnish-cache.org/ .
 
-Packaging files for Debian:
+Packaging files and scripts for Debian and Redhat:
 
-    git://git.varnish-cache.org/varnish-cache-debian.git
-
-Packaging files for Redhat:
-
-    https://github.com/varnish/varnish-cache-redhat
-
-Scripts that run the builds are available on:
-
-    https://github.com/varnish/pkg-varnish-cache
+    https://github.com/varnishcache/pkg-varnish-cache
 
 
 Third-party packages
