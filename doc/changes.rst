@@ -12,6 +12,9 @@ Changes since 4.1.0:
 - Last traces of varnishreplay removed.
 - If-Modified-Since is now ignored if we have If-None-Match.
 - Zero Content-Length is no longer sent on 304 responses.
+- vcl_dir and vmod_dir now accept a colon separated list of directories.
+- Nested includes starting with "./" are relative to the including
+  VCL file now.
 
 
 Bugs fixed
