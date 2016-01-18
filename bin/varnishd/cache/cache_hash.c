@@ -523,7 +523,9 @@ hsh_rush(struct worker *wrk, struct objhead *oh)
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_AssertHeld(&oh->mtx);
 	wl = oh->waitinglist;
-	CHECK_OBJ_NOTNULL(wl, WAITINGLIST_MAGIC);
+	CHECK_OBJ_ORNULL(wl, WAITINGLIST_MAGIC);
+	if (wl == NULL)
+		return;
 	for (u = 0; u < cache_param->rush_exponent; u++) {
 		req = VTAILQ_FIRST(&wl->list);
 		if (req == NULL)
