@@ -1,5 +1,17 @@
 ======================================
-Varnish Cache 4.1.1-beta1 (unreleased)
+Varnish Cache 4.1.1-beta2 (unreleased)
+======================================
+
+Bugs fixed
+----------
+
+* 1802_ - Segfault after VCL change
+* 1825_ - Cannot Start Varnish After Just Restarting The Service
+* 1842_ - Handle missing waiting list gracefully.
+
+
+======================================
+Varnish Cache 4.1.1-beta1 (2016-01-15)
 ======================================
 
 Changes since 4.1.0:
