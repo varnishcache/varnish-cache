@@ -170,11 +170,14 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 	unsigned status;
 	char *lib, *p;
 	struct vclprog *vp;
+	char buf[32];
 
 	AN(cli);
 
-	if (C_flag)
-		vclname = ".Cflagtest";
+	if (C_flag) {
+		bprintf(buf, ".CflagTest.%d", (int)getpid());
+		vclname = buf;
+	}
 
 	if (state == NULL)
 		state = "auto";
@@ -190,6 +193,7 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 	if (lib == NULL)
 		return;
 
+	AZ(C_flag);
 	vp = mgt_vcl_add(vclname, lib, state);
 	free(lib);
 
