@@ -277,7 +277,7 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 }
 
 static int
-event_warm(VRT_CTX, struct vmod_priv *priv)
+event_warm(VRT_CTX, const struct vmod_priv *priv)
 {
 	struct priv_vcl *priv_vcl;
 	char buf[32];
@@ -294,7 +294,7 @@ event_warm(VRT_CTX, struct vmod_priv *priv)
 	AZ(priv_vcl->vcl);
 	AZ(priv_vcl->vclref);
 
-	snprintf(buf, sizeof buf, "vmod-debug ref on %s", VCL_Name(ctx->vcl));
+	bprintf(buf, "vmod-debug ref on %s", VCL_Name(ctx->vcl));
 	priv_vcl->vcl = ctx->vcl;
 	priv_vcl->vclref = VRT_ref_vcl(ctx, buf);
 	return (0);
@@ -320,7 +320,7 @@ cooldown_thread(void *priv)
 }
 
 static int
-event_cold(VRT_CTX, struct vmod_priv *priv)
+event_cold(VRT_CTX, const struct vmod_priv *priv)
 {
 	pthread_t thread;
 	struct priv_vcl *priv_vcl;

@@ -401,7 +401,7 @@ VRT_ref_vcl(VRT_CTX, const char *desc)
 	ALLOC_OBJ(ref, VCLREF_MAGIC);
 	AN(ref);
 	ref->vcl = vcl;
-	snprintf(ref->desc, sizeof ref->desc, "%s", desc);
+	bprintf(ref->desc, "%s", desc);
 
 	Lck_Lock(&vcl_mtx);
 	VTAILQ_INSERT_TAIL(&vcl->ref_list, ref, list);
