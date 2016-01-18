@@ -166,6 +166,9 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 
 	AN(cli);
 
+	if (C_flag)
+		vclname = ".Cflagtest";
+
 	if (state == NULL)
 		state = "auto";
 
