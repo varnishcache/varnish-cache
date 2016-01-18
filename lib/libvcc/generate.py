@@ -139,11 +139,11 @@ returns =(
 	# Housekeeping
 
 	('init',
-		"",
+		"H",
 		('ok', 'fail')
 	),
 	('fini',
-		"",
+		"H",
 		('ok',)
 	),
 )
@@ -993,7 +993,8 @@ fo.write("#endif\n")
 
 fo.write("\n#ifdef VCL_MET_MAC\n")
 for i in ll:
-	fo.write("VCL_MET_MAC(%s, %s," % (i[0].lower(), i[0].upper()))
+	fo.write("VCL_MET_MAC(%s, %s, %s," %
+	    (i[0].lower(), i[0].upper(), i[1]))
 	p = " (\n\t"
 	lll = list(i[2])
 	lll.sort()
