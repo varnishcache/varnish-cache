@@ -129,7 +129,7 @@ VCL_Method_Name(unsigned m)
 {
 
 	switch (m) {
-#define VCL_MET_MAC(func, upper, bitmap) case VCL_MET_##upper: return (#upper);
+#define VCL_MET_MAC(func, upper, typ, bitmap) case VCL_MET_##upper: return (#upper);
 #include "tbl/vcl_returns.h"
 #undef VCL_MET_MAC
 	default:
@@ -905,7 +905,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	assert(aws == WS_Snapshot(wrk->aws));
 }
 
-#define VCL_MET_MAC(func, upper, bitmap)				\
+#define VCL_MET_MAC(func, upper, typ, bitmap)				\
 void									\
 VCL_##func##_method(struct vcl *vcl, struct worker *wrk,		\
      struct req *req, struct busyobj *bo, void *specific)		\
