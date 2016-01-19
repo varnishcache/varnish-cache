@@ -48,7 +48,7 @@
 #include "vtim.h"
 
 static void
-cnt_vdp(struct req *req, struct busyobj *bo)
+cnt_vdp(struct req *req, struct boc *boc)
 {
 	const char *r;
 	uint16_t status;
@@ -58,7 +58,7 @@ cnt_vdp(struct req *req, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
 
 	resp_len = http_GetContentLength(req->resp);
-	if (bo != NULL)
+	if (boc != NULL)
 		req->resp_len = resp_len;
 	else
 		req->resp_len = ObjGetLen(req->wrk, req->objcore);
@@ -105,7 +105,7 @@ cnt_vdp(struct req *req, struct busyobj *bo)
 			    "Content-Length: %jd", req->resp_len);
 	}
 
-	req->transport->deliver(req, bo, sendbody);
+	req->transport->deliver(req, boc, sendbody);
 }
 
 /*--------------------------------------------------------------------
@@ -207,7 +207,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		}
 	}
 
-	cnt_vdp(req, bo);
+	cnt_vdp(req, bo == NULL ? NULL : bo->boc);
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 

@@ -79,12 +79,12 @@ v1d_error(struct req *req, const char *msg)
  */
 
 void __match_proto__(vtr_deliver_f)
-V1D_Deliver(struct req *req, struct busyobj *bo, int sendbody)
+V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 {
 	int err = 0;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
 	if (sendbody) {

@@ -668,7 +668,7 @@ ved_objiterate(void *priv, int flush, const void *ptr, ssize_t len)
 }
 
 static void
-ved_stripgzip(struct req *req, struct busyobj *bo)
+ved_stripgzip(struct req *req, struct boc *boc)
 {
 	ssize_t l;
 	char *p;
@@ -687,9 +687,9 @@ ved_stripgzip(struct req *req, struct busyobj *bo)
 	foo.preq = ecx->preq;
 	memset(foo.tailbuf, 0xdd, sizeof foo.tailbuf);
 
-	/* XXX: Is this really required ? */
-	if (bo != NULL)
-		ObjWaitState(bo->boc, BOS_FINISHED);
+	/* OA_GZIPBITS is not valid until BOS_FINISHED */
+	if (boc != NULL)
+		ObjWaitState(boc, BOS_FINISHED);
 
 	AN(ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED));
 
@@ -751,13 +751,13 @@ ved_vdp_bytes(struct req *req, enum vdp_action act, void **priv,
 /*--------------------------------------------------------------------*/
 
 static void __match_proto__(vtr_deliver_f)
-VED_Deliver(struct req *req, struct busyobj *bo, int wantbody)
+VED_Deliver(struct req *req, struct boc *boc, int wantbody)
 {
 	int i;
 	struct ecx *ecx;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 
 	CAST_OBJ_NOTNULL(ecx, req->transport_priv, ECX_MAGIC);
@@ -768,7 +768,7 @@ VED_Deliver(struct req *req, struct busyobj *bo, int wantbody)
 	req->res_mode |= RES_ESI_CHILD;
 	i = ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED);
 	if (ecx->isgzip && i && !(req->res_mode & RES_ESI)) {
-		ved_stripgzip(req, bo);
+		ved_stripgzip(req, boc);
 	} else {
 		if (ecx->isgzip && !i)
 			VDP_push(req, ved_pretend_gzip, ecx, 1);
