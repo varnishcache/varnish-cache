@@ -202,7 +202,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		if (req->esi_level == 0 && bo->boc->state == BOS_FINISHED) {
 			VBO_DerefBusyObj(wrk, &bo);
 		} else if (!bo->do_stream) {
-			VBO_waitstate(bo->boc, BOS_FINISHED);
+			ObjWaitState(bo->boc, BOS_FINISHED);
 			VBO_DerefBusyObj(wrk, &bo);
 		}
 	}
@@ -216,7 +216,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	if (req->objcore->flags & (OC_F_PRIVATE | OC_F_PASS)) {
 		if (bo != NULL)
-			VBO_waitstate(bo->boc, BOS_FINISHED);
+			ObjWaitState(bo->boc, BOS_FINISHED);
 		ObjSlim(wrk, req->objcore);
 	}
 
@@ -296,7 +296,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 		sz = szl;
 		if (ObjGetSpace(wrk, req->objcore, &sz, &ptr) && sz >= szl) {
 			memcpy(ptr, VSB_data(synth_body), szl);
-			ObjExtend(wrk, req->objcore, szl);
+			ObjExtend(wrk, req->objcore, NULL, szl);
 		} else
 			szl = -1;
 	}

@@ -202,7 +202,7 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 	bo->ws_bo = WS_Snapshot(bo->ws);
 	HTTP_Copy(bo->bereq, bo->bereq0);
 
-	VBO_setstate(bo->boc, BOS_REQ_DONE);
+	ObjSetState(bo->boc, BOS_REQ_DONE);
 	return (F_STP_STARTFETCH);
 }
 
@@ -648,7 +648,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->do_stream) {
 		HSH_Unbusy(wrk, bo->fetch_objcore);
-		VBO_setstate(bo->boc, BOS_STREAM);
+		ObjSetState(bo->boc, BOS_STREAM);
 	}
 
 	VSLb(bo->vsl, SLT_Fetch_Body, "%u %s %s",
@@ -682,7 +682,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	   give predictable backend reuse behavior for varnishtest */
 	VDI_Finish(bo->wrk, bo);
 
-	VBO_setstate(bo->boc, BOS_FINISHED);
+	ObjSetState(bo->boc, BOS_FINISHED);
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
 	if (bo->stale_oc != NULL)
 		EXP_Rearm(bo->stale_oc, bo->stale_oc->exp.t_origin, 0, 0, 0);
@@ -736,7 +736,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->do_stream) {
 		HSH_Unbusy(wrk, bo->fetch_objcore);
-		VBO_setstate(bo->boc, BOS_STREAM);
+		ObjSetState(bo->boc, BOS_STREAM);
 	}
 
 	if (ObjIterate(wrk, bo->stale_oc, bo, vbf_objiterator))
@@ -758,7 +758,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	   give predictable backend reuse behavior for varnishtest */
 	VDI_Finish(bo->wrk, bo);
 
-	VBO_setstate(bo->boc, BOS_FINISHED);
+	ObjSetState(bo->boc, BOS_FINISHED);
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
 	return (F_STP_DONE);
 }
@@ -858,7 +858,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	VSB_delete(synth_body);
 
 	HSH_Unbusy(wrk, bo->fetch_objcore);
-	VBO_setstate(bo->boc, BOS_FINISHED);
+	ObjSetState(bo->boc, BOS_FINISHED);
 	return (F_STP_DONE);
 }
 
@@ -881,7 +881,7 @@ vbf_stp_fail(struct worker *wrk, struct busyobj *bo)
 		    bo->fetch_objcore->exp.t_origin, 0, 0, 0);
 	}
 	wrk->stats->fetch_failed++;
-	VBO_setstate(bo->boc, BOS_FAILED);
+	ObjSetState(bo->boc, BOS_FAILED);
 	return (F_STP_DONE);
 }
 
@@ -1031,9 +1031,9 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	} else {
 		bo_fetch = NULL; /* ref transferred to fetch thread */
 		if (mode == VBF_BACKGROUND) {
-			VBO_waitstate(bo->boc, BOS_REQ_DONE);
+			ObjWaitState(bo->boc, BOS_REQ_DONE);
 		} else {
-			VBO_waitstate(bo->boc, BOS_STREAM);
+			ObjWaitState(bo->boc, BOS_STREAM);
 			if (bo->boc->state == BOS_FAILED) {
 				AN((oc->flags & OC_F_FAILED));
 			} else {

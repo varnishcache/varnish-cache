@@ -680,10 +680,6 @@ double BAN_Time(const struct ban *ban);
 /* cache_busyobj.c */
 struct busyobj *VBO_GetBusyObj(struct worker *, const struct req *);
 void VBO_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
-void VBO_extend(struct worker *, struct objcore *, struct boc *, ssize_t);
-ssize_t VBO_waitlen(struct worker *, struct objcore *, struct boc *, ssize_t l);
-void VBO_setstate(struct boc *, enum busyobj_state_e next);
-void VBO_waitstate(struct boc *, enum busyobj_state_e want);
 
 /* cache_cli.c [CLI] */
 extern pthread_t cli_thread;
@@ -854,7 +850,10 @@ typedef int objiterate_f(void *priv, int flush, const void *ptr, ssize_t len);
 int ObjIterate(struct worker *, struct objcore *,
     void *priv, objiterate_f *func);
 int ObjGetSpace(struct worker *, struct objcore *, ssize_t *sz, uint8_t **ptr);
-void ObjExtend(struct worker *, struct objcore *, ssize_t l);
+void ObjExtend(struct worker *, struct objcore *, struct boc *, ssize_t l);
+ssize_t ObjWaitExtend(struct worker *, struct objcore *, struct boc *, ssize_t l);
+void ObjSetState(struct boc *, enum busyobj_state_e next);
+void ObjWaitState(struct boc *, enum busyobj_state_e want);
 void ObjTrimStore(struct worker *, struct objcore *);
 void ObjTouch(struct worker *wrk, struct objcore *oc, double now);
 unsigned ObjGetXID(struct worker *, struct objcore *);

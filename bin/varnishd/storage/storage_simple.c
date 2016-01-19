@@ -257,7 +257,7 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 
 	while (1) {
 		ol = len;
-		nl = VBO_waitlen(wrk, oc, bo->boc, ol);
+		nl = ObjWaitExtend(wrk, oc, bo->boc, ol);
 		if (bo->boc->state == BOS_FAILED) {
 			ret = -1;
 			break;

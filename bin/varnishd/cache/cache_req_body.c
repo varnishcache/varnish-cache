@@ -254,7 +254,7 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 			req->acct.req_bodybytes += l;
 			if (yet >= l)
 				yet -= l;
-			ObjExtend(req->wrk, req->body_oc, l);
+			ObjExtend(req->wrk, req->body_oc, NULL, l);
 		}
 
 	} while (vfps == VFP_OK);

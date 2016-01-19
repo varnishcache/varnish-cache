@@ -107,15 +107,83 @@ ObjGetSpace(struct worker *wrk, struct objcore *oc, ssize_t *sz, uint8_t **ptr)
  */
 
 void
-ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l)
+ObjExtend(struct worker *wrk, struct objcore *oc, struct boc *boc, ssize_t l)
 {
 	const struct obj_methods *om = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AN(om->objextend);
 	assert(l > 0);
 
-	AN(om->objextend);
-	om->objextend(wrk, oc, l);
+	if (boc != NULL) {
+		CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
+		Lck_Lock(&boc->mtx);
+		om->objextend(wrk, oc, l);
+		AZ(pthread_cond_broadcast(&boc->cond));
+		Lck_Unlock(&boc->mtx);
+	} else {
+		om->objextend(wrk, oc, l);
+	}
+}
+
+/*====================================================================
+ */
+
+ssize_t
+ObjWaitExtend(struct worker *wrk, struct objcore *oc, struct boc *boc,
+    ssize_t l)
+{
+	ssize_t rv;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
+	Lck_Lock(&boc->mtx);
+	rv = ObjGetLen(wrk, oc);
+	while (1) {
+		assert(l <= rv || boc->state == BOS_FAILED);
+		if (rv > l || boc->state >= BOS_FINISHED)
+			break;
+		(void)Lck_CondWait(&boc->cond, &boc->mtx, 0);
+		rv = ObjGetLen(wrk, oc);
+	}
+	Lck_Unlock(&boc->mtx);
+	return (rv);
+}
+
+/*====================================================================
+ */
+
+void
+ObjSetState(struct boc *boc, enum busyobj_state_e next)
+{
+
+	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
+
+	// assert(bo->do_stream || next != BOS_STREAM);
+	assert(next > boc->state);
+	Lck_Lock(&boc->mtx);
+	boc->state = next;
+	AZ(pthread_cond_broadcast(&boc->cond));
+	Lck_Unlock(&boc->mtx);
+}
+
+/*====================================================================
+ */
+
+void
+ObjWaitState(struct boc *boc, enum busyobj_state_e want)
+{
+
+	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
+
+	Lck_Lock(&boc->mtx);
+	while (1) {
+		if (boc->state >= want)
+			break;
+		(void)Lck_CondWait(&boc->cond, &boc->mtx, 0);
+	}
+	Lck_Unlock(&boc->mtx);
 }
 
 /*====================================================================
