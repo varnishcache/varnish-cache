@@ -9,6 +9,10 @@ Bugs fixed
 * 1825_ - Cannot Start Varnish After Just Restarting The Service
 * 1842_ - Handle missing waiting list gracefully.
 
+.. _1802: https://www.varnish-cache.org/trac/ticket/1802
+.. _1825: https://www.varnish-cache.org/trac/ticket/1825
+.. _1842: https://www.varnish-cache.org/trac/ticket/1842
+
 
 ======================================
 Varnish Cache 4.1.1-beta1 (2016-01-15)
