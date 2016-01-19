@@ -199,7 +199,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	/* Grab a ref to the bo if there is one, and hand it down */
 	bo = HSH_RefBusy(req->objcore);
 	if (bo != NULL) {
-		if (req->esi_level == 0 && bo->state == BOS_FINISHED) {
+		if (req->esi_level == 0 && bo->boc->state == BOS_FINISHED) {
 			VBO_DerefBusyObj(wrk, &bo);
 		} else if (!bo->do_stream) {
 			VBO_waitstate(bo, BOS_FINISHED);

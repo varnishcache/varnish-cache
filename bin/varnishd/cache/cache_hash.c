@@ -397,8 +397,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 				continue;
 
 			if (oc->busyobj != NULL &&
-			    oc->busyobj->vary != NULL &&
-			    !VRY_Match(req, oc->busyobj->vary))
+			    oc->busyobj->boc->vary != NULL &&
+			    !VRY_Match(req, oc->busyobj->boc->vary))
 				continue;
 
 			busy_found = 1;
@@ -720,7 +720,7 @@ HSH_RefBusy(const struct objcore *oc)
 	bo = oc->busyobj;
 	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
 	if (bo != NULL)
-		bo->refcount++;
+		bo->boc->refcount++;
 	Lck_Unlock(&oh->mtx);
 	return (bo);
 }

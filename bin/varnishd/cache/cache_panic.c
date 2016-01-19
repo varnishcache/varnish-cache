@@ -272,10 +272,10 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	VSB_printf(vsb, "busyobj = %p {\n", bo);
 	VSB_indent(vsb, 2);
 	pan_ws(vsb, bo->ws);
-	VSB_printf(vsb, "refcnt = %u,\n", bo->refcount);
+	VSB_printf(vsb, "refcnt = %u,\n", bo->boc->refcount);
 	VSB_printf(vsb, "retries = %d, ", bo->retries);
 	VSB_printf(vsb, "failed = %d, ", bo->vfc->failed);
-	VSB_printf(vsb, "state = %d,\n", (int)bo->state);
+	VSB_printf(vsb, "state = %d,\n", (int)bo->boc->state);
 	VSB_printf(vsb, "flags = {");
 	p = "";
 	/*lint -save -esym(438,p) */

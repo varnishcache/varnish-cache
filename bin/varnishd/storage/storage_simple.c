@@ -258,16 +258,16 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 	while (1) {
 		ol = len;
 		nl = VBO_waitlen(wrk, oc, bo, ol);
-		if (bo->state == BOS_FAILED) {
+		if (bo->boc->state == BOS_FAILED) {
 			ret = -1;
 			break;
 		}
 		if (nl == ol) {
-			if (bo->state == BOS_FINISHED)
+			if (bo->boc->state == BOS_FINISHED)
 				break;
 			continue;
 		}
-		Lck_Lock(&bo->mtx);
+		Lck_Lock(&bo->boc->mtx);
 		AZ(VTAILQ_EMPTY(&obj->list));
 		if (checkpoint == NULL) {
 			st = VTAILQ_FIRST(&obj->list);
@@ -300,8 +300,8 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 		st = VTAILQ_NEXT(st, list);
 		if (st != NULL && st->len == 0)
 			st = NULL;
-		Lck_Unlock(&bo->mtx);
-		assert(l > 0 || bo->state == BOS_FINISHED);
+		Lck_Unlock(&bo->boc->mtx);
+		assert(l > 0 || bo->boc->state == BOS_FINISHED);
 		if (func(priv, st != NULL ? 0 : 1, p, l)) {
 			ret = -1;
 			break;
@@ -375,9 +375,9 @@ sml_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
 
 	if (oc->busyobj != NULL) {
 		CHECK_OBJ_NOTNULL(oc->busyobj, BUSYOBJ_MAGIC);
-		Lck_Lock(&oc->busyobj->mtx);
+		Lck_Lock(&oc->busyobj->boc->mtx);
 		VTAILQ_INSERT_TAIL(&o->list, st, list);
-		Lck_Unlock(&oc->busyobj->mtx);
+		Lck_Unlock(&oc->busyobj->boc->mtx);
 	} else {
 		AN(oc->flags & (OC_F_PRIVATE));
 		VTAILQ_INSERT_TAIL(&o->list, st, list);
@@ -443,9 +443,9 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 
 	if (st->len == 0) {
 		if (oc->busyobj != NULL) {
-			Lck_Lock(&oc->busyobj->mtx);
+			Lck_Lock(&oc->busyobj->boc->mtx);
 			VTAILQ_REMOVE(&o->list, st, list);
-			Lck_Unlock(&oc->busyobj->mtx);
+			Lck_Unlock(&oc->busyobj->boc->mtx);
 		} else {
 			VTAILQ_REMOVE(&o->list, st, list);
 		}
@@ -468,10 +468,10 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 	memcpy(st1->ptr, st->ptr, st->len);
 	st1->len = st->len;
 	if (oc->busyobj != NULL) {
-		Lck_Lock(&oc->busyobj->mtx);
+		Lck_Lock(&oc->busyobj->boc->mtx);
 		VTAILQ_REMOVE(&o->list, st, list);
 		VTAILQ_INSERT_TAIL(&o->list, st1, list);
-		Lck_Unlock(&oc->busyobj->mtx);
+		Lck_Unlock(&oc->busyobj->boc->mtx);
 	} else {
 		VTAILQ_REMOVE(&o->list, st, list);
 		VTAILQ_INSERT_TAIL(&o->list, st1, list);
@@ -480,8 +480,8 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 		sml_stv_free(stv, st);
 	} else {
 		/* sml_stable frees this */
-		AZ(oc->busyobj->stevedore_priv);
-		oc->busyobj->stevedore_priv = st;
+		AZ(oc->busyobj->boc->stevedore_priv);
+		oc->busyobj->boc->stevedore_priv = st;
 	}
 }
 
@@ -495,10 +495,10 @@ sml_stable(struct worker *wrk, struct objcore *oc, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	if (bo->stevedore_priv == NULL)
+	if (bo->boc->stevedore_priv == NULL)
 		return;
-	CAST_OBJ_NOTNULL(st, bo->stevedore_priv, STORAGE_MAGIC);
-	bo->stevedore_priv = 0;
+	CAST_OBJ_NOTNULL(st, bo->boc->stevedore_priv, STORAGE_MAGIC);
+	bo->boc->stevedore_priv = 0;
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	stv = oc->stobj->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);

@@ -374,6 +374,33 @@ struct storeobj {
 	uintptr_t		priv2;
 };
 
+/* Busy Objcore structure --------------------------------------------
+ *
+ */
+
+/*
+ * The macro-states we expose outside the fetch code
+ */
+enum busyobj_state_e {
+	BOS_INVALID = 0,	/* don't touch (yet) */
+	BOS_REQ_DONE,		/* beresp.* can be examined */
+	BOS_STREAM,		/* beresp.* can be examined */
+	BOS_FINISHED,		/* object is complete */
+	BOS_FAILED,		/* something went wrong */
+};
+
+struct boc {
+	unsigned		magic;
+#define BOC_MAGIC		0x70c98476
+	unsigned		refcount;
+	struct lock		mtx;
+	pthread_cond_t		cond;
+	void			*stevedore_priv;
+	enum busyobj_state_e	state;
+	uint8_t			*vary;
+
+};
+
 /* Object core structure ---------------------------------------------
  * Objects have sideways references in the binary heap and the LRU list
  * and we want to avoid paging in a lot of objects just to move them up
@@ -425,17 +452,6 @@ struct objcore {
  * streaming delivery will make use of.
  */
 
-/*
- * The macro-states we expose outside the fetch code
- */
-enum busyobj_state_e {
-	BOS_INVALID = 0,	/* don't touch (yet) */
-	BOS_REQ_DONE,		/* beresp.* can be examined */
-	BOS_STREAM,		/* beresp.* can be examined */
-	BOS_FINISHED,		/* object is complete */
-	BOS_FAILED,		/* something went wrong */
-};
-
 enum director_state_e {
 	DIR_S_NULL = 0,
 	DIR_S_HDRS = 1,
@@ -445,24 +461,20 @@ enum director_state_e {
 struct busyobj {
 	unsigned		magic;
 #define BUSYOBJ_MAGIC		0x23b95567
-	struct lock		mtx;
-	pthread_cond_t		cond;
+
+	struct boc		boc[1];
+
 	char			*end;
 
 	/*
 	 * All fields from refcount and down are zeroed when the busyobj
 	 * is recycled.
 	 */
-	unsigned		refcount;
 	int			retries;
 	struct req		*req;
 	struct worker		*wrk;
 
-	uint8_t			*vary;
-
 	struct vfp_ctx		vfc[1];
-
-	enum busyobj_state_e	state;
 
 	struct ws		ws[1];
 	char			*ws_bo;
@@ -499,8 +511,6 @@ struct busyobj {
 	struct vcl		*vcl;
 
 	struct vsl_log		vsl[1];
-
-	void			*stevedore_priv;
 
 	uint8_t			digest[DIGEST_LEN];
 	struct vrt_privs	privs[1];

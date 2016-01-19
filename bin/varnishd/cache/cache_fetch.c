@@ -168,7 +168,7 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->req, REQ_MAGIC);
 
-	assert(bo->state == BOS_INVALID);
+	assert(bo->boc->state == BOS_INVALID);
 	AZ(bo->storage_hint);
 
 	HTTP_Setup(bo->bereq0, bo->ws, bo->vsl, SLT_BereqMethod);
@@ -221,7 +221,7 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	vfc = bo->vfc;
 	CHECK_OBJ_NOTNULL(vfc, VFP_CTX_MAGIC);
 
-	assert(bo->state == BOS_REQ_DONE);
+	assert(bo->boc->state == BOS_REQ_DONE);
 
 	VSLb_ts_busyobj(bo, "Retry", W_TIM_real(wrk));
 
@@ -281,7 +281,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);
 
-	assert(bo->state <= BOS_REQ_DONE);
+	assert(bo->boc->state <= BOS_REQ_DONE);
 
 	AZ(bo->htc);
 	i = VDI_GetHdr(wrk, bo);
@@ -451,7 +451,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_ERROR);
 	}
 
-	assert(bo->state == BOS_REQ_DONE);
+	assert(bo->boc->state == BOS_REQ_DONE);
 
 	if (bo->do_esi)
 		bo->do_stream = 0;
@@ -642,9 +642,9 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->htc->body_status != BS_NONE)
 		AZ(VDI_GetBody(bo->wrk, bo));
 
-	assert(bo->refcount >= 1);
+	assert(bo->boc->refcount >= 1);
 
-	assert(bo->state == BOS_REQ_DONE);
+	assert(bo->boc->state == BOS_REQ_DONE);
 
 	if (bo->do_stream) {
 		HSH_Unbusy(wrk, bo->fetch_objcore);
@@ -663,7 +663,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->vfc->failed) {
 		VDI_Finish(bo->wrk, bo);
 		if (!bo->do_stream) {
-			assert(bo->state < BOS_STREAM);
+			assert(bo->boc->state < BOS_STREAM);
 			// XXX: doclose = ?
 			return (F_STP_ERROR);
 		} else {
@@ -672,9 +672,9 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	}
 
 	if (bo->do_stream)
-		assert(bo->state == BOS_STREAM);
+		assert(bo->boc->state == BOS_STREAM);
 	else {
-		assert(bo->state == BOS_REQ_DONE);
+		assert(bo->boc->state == BOS_REQ_DONE);
 		HSH_Unbusy(wrk, bo->fetch_objcore);
 	}
 
@@ -872,7 +872,7 @@ vbf_stp_fail(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
 
-	assert(bo->state < BOS_FINISHED);
+	assert(bo->boc->state < BOS_FINISHED);
 	HSH_Fail(bo->fetch_objcore);
 	if (bo->fetch_objcore->exp_flags & OC_EF_EXP) {
 		/* Already unbusied - expire it */
@@ -926,7 +926,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	while (stp != F_STP_DONE) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-		assert(bo->refcount >= 1);
+		assert(bo->boc->refcount >= 1);
 		switch(stp) {
 #define FETCH_STEP(l, U, arg)						\
 		case F_STP_##U:						\
@@ -944,7 +944,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	http_Teardown(bo->bereq);
 	http_Teardown(bo->beresp);
 
-	if (bo->state == BOS_FINISHED) {
+	if (bo->boc->state == BOS_FINISHED) {
 		AZ(bo->fetch_objcore->flags & OC_F_FAILED);
 		HSH_Complete(bo->fetch_objcore);
 		VSLb(bo->vsl, SLT_Length, "%ju",
@@ -992,7 +992,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	THR_SetBusyobj(bo);
 
 	bo_fetch = bo;
-	bo->refcount = 2;
+	bo->boc->refcount = 2;
 
 	oc->busyobj = bo;
 
@@ -1001,7 +1001,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	if (mode == VBF_PASS)
 		bo->do_pass = 1;
 
-	bo->vary = req->vary_b;
+	bo->boc->vary = req->vary_b;
 	req->vary_b = NULL;
 
 	if (mode != VBF_BACKGROUND)
@@ -1034,7 +1034,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 			VBO_waitstate(bo, BOS_REQ_DONE);
 		} else {
 			VBO_waitstate(bo, BOS_STREAM);
-			if (bo->state == BOS_FAILED) {
+			if (bo->boc->state == BOS_FAILED) {
 				AN((oc->flags & OC_F_FAILED));
 			} else {
 				AZ(bo->fetch_objcore->flags & OC_F_BUSY);
