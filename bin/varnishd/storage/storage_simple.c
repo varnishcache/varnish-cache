@@ -307,8 +307,6 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 			break;
 		}
 	}
-	if (oc->flags & OC_F_PASS)
-		bo->abandon = 1;
 	VBO_DerefBusyObj(wrk, &bo);
 	return (ret);
 }

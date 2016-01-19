@@ -209,6 +209,10 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	cnt_vdp(req, bo == NULL ? NULL : bo->boc);
 
+	/* pass+streaming, abandon fetch in case delivery terminated early */
+	if (bo != NULL && req->objcore->flags & OC_F_PASS)
+		bo->abandon = 1;
+
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
 	if (http_HdrIs(req->resp, H_Connection, "close"))
