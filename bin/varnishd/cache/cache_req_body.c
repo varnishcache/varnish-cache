@@ -132,7 +132,7 @@ VRB_Iterate(struct req *req, objiterate_f *func, void *priv)
 }
 
 /*----------------------------------------------------------------------
- * DiscardReqBody() is a dedicated function, because we might
+ * VRB_Ignore() is a dedicated function, because we might
  * be able to disuade or terminate its transmission in some protocols.
  * For HTTP1 we have no such luck, and we just iterate it into oblivion.
  */
