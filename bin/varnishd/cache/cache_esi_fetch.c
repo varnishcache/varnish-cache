@@ -96,7 +96,7 @@ vfp_vep_callback(struct vfp_ctx *vc, void *priv, ssize_t l, enum vgz_flag flg)
 		i = VGZ_Gzip(vef->vgz, &dp, &dl, flg);
 		VGZ_UpdateObj(vc, vef->vgz, VUA_UPDATE);
 		vef->tot += dl;
-		VBO_extend(vc->bo, dl);
+		VFP_Extend(vc, dl);
 	} while (i != VGZ_ERROR &&
 	    (!VGZ_IbufEmpty(vef->vgz) || VGZ_ObufFull(vef->vgz)));
 	assert(i == VGZ_ERROR || VGZ_IbufEmpty(vef->vgz));

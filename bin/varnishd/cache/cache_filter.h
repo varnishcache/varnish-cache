@@ -84,6 +84,7 @@ enum vfp_status VFP_Error(struct vfp_ctx *, const char *fmt, ...)
 
 /* cache_fetch_proc.c */
 enum vfp_status VFP_GetStorage(struct vfp_ctx *, ssize_t *sz, uint8_t **ptr);
+void VFP_Extend(const struct vfp_ctx *, ssize_t sz);
 
 /* Deliver processors ------------------------------------------------*/
 

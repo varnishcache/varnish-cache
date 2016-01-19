@@ -511,7 +511,7 @@ vbf_fetch_body_helper(struct busyobj *bo)
 		vfps = VFP_Suck(vfc, ptr, &l);
 		if (l > 0 && vfps != VFP_ERROR) {
 			bo->acct.beresp_bodybytes += l;
-			VBO_extend(bo, l);
+			VFP_Extend(vfc, l);
 			if (est >= l)
 				est -= l;
 			else
@@ -711,7 +711,7 @@ vbf_objiterator(void *priv, int flush, const void *ptr, ssize_t len)
 		if (len < l)
 			l = len;
 		memcpy(pd, ps, l);
-		VBO_extend(bo, l);
+		VFP_Extend(bo->vfc, l);
 		ps += l;
 		len -= l;
 	}
@@ -851,7 +851,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		if (VFP_GetStorage(bo->vfc, &l, &ptr) != VFP_OK)
 			break;
 		memcpy(ptr, VSB_data(synth_body) + o, l);
-		VBO_extend(bo, l);
+		VFP_Extend(bo->vfc, l);
 		ll -= l;
 		o += l;
 	}

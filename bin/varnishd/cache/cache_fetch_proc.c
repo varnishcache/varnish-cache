@@ -72,7 +72,6 @@ VFP_GetStorage(struct vfp_ctx *vc, ssize_t *sz, uint8_t **ptr)
 {
 	ssize_t l;
 
-
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	AN(sz);
 	assert(*sz >= 0);
@@ -92,6 +91,14 @@ VFP_GetStorage(struct vfp_ctx *vc, ssize_t *sz, uint8_t **ptr)
 	assert(*sz > 0);
 	AN(*ptr);
 	return (VFP_OK);
+}
+
+void
+VFP_Extend(const struct vfp_ctx *vc, ssize_t sz)
+{
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+
+	VBO_extend(vc->oc, vc->bo, sz);
 }
 
 /**********************************************************************
