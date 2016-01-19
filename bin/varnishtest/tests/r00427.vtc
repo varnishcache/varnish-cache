@@ -3,9 +3,9 @@ varnishtest "client close in ESI delivery"
 server s1 {
 	rxreq
 	txresp -body {
-		<esi:include src="/foo">
-		<esi:include src="/bar">
-		<esi:include src="/barf">
+		<esi:include src="/foo"/>
+		<esi:include src="/bar"/>
+		<esi:include src="/barf"/>
 	}
 
 	rxreq
