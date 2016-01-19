@@ -689,7 +689,7 @@ ved_stripgzip(struct req *req, struct busyobj *bo)
 
 	/* XXX: Is this really required ? */
 	if (bo != NULL)
-		VBO_waitstate(bo, BOS_FINISHED);
+		VBO_waitstate(bo->boc, BOS_FINISHED);
 
 	AN(ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED));
 

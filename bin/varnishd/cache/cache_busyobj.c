@@ -227,64 +227,69 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 }
 
 void
-VBO_extend(struct worker *wrk, struct objcore *oc, struct busyobj *bo,
+VBO_extend(struct worker *wrk, struct objcore *oc, struct boc *boc,
     ssize_t l)
 {
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
 	if (l == 0)
 		return;
 	assert(l > 0);
-	Lck_Lock(&bo->boc->mtx);
+	Lck_Lock(&boc->mtx);
 	ObjExtend(wrk, oc, l);
-	AZ(pthread_cond_broadcast(&bo->boc->cond));
-	Lck_Unlock(&bo->boc->mtx);
+	AZ(pthread_cond_broadcast(&boc->cond));
+	Lck_Unlock(&boc->mtx);
 }
 
 ssize_t
-VBO_waitlen(struct worker *wrk, struct objcore *oc, struct busyobj *bo,
+VBO_waitlen(struct worker *wrk, struct objcore *oc, struct boc *boc,
     ssize_t l)
 {
 	ssize_t rv;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	xxxassert(bo->fetch_objcore == oc);
-	Lck_Lock(&bo->boc->mtx);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
+	Lck_Lock(&boc->mtx);
 	rv = ObjGetLen(wrk, oc);
 	while (1) {
-		assert(l <= rv || bo->boc->state == BOS_FAILED);
-		if (rv > l || bo->boc->state >= BOS_FINISHED)
+		assert(l <= rv || boc->state == BOS_FAILED);
+		if (rv > l || boc->state >= BOS_FINISHED)
 			break;
-		(void)Lck_CondWait(&bo->boc->cond, &bo->boc->mtx, 0);
+		(void)Lck_CondWait(&boc->cond, &boc->mtx, 0);
 		rv = ObjGetLen(wrk, oc);
 	}
-	Lck_Unlock(&bo->boc->mtx);
+	Lck_Unlock(&boc->mtx);
 	return (rv);
 }
 
 void
-VBO_setstate(struct busyobj *bo, enum busyobj_state_e next)
+VBO_setstate(struct boc *boc, enum busyobj_state_e next)
 {
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	assert(bo->do_stream || next != BOS_STREAM);
-	assert(next > bo->boc->state);
-	Lck_Lock(&bo->boc->mtx);
-	bo->boc->state = next;
-	AZ(pthread_cond_broadcast(&bo->boc->cond));
-	Lck_Unlock(&bo->boc->mtx);
+
+	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
+
+	// assert(bo->do_stream || next != BOS_STREAM);
+	assert(next > boc->state);
+	Lck_Lock(&boc->mtx);
+	boc->state = next;
+	AZ(pthread_cond_broadcast(&boc->cond));
+	Lck_Unlock(&boc->mtx);
 }
 
 void
-VBO_waitstate(struct busyobj *bo, enum busyobj_state_e want)
+VBO_waitstate(struct boc *boc, enum busyobj_state_e want)
 {
-	Lck_Lock(&bo->boc->mtx);
+
+	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
+
+	Lck_Lock(&boc->mtx);
 	while (1) {
-		if (bo->boc->state >= want)
+		if (boc->state >= want)
 			break;
-		(void)Lck_CondWait(&bo->boc->cond, &bo->boc->mtx, 0);
+		(void)Lck_CondWait(&boc->cond, &boc->mtx, 0);
 	}
-	Lck_Unlock(&bo->boc->mtx);
+	Lck_Unlock(&boc->mtx);
 }
