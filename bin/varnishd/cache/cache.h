@@ -671,7 +671,8 @@ double BAN_Time(const struct ban *ban);
 struct busyobj *VBO_GetBusyObj(struct worker *, const struct req *);
 void VBO_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
 void VBO_extend(struct busyobj *, ssize_t);
-ssize_t VBO_waitlen(struct worker *, struct busyobj *, ssize_t l);
+ssize_t VBO_waitlen(struct worker *, struct objcore *, struct busyobj *,
+    ssize_t l);
 void VBO_setstate(struct busyobj *bo, enum busyobj_state_e next);
 void VBO_waitstate(struct busyobj *bo, enum busyobj_state_e want);
 
