@@ -98,7 +98,7 @@ VFP_Extend(const struct vfp_ctx *vc, ssize_t sz)
 {
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 
-	VBO_extend(vc->oc, vc->bo, sz);
+	VBO_extend(vc->wrk, vc->oc, vc->bo, sz);
 }
 
 /**********************************************************************

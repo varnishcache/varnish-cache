@@ -221,16 +221,18 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 }
 
 void
-VBO_extend(struct objcore *oc, struct busyobj *bo, ssize_t l)
+VBO_extend(struct worker *wrk, struct objcore *oc, struct busyobj *bo,
+    ssize_t l)
 {
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	if (l == 0)
 		return;
 	assert(l > 0);
 	Lck_Lock(&bo->mtx);
-	ObjExtend(bo->wrk, oc, l);
+	ObjExtend(wrk, oc, l);
 	AZ(pthread_cond_broadcast(&bo->cond));
 	Lck_Unlock(&bo->mtx);
 }
