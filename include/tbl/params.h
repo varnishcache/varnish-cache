@@ -620,8 +620,8 @@ PARAM(
 	"Maximum number of bytes of HTTP backend response we will deal "
 	"with.  This is a limit on all bytes up to the double blank line "
 	"which ends the HTTP request.\n"
-	"The memory for the request is allocated from the worker workspace "
-	"(param: thread_pool_workspace) and this parameter limits how much "
+	"The memory for the request is allocated from the backend workspace "
+	"(param: workspace_backend) and this parameter limits how much "
 	"of that the request is allowed to take up.",
 	/* l-text */	"",
 	/* func */	NULL
