@@ -399,6 +399,7 @@ struct boc {
 	enum busyobj_state_e	state;
 	uint8_t			*vary;
 
+	struct busyobj		*busyobj;
 };
 
 /* Object core structure ---------------------------------------------

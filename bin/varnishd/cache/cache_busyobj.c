@@ -71,6 +71,7 @@ vbo_New(void)
 	INIT_OBJ(bo->boc, BOC_MAGIC);
 	Lck_New(&bo->boc->mtx, lck_busyobj);
 	AZ(pthread_cond_init(&bo->boc->cond, NULL));
+	bo->boc->busyobj = bo;
 	return (bo);
 }
 
