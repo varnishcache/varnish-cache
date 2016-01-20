@@ -950,13 +950,13 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 		VSLb(bo->vsl, SLT_Length, "%ju",
 		    (uintmax_t)ObjGetLen(bo->wrk, bo->fetch_objcore));
 	}
-	AZ(bo->fetch_objcore->boc);
+	// AZ(bo->fetch_objcore->boc);	// XXX
 
 	if (bo->stale_oc != NULL)
 		(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
 
 	wrk->vsl = NULL;
-	VBO_DerefBusyObj(wrk, &bo);
+	HSH_DerefBusy(wrk, bo->fetch_objcore);
 	THR_SetBusyobj(NULL);
 }
 
@@ -1028,7 +1028,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 		(void)vbf_stp_fail(req->wrk, bo);
 		if (bo->stale_oc != NULL)
 			(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
-		VBO_DerefBusyObj(wrk, &bo_fetch);
+		HSH_DerefBusy(wrk, bo->fetch_objcore);
 	} else {
 		bo_fetch = NULL; /* ref transferred to fetch thread */
 		if (mode == VBF_BACKGROUND) {
@@ -1044,6 +1044,6 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	}
 	AZ(bo_fetch);
 	VSLb_ts_req(req, "Fetch", W_TIM_real(wrk));
-	VBO_DerefBusyObj(wrk, &bo);
+	HSH_DerefBusy(wrk, bo->fetch_objcore);
 	THR_SetBusyobj(NULL);
 }

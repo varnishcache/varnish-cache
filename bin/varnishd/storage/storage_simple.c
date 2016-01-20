@@ -307,7 +307,7 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 			break;
 		}
 	}
-	HSH_DerefBusy(wrk, &boc);
+	HSH_DerefBusy(wrk, oc);
 	return (ret);
 }
 

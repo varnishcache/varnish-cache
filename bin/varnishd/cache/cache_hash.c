@@ -623,7 +623,6 @@ HSH_Fail(struct objcore *oc)
 	Lck_Lock(&oh->mtx);
 	oc->flags |= OC_F_FAILED;
 	oc->flags &= ~OC_F_INCOMPLETE;
-	oc->boc = NULL;
 	Lck_Unlock(&oh->mtx);
 }
 
@@ -641,7 +640,6 @@ HSH_Complete(struct objcore *oc)
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
 
 	Lck_Lock(&oh->mtx);
-	oc->boc = NULL;
 	oc->flags &= ~OC_F_INCOMPLETE;
 	Lck_Unlock(&oh->mtx);
 }
@@ -727,19 +725,24 @@ HSH_RefBusy(const struct objcore *oc)
 }
 
 void
-HSH_DerefBusy(struct worker *wrk, struct boc **pp)
+HSH_DerefBusy(struct worker *wrk, struct objcore *oc)
 {
 	struct boc *boc;
-	struct busyobj *bo;
+	unsigned r;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	AN(pp);
-	boc = *pp;
-	*pp = NULL;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	boc = oc->boc;
 	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
 	CHECK_OBJ_NOTNULL(boc->busyobj, BUSYOBJ_MAGIC);
-	bo = boc->busyobj;
-	VBO_DerefBusyObj(wrk, &bo);
+	Lck_Lock(&oc->objhead->mtx);
+	assert(boc->refcount > 0);
+	r = --boc->refcount;
+	if (r == 0)
+		oc->boc = NULL;
+	Lck_Unlock(&oc->objhead->mtx);
+	if (r == 0)
+		VBO_DerefBusyObj(wrk, &boc->busyobj);
 }
 
 /*--------------------------------------------------------------------

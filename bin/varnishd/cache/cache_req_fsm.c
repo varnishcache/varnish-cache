@@ -200,10 +200,12 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	boc = HSH_RefBusy(req->objcore);
 	if (boc != NULL) {
 		if (req->esi_level == 0 && boc->state == BOS_FINISHED) {
-			HSH_DerefBusy(wrk, &boc);
+			HSH_DerefBusy(wrk, req->objcore);
+			boc = NULL;
 		} else if (!boc->busyobj->do_stream) {
 			ObjWaitState(boc, BOS_FINISHED);
-			HSH_DerefBusy(wrk, &boc);
+			HSH_DerefBusy(wrk, req->objcore);
+			boc = NULL;
 		}
 	}
 
@@ -227,7 +229,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	}
 
 	if (boc != NULL)
-		HSH_DerefBusy(wrk, &boc);
+		HSH_DerefBusy(wrk, req->objcore);
 
 	(void)HSH_DerefObjCore(wrk, &req->objcore);
 	http_Teardown(req->resp);
@@ -600,6 +602,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	if (VDI_Http1Pipe(req, bo) < 0)
 		VSLb(bo->vsl, SLT_VCL_Error, "Backend does not support pipe");
 	http_Teardown(bo->bereq);
+bo->boc->refcount = 0;
 	VBO_DerefBusyObj(wrk, &bo);
 	THR_SetBusyobj(NULL);
 	return (REQ_FSM_DONE);
