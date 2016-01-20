@@ -115,7 +115,7 @@ cnt_vdp(struct req *req, struct boc *boc)
 static enum req_fsm_nxt
 cnt_deliver(struct worker *wrk, struct req *req)
 {
-	struct busyobj *bo;
+	struct boc *boc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -197,21 +197,23 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		http_PutResponse(req->resp, "HTTP/1.1", 304, NULL);
 
 	/* Grab a ref to the bo if there is one, and hand it down */
-	bo = HSH_RefBusy(req->objcore);
-	if (bo != NULL) {
-		if (req->esi_level == 0 && bo->boc->state == BOS_FINISHED) {
-			VBO_DerefBusyObj(wrk, &bo);
-		} else if (!bo->do_stream) {
-			ObjWaitState(bo->boc, BOS_FINISHED);
-			VBO_DerefBusyObj(wrk, &bo);
+	boc = HSH_RefBusy(req->objcore);
+	if (boc != NULL) {
+		if (req->esi_level == 0 && boc->state == BOS_FINISHED) {
+			HSH_DerefBusy(wrk, &boc);
+		} else if (!boc->busyobj->do_stream) {
+			ObjWaitState(boc, BOS_FINISHED);
+			HSH_DerefBusy(wrk, &boc);
 		}
 	}
 
-	cnt_vdp(req, bo == NULL ? NULL : bo->boc);
+	cnt_vdp(req, boc);
 
 	/* pass+streaming, abandon fetch in case delivery terminated early */
-	if (bo != NULL && req->objcore->flags & OC_F_PASS)
-		bo->abandon = 1;
+	if (boc != NULL && req->objcore->flags & OC_F_PASS) {
+		CHECK_OBJ_NOTNULL(boc->busyobj, BUSYOBJ_MAGIC);
+		boc->busyobj->abandon = 1;
+	}
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
@@ -219,13 +221,13 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		req->doclose = SC_RESP_CLOSE;
 
 	if (req->objcore->flags & (OC_F_PRIVATE | OC_F_PASS)) {
-		if (bo != NULL)
-			ObjWaitState(bo->boc, BOS_FINISHED);
+		if (boc != NULL)
+			ObjWaitState(boc, BOS_FINISHED);
 		ObjSlim(wrk, req->objcore);
 	}
 
-	if (bo != NULL)
-		VBO_DerefBusyObj(wrk, &bo);
+	if (boc != NULL)
+		HSH_DerefBusy(wrk, &boc);
 
 	(void)HSH_DerefObjCore(wrk, &req->objcore);
 	http_Teardown(req->resp);

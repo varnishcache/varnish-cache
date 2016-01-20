@@ -227,7 +227,7 @@ static int __match_proto__(objiterate_f)
 sml_iterator(struct worker *wrk, struct objcore *oc,
     void *priv, objiterate_f *func)
 {
-	struct busyobj *bo;
+	struct boc *boc;
 	struct object *obj;
 	struct storage *st;
 	struct storage *checkpoint = NULL;
@@ -243,9 +243,9 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 	obj = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 
-	bo = HSH_RefBusy(oc);
+	boc = HSH_RefBusy(oc);
 
-	if (bo == NULL) {
+	if (boc == NULL) {
 		VTAILQ_FOREACH(st, &obj->list, list)
 			if (func(priv, 0, st->ptr, st->len))
 				return (-1);
@@ -257,17 +257,17 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 
 	while (1) {
 		ol = len;
-		nl = ObjWaitExtend(wrk, oc, bo->boc, ol);
-		if (bo->boc->state == BOS_FAILED) {
+		nl = ObjWaitExtend(wrk, oc, boc, ol);
+		if (boc->state == BOS_FAILED) {
 			ret = -1;
 			break;
 		}
 		if (nl == ol) {
-			if (bo->boc->state == BOS_FINISHED)
+			if (boc->state == BOS_FINISHED)
 				break;
 			continue;
 		}
-		Lck_Lock(&bo->boc->mtx);
+		Lck_Lock(&boc->mtx);
 		AZ(VTAILQ_EMPTY(&obj->list));
 		if (checkpoint == NULL) {
 			st = VTAILQ_FIRST(&obj->list);
@@ -300,14 +300,14 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 		st = VTAILQ_NEXT(st, list);
 		if (st != NULL && st->len == 0)
 			st = NULL;
-		Lck_Unlock(&bo->boc->mtx);
-		assert(l > 0 || bo->boc->state == BOS_FINISHED);
+		Lck_Unlock(&boc->mtx);
+		assert(l > 0 || boc->state == BOS_FINISHED);
 		if (func(priv, st != NULL ? 0 : 1, p, l)) {
 			ret = -1;
 			break;
 		}
 	}
-	VBO_DerefBusyObj(wrk, &bo);
+	HSH_DerefBusy(wrk, &boc);
 	return (ret);
 }
 

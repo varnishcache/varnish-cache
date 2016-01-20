@@ -706,11 +706,12 @@ HSH_Ref(struct objcore *oc)
  * Gain a reference on the busyobj, if the objcore has one
  */
 
-struct busyobj *
+struct boc *
 HSH_RefBusy(const struct objcore *oc)
 {
 	struct objhead *oh;
 	struct busyobj *bo;
+	struct boc *boc = NULL;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	oh = oc->objhead;
@@ -719,10 +720,30 @@ HSH_RefBusy(const struct objcore *oc)
 	assert(oc->refcnt > 0);
 	bo = oc->busyobj;
 	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
-	if (bo != NULL)
-		bo->boc->refcount++;
+	if (bo != NULL) {
+		CHECK_OBJ_NOTNULL(bo->boc, BOC_MAGIC);
+		boc = bo->boc;
+		assert(boc->busyobj == bo);
+		boc->refcount++;
+	}
 	Lck_Unlock(&oh->mtx);
-	return (bo);
+	return (boc);
+}
+
+void
+HSH_DerefBusy(struct worker *wrk, struct boc **pp)
+{
+	struct boc *boc;
+	struct busyobj *bo;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AN(pp);
+	boc = *pp;
+	*pp = NULL;
+	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
+	CHECK_OBJ_NOTNULL(boc->busyobj, BUSYOBJ_MAGIC);
+	bo = boc->busyobj;
+	VBO_DerefBusyObj(wrk, &bo);
 }
 
 /*--------------------------------------------------------------------
