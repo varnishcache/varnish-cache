@@ -392,13 +392,12 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			continue;
 
 		if (oc->flags & OC_F_BUSY) {
-			CHECK_OBJ_ORNULL(oc->busyobj, BUSYOBJ_MAGIC);
+			CHECK_OBJ_ORNULL(oc->boc, BOC_MAGIC);
 			if (req->hash_ignore_busy)
 				continue;
 
-			if (oc->busyobj != NULL &&
-			    oc->busyobj->boc->vary != NULL &&
-			    !VRY_Match(req, oc->busyobj->boc->vary))
+			if (oc->boc != NULL && oc->boc->vary != NULL &&
+			    !VRY_Match(req, oc->boc->vary))
 				continue;
 
 			busy_found = 1;
@@ -624,7 +623,7 @@ HSH_Fail(struct objcore *oc)
 	Lck_Lock(&oh->mtx);
 	oc->flags |= OC_F_FAILED;
 	oc->flags &= ~OC_F_INCOMPLETE;
-	oc->busyobj = NULL;
+	oc->boc = NULL;
 	Lck_Unlock(&oh->mtx);
 }
 
@@ -642,7 +641,7 @@ HSH_Complete(struct objcore *oc)
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
 
 	Lck_Lock(&oh->mtx);
-	oc->busyobj = NULL;
+	oc->boc = NULL;
 	oc->flags &= ~OC_F_INCOMPLETE;
 	Lck_Unlock(&oh->mtx);
 }
@@ -710,20 +709,17 @@ struct boc *
 HSH_RefBusy(const struct objcore *oc)
 {
 	struct objhead *oh;
-	struct busyobj *bo;
-	struct boc *boc = NULL;
+	struct boc *boc;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	oh = oc->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	Lck_Lock(&oh->mtx);
 	assert(oc->refcnt > 0);
-	bo = oc->busyobj;
-	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
-	if (bo != NULL) {
-		CHECK_OBJ_NOTNULL(bo->boc, BOC_MAGIC);
-		boc = bo->boc;
-		assert(boc->busyobj == bo);
+	boc = oc->boc;
+	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
+	if (boc != NULL) {
+		CHECK_OBJ_NOTNULL(boc->busyobj, BUSYOBJ_MAGIC);
 		boc->refcount++;
 	}
 	Lck_Unlock(&oh->mtx);

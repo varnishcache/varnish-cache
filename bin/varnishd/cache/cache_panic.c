@@ -315,6 +315,12 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	VSB_printf(vsb, "},\n");
 }
 
+static void
+pan_boc(struct vsb *vsb, const struct boc *boc)
+{
+	pan_busyobj(vsb, boc->busyobj);
+}
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -366,8 +372,8 @@ pan_req(struct vsb *vsb, const struct req *req)
 
 	if (req->objcore != NULL) {
 		pan_objcore(vsb, "REQ", req->objcore);
-		if (req->objcore->busyobj != NULL)
-			pan_busyobj(vsb, req->objcore->busyobj);
+		if (req->objcore->boc != NULL)
+			pan_boc(vsb, req->objcore->boc);
 	}
 
 	VSB_printf(vsb, "flags = {\n");

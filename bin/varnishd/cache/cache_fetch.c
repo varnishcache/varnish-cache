@@ -950,7 +950,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 		VSLb(bo->vsl, SLT_Length, "%ju",
 		    (uintmax_t)ObjGetLen(bo->wrk, bo->fetch_objcore));
 	}
-	AZ(bo->fetch_objcore->busyobj);
+	AZ(bo->fetch_objcore->boc);
 
 	if (bo->stale_oc != NULL)
 		(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
@@ -994,7 +994,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	bo_fetch = bo;
 	bo->boc->refcount = 2;
 
-	oc->busyobj = bo;
+	oc->boc = bo->boc;
 
 	AN(bo->vcl);
 

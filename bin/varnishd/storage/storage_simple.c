@@ -371,11 +371,11 @@ sml_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
 	if (st == NULL)
 		return (0);
 
-	if (oc->busyobj != NULL) {
-		CHECK_OBJ_NOTNULL(oc->busyobj, BUSYOBJ_MAGIC);
-		Lck_Lock(&oc->busyobj->boc->mtx);
+	if (oc->boc != NULL) {
+		CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
+		Lck_Lock(&oc->boc->mtx);
 		VTAILQ_INSERT_TAIL(&o->list, st, list);
-		Lck_Unlock(&oc->busyobj->boc->mtx);
+		Lck_Unlock(&oc->boc->mtx);
 	} else {
 		AN(oc->flags & (OC_F_PRIVATE));
 		VTAILQ_INSERT_TAIL(&o->list, st, list);
@@ -440,10 +440,10 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 		return;
 
 	if (st->len == 0) {
-		if (oc->busyobj != NULL) {
-			Lck_Lock(&oc->busyobj->boc->mtx);
+		if (oc->boc != NULL) {
+			Lck_Lock(&oc->boc->mtx);
 			VTAILQ_REMOVE(&o->list, st, list);
-			Lck_Unlock(&oc->busyobj->boc->mtx);
+			Lck_Unlock(&oc->boc->mtx);
 		} else {
 			VTAILQ_REMOVE(&o->list, st, list);
 		}
@@ -465,21 +465,21 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 
 	memcpy(st1->ptr, st->ptr, st->len);
 	st1->len = st->len;
-	if (oc->busyobj != NULL) {
-		Lck_Lock(&oc->busyobj->boc->mtx);
+	if (oc->boc != NULL) {
+		Lck_Lock(&oc->boc->mtx);
 		VTAILQ_REMOVE(&o->list, st, list);
 		VTAILQ_INSERT_TAIL(&o->list, st1, list);
-		Lck_Unlock(&oc->busyobj->boc->mtx);
+		Lck_Unlock(&oc->boc->mtx);
 	} else {
 		VTAILQ_REMOVE(&o->list, st, list);
 		VTAILQ_INSERT_TAIL(&o->list, st1, list);
 	}
-	if (oc->busyobj == NULL) {
+	if (oc->boc == NULL) {
 		sml_stv_free(stv, st);
 	} else {
 		/* sml_stable frees this */
-		AZ(oc->busyobj->boc->stevedore_priv);
-		oc->busyobj->boc->stevedore_priv = st;
+		AZ(oc->boc->stevedore_priv);
+		oc->boc->stevedore_priv = st;
 	}
 }
 

@@ -416,7 +416,7 @@ struct objcore {
 	int			refcnt;
 	struct storeobj		stobj[1];
 	struct objhead		*objhead;
-	struct busyobj		*busyobj;
+	struct boc		*boc;
 	double			timer_when;
 	long			hits;
 
