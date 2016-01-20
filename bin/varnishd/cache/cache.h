@@ -381,7 +381,7 @@ struct storeobj {
 /*
  * The macro-states we expose outside the fetch code
  */
-enum busyobj_state_e {
+enum boc_state_e {
 	BOS_INVALID = 0,	/* don't touch (yet) */
 	BOS_REQ_DONE,		/* beresp.* can be examined */
 	BOS_STREAM,		/* beresp.* can be examined */
@@ -396,7 +396,7 @@ struct boc {
 	struct lock		mtx;
 	pthread_cond_t		cond;
 	void			*stevedore_priv;
-	enum busyobj_state_e	state;
+	enum boc_state_e	state;
 	uint8_t			*vary;
 
 	struct busyobj		*busyobj;
@@ -853,8 +853,8 @@ int ObjIterate(struct worker *, struct objcore *,
 int ObjGetSpace(struct worker *, struct objcore *, ssize_t *sz, uint8_t **ptr);
 void ObjExtend(struct worker *, struct objcore *, struct boc *, ssize_t l);
 ssize_t ObjWaitExtend(struct worker *, struct objcore *, struct boc *, ssize_t l);
-void ObjSetState(struct boc *, enum busyobj_state_e next);
-void ObjWaitState(struct boc *, enum busyobj_state_e want);
+void ObjSetState(struct boc *, enum boc_state_e next);
+void ObjWaitState(struct boc *, enum boc_state_e want);
 void ObjTrimStore(struct worker *, struct objcore *);
 void ObjTouch(struct worker *wrk, struct objcore *oc, double now);
 unsigned ObjGetXID(struct worker *, struct objcore *);

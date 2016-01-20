@@ -155,7 +155,7 @@ ObjWaitExtend(struct worker *wrk, struct objcore *oc, struct boc *boc,
  */
 
 void
-ObjSetState(struct boc *boc, enum busyobj_state_e next)
+ObjSetState(struct boc *boc, enum boc_state_e next)
 {
 
 	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
@@ -172,7 +172,7 @@ ObjSetState(struct boc *boc, enum busyobj_state_e next)
  */
 
 void
-ObjWaitState(struct boc *boc, enum busyobj_state_e want)
+ObjWaitState(struct boc *boc, enum boc_state_e want)
 {
 
 	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
