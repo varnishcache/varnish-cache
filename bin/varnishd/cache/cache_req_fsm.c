@@ -355,7 +355,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 static enum req_fsm_nxt
 cnt_lookup(struct worker *wrk, struct req *req)
 {
-	struct objcore *oc, *boc;
+	struct objcore *oc, *busy;
 	enum lookup_e lr;
 	int had_objhead = 0;
 
@@ -370,7 +370,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	AZ(req->objcore);
 	if (req->hash_objhead)
 		had_objhead = 1;
-	lr = HSH_Lookup(req, &oc, &boc,
+	lr = HSH_Lookup(req, &oc, &busy,
 	    req->esi_level == 0 ? 1 : 0,
 	    req->hash_always_miss ? 1 : 0
 	);
@@ -386,10 +386,10 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	if (had_objhead)
 		VSLb_ts_req(req, "Waitinglist", W_TIM_real(wrk));
 
-	if (boc == NULL) {
+	if (busy == NULL) {
 		VRY_Finish(req, DISCARD);
 	} else {
-		AN(boc->flags & OC_F_BUSY);
+		AN(busy->flags & OC_F_BUSY);
 		VRY_Finish(req, KEEP);
 	}
 
@@ -397,9 +397,9 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	if (lr == HSH_MISS) {
 		/* Found nothing */
 		AZ(oc);
-		AN(boc);
-		AN(boc->flags & OC_F_BUSY);
-		req->objcore = boc;
+		AN(busy);
+		AN(busy->flags & OC_F_BUSY);
+		req->objcore = busy;
 		req->req_step = R_STP_MISS;
 		return (REQ_FSM_MORE);
 	}
@@ -408,9 +408,9 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	AZ(oc->flags & OC_F_BUSY);
 	req->objcore = oc;
 
-	if ((oc->flags & OC_F_PASS) && boc != NULL) {
+	if ((oc->flags & OC_F_PASS) && busy != NULL) {
 		/* Treat a graced Hit-For-Pass as a miss */
-		req->objcore = boc;
+		req->objcore = busy;
 		req->stale_oc = oc;
 		req->req_step = R_STP_MISS;
 		return (REQ_FSM_MORE);
@@ -431,10 +431,10 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	switch (wrk->handling) {
 	case VCL_RET_DELIVER:
-		if (boc != NULL) {
+		if (busy != NULL) {
 			AZ(oc->flags & OC_F_PASS);
-			AZ(boc->busyobj);
-			VBF_Fetch(wrk, req, boc, oc, VBF_BACKGROUND);
+			AZ(busy->busyobj);
+			VBF_Fetch(wrk, req, busy, oc, VBF_BACKGROUND);
 		} else {
 			(void)VRB_Ignore(req);// XXX: handle err
 		}
@@ -447,8 +447,8 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		    "change return(fetch) to return(miss) in vcl_hit{}");
 		/* FALL-THROUGH */
 	case VCL_RET_MISS:
-		if (boc != NULL) {
-			req->objcore = boc;
+		if (busy != NULL) {
+			req->objcore = busy;
 			req->stale_oc = oc;
 			req->req_step = R_STP_MISS;
 		} else {
@@ -481,8 +481,8 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	/* Drop our object, we won't need it */
 	(void)HSH_DerefObjCore(wrk, &req->objcore);
 
-	if (boc != NULL) {
-		(void)HSH_DerefObjCore(wrk, &boc);
+	if (busy != NULL) {
+		(void)HSH_DerefObjCore(wrk, &busy);
 		VRY_Clear(req);
 	}
 
