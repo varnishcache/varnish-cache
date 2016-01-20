@@ -985,16 +985,17 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	}
 
 	bo = VBO_GetBusyObj(wrk, req);
+	oc->boc = bo->boc;
+
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	VSLb(bo->vsl, SLT_Begin, "bereq %u %s", VXID(req->vsl->wid), how);
 	VSLb(req->vsl, SLT_Link, "bereq %u %s", VXID(bo->vsl->wid), how);
 
 	THR_SetBusyobj(bo);
 
+	assert(HSH_RefBusy(oc) == bo->boc);
 	bo_fetch = bo;
-	bo->boc->refcount = 2;
 
-	oc->boc = bo->boc;
 
 	AN(bo->vcl);
 

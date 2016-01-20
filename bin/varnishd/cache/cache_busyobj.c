@@ -72,6 +72,7 @@ vbo_New(void)
 	Lck_New(&bo->boc->mtx, lck_busyobj);
 	AZ(pthread_cond_init(&bo->boc->cond, NULL));
 	bo->boc->busyobj = bo;
+	bo->boc->refcount = 1;
 	return (bo);
 }
 
@@ -103,9 +104,6 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 
 	bo = vbo_New();
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	AZ(bo->boc->refcount);
-
-	bo->boc->refcount = 1;
 
 	p = (void*)(bo + 1);
 	p = (void*)PRNDUP(p);
