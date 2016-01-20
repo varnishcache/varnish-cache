@@ -9,15 +9,27 @@ varnish v1 -vcl+backend {
 	import ${vmod_std};
 
 	sub vcl_deliver {
-		set resp.http.x-real = std.real(req.http.foo, 0.0);
-		set resp.http.x-fallback = std.real(req.http.bar, 0.0);
+		set resp.http.t0 = std.real(req.http.foo, 0.0);
+		set resp.http.t1 = std.real(req.http.bar, 0.0);
+		set resp.http.t2 = std.real(req.http.nonexistent, 0.0);
+		set resp.http.t3 = std.real("1.", 0.0);
+		set resp.http.t4 = std.real("1.0", 0.0);
+		set resp.http.t5 = std.real("1.0 ", 0.0);
+		set resp.http.t6 = std.real(" 1.0", 0.0);
+		set resp.http.t7 = std.real(" 1.0 ", 0.0);
 	}
 } -start
 
 client c1 {
-	txreq -hdr "foo: 1.00"
+	txreq -hdr "foo: 1.00" -hdr "bar: 1.00a"
 	rxresp
 	expect resp.status == 200
-	expect resp.http.x-real == 1.000
-	expect resp.http.x-fallback == 0.000
+	expect resp.http.t0 == 1.000
+	expect resp.http.t1 == 0.000
+	expect resp.http.t2 == 0.000
+	expect resp.http.t3 == 1.000
+	expect resp.http.t4 == 1.000
+	expect resp.http.t5 == 1.000
+	expect resp.http.t6 == 1.000
+	expect resp.http.t7 == 1.000
 } -run
