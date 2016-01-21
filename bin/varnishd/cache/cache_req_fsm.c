@@ -291,7 +291,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 		sz = szl;
 		if (ObjGetSpace(wrk, req->objcore, &sz, &ptr) && sz >= szl) {
 			memcpy(ptr, VSB_data(synth_body), szl);
-			ObjExtend(wrk, req->objcore, NULL, szl);
+			ObjExtend(wrk, req->objcore, szl);
 		} else
 			szl = -1;
 	}

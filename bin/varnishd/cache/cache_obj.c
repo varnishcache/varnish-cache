@@ -107,20 +107,20 @@ ObjGetSpace(struct worker *wrk, struct objcore *oc, ssize_t *sz, uint8_t **ptr)
  */
 
 void
-ObjExtend(struct worker *wrk, struct objcore *oc, struct boc *boc, ssize_t l)
+ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l)
 {
 	const struct obj_methods *om = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_ORNULL(oc->boc, BOC_MAGIC);
 	AN(om->objextend);
 	assert(l > 0);
 
-	if (boc != NULL) {
-		CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
-		Lck_Lock(&boc->mtx);
+	if (oc->boc != NULL) {
+		Lck_Lock(&oc->boc->mtx);
 		om->objextend(wrk, oc, l);
-		AZ(pthread_cond_broadcast(&boc->cond));
-		Lck_Unlock(&boc->mtx);
+		AZ(pthread_cond_broadcast(&oc->boc->cond));
+		Lck_Unlock(&oc->boc->mtx);
 	} else {
 		om->objextend(wrk, oc, l);
 	}
