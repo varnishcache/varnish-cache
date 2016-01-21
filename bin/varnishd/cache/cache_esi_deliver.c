@@ -668,7 +668,7 @@ ved_objiterate(void *priv, int flush, const void *ptr, ssize_t len)
 }
 
 static void
-ved_stripgzip(struct req *req, struct boc *boc)
+ved_stripgzip(struct req *req, const struct boc *boc)
 {
 	ssize_t l;
 	char *p;
@@ -689,7 +689,7 @@ ved_stripgzip(struct req *req, struct boc *boc)
 
 	/* OA_GZIPBITS is not valid until BOS_FINISHED */
 	if (boc != NULL)
-		ObjWaitState(boc, BOS_FINISHED);
+		ObjWaitState(req->objcore, BOS_FINISHED);
 
 	AN(ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED));
 

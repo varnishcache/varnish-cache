@@ -155,35 +155,36 @@ ObjWaitExtend(struct worker *wrk, struct objcore *oc, struct boc *boc,
  */
 
 void
-ObjSetState(struct boc *boc, enum boc_state_e next)
+ObjSetState(const struct objcore *oc, enum boc_state_e next)
 {
 
-	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 
-	// assert(bo->do_stream || next != BOS_STREAM);
-	assert(next > boc->state);
-	Lck_Lock(&boc->mtx);
-	boc->state = next;
-	AZ(pthread_cond_broadcast(&boc->cond));
-	Lck_Unlock(&boc->mtx);
+	assert(next > oc->boc->state);
+	Lck_Lock(&oc->boc->mtx);
+	oc->boc->state = next;
+	AZ(pthread_cond_broadcast(&oc->boc->cond));
+	Lck_Unlock(&oc->boc->mtx);
 }
 
 /*====================================================================
  */
 
 void
-ObjWaitState(struct boc *boc, enum boc_state_e want)
+ObjWaitState(const struct objcore *oc, enum boc_state_e want)
 {
 
-	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 
-	Lck_Lock(&boc->mtx);
+	Lck_Lock(&oc->boc->mtx);
 	while (1) {
-		if (boc->state >= want)
+		if (oc->boc->state >= want)
 			break;
-		(void)Lck_CondWait(&boc->cond, &boc->mtx, 0);
+		(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx, 0);
 	}
-	Lck_Unlock(&boc->mtx);
+	Lck_Unlock(&oc->boc->mtx);
 }
 
 /*====================================================================

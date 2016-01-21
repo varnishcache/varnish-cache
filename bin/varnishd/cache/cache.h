@@ -854,8 +854,8 @@ int ObjIterate(struct worker *, struct objcore *,
 int ObjGetSpace(struct worker *, struct objcore *, ssize_t *sz, uint8_t **ptr);
 void ObjExtend(struct worker *, struct objcore *, struct boc *, ssize_t l);
 ssize_t ObjWaitExtend(struct worker *, struct objcore *, struct boc *, ssize_t l);
-void ObjSetState(struct boc *, enum boc_state_e next);
-void ObjWaitState(struct boc *, enum boc_state_e want);
+void ObjSetState(const struct objcore *, enum boc_state_e next);
+void ObjWaitState(const struct objcore *, enum boc_state_e want);
 void ObjTrimStore(struct worker *, struct objcore *);
 void ObjTouch(struct worker *wrk, struct objcore *oc, double now);
 unsigned ObjGetXID(struct worker *, struct objcore *);
