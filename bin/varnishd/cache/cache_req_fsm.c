@@ -203,7 +203,9 @@ cnt_deliver(struct worker *wrk, struct req *req)
 			HSH_DerefBusy(wrk, req->objcore);
 			boc = NULL;
 		} else if (!boc->busyobj->do_stream) {
-			ObjWaitState(boc, BOS_FINISHED);
+			/* XXX These should go away */
+			xxxassert(boc->state >= BOS_STREAM);
+			xxxassert(boc->state >= BOS_FINISHED);
 			HSH_DerefBusy(wrk, req->objcore);
 			boc = NULL;
 		}

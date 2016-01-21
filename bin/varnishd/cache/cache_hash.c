@@ -398,8 +398,9 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		if (oc->flags & OC_F_FAILED)
 			continue;
 
-		if (oc->flags & OC_F_BUSY) {
+		if (oc->boc != NULL && oc->boc->state < BOS_STREAM) {
 			CHECK_OBJ_ORNULL(oc->boc, BOC_MAGIC);
+
 			if (req->hash_ignore_busy)
 				continue;
 
