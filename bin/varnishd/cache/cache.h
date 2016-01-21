@@ -462,8 +462,6 @@ struct busyobj {
 	unsigned		magic;
 #define BUSYOBJ_MAGIC		0x23b95567
 
-	struct boc		*boc;
-
 	char			*end;
 
 	/*
