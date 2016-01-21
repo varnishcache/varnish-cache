@@ -188,6 +188,20 @@ pan_http(struct vsb *vsb, const char *id, const struct http *h)
 }
 
 /*--------------------------------------------------------------------*/
+static void
+pan_boc(struct vsb *vsb, const struct boc *boc)
+{
+	VSB_printf(vsb, "boc = %p {\n", boc);
+	VSB_indent(vsb, 2);
+	VSB_printf(vsb, "refcnt = %u,\n", boc->refcount);
+	VSB_printf(vsb, "state = %d,\n", boc->state);
+	VSB_printf(vsb, "vary = %p,\n", boc->vary);
+	VSB_printf(vsb, "stevedore_priv = %p,\n", boc->stevedore_priv);
+	VSB_indent(vsb, -2);
+	VSB_printf(vsb, "},\n");
+}
+
+/*--------------------------------------------------------------------*/
 
 static void
 pan_objcore(struct vsb *vsb, const char *typ, const struct objcore *oc)
@@ -198,6 +212,8 @@ pan_objcore(struct vsb *vsb, const char *typ, const struct objcore *oc)
 	VSB_printf(vsb, "refcnt = %d,\n", oc->refcnt);
 	VSB_printf(vsb, "flags = 0x%x,\n", oc->flags);
 	VSB_printf(vsb, "exp_flags = 0x%x,\n", oc->exp_flags);
+	if (oc->boc != NULL)
+		pan_boc(vsb, oc->boc);
 	VSB_printf(vsb, "exp = { %f, %f, %f, %f }\n",
 	    oc->exp.t_origin, oc->exp.ttl, oc->exp.grace, oc->exp.keep);
 	VSB_printf(vsb, "objhead = %p,\n", oc->objhead);
@@ -315,12 +331,6 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	VSB_printf(vsb, "},\n");
 }
 
-static void
-pan_boc(struct vsb *vsb, const struct boc *boc)
-{
-	pan_busyobj(vsb, boc->busyobj);
-}
-
 /*--------------------------------------------------------------------*/
 
 static void
@@ -370,11 +380,8 @@ pan_req(struct vsb *vsb, const struct req *req)
 
 	VCL_Panic(vsb, req->vcl);
 
-	if (req->objcore != NULL) {
+	if (req->objcore != NULL)
 		pan_objcore(vsb, "REQ", req->objcore);
-		if (req->objcore->boc != NULL)
-			pan_boc(vsb, req->objcore->boc);
-	}
 
 	VSB_printf(vsb, "flags = {\n");
 	VSB_indent(vsb, 2);

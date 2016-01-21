@@ -957,6 +957,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	wrk->vsl = NULL;
 	HSH_DerefBusy(wrk, bo->fetch_objcore);
+	VBO_DerefBusyObj(wrk, &bo);
 	THR_SetBusyobj(NULL);
 }
 
@@ -987,7 +988,6 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 
 	bo = VBO_GetBusyObj(wrk, req);
 	bo->boc = oc->boc;
-	bo->boc->busyobj = bo;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	VSLb(bo->vsl, SLT_Begin, "bereq %u %s", VXID(req->vsl->wid), how);

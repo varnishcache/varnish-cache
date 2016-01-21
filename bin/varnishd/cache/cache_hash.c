@@ -760,7 +760,6 @@ HSH_DerefBusy(struct worker *wrk, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	boc = oc->boc;
 	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
-	CHECK_OBJ_NOTNULL(boc->busyobj, BUSYOBJ_MAGIC);
 	Lck_Lock(&oc->objhead->mtx);
 	assert(boc->refcount > 0);
 	r = --boc->refcount;
@@ -770,7 +769,6 @@ HSH_DerefBusy(struct worker *wrk, struct objcore *oc)
 	if (r == 0) {
 		if (oc->stobj->stevedore != NULL)
 			ObjStable(wrk, oc, boc);
-		VBO_DerefBusyObj(wrk, &boc->busyobj);
 		AZ(pthread_cond_destroy(&boc->cond));
 		Lck_Delete(&boc->mtx);
 		free(boc->vary);
