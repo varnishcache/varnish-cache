@@ -768,6 +768,8 @@ HSH_DerefBusy(struct worker *wrk, struct objcore *oc)
 		oc->boc = NULL;
 	Lck_Unlock(&oc->objhead->mtx);
 	if (r == 0) {
+		if (oc->stobj->stevedore != NULL)
+			ObjStable(wrk, oc, boc);
 		VBO_DerefBusyObj(wrk, &boc->busyobj);
 		AZ(pthread_cond_destroy(&boc->cond));
 		Lck_Delete(&boc->mtx);

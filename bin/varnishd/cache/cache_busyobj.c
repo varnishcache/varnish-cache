@@ -177,8 +177,6 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 
 	if (bo->fetch_objcore != NULL) {
 		AN(wrk);
-		if (bo->fetch_objcore->stobj->stevedore != NULL)
-			ObjStable(bo->wrk, bo->fetch_objcore, bo);
 		(void)HSH_DerefObjCore(wrk, &bo->fetch_objcore);
 	}
 

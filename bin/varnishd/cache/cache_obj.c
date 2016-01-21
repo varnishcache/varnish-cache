@@ -256,19 +256,19 @@ ObjUpdateMeta(struct worker *wrk, struct objcore *oc)
 }
 
 /*====================================================================
- * Called when the busyobj used to populate the objcore is going away.
+ * Called when the boc used to populate the objcore is going away.
  * Useful for releasing any leftovers from Trim.
  */
 
 void
-ObjStable(struct worker *wrk, struct objcore *oc, struct busyobj *bo)
+ObjStable(struct worker *wrk, struct objcore *oc, struct boc *boc)
 {
 	const struct obj_methods *m = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
 	if (m->objstable != NULL)
-		m->objstable(wrk, oc, bo);
+		m->objstable(wrk, oc, boc);
 }
 
 /*====================================================================

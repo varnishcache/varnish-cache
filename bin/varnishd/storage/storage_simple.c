@@ -484,19 +484,19 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 }
 
 static void __match_proto__(objstable_f)
-sml_stable(struct worker *wrk, struct objcore *oc, struct busyobj *bo)
+sml_stable(struct worker *wrk, struct objcore *oc, struct boc *boc)
 {
 	const struct stevedore *stv;
 	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
 
-	if (bo->boc->stevedore_priv == NULL)
+	if (boc->stevedore_priv == NULL)
 		return;
-	CAST_OBJ_NOTNULL(st, bo->boc->stevedore_priv, STORAGE_MAGIC);
-	bo->boc->stevedore_priv = 0;
+	CAST_OBJ_NOTNULL(st, boc->stevedore_priv, STORAGE_MAGIC);
+	boc->stevedore_priv = 0;
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	stv = oc->stobj->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);

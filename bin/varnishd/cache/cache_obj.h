@@ -43,7 +43,7 @@ typedef int objgetspace_f(struct worker *, struct objcore *,
      ssize_t *sz, uint8_t **ptr);
 typedef void objextend_f(struct worker *, struct objcore *, ssize_t l);
 typedef void objtrimstore_f(struct worker *, struct objcore *);
-typedef void objstable_f(struct worker *, struct objcore *, struct busyobj *);
+typedef void objstable_f(struct worker *, struct objcore *, struct boc *);
 typedef void objslim_f(struct worker *, struct objcore *);
 typedef void *objgetattr_f(struct worker *, struct objcore *,
     enum obj_attr attr, ssize_t *len);

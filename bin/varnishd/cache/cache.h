@@ -870,7 +870,7 @@ void *ObjSetattr(struct worker *, struct objcore *, enum obj_attr attr,
     ssize_t len, const void *);
 int ObjCopyAttr(struct worker *, struct objcore *, struct objcore *,
     enum obj_attr attr);
-void ObjStable(struct worker *, struct objcore *, struct busyobj *);
+void ObjStable(struct worker *, struct objcore *, struct boc *);
 
 int ObjSetDouble(struct worker *, struct objcore *, enum obj_attr, double);
 int ObjSetU32(struct worker *, struct objcore *, enum obj_attr, uint32_t);
