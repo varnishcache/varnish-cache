@@ -15,9 +15,7 @@ server s1 {
 	chunkedlen 0
 } -start
 
-varnish v1 -vcl+backend {
-} -start
-
+varnish v1 -vcl+backend { } -start
 
 client c1 {
 	txreq

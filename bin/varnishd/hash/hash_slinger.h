@@ -75,6 +75,7 @@ void HSH_config(const char *h_arg);
 struct boc *HSH_RefBusy(const struct objcore *);
 void HSH_DerefBusy(struct worker *wrk, struct objcore *);
 struct objcore *HSH_Private(struct worker *wrk, int wantboc);
+void HSH_Abandon(struct objcore *oc);
 
 #ifdef VARNISH_CACHE_CHILD
 

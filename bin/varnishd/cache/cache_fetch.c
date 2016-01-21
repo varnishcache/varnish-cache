@@ -486,7 +486,7 @@ vbf_fetch_body_helper(struct busyobj *bo)
 		est = 0;
 
 	do {
-		if (bo->abandon) {
+		if (vfc->oc->flags & OC_F_ABANDON) {
 			/*
 			 * A pass object and delivery was terminated
 			 * We don't fail the fetch, in order for hit-for-pass

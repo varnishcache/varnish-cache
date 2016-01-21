@@ -653,6 +653,24 @@ HSH_Complete(struct objcore *oc)
 }
 
 /*---------------------------------------------------------------------
+ * Abandon a fetch we will not need
+ */
+
+void
+HSH_Abandon(struct objcore *oc)
+{
+	struct objhead *oh;
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	oh = oc->objhead;
+	CHECK_OBJ(oh, OBJHEAD_MAGIC);
+
+	Lck_Lock(&oh->mtx);
+	oc->flags |= OC_F_ABANDON;
+	Lck_Unlock(&oh->mtx);
+}
+
+/*---------------------------------------------------------------------
  * Unbusy an objcore when the object is completely fetched.
  */
 
@@ -724,7 +742,7 @@ HSH_RefBusy(const struct objcore *oc)
 	assert(oc->refcnt > 0);
 	boc = oc->boc;
 	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
-	if (boc != NULL && boc->state < BOS_FINISHED) 
+	if (boc != NULL && boc->state < BOS_FINISHED)
 		boc->refcount++;
 	else
 		boc = NULL;

@@ -208,8 +208,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	if (req->objcore->flags & (OC_F_PRIVATE | OC_F_PASS)) {
 		if (boc != NULL) {
-			CHECK_OBJ_NOTNULL(boc->busyobj, BUSYOBJ_MAGIC);
-			boc->busyobj->abandon = 1;
+			HSH_Abandon(req->objcore);
 			ObjWaitState(boc, BOS_FINISHED);
 		}
 		ObjSlim(wrk, req->objcore);
