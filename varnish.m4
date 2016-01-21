@@ -42,7 +42,7 @@ m4_pattern_forbid([^_?VARNISH[A-Z_]+$])
 m4_pattern_allow([^VARNISH_VMOD(_INCLUDE_DIR|TOOL)$])
 # Check for pkg-config
 PKG_CHECK_EXISTS([varnishapi],[],[
-	if test -n "$PKG_CONFIG"; then
+	if test -z "$PKG_CONFIG"; then
 		AC_MSG_FAILURE(
 [The pkg-config script could not be found or is too old.  Make sure it
 is in your PATH or set the PKG_CONFIG environment variable to the full
