@@ -217,6 +217,8 @@ ObjTrimStore(struct worker *wrk, struct objcore *oc)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
+	assert(oc->boc == NULL || oc->boc->state < BOS_FINISHED);
+
 	if (om->objtrimstore != NULL)
 		om->objtrimstore(wrk, oc);
 	return;

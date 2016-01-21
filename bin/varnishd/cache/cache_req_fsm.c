@@ -198,26 +198,8 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	/* Grab a ref to the bo if there is one, and hand it down */
 	boc = HSH_RefBusy(req->objcore);
-	if (boc != NULL) {
-		if (req->esi_level == 0 && boc->state == BOS_FINISHED) {
-			HSH_DerefBusy(wrk, req->objcore);
-			boc = NULL;
-		} else if (!boc->busyobj->do_stream) {
-			/* XXX These should go away */
-			xxxassert(boc->state >= BOS_STREAM);
-			xxxassert(boc->state >= BOS_FINISHED);
-			HSH_DerefBusy(wrk, req->objcore);
-			boc = NULL;
-		}
-	}
 
 	cnt_vdp(req, boc);
-
-	/* pass+streaming, abandon fetch in case delivery terminated early */
-	if (boc != NULL && req->objcore->flags & OC_F_PASS) {
-		CHECK_OBJ_NOTNULL(boc->busyobj, BUSYOBJ_MAGIC);
-		boc->busyobj->abandon = 1;
-	}
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
@@ -225,8 +207,11 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		req->doclose = SC_RESP_CLOSE;
 
 	if (req->objcore->flags & (OC_F_PRIVATE | OC_F_PASS)) {
-		if (boc != NULL)
+		if (boc != NULL) {
+			CHECK_OBJ_NOTNULL(boc->busyobj, BUSYOBJ_MAGIC);
+			boc->busyobj->abandon = 1;
 			ObjWaitState(boc, BOS_FINISHED);
+		}
 		ObjSlim(wrk, req->objcore);
 	}
 

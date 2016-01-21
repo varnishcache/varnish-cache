@@ -866,7 +866,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
  */
 
 static enum fetch_step
-vbf_stp_fail(struct worker *wrk, struct busyobj *bo)
+vbf_stp_fail(struct worker *wrk, const struct busyobj *bo)
 {
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);

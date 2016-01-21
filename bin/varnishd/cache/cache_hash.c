@@ -724,10 +724,10 @@ HSH_RefBusy(const struct objcore *oc)
 	assert(oc->refcnt > 0);
 	boc = oc->boc;
 	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
-	if (boc != NULL) {
-		//CHECK_OBJ_NOTNULL(boc->busyobj, BUSYOBJ_MAGIC);
+	if (boc != NULL && boc->state < BOS_FINISHED) 
 		boc->refcount++;
-	}
+	else
+		boc = NULL;
 	Lck_Unlock(&oh->mtx);
 	return (boc);
 }
