@@ -109,11 +109,37 @@ sess_close_2str(enum sess_close sc, int want_desc)
 
 /*--------------------------------------------------------------------*/
 
+#define N_ALREADY 64
+static const void *already_list[N_ALREADY];
+static int already_idx;
+
+static int
+pan_already(struct vsb *vsb, const void *ptr)
+{
+	int i;
+
+	for (i = 0; i < already_idx; i++) {
+		if (already_list[i] == ptr) {
+			VSB_printf(vsb, "  [Already dumped, see above]\n");
+			VSB_printf(vsb, "},\n");
+			return (1);
+		}
+	}
+	if (already_idx < N_ALREADY)
+		already_list[already_idx++] = ptr;
+	return (0);
+}
+
+
+/*--------------------------------------------------------------------*/
+
 static void
 pan_ws(struct vsb *vsb, const struct ws *ws)
 {
 
 	VSB_printf(vsb, "ws = %p {\n", ws);
+	if (pan_already(vsb, ws))
+		return;
 	VSB_indent(vsb, 2);
 	if (WS_Overflowed(ws))
 		VSB_printf(vsb, "OVERFLOW ");
@@ -143,6 +169,8 @@ pan_htc(struct vsb *vsb, const struct http_conn *htc)
 {
 
 	VSB_printf(vsb, "http_conn = %p {\n", htc);
+	if (pan_already(vsb, htc))
+		return;
 	VSB_indent(vsb, 2);
 	VSB_printf(vsb, "fd = %d,\n", htc->fd);
 	VSB_printf(vsb, "doclose = %s,\n", sess_close_2str(htc->doclose, 0));
@@ -171,6 +199,8 @@ pan_http(struct vsb *vsb, const char *id, const struct http *h)
 	int i;
 
 	VSB_printf(vsb, "http[%s] = %p {\n", id, h);
+	if (pan_already(vsb, h))
+		return;
 	VSB_indent(vsb, 2);
 	VSB_printf(vsb, "ws[%s] = %p,\n", h->ws ? h->ws->id : "", h->ws);
 	VSB_printf(vsb, "hdrs {\n");
@@ -192,6 +222,8 @@ static void
 pan_boc(struct vsb *vsb, const struct boc *boc)
 {
 	VSB_printf(vsb, "boc = %p {\n", boc);
+	if (pan_already(vsb, boc))
+		return;
 	VSB_indent(vsb, 2);
 	VSB_printf(vsb, "refcnt = %u,\n", boc->refcount);
 	VSB_printf(vsb, "state = %d,\n", boc->state);
@@ -208,6 +240,8 @@ pan_objcore(struct vsb *vsb, const char *typ, const struct objcore *oc)
 {
 
 	VSB_printf(vsb, "objcore[%s] = %p {\n", typ, oc);
+	if (pan_already(vsb, oc))
+		return;
 	VSB_indent(vsb, 2);
 	VSB_printf(vsb, "refcnt = %d,\n", oc->refcnt);
 	VSB_printf(vsb, "flags = 0x%x,\n", oc->flags);
@@ -239,6 +273,8 @@ pan_wrk(struct vsb *vsb, const struct worker *wrk)
 	const char *p;
 
 	VSB_printf(vsb, "worker = %p {\n", wrk);
+	if (pan_already(vsb, wrk))
+		return;
 	VSB_indent(vsb, 2);
 	VSB_printf(vsb, "stack = {0x%jx -> 0x%jx},\n",
 	    (uintmax_t)wrk->stack_start, (uintmax_t)wrk->stack_end);
@@ -286,12 +322,12 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	const char *p;
 
 	VSB_printf(vsb, "busyobj = %p {\n", bo);
+	if (pan_already(vsb, bo))
+		return;
 	VSB_indent(vsb, 2);
 	pan_ws(vsb, bo->ws);
-	VSB_printf(vsb, "refcnt = %u,\n", bo->boc->refcount);
 	VSB_printf(vsb, "retries = %d, ", bo->retries);
 	VSB_printf(vsb, "failed = %d, ", bo->vfc->failed);
-	VSB_printf(vsb, "state = %d,\n", (int)bo->boc->state);
 	VSB_printf(vsb, "flags = {");
 	p = "";
 	/*lint -save -esym(438,p) */
@@ -339,6 +375,8 @@ pan_req(struct vsb *vsb, const struct req *req)
 	const char *stp;
 
 	VSB_printf(vsb, "req = %p {\n", req);
+	if (pan_already(vsb, req))
+		return;
 	VSB_indent(vsb, 2);
 
 	VSB_printf(vsb, "vxid = %u, ", VXID(req->vsl->wid));
@@ -405,6 +443,8 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 	char *cp;
 
 	VSB_printf(vsb, "sp = %p {\n", sp);
+	if (pan_already(vsb, sp))
+		return;
 	VSB_indent(vsb, 2);
 	VSB_printf(vsb, "fd = %d, vxid = %u,\n", sp->fd, VXID(sp->vxid));
 	AZ(SES_Get_client_ip(sp, &ci));
