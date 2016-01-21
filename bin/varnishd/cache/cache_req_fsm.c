@@ -293,7 +293,8 @@ cnt_synth(struct worker *wrk, struct req *req)
 	if (http_HdrIs(req->resp, H_Connection, "close"))
 		req->doclose = SC_RESP_CLOSE;
 
-	req->objcore = HSH_Private(wrk);
+	req->objcore = HSH_Private(wrk, 0);
+	AZ(req->objcore->boc);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	if (STV_NewObject(wrk, req->objcore, TRANSIENT_STORAGE, 1024)) {
 		szl = VSB_len(synth_body);
@@ -311,8 +312,9 @@ cnt_synth(struct worker *wrk, struct req *req)
 	if (szl < 0) {
 		VSLb(req->vsl, SLT_Error, "Could not get storage");
 		req->doclose = SC_OVERLOAD;
-	} else
+	} else {
 		cnt_vdp(req, NULL);
+	}
 
 	(void)HSH_DerefObjCore(wrk, &req->objcore);
 	VSB_delete(synth_body);
@@ -437,7 +439,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	case VCL_RET_DELIVER:
 		if (busy != NULL) {
 			AZ(oc->flags & OC_F_PASS);
-			AZ(busy->boc);
+			CHECK_OBJ_NOTNULL(busy->boc, BOC_MAGIC);
 			VBF_Fetch(wrk, req, busy, oc, VBF_BACKGROUND);
 		} else {
 			(void)VRB_Ignore(req);// XXX: handle err
@@ -557,7 +559,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 		break;
 	case VCL_RET_FETCH:
 		wrk->stats->s_pass++;
-		req->objcore = HSH_Private(wrk);
+		req->objcore = HSH_Private(wrk, 1);
 		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 		VBF_Fetch(wrk, req, req->objcore, NULL, VBF_PASS);
 		req->req_step = R_STP_FETCH;
@@ -602,7 +604,6 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	if (VDI_Http1Pipe(req, bo) < 0)
 		VSLb(bo->vsl, SLT_VCL_Error, "Backend does not support pipe");
 	http_Teardown(bo->bereq);
-bo->boc->refcount = 0;
 	VBO_DerefBusyObj(wrk, &bo);
 	THR_SetBusyobj(NULL);
 	return (REQ_FSM_DONE);

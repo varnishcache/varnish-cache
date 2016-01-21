@@ -68,14 +68,21 @@ static struct objhead *private_oh;
 /*---------------------------------------------------------------------*/
 
 static struct objcore *
-hsh_NewObjCore(struct worker *wrk)
+hsh_NewObjCore(struct worker *wrk, int boc)
 {
 	struct objcore *oc;
 
 	ALLOC_OBJ(oc, OBJCORE_MAGIC);
-	XXXAN(oc);
+	AN(oc);
 	wrk->stats->n_objectcore++;
 	oc->flags |= OC_F_BUSY | OC_F_INCOMPLETE;
+	if (boc) {
+		ALLOC_OBJ(oc->boc, BOC_MAGIC);
+		AN(oc->boc);
+		Lck_New(&oc->boc->mtx, lck_busyobj);
+		AZ(pthread_cond_init(&oc->boc->cond, NULL));
+		oc->boc->refcount = 1;
+	}
 	return (oc);
 }
 
@@ -104,7 +111,7 @@ hsh_prealloc(struct worker *wrk)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	if (wrk->nobjcore == NULL)
-		wrk->nobjcore = hsh_NewObjCore(wrk);
+		wrk->nobjcore = hsh_NewObjCore(wrk, 1);
 	CHECK_OBJ_NOTNULL(wrk->nobjcore, OBJCORE_MAGIC);
 
 	if (wrk->nobjhead == NULL) {
@@ -120,13 +127,13 @@ hsh_prealloc(struct worker *wrk)
 /*---------------------------------------------------------------------*/
 
 struct objcore *
-HSH_Private(struct worker *wrk)
+HSH_Private(struct worker *wrk, int wantboc)
 {
 	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(private_oh, OBJHEAD_MAGIC);
 
-	oc = hsh_NewObjCore(wrk);
+	oc = hsh_NewObjCore(wrk, wantboc);
 	AN(oc);
 	oc->refcnt = 1;
 	oc->objhead = private_oh;
@@ -717,7 +724,7 @@ HSH_RefBusy(const struct objcore *oc)
 	boc = oc->boc;
 	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
 	if (boc != NULL) {
-		CHECK_OBJ_NOTNULL(boc->busyobj, BUSYOBJ_MAGIC);
+		//CHECK_OBJ_NOTNULL(boc->busyobj, BUSYOBJ_MAGIC);
 		boc->refcount++;
 	}
 	Lck_Unlock(&oh->mtx);
@@ -741,8 +748,13 @@ HSH_DerefBusy(struct worker *wrk, struct objcore *oc)
 	if (r == 0)
 		oc->boc = NULL;
 	Lck_Unlock(&oc->objhead->mtx);
-	if (r == 0)
+	if (r == 0) {
 		VBO_DerefBusyObj(wrk, &boc->busyobj);
+		AZ(pthread_cond_destroy(&boc->cond));
+		Lck_Delete(&boc->mtx);
+		free(boc->vary);
+		FREE_OBJ(boc);
+	}
 }
 
 /*--------------------------------------------------------------------

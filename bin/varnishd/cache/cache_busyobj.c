@@ -68,11 +68,6 @@ vbo_New(void)
 	XXXAN(bo);
 	bo->magic = BUSYOBJ_MAGIC;
 	bo->end = (char *)bo + sz;
-	INIT_OBJ(bo->boc, BOC_MAGIC);
-	Lck_New(&bo->boc->mtx, lck_busyobj);
-	AZ(pthread_cond_init(&bo->boc->cond, NULL));
-	bo->boc->busyobj = bo;
-	bo->boc->refcount = 1;
 	return (bo);
 }
 
@@ -86,9 +81,6 @@ vbo_Free(struct busyobj **bop)
 	*bop = NULL;
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	AZ(bo->htc);
-	AZ(bo->boc->refcount);
-	AZ(pthread_cond_destroy(&bo->boc->cond));
-	Lck_Delete(&bo->boc->mtx);
 	MPL_Free(vbopool, bo);
 }
 
@@ -191,14 +183,6 @@ VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
 	}
 
 	VCL_Rel(&bo->vcl);
-
-	AZ(bo->boc->stevedore_priv);
-	AZ(bo->boc->refcount);
-	bo->boc->state = BOS_INVALID;
-	if (bo->boc->vary != NULL) {
-		free(bo->boc->vary);
-		bo->boc->vary = NULL;
-	}
 
 	memset(&bo->retries, 0,
 	    sizeof *bo - offsetof(struct busyobj, retries));
