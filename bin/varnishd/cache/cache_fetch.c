@@ -967,7 +967,8 @@ void
 VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
     struct objcore *oldoc, enum vbf_fetch_mode_e mode)
 {
-	struct busyobj *bo, *bo_fetch;
+	struct boc *boc;
+	struct busyobj *bo;
 	const char *how;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -994,9 +995,9 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 
 	THR_SetBusyobj(bo);
 
-	assert(HSH_RefBusy(oc) == bo->boc);
-	bo_fetch = bo;
-
+	boc = HSH_RefBusy(oc);
+	AN(boc);
+	assert(boc == bo->boc);
 
 	AN(bo->vcl);
 
@@ -1021,7 +1022,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	AZ(bo->req);
 	bo->req = req;
 
-	bo->fetch_task.priv = bo_fetch;
+	bo->fetch_task.priv = bo;
 	bo->fetch_task.func = vbf_fetch_thread;
 
 	if (Pool_Task(wrk->pool, &bo->fetch_task, TASK_QUEUE_BO)) {
@@ -1029,22 +1030,23 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 		(void)vbf_stp_fail(req->wrk, bo);
 		if (bo->stale_oc != NULL)
 			(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
-		HSH_DerefBusy(wrk, bo->fetch_objcore);
+		HSH_DerefBusy(wrk, oc);
 	} else {
-		bo_fetch = NULL; /* ref transferred to fetch thread */
+		bo = NULL; /* ref transferred to fetch thread */
 		if (mode == VBF_BACKGROUND) {
-			ObjWaitState(bo->boc, BOS_REQ_DONE);
+			ObjWaitState(boc, BOS_REQ_DONE);
 		} else {
-			ObjWaitState(bo->boc, BOS_STREAM);
-			if (bo->boc->state == BOS_FAILED) {
+			ObjWaitState(boc, BOS_STREAM);
+			if (boc->state == BOS_FAILED) {
 				AN((oc->flags & OC_F_FAILED));
 			} else {
-				AZ(bo->fetch_objcore->flags & OC_F_BUSY);
+				AZ(oc->flags & OC_F_BUSY);
 			}
 		}
 	}
-	AZ(bo_fetch);
+	AZ(bo);
 	VSLb_ts_req(req, "Fetch", W_TIM_real(wrk));
-	HSH_DerefBusy(wrk, bo->fetch_objcore);
+	assert(oc->boc == boc);
+	HSH_DerefBusy(wrk, oc);
 	THR_SetBusyobj(NULL);
 }
