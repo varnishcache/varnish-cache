@@ -78,7 +78,7 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	const struct vex_rhs *rhs;
 	long long lhs_int = 0;
 	double lhs_float = 0.;
-	const char *b, *e;
+	const char *b, *e, *q;
 	char *p;
 	int i;
 
@@ -145,8 +145,10 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 			/* Can't parse - no match */
 			return (0);
 		case VEX_FLOAT:
-			lhs_float = VNUM(b);
+			lhs_float = VNUMpfx(b, &q);
 			if (isnan(lhs_float))
+				return (0);
+			if (q != NULL && q > p && !isspace(q[-1]))
 				return (0);
 			break;
 		default:

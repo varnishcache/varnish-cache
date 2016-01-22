@@ -151,6 +151,12 @@ logexpect l1 -d 1 -g vxid -q "RespHeader[2] == 123" {
 	  expect * =	End
 } -run
 
+# Test field on floats
+logexpect l1 -d 1 -g vxid -q "RespHeader[2] == 123." {
+	  expect 0 *	Begin	req
+	  expect * =	End
+} -run
+
 # Test taglists
 logexpect l1 -d 1 -g vxid -q "Debug,Resp* == 200" {
 	  expect 0 *	Begin	req
