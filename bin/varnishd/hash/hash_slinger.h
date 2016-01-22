@@ -31,7 +31,6 @@
 struct sess;
 struct req;
 struct objcore;
-struct busyobj;
 struct worker;
 struct object;
 

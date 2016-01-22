@@ -130,24 +130,23 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l)
  */
 
 ssize_t
-ObjWaitExtend(struct worker *wrk, struct objcore *oc, struct boc *boc,
-    ssize_t l)
+ObjWaitExtend(struct worker *wrk, struct objcore *oc, ssize_t l)
 {
 	ssize_t rv;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
-	Lck_Lock(&boc->mtx);
+	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
+	Lck_Lock(&oc->boc->mtx);
 	rv = ObjGetLen(wrk, oc);
 	while (1) {
-		assert(l <= rv || boc->state == BOS_FAILED);
-		if (rv > l || boc->state >= BOS_FINISHED)
+		assert(l <= rv || oc->boc->state == BOS_FAILED);
+		if (rv > l || oc->boc->state >= BOS_FINISHED)
 			break;
-		(void)Lck_CondWait(&boc->cond, &boc->mtx, 0);
+		(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx, 0);
 		rv = ObjGetLen(wrk, oc);
 	}
-	Lck_Unlock(&boc->mtx);
+	Lck_Unlock(&oc->boc->mtx);
 	return (rv);
 }
 

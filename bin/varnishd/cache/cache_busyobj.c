@@ -146,7 +146,7 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 }
 
 void
-VBO_DerefBusyObj(struct worker *wrk, struct busyobj **pbo)
+VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 {
 	struct busyobj *bo;
 

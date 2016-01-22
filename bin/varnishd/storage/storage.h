@@ -33,7 +33,6 @@
 
 struct stevedore;
 struct sess;
-struct busyobj;
 struct objcore;
 struct worker;
 struct lru;

@@ -677,7 +677,7 @@ double BAN_Time(const struct ban *ban);
 
 /* cache_busyobj.c */
 struct busyobj *VBO_GetBusyObj(struct worker *, const struct req *);
-void VBO_DerefBusyObj(struct worker *wrk, struct busyobj **busyobj);
+void VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **busyobj);
 
 /* cache_cli.c [CLI] */
 extern pthread_t cli_thread;
@@ -849,7 +849,7 @@ int ObjIterate(struct worker *, struct objcore *,
     void *priv, objiterate_f *func);
 int ObjGetSpace(struct worker *, struct objcore *, ssize_t *sz, uint8_t **ptr);
 void ObjExtend(struct worker *, struct objcore *, ssize_t l);
-ssize_t ObjWaitExtend(struct worker *, struct objcore *, struct boc *, ssize_t l);
+ssize_t ObjWaitExtend(struct worker *, struct objcore *, ssize_t l);
 void ObjSetState(const struct objcore *, enum boc_state_e next);
 void ObjWaitState(const struct objcore *, enum boc_state_e want);
 void ObjTrimStore(struct worker *, struct objcore *);

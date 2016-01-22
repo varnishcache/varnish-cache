@@ -590,7 +590,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	if (VDI_Http1Pipe(req, bo) < 0)
 		VSLb(bo->vsl, SLT_VCL_Error, "Backend does not support pipe");
 	http_Teardown(bo->bereq);
-	VBO_DerefBusyObj(wrk, &bo);
+	VBO_ReleaseBusyObj(wrk, &bo);
 	THR_SetBusyobj(NULL);
 	return (REQ_FSM_DONE);
 }

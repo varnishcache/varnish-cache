@@ -957,7 +957,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	wrk->vsl = NULL;
 	HSH_DerefBusy(wrk, bo->fetch_objcore);
-	VBO_DerefBusyObj(wrk, &bo);
+	VBO_ReleaseBusyObj(wrk, &bo);
 	THR_SetBusyobj(NULL);
 }
 
