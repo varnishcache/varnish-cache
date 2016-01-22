@@ -1,5 +1,26 @@
 ======================================
-Varnish Cache 4.1.1-beta1 (unreleased)
+Varnish Cache 4.1.1-beta2 (2016-01-22)
+======================================
+
+* Improvements to VCL temperature handling added. This opens for reliably
+  deny warming a cooling VCL from a VMOD.
+
+Bugs fixed
+----------
+
+* 1802_ - Segfault after VCL change
+* 1825_ - Cannot Start Varnish After Just Restarting The Service
+* 1842_ - Handle missing waiting list gracefully.
+* 1845_ - Handle whitespace after floats in test fields
+
+.. _1802: https://www.varnish-cache.org/trac/ticket/1802
+.. _1825: https://www.varnish-cache.org/trac/ticket/1825
+.. _1842: https://www.varnish-cache.org/trac/ticket/1842
+.. _1845: https://www.varnish-cache.org/trac/ticket/1845
+
+
+======================================
+Varnish Cache 4.1.1-beta1 (2016-01-15)
 ======================================
 
 Changes since 4.1.0:
