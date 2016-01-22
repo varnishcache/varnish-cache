@@ -148,7 +148,7 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 			lhs_float = VNUMpfx(b, &q);
 			if (isnan(lhs_float))
 				return (0);
-			if (q != NULL && q > p && !isspace(q[-1]))
+			if (q != NULL && q > b && !isspace(q[-1]))
 				return (0);
 			break;
 		default:
