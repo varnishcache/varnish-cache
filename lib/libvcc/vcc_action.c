@@ -203,9 +203,14 @@ parse_new(struct vcc *tl)
 	s_obj = p;
 	p += strlen(p) + 1;
 	s_init = p;
-	while (p[0] != '\0' || p[1] != '\0')
+	/*
+	 * Check for the end marked (\0\0) followed by s(truct) to avoid
+	 * matching an ENUM half-way through and generating illegal C code.
+	 */
+	while (p[0] != '\0' || p[1] != '\0' || p[2] != 's')
 		p++;
 	p += 2;
+	AZ(strncmp(p, "struct vmod_", 12));
 	s_struct = p;
 	p += strlen(p) + 1;
 	s_fini = p + strlen(p) + 1;

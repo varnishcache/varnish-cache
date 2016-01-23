@@ -43,13 +43,14 @@ struct vmod_debug_obj {
 
 VCL_VOID
 vmod_obj__init(VRT_CTX, struct vmod_debug_obj **op,
-    const char *vcl_name, VCL_STRING s)
+    const char *vcl_name, VCL_STRING s, VCL_ENUM e)
 {
 	struct vmod_debug_obj *o;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	(void)vcl_name;
 	(void)s;
+	(void)e;
 	AN(op);
 	AZ(*op);
 	ALLOC_OBJ(o, VMOD_DEBUG_OBJ_MAGIC);

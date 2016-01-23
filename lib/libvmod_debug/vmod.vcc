@@ -71,7 +71,7 @@ $Function BACKEND no_backend()
 
 Fails at backend selection
 
-$Object obj(STRING)
+$Object obj(STRING, ENUM { one, two, three } number="one")
 
 Test object
 
