@@ -17,7 +17,9 @@ Patches can be sent to varnish-dev@varnish-cache.org.
 Github pull requests
 --------------------
 
-Documentation updates and other non-trivial items for the documentation
-team may be sent as Github pull requests.
+Pull requests are handled like other tickets.
+
+Trivial pull requests (fix typos, etc) are welcomed, but they will be commited
+by a core team member and the author credited in the commit message.
 
 Pull requests outside of this scope will be closed without review.
