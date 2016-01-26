@@ -344,7 +344,7 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 {
 	uint16_t retval;
 	const char *p;
-	const char *b, *e;
+	const char *b = NULL, *e;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
@@ -363,8 +363,12 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 		return (400);
 
 	/* RFC2616, section 5.2, point 1 */
-	if (!strncasecmp(hp->hd[HTTP_HDR_URL].b, "http://", 7)) {
+	if (!strncasecmp(hp->hd[HTTP_HDR_URL].b, "http://", 7))
 		b = e = hp->hd[HTTP_HDR_URL].b + 7;
+	else if (FEATURE(FEATURE_HTTPS_SCHEME) &&
+			!strncasecmp(hp->hd[HTTP_HDR_URL].b, "https://", 8))
+		b = e = hp->hd[HTTP_HDR_URL].b + 8;
+	if (b) {
 		while (*e != '/' && *e != '\0')
 			e++;
 		if (*e == '/') {

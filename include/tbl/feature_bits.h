@@ -59,4 +59,9 @@ FEATURE_BIT(ESI_REMOVE_BOM,		esi_remove_bom,
     "Remove UTF-8 BOM from front of object."
     "Ignore and remove the UTF-8 BOM (0xeb 0xbb 0xbf) from front of object."
 )
+FEATURE_BIT(HTTPS_SCHEME,		https_scheme,
+	"Also split https URIs",
+	"Extract host from full URI in the request line if the scheme is "
+	"https."
+)
 /*lint -restore */
