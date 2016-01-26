@@ -1,0 +1,45 @@
+varnishtest "Test https_scheme parameter"
+
+server s1 {
+	rxreq
+	expect req.url == /bar
+	txresp
+
+	rxreq
+	expect req.url == https://www.example.com/bar
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_deliver {
+		set resp.http.rxhost = req.http.host;
+		set resp.http.rxurl = req.url;
+	}
+} -start
+
+client c1 {
+	txreq -url http://www.example.com/bar
+	rxresp
+	expect resp.http.rxhost == www.example.com
+	expect resp.http.rxurl == /bar
+
+	txreq -url https://www.example.com/bar
+	rxresp
+	expect resp.http.rxhost == ""
+	expect resp.http.rxurl == https://www.example.com/bar
+} -run
+
+varnish v1 -cliok "param.set feature +https_scheme"
+
+client c1 {
+	txreq -url http://www.example.com/bar
+	rxresp
+	expect resp.http.rxhost == www.example.com
+	expect resp.http.rxurl == /bar
+
+	txreq -url https://www.example.com/bar
+	rxresp
+	expect resp.http.rxhost == www.example.com
+	expect resp.http.rxurl == /bar
+} -run
