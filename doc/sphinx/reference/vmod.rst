@@ -356,12 +356,12 @@ The per-call vmod_privs are freed before the per-vcl vmod_priv.
 Event functions
 ===============
 
-VMODs can have an "event" function which is called when a VCL which imports
-the VMOD is loaded, made active, or discarded.  This corresponds to the
-``VCL_EVENT_LOAD``, and ``VCL_EVENT_DISCARD`` events, respectively.  In
-addition, this function will be called when the VCL temperature is changed to
-cold or warm, corresponding to the ``VCL_EVENT_COLD`` and ``VCL_EVENT_WARM``
-events.
+VMODs can have an "event" function which is called when a VCL which
+imports the VMOD is loaded or discarded.  This corresponds to the
+``VCL_EVENT_LOAD`` and ``VCL_EVENT_DISCARD`` events, respectively.
+In addition, this function will be called when the VCL temperature is
+changed to cold or warm, corresponding to the ``VCL_EVENT_COLD`` and
+``VCL_EVENT_WARM`` events.
 
 The first argument to the event function is a VRT context.
 
