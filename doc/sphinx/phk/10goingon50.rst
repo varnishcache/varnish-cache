@@ -104,7 +104,7 @@ So what's the problem and why is this draconian solution better ?
 
 Usually, when FOSS projects start, they are started by "devops",
 Varnish certainly did:  Dag-Erling ran a couple of sites
-with Varnish, as did Kristian, and obviously Anders and Aydun of
+with Varnish, as did Kristian, and obviously Anders and Audun of
 VG did as well, so finding out if you improved or broke things
 during development didn't take long.
 
