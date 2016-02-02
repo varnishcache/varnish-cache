@@ -942,6 +942,7 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, enum var_type fmt)
 	case INT:	f2 = INT; break;
 	case DURATION:	f2 = REAL; break;
 	case BYTES:	f2 = REAL; break;
+	case REAL:	f2 = REAL; break;
 	default:
 		if (tl->t->tok != '*' && tl->t->tok != '/')
 			return;
@@ -1048,6 +1049,8 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 		} else if ((*e)->fmt == BYTES && e2->fmt == BYTES) {
 			/* OK */
 		} else if ((*e)->fmt == INT && e2->fmt == INT) {
+			/* OK */
+		} else if ((*e)->fmt == REAL && e2->fmt == REAL) {
 			/* OK */
 		} else if ((*e)->fmt == DURATION && e2->fmt == DURATION) {
 			/* OK */
