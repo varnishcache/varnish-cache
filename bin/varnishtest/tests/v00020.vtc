@@ -102,10 +102,18 @@ varnish v1 -vcl {
 
 		set req.http.foo = now + 1s;
 		set req.http.foo = now - 1s;
+
 		set req.http.foo = now - now;
 
 		set req.http.foo = 1 + 1;
 		set req.http.foo = 1 - 1;
+		set req.http.foo = 3 * 2;
+		set req.http.foo = 3 / 2;
+
+		set req.http.foo = 3.6 + 1.4;
+		set req.http.foo = 3.6 - 1.4;
+		set req.http.foo = 3.6 * 1.4;
+		set req.http.foo = 3.6 / 1.4;
 
 		set req.ttl = 1s;
 	}
