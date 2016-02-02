@@ -251,6 +251,7 @@ WS_ReleaseP(struct ws *ws, char *ptr)
 	ws->r = NULL;
 	WS_Assert(ws);
 }
+
 int
 WS_Overflowed(const struct ws *ws)
 {
