@@ -775,6 +775,7 @@ VED_Deliver(struct req *req, struct boc *boc, int wantbody)
 		else
 			VDP_push(req, ved_vdp_bytes, ecx->preq, 1);
 		(void)VDP_DeliverObj(req);
+		(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
 	}
 	VDP_close(req);
 }
