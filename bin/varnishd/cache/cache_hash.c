@@ -418,10 +418,11 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		if (BAN_CheckObject(wrk, oc, req))
 			continue;
 
-		vary = ObjGetattr(wrk, oc, OA_VARY, NULL);
-
-		if (vary != NULL && !VRY_Match(req, vary))
-			continue;
+		if (ObjHasAttr(wrk, oc, OA_VARY)) {
+			vary = ObjGetAttr(wrk, oc, OA_VARY, NULL);
+			if (!VRY_Match(req, vary))
+				continue;
+		}
 
 		if (EXP_Ttl(req, &oc->exp) >= req->t_req) {
 			/* If still valid, use it */

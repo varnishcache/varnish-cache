@@ -129,7 +129,7 @@ vbf_beresp2obj(struct busyobj *bo)
 		return (-1);
 
 	if (vary != NULL) {
-		b = ObjSetattr(bo->wrk, bo->fetch_objcore, OA_VARY, varyl,
+		b = ObjSetAttr(bo->wrk, bo->fetch_objcore, OA_VARY, varyl,
 		    VSB_data(vary));
 		VSB_delete(vary);
 	}
@@ -140,7 +140,7 @@ vbf_beresp2obj(struct busyobj *bo)
 	bo->beresp->logtag = SLT_ObjMethod;
 
 	/* Filter into object */
-	bp = ObjSetattr(bo->wrk, bo->fetch_objcore, OA_HEADERS, l2, NULL);
+	bp = ObjSetAttr(bo->wrk, bo->fetch_objcore, OA_HEADERS, l2, NULL);
 	AN(bp);
 	HTTP_Encode(bo->beresp, bp, l2,
 	    bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS);
@@ -727,7 +727,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 	AZ(vbf_beresp2obj(bo));
 
-	if (ObjGetattr(bo->wrk, bo->stale_oc, OA_ESIDATA, NULL) != NULL)
+	if (ObjHasAttr(bo->wrk, bo->stale_oc, OA_ESIDATA))
 		AZ(ObjCopyAttr(bo->wrk, bo->fetch_objcore, bo->stale_oc,
 		    OA_ESIDATA));
 

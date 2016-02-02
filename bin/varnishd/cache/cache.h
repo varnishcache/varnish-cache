@@ -420,20 +420,22 @@ struct objcore {
 
 	struct exp		exp;
 
-	uint16_t		flags;
+	uint8_t			flags;
 #define OC_F_BUSY		(1<<1)
 #define OC_F_PASS		(1<<2)
 #define OC_F_INCOMPLETE		(1<<3)
 #define OC_F_ABANDON		(1<<4)
-#define OC_F_PRIVATE		(1<<8)
-#define OC_F_FAILED		(1<<9)
+#define OC_F_PRIVATE		(1<<5)
+#define OC_F_FAILED		(1<<6)
 
-	uint16_t		exp_flags;
-#define OC_EF_OFFLRU		(1<<4)
-#define OC_EF_MOVE		(1<<10)
-#define OC_EF_INSERT		(1<<11)
-#define OC_EF_EXP		(1<<12)
-#define OC_EF_DYING		(1<<7)
+	uint8_t			exp_flags;
+#define OC_EF_OFFLRU		(1<<1)
+#define OC_EF_MOVE		(1<<2)
+#define OC_EF_INSERT		(1<<3)
+#define OC_EF_EXP		(1<<4)
+#define OC_EF_DYING		(1<<5)
+
+	uint16_t		oa_present;
 
 	unsigned		timer_idx;
 	VTAILQ_ENTRY(objcore)	list;
@@ -860,9 +862,10 @@ void ObjUpdateMeta(struct worker *, struct objcore *);
 void ObjFreeObj(struct worker *, struct objcore *);
 void ObjSlim(struct worker *, struct objcore *oc);
 struct lru *ObjGetLRU(const struct objcore *);
-void *ObjGetattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
+int ObjHasAttr(struct worker *, struct objcore *, enum obj_attr);
+void *ObjGetAttr(struct worker *, struct objcore *, enum obj_attr,
     ssize_t *len);
-void *ObjSetattr(struct worker *, struct objcore *, enum obj_attr attr,
+void *ObjSetAttr(struct worker *, struct objcore *, enum obj_attr,
     ssize_t len, const void *);
 int ObjCopyAttr(struct worker *, struct objcore *, struct objcore *,
     enum obj_attr attr);

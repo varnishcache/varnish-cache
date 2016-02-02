@@ -68,7 +68,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
 	if (HTTP_Decode(req->resp,
-	    ObjGetattr(req->wrk, req->objcore, OA_HEADERS, NULL))) {
+	    ObjGetAttr(req->wrk, req->objcore, OA_HEADERS, NULL))) {
 		req->err_code = 500;
 		req->req_step = R_STP_SYNTH;
 		return (REQ_FSM_MORE);
@@ -267,7 +267,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 		sendbody = 1;
 
 	if (!req->disable_esi && req->resp_len != 0 &&
-	    ObjGetattr(req->wrk, req->objcore, OA_ESIDATA, NULL) != NULL)
+	    ObjHasAttr(wrk, req->objcore, OA_ESIDATA))
 		VDP_push(req, VDP_ESI, NULL, 0);
 
 	if (cache_param->http_gzip_support &&

@@ -254,7 +254,7 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 	while (1) {
 		switch (ecx->state) {
 		case 0:
-			ecx->p = ObjGetattr(req->wrk, req->objcore,
+			ecx->p = ObjGetAttr(req->wrk, req->objcore,
 			    OA_ESIDATA, &l);
 			AN(ecx->p);
 			assert(l > 0);
@@ -699,7 +699,7 @@ ved_stripgzip(struct req *req, const struct boc *boc)
 	 * padding it, as necessary, to a byte boundary.
 	 */
 
-	p = ObjGetattr(req->wrk, req->objcore, OA_GZIPBITS, &l);
+	p = ObjGetAttr(req->wrk, req->objcore, OA_GZIPBITS, &l);
 	AN(p);
 	assert(l == 32);
 	foo.start = vbe64dec(p);

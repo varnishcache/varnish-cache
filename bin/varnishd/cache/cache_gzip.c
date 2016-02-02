@@ -310,7 +310,7 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 		if (req->objcore->flags & OC_F_INCOMPLETE)
 			return (0);	/* No idea about length */
 
-		p = ObjGetattr(req->wrk, req->objcore, OA_GZIPBITS, &dl);
+		p = ObjGetAttr(req->wrk, req->objcore, OA_GZIPBITS, &dl);
 		if (p == NULL || dl != 32)
 			return (0); /* No OA_GZIPBITS yet */
 
@@ -369,7 +369,7 @@ VGZ_UpdateObj(const struct vfp_ctx *vc, struct vgz *vg, enum vgz_ua_e e)
 	if (e == VUA_UPDATE && ii == vg->bits)
 		return;
 	vg->bits = ii;
-	p = ObjSetattr(vc->wrk, vc->oc, OA_GZIPBITS, 32, NULL);
+	p = ObjSetAttr(vc->wrk, vc->oc, OA_GZIPBITS, 32, NULL);
 	AN(p);
 	vbe64enc(p, vg->vz.start_bit);
 	vbe64enc(p + 8, vg->vz.last_bit);

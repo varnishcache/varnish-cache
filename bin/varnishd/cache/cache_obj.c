@@ -297,13 +297,33 @@ ObjGetLRU(const struct objcore *oc)
 }
 
 /*====================================================================
- * ObjGetattr()
+ * ObjHasAttr()
+ *
+ * Check if object has this attribute
+ */
+
+int
+ObjHasAttr(struct worker *wrk, struct objcore *oc, enum obj_attr attr)
+{
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	if (oc->oa_present)
+		return (oc->oa_present & (1 << attr));
+
+	/* resurrected persistent objects don't have oa_present set */
+	return (ObjGetAttr(wrk, oc, attr, NULL) != NULL ? 1 : 0);
+}
+
+/*====================================================================
+ * ObjGetAttr()
  *
  * Get an attribute of the object.
  */
 
 void *
-ObjGetattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
+ObjGetAttr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
    ssize_t *len)
 {
 	const struct obj_methods *om = obj_getmethods(oc);
@@ -315,14 +335,14 @@ ObjGetattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 }
 
 /*====================================================================
- * ObjSetattr()
+ * ObjSetAttr()
  *
  * If ptr is Non-NULL, it points to the new content which is copied into
  * the attribute.  Otherwise the caller will have to do the copying.
  */
 
 void *
-ObjSetattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
+ObjSetAttr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
     ssize_t len, const void *ptr)
 {
 	const struct obj_methods *om = obj_getmethods(oc);
@@ -330,6 +350,8 @@ ObjSetattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	AN(om->objsetattr);
+	assert((int)attr < 16);
+	oc->oa_present |= (1 << attr);
 	return (om->objsetattr(wrk, oc, attr, len, ptr));
 }
 
@@ -362,11 +384,11 @@ ObjCopyAttr(struct worker *wrk, struct objcore *oc, struct objcore *ocs,
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(ocs, OBJCORE_MAGIC);
 
-	vps = ObjGetattr(wrk, ocs, attr, &l);
+	vps = ObjGetAttr(wrk, ocs, attr, &l);
 	// XXX: later we want to have zero-length OA's too
 	if (vps == NULL || l <= 0)
 		return (-1);
-	vpd = ObjSetattr(wrk, oc, attr, l, vps);
+	vpd = ObjSetAttr(wrk, oc, attr, l, vps);
 	if (vpd == NULL)
 		return (-1);
 	return (0);
@@ -397,7 +419,7 @@ ObjSetDouble(struct worker *wrk, struct objcore *oc, enum obj_attr a, double t)
 
 	assert(sizeof t == sizeof u);
 	memcpy(&u, &t, sizeof u);
-	vp = ObjSetattr(wrk, oc, a, sizeof u, NULL);
+	vp = ObjSetAttr(wrk, oc, a, sizeof u, NULL);
 	if (vp == NULL)
 		return (-1);
 	vbe64enc(vp, u);
@@ -412,7 +434,7 @@ ObjGetDouble(struct worker *wrk, struct objcore *oc, enum obj_attr a, double *d)
 	ssize_t l;
 
 	assert(sizeof *d == sizeof u);
-	vp = ObjGetattr(wrk, oc, a, &l);
+	vp = ObjGetAttr(wrk, oc, a, &l);
 	if (vp == NULL)
 		return (-1);
 	if (d != NULL) {
@@ -431,7 +453,7 @@ ObjSetU64(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint64_t t)
 {
 	void *vp;
 
-	vp = ObjSetattr(wrk, oc, a, sizeof t, NULL);
+	vp = ObjSetAttr(wrk, oc, a, sizeof t, NULL);
 	if (vp == NULL)
 		return (-1);
 	vbe64enc(vp, t);
@@ -444,7 +466,7 @@ ObjGetU64(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint64_t *d)
 	void *vp;
 	ssize_t l;
 
-	vp = ObjGetattr(wrk, oc, a, &l);
+	vp = ObjGetAttr(wrk, oc, a, &l);
 	if (vp == NULL || l != sizeof *d)
 		return (-1);
 	if (d != NULL)
@@ -457,7 +479,7 @@ ObjSetU32(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint32_t t)
 {
 	void *vp;
 
-	vp = ObjSetattr(wrk, oc, a, sizeof t, NULL);
+	vp = ObjSetAttr(wrk, oc, a, sizeof t, NULL);
 	if (vp == NULL)
 		return (-1);
 	vbe32enc(vp, t);
@@ -470,7 +492,7 @@ ObjGetU32(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint32_t *d)
 	void *vp;
 	ssize_t l;
 
-	vp = ObjGetattr(wrk, oc, a, &l);
+	vp = ObjGetAttr(wrk, oc, a, &l);
 	if (vp == NULL || l != sizeof *d)
 		return (-1);
 	if (d != NULL)
@@ -486,7 +508,7 @@ ObjCheckFlag(struct worker *wrk, struct objcore *oc, enum obj_flags of)
 {
 	uint8_t *fp;
 
-	fp = ObjGetattr(wrk, oc, OA_FLAGS, NULL);
+	fp = ObjGetAttr(wrk, oc, OA_FLAGS, NULL);
 	AN(fp);
 	return ((*fp) & of);
 }
@@ -496,7 +518,7 @@ ObjSetFlag(struct worker *wrk, struct objcore *oc, enum obj_flags of, int val)
 {
 	uint8_t *fp;
 
-	fp = ObjSetattr(wrk, oc, OA_FLAGS, 1, NULL);
+	fp = ObjSetAttr(wrk, oc, OA_FLAGS, 1, NULL);
 	AN(fp);
 	if (val)
 		(*fp) |= of;

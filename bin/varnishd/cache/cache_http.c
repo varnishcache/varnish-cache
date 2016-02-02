@@ -896,7 +896,7 @@ uint16_t
 HTTP_GetStatusPack(struct worker *wrk, struct objcore *oc)
 {
 	const char *ptr;
-	ptr = ObjGetattr(wrk, oc, OA_HEADERS, NULL);
+	ptr = ObjGetAttr(wrk, oc, OA_HEADERS, NULL);
 	AN(ptr);
 
 	return(vbe16dec(ptr + 2));
@@ -915,7 +915,7 @@ HTTP_IterHdrPack(struct worker *wrk, struct objcore *oc, const char **p)
 	AN(p);
 
 	if (*p == NULL) {
-		ptr = ObjGetattr(wrk, oc, OA_HEADERS, NULL);
+		ptr = ObjGetAttr(wrk, oc, OA_HEADERS, NULL);
 		AN(ptr);
 		ptr += 4;	/* Skip nhd and status */
 		ptr = strchr(ptr, '\0') + 1;	/* Skip :proto: */
@@ -948,7 +948,7 @@ HTTP_GetHdrPack(struct worker *wrk, struct objcore *oc, const char *hdr)
 
 	if (hdr[0] == ':') {
 		/* Special cases */
-		ptr = ObjGetattr(wrk, oc, OA_HEADERS, NULL);
+		ptr = ObjGetAttr(wrk, oc, OA_HEADERS, NULL);
 		AN(ptr);
 		ptr += 4;	/* Skip nhd and status */
 
@@ -991,7 +991,7 @@ HTTP_Merge(struct worker *wrk, struct objcore *oc, struct http *to)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 
-	ptr = ObjGetattr(wrk, oc, OA_HEADERS, NULL);
+	ptr = ObjGetAttr(wrk, oc, OA_HEADERS, NULL);
 	AN(ptr);
 
 	to->status = vbe16dec(ptr + 2);
