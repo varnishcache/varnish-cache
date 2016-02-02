@@ -136,12 +136,13 @@ vcc_ParseImport(struct vcc *tl)
 		    fnpx != NULL ? fnpx : fn);
 		VSB_printf(tl->sb, "\tdlerror: %s\n", dlerror());
 		vcc_ErrWhere(tl, mod);
-		REPLACE(fnpx, NULL);
+		free(fnpx);
 		return;
 	}
 
+	AN(fnpx);
 	fnp = TlDup(tl, fnpx);
-	REPLACE(fnpx, NULL);
+	free(fnpx);
 
 	bprintf(buf, "Vmod_%.*s_Data", PF(mod));
 	vmd = dlsym(hdl, buf);
