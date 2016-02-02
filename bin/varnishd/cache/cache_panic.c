@@ -141,7 +141,7 @@ pan_ws(struct vsb *vsb, const struct ws *ws)
 	if (pan_already(vsb, ws))
 		return;
 	VSB_indent(vsb, 2);
-	if (WS_Overflowed(ws))
+	if (ws->id[0] & 0x20)
 		VSB_printf(vsb, "OVERFLOW ");
 	VSB_printf(vsb, "id = \"%s\",\n",  ws->id);
 	VSB_printf(vsb, "{s,f,r,e} = {%p",  ws->s);
