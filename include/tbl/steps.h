@@ -53,6 +53,7 @@ REQ_STEP(miss,		MISS,		(wrk, req))
 REQ_STEP(fetch,		FETCH,		(wrk, req))
 REQ_STEP(deliver,	DELIVER,	(wrk, req))
 REQ_STEP(synth,		SYNTH,		(wrk, req))
+REQ_STEP(transmit,	TRANSMIT,	(wrk, req))
 #endif
 
 #ifdef FETCH_STEP

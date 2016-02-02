@@ -47,67 +47,6 @@
 #include "vsha256.h"
 #include "vtim.h"
 
-static void
-cnt_vdp(struct req *req, struct boc *boc)
-{
-	const char *r;
-	uint16_t status;
-	int sendbody;
-	intmax_t resp_len;
-
-	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
-
-	resp_len = http_GetContentLength(req->resp);
-	if (boc != NULL)
-		req->resp_len = resp_len;
-	else
-		req->resp_len = ObjGetLen(req->wrk, req->objcore);
-
-	req->res_mode = 0;
-
-	/* RFC 7230, 3.3.3 */
-	status = http_GetStatus(req->resp);
-	if (!strcmp(req->http0->hd[HTTP_HDR_METHOD].b, "HEAD")) {
-		if (req->objcore->flags & OC_F_PASS)
-			sendbody = -1;
-		else
-			sendbody = 0;
-	} else if (status < 200 || status == 204 || status == 304) {
-		req->resp_len = -1;
-		sendbody = 0;
-	} else
-		sendbody = 1;
-
-	if (!req->disable_esi && req->resp_len != 0 &&
-	    ObjGetattr(req->wrk, req->objcore, OA_ESIDATA, NULL) != NULL)
-		VDP_push(req, VDP_ESI, NULL, 0);
-
-	if (cache_param->http_gzip_support &&
-	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
-	    !RFC2616_Req_Gzip(req->http))
-		VDP_push(req, VDP_gunzip, NULL, 1);
-
-	if (cache_param->http_range_support && http_IsStatus(req->resp, 200)) {
-		http_SetHeader(req->resp, "Accept-Ranges: bytes");
-		if (sendbody && http_GetHdr(req->http, H_Range, &r))
-			VRG_dorange(req, r);
-	}
-
-	if (sendbody < 0) {
-		/* Don't touch pass+HEAD C-L */
-		sendbody = 0;
-	} else if (resp_len >= 0 && resp_len == req->resp_len) {
-		/* Reuse C-L header */
-	} else {
-		http_Unset(req->resp, H_Content_Length);
-		if (req->resp_len >= 0 && sendbody)
-			http_PrintfHeader(req->resp,
-			    "Content-Length: %jd", req->resp_len);
-	}
-
-	req->transport->deliver(req, boc, sendbody);
-}
-
 /*--------------------------------------------------------------------
  * Deliver an object to client
  */
@@ -115,7 +54,6 @@ cnt_vdp(struct req *req, struct boc *boc)
 static enum req_fsm_nxt
 cnt_deliver(struct worker *wrk, struct req *req)
 {
-	struct boc *boc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -196,30 +134,8 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	    && req->http->conds && RFC2616_Do_Cond(req))
 		http_PutResponse(req->resp, "HTTP/1.1", 304, NULL);
 
-	/* Grab a ref to the bo if there is one, and hand it down */
-	boc = HSH_RefBusy(req->objcore);
-
-	cnt_vdp(req, boc);
-
-	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
-
-	if (http_HdrIs(req->resp, H_Connection, "close"))
-		req->doclose = SC_RESP_CLOSE;
-
-	if (req->objcore->flags & (OC_F_PRIVATE | OC_F_PASS)) {
-		if (boc != NULL) {
-			HSH_Abandon(req->objcore);
-			ObjWaitState(req->objcore, BOS_FINISHED);
-		}
-		ObjSlim(wrk, req->objcore);
-	}
-
-	if (boc != NULL)
-		HSH_DerefBusy(wrk, req->objcore);
-
-	(void)HSH_DerefObjCore(wrk, &req->objcore);
-	http_Teardown(req->resp);
-	return (REQ_FSM_DONE);
+	req->req_step = R_STP_TRANSMIT;
+	return (REQ_FSM_MORE);
 }
 
 /*--------------------------------------------------------------------
@@ -276,39 +192,128 @@ cnt_synth(struct worker *wrk, struct req *req)
 	}
 	assert(wrk->handling == VCL_RET_DELIVER);
 
-	if (http_HdrIs(req->resp, H_Connection, "close"))
-		req->doclose = SC_RESP_CLOSE;
-
 	req->objcore = HSH_Private(wrk, 0);
 	AZ(req->objcore->boc);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+	szl = -1;
 	if (STV_NewObject(wrk, req->objcore, TRANSIENT_STORAGE, 1024)) {
 		szl = VSB_len(synth_body);
 		assert(szl >= 0);
-	} else
-		szl = -1;
-	if (szl > 0) {
 		sz = szl;
-		if (ObjGetSpace(wrk, req->objcore, &sz, &ptr) && sz >= szl) {
+		if (sz > 0 &&
+		    ObjGetSpace(wrk, req->objcore, &sz, &ptr) && sz >= szl) {
 			memcpy(ptr, VSB_data(synth_body), szl);
 			ObjExtend(wrk, req->objcore, szl);
-		} else
+		} else if (sz > 0) {
 			szl = -1;
+		}
 	}
+
+	VSB_delete(synth_body);
+
 	if (szl < 0) {
 		VSLb(req->vsl, SLT_Error, "Could not get storage");
 		req->doclose = SC_OVERLOAD;
-	} else {
-		cnt_vdp(req, NULL);
+		VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
+		(void)HSH_DerefObjCore(wrk, &req->objcore);
+		http_Teardown(req->resp);
+		return (REQ_FSM_DONE);
 	}
 
-	(void)HSH_DerefObjCore(wrk, &req->objcore);
-	VSB_delete(synth_body);
+	req->req_step = R_STP_TRANSMIT;
+	return (REQ_FSM_MORE);
+}
+
+/*--------------------------------------------------------------------
+ * The mechanics of sending a response (from deliver or synth)
+ */
+
+static enum req_fsm_nxt
+cnt_transmit(struct worker *wrk, struct req *req)
+{
+	struct boc *boc;
+	const char *r;
+	uint16_t status;
+	int sendbody;
+	intmax_t resp_len;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	/* Grab a ref to the bo if there is one, and hand it down */
+	boc = HSH_RefBusy(req->objcore);
+
+	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
+
+	resp_len = http_GetContentLength(req->resp);
+	if (boc != NULL)
+		req->resp_len = resp_len;
+	else
+		req->resp_len = ObjGetLen(req->wrk, req->objcore);
+
+	req->res_mode = 0;
+
+	/* RFC 7230, 3.3.3 */
+	status = http_GetStatus(req->resp);
+	if (!strcmp(req->http0->hd[HTTP_HDR_METHOD].b, "HEAD")) {
+		if (req->objcore->flags & OC_F_PASS)
+			sendbody = -1;
+		else
+			sendbody = 0;
+	} else if (status < 200 || status == 204 || status == 304) {
+		req->resp_len = -1;
+		sendbody = 0;
+	} else
+		sendbody = 1;
+
+	if (!req->disable_esi && req->resp_len != 0 &&
+	    ObjGetattr(req->wrk, req->objcore, OA_ESIDATA, NULL) != NULL)
+		VDP_push(req, VDP_ESI, NULL, 0);
+
+	if (cache_param->http_gzip_support &&
+	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
+	    !RFC2616_Req_Gzip(req->http))
+		VDP_push(req, VDP_gunzip, NULL, 1);
+
+	if (cache_param->http_range_support && http_IsStatus(req->resp, 200)) {
+		http_SetHeader(req->resp, "Accept-Ranges: bytes");
+		if (sendbody && http_GetHdr(req->http, H_Range, &r))
+			VRG_dorange(req, r);
+	}
+
+	if (sendbody < 0) {
+		/* Don't touch pass+HEAD C-L */
+		sendbody = 0;
+	} else if (resp_len >= 0 && resp_len == req->resp_len) {
+		/* Reuse C-L header */
+	} else {
+		http_Unset(req->resp, H_Content_Length);
+		if (req->resp_len >= 0 && sendbody)
+			http_PrintfHeader(req->resp,
+			    "Content-Length: %jd", req->resp_len);
+	}
+
+	req->transport->deliver(req, boc, sendbody);
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
-	req->err_code = 0;
-	req->err_reason = NULL;
+	if (http_HdrIs(req->resp, H_Connection, "close"))
+		req->doclose = SC_RESP_CLOSE;
+
+	if (req->objcore->flags & (OC_F_PRIVATE | OC_F_PASS)) {
+		if (boc != NULL) {
+			HSH_Abandon(req->objcore);
+			ObjWaitState(req->objcore, BOS_FINISHED);
+		}
+		ObjSlim(wrk, req->objcore);
+	}
+
+	if (boc != NULL)
+		HSH_DerefBusy(wrk, req->objcore);
+
+	(void)HSH_DerefObjCore(wrk, &req->objcore);
+	http_Teardown(req->resp);
+
 	return (REQ_FSM_DONE);
 }
 
