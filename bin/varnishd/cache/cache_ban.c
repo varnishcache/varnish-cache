@@ -143,10 +143,10 @@ ban_equal(const uint8_t *bs1, const uint8_t *bs2)
 
 	/*
 	 * Compare two ban-strings.
-	 * The memcmp() is safe because the first field we compare is the
-	 * length and that is part of the fixed header structure.
 	 */
 	u = vbe32dec(bs1 + BANS_LENGTH);
+	if (u != vbe32dec(bs2 + BANS_LENGTH))
+		return (0);
 	return (!memcmp(bs1 + BANS_LENGTH, bs2 + BANS_LENGTH, u - BANS_LENGTH));
 }
 
