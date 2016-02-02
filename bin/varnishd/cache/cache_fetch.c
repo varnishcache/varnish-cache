@@ -1006,8 +1006,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	oc->boc->vary = req->vary_b;
 	req->vary_b = NULL;
 
-	if (mode != VBF_BACKGROUND)
-		HSH_Ref(oc);
+	HSH_Ref(oc);
 	AZ(bo->fetch_objcore);
 	bo->fetch_objcore = oc;
 
@@ -1047,5 +1046,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	VSLb_ts_req(req, "Fetch", W_TIM_real(wrk));
 	assert(oc->boc == boc);
 	HSH_DerefBusy(wrk, oc);
+	if (mode == VBF_BACKGROUND)
+		(void)HSH_DerefObjCore(wrk, &oc);
 	THR_SetBusyobj(NULL);
 }
