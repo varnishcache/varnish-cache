@@ -283,6 +283,8 @@ http1_body_status(const struct http *hp, struct http_conn *htc)
 	htc->content_length = -1;
 
 	cl = http_GetContentLength(hp);
+	if (cl == -2)
+		return (BS_ERROR);
 	if (http_GetHdr(hp, H_Transfer_Encoding, &b)) {
 		if (strcasecmp(b, "chunked"))
 			return (BS_ERROR);
@@ -295,8 +297,6 @@ http1_body_status(const struct http *hp, struct http_conn *htc)
 		}
 		return (BS_CHUNKED);
 	}
-	if (cl == -2)
-		return (BS_ERROR);
 	if (cl >= 0) {
 		htc->content_length = cl;
 		return (cl == 0 ? BS_NONE : BS_LENGTH);
@@ -376,10 +376,13 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 	p = http_GetMethod(hp);
 	AN(p);
 
-	/* We handle EOF bodies only for PUT and POST */
-	if (htc->body_status == BS_EOF &&
-	    strcasecmp(p, "put") && strcasecmp(p, "post"))
+	if (htc->body_status == BS_EOF) {
+		assert(hp->protover == 10);
+		/* RFC1945 8.3 p32 and D.1.1 p58 */
+		if (!strcasecmp(p, "post") || !strcasecmp(p, "put"))
+			return (400);
 		htc->body_status = BS_NONE;
+	}
 
 	/* HEAD with a body is a hard error */
 	if (htc->body_status != BS_NONE && !strcasecmp(p, "head"))
