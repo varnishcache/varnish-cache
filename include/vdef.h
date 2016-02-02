@@ -78,6 +78,6 @@
  */
 #define __match_proto__(xxx)		/*lint -e{818} */
 
-#define NEEDLESS_RETURN(foo)	return (foo)
+#define NEEDLESS_RETURN		return
 
 #endif /* VDEF_H_INCLUDED */

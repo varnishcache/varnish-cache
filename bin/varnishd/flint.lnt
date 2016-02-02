@@ -104,8 +104,6 @@
 
 +libh mgt_event.h
 
--emacro(527, NEEDLESS_RETURN)	// unreachable code
-
 -sem(BAN_Free, custodial(1))
 -sem(EXP_Inject, custodial(1))
 -sem(HSH_Insert, custodial(3))
