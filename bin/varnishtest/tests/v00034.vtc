@@ -20,7 +20,7 @@ varnish v1 -errvcl {Backend s1 redefined} {
 }
 
 varnish v1 -errvcl {Probe p1 redefined} {
+	probe p1 { }
+	probe p1 { }
 	backend s1 { .host = "127.0.0.1"; .probe = p1;}
-	probe p1 { }
-	probe p1 { }
 }
