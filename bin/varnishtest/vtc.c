@@ -71,6 +71,51 @@ struct macro {
 
 static VTAILQ_HEAD(,macro) macro_list = VTAILQ_HEAD_INITIALIZER(macro_list);
 
+/**********************************************************************/
+
+static struct macro *
+macro_def_int(const char *name, const char *fmt, va_list ap)
+{
+	struct macro *m;
+	char buf[256];
+
+	VTAILQ_FOREACH(m, &macro_list, list)
+		if (!strcmp(name, m->name))
+			break;
+	if (m == NULL) {
+		ALLOC_OBJ(m, MACRO_MAGIC);
+		AN(m);
+		REPLACE(m->name, name);
+		AN(m->name);
+		VTAILQ_INSERT_TAIL(&macro_list, m, list);
+	}
+	AN(m);
+	vbprintf(buf, fmt, ap);
+	REPLACE(m->val, buf);
+	AN(m->val);
+	return (m);
+}
+
+
+/**********************************************************************
+ * This is for defining macros before we fork the child process which
+ * runs the test-case.
+ */
+
+void
+extmacro_def(const char *name, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	(void)macro_def_int(name, fmt, ap);
+	va_end(ap);
+}
+
+/**********************************************************************
+ * Below this point is run inside the testing child-process.
+ */
+
 static pthread_mutex_t		macro_mtx;
 
 static void
@@ -84,7 +129,6 @@ macro_def(struct vtclog *vl, const char *instance, const char *name,
     const char *fmt, ...)
 {
 	char buf1[256];
-	char buf2[256];
 	struct macro *m;
 	va_list ap;
 
@@ -96,21 +140,9 @@ macro_def(struct vtclog *vl, const char *instance, const char *name,
 	}
 
 	AZ(pthread_mutex_lock(&macro_mtx));
-	VTAILQ_FOREACH(m, &macro_list, list)
-		if (!strcmp(name, m->name))
-			break;
-	if (m == NULL) {
-		ALLOC_OBJ(m, MACRO_MAGIC);
-		AN(m);
-		REPLACE(m->name, name);
-		VTAILQ_INSERT_TAIL(&macro_list, m, list);
-	}
-	AN(m);
 	va_start(ap, fmt);
-	vbprintf(buf2, fmt, ap);
+	m = macro_def_int(name, fmt, ap);
 	va_end(ap);
-	REPLACE(m->val, buf2);
-	AN(m->val);
 	vtc_log(vl, 4, "macro def %s=%s", name, m->val);
 	AZ(pthread_mutex_unlock(&macro_mtx));
 }
@@ -147,7 +179,6 @@ macro_get(const char *b, const char *e)
 	int l;
 	char *retval = NULL;
 
-
 	l = e - b;
 
 	if (l == 4 && !memcmp(b, "date", l)) {
@@ -163,7 +194,7 @@ macro_get(const char *b, const char *e)
 		CHECK_OBJ_NOTNULL(m, MACRO_MAGIC);
 		if (!strncmp(b, m->name, l) && m->name[l] == '\0')
 			break;
-}
+	}
 	if (m != NULL)
 		retval = strdup(m->val);
 	AZ(pthread_mutex_unlock(&macro_mtx));
@@ -200,7 +231,7 @@ macro_expand(struct vtclog *vl, const char *text)
 			VSB_delete(vsb);
 			vtc_log(vl, 0, "Macro ${%.*s} not found", (int)(q - p),
 			    p);
-			return (NULL);
+			NEEDLESS_RETURN (NULL);
 		}
 		VSB_printf(vsb, "%s", m);
 		free(m);
@@ -208,56 +239,6 @@ macro_expand(struct vtclog *vl, const char *text)
 	}
 	AZ(VSB_finish(vsb));
 	return (vsb);
-}
-
-/*
- * extmacro is a list of macro's that are defined from the
- * command line and are applied to the macro list of each test
- * instance. No locking is required as they are set before any tests
- *  are started.
- */
-
-struct extmacro {
-	unsigned		magic;
-#define EXTMACRO_MAGIC		0x51019ded
-	VTAILQ_ENTRY(extmacro)	list;
-	char			*name;
-	char			*val;
-};
-
-static VTAILQ_HEAD(, extmacro) extmacro_list =
-	VTAILQ_HEAD_INITIALIZER(extmacro_list);
-
-void
-extmacro_def(const char *name, const char *fmt, ...)
-{
-	char buf[256];
-	struct extmacro *m;
-	va_list ap;
-
-	VTAILQ_FOREACH(m, &extmacro_list, list)
-		if (!strcmp(name, m->name))
-			break;
-	if (m == NULL && fmt != NULL) {
-		ALLOC_OBJ(m, EXTMACRO_MAGIC);
-		AN(m);
-		REPLACE(m->name, name);
-		AN(m->name);
-		VTAILQ_INSERT_TAIL(&extmacro_list, m, list);
-	}
-	if (fmt != NULL) {
-		AN(m);
-		va_start(ap, fmt);
-		vbprintf(buf, fmt, ap);
-		va_end(ap);
-		REPLACE(m->val, buf);
-		AN(m->val);
-	} else if (m != NULL) {
-		VTAILQ_REMOVE(&extmacro_list, m, list);
-		REPLACE(m->name, NULL);
-		REPLACE(m->val, NULL);
-		FREE_OBJ(m);
-	}
 }
 
 /**********************************************************************
@@ -385,7 +366,7 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 				break;
 		if (cp->name == NULL) {
 			vtc_log(vl, 0, "Unknown command: \"%s\"", token_s[0]);
-			return;
+			NEEDLESS_RETURN;
 		}
 
 		assert(cp->cmd != NULL);
@@ -645,7 +626,6 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 {
 	unsigned old_err;
 	FILE *f;
-	struct extmacro *m;
 
 	(void)signal(SIGPIPE, SIG_IGN);
 
@@ -656,12 +636,6 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	init_macro();
 	init_sema();
 	init_server();
-
-	/* Apply extmacro definitions */
-	VTAILQ_FOREACH(m, &extmacro_list, list) {
-		CHECK_OBJ_NOTNULL(m, EXTMACRO_MAGIC);
-		macro_def(vltop, NULL, m->name, "%s", m->val);
-	}
 
 	/*
 	 * We need an IP number which will not repond, ever, and that is a
