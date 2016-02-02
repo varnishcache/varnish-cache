@@ -295,7 +295,7 @@ mgt_launch_child(struct cli *cli)
 	unsigned u;
 	char *p;
 	struct vev *e;
-	int i, cp[2];
+	int i, j, k, cp[2];
 	struct sigaction sa;
 
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
@@ -351,13 +351,29 @@ mgt_launch_child(struct cli *cli)
 		assert(dup2(heritage.std_fd, STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(heritage.std_fd, STDERR_FILENO) == STDERR_FILENO);
 
-		/* Close anything we shouldn't know about */
+		/*
+		 * Close all FDs the child shouldn't know about
+		 *
+		 * We cannot just close these filedescriptors, some random
+		 * library routine might miss it later on and wantonly close
+		 * a FD we use at that point in time. (See bug #1841).
+		 * We close the FD and replace it with /dev/null instead,
+		 * That prevents security leakage, and gives the library
+		 * code a valid FD to close when it discovers the changed
+		 * circumstances.
+		 */
 		closelog();
 
 		for (i = STDERR_FILENO + 1; i < CLOSE_FD_UP_TO; i++) {
 			if (vbit_test(fd_map, i))
 				continue;
-			(void)(close(i) == 0);
+			if (close(i) == 0) {
+				k = open("/dev/null", O_RDONLY);
+				assert(k >= 0);
+				j = dup2(k, i);
+				assert(j == i);
+				AZ(close(k));
+			}
 		}
 #ifdef HAVE_SETPROCTITLE
 		setproctitle("Varnish-Chld %s", heritage.name);
