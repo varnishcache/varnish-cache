@@ -534,6 +534,7 @@ vcc_file_source(const struct vcp * const vcp, struct vsb *sb, const char *fn)
 	if (VFIL_searchpath(vcp->vcl_path, NULL, &f, fn, &fnp) || f == NULL) {
 		VSB_printf(sb, "Cannot read file '%s' (%s)\n",
 		    fnp != NULL ? fnp : fn, strerror(errno));
+		REPLACE(fnp, NULL);
 		return (NULL);
 	}
 	sp = vcc_new_source(f, NULL, fnp);

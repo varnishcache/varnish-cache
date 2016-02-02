@@ -61,7 +61,7 @@ void
 vcc_ParseImport(struct vcc *tl)
 {
 	void *hdl;
-	char fn[1024], *fnp;
+	char fn[1024], *fnp, *fnpx;
 	char buf[256];
 	struct token *mod, *t1;
 	struct inifin *ifp;
@@ -130,13 +130,18 @@ vcc_ParseImport(struct vcc *tl)
 	SkipToken(tl, ';');
 
 	if (VFIL_searchpath(tl->param->vmod_path,
-	    vcc_path_dlopen, &hdl, fn, &fnp)) {
+	    vcc_path_dlopen, &hdl, fn, &fnpx)) {
 		VSB_printf(tl->sb, "Could not load VMOD %.*s\n", PF(mod));
-		VSB_printf(tl->sb, "\tFile name: %s\n", fnp != NULL ? fnp : fn);
+		VSB_printf(tl->sb, "\tFile name: %s\n",
+		    fnpx != NULL ? fnpx : fn);
 		VSB_printf(tl->sb, "\tdlerror: %s\n", dlerror());
 		vcc_ErrWhere(tl, mod);
+		REPLACE(fnpx, NULL);
 		return;
 	}
+
+	fnp = TlDup(tl, fnpx);
+	REPLACE(fnpx, NULL);
 
 	bprintf(buf, "Vmod_%.*s_Data", PF(mod));
 	vmd = dlsym(hdl, buf);
@@ -195,7 +200,6 @@ vcc_ParseImport(struct vcc *tl)
 	VSB_printf(ifp->ini, "\t    \"%.*s\",\n", PF(mod));
 	VSB_printf(ifp->ini, "\t    ");
 	EncString(ifp->ini, fnp, NULL, 0);
-	free(fnp);
 	VSB_printf(ifp->ini, ",\n");
 	AN(vmd);
 	AN(vmd->file_id);
