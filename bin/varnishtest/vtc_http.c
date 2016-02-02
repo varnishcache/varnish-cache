@@ -223,10 +223,10 @@ cmd_var_resolve(struct http *hp, char *spec)
 		return(hp->bodylen);
 	if (!strcmp(spec, "resp.body"))
 		return(hp->body != NULL ? hp->body : spec);
-	if (!memcmp(spec, "req.http.", 9)) {
+	if (!strncmp(spec, "req.http.", 9)) {
 		hh = hp->req;
 		hdr = spec + 9;
-	} else if (!memcmp(spec, "resp.http.", 10)) {
+	} else if (!strncmp(spec, "resp.http.", 10)) {
 		hh = hp->resp;
 		hdr = spec + 10;
 	} else
