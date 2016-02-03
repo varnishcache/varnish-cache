@@ -167,7 +167,7 @@ EXP_Poke(struct objcore *oc)
 }
 
 /*--------------------------------------------------------------------
- * Inject an object with a reference into the lru/binheap.
+ * Inject an object with a reference into the binheap.
  *
  * This can either come from a stevedore (persistent) during startup
  * or from EXP_Insert() below.
@@ -288,30 +288,14 @@ EXP_Deregister_Callback(uintptr_t *handle)
  */
 
 static void
-exp_inbox(struct exp_priv *ep, struct objcore *oc, double now, unsigned flags)
+exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags)
 {
-	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(ep, EXP_PRIV_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Inbox p=%p e=%.9f f=0x%x", oc,
 	    oc->timer_when, oc->flags);
-
-	lru = ObjGetLRU(oc);
-	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
-
-	Lck_Lock(&lru->mtx);
-	if (isnan(oc->last_lru)) {
-		if (!(oc->flags & OC_F_DYING)) {
-			VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
-			oc->last_lru = now;
-		}
-	} else if (oc->flags & OC_F_DYING) {
-		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
-		oc->last_lru = NAN;
-	}
-	Lck_Unlock(&lru->mtx);
 
 	if (oc->flags & OC_F_DYING) {
 		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Kill p=%p e=%.9f f=0x%x", oc,
@@ -360,8 +344,6 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now, unsigned flags)
 static double
 exp_expire(struct exp_priv *ep, double now)
 {
-
-	struct lru *lru;
 	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(ep, EXP_PRIV_MAGIC);
@@ -369,6 +351,8 @@ exp_expire(struct exp_priv *ep, double now)
 	oc = binheap_root(ep->heap);
 	if (oc == NULL)
 		return (now + 355./113.);
+	VSLb(&ep->vsl, SLT_ExpKill, "EXP_expire p=%p e=%.9f f=0x%x", oc,
+	    oc->timer_when, oc->flags);
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
@@ -380,21 +364,6 @@ exp_expire(struct exp_priv *ep, double now)
 
 	if (!(oc->flags & OC_F_DYING))
 		ObjKill(oc);
-
-	lru = ObjGetLRU(oc);
-	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
-	Lck_Lock(&lru->mtx);
-
-	if (isnan(oc->last_lru)) {
-		oc = NULL;
-	} else {
-		oc->last_lru = NAN;
-		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
-	}
-	Lck_Unlock(&lru->mtx);
-
-	if (oc == NULL)
-		return (now + 1e-3);		// XXX ?
 
 	/* Remove from binheap */
 	assert(oc->timer_idx != BINHEAP_NOIDX);
@@ -469,7 +438,7 @@ exp_thread(struct worker *wrk, void *priv)
 		t = VTIM_real();
 
 		if (oc != NULL)
-			exp_inbox(ep, oc, t, flags);
+			exp_inbox(ep, oc, flags);
 		else
 			tnext = exp_expire(ep, t);
 	}

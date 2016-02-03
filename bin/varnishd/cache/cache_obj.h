@@ -70,3 +70,4 @@ struct obj_methods {
 	objsetattr_f	*objsetattr;
 	objtouch_f	*objtouch;
 };
+

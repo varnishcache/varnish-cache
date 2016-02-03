@@ -121,6 +121,7 @@ uintmax_t STV_FileSize(int fd, const char *size, unsigned *granularity,
 
 struct lru *LRU_Alloc(void);
 void LRU_Free(struct lru *lru);
+int EXP_NukeOne(struct worker *wrk, struct lru *lru);
 
 /*--------------------------------------------------------------------*/
 extern const struct stevedore sma_stevedore;

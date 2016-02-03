@@ -39,6 +39,8 @@
 #include "storage/storage.h"
 #include "storage/storage_simple.h"
 
+#include "vtim.h"
+
 /*--------------------------------------------------------------------
  * Attempt to make space by nuking the oldest object on the LRU list
  * which isn't in use.
@@ -247,12 +249,22 @@ static void __match_proto__(objfree_f)
 sml_objfree(struct worker *wrk, struct objcore *oc)
 {
 	struct object *o;
+	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	sml_slim(wrk, oc);
 	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
 	o->magic = 0;
+
+	lru = ObjGetLRU(oc);
+	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
+	Lck_Lock(&lru->mtx);
+	if (!isnan(oc->last_lru)) {
+		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
+		oc->last_lru = NAN;
+	}
+	Lck_Unlock(&lru->mtx);
 
 	sml_stv_free(oc->stobj->stevedore, o->objstore);
 
@@ -536,19 +548,28 @@ sml_stable(struct worker *wrk, struct objcore *oc, struct boc *boc)
 {
 	const struct stevedore *stv;
 	struct storage *st;
+	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
 
-	if (boc->stevedore_priv == NULL)
-		return;
-	CAST_OBJ_NOTNULL(st, boc->stevedore_priv, STORAGE_MAGIC);
-	boc->stevedore_priv = 0;
-	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-	stv = oc->stobj->stevedore;
-	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-	sml_stv_free(stv, st);
+	if (boc->stevedore_priv != NULL) {
+		/* Free any leftovers from Trim */
+		CAST_OBJ_NOTNULL(st, boc->stevedore_priv, STORAGE_MAGIC);
+		boc->stevedore_priv = 0;
+		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+		stv = oc->stobj->stevedore;
+		CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+		sml_stv_free(stv, st);
+	}
+
+	lru = ObjGetLRU(oc);
+	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
+	Lck_Lock(&lru->mtx);
+	VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
+	oc->last_lru = VTIM_real();
+	Lck_Unlock(&lru->mtx);
 }
 
 static void * __match_proto__(objgetattr_f)
