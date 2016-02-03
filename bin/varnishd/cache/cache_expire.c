@@ -299,6 +299,7 @@ EXP_NukeOne(struct worker *wrk, struct lru *lru)
 		if (ObjKill(wrk, oc)) {
 			VSC_C_main->n_lru_nuked++; // XXX per lru ?
 			VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
+			oc->lru_flags |= OC_LRU_OFFLRU;
 			break;
 		}
 	}
