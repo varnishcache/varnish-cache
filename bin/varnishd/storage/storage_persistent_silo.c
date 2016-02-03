@@ -169,7 +169,8 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		HSH_Insert(wrk, so->hash, oc);
 		oc->exp = so->exp;
 		sg->nobj++;
-		EXP_Inject(wrk, oc, sg->lru);
+		oc->last_lru = NAN;
+		EXP_Inject(wrk, oc);
 	}
 	Pool_Sumstat(wrk);
 	sg->flags |= SMP_SEG_LOADED;

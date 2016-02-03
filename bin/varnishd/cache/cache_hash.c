@@ -76,6 +76,7 @@ hsh_NewObjCore(struct worker *wrk, int boc)
 	AN(oc);
 	wrk->stats->n_objectcore++;
 	oc->flags |= OC_F_BUSY | OC_F_INCOMPLETE;
+	oc->last_lru = NAN;
 	if (boc) {
 		ALLOC_OBJ(oc->boc, BOC_MAGIC);
 		AN(oc->boc);

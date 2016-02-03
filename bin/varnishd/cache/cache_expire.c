@@ -174,22 +174,15 @@ EXP_Poke(struct objcore *oc)
  */
 
 void
-EXP_Inject(struct worker *wrk, struct objcore *oc, struct lru *lru)
+EXP_Inject(struct worker *wrk, struct objcore *oc)
 {
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	AZ(isnan(oc->last_lru));
 	AZ(oc->exp_flags & (OC_EF_INSERT | OC_EF_MOVE));
 	AZ(oc->flags & OC_F_DYING);
 	AZ(oc->flags & OC_F_BUSY);
-	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
-
-	Lck_Lock(&lru->mtx);
-	lru->n_objcore++;
-	oc->last_lru = NAN;
-	Lck_Unlock(&lru->mtx);
 
 	oc->timer_when = EXP_When(&oc->exp);
 
@@ -207,24 +200,14 @@ EXP_Inject(struct worker *wrk, struct objcore *oc, struct lru *lru)
 void
 EXP_Insert(struct worker *wrk, struct objcore *oc)
 {
-	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	HSH_Ref(oc);
 
-	AZ(isnan(oc->last_lru));
 	AZ(oc->exp_flags & (OC_EF_INSERT | OC_EF_MOVE));
 	AZ(oc->flags & OC_F_DYING);
 	AN(oc->flags & OC_F_BUSY);
-
-	lru = ObjGetLRU(oc);
-	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
-
-	Lck_Lock(&lru->mtx);
-	lru->n_objcore++;
-	oc->last_lru = NAN;
-	Lck_Unlock(&lru->mtx);
 
 	exp_event(wrk, oc, EXP_INSERT);
 	exp_mail_it(oc, OC_EF_INSERT | OC_EF_EXP | OC_EF_MOVE);
