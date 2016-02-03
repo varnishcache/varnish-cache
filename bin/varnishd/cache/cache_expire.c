@@ -141,7 +141,6 @@ exp_mail_it(struct objcore *oc, uint8_t cmds)
 {
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	AN(isnan(oc->last_lru));
 	Lck_Lock(&exphdl->mtx);
 	if (!(oc->exp_flags & OC_EF_POSTED)) {
 		if (oc->flags & OC_F_DYING)
@@ -239,7 +238,6 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 void
 EXP_Rearm(struct objcore *oc, double now, double ttl, double grace, double keep)
 {
-	struct lru *lru;
 	double when;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -259,22 +257,7 @@ EXP_Rearm(struct objcore *oc, double now, double ttl, double grace, double keep)
 	VSL(SLT_ExpKill, 0, "EXP_Rearm p=%p E=%.9f e=%.9f f=0x%x", oc,
 	    oc->timer_when, when, oc->flags);
 
-	if (when > oc->exp.t_origin && when > oc->timer_when)
-		return;
-
-	lru = ObjGetLRU(oc);
-	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
-
-	Lck_Lock(&lru->mtx);
-	if (isnan(oc->last_lru)) {
-		oc = NULL;
-	} else {
-		oc->last_lru = NAN;
-		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
-	}
-	Lck_Unlock(&lru->mtx);
-
-	if (oc != NULL)
+	if (when < oc->exp.t_origin || when < oc->timer_when)
 		exp_mail_it(oc, OC_EF_MOVE);
 }
 
@@ -336,11 +319,14 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now, unsigned flags)
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	Lck_Lock(&lru->mtx);
-	AN(isnan(oc->last_lru));
-	oc->last_lru = now;
-	if (!(oc->flags & OC_F_DYING)) {
-		VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
-		oc->last_lru = now;
+	if (isnan(oc->last_lru)) {
+		if (!(oc->flags & OC_F_DYING)) {
+			VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
+			oc->last_lru = now;
+		}
+	} else if (oc->flags & OC_F_DYING) {
+		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
+		oc->last_lru = NAN;
 	}
 	Lck_Unlock(&lru->mtx);
 
