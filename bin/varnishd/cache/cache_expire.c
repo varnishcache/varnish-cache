@@ -143,11 +143,13 @@ exp_mail_it(struct objcore *oc, uint8_t cmds)
 
 	AN(isnan(oc->last_lru));
 	Lck_Lock(&exphdl->mtx);
-	oc->exp_flags |= cmds;
-	if (oc->flags & OC_F_DYING)
-		VSTAILQ_INSERT_HEAD(&exphdl->inbox, oc, exp_list);
-	else
-		VSTAILQ_INSERT_TAIL(&exphdl->inbox, oc, exp_list);
+	if (!(oc->exp_flags & OC_EF_POSTED)) {
+		if (oc->flags & OC_F_DYING)
+			VSTAILQ_INSERT_HEAD(&exphdl->inbox, oc, exp_list);
+		else
+			VSTAILQ_INSERT_TAIL(&exphdl->inbox, oc, exp_list);
+	}
+	oc->exp_flags |= cmds | OC_EF_POSTED;
 	VSC_C_main->exp_mailed++;
 	AZ(pthread_cond_signal(&exphdl->condvar));
 	Lck_Unlock(&exphdl->mtx);
@@ -355,9 +357,8 @@ EXP_Deregister_Callback(uintptr_t *handle)
  */
 
 static void
-exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
+exp_inbox(struct exp_priv *ep, struct objcore *oc, double now, unsigned flags)
 {
-	unsigned flags;
 	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(ep, EXP_PRIV_MAGIC);
@@ -368,12 +369,6 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 
 	lru = ObjGetLRU(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
-
-	/* Evacuate our action-flags, and put it back on the LRU list */
-	Lck_Lock(&ep->mtx);
-	flags = oc->exp_flags;
-	oc->exp_flags &= ~(OC_EF_INSERT | OC_EF_MOVE);
-	Lck_Unlock(&ep->mtx);
 
 	Lck_Lock(&lru->mtx);
 	AN(isnan(oc->last_lru));
@@ -512,6 +507,7 @@ exp_thread(struct worker *wrk, void *priv)
 	struct objcore *oc;
 	double t = 0, tnext = 0;
 	struct exp_priv *ep;
+	unsigned flags = 0;
 
 	CAST_OBJ_NOTNULL(ep, priv, EXP_PRIV_MAGIC);
 	ep->wrk = wrk;
@@ -526,6 +522,9 @@ exp_thread(struct worker *wrk, void *priv)
 			VSTAILQ_REMOVE(&ep->inbox, oc, objcore, exp_list);
 			VSC_C_main->exp_received++;
 			tnext = 0;
+			flags = oc->exp_flags;
+			oc->exp_flags &=
+			    ~(OC_EF_INSERT | OC_EF_MOVE | OC_EF_POSTED);
 		} else if (tnext > t) {
 			VSL_Flush(&ep->vsl, 0);
 			Pool_Sumstat(wrk);
@@ -536,7 +535,7 @@ exp_thread(struct worker *wrk, void *priv)
 		t = VTIM_real();
 
 		if (oc != NULL)
-			exp_inbox(ep, oc, t);
+			exp_inbox(ep, oc, t, flags);
 		else
 			tnext = exp_expire(ep, t);
 	}

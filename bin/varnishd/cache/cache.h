@@ -430,6 +430,7 @@ struct objcore {
 #define OC_F_DYING		(1<<7)
 
 	uint8_t			exp_flags;
+#define OC_EF_POSTED		(1<<1)
 #define OC_EF_MOVE		(1<<2)
 #define OC_EF_INSERT		(1<<3)
 #define OC_EF_EXP		(1<<4)
