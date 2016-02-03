@@ -393,7 +393,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		assert(oc->objhead == oh);
 
-		if (oc->exp_flags & OC_EF_DYING)
+		if (oc->flags & OC_F_DYING)
 			continue;
 		if (oc->flags & OC_F_FAILED)
 			continue;
@@ -415,8 +415,10 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		if (oc->exp.ttl <= 0.)
 			continue;
 
-		if (BAN_CheckObject(wrk, oc, req))
+		if (BAN_CheckObject(wrk, oc, req)) {
+			oc->flags |= OC_F_DYING;
 			continue;
+		}
 
 		if (ObjHasAttr(wrk, oc, OA_VARY)) {
 			vary = ObjGetAttr(wrk, oc, OA_VARY, NULL);
@@ -585,7 +587,7 @@ double keep)
 				 */
 				continue;
 			}
-			if (oc->exp_flags & OC_EF_DYING)
+			if (oc->flags & OC_F_DYING)
 				continue;
 			if (spc < sizeof *ocp) {
 				/* Iterate if aws is not big enough */

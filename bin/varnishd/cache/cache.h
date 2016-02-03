@@ -427,12 +427,12 @@ struct objcore {
 #define OC_F_ABANDON		(1<<4)
 #define OC_F_PRIVATE		(1<<5)
 #define OC_F_FAILED		(1<<6)
+#define OC_F_DYING		(1<<7)
 
 	uint8_t			exp_flags;
 #define OC_EF_MOVE		(1<<2)
 #define OC_EF_INSERT		(1<<3)
 #define OC_EF_EXP		(1<<4)
-#define OC_EF_DYING		(1<<5)
 
 	uint16_t		oa_present;
 
@@ -858,6 +858,7 @@ void ObjWaitState(const struct objcore *, enum boc_state_e want);
 void ObjTrimStore(struct worker *, struct objcore *);
 void ObjTouch(struct worker *, struct objcore *, double now);
 int ObjSnipe(const struct worker *, struct objcore *);
+void ObjKill(struct objcore *);
 unsigned ObjGetXID(struct worker *, struct objcore *);
 uint64_t ObjGetLen(struct worker *, struct objcore *);
 void ObjUpdateMeta(struct worker *, struct objcore *);

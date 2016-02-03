@@ -143,7 +143,7 @@ exp_mail_it(struct objcore *oc)
 
 	AN(oc->lru_flags & OC_LRU_OFFLRU);
 	Lck_Lock(&exphdl->mtx);
-	if (oc->exp_flags & OC_EF_DYING)
+	if (oc->flags & OC_F_DYING)
 		VTAILQ_INSERT_HEAD(&exphdl->inbox, oc, lru_list);
 	else
 		VTAILQ_INSERT_TAIL(&exphdl->inbox, oc, lru_list);
@@ -168,7 +168,7 @@ EXP_Inject(struct worker *wrk, struct objcore *oc, struct lru *lru)
 
 	AZ(oc->lru_flags & OC_LRU_OFFLRU);
 	AZ(oc->exp_flags & (OC_EF_INSERT | OC_EF_MOVE));
-	AZ(oc->exp_flags & OC_EF_DYING);
+	AZ(oc->flags & OC_F_DYING);
 	AZ(oc->flags & OC_F_BUSY);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
@@ -202,7 +202,7 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 
 	AZ(oc->lru_flags & OC_LRU_OFFLRU);
 	AZ(oc->exp_flags & (OC_EF_INSERT | OC_EF_MOVE));
-	AZ(oc->exp_flags & OC_EF_DYING);
+	AZ(oc->flags & OC_F_DYING);
 	AN(oc->flags & OC_F_BUSY);
 
 	lru = ObjGetLRU(oc);
@@ -256,15 +256,11 @@ EXP_Rearm(struct objcore *oc, double now, double ttl, double grace, double keep)
 
 	Lck_Lock(&lru->mtx);
 
-	if (!isnan(now) && when <= now)
-		oc->exp_flags |= OC_EF_DYING;
-	else
-		oc->exp_flags |= OC_EF_MOVE;
-
 	if (oc->lru_flags & OC_LRU_OFFLRU) {
 		oc = NULL;
 	} else {
 		oc->lru_flags |= OC_LRU_OFFLRU;
+		oc->exp_flags |= OC_EF_MOVE;
 		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 	}
 	Lck_Unlock(&lru->mtx);
@@ -384,13 +380,13 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 	AN(oc->lru_flags & OC_LRU_OFFLRU);
 	oc->exp_flags &= ~(OC_EF_INSERT | OC_EF_MOVE);
 	oc->last_lru = now;
-	if (!(flags & OC_EF_DYING)) {
+	if (!(oc->flags & OC_F_DYING)) {
 		VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
 		oc->lru_flags &= ~OC_LRU_OFFLRU;
 	}
 	Lck_Unlock(&lru->mtx);
 
-	if (flags & OC_EF_DYING) {
+	if (oc->flags & OC_F_DYING) {
 		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Kill p=%p e=%.9f f=0x%x", oc,
 		    oc->timer_when, oc->flags);
 		if (!(flags & OC_EF_INSERT)) {
@@ -458,7 +454,8 @@ exp_expire(struct exp_priv *ep, double now)
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 	Lck_Lock(&lru->mtx);
 
-	oc->exp_flags |= OC_EF_DYING;
+	if (!(oc->flags & OC_F_DYING))
+		ObjKill(oc);
 	if (oc->lru_flags & OC_LRU_OFFLRU)
 		oc = NULL;
 	else {
