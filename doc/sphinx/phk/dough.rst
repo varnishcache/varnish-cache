@@ -86,7 +86,7 @@ at least at that time, there were no way to prevent people from
 dropping money into it, no matter how much you wanted to stop them.
 
 In the end I managed to yell loud enough and only got overfunded
-a few percent, and I belive that my attempt to deflect the surplus
+a few percent, and I believe that my attempt to deflect the surplus
 to the FreeBSD Foundation gave them a little boost that year.
 
 So about PayPal:  The first thing they did was to shut my account,
@@ -184,7 +184,7 @@ the message to other communities, that Free and Open Source Software
 does not materialize out of empty space, it is written by people.
 
 People who love what we do, which is why I'm sitting here,
-way past midnight on a friday evening, writing this pamphlet.
+way past midnight on a Friday evening, writing this pamphlet.
 
 But software *is* written by people, real people with kids, cars,
 mortgages, leaky roofs, sick pets, infirm parents and all other
@@ -225,25 +225,25 @@ collect money and hire developers.  This is a relatively complex
 thing to do, and it will only be available for larger projects.
 
 The Apache Foundation "adopts" smaller projects inside their field
-of interest, and I belive that works OK, but I'm not sure if it
+of interest, and I believe that works OK, but I'm not sure if it
 can easily be transplanted to different topics.
 
 The final way is to simply throw money a the developers, the
 way the FreeBSD and Varnish communities have done with me.
 
 It is a far more flexible solution with respect to level of
-engangement, national boundaries etc. etc, but in many ways it
+engagement, national boundaries etc. etc, but in many ways it
 demands more from both sides of the deal, in particular
 with respect to paperwork, taxes and so on.
 
 Conclusion
 ==========
 
-I am obiously biased, I derive a large fraction of my relatively
+I am obviously biased, I derive a large fraction of my relatively
 modest income from community funding, for which I am the Varnish
 community deeply grateful.
 
-But biased as I may be, I belive that the Varnish community and I
+But biased as I may be, I believe that the Varnish community and I
 has shown that a tiny investment goes a long way in Free and Open
 Source Software.
 

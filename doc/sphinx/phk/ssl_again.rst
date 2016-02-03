@@ -11,7 +11,7 @@ revisit that issue.
 A SSL/TLS library
 ~~~~~~~~~~~~~~~~~
 
-In 2011 I critized OpenSSL's source-code as being a nightmare,
+In 2011 I criticized OpenSSL's source-code as being a nightmare,
 and as much as I Hate To Say I Told You So, I Told You So:  See also
 "HeartBleed".
 
@@ -19,15 +19,15 @@ The good news is that HeartBleed made people realize that FOSS
 maintainers also have mortgages and hungry kids.
 
 Various initiatives have been launched to make prevent critical
-infrastructure software from being maintained sunday evening between
+infrastructure software from being maintained Sunday evening between
 11 and 12PM by a sleep-deprived and overworked parent, worried about
 about being able to pay the bills come the next month.
 
 We're not there yet, but it's certainly getting better.
 
-However, implementing TLS and SSL is stil insanely complex, and
+However, implementing TLS and SSL is still insanely complex, and
 thanks to Edward Snowdens whistle-blowing, we have very good reasons
-to belive that didn't happen by accident.
+to believe that didn't happen by accident.
 
 The issue of finding a good TLS/SSL implementation is still the
 same and I still don't see one I would want my name associated with.
@@ -40,7 +40,7 @@ Handling Certificates
 ~~~~~~~~~~~~~~~~~~~~~
 
 I still don't see a way to do that.  The Varnish worker-process is not
-built to compartementalize bits at a cryptographic level and making it
+built to compartmentalize bits at a cryptographic level and making it
 do that would be a non-trivial undertaking.
 
 But there is new loop-hole here.
@@ -148,7 +148,7 @@ the privacy of every human being with an internet connection, because
 it takes a lot more skill to look into a SSL connection than a
 plaintext HTTP connection.
 
-"Sunshine is said to be the best of disinfectantants" wrote supreme
+"Sunshine is said to be the best of disinfectants" wrote supreme
 court justice Brandeis, SSL Everywhere puts all traffic in the shade.
 
 Poul-Henning, 2015-04-28

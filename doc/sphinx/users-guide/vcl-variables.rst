@@ -14,7 +14,7 @@ objects can be accessed and manipulated using VCL.
  do on or with the `req` object.
 
 *bereq*
- The backend request object. Varnish contructs this before sending it to the
+ The backend request object. Varnish constructs this before sending it to the
  backend. It is based on the `req` object.
 
 .. XXX:in what way? benc

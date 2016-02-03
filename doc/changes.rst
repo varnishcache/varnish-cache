@@ -566,7 +566,7 @@ Changes from 3.0.6 to 3.0.7-rc1 (2015-03-18)
 - Requests with multiple Content-Length headers will now fail.
 
 - Stop recognizing a single CR (\r) as a HTTP line separator.
-  This opened up a possible cache poisioning attack in stacked installations
+  This opened up a possible cache poisoning attack in stacked installations
   where sslterminator/varnish/backend had different CR handling.
 
 - Improved error detection on master-child process communication, leading to

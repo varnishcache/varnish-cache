@@ -148,7 +148,7 @@ Because it's not like the call is actually guaranteed to return at
 later than that, so you have to wrap the call in a loop.
 
 Whoever defined the select(2) and poll(2) systemcalls knew better
-than the POSIX and ISO-C group-think:  They specifed a maximum
+than the POSIX and ISO-C group-think:  They specified a maximum
 duration for the call, because then it doesn't matter what time
 it is, only how long time has transpired.
 

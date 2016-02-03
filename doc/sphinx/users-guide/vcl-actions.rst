@@ -14,7 +14,7 @@ The most common actions to return are these:
 
 *hash*
   When you return hash from `vcl_recv` you tell Varnish to deliver content
-  from cache even if the request othervise indicates that the request
+  from cache even if the request otherwise indicates that the request
   should be passed.
 
 *pipe*

@@ -20,7 +20,7 @@ subversion commit number 9::
     commit 523166ad2dd3a65e3987f13bc54f571f98453976
     Author: Dag Erling Smørgrav <des@des.no>
     Date:   Wed Feb 22 14:31:39 2006 +0000
-    
+
         Additional subdivisions.
 
 We consider this the official birth-certificate of the Varnish Cache
@@ -39,13 +39,13 @@ One part of the celebration, somehow, sometime, will be the "VCL
 Obfuscated Code Contest #1" in the same spirit as the `International
 Obfuscated C Code Contest <http://www.ioccc.org/>`_.
 
-True afficionados of Obfuscated Code will also appreciate this
+True aficionados of Obfuscated Code will also appreciate this
 amazing `Obfuscated PL/1 <http://www.multicians.org/proc-proc.html>`_.
 
 The official VCLOCC1 contest rules are simple:
 
 * VCL code must work with Varnish 4.1.1
-* As many Varnishd instances as you'd like. 
+* As many Varnishd instances as you'd like.
 * No inline-C allowed
 * Any VMOD you want is OK
 * You get to choose the request(s) to send to Varnishd
@@ -63,7 +63,7 @@ you are more than welcome to start already now.
 Releases
 --------
 
-Our 10 year aniversary was a good excuse to take stock and look at
+Our 10 year anniversary was a good excuse to take stock and look at
 the way we work, and changes are and will be happening.
 
 Like any respectable FOSS project, the Varnish project has never been
@@ -80,7 +80,7 @@ Come hell or high water [#f1]_, Varnish 5.0 will be released September
 15th 2016.
 
 And the next big release, whatever we call it, will be middle of
-march 2017, and until we change our mind, you can trust a major
+March 2017, and until we change our mind, you can trust a major
 release of Varnish to happen every six months.
 
 Minor releases, typically bugfixes, will be released as need arise,
@@ -95,7 +95,7 @@ We have plans and ideas for what *should* be there, and we will work
 to reach those milestones, but we will not hold the release for "just this
 one more feature" if they are not ready.
 
-If it is in on september 15th, it will be in the release, if not, it wont.
+If it is in on September 15th, it will be in the release, if not, it wont.
 
 And since the next release is guaranteed to come six months later,
 it's not a catastrophe to miss the deadline.
@@ -131,8 +131,8 @@ with the 4.1 release.
 All this obviously changes the dynamics of the project, and it we
 find out it is a disaster, we'll change our mind.
 
-But until then:  Two major releases a year, as clock-work, mid-september
-and mid-march.
+But until then:  Two major releases a year, as clock-work, mid-September
+and mid-March.
 
 ----------------
 Moving to github
@@ -176,7 +176,7 @@ If you are a contributor to Varnish, you should already have the
 nice blue T-shirt and the mug to prove it.  (Thanks Varnish-Software!)
 
 If you merely stumble over a spelling mistake, you merely
-stumbled over a spelling mistake, and we will happily 
+stumbled over a spelling mistake, and we will happily
 correct it, and put your name in the commit message.
 
 But it takes a lot more that fixing a spelling mistake to
@@ -190,7 +190,7 @@ Speaking of which...
 Where does 50 come into it ?
 ----------------------------
 
-On january 20th I celebrated my 50 year birthday, and this was a
+On January 20th I celebrated my 50 year birthday, and this was a
 much more serious affair than I had anticipated:  For the first
 time in my life I have received a basket with wine and flowers on
 my birthday.

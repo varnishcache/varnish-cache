@@ -32,7 +32,7 @@ precedence operators have.
 
 The C programming language is famous for having a couple of gottchas
 in its precedence rules and given our limited and narrow type
-repetoire, blindly importing a set of precedence rules may confuse
+repertoire, blindly importing a set of precedence rules may confuse
 a lot more than it may help.
 
 Here are the precedence rules I have settled on, from highest to

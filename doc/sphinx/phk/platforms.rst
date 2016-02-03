@@ -108,4 +108,4 @@ are right about Oracles intentions, Solaris may get demoted.
 Until next time,
 
 Poul-Henning, 2010-08-03
-Edited Nils, 2014-03-18 with Poul-Hennings concent
+Edited Nils, 2014-03-18 with Poul-Hennings consent

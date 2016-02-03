@@ -230,7 +230,7 @@ vcl_synth
 ~~~~~~~~~
 
 Called to deliver a synthetic object. A synthetic object is generated
-in VCL, not fetched from the backend. Its body may be contructed using
+in VCL, not fetched from the backend. Its body may be constructed using
 the ``synthetic()`` function.
 
 A `vcl_synth` defined object never enters the cache, contrary to a
@@ -325,7 +325,7 @@ vcl_backend_error
 This subroutine is called if we fail the backend fetch or if
 *max_retries* has been exceeded.
 
-A synthetic object is generated in VCL, whose body may be contructed
+A synthetic object is generated in VCL, whose body may be constructed
 using the ``synthetic()`` function.
 
 The `vcl_backend_error` subroutine may terminate with calling ``return()``

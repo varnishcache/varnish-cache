@@ -15,7 +15,7 @@ Varnish Command Line Interface
 DESCRIPTION
 ===========
 
-Varnish as a command line interface (CLI) which can control and change
+Varnish has a command line interface (CLI) which can control and change
 most of the operational parameters and the configuration of Varnish,
 without interrupting the running service.
 

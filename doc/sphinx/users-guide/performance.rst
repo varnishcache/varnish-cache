@@ -11,7 +11,7 @@ functions of Varnish that you should be aware of. The next subsection focuses
 on the how to purge content out of your cache. Purging of content is
 essential in a performance context because it allows you to extend the
 *time-to-live* (TTL) of your cached objects. Having a long TTL allows
-Varnish to keep the content in cache longer, meaning Varnish will make fewer requests to your relativly slower backend.
+Varnish to keep the content in cache longer, meaning Varnish will make fewer requests to your relatively slower backend.
 
 The final subsection deals with compression of web content. Varnish can
 gzip content when fetching it from the backend and then deliver it
