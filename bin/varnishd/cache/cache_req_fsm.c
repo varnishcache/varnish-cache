@@ -235,19 +235,18 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	const char *r;
 	uint16_t status;
 	int sendbody;
-	intmax_t resp_len;
+	intmax_t clval;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
-	/* Grab a ref to the bo if there is one, and hand it down */
-	boc = HSH_RefBusy(req->objcore);
-
 	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
 
-	resp_len = http_GetContentLength(req->resp);
+	/* Grab a ref to the bo if there is one */
+	boc = HSH_RefBusy(req->objcore);
+
+	clval = http_GetContentLength(req->resp);
 	if (boc != NULL)
-		req->resp_len = resp_len;
+		req->resp_len = clval;
 	else
 		req->resp_len = ObjGetLen(req->wrk, req->objcore);
 
@@ -266,25 +265,28 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	} else
 		sendbody = 1;
 
-	if (!req->disable_esi && req->resp_len != 0 &&
-	    ObjHasAttr(wrk, req->objcore, OA_ESIDATA))
-		VDP_push(req, VDP_ESI, NULL, 0);
+	if (sendbody >= 0) {
+		if (!req->disable_esi && req->resp_len != 0 &&
+		    ObjHasAttr(wrk, req->objcore, OA_ESIDATA))
+			VDP_push(req, VDP_ESI, NULL, 0);
 
-	if (cache_param->http_gzip_support &&
-	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
-	    !RFC2616_Req_Gzip(req->http))
-		VDP_push(req, VDP_gunzip, NULL, 1);
+		if (cache_param->http_gzip_support &&
+		    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
+		    !RFC2616_Req_Gzip(req->http))
+			VDP_push(req, VDP_gunzip, NULL, 1);
 
-	if (cache_param->http_range_support && http_IsStatus(req->resp, 200)) {
-		http_SetHeader(req->resp, "Accept-Ranges: bytes");
-		if (sendbody && http_GetHdr(req->http, H_Range, &r))
-			VRG_dorange(req, r);
+		if (cache_param->http_range_support &&
+		    http_IsStatus(req->resp, 200)) {
+			http_SetHeader(req->resp, "Accept-Ranges: bytes");
+			if (sendbody && http_GetHdr(req->http, H_Range, &r))
+				VRG_dorange(req, r);
+		}
 	}
 
 	if (sendbody < 0) {
 		/* Don't touch pass+HEAD C-L */
 		sendbody = 0;
-	} else if (resp_len >= 0 && resp_len == req->resp_len) {
+	} else if (clval >= 0 && clval == req->resp_len) {
 		/* Reuse C-L header */
 	} else {
 		http_Unset(req->resp, H_Content_Length);

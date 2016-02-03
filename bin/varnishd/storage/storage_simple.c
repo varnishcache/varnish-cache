@@ -565,7 +565,7 @@ sml_setattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 		if (o->esidata == NULL)
 			return (NULL);
 		o->esidata->len = len;
-		retval  = o->esidata->ptr;
+		retval = o->esidata->ptr;
 		break;
 	case OA_FLAGS:
 		assert(len == sizeof o->oa_flags);
