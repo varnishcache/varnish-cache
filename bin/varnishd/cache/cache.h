@@ -440,8 +440,6 @@ struct objcore {
 	VTAILQ_ENTRY(objcore)	list;
 	VTAILQ_ENTRY(objcore)	lru_list;
 	float			last_lru;
-	unsigned		lru_flags;
-#define OC_LRU_OFFLRU		(1<<1)
 	VTAILQ_ENTRY(objcore)	ban_list;
 	struct ban		*ban;
 };

@@ -141,7 +141,7 @@ exp_mail_it(struct objcore *oc)
 {
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	AN(oc->lru_flags & OC_LRU_OFFLRU);
+	AN(isnan(oc->last_lru));
 	Lck_Lock(&exphdl->mtx);
 	if (oc->flags & OC_F_DYING)
 		VTAILQ_INSERT_HEAD(&exphdl->inbox, oc, lru_list);
@@ -166,7 +166,7 @@ EXP_Inject(struct worker *wrk, struct objcore *oc, struct lru *lru)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	AZ(oc->lru_flags & OC_LRU_OFFLRU);
+	AZ(isnan(oc->last_lru));
 	AZ(oc->exp_flags & (OC_EF_INSERT | OC_EF_MOVE));
 	AZ(oc->flags & OC_F_DYING);
 	AZ(oc->flags & OC_F_BUSY);
@@ -174,7 +174,7 @@ EXP_Inject(struct worker *wrk, struct objcore *oc, struct lru *lru)
 
 	Lck_Lock(&lru->mtx);
 	lru->n_objcore++;
-	oc->lru_flags |= OC_LRU_OFFLRU;
+	oc->last_lru = NAN;
 	oc->exp_flags |= OC_EF_INSERT | OC_EF_EXP;
 	oc->timer_when = EXP_When(&oc->exp);
 	Lck_Unlock(&lru->mtx);
@@ -200,7 +200,7 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	HSH_Ref(oc);
 
-	AZ(oc->lru_flags & OC_LRU_OFFLRU);
+	AZ(isnan(oc->last_lru));
 	AZ(oc->exp_flags & (OC_EF_INSERT | OC_EF_MOVE));
 	AZ(oc->flags & OC_F_DYING);
 	AN(oc->flags & OC_F_BUSY);
@@ -210,7 +210,7 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 
 	Lck_Lock(&lru->mtx);
 	lru->n_objcore++;
-	oc->lru_flags |= OC_LRU_OFFLRU;
+	oc->last_lru = NAN;
 	oc->exp_flags |= OC_EF_INSERT | OC_EF_EXP;
 	oc->exp_flags |= OC_EF_MOVE;
 	Lck_Unlock(&lru->mtx);
@@ -256,10 +256,10 @@ EXP_Rearm(struct objcore *oc, double now, double ttl, double grace, double keep)
 
 	Lck_Lock(&lru->mtx);
 
-	if (oc->lru_flags & OC_LRU_OFFLRU) {
+	if (isnan(oc->last_lru)) {
 		oc = NULL;
 	} else {
-		oc->lru_flags |= OC_LRU_OFFLRU;
+		oc->last_lru = NAN;
 		oc->exp_flags |= OC_EF_MOVE;
 		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 	}
@@ -290,12 +290,12 @@ EXP_NukeOne(struct worker *wrk, struct lru *lru)
 		VSLb(wrk->vsl, SLT_ExpKill, "LRU_Cand p=%p f=0x%x r=%d",
 		    oc, oc->flags, oc->refcnt);
 
-		AZ(oc->lru_flags & OC_LRU_OFFLRU);
+		AZ(isnan(oc->last_lru));
 
 		if (ObjSnipe(wrk, oc)) {
 			VSC_C_main->n_lru_nuked++; // XXX per lru ?
 			VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
-			oc->lru_flags |= OC_LRU_OFFLRU;
+			oc->last_lru = NAN;
 			break;
 		}
 	}
@@ -377,12 +377,12 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 	/* Evacuate our action-flags, and put it back on the LRU list */
 	Lck_Lock(&lru->mtx);
 	flags = oc->exp_flags;
-	AN(oc->lru_flags & OC_LRU_OFFLRU);
+	AN(isnan(oc->last_lru));
 	oc->exp_flags &= ~(OC_EF_INSERT | OC_EF_MOVE);
 	oc->last_lru = now;
 	if (!(oc->flags & OC_F_DYING)) {
 		VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
-		oc->lru_flags &= ~OC_LRU_OFFLRU;
+		oc->last_lru = now;
 	}
 	Lck_Unlock(&lru->mtx);
 
@@ -456,10 +456,10 @@ exp_expire(struct exp_priv *ep, double now)
 
 	if (!(oc->flags & OC_F_DYING))
 		ObjKill(oc);
-	if (oc->lru_flags & OC_LRU_OFFLRU)
+	if (isnan(oc->last_lru)) {
 		oc = NULL;
-	else {
-		oc->lru_flags |= OC_LRU_OFFLRU;
+	} else {
+		oc->last_lru = NAN;
 		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 	}
 	Lck_Unlock(&lru->mtx);

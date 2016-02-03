@@ -635,13 +635,13 @@ sml_touch(struct worker *wrk, struct objcore *oc, double now)
 
 	AN(oc->exp_flags & OC_EF_EXP);
 
-	if (!(oc->lru_flags & OC_LRU_OFFLRU)) {
+	if (!isnan(oc->last_lru)) {
 		/* Can only touch it while it's actually on the LRU list */
 		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 		VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
 		VSC_C_main->n_lru_moved++;
+		oc->last_lru = now;
 	}
-	oc->last_lru = now;
 	Lck_Unlock(&lru->mtx);
 }
 
