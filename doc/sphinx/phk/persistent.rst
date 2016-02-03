@@ -52,7 +52,7 @@ this.
 And in a sense I did.
 
 Varnish has the advantage over databases and filesystems that we
-can actually loose objects without it being a catastrophy.  It would
+can actually loose objects without it being a catastrophe.  It would
 be better if we didn't, but we can simply ditch stuff which doesn't
 look consistent and we'll be safe.
 
