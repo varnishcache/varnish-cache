@@ -39,56 +39,6 @@
 #include "storage/storage.h"
 #include "storage/storage_simple.h"
 
-#include "vtim.h"
-
-/*--------------------------------------------------------------------
- * Attempt to make space by nuking the oldest object on the LRU list
- * which isn't in use.
- * Returns: 1: did, 0: didn't, -1: can't
- */
-
-int
-EXP_NukeOne(struct worker *wrk, struct lru *lru)
-{
-	struct objcore *oc, *oc2;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
-	/* Find the first currently unused object on the LRU.  */
-	Lck_Lock(&lru->mtx);
-	VTAILQ_FOREACH_SAFE(oc, &lru->lru_head, lru_list, oc2) {
-		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-
-		VSLb(wrk->vsl, SLT_ExpKill, "LRU_Cand p=%p f=0x%x r=%d",
-		    oc, oc->flags, oc->refcnt);
-
-		AZ(isnan(oc->last_lru));
-
-		if (ObjSnipe(wrk, oc)) {
-			VSC_C_main->n_lru_nuked++; // XXX per lru ?
-			VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
-			oc->last_lru = NAN;
-			break;
-		}
-	}
-	Lck_Unlock(&lru->mtx);
-
-	if (oc == NULL) {
-		VSLb(wrk->vsl, SLT_ExpKill, "LRU_Fail");
-		return (-1);
-	}
-
-	/* XXX: We could grab and return one storage segment to our caller */
-	ObjSlim(wrk, oc);
-
-	EXP_Poke(oc);
-
-	VSLb(wrk->vsl, SLT_ExpKill, "LRU x=%u", ObjGetXID(wrk, oc));
-	(void)HSH_DerefObjCore(wrk, &oc);
-	return (1);
-}
-
-
 /*-------------------------------------------------------------------*/
 
 static struct storage *
@@ -178,7 +128,7 @@ SML_allocobj(struct worker *wrk, const struct stevedore *stv,
 	ltot = sizeof(struct object) + PRNDUP(wsl);
 	while (1) {
 		if (really > 0) {
-			if (EXP_NukeOne(wrk, stv->lru) == -1)
+			if (LRU_NukeOne(wrk, stv->lru) == -1)
 				return (0);
 			really--;
 		}
@@ -249,7 +199,6 @@ static void __match_proto__(objfree_f)
 sml_objfree(struct worker *wrk, struct objcore *oc)
 {
 	struct object *o;
-	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -257,14 +206,7 @@ sml_objfree(struct worker *wrk, struct objcore *oc)
 	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
 	o->magic = 0;
 
-	lru = ObjGetLRU(oc);
-	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
-	Lck_Lock(&lru->mtx);
-	if (!isnan(oc->last_lru)) {
-		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
-		oc->last_lru = NAN;
-	}
-	Lck_Unlock(&lru->mtx);
+	LRU_Remove(oc);
 
 	sml_stv_free(oc->stobj->stevedore, o->objstore);
 
@@ -397,7 +339,7 @@ objallocwithnuke(struct worker *wrk, const struct stevedore *stv, size_t size)
 
 		/* no luck; try to free some space and keep trying */
 		if (fail < cache_param->nuke_limit &&
-		    EXP_NukeOne(wrk, stv->lru) == -1)
+		    LRU_NukeOne(wrk, stv->lru) == -1)
 			break;
 	}
 	CHECK_OBJ_ORNULL(st, STORAGE_MAGIC);
@@ -548,7 +490,6 @@ sml_stable(struct worker *wrk, struct objcore *oc, struct boc *boc)
 {
 	const struct stevedore *stv;
 	struct storage *st;
-	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -564,12 +505,7 @@ sml_stable(struct worker *wrk, struct objcore *oc, struct boc *boc)
 		sml_stv_free(stv, st);
 	}
 
-	lru = ObjGetLRU(oc);
-	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
-	Lck_Lock(&lru->mtx);
-	VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
-	oc->last_lru = VTIM_real();
-	Lck_Unlock(&lru->mtx);
+	LRU_Add(oc);
 }
 
 static void * __match_proto__(objgetattr_f)
@@ -675,45 +611,6 @@ sml_setattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 	return (retval);
 }
 
-static void __match_proto__(objtouch_f)
-sml_touch(struct worker *wrk, struct objcore *oc, double now)
-{
-	struct lru *lru;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-
-	/*
-	 * To avoid the exphdl->mtx becoming a hotspot, we only
-	 * attempt to move objects if they have not been moved
-	 * recently and if the lock is available.  This optimization
-	 * obviously leaves the LRU list imperfectly sorted.
-	 */
-
-	if (oc->flags & OC_F_INCOMPLETE)
-		return;
-
-	if (now - oc->last_lru < cache_param->lru_interval)
-		return;
-
-	lru = ObjGetLRU(oc);
-	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
-
-	if (Lck_Trylock(&lru->mtx))
-		return;
-
-	AN(oc->exp_flags & OC_EF_EXP);
-
-	if (!isnan(oc->last_lru)) {
-		/* Can only touch it while it's actually on the LRU list */
-		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
-		VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
-		VSC_C_main->n_lru_moved++;
-		oc->last_lru = now;
-	}
-	Lck_Unlock(&lru->mtx);
-}
-
 const struct obj_methods SML_methods = {
 	.objfree	= sml_objfree,
 	.objgetlru	= sml_objgetlru,
@@ -726,5 +623,5 @@ const struct obj_methods SML_methods = {
 	.objslim	= sml_slim,
 	.objgetattr	= sml_getattr,
 	.objsetattr	= sml_setattr,
-	.objtouch	= sml_touch,
+	.objtouch	= LRU_Touch,
 };

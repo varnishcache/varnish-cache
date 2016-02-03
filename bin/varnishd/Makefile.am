@@ -86,6 +86,7 @@ varnishd_SOURCES = \
 	storage/mgt_stevedore.c \
 	storage/stevedore_utils.c \
 	storage/storage_file.c \
+	storage/storage_lru.c \
 	storage/storage_malloc.c \
 	storage/storage_persistent.c \
 	storage/mgt_storage_persistent.c \

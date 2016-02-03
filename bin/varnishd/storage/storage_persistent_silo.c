@@ -139,7 +139,6 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 	ASSERT_SILO_THREAD(sc);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(sg, SMP_SEG_MAGIC);
-	CHECK_OBJ_NOTNULL(sg->lru, LRU_MAGIC);
 	assert(sg->flags & SMP_SEG_MUSTLOAD);
 	sg->flags &= ~SMP_SEG_MUSTLOAD;
 	AN(sg->p.offset);
@@ -225,7 +224,7 @@ smp_new_seg(struct smp_sc *sc)
 		return;
 	*sg = tmpsg;
 	sg->lru = LRU_Alloc();
-	CHECK_OBJ_NOTNULL(sg->lru, LRU_MAGIC);
+	AN(sg->lru);
 
 	sg->p.offset = IRNUP(sc, sg->p.offset);
 	sg->p.length -= sg->p.offset - tmpsg.p.offset;

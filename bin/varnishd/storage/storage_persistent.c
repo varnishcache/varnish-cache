@@ -235,7 +235,7 @@ smp_open_segs(struct smp_sc *sc, struct smp_signspace *spc)
 		ALLOC_OBJ(sg, SMP_SEG_MAGIC);
 		AN(sg);
 		sg->lru = LRU_Alloc();
-		CHECK_OBJ_NOTNULL(sg->lru, LRU_MAGIC);
+		AN(sg->lru);
 		sg->p = *ss;
 
 		sg->flags |= SMP_SEG_MUSTLOAD;
@@ -531,7 +531,7 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
 
 	while (1) {
 		if (really > 0) {
-			if (EXP_NukeOne(wrk, stv->lru) == -1)
+			if (LRU_NukeOne(wrk, stv->lru) == -1)
 				return (0);
 			really--;
 		}
@@ -608,10 +608,9 @@ const struct stevedore smp_stevedore = {
  */
 
 static void
-debug_report_silo(struct cli *cli, const struct smp_sc *sc, int objs)
+debug_report_silo(struct cli *cli, const struct smp_sc *sc)
 {
 	struct smp_seg *sg;
-	struct objcore *oc;
 
 	VCLI_Out(cli, "Silo: %s (%s)\n",
 	    sc->stevedore->ident, sc->filename);
@@ -626,10 +625,6 @@ debug_report_silo(struct cli *cli, const struct smp_sc *sc, int objs)
 			   (uintmax_t)(sc->next_top - sc->next_bot));
 		VCLI_Out(cli, "    %u nobj, %u alloc, %u lobjlist, %u fixed\n",
 		    sg->nobj, sg->nalloc, sg->p.lobjlist, sg->nfixed);
-		if (objs) {
-			VTAILQ_FOREACH(oc, &sg->lru->lru_head, lru_list)
-				VCLI_Out(cli, "      OC %p\n", oc);
-		}
 	}
 }
 
@@ -642,7 +637,7 @@ debug_persistent(struct cli *cli, const char * const * av, void *priv)
 
 	if (av[2] == NULL) {
 		VTAILQ_FOREACH(sc, &silos, list)
-			debug_report_silo(cli, sc, 0);
+			debug_report_silo(cli, sc);
 		return;
 	}
 	VTAILQ_FOREACH(sc, &silos, list)
@@ -654,7 +649,7 @@ debug_persistent(struct cli *cli, const char * const * av, void *priv)
 		return;
 	}
 	if (av[3] == NULL) {
-		debug_report_silo(cli, sc, 0);
+		debug_report_silo(cli, sc);
 		return;
 	}
 	Lck_Lock(&sc->mtx);
@@ -663,7 +658,7 @@ debug_persistent(struct cli *cli, const char * const * av, void *priv)
 			smp_close_seg(sc, sc->cur_seg);
 		smp_new_seg(sc);
 	} else if (!strcmp(av[3], "dump")) {
-		debug_report_silo(cli, sc, 1);
+		debug_report_silo(cli, sc);
 	} else {
 		VCLI_Out(cli, "Unknown operation\n");
 		VCLI_SetResult(cli, CLIS_PARAM);

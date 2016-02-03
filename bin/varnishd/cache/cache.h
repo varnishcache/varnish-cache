@@ -354,15 +354,6 @@ struct worker {
 	uintptr_t		stack_end;
 };
 
-/* LRU ---------------------------------------------------------------*/
-
-struct lru {
-	unsigned		magic;
-#define LRU_MAGIC		0x3fec7bb0
-	VTAILQ_HEAD(,objcore)	lru_head;
-	struct lock		mtx;
-};
-
 /* Stored object -----------------------------------------------------
  * This is just to encapsulate the fields owned by the stevedore
  */

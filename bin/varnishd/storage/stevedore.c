@@ -37,35 +37,13 @@
 #include <stdlib.h>
 
 #include "cache/cache.h"
+#include "hash/hash_slinger.h"
 
 #include "storage/storage.h"
 #include "vrt.h"
 #include "vrt_obj.h"
 
 static const struct stevedore * volatile stv_next;
-
-/*--------------------------------------------------------------------
- */
-
-struct lru *
-LRU_Alloc(void)
-{
-	struct lru *l;
-
-	ALLOC_OBJ(l, LRU_MAGIC);
-	AN(l);
-	VTAILQ_INIT(&l->lru_head);
-	Lck_New(&l->mtx, lck_lru);
-	return (l);
-}
-
-void
-LRU_Free(struct lru *lru)
-{
-	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
-	Lck_Delete(&lru->mtx);
-	FREE_OBJ(lru);
-}
 
 /*--------------------------------------------------------------------
  * XXX: trust pointer writes to be atomic
@@ -100,7 +78,6 @@ stv_pick_stevedore(struct vsl_log *vsl, const char **hint)
 	stv_next = stv;
 	return (stv);
 }
-
 
 /*-------------------------------------------------------------------
  * Allocate storage for an object, based on the header information.
