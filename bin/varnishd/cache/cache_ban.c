@@ -509,6 +509,7 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	Lck_AssertHeld(&oc->objhead->mtx);
 
 	vsl = req->vsl;
 
