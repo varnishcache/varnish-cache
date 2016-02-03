@@ -137,12 +137,13 @@ EXP_When(const struct exp *e)
  */
 
 static void
-exp_mail_it(struct objcore *oc)
+exp_mail_it(struct objcore *oc, uint8_t cmds)
 {
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	AN(isnan(oc->last_lru));
 	Lck_Lock(&exphdl->mtx);
+	oc->exp_flags |= cmds;
 	if (oc->flags & OC_F_DYING)
 		VSTAILQ_INSERT_HEAD(&exphdl->inbox, oc, exp_list);
 	else
@@ -175,13 +176,12 @@ EXP_Inject(struct worker *wrk, struct objcore *oc, struct lru *lru)
 	Lck_Lock(&lru->mtx);
 	lru->n_objcore++;
 	oc->last_lru = NAN;
-	oc->exp_flags |= OC_EF_INSERT | OC_EF_EXP;
-	oc->timer_when = EXP_When(&oc->exp);
 	Lck_Unlock(&lru->mtx);
 
-	exp_event(wrk, oc, EXP_INJECT);
+	oc->timer_when = EXP_When(&oc->exp);
 
-	exp_mail_it(oc);
+	exp_event(wrk, oc, EXP_INJECT);
+	exp_mail_it(oc, OC_EF_INSERT | OC_EF_EXP);
 }
 
 /*--------------------------------------------------------------------
@@ -211,13 +211,10 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 	Lck_Lock(&lru->mtx);
 	lru->n_objcore++;
 	oc->last_lru = NAN;
-	oc->exp_flags |= OC_EF_INSERT | OC_EF_EXP;
-	oc->exp_flags |= OC_EF_MOVE;
 	Lck_Unlock(&lru->mtx);
 
 	exp_event(wrk, oc, EXP_INSERT);
-
-	exp_mail_it(oc);
+	exp_mail_it(oc, OC_EF_INSERT | OC_EF_EXP | OC_EF_MOVE);
 }
 
 /*--------------------------------------------------------------------
@@ -255,18 +252,16 @@ EXP_Rearm(struct objcore *oc, double now, double ttl, double grace, double keep)
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	Lck_Lock(&lru->mtx);
-
 	if (isnan(oc->last_lru)) {
 		oc = NULL;
 	} else {
 		oc->last_lru = NAN;
-		oc->exp_flags |= OC_EF_MOVE;
 		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 	}
 	Lck_Unlock(&lru->mtx);
 
 	if (oc != NULL)
-		exp_mail_it(oc);
+		exp_mail_it(oc, OC_EF_MOVE);
 }
 
 /*--------------------------------------------------------------------
@@ -309,7 +304,7 @@ EXP_NukeOne(struct worker *wrk, struct lru *lru)
 	/* XXX: We could grab and return one storage segment to our caller */
 	ObjSlim(wrk, oc);
 
-	exp_mail_it(oc);
+	exp_mail_it(oc, 0);
 
 	VSLb(wrk->vsl, SLT_ExpKill, "LRU x=%u", ObjGetXID(wrk, oc));
 	(void)HSH_DerefObjCore(wrk, &oc);
@@ -375,10 +370,13 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	/* Evacuate our action-flags, and put it back on the LRU list */
-	Lck_Lock(&lru->mtx);
+	Lck_Lock(&ep->mtx);
 	flags = oc->exp_flags;
-	AN(isnan(oc->last_lru));
 	oc->exp_flags &= ~(OC_EF_INSERT | OC_EF_MOVE);
+	Lck_Unlock(&ep->mtx);
+
+	Lck_Lock(&lru->mtx);
+	AN(isnan(oc->last_lru));
 	oc->last_lru = now;
 	if (!(oc->flags & OC_F_DYING)) {
 		VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
@@ -433,6 +431,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, double now)
 static double
 exp_expire(struct exp_priv *ep, double now)
 {
+
 	struct lru *lru;
 	struct objcore *oc;
 
@@ -450,12 +449,13 @@ exp_expire(struct exp_priv *ep, double now)
 
 	VSC_C_main->n_expired++;
 
+	if (!(oc->flags & OC_F_DYING))
+		ObjKill(oc);
+
 	lru = ObjGetLRU(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 	Lck_Lock(&lru->mtx);
 
-	if (!(oc->flags & OC_F_DYING))
-		ObjKill(oc);
 	if (isnan(oc->last_lru)) {
 		oc = NULL;
 	} else {
