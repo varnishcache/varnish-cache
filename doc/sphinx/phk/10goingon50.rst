@@ -213,7 +213,7 @@ you to appreciate that you live in a fantastic future with a lot
 of amazing changes - even if it will take a long time before
 progress goes too far.
 
-There does seem to be increasing tendency to want the kids of your
+There does seem to be increasing tendency to want the kids off your
 lawn, but I think I can control that.
 
 But if not I hereby give them permission to steal my apples and
