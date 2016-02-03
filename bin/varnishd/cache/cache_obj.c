@@ -370,13 +370,13 @@ ObjTouch(struct worker *wrk, struct objcore *oc, double now)
 }
 
 /*====================================================================
- * ObjKill()
+ * ObjSnipe()
  *
  * If objcore is idle, gain a ref and mark it dead.
  */
 
 int
-ObjKill(const struct worker *wrk, struct objcore *oc)
+ObjSnipe(const struct worker *wrk, struct objcore *oc)
 {
 	int retval = 0;
 

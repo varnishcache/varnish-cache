@@ -296,7 +296,7 @@ EXP_NukeOne(struct worker *wrk, struct lru *lru)
 
 		AZ(oc->lru_flags & OC_LRU_OFFLRU);
 
-		if (ObjKill(wrk, oc)) {
+		if (ObjSnipe(wrk, oc)) {
 			VSC_C_main->n_lru_nuked++; // XXX per lru ?
 			VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 			oc->lru_flags |= OC_LRU_OFFLRU;

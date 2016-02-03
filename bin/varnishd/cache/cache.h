@@ -857,7 +857,7 @@ void ObjSetState(const struct objcore *, enum boc_state_e next);
 void ObjWaitState(const struct objcore *, enum boc_state_e want);
 void ObjTrimStore(struct worker *, struct objcore *);
 void ObjTouch(struct worker *, struct objcore *, double now);
-int ObjKill(const struct worker *, struct objcore *);
+int ObjSnipe(const struct worker *, struct objcore *);
 unsigned ObjGetXID(struct worker *, struct objcore *);
 uint64_t ObjGetLen(struct worker *, struct objcore *);
 void ObjUpdateMeta(struct worker *, struct objcore *);
