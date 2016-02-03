@@ -389,7 +389,7 @@ ObjKill(const struct worker *wrk, struct objcore *oc)
 	if (oc->refcnt == 1 && !Lck_Trylock(&oc->objhead->mtx)) {
 		if (oc->refcnt == 1) {
 			oc->exp_flags |= OC_EF_DYING;
-			oc->exp_flags |= OC_EF_OFFLRU;	/* XXX */
+			oc->lru_flags |= OC_LRU_OFFLRU;	/* XXX */
 			oc->refcnt++;
 			retval = 1;
 		}

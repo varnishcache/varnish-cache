@@ -635,7 +635,7 @@ sml_touch(struct worker *wrk, struct objcore *oc, double now)
 
 	AN(oc->exp_flags & OC_EF_EXP);
 
-	if (!(oc->exp_flags & OC_EF_OFFLRU)) {
+	if (!(oc->lru_flags & OC_LRU_OFFLRU)) {
 		/* Can only touch it while it's actually on the LRU list */
 		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 		VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
