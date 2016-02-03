@@ -855,12 +855,13 @@ ssize_t ObjWaitExtend(struct worker *, struct objcore *, ssize_t l);
 void ObjSetState(const struct objcore *, enum boc_state_e next);
 void ObjWaitState(const struct objcore *, enum boc_state_e want);
 void ObjTrimStore(struct worker *, struct objcore *);
-void ObjTouch(struct worker *wrk, struct objcore *oc, double now);
+void ObjTouch(struct worker *, struct objcore *, double now);
+int ObjKill(const struct worker *, struct objcore *);
 unsigned ObjGetXID(struct worker *, struct objcore *);
-uint64_t ObjGetLen(struct worker *, struct objcore *oc);
+uint64_t ObjGetLen(struct worker *, struct objcore *);
 void ObjUpdateMeta(struct worker *, struct objcore *);
 void ObjFreeObj(struct worker *, struct objcore *);
-void ObjSlim(struct worker *, struct objcore *oc);
+void ObjSlim(struct worker *, struct objcore *);
 struct lru *ObjGetLRU(const struct objcore *);
 int ObjHasAttr(struct worker *, struct objcore *, enum obj_attr);
 void *ObjGetAttr(struct worker *, struct objcore *, enum obj_attr,
@@ -879,7 +880,7 @@ int ObjGetDouble(struct worker *, struct objcore *, enum obj_attr, double *);
 int ObjGetU32(struct worker *, struct objcore *, enum obj_attr, uint32_t *);
 int ObjGetU64(struct worker *, struct objcore *, enum obj_attr, uint64_t *);
 
-int ObjCheckFlag(struct worker *, struct objcore *oc, enum obj_flags of);
+int ObjCheckFlag(struct worker *, struct objcore *, enum obj_flags of);
 void ObjSetFlag(struct worker *, struct objcore *, enum obj_flags of, int val);
 
 /* cache_panic.c */

@@ -370,6 +370,35 @@ ObjTouch(struct worker *wrk, struct objcore *oc, double now)
 }
 
 /*====================================================================
+ * ObjKill()
+ *
+ * If objcore is idle, gain a ref and mark it dead.
+ */
+
+int
+ObjKill(const struct worker *wrk, struct objcore *oc)
+{
+	int retval = 0;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
+
+	AZ(oc->exp_flags & OC_EF_DYING);
+
+	if (oc->refcnt == 1 && !Lck_Trylock(&oc->objhead->mtx)) {
+		if (oc->refcnt == 1) {
+			oc->exp_flags |= OC_EF_DYING;
+			oc->exp_flags |= OC_EF_OFFLRU;	/* XXX */
+			oc->refcnt++;
+			retval = 1;
+		}
+		Lck_Unlock(&oc->objhead->mtx);
+	}
+	return (retval);
+}
+
+/*====================================================================
  * Utility functions which work on top of the previous ones
  */
 

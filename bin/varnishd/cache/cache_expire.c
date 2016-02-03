@@ -279,7 +279,6 @@ int
 EXP_NukeOne(struct worker *wrk, struct lru *lru)
 {
 	struct objcore *oc, *oc2;
-	struct objhead *oh;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
@@ -292,30 +291,12 @@ EXP_NukeOne(struct worker *wrk, struct lru *lru)
 		    oc, oc->flags, oc->refcnt);
 
 		AZ(oc->exp_flags & OC_EF_OFFLRU);
-		AZ(oc->exp_flags & OC_EF_DYING);
 
-		/*
-		 * It wont release any space if we cannot release the last
-		 * reference, besides, if somebody else has a reference,
-		 * it's a bad idea to nuke this object anyway.
-		 */
-		if (oc->refcnt > 1)
-			continue;
-		oh = oc->objhead;
-		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
-		if (Lck_Trylock(&oh->mtx))
-			continue;
-		if (oc->refcnt == 1) {
-			oc->exp_flags |= OC_EF_DYING | OC_EF_OFFLRU;
-			oc->refcnt++;
+		if (ObjKill(wrk, oc)) {
 			VSC_C_main->n_lru_nuked++; // XXX per lru ?
 			VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
-		} else {
-			oc = NULL;
-		}
-		Lck_Unlock(&oh->mtx);
-		if (oc != NULL)
 			break;
+		}
 	}
 	Lck_Unlock(&lru->mtx);
 
