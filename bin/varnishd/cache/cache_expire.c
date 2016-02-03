@@ -156,6 +156,18 @@ exp_mail_it(struct objcore *oc, uint8_t cmds)
 }
 
 /*--------------------------------------------------------------------
+ * Call EXP's attention to a an oc
+ */
+
+void
+EXP_Poke(struct objcore *oc)
+{
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	exp_mail_it(oc, 0);
+}
+
+/*--------------------------------------------------------------------
  * Inject an object with a reference into the lru/binheap.
  *
  * This can either come from a stevedore (persistent) during startup
@@ -264,53 +276,6 @@ EXP_Rearm(struct objcore *oc, double now, double ttl, double grace, double keep)
 
 	if (oc != NULL)
 		exp_mail_it(oc, OC_EF_MOVE);
-}
-
-/*--------------------------------------------------------------------
- * Attempt to make space by nuking the oldest object on the LRU list
- * which isn't in use.
- * Returns: 1: did, 0: didn't, -1: can't
- */
-
-int
-EXP_NukeOne(struct worker *wrk, struct lru *lru)
-{
-	struct objcore *oc, *oc2;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
-	/* Find the first currently unused object on the LRU.  */
-	Lck_Lock(&lru->mtx);
-	VTAILQ_FOREACH_SAFE(oc, &lru->lru_head, lru_list, oc2) {
-		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-
-		VSLb(wrk->vsl, SLT_ExpKill, "LRU_Cand p=%p f=0x%x r=%d",
-		    oc, oc->flags, oc->refcnt);
-
-		AZ(isnan(oc->last_lru));
-
-		if (ObjSnipe(wrk, oc)) {
-			VSC_C_main->n_lru_nuked++; // XXX per lru ?
-			VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
-			oc->last_lru = NAN;
-			break;
-		}
-	}
-	Lck_Unlock(&lru->mtx);
-
-	if (oc == NULL) {
-		VSLb(wrk->vsl, SLT_ExpKill, "LRU_Fail");
-		return (-1);
-	}
-
-	/* XXX: We could grab and return one storage segment to our caller */
-	ObjSlim(wrk, oc);
-
-	exp_mail_it(oc, 0);
-
-	VSLb(wrk->vsl, SLT_ExpKill, "LRU x=%u", ObjGetXID(wrk, oc));
-	(void)HSH_DerefObjCore(wrk, &oc);
-	return (1);
 }
 
 /*--------------------------------------------------------------------*/
