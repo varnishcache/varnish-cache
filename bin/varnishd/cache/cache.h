@@ -441,6 +441,7 @@ struct objcore {
 	VTAILQ_ENTRY(objcore)	lru_list;
 	float			last_lru;
 	VTAILQ_ENTRY(objcore)	ban_list;
+	VSTAILQ_ENTRY(objcore)	exp_list;
 	struct ban		*ban;
 };
 

@@ -56,7 +56,7 @@ struct exp_priv {
 	struct worker			*wrk;
 	struct vsl_log			vsl;
 
-	VTAILQ_HEAD(,objcore)		inbox;
+	VSTAILQ_HEAD(,objcore)		inbox;
 	struct binheap			*heap;
 	pthread_cond_t			condvar;
 
@@ -144,9 +144,9 @@ exp_mail_it(struct objcore *oc)
 	AN(isnan(oc->last_lru));
 	Lck_Lock(&exphdl->mtx);
 	if (oc->flags & OC_F_DYING)
-		VTAILQ_INSERT_HEAD(&exphdl->inbox, oc, lru_list);
+		VSTAILQ_INSERT_HEAD(&exphdl->inbox, oc, exp_list);
 	else
-		VTAILQ_INSERT_TAIL(&exphdl->inbox, oc, lru_list);
+		VSTAILQ_INSERT_TAIL(&exphdl->inbox, oc, exp_list);
 	VSC_C_main->exp_mailed++;
 	AZ(pthread_cond_signal(&exphdl->condvar));
 	Lck_Unlock(&exphdl->mtx);
@@ -521,9 +521,9 @@ exp_thread(struct worker *wrk, void *priv)
 	while (1) {
 
 		Lck_Lock(&ep->mtx);
-		oc = VTAILQ_FIRST(&ep->inbox);
+		oc = VSTAILQ_FIRST(&ep->inbox);
 		if (oc != NULL) {
-			VTAILQ_REMOVE(&ep->inbox, oc, lru_list);
+			VSTAILQ_REMOVE(&ep->inbox, oc, objcore, exp_list);
 			VSC_C_main->exp_received++;
 			tnext = 0;
 		} else if (tnext > t) {
@@ -556,7 +556,7 @@ EXP_Init(void)
 
 	Lck_New(&ep->mtx, lck_exp);
 	AZ(pthread_cond_init(&ep->condvar, NULL));
-	VTAILQ_INIT(&ep->inbox);
+	VSTAILQ_INIT(&ep->inbox);
 	AZ(pthread_rwlock_init(&ep->cb_rwl, NULL));
 	VTAILQ_INIT(&ep->ecb_list);
 	exphdl = ep;
