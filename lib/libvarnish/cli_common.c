@@ -84,6 +84,31 @@ VCLI_Overflow(struct cli *cli)
 
 /*lint -e{818} cli could be const */
 void
+VCLI_JSON_str(struct cli *cli, const char *s)
+{
+
+	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
+	VSB_quote(cli->sb, s, -1, VSB_QUOTE_JSON);
+}
+
+/*lint -e{818} cli could be const */
+void
+VCLI_JSON_ver(struct cli *cli, unsigned ver, const char * const * av)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
+	VCLI_Out(cli, "[ %u, [", ver);
+	for (i = 1; av[i] != NULL; i++) {
+		VCLI_JSON_str(cli, av[i]);
+		if (av[i + 1] != NULL)
+			VCLI_Out(cli, ", ");
+	}
+	VCLI_Out(cli, "]");
+}
+
+/*lint -e{818} cli could be const */
+void
 VCLI_Quote(struct cli *cli, const char *s)
 {
 

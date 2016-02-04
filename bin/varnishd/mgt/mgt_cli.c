@@ -142,7 +142,9 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	 */
 	if (cli_o <= 0) {
 		if (!strcmp(av[1], "help")) {
-			VCLI_Out(cli, "No help from child, (not running).\n");
+			if (av[2] == NULL || strcmp(av[2], "-j"))
+				VCLI_Out(cli,
+				   "No help from child, (not running).\n");
 			return;
 		}
 		VCLI_SetResult(cli, CLIS_UNKNOWN);
@@ -308,7 +310,7 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 }
 
 static struct cli_proto cli_auth[] = {
-	{ CLI_HELP,		"", VCLS_func_help },
+	{ CLI_HELP,		"", VCLS_func_help, VCLS_func_help_json },
 	{ CLI_PING,		"", VCLS_func_ping },
 	{ CLI_AUTH,		"", mcf_auth },
 	{ CLI_QUIT,		"", VCLS_func_close },

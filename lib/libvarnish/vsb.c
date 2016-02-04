@@ -498,7 +498,6 @@ VSB_quote(struct vsb *s, const char *p, int len, int how)
 	const char *q;
 	int quote = 0;
 
-	(void)how;	/* For future enhancements */
 	if (len == -1)
 		len = strlen(p);
 
@@ -508,7 +507,7 @@ VSB_quote(struct vsb *s, const char *p, int len, int how)
 			break;
 		}
 	}
-	if (!quote) {
+	if (!quote && !(how & VSB_QUOTE_JSON)) {
 		(void)VSB_bcat(s, p, len);
 		return;
 	}
@@ -536,6 +535,7 @@ VSB_quote(struct vsb *s, const char *p, int len, int how)
 			(void)VSB_cat(s, "\\t");
 			break;
 		default:
+			/* XXX: Implement VSB_QUOTE_JSON */
 			if (isgraph(*q))
 				(void)VSB_putc(s, *q);
 			else

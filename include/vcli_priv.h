@@ -48,12 +48,14 @@ struct cli_proto {
 
 	/* Dispatch information */
 	cli_func_t		*func;
+	cli_func_t		*jsonfunc;
 	void			*priv;
 };
 
 /* The implementation must provide these functions */
 int VCLI_Overflow(struct cli *cli);
-void VCLI_Out(struct cli *cli, const char *fmt, ...)
-    __v_printflike(2, 3);
+void VCLI_Out(struct cli *cli, const char *fmt, ...) __v_printflike(2, 3);
 void VCLI_Quote(struct cli *cli, const char *str);
+void VCLI_JSON_str(struct cli *cli, const char *str);
+void VCLI_JSON_ver(struct cli *cli, unsigned ver, const char * const * av);
 void VCLI_SetResult(struct cli *cli, unsigned r);
