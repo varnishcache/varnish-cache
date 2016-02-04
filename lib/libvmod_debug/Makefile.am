@@ -13,7 +13,17 @@ vmodtoolargs = --strict
 
 noinst_LTLIBRARIES = libvmod_debug.la
 
-libvmod_debug_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version -shared -rpath /nowhere
+libvmod_debug_la_CFLAGS = \
+	@ASAN_CFLAGS@ \
+	@MSAN_CFLAGS@ \
+	@TSAN_CFLAGS@ \
+	@UBSAN_CFLAGS@
+
+libvmod_debug_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version -shared -rpath /nowhere \
+	@ASAN_LDFLAGS@ \
+	@MSAN_LDFLAGS@ \
+	@TSAN_LDFLAGS@ \
+	@UBSAN_LDFLAGS@
 
 libvmod_debug_la_SOURCES = \
 	vmod_debug.c \

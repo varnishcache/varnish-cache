@@ -279,6 +279,46 @@ if test "$ac_cv_have_viz" = no; then
 fi
 CFLAGS="${save_CFLAGS}"
 
+UBSAN_CFLAGS=
+UBSAN_LDFLAGS=
+AC_ARG_ENABLE(ubsan,
+	AS_HELP_STRING([--enable-ubsan],[enable undefined behavior sanitizer (default is NO)]),
+	CFLAGS="${CFLAGS} -fPIC"
+	UBSAN_CFLAGS="-fsanitize=undefined -fPIE -fno-omit-frame-pointer"
+	UBSAN_LDFLAGS="-fsanitize=undefined -pie")
+AC_SUBST(UBSAN_CFLAGS)
+AC_SUBST(UBSAN_LDFLAGS)
+
+TSAN_CFLAGS=
+TSAN_LDFLAGS=
+AC_ARG_ENABLE(tsan,
+	AS_HELP_STRING([--enable-tsan],[enable thread sanitizer (default is NO)]),
+	CFLAGS="${CFLAGS} -fPIC"
+	TSAN_CFLAGS="-fsanitize=thread -fPIE -fno-omit-frame-pointer"
+	TSAN_LDFLAGS="-fsanitize=thread -pie")
+AC_SUBST(TSAN_CFLAGS)
+AC_SUBST(TSAN_LDFLAGS)
+
+ASAN_CFLAGS=
+ASAN_LDFLAGS=
+AC_ARG_ENABLE(asan,
+	AS_HELP_STRING([--enable-asan],[enable address sanitizer (default is NO)]),
+	CFLAGS="${CFLAGS} -fPIC"
+	ASAN_CFLAGS="-fsanitize=address -fPIE -fno-omit-frame-pointer"
+	ASAN_LDFLAGS="-fsanitize=address -pie")
+AC_SUBST(ASAN_CFLAGS)
+AC_SUBST(ASAN_LDFLAGS)
+
+MSAN_CFLAGS=
+MSAN_LDFLAGS=
+AC_ARG_ENABLE(msan,
+	AS_HELP_STRING([--enable-msan],[enable memory sanitizer (default is NO)]),
+	CFLAGS="${CFLAGS} -fPIC"
+	MSAN_CFLAGS="-fsanitize=memory -fPIE -fno-omit-frame-pointer"
+	MSAN_LDFLAGS="-fsanitize=memory -pie")
+AC_SUBST(MSAN_CFLAGS)
+AC_SUBST(MSAN_LDFLAGS)
+
 # Use jemalloc on Linux
 JEMALLOC_LDADD=
 AC_ARG_WITH([jemalloc],

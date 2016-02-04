@@ -18,9 +18,19 @@ varnishtop_SOURCES = varnishtop.c \
 	$(top_srcdir)/lib/libvarnish/vsb.c
 
 
+varnishtop_CFLAGS = \
+	@ASAN_CFLAGS@ \
+	@MSAN_CFLAGS@ \
+	@TSAN_CFLAGS@ \
+	@UBSAN_CFLAGS@
+
 varnishtop_LDADD = \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
+	@ASAN_LDFLAGS@ \
+	@MSAN_LDFLAGS@ \
+	@TSAN_LDFLAGS@ \
+	@UBSAN_LDFLAGS@ \
 	@CURSES_LIB@ ${RT_LIBS} ${LIBM} ${PTHREAD_LIBS}
 
 noinst_PROGRAMS = varnishtop_opt2rst

@@ -3,8 +3,16 @@ AM_LDFLAGS  = $(AM_LT_LDFLAGS)
 
 pkglib_LTLIBRARIES = libvgz.la
 
-libvgz_la_LDFLAGS = $(AM_LDFLAGS) -avoid-version
-libvgz_la_CFLAGS = -D_LARGEFILE64_SOURCE=1 -DZLIB_CONST $(libvgz_extra_cflags)
+libvgz_la_LDFLAGS = $(AM_LDFLAGS) -avoid-version \
+	@ASAN_LDFLAGS@ \
+	@MSAN_LDFLAGS@ \
+	@TSAN_LDFLAGS@ \
+	@UBSAN_LDFLAGS@
+libvgz_la_CFLAGS = -D_LARGEFILE64_SOURCE=1 -DZLIB_CONST $(libvgz_extra_cflags) \
+	@ASAN_CFLAGS@ \
+	@MSAN_CFLAGS@ \
+	@TSAN_CFLAGS@ \
+	@UBSAN_CFLAGS@
 
 libvgz_la_SOURCES = \
 	adler32.c \

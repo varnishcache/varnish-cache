@@ -12,7 +12,17 @@ vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
 vmodtoolargs = --strict
 vmod_LTLIBRARIES = libvmod_directors.la
 
-libvmod_directors_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version -shared
+libvmod_directors_la_CFLAGS = \
+	@ASAN_CFLAGS@ \
+	@MSAN_CFLAGS@ \
+	@TSAN_CFLAGS@ \
+	@UBSAN_CFLAGS@
+
+libvmod_directors_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version -shared \
+	@ASAN_LDFLAGS@ \
+	@MSAN_LDFLAGS@ \
+	@TSAN_LDFLAGS@ \
+	@UBSAN_LDFLAGS@
 
 libvmod_directors_la_SOURCES = \
 	vdir.c \
