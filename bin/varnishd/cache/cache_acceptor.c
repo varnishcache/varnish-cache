@@ -561,7 +561,7 @@ static struct cli_proto vca_cmds[] = {
 	{ CLI_SERVER_START,	"i", ccf_start },
 	{ "debug.listen_address", "debug.listen_address",
 	    "\tReport the actual listen address.", 0, 0,
-	    "d", ccf_listen_address, NULL },
+	    "d", ccf_listen_address },
 	{ NULL }
 };
 

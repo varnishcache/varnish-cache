@@ -121,7 +121,7 @@ mcf_panic(struct cli *cli, const char * const *av, void *priv)
 static struct cli_proto cli_debug[] = {
 	{ "debug.panic.master", "debug.panic.master",
 		"\tPanic the master process.",
-		0, 0, "d", mcf_panic, NULL},
+		0, 0, "d", mcf_panic},
 	{ NULL }
 };
 
@@ -177,7 +177,7 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 
 static struct cli_proto cli_askchild[] = {
 	{ "*", "<wild-card-entry>", "\t<fall through to cacher>\n",
-		0, 9999, "h*", mcf_askchild, NULL},
+		0, 9999, "h*", mcf_askchild},
 	{ NULL }
 };
 
@@ -308,10 +308,10 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 }
 
 static struct cli_proto cli_auth[] = {
-	{ CLI_HELP,		"", VCLS_func_help, NULL },
+	{ CLI_HELP,		"", VCLS_func_help },
 	{ CLI_PING,		"", VCLS_func_ping },
-	{ CLI_AUTH,		"", mcf_auth, NULL },
-	{ CLI_QUIT,		"", VCLS_func_close, NULL},
+	{ CLI_AUTH,		"", mcf_auth },
+	{ CLI_QUIT,		"", VCLS_func_close },
 	{ NULL }
 };
 
