@@ -611,23 +611,36 @@ mgt_stop_child(void)
 }
 
 /*=====================================================================
- * CLI command to start/stop child
+ * CLI commands to start/stop child
  */
 
 void __match_proto__(cli_func_t)
-mcf_server_startstop(struct cli *cli, const char * const *av, void *priv)
+mcf_server_start(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)av;
-	if (priv != NULL && child_state == CH_RUNNING)
-		mgt_stop_child();
-	else if (priv == NULL && child_state == CH_STOPPED) {
+	(void)priv;
+	if (child_state == CH_STOPPED) {
 		if (mgt_has_vcl()) {
 			mgt_launch_child(cli);
 		} else {
 			VCLI_SetResult(cli, CLIS_CANT);
 			VCLI_Out(cli, "No VCL available");
 		}
+	} else {
+		VCLI_SetResult(cli, CLIS_CANT);
+		VCLI_Out(cli, "Child in state %s", ch_state[child_state]);
+	}
+}
+
+void __match_proto__(cli_func_t)
+mcf_server_stop(struct cli *cli, const char * const *av, void *priv)
+{
+
+	(void)av;
+	(void)priv;
+	if (child_state == CH_RUNNING) {
+		mgt_stop_child();
 	} else {
 		VCLI_SetResult(cli, CLIS_CANT);
 		VCLI_Out(cli, "Child in state %s", ch_state[child_state]);

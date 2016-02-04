@@ -29,7 +29,8 @@
  */
 
 /* mgt_child.c */
-cli_func_t mcf_server_startstop;
+cli_func_t mcf_server_start;
+cli_func_t mcf_server_stop;
 cli_func_t mcf_server_status;
 cli_func_t mcf_panic_show;
 cli_func_t mcf_panic_clear;

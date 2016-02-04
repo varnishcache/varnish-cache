@@ -89,20 +89,20 @@ mcf_banner(struct cli *cli, const char *const *av, void *priv)
 
 /* XXX: what order should this list be in ? */
 static struct cli_proto cli_proto[] = {
-	{ CLI_BANNER,		"", mcf_banner, NULL },
-	{ CLI_SERVER_STATUS,	"", mcf_server_status, NULL },
-	{ CLI_SERVER_START,	"", mcf_server_startstop, NULL },
-	{ CLI_SERVER_STOP,	"", mcf_server_startstop, cli_proto },
-	{ CLI_VCL_LOAD,		"", mcf_vcl_load, NULL },
-	{ CLI_VCL_INLINE,	"", mcf_vcl_inline, NULL },
-	{ CLI_VCL_USE,		"", mcf_vcl_use, NULL },
-	{ CLI_VCL_STATE,	"", mcf_vcl_state, NULL },
-	{ CLI_VCL_DISCARD,	"", mcf_vcl_discard, NULL },
-	{ CLI_VCL_LIST,		"", mcf_vcl_list, NULL },
-	{ CLI_PARAM_SHOW,	"", mcf_param_show, NULL },
-	{ CLI_PARAM_SET,	"", mcf_param_set, NULL },
-	{ CLI_PANIC_SHOW,	"", mcf_panic_show, NULL },
-	{ CLI_PANIC_CLEAR,	"", mcf_panic_clear, NULL },
+	{ CLI_BANNER,		"", mcf_banner },
+	{ CLI_SERVER_STATUS,	"", mcf_server_status },
+	{ CLI_SERVER_START,	"", mcf_server_start },
+	{ CLI_SERVER_STOP,	"", mcf_server_stop },
+	{ CLI_VCL_LOAD,		"", mcf_vcl_load },
+	{ CLI_VCL_INLINE,	"", mcf_vcl_inline },
+	{ CLI_VCL_USE,		"", mcf_vcl_use },
+	{ CLI_VCL_STATE,	"", mcf_vcl_state },
+	{ CLI_VCL_DISCARD,	"", mcf_vcl_discard },
+	{ CLI_VCL_LIST,		"", mcf_vcl_list },
+	{ CLI_PARAM_SHOW,	"", mcf_param_show },
+	{ CLI_PARAM_SET,	"", mcf_param_set },
+	{ CLI_PANIC_SHOW,	"", mcf_panic_show },
+	{ CLI_PANIC_CLEAR,	"", mcf_panic_clear },
 	{ NULL }
 };
 
