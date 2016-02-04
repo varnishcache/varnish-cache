@@ -531,7 +531,7 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
 
 	while (1) {
 		if (really > 0) {
-			if (LRU_NukeOne(wrk, stv->lru) == -1)
+			if (!LRU_NukeOne(wrk, stv->lru))
 				return (0);
 			really--;
 		}

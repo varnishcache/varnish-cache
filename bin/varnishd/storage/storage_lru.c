@@ -25,22 +25,17 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * STEVEDORE: one who works at or is responsible for loading and
- * unloading ships in port.  Example: "on the wharves, stevedores were
- * unloading cargo from the far corners of the world." Origin: Spanish
- * estibador, from estibar to pack.  First Known Use: 1788
+ * Least-Recently-Used logic for freeing space in stevedores.
  */
 
 #include "config.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "cache/cache.h"
 #include "hash/hash_slinger.h"
 
 #include "storage/storage.h"
-#include "vtim.h"
 
 struct lru {
 	unsigned		magic;
@@ -70,16 +65,17 @@ LRU_Free(struct lru *lru)
 }
 
 void
-LRU_Add(struct objcore *oc)
+LRU_Add(struct objcore *oc, double now)
 {
 	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AZ(isnan(now));
 	lru = ObjGetLRU(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 	Lck_Lock(&lru->mtx);
 	VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
-	oc->last_lru = VTIM_real();
+	oc->last_lru = now;
 	Lck_Unlock(&lru->mtx);
 }
 
@@ -139,7 +135,7 @@ LRU_Touch(struct worker *wrk, struct objcore *oc, double now)
 /*--------------------------------------------------------------------
  * Attempt to make space by nuking the oldest object on the LRU list
  * which isn't in use.
- * Returns: 1: did, 0: didn't, -1: can't
+ * Returns: 1: did, 0: didn't;
  */
 
 int
@@ -170,7 +166,7 @@ LRU_NukeOne(struct worker *wrk, struct lru *lru)
 
 	if (oc == NULL) {
 		VSLb(wrk->vsl, SLT_ExpKill, "LRU_Fail");
-		return (-1);
+		return (0);
 	}
 
 	/* XXX: We could grab and return one storage segment to our caller */

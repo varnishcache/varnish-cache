@@ -128,7 +128,7 @@ SML_allocobj(struct worker *wrk, const struct stevedore *stv,
 	ltot = sizeof(struct object) + PRNDUP(wsl);
 	while (1) {
 		if (really > 0) {
-			if (LRU_NukeOne(wrk, stv->lru) == -1)
+			if (!LRU_NukeOne(wrk, stv->lru))
 				return (0);
 			really--;
 		}
@@ -339,7 +339,7 @@ objallocwithnuke(struct worker *wrk, const struct stevedore *stv, size_t size)
 
 		/* no luck; try to free some space and keep trying */
 		if (fail < cache_param->nuke_limit &&
-		    LRU_NukeOne(wrk, stv->lru) == -1)
+		    !LRU_NukeOne(wrk, stv->lru))
 			break;
 	}
 	CHECK_OBJ_ORNULL(st, STORAGE_MAGIC);
@@ -505,7 +505,7 @@ sml_stable(struct worker *wrk, struct objcore *oc, struct boc *boc)
 		sml_stv_free(stv, st);
 	}
 
-	LRU_Add(oc);
+	LRU_Add(oc, wrk->lastused);	// approx timestamp is OK
 }
 
 static void * __match_proto__(objgetattr_f)

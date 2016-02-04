@@ -119,13 +119,13 @@ int STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx);
 uintmax_t STV_FileSize(int fd, const char *size, unsigned *granularity,
     const char *ctx);
 
+/*--------------------------------------------------------------------*/
 struct lru *LRU_Alloc(void);
 void LRU_Free(struct lru *);
-void LRU_Add(struct objcore *);
+void LRU_Add(struct objcore *, double now);
 void LRU_Remove(struct objcore *);
 int LRU_NukeOne(struct worker *, struct lru *);
 void LRU_Touch(struct worker *, struct objcore *, double now);
-
 
 /*--------------------------------------------------------------------*/
 extern const struct stevedore sma_stevedore;
