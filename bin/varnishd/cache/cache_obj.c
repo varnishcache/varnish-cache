@@ -60,6 +60,32 @@ obj_getmethods(const struct objcore *oc)
 }
 
 /*====================================================================
+ * ObjNew()
+ *
+ */
+
+struct objcore *
+ObjNew(struct worker *wrk, int wantboc)
+{
+	struct objcore *oc;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
+	ALLOC_OBJ(oc, OBJCORE_MAGIC);
+	AN(oc);
+	wrk->stats->n_objectcore++;
+	oc->last_lru = NAN;
+	if (wantboc) {
+		ALLOC_OBJ(oc->boc, BOC_MAGIC);
+		AN(oc->boc);
+		Lck_New(&oc->boc->mtx, lck_busyobj);
+		AZ(pthread_cond_init(&oc->boc->cond, NULL));
+		oc->boc->refcount = 1;
+	}
+	return (oc);
+}
+
+/*====================================================================
  * ObjIterate()
  *
  */

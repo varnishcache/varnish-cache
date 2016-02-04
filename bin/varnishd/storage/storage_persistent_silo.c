@@ -158,8 +158,7 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 	for (;no > 0; so++,no--) {
 		if (EXP_When(&so->exp) < t_now)
 			continue;
-		ALLOC_OBJ(oc, OBJCORE_MAGIC);
-		AN(oc);
+		oc = ObjNew(wrk, 0);
 		oc->flags &= ~OC_F_BUSY;
 		oc->stobj->stevedore = sc->parent;
 		smp_init_oc(oc, sg, no);
@@ -168,7 +167,6 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		HSH_Insert(wrk, so->hash, oc);
 		oc->exp = so->exp;
 		sg->nobj++;
-		oc->last_lru = NAN;
 		EXP_Inject(wrk, oc);
 	}
 	Pool_Sumstat(wrk);

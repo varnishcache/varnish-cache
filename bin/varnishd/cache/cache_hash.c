@@ -67,28 +67,6 @@ static struct objhead *private_oh;
 
 /*---------------------------------------------------------------------*/
 
-static struct objcore *
-hsh_NewObjCore(struct worker *wrk, int boc)
-{
-	struct objcore *oc;
-
-	ALLOC_OBJ(oc, OBJCORE_MAGIC);
-	AN(oc);
-	wrk->stats->n_objectcore++;
-	oc->flags |= OC_F_BUSY | OC_F_INCOMPLETE;
-	oc->last_lru = NAN;
-	if (boc) {
-		ALLOC_OBJ(oc->boc, BOC_MAGIC);
-		AN(oc->boc);
-		Lck_New(&oc->boc->mtx, lck_busyobj);
-		AZ(pthread_cond_init(&oc->boc->cond, NULL));
-		oc->boc->refcount = 1;
-	}
-	return (oc);
-}
-
-/*---------------------------------------------------------------------*/
-
 static struct objhead *
 hsh_newobjhead(void)
 {
@@ -111,8 +89,10 @@ hsh_prealloc(struct worker *wrk)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
-	if (wrk->nobjcore == NULL)
-		wrk->nobjcore = hsh_NewObjCore(wrk, 1);
+	if (wrk->nobjcore == NULL) {
+		wrk->nobjcore = ObjNew(wrk, 1);
+		wrk->nobjcore->flags |= OC_F_BUSY | OC_F_INCOMPLETE;
+	}
 	CHECK_OBJ_NOTNULL(wrk->nobjcore, OBJCORE_MAGIC);
 
 	if (wrk->nobjhead == NULL) {
@@ -134,11 +114,11 @@ HSH_Private(struct worker *wrk, int wantboc)
 
 	CHECK_OBJ_NOTNULL(private_oh, OBJHEAD_MAGIC);
 
-	oc = hsh_NewObjCore(wrk, wantboc);
+	oc = ObjNew(wrk, wantboc);
 	AN(oc);
 	oc->refcnt = 1;
 	oc->objhead = private_oh;
-	oc->flags |= OC_F_PRIVATE | OC_F_BUSY;
+	oc->flags |= OC_F_PRIVATE | OC_F_BUSY | OC_F_INCOMPLETE;
 	Lck_Lock(&private_oh->mtx);
 	VTAILQ_INSERT_TAIL(&private_oh->objcs, oc, list);
 	private_oh->refcnt++;
