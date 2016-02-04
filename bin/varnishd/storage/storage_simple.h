@@ -40,7 +40,8 @@ struct object {
 #define OBJECT_MAGIC		0x32851d42
 	struct storage		*objstore;
 
-	char			oa_vxid[4];
+	uint8_t			oa_len[8];
+	uint8_t			oa_vxid[4];
 	uint8_t			*oa_vary;
 	uint8_t			*oa_http;
 	uint8_t			oa_flags[1];
@@ -48,7 +49,6 @@ struct object {
 	char			oa_lastmodified[8];
 
 	struct storagehead	list;
-	ssize_t			len;
 
 	struct storage		*esidata;
 };

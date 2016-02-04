@@ -31,6 +31,7 @@
 
 /* upper, lower */
 #ifdef OBJ_ATTR
+OBJ_ATTR(LEN,		len)
 OBJ_ATTR(VXID,		vxid)
 OBJ_ATTR(EXP,		exp)
 OBJ_ATTR(VARY,		vary)

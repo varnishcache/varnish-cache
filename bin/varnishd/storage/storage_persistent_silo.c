@@ -45,6 +45,7 @@
 
 #include "hash/hash_slinger.h"
 #include "vsha256.h"
+#include "vend.h"
 #include "vtim.h"
 
 #include "storage/storage_persistent.h"
@@ -435,7 +436,7 @@ smp_oc_sml_getobj(struct worker *wrk, struct objcore *oc)
 				break;
 			l += st->len;
 		}
-		if (l != o->len)
+		if (l != vbe64dec(o->oa_len))
 			bad |= 0x100;
 
 		if(bad) {

@@ -136,41 +136,47 @@ void
 ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l)
 {
 	const struct obj_methods *om = obj_getmethods(oc);
+	uint64_t len;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_ORNULL(oc->boc, BOC_MAGIC);
-	AN(om->objextend);
 	assert(l > 0);
+
+	AZ(ObjGetU64(wrk, oc, OA_LEN, &len));
+	len += l;
 
 	if (oc->boc != NULL) {
 		Lck_Lock(&oc->boc->mtx);
+		AN(om->objextend);
 		om->objextend(wrk, oc, l);
-		AZ(pthread_cond_broadcast(&oc->boc->cond));
+		AZ(ObjSetU64(wrk, oc, OA_LEN, len));
 		Lck_Unlock(&oc->boc->mtx);
+		AZ(pthread_cond_broadcast(&oc->boc->cond));
 	} else {
 		om->objextend(wrk, oc, l);
+		AZ(ObjSetU64(wrk, oc, OA_LEN, len));
 	}
 }
 
 /*====================================================================
  */
 
-ssize_t
-ObjWaitExtend(struct worker *wrk, struct objcore *oc, ssize_t l)
+uint64_t
+ObjWaitExtend(struct worker *wrk, struct objcore *oc, uint64_t l)
 {
-	ssize_t rv;
+	uint64_t rv;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 	Lck_Lock(&oc->boc->mtx);
-	rv = ObjGetLen(wrk, oc);
+	AZ(ObjGetU64(wrk, oc, OA_LEN, &rv));
 	while (1) {
 		assert(l <= rv || oc->boc->state == BOS_FAILED);
 		if (rv > l || oc->boc->state >= BOS_FINISHED)
 			break;
 		(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx, 0);
-		rv = ObjGetLen(wrk, oc);
+		AZ(ObjGetU64(wrk, oc, OA_LEN, &rv));
 	}
 	Lck_Unlock(&oc->boc->mtx);
 	return (rv);
@@ -221,12 +227,12 @@ ObjWaitState(const struct objcore *oc, enum boc_state_e want)
 uint64_t
 ObjGetLen(struct worker *wrk, struct objcore *oc)
 {
-	const struct obj_methods *om = obj_getmethods(oc);
+	uint64_t len;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
-	AN(om->objgetlen);
-	return (om->objgetlen(wrk, oc));
+	AZ(ObjGetU64(wrk, oc, OA_LEN, &len));
+	return(len);
 }
 
 /*====================================================================

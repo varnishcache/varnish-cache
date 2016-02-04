@@ -393,19 +393,6 @@ sml_extend(struct worker *wrk, struct objcore *oc, ssize_t l)
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	assert(st->len + l <= st->space);
 	st->len += l;
-	o->len += l;
-}
-
-static uint64_t __match_proto__(objgetlen_f)
-sml_getlen(struct worker *wrk, struct objcore *oc)
-{
-	struct object *o;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-
-	o = sml_getobj(wrk, oc);
-	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
-	return (o->len);
 }
 
 static void __match_proto__(objtrimstore_f)
@@ -532,6 +519,9 @@ sml_getattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 	case OA_VARY:
 		*len = 4;			// XXX: hack
 		return (o->oa_vary);
+	case OA_LEN:
+		*len = sizeof o->oa_len;
+		return (o->oa_len);
 	case OA_VXID:
 		*len = sizeof o->oa_vxid;
 		return (o->oa_vxid);
@@ -588,6 +578,10 @@ sml_setattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 		st->len += len;
 		retval = o->oa_vary;
 		break;
+	case OA_LEN:
+		assert(len == sizeof o->oa_len);
+		retval = o->oa_len;
+		break;
 	case OA_VXID:
 		assert(len == sizeof o->oa_vxid);
 		retval = o->oa_vxid;
@@ -606,7 +600,6 @@ const struct obj_methods SML_methods = {
 	.objiterator	= sml_iterator,
 	.objgetspace	= sml_getspace,
 	.objextend	= sml_extend,
-	.objgetlen	= sml_getlen,
 	.objtrimstore	= sml_trimstore,
 	.objstable	= sml_stable,
 	.objslim	= sml_slim,
