@@ -133,10 +133,9 @@ STV_open(void)
 			stv->open(stv);
 	}
 	stv = stv_transient;
-	if (stv->open != NULL) {
-		stv->lru = LRU_Alloc();
+	stv->lru = LRU_Alloc();
+	if (stv->open != NULL)
 		stv->open(stv);
-	}
 	stv_next = VTAILQ_FIRST(&stv_stevedores);
 }
 

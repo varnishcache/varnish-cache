@@ -312,17 +312,6 @@ ObjFreeObj(struct worker *wrk, struct objcore *oc)
 }
 
 /*====================================================================
- */
-struct lru *
-ObjGetLRU(const struct objcore *oc)
-{
-	const struct obj_methods *m = obj_getmethods(oc);
-
-	AN(m->objgetlru);
-	return (m->objgetlru(oc));
-}
-
-/*====================================================================
  * ObjHasAttr()
  *
  * Check if object has this attribute

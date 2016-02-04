@@ -215,16 +215,6 @@ sml_objfree(struct worker *wrk, struct objcore *oc)
 	wrk->stats->n_object--;
 }
 
-static struct lru * __match_proto__(objgetlru_f)
-sml_objgetlru(const struct objcore *oc)
-{
-	const struct stevedore *stv;
-
-	stv = oc->stobj->stevedore;
-	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
-	return (stv->lru);
-}
-
 static int __match_proto__(objiterate_f)
 sml_iterator(struct worker *wrk, struct objcore *oc,
     void *priv, objiterate_f *func)
@@ -613,7 +603,6 @@ sml_setattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 
 const struct obj_methods SML_methods = {
 	.objfree	= sml_objfree,
-	.objgetlru	= sml_objgetlru,
 	.objiterator	= sml_iterator,
 	.objgetspace	= sml_getspace,
 	.objextend	= sml_extend,

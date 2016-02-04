@@ -63,8 +63,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	assert(req->objcore->refcnt > 0);
 
-	if (req->objcore->exp_flags & OC_EF_EXP)
-		ObjTouch(req->wrk, req->objcore, req->t_prev);
+	ObjTouch(req->wrk, req->objcore, req->t_prev);
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
 	if (HTTP_Decode(req->resp,

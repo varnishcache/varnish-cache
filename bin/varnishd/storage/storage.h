@@ -96,13 +96,13 @@ struct stevedore {
 	const struct obj_methods
 				*methods;
 
-	struct lru		*lru;
+	struct lru		*lru;		/* For storage_lru.c */
 
 #define VRTSTVVAR(nm, vtype, ctype, dval) storage_var_##ctype *var_##nm;
 #include "tbl/vrt_stv_var.h"
 #undef VRTSTVVAR
 
-	/* private fields */
+	/* private fields for the stevedore */
 	void			*priv;
 
 	VTAILQ_ENTRY(stevedore)	list;

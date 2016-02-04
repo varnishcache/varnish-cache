@@ -33,6 +33,7 @@
 #include <stdlib.h>
 
 #include "cache/cache.h"
+#include "cache/cache_obj.h"
 #include "hash/hash_slinger.h"
 
 #include "storage/storage.h"
@@ -44,22 +45,36 @@ struct lru {
 	struct lock		mtx;
 };
 
+static struct lru *
+lru_get(const struct objcore *oc)
+{
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->stobj->stevedore, STEVEDORE_MAGIC);
+	AN(oc->stobj->stevedore->methods);
+	const struct obj_methods *m = oc->stobj->stevedore->methods;
+
+	if(m->objgetlru != NULL)
+		return (m->objgetlru(oc));
+	return (oc->stobj->stevedore->lru);
+}
+
 struct lru *
 LRU_Alloc(void)
 {
-	struct lru *l;
+	struct lru *lru;
 
-	ALLOC_OBJ(l, LRU_MAGIC);
-	AN(l);
-	VTAILQ_INIT(&l->lru_head);
-	Lck_New(&l->mtx, lck_lru);
-	return (l);
+	ALLOC_OBJ(lru, LRU_MAGIC);
+	AN(lru);
+	VTAILQ_INIT(&lru->lru_head);
+	Lck_New(&lru->mtx, lck_lru);
+	return (lru);
 }
 
 void
 LRU_Free(struct lru *lru)
 {
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
+	AN(VTAILQ_EMPTY(&lru->lru_head));
 	Lck_Delete(&lru->mtx);
 	FREE_OBJ(lru);
 }
@@ -71,7 +86,7 @@ LRU_Add(struct objcore *oc, double now)
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(isnan(now));
-	lru = ObjGetLRU(oc);
+	lru = lru_get(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 	Lck_Lock(&lru->mtx);
 	VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
@@ -85,7 +100,7 @@ LRU_Remove(struct objcore *oc)
 	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	lru = ObjGetLRU(oc);
+	lru = lru_get(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 	Lck_Lock(&lru->mtx);
 	if (!isnan(oc->last_lru)) {
@@ -103,6 +118,9 @@ LRU_Touch(struct worker *wrk, struct objcore *oc, double now)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
+	if (isnan(oc->last_lru))
+		return;
+
 	/*
 	 * To avoid the exphdl->mtx becoming a hotspot, we only
 	 * attempt to move objects if they have not been moved
@@ -110,20 +128,16 @@ LRU_Touch(struct worker *wrk, struct objcore *oc, double now)
 	 * obviously leaves the LRU list imperfectly sorted.
 	 */
 
-	if (oc->flags & OC_F_INCOMPLETE)
-		return;
-
 	if (now - oc->last_lru < cache_param->lru_interval)
 		return;
 
-	lru = ObjGetLRU(oc);
+	lru = lru_get(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	if (Lck_Trylock(&lru->mtx))
 		return;
 
 	if (!isnan(oc->last_lru)) {
-		/* Can only touch it while it's actually on the LRU list */
 		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 		VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
 		VSC_C_main->n_lru_moved++;
@@ -145,15 +159,15 @@ LRU_NukeOne(struct worker *wrk, struct lru *lru)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
+
 	/* Find the first currently unused object on the LRU.  */
 	Lck_Lock(&lru->mtx);
 	VTAILQ_FOREACH_SAFE(oc, &lru->lru_head, lru_list, oc2) {
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+		AZ(isnan(oc->last_lru));
 
 		VSLb(wrk->vsl, SLT_ExpKill, "LRU_Cand p=%p f=0x%x r=%d",
 		    oc, oc->flags, oc->refcnt);
-
-		AZ(isnan(oc->last_lru));
 
 		if (ObjSnipe(wrk, oc)) {
 			VSC_C_main->n_lru_nuked++; // XXX per lru ?
@@ -175,6 +189,6 @@ LRU_NukeOne(struct worker *wrk, struct lru *lru)
 	EXP_Poke(oc);
 
 	VSLb(wrk->vsl, SLT_ExpKill, "LRU x=%u", ObjGetXID(wrk, oc));
-	(void)HSH_DerefObjCore(wrk, &oc);
+	(void)HSH_DerefObjCore(wrk, &oc);	// Ref from ObjSnipe
 	return (1);
 }
