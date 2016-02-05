@@ -60,7 +60,6 @@ struct storage {
 typedef void storage_init_f(struct stevedore *, int ac, char * const *av);
 typedef void storage_open_f(const struct stevedore *);
 typedef struct storage *storage_alloc_f(const struct stevedore *, size_t size);
-typedef void storage_trim_f(struct storage *, size_t size, int move_ok);
 typedef void storage_free_f(struct storage *);
 typedef int storage_allocobj_f(struct worker *, const struct stevedore *,
     struct objcore *, unsigned ltot, int really);
