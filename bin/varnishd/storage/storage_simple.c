@@ -236,7 +236,7 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 	obj = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
 
-	boc = HSH_RefBusy(oc);
+	boc = HSH_RefBoc(oc);
 
 	if (boc == NULL) {
 		VTAILQ_FOREACH(st, &obj->list, list)
@@ -300,7 +300,7 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 			break;
 		}
 	}
-	HSH_DerefBusy(wrk, oc);
+	HSH_DerefBoc(wrk, oc);
 	return (ret);
 }
 
@@ -351,6 +351,7 @@ sml_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
 
 	o = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 
 	st = VTAILQ_LAST(&o->list, storagehead);
 	if (st != NULL && st->len < st->space) {
@@ -364,15 +365,11 @@ sml_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
 	if (st == NULL)
 		return (0);
 
-	if (oc->boc != NULL) {
-		CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
-		Lck_Lock(&oc->boc->mtx);
-		VTAILQ_INSERT_TAIL(&o->list, st, list);
-		Lck_Unlock(&oc->boc->mtx);
-	} else {
-		AN(oc->flags & (OC_F_PRIVATE));
-		VTAILQ_INSERT_TAIL(&o->list, st, list);
-	}
+	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
+	Lck_Lock(&oc->boc->mtx);
+	VTAILQ_INSERT_TAIL(&o->list, st, list);
+	Lck_Unlock(&oc->boc->mtx);
+
 	*sz = st->space - st->len;
 	assert (*sz > 0);
 	*ptr = st->ptr + st->len;
@@ -405,6 +402,7 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 
 	stv = oc->stobj->stevedore;
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
@@ -420,13 +418,9 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 		return;
 
 	if (st->len == 0) {
-		if (oc->boc != NULL) {
-			Lck_Lock(&oc->boc->mtx);
-			VTAILQ_REMOVE(&o->list, st, list);
-			Lck_Unlock(&oc->boc->mtx);
-		} else {
-			VTAILQ_REMOVE(&o->list, st, list);
-		}
+		Lck_Lock(&oc->boc->mtx);
+		VTAILQ_REMOVE(&o->list, st, list);
+		Lck_Unlock(&oc->boc->mtx);
 		sml_stv_free(stv, st);
 		return;
 	}
@@ -445,22 +439,13 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 
 	memcpy(st1->ptr, st->ptr, st->len);
 	st1->len = st->len;
-	if (oc->boc != NULL) {
-		Lck_Lock(&oc->boc->mtx);
-		VTAILQ_REMOVE(&o->list, st, list);
-		VTAILQ_INSERT_TAIL(&o->list, st1, list);
-		Lck_Unlock(&oc->boc->mtx);
-	} else {
-		VTAILQ_REMOVE(&o->list, st, list);
-		VTAILQ_INSERT_TAIL(&o->list, st1, list);
-	}
-	if (oc->boc == NULL) {
-		sml_stv_free(stv, st);
-	} else {
-		/* sml_stable frees this */
-		AZ(oc->boc->stevedore_priv);
-		oc->boc->stevedore_priv = st;
-	}
+	Lck_Lock(&oc->boc->mtx);
+	VTAILQ_REMOVE(&o->list, st, list);
+	VTAILQ_INSERT_TAIL(&o->list, st1, list);
+	Lck_Unlock(&oc->boc->mtx);
+	/* sml_stable frees this */
+	AZ(oc->boc->stevedore_priv);
+	oc->boc->stevedore_priv = st;
 }
 
 static void __match_proto__(objstable_f)

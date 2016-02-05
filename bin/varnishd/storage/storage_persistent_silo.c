@@ -170,7 +170,7 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		sg->nobj++;
 		EXP_Inject(wrk, oc);
 		AN(isnan(oc->last_lru));
-		HSH_DerefBusy(wrk, oc);	// XXX Keep it an stream resurrection?
+		HSH_DerefBoc(wrk, oc);	// XXX Keep it an stream resurrection?
 		AZ(isnan(oc->last_lru));
 	}
 	Pool_Sumstat(wrk);

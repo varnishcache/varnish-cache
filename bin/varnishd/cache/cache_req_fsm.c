@@ -207,7 +207,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 		}
 	}
 
-	HSH_DerefBusy(wrk, req->objcore);
+	HSH_DerefBoc(wrk, req->objcore);
 	VSB_delete(synth_body);
 
 	if (szl < 0) {
@@ -241,7 +241,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
 
 	/* Grab a ref to the bo if there is one */
-	boc = HSH_RefBusy(req->objcore);
+	boc = HSH_RefBoc(req->objcore);
 
 	clval = http_GetContentLength(req->resp);
 	if (boc != NULL)
@@ -310,7 +310,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	}
 
 	if (boc != NULL)
-		HSH_DerefBusy(wrk, req->objcore);
+		HSH_DerefBoc(wrk, req->objcore);
 
 	(void)HSH_DerefObjCore(wrk, &req->objcore);
 	http_Teardown(req->resp);

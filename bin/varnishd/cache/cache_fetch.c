@@ -956,7 +956,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 		(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
 
 	wrk->vsl = NULL;
-	HSH_DerefBusy(wrk, bo->fetch_objcore);
+	HSH_DerefBoc(wrk, bo->fetch_objcore);
 	VBO_ReleaseBusyObj(wrk, &bo);
 	THR_SetBusyobj(NULL);
 }
@@ -989,7 +989,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	bo = VBO_GetBusyObj(wrk, req);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	boc = HSH_RefBusy(oc);
+	boc = HSH_RefBoc(oc);
 	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
 
 	VSLb(bo->vsl, SLT_Begin, "bereq %u %s", VXID(req->vsl->wid), how);
@@ -1028,7 +1028,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 		(void)vbf_stp_fail(req->wrk, bo);
 		if (bo->stale_oc != NULL)
 			(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
-		HSH_DerefBusy(wrk, oc);
+		HSH_DerefBoc(wrk, oc);
 	} else {
 		bo = NULL; /* ref transferred to fetch thread */
 		if (mode == VBF_BACKGROUND) {
@@ -1045,7 +1045,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	AZ(bo);
 	VSLb_ts_req(req, "Fetch", W_TIM_real(wrk));
 	assert(oc->boc == boc);
-	HSH_DerefBusy(wrk, oc);
+	HSH_DerefBoc(wrk, oc);
 	if (mode == VBF_BACKGROUND)
 		(void)HSH_DerefObjCore(wrk, &oc);
 	THR_SetBusyobj(NULL);

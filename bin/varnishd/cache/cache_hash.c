@@ -385,7 +385,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			if (req->hash_ignore_busy)
 				continue;
 
-			if (oc->boc != NULL && oc->boc->vary != NULL &&
+			if (oc->boc->vary != NULL &&
 			    !VRY_Match(req, oc->boc->vary))
 				continue;
 
@@ -714,7 +714,7 @@ HSH_Ref(struct objcore *oc)
  */
 
 struct boc *
-HSH_RefBusy(const struct objcore *oc)
+HSH_RefBoc(const struct objcore *oc)
 {
 	struct objhead *oh;
 	struct boc *boc;
@@ -735,7 +735,7 @@ HSH_RefBusy(const struct objcore *oc)
 }
 
 void
-HSH_DerefBusy(struct worker *wrk, struct objcore *oc)
+HSH_DerefBoc(struct worker *wrk, struct objcore *oc)
 {
 	struct boc *boc;
 	unsigned r;

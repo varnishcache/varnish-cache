@@ -71,8 +71,8 @@ void HSH_Insert(struct worker *, const void *hash, struct objcore *);
 void HSH_Purge(struct worker *, struct objhead *, double ttl, double grace,
     double keep);
 void HSH_config(const char *h_arg);
-struct boc *HSH_RefBusy(const struct objcore *);
-void HSH_DerefBusy(struct worker *wrk, struct objcore *);
+struct boc *HSH_RefBoc(const struct objcore *);
+void HSH_DerefBoc(struct worker *wrk, struct objcore *);
 struct objcore *HSH_Private(struct worker *wrk);
 void HSH_Abandon(struct objcore *oc);
 

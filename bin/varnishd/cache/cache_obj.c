@@ -144,17 +144,12 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l)
 	AZ(ObjGetU64(wrk, oc, OA_LEN, &len));
 	len += l;
 
-	if (oc->boc != NULL) {
-		Lck_Lock(&oc->boc->mtx);
-		AN(om->objextend);
-		om->objextend(wrk, oc, l);
-		AZ(ObjSetU64(wrk, oc, OA_LEN, len));
-		Lck_Unlock(&oc->boc->mtx);
-		AZ(pthread_cond_broadcast(&oc->boc->cond));
-	} else {
-		om->objextend(wrk, oc, l);
-		AZ(ObjSetU64(wrk, oc, OA_LEN, len));
-	}
+	Lck_Lock(&oc->boc->mtx);
+	AN(om->objextend);
+	om->objextend(wrk, oc, l);
+	AZ(ObjSetU64(wrk, oc, OA_LEN, len));
+	Lck_Unlock(&oc->boc->mtx);
+	AZ(pthread_cond_broadcast(&oc->boc->cond));
 }
 
 /*====================================================================

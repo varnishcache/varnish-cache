@@ -227,7 +227,7 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 
 	if (VFP_Open(vfc) < 0) {
 		req->req_body_status = REQ_BODY_FAIL;
-		HSH_DerefBusy(req->wrk, req->body_oc);
+		HSH_DerefBoc(req->wrk, req->body_oc);
 		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc));
 		return (-1);
 	}
@@ -242,7 +242,7 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 		if (req->req_bodybytes > maxsize) {
 			req->req_body_status = REQ_BODY_FAIL;
 			(void)VFP_Error(vfc, "Request body too big to cache");
-			HSH_DerefBusy(req->wrk, req->body_oc);
+			HSH_DerefBoc(req->wrk, req->body_oc);
 			AZ(HSH_DerefObjCore(req->wrk, &req->body_oc));
 			VFP_Close(vfc);
 			return(-1);
@@ -291,6 +291,6 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 		req->req_body_status = REQ_BODY_FAIL;
 	}
 	VSLb_ts_req(req, "ReqBody", VTIM_real());
-	HSH_DerefBusy(req->wrk, req->body_oc);
+	HSH_DerefBoc(req->wrk, req->body_oc);
 	return (vfps == VFP_END ? req->req_bodybytes : -1);
 }
