@@ -84,8 +84,8 @@ struct stevedore {
 	unsigned		transient;
 	storage_init_f		*init;		/* called by mgt process */
 	storage_open_f		*open;		/* called by cache process */
-	storage_alloc_f		*alloc;		/* --//-- only if SML */
-	storage_free_f		*free;		/* --//-- only if SML */
+	storage_alloc_f		*sml_alloc;	/* --//-- only if SML */
+	storage_free_f		*sml_free;	/* --//-- only if SML */
 	storage_close_f		*close;		/* --//-- */
 	storage_allocobj_f	*allocobj;	/* --//-- */
 	storage_signal_close_f	*signal_close;	/* --//-- */

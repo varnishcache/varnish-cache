@@ -182,7 +182,6 @@ STV_Config(const char *spec)
 	else if (ac != 0)
 		ARGV_ERR("(-s%s) too many arguments\n", stv->name);
 
-	AN(stv->alloc);
 	AN(stv->allocobj);
 	AN(stv->methods);
 

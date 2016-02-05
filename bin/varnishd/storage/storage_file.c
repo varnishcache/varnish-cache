@@ -475,8 +475,8 @@ const struct stevedore smf_stevedore = {
 	.name		=	"file",
 	.init		=	smf_init,
 	.open		=	smf_open,
-	.alloc		=	smf_alloc,
-	.free		=	smf_free,
+	.sml_alloc	=	smf_alloc,
+	.sml_free	=	smf_free,
 	.allocobj	=	SML_allocobj,
 	.methods	=	&SML_methods,
 };

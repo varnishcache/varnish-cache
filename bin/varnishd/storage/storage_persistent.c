@@ -537,7 +537,7 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
 		}
 		st = smp_allocx(stv, ltot, ltot, &so, &objidx, &sg);
 		if (st != NULL && st->space < ltot) {
-			stv->free(st);		// NOP
+			stv->sml_free(st);		// NOP
 			st = NULL;
 		}
 		if (st != NULL)
@@ -588,18 +588,18 @@ smp_alloc(const struct stevedore *st, size_t size)
 /*--------------------------------------------------------------------*/
 
 const struct stevedore smp_stevedore = {
-	.magic	=	STEVEDORE_MAGIC,
-	.name	=	"deprecated_persistent",
-	.init	=	smp_mgt_init,
-	.open	=	smp_open,
-	.close	=	smp_close,
-	.alloc	=	smp_alloc,
-	.allocobj =	smp_allocobj,
-	.free	=	NULL,
-	.signal_close = smp_signal_close,
-	.baninfo =	smp_baninfo,
-	.banexport =	smp_banexport,
-	.methods =	&smp_oc_realmethods,
+	.magic		= STEVEDORE_MAGIC,
+	.name		= "deprecated_persistent",
+	.init		= smp_mgt_init,
+	.open		= smp_open,
+	.close		= smp_close,
+	.sml_alloc	= smp_alloc,
+	.allocobj	= smp_allocobj,
+	.sml_free	= NULL,
+	.signal_close	= smp_signal_close,
+	.baninfo	= smp_baninfo,
+	.banexport	= smp_banexport,
+	.methods	= &smp_oc_realmethods,
 };
 
 /*--------------------------------------------------------------------
