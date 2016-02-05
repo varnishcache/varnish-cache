@@ -198,12 +198,13 @@ sma_init(struct stevedore *parent, int ac, char * const *av)
 	sc->sma_max = u;
 }
 
-static void
-sma_open(const struct stevedore *st)
+static void __match_proto__(storage_open_f)
+sma_open(struct stevedore *st)
 {
 	struct sma_sc *sma_sc;
 
 	ASSERT_CLI();
+	st->lru = LRU_Alloc();
 	if (lck_sma == NULL)
 		lck_sma = Lck_CreateClass("sma");
 	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);

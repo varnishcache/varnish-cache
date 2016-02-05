@@ -234,8 +234,7 @@ smp_open_segs(struct smp_sc *sc, struct smp_signspace *spc)
 	for(; ss <= se; ss++) {
 		ALLOC_OBJ(sg, SMP_SEG_MAGIC);
 		AN(sg);
-		sg->lru = LRU_Alloc();
-		AN(sg->lru);
+		VTAILQ_INIT(&sg->objcores);
 		sg->p = *ss;
 
 		sg->flags |= SMP_SEG_MUSTLOAD;
@@ -320,8 +319,8 @@ smp_thread(struct worker *wrk, void *priv)
  * Open a silo in the worker process
  */
 
-static void
-smp_open(const struct stevedore *st)
+static void __match_proto__(storage_open_f)
+smp_open(struct stevedore *st)
 {
 	struct smp_sc	*sc;
 
@@ -569,6 +568,7 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
 
 	smp_init_oc(oc, sg, objidx);
 
+	VTAILQ_INSERT_TAIL(&sg->objcores, oc, lru_list);
 	Lck_Unlock(&sc->mtx);
 	return (1);
 }
@@ -689,7 +689,6 @@ SMP_Init(void)
 	smp_oc_realmethods.sml_getobj = smp_oc_methods.sml_getobj;
 	smp_oc_realmethods.objupdatemeta = smp_oc_methods.objupdatemeta;
 	smp_oc_realmethods.objfree = smp_oc_methods.objfree;
-	smp_oc_realmethods.objgetlru = smp_oc_methods.objgetlru;
 	smp_oc_realmethods.objtouch = NULL;
 }
 

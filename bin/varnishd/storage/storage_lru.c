@@ -50,11 +50,7 @@ lru_get(const struct objcore *oc)
 {
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->stobj->stevedore, STEVEDORE_MAGIC);
-	AN(oc->stobj->stevedore->methods);
-	const struct obj_methods *m = oc->stobj->stevedore->methods;
-
-	if(m->objgetlru != NULL)
-		return (m->objgetlru(oc));
+	CHECK_OBJ_NOTNULL(oc->stobj->stevedore->lru, LRU_MAGIC);
 	return (oc->stobj->stevedore->lru);
 }
 

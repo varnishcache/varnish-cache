@@ -385,14 +385,15 @@ smf_open_chunk(struct smf_sc *sc, off_t sz, off_t off, off_t *fail, off_t *sum)
 	smf_open_chunk(sc, sz - h, off + h, fail, sum);
 }
 
-static void
-smf_open(const struct stevedore *st)
+static void __match_proto__(storage_open_f)
+smf_open(struct stevedore *st)
 {
 	struct smf_sc *sc;
 	off_t fail = 1 << 30;	/* XXX: where is OFF_T_MAX ? */
 	off_t sum = 0;
 
 	ASSERT_CLI();
+	st->lru = LRU_Alloc();
 	if (lck_smf == NULL)
 		lck_smf = Lck_CreateClass("smf");
 	CAST_OBJ_NOTNULL(sc, st->priv, SMF_SC_MAGIC);

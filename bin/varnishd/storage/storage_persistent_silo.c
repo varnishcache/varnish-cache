@@ -106,7 +106,7 @@ smp_save_segs(struct smp_sc *sc)
 		if (sg == sc->cur_seg)
 			continue;
 		VTAILQ_REMOVE(&sc->segments, sg, list);
-		LRU_Free(&sg->lru);
+		AN(VTAILQ_EMPTY(&sg->objcores));
 		FREE_OBJ(sg);
 	}
 	smp_save_seg(sc, &sc->seg1);
@@ -163,6 +163,7 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		oc->flags &= ~OC_F_BUSY;
 		oc->stobj->stevedore = sc->parent;
 		smp_init_oc(oc, sg, no);
+		VTAILQ_INSERT_TAIL(&sg->objcores, oc, lru_list);
 		oc->stobj->priv2 |= NEED_FIXUP;
 		oc->ban = BAN_RefBan(oc, so->ban);
 		oc->exp = so->exp;
@@ -170,9 +171,7 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		oc->refcnt++;
 		HSH_Insert(wrk, so->hash, oc);
 		EXP_Insert(wrk, oc);
-		AN(isnan(oc->last_lru));
 		HSH_DerefBoc(wrk, oc);	// XXX Keep it an stream resurrection?
-		AZ(isnan(oc->last_lru));
 		(void)HSH_DerefObjCore(wrk, &oc);
 	}
 	Pool_Sumstat(wrk);
@@ -224,11 +223,9 @@ smp_new_seg(struct smp_sc *sc)
 
 	ALLOC_OBJ(sg, SMP_SEG_MAGIC);
 	if (sg == NULL)
-		/* Failed allocation */
 		return;
 	*sg = tmpsg;
-	sg->lru = LRU_Alloc();
-	AN(sg->lru);
+	VTAILQ_INIT(&sg->objcores);
 
 	sg->p.offset = IRNUP(sc, sg->p.offset);
 	sg->p.length -= sg->p.offset - tmpsg.p.offset;
@@ -277,7 +274,7 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 		assert(sg->p.offset >= sc->ident->stuff[SMP_SPC_STUFF]);
 		assert(sg->p.offset < sc->mediasize);
 		sc->free_offset = sg->p.offset;
-		LRU_Free(&sg->lru);
+		AN(VTAILQ_EMPTY(&sg->objcores));
 		FREE_OBJ(sg);
 		return;
 	}
@@ -509,31 +506,16 @@ smp_oc_objfree(struct worker *wrk, struct objcore *oc)
 		sg->nfixed--;
 		wrk->stats->n_object--;
 	}
-	AZ(isnan(oc->last_lru));
-	LRU_Remove(oc);
+	VTAILQ_REMOVE(&sg->objcores, oc, lru_list);
 
 	Lck_Unlock(&sg->sc->mtx);
 	memset(oc->stobj, 0, sizeof oc->stobj);
-}
-
-/*--------------------------------------------------------------------
- * Find the per-segment lru list for this object
- */
-
-static struct lru * __match_proto__(objgetlru_f)
-smp_oc_objgetlru(const struct objcore *oc)
-{
-	struct smp_seg *sg;
-
-	CAST_OBJ_NOTNULL(sg, oc->stobj->priv, SMP_SEG_MAGIC);
-	return (sg->lru);
 }
 
 const struct obj_methods smp_oc_methods = {
 	.sml_getobj =		smp_oc_sml_getobj,
 	.objupdatemeta =	smp_oc_objupdatemeta,
 	.objfree =		smp_oc_objfree,
-	.objgetlru =		smp_oc_objgetlru,
 };
 
 /*--------------------------------------------------------------------*/

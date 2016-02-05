@@ -58,7 +58,7 @@ struct storage {
 /* Prototypes --------------------------------------------------------*/
 
 typedef void storage_init_f(struct stevedore *, int ac, char * const *av);
-typedef void storage_open_f(const struct stevedore *);
+typedef void storage_open_f(struct stevedore *);
 typedef struct storage *storage_alloc_f(const struct stevedore *, size_t size);
 typedef void storage_free_f(struct storage *);
 typedef int storage_allocobj_f(struct worker *, const struct stevedore *,

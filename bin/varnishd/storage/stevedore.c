@@ -128,12 +128,10 @@ STV_open(void)
 	struct stevedore *stv;
 
 	VTAILQ_FOREACH(stv, &stv_stevedores, list) {
-		stv->lru = LRU_Alloc();
 		if (stv->open != NULL)
 			stv->open(stv);
 	}
 	stv = stv_transient;
-	stv->lru = LRU_Alloc();
 	if (stv->open != NULL)
 		stv->open(stv);
 	stv_next = VTAILQ_FIRST(&stv_stevedores);

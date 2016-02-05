@@ -206,7 +206,7 @@ sml_objfree(struct worker *wrk, struct objcore *oc)
 	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
 	o->magic = 0;
 
-	if (oc->boc == NULL)
+	if (oc->boc == NULL && oc->stobj->stevedore->lru != NULL)
 		LRU_Remove(oc);
 
 	sml_stv_free(oc->stobj->stevedore, o->objstore);
@@ -329,6 +329,8 @@ objallocwithnuke(struct worker *wrk, const struct stevedore *stv, size_t size)
 			break;
 
 		/* no luck; try to free some space and keep trying */
+		if (stv->lru == NULL)
+			break;
 		if (fail < cache_param->nuke_limit &&
 		    !LRU_NukeOne(wrk, stv->lru))
 			break;
@@ -457,18 +459,19 @@ sml_stable(struct worker *wrk, struct objcore *oc, struct boc *boc)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
+	stv = oc->stobj->stevedore;
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
 	if (boc->stevedore_priv != NULL) {
 		/* Free any leftovers from Trim */
 		CAST_OBJ_NOTNULL(st, boc->stevedore_priv, STORAGE_MAGIC);
 		boc->stevedore_priv = 0;
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-		stv = oc->stobj->stevedore;
-		CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 		sml_stv_free(stv, st);
 	}
 
-	LRU_Add(oc, wrk->lastused);	// approx timestamp is OK
+	if (stv->lru != NULL)
+		LRU_Add(oc, wrk->lastused);	// approx timestamp is OK
 }
 
 static void * __match_proto__(objgetattr_f)

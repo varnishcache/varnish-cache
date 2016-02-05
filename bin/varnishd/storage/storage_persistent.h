@@ -193,7 +193,7 @@ struct smp_seg {
 #define SMP_SEG_MAGIC		0x45c61895
 
 	struct smp_sc		*sc;
-	struct lru		*lru;
+	VTAILQ_HEAD(,objcore)	objcores;
 
 	VTAILQ_ENTRY(smp_seg)	list;		/* on smp_sc.smp_segments */
 
