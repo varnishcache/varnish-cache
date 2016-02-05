@@ -682,7 +682,6 @@ void EXP_Clr(struct exp *e);
 double EXP_Ttl(const struct req *, const struct exp*);
 double EXP_When(const struct exp *exp);
 void EXP_Insert(struct worker *wrk, struct objcore *oc);
-void EXP_Inject(struct worker *wrk, struct objcore *oc);
 void EXP_Rearm(struct objcore *, double now, double ttl, double grace,
     double keep);
 void EXP_Poke(struct objcore *);

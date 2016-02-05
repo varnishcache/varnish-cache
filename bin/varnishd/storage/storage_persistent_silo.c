@@ -165,13 +165,15 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		smp_init_oc(oc, sg, no);
 		oc->stobj->priv2 |= NEED_FIXUP;
 		oc->ban = BAN_RefBan(oc, so->ban);
-		HSH_Insert(wrk, so->hash, oc);
 		oc->exp = so->exp;
 		sg->nobj++;
-		EXP_Inject(wrk, oc);
+		oc->refcnt++;
+		HSH_Insert(wrk, so->hash, oc);
+		EXP_Insert(wrk, oc);
 		AN(isnan(oc->last_lru));
 		HSH_DerefBoc(wrk, oc);	// XXX Keep it an stream resurrection?
 		AZ(isnan(oc->last_lru));
+		(void)HSH_DerefObjCore(wrk, &oc);
 	}
 	Pool_Sumstat(wrk);
 	sg->flags |= SMP_SEG_LOADED;
@@ -457,17 +459,14 @@ smp_oc_sml_getobj(struct worker *wrk, struct objcore *oc)
 	return (o);
 }
 
-static void
+static void __match_proto__(objupdatemeta_f)
 smp_oc_objupdatemeta(struct worker *wrk, struct objcore *oc)
 {
-	struct object *o;
 	struct smp_seg *sg;
 	struct smp_object *so;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	o = smp_oc_sml_getobj(wrk, oc);
-	AN(o);
 
 	CAST_OBJ_NOTNULL(sg, oc->stobj->priv, SMP_SEG_MAGIC);
 	CHECK_OBJ_NOTNULL(sg->sc, SMP_SC_MAGIC);

@@ -52,6 +52,8 @@ varnish v1 -vcl+backend {
 
 delay 5
 
+varnish v1 -expect n_object == 0
+
 logexpect l1 -v v1 -g vxid -q "Begin ~ bereq" {
     expect * 1002 Storage         "persistent s0"
 } -start

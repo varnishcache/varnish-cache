@@ -167,30 +167,6 @@ EXP_Poke(struct objcore *oc)
 }
 
 /*--------------------------------------------------------------------
- * Inject an object with a reference into the binheap.
- *
- * This can either come from a stevedore (persistent) during startup
- * or from EXP_Insert() below.
- */
-
-void
-EXP_Inject(struct worker *wrk, struct objcore *oc)
-{
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-
-	AZ(oc->exp_flags & (OC_EF_INSERT | OC_EF_MOVE));
-	AZ(oc->flags & OC_F_DYING);
-	AZ(oc->flags & OC_F_BUSY);
-
-	oc->timer_when = EXP_When(&oc->exp);
-
-	exp_event(wrk, oc, EXP_INJECT);
-	exp_mail_it(oc, OC_EF_INSERT | OC_EF_EXP);
-}
-
-/*--------------------------------------------------------------------
  * Insert new object.
  *
  * We grab a reference to the object, which will keep it around until
@@ -203,11 +179,11 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	HSH_Ref(oc);
 
 	AZ(oc->exp_flags & (OC_EF_INSERT | OC_EF_MOVE));
 	AZ(oc->flags & OC_F_DYING);
-	AN(oc->flags & OC_F_BUSY);
+
+	HSH_Ref(oc);
 
 	exp_event(wrk, oc, EXP_INSERT);
 	exp_mail_it(oc, OC_EF_INSERT | OC_EF_EXP | OC_EF_MOVE);
@@ -352,7 +328,7 @@ exp_expire(struct exp_priv *ep, double now)
 	if (oc == NULL)
 		return (now + 355./113.);
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_expire p=%p e=%.9f f=0x%x", oc,
-	    oc->timer_when, oc->flags);
+	    oc->timer_when - now, oc->flags);
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 

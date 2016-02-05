@@ -273,7 +273,6 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc)
 	assert(oh->refcnt > 0);
 
 	/* Insert (precreated) objcore in objecthead */
-	oc->refcnt = 1;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(oc->flags & OC_F_BUSY);
 
@@ -745,6 +744,7 @@ HSH_DerefBoc(struct worker *wrk, struct objcore *oc)
 	boc = oc->boc;
 	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
 	Lck_Lock(&oc->objhead->mtx);
+	assert(oc->refcnt > 0);
 	assert(boc->refcount > 0);
 	r = --boc->refcount;
 	if (r == 0)
