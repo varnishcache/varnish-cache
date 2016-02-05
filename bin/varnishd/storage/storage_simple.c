@@ -156,14 +156,15 @@ SML_allocobj(struct worker *wrk, const struct stevedore *stv,
 static struct object *
 sml_getobj(struct worker *wrk, struct objcore *oc)
 {
-	const struct obj_methods *m;
+	const struct stevedore *stv;
 	struct object *o;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	m = oc->stobj->stevedore->methods;
-	if (m->sml_getobj != NULL)
-		return (m->sml_getobj(wrk, oc));
+	stv = oc->stobj->stevedore;
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+	if (stv->sml_getobj != NULL)
+		return (stv->sml_getobj(wrk, oc));
 	if (oc->stobj->priv == NULL)
 		return (NULL);
 	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);

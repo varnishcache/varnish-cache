@@ -388,8 +388,8 @@ smp_loaded_st(const struct smp_sc *sc, const struct smp_seg *sg,
  * objcore methods for persistent objects
  */
 
-static struct object *
-smp_oc_sml_getobj(struct worker *wrk, struct objcore *oc)
+struct object *
+smp_sml_getobj(struct worker *wrk, struct objcore *oc)
 {
 	struct object *o;
 	struct smp_seg *sg;
@@ -401,9 +401,6 @@ smp_oc_sml_getobj(struct worker *wrk, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(oc->stobj->stevedore);
-
-	/* Some calls are direct, but they should match anyway */
-	assert(oc->stobj->stevedore->methods->sml_getobj == smp_oc_sml_getobj);
 
 	CAST_OBJ_NOTNULL(sg, oc->stobj->priv, SMP_SEG_MAGIC);
 	so = smp_find_so(sg, oc->stobj->priv2);
@@ -513,7 +510,6 @@ smp_oc_objfree(struct worker *wrk, struct objcore *oc)
 }
 
 const struct obj_methods smp_oc_methods = {
-	.sml_getobj =		smp_oc_sml_getobj,
 	.objupdatemeta =	smp_oc_objupdatemeta,
 	.objfree =		smp_oc_objfree,
 };

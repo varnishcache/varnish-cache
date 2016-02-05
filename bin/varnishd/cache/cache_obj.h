@@ -34,7 +34,6 @@ typedef void objupdatemeta_f(struct worker *, struct objcore *);
 typedef void objfree_f(struct worker *, struct objcore *);
 
 /* This method is only used by SML (...to get to persistent) */
-typedef struct object *sml_getobj_f(struct worker *, struct objcore *);
 
 typedef int objiterator_f(struct worker *, struct objcore *,
     void *priv, objiterate_f *func);
@@ -53,8 +52,6 @@ typedef void objtouch_f(struct worker *, struct objcore *, double now);
 struct obj_methods {
 	objfree_f	*objfree;
 	objupdatemeta_f	*objupdatemeta;
-
-	sml_getobj_f	*sml_getobj;
 
 	objiterator_f	*objiterator;
 	objgetspace_f	*objgetspace;

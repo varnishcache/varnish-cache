@@ -59,8 +59,6 @@ struct storage {
 
 typedef void storage_init_f(struct stevedore *, int ac, char * const *av);
 typedef void storage_open_f(struct stevedore *);
-typedef struct storage *storage_alloc_f(const struct stevedore *, size_t size);
-typedef void storage_free_f(struct storage *);
 typedef int storage_allocobj_f(struct worker *, const struct stevedore *,
     struct objcore *, unsigned ltot, int really);
 typedef void storage_close_f(const struct stevedore *);
@@ -69,6 +67,10 @@ typedef int storage_baninfo_f(const struct stevedore *, enum baninfo event,
     const uint8_t *ban, unsigned len);
 typedef void storage_banexport_f(const struct stevedore *, const uint8_t *bans,
     unsigned len);
+
+typedef struct object *storage_getobj_f(struct worker *, struct objcore *);
+typedef struct storage *storage_alloc_f(const struct stevedore *, size_t size);
+typedef void storage_free_f(struct storage *);
 
 /* Prototypes for VCL variable responders */
 #define VRTSTVTYPE(ct) typedef ct storage_var_##ct(const struct stevedore *);
@@ -86,6 +88,7 @@ struct stevedore {
 	storage_open_f		*open;		/* called by cache process */
 	storage_alloc_f		*sml_alloc;	/* --//-- only if SML */
 	storage_free_f		*sml_free;	/* --//-- only if SML */
+	storage_getobj_f	*sml_getobj;	/* --//-- only if SML */
 	storage_close_f		*close;		/* --//-- */
 	storage_allocobj_f	*allocobj;	/* --//-- */
 	storage_signal_close_f	*signal_close;	/* --//-- */

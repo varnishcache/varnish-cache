@@ -308,6 +308,7 @@ void smp_close_seg(struct smp_sc *sc, struct smp_seg *sg);
 void smp_init_oc(struct objcore *oc, struct smp_seg *sg, unsigned objidx);
 void smp_save_segs(struct smp_sc *sc);
 extern const struct obj_methods smp_oc_methods;
+storage_getobj_f smp_sml_getobj;
 
 /* storage_persistent_subr.c */
 
