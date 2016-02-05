@@ -191,8 +191,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 	}
 	assert(wrk->handling == VCL_RET_DELIVER);
 
-	req->objcore = HSH_Private(wrk, 0);
-	AZ(req->objcore->boc);
+	req->objcore = HSH_Private(wrk);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	szl = -1;
 	if (STV_NewObject(wrk, req->objcore, TRANSIENT_STORAGE, 1024)) {
@@ -208,6 +207,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 		}
 	}
 
+	HSH_DerefBusy(wrk, req->objcore);
 	VSB_delete(synth_body);
 
 	if (szl < 0) {
@@ -551,7 +551,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 		break;
 	case VCL_RET_FETCH:
 		wrk->stats->s_pass++;
-		req->objcore = HSH_Private(wrk, 1);
+		req->objcore = HSH_Private(wrk);
 		CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 		VBF_Fetch(wrk, req, req->objcore, NULL, VBF_PASS);
 		req->req_step = R_STP_FETCH;

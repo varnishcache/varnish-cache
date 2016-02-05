@@ -418,6 +418,8 @@ pan_req(struct vsb *vsb, const struct req *req)
 
 	VCL_Panic(vsb, req->vcl);
 
+	if (req->body_oc != NULL)
+		pan_objcore(vsb, "BODY", req->body_oc);
 	if (req->objcore != NULL)
 		pan_objcore(vsb, "REQ", req->objcore);
 

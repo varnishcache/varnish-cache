@@ -71,10 +71,17 @@ LRU_Alloc(void)
 }
 
 void
-LRU_Free(struct lru *lru)
+LRU_Free(struct lru **pp)
 {
+	struct lru *lru;
+
+	AN(pp);
+	lru = *pp;
+	*pp = NULL;
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
+	Lck_Lock(&lru->mtx);
 	AN(VTAILQ_EMPTY(&lru->lru_head));
+	Lck_Unlock(&lru->mtx);
 	Lck_Delete(&lru->mtx);
 	FREE_OBJ(lru);
 }
@@ -85,12 +92,15 @@ LRU_Add(struct objcore *oc, double now)
 	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AZ(oc->boc);
+	AN(isnan(oc->last_lru));
 	AZ(isnan(now));
 	lru = lru_get(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 	Lck_Lock(&lru->mtx);
 	VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
 	oc->last_lru = now;
+	AZ(isnan(oc->last_lru));
 	Lck_Unlock(&lru->mtx);
 }
 
@@ -100,13 +110,13 @@ LRU_Remove(struct objcore *oc)
 	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AZ(oc->boc);
 	lru = lru_get(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 	Lck_Lock(&lru->mtx);
-	if (!isnan(oc->last_lru)) {
-		VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
-		oc->last_lru = NAN;
-	}
+	AZ(isnan(oc->last_lru));
+	VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
+	oc->last_lru = NAN;
 	Lck_Unlock(&lru->mtx);
 }
 
@@ -172,7 +182,7 @@ LRU_NukeOne(struct worker *wrk, struct lru *lru)
 		if (ObjSnipe(wrk, oc)) {
 			VSC_C_main->n_lru_nuked++; // XXX per lru ?
 			VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
-			oc->last_lru = NAN;
+			VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);
 			break;
 		}
 	}

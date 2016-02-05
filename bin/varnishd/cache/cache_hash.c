@@ -90,7 +90,7 @@ hsh_prealloc(struct worker *wrk)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	if (wrk->nobjcore == NULL) {
-		wrk->nobjcore = ObjNew(wrk, 1);
+		wrk->nobjcore = ObjNew(wrk);
 		wrk->nobjcore->flags |= OC_F_BUSY | OC_F_INCOMPLETE;
 	}
 	CHECK_OBJ_NOTNULL(wrk->nobjcore, OBJCORE_MAGIC);
@@ -108,13 +108,13 @@ hsh_prealloc(struct worker *wrk)
 /*---------------------------------------------------------------------*/
 
 struct objcore *
-HSH_Private(struct worker *wrk, int wantboc)
+HSH_Private(struct worker *wrk)
 {
 	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(private_oh, OBJHEAD_MAGIC);
 
-	oc = ObjNew(wrk, wantboc);
+	oc = ObjNew(wrk);
 	AN(oc);
 	oc->refcnt = 1;
 	oc->objhead = private_oh;

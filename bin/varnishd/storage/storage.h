@@ -121,7 +121,7 @@ uintmax_t STV_FileSize(int fd, const char *size, unsigned *granularity,
 
 /*--------------------------------------------------------------------*/
 struct lru *LRU_Alloc(void);
-void LRU_Free(struct lru *);
+void LRU_Free(struct lru **);
 void LRU_Add(struct objcore *, double now);
 void LRU_Remove(struct objcore *);
 int LRU_NukeOne(struct worker *, struct lru *);

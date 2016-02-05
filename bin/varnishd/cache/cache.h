@@ -837,7 +837,7 @@ void *MPL_Get(struct mempool *mpl, unsigned *size);
 void MPL_Free(struct mempool *mpl, void *item);
 
 /* cache_obj.c */
-struct objcore * ObjNew(struct worker *, int wantboc);
+struct objcore * ObjNew(struct worker *);
 typedef int objiterate_f(void *priv, int flush, const void *ptr, ssize_t len);
 int ObjIterate(struct worker *, struct objcore *,
     void *priv, objiterate_f *func);

@@ -206,7 +206,8 @@ sml_objfree(struct worker *wrk, struct objcore *oc)
 	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
 	o->magic = 0;
 
-	LRU_Remove(oc);
+	if (oc->boc == NULL)
+		LRU_Remove(oc);
 
 	sml_stv_free(oc->stobj->stevedore, o->objstore);
 

@@ -65,7 +65,7 @@ obj_getmethods(const struct objcore *oc)
  */
 
 struct objcore *
-ObjNew(struct worker *wrk, int wantboc)
+ObjNew(struct worker *wrk)
 {
 	struct objcore *oc;
 
@@ -75,13 +75,11 @@ ObjNew(struct worker *wrk, int wantboc)
 	AN(oc);
 	wrk->stats->n_objectcore++;
 	oc->last_lru = NAN;
-	if (wantboc) {
-		ALLOC_OBJ(oc->boc, BOC_MAGIC);
-		AN(oc->boc);
-		Lck_New(&oc->boc->mtx, lck_busyobj);
-		AZ(pthread_cond_init(&oc->boc->cond, NULL));
-		oc->boc->refcount = 1;
-	}
+	ALLOC_OBJ(oc->boc, BOC_MAGIC);
+	AN(oc->boc);
+	Lck_New(&oc->boc->mtx, lck_busyobj);
+	AZ(pthread_cond_init(&oc->boc->cond, NULL));
+	oc->boc->refcount = 1;
 	return (oc);
 }
 
@@ -117,6 +115,7 @@ ObjGetSpace(struct worker *wrk, struct objcore *oc, ssize_t *sz, uint8_t **ptr)
 	const struct obj_methods *om = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 	AN(sz);
 	AN(ptr);
 	assert(*sz > 0);
@@ -139,7 +138,7 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l)
 	uint64_t len;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_ORNULL(oc->boc, BOC_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 	assert(l > 0);
 
 	AZ(ObjGetU64(wrk, oc, OA_LEN, &len));
@@ -369,6 +368,7 @@ ObjSetAttr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 	const struct obj_methods *om = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 
 	AN(om->objsetattr);
 	assert((int)attr < 16);
@@ -451,6 +451,7 @@ ObjCopyAttr(struct worker *wrk, struct objcore *oc, struct objcore *ocs,
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 	CHECK_OBJ_NOTNULL(ocs, OBJCORE_MAGIC);
 
 	vps = ObjGetAttr(wrk, ocs, attr, &l);

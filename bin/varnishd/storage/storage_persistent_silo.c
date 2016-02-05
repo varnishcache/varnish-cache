@@ -51,7 +51,7 @@
 #include "storage/storage_persistent.h"
 
 /*
- * We use the low bit to mark objects still needing fixup
+ * We use the top bit to mark objects still needing fixup
  * In theory this may need to be platform dependent
  */
 
@@ -106,7 +106,7 @@ smp_save_segs(struct smp_sc *sc)
 		if (sg == sc->cur_seg)
 			continue;
 		VTAILQ_REMOVE(&sc->segments, sg, list);
-		LRU_Free(sg->lru);
+		LRU_Free(&sg->lru);
 		FREE_OBJ(sg);
 	}
 	smp_save_seg(sc, &sc->seg1);
@@ -159,7 +159,7 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 	for (;no > 0; so++,no--) {
 		if (EXP_When(&so->exp) < t_now)
 			continue;
-		oc = ObjNew(wrk, 0);
+		oc = ObjNew(wrk);
 		oc->flags &= ~OC_F_BUSY;
 		oc->stobj->stevedore = sc->parent;
 		smp_init_oc(oc, sg, no);
@@ -169,6 +169,9 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		oc->exp = so->exp;
 		sg->nobj++;
 		EXP_Inject(wrk, oc);
+		AN(isnan(oc->last_lru));
+		HSH_DerefBusy(wrk, oc);	// XXX Keep it an stream resurrection?
+		AZ(isnan(oc->last_lru));
 	}
 	Pool_Sumstat(wrk);
 	sg->flags |= SMP_SEG_LOADED;
@@ -272,7 +275,7 @@ smp_close_seg(struct smp_sc *sc, struct smp_seg *sg)
 		assert(sg->p.offset >= sc->ident->stuff[SMP_SPC_STUFF]);
 		assert(sg->p.offset < sc->mediasize);
 		sc->free_offset = sg->p.offset;
-		LRU_Free(sg->lru);
+		LRU_Free(&sg->lru);
 		FREE_OBJ(sg);
 		return;
 	}
@@ -507,6 +510,8 @@ smp_oc_objfree(struct worker *wrk, struct objcore *oc)
 		sg->nfixed--;
 		wrk->stats->n_object--;
 	}
+	AZ(isnan(oc->last_lru));
+	LRU_Remove(oc);
 
 	Lck_Unlock(&sg->sc->mtx);
 	memset(oc->stobj, 0, sizeof oc->stobj);
