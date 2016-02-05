@@ -453,7 +453,7 @@ smp_sml_getobj(struct worker *wrk, struct objcore *oc)
 	return (o);
 }
 
-static void __match_proto__(objupdatemeta_f)
+void __match_proto__(objupdatemeta_f)
 smp_oc_objupdatemeta(struct worker *wrk, struct objcore *oc)
 {
 	struct smp_seg *sg;
@@ -478,7 +478,7 @@ smp_oc_objupdatemeta(struct worker *wrk, struct objcore *oc)
 	}
 }
 
-static void __match_proto__(objfree_f)
+void __match_proto__(objfree_f)
 smp_oc_objfree(struct worker *wrk, struct objcore *oc)
 {
 	struct smp_seg *sg;
@@ -508,11 +508,6 @@ smp_oc_objfree(struct worker *wrk, struct objcore *oc)
 	Lck_Unlock(&sg->sc->mtx);
 	memset(oc->stobj, 0, sizeof oc->stobj);
 }
-
-const struct obj_methods smp_oc_methods = {
-	.objupdatemeta =	smp_oc_objupdatemeta,
-	.objfree =		smp_oc_objfree,
-};
 
 /*--------------------------------------------------------------------*/
 

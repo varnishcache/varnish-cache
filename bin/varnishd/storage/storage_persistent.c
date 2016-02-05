@@ -688,9 +688,9 @@ SMP_Init(void)
 	lck_smp = Lck_CreateClass("smp");
 	CLI_AddFuncs(debug_cmds);
 	smp_oc_realmethods = SML_methods;
-	smp_oc_realmethods.objupdatemeta = smp_oc_methods.objupdatemeta;
-	smp_oc_realmethods.objfree = smp_oc_methods.objfree;
 	smp_oc_realmethods.objtouch = NULL;
+	smp_oc_realmethods.objupdatemeta = smp_oc_objupdatemeta;
+	smp_oc_realmethods.objfree = smp_oc_objfree;
 }
 
 /*--------------------------------------------------------------------
