@@ -104,7 +104,6 @@ struct objhead {
 
 void HSH_Fail(struct objcore *);
 void HSH_Unbusy(struct worker *, struct objcore *);
-void HSH_Complete(struct objcore *oc);
 void HSH_DeleteObjHead(struct worker *, struct objhead *oh);
 int HSH_DerefObjHead(struct worker *, struct objhead **poh);
 int HSH_DerefObjCore(struct worker *, struct objcore **ocp);

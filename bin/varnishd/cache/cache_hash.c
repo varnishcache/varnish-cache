@@ -91,7 +91,7 @@ hsh_prealloc(struct worker *wrk)
 
 	if (wrk->nobjcore == NULL) {
 		wrk->nobjcore = ObjNew(wrk);
-		wrk->nobjcore->flags |= OC_F_BUSY | OC_F_INCOMPLETE;
+		wrk->nobjcore->flags |= OC_F_BUSY;
 	}
 	CHECK_OBJ_NOTNULL(wrk->nobjcore, OBJCORE_MAGIC);
 
@@ -118,7 +118,7 @@ HSH_Private(struct worker *wrk)
 	AN(oc);
 	oc->refcnt = 1;
 	oc->objhead = private_oh;
-	oc->flags |= OC_F_PRIVATE | OC_F_BUSY | OC_F_INCOMPLETE;
+	oc->flags |= OC_F_PRIVATE | OC_F_BUSY;
 	Lck_Lock(&private_oh->mtx);
 	VTAILQ_INSERT_TAIL(&private_oh->objcs, oc, list);
 	private_oh->refcnt++;
@@ -613,25 +613,6 @@ HSH_Fail(struct objcore *oc)
 
 	Lck_Lock(&oh->mtx);
 	oc->flags |= OC_F_FAILED;
-	oc->flags &= ~OC_F_INCOMPLETE;
-	Lck_Unlock(&oh->mtx);
-}
-
-/*---------------------------------------------------------------------
- * Remove the busyobj from an objcore
- */
-
-void
-HSH_Complete(struct objcore *oc)
-{
-	struct objhead *oh;
-
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	oh = oc->objhead;
-	CHECK_OBJ(oh, OBJHEAD_MAGIC);
-
-	Lck_Lock(&oh->mtx);
-	oc->flags &= ~OC_F_INCOMPLETE;
 	Lck_Unlock(&oh->mtx);
 }
 
@@ -725,10 +706,13 @@ HSH_RefBoc(const struct objcore *oc)
 	assert(oc->refcnt > 0);
 	boc = oc->boc;
 	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
-	if (boc != NULL && boc->state < BOS_FINISHED)
-		boc->refcount++;
-	else
-		boc = NULL;
+	if (boc != NULL) {
+		assert(boc->refcount > 0);
+		if (boc->state < BOS_FINISHED)
+			boc->refcount++;
+		else
+			boc = NULL;
+	}
 	Lck_Unlock(&oh->mtx);
 	return (boc);
 }

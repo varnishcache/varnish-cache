@@ -413,7 +413,6 @@ struct objcore {
 	uint8_t			flags;
 #define OC_F_BUSY		(1<<1)
 #define OC_F_PASS		(1<<2)
-#define OC_F_INCOMPLETE		(1<<3)
 #define OC_F_ABANDON		(1<<4)
 #define OC_F_PRIVATE		(1<<5)
 #define OC_F_FAILED		(1<<6)

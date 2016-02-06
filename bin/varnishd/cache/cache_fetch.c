@@ -946,7 +946,6 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	if (bo->fetch_objcore->boc->state == BOS_FINISHED) {
 		AZ(bo->fetch_objcore->flags & OC_F_FAILED);
-		HSH_Complete(bo->fetch_objcore);
 		VSLb(bo->vsl, SLT_Length, "%ju",
 		    (uintmax_t)ObjGetLen(bo->wrk, bo->fetch_objcore));
 	}
