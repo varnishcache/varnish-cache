@@ -577,7 +577,7 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
  * Allocate a bite
  */
 
-static struct storage *
+static struct storage * __match_proto__(sml_alloc_f)
 smp_alloc(const struct stevedore *st, size_t size)
 {
 

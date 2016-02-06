@@ -68,9 +68,9 @@ typedef int storage_baninfo_f(const struct stevedore *, enum baninfo event,
 typedef void storage_banexport_f(const struct stevedore *, const uint8_t *bans,
     unsigned len);
 
-typedef struct object *storage_getobj_f(struct worker *, struct objcore *);
-typedef struct storage *storage_alloc_f(const struct stevedore *, size_t size);
-typedef void storage_free_f(struct storage *);
+typedef struct object *sml_getobj_f(struct worker *, struct objcore *);
+typedef struct storage *sml_alloc_f(const struct stevedore *, size_t size);
+typedef void sml_free_f(struct storage *);
 
 /* Prototypes for VCL variable responders */
 #define VRTSTVTYPE(ct) typedef ct storage_var_##ct(const struct stevedore *);
@@ -83,22 +83,28 @@ struct stevedore {
 	unsigned		magic;
 #define STEVEDORE_MAGIC		0x4baf43db
 	const char		*name;
-	unsigned		transient;
-	storage_init_f		*init;		/* called by mgt process */
-	storage_open_f		*open;		/* called by cache process */
-	storage_alloc_f		*sml_alloc;	/* --//-- only if SML */
-	storage_free_f		*sml_free;	/* --//-- only if SML */
-	storage_getobj_f	*sml_getobj;	/* --//-- only if SML */
-	storage_close_f		*close;		/* --//-- */
-	storage_allocobj_f	*allocobj;	/* --//-- */
-	storage_signal_close_f	*signal_close;	/* --//-- */
-	storage_baninfo_f	*baninfo;	/* --//-- */
-	storage_banexport_f	*banexport;	/* --//-- */
+
+	/* Called in MGT process */
+	storage_init_f		*init;
+
+	/* Called in cache process */
+	storage_open_f		*open;
+	storage_close_f		*close;
+	storage_allocobj_f	*allocobj;
+	storage_signal_close_f	*signal_close;
+	storage_baninfo_f	*baninfo;
+	storage_banexport_f	*banexport;
+
+	/* Only if SML is used */
+	sml_alloc_f		*sml_alloc;
+	sml_free_f		*sml_free;
+	sml_getobj_f		*sml_getobj;
 
 	const struct obj_methods
 				*methods;
 
-	struct lru		*lru;		/* For storage_lru.c */
+	/* Only if LRU is used */
+	struct lru		*lru;
 
 #define VRTSTVVAR(nm, vtype, ctype, dval) storage_var_##ctype *var_##nm;
 #include "tbl/vrt_stv_var.h"

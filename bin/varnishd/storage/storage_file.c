@@ -415,7 +415,7 @@ smf_open(struct stevedore *st)
 
 /*--------------------------------------------------------------------*/
 
-static struct storage *
+static struct storage * __match_proto__(sml_alloc_f)
 smf_alloc(const struct stevedore *st, size_t size)
 {
 	struct smf *smf;
@@ -451,7 +451,7 @@ smf_alloc(const struct stevedore *st, size_t size)
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(storage_free_f)
+static void __match_proto__(sml_free_f)
 smf_free(struct storage *s)
 {
 	struct smf *smf;

@@ -59,7 +59,7 @@ struct sma {
 
 static struct VSC_C_lck *lck_sma;
 
-static struct storage *
+static struct storage * __match_proto__(sml_alloc_f)
 sma_alloc(const struct stevedore *st, size_t size)
 {
 	struct sma_sc *sma_sc;
@@ -125,7 +125,7 @@ sma_alloc(const struct stevedore *st, size_t size)
 	return (&sma->s);
 }
 
-static void __match_proto__(storage_free_f)
+static void __match_proto__(sml_free_f)
 sma_free(struct storage *s)
 {
 	struct sma_sc *sma_sc;

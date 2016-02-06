@@ -186,7 +186,6 @@ STV_Config(const char *spec)
 	AN(stv->methods);
 
 	if (!strcmp(stv->ident, TRANSIENT_STORAGE)) {
-		stv->transient = 1;
 		AZ(stv_transient);
 		stv_transient = stv;
 	} else {

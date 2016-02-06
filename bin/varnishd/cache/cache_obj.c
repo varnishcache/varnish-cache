@@ -25,18 +25,60 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Primary API:
- *	ObjNew		Associate stevedore with oc
- *	ObjGetSpace	Add space
- *	ObjExtend	Commit space
- *	ObjDone		Object completed
- *	ObjGetLen	Len of committed space
- *	ObjIterate	Iterate over committed space
- *	ObjReserveAttr	Attr will be set later
- *	ObjSetAttr	Set attr now
- *	ObjGetAttr	Get attr no
- *	ObjRelease	Done with attr ptr
- *	ObjTouch	Object was used
+ * Lifetime of an objcore:
+ *	phase 0	- nonexistent
+ *	phase 1	- created, but no stevedore associated
+ *	phase 2	- stevedore associated, being filled out
+ *	phase 3	- stable, no changes happening
+ *	phase 4	- unavailable, being dismantled
+ *	phase 5	- stevedore disassociated
+ *	phase 6	- nonexistent
+ *
+ * 0->1	ObjNew()	creates objcore
+ *
+ * 1->2	STV_NewObject()	associates a stevedore
+ *
+ * 2	ObjSetState()	sets state
+ * 2	ObjWaitState()	waits for particular state
+ *			INVALID->REQ_DONE->STREAM->FINISHED->FAILED
+ *
+ * 2	ObjGetSpace()	allocates space
+ * 2	ObjExtend()	commits content
+ * 2	ObjWaitExtend()	waits for content - used to implement ObjIterate())
+ * 2	ObjTrimStore()	signals end of content addition
+ *
+ * 2	ObjSetAttr()
+ * 2	  ObjCopyAttr()
+ * 2	  ObjSetFlag()
+ * 2	  ObjSetDouble()
+ * 2	  ObjSetU32()
+ * 2	  ObjSetU64()
+ *
+ * 2->3	ObjStable()	Will no longer be modified
+ *
+ * 23	ObjHasAttr()
+ * 23	ObjGetAttr()
+ * 23	  ObjCheckFlag()
+ * 23	  ObjGetDouble()
+ * 23	  ObjGetU32()
+ * 23	  ObjGetU64()
+ * 23	  ObjGetLen()
+ * 23	  ObjGetXID()
+ *
+ * 23	ObjIterate()	... over body
+ *
+ * 23	ObjTouch()	Signal to LRU(-like) facilities
+ *
+ * 23	ObjUpdateMeta()	ban/ttl/grace/keep changed
+ *
+ * 3->4	ObjSnipe()	kill if not in use
+ * 3->4	ObjKill()	make unavailable
+ *
+ * 234	ObjSlim()	Release body storage (but retain attribute storage)
+ *
+ * 4->5	ObjFreeObj()	disassociates stevedore
+ *
+ * 5->6 FREE_OBJ()	...in HSH_DerefObjCore()
  */
 
 #include "config.h"
