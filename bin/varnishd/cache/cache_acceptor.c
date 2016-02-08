@@ -506,8 +506,12 @@ vca_acct(void *arg)
 	while (1) {
 		(void)sleep(1);
 		if (vca_tcp_opt_init()) {
-			VTAILQ_FOREACH(ls, &heritage.socks, list)
+			VTAILQ_FOREACH(ls, &heritage.socks, list) {
+				if (ls->sock == -2)
+					continue;	// raced VCA_Shutdown
+				assert (ls->sock > 0);
 				vca_tcp_opt_set(ls->sock, 1);
+			}
 		}
 		now = VTIM_real();
 		VSC_C_main->uptime = (uint64_t)(now - t0);
@@ -581,7 +585,7 @@ VCA_Shutdown(void)
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		i = ls->sock;
-		ls->sock = -1;
+		ls->sock = -2;
 		(void)close(i);
 	}
 }
