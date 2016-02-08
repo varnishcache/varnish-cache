@@ -440,8 +440,6 @@ ObjKill(struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
 
-	AZ(oc->flags & OC_F_DYING);	// XXX ?
-
 	Lck_Lock(&oc->objhead->mtx);
 	oc->flags |= OC_F_DYING;
 	Lck_Unlock(&oc->objhead->mtx);
