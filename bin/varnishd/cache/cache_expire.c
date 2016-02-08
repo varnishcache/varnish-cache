@@ -98,26 +98,10 @@ EXP_Ttl(const struct req *req, const struct objcore *oc)
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	r = oc->exp.ttl;
+	r = oc->ttl;
 	if (req != NULL && req->d_ttl > 0. && req->d_ttl < r)
 		r = req->d_ttl;
-	return (oc->exp.t_origin + r);
-}
-
-/*--------------------------------------------------------------------
- * Calculate when this object is no longer useful
- */
-
-static double
-EXP_When(const struct exp *e)
-{
-	double when;
-
-	if (e->t_origin == 0)
-		return (0.);
-	when = e->t_origin + e->ttl + e->grace + e->keep;
-	AZ(isnan(when));
-	return (when);
+	return (oc->t_origin + r);
 }
 
 /*--------------------------------------------------------------------
@@ -193,18 +177,18 @@ EXP_Rearm(struct objcore *oc, double now, double ttl, double grace, double keep)
 	AN(oc->exp_flags & OC_EF_EXP);
 
 	if (!isnan(ttl))
-		oc->exp.ttl = now + ttl - oc->exp.t_origin;
+		oc->ttl = now + ttl - oc->t_origin;
 	if (!isnan(grace))
-		oc->exp.grace = grace;
+		oc->grace = grace;
 	if (!isnan(keep))
-		oc->exp.keep = keep;
+		oc->keep = keep;
 
-	when = EXP_When(&oc->exp);
+	when = EXP_WHEN(oc);
 
 	VSL(SLT_ExpKill, 0, "EXP_Rearm p=%p E=%.9f e=%.9f f=0x%x", oc,
 	    oc->timer_when, when, oc->flags);
 
-	if (when < oc->exp.t_origin || when < oc->timer_when)
+	if (when < oc->t_origin || when < oc->timer_when)
 		exp_mail_it(oc, OC_EF_MOVE);
 }
 
@@ -275,7 +259,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags)
 	}
 
 	if (flags & OC_EF_MOVE) {
-		oc->timer_when = EXP_When(&oc->exp);
+		oc->timer_when = EXP_WHEN(oc);
 		ObjUpdateMeta(ep->wrk, oc);
 	}
 

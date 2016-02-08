@@ -392,7 +392,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			continue;
 		}
 
-		if (oc->exp.ttl <= 0.)
+		if (oc->ttl <= 0.)
 			continue;
 
 		if (BAN_CheckObject(wrk, oc, req)) {
@@ -418,10 +418,10 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			*ocp = oc;
 			return (HSH_HIT);
 		}
-		if (oc->exp.t_origin > exp_t_origin) {
+		if (oc->t_origin > exp_t_origin) {
 			/* record the newest object */
 			exp_oc = oc;
-			exp_t_origin = oc->exp.t_origin;
+			exp_t_origin = oc->t_origin;
 		}
 	}
 

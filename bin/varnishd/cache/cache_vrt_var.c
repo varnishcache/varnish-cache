@@ -481,65 +481,65 @@ VRT_r_bereq_retries(VRT_CTX)
  *	grace&keep are relative to ttl
  */
 
-#define VRT_DO_EXP_L(which, sexp, fld, offset)			\
+#define VRT_DO_EXP_L(which, oc, fld, offset)			\
 								\
 void								\
-VRT_l_##which##_##fld(VRT_CTX, double a)	\
+VRT_l_##which##_##fld(VRT_CTX, double a)			\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
 	a += (offset);						\
 	if (a < 0.0)						\
 		a = 0.0;					\
-	sexp.fld = a;						\
+	oc->fld = a;						\
 	VSLb(ctx->vsl, SLT_TTL, "VCL %.0f %.0f %.0f %.0f",	\
-	    sexp.ttl, sexp.grace, sexp.keep, sexp.t_origin);	\
+	    oc->ttl, oc->grace, oc->keep, oc->t_origin);	\
 }
 
-#define VRT_DO_EXP_R(which, sexp, fld, offset)			\
+#define VRT_DO_EXP_R(which, oc, fld, offset)			\
 								\
 double								\
-VRT_r_##which##_##fld(VRT_CTX)		\
+VRT_r_##which##_##fld(VRT_CTX)					\
 {								\
 	double d;						\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	d = sexp.fld;						\
+	d = oc->fld;						\
 	if (d <= 0.0)						\
 		d = 0.0;					\
 	d -= (offset);						\
 	return(d);						\
 }
 
-VRT_DO_EXP_R(obj, ctx->req->objcore->exp, ttl,
-    ctx->now - ctx->req->objcore->exp.t_origin)
-VRT_DO_EXP_R(obj, ctx->req->objcore->exp, grace, 0)
-VRT_DO_EXP_R(obj, ctx->req->objcore->exp, keep, 0)
+VRT_DO_EXP_R(obj, ctx->req->objcore, ttl,
+    ctx->now - ctx->req->objcore->t_origin)
+VRT_DO_EXP_R(obj, ctx->req->objcore, grace, 0)
+VRT_DO_EXP_R(obj, ctx->req->objcore, keep, 0)
 
-VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore->exp, ttl,
-    ctx->now - ctx->bo->fetch_objcore->exp.t_origin)
-VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore->exp, ttl,
-    ctx->now - ctx->bo->fetch_objcore->exp.t_origin)
-VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore->exp, grace, 0)
-VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore->exp, grace, 0)
-VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore->exp, keep, 0)
-VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore->exp, keep, 0)
+VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore, ttl,
+    ctx->now - ctx->bo->fetch_objcore->t_origin)
+VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore, ttl,
+    ctx->now - ctx->bo->fetch_objcore->t_origin)
+VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore, grace, 0)
+VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore, grace, 0)
+VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore, keep, 0)
+VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore, keep, 0)
 
 /*--------------------------------------------------------------------
  */
 
-#define VRT_DO_AGE_R(which, sexp)				\
+#define VRT_DO_AGE_R(which, oc)					\
 								\
 double								\
 VRT_r_##which##_##age(VRT_CTX)		\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	return(ctx->now - sexp.t_origin);			\
+	return(ctx->now - oc->t_origin);			\
 }
 
-VRT_DO_AGE_R(obj, ctx->req->objcore->exp)
-VRT_DO_AGE_R(beresp, ctx->bo->fetch_objcore->exp)
+VRT_DO_AGE_R(obj, ctx->req->objcore)
+VRT_DO_AGE_R(beresp, ctx->bo->fetch_objcore)
 
 /*--------------------------------------------------------------------
  * [be]req.xid

@@ -166,7 +166,7 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		VTAILQ_INSERT_TAIL(&sg->objcores, oc, lru_list);
 		oc->stobj->priv2 |= NEED_FIXUP;
 		oc->ban = BAN_RefBan(oc, so->ban);
-		EXP_COPY(&oc->exp, so);
+		EXP_COPY(oc, so);
 		sg->nobj++;
 		oc->refcnt++;
 		HSH_Insert(wrk, so->hash, oc);
@@ -439,7 +439,7 @@ smp_sml_getobj(struct worker *wrk, struct objcore *oc)
 			bad |= 0x100;
 
 		if(bad) {
-			EXP_ZERO(&oc->exp);
+			EXP_ZERO(oc);
 			EXP_ZERO(so);
 		}
 
@@ -470,11 +470,11 @@ smp_oc_objupdatemeta(struct worker *wrk, struct objcore *oc)
 		/* Lock necessary, we might race close_seg */
 		Lck_Lock(&sg->sc->mtx);
 		so->ban = BAN_Time(oc->ban);
-		EXP_COPY(so, &oc->exp);
+		EXP_COPY(so, oc);
 		Lck_Unlock(&sg->sc->mtx);
 	} else {
 		so->ban = BAN_Time(oc->ban);
-		EXP_COPY(so, &oc->exp);
+		EXP_COPY(so, oc);
 	}
 }
 

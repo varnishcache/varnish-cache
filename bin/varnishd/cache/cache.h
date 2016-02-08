@@ -273,15 +273,6 @@ struct dstat {
 
 /*--------------------------------------------------------------------*/
 
-struct exp {
-	double			t_origin;
-	float			ttl;
-	float			grace;
-	float			keep;
-};
-
-/*--------------------------------------------------------------------*/
-
 struct vsl_log {
 	uint32_t		*wlb, *wlp, *wle;
 	unsigned		wlr;
@@ -420,7 +411,10 @@ struct objcore {
 	double			timer_when;
 	long			hits;
 
-	struct exp		exp;
+	double			t_origin;
+	float			ttl;
+	float			grace;
+	float			keep;
 
 	uint8_t			flags;
 #define OC_F_BUSY		(1<<1)

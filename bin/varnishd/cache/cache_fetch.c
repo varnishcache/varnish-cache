@@ -53,7 +53,7 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 	oc = bo->fetch_objcore;
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	lifetime = oc->exp.ttl + oc->exp.grace + oc->exp.keep;
+	lifetime = oc->ttl + oc->grace + oc->keep;
 
 	if (bo->uncacheable || lifetime < cache_param->shortlived)
 		storage_hint = TRANSIENT_STORAGE;
@@ -73,10 +73,10 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 	 * on Transient storage.
 	 */
 
-	if (oc->exp.ttl > cache_param->shortlived)
-		oc->exp.ttl = cache_param->shortlived;
-	oc->exp.grace = 0.0;
-	oc->exp.keep = 0.0;
+	if (oc->ttl > cache_param->shortlived)
+		oc->ttl = cache_param->shortlived;
+	oc->grace = 0.0;
+	oc->keep = 0.0;
 	return (STV_NewObject(bo->wrk, bo->fetch_objcore,
 	    TRANSIENT_STORAGE, l));
 }
@@ -150,7 +150,7 @@ vbf_beresp2obj(struct busyobj *bo)
 		    VTIM_parse(b)));
 	else
 		AZ(ObjSetDouble(bo->wrk, bo->fetch_objcore, OA_LASTMODIFIED,
-		    floor(bo->fetch_objcore->exp.t_origin)));
+		    floor(bo->fetch_objcore->t_origin)));
 
 	return (0);
 }
@@ -385,15 +385,15 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	 * What does RFC2616 think about TTL ?
 	 */
 	RFC2616_Ttl(bo, now,
-	    &bo->fetch_objcore->exp.t_origin,
-	    &bo->fetch_objcore->exp.ttl,
-	    &bo->fetch_objcore->exp.grace,
-	    &bo->fetch_objcore->exp.keep
+	    &bo->fetch_objcore->t_origin,
+	    &bo->fetch_objcore->ttl,
+	    &bo->fetch_objcore->grace,
+	    &bo->fetch_objcore->keep
 	);
 
 	/* private objects have negative TTL */
 	if (bo->fetch_objcore->flags & OC_F_PRIVATE)
-		bo->fetch_objcore->exp.ttl = -1.;
+		bo->fetch_objcore->ttl = -1.;
 
 	AZ(bo->do_esi);
 	AZ(bo->was_304);
@@ -689,7 +689,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	ObjSetState(bo->fetch_objcore, BOS_FINISHED);
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
 	if (bo->stale_oc != NULL)
-		EXP_Rearm(bo->stale_oc, bo->stale_oc->exp.t_origin, 0, 0, 0);
+		EXP_Rearm(bo->stale_oc, bo->stale_oc->t_origin, 0, 0, 0);
 	return (F_STP_DONE);
 }
 
@@ -756,7 +756,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	if (!bo->do_stream)
 		HSH_Unbusy(wrk, bo->fetch_objcore);
 
-	EXP_Rearm(bo->stale_oc, bo->stale_oc->exp.t_origin, 0, 0, 0);
+	EXP_Rearm(bo->stale_oc, bo->stale_oc->t_origin, 0, 0, 0);
 
 	/* Recycle the backend connection before setting BOS_FINISHED to
 	   give predictable backend reuse behavior for varnishtest */
@@ -798,7 +798,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	http_TimeHeader(bo->beresp, "Date: ", now);
 	http_SetHeader(bo->beresp, "Server: Varnish");
 
-	bo->fetch_objcore->exp.t_origin = now;
+	bo->fetch_objcore->t_origin = now;
 	if (!VTAILQ_EMPTY(&bo->fetch_objcore->objhead->waitinglist)) {
 		/*
 		 * If there is a waitinglist, it means that there is no
@@ -807,13 +807,13 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		 * each objcore on the waiting list sequentially attempt
 		 * to fetch from the backend.
 		 */
-		bo->fetch_objcore->exp.ttl = 1;
-		bo->fetch_objcore->exp.grace = 5;
-		bo->fetch_objcore->exp.keep = 5;
+		bo->fetch_objcore->ttl = 1;
+		bo->fetch_objcore->grace = 5;
+		bo->fetch_objcore->keep = 5;
 	} else {
-		bo->fetch_objcore->exp.ttl = 0;
-		bo->fetch_objcore->exp.grace = 0;
-		bo->fetch_objcore->exp.keep = 0;
+		bo->fetch_objcore->ttl = 0;
+		bo->fetch_objcore->grace = 0;
+		bo->fetch_objcore->keep = 0;
 	}
 
 	synth_body = VSB_new_auto();
@@ -883,7 +883,7 @@ vbf_stp_fail(struct worker *wrk, const struct busyobj *bo)
 		/* Already unbusied - expire it */
 		AN(bo->fetch_objcore);
 		EXP_Rearm(bo->fetch_objcore,
-		    bo->fetch_objcore->exp.t_origin, 0, 0, 0);
+		    bo->fetch_objcore->t_origin, 0, 0, 0);
 	}
 	wrk->stats->fetch_failed++;
 	ObjSetState(bo->fetch_objcore, BOS_FAILED);

@@ -522,7 +522,11 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
 	assert(really >= 0);
 
 	/* Don't entertain already dead objects */
-	if ((oc->exp.ttl + oc->exp.grace + oc->exp.keep) <= 0.)
+	if (oc->flags & OC_F_DYING)
+		return (0);
+	if (oc->t_origin <= 0.)
+		return (0);
+	if (oc->ttl + oc->grace + oc->keep <= 0.)
 		return (0);
 
 	ltot = sizeof(struct object) + PRNDUP(wsl);
@@ -562,7 +566,7 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
 	/* We have to do this somewhere, might as well be here... */
 	assert(sizeof so->hash == DIGEST_LEN);
 	memcpy(so->hash, oc->objhead->digest, DIGEST_LEN);
-	EXP_COPY(so, &oc->exp);
+	EXP_COPY(so, oc);
 	so->ptr = (uint8_t*)o - sc->base;
 	so->ban = BAN_Time(oc->ban);
 
