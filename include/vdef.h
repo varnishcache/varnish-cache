@@ -67,6 +67,33 @@
 #  define __v_printflike(f,a)
 #endif
 
+/*********************************************************************
+ * Pointer alignment magic
+ */
+
+#if defined(__sparc__)
+/* NB: Overbroad test for 32bit userland on 64bit SPARC cpus. */
+#  define PALGN	    (sizeof(double) - 1)	/* size of alignment */
+#else
+#  define PALGN	    (sizeof(void *) - 1)	/* size of alignment */
+#endif
+#define PAOK(p)	    (((uintptr_t)(p) & PALGN) == 0)	/* is aligned */
+#define PRNDDN(p)   ((uintptr_t)(p) & ~PALGN)		/* Round down */
+#define PRNDUP(p)   (((uintptr_t)(p) + PALGN) & ~PALGN)	/* Round up */
+
+/*********************************************************************
+ * To be used as little as possible to wash off const/volatile etc.
+ */
+#define TRUST_ME(ptr)	((void*)(uintptr_t)(ptr))
+
+/**********************************************************************
+ * Generic power-2 rounding macros
+ */
+
+#define PWR2(x)     ((((x)-1UL)&(x))==0)		/* Is a power of two */
+#define RDN2(x, y)  ((x)&(~((uintptr_t)(y)-1UL)))	/* PWR2(y) true */
+#define RUP2(x, y)  (((x)+((y)-1))&(~((uintptr_t)(y)-1UL))) /* PWR2(y) true */
+
 /**********************************************************************
  * FlexeLint and compiler shutuppery
  */
