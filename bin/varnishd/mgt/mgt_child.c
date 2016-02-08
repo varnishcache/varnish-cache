@@ -455,7 +455,7 @@ mgt_reap_child(void)
 	int i;
 	int status;
 	struct vsb *vsb;
-	pid_t r;
+	pid_t r = 0;
 
 	assert(child_pid != -1);
 
