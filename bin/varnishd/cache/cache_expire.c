@@ -135,7 +135,8 @@ EXP_Poke(struct objcore *oc)
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	exp_mail_it(oc, 0);
+	if (oc->exp_flags & OC_EF_EXP)
+		exp_mail_it(oc, 0);
 }
 
 /*--------------------------------------------------------------------
@@ -246,6 +247,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags)
 	    oc->timer_when, oc->flags);
 
 	if (oc->flags & OC_F_DYING) {
+		oc->exp_flags &= OC_EF_EXP;
 		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Kill p=%p e=%.9f f=0x%x", oc,
 		    oc->timer_when, oc->flags);
 		if (!(flags & OC_EF_INSERT)) {
@@ -309,6 +311,7 @@ exp_expire(struct exp_priv *ep, double now)
 		return (oc->timer_when);
 
 	VSC_C_main->n_expired++;
+	oc->exp_flags &= OC_EF_EXP;
 
 	if (!(oc->flags & OC_F_DYING))
 		HSH_Kill(oc);
