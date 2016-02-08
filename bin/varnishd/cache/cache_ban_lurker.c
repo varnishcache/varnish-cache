@@ -71,7 +71,7 @@ ban_cleantail(void)
 			VTAILQ_REMOVE(&ban_head, b, list);
 			VSC_C_main->bans_persisted_fragmentation +=
 			    ban_len(b->spec);
-			ban_info(BI_DROP, b->spec, ban_len(b->spec));
+			ban_info_drop(b->spec, ban_len(b->spec));
 		} else {
 			b = NULL;
 		}

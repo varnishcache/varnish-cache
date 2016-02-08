@@ -40,11 +40,6 @@
 #include "vsb.h"
 #include "vapi/vsc_int.h"
 
-enum baninfo {
-	BI_NEW,
-	BI_DROP
-};
-
 struct cli;
 
 /**********************************************************************

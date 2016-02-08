@@ -109,7 +109,9 @@ extern pthread_cond_t	ban_lurker_cond;
 
 void ban_mark_completed(struct ban *b);
 unsigned ban_len(const uint8_t *banspec);
-void ban_info(enum baninfo event, const uint8_t *ban, unsigned len);
+void ban_info_new(const uint8_t *ban, unsigned len);
+void ban_info_drop(const uint8_t *ban, unsigned len);
+
 int ban_evaluate(struct worker *wrk, const uint8_t *bs, struct objcore *oc,
     const struct http *reqhttp, unsigned *tests);
 double ban_time(const uint8_t *banspec);

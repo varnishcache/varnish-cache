@@ -166,14 +166,27 @@ STV_close(void)
  */
 
 int
-STV_BanInfo(enum baninfo event, const uint8_t *ban, unsigned len)
+STV_BanInfoDrop(const uint8_t *ban, unsigned len)
 {
 	struct stevedore *stv;
 	int r = 0;
 
 	VTAILQ_FOREACH(stv, &stv_stevedores, list)
 		if (stv->baninfo != NULL)
-			r |= stv->baninfo(stv, event, ban, len);
+			r |= stv->baninfo(stv, BI_DROP, ban, len);
+
+	return (r);
+}
+
+int
+STV_BanInfoNew(const uint8_t *ban, unsigned len)
+{
+	struct stevedore *stv;
+	int r = 0;
+
+	VTAILQ_FOREACH(stv, &stv_stevedores, list)
+		if (stv->baninfo != NULL)
+			r |= stv->baninfo(stv, BI_NEW, ban, len);
 
 	return (r);
 }

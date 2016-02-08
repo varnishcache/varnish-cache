@@ -1061,8 +1061,6 @@ int STV_NewObject(struct worker *, struct objcore *,
     const char *hint, unsigned len);
 void STV_open(void);
 void STV_close(void);
-int STV_BanInfo(enum baninfo event, const uint8_t *ban, unsigned len);
-void STV_BanExport(const uint8_t *bans, unsigned len);
 
 /*
  * A normal pointer difference is signed, but we never want a negative value

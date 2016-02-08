@@ -40,6 +40,11 @@ struct vsl_log;
 struct vfp_ctx;
 struct obj_methods;
 
+enum baninfo {
+	BI_NEW,
+	BI_DROP
+};
+
 /* Storage -----------------------------------------------------------*/
 
 struct storage {

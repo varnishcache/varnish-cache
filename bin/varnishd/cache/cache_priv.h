@@ -128,6 +128,11 @@ void VRTPRIV_dynamic_kill(struct vrt_privs *privs, uintptr_t id);
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);
 
+/* stevedore.c */
+int STV_BanInfoDrop(const uint8_t *ban, unsigned len);
+int STV_BanInfoNew(const uint8_t *ban, unsigned len);
+void STV_BanExport(const uint8_t *banlist, unsigned len);
+
 /* storage_persistent.c */
 void SMP_Init(void);
 void SMP_Ready(void);

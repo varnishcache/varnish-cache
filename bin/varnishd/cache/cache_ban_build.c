@@ -306,7 +306,7 @@ BAN_Commit(struct ban_proto *bp)
 		VSC_C_main->bans_req++;
 
 	if (bi != NULL)
-		ban_info(BI_NEW, b->spec, ln);	/* Notify stevedores */
+		ban_info_new(b->spec, ln);	/* Notify stevedores */
 
 	if (cache_param->ban_dups) {
 		/* Hunt down duplicates, and mark them as completed */

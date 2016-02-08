@@ -301,19 +301,23 @@ ban_export(void)
 	VSC_C_main->bans_persisted_fragmentation = 0;
 }
 
+/*
+ * For both of these we do a full export on info failure to remove
+ * holes in the exported list.
+ * XXX: we should keep track of the size of holes in the last exported list
+ */
 void
-ban_info(enum baninfo event, const uint8_t *ban, unsigned len)
+ban_info_new(const uint8_t *ban, unsigned len)
 {
-	if (STV_BanInfo(event, ban, len)) {
-		/* One or more stevedores reported failure. Export the
-		 * list instead. The exported list should take up less
-		 * space due to drops being purged and completed being
-		 * truncated. */
-		/* XXX: Keep some measure of how much space can be
-		 * saved, and only export if it's worth it. Assert if
-		 * not */
+	if (STV_BanInfoNew(ban, len))
 		ban_export();
-	}
+}
+
+void
+ban_info_drop(const uint8_t *ban, unsigned len)
+{
+	if (STV_BanInfoNew(ban, len))
+		ban_export();
 }
 
 /*--------------------------------------------------------------------
@@ -743,7 +747,7 @@ BAN_Compile(void)
 
 	/* Report the place-holder ban */
 	b = VTAILQ_FIRST(&ban_head);
-	AZ(STV_BanInfo(BI_NEW, b->spec, ban_len(b->spec)));
+	ban_info_new(b->spec, ban_len(b->spec));
 
 	ban_export();
 
