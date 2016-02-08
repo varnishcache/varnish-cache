@@ -483,14 +483,20 @@ mgt_reap_child(void)
 		ev_listen = NULL;
 	}
 
-	/* Wait 10 seconds for child to die */
-	for (i = 0; i < 10; i++) {
+	/* Compose obituary */
+	vsb = VSB_new_auto();
+	XXXAN(vsb);
+
+	/* Wait for child to die */
+	for (i = 0; i < mgt_param.cli_timeout; i++) {
 		r = waitpid(child_pid, &status, WNOHANG);
 		if (r == child_pid)
 			break;
 		(void)sleep(1);
 	}
 	if (r == 0) {
+		VSB_printf(vsb, "Child (%jd) not dying, killing", (intmax_t)r);
+
 		/* Kick it Jim... */
 		if (MGT_FEATURE(FEATURE_NO_COREDUMP))
 			(void)kill(child_pid, SIGKILL);
@@ -504,9 +510,6 @@ mgt_reap_child(void)
 
 	MAC_reopen_sockets(NULL);
 
-	/* Compose obituary */
-	vsb = VSB_new_auto();
-	XXXAN(vsb);
 	VSB_printf(vsb, "Child (%jd) %s", (intmax_t)r,
 	    status ? "died" : "ended");
 	if (WIFEXITED(status) && WEXITSTATUS(status)) {
