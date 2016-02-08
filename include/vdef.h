@@ -78,6 +78,12 @@
  */
 #define __match_proto__(xxx)		/*lint -e{818} */
 
+/*
+ * State variables may change value before we have considered the
+ * previous value
+ */
+#define __state_variable__(varname)	varname /*lint -esym(838,varname) */
+
 #define NEEDLESS_RETURN		return
 
 #endif /* VDEF_H_INCLUDED */

@@ -42,17 +42,6 @@
 
 struct cli;
 
-/**********************************************************************
- * FlexeLint and compiler shutuppery
- */
-
-/*
- * State variables may change value before we use the last value we
- * set them to.
- * Pass no argument.
- */
-#define __state_variable__(xxx)		/*lint -esym(838,xxx) */
-
 /**********************************************************************/
 
 /* Name of transient storage */
