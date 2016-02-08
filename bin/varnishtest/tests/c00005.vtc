@@ -11,7 +11,7 @@ server s1 {
 
 varnish v1 -arg "-p vsl_mask=+VCL_trace" -vcl+backend {
 	acl acl1 {
-		"localhost";
+		"${localhost}";
 	}
 
 	sub vcl_recv {

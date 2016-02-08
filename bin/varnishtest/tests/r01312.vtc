@@ -6,6 +6,8 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	import ${vmod_std};
+
 	acl foo {
 		"127.0.0.2";
 		"127.0.1"/19;
@@ -15,8 +17,8 @@ varnish v1 -vcl+backend {
 		"127.0.1"/19;
 	}
 	sub vcl_deliver {
-		set resp.http.ACLfoo = client.ip ~ foo;
-		set resp.http.ACLbar = client.ip ~ bar;
+		set resp.http.ACLfoo = std.ip("127.0.0.1", client.ip) ~ foo;
+		set resp.http.ACLbar = std.ip("127.0.0.1", client.ip) ~ bar;
 	}
 } -start
 

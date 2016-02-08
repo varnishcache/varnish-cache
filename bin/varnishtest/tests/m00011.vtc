@@ -21,8 +21,8 @@ varnish v1 -vcl+backend {
 client c1 {
 	txreq
 	rxresp
-	expect resp.http.foo0 == "127.0.0.1"
-	expect resp.http.foo1 == "127.0.0.1"
+	expect resp.http.foo0 == "${localhost}"
+	expect resp.http.foo1 == "${localhost}"
 	expect resp.http.foo2 == "127.0.0.2"
 	expect resp.http.foo3 == "1.2.3.5"
 	expect resp.http.foo4 == "2001:db8::"

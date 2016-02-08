@@ -8,7 +8,7 @@ server s1 {
 
 	rxreq
 	expect req.url == "/bar"
-	expect req.http.host == "127.0.0.1"
+	expect req.http.host == "${localhost}"
 	txresp -body "foo1"
 } -start
 

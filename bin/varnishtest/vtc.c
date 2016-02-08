@@ -121,6 +121,12 @@ static pthread_mutex_t		macro_mtx;
 static void
 init_macro(void)
 {
+	struct macro *m;
+
+	/* Dump the extmacros for completeness */
+	VTAILQ_FOREACH(m, &macro_list, list)
+		vtc_log(vltop, 4, "extmacro def %s=%s", m->name, m->val);
+
 	AZ(pthread_mutex_init(&macro_mtx, NULL));
 }
 
@@ -636,15 +642,6 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	init_macro();
 	init_sema();
 	init_server();
-
-	/*
-	 * We need an IP number which will not repond, ever, and that is a
-	 * lot harder than it sounds.  This IP# is from RFC5737 and a
-	 * C-class broadcast at that.
-	 * If tests involving ${bad_ip} fails and you run linux, you should
-	 * check your /proc/sys/net/ipv4/ip_nonlocal_bind setting.
-	 */
-	macro_def(vltop, NULL, "bad_ip", "192.0.2.255");
 
 	/* Move into our tmpdir */
 	AZ(chdir(tmpdir));

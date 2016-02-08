@@ -4,7 +4,7 @@ server s1 {
 	# The server address is part of the hash-key
 	# so we need three responses
 	rxreq
-	expect req.http.x-forwarded-for == "127.0.0.1"
+	expect req.http.x-forwarded-for == "${localhost}"
 	txresp -hdr "Obj: 1"
 	rxreq
 	expect req.http.x-forwarded-for == "1.2.3.4"
@@ -49,7 +49,7 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.si == "${v1_addr}"
 	expect resp.http.sp == "${v1_port}"
-	expect resp.http.ci == "127.0.0.1"
+	expect resp.http.ci == "${localhost}"
 } -run
 delay .1
 
@@ -71,7 +71,7 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.si == "${v1_addr}"
 	expect resp.http.sp == "${v1_port}"
-	expect resp.http.ci == "127.0.0.1"
+	expect resp.http.ci == "${localhost}"
 } -run
 delay .1
 
@@ -84,7 +84,7 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.si == "${v1_addr}"
 	expect resp.http.sp == "${v1_port}"
-	expect resp.http.ci == "127.0.0.1"
+	expect resp.http.ci == "${localhost}"
 } -run
 delay .1
 
@@ -98,7 +98,7 @@ client c1 {
 	expect resp.status == 200
 	expect resp.http.si == "${v1_addr}"
 	expect resp.http.sp == "${v1_port}"
-	expect resp.http.ci == "127.0.0.1"
+	expect resp.http.ci == "${localhost}"
 } -run
 delay .1
 
@@ -116,7 +116,7 @@ client c1 {
 	expect resp.http.fc == false
 	expect resp.http.si == "${v1_addr}"
 	expect resp.http.sp == "${v1_port}"
-	expect resp.http.ci == "127.0.0.1"
+	expect resp.http.ci == "${localhost}"
 } -run
 delay .1
 

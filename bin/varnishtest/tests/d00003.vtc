@@ -21,6 +21,7 @@ server s2 {
 } -start
 
 varnish v1 -vcl+backend {
+	import ${vmod_std};
 	import ${vmod_directors};
 
 	sub vcl_init {
@@ -41,7 +42,7 @@ varnish v1 -vcl+backend {
 		} else if (req.url == "/13") {
 			set req.backend_hint = h1.backend(req.http.Void + "" + req.url);
 		} else if (req.url == "/ip") {
-			set req.backend_hint = h1.backend(client.ip);
+			set req.backend_hint = h1.backend(std.ip("127.0.0.1", client.ip));
 		} else {
 			set req.backend_hint = h1.backend(req.url);
 		}

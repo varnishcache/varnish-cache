@@ -427,6 +427,41 @@ dns_works(void)
 }
 
 /**********************************************************************
+ * Figure out what IP related magic
+ */
+
+static void
+ip_magic(void)
+{
+	const char *p;
+	int fd;
+	char abuf[VTCP_ADDRBUFSIZE];
+
+	/*
+	 * In FreeBSD jails localhost/127.0.0.1 becomes the jails IP#
+	 * XXX: IPv6-only hosts would have similar issue, but it is not
+	 * XXX: obvious how to cope.  Ideally "127.0.0.1" would be
+	 * XXX: "localhost", but that doesn't work out of the box.
+	 * XXX: Things like "prefer_ipv6" parameter complicates things.
+	 */
+	fd = VTCP_listen_on("127.0.0.1", NULL, 10, &p);
+	assert(fd >= 0);
+	VTCP_myname(fd, abuf, sizeof abuf, NULL, 0);
+	AZ(close(fd));
+	extmacro_def("localhost", "%s", abuf);
+
+	/*
+	 * We need an IP number which will not repond, ever, and that is a
+	 * lot harder than it sounds.  This IP# is from RFC5737 and a
+	 * C-class broadcast at that.
+	 * If tests involving ${bad_ip} fails and you run linux, you should
+	 * check your /proc/sys/net/ipv4/ip_nonlocal_bind setting.
+	 */
+
+	extmacro_def("bad_ip", "%s", "192.0.2.255");
+}
+
+/**********************************************************************
  * Main
  */
 
@@ -538,6 +573,7 @@ main(int argc, char * const *argv)
 	}
 
 	feature_dns = dns_works();
+	ip_magic();
 
 	if (iflg)
 		i_mode();

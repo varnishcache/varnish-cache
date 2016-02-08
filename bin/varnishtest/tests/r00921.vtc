@@ -2,8 +2,8 @@ varnishtest "VCC type issue in regsub arg 1"
 
 server s1 {
 	rxreq
-	expect req.http.foo == "127.0.0.1"
-	expect req.http.bar == "127.0.0.1"
+	expect req.http.foo == "${localhost}"
+	expect req.http.bar == "${localhost}"
 	txresp
 } -start
 

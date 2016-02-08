@@ -2,10 +2,10 @@ varnishtest "Test X-Forward-For headers"
 
 server s1 {
 	rxreq
-	expect req.http.X-Forwarded-For == "127.0.0.1"
+	expect req.http.X-Forwarded-For == "${localhost}"
 	txresp
 	rxreq
-	expect req.http.X-Forwarded-For == "1.2.3.4, 127.0.0.1"
+	expect req.http.X-Forwarded-For == "1.2.3.4, ${localhost}"
 	txresp
 } -start
 
