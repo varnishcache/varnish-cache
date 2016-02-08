@@ -311,7 +311,7 @@ exp_expire(struct exp_priv *ep, double now)
 	VSC_C_main->n_expired++;
 
 	if (!(oc->flags & OC_F_DYING))
-		ObjKill(oc);
+		HSH_Kill(oc);
 
 	/* Remove from binheap */
 	assert(oc->timer_idx != BINHEAP_NOIDX);

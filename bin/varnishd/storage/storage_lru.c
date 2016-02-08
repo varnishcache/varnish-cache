@@ -175,7 +175,7 @@ LRU_NukeOne(struct worker *wrk, struct lru *lru)
 		VSLb(wrk->vsl, SLT_ExpKill, "LRU_Cand p=%p f=0x%x r=%d",
 		    oc, oc->flags, oc->refcnt);
 
-		if (ObjSnipe(wrk, oc)) {
+		if (HSH_Snipe(wrk, oc)) {
 			VSC_C_main->n_lru_nuked++; // XXX per lru ?
 			VTAILQ_REMOVE(&lru->lru_head, oc, lru_list);
 			VTAILQ_INSERT_TAIL(&lru->lru_head, oc, lru_list);

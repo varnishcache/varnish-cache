@@ -71,8 +71,8 @@
  *
  * 23	ObjUpdateMeta()	ban/ttl/grace/keep changed
  *
- * 3->4	ObjSnipe()	kill if not in use
- * 3->4	ObjKill()	make unavailable
+ * 3->4	HSH_Snipe()	kill if not in use
+ * 3->4	HSH_Kill()	make unavailable
  *
  * 234	ObjSlim()	Release body storage (but retain attribute storage)
  *
@@ -425,52 +425,6 @@ ObjTouch(struct worker *wrk, struct objcore *oc, double now)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	if (om->objtouch != NULL)
 		om->objtouch(wrk, oc, now);
-}
-
-/*====================================================================
- * ObjKill()
- *
- * It's dead Jim, kick it...
- */
-
-void
-ObjKill(struct objcore *oc)
-{
-
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
-
-	Lck_Lock(&oc->objhead->mtx);
-	oc->flags |= OC_F_DYING;
-	Lck_Unlock(&oc->objhead->mtx);
-}
-
-/*====================================================================
- * ObjSnipe()
- *
- * If objcore is idle, gain a ref and mark it dead.
- */
-
-int
-ObjSnipe(const struct worker *wrk, struct objcore *oc)
-{
-	int retval = 0;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
-
-	AZ(oc->flags & OC_F_DYING);
-
-	if (oc->refcnt == 1 && !Lck_Trylock(&oc->objhead->mtx)) {
-		if (oc->refcnt == 1) {
-			oc->flags |= OC_F_DYING;
-			oc->refcnt++;
-			retval = 1;
-		}
-		Lck_Unlock(&oc->objhead->mtx);
-	}
-	return (retval);
 }
 
 /*====================================================================

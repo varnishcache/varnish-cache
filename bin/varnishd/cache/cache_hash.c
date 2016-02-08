@@ -671,6 +671,53 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 	Lck_Unlock(&oh->mtx);
 }
 
+/*====================================================================
+ * HSH_Kill()
+ *
+ * It's dead Jim, kick it...
+ */
+
+void
+HSH_Kill(struct objcore *oc)
+{
+
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
+
+	Lck_Lock(&oc->objhead->mtx);
+	oc->flags |= OC_F_DYING;
+	Lck_Unlock(&oc->objhead->mtx);
+}
+
+/*====================================================================
+ * HSH_Snipe()
+ *
+ * If objcore is idle, gain a ref and mark it dead.
+ */
+
+int
+HSH_Snipe(const struct worker *wrk, struct objcore *oc)
+{
+	int retval = 0;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
+
+	AZ(oc->flags & OC_F_DYING);
+
+	if (oc->refcnt == 1 && !Lck_Trylock(&oc->objhead->mtx)) {
+		if (oc->refcnt == 1) {
+			oc->flags |= OC_F_DYING;
+			oc->refcnt++;
+			retval = 1;
+		}
+		Lck_Unlock(&oc->objhead->mtx);
+	}
+	return (retval);
+}
+
+
 /*---------------------------------------------------------------------
  * Gain a reference on an objcore
  */

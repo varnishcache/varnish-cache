@@ -75,6 +75,8 @@ struct boc *HSH_RefBoc(const struct objcore *);
 void HSH_DerefBoc(struct worker *wrk, struct objcore *);
 struct objcore *HSH_Private(struct worker *wrk);
 void HSH_Abandon(struct objcore *oc);
+int HSH_Snipe(const struct worker *, struct objcore *);
+void HSH_Kill(struct objcore *);
 
 #ifdef VARNISH_CACHE_CHILD
 
