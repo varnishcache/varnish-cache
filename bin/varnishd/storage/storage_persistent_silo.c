@@ -449,7 +449,6 @@ smp_sml_getobj(struct worker *wrk, struct objcore *oc)
 		oc->stobj->priv2 &= ~NEED_FIXUP;
 	}
 	Lck_Unlock(&sg->sc->mtx);
-	EXP_Rearm(oc, NAN, NAN, NAN, NAN);	// XXX: Shouldn't be needed
 	return (o);
 }
 
