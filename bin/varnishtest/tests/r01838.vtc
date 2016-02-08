@@ -1,0 +1,32 @@
+varnishtest "Uncompressed synthetic responses as esi includes"
+
+server s1 {
+	rxreq
+	txresp -body {<FOO><esi:include src="/foo"/></FOO>}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/foo") {
+			return (synth(998));
+		}
+	}
+
+	sub vcl_synth {
+		if (resp.status == 998) {
+			synthetic("synthetic body");
+			return (deliver);
+		}
+	}
+
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "<FOO>synthetic body</FOO>"
+} -run
