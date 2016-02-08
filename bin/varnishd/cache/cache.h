@@ -1050,7 +1050,8 @@ int WS_Overflowed(const struct ws *ws);
 void *WS_Printf(struct ws *ws, const char *fmt, ...) __v_printflike(2, 3);
 
 /* cache_rfc2616.c */
-void RFC2616_Ttl(struct busyobj *, double now);
+void RFC2616_Ttl(struct busyobj *, double now, double *t_origin,
+    float *ttl, float *grace, float *keep);
 unsigned RFC2616_Req_Gzip(const struct http *);
 int RFC2616_Do_Cond(const struct req *sp);
 void RFC2616_Weaken_Etag(struct http *hp);

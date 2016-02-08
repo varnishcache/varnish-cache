@@ -384,8 +384,12 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	/*
 	 * What does RFC2616 think about TTL ?
 	 */
-	EXP_Clr(&bo->fetch_objcore->exp);
-	RFC2616_Ttl(bo, now);
+	RFC2616_Ttl(bo, now,
+	    &bo->fetch_objcore->exp.t_origin,
+	    &bo->fetch_objcore->exp.ttl,
+	    &bo->fetch_objcore->exp.grace,
+	    &bo->fetch_objcore->exp.keep
+	);
 
 	/* private objects have negative TTL */
 	if (bo->fetch_objcore->flags & OC_F_PRIVATE)

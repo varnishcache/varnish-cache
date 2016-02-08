@@ -62,25 +62,27 @@
  */
 
 void
-RFC2616_Ttl(struct busyobj *bo, double now)
+RFC2616_Ttl(struct busyobj *bo, double now, double *t_origin,
+    float *ttl, float *grace, float *keep)
 {
 	unsigned max_age, age;
 	double h_date, h_expires;
 	const char *p;
 	const struct http *hp;
-	struct exp *expp;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	expp = &bo->fetch_objcore->exp;
+	assert(now != 0.0 && !isnan(now));
+	AN(t_origin);
+	AN(ttl);
+	AN(grace);
+	AN(keep);
+
+	*t_origin = now;
+	*ttl = cache_param->default_ttl;
+	*grace = cache_param->default_grace;
+	*keep = cache_param->default_keep;
 
 	hp = bo->beresp;
-
-	assert(now != 0.0 && !isnan(now));
-	expp->t_origin = now;
-
-	expp->ttl = cache_param->default_ttl;
-	expp->grace = cache_param->default_grace;
-	expp->keep = cache_param->default_keep;
 
 	max_age = age = 0;
 	h_expires = 0;
@@ -98,7 +100,7 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 		 * compatible with fractional seconds.
 		 */
 		age = strtoul(p, NULL, 10);
-		expp->t_origin -= age;
+		*t_origin -= age;
 	}
 
 	if (http_GetHdr(hp, H_Expires, &p))
@@ -109,7 +111,7 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 
 	switch (http_GetStatus(hp)) {
 	default:
-		expp->ttl = -1.;
+		*ttl = -1.;
 		break;
 	case 302: /* Moved Temporarily */
 	case 307: /* Temporary Redirect */
@@ -119,7 +121,7 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 		 * Do not apply the default ttl, only set a ttl if Cache-Control
 		 * or Expires are present. Uncacheable otherwise.
 		 */
-		expp->ttl = -1.;
+		*ttl = -1.;
 		/* FALL-THROUGH */
 	case 200: /* OK */
 	case 203: /* Non-Authoritative Information */
@@ -144,7 +146,7 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 			else
 				max_age = strtoul(p, NULL, 0);
 
-			expp->ttl = max_age;
+			*ttl = max_age;
 			break;
 		}
 
@@ -155,7 +157,7 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 
 		/* If backend told us it is expired already, don't cache. */
 		if (h_expires < h_date) {
-			expp->ttl = 0;
+			*ttl = 0;
 			break;
 		}
 
@@ -167,9 +169,9 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 			 * trust Expires: relative to our own clock.
 			 */
 			if (h_expires < now)
-				expp->ttl = 0;
+				*ttl = 0;
 			else
-				expp->ttl = h_expires - now;
+				*ttl = h_expires - now;
 			break;
 		} else {
 			/*
@@ -177,7 +179,7 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 			 * derive a relative time from the two headers.
 			 * (the negative ttl case is caught above)
 			 */
-			expp->ttl = (int)(h_expires - h_date);
+			*ttl = (int)(h_expires - h_date);
 		}
 
 	}
@@ -186,19 +188,19 @@ RFC2616_Ttl(struct busyobj *bo, double now)
 	 * RFC5861 outlines a way to control the use of stale responses.
 	 * We use this to initialize the grace period.
 	 */
-	if (expp->ttl >= 0 && http_GetHdrField(hp, H_Cache_Control,
+	if (*ttl >= 0 && http_GetHdrField(hp, H_Cache_Control,
 	    "stale-while-revalidate", &p) && p != NULL) {
 
 		if (*p == '-')
-			expp->grace = 0;
+			*grace = 0;
 		else
-			expp->grace = strtoul(p, NULL, 0);
+			*grace = strtoul(p, NULL, 0);
 	}
 
 	VSLb(bo->vsl, SLT_TTL,
 	    "RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u",
-	    expp->ttl, expp->grace, -1., now,
-	    expp->t_origin, h_date, h_expires, max_age);
+	    *ttl, *grace, -1., now,
+	    *t_origin, h_date, h_expires, max_age);
 }
 
 /*--------------------------------------------------------------------
