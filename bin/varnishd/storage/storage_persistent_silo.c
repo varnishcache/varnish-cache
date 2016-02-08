@@ -157,7 +157,7 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 	/* Clear the bogus "hold" count */
 	sg->nobj = 0;
 	for (;no > 0; so++,no--) {
-		if (EXP_When(&so->exp) < t_now)
+		if (EXP_WHEN(so) < t_now)
 			continue;
 		oc = ObjNew(wrk);
 		oc->flags &= ~OC_F_BUSY;
@@ -166,7 +166,7 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		VTAILQ_INSERT_TAIL(&sg->objcores, oc, lru_list);
 		oc->stobj->priv2 |= NEED_FIXUP;
 		oc->ban = BAN_RefBan(oc, so->ban);
-		oc->exp = so->exp;
+		EXP_COPY(&oc->exp, so);
 		sg->nobj++;
 		oc->refcnt++;
 		HSH_Insert(wrk, so->hash, oc);
@@ -439,8 +439,8 @@ smp_sml_getobj(struct worker *wrk, struct objcore *oc)
 			bad |= 0x100;
 
 		if(bad) {
-			EXP_Clr(&oc->exp);
-			EXP_Clr(&so->exp);
+			EXP_ZERO(&oc->exp);
+			EXP_ZERO(so);
 		}
 
 		sg->nfixed++;
@@ -470,11 +470,11 @@ smp_oc_objupdatemeta(struct worker *wrk, struct objcore *oc)
 		/* Lock necessary, we might race close_seg */
 		Lck_Lock(&sg->sc->mtx);
 		so->ban = BAN_Time(oc->ban);
-		so->exp = oc->exp;
+		EXP_COPY(so, &oc->exp);
 		Lck_Unlock(&sg->sc->mtx);
 	} else {
 		so->ban = BAN_Time(oc->ban);
-		so->exp = oc->exp;
+		EXP_COPY(so, &oc->exp);
 	}
 }
 
@@ -491,7 +491,7 @@ smp_oc_objfree(struct worker *wrk, struct objcore *oc)
 	so = smp_find_so(sg, oc->stobj->priv2);
 
 	Lck_Lock(&sg->sc->mtx);
-	EXP_Clr(&so->exp);
+	EXP_ZERO(so);
 	so->ptr = 0;
 
 	assert(sg->nobj > 0);

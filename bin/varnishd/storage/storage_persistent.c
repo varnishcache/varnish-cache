@@ -475,7 +475,7 @@ smp_allocx(const struct stevedore *st, size_t min_size, size_t max_size,
 			sc->next_top -= sizeof(**so);
 			*so = (void*)(sc->base + sc->next_top);
 			/* Render this smp_object mostly harmless */
-			EXP_Clr(&(*so)->exp);
+			EXP_ZERO((*so));
 			(*so)->ban = 0.;
 			(*so)->ptr = 0;
 			sg->objs = *so;
@@ -562,7 +562,7 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
 	/* We have to do this somewhere, might as well be here... */
 	assert(sizeof so->hash == DIGEST_LEN);
 	memcpy(so->hash, oc->objhead->digest, DIGEST_LEN);
-	so->exp = oc->exp;
+	EXP_COPY(so, &oc->exp);
 	so->ptr = (uint8_t*)o - sc->base;
 	so->ban = BAN_Time(oc->ban);
 

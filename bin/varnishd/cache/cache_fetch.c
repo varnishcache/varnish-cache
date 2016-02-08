@@ -798,6 +798,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	http_TimeHeader(bo->beresp, "Date: ", now);
 	http_SetHeader(bo->beresp, "Server: Varnish");
 
+	bo->fetch_objcore->exp.t_origin = now;
 	if (!VTAILQ_EMPTY(&bo->fetch_objcore->objhead->waitinglist)) {
 		/*
 		 * If there is a waitinglist, it means that there is no
@@ -806,13 +807,13 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		 * each objcore on the waiting list sequentially attempt
 		 * to fetch from the backend.
 		 */
-		bo->fetch_objcore->exp.t_origin = now;
 		bo->fetch_objcore->exp.ttl = 1;
 		bo->fetch_objcore->exp.grace = 5;
 		bo->fetch_objcore->exp.keep = 5;
 	} else {
-		EXP_Clr(&bo->fetch_objcore->exp);
-		bo->fetch_objcore->exp.t_origin = now;
+		bo->fetch_objcore->exp.ttl = 0;
+		bo->fetch_objcore->exp.grace = 0;
+		bo->fetch_objcore->exp.keep = 0;
 	}
 
 	synth_body = VSB_new_auto();

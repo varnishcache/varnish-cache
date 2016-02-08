@@ -144,7 +144,10 @@ struct smp_segptr {
 
 struct smp_object {
 	uint8_t			hash[32];	/* really: DIGEST_LEN */
-	struct exp		exp;
+	double			t_origin;
+	float			ttl;
+	float			grace;
+	float			keep;
 	uint32_t		__filler__;	/* -> align/8 on 32bit */
 	double			ban;
 	uint64_t		ptr;		/* rel to silo */

@@ -694,10 +694,34 @@ extern pthread_t cli_thread;
 #define ASSERT_CLI() do {assert(pthread_self() == cli_thread);} while (0)
 
 /* cache_expire.c */
-void EXP_Clr(struct exp *e);
+
+/*
+ * The set of variables which control object expiry are inconveniently
+ * 24 bytes long (double+3*float) and this causes alignment waste if
+ * we put then in a struct.
+ * These three macros operate on the struct we don't use.
+ */
+
+#define EXP_ZERO(xx)							\
+	do {								\
+		(xx)->t_origin = 0.0;					\
+		(xx)->ttl = 0.0;					\
+		(xx)->grace = 0.0;					\
+		(xx)->keep = 0.0;					\
+	} while (0)
+
+#define EXP_COPY(to,fm)							\
+	do {								\
+		(to)->t_origin = (fm)->t_origin;			\
+		(to)->ttl = (fm)->ttl;					\
+		(to)->grace = (fm)->grace;				\
+		(to)->keep = (fm)->keep;				\
+	} while (0)
+
+#define EXP_WHEN(to)							\
+	((to)->t_origin + (to)->ttl + (to)->grace + (to)->keep)
 
 double EXP_Ttl(const struct req *, const struct exp*);
-double EXP_When(const struct exp *exp);
 void EXP_Insert(struct worker *wrk, struct objcore *oc);
 void EXP_Rearm(struct objcore *, double now, double ttl, double grace,
     double keep);

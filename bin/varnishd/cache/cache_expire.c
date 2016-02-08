@@ -87,20 +87,6 @@ exp_event(struct worker *wrk, struct objcore *oc, enum exp_event_e e)
 }
 
 /*--------------------------------------------------------------------
- * struct exp manipulations
- */
-
-void
-EXP_Clr(struct exp *e)
-{
-
-	e->ttl = -1;
-	e->grace = 0;
-	e->keep = 0;
-	e->t_origin = 0;
-}
-
-/*--------------------------------------------------------------------
  * Calculate an objects effective ttl time, taking req.ttl into account
  * if it is available.
  */
@@ -120,7 +106,7 @@ EXP_Ttl(const struct req *req, const struct exp *e)
  * Calculate when this object is no longer useful
  */
 
-double
+static double
 EXP_When(const struct exp *e)
 {
 	double when;
