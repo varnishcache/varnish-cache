@@ -453,7 +453,7 @@ static void
 mgt_reap_child(void)
 {
 	int i;
-	int status;
+	int status = 0xffff;
 	struct vsb *vsb;
 	pid_t r = 0;
 
