@@ -1,6 +1,5 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2016 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -26,55 +25,10 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * This file contains the heritage passed when mgt forks cache
  */
 
-struct vsm_sc;
-struct suckaddr;
-struct proto;
-
-struct listen_sock {
-	unsigned			magic;
-#define LISTEN_SOCK_MAGIC		0x999e4b57
-	VTAILQ_ENTRY(listen_sock)	list;
-	int				sock;
-	char				*name;
-	struct suckaddr			*addr;
-	const struct proto		*proto;
-	const char			*proto_name;
+struct proto {
+	unsigned		magic;
+#define PROTO_MAGIC		0x711e77c1
+	enum sess_step		first_step;
 };
-
-extern const struct proto VPX_proto;
-extern const struct proto HTTP1_proto;
-
-VTAILQ_HEAD(listen_sock_head, listen_sock);
-
-struct heritage {
-
-	/* Two pipe(2)'s for CLI connection between cache and mgt.  */
-	int				cli_in;
-	int				cli_out;
-
-	/* File descriptor for stdout/stderr */
-	int				std_fd;
-
-	/* Sockets from which to accept connections */
-	struct listen_sock_head		socks;
-
-	/* Hash method */
-	const struct hash_slinger	*hash;
-
-	struct vsm_sc			*vsm;
-
-	struct params			*param;
-
-	char				*name;
-	const char			*identity;
-
-	char				*panic_str;
-	ssize_t				panic_str_len;
-};
-
-extern struct heritage heritage;
-
-void child_main(void);

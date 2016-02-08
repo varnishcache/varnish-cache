@@ -618,6 +618,12 @@ enum sess_attr {
 	SA_LAST
 };
 
+enum sess_step {
+#define SESS_STEP(l, u)		S_STP_##u,
+#include "tbl/steps.h"
+#undef SESS_STEP
+};
+
 struct sess {
 	unsigned		magic;
 #define SESS_MAGIC		0x2c2f9c5a

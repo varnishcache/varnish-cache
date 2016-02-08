@@ -38,6 +38,7 @@
 #include <stdlib.h>
 
 #include "cache/cache.h"
+#include "cache/cache_proto.h"
 #include "cache_http1.h"
 #include "hash/hash_slinger.h"
 
@@ -285,3 +286,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 
 	}
 }
+
+const struct proto HTTP1_proto = {
+	.magic =		PROTO_MAGIC,
+	.first_step =		S_STP_H1NEWSESS,
+};

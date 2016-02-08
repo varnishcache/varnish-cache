@@ -107,6 +107,7 @@ noinst_HEADERS = \
 	cache/cache_esi.h \
 	cache/cache_obj.h \
 	cache/cache_pool.h \
+	cache/cache_proto.h \
 	cache/cache_priv.h \
 	common/heritage.h \
 	hash/hash_slinger.h \
