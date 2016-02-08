@@ -40,26 +40,9 @@
 #include "vsb.h"
 #include "vapi/vsc_int.h"
 
-/*
- * Enums cannot be forward declared (any more...) so put it here
- * to make everybody see it.
- */
-
 enum baninfo {
 	BI_NEW,
 	BI_DROP
-};
-
-enum obj_attr {
-#define OBJ_ATTR(U, l)	OA_##U,
-#include "tbl/obj_attr.h"
-#undef OBJ_ATTR
-};
-
-enum obj_flags {
-#define OBJ_FLAG(U, l, v)	OF_##U = v,
-#include "tbl/obj_attr.h"
-#undef OBJ_FLAG
 };
 
 struct cli;
