@@ -405,6 +405,12 @@ vca_accept_task(struct worker *wrk, void *arg)
 				   &wa.acceptaddrlen);
 		} while (i < 0 && errno == EAGAIN);
 
+		if (i < 0 && ls->sock == -2) {
+			/* Shut down in progress */
+			sleep(2);
+			continue;
+		}
+
 		if (i < 0) {
 			switch (errno) {
 			case ECONNABORTED:
@@ -416,7 +422,8 @@ vca_accept_task(struct worker *wrk, void *arg)
 			case EBADF:
 				VSL(SLT_Debug, ls->sock, "Accept failed: %s",
 				    strerror(errno));
-				return;
+				vca_pace_bad();
+				break;
 			default:
 				VSL(SLT_Debug, ls->sock, "Accept failed: %s",
 				    strerror(errno));
