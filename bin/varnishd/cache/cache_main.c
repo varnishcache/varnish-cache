@@ -261,6 +261,7 @@ child_main(void)
 
 	CLI_Run();
 
+	VCA_Shutdown();
 	BAN_Shutdown();
 	STV_close();
 
