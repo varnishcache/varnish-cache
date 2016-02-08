@@ -721,7 +721,7 @@ extern pthread_t cli_thread;
 #define EXP_WHEN(to)							\
 	((to)->t_origin + (to)->ttl + (to)->grace + (to)->keep)
 
-double EXP_Ttl(const struct req *, const struct exp*);
+double EXP_Ttl(const struct req *, const struct objcore *);
 void EXP_Insert(struct worker *wrk, struct objcore *oc);
 void EXP_Rearm(struct objcore *, double now, double ttl, double grace,
     double keep);

@@ -406,7 +406,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 				continue;
 		}
 
-		if (EXP_Ttl(req, &oc->exp) >= req->t_req) {
+		if (EXP_Ttl(req, oc) >= req->t_req) {
 			/* If still valid, use it */
 			assert(oh->refcnt > 1);
 			assert(oc->objhead == oh);

@@ -92,14 +92,16 @@ exp_event(struct worker *wrk, struct objcore *oc, enum exp_event_e e)
  */
 
 double
-EXP_Ttl(const struct req *req, const struct exp *e)
+EXP_Ttl(const struct req *req, const struct objcore *oc)
 {
 	double r;
 
-	r = e->ttl;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	r = oc->exp.ttl;
 	if (req != NULL && req->d_ttl > 0. && req->d_ttl < r)
 		r = req->d_ttl;
-	return (e->t_origin + r);
+	return (oc->exp.t_origin + r);
 }
 
 /*--------------------------------------------------------------------
@@ -334,7 +336,7 @@ exp_expire(struct exp_priv *ep, double now)
 
 	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%u t=%.0f",
-	    ObjGetXID(ep->wrk, oc), EXP_Ttl(NULL, &oc->exp) - now);
+	    ObjGetXID(ep->wrk, oc), EXP_Ttl(NULL, oc) - now);
 	exp_event(ep->wrk, oc, EXP_REMOVE);
 	(void)HSH_DerefObjCore(ep->wrk, &oc);
 	return (0);
