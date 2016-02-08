@@ -92,13 +92,11 @@ smp_fake_init(struct stevedore *parent, int ac, char * const *av)
 	);
 }
 
-
 static const struct stevedore smp_fake_stevedore = {
 	.magic = STEVEDORE_MAGIC,
 	.name = "deprecated_persistent",
 	.init = smp_fake_init,
 };
-
 
 /*--------------------------------------------------------------------
  * Parse a stevedore argument on the form:
