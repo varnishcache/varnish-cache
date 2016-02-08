@@ -65,7 +65,7 @@ void mgt_child_inherit(int fd, const char *what);
 /* cache/cache_vcl.c */
 int VCL_TestLoad(const char *);
 
-/* vsm.c */
+/* common_vsm.c */
 struct vsm_sc;
 struct VSC_C_main;
 struct vsm_sc *VSM_common_new(void *ptr, ssize_t len);
