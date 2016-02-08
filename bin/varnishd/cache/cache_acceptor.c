@@ -313,9 +313,10 @@ vca_make_session(struct worker *wrk, void *arg)
 		 * connection with minimum effort and fuzz, rather than try
 		 * to send an intelligent message back.
 		 */
+		vca_pace_bad();
+		(void)VTCP_nonblocking(wa->acceptsock);
 		AZ(close(wa->acceptsock));
 		wrk->stats->sess_drop++;
-		vca_pace_bad();
 		WS_Release(wrk->aws, 0);
 		return;
 	}
