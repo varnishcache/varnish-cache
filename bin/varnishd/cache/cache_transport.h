@@ -38,6 +38,8 @@ typedef void vtr_deliver_f (struct req *, struct boc *, int sendbody);
 struct transport {
 	unsigned		magic;
 #define TRANSPORT_MAGIC		0xf157f32f
+
+	task_func_t		*new_session;
+
 	vtr_deliver_f		*deliver;
-	enum sess_step		first_step;
 };

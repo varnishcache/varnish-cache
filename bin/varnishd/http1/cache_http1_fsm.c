@@ -47,7 +47,7 @@
 const struct transport HTTP1_transport = {
 	.magic =		TRANSPORT_MAGIC,
 	.deliver =		V1D_Deliver,
-	.first_step =		S_STP_H1NEWSESS,
+	.new_session =		SES_New_Session,
 };
 
 /*----------------------------------------------------------------------
@@ -185,17 +185,6 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 
 	while (1) {
 		switch (sp->sess_step) {
-		case S_STP_H1NEWSESS:
-			if (VTCP_blocking(sp->fd)) {
-				if (errno == ECONNRESET)
-					SES_Close(sp, SC_REM_CLOSE);
-				else
-					SES_Close(sp, SC_TX_ERROR);
-				AN(Req_Cleanup(sp, wrk, req));
-				return;
-			}
-			sp->sess_step = S_STP_H1NEWREQ;
-			break;
 		case S_STP_H1NEWREQ:
 			assert(isnan(req->t_prev));
 			assert(isnan(req->t_req));

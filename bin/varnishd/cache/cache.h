@@ -948,7 +948,7 @@ void SES_Wait(struct sess *sp);
 void SES_Delete(struct sess *sp, enum sess_close reason, double now);
 void SES_NewPool(struct pool *pp, unsigned pool_no);
 int SES_Reschedule_Req(struct req *);
-task_func_t SES_Proto_Sess;
+task_func_t SES_New_Session;
 task_func_t SES_Proto_Req;
 
 enum htc_status_e {

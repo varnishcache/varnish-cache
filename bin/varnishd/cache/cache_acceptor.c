@@ -330,7 +330,6 @@ vca_make_session(struct worker *wrk, void *arg)
 
 	sp->fd = wa->acceptsock;
 	wa->acceptsock = -1;
-	sp->sess_step = wa->acceptlsock->transport->first_step;
 
 	assert(wa->acceptaddrlen <= vsa_suckaddr_len);
 	SES_Reserve_remote_addr(sp, &sa);
@@ -365,9 +364,7 @@ vca_make_session(struct worker *wrk, void *arg)
 	}
 	vca_tcp_opt_set(sp->fd, 0);
 
-	/* SES_Proto_Sess() must be sceduled with reserved WS */
-	assert(8 <= WS_Reserve(sp->ws, 8));
-	wrk->task.func = SES_Proto_Sess;
+	wrk->task.func = wa->acceptlsock->transport->new_session;
 	wrk->task.priv = sp;
 }
 

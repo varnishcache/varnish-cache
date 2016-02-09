@@ -314,12 +314,8 @@ SES_Proto_Req(struct worker *wrk, void *arg)
 
 	THR_SetRequest(req);
 	AZ(wrk->aws->r);
-	if (req->sp->sess_step < S_STP_H1_LAST) {
-		HTTP1_Session(wrk, req);
-		AZ(wrk->v1l);
-	} else {
-		WRONG("Wrong session step");
-	}
+	HTTP1_Session(wrk, req);
+	AZ(wrk->v1l);
 	WS_Assert(wrk->aws);
 	THR_SetRequest(NULL);
 }
@@ -335,35 +331,44 @@ SES_Proto_Req(struct worker *wrk, void *arg)
  */
 
 void __match_proto__(task_func_t)
-SES_Proto_Sess(struct worker *wrk, void *arg)
+SES_New_Session(struct worker *wrk, void *arg)
 {
-	struct req *req;
 	struct sess *sp;
+	struct req *req;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
-	WS_Release(sp->ws, 0);
 
 	/*
 	 * Assume we're going to receive something that will likely
 	 * involve a request...
 	 */
-	(void)VTCP_blocking(sp->fd);
+	if (VTCP_blocking(sp->fd)) {
+		if (errno == ECONNRESET)
+			SES_Close(sp, SC_REM_CLOSE);
+		else
+			SES_Close(sp, SC_TX_ERROR);
+		return;
+	}
 	req = Req_New(wrk, sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	req->htc->fd = sp->fd;
 	SES_RxInit(req->htc, req->ws,
 	    cache_param->http_req_size, cache_param->http_req_hdr_len);
 
-	if (sp->sess_step < S_STP_H1_LAST) {
-		wrk->task.func = SES_Proto_Req;
-		wrk->task.priv = req;
-	} else if (sp->sess_step < S_STP_PROXY_LAST) {
-		wrk->task.func = VPX_Proto_Sess;
-		wrk->task.priv = req;
-	} else {
-		WRONG("Wrong session step");
-	}
+	sp->sess_step = S_STP_H1NEWREQ;
+	wrk->task.func = SES_Proto_Req;
+	wrk->task.priv = req;
+}
+
+static void __match_proto__(task_func_t)
+SES_Proto_Sess(struct worker *wrk, void *arg)
+{
+	struct sess *sp;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
+	WS_Release(sp->ws, 0);
+	SES_New_Session(wrk, arg);
 }
 
 /*--------------------------------------------------------------------

@@ -332,8 +332,8 @@ vpx_complete(struct http_conn *htc)
 	return (HTC_S_MORE);
 }
 
-void __match_proto__(task_func_t)
-VPX_Proto_Sess(struct worker *wrk, void *priv)
+static void __match_proto__(task_func_t)
+vpx_new_session(struct worker *wrk, void *arg)
 {
 	struct req *req;
 	struct sess *sp;
@@ -342,8 +342,13 @@ VPX_Proto_Sess(struct worker *wrk, void *priv)
 	int i;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(req, priv, REQ_MAGIC);
-	sp = req->sp;
+	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
+	(void)VTCP_blocking(sp->fd);		/* XXX redundant ? */
+	req = Req_New(wrk, sp);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	req->htc->fd = sp->fd;
+	SES_RxInit(req->htc, req->ws,
+	    cache_param->http_req_size, cache_param->http_req_hdr_len);
 
 	/* Per specification */
 	assert(sizeof vpx1_sig == 5);
@@ -383,5 +388,5 @@ VPX_Proto_Sess(struct worker *wrk, void *priv)
 
 const struct transport PROXY_transport = {
 	.magic =		TRANSPORT_MAGIC,
-	.first_step =		S_STP_PROXYNEWSESS,
+	.new_session =		vpx_new_session,
 };
