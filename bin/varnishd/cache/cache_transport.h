@@ -39,7 +39,10 @@ struct transport {
 	unsigned		magic;
 #define TRANSPORT_MAGIC		0xf157f32f
 
+	const char		*name;
+
 	task_func_t		*new_session;
+	task_func_t		*unwait;
 
 	vtr_deliver_f		*deliver;
 };

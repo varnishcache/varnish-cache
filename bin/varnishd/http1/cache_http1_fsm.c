@@ -44,10 +44,83 @@
 
 #include "vtcp.h"
 
+/*--------------------------------------------------------------------
+ * Call protocol for this request
+ */
+
+void __match_proto__(task_func_t)
+SES_Proto_Req(struct worker *wrk, void *arg)
+{
+	struct req *req;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
+
+	THR_SetRequest(req);
+	AZ(wrk->aws->r);
+	HTTP1_Session(wrk, req);
+	AZ(wrk->v1l);
+	WS_Assert(wrk->aws);
+	THR_SetRequest(NULL);
+}
+
+/*--------------------------------------------------------------------
+ * Call protocol for this session (new or from waiter)
+ *
+ * When sessions are rescheduled from the waiter, a struct pool_task
+ * is put on the reserved session workspace (for reasons of memory
+ * conservation).  This reservation is released as the first thing.
+ * The acceptor and any other code which schedules this function
+ * must obey this calling convention with a dummy reservation.
+ */
+
+static void __match_proto__(task_func_t)
+http1_new_session(struct worker *wrk, void *arg)
+{
+	struct sess *sp;
+	struct req *req;
+
+	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
+
+	/*
+	 * Assume we're going to receive something that will likely
+	 * involve a request...
+	 */
+	if (VTCP_blocking(sp->fd)) {
+		if (errno == ECONNRESET)
+			SES_Close(sp, SC_REM_CLOSE);
+		else
+			SES_Close(sp, SC_TX_ERROR);
+		return;
+	}
+	req = Req_New(wrk, sp);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	req->htc->fd = sp->fd;
+	SES_RxInit(req->htc, req->ws,
+	    cache_param->http_req_size, cache_param->http_req_hdr_len);
+
+	sp->sess_step = S_STP_H1NEWREQ;
+	wrk->task.func = SES_Proto_Req;
+	wrk->task.priv = req;
+}
+
+static void __match_proto__(task_func_t)
+http1_unwait(struct worker *wrk, void *arg)
+{
+	struct sess *sp;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
+	WS_Release(sp->ws, 0);
+	http1_new_session(wrk, arg);
+}
+
 const struct transport HTTP1_transport = {
+	.name =			"HTTP/1",
 	.magic =		TRANSPORT_MAGIC,
 	.deliver =		V1D_Deliver,
-	.new_session =		SES_New_Session,
+	.unwait =		http1_unwait,
+	.new_session =		http1_new_session,
 };
 
 /*----------------------------------------------------------------------

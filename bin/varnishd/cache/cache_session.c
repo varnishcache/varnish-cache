@@ -46,7 +46,7 @@
 
 #include "cache.h"
 #include "cache_pool.h"
-#include "http1/cache_http1.h"
+#include "cache_transport.h"
 
 #include "vsa.h"
 #include "vtcp.h"
@@ -301,77 +301,6 @@ SES_New(struct pool *pp)
 }
 
 /*--------------------------------------------------------------------
- * Call protocol for this request
- */
-
-void __match_proto__(task_func_t)
-SES_Proto_Req(struct worker *wrk, void *arg)
-{
-	struct req *req;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
-
-	THR_SetRequest(req);
-	AZ(wrk->aws->r);
-	HTTP1_Session(wrk, req);
-	AZ(wrk->v1l);
-	WS_Assert(wrk->aws);
-	THR_SetRequest(NULL);
-}
-
-/*--------------------------------------------------------------------
- * Call protocol for this session (new or from waiter)
- *
- * When sessions are rescheduled from the waiter, a struct pool_task
- * is put on the reserved session workspace (for reasons of memory
- * conservation).  This reservation is released as the first thing.
- * The acceptor and any other code which schedules this function
- * must obey this calling convention with a dummy reservation.
- */
-
-void __match_proto__(task_func_t)
-SES_New_Session(struct worker *wrk, void *arg)
-{
-	struct sess *sp;
-	struct req *req;
-
-	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
-
-	/*
-	 * Assume we're going to receive something that will likely
-	 * involve a request...
-	 */
-	if (VTCP_blocking(sp->fd)) {
-		if (errno == ECONNRESET)
-			SES_Close(sp, SC_REM_CLOSE);
-		else
-			SES_Close(sp, SC_TX_ERROR);
-		return;
-	}
-	req = Req_New(wrk, sp);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	req->htc->fd = sp->fd;
-	SES_RxInit(req->htc, req->ws,
-	    cache_param->http_req_size, cache_param->http_req_hdr_len);
-
-	sp->sess_step = S_STP_H1NEWREQ;
-	wrk->task.func = SES_Proto_Req;
-	wrk->task.priv = req;
-}
-
-static void __match_proto__(task_func_t)
-SES_Proto_Sess(struct worker *wrk, void *arg)
-{
-	struct sess *sp;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
-	WS_Release(sp->ws, 0);
-	SES_New_Session(wrk, arg);
-}
-
-/*--------------------------------------------------------------------
  * Reschedule a request on a work-thread from its sessions pool
  *
  * This is used to reschedule requests waiting on busy objects
@@ -426,7 +355,7 @@ ses_handle(struct waited *wp, enum wait_event ev, double now)
 		CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 		assert(sizeof *tp <= WS_Reserve(sp->ws, sizeof *tp));
 		tp = (void*)sp->ws->f;
-		tp->func = SES_Proto_Sess;
+		tp->func = sp->transport->unwait;
 		tp->priv = sp;
 		if (Pool_Task(pp, tp, TASK_QUEUE_REQ))
 			SES_Delete(sp, SC_OVERLOAD, now);

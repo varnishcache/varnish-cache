@@ -40,6 +40,7 @@
 #include <signal.h>
 
 #include "cache.h"
+#include "cache_transport.h"
 
 #include "cache_filter.h"
 #include "common/heritage.h"
@@ -448,7 +449,8 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 	if (pan_already(vsb, sp))
 		return;
 	VSB_indent(vsb, 2);
-	VSB_printf(vsb, "fd = %d, vxid = %u,\n", sp->fd, VXID(sp->vxid));
+	VSB_printf(vsb, "fd = %d, vxid = %u, xport = %s\n",
+	    sp->fd, VXID(sp->vxid), sp->transport->name);
 	AZ(SES_Get_client_ip(sp, &ci));
 	AZ(SES_Get_client_port(sp, &cp));
 	VSB_printf(vsb, "client = %s %s,\n", ci, cp);

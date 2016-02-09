@@ -364,7 +364,8 @@ vca_make_session(struct worker *wrk, void *arg)
 	}
 	vca_tcp_opt_set(sp->fd, 0);
 
-	wrk->task.func = wa->acceptlsock->transport->new_session;
+	sp->transport = wa->acceptlsock->transport;
+	wrk->task.func = sp->transport->new_session;
 	wrk->task.priv = sp;
 }
 

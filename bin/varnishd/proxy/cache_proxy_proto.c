@@ -41,6 +41,8 @@
 #include "../cache/cache.h"
 #include "../cache/cache_transport.h"
 
+#include "../common/heritage.h"
+
 #include "vend.h"
 #include "vsa.h"
 #include "vtcp.h"
@@ -381,12 +383,14 @@ vpx_new_session(struct worker *wrk, void *arg)
 	else
 		req->htc->pipeline_e = req->htc->rxbuf_e;
 	SES_RxReInit(req->htc);
+	sp->transport = &HTTP1_transport;
 	req->sp->sess_step = S_STP_H1NEWREQ;
 	wrk->task.func = SES_Proto_Req;
 	wrk->task.priv = req;
 }
 
 const struct transport PROXY_transport = {
+	.name =			"PROXY",
 	.magic =		TRANSPORT_MAGIC,
 	.new_session =		vpx_new_session,
 };
