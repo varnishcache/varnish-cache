@@ -230,10 +230,6 @@ SES_RxStuff(struct http_conn *htc, htc_complete_f *func,
 				*t2 = now;
 			return (HTC_S_COMPLETE);
 		}
-		if (tn < now) {
-			WS_ReleaseP(htc->ws, htc->rxbuf_b);
-			return (HTC_S_TIMEOUT);
-		}
 		if (hs == HTC_S_MORE) {
 			/* Working on it */
 			if (t1 != NULL && isnan(*t1))
@@ -249,6 +245,8 @@ SES_RxStuff(struct http_conn *htc, htc_complete_f *func,
 			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			return (HTC_S_OVERFLOW);
 		}
+		if (tmo <= 0.0)
+			tmo = 1e-3;
 		i = VTCP_read(htc->fd, htc->rxbuf_e, i, tmo);
 		if (i == 0 || i == -1) {
 			WS_ReleaseP(htc->ws, htc->rxbuf_b);
@@ -257,9 +255,13 @@ SES_RxStuff(struct http_conn *htc, htc_complete_f *func,
 			htc->rxbuf_e += i;
 			*htc->rxbuf_e = '\0';
 		} else if (i == -2) {
-			if (hs == HTC_S_EMPTY && ti < now) {
+			if (hs == HTC_S_EMPTY && ti <= now) {
 				WS_ReleaseP(htc->ws, htc->rxbuf_b);
 				return (HTC_S_IDLE);
+			}
+			if (tn <= now) {
+				WS_ReleaseP(htc->ws, htc->rxbuf_b);
+				return (HTC_S_TIMEOUT);
 			}
 		}
 	}
