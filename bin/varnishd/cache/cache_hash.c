@@ -120,7 +120,7 @@ HSH_Private(struct worker *wrk)
 	oc->objhead = private_oh;
 	oc->flags |= OC_F_PRIVATE | OC_F_BUSY;
 	Lck_Lock(&private_oh->mtx);
-	VTAILQ_INSERT_TAIL(&private_oh->objcs, oc, list);
+	VTAILQ_INSERT_TAIL(&private_oh->objcs, oc, hsh_list);
 	private_oh->refcnt++;
 	Lck_Unlock(&private_oh->mtx);
 	return (oc);
@@ -276,7 +276,7 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(oc->flags & OC_F_BUSY);
 
-	VTAILQ_INSERT_HEAD(&oh->objcs, oc, list);
+	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
 	/* NB: do not deref objhead the new object inherits our reference */
 	oc->objhead = oh;
 	Lck_Unlock(&oh->mtx);
@@ -302,7 +302,7 @@ hsh_insert_busyobj(struct worker *wrk, struct objhead *oh)
 	AN(oc->flags & OC_F_BUSY);
 	oc->refcnt = 1;		/* Owned by busyobj */
 	oc->objhead = oh;
-	VTAILQ_INSERT_TAIL(&oh->objcs, oc, list);
+	VTAILQ_INSERT_TAIL(&oh->objcs, oc, hsh_list);
 	return (oc);
 }
 
@@ -367,7 +367,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	busy_found = 0;
 	exp_oc = NULL;
 	exp_t_origin = 0.0;
-	VTAILQ_FOREACH(oc, &oh->objcs, list) {
+	VTAILQ_FOREACH(oc, &oh->objcs, hsh_list) {
 		/* Must be at least our own ref + the objcore we examine */
 		assert(oh->refcnt > 1);
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -554,7 +554,7 @@ double keep)
 		Lck_Lock(&oh->mtx);
 		assert(oh->refcnt > 0);
 		now = VTIM_real();
-		VTAILQ_FOREACH(oc, &oh->objcs, list) {
+		VTAILQ_FOREACH(oc, &oh->objcs, hsh_list) {
 			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 			assert(oc->objhead == oh);
 			if (oc->flags & OC_F_BUSY) {
@@ -662,8 +662,8 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
 	/* XXX: strictly speaking, we should sort in Date: order. */
-	VTAILQ_REMOVE(&oh->objcs, oc, list);
-	VTAILQ_INSERT_HEAD(&oh->objcs, oc, list);
+	VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
+	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
 	oc->flags &= ~OC_F_BUSY;
 	if (!VTAILQ_EMPTY(&oh->waitinglist))
 		hsh_rush(wrk, oh);
@@ -819,7 +819,7 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
 	assert(oh->refcnt > 0);
 	r = --oc->refcnt;
 	if (!r)
-		VTAILQ_REMOVE(&oh->objcs, oc, list);
+		VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
 	if (!VTAILQ_EMPTY(&oh->waitinglist))
 		hsh_rush(wrk, oh);
 	Lck_Unlock(&oh->mtx);
