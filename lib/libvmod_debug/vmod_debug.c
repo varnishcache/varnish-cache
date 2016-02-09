@@ -44,7 +44,7 @@ struct priv_vcl {
 	unsigned		magic;
 #define PRIV_VCL_MAGIC		0x8E62FA9D
 	char			*foo;
-	uintptr_t		exp_cb;
+	uintptr_t		obj_cb;
 	struct vcl		*vcl;
 	struct vclref		*vclref;
 };
@@ -198,8 +198,8 @@ vmod_vre_limit(VRT_CTX)
 	return (cache_param->vre_limits.match);
 }
 
-static void __match_proto__(exp_callback_f)
-exp_cb(struct worker *wrk, struct objcore *oc, enum exp_event_e ev, void *priv)
+static void __match_proto__(obj_event_f)
+obj_cb(struct worker *wrk, void *priv, struct objcore *oc, unsigned event)
 {
 	const struct priv_vcl *priv_vcl;
 	const char *what;
@@ -207,26 +207,28 @@ exp_cb(struct worker *wrk, struct objcore *oc, enum exp_event_e ev, void *priv)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CAST_OBJ_NOTNULL(priv_vcl, priv, PRIV_VCL_MAGIC);
-	switch (ev) {
-	case EXP_INSERT: what = "insert"; break;
-	case EXP_INJECT: what = "inject"; break;
-	case EXP_REMOVE: what = "remove"; break;
-	default: WRONG("Wrong exp_event");
+	switch (event) {
+	case OEV_INSERT: what = "insert"; break;
+	case OEV_REMOVE: what = "remove"; break;
+	default: WRONG("Wrong object event");
 	}
-	VSL(SLT_Debug, 0, "exp_cb: event %s 0x%jx", what,
+
+	/* We cannot trust %p to be 0x... format as expected by m00021.vtc */
+	VSL(SLT_Debug, 0, "Object Event: %s 0x%jx", what,
 	    (intmax_t)(uintptr_t)oc);
 }
 
 VCL_VOID __match_proto__()
-vmod_register_exp_callback(VRT_CTX, struct vmod_priv *priv)
+vmod_register_obj_events(VRT_CTX, struct vmod_priv *priv)
 {
 	struct priv_vcl *priv_vcl;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
-	AZ(priv_vcl->exp_cb);
-	priv_vcl->exp_cb = EXP_Register_Callback(exp_cb, priv_vcl);
-	VSL(SLT_Debug, 0, "exp_cb: registered");
+	AZ(priv_vcl->obj_cb);
+	priv_vcl->obj_cb = ObjSubscribeEvents(obj_cb, priv_vcl,
+		OEV_INSERT|OEV_REMOVE);
+	VSL(SLT_Debug, 0, "Subscribed to Object Events");
 }
 
 VCL_VOID __match_proto__()
@@ -246,9 +248,9 @@ priv_vcl_free(void *priv)
 	CAST_OBJ_NOTNULL(priv_vcl, priv, PRIV_VCL_MAGIC);
 	AN(priv_vcl->foo);
 	free(priv_vcl->foo);
-	if (priv_vcl->exp_cb != 0) {
-		EXP_Deregister_Callback(&priv_vcl->exp_cb);
-		VSL(SLT_Debug, 0, "exp_cb: deregistered");
+	if (priv_vcl->obj_cb != 0) {
+		ObjUnsubscribeEvents(&priv_vcl->obj_cb);
+		VSL(SLT_Debug, 0, "Unsubscribed from Object Events");
 	}
 	AZ(priv_vcl->vcl);
 	AZ(priv_vcl->vclref);

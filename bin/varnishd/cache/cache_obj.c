@@ -69,8 +69,6 @@
  *
  * 23	ObjTouch()	Signal to LRU(-like) facilities
  *
- * 23	ObjUpdateMeta()	ban/ttl/grace/keep changed
- *
  * 3->4	HSH_Snipe()	kill if not in use
  * 3->4	HSH_Kill()	make unavailable
  *
@@ -308,19 +306,6 @@ ObjSlim(struct worker *wrk, struct objcore *oc)
 
 	if (om->objslim != NULL)
 		om->objslim(wrk, oc);
-}
-
-/*====================================================================
- */
-void
-ObjUpdateMeta(struct worker *wrk, struct objcore *oc)
-{
-	const struct obj_methods *m = obj_getmethods(oc);
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-
-	if (m->objupdatemeta != NULL)
-		m->objupdatemeta(wrk, oc);
 }
 
 /*====================================================================
@@ -583,4 +568,97 @@ ObjSetFlag(struct worker *wrk, struct objcore *oc, enum obj_flags of, int val)
 		(*fp) |= of;
 	else
 		(*fp) &= ~of;
+}
+
+/*====================================================================
+ * Object event subscribtion mechanism.
+ *
+ * XXX: it is extremely unclear what the locking circumstances are here.
+ */
+
+struct oev_entry {
+	unsigned			magic;
+#define OEV_MAGIC			0xb0b7c5a1
+	unsigned			mask;
+	obj_event_f			*func;
+	void				*priv;
+	VTAILQ_ENTRY(oev_entry)		list;
+};
+
+static VTAILQ_HEAD(,oev_entry)		oev_list;
+static pthread_rwlock_t			oev_rwl;
+static unsigned				oev_mask;
+
+uintptr_t
+ObjSubscribeEvents(obj_event_f *func, void *priv, unsigned mask)
+{
+	struct oev_entry *oev;
+
+	AN(func);
+	AZ(mask & ~OEV_MASK);
+
+	ALLOC_OBJ(oev, OEV_MAGIC);
+	AN(oev);
+	oev->func = func;
+	oev->priv = priv;
+	oev->mask = mask;
+	AZ(pthread_rwlock_wrlock(&oev_rwl));
+	VTAILQ_INSERT_TAIL(&oev_list, oev, list);
+	oev_mask |= mask;
+	AZ(pthread_rwlock_unlock(&oev_rwl));
+	return ((uintptr_t)oev);
+}
+
+void
+ObjUnsubscribeEvents(uintptr_t *handle)
+{
+	struct oev_entry *oev, *oev2 = NULL;
+	unsigned newmask = 0;
+
+	AN(handle);
+	AN(*handle);
+	AZ(pthread_rwlock_wrlock(&oev_rwl));
+	VTAILQ_FOREACH(oev, &oev_list, list) {
+		CHECK_OBJ_NOTNULL(oev, OEV_MAGIC);
+		if ((uintptr_t)oev == *handle)
+			oev2 = oev;
+		else
+			newmask |= oev->mask;
+	}
+	AN(oev2);
+	VTAILQ_REMOVE(&oev_list, oev2, list);
+	oev_mask = newmask;
+	AZ(newmask & ~OEV_MASK);
+	AZ(pthread_rwlock_unlock(&oev_rwl));
+	FREE_OBJ(oev2);
+	*handle = 0;
+}
+
+void
+ObjSendEvent(struct worker *wrk, struct objcore *oc, unsigned event)
+{
+	struct oev_entry *oev;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(event & OEV_MASK);
+	AZ(event & ~OEV_MASK);
+	if (!(event & oev_mask))
+		return;
+
+	AZ(pthread_rwlock_rdlock(&oev_rwl));
+	VTAILQ_FOREACH(oev, &oev_list, list) {
+		CHECK_OBJ_NOTNULL(oev, OEV_MAGIC);
+		if (event & oev->mask)
+			oev->func(wrk, oev->priv, oc, event);
+	}
+	AZ(pthread_rwlock_unlock(&oev_rwl));
+
+}
+
+void
+ObjInit(void)
+{
+	VTAILQ_INIT(&oev_list);
+	AZ(pthread_rwlock_init(&oev_rwl, NULL));
 }

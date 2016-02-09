@@ -721,17 +721,6 @@ void EXP_Rearm(struct objcore *, double now, double ttl, double grace,
     double keep);
 void EXP_Poke(struct objcore *);
 
-enum exp_event_e {
-	EXP_INSERT,
-	EXP_INJECT,
-	EXP_REMOVE,
-};
-typedef void exp_callback_f(struct worker *, struct objcore *,
-    enum exp_event_e, void *priv);
-
-uintptr_t EXP_Register_Callback(exp_callback_f *func, void *priv);
-void EXP_Deregister_Callback(uintptr_t*);
-
 /* cache_fetch.c */
 enum vbf_fetch_mode_e {
 	VBF_NORMAL = 0,
@@ -884,7 +873,6 @@ void ObjTrimStore(struct worker *, struct objcore *);
 void ObjTouch(struct worker *, struct objcore *, double now);
 unsigned ObjGetXID(struct worker *, struct objcore *);
 uint64_t ObjGetLen(struct worker *, struct objcore *);
-void ObjUpdateMeta(struct worker *, struct objcore *);
 void ObjFreeObj(struct worker *, struct objcore *);
 void ObjSlim(struct worker *, struct objcore *);
 int ObjHasAttr(struct worker *, struct objcore *, enum obj_attr);
@@ -906,6 +894,20 @@ int ObjGetU64(struct worker *, struct objcore *, enum obj_attr, uint64_t *);
 
 int ObjCheckFlag(struct worker *, struct objcore *, enum obj_flags of);
 void ObjSetFlag(struct worker *, struct objcore *, enum obj_flags of, int val);
+
+#define OEV_BANCHG	(1U<<1)
+#define OEV_TTLCHG	(1U<<2)
+#define OEV_INSERT	(1U<<3)
+#define OEV_REMOVE	(1U<<4)
+
+#define OEV_MASK (OEV_BANCHG|OEV_TTLCHG|OEV_INSERT|OEV_REMOVE)
+
+typedef void obj_event_f(struct worker *, void *priv, struct objcore *,
+    unsigned);
+
+uintptr_t ObjSubscribeEvents(obj_event_f *, void *, unsigned mask);
+void ObjUnsubscribeEvents(uintptr_t *);
+void ObjSendEvent(struct worker *, struct objcore *oc, unsigned event);
 
 /* cache_panic.c */
 const char *body_status_2str(enum body_status e);

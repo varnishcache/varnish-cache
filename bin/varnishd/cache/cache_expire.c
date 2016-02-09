@@ -40,14 +40,6 @@
 #include "hash/hash_slinger.h"
 #include "vtim.h"
 
-struct exp_callback {
-	unsigned			magic;
-#define EXP_CALLBACK_MAGIC		0xab956eb1
-	exp_callback_f			*func;
-	void				*priv;
-	VTAILQ_ENTRY(exp_callback)	list;
-};
-
 struct exp_priv {
 	unsigned			magic;
 #define EXP_PRIV_MAGIC			0x9db22482
@@ -60,31 +52,10 @@ struct exp_priv {
 	struct binheap			*heap;
 	pthread_cond_t			condvar;
 
-	VTAILQ_HEAD(,exp_callback)	ecb_list;
 	pthread_rwlock_t		cb_rwl;
 };
 
 static struct exp_priv *exphdl;
-
-static void
-exp_event(struct worker *wrk, struct objcore *oc, enum exp_event_e e)
-{
-	struct exp_callback *cb;
-
-	/*
-	 * Strictly speaking this is not atomic, but neither is VMOD
-	 * loading in general, so this is a fair optimization
-	 */
-	if (VTAILQ_EMPTY(&exphdl->ecb_list))
-		return;
-
-	AZ(pthread_rwlock_rdlock(&exphdl->cb_rwl));
-	VTAILQ_FOREACH(cb, &exphdl->ecb_list, list) {
-		CHECK_OBJ_NOTNULL(cb, EXP_CALLBACK_MAGIC);
-		cb->func(wrk, oc, e, cb->priv);
-	}
-	AZ(pthread_rwlock_unlock(&exphdl->cb_rwl));
-}
 
 /*--------------------------------------------------------------------
  * Calculate an objects effective ttl time, taking req.ttl into account
@@ -159,7 +130,7 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 
 	HSH_Ref(oc);
 
-	exp_event(wrk, oc, EXP_INSERT);
+	ObjSendEvent(wrk, oc, OEV_INSERT);
 	exp_mail_it(oc, OC_EF_INSERT | OC_EF_EXP | OC_EF_MOVE);
 }
 
@@ -194,45 +165,6 @@ EXP_Rearm(struct objcore *oc, double now, double ttl, double grace, double keep)
 		exp_mail_it(oc, OC_EF_MOVE);
 }
 
-/*--------------------------------------------------------------------*/
-
-uintptr_t
-EXP_Register_Callback(exp_callback_f *func, void *priv)
-{
-	struct exp_callback *ecb;
-
-	AN(func);
-
-	ALLOC_OBJ(ecb, EXP_CALLBACK_MAGIC);
-	AN(ecb);
-	ecb->func = func;
-	ecb->priv = priv;
-	AZ(pthread_rwlock_wrlock(&exphdl->cb_rwl));
-	VTAILQ_INSERT_TAIL(&exphdl->ecb_list, ecb, list);
-	AZ(pthread_rwlock_unlock(&exphdl->cb_rwl));
-	return ((uintptr_t)ecb);
-}
-
-void
-EXP_Deregister_Callback(uintptr_t *handle)
-{
-	struct exp_callback *ecb;
-
-	AN(handle);
-	AN(*handle);
-	AZ(pthread_rwlock_wrlock(&exphdl->cb_rwl));
-	VTAILQ_FOREACH(ecb, &exphdl->ecb_list, list) {
-		CHECK_OBJ_NOTNULL(ecb, EXP_CALLBACK_MAGIC);
-		if ((uintptr_t)ecb == *handle)
-			break;
-	}
-	AN(ecb);
-	VTAILQ_REMOVE(&exphdl->ecb_list, ecb, list);
-	AZ(pthread_rwlock_unlock(&exphdl->cb_rwl));
-	FREE_OBJ(ecb);
-	*handle = 0;
-}
-
 /*--------------------------------------------------------------------
  * Handle stuff in the inbox
  */
@@ -256,14 +188,14 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags)
 			binheap_delete(ep->heap, oc->timer_idx);
 		}
 		assert(oc->timer_idx == BINHEAP_NOIDX);
-		exp_event(ep->wrk, oc, EXP_REMOVE);
+		ObjSendEvent(ep->wrk, oc, OEV_REMOVE);
 		(void)HSH_DerefObjCore(ep->wrk, &oc);
 		return;
 	}
 
 	if (flags & OC_EF_MOVE) {
 		oc->timer_when = EXP_WHEN(oc);
-		ObjUpdateMeta(ep->wrk, oc);
+		ObjSendEvent(ep->wrk, oc, OEV_TTLCHG);
 	}
 
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_When p=%p e=%.9f f=0x%x", oc,
@@ -325,7 +257,7 @@ exp_expire(struct exp_priv *ep, double now)
 	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%u t=%.0f",
 	    ObjGetXID(ep->wrk, oc), EXP_Ttl(NULL, oc) - now);
-	exp_event(ep->wrk, oc, EXP_REMOVE);
+	ObjSendEvent(ep->wrk, oc, OEV_REMOVE);
 	(void)HSH_DerefObjCore(ep->wrk, &oc);
 	return (0);
 }
@@ -412,7 +344,6 @@ EXP_Init(void)
 	AZ(pthread_cond_init(&ep->condvar, NULL));
 	VSTAILQ_INIT(&ep->inbox);
 	AZ(pthread_rwlock_init(&ep->cb_rwl, NULL));
-	VTAILQ_INIT(&ep->ecb_list);
 	exphdl = ep;
 	WRK_BgThread(&pt, "cache-timeout", exp_thread, ep);
 }

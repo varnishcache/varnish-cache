@@ -10,17 +10,17 @@ varnish v1 -vcl+backend {} -start
 varnish v1 -cliok "param.set debug +vclrel"
 
 logexpect l1 -v v1 -g raw {
-	expect * 0 Debug "exp_cb: registered"
-	expect * 0 Debug "exp_cb: event insert 0x[0-9a-f]+"
-	expect * 0 Debug "exp_cb: event remove 0x[0-9a-f]+"
-	expect * 0 Debug "exp_cb: deregistered"
+	expect * 0 Debug "Subscribed to Object Events"
+	expect * 0 Debug "Object Event: insert 0x[0-9a-f]+"
+	expect * 0 Debug "Object Event: remove 0x[0-9a-f]+"
+	expect * 0 Debug "Unsubscribed from Object Events"
 } -start
 
 varnish v1 -vcl+backend {
 	import ${vmod_debug};
 
 	sub vcl_init {
-		debug.register_exp_callback();
+		debug.register_obj_events();
 	}
 
 	sub vcl_recv {

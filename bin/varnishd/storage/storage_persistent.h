@@ -311,8 +311,8 @@ void smp_close_seg(struct smp_sc *sc, struct smp_seg *sg);
 void smp_init_oc(struct objcore *oc, struct smp_seg *sg, unsigned objidx);
 void smp_save_segs(struct smp_sc *sc);
 sml_getobj_f smp_sml_getobj;
-void smp_oc_objupdatemeta(struct worker *, struct objcore *);
 void smp_oc_objfree(struct worker *, struct objcore *);
+obj_event_f smp_oc_event;
 
 /* storage_persistent_subr.c */
 

@@ -98,6 +98,9 @@ struct req * THR_GetRequest(void);
 /* cache_lck.c */
 void LCK_Init(void);
 
+/* cache_obj.c */
+void ObjInit(void);
+
 /* cache_panic.c */
 void PAN_Init(void);
 
@@ -134,6 +137,5 @@ int STV_BanInfoNew(const uint8_t *ban, unsigned len);
 void STV_BanExport(const uint8_t *banlist, unsigned len);
 
 /* storage_persistent.c */
-void SMP_Init(void);
 void SMP_Ready(void);
 

@@ -192,7 +192,7 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 				bd->refcount++;
 				VTAILQ_INSERT_TAIL(&bd->objcore, oc, ban_list);
 				Lck_Unlock(&ban_mtx);
-				ObjUpdateMeta(wrk, oc);
+				ObjSendEvent(wrk, oc, OEV_BANCHG);
 			}
 		}
 		(void)HSH_DerefObjCore(wrk, &oc);

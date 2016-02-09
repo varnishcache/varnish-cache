@@ -452,31 +452,6 @@ smp_sml_getobj(struct worker *wrk, struct objcore *oc)
 	return (o);
 }
 
-void __match_proto__(objupdatemeta_f)
-smp_oc_objupdatemeta(struct worker *wrk, struct objcore *oc)
-{
-	struct smp_seg *sg;
-	struct smp_object *so;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-
-	CAST_OBJ_NOTNULL(sg, oc->stobj->priv, SMP_SEG_MAGIC);
-	CHECK_OBJ_NOTNULL(sg->sc, SMP_SC_MAGIC);
-	so = smp_find_so(sg, oc->stobj->priv2);
-
-	if (sg == sg->sc->cur_seg) {
-		/* Lock necessary, we might race close_seg */
-		Lck_Lock(&sg->sc->mtx);
-		so->ban = BAN_Time(oc->ban);
-		EXP_COPY(so, oc);
-		Lck_Unlock(&sg->sc->mtx);
-	} else {
-		so->ban = BAN_Time(oc->ban);
-		EXP_COPY(so, oc);
-	}
-}
-
 void __match_proto__(objfree_f)
 smp_oc_objfree(struct worker *wrk, struct objcore *oc)
 {
@@ -518,3 +493,36 @@ smp_init_oc(struct objcore *oc, struct smp_seg *sg, unsigned objidx)
 	oc->stobj->priv = sg;
 	oc->stobj->priv2 = objidx;
 }
+
+/*--------------------------------------------------------------------*/
+
+void __match_proto__(obj_event_f)
+smp_oc_event(struct worker *wrk, void *priv, struct objcore *oc, unsigned ev)
+{
+	struct smp_seg *sg;
+	struct smp_object *so;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AZ(priv);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	CAST_OBJ_NOTNULL(sg, oc->stobj->priv, SMP_SEG_MAGIC);
+	CHECK_OBJ_NOTNULL(sg->sc, SMP_SC_MAGIC);
+	so = smp_find_so(sg, oc->stobj->priv2);
+
+	if (sg == sg->sc->cur_seg) {
+		/* Lock necessary, we might race close_seg */
+		Lck_Lock(&sg->sc->mtx);
+		if (ev & (OEV_BANCHG|OEV_INSERT))
+			so->ban = BAN_Time(oc->ban);
+		if (ev & (OEV_TTLCHG|OEV_INSERT))
+			EXP_COPY(so, oc);
+		Lck_Unlock(&sg->sc->mtx);
+	} else {
+		if (ev & (OEV_BANCHG|OEV_INSERT))
+			so->ban = BAN_Time(oc->ban);
+		if (ev & (OEV_TTLCHG|OEV_INSERT))
+			EXP_COPY(so, oc);
+	}
+}
+

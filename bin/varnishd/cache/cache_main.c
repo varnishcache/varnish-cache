@@ -236,6 +236,8 @@ child_main(void)
 	PAN_Init();
 	VFP_Init();
 
+	ObjInit();
+
 	VCL_Init();
 
 	HTTP_Init();
@@ -252,7 +254,6 @@ child_main(void)
 
 	VCA_Init();
 
-	SMP_Init();
 	STV_open();
 
 	VMOD_Init();

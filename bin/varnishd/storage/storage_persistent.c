@@ -59,6 +59,8 @@ static struct obj_methods smp_oc_realmethods;
 
 static struct VSC_C_lck *lck_smp;
 
+static void smp_init(void);
+
 /*--------------------------------------------------------------------*/
 
 /*
@@ -325,6 +327,9 @@ smp_open(struct stevedore *st)
 	struct smp_sc	*sc;
 
 	ASSERT_CLI();
+
+	if (VTAILQ_EMPTY(&silos))
+		smp_init();
 
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
 
@@ -684,17 +689,19 @@ static struct cli_proto debug_cmds[] = {
 	{ NULL }
 };
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ */
 
-void
-SMP_Init(void)
+static void
+smp_init(void)
 {
 	lck_smp = Lck_CreateClass("smp");
 	CLI_AddFuncs(debug_cmds);
 	smp_oc_realmethods = SML_methods;
 	smp_oc_realmethods.objtouch = NULL;
-	smp_oc_realmethods.objupdatemeta = smp_oc_objupdatemeta;
 	smp_oc_realmethods.objfree = smp_oc_objfree;
+	(void)ObjSubscribeEvents(smp_oc_event, NULL,
+	    OEV_BANCHG|OEV_TTLCHG|OEV_INSERT);
 }
 
 /*--------------------------------------------------------------------
