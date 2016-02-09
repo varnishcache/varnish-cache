@@ -654,9 +654,8 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 
 	if (!(oc->flags & OC_F_PRIVATE)) {
 		BAN_NewObjCore(oc);
-		EXP_Insert(wrk, oc);
-		AN(oc->exp_flags & OC_EF_EXP);
 		AN(oc->ban);
+		EXP_Insert(wrk, oc);
 	}
 
 	/* XXX: pretouch neighbors on oh->objcs to prevent page-on under mtx */
@@ -687,6 +686,7 @@ HSH_Kill(struct objcore *oc)
 	Lck_Lock(&oc->objhead->mtx);
 	oc->flags |= OC_F_DYING;
 	Lck_Unlock(&oc->objhead->mtx);
+	EXP_Poke(oc);
 }
 
 /*====================================================================

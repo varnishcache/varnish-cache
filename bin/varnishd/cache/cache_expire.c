@@ -121,6 +121,7 @@ exp_mail_it(struct objcore *oc, uint8_t cmds)
 			VSTAILQ_INSERT_TAIL(&exphdl->inbox, oc, exp_list);
 	}
 	oc->exp_flags |= cmds | OC_EF_POSTED;
+	AN(oc->exp_flags & OC_EF_EXP);
 	VSC_C_main->exp_mailed++;
 	AZ(pthread_cond_signal(&exphdl->condvar));
 	Lck_Unlock(&exphdl->mtx);
@@ -311,7 +312,7 @@ exp_expire(struct exp_priv *ep, double now)
 		return (oc->timer_when);
 
 	VSC_C_main->n_expired++;
-	oc->exp_flags &= OC_EF_EXP;
+	oc->exp_flags &= ~OC_EF_EXP;
 
 	if (!(oc->flags & OC_F_DYING))
 		HSH_Kill(oc);

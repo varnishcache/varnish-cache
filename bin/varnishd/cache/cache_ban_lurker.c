@@ -181,8 +181,7 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 			VSLb(vsl, SLT_ExpBan, "%u banned by lurker",
 			    ObjGetXID(wrk, oc));
 
-			EXP_Rearm(oc, oc->t_origin, 0, 0, 0);
-					// XXX ^ fake now
+			HSH_Kill(oc);
 			VSC_C_main->bans_lurker_obj_killed++;
 		} else {
 			if (oc->ban != bd) {
