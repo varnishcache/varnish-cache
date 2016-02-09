@@ -29,21 +29,6 @@
  * Stuff that should *never* be exposed to a VMOD
  */
 
-/*--------------------------------------------------------------------
- * A transport is how we talk HTTP for a given request.
- * This is different from a protocol because ESI child requests have
- * their own "protocol" to talk to the parent ESI request, which may
- * or may not, be talking a "real" HTTP protocol itself.
- */
-
-typedef void vtr_deliver_f (struct req *, struct boc *, int sendbody);
-
-struct transport {
-	unsigned		magic;
-#define TRANSPORT_MAGIC		0xf157f32f
-	vtr_deliver_f		*deliver;
-};
-
 /* Prototypes etc ----------------------------------------------------*/
 
 /* cache_acceptor.c */

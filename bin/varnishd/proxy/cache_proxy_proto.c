@@ -39,7 +39,7 @@
 #include <string.h>
 
 #include "../cache/cache.h"
-#include "../cache/cache_proto.h"
+#include "../cache/cache_transport.h"
 
 #include "vend.h"
 #include "vsa.h"
@@ -381,7 +381,7 @@ VPX_Proto_Sess(struct worker *wrk, void *priv)
 	wrk->task.priv = req;
 }
 
-const struct proto VPX_proto = {
-	.magic =		PROTO_MAGIC,
+const struct transport PROXY_transport = {
+	.magic =		TRANSPORT_MAGIC,
 	.first_step =		S_STP_PROXYNEWSESS,
 };

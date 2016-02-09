@@ -39,7 +39,7 @@ extern const int HTTP1_Req[3];
 extern const int HTTP1_Resp[3];
 
 /* cache_http1_deliver.c */
-vtr_deliver_f V1D_Deliver;
+void V1D_Deliver(struct req *, struct boc *, int sendbody);
 
 /* cache_http1_pipe.c */
 struct v1p_acct {

@@ -38,15 +38,16 @@
 #include <stdlib.h>
 
 #include "cache/cache.h"
-#include "cache/cache_proto.h"
+#include "cache/cache_transport.h"
 #include "cache_http1.h"
 #include "hash/hash_slinger.h"
 
 #include "vtcp.h"
 
-static const struct transport http1_transport = {
-	.magic = TRANSPORT_MAGIC,
-	.deliver = V1D_Deliver,
+const struct transport HTTP1_transport = {
+	.magic =		TRANSPORT_MAGIC,
+	.deliver =		V1D_Deliver,
+	.first_step =		S_STP_H1NEWSESS,
 };
 
 /*----------------------------------------------------------------------
@@ -264,7 +265,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			sp->sess_step = S_STP_H1PROC;
 			break;
 		case S_STP_H1PROC:
-			req->transport = &http1_transport;
+			req->transport = &HTTP1_transport;
 			if (CNT_Request(wrk, req) == REQ_FSM_DISEMBARK) {
 				sp->sess_step = S_STP_H1BUSY;
 				return;
@@ -286,8 +287,3 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 
 	}
 }
-
-const struct proto HTTP1_proto = {
-	.magic =		PROTO_MAGIC,
-	.first_step =		S_STP_H1NEWSESS,
-};

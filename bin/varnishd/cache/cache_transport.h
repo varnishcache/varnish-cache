@@ -25,10 +25,19 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * A transport is how we talk HTTP for a given request.
+ *
+ * This is different from a protocol because ESI child requests have
+ * their own "protocol" to talk to the parent ESI request, which may
+ * or may not, be talking a "real" HTTP protocol itself.
+ *
  */
 
-struct proto {
+typedef void vtr_deliver_f (struct req *, struct boc *, int sendbody);
+
+struct transport {
 	unsigned		magic;
-#define PROTO_MAGIC		0x711e77c1
+#define TRANSPORT_MAGIC		0xf157f32f
+	vtr_deliver_f		*deliver;
 	enum sess_step		first_step;
 };

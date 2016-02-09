@@ -116,8 +116,8 @@ struct mac_help {
 #define MAC_HELP_MAGIC		0x1e00a9d9
 	int			good;
 	const char		*name;
-	const char		*proto_name;
-	const struct proto	*proto;
+	const char		*transport_name;
+	const struct transport	*transport;
 };
 
 static int __match_proto__(vss_resolved_f)
@@ -140,8 +140,8 @@ mac_callback(void *priv, const struct suckaddr *sa)
 	AN(ls->addr);
 	ls->name = strdup(mh->name);
 	AN(ls->name);
-	ls->proto_name = mh->proto_name;
-	ls->proto = mh->proto;
+	ls->transport_name = mh->transport_name;
+	ls->transport = mh->transport;
 	VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
 	mh->good++;
 	return (0);
@@ -197,13 +197,13 @@ MAC_Arg(const char *arg)
 	mh->name = av[1];
 
 	if (av[2] == NULL || !strcmp(av[2], "HTTP/1")) {
-		mh->proto = &HTTP1_proto;
-		mh->proto_name = "HTTP/1";
+		mh->transport = &HTTP1_transport;
+		mh->transport_name = "HTTP/1";
 		if (av[2] != NULL && av[3] != NULL)
 			ARGV_ERR("Too many sub-arguments to -a(HTTP/1)\n");
 	} else if (!strcmp(av[2], "PROXY")) {
-		mh->proto = &VPX_proto;
-		mh->proto_name = "PROXY";
+		mh->transport = &PROXY_transport;
+		mh->transport_name = "PROXY";
 		if (av[3] != NULL)
 			ARGV_ERR("Too many sub-arguments to -a(PROXY)\n");
 	} else {

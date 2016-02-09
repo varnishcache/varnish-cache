@@ -41,7 +41,7 @@
 #include <netinet/tcp.h>
 
 #include "cache.h"
-#include "cache_proto.h"
+#include "cache_transport.h"
 #include "cache_pool.h"
 #include "common/heritage.h"
 
@@ -330,7 +330,7 @@ vca_make_session(struct worker *wrk, void *arg)
 
 	sp->fd = wa->acceptsock;
 	wa->acceptsock = -1;
-	sp->sess_step = wa->acceptlsock->proto->first_step;
+	sp->sess_step = wa->acceptlsock->transport->first_step;
 
 	assert(wa->acceptaddrlen <= vsa_suckaddr_len);
 	SES_Reserve_remote_addr(sp, &sa);
@@ -349,7 +349,7 @@ vca_make_session(struct worker *wrk, void *arg)
 
 	VTCP_name(sa, laddr, sizeof laddr, lport, sizeof lport);
 
-	VSL(SLT_Begin, sp->vxid, "sess 0 %s", wa->acceptlsock->proto_name);
+	VSL(SLT_Begin, sp->vxid, "sess 0 %s", wa->acceptlsock->transport_name);
 	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f %d",
 	    raddr, rport, wa->acceptlsock->name, laddr, lport,
 	    sp->t_open, sp->fd);
@@ -495,7 +495,7 @@ vca_acct(void *arg)
 	(void)vca_tcp_opt_init();
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
-		CHECK_OBJ_NOTNULL(ls->proto, PROTO_MAGIC);
+		CHECK_OBJ_NOTNULL(ls->transport, TRANSPORT_MAGIC);
 		assert (ls->sock > 0);		// We know where stdin is
 		AZ(listen(ls->sock, cache_param->listen_depth));
 		vca_tcp_opt_set(ls->sock, 1);
