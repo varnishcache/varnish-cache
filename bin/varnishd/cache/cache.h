@@ -1078,8 +1078,6 @@ void RFC2616_Vary_AE(struct http *hp);
 /* stevedore.c */
 int STV_NewObject(struct worker *, struct objcore *,
     const char *hint, unsigned len);
-void STV_open(void);
-void STV_close(void);
 
 /*
  * A normal pointer difference is signed, but we never want a negative value

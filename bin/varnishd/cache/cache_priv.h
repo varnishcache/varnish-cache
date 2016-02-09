@@ -132,6 +132,8 @@ void VRTPRIV_dynamic_kill(struct vrt_privs *privs, uintptr_t id);
 void VMOD_Init(void);
 
 /* stevedore.c */
+void STV_open(void);
+void STV_close(void);
 int STV_BanInfoDrop(const uint8_t *ban, unsigned len);
 int STV_BanInfoNew(const uint8_t *ban, unsigned len);
 void STV_BanExport(const uint8_t *banlist, unsigned len);

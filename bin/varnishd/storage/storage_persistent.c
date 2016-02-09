@@ -387,24 +387,8 @@ smp_open(struct stevedore *st)
  * Close a silo
  */
 
-static void
-smp_signal_close(const struct stevedore *st)
-{
-	struct smp_sc	*sc;
-
-	ASSERT_CLI();
-
-	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
-	Lck_Lock(&sc->mtx);
-	if (sc->cur_seg != NULL)
-		smp_close_seg(sc, sc->cur_seg);
-	AZ(sc->cur_seg);
-	sc->flags |= SMP_SC_STOP;
-	Lck_Unlock(&sc->mtx);
-}
-
-static void
-smp_close(const struct stevedore *st)
+static void __match_proto__(storage_close_f)
+smp_close(const struct stevedore *st, int warn)
 {
 	struct smp_sc	*sc;
 	void *status;
@@ -412,9 +396,17 @@ smp_close(const struct stevedore *st)
 	ASSERT_CLI();
 
 	CAST_OBJ_NOTNULL(sc, st->priv, SMP_SC_MAGIC);
-
-	AZ(pthread_join(sc->bgthread, &status));
-	AZ(status);
+	if (warn) {
+		Lck_Lock(&sc->mtx);
+		if (sc->cur_seg != NULL)
+			smp_close_seg(sc, sc->cur_seg);
+		AZ(sc->cur_seg);
+		sc->flags |= SMP_SC_STOP;
+		Lck_Unlock(&sc->mtx);
+	} else {
+		AZ(pthread_join(sc->bgthread, &status));
+		AZ(status);
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -603,7 +595,6 @@ const struct stevedore smp_stevedore = {
 	.open		= smp_open,
 	.close		= smp_close,
 	.allocobj	= smp_allocobj,
-	.signal_close	= smp_signal_close,
 	.baninfo	= smp_baninfo,
 	.banexport	= smp_banexport,
 	.methods	= &smp_oc_realmethods,

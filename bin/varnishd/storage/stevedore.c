@@ -127,6 +127,7 @@ STV_open(void)
 {
 	struct stevedore *stv;
 
+	ASSERT_CLI();
 	VTAILQ_FOREACH(stv, &stv_stevedores, list) {
 		if (stv->open != NULL)
 			stv->open(stv);
@@ -141,22 +142,19 @@ void
 STV_close(void)
 {
 	struct stevedore *stv;
+	int i;
 
-	/* Signal intent to close */
-	VTAILQ_FOREACH(stv, &stv_stevedores, list)
-		if (stv->signal_close != NULL)
-			stv->signal_close(stv);
-	stv = stv_transient;
-	if (stv->signal_close != NULL)
-		stv->signal_close(stv);
-
-	/* Close each in turn */
-	VTAILQ_FOREACH(stv, &stv_stevedores, list)
+	ASSERT_CLI();
+	for (i = 1; i >= 0; i--) {
+		/* First send close warning */
+		VTAILQ_FOREACH(stv, &stv_stevedores, list)
+			if (stv->close != NULL)
+				stv->close(stv, i);
+		stv = stv_transient;
 		if (stv->close != NULL)
-			stv->close(stv);
-	stv = stv_transient;
-	if (stv->close != NULL)
-		stv->close(stv);
+			if (stv->close != NULL)
+				stv->close(stv, i);
+	}
 }
 
 /*-------------------------------------------------------------------
