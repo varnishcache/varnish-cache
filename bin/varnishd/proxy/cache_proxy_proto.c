@@ -344,13 +344,9 @@ vpx_new_session(struct worker *wrk, void *arg)
 	int i;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
-	(void)VTCP_blocking(sp->fd);		/* XXX redundant ? */
-	req = Req_New(wrk, sp);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	req->htc->fd = sp->fd;
-	SES_RxInit(req->htc, req->ws,
-	    cache_param->http_req_size, cache_param->http_req_hdr_len);
+	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
+	sp = req->sp;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	/* Per specification */
 	assert(sizeof vpx1_sig == 5);
@@ -384,8 +380,7 @@ vpx_new_session(struct worker *wrk, void *arg)
 		req->htc->pipeline_e = req->htc->rxbuf_e;
 	SES_RxReInit(req->htc);
 	sp->transport = &HTTP1_transport;
-	req->sp->sess_step = S_STP_H1NEWREQ;
-	wrk->task.func = SES_Proto_Req;
+	wrk->task.func = sp->transport->new_session;
 	wrk->task.priv = req;
 }
 

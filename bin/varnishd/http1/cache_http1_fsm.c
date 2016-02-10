@@ -80,24 +80,10 @@ http1_new_session(struct worker *wrk, void *arg)
 	struct sess *sp;
 	struct req *req;
 
-	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
-
-	/*
-	 * Assume we're going to receive something that will likely
-	 * involve a request...
-	 */
-	if (VTCP_blocking(sp->fd)) {
-		if (errno == ECONNRESET)
-			SES_Close(sp, SC_REM_CLOSE);
-		else
-			SES_Close(sp, SC_TX_ERROR);
-		return;
-	}
-	req = Req_New(wrk, sp);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	req->htc->fd = sp->fd;
-	SES_RxInit(req->htc, req->ws,
-	    cache_param->http_req_size, cache_param->http_req_hdr_len);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
+	sp = req->sp;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	sp->sess_step = S_STP_H1NEWREQ;
 	wrk->task.func = SES_Proto_Req;
@@ -108,11 +94,19 @@ static void __match_proto__(task_func_t)
 http1_unwait(struct worker *wrk, void *arg)
 {
 	struct sess *sp;
+	struct req *req;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(sp, arg, SESS_MAGIC);
 	WS_Release(sp->ws, 0);
-	http1_new_session(wrk, arg);
+	req = Req_New(wrk, sp);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	req->htc->fd = sp->fd;
+	SES_RxInit(req->htc, req->ws,
+	    cache_param->http_req_size, cache_param->http_req_hdr_len);
+	sp->sess_step = S_STP_H1NEWREQ;
+	wrk->task.func = SES_Proto_Req;
+	wrk->task.priv = req;
 }
 
 const struct transport HTTP1_transport = {

@@ -293,6 +293,7 @@ static void __match_proto__(task_func_t)
 vca_make_session(struct worker *wrk, void *arg)
 {
 	struct sess *sp;
+	struct req *req;
 	struct wrk_accept *wa;
 	struct sockaddr_storage ss;
 	struct suckaddr *sa;
@@ -304,6 +305,13 @@ vca_make_session(struct worker *wrk, void *arg)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(wa, arg, WRK_ACCEPT_MAGIC);
+
+	if (VTCP_blocking(wa->acceptsock)) {
+		AZ(close(wa->acceptsock));
+		wrk->stats->sess_drop++;	// XXX Better counter ?
+		WS_Release(wrk->aws, 0);
+		return;
+	}
 
 	/* Turn accepted socket into a session */
 	AN(wrk->aws->r);
@@ -364,9 +372,15 @@ vca_make_session(struct worker *wrk, void *arg)
 	}
 	vca_tcp_opt_set(sp->fd, 0);
 
+	req = Req_New(wrk, sp);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	req->htc->fd = sp->fd;
+	SES_RxInit(req->htc, req->ws,
+	    cache_param->http_req_size, cache_param->http_req_hdr_len);
+	
 	sp->transport = wa->acceptlsock->transport;
 	wrk->task.func = sp->transport->new_session;
-	wrk->task.priv = sp;
+	wrk->task.priv = req;
 }
 
 /*--------------------------------------------------------------------
