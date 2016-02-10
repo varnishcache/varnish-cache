@@ -190,6 +190,14 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
+	/*
+	 * We only allow caching to happen the first time through vcl_recv{}
+	 * where we know we will have no competition or conflicts for the
+	 * updates to req.http.* etc.
+	 */
+	if (req->restarts > 0 && req->req_body_status != REQ_BODY_CACHED)
+		return (-1);
+
 	assert (req->req_step == R_STP_RECV);
 	switch(req->req_body_status) {
 	case REQ_BODY_CACHED:
