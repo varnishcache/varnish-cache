@@ -380,7 +380,8 @@ pan_req(struct vsb *vsb, const struct req *req)
 		return;
 	VSB_indent(vsb, 2);
 
-	VSB_printf(vsb, "vxid = %u, ", VXID(req->vsl->wid));
+	VSB_printf(vsb, "vxid = %u, transport = %s", VXID(req->vsl->wid),
+	    req->transport == NULL ? "NULL" : req->transport->name);
 
 	switch (req->req_step) {
 #define REQ_STEP(l, u, arg) case R_STP_##u: stp = "R_STP_" #u; break;
@@ -449,8 +450,8 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 	if (pan_already(vsb, sp))
 		return;
 	VSB_indent(vsb, 2);
-	VSB_printf(vsb, "fd = %d, vxid = %u, xport = %s\n",
-	    sp->fd, VXID(sp->vxid), sp->transport->name);
+	VSB_printf(vsb, "fd = %d, vxid = %u\n",
+	    sp->fd, VXID(sp->vxid));
 	AZ(SES_Get_client_ip(sp, &ci));
 	AZ(SES_Get_client_port(sp, &cp));
 	VSB_printf(vsb, "client = %s %s,\n", ci, cp);

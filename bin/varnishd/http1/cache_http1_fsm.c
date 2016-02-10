@@ -38,6 +38,7 @@
 #include <stdlib.h>
 
 #include "cache/cache.h"
+#include "common/heritage.h"
 #include "cache/cache_transport.h"
 #include "cache_http1.h"
 #include "hash/hash_slinger.h"
@@ -57,7 +58,7 @@ http1_req(struct worker *wrk, void *arg)
 	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
 
 	THR_SetRequest(req);
-	req->transport = req->sp->transport;
+	req->transport = &HTTP1_transport;
 	AZ(wrk->aws->r);
 	HTTP1_Session(wrk, req);
 	AZ(wrk->v1l);
@@ -289,7 +290,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			if (hs == HTC_S_IDLE) {
 				wrk->stats->sess_herd++;
 				Req_Release(req);
-				SES_Wait(sp);
+				SES_Wait(sp, &HTTP1_transport);
 				return;
 			}
 			if (hs != HTC_S_COMPLETE)

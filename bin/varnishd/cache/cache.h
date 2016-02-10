@@ -635,7 +635,6 @@ struct sess {
 #define SESS_MAGIC		0x2c2f9c5a
 
 	enum sess_step		sess_step;
-	const struct transport	*transport;
 	struct lock		mtx;
 	int			fd;
 	uint32_t		vxid;
@@ -944,10 +943,10 @@ void CNT_AcctLogCharge(struct dstat *, struct req *);
 
 /* cache_session.c [SES] */
 struct sess *SES_New(struct pool *);
-void SES_Close(struct sess *sp, enum sess_close reason);
-void SES_Wait(struct sess *sp);
-void SES_Delete(struct sess *sp, enum sess_close reason, double now);
-void SES_NewPool(struct pool *pp, unsigned pool_no);
+void SES_Close(struct sess *, enum sess_close reason);
+void SES_Wait(struct sess *, const struct transport *);
+void SES_Delete(struct sess *, enum sess_close reason, double now);
+void SES_NewPool(struct pool *, unsigned pool_no);
 int SES_Reschedule_Req(struct req *);
 
 enum htc_status_e {

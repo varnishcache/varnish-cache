@@ -66,7 +66,8 @@ struct waited {
 #define WAITED_MAGIC		0x1743992d
 	int			fd;
 	unsigned		idx;
-	void			*ptr;
+	void			*priv1;
+	uintptr_t		priv2;
 	const struct waitfor	*waitfor;
 	double			idle;
 };

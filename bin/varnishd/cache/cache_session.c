@@ -335,9 +335,12 @@ ses_handle(struct waited *wp, enum wait_event ev, double now)
 	struct sess *sp;
 	struct pool *pp;
 	struct pool_task *tp;
+	const struct transport *xp;
 
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
-	CAST_OBJ_NOTNULL(sp, wp->ptr, SESS_MAGIC);
+	CAST_OBJ_NOTNULL(sp, wp->priv1, SESS_MAGIC);
+	CAST_OBJ_NOTNULL(xp, (const void*)wp->priv2, TRANSPORT_MAGIC);
+	AN(wp->priv2);
 	assert((void *)sp->ws->f == wp);
 	wp->magic = 0;
 	wp = NULL;
@@ -356,7 +359,7 @@ ses_handle(struct waited *wp, enum wait_event ev, double now)
 		CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 		assert(sizeof *tp <= WS_Reserve(sp->ws, sizeof *tp));
 		tp = (void*)sp->ws->f;
-		tp->func = sp->transport->unwait;
+		tp->func = xp->unwait;
 		tp->priv = sp;
 		if (Pool_Task(pp, tp, TASK_QUEUE_REQ))
 			SES_Delete(sp, SC_OVERLOAD, now);
@@ -373,12 +376,13 @@ ses_handle(struct waited *wp, enum wait_event ev, double now)
  */
 
 void
-SES_Wait(struct sess *sp)
+SES_Wait(struct sess *sp, const struct transport *xp)
 {
 	struct pool *pp;
 	struct waited *wp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(xp, TRANSPORT_MAGIC);
 	pp = sp->pool;
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	/*
@@ -400,7 +404,8 @@ SES_Wait(struct sess *sp)
 	wp = (void*)sp->ws->f;
 	INIT_OBJ(wp, WAITED_MAGIC);
 	wp->fd = sp->fd;
-	wp->ptr = sp;
+	wp->priv1 = sp;
+	wp->priv2 = (uintptr_t)xp;
 	wp->idle = sp->t_idle;
 	wp->waitfor = &pp->wf;
 	if (Wait_Enter(pp->waiter, wp))

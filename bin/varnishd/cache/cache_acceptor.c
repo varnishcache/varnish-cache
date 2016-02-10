@@ -377,9 +377,8 @@ vca_make_session(struct worker *wrk, void *arg)
 	req->htc->fd = sp->fd;
 	SES_RxInit(req->htc, req->ws,
 	    cache_param->http_req_size, cache_param->http_req_hdr_len);
-	
-	sp->transport = wa->acceptlsock->transport;
-	wrk->task.func = sp->transport->new_session;
+
+	wrk->task.func = wa->acceptlsock->transport->new_session;
 	wrk->task.priv = req;
 }
 

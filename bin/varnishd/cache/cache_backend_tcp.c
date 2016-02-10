@@ -83,7 +83,7 @@ tcp_handle(struct waited *w, enum wait_event ev, double now)
 	struct vbc *vbc;
 	struct tcp_pool *tp;
 
-	CAST_OBJ_NOTNULL(vbc, w->ptr, VBC_MAGIC);
+	CAST_OBJ_NOTNULL(vbc, w->priv1, VBC_MAGIC);
 	(void)ev;
 	(void)now;
 	CHECK_OBJ_NOTNULL(vbc->tcp_pool, TCP_POOL_MAGIC);
@@ -264,7 +264,7 @@ VBT_Recycle(const struct worker *wrk, struct tcp_pool *tp, struct vbc **vbcp)
 	Lck_Lock(&tp->mtx);
 	tp->n_used--;
 
-	vbc->waited->ptr = vbc;
+	vbc->waited->priv1 = vbc;
 	vbc->waited->fd = vbc->fd;
 	vbc->waited->idle = VTIM_real();
 	vbc->state = VBC_STATE_AVAIL;
