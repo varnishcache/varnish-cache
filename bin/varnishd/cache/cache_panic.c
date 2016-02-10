@@ -380,7 +380,7 @@ pan_req(struct vsb *vsb, const struct req *req)
 		return;
 	VSB_indent(vsb, 2);
 
-	VSB_printf(vsb, "vxid = %u, transport = %s", VXID(req->vsl->wid),
+	VSB_printf(vsb, "vxid = %u, transport = %s\n", VXID(req->vsl->wid),
 	    req->transport == NULL ? "NULL" : req->transport->name);
 
 	switch (req->req_step) {

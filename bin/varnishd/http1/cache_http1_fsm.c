@@ -38,6 +38,7 @@
 #include <stdlib.h>
 
 #include "cache/cache.h"
+#include "cache/cache_filter.h"
 #include "common/heritage.h"
 #include "cache/cache_transport.h"
 #include "cache_http1.h"
@@ -111,11 +112,28 @@ http1_unwait(struct worker *wrk, void *arg)
 	wrk->task.priv = req;
 }
 
+static void __match_proto__(vtr_req_body_t)
+http1_req_body(struct req *req)
+{
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	switch(req->htc->body_status) {
+	case BS_EOF:
+	case BS_LENGTH:
+	case BS_CHUNKED:
+		V1F_Setup_Fetch(req->htc->vfc, req->htc);
+		break;
+	default:
+		break;
+	}
+}
+
 const struct transport HTTP1_transport = {
 	.name =			"HTTP/1",
 	.magic =		TRANSPORT_MAGIC,
 	.deliver =		V1D_Deliver,
 	.unwait =		http1_unwait,
+	.req_body =		http1_req_body,
 	.new_session =		http1_new_session,
 };
 

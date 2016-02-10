@@ -33,7 +33,6 @@
 #include <stdlib.h>
 
 #include "cache.h"
-#include "http1/cache_http1.h"
 #include "cache_filter.h"
 #include "vtim.h"
 #include "hash/hash_slinger.h"
@@ -97,11 +96,8 @@ VRB_Iterate(struct req *req, objiterate_f *func, void *priv)
 	}
 
 	CHECK_OBJ_NOTNULL(req->htc, HTTP_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(req->htc->vfc, VFP_CTX_MAGIC);
 	vfc = req->htc->vfc;
-	VFP_Setup(vfc);
-	vfc->http = req->http;
-	vfc->wrk = req->wrk;
-	V1F_Setup_Fetch(vfc, req->htc);
 	if (VFP_Open(vfc) < 0) {
 		VSLb(req->vsl, SLT_FetchError, "Could not open Fetch Pipeline");
 		return (-1);
@@ -214,9 +210,8 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 	}
 
 	CHECK_OBJ_NOTNULL(req->htc, HTTP_CONN_MAGIC);
+	CHECK_OBJ_NOTNULL(req->htc->vfc, VFP_CTX_MAGIC);
 	vfc = req->htc->vfc;
-	VFP_Setup(vfc);
-	vfc->wrk = req->wrk;
 
 	if (req->htc->content_length > maxsize) {
 		req->req_body_status = REQ_BODY_FAIL;
@@ -224,14 +219,11 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 		return (-1);
 	}
 
-	vfc->http = req->http;
-
 	req->body_oc = HSH_Private(req->wrk);
 	AN(req->body_oc);
 	XXXAN(STV_NewObject(req->wrk, req->body_oc, TRANSIENT_STORAGE, 8));
 
 	vfc->oc = req->body_oc;
-	V1F_Setup_Fetch(vfc, req->htc);
 
 	if (VFP_Open(vfc) < 0) {
 		req->req_body_status = REQ_BODY_FAIL;

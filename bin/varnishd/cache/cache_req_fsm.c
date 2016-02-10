@@ -689,6 +689,12 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	http_CollectHdr(req->http, H_Cache_Control);
 
+	VFP_Setup(req->htc->vfc);
+	req->htc->vfc->http = req->http;
+	req->htc->vfc->wrk = wrk;
+	if (req->transport->req_body != NULL)
+		req->transport->req_body(req);
+
 	VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 
 	/* Attempts to cache req.body may fail */
