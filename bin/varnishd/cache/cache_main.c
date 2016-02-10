@@ -33,7 +33,6 @@
 #include <stdlib.h>
 
 #include "cache.h"
-#include "http1/cache_http1.h"
 #include "common/heritage.h"
 
 #include "vcli_priv.h"

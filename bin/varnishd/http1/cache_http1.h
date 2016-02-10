@@ -49,7 +49,6 @@ struct v1p_acct {
 	uint64_t        out;
 };
 
-void V1P_Init(void);
 void V1P_Process(struct req *, int fd, struct v1p_acct *);
 void V1P_Charge(struct req *, const struct v1p_acct *, struct VSC_C_vbe *);
 

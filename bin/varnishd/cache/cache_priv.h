@@ -116,6 +116,9 @@ void VRTPRIV_dynamic_kill(struct vrt_privs *privs, uintptr_t id);
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);
 
+/* http1/cache_http1_pipe.c */
+void V1P_Init(void);
+
 /* stevedore.c */
 void STV_open(void);
 void STV_close(void);
