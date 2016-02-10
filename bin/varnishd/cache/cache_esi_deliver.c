@@ -65,6 +65,12 @@ struct ecx {
 	uint32_t	crc;
 };
 
+static struct transport VED_transport = {
+	.magic =	TRANSPORT_MAGIC,
+	.name =		"ESI_INCLUDE",
+	.deliver =	VED_Deliver,
+};
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -74,7 +80,6 @@ ved_include(struct req *preq, const char *src, const char *host,
 	struct worker *wrk;
 	struct req *req;
 	enum req_fsm_nxt s;
-	struct transport xp;
 
 	CHECK_OBJ_NOTNULL(preq, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(ecx, ECX_MAGIC);
@@ -146,9 +151,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 	assert(isnan(req->t_first));
 	assert(isnan(req->t_prev));
 
-	INIT_OBJ(&xp, TRANSPORT_MAGIC);
-	xp.deliver = VED_Deliver;
-	req->transport = &xp;
+	req->transport = &VED_transport;
 	req->transport_priv = ecx;
 
 	THR_SetRequest(req);
