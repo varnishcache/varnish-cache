@@ -48,8 +48,8 @@
  * Call protocol for this request
  */
 
-void __match_proto__(task_func_t)
-SES_Proto_Req(struct worker *wrk, void *arg)
+static void __match_proto__(task_func_t)
+http1_req(struct worker *wrk, void *arg)
 {
 	struct req *req;
 
@@ -57,6 +57,7 @@ SES_Proto_Req(struct worker *wrk, void *arg)
 	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
 
 	THR_SetRequest(req);
+	req->transport = req->sp->transport;
 	AZ(wrk->aws->r);
 	HTTP1_Session(wrk, req);
 	AZ(wrk->v1l);
@@ -86,7 +87,7 @@ http1_new_session(struct worker *wrk, void *arg)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	sp->sess_step = S_STP_H1NEWREQ;
-	wrk->task.func = SES_Proto_Req;
+	wrk->task.func = http1_req;
 	wrk->task.priv = req;
 }
 
@@ -105,7 +106,7 @@ http1_unwait(struct worker *wrk, void *arg)
 	SES_RxInit(req->htc, req->ws,
 	    cache_param->http_req_size, cache_param->http_req_hdr_len);
 	sp->sess_step = S_STP_H1NEWREQ;
-	wrk->task.func = SES_Proto_Req;
+	wrk->task.func = http1_req;
 	wrk->task.priv = req;
 }
 
@@ -323,6 +324,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 		case S_STP_H1PROC:
 			req->transport = &HTTP1_transport;
 			if (CNT_Request(wrk, req) == REQ_FSM_DISEMBARK) {
+				req->task.func = http1_req;
+				req->task.priv = req;
 				sp->sess_step = S_STP_H1BUSY;
 				return;
 			}

@@ -320,8 +320,7 @@ SES_Reschedule_Req(struct req *req)
 	pp = sp->pool;
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 
-	req->task.func = SES_Proto_Req;
-	req->task.priv = req;
+	AN(req->task.func);
 
 	return (Pool_Task(pp, &req->task, TASK_QUEUE_REQ));
 }

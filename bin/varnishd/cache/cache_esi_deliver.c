@@ -65,7 +65,7 @@ struct ecx {
 	uint32_t	crc;
 };
 
-static struct transport VED_transport = {
+static const struct transport VED_transport = {
 	.magic =	TRANSPORT_MAGIC,
 	.name =		"ESI_INCLUDE",
 	.deliver =	VED_Deliver,
