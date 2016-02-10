@@ -28,13 +28,9 @@
  *
  * Session management
  *
- * This is a little bit of a mixed bag, containing both memory management
- * and various state-change functions.
- *
- * The overall picture is complicated by the fact that requests can
- * disembark their worker-threads if they hit a busy object, then come
- * back later in a different worker thread to continue.
- * XXX: I wonder if that complexity pays of any more ?
+ * The overall goal here is to hold as little state as possible for an
+ * idle session.  This leads to various nasty-ish overloads of struct
+ * sess fields, for instance ->fd being negative ->reason.
  *
  */
 
