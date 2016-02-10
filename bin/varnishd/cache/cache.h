@@ -932,10 +932,10 @@ int Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req);
 void Req_Fail(struct req *req, enum sess_close reason);
 
 /* cache_req_body.c */
-int VRB_Ignore(struct req *req);
-ssize_t VRB_Cache(struct req *req, ssize_t maxsize);
-int VRB_Iterate(struct req *req, objiterate_f *func, void *priv);
-void VRB_Free(struct req *req);
+int VRB_Ignore(struct req *);
+ssize_t VRB_Cache(struct req *, ssize_t maxsize);
+ssize_t VRB_Iterate(struct req *, objiterate_f *func, void *priv);
+void VRB_Free(struct req *);
 
 /* cache_req_fsm.c [CNT] */
 enum req_fsm_nxt CNT_Request(struct worker *, struct req *);
