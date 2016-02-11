@@ -39,6 +39,7 @@
 # XXX: does it actually do that ?
 
 import sys
+from os.path import join
 
 srcroot = "../.."
 buildroot = "../.."
@@ -752,7 +753,7 @@ vcltypes = {
 	'STRING_LIST':	"void*",
 }
 
-fi = open(srcroot + "/include/vrt.h")
+fi = open(join(srcroot, "include/vrt.h"))
 
 for i in fi:
 	j = i.split();
@@ -858,7 +859,7 @@ def emit_vcl_tnames(fo, tokens):
 # Read a C-source file and spit out code that outputs it with VSB_cat()
 
 def emit_file(fo, fd, bn):
-	fn = fd + "/" + bn
+	fn = join(fd, bn)
 
 	fi = open(fn)
 	fc = fi.read()
@@ -936,7 +937,7 @@ def file_header(fo):
 
 polish_tokens(tokens)
 
-fo = open(buildroot + "/lib/libvcc/vcc_token_defs.h", "w")
+fo = open(join(buildroot, "lib/libvcc/vcc_token_defs.h"), "w")
 
 file_header(fo)
 
@@ -970,7 +971,7 @@ for i in returns:
 
 #######################################################################
 
-fo = open(buildroot + "/include/tbl/vcl_returns.h", "w")
+fo = open(join(buildroot, "include/tbl/vcl_returns.h"), "w")
 
 file_header(fo)
 
@@ -1008,7 +1009,7 @@ fo.close()
 
 #######################################################################
 
-fo = open(buildroot + "/include/vcl.h", "w")
+fo = open(join(buildroot, "include/vcl.h"), "w")
 
 file_header(fo)
 
@@ -1131,10 +1132,10 @@ def restrict(fo, spec):
 
 #######################################################################
 
-fh = open(buildroot + "/include/vrt_obj.h", "w")
+fh = open(join(buildroot, "include/vrt_obj.h"), "w")
 file_header(fh)
 
-fo = open(buildroot + "/lib/libvcc/vcc_obj.c", "w")
+fo = open(join(buildroot, "lib/libvcc/vcc_obj.c"), "w")
 file_header(fo)
 
 fo.write("""
@@ -1207,7 +1208,7 @@ fh.close()
 
 #######################################################################
 
-fo = open(buildroot + "/lib/libvcc/vcc_fixed_token.c", "w")
+fo = open(join(buildroot, "lib/libvcc/vcc_fixed_token.c"), "w")
 
 file_header(fo)
 fo.write("""
@@ -1241,7 +1242,7 @@ fo.write("""
 fo.close()
 
 #######################################################################
-ft = open(buildroot + "/include/tbl/vcc_types.h", "w")
+ft = open(join(buildroot, "include/tbl/vcc_types.h"), "w")
 file_header(ft)
 
 ft.write("/*lint -save -e525 -e539 */\n")
@@ -1255,7 +1256,7 @@ ft.close()
 
 #######################################################################
 
-fo = open(buildroot + "/include/tbl/vrt_stv_var.h", "w")
+fo = open(join(buildroot, "include/tbl/vrt_stv_var.h"), "w")
 
 file_header(fo)
 
@@ -1295,7 +1296,7 @@ fo.close
 
 #######################################################################
 
-fp_vclvar = open(buildroot + "/doc/sphinx/include/vcl_var.rst", "w")
+fp_vclvar = open(join(buildroot, "doc/sphinx/include/vcl_var.rst"), "w")
 
 l = list()
 for i in sp_variables:
