@@ -66,6 +66,23 @@ ses_get_attr(const struct sess *sp, enum sess_attr a, void **dst)
 	}
 }
 
+static int
+ses_set_attr(const struct sess *sp, enum sess_attr a, const void *src, int sz)
+{
+	void *dst;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	assert(a < SA_LAST);
+	AN(src);
+	assert(sz > 0);
+
+	if (sp->sattr[a] == 0xffff)
+		return (-1);
+	dst = sp->ws->s + sp->sattr[a];
+	AN(dst);
+	memcpy(dst, src, sz);
+	return (0);
+}
+
 static void
 ses_reserve_attr(struct sess *sp, enum sess_attr a, void **dst, int sz)
 {
@@ -86,16 +103,22 @@ ses_reserve_attr(struct sess *sp, enum sess_attr a, void **dst, int sz)
 
 #define SESS_ATTR(UP, low, typ, len)					\
 	int								\
-	SES_Get_##low(const struct sess *sp, typ *dst)			\
+	SES_Set_##low(const struct sess *sp, const typ *src)		\
+	{								\
+		return (ses_set_attr(sp, SA_##UP, src, len));		\
+	}								\
+									\
+	int								\
+	SES_Get_##low(const struct sess *sp, typ **dst)			\
 	{								\
 		return (ses_get_attr(sp, SA_##UP, (void**)dst));	\
 	}								\
 									\
 	void								\
-	SES_Reserve_##low(struct sess *sp, typ *dst)			\
+	SES_Reserve_##low(struct sess *sp, typ **dst)			\
 	{								\
 		assert(len >= 0);					\
-		ses_reserve_attr(sp, SA_##UP, (void*)dst, len);		\
+		ses_reserve_attr(sp, SA_##UP, (void**)dst, len);	\
 	}
 
 #include "tbl/sess_attr.h"

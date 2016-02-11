@@ -443,8 +443,8 @@ static void
 pan_sess(struct vsb *vsb, const struct sess *sp)
 {
 	const char *stp;
-	char *ci;
-	char *cp;
+	const char *ci;
+	const char *cp;
 
 	VSB_printf(vsb, "sp = %p {\n", sp);
 	if (pan_already(vsb, sp))
@@ -452,8 +452,8 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 	VSB_indent(vsb, 2);
 	VSB_printf(vsb, "fd = %d, vxid = %u\n",
 	    sp->fd, VXID(sp->vxid));
-	AZ(SES_Get_client_ip(sp, &ci));
-	AZ(SES_Get_client_port(sp, &cp));
+	ci = SES_Get_String_Attr(sp, SA_CLIENT_IP);
+	cp = SES_Get_String_Attr(sp, SA_CLIENT_PORT);
 	VSB_printf(vsb, "client = %s %s,\n", ci, cp);
 	switch (sp->sess_step) {
 #define SESS_STEP(l, u) case S_STP_##u: stp = "S_STP_" #u; break;

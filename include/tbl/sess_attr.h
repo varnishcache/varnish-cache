@@ -32,14 +32,14 @@
 
 /*lint -save -e525 -e539 */
 
-//        upper           lower         type		   len
-SESS_ATTR(REMOTE_ADDR,	  remote_addr,	struct suckaddr *, vsa_suckaddr_len)
-SESS_ATTR(LOCAL_ADDR,	  local_addr,	struct suckaddr *, vsa_suckaddr_len)
-SESS_ATTR(CLIENT_ADDR,	  client_addr,	struct suckaddr *, vsa_suckaddr_len)
-SESS_ATTR(SERVER_ADDR,	  server_addr,	struct suckaddr *, vsa_suckaddr_len)
-SESS_ATTR(CLIENT_IP,	  client_ip,	char *,		   -1)
-SESS_ATTR(CLIENT_PORT,	  client_port,	char *,		   -1)
-SESS_ATTR(XPORT_PRIV1,	  xport_priv1,	void *,		   -1)
-SESS_ATTR(XPORT_PRIV2,	  xport_priv2,	uintptr_t,	   -1)
+//        upper           lower         type			len
+SESS_ATTR(REMOTE_ADDR,	  remote_addr,	struct suckaddr,	vsa_suckaddr_len)
+SESS_ATTR(LOCAL_ADDR,	  local_addr,	struct suckaddr,	vsa_suckaddr_len)
+SESS_ATTR(CLIENT_ADDR,	  client_addr,	struct suckaddr,	vsa_suckaddr_len)
+SESS_ATTR(SERVER_ADDR,	  server_addr,	struct suckaddr,	vsa_suckaddr_len)
+SESS_ATTR(CLIENT_IP,	  client_ip,	char,			-1)
+SESS_ATTR(CLIENT_PORT,	  client_port,	char,			-1)
+SESS_ATTR(XPORT_PRIV1,	  xport_priv1,	void *,			sizeof(void*))
+SESS_ATTR(XPORT_PRIV2,	  xport_priv2,	uintptr_t,		sizeof(uintptr_t))
 
 /*lint -restore */

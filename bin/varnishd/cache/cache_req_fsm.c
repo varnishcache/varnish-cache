@@ -643,7 +643,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	unsigned recv_handling;
 	struct SHA256Context sha256ctx;
 	const char *xff;
-	char *ci, *cp;
+	const char *ci, *cp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -655,8 +655,8 @@ cnt_recv(struct worker *wrk, struct req *req)
 	AZ(isnan(req->t_prev));
 	AZ(isnan(req->t_req));
 
-	AZ(SES_Get_client_ip(req->sp, &ci));
-	AZ(SES_Get_client_port(req->sp, &cp));
+	ci = SES_Get_String_Attr(req->sp, SA_CLIENT_IP);
+	cp = SES_Get_String_Attr(req->sp, SA_CLIENT_PORT);
 	VSLb(req->vsl, SLT_ReqStart, "%s %s", ci, cp);
 
 	http_VSL_log(req->http);

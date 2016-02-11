@@ -967,11 +967,13 @@ void SES_RxReInit(struct http_conn *htc);
 enum htc_status_e SES_RxStuff(struct http_conn *, htc_complete_f *,
     double *t1, double *t2, double ti, double tn);
 
-#define SESS_ATTR(UP, low, typ, len)				\
-	int SES_Get_##low(const struct sess *sp, typ *dst);	\
-	void SES_Reserve_##low(struct sess *sp, typ *dst);
+#define SESS_ATTR(UP, low, typ, len)					\
+	int SES_Set_##low(const struct sess *sp, const typ *src);	\
+	int SES_Get_##low(const struct sess *sp, typ **dst);		\
+	void SES_Reserve_##low(struct sess *sp, typ **dst);
 #include "tbl/sess_attr.h"
 #undef SESS_ATTR
+
 void SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src);
 const char *SES_Get_String_Attr(const struct sess *sp, enum sess_attr a);
 
