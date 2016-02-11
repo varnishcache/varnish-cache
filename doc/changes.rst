@@ -1,3 +1,19 @@
+
+================================
+Varnish Cache 4.1.2 (unreleased)
+================================
+
+* Be stricter when parsing a HTTP request to avoid potential
+  HTTP smuggling attacks against vulnerable backends.
+
+Bugs fixed
+----------
+
+* 1857_ - Fix timeout calculation for session herding.
+
+.. _1857: https://www.varnish-cache.org/trac/ticket/1857
+
+
 ================================
 Varnish Cache 4.1.1 (2016-01-28)
 ================================
