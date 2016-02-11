@@ -39,5 +39,7 @@ SESS_ATTR(CLIENT_ADDR,	  client_addr,	struct suckaddr *, vsa_suckaddr_len)
 SESS_ATTR(SERVER_ADDR,	  server_addr,	struct suckaddr *, vsa_suckaddr_len)
 SESS_ATTR(CLIENT_IP,	  client_ip,	char *,		   -1)
 SESS_ATTR(CLIENT_PORT,	  client_port,	char *,		   -1)
+SESS_ATTR(XPORT_PRIV1,	  xport_priv1,	void *,		   -1)
+SESS_ATTR(XPORT_PRIV2,	  xport_priv2,	uintptr_t,	   -1)
 
 /*lint -restore */
