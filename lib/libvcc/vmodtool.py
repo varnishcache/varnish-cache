@@ -42,7 +42,7 @@ import optparse
 import unittest
 import random
 from os import unlink
-from os.path import dirname, realpath, exists
+from os.path import dirname, exists, join, realpath
 from pprint import pprint, pformat
 
 ctypes = {
@@ -842,10 +842,10 @@ class SimpleTestCase(unittest.TestCase):
 		from glob import glob
 		tmpfile = mktemp()
 		bdir = dirname(realpath(__file__))
-		for inputfile in glob(bdir + "/../libvmod_*/vmod.vcc"):
-			runmain(inputfile, outputname=tmpfile)
-			for suffix in [".c", ".h"]:
-				unlink(tmpfile + suffix)
+		for inputfile in glob(join(bdir, "../libvmod_*/vmod.vcc")):
+			runmain(inputfile, outputprefix=tmpfile)
+			unlink(tmpfile + ".c")
+			unlink(tmpfile + ".h")
 
 
 #######################################################################
