@@ -840,7 +840,7 @@ class SimpleTestCase(unittest.TestCase):
 
 
 #######################################################################
-def runmain(inputvcc, outputname="vcc_if"):
+def runmain(inputvcc, outputprefix="vcc_if"):
 	# Read the file in
 	lines = []
 	with open(inputvcc, "r") as fp:
@@ -904,8 +904,8 @@ def runmain(inputvcc, outputname="vcc_if"):
 	# Parsing done, now process
 	#
 
-	fc = open("%s.c" % outputname, "w")
-	fh = open("%s.h" % outputname, "w")
+	fc = open("%s.c" % outputprefix, "w")
+	fh = open("%s.h" % outputprefix, "w")
 
 	write_c_file_warning(fc)
 	write_c_file_warning(fh)
@@ -951,6 +951,8 @@ if __name__ == "__main__":
 
 	oparser.add_option('-N', '--strict', action='store_true', default=False,
 	    help="Be strict when parsing input file. (vmod.vcc)")
+	oparser.add_option('-o', metavar="prefix", default='vcc_if',
+	    help='Output file prefix. (default: "vcc_if")')
 	oparser.add_option('', '--runtests', action='store_true', default=False,
 	    dest="runtests", help=optparse.SUPPRESS_HELP)
 	(opts, args) = oparser.parse_args()
@@ -973,4 +975,4 @@ if __name__ == "__main__":
 		oparser.print_help()
 		exit(-1)
 
-	runmain(i_vcc)
+	runmain(i_vcc, outputprefix=opts.o)
