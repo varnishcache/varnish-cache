@@ -122,9 +122,14 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc)
 		if (vct_iscrlf(p))
 			break;
 		while (r < htc->rxbuf_e) {
-			if (!vct_iscrlf(r)) {
+			if (!vct_isctl(*r) || vct_issp(*r)) {
 				r++;
 				continue;
+			}
+			if (!vct_iscrlf(r)) {
+				VSLb(hp->vsl, SLT_BogoHeader,
+				    "Header has ctrl char 0x%02x", *r);
+				return (400);
 			}
 			q = r;
 			assert(r < htc->rxbuf_e);
