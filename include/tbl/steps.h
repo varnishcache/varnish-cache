@@ -30,13 +30,6 @@
 
 /*lint -save -e525 -e539 */
 
-#ifdef SESS_STEP
-SESS_STEP(h1newreq,	H1NEWREQ)
-SESS_STEP(h1proc,	H1PROC)
-SESS_STEP(h1busy,	H1BUSY)
-SESS_STEP(h1cleanup,	H1CLEANUP)
-#endif
-
 #ifdef REQ_STEP
 REQ_STEP(restart,	RESTART,	(wrk, req))
 REQ_STEP(recv,		RECV,		(wrk, req))

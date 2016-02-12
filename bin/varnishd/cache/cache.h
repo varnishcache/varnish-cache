@@ -625,30 +625,19 @@ enum sess_attr {
 	SA_LAST
 };
 
-enum sess_step {
-#define SESS_STEP(l, u)		S_STP_##u,
-#include "tbl/steps.h"
-#undef SESS_STEP
-};
-
 struct sess {
 	unsigned		magic;
 #define SESS_MAGIC		0x2c2f9c5a
 
-	enum sess_step		sess_step;
-	struct lock		mtx;
+	uint16_t		sattr[SA_LAST];
 	int			fd;
 	uint32_t		vxid;
 
-	/* Cross references ------------------------------------------*/
+	struct lock		mtx;
 
 	struct pool		*pool;
 
-	/* Session related fields ------------------------------------*/
-
 	struct ws		ws[1];
-
-	uint16_t		sattr[SA_LAST];
 
 	/* Timestamps, all on TIM_real() timescale */
 	double			t_open;		/* fd accepted */

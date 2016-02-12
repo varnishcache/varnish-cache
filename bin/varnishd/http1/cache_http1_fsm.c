@@ -43,7 +43,31 @@
 #include "cache_http1.h"
 #include "hash/hash_slinger.h"
 
+#include "vsb.h"
 #include "vtcp.h"
+
+static const char H1NEWREQ[] = "HTTP1::NewReq";
+static const char H1PROC[] = "HTTP1::Proc";
+static const char H1BUSY[] = "HTTP1::Busy";
+static const char H1CLEANUP[] = "HTTP1::Cleanup";
+
+static void
+http1_setstate(const struct sess *sp, const char *s)
+{
+	uintptr_t p;
+
+	p = (uintptr_t)s;
+	AZ(SES_Set_xport_priv(sp, &p));
+}
+
+static const char *
+http1_getstate(const struct sess *sp)
+{
+	uintptr_t *p;
+
+	AZ(SES_Get_xport_priv(sp, &p));
+	return (const char *)*p;
+}
 
 /*--------------------------------------------------------------------
  * Call protocol for this request
@@ -81,13 +105,15 @@ http1_new_session(struct worker *wrk, void *arg)
 {
 	struct sess *sp;
 	struct req *req;
+	uintptr_t *u;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	sp->sess_step = S_STP_H1NEWREQ;
+	SES_Reserve_xport_priv(sp, &u);
+	http1_setstate(sp, H1NEWREQ);
 	wrk->task.func = http1_req;
 	wrk->task.priv = req;
 }
@@ -106,7 +132,7 @@ http1_unwait(struct worker *wrk, void *arg)
 	req->htc->fd = sp->fd;
 	SES_RxInit(req->htc, req->ws,
 	    cache_param->http_req_size, cache_param->http_req_hdr_len);
-	sp->sess_step = S_STP_H1NEWREQ;
+	http1_setstate(sp, H1NEWREQ);
 	wrk->task.func = http1_req;
 	wrk->task.priv = req;
 }
@@ -127,6 +153,20 @@ http1_req_body(struct req *req)
 	}
 }
 
+static void
+http1_sess_panic(struct vsb *vsb, const struct sess *sp)
+{
+
+	VSB_printf(vsb, "state = %s\n", http1_getstate(sp));
+}
+
+static void
+http1_req_panic(struct vsb *vsb, const struct req *req)
+{
+
+	VSB_printf(vsb, "state = %s\n", http1_getstate(req->sp));
+}
+
 struct transport HTTP1_transport = {
 	.name =			"HTTP/1",
 	.magic =		TRANSPORT_MAGIC,
@@ -134,6 +174,8 @@ struct transport HTTP1_transport = {
 	.unwait =		http1_unwait,
 	.req_body =		http1_req_body,
 	.new_session =		http1_new_session,
+	.sess_panic =		http1_sess_panic,
+	.req_panic =		http1_req_panic,
 };
 
 /*----------------------------------------------------------------------
@@ -247,6 +289,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 {
 	enum htc_status_e hs;
 	struct sess *sp;
+	const char *st;
 	int i;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -260,7 +303,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 	 * or waiter, but we'd rather do the syscall in the worker thread.
 	 * On systems which return errors for ioctl, we close early
 	 */
-	if (sp->sess_step == S_STP_H1NEWREQ && VTCP_blocking(sp->fd)) {
+	if (http1_getstate(sp) == H1NEWREQ && VTCP_blocking(sp->fd)) {
 		if (errno == ECONNRESET)
 			SES_Close(sp, SC_REM_CLOSE);
 		else
@@ -270,8 +313,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 	}
 
 	while (1) {
-		switch (sp->sess_step) {
-		case S_STP_H1NEWREQ:
+		st = http1_getstate(sp);
+		if (st == H1NEWREQ) {
 			assert(isnan(req->t_prev));
 			assert(isnan(req->t_req));
 			AZ(req->vcl);
@@ -318,13 +361,12 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			    req->htc->rxbuf_e - req->htc->rxbuf_b;
 			if (i) {
 				SES_Close(req->sp, req->doclose);
-				sp->sess_step = S_STP_H1CLEANUP;
-				break;
+				http1_setstate(sp, H1CLEANUP);
+			} else {
+				req->req_step = R_STP_RECV;
+				http1_setstate(sp, H1PROC);
 			}
-			req->req_step = R_STP_RECV;
-			sp->sess_step = S_STP_H1PROC;
-			break;
-		case S_STP_H1BUSY:
+		} else if (st == H1BUSY) {
 			/*
 			 * Return from waitinglist.
 			 * Check to see if the remote has left.
@@ -337,30 +379,26 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				AN(Req_Cleanup(sp, wrk, req));
 				return;
 			}
-			sp->sess_step = S_STP_H1PROC;
-			break;
-		case S_STP_H1PROC:
+			http1_setstate(sp, H1PROC);
+		} else if (st == H1PROC) {
 			req->transport = &HTTP1_transport;
 			if (CNT_Request(wrk, req) == REQ_FSM_DISEMBARK) {
 				req->task.func = http1_req;
 				req->task.priv = req;
-				sp->sess_step = S_STP_H1BUSY;
+				http1_setstate(sp, H1BUSY);
 				return;
 			}
 			req->transport = NULL;
-			sp->sess_step = S_STP_H1CLEANUP;
-			break;
-		case S_STP_H1CLEANUP:
+			http1_setstate(sp, H1CLEANUP);
+		} else if (st == H1CLEANUP) {
 			if (Req_Cleanup(sp, wrk, req))
 				return;
 			SES_RxReInit(req->htc);
 			if (req->htc->rxbuf_e != req->htc->rxbuf_b)
 				wrk->stats->sess_readahead++;
-			sp->sess_step = S_STP_H1NEWREQ;
-			break;
-		default:
+			http1_setstate(sp, H1NEWREQ);
+		} else {
 			WRONG("Wrong H1 session state");
 		}
-
 	}
 }

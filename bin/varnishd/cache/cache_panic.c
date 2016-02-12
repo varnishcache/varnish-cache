@@ -374,15 +374,25 @@ static void
 pan_req(struct vsb *vsb, const struct req *req)
 {
 	const char *stp;
+	const struct transport *xp;
 
 	VSB_printf(vsb, "req = %p {\n", req);
 	if (pan_already(vsb, req))
 		return;
 	VSB_indent(vsb, 2);
 
-	VSB_printf(vsb, "vxid = %u, transport = %s\n", VXID(req->vsl->wid),
-	    req->transport == NULL ? "NULL" : req->transport->name);
+	xp = req->transport;
+	VSB_printf(vsb, "vxid = %u, transport = %s", VXID(req->vsl->wid),
+	    xp == NULL ? "NULL" : xp->name);
 
+	if (xp != NULL && xp->req_panic != NULL) {
+		VSB_printf(vsb, " {\n");
+		VSB_indent(vsb, 2);
+		xp->req_panic(vsb, req);
+		VSB_indent(vsb, -2);
+		VSB_printf(vsb, "}");
+	}
+	VSB_printf(vsb, "\n");
 	switch (req->req_step) {
 #define REQ_STEP(l, u, arg) case R_STP_##u: stp = "R_STP_" #u; break;
 #include "tbl/steps.h"
@@ -442,7 +452,6 @@ pan_req(struct vsb *vsb, const struct req *req)
 static void
 pan_sess(struct vsb *vsb, const struct sess *sp)
 {
-	const char *stp;
 	const char *ci;
 	const char *cp;
 	const struct transport *xp;
@@ -452,22 +461,19 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 		return;
 	VSB_indent(vsb, 2);
 	xp = XPORT_ByNumber(sp->sattr[SA_TRANSPORT]);
-	VSB_printf(vsb, "fd = %d, vxid = %u, transport = %s\n",
+	VSB_printf(vsb, "fd = %d, vxid = %u, transport = %s",
 	    sp->fd, VXID(sp->vxid),
 	    xp == NULL ? "<none>" : xp->name);
+	if (xp != NULL && xp->sess_panic != NULL) {
+		VSB_printf(vsb, " {\n");
+		VSB_indent(vsb, 2);
+		xp->sess_panic(vsb, sp);
+		VSB_indent(vsb, -2);
+		VSB_printf(vsb, "}");
+	}
 	ci = SES_Get_String_Attr(sp, SA_CLIENT_IP);
 	cp = SES_Get_String_Attr(sp, SA_CLIENT_PORT);
-	VSB_printf(vsb, "client = %s %s,\n", ci, cp);
-	switch (sp->sess_step) {
-#define SESS_STEP(l, u) case S_STP_##u: stp = "S_STP_" #u; break;
-#include "tbl/steps.h"
-#undef SESS_STEP
-		default: stp = NULL;
-	}
-	if (stp != NULL)
-		VSB_printf(vsb, "step = %s,\n", stp);
-	else
-		VSB_printf(vsb, "step = 0x%x,\n", sp->sess_step);
+	VSB_printf(vsb, "\nclient = %s %s,\n", ci, cp);
 
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");

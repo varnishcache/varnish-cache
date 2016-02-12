@@ -38,6 +38,8 @@ struct boc;
 
 typedef void vtr_deliver_f (struct req *, struct boc *, int sendbody);
 typedef void vtr_req_body_f (struct req *);
+typedef void vtr_sess_panic_f (struct vsb *, const struct sess *);
+typedef void vtr_req_panic_f (struct vsb *, const struct req *);
 
 struct transport {
 	unsigned			magic;
@@ -52,6 +54,8 @@ struct transport {
 
 	vtr_req_body_f			*req_body;
 	vtr_deliver_f			*deliver;
+	vtr_sess_panic_f		*sess_panic;
+	vtr_req_panic_f			*req_panic;
 
 	VTAILQ_ENTRY(transport)		list;
 };
