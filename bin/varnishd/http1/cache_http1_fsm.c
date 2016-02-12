@@ -39,7 +39,6 @@
 
 #include "cache/cache.h"
 #include "cache/cache_filter.h"
-#include "common/heritage.h"
 #include "cache/cache_transport.h"
 #include "cache_http1.h"
 #include "hash/hash_slinger.h"
@@ -128,7 +127,7 @@ http1_req_body(struct req *req)
 	}
 }
 
-const struct transport HTTP1_transport = {
+struct transport HTTP1_transport = {
 	.name =			"HTTP/1",
 	.magic =		TRANSPORT_MAGIC,
 	.deliver =		V1D_Deliver,

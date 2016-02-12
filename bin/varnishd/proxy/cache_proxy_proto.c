@@ -41,8 +41,6 @@
 #include "../cache/cache.h"
 #include "../cache/cache_transport.h"
 
-#include "../common/heritage.h"
-
 #include "vend.h"
 #include "vsa.h"
 #include "vtcp.h"
@@ -383,7 +381,7 @@ vpx_new_session(struct worker *wrk, void *arg)
 	wrk->task.priv = req;
 }
 
-const struct transport PROXY_transport = {
+struct transport PROXY_transport = {
 	.name =			"PROXY",
 	.magic =		TRANSPORT_MAGIC,
 	.new_session =		vpx_new_session,

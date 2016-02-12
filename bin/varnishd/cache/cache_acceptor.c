@@ -356,7 +356,8 @@ vca_make_session(struct worker *wrk, void *arg)
 
 	VTCP_name(sa, laddr, sizeof laddr, lport, sizeof lport);
 
-	VSL(SLT_Begin, sp->vxid, "sess 0 %s", wa->acceptlsock->transport_name);
+	VSL(SLT_Begin, sp->vxid, "sess 0 %s",
+	    wa->acceptlsock->transport->name);
 	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f %d",
 	    raddr, rport, wa->acceptlsock->name, laddr, lport,
 	    sp->t_open, sp->fd);
@@ -609,4 +610,41 @@ VCA_Shutdown(void)
 		ls->sock = -2;
 		(void)close(i);
 	}
+}
+
+/*--------------------------------------------------------------------
+ * Transport protocol registration
+ *
+ */
+
+static VTAILQ_HEAD(,transport)	transports =
+    VTAILQ_HEAD_INITIALIZER(transports);
+
+void
+XPORT_Init(void)
+{
+	uint16_t n;
+	struct transport *xp;
+
+	ASSERT_MGT();
+
+	VTAILQ_INSERT_TAIL(&transports, &PROXY_transport, list);
+	VTAILQ_INSERT_TAIL(&transports, &HTTP1_transport, list);
+
+	n = 0;
+	VTAILQ_FOREACH(xp, &transports, list)
+		xp->number = ++n;
+}
+
+const struct transport *
+XPORT_Find(const char *name)
+{
+	struct transport *xp;
+
+	ASSERT_MGT();
+
+	VTAILQ_FOREACH(xp, &transports, list)
+		if (!strcasecmp(xp->name, name))
+			return (xp);
+	return (NULL);
 }

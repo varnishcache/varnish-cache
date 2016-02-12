@@ -62,6 +62,11 @@ void mgt_child_inherit(int fd, const char *what);
 		exit(2);					\
 	} while (0)
 
+/* cache/cache_acceptor.c */
+struct transport;
+void XPORT_Init(void);
+const struct transport *XPORT_Find(const char *name);
+
 /* cache/cache_vcl.c */
 int VCL_TestLoad(const char *);
 

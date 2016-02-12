@@ -568,6 +568,8 @@ main(int argc, char * const *argv)
 	mgt_evb = vev_new_base();
 	AN(mgt_evb);
 
+	XPORT_Init();
+
 	init_params(cli);
 	cli_check(cli);
 

@@ -49,7 +49,6 @@
 #include "vss.h"
 #include "vtcp.h"
 
-
 static int
 mac_opensocket(struct listen_sock *ls, struct cli *cli)
 {
@@ -116,7 +115,6 @@ struct mac_help {
 #define MAC_HELP_MAGIC		0x1e00a9d9
 	int			good;
 	const char		*name;
-	const char		*transport_name;
 	const struct transport	*transport;
 };
 
@@ -140,7 +138,6 @@ mac_callback(void *priv, const struct suckaddr *sa)
 	AN(ls->addr);
 	ls->name = strdup(mh->name);
 	AN(ls->name);
-	ls->transport_name = mh->transport_name;
 	ls->transport = mh->transport;
 	VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
 	mh->good++;
@@ -185,6 +182,7 @@ MAC_Arg(const char *arg)
 	struct mac_help *mh;
 	const char *err;
 	int error;
+	const struct transport *xp;
 
 	av = VAV_Parse(arg, NULL, ARGV_COMMA);
 	if (av == NULL)
@@ -196,19 +194,17 @@ MAC_Arg(const char *arg)
 	AN(mh);
 	mh->name = av[1];
 
-	if (av[2] == NULL || !strcmp(av[2], "HTTP/1")) {
-		mh->transport = &HTTP1_transport;
-		mh->transport_name = "HTTP/1";
-		if (av[2] != NULL && av[3] != NULL)
-			ARGV_ERR("Too many sub-arguments to -a(HTTP/1)\n");
-	} else if (!strcmp(av[2], "PROXY")) {
-		mh->transport = &PROXY_transport;
-		mh->transport_name = "PROXY";
-		if (av[3] != NULL)
-			ARGV_ERR("Too many sub-arguments to -a(PROXY)\n");
+	if (av[2] == NULL) {
+		xp = XPORT_Find("http/1");
 	} else {
-		ARGV_ERR("Unknown protocol '%s'\n", av[2]);
+		xp = XPORT_Find(av[2]);
+		if (xp == NULL)
+			ARGV_ERR("Unknown protocol '%s'\n", av[2]);
+		if (av[3] != NULL)
+			ARGV_ERR("Too many sub-arguments to -a(%s)\n", av[2]);
 	}
+	AN(xp);
+	mh->transport = xp;
 
 	error = VSS_resolver(av[1], "80", mac_callback, mh, &err);
 	if (mh->good == 0 || error)

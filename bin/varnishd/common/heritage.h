@@ -40,11 +40,7 @@ struct listen_sock {
 	char				*name;
 	struct suckaddr			*addr;
 	const struct transport		*transport;
-	const char			*transport_name;
 };
-
-extern const struct transport PROXY_transport;
-extern const struct transport HTTP1_transport;
 
 VTAILQ_HEAD(listen_sock_head, listen_sock);
 

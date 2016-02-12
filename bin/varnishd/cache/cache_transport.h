@@ -33,18 +33,29 @@
  *
  */
 
+struct req;
+struct boc;
+
 typedef void vtr_deliver_f (struct req *, struct boc *, int sendbody);
 typedef void vtr_req_body_f (struct req *);
 
 struct transport {
-	unsigned		magic;
-#define TRANSPORT_MAGIC		0xf157f32f
+	unsigned			magic;
+#define TRANSPORT_MAGIC			0xf157f32f
 
-	const char		*name;
+	uint16_t			number;
 
-	task_func_t		*new_session;
-	task_func_t		*unwait;
+	const char			*name;
 
-	vtr_req_body_f		*req_body;
-	vtr_deliver_f		*deliver;
+	task_func_t			*new_session;
+	task_func_t			*unwait;
+
+	vtr_req_body_f			*req_body;
+	vtr_deliver_f			*deliver;
+
+	VTAILQ_ENTRY(transport)		list;
 };
+
+extern struct transport PROXY_transport;
+extern struct transport HTTP1_transport;
+
