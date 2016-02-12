@@ -12,4 +12,4 @@ client c1 {
        expect_close
 } -run
 
-varnish v1 -expect sc_rx_timeout == 1
+varnish v1 -expect sc_tx_error == 1

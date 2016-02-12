@@ -58,7 +58,7 @@ typedef const struct suckaddr *vdi_getip_f(const struct director *,
 typedef void vdi_finish_f(const struct director *, struct worker *,
     struct busyobj *);
 
-typedef void vdi_http1pipe_f(const struct director *, struct req *,
+typedef enum sess_close vdi_http1pipe_f(const struct director *, struct req *,
     struct busyobj *);
 
 typedef void vdi_panic_f(const struct director *, struct vsb *);
@@ -88,7 +88,7 @@ const struct suckaddr *VDI_GetIP(struct worker *, struct busyobj *);
 
 void VDI_Finish(struct worker *wrk, struct busyobj *bo);
 
-int VDI_Http1Pipe(struct req *, struct busyobj *);
+enum sess_close VDI_Http1Pipe(struct req *, struct busyobj *);
 
 int VDI_Healthy(const struct director *, const struct busyobj *);
 void VDI_Panic(const struct director *, struct vsb *, const char *nm);

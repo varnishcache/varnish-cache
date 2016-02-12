@@ -268,10 +268,11 @@ vbe_dir_getip(const struct director *d, struct worker *wrk,
 
 /*--------------------------------------------------------------------*/
 
-static void
+static enum sess_close
 vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 {
 	int i;
+	enum sess_close retval;
 	struct backend *bp;
 	struct v1p_acct v1a;
 	struct vbc *vbc;
@@ -293,7 +294,7 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 
 	if (vbc == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
-		SES_Close(req->sp, SC_RX_TIMEOUT);
+		retval = SC_TX_ERROR;
 	} else {
 		i = V1F_SendReq(req->wrk, bo, &v1a.bereq, 1);
 		VSLb_ts_req(req, "Pipe", W_TIM_real(req->wrk));
@@ -302,11 +303,12 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 		if (i == 0)
 			V1P_Process(req, vbc->fd, &v1a);
 		VSLb_ts_req(req, "PipeSess", W_TIM_real(req->wrk));
-		SES_Close(req->sp, SC_TX_PIPE);
 		bo->htc->doclose = SC_TX_PIPE;
 		vbe_dir_finish(d, req->wrk, bo);
+		retval = SC_TX_PIPE;
 	}
 	V1P_Charge(req, &v1a, bp->vsc);
+	return (retval);
 }
 
 /*--------------------------------------------------------------------*/

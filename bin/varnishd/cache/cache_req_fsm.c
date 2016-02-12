@@ -594,8 +594,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 		INCOMPL();
 	assert(wrk->handling == VCL_RET_PIPE);
 
-	if (VDI_Http1Pipe(req, bo) < 0)
-		VSLb(bo->vsl, SLT_VCL_Error, "Backend does not support pipe");
+	SES_Close(req->sp, VDI_Http1Pipe(req, bo));
 	http_Teardown(bo->bereq);
 	VBO_ReleaseBusyObj(wrk, &bo);
 	THR_SetBusyobj(NULL);

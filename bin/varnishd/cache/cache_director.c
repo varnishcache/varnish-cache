@@ -149,7 +149,7 @@ VDI_Finish(struct worker *wrk, struct busyobj *bo)
 
 /* Get a connection --------------------------------------------------*/
 
-int
+enum sess_close
 VDI_Http1Pipe(struct req *req, struct busyobj *bo)
 {
 	const struct director *d;
@@ -158,10 +158,11 @@ VDI_Http1Pipe(struct req *req, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	d = vdi_resolve(req->wrk, bo);
-	if (d == NULL || d->http1pipe == NULL)
-		return (-1);
-	d->http1pipe(d, req, bo);
-	return (0);
+	if (d == NULL || d->http1pipe == NULL) {
+		VSLb(bo->vsl, SLT_VCL_Error, "Backend does not support pipe");
+		return (SC_TX_ERROR);
+	}
+	return (d->http1pipe(d, req, bo));
 }
 
 /* Check health --------------------------------------------------------
