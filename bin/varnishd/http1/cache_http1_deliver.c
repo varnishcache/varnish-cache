@@ -101,7 +101,9 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 
 	VSLb(req->vsl, SLT_Debug, "RES_MODE %x", req->res_mode);
 
-	if (req->doclose) {
+	if (!req->doclose && http_HdrIs(req->resp, H_Connection, "close")) {
+		req->doclose = SC_RESP_CLOSE;
+	} else if (req->doclose) {
 		if (!http_HdrIs(req->resp, H_Connection, "close")) {
 			http_Unset(req->resp, H_Connection);
 			http_SetHeader(req->resp, "Connection: close");

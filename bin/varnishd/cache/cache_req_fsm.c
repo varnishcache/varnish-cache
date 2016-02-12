@@ -299,9 +299,6 @@ cnt_transmit(struct worker *wrk, struct req *req)
 
 	VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
 
-	if (http_HdrIs(req->resp, H_Connection, "close"))
-		req->doclose = SC_RESP_CLOSE;
-
 	if (req->objcore->flags & (OC_F_PRIVATE | OC_F_PASS)) {
 		if (boc != NULL) {
 			HSH_Abandon(req->objcore);
