@@ -791,7 +791,15 @@ class FileSection(object):
 			o = parse_func(self, pobj=vx[1].nam)
 			vx[1].add_method(o)
 		else:
-			raise FormatError("Unknown keyword: %s" % t.str, "")
+			if opts.strict:
+				raise FormatError("Unknown keyword: %s" %
+				    t.str, "")
+			else:
+				print("WARNING: Unknown keyword: %s:" %
+				    t.str, file=sys.stderr)
+				o = None
+				while len(self.tl) > 0:
+				    self.get_token()
 
 		assert len(self.tl) == 0
 		if o is None and len(self.l) > 0:
