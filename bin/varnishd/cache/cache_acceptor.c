@@ -638,12 +638,23 @@ XPORT_Init(void)
 const struct transport *
 XPORT_Find(const char *name)
 {
-	struct transport *xp;
+	const struct transport *xp;
 
 	ASSERT_MGT();
 
 	VTAILQ_FOREACH(xp, &transports, list)
 		if (!strcasecmp(xp->name, name))
+			return (xp);
+	return (NULL);
+}
+
+const struct transport *
+XPORT_ByNumber(uint16_t no)
+{
+	const struct transport *xp;
+
+	VTAILQ_FOREACH(xp, &transports, list)
+		if (xp->number == no)
 			return (xp);
 	return (NULL);
 }

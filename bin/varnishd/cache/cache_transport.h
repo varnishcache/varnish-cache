@@ -59,3 +59,5 @@ struct transport {
 extern struct transport PROXY_transport;
 extern struct transport HTTP1_transport;
 
+const struct transport *XPORT_ByNumber(uint16_t no);
+

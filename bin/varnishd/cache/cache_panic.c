@@ -445,13 +445,16 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 	const char *stp;
 	const char *ci;
 	const char *cp;
+	const struct transport *xp;
 
 	VSB_printf(vsb, "sp = %p {\n", sp);
 	if (pan_already(vsb, sp))
 		return;
 	VSB_indent(vsb, 2);
-	VSB_printf(vsb, "fd = %d, vxid = %u\n",
-	    sp->fd, VXID(sp->vxid));
+	xp = XPORT_ByNumber(sp->sattr[SA_TRANSPORT]);
+	VSB_printf(vsb, "fd = %d, vxid = %u, transport = %s\n",
+	    sp->fd, VXID(sp->vxid),
+	    xp == NULL ? "<none>" : xp->name);
 	ci = SES_Get_String_Attr(sp, SA_CLIENT_IP);
 	cp = SES_Get_String_Attr(sp, SA_CLIENT_PORT);
 	VSB_printf(vsb, "client = %s %s,\n", ci, cp);
