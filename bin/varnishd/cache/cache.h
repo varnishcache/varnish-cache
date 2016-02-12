@@ -619,6 +619,7 @@ struct req {
 
 enum sess_attr {
 #define SESS_ATTR(UP, low, typ, len)	SA_##UP,
+	SA_TRANSPORT,
 #include "tbl/sess_attr.h"
 #undef SESS_ATTR
 	SA_LAST
@@ -948,6 +949,8 @@ void SES_Wait(struct sess *, const struct transport *);
 void SES_Delete(struct sess *, enum sess_close reason, double now);
 void SES_NewPool(struct pool *, unsigned pool_no);
 int SES_Reschedule_Req(struct req *);
+void SES_SetTransport(struct worker *, struct sess *, struct req *,
+    const struct transport *);
 
 enum htc_status_e {
 	HTC_S_JUNK =		-5,

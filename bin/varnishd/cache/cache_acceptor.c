@@ -379,8 +379,7 @@ vca_make_session(struct worker *wrk, void *arg)
 	SES_RxInit(req->htc, req->ws,
 	    cache_param->http_req_size, cache_param->http_req_hdr_len);
 
-	wrk->task.func = wa->acceptlsock->transport->new_session;
-	wrk->task.priv = req;
+	SES_SetTransport(wrk, sp, req, wa->acceptlsock->transport);
 }
 
 /*--------------------------------------------------------------------

@@ -50,6 +50,24 @@
 
 /*--------------------------------------------------------------------*/
 
+void
+SES_SetTransport(struct worker *wrk, struct sess *sp, struct req *req,
+    const struct transport *xp)
+{
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(xp, TRANSPORT_MAGIC);
+	assert(xp->number > 0);
+
+	sp->sattr[SA_TRANSPORT] = xp->number;
+	wrk->task.func = xp->new_session;
+	wrk->task.priv = req;
+}
+
+/*--------------------------------------------------------------------*/
+
 static int
 ses_get_attr(const struct sess *sp, enum sess_attr a, void **dst)
 {

@@ -377,8 +377,7 @@ vpx_new_session(struct worker *wrk, void *arg)
 	else
 		req->htc->pipeline_e = req->htc->rxbuf_e;
 	SES_RxReInit(req->htc);
-	wrk->task.func = HTTP1_transport.new_session;
-	wrk->task.priv = req;
+	SES_SetTransport(wrk, sp, req, &HTTP1_transport);
 }
 
 struct transport PROXY_transport = {
