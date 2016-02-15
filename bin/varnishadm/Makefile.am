@@ -14,16 +14,10 @@ varnishadm_SOURCES = \
 	$(top_srcdir)/lib/libvarnish/vss.c
 
 varnishadm_CFLAGS = @LIBEDIT_CFLAGS@ \
-	@ASAN_CFLAGS@ \
-	@MSAN_CFLAGS@ \
-	@TSAN_CFLAGS@ \
-	@UBSAN_CFLAGS@
+	@SAN_CFLAGS@
 
 varnishadm_LDADD = \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	${PTHREAD_LIBS} ${RT_LIBS} ${NET_LIBS} @LIBEDIT_LIBS@ ${LIBM} \
-	@ASAN_LDFLAGS@ \
-	@MSAN_LDFLAGS@ \
-	@TSAN_LDFLAGS@ \
-	@UBSAN_LDFLAGS@
+	@SAN_LDFLAGS@

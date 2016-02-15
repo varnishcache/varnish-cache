@@ -38,15 +38,9 @@ libvarnish_la_SOURCES = \
 
 libvarnish_la_CFLAGS = \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
-	@ASAN_CFLAGS@ \
-	@MSAN_CFLAGS@ \
-	@TSAN_CFLAGS@ \
-	@UBSAN_CFLAGS@
+	@SAN_CFLAGS@
 libvarnish_la_LIBADD = ${RT_LIBS} ${NET_LIBS} ${LIBM} @PCRE_LIBS@ \
-	@ASAN_LDFLAGS@ \
-	@MSAN_LDFLAGS@ \
-	@TSAN_LDFLAGS@ \
-	@UBSAN_LDFLAGS@
+	@SAN_LDFLAGS@
 
 if ENABLE_TESTS
 TESTS = vnum_c_test

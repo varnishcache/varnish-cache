@@ -19,18 +19,12 @@ varnishlog_SOURCES = \
 	$(top_srcdir)/lib/libvarnish/vtim.c
 
 varnishlog_CFLAGS = \
-	@ASAN_CFLAGS@ \
-	@MSAN_CFLAGS@ \
-	@TSAN_CFLAGS@ \
-	@UBSAN_CFLAGS@
+	@SAN_CFLAGS@
 
 varnishlog_LDADD = \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
-	@ASAN_LDFLAGS@ \
-	@MSAN_LDFLAGS@ \
-	@TSAN_LDFLAGS@ \
-	@UBSAN_LDFLAGS@ \
+	@SAN_LDFLAGS@ \
 	${RT_LIBS} ${LIBM} ${PTHREAD_LIBS}
 
 noinst_PROGRAMS = varnishlog_opt2rst

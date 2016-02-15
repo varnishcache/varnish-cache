@@ -42,17 +42,11 @@ varnishtest_LDADD = \
 		$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 		$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
 		$(top_builddir)/lib/libvgz/libvgz.la \
-		@ASAN_LDFLAGS@ \
-		@MSAN_LDFLAGS@ \
-		@TSAN_LDFLAGS@ \
-		@UBSAN_LDFLAGS@ \
+		@SAN_LDFLAGS@ \
 		${LIBM} ${PTHREAD_LIBS}
 
 varnishtest_CFLAGS = \
-		@ASAN_CFLAGS@ \
-		@MSAN_CFLAGS@ \
-		@TSAN_CFLAGS@ \
-		@UBSAN_CFLAGS@ \
+		@SAN_CFLAGS@ \
 		-DTOP_BUILDDIR='"${top_builddir}"'
 
 EXTRA_DIST = $(top_srcdir)/bin/varnishtest/tests/*.vtc \

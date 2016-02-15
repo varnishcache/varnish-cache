@@ -9,16 +9,10 @@ AM_CPPFLAGS = \
 pkglib_LTLIBRARIES = libvcc.la
 
 libvcc_la_CFLAGS = \
-	@ASAN_CFLAGS@ \
-	@MSAN_CFLAGS@ \
-	@TSAN_CFLAGS@ \
-	@UBSAN_CFLAGS@
+	@SAN_CFLAGS@
 
 libvcc_la_LDFLAGS = $(AM_LDFLAGS) -avoid-version \
-	@ASAN_LDFLAGS@ \
-	@MSAN_LDFLAGS@ \
-	@TSAN_LDFLAGS@ \
-	@UBSAN_LDFLAGS@
+	@SAN_LDFLAGS@
 
 libvcc_la_SOURCES = \
 	vcc_compile.h \
