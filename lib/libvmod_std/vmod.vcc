@@ -222,17 +222,19 @@ Description
 Example
 	set req.url = std.querysort(req.url);
 
-$Function VOID cache_req_body(BYTES size)
+$Function BOOL cache_req_body(BYTES size)
 
 Description
-	Cache the req.body if it is smaller than *size*.
+	Caches the request body if it is smaller than *size*.  Returns
+	`true` if the body was cached, `false` otherwise.
 
-	Caching the req.body makes it possible to retry pass
-	operations (POST, PUT).
+	Normally the request body is not available after sending it to
+	the backend.  By caching it is possible to retry pass operations,
+	e.g. POST and PUT.
 Example
-	std.cache_req_body(1KB);
-
-	This will cache the req.body if its size is smaller than 1KB.
+	| if (std.cache_req_body(1KB)) {
+	|	...
+	| }
 
 $Function STRING strstr(STRING s1, STRING s2)
 
