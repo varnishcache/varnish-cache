@@ -366,7 +366,7 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 	if (!strncasecmp(hp->hd[HTTP_HDR_URL].b, "http://", 7))
 		b = e = hp->hd[HTTP_HDR_URL].b + 7;
 	else if (FEATURE(FEATURE_HTTPS_SCHEME) &&
-			!strncasecmp(hp->hd[HTTP_HDR_URL].b, "https://", 8))
+	    !strncasecmp(hp->hd[HTTP_HDR_URL].b, "https://", 8))
 		b = e = hp->hd[HTTP_HDR_URL].b + 8;
 	if (b) {
 		while (*e != '/' && *e != '\0')

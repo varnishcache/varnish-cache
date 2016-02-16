@@ -49,4 +49,4 @@ for i in fi:
 		l = f[0]
 
 fo.write("}\n")
-	
+

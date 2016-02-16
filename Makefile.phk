@@ -8,7 +8,7 @@ TOPDIR = $(CURDIR)
 include $(TOPDIR)/Makefile.inc.phk
 
 .PHONY: top_install
-top_install:	
+top_install:
 	@for d in man doc etc bin lib libexec ; do \
 		mkdir -p $(INSTALL_BASE)/$$d ; \
 	done

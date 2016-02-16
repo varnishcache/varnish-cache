@@ -42,7 +42,7 @@ LIBVARNISHAPI_1.0 {
 	VSM_Close;
 	VSM_iter0;
 	VSM_intern;
-	
+
 	VSC_Setup;
 	VSC_Arg;
 	VSC_Open;
