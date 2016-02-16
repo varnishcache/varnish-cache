@@ -31,6 +31,8 @@
  * NB: When this file is changed, lib/libvcc/generate.py *MUST* be rerun.
  */
 
+#include <sys/types.h>
+
 /***********************************************************************
  * Major and minor VRT API versions.
  *
@@ -38,8 +40,8 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
- * changes to consider with next VRT_MAJOR_VERSION bump:
- * - cache_vrt.c: -> ssize_t VRT_CacheReqBody(VRT_CTX, size_t)
+ * Bump VRT_MAJOR_VERSION due to:
+ * - VRT_CacheReqBody changed signature
  *
  */
 
@@ -242,7 +244,7 @@ void VRT_acl_log(VRT_CTX, const char *msg);
 
 /* req related */
 
-int VRT_CacheReqBody(VRT_CTX, long long maxsize);
+ssize_t VRT_CacheReqBody(VRT_CTX, size_t maxsize);
 
 /* Regexp related */
 void VRT_re_init(void **, const char *);

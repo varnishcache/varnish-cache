@@ -460,14 +460,8 @@ VRT_ban_string(VRT_CTX, const char *str)
 	VAV_Free(av);
 }
 
-/*--------------------------------------------------------------------
- *
- * XXX this really should be ssize_t VRT_CacheReqBody(VRT_CTX, size_t)
- * - change with next VRT major bump
- */
-
-int
-VRT_CacheReqBody(VRT_CTX, long long maxsize)
+ssize_t
+VRT_CacheReqBody(VRT_CTX, size_t maxsize)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
