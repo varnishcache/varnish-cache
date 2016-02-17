@@ -247,8 +247,7 @@ vbe_dir_getbody(const struct director *d, struct worker *wrk,
 	CHECK_OBJ_NOTNULL(bo->vfc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
 
-	V1F_Setup_Fetch(bo->vfc, bo->htc);
-	return (0);
+	return (V1F_Setup_Fetch(bo->vfc, bo->htc));
 }
 
 static const struct suckaddr * __match_proto__(vdi_getip_f)

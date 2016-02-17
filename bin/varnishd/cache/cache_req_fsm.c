@@ -688,8 +688,14 @@ cnt_recv(struct worker *wrk, struct req *req)
 	VFP_Setup(req->htc->vfc);
 	req->htc->vfc->http = req->http;
 	req->htc->vfc->wrk = wrk;
-	if (req->transport->req_body != NULL)
+	if (req->transport->req_body != NULL) {
 		req->transport->req_body(req);
+
+		if (req->req_body_status == REQ_BODY_FAIL) {
+			req->doclose = SC_OVERLOAD;
+			return (REQ_FSM_DONE);
+		}
+	}
 
 	VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 

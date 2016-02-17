@@ -655,8 +655,14 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	    http_GetHdr(bo->beresp, H_ETag, &p)))
 		ObjSetFlag(bo->wrk, bo->fetch_objcore, OF_IMSCAND, 1);
 
-	if (bo->htc->body_status != BS_NONE)
-		AZ(VDI_GetBody(bo->wrk, bo));
+	if (bo->htc->body_status != BS_NONE &&
+	    VDI_GetBody(bo->wrk, bo) != 0) {
+		(void)VFP_Error(bo->vfc,
+		    "GetBody failed - workspace_backend overflow?");
+		bo->htc->doclose = SC_OVERLOAD;
+		VDI_Finish(bo->wrk, bo);
+		return (F_STP_ERROR);
+	}
 
 	assert(bo->fetch_objcore->boc->refcount >= 1);
 

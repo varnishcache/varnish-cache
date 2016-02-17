@@ -31,7 +31,7 @@
 int V1F_SendReq(struct worker *, struct busyobj *, uint64_t *ctr,
     int onlycached);
 int V1F_FetchRespHdr(struct busyobj *);
-void V1F_Setup_Fetch(struct vfp_ctx *vfc, struct http_conn *htc);
+int V1F_Setup_Fetch(struct vfp_ctx *vfc, struct http_conn *htc);
 
 /* cache_http1_fsm.c [HTTP1] */
 void HTTP1_Session(struct worker *, struct req *);

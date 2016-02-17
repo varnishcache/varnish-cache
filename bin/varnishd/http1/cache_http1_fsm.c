@@ -146,7 +146,8 @@ http1_req_body(struct req *req)
 	case BS_EOF:
 	case BS_LENGTH:
 	case BS_CHUNKED:
-		V1F_Setup_Fetch(req->htc->vfc, req->htc);
+		if (V1F_Setup_Fetch(req->htc->vfc, req->htc) != 0)
+			req->req_body_status = REQ_BODY_FAIL;
 		break;
 	default:
 		break;
