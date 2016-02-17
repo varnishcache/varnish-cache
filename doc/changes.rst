@@ -1,16 +1,41 @@
 
-================================
-Varnish Cache 4.1.2 (unreleased)
-================================
+======================================
+Varnish Cache 4.1.2-beta1 (2016-02-17)
+======================================
 
 * Be stricter when parsing a HTTP request to avoid potential
   HTTP smuggling attacks against vulnerable backends.
 
+* Some fixes to minor/trivial issues found with clang AddressSanitizer.
+
+* Arithmetric on REAL data type in VCL is now possible.
+
+* vmodtool.py improvements to allow vmods for 4.0 and 4.1 to share a source tree.
+
+* Off-by-one in WS_Reset() fixed.
+
+* "https_scheme" parameter added. Enables graceful handling of compound
+  request URLs with HTTPS scheme.
+
 Bugs fixed
 ----------
 
+* 1739_ - Workspace overflow handling in VFP_Push()
+* 1837_ - Error compiling VCL if probe is referenced before it is defined
+* 1841_ - Replace alien FD's with /dev/null rather than just closing them
+* 1843_ - Fail HTTP/1.0 POST and PUT requests without Content-Length
+* 1844_ - Correct ENUM handling in object constructors
+* 1851_ - Varnish 4.1.1 fails to build on i386
+* 1852_ - Add a missing VDP flush operation after ESI:includes.
 * 1857_ - Fix timeout calculation for session herding.
 
+.. _1739: https://www.varnish-cache.org/trac/ticket/1739
+.. _1837: https://www.varnish-cache.org/trac/ticket/1837
+.. _1841: https://www.varnish-cache.org/trac/ticket/1841
+.. _1843: https://www.varnish-cache.org/trac/ticket/1843
+.. _1844: https://www.varnish-cache.org/trac/ticket/1844
+.. _1851: https://www.varnish-cache.org/trac/ticket/1851
+.. _1852: https://www.varnish-cache.org/trac/ticket/1852
 .. _1857: https://www.varnish-cache.org/trac/ticket/1857
 
 
