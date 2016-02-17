@@ -1,0 +1,29 @@
+varnishtest "Check workspace overflow in fetch processor"
+
+server s1 {
+	rxreq
+	txresp -bodylen 1024
+} -start
+
+
+varnish v1 \
+ -vcl+backend {
+	import ${vmod_debug};
+	sub vcl_backend_response {
+		set beresp.do_gzip = true;
+		debug.workspace_allocate(backend, debug.workspace_free(backend) - 16);
+	}
+} -start
+
+logexpect l1 -v v1 -g raw {
+	expect * 1002 FetchError {^Bo workspace overflowed}
+	expect * =    Error      {^out of workspace [(]Bo[)]}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+logexpect l1 -wait

@@ -534,6 +534,15 @@ vbf_fetch_body_helper(struct busyobj *bo)
 /*--------------------------------------------------------------------
  */
 
+#define vbf_vfp_push(bo, vfp, top)					\
+	if (VFP_Push((bo)->vfc, (vfp), (top)) == NULL) {		\
+		assert (WS_Overflowed((bo)->vfc->http->ws));		\
+		(void)VFP_Error((bo)->vfc, "Bo workspace overflowed");	\
+		(bo)->htc->doclose = SC_OVERLOAD;			\
+		VDI_Finish((bo)->wrk, bo);				\
+		return (F_STP_ERROR);					\
+	}
+
 static enum fetch_step
 vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 {
@@ -589,19 +598,19 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
 
 	if (bo->do_gunzip || (bo->is_gzip && bo->do_esi))
-		(void)VFP_Push(bo->vfc, &vfp_gunzip, 1);
+		vbf_vfp_push(bo, &vfp_gunzip, 1);
 
 	if (bo->htc->content_length != 0) {
 		if (bo->do_esi && bo->do_gzip) {
-			(void)VFP_Push(bo->vfc, &vfp_esi_gzip, 1);
+			vbf_vfp_push(bo, &vfp_esi_gzip, 1);
 		} else if (bo->do_esi && bo->is_gzip && !bo->do_gunzip) {
-			(void)VFP_Push(bo->vfc, &vfp_esi_gzip, 1);
+			vbf_vfp_push(bo, &vfp_esi_gzip, 1);
 		} else if (bo->do_esi) {
-			(void)VFP_Push(bo->vfc, &vfp_esi, 1);
+			vbf_vfp_push(bo, &vfp_esi, 1);
 		} else if (bo->do_gzip) {
-			(void)VFP_Push(bo->vfc, &vfp_gzip, 1);
+			vbf_vfp_push(bo, &vfp_gzip, 1);
 		} else if (bo->is_gzip && !bo->do_gunzip) {
-			(void)VFP_Push(bo->vfc, &vfp_testgunzip, 1);
+			vbf_vfp_push(bo, &vfp_testgunzip, 1);
 		}
 	}
 

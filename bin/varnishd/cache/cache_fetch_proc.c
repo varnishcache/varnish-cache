@@ -196,8 +196,11 @@ VFP_Push(struct vfp_ctx *vc, const struct vfp *vfp, int top)
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->http, HTTP_MAGIC);
+
 	vfe = WS_Alloc(vc->http->ws, sizeof *vfe);
-	AN(vfe);
+	if (vfe == NULL)
+		return NULL;
+
 	INIT_OBJ(vfe, VFP_ENTRY_MAGIC);
 	vfe->vfp = vfp;
 	vfe->closed = VFP_OK;
