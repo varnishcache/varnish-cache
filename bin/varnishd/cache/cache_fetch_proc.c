@@ -199,7 +199,7 @@ VFP_Push(struct vfp_ctx *vc, const struct vfp *vfp, int top)
 
 	vfe = WS_Alloc(vc->http->ws, sizeof *vfe);
 	if (vfe == NULL)
-		return NULL;
+		return (NULL);
 
 	INIT_OBJ(vfe, VFP_ENTRY_MAGIC);
 	vfe->vfp = vfp;
