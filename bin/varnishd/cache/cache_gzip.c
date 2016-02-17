@@ -285,7 +285,7 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 	const void *dp;
 	struct worker *wrk;
 	struct vgz *vg;
-	char *p;
+	const char *p;
 	uint64_t u;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);

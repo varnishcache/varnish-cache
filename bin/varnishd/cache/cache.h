@@ -869,7 +869,7 @@ uint64_t ObjGetLen(struct worker *, struct objcore *);
 void ObjFreeObj(struct worker *, struct objcore *);
 void ObjSlim(struct worker *, struct objcore *);
 int ObjHasAttr(struct worker *, struct objcore *, enum obj_attr);
-void *ObjGetAttr(struct worker *, struct objcore *, enum obj_attr,
+const void *ObjGetAttr(struct worker *, struct objcore *, enum obj_attr,
     ssize_t *len);
 void *ObjSetAttr(struct worker *, struct objcore *, enum obj_attr,
     ssize_t len, const void *);

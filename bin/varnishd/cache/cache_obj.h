@@ -43,7 +43,7 @@ typedef void objextend_f(struct worker *, struct objcore *, ssize_t l);
 typedef void objtrimstore_f(struct worker *, struct objcore *);
 typedef void objstable_f(struct worker *, struct objcore *, struct boc *);
 typedef void objslim_f(struct worker *, struct objcore *);
-typedef void *objgetattr_f(struct worker *, struct objcore *,
+typedef const void *objgetattr_f(struct worker *, struct objcore *,
     enum obj_attr attr, ssize_t *len);
 typedef void *objsetattr_f(struct worker *, struct objcore *,
     enum obj_attr attr, ssize_t len, const void *ptr);

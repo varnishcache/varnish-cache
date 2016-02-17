@@ -54,8 +54,8 @@ static const uint8_t gzip_hdr[] = {
 struct ecx {
 	unsigned	magic;
 #define ECX_MAGIC	0x0b0f9163
-	uint8_t		*p;
-	uint8_t		*e;
+	const uint8_t	*p;
+	const uint8_t	*e;
 	int		state;
 	ssize_t		l;
 	int		isgzip;
@@ -191,9 +191,9 @@ ved_include(struct req *preq, const char *src, const char *host,
 #define Debug(fmt, ...) /**/
 
 static ssize_t
-ved_decode_len(struct req *req, uint8_t **pp)
+ved_decode_len(struct req *req, const uint8_t **pp)
 {
-	uint8_t *p;
+	const uint8_t *p;
 	ssize_t l;
 
 	p = *pp;
@@ -675,7 +675,7 @@ static void
 ved_stripgzip(struct req *req, const struct boc *boc)
 {
 	ssize_t l;
-	char *p;
+	const char *p;
 	uint32_t icrc;
 	uint32_t ilen;
 	uint8_t *dbits;

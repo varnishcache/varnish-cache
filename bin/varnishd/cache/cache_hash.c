@@ -320,7 +320,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	double exp_t_origin;
 	int busy_found;
 	enum lookup_e retval;
-	uint8_t *vary;
+	const uint8_t *vary;
 
 	AN(ocp);
 	*ocp = NULL;

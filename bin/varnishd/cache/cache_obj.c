@@ -371,7 +371,7 @@ ObjHasAttr(struct worker *wrk, struct objcore *oc, enum obj_attr attr)
  * Get an attribute of the object.
  */
 
-void *
+const void *
 ObjGetAttr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
    ssize_t *len)
 {
@@ -427,7 +427,8 @@ int
 ObjCopyAttr(struct worker *wrk, struct objcore *oc, struct objcore *ocs,
     enum obj_attr attr)
 {
-	void *vps, *vpd;
+	const void *vps;
+	void *vpd;
 	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -480,7 +481,7 @@ ObjSetDouble(struct worker *wrk, struct objcore *oc, enum obj_attr a, double t)
 int
 ObjGetDouble(struct worker *wrk, struct objcore *oc, enum obj_attr a, double *d)
 {
-	void *vp;
+	const void *vp;
 	uint64_t u;
 	ssize_t l;
 
@@ -514,7 +515,7 @@ ObjSetU64(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint64_t t)
 int
 ObjGetU64(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint64_t *d)
 {
-	void *vp;
+	const void *vp;
 	ssize_t l;
 
 	vp = ObjGetAttr(wrk, oc, a, &l);
@@ -540,7 +541,7 @@ ObjSetU32(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint32_t t)
 int
 ObjGetU32(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint32_t *d)
 {
-	void *vp;
+	const void *vp;
 	ssize_t l;
 
 	vp = ObjGetAttr(wrk, oc, a, &l);
@@ -557,7 +558,7 @@ ObjGetU32(struct worker *wrk, struct objcore *oc, enum obj_attr a, uint32_t *d)
 int
 ObjCheckFlag(struct worker *wrk, struct objcore *oc, enum obj_flags of)
 {
-	uint8_t *fp;
+	const uint8_t *fp;
 
 	fp = ObjGetAttr(wrk, oc, OA_FLAGS, NULL);
 	AN(fp);

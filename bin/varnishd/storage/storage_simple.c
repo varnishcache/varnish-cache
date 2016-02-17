@@ -476,7 +476,7 @@ sml_stable(struct worker *wrk, struct objcore *oc, struct boc *boc)
 		LRU_Add(oc, wrk->lastused);	// approx timestamp is OK
 }
 
-static void * __match_proto__(objgetattr_f)
+static const void * __match_proto__(objgetattr_f)
 sml_getattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
    ssize_t *len)
 {
