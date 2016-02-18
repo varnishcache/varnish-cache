@@ -303,9 +303,14 @@ AC_ARG_ENABLE(msan,
 	AS_HELP_STRING([--enable-msan],[enable memory sanitizer (default is NO)]),
 	MSAN_FLAGS="-fsanitize=memory")
 
-SAN_CFLAGS="-fPIC ${UBSAN_FLAGS} ${TSAN_FLAGS} ${ASAN_FLAGS} ${MSAN_FLAGS} -fPIE -fno-omit-frame-pointer"
+if test "x$UBSAN_FLAGS$TSAN_FLAGS$ASAN_FLAGS$MSAN_FLAGS" = x; then 
+	SAN_CFLAGS=
+	SAN_LDFLAGS=
+else
+	SAN_CFLAGS="-fPIC ${UBSAN_FLAGS} ${TSAN_FLAGS} ${ASAN_FLAGS} ${MSAN_FLAGS} -fPIE -fno-omit-frame-pointer"
+	SAN_LDFLAGS="${UBSAN_FLAGS} ${TSAN_FLAGS} ${ASAN_FLAGS} ${MSAN_FLAGS} -pie"
+fi
 AC_SUBST(SAN_CFLAGS)
-SAN_LDFLAGS="${UBSAN_FLAGS} ${TSAN_FLAGS} ${ASAN_FLAGS} ${MSAN_FLAGS} -pie"
 AC_SUBST(SAN_LDFLAGS)
 
 # Use jemalloc on Linux
