@@ -78,7 +78,7 @@ AC_ARG_WITH([dot],
   [AC_CHECK_PROGS(DOT, [dot], [no])
    if test "x$DOT" = "xno"; then
      AC_MSG_WARN(
-       [dot not found - can't generate graphviz output for documentation.])
+       [dot not found - cannot generate graphviz output for documentation.])
    fi])
 AM_CONDITIONAL(HAVE_DOT,[test "x$DOT" != "xno"])
 
@@ -279,6 +279,8 @@ if test "$ac_cv_have_viz" = no; then
 fi
 CFLAGS="${save_CFLAGS}"
 
+SAN_CFLAGS=
+SAN_LDFLAGS=
 UBSAN_CFLAGS=
 UBSAN_LDFLAGS=
 AC_ARG_ENABLE(ubsan,
@@ -303,11 +305,8 @@ AC_ARG_ENABLE(msan,
 	AS_HELP_STRING([--enable-msan],[enable memory sanitizer (default is NO)]),
 	MSAN_FLAGS="-fsanitize=memory")
 
-if test "x$UBSAN_FLAGS$TSAN_FLAGS$ASAN_FLAGS$MSAN_FLAGS" = x; then 
-	SAN_CFLAGS=
-	SAN_LDFLAGS=
-else
-	SAN_CFLAGS="-fPIC ${UBSAN_FLAGS} ${TSAN_FLAGS} ${ASAN_FLAGS} ${MSAN_FLAGS} -fPIE -fno-omit-frame-pointer"
+if test "x$UBSAN_FLAGS$TSAN_FLAGS$ASAN_FLAGS$MSAN_FLAGS" != "x"; then
+	SAN_CFLAGS="${UBSAN_FLAGS} ${TSAN_FLAGS} ${ASAN_FLAGS} ${MSAN_FLAGS} -fPIC -fPIE -fno-omit-frame-pointer"
 	SAN_LDFLAGS="${UBSAN_FLAGS} ${TSAN_FLAGS} ${ASAN_FLAGS} ${MSAN_FLAGS} -pie"
 fi
 AC_SUBST(SAN_CFLAGS)
