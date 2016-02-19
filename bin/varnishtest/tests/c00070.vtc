@@ -39,7 +39,7 @@ client c1 {
 	expect resp.http.overflowed == "false"
 
 	expect resp.http.free_backend > 9000
-	expect resp.http.free_session >= 240
+	expect resp.http.free_session >= 232
 	expect resp.http.free_thread > 2000
 } -run
 
