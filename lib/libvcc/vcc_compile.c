@@ -898,28 +898,26 @@ VCP_Builtin_VCL(struct vcp *vcp, const char *str)
 }
 
 /*--------------------------------------------------------------------
- * Configure default VCL source directory
+ * Configure default VCL source path
  */
 
 void
-VCP_VCL_dir(struct vcp *vcp, const char *str)
+VCP_VCL_path(struct vcp *vcp, const char *str)
 {
 
 	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
-	REPLACE(vcp->vcl_dir, str);
 	VFIL_setpath(&vcp->vcl_path, str);
 }
 
 /*--------------------------------------------------------------------
- * Configure default VMOD directory
+ * Configure default VMOD path
  */
 
 void
-VCP_VMOD_dir(struct vcp *vcp, const char *str)
+VCP_VMOD_path(struct vcp *vcp, const char *str)
 {
 
 	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
-	REPLACE(vcp->vmod_dir, str);
 	VFIL_setpath(&vcp->vmod_path, str);
 }
 

@@ -160,9 +160,7 @@ struct vcp {
 #define VCP_MAGIC		0xd90acfbc
 
 	char			*builtin_vcl;
-	char			*vcl_dir;
 	struct vfil_path	*vcl_path;
-	char			*vmod_dir;
 	struct vfil_path	*vmod_path;
 	unsigned		err_unref;
 	unsigned		allow_inline_c;

@@ -2,7 +2,7 @@ varnishtest "Test include vs. unsafe_path"
 
 server s1 {
 	rxreq
-	txresp -hdr "foo: bAr" -hdr "bar: fOo" -bodylen 4
+	txresp
 } -start
 
 shell "echo > ${tmpdir}/_.c00053"
@@ -14,13 +14,11 @@ varnish v1 -vcl+backend {
 varnish v1 -cliok "param.set vcc_unsafe_path off"
 
 varnish v1 -errvcl {' is unsafe} {
-	backend default {
-		.host = "${s1_sock}";
-	}
+	backend default { .host = "${s1_sock}"; }
 	include "${tmpdir}/_.c00053";
 }
 
-varnish v1 -cliok "param.set vcl_dir ${tmpdir}"
+varnish v1 -cliok "param.set vcl_path ${tmpdir}"
 
 varnish v1 -vcl+backend {
 	include "_.c00053";

@@ -1,4 +1,4 @@
-varnishtest "Test vmod_dir param"
+varnishtest "Test vmod_path param"
 
 feature topbuild
 
@@ -7,17 +7,19 @@ server s1 {
 	txresp
 } -start
 
-varnish v1 -arg "-pvmod_dir=${topbuild}/lib/libvmod_std/.libs/" \
+varnish v1 -arg "-pvmod_path=${topbuild}/lib/libvmod_std/.libs/" \
     -vcl+backend {
 	import std;
 } -start
 
-varnish v1 -cliok "param.set vmod_dir /nonexistent"
+varnish v1 -cliok "param.set vmod_path /nonexistent"
 
 varnish v1 -errvcl {Could not load VMOD std} {
 	import std;
 }
 
-varnish v1 -errvcl {Expected 'from path ...'} {
-	import std to;
+varnish v1 -cliok "param.set vmod_dir ${topbuild}/lib/libvmod_std/.libs/"
+
+varnish v1 -vcl+backend {
+	import std;
 }

@@ -32,8 +32,8 @@ struct vcc;
 
 struct vcp *VCP_New(void);
 void VCP_Builtin_VCL(struct vcp *, const char *str);
-void VCP_VCL_dir(struct vcp *, const char *str);
-void VCP_VMOD_dir(struct vcp *, const char *str);
+void VCP_VCL_path(struct vcp *, const char *str);
+void VCP_VMOD_path(struct vcp *, const char *str);
 void VCP_Err_Unref(struct vcp *tl, unsigned u);
 void VCP_Allow_InlineC(struct vcp *tl, unsigned u);
 void VCP_Unsafe_Path(struct vcp *tl, unsigned u);

@@ -284,3 +284,7 @@ varnish v1 -errvcl {Names of VCL acl's cannot contain '-'} {
 		}
 	}
 }
+
+varnish v1 -errvcl {Expected 'from path ...'} {
+	import std to;
+}

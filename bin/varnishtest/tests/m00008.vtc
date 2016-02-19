@@ -1,10 +1,10 @@
-varnishtest "Test std vmod vs. unsafe_path"
+varnishtest "Test import vs. unsafe_path"
 
 feature topbuild
 
 server s1 {
 	rxreq
-	txresp -hdr "foo: bAr" -hdr "bar: fOo" -bodylen 4
+	txresp
 } -start
 
 varnish v1 -vcl+backend {
@@ -18,7 +18,8 @@ varnish v1 -errvcl {'import ... from path ...' is unsafe.} {
 	import ${vmod_std};
 }
 
-varnish v1 -cliok "param.set vmod_dir /nowhere:${topbuild}/lib/libvmod_std/.libs/:/else"
+varnish v1 \
+    -cliok "param.set vmod_path /nowhere:${topbuild}/lib/libvmod_std/.libs/"
 
 varnish v1 -vcl+backend {
 	import std;
@@ -26,7 +27,7 @@ varnish v1 -vcl+backend {
 
 varnish v1 -cliok "param.set vcc_unsafe_path on"
 
-varnish v1 -cliok "param.set vmod_dir /nowhere:/else"
+varnish v1 -cliok "param.set vmod_path /nowhere:/else"
 
 varnish v1 -vcl+backend {
 	import std from "${topbuild}/lib/libvmod_std/.libs/";

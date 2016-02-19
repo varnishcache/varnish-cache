@@ -59,8 +59,8 @@ struct vcc_priv {
 };
 
 char *mgt_cc_cmd;
-const char *mgt_vcl_dir;
-const char *mgt_vmod_dir;
+const char *mgt_vcl_path;
+const char *mgt_vmod_path;
 unsigned mgt_vcc_err_unref;
 unsigned mgt_vcc_allow_inline_c;
 unsigned mgt_vcc_unsafe_path;
@@ -95,8 +95,8 @@ run_vcc(void *priv)
 
 	sb = VSB_new_auto();
 	XXXAN(sb);
-	VCP_VCL_dir(vcp, mgt_vcl_dir);
-	VCP_VMOD_dir(vcp, mgt_vmod_dir);
+	VCP_VCL_path(vcp, mgt_vcl_path);
+	VCP_VMOD_path(vcp, mgt_vmod_path);
 	VCP_Err_Unref(vcp, mgt_vcc_err_unref);
 	VCP_Allow_InlineC(vcp, mgt_vcc_allow_inline_c);
 	VCP_Unsafe_Path(vcp, mgt_vcc_unsafe_path);
