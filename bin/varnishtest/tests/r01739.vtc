@@ -8,7 +8,7 @@ server s1 {
 
 varnish v1 \
  -vcl+backend {
-	import ${vmod_debug};
+	import debug;
 	sub vcl_backend_response {
 		set beresp.do_gzip = true;
 		debug.workspace_allocate(backend, debug.workspace_free(backend) - 16);

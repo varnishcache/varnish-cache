@@ -2,7 +2,7 @@ varnishtest "backend name VCC crash"
 
 varnish v1 -vcl {
 	vcl 4.0;
-	import ${vmod_directors};
+	import directors;
 	backend s1 {
 	     .host = "127.0.0.1";
 	     .port = "80";

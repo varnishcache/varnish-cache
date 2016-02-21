@@ -12,7 +12,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import ${vmod_debug};
+	import debug;
 	sub vcl_deliver {
 		debug.workspace_allocate(client, debug.workspace_free(client) - 150);
 

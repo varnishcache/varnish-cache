@@ -19,7 +19,7 @@ client c1 {
 } -run
 
 varnish v1 -vcl+backend {
-	import ${vmod_directors};
+	import directors;
 
 	sub vcl_init {
 		new bar = directors.random();

@@ -4,7 +4,7 @@ server s1 -start
 
 # Load and use a VCL that will hold a reference
 varnish v1 -vcl+backend {
-	import ${vmod_debug};
+	import debug;
 	sub vcl_init {
 		debug.vcl_release_delay(3s);
 	}

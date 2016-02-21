@@ -6,7 +6,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import ${vmod_std};
+	import std;
 
 	sub vcl_deliver {
 		set resp.http.foo1 = std.ip("..", "1.2.3.4");
@@ -42,7 +42,7 @@ client c1 {
 } -run
 
 varnish v1 -errvcl "could not be resolved to an IP address" {
-	import ${vmod_std};
+	import std;
 
 	sub vcl_deliver {
 		set resp.http.foo = std.ip("..", "::1::2");
@@ -50,7 +50,7 @@ varnish v1 -errvcl "could not be resolved to an IP address" {
 }
 
 varnish v1 -errvcl "could not be resolved to an IP address" {
-	import ${vmod_std};
+	import std;
 
 	sub vcl_deliver {
 		set resp.http.foo = std.ip("..", "1.2.3.4::80");

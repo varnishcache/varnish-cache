@@ -9,7 +9,7 @@ varnish v1 -vcl+backend { } -start
 
 varnish v1 -errvcl "Planned failure in vcl_init" {
 
-	import ${vmod_debug};
+	import debug;
 
 	backend default {
 		.host = "${s1_addr}";
@@ -24,7 +24,7 @@ varnish v1 -cliok "param.set nuke_limit 42"
 
 varnish v1 -errvcl "nuke_limit is not the answer." {
 
-	import ${vmod_debug};
+	import debug;
 
 	backend default {
 		.host = "${s1_addr}";

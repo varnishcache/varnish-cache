@@ -10,7 +10,7 @@ server s1 {
 } -start
 
 varnish v1 -arg "-p thread_pools=1" -vcl {
-	import ${vmod_debug};
+	import debug;
 
 	backend dummy { .host = "${bad_ip}"; .port = "9080"; }
 
@@ -39,7 +39,7 @@ server s2 {
 } -start
 
 varnish v1 -vcl {
-	import ${vmod_debug};
+	import debug;
 
 	backend dummy { .host = "${bad_ip}"; .port = "9080"; }
 

@@ -23,7 +23,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import ${vmod_std};
+	import std;
 
 	sub vcl_recv {
 		if (req.url == "/foo") {
@@ -46,7 +46,7 @@ client c1 {
 } -run
 
 varnish v1 -vcl+backend {
-	import ${vmod_std};
+	import std;
 
 	sub vcl_backend_fetch {
 		if (bereq.url == "/baz") {

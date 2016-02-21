@@ -8,7 +8,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 
-	import ${vmod_debug};
+	import debug;
 
 	sub vcl_deliver {
 		set resp.http.foo = debug.vre_limit();

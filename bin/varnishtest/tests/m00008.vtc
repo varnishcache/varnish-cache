@@ -8,7 +8,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import ${vmod_std};
+	import std;
 }
 
 varnish v1 -cliok "param.set vcc_unsafe_path off"

@@ -15,7 +15,7 @@ server s1 {
 } -start
 
 varnish v1 -proto "PROXY" -vcl+backend {
-	import ${vmod_std};
+	import std;
 
 	acl fwd_client {
 		"1.2.3.4";

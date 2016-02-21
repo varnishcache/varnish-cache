@@ -9,7 +9,7 @@ server s1 -repeat 20 {
 
 # The debug vmod logs temperature vcl events
 varnish v1 -arg "-p vcl_cooldown=1" -vcl {
-	import ${vmod_debug};
+	import debug;
 	backend default {
 		.host = "${s1_addr}";
 		.probe = { .interval = 1s; .initial = 1;}

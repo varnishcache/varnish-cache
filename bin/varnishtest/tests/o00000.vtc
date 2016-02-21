@@ -15,7 +15,7 @@ server s1 {
 } -start
 
 varnish v1 -proto "PROXY" -vcl+backend {
-	import ${vmod_std};
+	import std;
 
 	sub vcl_deliver {
 		set resp.http.url = req.url;

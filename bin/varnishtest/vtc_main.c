@@ -386,7 +386,6 @@ i_mode(void)
 		VSB_printf(vsb, "%s%s/lib/libvmod_" #l "/.libs",	\
 		    sep, topbuild);					\
 		sep = ":";						\
-		extmacro_def("vmod_" #l, #l);				\
 	} while (0);
 #include "vmods.h"
 #undef VTC_VMOD
@@ -477,11 +476,6 @@ main(int argc, char * const *argv)
 	struct vtc_tst *tp;
 	char *p;
 	uintmax_t bufsiz;
-
-	/* Default import spec of vmods */
-#define VTC_VMOD(l)	extmacro_def("vmod_" #l, #l);
-#include "vmods.h"
-#undef VTC_VMOD
 
 	if (getenv("TMPDIR") != NULL)
 		tmppath = strdup(getenv("TMPDIR"));

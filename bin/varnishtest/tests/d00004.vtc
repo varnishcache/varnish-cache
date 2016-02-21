@@ -35,7 +35,7 @@ server s4 {
 } -start
 
 varnish v1 -vcl+backend {
-	import ${vmod_directors};
+	import directors;
 
 	sub vcl_init {
 		new foo = directors.random();

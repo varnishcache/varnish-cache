@@ -6,7 +6,7 @@ server s1 -repeat 6 {
 } -start
 
 varnish v1 -vcl+backend {
-	import ${vmod_std};
+	import std;
 
 	sub vcl_deliver {
 		set resp.http.url = std.querysort(req.url);

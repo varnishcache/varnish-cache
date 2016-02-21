@@ -7,7 +7,7 @@ server s1 {
 
 varnish v1 -arg "-i J.F.Nobody" -vcl+backend {
 
-	import ${vmod_std};
+	import std;
 
 	sub vcl_recv {
 		set client.identity = "Samuel B. Nobody";

@@ -31,7 +31,7 @@ client c1 {
 delay .2
 
 varnish v1 -vcl+backend {
-	import ${vmod_std};
+	import std;
 
 	sub vcl_recv {
 		if (std.cache_req_body(110B)) {

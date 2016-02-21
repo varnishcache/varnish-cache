@@ -14,7 +14,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import ${vmod_std};
+	import std;
 
 	sub vcl_deliver {
 		if (req.url == "/one") {
@@ -51,7 +51,7 @@ client c1 {
 } -run
 
 varnish v1 -vcl+backend {
-	import ${vmod_std};
+	import std;
 
 	sub vcl_deliver {
 		if (req.url == "/one") {

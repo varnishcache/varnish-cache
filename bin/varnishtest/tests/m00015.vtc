@@ -6,7 +6,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import ${vmod_std};
+	import std;
 
 	sub vcl_deliver {
 		set resp.http.t0 = std.real(req.http.foo, 0.0);

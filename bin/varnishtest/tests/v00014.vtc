@@ -17,7 +17,7 @@ server s1 {
 
 varnish v1 -vcl {
 
-	import ${vmod_std};
+	import std;
 
 	probe foo {
 		.url = "/";

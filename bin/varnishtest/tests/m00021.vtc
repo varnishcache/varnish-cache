@@ -17,7 +17,7 @@ logexpect l1 -v v1 -g raw {
 } -start
 
 varnish v1 -vcl+backend {
-	import ${vmod_debug};
+	import debug;
 
 	sub vcl_init {
 		debug.register_obj_events();

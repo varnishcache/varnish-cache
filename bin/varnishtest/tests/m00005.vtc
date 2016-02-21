@@ -6,7 +6,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import ${vmod_std};
+	import std;
 
 	sub vcl_deliver {
 		set resp.http.ttl = std.duration(req.http.ttl, 1s) + 1000000s;

@@ -6,7 +6,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import ${vmod_directors};
+	import directors;
 
 	backend b2 {
 		.host = "${s1_addr}"; .port = "${s1_port}";

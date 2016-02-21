@@ -29,7 +29,7 @@ server s5 {
 } -start
 
 varnish v1 -vcl+backend {
-	import ${vmod_directors};
+	import directors;
 	sub vcl_init {
 		new rd = directors.random();
 		rd.add_backend(s1, 10000);

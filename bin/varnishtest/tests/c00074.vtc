@@ -6,8 +6,8 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import ${vmod_debug};
-	import ${vmod_std};
+	import debug;
+	import std;
 
 	sub vcl_recv {
 		set req.http.ws-free = debug.workspace_free(session);

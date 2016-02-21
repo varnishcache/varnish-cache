@@ -23,7 +23,7 @@ server s1 {
 
 varnish v1 -arg "-smalloc,1m" -vcl+backend {
 
-	import ${vmod_debug};
+	import debug;
 
 	sub vcl_backend_response {
 		if (beresp.http.panic == "fetch") {

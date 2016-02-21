@@ -36,7 +36,7 @@ server s1 {
 } -start
 
 varnish v1 -cliok "param.set debug +syncvsl" -vcl+backend {
-	import ${vmod_debug};
+	import debug;
 
 	sub vcl_recv {
 		set req.http.x0 = debug.test_priv_top(req.url + req.esi_level);

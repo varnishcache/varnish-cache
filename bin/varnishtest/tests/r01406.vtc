@@ -6,7 +6,7 @@ server s1 {
 } -start
 
 varnish v1 -arg "-p vcc_allow_inline_c=true" -vcl+backend {
-	import ${vmod_std} ;
+	import std ;
 
 	C{
 		static const struct gethdr_s VGC_HDR_REQ_foo =

@@ -7,7 +7,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 
-	import ${vmod_debug};
+	import debug;
 
 	sub vcl_recv {
 		set req.backend_hint = debug.no_backend();
