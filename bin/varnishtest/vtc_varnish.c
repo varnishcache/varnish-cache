@@ -55,6 +55,7 @@
 
 extern int leave_temp;
 extern char *vmod_path;
+extern struct vsb *params_vsb;
 
 struct varnish {
 	unsigned		magic;
@@ -405,6 +406,7 @@ varnish_launch(struct varnish *v)
 	VSB_printf(vsb, "cd ${pwd} &&");
 	VSB_printf(vsb, " exec varnishd %s -d -n %s",
 	    v->jail, v->workdir);
+	VSB_printf(vsb, VSB_data(params_vsb));
 	if (vtc_witness)
 		VSB_cat(vsb, " -p debug=+witness");
 	if (leave_temp)

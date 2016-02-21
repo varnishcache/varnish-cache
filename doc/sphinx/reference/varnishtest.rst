@@ -48,6 +48,8 @@ The following options are available:
 
 -n iterations    Run tests this many times
 
+-p name=val      Pass parameters to all varnishd command lines
+
 -q               Quiet mode: report only failures
 
 -t duration      Time tests out after this long

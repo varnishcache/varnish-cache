@@ -95,6 +95,7 @@ static int vtc_fail;
 static char *tmppath;
 static char *cwd = NULL;
 char *vmod_path = NULL;
+struct vsb *params_vsb = NULL;
 int leave_temp;
 int vtc_witness = 0;
 int feature_dns;
@@ -137,6 +138,7 @@ usage(void)
 	fprintf(stderr, FMT, "-L", "Always leave temporary vtc.*");
 	fprintf(stderr, FMT, "-l", "Leave temporary vtc.* if test fails");
 	fprintf(stderr, FMT, "-n iterations", "Run tests this many times");
+	fprintf(stderr, FMT, "-p name=val", "Pass a varnishd parameter");
 	fprintf(stderr, FMT, "-q", "Quiet mode: report only failures");
 	fprintf(stderr, FMT, "-t duration", "Time tests out after this long");
 	fprintf(stderr, FMT, "-v", "Verbose mode: always report test log");
@@ -487,9 +489,12 @@ main(int argc, char * const *argv)
 
 	vmod_path = NULL;
 
+	params_vsb = VSB_new_auto();
+	AN(params_vsb);
+
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
-	while ((ch = getopt(argc, argv, "b:D:hij:kLln:qt:vW")) != -1) {
+	while ((ch = getopt(argc, argv, "b:D:hij:kLln:p:qt:vW")) != -1) {
 		switch (ch) {
 		case 'b':
 			if (VNUM_2bytes(optarg, &bufsiz, 0)) {
@@ -529,6 +534,10 @@ main(int argc, char * const *argv)
 		case 'n':
 			ntest = strtoul(optarg, NULL, 0);
 			break;
+		case 'p':
+			VSB_printf(params_vsb, " -p ");
+			VSB_quote(params_vsb, optarg, -1, VSB_QUOTE_NONL);
+			break;
 		case 'q':
 			if (vtc_verbosity > 0)
 				vtc_verbosity--;
@@ -566,6 +575,8 @@ main(int argc, char * const *argv)
 		tp->ntodo = ntest;
 		VTAILQ_INSERT_TAIL(&tst_head, tp, list);
 	}
+
+	VSB_finish(params_vsb);
 
 	feature_dns = dns_works();
 	ip_magic();
