@@ -402,7 +402,7 @@ varnish_launch(struct varnish *v)
 	vsb = VSB_new_auto();
 	AN(vsb);
 	VSB_printf(vsb, "cd ${pwd} &&");
-	VSB_printf(vsb, " exec ${varnishd} %s -d -n %s",
+	VSB_printf(vsb, " exec varnishd %s -d -n %s",
 	    v->jail, v->workdir);
 	if (vtc_witness)
 		VSB_cat(vsb, " -p debug=+witness");

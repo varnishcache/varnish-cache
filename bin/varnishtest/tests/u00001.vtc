@@ -12,7 +12,7 @@ server s1 {
 
 varnish v1 -vcl+backend "" -start
 
-shell "${varnishncsa} -D -P ${tmpdir}/ncsa.pid -n ${v1_name} -w ${tmpdir}/ncsa.log -F %s"
+shell "varnishncsa -D -P ${tmpdir}/ncsa.pid -n ${v1_name} -w ${tmpdir}/ncsa.log -F %s"
 
 # give varnishncsa enough time to open the VSM
 delay 2

@@ -17,21 +17,21 @@ varnish v1 -cliok "vcl.state vcl1 cold"
 # We should now see it as cooling
 delay 1
 shell {
-	${varnishadm} -n ${v1_name} vcl.list |
+	varnishadm -n ${v1_name} vcl.list |
 	grep "auto/cooling.*vcl1" >/dev/null
 }
 
 # It can't be warmed up yet
 delay 1
 shell {
-	${varnishadm} -n ${v1_name} vcl.state vcl1 warm 2>/dev/null |
+	varnishadm -n ${v1_name} vcl.state vcl1 warm 2>/dev/null |
 	grep "vmod-debug ref on vcl1" >/dev/null
 }
 
 # It will eventually cool down
 delay 2
 shell {
-	${varnishadm} -n ${v1_name} vcl.list |
+	varnishadm -n ${v1_name} vcl.list |
 	grep "auto/cold.*vcl1" >/dev/null
 }
 

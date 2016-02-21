@@ -474,11 +474,6 @@ main(int argc, char * const *argv)
 	char *p;
 	uintmax_t bufsiz;
 
-	/* Default names of programs */
-#define VTC_PROG(l)	extmacro_def(#l, #l);
-#include "programs.h"
-#undef VTC_PROG
-
 	/* Default import spec of vmods */
 #define VTC_VMOD(l)	extmacro_def("vmod_" #l, #l);
 #include "vmods.h"

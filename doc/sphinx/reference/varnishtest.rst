@@ -36,7 +36,7 @@ The following options are available:
 
 -h               Show help
 
--i               Find varnishd in build tree
+-i               Set PATH to find varnish binaries in build tree
 
 -j jobs          Run this many tests in parallel
 
@@ -58,10 +58,6 @@ The following options are available:
 
 file             File to use as a script
 
-
-Macro definitions that can be overridden.
-
-varnishd         Path to varnishd to use [varnishd]
 
 If `TMPDIR` is set in the environment, varnishtest creates temporary
 `vtc.*` directories for each test in `$TMPDIR`, otherwise in `/tmp`.

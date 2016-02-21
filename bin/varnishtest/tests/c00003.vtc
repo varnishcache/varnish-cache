@@ -5,10 +5,10 @@ varnishtest "Check that we fail to start if any listen address does not work"
 
 # All bad listen addresses
 err_shell "could not be resolved to an IP address" {
-	${varnishd} -F -a "${bad_ip}:0" -b '***' -n ${tmpdir} 2>&1
+	varnishd -F -a "${bad_ip}:0" -b '***' -n ${tmpdir} 2>&1
 }
 
 # old style address list
 err_shell "Unknown protocol" {
-	${varnishd} -F -a "127.0.0.1:0,${bad_ip}:0" -b '***' -n ${tmpdir} 2>&1
+	varnishd -F -a "127.0.0.1:0,${bad_ip}:0" -b '***' -n ${tmpdir} 2>&1
 }
