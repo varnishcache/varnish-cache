@@ -324,6 +324,7 @@ i_mode(void)
 	 */
 
 	vsb = VSB_new_auto();
+	AN(vsb);
 
 	q = p = VFIL_readfile(NULL, "Makefile", NULL);
 	if (p == NULL) {
@@ -361,12 +362,11 @@ i_mode(void)
 	/*
 	 * Build $PATH which can find all programs in the build tree
 	 */
-	AN(vsb);
 	VSB_printf(vsb, "PATH=");
 	sep = "";
 #define VTC_PROG(l)							\
 	do {								\
-		VSB_printf(vsb, "%s%s/bin/%s/", sep, topbuild, #l);	\
+		VSB_printf(vsb, "%s%s/bin/" #l, sep, topbuild);		\
 		sep = ":";						\
 	} while (0);
 #include "programs.h"
