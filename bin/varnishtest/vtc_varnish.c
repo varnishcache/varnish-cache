@@ -54,6 +54,7 @@
 #include "vtim.h"
 
 extern int leave_temp;
+extern char *vmod_path;
 
 struct varnish {
 	unsigned		magic;
@@ -419,6 +420,8 @@ varnish_launch(struct varnish *v)
 		VSB_printf(vsb, ",%s", v->proto);
 	VSB_printf(vsb, " -M '%s %s'", abuf, pbuf);
 	VSB_printf(vsb, " -P %s/varnishd.pid", v->workdir);
+	if (vmod_path != NULL)
+		VSB_printf(vsb, " -p vmod_path=%s", vmod_path);
 	VSB_printf(vsb, " %s", VSB_data(v->args));
 	AZ(VSB_finish(vsb));
 	vtc_log(v->vl, 3, "CMD: %s", VSB_data(vsb));

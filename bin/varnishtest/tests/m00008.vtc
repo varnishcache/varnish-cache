@@ -15,7 +15,7 @@ varnish v1 -cliok "param.set vcc_unsafe_path off"
 
 varnish v1 -errvcl {'import ... from path ...' is unsafe.} {
 	backend default { .host = "${s1_sock}"; }
-	import ${vmod_std};
+	import std from "${topbuild}/lib/libvmod_std/.libs/";
 }
 
 varnish v1 \

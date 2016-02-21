@@ -36,7 +36,7 @@ The following options are available:
 
 -h               Show help
 
--i               Set PATH to find varnish binaries in build tree
+-i               Set PATH and vmod_path to find varnish binaries in build tree
 
 -j jobs          Run this many tests in parallel
 

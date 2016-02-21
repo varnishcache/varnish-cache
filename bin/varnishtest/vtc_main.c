@@ -94,6 +94,7 @@ static int vtc_good;
 static int vtc_fail;
 static char *tmppath;
 static char *cwd = NULL;
+char *vmod_path = NULL;
 int leave_temp;
 int vtc_witness = 0;
 int feature_dns;
@@ -130,7 +131,7 @@ usage(void)
 	fprintf(stderr, FMT, "-b size",
 	    "Set internal buffer size (default: 512K)");
 	fprintf(stderr, FMT, "-D name=val", "Define macro");
-	fprintf(stderr, FMT, "-i", "Find varnishd in build tree");
+	fprintf(stderr, FMT, "-i", "Find varnish binaries in build tree");
 	fprintf(stderr, FMT, "-j jobs", "Run this many tests in parallel");
 	fprintf(stderr, FMT, "-k", "Continue on test failure");
 	fprintf(stderr, FMT, "-L", "Always leave temporary vtc.*");
@@ -376,19 +377,22 @@ i_mode(void)
 	AZ(putenv(strdup(VSB_data(vsb))));
 
 	/*
-	 * Redefine VMOD macros
+	 * Build vmod_path which can find all VMODs in the build tree
 	 */
+	VSB_clear(vsb);
+	sep = "";
 #define VTC_VMOD(l)							\
 	do {								\
-		VSB_clear(vsb);						\
-		VSB_printf(vsb,						\
-		   "%s from \"%s/lib/libvmod_%s/.libs/libvmod_%s.so\"",	\
-		    #l, topbuild, #l, #l);				\
-		AZ(VSB_finish(vsb));					\
-	    extmacro_def("vmod_" #l, "%s", VSB_data(vsb));		\
+		VSB_printf(vsb, "%s%s/lib/libvmod_" #l "/.libs",	\
+		    sep, topbuild);					\
+		sep = ":";						\
+		extmacro_def("vmod_" #l, #l);				\
 	} while (0);
 #include "vmods.h"
 #undef VTC_VMOD
+	AZ(VSB_finish(vsb));
+	vmod_path = strdup(VSB_data(vsb));
+	AN(vmod_path);
 	free(topbuild);
 	VSB_delete(vsb);
 }
@@ -486,6 +490,8 @@ main(int argc, char * const *argv)
 
 	cwd = getcwd(NULL, PATH_MAX);
 	extmacro_def("pwd", "%s", cwd);
+
+	vmod_path = NULL;
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
