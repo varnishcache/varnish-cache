@@ -11,8 +11,9 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	import std;
 	sub vcl_recv {
-		rollback;
+		std.rollback(req);
 	}
 	sub vcl_backend_response {
 		set beresp.do_esi = true;

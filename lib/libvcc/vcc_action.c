@@ -376,16 +376,6 @@ parse_return(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_rollback(struct vcc *tl)
-{
-
-	vcc_NextToken(tl);
-	Fb(tl, 1, "VRT_Rollback(ctx, VRT_r_req(ctx));\n");
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
 parse_synthetic(struct vcc *tl)
 {
 	vcc_NextToken(tl);
@@ -419,7 +409,6 @@ static struct action_table {
 	{ "hash_data",		parse_hash_data, VCL_MET_HASH },
 	{ "new",		parse_new, VCL_MET_INIT},
 	{ "return",		parse_return },
-	{ "rollback",		parse_rollback },
 	{ "set",		parse_set },
 	{ "synthetic",		parse_synthetic,
 		VCL_MET_SYNTH | VCL_MET_BACKEND_ERROR },

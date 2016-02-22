@@ -378,10 +378,6 @@ hash_data(input)
   Adds an input to the hash input. In the built-in VCL hash_data()
   is called on the host and URL of the *request*. Available in vcl_hash.
 
-rollback()
-  Restore *req* HTTP headers to their original state. This function is
-  deprecated.  Use std.rollback() instead.
-
 synthetic(STRING)
   Prepare a synthetic response body containing the STRING. Available in
   vcl_synth and vcl_backend_error.
