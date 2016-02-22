@@ -1,0 +1,19 @@
+varnishtest "backend unreachable on piped request"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_debug};
+
+	sub vcl_recv {
+		set req.backend_hint = debug.no_backend();
+	}
+} -start
+
+client c1 {
+	txreq -req PROPFIND
+	expect_close
+} -run
