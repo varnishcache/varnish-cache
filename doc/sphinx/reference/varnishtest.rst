@@ -114,6 +114,62 @@ different requests. It will start a Varnish server (v1) and add the backend
 definition to the VCL specified (-vcl+backend). Finally it starts the
 c1-client, which is a single client sending two requests.
 
+TESTING A BUILD TREE
+====================
+
+Whether you are building a VMOD or trying to use one that you freshly built,
+you can tell ``varnishtest`` to pass a *vmod_path* to ``varnishd`` instances
+started using the ``varnish -start`` command in your test case::
+
+    varnishtest -p vmod_path=... /path/to/*.vtc
+
+This way you can use the same test cases on both installed and built VMODs::
+
+    server s1 {...} -start
+
+    varnish v1 -vcl+backend {
+        import wossname;
+
+        ...
+    } -start
+
+    ...
+
+You are not limited to the *vmod_path* and can pass any parameter, allowing
+you to run a build matrix without changing the test suite. You can achieve the
+same with macros, but then they need to be defined on each run.
+
+You can see the actual ``varnishd`` command lines in test outputs, they look
+roughly like this::
+
+    exec varnishd [varnishtest -p params] [testing params] [vtc -arg params]
+
+Parameters you define with ``varnishtest -p`` may be overriden by parameters
+needed by ``varnishtest`` to run properly, and they may in turn be overriden
+by parameters set in test scripts.
+
+There's also a special mode in which ``varnishtest`` builds itself a PATH and
+a *vmod_path* in order to find Varnish binaries (programs and VMODs) in the
+build tree surrounding the ``varnishtest`` binary. This is meant for testing
+of Varnish under development and will disregard your *vmod_path* if you set
+one.
+
+If you need to test your VMOD against a Varnish build tree, you must install
+it first, in a temp directory for instance. With information provided by the
+installation's *pkg-config(1)* you can build a proper PATH in order to access
+Varnish programs, and a *vmod_path* to access both your VMOD and the built-in
+VMODs::
+
+    export PKG_CONFIG_PATH=/path/to/install/lib/pkgconfig
+
+    BINDIR="$(pkg-config --variable=bindir varnishapi)"
+    SBINDIR="$(pkg-config --variable=sbindir varnishapi)"
+    PATH="SBINDIR:BINDIR:$PATH"
+
+    VMOD_PATH="<your-build-path>:$(pkg-config --variable=vmoddir varnishapi)"
+
+    varnishtest -p vmod_path="$VMOD_PATH" ...
+
 SEE ALSO
 ========
 
