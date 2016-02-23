@@ -351,7 +351,7 @@ vcc_acl_emit(struct vcc *tl, const char *acln, int anon)
 	struct token *t;
 	struct inifin *ifp;
 
-	Fh(tl, 0, "\nstatic int\n");
+	Fh(tl, 0, "\nstatic int __match_proto__(acl_f)\n");
 	Fh(tl, 0,
 	    "match_acl_%s_%s(VRT_CTX, const VCL_IP p)\n",
 	    anon ? "anon" : "named", acln);
@@ -443,6 +443,15 @@ vcc_acl_emit(struct vcc *tl, const char *acln, int anon)
 	if (!anon)
 		Fh(tl, 0, "\tVRT_acl_log(ctx, \"NO_MATCH %s\");\n", acln);
 	Fh(tl, 0, "\treturn (0);\n}\n");
+
+	if (anon)
+		return;
+
+	/* Emit the struct that will be referenced */
+	Fh(tl, 0, "\nconst struct vrt_acl vrt_acl_named_%s = {\n", acln);
+	Fh(tl, 0, "\t.magic = VRT_ACL_MAGIC,\n");
+	Fh(tl, 0, "\t.match = &match_acl_named_%s,\n", acln);
+	Fh(tl, 0, "};\n\n");
 }
 
 void
