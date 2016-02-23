@@ -163,18 +163,15 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		ban = BAN_FindBan(so->ban);
 		AN(ban);
 		oc = ObjNew(wrk);
-		oc->flags &= ~OC_F_BUSY;
 		oc->stobj->stevedore = sc->parent;
 		smp_init_oc(oc, sg, no);
 		VTAILQ_INSERT_TAIL(&sg->objcores, oc, lru_list);
 		oc->stobj->priv2 |= NEED_FIXUP;
-		BAN_RefBan(oc, ban);
-		AN(oc->ban);
 		EXP_COPY(oc, so);
 		sg->nobj++;
 		oc->refcnt++;
-		HSH_Insert(wrk, so->hash, oc);
-		EXP_Insert(wrk, oc);
+		HSH_Insert(wrk, so->hash, oc, ban);
+		AN(oc->ban);
 		HSH_DerefBoc(wrk, oc);	// XXX Keep it an stream resurrection?
 		(void)HSH_DerefObjCore(wrk, &oc);
 	}

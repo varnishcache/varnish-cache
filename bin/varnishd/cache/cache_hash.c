@@ -65,6 +65,8 @@
 static const struct hash_slinger *hash;
 static struct objhead *private_oh;
 
+static void hsh_rush(struct worker *wrk, struct objhead *oh);
+
 /*---------------------------------------------------------------------*/
 
 static struct objhead *
@@ -256,13 +258,16 @@ hsh_testmagic(void *result)
  */
 
 void
-HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc)
+HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
+    struct ban *ban)
 {
 	struct objhead *oh;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(digest);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AN(ban);
+	AZ(oc->flags & OC_F_PRIVATE);
 
 	hsh_prealloc(wrk);
 
@@ -272,13 +277,25 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc)
 	Lck_AssertHeld(&oh->mtx);
 	assert(oh->refcnt > 0);
 
-	/* Insert (precreated) objcore in objecthead */
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	AZ(oc->flags & OC_F_BUSY);
-
-	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
-	/* NB: do not deref objhead the new object inherits our reference */
+	/* Mark object busy and insert (precreated) objcore in
+	   objecthead. The new object inherits our objhead reference. */
+	oc->flags |= OC_F_BUSY;
 	oc->objhead = oh;
+	VTAILQ_INSERT_TAIL(&oh->objcs, oc, hsh_list);
+	Lck_Unlock(&oh->mtx);
+
+	BAN_RefBan(oc, ban);
+	AN(oc->ban);
+	EXP_Insert(wrk, oc);
+
+	/* Move the object first in the oh list, unbusy it and run the
+	   waitinglist if necessary */
+	Lck_Lock(&oh->mtx);
+	VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
+	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
+	oc->flags &= ~OC_F_BUSY;
+	if (!VTAILQ_EMPTY(&oh->waitinglist))
+		hsh_rush(wrk, oh);
 	Lck_Unlock(&oh->mtx);
 	wrk->stats->n_objectcore++;
 	wrk->stats->n_vampireobject++;

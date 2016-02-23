@@ -61,13 +61,15 @@ enum lookup_e {
 };
 
 /* cache_hash.c */
+struct ban;
 void HSH_Cleanup(struct worker *w);
 enum lookup_e HSH_Lookup(struct req *, struct objcore **, struct objcore **,
     int wait_for_busy, int always_insert);
 void HSH_Ref(struct objcore *o);
 void HSH_Init(const struct hash_slinger *slinger);
 void HSH_AddString(struct req *, void *ctx, const char *str);
-void HSH_Insert(struct worker *, const void *hash, struct objcore *);
+void HSH_Insert(struct worker *, const void *hash, struct objcore *,
+    struct ban *);
 void HSH_Purge(struct worker *, struct objhead *, double ttl, double grace,
     double keep);
 void HSH_config(const char *h_arg);
