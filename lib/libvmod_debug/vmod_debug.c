@@ -36,6 +36,7 @@
 
 #include "vcl.h"
 #include "vrt.h"
+#include "vsa.h"
 #include "vsb.h"
 #include "vtim.h"
 #include "vcc_if.h"
@@ -463,4 +464,15 @@ vmod_vcl_release_delay(VRT_CTX, VCL_DURATION delay)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	assert(delay > 0.0);
 	vcl_release_delay = delay;
+}
+
+VCL_BOOL
+vmod_match_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip)
+{
+
+	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_ORNULL(acl, VRT_ACL_MAGIC);
+	assert(VSA_Sane(ip));
+
+	return (VRT_acl_match(ctx, acl, ip));
 }
