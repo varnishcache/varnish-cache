@@ -162,7 +162,6 @@ cnt_synth(struct worker *wrk, struct req *req)
 	if (req->err_code < 100 || req->err_code > 999)
 		req->err_code = 501;
 
-
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
 	h = req->resp;
 	http_TimeHeader(h, "Date: ", now);
@@ -208,6 +207,8 @@ cnt_synth(struct worker *wrk, struct req *req)
 		}
 	}
 
+	if (szl >= 0)
+		AZ(ObjSetU64(wrk, req->objcore, OA_LEN, szl));
 	HSH_DerefBoc(wrk, req->objcore);
 	VSB_delete(synth_body);
 

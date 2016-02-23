@@ -627,6 +627,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->htc->body_status == BS_NONE)
 		bo->do_stream = 0;
 
+	bo->fetch_objcore->boc->len_so_far = 0;
+
 	if (VFP_Open(bo->vfc)) {
 		(void)VFP_Error(bo->vfc, "Fetch pipeline failed to open");
 		bo->htc->doclose = SC_RX_BODY;
@@ -693,6 +695,9 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		}
 	}
 
+	AZ(ObjSetU64(wrk, bo->fetch_objcore, OA_LEN,
+	    bo->fetch_objcore->boc->len_so_far));
+
 	if (bo->do_stream)
 		assert(bo->fetch_objcore->boc->state == BOS_STREAM);
 	else {
@@ -726,8 +731,7 @@ vbf_objiterator(void *priv, int flush, const void *ptr, ssize_t len)
 	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 
 	while (len > 0) {
-		l = ObjGetLen(bo->wrk, bo->stale_oc);
-		assert(l > 0);
+		l = len;
 		if (VFP_GetStorage(bo->vfc, &l, &pd) != VFP_OK)
 			return (1);
 		if (len < l)
@@ -770,6 +774,9 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		VDI_Finish(bo->wrk, bo);
 		return (F_STP_FAIL);
 	}
+
+	AZ(ObjSetU64(wrk, bo->fetch_objcore, OA_LEN,
+	    bo->fetch_objcore->boc->len_so_far));
 
 	if (!bo->do_stream)
 		HSH_Unbusy(wrk, bo->fetch_objcore);
@@ -878,8 +885,8 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		ll -= l;
 		o += l;
 	}
+	AZ(ObjSetU64(wrk, bo->fetch_objcore, OA_LEN, VSB_len(synth_body) - ll));
 	VSB_delete(synth_body);
-
 	HSH_Unbusy(wrk, bo->fetch_objcore);
 	ObjSetState(wrk, bo->fetch_objcore, BOS_FINISHED);
 	return (F_STP_DONE);
