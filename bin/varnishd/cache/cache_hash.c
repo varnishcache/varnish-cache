@@ -828,6 +828,8 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
 	if (r != 0)
 		return (r);
 
+	AZ(oc->exp_flags);
+
 	BAN_DestroyObj(oc);
 	AZ(oc->ban);
 
