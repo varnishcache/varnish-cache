@@ -364,13 +364,13 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 
 	/* RFC2616, section 5.2, point 1 */
 	if (!strncasecmp(hp->hd[HTTP_HDR_URL].b, "http://", 7))
-		b = e = hp->hd[HTTP_HDR_URL].b + 7;
+		b = hp->hd[HTTP_HDR_URL].b + 7;
 	else if (FEATURE(FEATURE_HTTPS_SCHEME) &&
 	    !strncasecmp(hp->hd[HTTP_HDR_URL].b, "https://", 8))
-		b = e = hp->hd[HTTP_HDR_URL].b + 8;
+		b = hp->hd[HTTP_HDR_URL].b + 8;
 	if (b) {
-		while (*e != '/' && *e != '\0')
-			e++;
+		for (e = b; *e != '/' && *e != '\0'; e++)
+			continue;
 		if (*e == '/') {
 			http_Unset(hp, H_Host);
 			http_PrintfHeader(hp, "Host: %.*s", (int)(e - b), b);
