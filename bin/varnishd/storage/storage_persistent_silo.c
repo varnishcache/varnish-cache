@@ -133,6 +133,7 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 {
 	struct smp_object *so;
 	struct objcore *oc;
+	struct ban *ban;
 	uint32_t no;
 	double t_now = VTIM_real();
 	struct smp_signctx ctx[1];
@@ -159,13 +160,16 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 	for (;no > 0; so++,no--) {
 		if (EXP_WHEN(so) < t_now)
 			continue;
+		ban = BAN_FindBan(so->ban);
+		AN(ban);
 		oc = ObjNew(wrk);
 		oc->flags &= ~OC_F_BUSY;
 		oc->stobj->stevedore = sc->parent;
 		smp_init_oc(oc, sg, no);
 		VTAILQ_INSERT_TAIL(&sg->objcores, oc, lru_list);
 		oc->stobj->priv2 |= NEED_FIXUP;
-		oc->ban = BAN_RefBan(oc, so->ban);
+		BAN_RefBan(oc, ban);
+		AN(oc->ban);
 		EXP_COPY(oc, so);
 		sg->nobj++;
 		oc->refcnt++;

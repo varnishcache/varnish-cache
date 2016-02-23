@@ -672,7 +672,8 @@ void BAN_Abandon(struct ban_proto *b);
 void BAN_Hold(void);
 void BAN_Release(void);
 void BAN_Reload(const uint8_t *ban, unsigned len);
-struct ban *BAN_RefBan(struct objcore *oc, double t0);
+struct ban *BAN_FindBan(double t0);
+void BAN_RefBan(struct objcore *oc, struct ban *);
 double BAN_Time(const struct ban *ban);
 
 /* cache_busyobj.c */

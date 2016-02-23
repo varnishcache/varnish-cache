@@ -249,29 +249,45 @@ BAN_DestroyObj(struct objcore *oc)
 }
 
 /*--------------------------------------------------------------------
- * Find and/or Grab a reference to an objects ban based on timestamp
+ * Find a ban based on timestamp a ban timestamp.
  * Assume we have a BAN_Hold, so list traversal is safe.
  */
 
 struct ban *
-BAN_RefBan(struct objcore *oc, double t0)
+BAN_FindBan(double t0)
 {
 	struct ban *b;
-	double t1 = 0;
+	double t1;
 
+	assert(ban_holds > 0);
 	VTAILQ_FOREACH(b, &ban_head, list) {
 		t1 = ban_time(b->spec);
+		if (t1 == t0)
+			return (b);
 		if (t1 <= t0)
 			break;
 	}
-	AN(b);
-	assert(t1 == t0);
+	return (NULL);
+}
+
+/*--------------------------------------------------------------------
+ * Grab a reference to a ban and associate the objcore with that ban.
+ * Assume we have a BAN_Hold, so list traversal is safe.
+ */
+
+void
+BAN_RefBan(struct objcore *oc, struct ban *b)
+{
+
 	Lck_Lock(&ban_mtx);
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	AZ(oc->ban);
+	CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
 	assert(ban_holds > 0);
 	b->refcount++;
 	VTAILQ_INSERT_TAIL(&b->objcore, oc, ban_list);
+	oc->ban = b;
 	Lck_Unlock(&ban_mtx);
-	return (b);
 }
 
 /*--------------------------------------------------------------------
