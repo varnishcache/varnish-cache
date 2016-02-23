@@ -297,7 +297,6 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
 	if (!VTAILQ_EMPTY(&oh->waitinglist))
 		hsh_rush(wrk, oh);
 	Lck_Unlock(&oh->mtx);
-	wrk->stats->n_vampireobject++;
 }
 
 /*---------------------------------------------------------------------

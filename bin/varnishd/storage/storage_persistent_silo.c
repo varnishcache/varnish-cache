@@ -174,6 +174,7 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		AN(oc->ban);
 		HSH_DerefBoc(wrk, oc);	// XXX Keep it an stream resurrection?
 		(void)HSH_DerefObjCore(wrk, &oc);
+		wrk->stats->n_vampireobject++;
 	}
 	Pool_Sumstat(wrk);
 	sg->flags |= SMP_SEG_LOADED;
