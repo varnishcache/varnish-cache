@@ -885,7 +885,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		ll -= l;
 		o += l;
 	}
-	AZ(ObjSetU64(wrk, bo->fetch_objcore, OA_LEN, VSB_len(synth_body) - ll));
+	AZ(ObjSetU64(wrk, bo->fetch_objcore, OA_LEN, o));
 	VSB_delete(synth_body);
 	HSH_Unbusy(wrk, bo->fetch_objcore);
 	ObjSetState(wrk, bo->fetch_objcore, BOS_FINISHED);
