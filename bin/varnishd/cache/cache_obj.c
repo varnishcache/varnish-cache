@@ -220,13 +220,21 @@ ObjWaitExtend(struct worker *wrk, struct objcore *oc, uint64_t l)
  */
 
 void
-ObjSetState(const struct objcore *oc, enum boc_state_e next)
+ObjSetState(struct worker *wrk, const struct objcore *oc, enum boc_state_e next)
 {
+	const struct obj_methods *om;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
-
 	assert(next > oc->boc->state);
+
+	CHECK_OBJ_ORNULL(oc->stobj->stevedore, STEVEDORE_MAGIC);
+	if (oc->stobj->stevedore != NULL) {
+		om = oc->stobj->stevedore->methods;
+		if (om->objsetstate != NULL)
+			om->objsetstate(wrk, oc, next);
+	}
+
 	Lck_Lock(&oc->boc->mtx);
 	oc->boc->state = next;
 	AZ(pthread_cond_broadcast(&oc->boc->cond));

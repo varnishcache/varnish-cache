@@ -32,7 +32,8 @@
 
 typedef void objfree_f(struct worker *, struct objcore *);
 
-/* This method is only used by SML (...to get to persistent) */
+typedef void objsetstate_f(struct worker *, const struct objcore *,
+    enum boc_state_e);
 
 typedef int objiterator_f(struct worker *, struct objcore *,
     void *priv, objiterate_f *func);
@@ -59,5 +60,6 @@ struct obj_methods {
 	objgetattr_f	*objgetattr;
 	objsetattr_f	*objsetattr;
 	objtouch_f	*objtouch;
+	objsetstate_f	*objsetstate;
 };
 

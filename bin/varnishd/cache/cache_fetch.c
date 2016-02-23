@@ -202,7 +202,7 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 	bo->ws_bo = WS_Snapshot(bo->ws);
 	HTTP_Copy(bo->bereq, bo->bereq0);
 
-	ObjSetState(bo->fetch_objcore, BOS_REQ_DONE);
+	ObjSetState(bo->wrk, bo->fetch_objcore, BOS_REQ_DONE);
 	return (F_STP_STARTFETCH);
 }
 
@@ -670,7 +670,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->do_stream) {
 		HSH_Unbusy(wrk, bo->fetch_objcore);
-		ObjSetState(bo->fetch_objcore, BOS_STREAM);
+		ObjSetState(wrk, bo->fetch_objcore, BOS_STREAM);
 	}
 
 	VSLb(bo->vsl, SLT_Fetch_Body, "%u %s %s",
@@ -704,7 +704,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	   give predictable backend reuse behavior for varnishtest */
 	VDI_Finish(bo->wrk, bo);
 
-	ObjSetState(bo->fetch_objcore, BOS_FINISHED);
+	ObjSetState(wrk, bo->fetch_objcore, BOS_FINISHED);
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
 	if (bo->stale_oc != NULL)
 		HSH_Kill(bo->stale_oc);
@@ -758,7 +758,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->do_stream) {
 		HSH_Unbusy(wrk, bo->fetch_objcore);
-		ObjSetState(bo->fetch_objcore, BOS_STREAM);
+		ObjSetState(wrk, bo->fetch_objcore, BOS_STREAM);
 	}
 
 	if (ObjIterate(wrk, bo->stale_oc, bo, vbf_objiterator))
@@ -780,7 +780,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	   give predictable backend reuse behavior for varnishtest */
 	VDI_Finish(bo->wrk, bo);
 
-	ObjSetState(bo->fetch_objcore, BOS_FINISHED);
+	ObjSetState(wrk, bo->fetch_objcore, BOS_FINISHED);
 	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
 	return (F_STP_DONE);
 }
@@ -881,7 +881,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	VSB_delete(synth_body);
 
 	HSH_Unbusy(wrk, bo->fetch_objcore);
-	ObjSetState(bo->fetch_objcore, BOS_FINISHED);
+	ObjSetState(wrk, bo->fetch_objcore, BOS_FINISHED);
 	return (F_STP_DONE);
 }
 
@@ -903,7 +903,7 @@ vbf_stp_fail(struct worker *wrk, const struct busyobj *bo)
 		HSH_Kill(bo->fetch_objcore);
 	}
 	wrk->stats->fetch_failed++;
-	ObjSetState(bo->fetch_objcore, BOS_FAILED);
+	ObjSetState(wrk, bo->fetch_objcore, BOS_FAILED);
 	return (F_STP_DONE);
 }
 
