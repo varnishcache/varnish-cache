@@ -369,9 +369,8 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 	    !strncasecmp(hp->hd[HTTP_HDR_URL].b, "https://", 8))
 		b = hp->hd[HTTP_HDR_URL].b + 8;
 	if (b) {
-		for (e = b; *e != '/' && *e != '\0'; e++)
-			continue;
-		if (*e == '/') {
+		e = strchr(b, '/');
+		if (e) {
 			http_Unset(hp, H_Host);
 			http_PrintfHeader(hp, "Host: %.*s", (int)(e - b), b);
 			hp->hd[HTTP_HDR_URL].b = e;
