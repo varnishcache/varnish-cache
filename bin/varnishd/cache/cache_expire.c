@@ -180,7 +180,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags)
 	    oc->timer_when, oc->flags);
 
 	if (oc->flags & OC_F_DYING) {
-		oc->exp_flags &= OC_EF_EXP;
+		oc->exp_flags &= ~OC_EF_EXP;
 		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Kill p=%p e=%.9f f=0x%x", oc,
 		    oc->timer_when, oc->flags);
 		if (!(flags & OC_EF_INSERT)) {

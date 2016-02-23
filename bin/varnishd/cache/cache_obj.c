@@ -414,14 +414,17 @@ ObjSetAttr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
     ssize_t len, const void *ptr)
 {
 	const struct obj_methods *om = obj_getmethods(oc);
+	void *r;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
 
 	AN(om->objsetattr);
 	assert((int)attr < 16);
-	oc->oa_present |= (1 << attr);
-	return (om->objsetattr(wrk, oc, attr, len, ptr));
+	r = om->objsetattr(wrk, oc, attr, len, ptr);
+	if (r)
+		oc->oa_present |= (1 << attr);
+	return (r);
 }
 
 /*====================================================================
