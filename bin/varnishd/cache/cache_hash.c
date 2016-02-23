@@ -749,6 +749,8 @@ HSH_RefBoc(const struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	oh = oc->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	if (oc->boc == NULL)
+		return (NULL);
 	Lck_Lock(&oh->mtx);
 	assert(oc->refcnt > 0);
 	boc = oc->boc;
