@@ -46,6 +46,7 @@ from os.path import dirname, exists, join, realpath
 from pprint import pprint, pformat
 
 ctypes = {
+	'ACL':		"VCL_ACL",
 	'BACKEND':	"VCL_BACKEND",
 	'BLOB':		"VCL_BLOB",
 	'BOOL':		"VCL_BOOL",

@@ -286,6 +286,7 @@ sym_expr_t vcc_Eval_Var;
 sym_expr_t vcc_Eval_SymFunc;
 void vcc_Eval_Func(struct vcc *tl, const char *cfunc, const char *extra,
     const char *name, const char *args);
+sym_expr_t vcc_Eval_Acl;
 sym_expr_t vcc_Eval_Backend;
 sym_expr_t vcc_Eval_Probe;
 

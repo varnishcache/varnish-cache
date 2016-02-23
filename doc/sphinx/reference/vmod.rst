@@ -115,7 +115,10 @@ language representation.  Here is a description of them.
 All but the PRIV and STRING_LIST types have typedefs: VCL_INT, VCL_REAL,
 etc.
 
-.. TODO document ACL if patchwork #314 is merged
+ACL
+	C-type: ``const struct vrt_acl *``
+
+        A type for named ACLs declared in VCL.
 
 BACKEND
 	C-type: ``const struct director *``
