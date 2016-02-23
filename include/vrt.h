@@ -251,6 +251,7 @@ struct vrt_acl {
 };
 
 void VRT_acl_log(VRT_CTX, const char *msg);
+int VRT_acl_match(VRT_CTX, VCL_ACL, VCL_IP);
 
 /* req related */
 
