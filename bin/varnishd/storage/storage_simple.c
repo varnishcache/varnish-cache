@@ -55,6 +55,7 @@ sml_stv_alloc(const struct stevedore *stv, size_t size)
 
 	for (;;) {
 		/* try to allocate from it */
+		assert(size > 0);
 		AN(stv->sml_alloc);
 		st = stv->sml_alloc(stv, size);
 		if (st != NULL)
@@ -132,6 +133,7 @@ SML_allocobj(struct worker *wrk, const struct stevedore *stv,
 				return (0);
 			really--;
 		}
+		AN(stv->sml_alloc);
 		st = stv->sml_alloc(stv, ltot);
 		if (st != NULL && st->space < ltot) {
 			stv->sml_free(st);
@@ -324,7 +326,6 @@ objallocwithnuke(struct worker *wrk, const struct stevedore *stv, size_t size)
 
 	for (fail = 0; fail <= cache_param->nuke_limit; fail++) {
 		/* try to allocate from it */
-		AN(stv->sml_alloc);
 		st = sml_stv_alloc(stv, size);
 		if (st != NULL)
 			break;
