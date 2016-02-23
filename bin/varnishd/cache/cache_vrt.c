@@ -67,7 +67,11 @@ VRT_acl_log(VRT_CTX, const char *msg)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	VSLb(ctx->vsl, SLT_VCL_acl, "%s", msg);
+	AN(msg);
+	if (ctx->vsl != NULL)
+		VSLb(ctx->vsl, SLT_VCL_acl, "%s", msg);
+	else
+		VSL(SLT_VCL_acl, 0, "%s", msg);
 }
 
 /*--------------------------------------------------------------------*/
