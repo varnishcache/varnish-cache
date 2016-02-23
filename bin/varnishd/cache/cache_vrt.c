@@ -39,6 +39,7 @@
 #include "vcl.h"
 #include "vrt.h"
 #include "vrt_obj.h"
+#include "vsa.h"
 #include "vtcp.h"
 #include "vtim.h"
 
@@ -72,6 +73,16 @@ VRT_acl_log(VRT_CTX, const char *msg)
 		VSLb(ctx->vsl, SLT_VCL_acl, "%s", msg);
 	else
 		VSL(SLT_VCL_acl, 0, "%s", msg);
+}
+
+int
+VRT_acl_match(VRT_CTX, VCL_ACL acl, VCL_IP ip)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(acl, VRT_ACL_MAGIC);
+	assert(VSA_Sane(ip));
+	return (acl->match(ctx, ip));
 }
 
 /*--------------------------------------------------------------------*/
