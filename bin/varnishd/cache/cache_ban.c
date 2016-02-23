@@ -249,7 +249,7 @@ BAN_DestroyObj(struct objcore *oc)
 }
 
 /*--------------------------------------------------------------------
- * Find a ban based on timestamp a ban timestamp.
+ * Find a ban based on a timestamp.
  * Assume we have a BAN_Hold, so list traversal is safe.
  */
 
