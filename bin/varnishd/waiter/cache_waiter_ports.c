@@ -180,7 +180,7 @@ vws_thread(void *priv)
 		nevents = 1;
 
 		/*
-		 * see disucssion in
+		 * see discussion in
 		 * - https://issues.apache.org/bugzilla/show_bug.cgi?id=47645
 		 * - http://mail.opensolaris.org/pipermail/\
 		 *       networking-discuss/2009-August/011979.html
