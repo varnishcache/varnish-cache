@@ -652,9 +652,10 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (bo->do_gzip || bo->do_gunzip)
 		ObjSetFlag(bo->wrk, bo->fetch_objcore, OF_CHGGZIP, 1);
 
-	if (http_IsStatus(bo->beresp, 200) && (
-	    http_GetHdr(bo->beresp, H_Last_Modified, &p) ||
-	    http_GetHdr(bo->beresp, H_ETag, &p)))
+	if (!(bo->fetch_objcore->flags & OC_F_PASS) &&
+	    http_IsStatus(bo->beresp, 200) && (
+	      http_GetHdr(bo->beresp, H_Last_Modified, &p) ||
+	      http_GetHdr(bo->beresp, H_ETag, &p)))
 		ObjSetFlag(bo->wrk, bo->fetch_objcore, OF_IMSCAND, 1);
 
 	if (bo->htc->body_status != BS_NONE &&
