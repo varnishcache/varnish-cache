@@ -226,7 +226,8 @@ ObjSetState(struct worker *wrk, const struct objcore *oc,
 	assert(next > oc->boc->state);
 
 	CHECK_OBJ_ORNULL(oc->stobj->stevedore, STEVEDORE_MAGIC);
-	AN(next != BOS_FINISHED || (oc->oa_present & (1 << OA_LEN)));
+	assert(next != BOS_STREAM || oc->boc->state == BOS_PREP_STREAM);
+	assert(next != BOS_FINISHED || (oc->oa_present & (1 << OA_LEN)));
 
 	if (oc->stobj->stevedore != NULL) {
 		om = oc->stobj->stevedore->methods;
