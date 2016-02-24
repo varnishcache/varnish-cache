@@ -118,7 +118,7 @@ etc.
 ACL
 	C-type: ``const struct vrt_acl *``
 
-        A type for named ACLs declared in VCL.
+	A type for named ACLs declared in VCL.
 
 BACKEND
 	C-type: ``const struct director *``
@@ -152,9 +152,9 @@ DURATION
 	A time interval, as in 25 seconds.
 
 ENUM
-        C-type: ``const char *``
+	C-type: ``const char *``
 
-        TODO
+	TODO
 
 HEADER
 	C-type: ``const struct gethdr_s *``
@@ -169,9 +169,9 @@ HEADER
 	the value, but not where it came from.
 
 HTTP
-        C-type: ``struct http *``
+	C-type: ``struct http *``
 
-        TODO
+	TODO
 
 INT
 	C-type: ``long``

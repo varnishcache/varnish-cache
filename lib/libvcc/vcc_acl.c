@@ -351,7 +351,7 @@ vcc_acl_emit(struct vcc *tl, const char *acln, int anon)
 	struct token *t;
 	struct inifin *ifp;
 
-	Fh(tl, 0, "\nstatic int __match_proto__(acl_f)\n");
+	Fh(tl, 0, "\nstatic int __match_proto__(acl_match_f)\n");
 	Fh(tl, 0,
 	    "match_acl_%s_%s(VRT_CTX, const VCL_IP p)\n",
 	    anon ? "anon" : "named", acln);
@@ -364,7 +364,7 @@ vcc_acl_emit(struct vcc *tl, const char *acln, int anon)
 	Fh(tl, 0, "\t\tVRT_acl_log(ctx, \"NO_FAM %s\");\n", acln);
 	Fh(tl, 0, "\t\treturn(0);\n");
 	Fh(tl, 0, "\t}\n\n");
-	if (!tl->param->err_unref && !anon ) {
+	if (!tl->param->err_unref && !anon) {
 		ifp = New_IniFin(tl);
 		VSB_printf(ifp->ini,
 			"\tif (0) match_acl_named_%s(0, 0);\n", acln);
@@ -419,9 +419,9 @@ vcc_acl_emit(struct vcc *tl, const char *acln, int anon)
 			t = ae->t_addr;
 			do {
 				if (t->tok == CSTR) {
-					Fh(tl, 0, " \"\\\"\" " );
+					Fh(tl, 0, " \"\\\"\" ");
 					EncToken(tl->fh, t);
-					Fh(tl, 0, " \"\\\"\" " );
+					Fh(tl, 0, " \"\\\"\" ");
 				} else
 					Fh(tl, 0, " \"%.*s\"", PF(t));
 				if (t == ae->t_mask)
