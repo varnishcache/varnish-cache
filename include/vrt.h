@@ -40,6 +40,8 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
+ * Bump VRT_MINOR_VERSION due to:
+ * - VCL_ACL type added
  * Bump VRT_MAJOR_VERSION due to:
  * - VRT_CacheReqBody changed signature
  *
