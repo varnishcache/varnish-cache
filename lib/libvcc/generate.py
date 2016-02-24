@@ -763,6 +763,8 @@ for i in fi:
 		continue
 	if j[-1][-1] != ";":
 		continue
+	if j[-1][-2] == ")":
+		continue
 	if j[-1][:4] != "VCL_":
 		continue
 	d = " ".join(j[1:-1])
