@@ -54,7 +54,7 @@
  * 2	  ObjSetU32()
  * 2	  ObjSetU64()
  *
- * 2->3	ObjStable()	Will no longer be modified
+ * 2->3	ObjStable()	Will no longer be modified (clean up boc)
  *
  * 23	ObjHasAttr()
  * 23	ObjGetAttr()

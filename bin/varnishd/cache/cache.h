@@ -365,6 +365,7 @@ struct storeobj {
 enum boc_state_e {
 	BOS_INVALID = 0,	/* don't touch (yet) */
 	BOS_REQ_DONE,		/* beresp.* can be examined */
+	BOS_PREP_STREAM,	/* Prepare for streaming */
 	BOS_STREAM,		/* beresp.* can be examined */
 	BOS_FINISHED,		/* object is complete */
 	BOS_FAILED,		/* something went wrong */

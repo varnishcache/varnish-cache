@@ -672,6 +672,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert(bo->fetch_objcore->boc->state == BOS_REQ_DONE);
 
 	if (bo->do_stream) {
+		ObjSetState(wrk, bo->fetch_objcore, BOS_PREP_STREAM);
 		HSH_Unbusy(wrk, bo->fetch_objcore);
 		ObjSetState(wrk, bo->fetch_objcore, BOS_STREAM);
 	}
@@ -762,6 +763,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	AZ(ObjCopyAttr(bo->wrk, bo->fetch_objcore, bo->stale_oc, OA_GZIPBITS));
 
 	if (bo->do_stream) {
+		ObjSetState(wrk, bo->fetch_objcore, BOS_PREP_STREAM);
 		HSH_Unbusy(wrk, bo->fetch_objcore);
 		ObjSetState(wrk, bo->fetch_objcore, BOS_STREAM);
 	}
