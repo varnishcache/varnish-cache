@@ -242,12 +242,12 @@ struct vrt_ref {
 /* ACL related */
 #define VRT_ACL_MAXADDR		16	/* max(IPv4, IPv6) */
 
-typedef int acl_f (VRT_CTX, VCL_IP);
+typedef int acl_match_f(VRT_CTX, const VCL_IP);
 
 struct vrt_acl {
 	unsigned	magic;
 #define VRT_ACL_MAGIC	0x78329d96
-	acl_f		*match;
+	acl_match_f	*match;
 };
 
 void VRT_acl_log(VRT_CTX, const char *msg);
