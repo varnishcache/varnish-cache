@@ -1,0 +1,38 @@
+varnishtest "Test a hit-for-pass does not issue an IMS request"
+
+server s1 {
+	rxreq
+	txresp \
+	    -hdr {Etag: "foo"} \
+	    -body "foo"
+	rxreq
+	expect req.http.if-none-match == <undef>
+	txresp \
+	    -hdr {Etag: "bar"} \
+	    -body "bar"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		if (beresp.status == 200) {
+			set beresp.ttl = 1s;
+			set beresp.uncacheable = true;
+			return (deliver);
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "foo"
+
+	delay 1.5
+
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "bar"
+} -run
+
