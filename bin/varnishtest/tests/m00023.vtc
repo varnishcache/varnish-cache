@@ -1,7 +1,7 @@
 varnishtest "Test VMOD ACLs"
 
 varnish v1 -vcl {
-	import debug;
+	import ${vmod_debug};
 
 	backend dummy {
 		.host = "${bad_ip}";
