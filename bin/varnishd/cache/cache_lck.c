@@ -165,19 +165,23 @@ Lck__Trylock(struct lock *lck, const char *p, int l)
 	return (r);
 }
 
-void
-Lck__Assert(const struct lock *lck, int held)
+int
+Lck__Held(const struct lock *lck)
 {
 	struct ilck *ilck;
 
 	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
-	if (held) {
-		assert(ilck->held);
-		assert(pthread_equal(ilck->owner, pthread_self()));
-	} else {
-		AZ(ilck->held);
-		AZ(pthread_equal(ilck->owner, pthread_self()));
-	}
+	return (ilck->held);
+}
+
+int
+Lck__Owned(const struct lock *lck)
+{
+	struct ilck *ilck;
+
+	CAST_OBJ_NOTNULL(ilck, lck->priv, ILCK_MAGIC);
+	AN(ilck->held);
+	return (pthread_equal(ilck->owner, pthread_self()));
 }
 
 int __match_proto__()
