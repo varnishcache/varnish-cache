@@ -36,8 +36,11 @@ server s1 {
 		<esi:include  src=/>			30
 		<esi:include  src= />			31
 		</esi:include>				32
-		<esi:include  src="foofof />		33
-		<esi:include  foo=bar src=/body2 />	34
+		<!---->					33
+		</!-- bogocommentt -->			34
+		</![CDATA[ bogo-cdata ]]>		35
+		<esi:include  src="foofof />		36
+		<esi:include  foo=bar src=/body2 />	37
 	}
 	rxreq
 	expect req.url == "/body"
@@ -69,7 +72,7 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 385
+	expect resp.bodylen == 464
 }
 
 client c1 -run
