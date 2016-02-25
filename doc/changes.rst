@@ -1,5 +1,24 @@
 
 ======================================
+Varnish Cache 4.1.2-beta2 (2016-02-25)
+======================================
+
+* [vmods] Passing VCL ACL to a vmod is now possible.
+
+* [vmods] VRT_MINOR_VERSION increase due to new function: VRT_acl_match()
+
+* Some test case stabilization fixes and minor documentation updates.
+
+* Improved handling of workspace exhaustion when fetching objects.
+
+Bugs fixed
+----------
+
+* 1858_ - Hit-for-pass objects are not IMS candidates
+
+.. _1858: https://www.varnish-cache.org/trac/ticket/1858
+
+======================================
 Varnish Cache 4.1.2-beta1 (2016-02-17)
 ======================================
 
