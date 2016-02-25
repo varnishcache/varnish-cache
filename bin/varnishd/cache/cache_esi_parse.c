@@ -104,7 +104,7 @@ struct vep_state {
 	struct vep_match	*match;
 	struct vep_match	*match_hit;
 
-	char			tag[10];
+	char			tag[8];
 	int			tag_i;
 
 	dostuff_f		*dostuff;
@@ -217,28 +217,21 @@ vep_warn(const struct vep_state *vep, const char *p)
  */
 
 static struct vep_match *
-vep_match(struct vep_state *vep, const char *b, const char *e)
+vep_match(const struct vep_state *vep, const char *b, const char *e)
 {
 	struct vep_match *vm;
 	const char *q, *r;
-	ssize_t l;
 
-	for (vm = vep->match; vm->match; vm++) {
+	for (vm = vep->match; vm->match != NULL; vm++) {
+		assert(strlen(vm->match) <= sizeof (vep->tag));
 		r = b;
-		for (q = vm->match; *q && r < e; q++, r++)
+		for (q = vm->match; *q != '\0' && r < e; q++, r++)
 			if (*q != *r)
 				break;
-		if (*q != '\0' && r == e) {
-			if (b != vep->tag) {
-				l = e - b;
-				assert(l < sizeof vep->tag);
-				memmove(vep->tag, b, l);
-				vep->tag_i = l;
-			}
-			return (NULL);
-		}
 		if (*q == '\0')
-			return (vm);
+			break;
+		if (r == e)
+			return (NULL);
 	}
 	return (vm);
 }
@@ -948,6 +941,7 @@ VEP_Parse(struct vep_state *vep, const char *p, size_t l)
 				vep->match = NULL;
 				vep->tag_i = 0;
 			} else {
+				assert(e - p <= sizeof(vep->tag));
 				memcpy(vep->tag, p, e - p);
 				vep->tag_i = e - p;
 				vep->state = VEP_MATCHBUF;
@@ -959,28 +953,23 @@ VEP_Parse(struct vep_state *vep, const char *p, size_t l)
 			 * sections.
 			 */
 			AN(vep->match);
-			do {
-				if (*p == '>') {
-					for (vm = vep->match;
-					    vm->match != NULL; vm++)
-						continue;
-					AZ(vm->match);
-				} else {
-					vep->tag[vep->tag_i++] = *p++;
-					vm = vep_match(vep,
-					    vep->tag, vep->tag + vep->tag_i);
-					if (vm && vm->match == NULL) {
-						vep->tag_i--;
-						p--;
-					}
-				}
-			} while (vm == NULL && p < e);
-			vep->match_hit = vm;
+			i = sizeof(vep->tag) - vep->tag_i;
+			if (i > e - p)
+				i = e - p;
+			memcpy(vep->tag + vep->tag_i, p, i);
+			vm = vep_match(vep, vep->tag,
+			    vep->tag + vep->tag_i + i);
 			if (vm == NULL) {
+				vep->tag_i += i;
+				p += i;
 				assert(p == e);
 			} else {
+				vep->match_hit = vm;
 				vep->state = *vm->state;
+				if (vm->match != NULL)
+					p += strlen(vm->match) - vep->tag_i;
 				vep->match = NULL;
+				vep->tag_i = 0;
 			}
 		} else if (vep->state == VEP_UNTIL) {
 			/*
@@ -1019,7 +1008,7 @@ VEP_Parse(struct vep_state *vep, const char *p, size_t l)
 /*---------------------------------------------------------------------
  */
 
-static ssize_t __match_proto__()
+static ssize_t __match_proto__(vep_callback_t)
 vep_default_cb(struct vfp_ctx *vc, void *priv, ssize_t l, enum vgz_flag flg)
 {
 	ssize_t *s;
