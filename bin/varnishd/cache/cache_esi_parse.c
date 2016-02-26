@@ -448,11 +448,10 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 			vep->state = VEP_TAGERROR;
 			VSB_destroy(&vep->attr_vsb);
 			VSB_destroy(&vep->include_src);
-			vep->attr_vsb = NULL;
-			vep->include_src = NULL;
 			return;
 		}
 		vep->include_src = vep->attr_vsb;
+		vep->attr_vsb = NULL;
 		return;
 	}
 	assert(what == DO_TAG);
@@ -490,8 +489,8 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 			vep_warn(vep,
 			    "ESI 1.0 <esi:include> with https:// ignored");
 			vep->state = VEP_TAGERROR;
-			vep->attr_vsb = NULL;
-			vep->include_src = NULL;
+			AZ(vep->attr_vsb);
+			VSB_destroy(&vep->include_src);
 			return;
 		}
 		vep_warn(vep,
@@ -1048,6 +1047,8 @@ VEP_Finish(struct vep_state *vep)
 
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 
+	AZ(vep->include_src);
+	AZ(vep->attr_vsb);
 	if (vep->o_pending)
 		vep_mark_common(vep, vep->ver_p, vep->last_mark);
 	if (vep->o_wait > 0) {
