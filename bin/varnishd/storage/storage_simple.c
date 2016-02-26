@@ -451,13 +451,13 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 	VTAILQ_REMOVE(&o->list, st, list);
 	VTAILQ_INSERT_TAIL(&o->list, st1, list);
 	Lck_Unlock(&oc->boc->mtx);
-	/* sml_stable frees this */
+	/* sml_bocdone frees this */
 	AZ(oc->boc->stevedore_priv);
 	oc->boc->stevedore_priv = st;
 }
 
-static void __match_proto__(objstable_f)
-sml_stable(struct worker *wrk, struct objcore *oc, struct boc *boc)
+static void __match_proto__(objbocdone_f)
+sml_bocdone(struct worker *wrk, struct objcore *oc, struct boc *boc)
 {
 	const struct stevedore *stv;
 	struct storage *st;
@@ -610,7 +610,7 @@ const struct obj_methods SML_methods = {
 	.objgetspace	= sml_getspace,
 	.objextend	= sml_extend,
 	.objtrimstore	= sml_trimstore,
-	.objstable	= sml_stable,
+	.objbocdone	= sml_bocdone,
 	.objslim	= sml_slim,
 	.objgetattr	= sml_getattr,
 	.objsetattr	= sml_setattr,

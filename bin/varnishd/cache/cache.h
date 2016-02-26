@@ -859,6 +859,7 @@ void MPL_Free(struct mempool *mpl, void *item);
 
 /* cache_obj.c */
 struct objcore * ObjNew(struct worker *);
+void ObjDestroy(struct worker *, struct objcore **);
 typedef int objiterate_f(void *priv, int flush, const void *ptr, ssize_t len);
 int ObjIterate(struct worker *, struct objcore *,
     void *priv, objiterate_f *func);
@@ -882,7 +883,7 @@ void *ObjSetAttr(struct worker *, struct objcore *, enum obj_attr,
     ssize_t len, const void *);
 int ObjCopyAttr(struct worker *, struct objcore *, struct objcore *,
     enum obj_attr attr);
-void ObjStable(struct worker *, struct objcore *, struct boc *);
+void ObjBocDone(struct worker *, struct objcore *, struct boc **);
 
 int ObjSetDouble(struct worker *, struct objcore *, enum obj_attr, double);
 int ObjSetU32(struct worker *, struct objcore *, enum obj_attr, uint32_t);

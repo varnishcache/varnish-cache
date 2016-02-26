@@ -54,7 +54,7 @@
  * 2	  ObjSetU32()
  * 2	  ObjSetU64()
  *
- * 2->3	ObjStable()	Will no longer be modified (clean up boc)
+ * 2->3	ObjBocDone()	Boc removed from OC, clean it up
  *
  * 23	ObjHasAttr()
  * 23	ObjGetAttr()
@@ -99,6 +99,34 @@ obj_getmethods(const struct objcore *oc)
 	return (oc->stobj->stevedore->methods);
 }
 
+static struct boc *
+obj_newboc(void)
+{
+	struct boc *boc;
+
+	ALLOC_OBJ(boc, BOC_MAGIC);
+	AN(boc);
+	Lck_New(&boc->mtx, lck_busyobj);
+	AZ(pthread_cond_init(&boc->cond, NULL));
+	boc->refcount = 1;
+	return (boc);
+}
+
+static void
+obj_deleteboc(struct boc **p)
+{
+	struct boc *boc;
+
+	AN(p);
+	boc = *p;
+	*p = NULL;
+	Lck_Delete(&boc->mtx);
+	AZ(pthread_cond_destroy(&boc->cond));
+	if (boc->vary != NULL)
+		free(boc->vary);
+	FREE_OBJ(boc);
+}
+
 /*====================================================================
  * ObjNew()
  *
@@ -115,12 +143,32 @@ ObjNew(struct worker *wrk)
 	AN(oc);
 	wrk->stats->n_objectcore++;
 	oc->last_lru = NAN;
-	ALLOC_OBJ(oc->boc, BOC_MAGIC);
-	AN(oc->boc);
-	Lck_New(&oc->boc->mtx, lck_busyobj);
-	AZ(pthread_cond_init(&oc->boc->cond, NULL));
-	oc->boc->refcount = 1;
+	oc->flags = OC_F_BUSY;
+
+	oc->boc = obj_newboc();
+
 	return (oc);
+}
+
+/*====================================================================
+ * ObjDestroy()
+ *
+ */
+
+void
+ObjDestroy(struct worker *wrk, struct objcore **p)
+{
+	struct objcore *oc;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AN(p);
+	oc = *p;
+	*p = NULL;
+	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	if (oc->boc != NULL)
+		obj_deleteboc(&oc->boc);
+	FREE_OBJ(oc);
+	wrk->stats->n_objectcore--;
 }
 
 /*====================================================================
@@ -322,14 +370,19 @@ ObjSlim(struct worker *wrk, struct objcore *oc)
  */
 
 void
-ObjStable(struct worker *wrk, struct objcore *oc, struct boc *boc)
+ObjBocDone(struct worker *wrk, struct objcore *oc, struct boc **boc)
 {
-	const struct obj_methods *m = obj_getmethods(oc);
+	const struct obj_methods *m;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(boc, BOC_MAGIC);
-	if (m->objstable != NULL)
-		m->objstable(wrk, oc, boc);
+	AN(boc);
+	CHECK_OBJ_NOTNULL(*boc, BOC_MAGIC);
+	if (oc->stobj->stevedore != NULL) {
+		m = obj_getmethods(oc);
+		if (m->objbocdone != NULL)
+			m->objbocdone(wrk, oc, *boc);
+	}
+	obj_deleteboc(boc);
 }
 
 /*====================================================================

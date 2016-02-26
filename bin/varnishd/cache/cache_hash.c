@@ -91,10 +91,8 @@ hsh_prealloc(struct worker *wrk)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
-	if (wrk->nobjcore == NULL) {
+	if (wrk->nobjcore == NULL)
 		wrk->nobjcore = ObjNew(wrk);
-		wrk->nobjcore->flags |= OC_F_BUSY;
-	}
 	CHECK_OBJ_NOTNULL(wrk->nobjcore, OBJCORE_MAGIC);
 
 	if (wrk->nobjhead == NULL) {
@@ -120,7 +118,7 @@ HSH_Private(struct worker *wrk)
 	AN(oc);
 	oc->refcnt = 1;
 	oc->objhead = private_oh;
-	oc->flags |= OC_F_PRIVATE | OC_F_BUSY;
+	oc->flags |= OC_F_PRIVATE;
 	Lck_Lock(&private_oh->mtx);
 	VTAILQ_INSERT_TAIL(&private_oh->objcs, oc, hsh_list);
 	private_oh->refcnt++;
@@ -133,11 +131,9 @@ void
 HSH_Cleanup(struct worker *wrk)
 {
 
-	if (wrk->nobjcore != NULL) {
-		FREE_OBJ(wrk->nobjcore);
-		wrk->stats->n_objectcore--;
-		wrk->nobjcore = NULL;
-	}
+	if (wrk->nobjcore != NULL)
+		ObjDestroy(wrk, &wrk->nobjcore);
+
 	if (wrk->nobjhead != NULL) {
 		Lck_Delete(&wrk->nobjhead->mtx);
 		FREE_OBJ(wrk->nobjhead);
@@ -798,14 +794,8 @@ HSH_DerefBoc(struct worker *wrk, struct objcore *oc)
 	if (r == 0)
 		oc->boc = NULL;
 	Lck_Unlock(&oc->objhead->mtx);
-	if (r == 0) {
-		if (oc->stobj->stevedore != NULL)
-			ObjStable(wrk, oc, boc);
-		AZ(pthread_cond_destroy(&boc->cond));
-		Lck_Delete(&boc->mtx);
-		free(boc->vary);
-		FREE_OBJ(boc);
-	}
+	if (r == 0)
+		ObjBocDone(wrk, oc, &boc);
 }
 
 /*--------------------------------------------------------------------
@@ -850,9 +840,8 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
 
 	if (oc->stobj->stevedore != NULL)
 		ObjFreeObj(wrk, oc);
-	FREE_OBJ(oc);
+	ObjDestroy(wrk, &oc);
 
-	wrk->stats->n_objectcore--;
 	/* Drop our ref on the objhead */
 	assert(oh->refcnt > 0);
 	(void)HSH_DerefObjHead(wrk, &oh);
