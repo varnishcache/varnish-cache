@@ -489,6 +489,13 @@ VSB_delete(struct vsb *s)
 		SBFREE(s);
 }
 
+void
+VSB_destroy(struct vsb **s)
+{
+	VSB_delete(*s);
+	*s = NULL;
+}
+
 /*
  * Quote a string
  */
