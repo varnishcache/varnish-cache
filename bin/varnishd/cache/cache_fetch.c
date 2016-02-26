@@ -519,8 +519,6 @@ vbf_fetch_body_helper(struct busyobj *bo)
 		}
 	} while (vfps == VFP_OK);
 
-	VFP_Close(vfc);
-
 	if (vfps == VFP_ERROR) {
 		AN(vfc->failed);
 		(void)VFP_Error(vfc, "Fetch pipeline failed to process");
@@ -673,6 +671,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		assert(bo->htc->body_status != BS_ERROR);
 		vbf_fetch_body_helper(bo);
 	}
+
+	VFP_Close(bo->vfc);
 
 	if (bo->vfc->failed) {
 		VDI_Finish(bo->wrk, bo);
