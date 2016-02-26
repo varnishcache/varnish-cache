@@ -128,7 +128,6 @@ static void
 mgt_panic_clear(void)
 {
 	VSB_destroy(&child_panic);
-	child_panic = NULL;
 }
 
 void __match_proto__(cli_func_t)

@@ -453,7 +453,6 @@ cls_vlu(void *priv, const char *p)
 		free(cli->cmd);
 		cli->cmd = NULL;
 		VSB_destroy(&cfd->last_arg);
-		cfd->last_arg = NULL;
 		cfd->last_idx = 0;
 		return (i);
 	}

@@ -528,10 +528,8 @@ cmd_logexp(CMD_ARGS)
 				vtc_log(le->vl, 0, "Missing -v argument");
 				return;
 			}
-			if (le->n_arg != NULL) {
+			if (le->n_arg != NULL)
 				VSB_destroy(&le->n_arg);
-				le->n_arg = NULL;
-			}
 			vsb = VSB_new_auto();
 			AN(vsb);
 			AZ(VSB_printf(vsb, "%s/%s", tmpdir, av[1]));

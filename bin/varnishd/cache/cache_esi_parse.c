@@ -537,9 +537,7 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 	}
 #undef R
 	VSB_printf(vep->vsb, "%c", 0);
-
 	VSB_destroy(&vep->include_src);
-	vep->include_src = NULL;
 }
 
 /*---------------------------------------------------------------------
@@ -887,7 +885,6 @@ VEP_Parse(struct vep_state *vep, const char *p, size_t l)
 				if (vep->attr_vsb != NULL) {
 					AZ(VSB_finish(vep->attr_vsb));
 					VSB_destroy(&vep->attr_vsb);
-					vep->attr_vsb = NULL;
 				}
 			} else if (p < e) {
 				vep->attr_delim = 0;

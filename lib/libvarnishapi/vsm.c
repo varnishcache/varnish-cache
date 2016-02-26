@@ -124,7 +124,6 @@ VSM_ResetError(struct VSM_data *vd)
 	if (vd->diag == NULL)
 		return;
 	VSB_destroy(&vd->diag);
-	vd->diag = NULL;
 }
 
 /*--------------------------------------------------------------------*/
