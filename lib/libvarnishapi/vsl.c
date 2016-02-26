@@ -160,7 +160,7 @@ VSL_ResetError(struct VSL_data *vsl)
 
 	if (vsl->diag == NULL)
 		return;
-	VSB_delete(vsl->diag);
+	VSB_destroy(&vsl->diag);
 	vsl->diag = NULL;
 }
 

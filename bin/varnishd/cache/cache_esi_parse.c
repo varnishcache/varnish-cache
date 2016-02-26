@@ -446,8 +446,8 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 			    "ESI 1.0 <esi:include> "
 			    "has multiple src= attributes");
 			vep->state = VEP_TAGERROR;
-			VSB_delete(vep->attr_vsb);
-			VSB_delete(vep->include_src);
+			VSB_destroy(&vep->attr_vsb);
+			VSB_destroy(&vep->include_src);
 			vep->attr_vsb = NULL;
 			vep->include_src = NULL;
 			return;
@@ -539,7 +539,7 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 #undef R
 	VSB_printf(vep->vsb, "%c", 0);
 
-	VSB_delete(vep->include_src);
+	VSB_destroy(&vep->include_src);
 	vep->include_src = NULL;
 }
 
@@ -887,7 +887,7 @@ VEP_Parse(struct vep_state *vep, const char *p, size_t l)
 				vep->attr_delim = 0;
 				if (vep->attr_vsb != NULL) {
 					AZ(VSB_finish(vep->attr_vsb));
-					VSB_delete(vep->attr_vsb);
+					VSB_destroy(&vep->attr_vsb);
 					vep->attr_vsb = NULL;
 				}
 			} else if (p < e) {
@@ -1061,7 +1061,7 @@ VEP_Finish(struct vep_state *vep)
 	l = VSB_len(vep->vsb);
 	if (vep->esi_found && l > 0)
 		return (vep->vsb);
-	VSB_delete(vep->vsb);
+	VSB_destroy(&vep->vsb);
 	return (NULL);
 }
 

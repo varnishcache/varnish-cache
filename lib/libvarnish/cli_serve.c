@@ -452,7 +452,7 @@ cls_vlu(void *priv, const char *p)
 		cfd->argv = NULL;
 		free(cli->cmd);
 		cli->cmd = NULL;
-		VSB_delete(cfd->last_arg);
+		VSB_destroy(&cfd->last_arg);
 		cfd->last_arg = NULL;
 		cfd->last_idx = 0;
 		return (i);
@@ -512,7 +512,7 @@ cls_close_fd(struct VCLS *cs, struct VCLS_fd *cfd)
 	VTAILQ_REMOVE(&cs->fds, cfd, list);
 	cs->nfd--;
 	VLU_Destroy(cfd->cli->vlu);
-	VSB_delete(cfd->cli->sb);
+	VSB_destroy(&cfd->cli->sb);
 	if (cfd->closefunc == NULL) {
 		(void)close(cfd->fdi);
 		if (cfd->fdo != cfd->fdi)

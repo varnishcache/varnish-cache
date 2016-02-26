@@ -98,7 +98,7 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 
 	b->display_name = strdup(VSB_data(vsb));
 	AN(b->display_name);
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 
 	b->vcl = vcl;
 
@@ -316,7 +316,7 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 		}
 	}
 	Lck_Unlock(&backends_mtx);
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 	VCL_Rel(&vcc);
 	return (found);
 }

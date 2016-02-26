@@ -123,7 +123,7 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct token *nm, char **name)
 		VSB_printf(vsb, "vgc_probe__%d", tl->nprobe++);
 	AZ(VSB_finish(vsb));
 	retval = TlDup(tl, VSB_data(vsb));
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 	if (name != NULL)
 		*name = retval;
 
@@ -436,7 +436,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	tl->fb = NULL;
 	AZ(VSB_finish(vsb));
 	Fh(tl, 0, "%s", VSB_data(vsb));
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->ini,

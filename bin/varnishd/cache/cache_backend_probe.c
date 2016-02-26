@@ -472,7 +472,7 @@ vbp_build_req(struct vbp_target *vt, const struct vrt_backend_probe *vbp,
 	vt->req = strdup(VSB_data(vsb));
 	AN(vt->req);
 	vt->req_len = VSB_len(vsb);
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 }
 
 /*--------------------------------------------------------------------

@@ -330,11 +330,11 @@ VFIL_searchpath(const struct vfil_path *vp, vfil_path_func_f *func, void *priv,
 			e = errno;
 			*fno = strdup(VSB_data(vsb));
 			AN(*fno);
-			VSB_delete(vsb);
+			VSB_destroy(&vsb);
 			errno = e;
 			return (i);
 		}
 	}
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 	return (-1);
 }

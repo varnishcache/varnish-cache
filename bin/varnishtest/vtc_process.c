@@ -78,7 +78,7 @@ static VTAILQ_HEAD(, process)	processes =
 		AN(vsb);				\
 		p->field = strdup(VSB_data(vsb));	\
 		AN(p->field);				\
-		VSB_delete(vsb);			\
+		VSB_destroy(&vsb);			\
 	} while (0)
 
 static struct process *
@@ -214,7 +214,7 @@ process_start(struct process *p)
 	AZ(close(out_fd));
 	AZ(close(err_fd));
 	p->fds[0] = -1;
-	VSB_delete(cl);
+	VSB_destroy(&cl);
 	AZ(pthread_create(&p->tp, NULL, process_thread, p));
 }
 

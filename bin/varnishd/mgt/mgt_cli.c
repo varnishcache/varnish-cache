@@ -163,13 +163,13 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	AZ(VSB_finish(vsb));
 	i = write(cli_o, VSB_data(vsb), VSB_len(vsb));
 	if (i != VSB_len(vsb)) {
-		VSB_delete(vsb);
+		VSB_destroy(&vsb);
 		VCLI_SetResult(cli, CLIS_COMMS);
 		VCLI_Out(cli, "CLI communication error");
 		MGT_Child_Cli_Fail();
 		return;
 	}
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 	if (VCLI_ReadResult(cli_i, &u, &q, mgt_param.cli_timeout))
 		MGT_Child_Cli_Fail();
 	VCLI_SetResult(cli, u);
@@ -485,7 +485,7 @@ telnet_accept(const struct vev *ev, int what)
 	tn = telnet_new(i);
 	vsb = sock_id("telnet", i);
 	mgt_cli_setup(i, i, 0, VSB_data(vsb), telnet_close, tn);
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 	return (0);
 }
 
@@ -567,7 +567,7 @@ mgt_cli_telnet(const char *T_arg)
 		ARGV_ERR("-T %s could not be listened on.", T_arg);
 	/* Save in shmem */
 	mgt_SHM_static_alloc(VSB_data(vsb), VSB_len(vsb) + 1, "Arg", "-T", "");
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 }
 
 /* Reverse CLI ("Master") connections --------------------------------*/
@@ -617,7 +617,7 @@ Marg_connect(const struct vev *e, int what)
 	}
 	vsb = sock_id("master", M_fd);
 	mgt_cli_setup(M_fd, M_fd, 0, VSB_data(vsb), Marg_closer, NULL);
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 	M_poll = 1;
 	return (1);
 }

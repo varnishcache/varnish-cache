@@ -131,7 +131,7 @@ vbf_beresp2obj(struct busyobj *bo)
 	if (vary != NULL) {
 		AN(ObjSetAttr(bo->wrk, bo->fetch_objcore, OA_VARY, varyl,
 			VSB_data(vary)));
-		VSB_delete(vary);
+		VSB_destroy(&vary);
 	}
 
 	AZ(ObjSetU32(bo->wrk, bo->fetch_objcore, OA_VXID, VXID(bo->vsl->wid)));
@@ -852,12 +852,12 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	AZ(VSB_finish(synth_body));
 
 	if (wrk->handling == VCL_RET_ABANDON) {
-		VSB_delete(synth_body);
+		VSB_destroy(&synth_body);
 		return (F_STP_FAIL);
 	}
 
 	if (wrk->handling == VCL_RET_RETRY) {
-		VSB_delete(synth_body);
+		VSB_destroy(&synth_body);
 		if (bo->retries++ < cache_param->max_retries)
 			return (F_STP_RETRY);
 		VSLb(bo->vsl, SLT_VCL_Error, "Too many retries, failing");
@@ -873,7 +873,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	bo->vfc->esi_req = bo->bereq;
 
 	if (vbf_beresp2obj(bo)) {
-		VSB_delete(synth_body);
+		VSB_destroy(&synth_body);
 		return (F_STP_FAIL);
 	}
 
@@ -889,7 +889,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		o += l;
 	}
 	AZ(ObjSetU64(wrk, bo->fetch_objcore, OA_LEN, o));
-	VSB_delete(synth_body);
+	VSB_destroy(&synth_body);
 	HSH_Unbusy(wrk, bo->fetch_objcore);
 	ObjSetState(wrk, bo->fetch_objcore, BOS_FINISHED);
 	return (F_STP_DONE);

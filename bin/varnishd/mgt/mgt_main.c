@@ -170,7 +170,7 @@ MGT_complain(const char *loud, const char *fmt, ...)
 
 	if (!MGT_DO_DEBUG(DBG_VTC_MODE))
 		syslog(sf, "%s", VSB_data(vsb));
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 }
 
 /*--------------------------------------------------------------------*/

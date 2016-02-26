@@ -1399,7 +1399,7 @@ http_process(struct vtclog *vl, const char *spec, int sock, int *sfd)
 	VTCP_hisname(sock, hp->rem_ip, VTCP_ADDRBUFSIZE, hp->rem_port, VTCP_PORTBUFSIZE);
 	parse_string(spec, http_cmds, hp, vl);
 	retval = hp->fd;
-	VSB_delete(hp->vsb);
+	VSB_destroy(&hp->vsb);
 	free(hp->rxbuf);
 	free(hp->rem_ip);
 	free(hp->rem_port);

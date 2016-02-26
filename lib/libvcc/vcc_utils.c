@@ -219,7 +219,7 @@ Resolve_Sockaddr(struct vcc *tl,
 		vcc_ErrWhere(tl, t_err);
 		free(rss->vsa4);
 		free(rss->vsa6);
-		VSB_delete(rss->vsb);
+		VSB_destroy(&rss->vsb);
 		FREE_OBJ(rss);
 		return;
 	}
@@ -250,6 +250,6 @@ Resolve_Sockaddr(struct vcc *tl,
 		    VSB_data(rss->vsb));
 		vcc_ErrWhere(tl, t_err);
 	}
-	VSB_delete(rss->vsb);
+	VSB_destroy(&rss->vsb);
 	FREE_OBJ(rss);
 }

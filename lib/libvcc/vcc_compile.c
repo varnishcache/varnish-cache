@@ -351,7 +351,7 @@ EmitInitFini(const struct vcc *tl)
 		if (VSB_len(p->ini))
 			Fc(tl, 0, "\t/* %u */\n%s\n", p->n, VSB_data(p->ini));
 		Fc(tl, 0, "\tvgc_inistep = %u;\n\n", p->n);
-		VSB_delete(p->ini);
+		VSB_destroy(&p->ini);
 
 		AZ(VSB_finish(p->event));
 		if (VSB_len(p->event))
@@ -376,7 +376,7 @@ EmitInitFini(const struct vcc *tl)
 			Fc(tl, 0, "%s\n", VSB_data(p->fin));
 			Fc(tl, 0, "\t}\n\n");
 		}
-		VSB_delete(p->fin);
+		VSB_destroy(&p->fin);
 	}
 
 	Fc(tl, 0, "\treturn(0);\n");
@@ -435,7 +435,7 @@ EmitInitFini(const struct vcc *tl)
 				Fc(tl, 0, "\t    %s != 0)\n", VSB_data(p->event));
 				Fc(tl, 0, "\t\tretval = 1;\n\n");
 			}
-			VSB_delete(p->event);
+			VSB_destroy(&p->event);
 		}
 
 		Fc(tl, 0, "\treturn (retval);\n");
@@ -596,7 +596,7 @@ vcc_resolve_includes(struct vcc *tl)
 			VSB_cat(vsb, t1->dec + 1);
 			AZ(VSB_finish(vsb));
 			sp = vcc_file_source(tl->param, tl->sb, VSB_data(vsb));
-			VSB_delete(vsb);
+			VSB_destroy(&vsb);
 		} else {
 			sp = vcc_file_source(tl->param, tl->sb, t1->dec);
 		}
@@ -683,10 +683,10 @@ vcc_DestroyTokenList(struct vcc *tl, char *ret)
 		FREE_OBJ(sym);
 	}
 
-	VSB_delete(tl->fh);
-	VSB_delete(tl->fc);
+	VSB_destroy(&tl->fh);
+	VSB_destroy(&tl->fc);
 	for (i = 0; i < VCL_MET_MAX; i++)
-		VSB_delete(tl->fm[i]);
+		VSB_destroy(&tl->fm[i]);
 
 	free(tl);
 	return (ret);
@@ -839,7 +839,7 @@ vcc_CompileSource(const struct vcp * const vcp, struct vsb *sb,
 	of = strdup(VSB_data(vsb));
 	AN(of);
 
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 
 	/* done */
 	return (vcc_DestroyTokenList(tl, of));

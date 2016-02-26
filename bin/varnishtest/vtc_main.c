@@ -395,7 +395,7 @@ i_mode(void)
 	vmod_path = strdup(VSB_data(vsb));
 	AN(vmod_path);
 	free(topbuild);
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 }
 
 /**********************************************************************

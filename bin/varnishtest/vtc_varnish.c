@@ -296,7 +296,7 @@ varnish_new(const char *name)
 	AN(vsb);
 	v->workdir = strdup(VSB_data(vsb));
 	AN(v->workdir);
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 
 	bprintf(buf, "rm -rf %s ; mkdir -p %s", v->workdir, v->workdir);
 	AZ(system(buf));
@@ -429,7 +429,7 @@ varnish_launch(struct varnish *v)
 	vtc_log(v->vl, 3, "CMD: %s", VSB_data(vsb));
 	vsb1 = macro_expand(v->vl, VSB_data(vsb));
 	AN(vsb1);
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 	vsb = vsb1;
 	vtc_log(v->vl, 3, "CMD: %s", VSB_data(vsb));
 	AZ(pipe(&v->fds[0]));
@@ -456,7 +456,7 @@ varnish_launch(struct varnish *v)
 	AZ(close(v->fds[3]));
 	v->fds[0] = v->fds[2];
 	v->fds[2] = v->fds[3] = -1;
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 	AZ(pthread_create(&v->tp, NULL, varnish_thread, v));
 	AZ(pthread_create(&v->tp_vsl, NULL, varnishlog_thread, v));
 
@@ -712,7 +712,7 @@ varnish_vcl(struct varnish *v, const char *vcl, enum VCLI_status_e expect,
 
 	u = varnish_ask_cli(v, VSB_data(vsb), resp);
 	if (u != expect) {
-		VSB_delete(vsb);
+		VSB_destroy(&vsb);
 		vtc_log(v->vl, 0,
 		    "VCL compilation got %u expected %u",
 		    u, expect);
@@ -727,7 +727,7 @@ varnish_vcl(struct varnish *v, const char *vcl, enum VCLI_status_e expect,
 	} else {
 		vtc_log(v->vl, 2, "VCL compilation failed (as expected)");
 	}
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 }
 
 /**********************************************************************
@@ -762,8 +762,8 @@ varnish_vclbackend(struct varnish *v, const char *vcl)
 
 	u = varnish_ask_cli(v, VSB_data(vsb), NULL);
 	if (u != CLIS_OK) {
-		VSB_delete(vsb);
-		VSB_delete(vsb2);
+		VSB_destroy(&vsb);
+		VSB_destroy(&vsb2);
 		vtc_log(v->vl, 0, "FAIL VCL does not compile");
 		return;
 	}
@@ -772,8 +772,8 @@ varnish_vclbackend(struct varnish *v, const char *vcl)
 	AZ(VSB_finish(vsb));
 	u = varnish_ask_cli(v, VSB_data(vsb), NULL);
 	assert(u == CLIS_OK);
-	VSB_delete(vsb);
-	VSB_delete(vsb2);
+	VSB_destroy(&vsb);
+	VSB_destroy(&vsb2);
 }
 
 /**********************************************************************

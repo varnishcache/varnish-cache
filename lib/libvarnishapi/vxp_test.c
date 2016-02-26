@@ -72,11 +72,11 @@ main(int argc, char * const *argv)
 	if (vex == NULL) {
 		VSB_finish(vsb);
 		fprintf(stderr, "Error:\n%s", VSB_data(vsb));
-		VSB_delete(vsb);
+		VSB_destroy(&vsb);
 		free(q_arg);
 		exit(1);
 	}
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 
 	vex_Free(&vex);
 	AZ(vex);

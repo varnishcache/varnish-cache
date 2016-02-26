@@ -122,7 +122,7 @@ logexp_delete_tests(struct logexp *le)
 	while ((test = VTAILQ_FIRST(&le->tests))) {
 		CHECK_OBJ_NOTNULL(test, LOGEXP_TEST_MAGIC);
 		VTAILQ_REMOVE(&le->tests, test, list);
-		VSB_delete(test->str);
+		VSB_destroy(&test->str);
 		if (test->vre)
 			VRE_free(&test->vre);
 		FREE_OBJ(test);
@@ -142,7 +142,7 @@ logexp_delete(struct logexp *le)
 	free(le->query);
 	VSM_Delete(le->vsm);
 	if (le->n_arg)
-		VSB_delete(le->n_arg);
+		VSB_destroy(&le->n_arg);
 	FREE_OBJ(le);
 }
 
@@ -529,7 +529,7 @@ cmd_logexp(CMD_ARGS)
 				return;
 			}
 			if (le->n_arg != NULL) {
-				VSB_delete(le->n_arg);
+				VSB_destroy(&le->n_arg);
 				le->n_arg = NULL;
 			}
 			vsb = VSB_new_auto();
@@ -537,7 +537,7 @@ cmd_logexp(CMD_ARGS)
 			AZ(VSB_printf(vsb, "%s/%s", tmpdir, av[1]));
 			AZ(VSB_finish(vsb));
 			le->n_arg = macro_expand(le->vl, VSB_data(vsb));
-			VSB_delete(vsb);
+			VSB_destroy(&vsb);
 			if (le->n_arg == NULL)
 				return;
 			av++;

@@ -271,7 +271,7 @@ vcc_delete_expr(struct expr *e)
 	if (e == NULL)
 		return;
 	CHECK_OBJ_NOTNULL(e, EXPR_MAGIC);
-	VSB_delete(e->vsb);
+	VSB_destroy(&e->vsb);
 	FREE_OBJ(e);
 }
 /*--------------------------------------------------------------------

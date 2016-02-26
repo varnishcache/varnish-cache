@@ -130,7 +130,7 @@ vfp_esi_end(struct vfp_ctx *vc, struct vef_priv *vef,
 				    "Could not allocate storage for esidata");
 			}
 		}
-		VSB_delete(vsb);
+		VSB_destroy(&vsb);
 	}
 
 	if (vef->vgz != NULL) {

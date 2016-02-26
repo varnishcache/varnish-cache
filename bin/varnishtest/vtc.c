@@ -234,7 +234,7 @@ macro_expand(struct vtclog *vl, const char *text)
 		p += 2;
 		m = macro_get(p, q);
 		if (m == NULL) {
-			VSB_delete(vsb);
+			VSB_destroy(&vsb);
 			vtc_log(vl, 0, "Macro ${%.*s} not found", (int)(q - p),
 			    p);
 			NEEDLESS_RETURN (NULL);
@@ -480,7 +480,7 @@ cmd_err_shell(CMD_ARGS)
 	else
 		vtc_log(vl, 4,
 		    "Found expected string: (\"%s\")", av[1]);
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 }
 
 /**********************************************************************

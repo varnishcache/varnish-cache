@@ -681,7 +681,7 @@ parse_format(const char *format)
 		VSB_clear(vsb);
 	}
 
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 }
 
 static int

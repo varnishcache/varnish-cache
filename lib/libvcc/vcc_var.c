@@ -79,7 +79,7 @@ vcc_Var_Wildcard(struct vcc *tl, const struct token *t, const struct symbol *wc)
 	VSB_printf(vsb, "VRT_SetHdr(ctx, %s,", v->rname);
 	AZ(VSB_finish(vsb));
 	v->lname = TlDup(tl, VSB_data(vsb));
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 
 	sym = VCC_AddSymbolTok(tl, t, SYM_VAR);
 	AN(sym);

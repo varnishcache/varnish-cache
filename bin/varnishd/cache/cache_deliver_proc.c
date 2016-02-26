@@ -71,7 +71,7 @@ VDP_push(struct req *req, vdp_bytes *func, void *priv, int bottom)
 	Symbol_Lookup(vsb, func);
 	AZ(VSB_finish(vsb));
 	VSLb(req->vsl, SLT_Debug, "VDP %s %p %d", VSB_data(vsb), priv, bottom);
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 #endif
 	vdp = WS_Alloc(req->ws, sizeof *vdp);
 	if (vdp == NULL)

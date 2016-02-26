@@ -91,7 +91,7 @@ BAN_Abandon(struct ban_proto *bp)
 {
 
 	CHECK_OBJ_NOTNULL(bp, BAN_PROTO_MAGIC);
-	VSB_delete(bp->vsb);
+	VSB_destroy(&bp->vsb);
 	FREE_OBJ(bp);
 }
 

@@ -106,7 +106,7 @@ client_thread(void *priv)
 		VTCP_close(&fd);
 	}
 	vtc_log(vl, 2, "Ending");
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 	free(p);
 	return (NULL);
 }

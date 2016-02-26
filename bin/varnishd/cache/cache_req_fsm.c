@@ -185,7 +185,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	if (wrk->handling == VCL_RET_RESTART) {
 		HTTP_Setup(h, req->ws, req->vsl, SLT_RespMethod);
-		VSB_delete(synth_body);
+		VSB_destroy(&synth_body);
 		req->req_step = R_STP_RESTART;
 		return (REQ_FSM_MORE);
 	}
@@ -210,7 +210,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 	if (szl >= 0)
 		AZ(ObjSetU64(wrk, req->objcore, OA_LEN, szl));
 	HSH_DerefBoc(wrk, req->objcore);
-	VSB_delete(synth_body);
+	VSB_destroy(&synth_body);
 
 	if (szl < 0) {
 		VSLb(req->vsl, SLT_Error, "Could not get storage");

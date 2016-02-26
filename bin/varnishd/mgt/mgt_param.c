@@ -307,7 +307,7 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 		VCLI_SetResult(cli, CLIS_PARAM);
 		VCLI_Out(cli, "Unknown parameter \"%s\".", av[2]);
 	}
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 }
 
 /*--------------------------------------------------------------------
@@ -466,7 +466,7 @@ MCF_InitParams(struct cli *cli)
 		AN(pp->def);
 		mcf_wash_param(cli, pp, &pp->def, "default", vsb);
 	}
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 }
 
 /*--------------------------------------------------------------------*/

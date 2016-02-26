@@ -104,7 +104,7 @@ run_vcc(void *priv)
 	AZ(VSB_finish(sb));
 	if (VSB_len(sb))
 		printf("%s", VSB_data(sb));
-	VSB_delete(sb);
+	VSB_destroy(&sb);
 	if (csrc == NULL)
 		exit(2);
 
@@ -173,7 +173,7 @@ run_cc(void *priv)
 
 	(void)umask(027);
 	(void)execl("/bin/sh", "/bin/sh", "-c", VSB_data(sb), (char*)0);
-	VSB_delete(sb);				// For flexelint
+	VSB_destroy(&sb);				// For flexelint
 }
 
 /*--------------------------------------------------------------------
@@ -291,7 +291,7 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 	AZ(VSB_finish(sb));
 	if (VSB_len(sb) > 0)
 		VCLI_Out(cli, "%s", VSB_data(sb));
-	VSB_delete(sb);
+	VSB_destroy(&sb);
 
 	(void)unlink(vp.csrcfile);
 	free(vp.csrcfile);

@@ -323,7 +323,7 @@ vslq_newquery(struct VSL_data *vsl, enum VSL_grouping_e grouping,
 		XXXAN(query);
 		query->vex = vex;
 	}
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 	return (query);
 }
 

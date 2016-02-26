@@ -339,7 +339,7 @@ VCL_TestLoad(const char *fn)
 		retval = -1;
 	} else
 		VCL_Close(&vcl);
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 	return (retval);
 }
 
@@ -600,7 +600,7 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 		AZ(VSB_finish(vsb));
 		VCLI_SetResult(cli, CLIS_PARAM);
 		VCLI_Out(cli, "%s", VSB_data(vsb));
-		VSB_delete(vsb);
+		VSB_destroy(&vsb);
 		return;
 	}
 
@@ -630,7 +630,7 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 		vcl_cancel_load(&ctx, cli, name, "warmup");
 		return;
 	}
-	VSB_delete(vsb);
+	VSB_destroy(&vsb);
 	bprintf(vcl->state, "%s", state + 1);
 	assert(hand == VCL_RET_OK);
 	VCLI_Out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
@@ -747,7 +747,7 @@ ccf_config_state(struct cli *cli, const char * const *av, void *priv)
 	AN(ctx.vcl);			// MGT ensures this
 	if (vcl_set_state(&ctx, av[3]) == 0) {
 		bprintf(ctx.vcl->state, "%s", av[3] + 1);
-		VSB_delete(ctx.msg);
+		VSB_destroy(&ctx.msg);
 		return;
 	}
 	AZ(VSB_finish(ctx.msg));
@@ -756,7 +756,7 @@ ccf_config_state(struct cli *cli, const char * const *av, void *priv)
 	    av[3] + 1);
 	if (VSB_len(ctx.msg))
 		VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(ctx.msg));
-	VSB_delete(ctx.msg);
+	VSB_destroy(&ctx.msg);
 }
 
 static void __match_proto__(cli_func_t)

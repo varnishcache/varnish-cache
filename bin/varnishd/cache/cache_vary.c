@@ -158,15 +158,15 @@ VRY_Create(struct busyobj *bo, struct vsb **psb)
 	}
 
 	if (error) {
-		VSB_delete(sbh);
-		VSB_delete(sb);
+		VSB_destroy(&sbh);
+		VSB_destroy(&sb);
 		return (-1);
 	}
 
 	/* Terminate vary matching string */
 	VSB_printf(sb, "%c%c%c", 0xff, 0xff, 0);
 
-	VSB_delete(sbh);
+	VSB_destroy(&sbh);
 	AZ(VSB_finish(sb));
 	*psb = sb;
 	return (VSB_len(sb));
