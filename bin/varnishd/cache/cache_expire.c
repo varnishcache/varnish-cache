@@ -124,11 +124,10 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	assert(oc->refcnt >= 2);
 
 	AZ(oc->exp_flags & (OC_EF_INSERT | OC_EF_MOVE));
 	AZ(oc->flags & OC_F_DYING);
-
-	HSH_Ref(oc);
 
 	ObjSendEvent(wrk, oc, OEV_INSERT);
 	exp_mail_it(oc, OC_EF_INSERT | OC_EF_EXP | OC_EF_MOVE);

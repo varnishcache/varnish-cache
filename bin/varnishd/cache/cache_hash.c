@@ -263,7 +263,9 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
 	AN(digest);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AN(ban);
+	AN(oc->flags & OC_F_BUSY);
 	AZ(oc->flags & OC_F_PRIVATE);
+	assert(oc->refcnt == 1);
 
 	hsh_prealloc(wrk);
 
@@ -275,9 +277,9 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
 
 	/* Mark object busy and insert (precreated) objcore in
 	   objecthead. The new object inherits our objhead reference. */
-	oc->flags |= OC_F_BUSY;
 	oc->objhead = oh;
 	VTAILQ_INSERT_TAIL(&oh->objcs, oc, hsh_list);
+	oc->refcnt++;				// For EXP_Insert
 	Lck_Unlock(&oh->mtx);
 
 	BAN_RefBan(oc, ban);
@@ -662,16 +664,19 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 	AN(oc->stobj->stevedore);
 	AN(oc->flags & OC_F_BUSY);
 	assert(oh->refcnt > 0);
+	assert(oc->refcnt > 0);
 
 	if (!(oc->flags & OC_F_PRIVATE)) {
 		BAN_NewObjCore(oc);
 		AN(oc->ban);
-		EXP_Insert(wrk, oc);
 	}
 
 	/* XXX: pretouch neighbors on oh->objcs to prevent page-on under mtx */
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
+	assert(oc->refcnt > 0);
+	if (!(oc->flags & OC_F_PRIVATE)) 
+		oc->refcnt++;			// For EXP_Insert
 	/* XXX: strictly speaking, we should sort in Date: order. */
 	VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
@@ -679,6 +684,8 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 	if (!VTAILQ_EMPTY(&oh->waitinglist))
 		hsh_rush(wrk, oh);
 	Lck_Unlock(&oh->mtx);
+	if (!(oc->flags & OC_F_PRIVATE)) 
+		EXP_Insert(wrk, oc);
 }
 
 /*====================================================================
