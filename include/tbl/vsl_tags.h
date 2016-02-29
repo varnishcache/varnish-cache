@@ -142,14 +142,14 @@ SLTM(HttpGarbage, SLT_F_BINARY, "Unparseable HTTP request",
 SLTM(Proxy, 0, "PROXY protocol information",
 	"PROXY protocol information.\n\n"
 	"The format is::\n\n"
-	"\t%d %s %d %s %d [key value]...\n"
-	"\t|  |  |  |  |  |\n"
-	"\t|  |  |  |  |  +- optional information\n"
+	"\t%d %s %d %s %d\n"
+	"\t|  |  |  |  |\n"
 	"\t|  |  |  |  +- server port\n"
-	"\t|  |  |  +- server ip\n"
-	"\t|  |  +- client port\n"
-	"\t|  +- client ip\n"
-	"\t+---- PROXY protocol version\n"
+	"\t|  |  |  +---- server ip\n"
+	"\t|  |  +------- client port\n"
+	"\t|  +---------- client ip\n"
+	"\t+------------- PROXY protocol version\n"
+	"\n"
 )
 
 SLTM(ProxyGarbage, 0, "Unparseable PROXY request",
