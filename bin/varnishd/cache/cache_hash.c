@@ -675,7 +675,7 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
 	assert(oc->refcnt > 0);
-	if (!(oc->flags & OC_F_PRIVATE)) 
+	if (!(oc->flags & OC_F_PRIVATE))
 		oc->refcnt++;			// For EXP_Insert
 	/* XXX: strictly speaking, we should sort in Date: order. */
 	VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
@@ -684,7 +684,7 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 	if (!VTAILQ_EMPTY(&oh->waitinglist))
 		hsh_rush(wrk, oh);
 	Lck_Unlock(&oh->mtx);
-	if (!(oc->flags & OC_F_PRIVATE)) 
+	if (!(oc->flags & OC_F_PRIVATE))
 		EXP_Insert(wrk, oc);
 }
 
