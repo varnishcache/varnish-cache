@@ -8,6 +8,7 @@ You may or may not want to know what Poul-Henning thinks.
 .. toctree::
 	:maxdepth: 1
 
+	thatslow.rst
 	firstdesign.rst
 	10goingon50.rst
 	brinch-hansens-arrows.rst
