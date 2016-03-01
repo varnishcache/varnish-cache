@@ -524,7 +524,7 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 {
 	struct ban *b;
 	struct vsl_log *vsl;
-	struct ban * volatile b0;
+	struct ban *b0, *bn;
 	unsigned tests;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -545,10 +545,15 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 	/* If that fails, make a safe check */
 	Lck_Lock(&ban_mtx);
 	b0 = ban_start;
+	bn = oc->ban;
+	bn->refcount++;
 	Lck_Unlock(&ban_mtx);
 
-	if (b0 == oc->ban)
+	AN(bn);
+
+	if (b0 == bn)
 		return (0);
+
 
 	/*
 	 * This loop is safe without locks, because we know we hold
@@ -556,7 +561,7 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 	 * inspect the list past that ban.
 	 */
 	tests = 0;
-	for (b = b0; b != oc->ban; b = VTAILQ_NEXT(b, list)) {
+	for (b = b0; b != bn; b = VTAILQ_NEXT(b, list)) {
 		CHECK_OBJ_NOTNULL(b, BAN_MAGIC);
 		if (b->flags & BANS_FLAG_COMPLETED)
 			continue;
@@ -565,6 +570,7 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 	}
 
 	Lck_Lock(&ban_mtx);
+	bn->refcount--;
 	VSC_C_main->bans_tested++;
 	VSC_C_main->bans_tests_tested += tests;
 

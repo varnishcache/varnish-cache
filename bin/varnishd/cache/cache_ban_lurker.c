@@ -60,6 +60,7 @@ ban_cleantail(void)
 		Lck_Lock(&ban_mtx);
 		b = VTAILQ_LAST(&ban_head, banhead_s);
 		if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) {
+			assert(VTAILQ_EMPTY(&b->objcore));
 			if (b->flags & BANS_FLAG_COMPLETED)
 				VSC_C_main->bans_completed--;
 			if (b->flags & BANS_FLAG_OBJ)

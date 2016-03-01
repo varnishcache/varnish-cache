@@ -408,10 +408,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		if (oc->ttl <= 0.)
 			continue;
 
-		if (BAN_CheckObject(wrk, oc, req)) {
-			oc->flags |= OC_F_DYING;
+		if (BAN_CheckObject(wrk, oc, req))
 			continue;
-		}
 
 		if (ObjHasAttr(wrk, oc, OA_VARY)) {
 			vary = ObjGetAttr(wrk, oc, OA_VARY, NULL);
