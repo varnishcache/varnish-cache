@@ -43,7 +43,7 @@ over the last ten years, so lets pick the worst case and say that
 only two persons were full time.
 
 It follows that there is *no way* average output of those two persons
-exceeded 5 linies per hour, measured over the ten year history of
+exceeded 5 lines per hour, measured over the ten year history of
 the project.
 
 Does that number seem low or high to you ?
