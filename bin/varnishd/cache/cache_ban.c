@@ -525,7 +525,8 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 	Lck_Lock(&ban_mtx);
 	b0 = ban_start;
 	bn = oc->ban;
-	bn->refcount++;
+	if (b0 != bn)
+		bn->refcount++;
 	Lck_Unlock(&ban_mtx);
 
 	AN(bn);
