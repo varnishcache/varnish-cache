@@ -27,7 +27,7 @@ And probably about 5K lines of "misc"::
 	  712 lines in .ac files
 	  613 lines in .lnt files
 
-For the sake of simplicity, lets us call it a round 150K total lines [#f1]_.
+For the sake of simplicity, let us call it a round 150K total lines [#f1]_.
 
 Varnish has been in existence for 10 years, so that's 15K lines per year.
 
