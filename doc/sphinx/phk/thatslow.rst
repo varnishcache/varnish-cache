@@ -92,7 +92,7 @@ I was 40 years old when I started Varnish and I had 22 years
 of professional experience, a *lot* of them staring at, and
 often fixing/improving/refactoring, other peoples source code.
 
-Over the years I came to appreciate Antonie de Saint Exupérys
+Over the years I came to appreciate Antoine de Saint-Exupéry's
 observation::
 
 	Perfection is attained, not when there is nothing more
