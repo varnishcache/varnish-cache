@@ -12,6 +12,12 @@ if [ -f /usr/bin/clang -a "x${CC}" = "x" ] ; then
 	export CC
 fi
 
+if [ "x`uname -o`" = "xFreeBSD" ] ; then
+	DST="--prefix=/usr/local --mandir=/usr/local/man"
+else
+	DST="--prefix=/opt/varnish --mandir=/opt/varnish/man"
+fi
+
 rm -f configure
 . ./autogen.sh 2>&1 | egrep -v "(subdir-objects|is in a subdirectory)"
 
@@ -23,10 +29,9 @@ export CONFIG_SHELL=/bin/sh
 # NB: FreeBSD's make on -current
 # env MAKE=gmake \
 ./configure \
+    $DST \
     --enable-developer-warnings \
     --enable-debugging-symbols \
     --enable-dependency-tracking \
     --enable-tests \
-    --prefix=/opt/varnish \
-    --mandir=/opt/varnish/man \
     "$@"
