@@ -928,7 +928,7 @@ def runmain(inputvcc, rstdir, outputprefix="vcc_if"):
 	fc.write('#include "config.h"\n')
 	fc.write('#include "vcl.h"\n')
 	fc.write('#include "vrt.h"\n')
-	fc.write('#include "vcc_if.h"\n')
+	fc.write('#include "%s.h"\n' % outputprefix)
 	fc.write('#include "vmod_abi.h"\n')
 	fc.write('\n')
 
