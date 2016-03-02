@@ -42,7 +42,6 @@ libvarnish_la_CFLAGS = \
 libvarnish_la_LIBADD = ${RT_LIBS} ${NET_LIBS} ${LIBM} @PCRE_LIBS@ \
 	@SAN_LDFLAGS@
 
-if ENABLE_TESTS
 TESTS = vnum_c_test
 
 noinst_PROGRAMS = ${TESTS}
@@ -53,4 +52,3 @@ vnum_c_test_LDADD = ${LIBM}
 
 test: ${TESTS}
 	@for test in ${TESTS} ; do ./$${test} ; done
-endif
