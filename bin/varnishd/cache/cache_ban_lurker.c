@@ -174,6 +174,7 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 				VTAILQ_REMOVE(obans, bl, l_list);
 				continue;
 			}
+			AZ(bl->flags & BANS_FLAG_REQ);
 			tests = 0;
 			i = ban_evaluate(wrk, bl->spec, oc, NULL, &tests);
 			VSC_C_main->bans_lurker_tested++;
