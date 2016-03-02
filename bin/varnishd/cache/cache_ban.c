@@ -556,7 +556,7 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 
 	oc->ban->refcount--;
 	VTAILQ_REMOVE(&oc->ban->objcore, oc, ban_list);
-	if (b == oc->ban) {
+	if (b == bn) {
 		/* not banned */
 		VTAILQ_INSERT_TAIL(&b0->objcore, oc, ban_list);
 		b0->refcount++;
