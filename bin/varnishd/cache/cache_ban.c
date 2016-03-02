@@ -575,16 +575,14 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 	VSC_C_main->bans_tested++;
 	VSC_C_main->bans_tests_tested += tests;
 
-	oc->ban->refcount--;
-	VTAILQ_REMOVE(&oc->ban->objcore, oc, ban_list);
 	if (b == bn) {
 		/* not banned */
+		oc->ban->refcount--;
+		VTAILQ_REMOVE(&oc->ban->objcore, oc, ban_list);
 		VTAILQ_INSERT_TAIL(&b0->objcore, oc, ban_list);
 		b0->refcount++;
 		oc->ban = b0;
 		b = NULL;
-	} else {
-		oc->ban = NULL;
 	}
 
 	if (VTAILQ_LAST(&ban_head, banhead_s)->refcount == 0)
