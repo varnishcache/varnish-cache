@@ -635,11 +635,6 @@ AC_ARG_ENABLE(debugging-symbols,
 
 AC_SUBST(AM_LT_LDFLAGS)
 
-# --enable-tests
-AC_ARG_ENABLE(tests,
-	AS_HELP_STRING([--enable-tests],[build test programs (default is NO)]))
-AM_CONDITIONAL([ENABLE_TESTS], [test x$enable_tests = xyes])
-
 # Command line for compiling VCL code.  I wish there were a simple way
 # to figure this out dynamically without introducing a run-time
 # dependency on libtool.
