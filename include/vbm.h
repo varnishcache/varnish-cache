@@ -86,7 +86,7 @@ vbit_set(struct vbitmap *vb, unsigned bit)
 {
 
 	if (bit >= vb->nbits)
-		vbit_expand(vb, bit);
+		vbit_expand(vb, bit + 1);
 	vb->bits[VBITMAP_IDX(bit)] |= VBITMAP_BIT(bit);
 }
 
