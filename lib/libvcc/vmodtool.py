@@ -849,7 +849,7 @@ class SimpleTestCase(unittest.TestCase):
 
 
 #######################################################################
-def runmain(inputvcc, outputprefix="vcc_if"):
+def runmain(inputvcc, rstdir, outputprefix="vcc_if"):
 	# Read the file in
 	lines = []
 	with open(inputvcc, "r") as fp:
@@ -939,7 +939,7 @@ def runmain(inputvcc, outputprefix="vcc_if"):
 	fh.close()
 
 	for suf in ("", ".man"):
-		fp = open("vmod_%s%s.rst" % (vx[0].nam, suf), "w")
+		fp = open(join(rstdir, "vmod_%s%s.rst" % (vx[0].nam, suf)), "w")
 		write_rst_file_warning(fp)
 
 		vx[0].doc_dump(fp, suf)
@@ -962,6 +962,8 @@ if __name__ == "__main__":
 	    help="Be strict when parsing input file. (vmod.vcc)")
 	oparser.add_option('-o', metavar="prefix", default='vcc_if',
 	    help='Output file prefix. (default: "vcc_if")')
+	oparser.add_option('-w', '--rstdir', metavar="directory", default='.',
+	    help='Where to save generated RST files. (default: ".")')
 	oparser.add_option('', '--runtests', action='store_true', default=False,
 	    dest="runtests", help=optparse.SUPPRESS_HELP)
 	(opts, args) = oparser.parse_args()
@@ -984,4 +986,4 @@ if __name__ == "__main__":
 		oparser.print_help()
 		exit(-1)
 
-	runmain(i_vcc, outputprefix=opts.o)
+	runmain(i_vcc, opts.rstdir, outputprefix=opts.o)
