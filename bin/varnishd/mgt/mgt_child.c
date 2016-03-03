@@ -206,7 +206,7 @@ mgt_child_inherit(int fd, const char *what)
 
 	assert(fd >= 0);
 	if (fd_map == NULL)
-		fd_map = vbit_init(128);
+		fd_map = vbit_new(128);
 	AN(fd_map);
 	if (what != NULL)
 		vbit_set(fd_map, fd);

@@ -152,3 +152,12 @@ CLEANFILES = \
 	vcl.h \
 	vrt_obj.h \
 	vmod_abi.h
+
+TESTS = vbm_test
+
+noinst_PROGRAMS = ${TESTS}
+
+vbm_test_SOURCES = vbm_test.c vbm.h
+
+test: ${TESTS}
+	@for test in ${TESTS} ; do ./$${test} ; done

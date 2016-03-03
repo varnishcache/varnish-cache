@@ -270,7 +270,7 @@ vsl_IX_arg(struct VSL_data *vsl, int opt, const char *arg)
 	b = arg;
 	e = strchr(b, ':');
 	if (e) {
-		tags = vbit_init(SLT__MAX);
+		tags = vbit_new(SLT__MAX);
 		AN(tags);
 		l = e - b;
 		i = VSL_List2Tags(b, l, vsl_vbm_bitset, tags);

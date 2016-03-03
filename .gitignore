@@ -57,6 +57,9 @@ cscope.*out
 /include/tbl/vrt_stv_var.h
 /include/tbl/vcc_types.h
 /include/vcs_version.h
+/include/vbm_test
+/include/vbm_test.log
+/include/test-suite.log
 /lib/libvcc/vcc_fixed_token.c
 /lib/libvcc/vcc_obj.c
 /lib/libvcc/vcc_token_defs.h

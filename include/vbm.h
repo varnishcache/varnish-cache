@@ -29,17 +29,33 @@
  * Self-sizeing bitmap operations
  */
 
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+
 /**********************************************************************
- * Generic bitmap functions, may be generalized at some point.
+ * Generic bitmap functions
  */
 
 #define VBITMAP_TYPE	unsigned	/* Our preferred wordsize */
 #define VBITMAP_LUMP	(1024)		/* How many bits we alloc at a time */
 #define VBITMAP_WORD	(sizeof(VBITMAP_TYPE) * 8)
-#define VBITMAP_IDX(n)	(n / VBITMAP_WORD)
-#define VBITMAP_BIT(n)	(1U << (n % VBITMAP_WORD))
+#define VBITMAP_IDX(n)	((n) / VBITMAP_WORD)
+#define VBITMAP_BIT(n)	(1U << ((n) % VBITMAP_WORD))
+
+static inline unsigned
+vbit_rndup(unsigned bit, unsigned to) {
+	bit += to - 1;
+	bit -= (bit % to);
+
+	return (bit);
+}
 
 struct vbitmap {
+	unsigned	flags;
+#define VBITMAP_FL_MALLOC	 1	/* struct vbitmap is malloced */
+#define VBITMAP_FL_MALLOC_BITS	(1<<1)	/* bits space is malloced */
+
 	VBITMAP_TYPE	*bits;
 	unsigned	nbits;
 };
@@ -49,22 +65,64 @@ vbit_expand(struct vbitmap *vb, unsigned bit)
 {
 	unsigned char *p;
 
-	bit += VBITMAP_LUMP - 1;
-	bit -= (bit % VBITMAP_LUMP);
-	p = realloc(vb->bits, bit / 8);
-	assert(p != NULL);
+	bit = vbit_rndup(bit, VBITMAP_LUMP);
+	assert(bit > vb->nbits);
+
+	if (vb->flags & VBITMAP_FL_MALLOC_BITS) {
+		p = realloc(vb->bits, bit / 8);
+		assert(p != NULL);
+	} else {
+		p = malloc(bit / 8);
+		assert(p != NULL);
+		if (vb->nbits > 0)
+			memcpy(p, vb->bits, vb->nbits / 8);
+	}
 	memset(p + vb->nbits / 8, 0, (bit - vb->nbits) / 8);
+	vb->flags |= VBITMAP_FL_MALLOC_BITS;
 	vb->bits = (void*)p;
 	vb->nbits = bit;
 }
 
+#define VBITMAP_SZ(b) (sizeof(struct vbitmap) + \
+	vbit_rndup(b, VBITMAP_WORD))
+
+/*
+ * init from some extent of memory (e.g. workspace) which the caller must
+ * manage. Returns a vbitmap with as many bits as fit into sz in VBITMAP_WORD
+ * chunks.
+ *
+ * use VBITMAP_SZ to calculate sz
+ */
 static inline struct vbitmap *
-vbit_init(unsigned initial)
+vbit_init(void *p, size_t sz)
+{
+	struct vbitmap *vb;
+
+	if (sz < sizeof(*vb))
+		return NULL;
+
+	memset(p, 0, sz);
+	vb = p;
+
+	p = (char *)p + sizeof(*vb);
+	sz -= sizeof(*vb);
+
+	vb->nbits = (sz / VBITMAP_WORD) * VBITMAP_WORD;
+	if (vb->nbits)
+		vb->bits = p;
+
+	return (vb);
+}
+
+/* init using malloc */
+static inline struct vbitmap *
+vbit_new(unsigned initial)
 {
 	struct vbitmap *vb;
 
 	vb = calloc(sizeof *vb, 1);
 	assert(vb != NULL);
+	vb->flags |= VBITMAP_FL_MALLOC;
 	if (initial == 0)
 		initial = VBITMAP_LUMP;
 	vbit_expand(vb, initial);
@@ -77,8 +135,13 @@ vbit_destroy(struct vbitmap *vb)
 
 	if (vb == NULL)
 		return;
-	free(vb->bits);
-	free(vb);
+	if (vb->flags & VBITMAP_FL_MALLOC_BITS) {
+		free(vb->bits);
+		vb->bits = NULL;
+		vb->nbits = 0;
+	}
+	if (vb->flags & VBITMAP_FL_MALLOC)
+		free(vb);
 }
 
 static inline void
