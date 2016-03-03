@@ -843,7 +843,7 @@ class SimpleTestCase(unittest.TestCase):
 		tmpfile = mktemp()
 		bdir = dirname(realpath(__file__))
 		for inputfile in glob(join(bdir, "../libvmod_*/vmod.vcc")):
-			runmain(inputfile, outputprefix=tmpfile)
+			runmain(inputfile, ".", outputprefix=tmpfile)
 			unlink(tmpfile + ".c")
 			unlink(tmpfile + ".h")
 
