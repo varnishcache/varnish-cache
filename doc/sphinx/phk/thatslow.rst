@@ -101,7 +101,7 @@ observation::
 And eventually I no longer think about code lines as an asset
 to be accumulated, but rather as an expenditure to be avoided.
 
-When I started Varnish, one of my main personal goals was to 
+When I started Varnish, one of my main personal goals was to
 make it my highest quality program - ever [#f4]_.
 
 This is why Varnish is written in "pidgin C" style and lousy with

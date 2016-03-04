@@ -178,7 +178,7 @@ where we kept thinking in the old frame of reference (ie: Squid)::
 		How long time after the expiry can we serve a cached copy
 		of this document while we have reason to belive the backend
 		can supply us with an update ?
-		
+
 		How long time after the expiry can we serve a cached copy
 		of this document if the backend does not reply or is
 		unreachable.
@@ -521,7 +521,7 @@ Soon those two inspiratons collided::
 		statements:	/* empty */
 				| statement
 				| statements statement
-				
+
 
 		statement:	if_statement
 				| call_statement
@@ -641,7 +641,7 @@ Soon those two inspiratons collided::
 			if (obj.size > 256k) {
 				no-cache
 			} else if (obj.size > 32k && obj.ttl < 2m) {
-				obj.tll = 5m				
+				obj.tll = 5m
 			}
 			if (backend.response_time > 2.0s) {
 				set ttl *= 2.0
@@ -682,7 +682,7 @@ Soon those two inspiratons collided::
 	object on the generation list, the purge object has been completed
 	and will be removed.  A log entry is written with number of compares
 	and number of hits.
-		
+
 	-----------------------------------------------------------------------
 	Random notes
 
@@ -836,7 +836,7 @@ Soon those two inspiratons collided::
 			Logfile processor
 			-i shmemfile
 			-e regexp
-			-o "/var/log/varnish.%Y%m%d.traffic" 
+			-o "/var/log/varnish.%Y%m%d.traffic"
 			-e regexp2
 			-n "/var/log/varnish.%Y%m%d.exception"  (NCSA format)
 			-e regexp3
@@ -1063,7 +1063,7 @@ A couple of days later the ideas had gel'ed::
 			if (obj.size > 256k) {
 				no-cache
 			} else if (obj.size > 32k && obj.ttl < 2m) {
-				obj.tll = 5m				
+				obj.tll = 5m
 			}
 			if (backend.response_time > 2.0s) {
 				set ttl *= 2.0
@@ -1104,7 +1104,7 @@ A couple of days later the ideas had gel'ed::
 	object on the generation list, the purge object has been completed
 	and will be removed.  A log entry is written with number of compares
 	and number of hits.
-		
+
 	-----------------------------------------------------------------------
 	Random notes
 
@@ -1258,7 +1258,7 @@ A couple of days later the ideas had gel'ed::
 			Logfile processor
 			-i shmemfile
 			-e regexp
-			-o "/var/log/varnish.%Y%m%d.traffic" 
+			-o "/var/log/varnish.%Y%m%d.traffic"
 			-e regexp2
 			-n "/var/log/varnish.%Y%m%d.exception"  (NCSA format)
 			-e regexp3
