@@ -843,13 +843,13 @@ class SimpleTestCase(unittest.TestCase):
 		tmpfile = mktemp()
 		bdir = dirname(realpath(__file__))
 		for inputfile in glob(join(bdir, "../libvmod_*/vmod.vcc")):
-			runmain(inputfile, ".", outputprefix=tmpfile)
+			runmain(inputfile, ".", tmpfile)
 			unlink(tmpfile + ".c")
 			unlink(tmpfile + ".h")
 
 
 #######################################################################
-def runmain(inputvcc, rstdir, outputprefix="vcc_if"):
+def runmain(inputvcc, rstdir, outputprefix):
 	# Read the file in
 	lines = []
 	with open(inputvcc, "r") as fp:
@@ -959,11 +959,11 @@ if __name__ == "__main__":
 	oparser = optparse.OptionParser(usage=usagetext)
 
 	oparser.add_option('-N', '--strict', action='store_true', default=False,
-	    help="Be strict when parsing input file. (vmod.vcc)")
-	oparser.add_option('-o', metavar="prefix", default='vcc_if',
-	    help='Output file prefix. (default: "vcc_if")')
+	    help="Be strict when parsing the input file")
+	oparser.add_option('-o', '--output', metavar="prefix", default='vcc_if',
+	    help='Output file prefix (default: "vcc_if")')
 	oparser.add_option('-w', '--rstdir', metavar="directory", default='.',
-	    help='Where to save generated RST files. (default: ".")')
+	    help='Where to save the generated RST files (default: ".")')
 	oparser.add_option('', '--runtests', action='store_true', default=False,
 	    dest="runtests", help=optparse.SUPPRESS_HELP)
 	(opts, args) = oparser.parse_args()
@@ -986,4 +986,4 @@ if __name__ == "__main__":
 		oparser.print_help()
 		exit(-1)
 
-	runmain(i_vcc, opts.rstdir, outputprefix=opts.o)
+	runmain(i_vcc, opts.rstdir, opts.output)
