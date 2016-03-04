@@ -1,4 +1,23 @@
 
+
+================================
+Varnish Cache 4.1.2 (2016-03-04)
+================================
+
+* [vmods] vmodtool improvements for multiple vmods in a single directory.
+
+Bugs fixed
+----------
+
+* 1860_ - ESI-related memory leaks
+* 1863_ - Don't reset the oc->ban pointer from BAN_CheckObject
+* 1864_ - Avoid panic if the lurker is working on a ban to be checked.
+
+.. _1860: https://www.varnish-cache.org/trac/ticket/1860
+.. _1863: https://www.varnish-cache.org/trac/ticket/1863
+.. _1864: https://www.varnish-cache.org/trac/ticket/1864
+
+
 ======================================
 Varnish Cache 4.1.2-beta2 (2016-02-25)
 ======================================
