@@ -65,6 +65,8 @@
 #define COLW			14
 #define COLW_NAME_MIN		24
 
+#define VALUE_MAX		999999999999
+
 struct ma {
 	unsigned n, nmax;
 	double acc;
@@ -715,6 +717,17 @@ print_bytes(WINDOW *w, double val)
 }
 
 static void
+print_trunc(WINDOW *w, uintmax_t val)
+{
+	if (val > VALUE_MAX) {
+		while (val > VALUE_MAX)
+			val /= 1000;
+		wprintw(w, " %9ju...", val);
+	} else
+		wprintw(w, " %12ju", val);
+}
+
+static void
 draw_line_bytes(WINDOW *w, int y, int x, int X, struct pt *pt)
 {
 	enum {
@@ -740,7 +753,7 @@ draw_line_bytes(WINDOW *w, int y, int x, int X, struct pt *pt)
 			if (scale && pt->cur > 1024)
 				print_bytes(w, (double)pt->cur);
 			else
-				wprintw(w, " %12ju", (uintmax_t)pt->cur);
+				print_trunc(w, (uintmax_t)pt->cur);
 			break;
 		case COL_CHG:
 			if (pt->t_last)
