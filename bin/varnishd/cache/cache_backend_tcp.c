@@ -382,7 +382,9 @@ VBT_Get(struct tcp_pool *tp, double tmo, const struct backend *be,
 		Lck_Lock(&tp->mtx);
 		tp->n_used--;		// Nope, didn't work after all.
 		Lck_Unlock(&tp->mtx);
-	}
+	} else
+		VSC_C_main->backend_conn++;
+
 	return (vbc);
 }
 
