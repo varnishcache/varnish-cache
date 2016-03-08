@@ -138,7 +138,6 @@ VBE_DropRefVcl(struct backend *b)
 
 	ASSERT_CLI();
 	Lck_Lock(&b->mtx);
-	assert(b->vsc->vcls > 0);
 	b->vsc->vcls--;
 	VBE_DropRefLocked(b, NULL);
 }
