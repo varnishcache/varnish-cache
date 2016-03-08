@@ -231,7 +231,7 @@ VBT_Open(const struct tcp_pool *tp, double tmo, const struct suckaddr **sa)
 		*sa = tp->ip6;
 		s = VTCP_connect(tp->ip6, msec);
 		if (s >= 0)
-			return(s);
+			return (s);
 	}
 	*sa = tp->ip4;
 	s = VTCP_connect(tp->ip4, msec);
@@ -239,7 +239,7 @@ VBT_Open(const struct tcp_pool *tp, double tmo, const struct suckaddr **sa)
 		*sa = tp->ip6;
 		s = VTCP_connect(tp->ip6, msec);
 	}
-	return(s);
+	return (s);
 }
 
 /*--------------------------------------------------------------------
@@ -360,7 +360,7 @@ VBT_Get(struct tcp_pool *tp, double tmo, const struct backend *be,
 		VTAILQ_REMOVE(&tp->connlist, vbc, list);
 		VTAILQ_INSERT_TAIL(&tp->connlist, vbc, list);
 		tp->n_conn--;
-		VSC_C_main->backend_reuse += 1;
+		VSC_C_main->backend_reuse++;
 		vbc->state = VBC_STATE_STOLEN;
 		vbc->cond = &wrk->cond;
 	}
@@ -376,9 +376,8 @@ VBT_Get(struct tcp_pool *tp, double tmo, const struct backend *be,
 	vbc->state = VBC_STATE_USED;
 	vbc->tcp_pool = tp;
 	vbc->fd = VBT_Open(tp, tmo, &vbc->addr);
-	if (vbc->fd < 0)
+	if (vbc->fd < 0) {
 		FREE_OBJ(vbc);
-	if (vbc == NULL) {
 		Lck_Lock(&tp->mtx);
 		tp->n_used--;		// Nope, didn't work after all.
 		Lck_Unlock(&tp->mtx);
