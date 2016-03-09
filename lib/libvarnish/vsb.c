@@ -500,14 +500,32 @@ VSB_destroy(struct vsb **s)
  * Quote a string
  */
 void
-VSB_quote(struct vsb *s, const char *p, int len, int how)
+VSB_quote(struct vsb *s, const void *v, int len, int how)
 {
+	const char *p;
 	const char *q;
 	int quote = 0;
+	const unsigned char *u, *w;
 
-	(void)how;	/* For future enhancements */
+	assert(v != NULL);
 	if (len == -1)
-		len = strlen(p);
+		len = strlen(v);
+
+	if (how & VSB_QUOTE_HEX) {
+		u = v;
+		for (w = u; w < u + len; w++)
+			if (*w != 0x00)
+				break;
+		VSB_printf(s, "0x");
+		if (w == u + len) {
+			VSB_printf(s, "0...0");
+		} else {
+			for (w = u; w < u + len; w++)
+				VSB_printf(s, "%02x", *w);
+		}
+		return;
+	}
+	p = v;
 
 	for (q = p; q < p + len; q++) {
 		if (!isgraph(*q) || *q == '"' || *q == '\\') {
