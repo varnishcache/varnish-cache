@@ -220,7 +220,7 @@ class Vmod(object):
 		vfn = 'Vmod_%s_Func' % self.nam
 
 		fo.write("/*lint -esym(754, %s::*) */\n" % vfn)
-		fo.write("\nstatic const struct %s Vmod_Func =" % vfn)
+		fo.write("\nstatic const struct %s Vmod_Func = " % vfn)
 		fo.write(self.c_initializer())
 		fo.write("\n")
 
