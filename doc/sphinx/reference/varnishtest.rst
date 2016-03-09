@@ -178,7 +178,7 @@ AVAILABLE COMMANDS
 server
 ******
 
-Creates mock of a server that can accept requests from Varnish and send
+Creates a mock server that can accept requests from Varnish and send
 responses. Accepted parameters:
 
 \-listen
@@ -188,6 +188,8 @@ client
 ******
 
 Creates a client instance that sends requests to Varnish and receives responses.
+By default, a client will try and connect to the first varnish server available.
+
 Accepted parameters:
 
 \-connect
@@ -197,11 +199,11 @@ server/client command arguments
 *******************************
 
 \-repeat INT
- repeat the commands INT in order
+ repeats the commands INT in order
 \-wait
  waits for commands to complete
 \-start
- start the client, and continue without waiting for completion
+ starts the client, and continue without waiting for completion
 \-run
  equivalent to -start then -wait
 
@@ -212,30 +214,32 @@ varnish
 Starts Varnish instance. Accepted arguments:
 
 \-arg STRING
- pass additional arguments to varnishd
+ passes additional arguments to varnishd
 \-cli
- execute a command in CLI of running instance
+ executes a command in CLI of running instance
 \-cliok
- execute a command and expect it return OK status
+ executes a command and expect it return OK status
 \-clierr
- execute a command and expect it to error with given status
+ executes a command and expect it to error with given status
  (e.g. "-clierr 300 panic.clear")
-\-vcl+backend
- specify VCL for the instance, and automatically inject a backend into the VCL
+\-vcl STRING
+ specify VCL for the instance. You can create multiline strings by encasing them
+ in curly braces.
+\-vcl+backend STRING
+ specifes VCL for the instance, and automatically inject backends definition
+ of currently defined servers.
 \-errvcl
  tests that invalid VCL results in an error.
-\-vcl
- specify VCL for the instance
 \-stop
- stop the instance
+ stops the instance
 \-wait-stopped
- wait for the varnish child to stop
+ waits for the varnish child to stop
 \-wait-running
- wait for the varnish child to start
+ waits for the varnish child to start
 \-wait
- wait for varnish to stop
+ waits for varnish to stop
 \-expect
- set up a test for asserting variables against expected results.
+ sets up a test for asserting variables against expected results.
  Syntax: "-expect <var> <comparison> <const>"
 
 See tests supplied with Varnish distribution for usage examples for all these
