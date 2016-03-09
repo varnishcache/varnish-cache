@@ -32,7 +32,9 @@ nodist_libvmod_std_la_SOURCES = \
 # BUILT_SOURCES is only a hack and dependency tracking does not help for the first build
 $(libvmod_std_la_OBJECTS): vcc_if.h
 
-vcc_if.c vcc_if.h vmod_std.rst vmod_std.man.rst: $(vmodtool) $(vmod_srcdir)/vmod.vcc
+vcc_if.h vmod_std.rst vmod_std.man.rst: vcc_if.c
+
+vcc_if.c: $(vmodtool) $(vmod_srcdir)/vmod.vcc
 	@PYTHON@ $(vmodtool) $(vmodtoolargs) $(vmod_srcdir)/vmod.vcc
 
 EXTRA_DIST = vmod.vcc
