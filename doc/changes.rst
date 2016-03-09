@@ -1,3 +1,90 @@
+
+
+================================
+Varnish Cache 4.1.2 (2016-03-04)
+================================
+
+* [vmods] vmodtool improvements for multiple vmods in a single directory.
+
+Bugs fixed
+----------
+
+* 1860_ - ESI-related memory leaks
+* 1863_ - Don't reset the oc->ban pointer from BAN_CheckObject
+* 1864_ - Avoid panic if the lurker is working on a ban to be checked.
+
+.. _1860: https://www.varnish-cache.org/trac/ticket/1860
+.. _1863: https://www.varnish-cache.org/trac/ticket/1863
+.. _1864: https://www.varnish-cache.org/trac/ticket/1864
+
+
+======================================
+Varnish Cache 4.1.2-beta2 (2016-02-25)
+======================================
+
+* [vmods] Passing VCL ACL to a vmod is now possible.
+
+* [vmods] VRT_MINOR_VERSION increase due to new function: VRT_acl_match()
+
+* Some test case stabilization fixes and minor documentation updates.
+
+* Improved handling of workspace exhaustion when fetching objects.
+
+Bugs fixed
+----------
+
+* 1858_ - Hit-for-pass objects are not IMS candidates
+
+.. _1858: https://www.varnish-cache.org/trac/ticket/1858
+
+
+======================================
+Varnish Cache 4.1.2-beta1 (2016-02-17)
+======================================
+
+* Be stricter when parsing a HTTP request to avoid potential
+  HTTP smuggling attacks against vulnerable backends.
+
+* Some fixes to minor/trivial issues found with clang AddressSanitizer.
+
+* Arithmetric on REAL data type in VCL is now possible.
+
+* vmodtool.py improvements to allow vmods for 4.0 and 4.1 to share a source tree.
+
+* Off-by-one in WS_Reset() fixed.
+
+* "https_scheme" parameter added. Enables graceful handling of compound
+  request URLs with HTTPS scheme.
+
+Bugs fixed
+----------
+
+* 1739_ - Workspace overflow handling in VFP_Push()
+* 1837_ - Error compiling VCL if probe is referenced before it is defined
+* 1841_ - Replace alien FD's with /dev/null rather than just closing them
+* 1843_ - Fail HTTP/1.0 POST and PUT requests without Content-Length
+* 1844_ - Correct ENUM handling in object constructors
+* 1851_ - Varnish 4.1.1 fails to build on i386
+* 1852_ - Add a missing VDP flush operation after ESI:includes.
+* 1857_ - Fix timeout calculation for session herding.
+
+.. _1739: https://www.varnish-cache.org/trac/ticket/1739
+.. _1837: https://www.varnish-cache.org/trac/ticket/1837
+.. _1841: https://www.varnish-cache.org/trac/ticket/1841
+.. _1843: https://www.varnish-cache.org/trac/ticket/1843
+.. _1844: https://www.varnish-cache.org/trac/ticket/1844
+.. _1851: https://www.varnish-cache.org/trac/ticket/1851
+.. _1852: https://www.varnish-cache.org/trac/ticket/1852
+.. _1857: https://www.varnish-cache.org/trac/ticket/1857
+
+
+================================
+Varnish Cache 4.1.1 (2016-01-28)
+================================
+
+* No code changes since 4.1.1-beta2.
+
+
 ======================================
 Varnish Cache 4.1.1-beta2 (2016-01-22)
 ======================================
@@ -36,7 +123,6 @@ Changes since 4.1.0:
 - vcl_dir and vmod_dir now accept a colon separated list of directories.
 - Nested includes starting with "./" are relative to the including
   VCL file now.
-
 
 Bugs fixed
 ----------
