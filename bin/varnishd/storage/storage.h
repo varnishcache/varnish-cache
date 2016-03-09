@@ -71,6 +71,8 @@ typedef int storage_baninfo_f(const struct stevedore *, enum baninfo event,
     const uint8_t *ban, unsigned len);
 typedef void storage_banexport_f(const struct stevedore *, const uint8_t *bans,
     unsigned len);
+typedef void storage_panic_f(struct vsb *vsb, const struct objcore *oc);
+
 
 typedef struct object *sml_getobj_f(struct worker *, struct objcore *);
 typedef struct storage *sml_alloc_f(const struct stevedore *, size_t size);
@@ -97,6 +99,7 @@ struct stevedore {
 	storage_allocobj_f	*allocobj;
 	storage_baninfo_f	*baninfo;
 	storage_banexport_f	*banexport;
+	storage_panic_f		*panic;
 
 	/* Only if SML is used */
 	sml_alloc_f		*sml_alloc;

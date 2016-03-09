@@ -258,6 +258,13 @@ pan_objcore(struct vsb *vsb, const char *typ, const struct objcore *oc)
 		if (strlen(oc->stobj->stevedore->ident))
 			VSB_printf(vsb, " %s", oc->stobj->stevedore->ident);
 		VSB_printf(vsb, ")");
+		if (oc->stobj->stevedore->panic) {
+			VSB_printf(vsb, " {\n");
+			VSB_indent(vsb, 2);
+			oc->stobj->stevedore->panic(vsb, oc);
+			VSB_indent(vsb, -2);
+			VSB_printf(vsb, "}");
+		}
 	}
 	VSB_printf(vsb, ",\n");
 	VSB_indent(vsb, -2);
