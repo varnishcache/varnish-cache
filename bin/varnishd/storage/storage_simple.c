@@ -39,6 +39,8 @@
 #include "storage/storage.h"
 #include "storage/storage_simple.h"
 
+#include "vsb.h"
+
 /*-------------------------------------------------------------------*/
 
 static struct storage *
@@ -246,9 +248,11 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 	boc = HSH_RefBoc(oc);
 
 	if (boc == NULL) {
-		VTAILQ_FOREACH(st, &obj->list, list)
+		VTAILQ_FOREACH(st, &obj->list, list) {
+			AN(st->len);
 			if (func(priv, 0, st->ptr, st->len))
 				return (-1);
+		}
 		return (0);
 	}
 
@@ -616,3 +620,45 @@ const struct obj_methods SML_methods = {
 	.objsetattr	= sml_setattr,
 	.objtouch	= LRU_Touch,
 };
+
+static void
+sml_panic_st(struct vsb *vsb, const char *hd, const struct storage *st)
+{
+	VSB_printf(vsb, "%s %p {priv=%p ptr=%p len=%u space=%u}\n",
+	    hd, st, st->priv, st->ptr, st->len, st->space);
+}
+
+void
+SML_panic(struct vsb *vsb, const struct objcore *oc)
+{
+	struct object *o;
+	struct storage *st;
+
+	VSB_printf(vsb, "Simple = %p\n", oc->stobj->priv);
+	if (oc->stobj->priv == NULL)
+		return;
+	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
+	sml_panic_st(vsb, "Obj", o->objstore);
+
+#define OBJ_FIXATTR(U, l, sz) \
+	VSB_printf(vsb, "%s = ", #U); \
+	VSB_quote(vsb, (const void*)o->fa_##l, sz, VSB_QUOTE_HEX); \
+	VSB_printf(vsb, "\n");
+
+#define OBJ_VARATTR(U, l) \
+	VSB_printf(vsb, "%s = {len=%u, ptr=%p}\n", \
+	    #U, o->va_##l##_len, o->va_##l);
+
+#define OBJ_AUXATTR(U, l) \
+	if (o->aa_##l != NULL) sml_panic_st(vsb, #U, o->aa_##l);
+
+#include "tbl/obj_attr.h"
+
+#undef OBJ_FIXATTR
+#undef OBJ_VARATTR
+#undef OBJ_AUXATTR
+
+	VTAILQ_FOREACH(st, &o->list, list) {
+		sml_panic_st(vsb, "Body", st);
+	}
+}

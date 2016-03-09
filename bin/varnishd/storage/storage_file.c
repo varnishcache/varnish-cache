@@ -479,6 +479,7 @@ const struct stevedore smf_stevedore = {
 	.sml_alloc	=	smf_alloc,
 	.sml_free	=	smf_free,
 	.allocobj	=	SML_allocobj,
+	.panic		=	SML_panic,
 	.methods	=	&SML_methods,
 };
 

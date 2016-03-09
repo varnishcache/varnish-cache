@@ -224,6 +224,7 @@ const struct stevedore sma_stevedore = {
 	.sml_alloc	=	sma_alloc,
 	.sml_free	=	sma_free,
 	.allocobj	=	SML_allocobj,
+	.panic		=	SML_panic,
 	.methods	=	&SML_methods,
 	.var_free_space =	sma_free_space,
 	.var_used_space =	sma_used_space,

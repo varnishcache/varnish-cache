@@ -71,3 +71,4 @@ struct object *SML_MkObject(const struct stevedore *, struct objcore *,
     void *ptr);
 
 storage_allocobj_f SML_allocobj;
+storage_panic_f SML_panic;

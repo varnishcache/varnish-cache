@@ -164,6 +164,7 @@ const struct stevedore smu_stevedore = {
 	.free		=	smu_free,
 	.trim		=	smu_trim,
 	.allocobj	=	SML_allocobj,
+	.panic		=	SML_panic,
 	.methods	=	&SML_methods,
 };
 
