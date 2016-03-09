@@ -78,7 +78,8 @@ void		 VSB_delete(struct vsb *);
 void		 VSB_destroy(struct vsb **);
 #define VSB_QUOTE_NONL	1
 #define VSB_QUOTE_JSON	2
-void		 VSB_quote(struct vsb *s, const char *p, int len, int how);
+#define VSB_QUOTE_HEX	4
+void		 VSB_quote(struct vsb *, const void *, int len, int how);
 void		 VSB_indent(struct vsb *, int);
 #ifdef __cplusplus
 };
