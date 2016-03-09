@@ -41,7 +41,7 @@
 #define VSC_LEVEL_F(v,l,e,d)		\
 	printf("%s – %s\n\t%s\n\n", l, e, d);
 #define VSC_F(n, t, l, s, f, v, d, e)	\
-	printf("%s – %s (%s)\n\t%s\n\n", #n, e, VSC_level_##v, d);
+	printf("%s – %s (%s)\n\t%s\n\n", #n, d, VSC_level_##v, e);
 
 int main(int argc, char **argv)
 {
