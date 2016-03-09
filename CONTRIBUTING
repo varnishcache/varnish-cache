@@ -7,8 +7,7 @@ point and follow relevant parts linked there.
 
 Official development tree is here:
 
-    git://git.varnish-cache.org/varnish-cache
-    (soon: https://github.com/varnishcache/varnish-cache )
+    https://github.com/varnishcache/varnish-cache
 
 Patches can be sent to varnish-dev@varnish-cache.org.
 

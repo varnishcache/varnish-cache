@@ -67,7 +67,7 @@ http://repo.varnish-cache.org/source/ .
 Alternatively, if you want to hack on Varnish, you should clone our
 git repository by doing.
 
-      ``git clone git://git.varnish-cache.org/varnish-cache``
+      ``git clone https://github.com/varnishcache/varnish-cache``
 
 
 Build dependencies on Debian / Ubuntu
