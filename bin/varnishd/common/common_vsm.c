@@ -233,10 +233,11 @@ VSM_common_alloc(struct vsm_sc *sc, ssize_t size,
 	if (vr == NULL) {
 		/*
 		 * No space in VSM, return malloc'd space
+		 * This space will not be visible via the VSM
 		 */
 		ALLOC_OBJ(vr, VSM_RANGE_MAGIC);
 		AN(vr);
-		vr->ptr = malloc(size);
+		vr->ptr = calloc(size, 1);
 		AN(vr->ptr);
 		vr->len = size;
 		VTAILQ_INSERT_TAIL(&sc->r_bogus, vr, list);
