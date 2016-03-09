@@ -171,6 +171,135 @@ VMODs::
 
     varnishtest -p vmod_path="$VMOD_PATH" ...
 
+
+AVAILABLE COMMANDS
+==================
+
+server
+******
+
+Creates mock of a server that can accept requests from Varnish and send
+responses. Accepted parameters:
+
+\-listen
+  specifies address and port to listen on (e.g. "127.0.0.1:80")
+
+client
+******
+
+Creates a client instance that sends requests to Varnish and receives responses.
+Accepted parameters:
+
+\-connect
+  specify where to connect to (e.g. "-connect ${s1_sock}").
+
+server/client command arguments
+*******************************
+
+\-repeat INT
+ repeat the commands INT in order
+\-wait
+ waits for commands to complete
+\-start
+ start the client, and continue without waiting for completion
+\-run
+ equivalent to -start then -wait
+
+
+varnish
+*******
+
+Starts Varnish instance. Accepted arguments:
+
+\-arg STRING
+ pass additional arguments to varnishd
+\-cli
+ execute a command in CLI of running instance
+\-cliok
+ execute a command and expect it return OK status
+\-clierr
+ execute a command and expect it to error with given status
+ (e.g. "-clierr 300 panic.clear")
+\-vcl+backend
+ specify VCL for the instance, and automatically inject a backend into the VCL
+\-errvcl
+ tests that invalid VCL results in an error.
+\-vcl
+ specify VCL for the instance
+\-stop
+ stop the instance
+\-wait-stopped
+ wait for the varnish child to stop
+\-wait-running
+ wait for the varnish child to start
+\-wait
+ wait for varnish to stop
+\-expect
+ set up a test for asserting variables against expected results.
+ Syntax: "-expect <var> <comparison> <const>"
+
+See tests supplied with Varnish distribution for usage examples for all these
+directives.
+
+delay
+*****
+Sleeps for specified number of seconds. Can accept floating point numbers.
+
+Usage: ``delay FLOAT``
+
+varnishtest
+***********
+
+Accepts a string as an only argument. This being a test name that is being output
+into the log. By default, test name is not shown, unless it fails.
+
+shell
+*****
+
+Executes a shell command. Accepts one argument as a string, and runs the command
+as is.
+
+Usage: ``shell "CMD"``
+
+sema
+****
+
+Semaphores mostly used to synchronize clients and servers "around"
+varnish, so that the server will not send something particular
+until the client tells it to, but it can also be used synchronize
+multiple clients or servers running in parallel.
+
+Usage: ``sema NAME sync INT``
+
+NAME is of the form 'rX', X being a positive integer. This command blocks until,
+in total, INT semaphores named NAME block.
+
+random
+******
+
+Initializes random generator (need to call std.random() in vcl). See m00002.vtc
+for more info
+
+feature
+*******
+
+Checks for features to be present in the test environment. If feature is not present, test is skipped.
+
+Usage: ``feature STRING [STRING...]``
+
+Possible checks:
+
+SO_RCVTIMEO_WORKS
+ runs the test only if SO_RCVTIMEO option works in the environment
+64bit
+ runs the test only if environment is 64 bit
+!OSX
+ skips the test if ran on OSX
+topbuild
+ varnishtest has been started with '-i' and set the ${topbuild} macro.
+logexpect
+ This allows checking order and contents of VSL records in varnishtest.
+
 SEE ALSO
 ========
 
@@ -198,4 +327,4 @@ COPYRIGHT
 This document is licensed under the same licence as Varnish
 itself. See LICENCE for details.
 
-* Copyright (c) 2007-2015 Varnish Software AS
+* Copyright (c) 2007-2016 Varnish Software AS
