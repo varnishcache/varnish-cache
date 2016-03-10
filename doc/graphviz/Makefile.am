@@ -20,9 +20,10 @@ dist-hook:
 # this is a4, letter is 8.5,11
 SIZE	      = 8.4,11.7
 
-EXTRA_DIST = $(srcdir)/*.dot
+EXTRA_DIST = $(srcdir)/*.dot	\
+	$(PDFS)		\
+	$(SVGS)
 
-if HAVE_DOT
 PDFS = \
 	cache_http1_fsm.pdf \
 	cache_req_fsm.pdf \
@@ -33,33 +34,43 @@ SVGS = \
 	cache_req_fsm.svg \
 	cache_fetch.svg
 
+if HAVE_DOT
 CLEANFILES = \
 	$(PDFS)	\
 	$(SVGS)
 endif
 
 pdf: $(PDFS)
+
+html: $(SVGS) link_srcdir
+
+# XXX does not fit onto a4 unless in landscape
+cache_fetch.pdf: cache_fetch.dot
 if ! HAVE_DOT
 	@echo ==================================================
 	@echo You need graphviz installed to generate pdf output
 	@echo ==================================================
 	@false
-endif
-
-html: $(SVGS) link_srcdir
-if ! HAVE_DOT
-	@echo ===================================================
-	@echo You need graphviz installed to generate html output
-	@echo ===================================================
-	@false
-endif
-
-# XXX does not fit onto a4 unless in landscape
-cache_fetch.pdf: cache_fetch.dot
+else
 	@DOT@ -Tpdf -Gsize=$(SIZE) -Grotate=90 $< >$@
+endif
 
 %.pdf: %.dot
+if ! HAVE_DOT
+	@echo ==================================================
+	@echo You need graphviz installed to generate pdf output
+	@echo ==================================================
+	@false
+else
 	@DOT@ -Tpdf -Gsize=$(SIZE) $< >$@
+endif
 
 %.svg: %.dot
+if ! HAVE_DOT
+	@echo ===================================================
+	@echo You need graphviz installed to generate svg output
+	@echo ===================================================
+	@false
+else
 	@DOT@ -Tsvg $< >$@
+endif
