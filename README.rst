@@ -1,3 +1,6 @@
+Varnish Cache
+=============
+
 This is Varnish Cache, the high-performance HTTP accelerator.
 
 Documentation and additional information about Varnish is available on
