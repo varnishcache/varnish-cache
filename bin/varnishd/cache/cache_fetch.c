@@ -160,7 +160,7 @@ vbf_beresp2obj(struct busyobj *bo)
  */
 
 static enum fetch_step
-vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
+vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 {
 	const char *q;
 
@@ -187,7 +187,8 @@ vbf_stp_mkbereq(const struct worker *wrk, struct busyobj *bo)
 		AZ(bo->stale_oc);
 
 	if (bo->stale_oc != NULL &&
-	    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND)) {
+	    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND) &&
+	    (bo->stale_oc->boc != NULL || ObjGetLen(wrk, bo->stale_oc) != 0)) {
 		q = HTTP_GetHdrPack(bo->wrk, bo->stale_oc, H_Last_Modified);
 		if (q != NULL)
 			http_PrintfHeader(bo->bereq0,
