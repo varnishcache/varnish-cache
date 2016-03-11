@@ -118,6 +118,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	}
 
 	ObjTrimStore(req->wrk, req->body_oc);
+	AZ(ObjSetU64(req->wrk, req->body_oc, OA_LEN, req->req_bodybytes));
 	HSH_DerefBoc(req->wrk, req->body_oc);
 
 	if (vfps != VFP_END) {
@@ -163,8 +164,8 @@ VRB_Iterate(struct req *req, objiterate_f *func, void *priv)
 
 	switch(req->req_body_status) {
 	case REQ_BODY_CACHED:
-
-		if (ObjIterate(req->wrk, req->body_oc, priv, func))
+		if (req->req_bodybytes > 0 &&
+		    ObjIterate(req->wrk, req->body_oc, priv, func))
 			return (-1);
 		return (0);
 	case REQ_BODY_NONE:
