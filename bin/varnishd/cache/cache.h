@@ -111,7 +111,6 @@ struct director;
 struct iovec;
 struct mempool;
 struct objcore;
-struct object;
 struct objhead;
 struct pool;
 struct poolparam;

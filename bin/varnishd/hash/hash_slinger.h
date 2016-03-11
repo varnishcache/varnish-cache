@@ -32,7 +32,6 @@ struct sess;
 struct req;
 struct objcore;
 struct worker;
-struct object;
 
 typedef void hash_init_f(int ac, char * const *av);
 typedef void hash_start_f(void);
