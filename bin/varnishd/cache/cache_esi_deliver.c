@@ -722,7 +722,7 @@ ved_stripgzip(struct req *req, const struct boc *boc)
 	dbits = WS_Alloc(req->ws, 8);
 	AN(dbits);
 	foo.dbits = dbits;
-	(void)ObjIterate(req->wrk, req->objcore, &foo, ved_objiterate);
+	(void)ObjIterate(req->wrk, req->objcore, &foo, ved_objiterate, 0);
 	/* XXX: error check ?? */
 	(void)ved_bytes(req, foo.preq, VDP_FLUSH, NULL, 0);
 

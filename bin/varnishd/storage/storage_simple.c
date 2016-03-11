@@ -227,12 +227,13 @@ sml_objfree(struct worker *wrk, struct objcore *oc)
 
 static int __match_proto__(objiterate_f)
 sml_iterator(struct worker *wrk, struct objcore *oc,
-    void *priv, objiterate_f *func)
+    void *priv, objiterate_f *func, int final)
 {
 	struct boc *boc;
 	struct object *obj;
 	struct storage *st;
 	struct storage *checkpoint = NULL;
+	const struct stevedore *stv;
 	ssize_t checkpoint_len = 0;
 	ssize_t len = 0;
 	int ret = 0;
@@ -244,9 +245,24 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 
 	obj = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
+	stv = oc->stobj->stevedore;
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
 	boc = HSH_RefBoc(oc);
 
+	/* Attemt to catch if final was already used */
+	assert(boc != NULL || !VTAILQ_EMPTY(&obj->list));
+
+	if (boc == NULL && final) {
+		while (!VTAILQ_EMPTY(&obj->list)) {
+			st = VTAILQ_FIRST(&obj->list);
+			if (ret == 0 && func(priv, 1, st->ptr, st->len))
+				ret = -1;
+			VTAILQ_REMOVE(&obj->list, st, list);
+			sml_stv_free(stv, st);
+		}
+		return (ret);
+	}
 	if (boc == NULL) {
 		VTAILQ_FOREACH(st, &obj->list, list) {
 			AN(st->len);

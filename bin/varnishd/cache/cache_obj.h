@@ -35,7 +35,7 @@ typedef void objsetstate_f(struct worker *, const struct objcore *,
     enum boc_state_e);
 
 typedef int objiterator_f(struct worker *, struct objcore *,
-    void *priv, objiterate_f *func);
+    void *priv, objiterate_f *func, int final);
 typedef int objgetspace_f(struct worker *, struct objcore *,
      ssize_t *sz, uint8_t **ptr);
 typedef void objextend_f(struct worker *, struct objcore *, ssize_t l);

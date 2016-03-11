@@ -769,7 +769,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		ObjSetState(wrk, bo->fetch_objcore, BOS_STREAM);
 	}
 
-	if (ObjIterate(wrk, bo->stale_oc, bo, vbf_objiterator))
+	if (ObjIterate(wrk, bo->stale_oc, bo, vbf_objiterator, 0))
 		(void)VFP_Error(bo->vfc, "Template object failed");
 
 	if (bo->stale_oc->flags & OC_F_FAILED)

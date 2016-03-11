@@ -165,7 +165,7 @@ VRB_Iterate(struct req *req, objiterate_f *func, void *priv)
 	switch(req->req_body_status) {
 	case REQ_BODY_CACHED:
 		if (req->req_bodybytes > 0 &&
-		    ObjIterate(req->wrk, req->body_oc, priv, func))
+		    ObjIterate(req->wrk, req->body_oc, priv, func, 0))
 			return (-1);
 		return (0);
 	case REQ_BODY_NONE:

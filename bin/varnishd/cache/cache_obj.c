@@ -178,14 +178,14 @@ ObjDestroy(struct worker *wrk, struct objcore **p)
 
 int
 ObjIterate(struct worker *wrk, struct objcore *oc,
-    void *priv, objiterate_f *func)
+    void *priv, objiterate_f *func, int final)
 {
 	const struct obj_methods *om = obj_getmethods(oc);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(func);
 	AN(om->objiterator);
-	return (om->objiterator(wrk, oc, priv, func));
+	return (om->objiterator(wrk, oc, priv, func, final));
 }
 
 /*====================================================================

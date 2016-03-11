@@ -861,7 +861,7 @@ struct objcore * ObjNew(struct worker *);
 void ObjDestroy(struct worker *, struct objcore **);
 typedef int objiterate_f(void *priv, int flush, const void *ptr, ssize_t len);
 int ObjIterate(struct worker *, struct objcore *,
-    void *priv, objiterate_f *func);
+    void *priv, objiterate_f *func, int final);
 int ObjGetSpace(struct worker *, struct objcore *, ssize_t *sz, uint8_t **ptr);
 void ObjExtend(struct worker *, struct objcore *, ssize_t l);
 uint64_t ObjWaitExtend(const struct worker *, const struct objcore *,
