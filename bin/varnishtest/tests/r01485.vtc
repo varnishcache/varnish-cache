@@ -2,7 +2,7 @@ varnishtest "#1485: Wrong response reason phrase"
 
 server s1 {
 	rxreq
-	txresp -hdr {Etag: "foo"}
+	txresp -hdr {Etag: "foo"} -body "1"
 
 	rxreq
 	expect req.http.If-None-Match == {"foo"}
@@ -21,6 +21,7 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.status == 200
+	expect resp.bodylen == 1
 	expect resp.msg == "OK"
 
 	delay 0.1
@@ -28,5 +29,6 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.status == 200
+	expect resp.bodylen == 1
 	expect resp.msg == "OK"
 } -run

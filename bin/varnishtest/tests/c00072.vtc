@@ -2,15 +2,17 @@ varnishtest "purge stale on refresh with and without IMS"
 
 server s1 {
 	rxreq
-	txresp -hdr "foo: bar"
+	expect req.url == /no-ims
+	txresp -hdr "foo: bar" -body "1"
 	rxreq
-	txresp -hdr "foo: bar" -hdr {ETag: "asdf"}
+	expect req.url == /ims
+	txresp -hdr "foo: bar" -hdr {ETag: "asdf"} -body "12"
 
 	rxreq
-	txresp -hdr "foo: baz"
+	txresp -hdr "foo: baz" -body "123"
 	rxreq
 	expect req.http.if-none-match == {"asdf"}
-	txresp -status 304 -nolen -hdr "foo: baz"
+	txresp -status 304 -nolen -hdr "foo: bazf"
 } -start
 
 varnish v1 -vcl+backend {
@@ -24,9 +26,12 @@ varnish v1 -vcl+backend {
 client c1 {
 	txreq -url /no-ims
 	rxresp
+	expect resp.bodylen == 1
 	expect resp.http.foo == "bar"
+
 	txreq -url /ims
 	rxresp
+	expect resp.bodylen == 2
 	expect resp.http.foo == "bar"
 } -run
 
@@ -37,10 +42,13 @@ varnish v1 -expect n_object == 2
 client c1 {
 	txreq -url /no-ims
 	rxresp
+	expect resp.bodylen == 3
 	expect resp.http.foo == "baz"
+
 	txreq -url /ims
 	rxresp
-	expect resp.http.foo == "baz"
+	expect resp.bodylen == 2
+	expect resp.http.foo == "bazf"
 } -run
 
 # Make sure expiry is done

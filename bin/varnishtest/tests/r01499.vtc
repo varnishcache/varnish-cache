@@ -2,10 +2,10 @@ varnishtest "#1499 - objcore ref leak on IMS update"
 
 server s1 {
 	rxreq
-	txresp -hdr {Etag: "foo"}
+	txresp -hdr {Etag: "foo"} -body {1}
 	rxreq
 	expect req.http.if-none-match == {"foo"}
-	txresp -hdr "X-Resp: 2"
+	txresp -hdr "X-Resp: 2" -body {12}
 } -start
 
 varnish v1 -vcl+backend {
@@ -19,12 +19,14 @@ varnish v1 -vcl+backend {
 client c1 {
 	txreq
 	rxresp
+	expect resp.bodylen == 1
 
 	delay 0.5
 
 	txreq
 	rxresp
 	expect resp.http.x-resp == "2"
+	expect resp.bodylen == 2
 } -run
 
 delay 3
