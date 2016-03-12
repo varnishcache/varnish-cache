@@ -1,0 +1,20 @@
+varnishtest "Test large pass deleted during streaming"
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Transfer-Encoding: chunked"
+	chunkedlen 65536
+	chunkedlen 0
+} -start
+
+varnish v1 \
+	-arg "-s malloc,1m" -vcl+backend { } -start
+
+varnish v1 -cliok "debug.fragfetch 1024"
+
+client c1 {
+	txreq -hdr "Cookie: bar"
+	rxresp
+	expect resp.bodylen == 65536
+	expect_pattern 
+} -run

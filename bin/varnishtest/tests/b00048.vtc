@@ -24,6 +24,7 @@ client c1 {
 	loop 20 {
 		txreq -url /c1
 		rxresp
+		expect resp.bodylen == 4
 		expect resp.status == 200
 	}
 } -start
@@ -32,6 +33,7 @@ client c2 {
 	loop 20 {
 		txreq -url /c2
 		rxresp
+		expect resp.bodylen == 4
 		expect resp.status == 200
 	}
 } -start
@@ -40,6 +42,7 @@ client c3 {
 	loop 20 {
 		txreq -url /c3
 		rxresp
+		expect resp.bodylen == 4
 		expect resp.status == 200
 	}
 } -start
