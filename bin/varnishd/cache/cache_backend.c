@@ -327,9 +327,10 @@ vbe_panic(const struct director *d, struct vsb *vsb)
 		VSB_printf(vsb, "ipv6 = %s,\n", bp->ipv6_addr);
 	VSB_printf(vsb, "port = %s,\n", bp->port);
 	VSB_printf(vsb, "hosthdr = %s,\n", bp->hosthdr);
-	VSB_printf(vsb, "health=%s, admin_health=%s",
-	    bp->healthy ? "healthy" : "sick", bp->admin_health);
-	VSB_printf(vsb, ", changed=%.1f,\n", bp->health_changed);
+	VSB_printf(vsb, "health = %s,\n",
+	    bp->healthy ? "healthy" : "sick");
+	VSB_printf(vsb, "admin_health = %s, changed = %f,\n",
+	    bp->admin_health, bp->health_changed);
 	VSB_printf(vsb, "n_conn = %u,\n", bp->n_conn);
 }
 

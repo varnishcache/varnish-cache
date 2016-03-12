@@ -249,7 +249,7 @@ pan_objcore(struct vsb *vsb, const char *typ, const struct objcore *oc)
 	VSB_printf(vsb, "exp_flags = 0x%x,\n", oc->exp_flags);
 	if (oc->boc != NULL)
 		pan_boc(vsb, oc->boc);
-	VSB_printf(vsb, "exp = { %f, %f, %f, %f }\n",
+	VSB_printf(vsb, "exp = {%f,%f,%f,%f}\n",
 	    oc->t_origin, oc->ttl, oc->grace, oc->keep);
 	VSB_printf(vsb, "objhead = %p,\n", oc->objhead);
 	VSB_printf(vsb, "stevedore = %p", oc->stobj->stevedore);
