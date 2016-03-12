@@ -300,6 +300,30 @@ cmd_http_expect(CMD_ARGS)
 		    av[0], clhs, cmp, crhs, retval ? "match" : "failed");
 }
 
+static void
+cmd_http_expect_pattern(CMD_ARGS)
+{
+	char *p;
+	struct http *hp;
+	char t = '0';
+
+	(void)cmd;
+	(void)vl;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	AZ(strcmp(av[0], "expect_pattern"));
+	av++;
+	AZ(av[0]);
+	for (p = hp->body; *p != '\0'; p++) {
+		if (*p != t)
+			vtc_log(hp->vl, 0,
+			    "EXPECT PATTERN FAIL @%zd should 0x%02x is 0x%02x",
+			    p - hp->body, t, *p);
+		t += 1;
+		t &= ~0x08;
+	}
+	vtc_log(hp->vl, 4, "EXPECT PATTERN SUCCESS");
+}
+
 /**********************************************************************
  * Split a HTTP protocol header
  */
@@ -1347,6 +1371,7 @@ static const struct cmds http_cmds[] = {
 	{ "rxrespbody",		cmd_http_rxrespbody },
 	{ "gunzip",		cmd_http_gunzip_body },
 	{ "expect",		cmd_http_expect },
+	{ "expect_pattern",	cmd_http_expect_pattern },
 	{ "recv",		cmd_http_recv },
 	{ "send",		cmd_http_send },
 	{ "send_n",		cmd_http_send_n },
