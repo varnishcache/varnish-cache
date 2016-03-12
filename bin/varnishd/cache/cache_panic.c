@@ -468,8 +468,11 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 		return;
 	VSB_indent(vsb, 2);
 	xp = XPORT_ByNumber(sp->sattr[SA_TRANSPORT]);
-	VSB_printf(vsb, "fd = %d, vxid = %u, transport = %s",
-	    sp->fd, VXID(sp->vxid),
+	VSB_printf(vsb, "fd = %d, vxid = %u,\n",
+	    sp->fd, VXID(sp->vxid));
+	VSB_printf(vsb, "t_open = %f,\n", sp->t_open);
+	VSB_printf(vsb, "t_idle = %f,\n", sp->t_idle);
+	VSB_printf(vsb, "transport = %s",
 	    xp == NULL ? "<none>" : xp->name);
 	if (xp != NULL && xp->sess_panic != NULL) {
 		VSB_printf(vsb, " {\n");
