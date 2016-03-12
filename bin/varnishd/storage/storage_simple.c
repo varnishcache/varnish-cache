@@ -311,6 +311,11 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 			sl += st->len;
 			st = VTAILQ_NEXT(st, list);
 			if (VTAILQ_NEXT(st, list) != NULL) {
+				if (final && checkpoint != NULL) {
+					VTAILQ_REMOVE(&obj->list,
+					    checkpoint, list);
+					sml_stv_free(stv, checkpoint);
+				}
 				checkpoint = st;
 				checkpoint_len = sl;
 			}
@@ -322,7 +327,7 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 			st = NULL;
 		Lck_Unlock(&boc->mtx);
 		assert(l > 0 || boc->state == BOS_FINISHED);
-		if (func(priv, st != NULL ? 0 : 1, p, l)) {
+		if (func(priv, st != NULL ? final : 1, p, l)) {
 			ret = -1;
 			break;
 		}
