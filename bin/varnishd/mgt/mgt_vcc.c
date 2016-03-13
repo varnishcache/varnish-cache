@@ -296,17 +296,20 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 	(void)unlink(vp.csrcfile);
 	free(vp.csrcfile);
 
-	free(vp.dir);
-
 	if (status || C_flag) {
 		(void)unlink(vp.libfile);
 		free(vp.libfile);
+		if (C_flag)
+			AZ(rmdir(vp.dir));
+		free(vp.dir);
 		if (status) {
 			VCLI_Out(cli, "VCL compilation failed");
 			VCLI_SetResult(cli, CLIS_PARAM);
 		}
 		return(NULL);
 	}
+
+	free(vp.dir);
 
 	VCLI_Out(cli, "VCL compiled.\n");
 
