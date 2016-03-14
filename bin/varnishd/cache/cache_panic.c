@@ -145,19 +145,19 @@ pan_ws(struct vsb *vsb, const struct ws *ws)
 	if (!(ws->id[0] & 0x20))
 		VSB_printf(vsb, "OVERFLOWED ");
 	VSB_printf(vsb, "id = \"%s\",\n",  ws->id);
-	VSB_printf(vsb, "{s,f,r,e} = {%p",  ws->s);
+	VSB_printf(vsb, "{s, f, r, e} = {%p",  ws->s);
 	if (ws->f > ws->s)
-		VSB_printf(vsb, ",+%ld", (long) (ws->f - ws->s));
+		VSB_printf(vsb, ", +%ld", (long) (ws->f - ws->s));
 	else
-		VSB_printf(vsb, ",%p", ws->f);
+		VSB_printf(vsb, ", %p", ws->f);
 	if (ws->r > ws->s)
-		VSB_printf(vsb, ",+%ld", (long) (ws->r - ws->s));
+		VSB_printf(vsb, ", +%ld", (long) (ws->r - ws->s));
 	else
-		VSB_printf(vsb, ",%p", ws->r);
+		VSB_printf(vsb, ", %p", ws->r);
 	if (ws->e > ws->s)
-		VSB_printf(vsb, ",+%ld", (long) (ws->e - ws->s));
+		VSB_printf(vsb, ", +%ld", (long) (ws->e - ws->s));
 	else
-		VSB_printf(vsb, ",%p", ws->e);
+		VSB_printf(vsb, ", %p", ws->e);
 	VSB_printf(vsb, "},\n");
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
@@ -249,7 +249,7 @@ pan_objcore(struct vsb *vsb, const char *typ, const struct objcore *oc)
 	VSB_printf(vsb, "exp_flags = 0x%x,\n", oc->exp_flags);
 	if (oc->boc != NULL)
 		pan_boc(vsb, oc->boc);
-	VSB_printf(vsb, "exp = {%f,%f,%f,%f}\n",
+	VSB_printf(vsb, "exp = {%f, %f, %f, %f}\n",
 	    oc->t_origin, oc->ttl, oc->grace, oc->keep);
 	VSB_printf(vsb, "objhead = %p,\n", oc->objhead);
 	VSB_printf(vsb, "stevedore = %p", oc->stobj->stevedore);

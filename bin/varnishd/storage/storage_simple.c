@@ -645,7 +645,7 @@ const struct obj_methods SML_methods = {
 static void
 sml_panic_st(struct vsb *vsb, const char *hd, const struct storage *st)
 {
-	VSB_printf(vsb, "%s %p {priv=%p ptr=%p len=%u space=%u}\n",
+	VSB_printf(vsb, "%s %p {priv=%p, ptr=%p, len=%u, space=%u}\n",
 	    hd, st, st->priv, st->ptr, st->len, st->space);
 }
 
