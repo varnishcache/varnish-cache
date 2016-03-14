@@ -297,8 +297,6 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 	} else {
 		i = V1F_SendReq(req->wrk, bo, &v1a.bereq, 1);
 		VSLb_ts_req(req, "Pipe", W_TIM_real(req->wrk));
-		if (vbc->state == VBC_STATE_STOLEN)
-			VBT_Wait(req->wrk, vbc);
 		if (i == 0)
 			V1P_Process(req, vbc->fd, &v1a);
 		VSLb_ts_req(req, "PipeSess", W_TIM_real(req->wrk));

@@ -1,0 +1,33 @@
+varnishtest "#1806: return pipe w/ STOLEN connection"
+
+server s1 {
+	rxreq
+	expect req.url == "/pass-me"
+	txresp -body "I was PASSed\n"
+
+	rxreq
+	expect req.url == "/pipe-me"
+	txresp -body "I was PIPEd\n"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/pipe-me") {
+			return (pipe);
+		}
+
+		return (pass);
+	}
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
+
+client c1 {
+	txreq -url /pass-me
+	rxresp
+	expect resp.status == 200
+
+	txreq -req POST -url /pipe-me -body "asdf"
+	rxresp
+	expect resp.status == 200
+} -run
