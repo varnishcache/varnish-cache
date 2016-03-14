@@ -271,8 +271,7 @@ vbp_poke(struct vbp_target *vt)
 		if (tmo > 0)
 			i = poll(pfd, 1, tmo);
 		if (i == 0 || tmo <= 0) {
-			if (i == 0)
-				vt->err_recv |= 1;
+			vt->err_recv |= (i == 0);
 			VTCP_close(&s);
 			return;
 		}
