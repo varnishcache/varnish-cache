@@ -250,9 +250,6 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 
 	boc = HSH_RefBoc(oc);
 
-	/* Attemt to catch if final was already used */
-	assert(boc != NULL || !VTAILQ_EMPTY(&obj->list));
-
 	if (boc == NULL && final) {
 		while (!VTAILQ_EMPTY(&obj->list)) {
 			st = VTAILQ_FIRST(&obj->list);
