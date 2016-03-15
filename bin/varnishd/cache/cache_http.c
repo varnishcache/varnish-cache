@@ -246,11 +246,12 @@ http_IsHdr(const txt *hh, const char *hdr)
 /*--------------------------------------------------------------------*/
 
 static unsigned
-http_findhdr(const struct http *hp, unsigned l, const char *hdr)
+http_findhdr_from(const struct http *hp, unsigned l, const char *hdr,
+    unsigned from)
 {
 	unsigned u;
 
-	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
+	for (u = from; u < hp->nhd; u++) {
 		Tcheck(hp->hd[u]);
 		if (hp->hd[u].e < hp->hd[u].b + l + 1)
 			continue;
@@ -261,6 +262,11 @@ http_findhdr(const struct http *hp, unsigned l, const char *hdr)
 		return (u);
 	}
 	return (0);
+}
+
+static unsigned
+http_findhdr(const struct http *hp, unsigned l, const char *hdr) {
+	return (http_findhdr_from(hp, l, hdr, HTTP_HDR_FIRST));
 }
 
 /*--------------------------------------------------------------------
@@ -808,8 +814,12 @@ http_Merge(const struct http *fm, struct http *to, int not_ce)
 		if (!p)
 			continue;
 		u = http_findhdr(fm, p - to->hd[v].b, to->hd[v].b);
-		if (u)
+		while (u) {
 			fm->hdf[u] &= ~HDF_MARKER;
+			u = http_findhdr_from(fm, p - to->hd[v].b,
+				to->hd[v].b, u + 1);
+		}
+
 	}
 	for (u = HTTP_HDR_FIRST; u < fm->nhd; u++)
 		if (fm->hdf[u] & HDF_MARKER)
