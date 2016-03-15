@@ -1,0 +1,48 @@
+varnishtest "r01879: Check duplicate headers handling on IMS header merge"
+
+server s1 {
+	rxreq
+	txresp -hdr {etag: "foo"} -hdr "foo: a" -hdr "foo: b" -body "bdy"
+	rxreq
+	expect req.http.if-none-match == {"foo"}
+	txresp -status 304 -hdr {etag: "foo"}  -hdr "foo: c" -hdr "foo: d"
+	rxreq
+	txresp -hdr {etag: "bar"} -hdr "foo: a" -hdr "foo: b" -body "bdy"
+	rxreq
+	expect req.http.if-none-match == {"bar"}
+	txresp -status 304 -hdr {etag: "bar"}
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_std};
+
+	sub vcl_backend_response {
+		set beresp.ttl = 0.00001s;
+		set beresp.grace = 0.1s;
+		set beresp.keep = 9999s;
+	}
+	sub vcl_deliver {
+		std.collect(resp.http.foo);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.foo == "a, b"
+	delay .5
+	txreq
+	rxresp
+	expect resp.http.foo == "c, d"
+	delay .5
+} -run
+
+client c2 {
+	txreq
+	rxresp
+	expect resp.http.foo == "a, b"
+	delay .5
+	txreq
+	rxresp
+	expect resp.http.foo == "a, b"
+} -run
