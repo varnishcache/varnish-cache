@@ -196,11 +196,13 @@ logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	int vxid, tag, type, len;
 	const char *legend, *data;
 
-	(void)vsl;
 	CAST_OBJ_NOTNULL(le, priv, LOGEXP_MAGIC);
 
 	for (i = 0; (t = pt[i]); i++) {
 		while (1 == VSL_Next(t->c)) {
+			if (!VSL_Match(vsl, t->c))
+				continue;
+
 			CHECK_OBJ_NOTNULL(le->test, LOGEXP_TEST_MAGIC);
 			AN(t->c->rec.ptr);
 			vxid = VSL_ID(t->c->rec.ptr);
