@@ -992,6 +992,7 @@ HTTP_Merge(struct worker *wrk, struct objcore *oc, struct http *to)
 	const char *ptr;
 	unsigned u;
 	const char *p;
+	unsigned nhd_before_merge;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
@@ -1009,10 +1010,12 @@ HTTP_Merge(struct worker *wrk, struct objcore *oc, struct http *to)
 		http_SetH(to, u, ptr);
 		ptr = strchr(ptr, '\0') + 1;
 	}
+	nhd_before_merge = to->nhd;
 	while (*ptr != '\0') {
 		p = strchr(ptr, ':');
 		AN(p);
-		if (!http_findhdr(to, p - ptr, ptr))
+		u = http_findhdr(to, p - ptr, ptr);
+		if (u == 0 || u >= nhd_before_merge)
 			http_SetHeader(to, ptr);
 		ptr = strchr(ptr, '\0') + 1;
 	}
