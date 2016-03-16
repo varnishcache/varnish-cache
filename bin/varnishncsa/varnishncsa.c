@@ -81,7 +81,7 @@ enum e_frag {
 	F_h,			/* %h Host name / IP Address */
 	F_m,			/* %m Method */
 	F_s,			/* %s Status */
-	F_I,			/* %I Bytes recieved */
+	F_I,			/* %I Bytes received */
 	F_O,			/* %O Bytes sent */
 	F_tstart,		/* Time start */
 	F_tend,			/* Time end */
@@ -589,7 +589,7 @@ parse_format(const char *format)
 		case 'H':	/* Protocol */
 			addf_fragment(&CTX.frag[F_H], "HTTP/1.0");
 			break;
-		case 'I':	/* Bytes recieved */
+		case 'I':	/* Bytes received */
 			addf_fragment(&CTX.frag[F_I], "-");
 			break;
 		case 'l':	/* Client user ID (identd) always '-' */
