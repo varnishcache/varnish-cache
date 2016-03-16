@@ -36,8 +36,7 @@ SVGS = \
 
 if HAVE_DOT
 CLEANFILES = \
-	$(PDFS)	\
-	$(SVGS)
+	$(PDFS)
 endif
 
 pdf: $(PDFS)
@@ -67,9 +66,9 @@ endif
 
 %.svg: %.dot
 if ! HAVE_DOT
-	@echo ===================================================
+	@echo ==================================================
 	@echo You need graphviz installed to generate svg output
-	@echo ===================================================
+	@echo ==================================================
 	@false
 else
 	@DOT@ -Tsvg $< >$@
