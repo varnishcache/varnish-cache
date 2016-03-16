@@ -33,5 +33,4 @@ export CONFIG_SHELL=/bin/sh
     --enable-developer-warnings \
     --enable-debugging-symbols \
     --enable-dependency-tracking \
-    --enable-tests \
     "$@"
