@@ -109,7 +109,11 @@ VRB_Iterate(struct req *req, req_body_iter_f *func, void *priv)
 	VFP_Setup(vfc);
 	vfc->http = req->http;
 	vfc->wrk = req->wrk;
-	V1F_Setup_Fetch(vfc, req->htc);
+	if (V1F_Setup_Fetch(vfc, req->htc) != 0) {
+		VSLb(req->vsl, SLT_FetchError, "Fetch Pipeline Setup failed -"
+		    "out of workspace?");
+		return (-1);
+	}
 	if (VFP_Open(vfc) < 0) {
 		VSLb(req->vsl, SLT_FetchError, "Could not open Fetch Pipeline");
 		return (-1);
@@ -239,7 +243,12 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 
 	vfc->http = req->http;
 	vfc->oc = req->body_oc;
-	V1F_Setup_Fetch(vfc, req->htc);
+	if (V1F_Setup_Fetch(vfc, req->htc) != 0) {
+		(void)VFP_Error(vfc, "Fetch Pipeline Setup failed -"
+		    "out of workspace?");
+		req->req_body_status = REQ_BODY_FAIL;
+		return (-1);
+	}
 
 	if (VFP_Open(vfc) < 0) {
 		req->req_body_status = REQ_BODY_FAIL;
