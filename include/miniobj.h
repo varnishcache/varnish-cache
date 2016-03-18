@@ -59,6 +59,14 @@
 		CHECK_OBJ((to), (type_magic));				\
 	} while (0)
 
+#define TAKE_OBJ_NOTNULL(to, pfrom, type_magic)			\
+	do {								\
+		assert((pfrom) != NULL);				\
+		(to) = *(pfrom);					\
+		*(pfrom) = NULL;					\
+		CHECK_OBJ_NOTNULL((to), (type_magic));			\
+	} while (0)
+
 #define REPLACE(ptr, val)						\
 	do {								\
 		free(ptr);						\
