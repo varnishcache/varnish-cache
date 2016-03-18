@@ -178,10 +178,7 @@ Waiter_Destroy(struct waiter **wp)
 {
 	struct waiter *w;
 
-	AN(wp);
-	w = *wp;
-	*wp = NULL;
-	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
+	TAKE_OBJ_NOTNULL(w, wp, WAITER_MAGIC);
 
 	AZ(binheap_root(w->heap));
 	AN(w->impl->fini);

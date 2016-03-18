@@ -332,10 +332,7 @@ vslq_deletequery(struct vslq_query **pquery)
 {
 	struct vslq_query *query;
 
-	AN(pquery);
-	query = *pquery;
-	*pquery = NULL;
-	CHECK_OBJ_NOTNULL(query, VSLQ_QUERY_MAGIC);
+	TAKE_OBJ_NOTNULL(query, pquery, VSLQ_QUERY_MAGIC);
 
 	AN(query->vex);
 	vex_Free(&query->vex);

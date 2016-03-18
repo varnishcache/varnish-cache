@@ -178,10 +178,7 @@ VBT_Rel(struct tcp_pool **tpp)
 	struct tcp_pool *tp;
 	struct vbc *vbc, *vbc2;
 
-	AN(tpp);
-	tp = *tpp;
-	*tpp = NULL;
-	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
+	TAKE_OBJ_NOTNULL(tp, tpp, TCP_POOL_MAGIC);
 	assert(tp->refcnt > 0);
 	if (--tp->refcnt > 0)
 		return;

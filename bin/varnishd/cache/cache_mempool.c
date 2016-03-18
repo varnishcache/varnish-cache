@@ -253,10 +253,7 @@ MPL_Destroy(struct mempool **mpp)
 {
 	struct mempool *mpl;
 
-	AN(mpp);
-	mpl = *mpp;
-	*mpp = NULL;
-	CHECK_OBJ_NOTNULL(mpl, MEMPOOL_MAGIC);
+	TAKE_OBJ_NOTNULL(mpl, mpp, MEMPOOL_MAGIC);
 	Lck_Lock(&mpl->mtx);
 	AZ(mpl->live);
 	mpl->self_destruct = 1;

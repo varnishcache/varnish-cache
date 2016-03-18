@@ -148,10 +148,7 @@ VRT_delete_backend(VRT_CTX, struct director **dp)
 	struct backend *be;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(dp);
-	d = *dp;
-	*dp = NULL;
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	TAKE_OBJ_NOTNULL(d, dp, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
 	Lck_Lock(&be->mtx);
 	be->admin_health = vbe_ah_deleted;

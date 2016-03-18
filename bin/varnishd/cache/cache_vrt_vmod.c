@@ -149,10 +149,7 @@ VRT_Vmod_Fini(struct vmod **hdl)
 
 	ASSERT_CLI();
 
-	AN(hdl);
-	v = *hdl;
-	*hdl = NULL;
-	CHECK_OBJ_NOTNULL(v, VMOD_MAGIC);
+	TAKE_OBJ_NOTNULL(v, hdl, VMOD_MAGIC);
 
 #ifndef DONT_DLCLOSE_VMODS
 	/*

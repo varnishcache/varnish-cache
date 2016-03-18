@@ -76,10 +76,7 @@ vbo_Free(struct busyobj **bop)
 {
 	struct busyobj *bo;
 
-	AN(bop);
-	bo = *bop;
-	*bop = NULL;
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	TAKE_OBJ_NOTNULL(bo, bop, BUSYOBJ_MAGIC);
 	AZ(bo->htc);
 	MPL_Free(vbopool, bo);
 }
@@ -151,10 +148,7 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 	struct busyobj *bo;
 
 	CHECK_OBJ_ORNULL(wrk, WORKER_MAGIC);
-	AN(pbo);
-	bo = *pbo;
-	*pbo = NULL;
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	TAKE_OBJ_NOTNULL(bo, pbo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_ORNULL(bo->fetch_objcore, OBJCORE_MAGIC);
 
 	AZ(bo->htc);

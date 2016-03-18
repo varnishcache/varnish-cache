@@ -81,11 +81,7 @@ vdir_delete(struct vdir **vdp)
 {
 	struct vdir *vd;
 
-	AN(vdp);
-	vd = *vdp;
-	*vdp = NULL;
-
-	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
+	TAKE_OBJ_NOTNULL(vd, vdp, VDIR_MAGIC);
 
 	free(vd->backend);
 	free(vd->weight);

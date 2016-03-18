@@ -183,10 +183,7 @@ vxp_Delete(struct vxp **pvxp)
 	struct vxp *vxp;
 	struct membit *mb;
 
-	AN(pvxp);
-	vxp = *pvxp;
-	*pvxp = NULL;
-	CHECK_OBJ_NOTNULL(vxp, VXP_MAGIC);
+	TAKE_OBJ_NOTNULL(vxp, pvxp, VXP_MAGIC);
 
 	while (!VTAILQ_EMPTY(&vxp->membits)) {
 		mb = VTAILQ_FIRST(&vxp->membits);

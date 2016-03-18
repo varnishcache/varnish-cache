@@ -161,10 +161,7 @@ ObjDestroy(struct worker *wrk, struct objcore **p)
 	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	AN(p);
-	oc = *p;
-	*p = NULL;
-	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	TAKE_OBJ_NOTNULL(oc, p, OBJCORE_MAGIC);
 	if (oc->boc != NULL)
 		obj_deleteboc(&oc->boc);
 	FREE_OBJ(oc);

@@ -71,10 +71,7 @@ LRU_Free(struct lru **pp)
 {
 	struct lru *lru;
 
-	AN(pp);
-	lru = *pp;
-	*pp = NULL;
-	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
+	TAKE_OBJ_NOTNULL(lru, pp, LRU_MAGIC);
 	Lck_Lock(&lru->mtx);
 	AN(VTAILQ_EMPTY(&lru->lru_head));
 	Lck_Unlock(&lru->mtx);

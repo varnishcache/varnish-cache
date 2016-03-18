@@ -526,11 +526,7 @@ vtx_retire(struct VSLQ *vslq, struct vtx **pvtx)
 	struct chunk *chunk;
 
 	AN(vslq);
-	AN(pvtx);
-
-	vtx = *pvtx;
-	*pvtx = NULL;
-	CHECK_OBJ_NOTNULL(vtx, VTX_MAGIC);
+	TAKE_OBJ_NOTNULL(vtx, pvtx, VTX_MAGIC);
 
 	AN(vtx->flags & VTX_F_COMPLETE);
 	AN(vtx->flags & VTX_F_READY);
@@ -1109,10 +1105,7 @@ VSLQ_Delete(struct VSLQ **pvslq)
 	struct VSLQ *vslq;
 	struct vtx *vtx;
 
-	AN(pvslq);
-	vslq = *pvslq;
-	*pvslq = NULL;
-	CHECK_OBJ_NOTNULL(vslq, VSLQ_MAGIC);
+	TAKE_OBJ_NOTNULL(vslq, pvslq, VSLQ_MAGIC);
 
 	(void)VSLQ_Flush(vslq, NULL, NULL);
 	AZ(vslq->n_outstanding);

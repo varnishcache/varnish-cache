@@ -860,10 +860,7 @@ HSH_DerefObjHead(struct worker *wrk, struct objhead **poh)
 	int r;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	AN(poh);
-	oh = *poh;
-	*poh = NULL;
-	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	TAKE_OBJ_NOTNULL(oh, poh, OBJHEAD_MAGIC);
 
 	if (oh == private_oh) {
 		assert(VTAILQ_EMPTY(&oh->waitinglist));
