@@ -1215,7 +1215,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 	    (tl->t->tok == '~' || tl->t->tok == T_NOMATCH)) {
 		not = tl->t->tok == '~' ? "" : "!";
 		vcc_NextToken(tl);
-		ExpectErr(tl, ID);
+		vcc_ExpectCid(tl);
 		vcc_AddRef(tl, tl->t, SYM_ACL);
 		bprintf(buf, "%smatch_acl_named_%.*s(ctx, \v1)",
 		    not, PF(tl->t));
