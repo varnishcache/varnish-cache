@@ -576,7 +576,7 @@ main(int argc, char * const *argv)
 		VTAILQ_INSERT_TAIL(&tst_head, tp, list);
 	}
 
-	VSB_finish(params_vsb);
+	AZ(VSB_finish(params_vsb));
 
 	feature_dns = dns_works();
 	ip_magic();
