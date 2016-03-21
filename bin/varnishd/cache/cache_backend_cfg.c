@@ -324,6 +324,7 @@ static int __match_proto__()
 do_list(struct cli *cli, struct backend *b, void *priv)
 {
 	int *probes;
+	char time_str[VTIM_FORMAT_SIZE];
 
 	AN(priv);
 	probes = priv;
@@ -334,16 +335,17 @@ do_list(struct cli *cli, struct backend *b, void *priv)
 	VCLI_Out(cli, " %-10s", b->admin_health);
 
 	if (b->probe == NULL)
-		VCLI_Out(cli, " %s", "Healthy (no probe)");
+		VCLI_Out(cli, " %-20s", "Healthy (no probe)");
 	else {
 		if (b->healthy)
-			VCLI_Out(cli, " %s", "Healthy ");
+			VCLI_Out(cli, " %-20s", "Healthy ");
 		else
-			VCLI_Out(cli, " %s", "Sick ");
+			VCLI_Out(cli, " %-20s", "Sick ");
 		VBP_Status(cli, b, *probes);
 	}
 
-	/* XXX: report b->health_changed */
+	VTIM_format(b->health_changed, time_str);
+	VCLI_Out(cli, " %s", time_str);
 
 	return (0);
 }
@@ -367,7 +369,8 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
-	VCLI_Out(cli, "%-30s %-10s %s", "Backend name", "Admin", "Probe");
+	VCLI_Out(cli, "%-30s %-10s %-20s %s", "Backend name", "Admin",
+	    "Probe", "Last updated");
 	(void)backend_find(cli, av[2], do_list, &probes);
 }
 
