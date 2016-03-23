@@ -70,13 +70,6 @@ might seem that way sometimes.
 
 But as prophylactic for bandwidth troubles, it is second to none.
 
-One of the goals of Varnish was that it should be easy to roll out
-in a crisis situation, start it, repoint your DNS, suffer less,
-tune it a little bit (usually: ignore cookies) and suffer a lot less.
-
-Today was a good sanity-check for me, trying exactly that.
-All in all it worked out pretty well, as the varnishhist above shows.
-
 *phk*
 
 .. [#f1] These `BSTJ articles about the first Atlantic phone cable
