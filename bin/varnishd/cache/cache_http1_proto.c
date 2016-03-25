@@ -382,6 +382,8 @@ htc_proto_ver(struct http *hp)
 		hp->protover = 10;
 	else if (!strcasecmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.1"))
 		hp->protover = 11;
+	else if (*hp->hd[HTTP_HDR_PROTO].b != '\0')
+		hp->protover = 0;
 	else
 		hp->protover = 9;
 }
@@ -410,6 +412,10 @@ HTTP1_DissectRequest(struct req *req)
 		return (retval);
 	}
 	htc_proto_ver(hp);
+	if (hp->protover == 0) {
+		VSLb(hp->vsl, SLT_Error, "Illegal URL or protocol");
+		return (400);
+	}
 
 	if (http_CountHdr(hp, H_Host) > 1) {
 		VSLb(hp->vsl, SLT_Error, "Duplicate Host header");
