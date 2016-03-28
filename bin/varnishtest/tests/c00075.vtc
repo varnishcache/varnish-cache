@@ -16,5 +16,5 @@ client c1 {
 	txreq -hdr "Cookie: bar"
 	rxresp
 	expect resp.bodylen == 65536
-	expect_pattern 
+	expect_pattern
 } -run

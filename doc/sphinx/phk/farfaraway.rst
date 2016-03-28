@@ -7,23 +7,23 @@ Far, far away
 I realize I'm showing my age when I admit that Slades 1974 hit `"Far
 Far Away" <https://www.youtube.com/watch?v=6gqCCAb8xbw>`_ was one
 of the first rock-ballads I truly loved.  (In case you have never
-heard of Slade or the 1970'ies british glam-rock, you may want to
+heard of Slade or the 1970'ies British glam-rock, you may want to
 protect your innocence and *not* click on that link.)
 
 Some years back I got invited to a conference in New Zealand, and
 that is "far far away" from Denmark.  So far away in fact, that I
-downloaded the entire 
+downloaded the entire
 `Bell Systems Technical Journal <https://archive.org/details/bstj-archives>`_
 to my Kobo eReader in order to have something to do during the 24
 hour air-traffic "experience".
 
-BSTJ is good reading, for instance you learn tha they invented 
+BSTJ is good reading, for instance you learn that they invented
 `Agile Programming <https://archive.org/stream/bstj62-7-2365#page/n21/mode/2up>`_
 back in 1983, but failed to come up with a hip name.
 
 Anyway, Internet Access in New Zealand is like time-travel back to
 around Y2K or so, and when one of my time-nuts friends launched a
-`Kickstarter project <https://www.kickstarter.com/projects/1575992013/kiwisdr-beaglebone-software-defined-radio-sdr-with>`_ it didn't take much before his residental connection folded.
+`Kickstarter project <https://www.kickstarter.com/projects/1575992013/kiwisdr-beaglebone-software-defined-radio-sdr-with>`_ it didn't take much before his residential connection folded.
 
 As it happens, I am in the process of setting up the new Varnish-Cache.org
 project server just now, generously sponsored/donated by `RootBSD.com
@@ -39,9 +39,9 @@ I don't need to explain varnishhist to this audience::
 			||
 			||
 			||
-			||                             
 			||
-			||                             
+			||
+			||
 			||
 			||
 			||
