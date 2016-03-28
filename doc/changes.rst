@@ -2195,7 +2195,7 @@ varnishd
    This has now been fixed.
 
 -  Add documentation to the default VCL explaining that using
-   Connection: close in vcl\_close is generally a good idea.
+   Connection: close in vcl\_pipe is generally a good idea.
 
 -  Add minimal facility for dealing with TELNET option negotiation by
    returning WONT to DO and DONT requests.
