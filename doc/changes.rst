@@ -2,13 +2,16 @@
 DRAFT CHANGELOG ENTRIES FOR NEXT RELEASE
 ========================================
 
-Bugs fixed
-----------
 Changes since 4.1.2:
 
+Bugs fixed
+----------
+
 * 1879_ - Correct handling of duplicate headers on IMS header merge
+* 1871_ - Missing error handling code in V1F_Setup_Fetch
 
 .. _1879: https://github.com/varnishcache/varnish-cache/issues/1879
+.. _1871: https://github.com/varnishcache/varnish-cache/issues/1871
 
 ================================
 Varnish Cache 4.1.2 (2016-03-04)
