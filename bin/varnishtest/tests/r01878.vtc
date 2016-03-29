@@ -1,0 +1,32 @@
+varnishtest ""
+
+server s1 {
+	rxreq
+	txresp -hdr "id: /" -body {<1><esi:include src="/foo"/></1>}
+
+	rxreq
+	expect req.url == "/foo"
+	expect req.http.accept-encoding == "gzip"
+	txresp -hdr "id: foo" -gzipbody {<2><esi:include src="/bar"/></2>}
+
+	rxreq
+	expect req.url == "/bar"
+	txresp -hdr "id: bar" -body "<3>bar</3>"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		if (bereq.url != "/bar") {
+			set beresp.do_esi = true;
+		}
+		return (deliver);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 24
+	expect resp.body == {<1><2><3>bar</3></2></1>}
+} -run
+

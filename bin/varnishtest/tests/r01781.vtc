@@ -5,9 +5,11 @@ server s1 {
 	txresp -body {<esi:include src="/1"/>Baz}
 
 	rxreq
+	expect req.url == /1
 	txresp -body {<esi:include src="/2"/>Bar}
 
 	rxreq
+	expect req.url == /2
 	txresp -body {Foo}
 } -start
 
@@ -19,6 +21,10 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
+	txreq
+	rxresp
+	expect resp.body == "FooBarBaz"
+
 	txreq -hdr "Accept-Encoding: gzip"
 	rxresp
 	expect resp.http.content-encoding == "gzip"
