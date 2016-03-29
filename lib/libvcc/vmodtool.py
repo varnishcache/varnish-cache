@@ -151,7 +151,7 @@ class Token(object):
 class Vmod(object):
 	def __init__(self, nam, dnam, sec):
 		if not is_c_name(nam):
-			raise ParseError("Module name '%s' is illegal", nam)
+			raise ParseError("Module name '%s' is illegal" % nam)
 		self.nam = nam
 		self.dnam = dnam
 		self.sec = sec
@@ -163,10 +163,10 @@ class Vmod(object):
 
 	def set_event(self, nam):
 		if self.event != None:
-			raise ParseError("Module %s already has $Event",
+			raise ParseError("Module %s already has $Event" %
 			    self.nam)
 		if not is_c_name(nam):
-			raise ParseError("$Event name '%s' is illegal", nam)
+			raise ParseError("$Event name '%s' is illegal" % nam)
 		self.event = nam
 
 	def add_func(self, fn):
@@ -686,11 +686,11 @@ def parse_func(tl, rt_type=None, pobj=None):
 	if pobj != None and fname[0] == "." and is_c_name(fname[1:]):
 		fname = pobj + fname
 	elif not is_c_name(fname):
-		raise ParseError("Function name '%s' is illegal", fname)
+		raise ParseError("Function name '%s' is illegal" % fname)
 
 	t = tl.get_token()
 	if t.str != "(":
-		raise ParseError("Expected \"(\" got \"%s\"", t.str)
+		raise ParseError("Expected \"(\" got \"%s\"" % t.str)
 
 	while True:
 		t = parse_arg(tl, al)
