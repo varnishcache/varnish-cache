@@ -1,4 +1,4 @@
-varnishtest ""
+varnishtest "ESI delivering a gzip'd object works when parent is not gzip'd"
 
 server s1 {
 	rxreq
