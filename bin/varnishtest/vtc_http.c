@@ -503,7 +503,6 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 	char *p;
 	int i, l, ll;
 
-	hp->body = hp->rxbuf + hp->prxbuf;
 	ll = 0;
 	p = http_find_header(hh, "transfer-encoding");
 	if (p != NULL && !strcasecmp(p, "chunked")) {
@@ -565,6 +564,7 @@ http_rxhdr(struct http *hp)
 	}
 	vtc_dump(hp->vl, 4, "rxhdr", hp->rxbuf, -1);
 	vtc_log(hp->vl, 4, "rxhdrlen = %zd", strlen(hp->rxbuf));
+	hp->body = hp->rxbuf + hp->prxbuf;
 }
 
 
