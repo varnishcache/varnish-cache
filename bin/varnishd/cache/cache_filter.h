@@ -103,11 +103,13 @@ struct vdp_entry {
 #define VDP_ENTRY_MAGIC		0x353eb781
 	vdp_bytes		*func;
 	void			*priv;
+	const char		*id;
 	VTAILQ_ENTRY(vdp_entry)	list;
 };
 
 int VDP_bytes(struct req *, enum vdp_action act, const void *ptr, ssize_t len);
-void VDP_push(struct req *, vdp_bytes *func, void *priv, int bottom);
+void VDP_push(struct req *, vdp_bytes *func, void *priv, int bottom,
+    const char *id);
 void VDP_close(struct req *req);
 int VDP_DeliverObj(struct req *req);
 

@@ -112,7 +112,7 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		http_SetHeader(req->resp, "Connection: keep-alive");
 
 	if (sendbody && req->resp_len != 0)
-		VDP_push(req, v1d_bytes, NULL, 1);
+		VDP_push(req, v1d_bytes, NULL, 1, "V1B");
 
 	AZ(req->wrk->v1l);
 	V1L_Reserve(req->wrk, req->ws, &req->sp->fd, req->vsl, req->t_prev);

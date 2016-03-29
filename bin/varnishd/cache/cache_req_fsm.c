@@ -269,12 +269,12 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	if (sendbody >= 0) {
 		if (!req->disable_esi && req->resp_len != 0 &&
 		    ObjHasAttr(wrk, req->objcore, OA_ESIDATA))
-			VDP_push(req, VDP_ESI, NULL, 0);
+			VDP_push(req, VDP_ESI, NULL, 0, "ESI");
 
 		if (cache_param->http_gzip_support &&
 		    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
 		    !RFC2616_Req_Gzip(req->http))
-			VDP_push(req, VDP_gunzip, NULL, 1);
+			VDP_push(req, VDP_gunzip, NULL, 1, "GUZ");
 
 		if (cache_param->http_range_support &&
 		    http_IsStatus(req->resp, 200)) {

@@ -169,7 +169,7 @@ vrg_dorange(struct req *req, const char *r)
 	vrg_priv->range_off = 0;
 	vrg_priv->range_low = low;
 	vrg_priv->range_high = high + 1;
-	VDP_push(req, vrg_range_bytes, vrg_priv, 1);
+	VDP_push(req, vrg_range_bytes, vrg_priv, 1, "RNG");
 	http_PutResponse(req->resp, "HTTP/1.1", 206, NULL);
 	return (NULL);
 }

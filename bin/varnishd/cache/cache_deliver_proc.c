@@ -56,7 +56,8 @@ VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 }
 
 void
-VDP_push(struct req *req, vdp_bytes *func, void *priv, int bottom)
+VDP_push(struct req *req, vdp_bytes *func, void *priv, int bottom,
+    const char *id)
 {
 	struct vdp_entry *vdp;
 
@@ -79,6 +80,7 @@ VDP_push(struct req *req, vdp_bytes *func, void *priv, int bottom)
 	INIT_OBJ(vdp, VDP_ENTRY_MAGIC);
 	vdp->func = func;
 	vdp->priv = priv;
+	vdp->id = id;
 	if (bottom)
 		VTAILQ_INSERT_TAIL(&req->vdp, vdp, list);
 	else
