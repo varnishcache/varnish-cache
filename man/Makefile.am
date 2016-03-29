@@ -17,7 +17,7 @@ dist_man_MANS = \
 	vmod_directors.3 \
 	vmod_std.3
 
-MAINTAINERCLEANFILES = $(dist_man_MANS)
+CLEANFILES = $(dist_man_MANS)
 
 RST2ANY_FLAGS = --halt=2
 
