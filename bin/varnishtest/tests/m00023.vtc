@@ -1,14 +1,20 @@
-varnishtest "Test VMOD ACLs"
+varnishtest "Test VMOD ACLs (jail-compatible)"
 
-varnish v1 -vcl {
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
 	import debug;
-
-	backend dummy {
-		.host = "${bad_ip}";
-	}
 
 	acl loopback {
 		"127"/24;
+	}
+
+	acl local {
+		// We assume c1 and s1 comes from same address
+		"${s1_addr}"/24;
 	}
 
 	sub vcl_init {
@@ -18,8 +24,8 @@ varnish v1 -vcl {
 	}
 
 	sub vcl_recv {
-		if (debug.match_acl(loopback, client.ip)) {
-			return (synth(200));
+		if (debug.match_acl(local, client.ip)) {
+			return (hash);
 		}
 		return (synth(500));
 	}
