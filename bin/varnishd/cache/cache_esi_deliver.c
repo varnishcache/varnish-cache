@@ -232,13 +232,14 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 	uint32_t icrc = 0;
 	uint8_t tailbuf[8 + 5];
 	const uint8_t *pp;
-	struct ecx *ecx, *pecx;
+	struct ecx *ecx, *pecx = NULL;
 	int retval = 0;
 
 	if (act == VDP_INIT) {
 		AZ(*priv);
 		ALLOC_OBJ(ecx, ECX_MAGIC);
 		AN(ecx);
+		assert(sizeof gzip_hdr == 10);
 		ecx->preq = req;
 		*priv = ecx;
 		RFC2616_Weaken_Etag(req->resp);
@@ -255,6 +256,13 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 	}
 	pp = ptr;
 
+	if (req->esi_level > 0) {
+		assert(req->transport == &VED_transport);
+		CAST_OBJ_NOTNULL(pecx, req->transport_priv, ECX_MAGIC);
+		if (!pecx->isgzip)
+			pecx = NULL;
+	}
+
 	while (1) {
 		switch (ecx->state) {
 		case 0:
@@ -265,26 +273,15 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 			ecx->e = ecx->p + l;
 
 			if (*ecx->p == VEC_GZ) {
+				if (pecx == NULL)
+					retval = VDP_bytes(req, VDP_NULL,
+					    gzip_hdr, 10);
+				ecx->l_crc = 0;
+				ecx->crc = crc32(0L, Z_NULL, 0);
 				ecx->isgzip = 1;
 				ecx->p++;
 			}
-
-			if (req->esi_level == 0) {
-				/*
-				 * Only the top level document gets to
-				 * decide this.
-				 */
-				if (ecx->isgzip) {
-					assert(sizeof gzip_hdr == 10);
-					/* Send out the gzip header */
-					retval = VDP_bytes(req, VDP_NULL,
-					    gzip_hdr, 10);
-					ecx->l_crc = 0;
-					ecx->crc = crc32(0L, Z_NULL, 0);
-				}
-			}
 			ecx->state = 1;
-
 			break;
 		case 1:
 			if (ecx->p >= ecx->e) {
@@ -307,11 +304,9 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 						return (-1);
 					icrc = vbe32dec(ecx->p);
 					ecx->p += 4;
-					if (ecx->isgzip) {
-						ecx->crc = crc32_combine(
-						    ecx->crc, icrc, l);
-						ecx->l_crc += l;
-					}
+					ecx->crc = crc32_combine(
+					    ecx->crc, icrc, l);
+					ecx->l_crc += l;
 				}
 				ecx->state = 3;
 				break;
@@ -349,7 +344,7 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 			}
 			break;
 		case 2:
-			if (ecx->isgzip && req->esi_level == 0) {
+			if (ecx->isgzip && pecx == NULL) {
 				/*
 				 * We are bytealigned here, so simply emit
 				 * a gzip literal block with finish bit set.
@@ -367,10 +362,7 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 				vle32enc(tailbuf + 9, ecx->l_crc);
 
 				(void)VDP_bytes(req, VDP_NULL, tailbuf, 13);
-			}
-			if (req->transport->deliver == VED_Deliver) {
-				CAST_OBJ_NOTNULL(pecx, req->transport_priv,
-				    ECX_MAGIC);
+			} else if (pecx != NULL) {
 				pecx->crc = crc32_combine(pecx->crc,
 				    ecx->crc, ecx->l_crc);
 				pecx->l_crc += ecx->l_crc;
@@ -469,10 +461,9 @@ ved_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
 
 	p = pv;
 
-	if (ecx->isgzip) {
-		ecx->crc = crc32(ecx->crc, p, l);
-		ecx->l_crc += l;
-	}
+	AN (ecx->isgzip);
+	ecx->crc = crc32(ecx->crc, p, l);
+	ecx->l_crc += l;
 
 	lx = 65535;
 	buf1[0] = 0;
