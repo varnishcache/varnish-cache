@@ -491,7 +491,7 @@ vmod_barrier_sync(VRT_CTX, VCL_STRING addr)
 	AN(addr);
 	AN(*addr);
 
-	VSLb(ctx->vsl, SLT_VCL_call, "barrier_sync(\"%s\")", addr);
+	VSLb(ctx->vsl, SLT_Debug, "barrier_sync(\"%s\")", addr);
 	sock = VTCP_open(addr, NULL, 0., &err);
 	if (sock < 0) {
 		VSLb(ctx->vsl, SLT_Error, "Barrier connection failed: %s", err);
