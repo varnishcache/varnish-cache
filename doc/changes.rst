@@ -12,6 +12,7 @@ Changes from 4.0.3 to (unreleased)
 Bugs fixed
 ----------
 
+.. _1862: https://www.varnish-cache.org/trac/ticket/1862
 .. _1744: https://www.varnish-cache.org/trac/ticket/1744
 .. _1742: https://www.varnish-cache.org/trac/ticket/1742
 .. _1691: https://www.varnish-cache.org/trac/ticket/1691
@@ -19,6 +20,7 @@ Bugs fixed
 .. _1602: https://www.varnish-cache.org/trac/ticket/1602
 .. _1598: https://www.varnish-cache.org/trac/ticket/1598
 
+- 1862_ - Request URL with whitespace is allowed
 - 1744_ - Update the users guide to for new -sfile syntax
 - 1742_ - Document varnishlog -w/-r with more details
 - 1691_ - Fail fetch on malformed Content-Length header
