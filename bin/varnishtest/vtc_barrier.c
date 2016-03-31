@@ -223,6 +223,7 @@ barrier_sock_thread(void *priv)
 	macro_undef(vl, b->name, "port");
 	macro_undef(vl, b->name, "sock");
 	AZ(close(sock));
+	free(conns);
 
 	return (NULL);
 }
