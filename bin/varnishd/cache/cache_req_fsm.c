@@ -472,7 +472,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_PASS;
 		break;
 	default:
-		WRONG("Illegal return from vcl_hash{}");
+		WRONG("Illegal return from vcl_hit{}");
 	}
 
 	/* Drop our object, we won't need it */
