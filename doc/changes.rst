@@ -8,9 +8,11 @@ Bugs fixed
 ----------
 
 * 1879_ - Correct handling of duplicate headers on IMS header merge
+* 1878_ - Fix a ESI+gzip corner case which had escaped notice until now
 * 1871_ - Missing error handling code in V1F_Setup_Fetch
 
 .. _1879: https://github.com/varnishcache/varnish-cache/issues/1879
+.. _1878: https://github.com/varnishcache/varnish-cache/issues/1878
 .. _1871: https://github.com/varnishcache/varnish-cache/issues/1871
 
 ================================
