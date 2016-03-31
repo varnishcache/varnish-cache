@@ -505,7 +505,7 @@ vmod_barrier_sync(VRT_CTX, VCL_STRING addr)
 		return (1);
 	if (sz < 0)
 		VSLb(ctx->vsl, SLT_Error,
-		    "Barrier connection failed: %s (errno=%d)", strerror(i), i);
+		    "Barrier read failed: %s (errno=%d)", strerror(i), i);
 	if (sz > 0)
 		VSLb(ctx->vsl, SLT_Error, "Barrier unexpected data (%ldB)", sz);
 	return (0);
