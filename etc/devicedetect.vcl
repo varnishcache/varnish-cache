@@ -42,7 +42,7 @@ sub devicedetect {
         if (req.http.User-Agent ~ "\(compatible; Googlebot-Mobile/2.1; \+http://www.google.com/bot.html\)" ||
             (req.http.User-Agent ~ "iPhone" && req.http.User-Agent ~ "\(compatible; Googlebot/2.1; \+http://www.google.com/bot.html")) {
             set req.http.X-UA-Device = "mobile-bot"; }
-		elsif (req.http.User-Agent ~ "(?i)(ads|google|bing|msn|yandex|baidu|ro|career|)bot" ||
+		elsif (req.http.User-Agent ~ "(?i)(ads|google|bing|msn|yandex|baidu|ro|career|seznam|)bot" ||
 		    req.http.User-Agent ~ "(?i)(baidu|jike|symantec)spider" ||
 		    req.http.User-Agent ~ "(?i)scanner" ||
 		    req.http.User-Agent ~ "(?i)(web)crawler") {
@@ -61,7 +61,10 @@ sub devicedetect {
 		elsif (req.http.User-Agent ~ "PlayBook; U; RIM Tablet")         { set req.http.X-UA-Device = "tablet-rim"; }
 		elsif (req.http.User-Agent ~ "hp-tablet.*TouchPad")         { set req.http.X-UA-Device = "tablet-hp"; }
 		elsif (req.http.User-Agent ~ "Kindle/3")         { set req.http.X-UA-Device = "tablet-kindle"; }
-		elsif (req.http.User-Agent ~ "Touch.+Tablet PC")            { set req.http.X-UA-Device = "tablet-microsoft"; }
+		elsif (req.http.User-Agent ~ "Touch.+Tablet PC" ||
+		    req.http.User-Agent ~ "Windows NT [0-9.]+; ARM;" ) {
+		        set req.http.X-UA-Device = "tablet-microsoft";
+		}
 		elsif (req.http.User-Agent ~ "Mobile.+Firefox")     { set req.http.X-UA-Device = "mobile-firefoxos"; }
 		elsif (req.http.User-Agent ~ "^HTC" ||
 		    req.http.User-Agent ~ "Fennec" ||
