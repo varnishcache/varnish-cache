@@ -120,7 +120,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 			req->req_step = R_STP_SYNTH;
 			break;
 		default:
-			INCOMPL();
+			WRONG("Illegal return from vcl_deliver{}");
 		}
 
 		return (REQ_FSM_MORE);
@@ -472,7 +472,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_PASS;
 		break;
 	default:
-		INCOMPL();
+		WRONG("Illegal return from vcl_hash{}");
 	}
 
 	/* Drop our object, we won't need it */
