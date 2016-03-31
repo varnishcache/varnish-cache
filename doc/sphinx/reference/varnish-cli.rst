@@ -139,7 +139,7 @@ storage.list
   List storage devices.
 
 backend.list [-p] [<backend_expression>]
-  List backends.
+  List backends. If -p is specified include probe details.
 
 backend.set_health <backend_expression> <state>
   Set health status on the backends.
