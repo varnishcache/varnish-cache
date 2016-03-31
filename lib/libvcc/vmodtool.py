@@ -685,10 +685,12 @@ def parse_func(tl, rt_type=None, pobj=None):
 	fname = t.str
 	if pobj != None and fname[0] == "." and is_c_name(fname[1:]):
 		fname = pobj + fname
-	elif not is_c_name(fname):
-		raise ParseError("Function name '%s' is illegal" % fname)
 	elif pobj != None and fname[0] != ".":
 		raise ParseError("Method name '%s' must start with ." % fname)
+	elif pobj != None and not is_c_name(fname[1:]):
+		raise ParseError("Method name '%s' is illegal" % fname[1:])
+	elif not is_c_name(fname):
+		raise ParseError("Function name '%s' is illegal" % fname)
 
 	t = tl.get_token()
 	if t.str != "(":
