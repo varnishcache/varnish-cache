@@ -325,7 +325,7 @@ barrier_sock_sync(struct barrier *b, struct vtclog *vl)
 	AZ(close(sock));
 
 	if (sz < 0)
-		vtc_log(vl, 0, "Barrier(%s) connection failed: %s (errno=%d)",
+		vtc_log(vl, 0, "Barrier(%s) read failed: %s (errno=%d)",
 		    b->name, strerror(i), i);
 	if (sz > 0)
 		vtc_log(vl, 0, "Barrier(%s) unexpected data (%ldB)",
