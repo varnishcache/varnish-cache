@@ -224,7 +224,7 @@ RFC2616_Body(struct busyobj *bo, struct dstat *stats)
 	if (hp->status == 204) {
 		/*
 		 * 204 is "No Content", obviously don't expect a body.
-		 * [RFC2616 10.2.5 p60]
+		 * [RFC7230 3.3.1 p28 and 3.3.2 p30]
 		 */
 		stats->fetch_204++;
 		return (BS_NONE);
