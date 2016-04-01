@@ -112,3 +112,9 @@ cscope.*out
 /bin/varnishtest/tests/*.log
 /bin/varnishtest/tests/*.log-t
 /bin/varnishtest/test-suite.log
+
+# Code coverage with lcov/gcov
+*.gcno
+*.gcda
+*.info
+/lcov/

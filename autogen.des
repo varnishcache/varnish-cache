@@ -1,6 +1,10 @@
 #!/bin/sh
 #
 # Use this when doing code development
+#
+# Arguments to this script are passed to the resulting ./configure execution.
+# You may pass `--enable-code-coverage` to measure code coverage with lcov for
+# example.
 
 set -ex
 
