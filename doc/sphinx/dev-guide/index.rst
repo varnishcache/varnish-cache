@@ -55,7 +55,7 @@ worthy of discussion issues are pow-wowed.
 Tickets we cannot do anything about are closed.
 
 If feature-requests make sense, they get moved to a wiki/VIP page until
-somebody implements them, and the issue is closed.
+somebody implements them.
 
 Varnishtest cases for bugs is the norm, not the exception.
 
