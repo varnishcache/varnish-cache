@@ -133,9 +133,14 @@ void MGT_complain(const char *loud, const char *, ...) __v_printflike(2, 3);
 /* mgt_param.c */
 void MCF_InitParams(struct cli *);
 void MCF_CollectParams(void);
-void MCF_SetDefault(const char *param, const char *def);
-void MCF_SetMinimum(const char *param, const char *def);
-void MCF_SetMaximum(const char *param, const char *def);
+enum mcf_which_e {
+	MCF_DEFAULT = 32,
+	MCF_MINIMUM = 33,
+	MCF_MAXIMUM = 34,
+};
+void MCF_ParamConf(enum mcf_which_e, const char *param, const char *, ...)
+    __v_printflike(3, 4);
+
 void MCF_ParamSet(struct cli *, const char *param, const char *val);
 void MCF_ParamProtect(struct cli *, const char *arg);
 void MCF_DumpRstParam(void);

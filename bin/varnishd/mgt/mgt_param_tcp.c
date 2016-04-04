@@ -79,17 +79,12 @@ tcp_probe(int sock, int nam, const char *param, unsigned def)
 	int i;
 	socklen_t l;
 	unsigned u;
-	char buf[10];
-	const char *p;
 
 	l = sizeof u;
 	i = getsockopt(sock, IPPROTO_TCP, nam, &u, &l);
 	if (i < 0 || u == 0)
 		u = def;
-	bprintf(buf, "%u", u);
-	p = strdup(buf);
-	AN(p);
-	MCF_SetDefault(param, p);
+	MCF_ParamConf(MCF_DEFAULT, param, "%u", u);
 }
 
 static void

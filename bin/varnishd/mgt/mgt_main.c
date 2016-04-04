@@ -425,9 +425,6 @@ make_secret(const char *dirname)
 
 /*--------------------------------------------------------------------*/
 
-static char stackmin[20];
-static char stackdef[20];
-
 static void
 init_params(struct cli *cli)
 {
@@ -442,26 +439,24 @@ init_params(struct cli *cli)
 		 * Adjust default parameters for 32 bit systems to conserve
 		 * VM space.
 		 */
-		MCF_SetDefault("workspace_client", "24k");
-		MCF_SetDefault("workspace_backend", "16k");
-		MCF_SetDefault("http_resp_size", "8k");
-		MCF_SetDefault("http_req_size", "12k");
-		MCF_SetDefault("gzip_buffer", "4k");
+		MCF_ParamConf(MCF_DEFAULT, "workspace_client", "24k");
+		MCF_ParamConf(MCF_DEFAULT, "workspace_backend", "16k");
+		MCF_ParamConf(MCF_DEFAULT, "http_resp_size", "8k");
+		MCF_ParamConf(MCF_DEFAULT, "http_req_size", "12k");
+		MCF_ParamConf(MCF_DEFAULT, "gzip_buffer", "4k");
 	}
 
 #if !defined(HAVE_ACCEPT_FILTERS) || defined(__linux)
-	MCF_SetDefault("accept_filter", "off");
+	MCF_ParamConf(MCF_DEFAULT, "accept_filter", "off");
 #endif
 
 	low = sysconf(_SC_THREAD_STACK_MIN);
-	bprintf(stackmin, "%jd", (intmax_t)low);
-	MCF_SetMinimum("thread_pool_stack", stackmin);
+	MCF_ParamConf(MCF_MINIMUM, "thread_pool_stack", "%jd", (intmax_t)low);
 
 	def = 48 * 1024;
 	if (def < low)
 		def = low;
-	bprintf(stackdef, "%jd", (intmax_t)def);
-	MCF_SetDefault("thread_pool_stack", stackdef);
+	MCF_ParamConf(MCF_DEFAULT, "thread_pool_stack", "%jd", (intmax_t)def);
 
 	MCF_InitParams(cli);
 }

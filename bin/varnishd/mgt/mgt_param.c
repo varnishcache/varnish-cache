@@ -30,6 +30,7 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -483,38 +484,35 @@ MCF_CollectParams(void)
 /*--------------------------------------------------------------------*/
 
 void
-MCF_SetDefault(const char *param, const char *new_def)
+MCF_ParamConf(enum mcf_which_e which, const char *param, const char *fmt, ...)
 {
 	struct parspec *pp;
+	struct vsb *vsb;
+	va_list ap;
 
 	pp = mcf_findpar(param);
 	AN(pp);
-	pp->def = new_def;
-	AN(pp->def);
-}
-
-void
-MCF_SetMinimum(const char *param, const char *new_min)
-{
-	struct parspec *pp;
-
-	AN(new_min);
-	pp = mcf_findpar(param);
-	AN(pp);
-	pp->min = new_min;
-	AN(pp->min);
-}
-
-void
-MCF_SetMaximum(const char *param, const char *new_max)
-{
-	struct parspec *pp;
-
-	AN(new_max);
-	pp = mcf_findpar(param);
-	AN(pp);
-	pp->max = new_max;
-	AN(pp->max);
+	vsb = VSB_new_auto();
+	AN(vsb);
+	va_start(ap, fmt);
+	VSB_vprintf(vsb, fmt, ap);
+	va_end(ap);
+	AZ(VSB_finish(vsb));
+	switch (which) {
+	case MCF_DEFAULT:
+		pp->def = strdup(VSB_data(vsb));
+		AN(pp->def);
+		break;
+	case MCF_MINIMUM:
+		pp->min = strdup(VSB_data(vsb));
+		AN(pp->min);
+		break;
+	case MCF_MAXIMUM:
+		pp->max = strdup(VSB_data(vsb));
+		AN(pp->max);
+		break;
+	}
+	VSB_delete(vsb);
 }
 
 /*--------------------------------------------------------------------*/

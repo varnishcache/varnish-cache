@@ -130,7 +130,7 @@ ban_error(struct ban_proto *bp, const char *fmt, ...)
 			/* Record the error message in the vsb */
 			VSB_clear(bp->vsb);
 			va_start(ap, fmt);
-			(void)VSB_vprintf(bp->vsb, fmt, ap);
+			VSB_vprintf(bp->vsb, fmt, ap);
 			va_end(ap);
 			AZ(VSB_finish(bp->vsb));
 			bp->err = VSB_data(bp->vsb);
