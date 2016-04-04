@@ -109,6 +109,7 @@ EXTRA_DIST = \
 	phk \
 	tutorial \
 	users-guide \
+	dev-guide \
 	whats-new
 
 dist-hook:

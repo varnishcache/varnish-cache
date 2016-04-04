@@ -70,6 +70,7 @@ Longer listings like example command output and VCL look like this::
     users-guide/index.rst
     reference/index.rst
     whats-new/index.rst
+    dev-guide/index.rst
     phk/index.rst
     glossary/index.rst
 
