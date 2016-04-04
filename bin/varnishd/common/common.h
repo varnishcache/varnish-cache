@@ -42,6 +42,10 @@
 
 /**********************************************************************/
 
+#if !defined(MAX_THREAD_POOLS)
+#  define MAX_THREAD_POOLS 32
+#endif
+
 /* Name of transient storage */
 #define TRANSIENT_STORAGE	"Transient"
 

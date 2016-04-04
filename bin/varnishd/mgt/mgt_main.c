@@ -458,6 +458,8 @@ init_params(struct cli *cli)
 		def = low;
 	MCF_ParamConf(MCF_DEFAULT, "thread_pool_stack", "%jd", (intmax_t)def);
 
+	MCF_ParamConf(MCF_MAXIMUM, "thread_pools", "%d", MAX_THREAD_POOLS);
+
 	MCF_InitParams(cli);
 }
 
