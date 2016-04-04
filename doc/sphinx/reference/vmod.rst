@@ -426,10 +426,6 @@ In the case where properly releasing resources may take some time, you can
 opt for an asynchronous worker, either by spawning a thread and tracking it, or
 by using Varnish's worker pools.
 
-There is also a ``VCL_EVENT_USE`` event. Please note that this event is now
-deprecated and may be removed in a future release. A warm VCL should be ready
-to use so no additional task should be postponed at use time.
-
 When to lock, and when not to lock
 ==================================
 

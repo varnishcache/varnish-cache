@@ -475,11 +475,10 @@ vcl_failsafe_event(VRT_CTX, enum vcl_event_e ev)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(ctx->handling);
 	AN(ctx->vcl);
-	assert(ev == VCL_EVENT_COLD || ev == VCL_EVENT_DISCARD ||
-	    ev == VCL_EVENT_USE);
+	assert(ev == VCL_EVENT_COLD || ev == VCL_EVENT_DISCARD);
 
 	if (ctx->vcl->conf->event_vcl(ctx, ev) != 0)
-		WRONG("A VMOD cannot fail USE, COLD or DISCARD events");
+		WRONG("A VMOD cannot fail COLD or DISCARD events");
 }
 
 static void
@@ -784,8 +783,6 @@ static void __match_proto__(cli_func_t)
 ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcl *vcl;
-	struct vrt_ctx ctx;
-	unsigned hand = 0;
 
 	ASSERT_CLI();
 	AN(cli);
@@ -793,10 +790,6 @@ ccf_config_use(struct cli *cli, const char * const *av, void *priv)
 	vcl = vcl_find(av[2]);
 	AN(vcl);				// MGT ensures this
 	assert(vcl->temp == VCL_TEMP_WARM);	// MGT ensures this
-	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
-	ctx.handling = &hand;
-	ctx.vcl = vcl;
-	vcl_failsafe_event(&ctx, VCL_EVENT_USE);
 	Lck_Lock(&vcl_mtx);
 	vcl_active = vcl;
 	Lck_Unlock(&vcl_mtx);

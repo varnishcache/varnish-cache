@@ -326,8 +326,7 @@ EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
  * Init/Fini/Event
  *
  * We call DISCARD and COLD events in the opposite order of LOAD and
- * WARM. The child will panic if a USE event fails, since a WARM event
- * leads to a usable state.
+ * WARM.
  */
 
 static void
@@ -404,24 +403,6 @@ EmitInitFini(const struct vcc *tl)
 		Fc(tl, 0, "}\n");
 
 		/*
-		 * USE (deprecated)
-		 */
-		Fc(tl, 0, "\nstatic int\n");
-		Fc(tl, 0, "VGC_Use(VRT_CTX, enum vcl_event_e ev)\n{\n\n");
-
-		VTAILQ_FOREACH(p, &tl->inifin, list) {
-			assert(p->n > 0);
-			if (VSB_len(p->event)) {
-				Fc(tl, 0, "\t/* %u */\n", p->n);
-				Fc(tl, 0, "\tif (%s)\n", VSB_data(p->event));
-				Fc(tl, 0, "\t\treturn (1);\n\n");
-			}
-		}
-
-		Fc(tl, 0, "\treturn (0);\n");
-		Fc(tl, 0, "}\n");
-
-		/*
 		 * COLD
 		 */
 		Fc(tl, 0, "\nstatic int\n");
@@ -453,8 +434,6 @@ EmitInitFini(const struct vcc *tl)
 	if (has_event) {
 		Fc(tl, 0, "\tif (ev == VCL_EVENT_WARM)\n");
 		Fc(tl, 0, "\t\treturn(VGC_Warmup(ctx, ev));\n");
-		Fc(tl, 0, "\tif (ev == VCL_EVENT_USE)\n");
-		Fc(tl, 0, "\t\treturn(VGC_Use(ctx, ev));\n");
 		Fc(tl, 0, "\tif (ev == VCL_EVENT_COLD)\n");
 		Fc(tl, 0, "\t\treturn(VGC_Cooldown(ctx, ev));\n");
 	}
