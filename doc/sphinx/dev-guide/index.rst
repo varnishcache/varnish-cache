@@ -27,7 +27,7 @@ Technical stuff
 * Our coding style guideline is FreeBSD's
   `style(9) <https://www.freebsd.org/cgi/man.cgi?query=style&sektion=9>`_
 
-* See autoconf.des script for developer options to the toolchain.
+* See autogen.des script for developer options to the toolchain.
 
 * We always -Werror, there are no harmless warnings, only source code
   that does not express intent well enough.
