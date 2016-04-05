@@ -53,12 +53,14 @@ vrt_do_string(const struct http *hp, int fld,
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
 	b = VRT_String(hp->ws, NULL, p, ap);
-	if (b == NULL || *b == '\0') {
+	if (b == NULL) {
 		VSLb(hp->vsl, SLT_LostHeader, "%s", err);
 		WS_MarkOverflow(hp->ws);
-		return;
-	}
-	http_SetH(hp, fld, b);
+	} else if (*b == '\0') {
+		VSLb(hp->vsl, SLT_Error, "illegal %s", err);
+		WS_MarkOverflow(hp->ws);
+	} else
+		http_SetH(hp, fld, b);
 }
 
 #define VRT_HDR_L(obj, hdr, fld)					\

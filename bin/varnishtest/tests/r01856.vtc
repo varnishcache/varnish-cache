@@ -1,0 +1,38 @@
+varnishtest "Check ws exhaustion and empty strings yield different errors"
+
+server s1 {
+	rxreq
+	txresp
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import debug;
+	sub vcl_recv {
+		if (req.url == "/1") {
+			set req.url = "";
+		} else {
+			debug.workspace_allocate(client,
+			    debug.workspace_free(client) - 5);
+			set req.url = req.url;
+		}
+	}
+} -start
+
+logexpect l1 -v v1 {
+	expect * 1001 	Error		"illegal req.url"
+	expect * 1004 	LostHeader	"req.url"
+} -start
+
+client c1 {
+	txreq -url /1
+	rxresp
+} -run
+
+client c1 {
+	txreq -url /2
+	rxresp
+} -run
+
+logexpect l1 -wait
