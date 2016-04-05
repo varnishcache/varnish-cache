@@ -168,12 +168,20 @@ http1_req_panic(struct vsb *vsb, const struct req *req)
 	VSB_printf(vsb, "state = %s\n", http1_getstate(req->sp));
 }
 
+static void __match_proto__(vtr_req_fail_f)
+http1_req_fail(struct req *req, enum sess_close reason)
+{
+	if (req->sp->fd >= 0)
+		SES_Close(req->sp, reason);
+}
+
 struct transport HTTP1_transport = {
 	.name =			"HTTP/1",
 	.magic =		TRANSPORT_MAGIC,
 	.deliver =		V1D_Deliver,
 	.unwait =		http1_unwait,
 	.req_body =		http1_req_body,
+	.req_fail =		http1_req_fail,
 	.new_session =		http1_new_session,
 	.sess_panic =		http1_sess_panic,
 	.req_panic =		http1_req_panic,

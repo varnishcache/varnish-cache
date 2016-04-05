@@ -39,6 +39,7 @@
 
 #include "cache.h"
 #include "cache_pool.h"
+#include "cache_transport.h"
 
 #include "vtim.h"
 
@@ -209,11 +210,11 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 /*----------------------------------------------------------------------
  */
 
-void __match_proto__()
+void __match_proto__(vtr_req_fail_f)
 Req_Fail(struct req *req, enum sess_close reason)
 {
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	if (req->sp->fd >= 0)
-		SES_Close(req->sp, reason);
+	AN(req->transport->req_fail);
+	req->transport->req_fail(req, reason);
 }

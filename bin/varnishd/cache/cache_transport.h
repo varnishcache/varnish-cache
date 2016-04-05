@@ -40,6 +40,7 @@ typedef void vtr_deliver_f (struct req *, struct boc *, int sendbody);
 typedef void vtr_req_body_f (struct req *);
 typedef void vtr_sess_panic_f (struct vsb *, const struct sess *);
 typedef void vtr_req_panic_f (struct vsb *, const struct req *);
+typedef void vtr_req_fail_f (struct req *, enum sess_close);
 
 struct transport {
 	unsigned			magic;
@@ -52,6 +53,7 @@ struct transport {
 	task_func_t			*new_session;
 	task_func_t			*unwait;
 
+	vtr_req_fail_f			*req_fail;
 	vtr_req_body_f			*req_body;
 	vtr_deliver_f			*deliver;
 	vtr_sess_panic_f		*sess_panic;
