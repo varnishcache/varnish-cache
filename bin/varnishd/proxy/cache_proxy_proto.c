@@ -350,6 +350,7 @@ vpx_new_session(struct worker *wrk, void *arg)
 	assert(sizeof vpx1_sig == 5);
 	assert(sizeof vpx2_sig == 12);
 
+	SES_RxInit(req->htc, req->ws);
 	hs = SES_RxStuff(req->htc, vpx_complete,
 	    NULL, NULL, NAN, sp->t_idle + cache_param->timeout_idle,
 	    1024);			// XXX ?
@@ -376,7 +377,6 @@ vpx_new_session(struct worker *wrk, void *arg)
 		req->htc->pipeline_b = NULL;
 	else
 		req->htc->pipeline_e = req->htc->rxbuf_e;
-	SES_RxReInit(req->htc);
 	SES_SetTransport(wrk, sp, req, &HTTP1_transport);
 }
 

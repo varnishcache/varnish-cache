@@ -376,7 +376,6 @@ vca_make_session(struct worker *wrk, void *arg)
 	req = Req_New(wrk, sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	req->htc->fd = sp->fd;
-	SES_RxInit(req->htc, req->ws);
 
 	SES_SetTransport(wrk, sp, req, wa->acceptlsock->transport);
 }

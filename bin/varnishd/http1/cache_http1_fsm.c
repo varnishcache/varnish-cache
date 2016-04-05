@@ -112,6 +112,7 @@ http1_new_session(struct worker *wrk, void *arg)
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
+	SES_RxInit(req->htc, req->ws);
 	SES_Reserve_xport_priv(sp, &u);
 	http1_setstate(sp, H1NEWREQ);
 	wrk->task.func = http1_req;
@@ -394,7 +395,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 		} else if (st == H1CLEANUP) {
 			if (Req_Cleanup(sp, wrk, req))
 				return;
-			SES_RxReInit(req->htc);
+			SES_RxInit(req->htc, req->ws);
 			if (req->htc->rxbuf_e != req->htc->rxbuf_b)
 				wrk->stats->sess_readahead++;
 			http1_setstate(sp, H1NEWREQ);

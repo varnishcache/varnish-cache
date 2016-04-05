@@ -185,33 +185,13 @@ SES_Get_String_Attr(const struct sess *sp, enum sess_attr a)
 void
 SES_RxInit(struct http_conn *htc, struct ws *ws)
 {
-
-	htc->magic = HTTP_CONN_MAGIC;
-	htc->ws = ws;
-
-	(void)WS_Reserve(htc->ws, 0);
-	htc->rxbuf_b = ws->f;
-	htc->rxbuf_e = ws->f;
-	*htc->rxbuf_e = '\0';
-	htc->pipeline_b = NULL;
-	htc->pipeline_e = NULL;
-}
-
-/*--------------------------------------------------------------------
- * Start over, and recycle any pipelined input.
- * The WS_Reset is safe, even though the pipelined input is stored in
- * the ws somewhere, because WS_Reset only fiddles pointers.
- */
-
-void
-SES_RxReInit(struct http_conn *htc)
-{
 	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	htc->ws = ws;
 	(void)WS_Reserve(htc->ws, 0);
-	htc->rxbuf_b = htc->ws->f;
-	htc->rxbuf_e = htc->ws->f;
+	htc->rxbuf_b = ws->f;
+	htc->rxbuf_e = ws->f;
 	if (htc->pipeline_b != NULL) {
 		l = htc->pipeline_e - htc->pipeline_b;
 		assert(l > 0);
