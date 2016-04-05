@@ -106,7 +106,8 @@ HTTP1_Complete(struct http_conn *htc)
  */
 
 static uint16_t
-http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc)
+http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
+    unsigned maxhdr)
 {
 	char *q, *r;
 
@@ -147,7 +148,7 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc)
 				*q++ = ' ';
 		}
 
-		if (q - p > htc->maxhdr) {
+		if (q - p > maxhdr) {
 			VSLb(hp->vsl, SLT_BogoHeader, "Header too long: %.*s",
 			    (int)(q - p > 20 ? 20 : q - p), p);
 			return (400);
@@ -205,7 +206,8 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc)
  */
 
 static uint16_t
-http1_splitline(struct http *hp, struct http_conn *htc, const int *hf)
+http1_splitline(struct http *hp, struct http_conn *htc, const int *hf,
+    unsigned maxhdr)
 {
 	char *p;
 	int i;
@@ -271,7 +273,7 @@ http1_splitline(struct http *hp, struct http_conn *htc, const int *hf)
 	*p = '\0';
 	p += i;
 
-	return (http1_dissect_hdrs(hp, p, htc));
+	return (http1_dissect_hdrs(hp, p, htc, maxhdr));
 }
 
 /*--------------------------------------------------------------------*/
@@ -349,8 +351,8 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
-	htc->maxhdr = cache_param->http_req_hdr_len;
-	retval = http1_splitline(hp, htc, HTTP1_Req);
+	retval = http1_splitline(hp, htc,
+	    HTTP1_Req, cache_param->http_req_hdr_len);
 	if (retval != 0)
 		return (retval);
 	hp->protover = http1_proto_ver(hp);
@@ -415,8 +417,8 @@ HTTP1_DissectResponse(struct http_conn *htc, struct http *hp,
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(req, HTTP_MAGIC);
 
-	htc->maxhdr = cache_param->http_resp_hdr_len;
-	if (http1_splitline(hp, htc, HTTP1_Resp))
+	if (http1_splitline(hp, htc,
+	    HTTP1_Resp, cache_param->http_resp_hdr_len))
 		retval = 503;
 
 	if (retval == 0) {

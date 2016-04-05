@@ -225,7 +225,6 @@ struct http_conn {
 	int			fd;
 	enum sess_close		doclose;
 	unsigned		maxbytes;
-	unsigned		maxhdr;
 	enum body_status	body_status;
 	struct ws		*ws;
 	char			*rxbuf_b;
