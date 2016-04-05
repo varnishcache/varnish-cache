@@ -962,6 +962,7 @@ enum htc_status_e {
 };
 
 void SES_RxInit(struct http_conn *htc, struct ws *ws);
+void SES_RxPipeline(struct http_conn *htc, void *);
 enum htc_status_e SES_RxStuff(struct http_conn *, htc_complete_f *,
     double *t1, double *t2, double ti, double tn, int maxbytes);
 

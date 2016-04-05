@@ -203,6 +203,22 @@ SES_RxInit(struct http_conn *htc, struct ws *ws)
 	*htc->rxbuf_e = '\0';
 }
 
+void
+SES_RxPipeline(struct http_conn *htc, void *p)
+{
+
+	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	if (p == NULL || (char*)p == htc->rxbuf_e) {
+		htc->pipeline_b = NULL;
+		htc->pipeline_e = NULL;
+		return;
+	}
+	assert((char*)p >= htc->rxbuf_b);
+	assert((char*)p < htc->rxbuf_e);
+	htc->pipeline_b = p;
+	htc->pipeline_e = htc->rxbuf_e;
+}
+
 /*----------------------------------------------------------------------
  * Receive a request/packet/whatever, with timeouts
  *
@@ -233,6 +249,8 @@ SES_RxStuff(struct http_conn *htc, htc_complete_f *func,
 
 	while (1) {
 		now = VTIM_real();
+		AZ(htc->pipeline_b);
+		AZ(htc->pipeline_e);
 		hs = func(htc);
 		if (hs == HTC_S_OVERFLOW || hs == HTC_S_JUNK) {
 			WS_ReleaseP(htc->ws, htc->rxbuf_b);

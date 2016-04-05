@@ -68,8 +68,6 @@ HTTP1_Complete(struct http_conn *htc)
 	char *p;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	AZ(htc->pipeline_b);
-	AZ(htc->pipeline_e);
 
 	assert(htc->rxbuf_e >= htc->rxbuf_b);
 	assert(*htc->rxbuf_e == '\0');
@@ -193,11 +191,8 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 	}
 	if (p < htc->rxbuf_e)
 		p += vct_skipcrlf(p);
-	if (p < htc->rxbuf_e) {
-		htc->pipeline_b = p;
-		htc->pipeline_e = htc->rxbuf_e;
-		htc->rxbuf_e = p;
-	}
+	SES_RxPipeline(htc, p);
+	htc->rxbuf_e = p;
 	return (0);
 }
 

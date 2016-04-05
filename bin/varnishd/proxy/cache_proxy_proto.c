@@ -150,7 +150,7 @@ vpx_proto1(const struct worker *wrk, struct req *req)
 
 	VSL(SLT_Proxy, req->sp->vxid, "1 %s %s %s %s",
 	    fld[1], fld[3], fld[2], fld[4]);
-	req->htc->pipeline_b = q;
+	SES_RxPipeline(req->htc, q);
 	return (0);
 }
 
@@ -184,7 +184,7 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	assert(req->htc->rxbuf_e - req->htc->rxbuf_b >= 16L);
 	l = vbe16dec(req->htc->rxbuf_b + 14);
 	assert(req->htc->rxbuf_e - req->htc->rxbuf_b >= 16L + l);
-	req->htc->pipeline_b = req->htc->rxbuf_b + 16L + l;
+	SES_RxPipeline(req->htc, req->htc->rxbuf_b + 16L + l);
 	p = (const void *)req->htc->rxbuf_b;
 
 	/* Version @12 top half */
@@ -299,8 +299,6 @@ vpx_complete(struct http_conn *htc)
 	char *p, *q;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	AZ(htc->pipeline_b);
-	AZ(htc->pipeline_e);
 
 	l = htc->rxbuf_e - htc->rxbuf_b;
 	p = htc->rxbuf_b;
@@ -373,10 +371,6 @@ vpx_new_session(struct worker *wrk, void *arg)
 		return;
 	}
 
-	if (req->htc->rxbuf_e ==  req->htc->pipeline_b)
-		req->htc->pipeline_b = NULL;
-	else
-		req->htc->pipeline_e = req->htc->rxbuf_e;
 	SES_SetTransport(wrk, sp, req, &HTTP1_transport);
 }
 
