@@ -188,7 +188,7 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 	}
 	if (p < htc->rxbuf_e)
 		p += vct_skipcrlf(p);
-	SES_RxPipeline(htc, p);
+	HTC_RxPipeline(htc, p);
 	htc->rxbuf_e = p;
 	return (0);
 }

@@ -151,12 +151,12 @@ V1F_FetchRespHdr(struct busyobj *bo)
 
 	/* Receive response */
 
-	SES_RxInit(htc, bo->ws);
+	HTC_RxInit(htc, bo->ws);
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
 
 	t = VTIM_real() + htc->first_byte_timeout;
-	hs = SES_RxStuff(htc, HTTP1_Complete, NULL, NULL,
+	hs = HTC_RxStuff(htc, HTTP1_Complete, NULL, NULL,
 	    t, t + htc->between_bytes_timeout, cache_param->http_resp_size);
 	if (hs != HTC_S_COMPLETE) {
 		bo->acct.beresp_hdrbytes +=

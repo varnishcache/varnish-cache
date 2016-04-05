@@ -961,9 +961,9 @@ enum htc_status_e {
 	HTC_S_IDLE =		 3,
 };
 
-void SES_RxInit(struct http_conn *htc, struct ws *ws);
-void SES_RxPipeline(struct http_conn *htc, void *);
-enum htc_status_e SES_RxStuff(struct http_conn *, htc_complete_f *,
+void HTC_RxInit(struct http_conn *htc, struct ws *ws);
+void HTC_RxPipeline(struct http_conn *htc, void *);
+enum htc_status_e HTC_RxStuff(struct http_conn *, htc_complete_f *,
     double *t1, double *t2, double ti, double tn, int maxbytes);
 
 #define SESS_ATTR(UP, low, typ, len)					\

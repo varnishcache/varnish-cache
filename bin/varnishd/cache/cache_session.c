@@ -183,7 +183,7 @@ SES_Get_String_Attr(const struct sess *sp, enum sess_attr a)
 /*--------------------------------------------------------------------*/
 
 void
-SES_RxInit(struct http_conn *htc, struct ws *ws)
+HTC_RxInit(struct http_conn *htc, struct ws *ws)
 {
 	ssize_t l;
 
@@ -204,7 +204,7 @@ SES_RxInit(struct http_conn *htc, struct ws *ws)
 }
 
 void
-SES_RxPipeline(struct http_conn *htc, void *p)
+HTC_RxPipeline(struct http_conn *htc, void *p)
 {
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
@@ -230,7 +230,7 @@ SES_RxPipeline(struct http_conn *htc, void *p)
  */
 
 enum htc_status_e
-SES_RxStuff(struct http_conn *htc, htc_complete_f *func,
+HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
     double *t1, double *t2, double ti, double tn, int maxbytes)
 {
 	double tmo;

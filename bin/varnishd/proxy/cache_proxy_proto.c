@@ -150,7 +150,7 @@ vpx_proto1(const struct worker *wrk, struct req *req)
 
 	VSL(SLT_Proxy, req->sp->vxid, "1 %s %s %s %s",
 	    fld[1], fld[3], fld[2], fld[4]);
-	SES_RxPipeline(req->htc, q);
+	HTC_RxPipeline(req->htc, q);
 	return (0);
 }
 
@@ -184,7 +184,7 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	assert(req->htc->rxbuf_e - req->htc->rxbuf_b >= 16L);
 	l = vbe16dec(req->htc->rxbuf_b + 14);
 	assert(req->htc->rxbuf_e - req->htc->rxbuf_b >= 16L + l);
-	SES_RxPipeline(req->htc, req->htc->rxbuf_b + 16L + l);
+	HTC_RxPipeline(req->htc, req->htc->rxbuf_b + 16L + l);
 	p = (const void *)req->htc->rxbuf_b;
 
 	/* Version @12 top half */
@@ -348,8 +348,8 @@ vpx_new_session(struct worker *wrk, void *arg)
 	assert(sizeof vpx1_sig == 5);
 	assert(sizeof vpx2_sig == 12);
 
-	SES_RxInit(req->htc, req->ws);
-	hs = SES_RxStuff(req->htc, vpx_complete,
+	HTC_RxInit(req->htc, req->ws);
+	hs = HTC_RxStuff(req->htc, vpx_complete,
 	    NULL, NULL, NAN, sp->t_idle + cache_param->timeout_idle,
 	    1024);			// XXX ?
 	if (hs != HTC_S_COMPLETE) {
