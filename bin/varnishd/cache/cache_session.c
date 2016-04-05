@@ -507,11 +507,8 @@ SES_Close(struct sess *sp, enum sess_close reason)
 void
 SES_Delete(struct sess *sp, enum sess_close reason, double now)
 {
-	struct pool *pp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	pp = sp->pool;
-	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 
 	if (reason != SC_NULL)
 		SES_Close(sp, reason);
@@ -529,9 +526,7 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
 	VSL(SLT_SessClose, sp->vxid, "%s %.3f",
 	    sess_close_2str(reason, 0), now - sp->t_open);
 	VSL(SLT_End, sp->vxid, "%s", "");
-
-	Lck_Delete(&sp->mtx);
-	MPL_Free(pp->mpl_sess, sp);
+	SES_Rel(sp);
 }
 
 /*--------------------------------------------------------------------
@@ -551,12 +546,21 @@ SES_Ref(struct sess *sp)
 void
 SES_Rel(struct sess *sp)
 {
+	int i;
+	struct pool *pp;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	pp = sp->pool;
+	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
+
 	Lck_Lock(&sp->mtx);
 	assert(sp->refcnt > 0);
-	sp->refcnt--;
+	i = --sp->refcnt;
 	Lck_Unlock(&sp->mtx);
+	if (i)
+		return;
+	Lck_Delete(&sp->mtx);
+	MPL_Free(sp->pool->mpl_sess, sp);
 }
 
 /*--------------------------------------------------------------------
