@@ -588,8 +588,13 @@ cnt_pipe(struct worker *wrk, struct req *req)
 
 	VCL_pipe_method(req->vcl, wrk, req, bo, NULL);
 
-	if (wrk->handling == VCL_RET_SYNTH)
-		INCOMPL();
+	if (wrk->handling == VCL_RET_SYNTH) {
+		req->req_step = R_STP_SYNTH;
+		http_Teardown(bo->bereq);
+		VBO_ReleaseBusyObj(wrk, &bo);
+		THR_SetBusyobj(NULL);
+		return (REQ_FSM_MORE);
+	}
 	assert(wrk->handling == VCL_RET_PIPE);
 
 	SES_Close(req->sp, VDI_Http1Pipe(req, bo));
