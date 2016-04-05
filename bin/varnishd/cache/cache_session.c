@@ -269,7 +269,10 @@ SES_RxStuff(struct http_conn *htc, htc_complete_f *func,
 			/* Working on it */
 			if (t1 != NULL && isnan(*t1))
 				*t1 = now;
-		} else if (hs != HTC_S_EMPTY)
+		} else if (hs == HTC_S_EMPTY) {
+			htc->rxbuf_e = htc->rxbuf_b;
+			*htc->rxbuf_e = '\0';
+		} else
 			WRONG("htc_status_e");
 
 		tmo = tn - now;

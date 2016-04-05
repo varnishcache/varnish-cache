@@ -75,12 +75,9 @@ HTTP1_Complete(struct http_conn *htc)
 	/* Skip any leading white space */
 	for (p = htc->rxbuf_b ; vct_islws(*p); p++)
 		continue;
-	if (p == htc->rxbuf_e) {
-		/* All white space */
-		htc->rxbuf_e = htc->rxbuf_b;
-		*htc->rxbuf_e = '\0';
+	if (p == htc->rxbuf_e)
 		return (HTC_S_EMPTY);
-	}
+
 	/*
 	 * Here we just look for NL[CR]NL to see that reception
 	 * is completed.  More stringent validation happens later.
