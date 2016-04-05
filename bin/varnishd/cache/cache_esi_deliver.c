@@ -89,6 +89,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 		return;
 
 	req = Req_New(wrk, preq->sp);
+	SES_Ref(preq->sp);
 	req->req_body_status = REQ_BODY_NONE;
 	AZ(req->vsl->wid);
 	req->vsl->wid = VXID_Get(wrk, VSL_CLIENTMARKER);
@@ -182,6 +183,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 	req->wrk = NULL;
 
 	THR_SetRequest(preq);
+	SES_Rel(req->sp);
 	Req_Release(req);
 }
 

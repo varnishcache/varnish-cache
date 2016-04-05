@@ -634,6 +634,7 @@ struct sess {
 #define SESS_MAGIC		0x2c2f9c5a
 
 	uint16_t		sattr[SA_LAST];
+	int			refcnt;
 	int			fd;
 	uint32_t		vxid;
 
@@ -944,7 +945,8 @@ struct sess *SES_New(struct pool *);
 void SES_Close(struct sess *, enum sess_close reason);
 void SES_Wait(struct sess *, const struct transport *);
 void SES_Delete(struct sess *, enum sess_close reason, double now);
-void SES_NewPool(struct pool *, unsigned pool_no);
+void SES_Ref(struct sess *sp);
+void SES_Rel(struct sess *sp);
 int SES_Reschedule_Req(struct req *);
 void SES_SetTransport(struct worker *, struct sess *, struct req *,
     const struct transport *);

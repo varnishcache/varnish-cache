@@ -95,6 +95,9 @@ void Pool_Init(void);
 /* cache_proxy.c [VPX] */
 task_func_t VPX_Proto_Sess;
 
+/* cache_session.c */
+void SES_NewPool(struct pool *, unsigned pool_no);
+
 /* cache_shmlog.c */
 void VSM_Init(void);
 void VSL_Setup(struct vsl_log *vsl, void *ptr, size_t len);

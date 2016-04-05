@@ -325,6 +325,7 @@ SES_New(struct pool *pp)
 	sp = MPL_Get(pp->mpl_sess, &sz);
 	sp->magic = SESS_MAGIC;
 	sp->pool = pp;
+	sp->refcnt = 1;
 	memset(sp->sattr, 0xff, sizeof sp->sattr);
 
 	e = (char*)sp + sz;
@@ -531,6 +532,31 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
 
 	Lck_Delete(&sp->mtx);
 	MPL_Free(pp->mpl_sess, sp);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+void
+SES_Ref(struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	Lck_Lock(&sp->mtx);
+	assert(sp->refcnt > 0);
+	sp->refcnt++;
+	Lck_Unlock(&sp->mtx);
+}
+
+void
+SES_Rel(struct sess *sp)
+{
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	Lck_Lock(&sp->mtx);
+	assert(sp->refcnt > 0);
+	sp->refcnt--;
+	Lck_Unlock(&sp->mtx);
 }
 
 /*--------------------------------------------------------------------
