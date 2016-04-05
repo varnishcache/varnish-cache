@@ -351,8 +351,8 @@ vpx_new_session(struct worker *wrk, void *arg)
 	assert(sizeof vpx2_sig == 12);
 
 	hs = SES_RxStuff(req->htc, vpx_complete,
-	    NULL, NULL, NAN, sp->t_idle + cache_param->timeout_idle);
-	XXXAZ(req->htc->ws->r);
+	    NULL, NULL, NAN, sp->t_idle + cache_param->timeout_idle,
+	    1024);			// XXX ?
 	if (hs != HTC_S_COMPLETE) {
 		Req_Release(req);
 		SES_Delete(sp, SC_RX_JUNK, NAN);

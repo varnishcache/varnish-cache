@@ -236,7 +236,7 @@ SES_RxReInit(struct http_conn *htc)
 
 enum htc_status_e
 SES_RxStuff(struct http_conn *htc, htc_complete_f *func,
-    double *t1, double *t2, double ti, double tn)
+    double *t1, double *t2, double ti, double tn, int maxbytes)
 {
 	double tmo;
 	double now;
@@ -275,7 +275,8 @@ SES_RxStuff(struct http_conn *htc, htc_complete_f *func,
 		tmo = tn - now;
 		if (!isnan(ti) && ti < tn)
 			tmo = ti - now;
-		i = (htc->ws->r - htc->rxbuf_e) - 1;	/* space for NUL */
+		i = (htc->rxbuf_e - htc->rxbuf_b) + 1L;	/* space for NUL */
+		i = maxbytes - i;
 		if (i <= 0) {
 			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			return (HTC_S_OVERFLOW);

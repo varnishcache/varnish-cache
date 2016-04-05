@@ -965,7 +965,7 @@ enum htc_status_e {
 void SES_RxInit(struct http_conn *htc, struct ws *ws, unsigned maxbytes);
 void SES_RxReInit(struct http_conn *htc);
 enum htc_status_e SES_RxStuff(struct http_conn *, htc_complete_f *,
-    double *t1, double *t2, double ti, double tn);
+    double *t1, double *t2, double ti, double tn, int maxbytes);
 
 #define SESS_ATTR(UP, low, typ, len)					\
 	int SES_Set_##low(const struct sess *sp, const typ *src);	\
