@@ -224,7 +224,6 @@ struct http_conn {
 
 	int			fd;
 	enum sess_close		doclose;
-	unsigned		maxbytes;
 	enum body_status	body_status;
 	struct ws		*ws;
 	char			*rxbuf_b;
@@ -962,7 +961,7 @@ enum htc_status_e {
 	HTC_S_IDLE =		 3,
 };
 
-void SES_RxInit(struct http_conn *htc, struct ws *ws, unsigned maxbytes);
+void SES_RxInit(struct http_conn *htc, struct ws *ws);
 void SES_RxReInit(struct http_conn *htc);
 enum htc_status_e SES_RxStuff(struct http_conn *, htc_complete_f *,
     double *t1, double *t2, double ti, double tn, int maxbytes);

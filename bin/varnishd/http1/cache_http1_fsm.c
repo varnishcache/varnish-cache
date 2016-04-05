@@ -130,7 +130,7 @@ http1_unwait(struct worker *wrk, void *arg)
 	req = Req_New(wrk, sp);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	req->htc->fd = sp->fd;
-	SES_RxInit(req->htc, req->ws, cache_param->http_req_size);
+	SES_RxInit(req->htc, req->ws);
 	http1_setstate(sp, H1NEWREQ);
 	wrk->task.func = http1_req;
 	wrk->task.priv = req;

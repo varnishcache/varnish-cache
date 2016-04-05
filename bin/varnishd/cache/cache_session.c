@@ -183,14 +183,13 @@ SES_Get_String_Attr(const struct sess *sp, enum sess_attr a)
 /*--------------------------------------------------------------------*/
 
 void
-SES_RxInit(struct http_conn *htc, struct ws *ws, unsigned maxbytes)
+SES_RxInit(struct http_conn *htc, struct ws *ws)
 {
 
 	htc->magic = HTTP_CONN_MAGIC;
 	htc->ws = ws;
-	htc->maxbytes = maxbytes;
 
-	(void)WS_Reserve(htc->ws, htc->maxbytes);
+	(void)WS_Reserve(htc->ws, 0);
 	htc->rxbuf_b = ws->f;
 	htc->rxbuf_e = ws->f;
 	*htc->rxbuf_e = '\0';
@@ -210,7 +209,7 @@ SES_RxReInit(struct http_conn *htc)
 	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-	(void)WS_Reserve(htc->ws, htc->maxbytes);
+	(void)WS_Reserve(htc->ws, 0);
 	htc->rxbuf_b = htc->ws->f;
 	htc->rxbuf_e = htc->ws->f;
 	if (htc->pipeline_b != NULL) {
@@ -244,6 +243,9 @@ SES_RxStuff(struct http_conn *htc, htc_complete_f *func,
 	int i;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+
+	if (htc->ws->r - htc->rxbuf_b < maxbytes)
+		maxbytes = (htc->ws->r - htc->rxbuf_b);
 
 	AZ(isnan(tn));
 	if (t1 != NULL)
