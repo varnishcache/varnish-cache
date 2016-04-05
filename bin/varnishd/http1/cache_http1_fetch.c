@@ -149,8 +149,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 
 	/* Receive response */
 
-	SES_RxInit(htc, bo->ws, cache_param->http_resp_size,
-	    cache_param->http_resp_hdr_len);
+	SES_RxInit(htc, bo->ws, cache_param->http_resp_size);
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
 

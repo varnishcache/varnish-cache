@@ -349,6 +349,7 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
+	htc->maxhdr = cache_param->http_req_hdr_len;
 	retval = http1_splitline(hp, htc, HTTP1_Req);
 	if (retval != 0)
 		return (retval);
@@ -414,6 +415,7 @@ HTTP1_DissectResponse(struct http_conn *htc, struct http *hp,
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(req, HTTP_MAGIC);
 
+	htc->maxhdr = cache_param->http_resp_hdr_len;
 	if (http1_splitline(hp, htc, HTTP1_Resp))
 		retval = 503;
 

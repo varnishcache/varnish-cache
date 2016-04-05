@@ -183,14 +183,12 @@ SES_Get_String_Attr(const struct sess *sp, enum sess_attr a)
 /*--------------------------------------------------------------------*/
 
 void
-SES_RxInit(struct http_conn *htc, struct ws *ws, unsigned maxbytes,
-    unsigned maxhdr)
+SES_RxInit(struct http_conn *htc, struct ws *ws, unsigned maxbytes)
 {
 
 	htc->magic = HTTP_CONN_MAGIC;
 	htc->ws = ws;
 	htc->maxbytes = maxbytes;
-	htc->maxhdr = maxhdr;
 
 	(void)WS_Reserve(htc->ws, htc->maxbytes);
 	htc->rxbuf_b = ws->f;
