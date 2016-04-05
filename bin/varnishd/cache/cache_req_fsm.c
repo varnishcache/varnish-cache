@@ -569,6 +569,7 @@ static enum req_fsm_nxt
 cnt_pipe(struct worker *wrk, struct req *req)
 {
 	struct busyobj *bo;
+	enum req_fsm_nxt nxt;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -588,15 +589,22 @@ cnt_pipe(struct worker *wrk, struct req *req)
 
 	VCL_pipe_method(req->vcl, wrk, req, bo, NULL);
 
-	if (wrk->handling == VCL_RET_SYNTH)
-		INCOMPL();
-	assert(wrk->handling == VCL_RET_PIPE);
-
-	SES_Close(req->sp, VDI_Http1Pipe(req, bo));
+	switch (wrk->handling) {
+	case VCL_RET_SYNTH:
+		req->req_step = R_STP_SYNTH;
+		nxt = REQ_FSM_MORE;
+		break;
+	case VCL_RET_PIPE:
+		SES_Close(req->sp, VDI_Http1Pipe(req, bo));
+		nxt = REQ_FSM_DONE;
+		break;
+	default:
+		WRONG("Illegal return from vcl_pipe{}");
+	}
 	http_Teardown(bo->bereq);
 	VBO_ReleaseBusyObj(wrk, &bo);
 	THR_SetBusyobj(NULL);
-	return (REQ_FSM_DONE);
+	return (nxt);
 }
 
 /*--------------------------------------------------------------------
