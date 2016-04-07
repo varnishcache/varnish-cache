@@ -116,7 +116,7 @@ PipeRequest(struct req *req, struct busyobj *bo)
 	if (bo->director == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "No backend");
 		pipecharge(req, &acct_pipe, NULL);
-		SES_Close(req->sp, SC_OVERLOAD);
+		SES_Close(req->sp, SC_TX_ERROR);
 		return;
 	}
 
