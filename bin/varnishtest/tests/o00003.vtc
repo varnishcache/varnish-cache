@@ -1,0 +1,24 @@
+varnishtest "VCL backend side access to IP#s"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -proto PROXY -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.http.li = local.ip;
+		set beresp.http.ri = remote.ip;
+		set beresp.http.ci = client.ip;
+		set beresp.http.si = server.ip;
+	}
+} -start
+
+client c1 {
+	send "PROXY TCP4 1.2.3.4 5.6.7.8 1111 5678\r\n"
+	txreq
+	rxresp
+	expect resp.http.li == ${v1_addr}
+	expect resp.http.ci == 1.2.3.4
+	expect resp.http.si == 5.6.7.8
+} -run

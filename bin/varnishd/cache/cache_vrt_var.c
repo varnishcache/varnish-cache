@@ -604,9 +604,8 @@ VRT_r_req_##field(VRT_CTX)				\
 		struct suckaddr *sa;				\
 								\
 		CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
-		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);		\
-		CHECK_OBJ_NOTNULL(ctx->req->sp, SESS_MAGIC);	\
-		AZ(SES_Get_##fld##_addr(ctx->req->sp, &sa));	\
+		CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);		\
+		AZ(SES_Get_##fld##_addr(ctx->sp, &sa));		\
 		return (sa);					\
 	}
 
