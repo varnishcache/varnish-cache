@@ -40,7 +40,11 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
- * 3.2 = vrt_backend grew .proxy_header field
+ * 3.2:
+ *	vrt_backend grew .proxy_header field
+ *	vrt_ctx grew .sp field.
+ *
+ * older version:
  * Bump VRT_MINOR_VERSION due to:
  * - VCL_ACL type added
  * Bump VRT_MAJOR_VERSION due to:
@@ -107,6 +111,8 @@ struct vrt_ctx {
 	struct vsl_log			*vsl;
 	struct vcl			*vcl;
 	struct ws			*ws;
+
+	struct sess			*sp;
 
 	struct req			*req;
 	struct http			*http_req;
