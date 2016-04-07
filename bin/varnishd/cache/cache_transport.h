@@ -66,4 +66,4 @@ extern struct transport PROXY_transport;
 extern struct transport HTTP1_transport;
 
 const struct transport *XPORT_ByNumber(uint16_t no);
-
+void VPX_Send_Proxy(int fd, int version, const struct sess *);

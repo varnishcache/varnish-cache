@@ -1,0 +1,103 @@
+varnishtest "Sending proxy headers to backend"
+
+# This test is kind of hairy.
+# We don't have code in server to validate PROXY headers
+# so use a pipe of:  c1 [proxy] v2 [proxy] v1 [http] s1
+# Using proxy also between c1 and v2 allows us to test
+# IPv6 processing over a IPv4 connection.
+
+server s1 {
+	rxreq
+	expect req.url == "/1"
+	expect req.http.xyzzy1 == req.http.xyzzy2
+	expect req.http.xyzzy1 == 1111
+	expect req.http.x-forwarded-for == "1.2.3.4, 1.2.3.4"
+	txresp -body "proxy1"
+
+	rxreq
+	expect req.url == "/2"
+	expect req.http.xyzzy1 == req.http.xyzzy2
+	expect req.http.xyzzy1 == 2222
+	expect req.http.x-forwarded-for == "1.2.3.4, 1.2.3.4"
+	txresp -body "proxy2"
+
+	rxreq
+	expect req.url == "/3"
+	expect req.http.xyzzy1 == req.http.xyzzy2
+	expect req.http.xyzzy1 == 3333
+	expect req.http.x-forwarded-for == "1:f::2, 1:f::2"
+	txresp -body "proxy3"
+
+	rxreq
+	expect req.url == "/4"
+	expect req.http.xyzzy1 == req.http.xyzzy2
+	expect req.http.xyzzy1 == 4444
+	expect req.http.x-forwarded-for == "1:f::2, 1:f::2"
+	txresp -body "proxy4"
+} -start
+
+varnish v1 -proto PROXY -vcl+backend {
+	import std;
+
+	sub vcl_recv {
+		set req.http.xyzzy1 = std.port(client.ip);
+	}
+} -start
+
+varnish v2 -proto PROXY -vcl {
+	import std;
+
+	backend bp1 {
+		.host = "${v1_addr}";
+		.port = "${v1_port}";
+		.proxy_header = 1;
+	}
+	backend bp2 {
+		.host = "${v1_addr}";
+		.port = "${v1_port}";
+		.proxy_header = 2;
+	}
+	sub vcl_recv {
+		set req.http.xyzzy2 = std.port(client.ip);
+		if (req.url == "/1" || req.url == "/3") {
+			set req.backend_hint = bp1;
+		} else {
+			set req.backend_hint = bp2;
+		}
+	}
+	sub vcl_deliver {
+		set resp.http.connection = "close";
+	}
+} -start
+
+client c1 -connect ${v2_sock} {
+	send "PROXY TCP4 1.2.3.4 5.6.7.8 1111 5678\r\n"
+	txreq -url /1
+	rxresp
+	expect resp.body == "proxy1"
+} -run
+delay .2
+
+client c1 -connect ${v2_sock} {
+	send "PROXY TCP4 1.2.3.4 5.6.7.8 2222 5678\r\n"
+	txreq -url /2
+	rxresp
+	expect resp.body == "proxy2"
+} -run
+delay .2
+
+client c1 -connect ${v2_sock} {
+	send "PROXY TCP6 1:f::2 5:a::8 3333 5678\r\n"
+	txreq -url /3
+	rxresp
+	expect resp.body == "proxy3"
+} -run
+delay .2
+
+client c1 -connect ${v2_sock} {
+	send "PROXY TCP6 1:f::2 5:a::8 4444 5678\r\n"
+	txreq -url /4
+	rxresp
+	expect resp.body == "proxy4"
+} -run
+delay .2

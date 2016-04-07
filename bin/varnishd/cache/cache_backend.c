@@ -42,6 +42,7 @@
 
 #include "cache_director.h"
 #include "cache_backend.h"
+#include "cache_transport.h"
 #include "http1/cache_http1.h"
 
 #define FIND_TMO(tmx, dst, bo, be)					\
@@ -108,6 +109,9 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	bp->vsc->req++;
 	Lck_Unlock(&bp->mtx);
 
+	if (bp->proxy_header != 0)
+		VPX_Send_Proxy(vc->fd, bp->proxy_header, bo->sp);
+
 	VTCP_myname(vc->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
 	VTCP_hisname(vc->fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
 	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s",
@@ -152,7 +156,7 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	bo->htc->priv = NULL;
 	if (vbc->state != VBC_STATE_USED)
 		VBT_Wait(wrk, vbc);
-	if (bo->htc->doclose != SC_NULL) {
+	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s", vbc->fd,
 		    bp->display_name);
 		VBT_Close(bp->tcp_pool, &vbc);

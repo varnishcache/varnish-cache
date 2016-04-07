@@ -43,6 +43,7 @@
 
 #include "vend.h"
 #include "vsa.h"
+#include "vsb.h"
 #include "vtcp.h"
 
 /**********************************************************************
@@ -379,3 +380,98 @@ struct transport PROXY_transport = {
 	.magic =		TRANSPORT_MAGIC,
 	.new_session =		vpx_new_session,
 };
+
+static void
+vpx_enc_addr(struct vsb *vsb, int proto, const struct suckaddr *s)
+{
+	const struct sockaddr_in *sin4;
+	const struct sockaddr_in6 *sin6;
+	socklen_t sl;
+
+	if (proto == PF_INET6) {
+		sin6 = VSA_Get_Sockaddr(s, &sl);	//lint !e826
+		AN(sin6);
+		assert(sl >= sizeof *sin6);
+		VSB_bcat(vsb, &sin6->sin6_addr, sizeof(sin6->sin6_addr));
+	} else {
+		sin4 = VSA_Get_Sockaddr(s, &sl);	//lint !e826
+		AN(sin4);
+		assert(sl >= sizeof *sin4);
+		VSB_bcat(vsb, &sin4->sin_addr, sizeof(sin4->sin_addr));
+	}
+}
+
+static void
+vpx_enc_port(struct vsb *vsb, const struct suckaddr *s)
+{
+	uint8_t b[2];
+
+	vbe16enc(b, (uint16_t)VSA_Port(s));
+	VSB_bcat(vsb, b, sizeof(b));
+}
+
+void
+VPX_Send_Proxy(int fd, int version, const struct sess *sp)
+{
+	struct vsb *vsb, *vsb2;
+	const char *p1, *p2;
+	struct suckaddr *sac, *sas;
+	char ha[VTCP_ADDRBUFSIZE];
+	char pa[VTCP_PORTBUFSIZE];
+	int proto;
+
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	assert(version == 1 || version == 2);
+	vsb = VSB_new_auto();
+	AN(vsb);
+
+	AZ(SES_Get_server_addr(sp, &sas));
+	AN(sas);
+	proto = VSA_Get_Proto(sas);
+	assert(proto == PF_INET6 || proto == PF_INET);
+
+	if (version == 1) {
+		VSB_bcat(vsb, vpx1_sig, sizeof(vpx1_sig));
+		p1 = SES_Get_String_Attr(sp, SA_CLIENT_IP);
+		AN(p1);
+		p2 = SES_Get_String_Attr(sp, SA_CLIENT_PORT);
+		AN(p2);
+		VTCP_name(sas, ha, sizeof ha, pa, sizeof pa);
+		if (proto == PF_INET6)
+			VSB_printf(vsb, " TCP6 ");
+		else if (proto == PF_INET)
+			VSB_printf(vsb, " TCP4 ");
+		VSB_printf(vsb, "%s %s %s %s\r\n", p1, ha, p2, pa);
+	} else if (version == 2) {
+		AZ(SES_Get_client_addr(sp, &sac));
+		AN(sac);
+
+		VSB_bcat(vsb, vpx2_sig, sizeof(vpx2_sig));
+		VSB_putc(vsb, 0x21);
+		if (proto == PF_INET6) {
+			VSB_putc(vsb, 0x21);
+			VSB_putc(vsb, 0x00);
+			VSB_putc(vsb, 0x24);
+		} else if (proto == PF_INET) {
+			VSB_putc(vsb, 0x11);
+			VSB_putc(vsb, 0x00);
+			VSB_putc(vsb, 0x0c);
+		}
+		vpx_enc_addr(vsb, proto, sac);
+		vpx_enc_addr(vsb, proto, sas);
+		vpx_enc_port(vsb, sac);
+		vpx_enc_port(vsb, sas);
+	} else
+		WRONG("Wrong proxy version");
+
+	AZ(VSB_finish(vsb));
+	(void)write(fd, VSB_data(vsb), VSB_len(vsb));
+	vsb2 = VSB_new_auto();
+	AN(vsb2);
+	VSB_quote(vsb2, VSB_data(vsb), VSB_len(vsb),
+	    version == 2 ? VSB_QUOTE_HEX : 0);
+	AZ(VSB_finish(vsb2));
+	VSL(SLT_Debug, 999, "PROXY_HDR %s", VSB_data(vsb2));
+	VSB_delete(vsb);
+	VSB_delete(vsb2);
+}
