@@ -40,6 +40,7 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
+ * 3.2 = vrt_backend grew .proxy_header field
  * Bump VRT_MINOR_VERSION due to:
  * - VCL_ACL type added
  * Bump VRT_MAJOR_VERSION due to:
@@ -49,7 +50,7 @@
 
 #define VRT_MAJOR_VERSION	3U
 
-#define VRT_MINOR_VERSION	1U
+#define VRT_MINOR_VERSION	2U
 
 
 /***********************************************************************/
@@ -176,7 +177,8 @@ extern const void * const vrt_magic_string_unset;
 	double				connect_timeout;	\
 	double				first_byte_timeout;	\
 	double				between_bytes_timeout;	\
-	unsigned			max_connections;
+	unsigned			max_connections;	\
+	unsigned			proxy_header;
 
 #define VRT_BACKEND_HANDLE()			\
 	do {					\
@@ -189,6 +191,7 @@ extern const void * const vrt_magic_string_unset;
 		DN(first_byte_timeout);		\
 		DN(between_bytes_timeout);	\
 		DN(max_connections);		\
+		DN(proxy_header);		\
 	} while(0)
 
 struct vrt_backend {
