@@ -989,6 +989,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 
 	wrk->vsl = NULL;
 	HSH_DerefBoc(wrk, bo->fetch_objcore);
+	SES_Rel(bo->sp);
 	VBO_ReleaseBusyObj(wrk, &bo);
 	THR_SetBusyobj(NULL);
 }
@@ -1029,6 +1030,8 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 
 	THR_SetBusyobj(bo);
 
+	bo->sp = req->sp;
+	SES_Ref(bo->sp);
 
 	AN(bo->vcl);
 
@@ -1061,6 +1064,8 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 		if (bo->stale_oc != NULL)
 			(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
 		HSH_DerefBoc(wrk, oc);
+		SES_Rel(bo->sp);
+		VBO_ReleaseBusyObj(wrk, &bo);
 	} else {
 		bo = NULL; /* ref transferred to fetch thread */
 		if (mode == VBF_BACKGROUND) {

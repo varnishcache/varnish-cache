@@ -472,6 +472,7 @@ struct busyobj {
 	 */
 	int			retries;
 	struct req		*req;
+	struct sess		*sp;
 	struct worker		*wrk;
 
 	struct vfp_ctx		vfc[1];
