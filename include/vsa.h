@@ -38,7 +38,7 @@ unsigned VSA_Port(const struct suckaddr *);
 int VSA_Compare(const struct suckaddr *, const struct suckaddr *);
 struct suckaddr *VSA_Clone(const struct suckaddr *sua);
 
-const struct sockaddr *VSA_Get_Sockaddr(const struct suckaddr *, socklen_t *sl);
+const void *VSA_Get_Sockaddr(const struct suckaddr *, socklen_t *sl);
 int VSA_Get_Proto(const struct suckaddr *);
 
 /*

@@ -265,7 +265,7 @@ VSA_Build(void *d, const void *s, unsigned sal)
 	return (NULL);
 }
 
-const struct sockaddr *
+const void *
 VSA_Get_Sockaddr(const struct suckaddr *sua, socklen_t *sl)
 {
 
