@@ -315,7 +315,6 @@ Be aware that on 32 bit systems, certain default values are reduced
 relative to the values listed below, in order to conserve VM space:
 
 * workspace_client: 16k
-* thread_pool_workspace: 16k
 * http_resp_size: 8k
 * http_req_size: 12k
 * gzip_stack_buffer: 4k
