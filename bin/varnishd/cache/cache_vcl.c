@@ -862,6 +862,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		ctx.http_req_top = req->top->http;
 		ctx.http_resp = req->resp;
 		ctx.req = req;
+		ctx.sp = req->sp;
 		ctx.now = req->t_prev;
 		ctx.ws = req->ws;
 	}
@@ -873,6 +874,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		ctx.http_bereq = bo->bereq;
 		ctx.http_beresp = bo->beresp;
 		ctx.bo = bo;
+		ctx.sp = bo->sp;
 		ctx.now = bo->t_prev;
 		ctx.ws = bo->ws;
 	}
