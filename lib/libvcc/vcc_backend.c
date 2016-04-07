@@ -288,6 +288,7 @@ static void
 vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 {
 	struct token *t_field;
+	struct token *t_val;
 	struct token *t_host = NULL;
 	struct token *t_port = NULL;
 	struct token *t_hosthdr = NULL;
@@ -307,6 +308,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	    "?between_bytes_timeout",
 	    "?probe",
 	    "?max_connections",
+	    "?proxy_header",
 	    NULL);
 
 	SkipToken(tl, '{');
@@ -379,6 +381,18 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			ERRCHK(tl);
 			SkipToken(tl, ';');
 			Fb(tl, 0, "\t.max_connections = %u,\n", u);
+		} else if (vcc_IdIs(t_field, "proxy_header")) {
+			t_val = tl->t;
+			u = vcc_UintVal(tl);
+			ERRCHK(tl);
+			if (u != 1 && u != 2) {
+				VSB_printf(tl->sb,
+				    ".proxy_header must be 1 or 2\n");
+				vcc_ErrWhere(tl, t_val);
+				return;
+			}
+			SkipToken(tl, ';');
+			Fb(tl, 0, "\t.proxy_header = %u,\n", u);
 		} else if (vcc_IdIs(t_field, "probe") && tl->t->tok == '{') {
 			vcc_ParseProbeSpec(tl, NULL, &p);
 			Fb(tl, 0, "\t.probe = &%s,\n", p);
