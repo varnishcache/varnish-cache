@@ -294,7 +294,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 static int __match_proto__(VUT_cb_f)
 sighup(void)
 {
-	return (1);
+	exit(1);
 }
 
 static void *
