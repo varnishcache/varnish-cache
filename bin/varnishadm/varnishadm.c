@@ -191,7 +191,7 @@ static void send_line(char *l)
 		cli_write(_line_sock, l);
 		cli_write(_line_sock, "\n");
 		add_history(l);
-		rl_callback_handler_install("varnish> ", send_line);
+		rl_callback_handler_install("", send_line);
 	} else {
 		RL_EXIT(0);
 	}
@@ -246,7 +246,7 @@ interactive(int sock)
 	unsigned u, status;
 	_line_sock = sock;
 	rl_already_prompted = 1;
-	rl_callback_handler_install("varnish> ", send_line);
+	rl_callback_handler_install("", send_line);
 	rl_attempted_completion_function = varnishadm_completion;
 
 	fds[0].fd = sock;
@@ -309,6 +309,7 @@ interactive(int sock)
 				free(answer);
 				answer = NULL;
 			}
+			rl_set_prompt("varnish> ");
 			rl_forced_update_display();
 		}
 		if (fds[1].revents & POLLIN) {
