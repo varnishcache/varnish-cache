@@ -1055,7 +1055,7 @@ fo.write("\n" + tbl40("#define VCL_MET_MASK", "0x%x\n" % ((1 << n) - 1)))
 
 
 fo.write("\n/* VCL Returns */\n")
-n = 0
+n = 1
 l = list(rets.keys())
 l.sort()
 for i in l:
