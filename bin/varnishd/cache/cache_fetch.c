@@ -828,7 +828,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	http_SetHeader(bo->beresp, "Server: Varnish");
 
 	bo->fetch_objcore->t_origin = now;
-	if (!VTAILQ_EMPTY(&bo->fetch_objcore->objhead->waitinglist)) {
+	if (bo->fetch_objcore->objhead->waitinglist) {
 		/*
 		 * If there is a waitinglist, it means that there is no
 		 * grace-able object, so cache the error return for a

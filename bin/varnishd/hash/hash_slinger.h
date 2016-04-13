@@ -63,7 +63,7 @@ enum lookup_e {
 struct ban;
 void HSH_Cleanup(struct worker *w);
 enum lookup_e HSH_Lookup(struct req *, struct objcore **, struct objcore **,
-    int wait_for_busy, int always_insert);
+    int always_insert);
 void HSH_Ref(struct objcore *o);
 void HSH_Init(const struct hash_slinger *slinger);
 void HSH_AddString(struct req *, void *ctx, const char *str);
@@ -81,6 +81,22 @@ void HSH_Kill(struct objcore *);
 
 #ifdef VARNISH_CACHE_CHILD
 
+struct wlist_entry {
+	unsigned			magic;
+#define WLIST_ENTRY_MAGIC		0xbba98be4
+
+	VTAILQ_ENTRY(wlist_entry)	list;
+	struct req			*req;
+};
+
+struct wlist {
+	unsigned			magic;
+#define WLIST_MAGIC			0x40383dfa
+
+	VTAILQ_HEAD(, wlist_entry)	reqs;
+	pthread_cond_t			cv;
+};
+
 struct objhead {
 	unsigned		magic;
 #define OBJHEAD_MAGIC		0x1b96615d
@@ -89,7 +105,9 @@ struct objhead {
 	struct lock		mtx;
 	VTAILQ_HEAD(,objcore)	objcs;
 	uint8_t			digest[DIGEST_LEN];
-	VTAILQ_HEAD(, req)	waitinglist;
+
+	/* rescheduled / woken up by hsh_rush, protected by mtx */
+	struct wlist		*waitinglist;
 
 	/*----------------------------------------------------
 	 * The fields below are for the sole private use of

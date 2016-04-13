@@ -11,12 +11,17 @@ server s1 {
 	txresp -body {DATA}
 } -start
 
-varnish v1 -arg "-p debug=+workspace" -vcl+backend {
+varnish v1 -arg "-p debug=+waitinglist" -vcl+backend {
 	sub vcl_backend_response {
 		if (bereq.url == "/") {
 			set beresp.do_esi = true;
 		}
 	}
+} -start
+
+logexpect l1 -v v1 {
+	expect * *	Debug		"waiting for busy obj"
+	expect * *	Debug		"woke up on obj"
 } -start
 
 client c1 {
@@ -37,3 +42,5 @@ client c1 {
 	rxresp
 	expect resp.bodylen == 4
 } -run
+
+logexpect l1 -wait
