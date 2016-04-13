@@ -38,6 +38,8 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <setjmp.h>
+#include <ctype.h>
 
 #include "cache.h"
 #include "cache_transport.h"
@@ -131,6 +133,61 @@ pan_already(struct vsb *vsb, const void *ptr)
 	return (0);
 }
 
+/*--------------------------------------------------------------------*/
+
+#define ADDRDUMP_BYTES	128
+#define ADDRDUMP_BPL	16
+
+static jmp_buf addrdump_sigsegv_exit;
+static char addrdump_buf[ADDRDUMP_BYTES];
+
+static void
+pan_addrdump_sigsegv_handler(int s, siginfo_t *si, void *c)
+{
+	(void)s;
+	(void)si;
+	(void)c;
+	longjmp(addrdump_sigsegv_exit, 1);
+}
+
+static void
+pan_addrdump(struct vsb *vsb, const void *addr)
+{
+	struct sigaction sa, oldsa;
+	volatile int sigsegv;
+	int n, i, j;
+
+	VSB_printf(vsb, "addr = %p {\n", addr);
+	if (pan_already(vsb, addr))
+		return;
+
+	memset(&sa, 0, sizeof sa);
+	sa.sa_sigaction = pan_addrdump_sigsegv_handler;
+	(void)sigaction(SIGSEGV, &sa, &oldsa);
+	n = 0;
+	sigsegv = setjmp(addrdump_sigsegv_exit);
+	for (; !sigsegv && n < ADDRDUMP_BYTES; n++)
+		addrdump_buf[n] = ((char *)addr)[n];
+	(void)sigaction(SIGSEGV, &oldsa, NULL);
+
+	VSB_indent(vsb, 2);
+	for (i = 0; i < n; i += ADDRDUMP_BPL) {
+		for (j = 0; j < ADDRDUMP_BPL && i + j < n; j++)
+			VSB_printf(vsb, "%02hhx ", addrdump_buf[i + j]);
+		for (; j < ADDRDUMP_BPL; j++)
+			VSB_printf(vsb, "   ");
+		VSB_printf(vsb, "| ");
+		for (j = 0; j < ADDRDUMP_BPL && i + j < n; j++) {
+			if (isprint(addrdump_buf[i + j]))
+				VSB_printf(vsb, "%c", addrdump_buf[i + j]);
+			else
+				VSB_printf(vsb, " ");
+		}
+		VSB_printf(vsb, "\n");
+	}
+	VSB_indent(vsb, -2);
+	VSB_printf(vsb, "}%s,\n", sigsegv ? " SIGSEGV" : "");
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -528,7 +585,7 @@ pan_backtrace(struct vsb *vsb)
 
 static void __attribute__((__noreturn__))
 pan_ic(const char *func, const char *file, int line, const char *cond,
-    enum vas_e kind)
+    const void *addr, enum vas_e kind)
 {
 	const char *q;
 	struct req *req;
@@ -594,6 +651,8 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	pan_backtrace(pan_vsb);
 
 	if (!FEATURE(FEATURE_SHORT_PANIC)) {
+		if (addr)
+			pan_addrdump(pan_vsb, addr);
 		req = THR_GetRequest();
 		if (req != NULL) {
 			pan_req(pan_vsb, req);

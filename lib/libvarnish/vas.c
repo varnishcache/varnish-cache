@@ -40,7 +40,7 @@
 
 static void __attribute__((__noreturn__))
 VAS_Fail_default(const char *func, const char *file, int line,
-    const char *cond, enum vas_e kind)
+    const char *cond, const void *addr, enum vas_e kind)
 {
 	int err = errno;
 
@@ -66,6 +66,9 @@ VAS_Fail_default(const char *func, const char *file, int line,
 	if (err)
 		fprintf(stderr,
 		    "  errno = %d (%s)\n", err, strerror(err));
+	if (addr)
+		fprintf(stderr,
+		    "  addr = %p\n", addr);
 	abort();
 }
 

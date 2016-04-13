@@ -30,19 +30,19 @@
 
 #define CHECK_OBJ(ptr, type_magic)					\
 	do {								\
-		assert((ptr)->magic == type_magic);			\
+		assertdump((ptr)->magic == type_magic, (ptr));		\
 	} while (0)
 
 #define CHECK_OBJ_NOTNULL(ptr, type_magic)				\
 	do {								\
 		assert((ptr) != NULL);					\
-		assert((ptr)->magic == type_magic);			\
+		assertdump((ptr)->magic == type_magic, (ptr));		\
 	} while (0)
 
 #define CHECK_OBJ_ORNULL(ptr, type_magic)				\
 	do {								\
 		if ((ptr) != NULL)					\
-			assert((ptr)->magic == type_magic);		\
+			assertdump((ptr)->magic == type_magic, (ptr));	\
 	} while (0)
 
 #define CAST_OBJ(to, from, type_magic)					\
