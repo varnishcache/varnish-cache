@@ -321,16 +321,15 @@ secret file, and the challenge string.
 EXAMPLES
 ========
 
-Simple example: All requests where req.url exactly matches the string
-/news are banned from the cache::
+Ban all requests where req.url exactly matches the string /news::
 
-    req.url == "/news"
+    ban req.url == "/news"
 
-Example: Ban all documents where the serving host is "example.com"
-or "www.example.com", and where the Set-Cookie header received from
-the backend contains "USERID=1663"::
+Ban all documents where the serving host is "example.com" or
+"www.example.com", and where the Set-Cookie header received from the
+backend contains "USERID=1663"::
 
-    req.http.host ~ "^(?i)(www\.)example.com$" && obj.http.set-cookie ~ "USERID=1663"
+    ban req.http.host ~ "^(?i)(www\\.)example.com$" && obj.http.set-cookie ~ "USERID=1663"
 
 AUTHORS
 =======
