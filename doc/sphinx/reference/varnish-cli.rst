@@ -242,8 +242,8 @@ the functions Varnish code uses to read and write CLI response.
 
 .. _ref_psk_auth:
 
-How -S/PSK Authentication Works
--------------------------------
+Authentication with -S
+----------------------
 
 If the -S secret-file is given as argument to varnishd, all network
 CLI connections must authenticate, by proving they know the contents
