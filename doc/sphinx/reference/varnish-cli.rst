@@ -46,23 +46,21 @@ available. In debug mode (-d) the CLI will be in the foreground, with
 varnishd will connect back to a listening service *pushing* the CLI to
 that service. Please see :ref:`varnishd(1)` for details.
 
+.. _ref_syntax:
 
 Syntax
 ------
 
 Commands are usually terminated with a newline. Long command can be
-entered using sh style *here documents* (colloquially heredocs).
-The format of here-documents is::
+entered using shell style *here document* (here-document or heredoc).
+The format of here document is::
 
    << word
 	here document
    word
 
-.. :ref:`heredoc`
-
-*word* can be any continuous string chosen to make sure it doesn't
-appear naturally in the following *here document*. Commonly "EOF"
-is used.
+*word* can be any continuous string chosen to make sure it doesn't appear
+naturally in the following *here document*. Often EOF or END is used.
 
 When using the here document style of input there are no restrictions
 on length. When using newline-terminated commands maximum length is
@@ -108,7 +106,8 @@ vcl.load <configname> <filename> [auto|cold|warm]
   Compile and load the VCL file under the name provided.
 
 vcl.inline <configname> <quoted_VCLstring> [auto|cold|warm]
-  Compile and load the VCL data under the name provided. Multi-line VCL can be input using :ref:`heredoc`.
+  Compile and load the VCL data under the name provided.
+  Multi-line VCL can be input using the here document :ref:`ref_syntax`.
 
 vcl.use <configname>
   Switch to the named configuration immediately.
@@ -173,14 +172,16 @@ ban.list
 Backend Expression
 ------------------
 
-A backend expression can be a backend name or a combination of backend
-name, IP address and port in "name(IP address:port)" format. All fields
-are optional. If no exact matching backend is found, partial matching
-will be attempted based on the provided name, IP address and port fields.
+A backend expression can be a backend name or a combination of a VCL name
+and backend name in "VCL.backend" format.  If the VCL name is omitted,
+the active VCL is assumed.  Partial matching on the backend name, VCL
+name or both is possible using shell-style wilcards, i.e. asterisk (*),
+question mark (?) and brackets ([]).
 
 Examples::
 
    backend.list def*
+   backend.list b*.def*
    backend.set_health default sick
    backend.set_health def* healthy
    backend.set_health * auto
@@ -268,10 +269,13 @@ An authenticated session looks like this::
    Authentication required.
 
    auth 455ce847f0073c7ab3b1465f74507b75d3dc064c1e7de3b71e00de9092fdc89a
-   200 193
+   200 279
    -----------------------------
-   Varnish HTTP accelerator CLI.
+   Varnish Cache CLI 1.0
    -----------------------------
+   Linux,4.4.0-1-amd64,x86_64,-jnone,-smalloc,-smalloc,-hcritbit
+   varnish-trunk revision dc360a4
+
    Type 'help' for command list.
    Type 'quit' to close CLI session.
    Type 'start' to launch worker process.
@@ -320,6 +324,17 @@ secret file, and the challenge string.
 
 EXAMPLES
 ========
+
+Load a multi-line VCL using shell style *here document*::
+
+    vcl.inline example << EOF
+    vcl 4.0;
+
+    backend www {
+        .host = "127.0.0.1";
+        .port = "8080";
+    }
+    EOF
 
 Ban all requests where req.url exactly matches the string /news::
 
