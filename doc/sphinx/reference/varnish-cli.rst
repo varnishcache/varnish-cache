@@ -51,15 +51,18 @@ Syntax
 ------
 
 Commands are usually terminated with a newline. Long command can be
-entered using sh style *here documents*. The format of here-documents
-is::
+entered using sh style *here documents* (colloquially heredocs).
+The format of here-documents is::
 
    << word
 	here document
    word
 
+.. :ref:`heredoc`
+
 *word* can be any continuous string chosen to make sure it doesn't
-appear naturally in the following *here document*.
+appear naturally in the following *here document*. Commonly "EOF"
+is used.
 
 When using the here document style of input there are no restrictions
 on length. When using newline-terminated commands maximum length is
@@ -105,7 +108,7 @@ vcl.load <configname> <filename> [auto|cold|warm]
   Compile and load the VCL file under the name provided.
 
 vcl.inline <configname> <quoted_VCLstring> [auto|cold|warm]
-  Compile and load the VCL data under the name provided.
+  Compile and load the VCL data under the name provided. Multi-line VCL can be input using :ref:`heredoc`.
 
 vcl.use <configname>
   Switch to the named configuration immediately.
