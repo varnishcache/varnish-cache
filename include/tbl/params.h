@@ -137,8 +137,10 @@ PARAM(
 	/* s-text */
 	"The ban lurker will ignore bans until they are this old.  "
 	"When a ban is added, the active traffic will be tested against it "
-	"as part of object lookup.  This parameter "
-	"holds the ban-lurker off, until the rush is over.",
+	"as part of object lookup.  Because many applications issue bans in "
+	"bursts, this parameter holds the ban-lurker off until the rush is "
+	"over.\n"
+	"This should be set to the approximate time which a ban-burst takes.",
 	/* l-text */	"",
 	/* func */	NULL
 )
@@ -169,7 +171,7 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"How long the ban lurker sleeps after examining ${ban_lurker_batch} "
-	"objects."
+	"objects and when it detects lock contention on object heads."
 	"  Use this to pace the ban-lurker if it eats too many resources.\n"
 	"A value of zero will disable the ban lurker entirely.",
 	/* l-text */	"",
