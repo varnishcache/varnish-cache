@@ -264,7 +264,7 @@ BAN_FindBan(double t0)
 		t1 = ban_time(b->spec);
 		if (t1 == t0)
 			return (b);
-		if (t1 <= t0)
+		if (t1 < t0)
 			break;
 	}
 	return (NULL);
