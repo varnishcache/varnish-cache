@@ -171,9 +171,24 @@ PARAM(
 	/* flags */	0,
 	/* s-text */
 	"How long the ban lurker sleeps after examining ${ban_lurker_batch} "
-	"objects and when it detects lock contention on object heads."
+	"objects."
 	"  Use this to pace the ban-lurker if it eats too many resources.\n"
 	"A value of zero will disable the ban lurker entirely.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
+PARAM(
+	/* name */	ban_lurker_holdoff,
+	/* typ */	timeout,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"0.010",
+	/* units */	"seconds",
+	/* flags */	EXPERIMENTAL,
+	/* s-text */
+	"How long the ban lurker sleeps when giving way to lookup"
+	" due to lock contention.",
 	/* l-text */	"",
 	/* func */	NULL
 )

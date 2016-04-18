@@ -131,7 +131,7 @@ ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt)
 		Lck_Unlock(&ban_mtx);
 		VSC_C_main->bans_lurker_contention++;
 		VSL_Flush(vsl, 0);
-		VTIM_sleep(cache_param->ban_lurker_sleep);
+		VTIM_sleep(cache_param->ban_lurker_holdoff);
 	}
 	return (oc);
 }
