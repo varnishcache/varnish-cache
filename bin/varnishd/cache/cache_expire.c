@@ -83,6 +83,7 @@ static void
 exp_mail_it(struct objcore *oc, uint8_t cmds)
 {
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	assert(oc->refcnt > 0);
 
 	Lck_Lock(&exphdl->mtx);
 	if (!(oc->exp_flags & OC_EF_POSTED)) {
@@ -174,20 +175,21 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags)
 
 	CHECK_OBJ_NOTNULL(ep, EXP_PRIV_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+	assert(oc->refcnt > 0);
 
-	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Inbox p=%p e=%.9f f=0x%x", oc,
-	    oc->timer_when, oc->flags);
+	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Inbox flg=%x p=%p e=%.9f f=0x%x",
+	    flags, oc, oc->timer_when, oc->flags);
 
 	if (oc->flags & OC_F_DYING) {
-		oc->exp_flags &= ~OC_EF_EXP;
-		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Kill p=%p e=%.9f f=0x%x", oc,
-		    oc->timer_when, oc->flags);
 		if (!(flags & OC_EF_INSERT)) {
 			assert(oc->timer_idx != BINHEAP_NOIDX);
 			binheap_delete(ep->heap, oc->timer_idx);
 		}
 		assert(oc->timer_idx == BINHEAP_NOIDX);
 		ObjSendEvent(ep->wrk, oc, OEV_REMOVE);
+		oc->exp_flags &= ~OC_EF_EXP;
+		assert(oc->refcnt > 0);
+		AZ(oc->exp_flags);
 		(void)HSH_DerefObjCore(ep->wrk, &oc);
 		return;
 	}
@@ -304,7 +306,9 @@ exp_thread(struct worker *wrk, void *priv)
 
 		Lck_Lock(&ep->mtx);
 		oc = VSTAILQ_FIRST(&ep->inbox);
+		CHECK_OBJ_ORNULL(oc, OBJCORE_MAGIC);
 		if (oc != NULL) {
+			assert(oc->refcnt >= 1);
 			VSTAILQ_REMOVE(&ep->inbox, oc, objcore, exp_list);
 			VSC_C_main->exp_received++;
 			tnext = 0;

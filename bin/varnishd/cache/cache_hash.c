@@ -385,6 +385,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		assert(oh->refcnt > 1);
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 		assert(oc->objhead == oh);
+		assert(oc->refcnt > 0);
 
 		if (oc->flags & OC_F_DYING)
 			continue;
@@ -408,8 +409,11 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		if (oc->ttl <= 0.)
 			continue;
 
-		if (BAN_CheckObject(wrk, oc, req))
+		if (BAN_CheckObject(wrk, oc, req)) {
+			oc->flags |= OC_F_DYING;
+			EXP_Poke(oc);
 			continue;
+		}
 
 		if (ObjHasAttr(wrk, oc, OA_VARY)) {
 			vary = ObjGetAttr(wrk, oc, OA_VARY, NULL);

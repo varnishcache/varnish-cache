@@ -530,6 +530,7 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	Lck_AssertHeld(&oc->objhead->mtx);
+	assert(oc->refcnt > 0);
 
 	vsl = req->vsl;
 
@@ -597,8 +598,6 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 	} else {
 		VSLb(vsl, SLT_ExpBan, "%u banned lookup", ObjGetXID(wrk, oc));
 		VSC_C_main->bans_obj_killed++;
-		oc->flags |= OC_F_DYING;
-		EXP_Poke(oc);
 		return (1);
 	}
 }
