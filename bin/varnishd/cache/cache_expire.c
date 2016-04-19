@@ -86,16 +86,20 @@ exp_mail_it(struct objcore *oc, uint8_t cmds)
 	assert(oc->refcnt > 0);
 
 	Lck_Lock(&exphdl->mtx);
-	if (!(oc->exp_flags & OC_EF_POSTED)) {
-		if (oc->flags & OC_F_DYING)
-			VSTAILQ_INSERT_HEAD(&exphdl->inbox, oc, exp_list);
-		else
-			VSTAILQ_INSERT_TAIL(&exphdl->inbox, oc, exp_list);
+	if ((cmds | oc->exp_flags) & OC_EF_REFD) {
+		if (!(oc->exp_flags & OC_EF_POSTED)) {
+			if (cmds & OC_EF_REMOVE)
+				VSTAILQ_INSERT_HEAD(&exphdl->inbox,
+				    oc, exp_list);
+			else
+				VSTAILQ_INSERT_TAIL(&exphdl->inbox,
+				    oc, exp_list);
+		}
+		oc->exp_flags |= cmds | OC_EF_POSTED;
+		AN(oc->exp_flags & OC_EF_REFD);
+		VSC_C_main->exp_mailed++;
+		AZ(pthread_cond_signal(&exphdl->condvar));
 	}
-	oc->exp_flags |= cmds | OC_EF_POSTED;
-	AN(oc->exp_flags & OC_EF_EXP);
-	VSC_C_main->exp_mailed++;
-	AZ(pthread_cond_signal(&exphdl->condvar));
 	Lck_Unlock(&exphdl->mtx);
 }
 
@@ -108,8 +112,8 @@ EXP_Remove(struct objcore *oc)
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	if (oc->exp_flags & OC_EF_EXP)
-		exp_mail_it(oc, 0);
+	if (oc->exp_flags & OC_EF_REFD)
+		exp_mail_it(oc, OC_EF_REMOVE);
 }
 
 /*--------------------------------------------------------------------
@@ -130,7 +134,7 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 	AZ(oc->flags & OC_F_DYING);
 
 	ObjSendEvent(wrk, oc, OEV_INSERT);
-	exp_mail_it(oc, OC_EF_INSERT | OC_EF_EXP | OC_EF_MOVE);
+	exp_mail_it(oc, OC_EF_INSERT | OC_EF_REFD | OC_EF_MOVE);
 }
 
 /*--------------------------------------------------------------------
@@ -146,7 +150,7 @@ EXP_Rearm(struct objcore *oc, double now, double ttl, double grace, double keep)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	assert(oc->refcnt > 0);
 
-	AN(oc->exp_flags & OC_EF_EXP);
+	AN(oc->exp_flags & OC_EF_REFD);
 
 	if (!isnan(ttl))
 		oc->ttl = now + ttl - oc->t_origin;
@@ -179,13 +183,13 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags)
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Inbox flg=%x p=%p e=%.9f f=0x%x",
 	    flags, oc, oc->timer_when, oc->flags);
 
-	if (oc->flags & OC_F_DYING) {
+	if (flags & OC_EF_REMOVE) {
 		if (!(flags & OC_EF_INSERT)) {
 			assert(oc->timer_idx != BINHEAP_NOIDX);
 			binheap_delete(ep->heap, oc->timer_idx);
 		}
 		assert(oc->timer_idx == BINHEAP_NOIDX);
-		oc->exp_flags &= ~OC_EF_EXP;
+		oc->exp_flags &= ~OC_EF_REFD;
 		assert(oc->refcnt > 0);
 		AZ(oc->exp_flags);
 		ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
@@ -244,7 +248,7 @@ exp_expire(struct exp_priv *ep, double now)
 		return (oc->timer_when);
 
 	VSC_C_main->n_expired++;
-	oc->exp_flags &= ~OC_EF_EXP;
+	oc->exp_flags &= ~OC_EF_REFD;
 
 	if (!(oc->flags & OC_F_DYING))
 		HSH_Kill(oc);
@@ -312,8 +316,7 @@ exp_thread(struct worker *wrk, void *priv)
 			VSC_C_main->exp_received++;
 			tnext = 0;
 			flags = oc->exp_flags;
-			oc->exp_flags &=
-			    ~(OC_EF_INSERT | OC_EF_MOVE | OC_EF_POSTED);
+			oc->exp_flags &= OC_EF_REFD;
 		} else if (tnext > t) {
 			VSL_Flush(&ep->vsl, 0);
 			Pool_Sumstat(wrk);

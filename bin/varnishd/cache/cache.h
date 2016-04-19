@@ -430,9 +430,10 @@ struct objcore {
 
 	uint8_t			exp_flags;
 #define OC_EF_POSTED		(1<<1)
-#define OC_EF_MOVE		(1<<2)
-#define OC_EF_INSERT		(1<<3)
-#define OC_EF_EXP		(1<<4)
+#define OC_EF_REFD		(1<<2)
+#define OC_EF_MOVE		(1<<3)
+#define OC_EF_INSERT		(1<<4)
+#define OC_EF_REMOVE		(1<<5)
 
 	uint16_t		oa_present;
 
