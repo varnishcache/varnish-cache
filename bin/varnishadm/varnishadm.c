@@ -190,7 +190,8 @@ static void send_line(char *l)
 	if (l) {
 		cli_write(_line_sock, l);
 		cli_write(_line_sock, "\n");
-		add_history(l);
+		if (*l)
+			add_history(l);
 		rl_callback_handler_install("varnish> ", send_line);
 	} else {
 		RL_EXIT(0);
