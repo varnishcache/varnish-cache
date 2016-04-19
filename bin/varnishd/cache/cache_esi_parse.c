@@ -1052,6 +1052,14 @@ VEP_Finish(struct vep_state *vep)
 	if (vep->attr_vsb)
 		VSB_destroy(&vep->attr_vsb);
 
+	if (vep->state != VEP_START &&
+	    vep->state != VEP_BOM &&
+	    vep->state != VEP_TESTXML &&
+	    vep->state != VEP_NOTXML &&
+	    vep->state != VEP_NEXTTAG) {
+		vep_error(vep, "VEP ended inside a tag");
+	}
+
 	if (vep->o_pending)
 		vep_mark_common(vep, vep->ver_p, vep->last_mark);
 	if (vep->o_wait > 0) {
