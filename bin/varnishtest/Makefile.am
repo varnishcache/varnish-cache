@@ -4,10 +4,6 @@ VTC_LOG_COMPILER = ./varnishtest -v -i
 TEST_EXTENSIONS = .vtc
 TESTS = @VTC_TESTS@
 
-if CODE_COVERAGE_ENABLED
-VTC_LOG_COMPILER += -p cli_timeout=120
-endif
-
 # Make sure we run check-local first
 check: check-am check-local
 check-am: check-local

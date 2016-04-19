@@ -88,7 +88,5 @@ main(void)
 
 	vbit_destroy(vb);
 
-	(void)obits; /* needed when NDEBUG is defined */
-
 	return (0);
 }

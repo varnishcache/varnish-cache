@@ -25,17 +25,6 @@ distcleancheck_listfiles = \
 	find . -type f -exec sh -c 'test -f $(srcdir)/$$1 || echo $$1' \
 		sh '{}' ';'
 
-# lcov support
-CODE_COVERAGE_OUTPUT_DIRECTORY = lcov
-CODE_COVERAGE_IGNORE_PATTERN = "/usr/*"
-CODE_COVERAGE_GENHTML_OPTIONS = --prefix $(abs_top_srcdir)
-
-@CODE_COVERAGE_RULES@
-
-if CODE_COVERAGE_ENABLED
-lcov: check-code-coverage
-endif
-
 # XXX: This is a hack to ensure we have a built source tree when
 # running make dist If we had used non-recursive make we could have
 # solved it better, but we don't, so use this at least for now.
