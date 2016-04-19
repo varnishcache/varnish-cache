@@ -820,6 +820,8 @@ VEP_Parse(struct vep_state *vep, const char *p, size_t l)
 				vep_mark_skip(vep, p);
 				vep->in_esi_tag = 0;
 				vep->state = VEP_NEXTTAG;
+				if (vep->attr_vsb)
+					VSB_destroy(&vep->attr_vsb);
 			}
 
 		/******************************************************
@@ -854,6 +856,7 @@ VEP_Parse(struct vep_state *vep, const char *p, size_t l)
 				vep->state = VEP_TAGERROR;
 			}
 		} else if (vep->state == VEP_ATTRGETVAL) {
+			AZ(vep->attr_vsb);
 			vep->attr_vsb = VSB_new_auto();
 			vep->state = VEP_ATTRDELIM;
 		} else if (vep->state == VEP_ATTRDELIM) {
