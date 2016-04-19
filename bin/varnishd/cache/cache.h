@@ -889,12 +889,12 @@ int ObjGetU64(struct worker *, struct objcore *, enum obj_attr, uint64_t *);
 int ObjCheckFlag(struct worker *, struct objcore *, enum obj_flags of);
 void ObjSetFlag(struct worker *, struct objcore *, enum obj_flags of, int val);
 
-#define OEV_BANCHG	(1U<<1)
-#define OEV_TTLCHG	(1U<<2)
-#define OEV_INSERT	(1U<<3)
-#define OEV_REMOVE	(1U<<4)
+#define OEV_INSERT	(1U<<1)
+#define OEV_BANCHG	(1U<<2)
+#define OEV_TTLCHG	(1U<<3)
+#define OEV_EXPIRE	(1U<<4)
 
-#define OEV_MASK (OEV_BANCHG|OEV_TTLCHG|OEV_INSERT|OEV_REMOVE)
+#define OEV_MASK (OEV_INSERT|OEV_BANCHG|OEV_TTLCHG|OEV_EXPIRE)
 
 typedef void obj_event_f(struct worker *, void *priv, struct objcore *,
     unsigned);

@@ -115,8 +115,7 @@ EXP_Remove(struct objcore *oc)
 /*--------------------------------------------------------------------
  * Insert new object.
  *
- * We grab a reference to the object, which will keep it around until
- * we decide its time to let it go.
+ * Caller got a oc->refcnt for us.
  */
 
 void
@@ -186,10 +185,10 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags)
 			binheap_delete(ep->heap, oc->timer_idx);
 		}
 		assert(oc->timer_idx == BINHEAP_NOIDX);
-		ObjSendEvent(ep->wrk, oc, OEV_REMOVE);
 		oc->exp_flags &= ~OC_EF_EXP;
 		assert(oc->refcnt > 0);
 		AZ(oc->exp_flags);
+		ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
 		(void)HSH_DerefObjCore(ep->wrk, &oc);
 		return;
 	}
@@ -258,7 +257,7 @@ exp_expire(struct exp_priv *ep, double now)
 	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
 	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%u t=%.0f",
 	    ObjGetXID(ep->wrk, oc), EXP_Ttl(NULL, oc) - now);
-	ObjSendEvent(ep->wrk, oc, OEV_REMOVE);
+	ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
 	(void)HSH_DerefObjCore(ep->wrk, &oc);
 	return (0);
 }

@@ -212,7 +212,7 @@ obj_cb(struct worker *wrk, void *priv, struct objcore *oc, unsigned event)
 	CAST_OBJ_NOTNULL(priv_vcl, priv, PRIV_VCL_MAGIC);
 	switch (event) {
 	case OEV_INSERT: what = "insert"; break;
-	case OEV_REMOVE: what = "remove"; break;
+	case OEV_EXPIRE: what = "expire"; break;
 	default: WRONG("Wrong object event");
 	}
 
@@ -230,7 +230,7 @@ vmod_register_obj_events(VRT_CTX, struct vmod_priv *priv)
 	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
 	AZ(priv_vcl->obj_cb);
 	priv_vcl->obj_cb = ObjSubscribeEvents(obj_cb, priv_vcl,
-		OEV_INSERT|OEV_REMOVE);
+		OEV_INSERT|OEV_EXPIRE);
 	VSL(SLT_Debug, 0, "Subscribed to Object Events");
 }
 
