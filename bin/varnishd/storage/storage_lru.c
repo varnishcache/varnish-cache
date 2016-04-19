@@ -189,8 +189,6 @@ LRU_NukeOne(struct worker *wrk, struct lru *lru)
 	/* XXX: We could grab and return one storage segment to our caller */
 	ObjSlim(wrk, oc);
 
-	EXP_Poke(oc);
-
 	VSLb(wrk->vsl, SLT_ExpKill, "LRU x=%u", ObjGetXID(wrk, oc));
 	(void)HSH_DerefObjCore(wrk, &oc);	// Ref from ObjSnipe
 	return (1);

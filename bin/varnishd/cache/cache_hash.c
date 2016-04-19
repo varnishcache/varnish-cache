@@ -411,7 +411,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 
 		if (BAN_CheckObject(wrk, oc, req)) {
 			oc->flags |= OC_F_DYING;
-			EXP_Poke(oc);
+			EXP_Remove(oc);
 			continue;
 		}
 
@@ -706,7 +706,7 @@ HSH_Kill(struct objcore *oc)
 	Lck_Lock(&oc->objhead->mtx);
 	oc->flags |= OC_F_DYING;
 	Lck_Unlock(&oc->objhead->mtx);
-	EXP_Poke(oc);
+	EXP_Remove(oc);
 }
 
 /*====================================================================
@@ -734,6 +734,8 @@ HSH_Snipe(const struct worker *wrk, struct objcore *oc)
 		}
 		Lck_Unlock(&oc->objhead->mtx);
 	}
+	if (retval)
+		EXP_Remove(oc);
 	return (retval);
 }
 

@@ -42,7 +42,12 @@ void VBE_Poll(void);
 /* cache_backend_poll.c */
 void VBP_Init(void);
 
-/* == cache_ban.c == */
+/* cache_exp.c */
+double EXP_Ttl(const struct req *, const struct objcore *);
+void EXP_Insert(struct worker *wrk, struct objcore *oc);
+void EXP_Rearm(struct objcore *, double now, double ttl, double grace,
+    double keep);
+void EXP_Remove(struct objcore *);
 
 /* From cache_main.c */
 void BAN_Init(void);

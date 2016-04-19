@@ -104,7 +104,7 @@ exp_mail_it(struct objcore *oc, uint8_t cmds)
  */
 
 void
-EXP_Poke(struct objcore *oc)
+EXP_Remove(struct objcore *oc)
 {
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
