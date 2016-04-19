@@ -1044,8 +1044,11 @@ VEP_Finish(struct vep_state *vep)
 
 	CHECK_OBJ_NOTNULL(vep, VEP_MAGIC);
 
-	AZ(vep->include_src);
-	AZ(vep->attr_vsb);
+	if (vep->include_src)
+		VSB_destroy(&vep->include_src);
+	if (vep->attr_vsb)
+		VSB_destroy(&vep->attr_vsb);
+
 	if (vep->o_pending)
 		vep_mark_common(vep, vep->ver_p, vep->last_mark);
 	if (vep->o_wait > 0) {
