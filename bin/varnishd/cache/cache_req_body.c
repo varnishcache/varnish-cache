@@ -45,7 +45,7 @@
  */
 
 static ssize_t
-vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
+vrb_pull(struct req *req, ssize_t maxsize, const char *hint, objiterate_f *func, void *priv)
 {
 	ssize_t l, r = 0, yet;
 	struct vfp_ctx *vfc;
@@ -61,7 +61,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 
 	req->body_oc = HSH_Private(req->wrk);
 	AN(req->body_oc);
-	XXXAN(STV_NewObject(req->wrk, req->body_oc, TRANSIENT_STORAGE, 8));
+	XXXAN(STV_NewObject(req->wrk, req->body_oc, hint, 8));
 
 	vfc->oc = req->body_oc;
 
@@ -200,7 +200,7 @@ VRB_Iterate(struct req *req, objiterate_f *func, void *priv)
 		    "Multiple attempts to access non-cached req.body");
 		return (i);
 	}
-	return (vrb_pull(req, -1, func, priv));
+	return (vrb_pull(req, -1, TRANSIENT_STORAGE, func, priv));
 }
 
 /*----------------------------------------------------------------------
@@ -253,7 +253,7 @@ VRB_Free(struct req *req)
  */
 
 ssize_t
-VRB_Cache(struct req *req, ssize_t maxsize)
+VRB_Cache(struct req *req, ssize_t maxsize, const char *hint)
 {
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -290,5 +290,5 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 		return (-1);
 	}
 
-	return (vrb_pull(req, maxsize, NULL, NULL));
+	return (vrb_pull(req, maxsize, hint, NULL, NULL));
 }

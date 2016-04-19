@@ -226,12 +226,12 @@ vmod_timestamp(VRT_CTX, VCL_STRING label)
 }
 
 VCL_BOOL __match_proto__(td_std_cache_req_body)
-vmod_cache_req_body(VRT_CTX, VCL_BYTES size)
+vmod_cache_req_body(VRT_CTX, VCL_BYTES size, VCL_STRING hint)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (size < 0)
 		size = 0;
-	if (VRT_CacheReqBody(ctx, (size_t)size) < 0)
+	if (VRT_CacheReqBody(ctx, (size_t)size, hint) < 0)
 		return (0);
 	return (1);
 }
