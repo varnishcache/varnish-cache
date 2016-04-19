@@ -69,7 +69,8 @@ client c1 {
 
 client c2 {
        txreq -req POST -nolen -hdr "Content-Length: 1025"
-       expect_close
+	rxresp
+	expect resp.status == 413
 	expect resp.http.stored == <undef>
 } -run
 varnish v1 -stop
