@@ -713,6 +713,10 @@ extern pthread_t cli_thread;
 #define EXP_WHEN(to)							\
 	((to)->t_origin + (to)->ttl + (to)->grace + (to)->keep)
 
+/* cache_exp.c */
+void EXP_Rearm(struct objcore *, double now, double ttl, double grace,
+    double keep);
+
 /* cache_fetch.c */
 enum vbf_fetch_mode_e {
 	VBF_NORMAL = 0,
