@@ -372,7 +372,8 @@ VUT_Main(void)
 				continue;
 			}
 			c = VSL_CursorVSM(VUT.vsl, VUT.vsm,
-			    VSL_COPT_TAIL | VSL_COPT_BATCH);
+			    (VUT.d_opt ? VSL_COPT_TAILSTOP : VSL_COPT_TAIL)
+			    | VSL_COPT_BATCH);
 			if (c == NULL) {
 				VSL_ResetError(VUT.vsl);
 				VSM_Close(VUT.vsm);
