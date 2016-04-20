@@ -248,21 +248,30 @@ exp_expire(struct exp_priv *ep, double now)
 		return (oc->timer_when);
 
 	VSC_C_main->n_expired++;
-	oc->exp_flags &= ~OC_EF_REFD;
 
-	if (!(oc->flags & OC_F_DYING))
-		HSH_Kill(oc);
+	Lck_Lock(&ep->mtx);
+	if (oc->exp_flags & OC_EF_POSTED) {
+		oc->exp_flags |= OC_EF_REMOVE;
+		oc = NULL;
+	} else {
+		oc->exp_flags &= ~OC_EF_REFD;
+	}
+	Lck_Unlock(&ep->mtx);
+	if (oc != NULL) {
+		if (!(oc->flags & OC_F_DYING))
+			HSH_Kill(oc);
 
-	/* Remove from binheap */
-	assert(oc->timer_idx != BINHEAP_NOIDX);
-	binheap_delete(ep->heap, oc->timer_idx);
-	assert(oc->timer_idx == BINHEAP_NOIDX);
+		/* Remove from binheap */
+		assert(oc->timer_idx != BINHEAP_NOIDX);
+		binheap_delete(ep->heap, oc->timer_idx);
+		assert(oc->timer_idx == BINHEAP_NOIDX);
 
-	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
-	VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%u t=%.0f",
-	    ObjGetXID(ep->wrk, oc), EXP_Ttl(NULL, oc) - now);
-	ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
-	(void)HSH_DerefObjCore(ep->wrk, &oc);
+		CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
+		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%u t=%.0f",
+		    ObjGetXID(ep->wrk, oc), EXP_Ttl(NULL, oc) - now);
+		ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
+		(void)HSH_DerefObjCore(ep->wrk, &oc);
+	}
 	return (0);
 }
 
