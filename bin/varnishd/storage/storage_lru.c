@@ -85,6 +85,10 @@ LRU_Add(struct objcore *oc, double now)
 	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	if (oc->flags & OC_F_PRIVATE)
+		return;
+
 	AZ(oc->boc);
 	AN(isnan(oc->last_lru));
 	AZ(isnan(now));
@@ -103,6 +107,10 @@ LRU_Remove(struct objcore *oc)
 	struct lru *lru;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	if (oc->flags & OC_F_PRIVATE)
+		return;
+
 	AZ(oc->boc);
 	lru = lru_get(oc);
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
@@ -121,7 +129,7 @@ LRU_Touch(struct worker *wrk, struct objcore *oc, double now)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
-	if (isnan(oc->last_lru))
+	if (oc->flags & OC_F_PRIVATE || isnan(oc->last_lru))
 		return;
 
 	/*
