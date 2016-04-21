@@ -41,6 +41,8 @@
 
 #include "vsb.h"
 
+#include "vtim.h"
+
 /*-------------------------------------------------------------------*/
 
 static struct storage *
@@ -498,8 +500,11 @@ sml_bocdone(struct worker *wrk, struct objcore *oc, struct boc *boc)
 		sml_stv_free(stv, st);
 	}
 
-	if (stv->lru != NULL)
+	if (stv->lru != NULL) {
+		if (isnan(wrk->lastused))
+			wrk->lastused = VTIM_real();
 		LRU_Add(oc, wrk->lastused);	// approx timestamp is OK
+	}
 }
 
 static const void * __match_proto__(objgetattr_f)
