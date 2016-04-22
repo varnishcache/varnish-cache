@@ -145,9 +145,6 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 	unsigned tests;
 	int i;
 
-	/* It's an error to give an empty list to test against */
-	AZ(VTAILQ_EMPTY(obans));
-
 	/*
 	 * First see if there is anything to do, and if so, insert marker
 	 */
