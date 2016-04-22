@@ -32,4 +32,5 @@ You may or may not want to know what Poul-Henning thinks.
 	thoughts.rst
 	autocrap.rst
 	sphinx.rst
+	notes.rst
 
