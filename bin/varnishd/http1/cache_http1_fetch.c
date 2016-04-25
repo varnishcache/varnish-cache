@@ -80,6 +80,8 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr,
 	ssize_t i;
 	struct http_conn *htc;
 	int do_chunked = 0;
+	char abuf[VTCP_ADDRBUFSIZE];
+	char pbuf[VTCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -94,6 +96,9 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr,
 		http_PrintfHeader(hp, "Transfer-Encoding: chunked");
 		do_chunked = 1;
 	}
+
+	VTCP_hisname(htc->fd, abuf, sizeof abuf, pbuf, sizeof pbuf);
+	VSLb(bo->vsl, SLT_BackendStart, "%s %s", abuf, pbuf);
 
 	(void)VTCP_blocking(htc->fd);	/* XXX: we should timeout instead */
 	V1L_Reserve(wrk, wrk->aws, &htc->fd, bo->vsl, bo->t_prev);
