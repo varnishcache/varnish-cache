@@ -522,5 +522,16 @@ SLTM(Witness, 0, "Lock order witness records",
 	"Diagnostic recording of locking order.\n"
 )
 
+SLTM(BackendStart, 0, "Backend request start",
+	"Start of backend processing. Logs the backend IP address and port"
+	" number.\n\n"
+	"The format is::\n\n"
+	"\t%s %s\n"
+	"\t|  |\n"
+	"\t|  +- Backend Port number\n"
+	"\t+---- Backend IP4/6 address\n"
+	"\n"
+)
+
 #undef NODEF_NOTICE
 /*lint -restore */
