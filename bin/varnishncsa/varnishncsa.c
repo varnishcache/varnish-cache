@@ -50,6 +50,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <limits.h>
 #include <ctype.h>
 #include <time.h>
 #include <math.h>
@@ -125,6 +126,8 @@ VTAILQ_HEAD(watch_head, watch);
 struct ctx {
 	/* Options */
 	int			a_opt;
+	int			b_opt;
+	int			c_opt;
 	char			*w_arg;
 
 	FILE			*fo;
@@ -134,11 +137,12 @@ struct ctx {
 
 	/* State */
 	struct watch_head	watch_vcl_log;
-	struct watch_head	watch_reqhdr;
-	struct watch_head	watch_resphdr;
+	struct watch_head	watch_reqhdr; /* also bereqhdr */
+	struct watch_head	watch_resphdr; /* also beresphdr */
 	struct fragment		frag[F__MAX];
 	const char		*hitmiss;
 	const char		*handling;
+	const char		*side;
 } CTX;
 
 static void
@@ -658,6 +662,10 @@ parse_format(const char *format)
 					addf_strptr(&CTX.handling);
 					break;
 				}
+				if (!strcmp(buf, "Varnish:side")) {
+					addf_strptr(&CTX.side);
+					break;
+				}
 				if (!strncmp(buf, "VCL_Log:", 8)) {
 					addf_vcl_log(buf + 8, "");
 					break;
@@ -717,7 +725,8 @@ frag_fields(int force, const char *b, const char *e, ...)
 	field = va_arg(ap, int);
 	frag = va_arg(ap, struct fragment *);
 	for (n = 1, q = b; q < e; n++) {
-		assert(field > 0);
+		/* caller must sort the fields, or this loop will not work: */
+		assert(field >= n);
 		AN(frag);
 
 		p = q;
@@ -786,14 +795,25 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	unsigned tag;
 	const char *b, *e, *p;
 	struct watch *w;
-	int i, skip;
+	int i, skip, be_mark;
 	(void)vsl;
 	(void)priv;
 
+#define BACKEND_MARKER (INT_MAX / 2 + 1)
+	assert(BACKEND_MARKER >= VSL_t__MAX);
+
 	for (t = pt[0]; t != NULL; t = *++pt) {
 		CTX.gen++;
-		if (t->type != VSL_t_req)
-			/* Only look at client requests */
+
+		/* Consider client requests only if in client mode.
+		   Consider backend requests only if in backend mode. */
+		if (t->type == VSL_t_req && CTX.c_opt) {
+			CTX.side = "c";
+			be_mark = 0;
+		} else if (t->type == VSL_t_bereq && CTX.b_opt) {
+			CTX.side = "b";
+			be_mark = BACKEND_MARKER;
+		} else
 			continue;
 		if (t->reason == VSL_r_esi)
 			/* Skip ESI requests */
@@ -808,7 +828,8 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			while (e > b && e[-1] == '\0')
 				e--;
 
-			switch (tag) {
+			switch (tag + be_mark) {
+			case SLT_HttpGarbage + BACKEND_MARKER:
 			case SLT_HttpGarbage:
 				skip = 1;
 				break;
@@ -818,14 +839,21 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				    4, &CTX.frag[F_O],
 				    0, NULL);
 				break;
+			case (SLT_BackendStart + BACKEND_MARKER):
+				frag_fields(1, b, e,
+				    1, &CTX.frag[F_h],
+				    0, NULL);
+				break;
 			case SLT_ReqStart:
 				frag_fields(0, b, e,
 				    1, &CTX.frag[F_h],
 				    0, NULL);
 				break;
+			case (SLT_BereqMethod + BACKEND_MARKER):
 			case SLT_ReqMethod:
 				frag_line(0, b, e, &CTX.frag[F_m]);
 				break;
+			case (SLT_BereqURL + BACKEND_MARKER):
 			case SLT_ReqURL:
 				p = memchr(b, '?', e - b);
 				if (p == NULL)
@@ -833,12 +861,15 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				frag_line(0, b, p, &CTX.frag[F_U]);
 				frag_line(0, p, e, &CTX.frag[F_q]);
 				break;
+			case (SLT_BereqProtocol + BACKEND_MARKER):
 			case SLT_ReqProtocol:
 				frag_line(0, b, e, &CTX.frag[F_H]);
 				break;
+			case (SLT_BerespStatus + BACKEND_MARKER):
 			case SLT_RespStatus:
 				frag_line(1, b, e, &CTX.frag[F_s]);
 				break;
+			case (SLT_BereqAcct + BACKEND_MARKER):
 			case SLT_ReqAcct:
 				frag_fields(0, b, e,
 				    3, &CTX.frag[F_I],
@@ -846,28 +877,34 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				    6, &CTX.frag[F_O],
 				    0, NULL);
 				break;
+			case (SLT_Timestamp + BACKEND_MARKER):
 			case SLT_Timestamp:
 				if (isprefix(b, "Start:", e, &p)) {
 					frag_fields(0, p, e, 1,
 					    &CTX.frag[F_tstart], 0, NULL);
 
 				} else if (isprefix(b, "Resp:", e, &p) ||
-					isprefix(b, "PipeSess:", e, &p)) {
+					isprefix(b, "PipeSess:", e, &p) ||
+					isprefix(b, "BerespBody:", e, &p)) {
 					frag_fields(0, p, e, 1,
 					    &CTX.frag[F_tend], 0, NULL);
 
 				} else if (isprefix(b, "Process:", e, &p) ||
-					isprefix(b, "Pipe:", e, &p)) {
+					isprefix(b, "Pipe:", e, &p) ||
+					isprefix(b, "Beresp:", e, &p)) {
 					frag_fields(0, p, e, 2,
 					    &CTX.frag[F_ttfb], 0, NULL);
 				}
 				break;
+			case (SLT_BereqHeader + BACKEND_MARKER):
 			case SLT_ReqHeader:
 				if (isprefix(b, "Host:", e, &p))
 					frag_line(0, p, e, &CTX.frag[F_host]);
 				else if (isprefix(b, "Authorization:", e, &p) &&
 				    isprefix(p, "basic", e, &p))
 					frag_line(0, p, e, &CTX.frag[F_auth]);
+				break;
+			case (SLT_VCL_call + BACKEND_MARKER):
 				break;
 			case SLT_VCL_call:
 				if (!strcasecmp(b, "recv")) {
@@ -889,6 +926,8 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 					CTX.hitmiss = "miss";
 					CTX.handling = "synth";
 				}
+				break;
+			case (SLT_VCL_return + BACKEND_MARKER):
 				break;
 			case SLT_VCL_return:
 				if (!strcasecmp(b, "restart")) {
@@ -915,9 +954,11 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 					frag_line(0, p, e, &w->frag);
 				}
 			}
-			if (tag == SLT_ReqHeader)
+			if ((tag == SLT_ReqHeader && CTX.c_opt)
+			    || (tag == SLT_BereqHeader && CTX.b_opt))
 				process_hdr(&CTX.watch_reqhdr, b, e);
-			if (tag == SLT_RespHeader)
+			if ((tag == SLT_RespHeader && CTX.c_opt)
+			    || (tag == SLT_BerespHeader && CTX.b_opt))
 				process_hdr(&CTX.watch_resphdr, b, e);
 		}
 		if (skip)
@@ -980,6 +1021,14 @@ main(int argc, char * const *argv)
 			/* Append to file */
 			CTX.a_opt = 1;
 			break;
+		case 'b':
+			/* backend mode */
+			CTX.b_opt = 1;
+			break;
+		case 'c':
+			/* client mode */
+			CTX.c_opt = 1;
+			break;
 		case 'F':
 			/* Format string */
 			if (format != NULL)
@@ -1006,6 +1055,9 @@ main(int argc, char * const *argv)
 				usage(1);
 		}
 	}
+	/* default is client mode: */
+	if (!CTX.b_opt)
+		CTX.c_opt = 1;
 
 	if (optind != argc)
 		usage(1);
