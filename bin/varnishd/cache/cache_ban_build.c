@@ -48,7 +48,7 @@ struct ban_proto {
 };
 
 /*--------------------------------------------------------------------
- * Variables we can purge on
+ * Variables we can ban on
  */
 
 static const struct pvar {
