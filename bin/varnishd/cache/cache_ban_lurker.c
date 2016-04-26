@@ -178,6 +178,14 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 			VSC_C_main->bans_lurker_tests_tested += tests;
 			if (i)
 				break;
+			/*
+			 * XXX can we do this? can we safely assert that if
+			 * lookup has raced us it will have moved the oc
+			 * above the olist?
+			 *
+			if (oc->ban != bt)
+				break;
+			*/
 		}
 		if (i) {
 			VSLb(vsl, SLT_ExpBan, "%u banned by lurker",
@@ -186,8 +194,17 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 			HSH_Kill(oc);
 			VSC_C_main->bans_lurker_obj_killed++;
 		} else {
-			if (oc->ban != bd) {
+			/*
+			 * we race lookup-time ban checks - oc may have moved up
+			 * the ban list already and we do not want to move it
+			 * down again.
+			 */
+			while (oc->ban == bt) {
 				Lck_Lock(&ban_mtx);
+				if (oc->ban != bt) {
+					Lck_Unlock(&ban_mtx);
+					break;
+				}
 				oc->ban->refcount--;
 				VTAILQ_REMOVE(&oc->ban->objcore, oc, ban_list);
 				oc->ban = bd;
@@ -195,6 +212,7 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 				VTAILQ_INSERT_TAIL(&bd->objcore, oc, ban_list);
 				Lck_Unlock(&ban_mtx);
 				ObjSendEvent(wrk, oc, OEV_BANCHG);
+				break;
 			}
 		}
 		(void)HSH_DerefObjCore(wrk, &oc);
