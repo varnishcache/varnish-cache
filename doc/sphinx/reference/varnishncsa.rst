@@ -170,8 +170,19 @@ Supported formatters are:
     quotes), depending on where the request was made. In pure backend
     or client mode, this field will be constant.
 
+  Varnish:vxid
+    The VXID of the varnish transaction.
+
   VCL_Log:key
     Output value set by std.log("key:value") in VCL.
+
+  VSL:key[:field]
+    The value of the varnishlog entry with the given key.  If field is
+    specified, only the selected part is shown.  Specifying ":0" is
+    equivalent to not specifying a field, where the entire field is
+    printed.  Defaults to "-" (without the quotes) when the key is not
+    seen, or when the field is out of bounds.  If a key appears several
+    times in a given transaction, only the first occurrence is used.
 
 SIGNALS
 =======
