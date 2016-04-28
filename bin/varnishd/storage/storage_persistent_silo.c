@@ -173,7 +173,7 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		HSH_Insert(wrk, so->hash, oc, ban);
 		AN(oc->ban);
 		HSH_DerefBoc(wrk, oc);	// XXX Keep it an stream resurrection?
-		(void)HSH_DerefObjCore(wrk, &oc);
+		(void)HSH_DerefObjCore(wrk, &oc, -1);
 		wrk->stats->n_vampireobject++;
 	}
 	Pool_Sumstat(wrk);

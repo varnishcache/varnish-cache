@@ -95,6 +95,7 @@ struct wlist {
 
 	VTAILQ_HEAD(, wlist_entry)	reqs;
 	pthread_cond_t			cv;
+	unsigned			cv_waiting;
 };
 
 struct objhead {
@@ -127,7 +128,7 @@ void HSH_Fail(struct objcore *);
 void HSH_Unbusy(struct worker *, struct objcore *);
 void HSH_DeleteObjHead(struct worker *, struct objhead *oh);
 int HSH_DerefObjHead(struct worker *, struct objhead **poh);
-int HSH_DerefObjCore(struct worker *, struct objcore **ocp);
+int HSH_DerefObjCore(struct worker *, struct objcore **ocp, int rushmax);
 #endif /* VARNISH_CACHE_CHILD */
 
 extern const struct hash_slinger hsl_slinger;

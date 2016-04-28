@@ -65,7 +65,7 @@
 static const struct hash_slinger *hash;
 static struct objhead *private_oh;
 
-static void hsh_rush(struct worker *wrk, struct objhead *oh);
+static void hsh_rush(struct worker *wrk, struct objhead *oh, int rushmax);
 
 /*---------------------------------------------------------------------*/
 
@@ -292,7 +292,7 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
 	oc->flags &= ~OC_F_BUSY;
 	if (oh->waitinglist)
-		hsh_rush(wrk, oh);
+		hsh_rush(wrk, oh, -1);
 	Lck_Unlock(&oh->mtx);
 }
 
@@ -344,12 +344,14 @@ hsh_wlist_finish(struct objhead *oh)
 	wl = oh->waitinglist;
 	CHECK_OBJ_NOTNULL(wl, WLIST_MAGIC);
 
-	if (! VTAILQ_EMPTY(&wl->reqs))
+	if (wl->cv_waiting > 0 ||
+	    ! VTAILQ_EMPTY(&wl->reqs))
 		return;
 
 	Lck_AssertHeld(&oh->mtx);
 
-	AZ(pthread_cond_broadcast(&wl->cv));
+	if (wl->cv_waiting > 0)
+		AZ(pthread_cond_broadcast(&wl->cv));
 	AZ(pthread_cond_destroy(&wl->cv));
 
 	FREE_OBJ(wl);
@@ -593,7 +595,10 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		}
 
 		CHECK_OBJ_NOTNULL(oh->waitinglist, WLIST_MAGIC);
+		oh->waitinglist->cv_waiting++;
 		(void)Lck_CondWait(&oh->waitinglist->cv, &oh->mtx, 0);
+		if (oh->waitinglist)
+			oh->waitinglist->cv_waiting--;
 
 		if (DO_DEBUG(DBG_WAITINGLIST)) {
 			VSLb(req->vsl, SLT_Debug, "woke up on obj <%p>" , oh);
@@ -606,23 +611,48 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 }
 /*---------------------------------------------------------------------
  * must be called for non-empty waitinglist only
+ *
+ * rushmax specifies how many requests to wake up,
+ *  0: INVALID (only valid for HSH_DerefObjCore)
+ * -1: maximum by policy
+ *
+ * esi waiters get woken up first
  */
 
 static void
-hsh_rush(struct worker *wrk, struct objhead *oh)
+hsh_rush(struct worker *wrk, struct objhead *oh, int rushmax)
 {
 	unsigned u;
 	struct req *req;
 	struct sess *sp;
 	struct wlist *wl;
 
+	assert(rushmax != 0);
+
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	wl = oh->waitinglist;
 	CHECK_OBJ_NOTNULL(wl, WLIST_MAGIC);
 	Lck_AssertHeld(&oh->mtx);
-	AZ(pthread_cond_broadcast(&wl->cv));
-	for (u = 0; u < cache_param->rush_exponent; u++) {
+
+	if (rushmax == -1)
+		rushmax = cache_param->rush_exponent;
+
+	if (wl->cv_waiting == 0) {
+		//
+	} else if (wl->cv_waiting <= rushmax) {
+		rushmax -= wl->cv_waiting;
+		wrk->stats->busy_wakeup += wl->cv_waiting;
+		AZ(pthread_cond_broadcast(&wl->cv));
+	} else {
+		assert(wl->cv_waiting > rushmax);
+		wrk->stats->busy_wakeup += rushmax;
+		while (rushmax--)
+			AZ(pthread_cond_signal(&wl->cv));
+		return;
+	}
+
+	for (u = 0; u < rushmax; u++) {
 		req = hsh_wlist_deq(wl);
 		if (req == NULL)
 			break;
@@ -713,7 +743,7 @@ double keep)
 			oc = ocp[n];
 			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 			EXP_Rearm(oc, now, ttl, grace, keep);
-			(void)HSH_DerefObjCore(wrk, &oc);
+			(void)HSH_DerefObjCore(wrk, &oc, 0);
 		}
 	} while (more);
 	WS_Release(wrk->aws, 0);
@@ -798,7 +828,7 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
 	oc->flags &= ~OC_F_BUSY;
 	if (oh->waitinglist)
-		hsh_rush(wrk, oh);
+		hsh_rush(wrk, oh, -1);
 	Lck_Unlock(&oh->mtx);
 	if (!(oc->flags & OC_F_PRIVATE))
 		EXP_Insert(wrk, oc);
@@ -925,10 +955,14 @@ HSH_DerefBoc(struct worker *wrk, struct objcore *oc)
  * Dereference objcore
  *
  * Returns zero if target was destroyed.
+ *
+ * rushmax specifies how many requests to wake up or:
+ *  0: none
+ * -1: maximum by policy
  */
 
 int
-HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
+HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp, int rushmax)
 {
 	struct objcore *oc;
 	struct objhead *oh;
@@ -950,8 +984,8 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
 	r = --oc->refcnt;
 	if (!r)
 		VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
-	if (oh->waitinglist)
-		hsh_rush(wrk, oh);
+	if (rushmax != 0 && oh->waitinglist)
+		hsh_rush(wrk, oh, rushmax);
 	Lck_Unlock(&oh->mtx);
 	if (r != 0)
 		return (r);
@@ -1002,7 +1036,7 @@ HSH_DerefObjHead(struct worker *wrk, struct objhead **poh)
 		assert(oh->refcnt > 0);
 		r = oh->refcnt;
 		if (oh->waitinglist)
-			hsh_rush(wrk, oh);
+			hsh_rush(wrk, oh, -1);
 		Lck_Unlock(&oh->mtx);
 		if (r > 1)
 			break;
