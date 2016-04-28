@@ -392,13 +392,15 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			http1_setstate(sp, H1PROC);
 		} else if (st == H1PROC) {
 			req->transport = &HTTP1_transport;
+			req->task.func = http1_req;
+			req->task.priv = req;
 			if (CNT_Request(wrk, req) == REQ_FSM_DISEMBARK) {
-				req->task.func = http1_req;
-				req->task.priv = req;
 				http1_setstate(sp, H1BUSY);
 				return;
 			}
 			req->transport = NULL;
+			req->task.func = NULL;
+			req->task.priv = NULL;
 			http1_setstate(sp, H1CLEANUP);
 		} else if (st == H1CLEANUP) {
 			if (Req_Cleanup(sp, wrk, req))
