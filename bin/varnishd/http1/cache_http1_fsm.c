@@ -264,11 +264,15 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			break;
 		case S_STP_H1PROC:
 			req->transport = &http1_transport;
+			req->task.func = SES_Proto_Req;
+			req->task.priv = req;
 			if (CNT_Request(wrk, req) == REQ_FSM_DISEMBARK) {
 				sp->sess_step = S_STP_H1BUSY;
 				return;
 			}
 			req->transport = NULL;
+			req->task.func = NULL;
+			req->task.priv = NULL;
 			sp->sess_step = S_STP_H1CLEANUP;
 			break;
 		case S_STP_H1CLEANUP:
