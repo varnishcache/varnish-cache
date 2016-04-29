@@ -598,7 +598,7 @@ addf_auth(const char *str)
 static void
 parse_x_format(char *buf)
 {
-	char *r, *s, c;
+	char *e, *r, *s;
 	int slt;
 	long i;
 
@@ -628,34 +628,43 @@ parse_x_format(char *buf)
 	}
 	if (!strncmp(buf, "VSL:", 4)) {
 		buf += 4;
-		r = buf;
-		while(*r != ':' && *r != '\0')
-			r++;
-		c = *r;
-		*r = '\0';
+		e = buf;
+		while(*e != '\0')
+			e++;
+		if (e == buf) {
+			VUT_Error(1, "Missing tag in VSL:");
+		}
+		if (e[-1] == ']') {
+			r = e - 1;
+			while (r > buf && *r != '[')
+				r--;
+			if (r == buf || r[1] == ']')
+				VUT_Error(1, "Syntax error: VSL:%s", buf);
+			e[-1] = '\0';
+			i = strtol(r + 1, &s, 10);
+			if (s != e - 1)
+				VUT_Error(1, "Syntax error: VSL:%s]", buf);
+			if (i <= 0)
+				VUT_Error(1,
+				    "Syntax error. Field specifyer must be"
+				    " positive: %s]",
+				    buf);
+			if (i > INT_MAX) {
+				VUT_Error(1,
+				    "Field specifier %ld for the tag VSL:%s]"
+				    " is probably too high",
+				    i, buf);
+			}
+			*r = '\0';
+		} else
+			i = 0;
 		slt = VSL_Name2Tag(buf, -1);
 		if (slt == -2)
 			VUT_Error(1, "Tag not unique: %s", buf);
 		if (slt == -1)
 			VUT_Error(1, "Unknown log tag: %s", buf);
 		assert(slt >= 0);
-		if (c) {
-			i = strtol(r + 1, &s, 10);
-			if (*s)
-				VUT_Error(1,
-				    "Not a number: %s (see VSL:%s)",
-				    r + 1, buf);
-			if (i < 0)
-				VUT_Error(1,
-				    "Illegal '-' in field specifier for VSL:%s",
-				    buf);
-		} else
-			i = 0;
-		if (i > INT_MAX) {
-			VUT_Error(1, "Field specifier %ld for the tag VSL:%s"
-			    " is probably too high",
-			    i, buf);
-		}
+
 		addf_vsl(slt, i);
 		return;
 	}
