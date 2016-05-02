@@ -177,14 +177,13 @@ Supported formatters are:
     Output value set by std.log("key:value") in VCL.
 
   VSL:tag or VSL:tag[field]
-
     The value of the varnishlog entry with the given tag.  If field is
     specified, only the selected part is shown.  Defaults to "-"
     (without the quotes) when the key is not seen, or when the field
     is out of bounds.  If a key appears several times in a single
     transaction, only the first occurrence is used.  Example: The
     formatter %{VSL:Begin[2]}x will print the second field of the
-    Begin tag, which is the vxid of the parent transaction.
+    Begin tag, which is the VXID of the parent transaction.
 
 SIGNALS
 =======
