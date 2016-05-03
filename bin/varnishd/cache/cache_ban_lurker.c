@@ -164,6 +164,13 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 			return;
 		i = 0;
 		VTAILQ_FOREACH_REVERSE_SAFE(bl, obans, banhead_s, l_list, bln) {
+			if (oc->ban != bt) {
+				/*
+				 * HSH_Lookup() grabbed this oc, killed
+				 * it or tested it to top.  We're done.
+				 */
+				break;
+			}
 			if (bl->flags & BANS_FLAG_COMPLETED) {
 				/* Ban was overtaken by new (dup) ban */
 				VTAILQ_REMOVE(obans, bl, l_list);
@@ -174,44 +181,27 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 			i = ban_evaluate(wrk, bl->spec, oc, NULL, &tests);
 			VSC_C_main->bans_lurker_tested++;
 			VSC_C_main->bans_lurker_tests_tested += tests;
-			if (i)
+			if (i) {
+				VSLb(vsl, SLT_ExpBan, "%u banned by lurker",
+				    ObjGetXID(wrk, oc));
+				HSH_Kill(oc);
+				VSC_C_main->bans_lurker_obj_killed++;
 				break;
-			/*
-			 * XXX can we do this? can we safely assert that if
-			 * lookup has raced us it will have moved the oc
-			 * above the olist?
-			 *
-			if (oc->ban != bt)
-				break;
-			*/
+			}
 		}
-		if (i) {
-			VSLb(vsl, SLT_ExpBan, "%u banned by lurker",
-			    ObjGetXID(wrk, oc));
-
-			HSH_Kill(oc);
-			VSC_C_main->bans_lurker_obj_killed++;
-		} else {
-			/*
-			 * we race lookup-time ban checks - oc may have moved up
-			 * the ban list already and we do not want to move it
-			 * down again.
-			 */
-			while (oc->ban == bt) {
-				Lck_Lock(&ban_mtx);
-				if (oc->ban != bt) {
-					Lck_Unlock(&ban_mtx);
-					break;
-				}
-				oc->ban->refcount--;
-				VTAILQ_REMOVE(&oc->ban->objcore, oc, ban_list);
+		if (i == 0 && oc->ban == bt) {
+			Lck_Lock(&ban_mtx);
+			if (oc->ban == bt) {
+				bt->refcount--;
+				VTAILQ_REMOVE(&bt->objcore, oc, ban_list);
 				oc->ban = bd;
 				bd->refcount++;
 				VTAILQ_INSERT_TAIL(&bd->objcore, oc, ban_list);
-				Lck_Unlock(&ban_mtx);
-				ObjSendEvent(wrk, oc, OEV_BANCHG);
-				break;
+				i = 1;
 			}
+			Lck_Unlock(&ban_mtx);
+			if (i)
+				ObjSendEvent(wrk, oc, OEV_BANCHG);
 		}
 		(void)HSH_DerefObjCore(wrk, &oc);
 	}
