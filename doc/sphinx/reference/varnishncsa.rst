@@ -54,8 +54,7 @@ Client requests that results in a pipe (ie. return(pipe) in vcl), will
 not generate logging in backend mode. This is because varnish is not
 generating requests, but blindly passes on bytes in both directions.
 However, a varnishncsa instance running in normal mode can see this
-case by using the formatter %{Varnish:handling}x, which will be "pipe"
-(without the quotes).
+case by using the formatter %{Varnish:handling}x, which will be 'pipe'.
 
 In backend mode, some of the fields in the format string get different
 meanings.  Most notably, the byte counting formatters (%b, %I, %O)
@@ -67,10 +66,8 @@ backend mode, and one in client mode, logging to different files.
 FORMAT
 ======
 
-Specify the log format used. If no format is specified the default log
-format is used.
-
-The default log format is::
+Specify the log format to use. If no format is specified the default log
+format is used::
 
   %h %l %u %t "%r" %s %b "%{Referer}i" "%{User-agent}i"
 
@@ -104,10 +101,10 @@ Supported formatters are:
   The contents of request header X.
 
 %l
-   Remote logname (always '-')
+  Remote logname. Always '-'.
 
 %m
-   Request method. Defaults to '-' if not known.
+  Request method. Defaults to '-' if not known.
 
 %{X}o
   The contents of response header X.
@@ -117,7 +114,7 @@ Supported formatters are:
   bytes received from the backend.
 
 %q
-  The query string, if no query string exists, an empty string.
+  The query string. Defaults to an empty string if not present.
 
 %r
   The first line of the request. Synthesized from other fields, so it
@@ -132,7 +129,6 @@ Supported formatters are:
   date/time format.  In backend mode, time when the request was sent.
 
 %{X}t
-
   In client mode, time when the request was received, in the format
   specified by X.  In backend mode, time when the request was sent.
   The time specification format is the same as for strftime(3).
@@ -143,11 +139,11 @@ Supported formatters are:
   been received.
 
 %U
-  The request URL without any query string. Defaults to '-' if not
+  The request URL without the query string. Defaults to '-' if not
   known.
 
 %u
-  Remote user from auth
+  Remote user from auth.
 
 %{X}x
   Extended variables.  Supported variables are:
@@ -166,9 +162,9 @@ Supported formatters are:
     pass, pipe or synth.
 
   Varnish:side
-    Backend or client side. One of two values, "b" or "c" (without the
-    quotes), depending on where the request was made. In pure backend
-    or client mode, this field will be constant.
+    Backend or client side. One of two values, 'b' or 'c', depending
+    on where the request was made. In pure backend or client mode,
+    this field will be constant.
 
   Varnish:vxid
     The VXID of the varnish transaction.
@@ -177,13 +173,10 @@ Supported formatters are:
     Output value set by std.log("key:value") in VCL.
 
   VSL:tag or VSL:tag[field]
-    The value of the varnishlog entry with the given tag.  If field is
-    specified, only the selected part is shown.  Defaults to "-"
-    (without the quotes) when the key is not seen, or when the field
-    is out of bounds.  If a key appears several times in a single
-    transaction, only the first occurrence is used.  Example: The
-    formatter %{VSL:Begin[2]}x will print the second field of the
-    Begin tag, which is the VXID of the parent transaction.
+    The value of the VSL entry for the given tag.  If field is specified,
+    only the selected part is shown.  Defaults to '-' when the tag is not
+    seen, or when the field is out of bounds.  If a tag appears several
+    times in a single transaction, only the first occurrence is used.
 
 SIGNALS
 =======
@@ -194,12 +187,21 @@ SIGHUP
 SIGUSR1
   Flush any outstanding transactions
 
+EXAMPLE
+=======
+
+Log the second field of the Begin tag, corresponding to the VXID of the
+parent transaction::
+
+  varnishncsa -F "%{VSL:Begin[2]}x"
+
 SEE ALSO
 ========
 
 :ref:`varnishd(1)`
 :ref:`varnishlog(1)`
 :ref:`varnishstat(1)`
+:ref:`vsl(7)`
 
 HISTORY
 =======

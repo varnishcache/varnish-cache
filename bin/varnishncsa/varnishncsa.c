@@ -646,7 +646,7 @@ parse_x_format(char *buf)
 				VUT_Error(1, "Syntax error: VSL:%s]", buf);
 			if (i <= 0)
 				VUT_Error(1,
-				    "Syntax error. Field specifyer must be"
+				    "Syntax error. Field specifier must be"
 				    " positive: %s]",
 				    buf);
 			if (i > INT_MAX) {
