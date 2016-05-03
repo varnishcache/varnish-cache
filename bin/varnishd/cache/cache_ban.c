@@ -325,6 +325,8 @@ ban_export(void)
 void
 ban_info_new(const uint8_t *ban, unsigned len)
 {
+	/* XXX martin pls review if ban_mtx needs to be held */
+	Lck_AssertHeld(&ban_mtx);
 	if (STV_BanInfoNew(ban, len))
 		ban_export();
 }
@@ -332,6 +334,8 @@ ban_info_new(const uint8_t *ban, unsigned len)
 void
 ban_info_drop(const uint8_t *ban, unsigned len)
 {
+	/* XXX martin pls review if ban_mtx needs to be held */
+	Lck_AssertHeld(&ban_mtx);
 	if (STV_BanInfoDrop(ban, len))
 		ban_export();
 }
