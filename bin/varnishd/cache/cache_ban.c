@@ -321,6 +321,7 @@ ban_export(void)
  * For both of these we do a full export on info failure to remove
  * holes in the exported list.
  * XXX: we should keep track of the size of holes in the last exported list
+ * XXX: check if the ban_export should be batched in ban_cleantail
  */
 void
 ban_info_new(const uint8_t *ban, unsigned len)

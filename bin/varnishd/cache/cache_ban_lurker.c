@@ -51,13 +51,27 @@ ban_kick_lurker(void)
 	AZ(pthread_cond_signal(&ban_lurker_cond));
 }
 
-static void
-ban_cleantail(void)
-{
-	struct ban *b;
+/*
+ * ban_cleantail: clean the tail of the ban list up to the first ban which is
+ * still referenced. For already completed bans, we update statistics
+ * accordingly, but otherwise just skip the completion step and remove directly
+ *
+ * return 1 if we removed the victim, 0 otherwise
+ */
 
+static int
+ban_cleantail(const struct ban *victim)
+{
+	struct ban *b, *bt;
+	struct banhead_s freelist = VTAILQ_HEAD_INITIALIZER(freelist);
+	int r = 0;
+
+	/* handle the zero-length tail unprotected */
+	if (VTAILQ_LAST(&ban_head, banhead_s) == VTAILQ_FIRST(&ban_head))
+		return (r);
+
+	Lck_Lock(&ban_mtx);
 	do {
-		Lck_Lock(&ban_mtx);
 		b = VTAILQ_LAST(&ban_head, banhead_s);
 		if (b != VTAILQ_FIRST(&ban_head) && b->refcount == 0) {
 			assert(VTAILQ_EMPTY(&b->objcore));
@@ -70,16 +84,24 @@ ban_cleantail(void)
 			VSC_C_main->bans--;
 			VSC_C_main->bans_deleted++;
 			VTAILQ_REMOVE(&ban_head, b, list);
+			VTAILQ_INSERT_TAIL(&freelist, b, list);
 			VSC_C_main->bans_persisted_fragmentation +=
 			    ban_len(b->spec);
 			ban_info_drop(b->spec, ban_len(b->spec));
 		} else {
 			b = NULL;
 		}
-		Lck_Unlock(&ban_mtx);
-		if (b != NULL)
-			BAN_Free(b);
 	} while (b != NULL);
+
+	Lck_Unlock(&ban_mtx);
+
+	VTAILQ_FOREACH_SAFE(b, &freelist, list, bt) {
+		if (b == victim)
+			r = 1;
+		BAN_Free(b);
+	}
+
+	return (r);
 }
 
 /*--------------------------------------------------------------------
@@ -208,7 +230,13 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 }
 
 /*--------------------------------------------------------------------
- * Ban lurker thread
+ * Ban lurker thread:
+ *
+ * try to move ocs as far up the ban list as possible (to bd)
+ *
+ * BANS_FLAG_REQ bans act as barriers, for bans further down, ocs get moved to
+ * them. But still all bans up to the initial bd get checked and marked
+ * completed.
  */
 
 static double
@@ -219,8 +247,10 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 	double d, dt, n;
 
 	dt = 49.62;		// Random, non-magic
-	if (cache_param->ban_lurker_sleep == 0)
+	if (cache_param->ban_lurker_sleep == 0) {
+		(void) ban_cleantail(NULL);
 		return (dt);
+	}
 
 	Lck_Lock(&ban_mtx);
 	b = ban_start;
@@ -248,9 +278,25 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 		}
 	}
 
+	/*
+	 * conceptually, all obans are now completed. Remove the tail. If it
+	 * containted the first oban, all obans were on the tail and we're
+	 * done.
+	 */
+	if (ban_cleantail(VTAILQ_FIRST(&obans)))
+		return (dt);
+
+	/*
+	 * Mark remaining bans completed: the tail of the obans list is now
+	 * removed, but iterating over it is safe until we hit the new tail ban
+	 */
 	Lck_Lock(&ban_mtx);
-	VTAILQ_FOREACH(b, &obans, l_list)
+	bd = VTAILQ_LAST(&ban_head, banhead_s);
+	VTAILQ_FOREACH(b, &obans, l_list) {
 		ban_mark_completed(b);
+		if (b == bd)
+			break;
+	}
 	Lck_Unlock(&ban_mtx);
 	return (dt);
 }
@@ -269,7 +315,6 @@ ban_lurker(struct worker *wrk, void *priv)
 
 	while (!ban_shutdown) {
 		d = ban_lurker_work(wrk, &vsl);
-		ban_cleantail();
 		if (DO_DEBUG(DBG_LURKER))
 			VSLb(&vsl, SLT_Debug, "lurker: sleep = %lf", d);
 		d += VTIM_real();
