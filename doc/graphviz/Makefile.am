@@ -1,5 +1,7 @@
 # Makefile for graphviz outputs
 
+SUFFIXES: .dot .pdf .svg
+
 # for an out-of-tree build, sphinx needs the output in builddir
 # XXX is there a better way to do this?
 
@@ -54,7 +56,7 @@ else
 	@DOT@ -Tpdf -Gsize=$(SIZE) -Grotate=90 $< >$@
 endif
 
-%.pdf: %.dot
+.dot.pdf:
 if ! HAVE_DOT
 	@echo ==================================================
 	@echo You need graphviz installed to generate pdf output
@@ -64,7 +66,7 @@ else
 	@DOT@ -Tpdf -Gsize=$(SIZE) $< >$@
 endif
 
-%.svg: %.dot
+.dot.svg:
 if ! HAVE_DOT
 	@echo ==================================================
 	@echo You need graphviz installed to generate svg output
