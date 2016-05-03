@@ -14,8 +14,7 @@ EXTRA_DIST = README.Packaging LICENSE autogen.sh varnishapi.pc.in varnish.m4
 DISTCHECK_CONFIGURE_FLAGS = \
     --enable-developer-warnings \
     --enable-debugging-symbols \
-    --enable-dependency-tracking \
-    --enable-tests
+    --enable-dependency-tracking
 
 install-data-local:
 	$(install_sh) -d -m 0755 $(DESTDIR)$(localstatedir)/varnish
