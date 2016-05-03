@@ -114,8 +114,6 @@ ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt)
 				/*
 				 * We got the lock, and the oc is not being
 				 * dismantled under our feet.
-				 * Take it off the ban and (optimistically)
-				 * put it on the * destination ban
 				 */
 				AZ(oc->flags & OC_F_BUSY);
 				oc->refcnt += 1;
