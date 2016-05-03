@@ -596,9 +596,11 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 
 		CHECK_OBJ_NOTNULL(oh->waitinglist, WLIST_MAGIC);
 		oh->waitinglist->cv_waiting++;
+		wrk->stats->busy_sleep_esi++;
 		(void)Lck_CondWait(&oh->waitinglist->cv, &oh->mtx, 0);
 		if (oh->waitinglist)
 			oh->waitinglist->cv_waiting--;
+		wrk->stats->busy_wakeup_esi++;
 
 		if (DO_DEBUG(DBG_WAITINGLIST)) {
 			VSLb(req->vsl, SLT_Debug, "woke up on obj <%p>" , oh);
@@ -642,11 +644,9 @@ hsh_rush(struct worker *wrk, struct objhead *oh, int rushmax)
 		//
 	} else if (wl->cv_waiting <= rushmax) {
 		rushmax -= wl->cv_waiting;
-		wrk->stats->busy_wakeup += wl->cv_waiting;
 		AZ(pthread_cond_broadcast(&wl->cv));
 	} else {
 		assert(wl->cv_waiting > rushmax);
-		wrk->stats->busy_wakeup += rushmax;
 		while (rushmax--)
 			AZ(pthread_cond_signal(&wl->cv));
 		return;

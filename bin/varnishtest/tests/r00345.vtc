@@ -43,4 +43,6 @@ client c1 {
 	expect resp.bodylen == 4
 } -run
 
+varnish v1 -expect busy_sleep_esi >= 1
+varnish v1 -expect busy_wakeup_esi >= 1
 logexpect l1 -wait
