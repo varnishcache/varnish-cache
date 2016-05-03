@@ -332,7 +332,7 @@ ban_info_new(const uint8_t *ban, unsigned len)
 void
 ban_info_drop(const uint8_t *ban, unsigned len)
 {
-	if (STV_BanInfoNew(ban, len))
+	if (STV_BanInfoDrop(ban, len))
 		ban_export();
 }
 
