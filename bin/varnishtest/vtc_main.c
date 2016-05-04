@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -525,6 +526,13 @@ main(int argc, char * const *argv)
 		if (p == NULL) {
 			fprintf(stderr, "Cannot stat file \"%s\": %s\n",
 			    *argv, strerror(errno));
+			if (vtc_continue)
+				continue;
+			exit(2);
+		}
+		if (strncmp(p, "varnishtest", 11) || !isspace(p[11])) {
+			fprintf(stderr, "File \"%s\" doesn't start with 'varnishtest'\n",
+			    *argv);
 			if (vtc_continue)
 				continue;
 			exit(2);
