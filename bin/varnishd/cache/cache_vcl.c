@@ -99,12 +99,16 @@ VCL_Panic(struct vsb *vsb, const struct vcl *vcl)
 	VSB_printf(vsb, "vcl = {\n");
 	VSB_indent(vsb, 2);
 	VSB_printf(vsb, "temp = %s\n", vcl->temp);
-	VSB_printf(vsb, "srcname = {\n");
-	VSB_indent(vsb, 2);
-	for (i = 0; i < vcl->conf->nsrc; ++i)
-		VSB_printf(vsb, "\"%s\",\n", vcl->conf->srcname[i]);
-	VSB_indent(vsb, -2);
-	VSB_printf(vsb, "},\n");
+	if (vcl->conf == NULL) {
+		VSB_printf(vsb, "conf = NULL\n");
+	} else {
+		VSB_printf(vsb, "srcname = {\n");
+		VSB_indent(vsb, 2);
+		for (i = 0; i < vcl->conf->nsrc; ++i)
+			VSB_printf(vsb, "\"%s\",\n", vcl->conf->srcname[i]);
+		VSB_indent(vsb, -2);
+		VSB_printf(vsb, "},\n");
+	}
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
 }
@@ -350,6 +354,7 @@ VCL_DefaultDirector(const struct vcl *vcl)
 {
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	CHECK_OBJ_NOTNULL(vcl->conf, VCL_CONF_MAGIC);
 	return (*vcl->conf->default_director);
 }
 
@@ -366,6 +371,7 @@ VCL_DefaultProbe(const struct vcl *vcl)
 {
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	CHECK_OBJ_NOTNULL(vcl->conf, VCL_CONF_MAGIC);
 	return (vcl->conf->default_probe);
 }
 
@@ -377,6 +383,7 @@ VRT_count(VRT_CTX, unsigned u)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->vcl->conf, VCL_CONF_MAGIC);
 	assert(u < ctx->vcl->conf->nref);
 	if (ctx->vsl != NULL)
 		VSLb(ctx->vsl, SLT_VCL_trace, "%u %u.%u", u,
@@ -460,6 +467,8 @@ vcl_setup_event(VRT_CTX, enum vcl_event_e ev)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->vcl->conf, VCL_CONF_MAGIC);
 	AN(ctx->handling);
 	AN(ctx->vcl);
 	AN(ctx->msg);
@@ -473,6 +482,8 @@ vcl_failsafe_event(VRT_CTX, enum vcl_event_e ev)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->vcl->conf, VCL_CONF_MAGIC);
 	AN(ctx->handling);
 	AN(ctx->vcl);
 	assert(ev == VCL_EVENT_COLD || ev == VCL_EVENT_DISCARD);
@@ -506,6 +517,8 @@ vcl_set_state(VRT_CTX, const char *state)
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->vcl->conf, VCL_CONF_MAGIC);
 	AN(ctx->handling);
 	AN(ctx->vcl);
 	AN(state);
@@ -561,6 +574,9 @@ static void
 vcl_cancel_load(VRT_CTX, struct cli *cli, const char *name, const char *step)
 {
 	struct vcl *vcl = ctx->vcl;
+
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	CHECK_OBJ_NOTNULL(vcl->conf, VCL_CONF_MAGIC);
 
 	AZ(VSB_finish(ctx->msg));
 	VCLI_SetResult(cli, CLIS_CANT);
@@ -824,6 +840,8 @@ ccf_config_show(struct cli *cli, const char * const *av, void *priv)
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	CHECK_OBJ_NOTNULL(vcl->conf, VCL_CONF_MAGIC);
 	if (verbose) {
 		for (i = 0; i < vcl->conf->nsrc; i++)
 			VCLI_Out(cli, "// VCL.SHOW %d %zd %s\n%s\n",
