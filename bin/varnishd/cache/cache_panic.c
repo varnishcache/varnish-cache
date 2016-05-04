@@ -142,6 +142,7 @@ pan_ws(struct vsb *vsb, const struct ws *ws)
 	if (pan_already(vsb, ws))
 		return;
 	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, ws, WS_MAGIC);
 	if (!(ws->id[0] & 0x20))
 		VSB_printf(vsb, "OVERFLOWED ");
 	VSB_printf(vsb, "id = \"%s\",\n",  ws->id);
@@ -173,6 +174,7 @@ pan_htc(struct vsb *vsb, const struct http_conn *htc)
 	if (pan_already(vsb, htc))
 		return;
 	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, htc, HTTP_CONN_MAGIC);
 	VSB_printf(vsb, "fd = %d,\n", htc->fd);
 	VSB_printf(vsb, "doclose = %s,\n", sess_close_2str(htc->doclose, 0));
 	VSB_printf(vsb, "ws = %p,\n", htc->ws);
@@ -203,6 +205,7 @@ pan_http(struct vsb *vsb, const char *id, const struct http *h)
 	if (pan_already(vsb, h))
 		return;
 	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, h, HTTP_MAGIC);
 	VSB_printf(vsb, "ws[%s] = %p,\n", h->ws ? h->ws->id : "", h->ws);
 	VSB_printf(vsb, "hdrs {\n");
 	VSB_indent(vsb, 2);
@@ -226,6 +229,7 @@ pan_boc(struct vsb *vsb, const struct boc *boc)
 	if (pan_already(vsb, boc))
 		return;
 	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, boc, BOC_MAGIC);
 	VSB_printf(vsb, "refcnt = %u,\n", boc->refcount);
 	VSB_printf(vsb, "state = %d,\n", boc->state);
 	VSB_printf(vsb, "vary = %p,\n", boc->vary);
@@ -244,6 +248,7 @@ pan_objcore(struct vsb *vsb, const char *typ, const struct objcore *oc)
 	if (pan_already(vsb, oc))
 		return;
 	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, oc, OBJCORE_MAGIC);
 	VSB_printf(vsb, "refcnt = %d,\n", oc->refcnt);
 	VSB_printf(vsb, "flags = 0x%x,\n", oc->flags);
 	VSB_printf(vsb, "exp_flags = 0x%x,\n", oc->exp_flags);
@@ -284,6 +289,7 @@ pan_wrk(struct vsb *vsb, const struct worker *wrk)
 	if (pan_already(vsb, wrk))
 		return;
 	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, wrk, WORKER_MAGIC);
 	VSB_printf(vsb, "stack = {0x%jx -> 0x%jx},\n",
 	    (uintmax_t)wrk->stack_start, (uintmax_t)wrk->stack_end);
 	pan_ws(vsb, wrk->aws);
@@ -333,6 +339,7 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	if (pan_already(vsb, bo))
 		return;
 	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, bo, BUSYOBJ_MAGIC);
 	pan_ws(vsb, bo->ws);
 	VSB_printf(vsb, "retries = %d, ", bo->retries);
 	VSB_printf(vsb, "failed = %d, ", bo->vfc->failed);
@@ -387,7 +394,7 @@ pan_req(struct vsb *vsb, const struct req *req)
 	if (pan_already(vsb, req))
 		return;
 	VSB_indent(vsb, 2);
-
+	PAN_CheckMagic(vsb, req, REQ_MAGIC);
 	xp = req->transport;
 	VSB_printf(vsb, "vxid = %u, transport = %s", VXID(req->vsl->wid),
 	    xp == NULL ? "NULL" : xp->name);
@@ -467,6 +474,7 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 	if (pan_already(vsb, sp))
 		return;
 	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, sp, SESS_MAGIC);
 	xp = XPORT_ByNumber(sp->sattr[SA_TRANSPORT]);
 	VSB_printf(vsb, "fd = %d, vxid = %u,\n",
 	    sp->fd, VXID(sp->vxid));
