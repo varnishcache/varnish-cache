@@ -105,3 +105,5 @@ vsl_glob_test_SOURCES = \
 vsl_glob_test_LDADD = @PCRE_LIBS@ ${RT_LIBS} ${LIBM} libvarnishapi.la
 
 vsl_glob_test_CFLAGS = -I$(top_srcdir)/include
+
+.NOPATH: $(BUILT_SOURCES)
