@@ -1123,6 +1123,14 @@ DO_DEBUG(enum debug_bits x)
 			VSL(SLT_Debug, (id), __VA_ARGS__);	\
 	} while (0)
 
+#define PAN_CheckMagic(vsb, ptr, exp)					\
+	do {								\
+		if ((ptr)->magic != (exp))				\
+			VSB_printf((vsb),				\
+			    "MAGIC 0x%08x (Should:%s/0x%08x)\n",	\
+			    (ptr)->magic, #exp, exp);			\
+	} while(0)
+
 #ifdef VARNISHD_IS_NOT_A_VMOD
 #  include "cache/cache_priv.h"
 #endif

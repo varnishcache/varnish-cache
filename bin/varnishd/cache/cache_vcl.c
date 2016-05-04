@@ -98,10 +98,17 @@ VCL_Panic(struct vsb *vsb, const struct vcl *vcl)
 		return;
 	VSB_printf(vsb, "vcl = {\n");
 	VSB_indent(vsb, 2);
-	VSB_printf(vsb, "temp = %s\n", vcl->temp);
+	PAN_CheckMagic(vsb, vcl, VCL_MAGIC);
+	VSB_printf(vsb, "busy = %u\n", vcl->busy);
+	VSB_printf(vsb, "discard = %u,\n", vcl->discard);
+	VSB_printf(vsb, "state = %s,\n", vcl->state);
+	VSB_printf(vsb, "temp = %s,\n", vcl->temp);
+	VSB_printf(vsb, "conf = {\n");
+	VSB_indent(vsb, 2);
 	if (vcl->conf == NULL) {
 		VSB_printf(vsb, "conf = NULL\n");
 	} else {
+		PAN_CheckMagic(vsb, vcl->conf, VCL_CONF_MAGIC);
 		VSB_printf(vsb, "srcname = {\n");
 		VSB_indent(vsb, 2);
 		for (i = 0; i < vcl->conf->nsrc; ++i)
@@ -109,6 +116,8 @@ VCL_Panic(struct vsb *vsb, const struct vcl *vcl)
 		VSB_indent(vsb, -2);
 		VSB_printf(vsb, "},\n");
 	}
+	VSB_indent(vsb, -2);
+	VSB_printf(vsb, "},\n");
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
 }

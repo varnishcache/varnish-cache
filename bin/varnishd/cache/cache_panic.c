@@ -115,6 +115,7 @@ pan_ws(struct vsb *vsb, const struct ws *ws)
 
 	VSB_printf(vsb, "ws = %p {\n", ws);
 	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, ws, WS_MAGIC);
 	if (!(ws->id[0] & 0x20))
 		VSB_printf(vsb, "OVERFLOWED ");
 	VSB_printf(vsb, "id = \"%s\",\n",  ws->id);
@@ -144,6 +145,7 @@ pan_htc(struct vsb *vsb, const struct http_conn *htc)
 
 	VSB_printf(vsb, "http_conn = %p {\n", htc);
 	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, htc, HTTP_CONN_MAGIC);
 	VSB_printf(vsb, "fd = %d,\n", htc->fd);
 	VSB_printf(vsb, "doclose = %s,\n", sess_close_2str(htc->doclose, 0));
 	VSB_printf(vsb, "ws = %p,\n", htc->ws);
@@ -172,6 +174,7 @@ pan_http(struct vsb *vsb, const char *id, const struct http *h)
 
 	VSB_printf(vsb, "http[%s] = %p {\n", id, h);
 	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, h, HTTP_MAGIC);
 	VSB_printf(vsb, "ws[%s] = %p,\n", h->ws ? h->ws->id : "", h->ws);
 	VSB_printf(vsb, "hdrs {\n");
 	VSB_indent(vsb, 2);
@@ -195,6 +198,7 @@ pan_objcore(struct vsb *vsb, const char *typ, const struct objcore *oc)
 
 	VSB_printf(vsb, "objcore[%s] = %p {\n", typ, oc);
 	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, oc, OBJCORE_MAGIC);
 	VSB_printf(vsb, "refcnt = %d,\n", oc->refcnt);
 	VSB_printf(vsb, "flags = 0x%x,\n", oc->flags);
 	VSB_printf(vsb, "exp_flags = 0x%x,\n", oc->exp_flags);
@@ -224,6 +228,7 @@ pan_wrk(struct vsb *vsb, const struct worker *wrk)
 
 	VSB_printf(vsb, "worker = %p {\n", wrk);
 	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, wrk, WORKER_MAGIC);
 	VSB_printf(vsb, "stack = {0x%jx -> 0x%jx},\n",
 	    (uintmax_t)wrk->stack_start, (uintmax_t)wrk->stack_end);
 	pan_ws(vsb, wrk->aws);
@@ -271,6 +276,7 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 
 	VSB_printf(vsb, "busyobj = %p {\n", bo);
 	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, bo, BUSYOBJ_MAGIC);
 	pan_ws(vsb, bo->ws);
 	VSB_printf(vsb, "refcnt = %u,\n", bo->refcount);
 	VSB_printf(vsb, "retries = %d, ", bo->retries);
@@ -324,7 +330,7 @@ pan_req(struct vsb *vsb, const struct req *req)
 
 	VSB_printf(vsb, "req = %p {\n", req);
 	VSB_indent(vsb, 2);
-
+	PAN_CheckMagic(vsb, req, REQ_MAGIC);
 	VSB_printf(vsb, "vxid = %u, ", VXID(req->vsl->wid));
 
 	switch (req->req_step) {
@@ -393,10 +399,13 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 
 	VSB_printf(vsb, "sp = %p {\n", sp);
 	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, sp, SESS_MAGIC);
 	VSB_printf(vsb, "fd = %d, vxid = %u,\n", sp->fd, VXID(sp->vxid));
 	AZ(SES_Get_client_ip(sp, &ci));
 	AZ(SES_Get_client_port(sp, &cp));
 	VSB_printf(vsb, "client = %s %s,\n", ci, cp);
+	VSB_printf(vsb, "t_open = %f,\n", sp->t_open);
+	VSB_printf(vsb, "t_idle = %f,\n", sp->t_idle);
 	switch (sp->sess_step) {
 #define SESS_STEP(l, u) case S_STP_##u: stp = "S_STP_" #u; break;
 #include "tbl/steps.h"
