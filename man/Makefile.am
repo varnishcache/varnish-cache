@@ -82,3 +82,5 @@ vmod_std.3: $(top_builddir)/lib/libvmod_std/vmod_std.man.rst
 
 vmod_directors.3: $(top_builddir)/lib/libvmod_directors/vmod_directors.man.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $? $@
+
+.NOPATH: $(dist_man_MANS)

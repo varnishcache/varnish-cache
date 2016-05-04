@@ -174,3 +174,5 @@ BUILT_SOURCES += reference/vmod_directors.generated.rst
 
 EXTRA_DIST += $(BUILT_SOURCES)
 MAINTAINERCLEANFILES = $(EXTRA_DIST)
+
+.NOPATH: $(BUILT_SOURCES)
