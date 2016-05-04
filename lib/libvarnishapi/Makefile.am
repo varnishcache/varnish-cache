@@ -16,7 +16,6 @@ libvarnishapi_la_SOURCES = \
 	vsl_api.h \
 	vxp.h \
 	vxp_tokens.h \
-	\
 	../libvarnish/vas.c \
 	../libvarnish/vav.c \
 	../../include/vcs_version.h \
@@ -57,20 +56,15 @@ libvarnishapi_la_LDFLAGS += -export-symbols-regex '^V'
 endif
 
 EXTRA_DIST = \
-	generate.py \
-	vsl-tags.rst
+	generate.py
 
 BUILT_SOURCES = \
 	vxp_fixed_token.c \
-	vxp_tokens.h \
-	vsl-tags.rst
+	vxp_tokens.h
 
 CLEANFILES = \
 	$(builddir)/vxp_fixed_token.c \
 	$(builddir)/vxp_tokens.h
-
-MAINTAINERCLEANFILES = \
-	vsl-tags.rst
 
 noinst_PROGRAMS = vsl2rst
 
@@ -78,9 +72,6 @@ vsl2rst_SOURCES = \
 	vsl2rst.c \
 	$(top_srcdir)/include/tbl/vsl_tags.h \
 	$(top_srcdir)/include/tbl/vsl_tags_http.h
-
-vsl-tags.rst: vsl2rst
-	./vsl2rst > $@
 
 vxp_fixed_token.c vxp_tokens.h: \
 	$(srcdir)/generate.py
@@ -105,5 +96,3 @@ vsl_glob_test_SOURCES = \
 vsl_glob_test_LDADD = @PCRE_LIBS@ ${RT_LIBS} ${LIBM} libvarnishapi.la
 
 vsl_glob_test_CFLAGS = -I$(top_srcdir)/include
-
-.NOPATH: $(BUILT_SOURCES)

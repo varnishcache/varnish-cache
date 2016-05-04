@@ -123,7 +123,7 @@ distclean-local:
 	rm -rf $(BUILDDIR)
 
 include/params.rst: $(top_builddir)/bin/varnishd/varnishd
-	$(top_builddir)/bin/varnishd/varnishd -x dumprstparam > include/params.rst
+	$(top_builddir)/bin/varnishd/varnishd -x dumprstparam > $@
 BUILT_SOURCES = include/params.rst
 
 include/counters.rst: $(top_builddir)/bin/varnishstat/vsc2rst
@@ -159,6 +159,10 @@ include/varnishhist_synopsis.rst: $(top_builddir)/bin/varnishhist/varnishhist_op
 	$(top_builddir)/bin/varnishhist/varnishhist_opt2rst synopsis > $@
 BUILT_SOURCES += include/varnishhist_options.rst \
 	 include/varnishhist_synopsis.rst
+
+include/vsl-tags.rst: $(top_builddir)/lib/libvarnishapi/vsl2rst
+	$(top_builddir)/lib/libvarnishapi/vsl2rst > $@
+BUILT_SOURCES += include/vsl-tags.rst
 
 .PHONY: reference
 reference:

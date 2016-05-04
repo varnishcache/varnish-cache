@@ -22,7 +22,7 @@ logging tools supplied with Varnish.
 VSL tags
 ~~~~~~~~
 
-.. include:: ../../../lib/libvarnishapi/vsl-tags.rst
+.. include:: ../include/vsl-tags.rst
 
 TIMESTAMPS
 ==========
