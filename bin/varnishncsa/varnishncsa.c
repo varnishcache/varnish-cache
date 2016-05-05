@@ -629,11 +629,10 @@ parse_x_format(char *buf)
 	if (!strncmp(buf, "VSL:", 4)) {
 		buf += 4;
 		e = buf;
-		while(*e != '\0')
+		while (*e != '\0')
 			e++;
-		if (e == buf) {
+		if (e == buf)
 			VUT_Error(1, "Missing tag in VSL:");
-		}
 		if (e[-1] == ']') {
 			r = e - 1;
 			while (r > buf && *r != '[')

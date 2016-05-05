@@ -80,5 +80,5 @@ These rules are imported from the X11 project:
 
 * Isolate complexity as much as possible.
 
-* Provide mechanism, rather than policy. 
+* Provide mechanism, rather than policy.
 
