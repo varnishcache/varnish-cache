@@ -186,6 +186,30 @@ VTCP_filter_http(int sock)
 
 #endif
 
+/*--------------------------------------------------------------------*/
+
+#ifdef HAVE_TCP_FASTOPEN
+
+int
+VTCP_fastopen(int sock, int depth)
+{
+	return (setsockopt(sock, SOL_TCP, TCP_FASTOPEN,
+	    &depth, sizeof depth));
+}
+
+#else
+
+int
+VTCP_fastopen(int sock, int depth)
+{
+	errno = EOPNOTSUPP;
+	(void)sock;
+	(void)depth;
+	return (-1);
+}
+
+#endif
+
 /*--------------------------------------------------------------------
  * Functions for controlling NONBLOCK mode.
  *

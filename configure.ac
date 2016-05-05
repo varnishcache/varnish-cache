@@ -530,6 +530,34 @@ if test "$ac_cv_have_tcp_keep" = yes; then
 fi
 LIBS="${save_LIBS}"
 
+# Check if the OS supports TCP_FASTOPEN socket option
+save_LIBS="${LIBS}"
+LIBS="${LIBS} ${NET_LIBS}"
+AC_CACHE_CHECK([for TCP_FASTOPEN socket option],
+  [ac_cv_have_tcp_fastopen],
+  [AC_RUN_IFELSE(
+    [AC_LANG_PROGRAM([[
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+    ]],[[
+int s = socket(AF_INET, SOCK_STREAM, 0);
+int i;
+i = 5;
+if (setsockopt(s, SOL_TCP, TCP_FASTOPEN, &i, sizeof i))
+  return (1);
+return (0);
+    ]])],
+    [ac_cv_have_tcp_fastopen=yes],
+    [ac_cv_have_tcp_fastopen=no])
+  ])
+if test "$ac_cv_have_tcp_fastopen" = yes; then
+   AC_DEFINE([HAVE_TCP_FASTOPEN], [1], [Define if OS supports TCP_FASTOPEN socket option])
+fi
+LIBS="${save_LIBS}"
+
 # Run-time directory
 VARNISH_STATE_DIR='${localstatedir}/varnish'
 AC_SUBST(VARNISH_STATE_DIR)
