@@ -109,7 +109,7 @@ returns =(
 	),
 	('hit',
 		"C",
-		('synth', 'restart', 'pass', 'fetch', 'miss', 'deliver',)
+		('synth', 'restart', 'pass', 'miss', 'deliver',)
 	),
 	('deliver',
 		"C",
