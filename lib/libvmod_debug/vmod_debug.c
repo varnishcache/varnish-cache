@@ -191,7 +191,7 @@ vmod_argtest(VRT_CTX, VCL_STRING one, VCL_REAL two, VCL_STRING three,
 	char buf[100];
 
 	bprintf(buf, "%s %g %s %s", one, two, three, comma);
-	return WS_Copy(ctx->ws, buf, -1);
+	return (WS_Copy(ctx->ws, buf, -1));
 }
 
 VCL_INT
@@ -350,10 +350,10 @@ event_function(VRT_CTX, struct vmod_priv *priv, enum vcl_event_e e)
 {
 
 	switch (e) {
-		case VCL_EVENT_LOAD: return event_load(ctx, priv);
-		case VCL_EVENT_WARM: return event_warm(ctx, priv);
-		case VCL_EVENT_COLD: return event_cold(ctx, priv);
-		default: return (0);
+	case VCL_EVENT_LOAD: return event_load(ctx, priv);
+	case VCL_EVENT_WARM: return event_warm(ctx, priv);
+	case VCL_EVENT_COLD: return event_cold(ctx, priv);
+	default: return (0);
 	}
 }
 
@@ -365,16 +365,18 @@ vmod_sleep(VRT_CTX, VCL_DURATION t)
 	VTIM_sleep(t);
 }
 
-static struct ws *wsfind(VRT_CTX, VCL_ENUM which) {
-	if (!strcmp(which, "client")) {
-		return ctx->ws;
-	} else if (!strcmp(which, "backend")) {
-		return ctx->bo->ws;
-	} else if (!strcmp(which, "session")) {
-		return ctx->req->sp->ws;
-	} else if (!strcmp(which, "thread")) {
-		return ctx->req->wrk->aws;
-	} else
+static struct ws *
+wsfind(VRT_CTX, VCL_ENUM which)
+{
+	if (!strcmp(which, "client"))
+		return (ctx->ws);
+	else if (!strcmp(which, "backend"))
+		return (ctx->bo->ws);
+	else if (!strcmp(which, "session"))
+		return (ctx->req->sp->ws);
+	else if (!strcmp(which, "thread"))
+		return (ctx->req->wrk->aws);
+	else
 		WRONG("No such workspace.");
 }
 
@@ -423,6 +425,7 @@ vmod_workspace_overflowed(VRT_CTX, VCL_ENUM which)
 }
 
 static char *debug_ws_snap;
+
 void
 vmod_workspace_snap(VRT_CTX, VCL_ENUM which)
 {
