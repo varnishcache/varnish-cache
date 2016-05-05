@@ -969,6 +969,20 @@ PARAM(
 	/* func */	NULL
 )
 
+PARAM(
+	/* name */	tcp_fastopen,
+	/* typ */	bool,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	"off",
+	/* units */	"bool",
+	/* flags */	MUST_RESTART,
+	/* s-text */
+	"Enable TCP Fast Open extension (if available in the kernel).",
+	/* l-text */	NULL,
+	/* func */	NULL
+)
+
 #if 0
 PARAM(
 	/* name */	tcp_keepalive_intvl,
