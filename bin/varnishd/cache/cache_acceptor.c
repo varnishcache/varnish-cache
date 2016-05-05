@@ -506,6 +506,14 @@ vca_acct(void *arg)
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		CHECK_OBJ_NOTNULL(ls->transport, TRANSPORT_MAGIC);
 		assert (ls->sock > 0);		// We know where stdin is
+		if (cache_param->tcp_fastopen) {
+			int i;
+			i = VTCP_fastopen(ls->sock, cache_param->listen_depth);
+			if (i)
+				VSL(SLT_Error, ls->sock,
+				    "Kernel TCP Fast Open: sock=%d, ret=%d %s",
+				    ls->sock, i, strerror(errno));
+		}
 		AZ(listen(ls->sock, cache_param->listen_depth));
 		vca_tcp_opt_set(ls->sock, 1);
 		if (cache_param->accept_filter) {

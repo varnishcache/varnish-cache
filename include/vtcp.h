@@ -44,6 +44,7 @@ void VTCP_myname(int sock, char *abuf, unsigned alen,
 void VTCP_hisname(int sock, char *abuf, unsigned alen,
     char *pbuf, unsigned plen);
 int VTCP_filter_http(int sock);
+int VTCP_fastopen(int sock, int depth);
 int VTCP_blocking(int sock);
 int VTCP_nonblocking(int sock);
 int VTCP_linger(int sock, int linger);
