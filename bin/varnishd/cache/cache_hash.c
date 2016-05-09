@@ -724,10 +724,8 @@ HSH_Snipe(const struct worker *wrk, struct objcore *oc)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->objhead, OBJHEAD_MAGIC);
 
-	AZ(oc->flags & OC_F_DYING);
-
 	if (oc->refcnt == 1 && !Lck_Trylock(&oc->objhead->mtx)) {
-		if (oc->refcnt == 1) {
+		if (oc->refcnt == 1 && !(oc->flags & OC_F_DYING)) {
 			oc->flags |= OC_F_DYING;
 			oc->refcnt++;
 			retval = 1;
