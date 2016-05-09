@@ -334,7 +334,7 @@ hsh_insert_busyobj(struct worker *wrk, struct objhead *oh)
 
 enum lookup_e
 HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
-    int wait_for_busy, int always_insert)
+    int always_insert)
 {
 	struct worker *wrk;
 	struct objhead *oh;
@@ -483,14 +483,9 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 
 	AZ(req->hash_ignore_busy);
 
-	if (wait_for_busy) {
-		VTAILQ_INSERT_TAIL(&oh->waitinglist, req, w_list);
-		if (DO_DEBUG(DBG_WAITINGLIST))
-			VSLb(req->vsl, SLT_Debug, "on waiting list <%p>", oh);
-	} else {
-		if (DO_DEBUG(DBG_WAITINGLIST))
-			VSLb(req->vsl, SLT_Debug, "hit busy obj <%p>", oh);
-	}
+	VTAILQ_INSERT_TAIL(&oh->waitinglist, req, w_list);
+	if (DO_DEBUG(DBG_WAITINGLIST))
+		VSLb(req->vsl, SLT_Debug, "on waiting list <%p>", oh);
 
 	wrk->stats->busy_sleep++;
 	/*

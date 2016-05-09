@@ -42,7 +42,8 @@
 #include "vend.h"
 #include "vgz.h"
 
-static vtr_deliver_f VED_Deliver;
+static vtr_deliver_f ved_deliver;
+static vtr_reembark_f ved_reembark;
 
 static const uint8_t gzip_hdr[] = {
 	0x1f, 0x8b, 0x08,
@@ -59,6 +60,7 @@ struct ecx {
 	int		state;
 	ssize_t		l;
 	int		isgzip;
+	int		woken;
 
 	struct req	*preq;
 	ssize_t		l_crc;
@@ -68,8 +70,25 @@ struct ecx {
 static const struct transport VED_transport = {
 	.magic =	TRANSPORT_MAGIC,
 	.name =		"ESI_INCLUDE",
-	.deliver =	VED_Deliver,
+	.deliver =	ved_deliver,
+	.reembark =	ved_reembark,
 };
+
+/*--------------------------------------------------------------------*/
+
+static void __match_proto__(vtr_reembark_f)
+ved_reembark(struct worker *wrk, struct req *req)
+{
+	struct ecx *ecx;
+
+	(void)wrk;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CAST_OBJ_NOTNULL(ecx, req->transport_priv, ECX_MAGIC);
+	Lck_Lock(&req->sp->mtx);
+	ecx->woken = 1;
+	AZ(pthread_cond_signal(&ecx->preq->wrk->cond));
+	Lck_Unlock(&req->sp->mtx);
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -140,7 +159,6 @@ ved_include(struct req *preq, const char *src, const char *host,
 
 	req->vcl = preq->vcl;
 	preq->vcl = NULL;
-	req->wrk = preq->wrk;
 
 	/*
 	 * XXX: We should decide if we should cache the director
@@ -163,14 +181,20 @@ ved_include(struct req *preq, const char *src, const char *host,
 
 	while (1) {
 		req->wrk = wrk;
+		ecx->woken = 0;
 		s = CNT_Request(wrk, req);
 		if (s == REQ_FSM_DONE)
 			break;
 		DSL(DBG_WAITINGLIST, req->vsl->wid,
 		    "loop waiting for ESI (%d)", (int)s);
 		assert(s == REQ_FSM_DISEMBARK);
+		Lck_Lock(&req->sp->mtx);
+		if (!ecx->woken)
+			(void)Lck_CondWait(
+			    &ecx->preq->wrk->cond, &req->sp->mtx, 0);
+		Lck_Unlock(&req->sp->mtx);
+		ecx->woken = 0;
 		AZ(req->wrk);
-		(void)usleep(10000);
 	}
 
 	VRTPRIV_dynamic_kill(req->sp->privs, (uintptr_t)req);
@@ -748,7 +772,7 @@ ved_vdp_bytes(struct req *req, enum vdp_action act, void **priv,
 /*--------------------------------------------------------------------*/
 
 static void __match_proto__(vtr_deliver_f)
-VED_Deliver(struct req *req, struct boc *boc, int wantbody)
+ved_deliver(struct req *req, struct boc *boc, int wantbody)
 {
 	int i;
 	struct ecx *ecx;
