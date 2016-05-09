@@ -175,6 +175,31 @@ http1_req_fail(struct req *req, enum sess_close reason)
 		SES_Close(req->sp, reason);
 }
 
+static void __match_proto__(vtr_reembark_f)
+http1_reembark(struct worker *wrk, struct req *req)
+{
+	struct sess *sp;
+
+	sp = req->sp;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+
+	http1_setstate(sp, H1BUSY);
+
+	if (!SES_Reschedule_Req(req))
+		return;
+
+	/* Couldn't schedule, ditch */
+	wrk->stats->busy_wakeup--;
+	wrk->stats->busy_killed++;
+	AN (req->vcl);
+	VCL_Rel(&req->vcl);
+	CNT_AcctLogCharge(wrk->stats, req);
+	Req_Release(req);
+	SES_Delete(sp, SC_OVERLOAD, NAN);
+	DSL(DBG_WAITINGLIST, req->vsl->wid, "kill from waiting list");
+	usleep(10000);
+}
+
 struct transport HTTP1_transport = {
 	.name =			"HTTP/1",
 	.magic =		TRANSPORT_MAGIC,
@@ -185,6 +210,7 @@ struct transport HTTP1_transport = {
 	.new_session =		http1_new_session,
 	.sess_panic =		http1_sess_panic,
 	.req_panic =		http1_req_panic,
+	.reembark =		http1_reembark,
 };
 
 /*----------------------------------------------------------------------
@@ -394,10 +420,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			req->transport = &HTTP1_transport;
 			req->task.func = http1_req;
 			req->task.priv = req;
-			if (CNT_Request(wrk, req) == REQ_FSM_DISEMBARK) {
-				http1_setstate(sp, H1BUSY);
+			if (CNT_Request(wrk, req) == REQ_FSM_DISEMBARK)
 				return;
-			}
 			req->transport = NULL;
 			req->task.func = NULL;
 			req->task.priv = NULL;

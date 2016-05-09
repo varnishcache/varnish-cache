@@ -536,7 +536,6 @@ static void
 hsh_rush2(struct worker *wrk, struct rush *r)
 {
 	struct req *req;
-	struct sess *sp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(r, RUSH_MAGIC);
@@ -546,24 +545,8 @@ hsh_rush2(struct worker *wrk, struct rush *r)
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		VTAILQ_REMOVE(&r->reqs, req, w_list);
 		DSL(DBG_WAITINGLIST, req->vsl->wid, "off waiting list");
-		if (req->transport->reembark != NULL) {
-			req->transport->reembark(wrk, req);
-			continue;
-		}
-		if (!SES_Reschedule_Req(req))
-			continue;
-		/* Couldn't schedule, ditch */
-		wrk->stats->busy_wakeup--;
-		wrk->stats->busy_killed++;
-		AN (req->vcl);
-		VCL_Rel(&req->vcl);
-		sp = req->sp;
-		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-		CNT_AcctLogCharge(wrk->stats, req);
-		Req_Release(req);
-		SES_Delete(sp, SC_OVERLOAD, NAN);
-		DSL(DBG_WAITINGLIST, req->vsl->wid, "kill from waiting list");
-		(void)usleep(100000);
+		AN(req->transport->reembark);
+		req->transport->reembark(wrk, req);
 	}
 }
 
