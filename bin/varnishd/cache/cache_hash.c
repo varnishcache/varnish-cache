@@ -56,6 +56,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "cache/cache_transport.h"
 
 #include "hash/hash_slinger.h"
 #include "vsha256.h"
@@ -548,6 +549,10 @@ hsh_rush2(struct worker *wrk, struct rush *r)
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		VTAILQ_REMOVE(&r->reqs, req, w_list);
 		DSL(DBG_WAITINGLIST, req->vsl->wid, "off waiting list");
+		if (req->transport->reembark != NULL) {
+			req->transport->reembark(wrk, req);
+			continue;
+		}
 		if (!SES_Reschedule_Req(req))
 			continue;
 		/* Couldn't schedule, ditch */
