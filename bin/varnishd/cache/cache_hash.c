@@ -500,6 +500,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	 */
 	req->hash_objhead = oh;
 	req->wrk = NULL;
+	req->waitinglist = 1;
 	Lck_Unlock(&oh->mtx);
 	return (HSH_BUSY);
 }
@@ -528,6 +529,7 @@ hsh_rush1(struct worker *wrk, struct objhead *oh, struct rush *r, int all)
 		AZ(req->wrk);
 		VTAILQ_REMOVE(&oh->waitinglist, req, w_list);
 		VTAILQ_INSERT_TAIL(&r->reqs, req, w_list);
+		req->waitinglist = 0;
 	}
 }
 
