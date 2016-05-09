@@ -57,15 +57,21 @@
 
 #include "cache.h"
 
-
 #include "hash/hash_slinger.h"
 #include "vsha256.h"
 #include "vtim.h"
 
+struct rush {
+	unsigned		magic;
+#define RUSH_MAGIC		0xa1af5f01
+	VTAILQ_HEAD(,req)	reqs;
+};
+
 static const struct hash_slinger *hash;
 static struct objhead *private_oh;
 
-static void hsh_rush(struct worker *wrk, struct objhead *oh);
+static void hsh_rush1(struct worker *, struct objhead *, struct rush *, int);
+static void hsh_rush2(struct worker *, struct rush *);
 
 /*---------------------------------------------------------------------*/
 
@@ -258,6 +264,7 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
     struct ban *ban)
 {
 	struct objhead *oh;
+	struct rush rush;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AN(digest);
@@ -266,6 +273,7 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
 	AN(oc->flags & OC_F_BUSY);
 	AZ(oc->flags & OC_F_PRIVATE);
 	assert(oc->refcnt == 1);
+	INIT_OBJ(&rush, RUSH_MAGIC);
 
 	hsh_prealloc(wrk);
 
@@ -293,8 +301,9 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
 	oc->flags &= ~OC_F_BUSY;
 	if (!VTAILQ_EMPTY(&oh->waitinglist))
-		hsh_rush(wrk, oh);
+		hsh_rush1(wrk, oh, &rush, 0);
 	Lck_Unlock(&oh->mtx);
+	hsh_rush2(wrk, &rush);
 }
 
 /*---------------------------------------------------------------------
@@ -495,19 +504,21 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 }
 
 /*---------------------------------------------------------------------
+ * Pick the req's we are going to rush from the waiting list
  */
 
 static void
-hsh_rush(struct worker *wrk, struct objhead *oh)
+hsh_rush1(struct worker *wrk, struct objhead *oh, struct rush *r, int all)
 {
 	unsigned u;
 	struct req *req;
-	struct sess *sp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(r, RUSH_MAGIC);
+	VTAILQ_INIT(&r->reqs);
 	Lck_AssertHeld(&oh->mtx);
-	for (u = 0; u < cache_param->rush_exponent; u++) {
+	for (u = 0; u < cache_param->rush_exponent || all; u++) {
 		req = VTAILQ_FIRST(&oh->waitinglist);
 		if (req == NULL)
 			break;
@@ -515,32 +526,42 @@ hsh_rush(struct worker *wrk, struct objhead *oh)
 		wrk->stats->busy_wakeup++;
 		AZ(req->wrk);
 		VTAILQ_REMOVE(&oh->waitinglist, req, w_list);
+		VTAILQ_INSERT_TAIL(&r->reqs, req, w_list);
+	}
+}
+
+/*---------------------------------------------------------------------
+ * Rush req's that came from waiting list.
+ */
+
+static void
+hsh_rush2(struct worker *wrk, struct rush *r)
+{
+	struct req *req;
+	struct sess *sp;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(r, RUSH_MAGIC);
+
+	while(!VTAILQ_EMPTY(&r->reqs)) {
+		req = VTAILQ_FIRST(&r->reqs);
+		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+		VTAILQ_REMOVE(&r->reqs, req, w_list);
 		DSL(DBG_WAITINGLIST, req->vsl->wid, "off waiting list");
-		if (SES_Reschedule_Req(req)) {
-			/*
-			 * In case of overloads, we ditch the entire
-			 * waiting list.
-			 */
-			wrk->stats->busy_wakeup--;
-			while (1) {
-				wrk->stats->busy_killed++;
-				AN (req->vcl);
-				VCL_Rel(&req->vcl);
-				sp = req->sp;
-				CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-				CNT_AcctLogCharge(wrk->stats, req);
-				Req_Release(req);
-				SES_Delete(sp, SC_OVERLOAD, NAN);
-				req = VTAILQ_FIRST(&oh->waitinglist);
-				if (req == NULL)
-					break;
-				CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-				VTAILQ_REMOVE(&oh->waitinglist, req, w_list);
-				DSL(DBG_WAITINGLIST, req->vsl->wid,
-				    "kill from waiting list");
-			}
-			break;
-		}
+		if (!SES_Reschedule_Req(req))
+			continue;
+		/* Couldn't schedule, ditch */
+		wrk->stats->busy_wakeup--;
+		wrk->stats->busy_killed++;
+		AN (req->vcl);
+		VCL_Rel(&req->vcl);
+		sp = req->sp;
+		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+		CNT_AcctLogCharge(wrk->stats, req);
+		Req_Release(req);
+		SES_Delete(sp, SC_OVERLOAD, NAN);
+		DSL(DBG_WAITINGLIST, req->vsl->wid, "kill from waiting list");
+		(void)usleep(100000);
 	}
 }
 
@@ -657,11 +678,13 @@ void
 HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 {
 	struct objhead *oh;
+	struct rush rush;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	oh = oc->objhead;
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
+	INIT_OBJ(&rush, RUSH_MAGIC);
 
 	AN(oc->stobj->stevedore);
 	AN(oc->flags & OC_F_BUSY);
@@ -684,10 +707,11 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
 	oc->flags &= ~OC_F_BUSY;
 	if (!VTAILQ_EMPTY(&oh->waitinglist))
-		hsh_rush(wrk, oh);
+		hsh_rush1(wrk, oh, &rush, 0);
 	Lck_Unlock(&oh->mtx);
 	if (!(oc->flags & OC_F_PRIVATE))
 		EXP_Insert(wrk, oc);
+	hsh_rush2(wrk, &rush);
 }
 
 /*====================================================================
@@ -818,6 +842,7 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
 {
 	struct objcore *oc;
 	struct objhead *oh;
+	struct rush rush;
 	unsigned r;
 
 	AN(ocp);
@@ -827,6 +852,7 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	assert(oc->refcnt > 0);
+	INIT_OBJ(&rush, RUSH_MAGIC);
 
 	oh = oc->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
@@ -837,8 +863,9 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
 	if (!r)
 		VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
 	if (!VTAILQ_EMPTY(&oh->waitinglist))
-		hsh_rush(wrk, oh);
+		hsh_rush1(wrk, oh, &rush, 0);
 	Lck_Unlock(&oh->mtx);
+	hsh_rush2(wrk, &rush);
 	if (r != 0)
 		return (r);
 
@@ -861,10 +888,12 @@ int
 HSH_DerefObjHead(struct worker *wrk, struct objhead **poh)
 {
 	struct objhead *oh;
+	struct rush rush;
 	int r;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	TAKE_OBJ_NOTNULL(oh, poh, OBJHEAD_MAGIC);
+	INIT_OBJ(&rush, RUSH_MAGIC);
 
 	if (oh == private_oh) {
 		assert(VTAILQ_EMPTY(&oh->waitinglist));
@@ -883,16 +912,14 @@ HSH_DerefObjHead(struct worker *wrk, struct objhead **poh)
 	 * just make the hold the same ref's as objcore, that would
 	 * confuse hashers.
 	 */
-	while (!VTAILQ_EMPTY(&oh->waitinglist)) {
-		Lck_Lock(&oh->mtx);
-		assert(oh->refcnt > 0);
-		r = oh->refcnt;
-		hsh_rush(wrk, oh);
+	Lck_Lock(&oh->mtx);
+	while (oh->refcnt == 1 && !VTAILQ_EMPTY(&oh->waitinglist)) {
+		hsh_rush1(wrk, oh, &rush, 1);
 		Lck_Unlock(&oh->mtx);
-		if (r > 1)
-			break;
-		usleep(100000);
+		hsh_rush2(wrk, &rush);
+		Lck_Lock(&oh->mtx);
 	}
+	Lck_Unlock(&oh->mtx);
 
 	assert(oh->refcnt > 0);
 	r = hash->deref(oh);
