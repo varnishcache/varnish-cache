@@ -548,8 +548,6 @@ struct req {
 	const struct transport	*transport;
 	void			*transport_priv;
 
-	VTAILQ_ENTRY(req)	w_list;
-
 	struct objcore		*body_oc;
 
 	/* The busy objhead we sleep on */

@@ -65,7 +65,7 @@
 static const struct hash_slinger *hash;
 static struct objhead *private_oh;
 
-static void hsh_rush(struct worker *wrk, struct objhead *oh);
+static void hsh_rush(struct worker *wrk, struct objhead *oh, int rushmax);
 
 /*---------------------------------------------------------------------*/
 
@@ -78,7 +78,6 @@ hsh_newobjhead(void)
 	XXXAN(oh);
 	oh->refcnt = 1;
 	VTAILQ_INIT(&oh->objcs);
-	VTAILQ_INIT(&oh->waitinglist);
 	Lck_New(&oh->mtx, lck_objhdr);
 	return (oh);
 }
@@ -153,7 +152,7 @@ HSH_DeleteObjHead(struct worker *wrk, struct objhead *oh)
 
 	AZ(oh->refcnt);
 	assert(VTAILQ_EMPTY(&oh->objcs));
-	assert(VTAILQ_EMPTY(&oh->waitinglist));
+	AZ(oh->waitinglist);
 	Lck_Delete(&oh->mtx);
 	wrk->stats->n_objecthead--;
 	FREE_OBJ(oh);
@@ -292,8 +291,8 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
 	VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
 	oc->flags &= ~OC_F_BUSY;
-	if (!VTAILQ_EMPTY(&oh->waitinglist))
-		hsh_rush(wrk, oh);
+	if (oh->waitinglist)
+		hsh_rush(wrk, oh, -1);
 	Lck_Unlock(&oh->mtx);
 }
 
@@ -320,66 +319,98 @@ hsh_insert_busyobj(struct worker *wrk, struct objhead *oh)
 }
 
 /*---------------------------------------------------------------------
+ * waitinglist interface
  */
 
-enum lookup_e
-HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
-    int wait_for_busy, int always_insert)
+static inline struct wlist *
+hsh_wlist_new(void)
 {
-	struct worker *wrk;
-	struct objhead *oh;
-	struct objcore *oc;
-	struct objcore *exp_oc;
-	double exp_t_origin;
-	int busy_found;
-	enum lookup_e retval;
-	const uint8_t *vary;
+	struct wlist *wl;
 
-	AN(ocp);
-	*ocp = NULL;
-	AN(bocp);
-	*bocp = NULL;
+	ALLOC_OBJ(wl, WLIST_MAGIC);
+	XXXAN(wl);
+	VTAILQ_INIT(&wl->reqs);
+	AZ(pthread_cond_init(&wl->cv, NULL));
+	return (wl);
+}
 
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	wrk = req->wrk;
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(req->http, HTTP_MAGIC);
-	AN(hash);
-
-	hsh_prealloc(wrk);
-	if (DO_DEBUG(DBG_HASHEDGE))
-		hsh_testmagic(req->digest);
-
-	if (req->hash_objhead != NULL) {
-		/*
-		 * This req came off the waiting list, and brings an
-		 * oh refcnt with it.
-		 */
-		CHECK_OBJ_NOTNULL(req->hash_objhead, OBJHEAD_MAGIC);
-		oh = req->hash_objhead;
-		Lck_Lock(&oh->mtx);
-		req->hash_objhead = NULL;
-	} else {
-		AN(wrk->nobjhead);
-		oh = hash->lookup(wrk, req->digest, &wrk->nobjhead);
-	}
+static inline void
+hsh_wlist_finish(struct objhead *oh)
+{
+	struct wlist *wl;
 
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+
+	wl = oh->waitinglist;
+	CHECK_OBJ_NOTNULL(wl, WLIST_MAGIC);
+
+	if (wl->cv_waiting > 0 ||
+	    ! VTAILQ_EMPTY(&wl->reqs))
+		return;
+
 	Lck_AssertHeld(&oh->mtx);
 
-	if (always_insert) {
-		/* XXX: should we do predictive Vary in this case ? */
-		/* Insert new objcore in objecthead and release mutex */
-		*bocp = hsh_insert_busyobj(wrk, oh);
-		/* NB: no deref of objhead, new object inherits reference */
-		Lck_Unlock(&oh->mtx);
-		return (HSH_MISS);
-	}
+	if (wl->cv_waiting > 0)
+		AZ(pthread_cond_broadcast(&wl->cv));
+	AZ(pthread_cond_destroy(&wl->cv));
+
+	FREE_OBJ(wl);
+	oh->waitinglist = NULL;
+}
+
+static inline void
+hsh_wlist_enq(struct wlist *wl, struct req *req)
+{
+	struct wlist_entry *we;
+
+	CHECK_OBJ_NOTNULL(wl, WLIST_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	ALLOC_OBJ(we, WLIST_ENTRY_MAGIC);
+	XXXAN(we);
+	we->req = req;
+
+	VTAILQ_INSERT_TAIL(&wl->reqs, we, list);
+}
+
+static inline struct req *
+hsh_wlist_deq(struct wlist *wl)
+{
+	struct wlist_entry *we;
+	struct req *req;
+
+	CHECK_OBJ_NOTNULL(wl, WLIST_MAGIC);
+
+	we = VTAILQ_FIRST(&wl->reqs);
+	if (we == NULL)
+		return NULL;
+
+	CHECK_OBJ_NOTNULL(we, WLIST_ENTRY_MAGIC);
+	req = we->req;
+	VTAILQ_REMOVE(&wl->reqs, we, list);
+	FREE_OBJ(we);
+
+	return (req);
+}
+
+/*---------------------------------------------------------------------
+ */
+
+static enum lookup_e
+hsh_lookup(struct objhead *oh, struct worker *wrk, struct req *req,
+    struct objcore **ocp, struct objcore **bocp)
+{
+	struct objcore *oc;
+	const uint8_t *vary;
+	enum lookup_e retval;
+
+	int busy_found = 0;
+	struct objcore *exp_oc = NULL;
+	double exp_t_origin = 0.0;
 
 	assert(oh->refcnt > 0);
-	busy_found = 0;
-	exp_oc = NULL;
-	exp_t_origin = 0.0;
+	Lck_AssertHeld(&oh->mtx);
+
 	VTAILQ_FOREACH(oc, &oh->objcs, hsh_list) {
 		/* Must be at least our own ref + the objcore we examine */
 		assert(oh->refcnt > 1);
@@ -469,52 +500,165 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		return (HSH_MISS);
 	}
 
-	/* There are one or more busy objects, wait for them */
-
-	AZ(req->hash_ignore_busy);
-
-	if (wait_for_busy) {
-		VTAILQ_INSERT_TAIL(&oh->waitinglist, req, w_list);
-		if (DO_DEBUG(DBG_WAITINGLIST))
-			VSLb(req->vsl, SLT_Debug, "on waiting list <%p>", oh);
-	} else {
-		if (DO_DEBUG(DBG_WAITINGLIST))
-			VSLb(req->vsl, SLT_Debug, "hit busy obj <%p>", oh);
-	}
-
-	wrk->stats->busy_sleep++;
-	/*
-	 * The objhead reference transfers to the sess, we get it
-	 * back when the sess comes off the waiting list and
-	 * calls us again
-	 */
-	req->hash_objhead = oh;
-	req->wrk = NULL;
-	Lck_Unlock(&oh->mtx);
+	// oh->mtx still kept!
 	return (HSH_BUSY);
 }
 
+enum lookup_e
+HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
+    int always_insert)
+{
+	struct worker *wrk;
+	struct objhead *oh;
+	enum lookup_e r;
+
+	AN(ocp);
+	*ocp = NULL;
+	AN(bocp);
+	*bocp = NULL;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	wrk = req->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req->http, HTTP_MAGIC);
+	AN(hash);
+
+	hsh_prealloc(wrk);
+	if (DO_DEBUG(DBG_HASHEDGE))
+		hsh_testmagic(req->digest);
+
+	if (req->hash_objhead != NULL) {
+		/*
+		 * This req came off the waiting list, and brings an
+		 * oh refcnt with it.
+		 */
+		CHECK_OBJ_NOTNULL(req->hash_objhead, OBJHEAD_MAGIC);
+		oh = req->hash_objhead;
+		Lck_Lock(&oh->mtx);
+		req->hash_objhead = NULL;
+	} else {
+		AN(wrk->nobjhead);
+		oh = hash->lookup(wrk, req->digest, &wrk->nobjhead);
+	}
+
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	Lck_AssertHeld(&oh->mtx);
+
+	if (always_insert) {
+		/* XXX: should we do predictive Vary in this case ? */
+		/* Insert new objcore in objecthead and release mutex */
+		*bocp = hsh_insert_busyobj(wrk, oh);
+		/* NB: no deref of objhead, new object inherits reference */
+		Lck_Unlock(&oh->mtx);
+		return (HSH_MISS);
+	}
+
+	r = hsh_lookup(oh, wrk, req, ocp, bocp);
+
+	if (r != HSH_BUSY)
+		return (r);
+
+	/* There are one or more busy objects, wait for them */
+
+	AZ(req->hash_ignore_busy);
+	Lck_AssertHeld(&oh->mtx);
+
+	if (oh->waitinglist == NULL)
+		oh->waitinglist = hsh_wlist_new();
+
+	if (req->esi_level == 0) {
+		hsh_wlist_enq(oh->waitinglist, req);
+		if (DO_DEBUG(DBG_WAITINGLIST))
+			VSLb(req->vsl, SLT_Debug, "on waiting list <%p>", oh);
+
+		wrk->stats->busy_sleep++;
+		/*
+		 * The objhead reference transfers to the sess, we get it
+		 * back when the sess comes off the waiting list and
+		 * calls us again
+		 */
+		req->hash_objhead = oh;
+		req->wrk = NULL;
+		Lck_Unlock(&oh->mtx);
+		return (HSH_BUSY);
+	}
+
+	do {
+		Lck_AssertHeld(&oh->mtx);
+
+		if (oh->waitinglist == NULL)
+			oh->waitinglist = hsh_wlist_new();
+
+		if (DO_DEBUG(DBG_WAITINGLIST)) {
+			VSLb(req->vsl, SLT_Debug, "waiting for busy obj <%p>",
+			    oh);
+		}
+
+		CHECK_OBJ_NOTNULL(oh->waitinglist, WLIST_MAGIC);
+		oh->waitinglist->cv_waiting++;
+		wrk->stats->busy_sleep_esi++;
+		(void)Lck_CondWait(&oh->waitinglist->cv, &oh->mtx, 0);
+		if (oh->waitinglist)
+			oh->waitinglist->cv_waiting--;
+		wrk->stats->busy_wakeup_esi++;
+
+		if (DO_DEBUG(DBG_WAITINGLIST)) {
+			VSLb(req->vsl, SLT_Debug, "woke up on obj <%p>" , oh);
+		}
+
+		r = hsh_lookup(oh, wrk, req, ocp, bocp);
+	} while (r == HSH_BUSY);
+
+	return (r);
+}
 /*---------------------------------------------------------------------
+ * must be called for non-empty waitinglist only
+ *
+ * rushmax specifies how many requests to wake up,
+ *  0: INVALID (only valid for HSH_DerefObjCore)
+ * -1: maximum by policy
+ *
+ * esi waiters get woken up first
  */
 
 static void
-hsh_rush(struct worker *wrk, struct objhead *oh)
+hsh_rush(struct worker *wrk, struct objhead *oh, int rushmax)
 {
 	unsigned u;
 	struct req *req;
 	struct sess *sp;
+	struct wlist *wl;
+
+	assert(rushmax != 0);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	wl = oh->waitinglist;
+	CHECK_OBJ_NOTNULL(wl, WLIST_MAGIC);
 	Lck_AssertHeld(&oh->mtx);
-	for (u = 0; u < cache_param->rush_exponent; u++) {
-		req = VTAILQ_FIRST(&oh->waitinglist);
+
+	if (rushmax == -1)
+		rushmax = cache_param->rush_exponent;
+
+	if (wl->cv_waiting == 0) {
+		//
+	} else if (wl->cv_waiting <= rushmax) {
+		rushmax -= wl->cv_waiting;
+		AZ(pthread_cond_broadcast(&wl->cv));
+	} else {
+		assert(wl->cv_waiting > rushmax);
+		while (rushmax--)
+			AZ(pthread_cond_signal(&wl->cv));
+		return;
+	}
+
+	for (u = 0; u < rushmax; u++) {
+		req = hsh_wlist_deq(wl);
 		if (req == NULL)
 			break;
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		wrk->stats->busy_wakeup++;
 		AZ(req->wrk);
-		VTAILQ_REMOVE(&oh->waitinglist, req, w_list);
 		DSL(DBG_WAITINGLIST, req->vsl->wid, "off waiting list");
 		if (SES_Reschedule_Req(req)) {
 			/*
@@ -531,17 +675,17 @@ hsh_rush(struct worker *wrk, struct objhead *oh)
 				CNT_AcctLogCharge(wrk->stats, req);
 				Req_Release(req);
 				SES_Delete(sp, SC_OVERLOAD, NAN);
-				req = VTAILQ_FIRST(&oh->waitinglist);
+				req = hsh_wlist_deq(wl);
 				if (req == NULL)
 					break;
 				CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-				VTAILQ_REMOVE(&oh->waitinglist, req, w_list);
 				DSL(DBG_WAITINGLIST, req->vsl->wid,
 				    "kill from waiting list");
 			}
 			break;
 		}
 	}
+	hsh_wlist_finish(oh);
 }
 
 /*---------------------------------------------------------------------
@@ -599,7 +743,7 @@ double keep)
 			oc = ocp[n];
 			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 			EXP_Rearm(oc, now, ttl, grace, keep);
-			(void)HSH_DerefObjCore(wrk, &oc);
+			(void)HSH_DerefObjCore(wrk, &oc, 0);
 		}
 	} while (more);
 	WS_Release(wrk->aws, 0);
@@ -683,8 +827,8 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 	VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
 	oc->flags &= ~OC_F_BUSY;
-	if (!VTAILQ_EMPTY(&oh->waitinglist))
-		hsh_rush(wrk, oh);
+	if (oh->waitinglist)
+		hsh_rush(wrk, oh, -1);
 	Lck_Unlock(&oh->mtx);
 	if (!(oc->flags & OC_F_PRIVATE))
 		EXP_Insert(wrk, oc);
@@ -811,10 +955,14 @@ HSH_DerefBoc(struct worker *wrk, struct objcore *oc)
  * Dereference objcore
  *
  * Returns zero if target was destroyed.
+ *
+ * rushmax specifies how many requests to wake up or:
+ *  0: none
+ * -1: maximum by policy
  */
 
 int
-HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
+HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp, int rushmax)
 {
 	struct objcore *oc;
 	struct objhead *oh;
@@ -836,8 +984,8 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
 	r = --oc->refcnt;
 	if (!r)
 		VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
-	if (!VTAILQ_EMPTY(&oh->waitinglist))
-		hsh_rush(wrk, oh);
+	if (rushmax != 0 && oh->waitinglist)
+		hsh_rush(wrk, oh, rushmax);
 	Lck_Unlock(&oh->mtx);
 	if (r != 0)
 		return (r);
@@ -867,7 +1015,7 @@ HSH_DerefObjHead(struct worker *wrk, struct objhead **poh)
 	TAKE_OBJ_NOTNULL(oh, poh, OBJHEAD_MAGIC);
 
 	if (oh == private_oh) {
-		assert(VTAILQ_EMPTY(&oh->waitinglist));
+		AZ(oh->waitinglist);
 		Lck_Lock(&oh->mtx);
 		assert(oh->refcnt > 1);
 		oh->refcnt--;
@@ -883,11 +1031,12 @@ HSH_DerefObjHead(struct worker *wrk, struct objhead **poh)
 	 * just make the hold the same ref's as objcore, that would
 	 * confuse hashers.
 	 */
-	while (!VTAILQ_EMPTY(&oh->waitinglist)) {
+	while (oh->waitinglist) {
 		Lck_Lock(&oh->mtx);
 		assert(oh->refcnt > 0);
 		r = oh->refcnt;
-		hsh_rush(wrk, oh);
+		if (oh->waitinglist)
+			hsh_rush(wrk, oh, -1);
 		Lck_Unlock(&oh->mtx);
 		if (r > 1)
 			break;

@@ -203,7 +203,7 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 			if (i)
 				ObjSendEvent(wrk, oc, OEV_BANCHG);
 		}
-		(void)HSH_DerefObjCore(wrk, &oc);
+		(void)HSH_DerefObjCore(wrk, &oc, 0);
 	}
 }
 

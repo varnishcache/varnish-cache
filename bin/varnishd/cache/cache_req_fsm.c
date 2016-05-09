@@ -109,7 +109,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		wrk->handling = VCL_RET_DELIVER;
 
 	if (wrk->handling != VCL_RET_DELIVER) {
-		(void)HSH_DerefObjCore(wrk, &req->objcore);
+		(void)HSH_DerefObjCore(wrk, &req->objcore, 0);
 		http_Teardown(req->resp);
 
 		switch (wrk->handling) {
@@ -216,7 +216,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 		VSLb(req->vsl, SLT_Error, "Could not get storage");
 		req->doclose = SC_OVERLOAD;
 		VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
-		(void)HSH_DerefObjCore(wrk, &req->objcore);
+		(void)HSH_DerefObjCore(wrk, &req->objcore, 0);
 		http_Teardown(req->resp);
 		return (REQ_FSM_DONE);
 	}
@@ -311,7 +311,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	if (boc != NULL)
 		HSH_DerefBoc(wrk, req->objcore);
 
-	(void)HSH_DerefObjCore(wrk, &req->objcore);
+	(void)HSH_DerefObjCore(wrk, &req->objcore, 0);
 	http_Teardown(req->resp);
 
 	return (REQ_FSM_DONE);
@@ -335,7 +335,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	if (req->objcore->flags & OC_F_FAILED) {
 		req->err_code = 503;
 		req->req_step = R_STP_SYNTH;
-		(void)HSH_DerefObjCore(wrk, &req->objcore);
+		(void)HSH_DerefObjCore(wrk, &req->objcore, 0);
 		AZ(req->objcore);
 		return (REQ_FSM_MORE);
 	}
@@ -367,10 +367,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	AZ(req->objcore);
 	if (req->hash_objhead)
 		had_objhead = 1;
-	lr = HSH_Lookup(req, &oc, &busy,
-	    req->esi_level == 0 ? 1 : 0,
-	    req->hash_always_miss ? 1 : 0
-	);
+	lr = HSH_Lookup(req, &oc, &busy, req->hash_always_miss ? 1 : 0);
 	if (lr == HSH_BUSY) {
 		/*
 		 * We lost the session to a busy object, disembark the
@@ -416,7 +413,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		VSLb(req->vsl, SLT_Debug, "XXXX HIT-FOR-PASS");
 		VSLb(req->vsl, SLT_HitPass, "%u",
 		    ObjGetXID(wrk, req->objcore));
-		(void)HSH_DerefObjCore(wrk, &req->objcore);
+		(void)HSH_DerefObjCore(wrk, &req->objcore, 0);
 		wrk->stats->cache_hitpass++;
 		req->req_step = R_STP_PASS;
 		return (REQ_FSM_MORE);
@@ -445,7 +442,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 			req->stale_oc = oc;
 			req->req_step = R_STP_MISS;
 		} else {
-			(void)HSH_DerefObjCore(wrk, &req->objcore);
+			(void)HSH_DerefObjCore(wrk, &req->objcore, 0);
 			/*
 			 * We don't have a busy object, so treat this
 			 * like a pass
@@ -472,10 +469,10 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	}
 
 	/* Drop our object, we won't need it */
-	(void)HSH_DerefObjCore(wrk, &req->objcore);
+	(void)HSH_DerefObjCore(wrk, &req->objcore, 0);
 
 	if (busy != NULL) {
-		(void)HSH_DerefObjCore(wrk, &busy);
+		(void)HSH_DerefObjCore(wrk, &busy, 1);
 		VRY_Clear(req);
 	}
 
@@ -501,7 +498,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 		wrk->stats->cache_miss++;
 		VBF_Fetch(wrk, req, req->objcore, req->stale_oc, VBF_NORMAL);
 		if (req->stale_oc != NULL)
-			(void)HSH_DerefObjCore(wrk, &req->stale_oc);
+			(void)HSH_DerefObjCore(wrk, &req->stale_oc, 0);
 		req->req_step = R_STP_FETCH;
 		return (REQ_FSM_MORE);
 	case VCL_RET_SYNTH:
@@ -518,8 +515,8 @@ cnt_miss(struct worker *wrk, struct req *req)
 	}
 	VRY_Clear(req);
 	if (req->stale_oc != NULL)
-		(void)HSH_DerefObjCore(wrk, &req->stale_oc);
-	AZ(HSH_DerefObjCore(wrk, &req->objcore));
+		(void)HSH_DerefObjCore(wrk, &req->stale_oc, 0);
+	AZ(HSH_DerefObjCore(wrk, &req->objcore, 0));
 	return (REQ_FSM_MORE);
 }
 
@@ -777,7 +774,7 @@ cnt_purge(struct worker *wrk, struct req *req)
 	VRY_Prep(req);
 
 	AZ(req->objcore);
-	lr = HSH_Lookup(req, &oc, &boc, 1, 1);
+	lr = HSH_Lookup(req, &oc, &boc, 1);
 	assert (lr == HSH_MISS);
 	AZ(oc);
 	CHECK_OBJ_NOTNULL(boc, OBJCORE_MAGIC);
@@ -785,7 +782,7 @@ cnt_purge(struct worker *wrk, struct req *req)
 
 	HSH_Purge(wrk, boc->objhead, 0, 0, 0);
 
-	AZ(HSH_DerefObjCore(wrk, &boc));
+	AZ(HSH_DerefObjCore(wrk, &boc, 0));
 
 	VCL_purge_method(req->vcl, wrk, req, NULL, NULL);
 	switch (wrk->handling) {

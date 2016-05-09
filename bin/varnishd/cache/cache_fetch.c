@@ -828,7 +828,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	http_SetHeader(bo->beresp, "Server: Varnish");
 
 	bo->fetch_objcore->t_origin = now;
-	if (!VTAILQ_EMPTY(&bo->fetch_objcore->objhead->waitinglist)) {
+	if (bo->fetch_objcore->objhead->waitinglist) {
 		/*
 		 * If there is a waitinglist, it means that there is no
 		 * grace-able object, so cache the error return for a
@@ -950,7 +950,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 		CHECK_OBJ_NOTNULL(bo->stale_oc, OBJCORE_MAGIC);
 		/* We don't want the oc/stevedore ops in fetching thread */
 		if (!ObjCheckFlag(wrk, bo->stale_oc, OF_IMSCAND))
-			(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
+			(void)HSH_DerefObjCore(wrk, &bo->stale_oc, 0);
 	}
 #endif
 
@@ -982,7 +982,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	// AZ(bo->fetch_objcore->boc);	// XXX
 
 	if (bo->stale_oc != NULL)
-		(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
+		(void)HSH_DerefObjCore(wrk, &bo->stale_oc, 0);
 
 	wrk->vsl = NULL;
 	HSH_DerefBoc(wrk, bo->fetch_objcore);
@@ -1059,7 +1059,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 		wrk->stats->fetch_no_thread++;
 		(void)vbf_stp_fail(req->wrk, bo);
 		if (bo->stale_oc != NULL)
-			(void)HSH_DerefObjCore(wrk, &bo->stale_oc);
+			(void)HSH_DerefObjCore(wrk, &bo->stale_oc, 0);
 		HSH_DerefBoc(wrk, oc);
 		SES_Rel(bo->sp);
 		VBO_ReleaseBusyObj(wrk, &bo);
@@ -1081,6 +1081,6 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	assert(oc->boc == boc);
 	HSH_DerefBoc(wrk, oc);
 	if (mode == VBF_BACKGROUND)
-		(void)HSH_DerefObjCore(wrk, &oc);
+		(void)HSH_DerefObjCore(wrk, &oc, -1);
 	THR_SetBusyobj(NULL);
 }

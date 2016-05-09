@@ -79,7 +79,6 @@ ved_include(struct req *preq, const char *src, const char *host,
 {
 	struct worker *wrk;
 	struct req *req;
-	enum req_fsm_nxt s;
 
 	CHECK_OBJ_NOTNULL(preq, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(ecx, ECX_MAGIC);
@@ -161,17 +160,8 @@ ved_include(struct req *preq, const char *src, const char *host,
 
 	req->ws_req = WS_Snapshot(req->ws);
 
-	while (1) {
-		req->wrk = wrk;
-		s = CNT_Request(wrk, req);
-		if (s == REQ_FSM_DONE)
-			break;
-		DSL(DBG_WAITINGLIST, req->vsl->wid,
-		    "loop waiting for ESI (%d)", (int)s);
-		assert(s == REQ_FSM_DISEMBARK);
-		AZ(req->wrk);
-		(void)usleep(10000);
-	}
+	req->wrk = wrk;
+	assert (CNT_Request(wrk, req) == REQ_FSM_DONE);
 
 	VRTPRIV_dynamic_kill(req->sp->privs, (uintptr_t)req);
 	CNT_AcctLogCharge(wrk->stats, req);

@@ -254,6 +254,18 @@ VSC_F(busy_wakeup,		uint64_t, 1, 'c', 'i', info,
 	" and rescheduled."
 )
 
+VSC_F(busy_sleep_esi,		uint64_t, 1, 'c', 'i', info,
+    "ESI worker threads blocked on busy objhdr",
+	"Number of times ESI processing threads blocked because"
+	" they found a busy object."
+)
+
+VSC_F(busy_wakeup_esi,		uint64_t, 1, 'c', 'i', info,
+    "ESI worker threads resumed on busy objhdr",
+	"Number of times ESI processing threads got worken up after"
+	" waiting for a busy object."
+)
+
 VSC_F(busy_killed,		uint64_t, 1, 'c', 'i', info,
     "Number of requests killed after sleep on busy objhdr",
 	"Number of requests killed from the busy object sleep list"
