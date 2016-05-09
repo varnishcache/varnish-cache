@@ -198,7 +198,9 @@ Lck_CondWait(pthread_cond_t *cond, struct lock *lck, double when)
 		ts.tv_nsec = (long)(modf(when, &t) * 1e9);
 		ts.tv_sec = (long)t;
 		retval = pthread_cond_timedwait(cond, &ilck->mtx, &ts);
-		assert(retval == 0 || retval == ETIMEDOUT);
+		assert(retval == 0 ||
+		    retval == ETIMEDOUT ||
+		    retval == EINTR);
 	}
 	AZ(ilck->held);
 	ilck->held = 1;
