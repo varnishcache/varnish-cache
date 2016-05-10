@@ -35,17 +35,22 @@
  *   l: Long description
  */
 
-extern const char vopt_optstring[];
-extern const char vopt_synopsis[];
-extern const char *vopt_usage[];
 struct vopt_list {
 	const char *option;
 	const char *synopsis;
 	const char *desc;
 	const char *ldesc;
 };
-extern const struct vopt_list vopt_list[];
-extern unsigned vopt_list_n;
+
+struct vopt_spec {
+	const struct vopt_list	*vopt_list;
+	unsigned		vopt_list_n;
+	const char		*vopt_optstring;
+	const char		*vopt_synopsis;
+	const char		**vopt_usage;
+};
+
+extern const struct vopt_spec vopt_spec;
 
 #ifdef VOPT_DEFINITION
 
@@ -54,29 +59,36 @@ extern unsigned vopt_list_n;
 #endif
 
 #define VOPT(o,s,d,l) o
-const char vopt_optstring[] =
+static const char vopt_optstring[] =
 #include VOPT_INC
     ;
 #undef VOPT
 
 #define VOPT(o,s,d,l) " " s
-const char vopt_synopsis[] =
+static const char vopt_synopsis[] =
 #include VOPT_INC
     ;
 #undef VOPT
 
 #define VOPT(o,s,d,l) s, d,
-const char *vopt_usage[] = {
+static const char *vopt_usage[] = {
 #include VOPT_INC
 	NULL, NULL,
 };
 #undef VOPT
 
 #define VOPT(o,s,d,l) { o,s,d,l },
-const struct vopt_list vopt_list[] = {
+static const struct vopt_list vopt_list[] = {
 #include VOPT_INC
 };
 #undef VOPT
-unsigned vopt_list_n = sizeof vopt_list / sizeof vopt_list[0];
+
+const struct vopt_spec vopt_spec = {
+	vopt_list,
+	sizeof vopt_list / sizeof vopt_list[0],
+	vopt_optstring,
+	vopt_synopsis,
+	vopt_usage
+};
 
 #endif /* VOPT_DEFINITION */

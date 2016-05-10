@@ -369,7 +369,7 @@ usage(int status)
 
 	fprintf(stderr, "Usage: %s <options>\n\n", progname);
 	fprintf(stderr, "Options:\n");
-	for (opt = vopt_usage; *opt != NULL; opt +=2)
+	for (opt = vopt_spec.vopt_usage; *opt != NULL; opt +=2)
 		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
 	exit(status);
 }
@@ -385,11 +385,11 @@ main(int argc, char **argv)
 	struct profile cli_p = {0};
 	cli_p.name = 0;
 
-	VUT_Init(progname, argc, argv);
+	VUT_Init(progname, argc, argv, &vopt_spec);
 
 	/* only client requests */
 	assert(VUT_Arg('c', NULL));
-	while ((i = getopt(argc, argv, vopt_optstring)) != -1) {
+	while ((i = getopt(argc, argv, vopt_spec.vopt_optstring)) != -1) {
 		switch (i) {
 		case 'P':
 			colon = strchr(optarg, ':');

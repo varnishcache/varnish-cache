@@ -318,7 +318,7 @@ usage(int status)
 
 	fprintf(stderr, "Usage: %s <options>\n\n", progname);
 	fprintf(stderr, "Options:\n");
-	for (opt = vopt_usage; *opt != NULL; opt +=2)
+	for (opt = vopt_spec.vopt_usage; *opt != NULL; opt +=2)
 		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
 	exit(status);
 }
@@ -329,9 +329,9 @@ main(int argc, char **argv)
 	int o, once = 0;
 	pthread_t thr;
 
-	VUT_Init(progname, argc, argv);
+	VUT_Init(progname, argc, argv, &vopt_spec);
 
-	while ((o = getopt(argc, argv, vopt_optstring)) != -1) {
+	while ((o = getopt(argc, argv, vopt_spec.vopt_optstring)) != -1) {
 		switch (o) {
 		case '1':
 			AN(VUT_Arg('d', NULL));

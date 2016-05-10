@@ -55,10 +55,12 @@
 
 #include "vut.h"
 
+#include "vapi/voptget.h"
+
 struct VUT VUT;
 
-static int vut_synopsis(void);
-static int vut_options(void);
+static int vut_synopsis(const struct vopt_spec *);
+static int vut_options(const struct vopt_spec *);
 
 static void
 vut_vpf_remove(void)
@@ -205,13 +207,14 @@ VUT_Arg(int opt, const char *arg)
 }
 
 void
-VUT_Init(const char *progname, int argc, char * const *argv)
+VUT_Init(const char *progname, int argc, char * const *argv,
+    const struct vopt_spec *voc)
 {
 
 	if (argc == 2 && !strcmp(argv[1], "--synopsis"))
-		exit(vut_synopsis());
+		exit(vut_synopsis(voc));
 	if (argc == 2 && !strcmp(argv[1], "--options"))
-		exit(vut_options());
+		exit(vut_options(voc));
 
 	VUT.progname = progname;
 	REPLACE(VUT.name, "");
@@ -435,8 +438,6 @@ VUT_Main(void)
 /**********************************************************************/
 
 
-#include "vapi/voptget.h"
-
 static void
 print_nobrackets(const char *s)
 {
@@ -482,18 +483,18 @@ print_opt(const struct vopt_list *opt)
 }
 
 static int
-vut_synopsis(void)
+vut_synopsis(const struct vopt_spec *voc)
 {
-	printf(".. |synopsis| replace:: %s\n", vopt_synopsis);
+	printf(".. |synopsis| replace:: %s\n", voc->vopt_synopsis);
 	return (0);
 }
 
 static int
-vut_options(void)
+vut_options(const struct vopt_spec *voc)
 {
 	int i;
 
-	for (i = 0; i < vopt_list_n; i++)
-		print_opt(&vopt_list[i]);
+	for (i = 0; i < voc->vopt_list_n; i++)
+		print_opt(&voc->vopt_list[i]);
 	return (0);
 }

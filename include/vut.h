@@ -29,6 +29,8 @@
  * Common functions for the utilities
  */
 
+struct vopt_spec;
+
 typedef int VUT_cb_f(void);
 
 struct VUT {
@@ -74,7 +76,8 @@ int VUT_Arg(int opt, const char *arg);
 
 void VUT_Setup(void);
 
-void VUT_Init(const char *progname, int argc, char * const *argv);
+void VUT_Init(const char *progname, int argc, char * const *argv,
+    const struct vopt_spec *);
 
 void VUT_Fini(void);
 
