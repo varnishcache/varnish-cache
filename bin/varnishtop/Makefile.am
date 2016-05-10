@@ -8,11 +8,7 @@ bin_PROGRAMS = varnishtop
 
 varnishtop_SOURCES = varnishtop.c \
 	varnishtop_options.h \
-	varnishtop_options.c \
-	$(top_srcdir)/lib/libvarnish/vas.c \
-	$(top_srcdir)/lib/libvarnish/version.c \
-	$(top_srcdir)/lib/libvarnish/vtim.c \
-	$(top_srcdir)/lib/libvarnish/vsb.c
+	varnishtop_options.c
 
 
 varnishtop_CFLAGS = \

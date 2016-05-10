@@ -10,10 +10,7 @@ varnishstat_SOURCES = \
 	varnishstat.h \
 	\
 	varnishstat.c \
-	varnishstat_curses.c \
-	$(top_srcdir)/lib/libvarnish/vas.c \
-	$(top_srcdir)/lib/libvarnish/version.c \
-	$(top_srcdir)/lib/libvarnish/vtim.c
+	varnishstat_curses.c
 
 varnishstat_CFLAGS = \
 	@SAN_CFLAGS@

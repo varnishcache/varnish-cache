@@ -9,11 +9,7 @@ bin_PROGRAMS = varnishlog
 varnishlog_SOURCES = \
 	varnishlog.c \
 	varnishlog_options.h \
-	varnishlog_options.c \
-	$(top_srcdir)/lib/libvarnish/vas.c \
-	$(top_srcdir)/lib/libvarnish/version.c \
-	$(top_srcdir)/lib/libvarnish/vsb.c \
-	$(top_srcdir)/lib/libvarnish/vtim.c
+	varnishlog_options.c
 
 varnishlog_CFLAGS = \
 	@SAN_CFLAGS@

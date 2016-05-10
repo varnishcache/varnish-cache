@@ -8,10 +8,7 @@ bin_PROGRAMS = varnishhist
 
 varnishhist_SOURCES = varnishhist.c \
 	varnishhist_options.h \
-	varnishhist_options.c \
-	$(top_srcdir)/lib/libvarnish/vas.c \
-	$(top_srcdir)/lib/libvarnish/version.c \
-	$(top_srcdir)/lib/libvarnish/vtim.c
+	varnishhist_options.c
 
 varnishhist_CFLAGS = \
 	@SAN_CFLAGS@

@@ -142,4 +142,23 @@ LIBVARNISHAPI_1.5 {
 	VUT_Fini;
 	VUT_Main;
 	VUT;
+
+	VTIM_mono;
+	VTIM_real;
+	VTIM_sleep;
+
+	VSB_new;
+	VSB_destroy;
+	VSB_error;
+	VSB_cat;
+	VSB_putc;
+	VSB_printf;
+	VSB_clear;
+	VSB_finish;
+	VSB_len;
+	VSB_data;
+
+	VAS_Fail;
+
+	VCS_Message;
 } LIBVARNISHAPI_1.0;

@@ -11,11 +11,7 @@ varnishncsa_SOURCES = \
 	varnishncsa_options.h \
 	varnishncsa_options.c \
 	base64.h \
-	base64.c \
-	$(top_srcdir)/lib/libvarnish/vas.c \
-	$(top_srcdir)/lib/libvarnish/version.c \
-	$(top_srcdir)/lib/libvarnish/vtim.c \
-	$(top_srcdir)/lib/libvarnish/vsb.c
+	base64.c
 
 varnishncsa_CFLAGS = \
 	@SAN_CFLAGS@

@@ -8,7 +8,6 @@ bin_PROGRAMS = varnishadm
 
 varnishadm_SOURCES = \
 	varnishadm.c \
-	$(top_srcdir)/lib/libvarnish/vas.c \
 	$(top_srcdir)/lib/libvarnish/vsa.c \
 	$(top_srcdir)/lib/libvarnish/vtcp.c \
 	$(top_srcdir)/lib/libvarnish/vss.c
