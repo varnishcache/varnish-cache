@@ -14,8 +14,8 @@ varnishncsa_SOURCES = \
 	base64.c \
 	$(top_srcdir)/lib/libvarnishtools/vut.c \
 	$(top_srcdir)/lib/libvarnish/vas.c \
-	$(top_srcdir)/lib/libvarnish/flopen.c \
 	$(top_srcdir)/lib/libvarnish/version.c \
+	$(top_srcdir)/lib/libvarnish/vfl.c \
 	$(top_srcdir)/lib/libvarnish/vpf.c \
 	$(top_srcdir)/lib/libvarnish/vtim.c \
 	$(top_srcdir)/lib/libvarnish/vsb.c

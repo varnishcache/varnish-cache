@@ -44,7 +44,7 @@
 #include "mgt/mgt.h"
 #include "common/heritage.h"
 
-#include "flopen.h"
+#include "vfl.h"
 #include "vsm_priv.h"
 #include "vmb.h"
 #include "vfil.h"
@@ -112,7 +112,7 @@ vsm_n_check(void)
 		fprintf(stderr,
 		    "VSM (%s) not a regular file.\n", VSM_FILENAME);
 	} else {
-		i = fltest(fd, &pid);
+		i = VFL_Test(fd, &pid);
 		if (i < 0) {
 			fprintf(stderr,
 			    "Cannot determine locking status of VSM (%s)\n.",
@@ -150,7 +150,7 @@ vsm_zerofile(const char *fn, ssize_t size)
 	int fd;
 	int flags;
 
-	fd = flopen(fn, O_RDWR | O_CREAT | O_EXCL | O_NONBLOCK, 0640);
+	fd = VFL_Open(fn, O_RDWR | O_CREAT | O_EXCL | O_NONBLOCK, 0640);
 	if (fd < 0) {
 		fprintf(stderr, "Could not create %s: %s\n",
 		    fn, strerror(errno));

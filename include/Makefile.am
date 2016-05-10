@@ -66,7 +66,7 @@ nobase_noinst_HEADERS = \
 	binary_heap.h \
 	compat/daemon.h \
 	compat/execinfo.h \
-	flopen.h \
+	vfl.h \
 	libvcc.h \
 	vcli_common.h \
 	vcli_priv.h \

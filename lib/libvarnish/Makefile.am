@@ -17,7 +17,7 @@ libvarnish_la_SOURCES = \
 	cli_auth.c \
 	cli_common.c \
 	cli_serve.c \
-	flopen.c \
+	vfl.c \
 	vnum.c \
 	vtim.c \
 	vtcp.c \

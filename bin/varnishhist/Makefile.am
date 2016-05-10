@@ -13,7 +13,7 @@ varnishhist_SOURCES = varnishhist.c \
 	$(top_srcdir)/lib/libvarnish/version.c \
 	$(top_srcdir)/lib/libvarnish/vpf.c \
 	$(top_srcdir)/lib/libvarnish/vtim.c \
-	$(top_srcdir)/lib/libvarnish/flopen.c \
+	$(top_srcdir)/lib/libvarnish/vfl.c \
 	$(top_srcdir)/lib/libvarnishtools/vut.c
 
 varnishhist_CFLAGS = \

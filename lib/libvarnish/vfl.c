@@ -37,10 +37,10 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "flopen.h"
+#include "vfl.h"
 
 int
-flopen(const char *path, int flags, ...)
+VFL_Open(const char *path, int flags, ...)
 {
 	int fd, operation, serrno, trunc;
 	struct flock lock;
@@ -115,7 +115,7 @@ flopen(const char *path, int flags, ...)
  * Returns -1 on error (and errno)
  */
 int
-fltest(int fd, pid_t *pid)
+VFL_Test(int fd, pid_t *pid)
 {
 	struct flock lock;
 

@@ -40,7 +40,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "flopen.h"
+#include "vfl.h"
 #include "vas.h"
 #include "vpf.h"
 
@@ -128,7 +128,7 @@ VPF_Open(const char *path, mode_t mode, pid_t *pidptr)
 	 * PID file will be truncated again in VPF_Write(), so
 	 * VPF_Write() can be called multiple times.
 	 */
-	fd = flopen(pfh->pf_path,
+	fd = VFL_Open(pfh->pf_path,
 	    O_WRONLY | O_CREAT | O_TRUNC | O_NONBLOCK, mode);
 	if (fd == -1) {
 		if (errno == EWOULDBLOCK && pidptr != NULL) {
