@@ -132,31 +132,31 @@ BUILT_SOURCES += include/counters.rst
 
 # XXX add varnishstat here when it's been _opt2rst'ed
 
-include/varnishncsa_options.rst: $(top_builddir)/bin/varnishncsa/varnishncsa_opt2rst
-	$(top_builddir)/bin/varnishncsa/varnishncsa_opt2rst options > $@
-include/varnishncsa_synopsis.rst: $(top_builddir)/bin/varnishncsa/varnishncsa_opt2rst
-	$(top_builddir)/bin/varnishncsa/varnishncsa_opt2rst synopsis > $@
+include/varnishncsa_options.rst: $(top_builddir)/bin/varnishncsa/varnishncsa
+	$(top_builddir)/bin/varnishncsa/varnishncsa --options > $@
+include/varnishncsa_synopsis.rst: $(top_builddir)/bin/varnishncsa/varnishncsa
+	$(top_builddir)/bin/varnishncsa/varnishncsa --synopsis > $@
 BUILT_SOURCES += include/varnishncsa_options.rst \
 	include/varnishncsa_synopsis.rst
 
-include/varnishlog_options.rst: $(top_builddir)/bin/varnishlog/varnishlog_opt2rst
-	$(top_builddir)/bin/varnishlog/varnishlog_opt2rst options > $@
-include/varnishlog_synopsis.rst: $(top_builddir)/bin/varnishlog/varnishlog_opt2rst
-	$(top_builddir)/bin/varnishlog/varnishlog_opt2rst synopsis > $@
+include/varnishlog_options.rst: $(top_builddir)/bin/varnishlog/varnishlog
+	$(top_builddir)/bin/varnishlog/varnishlog --options > $@
+include/varnishlog_synopsis.rst: $(top_builddir)/bin/varnishlog/varnishlog
+	$(top_builddir)/bin/varnishlog/varnishlog --synopsis > $@
 BUILT_SOURCES += include/varnishlog_options.rst \
 	include/varnishlog_synopsis.rst
 
-include/varnishtop_options.rst: $(top_builddir)/bin/varnishtop/varnishtop_opt2rst
-	$(top_builddir)/bin/varnishtop/varnishtop_opt2rst options > $@
-include/varnishtop_synopsis.rst: $(top_builddir)/bin/varnishtop/varnishtop_opt2rst
-	$(top_builddir)/bin/varnishtop/varnishtop_opt2rst synopsis > $@
+include/varnishtop_options.rst: $(top_builddir)/bin/varnishtop/varnishtop
+	$(top_builddir)/bin/varnishtop/varnishtop --options > $@
+include/varnishtop_synopsis.rst: $(top_builddir)/bin/varnishtop/varnishtop
+	$(top_builddir)/bin/varnishtop/varnishtop --synopsis > $@
 BUILT_SOURCES += include/varnishtop_options.rst \
 	 include/varnishtop_synopsis.rst
 
-include/varnishhist_options.rst: $(top_builddir)/bin/varnishhist/varnishhist_opt2rst
-	$(top_builddir)/bin/varnishhist/varnishhist_opt2rst options > $@
-include/varnishhist_synopsis.rst: $(top_builddir)/bin/varnishhist/varnishhist_opt2rst
-	$(top_builddir)/bin/varnishhist/varnishhist_opt2rst synopsis > $@
+include/varnishhist_options.rst: $(top_builddir)/bin/varnishhist/varnishhist
+	$(top_builddir)/bin/varnishhist/varnishhist --options > $@
+include/varnishhist_synopsis.rst: $(top_builddir)/bin/varnishhist/varnishhist
+	$(top_builddir)/bin/varnishhist/varnishhist --synopsis > $@
 BUILT_SOURCES += include/varnishhist_options.rst \
 	 include/varnishhist_synopsis.rst
 

@@ -207,29 +207,29 @@ include/params.rst: ../../bin/varnishd/varnishd
 # only sphinx needs the opt2rst stuff anyway
 %_opt2rst: ../../bin/%/%_options.h %_options.c
 
-include/varnishncsa_options.rst: varnishncsa_opt2rst
-	../../bin/varnishncsa/varnishncsa_opt2rst options > $@
+include/varnishncsa_options.rst: varnishncsa
+	../../bin/varnishncsa/varnishncsa --options > $@
 
-include/varnishncsa_synopsis.rst: varnishncsa_opt2rst
-	../../bin/varnishncsa/varnishncsa_opt2rst synopsis > $@
+include/varnishncsa_synopsis.rst: varnishncsa
+	../../bin/varnishncsa/varnishncsa --synopsis > $@
 
-include/varnishlog_options.rst: varnishlog_opt2rst
-	../../bin/varnishlog/varnishlog_opt2rst options > $@
+include/varnishlog_options.rst: varnishlog
+	../../bin/varnishlog/varnishlog --options > $@
 
-include/varnishlog_synopsis.rst: varnishlog_opt2rst
-	../../bin/varnishlog/varnishlog_opt2rst synopsis > $@
+include/varnishlog_synopsis.rst: varnishlog
+	../../bin/varnishlog/varnishlog --synopsis > $@
 
-include/varnishtop_options.rst: varnishtop_opt2rst
-	../../bin/varnishtop/varnishtop_opt2rst options > $@
+include/varnishtop_options.rst: varnishtop
+	../../bin/varnishtop/varnishtop --options > $@
 
-include/varnishtop_synopsis.rst: varnishtop_opt2rst
-	../../bin/varnishtop/varnishtop_opt2rst synopsis > $@
+include/varnishtop_synopsis.rst: varnishtop
+	../../bin/varnishtop/varnishtop --synopsis > $@
 
-include/varnishhist_options.rst: varnishhist_opt2rst
-	./varnishhist_opt2rst options > $@
+include/varnishhist_options.rst: varnishhist
+	./varnishhist --options > $@
 
-include/varnishhist_synopsis.rst: varnishhist_opt2rst
-	./varnishhist_opt2rst synopsis > $@
+include/varnishhist_synopsis.rst: varnishhist
+	./varnishhist --synopsis > $@
 
 reference/vmod_std.generated.rst: reference ../../lib/libvmod_std/vmod_std.rst
 	cp ../../lib/libvmod_std/vmod_std.rst $@
