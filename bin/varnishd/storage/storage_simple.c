@@ -43,14 +43,24 @@
 
 #include "vtim.h"
 
+/* Flags for allocating memory in sml_stv_alloc */
+#define LESS_MEM_ALLOCED_IS_OK	1
+
 /*-------------------------------------------------------------------*/
 
 static struct storage *
-sml_stv_alloc(const struct stevedore *stv, size_t size)
+sml_stv_alloc(const struct stevedore *stv, size_t size, int flags)
 {
 	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+
+	if (!(flags & LESS_MEM_ALLOCED_IS_OK)) {
+		if (size > cache_param->fetch_maxchunksize)
+			return (NULL);
+		else
+			return (stv->sml_alloc(stv, size));
+	}
 
 	if (size > cache_param->fetch_maxchunksize)
 		size = cache_param->fetch_maxchunksize;
@@ -334,7 +344,8 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
  */
 
 static struct storage *
-objallocwithnuke(struct worker *wrk, const struct stevedore *stv, size_t size)
+objallocwithnuke(struct worker *wrk, const struct stevedore *stv, size_t size,
+    int flags)
 {
 	struct storage *st = NULL;
 	unsigned fail;
@@ -342,14 +353,17 @@ objallocwithnuke(struct worker *wrk, const struct stevedore *stv, size_t size)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
-	if (size > cache_param->fetch_maxchunksize)
+	if (size > cache_param->fetch_maxchunksize) {
+		if (!(flags & LESS_MEM_ALLOCED_IS_OK))
+			return (NULL);
 		size = cache_param->fetch_maxchunksize;
+	}
 
 	assert(size <= UINT_MAX);	/* field limit in struct storage */
 
 	for (fail = 0; fail <= cache_param->nuke_limit; fail++) {
 		/* try to allocate from it */
-		st = sml_stv_alloc(stv, size);
+		st = sml_stv_alloc(stv, size, flags);
 		if (st != NULL)
 			break;
 
@@ -388,7 +402,8 @@ sml_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
 		return (1);
 	}
 
-	st = objallocwithnuke(wrk, oc->stobj->stevedore, *sz);
+	st = objallocwithnuke(wrk, oc->stobj->stevedore, *sz,
+	    LESS_MEM_ALLOCED_IS_OK);
 	if (st == NULL)
 		return (0);
 
@@ -455,14 +470,10 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 	if (st->space - st->len < 512)
 		return;
 
-	st1 = sml_stv_alloc(stv, st->len);
+	st1 = sml_stv_alloc(stv, st->len, 0);
 	if (st1 == NULL)
 		return;
-
-	if (st1->space < st->len) {
-		sml_stv_free(stv, st1);
-		return;
-	}
+	assert(st1->space >= st->len);
 
 	memcpy(st1->ptr, st->ptr, st->len);
 	st1->len = st->len;
@@ -605,7 +616,8 @@ sml_setattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 		}							\
 		if (len == 0)						\
 			break;						\
-		o->aa_##l = objallocwithnuke(wrk, oc->stobj->stevedore,	len); \
+		o->aa_##l = objallocwithnuke(wrk, oc->stobj->stevedore,	\
+		    len, 0);						\
 		if (o->aa_##l == NULL)					\
 			break;						\
 		CHECK_OBJ_NOTNULL(o->aa_##l, STORAGE_MAGIC);		\
