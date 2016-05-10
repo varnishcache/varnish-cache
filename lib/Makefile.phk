@@ -1,4 +1,4 @@
-SUBDIRS = libvcc libvarnish libvarnishapi libvarnishtools libvcc
+SUBDIRS = libvcc libvarnish libvarnishapi libvcc
 SUBDIRS += libvgz
 SUBDIRS += libvmod_debug libvmod_directors libvmod_std
 

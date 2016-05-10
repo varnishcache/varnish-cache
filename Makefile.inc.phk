@@ -28,7 +28,6 @@ INSTALL_BASE ?=       $(TOPDIR)/_install
 
 LIB_VARNISH = -L $(TOPDIR)/lib/libvarnish -lvarnish
 LIB_VARNISHAPI = $(TOPDIR)/lib/libvarnishapi/libvarnishapi.a
-LIB_VARNISHTOOLS = -L $(TOPDIR)/lib/libvarnishtools -lvarnishtools
 LIB_VCC = -L $(TOPDIR)/lib/libvcc -lvcc
 LIB_VGZ = -L $(TOPDIR)/lib/libvgz -lvgz
 LIB_PCRE = -L /usr/local/lib -lpcre

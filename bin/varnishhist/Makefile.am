@@ -11,10 +11,7 @@ varnishhist_SOURCES = varnishhist.c \
 	varnishhist_options.c \
 	$(top_srcdir)/lib/libvarnish/vas.c \
 	$(top_srcdir)/lib/libvarnish/version.c \
-	$(top_srcdir)/lib/libvarnish/vpf.c \
-	$(top_srcdir)/lib/libvarnish/vtim.c \
-	$(top_srcdir)/lib/libvarnish/vfl.c \
-	$(top_srcdir)/lib/libvarnishtools/vut.c
+	$(top_srcdir)/lib/libvarnish/vtim.c
 
 varnishhist_CFLAGS = \
 	@SAN_CFLAGS@

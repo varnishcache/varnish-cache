@@ -1,7 +1,6 @@
 PROG_SRC = varnishhist.c
 PROG_SRC += varnishhist_options.c
 
-LD_ADD	+= ${LIB_VARNISHTOOLS}
 LD_ADD	+= ${LIB_VARNISHAPI}
 LD_ADD	+= ${LIB_VARNISH}
 LD_ADD += -lpthread -lncurses -lm ${LIB_PCRE}

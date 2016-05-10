@@ -10,12 +10,9 @@ varnishlog_SOURCES = \
 	varnishlog.c \
 	varnishlog_options.h \
 	varnishlog_options.c \
-	$(top_srcdir)/lib/libvarnishtools/vut.c \
 	$(top_srcdir)/lib/libvarnish/vas.c \
 	$(top_srcdir)/lib/libvarnish/version.c \
-	$(top_srcdir)/lib/libvarnish/vfl.c \
 	$(top_srcdir)/lib/libvarnish/vsb.c \
-	$(top_srcdir)/lib/libvarnish/vpf.c \
 	$(top_srcdir)/lib/libvarnish/vtim.c
 
 varnishlog_CFLAGS = \

@@ -1,7 +1,6 @@
 PROG_SRC = varnishlog.c
 PROG_SRC = varnishlog_options.c
 
-LD_ADD	+= ${LIB_VARNISHTOOLS}
 LD_ADD	+= ${LIB_VARNISHAPI}
 LD_ADD	+= ${LIB_VARNISH}
 LD_ADD	+= ${LIB_PCRE}

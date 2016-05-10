@@ -78,15 +78,17 @@ PROG_SRC += mgt/mgt_vcc.c
 PROG_SRC += mgt/mgt_vcl.c
 PROG_SRC += mgt/mgt_acceptor.c
 
-PROG_SRC += storage/stevedore.c
 PROG_SRC += storage/mgt_stevedore.c
+PROG_SRC += storage/mgt_storage_persistent.c
+PROG_SRC += storage/stevedore.c
 PROG_SRC += storage/stevedore_utils.c
 PROG_SRC += storage/storage_file.c
+PROG_SRC += storage/storage_lru.c
 PROG_SRC += storage/storage_malloc.c
 PROG_SRC += storage/storage_persistent.c
-PROG_SRC += storage/mgt_storage_persistent.c
 PROG_SRC += storage/storage_persistent_silo.c
 PROG_SRC += storage/storage_persistent_subr.c
+PROG_SRC += storage/storage_simple.c
 PROG_SRC += storage/storage_umem.c
 
 PROG_SRC += waiter/cache_waiter.c

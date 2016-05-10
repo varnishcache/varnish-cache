@@ -131,3 +131,15 @@ LIBVARNISHAPI_1.4 {
 	VSLQ_SetCursor;
 	VSM_IsOpen;
 } LIBVARNISHAPI_1.0;
+
+LIBVARNISHAPI_1.5 {
+  global:
+	VUT_Error;
+	VUT_g_Arg;
+	VUT_Arg;
+	VUT_Setup;
+	VUT_Init;
+	VUT_Fini;
+	VUT_Main;
+	VUT;
+} LIBVARNISHAPI_1.0;

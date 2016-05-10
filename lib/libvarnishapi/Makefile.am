@@ -22,8 +22,10 @@ libvarnishapi_la_SOURCES = \
 	../libvarnish/version.c \
 	../libvarnish/cli_common.c \
 	../libvarnish/cli_auth.c \
+	../libvarnish/vfl.c \
 	../libvarnish/vin.c \
 	../libvarnish/vmb.c \
+	../libvarnish/vpf.c \
 	../libvarnish/vre.c \
 	../libvarnish/vsb.c \
 	../libvarnish/vtim.c \
@@ -36,6 +38,7 @@ libvarnishapi_la_SOURCES = \
 	vsl_query.c \
 	vsl.c \
 	vsc.c \
+	vut.c \
 	vxp.c \
 	vxp_parse.c \
 	vxp_lexer.c \
