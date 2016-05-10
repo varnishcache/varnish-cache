@@ -25,9 +25,3 @@ varnishhist_LDADD = \
 	-lm \
 	@SAN_LDFLAGS@ \
 	@CURSES_LIB@ ${RT_LIBS} ${PTHREAD_LIBS}
-
-noinst_PROGRAMS = varnishhist_opt2rst
-varnishhist_opt2rst_SOURCES = \
-	varnishhist_options.h \
-	varnishhist_options.c \
-	$(top_srcdir)/lib/libvarnishtools/opt2rst.c

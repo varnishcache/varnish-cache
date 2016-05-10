@@ -385,9 +385,7 @@ main(int argc, char **argv)
 	struct profile cli_p = {0};
 	cli_p.name = 0;
 
-	VUT_Init(progname);
-	if (0)
-		(void)usage;
+	VUT_Init(progname, argc, argv);
 
 	/* only client requests */
 	assert(VUT_Arg('c', NULL));

@@ -74,7 +74,7 @@ int VUT_Arg(int opt, const char *arg);
 
 void VUT_Setup(void);
 
-void VUT_Init(const char *progname);
+void VUT_Init(const char *progname, int argc, char * const *argv);
 
 void VUT_Fini(void);
 

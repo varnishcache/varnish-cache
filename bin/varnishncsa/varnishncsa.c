@@ -1126,6 +1126,7 @@ main(int argc, char * const *argv)
 	signed char opt;
 	char *format = NULL;
 
+	VUT_Init(progname, argc, argv);
 	memset(&CTX, 0, sizeof CTX);
 	VTAILQ_INIT(&CTX.format);
 	VTAILQ_INIT(&CTX.watch_vcl_log);
@@ -1135,7 +1136,6 @@ main(int argc, char * const *argv)
 	CTX.vsb = VSB_new_auto();
 	AN(CTX.vsb);
 	VB64_init();
-	VUT_Init(progname);
 
 	while ((opt = getopt(argc, argv, vopt_optstring)) != -1) {
 		switch (opt) {

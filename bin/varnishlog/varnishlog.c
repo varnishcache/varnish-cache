@@ -121,8 +121,8 @@ main(int argc, char * const *argv)
 {
 	int opt;
 
+	VUT_Init(progname, argc, argv);
 	memset(&LOG, 0, sizeof LOG);
-	VUT_Init(progname);
 
 	while ((opt = getopt(argc, argv, vopt_optstring)) != -1) {
 		switch (opt) {

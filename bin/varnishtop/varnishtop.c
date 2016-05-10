@@ -329,7 +329,7 @@ main(int argc, char **argv)
 	int o, once = 0;
 	pthread_t thr;
 
-	VUT_Init(progname);
+	VUT_Init(progname, argc, argv);
 
 	while ((o = getopt(argc, argv, vopt_optstring)) != -1) {
 		switch (o) {

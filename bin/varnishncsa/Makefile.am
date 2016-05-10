@@ -28,9 +28,3 @@ varnishncsa_LDADD = \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
 	@SAN_LDFLAGS@ \
 	${RT_LIBS} ${LIBM}
-
-noinst_PROGRAMS = varnishncsa_opt2rst
-varnishncsa_opt2rst_SOURCES = \
-	varnishncsa_options.h \
-	varnishncsa_options.c \
-	$(top_srcdir)/lib/libvarnishtools/opt2rst.c

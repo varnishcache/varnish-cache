@@ -31,6 +31,7 @@
 
 #include "config.h"
 
+#include <ctype.h>
 #include <stdint.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -55,6 +56,9 @@
 #include "vut.h"
 
 struct VUT VUT;
+
+static int vut_synopsis(void);
+static int vut_options(void);
 
 static void
 vut_vpf_remove(void)
@@ -201,8 +205,14 @@ VUT_Arg(int opt, const char *arg)
 }
 
 void
-VUT_Init(const char *progname)
+VUT_Init(const char *progname, int argc, char * const *argv)
 {
+
+	if (argc == 2 && !strcmp(argv[1], "--synopsis"))
+		exit(vut_synopsis());
+	if (argc == 2 && !strcmp(argv[1], "--options"))
+		exit(vut_options());
+
 	VUT.progname = progname;
 	REPLACE(VUT.name, "");
 	VUT.g_arg = VSL_g_vxid;
@@ -420,4 +430,70 @@ VUT_Main(void)
 	}
 
 	return (i);
+}
+
+/**********************************************************************/
+
+
+#include "vapi/voptget.h"
+
+static void
+print_nobrackets(const char *s)
+{
+	const char *e;
+
+	/* Remove whitespace */
+	while (isspace(*s))
+		s++;
+	e = s + strlen(s);
+	while (e > s && isspace(e[-1]))
+		e--;
+
+	/* Remove outer layer brackets if present */
+	if (e > s && *s == '[' && e[-1] == ']') {
+		s++;
+		e--;
+	}
+
+	printf("%.*s", (int)(e - s), s);
+}
+
+static void
+print_tabbed(const char *string, int tabs)
+{
+	int i;
+	const char *c;
+
+	for (c = string; *c; c++) {
+		if (c == string || *(c - 1) == '\n')
+			for (i = 0; i < tabs; i++)
+				printf("\t");
+		printf("%c", *c);
+	}
+}
+
+static void
+print_opt(const struct vopt_list *opt)
+{
+	print_nobrackets(opt->synopsis);
+	printf("\n\n");
+	print_tabbed(opt->ldesc, 1);
+	printf("\n\n");
+}
+
+static int
+vut_synopsis(void)
+{
+	printf(".. |synopsis| replace:: %s\n", vopt_synopsis);
+	return (0);
+}
+
+static int
+vut_options(void)
+{
+	int i;
+
+	for (i = 0; i < vopt_list_n; i++)
+		print_opt(&vopt_list[i]);
+	return (0);
 }
