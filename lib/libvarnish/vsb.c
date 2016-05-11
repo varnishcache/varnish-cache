@@ -517,7 +517,7 @@ VSB_quote(struct vsb *s, const void *v, int len, int how)
 			if (*w != 0x00)
 				break;
 		VSB_printf(s, "0x");
-		if (w == u + len) {
+		if (w == u + len && len > 4) {
 			VSB_printf(s, "0...0");
 		} else {
 			for (w = u; w < u + len; w++)
