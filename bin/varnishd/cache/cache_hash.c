@@ -302,7 +302,7 @@ HSH_Insert(struct worker *wrk, const void *digest, struct objcore *oc,
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
 	oc->flags &= ~OC_F_BUSY;
 	if (!VTAILQ_EMPTY(&oh->waitinglist))
-		hsh_rush1(wrk, oh, &rush, 0);
+		hsh_rush1(wrk, oh, &rush, HSH_RUSH_POLICY);
 	Lck_Unlock(&oh->mtx);
 	hsh_rush2(wrk, &rush);
 }
@@ -519,17 +519,23 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
  */
 
 static void
-hsh_rush1(struct worker *wrk, struct objhead *oh, struct rush *r, int all)
+hsh_rush1(struct worker *wrk, struct objhead *oh, struct rush *r, int max)
 {
 	unsigned u;
 	struct req *req;
+
+	if (max == 0)
+		return;
+	if (max == HSH_RUSH_POLICY)
+		max = cache_param->rush_exponent;
+	assert(max > 0);
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	CHECK_OBJ_NOTNULL(r, RUSH_MAGIC);
 	VTAILQ_INIT(&r->reqs);
 	Lck_AssertHeld(&oh->mtx);
-	for (u = 0; u < cache_param->rush_exponent || all; u++) {
+	for (u = 0; u < max; u++) {
 		req = VTAILQ_FIRST(&oh->waitinglist);
 		if (req == NULL)
 			break;
@@ -706,7 +712,7 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, hsh_list);
 	oc->flags &= ~OC_F_BUSY;
 	if (!VTAILQ_EMPTY(&oh->waitinglist))
-		hsh_rush1(wrk, oh, &rush, 0);
+		hsh_rush1(wrk, oh, &rush, HSH_RUSH_POLICY);
 	Lck_Unlock(&oh->mtx);
 	if (!(oc->flags & OC_F_PRIVATE))
 		EXP_Insert(wrk, oc);
@@ -862,7 +868,7 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
 	if (!r)
 		VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
 	if (!VTAILQ_EMPTY(&oh->waitinglist))
-		hsh_rush1(wrk, oh, &rush, 0);
+		hsh_rush1(wrk, oh, &rush, HSH_RUSH_POLICY);
 	Lck_Unlock(&oh->mtx);
 	hsh_rush2(wrk, &rush);
 	if (r != 0)
@@ -913,7 +919,7 @@ HSH_DerefObjHead(struct worker *wrk, struct objhead **poh)
 	 */
 	Lck_Lock(&oh->mtx);
 	while (oh->refcnt == 1 && !VTAILQ_EMPTY(&oh->waitinglist)) {
-		hsh_rush1(wrk, oh, &rush, 1);
+		hsh_rush1(wrk, oh, &rush, HSH_RUSH_ALL);
 		Lck_Unlock(&oh->mtx);
 		hsh_rush2(wrk, &rush);
 		Lck_Lock(&oh->mtx);
