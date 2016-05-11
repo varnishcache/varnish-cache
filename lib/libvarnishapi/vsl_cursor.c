@@ -126,6 +126,10 @@ vslc_vsm_next(const struct VSL_cursor *cursor)
 	CHECK_OBJ_NOTNULL(c->vsm, VSM_MAGIC);
 
 	while (1) {
+		i = vslc_vsm_check(&c->cursor, &c->next);
+		if (i <= 0)
+			return (-3); /* Overrun */
+
 		t = *(volatile const uint32_t *)c->next.ptr;
 		AN(t);
 
@@ -146,10 +150,6 @@ vslc_vsm_next(const struct VSL_cursor *cursor)
 				return (-1); /* EOF */
 			return (0);	/* No new records available */
 		}
-
-		i = vslc_vsm_check(&c->cursor, &c->next);
-		if (i <= 0)
-			return (-3); /* Overrun */
 
 		c->cursor.rec = c->next;
 		c->next.ptr = VSL_NEXT(c->next.ptr);
