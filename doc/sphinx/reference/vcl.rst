@@ -244,6 +244,9 @@ the backend as down it they fail. A probe is defined as this::
         .attribute = "value";
     }
 
+The probe named `default` is special and will be used for all backends
+which do not explicitly reference a probe.
+
 There are no mandatory options. These are the options you can set:
 
   url
