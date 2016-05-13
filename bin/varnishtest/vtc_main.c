@@ -55,6 +55,7 @@
 #include "vsub.h"
 #include "vtcp.h"
 #include "vtim.h"
+#include "vct.h"
 
 #define		MAX_FILESIZE		(1024 * 1024)
 
@@ -530,6 +531,19 @@ main(int argc, char * const *argv)
 				continue;
 			exit(2);
 		}
+		while (1) {
+			if (vct_islws(*p)) {
+				p++;
+				continue;
+			}
+			if (*p == '#') {
+				if ((p = strchr(p, '\n')))
+					p++;
+				continue;
+			}
+			break;
+		}
+
 		if (strncmp(p, "varnishtest", 11) || !isspace(p[11])) {
 			fprintf(stderr, "File \"%s\" doesn't start with 'varnishtest'\n",
 			    *argv);

@@ -1,3 +1,6 @@
+# the first token in a varnishtest file must be "varnishtest",
+ 	# but whitespace and comments are fine
+
 varnishtest "basic default HTTP transactions"
 
 server s1 {
