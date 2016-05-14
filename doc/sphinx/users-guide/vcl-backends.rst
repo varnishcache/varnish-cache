@@ -74,6 +74,10 @@ really arbitrary data. You want to send mobile devices to a different
 backend? No problem. ``if (req.http.User-agent ~ /mobile/) ..`` should do the
 trick.
 
+Without an explicit backend selection, varnish will continue using
+the `default` backend. If there is no backend named `default`, the
+first backend found in the vcl will be used as the default backend.
+
 
 Backends and virtual hosts in Varnish
 -------------------------------------
