@@ -207,9 +207,8 @@ vslr(enum VSL_tag_e tag, uint32_t vxid, const char *b, unsigned len)
  */
 
 void
-VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
+VSLv(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, va_list ap)
 {
-	va_list ap;
 	unsigned n, mlen = cache_param->vsl_reclen;
 	char buf[mlen];
 
@@ -217,18 +216,26 @@ VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
 	if (vsl_tag_is_masked(tag))
 		return;
 
-
 	if (strchr(fmt, '%') == NULL) {
 		vslr(tag, vxid, fmt, strlen(fmt) + 1);
 	} else {
-		va_start(ap, fmt);
 		n = vsnprintf(buf, mlen, fmt, ap);
-		va_end(ap);
 		if (n > mlen - 1)
 			n = mlen - 1;
 		buf[n++] = '\0'; /* NUL-terminated */
 		vslr(tag, vxid, buf, n);
 	}
+
+}
+
+void
+VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	VSLv(tag, vxid, fmt, ap);
+	va_end(ap);
 }
 
 /*--------------------------------------------------------------------*/
