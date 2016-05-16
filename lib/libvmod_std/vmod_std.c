@@ -139,17 +139,20 @@ vmod_log(VRT_CTX, const char *fmt, ...)
 	txt t;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	u = WS_Reserve(ctx->ws, 0);
-	t.b = ctx->ws->f;
 	va_start(ap, fmt);
-	t.e = VRT_StringList(ctx->ws->f, u, fmt, ap);
+	if (ctx->vsl != NULL) {
+		u = WS_Reserve(ctx->ws, 0);
+		t.b = ctx->ws->f;
+		t.e = VRT_StringList(ctx->ws->f, u, fmt, ap);
+		if (t.e != NULL) {
+			assert(t.e > t.b);
+			t.e--;
+			VSLbt(ctx->vsl, SLT_VCL_Log, t);
+		}
+		WS_Release(ctx->ws, 0);
+	} else
+		VSLv(SLT_VCL_Log, 0, fmt, ap);
 	va_end(ap);
-	if (t.e != NULL) {
-		assert(t.e > t.b);
-		t.e--;
-		VSLbt(ctx->vsl, SLT_VCL_Log, t);
-	}
-	WS_Release(ctx->ws, 0);
 }
 
 VCL_VOID __match_proto__(td_std_syslog)
