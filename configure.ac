@@ -243,6 +243,7 @@ AC_CHECK_FUNCS([nanosleep])
 AC_CHECK_FUNCS([setppriv])
 AC_CHECK_FUNCS([fallocate])
 AC_CHECK_FUNCS([closefrom])
+AC_CHECK_FUNCS([vsyslog])
 
 save_LIBS="${LIBS}"
 LIBS="${PTHREAD_LIBS}"

@@ -1,4 +1,4 @@
-varnishtest "Test std.log from vcl_{init,fini}"
+varnishtest "Test std.{log,syslog} from vcl_{init,fini}"
 
 server s1 {
 	rxreq
@@ -10,10 +10,12 @@ varnish v1 -vcl+backend {
 
 	sub vcl_init {
 		std.log("init");
+		std.syslog(8 + 7, "init");
 	}
 
 	sub vcl_fini {
 		std.log("fini");
+		std.syslog(8 + 7, "fini");
 	}
 } -start
 
