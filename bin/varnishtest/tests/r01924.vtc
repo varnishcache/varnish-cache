@@ -1,0 +1,22 @@
+varnishtest "Test std.log from vcl_{init,fini}"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_init {
+		std.log("init");
+	}
+
+	sub vcl_fini {
+		std.log("fini");
+	}
+} -start
+
+varnish v1 -vcl+backend { }
+
+varnish v1 -cliok "vcl.discard vcl1"
