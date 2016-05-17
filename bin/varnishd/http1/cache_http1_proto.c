@@ -307,7 +307,7 @@ http1_body_status(const struct http *hp, struct http_conn *htc, int request)
 		return (cl == 0 ? BS_NONE : BS_LENGTH);
 	}
 
-	if (hp->protover == 11 && (request || !http_HdrIs(hp, H_Connection, "close")))
+	if (hp->protover == 11 && request)
 		return (BS_NONE);
 
 	if (http_HdrIs(hp, H_Connection, "keep-alive")) {

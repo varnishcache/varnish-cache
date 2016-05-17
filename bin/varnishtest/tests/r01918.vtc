@@ -3,19 +3,15 @@ varnishtest "Check EOF responses work with HTTP/1.1"
 server s1 {
 	rxreq
 	txresp -nolen -bodylen 10
-	rxreq
-	txresp -hdr "Connection: close" -nolen -bodylen 10
+	close
+	accept
 } -start
 
 varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq -url /1
-	rxresp
-	expect resp.status == 200
-	expect resp.bodylen == 0
-	txreq -url /2
+	txreq
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 10
