@@ -240,10 +240,6 @@ parse_new(struct vcc *tl)
 		sy3->cfunc = p;
 		p += strlen(p) + 1;
 
-		/* Functions which return VOID are procedures */
-		if (!memcmp(p, "VOID\0", 5))
-			sy3->kind = SYM_PROC;
-
 		sy3->args = p;
 		sy3->extra = TlDup(tl, buf1);
 		while (p[0] != '\0' || p[1] != '\0') {
@@ -435,7 +431,7 @@ vcc_ParseAction(struct vcc *tl)
 		}
 	}
 	sym = VCC_FindSymbol(tl, tl->t, SYM_NONE);
-	if (sym != NULL && sym->kind == SYM_PROC) {
+	if (sym != NULL && sym->kind == SYM_FUNC) {
 		vcc_Expr_Call(tl, sym);
 		return (1);
 	}

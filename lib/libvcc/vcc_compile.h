@@ -131,7 +131,7 @@ struct symbol {
 	struct proc			*proc;
 	unsigned			nref, ndef;
 
-	/* SYM_PROC, SYM_FUNC */
+	/* SYM_FUNC */
 	const char			*cfunc;
 	const char			*extra;
 	const char			*args;
@@ -289,6 +289,7 @@ void vcc_Eval_Func(struct vcc *tl, const char *cfunc, const char *extra,
 sym_expr_t vcc_Eval_Acl;
 sym_expr_t vcc_Eval_Backend;
 sym_expr_t vcc_Eval_Probe;
+enum var_type VCC_arg_type(const char **p);
 
 /* vcc_obj.c */
 extern const struct var vcc_vars[];

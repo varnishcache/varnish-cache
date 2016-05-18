@@ -30,8 +30,7 @@
 /*lint -save -e525 -e539 */
 VCC_SYMB(NONE,		none)
 VCC_SYMB(VAR,		var)
-VCC_SYMB(FUNC,		func)		/* VMOD function */
-VCC_SYMB(PROC,		proc)		/* VMOD procedure */
+VCC_SYMB(FUNC,		func)		/* VMOD function/procedure */
 VCC_SYMB(VMOD,		vmod)
 VCC_SYMB(ACL,		acl)
 VCC_SYMB(SUB,		sub)		/* VCL subroutine */

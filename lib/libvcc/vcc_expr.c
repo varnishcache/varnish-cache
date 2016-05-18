@@ -381,8 +381,8 @@ vcc_expr_fmt(struct vsb *d, int ind, const struct expr *e1)
 /*--------------------------------------------------------------------
  */
 
-static enum var_type
-vcc_arg_type(const char **p)
+enum var_type
+VCC_arg_type(const char **p)
 {
 
 #define VCC_TYPE(a) if (!strcmp(#a, *p)) { *p += strlen(#a) + 1; return (a);}
@@ -674,13 +674,13 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 	p = args;
 	if (extra == NULL)
 		extra = "";
-	rfmt = vcc_arg_type(&p);
+	rfmt = VCC_arg_type(&p);
 	VTAILQ_INIT(&head);
 	while (*p != '\0') {
 		fa = calloc(sizeof *fa, 1);
 		AN(fa);
 		VTAILQ_INSERT_TAIL(&head, fa, list);
-		fa->type = vcc_arg_type(&p);
+		fa->type = VCC_arg_type(&p);
 		if (fa->type == VOID && !memcmp(p, "PRIV_", 5)) {
 			fa->result = vcc_priv_arg(tl, p, name);
 			fa->name = "";
@@ -796,7 +796,8 @@ void
 vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, const struct symbol *sym)
 {
 
-	assert(sym->kind == SYM_FUNC || sym->kind == SYM_PROC);
+	assert(sym->kind == SYM_FUNC);
+	/* XXX */
 	AN(sym->cfunc);
 	AN(sym->name);
 	AN(sym->args);
@@ -862,6 +863,11 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 			return;
 		}
 		AN(sym);
+		if (sym->kind == SYM_FUNC && sym->fmt == VOID) {
+			VSB_printf(tl->sb, "Function returns VOID:\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
 		switch(sym->kind) {
 		case SYM_VAR:
 		case SYM_FUNC:
@@ -871,6 +877,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 			AN(sym->eval);
 			AZ(*e);
 			sym->eval(tl, e, sym);
+			ERRCHK(tl);
 			/* Unless asked for a HEADER, fold to string here */
 			if (*e && fmt != HEADER && (*e)->fmt == HEADER) {
 				vcc_expr_tostring(tl, e, STRING);
@@ -961,6 +968,7 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, enum var_type fmt)
 	*e = NULL;
 	vcc_expr4(tl, e, fmt);
 	ERRCHK(tl);
+	AN(*e);
 	f3 = f2 = (*e)->fmt;
 
 	switch(f2) {

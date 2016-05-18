@@ -275,6 +275,14 @@ varnish v1 -errvcl {VCL sub's named 'vcl*' are reserved names.} {
 	}
 }
 
+varnish v1 -errvcl {Function returns VOID} {
+	import debug;
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv {
+		set req.http.foo = debug.sleep(1m);
+	}
+}
+
 varnish v1 -errvcl {Names of VCL acl's cannot contain '-'} {
 	backend b { .host = "127.0.0.1"; }
 	acl foo-bar {
