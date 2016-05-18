@@ -680,7 +680,7 @@ vcc_CompileSource(const struct vcp * const vcp, struct vsb *sb,
     struct source *sp)
 {
 	struct vcc *tl;
-	struct symbol *sym;
+	struct symbol *sym, *sym2;
 	const struct var *v;
 	struct vsb *vsb;
 
@@ -691,6 +691,16 @@ vcc_CompileSource(const struct vcp * const vcp, struct vsb *sb,
 	tl->sb = sb;
 
 	vcc_Expr_Init(tl);
+
+	VTAILQ_FOREACH(sym, &vcp->symbols, list) {
+		assert(sym->eval == vcc_Eval_Generic);
+		sym2 = VCC_AddSymbolStr(tl, sym->name, sym->kind);
+		sym2->fmt = sym->fmt;
+		sym2->eval = sym->eval;
+		sym2->eval_priv = sym->eval_priv;
+		sym2->ndef = 1;
+		sym2->nref = 1;
+	}
 
 	for (v = tl->vars; v->name != NULL; v++) {
 		if (v->fmt == HEADER) {
@@ -860,6 +870,7 @@ VCP_New(void)
 
 	ALLOC_OBJ(vcp, VCP_MAGIC);
 	AN(vcp);
+	VTAILQ_INIT(&vcp->symbols);
 
 	return (vcp);
 }
@@ -927,3 +938,19 @@ VCP_Unsafe_Path(struct vcp *vcp, unsigned u)
 	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
 	vcp->unsafe_path = u;
 }
+
+void
+VCP_Stevedore(struct vcp *vcp, const char *stv_name)
+{
+	struct symbol *sym;
+
+	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
+	ALLOC_OBJ(sym, SYMBOL_MAGIC);
+	AN(sym);
+	REPLACE(sym->name, stv_name);		/* XXX storage.* ? */
+	sym->kind = SYM_STEVEDORE;
+	VCC_GenericSymbol(NULL, sym, STEVEDORE,
+	    "VRT_stevedore(\"%s\")", stv_name);
+	VTAILQ_INSERT_TAIL(&vcp->symbols, sym, list);
+}
+

@@ -231,6 +231,17 @@ VRT_Stv(const char *nm)
 	return (0);
 }
 
+struct stevedore *
+VRT_stevedore(const char *nm)
+{
+	struct stevedore *stv;
+
+	VTAILQ_FOREACH(stv, &stv_stevedores, list)
+		if (!strcmp(stv->ident, nm))
+			return (stv);
+	WRONG("Unknown stevedore name");
+}
+
 #define VRTSTVVAR(nm, vtype, ctype, dval)	\
 ctype						\
 VRT_Stv_##nm(const char *nm)			\

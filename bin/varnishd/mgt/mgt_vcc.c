@@ -41,6 +41,7 @@
 #include <sys/stat.h>
 
 #include "mgt/mgt.h"
+#include "storage/storage.h"
 
 #include "libvcc.h"
 #include "vcli.h"
@@ -87,6 +88,7 @@ run_vcc(void *priv)
 	struct vcc_priv *vp;
 	int fd, i, l;
 	struct vcp *vcp;
+	struct stevedore *stv;
 
 	VJ_subproc(JAIL_SUBPROC_VCC);
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
@@ -103,6 +105,9 @@ run_vcc(void *priv)
 	VCP_Err_Unref(vcp, mgt_vcc_err_unref);
 	VCP_Allow_InlineC(vcp, mgt_vcc_allow_inline_c);
 	VCP_Unsafe_Path(vcp, mgt_vcc_unsafe_path);
+	VTAILQ_FOREACH(stv, &stv_stevedores, list)
+		VCP_Stevedore(vcp, stv->ident);
+	VCP_Stevedore(vcp, stv_transient->ident);
 	csrc = VCC_Compile(vcp, sb, vp->vclsrc, vp->vclsrcfile);
 	AZ(VSB_finish(sb));
 	if (VSB_len(sb))

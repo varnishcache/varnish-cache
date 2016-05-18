@@ -824,6 +824,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		case ACL:	kind = SYM_ACL; break;
 		case BACKEND:	kind = SYM_BACKEND; break;
 		case PROBE:	kind = SYM_PROBE; break;
+		case STEVEDORE:	kind = SYM_STEVEDORE; break;
 		default:	kind = SYM_NONE; break;
 		}
 		if (kind != SYM_NONE)
@@ -853,6 +854,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		case SYM_FUNC:
 		case SYM_ACL:
 		case SYM_BACKEND:
+		case SYM_STEVEDORE:
 		case SYM_PROBE:
 			AN(sym->eval);
 			AZ(*e);

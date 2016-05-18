@@ -65,6 +65,7 @@ struct busyobj;
 struct director;
 struct http;
 struct req;
+struct stevedore;
 struct suckaddr;
 struct vcl;
 struct vmod;
@@ -91,6 +92,7 @@ typedef long					VCL_INT;
 typedef const struct suckaddr *			VCL_IP;
 typedef const struct vrt_backend_probe *	VCL_PROBE;
 typedef double					VCL_REAL;
+typedef struct stevedore *			VCL_STEVEDORE;
 typedef const char *				VCL_STRING;
 typedef double					VCL_TIME;
 typedef void					VCL_VOID;
@@ -330,6 +332,7 @@ struct vmod_priv *VRT_priv_top(VRT_CTX, void *vmod_id);
 
 /* Stevedore related functions */
 int VRT_Stv(const char *nm);
+struct stevedore *VRT_stevedore(const char *nm);
 
 /* Convert things to string */
 

@@ -165,6 +165,8 @@ struct vcp {
 	unsigned		err_unref;
 	unsigned		allow_inline_c;
 	unsigned		unsafe_path;
+
+	VTAILQ_HEAD(,symbol)	symbols;
 };
 
 struct vcc {

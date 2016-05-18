@@ -154,7 +154,11 @@ VCC_GenericSymbol(struct vcc *tl, struct symbol *sym,
 	VSB_vprintf(vsb, str, ap);
 	va_end(ap);
 	AZ(VSB_finish(vsb));
-	sym->eval_priv = TlDup(tl, VSB_data(vsb));
+	if (tl != NULL)
+		sym->eval_priv = TlDup(tl, VSB_data(vsb));
+	else
+		sym->eval_priv = strdup(VSB_data(vsb));
+	AN(sym->eval_priv);
 	sym->eval = vcc_Eval_Generic;
 	sym->fmt = fmt;
 	VSB_destroy(&vsb);
