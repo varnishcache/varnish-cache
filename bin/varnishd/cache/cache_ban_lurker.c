@@ -36,7 +36,8 @@
 #include "hash/hash_slinger.h"
 #include "vtim.h"
 
-static struct objcore oc_marker = { .magic = OBJCORE_MAGIC, };
+static struct objcore oc_mark_cnt = { .magic = OBJCORE_MAGIC, };
+static struct objcore oc_mark_end = { .magic = OBJCORE_MAGIC, };
 static unsigned ban_batch;
 static unsigned ban_generation;
 
@@ -110,23 +111,56 @@ ban_cleantail(const struct ban *victim)
  * makes most sense in HSH_Lookup(), but we come the other way.
  * We optimistically try to get them the other way, and get out of
  * the way if that fails, and retry again later.
+ *
+ * To avoid hammering on contested ocs, we first move those behind a marker
+ * once. When we only have contested ocs left, we stop moving them around and
+ * re-try them in order.
  */
 
 static struct objcore *
 ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt)
 {
 	struct objhead *oh;
-	struct objcore *oc;
+	struct objcore *oc, *noc;
+	int move_oc = 1;
 
+	Lck_Lock(&ban_mtx);
+
+	oc = VTAILQ_FIRST(&bt->objcore);
 	while (1) {
-		Lck_Lock(&ban_mtx);
-		oc = VTAILQ_FIRST(&bt->objcore);
 		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-		if (oc == &oc_marker) {
-			VTAILQ_REMOVE(&bt->objcore, oc, ban_list);
+
+		if (oc == &oc_mark_cnt) {
+			if (VTAILQ_NEXT(oc, ban_list) == &oc_mark_end) {
+				/* done with this ban's oc list */
+				VTAILQ_REMOVE(&bt->objcore, &oc_mark_cnt,
+				    ban_list);
+				VTAILQ_REMOVE(&bt->objcore, &oc_mark_end,
+				    ban_list);
+				oc = NULL;
+				break;
+			}
+			oc = VTAILQ_NEXT(oc, ban_list);
+			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+			move_oc = 0;
+		} else if (oc == &oc_mark_end) {
+			assert(move_oc == 0);
+
+			/* hold off to give lookup a chance and reiterate */
 			Lck_Unlock(&ban_mtx);
-			return (NULL);
+			VSC_C_main->bans_lurker_contention++;
+			VSL_Flush(vsl, 0);
+			VTIM_sleep(cache_param->ban_lurker_sleep);
+			Lck_Lock(&ban_mtx);
+
+			oc = VTAILQ_FIRST(&bt->objcore);
+			assert(oc == &oc_mark_cnt);
+			continue;
 		}
+
+		assert(oc != &oc_mark_cnt);
+		assert(oc != &oc_mark_end);
+
 		oh = oc->objhead;
 		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 		if (!Lck_Trylock(&oh->mtx)) {
@@ -135,24 +169,28 @@ ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt)
 			} else {
 				/*
 				 * We got the lock, and the oc is not being
-				 * dismantled under our feet.
+				 * dismantled under our feet - grab a ref
 				 */
 				AZ(oc->flags & OC_F_BUSY);
 				oc->refcnt += 1;
 				VTAILQ_REMOVE(&bt->objcore, oc, ban_list);
 				VTAILQ_INSERT_TAIL(&bt->objcore, oc, ban_list);
 				Lck_Unlock(&oh->mtx);
-				Lck_Unlock(&ban_mtx);
 				break;
 			}
 		}
 
-		/* Try again, later */
-		Lck_Unlock(&ban_mtx);
-		VSC_C_main->bans_lurker_contention++;
-		VSL_Flush(vsl, 0);
-		VTIM_sleep(cache_param->ban_lurker_holdoff);
+		noc = VTAILQ_NEXT(oc, ban_list);
+
+		if (move_oc) {
+			/* contested ocs go between the two markers */
+			VTAILQ_REMOVE(&bt->objcore, oc, ban_list);
+			VTAILQ_INSERT_BEFORE(&oc_mark_end, oc, ban_list);
+		}
+
+		oc = noc;
 	}
+	Lck_Unlock(&ban_mtx);
 	return (oc);
 }
 
@@ -166,12 +204,14 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 	int i;
 
 	/*
-	 * First see if there is anything to do, and if so, insert marker
+	 * First see if there is anything to do, and if so, insert markers
 	 */
 	Lck_Lock(&ban_mtx);
 	oc = VTAILQ_FIRST(&bt->objcore);
-	if (oc != NULL)
-		VTAILQ_INSERT_TAIL(&bt->objcore, &oc_marker, ban_list);
+	if (oc != NULL) {
+		VTAILQ_INSERT_TAIL(&bt->objcore, &oc_mark_cnt, ban_list);
+		VTAILQ_INSERT_TAIL(&bt->objcore, &oc_mark_end, ban_list);
+	}
 	Lck_Unlock(&ban_mtx);
 	if (oc == NULL)
 		return;
