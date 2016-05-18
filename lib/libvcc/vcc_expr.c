@@ -446,14 +446,16 @@ vcc_expr_tostring(struct vcc *tl, struct expr **e, enum var_type fmt)
 /*--------------------------------------------------------------------
  */
 
-static void
-vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym)
+static void __match_proto__(sym_expr_t)
+vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym,
+    enum var_type fmt)
 {
 	struct expr *e2;
 	int all = sym->eval_priv == NULL ? 0 : 1;
 	const char *p;
 	char buf[128];
 
+	(void)fmt;
 	vcc_delete_expr(*e);
 	SkipToken(tl, ID);
 	SkipToken(tl, '(');
@@ -481,10 +483,12 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym)
 /*--------------------------------------------------------------------
  */
 
-static void
-vcc_Eval_BoolConst(struct vcc *tl, struct expr **e, const struct symbol *sym)
+static void __match_proto__(sym_expr_t)
+vcc_Eval_BoolConst(struct vcc *tl, struct expr **e, const struct symbol *sym,
+    enum var_type fmt)
 {
 
+	(void)fmt;
 	vcc_NextToken(tl);
 	*e = vcc_mk_expr(BOOL, "(0==%d)", sym->eval_priv == NULL ? 1 : 0);
 	(*e)->constant = EXPR_CONST;
@@ -493,28 +497,36 @@ vcc_Eval_BoolConst(struct vcc *tl, struct expr **e, const struct symbol *sym)
 /*--------------------------------------------------------------------
  */
 
-void
-vcc_Eval_Generic(struct vcc *tl, struct expr **e, const struct symbol *sym)
+void __match_proto__(sym_expr_t)
+vcc_Eval_Generic(struct vcc *tl, struct expr **e, const struct symbol *sym,
+    enum var_type fmt)
 {
 
 	assert(sym->kind == sym->kind);
 	AN(sym->eval_priv);
 
-	vcc_ExpectCid(tl);
-	vcc_AddRef(tl, tl->t, sym->kind);
-	*e = vcc_mk_expr(sym->fmt, "%s", (const char *)sym->eval_priv);
-	(*e)->constant = EXPR_VAR;	/* XXX ? */
+	if (sym->fmt != STRING && (fmt == STRING || fmt == STRING_LIST)) {
+		*e = vcc_mk_expr(STRING, "\"%s\"", sym->name);
+		vcc_AddRef(tl, tl->t, sym->kind);
+	} else {
+		vcc_ExpectCid(tl);
+		vcc_AddRef(tl, tl->t, sym->kind);
+		*e = vcc_mk_expr(sym->fmt, "%s", (const char *)sym->eval_priv);
+		(*e)->constant = EXPR_VAR;	/* XXX ? */
+	}
 	vcc_NextToken(tl);
 }
 
 /*--------------------------------------------------------------------
  */
 
-void
-vcc_Eval_Var(struct vcc *tl, struct expr **e, const struct symbol *sym)
+void __match_proto__(sym_expr_t)
+vcc_Eval_Var(struct vcc *tl, struct expr **e, const struct symbol *sym,
+    enum var_type fmt)
 {
 	const struct var *vp;
 
+	(void)fmt;
 	assert(sym->kind == SYM_VAR);
 	vcc_AddUses(tl, tl->t, sym->r_methods, "Not available");
 	vp = vcc_FindVar(tl, tl->t, 0, "cannot be read");
@@ -758,10 +770,12 @@ vcc_Eval_Func(struct vcc *tl, const char *cfunc,
 /*--------------------------------------------------------------------
  */
 
-void
-vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, const struct symbol *sym)
+void __match_proto__(sym_expr_t)
+vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, const struct symbol *sym,
+    enum var_type fmt)
 {
 
+	(void)fmt;
 	assert(sym->kind == SYM_FUNC);
 	/* XXX */
 	AN(sym->cfunc);
@@ -842,7 +856,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		case SYM_PROBE:
 			AN(sym->eval);
 			AZ(*e);
-			sym->eval(tl, e, sym);
+			sym->eval(tl, e, sym, fmt);
 			ERRCHK(tl);
 			/* Unless asked for a HEADER, fold to string here */
 			if (*e && fmt != HEADER && (*e)->fmt == HEADER) {
@@ -1399,7 +1413,7 @@ vcc_Expr_Call(struct vcc *tl, const struct symbol *sym)
 
 	t1 = tl->t;
 	e = NULL;
-	vcc_Eval_SymFunc(tl, &e, sym);
+	vcc_Eval_SymFunc(tl, &e, sym, VOID);
 	if (!tl->err) {
 		vcc_expr_fmt(tl->fb, tl->indent, e);
 		VSB_cat(tl->fb, ";\n");

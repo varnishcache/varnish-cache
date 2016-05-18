@@ -19,12 +19,16 @@ varnish v1 -arg "-p vsl_mask=+VCL_trace" -vcl+backend {
 			set req.url = "/";
 		}
 	}
+	sub vcl_deliver {
+		set resp.http.acl = acl1;
+	}
 } -start
 
 client c1 {
 	txreq -url "foo"
 	rxresp
 	expect resp.status == 200
+	expect resp.http.acl == acl1
 } -run
 
 varnish v1 -vcl+backend {
@@ -38,6 +42,9 @@ varnish v1 -vcl+backend {
 		if (client.ip ~ acl1) {
 			set req.url = "/";
 		}
+	}
+	sub vcl_deliver {
+		set resp.http.acl = acl1;
 	}
 }
 
