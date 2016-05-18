@@ -747,6 +747,13 @@ main(int argc, char * const *argv)
 		    P_arg, strerror(errno));
 	VJ_master(JAIL_MASTER_LOW);
 
+	/* If no -s argument specified, process default -s argument */
+	if (!s_arg_given)
+		STV_Config(s_arg);
+
+	/* Configure Transient storage, if user did not */
+	STV_Config_Transient();
+
 	mgt_vcl_init();
 
 	if (b_arg != NULL || f_arg != NULL) {
@@ -777,13 +784,6 @@ main(int argc, char * const *argv)
 			    " use varnishadm to control it.\n");
 		}
 	}
-
-	/* If no -s argument specified, process default -s argument */
-	if (!s_arg_given)
-		STV_Config(s_arg);
-
-	/* Configure Transient storage, if user did not */
-	STV_Config_Transient();
 
 	HSH_config(h_arg);
 
