@@ -167,7 +167,6 @@ void STV_Config_Transient(void);
 /* mgt_vcc.c */
 char *mgt_VccCompile(struct cli *, const char *vclname, const char *vclsrc,
     const char *vclsrcfile, int C_flag);
-void mgt_vcc_init(void);
 
 void mgt_vcl_init(void);
 void mgt_vcc_startup(struct cli *, const char *b_arg, const char *f_arg,

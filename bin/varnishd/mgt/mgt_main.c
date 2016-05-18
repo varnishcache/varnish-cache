@@ -747,7 +747,6 @@ main(int argc, char * const *argv)
 		    P_arg, strerror(errno));
 	VJ_master(JAIL_MASTER_LOW);
 
-	mgt_vcc_init();
 	mgt_vcl_init();
 
 	if (b_arg != NULL || f_arg != NULL) {

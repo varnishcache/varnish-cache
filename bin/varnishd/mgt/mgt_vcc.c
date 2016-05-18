@@ -65,7 +65,6 @@ unsigned mgt_vcc_err_unref;
 unsigned mgt_vcc_allow_inline_c;
 unsigned mgt_vcc_unsafe_path;
 
-static struct vcp *vcp;
 
 #define VGC_SRC		"vgc.c"
 #define VGC_LIB		"vgc.so"
@@ -87,6 +86,7 @@ run_vcc(void *priv)
 	struct vsb *sb;
 	struct vcc_priv *vp;
 	int fd, i, l;
+	struct vcp *vcp;
 
 	VJ_subproc(JAIL_SUBPROC_VCC);
 	CAST_OBJ_NOTNULL(vp, priv, VCC_PRIV_MAGIC);
@@ -95,6 +95,9 @@ run_vcc(void *priv)
 
 	sb = VSB_new_auto();
 	XXXAN(sb);
+	vcp = VCP_New();
+	AN(vcp);
+	VCP_Builtin_VCL(vcp, builtin_vcl);
 	VCP_VCL_path(vcp, mgt_vcl_path);
 	VCP_VMOD_path(vcp, mgt_vmod_path);
 	VCP_Err_Unref(vcp, mgt_vcc_err_unref);
@@ -313,15 +316,4 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 	VCLI_Out(cli, "VCL compiled.\n");
 
 	return (vp.libfile);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-mgt_vcc_init(void)
-{
-
-	vcp = VCP_New();
-	AN(vcp);
-	VCP_Builtin_VCL(vcp, builtin_vcl);
 }
