@@ -266,8 +266,7 @@ vcc_ParseProbe(struct vcc *tl)
 		vcc_ErrWhere(tl, t_probe);
 		return;
 	}
-	sym->fmt = PROBE;
-	sym->eval = vcc_Eval_Probe;
+	VCC_GenericSymbol(tl, sym, PROBE, "%s", sym->name);
 	sym->ndef++;
 	ERRCHK(tl);
 
@@ -497,9 +496,7 @@ vcc_ParseBackend(struct vcc *tl)
 		vcc_ErrWhere(tl, t_be);
 		return;
 	}
-	sym->fmt = BACKEND;
-	sym->eval = vcc_Eval_Backend;
-	sym->eval_priv = TlDup(tl, vgcname);
+	VCC_GenericSymbol(tl, sym, BACKEND, "%s", vgcname);
 	sym->ndef++;
 	ERRCHK(tl);
 

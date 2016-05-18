@@ -494,50 +494,16 @@ vcc_Eval_BoolConst(struct vcc *tl, struct expr **e, const struct symbol *sym)
  */
 
 void
-vcc_Eval_Acl(struct vcc *tl, struct expr **e, const struct symbol *sym)
+vcc_Eval_Generic(struct vcc *tl, struct expr **e, const struct symbol *sym)
 {
 
-	assert(sym->kind == SYM_ACL);
+	assert(sym->kind == sym->kind);
 	AN(sym->eval_priv);
 
 	vcc_ExpectCid(tl);
-	vcc_AddRef(tl, tl->t, SYM_ACL);
-	*e = vcc_mk_expr(ACL, "&vrt_acl_named_%s",
-	    (const char *)sym->eval_priv);
+	vcc_AddRef(tl, tl->t, sym->kind);
+	*e = vcc_mk_expr(sym->fmt, "%s", (const char *)sym->eval_priv);
 	(*e)->constant = EXPR_VAR;	/* XXX ? */
-	vcc_NextToken(tl);
-}
-
-/*--------------------------------------------------------------------
- */
-
-void
-vcc_Eval_Backend(struct vcc *tl, struct expr **e, const struct symbol *sym)
-{
-
-	assert(sym->kind == SYM_BACKEND);
-	AN(sym->eval_priv);
-
-	vcc_ExpectCid(tl);
-	vcc_AddRef(tl, tl->t, SYM_BACKEND);
-	*e = vcc_mk_expr(BACKEND, "%s", (const char *)sym->eval_priv);
-	(*e)->constant = EXPR_VAR;	/* XXX ? */
-	vcc_NextToken(tl);
-}
-
-/*--------------------------------------------------------------------
- */
-
-void
-vcc_Eval_Probe(struct vcc *tl, struct expr **e, const struct symbol *sym)
-{
-
-	assert(sym->kind == SYM_PROBE);
-
-	vcc_ExpectCid(tl);
-	vcc_AddRef(tl, tl->t, SYM_PROBE);
-	*e = vcc_mk_expr(PROBE, "&vgc_probe_%.*s", PF(tl->t));
-	(*e)->constant = EXPR_VAR;      /* XXX ? */
 	vcc_NextToken(tl);
 }
 

@@ -475,7 +475,7 @@ vcc_ParseAcl(struct vcc *tl)
 {
 	struct token *an;
 	struct symbol *sym;
-	char acln[1024];
+	char *acln;
 
 	vcc_NextToken(tl);
 	VTAILQ_INIT(&tl->acl);
@@ -490,7 +490,7 @@ vcc_ParseAcl(struct vcc *tl)
 	an = tl->t;
 	vcc_NextToken(tl);
 
-	bprintf(acln, "%.*s", PF(an));
+	acln = TlDupTok(tl, an);
 
 	sym = VCC_GetSymbolTok(tl, an, SYM_ACL);
 	AN(sym);
@@ -499,9 +499,7 @@ vcc_ParseAcl(struct vcc *tl)
 		vcc_ErrWhere(tl, an);
 		return;
 	}
-	sym->fmt = ACL;
-	sym->eval = vcc_Eval_Acl;
-	sym->eval_priv = TlDup(tl, acln);
+	VCC_GenericSymbol(tl, sym, ACL, "&vrt_acl_named_%s", acln);
 	sym->ndef++;
 	ERRCHK(tl);
 

@@ -28,6 +28,7 @@
 
 #include "config.h"
 
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -138,4 +139,23 @@ VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, enum symkind kind)
 			func(tl, sym);
 		ERRCHK(tl);
 	}
+}
+
+void
+VCC_GenericSymbol(struct vcc *tl, struct symbol *sym,
+    enum var_type fmt, const char *str, ...)
+{
+	struct vsb *vsb;
+	va_list ap;
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+	va_start(ap, str);
+	VSB_vprintf(vsb, str, ap);
+	va_end(ap);
+	AZ(VSB_finish(vsb));
+	sym->eval_priv = TlDup(tl, VSB_data(vsb));
+	sym->eval = vcc_Eval_Generic;
+	sym->fmt = fmt;
+	VSB_destroy(&vsb);
 }
