@@ -119,7 +119,7 @@ varnish v1 -errvcl {'bereq.between_bytes_timeout': cannot be set} {
 	}
 }
 
-varnish v1 -errvcl {Backend not found: 'c'} {
+varnish v1 -errvcl {Symbol not found: 'c' (expected type BACKEND):} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_backend_response {
 		if (beresp.backend == c) {

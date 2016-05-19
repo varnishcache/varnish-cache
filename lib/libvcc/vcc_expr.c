@@ -498,12 +498,12 @@ vcc_Eval_BoolConst(struct vcc *tl, struct expr **e, const struct symbol *sym,
  */
 
 void __match_proto__(sym_expr_t)
-vcc_Eval_Generic(struct vcc *tl, struct expr **e, const struct symbol *sym,
+vcc_Eval_Handle(struct vcc *tl, struct expr **e, const struct symbol *sym,
     enum var_type fmt)
 {
 
 	assert(sym->kind == sym->kind);
-	AN(sym->eval_priv);
+	AN(sym->rname);
 
 	if (sym->fmt != STRING && (fmt == STRING || fmt == STRING_LIST)) {
 		*e = vcc_mk_expr(STRING, "\"%s\"", sym->name);
@@ -511,7 +511,7 @@ vcc_Eval_Generic(struct vcc *tl, struct expr **e, const struct symbol *sym,
 	} else {
 		vcc_ExpectCid(tl);
 		vcc_AddRef(tl, tl->t, sym->kind);
-		*e = vcc_mk_expr(sym->fmt, "%s", (const char *)sym->eval_priv);
+		*e = vcc_mk_expr(sym->fmt, "%s", sym->rname);
 		(*e)->constant = EXPR_VAR;	/* XXX ? */
 	}
 	vcc_NextToken(tl);
@@ -817,13 +817,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		 * XXX: look for SYM_VAR first for consistency ?
 		 */
 		sym = NULL;
-		switch (fmt) {
-		case ACL:	kind = SYM_ACL; break;
-		case BACKEND:	kind = SYM_BACKEND; break;
-		case PROBE:	kind = SYM_PROBE; break;
-		case STEVEDORE:	kind = SYM_STEVEDORE; break;
-		default:	kind = SYM_NONE; break;
-		}
+		kind = VCC_HandleKind(fmt);
 		if (kind != SYM_NONE)
 			sym = VCC_FindSymbol(tl, tl->t, kind);
 		if (sym == NULL)
@@ -1157,7 +1151,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 	const char *re;
 	const char *not;
 	struct token *tk;
-	struct symbol *sym;
+	enum symkind kind;
 
 	*e = NULL;
 
@@ -1215,24 +1209,14 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
 		return;
 	}
-	if ((*e)->fmt == BACKEND &&
-	    (tl->t->tok == T_EQ || tl->t->tok == T_NEQ)) {
-		// XXX: just ask for a BACKEND expression instead ?
+	kind = VCC_HandleKind((*e)->fmt);
+	if (kind != SYM_NONE && (tl->t->tok == T_EQ || tl->t->tok == T_NEQ)) {
+		bprintf(buf, "(\v1 %.*s \v2)", PF(tk));
 		vcc_NextToken(tl);
-		ExpectErr(tl, ID);
-		sym = VCC_FindSymbol(tl, tl->t, SYM_BACKEND);
-		if (sym == NULL) {
-			VSB_printf(tl->sb, "Backend not found: ");
-			vcc_ErrToken(tl, tl->t);
-			VSB_printf(tl->sb, "\n");
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
-		vcc_AddRef(tl, tl->t, SYM_BACKEND);
-		bprintf(buf, "(\v1 %.*s %s)", PF(tk),
-		    (const char *)sym->eval_priv);
-		vcc_NextToken(tl);
-		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
+		e2 = NULL;
+		vcc_expr0(tl, &e2, (*e)->fmt);
+		ERRCHK(tl);
+		*e = vcc_expr_edit(BOOL, buf, *e, e2);
 		return;
 	}
 	switch (tl->t->tok) {

@@ -287,11 +287,14 @@ void vcc_Expr(struct vcc *tl, enum var_type typ);
 void vcc_Expr_Call(struct vcc *tl, const struct symbol *sym);
 void vcc_Expr_Init(struct vcc *tl);
 sym_expr_t vcc_Eval_Var;
-sym_expr_t vcc_Eval_Generic;
+sym_expr_t vcc_Eval_Handle;
 sym_expr_t vcc_Eval_SymFunc;
 void vcc_Eval_Func(struct vcc *tl, const char *cfunc, const char *extra,
     const char *name, const char *args);
 enum var_type VCC_arg_type(const char **p);
+enum symkind VCC_HandleKind(enum var_type fmt);
+struct symbol *VCC_HandleSymbol(struct vcc *, const struct token *,
+    enum var_type fmt, const char *str, ...);
 
 /* vcc_obj.c */
 extern const struct var vcc_vars[];
@@ -320,8 +323,7 @@ struct symbol *VCC_FindSymbol(struct vcc *tl,
 const char * VCC_SymKind(struct vcc *tl, const struct symbol *s);
 typedef void symwalk_f(struct vcc *tl, const struct symbol *s);
 void VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, enum symkind kind);
-void VCC_GenericSymbol(struct vcc *, struct symbol *,
-    enum var_type, const char *str, ...);
+void VCC_GlobalSymbol(struct symbol *, enum var_type, const char *str, ...);
 
 /* vcc_token.c */
 void vcc_Coord(const struct vcc *tl, struct vsb *vsb,

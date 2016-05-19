@@ -692,11 +692,12 @@ vcc_CompileSource(const struct vcp * const vcp, struct vsb *sb,
 	vcc_Expr_Init(tl);
 
 	VTAILQ_FOREACH(sym, &vcp->symbols, list) {
-		assert(sym->eval == vcc_Eval_Generic);
 		sym2 = VCC_AddSymbolStr(tl, sym->name, sym->kind);
 		sym2->fmt = sym->fmt;
 		sym2->eval = sym->eval;
 		sym2->eval_priv = sym->eval_priv;
+		sym2->rname = sym->rname;
+		sym2->r_methods = sym->r_methods;
 		sym2->ndef = 1;
 		sym2->nref = 1;
 	}
@@ -951,8 +952,7 @@ VCP_Stevedore(struct vcp *vcp, const char *stv_name)
 	AN(sym);
 	REPLACE(sym->name, stv_name);		/* XXX storage.* ? */
 	sym->kind = SYM_STEVEDORE;
-	VCC_GenericSymbol(NULL, sym, STEVEDORE,
-	    "VRT_stevedore(\"%s\")", stv_name);
+	VCC_GlobalSymbol(sym, STEVEDORE, "VRT_stevedore(\"%s\")", stv_name);
 	VTAILQ_INSERT_TAIL(&vcp->symbols, sym, list);
 }
 

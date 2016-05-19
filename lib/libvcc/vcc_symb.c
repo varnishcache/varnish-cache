@@ -28,6 +28,7 @@
 
 #include "config.h"
 
+#include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,6 +37,18 @@
 #include "vcc_compile.h"
 
 /*--------------------------------------------------------------------*/
+
+enum symkind
+VCC_HandleKind(enum var_type fmt)
+{
+	switch(fmt) {
+	case ACL:       return(SYM_ACL);
+	case BACKEND:   return(SYM_BACKEND);
+	case PROBE:     return(SYM_PROBE);
+	case STEVEDORE: return(SYM_STEVEDORE);
+	default:        return(SYM_NONE);
+	}
+}
 
 const char *
 VCC_SymKind(struct vcc *tl, const struct symbol *s)
@@ -141,25 +154,68 @@ VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, enum symkind kind)
 	}
 }
 
-void
-VCC_GenericSymbol(struct vcc *tl, struct symbol *sym,
-    enum var_type fmt, const char *str, ...)
+static void
+vcc_global(struct vcc *tl, struct symbol *sym,
+    enum var_type fmt, const char *str, va_list ap)
 {
 	struct vsb *vsb;
-	va_list ap;
 
 	vsb = VSB_new_auto();
 	AN(vsb);
-	va_start(ap, str);
 	VSB_vprintf(vsb, str, ap);
-	va_end(ap);
 	AZ(VSB_finish(vsb));
 	if (tl != NULL)
-		sym->eval_priv = TlDup(tl, VSB_data(vsb));
+		sym->rname = TlDup(tl, VSB_data(vsb));
 	else
-		sym->eval_priv = strdup(VSB_data(vsb));
-	AN(sym->eval_priv);
-	sym->eval = vcc_Eval_Generic;
-	sym->fmt = fmt;
+		sym->rname = strdup(VSB_data(vsb));
+	AN(sym->rname);
 	VSB_destroy(&vsb);
+	sym->fmt = fmt;
+	sym->kind = VCC_HandleKind(sym->fmt);
+	if (sym->kind != SYM_NONE)
+		sym->eval = vcc_Eval_Handle;
+	else
+		WRONG("Wrong kind of global symbol");
+
+#define VCL_MET_MAC(l,u,t,b)   sym->r_methods |= VCL_MET_##u;
+#include "tbl/vcl_returns.h"
+#undef VCL_MET_MAC
+}
+
+void
+VCC_GlobalSymbol(struct symbol *sym, enum var_type fmt, const char *str, ...)
+{
+	va_list ap;
+
+	va_start(ap, str);
+	vcc_global(NULL, sym, fmt, str, ap);
+	va_end(ap);
+}
+
+struct symbol *
+VCC_HandleSymbol(struct vcc *tl, const struct token *tk, enum var_type fmt,
+    const char *str, ...)
+{
+	struct symbol *sym;
+	enum symkind kind;
+	va_list ap;
+	const char *p;
+
+	kind = VCC_HandleKind(fmt);
+	assert(kind != SYM_NONE);
+
+	sym = VCC_GetSymbolTok(tl, tk, kind);
+	AN(sym);
+	if (sym->ndef > 0) {
+		p = VCC_SymKind(tl, sym);
+		VSB_printf(tl->sb, "%c%s %.*s redefined\n",
+		    toupper(*p), p+1, PF(tk));
+		vcc_ErrWhere(tl, tk);
+		return (sym);
+	}
+	va_start(ap, str);
+	vcc_global(tl, sym, fmt, str, ap);
+	va_end(ap);
+	sym->ndef = 1;
+	return (sym);
 }

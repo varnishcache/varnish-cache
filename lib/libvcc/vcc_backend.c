@@ -249,7 +249,6 @@ void
 vcc_ParseProbe(struct vcc *tl)
 {
 	struct token *t_probe;
-	struct symbol *sym;
 	char *p;
 
 	vcc_NextToken(tl);		/* ID: probe */
@@ -259,15 +258,7 @@ vcc_ParseProbe(struct vcc *tl)
 	t_probe = tl->t;
 	vcc_NextToken(tl);
 
-	sym = VCC_GetSymbolTok(tl, t_probe, SYM_PROBE);
-	AN(sym);
-	if (sym->ndef > 0) {
-		VSB_printf(tl->sb, "Probe %.*s redefined\n", PF(t_probe));
-		vcc_ErrWhere(tl, t_probe);
-		return;
-	}
-	VCC_GenericSymbol(tl, sym, PROBE, "%s", sym->name);
-	sym->ndef++;
+	(void)VCC_HandleSymbol(tl, t_probe, PROBE, "%.s", PF(t_probe));
 	ERRCHK(tl);
 
 	vcc_ParseProbeSpec(tl, t_probe, &p);
@@ -489,15 +480,7 @@ vcc_ParseBackend(struct vcc *tl)
 	sprintf(vgcname, "vgc_backend_%.*s", PF(t_be));
 	Fh(tl, 0, "\nstatic struct director *%s;\n", vgcname);
 
-	sym = VCC_GetSymbolTok(tl, t_be, SYM_BACKEND);
-	AN(sym);
-	if (sym->ndef > 0) {
-		VSB_printf(tl->sb, "Backend %.*s redefined\n", PF(t_be));
-		vcc_ErrWhere(tl, t_be);
-		return;
-	}
-	VCC_GenericSymbol(tl, sym, BACKEND, "%s", vgcname);
-	sym->ndef++;
+	sym = VCC_HandleSymbol(tl, t_be, BACKEND, "%s", vgcname);
 	ERRCHK(tl);
 
 	vcc_ParseHostDef(tl, t_be, vgcname);
@@ -511,7 +494,7 @@ vcc_ParseBackend(struct vcc *tl)
 	}
 
 	if (tl->default_director == NULL || vcc_IdIs(t_be, "default")) {
-		tl->default_director = sym->eval_priv;
+		tl->default_director = sym->rname;
 		tl->t_default_director = t_be;
 	}
 }

@@ -474,7 +474,6 @@ void
 vcc_ParseAcl(struct vcc *tl)
 {
 	struct token *an;
-	struct symbol *sym;
 	char *acln;
 
 	vcc_NextToken(tl);
@@ -492,15 +491,7 @@ vcc_ParseAcl(struct vcc *tl)
 
 	acln = TlDupTok(tl, an);
 
-	sym = VCC_GetSymbolTok(tl, an, SYM_ACL);
-	AN(sym);
-	if (sym->ndef > 0) {
-		VSB_printf(tl->sb, "ACL %.*s redefined\n", PF(an));
-		vcc_ErrWhere(tl, an);
-		return;
-	}
-	VCC_GenericSymbol(tl, sym, ACL, "&vrt_acl_named_%s", acln);
-	sym->ndef++;
+	(void)VCC_HandleSymbol(tl, an, ACL, "&vrt_acl_named_%s", acln);
 	ERRCHK(tl);
 
 	SkipToken(tl, '{');
