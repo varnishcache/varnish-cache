@@ -283,6 +283,14 @@ varnish v1 -errvcl {Function returns VOID} {
 	}
 }
 
+varnish v1 -errvcl {'beresp.status': Not available in method 'vcl_recv'.} {
+	backend b { .host = "127.0.0.1"; }
+
+	sub vcl_recv {
+		set req.http.foo = 100 + beresp.status;
+	}
+}
+
 varnish v1 -errvcl {Names of VCL acl's cannot contain '-'} {
 	backend b { .host = "127.0.0.1"; }
 	acl foo-bar {
