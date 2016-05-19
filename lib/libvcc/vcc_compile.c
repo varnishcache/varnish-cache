@@ -203,45 +203,11 @@ Fc(const struct vcc *tl, int indent, const char *fmt, ...)
 /*--------------------------------------------------------------------*/
 
 void
-EncString(struct vsb *sb, const char *b, const char *e, int mode)
-{
-
-	if (e == NULL)
-		e = strchr(b, '\0');
-
-	VSB_cat(sb, "\"");
-	for (; b < e; b++) {
-		switch (*b) {
-		case '?':	// Trigraphs
-		case '\\':
-		case '"':
-			VSB_printf(sb, "\\%c", *b);
-			break;
-		case '\n':
-			VSB_printf(sb, "\\n");
-			if (mode)
-				VSB_printf(sb, "\"\n\t\"");
-			break;
-		case '\t': VSB_printf(sb, "\\t"); break;
-		case '\r': VSB_printf(sb, "\\r"); break;
-		case ' ': VSB_printf(sb, " "); break;
-		default:
-			if (isgraph(*b))
-				VSB_printf(sb, "%c", *b);
-			else
-				VSB_printf(sb, "\\%03o", (uint8_t)*b);
-			break;
-		}
-	}
-	VSB_cat(sb, "\"");
-}
-
-void
 EncToken(struct vsb *sb, const struct token *t)
 {
 
 	assert(t->tok == CSTR);
-	EncString(sb, t->dec, NULL, 1);
+	VSB_quote(sb, t->dec, -1, VSB_QUOTE_CSTR);
 }
 
 /*--------------------------------------------------------------------
@@ -264,7 +230,7 @@ EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
 	VSB_printf(vsb, "\nstatic const char *srcname[VGC_NSRCS] = {\n");
 	VTAILQ_FOREACH(sp, &tl->sources, list) {
 		VSB_printf(vsb, "\t");
-		EncString(vsb, sp->name, NULL, 0);
+		VSB_quote(vsb, sp->name, -1, VSB_QUOTE_CSTR);
 		VSB_printf(vsb, ",\n");
 	}
 	VSB_printf(vsb, "};\n");
@@ -272,10 +238,10 @@ EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
 	VSB_printf(vsb, "\nstatic const char *srcbody[%u] = {\n", tl->nsources);
 	VTAILQ_FOREACH(sp, &tl->sources, list) {
 		VSB_printf(vsb, "    /* ");
-		EncString(vsb, sp->name, NULL, 0);
+		VSB_quote(vsb, sp->name, -1, VSB_QUOTE_CSTR);
 		VSB_printf(vsb, "*/\n");
 		VSB_printf(vsb, "\t");
-		EncString(vsb, sp->b, sp->e, 1);
+		VSB_quote(vsb, sp->b, sp->e - sp->b, VSB_QUOTE_CSTR);
 		VSB_printf(vsb, ",\n");
 	}
 	VSB_printf(vsb, "};\n\n");

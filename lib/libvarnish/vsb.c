@@ -533,13 +533,18 @@ VSB_quote(struct vsb *s, const void *v, int len, int how)
 			break;
 		}
 	}
-	if (!quote && !(how & VSB_QUOTE_JSON)) {
+	if (!quote && !(how & (VSB_QUOTE_JSON|VSB_QUOTE_CSTR))) {
 		(void)VSB_bcat(s, p, len);
 		return;
 	}
 	(void)VSB_putc(s, '"');
 	for (q = p; q < p + len; q++) {
 		switch (*q) {
+		case '?':
+			if (how & VSB_QUOTE_CSTR)
+				(void)VSB_putc(s, '\\');
+			(void)VSB_putc(s, *q);
+			break;
 		case ' ':
 			(void)VSB_putc(s, *q);
 			break;
@@ -549,7 +554,9 @@ VSB_quote(struct vsb *s, const void *v, int len, int how)
 			(void)VSB_putc(s, *q);
 			break;
 		case '\n':
-			if (how & VSB_QUOTE_NONL)
+			if (how & VSB_QUOTE_CSTR)
+				(void)VSB_cat(s, "\"\n\t\"");
+			else if (how & VSB_QUOTE_NONL)
 				(void)VSB_cat(s, "\n");
 			else
 				(void)VSB_cat(s, "\\n");

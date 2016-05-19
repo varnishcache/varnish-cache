@@ -278,8 +278,6 @@ void *TlAlloc(struct vcc *tl, unsigned len);
 char *TlDup(struct vcc *tl, const char *s);
 char *TlDupTok(struct vcc *tl, const struct token *tok);
 
-void EncString(struct vsb *sb, const char *b, const char *e, int mode);
-
 /* vcc_expr.c */
 double vcc_DoubleVal(struct vcc *tl);
 void vcc_Duration(struct vcc *tl, double *);

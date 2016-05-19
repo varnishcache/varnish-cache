@@ -200,7 +200,7 @@ vcc_ParseImport(struct vcc *tl)
 	VSB_printf(ifp->ini, "\t    sizeof(Vmod_%.*s_Func),\n", PF(mod));
 	VSB_printf(ifp->ini, "\t    \"%.*s\",\n", PF(mod));
 	VSB_printf(ifp->ini, "\t    ");
-	EncString(ifp->ini, fnp, NULL, 0);
+	VSB_quote(ifp->ini, fnp, -1, VSB_QUOTE_CSTR);
 	VSB_printf(ifp->ini, ",\n");
 	AN(vmd);
 	AN(vmd->file_id);
