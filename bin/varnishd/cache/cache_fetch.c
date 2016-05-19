@@ -237,8 +237,6 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	bo->do_stream = 1;
 
 	/* reset fetch processors */
-	vfc->failed = 0;
-	VFP_Close(vfc);
 	VFP_Setup(vfc);
 
 	// XXX: BereqEnd + BereqAcct ?
@@ -639,6 +637,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	if (vbf_beresp2obj(bo)) {
 		(void)VFP_Error(bo->vfc, "Could not get storage");
 		bo->htc->doclose = SC_RX_BODY;
+		VFP_Close(bo->vfc);
 		VDI_Finish(bo->wrk, bo);
 		return (F_STP_ERROR);
 	}
@@ -662,6 +661,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	    VDI_GetBody(bo->wrk, bo) != 0) {
 		(void)VFP_Error(bo->vfc,
 		    "GetBody failed - workspace_backend overflow?");
+		VFP_Close(bo->vfc);
 		bo->htc->doclose = SC_OVERLOAD;
 		VDI_Finish(bo->wrk, bo);
 		return (F_STP_ERROR);
