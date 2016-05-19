@@ -291,17 +291,17 @@ vcc_ParseDirector(struct vcc *tl)
 static void
 vcc_ParseVcl(struct vcc *tl)
 {
-	double ver;
 	struct token *tok;
 
 	assert(vcc_IdIs(tl->t, "vcl"));
 	vcc_NextToken(tl);
 	tok = tl->t;
-	ver = vcc_DoubleVal(tl);
+	tl->syntax = vcc_DoubleVal(tl);
 	ERRCHK(tl);
-	if (ver != 4.0) {
+	if (tl->syntax != 4.0) {
 		// see TODO above
-		VSB_printf(tl->sb, "VCL version %.1f not supported.\n", ver);
+		VSB_printf(tl->sb, "VCL version %.1f not supported.\n",
+		    tl->syntax);
 		vcc_ErrWhere(tl, tok);
 		ERRCHK(tl);
 	}
