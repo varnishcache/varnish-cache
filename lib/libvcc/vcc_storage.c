@@ -139,10 +139,12 @@ vcc_Stv_Wildcard(struct vcc *tl, const struct token *t,
 
 	sym = VCC_AddSymbolTok(tl, t, SYM_VAR);
 	AN(sym);
-	sym->var = v;
 	sym->fmt = v->fmt;
 	sym->eval = vcc_Eval_Var;
 	sym->r_methods = v->r_methods;
+	sym->rname = v->rname;
+	sym->w_methods = v->w_methods;
+	sym->lname = v->lname;
 
 	return (sym);
 }

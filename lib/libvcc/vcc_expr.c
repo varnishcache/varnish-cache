@@ -524,15 +524,12 @@ void __match_proto__(sym_expr_t)
 vcc_Eval_Var(struct vcc *tl, struct expr **e, const struct symbol *sym,
     enum var_type fmt)
 {
-	const struct var *vp;
 
 	(void)fmt;
 	assert(sym->kind == SYM_VAR);
 	vcc_AddUses(tl, tl->t, sym->r_methods, "Not available");
-	vp = vcc_FindVar(tl, tl->t, 0, "cannot be read");
 	ERRCHK(tl);
-	assert(vp != NULL);
-	*e = vcc_mk_expr(vp->fmt, "%s", vp->rname);
+	*e = vcc_mk_expr(sym->fmt, "%s", sym->rname);
 	vcc_NextToken(tl);
 }
 

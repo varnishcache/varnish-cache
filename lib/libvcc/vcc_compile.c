@@ -609,7 +609,6 @@ vcc_NewVcc(const struct vcp *vcp)
 	ALLOC_OBJ(tl, VCC_MAGIC);
 	AN(tl);
 	tl->param = vcp;
-	tl->vars = vcc_vars;
 	VTAILQ_INIT(&tl->symbols);
 	VTAILQ_INIT(&tl->inifin);
 	VTAILQ_INIT(&tl->membits);
@@ -702,17 +701,20 @@ vcc_CompileSource(const struct vcp * const vcp, struct vsb *sb,
 		sym2->nref = 1;
 	}
 
-	for (v = tl->vars; v->name != NULL; v++) {
+	for (v = vcc_vars; v->name != NULL; v++) {
 		if (v->fmt == HEADER) {
 			sym = VCC_AddSymbolStr(tl, v->name, SYM_WILDCARD);
 			sym->wildcard = vcc_Var_Wildcard;
+			sym->wildcard_priv = v;
 		} else {
 			sym = VCC_AddSymbolStr(tl, v->name, SYM_VAR);
 		}
-		sym->var = v;
 		sym->fmt = v->fmt;
 		sym->eval = vcc_Eval_Var;
 		sym->r_methods = v->r_methods;
+		sym->rname = v->rname;
+		sym->w_methods = v->w_methods;
+		sym->lname = v->lname;
 	}
 
 	sym = VCC_AddSymbolStr(tl, "storage.", SYM_WILDCARD);

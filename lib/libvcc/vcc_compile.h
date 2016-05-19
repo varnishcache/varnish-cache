@@ -118,6 +118,7 @@ struct symbol {
 	char				*name;
 	unsigned			nlen;
 	sym_wildcard_t			*wildcard;
+	const void			*wildcard_priv;
 	enum symkind			kind;
 
 	const struct token		*def_b, *def_e;
@@ -137,8 +138,10 @@ struct symbol {
 	const char			*args;
 
 	/* SYM_VAR */
-	const struct var		*var;
+	const char			*rname;
 	unsigned			r_methods;
+	const char			*lname;
+	unsigned			w_methods;
 };
 
 VTAILQ_HEAD(tokenhead, token);
@@ -176,7 +179,6 @@ struct vcc {
 	/* Parameter/Template section */
 	const struct vcp	*param;
 
-	const struct var	*vars;
 	VTAILQ_HEAD(, symbol)	symbols;
 
 	struct inifinhead	inifin;
@@ -340,7 +342,7 @@ void vcc_AddToken(struct vcc *tl, unsigned tok, const char *b,
 
 /* vcc_var.c */
 sym_wildcard_t vcc_Var_Wildcard;
-const struct var *vcc_FindVar(struct vcc *tl, const struct token *t,
+const struct symbol *vcc_FindVar(struct vcc *tl, const struct token *t,
     int wr_access, const char *use);
 
 /* vcc_vmod.c */
