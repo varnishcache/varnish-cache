@@ -1,0 +1,27 @@
+varnishtest "Test requests other than GET are cacheable"
+
+server s1 {
+	rxreq
+	expect req.method == "POST"
+	expect req.body == "foo"
+	txresp -body bar
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		# We ignore the actual body and verb for this test.
+		return (hash);
+	}
+	sub vcl_miss {
+		return (fetch);
+	}
+} -start
+
+client c1 {
+	txreq -req "POST" -body foo
+	rxresp
+	expect resp.body == "bar"
+	txreq -req "POST" -body foo
+	rxresp
+	expect resp.body == "bar"
+} -run

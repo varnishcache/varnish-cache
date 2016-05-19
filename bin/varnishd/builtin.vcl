@@ -113,6 +113,8 @@ sub vcl_hit {
 }
 
 sub vcl_miss {
+    set req.method = "GET";
+    set req.proto = "HTTP/1.1";
     return (fetch);
 }
 
