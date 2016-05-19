@@ -172,6 +172,7 @@ struct vcp {
 struct vcc {
 	unsigned		magic;
 #define VCC_MAGIC		0x24ad719d
+	float			syntax;
 
 	/* Parameter/Template section */
 	const struct vcp	*param;
