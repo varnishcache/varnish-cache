@@ -479,13 +479,8 @@ vcc_ParseAcl(struct vcc *tl)
 	vcc_NextToken(tl);
 	VTAILQ_INIT(&tl->acl);
 
-	ExpectErr(tl, ID);
-	if (!vcc_isCid(tl->t)) {
-		VSB_printf(tl->sb,
-		    "Names of VCL acl's cannot contain '-'\n");
-		vcc_ErrWhere(tl, tl->t);
-		return;
-	}
+	vcc_ExpectCid(tl, "ACL");
+	ERRCHK(tl);
 	an = tl->t;
 	vcc_NextToken(tl);
 

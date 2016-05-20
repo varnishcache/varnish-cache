@@ -54,7 +54,6 @@ struct sockaddr_storage;
 #define isident1(c) (isalpha(c))
 #define isident(c) (isalpha(c) || isdigit(c) || (c) == '_' || (c) == '-')
 #define isvar(c) (isident(c) || (c) == '.')
-int vcc_isCid(const struct token *t);
 unsigned vcl_fixed_token(const char *p, const char **q);
 extern const char * const vcl_tnames[256];
 void vcl_output_lang_h(struct vsb *sb);
@@ -333,7 +332,7 @@ void vcc_ErrWhere2(struct vcc *, const struct token *, const struct token *);
 
 void vcc__Expect(struct vcc *tl, unsigned tok, unsigned line);
 int vcc_IdIs(const struct token *t, const char *p);
-void vcc_ExpectCid(struct vcc *tl);
+void vcc_ExpectCid(struct vcc *tl, const char *what);
 void vcc_Lexer(struct vcc *tl, struct source *sp);
 void vcc_NextToken(struct vcc *tl);
 void vcc__ErrInternal(struct vcc *tl, const char *func,

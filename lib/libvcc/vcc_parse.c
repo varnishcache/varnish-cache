@@ -211,13 +211,8 @@ vcc_ParseFunction(struct vcc *tl)
 	int m, i;
 
 	vcc_NextToken(tl);
-	ExpectErr(tl, ID);
-	if (!vcc_isCid(tl->t)) {
-		VSB_printf(tl->sb,
-		    "Names of VCL sub's cannot contain '-'\n");
-		vcc_ErrWhere(tl, tl->t);
-		return;
-	}
+	vcc_ExpectCid(tl, "function");
+	ERRCHK(tl);
 
 	m = IsMethod(tl->t);
 	if (m == -2) {

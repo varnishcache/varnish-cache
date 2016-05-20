@@ -1,5 +1,6 @@
 # the first token in a varnishtest file must be "varnishtest",
- 	# but whitespace and comments are fine
+    # but whitespace (SP)
+	# and (TAB) and comments are fine
 
 varnishtest "basic default HTTP transactions"
 

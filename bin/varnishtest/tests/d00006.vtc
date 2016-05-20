@@ -22,7 +22,7 @@ server s4 {
 	txresp -body "4444"
 } -start
 
-varnish v1 -errvcl {Names of VCL objects cannot contain '-'} {
+varnish v1 -errvcl {Name of VCL object, 'rr1-xx', contains illegal character '-'} {
 	import directors;
 	backend b1 { .host = "127.0.0.1"; .port = "8080";}
 	sub vcl_init {

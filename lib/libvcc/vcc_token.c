@@ -293,32 +293,23 @@ vcc_IdIs(const struct token *t, const char *p)
  * Check that we have a C-identifier
  */
 
-int
-vcc_isCid(const struct token *t)
+void
+vcc_ExpectCid(struct vcc *tl, const char *what)
 {
 	const char *q;
 
-	assert(t->tok == ID);
-	for (q = t->b; q < t->e; q++) {
-		if (!isalnum(*q) && *q != '_')
-			return (0);
-	}
-	return (1);
-}
-
-void
-vcc_ExpectCid(struct vcc *tl)
-{
-
 	ExpectErr(tl, ID);
 	ERRCHK(tl);
-	if (vcc_isCid(tl->t))
-		return;
-	VSB_printf(tl->sb, "Identifier ");
-	vcc_ErrToken(tl, tl->t);
-	VSB_printf(tl->sb,
-	    " contains illegal characters, use [0-9a-zA-Z_] only.\n");
-	vcc_ErrWhere(tl, tl->t);
+	for (q = tl->t->b; q < tl->t->e; q++) {
+		if (!isalnum(*q) && *q != '_') {
+			VSB_printf(tl->sb, "Name of %s, ", what);
+			vcc_ErrToken(tl, tl->t);
+			VSB_printf(tl->sb,
+			    ", contains illegal character '%c'\n", *q);
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		}
+	}
 }
 
 /*--------------------------------------------------------------------

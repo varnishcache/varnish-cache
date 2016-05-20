@@ -251,9 +251,9 @@ vcc_ParseProbe(struct vcc *tl)
 	struct token *t_probe;
 	char *p;
 
-	vcc_NextToken(tl);		/* ID: probe */
+	vcc_NextToken(tl);			/* ID: probe */
 
-	vcc_ExpectCid(tl);		/* ID: name */
+	vcc_ExpectCid(tl, "backend probe");	/* ID: name */
 	ERRCHK(tl);
 	t_probe = tl->t;
 	vcc_NextToken(tl);
@@ -462,7 +462,7 @@ vcc_ParseBackend(struct vcc *tl)
 	t_first = tl->t;
 	vcc_NextToken(tl);		/* ID: backend */
 
-	vcc_ExpectCid(tl);		/* ID: name */
+	vcc_ExpectCid(tl, "backend");	/* ID: name */
 	ERRCHK(tl);
 
 	if (tl->t->e - tl->t->b > MAX_BACKEND_NAME) {

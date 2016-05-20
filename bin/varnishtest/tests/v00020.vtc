@@ -257,7 +257,7 @@ varnish v1 -vcl {
 	}
 }
 
-varnish v1 -errvcl {Names of VCL sub's cannot contain '-'} {
+varnish v1 -errvcl {Name of function, 'foo-bar', contains illegal character '-'} {
 	backend b { .host = "127.0.0.1"; }
 	sub foo-bar {
 	}
@@ -291,7 +291,7 @@ varnish v1 -errvcl {'beresp.status': Not available in method 'vcl_recv'.} {
 	}
 }
 
-varnish v1 -errvcl {Names of VCL acl's cannot contain '-'} {
+varnish v1 -errvcl {Name of ACL, 'foo-bar', contains illegal character '-'} {
 	backend b { .host = "127.0.0.1"; }
 	acl foo-bar {
 	}

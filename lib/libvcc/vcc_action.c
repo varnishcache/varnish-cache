@@ -156,12 +156,8 @@ parse_new(struct vcc *tl)
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	if (!vcc_isCid(tl->t)) {
-		VSB_printf(tl->sb,
-		    "Names of VCL objects cannot contain '-'\n");
-		vcc_ErrWhere(tl, tl->t);
-		return;
-	}
+	vcc_ExpectCid(tl, "VCL object");
+	ERRCHK(tl);
 	sy1 = VCC_FindSymbol(tl, tl->t, SYM_NONE);
 	if (sy1 != NULL) {
 		VSB_printf(tl->sb, "Object name '%.*s' already used.\n",
