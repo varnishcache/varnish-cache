@@ -30,9 +30,8 @@
 /* VUT options */
 
 #define VUT_OPT_d \
-	VOPT("d", "[-d]", "Process old log entries on startup",		\
-	    "Start processing log records at the head of the log"	\
-	    " instead of the tail."					\
+	VOPT("d", "[-d]", "Process old log entries and exit",		\
+	    "Process log records at the head of the log and exit."	\
 	)
 
 #define VUT_OPT_D							\
