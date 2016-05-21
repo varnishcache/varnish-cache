@@ -680,6 +680,10 @@ main(int argc, char * const *argv)
 				mgt_DumpRstVsl();
 				exit(0);
 			}
+			if (!strcmp(optarg, "dumprstcli")) {
+				mgt_DumpRstCli();
+				exit(0);
+			}
 			usage();
 			break;
 		default:

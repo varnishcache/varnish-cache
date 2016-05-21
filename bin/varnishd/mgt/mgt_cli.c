@@ -57,6 +57,19 @@
 
 #include "mgt_cli.h"
 
+#define CLI_CMD(U,l,s,h,d,m,M) \
+const struct cli_cmd_desc CLICMD_##U[1] = {{ l, s, h, d, m, M }};
+#include "tbl/cli_cmds.h"
+#undef CLI_CMD
+
+static const struct cli_cmd_desc *cmds[] = {
+#define CLI_CMD(U,l,s,h,d,m,M) CLICMD_##U,
+#include "tbl/cli_cmds.h"
+#undef CLI_CMD
+};
+
+static const int ncmds = sizeof cmds / sizeof cmds[0];
+
 static int		cli_i = -1, cli_o = -1;
 static struct VCLS	*cls;
 static const char	*secret_file;
@@ -89,20 +102,20 @@ mcf_banner(struct cli *cli, const char *const *av, void *priv)
 
 /* XXX: what order should this list be in ? */
 static struct cli_proto cli_proto[] = {
-	{ CLI_BANNER,		"", mcf_banner },
-	{ CLI_SERVER_STATUS,	"", mcf_server_status },
-	{ CLI_SERVER_START,	"", mcf_server_start },
-	{ CLI_SERVER_STOP,	"", mcf_server_stop },
-	{ CLI_VCL_LOAD,		"", mcf_vcl_load },
-	{ CLI_VCL_INLINE,	"", mcf_vcl_inline },
-	{ CLI_VCL_USE,		"", mcf_vcl_use },
-	{ CLI_VCL_STATE,	"", mcf_vcl_state },
-	{ CLI_VCL_DISCARD,	"", mcf_vcl_discard },
-	{ CLI_VCL_LIST,		"", mcf_vcl_list },
-	{ CLI_PARAM_SHOW,	"", mcf_param_show },
-	{ CLI_PARAM_SET,	"", mcf_param_set },
-	{ CLI_PANIC_SHOW,	"", mcf_panic_show },
-	{ CLI_PANIC_CLEAR,	"", mcf_panic_clear },
+	{ CLICMD_BANNER,		"", mcf_banner },
+	{ CLICMD_SERVER_STATUS,		"", mcf_server_status },
+	{ CLICMD_SERVER_START,		"", mcf_server_start },
+	{ CLICMD_SERVER_STOP,		"", mcf_server_stop },
+	{ CLICMD_VCL_LOAD,		"", mcf_vcl_load },
+	{ CLICMD_VCL_INLINE,		"", mcf_vcl_inline },
+	{ CLICMD_VCL_USE,		"", mcf_vcl_use },
+	{ CLICMD_VCL_STATE,		"", mcf_vcl_state },
+	{ CLICMD_VCL_DISCARD,		"", mcf_vcl_discard },
+	{ CLICMD_VCL_LIST,		"", mcf_vcl_list },
+	{ CLICMD_PARAM_SHOW,		"", mcf_param_show },
+	{ CLICMD_PARAM_SET,		"", mcf_param_set },
+	{ CLICMD_PANIC_SHOW,		"", mcf_panic_show },
+	{ CLICMD_PANIC_CLEAR,		"", mcf_panic_clear },
 	{ NULL }
 };
 
@@ -119,10 +132,7 @@ mcf_panic(struct cli *cli, const char * const *av, void *priv)
 }
 
 static struct cli_proto cli_debug[] = {
-	{ "debug.panic.master", "debug.panic.master",
-		"\tPanic the master process.",
-		0, 0, "d", mcf_panic},
-	{ NULL }
+	{ CLICMD_DEBUG_PANIC_MASTER,		"d", mcf_panic },
 };
 
 /*--------------------------------------------------------------------*/
@@ -177,9 +187,11 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	free(q);
 }
 
+static const struct cli_cmd_desc CLICMD_WILDCARD[1] =
+    {{ "*", "<wild-card-entry>", "<fall through to cacher>", "", 0, -1 }};
+
 static struct cli_proto cli_askchild[] = {
-	{ "*", "<wild-card-entry>", "\t<fall through to cacher>\n",
-		0, 9999, "h*", mcf_askchild},
+	{ CLICMD_WILDCARD, "h*", mcf_askchild },
 	{ NULL }
 };
 
@@ -310,10 +322,10 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 }
 
 static struct cli_proto cli_auth[] = {
-	{ CLI_HELP,		"", VCLS_func_help, VCLS_func_help_json },
-	{ CLI_PING,		"", VCLS_func_ping },
-	{ CLI_AUTH,		"", mcf_auth },
-	{ CLI_QUIT,		"", VCLS_func_close },
+	{ CLICMD_HELP,		"", VCLS_func_help, VCLS_func_help_json },
+	{ CLICMD_PING,		"", VCLS_func_ping },
+	{ CLICMD_AUTH,		"", mcf_auth },
+	{ CLICMD_QUIT,		"", VCLS_func_close },
 	{ NULL }
 };
 
@@ -690,4 +702,37 @@ mgt_cli_master(const char *M_arg)
 	M_poker->callback = Marg_poker;
 	M_poker->name = "-M poker";
 	AZ(vev_add(mgt_evb, M_poker));
+}
+
+static int
+cli_cmp(const void *a, const void *b)
+{
+	struct cli_cmd_desc * const * const aa = a;
+	struct cli_cmd_desc * const * const bb = b;
+
+	return (strcmp((*aa)->request, (*bb)->request));
+}
+
+void
+mgt_DumpRstCli(void)
+{
+	const struct cli_cmd_desc *cp;
+	int i, j;
+
+	qsort(cmds, ncmds, sizeof cmds[0], cli_cmp);
+	for (i = 0; i < ncmds; i++, cp++) {
+		cp = cmds[i];
+		if (!strncmp(cp->request, "debug.", 6))
+			continue;
+		printf(".. _ref_cli_%s:\n\n", cp->syntax);
+		printf("%s\n", cp->syntax);
+		for (j = 0; j < strlen(cp->syntax); j++)
+			printf("~");
+		printf("\n");
+		printf("  %s\n", cp->help);
+		if (*cp->doc != '\0')
+			printf("\n%s\n", cp->doc);
+
+		printf("\n");
+	}
 }

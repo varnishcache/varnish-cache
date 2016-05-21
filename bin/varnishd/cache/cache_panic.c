@@ -637,9 +637,7 @@ ccf_panic(struct cli *cli, const char * const *av, void *priv)
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto debug_cmds[] = {
-	{ "debug.panic.worker", "debug.panic.worker",
-		"\tPanic the worker process.",
-		0, 0, "d", ccf_panic },
+	{ CLICMD_DEBUG_PANIC_WORKER,		"d",	ccf_panic },
 	{ NULL }
 };
 

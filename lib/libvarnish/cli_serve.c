@@ -138,10 +138,10 @@ VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 		VTAILQ_FOREACH(cfn, &cs->funcs, list) {
 			if (cfn->auth > cli->auth)
 				continue;
-			for (cp = cfn->clp; cp->request != NULL; cp++) {
-				if (!strcmp(cp->request, av[2])) {
+			for (cp = cfn->clp; cp->desc != NULL; cp++) {
+				if (!strcmp(cp->desc->request, av[2])) {
 					VCLI_Out(cli, "%s\n%s\n",
-					    cp->syntax, cp->help);
+					    cp->desc->syntax, cp->desc->help);
 					return;
 				}
 				for (u = 0; u < sizeof cp->flags; u++) {
@@ -159,7 +159,7 @@ VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 	VTAILQ_FOREACH(cfn, &cs->funcs, list) {
 		if (cfn->auth > cli->auth)
 			continue;
-		for (cp = cfn->clp; cp->request != NULL; cp++) {
+		for (cp = cfn->clp; cp->desc != NULL; cp++) {
 			d = 0;
 			h = 0;
 			i = 0;
@@ -186,8 +186,8 @@ VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 				continue;
 			if (h && !all)
 				continue;
-			if (cp->syntax != NULL)
-				VCLI_Out(cli, "%s\n", cp->syntax);
+			if (cp->desc->syntax != NULL)
+				VCLI_Out(cli, "%s\n", cp->desc->syntax);
 		}
 	}
 }
@@ -209,7 +209,7 @@ VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
 	VTAILQ_FOREACH(cfn, &cs->funcs, list) {
 		if (cfn->auth > cli->auth)
 			continue;
-		for (cp = cfn->clp; cp->request != NULL; cp++) {
+		for (cp = cfn->clp; cp->desc != NULL; cp++) {
 			f_wc = f_i = 0;
 			for (u = 0; u < sizeof cp->flags; u++) {
 				if (cp->flags[u] == '*')
@@ -225,13 +225,13 @@ VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
 				continue;
 			VCLI_Out(cli, ",\n  {");
 			VCLI_Out(cli, "\n  \"request\": ");
-			VCLI_JSON_str(cli, cp->request);
+			VCLI_JSON_str(cli, cp->desc->request);
 			VCLI_Out(cli, ",\n  \"syntax\": ");
-			VCLI_JSON_str(cli, cp->syntax);
+			VCLI_JSON_str(cli, cp->desc->syntax);
 			VCLI_Out(cli, ",\n  \"help\": ");
-			VCLI_JSON_str(cli, cp->help);
-			VCLI_Out(cli, ",\n  \"minarg\": %d", cp->minarg);
-			VCLI_Out(cli, ", \"maxarg\": %d", cp->maxarg);
+			VCLI_JSON_str(cli, cp->desc->help);
+			VCLI_Out(cli, ",\n  \"minarg\": %d", cp->desc->minarg);
+			VCLI_Out(cli, ", \"maxarg\": %d", cp->desc->maxarg);
 			VCLI_Out(cli, ", \"flags\": ");
 			VCLI_JSON_str(cli, cp->flags);
 			VCLI_Out(cli, ", \"json\": %s",
@@ -255,13 +255,13 @@ cls_dispatch(struct cli *cli, struct cli_proto *clp, char * const * av,
 	int json = 0;
 
 	AN(av);
-	for (cp = clp; cp->request != NULL; cp++) {
-		if (!strcmp(av[1], cp->request))
+	for (cp = clp; cp->desc != NULL; cp++) {
+		if (!strcmp(av[1], cp->desc->request))
 			break;
-		if (!strcmp("*", cp->request))
+		if (!strcmp("*", cp->desc->request))
 			break;
 	}
-	if (cp->request == NULL)
+	if (cp->desc == NULL)
 		return (0);
 
 	if (ac > 1 && !strcmp(av[2], "-j"))
@@ -278,13 +278,13 @@ cls_dispatch(struct cli *cli, struct cli_proto *clp, char * const * av,
 		return(1);
 	}
 
-	if (ac - 1 < cp->minarg + json) {
+	if (ac - 1 < cp->desc->minarg + json) {
 		VCLI_Out(cli, "Too few parameters\n");
 		VCLI_SetResult(cli, CLIS_TOOFEW);
 		return(1);
 	}
 
-	if (ac - 1> cp->maxarg + json) {
+	if (ac - 1> cp->desc->maxarg + json) {
 		VCLI_Out(cli, "Too many parameters\n");
 		VCLI_SetResult(cli, CLIS_TOOMANY);
 		return(1);
@@ -523,7 +523,6 @@ cls_close_fd(struct VCLS *cs, struct VCLS_fd *cfd)
 		free(cfd->cli->ident);
 	FREE_OBJ(cfd);
 }
-
 
 int
 VCLS_AddFunc(struct VCLS *cs, unsigned auth, struct cli_proto *clp)

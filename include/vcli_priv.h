@@ -37,19 +37,28 @@ struct cli;	/* NB: struct cli is opaque at this level.  */
 
 typedef void cli_func_t(struct cli*, const char * const *av, void *priv);
 
+struct cli_cmd_desc {
+	const char			*request;
+	const char			*syntax;
+	const char			*help;
+	const char			*doc;
+	int				minarg;
+	int				maxarg;
+};
+
+#define CLI_CMD(U,l,s,h,d,m,M) extern const struct cli_cmd_desc CLICMD_##U[1];
+#include "tbl/cli_cmds.h"
+#undef CLI_CMD
+
 struct cli_proto {
 	/* These must match the CLI_* macros in cli.h */
-	const char		*request;
-	const char		*syntax;
-	const char		*help;
-	unsigned		minarg;
-	unsigned		maxarg;
-	char			flags[4];
+	const struct cli_cmd_desc	*desc;
+	char				flags[4];
 
 	/* Dispatch information */
-	cli_func_t		*func;
-	cli_func_t		*jsonfunc;
-	void			*priv;
+	cli_func_t			*func;
+	cli_func_t			*jsonfunc;
+	void				*priv;
 };
 
 /* The implementation must provide these functions */

@@ -305,50 +305,6 @@ hcb_delete(struct hcb_root *r, struct objhead *oh)
 
 /*--------------------------------------------------------------------*/
 
-static void
-dumptree(struct cli *cli, uintptr_t p, int indent)
-{
-	int i;
-	const struct objhead *oh;
-	const struct hcb_y *y;
-
-	if (p == 0)
-		return;
-	if (hcb_is_node(p)) {
-		oh = hcb_l_node(p);
-		VCLI_Out(cli, "%*.*sN %d r%u <%02x%02x%02x...>\n",
-		    indent, indent, "", indent / 2, oh->refcnt,
-		    oh->digest[0], oh->digest[1], oh->digest[2]);
-		return;
-	}
-	assert(hcb_is_y(p));
-	y = hcb_l_y(p);
-	VCLI_Out(cli, "%*.*sY c %u p %u b %02x i %d\n",
-	    indent, indent, "",
-	    y->critbit, y->ptr, y->bitmask, indent / 2);
-	indent += 2;
-	for (i = 0; i < 2; i++)
-		dumptree(cli, y->leaf[i], indent);
-}
-
-static void
-hcb_dump(struct cli *cli, const char * const *av, void *priv)
-{
-
-	(void)priv;
-	(void)av;
-	VCLI_Out(cli, "HCB dump:\n");
-	dumptree(cli, hcb_root.origo, 0);
-	VCLI_Out(cli, "Coollist:\n");
-}
-
-static struct cli_proto hcb_cmds[] = {
-	{ "hcb.dump", "hcb.dump", "\tDump HCB tree.", 0, 0, "d", hcb_dump },
-	{ NULL }
-};
-
-/*--------------------------------------------------------------------*/
-
 static void * __match_proto__(bgthread_t)
 hcb_cleaner(struct worker *wrk, void *priv)
 {
@@ -384,7 +340,6 @@ hcb_start(void)
 	pthread_t tp;
 
 	(void)oh;
-	CLI_AddFuncs(hcb_cmds);
 	Lck_New(&hcb_mtx, lck_hcb);
 	WRK_BgThread(&tp, "hcb-cleaner", hcb_cleaner, NULL);
 	memset(&hcb_root, 0, sizeof hcb_root);

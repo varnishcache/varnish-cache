@@ -748,8 +748,8 @@ ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 }
 
 static struct cli_proto ban_cmds[] = {
-	{ CLI_BAN,				"", ccf_ban },
-	{ CLI_BAN_LIST,				"", ccf_ban_list },
+	{ CLICMD_BAN,				"", ccf_ban },
+	{ CLICMD_BAN_LIST,			"", ccf_ban_list },
 	{ NULL }
 };
 
