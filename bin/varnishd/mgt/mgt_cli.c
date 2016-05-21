@@ -71,7 +71,7 @@ static const struct cli_cmd_desc *cmds[] = {
 static const int ncmds = sizeof cmds / sizeof cmds[0];
 
 static int		cli_i = -1, cli_o = -1;
-static struct VCLS	*cls;
+struct VCLS		*mgt_cls;
 static const char	*secret_file;
 
 #define	MCF_NOAUTH	0	/* NB: zero disables here-documents */
@@ -152,12 +152,6 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 	 * running.
 	 */
 	if (cli_o <= 0) {
-		if (!strcmp(av[1], "help")) {
-			if (av[2] == NULL || strcmp(av[2], "-j"))
-				VCLI_Out(cli,
-				   "No help from child, (not running).\n");
-			return;
-		}
 		VCLI_SetResult(cli, CLIS_UNKNOWN);
 		VCLI_Out(cli,
 		    "Unknown request in manager process "
@@ -322,8 +316,28 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 	mcf_banner(cli, av, priv);
 }
 
+/*--------------------------------------------------------------------*/
+
+static void __match_proto__(cli_func_t)
+mcf_help(struct cli *cli, const char * const *av, void *priv)
+{
+	if (cli_o <= 0)
+		VCLS_func_help(cli, av, priv);
+	else
+		mcf_askchild(cli, av, priv);
+}
+
+static void __match_proto__(cli_func_t)
+mcf_help_json(struct cli *cli, const char * const *av, void *priv)
+{
+	if (cli_o <= 0)
+		VCLS_func_help_json(cli, av, priv);
+	else
+		mcf_askchild(cli, av, priv);
+}
+
 static struct cli_proto cli_auth[] = {
-	{ CLICMD_HELP,		"", VCLS_func_help, VCLS_func_help_json },
+	{ CLICMD_HELP,		"", mcf_help, mcf_help_json },
 	{ CLICMD_PING,		"", VCLS_func_ping },
 	{ CLICMD_AUTH,		"", mcf_auth },
 	{ CLICMD_QUIT,		"", VCLS_func_close },
@@ -353,14 +367,14 @@ static void
 mgt_cli_init_cls(void)
 {
 
-	cls = VCLS_New(mgt_cli_cb_before, mgt_cli_cb_after,
+	mgt_cls = VCLS_New(mgt_cli_cb_before, mgt_cli_cb_after,
 	    &mgt_param.cli_buffer, &mgt_param.cli_limit);
-	AN(cls);
-	VCLS_AddFunc(cls, MCF_NOAUTH, cli_auth);
-	VCLS_AddFunc(cls, MCF_AUTH, cli_proto);
-	VCLS_AddFunc(cls, MCF_AUTH, cli_debug);
-	VCLS_AddFunc(cls, MCF_AUTH, cli_stv);
-	VCLS_AddFunc(cls, MCF_AUTH, cli_askchild);
+	AN(mgt_cls);
+	VCLS_AddFunc(mgt_cls, MCF_NOAUTH, cli_auth);
+	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_proto);
+	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_debug);
+	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_stv);
+	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_askchild);
 }
 
 /*--------------------------------------------------------------------
@@ -371,7 +385,7 @@ void
 mgt_cli_close_all(void)
 {
 
-	VCLS_Destroy(&cls);
+	VCLS_Destroy(&mgt_cls);
 }
 
 /*--------------------------------------------------------------------
@@ -385,7 +399,7 @@ mgt_cli_callback2(const struct vev *e, int what)
 
 	(void)e;
 	(void)what;
-	i = VCLS_PollFd(cls, e->fd, 0);
+	i = VCLS_PollFd(mgt_cls, e->fd, 0);
 	return (i);
 }
 
@@ -400,10 +414,10 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident,
 
 	(void)ident;
 	(void)verbose;
-	if (cls == NULL)
+	if (mgt_cls == NULL)
 		mgt_cli_init_cls();
 
-	cli = VCLS_AddFd(cls, fdi, fdo, closefunc, priv);
+	cli = VCLS_AddFd(mgt_cls, fdi, fdo, closefunc, priv);
 
 	cli->ident = strdup(ident);
 

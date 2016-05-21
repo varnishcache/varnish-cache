@@ -85,3 +85,6 @@ void VSM_common_delete(struct vsm_sc **sc);
 void VSM_common_copy(struct vsm_sc *to, const struct vsm_sc *from);
 void VSM_common_cleaner(struct vsm_sc *sc, struct VSC_C_main *stats);
 void VSM_common_ageupdate(const struct vsm_sc *sc);
+
+/* mgt_cli.c */
+extern struct VCLS	*mgt_cls;

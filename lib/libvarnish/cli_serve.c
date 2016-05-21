@@ -82,7 +82,7 @@ struct VCLS {
 
 /*--------------------------------------------------------------------*/
 
-void
+void __match_proto__(cli_func_t)
 VCLS_func_close(struct cli *cli, const char *const *av, void *priv)
 {
 
@@ -94,24 +94,24 @@ VCLS_func_close(struct cli *cli, const char *const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-void
+void __match_proto__(cli_func_t)
 VCLS_func_ping(struct cli *cli, const char * const *av, void *priv)
 {
 	time_t t;
 
-	(void)priv;
 	(void)av;
+	(void)priv;
 	t = time(NULL);
 	VCLI_Out(cli, "PONG %jd 1.0", (intmax_t)t);
 }
 
 /*--------------------------------------------------------------------*/
 
-void
+void __match_proto__(cli_func_t)
 VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 {
 	struct cli_proto *clp;
-	unsigned all, debug, u, d, h, i;
+	unsigned all, debug, d;
 	struct VCLS *cs;
 
 	(void)priv;
@@ -128,73 +128,43 @@ VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 		debug = 1;
 	} else {
 		VTAILQ_FOREACH(clp, &cs->funcs, list) {
-			if (clp->auth > cli->auth)
-				continue;
-			if (!strcmp(clp->desc->request, av[2])) {
+			if (clp->auth <= cli->auth &&
+			    !strcmp(clp->desc->request, av[2])) {
 				VCLI_Out(cli, "%s\n%s\n",
 				    clp->desc->syntax, clp->desc->help);
 				return;
 			}
 		}
-		if (cs->wildcard != NULL) {
-			cs->wildcard->func(cli, av, NULL);
-		} else {
-			VCLI_Out(cli,
-			    "Unknown request.\nType 'help' for more info.\n");
-			VCLI_SetResult(cli, CLIS_UNKNOWN);
-		}
+		VCLI_Out(cli, "Unknown request.\nType 'help' for more info.\n");
+		VCLI_SetResult(cli, CLIS_UNKNOWN);
 		return;
 	}
 	VTAILQ_FOREACH(clp, &cs->funcs, list) {
 		if (clp->auth > cli->auth)
 			continue;
-		d = 0;
-		h = 0;
-		i = 0;
-		for (u = 0; u < sizeof clp->flags; u++) {
-			if (clp->flags[u] == '\0')
-				continue;
-			if (clp->flags[u] == 'd')
-				d = 1;
-			if (clp->flags[u] == 'h')
-				h = 1;
-			if (clp->flags[u] == 'i')
-				i = 1;
-		}
-		if (i)
+		d =  strchr(clp->flags, 'd') != NULL ? 1 : 0;
+		if (d && (!all && !debug))
 			continue;
-		if (debug != d)
-			continue;
-		if (h && !all)
+		if (debug && !d)
 			continue;
 		if (clp->desc->syntax != NULL)
 			VCLI_Out(cli, "%s\n", clp->desc->syntax);
 	}
-	if (cs->wildcard != NULL)
-		cs->wildcard->func(cli, av, NULL);
 }
 
-void
+void __match_proto__(cli_func_t)
 VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
 {
 	struct cli_proto *clp;
 	struct VCLS *cs;
-	unsigned u, f_i;
 
 	(void)priv;
 	cs = cli->cls;
 	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
 
-	if (priv == NULL)
-		VCLI_JSON_ver(cli, 1, av);
+	VCLI_JSON_ver(cli, 1, av);
 	VTAILQ_FOREACH(clp, &cs->funcs, list) {
 		if (clp->auth > cli->auth)
-			continue;
-		f_i = 0;
-		for (u = 0; u < sizeof clp->flags; u++)
-			if (clp->flags[u] == 'i')
-				f_i = 1;
-		if (f_i)
 			continue;
 		VCLI_Out(cli, ",\n  {");
 		VCLI_Out(cli, "\n  \"request\": ");
@@ -211,11 +181,7 @@ VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
 		    clp->jsonfunc == NULL ? "false" : "true");
 		VCLI_Out(cli, "\n  }");
 	}
-	if (cs->wildcard != NULL)
-		cs->wildcard->func(cli, av, priv);
-
-	if (priv == NULL)
-		VCLI_Out(cli, "\n]\n");
+	VCLI_Out(cli, "\n]\n");
 }
 
 /*--------------------------------------------------------------------
@@ -509,18 +475,41 @@ VCLS_AddFunc(struct VCLS *cs, unsigned auth, struct cli_proto *clp)
 		if (!strcmp(clp->desc->request, "*")) {
 			cs->wildcard = clp;
 		} else {
+			i = 0;
 			VTAILQ_FOREACH(clp2, &cs->funcs, list) {
 				i = strcmp(clp->desc->request,
 				    clp2->desc->request);
-				assert(i != 0);
-				if (i < 0)
+				if (i <= 0)
 					break;
 			}
-			if (clp2 != NULL)
+			if (clp2 != NULL && i == 0) {
+				VTAILQ_INSERT_BEFORE(clp2, clp, list);
+				VTAILQ_REMOVE(&cs->funcs, clp2, list);
+			} else if (clp2 != NULL)
 				VTAILQ_INSERT_BEFORE(clp2, clp, list);
 			else
 				VTAILQ_INSERT_TAIL(&cs->funcs, clp, list);
 		}
+	}
+}
+
+/*
+ * This function has *very* special semantics, related to the mgt/worker
+ * process Copy-On-Write memory relationship.
+ */
+
+void
+VCLS_Clone(struct VCLS *cs, struct VCLS *cso)
+{
+	struct cli_proto *clp, *clp2;
+
+	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	CHECK_OBJ_NOTNULL(cso, VCLS_MAGIC);
+	VTAILQ_FOREACH_SAFE(clp, &cso->funcs, list, clp2) {
+		VTAILQ_REMOVE(&cso->funcs, clp, list);
+		VTAILQ_INSERT_TAIL(&cs->funcs, clp, list);
+		clp->auth = 0;
+		clp->func = NULL;
 	}
 }
 

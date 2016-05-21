@@ -111,7 +111,7 @@ CLI_Run(void)
 
 static struct cli_proto cli_cmds[] = {
 	{ CLICMD_PING,	"i", VCLS_func_ping },
-	{ CLICMD_HELP,	"i", VCLS_func_help, VCLS_func_help_json, cli_cmds },
+	{ CLICMD_HELP,	"i", VCLS_func_help, VCLS_func_help_json },
 	{ NULL }
 };
 
@@ -129,6 +129,7 @@ CLI_Init(void)
 	cls = VCLS_New(cli_cb_before, cli_cb_after,
 	    &cache_param->cli_buffer, &cache_param->cli_limit);
 	AN(cls);
+	VCLS_Clone(cls, mgt_cls);
 
 	CLI_AddFuncs(cli_cmds);
 }

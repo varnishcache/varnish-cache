@@ -947,11 +947,11 @@ VCL_##func##_method(struct vcl *vcl, struct worker *wrk,		\
 /*--------------------------------------------------------------------*/
 
 static struct cli_proto vcl_cmds[] = {
-	{ CLICMD_VCL_LOAD,		"i", ccf_config_load },
-	{ CLICMD_VCL_LIST,		"i", ccf_config_list },
-	{ CLICMD_VCL_STATE,		"i", ccf_config_state },
-	{ CLICMD_VCL_DISCARD,		"i", ccf_config_discard },
-	{ CLICMD_VCL_USE,		"i", ccf_config_use },
+	{ CLICMD_VCL_LOAD,		"", ccf_config_load },
+	{ CLICMD_VCL_LIST,		"", ccf_config_list },
+	{ CLICMD_VCL_STATE,		"", ccf_config_state },
+	{ CLICMD_VCL_DISCARD,		"", ccf_config_discard },
+	{ CLICMD_VCL_USE,		"", ccf_config_use },
 	{ CLICMD_VCL_SHOW,		"", ccf_config_show },
 	{ NULL }
 };

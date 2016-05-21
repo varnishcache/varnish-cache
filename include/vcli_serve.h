@@ -38,6 +38,7 @@ void VCLS_AddFunc(struct VCLS *cs, unsigned auth, struct cli_proto *clp);
 int VCLS_Poll(struct VCLS *cs, int timeout);
 int VCLS_PollFd(struct VCLS *cs, int fd, int timeout);
 void VCLS_Destroy(struct VCLS **);
+void VCLS_Clone(struct VCLS *cs, struct VCLS *cso);
 
 /* From libvarnish/cli.c */
 cli_func_t	VCLS_func_close;

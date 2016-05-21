@@ -53,7 +53,7 @@ struct cli_cmd_desc {
 
 struct cli_proto {
 	const struct cli_cmd_desc	*desc;
-	char				flags[4];
+	const char			*flags;
 
 	/* Dispatch information */
 	cli_func_t			*func;
