@@ -133,6 +133,7 @@ mcf_panic(struct cli *cli, const char * const *av, void *priv)
 
 static struct cli_proto cli_debug[] = {
 	{ CLICMD_DEBUG_PANIC_MASTER,		"d", mcf_panic },
+	{ NULL }
 };
 
 /*--------------------------------------------------------------------*/
