@@ -232,7 +232,7 @@ CLI_CMD(DEBUG_LISTEN_ADDRESS,
 
 CLI_CMD(BACKEND_LIST,
 	"backend.list",
-	"baclend.list [-p] [<backend_pattern>]",
+	"backend.list [-p] [<backend_pattern>]",
 	"List backends.  -p also shows probe status.",
 	"",
 	0, 2
