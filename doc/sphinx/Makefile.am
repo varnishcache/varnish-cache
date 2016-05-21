@@ -122,9 +122,13 @@ dist-hook:
 distclean-local:
 	rm -rf $(BUILDDIR)
 
+include/cli.rst: $(top_builddir)/bin/varnishd/varnishd
+	$(top_builddir)/bin/varnishd/varnishd -x dumprstcli > $@
+BUILT_SOURCES = include/cli.rst
+
 include/params.rst: $(top_builddir)/bin/varnishd/varnishd
 	$(top_builddir)/bin/varnishd/varnishd -x dumprstparam > $@
-BUILT_SOURCES = include/params.rst
+BUILT_SOURCES += include/params.rst
 
 include/counters.rst: $(top_builddir)/bin/varnishstat/vsc2rst
 	$(top_builddir)/bin/varnishstat/vsc2rst > $@

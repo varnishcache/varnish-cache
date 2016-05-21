@@ -78,101 +78,12 @@ be entered with the \\xnn syntax.
 Commands
 --------
 
-help [<command>]
-  Show command/protocol help.
+.. include:: ../include/cli.rst
 
-ping [<timestamp>]
-  Keep connection alive.
+Backend Pattern
+---------------
 
-auth <response>
-  Authenticate.
-
-quit
-  Close connection.
-
-banner
-  Print welcome banner.
-
-status
-  Check status of Varnish cache process.
-
-start
-  Start the Varnish cache process.
-
-stop
-  Stop the Varnish cache process.
-
-vcl.load <configname> <filename> [auto|cold|warm]
-  Compile and load the VCL file under the name provided.
-
-vcl.inline <configname> <quoted_VCLstring> [auto|cold|warm]
-  Compile and load the VCL data under the name provided.
-  Multi-line VCL can be input using the here document :ref:`ref_syntax`.
-
-vcl.use <configname>
-  Switch to the named configuration immediately.
-
-vcl.discard <configname>
-  Unload the named configuration (when possible).
-
-vcl.list
-  List all loaded configuration.
-
-vcl.show [-v] <configname>
-  Display the source code for the specified configuration.
-
-vcl.state <configname> <state>
-  Force the state of the specified configuration.
-  State is any of auto, warm or cold values.
-
-param.show [-l] [<param>]
-  Show parameters and their values.
-
-param.set <param> <value>
-  Set parameter value.
-
-panic.show
-  Return the last panic, if any.
-
-panic.clear [-z]
-  Clear the last panic, if any. -z will clear related varnishstat counter(s).
-
-storage.list
-  List storage devices.
-
-backend.list [-p] [<backend_expression>]
-  List backends. If -p is specified include probe details.
-
-backend.set_health <backend_expression> <state>
-  Set health status on the backends.
-  State is any of auto, healthy or sick values.
-
-ban <field> <operator> <arg> [&& <field> <oper> <arg> ...]
-  Mark obsolete all objects where all the conditions match.
-
-ban.list
-  List the active bans. The output format is:
-
-  * time the ban was issued
-
-  * reference count
-
-  * ``C`` for completed bans (replaced by a newer ban) or ``-``
-
-  * if ``lurker`` debugging is enabled
-
-    * ``R`` for bans on request properties or ``-``
-
-    * ``O`` for bans on object properties or ``-``
-
-    * pointer to the ban object
-
-  * ban specification
-
-Backend Expression
-------------------
-
-A backend expression can be a backend name or a combination of a VCL name
+A backend pattern can be a backend name or a combination of a VCL name
 and backend name in "VCL.backend" format.  If the VCL name is omitted,
 the active VCL is assumed.  Partial matching on the backend name, VCL
 name or both is possible using shell-style wilcards, i.e. asterisk (*),
