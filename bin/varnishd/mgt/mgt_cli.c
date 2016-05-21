@@ -100,18 +100,11 @@ mcf_banner(struct cli *cli, const char *const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-/* XXX: what order should this list be in ? */
 static struct cli_proto cli_proto[] = {
 	{ CLICMD_BANNER,		"", mcf_banner },
 	{ CLICMD_SERVER_STATUS,		"", mcf_server_status },
 	{ CLICMD_SERVER_START,		"", mcf_server_start },
 	{ CLICMD_SERVER_STOP,		"", mcf_server_stop },
-	{ CLICMD_VCL_LOAD,		"", mcf_vcl_load },
-	{ CLICMD_VCL_INLINE,		"", mcf_vcl_inline },
-	{ CLICMD_VCL_USE,		"", mcf_vcl_use },
-	{ CLICMD_VCL_STATE,		"", mcf_vcl_state },
-	{ CLICMD_VCL_DISCARD,		"", mcf_vcl_discard },
-	{ CLICMD_VCL_LIST,		"", mcf_vcl_list },
 	{ CLICMD_PARAM_SHOW,		"", mcf_param_show },
 	{ CLICMD_PARAM_SET,		"", mcf_param_set },
 	{ CLICMD_PANIC_SHOW,		"", mcf_panic_show },
@@ -363,7 +356,7 @@ mgt_cli_cb_after(const struct cli *cli)
 
 /*--------------------------------------------------------------------*/
 
-static void
+void
 mgt_cli_init_cls(void)
 {
 
@@ -414,8 +407,6 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident,
 
 	(void)ident;
 	(void)verbose;
-	if (mgt_cls == NULL)
-		mgt_cli_init_cls();
 
 	cli = VCLS_AddFd(mgt_cls, fdi, fdo, closefunc, priv);
 

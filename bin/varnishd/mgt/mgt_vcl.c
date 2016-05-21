@@ -42,6 +42,7 @@
 
 #include "vcli.h"
 #include "vcli_priv.h"
+#include "vcli_serve.h"
 #include "vev.h"
 #include "vtim.h"
 
@@ -271,7 +272,7 @@ mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
 
 /*--------------------------------------------------------------------*/
 
-void
+static void __match_proto__(cli_func_t)
 mcf_vcl_inline(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vclprog *vp;
@@ -288,7 +289,7 @@ mcf_vcl_inline(struct cli *cli, const char * const *av, void *priv)
 	mgt_new_vcl(cli, av[2], av[3], "<vcl.inline>", av[4], 0);
 }
 
-void
+static void __match_proto__(cli_func_t)
 mcf_vcl_load(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vclprog *vp;
@@ -317,7 +318,7 @@ mcf_find_vcl(struct cli *cli, const char *name)
 	return (NULL);
 }
 
-void
+static void __match_proto__(cli_func_t)
 mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vclprog *vp;
@@ -353,7 +354,7 @@ mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 	}
 }
 
-void
+static void __match_proto__(cli_func_t)
 mcf_vcl_use(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned status;
@@ -386,7 +387,7 @@ mcf_vcl_use(struct cli *cli, const char * const *av, void *priv)
 	free(p);
 }
 
-void
+static void __match_proto__(cli_func_t)
 mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned status;
@@ -411,7 +412,7 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 	mgt_vcl_del(vp);
 }
 
-void
+static void __match_proto__(cli_func_t)
 mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned status;
@@ -455,6 +456,18 @@ mgt_vcl_poker(const struct vev *e, int what)
 
 /*--------------------------------------------------------------------*/
 
+static struct cli_proto cli_vcl[] = {
+	{ CLICMD_VCL_LOAD,		"", mcf_vcl_load },
+	{ CLICMD_VCL_INLINE,		"", mcf_vcl_inline },
+	{ CLICMD_VCL_USE,		"", mcf_vcl_use },
+	{ CLICMD_VCL_STATE,		"", mcf_vcl_state },
+	{ CLICMD_VCL_DISCARD,		"", mcf_vcl_discard },
+	{ CLICMD_VCL_LIST,		"", mcf_vcl_list },
+	{ NULL }
+};
+
+/*--------------------------------------------------------------------*/
+
 static void
 mgt_vcl_atexit(void)
 {
@@ -482,4 +495,6 @@ mgt_vcl_init(void)
 	AZ(vev_add(mgt_evb, e_poker));
 
 	AZ(atexit(mgt_vcl_atexit));
+
+	VCLS_AddFunc(mgt_cls, 0, cli_vcl);
 }

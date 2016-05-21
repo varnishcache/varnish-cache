@@ -691,6 +691,8 @@ main(int argc, char * const *argv)
 		}
 	}
 
+	mgt_cli_init_cls();		// CLI commands can be registered
+
 	if (!jailed)
 		VJ_Init(NULL);
 
