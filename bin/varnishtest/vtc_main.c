@@ -472,13 +472,55 @@ ip_magic(void)
  * Main
  */
 
+static int
+read_file(const char *fn, int ntest)
+{
+	struct vtc_tst *tp;
+	char *p;
+
+	p = VFIL_readfile(NULL, fn, NULL);
+	if (p == NULL) {
+		fprintf(stderr, "Cannot stat file \"%s\": %s\n",
+		    fn, strerror(errno));
+		return (2);
+	}
+	for (;p != NULL && *p != '\0'; p++) {
+		if (vct_islws(*p))
+			continue;
+		if (*p != '#')
+			break;
+		p = strchr(p, '\n');
+	}
+
+	if (p == NULL || *p == '\0') {
+		fprintf(stderr, "File \"%s\" has no content.\n", fn);
+		return (2);
+	}
+
+	if (strncmp(p, "varnishtest", 11) || !isspace(p[11])) {
+		fprintf(stderr,
+		    "File \"%s\" doesn't start with 'varnishtest'\n",
+		    fn);
+		return(2);
+	}
+	ALLOC_OBJ(tp, TST_MAGIC);
+	AN(tp);
+	tp->filename = fn;
+	tp->script = p;
+	tp->ntodo = ntest;
+	VTAILQ_INSERT_TAIL(&tst_head, tp, list);
+	return(0);
+}
+
+/**********************************************************************
+ * Main
+ */
+
 int
 main(int argc, char * const *argv)
 {
 	int ch, i;
 	int ntest = 1;			/* Run tests this many times */
-	struct vtc_tst *tp;
-	char *p;
 	uintmax_t bufsiz;
 
 	if (getenv("TMPDIR") != NULL)
@@ -562,40 +604,10 @@ main(int argc, char * const *argv)
 	argv += optind;
 
 	for (;argc > 0; argc--, argv++) {
-		p = VFIL_readfile(NULL, *argv, NULL);
-		if (p == NULL) {
-			fprintf(stderr, "Cannot stat file \"%s\": %s\n",
-			    *argv, strerror(errno));
-			if (vtc_continue)
-				continue;
+		if (!read_file(*argv, ntest))
+			continue;
+		if (!vtc_continue)
 			exit(2);
-		}
-		while (1) {
-			if (vct_islws(*p)) {
-				p++;
-				continue;
-			}
-			if (*p == '#') {
-				if ((p = strchr(p, '\n')))
-					p++;
-				continue;
-			}
-			break;
-		}
-
-		if (strncmp(p, "varnishtest", 11) || !isspace(p[11])) {
-			fprintf(stderr, "File \"%s\" doesn't start with 'varnishtest'\n",
-			    *argv);
-			if (vtc_continue)
-				continue;
-			exit(2);
-		}
-		ALLOC_OBJ(tp, TST_MAGIC);
-		AN(tp);
-		tp->filename = *argv;
-		tp->script = p;
-		tp->ntodo = ntest;
-		VTAILQ_INSERT_TAIL(&tst_head, tp, list);
 	}
 
 	AZ(VSB_finish(params_vsb));
