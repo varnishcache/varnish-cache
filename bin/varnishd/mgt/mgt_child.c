@@ -49,6 +49,7 @@
 #include "vbm.h"
 #include "vcli.h"
 #include "vcli_priv.h"
+#include "vcli_serve.h"
 #include "vev.h"
 #include "vlu.h"
 #include "vtim.h"
@@ -130,7 +131,7 @@ mgt_panic_clear(void)
 	VSB_destroy(&child_panic);
 }
 
-void __match_proto__(cli_func_t)
+static void __match_proto__(cli_func_t)
 mcf_panic_show(struct cli *cli, const char * const *av, void *priv)
 {
 	(void)av;
@@ -146,7 +147,7 @@ mcf_panic_show(struct cli *cli, const char * const *av, void *priv)
 	VCLI_Out(cli, "%s\n", VSB_data(child_panic));
 }
 
-void __match_proto__(cli_func_t)
+static void __match_proto__(cli_func_t)
 mcf_panic_clear(struct cli *cli, const char * const *av, void *priv)
 {
 	(void)priv;
@@ -616,7 +617,7 @@ mgt_stop_child(void)
  * CLI commands to start/stop child
  */
 
-void __match_proto__(cli_func_t)
+static void __match_proto__(cli_func_t)
 mcf_server_start(struct cli *cli, const char * const *av, void *priv)
 {
 
@@ -635,7 +636,7 @@ mcf_server_start(struct cli *cli, const char * const *av, void *priv)
 	}
 }
 
-void __match_proto__(cli_func_t)
+static void __match_proto__(cli_func_t)
 mcf_server_stop(struct cli *cli, const char * const *av, void *priv)
 {
 
@@ -651,7 +652,7 @@ mcf_server_stop(struct cli *cli, const char * const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-void
+static void
 mcf_server_status(struct cli *cli, const char * const *av, void *priv)
 {
 	(void)av;
@@ -690,6 +691,17 @@ mgt_uptime(const struct vev *e, int what)
 	return (0);
 }
 
+/*--------------------------------------------------------------------*/
+
+static struct cli_proto cli_child[] = {
+	{ CLICMD_SERVER_STATUS,		"", mcf_server_status },
+	{ CLICMD_SERVER_START,		"", mcf_server_start },
+	{ CLICMD_SERVER_STOP,		"", mcf_server_stop },
+	{ CLICMD_PANIC_SHOW,		"", mcf_panic_show },
+	{ CLICMD_PANIC_CLEAR,		"", mcf_panic_clear },
+	{ NULL }
+};
+
 /*=====================================================================
  * This thread is the master thread in the management process.
  * The relatively simple task is to start and stop the child process
@@ -702,6 +714,8 @@ MGT_Run(void)
 	struct sigaction sac;
 	struct vev *e;
 	int i;
+
+	VCLS_AddFunc(mgt_cls, 0, cli_child);
 
 	mgt_uptime_t0 = VTIM_real();
 	e = vev_new();

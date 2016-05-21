@@ -102,13 +102,8 @@ mcf_banner(struct cli *cli, const char *const *av, void *priv)
 
 static struct cli_proto cli_proto[] = {
 	{ CLICMD_BANNER,		"", mcf_banner },
-	{ CLICMD_SERVER_STATUS,		"", mcf_server_status },
-	{ CLICMD_SERVER_START,		"", mcf_server_start },
-	{ CLICMD_SERVER_STOP,		"", mcf_server_stop },
 	{ CLICMD_PARAM_SHOW,		"", mcf_param_show },
 	{ CLICMD_PARAM_SET,		"", mcf_param_set },
-	{ CLICMD_PANIC_SHOW,		"", mcf_panic_show },
-	{ CLICMD_PANIC_CLEAR,		"", mcf_panic_clear },
 	{ NULL }
 };
 
