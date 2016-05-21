@@ -38,6 +38,7 @@ struct cli;	/* NB: struct cli is opaque at this level.  */
 typedef void cli_func_t(struct cli*, const char * const *av, void *priv);
 
 struct cli_cmd_desc {
+	/* Must match CLI_CMD macro in include/tbl/cli_cmds.h */
 	const char			*request;
 	const char			*syntax;
 	const char			*help;
@@ -51,7 +52,6 @@ struct cli_cmd_desc {
 #undef CLI_CMD
 
 struct cli_proto {
-	/* These must match the CLI_* macros in cli.h */
 	const struct cli_cmd_desc	*desc;
 	char				flags[4];
 
@@ -59,6 +59,9 @@ struct cli_proto {
 	cli_func_t			*func;
 	cli_func_t			*jsonfunc;
 	void				*priv;
+
+	unsigned			auth;
+	VTAILQ_ENTRY(cli_proto)		list;
 };
 
 /* The implementation must provide these functions */

@@ -356,11 +356,11 @@ mgt_cli_init_cls(void)
 	cls = VCLS_New(mgt_cli_cb_before, mgt_cli_cb_after,
 	    &mgt_param.cli_buffer, &mgt_param.cli_limit);
 	AN(cls);
-	AZ(VCLS_AddFunc(cls, MCF_NOAUTH, cli_auth));
-	AZ(VCLS_AddFunc(cls, MCF_AUTH, cli_proto));
-	AZ(VCLS_AddFunc(cls, MCF_AUTH, cli_debug));
-	AZ(VCLS_AddFunc(cls, MCF_AUTH, cli_stv));
-	AZ(VCLS_AddFunc(cls, MCF_AUTH, cli_askchild));
+	VCLS_AddFunc(cls, MCF_NOAUTH, cli_auth);
+	VCLS_AddFunc(cls, MCF_AUTH, cli_proto);
+	VCLS_AddFunc(cls, MCF_AUTH, cli_debug);
+	VCLS_AddFunc(cls, MCF_AUTH, cli_stv);
+	VCLS_AddFunc(cls, MCF_AUTH, cli_askchild);
 }
 
 /*--------------------------------------------------------------------

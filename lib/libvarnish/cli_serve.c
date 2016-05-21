@@ -43,6 +43,7 @@
 
 #include "vdef.h"
 #include "vas.h"
+#include "vqueue.h"
 #include "miniobj.h"
 
 #include "vav.h"
@@ -51,16 +52,7 @@
 #include "vcli_priv.h"
 #include "vcli_serve.h"
 #include "vlu.h"
-#include "vqueue.h"
 #include "vsb.h"
-
-struct VCLS_func {
-	unsigned			magic;
-#define VCLS_FUNC_MAGIC			0x7d280c9b
-	VTAILQ_ENTRY(VCLS_func)		list;
-	unsigned			auth;
-	struct cli_proto		*clp;
-};
 
 struct VCLS_fd {
 	unsigned			magic;
@@ -81,10 +73,11 @@ struct VCLS {
 #define VCLS_MAGIC			0x60f044a3
 	VTAILQ_HEAD(,VCLS_fd)		fds;
 	unsigned			nfd;
-	VTAILQ_HEAD(,VCLS_func)		funcs;
+	VTAILQ_HEAD(,cli_proto)		funcs;
 	cls_cbc_f			*before, *after;
 	volatile unsigned		*maxlen;
 	volatile unsigned		*limit;
+	struct cli_proto		*wildcard;
 };
 
 /*--------------------------------------------------------------------*/
@@ -117,9 +110,8 @@ VCLS_func_ping(struct cli *cli, const char * const *av, void *priv)
 void
 VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 {
-	struct cli_proto *cp;
-	struct VCLS_func *cfn;
-	unsigned all, debug, u, d, h, i, wc;
+	struct cli_proto *clp;
+	unsigned all, debug, u, d, h, i;
 	struct VCLS *cs;
 
 	(void)priv;
@@ -135,70 +127,59 @@ VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 		all = 0;
 		debug = 1;
 	} else {
-		VTAILQ_FOREACH(cfn, &cs->funcs, list) {
-			if (cfn->auth > cli->auth)
+		VTAILQ_FOREACH(clp, &cs->funcs, list) {
+			if (clp->auth > cli->auth)
 				continue;
-			for (cp = cfn->clp; cp->desc != NULL; cp++) {
-				if (!strcmp(cp->desc->request, av[2])) {
-					VCLI_Out(cli, "%s\n%s\n",
-					    cp->desc->syntax, cp->desc->help);
-					return;
-				}
-				for (u = 0; u < sizeof cp->flags; u++) {
-					if (cp->flags[u] == '*') {
-						cp->func(cli, av, NULL);
-						return;
-					}
-				}
+			if (!strcmp(clp->desc->request, av[2])) {
+				VCLI_Out(cli, "%s\n%s\n",
+				    clp->desc->syntax, clp->desc->help);
+				return;
 			}
 		}
-		VCLI_Out(cli, "Unknown request.\nType 'help' for more info.\n");
-		VCLI_SetResult(cli, CLIS_UNKNOWN);
+		if (cs->wildcard != NULL) {
+			cs->wildcard->func(cli, av, NULL);
+		} else {
+			VCLI_Out(cli,
+			    "Unknown request.\nType 'help' for more info.\n");
+			VCLI_SetResult(cli, CLIS_UNKNOWN);
+		}
 		return;
 	}
-	VTAILQ_FOREACH(cfn, &cs->funcs, list) {
-		if (cfn->auth > cli->auth)
+	VTAILQ_FOREACH(clp, &cs->funcs, list) {
+		if (clp->auth > cli->auth)
 			continue;
-		for (cp = cfn->clp; cp->desc != NULL; cp++) {
-			d = 0;
-			h = 0;
-			i = 0;
-			wc = 0;
-			for (u = 0; u < sizeof cp->flags; u++) {
-				if (cp->flags[u] == '\0')
-					continue;
-				if (cp->flags[u] == 'd')
-					d = 1;
-				if (cp->flags[u] == 'h')
-					h = 1;
-				if (cp->flags[u] == 'i')
-					i = 1;
-				if (cp->flags[u] == '*')
-					wc = 1;
-			}
-			if (i)
+		d = 0;
+		h = 0;
+		i = 0;
+		for (u = 0; u < sizeof clp->flags; u++) {
+			if (clp->flags[u] == '\0')
 				continue;
-			if (wc) {
-				cp->func(cli, av, NULL);
-				continue;
-			}
-			if (debug != d)
-				continue;
-			if (h && !all)
-				continue;
-			if (cp->desc->syntax != NULL)
-				VCLI_Out(cli, "%s\n", cp->desc->syntax);
+			if (clp->flags[u] == 'd')
+				d = 1;
+			if (clp->flags[u] == 'h')
+				h = 1;
+			if (clp->flags[u] == 'i')
+				i = 1;
 		}
+		if (i)
+			continue;
+		if (debug != d)
+			continue;
+		if (h && !all)
+			continue;
+		if (clp->desc->syntax != NULL)
+			VCLI_Out(cli, "%s\n", clp->desc->syntax);
 	}
+	if (cs->wildcard != NULL)
+		cs->wildcard->func(cli, av, NULL);
 }
 
 void
 VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
 {
-	struct cli_proto *cp;
-	struct VCLS_func *cfn;
+	struct cli_proto *clp;
 	struct VCLS *cs;
-	unsigned u, f_wc, f_i;
+	unsigned u, f_i;
 
 	(void)priv;
 	cs = cli->cls;
@@ -206,39 +187,33 @@ VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
 
 	if (priv == NULL)
 		VCLI_JSON_ver(cli, 1, av);
-	VTAILQ_FOREACH(cfn, &cs->funcs, list) {
-		if (cfn->auth > cli->auth)
+	VTAILQ_FOREACH(clp, &cs->funcs, list) {
+		if (clp->auth > cli->auth)
 			continue;
-		for (cp = cfn->clp; cp->desc != NULL; cp++) {
-			f_wc = f_i = 0;
-			for (u = 0; u < sizeof cp->flags; u++) {
-				if (cp->flags[u] == '*')
-					f_wc = 1;
-				if (cp->flags[u] == 'i')
-					f_i = 1;
-			}
-			if (f_wc) {
-				cp->func(cli, av, priv);
-				continue;
-			}
-			if (f_i)
-				continue;
-			VCLI_Out(cli, ",\n  {");
-			VCLI_Out(cli, "\n  \"request\": ");
-			VCLI_JSON_str(cli, cp->desc->request);
-			VCLI_Out(cli, ",\n  \"syntax\": ");
-			VCLI_JSON_str(cli, cp->desc->syntax);
-			VCLI_Out(cli, ",\n  \"help\": ");
-			VCLI_JSON_str(cli, cp->desc->help);
-			VCLI_Out(cli, ",\n  \"minarg\": %d", cp->desc->minarg);
-			VCLI_Out(cli, ", \"maxarg\": %d", cp->desc->maxarg);
-			VCLI_Out(cli, ", \"flags\": ");
-			VCLI_JSON_str(cli, cp->flags);
-			VCLI_Out(cli, ", \"json\": %s",
-			    cp->jsonfunc == NULL ? "false" : "true");
-			VCLI_Out(cli, "\n  }");
-		}
+		f_i = 0;
+		for (u = 0; u < sizeof clp->flags; u++)
+			if (clp->flags[u] == 'i')
+				f_i = 1;
+		if (f_i)
+			continue;
+		VCLI_Out(cli, ",\n  {");
+		VCLI_Out(cli, "\n  \"request\": ");
+		VCLI_JSON_str(cli, clp->desc->request);
+		VCLI_Out(cli, ",\n  \"syntax\": ");
+		VCLI_JSON_str(cli, clp->desc->syntax);
+		VCLI_Out(cli, ",\n  \"help\": ");
+		VCLI_JSON_str(cli, clp->desc->help);
+		VCLI_Out(cli, ",\n  \"minarg\": %d", clp->desc->minarg);
+		VCLI_Out(cli, ", \"maxarg\": %d", clp->desc->maxarg);
+		VCLI_Out(cli, ", \"flags\": ");
+		VCLI_JSON_str(cli, clp->flags);
+		VCLI_Out(cli, ", \"json\": %s",
+		    clp->jsonfunc == NULL ? "false" : "true");
+		VCLI_Out(cli, "\n  }");
 	}
+	if (cs->wildcard != NULL)
+		cs->wildcard->func(cli, av, priv);
+
 	if (priv == NULL)
 		VCLI_Out(cli, "\n]\n");
 }
@@ -247,22 +222,13 @@ VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
  * Look for a CLI command to execute
  */
 
-static int
-cls_dispatch(struct cli *cli, struct cli_proto *clp, char * const * av,
-    unsigned ac)
+static void
+cls_dispatch(struct cli *cli, const struct cli_proto *cp,
+    char * const * av, unsigned ac)
 {
-	struct cli_proto *cp;
 	int json = 0;
 
 	AN(av);
-	for (cp = clp; cp->desc != NULL; cp++) {
-		if (!strcmp(av[1], cp->desc->request))
-			break;
-		if (!strcmp("*", cp->desc->request))
-			break;
-	}
-	if (cp->desc == NULL)
-		return (0);
 
 	if (ac > 1 && !strcmp(av[2], "-j"))
 		json = 1;
@@ -270,24 +236,24 @@ cls_dispatch(struct cli *cli, struct cli_proto *clp, char * const * av,
 	if (cp->func == NULL && !json) {
 		VCLI_Out(cli, "Unimplemented\n");
 		VCLI_SetResult(cli, CLIS_UNIMPL);
-		return(1);
+		return;
 	}
 	if (cp->jsonfunc == NULL && json) {
 		VCLI_Out(cli, "JSON unimplemented\n");
 		VCLI_SetResult(cli, CLIS_UNIMPL);
-		return(1);
+		return;
 	}
 
 	if (ac - 1 < cp->desc->minarg + json) {
 		VCLI_Out(cli, "Too few parameters\n");
 		VCLI_SetResult(cli, CLIS_TOOFEW);
-		return(1);
+		return;
 	}
 
 	if (ac - 1> cp->desc->maxarg + json) {
 		VCLI_Out(cli, "Too many parameters\n");
 		VCLI_SetResult(cli, CLIS_TOOMANY);
-		return(1);
+		return;
 	}
 
 	cli->result = CLIS_OK;
@@ -296,7 +262,6 @@ cls_dispatch(struct cli *cli, struct cli_proto *clp, char * const * av,
 		cp->jsonfunc(cli, (const char * const *)av, cp->priv);
 	else
 		cp->func(cli, (const char * const *)av, cp->priv);
-	return (1);
 }
 
 /*--------------------------------------------------------------------
@@ -308,7 +273,7 @@ cls_vlu2(void *priv, char * const *av)
 {
 	struct VCLS_fd *cfd;
 	struct VCLS *cs;
-	struct VCLS_func *cfn;
+	struct cli_proto *clp;
 	struct cli *cli;
 	unsigned na;
 	ssize_t len;
@@ -352,12 +317,18 @@ cls_vlu2(void *priv, char * const *av)
 		for (na = 0; av[na + 1] != NULL; na++)
 			continue;
 
-		VTAILQ_FOREACH(cfn, &cs->funcs, list) {
-			if (cfn->auth > cli->auth)
+		VTAILQ_FOREACH(clp, &cs->funcs, list) {
+			if (clp->auth > cli->auth)
 				continue;
-			if (cls_dispatch(cli, cfn->clp, av, na))
+			if (!strcmp(clp->desc->request, av[1])) {
+				cls_dispatch(cli, clp, av, na);
 				break;
+			}
 		}
+		if (clp == NULL &&
+		    cs->wildcard && cs->wildcard->auth <= cli->auth)
+			cls_dispatch(cli, cs->wildcard, av, na);
+
 	} while (0);
 
 	AZ(VSB_finish(cli->sb));
@@ -524,18 +495,33 @@ cls_close_fd(struct VCLS *cs, struct VCLS_fd *cfd)
 	FREE_OBJ(cfd);
 }
 
-int
+void
 VCLS_AddFunc(struct VCLS *cs, unsigned auth, struct cli_proto *clp)
 {
-	struct VCLS_func *cfn;
+	struct cli_proto *clp2;
+	int i;
 
 	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
-	ALLOC_OBJ(cfn, VCLS_FUNC_MAGIC);
-	AN(cfn);
-	cfn->clp = clp;
-	cfn->auth = auth;
-	VTAILQ_INSERT_TAIL(&cs->funcs, cfn, list);
-	return (0);
+	AN(clp);
+
+	for (;clp->desc != NULL; clp++) {
+		clp->auth = auth;
+		if (!strcmp(clp->desc->request, "*")) {
+			cs->wildcard = clp;
+		} else {
+			VTAILQ_FOREACH(clp2, &cs->funcs, list) {
+				i = strcmp(clp->desc->request,
+				    clp2->desc->request);
+				assert(i != 0);
+				if (i < 0)
+					break;
+			}
+			if (clp2 != NULL)
+				VTAILQ_INSERT_BEFORE(clp2, clp, list);
+			else
+				VTAILQ_INSERT_TAIL(&cs->funcs, clp, list);
+		}
+	}
 }
 
 int
@@ -625,7 +611,7 @@ VCLS_Destroy(struct VCLS **csp)
 {
 	struct VCLS *cs;
 	struct VCLS_fd *cfd, *cfd2;
-	struct VCLS_func *cfn;
+	struct cli_proto *clp;
 
 	cs = *csp;
 	*csp = NULL;
@@ -634,9 +620,8 @@ VCLS_Destroy(struct VCLS **csp)
 		cls_close_fd(cs, cfd);
 
 	while (!VTAILQ_EMPTY(&cs->funcs)) {
-		cfn = VTAILQ_FIRST(&cs->funcs);
-		VTAILQ_REMOVE(&cs->funcs, cfn, list);
-		FREE_OBJ(cfn);
+		clp = VTAILQ_FIRST(&cs->funcs);
+		VTAILQ_REMOVE(&cs->funcs, clp, list);
 	}
 	FREE_OBJ(cs);
 }

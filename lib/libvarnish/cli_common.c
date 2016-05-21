@@ -46,6 +46,7 @@
 #include "vdef.h"
 #include "vas.h"
 #include "miniobj.h"
+#include "vqueue.h"
 
 #include "vcli.h"
 #include "vcli_common.h"

@@ -67,7 +67,7 @@ CLI_AddFuncs(struct cli_proto *p)
 
 	AZ(add_check);
 	Lck_Lock(&cli_mtx);
-	AZ(VCLS_AddFunc(cls, 0, p));
+	VCLS_AddFunc(cls, 0, p);
 	Lck_Unlock(&cli_mtx);
 }
 
