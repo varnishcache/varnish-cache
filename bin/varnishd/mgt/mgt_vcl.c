@@ -46,8 +46,6 @@
 #include "vev.h"
 #include "vtim.h"
 
-#include "mgt_cli.h"
-
 static const char * const VCL_STATE_COLD = "cold";
 static const char * const VCL_STATE_WARM = "warm";
 static const char * const VCL_STATE_AUTO = "auto";
@@ -496,5 +494,5 @@ mgt_vcl_init(void)
 
 	AZ(atexit(mgt_vcl_atexit));
 
-	VCLS_AddFunc(mgt_cls, 0, cli_vcl);
+	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_vcl);
 }

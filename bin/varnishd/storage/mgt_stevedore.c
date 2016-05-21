@@ -40,7 +40,7 @@
 
 #include "mgt/mgt.h"
 #include "vcli_priv.h"
-#include "mgt/mgt_cli.h"
+#include "vcli_serve.h"
 
 #include "storage/storage.h"
 #include "vav.h"
@@ -52,7 +52,7 @@ struct stevedore *stv_transient;
 
 /*--------------------------------------------------------------------*/
 
-static void
+static void __match_proto__(cli_func_t)
 stv_cli_list(struct cli *cli, const char * const *av, void *priv)
 {
 	struct stevedore *stv;
@@ -69,7 +69,7 @@ stv_cli_list(struct cli *cli, const char * const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-struct cli_proto cli_stv[] = {
+static struct cli_proto cli_stv[] = {
 	{ CLICMD_STORAGE_LIST,		"", stv_cli_list },
 	{ NULL}
 };
@@ -199,8 +199,7 @@ STV_Config_Transient(void)
 
 	ASSERT_MGT();
 
+	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_stv);
 	if (stv_transient == NULL)
 		STV_Config(TRANSIENT_STORAGE "=malloc");
 }
-
-/*--------------------------------------------------------------------*/

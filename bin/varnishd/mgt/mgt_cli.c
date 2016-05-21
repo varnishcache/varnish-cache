@@ -55,8 +55,6 @@
 #include "vss.h"
 #include "vtcp.h"
 
-#include "mgt_cli.h"
-
 #define CLI_CMD(U,l,s,h,d,m,M) \
 const struct cli_cmd_desc CLICMD_##U[1] = {{ l, s, h, d, m, M }};
 #include "tbl/cli_cmds.h"
@@ -73,9 +71,6 @@ static const int ncmds = sizeof cmds / sizeof cmds[0];
 static int		cli_i = -1, cli_o = -1;
 struct VCLS		*mgt_cls;
 static const char	*secret_file;
-
-#define	MCF_NOAUTH	0	/* NB: zero disables here-documents */
-#define MCF_AUTH	16
 
 /*--------------------------------------------------------------------*/
 
@@ -102,8 +97,6 @@ mcf_banner(struct cli *cli, const char *const *av, void *priv)
 
 static struct cli_proto cli_proto[] = {
 	{ CLICMD_BANNER,		"", mcf_banner },
-	{ CLICMD_PARAM_SHOW,		"", mcf_param_show },
-	{ CLICMD_PARAM_SET,		"", mcf_param_set },
 	{ NULL }
 };
 
@@ -361,7 +354,6 @@ mgt_cli_init_cls(void)
 	VCLS_AddFunc(mgt_cls, MCF_NOAUTH, cli_auth);
 	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_proto);
 	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_debug);
-	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_stv);
 	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_askchild);
 }
 

@@ -43,8 +43,7 @@
 #include "vcli.h"
 #include "vcli_common.h"
 #include "vcli_priv.h"
-
-#include "mgt_cli.h"
+#include "vcli_serve.h"
 
 struct plist {
 	unsigned			magic;
@@ -230,7 +229,7 @@ mcf_wrap(struct cli *cli, const char *text)
 
 /*--------------------------------------------------------------------*/
 
-void
+static void __match_proto__(cli_func_t)
 mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 {
 	int n;
@@ -381,7 +380,7 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 
 /*--------------------------------------------------------------------*/
 
-void
+static void __match_proto__(cli_func_t)
 mcf_param_set(struct cli *cli, const char * const *av, void *priv)
 {
 
@@ -444,6 +443,14 @@ mcf_wash_param(struct cli *cli, const struct parspec *pp, const char **val,
 	}
 }
 
+/*--------------------------------------------------------------------*/
+
+static struct cli_proto cli_params[] = {
+	{ CLICMD_PARAM_SHOW,		"", mcf_param_show },
+	{ CLICMD_PARAM_SET,		"", mcf_param_set },
+	{ NULL }
+};
+
 /*--------------------------------------------------------------------
  * Wash the min/max/default values, and leave the default set.
  */
@@ -454,6 +461,8 @@ MCF_InitParams(struct cli *cli)
 	struct plist *pl;
 	struct parspec *pp;
 	struct vsb *vsb;
+
+	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_params);
 
 	vsb = VSB_new_auto();
 	AN(vsb);

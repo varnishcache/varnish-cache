@@ -560,6 +560,8 @@ main(int argc, char * const *argv)
 	clilim = 32768;
 	cli[0].limit = &clilim;
 
+	mgt_cli_init_cls();		// CLI commands can be registered
+
 	/* Various initializations */
 	VTAILQ_INIT(&heritage.socks);
 	mgt_evb = vev_new_base();
@@ -690,8 +692,6 @@ main(int argc, char * const *argv)
 			usage();
 		}
 	}
-
-	mgt_cli_init_cls();		// CLI commands can be registered
 
 	if (!jailed)
 		VJ_Init(NULL);

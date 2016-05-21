@@ -54,8 +54,6 @@
 #include "vlu.h"
 #include "vtim.h"
 
-#include "mgt_cli.h"
-
 pid_t			child_pid = -1;
 
 static struct vbitmap	*fd_map;
@@ -715,7 +713,7 @@ MGT_Run(void)
 	struct vev *e;
 	int i;
 
-	VCLS_AddFunc(mgt_cls, 0, cli_child);
+	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_child);
 
 	mgt_uptime_t0 = VTIM_real();
 	e = vev_new();

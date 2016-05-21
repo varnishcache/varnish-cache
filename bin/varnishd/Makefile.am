@@ -113,7 +113,6 @@ noinst_HEADERS = \
 	hash/hash_slinger.h \
 	http1/cache_http1.h \
 	mgt/mgt.h \
-	mgt/mgt_cli.h \
 	mgt/mgt_param.h \
 	storage/storage.h \
 	storage/storage_simple.h \
