@@ -47,8 +47,6 @@
 #include "common/heritage.h"
 
 #include "vbm.h"
-#include "vcli.h"
-#include "vcli_priv.h"
 #include "vcli_serve.h"
 #include "vev.h"
 #include "vlu.h"

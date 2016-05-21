@@ -149,8 +149,8 @@ One particular magic number to know, is that the line with the status
 code and length field always is exactly 13 characters long, including
 the NL character.
 
-For your reference the sourcefile lib/libvarnish/cli_common.h contains
-the functions Varnish code uses to read and write CLI response.
+The varnishapi library contains functions to implement the basics of
+the CLI protocol, see the `vcli.h` include file.
 
 .. _ref_psk_auth:
 

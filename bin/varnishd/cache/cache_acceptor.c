@@ -45,7 +45,7 @@
 #include "cache_pool.h"
 #include "common/heritage.h"
 
-#include "vcli_priv.h"
+#include "vcli_serve.h"
 #include "vsa.h"
 #include "vtcp.h"
 #include "vtim.h"

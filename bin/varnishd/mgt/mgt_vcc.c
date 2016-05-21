@@ -44,8 +44,7 @@
 #include "storage/storage.h"
 
 #include "libvcc.h"
-#include "vcli.h"
-#include "vcli_priv.h"
+#include "vcli_serve.h"
 #include "vfil.h"
 #include "vsub.h"
 

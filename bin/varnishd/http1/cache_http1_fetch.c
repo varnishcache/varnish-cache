@@ -35,7 +35,6 @@
 
 #include "cache/cache.h"
 
-#include "vcli_priv.h"
 #include "vrt.h"
 #include "vtcp.h"
 #include "vtim.h"

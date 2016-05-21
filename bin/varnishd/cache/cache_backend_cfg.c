@@ -39,8 +39,7 @@
 #include "cache.h"
 
 #include "vcl.h"
-#include "vcli.h"
-#include "vcli_priv.h"
+#include "vcli_serve.h"
 #include "vrt.h"
 #include "vtim.h"
 

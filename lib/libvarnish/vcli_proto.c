@@ -29,9 +29,14 @@
 #include "config.h"
 
 #include <sys/types.h>
+#include <sys/uio.h>
 
+#include <errno.h>
+#include <poll.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "vas.h"
@@ -61,4 +66,131 @@ VCLI_AuthResponse(int S_fd, const char *challenge,
 	SHA256_Final(buf, &ctx);
 	for(i = 0; i < SHA256_LEN; i++)
 		sprintf(response + 2 * i, "%02x", buf[i]);
+}
+
+int
+VCLI_WriteResult(int fd, unsigned status, const char *result)
+{
+	int i, l;
+	struct iovec iov[3];
+	char nl[2] = "\n";
+	size_t len;
+	char res[CLI_LINE0_LEN + 2];	/*
+					 * NUL + one more so we can catch
+					 * any misformats by snprintf
+					 */
+
+	assert(status >= 100);
+	assert(status <= 999);		/*lint !e650 const out of range */
+
+	len = strlen(result);
+
+	i = snprintf(res, sizeof res,
+	    "%-3d %-8zd\n", status, len);
+	assert(i == CLI_LINE0_LEN);
+	assert(strtoul(res + 3, NULL, 10) == len);
+
+	iov[0].iov_base = res;
+	iov[0].iov_len = CLI_LINE0_LEN;
+
+	iov[1].iov_base = (void*)(uintptr_t)result;	/* TRUST ME */
+	iov[1].iov_len = len;
+
+	iov[2].iov_base = nl;
+	iov[2].iov_len = 1;
+
+	for (l = i = 0; i < 3; i++)
+		l += iov[i].iov_len;
+	i = writev(fd, iov, 3);
+	return (i != l);
+}
+
+static int
+read_tmo(int fd, char *ptr, unsigned len, double tmo)
+{
+	int i, j, to;
+	struct pollfd pfd;
+
+	if (tmo > 0)
+		to = (int)(tmo * 1e3);
+	else
+		to = -1;
+	pfd.fd = fd;
+	pfd.events = POLLIN;
+	for (j = 0; len > 0; ) {
+		i = poll(&pfd, 1, to);
+		if (i == 0) {
+			errno = ETIMEDOUT;
+			return (-1);
+		}
+		i = read(fd, ptr, len);
+		if (i < 0)
+			return (i);
+		if (i == 0)
+			break;
+		len -= i;
+		ptr += i;
+		j += i;
+	}
+	return (j);
+}
+
+int
+VCLI_ReadResult(int fd, unsigned *status, char **ptr, double tmo)
+{
+	char res[CLI_LINE0_LEN];	/* For NUL */
+	int i, j;
+	unsigned u, v, s;
+	char *p = NULL;
+	const char *err = "CLI communication error (hdr)";
+
+	if (status == NULL)
+		status = &s;
+	if (ptr != NULL)
+		*ptr = NULL;
+	do {
+		i = read_tmo(fd, res, CLI_LINE0_LEN, tmo);
+		if (i != CLI_LINE0_LEN)
+			break;
+
+		if (res[3] != ' ')
+			break;
+
+		if (res[CLI_LINE0_LEN - 1] != '\n')
+			break;
+
+		res[CLI_LINE0_LEN - 1] = '\0';
+		j = sscanf(res, "%u %u\n", &u, &v);
+		if (j != 2)
+			break;
+
+		err = "CLI communication error (body)";
+
+		*status = u;
+		p = malloc(v + 1L);
+		if (p == NULL)
+			break;
+
+		i = read_tmo(fd, p, v + 1, tmo);
+		if (i < 0)
+			break;
+		if (i != v + 1)
+			break;
+		if (p[v] != '\n')
+			break;
+
+		p[v] = '\0';
+		if (ptr == NULL)
+			free(p);
+		else
+			*ptr = p;
+		return (0);
+	} while(0);
+
+	if (p != NULL)
+		free(p);
+	*status = CLIS_COMMS;
+	if (ptr != NULL)
+		*ptr = strdup(err);
+	return (*status);
 }

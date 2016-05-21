@@ -36,8 +36,7 @@
 #include "cache_ban.h"
 
 #include "hash/hash_slinger.h"
-#include "vcli.h"
-#include "vcli_priv.h"
+#include "vcli_serve.h"
 #include "vend.h"
 #include "vmb.h"
 

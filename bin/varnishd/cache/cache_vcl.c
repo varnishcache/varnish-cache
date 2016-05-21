@@ -44,8 +44,7 @@
 
 #include "cache_director.h"
 #include "cache_backend.h"
-#include "vcli.h"
-#include "vcli_priv.h"
+#include "vcli_serve.h"
 
 static const char * const VCL_TEMP_INIT = "init";
 static const char * const VCL_TEMP_COLD = "cold";

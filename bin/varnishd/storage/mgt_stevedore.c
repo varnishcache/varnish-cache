@@ -39,7 +39,6 @@
 #include <unistd.h>
 
 #include "mgt/mgt.h"
-#include "vcli_priv.h"
 #include "vcli_serve.h"
 
 #include "storage/storage.h"

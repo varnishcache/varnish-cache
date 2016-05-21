@@ -48,7 +48,7 @@
 #include "vrt.h"
 #include "cache_director.h"
 #include "storage/storage.h"
-#include "vcli_priv.h"
+#include "vcli_serve.h"
 
 /*
  * The panic string is constructed in memory, then copied to the

@@ -40,8 +40,6 @@
 
 #include "mgt/mgt.h"
 
-#include "vcli.h"
-#include "vcli_priv.h"
 #include "vcli_serve.h"
 #include "vev.h"
 #include "vtim.h"

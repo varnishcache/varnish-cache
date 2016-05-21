@@ -34,6 +34,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <poll.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,9 +48,6 @@
 #include "miniobj.h"
 
 #include "vav.h"
-#include "vcli.h"
-#include "vcli_common.h"
-#include "vcli_priv.h"
 #include "vcli_serve.h"
 #include "vlu.h"
 #include "vsb.h"
@@ -613,4 +611,85 @@ VCLS_Destroy(struct VCLS **csp)
 		VTAILQ_REMOVE(&cs->funcs, clp, list);
 	}
 	FREE_OBJ(cs);
+}
+
+/**********************************************************************
+ * Utility functions for implementing CLI commands
+ */
+
+/*lint -e{818} cli could be const */
+void
+VCLI_Out(struct cli *cli, const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	if (cli != NULL) {
+		CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
+		if (VSB_len(cli->sb) < *cli->limit)
+			(void)VSB_vprintf(cli->sb, fmt, ap);
+		else if (cli->result == CLIS_OK)
+			cli->result = CLIS_TRUNCATED;
+	} else {
+		(void)vfprintf(stdout, fmt, ap);
+	}
+	va_end(ap);
+}
+
+/*lint -e{818} cli could be const */
+int
+VCLI_Overflow(struct cli *cli)
+{
+	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
+	if (cli->result == CLIS_TRUNCATED ||
+	    VSB_len(cli->sb) >= *cli->limit)
+		return (1);
+	return (0);
+}
+
+/*lint -e{818} cli could be const */
+void
+VCLI_JSON_str(struct cli *cli, const char *s)
+{
+
+	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
+	VSB_quote(cli->sb, s, -1, VSB_QUOTE_JSON);
+}
+
+/*lint -e{818} cli could be const */
+void
+VCLI_JSON_ver(struct cli *cli, unsigned ver, const char * const * av)
+{
+	int i;
+
+	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
+	VCLI_Out(cli, "[ %u, [", ver);
+	for (i = 1; av[i] != NULL; i++) {
+		VCLI_JSON_str(cli, av[i]);
+		if (av[i + 1] != NULL)
+			VCLI_Out(cli, ", ");
+	}
+	VCLI_Out(cli, "]");
+}
+
+/*lint -e{818} cli could be const */
+void
+VCLI_Quote(struct cli *cli, const char *s)
+{
+
+	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
+	VSB_quote(cli->sb, s, -1, 0);
+}
+
+void
+VCLI_SetResult(struct cli *cli, unsigned res)
+{
+
+	if (cli != NULL) {
+		CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
+		if (cli->result != CLIS_TRUNCATED || res != CLIS_OK)
+			cli->result = res;	/*lint !e64 type mismatch */
+	} else {
+		printf("CLI result = %u\n", res);
+	}
 }

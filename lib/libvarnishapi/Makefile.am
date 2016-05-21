@@ -20,8 +20,7 @@ libvarnishapi_la_SOURCES = \
 	../libvarnish/vav.c \
 	../../include/vcs_version.h \
 	../libvarnish/version.c \
-	../libvarnish/cli_common.c \
-	../libvarnish/cli_auth.c \
+	../libvarnish/vcli_proto.c \
 	../libvarnish/vfl.c \
 	../libvarnish/vin.c \
 	../libvarnish/vmb.c \

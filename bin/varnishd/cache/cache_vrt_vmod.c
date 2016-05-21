@@ -37,7 +37,7 @@
 
 #include "cache.h"
 
-#include "vcli_priv.h"
+#include "vcli_serve.h"
 #include "vrt.h"
 
 /*--------------------------------------------------------------------

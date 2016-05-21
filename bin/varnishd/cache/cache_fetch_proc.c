@@ -33,8 +33,7 @@
 
 #include "cache.h"
 #include "cache_filter.h"
-
-#include "vcli_priv.h"
+#include "vcli_serve.h"
 
 static unsigned fetchfrag;
 
