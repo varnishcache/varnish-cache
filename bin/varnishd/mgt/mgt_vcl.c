@@ -130,12 +130,11 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 	char *p;
 	int i;
 
-	if (!strcmp(vp->state, VCL_STATE_LABEL)) {
+	if (vp == active_vcl || vp->label != NULL) {
 		AN(vp->warm);
 		return (0);
 	}
 	if (vs == VCL_STATE_AUTO) {
-		assert(vp != active_vcl);
 		now = VTIM_mono();
 		vs = vp->warm ? VCL_STATE_WARM : VCL_STATE_COLD;
 		if (vp->go_cold > 0 && !strcmp(vp->state, "auto") &&
@@ -340,10 +339,19 @@ mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 	vp = mcf_find_vcl(cli, av[2]);
 	if (vp == NULL)
 		return;
+
 	if (!strcmp(vp->state, VCL_STATE_LABEL)) {
 		VCLI_Out(cli, "Labels are always warm");
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
+	}
+	if (vp->label != NULL) {
+		AZ(!strcmp(vp->state, "cold"));
+		if (!strcmp(av[3], "cold")) {
+			VCLI_Out(cli, "A labeled VCL cannot be set cold");
+			VCLI_SetResult(cli, CLIS_CANT);
+			return;
+		}
 	}
 
 	if (!strcmp(vp->state, av[3]))
@@ -422,16 +430,18 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 	if (!strcmp(vp->state, VCL_STATE_LABEL)) {
+		AN(vp->warm);
 		vp->label->label = NULL;
 		vp->label = NULL;
+	} else {
+		if (vp->label != NULL) {
+			AN(vp->warm);
+			VCLI_SetResult(cli, CLIS_PARAM);
+			VCLI_Out(cli, "Must remove label to discard VCL\n");
+			return;
+		}
+		(void)mgt_vcl_setstate(cli, vp, VCL_STATE_COLD);
 	}
-
-	if (vp->label != NULL) {
-		VCLI_SetResult(cli, CLIS_PARAM);
-		VCLI_Out(cli, "Must remove label to discard VCL\n");
-		return;
-	}
-	(void)mgt_vcl_setstate(cli, vp, VCL_STATE_COLD);
 	if (child_pid >= 0) {
 		/* XXX If this fails the child is crashing, figure that later */
 		(void)mgt_cli_askchild(&status, &p, "vcl.discard %s\n", av[2]);
@@ -500,10 +510,15 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 	vpl->warm = 1;
-	if (vpl->label != NULL)
+	if (vpl->label != NULL) {
 		vpl->label->label = NULL;
+		/* XXX SET AUTO */
+	}
 	vpl->label = vpt;
 	vpt->label = vpl;
+	if (!strcmp(vpt->state, "cold"))
+		strcpy(vpt->state, "auto");
+	(void)mgt_vcl_setstate(cli, vpt, VCL_STATE_WARM);
 	if (child_pid < 0)
 		return;
 
@@ -525,10 +540,8 @@ mgt_vcl_poker(const struct vev *e, int what)
 	(void)e;
 	(void)what;
 	e_poker->timeout = mgt_param.vcl_cooldown * .45;
-	VTAILQ_FOREACH(vp, &vclhead, list) {
-		if (vp != active_vcl)
-			(void)mgt_vcl_setstate(NULL, vp, VCL_STATE_AUTO);
-	}
+	VTAILQ_FOREACH(vp, &vclhead, list)
+		(void)mgt_vcl_setstate(NULL, vp, VCL_STATE_AUTO);
 	return (0);
 }
 
