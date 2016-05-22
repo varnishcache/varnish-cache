@@ -51,6 +51,7 @@ static const char * const VCL_TEMP_COLD = "cold";
 static const char * const VCL_TEMP_WARM = "warm";
 static const char * const VCL_TEMP_BUSY = "busy";
 static const char * const VCL_TEMP_COOLING = "cooling";
+static const char * const VCL_TEMP_LABEL = "label";
 
 struct vcl {
 	unsigned		magic;
@@ -65,6 +66,7 @@ struct vcl {
 	const char		*temp;
 	VTAILQ_HEAD(,backend)	backend_list;
 	VTAILQ_HEAD(,vclref)	ref_list;
+	struct vcl		*label;
 };
 
 struct vclref {
@@ -161,7 +163,10 @@ VCL_Get(struct vcl **vcc)
 	assert(vcl_active->temp == VCL_TEMP_WARM);
 	Lck_Lock(&vcl_mtx);
 	AN(vcl_active);
-	*vcc = vcl_active;
+	if (vcl_active->label == NULL)
+		*vcc = vcl_active;
+	else
+		*vcc = vcl_active->label;
 	AN(*vcc);
 	AZ((*vcc)->discard);
 	(*vcc)->busy++;
@@ -609,11 +614,7 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 	ASSERT_CLI();
 
 	vcl = vcl_find(name);
-	if (vcl != NULL) {
-		VCLI_SetResult(cli, CLIS_PARAM);
-		VCLI_Out(cli, "Config '%s' already loaded", name);
-		return;
-	}
+	AZ(vcl);
 
 	vsb = VSB_new_auto();
 	AN(vsb);
@@ -736,8 +737,14 @@ ccf_config_list(struct cli *cli, const char * const *av, void *priv)
 			flg = "discarded";
 		} else
 			flg = "available";
-		VCLI_Out(cli, "%-10s %4s/%-8s %6u %s\n",
+		VCLI_Out(cli, "%-10s %5s/%-8s %6u %s",
 		    flg, vcl->state, vcl->temp, vcl->busy, vcl->loaded_name);
+		if (vcl->label != NULL) {
+			VCLI_Out(cli, " %s %s",
+			    strcmp(vcl->state, VCL_TEMP_LABEL) ?
+			    "<-" : "->", vcl->label->loaded_name);
+		}
+		VCLI_Out(cli, "\n");
 	}
 }
 
@@ -797,10 +804,46 @@ ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 	VSC_C_main->n_vcl_discard++;
 	VSC_C_main->n_vcl_avail--;
 	vcl->discard = 1;
+	if (vcl->label != NULL) {
+		AZ(strcmp(vcl->state, VCL_TEMP_LABEL));
+		vcl->label->label = NULL;
+		vcl->label= NULL;
+	}
 	Lck_Unlock(&vcl_mtx);
 
-	if (vcl->temp == VCL_TEMP_COLD)
+	if (!strcmp(vcl->state, VCL_TEMP_LABEL)) {
+		VTAILQ_REMOVE(&vcl_head, vcl, list);
+		free(vcl->loaded_name);
+	} else if (vcl->temp == VCL_TEMP_COLD)
 		VCL_Nuke(vcl);
+}
+
+static void __match_proto__(cli_func_t)
+ccf_config_label(struct cli *cli, const char * const *av, void *priv)
+{
+	struct vcl *lbl;
+	struct vcl *vcl;
+
+	ASSERT_CLI();
+	(void)cli;
+	(void)priv;
+	vcl = vcl_find(av[3]);
+	AN(vcl);
+	lbl = vcl_find(av[2]);
+	if (lbl == NULL) {
+		ALLOC_OBJ(lbl, VCL_MAGIC);
+		AN(lbl);
+		strcpy(lbl->state, VCL_TEMP_LABEL);
+		lbl->temp = VCL_TEMP_WARM;
+		lbl->loaded_name = strdup(av[2]);
+		AN(lbl->loaded_name);
+		VTAILQ_INSERT_TAIL(&vcl_head, lbl, list);
+	}
+	if (lbl->label != NULL)
+		lbl->label->label = NULL;
+	lbl->label = vcl;
+	vcl->label = lbl;
+	return;
 }
 
 static void __match_proto__(cli_func_t)
@@ -952,6 +995,7 @@ static struct cli_proto vcl_cmds[] = {
 	{ CLICMD_VCL_DISCARD,		"", ccf_config_discard },
 	{ CLICMD_VCL_USE,		"", ccf_config_use },
 	{ CLICMD_VCL_SHOW,		"", ccf_config_show },
+	{ CLICMD_VCL_LABEL,		"", ccf_config_label },
 	{ NULL }
 };
 

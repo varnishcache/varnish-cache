@@ -95,7 +95,7 @@ CLI_CMD(VCL_STATE,
 
 CLI_CMD(VCL_DISCARD,
 	"vcl.discard",
-	"vcl.discard <configname>",
+	"vcl.discard <configname|label>",
 	"Unload the named configuration (when possible).",
 	"",
 	1, 1
@@ -119,10 +119,18 @@ CLI_CMD(VCL_SHOW,
 
 CLI_CMD(VCL_USE,
 	"vcl.use",
-	"vcl.use <configname>",
+	"vcl.use <configname|label>",
 	"Switch to the named configuration immediately.",
 	"",
 	1, 1
+)
+
+CLI_CMD(VCL_LABEL,
+	"vcl.label",
+	"vcl.label <label> <configname>",
+	"Apply label to configuration.",
+	"",
+	2, 2
 )
 
 CLI_CMD(PARAM_SHOW,

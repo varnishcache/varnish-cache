@@ -1,0 +1,84 @@
+varnishtest "Test VCL labels"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {}
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (synth(400));
+	}
+}
+
+varnish v1 -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 400
+} -run
+
+varnish v1 -cliok "vcl.use vcl1"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -cliok "vcl.list"
+varnish v1 -clierr 106 "vcl.label foo vcl0"
+varnish v1 -cliok "vcl.label foo vcl1"
+varnish v1 -clierr 106 "vcl.state foo cold"
+varnish v1 -clierr 106 "vcl.label bar foo"
+varnish v1 -clierr 106 "vcl.discard vcl1"
+varnish v1 -cliok "vcl.list"
+varnish v1 -cliok "vcl.use foo"
+varnish v1 -clierr 106 "vcl.discard foo"
+varnish v1 -cliok "vcl.list"
+
+client c1 -run
+
+varnish v1 -cliok "vcl.label foo vcl2"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 400
+} -run
+
+varnish v1 -cliok "vcl.use vcl1"
+varnish v1 -cliok "vcl.list"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -cliok "vcl.discard foo"
+varnish v1 -clierr 106 "vcl.discard foo"
+
+varnish v1 -stop
+varnish v1 -cliok "vcl.list"
+varnish v1 -clierr 106 "vcl.label foo vcl0"
+varnish v1 -cliok "vcl.label foo vcl1"
+varnish v1 -clierr 106 "vcl.label bar foo"
+varnish v1 -clierr 106 "vcl.discard vcl1"
+varnish v1 -cliok "vcl.list"
+varnish v1 -cliok "vcl.use foo"
+varnish v1 -clierr 106 "vcl.discard foo"
+varnish v1 -cliok "vcl.list"
+
+server s1 -start
+
+varnish v1 -start
+client c1 -run
+varnish v1 -stop
+varnish v1 -cliok "vcl.use vcl1"
+varnish v1 -cliok "vcl.discard foo"
+varnish v1 -clierr 106 "vcl.discard foo"
+

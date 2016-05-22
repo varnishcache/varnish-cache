@@ -47,6 +47,7 @@
 static const char * const VCL_STATE_COLD = "cold";
 static const char * const VCL_STATE_WARM = "warm";
 static const char * const VCL_STATE_AUTO = "auto";
+static const char * const VCL_STATE_LABEL = "label";
 
 struct vclprog {
 	VTAILQ_ENTRY(vclprog)	list;
@@ -55,6 +56,7 @@ struct vclprog {
 	unsigned		warm;
 	char			state[8];
 	double			go_cold;
+	struct vclprog		*label;
 };
 
 static VTAILQ_HEAD(, vclprog) vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
@@ -91,7 +93,8 @@ mgt_vcl_del(struct vclprog *vp)
 	char dn[256];
 
 	VTAILQ_REMOVE(&vclhead, vp, list);
-	XXXAZ(unlink(vp->fname));
+	if (strcmp(vp->state, VCL_STATE_LABEL))
+		XXXAZ(unlink(vp->fname));
 	bprintf(dn, "vcl_%s", vp->name);
 	VJ_master(JAIL_MASTER_FILE);
 	(void)rmdir(dn);		// compiler droppings, eg gcov
@@ -127,6 +130,10 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 	char *p;
 	int i;
 
+	if (!strcmp(vp->state, VCL_STATE_LABEL)) {
+		AN(vp->warm);
+		return (0);
+	}
 	if (vs == VCL_STATE_AUTO) {
 		assert(vp != active_vcl);
 		now = VTIM_mono();
@@ -202,16 +209,13 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 	if (child_pid < 0)
 		return;
 
-	if (!mgt_cli_askchild(&status, &p, "vcl.load %s %s %d%s\n",
+	if (mgt_cli_askchild(&status, &p, "vcl.load %s %s %d%s\n",
 	    vp->name, vp->fname, vp->warm, vp->state)) {
-		free(p);
-		return;
+		mgt_vcl_del(vp);
+		VCLI_Out(cli, "%s", p);
+		VCLI_SetResult(cli, CLIS_PARAM);
 	}
-
-	mgt_vcl_del(vp);
-	VCLI_Out(cli, "%s", p);
 	free(p);
-	VCLI_SetResult(cli, CLIS_PARAM);
 }
 
 /*--------------------------------------------------------------------*/
@@ -251,14 +255,27 @@ mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
 	AZ(mgt_vcl_setstate(cli, active_vcl, VCL_STATE_WARM));
 
 	VTAILQ_FOREACH(vp, &vclhead, list) {
+		if (!strcmp(vp->state, VCL_STATE_LABEL))
+			continue;
 		if (mgt_cli_askchild(status, p, "vcl.load \"%s\" %s %d%s\n",
 		    vp->name, vp->fname, vp->warm, vp->state))
 			return (1);
 		free(*p);
+		*p = NULL;
+	}
+	VTAILQ_FOREACH(vp, &vclhead, list) {
+		if (strcmp(vp->state, VCL_STATE_LABEL))
+			continue;
+		if (mgt_cli_askchild(status, p, "vcl.label %s %s\n",
+		    vp->name, vp->label->name))
+			return (1);
+		free(*p);
+		*p = NULL;
 	}
 	if (mgt_cli_askchild(status, p, "vcl.use \"%s\"\n", active_vcl->name))
 		return (1);
 	free(*p);
+	*p = NULL;
 	if (mgt_cli_askchild(status, p, "start\n"))
 		return (1);
 	free(*p);
@@ -307,11 +324,11 @@ mcf_find_vcl(struct cli *cli, const char *name)
 	struct vclprog *vp;
 
 	vp = mgt_vcl_byname(name);
-	if (vp != NULL)
-		return (vp);
-	VCLI_SetResult(cli, CLIS_PARAM);
-	VCLI_Out(cli, "No configuration named %s known.", name);
-	return (NULL);
+	if (vp == NULL) {
+		VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_Out(cli, "No configuration named %s known.", name);
+	}
+	return (vp);
 }
 
 static void __match_proto__(cli_func_t)
@@ -323,6 +340,11 @@ mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 	vp = mcf_find_vcl(cli, av[2]);
 	if (vp == NULL)
 		return;
+	if (!strcmp(vp->state, VCL_STATE_LABEL)) {
+		VCLI_Out(cli, "Labels are always warm");
+		VCLI_SetResult(cli, CLIS_PARAM);
+		return;
+	}
 
 	if (!strcmp(vp->state, av[3]))
 		return;
@@ -399,6 +421,16 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 		VCLI_Out(cli, "Cannot discard active VCL program\n");
 		return;
 	}
+	if (!strcmp(vp->state, VCL_STATE_LABEL)) {
+		vp->label->label = NULL;
+		vp->label = NULL;
+	}
+
+	if (vp->label != NULL) {
+		VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_Out(cli, "Must remove label to discard VCL\n");
+		return;
+	}
 	(void)mgt_vcl_setstate(cli, vp, VCL_STATE_COLD);
 	if (child_pid >= 0) {
 		/* XXX If this fails the child is crashing, figure that later */
@@ -425,12 +457,62 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 		free(p);
 	} else {
 		VTAILQ_FOREACH(vp, &vclhead, list) {
-			VCLI_Out(cli, "%-10s %4s/%-8s %6s %s\n",
+			VCLI_Out(cli, "%-10s %5s",
 			    vp == active_vcl ? "active" : "available",
-			    vp->state, vp->warm ? "warm" : "cold", "",
-			    vp->name);
+			    vp->state);
+			VCLI_Out(cli, "/%-8s", vp->warm ? "warm" : "cold");
+			VCLI_Out(cli, " %6s %s", "", vp->name);
+			if (vp->label != NULL)
+				VCLI_Out(cli, " %s %s",
+				    strcmp(vp->state, VCL_STATE_LABEL) ?
+				    "<-" : "->", vp->label->name);
+			VCLI_Out(cli, "\n");
 		}
 	}
+}
+
+static void __match_proto__(cli_func_t)
+mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
+{
+	struct vclprog *vpl;
+	struct vclprog *vpt;
+	unsigned status;
+	char *p;
+	int i;
+
+	(void)av;
+	(void)priv;
+	vpt = mcf_find_vcl(cli, av[3]);
+	if (vpt == NULL)
+		return;
+	if (!strcmp(vpt->state, VCL_STATE_LABEL)) {
+		VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_Out(cli, "VCL labels cannot point to labels");
+		return;
+	}
+	vpl = mgt_vcl_byname(av[2]);
+	if (vpl == NULL)
+		vpl = mgt_vcl_add(av[2], NULL, VCL_STATE_LABEL);
+	AN(vpl);
+	if (strcmp(vpl->state, VCL_STATE_LABEL)) {
+		VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_Out(cli, "%s is not a label", vpl->name);
+		return;
+	}
+	vpl->warm = 1;
+	if (vpl->label != NULL)
+		vpl->label->label = NULL;
+	vpl->label = vpt;
+	vpt->label = vpl;
+	if (child_pid < 0)
+		return;
+
+	i = mgt_cli_askchild(&status, &p, "vcl.label %s %s\n", av[2], av[3]);
+	if (i) {
+		VCLI_SetResult(cli, status);
+		VCLI_Out(cli, "%s", p);
+	}
+	free(p);
 }
 
 /*--------------------------------------------------------------------*/
@@ -459,6 +541,7 @@ static struct cli_proto cli_vcl[] = {
 	{ CLICMD_VCL_STATE,		"", mcf_vcl_state },
 	{ CLICMD_VCL_DISCARD,		"", mcf_vcl_discard },
 	{ CLICMD_VCL_LIST,		"", mcf_vcl_list },
+	{ CLICMD_VCL_LABEL,		"", mcf_vcl_label },
 	{ NULL }
 };
 
