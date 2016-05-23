@@ -530,8 +530,14 @@ ved_stripgzip(struct req *req, struct busyobj *bo)
 	CAST_OBJ_NOTNULL(ecx, req->transport_priv, ECX_MAGIC);
 	preq = ecx->preq;
 
+	/* OA_GZIPBITS is not valid until BOS_FINISHED */
 	if (bo != NULL)
 		VBO_waitstate(bo, BOS_FINISHED);
+	if (req->objcore->flags & OC_F_FAILED) {
+		/* No way of signalling errors in the middle of
+		   the ESI body. Omit this ESI fragment. */
+		return;
+	}
 
 	AN(ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED));
 
