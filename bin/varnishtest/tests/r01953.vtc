@@ -1,0 +1,29 @@
+varnishtest "#1953: ved_stripgzip and failed object"
+
+server s1 {
+	rxreq
+	txresp -gzipbody {<1><esi:include src="/2"/></1>}
+
+	rxreq
+	txresp -nolen -hdr "Content-Encoding: gzip" -hdr "Content-Length: 42"
+	# No body sent, will cause fetch error
+	# The delay allows time for the ESI deliver thread to get to the point
+	# where it is waiting for this body
+	delay 1
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		if (bereq.url == "/") {
+			set beresp.do_esi = true;
+		}
+	}
+} -start
+
+client c1 {
+	txreq -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.http.Content-Encoding == "gzip"
+	gunzip
+	expect resp.body == "<1></1>"
+} -run
