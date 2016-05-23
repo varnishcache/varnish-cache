@@ -874,6 +874,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	bo->vfc->esi_req = bo->bereq;
 
 	if (vbf_beresp2obj(bo)) {
+		(void)VFP_Error(bo->vfc, "Could not get storage");
 		VSB_destroy(&synth_body);
 		return (F_STP_FAIL);
 	}
