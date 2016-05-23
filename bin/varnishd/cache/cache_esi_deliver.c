@@ -711,6 +711,11 @@ ved_stripgzip(struct req *req, const struct boc *boc)
 	/* OA_GZIPBITS is not valid until BOS_FINISHED */
 	if (boc != NULL)
 		ObjWaitState(req->objcore, BOS_FINISHED);
+	if (req->objcore->flags & OC_F_FAILED) {
+		/* No way of signalling errors in the middle of
+		   the ESI body. Omit this ESI fragment. */
+		return;
+	}
 
 	AN(ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED));
 
