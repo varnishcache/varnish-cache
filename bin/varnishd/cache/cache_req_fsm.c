@@ -91,6 +91,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	 * taken before the object entered into cache leading to negative
 	 * age. Truncate to zero in that case).
 	 */
+	http_Unset(req->resp, H_Age);
 	http_PrintfHeader(req->resp, "Age: %.0f",
 	    fmax(0., req->t_prev - req->objcore->t_origin));
 
@@ -278,6 +279,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 
 		if (cache_param->http_range_support &&
 		    http_IsStatus(req->resp, 200)) {
+			http_Unset(req->resp, H_Accept_Ranges);
 			http_SetHeader(req->resp, "Accept-Ranges: bytes");
 			if (sendbody && http_GetHdr(req->http, H_Range, &r))
 				VRG_dorange(req, r);
