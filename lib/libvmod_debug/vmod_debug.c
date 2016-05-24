@@ -352,9 +352,9 @@ event_function(VRT_CTX, struct vmod_priv *priv, enum vcl_event_e e)
 {
 
 	switch (e) {
-	case VCL_EVENT_LOAD: return event_load(ctx, priv);
-	case VCL_EVENT_WARM: return event_warm(ctx, priv);
-	case VCL_EVENT_COLD: return event_cold(ctx, priv);
+	case VCL_EVENT_LOAD: return (event_load(ctx, priv));
+	case VCL_EVENT_WARM: return (event_warm(ctx, priv));
+	case VCL_EVENT_COLD: return (event_cold(ctx, priv));
 	default: return (0);
 	}
 }
@@ -411,7 +411,7 @@ vmod_workspace_free(VRT_CTX, VCL_ENUM which)
 	WS_Assert(ws);
 	AZ(ws->r);
 
-	return pdiff(ws->f, ws->e);
+	return (pdiff(ws->f, ws->e));
 }
 
 VCL_BOOL

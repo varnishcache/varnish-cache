@@ -256,7 +256,7 @@ rfc2616_weak_compare(const char *p, const char *e)
 int
 RFC2616_Do_Cond(const struct req *req)
 {
-	const char *p, *e, *l;
+	const char *p, *e;
 	double ims, lm;
 
 	/*
@@ -276,8 +276,8 @@ RFC2616_Do_Cond(const struct req *req)
 		ims = VTIM_parse(p);
 		if (!ims || ims > req->t_req)	/* [RFC7232 3.3 p16] */
 			return (0);
-		if (http_GetHdr(req->resp, H_Last_Modified, &l)) {
-			lm = VTIM_parse(l);
+		if (http_GetHdr(req->resp, H_Last_Modified, &p)) {
+			lm = VTIM_parse(p);
 			if (!lm || lm > ims)
 				return (0);
 			return (1);
