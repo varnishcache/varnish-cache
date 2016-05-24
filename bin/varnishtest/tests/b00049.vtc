@@ -1,0 +1,40 @@
+varnishtest "Changing Last Modified in vcl_deliver"
+ 
+server s1 {
+	rxreq
+	txresp -hdr "Last-Modified: Wed, 27 Apr 2016 14:00:00 GMT"
+} -start
+ 
+varnish v1 -vcl+backend {
+	sub vcl_deliver {
+		if (req.http.deliver == "modify") {
+			set resp.http.Last-Modified = "Wed, 27 Apr 2016 16:00:00 GMT";
+		}
+	}
+} -start
+ 
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+
+	txreq -hdr "If-Modified-Since: Wed, 27 Apr 2016 14:00:00 GMT"
+	rxresp
+	expect resp.status == 304
+
+	txreq -hdr "If-Modified-Since: Wed, 27 Apr 2016 12:00:00 GMT"
+	rxresp
+	expect resp.status == 200
+
+	txreq -hdr "If-Modified-Since: Wed, 27 Apr 2016 14:00:00 GMT" -hdr "deliver: modify"
+	rxresp
+	expect resp.status == 200
+
+	txreq -hdr "If-Modified-Since: Wed, 27 Apr 2016 16:00:00 GMT" -hdr "deliver: modify"
+	rxresp
+	expect resp.status == 304
+
+	txreq -hdr "If-Modified-Since: Wed, 27 Apr 2016 18:00:00 GMT" -hdr "deliver: modify"
+	rxresp
+	expect resp.status == 304
+} -run
