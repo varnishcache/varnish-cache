@@ -698,6 +698,12 @@ AC_SUBST(VTC_TESTS)
 # Make sure this include dir exists
 AC_CONFIG_COMMANDS([mkdir], [$MKDIR_P doc/sphinx/include])
 
+# lcov support
+AX_CODE_COVERAGE
+CPPFLAGS="$CPPFLAGS \$(CODE_COVERAGE_CPPFLAGS)"
+CFLAGS="$CFLAGS \$(CODE_COVERAGE_CFLAGS)"
+LDFLAGS="$LDFLAGS \$(CODE_COVERAGE_LDFLAGS)"
+
 # Generate output
 AC_CONFIG_FILES([
     Makefile
