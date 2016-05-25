@@ -12,6 +12,7 @@ Bugs fixed
 * 1879_ - Correct handling of duplicate headers on IMS header merge
 * 1878_ - Fix a ESI+gzip corner case which had escaped notice until now
 * 1871_ - Missing error handling code in V1F_Setup_Fetch
+* 1869_ - Remove temporary directory iff called with -C
 * 1725_ - Revive the backend_conn counter
 * 1883_ - Only accept C identifiers as acls
 
@@ -19,6 +20,7 @@ Bugs fixed
 .. _1879: https://github.com/varnishcache/varnish-cache/issues/1879
 .. _1878: https://github.com/varnishcache/varnish-cache/issues/1878
 .. _1871: https://github.com/varnishcache/varnish-cache/issues/1871
+.. _1869: https://github.com/varnishcache/varnish-cache/issues/1869
 .. _1725: https://github.com/varnishcache/varnish-cache/issues/1725
 
 
