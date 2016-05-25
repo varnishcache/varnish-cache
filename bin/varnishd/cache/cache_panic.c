@@ -145,8 +145,8 @@ pan_ws(struct vsb *vsb, const struct ws *ws)
 	PAN_CheckMagic(vsb, ws, WS_MAGIC);
 	if (!(ws->id[0] & 0x20))
 		VSB_printf(vsb, "OVERFLOWED ");
-	VSB_printf(vsb, "id = \"%s\",\n",  ws->id);
-	VSB_printf(vsb, "{s, f, r, e} = {%p",  ws->s);
+	VSB_printf(vsb, "id = \"%s\",\n", ws->id);
+	VSB_printf(vsb, "{s, f, r, e} = {%p", ws->s);
 	if (ws->f > ws->s)
 		VSB_printf(vsb, ", +%ld", (long) (ws->f - ws->s));
 	else
@@ -243,6 +243,7 @@ pan_boc(struct vsb *vsb, const struct boc *boc)
 static void
 pan_objcore(struct vsb *vsb, const char *typ, const struct objcore *oc)
 {
+	const char *p;
 
 	VSB_printf(vsb, "objcore[%s] = %p {\n", typ, oc);
 	if (pan_already(vsb, oc))
@@ -250,8 +251,20 @@ pan_objcore(struct vsb *vsb, const char *typ, const struct objcore *oc)
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, oc, OBJCORE_MAGIC);
 	VSB_printf(vsb, "refcnt = %d,\n", oc->refcnt);
-	VSB_printf(vsb, "flags = 0x%x,\n", oc->flags);
-	VSB_printf(vsb, "exp_flags = 0x%x,\n", oc->exp_flags);
+	VSB_printf(vsb, "flags = {");
+	p = "";
+#define OC_FLAG(U, l, v) \
+	if (oc->flags & v) { VSB_printf(vsb, "%s" #l, p); p = ", "; }
+#include "tbl/oc_flags.h"
+#undef OC_FLAG
+	VSB_printf(vsb, "},\n");
+	VSB_printf(vsb, "exp_flags = {");
+	p = "";
+#define OC_EXP_FLAG(U, l, v) \
+	if (oc->exp_flags & v) { VSB_printf(vsb, "%s" #l, p); p = ", "; }
+#include "tbl/oc_exp_flags.h"
+#undef OC_EXP_FLAG
+	VSB_printf(vsb, "},\n");
 	if (oc->boc != NULL)
 		pan_boc(vsb, oc->boc);
 	VSB_printf(vsb, "exp = {%f, %f, %f, %f}\n",
@@ -347,7 +360,7 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	p = "";
 	/*lint -save -esym(438,p) */
 #define BO_FLAG(l, r, w, d) \
-	if(bo->l) { VSB_printf(vsb,  "%s" #l, p); p = ", "; }
+	if(bo->l) { VSB_printf(vsb, "%s" #l, p); p = ", "; }
 #include "tbl/bo_flags.h"
 #undef BO_FLAG
 	/*lint -restore */

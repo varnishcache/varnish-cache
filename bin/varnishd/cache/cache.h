@@ -405,6 +405,18 @@ enum obj_flags {
 #undef OBJ_FLAG
 };
 
+enum oc_flags {
+#define OC_FLAG(U, l, v)	OC_F_##U = v,
+#include "tbl/oc_flags.h"
+#undef OC_FLAG
+};
+
+enum oc_exp_flags {
+#define OC_EXP_FLAG(U, l, v)	OC_EF_##U = v,
+#include "tbl/oc_exp_flags.h"
+#undef OC_EXP_FLAG
+};
+
 struct objcore {
 	unsigned		magic;
 #define OBJCORE_MAGIC		0x4d301302
@@ -421,19 +433,8 @@ struct objcore {
 	float			keep;
 
 	uint8_t			flags;
-#define OC_F_BUSY		(1<<1)
-#define OC_F_PASS		(1<<2)
-#define OC_F_ABANDON		(1<<4)
-#define OC_F_PRIVATE		(1<<5)
-#define OC_F_FAILED		(1<<6)
-#define OC_F_DYING		(1<<7)
 
 	uint8_t			exp_flags;
-#define OC_EF_POSTED		(1<<1)
-#define OC_EF_REFD		(1<<2)
-#define OC_EF_MOVE		(1<<3)
-#define OC_EF_INSERT		(1<<4)
-#define OC_EF_REMOVE		(1<<5)
 
 	uint16_t		oa_present;
 
