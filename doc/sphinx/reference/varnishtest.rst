@@ -109,21 +109,22 @@ An example::
                 expect resp.bodylen == 21
         } -run
 
-When run, the above script will simulate a server (s1) that expects two
-different requests. It will start a Varnish server (v1) and add the backend
-definition to the VCL specified (-vcl+backend). Finally it starts the
-c1-client, which is a single client sending two requests.
+When run, the above script will simulate a server (s1) that expects
+two different requests. It will start a Varnish server (v1) and add the
+backend definition to the VCL specified (-vcl+backend). Finally it starts
+the c1-client, which is a single client sending two requests.
 
 TESTING A BUILD TREE
 ====================
 
-Whether you are building a VMOD or trying to use one that you freshly built,
-you can tell ``varnishtest`` to pass a *vmod_path* to ``varnishd`` instances
-started using the ``varnish -start`` command in your test case::
+Whether you are building a VMOD or trying to use one that you freshly
+built, you can tell ``varnishtest`` to pass a *vmod_path* to ``varnishd``
+instances started using the ``varnish -start`` command in your test case::
 
     varnishtest -p vmod_path=... /path/to/*.vtc
 
-This way you can use the same test cases on both installed and built VMODs::
+This way you can use the same test cases on both installed and built
+VMODs::
 
     server s1 {...} -start
 
@@ -135,30 +136,31 @@ This way you can use the same test cases on both installed and built VMODs::
 
     ...
 
-You are not limited to the *vmod_path* and can pass any parameter, allowing
-you to run a build matrix without changing the test suite. You can achieve the
-same with macros, but then they need to be defined on each run.
+You are not limited to the *vmod_path* and can pass any parameter,
+allowing you to run a build matrix without changing the test suite. You
+can achieve the same with macros, but then they need to be defined on
+each run.
 
-You can see the actual ``varnishd`` command lines in test outputs, they look
-roughly like this::
+You can see the actual ``varnishd`` command lines in test outputs,
+they look roughly like this::
 
     exec varnishd [varnishtest -p params] [testing params] [vtc -arg params]
 
-Parameters you define with ``varnishtest -p`` may be overriden by parameters
-needed by ``varnishtest`` to run properly, and they may in turn be overriden
-by parameters set in test scripts.
+Parameters you define with ``varnishtest -p`` may be overriden by
+parameters needed by ``varnishtest`` to run properly, and they may in
+turn be overriden by parameters set in test scripts.
 
-There's also a special mode in which ``varnishtest`` builds itself a PATH and
-a *vmod_path* in order to find Varnish binaries (programs and VMODs) in the
-build tree surrounding the ``varnishtest`` binary. This is meant for testing
-of Varnish under development and will disregard your *vmod_path* if you set
-one.
+There's also a special mode in which ``varnishtest`` builds itself a
+PATH and a *vmod_path* in order to find Varnish binaries (programs and
+VMODs) in the build tree surrounding the ``varnishtest`` binary. This
+is meant for testing of Varnish under development and will disregard
+your *vmod_path* if you set one.
 
-If you need to test your VMOD against a Varnish build tree, you must install
-it first, in a temp directory for instance. With information provided by the
-installation's *pkg-config(1)* you can build a proper PATH in order to access
-Varnish programs, and a *vmod_path* to access both your VMOD and the built-in
-VMODs::
+If you need to test your VMOD against a Varnish build tree, you must
+install it first, in a temp directory for instance. With information
+provided by the installation's *pkg-config(1)* you can build a proper
+PATH in order to access Varnish programs, and a *vmod_path* to access
+both your VMOD and the built-in VMODs::
 
     export PKG_CONFIG_PATH=/path/to/install/lib/pkgconfig
 
@@ -187,8 +189,9 @@ responses. Accepted parameters:
 client
 ******
 
-Creates a client instance that sends requests to Varnish and receives responses.
-By default, a client will try and connect to the first varnish server available.
+Creates a client instance that sends requests to Varnish and receives
+responses.  By default, a client will try and connect to the first
+varnish server available.
 
 Accepted parameters:
 
@@ -223,11 +226,11 @@ Starts Varnish instance. Accepted arguments:
  executes a command and expect it to error with given status
  (e.g. "-clierr 300 panic.clear")
 \-vcl STRING
- specify VCL for the instance. You can create multiline strings by encasing them
- in curly braces.
+ specify VCL for the instance. You can create multiline strings by
+ encasing them in curly braces.
 \-vcl+backend STRING
- specifes VCL for the instance, and automatically inject backends definition
- of currently defined servers.
+ specifes VCL for the instance, and automatically inject backends
+ definition of currently defined servers.
 \-errvcl
  tests that invalid VCL results in an error.
 \-stop
@@ -242,67 +245,79 @@ Starts Varnish instance. Accepted arguments:
  sets up a test for asserting variables against expected results.
  Syntax: "-expect <var> <comparison> <const>"
 
-See tests supplied with Varnish distribution for usage examples for all these
-directives.
+See tests supplied with Varnish distribution for usage examples for all
+these directives.
 
 delay
 *****
-Sleeps for specified number of seconds. Can accept floating point numbers.
+
+Sleeps for specified number of seconds.
 
 Usage: ``delay FLOAT``
 
 varnishtest
 ***********
 
-Accepts a string as an only argument. This being a test name that is being output
-into the log. By default, test name is not shown, unless it fails.
+Accepts a string as an only argument. This being a test name that is being
+output into the log. By default, test name is not shown, unless it fails.
 
 shell
 *****
 
-Executes a shell command. Accepts one argument as a string, and runs the command
-as is.
+Executes a shell command. Accepts one argument as a string, and runs
+the command as is.
 
 Usage: ``shell "CMD"``
 
-sema
-****
+err_shell
+*********
 
-Semaphores mostly used to synchronize clients and servers "around"
-varnish, so that the server will not send something particular
-until the client tells it to, but it can also be used synchronize
-multiple clients or servers running in parallel.
+Usage: ``err_shell "STRING" "CMD"``
 
-Usage: ``sema NAME sync INT``
+barrier
+*******
 
-NAME is of the form 'rX', X being a positive integer. This command blocks until,
-in total, INT semaphores named NAME block.
+Usage: ``barrier NAME [arguments]``
 
 random
 ******
 
-Initializes random generator (need to call std.random() in vcl). See m00002.vtc
-for more info
+Initializes random generator (need to call std.random() in vcl). See
+m00002.vtc for more info.
 
 feature
 *******
 
-Checks for features to be present in the test environment. If feature is not present, test is skipped.
+Checks for features to be present in the test environment. If feature
+is not present, test is skipped.
 
 Usage: ``feature STRING [STRING...]``
 
 Possible checks:
 
 SO_RCVTIMEO_WORKS
- runs the test only if SO_RCVTIMEO option works in the environment
+ The SO_RCVTIMEO socket option is working
 64bit
- runs the test only if environment is 64 bit
+ The environment is 64 bits
 !OSX
- skips the test if ran on OSX
+ The environment is not OSX
+dns
+ DNS lookups are working
 topbuild
- varnishtest has been started with '-i' and set the ${topbuild} macro.
+ varnishtest has been started with '-i'
+root
+ varnishtest has been invoked by the root user
+user_varnish
+ The varnish user is present
+user_vcache
+ The vcache user is present
+group_varnish
+ The varnish group is present
+
 logexpect
- This allows checking order and contents of VSL records in varnishtest.
+*********
+
+This allows checking order and contents of VSL records in varnishtest.
 
 SEE ALSO
 ========
@@ -319,10 +334,9 @@ HISTORY
 =======
 
 The varnishtest program was developed by Poul-Henning Kamp
-<phk@phk.freebsd.dk> in cooperation with Varnish Software AS.
-This manual page was originally written by Stig Sandbeck Mathisen
-<ssm@linpro.no> and updated by Kristian Lyngstøl
-<kristian@varnish-cache.org>.
+<phk@phk.freebsd.dk> in cooperation with Varnish Software AS.  This manual
+page was originally written by Stig Sandbeck Mathisen <ssm@linpro.no>
+and updated by Kristian Lyngstøl <kristian@varnish-cache.org>.
 
 
 COPYRIGHT

@@ -52,7 +52,7 @@ Syntax
 ------
 
 Commands are usually terminated with a newline. Long command can be
-entered using shell style *here document* (here-document or heredoc).
+entered using shell-style *here document* (here-document or heredoc).
 The format of here document is::
 
    << word
@@ -85,9 +85,8 @@ Backend Pattern
 
 A backend pattern can be a backend name or a combination of a VCL name
 and backend name in "VCL.backend" format.  If the VCL name is omitted,
-the active VCL is assumed.  Partial matching on the backend name, VCL
-name or both is possible using shell-style wilcards, i.e. asterisk (*),
-question mark (?) and brackets ([]).
+the active VCL is assumed.  Partial matching on the backend and VCL
+names is supported using shell-style wilcards, e.g. asterisk (*).
 
 Examples::
 
@@ -122,20 +121,22 @@ fields.
 VCL Temperature
 ---------------
 
-A VCL program goes through several states related to the different commands: it
-can be loaded, used, and later discarded. You can load several VCL programs and
-switch at any time from one to another. There is only one active VCL, but the
-previous active VCL will be maintained active until all its transactions are
-over.
+A VCL program goes through several states related to the different
+commands: it can be loaded, used, and later discarded. You can load
+several VCL programs and switch at any time from one to another. There
+is only one active VCL, but the previous active VCL will be maintained
+active until all its transactions are over.
 
-Over time, if you often refresh your VCL and keep the previous versions around,
-resource consumption will increase, you can't escape that. However, most of the
-time you want only one to pay the price only for the active VCL and keep older
-VCLs in case you'd need to rollback to a previous version.
+Over time, if you often refresh your VCL and keep the previous
+versions around, resource consumption will increase, you can't escape
+that. However, most of the time you want only one to pay the price only
+for the active VCL and keep older VCLs in case you'd need to rollback
+to a previous version.
 
-The VCL temperature allows you to minimize the footprint of inactive VCLs. Once
-a VCL becomes cold, Varnish will release all the resources that can be be later
-reacquired. You can manually set the temperature of a VCL or let varnish
+The VCL temperature allows you to minimize the footprint of inactive
+VCLs. Once a VCL becomes cold, Varnish will release all the resources
+that can be be later reacquired. You can manually set the temperature
+of a VCL or let varnish
 automatically handle it.
 
 
@@ -236,7 +237,7 @@ secret file, and the challenge string.
 EXAMPLES
 ========
 
-Load a multi-line VCL using shell style *here document*::
+Load a multi-line VCL using shell-style *here document*::
 
     vcl.inline example << EOF
     vcl 4.0;
@@ -260,9 +261,9 @@ backend contains "USERID=1663"::
 AUTHORS
 =======
 
-This manual page was originally written by Per Buer and later modified by
-Federico G. Schwindt, Dridi Boukelmoune, Lasse Karstensen and Poul-Henning
-Kamp.
+This manual page was originally written by Per Buer and later modified
+by Federico G. Schwindt, Dridi Boukelmoune, Lasse Karstensen and
+Poul-Henning Kamp.
 
 SEE ALSO
 ========
