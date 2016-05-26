@@ -115,10 +115,11 @@ VRT_priv_task(VRT_CTX, void *vmod_id)
 	if (ctx->req) {
 		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 		id = (uintptr_t)ctx->req;
-	} else {
+	} else if (ctx->bo) {
 		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 		id = (uintptr_t)ctx->bo;
-	}
+	} else
+		WRONG("PRIV_TASK is only accessible in client or backend VCL contexts");
 	return (VRT_priv_dynamic(ctx, id, (uintptr_t)vmod_id));
 }
 
@@ -133,7 +134,8 @@ VRT_priv_top(VRT_CTX, void *vmod_id)
 		CHECK_OBJ_NOTNULL(ctx->req->top, REQ_MAGIC);
 		id = (uintptr_t)&ctx->req->top->top;
 		return (VRT_priv_dynamic(ctx, id, (uintptr_t)vmod_id));
-	}
+	} else
+		WRONG("PRIV_TOP is only accessible in client VCL context");
 	return (NULL);
 }
 
