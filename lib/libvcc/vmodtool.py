@@ -962,7 +962,7 @@ def runmain(inputvcc, rstdir, outputprefix):
 
 	# Our makefile targets the .c file so make sure to put that in place last.
 	rename(fn_headerfile, outputprefix + ".h")
-	rename(fn_cfile, outputprefix + ".h")
+	rename(fn_cfile, outputprefix + ".c")
 
 
 if __name__ == "__main__":
