@@ -774,22 +774,21 @@ fi.close()
 # Nothing is easily configurable below this line.
 #######################################################################
 
+
 #######################################################################
-# Emit a function to recognize tokens in a string
-
 def emit_vcl_fixed_token(fo, tokens):
-
+	"Emit a function to recognize tokens in a string"
 	recog = list()
 	emit = dict()
 	for i in tokens:
 		j = tokens[i]
-		if (j != None):
+		if j is not None:
 			recog.append(j)
 			emit[j] = i
 
 	recog.sort()
 	rrecog = copy.copy(recog)
-	rrecog.sort(key = lambda x: -len(x))
+	rrecog.sort(key=lambda x: -len(x))
 
 	fo.write("""
 #define M1()\tdo {*q = p + 1; return (p[0]); } while (0)
@@ -837,26 +836,26 @@ vcl_fixed_token(const char *p, const char **q)
 			fo.write("\t\treturn (0);\n")
 	fo.write("\tdefault:\n\t\treturn (0);\n\t}\n}\n")
 
-#######################################################################
-# Emit the vcl_tnames (token->string) conversion array
 
+#######################################################################
 def emit_vcl_tnames(fo, tokens):
+	"Emit the vcl_tnames (token->string) conversion array"
 	fo.write("\nconst char * const vcl_tnames[256] = {\n")
 	l = list(tokens.keys())
 	l.sort()
 	for i in l:
 		j = tokens[i]
-		if j == None:
+		if j is None:
 			j = i
 		if i[0] == "'":
 			j = i
 		fo.write("\t[%s] = \"%s\",\n" % (i, j))
 	fo.write("};\n")
 
-#######################################################################
-# Read a C-source file and spit out code that outputs it with VSB_cat()
 
+#######################################################################
 def emit_file(fo, fd, bn):
+	"Read a C-source file and spit out code that outputs it with VSB_cat()"
 	fn = join(fd, bn)
 
 	fi = open(fn)
@@ -916,13 +915,14 @@ def emit_file(fo, fd, bn):
 
 
 def polish_tokens(tokens):
-	# Expand single char tokens
+	"Expand single char tokens"
 	st = tokens[None]
 	del tokens[None]
 	for i in st:
 		tokens["'" + i + "'"] = i
-#######################################################################
 
+
+#######################################################################
 def file_header(fo):
 	fo.write("""/*
  * NB:  This file is machine generated, DO NOT EDIT!
