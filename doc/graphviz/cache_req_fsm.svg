@@ -14,123 +14,91 @@
 </g>
 <!-- acceptor -->
 <g id="node1" class="node"><title>acceptor</title>
-<polygon fill="none" stroke="black" points="502.608,-1208.5 461.304,-1226.5 378.696,-1226.5 337.392,-1208.5 378.696,-1190.5 461.304,-1190.5 502.608,-1208.5"/>
-<text text-anchor="middle" x="420" y="-1204.8" font-family="Times,serif" font-size="14.00">Request received</text>
+<polygon fill="none" stroke="black" points="604.608,-1208.5 563.304,-1226.5 480.696,-1226.5 439.392,-1208.5 480.696,-1190.5 563.304,-1190.5 604.608,-1208.5"/>
+<text text-anchor="middle" x="522" y="-1204.8" font-family="Times,serif" font-size="14.00">Request received</text>
 </g>
 <!-- recv -->
 <g id="node4" class="node"><title>recv</title>
-<polygon fill="none" stroke="black" points="466,-1078.5 466,-1147.5 680,-1147.5 680,-1078.5 466,-1078.5"/>
-<text text-anchor="middle" x="573" y="-1132.3" font-family="Times,serif" font-size="14.00">cnt_recv:</text>
-<polyline fill="none" stroke="black" points="466,-1124.5 680,-1124.5 "/>
-<text text-anchor="middle" x="527.5" y="-1109.3" font-family="Times,serif" font-size="14.00">vcl_recv{}</text>
-<polyline fill="none" stroke="black" points="589,-1101.5 589,-1124.5 "/>
-<text text-anchor="middle" x="634.5" y="-1109.3" font-family="Times,serif" font-size="14.00">req.*</text>
-<polyline fill="none" stroke="black" points="466,-1101.5 680,-1101.5 "/>
-<text text-anchor="middle" x="486.5" y="-1086.3" font-family="Times,serif" font-size="14.00">hash</text>
-<polyline fill="none" stroke="black" points="507,-1078.5 507,-1101.5 "/>
-<text text-anchor="middle" x="530.5" y="-1086.3" font-family="Times,serif" font-size="14.00">purge</text>
-<polyline fill="none" stroke="black" points="554,-1078.5 554,-1101.5 "/>
-<text text-anchor="middle" x="574" y="-1086.3" font-family="Times,serif" font-size="14.00">pass</text>
-<polyline fill="none" stroke="black" points="594,-1078.5 594,-1101.5 "/>
-<text text-anchor="middle" x="614" y="-1086.3" font-family="Times,serif" font-size="14.00">pipe</text>
-<polyline fill="none" stroke="black" points="634,-1078.5 634,-1101.5 "/>
-<text text-anchor="middle" x="657" y="-1086.3" font-family="Times,serif" font-size="14.00">synth</text>
+<polygon fill="none" stroke="black" points="415,-1078.5 415,-1147.5 629,-1147.5 629,-1078.5 415,-1078.5"/>
+<text text-anchor="middle" x="522" y="-1132.3" font-family="Times,serif" font-size="14.00">cnt_recv:</text>
+<polyline fill="none" stroke="black" points="415,-1124.5 629,-1124.5 "/>
+<text text-anchor="middle" x="476.5" y="-1109.3" font-family="Times,serif" font-size="14.00">vcl_recv{}</text>
+<polyline fill="none" stroke="black" points="538,-1101.5 538,-1124.5 "/>
+<text text-anchor="middle" x="583.5" y="-1109.3" font-family="Times,serif" font-size="14.00">req.*</text>
+<polyline fill="none" stroke="black" points="415,-1101.5 629,-1101.5 "/>
+<text text-anchor="middle" x="435.5" y="-1086.3" font-family="Times,serif" font-size="14.00">hash</text>
+<polyline fill="none" stroke="black" points="456,-1078.5 456,-1101.5 "/>
+<text text-anchor="middle" x="479.5" y="-1086.3" font-family="Times,serif" font-size="14.00">purge</text>
+<polyline fill="none" stroke="black" points="503,-1078.5 503,-1101.5 "/>
+<text text-anchor="middle" x="523" y="-1086.3" font-family="Times,serif" font-size="14.00">pass</text>
+<polyline fill="none" stroke="black" points="543,-1078.5 543,-1101.5 "/>
+<text text-anchor="middle" x="563" y="-1086.3" font-family="Times,serif" font-size="14.00">pipe</text>
+<polyline fill="none" stroke="black" points="583,-1078.5 583,-1101.5 "/>
+<text text-anchor="middle" x="606" y="-1086.3" font-family="Times,serif" font-size="14.00">synth</text>
 </g>
 <!-- acceptor&#45;&gt;recv -->
 <g id="edge2" class="edge"><title>acceptor&#45;&gt;recv</title>
-<path fill="none" stroke="black" stroke-width="2" d="M448.063,-1190.35C465.274,-1179.83 488.043,-1165.92 509.425,-1152.85"/>
-<polygon fill="black" stroke="black" stroke-width="2" points="511.458,-1155.71 518.165,-1147.51 507.807,-1149.74 511.458,-1155.71"/>
+<path fill="none" stroke="black" stroke-width="2" d="M522,-1190.35C522,-1181.14 522,-1169.31 522,-1157.74"/>
+<polygon fill="black" stroke="black" stroke-width="2" points="525.5,-1157.7 522,-1147.7 518.5,-1157.7 525.5,-1157.7"/>
 </g>
 <!-- ESI_REQ -->
 <g id="node2" class="node"><title>ESI_REQ</title>
-<polygon fill="none" stroke="black" points="627.07,-1208.5 600.535,-1226.5 547.465,-1226.5 520.93,-1208.5 547.465,-1190.5 600.535,-1190.5 627.07,-1208.5"/>
-<text text-anchor="middle" x="574" y="-1204.8" font-family="Times,serif" font-size="14.00">ESI_REQ</text>
+<polygon fill="none" stroke="black" points="421.07,-1208.5 394.535,-1226.5 341.465,-1226.5 314.93,-1208.5 341.465,-1190.5 394.535,-1190.5 421.07,-1208.5"/>
+<text text-anchor="middle" x="368" y="-1204.8" font-family="Times,serif" font-size="14.00">ESI_REQ</text>
 </g>
 <!-- ESI_REQ&#45;&gt;recv -->
 <g id="edge1" class="edge"><title>ESI_REQ&#45;&gt;recv</title>
-<path fill="none" stroke="black" d="M573.817,-1190.35C573.718,-1181.14 573.592,-1169.31 573.468,-1157.74"/>
-<polygon fill="black" stroke="black" points="576.967,-1157.66 573.36,-1147.7 569.968,-1157.74 576.967,-1157.66"/>
+<path fill="none" stroke="black" d="M395.532,-1190.78C412.946,-1180.21 436.214,-1166.08 458.041,-1152.83"/>
+<polygon fill="black" stroke="black" points="459.909,-1155.79 466.64,-1147.61 456.276,-1149.81 459.909,-1155.79"/>
 </g>
 <!-- RESTART -->
 <g id="node3" class="node"><title>RESTART</title>
-<text text-anchor="middle" x="710" y="-1283.3" font-family="Times,serif" font-size="14.00">RESTART</text>
+<text text-anchor="middle" x="687" y="-1283.3" font-family="Times,serif" font-size="14.00">RESTART</text>
 </g>
 <!-- restart -->
 <g id="node22" class="node"><title>restart</title>
-<polygon fill="none" stroke="grey" points="646,-1185.5 646,-1231.5 774,-1231.5 774,-1185.5 646,-1185.5"/>
-<text text-anchor="middle" x="710" y="-1216.3" font-family="Times,serif" font-size="14.00" fill="grey">cnt_restart:</text>
-<polyline fill="none" stroke="grey" points="646,-1208.5 774,-1208.5 "/>
-<text text-anchor="middle" x="664" y="-1193.3" font-family="Times,serif" font-size="14.00" fill="grey">ok?</text>
-<polyline fill="none" stroke="grey" points="682,-1185.5 682,-1208.5 "/>
-<text text-anchor="middle" x="728" y="-1193.3" font-family="Times,serif" font-size="14.00" fill="grey">max_restarts?</text>
+<polygon fill="none" stroke="grey" points="623,-1185.5 623,-1231.5 751,-1231.5 751,-1185.5 623,-1185.5"/>
+<text text-anchor="middle" x="687" y="-1216.3" font-family="Times,serif" font-size="14.00" fill="grey">cnt_restart:</text>
+<polyline fill="none" stroke="grey" points="623,-1208.5 751,-1208.5 "/>
+<text text-anchor="middle" x="641" y="-1193.3" font-family="Times,serif" font-size="14.00" fill="grey">ok?</text>
+<polyline fill="none" stroke="grey" points="659,-1185.5 659,-1208.5 "/>
+<text text-anchor="middle" x="705" y="-1193.3" font-family="Times,serif" font-size="14.00" fill="grey">max_restarts?</text>
 </g>
 <!-- RESTART&#45;&gt;restart -->
 <g id="edge28" class="edge"><title>RESTART&#45;&gt;restart</title>
-<path fill="none" stroke="purple" d="M710,-1268.64C710,-1260.7 710,-1251.02 710,-1241.81"/>
-<polygon fill="purple" stroke="purple" points="713.5,-1241.74 710,-1231.74 706.5,-1241.74 713.5,-1241.74"/>
-</g>
-<!-- pass -->
-<g id="node19" class="node"><title>pass</title>
-<polygon fill="none" stroke="black" points="223,-445.5 223,-514.5 363,-514.5 363,-445.5 223,-445.5"/>
-<text text-anchor="middle" x="293" y="-499.3" font-family="Times,serif" font-size="14.00">cnt_pass:</text>
-<polyline fill="none" stroke="black" points="223,-491.5 363,-491.5 "/>
-<text text-anchor="middle" x="266" y="-476.3" font-family="Times,serif" font-size="14.00">vcl_pass{}</text>
-<polyline fill="none" stroke="black" points="309,-468.5 309,-491.5 "/>
-<text text-anchor="middle" x="336" y="-476.3" font-family="Times,serif" font-size="14.00">req.*</text>
-<polyline fill="none" stroke="black" points="223,-468.5 363,-468.5 "/>
-<text text-anchor="middle" x="245" y="-453.3" font-family="Times,serif" font-size="14.00">fetch</text>
-<polyline fill="none" stroke="black" points="267,-445.5 267,-468.5 "/>
-<text text-anchor="middle" x="290" y="-453.3" font-family="Times,serif" font-size="14.00">synth</text>
-<polyline fill="none" stroke="black" points="313,-445.5 313,-468.5 "/>
-<text text-anchor="middle" x="338" y="-453.3" font-family="Times,serif" font-size="14.00">restart</text>
-</g>
-<!-- recv&#45;&gt;pass -->
-<g id="edge33" class="edge"><title>recv:pass&#45;&gt;pass</title>
-<path fill="none" stroke="red" stroke-width="2" d="M574,-1078C574,-1036.22 575,-1025.78 575,-984 575,-984 575,-984 575,-615 575,-525.019 456.424,-495.389 373.053,-485.677"/>
-<polygon fill="red" stroke="red" stroke-width="2" points="373.391,-482.193 363.07,-484.588 372.632,-489.152 373.391,-482.193"/>
-</g>
-<!-- pipe -->
-<g id="node20" class="node"><title>pipe</title>
-<polygon fill="none" stroke="black" points="619,-925.5 619,-1040.5 753,-1040.5 753,-925.5 619,-925.5"/>
-<text text-anchor="middle" x="686" y="-1025.3" font-family="Times,serif" font-size="14.00">cnt_pipe:</text>
-<polyline fill="none" stroke="black" points="619,-1017.5 753,-1017.5 "/>
-<text text-anchor="middle" x="686" y="-1002.3" font-family="Times,serif" font-size="14.00">filter req.*&#45;&gt;bereq.*</text>
-<polyline fill="none" stroke="black" points="619,-994.5 753,-994.5 "/>
-<text text-anchor="middle" x="657.5" y="-967.8" font-family="Times,serif" font-size="14.00">vcl_pipe{}</text>
-<polyline fill="none" stroke="black" points="696,-948.5 696,-994.5 "/>
-<text text-anchor="middle" x="724.5" y="-979.3" font-family="Times,serif" font-size="14.00">req.*</text>
-<polyline fill="none" stroke="black" points="696,-971.5 753,-971.5 "/>
-<text text-anchor="middle" x="724.5" y="-956.3" font-family="Times,serif" font-size="14.00">bereq.*</text>
-<polyline fill="none" stroke="black" points="619,-948.5 753,-948.5 "/>
-<text text-anchor="middle" x="651" y="-933.3" font-family="Times,serif" font-size="14.00">pipe</text>
-<polyline fill="none" stroke="black" points="683,-925.5 683,-948.5 "/>
-<text text-anchor="middle" x="718" y="-933.3" font-family="Times,serif" font-size="14.00">synth</text>
-</g>
-<!-- recv&#45;&gt;pipe -->
-<g id="edge32" class="edge"><title>recv:pipe&#45;&gt;pipe</title>
-<path fill="none" stroke="orange" stroke-width="2" d="M614,-1078C614,-1068.08 616.557,-1058.57 620.707,-1049.65"/>
-<polygon fill="orange" stroke="orange" stroke-width="2" points="623.927,-1051.05 625.568,-1040.58 617.758,-1047.74 623.927,-1051.05"/>
+<path fill="none" stroke="purple" d="M687,-1268.64C687,-1260.7 687,-1251.02 687,-1241.81"/>
+<polygon fill="purple" stroke="purple" points="690.5,-1241.74 687,-1231.74 683.5,-1241.74 690.5,-1241.74"/>
 </g>
 <!-- hash -->
 <g id="node24" class="node"><title>hash</title>
-<polygon fill="none" stroke="black" points="423,-948.5 423,-1017.5 545,-1017.5 545,-948.5 423,-948.5"/>
-<text text-anchor="middle" x="484" y="-1002.3" font-family="Times,serif" font-size="14.00">cnt_recv:</text>
-<polyline fill="none" stroke="black" points="423,-994.5 545,-994.5 "/>
-<text text-anchor="middle" x="462" y="-979.3" font-family="Times,serif" font-size="14.00">vcl_hash{}</text>
-<polyline fill="none" stroke="black" points="501,-971.5 501,-994.5 "/>
-<text text-anchor="middle" x="523" y="-979.3" font-family="Times,serif" font-size="14.00">req.*</text>
-<polyline fill="none" stroke="black" points="423,-971.5 545,-971.5 "/>
-<text text-anchor="middle" x="484" y="-956.3" font-family="Times,serif" font-size="14.00">lookup</text>
+<polygon fill="none" stroke="black" points="440,-971.5 440,-1040.5 562,-1040.5 562,-971.5 440,-971.5"/>
+<text text-anchor="middle" x="501" y="-1025.3" font-family="Times,serif" font-size="14.00">cnt_recv:</text>
+<polyline fill="none" stroke="black" points="440,-1017.5 562,-1017.5 "/>
+<text text-anchor="middle" x="479" y="-1002.3" font-family="Times,serif" font-size="14.00">vcl_hash{}</text>
+<polyline fill="none" stroke="black" points="518,-994.5 518,-1017.5 "/>
+<text text-anchor="middle" x="540" y="-1002.3" font-family="Times,serif" font-size="14.00">req.*</text>
+<polyline fill="none" stroke="black" points="440,-994.5 562,-994.5 "/>
+<text text-anchor="middle" x="501" y="-979.3" font-family="Times,serif" font-size="14.00">lookup</text>
 </g>
 <!-- recv&#45;&gt;hash -->
 <g id="edge31" class="edge"><title>recv:hash&#45;&gt;hash</title>
-<path fill="none" stroke="green" stroke-width="2" d="M486,-1078C486,-1061.66 485.694,-1043.73 485.322,-1027.95"/>
-<polygon fill="green" stroke="green" stroke-width="2" points="488.82,-1027.84 485.07,-1017.93 481.823,-1028.02 488.82,-1027.84"/>
+<path fill="none" stroke="green" stroke-width="2" d="M435,-1078C435,-1067.05 439.265,-1057.08 445.627,-1048.29"/>
+<polygon fill="green" stroke="green" stroke-width="2" points="448.335,-1050.51 451.997,-1040.57 442.934,-1046.06 448.335,-1050.51"/>
 </g>
 <!-- recv&#45;&gt;hash -->
-<g id="edge36" class="edge"><title>recv:purge:s&#45;&gt;hash</title>
-<path fill="none" stroke="purple" stroke-width="2" d="M530,-1078C530,-1060.08 523.17,-1042.01 514.774,-1026.57"/>
-<polygon fill="purple" stroke="purple" stroke-width="2" points="517.735,-1024.7 509.69,-1017.81 511.68,-1028.21 517.735,-1024.7"/>
+<g id="edge32" class="edge"><title>recv:pipe&#45;&gt;hash</title>
+<path fill="none" stroke="orange" stroke-width="2" d="M563,-1078C563,-1067.33 558.982,-1057.5 552.991,-1048.76"/>
+<polygon fill="orange" stroke="orange" stroke-width="2" points="555.627,-1046.45 546.71,-1040.73 550.113,-1050.76 555.627,-1046.45"/>
+</g>
+<!-- recv&#45;&gt;hash -->
+<g id="edge33" class="edge"><title>recv:pass&#45;&gt;hash</title>
+<path fill="none" stroke="red" stroke-width="2" d="M523,-1078C523,-1068.91 521.333,-1059.44 518.916,-1050.49"/>
+<polygon fill="red" stroke="red" stroke-width="2" points="522.182,-1049.2 515.918,-1040.66 515.487,-1051.24 522.182,-1049.2"/>
+</g>
+<!-- recv&#45;&gt;hash -->
+<g id="edge38" class="edge"><title>recv:purge:s&#45;&gt;hash</title>
+<path fill="none" stroke="purple" stroke-width="2" d="M479,-1078C479,-1068.91 480.667,-1059.44 483.084,-1050.49"/>
+<polygon fill="purple" stroke="purple" stroke-width="2" points="486.513,-1051.24 486.082,-1040.66 479.818,-1049.2 486.513,-1051.24"/>
 </g>
 <!-- SYNTH -->
 <g id="node5" class="node"><title>SYNTH</title>
@@ -325,6 +293,21 @@
 <path fill="none" stroke="blue" stroke-width="2" d="M75,-688C75,-676.143 79.7319,-666.085 87.137,-657.604"/>
 <polygon fill="blue" stroke="blue" stroke-width="2" points="89.6233,-660.068 94.281,-650.552 84.7056,-655.086 89.6233,-660.068"/>
 </g>
+<!-- pass -->
+<g id="node19" class="node"><title>pass</title>
+<polygon fill="none" stroke="black" points="223,-445.5 223,-514.5 363,-514.5 363,-445.5 223,-445.5"/>
+<text text-anchor="middle" x="293" y="-499.3" font-family="Times,serif" font-size="14.00">cnt_pass:</text>
+<polyline fill="none" stroke="black" points="223,-491.5 363,-491.5 "/>
+<text text-anchor="middle" x="266" y="-476.3" font-family="Times,serif" font-size="14.00">vcl_pass{}</text>
+<polyline fill="none" stroke="black" points="309,-468.5 309,-491.5 "/>
+<text text-anchor="middle" x="336" y="-476.3" font-family="Times,serif" font-size="14.00">req.*</text>
+<polyline fill="none" stroke="black" points="223,-468.5 363,-468.5 "/>
+<text text-anchor="middle" x="245" y="-453.3" font-family="Times,serif" font-size="14.00">fetch</text>
+<polyline fill="none" stroke="black" points="267,-445.5 267,-468.5 "/>
+<text text-anchor="middle" x="290" y="-453.3" font-family="Times,serif" font-size="14.00">synth</text>
+<polyline fill="none" stroke="black" points="313,-445.5 313,-468.5 "/>
+<text text-anchor="middle" x="338" y="-453.3" font-family="Times,serif" font-size="14.00">restart</text>
+</g>
 <!-- lookup2&#45;&gt;pass -->
 <g id="edge22" class="edge"><title>lookup2:pass:s&#45;&gt;pass</title>
 <path fill="none" stroke="red" stroke-width="2" d="M212,-688C212,-655.911 256.629,-677.981 274,-651 298.143,-613.501 300.499,-561.496 298.321,-524.909"/>
@@ -332,38 +315,38 @@
 </g>
 <!-- lookup -->
 <g id="node17" class="node"><title>lookup</title>
-<polygon fill="none" stroke="grey" points="98,-818.5 98,-887.5 316,-887.5 316,-818.5 98,-818.5"/>
-<text text-anchor="middle" x="207" y="-872.3" font-family="Times,serif" font-size="14.00" fill="grey">cnt_lookup:</text>
+<polygon fill="none" stroke="grey" points="98,-841.5 98,-910.5 316,-910.5 316,-841.5 98,-841.5"/>
+<text text-anchor="middle" x="207" y="-895.3" font-family="Times,serif" font-size="14.00" fill="grey">cnt_lookup:</text>
+<polyline fill="none" stroke="grey" points="98,-887.5 316,-887.5 "/>
+<text text-anchor="middle" x="207" y="-872.3" font-family="Times,serif" font-size="14.00" fill="grey">hash lookup</text>
 <polyline fill="none" stroke="grey" points="98,-864.5 316,-864.5 "/>
-<text text-anchor="middle" x="207" y="-849.3" font-family="Times,serif" font-size="14.00" fill="grey">hash lookup</text>
-<polyline fill="none" stroke="grey" points="98,-841.5 316,-841.5 "/>
-<text text-anchor="middle" x="116.5" y="-826.3" font-family="Times,serif" font-size="14.00" fill="grey">hit?</text>
-<polyline fill="none" stroke="grey" points="135,-818.5 135,-841.5 "/>
-<text text-anchor="middle" x="159" y="-826.3" font-family="Times,serif" font-size="14.00" fill="grey">miss?</text>
-<polyline fill="none" stroke="grey" points="183,-818.5 183,-841.5 "/>
-<text text-anchor="middle" x="225.5" y="-826.3" font-family="Times,serif" font-size="14.00" fill="grey">hit&#45;for&#45;pass?</text>
-<polyline fill="none" stroke="grey" points="268,-818.5 268,-841.5 "/>
-<text text-anchor="middle" x="292" y="-826.3" font-family="Times,serif" font-size="14.00" fill="grey">busy?</text>
+<text text-anchor="middle" x="116.5" y="-849.3" font-family="Times,serif" font-size="14.00" fill="grey">hit?</text>
+<polyline fill="none" stroke="grey" points="135,-841.5 135,-864.5 "/>
+<text text-anchor="middle" x="159" y="-849.3" font-family="Times,serif" font-size="14.00" fill="grey">miss?</text>
+<polyline fill="none" stroke="grey" points="183,-841.5 183,-864.5 "/>
+<text text-anchor="middle" x="225.5" y="-849.3" font-family="Times,serif" font-size="14.00" fill="grey">hit&#45;for&#45;pass?</text>
+<polyline fill="none" stroke="grey" points="268,-841.5 268,-864.5 "/>
+<text text-anchor="middle" x="292" y="-849.3" font-family="Times,serif" font-size="14.00" fill="grey">busy?</text>
 </g>
 <!-- lookup&#45;&gt;lookup2 -->
 <g id="edge19" class="edge"><title>lookup:h:s&#45;&gt;lookup2</title>
-<path fill="none" stroke="green" stroke-width="2" d="M116,-818C116,-809.259 116,-799.996 116,-790.958"/>
-<polygon fill="green" stroke="green" stroke-width="2" points="119.5,-790.888 116,-780.888 112.5,-790.889 119.5,-790.888"/>
+<path fill="none" stroke="green" stroke-width="2" d="M116,-840C116,-824.001 116,-806.625 116,-790.719"/>
+<polygon fill="green" stroke="green" stroke-width="2" points="119.5,-790.507 116,-780.507 112.5,-790.507 119.5,-790.507"/>
 </g>
 <!-- lookup&#45;&gt;lookup -->
 <g id="edge16" class="edge"><title>lookup:busy:e&#45;&gt;lookup:top:e</title>
-<path fill="none" stroke="grey" d="M316,-830C322,-817 334,-817 334,-853 334,-877.75 328.328,-885.484 322.833,-883.677"/>
-<polygon fill="grey" stroke="grey" points="325.263,-881.142 316,-876 320.034,-885.797 325.263,-881.142"/>
-<text text-anchor="middle" x="367.5" y="-849.3" font-family="Times,serif" font-size="14.00" fill="grey">(waitinglist)</text>
+<path fill="none" stroke="grey" d="M316,-853C322,-834 334,-834 334,-876 334,-908.812 326.676,-915.99 320.61,-908.5"/>
+<polygon fill="grey" stroke="grey" points="323.515,-906.469 316,-899 317.217,-909.525 323.515,-906.469"/>
+<text text-anchor="middle" x="367.5" y="-872.3" font-family="Times,serif" font-size="14.00" fill="grey">(waitinglist)</text>
 </g>
 <!-- lookup&#45;&gt;miss -->
 <g id="edge17" class="edge"><title>lookup:miss:s&#45;&gt;miss</title>
-<path fill="none" stroke="blue" stroke-width="2" d="M159,-818C159,-778.017 219.308,-814.587 241,-781 263.425,-746.279 256.118,-726.469 241,-688 236.81,-677.339 230.183,-667.328 222.711,-658.375"/>
+<path fill="none" stroke="blue" stroke-width="2" d="M159,-840C159,-795.102 220.525,-820.957 241,-781 259.85,-744.215 256.118,-726.469 241,-688 236.81,-677.339 230.183,-667.328 222.711,-658.375"/>
 <polygon fill="blue" stroke="blue" stroke-width="2" points="225.227,-655.938 215.966,-650.79 219.996,-660.589 225.227,-655.938"/>
 </g>
 <!-- lookup&#45;&gt;pass -->
 <g id="edge18" class="edge"><title>lookup:hfp:s&#45;&gt;pass</title>
-<path fill="none" stroke="red" stroke-width="2" d="M226,-818C226,-794.744 251.216,-801.05 263,-781 313.367,-695.3 305.717,-662.137 313,-563 313.977,-549.703 315.434,-546.109 313,-533 312.47,-530.147 311.79,-527.249 311.002,-524.355"/>
+<path fill="none" stroke="red" stroke-width="2" d="M226,-840C226,-809.282 249.583,-809.097 262,-781 302.222,-689.987 305.71,-662.238 313,-563 313.977,-549.703 315.434,-546.109 313,-533 312.47,-530.147 311.79,-527.249 311.002,-524.355"/>
 <polygon fill="red" stroke="red" stroke-width="2" points="314.281,-523.113 307.968,-514.604 307.597,-525.193 314.281,-523.113"/>
 </g>
 <!-- miss&#45;&gt;FETCH -->
@@ -381,58 +364,85 @@
 <path fill="none" stroke="red" stroke-width="2" d="M245,-445C245,-435.486 228.709,-422.805 211.625,-412.122"/>
 <polygon fill="red" stroke="red" stroke-width="2" points="213.073,-408.908 202.701,-406.745 209.46,-414.904 213.073,-408.908"/>
 </g>
+<!-- pipe -->
+<g id="node20" class="node"><title>pipe</title>
+<polygon fill="none" stroke="black" points="619,-818.5 619,-933.5 753,-933.5 753,-818.5 619,-818.5"/>
+<text text-anchor="middle" x="686" y="-918.3" font-family="Times,serif" font-size="14.00">cnt_pipe:</text>
+<polyline fill="none" stroke="black" points="619,-910.5 753,-910.5 "/>
+<text text-anchor="middle" x="686" y="-895.3" font-family="Times,serif" font-size="14.00">filter req.*&#45;&gt;bereq.*</text>
+<polyline fill="none" stroke="black" points="619,-887.5 753,-887.5 "/>
+<text text-anchor="middle" x="657.5" y="-860.8" font-family="Times,serif" font-size="14.00">vcl_pipe{}</text>
+<polyline fill="none" stroke="black" points="696,-841.5 696,-887.5 "/>
+<text text-anchor="middle" x="724.5" y="-872.3" font-family="Times,serif" font-size="14.00">req.*</text>
+<polyline fill="none" stroke="black" points="696,-864.5 753,-864.5 "/>
+<text text-anchor="middle" x="724.5" y="-849.3" font-family="Times,serif" font-size="14.00">bereq.*</text>
+<polyline fill="none" stroke="black" points="619,-841.5 753,-841.5 "/>
+<text text-anchor="middle" x="651" y="-826.3" font-family="Times,serif" font-size="14.00">pipe</text>
+<polyline fill="none" stroke="black" points="683,-818.5 683,-841.5 "/>
+<text text-anchor="middle" x="718" y="-826.3" font-family="Times,serif" font-size="14.00">synth</text>
+</g>
 <!-- pipe_do -->
 <g id="node21" class="node"><title>pipe_do</title>
-<ellipse fill="none" stroke="black" cx="698" cy="-853" rx="95.4188" ry="26.7407"/>
-<text text-anchor="middle" x="698" y="-856.8" font-family="Times,serif" font-size="14.00">send bereq,</text>
-<text text-anchor="middle" x="698" y="-841.8" font-family="Times,serif" font-size="14.00">copy bytes until close</text>
+<ellipse fill="none" stroke="black" cx="698" cy="-734.5" rx="95.4188" ry="26.7407"/>
+<text text-anchor="middle" x="698" y="-738.3" font-family="Times,serif" font-size="14.00">send bereq,</text>
+<text text-anchor="middle" x="698" y="-723.3" font-family="Times,serif" font-size="14.00">copy bytes until close</text>
 </g>
 <!-- pipe&#45;&gt;pipe_do -->
 <g id="edge26" class="edge"><title>pipe:pipe&#45;&gt;pipe_do</title>
-<path fill="none" stroke="orange" stroke-width="2" d="M651,-925C651,-911.335 657.128,-898.282 664.958,-887.18"/>
-<polygon fill="orange" stroke="orange" stroke-width="2" points="667.862,-889.146 671.205,-879.092 662.322,-884.867 667.862,-889.146"/>
+<path fill="none" stroke="orange" stroke-width="2" d="M651,-818C651,-800.39 659.184,-783.111 668.723,-768.953"/>
+<polygon fill="orange" stroke="orange" stroke-width="2" points="671.761,-770.724 674.775,-760.566 666.085,-766.627 671.761,-770.724"/>
 </g>
 <!-- pipe_do&#45;&gt;DONE -->
 <g id="edge27" class="edge"><title>pipe_do&#45;&gt;DONE</title>
-<path fill="none" stroke="orange" stroke-width="2" d="M682.476,-826.166C670.159,-803.197 655,-768.27 655,-735.5 655,-735.5 655,-735.5 655,-90 655,-58.2915 621.5,-39.6576 592.711,-29.4983"/>
+<path fill="none" stroke="orange" stroke-width="2" d="M682.476,-707.666C670.159,-684.697 655,-649.77 655,-617 655,-617 655,-617 655,-90 655,-58.2915 621.5,-39.6576 592.711,-29.4983"/>
 <polygon fill="orange" stroke="orange" stroke-width="2" points="593.776,-26.1642 583.183,-26.3712 591.593,-32.8151 593.776,-26.1642"/>
 </g>
 <!-- restart&#45;&gt;recv -->
 <g id="edge29" class="edge"><title>restart:ok:s&#45;&gt;recv</title>
-<path fill="none" stroke="black" d="M664,-1185C664,-1173.49 659.422,-1163.58 652.319,-1155.12"/>
-<polygon fill="black" stroke="black" points="654.629,-1152.47 645.145,-1147.75 649.615,-1157.36 654.629,-1152.47"/>
+<path fill="none" stroke="black" d="M641,-1185C641,-1173.12 636.572,-1163.18 629.424,-1154.88"/>
+<polygon fill="black" stroke="black" points="631.723,-1152.23 622.144,-1147.7 626.809,-1157.21 631.723,-1152.23"/>
 </g>
 <!-- err_restart -->
 <g id="node23" class="node"><title>err_restart</title>
-<text text-anchor="middle" x="729" y="-1109.3" font-family="Times,serif" font-size="14.00">SYNTH</text>
+<text text-anchor="middle" x="705" y="-1109.3" font-family="Times,serif" font-size="14.00">SYNTH</text>
 </g>
 <!-- restart&#45;&gt;err_restart -->
 <g id="edge30" class="edge"><title>restart:max:s&#45;&gt;err_restart</title>
-<path fill="none" stroke="purple" d="M728,-1185C728,-1170.65 728.207,-1154.67 728.432,-1141.51"/>
-<polygon fill="purple" stroke="purple" points="731.937,-1141.28 728.622,-1131.22 724.938,-1141.15 731.937,-1141.28"/>
+<path fill="none" stroke="purple" d="M705,-1185C705,-1170.65 705,-1154.67 705,-1141.51"/>
+<polygon fill="purple" stroke="purple" points="708.5,-1141.22 705,-1131.22 701.5,-1141.22 708.5,-1141.22"/>
 </g>
 <!-- hash&#45;&gt;lookup -->
 <g id="edge34" class="edge"><title>hash:lookup:w&#45;&gt;lookup</title>
-<path fill="none" stroke="green" stroke-width="2" d="M422,-960C359.706,-960 296.753,-923.759 255.21,-893.659"/>
-<polygon fill="green" stroke="green" stroke-width="2" points="257.057,-890.672 246.936,-887.539 252.895,-896.3 257.057,-890.672"/>
+<path fill="none" stroke="green" stroke-width="2" d="M439,-983C372.437,-983 304.057,-946.456 258.942,-916.282"/>
+<polygon fill="green" stroke="green" stroke-width="2" points="260.75,-913.279 250.515,-910.539 256.807,-919.063 260.75,-913.279"/>
+</g>
+<!-- hash&#45;&gt;pass -->
+<g id="edge36" class="edge"><title>hash:lookup:s&#45;&gt;pass</title>
+<path fill="none" stroke="red" stroke-width="2" d="M501,-971C501,-941.539 538.166,-957.45 556,-934 572.165,-912.745 575,-903.704 575,-877 575,-877 575,-877 575,-615 575,-525.019 456.424,-495.389 373.053,-485.677"/>
+<polygon fill="red" stroke="red" stroke-width="2" points="373.391,-482.193 363.07,-484.588 372.632,-489.152 373.391,-482.193"/>
+</g>
+<!-- hash&#45;&gt;pipe -->
+<g id="edge37" class="edge"><title>hash:lookup:e&#45;&gt;pipe</title>
+<path fill="none" stroke="orange" stroke-width="2" d="M563,-983C593.899,-983 620.887,-963.568 641.648,-941.344"/>
+<polygon fill="orange" stroke="orange" stroke-width="2" points="644.401,-943.516 648.447,-933.724 639.178,-938.855 644.401,-943.516"/>
 </g>
 <!-- purge -->
 <g id="node25" class="node"><title>purge</title>
-<polygon fill="none" stroke="black" points="419,-818.5 419,-887.5 547,-887.5 547,-818.5 419,-818.5"/>
-<text text-anchor="middle" x="483" y="-872.3" font-family="Times,serif" font-size="14.00">cnt_purge:</text>
+<polygon fill="none" stroke="black" points="419,-841.5 419,-910.5 547,-910.5 547,-841.5 419,-841.5"/>
+<text text-anchor="middle" x="483" y="-895.3" font-family="Times,serif" font-size="14.00">cnt_purge:</text>
+<polyline fill="none" stroke="black" points="419,-887.5 547,-887.5 "/>
+<text text-anchor="middle" x="461" y="-872.3" font-family="Times,serif" font-size="14.00">vcl_purge{}</text>
+<polyline fill="none" stroke="black" points="503,-864.5 503,-887.5 "/>
+<text text-anchor="middle" x="525" y="-872.3" font-family="Times,serif" font-size="14.00">req.*</text>
 <polyline fill="none" stroke="black" points="419,-864.5 547,-864.5 "/>
-<text text-anchor="middle" x="461" y="-849.3" font-family="Times,serif" font-size="14.00">vcl_purge{}</text>
-<polyline fill="none" stroke="black" points="503,-841.5 503,-864.5 "/>
-<text text-anchor="middle" x="525" y="-849.3" font-family="Times,serif" font-size="14.00">req.*</text>
-<polyline fill="none" stroke="black" points="419,-841.5 547,-841.5 "/>
-<text text-anchor="middle" x="450" y="-826.3" font-family="Times,serif" font-size="14.00">synth</text>
-<polyline fill="none" stroke="black" points="481,-818.5 481,-841.5 "/>
-<text text-anchor="middle" x="514" y="-826.3" font-family="Times,serif" font-size="14.00">restart</text>
+<text text-anchor="middle" x="450" y="-849.3" font-family="Times,serif" font-size="14.00">synth</text>
+<polyline fill="none" stroke="black" points="481,-841.5 481,-864.5 "/>
+<text text-anchor="middle" x="514" y="-849.3" font-family="Times,serif" font-size="14.00">restart</text>
 </g>
 <!-- hash&#45;&gt;purge -->
 <g id="edge35" class="edge"><title>hash:lookup:s&#45;&gt;purge:top:n</title>
-<path fill="none" stroke="purple" stroke-width="2" d="M484,-947C484,-924.462 483.261,-916.457 483.054,-898.006"/>
-<polygon fill="purple" stroke="purple" stroke-width="2" points="486.554,-897.981 483,-888 479.554,-898.019 486.554,-897.981"/>
+<path fill="none" stroke="purple" stroke-width="2" d="M501,-971C501,-947.333 487.585,-940.99 483.917,-922.06"/>
+<polygon fill="purple" stroke="purple" stroke-width="2" points="487.394,-921.641 483,-912 480.423,-922.277 487.394,-921.641"/>
 </g>
 </g>
 </svg>

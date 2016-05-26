@@ -195,10 +195,13 @@ digraph cache_req_fsm {
 		      label="{cnt_recv:|{vcl_hash\{\}|req.*}|{<lookup>lookup}}"
 		      ]
 	}
-	recv:pipe -> pipe [style=bold,color=orange]
-	recv:pass -> pass [style=bold,color=red]
+	recv:pipe -> hash [style=bold,color=orange]
+	recv:pass -> hash [style=bold,color=red]
 	hash:lookup:w -> lookup [style=bold,color=green]
 	hash:lookup:s -> purge:top:n [style=bold,color=purple]
+	hash:lookup:s -> pass [style=bold,color=red]
+	hash:lookup:e -> pipe [style=bold,color=orange]
+
 	recv:purge:s -> hash [style=bold,color=purple]
 
 	/* cnt_purge */
