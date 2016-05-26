@@ -152,7 +152,7 @@ sub vcl_backend_fetch {
 }
 
 sub vcl_backend_response {
-    if (beresp.ttl <= 0s ||
+    if ((beresp.ttl + beresp.grace) <= 0s ||
       beresp.http.Set-Cookie ||
       beresp.http.Surrogate-control ~ "no-store" ||
       (!beresp.http.Surrogate-Control &&

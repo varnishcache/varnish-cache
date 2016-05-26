@@ -1,0 +1,32 @@
+varnishtest "#1964: ttl, grace and automatic hit-for-pass"
+
+server s1 {
+	rxreq
+	txresp -hdr "Age: 6" -hdr "Foo: Bar"
+
+	rxreq
+	txresp -hdr "Age: 6" -hdr "Foo: Baz"
+} -start
+
+varnish v1 -arg "-p default_ttl=5 -p default_grace=5" -vcl+backend {
+	sub vcl_backend_response {
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.Foo == "Bar"
+
+	txreq
+	rxresp
+	expect resp.http.Foo == "Bar"
+
+	# Give the backend fetch which should have been done by the previous
+	# request time to finish
+	delay 1
+
+	txreq
+	rxresp
+	expect resp.http.Foo == "Baz"
+} -run
