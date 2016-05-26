@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #-
-# Copyright (c) 2010-2015 Varnish Software AS
+# Copyright (c) 2010-2016 Varnish Software
 # All rights reserved.
 #
 # Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -86,16 +86,16 @@ def write_rst_file_warning(fo):
 
 #######################################################################
 
-def lwrap(s, w=72):
+def lwrap(s, width=72):
 	"""
-	Wrap a c-prototype like string into a number of lines
+	Wrap a C-prototype like string into a number of lines.
 	"""
 	l = []
 	p = ""
-	while len(s) > w:
-		y = s[:w].rfind(',')
+	while len(s) > width:
+		y = s[:width].rfind(',')
 		if y == -1:
-			y = s[:w].rfind('(')
+			y = s[:width].rfind('(')
 		if y == -1:
 			break
 		l.append(p + s[:y + 1])
@@ -106,18 +106,13 @@ def lwrap(s, w=72):
 	return l
 
 def quote(s):
-	t = ""
-	for i in s:
-		if i == '"':
-			t += '\\"'
-		else:
-			t += i
-	return t
+	return s.replace("\"", "\\\"")
+
 
 #######################################################################
 
 def is_c_name(s):
-	return None != re.match("^[a-zA-Z][a-zA-Z0-9_]*$", s)
+	return re.match("^[a-zA-Z][a-zA-Z0-9_]*$", s) is not None
 
 
 class ParseError(Exception):
@@ -126,8 +121,8 @@ class ParseError(Exception):
 
 class FormatError(Exception):
 	"""
-		Raised if the content of the (otherwise well-formed) input file
-		is invalid.
+	Raised if the content of the (otherwise well-formed) input file
+	is invalid.
 	"""
 	def __init__(self, msg, details):
 		self.msg = msg
@@ -162,7 +157,7 @@ class Vmod(object):
 		self.doc_order = []
 
 	def set_event(self, nam):
-		if self.event != None:
+		if self.event is not None:
 			raise ParseError("Module %s already has $Event" %
 			    self.nam)
 		if not is_c_name(nam):
@@ -188,7 +183,7 @@ class Vmod(object):
 		for f in self.funcs:
 			for i in lwrap(f.c_proto()):
 				fo.write(i + "\n")
-		if self.event != None:
+		if self.event is not None:
 			fo.write("\n")
 			fo.write("#ifdef VCL_MET_MAX\n")
 			fo.write("vmod_event_f " + self.event + ";\n")
@@ -213,7 +208,6 @@ class Vmod(object):
 				fo.write(j + "\n")
 
 	def c_vmod(self, fo):
-
 		cs = self.c_struct()
 		fo.write(cs + ';\n')
 
@@ -226,7 +220,7 @@ class Vmod(object):
 
 		fo.write("\nstatic const char Vmod_Proto[] =\n")
 		for t in self.c_typedefs_():
-			for i in lwrap(t, w=64):
+			for i in lwrap(t, width=64):
 				fo.write('\t"' + i + '\\n"\n')
 		fo.write('\t"\\n"\n')
 		for i in (cs + ";").split("\n"):
@@ -240,8 +234,8 @@ class Vmod(object):
 		nm = "Vmod_" + self.nam + "_Data"
 		fo.write("/*lint -esym(759, %s) */\n" % nm)
 		fo.write("const struct vmod_data " + nm + " = {\n")
-		fo.write("\t.vrt_major = VRT_MAJOR_VERSION,\n");
-		fo.write("\t.vrt_minor = VRT_MINOR_VERSION,\n");
+		fo.write("\t.vrt_major = VRT_MAJOR_VERSION,\n")
+		fo.write("\t.vrt_minor = VRT_MINOR_VERSION,\n")
 		fo.write("\t.name = \"%s\",\n" % self.nam)
 		fo.write("\t.func = &Vmod_Func,\n")
 		fo.write("\t.func_len = sizeof(Vmod_Func),\n")
@@ -255,7 +249,7 @@ class Vmod(object):
 		#
 		fo.write("\t.file_id = \"")
 		for i in range(32):
-			fo.write("%c" % random.randint(0x40,0x5a))
+			fo.write("%c" % random.randint(0x40, 0x5a))
 		fo.write("\",\n")
 		fo.write("};\n")
 
@@ -269,7 +263,7 @@ class Vmod(object):
 			s += f.c_initializer()
 
 		s += "\n\t/* Init/Fini */\n"
-		if self.event != None:
+		if self.event is not None:
 			s += "\t" + self.event + ",\n"
 		s += "};"
 
@@ -285,7 +279,7 @@ class Vmod(object):
 			s += f.c_struct(self.nam)
 
 		s += "\n\t/* Init/Fini */\n"
-		if self.event != None:
+		if self.event is not None:
 			s += "\tvmod_event_f\t*_event;\n"
 		s += '}'
 		return s
@@ -302,7 +296,7 @@ class Vmod(object):
 		for f in self.funcs:
 			s += f.c_strspec(self.nam) + ',\n\n'
 
-		if self.event != None:
+		if self.event is not None:
 			s += "\t/* Init/Fini */\n"
 			s += '\t"$EVENT\\0Vmod_' + self.nam + '_Func._event",\n'
 
@@ -379,7 +373,7 @@ class Func(object):
 		if not fini:
 			s += "VRT_CTX"
 			p = ", "
-		if self.pfx != None:
+		if self.pfx is not None:
 			s += p + self.pfx
 			p = ", "
 		for a in self.al:
@@ -396,7 +390,7 @@ class Func(object):
 		if not fini:
 			s += "VRT_CTX"
 			p = ", "
-		if self.pfx != None:
+		if self.pfx is not None:
 			s += p + self.pfx
 			p = ", "
 		for a in self.al:
@@ -457,7 +451,7 @@ class Func(object):
 		d = ""
 		for i in self.al:
 			s += d + i.typ
-			if i.nam != None:
+			if i.nam is not None:
 				s += " " + i.nam
 			d = ", "
 		fo.write(s + ")\n")
@@ -477,7 +471,7 @@ class Obj(object):
 		self.st = None
 
 	def fixup(self, modnam):
-		assert self.nam != None
+		assert self.nam is not None
 		self.st = "struct vmod_" + modnam + "_" + self.nam
 		self.init.set_pfx(self.st + " **, const char *")
 		self.fini.set_pfx(self.st + " **")
@@ -579,13 +573,13 @@ class Arg(object):
 		return "<ARG %s %s %s>" % (self.nam, self.typ, str(self.det))
 
 	def c_strspec(self):
-		if self.det == None:
+		if self.det is None:
 			s = self.typ + "\\0"
 		else:
 			s = self.det
-		if self.nam != None:
+		if self.nam is not None:
 			s += '"\n\t\t    "\\1' + self.nam + '\\0'
-		if self.val != None:
+		if self.val is not None:
 			# The space before the value is important to
 			# terminate the \2 escape sequence
 			s += '"\n\t\t\t"\\2 ' + quote(self.val) + "\\0"
@@ -594,6 +588,7 @@ class Arg(object):
 #######################################################################
 #
 #
+
 def parse_enum2(tl):
 	t = tl.get_token()
 	if t.str != "{":
@@ -601,7 +596,7 @@ def parse_enum2(tl):
 	s = "ENUM\\0"
 	t = None
 	while True:
-		if t == None:
+		if t is None:
 			t = tl.get_token()
 		if t.str == "}":
 			break
@@ -617,9 +612,10 @@ def parse_enum2(tl):
 	s += "\\0"
 	return Arg("ENUM", det=s)
 
+
 def parse_arg(tl, al):
 	t = tl.get_token()
-	assert t != None
+	assert t is not None
 
 	if t.str == ")":
 		return t
@@ -668,13 +664,10 @@ def parse_module(tl):
 	dnm = s[1:]
 	return Vmod(nm, dnm, sec)
 
-#######################################################################
-#
-#
 
 def parse_func(tl, rt_type=None, pobj=None):
 	al = list()
-	if rt_type == None:
+	if rt_type is None:
 		t = tl.get_token()
 		rt_type = t.str
 	if rt_type not in ctypes:
@@ -683,11 +676,11 @@ def parse_func(tl, rt_type=None, pobj=None):
 
 	t = tl.get_token()
 	fname = t.str
-	if pobj != None and fname[0] == "." and is_c_name(fname[1:]):
+	if pobj is not None and fname[0] == "." and is_c_name(fname[1:]):
 		fname = pobj + fname
-	elif pobj != None and fname[0] != ".":
+	elif pobj is not None and fname[0] != ".":
 		raise ParseError("Method name '%s' must start with ." % fname)
-	elif pobj != None and not is_c_name(fname[1:]):
+	elif pobj is not None and not is_c_name(fname[1:]):
 		raise ParseError("Method name '%s' is illegal" % fname[1:])
 	elif not is_c_name(fname):
 		raise ParseError("Function name '%s' is illegal" % fname)
@@ -719,9 +712,11 @@ def parse_obj(tl):
 
 
 #######################################################################
-# A section of the inputvcc, starting at a keyword
 
 class FileSection(object):
+	"""
+	A section of the inputvcc, starting at a keyword.
+	"""
 	def __init__(self):
 		self.l = []
 		self.tl = []
@@ -769,7 +764,7 @@ class FileSection(object):
 
 	def parse(self, vx):
 		t = self.get_token()
-		if t == None:
+		if t is None:
 			return
 		t0 = t.str
 		if t.str == "$Module":
@@ -820,9 +815,11 @@ class FileSection(object):
 				o.doc(i)
 
 #######################################################################
-# Polish the copyright message
-#
+
 def polish(l):
+	"""
+	Polish the copyright message.
+	"""
 	if len(l[0]) == 0:
 		l.pop(0)
 		return True
@@ -833,7 +830,7 @@ def polish(l):
 		if i[0] != c:
 			c = None
 			break
-	if c != None:
+	if c is not None:
 		for i in range(len(l)):
 			l[i] = l[i][1:]
 		return True
