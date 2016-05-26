@@ -812,7 +812,7 @@ vcl_fixed_token(const char *p, const char **q)
 				continue
 			if len(j) == 2:
 				fo.write("\t\tM2('%s', %s);\n" %
-				    (j[1], emit[j]))
+				         (j[1], emit[j]))
 			elif len(j) == 1:
 				fo.write("\t\tM1();\n")
 				need_ret = False
@@ -927,7 +927,7 @@ def file_header(fo):
 	fo.write("""/*
  * NB:  This file is machine generated, DO NOT EDIT!
  *
- * Edit and run generate.py instead
+ * Edit and run generate.py instead.
  */
 """)
 
@@ -987,8 +987,8 @@ fo.write("#endif\n")
 
 fo.write("\n#ifdef VCL_MET_MAC\n")
 for i in ll:
-	fo.write("VCL_MET_MAC(%s, %s, %s," %
-	    (i[0].lower(), i[0].upper(), i[1]))
+	fo.write("VCL_MET_MAC(%s, %s, %s," % (i[0].lower(), i[0].upper(),
+	                                      i[1]))
 	p = " (\n\t"
 	for j in sorted(i[2]):
 		fo.write("%s(1U << VCL_RET_%s)" % (p, j.upper()))
@@ -1035,9 +1035,8 @@ def tbl40(a, b):
 fo.write("\n/* VCL Methods */\n")
 n = 1
 for i in returns:
-	fo.write(
-	    tbl40("#define VCL_MET_%s" % i[0].upper(), "(1U << %d)\n" % n)
-	)
+	fo.write(tbl40("#define VCL_MET_%s" % i[0].upper(),
+	               "(1U << %d)\n" % n))
 	n += 1
 
 fo.write("\n" + tbl40("#define VCL_MET_MAX", "%d\n" % n))
@@ -1154,7 +1153,7 @@ def one_var(nm, spec):
 		fo.write('\t    "VRT_r_%s(ctx)",\n' % cnam)
 		if nm == i[0]:
 			fh.write("VCL_" + typ +
-			    " VRT_r_%s(VRT_CTX);\n" % cnam )
+			         " VRT_r_%s(VRT_CTX);\n" % cnam)
 	restrict(fo, spec[2])
 
 	if len(spec[3]) == 0:
@@ -1166,8 +1165,7 @@ def one_var(nm, spec):
 	else:
 		fo.write('\t    "VRT_l_%s(ctx, ",\n' % cnam)
 		if nm == i[0]:
-			fh.write(
-			    "void VRT_l_%s(VRT_CTX, " % cnam)
+			fh.write("void VRT_l_%s(VRT_CTX, " % cnam)
 			if typ != "STRING":
 				fh.write("VCL_" + typ + ");\n")
 			else:
@@ -1320,9 +1318,9 @@ for i in l:
 	for j in i[4].split("\n"):
 		fp_vclvar.write("\t%s\n" % j.strip())
 
-hdr="storage"
-fp_vclvar.write("\n" + hdr + "\n");
-fp_vclvar.write("~" * len(hdr) + "\n");
+hdr = "storage"
+fp_vclvar.write("\n" + hdr + "\n")
+fp_vclvar.write("~" * len(hdr) + "\n")
 for i in stv_variables:
 	fp_vclvar.write("\n" + i[3] + "\n\n")
 	fp_vclvar.write("\tType: " + i[1] + "\n\n")
