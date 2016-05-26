@@ -38,6 +38,7 @@
 # which hopefully makes for better error messages.
 # XXX: does it actually do that ?
 
+import copy
 import sys
 from os.path import join
 
@@ -78,8 +79,7 @@ tokens = {
 #######################################################################
 # Our methods and actions
 
-returns =(
-
+returns = (
 	###############################################################
 	# Client side
 
@@ -775,9 +775,6 @@ fi.close()
 # Nothing is easily configurable below this line.
 #######################################################################
 
-import sys
-import copy
-
 #######################################################################
 # Emit a function to recognize tokens in a string
 
@@ -944,9 +941,7 @@ fo = open(join(buildroot, "lib/libvcc/vcc_token_defs.h"), "w")
 file_header(fo)
 
 j = 128
-l = list(tokens.keys())
-l.sort()
-for i in l:
+for i in sorted(tokens.keys()):
 	if i[0] == "'":
 		continue
 	fo.write("#define\t%s %d\n" % (i, j))
@@ -980,11 +975,8 @@ file_header(fo)
 fo.write("\n/*lint -save -e525 -e539 */\n")
 
 fo.write("\n#ifdef VCL_RET_MAC\n")
-l = list(rets.keys())
-l.sort()
-ll = list(returns)
-ll.sort()
-for i in l:
+ll = sorted(returns)
+for i in sorted(rets.keys()):
 	fo.write("VCL_RET_MAC(%s, %s" % (i.lower(), i.upper()))
 	s=",\n\t"
 	for j in ll:
@@ -999,9 +991,7 @@ for i in ll:
 	fo.write("VCL_MET_MAC(%s, %s, %s," %
 	    (i[0].lower(), i[0].upper(), i[1]))
 	p = " (\n\t"
-	lll = list(i[2])
-	lll.sort()
-	for j in lll:
+	for j in sorted(i[2]):
 		fo.write("%s(1U << VCL_RET_%s)" % (p, j.upper()))
 		p = " |\n\t"
 	fo.write("\n))\n")
@@ -1056,9 +1046,7 @@ fo.write("\n" + tbl40("#define VCL_MET_MASK", "0x%x\n" % ((1 << n) - 1)))
 
 fo.write("\n/* VCL Returns */\n")
 n = 1
-l = list(rets.keys())
-l.sort()
-for i in l:
+for i in sorted(rets.keys()):
 	fo.write(tbl40("#define VCL_RET_%s" % i.upper(), "%d\n" % n))
 	n += 1
 
@@ -1085,10 +1073,7 @@ struct VCL_conf {
 for i in returns:
 	fo.write("\tvcl_func_f\t*" + i[0] + "_func;\n")
 
-fo.write("""
-};
-""")
-
+fo.write("\n};\n")
 fo.close()
 
 #######################################################################
@@ -1198,9 +1183,8 @@ for i in sp_variables:
 		if j[1] == i[0]:
 			one_var(j[0], i)
 
-fo.write("\t{ NULL }\n};\n")
+fo.write("\t{ NULL }\n};\n\n")
 
-fh.write("\n")
 for i in stv_variables:
 	fh.write(vcltypes[i[1]] + " VRT_Stv_" + i[0] + "(const char *);\n")
 
@@ -1236,10 +1220,7 @@ emit_file(fo, buildroot, "include/vcl.h")
 emit_file(fo, srcroot, "include/vrt.h")
 emit_file(fo, buildroot, "include/vrt_obj.h")
 
-fo.write("""
-}
-""")
-
+fo.write("\n}\n")
 fo.close()
 
 #######################################################################
@@ -1248,10 +1229,8 @@ file_header(ft)
 
 ft.write("/*lint -save -e525 -e539 */\n")
 
-i = list(vcltypes.keys())
-i.sort()
-for j in i:
-	ft.write("VCC_TYPE(" + j + ")\n")
+for vcltype in sorted(vcltypes.keys()):
+	ft.write("VCC_TYPE(" + vcltype + ")\n")
 ft.write("/*lint -restore */\n")
 ft.close()
 
@@ -1293,17 +1272,13 @@ fo.write("""
 #endif
 """)
 
-fo.close
+fo.close()
 
 #######################################################################
 
 fp_vclvar = open(join(buildroot, "doc/sphinx/include/vcl_var.rst"), "w")
 
-l = list()
-for i in sp_variables:
-	l.append(i)
-
-l.sort()
+l = sorted(sp_variables)
 
 def rst_where(fo, h, l):
 	ll = list()
