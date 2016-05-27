@@ -189,6 +189,7 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 	if (bo->stale_oc != NULL &&
 	    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND) &&
 	    (bo->stale_oc->boc != NULL || ObjGetLen(wrk, bo->stale_oc) != 0)) {
+		AZ(bo->stale_oc->flags & OC_F_PASS);
 		q = HTTP_GetHdrPack(bo->wrk, bo->stale_oc, H_Last_Modified);
 		if (q != NULL)
 			http_PrintfHeader(bo->bereq0,
