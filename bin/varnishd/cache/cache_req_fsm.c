@@ -406,8 +406,9 @@ cnt_lookup(struct worker *wrk, struct req *req)
 
 	if ((oc->flags & OC_F_PASS) && boc != NULL) {
 		/* Treat a graced Hit-For-Pass as a miss */
+		(void)HSH_DerefObjCore(wrk, &req->objcore);
+		AZ(req->objcore);
 		req->objcore = boc;
-		req->stale_oc = oc;
 		req->req_step = R_STP_MISS;
 		return (REQ_FSM_MORE);
 	} else if (oc->flags & OC_F_PASS) {

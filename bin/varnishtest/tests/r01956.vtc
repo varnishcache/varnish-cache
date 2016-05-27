@@ -1,0 +1,53 @@
+varnishtest "#1956: graced hit-for-pass, backend ims and obj flags inheritance"
+
+server s1 {
+	rxreq
+	txresp -hdr {ETag: "foo"} -body "asdf"
+
+	rxreq
+	expect req.http.if-none-match == {"foo"}
+	txresp -status 304 -hdr {ETag: "bar"}
+
+	rxreq
+	expect req.http.if-none-match == "<undef>"
+	txresp -status 200 -hdr {ETag: "baz"} -body "asdf"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.ttl = 0.1s;
+		set beresp.keep = 60s;
+		if (beresp.http.etag == {""bar""}) {
+			set beresp.grace = 60s;
+			set beresp.uncacheable = true;
+		} else {
+			set beresp.grace = 0s;
+		}
+		return (deliver);
+	}
+} -start
+
+client c1 {
+	timeout 5
+
+	txreq -hdr "cnt: 1"
+	rxresp
+	expect resp.http.etag == {"foo"}
+	expect resp.body == "asdf"
+
+	delay 0.2
+
+	txreq -hdr "cnt: 2"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.etag == {"bar"}
+	expect resp.body == "asdf"
+
+	delay 0.2
+
+	txreq -hdr "cnt: 3"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.etag == {"baz"}
+	expect resp.body == "asdf"
+} -run
