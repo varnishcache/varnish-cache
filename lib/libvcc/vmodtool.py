@@ -914,10 +914,10 @@ def runmain(inputvcc, rstdir, outputprefix):
 	#######################################################################
 	# Parsing done, now process
 	#
-	fd_cfile, fn_cfile = mkstemp()
+	fd_cfile, fn_cfile = mkstemp(dir='.')
 	cfile = fdopen(fd_cfile, "w")
 
-	fd_headerfile, fn_headerfile = mkstemp()
+	fd_headerfile, fn_headerfile = mkstemp(dir='.')
 	headerfile = fdopen(fd_headerfile, "w")
 
 	write_c_file_warning(cfile)
@@ -943,7 +943,7 @@ def runmain(inputvcc, rstdir, outputprefix):
 	headerfile.close()
 
 	for suf in ("", ".man"):
-		fd, fn_fp = mkstemp()
+		fd, fn_fp = mkstemp(dir='.')
 		fp = fdopen(fd, "w")
 		write_rst_file_warning(fp)
 
