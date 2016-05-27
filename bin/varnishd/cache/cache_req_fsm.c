@@ -702,6 +702,11 @@ cnt_recv(struct worker *wrk, struct req *req)
 	VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 
 	/* Attempts to cache req.body may fail */
+	if (req->req_body_status == REQ_BODY_TOO_LARGE) {
+		req->err_code = 413;
+		req->req_step = R_STP_SYNTH;
+		return (REQ_FSM_MORE);
+	}
 	if (req->req_body_status == REQ_BODY_FAIL) {
 		req->doclose = SC_RX_BODY;
 		return (REQ_FSM_DONE);

@@ -476,7 +476,7 @@ VRT_ban_string(VRT_CTX, const char *str)
 }
 
 ssize_t
-VRT_CacheReqBody(VRT_CTX, size_t maxsize)
+VRT_CacheReqBody(VRT_CTX, size_t maxsize, const char *hint)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -486,7 +486,7 @@ VRT_CacheReqBody(VRT_CTX, size_t maxsize)
 		    "req.body can only be cached in vcl_recv{}");
 		return (-1);
 	}
-	return (VRB_Cache(ctx->req, maxsize));
+	return (VRB_Cache(ctx->req, maxsize, hint));
 }
 
 /*--------------------------------------------------------------------
