@@ -43,7 +43,7 @@ void VBE_Poll(void);
 void VBP_Init(void);
 
 /* cache_exp.c */
-double EXP_Ttl(const struct req *, const struct objcore *);
+vtim_real EXP_Ttl(const struct req *, const struct objcore *);
 void EXP_Insert(struct worker *wrk, struct objcore *oc);
 void EXP_Remove(struct objcore *);
 

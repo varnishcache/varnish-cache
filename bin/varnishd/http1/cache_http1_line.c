@@ -57,7 +57,7 @@ struct v1l {
 	ssize_t			liov;
 	ssize_t			cliov;
 	unsigned		ciov;	/* Chunked header marker */
-	double			t0;
+	vtim_real		t0;
 	struct vsl_log		*vsl;
 	ssize_t			cnt;	/* Flushed byte count */
 	struct ws		*ws;
@@ -69,7 +69,7 @@ struct v1l {
 
 void
 V1L_Reserve(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
-    double t0)
+    vtim_real t0)
 {
 	struct v1l *v1l;
 	unsigned u;

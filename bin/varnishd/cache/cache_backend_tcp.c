@@ -78,7 +78,7 @@ static VTAILQ_HEAD(, tcp_pool)	pools = VTAILQ_HEAD_INITIALIZER(pools);
  */
 
 static void  __match_proto__(waiter_handle_f)
-tcp_handle(struct waited *w, enum wait_event ev, double now)
+tcp_handle(struct waited *w, enum wait_event ev, vtim_real now)
 {
 	struct vbc *vbc;
 	struct tcp_pool *tp;

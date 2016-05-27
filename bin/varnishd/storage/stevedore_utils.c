@@ -51,6 +51,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "vtim.h"
 #include "mgt/mgt.h"
 
 #include "storage/storage.h"

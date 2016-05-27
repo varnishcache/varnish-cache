@@ -45,6 +45,7 @@
 
 #include "vtc.h"
 
+#include "vtim.h"
 #include "vev.h"
 #include "vfil.h"
 #include "vnum.h"
@@ -54,7 +55,6 @@
 #include "vss.h"
 #include "vsub.h"
 #include "vtcp.h"
-#include "vtim.h"
 #include "vct.h"
 
 #define		MAX_FILESIZE		(1024 * 1024)
@@ -79,7 +79,7 @@ struct vtc_job {
 	char			*buf;
 	char			*tmpdir;
 	unsigned		bufsiz;
-	double			t0;
+	vtim_mono		t0;
 };
 
 int iflg = 0;
@@ -160,7 +160,7 @@ tst_cb(const struct vev *ve, int what)
 	char buf[BUFSIZ];
 	int i, stx;
 	pid_t px;
-	double t;
+	vtim_mono t;
 	FILE *f;
 
 	CAST_OBJ_NOTNULL(jp, ve->priv, JOB_MAGIC);

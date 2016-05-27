@@ -80,7 +80,7 @@ struct vbp_target {
 	double				avg;
 	double				rate;
 
-	double				due;
+	vtim_real			due;
 	int				running;
 	int				heap_idx;
 	struct pool_task		task;
@@ -221,7 +221,7 @@ static void
 vbp_poke(struct vbp_target *vt)
 {
 	int s, tmo, i;
-	double t_start, t_now, t_end;
+	vtim_real t_start, t_now, t_end;
 	unsigned rlen, resp;
 	char buf[8192], *p;
 	struct pollfd pfda[1], *pfd = pfda;
@@ -355,7 +355,7 @@ vbp_task(struct worker *wrk, void *priv)
 static void * __match_proto__()
 vbp_thread(struct worker *wrk, void *priv)
 {
-	double now, nxt;
+	vtim_real now, nxt;
 	struct vbp_target *vt;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);

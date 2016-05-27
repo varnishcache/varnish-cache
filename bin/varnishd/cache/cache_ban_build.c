@@ -252,7 +252,7 @@ BAN_Commit(struct ban_proto *bp)
 {
 	struct ban  *b, *bi;
 	ssize_t ln;
-	double t0;
+	vtim_real t0;
 
 	CHECK_OBJ_NOTNULL(bp, BAN_PROTO_MAGIC);
 	AN(bp->vsb);

@@ -41,6 +41,7 @@
 #include "vapi/vsl_int.h"
 #include "vapi/vsm_int.h"
 
+#include "vtim.h"
 #include "waiter/waiter.h"
 
 #include <sys/socket.h>
@@ -322,7 +323,7 @@ struct worker {
 
 	struct pool_task	task;
 
-	double			lastused;
+	vtim_real		lastused;
 
 	struct v1l		*v1l;
 
@@ -424,10 +425,10 @@ struct objcore {
 	struct storeobj		stobj[1];
 	struct objhead		*objhead;
 	struct boc		*boc;
-	double			timer_when;
+	vtim_real		timer_when;
 	long			hits;
 
-	double			t_origin;
+	vtim_real		t_origin;
 	float			ttl;
 	float			grace;
 	float			keep;
@@ -501,8 +502,8 @@ struct busyobj {
 	double			between_bytes_timeout;
 
 	/* Timers */
-	double			t_first;	/* First timestamp logged */
-	double			t_prev;		/* Previous timestamp logged */
+	vtim_real		t_first;	/* First timestamp logged */
+	vtim_real		t_prev;		/* Previous timestamp logged */
 
 	/* Acct */
 	struct acct_bereq	acct;
@@ -573,9 +574,9 @@ struct req {
 	char			*ws_req;	/* WS above request data */
 
 	/* Timestamps */
-	double			t_first;	/* First timestamp logged */
-	double			t_prev;		/* Previous timestamp logged */
-	double			t_req;		/* Headers complete */
+	vtim_real		t_first;	/* First timestamp logged */
+	vtim_real		t_prev;		/* Previous timestamp logged */
+	vtim_real		t_req;		/* Headers complete */
 
 	struct http_conn	htc[1];
 	const char		*client_identity;
@@ -647,9 +648,8 @@ struct sess {
 
 	struct ws		ws[1];
 
-	/* Timestamps, all on TIM_real() timescale */
-	double			t_open;		/* fd accepted */
-	double			t_idle;		/* fd accepted or resp sent */
+	vtim_real		t_open;		/* fd accepted */
+	vtim_real		t_idle;		/* fd accepted or resp sent */
 
 	struct vrt_privs	privs[1];
 
@@ -674,9 +674,9 @@ void BAN_Abandon(struct ban_proto *b);
 void BAN_Hold(void);
 void BAN_Release(void);
 void BAN_Reload(const uint8_t *ban, unsigned len);
-struct ban *BAN_FindBan(double t0);
+struct ban *BAN_FindBan(vtim_real t0);
 void BAN_RefBan(struct objcore *oc, struct ban *);
-double BAN_Time(const struct ban *ban);
+vtim_real BAN_Time(const struct ban *ban);
 
 /* cache_busyobj.c */
 struct busyobj *VBO_GetBusyObj(struct worker *, const struct req *);
@@ -771,7 +771,7 @@ int HTTP_Decode(struct http *to, const uint8_t *fm);
 void http_ForceHeader(struct http *to, const char *hdr, const char *val);
 void http_PrintfHeader(struct http *to, const char *fmt, ...)
     __v_printflike(2, 3);
-void http_TimeHeader(struct http *to, const char *fmt, double now);
+void http_TimeHeader(struct http *to, const char *fmt, vtim_real now);
 void http_SetHeader(struct http *to, const char *hdr);
 void http_SetH(const struct http *to, unsigned n, const char *fm);
 void http_ForceField(const struct http *to, unsigned n, const char *t);
@@ -834,7 +834,7 @@ void Lck__Assert(const struct lock *lck, int held);
 
 /* public interface: */
 void Lck_Delete(struct lock *lck);
-int Lck_CondWait(pthread_cond_t *cond, struct lock *lck, double);
+int Lck_CondWait(pthread_cond_t *cond, struct lock *lck, vtim_real);
 
 #define Lck_New(a, b) Lck__New(a, b, #b)
 #define Lck_Lock(a) Lck__Lock(a, __func__, __LINE__)
@@ -870,7 +870,7 @@ void ObjSetState(struct worker *, const struct objcore *,
     enum boc_state_e next);
 void ObjWaitState(const struct objcore *, enum boc_state_e want);
 void ObjTrimStore(struct worker *, struct objcore *);
-void ObjTouch(struct worker *, struct objcore *, double now);
+void ObjTouch(struct worker *, struct objcore *, vtim_real now);
 unsigned ObjGetXID(struct worker *, struct objcore *);
 uint64_t ObjGetLen(struct worker *, struct objcore *);
 void ObjFreeObj(struct worker *, struct objcore *);
@@ -945,7 +945,7 @@ void CNT_AcctLogCharge(struct dstat *, struct req *);
 struct sess *SES_New(struct pool *);
 void SES_Close(struct sess *, enum sess_close reason);
 void SES_Wait(struct sess *, const struct transport *);
-void SES_Delete(struct sess *, enum sess_close reason, double now);
+void SES_Delete(struct sess *, enum sess_close reason, vtim_real now);
 void SES_Ref(struct sess *sp);
 void SES_Rel(struct sess *sp);
 int SES_Reschedule_Req(struct req *);
@@ -967,7 +967,7 @@ enum htc_status_e {
 void HTC_RxInit(struct http_conn *htc, struct ws *ws);
 void HTC_RxPipeline(struct http_conn *htc, void *);
 enum htc_status_e HTC_RxStuff(struct http_conn *, htc_complete_f *,
-    double *t1, double *t2, double ti, double tn, int maxbytes);
+    vtim_real *t1, vtim_real *t2, vtim_real ti, vtim_real tn, int maxbytes);
 
 #define SESS_ATTR(UP, low, typ, len)					\
 	int SES_Set_##low(const struct sess *sp, const typ *src);	\
@@ -992,11 +992,11 @@ void VSLbv(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, va_list va);
 void VSLb(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, ...)
     __v_printflike(3, 4);
 void VSLbt(struct vsl_log *, enum VSL_tag_e tag, txt t);
-void VSLb_ts(struct vsl_log *, const char *event, double first, double *pprev,
-    double now);
+void VSLb_ts(struct vsl_log *, const char *event, vtim_real first,
+    vtim_real *pprev, vtim_real now);
 
 static inline void
-VSLb_ts_req(struct req *req, const char *event, double now)
+VSLb_ts_req(struct req *req, const char *event, vtim_real now)
 {
 
 	if (isnan(req->t_first) || req->t_first == 0.)
@@ -1005,7 +1005,7 @@ VSLb_ts_req(struct req *req, const char *event, double now)
 }
 
 static inline void
-VSLb_ts_busyobj(struct busyobj *bo, const char *event, double now)
+VSLb_ts_busyobj(struct busyobj *bo, const char *event, vtim_real now)
 {
 
 	if (isnan(bo->t_first) || bo->t_first == 0.)
@@ -1071,7 +1071,7 @@ int WS_Overflowed(const struct ws *ws);
 void *WS_Printf(struct ws *ws, const char *fmt, ...) __v_printflike(2, 3);
 
 /* cache_rfc2616.c */
-void RFC2616_Ttl(struct busyobj *, double now, double *t_origin,
+void RFC2616_Ttl(struct busyobj *, vtim_real now, vtim_real *t_origin,
     float *ttl, float *grace, float *keep);
 unsigned RFC2616_Req_Gzip(const struct http *);
 int RFC2616_Do_Cond(const struct req *sp);

@@ -1161,7 +1161,7 @@ http_PrintfHeader(struct http *to, const char *fmt, ...)
 }
 
 void
-http_TimeHeader(struct http *to, const char *fmt, double now)
+http_TimeHeader(struct http *to, const char *fmt, vtim_real now)
 {
 	char *p;
 

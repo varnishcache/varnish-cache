@@ -59,7 +59,7 @@ struct vwe {
 	int			epfd;
 	struct waiter		*waiter;
 	pthread_t		thread;
-	double			next;
+	vtim_real		next;
 	int			pipe[2];
 	unsigned		nwaited;
 	int			die;
@@ -74,7 +74,7 @@ vwe_thread(void *priv)
 	struct epoll_event ev[NEEV], *ep;
 	struct waited *wp;
 	struct waiter *w;
-	double now, then;
+	vtim_real now, then;
 	int i, n;
 	struct vwe *vwe;
 	char c;

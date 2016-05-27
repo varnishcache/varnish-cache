@@ -495,7 +495,7 @@ static void *
 vca_acct(void *arg)
 {
 	struct listen_sock *ls;
-	double t0, now;
+	vtim_real t0, now;
 
 	THR_SetName("cache-acceptor");
 	(void)arg;

@@ -80,7 +80,7 @@ LRU_Free(struct lru **pp)
 }
 
 void
-LRU_Add(struct objcore *oc, double now)
+LRU_Add(struct objcore *oc, vtim_real now)
 {
 	struct lru *lru;
 
@@ -122,7 +122,7 @@ LRU_Remove(struct objcore *oc)
 }
 
 void __match_proto__(objtouch_f)
-LRU_Touch(struct worker *wrk, struct objcore *oc, double now)
+LRU_Touch(struct worker *wrk, struct objcore *oc, vtim_real now)
 {
 	struct lru *lru;
 

@@ -44,8 +44,8 @@
 
 #include "binary_heap.h"
 #include "vqueue.h"
-#include "vev.h"
 #include "vtim.h"
+#include "vev.h"
 
 #undef DEBUG_EVENTS
 
@@ -404,7 +404,7 @@ vev_compact_pfd(struct vev_base *evb)
 /*--------------------------------------------------------------------*/
 
 static int
-vev_sched_timeout(struct vev_base *evb, struct vev *e, double t)
+vev_sched_timeout(struct vev_base *evb, struct vev *e, vtim_mono t)
 {
 	int i;
 
@@ -448,7 +448,7 @@ vev_sched_signal(struct vev_base *evb)
 int
 vev_schedule_one(struct vev_base *evb)
 {
-	double t;
+	vtim_mono t;
 	struct vev *e, *e2, *e3;
 	int i, j, tmo;
 	struct pollfd *pfd;

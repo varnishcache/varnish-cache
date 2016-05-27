@@ -42,6 +42,7 @@
 #include "vas.h"
 #include "miniobj.h"
 #include "vqueue.h"
+#include "vtim.h"
 
 #include "vapi/vsc.h"
 #include "vapi/vsm.h"

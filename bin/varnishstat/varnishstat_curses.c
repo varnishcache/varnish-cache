@@ -88,7 +88,7 @@ struct pt {
 	char			seen;
 
 	uint64_t		cur, last;
-	double			t_cur, t_last;
+	vtim_mono		t_cur, t_last;
 	double			chg, avg;
 
 	struct ma		ma_10, ma_100, ma_1000;
@@ -128,7 +128,7 @@ static int rebuild = 0;
 static int redraw = 0;
 static int sample = 0;
 static int scale = 1;
-static double t_sample = 0.;
+static vtim_mono t_sample = 0.;
 static double interval = 1.;
 
 static void
@@ -411,7 +411,7 @@ sample_points(void)
 static void
 sample_hitrate(void)
 {
-	double tv,dt;
+	vtim_mono tv,dt;
 	double hr, mr, ratio;
 	uint64_t hit, miss;
 
@@ -1066,7 +1066,7 @@ do_curses(struct VSM_data *vd, double delay)
 	struct pollfd pollfd;
 	long t;
 	int ch;
-	double now;
+	vtim_mono now;
 	struct VSM_fantom f_main = VSM_FANTOM_NULL;
 	struct VSM_fantom f_mgt = VSM_FANTOM_NULL;
 	struct VSM_fantom f_iter = VSM_FANTOM_NULL;

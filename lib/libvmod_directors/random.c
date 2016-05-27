@@ -49,7 +49,7 @@ struct vmod_directors_random {
 
 static unsigned __match_proto__(vdi_healthy)
 vmod_random_healthy(const struct director *dir, const struct busyobj *bo,
-    double *changed)
+    vtim_real *changed)
 {
 	struct vmod_directors_random *rr;
 

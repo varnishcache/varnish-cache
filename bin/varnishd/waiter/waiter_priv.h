@@ -58,7 +58,7 @@ struct waiter_impl {
 	size_t				size;
 };
 
-static inline double
+static inline vtim_real
 Wait_Tmo(const struct waited *wp)
 {
 	CHECK_OBJ_ORNULL(wp, WAITED_MAGIC);
@@ -67,7 +67,7 @@ Wait_Tmo(const struct waited *wp)
 	return (*wp->waitfor->tmo);
 }
 
-static inline double
+static inline vtim_real
 Wait_When(const struct waited *wp)
 {
 	CHECK_OBJ_ORNULL(wp, WAITED_MAGIC);
@@ -76,7 +76,7 @@ Wait_When(const struct waited *wp)
 }
 
 void Wait_Call(const struct waiter *, struct waited *,
-    enum wait_event ev, double now);
+    enum wait_event ev, vtim_real now);
 void Wait_HeapInsert(const struct waiter *, struct waited *);
 void Wait_HeapDelete(const struct waiter *, const struct waited *);
-double Wait_HeapDue(const struct waiter *, struct waited **);
+vtim_real Wait_HeapDue(const struct waiter *, struct waited **);

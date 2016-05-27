@@ -38,6 +38,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "vtim.h"
 #include "mgt/mgt.h"
 #include "vcli_serve.h"
 

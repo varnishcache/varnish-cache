@@ -240,7 +240,7 @@ vbe_str2adminhealth(const char *wstate)
  */
 
 unsigned
-VBE_Healthy(const struct backend *backend, double *changed)
+VBE_Healthy(const struct backend *backend, vtim_real *changed)
 {
 	CHECK_OBJ_NOTNULL(backend, BACKEND_MAGIC);
 
@@ -433,7 +433,7 @@ void
 VBE_Poll(void)
 {
 	struct backend *be;
-	double now = VTIM_real();
+	vtim_real now = VTIM_real();
 
 	Lck_Lock(&backends_mtx);
 	while (1) {

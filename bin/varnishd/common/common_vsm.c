@@ -54,7 +54,7 @@ struct vsm_range {
 	VTAILQ_ENTRY(vsm_range)		list;
 	ssize_t				off;
 	ssize_t				len;
-	double				cool;
+	vtim_real			cool;
 	struct VSM_chunk		*chunk;
 	void				*ptr;
 };
@@ -65,7 +65,7 @@ struct vsm_sc {
 	char				*b;
 	ssize_t				len;
 	struct VSM_head			*head;
-	double				t0;
+	vtim_real				t0;
 	VTAILQ_HEAD(,vsm_range)		r_used;
 	VTAILQ_HEAD(,vsm_range)		r_cooling;
 	VTAILQ_HEAD(,vsm_range)		r_free;
@@ -166,7 +166,7 @@ VSM_common_new(void *p, ssize_t l)
 void
 VSM_common_cleaner(struct vsm_sc *sc, struct VSC_C_main *stats)
 {
-	double now = VTIM_real();
+	vtim_real now = VTIM_real();
 	struct vsm_range *vr, *vr2;
 
 	CHECK_OBJ_NOTNULL(sc, VSM_SC_MAGIC);

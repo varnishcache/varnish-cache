@@ -279,12 +279,12 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
  * completed.
  */
 
-static double
+static vtim_real
 ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 {
 	struct ban *b, *bd;
 	struct banhead_s obans;
-	double d, dt, n;
+	vtim_real d, dt, n;
 
 	dt = 49.62;		// Random, non-magic
 	if (cache_param->ban_lurker_sleep == 0) {
@@ -345,7 +345,7 @@ void * __match_proto__(bgthread_t)
 ban_lurker(struct worker *wrk, void *priv)
 {
 	struct vsl_log vsl;
-	volatile double d;
+	volatile vtim_real d;
 	unsigned gen = ban_generation + 1;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);

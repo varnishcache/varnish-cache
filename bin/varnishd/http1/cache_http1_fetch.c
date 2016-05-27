@@ -141,7 +141,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 
 	struct http *hp;
 	int i;
-	double t;
+	vtim_real t;
 	struct http_conn *htc;
 	enum htc_status_e hs;
 

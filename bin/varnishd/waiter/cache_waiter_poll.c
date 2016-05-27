@@ -158,7 +158,7 @@ vwp_main(void *priv)
 	struct vwp *vwp;
 	struct waiter *w;
 	struct waited *wp;
-	double now, then;
+	vtim_real now, then;
 	int i;
 
 	THR_SetName("cache-poll");

@@ -320,7 +320,7 @@ int
 VSM_Abandoned(struct VSM_data *vd)
 {
 	struct stat st;
-	double now;
+	vtim_mono now;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 

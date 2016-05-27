@@ -93,7 +93,7 @@ static const int days_before_month[] = {
  * so we save a syscall by using gethrtime() if it is defined.
  */
 
-double
+vtim_mono
 VTIM_mono(void)
 {
 #ifdef HAVE_GETHRTIME
@@ -111,7 +111,7 @@ VTIM_mono(void)
 #endif
 }
 
-double
+vtim_real
 VTIM_real(void)
 {
 #ifdef HAVE_CLOCK_GETTIME
@@ -128,7 +128,7 @@ VTIM_real(void)
 }
 
 void
-VTIM_format(double t, char *p)
+VTIM_format(vtim_real t, char *p)
 {
 	struct tm tm;
 	time_t tt;
@@ -204,10 +204,10 @@ VTIM_format(double t, char *p)
 		DIGIT(1, sec);					\
 	} while(0)
 
-double
+vtim_real
 VTIM_parse(const char *p)
 {
-	double t;
+	vtim_real t;
 	int month = 0, year = 0, weekday = -1, mday = 0;
 	int hour = 0, min = 0, sec = 0;
 	int d, leap;
@@ -446,8 +446,8 @@ tst_delta_check(const char *name, double begin, double end, double ref)
 static void
 tst_delta()
 {
-	double m_begin, m_end;
-	double r_begin, r_end;
+	vtim_mono m_begin, m_end;
+	vtim_real r_begin, r_end;
 	const double ref = 1;
 	int err = 0;
 

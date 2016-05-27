@@ -47,6 +47,7 @@
 #include "vqueue.h"
 #include "vre.h"
 #include "vsl_priv.h"
+#include "vtim.h"
 
 #include "vapi/vsl.h"
 #include "vapi/vsm.h"

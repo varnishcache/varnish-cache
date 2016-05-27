@@ -160,12 +160,12 @@ vdir_remove_backend(struct vdir *vd, VCL_BACKEND be)
 }
 
 unsigned
-vdir_any_healthy(struct vdir *vd, const struct busyobj *bo, double *changed)
+vdir_any_healthy(struct vdir *vd, const struct busyobj *bo, vtim_real *changed)
 {
 	unsigned retval = 0;
 	VCL_BACKEND be;
 	unsigned u;
-	double c;
+	vtim_real c;
 
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
 	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);

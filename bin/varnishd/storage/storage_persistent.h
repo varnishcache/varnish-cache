@@ -144,12 +144,12 @@ struct smp_segptr {
 
 struct smp_object {
 	uint8_t			hash[32];	/* really: DIGEST_LEN */
-	double			t_origin;
+	vtim_real		t_origin;
 	float			ttl;
 	float			grace;
 	float			keep;
 	uint32_t		__filler__;	/* -> align/8 on 32bit */
-	double			ban;
+	vtim_real		ban;
 	uint64_t		ptr;		/* rel to silo */
 };
 

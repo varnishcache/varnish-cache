@@ -68,7 +68,7 @@ waited_update(void *priv, void *p, unsigned u)
 
 void
 Wait_Call(const struct waiter *w, struct waited *wp,
-    enum wait_event ev, double now)
+    enum wait_event ev, vtim_real now)
 {
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
@@ -106,7 +106,7 @@ Wait_HeapDelete(const struct waiter *w, const struct waited *wp)
 		binheap_delete(w->heap, wp->idx);
 }
 
-double
+vtim_real
 Wait_HeapDue(const struct waiter *w, struct waited **wpp)
 {
 	struct waited *wp;

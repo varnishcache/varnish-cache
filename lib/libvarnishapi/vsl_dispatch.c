@@ -145,7 +145,7 @@ struct vtx {
 	VTAILQ_ENTRY(vtx)	list_child;
 	VTAILQ_ENTRY(vtx)	list_vtx;
 
-	double			t_start;
+	vtim_mono		t_start;
 	unsigned		flags;
 #define VTX_F_BEGIN		0x1 /* Begin record processed */
 #define VTX_F_END		0x2 /* End record processed */
@@ -1308,7 +1308,7 @@ int
 VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv)
 {
 	int i, r;
-	double now;
+	vtim_mono now;
 	struct vtx *vtx;
 
 	CHECK_OBJ_NOTNULL(vslq, VSLQ_MAGIC);

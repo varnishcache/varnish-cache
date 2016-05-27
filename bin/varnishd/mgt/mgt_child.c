@@ -43,6 +43,7 @@
 #include <syslog.h>
 #include <unistd.h>
 
+#include "vtim.h"
 #include "mgt/mgt.h"
 #include "common/heritage.h"
 
@@ -50,7 +51,6 @@
 #include "vcli_serve.h"
 #include "vev.h"
 #include "vlu.h"
-#include "vtim.h"
 
 pid_t			child_pid = -1;
 
@@ -81,7 +81,7 @@ static struct vev	*ev_listen;
 static struct vlu	*child_std_vlu;
 
 static struct vsb *child_panic = NULL;
-static double mgt_uptime_t0 = 0.;
+static vtim_real mgt_uptime_t0 = 0.;
 
 static void mgt_reap_child(void);
 

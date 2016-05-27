@@ -51,7 +51,7 @@ struct vtclog {
 };
 
 static pthread_key_t log_key;
-static double t0;
+static vtim_mono t0;
 
 /**********************************************************************/
 
