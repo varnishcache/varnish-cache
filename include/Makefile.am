@@ -15,6 +15,8 @@ nobase_pkginclude_HEADERS = \
 	tbl/http_response.h \
 	tbl/locks.h \
 	tbl/obj_attr.h \
+	tbl/oc_exp_flags.h \
+	tbl/oc_flags.h \
 	tbl/params.h \
 	tbl/req_body.h \
 	tbl/req_flags.h \
