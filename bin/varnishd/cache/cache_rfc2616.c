@@ -199,7 +199,7 @@ RFC2616_Ttl(struct busyobj *bo, double now, double *t_origin,
 
 	VSLb(bo->vsl, SLT_TTL,
 	    "RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u",
-	    *ttl, *grace, -1., now,
+	    *ttl, *grace, *keep, now,
 	    *t_origin, h_date, h_expires, max_age);
 }
 
