@@ -176,12 +176,13 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 	    bo->do_pass ? HTTPH_R_PASS : HTTPH_R_FETCH);
 
 	if (!bo->do_pass) {
-		http_ForceField(bo->bereq0, HTTP_HDR_METHOD, "GET");
-		http_ForceField(bo->bereq0, HTTP_HDR_PROTO, "HTTP/1.1");
 		if (cache_param->http_gzip_support)
 			http_ForceHeader(bo->bereq0, H_Accept_Encoding, "gzip");
 		AN(bo->req);
-		bo->req = NULL;
+		if (!strcmp(bo->bereq0->hd[HTTP_HDR_METHOD].b, "GET")) {
+			http_Unset(bo->bereq0, H_Content_Length);
+			bo->req = NULL;
+		}
 		http_CopyHome(bo->bereq0);
 	} else
 		AZ(bo->stale_oc);
@@ -264,8 +265,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->do_pass)
 		AN(bo->req);
-	else
-		AZ(bo->req);
 
 	if (bo->retries > 0)
 		http_Unset(bo->bereq, "\012X-Varnish:");
