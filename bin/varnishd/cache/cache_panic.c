@@ -516,14 +516,16 @@ static void
 pan_backtrace(struct vsb *vsb)
 {
 	void *array[10];
-	size_t size;
-	size_t i;
+	ssize_t size;
+	ssize_t i;
 	char **strings;
 	char *p;
 
 	size = backtrace (array, 10);
-	if (size == 0)
+	if (size <= 0) {
+		VSB_printf(vsb, "Backtrace not available (%zd)\n", size);
 		return;
+	}
 	VSB_printf(vsb, "Backtrace:\n");
 	VSB_indent(vsb, 2);
 	for (i = 0; i < size; i++) {
