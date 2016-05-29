@@ -1,0 +1,22 @@
+varnishtest "Correct handling multiple Age headers in pass mode"
+
+# This affects Accept-Range as well but it's not possible to test
+# for that.
+
+server s1 {
+	 rxreq
+	 txresp -hdr "Cache-Control: max-age=1" -hdr "Age: 2"
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+	sub vcl_deliver {
+		std.collect(resp.http.age);
+	}
+} -start
+
+client c1 {
+	 txreq
+	 rxresp
+	 expect resp.http.age == "2"
+} -run
