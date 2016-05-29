@@ -44,7 +44,6 @@
 
 #include "waiter/waiter_priv.h"
 #include "waiter/mgt_waiter.h"
-#include "vtim.h"
 #include "vfil.h"
 
 #ifndef EPOLLRDHUP

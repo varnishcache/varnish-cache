@@ -38,6 +38,7 @@
 #include "vdef.h"
 #include "vqueue.h"
 #include "vsb.h"
+#include "vtim.h"
 #include "vapi/vsc_int.h"
 
 /**********************************************************************/

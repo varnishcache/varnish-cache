@@ -41,7 +41,6 @@
 #include "cache_pool.h"
 #include "cache_transport.h"
 
-#include "vtim.h"
 
 /*--------------------------------------------------------------------
  * Alloc/Free a request

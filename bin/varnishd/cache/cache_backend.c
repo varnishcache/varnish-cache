@@ -38,7 +38,6 @@
 
 #include "vrt.h"
 #include "vtcp.h"
-#include "vtim.h"
 
 #include "cache_director.h"
 #include "cache_backend.h"

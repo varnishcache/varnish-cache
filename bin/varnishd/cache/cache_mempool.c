@@ -35,7 +35,6 @@
 
 #include "cache.h"
 
-#include "vtim.h"
 
 struct memitem {
 	unsigned			magic;

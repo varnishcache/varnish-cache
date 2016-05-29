@@ -42,7 +42,6 @@
 #include "vnum.h"
 #include "vrt.h"
 #include "vsa.h"
-#include "vtim.h"
 #include "vcc_if.h"
 
 VCL_DURATION __match_proto__(td_std_duration)

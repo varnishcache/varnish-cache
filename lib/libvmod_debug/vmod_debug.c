@@ -40,7 +40,6 @@
 #include "vsa.h"
 #include "vsb.h"
 #include "vtcp.h"
-#include "vtim.h"
 #include "vcc_if.h"
 
 struct priv_vcl {

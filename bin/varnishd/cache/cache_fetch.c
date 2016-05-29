@@ -34,7 +34,6 @@
 #include "cache_filter.h"
 #include "hash/hash_slinger.h"
 #include "vcl.h"
-#include "vtim.h"
 
 /*--------------------------------------------------------------------
  * Allocate an object, with fall-back to Transient.

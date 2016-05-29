@@ -41,7 +41,6 @@
 #include "vapi/vsl_int.h"
 #include "vapi/vsm_int.h"
 
-#include "vtim.h"
 #include "waiter/waiter.h"
 
 #include <sys/socket.h>

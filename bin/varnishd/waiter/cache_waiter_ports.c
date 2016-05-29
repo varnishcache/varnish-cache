@@ -76,7 +76,6 @@
 
 #include "waiter/waiter_priv.h"
 #include "waiter/mgt_waiter.h"
-#include "vtim.h"
 
 // XXX replace with process.max-port-events bound to a sensible maximum
 #define MAX_EVENTS 256

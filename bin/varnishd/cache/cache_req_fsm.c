@@ -46,7 +46,6 @@
 #include "hash/hash_slinger.h"
 #include "vcl.h"
 #include "vsha256.h"
-#include "vtim.h"
 
 /*--------------------------------------------------------------------
  * Deliver an object to client

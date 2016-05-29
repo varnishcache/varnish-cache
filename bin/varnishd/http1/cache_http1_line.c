@@ -42,7 +42,6 @@
 
 #include "cache/cache.h"
 #include "cache_http1.h"
-#include "vtim.h"
 
 /*--------------------------------------------------------------------*/
 

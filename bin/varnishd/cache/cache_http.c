@@ -38,7 +38,6 @@
 
 #include "vend.h"
 #include "vct.h"
-#include "vtim.h"
 
 #define HTTPH(a, b, c) char b[] = "*" a ":";
 #include "tbl/http_headers.h"

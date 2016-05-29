@@ -60,7 +60,6 @@
 
 #include "hash/hash_slinger.h"
 #include "vsha256.h"
-#include "vtim.h"
 
 struct rush {
 	unsigned		magic;

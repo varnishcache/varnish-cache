@@ -33,7 +33,6 @@
 
 #include "cache.h"
 
-#include "vtim.h"
 
 /*--------------------------------------------------------------------
  * TTL and Age calculation in Varnish

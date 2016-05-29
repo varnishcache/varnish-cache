@@ -43,7 +43,6 @@
 #include <syslog.h>
 #include <unistd.h>
 
-#include "vtim.h"
 #include "mgt/mgt.h"
 #include "common/heritage.h"
 

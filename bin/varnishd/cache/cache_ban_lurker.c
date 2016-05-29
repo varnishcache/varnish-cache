@@ -34,7 +34,6 @@
 #include "cache_ban.h"
 
 #include "hash/hash_slinger.h"
-#include "vtim.h"
 
 static struct objcore oc_mark_cnt = { .magic = OBJCORE_MAGIC, };
 static struct objcore oc_mark_end = { .magic = OBJCORE_MAGIC, };

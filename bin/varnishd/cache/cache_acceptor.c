@@ -48,7 +48,6 @@
 #include "vcli_serve.h"
 #include "vsa.h"
 #include "vtcp.h"
-#include "vtim.h"
 
 static pthread_t	VCA_thread;
 static double vca_pace = 0.0;

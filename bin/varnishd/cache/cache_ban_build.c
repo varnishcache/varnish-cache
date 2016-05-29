@@ -36,7 +36,6 @@
 #include "cache_ban.h"
 
 #include "vend.h"
-#include "vtim.h"
 
 struct ban_proto {
 	unsigned		magic;

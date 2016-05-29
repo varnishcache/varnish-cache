@@ -38,7 +38,6 @@
 
 #include "binary_heap.h"
 #include "hash/hash_slinger.h"
-#include "vtim.h"
 
 struct exp_priv {
 	unsigned			magic;

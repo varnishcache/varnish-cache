@@ -37,7 +37,6 @@
 
 #include "vrt.h"
 #include "vtcp.h"
-#include "vtim.h"
 
 #include "hash/hash_slinger.h"
 

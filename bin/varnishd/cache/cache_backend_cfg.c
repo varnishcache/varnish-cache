@@ -41,7 +41,6 @@
 #include "vcl.h"
 #include "vcli_serve.h"
 #include "vrt.h"
-#include "vtim.h"
 
 #include "cache_director.h"
 #include "cache_backend.h"
