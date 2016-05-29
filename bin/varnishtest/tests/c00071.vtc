@@ -14,7 +14,7 @@ server s1 {
 varnish v1 -vcl+backend {
 	import ${vmod_debug};
 	sub vcl_deliver {
-		debug.workspace_allocate(client, debug.workspace_free(client) - 150);
+		debug.workspace_allocate(client, debug.workspace_free(client) - 160);
 
 		if (req.url ~ "/bar") {
 			set resp.http.x-foo = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";

@@ -88,7 +88,7 @@ cnt_vdp(struct req *req, struct busyobj *bo)
 		VDP_push(req, VDP_gunzip, NULL, 1);
 
 	if (cache_param->http_range_support && http_IsStatus(req->resp, 200)) {
-		http_SetHeader(req->resp, "Accept-Ranges: bytes");
+		http_ForceHeader(req->resp, H_Accept_Ranges, "bytes");
 		if (sendbody && http_GetHdr(req->http, H_Range, &r))
 			VRG_dorange(req, r);
 	}

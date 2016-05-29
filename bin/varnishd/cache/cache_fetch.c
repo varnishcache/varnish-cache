@@ -119,7 +119,7 @@ vbf_beresp2obj(struct busyobj *bo)
 	}
 
 	l2 = http_EstimateWS(bo->beresp,
-	    bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS);
+	    bo->uncacheable ? HTTPH_A_PASS : HTTPH_A_INS);
 	l += l2;
 
 	if (bo->uncacheable)
@@ -143,7 +143,7 @@ vbf_beresp2obj(struct busyobj *bo)
 	bp = ObjSetattr(bo->wrk, bo->fetch_objcore, OA_HEADERS, l2, NULL);
 	AN(bp);
 	HTTP_Encode(bo->beresp, bp, l2,
-	    bo->uncacheable ? HTTPH_R_PASS : HTTPH_A_INS);
+	    bo->uncacheable ? HTTPH_A_PASS : HTTPH_A_INS);
 
 	if (http_GetHdr(bo->beresp, H_Last_Modified, &b))
 		AZ(ObjSetDouble(bo->wrk, bo->fetch_objcore, OA_LASTMODIFIED,
