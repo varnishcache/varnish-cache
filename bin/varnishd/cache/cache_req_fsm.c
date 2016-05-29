@@ -278,7 +278,7 @@ cnt_transmit(struct worker *wrk, struct req *req)
 
 		if (cache_param->http_range_support &&
 		    http_IsStatus(req->resp, 200)) {
-			http_SetHeader(req->resp, "Accept-Ranges: bytes");
+			http_ForceHeader(req->resp, H_Accept_Ranges, "bytes");
 			if (sendbody && http_GetHdr(req->http, H_Range, &r))
 				VRG_dorange(req, r);
 		}
