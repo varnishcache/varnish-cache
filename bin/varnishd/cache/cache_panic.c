@@ -512,18 +512,20 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 
 /*--------------------------------------------------------------------*/
 
+#define BACKTRACE_LEVELS	10
+
 static void
 pan_backtrace(struct vsb *vsb)
 {
-	void *array[10];
-	ssize_t size;
-	ssize_t i;
+	void *array[BACKTRACE_LEVELS];
+	size_t size;
+	size_t i;
 	char **strings;
 	char *p;
 
-	size = backtrace (array, 10);
-	if (size <= 0) {
-		VSB_printf(vsb, "Backtrace not available (%zd)\n", size);
+	size = backtrace (array, BACKTRACE_LEVELS);
+	if (size > BACKTRACE_LEVELS) {
+		VSB_printf(vsb, "Backtrace not available (ret=%zu)\n", size);
 		return;
 	}
 	VSB_printf(vsb, "Backtrace:\n");
