@@ -476,7 +476,7 @@ static int
 read_file(const char *fn, int ntest)
 {
 	struct vtc_tst *tp;
-	char *p;
+	char *p, *q;
 
 	p = VFIL_readfile(NULL, fn, NULL);
 	if (p == NULL) {
@@ -484,23 +484,24 @@ read_file(const char *fn, int ntest)
 		    fn, strerror(errno));
 		return (2);
 	}
-	for (;p != NULL && *p != '\0'; p++) {
-		if (vct_islws(*p))
+	for (q = p ;q != NULL && *q != '\0'; q++) {
+		if (vct_islws(*q))
 			continue;
-		if (*p != '#')
+		if (*q != '#')
 			break;
-		p = strchr(p, '\n');
+		q = strchr(q, '\n');
 	}
 
-	if (p == NULL || *p == '\0') {
+	if (q == NULL || *q == '\0') {
 		fprintf(stderr, "File \"%s\" has no content.\n", fn);
+		free(p);
 		return (2);
 	}
 
-	if (strncmp(p, "varnishtest", 11) || !isspace(p[11])) {
+	if (strncmp(q, "varnishtest", 11) || !isspace(q[11])) {
 		fprintf(stderr,
-		    "File \"%s\" doesn't start with 'varnishtest'\n",
-		    fn);
+		    "File \"%s\" doesn't start with 'varnishtest'\n", fn);
+		free(p);
 		return(2);
 	}
 	ALLOC_OBJ(tp, TST_MAGIC);

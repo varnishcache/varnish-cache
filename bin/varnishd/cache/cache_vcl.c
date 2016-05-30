@@ -833,7 +833,7 @@ ccf_config_label(struct cli *cli, const char * const *av, void *priv)
 	if (lbl == NULL) {
 		ALLOC_OBJ(lbl, VCL_MAGIC);
 		AN(lbl);
-		strcpy(lbl->state, VCL_TEMP_LABEL);
+		bprintf(lbl->state, "%s", VCL_TEMP_LABEL);
 		lbl->temp = VCL_TEMP_WARM;
 		lbl->loaded_name = strdup(av[2]);
 		AN(lbl->loaded_name);
