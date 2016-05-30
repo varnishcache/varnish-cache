@@ -26,13 +26,11 @@ END {
 		a = section
 		c = gsub(/\./, "", a);
 		if (c == 0)
-			r = "=";
+			r = "-";
 		else if (c == 1)
-			r = "*"
+			r = "~"
 		else if (c == 2)
-			r = "+"
-		else if (c == 3)
-			r = "-"
+			r = "."
 		else
 			r = "."
 		print(gensub(/./, r, "g", tl[section]));
