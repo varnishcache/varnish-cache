@@ -159,6 +159,8 @@ Changes since 4.1.0:
 Bugs fixed
 ----------
 
+- 1796_ - Don't attempt to allocate a V1L from the workspace if it is overflowed.
+- 1794_ - Fail if multiple -a arguments return the same suckaddr.
 - 1763_ - Restart epoll_wait on EINTR error
 - 1788_ - ObjIter has terrible performance profile when busyobj != NULL
 - 1798_ - Varnish requests painfully slow with large files
@@ -167,7 +169,14 @@ Bugs fixed
 - 1821_ - Always slim private & pass objects after delivery.
 - 1823_ - Rush the objheader if there is a waiting list when it is deref'ed.
 - 1826_ - Ignore 0 Content-Lengths in 204 responses
+- 1813_ - Fail if multiple -a arguments return the same suckaddr.
+- 1810_ - Improve handling of HTTP/1.0 clients
+- 1807_ - Return 500 if we cannot decode the stored object into the resp.*
+- 1804_ - Log proxy related messages on the session, not on the request.
+- 1801_ - Relax IP constant parsing
 
+.. _1796: https://www.varnish-cache.org/trac/ticket/1796
+.. _1794: https://www.varnish-cache.org/trac/ticket/1794
 .. _1763: https://www.varnish-cache.org/trac/ticket/1763
 .. _1788: https://www.varnish-cache.org/trac/ticket/1788
 .. _1798: https://www.varnish-cache.org/trac/ticket/1798
@@ -176,6 +185,11 @@ Bugs fixed
 .. _1821: https://www.varnish-cache.org/trac/ticket/1821
 .. _1823: https://www.varnish-cache.org/trac/ticket/1823
 .. _1826: https://www.varnish-cache.org/trac/ticket/1826
+.. _1813: https://www.varnish-cache.org/trac/ticket/1813
+.. _1810: https://www.varnish-cache.org/trac/ticket/1810
+.. _1807: https://www.varnish-cache.org/trac/ticket/1807
+.. _1804: https://www.varnish-cache.org/trac/ticket/1804
+.. _1801: https://www.varnish-cache.org/trac/ticket/1801
 
 
 ================================
