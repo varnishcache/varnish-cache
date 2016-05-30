@@ -31,21 +31,21 @@ this happens, please refer yourself to the related source file and line
 number. However, this guide should help you avoid the most common mistakes.
 
 Words and strings
-~~~~~~~~~~~~~~~~~
+-----------------
 
 The parser splits words by detecting whitespace characters and a string is a
 word, or a series of words on the same line enclosed by double-quotes ("..."),
 or, for multi-line strings, enclosed in curly brackets ({...}).
 
 Comments
-~~~~~~~~
+--------
 
 The leading whitespaces of lines are ignored. Empty lines (or ones consisting
 only of whitespaces) are ignored too, as are the lines starting with "#" that
 are comments.
 
 Lines and commands
-~~~~~~~~~~~~~~~~~~
+------------------
 
 Test files take at most one command per line, with the first word of the line
 being the command and the following ones being its arguments. To continue over
