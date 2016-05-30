@@ -392,8 +392,15 @@ reset_cmds(const struct cmds *cmd)
 		cmd->cmd(NULL, NULL, NULL, NULL);
 }
 
-/**********************************************************************
- * Output test description
+/* SECTION: varnishtest varnishtest
+ *
+ * This should be the first command in your vtc as it will identify the test
+ * case with a short yet descriptive sentence. It takes exactly one argument, a
+ * string, eg::
+ *
+ *         varnishtest "Check that varnishtest is actually a valid command"
+ *
+ * It will also print that string in the log.
  */
 
 static void
