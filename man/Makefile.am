@@ -66,7 +66,8 @@ varnishstat.1: $(top_srcdir)/doc/sphinx/reference/varnishstat.rst
 varnishtest.1: $(top_srcdir)/doc/sphinx/reference/varnishtest.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/varnishtest.rst $@
 
-vtc.7: $(top_srcdir)/doc/sphinx/reference/vtc.rst
+vtc.7: $(top_srcdir)/doc/sphinx/reference/vtc.rst \
+	$(top_srcdir)/doc/sphinx/include/vtc-syntax.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/vtc.rst $@
 
 varnishtop.1: \
