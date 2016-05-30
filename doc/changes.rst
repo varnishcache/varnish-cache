@@ -12,6 +12,7 @@ Bugs fixed
 ----------
 
 * 1918_ - Correctly handle EOF responses with HTTP/1.1
+* 1912_ - Fix (insignificant) memory leak with mal-formed ESI directives.
 * 1885_ - [vmodtool] Method names should start with a period
 * 1879_ - Correct handling of duplicate headers on IMS header merge
 * 1878_ - Fix a ESI+gzip corner case which had escaped notice until now
@@ -21,6 +22,7 @@ Bugs fixed
 * 1883_ - Only accept C identifiers as acls
 
 .. _1918: https://github.com/varnishcache/varnish-cache/issues/1918
+.. _1912: https://github.com/varnishcache/varnish-cache/issues/1912
 .. _1885: https://github.com/varnishcache/varnish-cache/issues/1885
 .. _1883: https://github.com/varnishcache/varnish-cache/issues/1883
 .. _1879: https://github.com/varnishcache/varnish-cache/issues/1879
