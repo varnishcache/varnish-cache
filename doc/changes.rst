@@ -4,7 +4,9 @@ DRAFT CHANGELOG ENTRIES FOR NEXT RELEASE
 
 Changes since 4.1.2:
 
-* TBD.
+* varnishncsa can now access and log backend requests. (PR #1905)
+
+.. _1905: https://github.com/varnishcache/varnish-cache/pull/1905
 
 Bugs fixed
 ----------
