@@ -1,0 +1,36 @@
+varnishtest "Correct handling of Age and headers for chained varnish servers"
+
+# The issue https://github.com/varnishcache/varnish-cache/issues/1955
+# concerns multiple Accept-Ranges headers as well as multiple Age
+# headers, but the problem with multiple Accept-Ranges cannot be
+# demonstrated by varnishtest (2016-05-26).
+
+# test by fgsch:
+
+server s1 {
+    rxreq
+    txresp -hdr "Cache-Control: max-age=1"
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+varnish v2 -arg "-pdefault_grace=1" -vcl {
+    import std;
+    backend b1 {
+        .host = "${v1_addr}";
+        .port = "${v1_port}";
+    }
+    sub vcl_deliver {
+        std.collect(resp.http.age);
+    }
+} -start
+
+client c1 -connect ${v2_addr}:${v2_port} {
+    txreq
+    rxresp
+    delay 2
+    txreq
+    rxresp
+    expect resp.http.age == "2"
+} -run
