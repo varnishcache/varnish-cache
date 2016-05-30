@@ -65,7 +65,7 @@ struct backend {
 	struct vbp_target	*probe;
 	unsigned		healthy;
 	const char		*admin_health;
-	double			health_changed;
+	vtim_real		health_changed;
 
 	struct VSC_C_vbe	*vsc;
 
@@ -73,7 +73,7 @@ struct backend {
 
 	struct director		director[1];
 
-	double			cooled;
+	vtim_real		cooled;
 };
 
 /*---------------------------------------------------------------------
@@ -105,7 +105,7 @@ struct vbc {
 void VBE_fill_director(struct backend *be);
 
 /* cache_backend_cfg.c */
-unsigned VBE_Healthy(const struct backend *b, double *changed);
+unsigned VBE_Healthy(const struct backend *b, vtim_real *changed);
 #ifdef VCL_MET_MAX
 void VBE_Event(struct backend *, enum vcl_event_e);
 #endif

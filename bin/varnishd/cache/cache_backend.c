@@ -38,7 +38,6 @@
 
 #include "vrt.h"
 #include "vtcp.h"
-#include "vtim.h"
 
 #include "cache_director.h"
 #include "cache_backend.h"
@@ -129,7 +128,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 
 static unsigned __match_proto__(vdi_healthy_f)
 vbe_dir_healthy(const struct director *d, const struct busyobj *bo,
-    double *changed)
+    vtim_real *changed)
 {
 	struct backend *be;
 

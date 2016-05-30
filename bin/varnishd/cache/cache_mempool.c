@@ -35,14 +35,13 @@
 
 #include "cache.h"
 
-#include "vtim.h"
 
 struct memitem {
 	unsigned			magic;
 #define MEMITEM_MAGIC			0x42e55401
 	unsigned			size;
 	VTAILQ_ENTRY(memitem)		list;
-	double				touched;
+	vtim_real			touched;
 };
 
 VTAILQ_HEAD(memhead_s, memitem);
@@ -60,7 +59,7 @@ struct mempool {
 	struct VSC_C_mempool		*vsc;
 	unsigned			n_pool;
 	pthread_t			thread;
-	double				t_now;
+	vtim_real			t_now;
 	int				self_destruct;
 };
 
@@ -97,7 +96,7 @@ mpl_guard(void *priv)
 	struct mempool *mpl;
 	struct memitem *mi = NULL;
 	double __state_variable__(mpl_slp);
-	double last = 0;
+	vtim_real last = 0;
 
 	CAST_OBJ_NOTNULL(mpl, priv, MEMPOOL_MAGIC);
 	THR_SetName(mpl->name);

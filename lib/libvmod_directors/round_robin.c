@@ -47,7 +47,7 @@ struct vmod_directors_round_robin {
 
 static unsigned __match_proto__(vdi_healthy)
 vmod_rr_healthy(const struct director *dir, const struct busyobj *bo,
-    double *changed)
+    vtim_real *changed)
 {
 	struct vmod_directors_round_robin *rr;
 

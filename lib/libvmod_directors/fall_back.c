@@ -46,7 +46,7 @@ struct vmod_directors_fallback {
 
 static unsigned __match_proto__(vdi_healthy)
 vmod_fallback_healthy(const struct director *dir, const struct busyobj *bo,
-    double *changed)
+    vtim_real *changed)
 {
 	struct vmod_directors_fallback *rr;
 

@@ -46,7 +46,6 @@
 #include "hash/hash_slinger.h"
 #include "vsha256.h"
 #include "vend.h"
-#include "vtim.h"
 
 #include "storage/storage_persistent.h"
 
@@ -135,7 +134,7 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 	struct objcore *oc;
 	struct ban *ban;
 	uint32_t no;
-	double t_now = VTIM_real();
+	vtim_real t_now = VTIM_real();
 	struct smp_signctx ctx[1];
 
 	ASSERT_SILO_THREAD(sc);

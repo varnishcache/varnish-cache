@@ -38,7 +38,6 @@
 
 #include "hash/hash_slinger.h"
 #include "vmb.h"
-#include "vtim.h"
 
 static struct lock hcb_mtx;
 

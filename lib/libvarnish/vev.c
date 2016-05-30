@@ -44,8 +44,8 @@
 
 #include "binary_heap.h"
 #include "vqueue.h"
-#include "vev.h"
 #include "vtim.h"
+#include "vev.h"
 
 #undef DEBUG_EVENTS
 
@@ -114,7 +114,7 @@ vev_bh_cmp(void *priv, const void *a, const void *b)
 	CAST_OBJ_NOTNULL(evb, priv, VEV_BASE_MAGIC);
 	CAST_OBJ_NOTNULL(ea, a, VEV_MAGIC);
 	CAST_OBJ_NOTNULL(eb, b, VEV_MAGIC);
-	return (ea->__when < eb->__when);
+	return (ea->__when.mt < eb->__when.mt);
 }
 
 /*--------------------------------------------------------------------*/
@@ -282,12 +282,13 @@ vev_add(struct vev_base *evb, struct vev *e)
 	e->magic = VEV_MAGIC;	/* before binheap_insert() */
 
 	if (e->timeout != 0.0) {
-		e->__when += VTIM_mono() + e->timeout;
+		VTIM_mono(&e->__when);
+		e->__when.mt += e->timeout;
 		binheap_insert(evb->binheap, e);
 		assert(e->__binheap_idx > 0);
 		DBG(evb, "... bidx = %d\n", e->__binheap_idx);
 	} else {
-		e->__when = 0.0;
+		e->__when.mt = 0.0;
 		e->__binheap_idx = 0;
 	}
 
@@ -404,7 +405,7 @@ vev_compact_pfd(struct vev_base *evb)
 /*--------------------------------------------------------------------*/
 
 static int
-vev_sched_timeout(struct vev_base *evb, struct vev *e, double t)
+vev_sched_timeout(struct vev_base *evb, struct vev *e, vtim_mono t)
 {
 	int i;
 
@@ -414,7 +415,7 @@ vev_sched_timeout(struct vev_base *evb, struct vev *e, double t)
 		vev_del(evb, e);
 		free(e);
 	} else {
-		e->__when = t + e->timeout;
+		e->__when.mt = t.mt + e->timeout;
 		binheap_delete(evb->binheap, e->__binheap_idx);
 		binheap_insert(evb->binheap, e);
 	}
@@ -448,7 +449,7 @@ vev_sched_signal(struct vev_base *evb)
 int
 vev_schedule_one(struct vev_base *evb)
 {
-	double t;
+	vtim_mono t;
 	struct vev *e, *e2, *e3;
 	int i, j, tmo;
 	struct pollfd *pfd;
@@ -459,10 +460,10 @@ vev_schedule_one(struct vev_base *evb)
 	if (e != NULL) {
 		CHECK_OBJ_NOTNULL(e, VEV_MAGIC);
 		assert(e->__binheap_idx == 1);
-		t = VTIM_mono();
-		if (e->__when <= t)
+		VTIM_mono(&t);
+		if (e->__when.mt <= t.mt)
 			return (vev_sched_timeout(evb, e, t));
-		tmo = (int)((e->__when - t) * 1e3);
+		tmo = (int)((e->__when.mt - t.mt) * 1e3);
 		if (tmo == 0)
 			tmo = 1;
 	} else
@@ -482,8 +483,8 @@ vev_schedule_one(struct vev_base *evb)
 		return (vev_sched_signal(evb));
 	if (i == 0) {
 		assert(e != NULL);
-		t = VTIM_mono();
-		if (e->__when <= t)
+		VTIM_mono(&t);
+		if (e->__when.mt <= t.mt)
 			return (vev_sched_timeout(evb, e, t));
 	}
 	evb->disturbed = 0;

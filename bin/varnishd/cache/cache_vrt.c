@@ -41,7 +41,6 @@
 #include "vrt_obj.h"
 #include "vsa.h"
 #include "vtcp.h"
-#include "vtim.h"
 
 const void * const vrt_magic_string_end = &vrt_magic_string_end;
 const void * const vrt_magic_string_unset = &vrt_magic_string_unset;

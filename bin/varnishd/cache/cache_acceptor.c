@@ -48,7 +48,6 @@
 #include "vcli_serve.h"
 #include "vsa.h"
 #include "vtcp.h"
-#include "vtim.h"
 
 static pthread_t	VCA_thread;
 static double vca_pace = 0.0;
@@ -495,7 +494,7 @@ static void *
 vca_acct(void *arg)
 {
 	struct listen_sock *ls;
-	double t0, now;
+	vtim_real t0, now;
 
 	THR_SetName("cache-acceptor");
 	(void)arg;

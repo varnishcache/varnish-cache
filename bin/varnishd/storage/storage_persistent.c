@@ -50,7 +50,6 @@
 #include "hash/hash_slinger.h"
 #include "vcli_serve.h"
 #include "vsha256.h"
-#include "vtim.h"
 
 #include "storage/storage_persistent.h"
 

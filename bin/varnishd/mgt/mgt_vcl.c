@@ -42,7 +42,6 @@
 
 #include "vcli_serve.h"
 #include "vev.h"
-#include "vtim.h"
 
 static const char * const VCL_STATE_COLD = "cold";
 static const char * const VCL_STATE_WARM = "warm";
@@ -55,7 +54,7 @@ struct vclprog {
 	char			*fname;
 	unsigned		warm;
 	char			state[8];
-	double			go_cold;
+	vtim_mono		go_cold;
 	struct vclprog		*label;
 };
 
@@ -126,7 +125,7 @@ static int
 mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 {
 	unsigned status, warm;
-	double now;
+	vtim_mono now;
 	char *p;
 	int i;
 

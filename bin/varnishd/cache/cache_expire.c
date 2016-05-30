@@ -38,7 +38,6 @@
 
 #include "binary_heap.h"
 #include "hash/hash_slinger.h"
-#include "vtim.h"
 
 struct exp_priv {
 	unsigned			magic;
@@ -62,10 +61,10 @@ static struct exp_priv *exphdl;
  * if it is available.
  */
 
-double
+vtim_real
 EXP_Ttl(const struct req *req, const struct objcore *oc)
 {
-	double r;
+	vtim_real r;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
@@ -145,7 +144,7 @@ EXP_Insert(struct worker *wrk, struct objcore *oc)
 void
 EXP_Rearm(struct objcore *oc, double now, double ttl, double grace, double keep)
 {
-	double when;
+	vtim_real when;
 
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	assert(oc->refcnt > 0);
@@ -229,8 +228,8 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags)
  * Expire stuff from the binheap
  */
 
-static double
-exp_expire(struct exp_priv *ep, double now)
+static vtim_real
+exp_expire(struct exp_priv *ep, vtim_real now)
 {
 	struct objcore *oc;
 
@@ -306,7 +305,7 @@ static void * __match_proto__(bgthread_t)
 exp_thread(struct worker *wrk, void *priv)
 {
 	struct objcore *oc;
-	double t = 0, tnext = 0;
+	vtim_real t = 0, tnext = 0;
 	struct exp_priv *ep;
 	unsigned flags = 0;
 

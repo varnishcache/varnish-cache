@@ -483,7 +483,7 @@ ObjSetAttr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
  */
 
 void
-ObjTouch(struct worker *wrk, struct objcore *oc, double now)
+ObjTouch(struct worker *wrk, struct objcore *oc, vtim_real now)
 {
 	const struct obj_methods *om = obj_getmethods(oc);
 

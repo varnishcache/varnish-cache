@@ -38,7 +38,6 @@
 
 #include "vend.h"
 #include "vct.h"
-#include "vtim.h"
 
 #define HTTPH(a, b, c) char b[] = "*" a ":";
 #include "tbl/http_headers.h"
@@ -1161,7 +1160,7 @@ http_PrintfHeader(struct http *to, const char *fmt, ...)
 }
 
 void
-http_TimeHeader(struct http *to, const char *fmt, double now)
+http_TimeHeader(struct http *to, const char *fmt, vtim_real now)
 {
 	char *p;
 

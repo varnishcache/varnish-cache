@@ -44,7 +44,7 @@
 
 
 typedef unsigned vdi_healthy_f(const struct director *, const struct busyobj *,
-    double *changed);
+    vtim_real *changed);
 
 typedef const struct director *vdi_resolve_f(const struct director *,
     struct worker *, struct busyobj *);

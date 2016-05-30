@@ -56,7 +56,7 @@ void V1P_Charge(struct req *, const struct v1p_acct *, struct VSC_C_vbe *);
 void V1L_Chunked(const struct worker *w);
 void V1L_EndChunk(const struct worker *w);
 void V1L_Reserve(struct worker *, struct ws *, int *fd, struct vsl_log *,
-    double t0);
+    vtim_real t0);
 unsigned V1L_Flush(const struct worker *w);
 unsigned V1L_FlushRelease(struct worker *w);
 size_t V1L_Write(const struct worker *w, const void *ptr, ssize_t len);

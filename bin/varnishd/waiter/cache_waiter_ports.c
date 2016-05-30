@@ -76,7 +76,6 @@
 
 #include "waiter/waiter_priv.h"
 #include "waiter/mgt_waiter.h"
-#include "vtim.h"
 
 // XXX replace with process.max-port-events bound to a sensible maximum
 #define MAX_EVENTS 256
@@ -86,7 +85,7 @@ struct vws {
 #define VWS_MAGIC		0x0b771473
 	struct waiter		*waiter;
 	pthread_t		thread;
-	double			next;
+	vtim_real		next;
 	int			dport;
 	unsigned		nwaited;
 	int			die;
@@ -106,7 +105,8 @@ vws_del(struct vws *vws, int fd)
 }
 
 static inline void
-vws_port_ev(struct vws *vws, struct waiter *w, port_event_t *ev, double now) {
+vws_port_ev(struct vws *vws, struct waiter *w, port_event_t *ev,
+    vtim_real now) {
 	struct waited *wp;
 	if(ev->portev_source == PORT_SOURCE_USER) {
 		CAST_OBJ_NOTNULL(wp, ev->portev_user, WAITED_MAGIC);
@@ -139,7 +139,7 @@ vws_thread(void *priv)
 	struct waited *wp;
 	struct waiter *w;
 	struct vws *vws;
-	double now, then;
+	vtim_real now, then;
 	struct timespec ts;
 	const double	max_t  = 100.0;
 	port_event_t ev[MAX_EVENTS];

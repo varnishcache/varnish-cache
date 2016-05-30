@@ -37,7 +37,6 @@
 
 #include "vrt.h"
 #include "vtcp.h"
-#include "vtim.h"
 
 #include "hash/hash_slinger.h"
 
@@ -141,7 +140,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 
 	struct http *hp;
 	int i;
-	double t;
+	vtim_real t;
 	struct http_conn *htc;
 	enum htc_status_e hs;
 

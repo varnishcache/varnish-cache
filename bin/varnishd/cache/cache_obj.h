@@ -46,7 +46,7 @@ typedef const void *objgetattr_f(struct worker *, struct objcore *,
     enum obj_attr attr, ssize_t *len);
 typedef void *objsetattr_f(struct worker *, struct objcore *,
     enum obj_attr attr, ssize_t len, const void *ptr);
-typedef void objtouch_f(struct worker *, struct objcore *, double now);
+typedef void objtouch_f(struct worker *, struct objcore *, vtim_real now);
 
 struct obj_methods {
 	objfree_f	*objfree;

@@ -42,7 +42,6 @@
 #include "vnum.h"
 #include "vrt.h"
 #include "vsa.h"
-#include "vtim.h"
 #include "vcc_if.h"
 
 VCL_DURATION __match_proto__(td_std_duration)
@@ -238,7 +237,7 @@ vmod_time2real(VRT_CTX, VCL_TIME t, VCL_REAL r)
 VCL_TIME __match_proto__(td_std_time)
 vmod_time(VRT_CTX, VCL_STRING p, VCL_TIME d)
 {
-	double r;
+	vtim_real r;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 

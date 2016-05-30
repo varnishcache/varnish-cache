@@ -46,7 +46,6 @@
 #include "hash/hash_slinger.h"
 #include "vcl.h"
 #include "vsha256.h"
-#include "vtim.h"
 
 /*--------------------------------------------------------------------
  * Deliver an object to client
@@ -146,7 +145,7 @@ static enum req_fsm_nxt
 cnt_synth(struct worker *wrk, struct req *req)
 {
 	struct http *h;
-	double now;
+	vtim_real now;
 	struct vsb *synth_body;
 	ssize_t sz, szl;
 	uint8_t *ptr;

@@ -39,7 +39,7 @@
  * for latter handling of "||" as well.
  *
  * Bans are compiled into bytestrings as follows:
- *	8 bytes	- double: timestamp		XXX: Byteorder ?
+ *	8 bytes	- double (vtim_real): timestamp	XXX: Byteorder ?
  *	4 bytes - be32: length
  *	1 byte - flags: 0x01: BAN_F_{REQ|OBJ|COMPLETED}
  *	N tests
@@ -114,7 +114,7 @@ void ban_info_drop(const uint8_t *ban, unsigned len);
 
 int ban_evaluate(struct worker *wrk, const uint8_t *bs, struct objcore *oc,
     const struct http *reqhttp, unsigned *tests);
-double ban_time(const uint8_t *banspec);
+vtim_real ban_time(const uint8_t *banspec);
 int ban_equal(const uint8_t *bs1, const uint8_t *bs2);
 void BAN_Free(struct ban *b);
 void ban_kick_lurker(void);

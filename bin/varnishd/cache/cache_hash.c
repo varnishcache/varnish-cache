@@ -60,7 +60,6 @@
 
 #include "hash/hash_slinger.h"
 #include "vsha256.h"
-#include "vtim.h"
 
 struct rush {
 	unsigned		magic;
@@ -340,7 +339,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 	struct objhead *oh;
 	struct objcore *oc;
 	struct objcore *exp_oc;
-	double exp_t_origin;
+	vtim_real exp_t_origin;
 	int busy_found;
 	enum lookup_e retval;
 	const uint8_t *vary;
@@ -556,12 +555,12 @@ hsh_rush2(struct worker *wrk, struct rush *r)
 
 void
 HSH_Purge(struct worker *wrk, struct objhead *oh, double ttl, double grace,
-double keep)
+    double keep)
 {
 	struct objcore *oc, **ocp;
 	unsigned spc, ospc, nobj, n;
 	int more = 0;
-	double now;
+	vtim_real now;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);

@@ -53,7 +53,7 @@ struct vev {
 	void			*priv;
 
 	/* priv */
-	double			__when;
+	vtim_mono		__when;
 	VTAILQ_ENTRY(vev)	__list;
 	unsigned		__binheap_idx;
 	unsigned		__privflags;

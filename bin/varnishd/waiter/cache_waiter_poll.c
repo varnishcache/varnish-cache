@@ -38,7 +38,6 @@
 
 #include "waiter/waiter_priv.h"
 #include "waiter/mgt_waiter.h"
-#include "vtim.h"
 
 struct vwp {
 	unsigned		magic;
@@ -158,7 +157,7 @@ vwp_main(void *priv)
 	struct vwp *vwp;
 	struct waiter *w;
 	struct waited *wp;
-	double now, then;
+	vtim_real now, then;
 	int i;
 
 	THR_SetName("cache-poll");

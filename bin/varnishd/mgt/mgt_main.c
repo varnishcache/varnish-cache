@@ -44,6 +44,7 @@
 #include <time.h>
 #include <unistd.h>
 
+
 #include "mgt/mgt.h"
 #include "common/heritage.h"
 
@@ -57,7 +58,6 @@
 #include "vrnd.h"
 #include "vsha256.h"
 #include "vsub.h"
-#include "vtim.h"
 #include "waiter/mgt_waiter.h"
 
 #include "compat/daemon.h"

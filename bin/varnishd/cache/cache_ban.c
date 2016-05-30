@@ -116,10 +116,10 @@ BAN_Release(void)
  * Extract time and length from ban-spec
  */
 
-double
+vtim_real
 ban_time(const uint8_t *banspec)
 {
-	double t;
+	vtim_real t;
 
 	assert(sizeof t == (BANS_LENGTH - BANS_TIMESTAMP));
 	memcpy(&t, banspec, sizeof t);
@@ -253,10 +253,10 @@ BAN_DestroyObj(struct objcore *oc)
  */
 
 struct ban *
-BAN_FindBan(double t0)
+BAN_FindBan(vtim_real t0)
 {
 	struct ban *b;
-	double t1;
+	vtim_real t1;
 
 	assert(ban_holds > 0);
 	VTAILQ_FOREACH(b, &ban_head, list) {
@@ -353,7 +353,7 @@ ban_reload(const uint8_t *ban, unsigned len)
 {
 	struct ban *b, *b2;
 	int duplicate = 0;
-	double t0, t1, t2 = 9e99;
+	vtim_real t0, t1, t2 = 9e99;
 
 	ASSERT_CLI();
 	Lck_AssertHeld(&ban_mtx);
@@ -435,7 +435,7 @@ BAN_Reload(const uint8_t *ptr, unsigned len)
  * Get a bans timestamp
  */
 
-double
+vtim_real
 BAN_Time(const struct ban *b)
 {
 

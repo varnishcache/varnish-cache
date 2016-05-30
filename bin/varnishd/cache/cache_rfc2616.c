@@ -33,7 +33,6 @@
 
 #include "cache.h"
 
-#include "vtim.h"
 
 /*--------------------------------------------------------------------
  * TTL and Age calculation in Varnish
@@ -62,11 +61,11 @@
  */
 
 void
-RFC2616_Ttl(struct busyobj *bo, double now, double *t_origin,
+RFC2616_Ttl(struct busyobj *bo, vtim_real now, vtim_real *t_origin,
     float *ttl, float *grace, float *keep)
 {
 	unsigned max_age, age;
-	double h_date, h_expires;
+	vtim_real h_date, h_expires;
 	const char *p;
 	const struct http *hp;
 
@@ -257,7 +256,7 @@ int
 RFC2616_Do_Cond(const struct req *req)
 {
 	const char *p, *e;
-	double ims, lm;
+	vtim_real ims, lm;
 
 	/*
 	 * We MUST ignore If-Modified-Since if we have an If-None-Match

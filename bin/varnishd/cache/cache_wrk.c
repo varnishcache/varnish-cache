@@ -37,7 +37,6 @@
 #include "cache.h"
 #include "cache_pool.h"
 
-#include "vtim.h"
 
 #include "hash/hash_slinger.h"
 
@@ -433,7 +432,7 @@ pool_herder(void *priv)
 {
 	struct pool *pp;
 	struct pool_task *pt;
-	double t_idle;
+	vtim_real t_idle;
 	struct worker *wrk;
 
 	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);

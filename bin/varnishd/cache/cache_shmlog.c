@@ -38,7 +38,6 @@
 
 #include "vsl_priv.h"
 #include "vmb.h"
-#include "vtim.h"
 
 /* These cannot be struct lock, which depends on vsm/vsl working */
 static pthread_mutex_t vsl_mtx;
@@ -363,8 +362,8 @@ VSLb(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, ...)
 }
 
 void
-VSLb_ts(struct vsl_log *vsl, const char *event, double first, double *pprev,
-    double now)
+VSLb_ts(struct vsl_log *vsl, const char *event, vtim_real first,
+    vtim_real *pprev, vtim_real now)
 {
 
 	/* XXX: Make an option to turn off some unnecessary timestamp

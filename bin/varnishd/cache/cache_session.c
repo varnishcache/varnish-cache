@@ -46,7 +46,6 @@
 
 #include "vsa.h"
 #include "vtcp.h"
-#include "vtim.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -231,10 +230,10 @@ HTC_RxPipeline(struct http_conn *htc, void *p)
 
 enum htc_status_e
 HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
-    double *t1, double *t2, double ti, double tn, int maxbytes)
+    vtim_real *t1, vtim_real *t2, vtim_real ti, vtim_real tn, int maxbytes)
 {
 	double tmo;
-	double now;
+	vtim_real now;
 	enum htc_status_e hs;
 	int i;
 
@@ -370,7 +369,7 @@ SES_Reschedule_Req(struct req *req)
  */
 
 static void __match_proto__(waiter_handle_f)
-ses_handle(struct waited *wp, enum wait_event ev, double now)
+ses_handle(struct waited *wp, enum wait_event ev, vtim_real now)
 {
 	struct sess *sp;
 	struct pool *pp;
@@ -505,7 +504,7 @@ SES_Close(struct sess *sp, enum sess_close reason)
  */
 
 void
-SES_Delete(struct sess *sp, enum sess_close reason, double now)
+SES_Delete(struct sess *sp, enum sess_close reason, vtim_real now)
 {
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);

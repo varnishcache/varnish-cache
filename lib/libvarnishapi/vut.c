@@ -230,7 +230,7 @@ void
 VUT_Setup(void)
 {
 	struct VSL_cursor *c;
-	double t_start;
+	vtim_real t_start;
 	int i;
 
 	AN(VUT.vsl);

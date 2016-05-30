@@ -42,7 +42,6 @@
 
 #include "waiter/waiter_priv.h"
 #include "waiter/mgt_waiter.h"
-#include "vtim.h"
 
 #define NKEV	256
 
@@ -52,7 +51,7 @@ struct vwk {
 	int			kq;
 	struct waiter		*waiter;
 	pthread_t		thread;
-	double			next;
+	vtim_real		next;
 	int			pipe[2];
 	unsigned		nwaited;
 	int			die;
@@ -67,7 +66,7 @@ vwk_thread(void *priv)
 	struct vwk *vwk;
 	struct kevent ke[NKEV], *kp;
 	int j, n;
-	double now, then;
+	vtim_real now, then;
 	struct timespec ts;
 	struct waited *wp;
 	struct waiter *w;

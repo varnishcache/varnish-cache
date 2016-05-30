@@ -52,13 +52,13 @@ enum wait_event {
 	WAITER_CLOSE
 };
 
-typedef void waiter_handle_f(struct waited *, enum wait_event, double now);
+typedef void waiter_handle_f(struct waited *, enum wait_event, vtim_real now);
 
 struct waitfor {
 	unsigned		magic;
 #define WAITFOR_MAGIC		0x16b79246
 	waiter_handle_f		*func;
-	volatile double		*tmo;
+	volatile vtim_real	*tmo;
 };
 
 struct waited {
@@ -69,7 +69,7 @@ struct waited {
 	void			*priv1;
 	uintptr_t		priv2;
 	const struct waitfor	*waitfor;
-	double			idle;
+	vtim_real		idle;
 };
 
 /* cache_waiter.c */

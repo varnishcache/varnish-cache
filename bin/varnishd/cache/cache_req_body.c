@@ -34,7 +34,6 @@
 
 #include "cache.h"
 #include "cache_filter.h"
-#include "vtim.h"
 #include "hash/hash_slinger.h"
 
 /*----------------------------------------------------------------------
