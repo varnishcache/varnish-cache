@@ -1104,12 +1104,14 @@ read_format(const char *formatfile)
 {
 	FILE *fmtfile;
 	size_t len = 0;
+	int fmtlen;
 	char *fmt = NULL;
 
 	fmtfile = fopen(formatfile, "r");
 	if (fmtfile == NULL)
 		VUT_Error(1, "Can't open format file (%s)", strerror(errno));
-	if (getline(&fmt, &len, fmtfile) == -1) {
+	fmtlen = getline(&fmt, &len, fmtfile);
+	if (fmtlen == -1) {
 		free(fmt);
 		if (feof(fmtfile))
 			VUT_Error(1, "Empty format file");
@@ -1118,6 +1120,8 @@ read_format(const char *formatfile)
 			    strerror(errno));
 	}
 	fclose(fmtfile);
+	if (fmt[fmtlen - 1] == '\n')
+		fmt[fmtlen - 1] = '\0';
 	return (fmt);
 }
 
