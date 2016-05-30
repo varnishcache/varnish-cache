@@ -26,6 +26,7 @@ The Varnish Reference Manual
 	varnish-counters.rst
 	vsl.rst
 	vsl-query.rst
+	vtc.rst
 
 .. todo::
 	The programs:

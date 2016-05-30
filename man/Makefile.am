@@ -13,6 +13,7 @@ dist_man_MANS = \
 	varnishncsa.1 \
 	varnishstat.1 \
 	varnishtest.1 \
+	vtc.7 \
 	varnishtop.1 \
 	vmod_directors.3 \
 	vmod_std.3
@@ -65,6 +66,9 @@ varnishstat.1: $(top_srcdir)/doc/sphinx/reference/varnishstat.rst \
 
 varnishtest.1: $(top_srcdir)/doc/sphinx/reference/varnishtest.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/varnishtest.rst $@
+
+vtc.7: $(top_srcdir)/doc/sphinx/reference/vtc.rst
+	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/vtc.rst $@
 
 varnishtop.1: \
 	$(top_srcdir)/doc/sphinx/reference/varnishtop.rst \
