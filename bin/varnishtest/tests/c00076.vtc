@@ -1,0 +1,113 @@
+varnishtest "Complex son-of-hit-for-pass test"
+
+server s1 {
+	rxreq
+	txresp -hdr "Connection: close" -hdr "Set-Cookie: c1" -bodylen 1
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 1
+	delay .1
+} -run
+
+server s1 {
+	rxreq
+	expect req.http.foo == xyz
+	txresp -hdr "Set-Cookie: c2" -hdr "Vary: foo" -bodylen 2
+	rxreq
+	expect req.http.foo == abc
+	txresp -hdr "Connection: close" -hdr "Set-Cookie: c2" -hdr "Vary: foo" -bodylen 3
+} -start
+
+client c1 {
+	txreq -hdr "foo: xyz"
+	rxresp
+	expect resp.bodylen == 2
+	delay .1
+} -run
+
+client c1 {
+	txreq -hdr "foo: abc"
+	rxresp
+	expect resp.bodylen == 3
+	delay .1
+} -run
+
+server s1 {
+	rxreq
+	expect req.http.foo == 123
+	txresp -hdr "Connection: close" -hdr "Vary: foo" -bodylen 4
+} -start
+
+client c1 {
+	txreq -hdr "foo: 123"
+	rxresp
+	expect resp.bodylen == 4
+	delay .1
+} -run
+
+client c1 {
+	# Cache hit
+	txreq -hdr "foo: 123"
+	rxresp
+	expect resp.bodylen == 4
+	delay .1
+} -run
+
+server s1 {
+	rxreq
+	expect req.http.foo == 987
+	txresp -hdr "Connection: close" -hdr "Vary: foo" -bodylen 5
+} -start
+
+client c1 {
+	txreq -hdr "foo: 987"
+	rxresp
+	expect resp.bodylen == 5
+	delay .1
+} -run
+
+client c1 {
+	# Cache hit
+	txreq -hdr "foo: 123"
+	rxresp
+	expect resp.bodylen == 4
+	delay .1
+} -run
+
+server s1 {
+	rxreq
+	expect req.http.foo == 000
+	txresp -hdr "Connection: close" -bodylen 6
+} -start
+
+client c1 {
+	txreq -hdr "foo: 000"
+	rxresp
+	expect resp.bodylen == 6
+	delay .1
+
+	txreq -hdr "foo: 123"
+	rxresp
+	expect resp.bodylen == 6
+	delay .1
+
+	txreq -hdr "foo: abc"
+	rxresp
+	expect resp.bodylen == 6
+	delay .1
+
+	txreq -hdr "foo: 987"
+	rxresp
+	expect resp.bodylen == 6
+	delay .1
+
+	txreq -hdr "foo: xyz"
+	rxresp
+	expect resp.bodylen == 6
+	delay .1
+} -run

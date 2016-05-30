@@ -74,5 +74,5 @@ client c2 {
 	barrier b2 sync
 	txreq -hdr "c: 1"
 	rxresp
-	expect resp.http.pass == "1"
+	expect resp.http.miss == "1"
 } -run

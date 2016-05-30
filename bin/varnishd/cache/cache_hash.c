@@ -435,10 +435,18 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			/* If still valid, use it */
 			assert(oh->refcnt > 1);
 			assert(oc->objhead == oh);
-			oc->refcnt++;
-			if (oc->hits < LONG_MAX)
-				oc->hits++;
+			if (oc->flags & OC_F_PASS) {
+				wrk->stats->cache_hitpass++;
+				oc = NULL;
+				*bocp = hsh_insert_busyobj(wrk, oh);
+			} else {
+				oc->refcnt++;
+				if (oc->hits < LONG_MAX)
+					oc->hits++;
+			}
 			Lck_Unlock(&oh->mtx);
+			if (oc == NULL) 
+				return (HSH_MISS);
 			assert(HSH_DerefObjHead(wrk, &oh));
 			*ocp = oc;
 			return (HSH_HIT);
@@ -448,6 +456,12 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			exp_oc = oc;
 			exp_t_origin = oc->t_origin;
 		}
+	}
+
+	if (exp_oc != NULL && exp_oc->flags & OC_F_PASS) {
+		wrk->stats->cache_hitpass++;
+		exp_oc = NULL;
+		busy_found = 0;
 	}
 
 	if (exp_oc != NULL) {

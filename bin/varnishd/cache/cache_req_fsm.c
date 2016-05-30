@@ -401,24 +401,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	AZ(oc->flags & OC_F_BUSY);
 	req->objcore = oc;
-
-	if ((oc->flags & OC_F_PASS) && busy != NULL) {
-		/* Treat a graced Hit-For-Pass as a miss */
-		(void)HSH_DerefObjCore(wrk, &req->objcore);
-		AZ(req->objcore);
-		req->objcore = busy;
-		req->req_step = R_STP_MISS;
-		return (REQ_FSM_MORE);
-	} else if (oc->flags & OC_F_PASS) {
-		/* Found a hit-for-pass */
-		VSLb(req->vsl, SLT_Debug, "XXXX HIT-FOR-PASS");
-		VSLb(req->vsl, SLT_HitPass, "%u",
-		    ObjGetXID(wrk, req->objcore));
-		(void)HSH_DerefObjCore(wrk, &req->objcore);
-		wrk->stats->cache_hitpass++;
-		req->req_step = R_STP_PASS;
-		return (REQ_FSM_MORE);
-	}
+	AZ(oc->flags & OC_F_PASS);
 
 	VSLb(req->vsl, SLT_Hit, "%u", ObjGetXID(wrk, req->objcore));
 
