@@ -30,13 +30,18 @@
 
 /* from libvarnish/vtim.c */
 #define VTIM_FORMAT_SIZE 30
-typedef double vtim_mono;
-typedef double vtim_real;
+typedef struct {
+	double mt;
+} vtim_mono;
 
-void VTIM_format(vtim_real t, char *p);
-vtim_real VTIM_parse(const char *p);
-vtim_mono VTIM_mono(void);
-vtim_real VTIM_real(void);
+typedef struct {
+	double rt;
+} vtim_real;
+
+void VTIM_format(const vtim_real t, char *p);
+void VTIM_parse(vtim_real *, const char *p);
+void VTIM_mono(vtim_mono *);
+void VTIM_real(vtim_real *);
 void VTIM_sleep(double t);
 struct timespec VTIM_timespec(double t);
 struct timeval VTIM_timeval(double t);
