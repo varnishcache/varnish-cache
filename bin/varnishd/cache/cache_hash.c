@@ -445,7 +445,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 					oc->hits++;
 			}
 			Lck_Unlock(&oh->mtx);
-			if (oc == NULL) 
+			if (oc == NULL)
 				return (HSH_MISS);
 			assert(HSH_DerefObjHead(wrk, &oh));
 			*ocp = oc;
