@@ -194,7 +194,7 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags)
 		assert(oc->refcnt > 0);
 		AZ(oc->exp_flags);
 		ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
-		(void)HSH_DerefObjCore(ep->wrk, &oc);
+		(void)HSH_DerefObjCore(ep->wrk, &oc, 0);
 		return;
 	}
 
@@ -271,7 +271,7 @@ exp_expire(struct exp_priv *ep, double now)
 		VSLb(&ep->vsl, SLT_ExpKill, "EXP_Expired x=%u t=%.0f",
 		    ObjGetXID(ep->wrk, oc), EXP_Ttl(NULL, oc) - now);
 		ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
-		(void)HSH_DerefObjCore(ep->wrk, &oc);
+		(void)HSH_DerefObjCore(ep->wrk, &oc, 0);
 	}
 	return (0);
 }

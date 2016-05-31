@@ -625,7 +625,7 @@ double keep)
 			oc = ocp[n];
 			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 			EXP_Rearm(oc, now, ttl, grace, keep);
-			(void)HSH_DerefObjCore(wrk, &oc);
+			(void)HSH_DerefObjCore(wrk, &oc, 0);
 		}
 	} while (more);
 	WS_Release(wrk->aws, 0);
@@ -843,7 +843,7 @@ HSH_DerefBoc(struct worker *wrk, struct objcore *oc)
  */
 
 int
-HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
+HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp, int rushmax)
 {
 	struct objcore *oc;
 	struct objhead *oh;
@@ -868,7 +868,7 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
 	if (!r)
 		VTAILQ_REMOVE(&oh->objcs, oc, hsh_list);
 	if (!VTAILQ_EMPTY(&oh->waitinglist))
-		hsh_rush1(wrk, oh, &rush, HSH_RUSH_POLICY);
+		hsh_rush1(wrk, oh, &rush, rushmax);
 	Lck_Unlock(&oh->mtx);
 	hsh_rush2(wrk, &rush);
 	if (r != 0)

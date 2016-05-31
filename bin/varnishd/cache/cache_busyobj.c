@@ -171,7 +171,8 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 
 	if (bo->fetch_objcore != NULL) {
 		AN(wrk);
-		(void)HSH_DerefObjCore(wrk, &bo->fetch_objcore);
+		(void)HSH_DerefObjCore(wrk, &bo->fetch_objcore,
+		    HSH_RUSH_POLICY);
 	}
 
 	VCL_Rel(&bo->vcl);
