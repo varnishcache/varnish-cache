@@ -3,7 +3,7 @@
  * Copyright (c) 2006 Varnish Software AS
  * Copyright (c) 2007 OmniTI Computer Consulting, Inc.
  * Copyright (c) 2007 Theo Schlossnagle
- * Copyright (c) 2010-2015 UPLEX, Nils Goroll
+ * Copyright (c) 2010-2016 UPLEX, Nils Goroll
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -165,6 +165,7 @@ vws_thread(void *priv)
 			}
 			CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 			vws_del(vws, wp->fd);
+			Wait_HeapDelete(w, wp);
 			Wait_Call(w, wp, WAITER_TIMEOUT, now);
 		}
 		then = vws->next - now;
