@@ -581,8 +581,20 @@ cmd_random(CMD_ARGS)
 	}
 }
 
-/**********************************************************************
- * Check features.
+/* SECTION: feature feature
+ *
+ * Test that the required feature(s) for a test are available, and skip the test
+ * otherwise. feature takes any number of arguments from this list:
+ *
+ * - SO_RCVTIMEO_WORKS
+ * - 64bit
+ * - !OSX
+ * - dns
+ * - topbuild
+ * - root
+ * - user_varnish
+ * - user_vcache
+ *
  */
 
 static void
