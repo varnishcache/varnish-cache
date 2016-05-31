@@ -1,6 +1,6 @@
-========================================
-DRAFT CHANGELOG ENTRIES FOR NEXT RELEASE
-========================================
+======================================
+Varnish Cache 4.1.3-beta1 (unreleased)
+======================================
 
 Changes since 4.1.2:
 
@@ -19,8 +19,9 @@ Bugs fixed
 * 1878_ - Fix a ESI+gzip corner case which had escaped notice until now
 * 1871_ - Missing error handling code in V1F_Setup_Fetch
 * 1869_ - Remove temporary directory iff called with -C
-* 1725_ - Revive the backend_conn counter
 * 1883_ - Only accept C identifiers as acls
+* 1855_ - Truncate output if it's wider than 12 chars
+* 1725_ - Revive the backend_conn counter
 
 .. _1928: https://github.com/varnishcache/varnish-cache/issues/1928
 .. _1918: https://github.com/varnishcache/varnish-cache/issues/1918
@@ -31,6 +32,7 @@ Bugs fixed
 .. _1878: https://github.com/varnishcache/varnish-cache/issues/1878
 .. _1871: https://github.com/varnishcache/varnish-cache/issues/1871
 .. _1869: https://github.com/varnishcache/varnish-cache/issues/1869
+.. _1855: https://github.com/varnishcache/varnish-cache/issues/1855
 .. _1725: https://github.com/varnishcache/varnish-cache/issues/1725
 
 
