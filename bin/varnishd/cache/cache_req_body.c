@@ -67,7 +67,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	if (VFP_Open(vfc) < 0) {
 		req->req_body_status = REQ_BODY_FAIL;
 		HSH_DerefBoc(req->wrk, req->body_oc);
-		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc));
+		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
 		return (-1);
 	}
 
@@ -108,7 +108,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	VSLb_ts_req(req, "ReqBody", VTIM_real());
 	if (func != NULL) {
 		HSH_DerefBoc(req->wrk, req->body_oc);
-		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc));
+		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
 		if (vfps != VFP_END) {
 			req->req_body_status = REQ_BODY_FAIL;
 			if (r == 0)
@@ -123,7 +123,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 
 	if (vfps != VFP_END) {
 		req->req_body_status = REQ_BODY_FAIL;
-		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc));
+		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
 		return (-1);
 	}
 
@@ -239,7 +239,7 @@ VRB_Free(struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	if (req->body_oc != NULL)
-		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc));
+		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
 }
 
 /*----------------------------------------------------------------------

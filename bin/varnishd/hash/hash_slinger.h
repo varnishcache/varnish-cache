@@ -107,9 +107,9 @@ struct objhead {
 
 void HSH_Fail(struct objcore *);
 void HSH_Unbusy(struct worker *, struct objcore *);
-void HSH_DeleteObjHead(struct worker *, struct objhead *oh);
-int HSH_DerefObjHead(struct worker *, struct objhead **poh);
-int HSH_DerefObjCore(struct worker *, struct objcore **ocp);
+void HSH_DeleteObjHead(struct worker *, struct objhead *);
+int HSH_DerefObjHead(struct worker *, struct objhead **);
+int HSH_DerefObjCore(struct worker *, struct objcore **, int);
 #define HSH_RUSH_POLICY -1
 #define HSH_RUSH_ALL	INT_MAX
 #endif /* VARNISH_CACHE_CHILD */
