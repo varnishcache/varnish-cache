@@ -419,8 +419,18 @@ cmd_varnishtest(CMD_ARGS)
 	AZ(av[2]);
 }
 
-/**********************************************************************
- * Shell command execution
+/* SECTION: shell shell
+ *
+ * Pass the string given as argument to a shell. If you have multiple commands
+ * to run, you can use curly barces to describe a multi-lines script, eg::
+ *
+ *         shell {
+ *                 echo begin
+ *                 cat /etc/fstab
+ *                 echo end
+ *         }
+ *
+ * The vtc will fail if the return code of the shell is not 0.
  */
 
 static void
@@ -442,8 +452,15 @@ cmd_shell(CMD_ARGS)
 		    av[1], s, strerror(errno));
 }
 
-/**********************************************************************
- * Shell command execution
+/* SECTION: err_shell err_shell
+ *
+ * This is very similar to the the ``shell`` command, except it takes a first
+ * string as argument before the command::
+ *
+ *         err_shell "foo" "echo foo"
+ *
+ * err_shell expect the shell command to fail AND stdout to match the string,
+ * failing the test case otherwise.
  */
 
 static void
