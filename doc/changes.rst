@@ -11,6 +11,7 @@ Changes since 4.1.2:
 Bugs fixed
 ----------
 
+* 1955_ - 4.1.x sometimes duplicates Age and Accept-Ranges headers
 * 1928_ - req->task members must be set in case we get onto the waitinglist
 * 1918_ - Correctly handle EOF responses with HTTP/1.1
 * 1912_ - Fix (insignificant) memory leak with mal-formed ESI directives.
@@ -23,6 +24,7 @@ Bugs fixed
 * 1855_ - Truncate output if it's wider than 12 chars
 * 1725_ - Revive the backend_conn counter
 
+.. _1955: https://github.com/varnishcache/varnish-cache/issues/1955
 .. _1928: https://github.com/varnishcache/varnish-cache/issues/1928
 .. _1918: https://github.com/varnishcache/varnish-cache/issues/1918
 .. _1912: https://github.com/varnishcache/varnish-cache/issues/1912
