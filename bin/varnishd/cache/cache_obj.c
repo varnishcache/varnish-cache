@@ -235,7 +235,8 @@ ObjIterEnd(struct objcore *oc, void **oix)
  */
 
 static struct storage *
-objallocwithnuke(struct worker *wrk, const struct stevedore *stv, size_t size)
+objallocwithnuke(struct worker *wrk, const struct stevedore *stv,
+    size_t size, int flags)
 {
 	struct storage *st = NULL;
 	unsigned fail;
@@ -243,15 +244,18 @@ objallocwithnuke(struct worker *wrk, const struct stevedore *stv, size_t size)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
-	if (size > cache_param->fetch_maxchunksize)
+	if (size > cache_param->fetch_maxchunksize) {
+		if (!(flags & LESS_MEM_ALLOCED_IS_OK))
+			return (NULL);
 		size = cache_param->fetch_maxchunksize;
+	}
 
 	assert(size <= UINT_MAX);	/* field limit in struct storage */
 
 	for (fail = 0; fail <= cache_param->nuke_limit; fail++) {
 		/* try to allocate from it */
 		AN(stv->alloc);
-		st = STV_alloc(stv, size);
+		st = STV_alloc(stv, size, flags);
 		if (st != NULL)
 			break;
 
@@ -299,7 +303,8 @@ ObjGetSpace(struct worker *wrk, struct objcore *oc, ssize_t *sz, uint8_t **ptr)
 		return (1);
 	}
 
-	st = objallocwithnuke(wrk, oc->stobj->stevedore, *sz);
+	st = objallocwithnuke(wrk, oc->stobj->stevedore, *sz,
+			      LESS_MEM_ALLOCED_IS_OK);
 	if (st == NULL)
 		return (0);
 
@@ -564,9 +569,11 @@ ObjSetattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 	st = o->objstore;
 	switch (attr) {
 	case OA_ESIDATA:
-		o->esidata = objallocwithnuke(wrk, oc->stobj->stevedore, len);
+		o->esidata = objallocwithnuke(wrk, oc->stobj->stevedore,
+		    len, 0);
 		if (o->esidata == NULL)
 			return (NULL);
+		assert(o->esidata->space >= len);
 		o->esidata->len = len;
 		retval  = o->esidata->ptr;
 		break;

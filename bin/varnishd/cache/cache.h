@@ -1051,7 +1051,8 @@ void RFC2616_Vary_AE(struct http *hp);
 /* stevedore.c */
 int STV_NewObject(struct objcore *, struct worker *,
     const char *hint, unsigned len);
-struct storage *STV_alloc(const struct stevedore *, size_t size);
+struct storage *STV_alloc(const struct stevedore *, size_t size, int flags);
+#define LESS_MEM_ALLOCED_IS_OK	1
 void STV_trim(const struct stevedore *, struct storage *, size_t size,
     int move_ok);
 void STV_free(const struct stevedore *, struct storage *st);

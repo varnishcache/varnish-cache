@@ -156,12 +156,18 @@ stv_pick_stevedore(struct vsl_log *vsl, const char **hint)
 /*-------------------------------------------------------------------*/
 
 struct storage *
-STV_alloc(const struct stevedore *stv, size_t size)
+STV_alloc(const struct stevedore *stv, size_t size, int flags)
 {
 	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 
+	if (!(flags & LESS_MEM_ALLOCED_IS_OK)) {
+		if (size > cache_param->fetch_maxchunksize)
+			return (NULL);
+		else
+			return (stv->alloc(stv, size));
+	}
 	if (size > cache_param->fetch_maxchunksize)
 		size = cache_param->fetch_maxchunksize;
 
