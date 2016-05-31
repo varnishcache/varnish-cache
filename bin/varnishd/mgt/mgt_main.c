@@ -247,11 +247,11 @@ usage(void)
 #if defined(HAVE_KQUEUE)
 	fprintf(stderr, FMT, "", "  -W kqueue");
 #endif
-#if defined(HAVE_EPOLL_CTL)
-	fprintf(stderr, FMT, "", "  -W epoll");
-#endif
 #if defined(HAVE_PORT_CREATE)
 	fprintf(stderr, FMT, "", "  -W ports");
+#endif
+#if defined(HAVE_EPOLL_CTL)
+	fprintf(stderr, FMT, "", "  -W epoll");
 #endif
 	fprintf(stderr, FMT, "", "  -W poll");
 
