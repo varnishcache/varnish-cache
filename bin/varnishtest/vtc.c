@@ -507,8 +507,11 @@ cmd_err_shell(CMD_ARGS)
 	VSB_destroy(&vsb);
 }
 
-/**********************************************************************
- * Dump command arguments
+/* SECTION: delay delay
+ *
+ * This is the equivalent of ``sleep`` in shell: the command takes one argument
+ * that is the number of seconds (can be a float) to wait before continuing the
+ * test.
  */
 
 void
