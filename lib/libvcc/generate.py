@@ -812,7 +812,7 @@ vcl_fixed_token(const char *p, const char **q)
 				continue
 			if len(j) == 2:
 				fo.write("\t\tM2('%s', %s);\n" %
-				         (j[1], emit[j]))
+				    (j[1], emit[j]))
 			elif len(j) == 1:
 				fo.write("\t\tM1();\n")
 				need_ret = False
@@ -987,8 +987,8 @@ fo.write("#endif\n")
 
 fo.write("\n#ifdef VCL_MET_MAC\n")
 for i in ll:
-	fo.write("VCL_MET_MAC(%s, %s, %s," % (i[0].lower(), i[0].upper(),
-	                                      i[1]))
+	fo.write("VCL_MET_MAC(%s, %s, %s," %
+	    (i[0].lower(), i[0].upper(), i[1]))
 	p = " (\n\t"
 	for j in sorted(i[2]):
 		fo.write("%s(1U << VCL_RET_%s)" % (p, j.upper()))
@@ -1035,8 +1035,7 @@ def tbl40(a, b):
 fo.write("\n/* VCL Methods */\n")
 n = 1
 for i in returns:
-	fo.write(tbl40("#define VCL_MET_%s" % i[0].upper(),
-	               "(1U << %d)\n" % n))
+	fo.write(tbl40("#define VCL_MET_%s" % i[0].upper(), "(1U << %d)\n" % n))
 	n += 1
 
 fo.write("\n" + tbl40("#define VCL_MET_MAX", "%d\n" % n))
@@ -1152,8 +1151,7 @@ def one_var(nm, spec):
 	else:
 		fo.write('\t    "VRT_r_%s(ctx)",\n' % cnam)
 		if nm == i[0]:
-			fh.write("VCL_" + typ +
-			         " VRT_r_%s(VRT_CTX);\n" % cnam)
+			fh.write("VCL_" + typ + " VRT_r_%s(VRT_CTX);\n" % cnam)
 	restrict(fo, spec[2])
 
 	if len(spec[3]) == 0:
@@ -1240,37 +1238,11 @@ fo = open(join(buildroot, "include/tbl/vrt_stv_var.h"), "w")
 
 file_header(fo)
 
-fo.write("""
-#ifndef VRTSTVTYPE
-#define VRTSTVTYPE(ct)
-#define VRTSTVTYPEX
-#endif
-#ifndef VRTSTVVAR
-#define VRTSTVVAR(nm, vtype, ctype, dval)
-#define VRTSTVVARX
-#endif
-""")
-
-x = dict()
 for i in stv_variables:
 	ct = vcltypes[i[1]]
-	if not ct in x:
-		fo.write("VRTSTVTYPE(" + ct + ")\n")
-		x[ct] = 1
 	fo.write("VRTSTVVAR(" + i[0] + ",\t" + i[1] + ",\t")
 	fo.write(ct + ",\t" + i[2] + ")")
 	fo.write("\n")
-
-fo.write("""
-#ifdef VRTSTVTYPEX
-#undef VRTSTVTYPEX
-#undef VRTSTVTYPE
-#endif
-#ifdef VRTSTVVARX
-#undef VRTSTVVARX
-#undef VRTSTVVAR
-#endif
-""")
 
 fo.close()
 

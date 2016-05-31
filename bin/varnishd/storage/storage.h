@@ -79,9 +79,10 @@ typedef struct storage *sml_alloc_f(const struct stevedore *, size_t size);
 typedef void sml_free_f(struct storage *);
 
 /* Prototypes for VCL variable responders */
-#define VRTSTVTYPE(ct) typedef ct storage_var_##ct(const struct stevedore *);
+#define VRTSTVVAR(nm,vt,ct,def) \
+    typedef ct stv_var_##nm(const struct stevedore *);
 #include "tbl/vrt_stv_var.h"
-#undef VRTSTVTYPE
+#undef VRTSTVVAR
 
 /*--------------------------------------------------------------------*/
 
@@ -112,7 +113,7 @@ struct stevedore {
 	/* Only if LRU is used */
 	struct lru		*lru;
 
-#define VRTSTVVAR(nm, vtype, ctype, dval) storage_var_##ctype *var_##nm;
+#define VRTSTVVAR(nm, vtype, ctype, dval) stv_var_##nm *var_##nm;
 #include "tbl/vrt_stv_var.h"
 #undef VRTSTVVAR
 

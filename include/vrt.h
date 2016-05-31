@@ -31,8 +31,6 @@
  * NB: When this file is changed, lib/libvcc/generate.py *MUST* be rerun.
  */
 
-#include <sys/types.h>
-
 /***********************************************************************
  * Major and minor VRT API versions.
  *
@@ -40,6 +38,9 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
+ *
+ * 4.0:
+ *	VCL_BYTES changed to long long
  * 3.2:
  *	vrt_backend grew .proxy_header field
  *	vrt_ctx grew .sp field.
@@ -52,9 +53,9 @@
  *
  */
 
-#define VRT_MAJOR_VERSION	3U
+#define VRT_MAJOR_VERSION	4U
 
-#define VRT_MINOR_VERSION	2U
+#define VRT_MINOR_VERSION	0U
 
 
 /***********************************************************************/
@@ -83,7 +84,7 @@ typedef const struct vrt_acl *			VCL_ACL;
 typedef const struct director *			VCL_BACKEND;
 typedef const struct vmod_priv *		VCL_BLOB;
 typedef unsigned				VCL_BOOL;
-typedef double					VCL_BYTES;
+typedef long long				VCL_BYTES;
 typedef double					VCL_DURATION;
 typedef const char *				VCL_ENUM;
 typedef const struct gethdr_s *			VCL_HEADER;
@@ -268,7 +269,7 @@ int VRT_acl_match(VRT_CTX, VCL_ACL, VCL_IP);
 
 /* req related */
 
-ssize_t VRT_CacheReqBody(VRT_CTX, size_t maxsize);
+VCL_BYTES VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize);
 
 /* Regexp related */
 void VRT_re_init(void **, const char *);

@@ -474,8 +474,8 @@ VRT_ban_string(VRT_CTX, const char *str)
 	VAV_Free(av);
 }
 
-ssize_t
-VRT_CacheReqBody(VRT_CTX, size_t maxsize)
+VCL_BYTES
+VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);

@@ -38,6 +38,7 @@
 #include "storage/storage.h"
 #include "storage/storage_simple.h"
 
+#include "vrt.h"
 #include "vnum.h"
 
 struct sma_sc {
@@ -147,7 +148,7 @@ sma_free(struct storage *s)
 	free(sma);
 }
 
-static double
+static VCL_BYTES __match_proto__(stv_var_used_space)
 sma_used_space(const struct stevedore *st)
 {
 	struct sma_sc *sma_sc;
@@ -156,7 +157,7 @@ sma_used_space(const struct stevedore *st)
 	return (sma_sc->sma_alloc);
 }
 
-static double
+static VCL_BYTES __match_proto__(stv_var_free_space)
 sma_free_space(const struct stevedore *st)
 {
 	struct sma_sc *sma_sc;
