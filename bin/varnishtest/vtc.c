@@ -543,6 +543,11 @@ static const unsigned long random_expect[NRNDEXPECT] = {
 
 #define RND_NEXT_1K	0x3bdcbe30
 
+/* SECTION: random random
+ *
+ * Check the random number generator.
+ */
+
 static void
 cmd_random(CMD_ARGS)
 {
