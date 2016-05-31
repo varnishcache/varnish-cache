@@ -10,30 +10,30 @@ pkglib_LTLIBRARIES = libvarnish.la
 libvarnish_la_LDFLAGS = $(AM_LDFLAGS) -avoid-version
 
 libvarnish_la_SOURCES = \
-	vav.c \
-	vas.c \
 	binary_heap.c \
-	vsub.c \
+	vas.c \
+	vav.c \
 	vcli_proto.c \
 	vcli_serve.c \
-	vfl.c \
-	vnum.c \
-	vtim.c \
-	vtcp.c \
 	vct.c \
 	version.c \
 	vev.c \
 	vfil.c \
+	vfl.c \
 	vin.c \
 	vlu.c \
 	vmb.c \
+	vnum.c \
 	vpf.c \
 	vre.c \
 	vrnd.c \
 	vsa.c \
 	vsb.c \
 	vsha256.c \
-	vss.c
+	vss.c \
+	vsub.c \
+	vtcp.c \
+	vtim.c
 
 libvarnish_la_CFLAGS = \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
