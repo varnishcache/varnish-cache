@@ -26,33 +26,83 @@
  * SUCH DAMAGE.
  */
 
-/*
- * Synopsis:
- *   -v <varnish-instance>
- *   -d <0|1> (head/tail mode)
- *   -g <grouping-mode>
- *   -q <query>
+/* SECTION: logexpect logexpect
  *
- *   vsl arguments (vsl_arg.c)
- *   -b                   Only display backend records
- *   -c                   Only display client records
- *   -C                   Caseless regular expressions
- *   -i <taglist>         Include tags
- *   -I <[taglist:]regex> Include by regex
- *   -L <limit>           Incomplete transaction limit
- *   -T <seconds>         Transaction end timeout
+ * Reads the VSL and looks for records matching a given specification. It will
+ * process records trying to match the first pattern, and when done, will
+ * continue processing, trying to match the following pattern. If a pattern
+ * isn't matched, the test will fail.
+ * 
+ * logexpect threads are declared this way::
  *
+ *         logexpect lNAME -v <id> [-g <grouping>] [-d 0|1] [-q query] \
+ *                 [vsl arguments] {
+ *                         expect <skip> <vxid> <tag> <regex>
+ *                         expect <skip> <vxid> <tag> <regex>
+ *                         ...
+ *                 } [-start|-wait]
  *
- * logexpect lN -v <id> [-g <grouping>] [-d 0|1] [-q query] [vsl arguments] {
- *    expect <skip> <vxid> <tag> <regex>
- * }
+ * And once declared, you can start them, or wait on them::
  *
- * skip: [uint|*]		Max number of record to skip
- * vxid: [uint|*|=]		vxid to match
- * tag:  [tagname|*|=]		Tag to match against
- * regex:			regular expression to match against (optional)
- * *:				Match anything
- * =:				Match value of last successfully matched record
+ *         logexpect lNAME <-start|-wait>
+ *
+ * With:
+ *
+ * lNAME
+ *         Name the logexpect thread, it must start with 'l'.
+ *
+ * \-v id
+ *         Specify the varnish instance to use (most of the time, id=v1).
+ *
+ * \-g <session|request|vxid|raw
+ *         Decide how records are grouped, see -g in ``man varnishlog`` for more
+ *         information.
+ *
+ * \-d <0|1>
+ *         Start processing log records at the head of the log instead of the
+ *         tail.
+ *
+ * \-q query
+ *         Filter records using a query expression, see ``man vsl-query`` for
+ *         more information.
+ *
+ * \-start
+ *         Start the logexpect thread in the background.
+ * 
+ * \-wait
+ *         Wait for the logexpect thread to finish
+ *
+ * VSL arguments (similar to the varnishlog options):
+ *
+ * \-b|-c
+ *         Process only backend/client records.
+ * 
+ * \-C
+ *         Use caseless regex
+ *
+ * \-i <taglist>
+ *         Include tags
+ *
+ * \-I <[taglist:]regex>
+ *         Include by regex
+ *
+ * \-T <seconds>
+ *         Transaction end timeout
+ *
+ * And the arguments of the specifications lines are:
+ *
+ * skip: [uint|*]
+ *         Max number of record to skip
+ *
+ * vxid: [uint|*|=]
+ *         vxid to match
+ *
+ * tag:  [tagname|*|=]
+ *         Tag to match against
+ *
+ * regex:
+ *         regular expression to match against (optional) ('*' is anything, '='
+ *         is the value of the last matched record)
  */
 
 #include "config.h"
