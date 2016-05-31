@@ -11,6 +11,7 @@ Changes since 4.1.2:
 Bugs fixed
 ----------
 
+* 1928_ - req->task members must be set in case we get onto the waitinglist
 * 1918_ - Correctly handle EOF responses with HTTP/1.1
 * 1912_ - Fix (insignificant) memory leak with mal-formed ESI directives.
 * 1885_ - [vmodtool] Method names should start with a period
@@ -21,6 +22,7 @@ Bugs fixed
 * 1725_ - Revive the backend_conn counter
 * 1883_ - Only accept C identifiers as acls
 
+.. _1928: https://github.com/varnishcache/varnish-cache/issues/1928
 .. _1918: https://github.com/varnishcache/varnish-cache/issues/1918
 .. _1912: https://github.com/varnishcache/varnish-cache/issues/1912
 .. _1885: https://github.com/varnishcache/varnish-cache/issues/1885
