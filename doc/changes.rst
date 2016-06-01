@@ -95,7 +95,7 @@ Varnish Cache 4.1.2-beta1 (2016-02-17)
 * Off-by-one in WS_Reset() fixed.
 
 * "https_scheme" parameter added. Enables graceful handling of compound
-  request URLs with HTTPS scheme.
+  request URLs with HTTPS scheme. (Bug 1847_)
 
 Bugs fixed
 ----------
@@ -117,6 +117,7 @@ Bugs fixed
 .. _1851: https://www.varnish-cache.org/trac/ticket/1851
 .. _1852: https://www.varnish-cache.org/trac/ticket/1852
 .. _1857: https://www.varnish-cache.org/trac/ticket/1857
+.. _1847: https://www.varnish-cache.org/trac/ticket/1847
 
 
 ================================
