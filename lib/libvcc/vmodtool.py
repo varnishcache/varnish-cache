@@ -220,7 +220,7 @@ def vtype(txt):
 	if t != "ENUM":
 		return ct, r
 	assert r[0] == '{'
-	e = r[1:].split('}', maxsplit=1)
+	e = r[1:].split('}', 1)
 	r = e[1].lstrip()
 	e = e[0].split(',')
 	ct.spec = []
@@ -268,7 +268,7 @@ class prototype(object):
 			a2 = l.count(")")
 			if a1 > 0 and a1 == a2:
 				break
-			n = st.doc.split("\n", maxsplit=1)
+			n = st.doc.split("\n", 1)
 			l += n[0]
 			st.doc = n[1]
 
@@ -396,7 +396,7 @@ class stanza(object):
 
 class s_module(stanza):
 	def parse(self):
-		a = self.line[1].split(maxsplit=2)
+		a = self.line[1].split(None, 2)
 		self.vcc.modname = a[0]
 		self.vcc.mansection = a[1]
 		self.vcc.moddesc = a[2]
@@ -440,12 +440,12 @@ class s_module(stanza):
 		for i in self.vcc.contents[1:]:
 			j = i.rstlbl
 			if j != None:
-				l.append([j.split("_", maxsplit=1)[1], j])
+				l.append([j.split("_", 1)[1], j])
 			if i.methods == None:
 				continue
 			for x in i.methods:
 				j = x.rstlbl
-				l.append([j.split("_", maxsplit=1)[1], j])
+				l.append([j.split("_", 1)[1], j])
 
 		l.sort()
 		for i in l:
@@ -657,11 +657,11 @@ class vcc(object):
 		a = open(self.inputfile, "r").read()
 		a = a.split("\n$")
 		for i in range(len(a)):
-			b = a[i].split("\n", maxsplit=1)
+			b = a[i].split("\n", 1)
 			if i == 0:
 				self.copyright = a[0]
 				continue
-			c = b[0].split(maxsplit=1)
+			c = b[0].split(None, 1)
 			if i == 1:
 				if c[0] != "Module":
 					err("$Module must be first stanze")
