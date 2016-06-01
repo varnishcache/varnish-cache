@@ -36,6 +36,7 @@ Read the vmod.vcc file (inputvcc) and produce:
 # This script should work with both Python 2 and Python 3.
 from __future__ import print_function
 
+import os
 import sys
 import re
 import optparse
@@ -45,6 +46,8 @@ from os import fdopen, rename, unlink
 from os.path import dirname, exists, join, realpath
 from pprint import pprint, pformat
 from tempfile import mkstemp
+
+rstfmt=False
 
 ctypes = {
 	'ACL':		"VCL_ACL",
@@ -85,9 +88,16 @@ def write_c_file_warning(fo):
 def write_rst_file_warning(fo):
 	write_file_warning(fo, "..", "..", "..")
 
+def write_rst_hdr(fo, s, below="-", above=None):
+	if above != None:
+		fo.write(above * len(s) + "\n")
+	fo.write(s + "\n")
+	if below != None:
+		fo.write(below * len(s) + "\n")
+
 #######################################################################
 
-def lwrap(s, width=72):
+def lwrap(s, width=64):
 	"""
 	Wrap a C-prototype like string into a number of lines.
 	"""
@@ -109,6 +119,11 @@ def lwrap(s, width=72):
 def quote(s):
 	return s.replace("\"", "\\\"")
 
+def indent(p,n):
+	n = len(p.expandtabs()) + n
+	p = "\t" * int(n / 8)
+	p += " " * int(n % 8)
+	return p
 
 #######################################################################
 
@@ -130,840 +145,691 @@ class FormatError(Exception):
 		self.details = details
 		Exception.__init__(self)
 
+#######################################################################
+
+def err(str, warn=True):
+	if opts.strict or not warn:
+		print("ERROR: " + str, file = sys.stderr)
+		exit(1)
+		raise FormatError(str, "")
+	else:
+		print("WARNING: " + str, file = sys.stderr)
+
+def fmt_cstruct(fo, mn, x):
+	a = "\ttd_" + mn + "_" + x
+	while len(a.expandtabs()) < 40:
+		a += "\t"
+	fo.write("%s*%s;\n" % (a, x))
 
 #######################################################################
 
-class Token(object):
-	def __init__(self, ln, ch, tokstr):
-		self.ln = ln
-		self.ch = ch
-		self.str = tokstr
+class ctype(object):
+	def __init__(self, vt, ct):
+		self.vt = vt
+		self.ct = ct
+		self.nm = None
+		self.defval = None
+		self.spec = None
 
-	def __repr__(self):
-		return "<@%d \"%s\">" % (self.ln, self.str)
+	def __str__(self):
+		s = "<" + self.vt
+		if self.nm != None:
+			s += " " + self.nm
+		if self.defval != None:
+			s += " VAL=" + self.defval
+		if self.spec != None:
+			s += " SPEC=" + str(self.spec)
+		return s + ">"
+
+	def vcl(self):
+		if self.vt == "STRING_LIST":
+			return "STRING"
+		if self.spec == None:
+			return self.vt
+		return self.vt + " {" + ",".join(self.spec) + "}"
+
+	def specstr(self, fo, p):
+		fo.write(p + '"' + self.vt)
+		fo.write('\\0"\n')
+		p = indent(p, 4)
+		if self.spec != None:
+			fo.write(p + '"\\1"\n')
+			p = indent(p, 4)
+			for i in self.spec:
+				fo.write(p + '"' + i + '\\0"\n')
+			p = indent(p, -4)
+			# This terminating \1 is necessary to ensure that
+			# a prototype always ends with three \0's
+			fo.write(p + '"\\1\\0"\n')
+		if self.nm != None:
+			fo.write(p + '"\\2" "' + self.nm + '\\0"\n')
+		if self.defval != None:
+			fo.write(p + '"\\3" "' + quote(self.defval) + '\\0"\n')
+
+def vtype(txt):
+	j = len(txt)
+	for i in (',', ' ', '\n', '\t'):
+		x = txt.find(i)
+		if x > 0:
+			j = min(j, x)
+	t = txt[:j]
+	r = txt[j:].lstrip()
+	if t not in ctypes:
+		err("Did not recognize type <%s>" % txt)
+	ct = ctype(t, ctypes[t])
+	if t != "ENUM":
+		return ct, r
+	assert r[0] == '{'
+	e = r[1:].split('}', maxsplit=1)
+	r = e[1].lstrip()
+	e = e[0].split(',')
+	ct.spec = []
+	for i in e:
+		ct.spec.append(i.strip())
+	return ct, r
+
+def arg(txt):
+	a,s = vtype(txt)
+	if len(s) == 0 or s[0] == ',':
+		return a,s
+
+	i = s.find('=')
+	j = s.find(',')
+	if j >= 0 and j < i:
+		i = -1
+	if i < 0:
+		i = s.find(',')
+		if i < 0:
+			i = len(s)
+		a.nm = s[:i]
+		s = s[i:]
+		return a, s
+
+	a.nm = s[:i]
+	s = s[i+1:]
+	if s[0] == '"' or s[0] == "'":
+		m = re.match("(['\"]).*?(\\1)", s)
+		if not m:
+			err("Unbalanced quote")
+		a.defval = s[:m.end()]
+		s = s[m.end():]
+	else:
+		i = s.find(',')
+		a.defval = s[:i]
+		s = s[i:]
+
+	return a,s
+
+class prototype(object):
+	def __init__(self, st, retval=True, prefix=""):
+		l = st.line[1]
+		while True:
+			a1 = l.count("(")
+			a2 = l.count(")")
+			if a1 > 0 and a1 == a2:
+				break
+			n = st.doc.split("\n", maxsplit=1)
+			l += n[0]
+			st.doc = n[1]
+
+		if retval:
+			self.retval,s = vtype(l)
+		else:
+			self.retval = None
+			s = l
+		i = s.find("(")
+		assert i > 0
+		self.name = prefix + s[:i].strip()
+		s = s[i:].strip()
+		assert s[0] == "("
+		assert s[-1] == ")"
+		s = s[1:-1]
+		self.args = []
+		while len(s) > 0:
+			a,s = arg(s)
+			self.args.append(a)
+			if len(s) == 0:
+				break;
+			assert s[0] == ','
+			s = s[1:].lstrip()
+
+	def cname(self):
+		return self.name.replace(".", "_")
+
+	def vcl_proto(self, short):
+		s = ""
+		if self.retval != None:
+			s += self.retval.vcl() + " "
+		s += self.name + "("
+		l = []
+		for i in self.args:
+			t = i.vcl()
+			if not short:
+				if i.nm != None:
+					t += " " + i.nm
+				if i.defval != None:
+					t += "=" + i.defval
+			l.append(t)
+		s += ", ".join(l) + ")"
+		return s
+
+	def c_ret(self):
+		return self.retval.ct
+
+	def c_args(self):
+		if len(self.args) == 0:
+			return ""
+		l = [""]
+		for i in self.args:
+			l.append(i.ct)
+		return ", ".join(l)
+
+	def specstr(self, fo, p):
+		p = indent(p, 4)
+		if self.retval == None:
+			fo.write(p + '"VOID\\0"\n')
+		else:
+			self.retval.specstr(fo, p)
+		if self.args != None:
+			p = indent(p, 4)
+			for i in self.args:
+				i.specstr(fo, p)
+			p = indent(p, -4)
+		fo.write(p + '"\\0"\n')
 
 #######################################################################
 
-class Vmod(object):
-	def __init__(self, nam, dnam, sec):
-		if not is_c_name(nam):
-			raise ParseError("Module name '%s' is illegal" % nam)
-		self.nam = nam
-		self.dnam = dnam
-		self.sec = sec
-		self.event = None
-		self.funcs = list()
-		self.objs = list()
-		self.doc_str = []
-		self.doc_order = []
+class stanza(object):
+	def __init__(self, l0, doc, vcc):
+		self.line = l0
+		if len(doc) == 1:
+			self.doc = doc[0]
+		else:
+			self.doc = ""
+		self.vcc = vcc
+		self.rstlbl = None
+		self.methods = None
+		self.proto = None
+		self.parse()
 
-	def set_event(self, nam):
-		if self.event is not None:
-			raise ParseError("Module %s already has $Event" %
-			    self.nam)
-		if not is_c_name(nam):
-			raise ParseError("$Event name '%s' is illegal" % nam)
-		self.event = nam
+	def dump(self):
+		print(type(self), self.line)
 
-	def add_func(self, fn):
-		self.funcs.append(fn)
-		self.doc_order.append(fn)
+	def rstfile(self, fo, man):
+		if self.rstlbl != None:
+			fo.write(".. _" + self.rstlbl + ":\n\n")
 
-	def add_obj(self, o):
-		self.objs.append(o)
-		self.doc_order.append(o)
+		self.rsthead(fo, man)
+		self.rstmid(fo, man)
+		self.rsttail(fo, man)
 
-	def c_proto(self, fo):
-		for o in self.objs:
-			fo.write("/* Object %s */\n" % o.nam)
-			o.fixup(self.nam)
-			o.c_proto(fo)
+	def rsthead(self, fo, man):
+		if self.proto == None:
+			return
+		if rstfmt:
+			s = self.proto.vcl_proto(short=False)
+			write_rst_hdr(fo, s, '-')
+		else:
+			write_rst_hdr(fo, self.proto.name, '-')
+			s = self.proto.vcl_proto(short=False)
+			fo.write("\n::\n\n\t%s\n" % s)
+
+	def rstmid(self, fo, man):
+		fo.write(self.doc + "\n")
+
+	def rsttail(self, fo, man):
+		return
+
+	def hfile(self, fo):
+		return
+
+	def cstruct(self, fo):
+		return
+
+	def cstruct_init(self, fo):
+		return
+
+	def specstr(self, fo):
+		return
+
+#######################################################################
+
+class s_module(stanza):
+	def parse(self):
+		a = self.line[1].split(maxsplit=2)
+		self.vcc.modname = a[0]
+		self.vcc.mansection = a[1]
+		self.vcc.moddesc = a[2]
+		self.rstlbl = "vmod_%s(%s)" % (
+		    self.vcc.modname,
+		    self.vcc.mansection
+		)
+		self.vcc.contents.append(self)
+
+	def rsthead(self, fo, man):
+
+		write_rst_hdr(fo, "vmod_" + self.vcc.modname, "=", "=")
+		fo.write("\n")
+
+		write_rst_hdr(fo, self.vcc.moddesc, "-", "-")
+
+		fo.write("\n")
+		fo.write(":Manual section: " + self.vcc.mansection + "\n")
+
+		fo.write("\n")
+		write_rst_hdr(fo, "SYNOPSIS", "=")
+		fo.write("\n")
+		fo.write('import %s [from "path"] ;\n' % self.vcc.modname)
+		fo.write("\n")
+
+	def rsttail(self, fo, man):
+
+		write_rst_hdr(fo, "CONTENTS", "=")
+		fo.write("\n")
+
+		if man:
+			for i in self.vcc.contents[1:]:
+				if i.rstlbl == None:
+					continue
+				fo.write("* %s\n" %
+				    i.proto.vcl_proto(short=True))
 			fo.write("\n")
-		if len(self.funcs) > 0:
-			fo.write("/* Functions */\n")
-		for f in self.funcs:
-			for i in lwrap(f.c_proto()):
+			return
+
+		l = []
+		for i in self.vcc.contents[1:]:
+			j = i.rstlbl
+			if j != None:
+				l.append([j.split("_", maxsplit=1)[1], j])
+			if i.methods == None:
+				continue
+			for x in i.methods:
+				j = x.rstlbl
+				l.append([j.split("_", maxsplit=1)[1], j])
+
+		l.sort()
+		for i in l:
+			fo.write("* :ref:`%s`\n" % i[1])
+		fo.write("\n")
+
+class s_event(stanza):
+	def parse(self):
+		self.event_func = self.line[1]
+		self.vcc.contents.append(self)
+
+	def rstfile(self, fo, man):
+		return
+
+	def hfile(self, fo):
+		fo.write("#ifdef VCL_MET_MAX\n")
+		fo.write("vmod_event_f %s;\n" % self.event_func)
+		fo.write("#endif\n")
+
+	def cstruct(self, fo):
+		fo.write("\tvmod_event_f\t\t\t*_event;\n")
+
+	def cstruct_init(self, fo):
+		fo.write("\t%s,\n" % self.event_func)
+
+	def specstr(self, fo):
+		fo.write('\t"$EVENT\\0"\n\t    "Vmod_%s_Func._event",\n' %
+		    self.vcc.modname)
+
+class s_function(stanza):
+	def parse(self):
+		self.proto = prototype(self)
+		self.rstlbl = "func_" + self.proto.name
+		self.vcc.contents.append(self)
+
+	def hfile(self, fo):
+		fn = "vmod_" + self.proto.name
+		s = "%s %s(VRT_CTX" % (self.proto.c_ret(), fn)
+		s += self.proto.c_args() + ");"
+		for i in lwrap(s):
+			fo.write(i + "\n")
+
+	def cfile(self, fo):
+		fn = "td_" + self.vcc.modname + "_" + self.proto.name
+		s = "typedef %s %s(VRT_CTX" % (self.proto.c_ret(), fn)
+		s += self.proto.c_args() + ");"
+		for i in lwrap(s):
+			fo.write(i + "\n")
+
+	def cstruct(self, fo):
+		fmt_cstruct(fo, self.vcc.modname, self.proto.cname())
+
+	def cstruct_init(self, fo):
+		fo.write("\tvmod_" + self.proto.cname() + ",\n")
+
+	def specstr(self, fo):
+		fo.write('\t"$FUNC\\0"\n\t    "%s.%s\\0"\n' %
+		    (self.vcc.modname, self.proto.name))
+		fo.write('\t\t"Vmod_%s_Func.%s\\0"\n' %
+		    (self.vcc.modname, self.proto.cname()))
+		self.proto.specstr(fo, "\t\t")
+
+		fo.write('\t"\\0",\n\n')
+
+class s_object(stanza):
+	def parse(self):
+		self.proto = prototype(self, retval=False)
+		self.rstlbl = "obj_" + self.proto.name
+		self.vcc.contents.append(self)
+		self.methods = []
+
+	def rsthead(self, fo, man):
+		if rstfmt:
+			s = self.proto.vcl_proto(short=False)
+			write_rst_hdr(fo, "new OBJ = " + s, '=')
+		else:
+			write_rst_hdr(fo, self.proto.name, '-')
+			s = "new OBJ = " + self.proto.vcl_proto(short=False)
+			fo.write("\n::\n\n\t%s\n" % s)
+
+		fo.write(self.doc + "\n")
+
+		for i in self.methods:
+			i.rstfile(fo, man)
+
+	def rstmid(self, fo, man):
+		return
+
+	def chfile(self, fo, h):
+		sn = "vmod_" + self.vcc.modname + "_" + self.proto.name
+		fo.write("struct %s;\n" % sn)
+
+		if h:
+			def p(x):
+				return x + " vmod_"
+		else:
+			def p(x):
+				return "typedef " + x + \
+				    " td_%s_" % self.vcc.modname
+
+		s = p("VCL_VOID") + "%s__init(VRT_CTX, " % self.proto.name
+		s += "struct %s **, const char *" % sn
+		s += self.proto.c_args() + ");"
+		for i in lwrap(s):
+			fo.write(i + "\n")
+
+		s = p("VCL_VOID")
+		s += "%s__fini(struct %s **);" % (self.proto.name, sn)
+		for i in lwrap(s):
+			fo.write(i + "\n")
+
+		for i in self.methods:
+			cn = i.proto.cname()
+			s = p(i.proto.c_ret())
+			s += "%s(VRT_CTX, struct %s *" % (cn, sn)
+			s += i.proto.c_args() + ");"
+			for i in lwrap(s):
 				fo.write(i + "\n")
-		if self.event is not None:
-			fo.write("\n")
-			fo.write("#ifdef VCL_MET_MAX\n")
-			fo.write("vmod_event_f " + self.event + ";\n")
-			fo.write("#endif\n")
-
-	def c_typedefs_(self):
-		l = list()
-		for o in self.objs:
-			for t in o.c_typedefs(self.nam):
-				l.append(t)
-			l.append("")
-		if len(self.funcs) > 0:
-			l.append("/* Functions */")
-		for f in self.funcs:
-			l.append(f.c_typedef(self.nam))
-		l.append("")
-		return l
-
-	def c_typedefs(self, fo):
-		for i in self.c_typedefs_():
-			for j in lwrap(i):
-				fo.write(j + "\n")
-
-	def c_vmod(self, fo):
-		cs = self.c_struct()
-		fo.write(cs + ';\n')
-
-		vfn = 'Vmod_%s_Func' % self.nam
-
-		fo.write("/*lint -esym(754, %s::*) */\n" % vfn)
-		fo.write("\nstatic const struct %s Vmod_Func = " % vfn)
-		fo.write(self.c_initializer())
 		fo.write("\n")
 
-		fo.write("\nstatic const char Vmod_Proto[] =\n")
-		for t in self.c_typedefs_():
-			for i in lwrap(t, width=64):
-				fo.write('\t"' + i + '\\n"\n')
-		fo.write('\t"\\n"\n')
-		for i in (cs + ";").split("\n"):
-			fo.write('\n\t"' + i + '\\n"')
-		fo.write('\n\t"static struct ' + vfn + " " + vfn + ';";\n\n')
+	def hfile(self, fo):
+		self.chfile(fo, True)
 
-		fo.write(self.c_strspec())
+	def cfile(self, fo):
+		self.chfile(fo, False)
 
+	def cstruct(self, fo):
+		td = "td_" + self.vcc.modname + "_" + self.proto.name + "_"
+		fmt_cstruct(fo, self.vcc.modname, self.proto.name + "__init")
+		fmt_cstruct(fo, self.vcc.modname, self.proto.name + "__fini")
+		for i in self.methods:
+			i.cstruct(fo)
+
+	def cstruct_init(self, fo):
+		p = "\tvmod_"
+		fo.write(p + self.proto.name + "__init,\n")
+		fo.write(p + self.proto.name + "__fini,\n")
+		for i in self.methods:
+			i.cstruct_init(fo)
 		fo.write("\n")
 
-		nm = "Vmod_" + self.nam + "_Data"
-		fo.write("/*lint -esym(759, %s) */\n" % nm)
-		fo.write("const struct vmod_data " + nm + " = {\n")
-		fo.write("\t.vrt_major = VRT_MAJOR_VERSION,\n")
-		fo.write("\t.vrt_minor = VRT_MINOR_VERSION,\n")
-		fo.write("\t.name = \"%s\",\n" % self.nam)
-		fo.write("\t.func = &Vmod_Func,\n")
-		fo.write("\t.func_len = sizeof(Vmod_Func),\n")
-		fo.write("\t.proto = Vmod_Proto,\n")
-		fo.write("\t.spec = Vmod_Spec,\n")
-		fo.write("\t.abi = VMOD_ABI_Version,\n")
+	def specstr(self, fo):
 
+		fo.write('\t"$OBJ\\0"\n\t    "%s.%s\\0"\n' %
+		    (self.vcc.modname, self.proto.name))
+
+		fo.write('\t\t"struct vmod_%s_%s\\0"\n' %
+		    (self.vcc.modname, self.proto.name))
+		fo.write("\n")
+
+		fo.write('\t\t"Vmod_%s_Func.%s__init\\0"\n' %
+		    (self.vcc.modname, self.proto.name))
+		self.proto.specstr(fo, '\t\t')
+		fo.write('\t\t"\\0"\n\n')
+
+		fo.write('\t\t"Vmod_%s_Func.%s__fini\\0"\n' %
+		    (self.vcc.modname, self.proto.name))
+		fo.write('\t\t    "VOID\\0"\n')
+		fo.write('\t\t    "\\0"\n')
+		fo.write('\t\t"\\0"\n\n')
+
+		for i in self.methods:
+			i.specstr(fo)
+
+		fo.write('\t"\\0",\n\n')
+
+	def dump(self):
+		super(s_object, self).dump()
+		for i in self.methods:
+			i.dump()
+
+class s_method(stanza):
+	def parse(self):
+		p = self.vcc.contents[-1]
+		assert type(p) == s_object
+		self.proto = prototype(self, prefix=p.proto.name)
+		self.rstlbl = "func_" + self.proto.name
+		p.methods.append(self)
+
+	def cstruct(self, fo):
+		fmt_cstruct(fo, self.vcc.modname, self.proto.cname())
+
+	def cstruct_init(self, fo):
+		fo.write('\t' + "vmod_" + self.proto.cname() + ",\n")
+
+	def specstr(self, fo):
+		fo.write('\t\t"%s.%s\\0"\n' %
+		    (self.vcc.modname, self.proto.name))
+		fo.write('\t\t    "Vmod_%s_Func.%s\\0"\n' %
+		    (self.vcc.modname, self.proto.cname()))
+		self.proto.specstr(fo, '\t\t    ')
+		fo.write('\t\t"\\0"\n\n')
+
+#######################################################################
+
+class vcc(object):
+	def __init__(self, inputvcc, rstdir, outputprefix):
+		self.inputfile = inputvcc
+		self.rstdir = rstdir
+		self.pfx = outputprefix
+		self.contents = []
+		self.commit_files = []
+
+	def commit(self):
+		for i in self.commit_files:
+			os.rename(i + ".tmp", i)
+
+	def parse(self):
+		a = open(self.inputfile, "r").read()
+		a = a.split("\n$")
+		for i in range(len(a)):
+			b = a[i].split("\n", maxsplit=1)
+			if i == 0:
+				self.copyright = a[0]
+				continue
+			c = b[0].split(maxsplit=1)
+			if i == 1:
+				if c[0] != "Module":
+					err("$Module must be first stanze")
+			if c[0] == "Module":
+				s_module(c, b[1:], self)
+			elif c[0] == "Event":
+				s_event(c, b[1:], self)
+			elif c[0] == "Function":
+				s_function(c, b[1:], self)
+			elif c[0] == "Object":
+				s_object(c, b[1:], self)
+			elif c[0] == "Method":
+				s_method(c, b[1:], self)
+			else:
+				err("Unknown stanze $%s" % c[0])
+
+	def rst_copyright(self, fo):
+		write_rst_hdr(fo, "COPYRIGHT", "=")
+		fo.write("\n::\n\n")
+		a = self.copyright
+		a = a.replace("\n#", "\n ")
+		if a[:2] == "#\n":
+			a = a[2:]
+		if a[:3] == "#-\n":
+			a = a[3:]
+		fo.write(a + "\n")
+
+	def rstfile(self, man=False):
+		fn = self.rstdir + "/vmod_" + self.modname
+		if man:
+			fn += ".man"
+		fn += ".rst"
+		self.commit_files.append(fn)
+		fo = open(fn + ".tmp", "w")
+		write_rst_file_warning(fo)
+		fo.write(".. role:: ref(emphasis)\n\n")
+
+		for i in self.contents:
+			i.rstfile(fo, man)
+
+		self.rst_copyright(fo)
+
+		fo.close()
+
+	def hfile(self):
+		fn = self.rstdir + "/" + self.pfx + ".h"
+		self.commit_files.append(fn)
+		fo = open(fn + ".tmp", "w")
+		write_c_file_warning(fo)
+		fo.write("struct vmod_priv;\n")
+		fo.write("\n")
+		fo.write("extern const struct vmod_data Vmod_debug_Data;\n")
+		fo.write("\n")
+
+		for j in self.contents:
+			j.hfile(fo)
+		fo.close()
+
+	def cstruct(self, fo, csn):
+
+		fo.write("\n%s {\n" % csn)
+		for j in self.contents:
+			j.cstruct(fo)
+		fo.write("};\n")
+
+	def cstruct_init(self, fo, csn):
+		fo.write("\nstatic const %s Vmod_Func = {\n" % csn)
+		for j in self.contents:
+			j.cstruct_init(fo)
+		fo.write("};\n")
+
+	def specstr(self, fo):
+		fo.write("\n/*lint -save -e786 -e840 */\n")
+		fo.write("static const char * const Vmod_Spec[] = {\n")
+
+		for j in self.contents:
+			j.specstr(fo)
+		fo.write("\t0\n")
+		fo.write("};\n")
+		fo.write("/*lint -restore */\n")
+
+	def api(self, fo):
+		fo.write("\n/*lint -esym(759, Vmod_debug_Data) */\n")
+		fo.write("const struct vmod_data Vmod_%s_Data = {\n" %
+		    self.modname)
+		fo.write("\t.vrt_major =\tVRT_MAJOR_VERSION,\n")
+		fo.write("\t.vrt_minor =\tVRT_MINOR_VERSION,\n")
+		fo.write('\t.name =\t\t"%s",\n' % self.modname)
+		fo.write('\t.func =\t\t&Vmod_Func,\n')
+		fo.write('\t.func_len =\tsizeof(Vmod_Func),\n')
+		fo.write('\t.proto =\tVmod_Proto,\n')
+		fo.write('\t.spec =\t\tVmod_Spec,\n')
+		fo.write('\t.abi =\t\tVMOD_ABI_Version,\n')
 		# NB: Sort of hackish:
 		# Fill file_id with random stuff, so we can tell if
 		# VCC and VRT_Vmod_Init() dlopens the same file
 		#
-		fo.write("\t.file_id = \"")
+		fo.write("\t.file_id =\t\"")
 		for i in range(32):
 			fo.write("%c" % random.randint(0x40, 0x5a))
 		fo.write("\",\n")
 		fo.write("};\n")
 
-	def c_initializer(self):
-		s = '{\n'
-		for o in self.objs:
-			s += o.c_initializer()
+	def cfile(self):
+		fn = self.rstdir + "/" + self.pfx + ".c"
+		self.commit_files.append(fn)
+		fo = open(fn + ".tmp", "w")
+		write_c_file_warning(fo)
 
-		s += "\n\t/* Functions */\n"
-		for f in self.funcs:
-			s += f.c_initializer()
+		fn2 = fn + ".tmp2"
 
-		s += "\n\t/* Init/Fini */\n"
-		if self.event is not None:
-			s += "\t" + self.event + ",\n"
-		s += "};"
+		for i in ["config", "vcl", "vrt", "vcc_if", "vmod_abi"]:
+			fo.write('#include "%s.h"\n' % i)
 
-		return s
-
-	def c_struct(self):
-		s = 'struct Vmod_' + self.nam + '_Func {\n'
-		for o in self.objs:
-			s += o.c_struct(self.nam)
-
-		s += "\n\t/* Functions */\n"
-		for f in self.funcs:
-			s += f.c_struct(self.nam)
-
-		s += "\n\t/* Init/Fini */\n"
-		if self.event is not None:
-			s += "\tvmod_event_f\t*_event;\n"
-		s += '}'
-		return s
-
-	def c_strspec(self):
-		s = "/*lint -save -e786 -e840 */\n"
-		s += "static const char * const Vmod_Spec[] = {\n"
-
-		for o in self.objs:
-			s += o.c_strspec(self.nam) + ",\n\n"
-
-		if len(self.funcs) > 0:
-			s += "\t/* Functions */\n"
-		for f in self.funcs:
-			s += f.c_strspec(self.nam) + ',\n\n'
-
-		if self.event is not None:
-			s += "\t/* Init/Fini */\n"
-			s += '\t"$EVENT\\0Vmod_' + self.nam + '_Func._event",\n'
-
-		s += "\t0\n"
-		s += "};\n"
-		s += "/*lint -restore */\n"
-		return s
-
-	def doc(self, l):
-		self.doc_str.append(l)
-
-	def doc_dump(self, fo, suf):
-		fo.write(".. role:: ref(emphasis)\n\n")
-		i = "vmod_" + self.nam
-		fo.write(".. _" + i + "(" + self.sec + "):\n\n")
-		fo.write("=" * len(i) + "\n")
-		fo.write(i + "\n")
-		fo.write("=" * len(i) + "\n")
 		fo.write("\n")
-		i = self.dnam
-		fo.write("-" * len(i) + "\n")
-		fo.write(i + "\n")
-		fo.write("-" * len(i) + "\n")
-		fo.write("\n")
-		fo.write(":Manual section: %s\n" % self.sec)
-		fo.write("\n")
-		fo.write("SYNOPSIS\n")
-		fo.write("========\n")
-		fo.write("\n")
-		fo.write("import %s [from \"path\"] ;\n" % self.nam)
-		fo.write("\n")
-		for i in self.doc_str:
-			fo.write(i + "\n")
-		fo.write("CONTENTS\n")
-		fo.write("========\n")
-		fo.write("\n")
-		l = []
-		for i in self.funcs:
-			l.append(i.doc_idx(suf))
-		for i in self.objs:
-			l += i.doc_idx(suf)
-		l.sort()
-		for i in l:
-			fo.write("* " + i[1] + "\n")
-		fo.write("\n")
-		for i in self.doc_order:
-			i.doc_dump(fo)
+
+		fx = open(fn2, "w")
+
+		for i in self.contents:
+			if type(i) == s_object:
+				i.cfile(fo)
+				i.cfile(fx)
+
+		fx.write("/* Functions */\n")
+		for i in self.contents:
+			if type(i) == s_function:
+				i.cfile(fo)
+				i.cfile(fx)
+
+		csn = "Vmod_%s_Func" % self.modname
+
+		self.cstruct(fo, "struct " + csn)
+
+		self.cstruct(fx, "struct " + csn)
+
+		fo.write("\n/*lint -esym(754, Vmod_debug_Func::*) */\n")
+		self.cstruct_init(fo, "struct " + csn)
+
+		fx.close()
+
+		fo.write("\nstatic const char Vmod_Proto[] =\n")
+		fi = open(fn2)
+		for i in fi:
+			fo.write('\t"%s\\n"\n' % i.rstrip())
+		fi.close()
+		fo.write('\t"static struct %s %s;";\n' % (csn, csn))
+
+		os.remove(fn2)
+
+		self.specstr(fo)
+
+		self.api(fo)
+
+		fo.close()
 
 #######################################################################
 
-class Func(object):
-	def __init__(self, nam, retval, al):
-		#if not is_c_name(nam):
-		#	raise Exception("Func name '%s' is illegal" % nam)
-		if retval not in ctypes:
-			raise TypeError(
-			    "Return type '%s' not a valid type", retval)
-		self.nam = nam
-		self.cnam = nam.replace(".", "_")
-		self.al = al
-		self.retval = retval
-		self.pfx = None
-		self.doc_str = []
-
-	def __repr__(self):
-		return "<FUNC %s %s>" % (self.retval, self.nam)
-
-	def set_pfx(self, s):
-		self.pfx = s
-
-	def c_proto(self, fini=False):
-		s = ctypes[self.retval] + " vmod_" + self.cnam + "("
-		p = ""
-		if not fini:
-			s += "VRT_CTX"
-			p = ", "
-		if self.pfx is not None:
-			s += p + self.pfx
-			p = ", "
-		for a in self.al:
-			s += p + ctypes[a.typ]
-			p = ", "
-		s += ");"
-		return s
-
-	def c_typedef(self, modname, fini=False):
-		s = "typedef "
-		s += ctypes[self.retval]
-		s += " td_" + modname + "_" + self.cnam + "("
-		p = ""
-		if not fini:
-			s += "VRT_CTX"
-			p = ", "
-		if self.pfx is not None:
-			s += p + self.pfx
-			p = ", "
-		for a in self.al:
-			s += p + ctypes[a.typ]
-			p = ", "
-		s += ");"
-		return s
-
-	def c_struct(self, modname):
-		s = '\ttd_' + modname + "_" + self.cnam
-		if len(s.expandtabs()) >= 40:
-			s += "\n\t\t\t\t\t"
-		else:
-			while len(s.expandtabs()) < 40:
-				s += "\t"
-		s += "*" + self.cnam + ";\n"
-		return s
-
-	def c_initializer(self):
-		return "\tvmod_" + self.cnam + ",\n"
-
-	def c_strspec(self, modnam, pfx="\t"):
-		s = pfx + '"' + modnam + "." + self.nam + '\\0"\n'
-		s += pfx + '"'
-		s += "Vmod_" + modnam + "_Func." + self.cnam + '\\0"\n'
-		s += pfx + '    "' + self.retval + '\\0"\n'
-		for a in self.al:
-			s += pfx + '\t"' + a.c_strspec() + '"\n'
-		s += pfx + '"\\0"'
-		return s
-
-	def doc(self, l):
-		self.doc_str.append(l)
-
-	def doc_proto(self):
-		s = self.retval + " " + self.nam + "("
-		d = ""
-		for i in self.al:
-			s += d + i.typ
-			d = ", "
-		s += ")"
-		return s
-
-	def doc_idx(self, suf):
-		if suf == "":
-			return (self.nam, ":ref:`func_" + self.nam + "`")
-		else:
-			return (self.nam, self.doc_proto())
-
-	def doc_dump(self, fo):
-		s = self.doc_proto()
-		fo.write(".. _func_" + self.nam + ":\n\n")
-		fo.write(s + "\n")
-		fo.write("-" * len(s) + "\n")
-		fo.write("\n")
-		fo.write("Prototype\n")
-		s = "\t" + self.retval + " " + self.nam + "("
-		d = ""
-		for i in self.al:
-			s += d + i.typ
-			if i.nam is not None:
-				s += " " + i.nam
-			d = ", "
-		fo.write(s + ")\n")
-		for i in self.doc_str:
-			fo.write(i + "\n")
-
-
-#######################################################################
-
-class Obj(object):
-	def __init__(self, nam):
-		self.nam = nam
-		self.init = None
-		self.fini = None
-		self.methods = list()
-		self.doc_str = []
-		self.st = None
-
-	def fixup(self, modnam):
-		assert self.nam is not None
-		self.st = "struct vmod_" + modnam + "_" + self.nam
-		self.init.set_pfx(self.st + " **, const char *")
-		self.fini.set_pfx(self.st + " **")
-		for m in self.methods:
-			m.set_pfx(self.st + " *")
-
-	def set_init(self, f):
-		self.init = f
-		self.fini = Func(f.nam, "VOID", [])
-		self.init.cnam += "__init"
-		self.fini.cnam += "__fini"
-
-	def add_method(self, m):
-		self.methods.append(m)
-
-	def c_typedefs(self, modnam):
-		l = list()
-		l.append("/* Object " + self.nam + " */")
-		l.append(self.st + ";")
-		l.append(self.init.c_typedef(modnam) + "")
-		l.append(self.fini.c_typedef(modnam, fini=True) + "")
-		for m in self.methods:
-			l.append(m.c_typedef(modnam) + "")
-		return l
-
-	def c_proto(self, fo):
-		fo.write(self.st + ";\n")
-		l = []
-		l += lwrap(self.init.c_proto())
-		l += lwrap(self.fini.c_proto(fini=True))
-		for m in self.methods:
-			l += lwrap(m.c_proto())
-		for i in l:
-			fo.write(i + "\n")
-
-	def c_struct(self, modnam):
-		s = "\t/* Object " + self.nam + " */\n"
-		s += self.init.c_struct(modnam)
-		s += self.fini.c_struct(modnam)
-		for m in self.methods:
-			s += m.c_struct(modnam)
-		return s
-
-	def c_initializer(self):
-		s = "\t/* Object " + self.nam + " */\n"
-		s += self.init.c_initializer()
-		s += self.fini.c_initializer()
-		for m in self.methods:
-			s += m.c_initializer()
-		return s
-
-	def c_strspec(self, modnam):
-		s = "\t/* Object " + self.nam + " */\n"
-		s += '\t"$OBJ\\0"\n'
-		s += self.init.c_strspec(modnam, pfx="\t\t") + '\n'
-		s += '\t\t"' + self.st + '\\0"\n'
-		s += self.fini.c_strspec(modnam, pfx="\t\t") + '\n'
-		for m in self.methods:
-			s += m.c_strspec(modnam, pfx="\t\t") + '\n'
-		s += '\t"\\0"'
-		return s
-
-	def doc(self, l):
-		self.doc_str.append(l)
-
-	def doc_idx(self, suf):
-		l = []
-		if suf == "":
-			l.append((self.nam, ":ref:`obj_" + self.nam + "`"))
-		else:
-			l.append((self.nam, "Object " + self.nam))
-		for i in self.methods:
-			l.append(i.doc_idx(suf))
-		return l
-
-	def doc_dump(self, fo):
-		fo.write(".. _obj_" + self.nam + ":\n\n")
-		s = "Object " + self.nam
-		fo.write(s + "\n")
-		fo.write("=" * len(s) + "\n")
-		fo.write("\n")
-
-		for i in self.doc_str:
-			fo.write(i + "\n")
-
-		for i in self.methods:
-			i.doc_dump(fo)
-
-#######################################################################
-
-class Arg(object):
-	def __init__(self, typ, nam=None, det=None):
-		self.nam = nam
-		self.typ = typ
-		self.det = det
-		self.val = None
-
-	def __repr__(self):
-		return "<ARG %s %s %s>" % (self.nam, self.typ, str(self.det))
-
-	def c_strspec(self):
-		if self.det is None:
-			s = self.typ + "\\0"
-		else:
-			s = self.det
-		if self.nam is not None:
-			s += '"\n\t\t    "\\1' + self.nam + '\\0'
-		if self.val is not None:
-			# The space before the value is important to
-			# terminate the \2 escape sequence
-			s += '"\n\t\t\t"\\2 ' + quote(self.val) + "\\0"
-		return s
-
-#######################################################################
-#
-#
-
-def parse_enum2(tl):
-	t = tl.get_token()
-	if t.str != "{":
-		raise ParseError("expected \"{\"")
-	s = "ENUM\\0"
-	t = None
-	while True:
-		if t is None:
-			t = tl.get_token()
-		if t.str == "}":
-			break
-		s += t.str + "\\0"
-		t = tl.get_token()
-		if t.str == ",":
-			t = None
-		elif t.str == "}":
-			break
-		else:
-			raise ParseError(
-			    "Expected \"}\" or \",\" not \"%s\"" % t.str)
-	s += "\\0"
-	return Arg("ENUM", det=s)
-
-
-def parse_arg(tl, al):
-	t = tl.get_token()
-	assert t is not None
-
-	if t.str == ")":
-		return t
-
-	if t.str == "ENUM":
-		al.append(parse_enum2(tl))
-	elif t.str in ctypes:
-		al.append(Arg(t.str))
-	else:
-		raise Exception("ARG? %s", t.str)
-
-	t = tl.get_token()
-	if t.str == "," or t.str == ")":
-		return t
-
-	if not is_c_name(t.str):
-		raise ParseError(
-		    'Expected ")", "," or argument name, not "%s"' % t.str)
-
-	al[-1].nam = t.str
-	t = tl.get_token()
-
-	if t.str == "," or t.str == ")":
-		return t
-
-	if t.str != "=":
-		raise ParseError(
-		    'Expected ")", "," or "=", not "%s"' % t.str)
-
-	t = tl.get_token()
-	al[-1].val = t.str
-
-	t = tl.get_token()
-	return t
-
-#######################################################################
-#
-#
-
-def parse_module(tl):
-	nm = tl.get_token().str
-	sec = tl.get_token().str
-	s = ""
-	while len(tl.tl) > 0:
-		s += " " + tl.get_token().str
-	dnm = s[1:]
-	return Vmod(nm, dnm, sec)
-
-
-def parse_func(tl, rt_type=None, pobj=None):
-	al = list()
-	if rt_type is None:
-		t = tl.get_token()
-		rt_type = t.str
-	if rt_type not in ctypes:
-		raise TypeError(
-		    "Return type '%s' not a valid type" % rt_type)
-
-	t = tl.get_token()
-	fname = t.str
-	if pobj is not None and fname[0] == "." and is_c_name(fname[1:]):
-		fname = pobj + fname
-	elif pobj is not None and fname[0] != ".":
-		raise ParseError("Method name '%s' must start with ." % fname)
-	elif pobj is not None and not is_c_name(fname[1:]):
-		raise ParseError("Method name '%s' is illegal" % fname[1:])
-	elif not is_c_name(fname):
-		raise ParseError("Function name '%s' is illegal" % fname)
-
-	t = tl.get_token()
-	if t.str != "(":
-		raise ParseError("Expected \"(\" got \"%s\"" % t.str)
-
-	while True:
-		t = parse_arg(tl, al)
-		if t.str == ")":
-			break
-		if t.str != ",":
-			raise ParseError("End Of Input looking for ')' or ','")
-
-	f = Func(fname, rt_type, al)
-
-	return f
-
-#######################################################################
-#
-#
-
-def parse_obj(tl):
-	f = parse_func(tl, "VOID")
-	o = Obj(f.nam)
-	o.set_init(f)
-	return o
-
-
-#######################################################################
-
-class FileSection(object):
-	"""
-	A section of the inputvcc, starting at a keyword.
-	"""
-	def __init__(self):
-		self.l = []
-		self.tl = []
-
-	def add_line(self, ln, l):
-		self.l.append((ln, l))
-
-	def get_token(self):
-		while True:
-			if len(self.tl) > 0:
-				# print("T\t", self.tl[0])
-				return self.tl.pop(0)
-			if len(self.l) == 0:
-				break
-			self.more_tokens()
-		return None
-
-	def more_tokens(self):
-		ln, l = self.l.pop(0)
-		if l == "":
-			return
-		l = re.sub("[ \t]*#.*$", "", l)
-		l = re.sub("[ \t]*\n", "", l)
-
-		if re.match("['\"]", l):
-			m = re.match("(['\"]).*?(\\1)", l)
-			if not m:
-				raise FormatError("Unbalanced quote",
-				    "Unbalanced quote on line %d" % ln)
-			self.tl.append(Token(ln, 0, l[:m.end()]))
-			self.l.insert(0, (ln, l[m.end():]))
-			return
-
-		m = re.search("['\"]", l)
-		if m:
-			rest = l[m.start():]
-			self.l.insert(0, (ln, rest))
-			l = l[:m.start()]
-
-		l = re.sub("([(){},=])", r' \1 ', l)
-		if l == "":
-			return
-		for j in l.split():
-			self.tl.append(Token(ln, 0, j))
-
-	def parse(self, vx):
-		t = self.get_token()
-		if t is None:
-			return
-		t0 = t.str
-		if t.str == "$Module":
-			o = parse_module(self)
-			vx.append(o)
-		elif t.str == "$Event":
-			x = self.get_token()
-			vx[0].set_event(x.str)
-			o = None
-		elif t.str == "$Function":
-			if len(vx) == 2:
-				vx.pop(-1)
-			o = parse_func(self)
-			vx[0].add_func(o)
-		elif t.str == "$Object":
-			if len(vx) == 2:
-				vx.pop(-1)
-			o = parse_obj(self)
-			vx[0].add_obj(o)
-			vx.append(o)
-		elif t.str == "$Method":
-			if len(vx) != 2:
-				raise FormatError("$Method outside $Object", "")
-			o = parse_func(self, pobj=vx[1].nam)
-			vx[1].add_method(o)
-		else:
-			if opts.strict:
-				raise FormatError("Unknown keyword: %s" %
-				    t.str, "")
-			else:
-				print("WARNING: Unknown keyword: %s:" %
-				    t.str, file=sys.stderr)
-				o = None
-				while len(self.tl) > 0:
-				    self.get_token()
-
-		assert len(self.tl) == 0
-		if o is None and len(self.l) > 0:
-			m = "%s description is not included in .rst" % t0
-			details = pformat(self.l)
-			if opts.strict:
-				raise FormatError(m, details)
-			else:
-				print("WARNING: %s:" % m, file=sys.stderr)
-				print(details, file=sys.stderr)
-		else:
-			for ln, i in self.l:
-				o.doc(i)
-
-#######################################################################
-
-def polish(l):
-	"""
-	Polish the copyright message.
-	"""
-	if len(l[0]) == 0:
-		l.pop(0)
-		return True
-	c = l[0][0]
-	for i in l:
-		if len(i) == 0:
-			continue
-		if i[0] != c:
-			c = None
-			break
-	if c is not None:
-		for i in range(len(l)):
-			l[i] = l[i][1:]
-		return True
-	return False
-
-
-class SimpleTestCase(unittest.TestCase):
-	def test_included_vccs(self):
-		from tempfile import mktemp
-		from glob import glob
-		tmpfile = mktemp()
-		bdir = dirname(realpath(__file__))
-		for inputfile in glob(join(bdir, "../libvmod_*/vmod.vcc")):
-			runmain(inputfile, ".", tmpfile)
-			unlink(tmpfile + ".c")
-			unlink(tmpfile + ".h")
-
-
-#######################################################################
 def runmain(inputvcc, rstdir, outputprefix):
-	# Read the file in
-	lines = []
-	with open(inputvcc, "r") as fp:
-		for i in fp:
-			lines.append(i.rstrip())
-	ln = 0
 
-	#######################################################################
-	# First collect the copyright:  All initial lines starting with '#'
+	v = vcc(inputvcc, rstdir, outputprefix)
+	v.parse()
 
-	copy_right = []
-	while len(lines[0]) > 0 and lines[0][0] == "#":
-		ln += 1
-		copy_right.append(lines.pop(0))
+	v.rstfile(man=False)
+	v.rstfile(man=True)
+	v.hfile()
+	v.cfile()
 
-	if len(copy_right) > 0:
-		if copy_right[0] == "#-":
-			copy_right = []
-		else:
-			while polish(copy_right):
-				continue
-
-	if False:
-		for i in copy_right:
-			print("(C)\t", i)
-
-	#######################################################################
-	# Break into sections
-
-	sl = []
-	sc = FileSection()
-	sl.append(sc)
-	while len(lines) > 0:
-		ln += 1
-		l = lines.pop(0)
-		j = l.split()
-		if len(j) > 0 and re.match("^\$", j[0]):
-			sc = FileSection()
-			sl.append(sc)
-		sc.add_line(ln, l)
-
-	#######################################################################
-	# Parse each section
-
-	try:
-		vx = []
-		for i in sl:
-			i.parse(vx)
-			assert len(i.tl) == 0
-	except ParseError as e:
-		print("ERROR: Parse error reading \"%s\":" % inputvcc)
-		pprint(str(e))
-		exit(-1)
-	except FormatError as e:
-		print("ERROR: Format error reading \"%s\": %s" %
-		    (inputvcc, pformat(e.msg)))
-		print(e.details)
-		exit(-2)
-
-	#######################################################################
-	# Parsing done, now process
-	#
-	fd_cfile, fn_cfile = mkstemp(dir='.')
-	cfile = fdopen(fd_cfile, "w")
-
-	fd_headerfile, fn_headerfile = mkstemp(dir='.')
-	headerfile = fdopen(fd_headerfile, "w")
-
-	write_c_file_warning(cfile)
-	write_c_file_warning(headerfile)
-
-	headerfile.write('struct vmod_priv;\n\n')
-
-	headerfile.write('extern const struct vmod_data Vmod_%s_Data;\n\n' % vx[0].nam)
-
-	vx[0].c_proto(headerfile)
-
-	cfile.write('#include "config.h"\n')
-	cfile.write('#include "vcl.h"\n')
-	cfile.write('#include "vrt.h"\n')
-	cfile.write('#include "%s.h"\n' % outputprefix)
-	cfile.write('#include "vmod_abi.h"\n')
-	cfile.write('\n')
-
-	vx[0].c_typedefs(cfile)
-	vx[0].c_vmod(cfile)
-
-	cfile.close()
-	headerfile.close()
-
-	for suf in ("", ".man"):
-		fd, fn_fp = mkstemp(dir='.')
-		fp = fdopen(fd, "w")
-		write_rst_file_warning(fp)
-
-		vx[0].doc_dump(fp, suf)
-
-		if len(copy_right) > 0:
-			fp.write("\n")
-			fp.write("COPYRIGHT\n")
-			fp.write("=========\n")
-			fp.write("\n::\n\n")
-			for i in copy_right:
-				fp.write("  %s\n" % i)
-			fp.write("\n")
-		fp.close()
-		rename(fn_fp, join(rstdir, "vmod_%s%s.rst" % (vx[0].nam, suf)))
-
-	# Our makefile targets the .c file so make sure to put that in place last.
-	rename(fn_headerfile, outputprefix + ".h")
-	rename(fn_cfile, outputprefix + ".c")
-
+	v.commit()
 
 if __name__ == "__main__":
 	usagetext = "Usage: %prog [options] <vmod.vcc>"

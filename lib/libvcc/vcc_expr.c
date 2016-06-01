@@ -662,20 +662,23 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 			p += strlen(p) + 1;
 			continue;
 		}
-		if (fa->type == ENUM) {
-			fa->enum_bits = p;
-			while (*p != '\0')
+		if (*p == '\1') {
+			fa->enum_bits = ++p;
+			while (*p != '\1')
 				p += strlen(p) + 1;
+			p++;
+			assert(*p == '\0');
+			p++;
+		}
+		if (*p == '\2') {
+			fa->name = p + 1;
 			p += strlen(p) + 1;
 		}
-		if (*p == '\1') {
-			fa->name = p + 1;
-			p = strchr(p, '\0') + 1;
-			if (*p == '\2') {
-				fa->val = p + 1;
-				p = strchr(p, '\0') + 1;
-			}
+		if (*p == '\3') {
+			fa->val = p + 1;
+			p += strlen(p) + 1;
 		}
+		assert(*p == 0 || *p > ' ');
 	}
 
 	VTAILQ_FOREACH(fa, &head, list) {

@@ -196,23 +196,22 @@ parse_new(struct vcc *tl)
 	/*lint -save -e448 */
 	/* Split the first three args */
 	p = sy2->args;
+
 	s_obj = p;
 	p += strlen(p) + 1;
-	s_init = p;
-	/*
-	 * Check for the end marked (\0\0) followed by s(truct) to avoid
-	 * matching an ENUM half-way through and generating illegal C code.
-	 */
-	while (p[0] != '\0' || p[1] != '\0' || p[2] != 's')
-		p++;
-	p += 2;
-	AZ(strncmp(p, "struct vmod_", 12));
+
 	s_struct = p;
 	p += strlen(p) + 1;
-	s_fini = p + strlen(p) + 1;
-	while (p[0] != '\0' || p[1] != '\0')
+
+	s_init = p;
+	while (p[0] != '\0' || p[1] != '\0' || p[2] != '\0')
 		p++;
-	p += 2;
+	p += 3;
+
+	s_fini = p;
+	while (p[0] != '\0' || p[1] != '\0' || p[2] != '\0')
+		p++;
+	p += 3;
 
 	Fh(tl, 0, "static %s *vo_%s;\n\n", s_struct, sy1->name);
 
@@ -238,20 +237,9 @@ parse_new(struct vcc *tl)
 
 		sy3->args = p;
 		sy3->extra = TlDup(tl, buf1);
-		while (p[0] != '\0' || p[1] != '\0') {
-			if (!memcmp(p, "ENUM\0", 5)) {
-				/* XXX: Special case for ENUM that has
-				   it's own \0\0 end marker. Not exactly
-				   elegant, we should consider
-				   alternatives here. Maybe runlength
-				   encode the entire block? */
-				p += strlen(p) + 1;
-				while (p[0] != '\0' || p[1] != '\0')
-					p++;
-			}
+		while (p[0] != '\0' || p[1] != '\0' || p[2] != '\0')
 			p++;
-		}
-		p += 2;
+		p += 3;
 	}
 	sy1->def_e = tl->t;
 	/*lint -restore */

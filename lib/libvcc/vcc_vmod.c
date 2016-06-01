@@ -235,7 +235,8 @@ vcc_ParseImport(struct vcc *tl)
 			    "\t\t    VCL_EVENT_DISCARD);\n", p, PF(mod));
 			VSB_printf(ifp->event, "\t%s(ctx, &vmod_priv_%.*s, ev)",
 			    p, PF(mod));
-		} else {
+		} else if (!strcmp(p, "$FUNC")) {
+			p += strlen(p) + 1;
 			sym = VCC_AddSymbolStr(tl, p, SYM_FUNC);
 			ERRCHK(tl);
 			AN(sym);
@@ -245,6 +246,10 @@ vcc_ParseImport(struct vcc *tl)
 			p += strlen(p) + 1;
 			sym->args = p;
 			sym->fmt = VCC_arg_type(&p);
+		} else {
+			VSB_printf(tl->sb, "Internal spec error (%s)\n", p);
+			vcc_ErrWhere(tl, mod);
+			return;
 		}
 	}
 
