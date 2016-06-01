@@ -170,6 +170,7 @@ BUILT_SOURCES += include/vsl-tags.rst
 
 VTCSYN_SRC = $(top_srcdir)/bin/varnishtest/vtc.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_barrier.c \
+	     $(top_srcdir)/bin/varnishtest/vtc_http.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_logexp.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_varnish.c
 include/vtc-syntax.rst: vtc-syntax.awk $(VTCSYN_SRC)
