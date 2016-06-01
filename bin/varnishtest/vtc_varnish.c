@@ -915,9 +915,79 @@ varnish_expect(const struct varnish *v, char * const *av)
 		    av[0], (uintmax_t)sp.val, av[1], av[2], (uintmax_t)ref);
 	}
 }
-
-/**********************************************************************
- * Varnish server cmd dispatch
+/* SECTION: varnish varnish
+ *
+ * Define and interact with varnish instances.
+ *
+ * To define a Varnish server, you'll use this syntax::
+ *
+ *         varnish vNAME [-arg STRING] [-vcl STRING] [-vcl+backend STRING]
+ *	                 [-errvcl STRING STRING] [-jail STRING] [-proto PROXY]
+ *
+ * With:
+ *
+ * vNAME
+ *         Identify the Varnish server with a string, it must starts with 'v'.
+ *
+ * \-arg STRING
+ *         Pass an argument to varnishd, for example "-h simple_list".
+ *
+ * \-vcl STRING
+ *         Specify the VCL to load on this Varnish instance. You'll probably
+ *         want to use multi-lines strings for this ({...}).
+ *
+ * \-vcl+backend STRING
+ *         Do the exact same thing as -vcl, but adds the definition block of
+ *         known backends (ie. already defined).
+ *
+ * \-errvcl STRING1 STRING2
+ *         Load STRING2 as VCL, expecting it to fail, and Varnish to send an
+ *         error string matching STRING2
+ *
+ * \-jail STRING
+ *         Look at ``man varnishd`` (-j) for more information.
+ *
+ * \-proto PROXY
+ *         Have Varnish use the proxy protocol. Note that PROXY here is the
+ *         actual string.
+ *
+ * You can decide to start the Varnish instance and/or wait for several events::
+ *
+ *         varnish vNAME [-start] [-wait] [-wait-running] [-wait-stopped]
+ *
+ * \-start
+ *         Start Varnish in the background, immediately processing the rest of
+ *         the file.
+ *
+ * \-wait
+ *         Wait for that instance to terminate.
+ *
+ * \-wait-running
+ *         Wait for the Varnish child process to be started.
+ *
+ * \-wait-stopped
+ *         Wait for the Varnish child process to stop.
+ *
+ * \-cleanup
+ *         Once Varnish is stopped, clean everything after it. This is only used
+ *         in one test and you should never need it.
+ *
+ * Once Varnish is started, you can talk to it (as you would through
+ * ``varnishadm``) with these additional switches::
+ *
+ *         varnish vNAME [-cli STRING] [-cliok STRING] [-clierr STRING]
+ *                       [-expect STRING OP NUMBER]
+ *
+ * \-cli|-cliok|-clierr STRING
+ *         All three of these will send STRING to the CLI, the only difference
+ *         is what they expect the return code to be. -cli doesn't expect
+ *         anything, -cliok expects 200 and -clierr expects not 200.
+ *
+ * \-expect STRING OP NUMBER
+ *         Look into the VSM and make sure the counter identified by STRING has
+ *         a correct value. OP can be ==, >, >=, <, <=. For example::
+ *
+ *                 varnish v1 -expect SMA.s1.g_space > 1000000
  */
 
 void
