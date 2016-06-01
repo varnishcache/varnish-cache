@@ -627,5 +627,5 @@ VBP_Init(void)
 	vbp_heap = binheap_new(NULL, vbp_cmp, vbp_update);
 	AN(vbp_heap);
 	AZ(pthread_cond_init(&vbp_cond, NULL));
-	WRK_BgThread(&thr, "Backend poller", vbp_thread, NULL);
+	WRK_BgThread(&thr, "backend-poller", vbp_thread, NULL);
 }
