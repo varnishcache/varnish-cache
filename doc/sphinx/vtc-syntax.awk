@@ -13,7 +13,11 @@ p && $0 !~ "[ /]* SECTION: " {
 $0 ~ "[ /]* SECTION: " {
 	section = $3;
 	sl[len++] = section;
-	tl[section] = gensub(/[\t ]*\/?\* SECTION: [^ ]+ +/, "", "1", $0);
+	if ($4) {
+		tl[section] = gensub(/[\t ]*\/?\* SECTION: [^ ]+ +/, "", "1", $0);
+	} else {
+		tl[section] = "";
+	}
 	p = 1;
 }
 
