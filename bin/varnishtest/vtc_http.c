@@ -256,8 +256,40 @@ http_count_header(char * const *hh, const char *hdr)
 	return (r);
 }
 
-/**********************************************************************
- * Expect
+/* SECTION: client-server.spec.expect
+ *
+ * expect STRING1 OP STRING2
+ *         Test if "STRING1 OP STRING2" is true, and if not, fails the test.
+ *         OP can be ==, <, <=, >, >= when STRING1 and STRING2 represent numbers
+ *         in which case it's an order operator. If STRING1 and STRING2 are
+ *         meant as strings OP is a matching operator, either == (exact match)
+ *         or ~ (regex match).
+ *
+ *         varnishtet will first try to resolve STRING1 and STRING2 by looking
+ *         if they have special meanings, in which case, the resolved value is
+ *         use for the test. Note that this value can be a string representing a
+ *         number, allowing for tests such as::
+ *
+ *                 expect req.http.x-num > 2
+ *
+ *         Here's the list of recognized strings, most should be obvious as they
+ *         either match VCL logic, or the txreq/txresp options:
+ *
+ *         - remote.ip
+ *         - remote.port
+ *         - req.method
+ *         - req.url
+ *         - req.proto
+ *         - resp.proto
+ *         - resp.status
+ *         - resp.msg
+ *         - resp.chunklen
+ *         - req.bodylen
+ *         - req.body
+ *         - resp.bodylen
+ *         - resp.body
+ *         - req.http.NAME
+ *         - resp.http.NAME
  */
 
 static const char *
