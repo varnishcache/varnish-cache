@@ -22,6 +22,7 @@ Bugs fixed
 * 1869_ - Remove temporary directory iff called with -C
 * 1883_ - Only accept C identifiers as acls
 * 1855_ - Truncate output if it's wider than 12 chars
+* 1806_ - One minute delay on return (pipe) and a POST-Request
 * 1725_ - Revive the backend_conn counter
 
 .. _1955: https://github.com/varnishcache/varnish-cache/issues/1955
@@ -35,6 +36,7 @@ Bugs fixed
 .. _1871: https://github.com/varnishcache/varnish-cache/issues/1871
 .. _1869: https://github.com/varnishcache/varnish-cache/issues/1869
 .. _1855: https://github.com/varnishcache/varnish-cache/issues/1855
+.. _1806: https://github.com/varnishcache/varnish-cache/issues/1806
 .. _1725: https://github.com/varnishcache/varnish-cache/issues/1725
 
 
