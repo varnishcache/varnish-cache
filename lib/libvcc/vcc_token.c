@@ -457,7 +457,7 @@ vcc_Lexer(struct vcc *tl, struct source *sp)
 			return;
 		}
 
-		/* Match for the fixed tokens (see token.tcl) */
+		/* Match for the fixed tokens (see generate.py) */
 		u = vcl_fixed_token(p, &q);
 		if (u != 0) {
 			vcc_AddToken(tl, u, p, q);
