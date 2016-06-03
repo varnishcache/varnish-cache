@@ -24,13 +24,13 @@ libvcc_la_SOURCES = \
 	vcc_backend_util.c \
 	vcc_compile.c \
 	vcc_expr.c \
-	vcc_parse.c \
 	vcc_fixed_token.c \
 	vcc_obj.c \
+	vcc_parse.c \
 	vcc_storage.c \
-	vcc_utils.c \
 	vcc_symb.c \
 	vcc_token.c \
+	vcc_utils.c \
 	vcc_var.c \
 	vcc_vmod.c \
 	vcc_xref.c
