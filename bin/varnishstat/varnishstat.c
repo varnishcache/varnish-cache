@@ -41,11 +41,16 @@
 #include <math.h>
 #include <stdint.h>
 
+#include "vapi/voptget.h"
+#include "vapi/vsl.h"
+#include "vdef.h"
 #include "vnum.h"
 #include "vtim.h"
+#include "vut.h"
 
 #include "varnishstat.h"
 
+static const char progname[] = "varnishstat";
 
 /*--------------------------------------------------------------------*/
 
@@ -247,50 +252,38 @@ list_fields(struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 static void
-usage(void)
+usage(int status)
 {
-#define FMT "    %-28s # %s\n"
-	fprintf(stderr, "usage: varnishstat "
-	    "[-1lV] [-f field] [-t seconds|<off>] "
-	    VSC_n_USAGE "\n");
-	fprintf(stderr, FMT, "-1", "Print the statistics to stdout.");
-	fprintf(stderr, FMT, "-f field", "Field inclusion glob");
-	fprintf(stderr, FMT, "",
-	    "If it starts with '^' it is used as an exclusion list.");
-	fprintf(stderr, FMT, "-l",
-	    "Lists the available fields to use with the -f option.");
-	fprintf(stderr, FMT, "-n varnish_name",
-	    "The varnishd instance to get logs from.");
-	fprintf(stderr, FMT, "-N filename",
-	    "Filename of a stale VSM instance.");
-	fprintf(stderr, FMT, "-t seconds|<off>",
-	    "Timeout before returning error on initial VSM connection.");
-	fprintf(stderr, FMT, "-V", "Display the version number and exit.");
-	fprintf(stderr, FMT, "-x",
-	    "Print statistics to stdout as XML.");
-	fprintf(stderr, FMT, "-j",
-	    "Print statistics to stdout as JSON.");
-#undef FMT
-	exit(1);
+	const char **opt;
+
+	fprintf(stderr, "Usage: %s <options>\n\n", progname);
+	fprintf(stderr, "Options:\n");
+	for (opt = vopt_spec.vopt_usage; *opt != NULL; opt +=2)
+		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
+	exit(status);
 }
 
 int
 main(int argc, char * const *argv)
 {
-	int c;
 	struct VSM_data *vd;
 	double t_arg = 5.0, t_start = NAN;
 	int once = 0, xml = 0, json = 0, f_list = 0, curses = 0;
+	signed char opt;
 	int i;
 
+	VUT_Init(progname, argc, argv, &vopt_spec);
 	vd = VSM_New();
 	AN(vd);
 
-	while ((c = getopt(argc, argv, VSC_ARGS "1f:lVxjt:")) != -1) {
-		switch (c) {
+	while ((opt = getopt(argc, argv, vopt_spec.vopt_optstring)) != -1) {
+		switch (opt) {
 		case '1':
 			once = 1;
 			break;
+		case 'h':
+			/* Usage help */
+			usage(0);
 		case 'l':
 			f_list = 1;
 			break;
@@ -319,10 +312,10 @@ main(int argc, char * const *argv)
 			json = 1;
 			break;
 		default:
-			if (VSC_Arg(vd, c, optarg) > 0)
+			if (VSC_Arg(vd, opt, optarg) > 0)
 				break;
 			fprintf(stderr, "%s\n", VSM_Error(vd));
-			usage();
+			usage(1);
 		}
 	}
 

@@ -58,8 +58,9 @@ varnishlog.1: \
 	$(top_builddir)/doc/sphinx/include/varnishlog_synopsis.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/varnishlog.rst $@
 
-# XXX add _options.rst and _synopsis.rst here when it's been _opt2rst'ed
-varnishstat.1: $(top_srcdir)/doc/sphinx/reference/varnishstat.rst
+varnishstat.1: $(top_srcdir)/doc/sphinx/reference/varnishstat.rst \
+	$(top_builddir)/doc/sphinx/include/varnishstat_options.rst \
+	$(top_builddir)/doc/sphinx/include/varnishstat_synopsis.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/varnishstat.rst $@
 
 varnishtest.1: $(top_srcdir)/doc/sphinx/reference/varnishtest.rst

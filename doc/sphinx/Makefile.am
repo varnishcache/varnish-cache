@@ -164,6 +164,13 @@ include/varnishhist_synopsis.rst: $(top_builddir)/bin/varnishhist/varnishhist
 BUILT_SOURCES += include/varnishhist_options.rst \
 	 include/varnishhist_synopsis.rst
 
+include/varnishstat_options.rst: $(top_builddir)/bin/varnishstat/varnishstat
+	$(top_builddir)/bin/varnishstat/varnishstat --options > $@
+include/varnishstat_synopsis.rst: $(top_builddir)/bin/varnishstat/varnishstat
+	$(top_builddir)/bin/varnishstat/varnishstat --synopsis > $@
+BUILT_SOURCES += include/varnishstat_options.rst \
+	 include/varnishstat_synopsis.rst
+
 include/vsl-tags.rst: $(top_builddir)/lib/libvarnishapi/vsl2rst
 	$(top_builddir)/lib/libvarnishapi/vsl2rst > $@
 BUILT_SOURCES += include/vsl-tags.rst

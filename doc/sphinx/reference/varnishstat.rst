@@ -15,60 +15,17 @@ Varnish Cache statistics
 SYNOPSIS
 ========
 
-varnishstat [-1] [-x] [-j] [-f field] [-l] [-n varnish_name] [-N filename] [-t seconds|<off>] [-V]
-
-.. TODO: autogenerate this synopsis like the others.
+.. include:: ../include/varnishstat_synopsis.rst
+varnishstat |synopsis|
 
 DESCRIPTION
 ===========
 
 The varnishstat utility displays statistics from a running varnishd(1) instance.
 
-OPTIONS
-=======
-
 The following options are available:
 
--1
-	Instead of presenting a continuously updated display, print
-	the statistics to stdout.
-
--f
-	Field inclusion glob. A field glob consists of three parts,
-        type, ident and name, where ident is optional. Each part can
-        contain a '*' character at the end to match a prefix. Use
-        backslash to escape characters. If the argument starts with
-        '^' it is used as an exclusion glob. Multiple -f arguments may
-        be given, and they will be applied in order.
-
--l
-	Lists the available fields to use with the -f option.
-
--n
-	Specifies the name of the varnishd instance to get logs from.
-	If -n is not specified, the host name is used.
-
--N
-	Specify a the filename of a stale VSM instance. When using
-        this option the abandonment checking is disabled.
-
--t seconds|<off>
-	Timeout before returning error on initial VSM connection.  If
-	set the VSM connection is retried every 0.5 seconds for this
-	any seconds. If zero the connection is attempted only once and
-	will fail immediately if unsuccessful. If set to "off", the
-	connection will not fail, allowing the utility to start and
-	wait indefinitely for the Varnish instance to appear.
-	Defaults to 5 seconds.
-
--V
-	Display the version number and exit.
-
--x
-	Displays the result as XML.
-
--j
-	Displays the result as JSON.
+.. include:: ../include/varnishstat_options.rst
 
 CURSES MODE
 ===========

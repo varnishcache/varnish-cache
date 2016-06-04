@@ -8,9 +8,10 @@ bin_PROGRAMS = varnishstat
 
 varnishstat_SOURCES = \
 	varnishstat.h \
-	\
 	varnishstat.c \
-	varnishstat_curses.c
+	varnishstat_curses.c \
+	varnishstat_options.h \
+	varnishstat_options.c
 
 varnishstat_CFLAGS = \
 	@SAN_CFLAGS@
