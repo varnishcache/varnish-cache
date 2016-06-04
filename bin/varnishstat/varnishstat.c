@@ -157,7 +157,6 @@ do_json(struct VSM_data *vd)
 	printf("  \"timestamp\": \"%s\",\n", time_stamp);
 	(void)VSC_Iter(vd, NULL, do_json_cb, &jp);
 	printf("\n}\n");
-	fflush(stdout);
 }
 
 
@@ -229,22 +228,22 @@ do_list_cb(void *priv, const struct VSC_point * const pt)
 	sec = pt->section;
 	i = 0;
 	if (strcmp(sec->fantom->type, ""))
-		i += fprintf(stderr, "%s.", sec->fantom->type);
+		i += printf("%s.", sec->fantom->type);
 	if (strcmp(sec->fantom->ident, ""))
-		i += fprintf(stderr, "%s.", sec->fantom->ident);
-	i += fprintf(stderr, "%s", pt->desc->name);
+		i += printf("%s.", sec->fantom->ident);
+	i += printf("%s", pt->desc->name);
 	if (i < 30)
-		fprintf(stderr, "%*s", i - 30, "");
-	fprintf(stderr, " %s\n", pt->desc->sdesc);
+		printf("%*s", i - 30, "");
+	printf(" %s\n", pt->desc->sdesc);
 	return (0);
 }
 
 static void
 list_fields(struct VSM_data *vd)
 {
-	fprintf(stderr, "Varnishstat -f option fields:\n");
-	fprintf(stderr, "Field name                     Description\n");
-	fprintf(stderr, "----------                     -----------\n");
+	printf("Varnishstat -f option fields:\n");
+	printf("Field name                     Description\n");
+	printf("----------                     -----------\n");
 
 	(void)VSC_Iter(vd, NULL, do_list_cb, NULL);
 }
@@ -292,14 +291,10 @@ main(int argc, char * const *argv)
 				t_arg = -1.;
 			else {
 				t_arg = VNUM(optarg);
-				if (isnan(t_arg)) {
-					fprintf(stderr, "-t: Syntax error");
-					exit(1);
-				}
-				if (t_arg < 0.) {
-					fprintf(stderr, "-t: Range error");
-					exit(1);
-				}
+				if (isnan(t_arg))
+					VUT_Error(1, "-t: Syntax error");
+				if (t_arg < 0.)
+					VUT_Error(1, "-t: Range error");
 			}
 			break;
 		case 'V':
@@ -312,10 +307,11 @@ main(int argc, char * const *argv)
 			json = 1;
 			break;
 		default:
-			if (VSC_Arg(vd, opt, optarg) > 0)
-				break;
-			fprintf(stderr, "%s\n", VSM_Error(vd));
-			usage(1);
+			i = VSC_Arg(vd, opt, optarg);
+			if (i < 0)
+				VUT_Error(1, "%s", VSM_Error(vd));
+			if (!i)
+				usage(1);
 		}
 	}
 
@@ -327,8 +323,8 @@ main(int argc, char * const *argv)
 		if (!i)
 			break;
 		if (isnan(t_start) && t_arg > 0.) {
-			fprintf(stderr, "Can't open log -"
-			    " retrying for %.0f seconds\n", t_arg);
+			VUT_Error(0, "Can't open log -"
+			    " retrying for %.0f seconds", t_arg);
 			t_start = VTIM_real();
 		}
 		if (t_arg <= 0.)
@@ -340,18 +336,14 @@ main(int argc, char * const *argv)
 	}
 
 	if (curses) {
-		if (i && t_arg >= 0.) {
-			fprintf(stderr, "%s\n", VSM_Error(vd));
-			exit(1);
-		}
+		if (i && t_arg >= 0.)
+			VUT_Error(1, "%s", VSM_Error(vd));
 		do_curses(vd, 1.0);
 		exit(0);
 	}
 
-	if (i) {
-		fprintf(stderr, "%s\n", VSM_Error(vd));
-		exit(1);
-	}
+	if (i)
+		VUT_Error(1, "%s", VSM_Error(vd));
 
 	if (xml)
 		do_xml(vd);
@@ -363,9 +355,6 @@ main(int argc, char * const *argv)
 		list_fields(vd);
 	else
 		assert(0);
-
-	/* end of output block marker. */
-	printf("\n");
 
 	exit(0);
 }
