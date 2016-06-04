@@ -44,12 +44,6 @@ struct VSM_fantom;
  * VSC level access functions
  */
 
-#define VSC_ARGS	"f:n:N:"
-#define VSC_n_USAGE	VSM_n_USAGE " " VSM_N_USAGE
-#define VSC_f_USAGE	"[-f field_name,...]"
-#define VSC_USAGE	VSC_n_USAGE \
-			VSC_f_USAGE
-
 int VSC_Arg(struct VSM_data *vd, int arg, const char *opt);
 	/*
 	 * Handle standard stat-presenter arguments
