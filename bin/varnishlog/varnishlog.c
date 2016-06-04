@@ -69,7 +69,7 @@ usage(int status)
 	fprintf(stderr, "Usage: %s <options>\n\n", progname);
 	fprintf(stderr, "Options:\n");
 	for (opt = vopt_spec.vopt_usage; *opt != NULL; opt += 2)
-		fprintf(stderr, "  %-25s %s\n", *opt, *(opt + 1));
+		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
 	exit(status);
 }
 
