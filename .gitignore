@@ -88,7 +88,6 @@ cscope.*out
 /bin/varnishhist/varnishhist
 /bin/varnishlog/varnishlog
 /bin/varnishncsa/varnishncsa
-/bin/varnishreplay/varnishreplay
 /bin/varnishstat/varnishstat
 /bin/varnishstat/vsc2rst
 /bin/varnishtest/varnishtest
@@ -98,10 +97,8 @@ cscope.*out
 /doc/*.html
 /doc/sphinx/build/
 /doc/sphinx/conf.py
-/doc/sphinx/include/vcl_var.rst
 # graphviz-generated
 /doc/graphviz/*.pdf
-/doc/graphviz/*.svg
 
 # NetBeans insists on this
 /nbproject/private/
