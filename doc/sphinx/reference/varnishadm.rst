@@ -14,7 +14,7 @@ Control a running Varnish instance
 SYNOPSIS
 ========
 
-varnishadm [-n ident] [-t timeout] [-S secretfile] [-T [address]:port] [command [...]]
+varnishadm [-h] [-n ident] [-t timeout] [-S secretfile] [-T [address]:port] [command [...]]
 
 
 DESCRIPTION
@@ -34,6 +34,9 @@ replies between the CLI socket and stdin/stdout.
 
 OPTIONS
 =======
+
+-h
+    Print program usage and exit.
 
 -n ident
     Connect to the instance of `varnishd` with this name.
