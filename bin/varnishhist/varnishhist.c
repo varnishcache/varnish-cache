@@ -391,6 +391,9 @@ main(int argc, char **argv)
 	assert(VUT_Arg('c', NULL));
 	while ((i = getopt(argc, argv, vopt_spec.vopt_optstring)) != -1) {
 		switch (i) {
+		case 'h':
+			/* Usage help */
+			usage(0);
 		case 'P':
 			colon = strchr(optarg, ':');
 			/* no colon, take the profile as a name*/
