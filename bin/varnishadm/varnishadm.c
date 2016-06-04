@@ -378,13 +378,13 @@ pass(int sock)
 
 
 static void
-usage(void)
+usage(int status)
 {
 	fprintf(stderr,
-	    "Usage: varnishadm [-n ident] [-t timeout] [-S secretfile] "
+	    "Usage: varnishadm [-h] [-n ident] [-t timeout] [-S secretfile] "
 	    "[-T [address]:port] [command [...]]\n");
 	fprintf(stderr, "\t-n is mutually exclusive with -S and -T\n");
-	exit(1);
+	exit(status);
 }
 
 static int
@@ -456,8 +456,11 @@ main(int argc, char * const *argv)
 	 * The '+' stops that from happening
 	 * See #1496
 	 */
-	while ((opt = getopt(argc, argv, "+n:S:T:t:")) != -1) {
+	while ((opt = getopt(argc, argv, "+hn:S:T:t:")) != -1) {
 		switch (opt) {
+		case 'h':
+			/* Usage help */
+			usage(0);
 		case 'n':
 			n_arg = optarg;
 			break;
@@ -470,10 +473,10 @@ main(int argc, char * const *argv)
 		case 't':
 			timeout = VNUM(optarg);
 			if (isnan(timeout))
-				usage();
+				usage(1);
 			break;
 		default:
-			usage();
+			usage(1);
 		}
 	}
 
@@ -482,7 +485,7 @@ main(int argc, char * const *argv)
 
 	if (n_arg != NULL) {
 		if (T_arg != NULL || S_arg != NULL) {
-			usage();
+			usage(1);
 		}
 		sock = n_arg_sock(n_arg);
 	} else if (T_arg == NULL) {
