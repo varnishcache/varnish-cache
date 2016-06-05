@@ -353,8 +353,52 @@ barrier_sync(struct barrier *b, struct vtclog *vl)
 	}
 }
 
-/**********************************************************************
- * Barrier command dispatch
+/* SECTION: barrier barrier
+ *
+ * NOTE: this can be used from the top-level as well as from client and server
+ * specifications.
+ *
+ * Barriers allows you to synchronize different threads to make sure events
+ * occur in the right order. It's even possible to use them in VCL.
+ *
+ * First, it's necessary to declare the barrier::
+ *
+ *         barrier bNAME TYPE NUMBER [-cyclic]
+ *
+ * With the arguments being:
+ *
+ * bNAME
+ *         this is the name of the barrier, used to identify it when you'll
+ *         create sync points. It must start with 'b'.
+ *
+ * TYPE
+ *         it can be "cond" (mutex) or "sock" (socket) and sets internal
+ *         behavior. If you don't need VCL synchronization, use cond.
+ *
+ * NUMBER
+ *         number of sync point needed to go through the barrier.
+ *
+ * \-cyclic
+ *         if present, the barrier will reset itself and be ready for another
+ *         round once gotten through.
+ *
+ * Then, to add a sync point::
+ *
+ *         barrier bNAME sync
+ *
+ * This will block the parent thread until the number of sync points for bNAME
+ * reaches the NUMBER given in the barrier declaration.
+ *
+ * If you wish to synchronize the VCL, you need to declare a "sock" barrier.
+ * This will emit a macro definition named "bNAME_sock" that you can use in
+ * VCL (after importing the debug vmod)::
+ *
+ *         debug.barrier_sync("${bNAME_sock}");
+ *
+ * This function returns 0 if everything went well and is the equivalent of
+ * ``barrier bNAME sync`` at the VTC top-level.
+ *
+ *
  */
 
 void

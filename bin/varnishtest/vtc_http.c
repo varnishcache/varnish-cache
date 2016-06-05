@@ -49,6 +49,71 @@
 
 #define MAX_HDR		50
 
+/* SECTION: client-server client/server
+ *
+ * Client and server threads are fake HTTP entities used to test your Varnish
+ * and VCL. They take any number of arguments, and the one that are not
+ * recognized, assuming they don't start with '-', are treated as
+ * specifications, laying out the actions to undertake::
+ *
+ *         client cNAME [ARGS*]
+ *         server sNAME [ARGS*]
+ *
+ * Clients and server are identified by a string that's the first argument,
+ * clients' names start with 'c' and servers' names start with 's'.
+ *
+ * As the client and server commands share a good deal of arguments and
+ * specification actions, they are grouped in this single section, specific
+ * items will be explicitly marked as such.
+ *
+ * SECTION: client-server.macros Macros and automatic behaviour
+ *
+ * To make things easier in the general case, clients will connect by default
+ * to the first Varnish server declared and the -vcl+backend switch of the
+ * ``varnish`` command will add all the declared servers as backends.
+ *
+ * Be careful though, servers will by default listen to the 127.0.0.1 IP and
+ * will pick a random port, and publish 3 macros: sNAME_addr, sNAME_port and
+ * sNAME_sock, but only once they are started. For varnishtest to
+ * create the vcl with the correct values, the server must be started when you
+ * use -vcl+backend.
+ *
+ * SECTION: client-server.args Arguments
+ *
+ * \-start
+ *        Start the thread in background, processing the last given
+ *        specification.
+ *
+ * \-wait
+ *        Block until the thread finishes.
+ *
+ * \-run (client only)
+ *        Equivalent to "-start -wait".
+ *
+ * \repeat NUMBER
+ *        Instead of processing the specification only once, do it NUMBER times.
+ *
+ * \-break (server only)
+ *        Stop the server.
+ *
+ * \-listen STRING (server only)
+ *        Dictate the listening socket for the server. STRING is of the form
+ *        "IP PORT".
+ *
+ * \-connect STRING (client only)
+ *         Indicate the server to connect to. STRING is also of the form
+ *         "IP PORT".
+ *
+ * \-dispatch (server only, s0 only)
+ *         Normally, to keep things simple, server threads only handle one
+ *         connection at a time, but the -dispatch switch allows to accept
+ *         any number of connection and handle them following the given spec.
+ *
+ *         However, -dispatch is only allowed for the server name "s0".
+ *
+ * SECTION: client-server.spec Specification
+ */
+
 struct http {
 	unsigned		magic;
 #define HTTP_MAGIC		0x2f02169c
@@ -191,8 +256,40 @@ http_count_header(char * const *hh, const char *hdr)
 	return (r);
 }
 
-/**********************************************************************
- * Expect
+/* SECTION: client-server.spec.expect
+ *
+ * expect STRING1 OP STRING2
+ *         Test if "STRING1 OP STRING2" is true, and if not, fails the test.
+ *         OP can be ==, <, <=, >, >= when STRING1 and STRING2 represent numbers
+ *         in which case it's an order operator. If STRING1 and STRING2 are
+ *         meant as strings OP is a matching operator, either == (exact match)
+ *         or ~ (regex match).
+ *
+ *         varnishtet will first try to resolve STRING1 and STRING2 by looking
+ *         if they have special meanings, in which case, the resolved value is
+ *         use for the test. Note that this value can be a string representing a
+ *         number, allowing for tests such as::
+ *
+ *                 expect req.http.x-num > 2
+ *
+ *         Here's the list of recognized strings, most should be obvious as they
+ *         either match VCL logic, or the txreq/txresp options:
+ *
+ *         - remote.ip
+ *         - remote.port
+ *         - req.method
+ *         - req.url
+ *         - req.proto
+ *         - resp.proto
+ *         - resp.status
+ *         - resp.msg
+ *         - resp.chunklen
+ *         - req.bodylen
+ *         - req.body
+ *         - resp.bodylen
+ *         - resp.body
+ *         - req.http.NAME
+ *         - resp.http.NAME
  */
 
 static const char *
@@ -567,11 +664,12 @@ http_rxhdr(struct http *hp)
 	hp->body = hp->rxbuf + hp->prxbuf;
 }
 
-
-/**********************************************************************
- * Receive a response
+/* SECTION: client-server.spec.rxresp
+ *
+ * rxresp [-no_obj] (client only)
+ *         Receive and parse a response's headers and body. If -no_obj is present, only get
+ *         the headers. 
  */
-
 static void
 cmd_http_rxresp(CMD_ARGS)
 {
@@ -605,6 +703,11 @@ cmd_http_rxresp(CMD_ARGS)
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
 }
 
+/* SECTION: client-server.spec.rxreqhdrs
+ *
+ * rxresp (client only)
+ *         Receive and parse a response's headers.
+ */
 static void
 cmd_http_rxresphdrs(CMD_ARGS)
 {
@@ -815,6 +918,66 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 	return (av);
 }
 
+/* SECTION: client-server.spec.txre
+ *
+ * txreq|txresp [ARG*]
+ *         Send a minimal request or response, but overload it if necessary.
+ *
+ *         txreq is client-specific and txresp is server-specific.
+ *
+ *         The only thing different between a request and a response, apart
+ *         from who can send them is that the first line (request line vs
+ *         status line), so all the options are prety much the same.
+ *
+ *         \-req STRING (txreq only)
+ *                 What method to use (default: "GET".
+ *
+ *         \-url STRING (txreq only)
+ *                 What location to use (default "/").
+ *
+ *         \-proto STRING
+ *                 What protocol use in the status line.
+ *                 (default: "HTTP/1.1").
+ *
+ *         \-status NUMBER (txresp only)
+ *                 What status code to return (default 200).
+ *
+ *         \-msg STRING (txresp only)
+ *                 What message to put in the status line (default: "OK").
+ *
+ *         These three switches can appear in any order but must come before the
+ *         following ones.
+ *
+ *         \-nolen
+ *                 Don't include a Content-Length header in the response.
+ *
+ *         \-hdr STRING
+ *                 Add STRING as a header, it must follow this format:
+ *                 "name: value". It can be called multiple times.
+ *
+ *         You can then use the arguments related to the body:
+ *
+ *         \-body STRING
+ *                 Input STRING as body.
+ *
+ *         \-bodylen NUMBER
+ *                 Generate and input a body that is NUMBER bytes-long.
+ *
+ *         \-gziplevel NUMBER
+ *	           Set the gzip level (call it before any of the other gzip
+ *	           switches).
+ *
+ *         \gzipresidual NUMBER
+ *                 Add extra gzip bits. You should never need it.
+ *
+ *         \-gzipbody STRING
+ *                 Zip STRING and send it as body.
+ *
+ *         \-gziplen NUMBER
+ *                 Combine -body and -gzipbody: create a body of length NUMBER,
+ *                 zip it and send as body.
+ */
+
 /**********************************************************************
  * Transmit a response
  */
@@ -864,8 +1027,10 @@ cmd_http_txresp(CMD_ARGS)
 	http_write(hp, 4, "txresp");
 }
 
-/**********************************************************************
- * Receive a request
+/* SECTION: client-server.spec.rxreq
+ *
+ * rxreq (server only)
+ *         Receive and parse a request's headers and body.
  */
 
 static void
@@ -891,6 +1056,12 @@ cmd_http_rxreq(CMD_ARGS)
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
 }
 
+/* SECTION: client-server.spec.rxreqhdrs
+ *
+ * rxreqhdrs
+ *         Receive and parse a request's headers (but not the body).
+ */
+
 static void
 cmd_http_rxreqhdrs(CMD_ARGS)
 {
@@ -911,6 +1082,12 @@ cmd_http_rxreqhdrs(CMD_ARGS)
 		    "Multiple Content-Length headers.\n");
 }
 
+/* SECTION: client-server.spec.rxreqbody
+ *
+ * rxreqbody (server only)
+ *         Receive a request's body.
+ */
+
 static void
 cmd_http_rxreqbody(CMD_ARGS)
 {
@@ -929,6 +1106,12 @@ cmd_http_rxreqbody(CMD_ARGS)
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
 }
 
+/* SECTION: client-server.spec.rxrespbody
+ *
+ * rxrespbody
+ *         Receive a response's body.
+ */
+
 static void
 cmd_http_rxrespbody(CMD_ARGS)
 {
@@ -946,6 +1129,12 @@ cmd_http_rxrespbody(CMD_ARGS)
 	http_swallow_body(hp, hp->resp, 0);
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
 }
+
+/* SECTION: client-server.spec.rxchunk
+ *
+ * rxchunk
+ *         Receive an HTTP chunk
+ */
 
 static void
 cmd_http_rxchunk(CMD_ARGS)
@@ -1009,8 +1198,10 @@ cmd_http_txreq(CMD_ARGS)
 	http_write(hp, 4, "txreq");
 }
 
-/**********************************************************************
- * Receive N characters
+/* SECTION: client-server.spec.recv
+ *
+ * recv NUMBER
+ *         Read NUMBER bytes from the connection.
  */
 
 static void
@@ -1037,8 +1228,10 @@ cmd_http_recv(CMD_ARGS)
 	}
 }
 
-/**********************************************************************
- * Send a string
+/* SECTION: client-server.spec.send
+ *
+ * send STRING
+ *         Push STRING on the connection.
  */
 
 static void
@@ -1059,8 +1252,10 @@ cmd_http_send(CMD_ARGS)
 		    strerror(errno));
 }
 
-/**********************************************************************
- * Send a string many times
+/* SECTION: client-server.spec.send_n
+ *
+ * send_n NUMBER STRING
+ *         Write STRING on the socket NUMBER times.
  */
 
 static void
@@ -1087,8 +1282,10 @@ cmd_http_send_n(CMD_ARGS)
 	}
 }
 
-/**********************************************************************
- * Send an OOB urgent message
+/* SECTION: client-server.spec.send_urgent
+ *
+ * send_urgent STRING
+ *         Send string as TCP OOB urgent data. You will never need this.
  */
 
 static void
@@ -1109,8 +1306,12 @@ cmd_http_send_urgent(CMD_ARGS)
 		    "Write error in http_send_urgent(): %s", strerror(errno));
 }
 
-/**********************************************************************
- * Send a hex string
+/* SECTION: client-server.spec.sendhex
+ *
+ * sendhex STRING
+ *         Send bytes as described by STRING. STRING should consist of hex pairs
+ *         possibly separated by whitespace or newlines. For example:
+ *         "0F EE a5    3df2".
  */
 
 static void
@@ -1150,8 +1351,10 @@ cmd_http_sendhex(CMD_ARGS)
 
 }
 
-/**********************************************************************
- * Send a string as chunked encoding
+/* SECTION: client-server.spec.chunked
+ *
+ * chunked STRING
+ *         Send STRING as chunked encoding.
  */
 
 static void
@@ -1169,6 +1372,13 @@ cmd_http_chunked(CMD_ARGS)
 	    (uintmax_t)strlen(av[1]), nl, av[1], nl);
 	http_write(hp, 4, "chunked");
 }
+
+/* SECTION: client-server.spec.chunkedlen
+ *
+ * chunkedlen NUMBER
+ *         Do as ``chunked`` except that varnishtest will generate the string
+ *         for you, with a length of NUMBER characters.
+ */
 
 static void
 cmd_http_chunkedlen(CMD_ARGS)
@@ -1205,8 +1415,11 @@ cmd_http_chunkedlen(CMD_ARGS)
 	http_write(hp, 4, "chunked");
 }
 
-/**********************************************************************
- * set the timeout
+
+/* SECTION: client-server.spec.timeout
+ *
+ * timeout NUMBER
+ *         Set the TCP timeout for this entity. 
  */
 
 static void
@@ -1226,8 +1439,10 @@ cmd_http_timeout(CMD_ARGS)
 	hp->timeout = (int)(d * 1000.0);
 }
 
-/**********************************************************************
- * expect other end to close (server only)
+/* SECTION: client-server.spec.expect_close
+ *
+ * expect_close
+ *         Wait for the connected client to close the connection.
  */
 
 static void
@@ -1268,8 +1483,10 @@ cmd_http_expect_close(CMD_ARGS)
 	vtc_log(vl, 4, "fd=%d EOF, as expected", hp->fd);
 }
 
-/**********************************************************************
- * close a new connection  (server only)
+/* SECTION: client-server.spec.close
+ *
+ * close (server only)
+ *         Close the active TCP connection
  */
 
 static void
@@ -1287,8 +1504,10 @@ cmd_http_close(CMD_ARGS)
 	vtc_log(vl, 4, "Closed");
 }
 
-/**********************************************************************
- * close and accept a new connection  (server only)
+/* SECTION: client-server.spec.accept_close
+ *
+ * accept (server only)
+ *         Close the active connection (if any) and accept a new one.
  */
 
 static void
@@ -1311,8 +1530,10 @@ cmd_http_accept(CMD_ARGS)
 	vtc_log(vl, 3, "Accepted socket fd is %d", hp->fd);
 }
 
-/**********************************************************************
- * loop operator
+/* SECTION: client-server.spec.loop
+ *
+ * loop NUMBER STRING
+ *         Process STRING as a specification, NUMBER times.
  */
 
 static void
@@ -1332,8 +1553,10 @@ cmd_http_loop(CMD_ARGS)
 	}
 }
 
-/**********************************************************************
- * Control fatality
+/* SECTION: client-server.spec.fatal
+ *
+ * fatal|non-fatal
+ *         Control whether a failure of this entity should stop the test.
  */
 
 static void
@@ -1351,6 +1574,17 @@ cmd_http_fatal(CMD_ARGS)
 		vtc_log(vl, 0, "XXX: fatal %s", cmd->name);
 	}
 }
+
+/* SECTION: client-server.spec.delay
+ * 
+ * delay
+ *         Same as for the top-level delay.
+ *
+ * SECTION: client-server.spec.barrier
+ *
+ * barrier
+ *         Same as for the top-level barrier
+ */
 
 /**********************************************************************
  * Execute HTTP specifications

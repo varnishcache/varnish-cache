@@ -392,8 +392,15 @@ reset_cmds(const struct cmds *cmd)
 		cmd->cmd(NULL, NULL, NULL, NULL);
 }
 
-/**********************************************************************
- * Output test description
+/* SECTION: varnishtest varnishtest
+ *
+ * This should be the first command in your vtc as it will identify the test
+ * case with a short yet descriptive sentence. It takes exactly one argument, a
+ * string, eg::
+ *
+ *         varnishtest "Check that varnishtest is actually a valid command"
+ *
+ * It will also print that string in the log.
  */
 
 static void
@@ -412,8 +419,18 @@ cmd_varnishtest(CMD_ARGS)
 	AZ(av[2]);
 }
 
-/**********************************************************************
- * Shell command execution
+/* SECTION: shell shell
+ *
+ * Pass the string given as argument to a shell. If you have multiple commands
+ * to run, you can use curly barces to describe a multi-lines script, eg::
+ *
+ *         shell {
+ *                 echo begin
+ *                 cat /etc/fstab
+ *                 echo end
+ *         }
+ *
+ * The vtc will fail if the return code of the shell is not 0.
  */
 
 static void
@@ -435,8 +452,15 @@ cmd_shell(CMD_ARGS)
 		    av[1], s, strerror(errno));
 }
 
-/**********************************************************************
- * Shell command execution
+/* SECTION: err_shell err_shell
+ *
+ * This is very similar to the the ``shell`` command, except it takes a first
+ * string as argument before the command::
+ *
+ *         err_shell "foo" "echo foo"
+ *
+ * err_shell expect the shell command to fail AND stdout to match the string,
+ * failing the test case otherwise.
  */
 
 static void
@@ -483,8 +507,11 @@ cmd_err_shell(CMD_ARGS)
 	VSB_destroy(&vsb);
 }
 
-/**********************************************************************
- * Dump command arguments
+/* SECTION: delay delay
+ *
+ * This is the equivalent of ``sleep`` in shell: the command takes one argument
+ * that is the number of seconds (can be a float) to wait before continuing the
+ * test.
  */
 
 void
@@ -515,6 +542,11 @@ static const unsigned long random_expect[NRNDEXPECT] = {
 };
 
 #define RND_NEXT_1K	0x3bdcbe30
+
+/* SECTION: random random
+ *
+ * Check the random number generator.
+ */
 
 static void
 cmd_random(CMD_ARGS)
@@ -549,8 +581,20 @@ cmd_random(CMD_ARGS)
 	}
 }
 
-/**********************************************************************
- * Check features.
+/* SECTION: feature feature
+ *
+ * Test that the required feature(s) for a test are available, and skip the test
+ * otherwise. feature takes any number of arguments from this list:
+ *
+ * - SO_RCVTIMEO_WORKS
+ * - 64bit
+ * - !OSX
+ * - dns
+ * - topbuild
+ * - root
+ * - user_varnish
+ * - user_vcache
+ *
  */
 
 static void
