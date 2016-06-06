@@ -1140,7 +1140,7 @@ def one_var(nm, spec):
 	cnam = i[0].replace(".", "_")
 	ctyp = vcltypes[typ]
 
-	fo.write("\t{ \"%s\", %s, %d,\n" % (nm, typ, len(nm)))
+	fo.write("\t{ \"%s\", %s,\n" % (nm, typ))
 
 	if len(spec[2]) == 0:
 		fo.write('\t    NULL,\t/* No reads allowed */\n')

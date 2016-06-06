@@ -224,7 +224,6 @@ struct vcc {
 struct var {
 	const char		*name;
 	enum var_type		fmt;
-	unsigned		len;
 	const char		*rname;
 	unsigned		r_methods;
 	const char		*lname;
