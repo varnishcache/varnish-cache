@@ -65,11 +65,36 @@ VCC_SymKind(struct vcc *tl, const struct symbol *s)
 }
 
 static struct symbol *
+vcc_new_symbol(struct vcc *tl, const char *b, const char *e)
+{
+	struct symbol *sym;
+
+	AN(b);
+	if (e == NULL)
+		e = strchr(b, '\0');
+	AN(e);
+	assert(e > b);
+	sym = TlAlloc(tl, sizeof *sym);
+	INIT_OBJ(sym, SYMBOL_MAGIC);
+	AN(sym);
+	sym->name = TlAlloc(tl, (e - b) + 1L);
+	AN(sym->name);
+	memcpy(sym->name, b, (e - b));
+	sym->name[e - b] = '\0';
+	sym->nlen = e - b;
+	VTAILQ_INIT(&sym->children);
+	return (sym);
+}
+
+static struct symbol *
 vcc_AddSymbol(struct vcc *tl, const char *nb, int l, enum symkind kind)
 {
 	struct symbol *sym;
 
-	VTAILQ_FOREACH(sym, &tl->symbols, list) {
+	if (tl->symbols == NULL)
+		tl->symbols = vcc_new_symbol(tl, "<root>", NULL);
+
+	VTAILQ_FOREACH(sym, &tl->symbols->children, list) {
 		if (sym->nlen != l)
 			continue;
 		if (memcmp(nb, sym->name, l))
@@ -81,14 +106,8 @@ vcc_AddSymbol(struct vcc *tl, const char *nb, int l, enum symkind kind)
 		ErrInternal(tl);
 		return (NULL);
 	}
-	ALLOC_OBJ(sym, SYMBOL_MAGIC);
-	AN(sym);
-	sym->name = malloc(l + 1L);
-	AN(sym->name);
-	memcpy(sym->name, nb, l);
-	sym->name[l] = '\0';
-	sym->nlen = l;
-	VTAILQ_INSERT_HEAD(&tl->symbols, sym, list);
+	sym = vcc_new_symbol(tl, nb, nb + l);
+	VTAILQ_INSERT_HEAD(&tl->symbols->children, sym, list);
 	sym->kind = kind;
 	return (sym);
 }
@@ -127,7 +146,7 @@ VCC_FindSymbol(struct vcc *tl, const struct token *t, enum symkind kind)
 	struct symbol *sym;
 
 	assert(t->tok == ID);
-	VTAILQ_FOREACH(sym, &tl->symbols, list) {
+	VTAILQ_FOREACH(sym, &tl->symbols->children, list) {
 		if (sym->kind == SYM_WILDCARD &&
 		   (t->e - t->b > sym->nlen) &&
 		   !memcmp(sym->name, t->b, sym->nlen)) {
@@ -147,7 +166,7 @@ VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, enum symkind kind)
 {
 	struct symbol *sym;
 
-	VTAILQ_FOREACH(sym, &tl->symbols, list) {
+	VTAILQ_FOREACH(sym, &tl->symbols->children, list) {
 		if (kind == SYM_NONE || kind == sym->kind)
 			func(tl, sym);
 		ERRCHK(tl);

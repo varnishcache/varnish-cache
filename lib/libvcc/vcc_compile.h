@@ -113,6 +113,7 @@ struct symbol {
 	unsigned			magic;
 #define SYMBOL_MAGIC			0x3368c9fb
 	VTAILQ_ENTRY(symbol)		list;
+	VTAILQ_HEAD(,symbol)		children;
 
 	char				*name;
 	unsigned			nlen;
@@ -179,7 +180,7 @@ struct vcc {
 	/* Parameter/Template section */
 	const struct vcp	*param;
 
-	VTAILQ_HEAD(, symbol)	symbols;
+	struct symbol		*symbols;
 
 	struct inifinhead	inifin;
 	unsigned		ninifin;

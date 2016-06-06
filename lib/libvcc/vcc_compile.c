@@ -575,7 +575,6 @@ vcc_NewVcc(const struct vcp *vcp)
 	ALLOC_OBJ(tl, VCC_MAGIC);
 	AN(tl);
 	tl->param = vcp;
-	VTAILQ_INIT(&tl->symbols);
 	VTAILQ_INIT(&tl->inifin);
 	VTAILQ_INIT(&tl->membits);
 	VTAILQ_INIT(&tl->tokens);
@@ -606,7 +605,6 @@ vcc_DestroyTokenList(struct vcc *tl, char *ret)
 {
 	struct membit *mb;
 	struct source *sp;
-	struct symbol *sym;
 	int i;
 
 	while (!VTAILQ_EMPTY(&tl->membits)) {
@@ -619,12 +617,6 @@ vcc_DestroyTokenList(struct vcc *tl, char *ret)
 		sp = VTAILQ_FIRST(&tl->sources);
 		VTAILQ_REMOVE(&tl->sources, sp, list);
 		vcc_destroy_source(sp);
-	}
-
-	while (!VTAILQ_EMPTY(&tl->symbols)) {
-		sym = VTAILQ_FIRST(&tl->symbols);
-		VTAILQ_REMOVE(&tl->symbols, sym, list);
-		FREE_OBJ(sym);
 	}
 
 	VSB_destroy(&tl->fh);
