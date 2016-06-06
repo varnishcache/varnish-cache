@@ -924,6 +924,10 @@ varnish_expect(const struct varnish *v, char * const *av)
  *         varnish vNAME [-arg STRING] [-vcl STRING] [-vcl+backend STRING]
  *	                 [-errvcl STRING STRING] [-jail STRING] [-proto PROXY]
  *
+ * The first ``varnish vNAME`` invocation will start the varnishd master
+ * process in the background, waiting for the ``-start`` switch to actually
+ * start the child.
+ *
  * With:
  *
  * vNAME
@@ -956,8 +960,10 @@ varnish_expect(const struct varnish *v, char * const *av)
  *         varnish vNAME [-start] [-wait] [-wait-running] [-wait-stopped]
  *
  * \-start
- *         Start Varnish in the background, immediately processing the rest of
- *         the file.
+ *         Start the child process.
+ *
+ * \-stop
+ *         Stop the child process.
  *
  * \-wait
  *         Wait for that instance to terminate.
