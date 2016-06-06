@@ -106,14 +106,16 @@ enum symkind {
 
 typedef void sym_expr_t(struct vcc *tl, struct expr **,
     const struct symbol *sym, enum var_type);
-typedef struct symbol *sym_wildcard_t(struct vcc *tl, const struct token *t,
-    const struct symbol *sym);
+typedef void sym_wildcard_t(struct vcc *, struct symbol *,
+    const char *, const char *);
 
 struct symbol {
 	unsigned			magic;
 #define SYMBOL_MAGIC			0x3368c9fb
 	VTAILQ_ENTRY(symbol)		list;
 	VTAILQ_HEAD(,symbol)		children;
+
+	const char			*vmod;
 
 	char				*name;
 	unsigned			nlen;
@@ -289,7 +291,7 @@ sym_expr_t vcc_Eval_Var;
 sym_expr_t vcc_Eval_Handle;
 sym_expr_t vcc_Eval_SymFunc;
 void vcc_Eval_Func(struct vcc *tl, const char *cfunc, const char *extra,
-    const char *name, const char *args);
+    const char *name, const char *args, const char *vmod);
 enum var_type VCC_arg_type(const char **p);
 enum symkind VCC_HandleKind(enum var_type fmt);
 struct symbol *VCC_HandleSymbol(struct vcc *, const struct token *,
@@ -312,6 +314,8 @@ void Resolve_Sockaddr(struct vcc *tl, const char *host, const char *defport,
     const struct token *t_err, const char *errid);
 
 /* vcc_symb.c */
+struct symbol *VCC_Symbol(struct vcc *, struct symbol *,
+    const char *, const char *, enum symkind, int);
 struct symbol *VCC_AddSymbolStr(struct vcc *tl, const char *name, enum symkind);
 struct symbol *VCC_AddSymbolTok(struct vcc *tl, const struct token *t,
     enum symkind kind);

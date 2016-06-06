@@ -61,21 +61,18 @@
 
 #include "vcc_compile.h"
 
-#define PFX "storage."
-
 /*--------------------------------------------------------------------
  *
  */
 
 static struct var *
-vcc_Stv_mkvar(struct vcc *tl, const struct token *t, enum var_type fmt)
+vcc_Stv_mkvar(struct vcc *tl, enum var_type fmt)
 {
 	struct var *v;
 
 	v = TlAlloc(tl, sizeof *v);
 	AN(v);
 
-	v->name = TlDupTok(tl, t);
 	v->r_methods = 0;
 #define VCL_MET_MAC(l,u,t,b)	v->r_methods |= VCL_MET_##u;
 #include "tbl/vcl_returns.h"
@@ -95,39 +92,34 @@ static struct stvars {
 	{ NULL,			BOOL }
 };
 
-struct symbol *
-vcc_Stv_Wildcard(struct vcc *tl, const struct token *t,
-    const struct symbol *wcsym)
+void __match_proto__(sym_wildcard_t)
+vcc_Stv_Wildcard(struct vcc *tl, struct symbol *parent,
+    const char *b, const char *e)
 {
-	const char *p, *q;
+	const char *q;
 	struct var *v = NULL;
 	struct symbol *sym;
 	struct stvars *sv;
 	char stv[1024];
 	char buf[1024];
 
-	(void)wcsym;
-	assert((t->e - t->b) > strlen(PFX));
-	AZ(memcmp(t->b, PFX, strlen(PFX)));
-
-	p = t->b + strlen(PFX);
-	for (q = p; q < t->e && *q != '.'; q++)
+	for (q = b; q < e && *q != '.'; q++)
 		continue;
-	bprintf(stv, "%.*s", (int)(q - p), p);
+	bprintf(stv, "%.*s", (int)(q - b), b);
 
-	if (q == t->e) {
-		v = vcc_Stv_mkvar(tl, t, BOOL);
+	if (q == e) {
+		v = vcc_Stv_mkvar(tl, BOOL);
 		bprintf(buf, "VRT_Stv(\"%s\")", stv);
 		v->rname = TlDup(tl, buf);
 	} else {
 		assert(*q  == '.');
 		q++;
 		for(sv = stvars; sv->name != NULL; sv++) {
-			if (strncmp(q, sv->name, t->e - q))
+			if (strncmp(q, sv->name, e - q))
 				continue;
-			if (sv->name[t->e - q] != '\0')
+			if (sv->name[e - q] != '\0')
 				continue;
-			v = vcc_Stv_mkvar(tl, t, sv->fmt);
+			v = vcc_Stv_mkvar(tl, sv->fmt);
 			bprintf(buf, "VRT_Stv_%s(\"%s\")", sv->name, stv);
 			v->rname = TlDup(tl, buf);
 			break;
@@ -135,9 +127,9 @@ vcc_Stv_Wildcard(struct vcc *tl, const struct token *t,
 	}
 
 	if (v == NULL)
-		return (NULL);
+		return;
 
-	sym = VCC_AddSymbolTok(tl, t, SYM_VAR);
+	sym = VCC_Symbol(tl, parent, b, e, SYM_VAR, 1);
 	AN(sym);
 	sym->fmt = v->fmt;
 	sym->eval = vcc_Eval_Var;
@@ -145,6 +137,4 @@ vcc_Stv_Wildcard(struct vcc *tl, const struct token *t,
 	sym->rname = v->rname;
 	sym->w_methods = v->w_methods;
 	sym->lname = v->lname;
-
-	return (sym);
 }

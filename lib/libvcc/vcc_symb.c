@@ -86,30 +86,83 @@ vcc_new_symbol(struct vcc *tl, const char *b, const char *e)
 	return (sym);
 }
 
-static struct symbol *
-vcc_AddSymbol(struct vcc *tl, const char *nb, int l, enum symkind kind)
+struct symbol *
+VCC_Symbol(struct vcc *tl, struct symbol *parent,
+    const char *b, const char *e, enum symkind kind, int create)
 {
-	struct symbol *sym;
+	const char *q;
+	struct symbol *sym, *sym2 = NULL;
+	size_t l;
+	int i;
 
 	if (tl->symbols == NULL)
 		tl->symbols = vcc_new_symbol(tl, "<root>", NULL);
+	if (parent == NULL)
+		parent = tl->symbols;
 
-	VTAILQ_FOREACH(sym, &tl->symbols->children, list) {
-		if (sym->nlen != l)
+	AN(b);
+	assert(e == NULL || b < e);
+	if (e == NULL)
+		e = strchr(b, '\0');
+	assert(e > b);
+	if (e[-1] == '.')
+		e--;
+	assert(e > b);
+
+	q = strchr(b, '.');
+	if (q == NULL || q > e)
+		q = e;
+	l = q - b;
+	assert(l > 0);
+
+	VTAILQ_FOREACH(sym, &parent->children, list) {
+		i = strncmp(sym->name, b, l);
+		if (i < 0)
 			continue;
-		if (memcmp(nb, sym->name, l))
+		if (i > 0 || l < sym->nlen) {
+			sym2 = sym;
+			sym = NULL;
+			break;
+		}
+		if (l > sym->nlen)
 			continue;
-		if (kind != sym->kind)
+		if (q < e)
+			break;
+		if (kind != SYM_NONE && sym->kind != kind)
 			continue;
-		VSB_printf(tl->sb, "Name Collision: <%.*s> <%s>\n",
-		    l, nb, VCC_SymKind(tl, sym));
-		ErrInternal(tl);
-		return (NULL);
+		if (kind == SYM_NONE && sym->kind == kind)
+			continue;
+		break;
 	}
-	sym = vcc_new_symbol(tl, nb, nb + l);
-	VTAILQ_INSERT_HEAD(&tl->symbols->children, sym, list);
-	sym->kind = kind;
-	return (sym);
+	if (sym == NULL && create == 0 && parent->kind == SYM_WILDCARD) {
+		AN(parent->wildcard);
+		parent->wildcard(tl, parent, b, e);
+		if (tl->err)
+			return (NULL);
+		return (VCC_Symbol(tl, parent, b, e, kind, -1));
+	}
+	if (sym == NULL && create < 1)
+		return (sym);
+	if (sym == NULL) {
+		sym = vcc_new_symbol(tl, b, q);
+		if (sym2 != NULL)
+			VTAILQ_INSERT_BEFORE(sym2, sym, list);
+		else
+			VTAILQ_INSERT_TAIL(&parent->children, sym, list);
+		if (q == e)
+			sym->kind = kind;
+	}
+	if (q == e)
+		return (sym);
+	assert(*q == '.');
+	return (VCC_Symbol(tl, sym, ++q, e, kind, create));
+}
+
+static struct symbol *
+vcc_AddSymbol(struct vcc *tl, const char *nb, int l, enum symkind kind)
+{
+
+	return(VCC_Symbol(tl, NULL, nb, nb + l, kind, 1));
 }
 
 struct symbol *
@@ -143,34 +196,30 @@ VCC_GetSymbolTok(struct vcc *tl, const struct token *tok, enum symkind kind)
 struct symbol *
 VCC_FindSymbol(struct vcc *tl, const struct token *t, enum symkind kind)
 {
-	struct symbol *sym;
 
 	assert(t->tok == ID);
-	VTAILQ_FOREACH(sym, &tl->symbols->children, list) {
-		if (sym->kind == SYM_WILDCARD &&
-		   (t->e - t->b > sym->nlen) &&
-		   !memcmp(sym->name, t->b, sym->nlen)) {
-			AN(sym->wildcard);
-			return (sym->wildcard(tl, t, sym));
-		}
-		if (kind != SYM_NONE && kind != sym->kind)
-			continue;
-		if (vcc_IdIs(t, sym->name))
-			return (sym);
+	return (VCC_Symbol(tl, NULL, t->b, t->e, kind, 0));
+}
+
+static void
+vcc_walksymbols(struct vcc *tl, const struct symbol *root,
+    symwalk_f *func, enum symkind kind)
+{
+	struct symbol *sym;
+
+	VTAILQ_FOREACH(sym, &root->children, list) {
+		if (kind == SYM_NONE || kind == sym->kind)
+			func(tl, sym);
+		ERRCHK(tl);
+		vcc_walksymbols(tl, sym, func, kind);
 	}
-	return (NULL);
 }
 
 void
 VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, enum symkind kind)
 {
-	struct symbol *sym;
 
-	VTAILQ_FOREACH(sym, &tl->symbols->children, list) {
-		if (kind == SYM_NONE || kind == sym->kind)
-			func(tl, sym);
-		ERRCHK(tl);
-	}
+	vcc_walksymbols(tl, tl->symbols, func, kind);
 }
 
 static void

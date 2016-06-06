@@ -37,32 +37,31 @@
 
 /*--------------------------------------------------------------------*/
 
-struct symbol *
-vcc_Var_Wildcard(struct vcc *tl, const struct token *t, const struct symbol *wc)
+void __match_proto__(sym_wildcard_t)
+vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent,
+    const char *b, const char *e)
 {
 	struct symbol *sym;
 	struct var *v;
 	const struct var *vh;
 	unsigned u;
-	const char *p, *leaf;
+	const char *p;
 	struct vsb *vsb;
 
-	vh = wc->wildcard_priv;
+	vh = parent->wildcard_priv;
 	assert(vh->fmt == HEADER);
 
 	v = TlAlloc(tl, sizeof *v);
 	AN(v);
-	v->name = TlDupTok(tl, t);
 	v->r_methods = vh->r_methods;
 	v->w_methods = vh->w_methods;
 	v->fmt = vh->fmt;
-	leaf = v->name + vh->len;
 
 	/* Create a C-name version of the header name */
 	vsb = VSB_new_auto();
 	AN(vsb);
 	VSB_printf(vsb, "&VGC_%s_", vh->rname);
-	for (p = leaf, u = 1; *p != '\0'; p++, u++)
+	for (p = b, u = 1; p < e; p++, u++)
 		if (vct_isalpha(*p) || vct_isdigit(*p))
 			VSB_putc(vsb, *p);
 		else
@@ -71,7 +70,8 @@ vcc_Var_Wildcard(struct vcc *tl, const struct token *t, const struct symbol *wc)
 
 	/* Create the static identifier */
 	Fh(tl, 0, "static const struct gethdr_s %s =\n", VSB_data(vsb) + 1);
-	Fh(tl, 0, "    { %s, \"\\%03o%s:\"};\n", vh->rname, u, leaf);
+	Fh(tl, 0, "    { %s, \"\\%03o%.*s:\"};\n",
+	    vh->rname, u, (int)(e - b), b);
 
 	/* Create the symbol r/l values */
 	v->rname = TlDup(tl, VSB_data(vsb));
@@ -81,7 +81,7 @@ vcc_Var_Wildcard(struct vcc *tl, const struct token *t, const struct symbol *wc)
 	v->lname = TlDup(tl, VSB_data(vsb));
 	VSB_destroy(&vsb);
 
-	sym = VCC_AddSymbolTok(tl, t, SYM_VAR);
+	sym = VCC_Symbol(tl, parent, b, e, SYM_VAR, 1);
 	AN(sym);
 	sym->fmt = v->fmt;
 	sym->eval = vcc_Eval_Var;
@@ -89,7 +89,6 @@ vcc_Var_Wildcard(struct vcc *tl, const struct token *t, const struct symbol *wc)
 	sym->rname = v->rname;
 	sym->w_methods = v->w_methods;
 	sym->lname = v->lname;
-	return (sym);
 }
 
 /*--------------------------------------------------------------------*/

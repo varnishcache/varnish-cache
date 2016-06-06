@@ -174,7 +174,7 @@ parse_new(struct vcc *tl)
 		return;
 	}
 
-	sy1 = VCC_AddSymbolTok(tl, tl->t, SYM_NONE);	// XXX: NONE ?
+	sy1 = VCC_AddSymbolTok(tl, tl->t, SYM_INSTANCE);
 	XXXAN(sy1);
 	sy1->def_b = tl->t;
 	vcc_NextToken(tl);
@@ -218,7 +218,8 @@ parse_new(struct vcc *tl)
 	vcc_NextToken(tl);
 
 	bprintf(buf1, ", &vo_%s, \"%s\"", sy1->name, sy1->name);
-	vcc_Eval_Func(tl, s_init, buf1, sy2->name, s_init + strlen(s_init) + 1);
+	vcc_Eval_Func(tl, s_init, buf1, sy2->name, s_init + strlen(s_init) + 1,
+	    sy2->vmod);
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->fin, "\t\t%s(&vo_%s);", s_fini, sy1->name);
 	ExpectErr(tl, ';');

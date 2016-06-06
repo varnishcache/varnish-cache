@@ -537,18 +537,15 @@ vcc_Eval_Var(struct vcc *tl, struct expr **e, const struct symbol *sym,
  */
 
 static struct expr *
-vcc_priv_arg(struct vcc *tl, const char *p, const char *name)
+vcc_priv_arg(struct vcc *tl, const char *p, const char *name, const char *vmod)
 {
-	const char *r;
 	struct expr *e2;
 	char buf[32];
 	struct inifin *ifp;
 
+	(void)name;
 	if (!strcmp(p, "PRIV_VCL")) {
-		r = strchr(name, '.');
-		AN(r);
-		e2 = vcc_mk_expr(VOID, "&vmod_priv_%.*s",
-		    (int) (r - name), name);
+		e2 = vcc_mk_expr(VOID, "&vmod_priv_%s", vmod);
 	} else if (!strcmp(p, "PRIV_CALL")) {
 		bprintf(buf, "vmod_priv_%u", tl->unique++);
 		ifp = New_IniFin(tl);
@@ -556,17 +553,11 @@ vcc_priv_arg(struct vcc *tl, const char *p, const char *name)
 		VSB_printf(ifp->fin, "\tVRT_priv_fini(&%s);", buf);
 		e2 = vcc_mk_expr(VOID, "&%s", buf);
 	} else if (!strcmp(p, "PRIV_TASK")) {
-		r = strchr(name, '.');
-		AN(r);
 		e2 = vcc_mk_expr(VOID,
-		    "VRT_priv_task(ctx, &VGC_vmod_%.*s)",
-		    (int) (r - name), name);
+		    "VRT_priv_task(ctx, &VGC_vmod_%s)", vmod);
 	} else if (!strcmp(p, "PRIV_TOP")) {
-		r = strchr(name, '.');
-		AN(r);
 		e2 = vcc_mk_expr(VOID,
-		    "VRT_priv_top(ctx, &VGC_vmod_%.*s)",
-		    (int) (r - name), name);
+		    "VRT_priv_top(ctx, &VGC_vmod_%s)", vmod);
 	} else {
 		WRONG("Wrong PRIV_ type");
 	}
@@ -633,7 +624,7 @@ vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 
 static void
 vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
-    const char *extra, const char *name, const char *args)
+    const char *extra, const char *name, const char *args, const char *vmod)
 {
 	const char *p;
 	struct expr *e1;
@@ -657,7 +648,7 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 		VTAILQ_INSERT_TAIL(&head, fa, list);
 		fa->type = VCC_arg_type(&p);
 		if (fa->type == VOID && !memcmp(p, "PRIV_", 5)) {
-			fa->result = vcc_priv_arg(tl, p, name);
+			fa->result = vcc_priv_arg(tl, p, name, vmod);
 			fa->name = "";
 			p += strlen(p) + 1;
 			continue;
@@ -751,13 +742,13 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 
 void
 vcc_Eval_Func(struct vcc *tl, const char *cfunc,
-    const char *extra, const char *name, const char *args)
+    const char *extra, const char *name, const char *args, const char *vmod)
 {
 	struct expr *e = NULL;
 	struct token *t1;
 
 	t1 = tl->t;
-	vcc_func(tl, &e, cfunc, extra, name, args);
+	vcc_func(tl, &e, cfunc, extra, name, args, vmod);
 	if (!tl->err) {
 		vcc_expr_fmt(tl->fb, tl->indent, e);
 		VSB_cat(tl->fb, ";\n");
@@ -782,7 +773,8 @@ vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, const struct symbol *sym,
 	AN(sym->name);
 	AN(sym->args);
 	SkipToken(tl, ID);
-	vcc_func(tl, e, sym->cfunc, sym->extra, sym->name, sym->args);
+	vcc_func(tl, e, sym->cfunc, sym->extra, sym->name, sym->args,
+	    sym->vmod);
 }
 
 /*--------------------------------------------------------------------

@@ -32,6 +32,7 @@ VCC_SYMB(NONE,		none)
 VCC_SYMB(ACL,		acl)
 VCC_SYMB(BACKEND,	backend)
 VCC_SYMB(FUNC,		func)		/* VMOD function/procedure */
+VCC_SYMB(INSTANCE,	instance)
 VCC_SYMB(METHOD,	method)
 VCC_SYMB(OBJECT,	object)
 VCC_SYMB(PROBE,		probe)

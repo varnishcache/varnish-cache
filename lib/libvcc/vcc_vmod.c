@@ -67,6 +67,7 @@ vcc_ParseImport(struct vcc *tl)
 	struct inifin *ifp;
 	const char * const *spec;
 	struct symbol *sym;
+	struct symbol *msym;
 	const struct symbol *osym;
 	const char *p;
 	// int *modlen;
@@ -96,11 +97,11 @@ vcc_ParseImport(struct vcc *tl)
 	}
 
 	bprintf(fn, "%.*s", PF(mod));
-	sym = VCC_AddSymbolStr(tl, fn, SYM_VMOD);
+	msym = VCC_AddSymbolStr(tl, fn, SYM_VMOD);
 	ERRCHK(tl);
-	AN(sym);
-	sym->def_b = t1;
-	sym->def_e = tl->t;
+	AN(msym);
+	msym->def_b = t1;
+	msym->def_e = tl->t;
 
 	if (tl->t->tok == ID) {
 		if (!vcc_IdIs(tl->t, "from")) {
@@ -222,6 +223,7 @@ vcc_ParseImport(struct vcc *tl)
 			sym = VCC_AddSymbolStr(tl, p, SYM_OBJECT);
 			XXXAN(sym);
 			sym->args = p;
+			sym->vmod = msym->name;
 		} else if (!strcmp(p, "$EVENT")) {
 			p += strlen(p) + 1;
 			if (ifp == NULL)
@@ -240,6 +242,7 @@ vcc_ParseImport(struct vcc *tl)
 			sym = VCC_AddSymbolStr(tl, p, SYM_FUNC);
 			ERRCHK(tl);
 			AN(sym);
+			sym->vmod = msym->name;
 			sym->eval = vcc_Eval_SymFunc;
 			p += strlen(p) + 1;
 			sym->cfunc = p;
