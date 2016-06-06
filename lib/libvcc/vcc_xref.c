@@ -78,7 +78,7 @@ vcc_AddRef(struct vcc *tl, const struct token *t, enum symkind kind)
 {
 	struct symbol *sym;
 
-	sym = VCC_GetSymbolTok(tl, t, kind);
+	sym = VCC_SymbolTok(tl, NULL, t, kind, 1);
 	AN(sym);
 	sym->nref++;
 }
@@ -88,7 +88,9 @@ vcc_AddDef(struct vcc *tl, const struct token *t, enum symkind kind)
 {
 	struct symbol *sym;
 
-	sym = VCC_GetSymbolTok(tl, t, kind);
+	sym = VCC_SymbolTok(tl, NULL, t, kind, 1);
+	if (sym->def_b == NULL)
+		sym->def_b = t;
 	AN(sym);
 	sym->ndef++;
 	return (sym->ndef);
@@ -134,7 +136,7 @@ vcc_findproc(struct vcc *tl, struct token *t)
 	struct proc *p;
 
 
-	sym = VCC_GetSymbolTok(tl, t, SYM_SUB);
+	sym = VCC_SymbolTok(tl, NULL, t, SYM_SUB, 1);
 	AN(sym);
 	if (sym->proc != NULL)
 		return (sym->proc);

@@ -814,13 +814,13 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
 		sym = NULL;
 		kind = VCC_HandleKind(fmt);
 		if (kind != SYM_NONE)
-			sym = VCC_FindSymbol(tl, tl->t, kind);
+			sym = VCC_SymbolTok(tl, NULL, tl->t, kind, 0);
 		if (sym == NULL)
-			sym = VCC_FindSymbol(tl, tl->t, SYM_VAR);
+			sym = VCC_SymbolTok(tl, NULL, tl->t, SYM_VAR, 0);
 		if (sym == NULL)
-			sym = VCC_FindSymbol(tl, tl->t, SYM_FUNC);
+			sym = VCC_SymbolTok(tl, NULL, tl->t, SYM_FUNC, 0);
 		if (sym == NULL)
-			sym = VCC_FindSymbol(tl, tl->t, SYM_NONE);
+			sym = VCC_SymbolTok(tl, NULL, tl->t, SYM_NONE, 0);
 		if (sym == NULL || sym->eval == NULL) {
 			VSB_printf(tl->sb, "Symbol not found: ");
 			vcc_ErrToken(tl, tl->t);
@@ -1409,22 +1409,22 @@ vcc_Expr_Init(struct vcc *tl)
 {
 	struct symbol *sym;
 
-	sym = VCC_AddSymbolStr(tl, "regsub", SYM_FUNC);
+	sym = VCC_Symbol(tl, NULL, "regsub", NULL, SYM_FUNC, 1);
 	AN(sym);
 	sym->eval = vcc_Eval_Regsub;
 	sym->eval_priv = NULL;
 
-	sym = VCC_AddSymbolStr(tl, "regsuball", SYM_FUNC);
+	sym = VCC_Symbol(tl, NULL, "regsuball", NULL, SYM_FUNC, 1);
 	AN(sym);
 	sym->eval = vcc_Eval_Regsub;
 	sym->eval_priv = sym;
 
-	sym = VCC_AddSymbolStr(tl, "true", SYM_FUNC);
+	sym = VCC_Symbol(tl, NULL, "true", NULL, SYM_FUNC, 1);
 	AN(sym);
 	sym->eval = vcc_Eval_BoolConst;
 	sym->eval_priv = sym;
 
-	sym = VCC_AddSymbolStr(tl, "false", SYM_FUNC);
+	sym = VCC_Symbol(tl, NULL, "false", NULL, SYM_FUNC, 1);
 	AN(sym);
 	sym->eval = vcc_Eval_BoolConst;
 	sym->eval_priv = NULL;

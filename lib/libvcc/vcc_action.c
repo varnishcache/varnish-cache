@@ -158,7 +158,7 @@ parse_new(struct vcc *tl)
 	ExpectErr(tl, ID);
 	vcc_ExpectCid(tl, "VCL object");
 	ERRCHK(tl);
-	sy1 = VCC_FindSymbol(tl, tl->t, SYM_NONE);
+	sy1 = VCC_SymbolTok(tl, NULL, tl->t, SYM_NONE, 0);
 	if (sy1 != NULL) {
 		VSB_printf(tl->sb, "Object name '%.*s' already used.\n",
 		    PF(tl->t));
@@ -174,7 +174,7 @@ parse_new(struct vcc *tl)
 		return;
 	}
 
-	sy1 = VCC_AddSymbolTok(tl, tl->t, SYM_INSTANCE);
+	sy1 = VCC_SymbolTok(tl, NULL, tl->t, SYM_INSTANCE, 1);
 	XXXAN(sy1);
 	sy1->def_b = tl->t;
 	vcc_NextToken(tl);
@@ -183,7 +183,7 @@ parse_new(struct vcc *tl)
 	vcc_NextToken(tl);
 
 	ExpectErr(tl, ID);
-	sy2 = VCC_FindSymbol(tl, tl->t, SYM_OBJECT);
+	sy2 = VCC_SymbolTok(tl, NULL, tl->t, SYM_OBJECT, 0);
 	if (sy2 == NULL) {
 		VSB_printf(tl->sb, "Symbol not found: ");
 		vcc_ErrToken(tl, tl->t);
@@ -229,7 +229,7 @@ parse_new(struct vcc *tl)
 	while (*p != '\0') {
 		p += strlen(s_obj);
 		bprintf(buf2, "%s%s", sy1->name, p);
-		sy3 = VCC_AddSymbolStr(tl, buf2, SYM_FUNC);
+		sy3 = VCC_Symbol(tl, NULL, buf2, NULL, SYM_FUNC, 1);
 		AN(sy3);
 		sy3->eval = vcc_Eval_SymFunc;
 		p += strlen(p) + 1;
@@ -415,7 +415,7 @@ vcc_ParseAction(struct vcc *tl)
 			return (1);
 		}
 	}
-	sym = VCC_FindSymbol(tl, tl->t, SYM_NONE);
+	sym = VCC_SymbolTok(tl, NULL, tl->t, SYM_NONE, 0);
 	if (sym != NULL && sym->kind == SYM_FUNC) {
 		vcc_Expr_Call(tl, sym);
 		return (1);

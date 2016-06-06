@@ -99,7 +99,7 @@ vcc_FindVar(struct vcc *tl, const struct token *t, int wr_access,
 {
 	const struct symbol *sym;
 
-	sym = VCC_FindSymbol(tl, t, SYM_VAR);
+	sym = VCC_SymbolTok(tl, NULL, t, SYM_VAR, 0);
 	if (sym != NULL) {
 		if (wr_access && sym->w_methods == 0) {
 			VSB_printf(tl->sb, "Variable ");

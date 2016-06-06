@@ -158,49 +158,6 @@ VCC_Symbol(struct vcc *tl, struct symbol *parent,
 	return (VCC_Symbol(tl, sym, ++q, e, kind, create));
 }
 
-static struct symbol *
-vcc_AddSymbol(struct vcc *tl, const char *nb, int l, enum symkind kind)
-{
-
-	return(VCC_Symbol(tl, NULL, nb, nb + l, kind, 1));
-}
-
-struct symbol *
-VCC_AddSymbolStr(struct vcc *tl, const char *name, enum symkind kind)
-{
-
-	return (vcc_AddSymbol(tl, name, strlen(name), kind));
-}
-
-struct symbol *
-VCC_AddSymbolTok(struct vcc *tl, const struct token *t, enum symkind kind)
-{
-
-	return (vcc_AddSymbol(tl, t->b, t->e - t->b, kind));
-}
-
-struct symbol *
-VCC_GetSymbolTok(struct vcc *tl, const struct token *tok, enum symkind kind)
-{
-	struct symbol *sym;
-
-	sym = VCC_FindSymbol(tl, tok, kind);
-	if (sym == NULL) {
-		sym = vcc_AddSymbol(tl, tok->b, tok->e - tok->b, kind);
-		AN(sym);
-		sym->def_b = tok;
-	}
-	return (sym);
-}
-
-struct symbol *
-VCC_FindSymbol(struct vcc *tl, const struct token *t, enum symkind kind)
-{
-
-	assert(t->tok == ID);
-	return (VCC_Symbol(tl, NULL, t->b, t->e, kind, 0));
-}
-
 static void
 vcc_walksymbols(struct vcc *tl, const struct symbol *root,
     symwalk_f *func, enum symkind kind)
@@ -272,7 +229,9 @@ VCC_HandleSymbol(struct vcc *tl, const struct token *tk, enum var_type fmt,
 	kind = VCC_HandleKind(fmt);
 	assert(kind != SYM_NONE);
 
-	sym = VCC_GetSymbolTok(tl, tk, kind);
+	sym = VCC_SymbolTok(tl, NULL, tk, kind, 1);
+	if (sym->def_b == NULL)
+		sym->def_b = tk;
 	AN(sym);
 	if (sym->ndef > 0) {
 		p = VCC_SymKind(tl, sym);

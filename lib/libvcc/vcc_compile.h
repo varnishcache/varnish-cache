@@ -315,13 +315,8 @@ void Resolve_Sockaddr(struct vcc *tl, const char *host, const char *defport,
 /* vcc_symb.c */
 struct symbol *VCC_Symbol(struct vcc *, struct symbol *,
     const char *, const char *, enum symkind, int);
-struct symbol *VCC_AddSymbolStr(struct vcc *tl, const char *name, enum symkind);
-struct symbol *VCC_AddSymbolTok(struct vcc *tl, const struct token *t,
-    enum symkind kind);
-struct symbol *VCC_GetSymbolTok(struct vcc *tl, const struct token *tok,
-    enum symkind);
-struct symbol *VCC_FindSymbol(struct vcc *tl,
-    const struct token *t, enum symkind kind);
+#define VCC_SymbolTok(vcc, sym, tok, kind, create) \
+    VCC_Symbol(vcc, sym, (tok)->b, (tok)->e, kind, create)
 const char * VCC_SymKind(struct vcc *tl, const struct symbol *s);
 typedef void symwalk_f(struct vcc *tl, const struct symbol *s);
 void VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, enum symkind kind);

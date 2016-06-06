@@ -650,7 +650,7 @@ vcc_CompileSource(const struct vcp * const vcp, struct vsb *sb,
 	vcc_Expr_Init(tl);
 
 	VTAILQ_FOREACH(sym, &vcp->symbols, list) {
-		sym2 = VCC_AddSymbolStr(tl, sym->name, sym->kind);
+		sym2 = VCC_Symbol(tl, NULL, sym->name, NULL, sym->kind, 1);
 		sym2->fmt = sym->fmt;
 		sym2->eval = sym->eval;
 		sym2->eval_priv = sym->eval_priv;
@@ -662,11 +662,12 @@ vcc_CompileSource(const struct vcp * const vcp, struct vsb *sb,
 
 	for (v = vcc_vars; v->name != NULL; v++) {
 		if (v->fmt == HEADER) {
-			sym = VCC_AddSymbolStr(tl, v->name, SYM_WILDCARD);
+			sym = VCC_Symbol(tl, NULL, v->name, NULL,
+			    SYM_WILDCARD, 1);
 			sym->wildcard = vcc_Var_Wildcard;
 			sym->wildcard_priv = v;
 		} else {
-			sym = VCC_AddSymbolStr(tl, v->name, SYM_VAR);
+			sym = VCC_Symbol(tl, NULL, v->name, NULL, SYM_VAR, 1);
 		}
 		sym->fmt = v->fmt;
 		sym->eval = vcc_Eval_Var;
@@ -676,7 +677,7 @@ vcc_CompileSource(const struct vcp * const vcp, struct vsb *sb,
 		sym->lname = v->lname;
 	}
 
-	sym = VCC_AddSymbolStr(tl, "storage.", SYM_WILDCARD);
+	sym = VCC_Symbol(tl, NULL, "storage", NULL, SYM_WILDCARD, 1);
 	sym->wildcard = vcc_Stv_Wildcard;
 
 	Fh(tl, 0, "/* ---===### VCC generated .h code ###===---*/\n");
