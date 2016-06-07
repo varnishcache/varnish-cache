@@ -110,7 +110,7 @@ vcc_ParseImport(struct vcc *tl)
 			return;
 		}
 		vcc_NextToken(tl);
-		if (!tl->param->unsafe_path && strchr(tl->t->dec, '/')) {
+		if (!tl->unsafe_path && strchr(tl->t->dec, '/')) {
 			VSB_printf(tl->sb,
 			    "'import ... from path ...' is unsafe.\nAt:");
 			vcc_ErrToken(tl, tl->t);
@@ -130,7 +130,7 @@ vcc_ParseImport(struct vcc *tl)
 
 	SkipToken(tl, ';');
 
-	if (VFIL_searchpath(tl->param->vmod_path,
+	if (VFIL_searchpath(tl->vmod_path,
 	    vcc_path_dlopen, &hdl, fn, &fnpx)) {
 		VSB_printf(tl->sb, "Could not load VMOD %.*s\n", PF(mod));
 		VSB_printf(tl->sb, "\tFile name: %s\n",

@@ -74,11 +74,6 @@ enum var_type {
 #undef VCC_TYPE
 };
 
-struct membit {
-	VTAILQ_ENTRY(membit)	list;
-	void			*ptr;
-};
-
 struct source {
 	VTAILQ_ENTRY(source)	list;
 	char			*name;
@@ -160,9 +155,10 @@ struct inifin {
 
 VTAILQ_HEAD(inifinhead, inifin);
 
-struct vcp {
+struct vcc {
 	unsigned		magic;
-#define VCP_MAGIC		0xd90acfbc
+#define VCC_MAGIC		0x24ad719d
+	float			syntax;
 
 	char			*builtin_vcl;
 	struct vfil_path	*vcl_path;
@@ -170,17 +166,6 @@ struct vcp {
 	unsigned		err_unref;
 	unsigned		allow_inline_c;
 	unsigned		unsafe_path;
-
-	VTAILQ_HEAD(,symbol)	symbols;
-};
-
-struct vcc {
-	unsigned		magic;
-#define VCC_MAGIC		0x24ad719d
-	float			syntax;
-
-	/* Parameter/Template section */
-	const struct vcp	*param;
 
 	struct symbol		*symbols;
 
@@ -190,7 +175,6 @@ struct vcc {
 	/* Instance section */
 	struct tokenhead	tokens;
 	VTAILQ_HEAD(, source)	sources;
-	VTAILQ_HEAD(, membit)	membits;
 	unsigned		nsources;
 	struct source		*src;
 	struct token		*t;

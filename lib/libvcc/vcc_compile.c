@@ -74,26 +74,14 @@ struct method method_tab[] = {
 
 /*--------------------------------------------------------------------*/
 
-static void
-TlDoFree(struct vcc *tl, void *p)
-{
-	struct membit *mb;
-
-	mb = calloc(sizeof *mb, 1);
-	assert(mb != NULL);
-	mb->ptr = p;
-	VTAILQ_INSERT_TAIL(&tl->membits, mb, list);
-}
-
-
-void *
+void * __match_proto__(TlAlloc)
 TlAlloc(struct vcc *tl, unsigned len)
 {
 	void *p;
 
+	(void)tl;
 	p = calloc(len, 1);
 	assert(p != NULL);
-	TlDoFree(tl, p);
 	return (p);
 }
 
@@ -453,31 +441,21 @@ vcc_new_source(const char *b, const char *e, const char *name)
 	return (sp);
 }
 
-static void
-vcc_destroy_source(struct source *sp)
-{
-
-	if (sp->freeit != NULL)
-		free(sp->freeit);
-	free(sp->name);
-	free(sp);
-}
-
 /*--------------------------------------------------------------------*/
 
 static struct source *
-vcc_file_source(const struct vcp * const vcp, struct vsb *sb, const char *fn)
+vcc_file_source(struct vcc *tl, const char *fn)
 {
 	char *f, *fnp;
 	struct source *sp;
 
-	if (!vcp->unsafe_path && strchr(fn, '/') != NULL) {
-		VSB_printf(sb, "VCL filename '%s' is unsafe.\n", fn);
+	if (!tl->unsafe_path && strchr(fn, '/') != NULL) {
+		VSB_printf(tl->sb, "VCL filename '%s' is unsafe.\n", fn);
 		return (NULL);
 	}
 	f = NULL;
-	if (VFIL_searchpath(vcp->vcl_path, NULL, &f, fn, &fnp) || f == NULL) {
-		VSB_printf(sb, "Cannot read file '%s' (%s)\n",
+	if (VFIL_searchpath(tl->vcl_path, NULL, &f, fn, &fnp) || f == NULL) {
+		VSB_printf(tl->sb, "Cannot read file '%s' (%s)\n",
 		    fnp != NULL ? fnp : fn, strerror(errno));
 		free(fnp);
 		return (NULL);
@@ -540,10 +518,10 @@ vcc_resolve_includes(struct vcc *tl)
 			VSB_bcat(vsb, t1->src->name, p - t1->src->name);
 			VSB_cat(vsb, t1->dec + 1);
 			AZ(VSB_finish(vsb));
-			sp = vcc_file_source(tl->param, tl->sb, VSB_data(vsb));
+			sp = vcc_file_source(tl, VSB_data(vsb));
 			VSB_destroy(&vsb);
 		} else {
-			sp = vcc_file_source(tl->param, tl->sb, t1->dec);
+			sp = vcc_file_source(tl, t1->dec);
 		}
 		if (sp == NULL) {
 			vcc_ErrWhere(tl, t1);
@@ -563,102 +541,21 @@ vcc_resolve_includes(struct vcc *tl)
 	}
 }
 
-/*--------------------------------------------------------------------*/
-
-static struct vcc *
-vcc_NewVcc(const struct vcp *vcp)
-{
-	struct vcc *tl;
-	int i;
-
-	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
-	ALLOC_OBJ(tl, VCC_MAGIC);
-	AN(tl);
-	tl->param = vcp;
-	VTAILQ_INIT(&tl->inifin);
-	VTAILQ_INIT(&tl->membits);
-	VTAILQ_INIT(&tl->tokens);
-	VTAILQ_INIT(&tl->sources);
-
-	tl->nsources = 0;
-
-	/* General C code */
-	tl->fc = VSB_new_auto();
-	assert(tl->fc != NULL);
-
-	/* Forward decls (.h like) */
-	tl->fh = VSB_new_auto();
-	assert(tl->fh != NULL);
-
-	/* body code of methods */
-	for (i = 0; i < VCL_MET_MAX; i++) {
-		tl->fm[i] = VSB_new_auto();
-		assert(tl->fm[i] != NULL);
-	}
-	return (tl);
-}
-
-/*--------------------------------------------------------------------*/
-
-static char *
-vcc_DestroyTokenList(struct vcc *tl, char *ret)
-{
-	struct membit *mb;
-	struct source *sp;
-	int i;
-
-	while (!VTAILQ_EMPTY(&tl->membits)) {
-		mb = VTAILQ_FIRST(&tl->membits);
-		VTAILQ_REMOVE(&tl->membits, mb, list);
-		free(mb->ptr);
-		free(mb);
-	}
-	while (!VTAILQ_EMPTY(&tl->sources)) {
-		sp = VTAILQ_FIRST(&tl->sources);
-		VTAILQ_REMOVE(&tl->sources, sp, list);
-		vcc_destroy_source(sp);
-	}
-
-	VSB_destroy(&tl->fh);
-	VSB_destroy(&tl->fc);
-	for (i = 0; i < VCL_MET_MAX; i++)
-		VSB_destroy(&tl->fm[i]);
-
-	free(tl);
-	return (ret);
-}
-
 /*--------------------------------------------------------------------
  * Compile the VCL code from the given source and return the C-source
  */
 
 static char *
-vcc_CompileSource(const struct vcp * const vcp, struct vsb *sb,
-    struct source *sp)
+vcc_CompileSource(struct vcc *tl, struct source *sp)
 {
-	struct vcc *tl;
-	struct symbol *sym, *sym2;
+	struct symbol *sym;
 	const struct var *v;
 	struct vsb *vsb;
 
 	char *of;
 	int i;
 
-	tl = vcc_NewVcc(vcp);
-	tl->sb = sb;
-
 	vcc_Expr_Init(tl);
-
-	VTAILQ_FOREACH(sym, &vcp->symbols, list) {
-		sym2 = VCC_Symbol(tl, NULL, sym->name, NULL, sym->kind, 1);
-		sym2->fmt = sym->fmt;
-		sym2->eval = sym->eval;
-		sym2->eval_priv = sym->eval_priv;
-		sym2->rname = sym->rname;
-		sym2->r_methods = sym->r_methods;
-		sym2->ndef = 1;
-		sym2->nref = 1;
-	}
 
 	for (v = vcc_vars; v->name != NULL; v++) {
 		if (v->fmt == HEADER) {
@@ -689,32 +586,32 @@ vcc_CompileSource(const struct vcp * const vcp, struct vsb *sb,
 	sp->idx = tl->nsources++;
 	vcc_Lexer(tl, sp);
 	if (tl->err)
-		return (vcc_DestroyTokenList(tl, NULL));
+		return (NULL);
 
 	/* Register and lex the builtin VCL */
-	sp = vcc_new_source(tl->param->builtin_vcl, NULL, "Builtin");
+	sp = vcc_new_source(tl->builtin_vcl, NULL, "Builtin");
 	assert(sp != NULL);
 	VTAILQ_INSERT_TAIL(&tl->sources, sp, list);
 	sp->idx = tl->nsources++;
 	vcc_Lexer(tl, sp);
 	if (tl->err)
-		return (vcc_DestroyTokenList(tl, NULL));
+		return (NULL);
 
 	/* Add "END OF INPUT" token */
 	vcc_AddToken(tl, EOI, sp->e, sp->e);
 	if (tl->err)
-		return (vcc_DestroyTokenList(tl, NULL));
+		return (NULL);
 
 	/* Expand and lex any includes in the token string */
 	vcc_resolve_includes(tl);
 	if (tl->err)
-		return (vcc_DestroyTokenList(tl, NULL));
+		return (NULL);
 
 	/* Parse the token string */
 	tl->t = VTAILQ_FIRST(&tl->tokens);
 	vcc_Parse(tl);
 	if (tl->err)
-		return (vcc_DestroyTokenList(tl, NULL));
+		return (NULL);
 
 	/* Check if we have any backends at all */
 	if (tl->default_director == NULL) {
@@ -722,7 +619,7 @@ vcc_CompileSource(const struct vcp * const vcp, struct vsb *sb,
 		    "No backends or directors found in VCL program, "
 		    "at least one is necessary.\n");
 		tl->err = 1;
-		return (vcc_DestroyTokenList(tl, NULL));
+		return (NULL);
 	}
 
 	/* Configure the default director */
@@ -730,15 +627,15 @@ vcc_CompileSource(const struct vcp * const vcp, struct vsb *sb,
 
 	/* Check for orphans */
 	if (vcc_CheckReferences(tl))
-		return (vcc_DestroyTokenList(tl, NULL));
+		return (NULL);
 
 	/* Check that all action returns are legal */
 	if (vcc_CheckAction(tl) || tl->err)
-		return (vcc_DestroyTokenList(tl, NULL));
+		return (NULL);
 
 	/* Check that all variable uses are legal */
 	if (vcc_CheckUses(tl) || tl->err)
-		return (vcc_DestroyTokenList(tl, NULL));
+		return (NULL);
 
 	/* Emit method functions */
 	Fh(tl, 1, "\n");
@@ -793,7 +690,7 @@ vcc_CompileSource(const struct vcp * const vcp, struct vsb *sb,
 	VSB_destroy(&vsb);
 
 	/* done */
-	return (vcc_DestroyTokenList(tl, of));
+	return (of);
 }
 
 /*--------------------------------------------------------------------
@@ -802,22 +699,23 @@ vcc_CompileSource(const struct vcp * const vcp, struct vsb *sb,
  */
 
 char *
-VCC_Compile(const struct vcp *vcp, struct vsb *sb,
+VCC_Compile(struct vcc *tl, struct vsb **sb,
     const char *vclsrc, const char *vclsrcfile)
 {
 	struct source *sp;
-	char *r;
-	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
+	char *r = NULL;
+
+	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
 	AN(sb);
 	AN(vclsrcfile);
 
 	if (vclsrc != NULL)
 		sp = vcc_new_source(vclsrc, NULL, vclsrcfile);
 	else
-		sp = vcc_file_source(vcp, sb, vclsrcfile);
-	if (sp == NULL)
-		return (NULL);
-	r = vcc_CompileSource(vcp, sb, sp);
+		sp = vcc_file_source(tl, vclsrcfile);
+	if (sp != NULL)
+		r = vcc_CompileSource(tl, sp);
+	*sb = tl->sb;
 	return (r);
 }
 
@@ -825,16 +723,36 @@ VCC_Compile(const struct vcp *vcp, struct vsb *sb,
  * Allocate a compiler instance
  */
 
-struct vcp *
-VCP_New(void)
+struct vcc *
+VCC_New(void)
 {
-	struct vcp *vcp;
+	struct vcc *tl;
+	int i;
 
-	ALLOC_OBJ(vcp, VCP_MAGIC);
-	AN(vcp);
-	VTAILQ_INIT(&vcp->symbols);
+	ALLOC_OBJ(tl, VCC_MAGIC);
+	AN(tl);
+	VTAILQ_INIT(&tl->inifin);
+	VTAILQ_INIT(&tl->tokens);
+	VTAILQ_INIT(&tl->sources);
 
-	return (vcp);
+	tl->nsources = 0;
+
+	/* General C code */
+	tl->fc = VSB_new_auto();
+	assert(tl->fc != NULL);
+
+	/* Forward decls (.h like) */
+	tl->fh = VSB_new_auto();
+	assert(tl->fh != NULL);
+
+	/* body code of methods */
+	for (i = 0; i < VCL_MET_MAX; i++) {
+		tl->fm[i] = VSB_new_auto();
+		assert(tl->fm[i] != NULL);
+	}
+	tl->sb = VSB_new_auto();
+	AN(tl->sb);
+	return (tl);
 }
 
 /*--------------------------------------------------------------------
@@ -842,11 +760,11 @@ VCP_New(void)
  */
 
 void
-VCP_Builtin_VCL(struct vcp *vcp, const char *str)
+VCC_Builtin_VCL(struct vcc *vcc, const char *str)
 {
 
-	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
-	REPLACE(vcp->builtin_vcl, str);
+	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
+	REPLACE(vcc->builtin_vcl, str);
 }
 
 /*--------------------------------------------------------------------
@@ -854,11 +772,11 @@ VCP_Builtin_VCL(struct vcp *vcp, const char *str)
  */
 
 void
-VCP_VCL_path(struct vcp *vcp, const char *str)
+VCC_VCL_path(struct vcc *vcc, const char *str)
 {
 
-	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
-	VFIL_setpath(&vcp->vcl_path, str);
+	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
+	VFIL_setpath(&vcc->vcl_path, str);
 }
 
 /*--------------------------------------------------------------------
@@ -866,11 +784,11 @@ VCP_VCL_path(struct vcp *vcp, const char *str)
  */
 
 void
-VCP_VMOD_path(struct vcp *vcp, const char *str)
+VCC_VMOD_path(struct vcc *vcc, const char *str)
 {
 
-	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
-	VFIL_setpath(&vcp->vmod_path, str);
+	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
+	VFIL_setpath(&vcc->vmod_path, str);
 }
 
 /*--------------------------------------------------------------------
@@ -878,42 +796,47 @@ VCP_VMOD_path(struct vcp *vcp, const char *str)
  */
 
 void
-VCP_Err_Unref(struct vcp *vcp, unsigned u)
+VCC_Err_Unref(struct vcc *vcc, unsigned u)
 {
 
-	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
-	vcp->err_unref = u;
+	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
+	vcc->err_unref = u;
 }
 
 void
-VCP_Allow_InlineC(struct vcp *vcp, unsigned u)
+VCC_Allow_InlineC(struct vcc *vcc, unsigned u)
 {
 
-	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
-	vcp->allow_inline_c = u;
+	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
+	vcc->allow_inline_c = u;
 }
 
 void
-VCP_Unsafe_Path(struct vcp *vcp, unsigned u)
+VCC_Unsafe_Path(struct vcc *vcc, unsigned u)
 {
 
-	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
-	vcp->unsafe_path = u;
+	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
+	vcc->unsafe_path = u;
 }
 
 void
-VCP_Stevedore(struct vcp *vcp, const char *stv_name)
+VCC_Stevedore(struct vcc *vcc, const char *stv_name)
 {
+#if 0
 	struct symbol *sym;
 	char stv[1024];
 
-	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
+	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
 	ALLOC_OBJ(sym, SYMBOL_MAGIC);
 	AN(sym);
 	bprintf(stv, "stv.%s", stv_name);
 	REPLACE(sym->name, stv);		/* XXX storage.* ? */
 	sym->kind = SYM_STEVEDORE;
 	VCC_GlobalSymbol(sym, STEVEDORE, "VRT_stevedore(\"%s\")", stv_name);
-	VTAILQ_INSERT_TAIL(&vcp->symbols, sym, list);
+	VTAILQ_INSERT_TAIL(&vcc->symbols, sym, list);
+#else
+	(void)vcc;
+	(void)stv_name;
+#endif
 }
 

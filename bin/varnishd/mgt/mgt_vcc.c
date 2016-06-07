@@ -83,10 +83,10 @@ static void __match_proto__(vsub_func_f)
 run_vcc(void *priv)
 {
 	char *csrc;
-	struct vsb *sb;
+	struct vsb *sb = NULL;
 	struct vcc_priv *vp;
 	int fd, i, l;
-	struct vcp *vcp;
+	struct vcc *vcc;
 	struct stevedore *stv;
 
 	VJ_subproc(JAIL_SUBPROC_VCC);
@@ -94,20 +94,18 @@ run_vcc(void *priv)
 
 	AZ(chdir(vp->dir));
 
-	sb = VSB_new_auto();
-	XXXAN(sb);
-	vcp = VCP_New();
-	AN(vcp);
-	VCP_Builtin_VCL(vcp, builtin_vcl);
-	VCP_VCL_path(vcp, mgt_vcl_path);
-	VCP_VMOD_path(vcp, mgt_vmod_path);
-	VCP_Err_Unref(vcp, mgt_vcc_err_unref);
-	VCP_Allow_InlineC(vcp, mgt_vcc_allow_inline_c);
-	VCP_Unsafe_Path(vcp, mgt_vcc_unsafe_path);
+	vcc = VCC_New();
+	AN(vcc);
+	VCC_Builtin_VCL(vcc, builtin_vcl);
+	VCC_VCL_path(vcc, mgt_vcl_path);
+	VCC_VMOD_path(vcc, mgt_vmod_path);
+	VCC_Err_Unref(vcc, mgt_vcc_err_unref);
+	VCC_Allow_InlineC(vcc, mgt_vcc_allow_inline_c);
+	VCC_Unsafe_Path(vcc, mgt_vcc_unsafe_path);
 	VTAILQ_FOREACH(stv, &stv_stevedores, list)
-		VCP_Stevedore(vcp, stv->ident);
-	VCP_Stevedore(vcp, stv_transient->ident);
-	csrc = VCC_Compile(vcp, sb, vp->vclsrc, vp->vclsrcfile);
+		VCC_Stevedore(vcc, stv->ident);
+	VCC_Stevedore(vcc, stv_transient->ident);
+	csrc = VCC_Compile(vcc, &sb, vp->vclsrc, vp->vclsrcfile);
 	AZ(VSB_finish(sb));
 	if (VSB_len(sb))
 		printf("%s", VSB_data(sb));

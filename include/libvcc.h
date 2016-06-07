@@ -28,16 +28,16 @@
  *
  */
 
-struct vcp;
+struct vcc;
 
-struct vcp *VCP_New(void);
-void VCP_Allow_InlineC(struct vcp *, unsigned);
-void VCP_Builtin_VCL(struct vcp *, const char *);
-void VCP_Err_Unref(struct vcp *, unsigned);
-void VCP_Stevedore(struct vcp *, const char *);
-void VCP_Unsafe_Path(struct vcp *, unsigned);
-void VCP_VCL_path(struct vcp *, const char *);
-void VCP_VMOD_path(struct vcp *, const char *);
+struct vcc *VCC_New(void);
+void VCC_Allow_InlineC(struct vcc *, unsigned);
+void VCC_Builtin_VCL(struct vcc *, const char *);
+void VCC_Err_Unref(struct vcc *, unsigned);
+void VCC_Stevedore(struct vcc *, const char *);
+void VCC_Unsafe_Path(struct vcc *, unsigned);
+void VCC_VCL_path(struct vcc *, const char *);
+void VCC_VMOD_path(struct vcc *, const char *);
 
-char *VCC_Compile(const struct vcp *, struct vsb *,
+char *VCC_Compile(struct vcc *, struct vsb **,
     const char *vclsrc, const char *vclsrcfile);
