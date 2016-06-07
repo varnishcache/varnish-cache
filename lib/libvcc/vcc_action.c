@@ -158,27 +158,12 @@ parse_new(struct vcc *tl)
 	ExpectErr(tl, ID);
 	vcc_ExpectCid(tl, "VCL object");
 	ERRCHK(tl);
-	sy1 = VCC_SymbolTok(tl, NULL, tl->t, SYM_NONE, 0);
-	if (sy1 != NULL) {
-		VSB_printf(tl->sb, "Object name '%.*s' already used.\n",
-		    PF(tl->t));
+	sy1 = VCC_HandleSymbol(tl, tl->t, INSTANCE, "XXX");
+	ERRCHK(tl);
 
-		if (sy1->def_b) {
-			VSB_printf(tl->sb, "First usage:\n");
-			AN(sy1->def_b);
-			if (sy1->def_e != NULL)
-				vcc_ErrWhere2(tl, sy1->def_b, sy1->def_e);
-			else
-				vcc_ErrWhere(tl, sy1->def_b);
-			VSB_printf(tl->sb, "Redefinition:\n");
-			vcc_ErrWhere(tl, tl->t);
-		}
-		return;
-	}
+	/* We allow implicit use of VMOD objects:  Pretend it's ref'ed */
+	sy1->nref++;
 
-	sy1 = VCC_SymbolTok(tl, NULL, tl->t, SYM_INSTANCE, 1);
-	XXXAN(sy1);
-	sy1->def_b = tl->t;
 	vcc_NextToken(tl);
 
 	ExpectErr(tl, '=');

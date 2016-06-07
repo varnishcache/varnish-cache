@@ -240,7 +240,7 @@ vcc_ParseFunction(struct vcc *tl)
 		i = vcc_AddDef(tl, tl->t, SYM_SUB);
 		if (i > 1) {
 			VSB_printf(tl->sb,
-			    "Function %.*s redefined\n", PF(tl->t));
+			    "Function '%.*s' redefined\n", PF(tl->t));
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}

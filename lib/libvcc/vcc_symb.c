@@ -42,11 +42,12 @@ enum symkind
 VCC_HandleKind(enum var_type fmt)
 {
 	switch(fmt) {
-	case ACL:       return(SYM_ACL);
-	case BACKEND:   return(SYM_BACKEND);
-	case PROBE:     return(SYM_PROBE);
-	case STEVEDORE: return(SYM_STEVEDORE);
-	default:        return(SYM_NONE);
+	case ACL:	return(SYM_ACL);
+	case BACKEND:	return(SYM_BACKEND);
+	case PROBE:	return(SYM_PROBE);
+	case STEVEDORE:	return(SYM_STEVEDORE);
+	case INSTANCE:	return(SYM_INSTANCE);
+	default:	return(SYM_NONE);
 	}
 }
 
@@ -223,26 +224,43 @@ VCC_HandleSymbol(struct vcc *tl, const struct token *tk, enum var_type fmt,
 {
 	struct symbol *sym;
 	enum symkind kind;
-	va_list ap;
 	const char *p;
+	va_list ap;
 
 	kind = VCC_HandleKind(fmt);
 	assert(kind != SYM_NONE);
 
-	sym = VCC_SymbolTok(tl, NULL, tk, kind, 1);
-	if (sym->def_b == NULL)
-		sym->def_b = tk;
-	AN(sym);
-	if (sym->ndef > 0) {
+	sym = VCC_SymbolTok(tl, NULL, tk, SYM_NONE, 0);
+	if (sym != NULL && sym->def_b != NULL && kind == sym->kind) {
 		p = VCC_SymKind(tl, sym);
-		VSB_printf(tl->sb, "%c%s %.*s redefined\n",
-		    toupper(*p), p+1, PF(tk));
+		VSB_printf(tl->sb, "%c%s '%.*s' redefined.\n",
+		    toupper(*p), p + 1, PF(tk));
+		vcc_ErrWhere(tl, tk);
+		VSB_printf(tl->sb, "First definition:\n");
+		AN(sym->def_b);
+		vcc_ErrWhere(tl, sym->def_b);
+		return (sym);
+	} else if (sym != NULL && sym->def_b != NULL) {
+		VSB_printf(tl->sb, "Name '%.*s' already used.\n", PF(tk));
+		vcc_ErrWhere(tl, tk);
+		VSB_printf(tl->sb, "First definition:\n");
+		AN(sym->def_b);
+		vcc_ErrWhere(tl, sym->def_b);
+		return (sym);
+	} else if (sym != NULL) {
+		VSB_printf(tl->sb,
+		    "Name %.*s is a reserved name.\n", PF(tk));
 		vcc_ErrWhere(tl, tk);
 		return (sym);
 	}
+	sym = VCC_SymbolTok(tl, NULL, tk, kind, 1);
+	AN(sym);
+	AZ(sym->ndef);
 	va_start(ap, str);
 	vcc_global(tl, sym, fmt, str, ap);
 	va_end(ap);
 	sym->ndef = 1;
+	if (sym->def_b == NULL)
+		sym->def_b = tk;
 	return (sym);
 }

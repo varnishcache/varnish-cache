@@ -905,11 +905,13 @@ void
 VCP_Stevedore(struct vcp *vcp, const char *stv_name)
 {
 	struct symbol *sym;
+	char stv[1024];
 
 	CHECK_OBJ_NOTNULL(vcp, VCP_MAGIC);
 	ALLOC_OBJ(sym, SYMBOL_MAGIC);
 	AN(sym);
-	REPLACE(sym->name, stv_name);		/* XXX storage.* ? */
+	bprintf(stv, "stv.%s", stv_name);
+	REPLACE(sym->name, stv);		/* XXX storage.* ? */
 	sym->kind = SYM_STEVEDORE;
 	VCC_GlobalSymbol(sym, STEVEDORE, "VRT_stevedore(\"%s\")", stv_name);
 	VTAILQ_INSERT_TAIL(&vcp->symbols, sym, list);
