@@ -586,15 +586,24 @@ cmd_random(CMD_ARGS)
  * Test that the required feature(s) for a test are available, and skip the test
  * otherwise. feature takes any number of arguments from this list:
  *
- * - SO_RCVTIMEO_WORKS
- * - 64bit
- * - !OSX
- * - dns
- * - topbuild
- * - root
- * - user_varnish
- * - user_vcache
- *
+ * SO_RCVTIMEO_WORKS
+ *        The SO_RCVTIMEO socket option is working
+ * 64bit
+ *        The environment is 64 bits
+ * !OSX
+ *        The environment is not OSX
+ * dns
+ *        DNS lookups are working
+ * topbuild
+ *        varnishtest has been started with '-i'
+ * root
+ *        varnishtest has been invoked by the root user
+ * user_varnish
+ *        The varnish user is present
+ * user_vcache
+ *        The vcache user is present
+ * group_varnish
+ *        The varnish group is present
  */
 
 static void
