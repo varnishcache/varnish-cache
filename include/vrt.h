@@ -89,6 +89,7 @@ typedef double					VCL_DURATION;
 typedef const char *				VCL_ENUM;
 typedef const struct gethdr_s *			VCL_HEADER;
 typedef struct http *				VCL_HTTP;
+typedef void					VCL_INSTANCE;
 typedef long					VCL_INT;
 typedef const struct suckaddr *			VCL_IP;
 typedef const struct vrt_backend_probe *	VCL_PROBE;
