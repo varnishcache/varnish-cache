@@ -67,10 +67,10 @@ If `TMPDIR` is set in the environment, varnishtest creates temporary
 SCRIPTS
 =======
 
-The script language used for Varnishtest is not a strictly defined
-language. The best reference for writing scripts is the varnishtest program
-itself. In the Varnish source code repository, under
-`bin/varnishtest/tests/`, all the regression tests for Varnish are kept.
+The vtc syntax is documented at length in :ref:`vtc(7)`. Should you want more
+examples than the one below, you can have a look at the Varnish source code
+repository, under `bin/varnishtest/tests/`, where all the regression tests for
+Varnish are kept.
 
 An example::
 
@@ -173,156 +173,11 @@ both your VMOD and the built-in VMODs::
 
     varnishtest -p vmod_path="$VMOD_PATH" ...
 
-
-AVAILABLE COMMANDS
-==================
-
-server
-******
-
-Creates a mock server that can accept requests from Varnish and send
-responses. Accepted parameters:
-
-\-listen
-  specifies address and port to listen on (e.g. "127.0.0.1:80")
-
-client
-******
-
-Creates a client instance that sends requests to Varnish and receives
-responses.  By default, a client will try and connect to the first
-varnish server available.
-
-Accepted parameters:
-
-\-connect
-  specify where to connect to (e.g. "-connect ${s1_sock}").
-
-server/client command arguments
-*******************************
-
-\-repeat INT
- repeats the commands INT in order
-\-wait
- waits for commands to complete
-\-start
- starts the client, and continue without waiting for completion
-\-run
- equivalent to -start then -wait
-
-
-varnish
-*******
-
-Starts Varnish instance. Accepted arguments:
-
-\-arg STRING
- passes additional arguments to varnishd
-\-cli
- executes a command in CLI of running instance
-\-cliok
- executes a command and expect it return OK status
-\-clierr
- executes a command and expect it to error with given status
- (e.g. "-clierr 300 panic.clear")
-\-vcl STRING
- specify VCL for the instance. You can create multiline strings by
- encasing them in curly braces.
-\-vcl+backend STRING
- specifes VCL for the instance, and automatically inject backends
- definition of currently defined servers.
-\-errvcl
- tests that invalid VCL results in an error.
-\-stop
- stops the instance
-\-wait-stopped
- waits for the varnish child to stop
-\-wait-running
- waits for the varnish child to start
-\-wait
- waits for varnish to stop
-\-expect
- sets up a test for asserting variables against expected results.
- Syntax: "-expect <var> <comparison> <const>"
-
-See tests supplied with Varnish distribution for usage examples for all
-these directives.
-
-delay
-*****
-
-Sleeps for specified number of seconds.
-
-Usage: ``delay FLOAT``
-
-varnishtest
-***********
-
-Accepts a string as an only argument. This being a test name that is being
-output into the log. By default, test name is not shown, unless it fails.
-
-shell
-*****
-
-Executes a shell command. Accepts one argument as a string, and runs
-the command as is.
-
-Usage: ``shell "CMD"``
-
-err_shell
-*********
-
-Usage: ``err_shell "STRING" "CMD"``
-
-barrier
-*******
-
-Usage: ``barrier NAME [arguments]``
-
-random
-******
-
-Initializes random generator (need to call std.random() in vcl). See
-m00002.vtc for more info.
-
-feature
-*******
-
-Checks for features to be present in the test environment. If feature
-is not present, test is skipped.
-
-Usage: ``feature STRING [STRING...]``
-
-Possible checks:
-
-SO_RCVTIMEO_WORKS
- The SO_RCVTIMEO socket option is working
-64bit
- The environment is 64 bits
-!OSX
- The environment is not OSX
-dns
- DNS lookups are working
-topbuild
- varnishtest has been started with '-i'
-root
- varnishtest has been invoked by the root user
-user_varnish
- The varnish user is present
-user_vcache
- The vcache user is present
-group_varnish
- The varnish group is present
-
-logexpect
-*********
-
-This allows checking order and contents of VSL records in varnishtest.
-
 SEE ALSO
 ========
 
 * varnishtest source code repository with tests
+* :ref:`vtc(7)`
 * :ref:`varnishhist(1)`
 * :ref:`varnishlog(1)`
 * :ref:`varnishncsa(1)`
