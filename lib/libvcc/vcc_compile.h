@@ -139,10 +139,7 @@ struct symbol {
 	struct proc			*proc;
 	unsigned			nref, ndef;
 
-	/* SYM_FUNC */
-	const char			*cfunc;
 	const char			*extra;
-	const char			*args;
 
 	/* SYM_VAR */
 	const char			*rname;
@@ -283,8 +280,8 @@ void vcc_Expr_Init(struct vcc *tl);
 sym_expr_t vcc_Eval_Var;
 sym_expr_t vcc_Eval_Handle;
 sym_expr_t vcc_Eval_SymFunc;
-void vcc_Eval_Func(struct vcc *tl, const char *cfunc, const char *extra,
-    const char *name, const char *args, const char *vmod);
+void vcc_Eval_Func(struct vcc *tl, const char *spec,
+    const char *extra, const struct symbol *sym);
 enum symkind VCC_HandleKind(vcc_type_t fmt);
 struct symbol *VCC_HandleSymbol(struct vcc *, const struct token *,
     vcc_type_t fmt, const char *str, ...);

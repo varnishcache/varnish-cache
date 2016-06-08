@@ -581,33 +581,35 @@ vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 }
 
 static void
-vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
-    const char *extra, const char *name, const char *args, const char *vmod)
+vcc_func(struct vcc *tl, struct expr **e, const char *spec,
+    const char *extra, const struct symbol *sym)
 {
+	vcc_type_t rfmt;
+	const char *args;
+	const char *cfunc;
 	const char *p;
 	struct expr *e1;
 	struct func_arg *fa, *fa2;
-	vcc_type_t rfmt;
 	VTAILQ_HEAD(,func_arg) head;
 	struct token *t1;
 
-	AN(cfunc);
-	AN(args);
-	AN(name);
+	rfmt = VCC_Type(spec);
+	spec += strlen(spec) + 1;
+	cfunc = spec;
+	spec += strlen(spec) + 1;
+	args = spec;
 	SkipToken(tl, '(');
 	p = args;
 	if (extra == NULL)
 		extra = "";
-	rfmt = VCC_Type(p);
 	AN(rfmt);
-	p += strlen(p) + 1;
 	VTAILQ_INIT(&head);
 	while (*p != '\0') {
 		fa = calloc(sizeof *fa, 1);
 		AN(fa);
 		VTAILQ_INSERT_TAIL(&head, fa, list);
 		if (!memcmp(p, "PRIV_", 5)) {
-			fa->result = vcc_priv_arg(tl, p, name, vmod);
+			fa->result = vcc_priv_arg(tl, p, sym->name, sym->vmod);
 			fa->name = "";
 			p += strlen(p) + 1;
 			continue;
@@ -703,14 +705,14 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
  */
 
 void
-vcc_Eval_Func(struct vcc *tl, const char *cfunc,
-    const char *extra, const char *name, const char *args, const char *vmod)
+vcc_Eval_Func(struct vcc *tl, const char *spec,
+    const char *extra, const struct symbol *sym)
 {
 	struct expr *e = NULL;
 	struct token *t1;
 
 	t1 = tl->t;
-	vcc_func(tl, &e, cfunc, extra, name, args, vmod);
+	vcc_func(tl, &e, spec, extra, sym);
 	if (!tl->err) {
 		vcc_expr_fmt(tl->fb, tl->indent, e);
 		VSB_cat(tl->fb, ";\n");
@@ -727,23 +729,14 @@ void __match_proto__(sym_expr_t)
 vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, const struct symbol *sym,
     vcc_type_t fmt)
 {
-	const char *cfunc;
-	const char *args;
-	const char *p;
 
 	(void)fmt;
 	assert(sym->kind == SYM_FUNC);
-	/* XXX */
 	AN(sym->eval_priv);
-	AZ(sym->args);
-	AZ(sym->cfunc);
-	p = sym->eval_priv;
-	cfunc = p;
-	p += strlen(p) + 1;
-	args = p;
-	AN(sym->name);
+
 	SkipToken(tl, ID);
-	vcc_func(tl, e, cfunc, sym->extra, sym->name, args, sym->vmod);
+	assert(sym->fmt == VCC_Type(sym->eval_priv));
+	vcc_func(tl, e, sym->eval_priv, sym->extra, sym);
 }
 
 /*--------------------------------------------------------------------

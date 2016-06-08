@@ -324,17 +324,16 @@ class prototype(object):
 			l.append(i.ct)
 		return ", ".join(l)
 
-	def specstr(self, fo, p):
-		p = indent(p, 4)
+	def specstr(self, fo, cfunc, p):
 		if self.retval == None:
 			fo.write(p + '"VOID\\0"\n')
 		else:
 			self.retval.specstr(fo, p)
+		fo.write(p + '"' + cfunc + '\\0"\n')
+		p = indent(p, 4)
 		if self.args != None:
-			p = indent(p, 4)
 			for i in self.args:
 				i.specstr(fo, p)
-			p = indent(p, -4)
 		fo.write(p + '"\\0"\n')
 
 #######################################################################
@@ -472,7 +471,7 @@ class s_event(stanza):
 		fo.write("\t%s,\n" % self.event_func)
 
 	def specstr(self, fo):
-		fo.write('\t"$EVENT\\0"\n\t    "Vmod_%s_Func._event",\n' %
+		fo.write('\t"$EVENT\\0"\n\t    "Vmod_%s_Func._event",\n\n' %
 		    self.vcc.modname)
 
 class s_function(stanza):
@@ -502,13 +501,11 @@ class s_function(stanza):
 		fo.write("\tvmod_" + self.proto.cname() + ",\n")
 
 	def specstr(self, fo):
-		fo.write('\t"$FUNC\\0"\n\t    "%s.%s\\0"\n' %
+		fo.write('\t"$FUNC\\0"\t"%s.%s\\0"\n\n' %
 		    (self.vcc.modname, self.proto.name))
-		fo.write('\t\t"Vmod_%s_Func.%s\\0"\n' %
-		    (self.vcc.modname, self.proto.cname()))
-		self.proto.specstr(fo, "\t\t")
-
-		fo.write('\t"\\0",\n\n')
+		self.proto.specstr(fo, 'Vmod_%s_Func.%s' %
+		    (self.vcc.modname, self.proto.cname()), "\t    ")
+		fo.write('\t    "\\0",\n\n')
 
 class s_object(stanza):
 	def parse(self):
@@ -589,28 +586,27 @@ class s_object(stanza):
 
 	def specstr(self, fo):
 
-		fo.write('\t"$OBJ\\0"\n\t    "%s.%s\\0"\n' %
+		fo.write('\t"$OBJ\\0"\t"%s.%s\\0"\n\n' %
 		    (self.vcc.modname, self.proto.name))
 
-		fo.write('\t\t"struct vmod_%s_%s\\0"\n' %
+		fo.write('\t    "struct vmod_%s_%s\\0"\n' %
 		    (self.vcc.modname, self.proto.name))
 		fo.write("\n")
 
-		fo.write('\t\t"Vmod_%s_Func.%s__init\\0"\n' %
-		    (self.vcc.modname, self.proto.name))
-		self.proto.specstr(fo, '\t\t')
-		fo.write('\t\t"\\0"\n\n')
+		self.proto.specstr(fo, 'Vmod_%s_Func.%s__init' %
+		    (self.vcc.modname, self.proto.name), '\t    ')
+		fo.write('\t    "\\0"\n\n')
 
-		fo.write('\t\t"Vmod_%s_Func.%s__fini\\0"\n' %
+		fo.write('\t    "VOID\\0"\n')
+		fo.write('\t    "Vmod_%s_Func.%s__fini\\0"\n' %
 		    (self.vcc.modname, self.proto.name))
-		fo.write('\t\t    "VOID\\0"\n')
-		fo.write('\t\t    "\\0"\n')
-		fo.write('\t\t"\\0"\n\n')
+		fo.write('\t\t"\\0"\n')
+		fo.write('\t    "\\0"\n\n')
 
 		for i in self.methods:
 			i.specstr(fo)
 
-		fo.write('\t"\\0",\n\n')
+		fo.write('\t    "\\0",\n\n')
 
 	def dump(self):
 		super(s_object, self).dump()
@@ -632,11 +628,10 @@ class s_method(stanza):
 		fo.write('\t' + "vmod_" + self.proto.cname() + ",\n")
 
 	def specstr(self, fo):
-		fo.write('\t\t"%s.%s\\0"\n' %
+		fo.write('\t    "%s.%s\\0"\n' %
 		    (self.vcc.modname, self.proto.name))
-		fo.write('\t\t    "Vmod_%s_Func.%s\\0"\n' %
-		    (self.vcc.modname, self.proto.cname()))
-		self.proto.specstr(fo, '\t\t    ')
+		self.proto.specstr(fo, 'Vmod_%s_Func.%s' %
+		    (self.vcc.modname, self.proto.cname()), '\t\t')
 		fo.write('\t\t"\\0"\n\n')
 
 #######################################################################

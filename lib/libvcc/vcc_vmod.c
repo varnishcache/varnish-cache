@@ -222,7 +222,7 @@ vcc_ParseImport(struct vcc *tl)
 			p += strlen(p) + 1;
 			sym = VCC_Symbol(tl, NULL, p, NULL, SYM_OBJECT, 1);
 			XXXAN(sym);
-			sym->args = p;
+			sym->extra = p;
 			sym->vmod = msym->name;
 		} else if (!strcmp(p, "$EVENT")) {
 			p += strlen(p) + 1;
@@ -246,10 +246,8 @@ vcc_ParseImport(struct vcc *tl)
 			sym->eval = vcc_Eval_SymFunc;
 			p += strlen(p) + 1;
 			sym->eval_priv = p;
-			p += strlen(p) + 1;
 			sym->fmt = VCC_Type(p);
 			AN(sym->fmt);
-			p += strlen(p) + 1;
 		} else {
 			VSB_printf(tl->sb, "Internal spec error (%s)\n", p);
 			vcc_ErrWhere(tl, mod);
@@ -269,7 +267,7 @@ vcc_ParseNew(struct vcc *tl)
 {
 	struct symbol *sy1, *sy2, *sy3;
 	struct inifin *ifp;
-	const char *p, *s_obj, *s_init, *s_struct, *s_fini;
+	const char *p, *s_obj;
 	char buf1[128];
 	char buf2[128];
 
@@ -297,41 +295,34 @@ vcc_ParseNew(struct vcc *tl)
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
-	XXXAN(sy2);
+	vcc_NextToken(tl);
 
-	/*lint -save -e448 */
-	/* Split the first three args */
-	p = sy2->args;
+	p = sy2->extra;
 
 	s_obj = p;
 	p += strlen(p) + 1;
 
-	s_struct = p;
+	Fh(tl, 0, "static %s *vo_%s;\n\n", p, sy1->name);
 	p += strlen(p) + 1;
 
-	s_init = p;
-	while (p[0] != '\0' || p[1] != '\0' || p[2] != '\0')
-		p++;
-	p += 3;
-
-	s_fini = p;
-	while (p[0] != '\0' || p[1] != '\0' || p[2] != '\0')
-		p++;
-	p += 3;
-
-	Fh(tl, 0, "static %s *vo_%s;\n\n", s_struct, sy1->name);
-
-	vcc_NextToken(tl);
-
 	bprintf(buf1, ", &vo_%s, \"%s\"", sy1->name, sy1->name);
-	vcc_Eval_Func(tl, s_init, buf1, sy2->name, s_init + strlen(s_init) + 1,
-	    sy2->vmod);
-	ifp = New_IniFin(tl);
-	VSB_printf(ifp->fin, "\t\t%s(&vo_%s);", s_fini, sy1->name);
+	vcc_Eval_Func(tl, p, buf1, sy2);
 	ExpectErr(tl, ';');
 
+	while (p[0] != '\0' || p[1] != '\0' || p[2] != '\0')
+		p++;
+	p += 3;
+
+	ifp = New_IniFin(tl);
+	p += strlen(p) + 1;
+	VSB_printf(ifp->fin, "\t\t%s(&vo_%s);", p, sy1->name);
+
+	while (p[0] != '\0' || p[1] != '\0' || p[2] != '\0')
+		p++;
+	p += 3;
+
+	/* Instantiate symbols for the methods */
 	bprintf(buf1, ", vo_%s", sy1->name);
-	/* Split the methods from the args */
 	while (*p != '\0') {
 		p += strlen(s_obj);
 		bprintf(buf2, "%s%s", sy1->name, p);
@@ -340,7 +331,6 @@ vcc_ParseNew(struct vcc *tl)
 		sy3->eval = vcc_Eval_SymFunc;
 		p += strlen(p) + 1;
 		sy3->eval_priv = p;
-		p += strlen(p) + 1;
 		sy3->fmt = VCC_Type(p);
 		sy3->extra = TlDup(tl, buf1);
 		while (p[0] != '\0' || p[1] != '\0' || p[2] != '\0')
@@ -348,5 +338,4 @@ vcc_ParseNew(struct vcc *tl)
 		p += 3;
 	}
 	sy1->def_e = tl->t;
-	/*lint -restore */
 }
