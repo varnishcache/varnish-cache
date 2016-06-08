@@ -727,16 +727,23 @@ void __match_proto__(sym_expr_t)
 vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, const struct symbol *sym,
     vcc_type_t fmt)
 {
+	const char *cfunc;
+	const char *args;
+	const char *p;
 
 	(void)fmt;
 	assert(sym->kind == SYM_FUNC);
 	/* XXX */
-	AN(sym->cfunc);
+	AN(sym->eval_priv);
+	AZ(sym->args);
+	AZ(sym->cfunc);
+	p = sym->eval_priv;
+	cfunc = p;
+	p += strlen(p) + 1;
+	args = p;
 	AN(sym->name);
-	AN(sym->args);
 	SkipToken(tl, ID);
-	vcc_func(tl, e, sym->cfunc, sym->extra, sym->name, sym->args,
-	    sym->vmod);
+	vcc_func(tl, e, cfunc, sym->extra, sym->name, args, sym->vmod);
 }
 
 /*--------------------------------------------------------------------
@@ -777,10 +784,6 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		kind = VCC_HandleKind(fmt);
 		if (kind != SYM_NONE)
 			sym = VCC_SymbolTok(tl, NULL, tl->t, kind, 0);
-		if (sym == NULL)
-			sym = VCC_SymbolTok(tl, NULL, tl->t, SYM_VAR, 0);
-		if (sym == NULL)
-			sym = VCC_SymbolTok(tl, NULL, tl->t, SYM_FUNC, 0);
 		if (sym == NULL)
 			sym = VCC_SymbolTok(tl, NULL, tl->t, SYM_NONE, 0);
 		if (sym == NULL || sym->eval == NULL) {

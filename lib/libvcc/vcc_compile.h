@@ -133,7 +133,7 @@ struct symbol {
 	vcc_type_t			fmt;
 
 	sym_expr_t			*eval;
-	void				*eval_priv;
+	const void			*eval_priv;
 
 	/* xref.c */
 	struct proc			*proc;
@@ -342,6 +342,7 @@ const struct symbol *vcc_FindVar(struct vcc *tl, const struct token *t,
 
 /* vcc_vmod.c */
 void vcc_ParseImport(struct vcc *tl);
+void vcc_ParseNew(struct vcc *tl);
 
 /* vcc_xref.c */
 int vcc_AddDef(struct vcc *tl, const struct token *t, enum symkind type);
