@@ -378,23 +378,15 @@ vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	AN(fmt == STRING || fmt == STRING_LIST);
 
 	p = (*e)->fmt->tostring;
-	if (p == NULL && (*e)->fmt == INT) {
-		if (vcc_isconst(*e)) {
-			p = "\"\v1\"";
-			constant = EXPR_CONST;
-		} else {
-			p = "VRT_INT_string(ctx, \v1)";
-		}
-	} else if (p == NULL && (*e)->fmt == BLOB) {
+	if (p == NULL && (*e)->fmt == BLOB) {
 		VSB_printf(tl->sb,
 		    "Wrong use of BLOB value.\n"
 		    "BLOBs can only be used as arguments to VMOD"
 		    " functions.\n");
 		vcc_ErrWhere2(tl, (*e)->t1, tl->t);
 		return;
-	} else {
-		AN(p);
 	}
+	AN(p);
 	if (*p != '\0') {
 		*e = vcc_expr_edit(fmt, p, *e, NULL);
 		(*e)->constant = constant;
@@ -912,6 +904,13 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		vcc_NextToken(tl);
 		vcc_expr4(tl, &e2, f2);
 		ERRCHK(tl);
+		if (e2->fmt->multype == NULL) {
+			VSB_printf(tl->sb,
+			    "%s %.*s %s not possible.\n",
+			    f2->name, PF(tk), e2->fmt->name);
+			vcc_ErrWhere(tl, tk);
+			return;
+		}
 		assert(e2->fmt == f2);
 		if (tk->tok == '*')
 			*e = vcc_expr_edit(f3, "(\v1*\v2)", *e, e2);
@@ -947,10 +946,8 @@ vcc_expr_string_add(struct vcc *tl, struct expr **e, struct expr *e2)
 			vcc_expr_mul(tl, &e2, STRING);
 		}
 		ERRCHK(tl);
-		if (e2->fmt != STRING && e2->fmt != STRING_LIST) {
+		if (e2->fmt != STRING && e2->fmt != STRING_LIST)
 			vcc_expr_tostring(tl, &e2, f2);
-			ERRCHK(tl);
-		}
 		ERRCHK(tl);
 		assert(e2->fmt == STRING || e2->fmt == STRING_LIST);
 
@@ -996,41 +993,46 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		else
 			vcc_expr_mul(tl, &e2, f2);
 		ERRCHK(tl);
-		if (tk->tok == '-' && (*e)->fmt == TIME && e2->fmt == TIME) {
-			/* OK */
-		} else if ((*e)->fmt == TIME && e2->fmt == DURATION) {
-			f2 = TIME;
-			/* OK */
-		} else if ((*e)->fmt == BYTES && e2->fmt == BYTES) {
-			/* OK */
-		} else if ((*e)->fmt == INT && e2->fmt == INT) {
-			/* OK */
-		} else if ((*e)->fmt == REAL && e2->fmt == REAL) {
-			/* OK */
-		} else if ((*e)->fmt == DURATION && e2->fmt == DURATION) {
-			/* OK */
-		} else if (tk->tok == '+' &&
-		    (*e)->fmt == STRING && e2->fmt == STRING) {
-			vcc_expr_string_add(tl, e, e2);
-			return;
-		} else if (tk->tok == '+' &&
-		    (fmt == STRING || fmt == STRING_LIST)) {
-			/* Time to fold and add as string */
-			vcc_expr_tostring(tl, e, STRING);
-			vcc_expr_string_add(tl, e, e2);
-			return;
-		} else {
-			VSB_printf(tl->sb, "%s %.*s %s not possible.\n",
-			    (*e)->fmt->name, PF(tk), e2->fmt->name);
-			vcc_ErrWhere2(tl, tk, tl->t);
-			return;
+
+#define ADD_OK(op, a, b, c)						  \
+		if (tk->tok == op[0] && (*e)->fmt == a && e2->fmt == b) { \
+			*e = vcc_expr_edit(c, "(\v1" op "\v2)", *e, e2);  \
+			continue;					  \
+		}							  \
+
+		ADD_OK("-", TIME,	TIME,		DURATION);
+		ADD_OK("+", TIME,	DURATION,	TIME);
+		ADD_OK("-", TIME,	DURATION,	TIME);
+		ADD_OK("+", DURATION,	DURATION,	DURATION);
+		ADD_OK("-", DURATION,	DURATION,	DURATION);
+		ADD_OK("+", BYTES,	BYTES,		BYTES);
+		ADD_OK("-", BYTES,	BYTES,		BYTES);
+		ADD_OK("+", INT,	INT,		INT);
+		ADD_OK("-", INT,	INT,		INT);
+		ADD_OK("+", REAL,	REAL,		REAL);
+		ADD_OK("-", REAL,	REAL,		REAL);
+
+#undef ADD_OK
+
+		if (tk->tok == '+') {
+			if ((*e)->fmt == STRING && e2->fmt == STRING) {
+				vcc_expr_string_add(tl, e, e2);
+				return;
+			}
+
+			if (fmt == STRING || fmt == STRING_LIST) {
+				/* Time to fold and add as string */
+				if ((*e)->fmt != fmt)
+					vcc_expr_tostring(tl, e, fmt);
+				vcc_expr_string_add(tl, e, e2);
+				return;
+			}
 		}
-		if (tk->tok == '+')
-			*e = vcc_expr_edit(f2, "(\v1+\v2)", *e, e2);
-		else if (f2 == TIME && e2->fmt == TIME)
-			*e = vcc_expr_edit(DURATION, "(\v1-\v2)", *e, e2);
-		else
-			*e = vcc_expr_edit(f2, "(\v1-\v2)", *e, e2);
+
+		VSB_printf(tl->sb, "%s %.*s %s not possible.\n",
+		    (*e)->fmt->name, PF(tk), e2->fmt->name);
+		vcc_ErrWhere2(tl, tk, tl->t);
+		return;
 	}
 }
 
@@ -1246,8 +1248,8 @@ vcc_expr_cand(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		ERRCHK(tl);
 		if (e2->fmt != BOOL) {
 			VSB_printf(tl->sb,
-			    "'&&' must be followed by BOOL, found ");
-			VSB_printf(tl->sb, "%s.\n", e2->fmt->name);
+			    "'&&' must be followed by BOOL,"
+			    " found %s.\n", e2->fmt->name);
 			vcc_ErrWhere2(tl, tk, tl->t);
 			return;
 		}
@@ -1280,8 +1282,8 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			ERRCHK(tl);
 			if (e2->fmt != BOOL) {
 				VSB_printf(tl->sb,
-				    "'||' must be followed by BOOL, found ");
-				VSB_printf(tl->sb, "%s.\n", e2->fmt->name);
+				    "'||' must be followed by BOOL,"
+				    " found %s.\n", e2->fmt->name);
 				vcc_ErrWhere2(tl, tk, tl->t);
 				return;
 			}

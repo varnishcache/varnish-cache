@@ -304,3 +304,11 @@ varnish v1 -errvcl {Name of ACL, 'foo-bar', contains illegal character '-'} {
 varnish v1 -errvcl {Expected 'from path ...'} {
 	import std to;
 }
+
+varnish v1 -errvcl {INT * BLOB not possible.} {
+	import debug;
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_deliver {
+		set resp.status = 100 * debug.str2blob("a");
+	}
+}

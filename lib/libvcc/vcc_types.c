@@ -100,6 +100,7 @@ const struct type INT[1] = {{
 	.magic =		0xfae932d9,
 	.name =			"INT",
 	.multype =		INT,
+	.tostring =		"VRT_INT_string(ctx, \v1)",
 }};
 
 const struct type IP[1] = {{
