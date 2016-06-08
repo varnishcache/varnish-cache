@@ -180,8 +180,8 @@ VTCSYN_SRC = $(top_srcdir)/bin/varnishtest/vtc.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_http.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_logexp.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_varnish.c
-include/vtc-syntax.rst: vtc-syntax.awk $(VTCSYN_SRC)
-	awk -f $(top_srcdir)/doc/sphinx/vtc-syntax.awk $(VTCSYN_SRC) > $@
+include/vtc-syntax.rst: vtc-syntax.py $(VTCSYN_SRC)
+	$(PYTHON) $(top_srcdir)/doc/sphinx/vtc-syntax.py $(VTCSYN_SRC) > $@
 BUILT_SOURCES += include/vtc-syntax.rst
 
 .PHONY: reference
