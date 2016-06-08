@@ -110,6 +110,19 @@ packages installed:
 * `python-sphinx`
 * `graphviz`
 
+Build dependencies on a SmartOS Zone
+------------------------------------
+
+As of SmartOS pkgsrc 2015Q4, install the following packages::
+
+	pkgin in autoconf automake libedit libtool ncurses \
+		 pcre graphviz py27-sphinx python27 gmake gcc49 \
+		 pkg-config
+
+Optionally, to pull from a repository::
+
+	pkgin in git
+
 Compiling Varnish
 -----------------
 
