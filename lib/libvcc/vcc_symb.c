@@ -39,7 +39,7 @@
 /*--------------------------------------------------------------------*/
 
 enum symkind
-VCC_HandleKind(enum var_type fmt)
+VCC_HandleKind(vcc_type_t fmt)
 {
 	switch(fmt) {
 	case ACL:	return(SYM_ACL);
@@ -182,7 +182,7 @@ VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, enum symkind kind)
 
 static void
 vcc_global(struct vcc *tl, struct symbol *sym,
-    enum var_type fmt, const char *str, va_list ap)
+    vcc_type_t fmt, const char *str, va_list ap)
 {
 	struct vsb *vsb;
 
@@ -209,7 +209,7 @@ vcc_global(struct vcc *tl, struct symbol *sym,
 }
 
 void
-VCC_GlobalSymbol(struct symbol *sym, enum var_type fmt, const char *str, ...)
+VCC_GlobalSymbol(struct symbol *sym, vcc_type_t fmt, const char *str, ...)
 {
 	va_list ap;
 
@@ -219,7 +219,7 @@ VCC_GlobalSymbol(struct symbol *sym, enum var_type fmt, const char *str, ...)
 }
 
 struct symbol *
-VCC_HandleSymbol(struct vcc *tl, const struct token *tk, enum var_type fmt,
+VCC_HandleSymbol(struct vcc *tl, const struct token *tk, vcc_type_t fmt,
     const char *str, ...)
 {
 	struct symbol *sym;

@@ -66,7 +66,7 @@
  */
 
 static struct var *
-vcc_Stv_mkvar(struct vcc *tl, enum var_type fmt)
+vcc_Stv_mkvar(struct vcc *tl, vcc_type_t fmt)
 {
 	struct var *v;
 
@@ -84,7 +84,7 @@ vcc_Stv_mkvar(struct vcc *tl, enum var_type fmt)
 
 static struct stvars {
 	const char	*name;
-	enum var_type	fmt;
+	vcc_type_t	fmt;
 } stvars[] = {
 #define VRTSTVVAR(nm, vtype, ctype, dval)	{ #nm, vtype },
 #include "tbl/vrt_stv_var.h"

@@ -40,7 +40,7 @@
 #include "vcc_compile.h"
 
 static const char *
-vcc_Type(enum var_type fmt)
+vcc_Type(vcc_type_t fmt)
 {
 	switch(fmt) {
 #define VCC_TYPE(a)	case a: return(#a);
@@ -214,7 +214,7 @@ vcc_ByteVal(struct vcc *tl, double *d)
 struct expr {
 	unsigned	magic;
 #define EXPR_MAGIC	0x38c794ab
-	enum var_type	fmt;
+	vcc_type_t	fmt;
 	struct vsb	*vsb;
 	uint8_t		constant;
 #define EXPR_VAR	(1<<0)
@@ -230,7 +230,7 @@ vcc_isconst(const struct expr *e)
 	return (e->constant & EXPR_CONST);
 }
 
-static void vcc_expr0(struct vcc *tl, struct expr **e, enum var_type fmt);
+static void vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt);
 
 static struct expr *
 vcc_new_expr(void)
@@ -247,11 +247,11 @@ vcc_new_expr(void)
 }
 
 static struct expr *
-vcc_mk_expr(enum var_type fmt, const char *str, ...)
+vcc_mk_expr(vcc_type_t fmt, const char *str, ...)
     __v_printflike(2, 3);
 
 static struct expr *
-vcc_mk_expr(enum var_type fmt, const char *str, ...)
+vcc_mk_expr(vcc_type_t fmt, const char *str, ...)
 {
 	va_list ap;
 	struct expr *e;
@@ -296,7 +296,7 @@ vcc_delete_expr(struct expr *e)
  */
 
 static struct expr *
-vcc_expr_edit(enum var_type fmt, const char *p, struct expr *e1,
+vcc_expr_edit(vcc_type_t fmt, const char *p, struct expr *e1,
     struct expr *e2)
 {
 	struct expr *e;
@@ -381,7 +381,7 @@ vcc_expr_fmt(struct vsb *d, int ind, const struct expr *e1)
 /*--------------------------------------------------------------------
  */
 
-enum var_type
+vcc_type_t
 VCC_arg_type(const char **p)
 {
 
@@ -395,7 +395,7 @@ VCC_arg_type(const char **p)
  */
 
 static void
-vcc_expr_tostring(struct vcc *tl, struct expr **e, enum var_type fmt)
+vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 	const char *p;
 	uint8_t	constant = EXPR_VAR;
@@ -448,7 +448,7 @@ vcc_expr_tostring(struct vcc *tl, struct expr **e, enum var_type fmt)
 
 static void __match_proto__(sym_expr_t)
 vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym,
-    enum var_type fmt)
+    vcc_type_t fmt)
 {
 	struct expr *e2;
 	int all = sym->eval_priv == NULL ? 0 : 1;
@@ -485,7 +485,7 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym,
 
 static void __match_proto__(sym_expr_t)
 vcc_Eval_BoolConst(struct vcc *tl, struct expr **e, const struct symbol *sym,
-    enum var_type fmt)
+    vcc_type_t fmt)
 {
 
 	(void)fmt;
@@ -499,7 +499,7 @@ vcc_Eval_BoolConst(struct vcc *tl, struct expr **e, const struct symbol *sym,
 
 void __match_proto__(sym_expr_t)
 vcc_Eval_Handle(struct vcc *tl, struct expr **e, const struct symbol *sym,
-    enum var_type fmt)
+    vcc_type_t fmt)
 {
 
 	assert(sym->kind == sym->kind);
@@ -522,7 +522,7 @@ vcc_Eval_Handle(struct vcc *tl, struct expr **e, const struct symbol *sym,
 
 void __match_proto__(sym_expr_t)
 vcc_Eval_Var(struct vcc *tl, struct expr **e, const struct symbol *sym,
-    enum var_type fmt)
+    vcc_type_t fmt)
 {
 
 	(void)fmt;
@@ -565,7 +565,7 @@ vcc_priv_arg(struct vcc *tl, const char *p, const char *name, const char *vmod)
 }
 
 struct func_arg {
-	enum var_type		type;
+	vcc_type_t		type;
 	const char		*enum_bits;
 	const char		*name;
 	const char		*val;
@@ -629,7 +629,7 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 	const char *p;
 	struct expr *e1;
 	struct func_arg *fa, *fa2;
-	enum var_type rfmt;
+	vcc_type_t rfmt;
 	VTAILQ_HEAD(,func_arg) head;
 	struct token *t1;
 
@@ -763,7 +763,7 @@ vcc_Eval_Func(struct vcc *tl, const char *cfunc,
 
 void __match_proto__(sym_expr_t)
 vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, const struct symbol *sym,
-    enum var_type fmt)
+    vcc_type_t fmt)
 {
 
 	(void)fmt;
@@ -787,7 +787,7 @@ vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, const struct symbol *sym,
  */
 
 static void
-vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
+vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 	struct expr *e1, *e2;
 	const char *ip;
@@ -927,10 +927,10 @@ vcc_expr4(struct vcc *tl, struct expr **e, enum var_type fmt)
  */
 
 static void
-vcc_expr_mul(struct vcc *tl, struct expr **e, enum var_type fmt)
+vcc_expr_mul(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 	struct expr *e2;
-	enum var_type f2, f3;
+	vcc_type_t f2, f3;
 	struct token *tk;
 
 	*e = NULL;
@@ -979,7 +979,7 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, enum var_type fmt)
 static void
 vcc_expr_string_add(struct vcc *tl, struct expr **e, struct expr *e2)
 {
-	enum var_type f2;
+	vcc_type_t f2;
 
 	AN(e);
 	AN(*e);
@@ -1023,10 +1023,10 @@ vcc_expr_string_add(struct vcc *tl, struct expr **e, struct expr *e2)
 }
 
 static void
-vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
+vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 	struct expr  *e2;
-	enum var_type f2;
+	vcc_type_t f2;
 	struct token *tk;
 
 	*e = NULL;
@@ -1085,7 +1085,7 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
  */
 
 static void
-vcc_expr_strfold(struct vcc *tl, struct expr **e, enum var_type fmt)
+vcc_expr_strfold(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 
 	vcc_expr_add(tl, e, fmt);
@@ -1119,7 +1119,7 @@ vcc_expr_strfold(struct vcc *tl, struct expr **e, enum var_type fmt)
 	{typ,		'>',	"(\v1 > \v2)" }
 
 static const struct cmps {
-	enum var_type		fmt;
+	vcc_type_t		fmt;
 	unsigned		token;
 	const char		*emit;
 } vcc_cmps[] = {
@@ -1138,7 +1138,7 @@ static const struct cmps {
 #undef NUM_REL
 
 static void
-vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
+vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 	struct expr *e2;
 	const struct cmps *cp;
@@ -1243,7 +1243,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
  */
 
 static void
-vcc_expr_not(struct vcc *tl, struct expr **e, enum var_type fmt)
+vcc_expr_not(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 	struct expr *e2;
 	struct token *tk;
@@ -1274,7 +1274,7 @@ vcc_expr_not(struct vcc *tl, struct expr **e, enum var_type fmt)
  */
 
 static void
-vcc_expr_cand(struct vcc *tl, struct expr **e, enum var_type fmt)
+vcc_expr_cand(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 	struct expr *e2;
 	struct token *tk;
@@ -1309,7 +1309,7 @@ vcc_expr_cand(struct vcc *tl, struct expr **e, enum var_type fmt)
  */
 
 static void
-vcc_expr0(struct vcc *tl, struct expr **e, enum var_type fmt)
+vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 	struct expr *e2;
 	struct token *tk;
@@ -1349,7 +1349,7 @@ vcc_expr0(struct vcc *tl, struct expr **e, enum var_type fmt)
  */
 
 void
-vcc_Expr(struct vcc *tl, enum var_type fmt)
+vcc_Expr(struct vcc *tl, vcc_type_t fmt)
 {
 	struct expr *e;
 	struct token *t1;

@@ -54,9 +54,9 @@ parse_call(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static const struct arith {
-	enum var_type		type;
+	vcc_type_t		type;
 	unsigned		oper;
-	enum var_type		want;
+	vcc_type_t		want;
 } arith[] = {
 	{ INT,		T_INCR,		INT },
 	{ INT,		T_DECR,		INT },
@@ -84,7 +84,7 @@ parse_set(struct vcc *tl)
 {
 	const struct symbol *sym;
 	const struct arith *ap;
-	enum var_type fmt;
+	vcc_type_t fmt;
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);

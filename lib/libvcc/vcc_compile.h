@@ -74,6 +74,8 @@ enum var_type {
 #undef VCC_TYPE
 };
 
+typedef enum var_type vcc_type_t;
+
 struct source {
 	VTAILQ_ENTRY(source)	list;
 	char			*name;
@@ -100,7 +102,7 @@ enum symkind {
 };
 
 typedef void sym_expr_t(struct vcc *tl, struct expr **,
-    const struct symbol *sym, enum var_type);
+    const struct symbol *sym, vcc_type_t);
 typedef void sym_wildcard_t(struct vcc *, struct symbol *,
     const char *, const char *);
 
@@ -120,7 +122,7 @@ struct symbol {
 
 	const struct token		*def_b, *def_e;
 
-	enum var_type			fmt;
+	vcc_type_t			fmt;
 
 	sym_expr_t			*eval;
 	void				*eval_priv;
@@ -207,7 +209,7 @@ struct vcc {
 
 struct var {
 	const char		*name;
-	enum var_type		fmt;
+	vcc_type_t		fmt;
 	const char		*rname;
 	unsigned		r_methods;
 	const char		*lname;
@@ -267,7 +269,7 @@ char *TlDupTok(struct vcc *tl, const struct token *tok);
 double vcc_DoubleVal(struct vcc *tl);
 void vcc_Duration(struct vcc *tl, double *);
 unsigned vcc_UintVal(struct vcc *tl);
-void vcc_Expr(struct vcc *tl, enum var_type typ);
+void vcc_Expr(struct vcc *tl, vcc_type_t typ);
 void vcc_Expr_Call(struct vcc *tl, const struct symbol *sym);
 void vcc_Expr_Init(struct vcc *tl);
 sym_expr_t vcc_Eval_Var;
@@ -275,10 +277,10 @@ sym_expr_t vcc_Eval_Handle;
 sym_expr_t vcc_Eval_SymFunc;
 void vcc_Eval_Func(struct vcc *tl, const char *cfunc, const char *extra,
     const char *name, const char *args, const char *vmod);
-enum var_type VCC_arg_type(const char **p);
-enum symkind VCC_HandleKind(enum var_type fmt);
+vcc_type_t VCC_arg_type(const char **p);
+enum symkind VCC_HandleKind(vcc_type_t fmt);
 struct symbol *VCC_HandleSymbol(struct vcc *, const struct token *,
-    enum var_type fmt, const char *str, ...);
+    vcc_type_t fmt, const char *str, ...);
 
 /* vcc_obj.c */
 extern const struct var vcc_vars[];
@@ -304,7 +306,7 @@ struct symbol *VCC_Symbol(struct vcc *, struct symbol *,
 const char * VCC_SymKind(struct vcc *tl, const struct symbol *s);
 typedef void symwalk_f(struct vcc *tl, const struct symbol *s);
 void VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, enum symkind kind);
-void VCC_GlobalSymbol(struct symbol *, enum var_type, const char *str, ...);
+void VCC_GlobalSymbol(struct symbol *, vcc_type_t, const char *str, ...);
 
 /* vcc_token.c */
 void vcc_Coord(const struct vcc *tl, struct vsb *vsb,
