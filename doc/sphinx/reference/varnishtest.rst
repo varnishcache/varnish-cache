@@ -177,13 +177,13 @@ SEE ALSO
 ========
 
 * varnishtest source code repository with tests
-* :ref:`vtc(7)`
 * :ref:`varnishhist(1)`
 * :ref:`varnishlog(1)`
 * :ref:`varnishncsa(1)`
 * :ref:`varnishstat(1)`
 * :ref:`varnishtop(1)`
 * :ref:`vcl(7)`
+* :ref:`vtc(7)`
 
 HISTORY
 =======
