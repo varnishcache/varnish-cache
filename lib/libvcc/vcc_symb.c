@@ -133,7 +133,7 @@ VCC_Symbol(struct vcc *tl, struct symbol *parent,
 			continue;
 		break;
 	}
-	if (sym == NULL && create == 0 && parent->kind == SYM_WILDCARD) {
+	if (sym == NULL && create == 0 && parent->wildcard != NULL) {
 		AN(parent->wildcard);
 		parent->wildcard(tl, parent, b, e);
 		if (tl->err)

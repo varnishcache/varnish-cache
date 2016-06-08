@@ -40,5 +40,4 @@ VCC_SYMB(STEVEDORE,	stevedore)
 VCC_SYMB(SUB,		sub)		/* VCL subroutine */
 VCC_SYMB(VAR,		var)
 VCC_SYMB(VMOD,		vmod)
-VCC_SYMB(WILDCARD,	wildcard)
 /*lint -restore */

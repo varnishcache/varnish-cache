@@ -560,7 +560,7 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 	for (v = vcc_vars; v->name != NULL; v++) {
 		if (v->fmt == HEADER) {
 			sym = VCC_Symbol(tl, NULL, v->name, NULL,
-			    SYM_WILDCARD, 1);
+			    SYM_NONE, 1);
 			sym->wildcard = vcc_Var_Wildcard;
 			sym->wildcard_priv = v;
 		} else {
@@ -574,7 +574,7 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 		sym->lname = v->lname;
 	}
 
-	sym = VCC_Symbol(tl, NULL, "storage", NULL, SYM_WILDCARD, 1);
+	sym = VCC_Symbol(tl, NULL, "storage", NULL, SYM_NONE, 1);
 	sym->wildcard = vcc_Stv_Wildcard;
 
 	Fh(tl, 0, "/* ---===### VCC generated .h code ###===---*/\n");
