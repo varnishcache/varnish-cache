@@ -68,14 +68,6 @@ struct expr;
 struct vcc;
 struct symbol;
 
-enum var_type {
-#define VCC_TYPE(foo)		foo,
-#include "tbl/vcc_types.h"
-#undef VCC_TYPE
-};
-
-typedef enum var_type vcc_type_t;
-
 struct source {
 	VTAILQ_ENTRY(source)	list;
 	char			*name;
@@ -94,6 +86,22 @@ struct token {
 	unsigned		cnt;
 	char			*dec;
 };
+
+typedef const struct type	*vcc_type_t;
+
+struct type {
+	unsigned		magic;
+#define TYPE_MAGIC		0xfae932d9
+
+	const char		*name;
+	const char		*tostring;
+	vcc_type_t		multype;
+};
+
+#define VCC_TYPE(foo)		extern const struct type foo[1];
+#include "tbl/vcc_types.h"
+#undef VCC_TYPE
+
 
 enum symkind {
 #define VCC_SYMB(uu, ll)	SYM_##uu,
@@ -277,7 +285,6 @@ sym_expr_t vcc_Eval_Handle;
 sym_expr_t vcc_Eval_SymFunc;
 void vcc_Eval_Func(struct vcc *tl, const char *cfunc, const char *extra,
     const char *name, const char *args, const char *vmod);
-vcc_type_t VCC_arg_type(const char **p);
 enum symkind VCC_HandleKind(vcc_type_t fmt);
 struct symbol *VCC_HandleSymbol(struct vcc *, const struct token *,
     vcc_type_t fmt, const char *str, ...);
@@ -324,6 +331,9 @@ void vcc__ErrInternal(struct vcc *tl, const char *func,
     unsigned line);
 void vcc_AddToken(struct vcc *tl, unsigned tok, const char *b,
     const char *e);
+
+/* vcc_types.c */
+vcc_type_t VCC_Type(const char *p);
 
 /* vcc_var.c */
 sym_wildcard_t vcc_Var_Wildcard;

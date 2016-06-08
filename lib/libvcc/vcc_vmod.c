@@ -248,7 +248,9 @@ vcc_ParseImport(struct vcc *tl)
 			sym->cfunc = p;
 			p += strlen(p) + 1;
 			sym->args = p;
-			sym->fmt = VCC_arg_type(&p);
+			sym->fmt = VCC_Type(p);
+			AN(sym->fmt);
+			p += strlen(p) + 1;
 		} else {
 			VSB_printf(tl->sb, "Internal spec error (%s)\n", p);
 			vcc_ErrWhere(tl, mod);

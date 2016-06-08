@@ -30,6 +30,7 @@ libvcc_la_SOURCES = \
 	vcc_storage.c \
 	vcc_symb.c \
 	vcc_token.c \
+	vcc_types.c \
 	vcc_utils.c \
 	vcc_var.c \
 	vcc_vmod.c \

@@ -39,19 +39,6 @@
 
 #include "vcc_compile.h"
 
-static const char *
-vcc_Type(vcc_type_t fmt)
-{
-	switch(fmt) {
-#define VCC_TYPE(a)	case a: return(#a);
-#include "tbl/vcc_types.h"
-#undef VCC_TYPE
-	default:
-		assert("Unknown Type");
-		return(NULL);
-	}
-}
-
 /*--------------------------------------------------------------------
  * Recognize and convert units of time, return seconds.
  */
@@ -381,19 +368,6 @@ vcc_expr_fmt(struct vsb *d, int ind, const struct expr *e1)
 /*--------------------------------------------------------------------
  */
 
-vcc_type_t
-VCC_arg_type(const char **p)
-{
-
-#define VCC_TYPE(a) if (!strcmp(#a, *p)) { *p += strlen(#a) + 1; return (a);}
-#include "tbl/vcc_types.h"
-#undef VCC_TYPE
-	return (VOID);
-}
-
-/*--------------------------------------------------------------------
- */
-
 static void
 vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
@@ -403,41 +377,25 @@ vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	CHECK_OBJ_NOTNULL(*e, EXPR_MAGIC);
 	AN(fmt == STRING || fmt == STRING_LIST);
 
-	p = NULL;
-	switch((*e)->fmt) {
-	case BACKEND:	p = "VRT_BACKEND_string(\v1)"; break;
-	case BOOL:	p = "VRT_BOOL_string(\v1)"; break;
-	case DURATION:	p = "VRT_REAL_string(ctx, \v1)"; break;
-			 /* XXX: should DURATION insist on "s" suffix ? */
-	case INT:
+	p = (*e)->fmt->tostring;
+	if (p == NULL && (*e)->fmt == INT) {
 		if (vcc_isconst(*e)) {
 			p = "\"\v1\"";
 			constant = EXPR_CONST;
 		} else {
 			p = "VRT_INT_string(ctx, \v1)";
 		}
-		break;
-	case IP:	p = "VRT_IP_string(ctx, \v1)"; break;
-	case BYTES:	p = "VRT_REAL_string(ctx, \v1)"; break; /* XXX */
-	case REAL:	p = "VRT_REAL_string(ctx, \v1)"; break;
-	case TIME:	p = "VRT_TIME_string(ctx, \v1)"; break;
-	case HEADER:	p = "VRT_GetHdr(ctx, \v1)"; break;
-	case ENUM:
-	case STRING:
-	case STRING_LIST:
-			break;
-	case BLOB:
-			VSB_printf(tl->sb,
-			    "Wrong use of BLOB value.\n"
-			    "BLOBs can only be used as arguments to VMOD"
-			    " functions.\n");
-			vcc_ErrWhere2(tl, (*e)->t1, tl->t);
-			return;
-	default:
-			INCOMPL();
-			break;
+	} else if (p == NULL && (*e)->fmt == BLOB) {
+		VSB_printf(tl->sb,
+		    "Wrong use of BLOB value.\n"
+		    "BLOBs can only be used as arguments to VMOD"
+		    " functions.\n");
+		vcc_ErrWhere2(tl, (*e)->t1, tl->t);
+		return;
+	} else {
+		AN(p);
 	}
-	if (p != NULL) {
+	if (*p != '\0') {
 		*e = vcc_expr_edit(fmt, p, *e, NULL);
 		(*e)->constant = constant;
 	}
@@ -606,9 +564,9 @@ vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 		if (e2->fmt != fa->type) {
 			VSB_printf(tl->sb, "Wrong argument type.");
 			VSB_printf(tl->sb, "  Expected %s.",
-				vcc_Type(fa->type));
+				fa->type->name);
 			VSB_printf(tl->sb, "  Got %s.\n",
-				vcc_Type(e2->fmt));
+				e2->fmt->name);
 			vcc_ErrWhere2(tl, e2->t1, tl->t);
 			return;
 		}
@@ -640,19 +598,23 @@ vcc_func(struct vcc *tl, struct expr **e, const char *cfunc,
 	p = args;
 	if (extra == NULL)
 		extra = "";
-	rfmt = VCC_arg_type(&p);
+	rfmt = VCC_Type(p);
+	AN(rfmt);
+	p += strlen(p) + 1;
 	VTAILQ_INIT(&head);
 	while (*p != '\0') {
 		fa = calloc(sizeof *fa, 1);
 		AN(fa);
 		VTAILQ_INSERT_TAIL(&head, fa, list);
-		fa->type = VCC_arg_type(&p);
-		if (fa->type == VOID && !memcmp(p, "PRIV_", 5)) {
+		if (!memcmp(p, "PRIV_", 5)) {
 			fa->result = vcc_priv_arg(tl, p, name, vmod);
 			fa->name = "";
 			p += strlen(p) + 1;
 			continue;
 		}
+		fa->type = VCC_Type(p);
+		AN(fa->type);
+		p += strlen(p) + 1;
 		if (*p == '\1') {
 			fa->enum_bits = ++p;
 			while (*p != '\1')
@@ -825,7 +787,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			VSB_printf(tl->sb, "Symbol not found: ");
 			vcc_ErrToken(tl, tl->t);
 			VSB_printf(tl->sb, " (expected type %s):\n",
-			    vcc_Type(fmt));
+			    fmt->name);
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
@@ -914,7 +876,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	default:
 		VSB_printf(tl->sb, "Unknown token ");
 		vcc_ErrToken(tl, tl->t);
-		VSB_printf(tl->sb, " when looking for %s\n\n", vcc_Type(fmt));
+		VSB_printf(tl->sb, " when looking for %s\n\n", fmt->name);
 		vcc_ErrWhere(tl, tl->t);
 		break;
 	}
@@ -937,18 +899,14 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	vcc_expr4(tl, e, fmt);
 	ERRCHK(tl);
 	AN(*e);
-	f3 = f2 = (*e)->fmt;
+	f3 = (*e)->fmt;
 
-	switch(f2) {
-	case INT:	f2 = INT; break;
-	case DURATION:	f2 = REAL; break;
-	case BYTES:	f2 = REAL; break;
-	case REAL:	f2 = REAL; break;
-	default:
+	f2 = f3->multype;
+	if (f2 == NULL) {
 		if (tl->t->tok != '*' && tl->t->tok != '/')
 			return;
 		VSB_printf(tl->sb, "Operator %.*s not possible on type %s.\n",
-		    PF(tl->t), vcc_Type(f2));
+		    PF(tl->t), f3->name);
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
@@ -1067,7 +1025,7 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			return;
 		} else {
 			VSB_printf(tl->sb, "%s %.*s %s not possible.\n",
-			    vcc_Type((*e)->fmt), PF(tk), vcc_Type(e2->fmt));
+			    (*e)->fmt->name, PF(tk), e2->fmt->name);
 			vcc_ErrWhere2(tl, tk, tl->t);
 			return;
 		}
@@ -1166,9 +1124,9 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		ERRCHK(tl);
 		if (e2->fmt != (*e)->fmt) { /* XXX */
 			VSB_printf(tl->sb, "Comparison of different types: ");
-			VSB_printf(tl->sb, "%s ", vcc_Type((*e)->fmt));
+			VSB_printf(tl->sb, "%s ", (*e)->fmt->name);
 			vcc_ErrToken(tl, tk);
-			VSB_printf(tl->sb, " %s\n", vcc_Type(e2->fmt));
+			VSB_printf(tl->sb, " %s\n", e2->fmt->name);
 			vcc_ErrWhere(tl, tk);
 			return;
 		}
@@ -1224,7 +1182,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	case '~':
 	case T_NOMATCH:
 		VSB_printf(tl->sb, "Operator %.*s not possible on %s\n",
-		    PF(tl->t), vcc_Type((*e)->fmt));
+		    PF(tl->t), (*e)->fmt->name);
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	default:
@@ -1263,7 +1221,7 @@ vcc_expr_not(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		return;
 	}
 	VSB_printf(tl->sb, "'!' must be followed by BOOL, found ");
-	VSB_printf(tl->sb, "%s.\n", vcc_Type(e2->fmt));
+	VSB_printf(tl->sb, "%s.\n", e2->fmt->name);
 	vcc_ErrWhere2(tl, tk, tl->t);
 }
 
@@ -1293,7 +1251,7 @@ vcc_expr_cand(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		if (e2->fmt != BOOL) {
 			VSB_printf(tl->sb,
 			    "'&&' must be followed by BOOL, found ");
-			VSB_printf(tl->sb, "%s.\n", vcc_Type(e2->fmt));
+			VSB_printf(tl->sb, "%s.\n", e2->fmt->name);
 			vcc_ErrWhere2(tl, tk, tl->t);
 			return;
 		}
@@ -1327,7 +1285,7 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			if (e2->fmt != BOOL) {
 				VSB_printf(tl->sb,
 				    "'||' must be followed by BOOL, found ");
-				VSB_printf(tl->sb, "%s.\n", vcc_Type(e2->fmt));
+				VSB_printf(tl->sb, "%s.\n", e2->fmt->name);
 				vcc_ErrWhere2(tl, tk, tl->t);
 				return;
 			}
@@ -1362,7 +1320,7 @@ vcc_Expr(struct vcc *tl, vcc_type_t fmt)
 	e->t1 = t1;
 	if (!tl->err && fmt != e->fmt)  {
 		VSB_printf(tl->sb, "Expression has type %s, expected %s\n",
-		    vcc_Type(e->fmt), vcc_Type(fmt));
+		    e->fmt->name, fmt->name);
 		tl->err = 1;
 	}
 	if (!tl->err) {

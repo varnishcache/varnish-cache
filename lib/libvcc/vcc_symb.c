@@ -41,14 +41,12 @@
 enum symkind
 VCC_HandleKind(vcc_type_t fmt)
 {
-	switch(fmt) {
-	case ACL:	return(SYM_ACL);
-	case BACKEND:	return(SYM_BACKEND);
-	case PROBE:	return(SYM_PROBE);
-	case STEVEDORE:	return(SYM_STEVEDORE);
-	case INSTANCE:	return(SYM_INSTANCE);
-	default:	return(SYM_NONE);
-	}
+	if (fmt == ACL)		return(SYM_ACL);
+	if (fmt == BACKEND)	return(SYM_BACKEND);
+	if (fmt == PROBE)	return(SYM_PROBE);
+	if (fmt == STEVEDORE)	return(SYM_STEVEDORE);
+	if (fmt == INSTANCE)	return(SYM_INSTANCE);
+	return(SYM_NONE);
 }
 
 const char *
