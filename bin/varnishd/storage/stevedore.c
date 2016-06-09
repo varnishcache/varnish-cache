@@ -126,13 +126,20 @@ void
 STV_open(void)
 {
 	struct stevedore *stv;
+	char buf[1024];
 
 	ASSERT_CLI();
 	VTAILQ_FOREACH(stv, &stv_stevedores, list) {
+		bprintf(buf, "storage.%s", stv->ident);
+		stv->vclname = strdup(buf);
+		AN(stv->vclname);
 		if (stv->open != NULL)
 			stv->open(stv);
 	}
 	stv = stv_transient;
+	bprintf(buf, "storage.%s", stv->ident);
+	stv->vclname = strdup(buf);
+	AN(stv->vclname);
 	if (stv->open != NULL)
 		stv->open(stv);
 	stv_next = VTAILQ_FIRST(&stv_stevedores);
@@ -231,15 +238,19 @@ VRT_Stv(const char *nm)
 	return (0);
 }
 
-struct stevedore *
+const char * __match_proto__()
+VRT_STEVEDORE_string(VCL_STEVEDORE s)
+{
+	if (s == NULL)
+		return (NULL);
+	CHECK_OBJ_NOTNULL(s, STEVEDORE_MAGIC);
+	return (s->vclname);
+}
+
+VCL_STEVEDORE
 VRT_stevedore(const char *nm)
 {
-	struct stevedore *stv;
-
-	VTAILQ_FOREACH(stv, &stv_stevedores, list)
-		if (!strcmp(stv->ident, nm))
-			return (stv);
-	WRONG("Unknown stevedore name");
+	return (stv_find(nm));
 }
 
 #define VRTSTVVAR(nm, vtype, ctype, dval)	\

@@ -386,6 +386,12 @@ vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		vcc_ErrWhere2(tl, (*e)->t1, tl->t);
 		return;
 	}
+	if (p == NULL) {
+		VSB_printf(tl->sb,
+		    "Cannot convert %s to STRING.\n", (*e)->fmt->name);
+		vcc_ErrWhere2(tl, (*e)->t1, tl->t);
+		return;
+	}
 	AN(p);
 	if (*p != '\0') {
 		*e = vcc_expr_edit(fmt, p, *e, NULL);

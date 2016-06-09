@@ -124,6 +124,7 @@ const struct type REAL[1] = {{
 const struct type STEVEDORE[1] = {{
 	.magic =		0xfae932d9,
 	.name =			"STEVEDORE",
+	.tostring =		"VRT_STEVEDORE_string(\v1)",
 }};
 
 const struct type STRING[1] = {{

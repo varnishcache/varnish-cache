@@ -206,16 +206,6 @@ vcc_global(struct vcc *tl, struct symbol *sym,
 #undef VCL_MET_MAC
 }
 
-void
-VCC_GlobalSymbol(struct symbol *sym, vcc_type_t fmt, const char *str, ...)
-{
-	va_list ap;
-
-	va_start(ap, str);
-	vcc_global(NULL, sym, fmt, str, ap);
-	va_end(ap);
-}
-
 struct symbol *
 VCC_HandleSymbol(struct vcc *tl, const struct token *tk, vcc_type_t fmt,
     const char *str, ...)

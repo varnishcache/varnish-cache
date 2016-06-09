@@ -292,9 +292,6 @@ extern const struct var vcc_vars[];
 /* vcc_parse.c */
 void vcc_Parse(struct vcc *tl);
 
-/* vcc_storage.c */
-sym_wildcard_t vcc_Stv_Wildcard;
-
 /* vcc_utils.c */
 const char *vcc_regexp(struct vcc *tl);
 void Resolve_Sockaddr(struct vcc *tl, const char *host, const char *defport,
@@ -310,7 +307,6 @@ struct symbol *VCC_Symbol(struct vcc *, struct symbol *,
 const char * VCC_SymKind(struct vcc *tl, const struct symbol *s);
 typedef void symwalk_f(struct vcc *tl, const struct symbol *s);
 void VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, enum symkind kind);
-void VCC_GlobalSymbol(struct symbol *, vcc_type_t, const char *str, ...);
 
 /* vcc_token.c */
 void vcc_Coord(const struct vcc *tl, struct vsb *vsb,

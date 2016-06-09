@@ -444,7 +444,7 @@ vcc_new_source(const char *b, const char *e, const char *name)
 /*--------------------------------------------------------------------*/
 
 static struct source *
-vcc_file_source(struct vcc *tl, const char *fn)
+vcc_file_source(const struct vcc *tl, const char *fn)
 {
 	char *f, *fnp;
 	struct source *sp;
@@ -573,9 +573,6 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 		sym->w_methods = v->w_methods;
 		sym->lname = v->lname;
 	}
-
-	sym = VCC_Symbol(tl, NULL, "storage", NULL, SYM_NONE, 1);
-	sym->wildcard = vcc_Stv_Wildcard;
 
 	Fh(tl, 0, "/* ---===### VCC generated .h code ###===---*/\n");
 	Fc(tl, 0, "\n/* ---===### VCC generated .c code ###===---*/\n");
@@ -818,25 +815,3 @@ VCC_Unsafe_Path(struct vcc *vcc, unsigned u)
 	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
 	vcc->unsafe_path = u;
 }
-
-void
-VCC_Stevedore(struct vcc *vcc, const char *stv_name)
-{
-#if 0
-	struct symbol *sym;
-	char stv[1024];
-
-	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
-	ALLOC_OBJ(sym, SYMBOL_MAGIC);
-	AN(sym);
-	bprintf(stv, "stv.%s", stv_name);
-	REPLACE(sym->name, stv);		/* XXX storage.* ? */
-	sym->kind = SYM_STEVEDORE;
-	VCC_GlobalSymbol(sym, STEVEDORE, "VRT_stevedore(\"%s\")", stv_name);
-	VTAILQ_INSERT_TAIL(&vcc->symbols, sym, list);
-#else
-	(void)vcc;
-	(void)stv_name;
-#endif
-}
-

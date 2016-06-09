@@ -136,7 +136,7 @@ VRT_priv_top(VRT_CTX, void *vmod_id)
 		return (VRT_priv_dynamic(ctx, id, (uintptr_t)vmod_id));
 	} else
 		WRONG("PRIV_TOP is only accessible in client VCL context");
-	return (NULL);
+	NEEDLESS_RETURN(NULL);
 }
 
 /*--------------------------------------------------------------------

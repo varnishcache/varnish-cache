@@ -122,6 +122,7 @@ struct stevedore {
 
 	VTAILQ_ENTRY(stevedore)	list;
 	char			ident[16];	/* XXX: match VSM_chunk.ident */
+	char			*vclname;
 };
 
 VTAILQ_HEAD(stevedore_head, stevedore);

@@ -94,7 +94,7 @@ typedef long					VCL_INT;
 typedef const struct suckaddr *			VCL_IP;
 typedef const struct vrt_backend_probe *	VCL_PROBE;
 typedef double					VCL_REAL;
-typedef struct stevedore *			VCL_STEVEDORE;
+typedef const struct stevedore *		VCL_STEVEDORE;
 typedef const char *				VCL_STRING;
 typedef double					VCL_TIME;
 typedef void					VCL_VOID;
@@ -334,7 +334,7 @@ struct vmod_priv *VRT_priv_top(VRT_CTX, void *vmod_id);
 
 /* Stevedore related functions */
 int VRT_Stv(const char *nm);
-struct stevedore *VRT_stevedore(const char *nm);
+VCL_STEVEDORE VRT_stevedore(const char *nm);
 
 /* Convert things to string */
 
@@ -344,4 +344,5 @@ char *VRT_REAL_string(VRT_CTX, VCL_REAL);
 char *VRT_TIME_string(VRT_CTX, VCL_TIME);
 const char *VRT_BOOL_string(VCL_BOOL);
 const char *VRT_BACKEND_string(VCL_BACKEND);
+const char *VRT_STEVEDORE_string(VCL_STEVEDORE);
 const char *VRT_CollectString(VRT_CTX, const char *p, ...);
