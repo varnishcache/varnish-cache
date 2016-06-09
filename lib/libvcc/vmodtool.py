@@ -235,7 +235,9 @@ def arg(txt):
 
 	i = s.find('=')
 	j = s.find(',')
-	if j >= 0 and j < i:
+	if j < 0:
+		j = len(s)
+	if j < i:
 		i = -1
 	if i < 0:
 		i = s.find(',')
@@ -255,11 +257,14 @@ def arg(txt):
 		s = s[m.end():]
 	else:
 		i = s.find(',')
+		if i < 0:
+			i = len(s)
 		a.defval = s[:i]
 		s = s[i:]
 
 	return a,s
 
+# XXX cant have ( or ) in an argument default value
 class prototype(object):
 	def __init__(self, st, retval=True, prefix=""):
 		l = st.line[1]
