@@ -123,7 +123,8 @@ $Method VOID .refresh(STRING addr, STRING port)
 
 Dynamically refresh & (always!) replace the backend by a new one.
 
-$Function VOID workspace_allocate(ENUM { client, backend, session, thread }, INT SIZE)
+$Function VOID workspace_allocate(ENUM { client, backend, session, thread },
+	  INT size)
 
 Allocate and zero out SIZE bytes from a workspace.
 
