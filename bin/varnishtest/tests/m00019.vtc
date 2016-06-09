@@ -22,12 +22,12 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.bodylen == "6"
-	expect resp.http.foo1 == "1 2 3 ,"
-	expect resp.http.foo2 == "1 2 3 ,"
-	expect resp.http.foo3 == "1 2 3 ,"
-	expect resp.http.foo4 == "1 2 3 ,"
-	expect resp.http.foo5 == "1 2 3 ,"
-	expect resp.http.foo6 == "1 2 3 ,"
+	expect resp.http.foo1 == "1 2 3 , 4"
+	expect resp.http.foo2 == "1 2 3 , 4"
+	expect resp.http.foo3 == "1 2 3 , 4"
+	expect resp.http.foo4 == "1 2 3 , 4"
+	expect resp.http.foo5 == "1 2 3 , 4"
+	expect resp.http.foo6 == "1 2 3 , 4"
 } -run
 
 delay .1
@@ -48,10 +48,10 @@ varnish v1 -errvcl {Argument 'one' missing} {
 	}
 }
 
-varnish v1 -errvcl {Unknown argument 'four'} {
+varnish v1 -errvcl {Unknown argument 'five'} {
 	import debug;
 	backend b1 {.host = "127.0.0.1";}
 	sub vcl_deliver {
-		set resp.http.foo5 = debug.argtest("1", two=2.0, four="3");
+		set resp.http.foo5 = debug.argtest("1", two=2.0, five="3");
 	}
 }
