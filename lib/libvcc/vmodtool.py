@@ -702,7 +702,7 @@ class vcc(object):
 		fo.close()
 
 	def hfile(self):
-		fn = self.rstdir + "/" + self.pfx + ".h"
+		fn = self.pfx + ".h"
 		self.commit_files.append(fn)
 		fo = open(fn + ".tmp", "w")
 		write_c_file_warning(fo)
@@ -761,7 +761,7 @@ class vcc(object):
 		fo.write("};\n")
 
 	def cfile(self):
-		fn = self.rstdir + "/" + self.pfx + ".c"
+		fn = self.pfx + ".c"
 		self.commit_files.append(fn)
 		fo = open(fn + ".tmp", "w")
 		write_c_file_warning(fo)
