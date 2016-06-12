@@ -648,6 +648,7 @@ class vcc(object):
 		self.pfx = outputprefix
 		self.contents = []
 		self.commit_files = []
+		self.copyright = None
 
 	def commit(self):
 		for i in self.commit_files:
@@ -658,11 +659,15 @@ class vcc(object):
 		a = a.split("\n$")
 		for i in range(len(a)):
 			b = a[i].split("\n", 1)
-			if i == 0:
-				self.copyright = a[0]
-				continue
 			c = b[0].split(None, 1)
-			if i == 1:
+
+			if i == 0:
+				if c[0] == "$Module":
+					s_module(c, b[1:], self)
+				else:
+					self.copyright = a[0]
+				continue
+			if i == 1 and self.copyright != None:
 				if c[0] != "Module":
 					err("$Module must be first stanze")
 			if c[0] == "Module":
@@ -702,7 +707,8 @@ class vcc(object):
 		for i in self.contents:
 			i.rstfile(fo, man)
 
-		self.rst_copyright(fo)
+		if self.copyright != None:
+			self.rst_copyright(fo)
 
 		fo.close()
 
