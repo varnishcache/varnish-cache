@@ -288,7 +288,7 @@ class prototype(object):
 		s = s[i:].strip()
 		assert s[0] == "("
 		assert s[-1] == ")"
-		s = s[1:-1]
+		s = s[1:-1].lstrip()
 		self.args = []
 		while len(s) > 0:
 			a,s = arg(s)
