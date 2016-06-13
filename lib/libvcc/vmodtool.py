@@ -235,7 +235,9 @@ def arg(txt):
 
 	i = s.find('=')
 	j = s.find(',')
-	if j >= 0 and j < i:
+	if j < 0:
+		j = len(s)
+	if j < i:
 		i = -1
 	if i < 0:
 		i = s.find(',')
@@ -255,11 +257,14 @@ def arg(txt):
 		s = s[m.end():]
 	else:
 		i = s.find(',')
+		if i < 0:
+			i = len(s)
 		a.defval = s[:i]
 		s = s[i:]
 
 	return a,s
 
+# XXX cant have ( or ) in an argument default value
 class prototype(object):
 	def __init__(self, st, retval=True, prefix=""):
 		l = st.line[1]
@@ -690,7 +695,7 @@ class vcc(object):
 		fo.write(a + "\n")
 
 	def rstfile(self, man=False):
-		fn = self.rstdir + "/vmod_" + self.modname
+		fn = join(self.rstdir, "vmod_" + self.modname)
 		if man:
 			fn += ".man"
 		fn += ".rst"
@@ -708,7 +713,7 @@ class vcc(object):
 		fo.close()
 
 	def hfile(self):
-		fn = self.rstdir + "/" + self.pfx + ".h"
+		fn = self.pfx + ".h"
 		self.commit_files.append(fn)
 		fo = open(fn + ".tmp", "w")
 		write_c_file_warning(fo)
@@ -767,14 +772,14 @@ class vcc(object):
 		fo.write("};\n")
 
 	def cfile(self):
-		fn = self.rstdir + "/" + self.pfx + ".c"
+		fn = self.pfx + ".c"
 		self.commit_files.append(fn)
 		fo = open(fn + ".tmp", "w")
 		write_c_file_warning(fo)
 
 		fn2 = fn + ".tmp2"
 
-		for i in ["config", "vcl", "vrt", "vcc_if", "vmod_abi"]:
+		for i in ["config", "vcl", "vrt", self.pfx, "vmod_abi"]:
 			fo.write('#include "%s.h"\n' % i)
 
 		fo.write("\n")
