@@ -685,7 +685,7 @@ class vcc(object):
 		fo.write(a + "\n")
 
 	def rstfile(self, man=False):
-		fn = self.rstdir + "/vmod_" + self.modname
+		fn = join(self.rstdir, "vmod_" + self.modname)
 		if man:
 			fn += ".man"
 		fn += ".rst"
