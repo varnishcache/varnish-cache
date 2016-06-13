@@ -79,6 +79,8 @@ vcc_AddRef(struct vcc *tl, const struct token *t, enum symkind kind)
 	struct symbol *sym;
 
 	sym = VCC_SymbolTok(tl, NULL, t, kind, 1);
+	if (sym->ref_b == NULL)
+		sym->ref_b = t;
 	AN(sym);
 	sym->nref++;
 }
@@ -103,10 +105,12 @@ vcc_checkref(struct vcc *tl, const struct symbol *sym)
 {
 
 	if (sym->ndef == 0 && sym->nref != 0) {
+		AN(sym->ref_b);
 		VSB_printf(tl->sb, "Undefined %s %.*s, first reference:\n",
-		    VCC_SymKind(tl, sym), PF(sym->def_b));
-		vcc_ErrWhere(tl, sym->def_b);
+		    VCC_SymKind(tl, sym), PF(sym->ref_b));
+		vcc_ErrWhere(tl, sym->ref_b);
 	} else if (sym->ndef != 0 && sym->nref == 0) {
+		AN(sym->def_b);
 		VSB_printf(tl->sb, "Unused %s %.*s, defined:\n",
 		    VCC_SymKind(tl, sym), PF(sym->def_b));
 		vcc_ErrWhere(tl, sym->def_b);

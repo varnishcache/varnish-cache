@@ -128,7 +128,7 @@ struct symbol {
 	const void			*wildcard_priv;
 	enum symkind			kind;
 
-	const struct token		*def_b, *def_e;
+	const struct token		*def_b, *def_e, *ref_b;
 
 	vcc_type_t			fmt;
 
