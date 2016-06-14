@@ -50,6 +50,7 @@ Bugs fixed
 .. _1954: https://github.com/varnishcache/varnish-cache/issues/1954
 .. _1931: https://github.com/varnishcache/varnish-cache/issues/1931
 .. _1928: https://github.com/varnishcache/varnish-cache/issues/1928
+.. _1924: https://github.com/varnishcache/varnish-cache/issues/1924
 .. _1919: https://github.com/varnishcache/varnish-cache/issues/1919
 .. _1918: https://github.com/varnishcache/varnish-cache/issues/1918
 .. _1912: https://github.com/varnishcache/varnish-cache/issues/1912
