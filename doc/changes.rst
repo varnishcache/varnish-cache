@@ -23,12 +23,13 @@ Bugs fixed
 ----------
 
 * 1971_ - Add missing Wait_HeapDelete
-* 1967_ - [ncsa] Remove implicit line feed when using formatfile.
+* 1967_ - [ncsa] Remove implicit line feed when using formatfile
 * 1955_ - 4.1.x sometimes duplicates Age and Accept-Ranges headers
 * 1954_ - Correctly handle HTTP/1.1 EOF response
-* 1931_ - Allow VCL set Last-Modified to be used for I-M-S processing.
+* 1931_ - Allow VCL set Last-Modified to be used for I-M-S processing
 * 1928_ - req->task members must be set in case we get onto the waitinglist
-* 1919_ - Avoid ban lurker panic with empty olist.
+* 1924_ - Make std.log() and std.syslog() work from vcl_{init,fini}
+* 1919_ - Avoid ban lurker panic with empty olist
 * 1918_ - Correctly handle EOF responses with HTTP/1.1
 * 1912_ - Fix (insignificant) memory leak with mal-formed ESI directives.
 * 1904_ - Release memory instead of crashing on malformed ESI
