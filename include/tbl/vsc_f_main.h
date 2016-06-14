@@ -102,7 +102,7 @@ VSC_F(cache_miss,		uint64_t, 1, 'c', 'i', info,
     "Cache misses",
 	"Count of misses"
 	"  A cache miss indicates the object was fetched from the"
-	"  backend before delivering it to the backend."
+	"  backend before delivering it to the client."
 )
 
 /*---------------------------------------------------------------------*/
