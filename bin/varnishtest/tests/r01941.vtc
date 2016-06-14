@@ -1,4 +1,3 @@
-
 varnishtest "ESI memory should only be fully allocated"
 
 # In this test case, the cache is almost filled. Then we force the
