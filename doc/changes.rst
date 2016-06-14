@@ -6,9 +6,9 @@ Changes since 4.1.2:
 
 * varnishncsa can now access and log backend requests. (PR #1905)
 
-* [varnishncsa] New formatter %{VSL:Tag}x.
+* [varnishncsa] New output formatters %{Varnish:vxid}x and %{VSL:Tag}x.
 
-* [varnishlog] Added log tag BacakendStart on backend transactions.
+* [varnishlog] Added log tag BackendStart on backend transactions.
 
 * On SmartOS, use ports instead of epoll by default.
 
