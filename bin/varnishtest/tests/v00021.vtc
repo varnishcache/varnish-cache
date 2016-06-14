@@ -65,15 +65,3 @@ varnish v1 -errvcl {Invalid return "deliver"} {
 		return (deliver);
 	}
 }
-
-varnish v1 -errvcl {directors are now in directors VMOD} {
-	backend b { .host = "127.0.0.1"; }
-
-	director d1 random {
-		.backend b;
-	}
-
-	sub vcl_recv {
-		set req.backend = d1;
-	}
-}
