@@ -272,18 +272,6 @@ vcc_ParseFunction(struct vcc *tl)
  */
 
 static void
-vcc_ParseDirector(struct vcc *tl)
-{
-	VSB_printf(tl->sb, "\ndirectors are now in directors VMOD.\n");
-	vcc_ErrWhere(tl, tl->t);
-}
-
-/*--------------------------------------------------------------------
- * TODO when bumping the vcl version:
- * #1603 remove return(fetch) from vcl_hit{}
- */
-
-static void
 vcc_ParseVcl(struct vcc *tl)
 {
 	struct token *tok;
@@ -324,7 +312,6 @@ static struct toplev {
 	{ "acl",		vcc_ParseAcl },
 	{ "sub",		vcc_ParseFunction },
 	{ "backend",		vcc_ParseBackend },
-	{ "director",		vcc_ParseDirector },
 	{ "probe",		vcc_ParseProbe },
 	{ "import",		vcc_ParseImport },
 	{ "vcl",		vcc_ParseVcl },
