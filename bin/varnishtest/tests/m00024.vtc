@@ -9,7 +9,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import debug;
+	import ${vmod_debug};
 
 	sub vcl_recv {
 		if (!debug.barrier_sync("${b1_sock}")) {
