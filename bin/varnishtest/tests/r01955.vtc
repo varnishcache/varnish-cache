@@ -9,7 +9,7 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import std;
+	import ${vmod_std};
 	sub vcl_deliver {
 		std.collect(resp.http.age);
 	}
