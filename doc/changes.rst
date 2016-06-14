@@ -6,12 +6,20 @@ Changes since 4.1.2:
 
 * varnishncsa can now access and log backend requests. (PR #1905)
 
+* On SmartOS, use ports instead of epoll by default.
+
+* Add support for TCP Fastopen where available. Disabled by default.
+
 .. _1905: https://github.com/varnishcache/varnish-cache/pull/1905
 
 Bugs fixed
 ----------
 
+* 1971_ - Add missing Wait_HeapDelete
+* 1967_ - [ncsa] Remove implicit line feed when using formatfile.
 * 1955_ - 4.1.x sometimes duplicates Age and Accept-Ranges headers
+* 1954_ - Correctly handle HTTP/1.1 EOF response
+* 1931_ - Allow VCL set Last-Modified to be used for I-M-S processing.
 * 1928_ - req->task members must be set in case we get onto the waitinglist
 * 1918_ - Correctly handle EOF responses with HTTP/1.1
 * 1912_ - Fix (insignificant) memory leak with mal-formed ESI directives.
@@ -26,7 +34,11 @@ Bugs fixed
 * 1806_ - One minute delay on return (pipe) and a POST-Request
 * 1725_ - Revive the backend_conn counter
 
+.. _1971: https://github.com/varnishcache/varnish-cache/issues/1971
+.. _1967: https://github.com/varnishcache/varnish-cache/issues/1967
 .. _1955: https://github.com/varnishcache/varnish-cache/issues/1955
+.. _1954: https://github.com/varnishcache/varnish-cache/issues/1954
+.. _1931: https://github.com/varnishcache/varnish-cache/issues/1931
 .. _1928: https://github.com/varnishcache/varnish-cache/issues/1928
 .. _1918: https://github.com/varnishcache/varnish-cache/issues/1918
 .. _1912: https://github.com/varnishcache/varnish-cache/issues/1912
