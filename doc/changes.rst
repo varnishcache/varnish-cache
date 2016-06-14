@@ -14,6 +14,9 @@ Changes since 4.1.2:
 
 * Add support for TCP Fastopen where available. Disabled by default.
 
+* [varnishtest] New syncronization primitive barriers added, improving
+  coordination when test cases call external programs.
+
 .. _1905: https://github.com/varnishcache/varnish-cache/pull/1905
 
 Bugs fixed
