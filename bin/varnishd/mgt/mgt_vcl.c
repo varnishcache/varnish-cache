@@ -437,7 +437,9 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 		if (vp->label != NULL) {
 			AN(vp->warm);
 			VCLI_SetResult(cli, CLIS_PARAM);
-			VCLI_Out(cli, "Must remove label to discard VCL\n");
+			VCLI_Out(cli,
+			    "Cannot discard labeled (\"%s\") VCL program.\n",
+			    vp->label->name);
 			return;
 		}
 		(void)mgt_vcl_setstate(cli, vp, VCL_STATE_COLD);
@@ -500,6 +502,12 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 		VCLI_Out(cli, "VCL labels cannot point to labels");
 		return;
 	}
+	if (vpt->label != NULL) {
+		VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_Out(cli, "VCL already labeled (\"%s\")",
+		    vpt->label->name);
+		return;
+	}
 	vpl = mgt_vcl_byname(av[2]);
 	if (vpl == NULL)
 		vpl = mgt_vcl_add(av[2], NULL, VCL_STATE_LABEL);
@@ -511,8 +519,10 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 	}
 	vpl->warm = 1;
 	if (vpl->label != NULL) {
+		assert(vpl->label->label == vpl);
+		/* XXX SET vp->label AUTO */
 		vpl->label->label = NULL;
-		/* XXX SET AUTO */
+		vpl->label = NULL;
 	}
 	vpl->label = vpt;
 	vpt->label = vpl;

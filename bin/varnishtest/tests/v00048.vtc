@@ -31,7 +31,11 @@ client c1 {
 
 varnish v1 -cliok "vcl.list"
 varnish v1 -clierr 106 "vcl.label foo vcl0"
+varnish v1 -cliok "vcl.label foo vcl2"
+varnish v1 -clierr 106 "vcl.label bar vcl2"
+varnish v1 -clierr 106 "vcl.discard vcl2"
 varnish v1 -cliok "vcl.label foo vcl1"
+varnish v1 -clierr 106 "vcl.label vcl1 vcl2"
 varnish v1 -clierr 106 "vcl.state foo cold"
 varnish v1 -clierr 106 "vcl.label bar foo"
 varnish v1 -clierr 106 "vcl.discard vcl1"
