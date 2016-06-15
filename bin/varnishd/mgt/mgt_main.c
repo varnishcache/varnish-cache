@@ -238,6 +238,8 @@ usage(void)
 	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>,<size>");
 	fprintf(stderr, FMT, "",
 	    "  -s file,<dir_or_file>,<size>,<granularity>");
+	fprintf(stderr, FMT, "",
+	    "  -s file,<dir_or_file>,<size>,<granularity>,<advice>");
 	fprintf(stderr, FMT, "", "  -s persistent (experimental)");
 	fprintf(stderr, FMT, "-T address:port",
 	    "Telnet listen address and port");

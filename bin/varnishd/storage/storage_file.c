@@ -96,6 +96,7 @@ struct smf_sc {
 	int			fd;
 	unsigned		pagesize;
 	uintmax_t		filesize;
+	int			advice;
 	struct smfhead		order;
 	struct smfhead		free[NBUCKET];
 	struct smfhead		used;
@@ -110,13 +111,14 @@ smf_init(struct stevedore *parent, int ac, char * const *av)
 	struct smf_sc *sc;
 	unsigned u;
 	uintmax_t page_size;
+	int advice = MADV_RANDOM;
 
 	AZ(av[ac]);
 
 	size = NULL;
 	page_size = getpagesize();
 
-	if (ac > 3)
+	if (ac > 4)
 		ARGV_ERR("(-sfile) too many arguments\n");
 	if (ac < 1 || *av[0] == '\0')
 		ARGV_ERR("(-sfile) path is mandatory\n");
@@ -129,6 +131,16 @@ smf_init(struct stevedore *parent, int ac, char * const *av)
 		if (r != NULL)
 			ARGV_ERR("(-sfile) granularity \"%s\": %s\n", av[2], r);
 	}
+	if (ac > 3) {
+		if (!strcmp(av[3], "normal"))
+			advice = MADV_NORMAL;
+		else if (!strcmp(av[3], "random"))
+			advice = MADV_RANDOM;
+		else if (!strcmp(av[3], "sequential"))
+			advice = MADV_SEQUENTIAL;
+		else
+			ARGV_ERR("(-s file) invalid advice: \"%s\"", av[3]);
+	}
 
 	AN(fn);
 
@@ -139,7 +151,7 @@ smf_init(struct stevedore *parent, int ac, char * const *av)
 		VTAILQ_INIT(&sc->free[u]);
 	VTAILQ_INIT(&sc->used);
 	sc->pagesize = page_size;
-
+	sc->advice = advice;
 	parent->priv = sc;
 
 	(void)STV_GetFile(fn, &sc->fd, &sc->filename, "-sfile");
@@ -366,7 +378,7 @@ smf_open_chunk(struct smf_sc *sc, off_t sz, off_t off, off_t *fail, off_t *sum)
 		p = mmap(NULL, sz, PROT_READ|PROT_WRITE,
 		    MAP_NOCORE | MAP_NOSYNC | MAP_SHARED, sc->fd, off);
 		if (p != MAP_FAILED) {
-			(void) madvise(p, sz, MADV_RANDOM);
+			(void) madvise(p, sz, sc->advice);
 			(*sum) += sz;
 			new_smf(sc, p, off, sz);
 			return;
