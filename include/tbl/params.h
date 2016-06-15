@@ -1332,6 +1332,21 @@ PARAM(
 	/* func */	NULL
 )
 
+PARAM(
+	/* name */	vsm_free_cooldown,
+	/* typ */	timeout,
+	/* min */	"10.000",
+	/* max */	"600.000",
+	/* default */	"60.000",
+	/* units */	"seconds",
+	/* flags */	0,
+	/* s-text */
+	"How long VSM memory is kept warm after a deallocation "
+	"(granularity approximately 2 seconds).",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
 #if 0
 PARAM(
 	/* name */	vcl_dir,
