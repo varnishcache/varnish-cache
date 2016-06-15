@@ -1,0 +1,18 @@
+varnishtest "g_cooldown counter test"
+
+server s1 {} -start
+varnish v1 -vcl+backend {} -start
+varnish v1 -cliok "param.set vsm_free_cooldown 10.0"
+
+# Load and use a new VCL, freeze the first
+varnish v1 -vcl+backend {}
+varnish v1 -cliok "vcl.state vcl1 cold"
+
+# the VSM_common_cleaner runs every 1.1 seconds.
+# Wait for it to update vsm_cooling
+delay 2
+varnish v1 -expect vsm_cooling > 0
+
+# Wait long enough for all the cooling vsm memory to be transfered to the free list:
+delay 12
+varnish v1 -expect vsm_cooling == 0
