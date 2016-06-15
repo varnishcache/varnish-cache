@@ -26,6 +26,7 @@ Bugs fixed
 * 1967_ - [ncsa] Remove implicit line feed when using formatfile
 * 1955_ - 4.1.x sometimes duplicates Age and Accept-Ranges headers
 * 1954_ - Correctly handle HTTP/1.1 EOF response
+* 1953_ - Deal with fetch failures in ved_stripgzip
 * 1931_ - Allow VCL set Last-Modified to be used for I-M-S processing
 * 1928_ - req->task members must be set in case we get onto the waitinglist
 * 1924_ - Make std.log() and std.syslog() work from vcl_{init,fini}
@@ -48,6 +49,7 @@ Bugs fixed
 .. _1967: https://github.com/varnishcache/varnish-cache/issues/1967
 .. _1955: https://github.com/varnishcache/varnish-cache/issues/1955
 .. _1954: https://github.com/varnishcache/varnish-cache/issues/1954
+.. _1953: https://github.com/varnishcache/varnish-cache/issues/1953
 .. _1931: https://github.com/varnishcache/varnish-cache/issues/1931
 .. _1928: https://github.com/varnishcache/varnish-cache/issues/1928
 .. _1924: https://github.com/varnishcache/varnish-cache/issues/1924
