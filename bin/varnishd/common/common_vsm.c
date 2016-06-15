@@ -41,10 +41,13 @@
 #include <unistd.h>
 
 #include "common.h"
+#include "common/params.h"
 
 #include "vsm_priv.h"
 #include "vmb.h"
 #include "vtim.h"
+
+extern volatile struct params * cache_param;
 
 /*--------------------------------------------------------------------*/
 
@@ -299,7 +302,7 @@ VSM_common_free(struct vsm_sc *sc, void *ptr)
 		vr2 = VTAILQ_NEXT(vr, list);
 		VTAILQ_REMOVE(&sc->r_used, vr, list);
 		VTAILQ_INSERT_TAIL(&sc->r_cooling, vr, list);
-		vr->cool = VTIM_real() + 60;	/* XXX: param ? */
+		vr->cool = VTIM_real() + cache_param->vsm_free_cooldown;
 		if (vr2 != NULL)
 			vr2->chunk->next = vr->chunk->next;
 		else
