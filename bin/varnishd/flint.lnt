@@ -118,6 +118,7 @@
 -e458	// unprotected read
 -e728	// Symbol ... not explicitly initialized
 -e716	// while(1) ...
+-e717	// do ... while(1) ...
 -e785	// Too few initializers for aggregate
 -e850	// for loop index variable '___' whose type category is '___'
 	// is modified in body of the for loop that began at '___'

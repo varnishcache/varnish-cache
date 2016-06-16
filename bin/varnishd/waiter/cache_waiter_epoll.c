@@ -31,6 +31,7 @@
  * write the session pointer to a pipe which the event engine monitors.
  */
 
+//lint -e{766}
 #include "config.h"
 
 #if defined(HAVE_EPOLL_CTL)

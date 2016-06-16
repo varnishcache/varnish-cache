@@ -24,6 +24,7 @@
  * SUCH DAMAGE.
  */
 
+//lint -e{766}
 #include "config.h"
 
 #ifndef HAVE_BACKTRACE

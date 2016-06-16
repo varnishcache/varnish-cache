@@ -29,6 +29,7 @@
  * $FreeBSD: src/lib/libc/gen/daemon.c,v 1.8 2007/01/09 00:27:53 imp Exp $
  */
 
+//lint -e{766}
 #include "config.h"
 
 #ifndef HAVE_DAEMON

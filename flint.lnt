@@ -6,9 +6,9 @@
 // build/config related
 
 -efile(451, "tbl/*.h")				// No include guard
+-efile(537, "tbl/*.h")				// Repeated include
 
 -efile(451, ../../config.h)			// No include guard
--header(../../config.h)
 +libh(../../config.h)
 
 ///////////////////////////////////////////////////////////////////////

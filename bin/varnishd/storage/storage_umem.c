@@ -29,6 +29,7 @@
  * Storage method based on umem_alloc(3MALLOC)
  */
 
+//lint -e{766}
 #include "config.h"
 
 #ifdef HAVE_LIBUMEM
