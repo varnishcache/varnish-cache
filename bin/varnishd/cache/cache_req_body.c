@@ -182,7 +182,7 @@ VRB_Iterate(struct req *req, objiterate_f *func, void *priv)
 		    "Had failed reading req.body before.");
 		return (-1);
 	default:
-		WRONG("Wrong req_body_status in VRB_IterateReqBody()");
+		WRONG("Wrong req_body_status in VRB_Iterate()");
 	}
 	Lck_Lock(&req->sp->mtx);
 	if (req->req_body_status == REQ_BODY_WITH_LEN ||
