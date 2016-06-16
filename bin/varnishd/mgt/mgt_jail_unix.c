@@ -231,7 +231,7 @@ vju_subproc(enum jail_subproc_e jse)
 	 */
 	if (prctl(PR_SET_DUMPABLE, 1) != 0) {
 		MGT_complain(C_INFO,
-		    "Could not set dumpable bit.  Core dumps turned off\n");
+		    "Could not set dumpable bit.  Core dumps turned off");
 	}
 #endif
 }

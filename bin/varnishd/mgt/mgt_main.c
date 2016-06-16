@@ -811,7 +811,7 @@ main(int argc, char * const *argv)
 
 	assert(pfh == NULL || !VPF_Write(pfh));
 
-	MGT_complain(C_DEBUG, "Platform: %s\n", VSB_data(vident) + 1);
+	MGT_complain(C_DEBUG, "Platform: %s", VSB_data(vident) + 1);
 
 	mgt_pid = getpid();	/* daemon() changed this */
 
