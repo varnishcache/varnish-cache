@@ -271,7 +271,14 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 	AZ(VSB_finish(sb));
 	vp.dir = strdup(VSB_data(sb));
 	AN(vp.dir);
-	VJ_make_vcldir(vp.dir);
+
+	if (VJ_make_vcldir(vp.dir)) {
+		free(vp.dir);
+		VSB_destroy(&sb);
+		VCLI_Out(cli, "VCL compilation failed");
+		VCLI_SetResult(cli, CLIS_PARAM);
+		return (NULL);
+	}
 
 	VSB_clear(sb);
 	VSB_printf(sb, "%s/%s", vp.dir, VGC_SRC);
@@ -305,7 +312,7 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 			VCLI_Out(cli, "VCL compilation failed");
 			VCLI_SetResult(cli, CLIS_PARAM);
 		}
-		return(NULL);
+		return (NULL);
 	}
 
 	free(vp.dir);
