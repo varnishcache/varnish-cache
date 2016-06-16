@@ -224,6 +224,10 @@ are available:
   probe
     Attach a probe to the backend. See `Probes`_
 
+  proxy_header
+    The PROXY protocol version Varnish should use when connecting to
+    this backend.
+
   max_connections
     Maximum number of open connections towards this backend. If
     Varnish reaches the maximum Varnish it will start failing
