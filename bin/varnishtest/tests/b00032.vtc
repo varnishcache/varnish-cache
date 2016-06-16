@@ -26,3 +26,4 @@ varnish v1 -clierr 106 {vcl.load vcl3 ./nonexistent.vcl}
 
 varnish v1 -cliok "vcl.discard vcl2"
 
+varnish v1 -clierr 106 {vcl.load /invalid/name.vcl vcl4}

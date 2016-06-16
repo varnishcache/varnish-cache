@@ -91,7 +91,7 @@ enum jail_master_e {
 typedef int jail_init_f(char **);
 typedef void jail_master_f(enum jail_master_e);
 typedef void jail_subproc_f(enum jail_subproc_e);
-typedef void jail_make_dir_f(const char *dname);
+typedef int jail_make_dir_f(const char *dname);
 typedef void jail_fixfile_f(int fd);
 
 struct jail_tech {
@@ -110,8 +110,8 @@ struct jail_tech {
 void VJ_Init(const char *j_arg);
 void VJ_master(enum jail_master_e jme);
 void VJ_subproc(enum jail_subproc_e jse);
-void VJ_make_workdir(const char *dname);
-void VJ_make_vcldir(const char *dname);
+int VJ_make_workdir(const char *dname);
+int VJ_make_vcldir(const char *dname);
 void VJ_fix_vsm_file(int fd);
 void VJ_fix_storage_file(int fd);
 

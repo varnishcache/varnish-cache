@@ -743,7 +743,9 @@ main(int argc, char * const *argv)
 
 	identify(i_arg);
 
-	VJ_make_workdir(dirname);
+	if (VJ_make_workdir(dirname))
+		ARGV_ERR("Cannot create working directory (%s): %s\n",
+		    dirname, strerror(errno));
 
 	/* XXX: should this be relative to the -n arg ? */
 	VJ_master(JAIL_MASTER_FILE);
