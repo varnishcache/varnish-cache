@@ -29,8 +29,6 @@
  * Private include file for the pool aware code.
  */
 
-#include "config.h"
-
 VTAILQ_HEAD(taskhead, pool_task);
 
 struct pool {
