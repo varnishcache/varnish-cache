@@ -94,6 +94,20 @@ reqbody_status_2str(enum req_body_state_e e)
 
 /*--------------------------------------------------------------------*/
 
+static const char *
+boc_state_2str(enum boc_state_e e)
+{
+	switch (e) {
+#define BOC_STATE(U,l) case BOS_##U: return(#l);
+#include "tbl/boc_state.h"
+#undef BOC_STATE
+	default:
+		return ("?");
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
 const char *
 sess_close_2str(enum sess_close sc, int want_desc)
 {
@@ -231,7 +245,7 @@ pan_boc(struct vsb *vsb, const struct boc *boc)
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, boc, BOC_MAGIC);
 	VSB_printf(vsb, "refcnt = %u,\n", boc->refcount);
-	VSB_printf(vsb, "state = %d,\n", boc->state);
+	VSB_printf(vsb, "state = %s,\n", boc_state_2str(boc->state));
 	VSB_printf(vsb, "vary = %p,\n", boc->vary);
 	VSB_printf(vsb, "stevedore_priv = %p,\n", boc->stevedore_priv);
 	VSB_indent(vsb, -2);

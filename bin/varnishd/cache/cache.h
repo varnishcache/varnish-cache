@@ -360,12 +360,9 @@ struct storeobj {
  * The macro-states we expose outside the fetch code
  */
 enum boc_state_e {
-	BOS_INVALID = 0,	/* don't touch (yet) */
-	BOS_REQ_DONE,		/* beresp.* can be examined */
-	BOS_PREP_STREAM,	/* Prepare for streaming */
-	BOS_STREAM,		/* beresp.* can be examined */
-	BOS_FINISHED,		/* object is complete */
-	BOS_FAILED,		/* something went wrong */
+#define BOC_STATE(U, l)       BOS_##U,
+#include "tbl/boc_state.h"
+#undef BOC_STATE
 };
 
 struct boc {
