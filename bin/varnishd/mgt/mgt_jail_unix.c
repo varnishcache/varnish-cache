@@ -236,14 +236,19 @@ vju_subproc(enum jail_subproc_e jse)
 #endif
 }
 
-static void __match_proto__(jail_make_dir_f)
+static int __match_proto__(jail_make_dir_f)
 vju_make_vcldir(const char *dname)
 {
 	AZ(seteuid(0));
 
-	assert((mkdir(dname, 0755) == 0) || errno == EEXIST);
+	if (mkdir(dname, 0755) < 0 && errno != EEXIST) {
+		MGT_complain(C_ERR, "Cannot create VCL directory '%s': %s",
+		    dname, strerror(errno));
+		return (1);
+	}
 	AZ(chown(dname, vju_uid, vju_gid));
 	AZ(seteuid(vju_uid));
+	return (0);
 }
 
 
