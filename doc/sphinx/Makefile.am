@@ -102,14 +102,15 @@ doctest: sphinx_prereq
 
 EXTRA_DIST = \
 	conf.py \
-	index.rst \
-	include \
+	dev-guide \
 	glossary \
+	include \
+	index.rst \
 	installation \
 	phk \
 	tutorial \
 	users-guide \
-	dev-guide \
+	vtc-syntax.py \
 	whats-new
 
 dist-hook:
