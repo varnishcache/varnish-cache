@@ -299,6 +299,11 @@ VCL_Open(const char *fn, struct vsb *msg)
 	AN(fn);
 	AN(msg);
 
+#ifdef RTLD_NOLOAD
+	/* Detect bogus caching by dlopen(3) */
+	dlh = dlopen(fn, RTLD_NOW | RTLD_NOLOAD);
+	AZ(dlh);
+#endif
 	dlh = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
 	if (dlh == NULL) {
 		VSB_printf(msg, "Could not load compiled VCL.\n");
