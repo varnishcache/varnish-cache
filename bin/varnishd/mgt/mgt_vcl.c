@@ -91,13 +91,21 @@ mgt_vcl_add(const char *name, const char *libfile, const char *state)
 static void
 mgt_vcl_del(struct vclprog *vp)
 {
-	char dn[256];
+	char *p;
 
 	VTAILQ_REMOVE(&vclhead, vp, list);
-	XXXAZ(unlink(vp->fname));
-	bprintf(dn, "vcl_%s", vp->name);
+	AZ(unlink(vp->fname));
+	p = strrchr(vp->fname, '/');
+	AN(p);
+	*p = '\0';
 	VJ_master(JAIL_MASTER_FILE);
-	(void)rmdir(dn);		// compiler droppings, eg gcov
+	/*
+	 * This will fail if any files are dropped next to the library
+	 * without us knowing.  This happens for instance with GCOV.
+	 * Assume developers know how to clean up after themselves
+	 * (or alternatively:  How to run out of disk space).
+	 */
+	(void)rmdir(vp->fname);
 	VJ_master(JAIL_MASTER_LOW);
 	free(vp->fname);
 	free(vp->name);
