@@ -176,7 +176,7 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 		VCLI_Out(cli, "%s", p);
 	}
 
-	REPLACE(p, NULL);
+	free(p);
 	return (i);
 }
 
@@ -229,7 +229,7 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 		VCLI_Out(cli, "%s", p);
 		VCLI_SetResult(cli, CLIS_PARAM);
 	}
-	REPLACE(p, NULL);
+	free(p);
 }
 
 /*--------------------------------------------------------------------*/
@@ -274,7 +274,8 @@ mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
 		if (mgt_cli_askchild(status, p, "vcl.load \"%s\" %s %d%s\n",
 		    vp->name, vp->fname, vp->warm, vp->state))
 			return (1);
-		REPLACE(*p, NULL);
+		free(*p);
+		*p = NULL;
 	}
 	VTAILQ_FOREACH(vp, &vclhead, list) {
 		if (strcmp(vp->state, VCL_STATE_LABEL))
@@ -282,14 +283,17 @@ mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
 		if (mgt_cli_askchild(status, p, "vcl.label %s %s\n",
 		    vp->name, vp->label->name))
 			return (1);
-		REPLACE(*p, NULL);
+		free(*p);
+		*p = NULL;
 	}
 	if (mgt_cli_askchild(status, p, "vcl.use \"%s\"\n", active_vcl->name))
 		return (1);
-	REPLACE(*p, NULL);
+	free(*p);
+	*p = NULL;
 	if (mgt_cli_askchild(status, p, "start\n"))
 		return (1);
-	REPLACE(*p, NULL);
+	free(*p);
+	*p = NULL;
 	return (0);
 }
 
@@ -421,7 +425,7 @@ mcf_vcl_use(struct cli *cli, const char * const *av, void *priv)
 			(void)mgt_vcl_setstate(cli, vp2, VCL_STATE_AUTO);
 		}
 	}
-	REPLACE(p, NULL);
+	free(p);
 }
 
 static void __match_proto__(cli_func_t)
