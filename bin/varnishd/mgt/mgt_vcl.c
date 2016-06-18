@@ -54,12 +54,12 @@ struct vclprog {
 	char			*name;
 	char			*fname;
 	unsigned		warm;
-	char			state[8];
+	const char *		state;
 	double			go_cold;
 	struct vclprog		*label;
 };
 
-static VTAILQ_HEAD(, vclprog) vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
+static VTAILQ_HEAD(, vclprog)	vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
 static struct vclprog		*active_vcl;
 static struct vev *e_poker;
 
@@ -70,16 +70,18 @@ mgt_vcl_add(const char *name, const char *libfile, const char *state)
 {
 	struct vclprog *vp;
 
+	assert(state == VCL_STATE_WARM ||
+	       state == VCL_STATE_COLD ||
+	       state == VCL_STATE_AUTO ||
+	       state == VCL_STATE_LABEL);
 	vp = calloc(sizeof *vp, 1);
 	XXXAN(vp);
 	REPLACE(vp->name, name);
 	REPLACE(vp->fname, libfile);
-	if (strcmp(state, "cold"))
-		vp->warm = 1;
-	else
-		state = "auto";
+	vp->state = state;
 
-	bprintf(vp->state, "%s", state);
+	if (vp->state != VCL_STATE_COLD)
+		vp->warm = 1;
 
 	if (active_vcl == NULL)
 		active_vcl = vp;
@@ -137,7 +139,7 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 	if (vs == VCL_STATE_AUTO) {
 		now = VTIM_mono();
 		vs = vp->warm ? VCL_STATE_WARM : VCL_STATE_COLD;
-		if (vp->go_cold > 0 && !strcmp(vp->state, "auto") &&
+		if (vp->go_cold > 0 && vp->state == VCL_STATE_AUTO &&
 		    vp->go_cold + mgt_param.vcl_cooldown < now)
 			vs = VCL_STATE_COLD;
 	}
@@ -165,7 +167,7 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 		VCLI_Out(cli, "%s", p);
 	}
 
-	free(p);
+	REPLACE(p, NULL);
 	return (i);
 }
 
@@ -188,10 +190,14 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 	}
 
 	if (state == NULL)
-		state = "auto";
-
-	if (strcmp(state, "auto") &&
-	    strcmp(state, "cold") && strcmp(state, "warm")) {
+		state = VCL_STATE_AUTO;
+	else if (!strcmp(state, VCL_STATE_AUTO))
+		state = VCL_STATE_AUTO;
+	else if (!strcmp(state, VCL_STATE_COLD))
+		state = VCL_STATE_COLD;
+	else if (!strcmp(state, VCL_STATE_WARM))
+		state = VCL_STATE_WARM;
+	else {
 		VCLI_Out(cli, "State must be one of auto, cold or warm.");
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
@@ -214,7 +220,7 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 		VCLI_Out(cli, "%s", p);
 		VCLI_SetResult(cli, CLIS_PARAM);
 	}
-	free(p);
+	REPLACE(p, NULL);
 }
 
 /*--------------------------------------------------------------------*/
@@ -259,8 +265,7 @@ mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
 		if (mgt_cli_askchild(status, p, "vcl.load \"%s\" %s %d%s\n",
 		    vp->name, vp->fname, vp->warm, vp->state))
 			return (1);
-		free(*p);
-		*p = NULL;
+		REPLACE(*p, NULL);
 	}
 	VTAILQ_FOREACH(vp, &vclhead, list) {
 		if (strcmp(vp->state, VCL_STATE_LABEL))
@@ -268,17 +273,14 @@ mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
 		if (mgt_cli_askchild(status, p, "vcl.label %s %s\n",
 		    vp->name, vp->label->name))
 			return (1);
-		free(*p);
-		*p = NULL;
+		REPLACE(*p, NULL);
 	}
 	if (mgt_cli_askchild(status, p, "vcl.use \"%s\"\n", active_vcl->name))
 		return (1);
-	free(*p);
-	*p = NULL;
+	REPLACE(*p, NULL);
 	if (mgt_cli_askchild(status, p, "start\n"))
 		return (1);
-	free(*p);
-	*p = NULL;
+	REPLACE(*p, NULL);
 	return (0);
 }
 
@@ -357,23 +359,23 @@ mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 	if (!strcmp(vp->state, av[3]))
 		return;
 
-	if (!strcmp(av[3], "auto")) {
-		bprintf(vp->state, "%s", "auto");
+	if (!strcmp(av[3], VCL_STATE_AUTO)) {
+		vp->state = VCL_STATE_AUTO;
 		if (vp != active_vcl) {
 			vp->go_cold = VTIM_mono();
 			(void)mgt_vcl_setstate(cli, vp, VCL_STATE_AUTO);
 		}
-	} else if (!strcmp(av[3], "cold")) {
+	} else if (!strcmp(av[3], VCL_STATE_COLD)) {
 		if (vp == active_vcl) {
 			VCLI_Out(cli, "Cannot set the active VCL cold.");
 			VCLI_SetResult(cli, CLIS_PARAM);
 			return;
 		}
-		bprintf(vp->state, "%s", "auto");
+		vp->state = VCL_STATE_AUTO;
 		(void)mgt_vcl_setstate(cli, vp, VCL_STATE_COLD);
-	} else if (!strcmp(av[3], "warm")) {
+	} else if (!strcmp(av[3], VCL_STATE_WARM)) {
 		if (mgt_vcl_setstate(cli, vp, VCL_STATE_WARM) == 0)
-			bprintf(vp->state, "%s", av[3]);
+			vp->state = VCL_STATE_WARM;
 	} else {
 		VCLI_Out(cli, "State must be one of auto, cold or warm.");
 		VCLI_SetResult(cli, CLIS_PARAM);
@@ -410,7 +412,7 @@ mcf_vcl_use(struct cli *cli, const char * const *av, void *priv)
 			(void)mgt_vcl_setstate(cli, vp2, VCL_STATE_AUTO);
 		}
 	}
-	free(p);
+	REPLACE(p, NULL);
 }
 
 static void __match_proto__(cli_func_t)
@@ -472,7 +474,8 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 			VCLI_Out(cli, "%-10s %5s",
 			    vp == active_vcl ? "active" : "available",
 			    vp->state);
-			VCLI_Out(cli, "/%-8s", vp->warm ? "warm" : "cold");
+			VCLI_Out(cli, "/%-8s", vp->warm ?
+			    VCL_STATE_WARM : VCL_STATE_COLD);
 			VCLI_Out(cli, " %6s %s", "", vp->name);
 			if (vp->label != NULL)
 				VCLI_Out(cli, " %s %s",
@@ -526,8 +529,8 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 	}
 	vpl->label = vpt;
 	vpt->label = vpl;
-	if (!strcmp(vpt->state, "cold"))
-		strcpy(vpt->state, "auto");
+	if (vpt->state == VCL_STATE_COLD)
+		vpt->state = VCL_STATE_AUTO;
 	(void)mgt_vcl_setstate(cli, vpt, VCL_STATE_WARM);
 	if (child_pid < 0)
 		return;
