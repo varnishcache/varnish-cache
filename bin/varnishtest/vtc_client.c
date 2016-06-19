@@ -31,12 +31,14 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "vtc.h"
 
+#include "vsa.h"
 #include "vss.h"
 #include "vtcp.h"
 
@@ -51,6 +53,9 @@ struct client {
 
 	char			connect[256];
 
+	char			*proxy_spec;
+	int			proxy_version;
+
 	unsigned		repeat;
 
 	unsigned		running;
@@ -59,6 +64,47 @@ struct client {
 
 static VTAILQ_HEAD(, client)	clients =
     VTAILQ_HEAD_INITIALIZER(clients);
+
+/**********************************************************************
+ * Send the proxy header
+ */
+
+static int __match_proto__(vss_resolved_f)
+proxy_cb(void *priv, const struct suckaddr *sa)
+{
+	struct suckaddr **addr = priv;
+	*addr = VSA_Clone(sa);
+	return (1);
+}
+
+static void
+client_proxy(struct vtclog *vl, int fd, int version, char *spec)
+{
+	struct suckaddr *sac, *sas;
+	const char *err;
+	char *p, *p2;
+	int error;
+
+	p = strdup(spec);
+	AN(p);
+	p2 = strchr(p, ' ');
+	AN(p2);
+	*p2++ = '\0';
+
+	error = VSS_resolver(p, NULL, proxy_cb, &sac, &err);
+	if (err != NULL)
+		vtc_log(vl, 0, "Could not resolve client address: %s", err);
+	assert(error == 1);
+	error = VSS_resolver(p2, NULL, proxy_cb, &sas, &err);
+	if (err != NULL)
+		vtc_log(vl, 0, "Could not resolve server address: %s", err);
+	assert(error == 1);
+	if (vtc_send_proxy(fd, version, sac, sas))
+		vtc_log(vl, 0, "Write failed: %s", strerror(errno));
+	free(p);
+	free(sac);
+	free(sas);
+}
 
 /**********************************************************************
  * Client thread
@@ -101,6 +147,8 @@ client_thread(void *priv)
 		VTCP_myname(fd, mabuf, sizeof mabuf, mpbuf, sizeof mpbuf);
 		vtc_log(vl, 3, "connected fd %d from %s %s to %s",
 		    fd, mabuf, mpbuf, VSB_data(vsb));
+		if (c->proxy_spec != NULL)
+			client_proxy(vl, fd, c->proxy_version, c->proxy_spec);
 		fd = http_process(vl, c->spec, fd, NULL);
 		vtc_log(vl, 3, "closing fd %d", fd);
 		VTCP_close(&fd);
@@ -146,6 +194,7 @@ client_delete(struct client *c)
 	vtc_logclose(c->vl);
 	free(c->spec);
 	free(c->name);
+	free(c->proxy_spec);
 	/* XXX: MEMLEAK (?)*/
 	FREE_OBJ(c);
 }
@@ -244,6 +293,18 @@ cmd_client(CMD_ARGS)
 
 		if (!strcmp(*av, "-connect")) {
 			bprintf(c->connect, "%s", av[1]);
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-proxy1")) {
+			REPLACE(c->proxy_spec, av[1]);
+			c->proxy_version = 1;
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-proxy2")) {
+			REPLACE(c->proxy_spec, av[1]);
+			c->proxy_version = 2;
 			av++;
 			continue;
 		}

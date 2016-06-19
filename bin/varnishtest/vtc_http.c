@@ -101,15 +101,23 @@
  *        "IP PORT".
  *
  * \-connect STRING (client only)
- *         Indicate the server to connect to. STRING is also of the form
- *         "IP PORT".
+ *        Indicate the server to connect to. STRING is also of the form
+ *        "IP PORT".
  *
  * \-dispatch (server only, s0 only)
- *         Normally, to keep things simple, server threads only handle one
- *         connection at a time, but the -dispatch switch allows to accept
- *         any number of connection and handle them following the given spec.
+ *        Normally, to keep things simple, server threads only handle one
+ *        connection at a time, but the -dispatch switch allows to accept
+ *        any number of connection and handle them following the given spec.
  *
- *         However, -dispatch is only allowed for the server name "s0".
+ *        However, -dispatch is only allowed for the server name "s0".
+ *
+ * \-proxy1 STRING (client only)
+ *        Use the PROXY protocol version 1 for this connection. STRING
+ *        is of the form "CLIENT:PORT SERVER:PORT".
+ *
+ * \-proxy2 STRING (client only)
+ *        Use the PROXY protocol version 2 for this connection. STRING
+ *        is of the form "CLIENT:PORT SERVER:PORT".
  *
  * SECTION: client-server.spec Specification
  */

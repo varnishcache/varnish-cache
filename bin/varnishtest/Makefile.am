@@ -23,19 +23,20 @@ AM_CPPFLAGS = \
 bin_PROGRAMS =	varnishtest
 
 varnishtest_SOURCES = \
+		programs.h \
+		vmods.h \
 		vtc.c \
 		vtc.h \
-		vmods.h \
-		programs.h \
 		vtc_barrier.c \
 		vtc_client.c \
 		vtc_http.c \
-		vtc_main.c \
 		vtc_log.c \
-		vtc_server.c \
-		vtc_varnish.c \
 		vtc_logexp.c \
-		vtc_process.c
+		vtc_main.c \
+		vtc_process.c \
+		vtc_proxy.c \
+		vtc_server.c \
+		vtc_varnish.c
 
 varnishtest_LDADD = \
 		$(top_builddir)/lib/libvarnish/libvarnish.la \

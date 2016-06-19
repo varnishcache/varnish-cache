@@ -43,6 +43,7 @@
 
 struct vtclog;
 struct cmds;
+struct suckaddr;
 
 #define CMD_ARGS \
     char * const *av, void *priv, const struct cmds *cmd, struct vtclog *vl
@@ -89,6 +90,9 @@ void vtc_dump(struct vtclog *vl, int lvl, const char *pfx,
     const char *str, int len);
 void vtc_hexdump(struct vtclog *vl, int lvl, const char *pfx,
     const unsigned char *str, int len);
+
+int vtc_send_proxy(int fd, int version, const struct suckaddr *sac,
+    const struct suckaddr *sas);
 
 int exec_file(const char *fn, const char *script, const char *tmpdir,
     char *logbuf, unsigned loglen);

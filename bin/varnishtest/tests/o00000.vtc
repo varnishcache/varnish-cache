@@ -140,8 +140,7 @@ logexpect l1 -v v1 {
 } -start
 
 # Finally try something which works...
-client c1 {
-	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678\r\n"
+client c1 -proxy1 "1.2.3.4:1234 5.6.7.8:5678" {
 	txreq -url /1
 	rxresp
 	expect resp.http.url == "/1"
@@ -156,8 +155,7 @@ client c1 {
 } -run
 delay .1
 
-client c1 {
-	send "PROXY TCP6 1:f::2 5:a::8 1234 5678\r\n"
+client c1 -proxy1 "[1:f::2]:1234 [5:a::8]:5678" {
 	txreq -url /2
 	rxresp
 	expect resp.http.url == "/2"
@@ -175,14 +173,14 @@ delay .1
 logexpect l1 -wait
 
 # Try with appended request (See also: #1728)
-client c1 {
+client c2 {
 	send "PROXY TCP6 1:f::3 5:a::8 1234 5678\r\nGET /3 HTTP/1.1\r\nHdr1: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n\r\n"
 	rxresp
 	expect resp.http.url == "/3"
 } -run
 
 # Malformed (missing \r)
-client c1 {
+client c2 {
 	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678\n"
 	expect_close
 } -run
@@ -190,7 +188,7 @@ delay .1
 
 # Malformed, too long (106)
 # NB: Should check VSL for proper disposal
-client c1 {
+client c2 {
 	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678                                                                     \r\n"
 	expect_close
 } -run
@@ -198,7 +196,7 @@ delay .1
 
 # Malformed, too long (107)
 # NB: Should check VSL for proper disposal
-client c1 {
+client c2 {
 	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678                                                                      \r\n"
 	expect_close
 } -run
@@ -206,7 +204,7 @@ delay .1
 
 # Malformed, too long (108)
 # NB: Should check VSL for proper disposal
-client c1 {
+client c2 {
 	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678                                                                       \r\n"
 	expect_close
 } -run

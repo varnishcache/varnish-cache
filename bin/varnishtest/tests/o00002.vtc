@@ -70,32 +70,28 @@ varnish v2 -proto PROXY -vcl {
 	}
 } -start
 
-client c1 -connect ${v2_sock} {
-	send "PROXY TCP4 1.2.3.4 5.6.7.8 1111 5678\r\n"
+client c1 -connect ${v2_sock} -proxy1 "1.2.3.4:1111 5.6.7.8:5678" {
 	txreq -url /1
 	rxresp
 	expect resp.body == "proxy1"
 } -run
 delay .2
 
-client c1 -connect ${v2_sock} {
-	send "PROXY TCP4 1.2.3.4 5.6.7.8 2222 5678\r\n"
+client c1 -connect ${v2_sock} -proxy1 "1.2.3.4:2222 5.6.7.8:5678" {
 	txreq -url /2
 	rxresp
 	expect resp.body == "proxy2"
 } -run
 delay .2
 
-client c1 -connect ${v2_sock} {
-	send "PROXY TCP6 1:f::2 5:a::8 3333 5678\r\n"
+client c1 -connect ${v2_sock} -proxy1 "[1:f::2]:3333 [5:a::8]:5678" {
 	txreq -url /3
 	rxresp
 	expect resp.body == "proxy3"
 } -run
 delay .2
 
-client c1 -connect ${v2_sock} {
-	send "PROXY TCP6 1:f::2 5:a::8 4444 5678\r\n"
+client c1 -connect ${v2_sock} -proxy1 "[1:f::2]:4444 [5:a::8]:5678" {
 	txreq -url /4
 	rxresp
 	expect resp.body == "proxy4"
