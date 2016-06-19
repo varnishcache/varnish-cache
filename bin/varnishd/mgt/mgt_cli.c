@@ -562,7 +562,7 @@ mgt_cli_telnet(const char *T_arg)
 	AN(vsb);
 	error = VSS_resolver(T_arg, NULL, mct_callback, vsb, &err);
 	if (err != NULL)
-		ARGV_ERR("Could resolve -T argument to address\n\t%s\n", err);
+		ARGV_ERR("Could not resolve -T argument to address\n\t%s\n", err);
 	AZ(error);
 	AZ(VSB_finish(vsb));
 	if (VSB_len(vsb) == 0)
@@ -681,7 +681,7 @@ mgt_cli_master(const char *M_arg)
 
 	error = VSS_resolver(M_arg, NULL, marg_cb, NULL, &err);
 	if (err != NULL)
-		ARGV_ERR("Could resolve -M argument to address\n\t%s\n", err);
+		ARGV_ERR("Could not resolve -M argument to address\n\t%s\n", err);
 	AZ(error);
 	if (VTAILQ_EMPTY(&m_addr_list))
 		ARGV_ERR("Could not resolve -M argument to address\n");
