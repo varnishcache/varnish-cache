@@ -56,7 +56,7 @@
  * "0.0.0.0" - "0.0.0.0:80"
  * "[::1]" - "[::1]:80"
  * "[::]" - "[::]:80"
- * "::1"
+ * "::1" - "[::1]:80"
  *
  * See also RFC5952
  */
@@ -80,7 +80,10 @@ vss_parse(char *str, char **addr, char **port)
 		if (*p != ' ' && *p != ':')
 			return ("IPv6 address has wrong port separator");
 	} else {
-		/* IPv4 address of the form 127.0.0.1:80, or non-numeric */
+		/*
+		 * IPv4 address of the form 127.0.0.1:80, IPv6 address
+		 * without port or non-numeric.
+		 */
 		*addr = str;
 		p = strchr(str, ' ');
 		if (p == NULL)
