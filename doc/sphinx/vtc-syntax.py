@@ -68,7 +68,7 @@ def parse_file(fn):
 		c = section.count('.')
 		if c == 0:
 			r = "-"
-		elif c ==1: 
+		elif c ==1:
 			r = "~"
 		else:
 			r = "."
