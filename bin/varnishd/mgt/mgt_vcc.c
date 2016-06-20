@@ -303,7 +303,7 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 	 * count, and when it finally runs, it trashes the second 'foo' because
 	 * dlopen(3) decided they were really the same thing.
 	 *
-	 * The Best way to reproduce ths is to have regexps in the VCL.
+	 * The Best way to reproduce this is to have regexps in the VCL.
 	 */
 	VSB_printf(sb, "vcl_%s.%.9f", vclname, VTIM_real());
 	AZ(VSB_finish(sb));
