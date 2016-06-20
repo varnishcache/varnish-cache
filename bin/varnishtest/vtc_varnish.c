@@ -68,6 +68,8 @@ struct varnish {
 	int			fds[4];
 	pid_t			pid;
 
+	float			syntax;
+
 	pthread_t		tp;
 	pthread_t		tp_vsl;
 
@@ -287,6 +289,8 @@ varnish_new(const char *name)
 	REPLACE(v->name, name);
 
 	REPLACE(v->jail, "");
+
+	v->syntax = 4.0;
 
 	v->vl = vtc_logopen(name);
 	AN(v->vl);
@@ -714,8 +718,8 @@ varnish_vcl(struct varnish *v, const char *vcl, enum VCLI_status_e expect,
 	vsb = VSB_new_auto();
 	AN(vsb);
 
-	VSB_printf(vsb, "vcl.inline vcl%d << %s\nvcl 4.0;\n%s\n%s\n",
-	    ++v->vcl_nbr, NONSENSE, vcl, NONSENSE);
+	VSB_printf(vsb, "vcl.inline vcl%d << %s\nvcl %.1f;\n%s\n%s\n",
+	    ++v->vcl_nbr, NONSENSE, v->syntax, vcl, NONSENSE);
 	AZ(VSB_finish(vsb));
 
 	u = varnish_ask_cli(v, VSB_data(vsb), resp);
@@ -758,7 +762,7 @@ varnish_vclbackend(struct varnish *v, const char *vcl)
 	vsb2 = VSB_new_auto();
 	AN(vsb2);
 
-	VSB_printf(vsb2, "vcl 4.0;\n");
+	VSB_printf(vsb2, "vcl %.1f;\n", v->syntax);
 
 	cmd_server_genvcl(vsb2);
 
@@ -963,6 +967,9 @@ varnish_expect(const struct varnish *v, char * const *av)
  * \-stop
  *         Stop the child process.
  *
+ * \-syntax
+ *         Set the VCL syntax level (default: 4.0)
+ *
  * \-wait
  *         Wait for that instance to terminate.
  *
@@ -1102,6 +1109,12 @@ cmd_varnish(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-stop")) {
 			varnish_stop(v);
+			continue;
+		}
+		if (!strcmp(*av, "-syntax")) {
+			AN(av[1]);
+			v->syntax = strtod(av[1], NULL);
+			av++;
 			continue;
 		}
 		if (!strcmp(*av, "-vcl")) {
