@@ -56,8 +56,8 @@
  * recognized, assuming they don't start with '-', are treated as
  * specifications, laying out the actions to undertake::
  *
- *         client cNAME [ARGS*]
- *         server sNAME [ARGS*]
+ *         client cNAME [...]
+ *         server sNAME [...]
  *
  * Clients and server are identified by a string that's the first argument,
  * clients' names start with 'c' and servers' names start with 's'.
@@ -113,11 +113,11 @@
  *
  * \-proxy1 STRING (client only)
  *        Use the PROXY protocol version 1 for this connection. STRING
- *        is of the form "CLIENT:PORT SERVER:PORT".
+ *        is of the form "CLIENTIP:PORT SERVERIP:PORT".
  *
  * \-proxy2 STRING (client only)
  *        Use the PROXY protocol version 2 for this connection. STRING
- *        is of the form "CLIENT:PORT SERVER:PORT".
+ *        is of the form "CLIENTIP:PORT SERVERIP:PORT".
  *
  * SECTION: client-server.spec Specification
  */
@@ -928,7 +928,7 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 
 /* SECTION: client-server.spec.txre
  *
- * txreq|txresp [ARG*]
+ * txreq|txresp [...]
  *         Send a minimal request or response, but overload it if necessary.
  *
  *         txreq is client-specific and txresp is server-specific.
@@ -938,7 +938,7 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
  *         status line), so all the options are prety much the same.
  *
  *         \-req STRING (txreq only)
- *                 What method to use (default: "GET".
+ *                 What method to use (default: "GET").
  *
  *         \-url STRING (txreq only)
  *                 What location to use (default "/").
@@ -975,7 +975,7 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
  *		   Set the gzip level (call it before any of the other gzip
  *		   switches).
  *
- *         \gzipresidual NUMBER
+ *         \-gzipresidual NUMBER
  *                 Add extra gzip bits. You should never need it.
  *
  *         \-gzipbody STRING
