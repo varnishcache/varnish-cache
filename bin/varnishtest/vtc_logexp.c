@@ -32,7 +32,7 @@
  * process records trying to match the first pattern, and when done, will
  * continue processing, trying to match the following pattern. If a pattern
  * isn't matched, the test will fail.
- * 
+ *
  * logexpect threads are declared this way::
  *
  *         logexpect lNAME -v <id> [-g <grouping>] [-d 0|1] [-q query] \
@@ -68,7 +68,7 @@
  *
  * \-start
  *         Start the logexpect thread in the background.
- * 
+ *
  * \-wait
  *         Wait for the logexpect thread to finish
  *
@@ -76,7 +76,7 @@
  *
  * \-b|-c
  *         Process only backend/client records.
- * 
+ *
  * \-C
  *         Use caseless regex
  *

@@ -676,7 +676,7 @@ http_rxhdr(struct http *hp)
  *
  * rxresp [-no_obj] (client only)
  *         Receive and parse a response's headers and body. If -no_obj is present, only get
- *         the headers. 
+ *         the headers.
  */
 static void
 cmd_http_rxresp(CMD_ARGS)
@@ -972,8 +972,8 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
  *                 Generate and input a body that is NUMBER bytes-long.
  *
  *         \-gziplevel NUMBER
- *	           Set the gzip level (call it before any of the other gzip
- *	           switches).
+ *		   Set the gzip level (call it before any of the other gzip
+ *		   switches).
  *
  *         \gzipresidual NUMBER
  *                 Add extra gzip bits. You should never need it.
@@ -1427,7 +1427,7 @@ cmd_http_chunkedlen(CMD_ARGS)
 /* SECTION: client-server.spec.timeout
  *
  * timeout NUMBER
- *         Set the TCP timeout for this entity. 
+ *         Set the TCP timeout for this entity.
  */
 
 static void
@@ -1584,14 +1584,14 @@ cmd_http_fatal(CMD_ARGS)
 }
 
 /* SECTION: client-server.spec.delay
- * 
+ *
  * delay
- *         Same as for the top-level delay.
+ *	Same as for the top-level delay.
  *
  * SECTION: client-server.spec.barrier
  *
  * barrier
- *         Same as for the top-level barrier
+ *	Same as for the top-level barrier
  */
 
 /**********************************************************************
