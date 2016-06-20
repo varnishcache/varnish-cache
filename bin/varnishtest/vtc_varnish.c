@@ -982,10 +982,10 @@ varnish_expect(const struct varnish *v, char * const *av)
  *         varnish vNAME [-cli STRING] [-cliok STRING] [-clierr STRING]
  *                       [-expect STRING OP NUMBER]
  *
- * \-cli|-cliok|-clierr STRING
+ * \-cli STRING|-cliok STRING|-clierr STATUS STRING
  *         All three of these will send STRING to the CLI, the only difference
  *         is what they expect the return code to be. -cli doesn't expect
- *         anything, -cliok expects 200 and -clierr expects not 200.
+ *         anything, -cliok expects 200 and -clierr expects STATUS
  *
  * \-expect STRING OP NUMBER
  *         Look into the VSM and make sure the counter identified by STRING has
