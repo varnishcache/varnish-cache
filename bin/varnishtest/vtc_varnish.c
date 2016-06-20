@@ -923,8 +923,8 @@ varnish_expect(const struct varnish *v, char * const *av)
  *
  * To define a Varnish server, you'll use this syntax::
  *
- *         varnish vNAME [-arg STRING] [-vcl STRING] [-vcl+backend STRING]
- *	                 [-errvcl STRING STRING] [-jail STRING] [-proto PROXY]
+ *	varnish vNAME [-arg STRING] [-vcl STRING] [-vcl+backend STRING]
+ *		[-errvcl STRING STRING] [-jail STRING] [-proto PROXY]
  *
  * The first ``varnish vNAME`` invocation will start the varnishd master
  * process in the background, waiting for the ``-start`` switch to actually
