@@ -28,7 +28,8 @@ description of syntax and semantics, with ample examples, please see
 the online documentation at https://www.varnish-cache.org/docs/ .
 
 Starting with Varnish 4.0, each VCL file must start by declaring its version
-with a special "vcl 4.0;" marker at the top of the file.
+with "vcl X.Y;" marker at the top of the file.  See more about this
+under Versioning below.
 
 
 Operators
@@ -406,6 +407,26 @@ regsuball(str, regex, sub)
 For converting or casting VCL values between data types use the functions
 available in the std VMOD.
 
+Versioning
+==========
+
+Multiple versions of the VCL syntax can coexist within certain
+constraints.
+
+The VCL syntax version at the start of VCL file specified with ''-f''
+sets the hard limit that cannot be exceed anywhere, and it selects
+the appropriate version of the builtin VCL.
+
+That means that you can never include "vcl 9.1;" from "vcl 8.7;", but
+the opposite *may* be possible, to the extent the compiler supports it.
+
+Files pulled in via ``include`` do not need to have a "vcl X.Y;" but
+it may be a good idea to do it anyway, to not have surprises in the
+future.  The syntax version set in an included file only applies to
+that file and any files it includes - unless these set their own VCL
+syntax version.
+
+The version of Varnish this file belongs to supports syntax 4.0 only.
 
 
 EXAMPLES
