@@ -5,10 +5,12 @@
 ///////////////////////////////////////////////////////////////////////
 // build/config related
 
--efile(451, "tbl/*.h")				// No include guard
--efile(537, "tbl/*.h")				// Repeated include
+-efile(451, "tbl/*.h")		// No include guard
+-efile(537, "tbl/*.h")		// Repeated include
 
--efile(451, ../../config.h)			// No include guard
+-efile(451, ../../config.h)	// No include guard
+-efile(766, ../../config.h)	// Header file '___' not used in module '___'
+
 +libh(../../config.h)
 
 ///////////////////////////////////////////////////////////////////////
