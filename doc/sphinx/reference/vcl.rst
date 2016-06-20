@@ -414,7 +414,7 @@ Multiple versions of the VCL syntax can coexist within certain
 constraints.
 
 The VCL syntax version at the start of VCL file specified with ''-f''
-sets the hard limit that cannot be exceed anywhere, and it selects
+sets the hard limit that cannot be exceeded anywhere, and it selects
 the appropriate version of the builtin VCL.
 
 That means that you can never include "vcl 9.1;" from "vcl 8.7;", but
