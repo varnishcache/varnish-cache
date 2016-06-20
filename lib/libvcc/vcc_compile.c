@@ -481,7 +481,7 @@ vcc_resolve_includes(struct vcc *tl)
 			continue;
 
 		t1 = VTAILQ_NEXT(t, list);
-		assert(t1 != NULL);	/* There's always an EOI */
+		AN(t1);			/* There's always an EOI */
 		if (t1->tok != CSTR) {
 			VSB_printf(tl->sb,
 			    "include not followed by string constant.\n");
@@ -489,7 +489,7 @@ vcc_resolve_includes(struct vcc *tl)
 			return;
 		}
 		t2 = VTAILQ_NEXT(t1, list);
-		assert(t2 != NULL);	/* There's always an EOI */
+		AN(t2);			/* There's always an EOI */
 
 		if (t2->tok != ';') {
 			VSB_printf(tl->sb,

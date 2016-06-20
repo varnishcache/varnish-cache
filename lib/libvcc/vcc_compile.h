@@ -70,6 +70,7 @@ struct symbol;
 
 struct source {
 	VTAILQ_ENTRY(source)	list;
+	float			syntax;
 	char			*name;
 	const char		*b;
 	const char		*e;
