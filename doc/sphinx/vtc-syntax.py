@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#-
+#
 # Copyright (c) 2006-2016 Varnish Software AS
 # All rights reserved.
 #
@@ -26,12 +26,13 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-# Generate various .c and .h files for the VSL query expression parser
-# and the interfaces for it.
+# Process various varnishtest C files and output reStructuredText to be
+# included in vtc(7).
 
 from __future__ import print_function
-import sys;
-import re;
+import sys
+import re
+
 
 def parse_file(fn):
 	p = False
@@ -41,7 +42,7 @@ def parse_file(fn):
 	tl = {}
 	sl = []
 
-	f = open(fn, 'r')
+	f = open(fn, "r")
 
 	for l in f:
 		if "*/" in l:
@@ -52,27 +53,28 @@ def parse_file(fn):
 			sl.append(section)
 			cl[section] = []
 			if len(a) > 3:
-				tl[section] = re.sub(r'^[\t ]*\/?\* SECTION: [^ ]+ +',
-						"", l)
+				tl[section] = re.sub(
+					r"^[\t ]*\/?\* SECTION: [^ ]+ +",
+					"", l)
 			else:
 				tl[section] = ""
 			p = 1
 		elif p:
-			cl[section].append(re.sub(r'^ \* ?',"", l))
+			cl[section].append(re.sub(r"^ \* ?", "", l))
 	f.close()
 
 	sl.sort()
 	for section in sl:
-		print(tl[section], end='');
+		print(tl[section], end="")
 		a = section
-		c = section.count('.')
+		c = section.count(".")
 		if c == 0:
 			r = "-"
-		elif c ==1:
+		elif c == 1:
 			r = "~"
 		else:
 			r = "."
-		print(re.sub(r'.', r, tl[section]), end='')
+		print(re.sub(r".", r, tl[section]), end="")
 		print("".join(cl[section]))
 
 if __name__ == "__main__":
