@@ -68,6 +68,7 @@ Req_New(const struct worker *wrk, struct sess *sp)
 	req->top = req;	// esi overrides
 
 	INIT_OBJ(req->htc, HTTP_CONN_MAGIC);
+	req->htc->fd = -1;
 
 	e = (char*)req + sz;
 	p = (char*)(req + 1);
