@@ -180,8 +180,6 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 		http_ForceField(bo->bereq0, HTTP_HDR_PROTO, "HTTP/1.1");
 		if (cache_param->http_gzip_support)
 			http_ForceHeader(bo->bereq0, H_Accept_Encoding, "gzip");
-		AN(bo->req);
-		bo->req = NULL;
 		http_CopyHome(bo->bereq0);
 	} else
 		AZ(bo->stale_oc);
@@ -204,7 +202,10 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 	bo->ws_bo = WS_Snapshot(bo->ws);
 	HTTP_Copy(bo->bereq, bo->bereq0);
 
-	ObjSetState(bo->wrk, bo->fetch_objcore, BOS_REQ_DONE);
+	if (bo->req->req_body_status == REQ_BODY_NONE) {
+		bo->req = NULL;
+		ObjSetState(bo->wrk, bo->fetch_objcore, BOS_REQ_DONE);
+	}
 	return (F_STP_STARTFETCH);
 }
 
@@ -223,7 +224,7 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	vfc = bo->vfc;
 	CHECK_OBJ_NOTNULL(vfc, VFP_CTX_MAGIC);
 
-	assert(bo->fetch_objcore->boc->state == BOS_REQ_DONE);
+	assert(bo->fetch_objcore->boc->state <= BOS_REQ_DONE);
 
 	VSLb_ts_busyobj(bo, "Retry", W_TIM_real(wrk));
 
@@ -262,11 +263,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	AZ(bo->storage_hint);
-
-	if (bo->do_pass)
-		AN(bo->req);
-	else
-		AZ(bo->req);
 
 	if (bo->retries > 0)
 		http_Unset(bo->bereq, "\012X-Varnish:");
@@ -457,7 +453,11 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_ERROR);
 	}
 
-	assert(bo->fetch_objcore->boc->state == BOS_REQ_DONE);
+	assert(bo->fetch_objcore->boc->state <= BOS_REQ_DONE);
+	if (bo->fetch_objcore->boc->state != BOS_REQ_DONE) {
+		bo->req = NULL;
+		ObjSetState(wrk, bo->fetch_objcore, BOS_REQ_DONE);
+	}
 
 	if (bo->do_esi)
 		bo->do_stream = 0;
