@@ -71,7 +71,7 @@ H("Cache-Control",	H_Cache_Control,	  F    )	// 2616 14.9
 H("Connection",		H_Connection,		P|F|I|S)	// 2616 14.10
 H("Content-Encoding",	H_Content_Encoding,	0      )	// 2616 14.11
 H("Content-Language",	H_Content_Language,	0      )	// 2616 14.12
-H("Content-Length",	H_Content_Length,	  F    )	// 2616 14.13
+H("Content-Length",	H_Content_Length,	0      )	// 2616 14.13
 H("Content-Location",	H_Content_Location,	0      )	// 2616 14.14
 H("Content-MD5",	H_Content_MD5,		0      )	// 2616 14.15
 H("Content-Range",	H_Content_Range,	  F|I  )	// 2616 14.16

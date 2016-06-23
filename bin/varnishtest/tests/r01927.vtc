@@ -1,0 +1,46 @@
+varnishtest "Test requests other than GET are cacheable"
+
+server s1 {
+	rxreq
+	expect req.method == "POST"
+	expect req.body == "foo"
+	txresp -body bar
+	rxreq
+	expect req.method == "POST"
+	expect req.body == "foo"
+	txresp -body baz
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		# We ignore the actual body and verb for this test.
+		return (hash);
+	}
+	sub vcl_miss {
+		return (fetch);
+	}
+	sub vcl_backend_fetch {
+		set bereq.method = "POST";
+		set bereq.first_byte_timeout = 1s;
+	}
+	sub vcl_backend_response {
+		set beresp.ttl = 1s;
+		set beresp.grace = 2s;
+	}
+} -start
+
+client c1 {
+	txreq -req "POST" -body "foo"
+	rxresp
+	expect resp.body == "bar"
+	txreq -req "POST" -body "foo"
+	rxresp
+	expect resp.body == "bar"
+	delay 1
+	txreq -req "POST" -body "foo"
+	rxresp
+	expect resp.body == "bar"
+	txreq -req "POST" -body "foo"
+	rxresp
+	expect resp.body == "baz"
+} -run
