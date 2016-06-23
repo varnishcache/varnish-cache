@@ -312,7 +312,7 @@ EmitInitFini(const struct vcc *tl)
 	}
 
 	Fc(tl, 0, "\t(void)VGC_function_vcl_init(ctx);\n");
-	Fc(tl, 0, "\treturn(*ctx->handling == VCL_RET_OK ? 0: -1);\n");
+	Fc(tl, 0, "\treturn (*ctx->handling == VCL_RET_OK ? 0: -1);\n");
 	Fc(tl, 0, "}\n");
 
 	/*
@@ -332,7 +332,7 @@ EmitInitFini(const struct vcc *tl)
 		VSB_destroy(&p->fin);
 	}
 
-	Fc(tl, 0, "\treturn(0);\n");
+	Fc(tl, 0, "\treturn (0);\n");
 	Fc(tl, 0, "}\n");
 
 	if (has_event) {
@@ -384,15 +384,15 @@ EmitInitFini(const struct vcc *tl)
 	Fc(tl, 0, "VGC_Event(VRT_CTX, enum vcl_event_e ev)\n");
 	Fc(tl, 0, "{\n");
 	Fc(tl, 0, "\tif (ev == VCL_EVENT_LOAD)\n");
-	Fc(tl, 0, "\t\treturn(VGC_Load(ctx));\n");
+	Fc(tl, 0, "\t\treturn (VGC_Load(ctx));\n");
 	if (has_event) {
 		Fc(tl, 0, "\tif (ev == VCL_EVENT_WARM)\n");
-		Fc(tl, 0, "\t\treturn(VGC_Warmup(ctx, ev));\n");
+		Fc(tl, 0, "\t\treturn (VGC_Warmup(ctx, ev));\n");
 		Fc(tl, 0, "\tif (ev == VCL_EVENT_COLD)\n");
-		Fc(tl, 0, "\t\treturn(VGC_Cooldown(ctx, ev));\n");
+		Fc(tl, 0, "\t\treturn (VGC_Cooldown(ctx, ev));\n");
 	}
 	Fc(tl, 0, "\tif (ev == VCL_EVENT_DISCARD)\n");
-	Fc(tl, 0, "\t\treturn(VGC_Discard(ctx));\n");
+	Fc(tl, 0, "\t\treturn (VGC_Discard(ctx));\n");
 	Fc(tl, 0, "\n");
 	if (!has_event)
 		Fc(tl, 0, "\t(void)vgc_warmupstep;\n");
@@ -656,7 +656,7 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 			Fc(tl, 1, "  VRT_handling(ctx, VCL_RET_OK);\n");
 		Fc(tl, 1, "%s", VSB_data(tl->fm[i]));
 		if (method_tab[i].bitval == VCL_MET_INIT)
-			Fc(tl, 1, "  return(1);\n");
+			Fc(tl, 1, "  return (1);\n");
 		Fc(tl, 1, "}\n");
 	}
 
