@@ -54,6 +54,11 @@ const struct type BLOB[1] = {{
 	.name =			"BLOB",
 }};
 
+const struct type BODY[1] = {{
+	.magic =		0xfae932d9,
+	.name =			"BODY",
+}};
+
 const struct type BOOL[1] = {{
 	.magic =		0xfae932d9,
 	.name =			"BOOL",
