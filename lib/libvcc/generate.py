@@ -381,6 +381,13 @@ sp_variables = [
 		This is the backend or director we attempt to fetch from.
 		"""
 	),
+	('bereq.body',
+		'BODY',
+		(),
+		('backend_fetch',), """
+		The request body.
+		"""
+	),
 	('bereq.method',
 		'STRING',
 		('pipe', 'backend', ),
@@ -1164,7 +1171,7 @@ def one_var(nm, spec):
 		fo.write('\t    "VRT_l_%s(ctx, ",\n' % cnam)
 		if nm == i[0]:
 			fh.write("void VRT_l_%s(VRT_CTX, " % cnam)
-			if typ != "STRING":
+			if typ != "STRING" and typ != "BODY":
 				fh.write("VCL_" + typ + ");\n")
 			else:
 				fh.write(ctyp + ", ...);\n")

@@ -83,6 +83,7 @@ struct ws;
 typedef const struct vrt_acl *			VCL_ACL;
 typedef const struct director *			VCL_BACKEND;
 typedef const struct vmod_priv *		VCL_BLOB;
+typedef const char *				VCL_BODY;
 typedef unsigned				VCL_BOOL;
 typedef long long				VCL_BYTES;
 typedef double					VCL_DURATION;

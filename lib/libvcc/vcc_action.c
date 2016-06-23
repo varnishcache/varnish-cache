@@ -91,6 +91,11 @@ parse_set(struct vcc *tl)
 	sym = vcc_FindVar(tl, tl->t, 1, "cannot be set");
 	ERRCHK(tl);
 	assert(sym != NULL);
+	if (vcc_IdIs(tl->t, "bereq.body")) {
+		VSB_printf(tl->sb, "bereq.body cannot be set.\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
 	Fb(tl, 1, "%s\n", sym->lname);
 	tl->indent += INDENT;
 	vcc_NextToken(tl);
@@ -132,9 +137,10 @@ parse_unset(struct vcc *tl)
 	sym = vcc_FindVar(tl, tl->t, 1, "cannot be unset");
 	ERRCHK(tl);
 	assert(sym != NULL);
-	if (sym->fmt != HEADER) {
+	if (sym->fmt != HEADER && !vcc_IdIs(tl->t, "bereq.body")) {
 		VSB_printf(tl->sb,
-		    "Only HTTP header variables can be unset.\n");
+		    "Only bereq.body and HTTP header variables can"
+		    " be unset.\n");
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
