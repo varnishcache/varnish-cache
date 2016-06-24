@@ -674,6 +674,31 @@ VRT_r_resp_is_streaming(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
+#define VRT_BODY_L(which)					\
+void								\
+VRT_l_##which##_body(VRT_CTX, const char *str, ...)		\
+{								\
+	va_list ap;						\
+	const char *p;						\
+	struct vsb *vsb;					\
+								\
+	CAST_OBJ_NOTNULL(vsb, ctx->specific, VSB_MAGIC);	\
+	va_start(ap, str);					\
+	p = str;						\
+	while (p != vrt_magic_string_end) {			\
+		if (p == NULL)					\
+			p = "(null)";				\
+		VSB_cat(vsb, p);				\
+		p = va_arg(ap, const char *);			\
+	}							\
+	va_end(ap);						\
+}
+
+VRT_BODY_L(beresp)
+VRT_BODY_L(resp)
+
+/*--------------------------------------------------------------------*/
+
 #define HTTP_VAR(x)						\
 struct http *							\
 VRT_r_##x(VRT_CTX)				\

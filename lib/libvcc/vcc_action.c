@@ -112,6 +112,8 @@ parse_set(struct vcc *tl)
 		vcc_Expr(tl, STRING_LIST);
 	} else if (fmt == STRING) {
 		vcc_Expr(tl, STRING_LIST);
+	} else if (fmt == BODY) {
+		vcc_Expr(tl, STRING_LIST);
 	} else {
 		vcc_Expr(tl, fmt);
 	}

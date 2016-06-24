@@ -448,6 +448,13 @@ sp_variables = [
 		The entire backend response HTTP data structure
 		"""
 	),
+	('beresp.body',
+		'BODY',
+		(),
+		('backend_error',), """
+		The response body.
+		"""
+	),
 	('beresp.proto',
 		'STRING',
 		('backend_response', 'backend_error'),
@@ -676,6 +683,13 @@ sp_variables = [
 		('deliver', 'synth'),
 		(), """
 		The entire response HTTP data structure.
+		"""
+	),
+	('resp.body',
+		'BODY',
+		(),
+		('synth',), """
+		The response body.
 		"""
 	),
 	('resp.proto',
