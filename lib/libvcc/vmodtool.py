@@ -53,6 +53,7 @@ ctypes = {
 	'ACL':		"VCL_ACL",
 	'BACKEND':	"VCL_BACKEND",
 	'BLOB':		"VCL_BLOB",
+	'BODY':		"VCL_BODY",
 	'BOOL':		"VCL_BOOL",
 	'BYTES':	"VCL_BYTES",
 	'DURATION':	"VCL_DURATION",

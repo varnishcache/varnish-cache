@@ -148,6 +148,9 @@ sub vcl_synth {
 # Backend Fetch
 
 sub vcl_backend_fetch {
+    if (bereq.method == "GET") {
+        unset bereq.body;
+    }
     return (fetch);
 }
 
