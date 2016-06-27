@@ -1,3 +1,72 @@
+======================================
+Varnish Cache 4.1.3-beta1 (2016-06-15)
+======================================
+
+Changes since 4.1.2:
+
+* varnishncsa can now access and log backend requests. (PR #1905)
+
+* [varnishncsa] New output formatters %{Varnish:vxid}x and %{VSL:Tag}x.
+
+* [varnishlog] Added log tag BackendStart on backend transactions.
+
+* On SmartOS, use ports instead of epoll by default.
+
+* Add support for TCP Fast Open where available. Disabled by default.
+
+* [varnishtest] New syncronization primitive barriers added, improving
+  coordination when test cases call external programs.
+
+.. _1905: https://github.com/varnishcache/varnish-cache/pull/1905
+
+Bugs fixed
+----------
+
+* 1971_ - Add missing Wait_HeapDelete
+* 1967_ - [ncsa] Remove implicit line feed when using formatfile
+* 1955_ - 4.1.x sometimes duplicates Age and Accept-Ranges headers
+* 1954_ - Correctly handle HTTP/1.1 EOF response
+* 1953_ - Deal with fetch failures in ved_stripgzip
+* 1931_ - Allow VCL set Last-Modified to be used for I-M-S processing
+* 1928_ - req->task members must be set in case we get onto the waitinglist
+* 1924_ - Make std.log() and std.syslog() work from vcl_{init,fini}
+* 1919_ - Avoid ban lurker panic with empty olist
+* 1918_ - Correctly handle EOF responses with HTTP/1.1
+* 1912_ - Fix (insignificant) memory leak with mal-formed ESI directives.
+* 1904_ - Release memory instead of crashing on malformed ESI
+* 1885_ - [vmodtool] Method names should start with a period
+* 1879_ - Correct handling of duplicate headers on IMS header merge
+* 1878_ - Fix a ESI+gzip corner case which had escaped notice until now
+* 1873_ - Check for overrun before looking at the next vsm record
+* 1871_ - Missing error handling code in V1F_Setup_Fetch
+* 1869_ - Remove temporary directory iff called with -C
+* 1883_ - Only accept C identifiers as acls
+* 1855_ - Truncate output if it's wider than 12 chars
+* 1806_ - One minute delay on return (pipe) and a POST-Request
+* 1725_ - Revive the backend_conn counter
+
+.. _1971: https://github.com/varnishcache/varnish-cache/issues/1971
+.. _1967: https://github.com/varnishcache/varnish-cache/issues/1967
+.. _1955: https://github.com/varnishcache/varnish-cache/issues/1955
+.. _1954: https://github.com/varnishcache/varnish-cache/issues/1954
+.. _1953: https://github.com/varnishcache/varnish-cache/issues/1953
+.. _1931: https://github.com/varnishcache/varnish-cache/issues/1931
+.. _1928: https://github.com/varnishcache/varnish-cache/issues/1928
+.. _1924: https://github.com/varnishcache/varnish-cache/issues/1924
+.. _1919: https://github.com/varnishcache/varnish-cache/issues/1919
+.. _1918: https://github.com/varnishcache/varnish-cache/issues/1918
+.. _1912: https://github.com/varnishcache/varnish-cache/issues/1912
+.. _1904: https://github.com/varnishcache/varnish-cache/issues/1904
+.. _1885: https://github.com/varnishcache/varnish-cache/issues/1885
+.. _1883: https://github.com/varnishcache/varnish-cache/issues/1883
+.. _1879: https://github.com/varnishcache/varnish-cache/issues/1879
+.. _1878: https://github.com/varnishcache/varnish-cache/issues/1878
+.. _1873: https://github.com/varnishcache/varnish-cache/issues/1873
+.. _1871: https://github.com/varnishcache/varnish-cache/issues/1871
+.. _1869: https://github.com/varnishcache/varnish-cache/issues/1869
+.. _1855: https://github.com/varnishcache/varnish-cache/issues/1855
+.. _1806: https://github.com/varnishcache/varnish-cache/issues/1806
+.. _1725: https://github.com/varnishcache/varnish-cache/issues/1725
 
 
 ================================
@@ -37,7 +106,6 @@ Bugs fixed
 
 .. _1858: https://www.varnish-cache.org/trac/ticket/1858
 
-
 ======================================
 Varnish Cache 4.1.2-beta1 (2016-02-17)
 ======================================
@@ -54,7 +122,7 @@ Varnish Cache 4.1.2-beta1 (2016-02-17)
 * Off-by-one in WS_Reset() fixed.
 
 * "https_scheme" parameter added. Enables graceful handling of compound
-  request URLs with HTTPS scheme.
+  request URLs with HTTPS scheme. (Bug 1847_)
 
 Bugs fixed
 ----------
@@ -76,6 +144,7 @@ Bugs fixed
 .. _1851: https://www.varnish-cache.org/trac/ticket/1851
 .. _1852: https://www.varnish-cache.org/trac/ticket/1852
 .. _1857: https://www.varnish-cache.org/trac/ticket/1857
+.. _1847: https://www.varnish-cache.org/trac/ticket/1847
 
 
 ================================
@@ -124,9 +193,12 @@ Changes since 4.1.0:
 - Nested includes starting with "./" are relative to the including
   VCL file now.
 
+
 Bugs fixed
 ----------
 
+- 1796_ - Don't attempt to allocate a V1L from the workspace if it is overflowed.
+- 1794_ - Fail if multiple -a arguments return the same suckaddr.
 - 1763_ - Restart epoll_wait on EINTR error
 - 1788_ - ObjIter has terrible performance profile when busyobj != NULL
 - 1798_ - Varnish requests painfully slow with large files
@@ -135,7 +207,14 @@ Bugs fixed
 - 1821_ - Always slim private & pass objects after delivery.
 - 1823_ - Rush the objheader if there is a waiting list when it is deref'ed.
 - 1826_ - Ignore 0 Content-Lengths in 204 responses
+- 1813_ - Fail if multiple -a arguments return the same suckaddr.
+- 1810_ - Improve handling of HTTP/1.0 clients
+- 1807_ - Return 500 if we cannot decode the stored object into the resp.*
+- 1804_ - Log proxy related messages on the session, not on the request.
+- 1801_ - Relax IP constant parsing
 
+.. _1796: https://www.varnish-cache.org/trac/ticket/1796
+.. _1794: https://www.varnish-cache.org/trac/ticket/1794
 .. _1763: https://www.varnish-cache.org/trac/ticket/1763
 .. _1788: https://www.varnish-cache.org/trac/ticket/1788
 .. _1798: https://www.varnish-cache.org/trac/ticket/1798
@@ -144,6 +223,11 @@ Bugs fixed
 .. _1821: https://www.varnish-cache.org/trac/ticket/1821
 .. _1823: https://www.varnish-cache.org/trac/ticket/1823
 .. _1826: https://www.varnish-cache.org/trac/ticket/1826
+.. _1813: https://www.varnish-cache.org/trac/ticket/1813
+.. _1810: https://www.varnish-cache.org/trac/ticket/1810
+.. _1807: https://www.varnish-cache.org/trac/ticket/1807
+.. _1804: https://www.varnish-cache.org/trac/ticket/1804
+.. _1801: https://www.varnish-cache.org/trac/ticket/1801
 
 
 ================================
