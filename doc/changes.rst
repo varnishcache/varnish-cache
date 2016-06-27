@@ -1,4 +1,23 @@
 ======================================
+Varnish Cache 4.1.3-beta2 (unreleased)
+======================================
+
+Changes since 4.1.2-beta1:
+
+* New parameter `vsm_free_cooldown`. Specifies how long freed VSM
+  memory (shared log) will be kept around before actually being freed.
+
+Bugs fixed
+----------
+
+* 1986_ - Avoid abort when changing to a VCL name which is a path.
+* 1984_ - Make the counter vsm_cooling act according to spec
+
+.. _1986: https://github.com/varnishcache/varnish-cache/pull/1986
+.. _1984: https://github.com/varnishcache/varnish-cache/pull/1984
+
+
+======================================
 Varnish Cache 4.1.3-beta1 (2016-06-15)
 ======================================
 
@@ -12,7 +31,7 @@ Changes since 4.1.2:
 
 * On SmartOS, use ports instead of epoll by default.
 
-* Add support for TCP Fastopen where available. Disabled by default.
+* Add support for TCP Fast Open where available. Disabled by default.
 
 * [varnishtest] New syncronization primitive barriers added, improving
   coordination when test cases call external programs.
