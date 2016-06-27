@@ -412,7 +412,7 @@ smp_sml_getobj(struct worker *wrk, struct objcore *oc)
 	 * The object may not be in this segment since we allocate it
 	 * In a separate operation than the smp_object.  We could check
 	 * that it is in a later segment, but that would be complicated.
-	 * XXX: For now, be happy if it is inside th silo
+	 * XXX: For now, be happy if it is inside the silo
 	 */
 	ASSERT_PTR_IN_SILO(sg->sc, o);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
