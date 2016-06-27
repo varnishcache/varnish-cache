@@ -10,11 +10,13 @@ Changes since 4.1.2-beta1:
 Bugs fixed
 ----------
 
-* 1986_ - Avoid abort when changing to a VCL name which is a path.
+* 1986_ - Avoid abort when changing to a VCL name which is a path
 * 1984_ - Make the counter vsm_cooling act according to spec
+* 1933_ - Don't trust dlopen refcounting
 
-.. _1986: https://github.com/varnishcache/varnish-cache/pull/1986
-.. _1984: https://github.com/varnishcache/varnish-cache/pull/1984
+.. _1986: https://github.com/varnishcache/varnish-cache/issues/1986
+.. _1984: https://github.com/varnishcache/varnish-cache/issues/1984
+.. _1933: https://github.com/varnishcache/varnish-cache/issues/1933
 
 
 ======================================
