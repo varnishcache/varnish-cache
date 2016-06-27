@@ -796,8 +796,7 @@ http_EstimateWS(const struct http *fm, unsigned how)
 	for (u = 0; u < fm->nhd; u++) {
 		if (u == HTTP_HDR_METHOD || u == HTTP_HDR_URL)
 			continue;
-		AN(fm->hd[u].b);
-		AN(fm->hd[u].e);
+		Tcheck(fm->hd[u]);
 		if (fm->hdf[u] & HDF_FILTER)
 			continue;
 #define HTTPH(a, b, c) \
@@ -839,8 +838,7 @@ HTTP_Encode(const struct http *fm, uint8_t *p0, unsigned l, unsigned how)
 	for (u = 0; u < fm->nhd; u++) {
 		if (u == HTTP_HDR_METHOD || u == HTTP_HDR_URL)
 			continue;
-		AN(fm->hd[u].b);
-		AN(fm->hd[u].e);
+		Tcheck(fm->hd[u]);
 		if (fm->hdf[u] & HDF_FILTER)
 			continue;
 #define HTTPH(a, b, c) \
