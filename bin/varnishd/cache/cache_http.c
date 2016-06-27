@@ -1031,8 +1031,7 @@ http_filterfields(struct http *to, const struct http *fm, unsigned how)
 	to->nhd = HTTP_HDR_FIRST;
 	to->status = fm->status;
 	for (u = HTTP_HDR_FIRST; u < fm->nhd; u++) {
-		if (fm->hd[u].b == NULL)
-			continue;
+		Tcheck(fm->hd[u]);
 		if (fm->hdf[u] & HDF_FILTER)
 			continue;
 		Tcheck(fm->hd[u]);
@@ -1088,8 +1087,10 @@ http_CopyHome(const struct http *hp)
 	char *p;
 
 	for (u = 0; u < hp->nhd; u++) {
-		if (hp->hd[u].b == NULL)
+		if (hp->hd[u].b == NULL) {
+			assert(u < HTTP_HDR_FIRST);
 			continue;
+		}
 		if (hp->hd[u].b >= hp->ws->s && hp->hd[u].e <= hp->ws->e)
 			continue;
 
@@ -1187,8 +1188,7 @@ http_Unset(struct http *hp, const char *hdr)
 	uint16_t u, v;
 
 	for (v = u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
-		if (hp->hd[u].b == NULL)
-			continue;
+		Tcheck(hp->hd[u]);
 		if (http_IsHdr(&hp->hd[u], hdr)) {
 			http_VSLH_del(hp, u);
 			continue;
