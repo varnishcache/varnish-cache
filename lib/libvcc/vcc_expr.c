@@ -458,7 +458,6 @@ vcc_Eval_Handle(struct vcc *tl, struct expr **e, const struct symbol *sym,
     vcc_type_t fmt)
 {
 
-	assert(sym->kind == sym->kind);
 	AN(sym->rname);
 
 	if (sym->fmt != STRING && (fmt == STRING || fmt == STRING_LIST)) {
