@@ -1,0 +1,44 @@
+varnishtest "workspace overflow with failed backend fetch"
+
+varnish v1 -vcl {
+	import debug;
+
+	backend default {
+		.host = "${bad_ip}";
+		.port = "9090";
+	}
+
+	sub vcl_backend_fetch {
+		# avoid LostHeader      b Host: %s
+		set bereq.http.Host = "${bad_ip}";
+		debug.workspace_allocate(backend,
+			debug.workspace_free(backend));
+	}
+
+	sub vcl_backend_error {
+		# At this point we got no workspace to stringify
+		# the non-standard status 299, but we will leave
+		# the const "Unknown HTTP Status" reason
+		set beresp.status = 299;
+	}
+
+} -start
+
+logexpect l1 -v v1 -g raw {
+	expect * 1002 FetchError   {^no backend connection}
+	expect * =    BerespStatus {^503}
+	expect * =    BerespReason {^Backend fetch failed}
+	expect * =    Error        {^out of workspace [(]Bo[)]}
+	expect * =    LostHeader   {^Date:}
+	expect * =    Error        {^out of workspace [(]Bo[)]}
+	expect * =    LostHeader   {^299}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 503
+	expect resp.msg == "Unknown HTTP Status"
+} -run
+
+logexpect l1 -wait

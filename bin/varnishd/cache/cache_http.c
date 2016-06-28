@@ -114,23 +114,27 @@ http_fail(const struct http *hp)
 
 static struct http_msg {
 	unsigned	nbr;
+	const char	*status;
 	const char	*txt;
 } http_msg[] = {
-#define HTTP_RESP(n, t)	{ n, t},
+#define HTTP_RESP(n, t)	{ n, #n, t},
 #include "tbl/http_response.h"
-	{ 0, NULL }
+	{ 0, "0", NULL }
 };
 
 const char *
-http_Status2Reason(unsigned status)
+http_Status2Reason(unsigned status, const char **sstr)
 {
 	struct http_msg *mp;
 
 	status %= 1000;
 	assert(status >= 100);
 	for (mp = http_msg; mp->nbr != 0 && mp->nbr <= status; mp++)
-		if (mp->nbr == status)
+		if (mp->nbr == status) {
+			if (sstr)
+				*sstr = mp->status;
 			return (mp->txt);
+		}
 	return ("Unknown HTTP Status");
 }
 
@@ -720,6 +724,8 @@ void
 http_SetStatus(struct http *to, uint16_t status)
 {
 	char buf[4];
+	const char *reason;
+	const char *sstr = NULL;
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	/*
@@ -729,9 +735,15 @@ http_SetStatus(struct http *to, uint16_t status)
 	to->status = status;
 	status %= 1000;
 	assert(status >= 100);
-	bprintf(buf, "%03d", status);
-	http_PutField(to, HTTP_HDR_STATUS, buf);
-	http_SetH(to, HTTP_HDR_REASON, http_Status2Reason(status));
+
+	reason = http_Status2Reason(status, &sstr);
+	if (sstr) {
+		http_SetH(to, HTTP_HDR_STATUS, sstr);
+	} else {
+		bprintf(buf, "%03d", status);
+		http_PutField(to, HTTP_HDR_STATUS, buf);
+	}
+	http_SetH(to, HTTP_HDR_REASON, reason);
 }
 
 /*--------------------------------------------------------------------*/
@@ -776,9 +788,8 @@ http_PutResponse(struct http *to, const char *proto, uint16_t status,
 	if (proto != NULL)
 		http_SetH(to, HTTP_HDR_PROTO, proto);
 	http_SetStatus(to, status);
-	if (reason == NULL)
-		reason = http_Status2Reason(status);
-	http_SetH(to, HTTP_HDR_REASON, reason);
+	if (reason != NULL)
+		http_SetH(to, HTTP_HDR_REASON, reason);
 }
 
 /*--------------------------------------------------------------------
