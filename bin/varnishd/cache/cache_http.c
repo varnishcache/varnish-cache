@@ -796,8 +796,6 @@ http_EstimateWS(const struct http *fm, unsigned how)
 	for (u = 0; u < fm->nhd; u++) {
 		if (u == HTTP_HDR_METHOD || u == HTTP_HDR_URL)
 			continue;
-		if (u < HTTP_HDR_FIRST && fm->hd[u].b == NULL)
-			continue;
 		Tcheck(fm->hd[u]);
 		if (fm->hdf[u] & HDF_FILTER)
 			continue;
