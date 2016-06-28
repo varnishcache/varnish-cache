@@ -454,14 +454,14 @@ HTTP1_DissectResponse(struct http_conn *htc, struct http *hp,
 		    (int)(htc->rxbuf_e - htc->rxbuf_b), htc->rxbuf_b);
 		assert(retval >= 100 && retval <= 999);
 		assert(retval == 503);
-		hp->status = retval;
-		http_SetH(hp, HTTP_HDR_STATUS, "503");
-		http_SetH(hp, HTTP_HDR_REASON, http_Status2Reason(retval));
+		http_SetStatus(hp, 503);
 	}
 
 	if (hp->hd[HTTP_HDR_REASON].b == NULL ||
-	    !Tlen(hp->hd[HTTP_HDR_REASON]))
-		http_SetH(hp, HTTP_HDR_REASON, http_Status2Reason(hp->status));
+	    !Tlen(hp->hd[HTTP_HDR_REASON])) {
+		http_SetH(hp, HTTP_HDR_REASON,
+		    http_Status2Reason(hp->status, NULL));
+	}
 
 	htc->body_status = http1_body_status(hp, htc, 0);
 
