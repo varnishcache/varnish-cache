@@ -1149,7 +1149,8 @@ http_PrintfHeader(struct http *to, const char *fmt, ...)
 	va_end(ap);
 	if (n + 1 >= l || to->nhd >= to->shd) {
 		http_fail(to);
-		VSLb(to->vsl, SLT_LostHeader, "%s", to->ws->f);
+		VSLb(to->vsl, SLT_LostHeader, "%s",
+		    n + 1 >= l ? fmt : to->ws->f);
 		WS_Release(to->ws, 0);
 		return;
 	}
