@@ -1095,14 +1095,11 @@ pdiff(const void *b, const void *e)
 	    ((unsigned)((const unsigned char *)e - (const unsigned char *)b));
 }
 
-static inline void
-Tcheck(const txt t)
-{
-
-	AN(t.b);
-	AN(t.e);
-	assert(t.b <= t.e);
-}
+#define Tcheck(t) do {						\
+		AN((t).b);					\
+		AN((t).e);					\
+		assert((t).b <= (t).e); 			\
+	} while(0)
 
 /*
  * unsigned length of a txt
