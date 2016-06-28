@@ -7,6 +7,9 @@ Changes since 4.1.2-beta1:
 * New parameter `vsm_free_cooldown`. Specifies how long freed VSM
   memory (shared log) will be kept around before actually being freed.
 
+* varnishncsa now accepts `-L` argument to configure the limit on incomplete
+  transactions kept. (Issue 1994_)
+
 Bugs fixed
 ----------
 
@@ -14,6 +17,7 @@ Bugs fixed
 * 1984_ - Make the counter vsm_cooling act according to spec
 * 1933_ - Don't trust dlopen refcounting
 
+.. _1994: https://github.com/varnishcache/varnish-cache/issues/1994
 .. _1986: https://github.com/varnishcache/varnish-cache/issues/1986
 .. _1984: https://github.com/varnishcache/varnish-cache/issues/1984
 .. _1933: https://github.com/varnishcache/varnish-cache/issues/1933
