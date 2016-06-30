@@ -189,6 +189,18 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc)
 			    (int)(q - p > 20 ? 20 : q - p), p);
 			return (400);
 		}
+
+		for (; p < q; p++) {
+			if (vct_islws(*p)) {
+				VSLb(hp->vsl, SLT_BogoHeader,
+				    "Space in header '%.*s'",
+				    (int)Tlen(hp->hd[hp->nhd - 1]),
+				    hp->hd[hp->nhd - 1].b);
+				return (400);
+			}
+			if (*p == ':')
+				break;
+		}
 	}
 	if (p < htc->rxbuf_e)
 		p += vct_skipcrlf(p);
