@@ -1,0 +1,23 @@
+varnishtest "Test cached request bodies can be piped"
+
+server s1 {
+	rxreq
+	expect req.bodylen == 6
+	expect req.http.foo == "true"
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_recv {
+		set req.http.foo = std.cache_req_body(10KB);
+		return (pipe);
+	}
+} -start
+
+client c1 {
+	txreq -body "foobar"
+	rxresp
+	expect resp.status == 200
+} -run
