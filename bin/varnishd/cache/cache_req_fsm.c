@@ -573,6 +573,9 @@ cnt_pipe(struct worker *wrk, struct req *req)
 		nxt = REQ_FSM_MORE;
 		break;
 	case VCL_RET_PIPE:
+		AZ(bo->req);
+		bo->req = req;
+		bo->wrk = wrk;
 		SES_Close(req->sp, VDI_Http1Pipe(req, bo));
 		nxt = REQ_FSM_DONE;
 		break;
