@@ -55,7 +55,8 @@ sub vcl_recv {
       req.method != "POST" &&
       req.method != "TRACE" &&
       req.method != "OPTIONS" &&
-      req.method != "DELETE") {
+      req.method != "DELETE" &&
+      req.method != "PATCH") {
         /* Non-RFC2616 or CONNECT which is weird. */
         return (pipe);
     }
