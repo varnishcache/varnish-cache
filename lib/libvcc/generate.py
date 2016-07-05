@@ -179,7 +179,8 @@ sp_variables = [
 		('client',),
 		('client',), """
 		Identification of the client, used to load balance
-		in the client director.
+		in the client director. Defaults to the client's IP
+		address.
 		"""
 	),
 	('local.ip',
