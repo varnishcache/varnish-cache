@@ -1,3 +1,12 @@
+================================
+Varnish Cache 4.1.3 (2016-07-06)
+================================
+
+Changes since 4.1.3-beta2:
+
+* Be stricter when parsing request headers to harden against smuggling attacks.
+
+
 ======================================
 Varnish Cache 4.1.3-beta2 (2016-06-28)
 ======================================
