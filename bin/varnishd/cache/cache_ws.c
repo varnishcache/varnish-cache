@@ -257,6 +257,7 @@ int
 WS_Overflowed(const struct ws *ws)
 {
 	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
+	AN(ws->id[0]);
 
 	if (ws->id[0] & 0x20)
 		return (0);
