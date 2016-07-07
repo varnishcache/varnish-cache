@@ -116,7 +116,7 @@ pan_ws(struct vsb *vsb, const struct ws *ws)
 	VSB_printf(vsb, "ws = %p {\n", ws);
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, ws, WS_MAGIC);
-	if (!(ws->id[0] & 0x20))
+	if (ws->id[0] != '\0' && (!(ws->id[0] & 0x20)))
 		VSB_printf(vsb, "OVERFLOWED ");
 	VSB_printf(vsb, "id = \"%s\",\n",  ws->id);
 	VSB_printf(vsb, "{s,f,r,e} = {%p",  ws->s);
