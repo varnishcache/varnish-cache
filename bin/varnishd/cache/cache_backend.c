@@ -166,6 +166,7 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	}
 	assert(bp->n_conn > 0);
 	bp->n_conn--;
+	bp->vsc->conn--;
 #define ACCT(foo)	bp->vsc->foo += bo->acct.foo;
 #include "tbl/acct_fields_bereq.h"
 #undef ACCT
