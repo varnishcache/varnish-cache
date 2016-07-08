@@ -1,3 +1,13 @@
+========================================
+DRAFT CHANGELOG ENTRIES FOR NEXT RELEASE
+========================================
+
+Changes since 4.1.3:
+
+* 2011_ - VBE.*.conn (concurrent connections to backend) not working as expected
+
+.. _2011: https://github.com/varnishcache/varnish-cache/issues/2011
+
 ================================
 Varnish Cache 4.1.3 (2016-07-06)
 ================================
