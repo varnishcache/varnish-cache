@@ -48,7 +48,7 @@ depend on the operating systems ability to page effectively.
 file
 ~~~~
 
-syntax: file[,path[,size[,granularity]]]
+syntax: file[,path[,size[,granularity,[advice]]]]
 
 The file backend stores objects in memory backed by an unlinked file on disk
 with `mmap`.
@@ -93,6 +93,13 @@ have many small objects.
 
 File performance is typically limited to the write speed of the
 device, and depending on use, the seek time.
+
+'advice' dictates what Varnish tells the system to optimize reads. Depending
+on your OS, disks and object sizes, it can be beneficial to tweak this. The
+three possible values are "normal", "random" (default) and "sequential" and
+correspond to MADV_NORMAL, MADV_RANDOM, MADV_SEQUENTIAL, respectively.
+For example, large objects and rotational disk should profit from "sequential"
+on Linux.
 
 persistent (experimental)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
