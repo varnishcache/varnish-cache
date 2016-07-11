@@ -420,7 +420,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 			    "304 response but not conditional fetch");
 			bo->htc->doclose = SC_RX_BAD;
 			VDI_Finish(bo->wrk, bo);
-			return (F_STP_FAIL);
+			return (F_STP_ERROR);
 		}
 	}
 
