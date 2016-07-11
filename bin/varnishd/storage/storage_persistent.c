@@ -372,6 +372,9 @@ smp_open(struct stevedore *st)
 
 	/* XXX: abandon early segments to make sure we have free space ? */
 
+	(void)ObjSubscribeEvents(smp_oc_event, st,
+	    OEV_BANCHG|OEV_TTLCHG|OEV_INSERT);
+
 	/* Open a new segment, so we are ready to write */
 	smp_new_seg(sc);
 
@@ -683,8 +686,6 @@ smp_init(void)
 	smp_oc_realmethods = SML_methods;
 	smp_oc_realmethods.objtouch = NULL;
 	smp_oc_realmethods.objfree = smp_oc_objfree;
-	(void)ObjSubscribeEvents(smp_oc_event, NULL,
-	    OEV_BANCHG|OEV_TTLCHG|OEV_INSERT);
 }
 
 /*--------------------------------------------------------------------

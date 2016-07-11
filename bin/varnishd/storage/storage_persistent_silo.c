@@ -501,12 +501,16 @@ smp_init_oc(struct objcore *oc, struct smp_seg *sg, unsigned objidx)
 void __match_proto__(obj_event_f)
 smp_oc_event(struct worker *wrk, void *priv, struct objcore *oc, unsigned ev)
 {
+	struct stevedore *st;
 	struct smp_seg *sg;
 	struct smp_object *so;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	AZ(priv);
+	CAST_OBJ_NOTNULL(st, priv, STEVEDORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	if (oc->stobj->stevedore != st)
+		return;
 
 	CAST_OBJ_NOTNULL(sg, oc->stobj->priv, SMP_SEG_MAGIC);
 	CHECK_OBJ_NOTNULL(sg->sc, SMP_SC_MAGIC);
