@@ -62,7 +62,7 @@ digraph cache_req_fsm {
 		/* cnt_deliver() */
 		deliver [
 			 shape=record
-			 label="{cnt_deliver:|Filter obj.-\>resp.|{vcl_deliver\{\}|{req.*|resp.*}}|{restart|<deliver>deliver|<synth>synth}}"
+			 label="{cnt_deliver:|Filter obj.-\>resp.|{vcl_deliver\{\}|{req.*|resp.*}}|{<restart>restart|<deliver>deliver|<synth>synth}}"
 		]
 
 		deliver:deliver:s -> V1D_Deliver [style=bold,color=green]
