@@ -379,19 +379,21 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_ERROR);
 	}
 
-	/*
-	 * What does RFC2616 think about TTL ?
-	 */
-	RFC2616_Ttl(bo, now,
-	    &bo->fetch_objcore->t_origin,
-	    &bo->fetch_objcore->ttl,
-	    &bo->fetch_objcore->grace,
-	    &bo->fetch_objcore->keep
-	);
-
-	/* private objects have negative TTL */
-	if (bo->fetch_objcore->flags & OC_F_PRIVATE)
+	if (bo->fetch_objcore->flags & OC_F_PRIVATE) {
+		/* private objects have negative TTL */
+		bo->fetch_objcore->t_origin = now;
 		bo->fetch_objcore->ttl = -1.;
+		bo->fetch_objcore->grace = 0;
+		bo->fetch_objcore->keep = 0;
+	} else {
+		/* What does RFC2616 think about TTL ? */
+		RFC2616_Ttl(bo, now,
+		    &bo->fetch_objcore->t_origin,
+		    &bo->fetch_objcore->ttl,
+		    &bo->fetch_objcore->grace,
+		    &bo->fetch_objcore->keep
+		    );
+	}
 
 	AZ(bo->do_esi);
 	AZ(bo->was_304);
