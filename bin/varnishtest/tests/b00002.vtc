@@ -2,19 +2,33 @@ varnishtest "Check that a pass transaction works"
 
 server s1 {
 	rxreq
-	txresp -hdr "Connection: close" -body "012345\n"
+	txresp -hdr "Cache-Control: max-age=120" -hdr "Connection: close" -body "012345\n"
 } -start
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
 		return(pass);
 	}
+	sub vcl_backend_response {
+		set beresp.http.x-ttl = beresp.ttl;
+	}
+} -start
+
+# check that there are no TTL LogTags between the
+# last header and VCL_return b deliver
+logexpect l1 -v v1 -g request {
+	  expect * 1002 Begin
+	  expect * =	BerespHeader	^Date:
+	  expect 0 =	VCL_call	^BACKEND_RESPONSE
+	  expect 0 =	BerespHeader	^x-ttl: 0.000
+	  expect 0 =	VCL_return	^deliver
 } -start
 
 client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 200
+	expect resp.http.x-ttl == 0.000
 } -run
 
 # Give varnish a chance to update stats
@@ -27,3 +41,5 @@ varnish v1 -expect client_req == 1
 varnish v1 -expect s_sess == 1
 varnish v1 -expect s_req == 1
 varnish v1 -expect s_pass == 1
+
+logexpect l1 -wait
