@@ -252,6 +252,8 @@ child_listener(const struct vev *e, int what)
 static int __match_proto__(vev_cb_f)
 child_poker(const struct vev *e, int what)
 {
+	char *r = NULL;
+	unsigned status;
 
 	(void)e;
 	(void)what;
@@ -259,9 +261,14 @@ child_poker(const struct vev *e, int what)
 		return (1);
 	if (child_pid < 0)
 		return (0);
-	if (!mgt_cli_askchild(NULL, NULL, "ping\n"))
-		return (0);
-	return (0);
+	if (mgt_cli_askchild(&status, &r, "ping\n") || strncmp("PONG ", r, 5)) {
+		MGT_complain(C_ERR, "Unexpected reply from ping: %u %s",
+		    status, r);
+		if (status != CLIS_COMMS)
+			MGT_Child_Cli_Fail();
+	}
+	free(r);
+	return 0;
 }
 
 /*=====================================================================
