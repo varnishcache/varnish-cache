@@ -48,14 +48,13 @@ depend on the operating systems ability to page effectively.
 file
 ~~~~
 
-syntax: file[,path[,size[,granularity,[advice]]]]
+syntax: file,path[,size[,granularity[,advice]]]
 
 The file backend stores objects in memory backed by an unlinked file on disk
 with `mmap`.
 
 The 'path' parameter specifies either the path to the backing file or
-the path to a directory in which `varnishd` will create the backing
-file. The default is `/tmp`.
+the path to a directory in which `varnishd` will create the backing file.
 
 The size parameter specifies the size of the backing file. The size
 is assumed to be in bytes, unless followed by one of the following
