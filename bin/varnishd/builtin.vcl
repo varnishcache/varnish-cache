@@ -156,7 +156,7 @@ sub vcl_backend_fetch {
 }
 
 sub vcl_backend_response {
-    if (beresp.uncacheable) {
+    if (bereq.uncacheable) {
         return (deliver);
     } else if (beresp.ttl <= 0s ||
       beresp.http.Set-Cookie ||
