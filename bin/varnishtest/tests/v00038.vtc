@@ -92,3 +92,13 @@ varnish v1 -errvcl "Mandatory field 'host' missing." {
 		.port = "NONE";
 	}
 }
+
+# from r01837.vtc
+varnish v1 -errvcl "Probe p not found" {
+	backend b {
+		.host = "127.0.0.1";
+		.probe = p;
+	}
+	probe p {
+	}
+}

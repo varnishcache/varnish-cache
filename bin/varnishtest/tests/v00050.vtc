@@ -1,0 +1,90 @@
+varnishtest "VCL compiler coverage test: vcc_symb.c"
+
+# ACL
+# BACKEND
+# PROBE
+# STEVEDORE
+# INSTANCE
+#                VSB_printf(tl->sb, "%c%s '%.*s' redefined.\n",
+#                VSB_printf(tl->sb, "Name '%.*s' already used.\n", PF(tk));
+#                VSB_printf(tl->sb, "%c%s '%.*s' used before defined.\n"
+
+## ACL
+varnish v1 -errvcl {Acl 'a' redefined.} {
+	backend b { .host = "127.0.0.1"; }
+	acl a {
+		"10.0.1.0" / 22;
+	}
+	acl a {
+		"10.0.2.0" / 22;
+	}
+	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
+}
+varnish v1 -errvcl {Name 'a' already used.} {
+	backend a { .host = "127.0.0.1"; }
+	acl a {
+		"10.0.1.0" / 22;
+	}
+	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
+}
+varnish v1 -errvcl {Acl 'a' used before defined.} {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv { if (client.ip ~ a) { return(pass); } }
+	acl a {
+		"10.0.1.0" / 22;
+	}
+}
+
+## BACKEND
+varnish v1 -errvcl {Backend 'b' redefined.} {
+	backend b { .host = "127.0.0.1"; }
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv { set req.backend_hint = b; }
+}
+varnish v1 -errvcl {Name 'b' already used.} {
+	acl b {
+		"10.0.1.0" / 22;
+	}
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv { set req.backend_hint = b; }
+}
+# XXX different error
+#varnish v1 -errvcl {Backend 'b' used before defined.} {
+varnish v1 -errvcl {Symbol not found: 'b' (expected type BACKEND)} {
+	sub vcl_recv { set req.backend_hint = b; }
+	backend b { .host = "127.0.0.1"; }
+}
+
+## INSTANCE
+# fromtests/r01510.vtc
+varnish v1 -errvcl {Instance 'first' redefined.} {
+	import debug;
+	sub vcl_init {
+	       new first = debug.obj("FOO");
+	       new first = debug.obj("BAH");
+	}
+}
+varnish v1 -errvcl {Name 'first' already used.} {
+	import debug;
+
+	backend first { .host = "${bad_ip}"; .port = "9080"; }
+
+	sub vcl_init {
+		new first = debug.obj("FOO");
+	}
+}
+# XXX different error
+# varnish v1 -errvcl {Instance 'first' used before defined.} {
+varnish v1 -errvcl {Symbol not found: 'first.date'} {
+	import debug;
+	sub vcl_recv {
+		set req.http.foo = first.date();
+	}
+	sub vcl_init {
+		new first = debug.obj("FOO");
+	}
+}
+
+## TODO?
+# PROBE
+# STEVEDORE
