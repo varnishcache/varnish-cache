@@ -1,8 +1,16 @@
 <!--- Provide a general summary of the issue in the Title above -->
 
 ## Expected Behavior
+<!--- Did you check that there are no similar bug reports or pull requests? -->
 <!--- If you're describing a bug, tell us what should happen -->
 <!--- If you're suggesting a change/improvement, tell us how it should work -->
+<!---
+    If it's a packaging bug (including sysv or systemd services bugs) please
+    open an issue on varnishcache/pkg-varnish-cache instead.
+<!---
+    If it's a feature request, please start a thread on the misc list instead.
+    https://www.varnish-cache.org/lists/mailman/listinfo/varnish-misc
+-->
 
 ## Current Behavior
 <!--- If describing a bug, tell us what happens instead of the expected behavior -->
