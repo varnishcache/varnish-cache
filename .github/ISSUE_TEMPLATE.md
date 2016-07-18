@@ -7,6 +7,7 @@
 <!---
     If it's a packaging bug (including sysv or systemd services bugs) please
     open an issue on varnishcache/pkg-varnish-cache instead.
+-->
 <!---
     If it's a feature request, please start a thread on the misc list instead.
     https://www.varnish-cache.org/lists/mailman/listinfo/varnish-misc
