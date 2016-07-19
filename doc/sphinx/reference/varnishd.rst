@@ -139,7 +139,8 @@ OPTIONS
 -T <address[:port]>
 
   Offer a management interface on the specified address and port. See
-  `Management Interface`_ for a list of management commands.
+  `Management Interface`_ for a list of management commands.  To disable
+  the management interface use ``none``.
 
 -t TTL
 

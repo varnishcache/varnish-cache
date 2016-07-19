@@ -704,7 +704,7 @@ main(int argc, char * const *argv)
 
 	if (M_arg != NULL && *M_arg == '\0')
 		M_arg = NULL;
-	if (T_arg != NULL && *T_arg == '\0')
+	if (T_arg != NULL && !strcmp(T_arg, "none"))
 		T_arg = NULL;
 
 	/* XXX: we can have multiple CLI actions above, is this enough ? */
