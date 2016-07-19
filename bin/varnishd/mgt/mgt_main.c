@@ -702,8 +702,6 @@ main(int argc, char * const *argv)
 	if (argc != 0)
 		ARGV_ERR("Too many arguments (%s...)\n", argv[0]);
 
-	if (M_arg != NULL && *M_arg == '\0')
-		M_arg = NULL;
 	if (T_arg != NULL && !strcmp(T_arg, "none"))
 		T_arg = NULL;
 
