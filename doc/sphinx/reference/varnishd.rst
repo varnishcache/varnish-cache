@@ -123,11 +123,11 @@ OPTIONS
   *vmod_path* read only as these can potentially be used to escalate
   privileges from the CLI.
 
--S file
+-S secret-file
 
   Path to a file containing a secret used for authorizing access to
   the management port. If not provided a new secret will be drawn
-  from the system PRNG.
+  from the system PRNG.  To disable authentication use ``none``.
 
 -s <[name=]type[,options]>
 
