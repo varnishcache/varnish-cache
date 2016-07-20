@@ -358,6 +358,9 @@ main(int argc, char **argv)
 		}
 	}
 
+	if (optind != argc)
+		usage(1);
+
 	VUT_Setup();
 	if (!once) {
 		if (pthread_create(&thr, NULL, do_curses, NULL) != 0) {

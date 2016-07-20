@@ -427,6 +427,10 @@ main(int argc, char **argv)
 				usage(1);
 		}
 	}
+
+	if (optind != argc)
+		usage(1);
+
 	/* Check for valid grouping mode */
 	assert(VUT.g_arg < VSL_g__MAX);
 	if (VUT.g_arg != VSL_g_vxid && VUT.g_arg != VSL_g_request)

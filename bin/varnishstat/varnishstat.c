@@ -315,6 +315,9 @@ main(int argc, char * const *argv)
 		}
 	}
 
+	if (optind != argc)
+		usage(1);
+
 	if (!(xml || json || once || f_list))
 		curses = 1;
 
