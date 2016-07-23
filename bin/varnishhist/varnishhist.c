@@ -79,6 +79,7 @@ static char *format;
 static int match_tag;
 double timebend = 0, t0;
 double vsl_t0 = 0, vsl_to, vsl_ts = 0;
+pthread_cond_t timebend_cv;
 static double log_ten;
 
 static int scales[] = {
@@ -396,10 +397,16 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 
 	assert(t > t0);
 	vsl_to = vsl_t0 + (t - t0) * timebend;
-	pthread_mutex_unlock(&mtx);
 
-	if (vsl_ts > vsl_to)
-		VTIM_sleep(vsl_ts - vsl_to);
+	if (vsl_ts > vsl_to) {
+		double when = VTIM_real() + vsl_ts - vsl_to;
+		struct timespec ts;
+		// Lck_CondWait
+		ts.tv_nsec = (long)(modf(when, &t) * 1e9);
+		ts.tv_sec = (long)t;
+		(void) pthread_cond_timedwait(&timebend_cv, &mtx, &ts);
+	}
+	pthread_mutex_unlock(&mtx);
 
 	return (0);
 }
@@ -492,6 +499,7 @@ do_curses(void *arg)
 				timebend /= 2;
 			else
 				timebend *= 2;
+			pthread_cond_broadcast(&timebend_cv);
 			pthread_mutex_unlock(&mtx);
 		}
 	}
@@ -532,6 +540,7 @@ main(int argc, char **argv)
 	cli_p.name = 0;
 
 	VUT_Init(progname, argc, argv, &vopt_spec);
+	AZ(pthread_cond_init(&timebend_cv, NULL));
 
 	while ((i = getopt(argc, argv, vopt_spec.vopt_optstring)) != -1) {
 		switch (i) {
