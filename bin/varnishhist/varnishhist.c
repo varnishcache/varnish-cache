@@ -174,7 +174,7 @@ profiles[] = {
 	}
 };
 
-static struct profile *active_profile = &profiles[0];
+static struct profile *active_profile;
 
 static void
 update(void)
