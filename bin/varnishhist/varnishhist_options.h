@@ -60,6 +60,16 @@
 	    " graph (these are power of ten)."				\
 	)
 
+#define HIS_OPT_B							\
+	VOPT("B:", "[-B <factor>]",					\
+	    "Time bending",						\
+	    "Factor to bend time by. Particularly usedful when"	\
+	    " [-r]eading from a vsl file. =1 process in near real"	\
+	    " time, <1 slow-motion, >1 time-lapse (useless unless"	\
+	    " reading from a file). At runtime, < halves and"		\
+	    " > doubles."						\
+	    )
+
 VSL_OPT_C
 VUT_OPT_d
 HIS_OPT_g
@@ -74,3 +84,4 @@ VUT_OPT_r
 VUT_OPT_t
 VSL_OPT_T
 VUT_OPT_V
+HIS_OPT_B
