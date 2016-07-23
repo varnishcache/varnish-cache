@@ -189,8 +189,6 @@ update(void)
 	erase();
 
 	/* Draw horizontal axis */
-	w = COLS / hist_range;
-	n = w * hist_range;
 	for (i = 0; i < n; ++i)
 		(void)mvaddch(LINES - 2, i, '-');
 	for (k = 0, l = hist_low; k < hist_range; ++k, ++l) {
