@@ -105,6 +105,7 @@ static int scales[] = {
 
 struct profile {
 	const char *name;
+	char VSL_arg;
 	enum VSL_tag_e tag;
 	const char *prefix;
 	int field;
@@ -112,22 +113,64 @@ struct profile {
 	int hist_high;
 }
 profiles[] = {
+	// client
 	{
 		.name = "responsetime",
+		.VSL_arg = 'c',
 		.tag = SLT_Timestamp,
 		.prefix = "Process:",
 		.field = 3,
 		.hist_low = -6,
 		.hist_high = 3
-	}, {
+	},
+	{
 		.name = "size",
+		.VSL_arg = 'c',
 		.tag = SLT_ReqAcct,
 		.prefix = NULL,
 		.field = 5,
 		.hist_low = 1,
 		.hist_high = 8
-	}, {
-		.name = 0,
+	},
+	// backend
+	{
+		.name = "Bereqtime",
+		.VSL_arg = 'b',
+		.tag = SLT_Timestamp,
+		.prefix = "Bereq:",
+		.field = 3,
+		.hist_low = -6,
+		.hist_high = 3
+	},
+	{
+		.name = "Beresptime",
+		.VSL_arg = 'b',
+		.tag = SLT_Timestamp,
+		.prefix = "Beresp:",
+		.field = 3,
+		.hist_low = -6,
+		.hist_high = 3
+	},
+	{
+		.name = "BerespBodytime",
+		.VSL_arg = 'b',
+		.tag = SLT_Timestamp,
+		.prefix = "BerespBody:",
+		.field = 3,
+		.hist_low = -6,
+		.hist_high = 3
+	},
+	{
+		.name = "Besize",
+		.VSL_arg = 'b',
+		.tag = SLT_BereqAcct,
+		.prefix = NULL,
+		.field = 5,
+		.hist_low = 1,
+		.hist_high = 8
+	},
+	{
+		.name = NULL
 	}
 };
 
@@ -203,9 +246,6 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	(void)priv;
 
 	for (tr = pt[0]; tr != NULL; tr = *++pt) {
-		if (tr->type != VSL_t_req)
-			/* Only look at client requests */
-			continue;
 		if (tr->reason == VSL_r_esi)
 			/* Skip ESI requests */
 			continue;
@@ -223,7 +263,9 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case SLT_VCL_return:
 				if (!strcasecmp(VSL_CDATA(tr->c->rec.ptr),
-					"restart"))
+						"restart") ||
+				    !strcasecmp(VSL_CDATA(tr->c->rec.ptr),
+						"retry"))
 					skip = 1;
 				break;
 			default:
@@ -374,11 +416,19 @@ usage(int status)
 	exit(status);
 }
 
+static void
+profile_error(const char *s)
+{
+	fprintf(stderr, "-P: '%s' is not a valid"
+		" profile name or definition\n", s);
+	exit(1);
+}
+
 int
 main(int argc, char **argv)
 {
 	int i;
-	char *colon;
+	const char *colon, *ptag;
 	const char *profile = "responsetime";
 	pthread_t thr;
 	int fnum = -1;
@@ -389,8 +439,6 @@ main(int argc, char **argv)
 	if (0)
 		(void)usage;
 
-	/* only client requests */
-	assert(VUT_Arg('c', NULL));
 	while ((i = getopt(argc, argv, vopt_optstring)) != -1) {
 		switch (i) {
 		case 'h':
@@ -404,14 +452,25 @@ main(int argc, char **argv)
 				break;
 			}
 			/* else it's a definition, we hope */
-			if (sscanf(colon+1, "%d:%d:%d",	&cli_p.field,
-				&cli_p.hist_low, &cli_p.hist_high) != 3) {
-				fprintf(stderr, "-P: '%s' is not a valid"
-				    " profile name or definition\n", optarg);
-				exit(1);
+			if (colon == optarg + 1 &&
+			    (*optarg == 'b' || *optarg == 'c')) {
+				cli_p.VSL_arg = *optarg;
+				ptag = colon + 1;
+				colon = strchr(colon + 1, ':');
+				if (colon == NULL)
+					profile_error(optarg);
+			} else {
+				ptag = optarg;
+				cli_p.VSL_arg = 'c';
 			}
 
-			match_tag = VSL_Name2Tag(optarg, colon - optarg);
+			assert(colon);
+			if (sscanf(colon+1, "%d:%d:%d",	&cli_p.field,
+				&cli_p.hist_low, &cli_p.hist_high) != 3) {
+				profile_error(optarg);
+			}
+
+			match_tag = VSL_Name2Tag(ptag, colon - ptag);
 			if (match_tag < 0) {
 				fprintf(stderr,
 				    "-P: '%s' is not a valid tag name\n",
@@ -448,6 +507,8 @@ main(int argc, char **argv)
 		fprintf(stderr, "-P: No such profile '%s'\n", profile);
 		exit(1);
 	}
+
+	assert(VUT_Arg(active_profile->VSL_arg, NULL));
 	match_tag = active_profile->tag;
 	fnum = active_profile->field;
 	hist_low = active_profile->hist_low;

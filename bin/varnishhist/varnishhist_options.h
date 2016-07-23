@@ -45,13 +45,18 @@
 	)
 
 #define HIS_OPT_P							\
-	VOPT("P:", "[-P <size|responsetime|tag:field_num:min:max>]",	\
+	VOPT("P:", "[-P <profile|[[cb:]tag:field_num:min:max>]",	\
 	    "Profile definition",					\
-	    "Either specify \"size\" or \"responsetime\" profile or"	\
-	    " create a new one. Define the tag we'll look for, and the"	\
-	    " field number of the value we are interested in. min and"	\
-	    " max are the boundaries of the graph (these are power of"	\
-	    " tens)."							\
+	    "Either a predefined profile or a custom definition. "	\
+	    " Predefined profiles for the client side are"		\
+	    " \"responsetime \" and \"size\". For the backend side:"	\
+	    " \"Bereqtime\", \"Beresptime\", \"BerespBodytime\","	\
+	    " and \"Besize\"."						\
+	    " custom definitions include an optional (c)lient or"	\
+	    " (b)backend filter (defaults to client), the tag we'll"	\
+	    " look for, and the field number of the value we are"	\
+	    " interested in. min and max are the boundaries of the"	\
+	    " graph (these are power of ten)."				\
 	)
 
 VSL_OPT_C
