@@ -68,7 +68,7 @@ static int hist_buckets;
 static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 
 static int end_of_file = 0;
-static int delay = 1;
+static double delay = 1;
 static unsigned rr_hist[HIST_N];
 static unsigned nhist;
 static unsigned next_hist;
@@ -218,7 +218,7 @@ update(void)
 		/* nothing */ ;
 	scale = scales[i];
 
-	mvprintw(0, 0, "1:%d, n = %d", scale, nhist);
+	mvprintw(0, 0, "1:%d, n = %d, d = %g", scale, nhist, delay);
 
 	for (j = 2; j < LINES - 3; j+=5)
 		mvprintw(j, 0, "%d_", (LINES - 3 - j) * scale);
@@ -395,6 +395,14 @@ do_curses(void *arg)
 		case '9':
 			delay = 1 << (ch - '0');
 			break;
+		case '+':
+			delay /= 2;
+			if (delay < 1e-3)
+				delay = 1e-3;
+			break;
+		case '-':
+			delay *= 2;
+			break;
 		default:
 			beep();
 			break;
@@ -445,6 +453,13 @@ main(int argc, char **argv)
 		case 'h':
 			/* Usage help */
 			usage(0);
+		case 'p':
+			delay = strtod(optarg, NULL);
+			if (delay <= 0) {
+				fprintf(stderr, "-p: invalid '%s'\n", optarg);
+				exit(1);
+			}
+			break;
 		case 'P':
 			colon = strchr(optarg, ':');
 			/* no colon, take the profile as a name*/
