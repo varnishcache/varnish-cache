@@ -1,3 +1,13 @@
+======
+Master
+======
+
+* varnishhist improvements:
+  * can now generate statistics of backend reqeusts
+  * more predefined profiles
+  * time bend option: control the log processing speed
+  * y axis scale
+
 ======================================
 Varnish Cache 4.1.3-beta1 (2016-06-15)
 ======================================
