@@ -68,7 +68,7 @@
 	    " backend requests will trigger log lines."			\
 	)
 #define NCSA_OPT_c							\
-	VOPT("c", "[-c]", "Cient mode",					\
+	VOPT("c", "[-c]", "Client mode",					\
 	    "Log client requests. This is the default. If -b is"	\
 	    " specified, then -c is needed to also log client requests"	\
 	)
