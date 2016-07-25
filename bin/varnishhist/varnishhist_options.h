@@ -46,7 +46,7 @@
 	)
 
 #define HIS_OPT_P							\
-	VOPT("P:", "[-P <[[cb:]tag:field_num:min:max>]",		\
+	VOPT("P:", "[-P <[cb:]tag:field_num:min:max>]",		\
 	    "Custom profile definition",				\
 	    " Graph the given custom definition defined as: an optional"\
 	    " (c)lient or (b)backend filter (defaults to client), the " \
