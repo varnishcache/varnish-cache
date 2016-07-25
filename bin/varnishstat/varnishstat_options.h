@@ -37,7 +37,7 @@
 	    " print the statistics to stdout."				\
 	)
 #define STAT_OPT_f							\
-	VOPT("f:", "[-f field]", "Field inclusion glob",		\
+	VOPT("f:", "[-f <glob>]", "Field inclusion glob",		\
 	    "Field inclusion glob."					\
 	    " A field glob consists of three parts, type, ident and"	\
 	    " name, where ident is optional. Each part can contain a"	\
