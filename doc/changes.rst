@@ -10,6 +10,12 @@ Changes since 4.1.3:
 .. _2024: https://github.com/varnishcache/varnish-cache/issues/2024
 .. _2011: https://github.com/varnishcache/varnish-cache/issues/2011
 
+* varnishhist improvements:
+  * can now generate statistics of backend reqeusts
+  * more predefined profiles
+  * time bend option: control the log processing speed
+  * y axis scale
+
 ================================
 Varnish Cache 4.1.3 (2016-07-06)
 ================================
