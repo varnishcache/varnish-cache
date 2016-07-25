@@ -40,6 +40,7 @@ SEE ALSO
 * :ref:`varnishncsa(1)`
 * :ref:`varnishstat(1)`
 * :ref:`varnishtop(1)`
+* :ref:`vsl(7)`
 
 HISTORY
 =======

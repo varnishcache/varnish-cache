@@ -31,25 +31,25 @@
 // client
 HIS_PROF(
     "responsetime",	// name
-    HIS_CLIENT,	// HIS_CLIENT | HIS_BACKEND
+    HIS_CLIENT,		// HIS_CLIENT | HIS_BACKEND
     SLT_Timestamp,	// tag
-    "Process:",	// prefix
+    "Process:",		// prefix
     3,			// field
-    -6,		// hist_low
+    -6,			// hist_low
     3,			// hist_high
-    "Graph the total time from start of request processing"
+    "graph the total time from start of request processing"
     " (first byte received) until ready to deliver the"
-    " client response."
+    " client response"
     )
 HIS_PROF(
     "size",		// name
-    HIS_CLIENT,	// HIS_CLIENT | HIS_BACKEND
+    HIS_CLIENT,		// HIS_CLIENT | HIS_BACKEND
     SLT_ReqAcct,	// tag
     HIS_NO_PREFIX,	// prefix
     5,			// field
     1,			// hist_low
     8,			// hist_high
-    "Graph the size of responses"
+    "graph the size of responses"
     )
 // backend
 HIS_PROF(
@@ -58,9 +58,9 @@ HIS_PROF(
     SLT_Timestamp,	// tag
     "Bereq:",		// prefix
     3,			// field
-    -6,		// hist_low
+    -6,			// hist_low
     3,			// hist_high
-    "Graph the time from beginning of backend processing"
+    "graph the time from beginning of backend processing"
     " until a backend request is sent completely"
     )
 HIS_PROF(
@@ -69,9 +69,9 @@ HIS_PROF(
     SLT_Timestamp,	// tag
     "Beresp:",		// prefix
     3,			// field
-    -6,		// hist_low
+    -6,			// hist_low
     3,			// hist_high
-    "Graph the time from beginning of backend processing"
+    "graph the time from beginning of backend processing"
     " until the response headers are being received completely"
     )
 HIS_PROF(
@@ -80,9 +80,9 @@ HIS_PROF(
     SLT_Timestamp,	// tag
     "BerespBody:",	// prefix
     3,			// field
-    -6,		// hist_low
+    -6,			// hist_low
     3,			// hist_high
-    "Graph the time from beginning of backend processing"
+    "graph the time from beginning of backend processing"
     " until the response body has been received"
     )
 HIS_PROF(
@@ -93,5 +93,5 @@ HIS_PROF(
     5,			// field
     1,			// hist_low
     8,			// hist_high
-    "Graph the backend response body size"
+    "graph the backend response body size"
     )
