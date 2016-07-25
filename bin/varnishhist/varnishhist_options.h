@@ -32,7 +32,8 @@
 #include "vut_options.h"
 
 #define HIS_OPT_g							\
-	VOPT("g:", "[-g <request|vxid>]", "Grouping mode (default: vxid)",		\
+	VOPT("g:", "[-g <request|vxid>]",				\
+	    "Grouping mode (default: vxid)",				\
 	    "The grouping of the log records. The default is to group"	\
 	    " by vxid."							\
 	)
@@ -42,14 +43,14 @@
 	    "Specified the number of seconds between screen refreshes."	\
 	    " Default is 1 second, and can be changed at runtime by"	\
 	    " pressing the [0-9] keys (powers of 2 in seconds"		\
-	    " or + and - (double/halve the speed)"			\
+	    " or + and - (double/halve the speed)."			\
 	)
 
 #define HIS_OPT_P							\
-	VOPT("P:", "[-P <[cb:]tag:field_num:min:max>]",		\
+	VOPT("P:", "[-P <[cb:]tag:field_num:min:max>]",			\
 	    "Custom profile definition",				\
-	    " Graph the given custom definition defined as: an optional"\
-	    " (c)lient or (b)ackend filter (defaults to client), the "	\
+	    "Graph the given custom definition defined as: an optional" \
+	    " (c)lient or (b)ackend filter (defaults to client), the"	\
 	    " tag we'll look for, and the field number of the value we" \
 	    " are interested in. min and max are the boundaries of the" \
 	    " graph (these are power of ten)."				\
@@ -81,7 +82,7 @@ HIS_OPT_p
 	VOPT("P:", "[-P " name "]",					\
 	     "Predefined " cb " profile",				\
 	     "Predefined " cb " profile: " doc				\
-	     " (Field " #field " of " #tag " " prefix " log tags)"	\
+	     " (field " #field " of " #tag " " prefix " VSL tag)."	\
 	    )
 #include "varnishhist_profiles.h"
 #undef HIS_NO_PREFIX
