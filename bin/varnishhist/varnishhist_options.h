@@ -49,7 +49,7 @@
 	VOPT("P:", "[-P <[cb:]tag:field_num:min:max>]",		\
 	    "Custom profile definition",				\
 	    " Graph the given custom definition defined as: an optional"\
-	    " (c)lient or (b)backend filter (defaults to client), the " \
+	    " (c)lient or (b)ackend filter (defaults to client), the "	\
 	    " tag we'll look for, and the field number of the value we" \
 	    " are interested in. min and max are the boundaries of the" \
 	    " graph (these are power of ten)."				\
@@ -58,7 +58,7 @@
 #define HIS_OPT_B							\
 	VOPT("B:", "[-B <factor>]",					\
 	    "Time bending",						\
-	    "Factor to bend time by. Particularly usedful when"	\
+	    "Factor to bend time by. Particularly useful when"		\
 	    " [-r]eading from a vsl file. =1 process in near real"	\
 	    " time, <1 slow-motion, >1 time-lapse (useless unless"	\
 	    " reading from a file). At runtime, < halves and"		\
