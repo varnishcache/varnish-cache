@@ -65,6 +65,7 @@
 	    " > doubles."						\
 	    )
 
+HIS_OPT_B
 VSL_OPT_C
 VUT_OPT_d
 HIS_OPT_g
@@ -93,4 +94,3 @@ VUT_OPT_r
 VUT_OPT_t
 VSL_OPT_T
 VUT_OPT_V
-HIS_OPT_B
