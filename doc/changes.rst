@@ -11,7 +11,7 @@ Changes since 4.1.3:
 .. _2011: https://github.com/varnishcache/varnish-cache/issues/2011
 
 * varnishhist improvements:
-  * can now generate statistics of backend reqeusts
+  * can now generate statistics of backend requests
   * more predefined profiles
   * time bend option: control the log processing speed
   * y axis scale
