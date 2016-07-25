@@ -51,35 +51,35 @@
 	)
 
 #define VUT_OPT_k							\
-	VOPT("k:", "[-k num]", "Limit transactions",			\
+	VOPT("k:", "[-k <num>]", "Limit transactions",			\
 	    "Process this number of matching log transactions before"	\
 	    " exiting."							\
 	)
 
 #define VUT_OPT_n							\
-	VOPT("n:", "[-n name]", "Varnish instance name",		\
+	VOPT("n:", "[-n <name>]", "Varnish instance name",		\
 	    "Specify the name of the varnishd instance to get logs"	\
 	    " from. If -n is not specified, the host name is used."	\
 	)
 
 #define VUT_OPT_N							\
-	VOPT("N:", "[-N filename]", "VSM filename",			\
+	VOPT("N:", "[-N <filename>]", "VSM filename",			\
 	    "Specify the filename of a stale VSM instance. When using"	\
 	    " this option the abandonment checking is disabled."	\
 	)
 
 #define VUT_OPT_P							\
-	VOPT("P:", "[-P file]", "PID file",				\
+	VOPT("P:", "[-P <file>]", "PID file",				\
 		"Write the process' PID to the specified file."		\
 	)
 
 #define VUT_OPT_q							\
-	VOPT("q:", "[-q query]", "VSL query",				\
+	VOPT("q:", "[-q <query>]", "VSL query",				\
 		"Specifies the VSL query to use."			\
 	)
 
 #define VUT_OPT_r							\
-	VOPT("r:", "[-r filename]", "Binary file input",		\
+	VOPT("r:", "[-r <filename>]", "Binary file input",		\
 	    "Read log in binary file format from this file. The file"	\
 	    " can be created with ``varnishlog -w filename``."		\
 	)

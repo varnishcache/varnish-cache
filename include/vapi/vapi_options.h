@@ -51,7 +51,7 @@
 	)
 
 #define VSL_OPT_i							\
-	VOPT("i:", "[-i taglist]", "Include tags",			\
+	VOPT("i:", "[-i <taglist>]", "Include tags",			\
 	    "Include log records of these tags in output. Taglist is"   \
 	    " a comma-separated list of tag globs. Multiple -i"		\
 	    " options may be given.\n"					\
@@ -69,7 +69,7 @@
 	)
 
 #define VSL_OPT_L							\
-	VOPT("L:", "[-L limit]", "Incomplete transaction limit",	\
+	VOPT("L:", "[-L <limit>]", "Incomplete transaction limit",	\
 	    "Sets the upper limit of incomplete transactions kept"	\
 	    " before the oldest transaction is force completed. A"	\
 	    " warning record is synthesized when this happens. This"	\
@@ -78,7 +78,7 @@
 	)
 
 #define VSL_OPT_T							\
-	VOPT("T:", "[-T seconds]", "Transaction end timeout",		\
+	VOPT("T:", "[-T <seconds>]", "Transaction end timeout",		\
 	    "Sets the transaction timeout in seconds. This defines the"	\
 	    " maximum number of seconds elapsed between a Begin tag"	\
 	    " and the End tag. If the timeout expires, a warning"	\
@@ -94,7 +94,7 @@
 	)
 
 #define VSL_OPT_x							\
-	VOPT("x:", "[-x taglist]", "Exclude tags",			\
+	VOPT("x:", "[-x <taglist>]", "Exclude tags",			\
 	    "Exclude log records of these tags in output. Taglist is"   \
 	    " a comma-separated list of tag globs. Multiple -x"		\
 	    " options may be given.\n"					\

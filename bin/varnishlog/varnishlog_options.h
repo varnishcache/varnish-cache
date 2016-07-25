@@ -43,7 +43,7 @@
 	)
 
 #define LOG_OPT_w							\
-	VOPT("w:", "[-w filename]", "Output filename",			\
+	VOPT("w:", "[-w <filename>]", "Output filename",		\
 	    "Redirect output to file. The file will be overwritten"	\
 	    " unless the -a option was specified. If the application"	\
 	    " receives a SIGHUP in daemon mode the file will be "	\

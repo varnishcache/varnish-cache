@@ -254,7 +254,7 @@ usage(void)
 	    "[-1lV] [-f field] [-t seconds|<off>] "
 	    VSC_n_USAGE "\n");
 	fprintf(stderr, FMT, "-1", "Print the statistics to stdout.");
-	fprintf(stderr, FMT, "-f field", "Field inclusion glob");
+	fprintf(stderr, FMT, "-f <glob>", "Field inclusion glob");
 	fprintf(stderr, FMT, "",
 	    "If it starts with '^' it is used as an exclusion list.");
 	fprintf(stderr, FMT, "-l",

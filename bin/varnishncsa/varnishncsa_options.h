@@ -36,12 +36,12 @@
 	)
 
 #define NCSA_OPT_F							\
-	VOPT("F:", "[-F format]", "Set output format",			\
+	VOPT("F:", "[-F <format>]", "Set output format",		\
 	    "Set the output log format string."				\
 	)
 
 #define NCSA_OPT_f							\
-	VOPT("f:", "[-f formatfile]", "Read output format from file",   \
+	VOPT("f:", "[-f <formatfile>]", "Read output format from file", \
 	    "Read output format from a file. Will read a single line"   \
 	    " from the specified file, and use that line as the"	\
 	    " format."							\
@@ -55,7 +55,7 @@
 	)
 
 #define NCSA_OPT_w							\
-	VOPT("w:", "[-w filename]", "Output filename",			\
+	VOPT("w:", "[-w <filename>]", "Output filename",		\
 	    "Redirect output to file. The file will be overwritten"	\
 	    " unless the -a option was specified. If the application"	\
 	    " receives a SIGHUP in daemon mode the file will be"	\
