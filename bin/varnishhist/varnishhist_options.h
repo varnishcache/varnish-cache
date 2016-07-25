@@ -41,18 +41,34 @@
 	VOPT("p:", "[-p period]", "Refresh period",			\
 	    "Specified the number of seconds between screen refreshes."	\
 	    " Default is 1 second, and can be changed at runtime by"	\
-	    " pressing the [1-9] keys."					\
+	    " pressing the [0-9] keys (powers of 2 in seconds"		\
+	    " or + and - (double/halve the speed)"			\
 	)
 
 #define HIS_OPT_P							\
-	VOPT("P:", "[-P <size|responsetime|tag:field_num:min:max>]",	\
+	VOPT("P:", "[-P <profile|[[cb:]tag:field_num:min:max>]",	\
 	    "Profile definition",					\
-	    "Either specify \"size\" or \"responsetime\" profile or"	\
-	    " create a new one. Define the tag we'll look for, and the"	\
-	    " field number of the value we are interested in. min and"	\
-	    " max are the boundaries of the graph (these are power of"	\
-	    " tens)."							\
+	    "Either a predefined profile or a custom definition. "	\
+	    " Predefined profiles for the client side are"		\
+	    " \"responsetime \" and \"size\". For the backend side:"	\
+	    " \"Bereqtime\", \"Beresptime\", \"BerespBodytime\","	\
+	    " and \"Besize\"."						\
+	    " custom definitions include an optional (c)lient or"	\
+	    " (b)backend filter (defaults to client), the tag we'll"	\
+	    " look for, and the field number of the value we are"	\
+	    " interested in. min and max are the boundaries of the"	\
+	    " graph (these are power of ten)."				\
 	)
+
+#define HIS_OPT_B							\
+	VOPT("B:", "[-B <factor>]",					\
+	    "Time bending",						\
+	    "Factor to bend time by. Particularly usedful when"	\
+	    " [-r]eading from a vsl file. =1 process in near real"	\
+	    " time, <1 slow-motion, >1 time-lapse (useless unless"	\
+	    " reading from a file). At runtime, < halves and"		\
+	    " > doubles."						\
+	    )
 
 VSL_OPT_C
 VUT_OPT_d
@@ -68,3 +84,4 @@ VUT_OPT_r
 VUT_OPT_t
 VSL_OPT_T
 VUT_OPT_V
+HIS_OPT_B

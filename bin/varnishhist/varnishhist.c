@@ -54,6 +54,7 @@
 #include "vas.h"
 #include "vcs.h"
 #include "vut.h"
+#include "vtim.h"
 
 #define HIST_N 2000 /* how far back we remember */
 #define HIST_RES 100 /* bucket resolution */
@@ -68,7 +69,7 @@ static int hist_buckets;
 static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 
 static int end_of_file = 0;
-static int delay = 1;
+static double delay = 1;
 static unsigned rr_hist[HIST_N];
 static unsigned nhist;
 static unsigned next_hist;
@@ -76,7 +77,9 @@ static unsigned *bucket_miss;
 static unsigned *bucket_hit;
 static char *format;
 static int match_tag;
-
+double timebend = 0, t0;
+double vsl_t0 = 0, vsl_to, vsl_ts = 0;
+pthread_cond_t timebend_cv;
 static double log_ten;
 
 static int scales[] = {
@@ -105,6 +108,7 @@ static int scales[] = {
 
 struct profile {
 	const char *name;
+	char VSL_arg;
 	enum VSL_tag_e tag;
 	const char *prefix;
 	int field;
@@ -112,22 +116,64 @@ struct profile {
 	int hist_high;
 }
 profiles[] = {
+	// client
 	{
 		.name = "responsetime",
+		.VSL_arg = 'c',
 		.tag = SLT_Timestamp,
 		.prefix = "Process:",
 		.field = 3,
 		.hist_low = -6,
 		.hist_high = 3
-	}, {
+	},
+	{
 		.name = "size",
+		.VSL_arg = 'c',
 		.tag = SLT_ReqAcct,
 		.prefix = NULL,
 		.field = 5,
 		.hist_low = 1,
 		.hist_high = 8
-	}, {
-		.name = 0,
+	},
+	// backend
+	{
+		.name = "Bereqtime",
+		.VSL_arg = 'b',
+		.tag = SLT_Timestamp,
+		.prefix = "Bereq:",
+		.field = 3,
+		.hist_low = -6,
+		.hist_high = 3
+	},
+	{
+		.name = "Beresptime",
+		.VSL_arg = 'b',
+		.tag = SLT_Timestamp,
+		.prefix = "Beresp:",
+		.field = 3,
+		.hist_low = -6,
+		.hist_high = 3
+	},
+	{
+		.name = "BerespBodytime",
+		.VSL_arg = 'b',
+		.tag = SLT_Timestamp,
+		.prefix = "BerespBody:",
+		.field = 3,
+		.hist_low = -6,
+		.hist_high = 3
+	},
+	{
+		.name = "Besize",
+		.VSL_arg = 'b',
+		.tag = SLT_BereqAcct,
+		.prefix = NULL,
+		.field = 5,
+		.hist_low = 1,
+		.hist_high = 8
+	},
+	{
+		.name = NULL
 	}
 };
 
@@ -146,8 +192,6 @@ update(void)
 	erase();
 
 	/* Draw horizontal axis */
-	w = COLS / hist_range;
-	n = w * hist_range;
 	for (i = 0; i < n; ++i)
 		(void)mvaddch(LINES - 2, i, '-');
 	for (k = 0, l = hist_low; k < hist_range; ++k, ++l) {
@@ -171,13 +215,24 @@ update(void)
 			max = bm[l] + bh[l];
 	}
 
-	/* scale */
+	/* scale,time */
 	assert(LINES - 3 >= 0);
 	for (i = 0; max / scales[i] > (unsigned)(LINES - 3); ++i)
 		/* nothing */ ;
 	scale = scales[i];
 
-	mvprintw(0, 0, "1:%d, n = %d", scale, nhist);
+	if (vsl_t0 > 0) {
+		char t[VTIM_FORMAT_SIZE];
+		VTIM_format(vsl_ts, t);
+
+		mvprintw(0, 0, "1:%d, n = %d, d = %g @ %s x %g",
+		scale, nhist, delay, t, timebend);
+	} else {
+		mvprintw(0, 0, "1:%d, n = %d, d = %g", scale, nhist, delay);
+	}
+
+	for (j = 2; j < LINES - 3; j+=5)
+		mvprintw(j, 0, "%d_", (LINES - 3 - j) * scale);
 
 	/* show them */
 	for (i = 0; i < n; ++i) {
@@ -190,6 +245,25 @@ update(void)
 	refresh();
 }
 
+inline static void
+upd_vsl_ts(const char *p)
+{
+	double t;
+
+	if (timebend == 0)
+		return;
+
+	p = strchr(p, ' ');
+
+	if (p == NULL)
+		return;
+
+	t = strtod(p + 1, NULL);
+
+	if (t > vsl_ts)
+		vsl_ts = t;
+}
+
 static int /*__match_proto__ (VSLQ_dispatch_f)*/
 accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	void *priv)
@@ -198,14 +272,13 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	unsigned u;
 	double value;
 	struct VSL_transaction *tr;
+	double t;
+	const char *tsp;
 
 	(void)vsl;
 	(void)priv;
 
 	for (tr = pt[0]; tr != NULL; tr = *++pt) {
-		if (tr->type != VSL_t_req)
-			/* Only look at client requests */
-			continue;
 		if (tr->reason == VSL_r_esi)
 			/* Skip ESI requests */
 			continue;
@@ -213,7 +286,20 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		hit = 0;
 		skip = 0;
 		match = 0;
-		while (skip == 0 && 1 == VSL_Next(tr->c)) {
+		tsp = NULL;
+		while (skip == 0) {
+			i = VSL_Next(tr->c);
+			if (i == -3) {
+				// overrun - need to skip forward
+				pthread_mutex_lock(&mtx);
+				vsl_to = vsl_t0 = vsl_ts = 0;
+				t0 = VTIM_mono();
+				pthread_mutex_unlock(&mtx);
+				break;
+			}
+			if (i != 1)
+				break;
+
 			/* get the value we want, and register if it's a hit*/
 			tag = VSL_TAG(tr->c->rec.ptr);
 
@@ -223,9 +309,13 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case SLT_VCL_return:
 				if (!strcasecmp(VSL_CDATA(tr->c->rec.ptr),
-					"restart"))
+						"restart") ||
+				    !strcasecmp(VSL_CDATA(tr->c->rec.ptr),
+						"retry"))
 					skip = 1;
 				break;
+			case SLT_Timestamp:
+				tsp = VSL_CDATA(tr->c->rec.ptr);
 			default:
 				if (tag != match_tag)
 					break;
@@ -248,6 +338,12 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		if (skip || !match)
 			continue;
 
+		/*
+		 * only parse the last tsp seen in this transaction - it should
+		 * be the latest
+		 */
+		upd_vsl_ts(tsp);
+
 		/* select bucket */
 		i = HIST_RES * (log(value) / log_ten);
 		if (i < hist_low * HIST_RES)
@@ -257,6 +353,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		i -= hist_low * HIST_RES;
 		assert(i >= 0);
 		assert(i < hist_buckets);
+
 		pthread_mutex_lock(&mtx);
 
 		/* phase out old data */
@@ -288,6 +385,29 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		}
 		pthread_mutex_unlock(&mtx);
 	}
+
+	if (vsl_ts < vsl_to)
+		return (0);
+
+	t = VTIM_mono();
+
+	pthread_mutex_lock(&mtx);
+	if (vsl_t0 == 0)
+		vsl_to = vsl_t0 = vsl_ts;
+
+	assert(t > t0);
+	vsl_to = vsl_t0 + (t - t0) * timebend;
+
+	if (vsl_ts > vsl_to) {
+		double when = VTIM_real() + vsl_ts - vsl_to;
+		struct timespec ts;
+		// Lck_CondWait
+		ts.tv_nsec = (long)(modf(when, &t) * 1e9);
+		ts.tv_sec = (long)t;
+		(void) pthread_cond_timedwait(&timebend_cv, &mtx, &ts);
+	}
+	pthread_mutex_unlock(&mtx);
+
 	return (0);
 }
 
@@ -352,9 +472,35 @@ do_curses(void *arg)
 		case '9':
 			delay = 1 << (ch - '0');
 			break;
+		case '+':
+			delay /= 2;
+			if (delay < 1e-3)
+				delay = 1e-3;
+			break;
+		case '-':
+			delay *= 2;
+			break;
+		case '>':
+		case '<':
+			// see below
+			break;
 		default:
 			beep();
 			break;
+		}
+
+		if (ch == '<' || ch == '>') {
+			pthread_mutex_lock(&mtx);
+			vsl_to = vsl_t0 = vsl_ts;
+			t0 = VTIM_mono();
+			if (timebend == 0)
+				timebend = 1;
+			else if (ch == '<')
+				timebend /= 2;
+			else
+				timebend *= 2;
+			pthread_cond_broadcast(&timebend_cv);
+			pthread_mutex_unlock(&mtx);
 		}
 	}
 	pthread_exit(NULL);
@@ -374,11 +520,19 @@ usage(int status)
 	exit(status);
 }
 
+static void
+profile_error(const char *s)
+{
+	fprintf(stderr, "-P: '%s' is not a valid"
+		" profile name or definition\n", s);
+	exit(1);
+}
+
 int
 main(int argc, char **argv)
 {
 	int i;
-	char *colon;
+	const char *colon, *ptag;
 	const char *profile = "responsetime";
 	pthread_t thr;
 	int fnum = -1;
@@ -386,14 +540,20 @@ main(int argc, char **argv)
 	cli_p.name = 0;
 
 	VUT_Init(progname, argc, argv, &vopt_spec);
+	AZ(pthread_cond_init(&timebend_cv, NULL));
 
-	/* only client requests */
-	assert(VUT_Arg('c', NULL));
 	while ((i = getopt(argc, argv, vopt_spec.vopt_optstring)) != -1) {
 		switch (i) {
 		case 'h':
 			/* Usage help */
 			usage(0);
+		case 'p':
+			delay = strtod(optarg, NULL);
+			if (delay <= 0) {
+				fprintf(stderr, "-p: invalid '%s'\n", optarg);
+				exit(1);
+			}
+			break;
 		case 'P':
 			colon = strchr(optarg, ':');
 			/* no colon, take the profile as a name*/
@@ -402,14 +562,25 @@ main(int argc, char **argv)
 				break;
 			}
 			/* else it's a definition, we hope */
-			if (sscanf(colon+1, "%d:%d:%d",	&cli_p.field,
-				&cli_p.hist_low, &cli_p.hist_high) != 3) {
-				fprintf(stderr, "-P: '%s' is not a valid"
-				    " profile name or definition\n", optarg);
-				exit(1);
+			if (colon == optarg + 1 &&
+			    (*optarg == 'b' || *optarg == 'c')) {
+				cli_p.VSL_arg = *optarg;
+				ptag = colon + 1;
+				colon = strchr(colon + 1, ':');
+				if (colon == NULL)
+					profile_error(optarg);
+			} else {
+				ptag = optarg;
+				cli_p.VSL_arg = 'c';
 			}
 
-			match_tag = VSL_Name2Tag(optarg, colon - optarg);
+			assert(colon);
+			if (sscanf(colon+1, "%d:%d:%d",	&cli_p.field,
+				&cli_p.hist_low, &cli_p.hist_high) != 3) {
+				profile_error(optarg);
+			}
+
+			match_tag = VSL_Name2Tag(ptag, colon - ptag);
 			if (match_tag < 0) {
 				fprintf(stderr,
 				    "-P: '%s' is not a valid tag name\n",
@@ -421,6 +592,23 @@ main(int argc, char **argv)
 			profile = NULL;
 			active_profile = &cli_p;
 
+			break;
+		case 'B':
+			timebend = strtod(optarg, NULL);
+			if (timebend == 0) {
+				fprintf(stderr,
+				    "-B: being able to bend time does not"
+				    " mean we can stop it"
+				    " (invalid factor '%s')\n", optarg);
+				exit(1);
+			}
+			if (timebend < 0) {
+				fprintf(stderr,
+				    "-B: being able to bend time does not"
+				    " mean we can make it go backwards"
+				    " (invalid factor '%s')\n", optarg);
+				exit(1);
+			}
 			break;
 		default:
 			if (!VUT_Arg(i, optarg))
@@ -450,6 +638,8 @@ main(int argc, char **argv)
 		fprintf(stderr, "-P: No such profile '%s'\n", profile);
 		exit(1);
 	}
+
+	assert(VUT_Arg(active_profile->VSL_arg, NULL));
 	match_tag = active_profile->tag;
 	fnum = active_profile->field;
 	hist_low = active_profile->hist_low;
@@ -459,6 +649,9 @@ main(int argc, char **argv)
 	hist_buckets = hist_range * HIST_RES;
 	bucket_hit = calloc(sizeof *bucket_hit, hist_buckets);
 	bucket_miss = calloc(sizeof *bucket_miss, hist_buckets);
+
+	if (timebend > 0)
+		t0 = VTIM_mono();
 
 	format = malloc(4 * fnum);
 	for (i = 0; i < fnum-1; i++) {
