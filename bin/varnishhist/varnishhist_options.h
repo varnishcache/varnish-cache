@@ -79,7 +79,8 @@ HIS_OPT_p
 #define HIS_PROF(name,cb,tag,prefix,field,hist_low,high_high,doc)	\
 	VOPT("P:", "[-P " name "]",					\
 	     "Predefined " cb " profile",				\
-	     doc " (Field " #field " of " #tag " " prefix " log tags)"	\
+	     "Predefined " cb " profile: " doc				\
+	     " (Field " #field " of " #tag " " prefix " log tags)"	\
 	    )
 #include "varnishhist_profiles.h"
 #undef HIS_NO_PREFIX
