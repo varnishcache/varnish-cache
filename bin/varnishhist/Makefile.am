@@ -8,6 +8,7 @@ bin_PROGRAMS = varnishhist
 
 varnishhist_SOURCES = varnishhist.c \
 	varnishhist_options.h \
+	varnishhist_profiles.h \
 	varnishhist_options.c \
 	$(top_srcdir)/lib/libvarnish/vas.c \
 	$(top_srcdir)/lib/libvarnish/version.c \
