@@ -115,67 +115,19 @@ struct profile {
 	int hist_low;
 	int hist_high;
 }
+#define HIS_PROF(name,vsl_arg,tag,prefix,field,hist_low,high_high,doc)	\
+	{name,vsl_arg,tag,prefix,field,hist_low,high_high},
+#define HIS_NO_PREFIX	NULL
+#define HIS_CLIENT	'c'
+#define HIS_BACKEND	'b'
 profiles[] = {
-	// client
-	{
-		.name = "responsetime",
-		.VSL_arg = 'c',
-		.tag = SLT_Timestamp,
-		.prefix = "Process:",
-		.field = 3,
-		.hist_low = -6,
-		.hist_high = 3
-	},
-	{
-		.name = "size",
-		.VSL_arg = 'c',
-		.tag = SLT_ReqAcct,
-		.prefix = NULL,
-		.field = 5,
-		.hist_low = 1,
-		.hist_high = 8
-	},
-	// backend
-	{
-		.name = "Bereqtime",
-		.VSL_arg = 'b',
-		.tag = SLT_Timestamp,
-		.prefix = "Bereq:",
-		.field = 3,
-		.hist_low = -6,
-		.hist_high = 3
-	},
-	{
-		.name = "Beresptime",
-		.VSL_arg = 'b',
-		.tag = SLT_Timestamp,
-		.prefix = "Beresp:",
-		.field = 3,
-		.hist_low = -6,
-		.hist_high = 3
-	},
-	{
-		.name = "BerespBodytime",
-		.VSL_arg = 'b',
-		.tag = SLT_Timestamp,
-		.prefix = "BerespBody:",
-		.field = 3,
-		.hist_low = -6,
-		.hist_high = 3
-	},
-	{
-		.name = "Besize",
-		.VSL_arg = 'b',
-		.tag = SLT_BereqAcct,
-		.prefix = NULL,
-		.field = 5,
-		.hist_low = 1,
-		.hist_high = 8
-	},
-	{
-		.name = NULL
-	}
+#include "varnishhist_profiles.h"
+	{ NULL }
 };
+#undef HIS_NO_PREFIX
+#undef HIS_BACKEND
+#undef HIS_CLIENT
+#undef HIS_PROF
 
 static struct profile *active_profile;
 

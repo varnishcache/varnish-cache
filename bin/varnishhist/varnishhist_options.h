@@ -38,7 +38,7 @@
 	)
 
 #define HIS_OPT_p							\
-	VOPT("p:", "[-p period]", "Refresh period",			\
+	VOPT("p:", "[-p <period>]", "Refresh period",			\
 	    "Specified the number of seconds between screen refreshes."	\
 	    " Default is 1 second, and can be changed at runtime by"	\
 	    " pressing the [0-9] keys (powers of 2 in seconds"		\
@@ -46,17 +46,12 @@
 	)
 
 #define HIS_OPT_P							\
-	VOPT("P:", "[-P <profile|[[cb:]tag:field_num:min:max>]",	\
-	    "Profile definition",					\
-	    "Either a predefined profile or a custom definition. "	\
-	    " Predefined profiles for the client side are"		\
-	    " \"responsetime \" and \"size\". For the backend side:"	\
-	    " \"Bereqtime\", \"Beresptime\", \"BerespBodytime\","	\
-	    " and \"Besize\"."						\
-	    " custom definitions include an optional (c)lient or"	\
-	    " (b)backend filter (defaults to client), the tag we'll"	\
-	    " look for, and the field number of the value we are"	\
-	    " interested in. min and max are the boundaries of the"	\
+	VOPT("P:", "[-P <[[cb:]tag:field_num:min:max>]",		\
+	    "Custom profile definition",				\
+	    " Graph the given custom definition defined as: an optional"\
+	    " (c)lient or (b)backend filter (defaults to client), the " \
+	    " tag we'll look for, and the field number of the value we" \
+	    " are interested in. min and max are the boundaries of the" \
 	    " graph (these are power of ten)."				\
 	)
 
@@ -78,6 +73,19 @@ VSL_OPT_L
 VUT_OPT_n
 VUT_OPT_N
 HIS_OPT_p
+#define HIS_CLIENT	"client"
+#define HIS_BACKEND	"backend"
+#define HIS_NO_PREFIX	""
+#define HIS_PROF(name,cb,tag,prefix,field,hist_low,high_high,doc)	\
+	VOPT("P:", "[-P " name "]",					\
+	     "Predefined " cb " profile",				\
+	     doc " (Field " #field " of " #tag " " prefix " log tags)"	\
+	    )
+#include "varnishhist_profiles.h"
+#undef HIS_NO_PREFIX
+#undef HIS_BACKEND
+#undef HIS_CLIENT
+#undef HIS_PROF
 HIS_OPT_P
 VUT_OPT_q
 VUT_OPT_r
