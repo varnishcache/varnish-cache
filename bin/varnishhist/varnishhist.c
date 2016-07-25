@@ -549,7 +549,7 @@ main(int argc, char **argv)
 			usage(0);
 		case 'p':
 			delay = strtod(optarg, NULL);
-			if (delay == 0) {
+			if (delay <= 0) {
 				fprintf(stderr, "-p: invalid '%s'\n", optarg);
 				exit(1);
 			}
