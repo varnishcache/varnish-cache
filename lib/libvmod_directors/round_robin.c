@@ -62,6 +62,7 @@ vmod_rr_resolve(const struct director *dir, struct worker *wrk,
 	struct vmod_directors_round_robin *rr;
 	unsigned u;
 	VCL_BACKEND be = NULL;
+	unsigned nxt;
 
 	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -69,8 +70,8 @@ vmod_rr_resolve(const struct director *dir, struct worker *wrk,
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
 	vdir_rdlock(rr->vd);
 	for (u = 0; u < rr->vd->n_backend; u++) {
-		rr->nxt %= rr->vd->n_backend;
-		be = rr->vd->backend[rr->nxt];
+		nxt = rr->nxt %= rr->vd->n_backend;
+		be = rr->vd->backend[nxt];
 		rr->nxt++;
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
 		if (be->healthy(be, bo, NULL))
