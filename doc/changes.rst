@@ -3,7 +3,7 @@ Master
 ======
 
 * varnishhist improvements:
-  * can now generate statistics of backend reqeusts
+  * can now generate statistics of backend requests
   * more predefined profiles
   * time bend option: control the log processing speed
   * y axis scale
