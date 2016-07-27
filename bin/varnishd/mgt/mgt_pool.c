@@ -140,7 +140,7 @@ struct parspec WRK_parspec[] = {
 		"Set this to a few milliseconds if you see the "
 		"'threads_failed' counter grow too much.\n"
 		"\n"
-		"Setting this too high results in insuffient worker threads.",
+		"Setting this too high results in insufficient worker threads.",
 		EXPERIMENTAL,
 		"0", "seconds" },
 	{ "thread_pool_fail_delay",

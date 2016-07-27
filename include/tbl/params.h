@@ -1061,7 +1061,7 @@ PARAM(
 	"creating threads.\n"
 	"Set this to a few milliseconds if you see the 'threads_failed' "
 	"counter grow too much.\n"
-	"Setting this too high results in insuffient worker threads.",
+	"Setting this too high results in insufficient worker threads.",
 	/* l-text */	"",
 	/* func */	NULL
 )
