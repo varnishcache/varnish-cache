@@ -56,8 +56,8 @@
 #include "vut.h"
 #include "vtim.h"
 
-#define HIST_N 2000 /* how far back we remember */
-#define HIST_RES 100 /* bucket resolution */
+#define HIST_N 2000		/* how far back we remember */
+#define HIST_RES 100		/* bucket resolution */
 
 static const char progname[] = "varnishhist";
 
@@ -134,6 +134,7 @@ static struct profile *active_profile;
 static void
 update(void)
 {
+	char t[VTIM_FORMAT_SIZE];
 	unsigned w = COLS / hist_range;
 	unsigned n = w * hist_range;
 	unsigned bm[n], bh[n];
@@ -174,16 +175,15 @@ update(void)
 	scale = scales[i];
 
 	if (vsl_t0 > 0) {
-		char t[VTIM_FORMAT_SIZE];
 		VTIM_format(vsl_ts, t);
 
 		mvprintw(0, 0, "1:%d, n = %d, d = %g @ %s x %g",
-		scale, nhist, delay, t, timebend);
-	} else {
-		mvprintw(0, 0, "1:%d, n = %d, d = %g", scale, nhist, delay);
-	}
+		    scale, nhist, delay, t, timebend);
+	} else
+		mvprintw(0, 0, "1:%d, n = %d, d = %g",
+		    scale, nhist, delay);
 
-	for (j = 2; j < LINES - 3; j+=5)
+	for (j = 2; j < LINES - 3; j += 5)
 		mvprintw(j, 0, "%d_", (LINES - 3 - j) * scale);
 
 	/* show them */
@@ -218,7 +218,7 @@ upd_vsl_ts(const char *p)
 
 static int /*__match_proto__ (VSLQ_dispatch_f)*/
 accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
-	void *priv)
+    void *priv)
 {
 	int i, tag, skip, match, hit;
 	unsigned u;
@@ -242,7 +242,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		while (skip == 0) {
 			i = VSL_Next(tr->c);
 			if (i == -3) {
-				// overrun - need to skip forward
+				/* overrun - need to skip forward */
 				pthread_mutex_lock(&mtx);
 				vsl_to = vsl_t0 = vsl_ts = 0;
 				t0 = VTIM_mono();
@@ -252,7 +252,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			if (i != 1)
 				break;
 
-			/* get the value we want, and register if it's a hit*/
+			/* get the value we want and register if it's a hit */
 			tag = VSL_TAG(tr->c->rec.ptr);
 
 			switch (tag) {
@@ -261,9 +261,9 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case SLT_VCL_return:
 				if (!strcasecmp(VSL_CDATA(tr->c->rec.ptr),
-						"restart") ||
+				    "restart") ||
 				    !strcasecmp(VSL_CDATA(tr->c->rec.ptr),
-						"retry"))
+				    "retry"))
 					skip = 1;
 				break;
 			case SLT_Timestamp:
@@ -274,12 +274,12 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 
 				if (active_profile->prefix &&
 				    strncmp(VSL_CDATA(tr->c->rec.ptr),
-					active_profile->prefix,
-					strlen(active_profile->prefix)) != 0)
+				    active_profile->prefix,
+				    strlen(active_profile->prefix)) != 0)
 					break;
 
-				i = sscanf(VSL_CDATA(tr->c->rec.ptr), format,
-				    &value);
+				i = sscanf(VSL_CDATA(tr->c->rec.ptr),
+				    format, &value);
 				if (i != 1)
 					break;
 				match = 1;
@@ -291,8 +291,8 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			continue;
 
 		/*
-		 * only parse the last tsp seen in this transaction - it should
-		 * be the latest
+		 * only parse the last tsp seen in this transaction -
+		 * it should be the latest.
 		 */
 		upd_vsl_ts(tsp);
 
@@ -356,7 +356,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		// Lck_CondWait
 		ts.tv_nsec = (long)(modf(when, &t) * 1e9);
 		ts.tv_sec = (long)t;
-		(void) pthread_cond_timedwait(&timebend_cv, &mtx, &ts);
+		(void)pthread_cond_timedwait(&timebend_cv, &mtx, &ts);
 	}
 	pthread_mutex_unlock(&mtx);
 
@@ -396,17 +396,17 @@ do_curses(void *arg)
 			erase();
 			break;
 #endif
-		case '\014': /* Ctrl-L */
-		case '\024': /* Ctrl-T */
+		case '\014':	/* Ctrl-L */
+		case '\024':	/* Ctrl-T */
 			redrawwin(stdscr);
 			refresh();
 			break;
-		case '\032': /* Ctrl-Z */
+		case '\032':	/* Ctrl-Z */
 			endwin();
 			raise(SIGTSTP);
 			break;
-		case '\003': /* Ctrl-C */
-		case '\021': /* Ctrl-Q */
+		case '\003':	/* Ctrl-C */
+		case '\021':	/* Ctrl-Q */
 		case 'Q':
 		case 'q':
 			raise(SIGINT);
@@ -434,7 +434,7 @@ do_curses(void *arg)
 			break;
 		case '>':
 		case '<':
-			// see below
+			/* see below */
 			break;
 		default:
 			beep();
@@ -467,7 +467,7 @@ usage(int status)
 
 	fprintf(stderr, "Usage: %s <options>\n\n", progname);
 	fprintf(stderr, "Options:\n");
-	for (opt = vopt_spec.vopt_usage; *opt != NULL; opt +=2)
+	for (opt = vopt_spec.vopt_usage; *opt != NULL; opt += 2)
 		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
 	exit(status);
 }
@@ -476,7 +476,7 @@ static void
 profile_error(const char *s)
 {
 	fprintf(stderr, "-P: '%s' is not a valid"
-		" profile name or definition\n", s);
+	    " profile name or definition\n", s);
 	exit(1);
 }
 
@@ -501,14 +501,12 @@ main(int argc, char **argv)
 			usage(0);
 		case 'p':
 			delay = strtod(optarg, NULL);
-			if (delay <= 0) {
-				fprintf(stderr, "-p: invalid '%s'\n", optarg);
-				exit(1);
-			}
+			if (delay <= 0)
+				VUT_Error(1, "-p: invalid '%s'", optarg);
 			break;
 		case 'P':
 			colon = strchr(optarg, ':');
-			/* no colon, take the profile as a name*/
+			/* no colon, take the profile as a name */
 			if (colon == NULL) {
 				profile = optarg;
 				break;
@@ -527,18 +525,15 @@ main(int argc, char **argv)
 			}
 
 			assert(colon);
-			if (sscanf(colon+1, "%d:%d:%d",	&cli_p.field,
-				&cli_p.hist_low, &cli_p.hist_high) != 3) {
+			if (sscanf(colon + 1, "%d:%d:%d", &cli_p.field,
+			    &cli_p.hist_low, &cli_p.hist_high) != 3)
 				profile_error(optarg);
-			}
 
 			match_tag = VSL_Name2Tag(ptag, colon - ptag);
-			if (match_tag < 0) {
-				fprintf(stderr,
-				    "-P: '%s' is not a valid tag name\n",
+			if (match_tag < 0)
+				VUT_Error(1,
+				    "-P: '%s' is not a valid tag name",
 				    optarg);
-				exit(1);
-			}
 			cli_p.name = "custom";
 			cli_p.tag = match_tag;
 			profile = NULL;
@@ -547,20 +542,16 @@ main(int argc, char **argv)
 			break;
 		case 'B':
 			timebend = strtod(optarg, NULL);
-			if (timebend == 0) {
-				fprintf(stderr,
+			if (timebend == 0)
+				VUT_Error(1,
 				    "-B: being able to bend time does not"
 				    " mean we can stop it"
-				    " (invalid factor '%s')\n", optarg);
-				exit(1);
-			}
-			if (timebend < 0) {
-				fprintf(stderr,
+				    " (invalid factor '%s')", optarg);
+			if (timebend < 0)
+				VUT_Error(1,
 				    "-B: being able to bend time does not"
 				    " mean we can make it go backwards"
-				    " (invalid factor '%s')\n", optarg);
-				exit(1);
-			}
+				    " (invalid factor '%s')", optarg);
 			break;
 		default:
 			if (!VUT_Arg(i, optarg))
@@ -580,16 +571,13 @@ main(int argc, char **argv)
 
 	if (profile) {
 		for (active_profile = profiles; active_profile->name;
-			active_profile++) {
-			if (strcmp(active_profile->name, profile) == 0) {
+		     active_profile++) {
+			if (strcmp(active_profile->name, profile) == 0)
 				break;
-			}
 		}
 	}
-	if (! active_profile->name) {
-		fprintf(stderr, "-P: No such profile '%s'\n", profile);
-		exit(1);
-	}
+	if (!active_profile->name)
+		VUT_Error(1, "-P: No such profile '%s'", profile);
 
 	assert(VUT_Arg(active_profile->VSL_arg, NULL));
 	match_tag = active_profile->tag;
@@ -606,19 +594,15 @@ main(int argc, char **argv)
 		t0 = VTIM_mono();
 
 	format = malloc(4 * fnum);
-	for (i = 0; i < fnum-1; i++) {
-		strcpy(format + 4*i, "%*s ");
-	}
-	strcpy(format + 4*(fnum-1), "%lf");
+	for (i = 0; i < fnum - 1; i++)
+		strcpy(format + 4 * i, "%*s ");
+	strcpy(format + 4 * (fnum - 1), "%lf");
 
 	log_ten = log(10.0);
 
 	VUT_Setup();
-	if (pthread_create(&thr, NULL, do_curses, NULL) != 0) {
-		fprintf(stderr, "pthread_create(): %s\n",
-				strerror(errno));
-		exit(1);
-	}
+	if (pthread_create(&thr, NULL, do_curses, NULL) != 0)
+		VUT_Error(1, "pthread_create(): %s", strerror(errno));
 	VUT.dispatch_f = &accumulate;
 	VUT.dispatch_priv = NULL;
 	VUT.sighup_f = sighup;
