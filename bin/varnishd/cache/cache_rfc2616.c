@@ -55,7 +55,7 @@
  *
  * Varnish implements a policy which is RFC2616 compliant when there
  * is no clockskew, and falls as gracefully as possible otherwise.
- * Our "clockless cache" model is syntehsized from the bits of RFC2616
+ * Our "clockless cache" model is synthesized from the bits of RFC2616
  * that talks about how a cache should react to a clockless origin server,
  * and more or less uses the inverse logic for the opposite relationship.
  *
