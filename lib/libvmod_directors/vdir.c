@@ -212,7 +212,7 @@ vdir_pick_be(struct vdir *vd, double w, const struct busyobj *bo)
 	double tw = 0.0;
 	VCL_BACKEND be = NULL;
 
-	vdir_rdlock(vd);
+	vdir_wrlock(vd);
 	for (u = 0; u < vd->n_backend; u++) {
 		if (vd->backend[u]->healthy(vd->backend[u], bo, NULL)) {
 			vbit_clr(vd->vbm, u);
