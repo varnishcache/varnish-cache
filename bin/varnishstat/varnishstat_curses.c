@@ -95,7 +95,6 @@ struct pt {
 };
 
 struct hitrate {
-	double lt;
 	uint64_t lhit, lmiss;
 	struct ma hr_10;
 	struct ma hr_100;
@@ -411,21 +410,16 @@ sample_points(void)
 static void
 sample_hitrate(void)
 {
-	double tv,dt;
 	double hr, mr, ratio;
 	uint64_t hit, miss;
 
 	if (VSC_C_main == NULL)
 		return;
 
-	tv = VTIM_mono();
-	dt = tv - hitrate.lt;
-	hitrate.lt= tv;
-
 	hit = VSC_C_main->cache_hit;
 	miss = VSC_C_main->cache_miss;
-	hr = (hit - hitrate.lhit) / dt;
-	mr = (miss - hitrate.lmiss) / dt;
+	hr = hit - hitrate.lhit;
+	mr = miss - hitrate.lmiss;
 	hitrate.lhit = hit;
 	hitrate.lmiss = miss;
 
