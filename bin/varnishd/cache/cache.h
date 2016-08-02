@@ -1098,7 +1098,7 @@ pdiff(const void *b, const void *e)
 #define Tcheck(t) do {						\
 		AN((t).b);					\
 		AN((t).e);					\
-		assert((t).b <= (t).e); 			\
+		assert((t).b <= (t).e);				\
 	} while(0)
 
 /*
