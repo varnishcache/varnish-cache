@@ -264,7 +264,7 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 	struct vsb *token_exp[MAX_TOKENS];
 	char *p, *q, *f, *buf;
 	int nest_brace;
-	int tn;
+	int tn, br = 0;
 	const struct cmds *cp;
 
 	AN(spec);
@@ -298,7 +298,11 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 		/* First content on line, collect tokens */
 		tn = 0;
 		f = p;
-		while (*p != '\0') {
+		while (1) {
+			if (*p == '\0') {
+				br = 1;
+				break;
+			}
 			assert(tn < MAX_TOKENS);
 			if (*p == '\n') { /* End on NL */
 				break;
@@ -377,6 +381,9 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 
 		assert(cp->cmd != NULL);
 		cp->cmd(token_s, priv, cmd, vl);
+
+		if (br)
+			break;
 	}
 }
 
