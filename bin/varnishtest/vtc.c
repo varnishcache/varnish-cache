@@ -262,7 +262,7 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 {
 	char *token_s[MAX_TOKENS], *token_e[MAX_TOKENS];
 	struct vsb *token_exp[MAX_TOKENS];
-	char *p, *q, *f, *buf;
+	char *p, *q, *e, *f, *buf;
 	int nest_brace;
 	int tn;
 	const struct cmds *cp;
@@ -270,7 +270,8 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 	AN(spec);
 	buf = strdup(spec);
 	AN(buf);
-	for (p = buf; *p != '\0'; p++) {
+	e = strchr(buf, '\0');
+	for (p = buf; p < e; p++) {
 		if (vtc_error || vtc_stop)
 			break;
 		/* Start of line */
@@ -289,7 +290,7 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 
 		q = strchr(p, '\n');
 		if (q == NULL)
-			q = strchr(p, '\0');
+			q = e;
 		if (q - p > 60)
 			vtc_log(vl, 2, "=== %.60s...", p);
 		else
