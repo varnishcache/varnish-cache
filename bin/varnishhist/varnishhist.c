@@ -268,6 +268,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case SLT_Timestamp:
 				tsp = VSL_CDATA(tr->c->rec.ptr);
+				break;
 			default:
 				if (tag != match_tag)
 					break;
