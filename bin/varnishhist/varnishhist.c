@@ -307,7 +307,8 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		 * only parse the last tsp seen in this transaction -
 		 * it should be the latest.
 		 */
-		upd_vsl_ts(tsp);
+		if (tsp)
+			upd_vsl_ts(tsp);
 
 		/* phase out old data */
 		if (nhist == HIST_N) {
