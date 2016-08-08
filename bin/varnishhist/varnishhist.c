@@ -291,12 +291,6 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		if (skip || !match)
 			continue;
 
-		/*
-		 * only parse the last tsp seen in this transaction -
-		 * it should be the latest.
-		 */
-		upd_vsl_ts(tsp);
-
 		/* select bucket */
 		i = HIST_RES * (log(value) / log_ten);
 		if (i < hist_low * HIST_RES)
@@ -308,6 +302,12 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		assert(i < hist_buckets);
 
 		pthread_mutex_lock(&mtx);
+
+		/*
+		 * only parse the last tsp seen in this transaction -
+		 * it should be the latest.
+		 */
+		upd_vsl_ts(tsp);
 
 		/* phase out old data */
 		if (nhist == HIST_N) {
