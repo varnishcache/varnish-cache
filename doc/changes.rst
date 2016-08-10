@@ -4,8 +4,10 @@ DRAFT CHANGELOG ENTRIES FOR NEXT RELEASE
 
 Changes since 4.1.3:
 
+* 2024_ - panic vmod_rr_resolve() round_robin.c line 75 (be) != NULL
 * 2011_ - VBE.*.conn (concurrent connections to backend) not working as expected
 
+.. _2024: https://github.com/varnishcache/varnish-cache/issues/2024
 .. _2011: https://github.com/varnishcache/varnish-cache/issues/2011
 
 ================================
