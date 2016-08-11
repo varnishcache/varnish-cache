@@ -61,7 +61,7 @@ static const int tab0 = 3;
 
 static const char OBJ_STICKY_TEXT[] =
 	"\n\n"
-	"NB: This parameter is evaluated only when objects are created."
+	"NB: This parameter is evaluated only when objects are created. "
 	"To change it for all objects, restart or ban everything.";
 
 static const char DELAYED_EFFECT_TEXT[] =
@@ -81,7 +81,7 @@ static const char MUST_RELOAD_TEXT[] =
 static const char EXPERIMENTAL_TEXT[] =
 	"\n\n"
 	"NB: We do not know yet if it is a good idea to change "
-	"this parameter, or if the default value is even sensible.  "
+	"this parameter, or if the default value is even sensible. "
 	"Caution is advised, and feedback is most welcome.";
 
 static const char WIZARD_TEXT[] =
