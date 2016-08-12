@@ -183,30 +183,6 @@ vmod_real(VRT_CTX, VCL_STRING p, VCL_REAL d)
 	return (r);
 }
 
-VCL_INT __match_proto__(td_std_real2integer)
-vmod_real2integer(VRT_CTX, VCL_REAL r, VCL_INT i)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-
-	if (!isfinite(r))
-		return (i);
-	r = round(r);
-	if (r > LONG_MAX || r < LONG_MIN)
-		return(i);
-	return ((long)r);
-}
-
-VCL_TIME __match_proto__(td_std_real2time)
-vmod_real2time(VRT_CTX, VCL_REAL r, VCL_TIME t)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-
-	if (!isfinite(r))
-		return (t);
-
-	return (r);
-}
-
 VCL_INT __match_proto__(td_std_time2integer)
 vmod_time2integer(VRT_CTX, VCL_TIME t, VCL_INT i)
 {
