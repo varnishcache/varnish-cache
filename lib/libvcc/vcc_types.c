@@ -39,119 +39,119 @@
 #include "vcc_compile.h"
 
 const struct type ACL[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"ACL",
 }};
 
 const struct type BACKEND[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"BACKEND",
 	.tostring =		"VRT_BACKEND_string(\v1)",
 }};
 
 const struct type BLOB[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"BLOB",
 }};
 
 const struct type BODY[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"BODY",
 }};
 
 const struct type BOOL[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"BOOL",
 	.tostring =		"VRT_BOOL_string(\v1)",
 }};
 
 const struct type BYTES[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"BYTES",
 	.tostring =		"VRT_REAL_string(ctx, \v1)", // XXX: wrong
 	.multype =		REAL,	// XXX: wrong
 }};
 
 const struct type DURATION[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"DURATION",
 	.tostring =		"VRT_REAL_string(ctx, \v1)", // XXX 's' suff?
 	.multype =		REAL,
 }};
 
 const struct type ENUM[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"ENUM",
 	.tostring =		"",
 }};
 
 const struct type HEADER[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"HEADER",
 	.tostring =		"VRT_GetHdr(ctx, \v1)",
 }};
 
 const struct type HTTP[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"HTTP",
 }};
 
 const struct type INSTANCE[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"INSTANCE",
 }};
 
 const struct type INT[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"INT",
 	.multype =		INT,
 	.tostring =		"VRT_INT_string(ctx, \v1)",
 }};
 
 const struct type IP[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"IP",
 	.tostring =		"VRT_IP_string(ctx, \v1)",
 }};
 
 const struct type PROBE[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"PROBE",
 }};
 
 const struct type REAL[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"REAL",
 	.tostring =		"VRT_REAL_string(ctx, \v1)",
 	.multype =		REAL,
 }};
 
 const struct type STEVEDORE[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"STEVEDORE",
 	.tostring =		"VRT_STEVEDORE_string(\v1)",
 }};
 
 const struct type STRING[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"STRING",
 	.tostring =		"",
 }};
 
 const struct type STRING_LIST[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"STRING_LIST",
 	.tostring =		"",
 }};
 
 const struct type TIME[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"TIME",
 	.tostring =		"VRT_TIME_string(ctx, \v1)",
 }};
 
 const struct type VOID[1] = {{
-	.magic =		0xfae932d9,
+	.magic =		TYPE_MAGIC,
 	.name =			"VOID",
 }};
 
