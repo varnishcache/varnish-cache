@@ -89,3 +89,8 @@ varnish v1 -cliok "vcl.use vcl1"
 varnish v1 -cliok "vcl.discard foo"
 varnish v1 -clierr 106 "vcl.discard foo"
 
+varnish v1 -start
+varnish v1 -cliok "vcl.label snarf vcl1"
+server s1 -start
+client c1 -run
+

@@ -100,6 +100,7 @@ VCL_Panic(struct vsb *vsb, const struct vcl *vcl)
 	VSB_printf(vsb, "vcl = {\n");
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, vcl, VCL_MAGIC);
+	VSB_printf(vsb, "name = \"%s\"\n", vcl->loaded_name);
 	VSB_printf(vsb, "busy = %u\n", vcl->busy);
 	VSB_printf(vsb, "discard = %u,\n", vcl->discard);
 	VSB_printf(vsb, "state = %s,\n", vcl->state);
@@ -164,6 +165,8 @@ VCL_Get(struct vcl **vcc)
 	Lck_Lock(&vcl_mtx);
 	AN(vcl_active);
 	if (vcl_active->label == NULL)
+		*vcc = vcl_active;
+	else if (strcmp(vcl_active->state, VCL_TEMP_LABEL))
 		*vcc = vcl_active;
 	else
 		*vcc = vcl_active->label;
