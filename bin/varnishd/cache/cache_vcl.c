@@ -310,7 +310,7 @@ VCL_Open(const char *fn, struct vsb *msg)
 	dlh = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
 	if (dlh == NULL) {
 		VSB_printf(msg, "Could not load compiled VCL.\n");
-		VSB_printf(msg, "\tdlopen(%s) = %s\n", fn, dlerror());
+		VSB_printf(msg, "\tdlopen() = %s\n", dlerror());
 		return (NULL);
 	}
 	cnf = dlsym(dlh, "VCL_conf");
