@@ -105,8 +105,6 @@ run_vcc(void *priv)
 	VCC_Unsafe_Path(vcc, mgt_vcc_unsafe_path);
 	VTAILQ_FOREACH(stv, &stv_stevedores, list)
 		VCC_Stevedore(vcc, stv->ident);
-VCC_Vcl(vcc, "vclA");
-VCC_Vcl(vcc, "vclB");
 	VCC_Stevedore(vcc, stv_transient->ident);
 	csrc = VCC_Compile(vcc, &sb, vp->vclsrc, vp->vclsrcfile);
 	AZ(VSB_finish(sb));
