@@ -34,10 +34,10 @@ struct vcc *VCC_New(void);
 void VCC_Allow_InlineC(struct vcc *, unsigned);
 void VCC_Builtin_VCL(struct vcc *, const char *);
 void VCC_Err_Unref(struct vcc *, unsigned);
-void VCC_Stevedore(struct vcc *, const char *);
 void VCC_Unsafe_Path(struct vcc *, unsigned);
 void VCC_VCL_path(struct vcc *, const char *);
 void VCC_VMOD_path(struct vcc *, const char *);
+void VCC_Predef(struct vcc *, const char *type, const char *name);
 
 struct vsb *VCC_Compile(struct vcc *, struct vsb **,
     const char *vclsrc, const char *vclsrcfile);

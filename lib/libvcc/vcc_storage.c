@@ -77,7 +77,7 @@ static struct stvars {
 };
 
 void
-VCC_Stevedore(struct vcc *vcc, const char *stv_name)
+vcc_stevedore(struct vcc *vcc, const char *stv_name)
 {
 	struct symbol *sym;
 	struct stvars *sv;

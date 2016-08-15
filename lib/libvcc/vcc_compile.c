@@ -806,3 +806,14 @@ VCC_Unsafe_Path(struct vcc *vcc, unsigned u)
 	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
 	vcc->unsafe_path = u;
 }
+
+/*--------------------------------------------------------------------
+ * Configure settings
+ */
+
+void
+VCC_Predef(struct vcc *vcc, const char *type, const char *name)
+{
+	AZ(strcmp(type, "VCL_STEVEDORE"));
+	vcc_stevedore(vcc, name);
+}

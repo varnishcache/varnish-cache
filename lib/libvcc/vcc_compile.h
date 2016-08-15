@@ -300,6 +300,9 @@ void Resolve_Sockaddr(struct vcc *tl, const char *host, const char *defport,
     const char **ipv6_ascii, const char **p_ascii, int maxips,
     const struct token *t_err, const char *errid);
 
+/* vcc_storage.c */
+void vcc_stevedore(struct vcc *vcc, const char *stv_name);
+
 /* vcc_symb.c */
 struct symbol *VCC_Symbol(struct vcc *, struct symbol *,
     const char *, const char *, enum symkind, int);

@@ -104,8 +104,8 @@ run_vcc(void *priv)
 	VCC_Allow_InlineC(vcc, mgt_vcc_allow_inline_c);
 	VCC_Unsafe_Path(vcc, mgt_vcc_unsafe_path);
 	VTAILQ_FOREACH(stv, &stv_stevedores, list)
-		VCC_Stevedore(vcc, stv->ident);
-	VCC_Stevedore(vcc, stv_transient->ident);
+		VCC_Predef(vcc, "VCL_STEVEDORE", stv->ident);
+	VCC_Predef(vcc, "VCL_STEVEDORE", stv_transient->ident);
 	csrc = VCC_Compile(vcc, &sb, vp->vclsrc, vp->vclsrcfile);
 	AZ(VSB_finish(sb));
 	if (VSB_len(sb))
