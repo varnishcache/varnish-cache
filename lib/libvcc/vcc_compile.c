@@ -545,14 +545,12 @@ vcc_resolve_includes(struct vcc *tl)
  * Compile the VCL code from the given source and return the C-source
  */
 
-static char *
+static struct vsb *
 vcc_CompileSource(struct vcc *tl, struct source *sp)
 {
 	struct symbol *sym;
 	const struct var *v;
 	struct vsb *vsb;
-
-	char *of;
 	int i;
 
 	vcc_Expr_Init(tl);
@@ -680,14 +678,7 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 	VSB_cat(vsb, VSB_data(tl->fc));
 
 	AZ(VSB_finish(vsb));
-
-	of = strdup(VSB_data(vsb));
-	AN(of);
-
-	VSB_destroy(&vsb);
-
-	/* done */
-	return (of);
+	return (vsb);
 }
 
 /*--------------------------------------------------------------------
@@ -695,12 +686,12 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
  * formatted into the vsb.
  */
 
-char *
+struct vsb *
 VCC_Compile(struct vcc *tl, struct vsb **sb,
     const char *vclsrc, const char *vclsrcfile)
 {
 	struct source *sp;
-	char *r = NULL;
+	struct vsb *r = NULL;
 
 	CHECK_OBJ_NOTNULL(tl, VCC_MAGIC);
 	AN(sb);

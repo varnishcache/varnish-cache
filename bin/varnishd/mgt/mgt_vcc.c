@@ -83,7 +83,7 @@ static const char * const builtin_vcl =
 static void __match_proto__(vsub_func_f)
 run_vcc(void *priv)
 {
-	char *csrc;
+	struct vsb *csrc;
 	struct vsb *sb = NULL;
 	struct vcc_priv *vp;
 	int fd, i, l;
@@ -119,14 +119,14 @@ run_vcc(void *priv)
 		fprintf(stderr, "VCC cannot open %s", vp->csrcfile);
 		exit(2);
 	}
-	l = strlen(csrc);
-	i = write(fd, csrc, l);
+	l = VSB_len(csrc);
+	i = write(fd, VSB_data(csrc), l);
 	if (i != l) {
 		fprintf(stderr, "VCC cannot write %s", vp->csrcfile);
 		exit(2);
 	}
 	AZ(close(fd));
-	free(csrc);
+	VSB_destroy(&csrc);
 	exit(0);
 }
 

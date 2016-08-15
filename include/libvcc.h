@@ -39,5 +39,5 @@ void VCC_Unsafe_Path(struct vcc *, unsigned);
 void VCC_VCL_path(struct vcc *, const char *);
 void VCC_VMOD_path(struct vcc *, const char *);
 
-char *VCC_Compile(struct vcc *, struct vsb **,
+struct vsb *VCC_Compile(struct vcc *, struct vsb **,
     const char *vclsrc, const char *vclsrcfile);
