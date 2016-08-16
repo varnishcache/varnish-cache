@@ -253,7 +253,6 @@ parse_return_vcl(struct vcc *tl)
 		return;
 	}
 	if (sym->eval_priv == NULL) {
-
 		VSB_printf(tl->fi, "%s VCL %.*s */\n",
 		    VCC_INFO_PREFIX, PF(tl->t));
 
@@ -261,16 +260,16 @@ parse_return_vcl(struct vcc *tl)
 		sym->eval_priv = strdup(buf);
 		AN(sym->eval_priv);
 
-		Fh(tl, 0, "static VCL_VCL %s;", sym->eval_priv);
+		Fh(tl, 0, "static VCL_VCL %s;", buf);
 		Fh(tl, 0, "\t/* VCL %.*s */\n", PF(tl->t));
 
 		p = New_IniFin(tl);
 		AN(p);
 		VSB_printf(p->ini, "\t%s = VRT_vcl_lookup(\"%.*s\");",
-		    sym->eval_priv, PF(tl->t));
+		    buf, PF(tl->t));
 	}
 	Fb(tl, 1, "VRT_vcl_select(ctx, %s);\t/* %.*s */\n",
-	    sym->eval_priv, PF(tl->t));
+	    (const char*)sym->eval_priv, PF(tl->t));
 	Fb(tl, 1, "VRT_handling(ctx, VCL_RET_VCL);\n");
 	Fb(tl, 1, "return (1);\n");
 	vcc_NextToken(tl);
