@@ -35,6 +35,7 @@
 
 struct cli;
 struct parspec;
+struct vcc;
 
 extern struct vev_base	*mgt_evb;
 extern unsigned		d_flag;
@@ -176,6 +177,7 @@ void mgt_vcl_init(void);
 void mgt_vcc_startup(struct cli *, const char *b_arg, const char *f_arg,
     const char *vclsrc, int Cflag);
 int mgt_push_vcls_and_start(struct cli *, unsigned *status, char **p);
+void mgt_vcl_export_labels(struct vcc *);
 int mgt_has_vcl(void);
 extern char *mgt_cc_cmd;
 extern const char *mgt_vcl_path;

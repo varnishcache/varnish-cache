@@ -40,6 +40,7 @@
 
 #include "mgt/mgt.h"
 
+#include "libvcc.h"
 #include "vcli_serve.h"
 #include "vev.h"
 #include "vtim.h"
@@ -302,6 +303,16 @@ mgt_vcc_startup(struct cli *cli, const char *b_arg, const char *f_arg,
 	    "    .host = \"%s\";\n"
 	    "}\n", b_arg);
 	mgt_new_vcl(cli, "boot", buf, "<-b argument>", NULL, C_flag);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+mgt_vcl_export_labels(struct vcc *vcc)
+{
+	struct vclprog *vp;
+	VTAILQ_FOREACH(vp, &vclhead, list)
+		VCC_Predef(vcc, "VCL_VCL", vp->name);
 }
 
 /*--------------------------------------------------------------------*/

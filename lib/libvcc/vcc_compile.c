@@ -814,6 +814,10 @@ VCC_Unsafe_Path(struct vcc *vcc, unsigned u)
 void
 VCC_Predef(struct vcc *vcc, const char *type, const char *name)
 {
-	AZ(strcmp(type, "VCL_STEVEDORE"));
-	vcc_stevedore(vcc, name);
+	if (!strcmp(type, "VCL_STEVEDORE"))
+		vcc_stevedore(vcc, name);
+	else if (!strcmp(type, "VCL_VCL"))
+		return;
+	else
+		WRONG("Unknown VCC predef type");
 }
