@@ -1,6 +1,6 @@
 
-Varnish Administrator Documentation
-===================================
+Varnish Documentation
+=====================
 
 Varnish Cache is a web application accelerator also known as a caching HTTP
 reverse proxy. You install it in front of any server that speaks HTTP and
