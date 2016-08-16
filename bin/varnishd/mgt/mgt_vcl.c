@@ -49,7 +49,20 @@ static const char * const VCL_STATE_WARM = "warm";
 static const char * const VCL_STATE_AUTO = "auto";
 static const char * const VCL_STATE_LABEL = "label";
 
+struct vclprog;
+
+struct vcldep {
+	unsigned		magic;
+#define VCLDEP_MAGIC		0xa9a17dc2
+	struct vclprog		*from;
+	VTAILQ_ENTRY(vcldep)	lfrom;
+	struct vclprog		*to;
+	VTAILQ_ENTRY(vcldep)	lto;
+};
+
 struct vclprog {
+	unsigned		magic;
+#define VCLPROG_MAGIC		0x9ac09fea
 	VTAILQ_ENTRY(vclprog)	list;
 	char			*name;
 	char			*fname;
@@ -57,11 +70,40 @@ struct vclprog {
 	const char *		state;
 	double			go_cold;
 	struct vclprog		*label;
+	VTAILQ_HEAD(, vcldep)	dfrom;
+	VTAILQ_HEAD(, vcldep)	dto;
 };
 
 static VTAILQ_HEAD(, vclprog)	vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
 static struct vclprog		*active_vcl;
 static struct vev *e_poker;
+
+/*--------------------------------------------------------------------*/
+
+static void
+mgt_vcl_dep_add(struct vclprog *vp_from, struct vclprog *vp_to)
+{
+	struct vcldep *vd;
+
+	CHECK_OBJ_NOTNULL(vp_from, VCLPROG_MAGIC);
+	CHECK_OBJ_NOTNULL(vp_to, VCLPROG_MAGIC);
+	ALLOC_OBJ(vd, VCLDEP_MAGIC);
+	XXXAN(vd);
+	vd->from = vp_from;
+	VTAILQ_INSERT_TAIL(&vp_from->dfrom, vd, lfrom);
+	vd->to = vp_to;
+	VTAILQ_INSERT_TAIL(&vp_to->dto, vd, lto);
+}
+
+static void
+mgt_vcl_dep_del(struct vcldep *vd)
+{
+
+	CHECK_OBJ_NOTNULL(vd, VCLDEP_MAGIC);
+	VTAILQ_REMOVE(&vd->from->dfrom, vd, lfrom);
+	VTAILQ_REMOVE(&vd->to->dfrom, vd, lto);
+	FREE_OBJ(vd);
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -74,10 +116,12 @@ mgt_vcl_add(const char *name, const char *libfile, const char *state)
 	       state == VCL_STATE_COLD ||
 	       state == VCL_STATE_AUTO ||
 	       state == VCL_STATE_LABEL);
-	vp = calloc(sizeof *vp, 1);
+	ALLOC_OBJ(vp, VCLPROG_MAGIC);
 	XXXAN(vp);
 	REPLACE(vp->name, name);
 	REPLACE(vp->fname, libfile);
+	VTAILQ_INIT(&vp->dfrom);
+	VTAILQ_INIT(&vp->dto);
 	vp->state = state;
 
 	if (vp->state != VCL_STATE_COLD)
@@ -93,6 +137,10 @@ static void
 mgt_vcl_del(struct vclprog *vp)
 {
 	char *p;
+
+	CHECK_OBJ_NOTNULL(vp, VCLPROG_MAGIC);
+	while (!VTAILQ_EMPTY(&vp->dfrom))
+		mgt_vcl_dep_del(VTAILQ_FIRST(&vp->dfrom));
 
 	VTAILQ_REMOVE(&vclhead, vp, list);
 	if (strcmp(vp->state, VCL_STATE_LABEL)) {
@@ -112,7 +160,7 @@ mgt_vcl_del(struct vclprog *vp)
 		free(vp->fname);
 	}
 	free(vp->name);
-	free(vp);
+	FREE_OBJ(vp);
 }
 
 static struct vclprog *
@@ -444,11 +492,7 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 		VCLI_Out(cli, "Cannot discard active VCL program\n");
 		return;
 	}
-	if (!strcmp(vp->state, VCL_STATE_LABEL)) {
-		AN(vp->warm);
-		vp->label->label = NULL;
-		vp->label = NULL;
-	} else {
+	if (!VTAILQ_EMPTY(&vp->dto)) {
 		if (vp->label != NULL) {
 			AN(vp->warm);
 			VCLI_SetResult(cli, CLIS_PARAM);
@@ -457,6 +501,13 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 			    vp->label->name);
 			return;
 		}
+		INCOMPL();
+	}
+	if (!strcmp(vp->state, VCL_STATE_LABEL)) {
+		AN(vp->warm);
+		vp->label->label = NULL;
+		vp->label = NULL;
+	} else {
 		(void)mgt_vcl_setstate(cli, vp, VCL_STATE_COLD);
 	}
 	if (child_pid >= 0) {
@@ -508,7 +559,6 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 	char *p;
 	int i;
 
-	(void)av;
 	(void)priv;
 	vpt = mcf_find_vcl(cli, av[3]);
 	if (vpt == NULL)
@@ -525,21 +575,25 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 	vpl = mgt_vcl_byname(av[2]);
-	if (vpl == NULL)
-		vpl = mgt_vcl_add(av[2], NULL, VCL_STATE_LABEL);
-	AN(vpl);
-	if (strcmp(vpl->state, VCL_STATE_LABEL)) {
-		VCLI_SetResult(cli, CLIS_PARAM);
-		VCLI_Out(cli, "%s is not a label", vpl->name);
-		return;
-	}
-	vpl->warm = 1;
-	if (vpl->label != NULL) {
+	if (vpl != NULL) {
+		if (strcmp(vpl->state, VCL_STATE_LABEL)) {
+			VCLI_SetResult(cli, CLIS_PARAM);
+			VCLI_Out(cli, "%s is not a label", vpl->name);
+			return;
+		}
+		AN(vpl->label);
 		assert(vpl->label->label == vpl);
 		/* XXX SET vp->label AUTO */
 		vpl->label->label = NULL;
 		vpl->label = NULL;
+		mgt_vcl_dep_del(VTAILQ_FIRST(&vpl->dfrom));
+		AN(VTAILQ_EMPTY(&vpl->dfrom));
+	} else {
+		vpl = mgt_vcl_add(av[2], NULL, VCL_STATE_LABEL);
 	}
+	AN(vpl);
+	mgt_vcl_dep_add(vpl, vpt);
+	vpl->warm = 1;
 	vpl->label = vpt;
 	vpt->label = vpl;
 	if (vpt->state == VCL_STATE_COLD)
