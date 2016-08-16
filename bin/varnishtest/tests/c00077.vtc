@@ -1,0 +1,71 @@
+varnishtest "Switching VCL from VCL"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_deliver {
+		set resp.http.vcl = "vclA";
+	}
+} -start
+
+varnish v1 -clierr 106 "vcl.label vcl.A vcl1"
+varnish v1 -cliok "vcl.label vclA vcl1"
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.http.vcl == "vcl1") {
+			return (vcl(vclA));
+		}
+	}
+	sub vcl_deliver {
+		set resp.http.vcl = "vcl2";
+	}
+}
+varnish v1 -cliok "vcl.label vclB vcl2"
+varnish v1 -cliok "vcl.list"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.vcl == vcl2
+
+	txreq -hdr "vcl: vcl1"
+	rxresp
+	expect resp.http.vcl == vclA
+} -run
+
+varnish v1 -clierr 106 "vcl.discard vcl1"
+
+varnish v1 -vcl+backend { sub vcl_recv { return (vcl(vclB)); } }
+
+client c1 {
+	txreq -hdr "vcl: vcl1"
+	rxresp
+	expect resp.status == 503
+} -run
+
+delay .2
+
+varnish v1 -vcl+backend { sub vcl_recv { return (vcl(vclA)); } }
+varnish v1 -vcl+backend { sub vcl_recv { return (vcl(vclA)); } }
+varnish v1 -vcl+backend { sub vcl_recv { return (vcl(vclA)); } }
+varnish v1 -vcl+backend { sub vcl_recv { return (vcl(vclA)); } }
+
+varnish v1 -clierr 106 "vcl.discard vclA"
+
+varnish v1 -vcl+backend { }
+varnish v1 -cliok "vcl.discard vcl3"
+varnish v1 -cliok "vcl.discard vcl4"
+varnish v1 -cliok "vcl.discard vcl5"
+varnish v1 -cliok "vcl.discard vcl6"
+varnish v1 -cliok "vcl.discard vcl7"
+
+varnish v1 -cliok "vcl.discard vclB"
+varnish v1 -cliok "vcl.discard vcl2"
+varnish v1 -cliok "vcl.discard vclA"
+varnish v1 -cliok "vcl.discard vcl1"
+
+

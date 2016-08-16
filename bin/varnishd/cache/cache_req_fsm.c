@@ -688,6 +688,8 @@ cnt_recv(struct worker *wrk, struct req *req)
 	}
 
 	VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
+	if (wrk->handling == VCL_RET_VCL)
+		VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 
 	/* Attempts to cache req.body may fail */
 	if (req->req_body_status == REQ_BODY_FAIL) {
@@ -714,6 +716,12 @@ cnt_recv(struct worker *wrk, struct req *req)
 	SHA256_Final(req->digest, &sha256ctx);
 
 	switch(recv_handling) {
+	case VCL_RET_VCL:
+		VSLb(req->vsl, SLT_VCL_Error,
+		    "return(vcl) only allowed from active (top) VCL.");
+		req->err_code = 503;
+		req->req_step = R_STP_SYNTH;
+		return (REQ_FSM_MORE);
 	case VCL_RET_PURGE:
 		req->req_step = R_STP_PURGE;
 		return (REQ_FSM_MORE);

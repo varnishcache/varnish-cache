@@ -453,6 +453,8 @@ VRT_vcl_select(VRT_CTX, VCL_VCL vcl)
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	VCL_Rel(&req->vcl);
 	vcl_get(&req->vcl, vcl);
+	/* XXX: better logging */
+	VSLb(ctx->req->vsl, SLT_Debug, "Now using %s VCL", vcl->loaded_name);
 }
 
 struct vclref *
