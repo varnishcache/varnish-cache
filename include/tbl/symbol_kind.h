@@ -39,5 +39,6 @@ VCC_SYMB(PROBE,		probe)
 VCC_SYMB(STEVEDORE,	stevedore)
 VCC_SYMB(SUB,		sub)		/* VCL subroutine */
 VCC_SYMB(VAR,		var)
+VCC_SYMB(VCL,		vcl)		/* VCL program */
 VCC_SYMB(VMOD,		vmod)
 /*lint -restore */

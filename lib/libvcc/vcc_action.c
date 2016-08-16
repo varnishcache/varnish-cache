@@ -191,6 +191,94 @@ parse_hash_data(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static void
+parse_return_synth(struct vcc *tl)
+{
+
+	AN(vcc_IdIs(tl->t, "synth"));
+	vcc_NextToken(tl);
+	if (tl->t->tok == ')') {
+		VSB_printf(tl->sb,
+		    "Syntax has changed, use:\n"
+		    "\treturn(synth(999));\n"
+		    "or\n"
+		    "\treturn(synth(999, \"Response text\"));\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+	ExpectErr(tl, '(');
+	vcc_NextToken(tl);
+	Fb(tl, 1, "VRT_synth(ctx,\n");
+	tl->indent += INDENT;
+	vcc_Expr(tl, INT);
+	ERRCHK(tl);
+	Fb(tl, 1, ",\n");
+	if (tl->t->tok == ',') {
+		vcc_NextToken(tl);
+		vcc_Expr(tl, STRING);
+		ERRCHK(tl);
+	} else {
+		Fb(tl, 1, "(const char*)0\n");
+	}
+	tl->indent -= INDENT;
+	ExpectErr(tl, ')');
+	vcc_NextToken(tl);
+	Fb(tl, 1, ");\n");
+	Fb(tl, 1, "VRT_handling(ctx, VCL_RET_SYNTH);\n");
+	Fb(tl, 1, "return (1);\n");
+	vcc_ProcAction(tl->curproc, VCL_RET_SYNTH, tl->t);
+	ExpectErr(tl, ')');
+	vcc_NextToken(tl);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+parse_return_vcl(struct vcc *tl)
+{
+	struct symbol *sym;
+	struct inifin *p;
+	char buf[1024];
+
+	AN(vcc_IdIs(tl->t, "vcl"));
+	vcc_NextToken(tl);
+	ExpectErr(tl, '(');
+	vcc_NextToken(tl);
+	ExpectErr(tl, ID);
+	sym = VCC_SymbolTok(tl, NULL, tl->t, SYM_VCL, 0);
+	ERRCHK(tl);
+	if (sym == NULL) {
+		VSB_printf(tl->sb, "Not a VCL label:\n");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+	if (sym->eval_priv == NULL) {
+
+		bprintf(buf, "vgc_vcl_%u", tl->unique++);
+		sym->eval_priv = strdup(buf);
+		AN(sym->eval_priv);
+
+		Fh(tl, 0, "static VCL_VCL %s;", sym->eval_priv);
+		Fh(tl, 0, "\t/* VCL %.*s */\n", PF(tl->t));
+
+		p = New_IniFin(tl);
+		AN(p);
+		VSB_printf(p->ini, "\t%s = VRT_vcl_lookup(\"%.*s\");",
+		    sym->eval_priv, PF(tl->t));
+	}
+	Fb(tl, 1, "VRT_vcl_select(ctx, %s);\t/* %.*s */\n",
+	    sym->eval_priv, PF(tl->t));
+	Fb(tl, 1, "VRT_handling(ctx, VCL_RET_VCL);\n");
+	Fb(tl, 1, "return (1);\n");
+	vcc_NextToken(tl);
+	ExpectErr(tl, ')');
+	vcc_NextToken(tl);
+	ExpectErr(tl, ')');
+	vcc_NextToken(tl);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 parse_return(struct vcc *tl)
 {
 	int retval = 0;
@@ -200,41 +288,12 @@ parse_return(struct vcc *tl)
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 
-	/* 'error' gets special handling, to allow optional status/response */
 	if (vcc_IdIs(tl->t, "synth")) {
-		vcc_NextToken(tl);
-		if (tl->t->tok == ')') {
-			VSB_printf(tl->sb,
-			    "Syntax has changed, use:\n"
-			    "\treturn(synth(999));\n"
-			    "or\n"
-			    "\treturn(synth(999, \"Response text\"));\n");
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
-		ExpectErr(tl, '(');
-		vcc_NextToken(tl);
-		Fb(tl, 1, "VRT_synth(ctx,\n");
-		tl->indent += INDENT;
-		vcc_Expr(tl, INT);
-		ERRCHK(tl);
-		Fb(tl, 1, ",\n");
-		if (tl->t->tok == ',') {
-			vcc_NextToken(tl);
-			vcc_Expr(tl, STRING);
-			ERRCHK(tl);
-		} else {
-			Fb(tl, 1, "(const char*)0\n");
-		}
-		tl->indent -= INDENT;
-		ExpectErr(tl, ')');
-		vcc_NextToken(tl);
-		Fb(tl, 1, ");\n");
-		Fb(tl, 1, "VRT_handling(ctx, VCL_RET_SYNTH);\n");
-		Fb(tl, 1, "return (1);\n");
-		vcc_ProcAction(tl->curproc, VCL_RET_SYNTH, tl->t);
-		ExpectErr(tl, ')');
-		vcc_NextToken(tl);
+		parse_return_synth(tl);
+		return;
+	}
+	if (vcc_IdIs(tl->t, "vcl")) {
+		parse_return_vcl(tl);
 		return;
 	}
 

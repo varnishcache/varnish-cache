@@ -811,13 +811,26 @@ VCC_Unsafe_Path(struct vcc *vcc, unsigned u)
  * Configure settings
  */
 
+static void
+vcc_predef_vcl(struct vcc *vcc, const char *name)
+{
+	struct symbol *sym;
+
+	sym = VCC_Symbol(vcc, NULL, name, NULL, SYM_VCL, 1);
+	AN(sym);
+	sym->fmt = VCL;
+	sym->r_methods = VCL_MET_RECV;
+}
+
 void
 VCC_Predef(struct vcc *vcc, const char *type, const char *name)
 {
+
+	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
 	if (!strcmp(type, "VCL_STEVEDORE"))
 		vcc_stevedore(vcc, name);
 	else if (!strcmp(type, "VCL_VCL"))
-		return;
+		vcc_predef_vcl(vcc, name);
 	else
 		WRONG("Unknown VCC predef type");
 }
