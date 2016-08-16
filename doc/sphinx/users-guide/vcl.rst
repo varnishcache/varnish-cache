@@ -41,6 +41,7 @@ code commented out in the file `builtin.vcl` that ships with Varnish Cache.
    vcl-backends
    vcl-hashing
    vcl-grace
+   vcl-separate
    vcl-inline-c
    vcl-examples
    devicedetection
