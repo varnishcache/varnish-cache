@@ -150,6 +150,11 @@ const struct type TIME[1] = {{
 	.tostring =		"VRT_TIME_string(ctx, \v1)",
 }};
 
+const struct type VCL[1] = {{
+	.magic =		TYPE_MAGIC,
+	.name =			"VCL",
+}};
+
 const struct type VOID[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"VOID",

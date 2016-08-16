@@ -89,6 +89,23 @@ static struct vcl		*vcl_active; /* protected by vcl_mtx */
 
 /*--------------------------------------------------------------------*/
 
+static struct vcl *
+vcl_find(const char *name)
+{
+	struct vcl *vcl;
+
+	ASSERT_CLI();
+	VTAILQ_FOREACH(vcl, &vcl_head, list) {
+		if (vcl->discard)
+			continue;
+		if (!strcmp(vcl->loaded_name, name))
+			return (vcl);
+	}
+	return (NULL);
+}
+
+/*--------------------------------------------------------------------*/
+
 void
 VCL_Panic(struct vsb *vsb, const struct vcl *vcl)
 {
@@ -155,25 +172,32 @@ VCL_Method_Name(unsigned m)
 /*--------------------------------------------------------------------*/
 
 static void
-VCL_Get(struct vcl **vcc)
+vcl_get(struct vcl **vcc, struct vcl *vcl)
 {
-	while (vcl_active == NULL)
-		(void)usleep(100000);
 
-	CHECK_OBJ_NOTNULL(vcl_active, VCL_MAGIC);
-	assert(vcl_active->temp == VCL_TEMP_WARM);
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	assert(vcl->temp == VCL_TEMP_WARM);
 	Lck_Lock(&vcl_mtx);
-	AN(vcl_active);
-	if (vcl_active->label == NULL)
-		*vcc = vcl_active;
-	else if (strcmp(vcl_active->state, VCL_TEMP_LABEL))
-		*vcc = vcl_active;
+	AN(vcl);
+	if (vcl->label == NULL)
+		*vcc = vcl;
+	else if (strcmp(vcl->state, VCL_TEMP_LABEL))
+		*vcc = vcl;
 	else
-		*vcc = vcl_active->label;
+		*vcc = vcl->label;
 	AN(*vcc);
 	AZ((*vcc)->discard);
 	(*vcc)->busy++;
 	Lck_Unlock(&vcl_mtx);
+}
+
+static void
+vcl_get_active(struct vcl **vcc)
+{
+	while (vcl_active == NULL)
+		(void)usleep(100000);
+
+	vcl_get(vcc, vcl_active);
 }
 
 void
@@ -185,7 +209,7 @@ VCL_Refresh(struct vcl **vcc)
 		return;
 	if (*vcc != NULL)
 		VCL_Rel(vcc);	/* XXX: optimize locking */
-	VCL_Get(vcc);
+	vcl_get_active(vcc);
 }
 
 void
@@ -411,6 +435,26 @@ VRT_count(VRT_CTX, unsigned u)
 		    ctx->vcl->conf->ref[u].line, ctx->vcl->conf->ref[u].pos);
 }
 
+VCL_VCL
+VRT_vcl_lookup(const char *name)
+{
+	VCL_VCL vcl;
+
+	vcl = vcl_find(name);
+	AN(vcl);
+	return (vcl);
+}
+
+void
+VRT_vcl_select(VRT_CTX, VCL_VCL vcl)
+{
+	struct req *req = ctx->req;
+
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	VCL_Rel(&req->vcl);
+	vcl_get(&req->vcl, vcl);
+}
+
 struct vclref *
 VRT_ref_vcl(VRT_CTX, const char *desc)
 {
@@ -467,21 +511,6 @@ VRT_rel_vcl(VRT_CTX, struct vclref **refp)
 }
 
 /*--------------------------------------------------------------------*/
-
-static struct vcl *
-vcl_find(const char *name)
-{
-	struct vcl *vcl;
-
-	ASSERT_CLI();
-	VTAILQ_FOREACH(vcl, &vcl_head, list) {
-		if (vcl->discard)
-			continue;
-		if (!strcmp(vcl->loaded_name, name))
-			return (vcl);
-	}
-	return (NULL);
-}
 
 static int
 vcl_setup_event(VRT_CTX, enum vcl_event_e ev)

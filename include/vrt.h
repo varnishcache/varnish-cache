@@ -98,6 +98,7 @@ typedef double					VCL_REAL;
 typedef const struct stevedore *		VCL_STEVEDORE;
 typedef const char *				VCL_STRING;
 typedef double					VCL_TIME;
+typedef struct vcl *				VCL_VCL;
 typedef void					VCL_VOID;
 
 /***********************************************************************
@@ -312,6 +313,10 @@ int VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst);
 int VRT_Vmod_Init(struct vmod **hdl, void *ptr, int len, const char *nm,
     const char *path, const char *file_id, VRT_CTX);
 void VRT_Vmod_Fini(struct vmod **hdl);
+
+/* VCL program related */
+VCL_VCL VRT_vcl_lookup(const char *);
+void VRT_vcl_select(VRT_CTX, VCL_VCL);
 
 struct vmod_priv;
 typedef void vmod_priv_free_f(void *);
