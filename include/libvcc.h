@@ -30,6 +30,8 @@
 
 struct vcc;
 
+#define VCC_INFO_PREFIX	"/* VCC_INFO"
+
 struct vcc *VCC_New(void);
 void VCC_Allow_InlineC(struct vcc *, unsigned);
 void VCC_Builtin_VCL(struct vcc *, const char *);

@@ -35,6 +35,7 @@
 #include <string.h>
 
 #include "vcc_compile.h"
+#include "libvcc.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -252,6 +253,9 @@ parse_return_vcl(struct vcc *tl)
 		return;
 	}
 	if (sym->eval_priv == NULL) {
+
+		VSB_printf(tl->fi, "%s VCL %.*s */\n",
+		    VCC_INFO_PREFIX, PF(tl->t));
 
 		bprintf(buf, "vgc_vcl_%u", tl->unique++);
 		sym->eval_priv = strdup(buf);

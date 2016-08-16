@@ -667,6 +667,9 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 	vsb = VSB_new_auto();
 	AN(vsb);
 
+	AZ(VSB_finish(tl->fi));
+	VSB_cat(vsb, VSB_data(tl->fi));
+
 	vcl_output_lang_h(vsb);
 
 	EmitCoordinates(tl, vsb);
@@ -725,15 +728,15 @@ VCC_New(void)
 
 	tl->nsources = 0;
 
-	/* General C code */
+	tl->fi = VSB_new_auto();
+	assert(tl->fi != NULL);
+
 	tl->fc = VSB_new_auto();
 	assert(tl->fc != NULL);
 
-	/* Forward decls (.h like) */
 	tl->fh = VSB_new_auto();
 	assert(tl->fh != NULL);
 
-	/* body code of methods */
 	for (i = 0; i < VCL_MET_MAX; i++) {
 		tl->fm[i] = VSB_new_auto();
 		assert(tl->fm[i] != NULL);

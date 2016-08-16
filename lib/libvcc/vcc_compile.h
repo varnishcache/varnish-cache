@@ -190,6 +190,7 @@ struct vcc {
 	int			hindent;
 	unsigned		cnt;
 
+	struct vsb		*fi;		/* VCC info to MGR */
 	struct vsb		*fc;		/* C-code */
 	struct vsb		*fh;		/* H-code (before C-code) */
 	struct vsb		*fb;		/* Body of current sub
