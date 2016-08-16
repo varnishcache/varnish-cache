@@ -109,7 +109,7 @@ mgt_vcl_dep_del(struct vcldep *vd)
 /*--------------------------------------------------------------------*/
 
 static struct vclprog *
-mgt_vcl_add(const char *name, const char *libfile, const char *state)
+mgt_vcl_add(const char *name, const char *state)
 {
 	struct vclprog *vp;
 
@@ -120,7 +120,6 @@ mgt_vcl_add(const char *name, const char *libfile, const char *state)
 	ALLOC_OBJ(vp, VCLPROG_MAGIC);
 	XXXAN(vp);
 	REPLACE(vp->name, name);
-	REPLACE(vp->fname, libfile);
 	VTAILQ_INIT(&vp->dfrom);
 	VTAILQ_INIT(&vp->dto);
 	vp->state = state;
@@ -144,7 +143,7 @@ mgt_vcl_del(struct vclprog *vp)
 		mgt_vcl_dep_del(VTAILQ_FIRST(&vp->dfrom));
 
 	VTAILQ_REMOVE(&vclhead, vp, list);
-	if (strcmp(vp->state, VCL_STATE_LABEL)) {
+	if (vp->fname != NULL) {
 		AZ(unlink(vp->fname));
 		p = strrchr(vp->fname, '/');
 		AN(p);
@@ -173,6 +172,18 @@ mgt_vcl_byname(const char *name)
 		if (!strcmp(name, vp->name))
 			return (vp);
 	return (NULL);
+}
+
+void
+mgt_vcl_depends(struct vclprog *vp1, const char *name)
+{
+	struct vclprog *vp2;
+
+	CHECK_OBJ_NOTNULL(vp1, VCLPROG_MAGIC);
+
+	vp2 = mgt_vcl_byname(name);
+	CHECK_OBJ_NOTNULL(vp2, VCLPROG_MAGIC);
+	mgt_vcl_dep_add(vp1, vp2);
 }
 
 int
@@ -261,13 +272,15 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 		return;
 	}
 
-	lib = mgt_VccCompile(cli, vclname, vclsrc, vclsrcfile, C_flag);
-	if (lib == NULL)
+	vp = mgt_vcl_add(vclname, state);
+	lib = mgt_VccCompile(cli, vp, vclname, vclsrc, vclsrcfile, C_flag);
+	if (lib == NULL) {
+		mgt_vcl_del(vp);
 		return;
+	}
 
 	AZ(C_flag);
-	vp = mgt_vcl_add(vclname, lib, state);
-	free(lib);
+	vp->fname = lib;
 
 	if (child_pid < 0)
 		return;
@@ -311,8 +324,10 @@ void
 mgt_vcl_export_labels(struct vcc *vcc)
 {
 	struct vclprog *vp;
-	VTAILQ_FOREACH(vp, &vclhead, list)
-		VCC_Predef(vcc, "VCL_VCL", vp->name);
+	VTAILQ_FOREACH(vp, &vclhead, list) {
+		if (!strcmp(vp->state, VCL_STATE_LABEL))
+			VCC_Predef(vcc, "VCL_VCL", vp->name);
+	}
 }
 
 /*--------------------------------------------------------------------*/
@@ -493,6 +508,8 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 	unsigned status;
 	char *p = NULL;
 	struct vclprog *vp;
+	struct vcldep *vd;
+	int n;
 
 	(void)priv;
 	vp = mcf_find_vcl(cli, av[2]);
@@ -504,7 +521,7 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 	if (!VTAILQ_EMPTY(&vp->dto)) {
-		if (vp->label != NULL) {
+		if (vp->label != NULL && strcmp(vp->state, VCL_STATE_LABEL)) {
 			AN(vp->warm);
 			VCLI_SetResult(cli, CLIS_PARAM);
 			VCLI_Out(cli,
@@ -512,7 +529,19 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 			    vp->label->name);
 			return;
 		}
-		INCOMPL();
+		VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_Out(cli,
+		    "Cannot discard \"%s\" VCL label, "
+		    "other VCLs depend on it.\n", vp->name);
+		n = 0;
+		VTAILQ_FOREACH(vd, &vp->dto, lto) {
+			if (n++ == 5) {
+				VCLI_Out(cli, "\t[...]");
+				break;
+			}
+			VCLI_Out(cli, "\t%s\n", vd->from->name);
+		}
+		return;
 	}
 	if (!strcmp(vp->state, VCL_STATE_LABEL)) {
 		AN(vp->warm);
@@ -600,7 +629,13 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 		mgt_vcl_dep_del(VTAILQ_FIRST(&vpl->dfrom));
 		AN(VTAILQ_EMPTY(&vpl->dfrom));
 	} else {
-		vpl = mgt_vcl_add(av[2], NULL, VCL_STATE_LABEL);
+		/* XXX should check for C-syntax */
+		if (strchr(av[2], '.')) {
+			VCLI_SetResult(cli, CLIS_PARAM);
+			VCLI_Out(cli, "VCL labels cannot contain '.'");
+			return;
+		}
+		vpl = mgt_vcl_add(av[2], VCL_STATE_LABEL);
 	}
 	AN(vpl);
 	mgt_vcl_dep_add(vpl, vpt);

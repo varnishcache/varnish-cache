@@ -36,6 +36,7 @@
 struct cli;
 struct parspec;
 struct vcc;
+struct vclprog;
 
 extern struct vev_base	*mgt_evb;
 extern unsigned		d_flag;
@@ -170,8 +171,8 @@ void STV_Config(const char *spec);
 void STV_Config_Transient(void);
 
 /* mgt_vcc.c */
-char *mgt_VccCompile(struct cli *, const char *vclname, const char *vclsrc,
-    const char *vclsrcfile, int C_flag);
+char *mgt_VccCompile(struct cli *, struct vclprog *, const char *vclname,
+    const char *vclsrc, const char *vclsrcfile, int C_flag);
 
 void mgt_vcl_init(void);
 void mgt_vcc_startup(struct cli *, const char *b_arg, const char *f_arg,
@@ -179,6 +180,7 @@ void mgt_vcc_startup(struct cli *, const char *b_arg, const char *f_arg,
 int mgt_push_vcls_and_start(struct cli *, unsigned *status, char **p);
 void mgt_vcl_export_labels(struct vcc *);
 int mgt_has_vcl(void);
+void mgt_vcl_depends(struct vclprog *vp1, const char *name);
 extern char *mgt_cc_cmd;
 extern const char *mgt_vcl_path;
 extern const char *mgt_vmod_path;

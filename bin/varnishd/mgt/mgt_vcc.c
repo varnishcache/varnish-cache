@@ -47,6 +47,7 @@
 #include "vcli_serve.h"
 #include "vfil.h"
 #include "vsub.h"
+#include "vav.h"
 #include "vtim.h"
 
 struct vcc_priv {
@@ -258,12 +259,16 @@ mgt_vcc_compile(struct vcc_priv *vp, struct vsb *sb, int C_flag)
 /*--------------------------------------------------------------------*/
 
 char *
-mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
-    const char *vclsrcfile, int C_flag)
+mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
+    const char *vclsrc, const char *vclsrcfile, int C_flag)
 {
 	struct vcc_priv vp;
 	struct vsb *sb;
 	unsigned status;
+	char buf[1024];
+	FILE *fcs;
+	char **av;
+	int ac;
 
 	AN(cli);
 
@@ -339,10 +344,9 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 		VCLI_Out(cli, "%s", VSB_data(sb));
 	VSB_destroy(&sb);
 
-	(void)unlink(vp.csrcfile);
-	free(vp.csrcfile);
-
 	if (status || C_flag) {
+		(void)unlink(vp.csrcfile);
+		free(vp.csrcfile);
 		(void)unlink(vp.libfile);
 		free(vp.libfile);
 		(void)rmdir(vp.dir);
@@ -353,6 +357,26 @@ mgt_VccCompile(struct cli *cli, const char *vclname, const char *vclsrc,
 		}
 		return (NULL);
 	}
+
+	fcs = fopen(vp.csrcfile, "r");
+	AN(fcs);
+	while (1) {
+		AN(fgets(buf, sizeof buf, fcs));
+		if (memcmp(buf, VCC_INFO_PREFIX, strlen(VCC_INFO_PREFIX)))
+			break;
+		av = VAV_Parse(buf, &ac, 0);
+		AN(av);
+		AZ(av[0]);
+		AZ(strcmp(av[1], "/*"));
+		AZ(strcmp(av[ac-1], "*/"));
+		AZ(strcmp(av[3], "VCL"));
+		mgt_vcl_depends(vcl, av[4]);
+		VAV_Free(av);
+	}
+	AZ(fclose(fcs));
+
+	(void)unlink(vp.csrcfile);
+	free(vp.csrcfile);
 
 	free(vp.dir);
 
