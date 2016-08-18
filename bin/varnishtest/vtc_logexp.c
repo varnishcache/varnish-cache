@@ -519,7 +519,7 @@ logexp_spec(struct logexp *le, const char *spec)
 }
 
 void
-cmd_logexp(CMD_ARGS)
+cmd_logexpect(CMD_ARGS)
 {
 	struct logexp *le, *le2;
 	const char tmpdir[] = "${tmpdir}";

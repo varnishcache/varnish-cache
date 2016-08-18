@@ -674,7 +674,7 @@ static const struct cmds cmds[] = {
 	{ "barrier",	cmd_barrier },
 	{ "random",	cmd_random },
 	{ "feature",	cmd_feature },
-	{ "logexpect",	cmd_logexp },
+	{ "logexpect",	cmd_logexpect },
 	{ "process",	cmd_process },
 	{ NULL,		NULL }
 };
