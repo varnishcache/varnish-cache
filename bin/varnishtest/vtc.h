@@ -58,13 +58,15 @@ struct cmds {
 void parse_string(const char *spec, const struct cmds *cmd, void *priv,
     struct vtclog *vl);
 
-cmd_f cmd_delay;
-cmd_f cmd_server;
-cmd_f cmd_client;
-cmd_f cmd_varnish;
-cmd_f cmd_barrier;
-cmd_f cmd_logexpect;
-cmd_f cmd_process;
+#define CMD(n) cmd_f cmd_##n
+CMD(delay);
+CMD(server);
+CMD(client);
+CMD(varnish);
+CMD(barrier);
+CMD(logexpect);
+CMD(process);
+#undef CMD
 
 extern volatile sig_atomic_t vtc_error; /* Error, bail out */
 extern int vtc_stop;		/* Abandon current test, no error */
