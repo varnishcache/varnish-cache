@@ -569,7 +569,7 @@ cmd_random(CMD_ARGS)
 static void
 cmd_feature(CMD_ARGS)
 {
-	int i;
+	int i, r;
 
 	(void)priv;
 	(void)cmd;
@@ -612,6 +612,15 @@ cmd_feature(CMD_ARGS)
 		if (!strcmp(av[i], "group_varnish") &&
 		    getgrnam("varnish") != NULL)
 			continue;
+
+		if (!strcmp(av[i], "cmd")) {
+			i++;
+			if (av[i] == NULL)
+				vtc_log(vl, 0, "Missing the command-line");
+			r = system(av[i]);
+			if (WEXITSTATUS(r) == 0)
+				continue;
+		}
 
 		vtc_log(vl, 1, "SKIPPING test, missing feature: %s", av[i]);
 		vtc_stop = 1;
