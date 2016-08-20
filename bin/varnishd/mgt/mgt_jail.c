@@ -154,7 +154,7 @@ VJ_make_workdir(const char *dname)
 
 	fd = open("_.testfile", O_RDWR|O_CREAT|O_EXCL, 0600);
 	if (fd < 0)
-		ARGV_ERR("Error: Cannot create test-file in %s (%s)\n"
+		ARGV_ERR("Cannot create test-file in %s (%s)\n"
 		    "Check permissions (or delete old directory)\n",
 		    dname, strerror(errno));
 	AZ(close(fd));
