@@ -144,9 +144,9 @@ AC_ARG_ENABLE(pcre-jit,
 if test "$enable_pcre_jit" = yes; then
   AC_MSG_CHECKING(for PCRE JIT usability)
   save_CFLAGS="${CFLAGS}"
-  CFLAGS="${PCRE_CFLAGS}"
+  CFLAGS="${CFLAGS} ${PCRE_CFLAGS}"
   save_LIBS="${LIBS}"
-  LIBS="${PCRE_LIBS}"
+  LIBS="${LIBS} ${PCRE_LIBS}"
   AC_RUN_IFELSE(
     [AC_LANG_PROGRAM([[
 #include <pcre.h>
