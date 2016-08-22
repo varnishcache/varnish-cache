@@ -36,8 +36,8 @@
 #include "tbl/vsc_levels.h"
 #undef VSC_LEVEL_F
 
-#define P(x, ...)			\
-	printf(x "\n", ##__VA_ARGS__)
+#define P(x)			\
+	printf(x "\n")
 #define VSC_LEVEL_F(v,l,e,d)		\
 	printf("%s – %s\n\t%s\n\n", l, e, d);
 #define VSC_F(n, t, l, s, f, v, d, e)	\
