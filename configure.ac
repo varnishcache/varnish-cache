@@ -572,8 +572,22 @@ gl_LD_VERSION_SCRIPT
 # The reason for -Wno-error=unused-result is a glibc/gcc interaction
 # idiocy where write is marked as warn_unused_result, causing build
 # failures.
-CFLAGS="${CFLAGS} -Wall -Werror"
-OCFLAGS="${OCFLAGS} -Wall -Werror"
+
+AX_CHECK_COMPILE_FLAG([-Wall],
+     [CFLAGS="${CFLAGS} -Wall"
+      OCFLAGS="${OCFLAGS} -Wall"])
+
+SUNCC_CFLAGS=" \
+	-errwarn=%all,no%E_EMPTY_TRANSLATION_UNIT,no%E_ATTRIBUTE_UNKNOWN,no%E_STATEMENT_NOT_REACHED,no%E_EMPTY_DECLARATION \
+	-errtags=yes \
+	"
+AX_CHECK_COMPILE_FLAG([-Werror],
+     [CFLAGS="${CFLAGS} -Werror"
+      OCFLAGS="${OCFLAGS} -Werror"],
+     [AX_CHECK_COMPILE_FLAG([${SUNCC_CFLAGS}],
+      [CFLAGS="${CFLAGS} ${SUNCC_CFLAGS}"
+       OCFLAGS="${OCFLAGS} ${SUNCC_CFLAGS}"])])
+
 AX_CHECK_COMPILE_FLAG([-Werror=unused-result],
     [CFLAGS="${CFLAGS} -Wno-error=unused-result"
      OCFLAGS="${OCFLAGS} -Wno-error=unused-result"],
