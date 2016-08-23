@@ -490,8 +490,9 @@ sp_variables = [
 		('backend_response', 'backend_error'),
 		('backend_response', 'backend_error'), """
 		Deliver the object to the client while fetching the whole
-		object into varnish. If this request is pass'ed it will not be
-		stored in memory.
+		object into varnish. For uncacheable objects, storage for
+		parts of the body which have been sent to the client may
+		get freed early, depending on the storage engine used.
 		"""
 	),
 	('beresp.do_gzip',
