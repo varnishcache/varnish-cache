@@ -123,6 +123,24 @@ Optionally, to pull from a repository::
 
 	pkgin in git
 
+Building on Solaris and other Solaris-ish OSes
+----------------------------------------------
+
+Building with gcc should be straight forward, as long as the above
+requirements are installed.
+
+Alternatively, building with Solaris Studio 12.4 should work
+considering the following recommendations:
+
+* have GNU `nm` in `$PATH` before Solaris `nm`
+* Provide compiler flags for `configure` to include paths under which
+  dependencies are installed. Example for `/opt/local`::
+
+	./configure \
+	CPPFLAGS="-I/opt/local/include" \
+	CFLAGS="-m64" \
+	LDFLAGS="-L/opt/local/lib -R/opt/local/lib"
+
 Compiling Varnish
 -----------------
 
