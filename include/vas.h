@@ -42,6 +42,7 @@ enum vas_e {
 	VAS_WRONG,
 	VAS_MISSING,
 	VAS_ASSERT,
+	VAS_REQUIRE,
 	VAS_INCOMPLETE,
 	VAS_VCL,
 };
@@ -62,6 +63,14 @@ do {									\
 } while (0)
 #endif
 
+#define require(e)							\
+do {									\
+	if (!(e)) {							\
+		VAS_Fail(__func__, __FILE__, __LINE__,			\
+		    #e, VAS_REQUIRE);					\
+	}								\
+} while (0)
+
 #define xxxassert(e)							\
 do {									\
 	if (!(e)) {							\
@@ -73,6 +82,8 @@ do {									\
 /* Assert zero return value */
 #define AZ(foo)		do { assert((foo) == 0); } while (0)
 #define AN(foo)		do { assert((foo) != 0); } while (0)
+#define RZ(foo)		do { require((foo) == 0); } while (0)
+#define RN(foo)		do { require((foo) != 0); } while (0)
 #define XXXAZ(foo)	do { xxxassert((foo) == 0); } while (0)
 #define XXXAN(foo)	do { xxxassert((foo) != 0); } while (0)
 #define diagnostic(foo)	assert(foo)

@@ -57,6 +57,11 @@ VAS_Fail_default(const char *func, const char *file, int line,
 		fprintf(stderr,
 		    "Wrong turn in %s(), %s line %d: %s\n",
 		    func, file, line, cond);
+	} else if (kind == VAS_REQUIRE) {
+		fprintf(stderr,
+		    "Unmet requirement in %s(), %s line %d:\n"
+		    "  Condition(%s) not true.\n",
+		    func, file, line, cond);
 	} else {
 		fprintf(stderr,
 		    "Assert error in %s(), %s line %d:\n"
