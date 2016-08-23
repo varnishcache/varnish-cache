@@ -380,7 +380,7 @@ ban_reload(const uint8_t *ban, unsigned len)
 	b2 = ban_alloc();
 	AN(b2);
 	b2->spec = malloc(len);
-	AN(b2->spec);
+	RN(b2->spec);
 	memcpy(b2->spec, ban, len);
 	if (ban[BANS_FLAGS] & BANS_FLAG_REQ) {
 		VSC_C_main->bans_req++;

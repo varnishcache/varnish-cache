@@ -337,7 +337,7 @@ Symbol_hack(const char *a0)
 		if (i != 4)
 			continue;
 		s = malloc(sizeof *s + strlen(name) + 1);
-		AN(s);
+		RN(s);
 		s->a = aa;
 		s->l = ll;
 		s->n = (void*)(s + 1);

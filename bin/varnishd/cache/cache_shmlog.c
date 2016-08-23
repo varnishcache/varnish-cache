@@ -389,7 +389,7 @@ VSL_Setup(struct vsl_log *vsl, void *ptr, size_t len)
 	if (ptr == NULL) {
 		len = cache_param->vsl_buffer;
 		ptr = malloc(len);
-		AN(ptr);
+		RN(ptr);
 	}
 	vsl->wlp = ptr;
 	vsl->wlb = ptr;

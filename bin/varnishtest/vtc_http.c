@@ -184,7 +184,7 @@ synth_body(const char *len, int rnd)
 	i = strtoul(len, NULL, 0);
 	assert(i > 0);
 	b = malloc(i + 1L);
-	AN(b);
+	RN(b);
 	l = k = '!';
 	for (j = 0; j < i; j++) {
 		if ((j % 64) == 63) {
@@ -1337,7 +1337,7 @@ cmd_http_sendhex(CMD_ARGS)
 	AZ(av[2]);
 	l = strlen(av[1]) / 2;
 	p = malloc(l);
-	AN(p);
+	RN(p);
 	q = av[1];
 	for (i = 0; i < l; i++) {
 		while (vct_issp(*q))
@@ -1646,7 +1646,7 @@ http_process(struct vtclog *vl, const char *spec, int sock, int *sfd)
 
 	hp->nrxbuf = 2048*1024;
 	hp->rxbuf = malloc(hp->nrxbuf);		/* XXX */
-	AN(hp->rxbuf);
+	RN(hp->rxbuf);
 
 	hp->vsb = VSB_new_auto();
 	AN(hp->vsb);
@@ -1654,10 +1654,10 @@ http_process(struct vtclog *vl, const char *spec, int sock, int *sfd)
 	hp->sfd = sfd;
 
 	hp->rem_ip = malloc(VTCP_ADDRBUFSIZE);
-	AN(hp->rem_ip);
+	RN(hp->rem_ip);
 
 	hp->rem_port = malloc(VTCP_PORTBUFSIZE);
-	AN(hp->rem_port);
+	RN(hp->rem_port);
 
 	hp->vl = vl;
 	hp->gziplevel = 0;
