@@ -128,7 +128,7 @@ STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx)
 		ARGV_ERR(
 		    "(%s) \"%s\" is neither file nor directory\n", ctx, fn);
 
-	AZ(fstat(fd, &st));
+	RZ(fstat(fd, &st));
 	if (!S_ISREG(st.st_mode))
 		ARGV_ERR("(%s) \"%s\" was not a file after opening\n",
 		    ctx, fn);
@@ -161,7 +161,7 @@ STV_FileSize(int fd, const char *size, unsigned *granularity, const char *ctx)
 	AN(granularity);
 	AN(ctx);
 
-	AZ(fstat(fd, &st));
+	RZ(fstat(fd, &st));
 	xxxassert(S_ISREG(st.st_mode));
 
 	AZ(VFIL_fsinfo(fd, &bs, &fssize, NULL));

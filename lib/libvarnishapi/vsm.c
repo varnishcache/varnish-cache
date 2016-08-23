@@ -237,7 +237,7 @@ VSM_Open(struct VSM_data *vd)
 		return (vsm_diag(vd, "Cannot open %s: %s\n",
 		    vd->fname, strerror(errno)));
 
-	AZ(fstat(vd->vsm_fd, &vd->fstat));
+	RZ(fstat(vd->vsm_fd, &vd->fstat));
 	if (!S_ISREG(vd->fstat.st_mode)) {
 		AZ(close(vd->vsm_fd));
 		vd->vsm_fd = -1;

@@ -107,7 +107,7 @@ vsm_n_check(void)
 	if (fd < 0)
 		return (0);
 
-	AZ(fstat(fd, &st));
+	RZ(fstat(fd, &st));
 	if (!S_ISREG(st.st_mode)) {
 		fprintf(stderr,
 		    "VSM (%s) not a regular file.\n", VSM_FILENAME);
