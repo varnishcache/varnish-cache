@@ -183,7 +183,8 @@ ban_get_lump(const uint8_t **bs)
 	while (**bs == 0xff)
 		*bs += 1;
 	ln = vbe32dec(*bs);
-	*bs += 4;
+	*bs += PRNDUP(sizeof(uint32_t));
+	assert(PAOK(*bs));
 	r = (const void*)*bs;
 	*bs += ln;
 	return (r);
