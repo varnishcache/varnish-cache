@@ -386,7 +386,7 @@ VSC_F(sess_readahead,		uint64_t, 1, 'c', 'i', info,
 )
 VSC_F(sess_herd,		uint64_t, 1, 'c', 'i', diag,
     "Session herd",
-	""
+	"Number of times the linger_timeout triggered"
 )
 
 #define SESS_CLOSE_ERR0 "OK  "
