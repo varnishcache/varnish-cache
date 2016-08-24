@@ -384,8 +384,8 @@ vbp_thread(struct worker *wrk, void *priv)
 			binheap_insert(vbp_heap, vt);
 		}
 	}
-	Lck_Unlock(&vbp_mtx);
-	NEEDLESS_RETURN(NULL);
+	NEEDLESS(Lck_Unlock(&vbp_mtx));
+	NEEDLESS(return NULL);
 }
 
 

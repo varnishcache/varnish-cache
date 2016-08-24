@@ -206,7 +206,7 @@ VSL(SLT_Debug, vwp->pollfd[i].fd, "POLL loop i=%d revents=0x%x", i, vwp->pollfd[
 		if (vwp->pollfd[0].revents)
 			vwp_dopipe(vwp);
 	}
-	NEEDLESS_RETURN(NULL);
+	NEEDLESS(return NULL);
 }
 
 /*--------------------------------------------------------------------*/

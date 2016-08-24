@@ -313,7 +313,7 @@ smp_thread(struct worker *wrk, void *priv)
 	Lck_Unlock(&sc->mtx);
 	pthread_exit(0);
 
-	NEEDLESS_RETURN(NULL);
+	NEEDLESS(return NULL);
 }
 
 /*--------------------------------------------------------------------

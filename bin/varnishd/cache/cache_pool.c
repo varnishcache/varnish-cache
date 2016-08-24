@@ -226,7 +226,7 @@ pool_poolherder(void *priv)
 		Lck_Unlock(&pool_mtx);
 		VSC_C_main->thread_queue_len = u;
 	}
-	NEEDLESS_RETURN(NULL);
+	NEEDLESS(return NULL);
 }
 
 /*--------------------------------------------------------------------*/

@@ -298,7 +298,7 @@ vslq_exec(const struct vex *vex, struct VSL_transaction * const ptrans[])
 	default:
 		return (vslq_test(vex, ptrans));
 	}
-	NEEDLESS_RETURN(0);
+	NEEDLESS(return 0);
 }
 
 struct vslq_query *

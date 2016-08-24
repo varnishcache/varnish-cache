@@ -293,8 +293,7 @@ do_curses(void *arg)
 			break;
 		}
 	}
-	return NULL;
-
+	NEEDLESS(return NULL);
 }
 
 static void

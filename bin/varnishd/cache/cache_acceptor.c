@@ -543,7 +543,7 @@ vca_acct(void *arg)
 		now = VTIM_real();
 		VSC_C_main->uptime = (uint64_t)(now - t0);
 	}
-	NEEDLESS_RETURN(NULL);
+	NEEDLESS(return NULL);
 }
 
 /*--------------------------------------------------------------------*/

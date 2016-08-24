@@ -733,7 +733,7 @@ decode(struct vhd_decode *d, struct vht_table *tbl, uint8_t *in, size_t in_l,
 		}
 	}
 
-	NEEDLESS_RETURN(0);
+	NEEDLESS(return (VHD_OK));
 }
 
 #define CHECK_RET(r, e)					\

@@ -457,7 +457,7 @@ do_curses(void *arg)
 			pthread_mutex_unlock(&mtx);
 		}
 	}
-	pthread_exit(NULL);
+	NEEDLESS(pthread_exit(NULL));
 }
 
 /*--------------------------------------------------------------------*/

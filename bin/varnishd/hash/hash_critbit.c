@@ -327,7 +327,7 @@ hcb_cleaner(struct worker *wrk, void *priv)
 		Pool_Sumstat(wrk);
 		VTIM_sleep(cache_param->critbit_cooloff);
 	}
-	NEEDLESS_RETURN(NULL);
+	NEEDLESS(return NULL);
 }
 
 /*--------------------------------------------------------------------*/

@@ -70,7 +70,7 @@ wrk_bgthread(void *arg)
 
 	WRONG("BgThread terminated");
 
-	NEEDLESS_RETURN(NULL);
+	NEEDLESS(return NULL);
 }
 
 void
@@ -539,5 +539,5 @@ pool_herder(void *priv)
 		}
 		Lck_Unlock(&pp->mtx);
 	}
-	NEEDLESS_RETURN(NULL);
+	NEEDLESS(return NULL);
 }

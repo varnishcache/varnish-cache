@@ -368,5 +368,5 @@ ban_lurker(struct worker *wrk, void *priv)
 		Lck_Unlock(&ban_mtx);
 	}
 	pthread_exit(0);
-	NEEDLESS_RETURN(NULL);
+	NEEDLESS(return NULL);
 }
