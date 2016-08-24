@@ -101,9 +101,8 @@ BAN_Abandon(struct ban_proto *bp)
 static void
 ban_add_lump(const struct ban_proto *bp, const void *p, uint32_t len)
 {
-	uint8_t buf[PRNDUP(sizeof len)];
+	uint8_t buf[PRNDUP(sizeof len)] = { 0xff };
 
-	buf[0] = 0xff;
 	while (VSB_len(bp->vsb) & PALGN)
 		VSB_putc(bp->vsb, buf[0]);
 	vbe32enc(buf, len);
