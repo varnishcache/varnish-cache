@@ -6,10 +6,10 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = varnishapi.pc
 
 m4dir = $(datadir)/aclocal
-m4_DATA = varnish.m4
+m4_DATA = varnish.m4 varnish-deprecated.m4
 
 CLEANFILES = cscope.in.out cscope.out cscope.po.out
-EXTRA_DIST = README.rst README.Packaging LICENSE autogen.sh varnishapi.pc.in varnish.m4
+EXTRA_DIST = README.rst README.Packaging LICENSE autogen.sh varnishapi.pc.in varnish.m4 varnish-deprecated.m4
 
 DISTCHECK_CONFIGURE_FLAGS = \
     --enable-developer-warnings \
