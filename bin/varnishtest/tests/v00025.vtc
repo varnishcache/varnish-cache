@@ -25,6 +25,10 @@ varnish v1 -arg "-i J.F.Nobody" -vcl+backend {
 		set resp.http.l_ip = local.ip;
 		set resp.http.r_ip = remote.ip;
 		if (obj.uncacheable) { }
+		set resp.http.o_age = obj.age;
+		set resp.http.o_ttl = obj.ttl;
+		set resp.http.o_grace = obj.grace;
+		set resp.http.o_keep = obj.keep;
 	}
 
 	sub vcl_backend_response {

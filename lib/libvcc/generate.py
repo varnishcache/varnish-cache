@@ -654,28 +654,28 @@ sp_variables = [
 	),
 	('obj.ttl',
 		'DURATION',
-		('hit',),
+		('hit', 'deliver'),
 		(), """
 		The object's remaining time to live, in seconds.
 		"""
 	),
 	('obj.age',
 		'DURATION',
-		('hit',),
+		('hit', 'deliver'),
 		(), """
 		The age of the object.
 		"""
 	),
 	('obj.grace',
 		'DURATION',
-		('hit',),
+		('hit', 'deliver'),
 		(), """
 		The object's remaining grace period in seconds.
 		"""
 	),
 	('obj.keep',
 		'DURATION',
-		('hit',),
+		('hit', 'deliver'),
 		(), """
 		The object's remaining keep period in seconds.
 		"""
