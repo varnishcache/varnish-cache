@@ -134,11 +134,10 @@ AC_DEFUN([_VARNISH_VMOD], [
 
 vmod_$1.lo: vcc_$1_if.c vcc_$1_if.h
 
-vcc_$1_if.c vcc_$1_if.h vmod_$1.rst vmod_$1.man.rst: .vcc_$1
+vcc_$1_if.h vmod_$1.rst vmod_$1.man.rst: vcc_$1_if.c
 
-.vcc_$1: vmod_$1.vcc
+vcc_$1_if.c: vmod_$1.vcc
 	\$(AM_V_VMODTOOL) $PYTHON $VMODTOOL -o vcc_$1_if \$(srcdir)/vmod_$1.vcc
-	@touch .vcc_$1
 
 vmod_$1.3: vmod_$1.man.rst
 	$RST2MAN vmod_$1.man.rst vmod_$1.3
@@ -150,7 +149,6 @@ distclean: clean-vmod-$1
 clean-vmod-$1:
 	rm -f vcc_$1_if.c vcc_$1_if.h
 	rm -f vmod_$1.rst vmod_$1.man.rst vmod_$1.3
-	rm -f .vcc_$1
 
 "
 
