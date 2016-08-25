@@ -127,7 +127,7 @@ AC_DEFUN([_VARNISH_VMOD], [
 	VMOD_FILE="\$(abs_builddir)/.libs/libvmod_$1.so"
 	AC_SUBST(m4_toupper(VMOD_$1_FILE), [$VMOD_FILE])
 
-	VMOD_IMPORT="querystring from \\\"$VMOD_FILE\\\""
+	VMOD_IMPORT="$1 from \\\"$VMOD_FILE\\\""
 	AC_SUBST(m4_toupper(VMOD_$1), [$VMOD_IMPORT])
 
 	VMOD_RULES="
