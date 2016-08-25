@@ -1,0 +1,54 @@
+#!/bin/sh
+#
+# Build Varnish under Coverity, and upload the output to Coverity Scan.
+#
+# Requires the Coverity scanner in $PATH and the upload token set in $COVTOKEN.
+#
+# See https://github.com/varnishcache/varnish-cache/wiki/Coverity-scans for overview.
+#
+
+
+if [ -z "$COVTOKEN" ]; then
+	echo "ERROR: No COVTOKEN in environment"
+	exit 1
+fi
+
+if [ -z "`which cov-build`" ]; then
+	echo "ERROR: No Coverity (cov-build) in \$PATH. Download: https://scan.coverity.com/download?tab=cxx"
+	exit 1
+fi
+
+if [ -z "$EMAIL" ]; then
+	EMAIL="varnish-dev@varnish-cache.org"
+fi
+
+
+GITREF=`git rev-parse --short HEAD`
+GITBRANCH=`git rev-parse --abbrev-ref HEAD`
+
+# Do a dirty check.
+DIRT=`git status --porcelain 2>/dev/null | egrep '^(\ M|M)' | grep -v coverity-run`
+if [ -n "$DIRT" ]; then
+	printf "ERROR: Refusing to analyse a dirty tree.\n$DIRT\n"
+	exit 2
+fi
+
+test "`basename $PWD`" = "devscripts" && cd ..
+
+make distclean || true
+test -f configure || ./autogen.sh
+./configure
+
+cov-build --dir cov-int make
+
+# the web ui seems to require the file to be called myproject.tgz. Very cute.
+tar cvfz myproject.tgz cov-int
+
+curl --form token=$COVTOKEN \
+  --form "email=$EMAIL" \
+  --form "file=@myproject.tgz" \
+  --form version="$GITREF" \
+  --form description="description=${GITBRANCH}_branch" \
+  'https://scan.coverity.com/builds?project=varnish'
+
+rm myproject.tgz
