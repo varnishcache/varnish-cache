@@ -604,56 +604,68 @@ cmd_random(CMD_ARGS)
  *        The vcache user is present
  * group_varnish
  *        The varnish group is present
+ * cmd <command-line>
+ *        A command-line that should exit with zero
  */
 
 static void
 cmd_feature(CMD_ARGS)
 {
-	int i;
+	int r;
 
 	(void)priv;
 	(void)cmd;
+
 	if (av == NULL)
 		return;
 
-	for (i = 1; av[i] != NULL; i++) {
+	for (; *av != NULL; av++) {
 #ifdef SO_RCVTIMEO_WORKS
-		if (!strcmp(av[i], "SO_RCVTIMEO_WORKS"))
+		if (!strcmp(*av, "SO_RCVTIMEO_WORKS"))
 			continue;
 #endif
-		if (sizeof(void*) == 8 && !strcmp(av[i], "64bit"))
+		if (sizeof(void*) == 8 && !strcmp(*av, "64bit"))
 			continue;
 
-		if (!strcmp(av[i], "pcre_jit") && VRE_has_jit)
+		if (!strcmp(*av, "pcre_jit") && VRE_has_jit)
 			continue;
 
-		if (!strcmp(av[i], "!OSX")) {
+		if (!strcmp(*av, "!OSX")) {
 #if !defined(__APPLE__) || !defined(__MACH__)
 			continue;
 #endif
 		}
-		if (!strcmp(av[i], "dns") && feature_dns)
+		if (!strcmp(*av, "dns") && feature_dns)
 			continue;
 
-		if (!strcmp(av[i], "topbuild") && iflg)
+		if (!strcmp(*av, "topbuild") && iflg)
 			continue;
 
-		if (!strcmp(av[i], "root") && !geteuid())
+		if (!strcmp(*av, "root") && !geteuid())
 			continue;
 
-		if (!strcmp(av[i], "user_varnish") &&
+		if (!strcmp(*av, "user_varnish") &&
 		    getpwnam("varnish") != NULL)
 			continue;
 
-		if (!strcmp(av[i], "user_vcache") &&
+		if (!strcmp(*av, "user_vcache") &&
 		    getpwnam("vcache") != NULL)
 			continue;
 
-		if (!strcmp(av[i], "group_varnish") &&
+		if (!strcmp(*av, "group_varnish") &&
 		    getgrnam("varnish") != NULL)
 			continue;
 
-		vtc_log(vl, 1, "SKIPPING test, missing feature: %s", av[i]);
+		if (!strcmp(*av, "cmd")) {
+			av++;
+			if (*av == NULL)
+				vtc_log(vl, 0, "Missing the command-line");
+			r = system(*av);
+			if (WEXITSTATUS(r) == 0)
+				continue;
+		}
+
+		vtc_log(vl, 1, "SKIPPING test, missing feature: %s", *av);
 		vtc_stop = 1;
 		return;
 	}
