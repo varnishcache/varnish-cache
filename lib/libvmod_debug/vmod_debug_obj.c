@@ -39,6 +39,7 @@ struct vmod_debug_obj {
 	unsigned		magic;
 #define VMOD_DEBUG_OBJ_MAGIC	0xccbd9b77
 	int foobar;
+	const char *string, *number;
 };
 
 VCL_VOID
@@ -49,14 +50,14 @@ vmod_obj__init(VRT_CTX, struct vmod_debug_obj **op,
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	(void)vcl_name;
-	(void)s;
-	(void)e;
 	AN(op);
 	AZ(*op);
 	ALLOC_OBJ(o, VMOD_DEBUG_OBJ_MAGIC);
 	AN(o);
 	*op = o;
 	o->foobar = 42;
+	o->string = s;
+	o->number = e;
 	AN(*op);
 }
 
@@ -98,4 +99,24 @@ vmod_obj_date(VRT_CTX, struct vmod_debug_obj *o)
 	CHECK_OBJ_NOTNULL(o, VMOD_DEBUG_OBJ_MAGIC);
 	assert(o->foobar == 42);
 	return (21.4);
+}
+
+VCL_STRING __match_proto__()
+vmod_obj_string(VRT_CTX, struct vmod_debug_obj *o)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(o, VMOD_DEBUG_OBJ_MAGIC);
+	assert(o->foobar == 42);
+	return (o->string);
+}
+
+VCL_STRING __match_proto__()
+vmod_obj_number(VRT_CTX, struct vmod_debug_obj *o)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(o, VMOD_DEBUG_OBJ_MAGIC);
+	assert(o->foobar == 42);
+	return (o->number);
 }

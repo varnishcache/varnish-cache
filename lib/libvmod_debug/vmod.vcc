@@ -71,7 +71,7 @@ $Function BACKEND no_backend()
 
 Fails at backend selection
 
-$Object obj(STRING, ENUM { one, two, three } number="one")
+$Object obj(STRING string="default", ENUM { one, two, three } number="one")
 
 Test object
 
@@ -80,6 +80,14 @@ $Method VOID .enum(ENUM { phk, des, kristian, mithrandir, martin })
 
 Testing that enums work as part of object and that the parser isn't
 (too) buggy.
+
+$Method STRING .string()
+
+getter for string
+
+$Method STRING .number()
+
+getter for number
 
 $Method STRING .foo(STRING why)
 

@@ -1,4 +1,4 @@
-varnishtest "Test var args"
+varnishtest "Test vmod functions/contructor named arguments and defaults"
 
 server s1 {
 	rxreq
@@ -8,6 +8,15 @@ server s1 {
 varnish v1 -vcl+backend {
 	import debug;
 
+	sub vcl_init {
+		new obj0 = debug.obj();
+		new obj1 = debug.obj("only_argument");
+		new obj2 = debug.obj("string", one);
+		new obj3 = debug.obj(string="s_two", number=two);
+		new obj4 = debug.obj(number=three, string="s_three");
+		new obj5 = debug.obj(number=three);
+	}
+
 	sub vcl_deliver {
 		set resp.http.foo1 = debug.argtest("1", 2.1, "3a");
 		set resp.http.foo2 = debug.argtest("1", two=2.2, three="3b");
@@ -15,6 +24,13 @@ varnish v1 -vcl+backend {
 		set resp.http.foo4 = debug.argtest("1", 2.4, three="3d");
 		set resp.http.foo5 = debug.argtest("1", 2.5);
 		set resp.http.foo6 = debug.argtest("1", four=6);
+
+		set resp.http.obj0 = obj0.string() + ", " + obj0.number();
+		set resp.http.obj1 = obj1.string() + ", " + obj1.number();
+		set resp.http.obj2 = obj2.string() + ", " + obj2.number();
+		set resp.http.obj3 = obj3.string() + ", " + obj3.number();
+		set resp.http.obj4 = obj4.string() + ", " + obj4.number();
+		set resp.http.obj5 = obj5.string() + ", " + obj5.number();
 	}
 } -start
 
@@ -28,6 +44,13 @@ client c1 {
 	expect resp.http.foo4 == "1 2.4 3d , 4"
 	expect resp.http.foo5 == "1 2.5 3 , 4"
 	expect resp.http.foo6 == "1 2 3 , 6"
+
+	expect resp.http.obj0 == "default, one"
+	expect resp.http.obj1 == "only_argument, one"
+	expect resp.http.obj2 == "string, one"
+	expect resp.http.obj3 == "s_two, two"
+	expect resp.http.obj4 == "s_three, three"
+	expect resp.http.obj5 == "default, three"
 } -run
 
 delay .1
