@@ -299,6 +299,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	    "?probe",
 	    "?max_connections",
 	    "?proxy_header",
+	    "?key",
 	    NULL);
 
 	SkipToken(tl, '{');
@@ -346,6 +347,14 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			ExpectErr(tl, CSTR);
 			assert(tl->t->dec != NULL);
 			t_hosthdr = tl->t;
+			vcc_NextToken(tl);
+			SkipToken(tl, ';');
+		} else if (vcc_IdIs(t_field, "key")) {
+			ERRCHK(tl);
+			ExpectErr(tl, CSTR);
+			Fb(tl, 0, "\t.key = ");
+			EncToken(tl->fb, tl->t);
+			Fb(tl, 0, ",\n");
 			vcc_NextToken(tl);
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "connect_timeout")) {

@@ -213,6 +213,14 @@ are available:
   host_header
     A host header to add.
 
+  key
+    An opaque key identifying this backend. Normally, backends with the
+    same host (as determined by IPv4/IPv6 address pair) and port will
+    share TCP connections, but if you give them different keys, they will
+    not. This is useful if your HTTP connections have some kind of state
+    (e.g. for security) which makes it impossible to reuse them across
+    backends.
+
   connect_timeout
     Timeout for connections.
 
