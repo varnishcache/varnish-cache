@@ -1191,7 +1191,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	default:
 		break;
 	}
-	if (fmt == BOOL && (*e)->fmt == STRING) {
+	if (fmt == BOOL && ((*e)->fmt == STRING || (*e)->fmt == BACKEND)) {
 		*e = vcc_expr_edit(BOOL, "(\v1 != 0)", *e, NULL);
 		return;
 	}

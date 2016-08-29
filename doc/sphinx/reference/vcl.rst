@@ -87,7 +87,11 @@ characters except for the NUL (0x00) character.
 Booleans
 ~~~~~~~~
 
-Booleans can be either *true* or *false*.
+Booleans can be either *true* or *false*. Some values may be inferred as
+truthy or falthy. When cast to booleans, strings will evaluate to *false*
+if they are empty or NULL. This allows broad checks on headers existence
+for instance. Backend expressions can also be tested as booleans and can
+help find when a director like the hash director returns a NULL backend.
 
 Time
 ----
