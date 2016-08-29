@@ -134,6 +134,8 @@ Description
 
 	The random director distributes load over the backends using
 	a weighted random probability distribution.
+	The "testable" random generator in varnishd is used, which
+	enables deterministic tests to be run (See: d00004.vtc).
 
 Example
 	new vdir = directors.random();

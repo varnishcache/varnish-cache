@@ -168,17 +168,16 @@ cli_debug_xid(struct cli *cli, const char * const *av, void *priv)
  * Default to seed=1, this is the only seed value POSIXl guarantees will
  * result in a reproducible random number sequence.
  */
-static void
+static void __match_proto__(cli_func_t)
 cli_debug_srandom(struct cli *cli, const char * const *av, void *priv)
 {
-	(void)priv;
 	unsigned seed = 1;
 
+	(void)priv;
+	(void)cli;
 	if (av[2] != NULL)
 		seed = strtoul(av[2], NULL, 0);
-	srandom(seed);
-	srand48(random());
-	VCLI_Out(cli, "Random(3) seeded with %u", seed);
+	VRND_SeedTestable(seed);
 }
 
 static struct cli_proto debug_cmds[] = {
@@ -255,8 +254,8 @@ child_main(void)
 
 	BAN_Compile();
 
-	VRND_Seed();
-	srand48(random());
+	VRND_SeedAll();
+
 	CLI_AddFuncs(debug_cmds);
 
 	/* Wait for persistent storage to load if asked to */

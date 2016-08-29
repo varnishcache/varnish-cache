@@ -406,7 +406,7 @@ make_secret(const char *dirname)
 		    dirname, strerror(errno));
 
 	for (i = 0; i < 256; i++) {
-		AZ(VRND_CryptoQuality(&b, 1));
+		AZ(VRND_RandomCrypto(&b, 1));
 		assert(1 == write(fdo, &b, 1));
 	}
 	AZ(close(fdo));
@@ -523,7 +523,7 @@ main(int argc, char * const *argv)
 	 */
 	VSUB_closefrom(STDERR_FILENO + 1);
 
-	VRND_Seed();
+	VRND_SeedAll();
 
 	mgt_got_fd(STDERR_FILENO);
 

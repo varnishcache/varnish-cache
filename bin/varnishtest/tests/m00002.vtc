@@ -1,8 +1,5 @@
 varnishtest "Test std.random()"
 
-# needs random generator
-random
-
 server s1 {
 	rxreq
 	txresp
@@ -19,15 +16,13 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
-# NB: Do not change the number 1
-# NB: Only srandom(1) is standardized as deterministic.
-varnish v1 -cliok "debug.srandom 1"
+varnish v1 -cliok "debug.srandom"
 
 client c1 {
 	txreq
 	rxresp
-	expect resp.http.rnd1 == 0.388
-	expect resp.http.rnd2 == 7.478
-	expect resp.http.rnd3 == 9.034
-	expect resp.http.rnd4 == 99.502
+	expect resp.http.rnd1 == 0.256
+	expect resp.http.rnd2 == 1.643
+	expect resp.http.rnd3 == 9.011
+	expect resp.http.rnd4 == 99.654
 } -run

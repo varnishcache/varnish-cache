@@ -72,6 +72,9 @@ $Function REAL random(REAL lo, REAL hi)
 
 Description
 	Returns a random real number between *lo* and *hi*.
+	This function uses the "testable" random generator in varnishd
+	which enables determinstic tests to be run (See m00002.vtc).
+	This function should not be used for cryptographic applications.
 Example
 	set beresp.http.random-number = std.random(1, 100);
 

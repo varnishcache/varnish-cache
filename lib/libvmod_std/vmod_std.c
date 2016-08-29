@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <syslog.h>
 
+#include "vrnd.h"
 #include "vrt.h"
 #include "vtcp.h"
 #include "vsa.h"
@@ -125,7 +126,7 @@ vmod_random(VRT_CTX, VCL_REAL lo, VCL_REAL hi)
 	double a;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	a = drand48();
+	a = VRND_RandomTestableDouble();
 	a *= hi - lo;
 	a += lo;
 	return (a);

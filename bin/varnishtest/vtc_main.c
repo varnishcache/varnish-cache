@@ -252,7 +252,7 @@ start_test(void)
 	assert(jp->buf != MAP_FAILED);
 	memset(jp->buf, 0, jp->bufsiz);
 
-	VRND_Seed();
+	VRND_SeedAll();
 	bprintf(tmpdir, "%s/vtc.%d.%08x", tmppath, (int)getpid(),
 		(unsigned)random());
 	AZ(mkdir(tmpdir, 0711));

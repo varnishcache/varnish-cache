@@ -530,57 +530,6 @@ cmd_delay(CMD_ARGS)
 	VTIM_sleep(f);
 }
 
-/**********************************************************************
- * Check random generator
- */
-
-#define NRNDEXPECT	12
-static const unsigned long random_expect[NRNDEXPECT] = {
-	1804289383,	846930886,	1681692777,	1714636915,
-	1957747793,	424238335,	719885386,	1649760492,
-	 596516649,	1189641421,	1025202362,	1350490027
-};
-
-#define RND_NEXT_1K	0x3bdcbe30
-
-/* SECTION: random random
- *
- * Check the random number generator.
- */
-
-static void
-cmd_random(CMD_ARGS)
-{
-	uint32_t l;
-	int i;
-
-	(void)cmd;
-	(void)priv;
-	if (av == NULL)
-		return;
-	srandom(1);
-	for (i = 0; i < NRNDEXPECT; i++) {
-		l = random();
-		if (l == random_expect[i])
-			continue;
-		vtc_log(vl, 4, "random[%d] = 0x%x (expect 0x%lx)",
-		    i, l, random_expect[i]);
-		vtc_log(vl, 1, "SKIPPING test: unknown srandom(1) sequence.");
-		vtc_stop = 1;
-		break;
-	}
-	l = 0;
-	for (i = 0; i < 1000; i++)
-		l += random();
-	if (l != RND_NEXT_1K) {
-		vtc_log(vl, 4, "sum(random[%d...%d]) = 0x%x (expect 0x%x)",
-		    NRNDEXPECT, NRNDEXPECT + 1000,
-		    l, RND_NEXT_1K);
-		vtc_log(vl, 1, "SKIPPING test: unknown srandom(1) sequence.");
-		vtc_stop = 1;
-	}
-}
-
 /* SECTION: feature feature
  *
  * Test that the required feature(s) for a test are available, and skip the test
@@ -685,7 +634,6 @@ static const struct cmds cmds[] = {
 	CMD(shell),
 	CMD(err_shell),
 	CMD(barrier),
-	CMD(random),
 	CMD(feature),
 	CMD(logexpect),
 	CMD(process),

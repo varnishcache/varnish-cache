@@ -28,5 +28,9 @@
  * Random functions
  */
 
-int VRND_CryptoQuality(void *, size_t);
-void VRND_Seed(void);		/* Seed random(3) properly */
+int VRND_RandomCrypto(void *, size_t);
+long VRND_RandomTestable(void);
+double VRND_RandomTestableDouble(void);
+void VRND_SeedTestable(unsigned int);
+void VRND_SeedAll(void);		/* Seed random(3) properly */
+

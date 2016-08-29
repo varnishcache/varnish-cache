@@ -1,7 +1,5 @@
 varnishtest "Deeper test of random director"
 
-random
-
 server s1 {
 	rxreq
 	txresp -body "1"
@@ -21,15 +19,15 @@ server s2 {
 server s3 {
 	rxreq
 	txresp -body "333"
+	rxreq
+	txresp -body "333"
+	rxreq
+	txresp -body "333"
+	rxreq
+	txresp -body "333"
 } -start
 
 server s4 {
-	rxreq
-	txresp -body "4444"
-	rxreq
-	txresp -body "4444"
-	rxreq
-	txresp -body "4444"
 	rxreq
 	txresp -body "4444"
 } -start
@@ -54,10 +52,7 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
-# NB: Do not change the number 1
-# NB: Only srandom(1) is standardized as deterministic.
-
-varnish v1 -cliok "debug.srandom 1"
+varnish v1 -cliok "debug.srandom"
 
 client c1 {
 	txreq
@@ -65,22 +60,10 @@ client c1 {
 	expect resp.bodylen == 2
 	txreq
 	rxresp
-	expect resp.bodylen == 4
-	txreq
-	rxresp
-	expect resp.bodylen == 4
-	txreq
-	rxresp
-	expect resp.bodylen == 4
-	txreq
-	rxresp
-	expect resp.bodylen == 1
-	txreq
-	rxresp
 	expect resp.bodylen == 2
 	txreq
 	rxresp
-	expect resp.bodylen == 4
+	expect resp.bodylen == 1
 	txreq
 	rxresp
 	expect resp.bodylen == 2
@@ -90,4 +73,16 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.bodylen == 2
+	txreq
+	rxresp
+	expect resp.bodylen == 3
+	txreq
+	rxresp
+	expect resp.bodylen == 4
+	txreq
+	rxresp
+	expect resp.bodylen == 3
+	txreq
+	rxresp
+	expect resp.bodylen == 3
 } -run
