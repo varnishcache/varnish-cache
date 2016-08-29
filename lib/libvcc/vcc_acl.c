@@ -225,6 +225,8 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 				res->ai_family, PF(ae->t_addr));
 			continue;
 		}
+		if (tl->err)
+			freeaddrinfo(res0);
 		ERRCHK(tl);
 	}
 	freeaddrinfo(res0);
