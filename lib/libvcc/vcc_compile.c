@@ -321,16 +321,18 @@ EmitInitFini(const struct vcc *tl)
 	Fc(tl, 0, "\nstatic int\nVGC_Discard(VRT_CTX)\n{\n\n");
 
 	Fc(tl, 0, "\t(void)VGC_function_vcl_fini(ctx);\n\n");
+
+	Fc(tl, 0, "\tswitch (vgc_inistep) {\n\n");
 	VTAILQ_FOREACH_REVERSE(p, &tl->inifin, inifinhead, list) {
 		AZ(VSB_finish(p->fin));
 		if (VSB_len(p->fin)) {
-			Fc(tl, 0, "\t/* %u */\n", p->n);
-			Fc(tl, 0, "\tif (vgc_inistep >= %u) {\n", p->n);
-			Fc(tl, 0, "%s\n", VSB_data(p->fin));
-			Fc(tl, 0, "\t}\n\n");
+			Fc(tl, 0, "\t\tcase %u :\n", p->n);
+			Fc(tl, 0, "\t%s\n", VSB_data(p->fin));
+			Fc(tl, 0, "\t\t\t/* FALLTHROUGH */\n");
 		}
 		VSB_destroy(&p->fin);
 	}
+	Fc(tl, 0, "\t}\n\n");
 
 	Fc(tl, 0, "\treturn (0);\n");
 	Fc(tl, 0, "}\n");
