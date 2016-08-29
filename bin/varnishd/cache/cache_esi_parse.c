@@ -582,14 +582,11 @@ VEP_Parse(struct vep_state *vep, const char *p, size_t l)
 
 	while (p < e) {
 		AN(vep->state);
-		i = e - p;
-		if (i > 10)
-			i = 10;
 		Debug("EP %s %d (%.*s) [%.*s]\n",
 		    vep->state,
 		    vep->remove,
 		    vep->tag_i, vep->tag,
-		    i, p);
+		    (e - p) > 10 ? 10 : (int)(e-p), p);
 		assert(p >= vep->ver_p);
 
 		/******************************************************
