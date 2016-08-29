@@ -1,0 +1,20 @@
+varnishtest "Backend as a boolean expression"
+
+server s1 -start
+
+varnish v1 -vcl+backend {
+	import debug;
+
+	sub vcl_recv {
+		set req.backend_hint = debug.no_backend();
+		if (!req.backend_hint) {
+			return (synth(404));
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 404
+} -run
