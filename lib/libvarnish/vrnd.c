@@ -48,7 +48,7 @@ VRND_CryptoQuality(void *ptr, size_t len)
 	ssize_t l;
 
 	AN(ptr);
-	fd = open("/dev/random", O_RDONLY);
+	fd = open("/dev/urandom", O_RDONLY);
 	if (fd < 0)
 		return (-1);
 	for (p = ptr; len > 0; len--, p++) {
