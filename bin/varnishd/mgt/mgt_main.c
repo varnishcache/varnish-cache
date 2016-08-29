@@ -394,9 +394,8 @@ make_secret(const char *dirname)
 {
 	char *fn;
 	int fdo;
-	int i, j;
+	int i;
 	unsigned char b;
-	int fdi;
 
 	assert(asprintf(&fn, "%s/_.secret", dirname) > 0);
 
@@ -406,18 +405,10 @@ make_secret(const char *dirname)
 		ARGV_ERR("Cannot create secret-file in %s (%s)\n",
 		    dirname, strerror(errno));
 
-	fdi = open("/dev/urandom", O_RDONLY);
-	if (fdi < 0)
-		fdi = open("/dev/random", O_RDONLY);
-	if (fdi < 0)
-		ARGV_ERR("No /dev/[u]random, cannot autogenerate -S file\n");
-
 	for (i = 0; i < 256; i++) {
-		j = read(fdi, &b, 1);
-		assert(j == 1);
+		AZ(VRND_CryptoQuality(&b, 1));
 		assert(1 == write(fdo, &b, 1));
 	}
-	AZ(close(fdi));
 	AZ(close(fdo));
 	VJ_master(JAIL_MASTER_LOW);
 	AZ(atexit(mgt_secret_atexit));

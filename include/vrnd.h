@@ -28,4 +28,5 @@
  * Random functions
  */
 
+int VRND_CryptoQuality(void *, size_t);
 void VRND_Seed(void);		/* Seed random(3) properly */

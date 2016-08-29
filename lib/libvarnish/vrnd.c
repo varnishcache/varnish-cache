@@ -40,39 +40,31 @@
 #include "vtim.h"
 #include "vsha256.h"
 
+int
+VRND_CryptoQuality(void *ptr, size_t len)
+{
+	int fd;
+	char *p;
+	ssize_t l;
+
+	AN(ptr);
+	fd = open("/dev/random", O_RDONLY);
+	if (fd < 0)
+		return (-1);
+	for (p = ptr; len > 0; len--, p++) {
+		l = read(fd, p, 1);
+		if (l != 1)
+			break;
+	}
+	AZ(close(fd));
+	return (len == 0 ? 0 : -1);
+}
+
 void
 VRND_Seed(void)
 {
 	unsigned long seed;
-	struct SHA256Context ctx;
-	double d;
-	pid_t p;
-	unsigned char b[SHA256_LEN];
-	int fd;
-	ssize_t sz;
 
-	fd = open("/dev/urandom", O_RDONLY);
-	if (fd < 0)
-		fd = open("/dev/random", O_RDONLY);
-	if (fd >= 0) {
-		sz = read(fd, &seed, sizeof seed);
-		AZ(close(fd));
-		if (sz == sizeof seed) {
-			srandom(seed);
-			return;
-		}
-	}
-
-	SHA256_Init(&ctx);
-	d = VTIM_mono();
-	SHA256_Update(&ctx, &d, sizeof d);
-	d = VTIM_real();
-	SHA256_Update(&ctx, &d, sizeof d);
-	p = getpid();
-	SHA256_Update(&ctx, &p, sizeof p);
-	p = getppid();
-	SHA256_Update(&ctx, &p, sizeof p);
-	SHA256_Final(b, &ctx);
-	memcpy(&seed, b, sizeof seed);
+	AZ(VRND_CryptoQuality(&seed, sizeof seed));
 	srandom(seed);
 }

@@ -242,9 +242,9 @@ mgt_cli_challenge(struct cli *cli)
 {
 	int i;
 
-	VRND_Seed();
-	for (i = 0; i + 2L < sizeof cli->challenge; i++)
-		cli->challenge[i] = (random() % 26) + 'a';
+	AZ(VRND_CryptoQuality(cli->challenge, sizeof cli->challenge - 2));
+	for (i = 0; i < sizeof cli->challenge - 2; i++)
+		cli->challenge[i] = (cli->challenge[i] % 26) + 'a';
 	cli->challenge[i++] = '\n';
 	cli->challenge[i] = '\0';
 	VCLI_Out(cli, "%s", cli->challenge);
