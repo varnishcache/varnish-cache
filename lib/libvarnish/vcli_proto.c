@@ -39,6 +39,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "vdef.h"
 #include "vas.h"
 #include "vcli.h"
 #include "vsha256.h"
