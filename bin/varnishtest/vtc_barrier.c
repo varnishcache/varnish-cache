@@ -342,6 +342,7 @@ barrier_sync(struct barrier *b, struct vtclog *vl)
 	case BARRIER_NONE:
 		vtc_log(vl, 0,
 		    "Barrier(%s) use error: not initialized", b->name);
+		break;
 	case BARRIER_COND:
 		barrier_cond_sync(b, vl);
 		break;
