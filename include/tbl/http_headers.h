@@ -83,7 +83,7 @@ H("Expect",		H_Expect,		0      )	// 2616 14.20
 H("Expires",		H_Expires,		0      )	// 2616 14.21
 H("From",		H_From,			0      )	// 2616 14.22
 H("Host",		H_Host,			0      )	// 2616 14.23
-H("HTTP2-Settings",	H_HTTP2_Settings,	P|F|I|S)	// httpbis-http2-16.txt
+H("HTTP2-Settings",	H_HTTP2_Settings,	P|F|I|S)	// 7540 3.2.1
 H("If-Match",		H_If_Match,		  F    )	// 2616 14.24
 H("If-Modified-Since",	H_If_Modified_Since,	  F    )	// 2616 14.25
 H("If-None-Match",	H_If_None_Match,	  F    )	// 2616 14.26

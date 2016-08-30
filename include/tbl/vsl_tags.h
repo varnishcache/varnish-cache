@@ -533,5 +533,21 @@ SLTM(BackendStart, 0, "Backend request start",
 	"\n"
 )
 
+SLTM(H2RxHdr, 0, "Received HTTP2 frame header",
+	"Binary data"
+)
+
+SLTM(H2RxBody, 0, "Received HTTP2 frame body",
+	"Binary data"
+)
+
+SLTM(H2TxHdr, 0, "Received HTTP2 frame header",
+	"Binary data"
+)
+
+SLTM(H2TxBody, 0, "Received HTTP2 frame body",
+	"Binary data"
+)
+
 #undef NODEF_NOTICE
 /*lint -restore */
