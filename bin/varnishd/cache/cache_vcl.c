@@ -127,7 +127,7 @@ VCL_Panic(struct vsb *vsb, const struct vcl *vcl)
 	VSB_printf(vsb, "busy = %u\n", vcl->busy);
 	VSB_printf(vsb, "discard = %u,\n", vcl->discard);
 	VSB_printf(vsb, "state = %s,\n", vcl->state);
-	VSB_printf(vsb, "temp = %s,\n", vcl->temp);
+	VSB_printf(vsb, "temp = %s,\n", (const volatile char *)vcl->temp);
 	VSB_printf(vsb, "conf = {\n");
 	VSB_indent(vsb, 2);
 	if (vcl->conf == NULL) {
