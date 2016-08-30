@@ -102,6 +102,43 @@ For the std VMOD, the compiled vcc_if.h file looks like this::
 Those are your C prototypes.  Notice the ``vmod_`` prefix on the
 function names.
 
+Named arguments and default values
+----------------------------------
+
+The basic vmod.vcc function declaration syntax introduced above makes all
+arguments mandatory for calls from vcl - which implies that they need
+to be given in order.
+
+Naming the arguments as in::
+
+	$Function BOOL match_acl(ACL acl, IP ip)
+
+allows calls from VCL with named arguments in any order, for example::
+
+	if (debug.match_acl(ip=client.ip, acl=local)) { # ...
+
+Named arguments also take default values, so for this example from
+the debug vmod::
+
+	$Function STRING argtest(STRING one, REAL two=2, STRING three="3",
+				 STRING comma=",", INT four=4)
+
+only argument `one` is required, so that all of the following are
+valid invocations from vcl::
+
+	debug.argtest("1", 2.1, "3a")
+	debug.argtest("1", two=2.2, three="3b")
+	debug.argtest("1", three="3c", two=2.3)
+	debug.argtest("1", 2.4, three="3d")
+	debug.argtest("1", 2.5)
+	debug.argtest("1", four=6);
+
+The C interface does not change with named arguments and default
+values, arguments remain positional and defaul values appear no
+differnt to user specified values.
+
+`Note` that default values have to be fiven in the native C-type
+syntax, see below. As a special case, ``NULL`` has to be given as ``0``.
 
 .. _ref-vmod-vcl-c-types:
 
@@ -152,9 +189,14 @@ DURATION
 	A time interval, as in 25 seconds.
 
 ENUM
+	vcc syntax: ENUM { val1, val2, ... }
+
+	vcc example: ``ENUM { one, two, three } number="one"``
+
 	C-type: ``const char *``
 
-	TODO
+	Allows values from a set of constant strings. `Note` that the
+	C-type is a string, not a C enum.
 
 HEADER
 	C-type: ``const struct gethdr_s *``
