@@ -510,8 +510,12 @@ VRT_rel_vcl(VRT_CTX, struct vclref **refp)
 	vcl = ctx->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	assert(vcl == ref->vcl);
-	assert(vcl->temp == VCL_TEMP_WARM || vcl->temp == VCL_TEMP_BUSY ||
-	    vcl->temp == VCL_TEMP_COOLING);
+
+	/* NB: A VCL may be released by a VMOD at any time, but it must happen
+	 * after a warmup and before the end of a cooldown. The release may or
+	 * may not happen while the same thread holds the temperature lock, so
+	 * instead we check that all references are gone in VCL_Nuke.
+	 */
 
 	Lck_Lock(&vcl_mtx);
 	assert(!VTAILQ_EMPTY(&vcl->ref_list));
