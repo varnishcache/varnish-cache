@@ -2,8 +2,8 @@
 
 # API headers
 nobase_pkginclude_HEADERS = \
-	tbl/acct_fields_req.h \
 	tbl/acct_fields_bereq.h \
+	tbl/acct_fields_req.h \
 	tbl/backend_poll.h \
 	tbl/ban_vars.h \
 	tbl/bo_flags.h \
@@ -12,6 +12,10 @@ nobase_pkginclude_HEADERS = \
 	tbl/cli_cmds.h \
 	tbl/debug_bits.h \
 	tbl/feature_bits.h \
+	tbl/h2_error.h \
+	tbl/h2_frames.h \
+	tbl/h2_settings.h \
+	tbl/h2_stream.h \
 	tbl/http_headers.h \
 	tbl/http_response.h \
 	tbl/locks.h \
@@ -27,12 +31,17 @@ nobase_pkginclude_HEADERS = \
 	tbl/symbol_kind.h \
 	tbl/vcc_types.h \
 	tbl/vcl_returns.h \
+	tbl/vhd_fsm.h \
+	tbl/vhd_fsm_funcs.h \
+	tbl/vhd_return.h \
+	tbl/vhp_huffman.h \
+	tbl/vhp_static.h \
 	tbl/vrt_stv_var.h \
-	tbl/vsc_types.h \
 	tbl/vsc_all.h \
+	tbl/vsc_f_main.h \
 	tbl/vsc_fields.h \
 	tbl/vsc_levels.h \
-	tbl/vsc_f_main.h \
+	tbl/vsc_types.h \
 	tbl/vsl_tags.h \
 	tbl/vsl_tags_http.h \
 	vapi/vsm.h \
