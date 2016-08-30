@@ -34,6 +34,7 @@
 #include "config.h"
 
 #include <dlfcn.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -70,6 +71,7 @@ struct vcl {
 	unsigned		busy;
 	unsigned		discard;
 	const char		*temp;
+	pthread_rwlock_t	temp_rwl;
 	VTAILQ_HEAD(,backend)	backend_list;
 	VTAILQ_HEAD(,vclref)	ref_list;
 	struct vcl		*label;
@@ -356,6 +358,7 @@ VCL_Open(const char *fn, struct vsb *msg)
 	}
 	ALLOC_OBJ(vcl, VCL_MAGIC);
 	AN(vcl);
+	AZ(pthread_rwlock_init(&vcl->temp_rwl, NULL));
 	vcl->dlh = dlh;
 	vcl->conf = cnf;
 	return (vcl);
@@ -370,6 +373,7 @@ VCL_Close(struct vcl **vclp)
 	vcl = *vclp;
 	*vclp = NULL;
 	AZ(dlclose(vcl->dlh));
+	AZ(pthread_rwlock_destroy(&vcl->temp_rwl));
 	FREE_OBJ(vcl);
 }
 
