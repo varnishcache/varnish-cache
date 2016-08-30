@@ -219,6 +219,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 
 	if (sendbody && req->resp_len != 0)
 		err = VDP_DeliverObj(req);
+	/*XXX*/(void)err;
 
 	H2_Send(req->wrk, r2, 1, H2_FRAME_DATA, H2FF_DATA_END_STREAM, 0, NULL);
 
