@@ -132,7 +132,7 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 static void
 wait_stopped(const struct varnish *v)
 {
-	char *r;
+	char *r = NULL;
 	enum VCLI_status_e st;
 
 	while (1) {
@@ -146,6 +146,7 @@ wait_stopped(const struct varnish *v)
 			break;
 		}
 		free(r);
+		r = NULL;
 		(void)usleep(200000);
 	}
 }
@@ -156,7 +157,7 @@ wait_stopped(const struct varnish *v)
 static void
 wait_running(const struct varnish *v)
 {
-	char *r;
+	char *r = NULL;
 	enum VCLI_status_e st;
 
 	while (1) {
@@ -176,6 +177,7 @@ wait_running(const struct varnish *v)
 			break;
 		}
 		free(r);
+		r = NULL;
 		(void)usleep(200000);
 	}
 }
@@ -386,7 +388,7 @@ varnish_launch(struct varnish *v)
 	struct pollfd fd[2];
 	enum VCLI_status_e u;
 	const char *err;
-	char *r;
+	char *r = NULL;
 
 	v->vd = VSM_New();
 
@@ -512,6 +514,7 @@ varnish_launch(struct varnish *v)
 	VCLI_AuthResponse(nfd, r, abuf + 5);
 	AZ(close(nfd));
 	free(r);
+	r = NULL;
 	strcat(abuf, "\n");
 
 	u = varnish_ask_cli(v, abuf, &r);
@@ -533,7 +536,7 @@ static void
 varnish_start(struct varnish *v)
 {
 	enum VCLI_status_e u;
-	char *resp, *h, *p;
+	char *resp = NULL, *h, *p;
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);
@@ -547,6 +550,7 @@ varnish_start(struct varnish *v)
 		vtc_log(v->vl, 0, "CLI start command failed: %u %s", u, resp);
 	wait_running(v);
 	free(resp);
+	resp = NULL;
 	u = varnish_ask_cli(v, "debug.xid 999", &resp);
 	if (vtc_error)
 		return;
@@ -554,6 +558,7 @@ varnish_start(struct varnish *v)
 		vtc_log(v->vl, 0, "CLI debug.xid command failed: %u %s",
 		    u, resp);
 	free(resp);
+	resp = NULL;
 	u = varnish_ask_cli(v, "debug.listen_address", &resp);
 	if (vtc_error)
 		return;
