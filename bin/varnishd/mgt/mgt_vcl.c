@@ -343,6 +343,8 @@ mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
 	AZ(mgt_vcl_setstate(cli, active_vcl, VCL_STATE_WARM));
 
 	VTAILQ_FOREACH(vp, &vclhead, list) {
+		if (!VTAILQ_EMPTY(&vp->dfrom))
+			continue;
 		if (!strcmp(vp->state, VCL_STATE_LABEL))
 			continue;
 		if (mgt_cli_askchild(status, p, "vcl.load \"%s\" %s %d%s\n",
@@ -360,6 +362,18 @@ mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
 		free(*p);
 		*p = NULL;
 	}
+	VTAILQ_FOREACH(vp, &vclhead, list) {
+		if (VTAILQ_EMPTY(&vp->dfrom))
+			continue;
+		if (!strcmp(vp->state, VCL_STATE_LABEL))
+			continue;
+		if (mgt_cli_askchild(status, p, "vcl.load \"%s\" %s %d%s\n",
+		    vp->name, vp->fname, vp->warm, vp->state))
+			return (1);
+		free(*p);
+		*p = NULL;
+	}
+
 	if (mgt_cli_askchild(status, p, "vcl.use \"%s\"\n", active_vcl->name))
 		return (1);
 	free(*p);

@@ -299,20 +299,21 @@ static void
 ban_export(void)
 {
 	struct ban *b;
-	struct vsb vsb;
+	struct vsb *vsb;
 	unsigned ln;
 
 	Lck_AssertHeld(&ban_mtx);
 	ln = VSC_C_main->bans_persisted_bytes -
 	    VSC_C_main->bans_persisted_fragmentation;
-	AN(VSB_new(&vsb, NULL, ln, VSB_AUTOEXTEND));
+	vsb = VSB_new_auto();
+	AN(vsb);
 	VTAILQ_FOREACH_REVERSE(b, &ban_head, banhead_s, list) {
-		AZ(VSB_bcat(&vsb, b->spec, ban_len(b->spec)));
+		AZ(VSB_bcat(vsb, b->spec, ban_len(b->spec)));
 	}
-	AZ(VSB_finish(&vsb));
-	assert(VSB_len(&vsb) == ln);
-	STV_BanExport((const uint8_t *)VSB_data(&vsb), VSB_len(&vsb));
-	VSB_delete(&vsb);
+	AZ(VSB_finish(vsb));
+	assert(VSB_len(vsb) == ln);
+	STV_BanExport((const uint8_t *)VSB_data(vsb), VSB_len(vsb));
+	VSB_destroy(&vsb);
 	VSC_C_main->bans_persisted_bytes = ln;
 	VSC_C_main->bans_persisted_fragmentation = 0;
 }
