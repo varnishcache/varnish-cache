@@ -165,7 +165,9 @@ VCL_Get(struct vcl **vcc)
 		(void)usleep(100000);
 
 	CHECK_OBJ_NOTNULL(vcl_active, VCL_MAGIC);
+	AZ(pthread_rwlock_rdlock(&vcl_active->temp_rwl));
 	assert(VCL_WARM(vcl_active));
+	AZ(pthread_rwlock_unlock(&vcl_active->temp_rwl));
 	Lck_Lock(&vcl_mtx);
 	AN(vcl_active);
 	*vcc = vcl_active;
@@ -179,7 +181,9 @@ void
 VCL_Refresh(struct vcl **vcc)
 {
 	CHECK_OBJ_NOTNULL(vcl_active, VCL_MAGIC);
+	AZ(pthread_rwlock_rdlock(&vcl_active->temp_rwl));
 	assert(VCL_WARM(vcl_active));
+	AZ(pthread_rwlock_unlock(&vcl_active->temp_rwl));
 	if (*vcc == vcl_active)
 		return;
 	if (*vcc != NULL)
@@ -192,7 +196,9 @@ VCL_Ref(struct vcl *vcl)
 {
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	AZ(pthread_rwlock_rdlock(&vcl->temp_rwl));
 	assert(!VCL_COLD(vcl));
+	AZ(pthread_rwlock_unlock(&vcl->temp_rwl));
 	Lck_Lock(&vcl_mtx);
 	assert(vcl->busy > 0);
 	vcl->busy++;
@@ -228,8 +234,11 @@ VCL_AddBackend(struct vcl *vcl, struct backend *be)
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 
-	if (vcl->temp == VCL_TEMP_COOLING)
+	AZ(pthread_rwlock_rdlock(&vcl->temp_rwl));
+	if (vcl->temp == VCL_TEMP_COOLING) {
+		AZ(pthread_rwlock_unlock(&vcl->temp_rwl));
 		return (1);
+	}
 
 	Lck_Lock(&vcl_mtx);
 	VTAILQ_INSERT_TAIL(&vcl->backend_list, be, vcl_list);
@@ -240,6 +249,7 @@ VCL_AddBackend(struct vcl *vcl, struct backend *be)
 		VBE_Event(be, VCL_EVENT_WARM);
 	else if (vcl->temp != VCL_TEMP_INIT)
 		WRONG("Dynamic Backends can only be added to warm VCLs");
+	AZ(pthread_rwlock_unlock(&vcl->temp_rwl));
 
 	return (0);
 }
@@ -255,8 +265,11 @@ VCL_DelBackend(struct backend *be)
 	Lck_Lock(&vcl_mtx);
 	VTAILQ_REMOVE(&vcl->backend_list, be, vcl_list);
 	Lck_Unlock(&vcl_mtx);
-	if (vcl->temp == VCL_TEMP_WARM)
+
+	AZ(pthread_rwlock_rdlock(&vcl->temp_rwl));
+	if (VCL_WARM(vcl))
 		VBE_Event(be, VCL_EVENT_COLD);
+	AZ(pthread_rwlock_unlock(&vcl->temp_rwl));
 }
 
 static void
@@ -554,6 +567,7 @@ vcl_set_state(VRT_CTX, const char *state)
 	assert(ctx->msg != NULL || *state == '0');
 
 	vcl = ctx->vcl;
+	AZ(pthread_rwlock_wrlock(&vcl->temp_rwl));
 	AN(vcl->temp);
 
 	switch(state[0]) {
@@ -595,6 +609,8 @@ vcl_set_state(VRT_CTX, const char *state)
 	default:
 		WRONG("Wrong enum state");
 	}
+	AZ(pthread_rwlock_unlock(&vcl->temp_rwl));
+
 	return (i);
 }
 
