@@ -541,11 +541,11 @@ SLTM(H2RxBody, 0, "Received HTTP2 frame body",
 	"Binary data"
 )
 
-SLTM(H2TxHdr, 0, "Received HTTP2 frame header",
+SLTM(H2TxHdr, 0, "Transmit HTTP2 frame header",
 	"Binary data"
 )
 
-SLTM(H2TxBody, 0, "Received HTTP2 frame body",
+SLTM(H2TxBody, 0, "Transmit HTTP2 frame body",
 	"Binary data"
 )
 

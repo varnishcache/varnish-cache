@@ -110,7 +110,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	struct http *hp;
 	struct sess *sp;
 	struct h2_req *r2;
-	int i, err = 0;
+	int i, err;
 	const struct hpack_static *hps;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
