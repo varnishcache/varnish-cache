@@ -146,7 +146,7 @@ barrier_sock_thread(void *priv)
 
 	sock = VTCP_listen_on("127.0.0.1:0", NULL, b->expected, &err);
 	if (sock < 0) {
-		pthread_cond_signal(&b->cond);
+		AZ(pthread_cond_signal(&b->cond));
 		AZ(pthread_mutex_unlock(&b->mtx));
 		vtc_log(vl, 0, "Barrier(%s) %s fails: %s (errno=%d)",
 		    b->name, err, strerror(errno), errno);
@@ -159,7 +159,7 @@ barrier_sock_thread(void *priv)
 	macro_def(vl, b->name, "port", "%s", pbuf);
 	macro_def(vl, b->name, "sock", "%s:%s", abuf, pbuf);
 
-	pthread_cond_signal(&b->cond);
+	AZ(pthread_cond_signal(&b->cond));
 	AZ(pthread_mutex_unlock(&b->mtx));
 
 	conns = calloc(b->expected, sizeof *conns);
