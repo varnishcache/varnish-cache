@@ -135,9 +135,9 @@ valid invocations from vcl::
 
 The C interface does not change with named arguments and default
 values, arguments remain positional and defaul values appear no
-differnt to user specified values.
+different to user specified values.
 
-`Note` that default values have to be fiven in the native C-type
+`Note` that default values have to be given in the native C-type
 syntax, see below. As a special case, ``NULL`` has to be given as ``0``.
 
 .. _ref-vmod-vcl-c-types:
