@@ -303,6 +303,7 @@ h2_rx_goaway(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	(void)r2;
 	h2->go_away_last_stream = vbe32dec(h2->rxf_data);
 	error = vbe32dec(h2->rxf_data + 4);
+	/*XXX*/(void)error;
 	h2->go_away = 1;
 }
 
