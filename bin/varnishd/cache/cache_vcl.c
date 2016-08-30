@@ -53,6 +53,12 @@ static const char * const VCL_TEMP_BUSY = "busy";
 static const char * const VCL_TEMP_COOLING = "cooling";
 static const char * const VCL_TEMP_LABEL = "label";
 
+/* NB: The COOLING temperature is neither COLD nor WARM. And LABEL is not a
+ * temperature, it's a state.
+ */
+#define VCL_WARM(v) ((v)->temp == VCL_TEMP_WARM || (v)->temp == VCL_TEMP_BUSY)
+#define VCL_COLD(v) ((v)->temp == VCL_TEMP_INIT || (v)->temp == VCL_TEMP_COLD)
+
 struct vcl {
 	unsigned		magic;
 #define VCL_MAGIC		0x214188f2
@@ -176,7 +182,7 @@ vcl_get(struct vcl **vcc, struct vcl *vcl)
 {
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	assert(vcl->temp == VCL_TEMP_WARM);
+	assert(VCL_WARM(vcl));
 	Lck_Lock(&vcl_mtx);
 	AN(vcl);
 	if (vcl->label == NULL)
@@ -204,7 +210,7 @@ void
 VCL_Refresh(struct vcl **vcc)
 {
 	CHECK_OBJ_NOTNULL(vcl_active, VCL_MAGIC);
-	assert(vcl_active->temp == VCL_TEMP_WARM);
+	assert(VCL_WARM(vcl_active));
 	if (*vcc == vcl_active)
 		return;
 	if (*vcc != NULL)
@@ -217,7 +223,7 @@ VCL_Ref(struct vcl *vcl)
 {
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	assert(vcl->temp != VCL_TEMP_INIT && vcl->temp != VCL_TEMP_COLD);
+	assert(!VCL_COLD(vcl));
 	Lck_Lock(&vcl_mtx);
 	assert(vcl->busy > 0);
 	vcl->busy++;
@@ -260,7 +266,7 @@ VCL_AddBackend(struct vcl *vcl, struct backend *be)
 	VTAILQ_INSERT_TAIL(&vcl->backend_list, be, vcl_list);
 	Lck_Unlock(&vcl_mtx);
 
-	if (vcl->temp == VCL_TEMP_WARM || vcl->temp == VCL_TEMP_BUSY)
+	if (VCL_WARM(vcl))
 		/* Only when adding backend to already warm VCL */
 		VBE_Event(be, VCL_EVENT_WARM);
 	else if (vcl->temp != VCL_TEMP_INIT)
@@ -470,7 +476,7 @@ VRT_ref_vcl(VRT_CTX, const char *desc)
 
 	vcl = ctx->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	xxxassert(vcl->temp == VCL_TEMP_WARM);
+	assert(VCL_WARM(vcl));
 
 	ALLOC_OBJ(ref, VCLREF_MAGIC);
 	AN(ref);
@@ -582,8 +588,7 @@ vcl_set_state(VRT_CTX, const char *state)
 	switch(state[0]) {
 	case '0':
 		assert(vcl->temp != VCL_TEMP_COLD);
-		if (vcl->busy == 0 && (vcl->temp == VCL_TEMP_WARM ||
-		    vcl->temp == VCL_TEMP_BUSY)) {
+		if (vcl->busy == 0 && VCL_WARM(vcl)) {
 
 			vcl->temp = VTAILQ_EMPTY(&vcl->ref_list) ?
 			    VCL_TEMP_COLD : VCL_TEMP_COOLING;
