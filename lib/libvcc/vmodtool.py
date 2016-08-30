@@ -244,12 +244,12 @@ def arg(txt):
 		i = s.find(',')
 		if i < 0:
 			i = len(s)
-		a.nm = s[:i]
+		a.nm = s[:i].rstrip()
 		s = s[i:]
 		return a, s
 
-	a.nm = s[:i]
-	s = s[i+1:]
+	a.nm = s[:i].rstrip()
+	s = s[i+1:].lstrip()
 	if s[0] == '"' or s[0] == "'":
 		m = re.match("(['\"]).*?(\\1)", s)
 		if not m:
@@ -260,7 +260,7 @@ def arg(txt):
 		i = s.find(',')
 		if i < 0:
 			i = len(s)
-		a.defval = s[:i]
+		a.defval = s[:i].rstrip()
 		s = s[i:]
 
 	return a,s
@@ -294,6 +294,7 @@ class prototype(object):
 		while len(s) > 0:
 			a,s = arg(s)
 			self.args.append(a)
+			s = s.lstrip()
 			if len(s) == 0:
 				break;
 			assert s[0] == ','
