@@ -23,6 +23,7 @@ AM_CPPFLAGS = \
 bin_PROGRAMS =	varnishtest
 
 varnishtest_SOURCES = \
+		hpack.h \
 		programs.h \
 		vmods.h \
 		vtc.c \
@@ -30,7 +31,15 @@ varnishtest_SOURCES = \
 		vtc_barrier.c \
 		vtc_client.c \
 		vtc_http.c \
+		vtc_http.h \
 		vtc_log.c \
+		vtc_http2.c \
+		vtc_h2_dectbl.h \
+		vtc_h2_enctbl.h \
+		vtc_h2_hpack.c \
+		vtc_h2_priv.h \
+		vtc_h2_stattbl.h \
+		vtc_h2_tbl.c \
 		vtc_logexp.c \
 		vtc_main.c \
 		vtc_process.c \

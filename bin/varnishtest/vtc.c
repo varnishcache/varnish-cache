@@ -262,7 +262,7 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 {
 	char *token_s[MAX_TOKENS], *token_e[MAX_TOKENS];
 	struct vsb *token_exp[MAX_TOKENS];
-	char *p, *q, *f, *buf;
+	char *e, *p, *q, *f, *buf;
 	int nest_brace;
 	int tn;
 	const struct cmds *cp;
@@ -270,7 +270,9 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 	AN(spec);
 	buf = strdup(spec);
 	AN(buf);
-	for (p = buf; *p != '\0'; p++) {
+	e = strchr(buf, '\0');
+	AN(e);
+	for (p = buf; p < e; p++) {
 		if (vtc_error || vtc_stop)
 			break;
 		/* Start of line */
@@ -298,8 +300,9 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 		/* First content on line, collect tokens */
 		tn = 0;
 		f = p;
-		while (*p != '\0') {
+		while (p < e) {
 			assert(tn < MAX_TOKENS);
+			assert(p < e);
 			if (*p == '\n') { /* End on NL */
 				break;
 			}
@@ -315,6 +318,7 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 				token_s[tn] = ++p;
 				q = p;
 				for (; *p != '\0'; p++) {
+					assert(p < e);
 					if (*p == '"')
 						break;
 					if (*p == '\\') {
@@ -334,7 +338,7 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 			} else if (*p == '{') { /* Braces */
 				nest_brace = 0;
 				token_s[tn] = p + 1;
-				for (; *p != '\0'; p++) {
+				for (; p < e; p++) {
 					if (*p == '{')
 						nest_brace++;
 					else if (*p == '}') {
@@ -346,25 +350,26 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 				token_e[tn++] = p++;
 			} else { /* other tokens */
 				token_s[tn] = p;
-				for (; *p != '\0' && !isspace(*p); p++)
-					;
+				for (; p < e && !isspace(*p); p++)
+					continue;
 				token_e[tn++] = p;
 			}
 		}
+
+		assert(p <= e);
 		assert(tn < MAX_TOKENS);
 		token_s[tn] = NULL;
 		for (tn = 0; token_s[tn] != NULL; tn++) {
 			token_exp[tn] = NULL;
 			AN(token_e[tn]);	/*lint !e771 */
 			*token_e[tn] = '\0';	/*lint !e771 */
-			if (NULL == strstr(token_s[tn], "${"))
-				continue;
-			token_exp[tn] = macro_expand(vl, token_s[tn]);
-			if (vtc_error) {
-				return;
+			if (NULL != strstr(token_s[tn], "${")) {
+				token_exp[tn] = macro_expand(vl, token_s[tn]);
+				if (vtc_error)
+					return;
+				token_s[tn] = VSB_data(token_exp[tn]);
+				token_e[tn] = strchr(token_s[tn], '\0');
 			}
-			token_s[tn] = VSB_data(token_exp[tn]);
-			token_e[tn] = strchr(token_s[tn], '\0');
 		}
 
 		for (cp = cmd; cp->name != NULL; cp++)
@@ -507,13 +512,14 @@ cmd_err_shell(CMD_ARGS)
 	VSB_destroy(&vsb);
 }
 
-/* SECTION: delay delay
+/* SECTION: client-server.spec.delay delay
  *
- * This is the equivalent of ``sleep`` in shell: the command takes one argument
- * that is the number of seconds (can be a float) to wait before continuing the
- * test.
+ * Take a float as argument and sleep for that number of seconds.
  */
-
+/* SECTION: stream.spec.delay delay
+ *
+ * Take a float as argument and sleep for that number of seconds.
+ */
 void
 cmd_delay(CMD_ARGS)
 {

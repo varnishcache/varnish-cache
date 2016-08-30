@@ -32,3 +32,4 @@
 
 -efile(451, vmods.h)
 -efile(451, programs.h)
+-efile(451, vtc_h2_stattbl.h)

@@ -80,6 +80,10 @@ void init_barrier(void);
 void init_server(void);
 
 int http_process(struct vtclog *vl, const char *spec, int sock, int *sfd);
+int http2_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
+		unsigned nosettings);
+
+char * synth_body(const char *len, int rnd);
 
 void cmd_server_genvcl(struct vsb *vsb);
 
@@ -107,3 +111,10 @@ struct vsb *macro_expand(struct vtclog *vl, const char *text);
 
 void extmacro_def(const char *name, const char *fmt, ...)
     __v_printflike(2, 3);
+
+struct http;
+extern const struct cmds http_cmds[];
+void cmd_stream(CMD_ARGS);
+void start_h2(struct http *hp);
+void stop_h2(struct http *hp);
+void b64_settings(const struct http *hp, const char *s);

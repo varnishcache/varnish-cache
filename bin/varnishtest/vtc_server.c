@@ -38,7 +38,6 @@
 
 #include "vtc.h"
 
-#include "vss.h"
 #include "vtcp.h"
 
 struct server {

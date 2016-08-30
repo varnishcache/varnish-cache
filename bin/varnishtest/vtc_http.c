@@ -40,14 +40,14 @@
 #include <string.h>
 
 #include "vtc.h"
+#include "vtc_http.h"
 
 #include "vct.h"
 #include "vgz.h"
 #include "vnum.h"
 #include "vre.h"
 #include "vtcp.h"
-
-#define MAX_HDR		50
+#include "hpack.h"
 
 /* SECTION: client-server client/server
  *
@@ -120,39 +120,26 @@
  *        is of the form "CLIENTIP:PORT SERVERIP:PORT".
  *
  * SECTION: client-server.spec Specification
+ *
+ * It's a string, either double-quoted "like this", but most of the time
+ * enclosed in curly brackets, allowing multilining. Write a command per line in
+ * it, empty line are ignored, and long line can be wrapped by using a
+ * backslash. For example::
+ *
+ *     client c1 {
+ *         txreq -url /foo \
+ *               -hdr "bar: baz"
+ *
+ *         rxresp
+ *     } -run
  */
-
-struct http {
-	unsigned		magic;
-#define HTTP_MAGIC		0x2f02169c
-	int			fd;
-	int			*sfd;
-	int			timeout;
-	struct vtclog		*vl;
-
-	struct vsb		*vsb;
-
-	int			nrxbuf;
-	char			*rxbuf;
-	char			*rem_ip;
-	char			*rem_port;
-	int			prxbuf;
-	char			*body;
-	unsigned		bodyl;
-	char			bodylen[20];
-	char			chunklen[20];
-
-	char			*req[MAX_HDR];
-	char			*resp[MAX_HDR];
-
-	int			gziplevel;
-	int			gzipresidual;
-
-	int			fatal;
-};
 
 #define ONLY_CLIENT(hp, av)						\
 	do {								\
+		if (hp->h2)						\
+			vtc_log(hp->vl, 0,				\
+			    "\"%s\" only possible before H/2 upgrade",	\
+					av[0]);				\
 		if (hp->sfd != NULL)					\
 			vtc_log(hp->vl, 0,				\
 			    "\"%s\" only possible in client", av[0]);	\
@@ -160,6 +147,10 @@ struct http {
 
 #define ONLY_SERVER(hp, av)						\
 	do {								\
+		if (hp->h2)						\
+			vtc_log(hp->vl, 0,				\
+			    "\"%s\" only possible before H/2 upgrade",	\
+					av[0]);				\
 		if (hp->sfd == NULL)					\
 			vtc_log(hp->vl, 0,				\
 			    "\"%s\" only possible in server", av[0]);	\
@@ -173,7 +164,7 @@ static const char * const nl = "\r\n";
  * Generate a synthetic body
  */
 
-static char *
+char *
 synth_body(const char *len, int rnd)
 {
 	int i, j, k, l;
@@ -336,6 +327,11 @@ cmd_var_resolve(struct http *hp, char *spec)
 	} else if (!strncmp(spec, "resp.http.", 10)) {
 		hh = hp->resp;
 		hdr = spec + 10;
+	} else if (!strcmp(spec, "h2.state")) {
+		if (hp->h2)
+			return ("true");
+		else
+			return ("false");
 	} else
 		return (spec);
 	hdr = http_find_header(hh, hdr);
@@ -544,8 +540,8 @@ http_rxchar(struct http *hp, int n, int eof)
 			return (i);
 		if (i == 0)
 			vtc_log(hp->vl, hp->fatal,
-			    "HTTP rx EOF (fd:%d read: %s)",
-			    hp->fd, strerror(errno));
+			    "HTTP rx EOF (fd:%d read: %s) %d",
+			    hp->fd, strerror(errno), n);
 		if (i < 0)
 			vtc_log(hp->vl, hp->fatal,
 			    "HTTP rx failed (fd:%d read: %s)",
@@ -729,7 +725,7 @@ cmd_http_rxresphdrs(CMD_ARGS)
 	av++;
 
 	for(; *av != NULL; av++)
-		vtc_log(hp->vl, 0, "Unknown http rxreq spec: %s\n", *av);
+		vtc_log(hp->vl, 0, "Unknown http rxresp spec: %s\n", *av);
 	http_rxhdr(hp);
 	http_splitheader(hp, 0);
 	if (http_count_header(hp->resp, "Content-Length") > 1)
@@ -1035,33 +1031,75 @@ cmd_http_txresp(CMD_ARGS)
 	http_write(hp, 4, "txresp");
 }
 
+static void
+cmd_http_upgrade(CMD_ARGS)
+{
+	char *h;
+	struct http *hp;
+
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	ONLY_SERVER(hp, av);
+	AN(hp->sfd);
+
+	h = http_find_header(hp->req, "Upgrade");
+	if (!h || strcmp(h, "h2c"))
+		vtc_log(vl, 0, "Req misses \"Upgrade: h2c\" header");
+
+	h = http_find_header(hp->req, "Connection");
+	if (!h || strcmp(h, "Upgrade, HTTP2-Settings"))
+		vtc_log(vl, 0, "Req misses \"Connection: " 
+			"Upgrade, HTTP2-Settings\" header");
+
+	h = http_find_header(hp->req, "HTTP2-Settings");
+	if (!h)
+		vtc_log(vl, 0, "Req misses \"HTTP2-Settings\" header");
+
+
+	parse_string("txresp -status 101 "
+				"-hdr \"Connection: Upgrade\" "
+				"-hdr \"Upgrade: h2c\"\n", cmd, hp, vl);
+
+	b64_settings(hp, h);
+
+	parse_string("rxpri\n"
+			"stream 0 {\n"
+			"txsettings\n"
+			"rxsettings\n"
+			"txsettings -ack\n"
+			"rxsettings\n"
+			"expect settings.ack == true\n"
+			"} -start\n", cmd, hp, vl);
+}
+
+/**********************************************************************
+ * Receive a request
+ */
+
 /* SECTION: client-server.spec.rxreq
  *
  * rxreq (server only)
  *         Receive and parse a request's headers and body.
  */
-
 static void
 cmd_http_rxreq(CMD_ARGS)
 {
 	struct http *hp;
 
 	(void)cmd;
-	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_SERVER(hp, av);
 	AZ(strcmp(av[0], "rxreq"));
 	av++;
 
 	for(; *av != NULL; av++)
-		vtc_log(hp->vl, 0, "Unknown http rxreq spec: %s\n", *av);
+		vtc_log(vl, 0, "Unknown http rxreq spec: %s\n", *av);
 	http_rxhdr(hp);
 	http_splitheader(hp, 1);
 	if (http_count_header(hp->req, "Content-Length") > 1)
-		vtc_log(hp->vl, 0,
+		vtc_log(vl, 0,
 		    "Multiple Content-Length headers.\n");
 	http_swallow_body(hp, hp->req, 0);
-	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
+	vtc_log(vl, 4, "bodylen = %s", hp->bodylen);
 }
 
 /* SECTION: client-server.spec.rxreqhdrs
@@ -1133,7 +1171,7 @@ cmd_http_rxrespbody(CMD_ARGS)
 	av++;
 
 	for(; *av != NULL; av++)
-		vtc_log(hp->vl, 0, "Unknown http rxreq spec: %s\n", *av);
+		vtc_log(hp->vl, 0, "Unknown http rxrespbody spec: %s\n", *av);
 	http_swallow_body(hp, hp->resp, 0);
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
 }
@@ -1175,6 +1213,7 @@ cmd_http_txreq(CMD_ARGS)
 	const char *req = "GET";
 	const char *url = "/";
 	const char *proto = "HTTP/1.1";
+	const char *up = NULL;
 
 	(void)cmd;
 	(void)vl;
@@ -1195,15 +1234,39 @@ cmd_http_txreq(CMD_ARGS)
 		} else if (!strcmp(*av, "-req")) {
 			req = av[1];
 			av++;
+		} else if (!hp->sfd && !strcmp(*av, "-up")) {
+			up = av[1];
+			av++;
 		} else
 			break;
 	}
 	VSB_printf(hp->vsb, "%s %s %s%s", req, url, proto, nl);
 
+	if (up)
+		VSB_printf(hp->vsb, "Connection: Upgrade, HTTP2-Settings%s"
+				"Upgrade: h2c%s"
+				"HTTP2-Settings: %s%s", nl, nl, up, nl);
+
 	av = http_tx_parse_args(av, vl, hp, NULL);
 	if (*av != NULL)
 		vtc_log(hp->vl, 0, "Unknown http txreq spec: %s\n", *av);
 	http_write(hp, 4, "txreq");
+
+	if (up) {
+		parse_string("rxresp\n"
+				"expect resp.status == 101\n"
+				"expect resp.http.connection == Upgrade\n"
+				"expect resp.http.upgrade == h2c\n"
+				"txpri\n", http_cmds, hp, vl);
+		b64_settings(hp, up);
+		parse_string("stream 0 {\n"
+				"txsettings\n"
+				"rxsettings\n"
+				"txsettings -ack\n"
+				"rxsettings\n"
+				"expect settings.ack == true"
+			     "} -start\n", http_cmds, hp, vl);
+	}
 }
 
 /* SECTION: client-server.spec.recv
@@ -1453,6 +1516,11 @@ cmd_http_timeout(CMD_ARGS)
  *         Wait for the connected client to close the connection.
  */
 
+/* SECTION: client-server.spec.expect_close expect_close (server)
+ *
+ * Reads from the connection, expecting nothing to read but an EOF.
+ *
+ */
 static void
 cmd_http_expect_close(CMD_ARGS)
 {
@@ -1467,6 +1535,8 @@ cmd_http_expect_close(CMD_ARGS)
 	AZ(av[1]);
 
 	vtc_log(vl, 4, "Expecting close (fd = %d)", hp->fd);
+	if (hp->h2)
+		stop_h2(hp);
 	while (1) {
 		fds[0].fd = hp->fd;
 		fds[0].events = POLLIN | POLLERR;
@@ -1497,6 +1567,12 @@ cmd_http_expect_close(CMD_ARGS)
  *         Close the active TCP connection
  */
 
+/* SECTION: client-server.spec.close close (server)
+ *
+ * Close the connection. Not that if operating in H/2 mode, no extra (GOAWAY)
+ * frame is sent, it's simply a TCP close.
+ *
+ */
 static void
 cmd_http_close(CMD_ARGS)
 {
@@ -1508,6 +1584,8 @@ cmd_http_close(CMD_ARGS)
 	AZ(av[1]);
 	assert(hp->sfd != NULL);
 	assert(*hp->sfd >= 0);
+	if (hp->h2)
+		stop_h2(hp);
 	VTCP_close(&hp->fd);
 	vtc_log(vl, 4, "Closed");
 }
@@ -1518,6 +1596,11 @@ cmd_http_close(CMD_ARGS)
  *         Close the active connection (if any) and accept a new one.
  */
 
+/* SECTION: client-server.spec.accept accept (server)
+ *
+ * Close the potential current connection, and accept a new one. Note that this
+ * new connection is H/1.
+ */
 static void
 cmd_http_accept(CMD_ARGS)
 {
@@ -1529,6 +1612,8 @@ cmd_http_accept(CMD_ARGS)
 	AZ(av[1]);
 	assert(hp->sfd != NULL);
 	assert(*hp->sfd >= 0);
+	if (hp->h2)
+		stop_h2(hp);
 	if (hp->fd >= 0)
 		VTCP_close(&hp->fd);
 	vtc_log(vl, 4, "Accepting");
@@ -1594,11 +1679,113 @@ cmd_http_fatal(CMD_ARGS)
  *	Same as for the top-level barrier
  */
 
+char PREFACE[] = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
+
+/* SECTION: client-server.spec.txpri txpri (client)
+ *
+ * Send an H/2 preface ("PRI * HTTP/2.0\\r\\n\\r\\nSM\\r\\n\\r\\n") and set
+ * client to H/2.
+ */
+static void
+cmd_http_txpri(CMD_ARGS)
+{
+	size_t l;
+	struct http *hp;
+	(void)cmd;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	ONLY_CLIENT(hp, av);
+
+	vtc_dump(hp->vl, 4, "txpri", PREFACE, sizeof(PREFACE) - 1);
+	l = write(hp->fd, PREFACE, sizeof(PREFACE) - 1);
+	if (l != sizeof(PREFACE) - 1)
+		vtc_log(vl, hp->fatal, "Write failed: (%zd vs %zd) %s",
+		    l, sizeof(PREFACE) - 1, strerror(errno));
+	start_h2(hp);
+	AN(hp->h2);
+}
+
+/* SECTION: client-server.spec.rxpri rxpri (server)
+ *
+ * Receive a preface, and if it matches, sets the server to H/2, aborts
+ * otherwise.
+ */
+static void
+cmd_http_rxpri(CMD_ARGS)
+{
+	struct http *hp;
+	(void)cmd;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	ONLY_SERVER(hp, av);
+
+	hp->prxbuf = 0;
+	if (!http_rxchar(hp, sizeof(PREFACE) - 1, 0))
+		vtc_log(vl, 0, "Couldn't retrieve connection preface");
+	if (strncmp(hp->rxbuf, PREFACE, sizeof(PREFACE) - 1))
+		vtc_log(vl, 0, "Received invalid preface\n");
+	start_h2(hp);
+	AN(hp->h2);
+}
+
+/* SECTION: client-server.spec.settings
+ *
+ * settings -dectbl INT
+ *         Force internal H/2 settings to certain values. Currently only
+ *         support setting the decoding table size.
+ */
+static void
+cmd_http_settings(CMD_ARGS)
+{
+	uint32_t n;
+	char *p;
+	struct http *hp;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	(void)cmd;
+
+	if (!hp->h2)
+		vtc_log(hp->vl, 0, "Only possible in H/2 mode");
+
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+
+	for(; *av != NULL; av++) {
+		if (!strcmp(*av, "-dectbl")) {
+			n = strtoul(av[1], &p, 0);
+			if (*p != '\0')
+				vtc_log(hp->vl, 0, "-dectbl takes an integer as"
+						" argument (found %s)", av[1]);
+			HPK_ResizeTbl(hp->decctx, n);
+			av++;
+		} else
+			vtc_log(vl, 0, "Unknown settings spec: %s\n", *av);
+	}
+}
+
+static void
+cmd_http_stream(CMD_ARGS)
+{
+	struct http *hp = (struct http *)priv;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	if (!hp->h2) {
+		vtc_log(hp->vl, 4, "Not in H/2 mode, do what's needed");
+		if (hp->sfd)
+			parse_string("rxpri", http_cmds, hp, vl);
+		else
+			parse_string("txpri", http_cmds, hp, vl);
+		parse_string("stream 0 {\n"
+				"txsettings\n"
+				"rxsettings\n"
+				"txsettings -ack\n"
+				"rxsettings\n"
+				"expect settings.ack == true"
+			     "} -run\n", http_cmds, hp, vl);
+	}
+	cmd_stream(av, hp, cmd, vl);
+}
+
 /**********************************************************************
  * Execute HTTP specifications
  */
 
-static const struct cmds http_cmds[] = {
+const struct cmds http_cmds[] = {
 	{ "timeout",		cmd_http_timeout },
 	{ "txreq",		cmd_http_txreq },
 
@@ -1629,6 +1816,12 @@ static const struct cmds http_cmds[] = {
 	{ "loop",		cmd_http_loop },
 	{ "fatal",		cmd_http_fatal },
 	{ "non-fatal",		cmd_http_fatal },
+
+	{ "rxpri",		cmd_http_rxpri },
+	{ "txpri",		cmd_http_txpri },
+	{ "stream",		cmd_http_stream },
+	{ "settings",		cmd_http_settings },
+	{ "upgrade",		cmd_http_upgrade },
 	{ NULL,			NULL }
 };
 
@@ -1665,6 +1858,8 @@ http_process(struct vtclog *vl, const char *spec, int sock, int *sfd)
 
 	VTCP_hisname(sock, hp->rem_ip, VTCP_ADDRBUFSIZE, hp->rem_port, VTCP_PORTBUFSIZE);
 	parse_string(spec, http_cmds, hp, vl);
+	if (hp->h2)
+		stop_h2(hp);
 	retval = hp->fd;
 	VSB_destroy(&hp->vsb);
 	free(hp->rxbuf);

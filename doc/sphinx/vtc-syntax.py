@@ -34,13 +34,10 @@ import sys
 import re
 
 
-def parse_file(fn):
+def parse_file(fn, cl, tl, sl):
 	p = False
 	section = ""
 	resec = re.compile("[ /]\* SECTION: ")
-	cl = {}
-	tl = {}
-	sl = []
 
 	f = open(fn, "r")
 
@@ -63,6 +60,12 @@ def parse_file(fn):
 			cl[section].append(re.sub(r"^ \* ?", "", l))
 	f.close()
 
+if __name__ == "__main__":
+	cl = {}
+	tl = {}
+	sl = []
+	for fn in sys.argv[1:]:
+		parse_file(fn, cl, tl, sl)
 	sl.sort()
 	for section in sl:
 		print(tl[section], end="")
@@ -72,11 +75,10 @@ def parse_file(fn):
 			r = "-"
 		elif c == 1:
 			r = "~"
-		else:
+		elif c == 2:
 			r = "."
+		else:
+			r = "*"
 		print(re.sub(r".", r, tl[section]), end="")
 		print("".join(cl[section]))
 
-if __name__ == "__main__":
-	for fn in sys.argv[1:]:
-		parse_file(fn)
