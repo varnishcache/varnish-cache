@@ -333,6 +333,7 @@ vcc_ParseNew(struct vcc *tl)
 		sy3->eval_priv = p;
 		sy3->fmt = VCC_Type(p);
 		sy3->extra = TlDup(tl, buf1);
+		sy3->vmod = sy2->vmod;
 		while (p[0] != '\0' || p[1] != '\0' || p[2] != '\0')
 			p++;
 		p += 3;

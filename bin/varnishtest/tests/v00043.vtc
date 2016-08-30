@@ -38,6 +38,10 @@ server s1 {
 varnish v1 -cliok "param.set debug +syncvsl" -vcl+backend {
 	import debug;
 
+	sub vcl_init {
+		new o = debug.obj();
+	}
+
 	sub vcl_recv {
 		set req.http.x0 = debug.test_priv_top(req.url + req.esi_level);
 	}
@@ -53,6 +57,7 @@ varnish v1 -cliok "param.set debug +syncvsl" -vcl+backend {
 
 	sub vcl_deliver {
 		set resp.http.x1 = debug.test_priv_top("");
+		set resp.http.o1 = o.test_priv_top("");
 	}
 } -start
 
@@ -61,10 +66,12 @@ client c1 {
 	txreq -url /a
 	rxresp
 	expect resp.http.x1 == "/a0"
+	expect resp.http.o1 == "/a0"
 
 	txreq -url /b
 	rxresp
 	expect resp.http.x1 == "/b0"
+	expect resp.http.o1 == "/b0"
 } -run
 
 varnish v1 -expect s_req == 2
