@@ -23,6 +23,7 @@ flexelint \
 	common/*.c \
 	hash/*.c \
 	http1/*.c \
+	http2/*.c \
 	mgt/*.c \
 	proxy/*.c \
 	storage/*.c \

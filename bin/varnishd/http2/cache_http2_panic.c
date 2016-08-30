@@ -25,49 +25,55 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * A transport is how we talk HTTP for a given request.
- *
- * This is different from a protocol because ESI child requests have
- * their own "protocol" to talk to the parent ESI request, which may
- * or may not, be talking a "real" HTTP protocol itself.
- *
  */
 
-struct req;
-struct boc;
+#include "config.h"
 
-typedef void vtr_deliver_f (struct req *, struct boc *, int sendbody);
-typedef void vtr_req_body_f (struct req *);
-typedef void vtr_sess_panic_f (struct vsb *, const struct sess *);
-typedef void vtr_req_panic_f (struct vsb *, const struct req *);
-typedef void vtr_req_fail_f (struct req *, enum sess_close);
-typedef void vtr_reembark_f (struct worker *, struct req *);
+#include <sys/types.h>
+#include <sys/socket.h>
 
-struct transport {
-	unsigned			magic;
-#define TRANSPORT_MAGIC			0xf157f32f
+#include <netinet/in.h>
 
-	uint16_t			number;
+#include <ctype.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-	const char			*name;
+#include "../cache/cache.h"
+#include "../cache/cache_filter.h"
+#include "../cache/cache_transport.h"
+#include "../http2/cache_http2.h"
 
-	task_func_t			*new_session;
-	task_func_t			*unwait;
+#include "vend.h"
+#include "vsb.h"
+#include "vtcp.h"
+#include "vtim.h"
 
-	vtr_req_fail_f			*req_fail;
-	vtr_req_body_f			*req_body;
-	vtr_deliver_f			*deliver;
-	vtr_sess_panic_f		*sess_panic;
-	vtr_req_panic_f			*req_panic;
-	vtr_reembark_f			*reembark;
+void
+h2_sess_panic(struct vsb *vsb, const struct sess *sp)
+{
+	uintptr_t *up;
+	struct h2_sess *h2;
+	struct h2_req *r2;
 
-	VTAILQ_ENTRY(transport)		list;
-};
+	AZ(SES_Get_xport_priv(sp, &up));
 
-extern struct transport PROXY_transport;
-extern struct transport HTTP1_transport;
-extern struct transport H2_transport;
-htc_complete_f H2_prism_complete;
-
-const struct transport *XPORT_ByNumber(uint16_t no);
-void VPX_Send_Proxy(int fd, int version, const struct sess *);
+	h2 = (void*)*up;
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	VSB_printf(vsb, "streams {\n");
+	VSB_indent(vsb, 2);
+	VTAILQ_FOREACH(r2, &h2->streams, list) {
+		VSB_printf(vsb, "0x%08x", r2->stream);
+		switch(r2->state) {
+#define H2_STREAM(U,sd,d) case H2_S_##U: VSB_printf(vsb, " %-6s", sd); break;
+#include <tbl/h2_stream.h>
+		default:
+			VSB_printf(vsb, " State %d", r2->state);
+			break;
+		}
+		VSB_printf(vsb, "\n");
+	}
+	VSB_indent(vsb, -2);
+	VSB_printf(vsb, "}\n");
+}

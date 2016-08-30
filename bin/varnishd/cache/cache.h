@@ -816,6 +816,9 @@ extern const char H__Status[];
 extern const char H__Proto[];
 extern const char H__Reason[];
 
+/* cache_http2_deliver.c */
+void V2D_Init(void);
+
 /* cache_main.c */
 #define VXID(u) ((u) & VSL_IDENTMASK)
 uint32_t VXID_Get(struct worker *, uint32_t marker);

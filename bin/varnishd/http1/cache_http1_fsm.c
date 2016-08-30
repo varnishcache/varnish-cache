@@ -392,16 +392,34 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			if (hs != HTC_S_COMPLETE)
 				WRONG("htc_status (nonbad)");
 
+			if (H2_prism_complete(req->htc) == HTC_S_COMPLETE) {
+				VSLb(req->vsl, SLT_Debug,
+				    "H2 Prior Knowledge Upgrade");
+				http1_setstate(sp, NULL);
+				req->err_code = 1;
+				SES_SetTransport(wrk, sp, req, &H2_transport);
+				return;
+			}
+
 			i = http1_dissect(wrk, req);
 			req->acct.req_hdrbytes +=
 			    req->htc->rxbuf_e - req->htc->rxbuf_b;
 			if (i) {
 				SES_Close(req->sp, req->doclose);
 				http1_setstate(sp, H1CLEANUP);
-			} else {
-				req->req_step = R_STP_RECV;
-				http1_setstate(sp, H1PROC);
+				continue;
 			}
+			if (req->htc->body_status == BS_NONE &&
+			    http_HdrIs(req->http, H_Upgrade, "h2c")) {
+				VSLb(req->vsl, SLT_Debug,
+				    "H2 Optimistic Upgrade");
+				http1_setstate(sp, NULL);
+				req->err_code = 2;
+				SES_SetTransport(wrk, sp, req, &H2_transport);
+				return;
+			}
+			req->req_step = R_STP_RECV;
+			http1_setstate(sp, H1PROC);
 		} else if (st == H1BUSY) {
 			/*
 			 * Return from waitinglist.

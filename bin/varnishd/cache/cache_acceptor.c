@@ -632,6 +632,7 @@ XPORT_Init(void)
 
 	VTAILQ_INSERT_TAIL(&transports, &PROXY_transport, list);
 	VTAILQ_INSERT_TAIL(&transports, &HTTP1_transport, list);
+	VTAILQ_INSERT_TAIL(&transports, &H2_transport, list);
 
 	n = 0;
 	VTAILQ_FOREACH(xp, &transports, list)

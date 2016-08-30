@@ -58,6 +58,8 @@ varnishd_SOURCES = \
 	hash/hash_critbit.c \
 	hash/mgt_hash.c \
 	hash/hash_simple_list.c \
+	hpack/vhp_table.c \
+	hpack/vhp_decode.c \
 	http1/cache_http1_deliver.c \
 	http1/cache_http1_fetch.c \
 	http1/cache_http1_fsm.c \
@@ -65,6 +67,11 @@ varnishd_SOURCES = \
 	http1/cache_http1_pipe.c \
 	http1/cache_http1_proto.c \
 	http1/cache_http1_vfp.c \
+	http2/cache_http2_deliver.c \
+	http2/cache_http2_hpack.c \
+	http2/cache_http2_panic.c \
+	http2/cache_http2_proto.c \
+	http2/cache_http2_send.c \
 	mgt/mgt_acceptor.c \
 	mgt/mgt_child.c \
 	mgt/mgt_cli.c \
@@ -111,7 +118,9 @@ noinst_HEADERS = \
 	cache/cache_transport.h \
 	common/heritage.h \
 	hash/hash_slinger.h \
+	hpack/vhp.h \
 	http1/cache_http1.h \
+	http2/cache_http2.h \
 	mgt/mgt.h \
 	mgt/mgt_param.h \
 	storage/storage.h \
@@ -153,6 +162,26 @@ varnishd_LDADD = \
 EXTRA_DIST = builtin.vcl
 DISTCLEANFILES = builtin_vcl.h
 
+noinst_PROGRAMS = vhp_gen_hufdec
+vhp_gen_hufdec_SOURCES = hpack/vhp_gen_hufdec.c
+vhp_gen_hufdec_CFLAGS = -include config.h
+vhp_gen_hufdec_LDADD = \
+	$(top_builddir)/lib/libvarnish/libvarnish.la
+
+noinst_PROGRAMS += vhp_table_test
+vhp_table_test_SOURCES = hpack/vhp_table.c
+vhp_table_test_CFLAGS = -DTABLE_TEST_DRIVER -include config.h
+vhp_table_test_LDADD = \
+	$(top_builddir)/lib/libvarnish/libvarnish.la
+
+noinst_PROGRAMS += vhp_decode_test
+vhp_decode_test_SOURCES = hpack/vhp_decode.c hpack/vhp_table.c 
+vhp_decode_test_CFLAGS = -DDECODE_TEST_DRIVER -include config.h
+vhp_decode_test_LDADD = \
+	$(top_builddir)/lib/libvarnish/libvarnish.la
+
+TESTS = vhp_table_test vhp_decode_test
+
 #
 # Turn the builtin.vcl file into a C-string we can include in the program.
 #
@@ -167,6 +196,13 @@ builtin_vcl.h:	builtin.vcl
 	sed -e 's/"/\\"/g' \
 	    -e 's/$$/\\n"/' \
 	    -e 's/^/ "/' $(srcdir)/builtin.vcl >> $@
+
+vhp_hufdec.h: vhp_gen_hufdec
+	$(AM_V_GEN) ./vhp_gen_hufdec > vhp_hufdec.h_
+	mv vhp_hufdec.h_ vhp_hufdec.h
+
+BUILT_SOURCES	=	vhp_hufdec.h
+DISTCLEANFILES	=	vhp_hufdec.h
 
 # Explicitly record dependency
 mgt/mgt_vcc.c:	builtin_vcl.h
