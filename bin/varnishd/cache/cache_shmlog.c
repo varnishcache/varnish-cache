@@ -378,6 +378,39 @@ VSLb_ts(struct vsl_log *vsl, const char *event, double first, double *pprev,
 	*pprev = now;
 }
 
+void
+VSLb_bin(struct vsl_log *vsl, enum VSL_tag_e tag, ssize_t len, const void *ptr)
+{
+	char *p;
+	const uint8_t *pp = ptr;
+	int suff = 0;
+	size_t ll;
+
+	assert(len >= 0);
+	AN(ptr);
+	if (vsl_tag_is_masked(tag))
+		return;
+	vsl_sanity(vsl);
+	if (len * 2 + 1 > cache_param->vsl_reclen) {
+		len = (cache_param->vsl_reclen - 2) / 2;
+		suff = 1;
+	}
+	if (VSL_END(vsl->wlp, len * 2 + 1) >= vsl->wle)
+		VSL_Flush(vsl, 1);
+	assert(VSL_END(vsl->wlp, len * 2 + 1) < vsl->wle);
+	p = VSL_DATA(vsl->wlp);
+	for (ll = 0; ll < len; ll++) {
+		(void)sprintf(p, "%02x", *pp++);
+		p += 2;
+	}
+	if (suff)
+		*p++ = '-';
+	*p = '\0';
+	vsl->wlp = vsl_hdr(tag, vsl->wlp, len * 2 + 1, vsl->wid);
+	assert(vsl->wlp < vsl->wle);
+	vsl->wlr++;
+}
+
 /*--------------------------------------------------------------------
  * Setup a VSL buffer, allocate space if none provided.
  */

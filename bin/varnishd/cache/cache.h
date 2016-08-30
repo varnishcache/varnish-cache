@@ -993,6 +993,7 @@ void VSLb(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, ...)
 void VSLbt(struct vsl_log *, enum VSL_tag_e tag, txt t);
 void VSLb_ts(struct vsl_log *, const char *event, double first, double *pprev,
     double now);
+void VSLb_bin(struct vsl_log *, enum VSL_tag_e, ssize_t, const void*);
 
 static inline void
 VSLb_ts_req(struct req *req, const char *event, double now)
