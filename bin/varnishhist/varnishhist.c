@@ -243,10 +243,10 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			i = VSL_Next(tr->c);
 			if (i == -3) {
 				/* overrun - need to skip forward */
-				pthread_mutex_lock(&mtx);
+				AZ(pthread_mutex_lock(&mtx));
 				vsl_to = vsl_t0 = vsl_ts = 0;
 				t0 = VTIM_mono();
-				pthread_mutex_unlock(&mtx);
+				AZ(pthread_mutex_unlock(&mtx));
 				break;
 			}
 			if (i != 1)
@@ -301,7 +301,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		assert(i >= 0);
 		assert(i < hist_buckets);
 
-		pthread_mutex_lock(&mtx);
+		AZ(pthread_mutex_lock(&mtx));
 
 		/*
 		 * only parse the last tsp seen in this transaction -
@@ -337,7 +337,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		if (++next_hist == HIST_N) {
 			next_hist = 0;
 		}
-		pthread_mutex_unlock(&mtx);
+		AZ(pthread_mutex_unlock(&mtx));
 	}
 
 	if (vsl_ts < vsl_to)
@@ -345,7 +345,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 
 	t = VTIM_mono();
 
-	pthread_mutex_lock(&mtx);
+	AZ(pthread_mutex_lock(&mtx));
 	if (vsl_t0 == 0)
 		vsl_to = vsl_t0 = vsl_ts;
 
@@ -360,7 +360,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		ts.tv_sec = (long)t;
 		(void)pthread_cond_timedwait(&timebend_cv, &mtx, &ts);
 	}
-	pthread_mutex_unlock(&mtx);
+	AZ(pthread_mutex_unlock(&mtx));
 
 	return (0);
 }
@@ -385,9 +385,9 @@ do_curses(void *arg)
 	curs_set(0);
 	erase();
 	for (;;) {
-		pthread_mutex_lock(&mtx);
+		AZ(pthread_mutex_lock(&mtx));
 		update();
-		pthread_mutex_unlock(&mtx);
+		AZ(pthread_mutex_unlock(&mtx));
 
 		timeout(delay * 1000);
 		switch ((ch = getch())) {
