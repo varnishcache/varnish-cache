@@ -55,12 +55,6 @@ enum h2frame {
 #include "tbl/h2_frames.h"
 };
 
-enum h2setting {
-#define H2_SETTINGS(n,v,d) H2S_##n = v,
-#include "tbl/h2_settings.h"
-#undef H2_SETTINGS
-};
-
 static const char *
 h2_framename(enum h2frame h2f)
 {

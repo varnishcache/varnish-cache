@@ -50,7 +50,12 @@ enum h2_stream_e {
 #define H2_FRAME_FLAGS(l,u,v)   extern const uint8_t H2FF_##u;
 #include "tbl/h2_frames.h"
 
-#define H2_SETTINGS_N			7
+enum h2setting {
+#define H2_SETTINGS(n,v,d) H2S_##n = v,
+#include "tbl/h2_settings.h"
+#undef H2_SETTINGS
+	H2_SETTINGS_N
+};
 
 struct h2_req {
 	unsigned			magic;

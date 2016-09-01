@@ -100,15 +100,36 @@ H2_Send(struct worker *wrk, struct h2_req *r2, int flush,
 {
 	int retval;
 	struct h2_sess *h2;
+	uint32_t mfs, tf;
+	const char *p;
 
 	(void)flush;
 
+	AN(ptr);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	h2 = r2->h2sess;
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 
 	Lck_Lock(&h2->sess->mtx);
-	retval = H2_Send_Frame(wrk, h2, type, flags, len, r2->stream, ptr);
+	mfs = h2->their_settings[H2S_MAX_FRAME_SIZE];
+	if (len < mfs) {
+		retval = H2_Send_Frame(wrk, h2,
+		    type, flags, len, r2->stream, ptr);
+	} else if (type == H2_FRAME_DATA) {
+		p = ptr;
+		do {
+			tf = mfs;
+			if (tf > len)
+				tf = len;
+			retval = H2_Send_Frame(wrk, h2, type,
+			    tf == len ? flags : 0,
+			    tf, r2->stream, p);
+			p += tf;
+			len -= tf;
+		} while (len > 0);
+	} else {
+		INCOMPL();
+	}
 	Lck_Unlock(&h2->sess->mtx);
 	return (retval);
 }

@@ -44,7 +44,6 @@
 #include "../cache/cache_filter.h"
 #include "../cache/cache_transport.h"
 
-#include "../http1/cache_http1.h"
 #include "../http2/cache_http2.h"
 
 #include "vct.h"

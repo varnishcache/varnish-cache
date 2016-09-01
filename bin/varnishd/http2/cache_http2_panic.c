@@ -47,8 +47,6 @@
 
 #include "vend.h"
 #include "vsb.h"
-#include "vtcp.h"
-#include "vtim.h"
 
 void
 h2_sess_panic(struct vsb *vsb, const struct sess *sp)
