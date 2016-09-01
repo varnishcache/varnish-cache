@@ -3,13 +3,11 @@ varnishtest "Deeper test of random director"
 server s1 {
 	rxreq
 	txresp -body "1"
+	rxreq
+	txresp -body "1"
 } -start
 
 server s2 {
-	rxreq
-	txresp -body "22"
-	rxreq
-	txresp -body "22"
 	rxreq
 	txresp -body "22"
 	rxreq
@@ -28,6 +26,8 @@ server s3 {
 } -start
 
 server s4 {
+	rxreq
+	txresp -body "4444"
 	rxreq
 	txresp -body "4444"
 } -start
@@ -57,19 +57,19 @@ varnish v1 -cliok "debug.srandom"
 client c1 {
 	txreq
 	rxresp
-	expect resp.bodylen == 2
+	expect resp.bodylen == 3
 	txreq
 	rxresp
-	expect resp.bodylen == 2
+	expect resp.bodylen == 4
+	txreq
+	rxresp
+	expect resp.bodylen == 1
 	txreq
 	rxresp
 	expect resp.bodylen == 1
 	txreq
 	rxresp
 	expect resp.bodylen == 2
-	txreq
-	rxresp
-	expect resp.bodylen == 3
 	txreq
 	rxresp
 	expect resp.bodylen == 2

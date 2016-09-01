@@ -106,7 +106,7 @@ VRND_SeedTestable(unsigned int x)
 	rptr = &state[0];
 	lim = 10 * rand_deg;
 	for (i = 0; i < lim; i++)
-		(void)random();
+		(void)VRND_RandomTestable();
 }
 
 long

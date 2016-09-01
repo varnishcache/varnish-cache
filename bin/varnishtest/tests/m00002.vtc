@@ -21,8 +21,8 @@ varnish v1 -cliok "debug.srandom"
 client c1 {
 	txreq
 	rxresp
-	expect resp.http.rnd1 == 0.256
-	expect resp.http.rnd2 == 1.643
-	expect resp.http.rnd3 == 9.011
-	expect resp.http.rnd4 == 99.654
+	expect resp.http.rnd1 == 0.656
+	expect resp.http.rnd2 == 0.390
+	expect resp.http.rnd3 == 8.585
+	expect resp.http.rnd4 == 99.636
 } -run
