@@ -88,7 +88,7 @@ SLTM(SessOpen, 0, "Client connection opened",
 */
 
 SLTM(SessClose, 0, "Client connection closed",
-	"SessionClose is the last record for any client connection.\n\n"
+	"SessClose is the last record for any client connection.\n\n"
 	"The format is::\n\n"
 	"\t%s %f\n"
 	"\t|  |\n"
