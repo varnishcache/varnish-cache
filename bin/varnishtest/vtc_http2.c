@@ -32,6 +32,7 @@
 #include <sys/socket.h>
 
 #include <errno.h>
+#include <inttypes.h>
 #include <math.h>
 #include <poll.h>
 #include <stdio.h>
@@ -1084,7 +1085,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	 *         Id of the stream this one depends on.
 	 */
 	else if (!strcmp(spec, "stream.window")) {
-		snprintf(buf, 20, "%ld", s->id ? s->ws : s->hp->ws);
+		snprintf(buf, 20, "%" PRIu64 "d", s->id ? s->ws : s->hp->ws);
 		return (buf);
 	}
 	else if (!strcmp(spec, "stream.weight")) {
@@ -2735,7 +2736,7 @@ b64_settings(const struct http *hp, const char *s)
 				HPK_ResizeTbl(hp->decctx, v);
 		}
 
-		vtc_log(hp->vl, 4, "Upgrade: %s (%d): %ld", buf, i, v);
+		vtc_log(hp->vl, 4, "Upgrade: %s (%d): %" PRIu64 "d", buf, i, v);
 	}
 }
 

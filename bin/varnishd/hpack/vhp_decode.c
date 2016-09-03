@@ -1190,15 +1190,15 @@ main(int argc, char **argv)
 	}
 
 	if (verbose) {
-		printf("sizeof (struct vhd_int)=%ju\n",
+		printf("sizeof (struct vhd_int)=%zu\n",
 		    sizeof (struct vhd_int));
-		printf("sizeof (struct vhd_lookup)=%ju\n",
+		printf("sizeof (struct vhd_lookup)=%zu\n",
 		    sizeof (struct vhd_lookup));
-		printf("sizeof (struct vhd_raw)=%ju\n",
+		printf("sizeof (struct vhd_raw)=%zu\n",
 		    sizeof (struct vhd_raw));
-		printf("sizeof (struct vhd_huffman)=%ju\n",
+		printf("sizeof (struct vhd_huffman)=%zu\n",
 		    sizeof (struct vhd_huffman));
-		printf("sizeof (struct vhd_decode)=%ju\n",
+		printf("sizeof (struct vhd_decode)=%zu\n",
 		    sizeof (struct vhd_decode));
 	}
 

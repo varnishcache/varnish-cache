@@ -767,9 +767,9 @@ main(int argc, char **argv)
 	}
 
 	if (verbose) {
-		printf("sizeof (struct vht_table) == %ju\n",
+		printf("sizeof (struct vht_table) == %zu\n",
 		    sizeof (struct vht_table));
-		printf("sizeof (struct vht_entry) == %ju\n",
+		printf("sizeof (struct vht_entry) == %zu\n",
 		    sizeof (struct vht_entry));
 		printf("\n");
 	}
