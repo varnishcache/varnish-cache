@@ -393,6 +393,13 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				WRONG("htc_status (nonbad)");
 
 			if (H2_prism_complete(req->htc) == HTC_S_COMPLETE) {
+				if (!FEATURE(FEATURE_HTTP2)) {
+					VSLb(req->vsl, SLT_Debug,
+					    "H2 attempt");
+					SES_Close(req->sp, req->doclose);
+					http1_setstate(sp, H1CLEANUP);
+					continue;
+				}
 				VSLb(req->vsl, SLT_Debug,
 				    "H2 Prior Knowledge Upgrade");
 				http1_setstate(sp, NULL);
@@ -409,10 +416,17 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				http1_setstate(sp, H1CLEANUP);
 				continue;
 			}
-			if (req->htc->body_status == BS_NONE &&
+			if (req->htc->body_status == BS_NONE && /* XXX */
 			    http_HdrIs(req->http, H_Upgrade, "h2c")) {
+				if (!FEATURE(FEATURE_HTTP2)) {
+					VSLb(req->vsl, SLT_Debug,
+					    "H2 upgrade attempt");
+					SES_Close(req->sp, req->doclose);
+					http1_setstate(sp, H1CLEANUP);
+					continue;
+				}
 				VSLb(req->vsl, SLT_Debug,
-				    "H2 Optimistic Upgrade");
+				    "H2 Upgrade");
 				http1_setstate(sp, NULL);
 				req->err_code = 2;
 				SES_SetTransport(wrk, sp, req, &H2_transport);

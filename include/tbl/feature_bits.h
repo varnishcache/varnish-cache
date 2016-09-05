@@ -63,4 +63,8 @@ FEATURE_BIT(HTTPS_SCHEME,		https_scheme,
     "Also split https URIs",
     "Extract host from full URI in the request line if the scheme is https."
 )
+FEATURE_BIT(HTTP2,		http2,
+    "Support HTTP/2 protocol",
+    "Enable HTTP/2 protocol support."
+)
 /*lint -restore */
