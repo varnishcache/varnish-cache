@@ -1,0 +1,15 @@
+varnishtest "H/2 state after sending/receiving preface"
+
+server s1 {
+	expect h2.state == false
+	rxpri
+	expect h2.state == true
+} -start
+
+client c1 -connect ${s1_sock} {
+	expect h2.state == false
+	txpri
+	expect h2.state == true
+} -start
+
+server s1 -wait

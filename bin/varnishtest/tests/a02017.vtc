@@ -1,0 +1,22 @@
+varnishtest "Push promise"
+
+server s1 {
+	stream 1 {
+		rxreq
+		txpush -promised 2 -url "/hereyougo"
+		txresp
+	} -run
+} -start
+
+client c1 -connect ${s1_sock} {
+	stream 1 {
+		txreq
+		rxpush
+		expect push.id == 2
+		expect req.url == "/hereyougo"
+		expect req.method == "GET"
+		rxresp
+	} -run
+} -run
+
+server s1 -wait

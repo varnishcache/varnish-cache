@@ -1,0 +1,118 @@
+varnishtest "HPACK test"
+
+server s1 {
+	stream 0 {
+		txsettings -hdrtbl 256
+		rxsettings
+		txsettings -ack
+		rxsettings
+		expect settings.ack == true
+	} -run
+
+	stream 1 {
+		rxreq
+		expect tbl.dec[1].key == "location"
+		expect tbl.dec[1].value == "https://www.example.com"
+		expect tbl.dec[2].key == "date"
+		expect tbl.dec[2].value == "Mon, 21 Oct 2013 20:13:21 GMT"
+		expect tbl.dec[3].key == "cache-control"
+		expect tbl.dec[3].value == "private"
+		expect tbl.dec[4].key == ":status"
+		expect tbl.dec[4].value == "302"
+		expect tbl.dec.size == 222
+		txresp
+	} -run
+
+	stream 3 {
+		rxreq
+		expect tbl.dec[1].key == ":status"
+		expect tbl.dec[1].value == "307"
+		expect tbl.dec[2].key == "location"
+		expect tbl.dec[2].value == "https://www.example.com"
+		expect tbl.dec[3].key == "date"
+		expect tbl.dec[3].value == "Mon, 21 Oct 2013 20:13:21 GMT"
+		expect tbl.dec[4].key == "cache-control"
+		expect tbl.dec[4].value == "private"
+		expect tbl.dec.size == 222
+		txresp
+	} -run
+
+	stream 5 {
+		rxreq
+		expect tbl.dec[1].key == "set-cookie"
+		expect tbl.dec[1].value == "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1"
+		expect tbl.dec[2].key == "content-encoding"
+		expect tbl.dec[2].value == "gzip"
+		expect tbl.dec[3].key == "date"
+		expect tbl.dec[3].value == "Mon, 21 Oct 2013 20:13:22 GMT"
+		expect tbl.dec.size == 215
+		txresp
+	} -run
+} -start
+
+client c1 -connect ${s1_sock} {
+	stream 0 {
+		txsettings -hdrtbl 256
+		rxsettings
+		txsettings -ack
+		rxsettings
+		expect settings.ack == true
+	} -run
+
+	stream 1 {
+
+		txreq \
+			-litIdxHdr inc 8 plain "302" \
+			-litIdxHdr inc 24 plain "private" \
+			-litIdxHdr inc 33 plain "Mon, 21 Oct 2013 20:13:21 GMT" \
+			-litIdxHdr inc 46 plain "https://www.example.com"
+		expect tbl.enc[1].key == "location"
+		expect tbl.enc[1].value == "https://www.example.com"
+		expect tbl.enc[2].key == "date"
+		expect tbl.enc[2].value == "Mon, 21 Oct 2013 20:13:21 GMT"
+		expect tbl.enc[3].key == "cache-control"
+		expect tbl.enc[3].value == "private"
+		expect tbl.enc[4].key == ":status"
+		expect tbl.enc[4].value == "302"
+		expect tbl.enc.size == 222
+		rxresp
+	} -run
+
+	stream 3 {
+		txreq \
+			-litIdxHdr inc 8 huf "307" \
+			-idxHdr 65 \
+			-idxHdr 64 \
+			-idxHdr 63
+		expect tbl.enc[1].key == ":status"
+		expect tbl.enc[1].value == "307"
+		expect tbl.enc[2].key == "location"
+		expect tbl.enc[2].value == "https://www.example.com"
+		expect tbl.enc[3].key == "date"
+		expect tbl.enc[3].value == "Mon, 21 Oct 2013 20:13:21 GMT"
+		expect tbl.enc[4].key == "cache-control"
+		expect tbl.enc[4].value == "private"
+		expect tbl.enc.size == 222
+		rxresp
+	} -run
+
+	stream 5 {
+		txreq -idxHdr 8 \
+			-idxHdr 65 \
+			-litIdxHdr inc 33 plain "Mon, 21 Oct 2013 20:13:22 GMT" \
+			-idxHdr 64 \
+			-litIdxHdr inc 26 plain "gzip" \
+			-litIdxHdr inc 55 plain "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1"
+		expect tbl.enc[1].key == "set-cookie"
+		expect tbl.enc[1].value == "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1"
+		expect tbl.enc[2].key == "content-encoding"
+		expect tbl.enc[2].value == "gzip"
+		expect tbl.enc[3].key == "date"
+		expect tbl.enc[3].value == "Mon, 21 Oct 2013 20:13:22 GMT"
+		expect tbl.enc.size == 215
+		rxresp
+	} -run
+
+} -run
+
+server s1 -wait

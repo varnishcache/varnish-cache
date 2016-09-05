@@ -1,0 +1,21 @@
+varnishtest "H/1 -> H/2 upgrade"
+
+server s1 {
+	rxreq
+	upgrade
+
+	stream 3 { rxprio } -run
+	stream 5 { rxprio } -run
+	stream 7 { rxprio } -run
+	stream 9 { rxprio } -run
+	stream 11 { rxprio } -run
+
+	stream 1 {
+		rxprio
+		txresp
+	} -start
+
+} -start
+
+
+shell { nghttp http://${s1_addr}:${s1_port} -nu }

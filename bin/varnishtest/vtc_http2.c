@@ -99,7 +99,7 @@ struct stream {
 	char			*name;
 	VTAILQ_ENTRY(stream)    list;
 	unsigned		running;
-	pthread_cond_t          cond;
+	pthread_cond_t		cond;
 	struct frame		*frame;
 	pthread_t		tp;
 	unsigned		reading;
@@ -210,10 +210,10 @@ VTAILQ_HEAD(fq_head, frame);
 struct frame {
 	unsigned	magic;
 #define	FRAME_MAGIC	0x5dd3ec4
-	uint32_t        size;
+	uint32_t	size;
 	uint32_t	stid;
-	uint8_t         type;
-	uint8_t         flags;
+	uint8_t		type;
+	uint8_t		flags;
 	char		*data;
 
 	VTAILQ_ENTRY(frame)    list;
@@ -347,10 +347,10 @@ exclusive_stream_dependency(const struct stream *s)
 {
 	struct stream *target = NULL;
 	struct http *hp = s->hp;
-	
+
 	if (s->id == 0)
 		return;
-	
+
 	VTAILQ_FOREACH(target, &hp->streams, list) {
 		if (target->id != s->id && target->dependency == s->dependency)
 			target->dependency = s->id;
@@ -845,7 +845,7 @@ do {									       \
 	STRTOU32(n, *sp, p, v, c);					       \
 	if (l && n >= (1 << l))						       \
 		vtc_log(v, 0, c " must be a %d-bits integer (found %s)",       \
-			       l, *sp);				       \
+			       l, *sp);					       \
 } while (0)
 
 #define CHECK_LAST_FRAME(TYPE) \
@@ -908,9 +908,9 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	n = 0;
 	/* SECTION: stream.spec.zexpect.ping PING specific
 	 * ping.data
-	 *         The 8-bytes string of the PING frame payload.
+	 *	The 8-bytes string of the PING frame payload.
 	 * ping.ack (PING)
-	 *         "true" if the ACK flag was set, "false" otherwise.
+	 *	"true" if the ACK flag was set, "false" otherwise.
 	 */
 	if (!strcmp(spec, "ping.data")) {
 		CHECK_LAST_FRAME(PING);
@@ -923,7 +923,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	}
 	/* SECTION: stream.spec.zexpect.winup WINDOW_UPDATE specific
 	 * winup.size
-	 *         The size of the upgrade given by the WINDOW_UPDATE frame.
+	 *	The size of the upgrade given by the WINDOW_UPDATE frame.
 	 */
 	else if (!strcmp(spec, "winup.size")) {
 		CHECK_LAST_FRAME(WINDOW_UPDATE);
@@ -931,13 +931,13 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	}
 	/* SECTION: stream.spec.zexpect.prio PRIORITY specific
 	 * prio.stream
-	 *         The stream ID announced.
+	 *	The stream ID announced.
 	 *
 	 * prio.exclusive
-	 *         "true" if the priority is exclusive, else "false".
+	 *	"true" if the priority is exclusive, else "false".
 	 *
 	 * prio.weight
-	 *         The dependency weight.
+	 *	The dependency weight.
 	 */
 	else if (!strcmp(spec, "prio.stream")) {
 		CHECK_LAST_FRAME(PRIORITY);
@@ -954,7 +954,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	}
 	/* SECTION: stream.spec.zexpect.rst RESET_STREAM specific
 	 * rst.err
-	 *         The error code (as integer) of the RESET_STREAM frame.
+	 *	The error code (as integer) of the RESET_STREAM frame.
 	 */
 	else if (!strcmp(spec, "rst.err")) {
 		CHECK_LAST_FRAME(RST_STREAM);
@@ -963,26 +963,26 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	/* SECTION: stream.spec.zexpect.settings SETTINGS specific
 	 *
 	 * settings.ack
-	 *         "true" if the ACK flag was set, else ""false.
+	 *	"true" if the ACK flag was set, else ""false.
 	 *
 	 * settings.push
-	 *         "true" if the push settings was set to yes, "false" if set to
-	 *         no, and <undef> if not present.
+	 *	"true" if the push settings was set to yes, "false" if set to
+	 *	no, and <undef> if not present.
 	 *
 	 * settings.hdrtbl
-	 *         Value of HEADER_TABLE_SIZE if set, <undef> otherwise.
+	 *	Value of HEADER_TABLE_SIZE if set, <undef> otherwise.
 	 *
 	 * settings.maxstreams
-	 *         Value of MAX_CONCURRENT_STREAMS if set, <undef> otherwise.
+	 *	Value of MAX_CONCURRENT_STREAMS if set, <undef> otherwise.
 	 *
 	 * settings.winsize
-	 *         Value of INITIAL_WINDOW_SIZE if set, <undef> otherwise.
+	 *	Value of INITIAL_WINDOW_SIZE if set, <undef> otherwise.
 	 *
 	 * setting.framesize
-	 *         Value of MAX_FRAME_SIZE if set, <undef> otherwise.
+	 *	Value of MAX_FRAME_SIZE if set, <undef> otherwise.
 	 *
 	 * settings.hdrsize
-	 *         Value of MAX_HEADER_LIST_SIZE if set, <undef> otherwise.
+	 *	Value of MAX_HEADER_LIST_SIZE if set, <undef> otherwise.
 	 */
 	else if (!strncmp(spec, "settings.", 9)) {
 		CHECK_LAST_FRAME(SETTINGS);
@@ -1008,7 +1008,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	}
 	/* SECTION: stream.spec.zexpect.push PUSH_PROMISE specific
 	 * push.id
-	 *         The id of the promised stream.
+	 *	The id of the promised stream.
 	 */
 	else if (!strcmp(spec, "push.id")) {
 		CHECK_LAST_FRAME(PUSH_PROMISE);
@@ -1016,13 +1016,13 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	}
 	/* SECTION: stream.spec.zexpect.goaway GOAWAY specific
 	 * goaway.err
-	 *         The error code (as integer) of the GOAWAY frame.
+	 *	The error code (as integer) of the GOAWAY frame.
 	 *
 	 * goaway.laststream
-	 *         Last-Stream-ID
+	 *	Last-Stream-ID
 	 *
 	 * goaway.debug
-	 *         Debug data, if any.
+	 *	Debug data, if any.
 	 */
 	else if (!strncmp(spec, "goaway.", 7)) {
 		spec += 7;
@@ -1040,20 +1040,20 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	}
 	/* SECTION: stream.spec.zexpect.zframe Generic frame
 	 * frame.data
-	 *         Payload of the last frame
+	 *	Payload of the last frame
 	 *
 	 * frame.type
-	 *         Type of the frame, as integer.
+	 *	Type of the frame, as integer.
 	 *
 	 * frame.size
-	 *         Size of the frame.
+	 *	Size of the frame.
 	 *
 	 * frame.stream
-	 *         Stream of the frame (correspond to the one you are executing
-	 *         this from, obviously).
+	 *	Stream of the frame (correspond to the one you are executing
+	 *	this from, obviously).
 	 *
 	 * frame.padding (for DATA, HEADERS, PUSH_PROMISE frames)
-	 *         Number of padded bytes.
+	 *	Number of padded bytes.
 	 */
 	else if (!strncmp(spec, "frame.", 6)) {
 		spec += 6;
@@ -1075,17 +1075,18 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	}
 	/* SECTION: stream.spec.zexpect.zstream Stream
 	 * stream.window
-	 *         The current window size of the stream, or, if on stream 0,
-	 *         of the connection.
+	 *	The current window size of the stream, or, if on stream 0,
+	 *	of the connection.
 	 *
 	 * stream.weight
-	 *         Weight of the stream
+	 *	Weight of the stream
 	 *
 	 * stream.dependency
-	 *         Id of the stream this one depends on.
+	 *	Id of the stream this one depends on.
 	 */
 	else if (!strcmp(spec, "stream.window")) {
-		snprintf(buf, 20, "%" PRIu64 "d", s->id ? s->ws : s->hp->ws);
+		snprintf(buf, 20, "%jd",
+		    (intmax_t)(s->id ? s->ws : s->hp->ws));
 		return (buf);
 	}
 	else if (!strcmp(spec, "stream.weight")) {
@@ -1106,21 +1107,21 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	}
 	/* SECTION: stream.spec.zexpect.ztable Index tables
 	 * tbl.dec.size / tbl.enc.size
-	 *         Size (bytes) of the decoding/encoding table.
+	 *	Size (bytes) of the decoding/encoding table.
 	 *
 	 * tbl.dec.size / tbl.enc.maxsize
-	 *         Maximum size (bytes) of the decoding/encoding table.
+	 *	Maximum size (bytes) of the decoding/encoding table.
 	 *
 	 * tbl.dec.length / tbl.enc.length
-	 *         Number of headers in decoding/encoding table.
+	 *	Number of headers in decoding/encoding table.
 	 *
 	 * tbl.dec[INT].key / tbl.enc[INT].key
-	 *         Name of the header at index INT of the decoding/encoding
-	 *         table.
+	 *	Name of the header at index INT of the decoding/encoding
+	 *	table.
 	 *
 	 * tbl.dec[INT].value / tbl.enc[INT].value
-	 *         Value of the header at index INT of the decoding/encoding
-	 *         table.
+	 *	Value of the header at index INT of the decoding/encoding
+	 *	table.
 	 */
 	else if (!strncmp(spec, "tbl.dec", 7) ||
 			!strncmp(spec, "tbl.enc", 7)) {
@@ -1156,28 +1157,28 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	 * still being construct (in-between two frames for example).
 	 *
 	 * req.bodylen / resp.bodylen
-	 *         Length in bytes of the request/response so far.
+	 *	Length in bytes of the request/response so far.
 	 *
 	 * req.body / resp.body
-	 *         Body of the request/response so far.
+	 *	Body of the request/response so far.
 	 *
 	 * req.http.STRING / resp.http.STRING
-	 *         Value of the header STRING in the request/response.
+	 *	Value of the header STRING in the request/response.
 	 *
 	 * req.status / resp.status
-	 *         :status pseudo-header's value.
+	 *	:status pseudo-header's value.
 	 *
 	 * req.url / resp.url
-	 *         :path pseudo-header's value.
+	 *	:path pseudo-header's value.
 	 *
 	 * req.method / resp.method
-	 *         :method pseudo-header's value.
+	 *	:method pseudo-header's value.
 	 *
 	 * req.authority / resp.authority
-	 *         :method pseudo-header's value.
+	 *	:method pseudo-header's value.
 	 *
 	 * req.scheme / resp.scheme
-	 *         :method pseudo-header's value.
+	 *	:method pseudo-header's value.
 	 */
 	else if (!strncmp(spec, "req.", 4) || !strncmp(spec, "resp.", 5)) {
 		if (spec[2] == 'q') {
@@ -1217,7 +1218,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
  * describing the bytes, in hex notation, will possible whitespaces between
  * them. Here's an example::
  *
- *         sendhex "00 00 08 00 0900       8d"
+ *	sendhex "00 00 08 00 0900	8d"
  */
 static void
 cmd_sendhex(CMD_ARGS)
@@ -1298,80 +1299,80 @@ cmd_sendhex(CMD_ARGS)
  * each of them.
  *
  * \-noadd
- *         Do not add default headers. Useful to avoid duplicates when sending
- *         default headers using ``-hdr``, ``-idxHdr`` and ``-litIdxHdr``.
+ *	Do not add default headers. Useful to avoid duplicates when sending
+ *	default headers using ``-hdr``, ``-idxHdr`` and ``-litIdxHdr``.
  *
  * \-status INT (txresp)
- *         Set the :status pseudo-header.
+ *	Set the :status pseudo-header.
  *
  * \-url STRING (txreq, txpush)
- *         Set the :path pseudo-header.
+ *	Set the :path pseudo-header.
  *
  * \-req STRING (txreq, txpush)
- *         Set the :method pseudo-header.
+ *	Set the :method pseudo-header.
  *
  * \-scheme STRING (txreq, txpush)
- *         Set the :scheme pseudo-header.
+ *	Set the :scheme pseudo-header.
  *
  * \-hdr STRING1 STRING2
- *         Insert a header, STRING1 being the name, and STRING2 the value.
+ *	Insert a header, STRING1 being the name, and STRING2 the value.
  *
  * \-idxHdr INT
- *         Insert an indexed header, using INT as index.
+ *	Insert an indexed header, using INT as index.
  *
  * \-litIdxHdr inc|not|never INT huf|plain STRING
- *         Insert an literal, indexed header. The first argument specify if the
- *         header should be added to the table, shouldn't, or mustn't be
- *         compressed if/when retransmitted.
+ *	Insert an literal, indexed header. The first argument specify if the
+ *	header should be added to the table, shouldn't, or mustn't be
+ *	compressed if/when retransmitted.
  *
- *         INT is the idex of the header name to use.
+ *	INT is the idex of the header name to use.
  *
- *         The third argument informs about the Huffman encoding: yes (huf) or
- *         no (plain).
+ *	The third argument informs about the Huffman encoding: yes (huf) or
+ *	no (plain).
  *
- *         The last term is the literal value of the header.
+ *	The last term is the literal value of the header.
  *
  * \-litHdr inc|not|never huf|plain STRING1 huf|plain STRING2
- *         Insert a literal header, with the same first argument as
- *         ``-litIdxHdr``.
+ *	Insert a literal header, with the same first argument as
+ *	``-litIdxHdr``.
  *
- *         The second and third terms tell what the name of the header is and if
- *         it should be Huffman-encoded, while the last two do the same
- *         regarding the value.
+ *	The second and third terms tell what the name of the header is and if
+ *	it should be Huffman-encoded, while the last two do the same
+ *	regarding the value.
  *
  * \-body STRING (txreq, txresp)
- *         Specify a body, effectively putting STRING into a DATA frame after
- *         the HEADER frame is sent.
+ *	Specify a body, effectively putting STRING into a DATA frame after
+ *	the HEADER frame is sent.
  *
  * \-bodylen INT (txreq, txresp)
- *         Do the same thing as ``-body`` but generate an string of INT length
- *         for you.
+ *	Do the same thing as ``-body`` but generate an string of INT length
+ *	for you.
  *
  * \-nostrend (txreq, txresp)
- *         Don't set the END_STREAM flag automatically, making the peer expect
- *         a body after the headers.
+ *	Don't set the END_STREAM flag automatically, making the peer expect
+ *	a body after the headers.
  *
  * \-nohdrend
- *         Don't set the END_HEADERS flag automatically, making the peer expect
- *         more HEADER frames.
+ *	Don't set the END_HEADERS flag automatically, making the peer expect
+ *	more HEADER frames.
  *
  * \-dep INT (txreq, txresp)
- *         Tell the peer that this content depends on the stream with the INT
- *         id.
+ *	Tell the peer that this content depends on the stream with the INT
+ *	id.
  *
  * \-ex (txreq, txresp)
- *         Make the dependency exclusive (``-dep`` is still needed).
+ *	Make the dependency exclusive (``-dep`` is still needed).
  *
  * \-weight (txreq, txresp)
- *         Set the weight for the dependency.
+ *	Set the weight for the dependency.
  *
  * \-promised INT (txpush)
- *         The id of the promised stream.
+ *	The id of the promised stream.
  *
  * \-pad STRING / -padlen INT (txreq, txresp, txpush)
- *         Add string as padding to the frame, either the one you provided with
- *         \-pad, or one that is generated for you, of length INT is -padlen
- *         case.
+ *	Add string as padding to the frame, either the one you provided with
+ *	\-pad, or one that is generated for you, of length INT is -padlen
+ *	case.
  */
 static void
 cmd_tx11obj(CMD_ARGS)
@@ -1567,7 +1568,7 @@ cmd_tx11obj(CMD_ARGS)
 		s->dependency = stid;
 
 		assert(f.size + 5 < BUF_SIZE);
-	        memmove(buf + 5, buf, f.size);
+		memmove(buf + 5, buf, f.size);
 		vbe32enc(buf, (stid | exclusive));
 		buf[4] = s->weight;
 		f.size += 5;
@@ -1591,7 +1592,7 @@ cmd_tx11obj(CMD_ARGS)
 	}
 	if (f.type == TYPE_PUSH_PROMISE)
 		f.size += 4;
-	f.data = buf;	
+	f.data = buf;
 	HPK_FreeIter(iter);
 	write_frame(s->hp, &f, 1);
 	free(buf);
@@ -1613,19 +1614,19 @@ cmd_tx11obj(CMD_ARGS)
  * and txdata automatically set it.
  *
  * \-data STRING
- *         Data to be embedded into the frame.
+ *	Data to be embedded into the frame.
  *
  * \-datalen INT
- *         Generate and INT-bytes long string to be sent in the frame.
+ *	Generate and INT-bytes long string to be sent in the frame.
  *
  * \-pad STRING / -padlen INT
- *         Add string as padding to the frame, either the one you provided with
- *         \-pad, or one that is generated for you, of length INT is -padlen
- *         case.
+ *	Add string as padding to the frame, either the one you provided with
+ *	\-pad, or one that is generated for you, of length INT is -padlen
+ *	case.
  *
  * \-nostrend
- *         Don't set the END_STREAM flag, allowing to send more data on this
- *         stream.
+ *	Don't set the END_STREAM flag, allowing to send more data on this
+ *	stream.
  */
 static void
 cmd_txdata(CMD_ARGS)
@@ -1699,9 +1700,9 @@ cmd_txdata(CMD_ARGS)
  * (NO_ERROR).
  *
  * \-err STRING|INT
- *         Sets the error code to be sent. The argument can be an integer or a
- *         string describing the error, such as NO_ERROR, or CANCEL (see
- *         rfc7540#11.4 for more strings).
+ *	Sets the error code to be sent. The argument can be an integer or a
+ *	string describing the error, such as NO_ERROR, or CANCEL (see
+ *	rfc7540#11.4 for more strings).
  */
 static void
 cmd_txrst(CMD_ARGS)
@@ -1728,7 +1729,7 @@ cmd_txrst(CMD_ARGS)
 
 			STRTOU32(err, *av, p, vl, "-err");
 		} else
-			break;	
+			break;
 	}
 	if (*av != NULL)
 		vtc_log(vl, 0, "Unknown txrst spec: %s\n", *av);
@@ -1743,15 +1744,15 @@ cmd_txrst(CMD_ARGS)
  * Send a PRIORITY frame
  *
  * \-stream INT
- *         indicate the id of the stream the sender stream depends on.
+ *	indicate the id of the stream the sender stream depends on.
  *
  * \-ex
- *         the dependency should be made exclusive (only this streams depends on
- *         the parent stream).
+ *	the dependency should be made exclusive (only this streams depends on
+ *	the parent stream).
  *
  * \-weight INT
- *         an 8-bits integer is used to balance priority between streams
- *         depending on the same streams. 
+ *	an 8-bits integer is used to balance priority between streams
+ *	depending on the same streams.
  */
 static void
 cmd_txprio(CMD_ARGS)
@@ -1778,7 +1779,7 @@ cmd_txprio(CMD_ARGS)
 		} else if (!strcmp(*av, "-weight")) {
 			STRTOU32_CHECK(weight, av, p, vl, "-weight", 8);
 		} else
-			break;	
+			break;
 	}
 	if (*av != NULL)
 		vtc_log(vl, 0, "Unknown txprio spec: %s\n", *av);
@@ -1809,25 +1810,25 @@ cmd_txprio(CMD_ARGS)
  * are from  rfc7540#6.5.2):
  *
  * \-hdrtbl INT
- *         headers table size
+ *	headers table size
  *
  * \-push BOOL
- *         whether push frames are accepted or not
+ *	whether push frames are accepted or not
  *
  * \-maxstreams INT
- *         maximum concurrent streams allowed
+ *	maximum concurrent streams allowed
  *
  * \-winsize INT
- *         sender's initial window size
+ *	sender's initial window size
  *
  * \-framesize INT
- *         largest frame size authorized
+ *	largest frame size authorized
  *
  * \-hdrsize INT
- *         maximum size of the header list authorized
+ *	maximum size of the header list authorized
  *
  * \-ack
- *         set the ack bit
+ *	set the ack bit
  */
 static void
 cmd_txsettings(CMD_ARGS)
@@ -1902,10 +1903,10 @@ cmd_txsettings(CMD_ARGS)
  * Send PING frame.
  *
  * \-data STRING
- *         specify the payload of the frame, with STRING being an 8-char string.
+ *	specify the payload of the frame, with STRING being an 8-char string.
  *
  * \-ack
- *         set the ACK flag.
+ *	set the ACK flag.
  */
 static void
 cmd_txping(CMD_ARGS)
@@ -1945,17 +1946,17 @@ cmd_txping(CMD_ARGS)
  * Possible options include:
  *
  * \-err STRING|INT
- *         set the error code to eplain the termination. The second argument
- *         can be a integer or the string version of the error code as found
- *         in rfc7540#7.
+ *	set the error code to eplain the termination. The second argument
+ *	can be a integer or the string version of the error code as found
+ *	in rfc7540#7.
  *
  * \-laststream INT
- *         the id of the "highest-numbered stream identifier for which the
- *         sender of the GOAWAY frame might have taken some action on or might
- *         yet take action on".
+ *	the id of the "highest-numbered stream identifier for which the
+ *	sender of the GOAWAY frame might have taken some action on or might
+ *	yet take action on".
  *
  * \-debug
- *         specify the debug data, if any to append to the frame.
+ *	specify the debug data, if any to append to the frame.
  */
 static void
 cmd_txgoaway(CMD_ARGS)
@@ -2014,7 +2015,7 @@ cmd_txgoaway(CMD_ARGS)
  * connection (from stream 0) or of the stream (any other stream).
  *
  * \-size INT
- *         give INT credits to the peer.
+ *	give INT credits to the peer.
  */
 static void
 cmd_txwinup(CMD_ARGS)
@@ -2024,7 +2025,7 @@ cmd_txwinup(CMD_ARGS)
 	char *p;
 	struct frame f;
 	char buf[8];
-	uint32_t size = 0; 
+	uint32_t size = 0;
 
 	(void)cmd;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
@@ -2041,7 +2042,7 @@ cmd_txwinup(CMD_ARGS)
 		if (!strcmp(*av, "-size")) {
 			STRTOU32_CHECK(size, av, p, vl, "-size", 0);
 		} else
-			break;	
+			break;
 	}
 	if (*av != NULL)
 		vtc_log(vl, 0, "Unknown txwinup spec: %s\n", *av);
@@ -2089,7 +2090,7 @@ rxstuff(struct stream *s) {
 				"instead of %s (%d)", \
 				rcv, func, \
 				rt < TYPE_MAX ? h2_types[rt] : "?", rt, \
-			       	wt < TYPE_MAX ? h2_types[wt] : "?", wt); \
+				wt < TYPE_MAX ? h2_types[wt] : "?", wt); \
 	} while (0);
 
 /* SECTION: stream.spec.data_12 rxhdrs
@@ -2098,10 +2099,10 @@ rxstuff(struct stream *s) {
  * zero or more CONTINUATION frame.
  *
  * \-all
- *         Keep waiting for CONTINUATION frames until END_HEADERS flag is seen.
+ *	Keep waiting for CONTINUATION frames until END_HEADERS flag is seen.
  *
  * \-some INT
- *         Retrieve INT - 1 CONTINUATION frames after the HEADER frame.
+ *	Retrieve INT - 1 CONTINUATION frames after the HEADER frame.
  *
  */
 static void
@@ -2125,7 +2126,7 @@ cmd_rxhdrs(CMD_ARGS)
 		} else if (!strcmp(*av, "-all")) {
 			loop = 1;
 		} else
-			break;	
+			break;
 	}
 	if (*av != NULL)
 		vtc_log(vl, 0, "Unknown rxhdrs spec: %s\n", *av);
@@ -2160,7 +2161,7 @@ cmd_rxcont(CMD_ARGS)
 		} else if (!strcmp(*av, "-all")) {
 			loop = 1;
 		} else
-			break;	
+			break;
 	}
 	if (*av != NULL)
 		vtc_log(vl, 0, "Unknown rxcont spec: %s\n", *av);
@@ -2182,10 +2183,10 @@ cmd_rxcont(CMD_ARGS)
  * arguments:
  *
  * \-all
- *         keep waiting for DATA frame until one sets the END_STREAM flag
+ *	keep waiting for DATA frame until one sets the END_STREAM flag
  *
  * \-some INT
- *         retrieve INT DATA frames.
+ *	retrieve INT DATA frames.
  *
  */
 static void
@@ -2208,7 +2209,7 @@ cmd_rxdata(CMD_ARGS)
 		} else if (!strcmp(*av, "-all")) {
 			loop = 1;
 		} else
-			break;	
+			break;
 	}
 	if (*av != NULL)
 		vtc_log(vl, 0, "Unknown rxdata spec: %s\n", *av);
@@ -2276,10 +2277,10 @@ cmd_rxreqsp(CMD_ARGS)
  * CONTINUATION frames.
  *
  * \-all
- *         Keep waiting for CONTINUATION frames until END_HEADERS flag is seen.
+ *	Keep waiting for CONTINUATION frames until END_HEADERS flag is seen.
  *
  * \-some INT
- *         Retrieve INT - 1 CONTINUATION frames after the PUSH frame.
+ *	Retrieve INT - 1 CONTINUATION frames after the PUSH frame.
  *
  */
 static void
@@ -2618,7 +2619,7 @@ stream_run(struct stream *s)
  *
  * Stream syntax follow the client/server one::
  *
- *         stream ID [SPEC] [ACTION]
+ *	stream ID [SPEC] [ACTION]
  *
  * ID is the H/2 stream number, while SPEC describes what will be done in that
  * stream.
@@ -2626,27 +2627,27 @@ stream_run(struct stream *s)
  * Note that, when parsing a stream action, if the entity isn't operating in H/2
  * mode, these spec is ran before::
  *
- *         txpri/rxpri # client/server
- *         stream 0 {
- *             txsettings
- *             rxsettings
- *             txsettings -ack
- *             rxsettings
- *             expect settings.ack == true
- *         } -run
+ *	txpri/rxpri # client/server
+ *	stream 0 {
+ *	    txsettings
+ *	    rxsettings
+ *	    txsettings -ack
+ *	    rxsettings
+ *	    expect settings.ack == true
+ *	} -run
  *
  * And H/2 mode is then activated before parsing the specification.
  *
  * SECTION: stream.actions Actions
  *
  * \-start
- *         Run the specification in a thread, giving back control immediately.
+ *	Run the specification in a thread, giving back control immediately.
  *
  * \-wait
- *         Wait for the started thread to finish running the spec.
+ *	Wait for the started thread to finish running the spec.
  *
  * \-run
- *         equivalent to calling ``-start`` then ``-wait``. 
+ *	equivalent to calling ``-start`` then ``-wait``.
  */
 
 void
@@ -2722,7 +2723,7 @@ b64_settings(const struct http *hp, const char *s)
 			s++;
 		}
 		i = v >> 32;
-		v &= 0xffff;		
+		v &= 0xffff;
 
 		if (i <= SETTINGS_MAX) {
 			buf = h2_settings[i];
@@ -2736,7 +2737,8 @@ b64_settings(const struct http *hp, const char *s)
 				HPK_ResizeTbl(hp->decctx, v);
 		}
 
-		vtc_log(hp->vl, 4, "Upgrade: %s (%d): %" PRIu64 "d", buf, i, v);
+		vtc_log(hp->vl, 4, "Upgrade: %s (%d): %ju",
+		    buf, i, (intmax_t)v);
 	}
 }
 

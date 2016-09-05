@@ -1,0 +1,40 @@
+varnishtest "Verify the initial window size"
+
+server s1 {
+	stream 0 {
+		rxsettings
+		txsettings -ack
+	} -run
+	stream 1 {
+		rxreq
+		txresp -bodylen 100
+	} -run
+	stream 0 {
+		rxsettings
+		txsettings -ack
+	} -run
+} -start
+
+client c1 -connect ${s1_sock} {
+	stream 0 {
+		txsettings -winsize 128
+		rxsettings
+	} -run
+	stream 1 {
+		txreq
+		rxresp
+		expect resp.bodylen == 100
+		expect stream.window == 28
+	} -run
+	stream 0 {
+		txsettings -winsize 64
+		rxsettings
+
+		expect stream.window == 65435
+	} -run
+	stream 1 {
+		expect stream.window == -36
+	} -run
+} -run
+
+server s1 -wait

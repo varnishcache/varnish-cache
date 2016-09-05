@@ -1,0 +1,21 @@
+varnishtest "H/2 state after sending/receiving preface"
+
+server s1 {
+	expect h2.state == "false"
+	stream 1 {
+		rxreq
+		txresp
+	} -run
+	expect h2.state == "true"
+} -start
+
+client c1 -connect ${s1_sock} {
+	expect h2.state == "false"
+	stream 1 {
+		txreq
+		rxresp
+	} -run
+	expect h2.state == "true"
+} -start
+
+server s1 -wait

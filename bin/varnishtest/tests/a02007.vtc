@@ -1,0 +1,79 @@
+varnishtest "HPACK test"
+
+server s1 {
+	stream 1 {
+		rxreq
+		expect tbl.dec.size == 57
+		expect tbl.dec[1].key == ":authority"
+		expect tbl.dec[1].value == "www.example.com"
+		txresp
+	} -run
+
+	stream 3 {
+		rxreq
+		expect tbl.dec[1].key == "cache-control"
+		expect tbl.dec[1].value == "no-cache"
+		expect tbl.dec[2].key == ":authority"
+		expect tbl.dec[2].value == "www.example.com"
+		expect tbl.dec.size == 110
+		txresp
+	} -run
+
+	stream 5 {
+		rxreq
+		expect tbl.dec[1].key == "custom-key"
+		expect tbl.dec[1].value == "custom-value"
+		expect tbl.dec[2].key == "cache-control"
+		expect tbl.dec[2].value == "no-cache"
+		expect tbl.dec[3].key == ":authority"
+		expect tbl.dec[3].value == "www.example.com"
+		expect tbl.dec.size == 164
+		txresp
+	} -run
+} -start
+
+client c1 -connect ${s1_sock} {
+	stream 1 {
+
+		txreq -idxHdr 2 \
+			-idxHdr 6 \
+			-idxHdr 4 \
+			-litIdxHdr inc 1 huf "www.example.com"
+		expect tbl.enc[1].key == ":authority"
+		expect tbl.enc[1].value == "www.example.com"
+		rxresp
+	} -run
+
+	stream 3 {
+		txreq -idxHdr 2 \
+			-idxHdr 6 \
+			-idxHdr 4 \
+			-idxHdr 62 \
+			-litIdxHdr inc 24 huf no-cache
+		expect tbl.enc[1].key == "cache-control"
+		expect tbl.enc[1].value == "no-cache"
+		expect tbl.enc[2].key == ":authority"
+		expect tbl.enc[2].value == "www.example.com"
+		expect tbl.enc.size == 110
+		rxresp
+	} -run
+
+	stream 5 {
+		txreq -idxHdr 2 \
+			-idxHdr 7 \
+			-idxHdr 5 \
+			-idxHdr 63 \
+			-litHdr inc huf "custom-key" huf "custom-value"
+		expect tbl.enc[1].key == "custom-key"
+		expect tbl.enc[1].value == "custom-value"
+		expect tbl.enc[2].key == "cache-control"
+		expect tbl.enc[2].value == "no-cache"
+		expect tbl.enc[3].key == ":authority"
+		expect tbl.enc[3].value == "www.example.com"
+		expect tbl.enc.size == 164
+		rxresp
+	} -run
+
+} -run
+
+server s1 -wait

@@ -111,8 +111,8 @@ huff_encode(struct hpk_iter *iter, const char *str, int len)
 	int pl = 0; /* pack length*/
 	uint32_t	v;
 	uint8_t		s;
-	
-	assert(iter->buf < iter->end); 
+
+	assert(iter->buf < iter->end);
 
 	while (len--) {
 		v = coding_table[(uint8_t)*str].val;
@@ -279,7 +279,7 @@ str_decode(struct hpk_iter *iter, struct txt *t)
 
 	t->ptr[num] = '\0';
 	t->len = num;
-	
+
 	return (ITER_DONE(iter));
 }
 

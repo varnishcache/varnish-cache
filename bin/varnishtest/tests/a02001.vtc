@@ -1,0 +1,96 @@
+varnishtest "Quickly test all frames"
+
+server s1 {
+	rxpri
+	stream 0 {
+# PRIO
+		txprio -stream 23456 -weight 123
+
+# RST
+		txrst -err 2
+
+# SETTINGS
+		txsettings -push true -hdrtbl 11111111 -maxstreams 222222 -winsize 333333 -framesize 444444 -hdrsize 555555
+		txsettings -ack
+
+# PING
+		txping -data "01234567"
+		txping -data "abcdefgh" -ack
+
+# GOAWAY
+		txgoaway -laststream 17432423 -err 12 -debug "kangaroo"
+
+# WINUP
+		txwinup -size 500
+
+
+# FRAME
+		txresp -body "floubidou"
+
+
+# FRAME
+		txresp -body "tata"
+	} -run
+} -start
+
+client c1 -connect ${s1_sock} {
+	txpri
+	stream 0 {
+# PRIO
+		rxprio
+		expect prio.stream == 23456
+		expect prio.weight == 123
+
+# RST
+		rxrst
+		expect rst.err >= 2
+		expect rst.err < 3
+
+# SETTINGS
+		rxsettings
+		expect settings.hdrtbl == 11111111
+		expect settings.maxstreams == 222222
+		expect settings.winsize == 333333
+		expect settings.framesize == 444444
+		expect settings.hdrsize == 555555
+
+		rxsettings
+		expect settings.ack == true
+		expect settings.hdrtbl == <undef>
+		expect settings.maxstreams == <undef>
+		expect settings.winsize == <undef>
+		expect settings.framesize == <undef>
+		expect settings.hdrsize == <undef>
+
+# PING
+		rxping
+		expect ping.ack == "false"
+		expect ping.data == "01234567"
+		expect ping.data != "O1234567"
+		rxping
+		expect ping.ack == "true"
+		expect ping.data == "abcdefgh"
+		expect ping.data != "abcdefgt"
+
+# GOAWAY
+		rxgoaway
+		expect goaway.err == 12
+		expect goaway.laststream == 17432423
+		expect goaway.debug == "kangaroo"
+
+# WINUP
+		rxwinup
+		expect winup.size == 500
+
+# FRAME
+		rxhdrs
+		rxdata
+		expect frame.data == "floubidou"
+		expect frame.type == 0
+		expect frame.size == 9
+		expect frame.stream == 0
+
+		rxresp
+		expect resp.body == "floubidoutata"
+	} -run
+} -run

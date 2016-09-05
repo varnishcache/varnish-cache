@@ -1,0 +1,37 @@
+varnishtest "Test pseudo-headers inspection"
+
+server s1 {
+	stream 1 {
+		rxreq
+
+		expect req.url == "/foo"
+		expect req.http.:path == "/foo"
+
+		expect req.method == "NOTGET"
+		expect req.http.:method == "NOTGET"
+
+		expect req.authority == "bar"
+		expect req.http.:authority == "bar"
+
+		expect req.scheme == "baz"
+		expect req.http.:scheme == "baz"
+
+		txresp -status 123
+	} -run
+} -start
+
+client c1 -connect ${s1_sock} {
+	stream 1 {
+		txreq -url "/foo" \
+			-req "NOTGET" \
+			-hdr ":authority" "bar" \
+			-scheme "baz"
+
+		rxresp
+
+		expect resp.status == 123
+		expect resp.http.:status == 123
+	} -run
+} -start
+
+server s1 -wait

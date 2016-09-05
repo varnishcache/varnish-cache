@@ -1,0 +1,16 @@
+varnishtest "Simple request with body"
+
+server s1 {
+	stream 1 {
+		rxreq
+		txresp -body "bob"
+	} -run
+} -start
+
+client c1 -connect ${s1_sock} {
+	stream 1 {
+		txreq
+		rxresp
+		expect resp.bodylen == 3
+	} -run
+} -run

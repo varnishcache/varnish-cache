@@ -1,0 +1,36 @@
+varnishtest "Continuation frames"
+
+server s1 {
+	stream 1 {
+		rxreq
+		txresp -nohdrend
+		txcont -nohdrend -hdr "foo" "bar"
+		txcont	   -hdr "baz" "qux"
+	} -run
+	stream 3 {
+		rxreq
+		txresp -nohdrend
+		txcont -nohdrend -hdr "foo2" "bar2"
+		txcont	   -hdr "baz2" "qux2"
+	} -run
+} -start
+
+client c1 -connect ${s1_sock} {
+	stream 1 {
+		txreq
+		rxhdrs -all
+		expect resp.http.foo == "bar"
+		expect resp.http.baz == "qux"
+	} -run
+	stream 3 {
+		txreq
+		rxhdrs -some 2
+		expect resp.http.foo2 == <undef>
+		expect resp.http.baz2 == <undef>
+		rxcont
+		expect resp.http.foo2 == "bar2"
+		expect resp.http.baz2 == "qux2"
+	} -run
+} -run
+
+server s1 -wait

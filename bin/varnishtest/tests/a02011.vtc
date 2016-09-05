@@ -1,0 +1,22 @@
+varnishtest "overflow"
+
+server s1 {
+	stream 1 {
+		rxreq
+		txresp -hdr long-header-original1 original1 \
+			-hdr long-header-original2 original2 \
+			-hdr long-header-original3 original3 \
+			-hdr long-header-original4 original4
+	} -run
+} -start
+
+client c1  -connect ${s1_sock} {
+	stream 1 {
+		txreq -req GET \
+			-url / \
+			-hdr :scheme http \
+			-hdr :authority localhost
+		rxresp
+		expect resp.http.:status == 200
+	} -run
+} -run

@@ -1,0 +1,50 @@
+varnishtest "Close/accept after H/2 upgrade"
+
+server s1 {
+	stream 1 {
+		rxreq
+		txresp
+	} -run
+
+	expect_close
+	accept
+
+	rxreq
+	txresp
+
+	close
+	accept
+
+	rxreq
+	txresp
+
+	stream 1 {
+		rxreq
+		txresp
+	} -run
+} -start
+
+client c1 -connect ${s1_sock} {
+	stream 1 {
+		txreq
+		rxresp
+	} -run
+} -run
+
+client c1 -connect ${s1_sock} {
+	txreq
+	rxresp
+
+} -run
+
+client c1 -connect ${s1_sock} {
+	txreq
+	rxresp
+
+	stream 1 {
+		txreq
+		rxresp
+	} -run
+} -run
+
+server s1 -wait

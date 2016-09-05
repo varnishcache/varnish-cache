@@ -1047,7 +1047,7 @@ cmd_http_upgrade(CMD_ARGS)
 
 	h = http_find_header(hp->req, "Connection");
 	if (!h || strcmp(h, "Upgrade, HTTP2-Settings"))
-		vtc_log(vl, 0, "Req misses \"Connection: " 
+		vtc_log(vl, 0, "Req misses \"Connection: "
 			"Upgrade, HTTP2-Settings\" header");
 
 	h = http_find_header(hp->req, "HTTP2-Settings");

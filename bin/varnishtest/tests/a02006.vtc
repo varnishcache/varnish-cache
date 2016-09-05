@@ -1,0 +1,40 @@
+varnishtest "Keep track of window credits"
+
+server s1 {
+	stream 2 {
+		rxreq
+		txresp -nohdrend
+		txcont -nohdrend -hdr "foo" "bar"
+		txcont -hdr "baz" "qux"
+		txdata -data "foo"
+		txdata -data "bar"
+	} -run
+
+} -start
+
+client c1 -connect ${s1_sock} {
+	stream 0 {
+		expect stream.window == 65535
+	} -run
+	stream 2 {
+		expect stream.window == 65535
+		txreq
+		rxhdrs
+		rxcont
+		rxcont
+		expect resp.http.:status == "200"
+		expect resp.http.foo == "bar"
+		expect stream.window == 65535
+		rxdata
+		expect stream.window == 65532
+		rxdata
+		expect stream.window == 65529
+		expect resp.body == "foobar"
+		expect resp.http.baz == "qux"
+	} -run
+	stream 0 {
+		expect stream.window == 65529
+	} -run
+} -run
+
+server s1 -wait

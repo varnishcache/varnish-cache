@@ -1,0 +1,52 @@
+varnishtest "priority"
+
+server s1 {
+	stream 1 {
+		rxreq
+		txresp
+		expect stream.weight == 16
+		expect stream.dependency == 0
+	} -run
+	stream 3 {
+		rxreq
+		txresp
+		expect stream.weight == 123
+		expect stream.dependency == 5
+
+		rxprio
+		expect prio.weight == 10
+		expect prio.stream == 7
+		expect stream.weight == 10
+		expect stream.dependency == 7
+	} -run
+} -start
+client c1 -connect ${s1_sock} {
+	stream 1 {
+		txreq -req GET -url /1 \
+			-hdr :scheme http -hdr :authority localhost
+		rxresp
+		expect stream.weight == 16
+		expect stream.dependency == 0
+	} -run
+	stream 3 {
+		txreq -req GET -url /3 \
+			-hdr :scheme http -hdr :authority localhost \
+			-weight 123 -ex -dep 5
+		rxresp
+		expect stream.weight == 123
+		expect stream.dependency == 5
+
+		txprio -weight 10 -stream 7
+		expect stream.weight == 10
+		expect stream.dependency == 7
+	} -run
+	stream 5 {
+		expect stream.weight == 16
+		expect stream.dependency == 0
+	} -run
+	stream 0 {
+		expect stream.weight == <undef>
+		expect stream.dependency == <undef>
+	} -run
+} -run
+server s1 -wait

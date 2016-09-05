@@ -1,0 +1,20 @@
+varnishtest "Trigger a compression error via bad index"
+
+server s1 {
+	non-fatal
+	stream 1 {
+		rxreq
+		expect req.http.foo == <undef>
+		txgoaway -laststream 0 -err 9 -debug "COMPRESSION_ERROR"
+	} -run
+} -start
+
+client c1 -connect ${s1_sock} {
+	stream 1 {
+		txreq -idxHdr 100 -litHdr inc plain "foo" plain "bar"
+		rxgoaway
+		expect goaway.err == 9
+		expect goaway.laststream == 0
+		expect goaway.debug == "COMPRESSION_ERROR"
+	} -run
+} -run

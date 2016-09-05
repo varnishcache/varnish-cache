@@ -1,0 +1,44 @@
+varnishtest "Window update"
+
+server s1 {
+	stream 1 {
+		rxreq
+		txresp -body "bob"
+	} -run
+	stream 3 {
+		rxreq
+		txresp -nohdrend
+		txcont -nohdrend -hdr "foo" "bar"
+		txcont	   -hdr "baz" "qux"
+		txdata -data "foo"
+		txdata -data "bar"
+	} -run
+
+} -start
+
+client c1 -connect ${s1_sock} {
+	stream 1 {
+		txreq
+		rxresp
+		expect resp.bodylen == 3
+	} -run
+	stream 3 {
+		txreq
+		rxhdrs
+		rxcont
+		rxcont
+		expect resp.http.:status == "200"
+		expect resp.http.foo == "bar"
+		expect stream.window == 65535
+
+		rxdata
+		expect stream.window == 65532
+
+		rxdata
+		expect stream.window == 65529
+		expect resp.body == "foobar"
+		expect resp.http.baz == "qux"
+	} -run
+} -run
+
+server s1 -wait
