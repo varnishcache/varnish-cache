@@ -577,7 +577,7 @@ cmd_feature(CMD_ARGS)
 	if (av == NULL)
 		return;
 
-	for (; *av != NULL; av++) {
+	for (av++; *av != NULL; av++) {
 #ifdef SO_RCVTIMEO_WORKS
 		if (!strcmp(*av, "SO_RCVTIMEO_WORKS"))
 			continue;
