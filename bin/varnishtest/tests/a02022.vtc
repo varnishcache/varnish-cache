@@ -1,5 +1,7 @@
 varnishtest "H/1 -> H/2 upgrade"
 
+feature cmd "nghttp --help > /dev/null 2>&1"
+
 server s1 {
 	rxreq
 	upgrade
