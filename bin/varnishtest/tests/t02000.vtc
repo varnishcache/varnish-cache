@@ -15,4 +15,10 @@ client c1 {
 		txreq
 		rxresp
 	} -run
+	stream 0 {
+		txping -data "_-__-_-_"
+		rxping
+		expect ping.ack == "true"
+		expect ping.data == "_-__-_-_"
+	} -run
 } -run

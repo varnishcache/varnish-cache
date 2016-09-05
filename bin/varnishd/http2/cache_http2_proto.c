@@ -111,7 +111,6 @@ static const uint8_t H2_settings[] = {
 
 DUMMY_FRAME(data)
 DUMMY_FRAME(rst_stream)
-DUMMY_FRAME(ping)
 DUMMY_FRAME(push_promise)
 DUMMY_FRAME(continuation)
 
@@ -284,6 +283,20 @@ h2_vsl_frame(const struct h2_sess *h2, const void *ptr, size_t len)
 	VSB_destroy(&vsb);
 }
 
+
+/**********************************************************************
+ */
+
+void __match_proto__(h2_frame_f)
+h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+{
+	(void)r2;
+	xxxassert(h2->rxf_len == 8);
+	xxxassert(h2->rxf_flags == 0);
+	xxxassert(h2->rxf_stream == 0);
+	H2_Send_Frame(wrk, h2,
+	    H2_FRAME_PING, H2FF_PING_ACK, 8, 0, h2->rxf_data);
+}
 
 /**********************************************************************
  */
