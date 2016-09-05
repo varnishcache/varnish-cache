@@ -113,7 +113,6 @@ void extmacro_def(const char *name, const char *fmt, ...)
     __v_printflike(2, 3);
 
 struct http;
-extern const struct cmds http_cmds[];
 void cmd_stream(CMD_ARGS);
 void start_h2(struct http *hp);
 void stop_h2(struct http *hp);

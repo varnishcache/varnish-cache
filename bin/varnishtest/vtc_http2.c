@@ -52,7 +52,6 @@
 #include "hpack.h"
 #include "vend.h"
 
-#define MAX_HDR		50
 #define ERR_MAX		13
 #define BUF_SIZE	(1024*2048)
 
@@ -102,7 +101,6 @@ struct stream {
 	pthread_cond_t		cond;
 	struct frame		*frame;
 	pthread_t		tp;
-	unsigned		reading;
 	struct http		*hp;
 	int64_t			ws;
 
@@ -509,7 +507,7 @@ parse_hdr(struct stream *s, struct frame *f, struct vsb *vsb)
 	if (f->type == TYPE_HEADERS && f->flags & PRIORITY){
 		shift += 5;
 		n = vbe32dec(f->data);
-		s->dependency = n & ~(1 << 31);
+		s->dependency = n & ~(1U << 31);
 		exclusive = n >> 31;
 
 		s->weight = f->data[4];
@@ -521,7 +519,7 @@ parse_hdr(struct stream *s, struct frame *f, struct vsb *vsb)
 	} else if (f->type == TYPE_PUSH_PROMISE){
 		shift += 4;
 		n = vbe32dec(f->data);
-		f->md.promised = n & ~(1 << 31);
+		f->md.promised = n & ~(1U << 31);
 	}
 
 	AZ(VSB_bcat(vsb, data + shift, size - shift));
@@ -545,7 +543,7 @@ parse_prio(struct stream *s, struct frame *f)
 	AN(buf);
 
 	n = vbe32dec(f->data);
-	f->md.prio.stream = n & ~(1 << 31);
+	f->md.prio.stream = n & ~(1U << 31);
 
 	s->dependency = f->md.prio.stream;
 	if (n >> 31){
@@ -838,14 +836,14 @@ receive_frame(void *priv)
 	} \
 	} while (0)
 
-#define STRTOU32_CHECK(n, sp, p, v, c, l)				       \
-do {									       \
-	sp++;								       \
-	AN(*sp);							       \
-	STRTOU32(n, *sp, p, v, c);					       \
-	if (l && n >= (1 << l))						       \
-		vtc_log(v, 0, c " must be a %d-bits integer (found %s)",       \
-			       l, *sp);					       \
+#define STRTOU32_CHECK(n, sp, p, v, c, l)				\
+do {									\
+	sp++;								\
+	AN(*sp);							\
+	STRTOU32(n, *sp, p, v, c);					\
+	if (l && n >= (1U << l))					\
+		vtc_log(v, 0,						\
+		    c " must be a %d-bits integer (found %s)", l, *sp);	\
 } while (0)
 
 #define CHECK_LAST_FRAME(TYPE) \
@@ -1471,7 +1469,7 @@ cmd_tx11obj(CMD_ARGS)
 		}
 		else if (AV_IS("-litIdxHdr")) {
 			av++;
-			     if (AV_IS("inc"))   { hdr.t = hpk_inc;   }
+			if      (AV_IS("inc"))   { hdr.t = hpk_inc;   }
 			else if (AV_IS("not"))   { hdr.t = hpk_not;   }
 			else if (AV_IS("never")) { hdr.t = hpk_never; }
 			else
@@ -1489,7 +1487,7 @@ cmd_tx11obj(CMD_ARGS)
 		}
 		else if (AV_IS("-litHdr")) {
 			av++;
-			     if (AV_IS("inc"))   { hdr.t = hpk_inc;   }
+			if      (AV_IS("inc"))   { hdr.t = hpk_inc;   }
 			else if (AV_IS("not"))   { hdr.t = hpk_not;   }
 			else if (AV_IS("never")) { hdr.t = hpk_never; }
 			else
@@ -1538,7 +1536,7 @@ cmd_tx11obj(CMD_ARGS)
 				f.flags |= PRIORITY;
 			}
 			else if (AV_IS("-ex")) {
-				exclusive = 1 << 31;
+				exclusive = 1U << 31;
 				f.flags |= PRIORITY;
 			}
 			else if (AV_IS("-weight")) {
@@ -2527,7 +2525,7 @@ stream_new(const char *name, struct http *h)
 	s->dependency = 0;
 
 	STRTOU32(s->id, name, p, h->vl, "stream");
-	if (s->id & (1 << 31))
+	if (s->id & (1U << 31))
 		vtc_log(h->vl, 0, "Stream id must be a 31-bits integer "
 				"(found %s)", name);
 

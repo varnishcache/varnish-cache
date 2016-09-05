@@ -44,7 +44,7 @@
 #undef STAT_HDRS
 
 /*lint -save -e778 */
-struct hpk_hdr sttbl[] = {
+const struct hpk_hdr sttbl[] = {
 	{{NULL, 0, 0}, {NULL, 0, 0}, hpk_idx, 0},
 #define STAT_HDRS(j, k, v) \
 { \

@@ -49,6 +49,8 @@
 #include "vtcp.h"
 #include "hpack.h"
 
+static const struct cmds http_cmds[];
+
 /* SECTION: client-server client/server
  *
  * Client and server threads are fake HTTP entities used to test your Varnish
@@ -738,10 +740,7 @@ cmd_http_rxresphdrs(CMD_ARGS)
  * Ungzip rx'ed body
  */
 
-#define TRUST_ME(ptr)   ((void*)(uintptr_t)(ptr))
-
 #define OVERHEAD 64L
-
 
 static void
 cmd_http_gunzip_body(CMD_ARGS)
@@ -1679,7 +1678,7 @@ cmd_http_fatal(CMD_ARGS)
  *	Same as for the top-level barrier
  */
 
-char PREFACE[] = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
+const char PREFACE[] = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 
 /* SECTION: client-server.spec.txpri txpri (client)
  *
@@ -1785,7 +1784,7 @@ cmd_http_stream(CMD_ARGS)
  * Execute HTTP specifications
  */
 
-const struct cmds http_cmds[] = {
+static const struct cmds http_cmds[] = {
 	{ "timeout",		cmd_http_timeout },
 	{ "txreq",		cmd_http_txreq },
 
@@ -1856,7 +1855,8 @@ http_process(struct vtclog *vl, const char *spec, int sock, int *sfd)
 	hp->gziplevel = 0;
 	hp->gzipresidual = -1;
 
-	VTCP_hisname(sock, hp->rem_ip, VTCP_ADDRBUFSIZE, hp->rem_port, VTCP_PORTBUFSIZE);
+	VTCP_hisname(sock,
+	    hp->rem_ip, VTCP_ADDRBUFSIZE, hp->rem_port, VTCP_PORTBUFSIZE);
 	parse_string(spec, http_cmds, hp, vl);
 	if (hp->h2)
 		stop_h2(hp);

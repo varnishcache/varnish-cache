@@ -78,7 +78,7 @@ proxy_cb(void *priv, const struct suckaddr *sa)
 }
 
 static void
-client_proxy(struct vtclog *vl, int fd, int version, char *spec)
+client_proxy(struct vtclog *vl, int fd, int version, const char *spec)
 {
 	struct suckaddr *sac, *sas;
 	const char *err;
