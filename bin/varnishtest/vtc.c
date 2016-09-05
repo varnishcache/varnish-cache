@@ -570,6 +570,7 @@ static void
 cmd_feature(CMD_ARGS)
 {
 	int r;
+	int good;
 
 	(void)priv;
 	(void)cmd;
@@ -577,54 +578,65 @@ cmd_feature(CMD_ARGS)
 	if (av == NULL)
 		return;
 
-	for (av++; *av != NULL; av++) {
-#ifdef SO_RCVTIMEO_WORKS
-		if (!strcmp(*av, "SO_RCVTIMEO_WORKS"))
-			continue;
-#endif
-		if (sizeof(void*) == 8 && !strcmp(*av, "64bit"))
-			continue;
+#define FEATURE(nm, tst)				\
+	do {						\
+		if (!strcmp(*av, nm)) {			\
+			if (tst) {			\
+				good = 1;		\
+			} else {			\
+				vtc_stop = 1;		\
+			}				\
+		}					\
+	} while (0)
 
-		if (!strcmp(*av, "pcre_jit") && VRE_has_jit)
-			continue;
+	for (av++; *av != NULL; av++) {
+		good = 0;
+		if (!strcmp(*av, "SO_RCVTIMEO_WORKS")) {
+#ifdef SO_RCVTIMEO_WORKS
+			good = 1;
+#else
+			vtc_stop = 1;
+#endif
+		}
 
 		if (!strcmp(*av, "!OSX")) {
 #if !defined(__APPLE__) || !defined(__MACH__)
-			continue;
+			good = 1;
+#else
+			vtc_stop = 1;
 #endif
 		}
-		if (!strcmp(*av, "dns") && feature_dns)
-			continue;
-
-		if (!strcmp(*av, "topbuild") && iflg)
-			continue;
-
-		if (!strcmp(*av, "root") && !geteuid())
-			continue;
-
-		if (!strcmp(*av, "user_varnish") &&
-		    getpwnam("varnish") != NULL)
-			continue;
-
-		if (!strcmp(*av, "user_vcache") &&
-		    getpwnam("vcache") != NULL)
-			continue;
-
-		if (!strcmp(*av, "group_varnish") &&
-		    getgrnam("varnish") != NULL)
-			continue;
+		FEATURE("pcre_jit", VRE_has_jit);
+		FEATURE("64bit", sizeof(void*) == 8);
+		FEATURE("dns", feature_dns);
+		FEATURE("topbuild", iflg);
+		FEATURE("root", !geteuid());
+		FEATURE("user_varnish", getpwnam("varnish") != NULL);
+		FEATURE("user_vcache", getpwnam("vcache") != NULL);
+		FEATURE("group_varnish", getgrnam("varnish") != NULL);
 
 		if (!strcmp(*av, "cmd")) {
 			av++;
-			if (*av == NULL)
+			if (*av == NULL) {
 				vtc_log(vl, 0, "Missing the command-line");
+				return;
+			}
 			r = system(*av);
 			if (WEXITSTATUS(r) == 0)
-				continue;
+				good = 1;
+			else
+				vtc_stop = 1;
 		}
+		if (good)
+			continue;
 
-		vtc_log(vl, 1, "SKIPPING test, missing feature: %s", *av);
-		vtc_stop = 1;
+		if (!vtc_stop) {
+			vtc_log(vl, 0,
+			    "FAIL test, unknown feature: %s", *av);
+		} else {
+			vtc_log(vl, 1,
+			    "SKIPPING test, lacking feature: %s", *av);
+		}
 		return;
 	}
 }
