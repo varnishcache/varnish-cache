@@ -480,6 +480,7 @@ static int
 vcl_setup_event(VRT_CTX, enum vcl_event_e ev)
 {
 
+	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->vcl->conf, VCL_CONF_MAGIC);
@@ -495,6 +496,7 @@ static void
 vcl_failsafe_event(VRT_CTX, enum vcl_event_e ev)
 {
 
+	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->vcl->conf, VCL_CONF_MAGIC);
