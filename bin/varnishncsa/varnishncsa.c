@@ -131,7 +131,7 @@ struct vsl_watch {
 	VTAILQ_ENTRY(vsl_watch)	list;
 	enum VSL_tag_e		tag;
 	int			idx;
-	char		*prefix;
+	char			*prefix;
 	int			prefixlen;
 	struct fragment		frag;
 };
