@@ -35,6 +35,9 @@
 #ifndef VDEF_H_INCLUDED
 #define VDEF_H_INCLUDED
 
+#include <stdint.h>
+#include "vas.h"
+
 /* Safe printf into a fixed-size buffer */
 #define bprintf(buf, fmt, ...)						\
 	do {								\
@@ -80,6 +83,20 @@
 #define PAOK(p)	    (((uintptr_t)(p) & PALGN) == 0)	/* is aligned */
 #define PRNDDN(p)   ((uintptr_t)(p) & ~PALGN)		/* Round down */
 #define PRNDUP(p)   (((uintptr_t)(p) + PALGN) & ~PALGN)	/* Round up */
+
+/*
+ * A normal pointer difference is signed, but we never want a negative value
+ * so this little tool will make sure we don't get that.
+ */
+
+static inline unsigned
+pdiff(const void *b, const void *e)
+{
+	assert(b <= e);
+	return
+	    ((unsigned)((const unsigned char *)e - (const unsigned char *)b));
+}
+
 
 /*********************************************************************
  * To be used as little as possible to wash off const/volatile etc.

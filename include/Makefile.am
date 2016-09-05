@@ -73,7 +73,8 @@ nobase_pkginclude_HEADERS += \
 	vsha256.h \
 	vtcp.h \
 	vtim.h \
-	vrnd.h
+	vrnd.h \
+	ws.h
 
 # Private headers
 nobase_noinst_HEADERS = \
