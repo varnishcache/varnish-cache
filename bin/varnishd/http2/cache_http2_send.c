@@ -105,10 +105,10 @@ H2_Send(struct worker *wrk, struct h2_req *r2, int flush,
 
 	(void)flush;
 
-	AN(ptr);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	h2 = r2->h2sess;
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	assert(len == 0 || ptr != NULL);
 
 	Lck_Lock(&h2->sess->mtx);
 	mfs = h2->their_settings[H2S_MAX_FRAME_SIZE];
