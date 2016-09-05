@@ -115,9 +115,11 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 			   "http" or "https"). For now set it as a normal
 			   header, stripping the first ':'. */
 			b++;
+			len-=1;
 			n = hp->nhd;
 		} else if (!strncmp(b, ":authority: ", namelen)) {
 			b+=6;
+			len-=6;
 			memcpy(b, "host", 4);
 			n = hp->nhd;
 		} else {
