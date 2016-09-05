@@ -131,6 +131,8 @@ struct vsl_watch {
 	VTAILQ_ENTRY(vsl_watch)	list;
 	enum VSL_tag_e		tag;
 	int			idx;
+	char		*prefix;
+	int			prefixlen;
 	struct fragment		frag;
 };
 VTAILQ_HEAD(vsl_watch_head, vsl_watch);
@@ -566,7 +568,7 @@ addf_hdr(struct watch_head *head, const char *key, const char *str)
 }
 
 static void
-addf_vsl(enum VSL_tag_e tag, long i)
+addf_vsl(enum VSL_tag_e tag, long i, const char *prefix)
 {
 	struct vsl_watch *w;
 
@@ -575,6 +577,9 @@ addf_vsl(enum VSL_tag_e tag, long i)
 	w->tag = tag;
 	assert(i <= INT_MAX);
 	w->idx = i;
+	w->prefix = strdup(prefix);
+	AN(w->prefix);
+	w->prefixlen = strlen(prefix);
 	VTAILQ_INSERT_TAIL(&CTX.watch_vsl, w, list);
 
 	addf_fragment(&w->frag, "-");
@@ -655,16 +660,25 @@ parse_x_format(char *buf)
 				    i, buf);
 			}
 			*r = '\0';
+			e = r;
 		} else
 			i = 0;
-		slt = VSL_Name2Tag(buf, -1);
+		r = buf;
+		while (r < e && *r != ':')
+			r++;
+		if(r != e) {
+			slt = VSL_Name2Tag(buf, r - buf);
+			r++;
+		} else {
+			slt = VSL_Name2Tag(buf, -1);
+			*r = '\0';
+		}
 		if (slt == -2)
 			VUT_Error(1, "Tag not unique: %s", buf);
 		if (slt == -1)
 			VUT_Error(1, "Unknown log tag: %s", buf);
 		assert(slt >= 0);
-
-		addf_vsl(slt, i);
+		addf_vsl(slt, i, r);
 		return;
 	}
 	VUT_Error(1, "Unknown formatting extension: %s", buf);
@@ -1073,12 +1087,22 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			VTAILQ_FOREACH(vslw, &CTX.watch_vsl, list) {
 				CHECK_OBJ_NOTNULL(vslw, VSL_WATCH_MAGIC);
 				if (tag == vslw->tag) {
-					if (vslw->idx == 0)
-						frag_line(0, b, e, &vslw->frag);
-					else
-						frag_fields(0, b, e,
-						    vslw->idx, &vslw->frag,
-						    0, NULL);
+					if (vslw->prefixlen == 0){
+						if (vslw->idx == 0)
+							frag_line(0, b, e, &vslw->frag);
+						else
+							frag_fields(0, b, e,
+							    vslw->idx, &vslw->frag,
+							    0, NULL);
+					} else if (!strncasecmp(b, vslw->prefix, vslw->prefixlen) && b[vslw->prefixlen] == ':') {
+						p = b + vslw->prefixlen + 1;
+						if (vslw->idx == 0)
+							frag_line(0, p, e, &vslw->frag);
+						else
+							frag_fields(0, p, e,
+							    vslw->idx, &vslw->frag,
+							    0, NULL);
+					}
 				}
 			}
 		}
