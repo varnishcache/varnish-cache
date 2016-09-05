@@ -32,7 +32,6 @@
 #include <sys/socket.h>
 
 #include <errno.h>
-#include <inttypes.h>
 #include <math.h>
 #include <poll.h>
 #include <stdio.h>
