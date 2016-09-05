@@ -1,0 +1,17 @@
+varnishtest	"simple H2 get"
+
+server s1 {
+	rxreq
+	txresp -bodylen 10
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
+
+client c1 {
+	stream 1 {
+		txreq
+		rxresp
+	} -run
+} -run
