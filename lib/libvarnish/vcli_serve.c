@@ -441,10 +441,9 @@ VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 	cfd->cli->sb = VSB_new_auto();
 	cfd->cli->limit = cs->limit;
 	if (cs->ws_sz > 0) {
-		cfd->cli->ws = malloc(sizeof(*cfd->cli->ws));
-		assert(cfd->cli->ws != NULL);
-		WS_Init(cfd->cli->ws, "cli",
+		cfd->cli->ws = WS_Embed("cli",
 		    malloc(cs->ws_sz), cs->ws_sz);
+		assert(cfd->cli->ws != NULL);
 	}
 	cfd->closefunc = closefunc;
 	cfd->priv = priv;

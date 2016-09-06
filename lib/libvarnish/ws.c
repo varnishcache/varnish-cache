@@ -75,6 +75,24 @@ WS_Assert(const struct ws *ws)
  * (upper-case the first char to indicate overflow)
  */
 
+struct ws *
+WS_Embed(const char *id, void *space, unsigned len)
+{
+	struct ws *ws;
+	const size_t wssz = PRNDUP(sizeof(*ws));
+
+	if (len < PRNDUP(wssz + 1))
+		return NULL;
+
+	assert(PAOK(space));
+
+	ws = space;
+	WS_Init_Debug(ws, id, (char *)space + wssz,
+	    len - wssz, NULL);
+
+	return (ws);
+}
+
 void
 WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 {

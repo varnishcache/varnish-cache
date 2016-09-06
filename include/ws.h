@@ -55,6 +55,7 @@ struct ws {
 	char			*e;		/* (E)nd of buffer */
 };
 
+struct ws *WS_Embed(const char *id, void *space, unsigned len);
 void WS_Init(struct ws *ws, const char *id, void *space, unsigned len);
 void WS_Init_Debug(struct ws *ws, const char *id, void *space, unsigned len,
     ws_debug_f *debug_f);
