@@ -100,7 +100,8 @@ Req_New(const struct worker *wrk, struct sess *sp)
 
 	assert(p < e);
 
-	WS_Init(req->ws, "req", p, e - p);
+	WS_Init(req->ws, "req", p, e - p,
+	    IF_DEBUG(DBG_WORKSPACE, debug_ws));
 
 	req->req_bodybytes = 0;
 

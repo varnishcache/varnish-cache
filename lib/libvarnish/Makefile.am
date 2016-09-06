@@ -33,7 +33,8 @@ libvarnish_la_SOURCES = \
 	vss.c \
 	vsub.c \
 	vtcp.c \
-	vtim.c
+	vtim.c \
+	ws.c
 
 libvarnish_la_CFLAGS = \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \

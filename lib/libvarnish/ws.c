@@ -31,15 +31,24 @@
 #include "config.h"
 
 #include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
 
-#include "cache.h"
+#include "ws.h"
+#include "vas.h"
+#include "miniobj.h"
+
+#define DBG(ws, fmt, ...) do {					\
+		if ((ws)->debug_f != NULL)			\
+			(ws)->debug_f((fmt), __VA_ARGS__);	\
+	} while (0);
 
 void
 WS_Assert(const struct ws *ws)
 {
 
 	CHECK_OBJ_NOTNULL(ws, WS_MAGIC);
-	DSL(DBG_WORKSPACE, 0, "WS(%p) = (%s, %p %u %u %u)",
+	DBG(ws, "WS(%p) = (%s, %p %u %u %u)",
 	    ws, ws->id, ws->s, pdiff(ws->s, ws->f),
 	    ws->r == NULL ? 0 : pdiff(ws->f, ws->r),
 	    pdiff(ws->s, ws->e));
@@ -65,11 +74,10 @@ WS_Assert(const struct ws *ws)
  */
 
 void
-WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
+WS_Init(struct ws *ws, const char *id, void *space, unsigned len,
+    ws_debug_f *debug_f)
 {
 
-	DSL(DBG_WORKSPACE, 0,
-	    "WS_Init(%p, \"%s\", %p, %u)", ws, id, space, len);
 	assert(space != NULL);
 	INIT_OBJ(ws, WS_MAGIC);
 	ws->s = space;
@@ -81,6 +89,8 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 	assert(id[0] & 0x20);
 	assert(strlen(id) < sizeof ws->id);
 	strcpy(ws->id, id);
+	ws->debug_f = debug_f;
+	DBG(ws, "WS_Init(%p, \"%s\", %p, %u)", ws, id, space, len);
 	WS_Assert(ws);
 }
 
@@ -110,7 +120,7 @@ WS_Reset(struct ws *ws, char *p)
 {
 
 	WS_Assert(ws);
-	DSL(DBG_WORKSPACE, 0, "WS_Reset(%p, %p)", ws, p);
+	DBG(ws, "WS_Reset(%p, %p)", ws, p);
 	assert(ws->r == NULL);
 	if (p == NULL)
 		ws->f = ws->s;
@@ -138,7 +148,7 @@ WS_Alloc(struct ws *ws, unsigned bytes)
 	}
 	r = ws->f;
 	ws->f += bytes;
-	DSL(DBG_WORKSPACE, 0, "WS_Alloc(%p, %u) = %p", ws, bytes, r);
+	DBG(ws, "WS_Alloc(%p, %u) = %p", ws, bytes, r);
 	WS_Assert(ws);
 	return (r);
 }
@@ -164,7 +174,7 @@ WS_Copy(struct ws *ws, const void *str, int len)
 	r = ws->f;
 	ws->f += bytes;
 	memcpy(r, str, len);
-	DSL(DBG_WORKSPACE, 0, "WS_Copy(%p, %d) = %p", ws, len, r);
+	DBG(ws, "WS_Copy(%p, %d) = %p", ws, len, r);
 	WS_Assert(ws);
 	return (r);
 }
@@ -199,7 +209,7 @@ WS_Snapshot(struct ws *ws)
 
 	WS_Assert(ws);
 	assert(ws->r == NULL);
-	DSL(DBG_WORKSPACE, 0, "WS_Snapshot(%p) = %p", ws, ws->f);
+	DBG(ws, "WS_Snapshot(%p) = %p", ws, ws->f);
 	return (ws->f);
 }
 
@@ -220,7 +230,7 @@ WS_Reserve(struct ws *ws, unsigned bytes)
 		return (0);
 	}
 	ws->r = ws->f + b2;
-	DSL(DBG_WORKSPACE, 0, "WS_Reserve(%p, %u/%u) = %u",
+	DBG(ws, "WS_Reserve(%p, %u/%u) = %u",
 	    ws, b2, bytes, pdiff(ws->f, ws->r));
 	WS_Assert(ws);
 	return (pdiff(ws->f, ws->r));
@@ -232,7 +242,7 @@ WS_Release(struct ws *ws, unsigned bytes)
 	WS_Assert(ws);
 	bytes = PRNDUP(bytes);
 	assert(bytes <= ws->e - ws->f);
-	DSL(DBG_WORKSPACE, 0, "WS_Release(%p, %u)", ws, bytes);
+	DBG(ws, "WS_Release(%p, %u)", ws, bytes);
 	assert(ws->r != NULL);
 	assert(ws->f + bytes <= ws->r);
 	ws->f += bytes;
@@ -244,7 +254,7 @@ void
 WS_ReleaseP(struct ws *ws, char *ptr)
 {
 	WS_Assert(ws);
-	DSL(DBG_WORKSPACE, 0, "WS_ReleaseP(%p, %p (%zd))", ws, ptr, ptr - ws->f);
+	DBG(ws, "WS_ReleaseP(%p, %p (%zd))", ws, ptr, ptr - ws->f);
 	assert(ws->r != NULL);
 	assert(ptr >= ws->f);
 	assert(ptr <= ws->r);

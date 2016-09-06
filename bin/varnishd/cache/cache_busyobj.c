@@ -123,7 +123,8 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 	p = (void*)PRNDUP(p);
 	assert(p < bo->end);
 
-	WS_Init(bo->ws, "bo", p, bo->end - p);
+	WS_Init(bo->ws, "bo", p, bo->end - p,
+	    IF_DEBUG(DBG_WORKSPACE, debug_ws));
 
 	bo->do_stream = 1;
 
