@@ -32,6 +32,7 @@
  */
 
 #include "vcli.h"
+#include "ws.h"
 
 struct cli;	/* NB: struct cli is opaque at this level.  */
 struct vlu;
@@ -80,6 +81,7 @@ struct cli {
 	struct vlu              *vlu;
 	struct VCLS             *cls;
 	volatile unsigned       *limit;
+	struct ws		*ws;
 };
 
 /* The implementation must provide these functions */
@@ -92,7 +94,7 @@ void VCLI_SetResult(struct cli *cli, unsigned r);
 
 typedef void cls_cb_f(void *priv);
 typedef void cls_cbc_f(const struct cli*);
-struct VCLS *VCLS_New(cls_cbc_f *before, cls_cbc_f *after,
+struct VCLS *VCLS_New(cls_cbc_f *before, cls_cbc_f *after, size_t ws_sz,
     volatile unsigned *maxlen, volatile unsigned *limit);
 struct cli *VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc,
     void *priv);

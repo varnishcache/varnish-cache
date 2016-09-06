@@ -76,6 +76,7 @@ struct VCLS {
 	volatile unsigned		*maxlen;
 	volatile unsigned		*limit;
 	struct cli_proto		*wildcard;
+	size_t				ws_sz;
 };
 
 /*--------------------------------------------------------------------*/
@@ -190,6 +191,7 @@ static void
 cls_dispatch(struct cli *cli, const struct cli_proto *cp,
     char * const * av, unsigned ac)
 {
+	char *ws_snap = NULL;
 	int json = 0;
 
 	AN(av);
@@ -222,10 +224,19 @@ cls_dispatch(struct cli *cli, const struct cli_proto *cp,
 
 	cli->result = CLIS_OK;
 	VSB_clear(cli->sb);
+
+	if (cli->ws)
+		ws_snap = WS_Snapshot(cli->ws);
+
 	if (json)
 		cp->jsonfunc(cli, (const char * const *)av, cp->priv);
 	else
 		cp->func(cli, (const char * const *)av, cp->priv);
+
+	if (ws_snap) {
+		WS_Assert(cli->ws);
+		WS_Reset(cli->ws, ws_snap);
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -394,8 +405,8 @@ cls_vlu(void *priv, const char *p)
 }
 
 struct VCLS *
-VCLS_New(cls_cbc_f *before, cls_cbc_f *after, volatile unsigned *maxlen,
-    volatile unsigned *limit)
+VCLS_New(cls_cbc_f *before, cls_cbc_f *after, size_t ws_sz,
+    volatile unsigned *maxlen, volatile unsigned *limit)
 {
 	struct VCLS *cs;
 
@@ -407,6 +418,7 @@ VCLS_New(cls_cbc_f *before, cls_cbc_f *after, volatile unsigned *maxlen,
 	cs->after = after;
 	cs->maxlen = maxlen;
 	cs->limit = limit;
+	cs->ws_sz = ws_sz;
 	return (cs);
 }
 
@@ -428,6 +440,12 @@ VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 	cfd->cli->vlu = VLU_New(cfd, cls_vlu, *cs->maxlen);
 	cfd->cli->sb = VSB_new_auto();
 	cfd->cli->limit = cs->limit;
+	if (cs->ws_sz > 0) {
+		cfd->cli->ws = malloc(sizeof(*cfd->cli->ws));
+		assert(cfd->cli->ws != NULL);
+		WS_Init(cfd->cli->ws, "cli",
+		    malloc(cs->ws_sz), cs->ws_sz);
+	}
 	cfd->closefunc = closefunc;
 	cfd->priv = priv;
 	AN(cfd->cli->sb);

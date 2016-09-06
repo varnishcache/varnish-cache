@@ -41,6 +41,7 @@
 
 #include "vcl.h"
 #include "vrt.h"
+#include "vtim.h"
 
 #include "cache_director.h"
 #include "cache_backend.h"
@@ -680,6 +681,7 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 	ctx.method = VCL_MET_INIT;
 	ctx.handling = &hand;
 	ctx.vcl = vcl;
+	ctx.ws = cli->ws;
 
 	VSB_clear(vsb);
 	ctx.msg = vsb;
@@ -714,7 +716,7 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
  */
 
 static void
-VCL_Nuke(struct vcl *vcl)
+VCL_Nuke(struct vcl *vcl, struct ws *ws)
 {
 	struct vrt_ctx ctx;
 	unsigned hand = 0;
@@ -729,6 +731,7 @@ VCL_Nuke(struct vcl *vcl)
 	ctx.method = VCL_MET_FINI;
 	ctx.handling = &hand;
 	ctx.vcl = vcl;
+	ctx.ws = ws;
 	vcl_failsafe_event(&ctx, VCL_EVENT_DISCARD);
 	vcl_KillBackends(vcl);
 	free(vcl->loaded_name);
@@ -740,7 +743,7 @@ VCL_Nuke(struct vcl *vcl)
 /*--------------------------------------------------------------------*/
 
 void
-VCL_Poll(void)
+VCL_Poll(struct ws *ws)
 {
 	struct vrt_ctx ctx;
 	struct vcl *vcl, *vcl2;
@@ -752,11 +755,12 @@ VCL_Poll(void)
 		    vcl->temp == VCL_TEMP_COOLING) {
 			INIT_OBJ(&ctx, VRT_CTX_MAGIC);
 			ctx.vcl = vcl;
+			ctx.ws = ws;
 			ctx.handling = &hand;
 			(void)vcl_set_state(&ctx, "0");
 		}
 		if (vcl->discard && vcl->temp == VCL_TEMP_COLD)
-			VCL_Nuke(vcl);
+			VCL_Nuke(vcl, ws);
 	}
 }
 
@@ -816,6 +820,7 @@ ccf_config_state(struct cli *cli, const char * const *av, void *priv)
 	AN(av[3]);
 	ctx.vcl = vcl_find(av[2]);
 	AN(ctx.vcl);			// MGT ensures this
+	ctx.ws = cli->ws;
 	if (vcl_set_state(&ctx, av[3]) == 0) {
 		bprintf(ctx.vcl->state, "%s", av[3] + 1);
 		VSB_destroy(&ctx.msg);
@@ -856,7 +861,7 @@ ccf_config_discard(struct cli *cli, const char * const *av, void *priv)
 		VTAILQ_REMOVE(&vcl_head, vcl, list);
 		free(vcl->loaded_name);
 	} else if (vcl->temp == VCL_TEMP_COLD)
-		VCL_Nuke(vcl);
+		VCL_Nuke(vcl, cli->ws);
 }
 
 static void __match_proto__(cli_func_t)
@@ -954,7 +959,7 @@ ccf_config_show(struct cli *cli, const char * const *av, void *priv)
 
 static void
 vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
-    void *specific, unsigned method, vcl_func_f *func)
+    const struct cli *cli, void *specific, unsigned method, vcl_func_f *func)
 {
 	char *aws;
 	struct vsl_log *vsl = NULL;
@@ -962,6 +967,11 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
+	if (cli != NULL) {
+		CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
+		ctx.ws = cli->ws;
+		ctx.now = VTIM_real();
+	}
 	if (req != NULL) {
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
@@ -988,6 +998,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		ctx.now = bo->t_prev;
 		ctx.ws = bo->ws;
 	}
+	WS_Assert(ctx.ws);
 	assert(ctx.now != 0);
 	ctx.vsl = vsl;
 	ctx.specific = specific;
@@ -1013,13 +1024,14 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 #define VCL_MET_MAC(func, upper, typ, bitmap)				\
 void									\
 VCL_##func##_method(struct vcl *vcl, struct worker *wrk,		\
-     struct req *req, struct busyobj *bo, void *specific)		\
+    struct req *req, struct busyobj *bo, const struct cli *cli,		\
+    void *specific)							\
 {									\
 									\
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);				\
 	CHECK_OBJ_NOTNULL(vcl->conf, VCL_CONF_MAGIC);			\
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);				\
-	vcl_call_method(wrk, req, bo, specific,				\
+	vcl_call_method(wrk, req, bo, cli, specific,			\
 	    VCL_MET_ ## upper, vcl->conf->func##_func);			\
 	AN((1U << wrk->handling) & bitmap);				\
 }
