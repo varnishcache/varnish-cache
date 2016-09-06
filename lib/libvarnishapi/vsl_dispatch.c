@@ -354,7 +354,7 @@ chunk_newbuf(struct vtx *vtx, const uint32_t *ptr, size_t len)
 	while (chunk->buf.space < len)
 		chunk->buf.space *= 2;
 	chunk->buf.data = malloc(sizeof (uint32_t) * chunk->buf.space);
-	AN(chunk->buf.data);
+	RN(chunk->buf.data);
 	memcpy(chunk->buf.data, ptr, sizeof (uint32_t) * len);
 	chunk->len = len;
 	return (chunk);

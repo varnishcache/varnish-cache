@@ -442,7 +442,7 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name, unsigned options)
 	c->close_fd = close_fd;
 	c->buflen = VSL_WORDS(BUFSIZ);
 	c->buf = malloc(VSL_BYTES(c->buflen));
-	AN(c->buf);
+	RN(c->buf);
 
 	return (&c->cursor);
 }
