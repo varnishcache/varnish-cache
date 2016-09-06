@@ -333,7 +333,8 @@ SES_New(struct pool *pp)
 	p = (char*)(sp + 1);
 	p = (void*)PRNDUP(p);
 	assert(p < e);
-	WS_Init(sp->ws, "ses", p, e - p);
+	WS_Init_Debug(sp->ws, "ses", p, e - p,
+	    IF_DEBUG(DBG_WORKSPACE, debug_ws));
 
 	sp->t_open = NAN;
 	sp->t_idle = NAN;
