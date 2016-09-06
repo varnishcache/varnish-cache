@@ -9,16 +9,26 @@ varnish v1 -vcl+backend {
 	import std;
 
 	sub vcl_init {
-		std.log("init");
+		std.log("init" + " one " + "two");
 		std.syslog(8 + 7, "init");
 	}
 
 	sub vcl_fini {
-		std.log("fini");
+		std.log("fini" + " one " + "two");
 		std.syslog(8 + 7, "fini");
 	}
+} -start
+
+logexpect l1 -v v1 -g raw -d 1 {
+	expect 0 0    CLI		{^Rd vcl.load}
+	expect 0 =    VCL_Log		{^init one two}
+
+	expect * 0    CLI		{^Rd vcl.discard}
+	expect 0 =    VCL_Log		{^fini one two}
 } -start
 
 varnish v1 -vcl+backend { }
 
 varnish v1 -cliok "vcl.discard vcl1"
+
+logexpect l1 -wait
