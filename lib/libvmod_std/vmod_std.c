@@ -133,27 +133,31 @@ vmod_random(VRT_CTX, VCL_REAL lo, VCL_REAL hi)
 }
 
 VCL_VOID __match_proto__(td_std_log)
-vmod_log(VRT_CTX, const char *fmt, ...)
+vmod_log(VRT_CTX, const char *s, ...)
 {
+	txt t;
 	unsigned u;
 	va_list ap;
-	txt t;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	va_start(ap, fmt);
-	if (ctx->vsl != NULL) {
-		u = WS_Reserve(ctx->ws, 0);
-		t.b = ctx->ws->f;
-		t.e = VRT_StringList(ctx->ws->f, u, fmt, ap);
-		if (t.e != NULL) {
-			assert(t.e > t.b);
-			t.e--;
-			VSLbt(ctx->vsl, SLT_VCL_Log, t);
-		}
-		WS_Release(ctx->ws, 0);
-	} else
-		VSLv(SLT_VCL_Log, 0, fmt, ap);
+	WS_Assert(ctx->ws);
+
+
+	u = WS_Reserve(ctx->ws, 0);
+	t.b = ctx->ws->f;
+	va_start(ap, s);
+	t.e = VRT_StringList(ctx->ws->f, u, s, ap);
 	va_end(ap);
+
+	if (t.e != NULL) {
+		assert(t.e > t.b);
+		t.e--;
+		if (ctx->vsl != NULL)
+			VSLbt(ctx->vsl, SLT_VCL_Log, t);
+		else
+			VSL(SLT_VCL_Log, 0, "%s", t.b);
+	}
+	WS_Release(ctx->ws, 0);
 }
 
 VCL_VOID __match_proto__(td_std_syslog)
