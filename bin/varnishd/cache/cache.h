@@ -1085,20 +1085,6 @@ void RFC2616_Vary_AE(struct http *hp);
 int STV_NewObject(struct worker *, struct objcore *,
     const char *hint, unsigned len);
 
-/*
- * A normal pointer difference is signed, but we never want a negative value
- * so this little tool will make sure we don't get that.
- */
-
-static inline unsigned
-pdiff(const void *b, const void *e)
-{
-
-	assert(b <= e);
-	return
-	    ((unsigned)((const unsigned char *)e - (const unsigned char *)b));
-}
-
 #define Tcheck(t) do {						\
 		AN((t).b);					\
 		AN((t).e);					\

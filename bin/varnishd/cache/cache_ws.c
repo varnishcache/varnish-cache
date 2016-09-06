@@ -33,6 +33,7 @@
 #include <stdio.h>
 
 #include "cache.h"
+#include "pdiff.h"
 
 void
 WS_Assert(const struct ws *ws)
