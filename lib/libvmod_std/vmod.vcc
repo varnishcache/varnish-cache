@@ -139,6 +139,16 @@ Example
 	|	...
 	| }
 
+$Function BOOL boolean(STRING s, BOOL fallback)
+
+Description
+	Converts the string *s* to a boolean. If conversion fails,
+	*fallback* will be returned.
+Example
+	| if (std.boolean(req.http.foo, true)) {
+	|	...
+	| }
+
 $Function IP ip(STRING s, IP fallback)
 
 Description
