@@ -84,6 +84,7 @@ WS_Embed(const char *id, void *space, unsigned len)
 	if (len < PRNDUP(wssz + 1))
 		return NULL;
 
+	assert(space != NULL);
 	assert(PAOK(space));
 
 	ws = space;
