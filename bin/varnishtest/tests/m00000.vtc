@@ -20,7 +20,7 @@ varnish v1 -vcl+backend {
 		set resp.http.who = debug.author(phk);
 		debug.test_priv_call();
 		debug.test_priv_vcl();
-		std.log("VCL initiated log");
+		std.log("VCL" + " initiated " + "log");
 		std.syslog(8 + 7, "Somebody runs varnishtest");
 		debug.rot52(resp);
 	}
@@ -35,6 +35,20 @@ client c1 {
 	expect resp.http.bar == "foo"
 	expect resp.http.encrypted == "ROT52"
 } -run
+
+logexpect l1 -v v1 -g raw -d 1 {
+	expect * 1001 VCL_call		{^DELIVER}
+	expect 0 =    RespUnset	{^foo: bAr}
+	expect 0 =    RespHeader	{^foo: BAR}
+	expect 0 =    RespUnset	{^bar: fOo}
+	expect 0 =    RespHeader	{^bar: foo}
+	expect 0 =    RespHeader	{^who: Poul-Henning}
+	expect 0 =    VCL_Log		{^VCL initiated log}
+	expect 0 =    RespHeader	{^Encrypted: ROT52}
+	expect 0 =    VCL_return	{^deliver}
+} -start
+
+logexpect l1 -wait
 
 varnish v1 -errvcl {Wrong enum value.  Expected one of:} {
 	import debug;
