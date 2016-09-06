@@ -2,6 +2,7 @@ varnishtest	"simple H2 get"
 
 server s1 {
 	rxreq
+	expect req.http.host == foo.bar
 	txresp -bodylen 10
 } -start
 
@@ -12,8 +13,18 @@ varnish v1 -cliok "param.set debug +syncvsl"
 
 client c1 {
 	stream 1 {
-		txreq
+		txprio -weight 10 -stream 0
+	} -start
+	stream 3 {
+		txprio -weight 10 -stream 0
+	} -start
+	stream 5 {
+		txprio -weight 10 -stream 2
+	} -start
+	stream 7 {
+		txreq -hdr :authority foo.bar
 		rxresp
+		expect resp.status == 200
 	} -run
 	stream 0 {
 		txping -data "_-__-_-_"
