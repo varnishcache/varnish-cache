@@ -1,8 +1,11 @@
 varnishtest	"H1->H2 Upgrade"
 
+barrier b1 cond 2
+
 server s1 {
 	rxreq
 	expect req.http.host == foo.bar
+	barrier b1 sync
 	txresp -status 400 -bodylen 10
 } -start
 
@@ -21,6 +24,15 @@ client c1 {
 	expect resp.status == 101
 	expect resp.http.upgrade == h2c
 	expect resp.http.connection == Upgrade
+	txpri
+	stream 0 {
+		rxsettings
+		txsettings
+		txsettings -ack
+		rxsettings
+		expect settings.ack == true
+	} -run
+	barrier b1 sync
 	stream 1 {
 		rxresp
 		expect resp.status == 400
