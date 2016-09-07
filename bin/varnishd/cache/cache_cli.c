@@ -74,7 +74,7 @@ cli_cb_before(const struct cli *cli)
 
 	ASSERT_CLI();
 	VSL(SLT_CLI, 0, "Rd %s", cli->cmd);
-	VCL_Poll();
+	VCL_Poll(cli->ws);
 	VBE_Poll();
 	Lck_Lock(&cli_mtx);
 }
@@ -123,7 +123,9 @@ CLI_Init(void)
 	Lck_New(&cli_mtx, lck_cli);
 	cli_thread = pthread_self();
 
+	/* cli workspace same as size as client - no new knobs */
 	cls = VCLS_New(cli_cb_before, cli_cb_after,
+	    cache_param->workspace_client,
 	    &cache_param->cli_buffer, &cache_param->cli_limit);
 	AN(cls);
 	VCLS_Clone(cls, mgt_cls);

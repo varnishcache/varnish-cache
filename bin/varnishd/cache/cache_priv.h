@@ -112,7 +112,7 @@ struct director *VCL_DefaultDirector(const struct vcl *);
 const struct vrt_backend_probe *VCL_DefaultProbe(const struct vcl *);
 void VCL_Init(void);
 void VCL_Panic(struct vsb *, const struct vcl *);
-void VCL_Poll(void);
+void VCL_Poll(struct ws *);
 
 /* cache_vrt.c */
 void VRTPRIV_init(struct vrt_privs *privs);

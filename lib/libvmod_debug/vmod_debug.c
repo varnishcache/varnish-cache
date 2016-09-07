@@ -42,6 +42,7 @@
 #include "vtcp.h"
 #include "vtim.h"
 #include "vcc_if.h"
+#include "pdiff.h"
 
 struct priv_vcl {
 	unsigned		magic;

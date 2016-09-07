@@ -55,6 +55,7 @@
 #include <math.h>
 
 #include "common/params.h"
+#include "ws.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -150,20 +151,6 @@ enum fetch_step {
 
 /*--------------------------------------------------------------------*/
 struct lock { void *priv; };	// Opaque
-
-/*--------------------------------------------------------------------
- * Workspace structure for quick memory allocation.
- */
-
-struct ws {
-	unsigned		magic;
-#define WS_MAGIC		0x35fac554
-	char			id[4];		/* identity */
-	char			*s;		/* (S)tart of buffer */
-	char			*f;		/* (F)ree/front pointer */
-	char			*r;		/* (R)eserved length */
-	char			*e;		/* (E)nd of buffer */
-};
 
 /*--------------------------------------------------------------------
  *
@@ -1039,7 +1026,7 @@ const char *VCL_Return_Name(unsigned);
 
 #define VCL_MET_MAC(l,u,t,b) \
     void VCL_##l##_method(struct vcl *, struct worker *, struct req *, \
-	struct busyobj *bo, void *specific);
+	struct busyobj *bo, const struct cli *, void *specific);
 #include "tbl/vcl_returns.h"
 #undef VCL_MET_MAC
 
@@ -1058,21 +1045,6 @@ typedef void *bgthread_t(struct worker *, void *priv);
 void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func,
     void *priv);
 
-/* cache_ws.c */
-
-void WS_Init(struct ws *ws, const char *id, void *space, unsigned len);
-unsigned WS_Reserve(struct ws *ws, unsigned bytes);
-void WS_MarkOverflow(struct ws *ws);
-void WS_Release(struct ws *ws, unsigned bytes);
-void WS_ReleaseP(struct ws *ws, char *ptr);
-void WS_Assert(const struct ws *ws);
-void WS_Reset(struct ws *ws, char *p);
-void *WS_Alloc(struct ws *ws, unsigned bytes);
-void *WS_Copy(struct ws *ws, const void *str, int len);
-char *WS_Snapshot(struct ws *ws);
-int WS_Overflowed(const struct ws *ws);
-void *WS_Printf(struct ws *ws, const char *fmt, ...) __v_printflike(2, 3);
-
 /* cache_rfc2616.c */
 void RFC2616_Ttl(struct busyobj *, double now, double *t_origin,
     float *ttl, float *grace, float *keep);
@@ -1084,20 +1056,6 @@ void RFC2616_Vary_AE(struct http *hp);
 /* stevedore.c */
 int STV_NewObject(struct worker *, struct objcore *,
     const char *hint, unsigned len);
-
-/*
- * A normal pointer difference is signed, but we never want a negative value
- * so this little tool will make sure we don't get that.
- */
-
-static inline unsigned
-pdiff(const void *b, const void *e)
-{
-
-	assert(b <= e);
-	return
-	    ((unsigned)((const unsigned char *)e - (const unsigned char *)b));
-}
 
 #define Tcheck(t) do {						\
 		AN((t).b);					\
@@ -1142,6 +1100,18 @@ DO_DEBUG(enum debug_bits x)
 		if (DO_DEBUG(debug_bit))			\
 			VSL(SLT_Debug, (id), __VA_ARGS__);	\
 	} while (0)
+
+static inline void __match_proto__(ws_debug_f)
+debug_ws(const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	VSLv(SLT_Debug, 0, fmt, ap);
+	va_end(ap);
+}
+
+#define IF_DEBUG(bit, ptr) (DO_DEBUG(bit) ? (ptr) : NULL)
 
 #define PAN_CheckMagic(vsb, ptr, exp)					\
 	do {								\
