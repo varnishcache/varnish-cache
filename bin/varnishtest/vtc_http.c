@@ -1775,7 +1775,7 @@ cmd_http_stream(CMD_ARGS)
 				"txsettings -ack\n"
 				"rxsettings\n"
 				"expect settings.ack == true"
-			     "} -run\n", http_cmds, hp, vl);
+			     "} -start\n", http_cmds, hp, vl);
 	}
 	cmd_stream(av, hp, cmd, vl);
 }
