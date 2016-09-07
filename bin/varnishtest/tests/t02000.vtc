@@ -14,18 +14,18 @@ varnish v1 -cliok "param.set debug +syncvsl"
 client c1 {
 	stream 1 {
 		txprio -weight 10 -stream 0
-	} -start
+	} -run
 	stream 3 {
 		txprio -weight 10 -stream 0
-	} -start
+	} -run
 	stream 5 {
 		txprio -weight 10 -stream 2
-	} -start
+	} -run
 	stream 7 {
 		txreq -hdr :authority foo.bar
 		rxresp
 		expect resp.status == 200
-	} -run
+	} -start
 	stream 0 {
 		txping -data "_-__-_-_"
 		rxping
