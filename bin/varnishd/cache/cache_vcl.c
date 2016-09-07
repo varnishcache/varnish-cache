@@ -515,8 +515,8 @@ VRT_rel_vcl(VRT_CTX, struct vclref **refp)
 /*--------------------------------------------------------------------*/
 
 /*
- * the workspace allocated here exists for the lifetime of the varnishd process
- * and is never explicitly freed
+ * the event vrt_ctx and workspace get allocated once, exist for the lifetime of
+ * the varnishd process and are never explicitly freed
  */
 static struct ws *
 vcl_event_ws(void)
@@ -539,11 +539,68 @@ vcl_event_ws(void)
 	return (ws);
 }
 
+static struct vrt_ctx *
+vcl_event_ctx_init(void)
+{
+	static struct vrt_ctx *ctx = NULL;
+	static struct vrt_ctx_event *ctx_event = NULL;
+	static struct vsb *vsb = NULL;
+
+	ASSERT_CLI();
+
+	if (ctx == NULL) {
+		AZ(ctx_event);
+		AZ(vsb);
+		ctx = malloc(sizeof(*ctx));
+		memset(ctx, 0, sizeof(*ctx));
+		ctx_event = malloc(sizeof(*ctx_event));
+		memset(ctx_event, 0, sizeof(*ctx_event));
+		vsb = VSB_new_auto();
+	}
+
+	AN(ctx);
+	AZ(ctx->magic);
+	AN(ctx_event);
+	AZ(ctx_event->magic);
+	AN(vsb);
+
+	INIT_OBJ(ctx, VRT_CTX_MAGIC);
+	INIT_OBJ(ctx_event, VRT_CTX_EVENT_MAGIC);
+	ctx->event = ctx_event;
+
+	VSB_clear(vsb);
+	ctx->event->msg = vsb;
+
+	ctx->ws = vcl_event_ws();
+
+	VRTPRIV_init(ctx->event->privs);
+
+	return (ctx);
+}
+
+static void
+vcl_event_ctx_fini(struct vrt_ctx **ctxp)
+{
+	struct vrt_ctx *ctx;
+
+	ASSERT_CLI();
+
+	AN(ctxp);
+	ctx = *ctxp;
+	*ctxp = NULL;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->event, VRT_CTX_EVENT_MAGIC);
+
+	VRTPRIV_dynamic_kill(ctx->event->privs, 0);
+
+	memset(ctx->event, 0, sizeof(*ctx->event));
+	memset(ctx, 0, sizeof(*ctx));
+}
+
 static int
 vcl_setup_event(struct vrt_ctx *ctx, enum vcl_event_e ev)
 {
-	int r;
-
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->vcl, VCL_MAGIC);
@@ -553,12 +610,8 @@ vcl_setup_event(struct vrt_ctx *ctx, enum vcl_event_e ev)
 	AN(ctx->event);
 	AN(ctx->event->msg);
 	assert(ev == VCL_EVENT_LOAD || ev == VCL_EVENT_WARM);
-	AZ(ctx->ws);
-	ctx->ws = vcl_event_ws();
-	r = ctx->vcl->conf->event_vcl(ctx, ev);
-	ctx->ws = NULL;
 
-	return (r);
+	return (ctx->vcl->conf->event_vcl(ctx, ev));
 }
 
 static void
@@ -572,13 +625,9 @@ vcl_failsafe_event(struct vrt_ctx *ctx, enum vcl_event_e ev)
 	AN(ctx->handling);
 	AN(ctx->vcl);
 	assert(ev == VCL_EVENT_COLD || ev == VCL_EVENT_DISCARD);
-	AZ(ctx->ws);
-	ctx->ws = vcl_event_ws();
 
 	if (ctx->vcl->conf->event_vcl(ctx, ev) != 0)
 		WRONG("A VMOD cannot fail COLD or DISCARD events");
-
-	ctx->ws = NULL;
 }
 
 static void
@@ -661,7 +710,8 @@ vcl_set_state(struct vrt_ctx *ctx, const char *state)
 }
 
 static void
-vcl_cancel_load(VRT_CTX, struct cli *cli, const char *name, const char *step)
+vcl_cancel_load(struct vrt_ctx *ctx, struct cli *cli, const char *name,
+    const char *step)
 {
 	struct vcl *vcl = ctx->vcl;
 
@@ -677,16 +727,14 @@ vcl_cancel_load(VRT_CTX, struct cli *cli, const char *name, const char *step)
 	AZ(vcl->conf->event_vcl(ctx, VCL_EVENT_DISCARD));
 	vcl_KillBackends(vcl);
 	VCL_Close(&vcl);
-	VSB_delete(ctx->event->msg);
-	VRTPRIV_dynamic_kill(ctx->event->privs, 0);
+	vcl_event_ctx_fini(&ctx);
 }
 
 static void
 VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 {
 	struct vcl *vcl;
-	struct vrt_ctx ctx;
-	struct vrt_ctx_event ctx_event;
+	struct vrt_ctx *ctx;
 	unsigned hand = 0;
 	struct vsb *vsb;
 	int i;
@@ -707,6 +755,7 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 		VSB_destroy(&vsb);
 		return;
 	}
+	VSB_destroy(&vsb);
 
 	vcl->loaded_name = strdup(name);
 	XXXAN(vcl->loaded_name);
@@ -715,31 +764,25 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 
 	vcl->temp = VCL_TEMP_INIT;
 
-	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
-	ctx.method = VCL_MET_INIT;
-	ctx.handling = &hand;
-	ctx.vcl = vcl;
+	ctx = vcl_event_ctx_init();
+	ctx->method = VCL_MET_INIT;
+	ctx->handling = &hand;
+	ctx->vcl = vcl;
 
-	INIT_OBJ(&ctx_event, VRT_CTX_EVENT_MAGIC);
-	ctx.event = &ctx_event;
-	VSB_clear(vsb);
-	ctx.event->msg = vsb;
-	VRTPRIV_init(ctx.event->privs);
-
-	i = vcl_setup_event(&ctx, VCL_EVENT_LOAD);
+	i = vcl_setup_event(ctx, VCL_EVENT_LOAD);
 	if (i) {
-		vcl_cancel_load(&ctx, cli, name, "initialization");
+		vcl_cancel_load(ctx, cli, name, "initialization");
 		return;
 	}
-	VSB_clear(vsb);
-	i = vcl_set_state(&ctx, state);
+	i = vcl_set_state(ctx, state);
 	if (i) {
 		assert(*state == '1');
-		vcl_cancel_load(&ctx, cli, name, "warmup");
+		vcl_cancel_load(ctx, cli, name, "warmup");
 		return;
 	}
-	VSB_destroy(&vsb);
-	VRTPRIV_dynamic_kill(ctx.event->privs, 0);
+
+	vcl_event_ctx_fini(&ctx);
+
 	bprintf(vcl->state, "%s", state + 1);
 	assert(hand == VCL_RET_OK);
 	VCLI_Out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
@@ -760,20 +803,21 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 static void
 VCL_Nuke(struct vcl *vcl)
 {
-	struct vrt_ctx ctx;
+	struct vrt_ctx *ctx;
 	unsigned hand = 0;
 
-	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
+	ctx = vcl_event_ctx_init();
 	ASSERT_CLI();
 	assert(vcl != vcl_active);
 	assert(vcl->discard);
 	AZ(vcl->busy);
 	assert(VTAILQ_EMPTY(&vcl->ref_list));
 	VTAILQ_REMOVE(&vcl_head, vcl, list);
-	ctx.method = VCL_MET_FINI;
-	ctx.handling = &hand;
-	ctx.vcl = vcl;
-	vcl_failsafe_event(&ctx, VCL_EVENT_DISCARD);
+	ctx->method = VCL_MET_FINI;
+	ctx->handling = &hand;
+	ctx->vcl = vcl;
+	vcl_failsafe_event(ctx, VCL_EVENT_DISCARD);
+	vcl_event_ctx_fini(&ctx);
 	vcl_KillBackends(vcl);
 	free(vcl->loaded_name);
 	VCL_Close(&vcl);
@@ -786,7 +830,7 @@ VCL_Nuke(struct vcl *vcl)
 void
 VCL_Poll(void)
 {
-	struct vrt_ctx ctx;
+	struct vrt_ctx *ctx;
 	struct vcl *vcl, *vcl2;
 	unsigned hand;
 
@@ -794,10 +838,11 @@ VCL_Poll(void)
 	VTAILQ_FOREACH_SAFE(vcl, &vcl_head, list, vcl2) {
 		if (vcl->temp == VCL_TEMP_BUSY ||
 		    vcl->temp == VCL_TEMP_COOLING) {
-			INIT_OBJ(&ctx, VRT_CTX_MAGIC);
-			ctx.vcl = vcl;
-			ctx.handling = &hand;
-			(void)vcl_set_state(&ctx, "0");
+			ctx = vcl_event_ctx_init();
+			ctx->vcl = vcl;
+			ctx->handling = &hand;
+			(void)vcl_set_state(ctx, "0");
+			vcl_event_ctx_fini(&ctx);
 		}
 		if (vcl->discard && vcl->temp == VCL_TEMP_COLD)
 			VCL_Nuke(vcl);
@@ -845,39 +890,31 @@ ccf_config_load(struct cli *cli, const char * const *av, void *priv)
 static void __match_proto__(cli_func_t)
 ccf_config_state(struct cli *cli, const char * const *av, void *priv)
 {
-	struct vrt_ctx ctx;
-	struct vrt_ctx_event ctx_event;
+	struct vrt_ctx *ctx;
 	unsigned hand;
 
-	INIT_OBJ(&ctx, VRT_CTX_MAGIC);
-	INIT_OBJ(&ctx_event, VRT_CTX_EVENT_MAGIC);
-	ctx.event = &ctx_event;
-	ctx.event->msg = VSB_new_auto();
-	VRTPRIV_init(ctx.event->privs);
-	AN(ctx.event->msg);
-	ctx.handling = &hand;
+	ctx = vcl_event_ctx_init();
+	ctx->handling = &hand;
 
 	(void)cli;
 	AZ(priv);
 	ASSERT_CLI();
 	AN(av[2]);
 	AN(av[3]);
-	ctx.vcl = vcl_find(av[2]);
-	AN(ctx.vcl);			// MGT ensures this
-	if (vcl_set_state(&ctx, av[3]) == 0) {
-		bprintf(ctx.vcl->state, "%s", av[3] + 1);
-		VSB_destroy(&ctx.event->msg);
-		VRTPRIV_dynamic_kill(ctx.event->privs, 0);
+	ctx->vcl = vcl_find(av[2]);
+	AN(ctx->vcl);			// MGT ensures this
+	if (vcl_set_state(ctx, av[3]) == 0) {
+		bprintf(ctx->vcl->state, "%s", av[3] + 1);
+		vcl_event_ctx_fini(&ctx);
 		return;
 	}
-	AZ(VSB_finish(ctx.event->msg));
+	AZ(VSB_finish(ctx->event->msg));
 	VCLI_SetResult(cli, CLIS_CANT);
-	VCLI_Out(cli, "Failed <vcl.state %s %s>", ctx.vcl->loaded_name,
+	VCLI_Out(cli, "Failed <vcl.state %s %s>", ctx->vcl->loaded_name,
 	    av[3] + 1);
-	if (VSB_len(ctx.event->msg))
-		VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(ctx.event->msg));
-	VSB_destroy(&ctx.event->msg);
-	VRTPRIV_dynamic_kill(ctx.event->privs, 0);
+	if (VSB_len(ctx->event->msg))
+		VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(ctx->event->msg));
+	vcl_event_ctx_fini(&ctx);
 }
 
 static void __match_proto__(cli_func_t)
