@@ -514,9 +514,31 @@ VRT_rel_vcl(VRT_CTX, struct vclref **refp)
 
 /*--------------------------------------------------------------------*/
 
-static int
-vcl_setup_event(VRT_CTX, enum vcl_event_e ev)
+static struct ws *
+vcl_event_ws(void)
 {
+	static struct ws *ws = NULL;
+	static char *ws_snap;
+
+	ASSERT_CLI();
+
+	if (ws == NULL) {
+		ws = malloc(sizeof(*ws));
+		AN(ws);
+		WS_Init(ws, "cli", malloc(cache_param->workspace_client),
+		    cache_param->workspace_client);
+		ws_snap = WS_Snapshot(ws);
+	} else {
+		WS_Reset(ws, ws_snap);
+		WS_Assert(ws);
+	}
+	return (ws);
+}
+
+static int
+vcl_setup_event(struct vrt_ctx *ctx, enum vcl_event_e ev)
+{
+	int r;
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -526,12 +548,16 @@ vcl_setup_event(VRT_CTX, enum vcl_event_e ev)
 	AN(ctx->vcl);
 	AN(ctx->msg);
 	assert(ev == VCL_EVENT_LOAD || ev == VCL_EVENT_WARM);
+	AZ(ctx->ws);
+	ctx->ws = vcl_event_ws();
+	r = ctx->vcl->conf->event_vcl(ctx, ev);
+	ctx->ws = NULL;
 
-	return (ctx->vcl->conf->event_vcl(ctx, ev));
+	return (r);
 }
 
 static void
-vcl_failsafe_event(VRT_CTX, enum vcl_event_e ev)
+vcl_failsafe_event(struct vrt_ctx *ctx, enum vcl_event_e ev)
 {
 
 	ASSERT_CLI();
@@ -541,9 +567,13 @@ vcl_failsafe_event(VRT_CTX, enum vcl_event_e ev)
 	AN(ctx->handling);
 	AN(ctx->vcl);
 	assert(ev == VCL_EVENT_COLD || ev == VCL_EVENT_DISCARD);
+	AZ(ctx->ws);
+	ctx->ws = vcl_event_ws();
 
 	if (ctx->vcl->conf->event_vcl(ctx, ev) != 0)
 		WRONG("A VMOD cannot fail COLD or DISCARD events");
+
+	ctx->ws = NULL;
 }
 
 static void
@@ -564,7 +594,7 @@ vcl_print_refs(VRT_CTX)
 }
 
 static int
-vcl_set_state(VRT_CTX, const char *state)
+vcl_set_state(struct vrt_ctx *ctx, const char *state)
 {
 	struct vcl *vcl;
 	int i = 0;
