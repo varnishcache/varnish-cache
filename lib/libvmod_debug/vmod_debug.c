@@ -101,9 +101,19 @@ vmod_test_priv_task(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (priv->priv == NULL) {
+	if (s == NULL || *s == '\0') {
+		return priv->priv;
+	} else if (priv->priv == NULL) {
 		priv->priv = strdup(s);
 		priv->free = free;
+	} else {
+		char *n = realloc(priv->priv,
+		    strlen(priv->priv) + strlen(s) + 2);
+		if (n == NULL)
+			return NULL;
+		strcat(n, " ");
+		strcat(n, s);
+		priv->priv = n;
 	}
 	return (priv->priv);
 }

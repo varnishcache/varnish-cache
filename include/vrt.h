@@ -40,6 +40,7 @@
  *
  * 5.0:
  *	move .msg from vrt_ctx to new vrt_ctx_event
+ *	add vrt_ctx_event .privs field
  * 4.0:
  *	VCL_BYTES changed to long long
  * 3.2:

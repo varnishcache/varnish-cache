@@ -301,6 +301,7 @@ struct vrt_ctx_event {
 #define VRT_CTX_EVENT_MAGIC		0xeaea90a2
 
 	struct vsb			*msg;
+	struct vrt_privs		privs[1];
 };
 
 /* Worker pool stuff -------------------------------------------------*/

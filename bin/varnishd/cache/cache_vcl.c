@@ -678,6 +678,7 @@ vcl_cancel_load(VRT_CTX, struct cli *cli, const char *name, const char *step)
 	vcl_KillBackends(vcl);
 	VCL_Close(&vcl);
 	VSB_delete(ctx->event->msg);
+	VRTPRIV_dynamic_kill(ctx->event->privs, 0);
 }
 
 static void
@@ -723,6 +724,7 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 	ctx.event = &ctx_event;
 	VSB_clear(vsb);
 	ctx.event->msg = vsb;
+	VRTPRIV_init(ctx.event->privs);
 
 	i = vcl_setup_event(&ctx, VCL_EVENT_LOAD);
 	if (i) {
@@ -737,6 +739,7 @@ VCL_Load(struct cli *cli, const char *name, const char *fn, const char *state)
 		return;
 	}
 	VSB_destroy(&vsb);
+	VRTPRIV_dynamic_kill(ctx.event->privs, 0);
 	bprintf(vcl->state, "%s", state + 1);
 	assert(hand == VCL_RET_OK);
 	VCLI_Out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
@@ -850,6 +853,7 @@ ccf_config_state(struct cli *cli, const char * const *av, void *priv)
 	INIT_OBJ(&ctx_event, VRT_CTX_EVENT_MAGIC);
 	ctx.event = &ctx_event;
 	ctx.event->msg = VSB_new_auto();
+	VRTPRIV_init(ctx.event->privs);
 	AN(ctx.event->msg);
 	ctx.handling = &hand;
 
@@ -863,6 +867,7 @@ ccf_config_state(struct cli *cli, const char * const *av, void *priv)
 	if (vcl_set_state(&ctx, av[3]) == 0) {
 		bprintf(ctx.vcl->state, "%s", av[3] + 1);
 		VSB_destroy(&ctx.event->msg);
+		VRTPRIV_dynamic_kill(ctx.event->privs, 0);
 		return;
 	}
 	AZ(VSB_finish(ctx.event->msg));
@@ -872,6 +877,7 @@ ccf_config_state(struct cli *cli, const char * const *av, void *priv)
 	if (VSB_len(ctx.event->msg))
 		VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(ctx.event->msg));
 	VSB_destroy(&ctx.event->msg);
+	VRTPRIV_dynamic_kill(ctx.event->privs, 0);
 }
 
 static void __match_proto__(cli_func_t)
