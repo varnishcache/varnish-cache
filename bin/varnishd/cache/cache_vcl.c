@@ -514,6 +514,10 @@ VRT_rel_vcl(VRT_CTX, struct vclref **refp)
 
 /*--------------------------------------------------------------------*/
 
+/*
+ * the workspace allocated here exists for the lifetime of the varnishd process
+ * and is never explicitly freed
+ */
 static struct ws *
 vcl_event_ws(void)
 {
