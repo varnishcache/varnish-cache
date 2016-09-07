@@ -1,0 +1,29 @@
+varnishtest	"H1->H2 Upgrade"
+
+server s1 {
+	rxreq
+	expect req.http.host == foo.bar
+	txresp -status 400 -bodylen 10
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set debug +syncvsl"
+
+client c1 {
+	send "GET / HTTP/1.1\r\n"
+	send "Host: foo.bar\r\n"
+	send "Upgrade: h2c\r\n"
+	send "HTTP2-Settings: AAMAAABkAAQAAP__\r\n"
+	send "\r\n"
+	rxresp
+	expect resp.status == 101
+	expect resp.http.upgrade == h2c
+	expect resp.http.connection == Upgrade
+	stream 1 {
+		rxresp
+		expect resp.status == 400
+		expect resp.bodylen == 10
+	} -run
+} -run

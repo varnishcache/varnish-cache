@@ -1,4 +1,4 @@
-varnishtest	"simple H2 get"
+varnishtest	"Direct H2 start"
 
 server s1 {
 	rxreq
