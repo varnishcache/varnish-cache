@@ -717,6 +717,11 @@ main(int argc, char * const *argv)
 	if (S_arg != NULL && *S_arg == '\0') {
 		fprintf(stderr,
 		    "Warning: Empty -S argument, no CLI authentication.\n");
+		fprintf(stderr, "Warning: For forward compatibility,"
+		    " please switch to using -S none\n");
+	} else if (S_arg != NULL && !strcmp(S_arg, "none")) {
+		fprintf(stderr,
+		    "Warning: CLI authentication disabled.\n");
 	} else if (S_arg != NULL) {
 		VJ_master(JAIL_MASTER_FILE);
 		o = open(S_arg, O_RDONLY, 0);
@@ -817,7 +822,7 @@ main(int argc, char * const *argv)
 	if (d_flag)
 		mgt_cli_setup(0, 1, 1, "debug", cli_stdin_close, NULL);
 
-	if (*S_arg != '\0')
+	if (strcmp(S_arg, "none"))
 		mgt_cli_secret(S_arg);
 
 	if (M_arg != NULL)
