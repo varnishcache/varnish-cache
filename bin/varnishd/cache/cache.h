@@ -293,6 +293,16 @@ struct vrt_privs {
 	VTAILQ_HEAD(,vrt_priv)	privs;
 };
 
+/*--------------------------------------------------------------------
+ * context which only exists for vcl events
+ */
+struct vrt_ctx_event {
+	unsigned			magic;
+#define VRT_CTX_EVENT_MAGIC		0xeaea90a2
+
+	struct vsb			*msg;
+};
+
 /* Worker pool stuff -------------------------------------------------*/
 
 typedef void task_func_t(struct worker *wrk, void *priv);
