@@ -513,6 +513,8 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	/* XXX: later full DATA will not be rx'ed yet. */
 	HTC_RxPipeline(h2->htc, h2->htc->rxbuf_b + h2->rxf_len + 9);
 
+	h2_vsl_frame(h2, h2->htc->rxbuf_b, 9L + h2->rxf_len);
+
 	Lck_Lock(&h2->sess->mtx);
 	VTAILQ_FOREACH(r2, &h2->streams, list)
 		if (r2->stream == h2->rxf_stream)
@@ -522,8 +524,6 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		h2->highest_stream = h2->rxf_stream;
 		r2 = h2_new_req(wrk, h2, h2->rxf_stream, NULL);
 	}
-
-	h2_vsl_frame(h2, h2->htc->rxbuf_b, 9L + h2->rxf_len);
 
 	ft = (enum h2frame)h2->htc->rxbuf_b[3];
 	switch (ft) {
