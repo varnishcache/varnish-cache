@@ -96,13 +96,6 @@ sma_alloc(const struct stevedore *st, size_t size)
 
 	p = malloc(size);
 	if (p != NULL) {
-		/* If we are on Linux, avoid gigabyte/terabyte sized core dumps by
-		 * skipping the storage data.
-		 */
-#ifdef MADV_DONTDUMP
-		madvise(p, size, MADV_DONTDUMP);
-#endif
-
 		ALLOC_OBJ(sma, SMA_MAGIC);
 		if (sma != NULL)
 			sma->s.ptr = p;
@@ -131,6 +124,13 @@ sma_alloc(const struct stevedore *st, size_t size)
 	sma->s.len = 0;
 	sma->s.space = size;
 	sma->s.magic = STORAGE_MAGIC;
+
+	/* If we are on Linux, avoid gigabyte/terabyte sized core dumps by
+	 * skipping the storage data.
+	 */
+#ifdef MADV_DONTDUMP
+	(void)madvise(sma->s.ptr, sma->sz, MADV_DONTDUMP);
+#endif
 	return (&sma->s);
 }
 
@@ -152,6 +152,9 @@ sma_free(struct storage *s)
 	if (sma_sc->sma_max != SIZE_MAX)
 		sma_sc->stats->g_space += sma->sz;
 	Lck_Unlock(&sma_sc->sma_mtx);
+#ifdef MADV_DODUMP
+	(void)madvise(sma->s.ptr, sma->sz, MADV_DODUMP);
+#endif
 	free(sma->s.ptr);
 	free(sma);
 }
