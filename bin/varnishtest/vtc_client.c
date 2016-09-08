@@ -143,7 +143,8 @@ client_thread(void *priv)
 			vtc_log(c->vl, 0, "Failed to open %s: %s",
 			    VSB_data(vsb), err);
 		assert(fd >= 0);
-		VTCP_blocking(fd);
+		/* VTCP_blocking does its own checks, trust it */
+		(void)VTCP_blocking(fd);
 		VTCP_myname(fd, mabuf, sizeof mabuf, mpbuf, sizeof mpbuf);
 		vtc_log(vl, 3, "connected fd %d from %s %s to %s",
 		    fd, mabuf, mpbuf, VSB_data(vsb));
