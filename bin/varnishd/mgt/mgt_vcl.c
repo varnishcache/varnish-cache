@@ -42,6 +42,7 @@
 
 #include "libvcc.h"
 #include "vcli_serve.h"
+#include "vct.h"
 #include "vev.h"
 #include "vtim.h"
 
@@ -78,6 +79,74 @@ struct vclprog {
 static VTAILQ_HEAD(, vclprog)	vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
 static struct vclprog		*active_vcl;
 static struct vev *e_poker;
+
+/*--------------------------------------------------------------------*/
+
+static struct vclprog *
+mcf_vcl_byname(const char *name)
+{
+	struct vclprog *vp;
+
+	VTAILQ_FOREACH(vp, &vclhead, list)
+		if (!strcmp(name, vp->name))
+			return (vp);
+	return (NULL);
+}
+
+static int
+mcf_bad_vclname(struct cli *cli, const char *name)
+{
+	const char *p;
+	int bad = 0;
+
+	AN(name);
+	p = name;
+	if (!vct_isalpha(*p))
+		bad = *p;
+	for (p++; bad == 0 && *p != '\0'; p++)
+		if (!vct_isalpha(*p) && !vct_isdigit(*p) && *p != '_')
+			bad = *p;
+	if (bad) {
+		VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_Out(cli, "Illegal character in VCL name ");
+		if (bad > 0x20 && bad < 0x7f)
+			VCLI_Out(cli, "('%c')", bad);
+		else
+			VCLI_Out(cli, "(0x%02x)", bad & 0xff);
+	}
+	return (bad);
+}
+
+static struct vclprog *
+mcf_find_vcl(struct cli *cli, const char *name)
+{
+	struct vclprog *vp;
+
+	if (mcf_bad_vclname(cli, name))
+		return (NULL);
+
+	vp = mcf_vcl_byname(name);
+	if (vp == NULL) {
+		VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_Out(cli, "No VCL named %s known.", name);
+	}
+	return (vp);
+}
+
+static int
+mcf_find_no_vcl(struct cli *cli, const char *name)
+{
+
+	if (mcf_bad_vclname(cli, name))
+		return (0);
+
+	if (mcf_vcl_byname(name) != NULL) {
+		VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_Out(cli, "Already a VCL named %s", name);
+		return (0);
+	}
+	return (1);
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -163,17 +232,6 @@ mgt_vcl_del(struct vclprog *vp)
 	FREE_OBJ(vp);
 }
 
-static struct vclprog *
-mgt_vcl_byname(const char *name)
-{
-	struct vclprog *vp;
-
-	VTAILQ_FOREACH(vp, &vclhead, list)
-		if (!strcmp(name, vp->name))
-			return (vp);
-	return (NULL);
-}
-
 void
 mgt_vcl_depends(struct vclprog *vp1, const char *name)
 {
@@ -181,7 +239,7 @@ mgt_vcl_depends(struct vclprog *vp1, const char *name)
 
 	CHECK_OBJ_NOTNULL(vp1, VCLPROG_MAGIC);
 
-	vp2 = mgt_vcl_byname(name);
+	vp2 = mcf_vcl_byname(name);
 	CHECK_OBJ_NOTNULL(vp2, VCLPROG_MAGIC);
 	mgt_vcl_dep_add(vp1, vp2);
 }
@@ -390,16 +448,11 @@ mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
 static void __match_proto__(cli_func_t)
 mcf_vcl_inline(struct cli *cli, const char * const *av, void *priv)
 {
-	struct vclprog *vp;
 
 	(void)priv;
 
-	vp = mgt_vcl_byname(av[2]);
-	if (vp != NULL) {
-		VCLI_Out(cli, "Already a VCL program named %s", av[2]);
-		VCLI_SetResult(cli, CLIS_PARAM);
+	if (!mcf_find_no_vcl(cli, av[2]))
 		return;
-	}
 
 	mgt_new_vcl(cli, av[2], av[3], "<vcl.inline>", av[4], 0);
 }
@@ -407,31 +460,14 @@ mcf_vcl_inline(struct cli *cli, const char * const *av, void *priv)
 static void __match_proto__(cli_func_t)
 mcf_vcl_load(struct cli *cli, const char * const *av, void *priv)
 {
-	struct vclprog *vp;
 
 	(void)priv;
-	vp = mgt_vcl_byname(av[2]);
-	if (vp != NULL) {
-		VCLI_Out(cli, "Already a VCL program named %s", av[2]);
-		VCLI_SetResult(cli, CLIS_PARAM);
+	if (!mcf_find_no_vcl(cli, av[2]))
 		return;
-	}
 
 	mgt_new_vcl(cli, av[2], NULL, av[3], av[4], 0);
 }
 
-static struct vclprog *
-mcf_find_vcl(struct cli *cli, const char *name)
-{
-	struct vclprog *vp;
-
-	vp = mgt_vcl_byname(name);
-	if (vp == NULL) {
-		VCLI_SetResult(cli, CLIS_PARAM);
-		VCLI_Out(cli, "No configuration named %s known.", name);
-	}
-	return (vp);
-}
 
 static void __match_proto__(cli_func_t)
 mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
@@ -614,6 +650,10 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 	int i;
 
 	(void)priv;
+	if (mcf_bad_vclname(cli, av[2]))
+		return;
+	if (mcf_bad_vclname(cli, av[3]))
+		return;
 	vpt = mcf_find_vcl(cli, av[3]);
 	if (vpt == NULL)
 		return;
@@ -628,7 +668,7 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 		    vpt->label->name);
 		return;
 	}
-	vpl = mgt_vcl_byname(av[2]);
+	vpl = mcf_vcl_byname(av[2]);
 	if (vpl != NULL) {
 		if (strcmp(vpl->state, VCL_STATE_LABEL)) {
 			VCLI_SetResult(cli, CLIS_PARAM);
@@ -643,12 +683,6 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 		mgt_vcl_dep_del(VTAILQ_FIRST(&vpl->dfrom));
 		AN(VTAILQ_EMPTY(&vpl->dfrom));
 	} else {
-		/* XXX should check for C-syntax */
-		if (strchr(av[2], '.')) {
-			VCLI_SetResult(cli, CLIS_PARAM);
-			VCLI_Out(cli, "VCL labels cannot contain '.'");
-			return;
-		}
 		vpl = mgt_vcl_add(av[2], VCL_STATE_LABEL);
 	}
 	AN(vpl);
