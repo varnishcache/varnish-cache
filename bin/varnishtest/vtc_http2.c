@@ -342,7 +342,7 @@ write_frame(struct http *hp, const struct frame *f, const unsigned lock)
 static void
 exclusive_stream_dependency(const struct stream *s)
 {
-	struct stream *target = NULL;
+	struct stream *target;
 	struct http *hp = s->hp;
 
 	if (s->id == 0)
