@@ -258,7 +258,8 @@ vcc_ParseProbe(struct vcc *tl)
 	t_probe = tl->t;
 	vcc_NextToken(tl);
 
-	(void)VCC_HandleSymbol(tl, t_probe, PROBE, "%.s", PF(t_probe));
+	(void)VCC_HandleSymbol(tl, t_probe, PROBE, "&vgc_probe_%.*s",
+	    PF(t_probe));
 	ERRCHK(tl);
 
 	vcc_ParseProbeSpec(tl, t_probe, &p);
