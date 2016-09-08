@@ -32,6 +32,7 @@
 #include <ctype.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -124,6 +125,39 @@ vmod_integer(VRT_CTX, VCL_STRING p, VCL_INT i)
 		return (i);
 
 	return (r);
+}
+
+VCL_BOOL __match_proto__(td_std_boolean)
+vmod_boolean(VRT_CTX, VCL_STRING p, VCL_BOOL b)
+{
+	char *e;
+	long r;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	if (p == NULL)
+		return (b);
+
+	while(isspace(*p))
+		p++;
+
+	if (strcasecmp("false", p) == 0) {
+		return (0);
+	} else if (strcasecmp("true", p) == 0) {
+		return (1);
+	}
+
+	if (*p != '+' && *p != '-' && !isdigit(*p))
+		return (b);
+
+	e = NULL;
+
+	r = strtol(p, &e, 0);
+
+	if (e == NULL || *e != '\0')
+		return (b);
+
+	return (r == 0 ? 0 : 1);
 }
 
 VCL_IP
