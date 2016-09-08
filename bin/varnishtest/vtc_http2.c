@@ -256,7 +256,7 @@ readFrameHeader(struct frame *f, const char *buf)
 	f->stid += (0xff & (unsigned char)buf[6]) << 16;
 	f->stid += (0xff & (unsigned char)buf[7]) <<  8;
 	f->stid += (0xff & (unsigned char)buf[8]);
-};
+}
 
 static void
 writeFrameHeader(char *buf, const struct frame *f)
