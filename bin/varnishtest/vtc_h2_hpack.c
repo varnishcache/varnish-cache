@@ -57,13 +57,12 @@ huff_decode(char *str, int nm, struct hpk_iter *iter, int ilen)
 {
 	int l = 0;
 	uint64_t pack = 0;
-	int pl = 0; /* pack length*/
+	unsigned pl = 0; /* pack length*/
 	struct stbl *tbl = &byte0;
 	struct ssym *sym;
 
 	(void)nm;
 	while (ilen > 0 || pl != 0) {
-		assert(pl >= 0);
 		/* make sure we have enough data*/
 		if (pl < tbl->msk) {
 			if (ilen == 0) {
@@ -92,6 +91,7 @@ huff_decode(char *str, int nm, struct hpk_iter *iter, int ilen)
 			return (0);
 
 		pack <<= sym->csm;
+		assert(sym->csm <= pl);
 		pl -= sym->csm;
 		if (sym->nxt) {
 			tbl = sym->nxt;
