@@ -327,6 +327,7 @@ EmitInitFini(const struct vcc *tl)
 		AZ(VSB_finish(p->fin));
 		if (q)
 			assert(q->n > p->n);
+		q = p;
 		if (VSB_len(p->fin)) {
 			Fc(tl, 0, "\t\tcase %u :\n", p->n);
 			Fc(tl, 0, "\t%s\n", VSB_data(p->fin));
