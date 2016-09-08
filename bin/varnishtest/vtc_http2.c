@@ -739,7 +739,7 @@ receive_frame(void *priv)
 			f->data = malloc(f->size + 1L);
 			AN(f->data);
 			f->data[f->size] = '\0';
-			get_bytes(hp, f->data, f->size);
+			AN(get_bytes(hp, f->data, f->size));
 		}
 
 		/* is the corresponding stream waiting? */
