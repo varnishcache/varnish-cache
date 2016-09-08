@@ -8,6 +8,10 @@ Master
   * time bend option: control the log processing speed
   * y axis scale
 
+* varnishd no longer seeds the libc random number generator, but
+  rather its own. This can affect vmods using random() with varnishd
+  debug.srandom
+
 ======================================
 Varnish Cache 4.1.3-beta1 (2016-06-15)
 ======================================
