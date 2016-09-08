@@ -513,3 +513,13 @@ vmod_barrier_sync(VRT_CTX, VCL_STRING addr)
 		VSLb(ctx->vsl, SLT_Error, "Barrier unexpected data (%zdB)", sz);
 	return (0);
 }
+
+VCL_VOID
+vmod_test_probe(VRT_CTX, VCL_PROBE probe, VCL_PROBE same)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(probe, VRT_BACKEND_PROBE_MAGIC);
+	CHECK_OBJ_ORNULL(same, VRT_BACKEND_PROBE_MAGIC);
+	AZ(same == NULL || probe == same);
+}
