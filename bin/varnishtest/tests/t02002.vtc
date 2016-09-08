@@ -1,0 +1,37 @@
+varnishtest "HPACK coverage"
+
+server s1 {
+	rxreq
+	expect req.http.host == www.example.com
+	expect req.http.foohdr == FOOcont
+	txresp -status 500 -bodylen 10
+	rxreq
+	expect req.http.host == www.example.com
+	expect req.http.foohdr == FOOcont2
+	txresp -status 404 -bodylen 20
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set debug +syncvsl"
+
+client c1 {
+	stream 7 {
+		txreq \
+			-litIdxHdr inc 1 huf "www.example.com" \
+			-idxHdr 16 \
+			-litHdr inc huf "foohdr" huf "FOOcont"
+		rxresp
+		expect resp.status == 500
+		expect resp.bodylen == 10
+	} -run
+	stream 9 {
+		txreq \
+			-idxHdr 63 \
+			-litIdxHdr never 62 plain "FOOcont2"
+		rxresp
+		expect resp.status == 404
+		expect resp.bodylen == 20
+	} -run
+} -run
