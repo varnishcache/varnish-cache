@@ -1136,7 +1136,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		*e = vcc_expr_edit(BOOL, cp->emit, *e, e2);
 		return;
 	}
-	if ((*e)->fmt == STRING &&
+	if (((*e)->fmt == STRING || (*e)->fmt == STRING_LIST) &&
 	    (tl->t->tok == '~' || tl->t->tok == T_NOMATCH)) {
 		not = tl->t->tok == '~' ? "" : "!";
 		vcc_NextToken(tl);
