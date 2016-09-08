@@ -283,7 +283,7 @@ http_count_header(char * const *hh, const char *hdr)
  *         - req.proto
  *         - resp.proto
  *         - resp.status
- *         - resp.msg
+ *         - resp.reason
  *         - resp.chunklen
  *         - req.bodylen
  *         - req.body
@@ -311,7 +311,7 @@ cmd_var_resolve(struct http *hp, char *spec)
 		return(hp->resp[0]);
 	if (!strcmp(spec, "resp.status"))
 		return(hp->resp[1]);
-	if (!strcmp(spec, "resp.msg"))
+	if (!strcmp(spec, "resp.reason"))
 		return(hp->resp[2]);
 	if (!strcmp(spec, "resp.chunklen"))
 		return(hp->chunklen);

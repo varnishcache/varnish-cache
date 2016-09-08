@@ -22,7 +22,7 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 1
-	expect resp.msg == "OK"
+	expect resp.reason == "OK"
 
 	delay 0.1
 
@@ -30,5 +30,5 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 1
-	expect resp.msg == "OK"
+	expect resp.reason == "OK"
 } -run

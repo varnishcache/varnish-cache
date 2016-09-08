@@ -43,13 +43,13 @@ client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 200
-	expect resp.msg == "OK"
+	expect resp.reason == "OK"
 	delay .1
 
 	txreq -url "/synth"
 	rxresp
 	expect resp.status == 200
-	expect resp.msg == "Synth test"
+	expect resp.reason == "Synth test"
 	delay .1
 
 	txreq -url "/error"

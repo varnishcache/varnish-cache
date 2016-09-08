@@ -24,7 +24,7 @@ client c1 -connect ${s1_sock} {
 	rxresp
 	expect resp.proto == HTTP/1.2
 	expect resp.status == 201
-	expect resp.msg == Foo
+	expect resp.reason == Foo
 }
 
 client c2 -connect ${s2_sock} {
@@ -32,7 +32,7 @@ client c2 -connect ${s2_sock} {
 	rxresp
 	expect resp.proto == HTTP/1.1
 	expect resp.status == 200
-	expect resp.msg == OK
+	expect resp.reason == OK
 }
 
 client c1 -start

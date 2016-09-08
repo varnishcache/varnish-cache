@@ -17,7 +17,7 @@ client c1 -connect ${s1_sock} {
 	rxresp
 	expect resp.proto == HTTP/1.2
 	expect resp.status == 201
-	expect resp.msg == Foo
+	expect resp.reason == Foo
 }
 
 client c1 -run

@@ -38,7 +38,7 @@ client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.status == 503
-	expect resp.msg == "Unknown HTTP Status"
+	expect resp.reason == "Unknown HTTP Status"
 } -run
 
 logexpect l1 -wait
