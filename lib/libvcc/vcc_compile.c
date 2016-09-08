@@ -333,7 +333,7 @@ EmitCoordinates(const struct vcc *tl, struct vsb *vsb)
 static void
 EmitInitFini(const struct vcc *tl)
 {
-	struct inifin *p;
+	struct inifin *p, *q = NULL;
 	unsigned has_event = 0;
 
 	Fh(tl, 0, "\n");
@@ -370,6 +370,8 @@ EmitInitFini(const struct vcc *tl)
 	Fc(tl, 0, "\t(void)VGC_function_vcl_fini(ctx);\n\n");
 	VTAILQ_FOREACH_REVERSE(p, &tl->inifin, inifinhead, list) {
 		AZ(VSB_finish(p->fin));
+		if (q)
+			assert(q->n > p->n);
 		if (VSB_len(p->fin)) {
 			Fc(tl, 0, "\t/* %u */\n", p->n);
 			Fc(tl, 0, "\tif (vgc_inistep >= %u) {\n", p->n);
