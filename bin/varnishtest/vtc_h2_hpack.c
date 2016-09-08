@@ -104,7 +104,7 @@ huff_decode(char *str, int nm, struct hpk_iter *iter, int ilen)
 }
 
 /* inspired from Dridi Boukelmoune's cashpack. */
-static int
+static enum hpk_result
 huff_encode(struct hpk_iter *iter, const char *str, int len)
 {
 	uint64_t pack = 0;
@@ -123,7 +123,7 @@ huff_encode(struct hpk_iter *iter, const char *str, int len)
 
 		while (pl >= 8) {
 			if (iter->buf == iter->end)
-				return (1);
+				return (hpk_done);
 			*iter->buf = (char)(pack >> 56);
 			iter->buf++;
 			pack <<= 8;
@@ -143,7 +143,7 @@ huff_encode(struct hpk_iter *iter, const char *str, int len)
 		iter->buf++;
 	}
 
-	return (0);
+	return (hpk_more);
 }
 
 static int
