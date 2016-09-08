@@ -33,6 +33,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/mman.h>
 
 #include "cache/cache.h"
 #include "storage/storage.h"
@@ -95,6 +96,13 @@ sma_alloc(const struct stevedore *st, size_t size)
 
 	p = malloc(size);
 	if (p != NULL) {
+		/* If we are on Linux, avoid gigabyte/terabyte sized core dumps by
+		 * skipping the storage data.
+		 */
+#ifdef MADV_DONTDUMP
+		madvise(p, size, MADV_DONTDUMP);
+#endif
+
 		ALLOC_OBJ(sma, SMA_MAGIC);
 		if (sma != NULL)
 			sma->s.ptr = p;
