@@ -71,7 +71,6 @@ struct vclprog {
 	unsigned		warm;
 	const char *		state;
 	double			go_cold;
-	struct vclprog		*label;
 	VTAILQ_HEAD(, vcldep)	dfrom;
 	VTAILQ_HEAD(, vcldep)	dto;
 };
@@ -149,7 +148,7 @@ mcf_find_no_vcl(struct cli *cli, const char *name)
 }
 
 static int
-mcf_is_label(struct vclprog *vp)
+mcf_is_label(const struct vclprog *vp)
 {
 	return (!strcmp(vp->state, VCL_STATE_LABEL));
 }
@@ -265,7 +264,7 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 	char *p;
 	int i;
 
-	if (vp == active_vcl || vp->label != NULL) {
+	if (vp == active_vcl || mcf_is_label(vp)) {
 		AN(vp->warm);
 		return (0);
 	}
@@ -400,6 +399,7 @@ int
 mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
 {
 	struct vclprog *vp;
+	struct vcldep *vd;
 
 	AN(active_vcl);
 
@@ -420,8 +420,10 @@ mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
 	VTAILQ_FOREACH(vp, &vclhead, list) {
 		if (!mcf_is_label(vp))
 			continue;
+		vd = VTAILQ_FIRST(&vp->dfrom);
+		AN(vd);
 		if (mgt_cli_askchild(status, p, "vcl.label %s %s\n",
-		    vp->name, vp->label->name))
+		    vp->name, vd->to->name))
 			return (1);
 		free(*p);
 		*p = NULL;
@@ -490,8 +492,8 @@ mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
-	if (vp->label != NULL) {
-		AZ(!strcmp(vp->state, "cold"));
+	if (!VTAILQ_EMPTY(&vp->dto)) {
+		AN(strcmp(vp->state, "cold"));
 		if (!strcmp(av[3], "cold")) {
 			VCLI_Out(cli, "A labeled VCL cannot be set cold");
 			VCLI_SetResult(cli, CLIS_CANT);
@@ -511,7 +513,7 @@ mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 	} else if (!strcmp(av[3], VCL_STATE_COLD)) {
 		if (vp == active_vcl) {
 			VCLI_Out(cli, "Cannot set the active VCL cold.");
-			VCLI_SetResult(cli, CLIS_PARAM);
+			VCLI_SetResult(cli, CLIS_CANT);
 			return;
 		}
 		vp->state = VCL_STATE_AUTO;
@@ -572,23 +574,19 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 	if (vp == NULL)
 		return;
 	if (vp == active_vcl) {
-		VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_SetResult(cli, CLIS_CANT);
 		VCLI_Out(cli, "Cannot discard active VCL program\n");
 		return;
 	}
 	if (!VTAILQ_EMPTY(&vp->dto)) {
-		if (vp->label != NULL && !mcf_is_label(vp)) {
-			AN(vp->warm);
-			VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_SetResult(cli, CLIS_CANT);
+		AN(vp->warm);
+		if (!mcf_is_label(vp))
+			VCLI_Out(cli, "Cannot discard labeled VCL program.\n");
+		else
 			VCLI_Out(cli,
-			    "Cannot discard labeled (\"%s\") VCL program.\n",
-			    vp->label->name);
-			return;
-		}
-		VCLI_SetResult(cli, CLIS_PARAM);
-		VCLI_Out(cli,
-		    "Cannot discard \"%s\" VCL label, "
-		    "other VCLs depend on it.\n", vp->name);
+			    "Cannot discard this VCL label, "
+			    "other VCLs depend on it.\n");
 		n = 0;
 		VTAILQ_FOREACH(vd, &vp->dto, lto) {
 			if (n++ == 5) {
@@ -599,19 +597,31 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 		}
 		return;
 	}
-	if (mcf_is_label(vp)) {
+	if (mcf_is_label(vp))
 		AN(vp->warm);
-		vp->label->label = NULL;
-		vp->label = NULL;
-	} else {
+	else
 		(void)mgt_vcl_setstate(cli, vp, VCL_STATE_COLD);
-	}
 	if (child_pid >= 0) {
 		/* XXX If this fails the child is crashing, figure that later */
 		(void)mgt_cli_askchild(&status, &p, "vcl.discard %s\n", av[2]);
 		free(p);
 	}
 	mgt_vcl_del(vp);
+}
+
+static void
+mcf_list_labels(struct cli *cli, const struct vclprog *vp)
+{
+	int n = 0;
+	struct vcldep *vd;
+
+	VTAILQ_FOREACH(vd, &vp->dto, lto) {
+		if (n++ == 5) {
+			VCLI_Out(cli, " [...]");
+			break;
+		}
+		VCLI_Out(cli, " %s", vd->from->name);
+	}
 }
 
 static void __match_proto__(cli_func_t)
@@ -637,10 +647,7 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 			VCLI_Out(cli, "/%-8s", vp->warm ?
 			    VCL_STATE_WARM : VCL_STATE_COLD);
 			VCLI_Out(cli, " %6s %s", "", vp->name);
-			if (vp->label != NULL)
-				VCLI_Out(cli, " %s %s",
-				    mcf_is_label(vp) ?
-				    "->" : "<-", vp->label->name);
+			mcf_list_labels(cli, vp);
 			VCLI_Out(cli, "\n");
 		}
 	}
@@ -664,14 +671,15 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 	if (vpt == NULL)
 		return;
 	if (mcf_is_label(vpt)) {
-		VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_SetResult(cli, CLIS_CANT);
 		VCLI_Out(cli, "VCL labels cannot point to labels");
 		return;
 	}
-	if (vpt->label != NULL) {
-		VCLI_SetResult(cli, CLIS_PARAM);
-		VCLI_Out(cli, "VCL already labeled (\"%s\")",
-		    vpt->label->name);
+	if (!VTAILQ_EMPTY(&vpt->dto)) {
+		VCLI_SetResult(cli, CLIS_CANT);
+		VCLI_Out(cli, "VCL already labeled with");
+		mcf_list_labels(cli, vpt);
+		VCLI_Out(cli, "\n");
 		return;
 	}
 	vpl = mcf_vcl_byname(av[2]);
@@ -681,11 +689,6 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 			VCLI_Out(cli, "%s is not a label", vpl->name);
 			return;
 		}
-		AN(vpl->label);
-		assert(vpl->label->label == vpl);
-		/* XXX SET vp->label AUTO */
-		vpl->label->label = NULL;
-		vpl->label = NULL;
 		mgt_vcl_dep_del(VTAILQ_FIRST(&vpl->dfrom));
 		AN(VTAILQ_EMPTY(&vpl->dfrom));
 	} else {
@@ -694,8 +697,6 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 	AN(vpl);
 	mgt_vcl_dep_add(vpl, vpt);
 	vpl->warm = 1;
-	vpl->label = vpt;
-	vpt->label = vpl;
 	if (vpt->state == VCL_STATE_COLD)
 		vpt->state = VCL_STATE_AUTO;
 	(void)mgt_vcl_setstate(cli, vpt, VCL_STATE_WARM);

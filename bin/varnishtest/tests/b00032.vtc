@@ -16,7 +16,7 @@ varnish v1 -cliok start
 
 varnish v1 -cliok "vcl.use vcl1"
 
-varnish v1 -clierr 106 "vcl.discard vcl1"
+varnish v1 -clierr 300 "vcl.discard vcl1"
 
 varnish v1 -clierr 106 "vcl.discard vcl0"
 
