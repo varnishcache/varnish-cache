@@ -148,6 +148,12 @@ mcf_find_no_vcl(struct cli *cli, const char *name)
 	return (1);
 }
 
+static int
+mcf_is_label(struct vclprog *vp)
+{
+	return (!strcmp(vp->state, VCL_STATE_LABEL));
+}
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -383,7 +389,7 @@ mgt_vcl_export_labels(struct vcc *vcc)
 {
 	struct vclprog *vp;
 	VTAILQ_FOREACH(vp, &vclhead, list) {
-		if (!strcmp(vp->state, VCL_STATE_LABEL))
+		if (mcf_is_label(vp))
 			VCC_Predef(vcc, "VCL_VCL", vp->name);
 	}
 }
@@ -403,7 +409,7 @@ mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
 	VTAILQ_FOREACH(vp, &vclhead, list) {
 		if (!VTAILQ_EMPTY(&vp->dfrom))
 			continue;
-		if (!strcmp(vp->state, VCL_STATE_LABEL))
+		if (mcf_is_label(vp))
 			continue;
 		if (mgt_cli_askchild(status, p, "vcl.load \"%s\" %s %d%s\n",
 		    vp->name, vp->fname, vp->warm, vp->state))
@@ -412,7 +418,7 @@ mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
 		*p = NULL;
 	}
 	VTAILQ_FOREACH(vp, &vclhead, list) {
-		if (strcmp(vp->state, VCL_STATE_LABEL))
+		if (!mcf_is_label(vp))
 			continue;
 		if (mgt_cli_askchild(status, p, "vcl.label %s %s\n",
 		    vp->name, vp->label->name))
@@ -423,7 +429,7 @@ mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
 	VTAILQ_FOREACH(vp, &vclhead, list) {
 		if (VTAILQ_EMPTY(&vp->dfrom))
 			continue;
-		if (!strcmp(vp->state, VCL_STATE_LABEL))
+		if (mcf_is_label(vp))
 			continue;
 		if (mgt_cli_askchild(status, p, "vcl.load \"%s\" %s %d%s\n",
 		    vp->name, vp->fname, vp->warm, vp->state))
@@ -479,7 +485,7 @@ mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 	if (vp == NULL)
 		return;
 
-	if (!strcmp(vp->state, VCL_STATE_LABEL)) {
+	if (mcf_is_label(vp)) {
 		VCLI_Out(cli, "Labels are always warm");
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
@@ -571,7 +577,7 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 	if (!VTAILQ_EMPTY(&vp->dto)) {
-		if (vp->label != NULL && strcmp(vp->state, VCL_STATE_LABEL)) {
+		if (vp->label != NULL && !mcf_is_label(vp)) {
 			AN(vp->warm);
 			VCLI_SetResult(cli, CLIS_PARAM);
 			VCLI_Out(cli,
@@ -593,7 +599,7 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 		}
 		return;
 	}
-	if (!strcmp(vp->state, VCL_STATE_LABEL)) {
+	if (mcf_is_label(vp)) {
 		AN(vp->warm);
 		vp->label->label = NULL;
 		vp->label = NULL;
@@ -633,8 +639,8 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 			VCLI_Out(cli, " %6s %s", "", vp->name);
 			if (vp->label != NULL)
 				VCLI_Out(cli, " %s %s",
-				    strcmp(vp->state, VCL_STATE_LABEL) ?
-				    "<-" : "->", vp->label->name);
+				    mcf_is_label(vp) ?
+				    "->" : "<-", vp->label->name);
 			VCLI_Out(cli, "\n");
 		}
 	}
@@ -657,7 +663,7 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 	vpt = mcf_find_vcl(cli, av[3]);
 	if (vpt == NULL)
 		return;
-	if (!strcmp(vpt->state, VCL_STATE_LABEL)) {
+	if (mcf_is_label(vpt)) {
 		VCLI_SetResult(cli, CLIS_PARAM);
 		VCLI_Out(cli, "VCL labels cannot point to labels");
 		return;
@@ -670,7 +676,7 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 	}
 	vpl = mcf_vcl_byname(av[2]);
 	if (vpl != NULL) {
-		if (strcmp(vpl->state, VCL_STATE_LABEL)) {
+		if (!mcf_is_label(vpl)) {
 			VCLI_SetResult(cli, CLIS_PARAM);
 			VCLI_Out(cli, "%s is not a label", vpl->name);
 			return;
