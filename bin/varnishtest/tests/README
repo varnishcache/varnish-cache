@@ -14,7 +14,7 @@ Naming scheme
 		[id]%05d.vtc
 
 	id ~ ^a		--> varnishtest(1) tests
-	id ~ ^a02	--> HTTP2 
+	id ~ ^a02	--> HTTP2
 	id ~ ^b		--> Basic functionality tests
 	id ~ ^c		--> Complex functionality tests
 	id ~ ^d		--> Director VMOD tests
