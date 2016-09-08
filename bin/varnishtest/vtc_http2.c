@@ -663,7 +663,7 @@ parse_goaway(const struct stream *s, struct frame *f)
 		err_buf = "unknown";
 
 	if (f->size > 8) {
-		f->md.goaway.debug = malloc(f->size - 8 + 1L);
+		f->md.goaway.debug = malloc((f->size - 8) + 1L);
 		AN(f->md.goaway.debug);
 		f->md.goaway.debug[f->size - 8] = '\0';
 
