@@ -860,7 +860,7 @@ do { \
 	} \
 	snprintf(buf, 20, "%.0f", f->md.settings[idx]); \
 	return (buf); \
-} while (0);
+} while (0)
 
 #define RETURN_BUFFED(val) \
 do { \
