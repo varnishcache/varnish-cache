@@ -610,7 +610,7 @@ parse_settings(const struct stream *s, struct frame *f)
 			buf = "unknown";
 		i += 4;
 
-		if (t == 1 ) {
+		if (t == 1) {
 			r = HPK_ResizeTbl(s->hp->encctx, v);
 			assert(r == hpk_done);
 		}
@@ -2730,7 +2730,7 @@ b64_settings(const struct http *hp, const char *s)
 		} else
 			buf = "unknown";
 
-		if (v == 1 ) {
+		if (v == 1) {
 			if (hp->sfd)
 				HPK_ResizeTbl(hp->encctx, v);
 			else
