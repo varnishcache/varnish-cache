@@ -789,7 +789,7 @@ receive_frame(void *priv)
 				parse_hdr(s, f, vsb);
 				if (f->flags & END_HEADERS) {
 					expect_cont = 0;
-					VSB_finish(vsb);
+					AZ(VSB_finish(vsb));
 					decode_hdr(hp, hdrs, vsb);
 					VSB_destroy(&vsb);
 					hdrs = NULL;
