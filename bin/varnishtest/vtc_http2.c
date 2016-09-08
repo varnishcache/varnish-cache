@@ -588,6 +588,7 @@ parse_settings(const struct stream *s, struct frame *f)
 	struct http *hp;
 	int i, t, v;
 	const char *buf;
+	enum hpk_result r;
 	CHECK_OBJ_NOTNULL(f, FRAME_MAGIC);
 	CHECK_OBJ_NOTNULL(s, STREAM_MAGIC);
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);;
@@ -609,8 +610,10 @@ parse_settings(const struct stream *s, struct frame *f)
 			buf = "unknown";
 		i += 4;
 
-		if (t == 1 )
-			HPK_ResizeTbl(s->hp->encctx, v);
+		if (t == 1 ) {
+			r = HPK_ResizeTbl(s->hp->encctx, v);
+			assert(r == hpk_done);
+		}
 
 		vtc_log(hp->vl, 4, "settings->%s (%d): %d", buf, t, v);
 	}
