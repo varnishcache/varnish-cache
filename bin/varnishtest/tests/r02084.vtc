@@ -1,0 +1,27 @@
+varnishtest "REAL - INT types"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_deliver {
+	    set resp.http.add = 10.0 + std.integer(req.http.foo, 0);
+	    set resp.http.sub = 10.0 - std.integer(req.http.foo, 0);
+	    set resp.http.mul = 10.0 * std.integer(req.http.foo, 0);
+	    set resp.http.div = 10.0 / std.integer(req.http.foo, 0);
+	}
+
+} -start
+
+client c1 {
+	txreq -hdr "foo: 3"
+	rxresp
+	expect resp.http.add == 13.000
+	expect resp.http.sub == 7.000
+	expect resp.http.mul == 30.000
+	expect resp.http.div == 3.333
+} -run

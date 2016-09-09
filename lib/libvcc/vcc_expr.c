@@ -910,14 +910,13 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		vcc_NextToken(tl);
 		vcc_expr4(tl, &e2, f2);
 		ERRCHK(tl);
-		if (e2->fmt->multype == NULL) {
+		if (e2->fmt != REAL && e2->fmt != INT) {
 			VSB_printf(tl->sb,
 			    "%s %.*s %s not possible.\n",
 			    f2->name, PF(tk), e2->fmt->name);
 			vcc_ErrWhere(tl, tk);
 			return;
 		}
-		assert(e2->fmt == f2);
 		if (tk->tok == '*')
 			*e = vcc_expr_edit(f3, "(\v1*\v2)", *e, e2);
 		else
@@ -1017,6 +1016,10 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		ADD_OK("-", INT,	INT,		INT);
 		ADD_OK("+", REAL,	REAL,		REAL);
 		ADD_OK("-", REAL,	REAL,		REAL);
+		ADD_OK("+", REAL,	INT,		REAL);
+		ADD_OK("-", REAL,	INT,		REAL);
+		ADD_OK("+", INT,	REAL,		REAL);
+		ADD_OK("-", INT,	REAL,		REAL);
 
 #undef ADD_OK
 
