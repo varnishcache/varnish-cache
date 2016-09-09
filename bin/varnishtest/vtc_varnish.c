@@ -730,7 +730,7 @@ varnish_vcl(struct varnish *v, const char *vcl, int fail, char **resp)
 	if (u == CLIS_OK && fail) {
 		VSB_destroy(&vsb);
 		vtc_log(v->vl, 0,
-		    "VCL compilation successed expected failure");
+		    "VCL compilation succeeded expected failure");
 		return;
 	} else if (u == CLIS_OK) {
 		VSB_clear(vsb);
