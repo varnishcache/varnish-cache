@@ -93,11 +93,14 @@ struct parspec WRK_parspec[] = {
 		"1", NULL,
 		"Number of worker thread pools.\n"
 		"\n"
-		"Increasing number of worker pools decreases lock "
-		"contention.\n"
+		"Increasing the number of worker pools decreases lock "
+		"contention. Each worker pool also has a thread accepting "
+		"new connections, so for very high rates of incoming new "
+		"connections on systems with many cores, increasing the "
+		"worker pools may be required.\n"
 		"\n"
-		"Too many pools waste CPU and RAM resources, and more than "
-		"one pool for each CPU is probably detrimal to performance.\n"
+		"Too many pools waste CPU and RAM resources, and more than one "
+		"pool for each CPU is most likely detrimal to performance.\n"
 		"\n"
 		"Can be increased on the fly, but decreases require a "
 		"restart to take effect.",
