@@ -72,15 +72,16 @@ VRT_Vmod_Init(struct vmod **hdl, void *ptr, int len, const char *nm,
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(ctx->msg);
+	AN(ctx->event);
+	AN(ctx->event->msg);
 	AN(hdl);
 	AZ(*hdl);
 
 	dlhdl = dlopen(path, RTLD_NOW | RTLD_LOCAL);
 	if (dlhdl == NULL) {
-		VSB_printf(ctx->msg, "Loading VMOD %s from %s:\n", nm, path);
-		VSB_printf(ctx->msg, "dlopen() failed: %s\n", dlerror());
-		VSB_printf(ctx->msg, "Check child process permissions.\n");
+		VSB_printf(ctx->event->msg, "Loading VMOD %s from %s:\n", nm, path);
+		VSB_printf(ctx->event->msg, "dlopen() failed: %s\n", dlerror());
+		VSB_printf(ctx->event->msg, "Check child process permissions.\n");
 		return (1);
 	}
 
@@ -98,9 +99,9 @@ VRT_Vmod_Init(struct vmod **hdl, void *ptr, int len, const char *nm,
 		if (d == NULL ||
 		    d->file_id == NULL ||
 		    strcmp(d->file_id, file_id)) {
-			VSB_printf(ctx->msg,
+			VSB_printf(ctx->event->msg,
 			    "Loading VMOD %s from %s:\n", nm, path);
-			VSB_printf(ctx->msg,
+			VSB_printf(ctx->event->msg,
 			    "This is no longer the same file seen by"
 			    " the VCL-compiler.\n");
 			(void)dlclose(v->hdl);
@@ -116,9 +117,9 @@ VRT_Vmod_Init(struct vmod **hdl, void *ptr, int len, const char *nm,
 		    d->proto == NULL ||
 		    d->spec == NULL ||
 		    d->abi == NULL) {
-			VSB_printf(ctx->msg,
+			VSB_printf(ctx->event->msg,
 			    "Loading VMOD %s from %s:\n", nm, path);
-			VSB_printf(ctx->msg, "VMOD data is mangled.\n");
+			VSB_printf(ctx->event->msg, "VMOD data is mangled.\n");
 			(void)dlclose(v->hdl);
 			FREE_OBJ(v);
 			return (1);

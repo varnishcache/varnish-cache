@@ -38,7 +38,9 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
- *
+ * 5.0:
+ *	move .msg from vrt_ctx to new vrt_ctx_event
+ *	add vrt_ctx_event .privs field
  * 4.0:
  *	VCL_BYTES changed to long long
  * 3.2:
@@ -53,7 +55,7 @@
  *
  */
 
-#define VRT_MAJOR_VERSION	4U
+#define VRT_MAJOR_VERSION	5U
 
 #define VRT_MINOR_VERSION	0U
 
@@ -73,6 +75,7 @@ struct vmod;
 struct vsb;
 struct vsl_log;
 struct ws;
+struct vrt_ctx_event;
 
 /***********************************************************************
  * This is the central definition of the mapping from VCL types to
@@ -113,7 +116,8 @@ struct vrt_ctx {
 	unsigned			method;
 	unsigned			*handling;
 
-	struct vsb			*msg;	// Only in ...init()
+	struct vrt_ctx_event		*event;	// Only for events
+
 	struct vsl_log			*vsl;
 	struct vcl			*vcl;
 	struct ws			*ws;

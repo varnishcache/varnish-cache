@@ -69,9 +69,14 @@ VRT_priv_dynamic(VRT_CTX, uintptr_t id, uintptr_t vmod_id)
 		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(ctx->req->sp, SESS_MAGIC);
 		CAST_OBJ_NOTNULL(vps, ctx->req->sp->privs, VRT_PRIVS_MAGIC);
-	} else {
+	} else if (ctx->bo) {
 		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 		CAST_OBJ_NOTNULL(vps, ctx->bo->privs, VRT_PRIVS_MAGIC);
+	} else if (ctx->event) {
+		CHECK_OBJ_NOTNULL(ctx->event, VRT_CTX_EVENT_MAGIC);
+		CAST_OBJ_NOTNULL(vps, ctx->event->privs, VRT_PRIVS_MAGIC);
+	} else {
+		INCOMPL();
 	}
 
 	VTAILQ_FOREACH(vp, &vps->privs, list) {
@@ -118,8 +123,12 @@ VRT_priv_task(VRT_CTX, void *vmod_id)
 	} else if (ctx->bo) {
 		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 		id = (uintptr_t)ctx->bo;
+	} else if (ctx->event) {
+		CHECK_OBJ_NOTNULL(ctx->event, VRT_CTX_EVENT_MAGIC);
+		id = 0;
 	} else
-		WRONG("PRIV_TASK is only accessible in client or backend VCL contexts");
+		INCOMPL();
+
 	return (VRT_priv_dynamic(ctx, id, (uintptr_t)vmod_id));
 }
 

@@ -10,6 +10,10 @@ varnish v1 -vcl+backend {
 	import std;
 	import debug;
 
+	sub vcl_init {
+		new obj = debug.obj();
+	}
+
 	sub vcl_recv {
 		debug.rot52(req);
 	}
@@ -20,6 +24,8 @@ varnish v1 -vcl+backend {
 		set resp.http.who = debug.author(phk);
 		debug.test_priv_call();
 		debug.test_priv_vcl();
+		obj.test_priv_call();
+		obj.test_priv_vcl();
 		std.log("VCL" + " initiated " + "log");
 		std.syslog(8 + 7, "Somebody runs varnishtest");
 		debug.rot52(resp);

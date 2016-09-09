@@ -51,7 +51,7 @@ $Function VOID test_priv_vcl(PRIV_VCL)
 
 Test function for VCL private pointers
 
-$Function STRING test_priv_task(PRIV_TASK, STRING)
+$Function STRING test_priv_task(PRIV_TASK, STRING s="")
 
 Test function for TASK private pointers
 
@@ -96,6 +96,29 @@ Foo indeed.
 $Method TIME .date()
 
 You never know when you need a date.
+
+$Method VOID .test_priv_call(PRIV_CALL)
+
+Test method for call private pointers
+
+Objects share the PRIV_* state with other objects and methods from the
+same vmod - IOW the PRIV_* state is per vmod, not per object.
+
+$Method VOID .test_priv_vcl(PRIV_VCL)
+
+Test method for VCL private pointers
+
+Objects share the PRIV_* state with other objects and methods from the
+same vmod - IOW the PRIV_* state is per vmod, not per object.
+
+$Method STRING .test_priv_task(PRIV_TASK, STRING s="")
+
+Test method for TASK private pointers
+
+Objects share the PRIV_* state with other objects and methods from the
+same vmod - IOW the PRIV_* state is per vmod, not per object.
+
+$Method STRING .test_priv_top(PRIV_TOP, STRING)
 
 $Function VOID rot52(HTTP hdr)
 

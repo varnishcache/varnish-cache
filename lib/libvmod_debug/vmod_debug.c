@@ -101,9 +101,19 @@ vmod_test_priv_task(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (priv->priv == NULL) {
+	if (s == NULL || *s == '\0') {
+		return priv->priv;
+	} else if (priv->priv == NULL) {
 		priv->priv = strdup(s);
 		priv->free = free;
+	} else {
+		char *n = realloc(priv->priv,
+		    strlen(priv->priv) + strlen(s) + 2);
+		if (n == NULL)
+			return NULL;
+		strcat(n, " ");
+		strcat(n, s);
+		priv->priv = n;
 	}
 	return (priv->priv);
 }
@@ -238,8 +248,9 @@ VCL_VOID __match_proto__()
 vmod_init_fail(VRT_CTX)
 {
 
-	AN(ctx->msg);
-	VSB_printf(ctx->msg, "Planned failure in vcl_init{}");
+	AN(ctx->event);
+	AN(ctx->event->msg);
+	VSB_printf(ctx->event->msg, "Planned failure in vcl_init{}");
 	VRT_handling(ctx, VCL_RET_FAIL);
 }
 
@@ -266,9 +277,10 @@ event_load(VRT_CTX, struct vmod_priv *priv)
 {
 	struct priv_vcl *priv_vcl;
 
-	AN(ctx->msg);
+	AN(ctx->event);
+	AN(ctx->event->msg);
 	if (cache_param->nuke_limit == 42) {
-		VSB_printf(ctx->msg, "nuke_limit is not the answer.");
+		VSB_printf(ctx->event->msg, "nuke_limit is not the answer.");
 		return (-1);
 	}
 
@@ -289,9 +301,10 @@ event_warm(VRT_CTX, const struct vmod_priv *priv)
 
 	VSL(SLT_Debug, 0, "%s: VCL_EVENT_WARM", VCL_Name(ctx->vcl));
 
-	AN(ctx->msg);
+	AN(ctx->event);
+	AN(ctx->event->msg);
 	if (cache_param->max_esi_depth == 42) {
-		VSB_printf(ctx->msg, "max_esi_depth is not the answer.");
+		VSB_printf(ctx->event->msg, "max_esi_depth is not the answer.");
 		return (-1);
 	}
 
