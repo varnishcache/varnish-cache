@@ -1,16 +1,15 @@
-======
-Master
-======
+======================================
+Varnish Cache 5.0.0-beta1 (2016-09-09)
+======================================
 
-* varnishhist improvements:
-  * can now generate statistics of backend requests
-  * more predefined profiles
-  * time bend option: control the log processing speed
-  * y axis scale
+This is the first beta release of the upcoming 5.0 release.
 
-* varnishd no longer seeds the libc random number generator, but
-  rather its own. This can affect vmods using random() with varnishd
-  debug.srandom
+The list of changes are numerous and will not be expanded on in detail.
+
+Major items:
+* Experimental support for HTTP/2.
+* VCL labels, allowing for per-vhost VCL.
+
 
 ======================================
 Varnish Cache 4.1.3-beta1 (2016-06-15)
