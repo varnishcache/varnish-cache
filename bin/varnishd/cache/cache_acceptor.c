@@ -380,7 +380,7 @@ vca_make_session(struct worker *wrk, void *arg)
 }
 
 /*--------------------------------------------------------------------
- * This function accepts on a single socket for a single session pool.
+ * This function accepts on a single socket for a single thread pool.
  *
  * As long as we can stick the accepted connection to another thread
  * we do so, otherwise we put the socket back on the "BACK" pool
@@ -468,7 +468,7 @@ vca_accept_task(struct worker *wrk, void *arg)
 }
 
 /*--------------------------------------------------------------------
- * Called when a worker and attached session pool is created, to
+ * Called when a worker and attached thread pool is created, to
  * allocate the tasks which will listen to sockets for that pool.
  */
 
