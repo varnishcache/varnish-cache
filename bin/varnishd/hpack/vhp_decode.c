@@ -70,6 +70,7 @@ enum vhd_func_e {
 
 /* States */
 enum vhd_state_e {
+	VHD_S__MIN = -1,
 #define VHD_FSM(STATE, FUNC, arg1, arg2)	\
 	VHD_S_##STATE,
 #include "tbl/vhd_fsm.h"
@@ -93,7 +94,7 @@ static void
 vhd_set_state(struct vhd_decode *d, enum vhd_state_e state)
 {
 	AN(d);
-	assert(state >= 0 && state < VHD_S__MAX);
+	assert(state > VHD_S__MIN && state < VHD_S__MAX);
 	d->state = state;
 	d->first = 1;
 }
