@@ -710,8 +710,7 @@ varnish_cli(struct varnish *v, const char *cli, unsigned exp)
  */
 
 static void
-varnish_vcl(struct varnish *v, const char *vcl, enum VCLI_status_e expect,
-    char **resp)
+varnish_vcl(struct varnish *v, const char *vcl, int fail, char **resp)
 {
 	struct vsb *vsb;
 	enum VCLI_status_e u;
@@ -728,14 +727,12 @@ varnish_vcl(struct varnish *v, const char *vcl, enum VCLI_status_e expect,
 	AZ(VSB_finish(vsb));
 
 	u = varnish_ask_cli(v, VSB_data(vsb), resp);
-	if (u != expect) {
+	if (u == CLIS_OK && fail) {
 		VSB_destroy(&vsb);
 		vtc_log(v->vl, 0,
-		    "VCL compilation got %u expected %u",
-		    u, expect);
+		    "VCL compilation successed expected failure");
 		return;
-	}
-	if (u == CLIS_OK) {
+	} else if (u == CLIS_OK) {
 		VSB_clear(vsb);
 		VSB_printf(vsb, "vcl.use vcl%d", v->vcl_nbr);
 		AZ(VSB_finish(vsb));
@@ -1075,7 +1072,7 @@ cmd_varnish(CMD_ARGS)
 			char *r = NULL;
 			AN(av[1]);
 			AN(av[2]);
-			varnish_vcl(v, av[2], CLIS_PARAM, &r);
+			varnish_vcl(v, av[2], 1, &r);
 			if (strstr(r, av[1]) == NULL)
 				vtc_log(v->vl, 0,
 				    "Did not find expected string: (\"%s\")",
@@ -1124,7 +1121,7 @@ cmd_varnish(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-vcl")) {
 			AN(av[1]);
-			varnish_vcl(v, av[1], CLIS_OK, NULL);
+			varnish_vcl(v, av[1], 0, NULL);
 			av++;
 			continue;
 		}
