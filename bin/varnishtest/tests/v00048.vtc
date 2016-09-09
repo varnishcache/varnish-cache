@@ -73,16 +73,16 @@ varnish v1 -clierr 106 "vcl.discard foo"
 
 varnish v1 -stop
 varnish v1 -cliok "vcl.list"
-varnish v1 -clierr 106 "vcl.label foo vcl0"
-varnish v1 -cliok "vcl.label foo vcl1"
-varnish v1 -clierr 300 "vcl.label bar foo"
+varnish v1 -clierr 106 "vcl.label fo- vcl0"
+varnish v1 -cliok "vcl.label fo- vcl1"
+varnish v1 -clierr 300 "vcl.label bar fo-"
 varnish v1 -clierr 200 "vcl.state vcl1 warm"
 varnish v1 -clierr 200 "vcl.state vcl1 auto"
 varnish v1 -clierr 300 "vcl.state vcl1 cold"
 varnish v1 -clierr 300 "vcl.discard vcl1"
 varnish v1 -cliok "vcl.list"
-varnish v1 -cliok "vcl.use foo"
-varnish v1 -clierr 300 "vcl.discard foo"
+varnish v1 -cliok "vcl.use fo-"
+varnish v1 -clierr 300 "vcl.discard fo-"
 varnish v1 -cliok "vcl.list"
 
 server s1 -start
@@ -91,8 +91,8 @@ varnish v1 -start
 client c1 -run
 varnish v1 -stop
 varnish v1 -cliok "vcl.use vcl1"
-varnish v1 -cliok "vcl.discard foo"
-varnish v1 -clierr 106 "vcl.discard foo"
+varnish v1 -cliok "vcl.discard fo-"
+varnish v1 -clierr 106 "vcl.discard fo-"
 
 varnish v1 -start
 varnish v1 -cliok "vcl.label snarf vcl1"

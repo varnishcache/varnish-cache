@@ -103,7 +103,10 @@ mcf_bad_vclname(struct cli *cli, const char *name)
 	if (!vct_isalpha(*p))
 		bad = *p;
 	for (p++; bad == 0 && *p != '\0'; p++)
-		if (!vct_isalpha(*p) && !vct_isdigit(*p) && *p != '_')
+		if (!vct_isalpha(*p) &&
+		    !vct_isdigit(*p) &&
+		    *p != '_' &&
+		    *p != '-')
 			bad = *p;
 	if (bad) {
 		VCLI_SetResult(cli, CLIS_PARAM);
@@ -213,6 +216,8 @@ mgt_vcl_del(struct vclprog *vp)
 	char *p;
 
 	CHECK_OBJ_NOTNULL(vp, VCLPROG_MAGIC);
+	while (!VTAILQ_EMPTY(&vp->dto))
+		mgt_vcl_dep_del(VTAILQ_FIRST(&vp->dto));
 	while (!VTAILQ_EMPTY(&vp->dfrom))
 		mgt_vcl_dep_del(VTAILQ_FIRST(&vp->dfrom));
 
@@ -352,7 +357,7 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 	    vp->name, vp->fname, vp->warm, vp->state)) {
 		mgt_vcl_del(vp);
 		VCLI_Out(cli, "%s", p);
-		VCLI_SetResult(cli, CLIS_PARAM);
+		VCLI_SetResult(cli, status);
 	}
 	free(p);
 }
@@ -748,6 +753,7 @@ mgt_vcl_atexit(void)
 
 	if (getpid() != mgt_pid)
 		return;
+	active_vcl = NULL;
 	do {
 		vp = VTAILQ_FIRST(&vclhead);
 		if (vp != NULL)
