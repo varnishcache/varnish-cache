@@ -339,6 +339,8 @@ PARAM(
 )
 
 #if 0
+/* actual location mgt_param_bits.c*/
+/* see tbl/debug_bits.h */
 PARAM(
 	/* name */	debug,
 	/* typ */	debug,
@@ -417,6 +419,8 @@ PARAM(
 )
 
 #if 0
+/* actual location mgt_param_bits.c*/
+/* See tbl/feature_bits.h */
 PARAM(
 	/* name */	feature,
 	/* typ */	feature,
@@ -753,6 +757,7 @@ PARAM(
 )
 
 #if 0
+/* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	pcre_match_limit,
 	/* typ */	uint,
@@ -768,6 +773,7 @@ PARAM(
 	/* func */	NULL
 )
 
+/* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	pcre_match_limit_recursion,
 	/* typ */	uint,
@@ -816,6 +822,7 @@ PARAM(
 )
 
 #if 0
+/* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	pool_req,
 	/* typ */	poolparam,
@@ -831,6 +838,7 @@ PARAM(
 	/* func */	NULL
 )
 
+/* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	pool_sess,
 	/* typ */	poolparam,
@@ -846,6 +854,7 @@ PARAM(
 	/* func */	NULL
 )
 
+/* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	pool_vbo,
 	/* typ */	poolparam,
@@ -984,6 +993,7 @@ PARAM(
 )
 
 #if 0
+/* actual location mgt_param_tcp.c */
 PARAM(
 	/* name */	tcp_keepalive_intvl,
 	/* typ */	timeout,
@@ -998,6 +1008,7 @@ PARAM(
 	/* func */	NULL
 )
 
+/* actual location mgt_param_tcp.c */
 PARAM(
 	/* name */	tcp_keepalive_probes,
 	/* typ */	uint,
@@ -1014,6 +1025,7 @@ PARAM(
 	/* func */	NULL
 )
 
+/* actual location mgt_param_tcp.c */
 PARAM(
 	/* name */	tcp_keepalive_time,
 	/* typ */	timeout,
@@ -1029,6 +1041,7 @@ PARAM(
 	/* func */	NULL
 )
 
+/* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_add_delay,
 	/* typ */	timeout,
@@ -1049,6 +1062,7 @@ PARAM(
 	/* func */	NULL
 )
 
+/* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_destroy_delay,
 	/* typ */	timeout,
@@ -1064,6 +1078,7 @@ PARAM(
 	/* func */	NULL
 )
 
+/* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_fail_delay,
 	/* typ */	timeout,
@@ -1090,6 +1105,7 @@ PARAM(
 	/* func */	NULL
 )
 
+/* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_max,
 	/* typ */	thread_pool_max,
@@ -1108,6 +1124,7 @@ PARAM(
 	/* func */	NULL
 )
 
+/* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_min,
 	/* typ */	thread_pool_min,
@@ -1126,6 +1143,7 @@ PARAM(
 	/* func */	NULL
 )
 
+/* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_stack,
 	/* typ */	bytes,
@@ -1142,6 +1160,7 @@ PARAM(
 	/* func */	NULL
 )
 
+/* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_timeout,
 	/* typ */	timeout,
@@ -1159,6 +1178,7 @@ PARAM(
 	/* func */	NULL
 )
 
+/* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pools,
 	/* typ */	uint,
@@ -1185,6 +1205,7 @@ PARAM(
 	/* func */	NULL
 )
 
+/* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_queue_limit,
 	/* typ */	uint,
@@ -1203,6 +1224,7 @@ PARAM(
 	/* func */	NULL
 )
 
+/* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_stats_rate,
 	/* typ */	uint,
@@ -1260,6 +1282,7 @@ PARAM(
 )
 
 #if 0
+/* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	vcc_allow_inline_c,
 	/* typ */	bool,
@@ -1274,6 +1297,7 @@ PARAM(
 	/* func */	NULL
 )
 
+/* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	vcc_err_unref,
 	/* typ */	bool,
@@ -1288,6 +1312,7 @@ PARAM(
 	/* func */	NULL
 )
 
+/* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	vcc_unsafe_path,
 	/* typ */	bool,
@@ -1335,6 +1360,7 @@ PARAM(
 )
 
 #if 0
+/* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	vcl_dir,
 	/* typ */	string,
@@ -1350,6 +1376,7 @@ PARAM(
 	/* func */	NULL
 )
 
+/* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	vmod_dir,
 	/* typ */	string,
@@ -1385,6 +1412,7 @@ PARAM(
 )
 
 #if 0
+/* actual location mgt_param_bits.c*/
 PARAM(
 	/* name */	vsl_mask,
 	/* typ */	vsl_mask,
@@ -1453,6 +1481,7 @@ PARAM(
 )
 
 #if 0
+/* see mgt_waiter.c */
 PARAM(
 	/* name */	waiter,
 	/* typ */	waiter,
