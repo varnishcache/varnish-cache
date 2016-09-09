@@ -100,7 +100,7 @@ struct parspec WRK_parspec[] = {
 		"worker pools may be required.\n"
 		"\n"
 		"Too many pools waste CPU and RAM resources, and more than one "
-		"pool for each CPU is most likely detrimal to performance.\n"
+		"pool for each CPU is most likely detrimental to performance.\n"
 		"\n"
 		"Can be increased on the fly, but decreases require a "
 		"restart to take effect.",
