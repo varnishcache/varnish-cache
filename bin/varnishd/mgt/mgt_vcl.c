@@ -299,7 +299,7 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 	    vp->name, vp->warm, vp->state);
 	if (i) {
 		AN(cli);
-		AN(vp->warm);
+		XXXAN(vp->warm);	/* XXX: should restart child instead */
 		VCLI_SetResult(cli, status);
 		VCLI_Out(cli, "%s", p);
 	}
