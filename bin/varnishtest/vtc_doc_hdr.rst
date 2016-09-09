@@ -18,7 +18,7 @@ Here's an example of test file::
         		txgoaway -laststream 0 -err 9 -debug "COMPRESSION_ERROR"
         	} -run
         } -start
-        
+
         client c1 -connect ${s1_sock} {
         	stream 1 {
         		txreq -idxHdr 100 -litHdr inc plain "foo" plain "bar"

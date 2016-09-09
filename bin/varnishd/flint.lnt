@@ -36,7 +36,6 @@
 -esym(765, BackSlash)
 -esym(759, BackSlashDecode)
 -esym(765, BackSlashDecode)
--esym(714, VSS_open)
 -esym(757, base64*)
 
 

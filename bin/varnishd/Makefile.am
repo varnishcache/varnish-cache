@@ -175,7 +175,7 @@ vhp_table_test_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la
 
 noinst_PROGRAMS += vhp_decode_test
-vhp_decode_test_SOURCES = hpack/vhp_decode.c hpack/vhp_table.c 
+vhp_decode_test_SOURCES = hpack/vhp_decode.c hpack/vhp_table.c
 vhp_decode_test_CFLAGS = -DDECODE_TEST_DRIVER -include config.h
 vhp_decode_test_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.la

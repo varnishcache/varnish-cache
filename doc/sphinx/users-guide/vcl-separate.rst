@@ -71,7 +71,7 @@ If you want to change the top level VCL, do as you always did::
 Details, details, details:
 --------------------------
 
-* All requests *always* start in the active VCL - the one from ``vcl.use`` 
+* All requests *always* start in the active VCL - the one from ``vcl.use``
 
 * Only VCL labels can be used in ``return(vcl(name))``.  Without this
   restriction the top level VCL would have to be reloaded every time

@@ -261,6 +261,7 @@ vcc_delete_expr(struct expr *e)
 	VSB_destroy(&e->vsb);
 	FREE_OBJ(e);
 }
+
 /*--------------------------------------------------------------------
  * We want to get the indentation right in the emitted C code so we have
  * to represent it symbolically until we are ready to render.
@@ -273,7 +274,7 @@ vcc_delete_expr(struct expr *e)
  *	\v1  insert subexpression 1
  *	\v2  insert subexpression 2
  *	\v+  increase indentation
- *	\v-  increase indentation
+ *	\v-  decrease indentation
  *	anything else is literal
  *
  * When editing, we check if any of the subexpressions contain a newline
