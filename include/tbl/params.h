@@ -912,23 +912,6 @@ PARAM(
 )
 
 PARAM(
-	/* name */	session_max,
-	/* typ */	uint,
-	/* min */	"1000",
-	/* max */	NULL,
-	/* default */	"100000",
-	/* units */	"sessions",
-	/* flags */	0,
-	/* s-text */
-	"Maximum number of sessions we will allocate from one pool before "
-	"just dropping connections.\n"
-	"This is mostly an anti-DoS measure, and setting it plenty high "
-	"should not hurt, as long as you have the memory for it.",
-	/* l-text */	"",
-	/* func */	NULL
-)
-
-PARAM(
 	/* name */	shm_reclen,
 	/* typ */	vsl_reclen,
 	/* min */	"16b",
