@@ -9,6 +9,8 @@ The list of changes are numerous and will not be expanded on in detail.
 Major items:
 * Experimental support for HTTP/2.
 * VCL labels, allowing for per-vhost VCL.
+* Always send the request body to the backend, making possible to cache
+  e.g. POST.
 
 
 ======================================
@@ -733,7 +735,6 @@ Open issues
 .. _1381: https://www.varnish-cache.org/trac/ticket/1381
 .. _1323: https://www.varnish-cache.org/trac/ticket/1323
 .. _1268: https://www.varnish-cache.org/trac/ticket/1268
-.. _1268: https://www.varnish-cache.org/trac/ticket/1268
 
 
 ============================================
@@ -989,7 +990,6 @@ varnishd
 .. _bug #897: https://www.varnish-cache.org/trac/ticket/897
 .. _bug #1023: https://www.varnish-cache.org/trac/ticket/1023
 .. _bug #1029: https://www.varnish-cache.org/trac/ticket/1029
-.. _bug #1023: https://www.varnish-cache.org/trac/ticket/1023
 .. _bug #1035: https://www.varnish-cache.org/trac/ticket/1035
 .. _bug #1037: https://www.varnish-cache.org/trac/ticket/1037
 .. _bug #1038: https://www.varnish-cache.org/trac/ticket/1038
@@ -1176,7 +1176,7 @@ Changes from 3.0.0 to 3.0.1 rc 1 (2011-08-24)
 varnishd
 --------
 
-- Avoid sending an empty end-chunk when sending bodyless responsed.
+- Avoid sending an empty end-chunk when sending bodyless responses.
 
 - `http_resp_hdr_len` and `http_req_hdr_len` were set to too low
   values leading to clients receiving `HTTP 400 Bad Request` errors.
@@ -1253,7 +1253,7 @@ Changes from 3.0 beta 2 to 3.0.0 (2011-06-16)
 varnishd
 --------
 
-- Avoid sending an empty end-chunk when sending bodyless responsed.
+- Avoid sending an empty end-chunk when sending bodyless responses.
 
 VCL
 ---
@@ -1420,7 +1420,6 @@ varnishd
 .. _bug #663: https://www.varnish-cache.org/trac/ticket/663
 .. _bug #880: https://www.varnish-cache.org/trac/ticket/880
 .. _bug #411: https://www.varnish-cache.org/trac/ticket/411
-.. _bug #693: https://www.varnish-cache.org/trac/ticket/693
 
 Tools
 -----
