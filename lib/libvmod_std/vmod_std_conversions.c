@@ -102,28 +102,23 @@ vmod_duration(VRT_CTX, VCL_STRING p, VCL_DURATION d)
 VCL_INT __match_proto__(td_std_integer)
 vmod_integer(VRT_CTX, VCL_STRING p, VCL_INT i)
 {
-	char *e;
-	long r;
+	const char *e;
+	double r;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	if (p == NULL)
 		return (i);
 
-	while(isspace(*p))
-		p++;
-
-	if (*p != '+' && *p != '-' && !isdigit(*p))
+	r = VNUMpfx(p, &e);
+	if (isnan(r) || e != NULL)
 		return (i);
 
-	e = NULL;
-
-	r = strtol(p, &e, 0);
-
-	if (e == NULL || *e != '\0')
+	r = trunc(r);
+	if (r > LONG_MAX || r < LONG_MIN)
 		return (i);
 
-	return (r);
+	return ((long)r);
 }
 
 VCL_IP

@@ -19,6 +19,9 @@ varnish v1 -vcl+backend {
 		set resp.http.x-qux = std.real2integer(
 		    std.real(req.http.foo, 2.0), 2);
 
+		set resp.http.x-xyzzy = std.integer(
+		    std.real(req.http.foo, 2.0), 2);
+
 		# Representation of 9e99, which is larger than what fits in the
 		# 128bit integers on $exotic_platform.
 		set resp.http.x-int-fallback = std.real2integer(9000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.000, 2);
@@ -31,6 +34,7 @@ client c1 {
 	expect resp.http.x-foo == resp.http.x-bar
 	expect resp.http.x-baz == 1140618699.000
 	expect resp.http.x-qux == 1140618699
+	expect resp.http.x-xyzzy == resp.http.x-qux
 	expect resp.http.x-int-fallback == 2
 } -run
 
