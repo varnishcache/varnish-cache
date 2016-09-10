@@ -179,7 +179,7 @@ mgt_vcl_dep_del(struct vcldep *vd)
 
 	CHECK_OBJ_NOTNULL(vd, VCLDEP_MAGIC);
 	VTAILQ_REMOVE(&vd->from->dfrom, vd, lfrom);
-	VTAILQ_REMOVE(&vd->to->dfrom, vd, lto);
+	VTAILQ_REMOVE(&vd->to->dto, vd, lto);
 	FREE_OBJ(vd);
 }
 
