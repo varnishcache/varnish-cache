@@ -1,6 +1,6 @@
 varnishtest "H/1 -> H/2 upgrade"
 
-feature cmd "nghttp --help > /dev/null 2>&1"
+feature cmd "nghttp --version | grep -q 'nghttp2/[1-9]'"
 
 server s1 {
 	rxreq
