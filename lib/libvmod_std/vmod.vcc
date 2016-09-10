@@ -160,22 +160,6 @@ Example
 	|	...
 	| }
 
-$Function INT real2integer(REAL r, INT fallback)
-
-Description
-	Converts the real *r* to an integer. If conversion fails,
-	*fallback* will be returned.
-Example
-	set req.http.integer = std.real2integer(1140618699.00, 0);
-
-$Function TIME real2time(REAL r, TIME fallback)
-
-Description
-	Converts the real *r* to a time. If conversion fails,
-	*fallback* will be returned.
-Example
-	set req.http.time = std.real2time(1140618699.00, now);
-
 $Function INT time2integer(TIME t, INT fallback)
 
 Description

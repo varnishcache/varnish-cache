@@ -102,28 +102,24 @@ vmod_duration(VRT_CTX, VCL_STRING p, VCL_DURATION d)
 VCL_INT __match_proto__(td_std_integer)
 vmod_integer(VRT_CTX, VCL_STRING p, VCL_INT i)
 {
-	char *e;
-	long r;
+	const char *e;
+	double r;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	if (p == NULL)
 		return (i);
 
-	while(isspace(*p))
-		p++;
-
-	if (*p != '+' && *p != '-' && !isdigit(*p))
-		return (i);
-
 	e = NULL;
-
-	r = strtol(p, &e, 0);
-
-	if (e == NULL || *e != '\0')
+	r = VNUMpfx(p, &e);
+	if (isnan(r) || e != NULL)
 		return (i);
 
-	return (r);
+	r = round(r);
+	if (r > LONG_MAX || r < LONG_MIN)
+		return (i);
+
+	return ((long)r);
 }
 
 VCL_IP
@@ -183,30 +179,6 @@ vmod_real(VRT_CTX, VCL_STRING p, VCL_REAL d)
 
 	if (isnan(r))
 		return (d);
-
-	return (r);
-}
-
-VCL_INT __match_proto__(td_std_real2integer)
-vmod_real2integer(VRT_CTX, VCL_REAL r, VCL_INT i)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-
-	if (!isfinite(r))
-		return (i);
-	r = round(r);
-	if (r > LONG_MAX || r < LONG_MIN)
-		return(i);
-	return ((long)r);
-}
-
-VCL_TIME __match_proto__(td_std_real2time)
-vmod_real2time(VRT_CTX, VCL_REAL r, VCL_TIME t)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-
-	if (!isfinite(r))
-		return (t);
 
 	return (r);
 }
