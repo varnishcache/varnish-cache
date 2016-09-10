@@ -40,11 +40,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../cache/cache.h"
-#include "../cache/cache_filter.h"
-#include "../cache/cache_transport.h"
+#include "cache/cache.h"
+#include "cache/cache_filter.h"
+#include "cache/cache_transport.h"
 
-#include "../http2/cache_http2.h"
+#include "http2/cache_http2.h"
 
 #include "vct.h"
 #include "vend.h"

@@ -32,8 +32,8 @@
 #include <ctype.h>
 #include <stdio.h>
 
-#include "../cache/cache.h"
-#include "../http2/cache_http2.h"
+#include "cache/cache.h"
+#include "http2/cache_http2.h"
 #include "vct.h"
 
 static int

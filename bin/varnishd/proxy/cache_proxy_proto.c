@@ -38,8 +38,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../cache/cache.h"
-#include "../cache/cache_transport.h"
+#include "cache/cache.h"
+#include "cache/cache_transport.h"
 
 #include "vend.h"
 #include "vsa.h"
