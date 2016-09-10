@@ -37,8 +37,10 @@ client c1 {
 varnish v1 -cliok "vcl.list"
 varnish v1 -clierr 106 "vcl.label foo vcl0"
 varnish v1 -cliok "vcl.label foo vcl2"
-varnish v1 -clierr 300 "vcl.label bar vcl2"
+varnish v1 -cliok "vcl.label bar vcl2"
+varnish v1 -cliok "vcl.list"
 varnish v1 -clierr 300 "vcl.discard vcl2"
+varnish v1 -cliok "vcl.discard bar"
 varnish v1 -cliok "vcl.label foo vcl1"
 varnish v1 -clierr 106 "vcl.label vcl1 vcl2"
 varnish v1 -clierr 106 "vcl.state foo cold"
@@ -94,7 +96,13 @@ varnish v1 -cliok "vcl.use vcl1"
 varnish v1 -cliok "vcl.discard fo-"
 varnish v1 -clierr 106 "vcl.discard fo-"
 
+varnish v1 -cliok "vcl.label label1 vcl1"
+varnish v1 -cliok "vcl.label label2 vcl1"
+varnish v1 -cliok "vcl.label label3 vcl1"
+varnish v1 -cliok "vcl.list"
+
 varnish v1 -start
+varnish v1 -cliok "vcl.list"
 varnish v1 -cliok "vcl.label snarf vcl1"
 server s1 -start
 client c1 -run
