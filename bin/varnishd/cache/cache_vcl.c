@@ -181,9 +181,6 @@ void
 VCL_Refresh(struct vcl **vcc)
 {
 	CHECK_OBJ_NOTNULL(vcl_active, VCL_MAGIC);
-	AZ(pthread_rwlock_rdlock(&vcl_active->temp_rwl));
-	assert(VCL_WARM(vcl_active));
-	AZ(pthread_rwlock_unlock(&vcl_active->temp_rwl));
 	if (*vcc == vcl_active)
 		return;
 	if (*vcc != NULL)
