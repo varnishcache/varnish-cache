@@ -105,6 +105,7 @@ cscope.*out
 /bin/varnishd/vhp_decode_test
 /bin/varnishd/vhp_gen_hufdec
 /bin/varnishd/vhp_table_test
+/bin/varnishd/*.log
 /bin/varnishtest/tests/*.log
 /bin/varnishtest/tests/*.log-t
 /bin/varnishtest/test-suite.log
