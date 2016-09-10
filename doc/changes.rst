@@ -7,10 +7,13 @@ This is the first beta release of the upcoming 5.0 release.
 The list of changes are numerous and will not be expanded on in detail.
 
 Major items:
-* Experimental support for HTTP/2.
+
 * VCL labels, allowing for per-vhost VCL.
+
+* (Very!) experimental support for HTTP/2.
+
 * Always send the request body to the backend, making possible to cache
-  e.g. POST.
+  POST, PUT, PATCH etc.
 
 
 ======================================
