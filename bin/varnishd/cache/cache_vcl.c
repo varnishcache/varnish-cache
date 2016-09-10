@@ -127,6 +127,7 @@ vcl_rel_ctx(struct vrt_ctx **ctx)
 	WS_Reset(&ws_cli, ws_snapshot_cli);
 	INIT_OBJ(*ctx, VRT_CTX_MAGIC);
 	*ctx = NULL;
+	VRTPRIV_dynamic_kill(NULL, 0);
 }
 
 /*--------------------------------------------------------------------*/
