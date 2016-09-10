@@ -73,6 +73,7 @@ struct vclprog {
 	double			go_cold;
 	VTAILQ_HEAD(, vcldep)	dfrom;
 	VTAILQ_HEAD(, vcldep)	dto;
+	int			nto;
 };
 
 static VTAILQ_HEAD(, vclprog)	vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
@@ -171,6 +172,7 @@ mgt_vcl_dep_add(struct vclprog *vp_from, struct vclprog *vp_to)
 	VTAILQ_INSERT_TAIL(&vp_from->dfrom, vd, lfrom);
 	vd->to = vp_to;
 	VTAILQ_INSERT_TAIL(&vp_to->dto, vd, lto);
+	vp_to->nto++;
 }
 
 static void
@@ -180,6 +182,7 @@ mgt_vcl_dep_del(struct vcldep *vd)
 	CHECK_OBJ_NOTNULL(vd, VCLDEP_MAGIC);
 	VTAILQ_REMOVE(&vd->from->dfrom, vd, lfrom);
 	VTAILQ_REMOVE(&vd->to->dto, vd, lto);
+	vd->to->nto--;
 	FREE_OBJ(vd);
 }
 
@@ -614,27 +617,15 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 	mgt_vcl_del(vp);
 }
 
-static void
-mcf_list_labels(struct cli *cli, const struct vclprog *vp)
-{
-	int n = 0;
-	struct vcldep *vd;
-
-	VTAILQ_FOREACH(vd, &vp->dto, lto) {
-		if (n++ == 5) {
-			VCLI_Out(cli, " [...]");
-			break;
-		}
-		VCLI_Out(cli, " %s", vd->from->name);
-	}
-}
-
 static void __match_proto__(cli_func_t)
 mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned status;
 	char *p;
 	struct vclprog *vp;
+	struct vcldep *vd;
+
+	/* NB: Shall generate same output as vcl_cli_list() */
 
 	(void)av;
 	(void)priv;
@@ -652,7 +643,15 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 			VCLI_Out(cli, "/%-8s", vp->warm ?
 			    VCL_STATE_WARM : VCL_STATE_COLD);
 			VCLI_Out(cli, " %6s %s", "", vp->name);
-			mcf_list_labels(cli, vp);
+			if (mcf_is_label(vp)) {
+				vd = VTAILQ_FIRST(&vp->dfrom);
+				AN(vd);
+				VCLI_Out(cli, " -> %s", vd->to->name);
+			} else if (vp->nto > 1) {
+				VCLI_Out(cli, " (%d labels)", vp->nto);
+			} else if (vp->nto > 0) {
+				VCLI_Out(cli, " (%d label)", vp->nto);
+			}
 			VCLI_Out(cli, "\n");
 		}
 	}
@@ -678,13 +677,6 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 	if (mcf_is_label(vpt)) {
 		VCLI_SetResult(cli, CLIS_CANT);
 		VCLI_Out(cli, "VCL labels cannot point to labels");
-		return;
-	}
-	if (!VTAILQ_EMPTY(&vpt->dto)) {
-		VCLI_SetResult(cli, CLIS_CANT);
-		VCLI_Out(cli, "VCL already labeled with");
-		mcf_list_labels(cli, vpt);
-		VCLI_Out(cli, "\n");
 		return;
 	}
 	vpl = mcf_vcl_byname(av[2]);

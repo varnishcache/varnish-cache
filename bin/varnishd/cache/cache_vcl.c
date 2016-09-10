@@ -74,6 +74,7 @@ struct vcl {
 	VTAILQ_HEAD(,backend)	backend_list;
 	VTAILQ_HEAD(,vclref)	ref_list;
 	struct vcl		*label;
+	int			nlabels;
 };
 
 struct vclref {
@@ -258,12 +259,13 @@ vcl_get(struct vcl **vcc, struct vcl *vcl)
 	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
 	Lck_Lock(&vcl_mtx);
 	AN(vcl);
-	if (vcl->label == NULL)
+	if (vcl->label == NULL) {
+		AN(strcmp(vcl->state, VCL_TEMP_LABEL));
 		*vcc = vcl;
-	else if (strcmp(vcl->state, VCL_TEMP_LABEL))
-		*vcc = vcl;
-	else
+	} else {
+		AZ(strcmp(vcl->state, VCL_TEMP_LABEL));
 		*vcc = vcl->label;
+	}
 	AN(*vcc);
 	AZ((*vcc)->discard);
 	(*vcc)->busy++;
@@ -804,6 +806,8 @@ vcl_cli_list(struct cli *cli, const char * const *av, void *priv)
 	struct vcl *vcl;
 	const char *flg;
 
+	/* NB: Shall generate same output as mcf_vcl_list() */
+
 	(void)av;
 	(void)priv;
 	ASSERT_CLI();
@@ -816,11 +820,12 @@ vcl_cli_list(struct cli *cli, const char * const *av, void *priv)
 			flg = "available";
 		VCLI_Out(cli, "%-10s %5s/%-8s %6u %s",
 		    flg, vcl->state, vcl->temp, vcl->busy, vcl->loaded_name);
-		if (vcl->label != NULL) {
-			VCLI_Out(cli, " %s %s",
-			    strcmp(vcl->state, VCL_TEMP_LABEL) ?
-			    "<-" : "->", vcl->label->loaded_name);
-		}
+		if (vcl->label != NULL)
+			VCLI_Out(cli, " -> %s", vcl->label->loaded_name);
+		else if (vcl->nlabels > 1)
+			VCLI_Out(cli, " (%d labels)", vcl->nlabels);
+		else if (vcl->nlabels > 0)
+			VCLI_Out(cli, " (%d label)", vcl->nlabels);
 		VCLI_Out(cli, "\n");
 	}
 }
@@ -874,12 +879,13 @@ vcl_cli_discard(struct cli *cli, const char * const *av, void *priv)
 	AN(vcl);			// MGT ensures this
 	Lck_Lock(&vcl_mtx);
 	assert (vcl != vcl_active);	// MGT ensures this
+	AZ(vcl->nlabels);		// MGT ensures this
 	VSC_C_main->n_vcl_discard++;
 	VSC_C_main->n_vcl_avail--;
 	vcl->discard = 1;
 	if (vcl->label != NULL) {
 		AZ(strcmp(vcl->state, VCL_TEMP_LABEL));
-		vcl->label->label = NULL;
+		vcl->label->nlabels--;
 		vcl->label= NULL;
 	}
 	Lck_Unlock(&vcl_mtx);
@@ -901,21 +907,20 @@ vcl_cli_label(struct cli *cli, const char * const *av, void *priv)
 	(void)cli;
 	(void)priv;
 	vcl = vcl_find(av[3]);
-	AN(vcl);
+	AN(vcl);				// MGT ensures this
 	lbl = vcl_find(av[2]);
 	if (lbl == NULL) {
 		ALLOC_OBJ(lbl, VCL_MAGIC);
 		AN(lbl);
 		bprintf(lbl->state, "%s", VCL_TEMP_LABEL);
 		lbl->temp = VCL_TEMP_WARM;
-		lbl->loaded_name = strdup(av[2]);
-		AN(lbl->loaded_name);
+		REPLACE(lbl->loaded_name, av[2]);
 		VTAILQ_INSERT_TAIL(&vcl_head, lbl, list);
 	}
 	if (lbl->label != NULL)
-		lbl->label->label = NULL;
+		lbl->label->nlabels--;
 	lbl->label = vcl;
-	vcl->label = lbl;
+	vcl->nlabels++;
 	return;
 }
 
