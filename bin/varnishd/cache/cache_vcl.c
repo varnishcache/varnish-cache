@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2015 Varnish Software AS
+ * Copyright (c) 2006-2016 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -26,9 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Interface *to* compiled VCL code:  Loading, unloading, calling into etc.
- *
- * The interface *from* the compiled VCL code is in cache_vrt.c.
  */
 
 #include "config.h"
@@ -54,8 +51,9 @@ static const char * const VCL_TEMP_BUSY = "busy";
 static const char * const VCL_TEMP_COOLING = "cooling";
 static const char * const VCL_TEMP_LABEL = "label";
 
-/* NB: The COOLING temperature is neither COLD nor WARM. And LABEL is not a
- * temperature, it's a state.
+/*
+ * NB: The COOLING temperature is neither COLD nor WARM.
+ * And LABEL is not a temperature, it's a state.
  */
 #define VCL_WARM(v) ((v)->temp == VCL_TEMP_WARM || (v)->temp == VCL_TEMP_BUSY)
 #define VCL_COLD(v) ((v)->temp == VCL_TEMP_INIT || (v)->temp == VCL_TEMP_COLD)
@@ -221,7 +219,9 @@ VCL_Return_Name(unsigned r)
 {
 
 	switch (r) {
-#define VCL_RET_MAC(l, U, B) case VCL_RET_##U: return(#l);
+#define VCL_RET_MAC(l, U, B)	\
+	case VCL_RET_##U:	\
+		return(#l);
 #include "tbl/vcl_returns.h"
 #undef VCL_RET_MAC
 	default:
@@ -234,7 +234,9 @@ VCL_Method_Name(unsigned m)
 {
 
 	switch (m) {
-#define VCL_MET_MAC(func, upper, typ, bitmap) case VCL_MET_##upper: return (#upper);
+#define VCL_MET_MAC(func, upper, typ, bitmap)	\
+	case VCL_MET_##upper:			\
+		return (#upper);
 #include "tbl/vcl_returns.h"
 #undef VCL_MET_MAC
 	default:
@@ -508,7 +510,9 @@ VCL_DefaultProbe(const struct vcl *vcl)
 	return (vcl->conf->default_probe);
 }
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * VRT apis relating to VCL's as VCLS.
+ */
 
 void
 VRT_count(VRT_CTX, unsigned u)
@@ -605,6 +609,7 @@ VRT_rel_vcl(VRT_CTX, struct vclref **refp)
 }
 
 /*--------------------------------------------------------------------*/
+
 static void
 vcl_print_refs(VRT_CTX)
 {
@@ -704,7 +709,7 @@ vcl_cancel_load(VRT_CTX, struct cli *cli, const char *name, const char *step)
 }
 
 static void
-VCL_Load(struct cli *cli, struct vrt_ctx *ctx,
+vcl_load(struct cli *cli, struct vrt_ctx *ctx,
     const char *name, const char *fn, const char *state)
 {
 	struct vcl *vcl;
@@ -829,7 +834,7 @@ vcl_cli_load(struct cli *cli, const char * const *av, void *priv)
 	AZ(priv);
 	ASSERT_CLI();
 	ctx = vcl_get_ctx(VCL_MET_INIT, 1);
-	VCL_Load(cli, ctx, av[2], av[3], av[4]);
+	vcl_load(cli, ctx, av[2], av[3], av[4]);
 	vcl_rel_ctx(&ctx);
 }
 
