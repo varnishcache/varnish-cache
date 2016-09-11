@@ -50,6 +50,7 @@
 	    " default is 60 seconds. The first number in the list is"	\
 	    " the average number of requests seen over this time"	\
 	    " period."							\
+	    " This option has no effect if -1 option is also used."	\
 	)
 
 TOP_OPT_1
