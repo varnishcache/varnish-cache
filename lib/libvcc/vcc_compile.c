@@ -133,12 +133,12 @@ New_IniFin(struct vcc *tl)
 int
 IsMethod(const struct token *t)
 {
-	struct method *m;
+	int i;
 
 	assert(t->tok == ID);
-	for(m = method_tab; m->name != NULL; m++) {
-		if (vcc_IdIs(t, m->name))
-			return (m - method_tab);
+	for (i = 1; method_tab[i].name != NULL; i++) {
+		if (vcc_IdIs(t, method_tab[i].name))
+			return (i);
 	}
 	if ((t->b[0] == 'v'|| t->b[0] == 'V') &&
 	    (t->b[1] == 'c'|| t->b[1] == 'C') &&

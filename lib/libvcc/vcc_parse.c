@@ -220,7 +220,7 @@ vcc_ParseFunction(struct vcc *tl)
 		    "VCL sub's named 'vcl*' are reserved names.\n");
 		vcc_ErrWhere(tl, tl->t);
 		VSB_printf(tl->sb, "Valid vcl_* methods are:\n");
-		for (i = 0; method_tab[i].name != NULL; i++)
+		for (i = 1; method_tab[i].name != NULL; i++)
 			VSB_printf(tl->sb, "\t%s\n", method_tab[i].name);
 		return;
 	} else if (m != -1) {

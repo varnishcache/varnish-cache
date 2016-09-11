@@ -40,7 +40,6 @@ varnish v1 -errvcl "Function recurses on" {
 	sub vcl_recv { call foo; }
 }
 
-
 varnish v1 -errvcl {Unused acl foo, defined:} {
 	backend b { .host = "127.0.0.1"; }
 
@@ -54,6 +53,14 @@ varnish v1 -errvcl {Unused sub foo, defined:} {
 	sub foo {
 	}
 }
+
+varnish v1 -errvcl {Unused sub none, defined:} {
+	backend b { .host = "127.0.0.1"; }
+
+	sub none {
+	}
+}
+
 varnish v1 -errvcl {Invalid return "deliver"} {
 	backend b { .host = "127.0.0.1"; }
 
