@@ -377,6 +377,7 @@ vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 
 	CHECK_OBJ_NOTNULL(*e, EXPR_MAGIC);
 	AN(fmt == STRING || fmt == STRING_LIST);
+	AZ(fmt == (*e)->fmt);
 
 	p = (*e)->fmt->tostring;
 	if (p == NULL && (*e)->fmt == BLOB) {
@@ -1300,7 +1301,7 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		}
 		*e = vcc_expr_edit(BOOL, "\v1\v-\n)", *e, NULL);
 	}
-	if (fmt == STRING || fmt == STRING_LIST) {
+	if (fmt != (*e)->fmt && (fmt == STRING || fmt == STRING_LIST)) {
 		vcc_expr_tostring(tl, e, fmt);
 		ERRCHK(tl);
 	}
