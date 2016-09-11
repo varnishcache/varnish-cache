@@ -15,3 +15,12 @@ process p1 {varnishstat -1 -n ${v1_name} -f ^LCK.vbe.destroy \
 shell "grep -q vbe ${tmpdir}/p1/stdout"
 shell "grep -q mempool ${tmpdir}/p1/stdout"
 err_shell "" "grep -q LCK.vbe.destroy ${tmpdir}/p1/stdout"
+
+process p2 {varnishstat -1 -n ${v1_name} -f ^*vbe.destroy \
+	-f *vbe* -f *mempool*} -run
+
+shell "grep -q vbe ${tmpdir}/p2/stdout"
+shell "grep -q mempool ${tmpdir}/p2/stdout"
+err_shell "" "grep -q LCK.vbe.destroy ${tmpdir}/p2/stdout"
+
+shell "cmp -s ${tmpdir}/p1/stdout ${tmpdir}/p2/stdout"
