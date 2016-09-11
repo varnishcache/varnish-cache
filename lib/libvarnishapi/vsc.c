@@ -33,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include <fnmatch.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,6 +43,7 @@
 #include "vas.h"
 #include "miniobj.h"
 #include "vqueue.h"
+#include "vsb.h"
 
 #include "vapi/vsc.h"
 #include "vapi/vsm.h"
@@ -75,14 +77,8 @@ struct vsc_sf {
 	unsigned		magic;
 #define VSC_SF_MAGIC		0x558478dd
 	VTAILQ_ENTRY(vsc_sf)	list;
-	int			flags;
-#define VSC_SF_EXCL		(1 << 0)
-#define VSC_SF_TY_WC		(1 << 1)
-#define VSC_SF_ID_WC		(1 << 2)
-#define VSC_SF_NM_WC		(1 << 3)
-	char			*type;
-	char			*ident;
-	char			*name;
+	char			*pattern;
+	unsigned		exclude;
 };
 
 struct vsc {
@@ -151,9 +147,7 @@ vsc_delete_sf_list(struct vsc *vsc)
 		sf = VTAILQ_FIRST(&vsc->sf_list);
 		CHECK_OBJ_NOTNULL(sf, VSC_SF_MAGIC);
 		VTAILQ_REMOVE(&vsc->sf_list, sf, list);
-		free(sf->type);
-		free(sf->ident);
-		free(sf->name);
+		free(sf->pattern);
 		FREE_OBJ(sf);
 	}
 }
@@ -180,105 +174,20 @@ vsc_f_arg(struct VSM_data *vd, const char *opt)
 {
 	struct vsc *vsc = vsc_setup(vd);
 	struct vsc_sf *sf;
-	const char *error = NULL;
-	const char *p, *q;
-	char *r;
-	int i;
-	int flags = 0;
-	char *parts[3];
 
 	AN(vd);
 	AN(opt);
 
+	ALLOC_OBJ(sf, VSC_SF_MAGIC);
+	AN(sf);
+
 	if (opt[0] == '^') {
-		flags |= VSC_SF_EXCL;
+		sf->exclude = 1;
 		opt++;
 	}
 
-	/* Split on '.' */
-	memset(parts, 0, sizeof parts);
-	for (i = 0, p = opt; *p != '\0'; i++) {
-		for (q = p; *q != '\0' && *q != '.'; q++)
-			if (*q == '\\')
-				q++;
-		if (i < 3) {
-			parts[i] = malloc(1 + q - p);
-			AN(parts[i]);
-			memcpy(parts[i], p, q - p);
-			parts[i][q - p] = '\0';
-			p = r = parts[i];
-
-			/* Unescape */
-			while (1) {
-				if (*p == '\\')
-					p++;
-				if (*p == '\0')
-					break;
-				*r++ = *p++;
-			}
-			*r = '\0';
-		}
-		p = q;
-		if (*p == '.')
-			p++;
-	}
-	if (i < 1 || i > 3) {
-		(void)vsm_diag(vd, "-f: Wrong number of elements");
-		for (i = 0; i < 3; i++)
-			free(parts[i]);
-		return (-1);
-	}
-
-	/* Set fields */
-	ALLOC_OBJ(sf, VSC_SF_MAGIC);
-	AN(sf);
-	sf->flags = flags;
-	AN(parts[0]);
-	sf->type = parts[0];
-	if (i == 2) {
-		AN(parts[1]);
-		sf->name = parts[1];
-	} else if (i == 3) {
-		AN(parts[1]);
-		sf->ident = parts[1];
-		AN(parts[2]);
-		sf->name = parts[2];
-	}
-
-	/* Check for wildcards */
-	if (sf->type != NULL) {
-		r = strchr(sf->type, '*');
-		if (r != NULL && r[1] == '\0') {
-			*r = '\0';
-			sf->flags |= VSC_SF_TY_WC;
-		} else if (r != NULL)
-			error = "-f: Wildcard not last";
-	}
-	if (sf->ident != NULL) {
-		r = strchr(sf->ident, '*');
-		if (r != NULL && r[1] == '\0') {
-			*r = '\0';
-			sf->flags |= VSC_SF_ID_WC;
-		} else if (r != NULL)
-			error = "-f: Wildcard not last";
-	}
-	if (sf->name != NULL) {
-		r = strchr(sf->name, '*');
-		if (r != NULL && r[1] == '\0') {
-			*r = '\0';
-			sf->flags |= VSC_SF_NM_WC;
-		} else if (r != NULL)
-			error = "-f: Wildcard not last";
-	}
-
-	if (error != NULL) {
-		(void)vsm_diag(vd, "%s", error);
-		free(sf->type);
-		free(sf->ident);
-		free(sf->name);
-		FREE_OBJ(sf);
-		return (-1);
-	}
+	sf->pattern = strdup(opt);
+	AN(sf->pattern);
 
 	VTAILQ_INSERT_TAIL(&vsc->sf_list, sf, list);
 	return (1);
@@ -449,52 +358,43 @@ vsc_build_pt_list(struct VSM_data *vd)
 /*--------------------------------------------------------------------
  */
 
-static inline int
-iter_test(const char *s1, const char *s2, int wc)
-{
-
-	if (s1 == NULL)
-		return (0);
-	if (!wc)
-		return (strcmp(s1, s2));
-	for (; *s1 != '\0' && *s1 == *s2; s1++, s2++)
-		continue;
-	return (*s1 != '\0');
-}
-
 static void
 vsc_filter_pt_list(struct VSM_data *vd)
 {
 	struct vsc *vsc = vsc_setup(vd);
 	struct vsc_sf *sf;
 	struct vsc_pt *pt, *pt2;
-	VTAILQ_HEAD(, vsc_pt)	pt_list;
+	VTAILQ_HEAD(, vsc_pt) pt_list;
+	struct vsb *vsb;
 
 	if (VTAILQ_EMPTY(&vsc->sf_list))
 		return;
+
+	vsb = VSB_new_auto();
+	AN(vsb);
 
 	VTAILQ_INIT(&pt_list);
 	VTAILQ_FOREACH(sf, &vsc->sf_list, list) {
 		CHECK_OBJ_NOTNULL(sf, VSC_SF_MAGIC);
 		VTAILQ_FOREACH_SAFE(pt, &vsc->pt_list, list, pt2) {
 			CHECK_OBJ_NOTNULL(pt, VSC_PT_MAGIC);
-			if (iter_test(sf->type, pt->point.section->type,
-			    sf->flags & VSC_SF_TY_WC))
-				continue;
-			if (iter_test(sf->ident, pt->point.section->ident,
-			    sf->flags & VSC_SF_ID_WC))
-				continue;
-			if (iter_test(sf->name, pt->point.desc->name,
-			    sf->flags & VSC_SF_NM_WC))
+			VSB_clear(vsb);
+			VSB_printf(vsb, "%s.%s.%s",
+			    pt->point.section->type,
+			    pt->point.section->ident,
+			    pt->point.desc->name);
+			VSB_finish(vsb);
+			if (fnmatch(sf->pattern, VSB_data(vsb), 0))
 				continue;
 			VTAILQ_REMOVE(&vsc->pt_list, pt, list);
-			if (sf->flags & VSC_SF_EXCL) {
+			if (sf->exclude)
 				FREE_OBJ(pt);
-			} else {
+			else
 				VTAILQ_INSERT_TAIL(&pt_list, pt, list);
-			}
 		}
 	}
+
+	VSB_destroy(&vsb);
 	vsc_delete_pt_list(vsc);
 	VTAILQ_CONCAT(&vsc->pt_list, &pt_list, list);
 }
