@@ -39,13 +39,10 @@
 #define STAT_OPT_f							\
 	VOPT("f:", "[-f <glob>]", "Field inclusion glob",		\
 	    "Field inclusion glob."					\
-	    " A field glob consists of three parts, type, ident and"	\
-	    " name, where ident is optional. Each part can contain a"	\
-	    " '*' character at the end to match a prefix. Use"		\
-	    " backslash to escape characters. If the argument starts"	\
-	    " with '^' it is used as an exclusion glob. Multiple -f"	\
-	    " arguments may be given, and they will be applied in"	\
-	    " order."							\
+	    " Use backslash to escape characters. If the argument"	\
+	    " starts with '^' it is used as an exclusion glob."		\
+	    " Multiple -f arguments may be given, and they will be"	\
+	    " applied in order."					\
 	)
 #define STAT_OPT_j							\
 	VOPT("j", "[-j]", "Print statistics to stdout as JSON",		\
