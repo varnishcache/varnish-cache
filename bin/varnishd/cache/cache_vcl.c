@@ -272,15 +272,6 @@ vcl_get(struct vcl **vcc, struct vcl *vcl)
 	Lck_Unlock(&vcl_mtx);
 }
 
-static void
-vcl_get_active(struct vcl **vcc)
-{
-	while (vcl_active == NULL)
-		(void)usleep(100000);
-
-	vcl_get(vcc, vcl_active);
-}
-
 void
 VCL_Refresh(struct vcl **vcc)
 {
@@ -289,7 +280,11 @@ VCL_Refresh(struct vcl **vcc)
 		return;
 	if (*vcc != NULL)
 		VCL_Rel(vcc);	/* XXX: optimize locking */
-	vcl_get_active(vcc);
+
+	while (vcl_active == NULL)
+		(void)usleep(100000);
+
+	vcl_get(vcc, vcl_active);
 }
 
 void
@@ -915,6 +910,7 @@ vcl_cli_label(struct cli *cli, const char * const *av, void *priv)
 		bprintf(lbl->state, "%s", VCL_TEMP_LABEL);
 		lbl->temp = VCL_TEMP_WARM;
 		REPLACE(lbl->loaded_name, av[2]);
+		AZ(errno=pthread_rwlock_init(&vcl->temp_rwl, NULL));
 		VTAILQ_INSERT_TAIL(&vcl_head, lbl, list);
 	}
 	if (lbl->label != NULL)
