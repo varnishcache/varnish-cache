@@ -248,7 +248,7 @@ improve user-perceived response times.
 Sharding
 ````````
 
-This basic technique allows for numerious applications like optimizing
+This basic technique allows for numerous applications like optimizing
 backend server cache efficiency, Varnish clustering or persisting
 sessions to servers without keeping any state, and, in particular,
 without the need to synchronize state between nodes of a cluster of
@@ -275,12 +275,12 @@ Varnish servers:
   increase efficiency (scales by the number of servers).
 
 * Another application is to implement persistence of backend requests,
-  such that all requests sharing a certain criterium (such as an IP
+  such that all requests sharing a certain criteria (such as an IP
   address or session ID) get forwarded to the same backend server.
 
 When used with clusters of varnish servers, the shard director will,
 if otherwise configured equally, make the same decision on all
-servers. In other words, requests sharing a common criterium used as
+servers. In other words, requests sharing a common criteria used as
 the shard key will be balanced onto the same backend server(s) no
 matter which Varnish server handles the request.
 
@@ -307,15 +307,15 @@ being the backend name) for each backend and for a running number from
 1 to n (n is the number of `replicas`). Hashing creates the seemingly
 random order for placement of backends on the consistent hashing ring.
 
-When ``.backend()`` is called, a load balacing key gets generated
+When ``.backend()`` is called, a load balancing key gets generated
 unless provided. The smallest hash value in the circle is looked up
 that is larger than the key (searching clockwise and wrapping around
 as necessary). The backend for this hash value is the preferred
 backend for the given key.
 
-If a healhy backend is requested, the search is continued linearly on
+If a healthy backend is requested, the search is continued linearly on
 the ring as long as backends found are unhealthy or all backends have
-been checked. The order auf these "alternative backends" on the ring
+been checked. The order of these "alternative backends" on the ring
 is likely to differ for different keys. Alternative backends can also
 be selected explicitly.
 
@@ -358,7 +358,7 @@ which will be hashed by `shard.reconfigure()` to construct the
 consistent hashing ring. The identification string defaults to the
 backend name.
 
-`ident` allows to add multuple instances of the same backend.
+`ident` allows to add multiple instances of the same backend.
 
 `rampup`: Optionally specify a rampup time for this backend. Defaults
 to the director rampup time.
@@ -468,7 +468,7 @@ is _not_ the order given when backends are added.
   `set_rampup()` method or specifically per backend with the
   `set_backend()` method.
 
-* `warmup` probabalistic alternative server selection
+* `warmup` probabilistic alternative server selection
 
   possible values: -1, 0..1
 
@@ -515,7 +515,7 @@ ACKNOWLEDGEMENTS
 ================
 
 Development of a previous version of the shard director was partly sponsored
-by Deutsche Telekom AG – Products & Innovation.
+by Deutsche Telekom AG - Products & Innovation.
 
 Development of this version of the shard director was partly sponsored
 by BILD GmbH & Co KG.
