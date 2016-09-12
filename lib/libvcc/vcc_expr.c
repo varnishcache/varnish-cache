@@ -1062,10 +1062,8 @@ vcc_expr_strfold(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	ERRCHK(tl);
 
 	if (fmt != STRING_LIST && (*e)->fmt == STRING_LIST)
-		*e = vcc_expr_edit(STRING,
-		    "\v+VRT_CollectString(ctx,\n\v1,\nvrt_magic_string_end)\v-",
-		    *e, NULL);
-	if (fmt == STRING_LIST && (*e)->fmt == STRING)
+		vcc_expr_tostring(tl, e, STRING);
+	else if (fmt == STRING_LIST && (*e)->fmt == STRING)
 		(*e)->fmt = STRING_LIST;
 }
 
