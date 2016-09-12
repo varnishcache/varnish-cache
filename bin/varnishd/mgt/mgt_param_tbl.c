@@ -66,7 +66,11 @@ struct parspec mgt_parspec[] = {
 		NULL, NULL,
 		"Directory (or colon separated list of directories) "
 		"from which relative VCL filenames (vcl.load and "
-		"include) are to be found.",
+		"include) are to be found.  By default Varnish searches "
+		"VCL files in both the system configuration and shared "
+		"data directories to allow packages to drop their VCL "
+		"files in a standard location where relative includes "
+		"would work.",
 		0,
 		VARNISH_VCL_DIR,
 		NULL },
