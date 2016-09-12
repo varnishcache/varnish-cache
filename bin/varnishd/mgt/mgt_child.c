@@ -742,7 +742,9 @@ MGT_Run(void)
 		}
 	}
 
-	mgt_SHM_Commit();
+	i = mgt_SHM_Commit();
+	if (i != 0)
+		MGT_complain(C_ERR, "Could not commit SHM file");
 
 	i = vev_schedule(mgt_evb);
 	if (i != 0)
