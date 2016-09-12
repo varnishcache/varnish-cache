@@ -136,9 +136,9 @@ logexpect l1 -v v1 -g raw -d 1 {
 
 	expect 0 =    CLI   Loaded
 
-	expect * =    Debug {^shard: lookup key 68b902f8 idx 29 host 0}
-	expect * =    Debug {^shard: lookup key 39dc4614 idx 20 host 1}
-	expect * =    Debug {^shard: lookup key c7793506 idx 59 host 2}
+	expect * =    Debug {^shard: lookup key 68b902f7 idx 29 host 0}
+	expect * =    Debug {^shard: lookup key 39dc4613 idx 20 host 1}
+	expect * =    Debug {^shard: lookup key c7793505 idx 59 host 2}
 } -start
 
 client c1 {

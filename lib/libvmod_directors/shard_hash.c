@@ -46,12 +46,7 @@
 static uint32_t __match_proto__(hash_func)
 shard_hash_crc32(VCL_STRING s)
 {
-	uint32_t crc;
-	crc = crc32(~0U, (const unsigned char*)s, strlen(s));
-	crc ^= ~0U;
-	crc++;
-
-	return (crc);
+	return (crc32_l(s, strlen(s)));
 }
 
 static uint32_t __match_proto__(hash_func)
