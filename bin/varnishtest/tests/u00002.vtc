@@ -1,0 +1,17 @@
+varnishtest "Test varnishstat -f option"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+delay 1
+
+process p1 {varnishstat -1 -n ${v1_name} -f ^LCK.vbe.destroy \
+	-f LCK.vbe.* -f LCK.mempool.*} -run
+
+shell "grep -q vbe ${tmpdir}/p1/stdout"
+shell "grep -q mempool ${tmpdir}/p1/stdout"
+err_shell "" "grep -q LCK.vbe.destroy ${tmpdir}/p1/stdout"
