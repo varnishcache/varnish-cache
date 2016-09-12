@@ -3,9 +3,9 @@
 Separate VCL files
 ==================
 
-Having multiple different domains in the same Varnish is a very
+Having multiple different vhosts in the same Varnish is a very
 typical use-case, and from Varnish 5.0 it is possible to have
-a separate VCL files for separate domains or any other distinct
+a separate VCL files for separate vhosts or any other distinct
 subset of requests.
 
 Assume that we want to handle ``varnish.org`` with one VCL file
