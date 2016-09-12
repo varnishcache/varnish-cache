@@ -101,6 +101,7 @@ VRTPRIV_dynamic_kill(struct vrt_privs *privs, uintptr_t id)
 	if (privs == NULL && id == 0) {
 		ASSERT_CLI();
 		VRT_priv_fini(&cli_task_priv);
+		memset(&cli_task_priv, 0, sizeof cli_task_priv);
 		return;
 	}
 	CHECK_OBJ_NOTNULL(privs, VRT_PRIVS_MAGIC);
