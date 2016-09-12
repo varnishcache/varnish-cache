@@ -402,7 +402,7 @@ i_mode(void)
 	/*
 	 * strict jemalloc checking
 	 */
-	AZ(putenv("MALLOC_CONF=abort:true,redzone:true,junk:true"));
+	AZ(putenv((char *)"MALLOC_CONF=abort:true,redzone:true,junk:true"));
 }
 
 /**********************************************************************
