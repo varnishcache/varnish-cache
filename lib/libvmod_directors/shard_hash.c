@@ -47,13 +47,13 @@
  * dependency nightmare (at least for now)
  */
 
-unsigned long crc32(unsigned long, const void *buf, unsigned len);
+unsigned long crc32(unsigned long, const unsigned char *buf, unsigned len);
 
 static uint32_t __match_proto__(hash_func)
 shard_hash_crc32(VCL_STRING s)
 {
 	uint32_t crc;
-	crc = crc32(~0U, s, strlen(s));
+	crc = crc32(~0U, (const unsigned char *)s, strlen(s));
 	crc ^= ~0U;
 	return (crc);
 }
@@ -104,7 +104,7 @@ _shard_hash_invalid(VCL_STRING s)
 	NEEDLESS_RETURN(0);
 }
 
-hash_func shard_hash_f[_ALG_E_MAX] = {
+const hash_func shard_hash_f[_ALG_E_MAX] = {
 	[_ALG_E_INVALID] = _shard_hash_invalid,
 	[CRC32]	 = shard_hash_crc32,
 	[SHA256]	 = shard_hash_sha256,

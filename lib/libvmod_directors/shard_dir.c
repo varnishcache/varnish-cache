@@ -299,6 +299,9 @@ sharddir_pick_be(VRT_CTX, struct sharddir *shardd,
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(ctx->vsl);
 
+	memset(&state, 0, sizeof(state));
+	init_state(&state, ctx, shardd, vbit_init(picklist_spc, picklist_sz));
+
 	sharddir_rdlock(shardd);
 	if(shardd->n_backend == 0) {
 		shard_err0(ctx, shardd, "no backends");
@@ -309,17 +312,14 @@ sharddir_pick_be(VRT_CTX, struct sharddir *shardd,
 
 	validate_alt(ctx, shardd, &alt);
 
-	memset(&state, 0, sizeof(state));
-	init_state(&state, ctx, shardd, vbit_init(picklist_spc, picklist_sz));
-
 	state.idx = shard_lookup(shardd, key);
 	assert(state.idx >= 0);
 
-	SHDBG(SHDBG_LOOKUP, shardd, "lookup key %x idx %d host %d",
+	SHDBG(SHDBG_LOOKUP, shardd, "lookup key %x idx %d host %u",
 	    key, state.idx, shardd->hashcircle[state.idx].host);
 
 	if (alt > 0) {
-		if (shard_next(&state, alt - 1, healthy == ALL) == -1) {
+		if (shard_next(&state, alt - 1, healthy == ALL ? 1 : 0) == -1) {
 			if (state.previous.hostid != -1) {
 				be = sharddir_backend(shardd,
 				    state.previous.hostid);
@@ -329,7 +329,7 @@ sharddir_pick_be(VRT_CTX, struct sharddir *shardd,
 		}
 	}
 
-	if (shard_next(&state, 0, healthy != IGNORE) == -1) {
+	if (shard_next(&state, 0, healthy == IGNORE ? 0 : 1) == -1) {
 		if (state.previous.hostid != -1) {
 			be = sharddir_backend(shardd, state.previous.hostid);
 			goto ok;

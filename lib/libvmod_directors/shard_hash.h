@@ -27,4 +27,4 @@
  */
 
 typedef uint32_t (*hash_func)(VCL_STRING);
-extern hash_func shard_hash_f[_ALG_E_MAX];
+extern const hash_func shard_hash_f[_ALG_E_MAX];
