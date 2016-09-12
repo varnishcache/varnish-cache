@@ -94,7 +94,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	http_PrintfHeader(req->resp, "Age: %.0f",
 	    fmax(0., req->t_prev - req->objcore->t_origin));
 
-	http_SetHeader(req->resp, "Via: 1.1 varnish-v4");
+	http_SetHeader(req->resp, "Via: 1.1 varnish (Varnish/5.0)");
 
 	if (cache_param->http_gzip_support &&
 	    ObjCheckFlag(req->wrk, req->objcore, OF_GZIPED) &&
