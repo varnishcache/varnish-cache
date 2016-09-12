@@ -275,12 +275,12 @@ Varnish servers:
   increase efficiency (scales by the number of servers).
 
 * Another application is to implement persistence of backend requests,
-  such that all requests sharing a certain criteria (such as an IP
+  such that all requests sharing a certain criterion (such as an IP
   address or session ID) get forwarded to the same backend server.
 
 When used with clusters of varnish servers, the shard director will,
 if otherwise configured equally, make the same decision on all
-servers. In other words, requests sharing a common criteria used as
+servers. In other words, requests sharing a common criterion used as
 the shard key will be balanced onto the same backend server(s) no
 matter which Varnish server handles the request.
 
