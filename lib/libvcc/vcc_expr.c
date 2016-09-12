@@ -379,6 +379,10 @@ vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	AN(fmt == STRING || fmt == STRING_LIST);
 	AZ(fmt == (*e)->fmt);
 
+	if ((*e)->fmt == STRING || ((*e)->fmt == STRING_LIST && vcc_isconst(*e))) {
+		(*e)->fmt = fmt;
+		return;
+	}
 	p = (*e)->fmt->tostring;
 	if (p == NULL && (*e)->fmt == BLOB) {
 		VSB_printf(tl->sb,

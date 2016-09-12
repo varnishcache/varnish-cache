@@ -141,7 +141,7 @@ const struct type STRING[1] = {{
 const struct type STRING_LIST[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"STRING_LIST",
-	.tostring =		"",
+	.tostring =		"VRT_CollectString(ctx,\n\v1,\nvrt_magic_string_end)",
 }};
 
 const struct type TIME[1] = {{
