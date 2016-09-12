@@ -39,6 +39,8 @@
  * binary/load-time compatible, increment MAJOR version
  *
  *
+ * 5.0:
+ *	Varnish 5.0 release "better safe than sorry" bump
  * 4.0:
  *	VCL_BYTES changed to long long
  * 3.2:
@@ -53,7 +55,7 @@
  *
  */
 
-#define VRT_MAJOR_VERSION	4U
+#define VRT_MAJOR_VERSION	5U
 
 #define VRT_MINOR_VERSION	0U
 
