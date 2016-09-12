@@ -188,6 +188,7 @@ h2_new_req(const struct worker *wrk, struct h2_sess *h2,
 	r2 = WS_Alloc(req->ws, sizeof *r2);
 	AN(r2);
 	INIT_OBJ(r2, H2_REQ_MAGIC);
+	r2->state = H2_S_IDLE;
 	r2->h2sess = h2;
 	r2->stream = stream;
 	r2->req = req;
@@ -384,6 +385,7 @@ h2_do_req(struct worker *wrk, void *priv)
 	assert(CNT_Request(wrk, req) != REQ_FSM_DISEMBARK);
 	VSL(SLT_Debug, 0, "H2REQ CNT done");
 	/* XXX clean up req */
+	r2->state = H2_S_CLOSED;
 	h2_del_req(wrk, r2, H2E_NO_ERROR);
 }
 
@@ -400,7 +402,9 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	 * read frames and proper error handling.
 	 */
 
-	assert(h2->rxf_stream & 1);
+	xxxassert(h2->rxf_stream & 1);
+	xxxassert(r2->state == H2_S_IDLE);
+	r2->state = H2_S_OPEN;
 
 	req = r2->req;
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);

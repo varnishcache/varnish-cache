@@ -32,17 +32,20 @@ struct h2_sess;
 #include "hpack/vhp.h"
 
 enum h2_error_e {
+	H2E__DUMMY = -1,
 #define H2_ERROR(NAME, val, desc)		\
 	H2E_##NAME = val,
 #include "tbl/h2_error.h"
 };
 
 enum h2_frame_e {
+	H2_FRAME__DUMMY = -1,
 #define H2_FRAME(l,u,t,f) H2_FRAME_##u = t,
 #include "tbl/h2_frames.h"
 };
 
 enum h2_stream_e {
+	H2_STREAM__DUMMY = -1,
 #define H2_STREAM(U,s,d) H2_S_##U,
 #include "tbl/h2_stream.h"
 };
@@ -51,6 +54,7 @@ enum h2_stream_e {
 #include "tbl/h2_frames.h"
 
 enum h2setting {
+	H2_SETTINGS__DUMMY = -1,
 #define H2_SETTINGS(n,v,d) H2S_##n = v,
 #include "tbl/h2_settings.h"
 #undef H2_SETTINGS
