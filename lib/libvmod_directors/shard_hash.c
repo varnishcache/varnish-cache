@@ -38,6 +38,7 @@
 #include "vrt.h"
 #include "crc32.h"
 #include "vsha256.h"
+#include "vend.h"
 
 #include "shard_parse_vcc_enums.h"
 #include "shard_hash.h"
@@ -61,6 +62,7 @@ shard_hash_sha256(VCL_STRING s)
 		unsigned char digest[32];
 		uint32_t uint32_digest[8];
 	} sha256_digest;
+	uint32_t r;
 
 	SHA256_Init(&sha256);
 	SHA256_Update(&sha256, s, strlen(s));
@@ -70,7 +72,8 @@ shard_hash_sha256(VCL_STRING s)
 	 * use low 32 bits only
 	 * XXX: Are these the best bits to pick?
 	 */
-	return (sha256_digest.uint32_digest[7]);
+	vle32enc(&r, sha256_digest.uint32_digest[7]);
+	return (r);
 }
 
 static uint32_t __match_proto__(hash_func)
