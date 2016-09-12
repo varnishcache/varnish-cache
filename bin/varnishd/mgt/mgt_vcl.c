@@ -82,8 +82,6 @@ mgt_vcl_add(const char *name, const char *libfile, const char *state)
 
 	bprintf(vp->state, "%s", state);
 
-	if (active_vcl == NULL)
-		active_vcl = vp;
 	VTAILQ_INSERT_TAIL(&vclhead, vp, list);
 	return (vp);
 }
@@ -209,6 +207,9 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 	AZ(C_flag);
 	vp = mgt_vcl_add(vclname, lib, state);
 	free(lib);
+
+	if (active_vcl == NULL)
+		active_vcl = vp;
 
 	if (child_pid < 0)
 		return;
