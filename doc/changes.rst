@@ -15,6 +15,14 @@ Major items:
 * Always send the request body to the backend, making possible to cache
   POST, PUT, PATCH etc.
 
+* hit-for-pass is now actually hit-for-miss: Objects cached as
+  uncacheable now trigger misses rather than hits, so when a cacheable
+  object becomes available, it will be cached even before the ttl of
+  the uncacheable object expires. As a particular implication of this,
+  conditional request headers (If-Modified-Since, If-None-Match) are
+  now being removed for hits on uncacheable objects.
+
+  Documentation and counters still refer to the mechanism as hit-for-pass
 
 ======================================
 Varnish Cache 4.1.3-beta1 (2016-06-15)
