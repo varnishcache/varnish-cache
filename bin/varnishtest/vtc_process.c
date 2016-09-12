@@ -231,6 +231,14 @@ process_wait(const struct process *p)
 		AZ(pthread_join(p->tp, &v));
 }
 
+static void
+process_run(struct process *p)
+{
+
+	process_start(p);
+	process_wait(p);
+}
+
 /**********************************************************************
  * Send a signal to a process
  */
@@ -347,6 +355,10 @@ cmd_process(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-wait")) {
 			process_wait(p);
+			continue;
+		}
+		if (!strcmp(*av, "-run")) {
+			process_run(p);
 			continue;
 		}
 		if (!strcmp(*av, "-kill")) {
