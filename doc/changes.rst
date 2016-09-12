@@ -22,7 +22,8 @@ Major items:
   conditional request headers (If-Modified-Since, If-None-Match) are
   now being removed for hits on uncacheable objects.
 
-  Documentation and counters still refer to the mechanism as hit-for-pass
+  Documentation, counters and log entries still refer to the mechanism
+  as hit-for-pass and Hitpass, respectively.
 
 ======================================
 Varnish Cache 4.1.3-beta1 (2016-06-15)
