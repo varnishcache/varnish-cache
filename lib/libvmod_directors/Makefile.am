@@ -33,9 +33,7 @@ libvmod_directors_la_SOURCES = \
 	shard_hash.c \
 	shard_hash.h \
 	shard_parse_vcc_enums.h \
-	shard_parse_vcc_enums.c \
-	crc32.c \
-	crc32.h
+	shard_parse_vcc_enums.c
 
 nodist_libvmod_directors_la_SOURCES = \
 	vcc_if.c \

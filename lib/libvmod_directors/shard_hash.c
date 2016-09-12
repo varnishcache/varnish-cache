@@ -36,17 +36,26 @@
 #include "cache/cache.h"
 
 #include "vrt.h"
-#include "crc32.h"
 #include "vsha256.h"
 #include "vend.h"
 
 #include "shard_parse_vcc_enums.h"
 #include "shard_hash.h"
 
+/*
+ * XXX use the crc32 from libvgz, but declare it here to avoid an include
+ * dependency nightmare (at least for now)
+ */
+
+unsigned long crc32(unsigned long, const void *buf, unsigned len);
+
 static uint32_t __match_proto__(hash_func)
 shard_hash_crc32(VCL_STRING s)
 {
-	return (crc32_l(s, strlen(s)));
+	uint32_t crc;
+	crc = crc32(~0U, s, strlen(s));
+	crc ^= ~0U;
+	return (crc);
 }
 
 static uint32_t __match_proto__(hash_func)
