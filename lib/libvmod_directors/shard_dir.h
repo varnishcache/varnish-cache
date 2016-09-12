@@ -95,10 +95,10 @@ sharddir_backend_ident(const struct sharddir *shardd, int host)
 		    (shardd)->name, __VA_ARGS__);			\
 	} while (0)
 
-#define shard_err0(ctx, shardd, s)					\
+#define shard_err0(ctx, shardd, msg)					\
 	do {								\
 		sharddir_err(ctx, SLT_Error, "shard %s: %s",		\
-		    (shardd)->name, (s));				\
+		    (shardd)->name, (msg));				\
 	} while (0)
 
 void sharddir_debug(struct sharddir *shardd, const uint32_t flags);
@@ -113,5 +113,5 @@ VCL_BACKEND sharddir_pick_be(VRT_CTX, struct sharddir *, uint32_t, VCL_INT,
    VCL_REAL, VCL_BOOL, enum healthy_e);
 
 /* in shard_cfg.c */
-void shardcfg_delete(struct sharddir *shardd);
-VCL_DURATION shardcfg_get_rampup(struct sharddir *shardd, int host);
+void shardcfg_delete(const struct sharddir *shardd);
+VCL_DURATION shardcfg_get_rampup(const struct sharddir *shardd, int host);

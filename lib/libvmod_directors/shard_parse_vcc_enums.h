@@ -19,10 +19,10 @@ enum alg_e parse_alg_e (const char *);
 
 enum by_e {
 	_BY_E_INVALID = 0,
-	HASH,
-	URL,
-	KEY,
-	BLOB,
+	BY_HASH,
+	BY_URL,
+	BY_KEY,
+	BY_BLOB,
 	_BY_E_MAX
 };
 

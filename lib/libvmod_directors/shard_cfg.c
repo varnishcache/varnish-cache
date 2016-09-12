@@ -148,7 +148,7 @@ shard_change_task_add(VRT_CTX, struct shard_change *change,
 
 static inline VCL_BOOL
 shard_change_task_backend(VRT_CTX,
-    struct vmod_priv *priv, struct sharddir *shardd,
+    struct vmod_priv *priv, const struct sharddir *shardd,
     enum shard_change_task_e task_e, VCL_BACKEND be, VCL_STRING ident,
     VCL_DURATION rampup)
 {
@@ -183,8 +183,9 @@ shard_change_task_backend(VRT_CTX,
  * director reconfiguration tasks
  */
 VCL_BOOL
-shardcfg_add_backend(VRT_CTX, struct vmod_priv *priv, struct sharddir *shardd,
-    VCL_BACKEND be, VCL_STRING ident, VCL_DURATION rampup)
+shardcfg_add_backend(VRT_CTX, struct vmod_priv *priv,
+    const struct sharddir *shardd, VCL_BACKEND be, VCL_STRING ident,
+    VCL_DURATION rampup)
 {
 	AN(be);
 	return shard_change_task_backend(ctx, priv, shardd, ADD_BE,
@@ -193,14 +194,14 @@ shardcfg_add_backend(VRT_CTX, struct vmod_priv *priv, struct sharddir *shardd,
 
 VCL_BOOL
 shardcfg_remove_backend(VRT_CTX, struct vmod_priv *priv,
-    struct sharddir *shardd, VCL_BACKEND be, VCL_STRING ident)
+    const struct sharddir *shardd, VCL_BACKEND be, VCL_STRING ident)
 {
 	return shard_change_task_backend(ctx, priv, shardd, REMOVE_BE,
 	    be, ident, 0);
 }
 
 VCL_BOOL
-shardcfg_clear(VRT_CTX, struct vmod_priv *priv, struct sharddir *shardd)
+shardcfg_clear(VRT_CTX, struct vmod_priv *priv, const struct sharddir *shardd)
 {
 	struct shard_change *change;
 
@@ -223,7 +224,8 @@ shardcfg_clear(VRT_CTX, struct vmod_priv *priv, struct sharddir *shardd)
 typedef int (*compar)( const void*, const void* );
 
 static int
-circlepoint_compare(struct shard_circlepoint *a, struct shard_circlepoint *b)
+circlepoint_compare(const struct shard_circlepoint *a,
+    const struct shard_circlepoint *b)
 {
 	return (a->point == b->point) ? 0 : ((a->point > b->point) ? 1 : -1);
 }
@@ -256,7 +258,7 @@ shardcfg_hashcircle(struct sharddir *shardd, VCL_INT replicas, enum alg_e alg)
 
 		assert(ident[0] != '\0');
 
-		len = strlen(ident) + log10(UINT32_MAX) + 2;
+		len = strlen(ident) + 12; // log10(UINT32_MAX) + 2;
 
 		char s[len];
 
@@ -280,7 +282,7 @@ shardcfg_hashcircle(struct sharddir *shardd, VCL_INT replicas, enum alg_e alg)
 		for (j = 0; j < replicas; j++)
 			SHDBG(SHDBG_CIRCLE, shardd,
 			    "hashcircle[%5ld] = "
-			    "{point = %8x, host = %2d}\n",
+			    "{point = %8x, host = %2u}\n",
 			    i * replicas + j,
 			    shardd->hashcircle[i * replicas + j].point,
 			    shardd->hashcircle[i * replicas + j].host);
@@ -343,7 +345,7 @@ shardcfg_backend_del_cmp(const struct shard_backend *task,
 }
 
 static const struct shard_backend *
-shardcfg_backend_lookup(struct backend_reconfig *re,
+shardcfg_backend_lookup(const struct backend_reconfig *re,
     const struct shard_backend *b)
 {
 	int i, max = re->shardd->n_backend + re->hole_n;
@@ -357,7 +359,7 @@ shardcfg_backend_lookup(struct backend_reconfig *re,
 }
 
 static void
-shardcfg_backend_expand(struct backend_reconfig *re)
+shardcfg_backend_expand(const struct backend_reconfig *re)
 {
 	int min = re->hint;
 
@@ -612,7 +614,7 @@ shardcfg_reconfigure(VRT_CTX, struct vmod_priv *priv,
 
 /* only for sharddir_delete() */
 void
-shardcfg_delete(struct sharddir *shardd)
+shardcfg_delete(const struct sharddir *shardd)
 {
 	int i;
 
@@ -645,7 +647,7 @@ shardcfg_set_rampup(struct sharddir *shardd, VCL_DURATION duration)
 }
 
 VCL_DURATION
-shardcfg_get_rampup(struct sharddir *shardd, int host)
+shardcfg_get_rampup(const struct sharddir *shardd, int host)
 {
 	VCL_DURATION r;
 

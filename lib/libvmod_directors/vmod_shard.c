@@ -184,13 +184,13 @@ get_key(VRT_CTX, enum by_e by, VCL_INT key_int, VCL_BLOB key_blob)
 	int i, ki;
 
 	switch (by) {
-	case HASH:
+	case BY_HASH:
 		if (ctx->bo) {
 			CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 			return (vbe32dec(ctx->bo->digest));
 		}
 		/* FALLTHROUGH */
-	case URL:
+	case BY_URL:
 		if (ctx->http_req) {
 			AN(http = ctx->http_req);
 		} else {
@@ -198,11 +198,9 @@ get_key(VRT_CTX, enum by_e by, VCL_INT key_int, VCL_BLOB key_blob)
 			AN(http = ctx->http_bereq);
 		}
 		return (shard_hash_f[SHA256](http->hd[HTTP_HDR_URL].b));
-		break;
-	case KEY:
+	case BY_KEY:
 		return ((uint32_t)key_int);
-		break;
-	case BLOB:
+	case BY_BLOB:
 		assert(key_blob);
 		assert(key_blob->len > 0);
 		assert(key_blob->priv != NULL);
@@ -218,7 +216,6 @@ get_key(VRT_CTX, enum by_e by, VCL_INT key_int, VCL_BLOB key_blob)
 		assert(i <= key_blob->len);
 
 		return (vbe32dec(k));
-		break;
 	default:
 		WRONG("by value");
 	}
@@ -237,26 +234,26 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 
-	if (key_int && by != KEY) {
+	if (key_int && by != BY_KEY) {
 		shard_err(ctx, vshard->shardd,
 		    "by=%s but key argument used", by_s);
 		return NULL;
 	}
 
-	if (key_blob && by != BLOB) {
+	if (key_blob && by != BY_BLOB) {
 		shard_err(ctx, vshard->shardd,
 		    "by=%s but key_blob argument used", by_s);
 		return NULL;
 	}
 
-	if (by == BLOB) {
+	if (by == BY_BLOB) {
 		if (key_blob == NULL ||
 		    key_blob->len <= 0 ||
 		    key_blob->priv == NULL) {
 			shard_err0(ctx, vshard->shardd,
 			    "by=BLOB but no or empty key_blob "
 			    "- using key 0");
-			by = KEY;
+			by = BY_KEY;
 			key_int = 0;
 		}
 	}

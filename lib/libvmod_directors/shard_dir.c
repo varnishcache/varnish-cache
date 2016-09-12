@@ -44,7 +44,6 @@
 #include "vrnd.h"
 
 #include "shard_dir.h"
-#include "shard_hash.h"
 
 struct shard_be_info {
 	int		hostid;
@@ -98,7 +97,7 @@ shard_lookup(const struct sharddir *shardd, const uint32_t key)
 	int idx = -1, high = n, low = 0, i;
 
 	do {
-	    i = (high + low) >> 1;
+	    i = (high + low) / 2 ;
 	    if (shardd->hashcircle[i].point == key)
 		idx = i;
 	    else if (i == n - 1)
@@ -232,7 +231,7 @@ sharddir_unlock(struct sharddir *shardd)
 }
 
 static inline void
-validate_alt(VRT_CTX, struct sharddir *shardd, VCL_INT *alt)
+validate_alt(VRT_CTX, const struct sharddir *shardd, VCL_INT *alt)
 {
 	const VCL_INT alt_max = shardd->n_backend - 1;
 
@@ -257,7 +256,6 @@ init_state(struct shard_state *state,
 	state->shardd = shardd;
 	state->idx = -1;
 	state->picklist = picklist;
-	state->pickcount = 0;
 
 	/* healhy and changed only defined for hostid != -1 */
 	state->previous.hostid = -1;
@@ -311,6 +309,7 @@ sharddir_pick_be(VRT_CTX, struct sharddir *shardd,
 
 	validate_alt(ctx, shardd, &alt);
 
+	memset(&state, 0, sizeof(state));
 	init_state(&state, ctx, shardd, vbit_init(picklist_spc, picklist_sz));
 
 	state.idx = shard_lookup(shardd, key);

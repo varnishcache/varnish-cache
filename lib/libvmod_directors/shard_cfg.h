@@ -27,12 +27,12 @@
  */
 
 VCL_BOOL shardcfg_add_backend(VRT_CTX, struct vmod_priv *priv,
-    struct sharddir *shardd, VCL_BACKEND be, VCL_STRING ident,
+    const struct sharddir *shardd, VCL_BACKEND be, VCL_STRING ident,
     VCL_DURATION rampup);
 VCL_BOOL shardcfg_remove_backend(VRT_CTX, struct vmod_priv *priv,
-    struct sharddir *shardd, VCL_BACKEND be, VCL_STRING ident);
+    const struct sharddir *shardd, VCL_BACKEND be, VCL_STRING ident);
 VCL_BOOL shardcfg_clear(VRT_CTX, struct vmod_priv *priv,
-    struct sharddir *shardd);
+    const struct sharddir *shardd);
 VCL_BOOL shardcfg_reconfigure(VRT_CTX, struct vmod_priv *priv,
     struct sharddir *shardd, VCL_INT replicas, enum alg_e alg_e);
 VCL_VOID shardcfg_set_warmup(struct sharddir *shardd, VCL_REAL ratio);

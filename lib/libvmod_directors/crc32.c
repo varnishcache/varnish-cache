@@ -104,9 +104,12 @@ crc32_l(const void *p1, unsigned l)
 #ifdef DEBUG
 
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 int main(int argc, char *argv[]) {
 	if (argc > 1)
 		printf("%x\n", crc32_l(argv[1], strlen(argv[1])));
+	return 0;
 }
 
 #endif

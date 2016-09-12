@@ -67,7 +67,7 @@ enum by_e parse_by_e (const char *m) {
 	 _0B:
 	//BLOB
 	if ((m[1] == 'L') && (m[2] == 'O') && (m[3] == 'B') && (term(m[4]))) {
-	    r = BLOB;
+	    r = BY_BLOB;
 	    p = 4;
 	    goto ok;
 	}
@@ -75,7 +75,7 @@ enum by_e parse_by_e (const char *m) {
 	 _0H:
 	//HASH
 	if ((m[1] == 'A') && (m[2] == 'S') && (m[3] == 'H') && (term(m[4]))) {
-	    r = HASH;
+	    r = BY_HASH;
 	    p = 4;
 	    goto ok;
 	}
@@ -83,7 +83,7 @@ enum by_e parse_by_e (const char *m) {
 	 _0K:
 	//KEY
 	if ((m[1] == 'E') && (m[2] == 'Y') && (term(m[3]))) {
-	    r = KEY;
+	    r = BY_KEY;
 	    p = 3;
 	    goto ok;
 	}
@@ -91,7 +91,7 @@ enum by_e parse_by_e (const char *m) {
 	 _0U:
 	//URL
 	if ((m[1] == 'R') && (m[2] == 'L') && (term(m[3]))) {
-	    r = URL;
+	    r = BY_URL;
 	    p = 3;
 	    goto ok;
 	}
