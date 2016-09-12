@@ -17,6 +17,8 @@ enum alg_e {
 
 enum alg_e parse_alg_e (const char *);
 
+/*lint -esym(769,  by_e::_BY_E_MAX) */
+
 enum by_e {
 	_BY_E_INVALID = 0,
 	BY_HASH,
@@ -26,8 +28,9 @@ enum by_e {
 	_BY_E_MAX
 };
 
-
 enum by_e parse_by_e (const char *);
+
+/*lint -esym(769,  healthy_e::_HEALTHY_E_MAX) */
 
 enum healthy_e {
 	_HEALTHY_E_INVALID = 0,

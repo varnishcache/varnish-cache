@@ -6,6 +6,8 @@
  * TODO: integrate in vmodtool.py or replace with something else
  */
 
+/*lint -e801 */
+
 #include "shard_parse_vcc_enums.h"
 #define term(c) ((c) == '\0')
 
