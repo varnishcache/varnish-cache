@@ -251,20 +251,22 @@ mgt_SHM_Create(void)
  * Commit the VSM
  */
 
-void
+int
 mgt_SHM_Commit(void)
 {
 	char fnbuf[64];
+	int retval = 0;
 
 	bprintf(fnbuf, "%s.%jd", VSM_FILENAME, (intmax_t)getpid());
 	VJ_master(JAIL_MASTER_FILE);
 	if (rename(fnbuf, VSM_FILENAME)) {
-		fprintf(stderr, "Rename failed %s -> %s: %s\n",
+		MGT_complain(C_ERR, "Rename failed %s -> %s: %s\n",
 		    fnbuf, VSM_FILENAME, strerror(errno));
 		(void)unlink(fnbuf);
-		exit(1);
+		retval = -1;
 	}
 	VJ_master(JAIL_MASTER_LOW);
+	return (retval);
 }
 
 /*--------------------------------------------------------------------
