@@ -398,6 +398,11 @@ i_mode(void)
 	AN(vmod_path);
 	free(topbuild);
 	VSB_destroy(&vsb);
+
+	/*
+	 * strict jemalloc checking
+	 */
+	AZ(putenv("MALLOC_CONF=abort:true,redzone:true,junk:true"));
 }
 
 /**********************************************************************
