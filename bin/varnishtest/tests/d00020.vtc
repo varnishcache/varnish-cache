@@ -1,0 +1,50 @@
+varnishtest "shard director RS"
+
+server s1 {
+	rxreq
+	txresp -body "ech3Ooj"
+} -start
+
+server s2 {
+	rxreq
+	txresp -body "ieQu2qua"
+} -start
+
+server s3 {
+	rxreq
+	txresp -body "xiuFi3Pe"
+} -start
+
+varnish v1 -vcl+backend {
+	import directors;
+
+	sub vcl_init {
+		new vd = directors.shard();
+		vd.add_backend(s1);
+		vd.add_backend(s2);
+		vd.add_backend(s3);
+		vd.reconfigure(replicas=25);
+	}
+
+	sub vcl_recv {
+		set req.backend_hint = vd.backend(by=KEY,
+		    key=vd.key(req.url, alg=RS));
+		return(pass);
+	}
+
+} -start
+
+
+client c1 {
+	txreq -url /we0eeTho
+	rxresp
+	expect resp.body == "ech3Ooj"
+
+	txreq -url /mae8ooNu
+	rxresp
+	expect resp.body == "ieQu2qua"
+
+	txreq -url /oob3dahS
+	rxresp
+	expect resp.body == "xiuFi3Pe"
+} -run

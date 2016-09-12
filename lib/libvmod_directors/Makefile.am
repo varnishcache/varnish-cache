@@ -24,7 +24,18 @@ libvmod_directors_la_SOURCES = \
 	fall_back.c \
 	hash.c \
 	random.c \
-	round_robin.c
+	round_robin.c \
+	vmod_shard.c \
+	shard_cfg.c \
+	shard_cfg.h \
+	shard_dir.c \
+	shard_dir.h \
+	shard_hash.c \
+	shard_hash.h \
+	shard_parse_vcc_enums.h \
+	shard_parse_vcc_enums.c \
+	crc32.c \
+	crc32.h
 
 nodist_libvmod_directors_la_SOURCES = \
 	vcc_if.c \

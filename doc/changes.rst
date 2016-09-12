@@ -25,6 +25,8 @@ Major items:
   Documentation, counters and log entries still refer to the mechanism
   as hit-for-pass and Hitpass, respectively.
 
+* new shard director for loadbalancing by consistent hashing
+
 ======================================
 Varnish Cache 4.1.3-beta1 (2016-06-15)
 ======================================

@@ -1,0 +1,29 @@
+varnishtest "shard - single backend works"
+
+server s1 {
+	rxreq
+	txresp -body "ech3Ooj"
+} -start
+
+varnish v1 -vcl+backend {
+	import directors;
+
+	sub vcl_init {
+		new vd = directors.shard();
+		vd.add_backend(s1);
+		vd.reconfigure(1);
+	}
+
+	sub vcl_recv {
+		set req.backend_hint = vd.backend();
+		return(pass);
+	}
+
+} -start
+
+
+client c1 {
+	txreq -url /eishoSu2
+	rxresp
+	expect resp.body == "ech3Ooj"
+} -run

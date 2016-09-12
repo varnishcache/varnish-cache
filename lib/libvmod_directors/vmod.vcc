@@ -1,8 +1,15 @@
 #-
+# This document is licensed under the same licence as Varnish
+# itself. See LICENCE for details.
+#
 # Copyright (c) 2013-2015 Varnish Software AS
+# Copyright 2009-2016 UPLEX - Nils Goroll Systemoptimierung
 # All rights reserved.
 #
-# Author: Poul-Henning Kamp <phk@FreeBSD.org>
+# Authors: Poul-Henning Kamp <phk@FreeBSD.org>
+#	   Julian Wiesener <jw@uplex.de>
+#	   Nils Goroll <slink@uplex.de>
+#	   Geoffrey Simmons <geoff@uplex.de>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -32,9 +39,9 @@ DESCRIPTION
 
 `vmod_directors` enables backend load balancing in Varnish.
 
-The module implements a set of basic load balancing techniques, and
-also serves as an example on how one could extend the load balancing
-capabilities of Varnish.
+The module implements load balancing techniques, and also serves as an
+example on how one could extend the load balancing capabilities of
+Varnish.
 
 To enable load balancing you must import this vmod (directors).
 
@@ -213,10 +220,302 @@ Example
 	# pick a backend based on the cookie header from the client
 	set req.backend_hint = vdir.backend(req.http.cookie);
 
-COPYRIGHT
-=========
+$Object shard()
 
-This document is licensed under the same licence as Varnish
-itself. See LICENCE for details.
+Create a shard director.
 
-* Copyright (c) 2013-2015 Varnish Software AS
+Note that the shard director needs to be configured using at least one
+``shard.add_backend()`` call(s) **followed by a**
+``shard.reconfigure()`` **call** before it can hand out backends.
+
+Introduction
+````````````
+
+The shard director selects backends by a key, which can be provided
+directly or derived from strings. For the same key, the shard director
+will always return the same backend, unless the backend configuration
+or health state changes. Conversely, for differing keys, the shard
+director will likely choose different backends. In the default
+configuration, unhealthy backends are not selected.
+
+The shard director resembles the hash director, but its main advantage
+is that, when the backend configuration or health states change, the
+association of keys to backends remains as stable as possible.
+
+In addition, the rampup and warmup features can help to further
+improve user-perceived response times.
+
+Sharding
+````````
+
+This basic technique allows for numerious applications like optimizing
+backend server cache efficiency, Varnish clustering or persisting
+sessions to servers without keeping any state, and, in particular,
+without the need to synchronize state between nodes of a cluster of
+Varnish servers:
+
+* Many applications use caches for data objects, so, in a cluster of
+  application servers, requesting similar objects from the same server
+  may help to optimize efficiency of such caches.
+
+  For example, sharding by URL or some `id` component of the url has
+  been shown to drastically improve the efficiency of many content
+  management systems.
+
+* As special case of the previous example, in clusters of Varnish
+  servers without additional request distribution logic, each cache
+  will need store all hot objects, so the effective cache size is
+  approximately the smallest cache size of any server in the cluster.
+
+  Sharding allows to segregate objects within the cluster such that
+  each object is only cached on one of the servers (or on one primary
+  and one backup, on a primary for long and others for short
+  etc...). Effectively, this will lead to a cache size in the order of
+  the sum of all individual caches, with the potential to drastically
+  increase efficiency (scales by the number of servers).
+
+* Another application is to implement persistence of backend requests,
+  such that all requests sharing a certain criterium (such as an IP
+  address or session ID) get forwarded to the same backend server.
+
+When used with clusters of varnish servers, the shard director will,
+if otherwise configured equally, make the same decision on all
+servers. In other words, requests sharing a common criterium used as
+the shard key will be balanced onto the same backend server(s) no
+matter which Varnish server handles the request.
+
+The drawbacks are:
+
+* the distribution of requests depends on the number of requests per
+  key and the uniformity of the distribution of key values. In short,
+  while this technique may lead to much better efficiency overall, it
+  may also lead to less good load balancing for specific cases.
+
+* When a backend server becomes unavailable, every persistence
+  technique has to reselect a new backend server, but this technique
+  will also switch back to the preferred server once it becomes
+  healthy again, so when used for persistence, it is generally less
+  stable compared to stateful techniques (which would continue to use
+  a selected server for as long as possible (or dictated by a TTL)).
+
+Method
+``````
+
+When ``.reconfigure()`` is called, a consistent hashing circular data
+structure gets built from hash values of "ident%d" (default ident
+being the backend name) for each backend and for a running number from
+1 to n (n is the number of `replicas`). Hashing creates the seemingly
+random order for placement of backends on the consistent hashing ring.
+
+When ``.backend()`` is called, a load balacing key gets generated
+unless provided. The smallest hash value in the circle is looked up
+that is larger than the key (searching clockwise and wrapping around
+as necessary). The backend for this hash value is the preferred
+backend for the given key.
+
+If a healhy backend is requested, the search is continued linearly on
+the ring as long as backends found are unhealthy or all backends have
+been checked. The order auf these "alternative backends" on the ring
+is likely to differ for different keys. Alternative backends can also
+be selected explicitly.
+
+On consistent hashing see:
+
+* http://www8.org/w8-papers/2a-webserver/caching/paper2.html
+* http://www.audioscrobbler.net/development/ketama/
+* svn://svn.audioscrobbler.net/misc/ketama
+* http://en.wikipedia.org/wiki/Consistent_hashing
+
+Error Reporting
+```````````````
+
+Failing methods should report errors to VSL with the Error tag, so
+when configuring the shard director, you are advised to check::
+
+	varnishlog -I Error:^shard
+
+$Method VOID .set_warmup(REAL probability=0.0)
+
+Set the default warmup probability. See the `warmup` parameter of
+``shard.backend()``.
+
+Default: 0.0 (no warmup)
+
+$Method VOID .set_rampup(DURATION duration=0)
+
+Set the default rampup duration. See `rampup` parameter of
+`shard.backend()`.
+
+Default: 0s (no rampup)
+
+$Method BOOL .add_backend(PRIV_TASK, BACKEND backend,
+	STRING ident=0, DURATION rampup=973279260)
+
+Add a backend `backend` to the director.
+
+`ident`: Optionally specify an identification string for this backend,
+which will be hashed by `shard.reconfigure()` to construct the
+consistent hashing ring. The identification string defaults to the
+backend name.
+
+`ident` allows to add multuple instances of the same backend.
+
+`rampup`: Optionally specify a rampup time for this backend. Defaults
+to the director rampup time.
+
+NOTE: Backend changes need to be finalized with `shard.reconfigure()`
+and are only supported on one shard director at a time.
+
+$Method BOOL .remove_backend(PRIV_TASK, BACKEND backend=0, STRING ident=0)
+
+Remove backend(s) from the director. Either `backend` or `ident` must
+be specified. `ident` removes a specific instance. If `backend` is
+given without `ident`, all instances of this backend are removed.
+
+NOTE: Backend changes need to be finalized with `shard.reconfigure()`
+and are only supported on one shard director at a time.
+
+$Method BOOL .clear(PRIV_TASK)
+
+Remove all backends from the director.
+
+NOTE: Backend changes need to be finalized with `shard.reconfigure()`
+and are only supported on one shard director at a time.
+
+$Method BOOL .reconfigure(PRIV_TASK, INT replicas=67,
+	ENUM { CRC32, SHA256, RS } alg="SHA256")
+
+Reconfigure the consistent hashing ring to reflect backend changes.
+
+This method must be called at least once before the director can be
+used.
+
+$Method INT .key(STRING string, ENUM { CRC32, SHA256, RS } alg="SHA256")
+
+Utility method to generate a sharding key for use with the
+``shard.backend()`` method by hashing `string` with hash algorithm
+`alg`.
+
+$Method BACKEND .backend(
+	ENUM {HASH, URL, KEY, BLOB} by="HASH",
+	INT key=0,
+	BLOB key_blob=0,
+	INT alt=0,
+	REAL warmup=-1,
+	BOOL rampup=1,
+	ENUM {CHOSEN, IGNORE, ALL} healthy="CHOSEN")
+
+
+Lookup a backend on the consistent hashing ring.
+
+This documentation uses the notion of an order of backends for a
+particular shard key. This order is deterministic but seemingly random
+as determined by the consistent hashing algorithm and is likely to
+differ for different keys, depending on the number of backends and the
+number of replicas. In particular, the backend order referred to here
+is _not_ the order given when backends are added.
+
+* `by` how to determine the sharding key
+
+  default: `HASH`
+
+  * `HASH`:
+
+    * when called in backend context: Use the varnish hash value as
+      set by `vcl_hash`
+
+    * when called in client content: hash `req.url`
+
+  * `URL`: hash req.url / bereq.url
+
+  * `KEY`: use the `key` argument
+
+  * `BLOB`: use the `key_blob` argument
+
+  * `key` lookup key with `by=KEY`
+
+    the `shard.key()` function may come handy to generate a sharding
+    key from custom strings.
+
+  * `key_blob` lookup key with `by=BLOB`
+
+    Currently, this uses the first 4 bytes from the given blob in
+    network byte order (big endian), left-padded with zeros for blobs
+    smaller than 4 bytes.
+
+* `alt` alternative backend selection
+
+  default: `0`
+
+  Select the `alt`-th alternative backend for the given `key`.
+
+  This is particularly useful for retries / restarts due to backend
+  errors: By setting `alt=req.restarts` or `alt=bereq.retries` with
+  healthy=ALL, another server gets selected.
+
+  The rampup and warmup features are only active for `alt==0`
+
+* `rampup` slow start for servers which just went healthy
+
+  default: `true`
+
+  If `alt==0` and the chosen backend is in its rampup period, with a
+  probability proportional to the fraction of time since the backup
+  became healthy to the rampup period, return the next alternative
+  backend, unless this is also in its rampup period.
+
+  The default rampup interval can be set per shard director using the
+  `set_rampup()` method or specifically per backend with the
+  `set_backend()` method.
+
+* `warmup` probabalistic alternative server selection
+
+  possible values: -1, 0..1
+
+  default: `-1`
+
+  `-1`: use the warmup probability from the director definition
+
+  Only used for `alt==0`: Sets the ratio of requests (0.0 to 1.0) that
+  goes to the next alternate backend to warm it up when the preferred
+  backend is healthy. Not active if any of the preferred or
+  alternative backend are in rampup.
+
+  `warmup=0.5` is a convenient way to spread the load for each key
+  over two backends under normal operating conditions.
+
+* `healthy`
+
+  default: `CHOSEN`
+
+  * CHOSEN: Return a healthy backend if possible.
+
+    For `alt==0`, return the first healthy backend or none.
+
+    For `alt > 0`, ignore the health state of backends skipped for
+    alternative backend selection, then return the next healthy
+    backend. If this does not exist, return the last healthy backend
+    of those skipped or none.
+
+  * IGNORE: Completely ignore backend health state
+
+    Just return the first or `alt`-th alternative backend, ignoring
+    health state. Ignore `rampup` and `warmup`.
+
+  * ALL: Check health state also for alternative backend selection
+
+    For `alt > 0`, return the `alt`-th alternative backend of all
+    those healthy, the last healthy backend found or none.
+
+$Method VOID .debug(INT)
+
+`intentionally undocumented`
+
+ACKNOWLEDGEMENTS
+================
+
+Development of a previous version of the shard director was partly sponsored
+by Deutsche Telekom AG – Products & Innovation.
+
+Development of this version of the shard director was partly sponsored
+by BILD GmbH & Co KG.

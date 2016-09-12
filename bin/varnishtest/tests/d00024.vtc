@@ -1,0 +1,75 @@
+varnishtest "shard director Rampup Time"
+
+# NOTE: this test is timing sensitive by nature
+
+
+server s1 {
+	rxreq
+	txresp -body "ech3Ooj"
+} -start
+
+server s2 {
+	rxreq
+	txresp -body "ieQu2qua"
+	rxreq
+	txresp -body "ieQu2qua"
+} -start
+
+server s3 {
+	rxreq
+	txresp -body "xiuFi3Pe"
+} -start
+
+varnish v1 -vcl+backend {
+	import directors;
+
+	sub vcl_init {
+		new vd = directors.shard();
+		vd.debug(4);
+		vd.add_backend(s1);
+		vd.add_backend(s2);
+		vd.add_backend(s3);
+		vd.set_rampup(15s);
+		vd.reconfigure(25);
+	}
+
+	sub vcl_recv {
+		set req.backend_hint = vd.backend(by=KEY,
+		    key=vd.key(alg=CRC32, string="/eishoSu2"));
+		return(pass);
+	}
+} -start
+
+varnish v1 -cliok "debug.srandom"
+
+delay 8
+
+varnish v1 -cliok "backend.set_health s1 sick"
+
+# s1 down, s2 and s3 both in rampup - s2 chosen
+client c1 {
+	txreq -url /1
+	rxresp
+	expect resp.body == "ieQu2qua"
+} -run
+
+
+delay 8
+
+varnish v1 -cliok "backend.set_health s1 healthy"
+
+# s1 just came up, s2 chosen for ramup
+client c1 {
+	txreq -url /2
+	rxresp
+	expect resp.body == "ieQu2qua"
+} -run
+
+delay 16
+
+# s1 out of ramup
+client c1 {
+	txreq -url /3
+	rxresp
+	expect resp.body == "ech3Ooj"
+} -run

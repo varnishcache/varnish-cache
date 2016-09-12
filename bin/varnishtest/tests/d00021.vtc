@@ -1,0 +1,81 @@
+varnishtest "shard director key function"
+
+server s1 {
+	rxreq
+	txresp -body "ech3Ooj"
+	rxreq
+	txresp -body "ech3Ooj"
+	rxreq
+	txresp -body "ech3Ooj"
+} -start
+
+server s2 {
+	rxreq
+	txresp -body "ieQu2qua"
+} -start
+
+server s3 {
+	rxreq
+	txresp -body "xiuFi3Pe"
+} -start
+
+varnish v1 -vcl+backend {
+	import directors;
+
+	sub vcl_init {
+		new vd = directors.shard();
+		vd.add_backend(s1);
+		vd.add_backend(s2);
+		vd.add_backend(s3);
+		vd.reconfigure(25);
+	}
+
+	sub recv_sub {
+		set req.backend_hint = vd.backend(by=KEY,
+		    key=vd.key(req.http.X-Hash, RS));
+	}
+
+	sub vcl_recv {
+		if(req.url == "/1") {
+			set req.backend_hint = vd.backend(by=KEY,
+			    key=vd.key(alg=CRC32, string="/eishoSu2"));
+		} else if (req.url == "/2") {
+			set req.backend_hint = vd.backend(by=KEY,
+			    key=vd.key("/eishoSu2"));
+		} else if (req.url == "/3") {
+			set req.http.X-Hash = "/oob3dahS";
+			call recv_sub;
+		} else if (req.url == "/null_by_string") {
+			set req.backend_hint = vd.backend(by=KEY,
+			    key=vd.key(req.http.NonExistent));
+		} else if (req.url == "/null_by_string_hash") {
+			set req.backend_hint = vd.backend(by=KEY,
+			    key=vd.key(req.http.NonExistent, SHA256));
+		}
+		return(pass);
+	}
+
+} -start
+
+
+client c1 {
+	txreq -url /1
+	rxresp
+	expect resp.body == "ech3Ooj"
+
+	txreq -url /2
+	rxresp
+	expect resp.body == "ieQu2qua"
+
+	txreq -url /3
+	rxresp
+	expect resp.body == "xiuFi3Pe"
+
+	txreq -url /null_by_string
+	rxresp
+	expect resp.body == "ech3Ooj"
+
+	txreq -url /null_by_string_hash
+	rxresp
+	expect resp.body == "ech3Ooj"
+} -run

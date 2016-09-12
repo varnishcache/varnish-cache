@@ -1,0 +1,50 @@
+varnishtest "shard director - same as v01000.vtc but setting backend in fetch"
+
+server s1 {
+	rxreq
+	txresp -body "ech3Ooj"
+} -start
+
+server s2 {
+	rxreq
+	txresp -body "ieQu2qua"
+} -start
+
+server s3 {
+	rxreq
+	txresp -body "xiuFi3Pe"
+} -start
+
+varnish v1 -vcl+backend {
+	import directors;
+
+	sub vcl_init {
+		new vd = directors.shard();
+		vd.add_backend(s1);
+		vd.add_backend(s2);
+		vd.add_backend(s3);
+		vd.reconfigure(25);
+	}
+
+	sub vcl_backend_fetch {
+		set bereq.backend = vd.backend(by=KEY,
+		    key=vd.key(bereq.url, CRC32));
+		return(fetch);
+	}
+
+} -start
+
+
+client c1 {
+	txreq -url /eishoSu2
+	rxresp
+	expect resp.body == "ech3Ooj"
+
+	txreq -url /Zainao9d
+	rxresp
+	expect resp.body == "ieQu2qua"
+
+	txreq -url /Aunah3uo
+	rxresp
+	expect resp.body == "xiuFi3Pe"
+} -run
