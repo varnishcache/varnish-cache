@@ -910,14 +910,13 @@ vcl_cli_label(struct cli *cli, const char * const *av, void *priv)
 		bprintf(lbl->state, "%s", VCL_TEMP_LABEL);
 		lbl->temp = VCL_TEMP_WARM;
 		REPLACE(lbl->loaded_name, av[2]);
-		AZ(errno=pthread_rwlock_init(&vcl->temp_rwl, NULL));
+		AZ(errno=pthread_rwlock_init(&lbl->temp_rwl, NULL));
 		VTAILQ_INSERT_TAIL(&vcl_head, lbl, list);
 	}
 	if (lbl->label != NULL)
 		lbl->label->nlabels--;
 	lbl->label = vcl;
 	vcl->nlabels++;
-	return;
 }
 
 static void __match_proto__(cli_func_t)
