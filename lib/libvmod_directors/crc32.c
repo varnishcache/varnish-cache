@@ -83,17 +83,15 @@ static const uint32_t crc32bits[] = {
 };
 
 uint32_t
-crc32(uint32_t crc, const void *p1, unsigned l)
+crc32(uint32_t crc, const unsigned char *p, unsigned l)
 {
-	const unsigned char *p;
-
-	for (p = (const unsigned char*)p1; l-- > 0; p++)
+	for (; l-- > 0; p++)
 		crc = (crc >> 8) ^ crc32bits[(crc ^ *p) & 0xff];
 	return (crc);
 }
 
 uint32_t
-crc32_l(const void *p1, unsigned l)
+crc32_l(const unsigned char *p1, unsigned l)
 {
 	uint32_t crc;
 
