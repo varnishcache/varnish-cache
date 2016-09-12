@@ -120,10 +120,8 @@ varnish v1 -vcl {
 		set req.http.foo = 3.0 * 2;
 		set req.http.foo = 3.0 / 2;
 
-		set req.http.foo = req.http.foo ~ "bar";
-		set req.http.foo = req.http.foo !~ "bar";
-		set req.http.foo = "foo" ~ "bar";
-		set req.http.foo = "foo" !~ "bar";
+		set req.http.foo = req.http.foo + "bar" ~ "bar";
+		set req.http.foo = req.http.foo + "bar" !~ "bar";
 
 		set req.ttl = 1s;
 	}

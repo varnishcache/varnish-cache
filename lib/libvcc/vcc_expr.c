@@ -1147,6 +1147,8 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	}
 	if (((*e)->fmt == STRING || (*e)->fmt == STRING_LIST) &&
 	    (tl->t->tok == '~' || tl->t->tok == T_NOMATCH)) {
+		if ((*e)->fmt == STRING_LIST)
+			vcc_expr_tostring(tl, e, STRING);
 		not = tl->t->tok == '~' ? "" : "!";
 		vcc_NextToken(tl);
 		ExpectErr(tl, CSTR);
