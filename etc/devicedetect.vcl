@@ -40,7 +40,8 @@ sub devicedetect {
 		if (req.http.Cookie ~ "^ *$") { unset req.http.Cookie; }
 	} else {
         if (req.http.User-Agent ~ "\(compatible; Googlebot-Mobile/2.1; \+http://www.google.com/bot.html\)" ||
-            (req.http.User-Agent ~ "iPhone" && req.http.User-Agent ~ "\(compatible; Googlebot/2.1; \+http://www.google.com/bot.html")) {
+            (req.http.User-Agent ~ "(Android|iPhone)" && req.http.User-Agent ~ "\(compatible.?; Googlebot/2.1.?; \+http://www.google.com/bot.html") ||
+			(req.http.User-Agent ~ "(iPhone|Windows Phone)" && req.http.User-Agent ~ "\(compatible; bingbot/2.0; \+http://www.bing.com/bingbot.htm")) {
             set req.http.X-UA-Device = "mobile-bot"; }
 		elsif (req.http.User-Agent ~ "(?i)(ads|google|bing|msn|yandex|baidu|ro|career|seznam|)bot" ||
 		    req.http.User-Agent ~ "(?i)(baidu|jike|symantec)spider" ||
