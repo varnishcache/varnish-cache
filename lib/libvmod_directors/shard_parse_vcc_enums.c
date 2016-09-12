@@ -12,7 +12,6 @@
 
 
 enum alg_e parse_alg_e (const char *m) {
-	int p;
 	enum alg_e r;
 
 	switch (m[0]) {
@@ -25,7 +24,6 @@ enum alg_e parse_alg_e (const char *m) {
 	//CRC32
 	if ((m[1] == 'R') && (m[2] == 'C') && (m[3] == '3') && (m[4] == '2') && (term(m[5]))) {
 	    r = CRC32;
-	    p = 5;
 	    goto ok;
 	}
 	goto invalid;
@@ -33,7 +31,6 @@ enum alg_e parse_alg_e (const char *m) {
 	//RS
 	if ((m[1] == 'S') && (term(m[2]))) {
 	    r = RS;
-	    p = 2;
 	    goto ok;
 	}
 	goto invalid;
@@ -41,7 +38,6 @@ enum alg_e parse_alg_e (const char *m) {
 	//SHA256
 	if ((m[1] == 'H') && (m[2] == 'A') && (m[3] == '2') && (m[4] == '5') && (m[5] == '6') && (term(m[6]))) {
 	    r = SHA256;
-	    p = 6;
 	    goto ok;
 	}
 	goto invalid;
@@ -49,12 +45,10 @@ enum alg_e parse_alg_e (const char *m) {
 	return r;
   invalid:
     return _ALG_E_INVALID;
-    (void)p;
 }
 
 
 enum by_e parse_by_e (const char *m) {
-	int p;
 	enum by_e r;
 
 	switch (m[0]) {
@@ -68,7 +62,6 @@ enum by_e parse_by_e (const char *m) {
 	//BLOB
 	if ((m[1] == 'L') && (m[2] == 'O') && (m[3] == 'B') && (term(m[4]))) {
 	    r = BY_BLOB;
-	    p = 4;
 	    goto ok;
 	}
 	goto invalid;
@@ -76,7 +69,6 @@ enum by_e parse_by_e (const char *m) {
 	//HASH
 	if ((m[1] == 'A') && (m[2] == 'S') && (m[3] == 'H') && (term(m[4]))) {
 	    r = BY_HASH;
-	    p = 4;
 	    goto ok;
 	}
 	goto invalid;
@@ -84,7 +76,6 @@ enum by_e parse_by_e (const char *m) {
 	//KEY
 	if ((m[1] == 'E') && (m[2] == 'Y') && (term(m[3]))) {
 	    r = BY_KEY;
-	    p = 3;
 	    goto ok;
 	}
 	goto invalid;
@@ -92,7 +83,6 @@ enum by_e parse_by_e (const char *m) {
 	//URL
 	if ((m[1] == 'R') && (m[2] == 'L') && (term(m[3]))) {
 	    r = BY_URL;
-	    p = 3;
 	    goto ok;
 	}
 	goto invalid;
@@ -100,7 +90,6 @@ enum by_e parse_by_e (const char *m) {
 	return r;
   invalid:
     return _BY_E_INVALID;
-    (void)p;
 }
 
 
