@@ -11,13 +11,21 @@ varnish v1 -vcl+backend {
 	import debug;
 	import std;
 
+	sub vcl_init {
+		debug.test_priv_task("something");
+		debug.test_priv_task("to remember");
+		std.log(debug.test_priv_task());
+	}
+
 	sub vcl_recv {
-		set req.http.x0 = debug.test_priv_task(req.url);
+		debug.test_priv_task(req.url);
+		set req.http.x0 = debug.test_priv_task();
+		debug.test_priv_task("bazz");
 	}
 
 	sub vcl_deliver {
 		set resp.http.x0 = req.http.x0;
-		set resp.http.x1 = debug.test_priv_task("");
+		set resp.http.x1 = debug.test_priv_task();
 	}
 
 	sub vcl_backend_fetch {
@@ -32,19 +40,37 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+logexpect l1 -v v1 -g raw -d 1 {
+	expect 0 0    CLI		{^Rd vcl.load}
+	expect 0 =    VCL_Log		{^something to remember}
+
+	expect * 1002 Begin		fetch$
+	expect * =    VCL_call		^BACKEND_FETCH
+	expect 0 =    VCL_Log		^foo
+	expect 0 =    BereqHeader	{^bx0: /foobar}
+	expect 0 =    VCL_Log		^bar
+
+	expect * 1004 Begin		fetch$
+	expect * =    VCL_call		^BACKEND_FETCH
+	expect 0 =    VCL_Log		^foo
+	expect 0 =    BereqHeader	{^bx0: /snafu}
+	expect 0 =    VCL_Log		^bar
+} -start
 
 client c1 {
 	txreq -url /foobar
 	rxresp
 	expect resp.http.x0 == /foobar
-	expect resp.http.x1 == /foobar
+	expect resp.http.x1 == "/foobar bazz"
 	expect resp.http.bx0 == /foobar
 	expect resp.http.bx1 == /foobar
 
 	txreq -url /snafu
 	rxresp
 	expect resp.http.x0 == /snafu
-	expect resp.http.x1 == /snafu
+	expect resp.http.x1 == "/snafu bazz"
 	expect resp.http.bx0 == /snafu
 	expect resp.http.bx1 == /snafu
 } -run
+
+logexpect l1 -wait
