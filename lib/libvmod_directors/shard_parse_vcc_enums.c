@@ -94,7 +94,6 @@ enum by_e parse_by_e (const char *m) {
 
 
 enum healthy_e parse_healthy_e (const char *m) {
-	int p;
 	enum healthy_e r;
 
 	switch (m[0]) {
@@ -107,7 +106,6 @@ enum healthy_e parse_healthy_e (const char *m) {
 	//ALL
 	if ((m[1] == 'L') && (m[2] == 'L') && (term(m[3]))) {
 	    r = ALL;
-	    p = 3;
 	    goto ok;
 	}
 	goto invalid;
@@ -115,7 +113,6 @@ enum healthy_e parse_healthy_e (const char *m) {
 	//CHOSEN
 	if ((m[1] == 'H') && (m[2] == 'O') && (m[3] == 'S') && (m[4] == 'E') && (m[5] == 'N') && (term(m[6]))) {
 	    r = CHOSEN;
-	    p = 6;
 	    goto ok;
 	}
 	goto invalid;
@@ -123,7 +120,6 @@ enum healthy_e parse_healthy_e (const char *m) {
 	//IGNORE
 	if ((m[1] == 'G') && (m[2] == 'N') && (m[3] == 'O') && (m[4] == 'R') && (m[5] == 'E') && (term(m[6]))) {
 	    r = IGNORE;
-	    p = 6;
 	    goto ok;
 	}
 	goto invalid;
@@ -131,5 +127,4 @@ enum healthy_e parse_healthy_e (const char *m) {
 	return r;
   invalid:
     return _HEALTHY_E_INVALID;
-    (void)p;
 }
