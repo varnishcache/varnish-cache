@@ -27,6 +27,22 @@ Major items:
 
 * new shard director for loadbalancing by consistent hashing
 
+* ban lurker performance improvements
+
+* access to obj.ttl, obj.age, obj.grace and obj.keep in vcl_deliver
+
+News for Vmod Authors
+---------------------
+
+* vcl cli events (init/fini methods) now have a workspace and
+  PRIV_TASK
+
+* PRIV_* now also work for object methods with unchanged scope.  In
+  particular, they are per vmod and `not` per object - e.g. the same
+  PRIV_TASK gets passed to object methods as to functions during a VCL
+  task.
+
+
 ======================================
 Varnish Cache 4.1.3-beta1 (2016-06-15)
 ======================================
