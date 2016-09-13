@@ -822,7 +822,7 @@ main(int argc, char * const *argv)
 	if (d_flag)
 		mgt_cli_setup(0, 1, 1, "debug", cli_stdin_close, NULL);
 
-	if (strcmp(S_arg, "none"))
+	if (strcmp(S_arg, "none") && *S_arg != '\0')
 		mgt_cli_secret(S_arg);
 
 	if (M_arg != NULL)
