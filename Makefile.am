@@ -6,7 +6,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = varnishapi.pc
 
 m4dir = $(datadir)/aclocal
-m4_DATA = varnish-legacy.m4
+m4_DATA = varnish.m4 varnish-legacy.m4
 
 CLEANFILES = cscope.in.out cscope.out cscope.po.out
 EXTRA_DIST = \
@@ -15,6 +15,7 @@ EXTRA_DIST = \
 	LICENSE \
 	autogen.sh \
 	varnishapi.pc.in \
+	varnish.m4 \
 	varnish-legacy.m4
 
 DISTCHECK_CONFIGURE_FLAGS = \
