@@ -1,20 +1,30 @@
-========================================
-DRAFT CHANGELOG ENTRIES FOR NEXT RELEASE
-========================================
+======================================
+Varnish Cache 4.1.4-beta1 (2016-09-14)
+======================================
 
 Changes since 4.1.3:
 
+* [varnishhist] Various improvements
+* [varnishtest] A `cmd` feature for custom shell-based checks
+* Documentation improvements (do_stream, sess_herd, timeout_linger, thread_pools)
+* [varnishtop] Documented behavior when both -p and -1 are specified
+
+Bugs fixed
+----------
+
+* 2027_ - Racy backend selection
 * 2024_ - panic vmod_rr_resolve() round_robin.c line 75 (be) != NULL
 * 2011_ - VBE.*.conn (concurrent connections to backend) not working as expected
+* 2008_ - Assert error in VBE_Delete()
+* 2007_ - Update documentation part about CLI/management port authentication paramater
+* 1881_ - std.cache_req_body() w/ return(pipe) is broken
 
+.. _2027: https://github.com/varnishcache/varnish-cache/issues/2027
 .. _2024: https://github.com/varnishcache/varnish-cache/issues/2024
 .. _2011: https://github.com/varnishcache/varnish-cache/issues/2011
-
-* varnishhist improvements:
-  * can now generate statistics of backend requests
-  * more predefined profiles
-  * time bend option: control the log processing speed
-  * y axis scale
+.. _2008: https://github.com/varnishcache/varnish-cache/issues/2008
+.. _2007: https://github.com/varnishcache/varnish-cache/issues/2007
+.. _1881: https://github.com/varnishcache/varnish-cache/issues/1881
 
 ================================
 Varnish Cache 4.1.3 (2016-07-06)
