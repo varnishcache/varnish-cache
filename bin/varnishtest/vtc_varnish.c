@@ -35,6 +35,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <fnmatch.h>
 #include <inttypes.h>
 #include <poll.h>
 #include <stdio.h>
@@ -791,6 +792,64 @@ varnish_vclbackend(struct varnish *v, const char *vcl)
 }
 
 /**********************************************************************
+ */
+
+struct dump_priv {
+	const char *arg;
+	const struct varnish *v;
+};
+
+static int
+do_stat_dump_cb(void *priv, const struct VSC_point * const pt)
+{
+	const struct varnish *v;
+	struct dump_priv *dp;
+	uint64_t u;
+	char buf[1024];
+
+	if (pt == NULL)
+		return (0);
+	dp = priv;
+	v = dp->v;
+
+	if(strcmp(pt->desc->ctype, "uint64_t"))
+		return (0);
+	u = *(const volatile uint64_t*)pt->ptr;
+
+	strcpy(buf, pt->section->type);
+	if (pt->section->ident[0] != '\0') {
+		strcat(buf, ".");
+		strcat(buf, pt->section->ident);
+	}
+	strcat(buf, ".");
+	strcat(buf, pt->desc->name);
+
+	if (strcmp(dp->arg, "*")) {
+		if (fnmatch(dp->arg, buf, 0))
+			return (0);
+	}
+
+	vtc_log(v->vl, 4, "VSC %s %ju",  buf, u);
+	return (0);
+}
+
+static void
+varnish_vsc(const struct varnish *v, const char *arg)
+{
+	struct dump_priv dp;
+
+	memset(&dp, 0, sizeof dp);
+	dp.v = v;
+	dp.arg = arg;
+	if (VSM_Abandoned(v->vd)) {
+		VSM_Close(v->vd);
+		VSM_Open(v->vd);
+	}
+
+	(void)VSC_Iter(v->vd, NULL, do_stat_dump_cb, &dp);
+}
+
+/**********************************************************************
  * Check statistics
  */
 
@@ -821,6 +880,9 @@ do_stat_cb(void *priv, const struct VSC_point * const pt)
 	sp->val = *(const volatile uint64_t*)pt->ptr;
 	return (1);
 }
+
+/**********************************************************************
+ */
 
 static void
 varnish_expect(const struct varnish *v, char * const *av)
@@ -1001,6 +1063,12 @@ varnish_expect(const struct varnish *v, char * const *av)
  *         a correct value. OP can be ==, >, >=, <, <=. For example::
  *
  *                 varnish v1 -expect SMA.s1.g_space > 1000000
+ *
+ * \-vsc PATTERN
+ *         Dump VSC counters matching PATTERN.  The PATTERN is a 'glob'
+ *         style pattern (ie: fnmatch(3)) as used in shell filename expansion.
+ *         To see all counters use pattern "*", to see all counters about
+ *         requests use "*req*".
  */
 
 void
@@ -1128,6 +1196,12 @@ cmd_varnish(CMD_ARGS)
 		if (!strcmp(*av, "-vcl+backend")) {
 			AN(av[1]);
 			varnish_vclbackend(v, av[1]);
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-vsc")) {
+			AN(av[1]);
+			varnish_vsc(v, av[1]);
 			av++;
 			continue;
 		}
