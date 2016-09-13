@@ -829,7 +829,7 @@ do_stat_dump_cb(void *priv, const struct VSC_point * const pt)
 			return (0);
 	}
 
-	vtc_log(v->vl, 4, "VSC %s %ju",  buf, u);
+	vtc_log(v->vl, 4, "VSC %s %ju",  buf, (uintmax_t)u);
 	return (0);
 }
 
