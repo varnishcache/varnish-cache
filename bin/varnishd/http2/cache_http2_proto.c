@@ -141,7 +141,6 @@ h2_new_sess(const struct worker *wrk, struct sess *sp, struct req *srq)
 		h2 = WS_Alloc(srq->ws, sizeof *h2);
 		AN(h2);
 		INIT_OBJ(h2, H2_SESS_MAGIC);
-		h2->refcnt = 1;
 		h2->srq = srq;
 		h2->htc = srq->htc;
 		h2->ws = srq->ws;
@@ -203,20 +202,29 @@ static void
 h2_del_req(struct worker *wrk, struct h2_req *r2, enum h2_error_e err)
 {
 	struct h2_sess *h2;
+	struct sess *sp;
+	struct req *req;
 	int r;
 
 	(void)err;
 	h2 = r2->h2sess;
-	Lck_Lock(&h2->sess->mtx);
+	sp = h2->sess;
+	Lck_Lock(&sp->mtx);
 	assert(h2->refcnt > 0);
 	r = --h2->refcnt;
 	/* XXX: PRIORITY reshuffle */
 	VTAILQ_REMOVE(&h2->streams, r2, list);
-	Lck_Unlock(&h2->sess->mtx);
-	Req_Cleanup(h2->sess, wrk, r2->req);
+	Lck_Unlock(&sp->mtx);
+	Req_Cleanup(sp, wrk, r2->req);
+	Req_Release(r2->req);
 	if (r)
 		return;
-	SES_Delete(h2->sess, SC_RX_JUNK, NAN);
+
+	/* All streams gone, including stream #0, clean up */
+	req = h2->srq;
+	Req_Cleanup(sp, wrk, req);
+	Req_Release(req);
+	SES_Delete(sp, SC_RX_JUNK, NAN);
 }
 
 /**********************************************************************
@@ -687,7 +695,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	struct req *req;
 	struct sess *sp;
 	struct h2_sess *h2;
-	struct h2_req *r2;
+	struct h2_req *r2, *r22;
 	char *wsp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -742,10 +750,11 @@ h2_new_session(struct worker *wrk, void *arg)
 		HTC_RxInit(h2->htc, wrk->aws);
 	}
 
-	r2 = VTAILQ_FIRST(&h2->streams);
-	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
-	assert(r2->stream == 0);
-	h2_del_req(wrk, r2, H2E_NO_ERROR);
+	/* Delete all idle streams */
+	VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
+		if (r2->state == H2_S_IDLE)
+			h2_del_req(wrk, r2, H2E_NO_ERROR);
+	}
 }
 
 struct transport H2_transport = {
