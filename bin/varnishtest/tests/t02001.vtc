@@ -4,18 +4,39 @@ barrier b1 cond 2
 
 server s1 {
 	rxreq
+	expect req.url == /noupgrade
 	expect req.http.host == foo.bar
-	barrier b1 sync
 	txresp -status 400 -bodylen 10
 } -start
 
 varnish v1 -vcl+backend {} -start
 
-varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set feature -http2"
 varnish v1 -cliok "param.set debug +syncvsl"
 
 client c1 {
-	send "GET / HTTP/1.1\r\n"
+	send "GET /noupgrade HTTP/1.1\r\n"
+	send "Host: foo.bar\r\n"
+	send "Upgrade: h2c\r\n"
+	send "HTTP2-Settings: AAMAAABkAAQAAP__\r\n"
+	send "\r\n"
+	rxresp
+	expect resp.status == 400
+	expect resp.bodylen == 10
+} -run
+
+server s1 {
+	rxreq
+	expect req.url == /upgrade
+	expect req.http.host == foo.bar
+	barrier b1 sync
+	txresp -status 401 -bodylen 11
+} -start
+
+varnish v1 -cliok "param.set feature +http2"
+
+client c1 {
+	send "GET /upgrade HTTP/1.1\r\n"
 	send "Host: foo.bar\r\n"
 	send "Upgrade: h2c\r\n"
 	send "HTTP2-Settings: AAMAAABkAAQAAP__\r\n"
@@ -35,7 +56,7 @@ client c1 {
 	barrier b1 sync
 	stream 1 {
 		rxresp
-		expect resp.status == 400
-		expect resp.bodylen == 10
+		expect resp.status == 401
+		expect resp.bodylen == 11
 	} -run
 } -run
