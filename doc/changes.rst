@@ -8,7 +8,7 @@ The list of changes are numerous and will not be expanded on in detail.
 
 Major items:
 
-* VCL labels, allowing for per-vhost VCL.
+* VCL labels, allowing for per-vhost (or per-anything) separate VCL files.
 
 * (Very!) experimental support for HTTP/2.
 
