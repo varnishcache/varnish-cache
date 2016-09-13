@@ -127,6 +127,16 @@ varnish v1 -vcl {
 	}
 }
 
+
+varnish v1 -vcl {
+	import std;
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv {
+		if (std.integer("1", 1)) {
+		}
+	}
+}
+
 # XXX: not the most clear error message
 varnish v1 -errvcl {STRING - STRING not possible.} {
 	backend b { .host = "127.0.0.1"; }
