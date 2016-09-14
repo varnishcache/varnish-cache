@@ -61,3 +61,47 @@ to our other directors, configuration is transactional: Any series of
 backend changes must be concluded by a reconfigure call for
 activation.
 
+Hit-For-Pass is now actually Hit-For-Miss
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Almost since the beginning of time (2008), varnish has hit-for-pass:
+It is basically a negative caching feature, putting into the cache
+objects as markers saying "when you hit this, your request should be a
+pass". The purpose is to selectively avoid the request coalescing
+(waitinglist) feature, which is useful for cacheable content, but not
+for uncacheable objects. If we did not have hit-for-pass, without
+additional configuration in vcl_recv, requests to uncacheable content
+would be sent to the backend serialized (one after the other).
+
+As useful as this feature is, it has caused a lot of headaches to
+varnish administrators along the lines of "why the *beep* doesn't
+Varnish cache this": A hit-for-pass object stayed in cache for however
+long its ttl dictated and prevented caching whenever it got hit ("for
+that url" in most cases). In particular, as a pass object can not be
+turned into something cacheable retrospectively (beresp.uncacheable
+can be changed from false to true, but not the other way around), even
+responses which would have been cacheable were not cached. So, when a
+hit-for-pass object got into cache unintentionally, it had to be
+removed explicitly (using a ban or purge).
+
+We've changed this now:
+
+A hit-for-pass object (we still call it like this in the docs, logging
+and statistics) will now cause a cache-miss for all subsequent
+requests, so if any backend response qualifies for caching, it will
+get cached and subsequent requests will be hits.
+
+The punchline is: We've changed from "the uncacheable case wins" to
+"the cacheable case wins" or from hit-for-pass to hit-for-miss.
+
+The primary consequence which we are aware of at the time of this
+release is caused be the fact that, to create cacheable objects, we
+need to make backend requests unconditional (that is, remove the
+If-Modified-Since and If-None-Match headers): For conditional client
+requests on hit-for-pass objects, Varnish will now issue an
+unconditional backend fetch and, for 200 responses, send a 304 or 200
+response to the client as appropriate.
+
+As of the time of this release we cannot say if this will remain the
+final word on this topic, but we hope that it will mean an improvement
+for most users of Varnish.
