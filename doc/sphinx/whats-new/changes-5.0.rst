@@ -3,7 +3,7 @@
 Changes in Varnish 5.0
 ======================
 
-Varnish 5.0 changes some (mostly) internal APIs and adds som major new
+Varnish 5.0 changes some (mostly) internal APIs and adds some major new
 features over Varnish 4.1.
 
 
@@ -20,7 +20,7 @@ send all POSTs, all JPEG images or all traffic from a certain
 IP range to a separate VCL file.
 
 VCL labels can also be used to give symbolic names to loaded VCL
-configurations, so that operations personel only need to know
+configurations, so that operations personnel only need to know
 about "normal", "weekend" and "emergency", and web developers
 can update these as usual, without having to tell ops what the
 new weekend VCL is called.
