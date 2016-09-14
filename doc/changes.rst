@@ -15,8 +15,9 @@ Major items:
 
 * (Very!) experimental support for HTTP/2.
 
-* Always send the request body to the backend, allowing caching of
-  POST, PUT, PATCH etc with appropriate custom VCL and/or vmods.
+* Always send the request body to the backend, making possible to cache
+  responses of POST, PATCH requests etc with appropriate custom VCL and/or
+  vmods.
 
 * hit-for-pass is now actually hit-for-miss.
 
