@@ -10,7 +10,7 @@ features over Varnish 4.1.
 Separate VCL files and VCL labels
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Varnish 5.0 supports jumping from the active VCL's vcl_recv{} to
+Varnish 5.0 supports jumping from the active VCL's ``vcl_recv{}`` to
 another VCL via a VCL label.
 
 The major use of this will probably be to have a separate VCL for
@@ -56,9 +56,9 @@ smoothly, while the prewarm feature allows to prepare backends for
 traffic which they would see if the primary backend for a certain key
 went down.
 
-It can be reconfigured dynamically (outside vcl_init), but different
-to our other directors, configuration is transactional: Any series of
-backend changes must be concluded by a reconfigure call for
+It can be reconfigured dynamically (outside ``vcl_init{}``), but
+different to our other directors, configuration is transactional: Any
+series of backend changes must be concluded by a reconfigure call for
 activation.
 
 
@@ -79,11 +79,12 @@ varnish administrators along the lines of "why the *beep* doesn't
 Varnish cache this": A hit-for-pass object stayed in cache for however
 long its ttl dictated and prevented caching whenever it got hit ("for
 that url" in most cases). In particular, as a pass object can not be
-turned into something cacheable retrospectively (beresp.uncacheable
-can be changed from false to true, but not the other way around), even
-responses which would have been cacheable were not cached. So, when a
-hit-for-pass object got into cache unintentionally, it had to be
-removed explicitly (using a ban or purge).
+turned into something cacheable retrospectively
+(``beresp.uncacheable`` can be changed from ``false`` to ``true``, but
+not the other way around), even responses which would have been
+cacheable were not cached. So, when a hit-for-pass object got into
+cache unintentionally, it had to be removed explicitly (using a ban or
+purge).
 
 We've changed this now:
 
@@ -98,8 +99,8 @@ The punchline is: We've changed from "the uncacheable case wins" to
 The primary consequence which we are aware of at the time of this
 release is caused be the fact that, to create cacheable objects, we
 need to make backend requests unconditional (that is, remove the
-If-Modified-Since and If-None-Match headers): For conditional client
-requests on hit-for-pass objects, Varnish will now issue an
+``If-Modified-Since`` and ``If-None-Match headers``): For conditional
+client requests on hit-for-pass objects, Varnish will now issue an
 unconditional backend fetch and, for 200 responses, send a 304 or 200
 response to the client as appropriate.
 
@@ -115,17 +116,17 @@ We have made the ban lurker even more efficient by example of some
 real live situations with tens of thousands of bans using inefficient
 regular expressions.
 
-The new parameter ban_lurker_holdoff tells the ban lurker for how long
-it should get out of the way when it could potentially slow down
+The new parameter ``ban_lurker_holdoff`` tells the ban lurker for how
+long it should get out of the way when it could potentially slow down
 lookups due to lock contention. Previously this was the same as
-ban_lurker_sleep.
+``ban_lurker_sleep``.
 
 
 Access to more object properties from vcl_deliver
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-obj.ttl, obj.age, obj.grace and obj.keep are now available vcl_deliver
-read-only.
+``obj.ttl``, ``obj.age``, ``obj.grace`` and ``obj.keep`` are now
+available in ``vcl_deliver{}`` read-only.
 
 
 Request Body sent always / "cacheable POST"
@@ -145,10 +146,11 @@ some applications use it).
 So the often-requested ability to cache POST/PUT/... is now available,
 but not out-of-the-box:
 
-The builtin.vcl still contains a return(pass) for anything but a GET
-or HEAD because other HTTP methods, by definition, may cause state
-changes / side effects on backends. The application at hand should be
-understood well before caching of non-GET/non-HEAD is considered.
+The ``builtin.vcl`` still contains a ``return(pass)`` for anything but
+a GET or HEAD because other HTTP methods, by definition, may cause
+state changes / side effects on backends. The application at hand
+should be understood well before caching of non-GET/non-HEAD is
+considered.
 
 Care should be taken to choose an appropriate cache key and/or Vary
 criteria. Adding the request body to the cache key is not possible
@@ -162,10 +164,10 @@ key doing so is almost guaranteed to be wrong.
 News for vmod authors
 ~~~~~~~~~~~~~~~~~~~~~
 
-* vcl cli events (init/fini methods) now have a workspace and
-  PRIV_TASK
+* vcl cli events (in particular, ``vcl_init{}`` /``vcl_fini{}``) now
+  have a workspace and ``PRIV_TASK`` available for vmods.
 
-* PRIV_* now also work for object methods with unchanged scope.  In
-  particular, they are per vmod and `not` per object - e.g. the same
-  PRIV_TASK gets passed to object methods as to functions during a VCL
-  task.
+* ``PRIV_*`` now also work for object methods with unchanged scope.
+  In particular, they are per vmod and `not` per object - e.g. the
+  same ``PRIV_TASK`` gets passed to object methods as to functions
+  during a VCL task.
