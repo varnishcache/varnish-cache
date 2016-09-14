@@ -122,13 +122,6 @@ lookups due to lock contention. Previously this was the same as
 ``ban_lurker_sleep``.
 
 
-Access to more object properties from vcl_deliver
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-``obj.ttl``, ``obj.age``, ``obj.grace`` and ``obj.keep`` are now
-available in ``vcl_deliver{}`` read-only.
-
-
 Request Body sent always / "cacheable POST"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
