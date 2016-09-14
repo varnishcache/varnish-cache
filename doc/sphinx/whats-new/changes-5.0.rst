@@ -236,3 +236,5 @@ News for vmod authors
 
 * ``vmodtool.py`` for translating vcc files has been largely
   rewritten, there may still exist regressions which remained unnoticed
+
+* ``vmodtool.py`` now requires at least Python 2.6
