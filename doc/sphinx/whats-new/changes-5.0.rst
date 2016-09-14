@@ -129,7 +129,7 @@ read-only.
 
 
 News for vmod authors
-~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 * vcl cli events (init/fini methods) now have a workspace and
   PRIV_TASK
