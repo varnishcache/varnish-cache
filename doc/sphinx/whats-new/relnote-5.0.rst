@@ -12,14 +12,57 @@ released`_ on September 20th 2006.
 That also means that we have been doing this for 10 years
 without any bad security holes.
 
-So yeah… 5.0 is not what we had hoped it would be, but we are as
-proud as one can possibly be anyway.
+So yeah… 5.0 is not entirely what we had hoped it would be, but we
+are as proud as one can possibly be anyway.
 
-We have put the technical stuff in two separate documents:
+To keep this release not short(er), we have put the purely technical
+stuff in two separate documents:
 
 * :ref:`whatsnew_changes_5.0`
 
 * :ref:`whatsnew_upgrading_5.0`
+
+How to get Varnish 5.0
+----------------------
+
+`Source download <https://repo.varnish-cache.org/source/varnish-5.0.0.tar.gz>`_
+
+Packages for most mainstream operating systems should appear in as
+soon as they trickle through the machinery.
+
+
+Reasons to upgrade to Varnish 5.0
+---------------------------------
+
+The separate VCL/VCL labels feature can probably help you untangle
+your VCL code if it has become too complex.  Upgrading from 4.1
+to get that feature should be a no-brainer.
+
+The HTTP/2 code is not mature enough for production, and if you
+want to start to play with H2, you should not upgrade to 5.0,
+but rather track -trunk from github and help us find all the bugs
+before the next release.
+
+The Shard director is new in the tree, but it has a lot of live
+hours out of tree.  Upgrading from 4.1 to 5.0 to get that should
+also be a no-brainer.
+
+We have also fixed at lot of minor bugs, and improved many details
+here and there, but to be honest, we don't have a comprehensive
+list of it all, apart from the git logs.
+
+
+Reasons not to upgrade to Varnish 5.0
+-------------------------------------
+
+None that we know of af this time.
+
+
+Next release
+------------
+
+Next release is scheduled for March 15th 2017, and will most
+likely be Varnish 5.1.
 
 
 The obligatory thank-you speech
@@ -40,8 +83,7 @@ Without them, this release, and for that matter all the previous
 ones, would not have happened.
 
 Even though they are by and large employees of the very
-same companies, the developers who have contributed to
-Varnish in a major way in this release also deserve thanks:
+same companies, these developers merit personal praise:
 
 * Martin - HTTP/2 HPACK header compression code, stevedore API, VSL
 
@@ -57,7 +99,8 @@ Varnish in a major way in this release also deserve thanks:
 
 * Devon - Performance insights and critical review.
 
-* The rest of the V-S crew, for too many things to mention.
+* The rest of the V-S crew - Too many things to list.
+
 
 We need more money
 ------------------
@@ -98,6 +141,13 @@ so a webmaster is on our shopping list as well.
 Finally, we can always use C-developers, we have more ideas than
 we have coders, and since we have very high standards for quality
 things take time to write.
+
+The best way to get involved is to just jump in and do stuff that
+needs done.
+
+Here is the `Varnish Cache github page <https://github.com/varnishcache/varnish-cache>`_.
+
+And here is the `Varnish Projects homepage on github <https://github.com/varnishcache/varnish-cache>`_.
 
 *phk*
 
