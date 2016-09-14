@@ -14,81 +14,84 @@ Changes to VCL
 
 	Name <acl> is a reserved name
 
-backend ... {}
-~~~~~~~~~~~~~~
+* VCL names are restricted to alphanumeric characters, dashes (-) and
+  underscores (_).  In addition, the first character should be alphabetic.
+  That is, the name should match "[A-Za-z][A-Za-z0-9\_-]*".
 
-* added ``.proxy_header`` attribute with possible values of 1 and 2
-  for PROXY Protocol Version 1 and 2
+backends
+~~~~~~~~
 
-vcl_recv {}
-~~~~~~~~~~~
+* Added support for the PROXY protocol via ``.proxy_header`` attribute.
+  Possible values are 1 and 2, corresponding to the PROXY protocol
+  version 1 and 2, respectively.
 
-* added ``return(vcl(label))`` to switch to the vcl labeled `label`
-* ``rollback`` is now ``std.rollback(req)``
+vcl_recv
+~~~~~~~~
 
-vcl_hit {}
-~~~~~~~~~~
+* Added ``return(vcl(label))`` to switch to the VCL labelled `label`.
+* The ``rollback`` function has been retired.
 
-* replace ``return(fetch)`` with ``return(miss)``
+vcl_hit
+~~~~~~~
 
-vcl_backend_* {}
-~~~~~~~~~~~~~~~~
+* Replace ``return(fetch)`` with ``return(miss)``.
 
-* added read access to ``remote.ip``, ``client.ip``, ``local.ip`` and
-  ``server.ip``
+vcl_backend_*
+~~~~~~~~~~~~~
 
-vcl_backend_fetch {}
-~~~~~~~~~~~~~~~~~~~~
+* Added read access to ``remote.ip``, ``client.ip``, ``local.ip`` and
+  ``server.ip``.
 
-* added write access to ``bereq.body``, the request body, only
-  supported with ``unset`` yet.
+vcl_backend_fetch
+~~~~~~~~~~~~~~~~~
+
+* Added write access to ``bereq.body``, the request body. Only ``unset``
+  is supported at this time.
 
 * We now send request bodies by default (see :ref:_whatsnew_changes_5.0).
-  To keep the previous behaviour, add the following code before any
-  ``return()``::
+  To keep the previous behaviour add the following code before any
+  ``return()`` statement in this subroutine::
 
 	if (bereq.method == "GET") {
 	    unset bereq.body;
 	}
 
 
-vcl_backend_error {}
-~~~~~~~~~~~~~~~~~~~~
+vcl_backend_error
+~~~~~~~~~~~~~~~~~
 
-* added write access to ``beresp.body``, the response body.  This may
+* Added write access to ``beresp.body``, the response body. This may
   replace ``synthetic()`` in future releases.
 
-vcl_deliver {}
-~~~~~~~~~~~~~~
+vcl_deliver
+~~~~~~~~~~~
 
-* added read access to ``obj.ttl``, ``obj.age``, ``obj.grace`` and
-  ``obj.keep``
+* Added read access to ``obj.ttl``, ``obj.age``, ``obj.grace`` and
+  ``obj.keep``.
 
-vcl_synth {}
-~~~~~~~~~~~~
+vcl_synth
+~~~~~~~~~
 
-* added write access to ``resp.body``, the response body. This may
-  replace ``synthetic()`` in future releases.
+* Added write access to ``resp.body``, the response body. This may replace
+  ``synthetic()`` in future releases.
 
 Management interface
 ====================
 
-* to disable CLI authentication, use ``-S none``
+* To disable CLI authentication use ``-S none``.
 
-* ``n_waitinglist`` statistic removed
+* ``n_waitinglist`` statistic removed.
 
 Changes to parameters
 =====================
 
-* added ``ban_lurker_holdoff``
+* Added ``ban_lurker_holdoff``.
 
-* removed ``session_max``
-
-  this parameter actually had no effect since 4.0 and will likely be
-  added back later.
+* Removed ``session_max``.  This parameter actually had no effect since
+  4.0 but might come back in a future release.
 
 * ``vcl_path`` is now a colon-separated list of directories, replacing
-  ``vcl_dir``
+  ``vcl_dir``.
 
 * ``vmod_path`` is now a colon-separated list of directories, replacing
-  ``vmod_dir``
+  ``vmod_dir``.
