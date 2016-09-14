@@ -1,21 +1,35 @@
 .. _whats-new-index:
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-What's new in Varnish 4.1
-%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%
+What's new / Upgrading
+%%%%%%%%%%%%%%%%%%%%%%
 
-This section describes the changes that have been made for Varnish 4.1.
+This section describes the changes and improvements between different
+versions of Varnish, and what upgrading between the different versions
+entail.
 
-The first subsection describes overarching changes that have gone into
-Varnish 4.0, while the second subsection describes changes you need to make to
-your current configuration if you come from Varnish 3.x.
-
-The text also considers changes in behaviour that you need to be aware of and
-take into consideration when upgrading.
+Varnish 5.0
+-----------
 
 .. toctree::
    :maxdepth: 2
 
-   changes
-   upgrading
-   upgrade-4.0
+   changes-5.0
+   upgrading-5.0
+
+Varnish 4.1
+-----------
+
+.. toctree::
+   :maxdepth: 2
+
+   changes-4.1
+   upgrading-4.1
+
+Varnish 4.0
+-----------
+
+.. toctree::
+   :maxdepth: 2
+
+   upgrading-4.0

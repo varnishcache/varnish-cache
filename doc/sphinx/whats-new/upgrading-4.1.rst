@@ -1,4 +1,4 @@
-.. _whatsnew_upgrade41:
+.. _whatsnew_upgrading_4_1:
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 Upgrading to Varnish 4.1

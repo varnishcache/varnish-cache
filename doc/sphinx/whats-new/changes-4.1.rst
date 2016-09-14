@@ -1,4 +1,4 @@
-.. _whatsnew_changes:
+.. _whatsnew_changes_4_1:
 
 Changes in Varnish 4.1
 ======================
@@ -8,7 +8,7 @@ in Varnish 4.0.
 
 
 Proactive security features
-===========================
+---------------------------
 
 New in 4.1 is support for different kinds of privilege separation methods,
 collectively described as jails.
@@ -24,7 +24,7 @@ now must be run in a context with `varnish` group membership.
 
 
 Warm and cold VCL configurations
-================================
+--------------------------------
 
 Traditionally Varnish have had the concept of active and inactive
 loaded VCLs.  Any loaded VCL lead to state being kept, and a separate
@@ -69,7 +69,7 @@ release unnecessary state when a VCL is transitioned to cold (see
 
 
 PROXY protocol support
-======================
+----------------------
 
 Socket support for PROXY protocol connections has been added. PROXY
 defines a short preamble on the TCP connection where (usually) a SSL/TLS
@@ -96,7 +96,7 @@ in ``vcl_recv`` to see if traffic came in over the HTTP listening socket
 
 
 VMOD backends
-=============
+-------------
 
 Before Varnish 4.1, backends could only be declared in native VCL. Varnish
 4.0 moved directors from VCL to VMODs, and VMODs can now also create
@@ -107,7 +107,7 @@ documentation.
 
 
 Backend connection timeout
-==========================
+--------------------------
 
 Backend connections will now be closed by Varnish after `backend_idle_timeout`
 seconds of inactivity.
@@ -119,13 +119,13 @@ times, before a working backend connection was found/created.
 
 
 Protocol support
-================
+----------------
 
 Support for HTTP/0.9 on the client side has been retired.
 
 
 More modules available
-======================
+----------------------
 
 Varnish has an ecosystem for third-party modules (vmods). New since
 the last release, these are worth knowing about:
@@ -143,7 +143,7 @@ libvmod-rtstatus: Real time statistics dashboard.
 
 
 Passing data between ESI requests
-=================================
+---------------------------------
 
 A new `req_top` identifier is available in VCL, which is a reference to
 `req` in the top-level ESI request.
@@ -153,7 +153,7 @@ and any ESI sub-requests it leads to.
 
 
 Other noteworthy small changes
-==============================
+------------------------------
 
 * Varnish will now use the ``stale-while-revalidate`` defined in RFC5861
   to set object grace time.
