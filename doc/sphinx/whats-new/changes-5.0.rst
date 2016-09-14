@@ -168,6 +168,12 @@ to trigger immediate continuation of ESI processing when an object
 being waited for becomes available.
 
 
+Backend PROXY protocol requests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Are now supported through the ``.proxy_header`` attribute of the
+backend definition.
+
 Default VCL search path
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -184,6 +190,15 @@ devicedetect.vcl
 The basic device detection vcl is now bundled with varnish.
 
 
+misc
+~~~~
+
+Brief notes on other changes
+
+* Added separate thread for object expiry
+* The ESI parser is now more tolerant to some syntactic corner cases
+* Reduced needless rushing of requests on the waitinglist
+
 News for vmod authors
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -194,3 +209,5 @@ News for vmod authors
   In particular, they are per vmod and `not` per object - e.g. the
   same ``PRIV_TASK`` gets passed to object methods as to functions
   during a VCL task.
+
+* varnish now provides a random number api, see vrnd.h

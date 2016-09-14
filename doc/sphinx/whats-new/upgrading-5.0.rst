@@ -7,6 +7,12 @@ Upgrading to Varnish 5.0
 Changes to VCL
 ==============
 
+backend ... {}
+~~~~~~~~~~~~~~
+
+* added ``.proxy_header`` attribute with possible values of 1 and 2
+  for PROXY Protocol Version 1 and 2
+
 vcl_recv {}
 ~~~~~~~~~~~
 
@@ -59,6 +65,7 @@ vcl_synth {}
 Management interface
 ====================
 
+* to disable CLI authentication, use ``-S none``
 
 Changes to parameters
 =====================
@@ -69,3 +76,9 @@ Changes to parameters
 
   this parameter actually had no effect since 4.0 and will likely be
   added back later.
+
+* ``vcl_path`` is now a colon-separated list of directories, replacing
+  ``vcl_dir``
+
+* ``vmod_path`` is now a colon-separated list of directories, replacing
+  ``vmod_dir``
