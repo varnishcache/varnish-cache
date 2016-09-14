@@ -26,7 +26,8 @@ vcl_backend_* {}
 vcl_backend_fetch {}
 ~~~~~~~~~~~~~~~~~~~~
 
-* added write access to ``bereq.body``, the request body
+* added write access to ``bereq.body``, the request body, only
+  supported with ``unset`` yet.
 
 * We now send request bodies by default (see :ref:_whatsnew_changes_5.0).
   To keep the previous behaviour, add the following code before any
@@ -40,7 +41,8 @@ vcl_backend_fetch {}
 vcl_backend_error {}
 ~~~~~~~~~~~~~~~~~~~~
 
-* added write access to ``beresp.body``, the response body
+* added write access to ``beresp.body``, the response body.  This is
+  planned to replace ``synthetic()`` in future releases.
 
 vcl_deliver {}
 ~~~~~~~~~~~~~~
@@ -51,7 +53,8 @@ vcl_deliver {}
 vcl_synth {}
 ~~~~~~~~~~~~
 
-* added write access to ``resp.body``, the response body
+* added write access to ``resp.body``, the response body. This is
+  planned to replace ``synthetic()`` in future releases.
 
 Management interface
 ====================
