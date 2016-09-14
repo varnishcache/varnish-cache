@@ -18,8 +18,15 @@ Changes to VCL
   underscores (_).  In addition, the first character should be alphabetic.
   That is, the name should match "[A-Za-z][A-Za-z0-9\_-]*".
 
-* Like strings, backends and integers can now be used as boolean expressions
-  in if statements.
+* Backend and integer types can be used in a boolean context.
+  See ``vcl(7)`` for details.
+
+* Add support to perform matches in assignments, obtaining a boolean
+  as result::
+
+        set req.http.foo = req.http.bar ~ "bar";
+
+* Returned values from functions and methods' calls can be thrown away.
 
 backends
 ~~~~~~~~
@@ -31,13 +38,13 @@ backends
 vcl_recv
 ~~~~~~~~
 
-* Added ``return(vcl(label))`` to switch to the VCL labelled `label`.
+* Added ``return (vcl(label))`` to switch to the VCL labelled `label`.
 * The ``rollback`` function has been retired.
 
 vcl_hit
 ~~~~~~~
 
-* Replace ``return(fetch)`` with ``return(miss)``.
+* Replace ``return (fetch)`` with ``return (miss)``.
 
 vcl_backend_*
 ~~~~~~~~~~~~~
@@ -53,7 +60,7 @@ vcl_backend_fetch
 
 * We now send request bodies by default (see :ref:_whatsnew_changes_5.0).
   To keep the previous behaviour add the following code before any
-  ``return()`` statement in this subroutine::
+  ``return (..)`` statement in this subroutine::
 
 	if (bereq.method == "GET") {
 	    unset bereq.body;
