@@ -17,7 +17,7 @@ Major items:
 
 * Always send the request body to the backend, making possible to cache
   responses of POST, PATCH requests etc with appropriate custom VCL and/or
-  vmods.
+  VMODs.
 
 * hit-for-pass is now actually hit-for-miss.
 
@@ -110,7 +110,7 @@ Bugs fixed
 Varnish Cache 4.1.2 (2016-03-04)
 ================================
 
-* [vmods] vmodtool improvements for multiple vmods in a single directory.
+* [vmods] vmodtool improvements for multiple VMODs in a single directory.
 
 Bugs fixed
 ----------
@@ -128,7 +128,7 @@ Bugs fixed
 Varnish Cache 4.1.2-beta2 (2016-02-25)
 ======================================
 
-* [vmods] Passing VCL ACL to a vmod is now possible.
+* [vmods] Passing VCL ACL to a VMOD is now possible.
 
 * [vmods] VRT_MINOR_VERSION increase due to new function: VRT_acl_match()
 
@@ -154,7 +154,7 @@ Varnish Cache 4.1.2-beta1 (2016-02-17)
 
 * Arithmetric on REAL data type in VCL is now possible.
 
-* vmodtool.py improvements to allow vmods for 4.0 and 4.1 to share a source tree.
+* vmodtool.py improvements to allow VMODs for 4.0 and 4.1 to share a source tree.
 
 * Off-by-one in WS_Reset() fixed.
 
@@ -222,7 +222,7 @@ Changes since 4.1.0:
 - [varnishncsa] -w is now required when running deamonized.
 - [varnishncsa] Log format can now be read from file.
 - Port fields extracted from PROXY1 header now work as expected.
-- New VCL state "busy" introduced (mostly for vmod writers).
+- New VCL state "busy" introduced (mostly for VMOD writers).
 - Last traces of varnishreplay removed.
 - If-Modified-Since is now ignored if we have If-None-Match.
 - Zero Content-Length is no longer sent on 304 responses.
@@ -1140,7 +1140,7 @@ VCL
 
 - Allow relational comparisons of floating point types.
 
-- Make it possible for vmods to fail loading and so cause the VCL
+- Make it possible for VMODs to fail loading and so cause the VCL
   loading to fail.
 
 varnishncsa
@@ -1262,8 +1262,8 @@ Other
 - A bug in the ESI entity replacement parser has been fixed.  `Bug
   #961`_.
 
-- The ABI of vmods are now checked.  This will require a rebuild of
-  all vmods against the new version of Varnish.
+- The ABI of VMODs are now checked.  This will require a rebuild of
+  all VMODs against the new version of Varnish.
 
 .. _bug #961: https://www.varnish-cache.org/trac/ticket/961
 
@@ -1510,7 +1510,7 @@ varnishlog
 VMODs
 -----
 
-- Add a std vmod which includes a random function, log, syslog,
+- Add a std VMOD which includes a random function, log, syslog,
   fileread, collect,
 
 VCL
@@ -1531,7 +1531,7 @@ VCL
   ``vcl_fetch`` and are read only.  `Bug #481`_
 - The default VCL now calls pass for any objects where
   ``beresp.http.Vary == "*"``.  `Bug #787`_
-- The ``log`` keyword has been moved to the ``std`` vmod.
+- The ``log`` keyword has been moved to the ``std`` VMOD.
 - It is now possible to choose which storage backend to be used
 - Add variables ``storage.$name.free_space``,
   ``storage.$name.used_space`` and ``storage.$name.happy``

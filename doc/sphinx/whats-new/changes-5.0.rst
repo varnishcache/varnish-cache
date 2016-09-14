@@ -48,8 +48,8 @@ feature bit.
 The Shard Director
 ~~~~~~~~~~~~~~~~~~
 
-We have added to the directors vmod an overhauled version of a
-director which was available as an out-of-tree vmod under the name
+We have added to the directors VMOD an overhauled version of a
+director which was available as an out-of-tree VMOD under the name
 VSLP for a couple of years: It's basically a better hash director,
 which uses consistent hashing to provide improved stability of backend
 node selection when the configuration and/or health state of backends
@@ -150,7 +150,7 @@ considered.
 
 Care should be taken to choose an appropriate cache key and/or Vary
 criteria. Adding the request body to the cache key is not possible
-with core varnish, but through a vmod
+with core varnish, but through a VMOD
 https://github.com/aondio/libvmod-bodyaccess
 
 To summarize: You should know what you are doing when caching anything
@@ -216,17 +216,17 @@ Brief notes on other changes
 * further improved stability when handling workspace overflows
 * numerous vcl compiler improvements
 
-News for vmod authors
+News for VMOD authors
 ~~~~~~~~~~~~~~~~~~~~~
 
 * It is now mandatory to have a description in the ``$Module`` line of
   a ``vcc`` file
 
 * vcl cli events (in particular, ``vcl_init{}`` /``vcl_fini{}``) now
-  have a workspace and ``PRIV_TASK`` available for vmods.
+  have a workspace and ``PRIV_TASK`` available for VMODs.
 
 * ``PRIV_*`` now also work for object methods with unchanged scope.
-  In particular, they are per vmod and `not` per object - e.g. the
+  In particular, they are per VMOD and `not` per object - e.g. the
   same ``PRIV_TASK`` gets passed to object methods as to functions
   during a VCL task.
 
