@@ -93,8 +93,8 @@ and statistics) will now cause a cache-miss for all subsequent
 requests, so if any backend response qualifies for caching, it will
 get cached and subsequent requests will be hits.
 
-The punchline is: We've changed from "the uncacheable case wins" to
-"the cacheable case wins" or from hit-for-pass to hit-for-miss.
+In short: We've changed from "the uncacheable case wins" to "the
+cacheable case wins" or from hit-for-pass to hit-for-miss.
 
 The primary consequence which we are aware of at the time of this
 release is caused be the fact that, to create cacheable objects, we
@@ -157,9 +157,9 @@ criteria. Adding the request body to the cache key is not possible
 with core varnish, but through a vmod
 https://github.com/aondio/libvmod-bodyaccess
 
-The punchline: You should know what you are doing when caching
-anything but a GET or HEAD and without creating an appropriate cache
-key doing so is almost guaranteed to be wrong.
+To summarize: You should know what you are doing when caching anything
+but a GET or HEAD and without creating an appropriate cache key doing
+so is almost guaranteed to be wrong.
 
 News for vmod authors
 ~~~~~~~~~~~~~~~~~~~~~
