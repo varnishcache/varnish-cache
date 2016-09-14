@@ -14,6 +14,7 @@ Varnish 5.0
 .. toctree::
    :maxdepth: 2
 
+   relnote-5.0
    changes-5.0
    upgrading-5.0
 
