@@ -65,8 +65,8 @@ with the *elseif* statement (*elsif*/*elif*/*else if* are equivalent).
 Note that there are no loops or iterators of any kind in VCL.
 
 
-Strings, booleans, time, duration and integers
-----------------------------------------------
+Strings, booleans, time, duration, integers and real numbers
+------------------------------------------------------------
 
 These are the data types in Varnish. You can *set* or *unset* these.
 
@@ -87,21 +87,26 @@ characters except for the NUL (0x00) character.
 Booleans
 ~~~~~~~~
 
-Booleans can be either *true* or *false*. Some values may be inferred as
-truthy or falthy. When cast to booleans, strings will evaluate to *false*
-if they are empty or NULL. This allows broad checks on headers existence
-for instance. Backend expressions can also be tested as booleans and can
-help find when a director like the hash director returns a NULL backend.
+Booleans can be either *true* or *false*.  In addition, in a boolean
+context some data types will evaluate to *true* or *false* depending on
+their value.
+
+String types will evaluate to *false* if they are empty; backend types
+will evalute to *false* if they don't have a backend assigned; integer
+types will evaluate to *false* if their value is zero.
 
 Time
-----
+~~~~
 
-VCL has time. The function *now* returns a time. A duration can be
-added to a time to make another time. In string context they return a
-formatted string.
+VCL has time. A duration can be added to a time to make another time.
+In string context they return a formatted string in RFC1123 format
+(e.g. Sun, 06 Nov 1994 08:49:37 GMT).
+
+The keyword *now* returns a time representing the current time in seconds
+since the Epoch.
 
 Durations
----------
+~~~~~~~~~
 
 Durations are defined by a number and a designation. The number can be a real
 so 1.5w is allowed.
@@ -128,13 +133,13 @@ so 1.5w is allowed.
     years
 
 Integers
---------
+~~~~~~~~
 
 Certain fields are integers, used as expected. In string context they
 return a string.
 
 Real numbers
-------------
+~~~~~~~~~~~~
 
 VCL understands real numbers. As with integers, when used in a string
 context they will return a string.
