@@ -161,6 +161,23 @@ To summarize: You should know what you are doing when caching anything
 but a GET or HEAD and without creating an appropriate cache key doing
 so is almost guaranteed to be wrong.
 
+
+Default VCL search path
+~~~~~~~~~~~~~~~~~~~~~~~
+
+For default builds, vcl files are now also being looked for under
+/usr/share/varnish/vcl if not found in /etc/varnish.
+
+For custom builds, the actual search path is
+``${varnishconfdir}:${datarootdir}/varnish/vcl``
+
+
+devicedetect.vcl
+~~~~~~~~~~~~~~~~
+
+The basic device detection vcl is now bundled with varnish.
+
+
 News for vmod authors
 ~~~~~~~~~~~~~~~~~~~~~
 
