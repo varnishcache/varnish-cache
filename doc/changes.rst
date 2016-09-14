@@ -15,15 +15,7 @@ Major items:
 * Always send the request body to the backend, making possible to cache
   POST, PUT, PATCH etc.
 
-* hit-for-pass is now actually hit-for-miss: Objects cached as
-  uncacheable now trigger misses rather than hits, so when a cacheable
-  object becomes available, it will be cached even before the ttl of
-  the uncacheable object expires. As a particular implication of this,
-  conditional request headers (If-Modified-Since, If-None-Match) are
-  now being removed for hits on uncacheable objects.
-
-  Documentation, counters and log entries still refer to the mechanism
-  as hit-for-pass and Hitpass, respectively.
+* hit-for-pass is now actually hit-for-miss.
 
 * new shard director for loadbalancing by consistent hashing
 
@@ -34,13 +26,9 @@ Major items:
 News for Vmod Authors
 ---------------------
 
-* vcl cli events (init/fini methods) now have a workspace and
-  PRIV_TASK
+* workspace and PRIV_TASK for vcl cli events (init/fini methods)
 
-* PRIV_* now also work for object methods with unchanged scope.  In
-  particular, they are per vmod and `not` per object - e.g. the same
-  PRIV_TASK gets passed to object methods as to functions during a VCL
-  task.
+* PRIV_* now also work for object methods with unchanged scope.
 
 
 ======================================
