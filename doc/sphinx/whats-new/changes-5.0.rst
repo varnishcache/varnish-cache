@@ -220,7 +220,7 @@ News for VMOD authors
 ~~~~~~~~~~~~~~~~~~~~~
 
 * It is now mandatory to have a description in the ``$Module`` line of
-  a ``vcc`` file
+  a ``vcc`` file.
 
 * vcl cli events (in particular, ``vcl_init{}`` /``vcl_fini{}``) now
   have a workspace and ``PRIV_TASK`` available for VMODs.
@@ -238,3 +238,8 @@ News for VMOD authors
   rewritten, there may still exist regressions which remained unnoticed
 
 * ``vmodtool.py`` now requires at least Python 2.6
+
+* New autoconf macros are available, they should greatly simplify build
+  systems of out-of-tree VMODs.  They are implemented and documented in
+  ``varnish.m4``, and the previous macros now live in ``varnish-legacy.m4``
+  so existing VMODs should still build fine.
