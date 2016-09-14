@@ -41,6 +41,9 @@ no browsers support that, but tools like curl does.
 
 For encrypted HTTP/2 traffic, put a SSL proxy in front of Varnish.
 
+HTTP/2 support is disabled by default, to enable, set the ``http2``
+feature bit.
+
 
 The Shard Director
 ~~~~~~~~~~~~~~~~~~
@@ -196,6 +199,7 @@ varnishtest
 * HTTP2 testing capabilities added
 * default search path for executables and vmods added
 * ``sema`` mechanism replaced by ``barrier``
+* support for PROXY requests
 
 misc
 ~~~~
@@ -208,9 +212,15 @@ Brief notes on other changes
 * `varnishhist` can now process backend requests and offers a timebend
   function to control the processing speed
 * ``std.integer()`` can now also parse real numbers and truncates them
+* ``std.log()`` now also works correctly during ``vcl_init{}``
+* further improved stability when handling workspace overflows
+* numerous vcl compiler improvements
 
 News for vmod authors
 ~~~~~~~~~~~~~~~~~~~~~
+
+* It is now mandatory to have a description in the ``$Module`` line of
+  a ``vcc`` file
 
 * vcl cli events (in particular, ``vcl_init{}`` /``vcl_fini{}``) now
   have a workspace and ``PRIV_TASK`` available for vmods.
@@ -221,3 +231,8 @@ News for vmod authors
   during a VCL task.
 
 * varnish now provides a random number api, see vrnd.h
+
+* vbm (variable size bitmaps) improved
+
+* ``vmodtool.py`` for translating vcc files has been largely
+  rewritten, there may still exist regressions which remained unnoticed

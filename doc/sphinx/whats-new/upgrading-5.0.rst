@@ -7,6 +7,11 @@ Upgrading to Varnish 5.0
 Changes to VCL
 ==============
 
+* All VCL Objects should now be defined before used
+  * in particular, this is now required for ACLs. The error message
+    for ACLs being used before being defined is confusing - see PR #2021
+    ``Name <acl> is a reserved name``
+
 backend ... {}
 ~~~~~~~~~~~~~~
 
@@ -17,6 +22,7 @@ vcl_recv {}
 ~~~~~~~~~~~
 
 * added ``return(vcl(label))`` to switch to the vcl labeled `label`
+* ``rollback`` is now ``std.rollback(req)``
 
 vcl_hit {}
 ~~~~~~~~~~
@@ -66,6 +72,8 @@ Management interface
 ====================
 
 * to disable CLI authentication, use ``-S none``
+
+* ``n_waitinglist`` statistic removed
 
 Changes to parameters
 =====================
