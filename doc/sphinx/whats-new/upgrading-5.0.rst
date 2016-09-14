@@ -47,8 +47,8 @@ vcl_backend_fetch {}
 vcl_backend_error {}
 ~~~~~~~~~~~~~~~~~~~~
 
-* added write access to ``beresp.body``, the response body.  This is
-  planned to replace ``synthetic()`` in future releases.
+* added write access to ``beresp.body``, the response body.  This may
+  replace ``synthetic()`` in future releases.
 
 vcl_deliver {}
 ~~~~~~~~~~~~~~
@@ -59,8 +59,8 @@ vcl_deliver {}
 vcl_synth {}
 ~~~~~~~~~~~~
 
-* added write access to ``resp.body``, the response body. This is
-  planned to replace ``synthetic()`` in future releases.
+* added write access to ``resp.body``, the response body. This may
+  replace ``synthetic()`` in future releases.
 
 Management interface
 ====================
