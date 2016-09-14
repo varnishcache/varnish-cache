@@ -189,6 +189,13 @@ devicedetect.vcl
 
 The basic device detection vcl is now bundled with varnish.
 
+varnishtest
+~~~~~~~~~~~
+
+* ``resp.msg`` renamed to ``resp.reason`` for consistency with vcl
+* HTTP2 testing capabilities added
+* default search path for executables and vmods added
+* ``sema`` mechanism replaced by ``barrier``
 
 misc
 ~~~~
@@ -198,6 +205,9 @@ Brief notes on other changes
 * Added separate thread for object expiry
 * The ESI parser is now more tolerant to some syntactic corner cases
 * Reduced needless rushing of requests on the waitinglist
+* `varnishhist` can now process backend requests and offers a timebend
+  function to control the processing speed
+* ``std.integer()`` can now also parse real numbers and truncates them
 
 News for vmod authors
 ~~~~~~~~~~~~~~~~~~~~~
