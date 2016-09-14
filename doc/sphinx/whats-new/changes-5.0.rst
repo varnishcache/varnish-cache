@@ -155,6 +155,19 @@ but a GET or HEAD and without creating an appropriate cache key doing
 so is almost guaranteed to be wrong.
 
 
+ESI and Backend Request Coalescing ("waitinglist") Improvement
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Previously, ESI subrequests depending on objects being fetched from
+the backed used polling, which typically added some ~5ms of processing
+time to such subrequests and could lead to starvation effects in
+extreme corner cases.
+
+The waitinglist logic for ESI subrequests now uses condition variables
+to trigger immediate continuation of ESI processing when an object
+being waited for becomes available.
+
+
 Default VCL search path
 ~~~~~~~~~~~~~~~~~~~~~~~
 
