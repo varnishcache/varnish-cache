@@ -18,8 +18,8 @@ Changes to VCL
   underscores (_).  In addition, the first character should be alphabetic.
   That is, the name should match "[A-Za-z][A-Za-z0-9\_-]*".
 
-* Backend and integer types can be used in a boolean context.
-  See ``vcl(7)`` for details.
+* Like strings, backends and integers can now be used as boolean
+  expressions in if statements.  See ``vcl(7)`` for details.
 
 * Add support to perform matches in assignments, obtaining a boolean
   as result::
