@@ -6,6 +6,9 @@ This is the first beta release of the upcoming 5.0 release.
 
 The list of changes are numerous and will not be expanded on in detail.
 
+The release notes contain more background information and are highly
+recommended reading before using any of the new features.
+
 Major items:
 
 * VCL labels, allowing for per-vhost (or per-anything) separate VCL files.
