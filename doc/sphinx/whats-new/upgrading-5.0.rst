@@ -10,8 +10,9 @@ Changes to VCL
 * All VCL Objects should now be defined before used
 
   * in particular, this is now required for ACLs. The error message
-    for ACLs being used before being defined is confusing - see PR #2021
-    ``Name <acl> is a reserved name``
+    for ACLs being used before being defined is confusing - see PR #2021::
+
+	Name <acl> is a reserved name
 
 backend ... {}
 ~~~~~~~~~~~~~~
