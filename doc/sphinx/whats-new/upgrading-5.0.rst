@@ -60,3 +60,9 @@ Management interface
 Changes to parameters
 =====================
 
+* added ``ban_lurker_holdoff``
+
+* removed ``session_max``
+
+  this parameter actually had no effect since 4.0 and will likely be
+  added back later.
