@@ -134,10 +134,10 @@ for pipe mode, but this is special anyway and should be avoided).
 Not so any more, but the default behaviour has not changed:
 
 Whenever a request has a body, it will get sent to the backend for a
-cache miss (and pass, as before). This can be prevented by an unset
-bereq.body and the builtin.vcl removes the body for GET requests
-because it is questionable if GET with a body is valid anyway (but
-some applications use it).
+cache miss (and pass, as before). This can be prevented by an
+``unset bereq.body`` and the ``builtin.vcl`` removes the body for GET
+requests because it is questionable if GET with a body is valid anyway
+(but some applications use it).
 
 So the often-requested ability to cache POST/PATCH/... is now available,
 but not out-of-the-box:
@@ -181,7 +181,7 @@ Default VCL search path
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 For default builds, vcl files are now also being looked for under
-/usr/share/varnish/vcl if not found in /etc/varnish.
+``/usr/share/varnish/vcl`` if not found in ``/etc/varnish``.
 
 For custom builds, the actual search path is
 ``${varnishconfdir}:${datarootdir}/varnish/vcl``
@@ -209,7 +209,7 @@ Brief notes on other changes
 * Added separate thread for object expiry
 * The ESI parser is now more tolerant to some syntactic corner cases
 * Reduced needless rushing of requests on the waitinglist
-* `varnishhist` can now process backend requests and offers a timebend
+* ``varnishhist`` can now process backend requests and offers a timebend
   function to control the processing speed
 * ``std.integer()`` can now also parse real numbers and truncates them
 * ``std.log()`` now also works correctly during ``vcl_init{}``
