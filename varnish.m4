@@ -230,10 +230,10 @@ clean-vmod-$1:
 #
 #     ACLOCAL_AMFLAGS = -I m4 -I ${VARNISHAPI_DATAROOTDIR}/aclocal
 #
-# The VARNISH_VERSION variable will be set even if the VARNISH_PREREQ isn't
-# called. Although many things are set up to facilitate VMOD maintenance,
-# initialization of autoconf, automake and libtool is still the maintainer's
-# responsibility.
+# The VARNISH_VERSION variable will be set even if the VARNISH_PREREQ macro
+# wasn't called. Although many things are set up to facilitate out-of-tree
+# VMOD maintenance, initialization of autoconf, automake and libtool is
+# still the maintainer's responsibility. It cannot be avoided.
 #
 AC_DEFUN([VARNISH_VMODS], [
 	m4_foreach([_vmod_name],
