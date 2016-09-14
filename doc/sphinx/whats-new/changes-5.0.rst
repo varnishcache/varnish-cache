@@ -61,6 +61,7 @@ to our other directors, configuration is transactional: Any series of
 backend changes must be concluded by a reconfigure call for
 activation.
 
+
 Hit-For-Pass is now actually Hit-For-Miss
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -105,3 +106,35 @@ response to the client as appropriate.
 As of the time of this release we cannot say if this will remain the
 final word on this topic, but we hope that it will mean an improvement
 for most users of Varnish.
+
+
+Ban Lurker Improvements
+~~~~~~~~~~~~~~~~~~~~~~~
+
+We have made the ban lurker even more efficient by example of some
+real live situations with tens of thousands of bans using inefficient
+regular expressions.
+
+The new parameter ban_lurker_holdoff tells the ban lurker for how long
+it should get out of the way when it could potentially slow down
+lookups due to lock contention. Previously this was the same as
+ban_lurker_sleep.
+
+
+Access to more object properties from vcl_deliver
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+obj.ttl, obj.age, obj.grace and obj.keep are now available vcl_deliver
+read-only.
+
+
+News for vmod authors
+~~~~~~~~~~~~~~~~~~~~~~~
+
+* vcl cli events (init/fini methods) now have a workspace and
+  PRIV_TASK
+
+* PRIV_* now also work for object methods with unchanged scope.  In
+  particular, they are per vmod and `not` per object - e.g. the same
+  PRIV_TASK gets passed to object methods as to functions during a VCL
+  task.
