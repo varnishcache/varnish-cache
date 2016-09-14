@@ -41,3 +41,23 @@ no browsers support that, but tools like curl does.
 
 For encrypted HTTP/2 traffic, put a SSL proxy in front of Varnish.
 
+
+The Shard Director
+~~~~~~~~~~~~~~~~~~
+
+We have added to the directors vmod an overhauled version of a
+director which was available as an out-of-tree vmod under the name
+VSLP for a couple of years: It's basically a better hash director,
+which uses consistent hashing to provide improved stability of backend
+node selection when the configuration and/or health state of backends
+changes. There are several options to provide the shard key. The
+rampup feature allows to take just-gone-healthy backends in production
+smoothly, while the prewarm feature allows to prepare backends for
+traffic which they would see if the primary backend for a certain key
+went down.
+
+It can be reconfigured dynamically (outside vcl_init), but different
+to our other directors, configuration is transactional: Any series of
+backend changes must be concluded by a reconfigure call for
+activation.
+
