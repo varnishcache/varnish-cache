@@ -128,6 +128,37 @@ obj.ttl, obj.age, obj.grace and obj.keep are now available vcl_deliver
 read-only.
 
 
+Request Body sent always / "cacheable POST"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Previously, we would only send a request body for passed requests (and
+for pipe mode, but this is special anyway and should be avoided).
+
+Not so any more, but the default behaviour has not changed:
+
+Whenever a request has a body, it will get sent to the backend for a
+cache miss (and pass, as before). This can be prevented by an unset
+bereq.body and the builtin.vcl removes the body for GET requests
+because it is questionable if GET with a body is valid anyway (but
+some applications use it).
+
+So the often-requested ability to cache POST/PUT/... is now available,
+but not out-of-the-box:
+
+The builtin.vcl still contains a return(pass) for anything but a GET
+or HEAD because other HTTP methods, by definition, may cause state
+changes / side effects on backends. The application at hand should be
+understood well before caching of non-GET/non-HEAD is considered.
+
+Care should be taken to choose an appropriate cache key and/or Vary
+criteria. Adding the request body to the cache key is not possible
+with core varnish, but through a vmod
+https://github.com/aondio/libvmod-bodyaccess
+
+The punchline: You should know what you are doing when caching
+anything but a GET or HEAD and without creating an appropriate cache
+key doing so is almost guaranteed to be wrong.
+
 News for vmod authors
 ~~~~~~~~~~~~~~~~~~~~~
 
