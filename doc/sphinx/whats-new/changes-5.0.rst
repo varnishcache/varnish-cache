@@ -143,7 +143,7 @@ bereq.body and the builtin.vcl removes the body for GET requests
 because it is questionable if GET with a body is valid anyway (but
 some applications use it).
 
-So the often-requested ability to cache POST/PUT/... is now available,
+So the often-requested ability to cache POST/PATCH/... is now available,
 but not out-of-the-box:
 
 The ``builtin.vcl`` still contains a ``return(pass)`` for anything but
