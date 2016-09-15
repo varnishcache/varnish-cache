@@ -4,6 +4,7 @@ varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_miss { return(synth(100,req.url)); }
 	sub vcl_hit { return(synth(100,"the butter please")); }
+	sub vcl_deliver { return(synth(resp.status, resp.reason)); }
 }
 
 varnish v1 -errvcl {Variable 'now' is read only.} {

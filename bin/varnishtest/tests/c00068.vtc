@@ -10,11 +10,17 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		if (bereq.url == "/333") {
+			set beresp.status = 333;
+			set beresp.reason = "FOO";
+		}
+	}
 	sub vcl_deliver {
 		if (req.url == "/332") {
 			return (synth(332, "FOO"));
 		} else if (req.url == "/333") {
-			return (synth(333, "FOO"));
+			return (synth(resp.status, resp.reason));
 		} else {
 			return (synth(334, "BAR"));
 		}
