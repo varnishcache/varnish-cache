@@ -88,7 +88,7 @@ same companies, these developers merit personal praise:
 
 * Martin - HTTP/2 HPACK header compression code, stevedore API, VSL
 
-* Niels & Geoff - Shard backend director, ban-lurker improvements
+* Nils & Geoff - Shard backend director, ban-lurker improvements
 
 * Guillame - HTTP/2 support for varnishtest
 
