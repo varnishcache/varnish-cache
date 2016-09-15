@@ -15,7 +15,7 @@ without any bad security holes.
 So yeah… 5.0 is not entirely what we had hoped it would be, but we
 are as proud as one can possibly be anyway.
 
-To keep this release not short(er), we have put the purely technical
+To keep this release note short(er), we have put the purely technical
 stuff in two separate documents:
 
 * :ref:`whatsnew_changes_5.0`
@@ -27,7 +27,7 @@ How to get Varnish 5.0
 
 `Source download <https://repo.varnish-cache.org/source/varnish-5.0.0.tar.gz>`_
 
-Packages for most mainstream operating systems should appear in as
+Packages for mainstream operating systems should appear in as
 soon as they trickle through the machinery.
 
 
@@ -48,14 +48,15 @@ hours out of tree.  Upgrading from 4.1 to 5.0 to get that should
 also be a no-brainer.
 
 We have also fixed at lot of minor bugs, and improved many details
-here and there, but to be honest, we don't have a comprehensive
-list of it all, apart from the git logs.
+here and there, See :ref:`whatsnew_upgrading_5.0` for more of this.
 
 
 Reasons not to upgrade to Varnish 5.0
 -------------------------------------
 
 None that we know of af this time.
+
+Only in very special cases should you need to modify your VCL.
 
 
 Next release
@@ -82,7 +83,7 @@ support and donations of money and manpower from four companies:
 Without them, this release, and for that matter all the previous
 ones, would not have happened.
 
-Even though they are by and large employees of the very
+Even though they are all employees of those very
 same companies, these developers merit personal praise:
 
 * Martin - HTTP/2 HPACK header compression code, stevedore API, VSL
@@ -148,6 +149,8 @@ needs done.
 Here is the `Varnish Cache github page <https://github.com/varnishcache/varnish-cache>`_.
 
 And here is the `Varnish Projects homepage on github <https://github.com/varnishcache/varnish-cache>`_.
+
+Welcome on board!
 
 *phk*
 
