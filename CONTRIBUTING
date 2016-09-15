@@ -1,21 +1,29 @@
 Contributing to Varnish Cache
 =============================
 
-To contribute to Varnish, read
-https://www.varnish-cache.org/trac/wiki/Contributing as a starting
-point and follow relevant parts linked there.
-
 Official development tree is here:
 
     https://github.com/varnishcache/varnish-cache
 
-Patches can be sent to varnish-dev@varnish-cache.org.
+These days we prefer patches as pull requests directly to that tree.
+
+Bugreports go there too.
+
+Our main project communication is through or developer IRC channel::
+
+	#varnish-hacking on server irc.linpro.no
+
+(That channel is not for user questions, use the #varnish channel for that.)
+
+Mondays at 13:00 EU time we hold our weekly "bugwash" where we go
+through new (and old) tickets.  It speeds things up a lot if you
+can be join the channel and answer questions directly when we go
+over the ticket.
 
 Github pull requests
 --------------------
 
 Pull requests are handled like other tickets.
 
-Trivial pull requests (fix typos, etc) are welcomed, but they will be commited
+Trivial pull requests (fix typos, etc) are welcomed, but they may be commited
 by a core team member and the author credited in the commit message.
-
