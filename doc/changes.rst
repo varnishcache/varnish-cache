@@ -1,3 +1,36 @@
+================================
+Varnish Cache 5.0.0 (2016-09-15)
+================================
+
+* Documentation updates, especially the what's new and upgrade sections.
+
+* Via: header made by Varnish now says 5.0.
+
+* VMOD VRT ABI level increased.
+
+* [vcl] obj.(ttl|age|grace|keep) is now readable in vcl_deliver.
+
+* Latest devicedetect.vcl imported from upstream.
+
+* New system wide VCL directory: ``/usr/share/vcl/``
+
+* std.integer() can now convert from REAL.
+
+Issues fixed:
+
+* 2086_ - Ignore H2 upgrades if the feature is not enabled.
+* 2054_ - Introduce new macros for out-of-tree VMODs
+* 2022_ - varnishstat -1 -f field inclusion glob doesn't allow VBE backend fields
+* 2008_ - Panic: Assert error in VBE_Delete()
+* 1800_ - PRIV_TASK in vcl_init/fini
+
+.. _2086: https://www.varnish-cache.org/trac/ticket/2086
+.. _2054: https://www.varnish-cache.org/trac/ticket/2054
+.. _2022: https://www.varnish-cache.org/trac/ticket/2022
+.. _2008: https://www.varnish-cache.org/trac/ticket/2008
+.. _1800: https://www.varnish-cache.org/trac/ticket/1800
+
+
 ======================================
 Varnish Cache 5.0.0-beta1 (2016-09-09)
 ======================================
