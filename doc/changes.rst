@@ -12,7 +12,7 @@ Varnish Cache 5.0.0 (2016-09-15)
 
 * Latest devicedetect.vcl imported from upstream.
 
-* New system wide VCL directory: ``/usr/share/vcl/``
+* New system wide VCL directory: ``/usr/share/varnish/vcl/``
 
 * std.integer() can now convert from REAL.
 
