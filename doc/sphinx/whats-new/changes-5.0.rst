@@ -151,7 +151,7 @@ but not out-of-the-box:
 * For misses, core code still calls the equivalent of ``set
   bereq.method = "GET"`` before calling ``vcl_backend_fetch``, so to
   make a backend request with the original request method, it needs to
-  saved in ``vcl_recv`` and restored in ``vcl_backend_fetch``.
+  be saved in ``vcl_recv`` and restored in ``vcl_backend_fetch``.
 
 * Care should be taken to choose an appropriate cache key and/or Vary
   criteria. Adding the request body to the cache key is not possible
