@@ -54,7 +54,7 @@ here and there, See :ref:`whatsnew_upgrading_5.0` for more of this.
 Reasons not to upgrade to Varnish 5.0
 -------------------------------------
 
-None that we know of af this time.
+None that we know of at this time.
 
 Only in very special cases should you need to modify your VCL.
 
