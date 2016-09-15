@@ -13,6 +13,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
+		set req.http.X-Method = req.method;
 		# We ignore the actual body and verb for this test.
 		return (hash);
 	}
@@ -20,7 +21,8 @@ varnish v1 -vcl+backend {
 		return (fetch);
 	}
 	sub vcl_backend_fetch {
-		set bereq.method = "POST";
+		set bereq.method = bereq.http.X-Method;
+		unset bereq.http.X-Method;
 		set bereq.first_byte_timeout = 1s;
 	}
 	sub vcl_backend_response {

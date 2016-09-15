@@ -142,16 +142,21 @@ requests because it is questionable if GET with a body is valid anyway
 So the often-requested ability to cache POST/PATCH/... is now available,
 but not out-of-the-box:
 
-The ``builtin.vcl`` still contains a ``return(pass)`` for anything but
-a GET or HEAD because other HTTP methods, by definition, may cause
-state changes / side effects on backends. The application at hand
-should be understood well before caching of non-GET/non-HEAD is
-considered.
+* The ``builtin.vcl`` still contains a ``return(pass)`` for anything
+  but a GET or HEAD because other HTTP methods, by definition, may cause
+  state changes / side effects on backends. The application at hand
+  should be understood well before caching of non-GET/non-HEAD is
+  considered.
 
-Care should be taken to choose an appropriate cache key and/or Vary
-criteria. Adding the request body to the cache key is not possible
-with core varnish, but through a VMOD
-https://github.com/aondio/libvmod-bodyaccess
+* For misses, core code still calls the equivalent of ``set
+  bereq.method = "GET"`` before calling ``vcl_backend_fetch``, so to
+  make a backend request with the original request method, it needs to
+  saved in ``vcl_recv`` and restored in ``vcl_backend_fetch``.
+
+* Care should be taken to choose an appropriate cache key and/or Vary
+  criteria. Adding the request body to the cache key is not possible
+  with core varnish, but through a VMOD
+  https://github.com/aondio/libvmod-bodyaccess
 
 To summarize: You should know what you are doing when caching anything
 but a GET or HEAD and without creating an appropriate cache key doing
