@@ -124,6 +124,7 @@ long it should get out of the way when it could potentially slow down
 lookups due to lock contention. Previously this was the same as
 ``ban_lurker_sleep``.
 
+.. _whatsnew_changes_5.0_reqbody:
 
 Request Body sent always / "cacheable POST"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -58,9 +58,10 @@ vcl_backend_fetch
 * Added write access to ``bereq.body``, the request body. Only ``unset``
   is supported at this time.
 
-* We now send request bodies by default (see :ref:_whatsnew_changes_5.0).
-  To keep the previous behaviour add the following code before any
-  ``return (..)`` statement in this subroutine::
+* We now send request bodies by default (see
+  :ref:`whatsnew_changes_5.0_reqbody`). To keep the previous behaviour
+  add the following code before any ``return (..)`` statement in this
+  subroutine::
 
 	if (bereq.method == "GET") {
 	    unset bereq.body;
