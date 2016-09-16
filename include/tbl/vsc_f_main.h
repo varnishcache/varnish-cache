@@ -58,7 +58,7 @@ VSC_F(sess_drop,		uint64_t, 1, 'c', 'i', info,
 VSC_F(sess_fail,		uint64_t, 1, 'c', 'i', info,
     "Session accept failures",
 	"Count of failures to accept TCP connection."
-	"  Either the client changed its mind, or the kernel ran out of"
+	" Either the client changed its mind, or the kernel ran out of"
 	" some resource like file descriptors."
 )
 
@@ -85,24 +85,24 @@ VSC_F(client_req,		uint64_t, 1, 'c', 'i', info,
 VSC_F(cache_hit,		uint64_t, 1, 'c', 'i', info,
     "Cache hits",
 	"Count of cache hits. "
-	"  A cache hit indicates that an object has been delivered to a"
-	"  client without fetching it from a backend server."
+	" A cache hit indicates that an object has been delivered to a"
+	" client without fetching it from a backend server."
 )
 
 VSC_F(cache_hitpass,		uint64_t, 1, 'c', 'i', info,
-    "Cache hits for pass",
-	"Count of hits for pass"
-	"  A cache hit for pass indicates that Varnish is going to"
-	"  pass the request to the backend and this decision has been "
-	"  cached in it self. This counts how many times the cached "
-	"  decision is being used."
+    "Cache hits for pass.",
+	"Count of hits for pass."
+	" A cache hit for pass indicates that Varnish is going to"
+	" pass the request to the backend and this decision has been"
+	" cached in it self. This counts how many times the cached"
+	" decision is being used."
 )
 
 VSC_F(cache_miss,		uint64_t, 1, 'c', 'i', info,
     "Cache misses",
-	"Count of misses"
-	"  A cache miss indicates the object was fetched from the"
-	"  backend before delivering it to the client."
+	"Count of misses."
+	" A cache miss indicates the object was fetched from the"
+	" backend before delivering it to the client."
 )
 
 /*---------------------------------------------------------------------*/
@@ -127,16 +127,16 @@ VSC_F(backend_fail,		uint64_t, 0, 'c', 'i', info,
 )
 VSC_F(backend_reuse,		uint64_t, 0, 'c', 'i', info,
     "Backend conn. reuses",
-	"Count of backend connection reuses"
-	"  This counter is increased whenever we reuse a recycled connection."
+	"Count of backend connection reuses."
+	" This counter is increased whenever we reuse a recycled connection."
 )
 VSC_F(backend_recycle,		uint64_t, 0, 'c', 'i', info,
     "Backend conn. recycles",
-	"Count of backend connection recycles"
-	"  This counter is increased whenever we have a keep-alive"
-	"  connection that is put back into the pool of connections."
-	"  It has not yet been used, but it might be, unless the backend"
-	"  closes it."
+	"Count of backend connection recycles."
+	" This counter is increased whenever we have a keep-alive"
+	" connection that is put back into the pool of connections."
+	" It has not yet been used, but it might be, unless the backend"
+	" closes it."
 )
 VSC_F(backend_retry,		uint64_t, 0, 'c', 'i', info,
     "Backend conn. retry",
@@ -200,22 +200,21 @@ VSC_F(fetch_no_thread,		uint64_t, 1, 'c', 'i', info,
 
 VSC_F(pools,			uint64_t, 0, 'g', 'i', info,
     "Number of thread pools",
-	"Number of thread pools.  See also parameter thread_pools."
-	"  NB: Presently pools cannot be removed once created."
+	"Number of thread pools. See also parameter thread_pools."
+	" NB: Presently pools cannot be removed once created."
 )
 
 VSC_F(threads,			uint64_t, 0, 'g', 'i', info,
     "Total number of threads",
 	"Number of threads in all pools."
-	"  See also parameters thread_pools, thread_pool_min and"
+	" See also parameters thread_pools, thread_pool_min and"
 	" thread_pool_max."
 )
 
 VSC_F(threads_limited,		uint64_t, 0, 'c', 'i', info,
     "Threads hit max",
 	"Number of times more threads were needed, but limit was reached"
-	" in a thread pool."
-	"  See also parameter thread_pool_max."
+	" in a thread pool. See also parameter thread_pool_max."
 )
 
 VSC_F(threads_created,		uint64_t, 0, 'c', 'i', info,
@@ -231,15 +230,15 @@ VSC_F(threads_destroyed,	uint64_t, 0, 'c', 'i', info,
 VSC_F(threads_failed,		uint64_t, 0, 'c', 'i', info,
     "Thread creation failed",
 	"Number of times creating a thread failed."
-	"  See VSL::Debug for diagnostics."
-	"  See also parameter thread_fail_delay."
+	" See VSL::Debug for diagnostics."
+	" See also parameter thread_fail_delay."
 )
 
 VSC_F(thread_queue_len,		uint64_t, 0, 'g', 'i', info,
     "Length of session queue",
 	"Length of session queue waiting for threads."
-	"  NB: Only updates once per second."
-	"  See also parameter thread_queue_limit."
+	" NB: Only updates once per second."
+	" See also parameter thread_queue_limit."
 )
 
 VSC_F(busy_sleep,		uint64_t, 1, 'c', 'i', info,
@@ -263,7 +262,7 @@ VSC_F(busy_killed,		uint64_t, 1, 'c', 'i', info,
 VSC_F(sess_queued,		uint64_t, 0, 'c', 'i', info,
     "Sessions queued for thread",
 	"Number of times session was queued waiting for a thread."
-	"  See also parameter thread_queue_limit."
+	" See also parameter thread_queue_limit."
 )
 
 VSC_F(sess_dropped,		uint64_t, 0, 'c', 'i', info,
@@ -500,7 +499,7 @@ VSC_F(bans_tests_tested,	uint64_t, 0, 'c', 'i', diag,
     "Ban tests tested against objects (lookup)",
 	"Count of how many tests and objects have been tested against"
 	" each other during lookup."
-	"  'ban req.url == foo && req.http.host == bar'"
+	" 'ban req.url == foo && req.http.host == bar'"
 	" counts as one in 'bans_tested' and as two in 'bans_tests_tested'"
 )
 VSC_F(bans_lurker_tests_tested,	uint64_t, 0, 'c', 'i', diag,
