@@ -1304,10 +1304,15 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		}
 		*e = vcc_expr_edit(BOOL, "\v1\v-\n)", *e, NULL);
 	}
-	if (fmt != (*e)->fmt && (fmt == STRING || fmt == STRING_LIST)) {
+	if (fmt == (*e)->fmt)
+		return;
+	if (fmt == STRING || fmt == STRING_LIST) {
 		vcc_expr_tostring(tl, e, fmt);
 		ERRCHK(tl);
-	}
+	} else if (fmt == DURATION && ((*e)->fmt == INT || (*e)->fmt == REAL))
+		(*e)->fmt = DURATION;
+	else if (fmt == REAL && ((*e)->fmt == DURATION || (*e)->fmt == INT))
+		(*e)->fmt = REAL;
 }
 
 /*--------------------------------------------------------------------

@@ -78,6 +78,7 @@ varnish v1 -errvcl {BOOL + BOOL not possible.} {
 }
 
 varnish v1 -vcl {
+	import std;
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = "foo" + "bar";
@@ -115,6 +116,10 @@ varnish v1 -vcl {
 
 		set req.ttl = 1s + 1;
 		set req.ttl = 1s - 1;
+
+		set req.ttl = std.duration(req.http.foo, 1);
+		set req.ttl = std.duration(req.http.foo, 1.5);
+		set req.ttl = std.random(req.ttl, 5);
 
 		if (req.ttl) { }
 		if (!req.ttl) { }
