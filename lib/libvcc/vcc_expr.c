@@ -146,13 +146,10 @@ vcc_DoubleVal(struct vcc *tl)
 void
 vcc_Duration(struct vcc *tl, double *d)
 {
-	double v, sc;
-
-	v = vcc_DoubleVal(tl);
+	*d = vcc_DoubleVal(tl);
 	ERRCHK(tl);
-	ExpectErr(tl, ID);
-	sc = vcc_TimeUnit(tl);
-	*d = v * sc;
+	if (tl->t->tok == ID)
+		*d *= vcc_TimeUnit(tl);
 }
 
 /*--------------------------------------------------------------------*/

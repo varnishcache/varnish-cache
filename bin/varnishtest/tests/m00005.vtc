@@ -68,5 +68,5 @@ client c1 {
 
 	txreq -hdr "ttl: 100"
 	rxresp
-	expect resp.http.ttl == 1000001.000
+	expect resp.http.ttl == 1000100.000
 } -run

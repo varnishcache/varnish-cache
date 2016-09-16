@@ -56,7 +56,7 @@ vmod_duration(VRT_CTX, VCL_STRING p, VCL_DURATION d)
 	if (p == NULL)
 		return (d);
 
-	while(isspace(*p))
+	while (isspace(*p))
 		p++;
 
 	if (*p != '+' && *p != '-' && !isdigit(*p))
@@ -66,10 +66,13 @@ vmod_duration(VRT_CTX, VCL_STRING p, VCL_DURATION d)
 
 	r = VNUMpfx(p, &e);
 
-	if (isnan(r) || e == NULL)
+	if (isnan(r))
 		return (d);
 
-	while(isspace(*e))
+	if (e == NULL)
+		return (r);
+
+	while (isspace(*e))
 		e++;
 
 	/* NB: Keep this list synchronized with VCC */
@@ -90,7 +93,7 @@ vmod_duration(VRT_CTX, VCL_STRING p, VCL_DURATION d)
 		return (d);
 	}
 
-	while(isspace(*e))
+	while (isspace(*e))
 		e++;
 
 	if (*e != '\0')
