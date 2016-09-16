@@ -58,14 +58,6 @@ varnish v1 -errvcl {Unknown token '-' when looking for DURATION} {
 	}
 }
 
-varnish v1 -errvcl {'&&' must be followed by BOOL, found DURATION.} {
-	sub vcl_recv {
-		if (req.ttl < 3s && req.ttl) {
-			set req.http.foo = vcl_recv;
-		}
-	}
-}
-
 varnish v1 -errvcl {Operator * not possible on type STRING.} {
 	sub vcl_recv {
 		set req.http.foo = "bla" * "foo";
@@ -75,13 +67,6 @@ varnish v1 -errvcl {Operator * not possible on type STRING.} {
 varnish v1 -errvcl {DURATION + INT not possible.} {
 	sub vcl_backend_response {
 		set req.ttl = req.ttl + beresp.status;
-	}
-}
-
-varnish v1 -errvcl {'!' must be followed by BOOL, found DURATION.} {
-	sub vcl_backend_response {
-		if (! req.ttl) {
-		}
 	}
 }
 
@@ -124,16 +109,11 @@ varnish v1 -vcl {
 		set req.http.foo = req.http.foo + "bar" !~ "bar";
 
 		set req.ttl = 1s;
-	}
-}
 
+		if (req.ttl) { }
+		if (!req.ttl) { }
 
-varnish v1 -vcl {
-	import std;
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv {
-		if (std.integer("1", 1)) {
-		}
+		if (1) { }
 	}
 }
 
@@ -248,22 +228,6 @@ varnish v1 -errvcl {DURATION + STRING not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.ttl = 1s + "foo";
-	}
-}
-
-varnish v1 -errvcl {'||' must be followed by BOOL, found DURATION.} {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_backend_response {
-		if (req.url || beresp.ttl) {
-		}
-	}
-}
-
-varnish v1 -errvcl {'&&' must be followed by BOOL, found DURATION.} {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_backend_response {
-		if (req.url && beresp.ttl) {
-		}
 	}
 }
 

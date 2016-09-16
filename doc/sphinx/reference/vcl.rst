@@ -93,7 +93,8 @@ their value.
 
 String types will evaluate to *false* if they are empty; backend types
 will evalute to *false* if they don't have a backend assigned; integer
-types will evaluate to *false* if their value is zero.
+types will evaluate to *false* if their value is zero; duration types
+will evaluate to *false* if their value is equal or less than zero.
 
 Time
 ~~~~
