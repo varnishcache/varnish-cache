@@ -23,9 +23,9 @@ FreeBSD
 -------
 
 Binary package:
-		``pkg_add -r varnish``
+		``pkg_add -r varnish4``
 From source:
-		``cd /usr/ports/varnish && make install clean``
+		``cd /usr/ports/www/varnish4 && make install clean``
 
 Red Hat / CentOS
 ----------------
