@@ -1,6 +1,3 @@
-# varnish.m4 - Macros to define VMOD builds.            -*- Autoconf -*-
-# serial 5 (varnish-4.1.4)
-
 # Copyright (c) 2016 Varnish Software AS
 # All rights reserved.
 #
@@ -31,6 +28,20 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# varnish.m4 - Macros to define VMOD builds.            -*- Autoconf -*-
+# serial 6 (varnish-5.0.1)
+#
+# This collection of macros helps create VMODs or tools interacting with
+# Varnish Cache using the GNU build system (autotools). In order to work
+# from a source checkout, recommended versions of autotools are 2.68 for
+# autoconf, 1.12 for automake and 2.2.6 for libtool. For pkg-config, at
+# least version 0.21 is required ; it should be available even on old
+# platforms. Only pkg-config is needed when building from a dist archive.
+#
+# Macros whose name start with an underscore are private and may change at
+# any time. Public macros starting with VARNISH_ are documented and will
+# maintain backwards compatibility with older versions of Varnish Cache.
+
 # _VARNISH_PKG_CONFIG
 # --------------------
 AC_DEFUN([_VARNISH_PKG_CONFIG], [
@@ -41,11 +52,18 @@ AC_DEFUN([_VARNISH_PKG_CONFIG], [
 
 	PKG_CHECK_VAR([VARNISHAPI_PREFIX], [varnishapi], [prefix])
 	PKG_CHECK_VAR([VARNISHAPI_DATAROOTDIR], [varnishapi], [datarootdir])
+	PKG_CHECK_VAR([VARNISHAPI_LIBDIR], [varnishapi], [libdir])
 	PKG_CHECK_VAR([VARNISHAPI_BINDIR], [varnishapi], [bindir])
 	PKG_CHECK_VAR([VARNISHAPI_SBINDIR], [varnishapi], [sbindir])
 	PKG_CHECK_VAR([VARNISHAPI_VMODDIR], [varnishapi], [vmoddir])
 
 	PKG_CHECK_VAR([VMODTOOL], [varnishapi], [vmodtool])
+
+	AC_SUBST([VARNISH_LIBRARY_PATH],
+		[$VARNISHAPI_LIBDIR:$VARNISHAPI_LIBDIR/varnish])
+
+	AC_SUBST([VARNISH_TEST_PATH],
+		[$VARNISHAPI_SBINDIR:$VARNISHAPI_BINDIR:$PATH])
 ])
 
 # _VARNISH_CHECK_DEVEL
@@ -113,9 +131,8 @@ AC_DEFUN([_VARNISH_VMOD_CONFIG], [
 	AC_SUBST([VMOD_LDFLAGS],
 		"-module -export-dynamic -avoid-version -shared")
 
-	dnl Define the PATH for the test suite
-	AC_SUBST([VMOD_TEST_PATH],
-		[$VARNISHAPI_SBINDIR:$VARNISHAPI_BINDIR:$PATH])
+	dnl Substitute an alias for compatibility reasons
+	AC_SUBST([VMOD_TEST_PATH], [$VARNISH_TEST_PATH])
 ])
 
 # _VARNISH_VMOD(NAME)
@@ -166,7 +183,7 @@ clean-vmod-$1:
 # to build the modules:
 #
 # - VMOD_LDFLAGS (the recommended flags to link VMODs)
-# - VMOD_TEST_PATH (for the test suite's environment)
+# - VMOD_TEST_PATH (an alias for VARNISH_TEST_PATH)
 # - VMODTOOL (to generate a VMOD's interface)
 # - vmoddir (the install prefix for VMODs)
 #
@@ -201,18 +218,13 @@ clean-vmod-$1:
 # sub-directories. You still need to declare the generated VCC interfaces
 # in your library's sources. The generated files can be declared this way:
 #
-#     nodist_libvmod_foo_la_SOURCES = \
-#         vcc_foo_if.c \
-#         vcc_foo_if.h
-#
-#     nodist_libvmod_bar_la_SOURCES = \
-#         vcc_bar_if.c \
-#         vcc_bar_if.h
+#     nodist_libvmod_foo_la_SOURCES = vcc_foo_if.c vcc_foo_if.h
+#     nodist_libvmod_bar_la_SOURCES = vcc_bar_if.c vcc_bar_if.h
 #
 # The generated rules also build the manual page, all you need to do is to
 # declare the generated pages:
 #
-#     nodist_man_MANS = vmod_foo.3 vmod_bar.3
+#     dist_man_MANS = vmod_foo.3 vmod_bar.3
 #
 # However, it requires RST2MAN to be defined beforehand in configure.ac
 # and it is for now the VMOD's maintainer job to manage it. On the other
@@ -235,6 +247,47 @@ clean-vmod-$1:
 # VMOD maintenance, initialization of autoconf, automake and libtool is
 # still the maintainer's responsibility. It cannot be avoided.
 #
+# Once your VMOD is built, you can use varnishtest to run test cases. For
+# that you can rely on automake's default test driver, and all you need
+# is a minimal setup:
+#
+#     AM_TESTS_ENVIRONMENT = \
+#         PATH="$(VARNISH_TEST_PATH)" \
+#         LD_LIBRARY_PATH="$(VARNISH_LIBRARY_PATH)"
+#     TEST_EXTENSIONS = .vtc
+#     VTC_LOG_COMPILER = varnishtest -v
+#     AM_VTC_LOG_FLAGS = -Dvmod_foo="$(VMOD_FOO)" -Dvmod_bar="$(VMOD_BAR)"
+#
+# Setting up the different paths is mostly relevant when you aren't building
+# against the system installation of Varnish. In the case of the PATH, you
+# may also need to preserve the original PATH if you run commands outside of
+# the Varnish distribution in your test cases.
+#
+# The $(VMOD_*) variables contain a proper import statement if the relevant
+# VMOD was built in the same directory as the test runner. With the example
+# above you could import VMODs this way in a test case:
+#
+#     varnish v1 -vcl+backend {
+#         import std;
+#         import ${vmod_bar};
+#
+#         [...]
+#     } -start
+#
+# Once your test suite is set up, all you need is to do is declare your test
+# cases and `make check` will work out of the box.
+#
+#     TESTS = <your VTC files>
+#
+# At this point almost everything is taken care of, and your autotools-based
+# build is ready for prime time. However if you want your VMODs to build and
+# run the test suite from a dist archive, don't forget to embed your VCC
+# file and the test cases:
+#
+#     EXTRA_DIST = vmod_foo.vcc vmod_bar.vcc $(TESTS)
+#
+# Now, you can focus on writing this VMOD of yours.
+#
 AC_DEFUN([VARNISH_VMODS], [
 	m4_foreach([_vmod_name],
 		m4_split(m4_normalize([$1])),
@@ -245,11 +298,34 @@ AC_DEFUN([VARNISH_VMODS], [
 # --------------------------------------------------
 # Since: Varnish 4.1.4
 #
+# Since Varnish 5.0.1:
+# - VARNISH_TEST_PATH added
+# - VARNISH_LIBRARY_PATH added
+# - VARNISHAPI_LIBDIR added
+#
 # Verify that the version of Varnish Cache found by pkg-config is at least
 # MINIMUM-VERSION. If MAXIMUM-VERSION is specified, verify that the version
 # is strictly below MAXIMUM-VERSION.
 #
-# If the prerequisite is met, the variable VARNISH_VERSION is available.
+# Once the requirements are met, the following variables can be used in
+# Makefiles:
+#
+# - VARNISH_TEST_PATH (for the test suite environment)
+# - VARNISH_LIBRARY_PATH (for both public and private libraries)
+# - VARNISH_VERSION (also available in autoconf)
+#
+# The following variables are available in autoconf, read from the varnish
+# pkg-config:
+#
+# - VARNISHAPI_CFLAGS
+# - VARNISHAPI_LIBS
+# - VARNISHAPI_PREFIX
+# - VARNISHAPI_DATAROOTDIR
+# - VARNISHAPI_LIBDIR
+# - VARNISHAPI_BINDIR
+# - VARNISHAPI_SBINDIR
+# - VARNISHAPI_VMODDIR
+# - VMODTOOL
 #
 AC_DEFUN([VARNISH_PREREQ], [
 	AC_REQUIRE([_VARNISH_PKG_CONFIG])
