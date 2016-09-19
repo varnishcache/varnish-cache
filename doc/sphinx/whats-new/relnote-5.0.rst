@@ -4,15 +4,15 @@ Varnish 5.0 Release Note
 ========================
 
 This is the first Varnish release after the Varnish Project moved out
-of Varnish Softwares basement, so to speak, and it shows.
+of Varnish Software's basement, so to speak, and it shows.
 
-But it is also our 10 year aniversary release, `Varnish 1.0 was
+But it is also our 10 year anniversary release, `Varnish 1.0 was
 released`_ on September 20th 2006.
 
 That also means that we have been doing this for 10 years
 without any bad security holes.
 
-So yeah… 5.0 is not entirely what we had hoped it would be, but we
+So yeah... 5.0 is not entirely what we had hoped it would be, but we
 are as proud as one can possibly be anyway.
 
 To keep this release note short(er), we have put the purely technical
@@ -54,7 +54,7 @@ here and there, See :ref:`whatsnew_upgrading_5.0` for more of this.
 Reasons not to upgrade to Varnish 5.0
 -------------------------------------
 
-None that we know of af this time.
+None that we know of at this time.
 
 Only in very special cases should you need to modify your VCL.
 
@@ -118,7 +118,7 @@ the developers mortgages and student loans.
 A very large part of the Varnish development is funded through the
 `Varnish Moral License`_, which enables Poul-Henning Kamp to have
 Varnish as his primary job, but right now he is underfunded to the
-tune of €2000-3000 per month.
+tune of EUR 2000-3000 per month.
 
 Please consider if your company makes enough money using Varnish
 Cache, to spare some money, or employee-hours for its future
