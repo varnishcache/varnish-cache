@@ -948,9 +948,6 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
  *         \-reason STRING (txresp only)
  *                 What message to put in the status line (default: "OK").
  *
- *         \-msg STRING (txresp only)
- *                 An alias to -reason.
- *
  *         These three switches can appear in any order but must come before the
  *         following ones.
  *
@@ -1013,7 +1010,7 @@ cmd_http_txresp(CMD_ARGS)
 		} else if (!strcmp(*av, "-status")) {
 			status = av[1];
 			av++;
-		} else if (!strcmp(*av, "-reason") || !strcmp(*av, "-msg")) {
+		} else if (!strcmp(*av, "-reason")) {
 			reason = av[1];
 			av++;
 			continue;
