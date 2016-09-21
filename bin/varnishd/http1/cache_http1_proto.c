@@ -46,6 +46,8 @@
 #include "config.h"
 
 #include "cache/cache.h"
+#include "cache/cache_transport.h"
+
 #include "cache_http1.h"
 
 #include "vct.h"
@@ -66,6 +68,7 @@ enum htc_status_e __match_proto__(htc_complete_f)
 HTTP1_Complete(struct http_conn *htc)
 {
 	char *p;
+	enum htc_status_e retval;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 
@@ -77,6 +80,11 @@ HTTP1_Complete(struct http_conn *htc)
 		continue;
 	if (p == htc->rxbuf_e)
 		return (HTC_S_EMPTY);
+
+	/* Do not return a partial H2 connection preface */
+	retval = H2_prism_complete(htc);
+	if (retval != HTC_S_JUNK)
+		return (retval);
 
 	/*
 	 * Here we just look for NL[CR]NL to see that reception

@@ -474,10 +474,11 @@ H2_prism_complete(struct http_conn *htc)
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	l = htc->rxbuf_e - htc->rxbuf_b;
-	if (l < strlen(H2_prism))
-		return (HTC_S_MORE);
-	if (!memcmp(htc->rxbuf_b, H2_prism, sizeof(H2_prism)))
+	if (l >= sizeof(H2_prism) &&
+	    !memcmp(htc->rxbuf_b, H2_prism, sizeof(H2_prism)))
 		return (HTC_S_COMPLETE);
+	if (l < sizeof(H2_prism) && !memcmp(htc->rxbuf_b, H2_prism, l))
+		return (HTC_S_MORE);
 	return (HTC_S_JUNK);
 }
 
