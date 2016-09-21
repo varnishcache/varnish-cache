@@ -387,7 +387,7 @@ VSLb_bin(struct vsl_log *vsl, enum VSL_tag_e tag, ssize_t len, const void *ptr)
 	size_t ll;
 
 	assert(len >= 0);
-	AN(ptr);
+	AN(pp);
 	if (vsl_tag_is_masked(tag))
 		return;
 	vsl_sanity(vsl);
@@ -501,7 +501,7 @@ VSM_Init(void)
 	vsl_end = vsl_head->log + vsl_segsize * VSL_SEGMENTS;
 	/* Make segment_n always overflow on first log wrap to make any
 	   problems with regard to readers on that event visible */
-	vsl_segment_n = UINT_MAX - VSL_SEGMENTS + 1;
+	vsl_segment_n = UINT_MAX - (VSL_SEGMENTS - 1);
 	AZ(vsl_segment_n % VSL_SEGMENTS);
 	vsl_head->segment_n = vsl_segment_n;
 	vsl_ptr = vsl_head->log;
