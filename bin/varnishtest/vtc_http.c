@@ -945,8 +945,11 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
  *         \-status NUMBER (txresp only)
  *                 What status code to return (default 200).
  *
- *         \-msg STRING (txresp only)
+ *         \-reason STRING (txresp only)
  *                 What message to put in the status line (default: "OK").
+ *
+ *         \-msg STRING (txresp only)
+ *                 An alias to -reason.
  *
  *         These three switches can appear in any order but must come before the
  *         following ones.
@@ -991,7 +994,7 @@ cmd_http_txresp(CMD_ARGS)
 	struct http *hp;
 	const char *proto = "HTTP/1.1";
 	const char *status = "200";
-	const char *msg = "OK";
+	const char *reason = "OK";
 	char* body = NULL;
 
 	(void)cmd;
@@ -1010,15 +1013,15 @@ cmd_http_txresp(CMD_ARGS)
 		} else if (!strcmp(*av, "-status")) {
 			status = av[1];
 			av++;
-		} else if (!strcmp(*av, "-msg")) {
-			msg = av[1];
+		} else if (!strcmp(*av, "-reason") || !strcmp(*av, "-msg")) {
+			reason = av[1];
 			av++;
 			continue;
 		} else
 			break;
 	}
 
-	VSB_printf(hp->vsb, "%s %s %s%s", proto, status, msg, nl);
+	VSB_printf(hp->vsb, "%s %s %s%s", proto, status, reason, nl);
 
 	/* send a "Content-Length: 0" header unless something else happens */
 	REPLACE(body, "");

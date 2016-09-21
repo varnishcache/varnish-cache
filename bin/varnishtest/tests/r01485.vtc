@@ -6,7 +6,7 @@ server s1 {
 
 	rxreq
 	expect req.http.If-None-Match == {"foo"}
-	txresp -status 304 -msg "Not Modified"
+	txresp -status 304 -reason "Not Modified"
 } -start
 
 varnish v1 -vcl+backend {
