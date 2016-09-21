@@ -116,6 +116,8 @@ H2_Send(struct worker *wrk, struct h2_req *r2, int flush,
 		retval = H2_Send_Frame(wrk, h2,
 		    type, flags, len, r2->stream, ptr);
 	} else if (type == H2_FRAME_DATA) {
+		AN(ptr);
+		AN(len);
 		p = ptr;
 		do {
 			tf = mfs;
