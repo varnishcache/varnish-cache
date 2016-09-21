@@ -38,7 +38,7 @@ varnish v1 -stop
 
 server s1 {
 	rxreq
-	txresp -status 400 -msg "Persistent Object Not Found"
+	txresp -status 400 -reason "Persistent Object Not Found"
 } -start
 
 

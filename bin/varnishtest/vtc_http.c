@@ -823,7 +823,7 @@ cmd_http_txresp(CMD_ARGS)
 	struct http *hp;
 	const char *proto = "HTTP/1.1";
 	const char *status = "200";
-	const char *msg = "OK";
+	const char *reason = "OK";
 	char* body = NULL;
 
 	(void)cmd;
@@ -842,15 +842,15 @@ cmd_http_txresp(CMD_ARGS)
 		} else if (!strcmp(*av, "-status")) {
 			status = av[1];
 			av++;
-		} else if (!strcmp(*av, "-msg")) {
-			msg = av[1];
+		} else if (!strcmp(*av, "-reason") || !strcmp(*av, "-msg")) {
+			reason = av[1];
 			av++;
 			continue;
 		} else
 			break;
 	}
 
-	VSB_printf(hp->vsb, "%s %s %s%s", proto, status, msg, nl);
+	VSB_printf(hp->vsb, "%s %s %s%s", proto, status, reason, nl);
 
 	/* send a "Content-Length: 0" header unless something else happens */
 	REPLACE(body, "");
