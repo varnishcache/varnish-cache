@@ -1678,7 +1678,7 @@ cmd_http_fatal(CMD_ARGS)
  *	Same as for the top-level barrier
  */
 
-const char PREFACE[] = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
+const char PREFACE[24] = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 
 /* SECTION: client-server.spec.txpri txpri (client)
  *
@@ -1694,11 +1694,18 @@ cmd_http_txpri(CMD_ARGS)
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	ONLY_CLIENT(hp, av);
 
-	vtc_dump(hp->vl, 4, "txpri", PREFACE, sizeof(PREFACE) - 1);
-	l = write(hp->fd, PREFACE, sizeof(PREFACE) - 1);
-	if (l != sizeof(PREFACE) - 1)
+	vtc_dump(hp->vl, 4, "txpri", PREFACE, sizeof(PREFACE));
+	/* Dribble out the preface */
+	l = write(hp->fd, PREFACE, 18);
+	if (l != 18)
 		vtc_log(vl, hp->fatal, "Write failed: (%zd vs %zd) %s",
-		    l, sizeof(PREFACE) - 1, strerror(errno));
+		    l, sizeof(PREFACE), strerror(errno));
+	usleep(10000);
+	l = write(hp->fd, PREFACE + 18, sizeof(PREFACE) - 18);
+	if (l != sizeof(PREFACE) - 18)
+		vtc_log(vl, hp->fatal, "Write failed: (%zd vs %zd) %s",
+		    l, sizeof(PREFACE), strerror(errno));
+
 	start_h2(hp);
 	AN(hp->h2);
 }
@@ -1717,9 +1724,9 @@ cmd_http_rxpri(CMD_ARGS)
 	ONLY_SERVER(hp, av);
 
 	hp->prxbuf = 0;
-	if (!http_rxchar(hp, sizeof(PREFACE) - 1, 0))
+	if (!http_rxchar(hp, sizeof(PREFACE), 0))
 		vtc_log(vl, 0, "Couldn't retrieve connection preface");
-	if (strncmp(hp->rxbuf, PREFACE, sizeof(PREFACE) - 1))
+	if (memcmp(hp->rxbuf, PREFACE, sizeof(PREFACE)))
 		vtc_log(vl, 0, "Received invalid preface\n");
 	start_h2(hp);
 	AN(hp->h2);
