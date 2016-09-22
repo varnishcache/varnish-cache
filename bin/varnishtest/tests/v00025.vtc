@@ -44,7 +44,6 @@ varnish v1 -arg "-i J.F.Nobody" -vcl+backend {
 		set beresp.http.keep = beresp.keep;
 		set beresp.http.hint = beresp.storage_hint;
 		set beresp.http.be_ip = beresp.backend.ip;
-		set beresp.http.be_nm = beresp.backend.name;
 		set beresp.http.unc = bereq.uncacheable;
 		if (beresp.ttl > 3 s) {
 			set beresp.http.ttl = "long";
@@ -85,7 +84,6 @@ client c1 {
 	expect resp.http.bereq_backend == "rr"
 	expect resp.http.beresp_backend == "s1"
 	expect resp.http.be_ip == "127.0.0.1"
-	expect resp.http.be_nm == "s1"
 	expect resp.http.be == "rr"
 
 	txreq

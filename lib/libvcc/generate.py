@@ -605,14 +605,6 @@ sp_variables = [
 		When used in string context, returns its name.
 		"""
 	),
-	('beresp.backend.name',
-		'STRING',
-		('backend_response', 'backend_error'),
-		(), """
-		Name of the backend this response was fetched from.
-		Same as beresp.backend.
-		"""
-	),
 	('beresp.backend.ip',
 		'IP',
 		('backend_response', 'backend_error'),

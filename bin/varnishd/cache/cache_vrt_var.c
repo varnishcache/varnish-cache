@@ -289,19 +289,6 @@ BEREQ_TIMEOUT(connect_timeout)
 BEREQ_TIMEOUT(first_byte_timeout)
 BEREQ_TIMEOUT(between_bytes_timeout)
 
-/*--------------------------------------------------------------------*/
-
-const char *
-VRT_r_beresp_backend_name(VRT_CTX)
-{
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	if (ctx->bo->director_resp != NULL)
-		return (ctx->bo->director_resp->vcl_name);
-	return (NULL);
-}
-
 /*--------------------------------------------------------------------
  * Backends do not in general have a IP number (any more) and this
  * variable is really not about the backend, but the backend connection.
