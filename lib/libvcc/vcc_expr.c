@@ -555,7 +555,7 @@ vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 			do {
 				VSB_printf(tl->sb, "\t%s\n", r);
 				r += strlen(r) + 1;
-			} while (*r != '\0');
+			} while (*r != '\0' && *r != '\1');
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
