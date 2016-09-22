@@ -8,9 +8,16 @@ server s1 {
 varnish v1 -arg "-i J.F.Nobody" -vcl+backend {
 
 	import std;
+	import directors;
+
+	sub vcl_init {
+		new rr = directors.round_robin();
+		rr.add_backend(s1);
+	}
 
 	sub vcl_recv {
 		set client.identity = "Samuel B. Nobody";
+		set req.backend_hint = rr.backend();
 	}
 
 	sub vcl_deliver {
@@ -32,7 +39,8 @@ varnish v1 -arg "-i J.F.Nobody" -vcl+backend {
 	}
 
 	sub vcl_backend_response {
-		set beresp.http.backend = bereq.backend;
+		set beresp.http.bereq_backend = bereq.backend;
+		set beresp.http.beresp_backend = beresp.backend;
 		set beresp.http.keep = beresp.keep;
 		set beresp.http.hint = beresp.storage_hint;
 		set beresp.http.be_ip = beresp.backend.ip;
@@ -73,6 +81,13 @@ varnish v1 -arg "-i J.F.Nobody" -vcl+backend {
 client c1 {
 	txreq
 	rxresp
+	expect resp.status == 200
+	expect resp.http.bereq_backend == "rr"
+	expect resp.http.beresp_backend == "s1"
+	expect resp.http.be_ip == "127.0.0.1"
+	expect resp.http.be_nm == "s1"
+	expect resp.http.be == "rr"
+
 	txreq
 	rxresp
 } -run

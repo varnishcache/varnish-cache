@@ -299,6 +299,11 @@ sp_variables = [
 		('client', ),
 		('client',), """
 		Set bereq.backend to this if we attempt to fetch.
+		When set to a director, reading this variable returns
+		an actual backend if the director has resolved immediately,
+		or the director otherwise.
+		When used in string context, returns the name of the director
+		or backend, respectively.
 		"""
 	),
 	('req.hash_ignore_busy',
@@ -380,6 +385,11 @@ sp_variables = [
 		('pipe', 'backend', ),
 		('pipe', 'backend', ), """
 		This is the backend or director we attempt to fetch from.
+		When set to a director, reading this variable returns
+		an actual backend if the director has resolved immediately,
+		or the director otherwise.
+		When used in string context, returns the name of the director
+		or backend, respectively.
 		"""
 	),
 	('bereq.body',
@@ -592,6 +602,7 @@ sp_variables = [
 		This is the backend we fetched from.  If bereq.backend
 		was set to a director, this will be the backend selected
 		by the director.
+		When used in string context, returns its name.
 		"""
 	),
 	('beresp.backend.name',
@@ -599,6 +610,7 @@ sp_variables = [
 		('backend_response', 'backend_error'),
 		(), """
 		Name of the backend this response was fetched from.
+		Same as beresp.backend.
 		"""
 	),
 	('beresp.backend.ip',
