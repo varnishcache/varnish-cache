@@ -847,27 +847,24 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		 * XXX: but %a is ugly, isn't it ?
 		 */
 		assert(fmt != VOID);
-		if (fmt == DURATION) {
-			vcc_Duration(tl, &d);
-			ERRCHK(tl);
-			e1 = vcc_mk_expr(DURATION, "%g", d);
-		} else if (fmt == BYTES) {
+		if (fmt == BYTES) {
 			vcc_ByteVal(tl, &d);
 			ERRCHK(tl);
 			e1 = vcc_mk_expr(BYTES, "%.1f", d);
 			ERRCHK(tl);
-		} else if (fmt == REAL) {
-			e1 = vcc_mk_expr(REAL, "%f", vcc_DoubleVal(tl));
-			ERRCHK(tl);
-		} else if (fmt == INT) {
-			e1 = vcc_mk_expr(INT, "%.*s", PF(tl->t));
-			vcc_NextToken(tl);
 		} else {
 			vcc_NumVal(tl, &d, &i);
-			if (i)
+			ERRCHK(tl);
+
+			if (tl->t->tok == ID) {
+				e1 = vcc_mk_expr(DURATION, "%g",
+				    d * vcc_TimeUnit(tl));
+				ERRCHK(tl);
+			} else if (i == 1 || fmt == REAL) {
 				e1 = vcc_mk_expr(REAL, "%f", d);
-			else
+			} else {
 				e1 = vcc_mk_expr(INT, "%ld", (long)d);
+			}
 		}
 		e1->constant = EXPR_CONST;
 		*e = e1;
@@ -1307,9 +1304,26 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		}
 		*e = vcc_expr_edit(BOOL, "\v1\v-\n)", *e, NULL);
 	}
-	if (fmt != (*e)->fmt && (fmt == STRING || fmt == STRING_LIST)) {
+
+	if (fmt == (*e)->fmt)
+		return;
+
+	if (fmt == STRING || fmt == STRING_LIST) {
 		vcc_expr_tostring(tl, e, fmt);
 		ERRCHK(tl);
+		return;
+	}
+
+	/*
+	 * casts between real/int/duration truncate as in c
+	 * use std.round() for rounding
+	 */
+	if ((fmt == REAL || fmt == INT || fmt == DURATION) &&
+	    ((*e)->fmt == REAL || (*e)->fmt == INT || (*e)->fmt == DURATION)) {
+		if (fmt == INT)
+			*e = vcc_expr_edit(fmt, "(VCL_INT)(\v1)", *e, NULL);
+		else
+			(*e)->fmt = fmt;
 	}
 }
 

@@ -160,9 +160,20 @@ Example
 	|	...
 	| }
 
+$Function REAL round(REAL r)
+
+Description
+	Round to nearest integer, away from zero
+
+Example
+	set req.http.real = std.round(123.45)
+
 $Function INT real2integer(REAL r, INT fallback)
 
 Description
+	*DEPRECATED*: real to int conversion with truncating is now
+	implicit in VCL. Use `round()` if you require rounding.
+
 	Converts the real *r* to an integer. If conversion fails,
 	*fallback* will be returned.
 Example
