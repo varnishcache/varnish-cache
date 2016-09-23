@@ -39,6 +39,8 @@
  * binary/load-time compatible, increment MAJOR version
  *
  *
+ * 5.1:
+ *	Added va_list interfaces for varargish vrt functions
  * 5.0:
  *	Varnish 5.0 release "better safe than sorry" bump
  * 4.0:
@@ -59,6 +61,8 @@
 
 #define VRT_MINOR_VERSION	0U
 
+
+#include <stdarg.h>
 
 /***********************************************************************/
 
@@ -290,9 +294,11 @@ void VRT_synth(VRT_CTX, unsigned, const char *);
 
 struct http *VRT_selecthttp(VRT_CTX, enum gethdr_e);
 const char *VRT_GetHdr(VRT_CTX, const struct gethdr_s *);
+void VRT_SetHdrv(VRT_CTX, const struct gethdr_s *, const char *, va_list);
 void VRT_SetHdr(VRT_CTX, const struct gethdr_s *, const char *, ...);
 void VRT_handling(VRT_CTX, unsigned hand);
 
+void VRT_hashdatav(VRT_CTX, const char *str, va_list);
 void VRT_hashdata(VRT_CTX, const char *str, ...);
 
 /* Simple stuff */
@@ -302,6 +308,7 @@ void VRT_memmove(void *dst, const void *src, unsigned len);
 void VRT_Rollback(VRT_CTX, const struct http *);
 
 /* Synthetic pages */
+void VRT_synth_pagev(VRT_CTX, const char *, va_list);
 void VRT_synth_page(VRT_CTX, const char *, ...);
 
 /* Backend related */

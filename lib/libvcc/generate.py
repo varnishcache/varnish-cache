@@ -1198,11 +1198,16 @@ def one_var(nm, spec):
 	else:
 		fo.write('\t    "VRT_l_%s(ctx, ",\n' % cnam)
 		if nm == i[0]:
-			fh.write("void VRT_l_%s(VRT_CTX, " % cnam)
 			if typ != "STRING" and typ != "BODY":
-				fh.write("VCL_" + typ + ");\n")
+				fh.write("void VRT_l_%s(VRT_CTX, VCL_%s);\n" %
+					 (cnam, typ))
 			else:
-				fh.write(ctyp + ", ...);\n")
+				fh.write("void VRT_l_%sv"
+					 "(VRT_CTX, VCL_%s, va_list);\n" %
+					 (cnam, typ))
+				fh.write("void VRT_l_%s"
+					 "(VRT_CTX, VCL_%s, ...);\n" %
+					 (cnam, typ))
 	restrict(fo, spec[3])
 
 	fo.write("\t},\n")

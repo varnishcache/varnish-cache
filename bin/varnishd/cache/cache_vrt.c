@@ -199,6 +199,8 @@ VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
 
 /*--------------------------------------------------------------------
  * Copy and merge a STRING_LIST on the current workspace
+ *
+ * no va_list variant because we're merely wrapping VRT_String
  */
 
 const char *
@@ -218,11 +220,10 @@ VRT_CollectString(VRT_CTX, const char *p, ...)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_SetHdr(VRT_CTX , const struct gethdr_s *hs,
-    const char *p, ...)
+VRT_SetHdrv(VRT_CTX , const struct gethdr_s *hs,
+    const char *p, va_list ap)
 {
 	struct http *hp;
-	va_list ap;
 	const char *b;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -230,7 +231,6 @@ VRT_SetHdr(VRT_CTX , const struct gethdr_s *hs,
 	AN(hs->what);
 	hp = VRT_selecthttp(ctx, hs->where);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	va_start(ap, p);
 	if (p == vrt_magic_string_unset) {
 		http_Unset(hp, hs->what);
 	} else {
@@ -242,9 +242,18 @@ VRT_SetHdr(VRT_CTX , const struct gethdr_s *hs,
 			http_SetHeader(hp, b);
 		}
 	}
-	va_end(ap);
 }
 
+void
+VRT_SetHdr(VRT_CTX , const struct gethdr_s *hs,
+    const char *p, ...)
+{
+	va_list ap;
+
+	va_start(ap, p);
+	VRT_SetHdrv(ctx, hs, p, ap);
+	va_end(ap);
+}
 /*--------------------------------------------------------------------*/
 
 void
@@ -261,28 +270,30 @@ VRT_handling(VRT_CTX, unsigned hand)
  */
 
 void
-VRT_hashdata(VRT_CTX, const char *str, ...)
+VRT_hashdatav(VRT_CTX, const char *p, va_list ap)
 {
-	va_list ap;
-	const char *p;
-
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	AN(ctx->specific);
-	HSH_AddString(ctx->req, ctx->specific, str);
-	va_start(ap, str);
-	while (1) {
-		p = va_arg(ap, const char *);
-		if (p == vrt_magic_string_end)
-			break;
+	while (p != vrt_magic_string_end) {
 		HSH_AddString(ctx->req, ctx->specific, p);
+		p = va_arg(ap, const char *);
 	}
-	va_end(ap);
 	/*
 	 * Add a 'field-separator' to make it more difficult to
 	 * manipulate the hash.
 	 */
 	HSH_AddString(ctx->req, ctx->specific, NULL);
+}
+
+void
+VRT_hashdata(VRT_CTX, const char *str, ...)
+{
+	va_list ap;
+
+	va_start(ap, str);
+	VRT_hashdatav(ctx, str, ap);
+	va_end(ap);
 }
 
 /*--------------------------------------------------------------------*/
@@ -384,21 +395,26 @@ VRT_Rollback(VRT_CTX, const struct http *hp)
 /*--------------------------------------------------------------------*/
 
 void
-VRT_synth_page(VRT_CTX, const char *str, ...)
+VRT_synth_pagev(VRT_CTX, const char *p, va_list ap)
 {
-	va_list ap;
-	const char *p;
 	struct vsb *vsb;
 
 	CAST_OBJ_NOTNULL(vsb, ctx->specific, VSB_MAGIC);
-	va_start(ap, str);
-	p = str;
 	while (p != vrt_magic_string_end) {
 		if (p == NULL)
 			p = "(null)";
 		VSB_cat(vsb, p);
 		p = va_arg(ap, const char *);
 	}
+}
+
+void
+VRT_synth_page(VRT_CTX, const char *str, ...)
+{
+	va_list ap;
+
+	va_start(ap, str);
+	VRT_synth_pagev(ctx, str, ap);
 	va_end(ap);
 }
 

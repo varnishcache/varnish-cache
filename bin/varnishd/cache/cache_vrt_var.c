@@ -63,13 +63,20 @@ vrt_do_string(const struct http *hp, int fld,
 
 #define VRT_HDR_L(obj, hdr, fld)					\
 void									\
-VRT_l_##obj##_##hdr(VRT_CTX, const char *p, ...)	\
+VRT_l_##obj##_##hdr##v(VRT_CTX, const char *p, va_list ap)		\
+{									\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
+	vrt_do_string(ctx->http_##obj, fld, #obj "." #hdr, p, ap);	\
+}									\
+									\
+void									\
+VRT_l_##obj##_##hdr(VRT_CTX, const char *p, ...)			\
 {									\
 	va_list ap;							\
 									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	va_start(ap, p);						\
-	vrt_do_string(ctx->http_##obj, fld, #obj "." #hdr, p, ap);	\
+	VRT_l_##obj##_##hdr##v(ctx,p, ap);				\
 	va_end(ap);							\
 }
 
@@ -246,22 +253,29 @@ VRT_r_client_identity(VRT_CTX)
 }
 
 void
-VRT_l_client_identity(VRT_CTX, const char *str, ...)
+VRT_l_client_identityv(VRT_CTX, const char *str, va_list ap)
 {
-	va_list ap;
 	const char *b;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	va_start(ap, str);
 	b = VRT_String(ctx->req->http->ws, NULL, str, ap);
-	va_end(ap);
 	if (b == NULL) {
 		VSLb(ctx->vsl, SLT_LostHeader, "client.identity");
 		WS_MarkOverflow(ctx->req->http->ws);
 		return;
 	}
 	ctx->req->client_identity = b;
+}
+
+void
+VRT_l_client_identity(VRT_CTX, const char *str, ...)
+{
+	va_list ap;
+
+	va_start(ap, str);
+	VRT_l_client_identityv(ctx, str, ap);
+	va_end(ap);
 }
 
 /*--------------------------------------------------------------------*/
@@ -331,22 +345,29 @@ VRT_r_beresp_storage_hint(VRT_CTX)
 }
 
 void
-VRT_l_beresp_storage_hint(VRT_CTX, const char *str, ...)
+VRT_l_beresp_storage_hintv(VRT_CTX, const char *str, va_list ap)
 {
-	va_list ap;
 	const char *b;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	va_start(ap, str);
 	b = VRT_String(ctx->bo->ws, NULL, str, ap);	// XXX: ctx->ws ?
-	va_end(ap);
 	if (b == NULL) {
 		VSLb(ctx->vsl, SLT_LostHeader, "storage.hint");
 		WS_MarkOverflow(ctx->bo->beresp->ws);
 		return;
 	}
 	ctx->bo->storage_hint = b;
+}
+
+void
+VRT_l_beresp_storage_hint(VRT_CTX, const char *str, ...)
+{
+	va_list ap;
+
+	va_start(ap, str);
+	VRT_l_beresp_storage_hintv(ctx, str, ap);
+	va_end(ap);
 }
 
 /*--------------------------------------------------------------------*/
@@ -408,6 +429,7 @@ VRT_r_beresp_backend(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
+/* no va_args variant yet because only implemented for unset */
 void
 VRT_l_bereq_body(VRT_CTX, const char *p, ...)
 {
@@ -688,6 +710,8 @@ VRT_r_resp_is_streaming(VRT_CTX)
 }
 
 /*--------------------------------------------------------------------*/
+
+/* no va_args variant yet because only implemented for unset */
 
 #define VRT_BODY_L(which)					\
 void								\
