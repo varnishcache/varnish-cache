@@ -172,11 +172,14 @@ Supported formatters are:
   VCL_Log:key
     Output value set by std.log("key:value") in VCL.
 
-  VSL:tag or VSL:tag[field]
-    The value of the VSL entry for the given tag.  If field is specified,
-    only the selected part is shown.  Defaults to '-' when the tag is not
-    seen, or when the field is out of bounds.  If a tag appears several
-    times in a single transaction, only the first occurrence is used.
+  VSL:tag or VSL:tag[field] or VSL:tag:record-prefix or VSL:tag:record-prefix[field]
+    The value of the VSL entry for the given tag.  If record-prefix
+    is specified, limit the matches to those records that has this prefix
+    as it's first part of the record content followed by a colon.
+    If field is specified, only the selected part is shown.
+    Defaults to '-' when the tag is not seen, or when the field
+    is out of bounds.  If a tag appears several times in
+    a single transaction, only the first occurrence is used.
 
 SIGNALS
 =======
