@@ -78,6 +78,7 @@ varnish v1 -errvcl {BOOL + BOOL not possible.} {
 }
 
 varnish v1 -vcl {
+	import std;
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = "foo" + "bar";
@@ -89,6 +90,9 @@ varnish v1 -vcl {
 		set req.http.foo = now - 1s;
 
 		set req.http.foo = now - now;
+
+		set req.http.foo = now + 1;
+		set req.http.foo = now - 1;
 
 		set req.http.foo = 1 + 1;
 		set req.http.foo = 1 - 1;
@@ -109,6 +113,13 @@ varnish v1 -vcl {
 		set req.http.foo = req.http.foo + "bar" !~ "bar";
 
 		set req.ttl = 1s;
+
+		set req.ttl = 1s + 1;
+		set req.ttl = 1s - 1;
+
+		set req.ttl = std.duration(req.http.foo, 1);
+		set req.ttl = std.duration(req.http.foo, 1.5);
+		set req.ttl = std.random(req.ttl, 5);
 
 		if (req.ttl) { }
 		if (!req.ttl) { }
@@ -136,14 +147,6 @@ varnish v1 -errvcl {TIME + TIME not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.ttl = now + now;
-	}
-}
-
-# XXX: error message should say something about DURATION
-varnish v1 -errvcl {Expected ID got ';'} {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv {
-		set req.http.foo = now + 1;
 	}
 }
 
@@ -206,14 +209,6 @@ varnish v1 -errvcl {Expected ';' got 's'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = "foo" + 1s;
-	}
-}
-
-# XXX: should spot DURATION
-varnish v1 -errvcl {Expected ID got ';'} {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv {
-		set req.ttl = 1s + 1;
 	}
 }
 
