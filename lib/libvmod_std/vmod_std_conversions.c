@@ -182,6 +182,15 @@ vmod_real(VRT_CTX, VCL_STRING p, VCL_REAL d)
 	return (r);
 }
 
+VCL_REAL __match_proto__(td_std_round)
+vmod_round(VRT_CTX, VCL_REAL r)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	return (round(r));
+}
+
+/* DEPRECATED */
 VCL_INT __match_proto__(td_std_real2integer)
 vmod_real2integer(VRT_CTX, VCL_REAL r, VCL_INT i)
 {

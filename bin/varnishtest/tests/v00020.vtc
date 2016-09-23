@@ -22,17 +22,84 @@ varnish v1 -errvcl {Found: '0' at} { 0; }
 
 varnish v1 -errvcl {Expected an action, 'if', } " sub vcl_recv { { } { "
 
-varnish v1 -vcl {
-	backend b { .host = "127.0.0.1"; }
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.ttl = 1w;
+		set beresp.http.ttl1a = beresp.ttl;
 		set beresp.ttl *= 1.5;
+		set beresp.http.ttl1b = beresp.ttl;
 		set beresp.ttl = 1.5 s * 2.5;
+		set beresp.http.ttl1c = beresp.ttl;
 		set beresp.ttl = 1.5 s / 2.5;
+		set beresp.http.ttl1d = beresp.ttl;
 		set beresp.ttl = 1.5h + 1.5s;
+		set beresp.http.ttl1e = beresp.ttl;
 		set beresp.ttl = 1.5h - 1.5s;
+		set beresp.http.ttl1f = beresp.ttl;
+
+		# real->duration cast
+		set beresp.ttl = 7.0 * 24.0 * 3600.0;
+		set beresp.http.ttl2a = beresp.ttl;
+		set beresp.ttl *= 1.5;
+		set beresp.http.ttl2b = beresp.ttl;
+		set beresp.ttl = 1.5 * 2.5;
+		set beresp.http.ttl2c = beresp.ttl;
+		set beresp.ttl = 1.5 / 2.5;
+		set beresp.http.ttl2d = beresp.ttl;
+		set beresp.ttl = 1.5 * 3600 + 1.5;
+		set beresp.http.ttl2e = beresp.ttl;
+		set beresp.ttl = 1.5 * 3600 - 1.5;
+		set beresp.http.ttl2f = beresp.ttl;
+
+		# int->duration cast
+		set beresp.ttl = 7 * 24 *3600;
+		set beresp.http.ttl3a = beresp.ttl;
+		set beresp.ttl *= 1.5;
+		set beresp.http.ttl3b = beresp.ttl;
+		set beresp.ttl = 2 * 2;
+		set beresp.http.ttl3c = beresp.ttl;
+		set beresp.ttl = 5 / 2;
+		set beresp.http.ttl3d = beresp.ttl;
+		set beresp.ttl = 90 + 2;
+		set beresp.http.ttl3e = beresp.ttl;
+		set beresp.ttl = 90 - 2;
+		set beresp.http.ttl3f = beresp.ttl;
 	}
-}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+
+	expect resp.http.ttl1a == 604800.000
+	expect resp.http.ttl1b == 907200.000
+	expect resp.http.ttl1c == 3.750
+	expect resp.http.ttl1d == 0.600
+	expect resp.http.ttl1e == 5401.500
+	expect resp.http.ttl1f == 5398.500
+
+	expect resp.http.ttl2a == 604800.000
+	expect resp.http.ttl2b == 907200.000
+	expect resp.http.ttl2c == 3.750
+	expect resp.http.ttl2d == 0.600
+	expect resp.http.ttl2e == 5401.500
+	expect resp.http.ttl2f == 5398.500
+
+	expect resp.http.ttl3a == 604800.000
+	expect resp.http.ttl3b == 907200.000
+	expect resp.http.ttl3c == 4.000
+	expect resp.http.ttl3d == 2.000
+	expect resp.http.ttl3e == 92.000
+	expect resp.http.ttl3f == 88.000
+
+} -run
+
 
 varnish v1 -errvcl {Comparison of different types: INT '!=' STRING} {
 	sub vcl_recv {
@@ -139,14 +206,6 @@ varnish v1 -errvcl {TIME + TIME not possible.} {
 	}
 }
 
-# XXX: error message should say something about DURATION
-varnish v1 -errvcl {Expected ID got ';'} {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv {
-		set req.http.foo = now + 1;
-	}
-}
-
 varnish v1 -errvcl {INT + STRING not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_backend_response {
@@ -158,62 +217,6 @@ varnish v1 -errvcl {INT + TIME not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_backend_response {
 		set beresp.status = 1 + now;
-	}
-}
-
-# XXX: error message should spot DURATION
-varnish v1 -errvcl {Expected ';' got 's'} {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv {
-		set req.http.foo = 1 + 1s;
-	}
-}
-
-# XXX: should spot DURATION
-varnish v1 -errvcl {Expected ';' got 's'} {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv {
-		set req.http.foo = 1s;
-	}
-}
-
-# XXX: should spot DURATION
-varnish v1 -errvcl {Expected ';' got 's'} {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv {
-		set req.http.foo = 1s + 1;
-	}
-}
-
-# XXX: should spot DURATION
-varnish v1 -errvcl {Expected ';' got 's'} {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv {
-		set req.http.foo = 1s + now;
-	}
-}
-
-# XXX: should spot DURATION
-varnish v1 -errvcl {Expected ';' got 's'} {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv {
-		set req.http.foo = 1s + "foo";
-	}
-}
-
-# XXX: should spot DURATION
-varnish v1 -errvcl {Expected ';' got 's'} {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv {
-		set req.http.foo = "foo" + 1s;
-	}
-}
-
-# XXX: should spot DURATION
-varnish v1 -errvcl {Expected ID got ';'} {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv {
-		set req.ttl = 1s + 1;
 	}
 }
 
