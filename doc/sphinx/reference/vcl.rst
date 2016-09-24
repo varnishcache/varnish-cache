@@ -100,8 +100,8 @@ Time
 ~~~~
 
 VCL has time. A duration can be added to a time to make another time.
-In string context they return a formatted string in RFC1123 format
-(e.g. Sun, 06 Nov 1994 08:49:37 GMT).
+In string context they return a formatted string in RFC1123 format,
+e.g. Sun, 06 Nov 1994 08:49:37 GMT.
 
 The keyword *now* returns a time representing the current time in seconds
 since the Epoch.
@@ -109,8 +109,8 @@ since the Epoch.
 Durations
 ~~~~~~~~~
 
-Durations are defined by a number and a designation. The number can be a real
-so 1.5w is allowed.
+Durations are defined by a number followed by an unit. The number can
+include a fractional part, e.g. 1.5s. The supported units are:
 
   ms
     milliseconds

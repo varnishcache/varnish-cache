@@ -22,18 +22,6 @@ varnish v1 -errvcl {Found: '0' at} { 0; }
 
 varnish v1 -errvcl {Expected an action, 'if', } " sub vcl_recv { { } { "
 
-varnish v1 -vcl {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_backend_response {
-		set beresp.ttl = 1w;
-		set beresp.ttl *= 1.5;
-		set beresp.ttl = 1.5 s * 2.5;
-		set beresp.ttl = 1.5 s / 2.5;
-		set beresp.ttl = 1.5h + 1.5s;
-		set beresp.ttl = 1.5h - 1.5s;
-	}
-}
-
 varnish v1 -errvcl {Comparison of different types: INT '!=' STRING} {
 	sub vcl_recv {
 		if (!req.restarts != req.url) {
@@ -109,9 +97,16 @@ varnish v1 -vcl {
 		set req.http.foo = req.http.foo + "bar" !~ "bar";
 
 		set req.ttl = 1s;
+		set req.ttl *= 1.5;
+		set req.ttl = 1.5 s * 2.5;
+		set req.ttl = 1.5 s / 2.5;
+		set req.ttl = 1.5h + 1.5s;
+		set req.ttl = 1.5h - 1.5s;
 
 		if (req.ttl) { }
 		if (!req.ttl) { }
+
+		if (!req.url) { }
 
 		if (1) { }
 	}
@@ -228,14 +223,6 @@ varnish v1 -errvcl {DURATION + STRING not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.ttl = 1s + "foo";
-	}
-}
-
-varnish v1 -vcl {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_miss {
-		if (!req.url) {
-		}
 	}
 }
 
