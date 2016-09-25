@@ -847,24 +847,18 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		 * XXX: but %a is ugly, isn't it ?
 		 */
 		assert(fmt != VOID);
-		if (fmt == DURATION) {
-			vcc_Duration(tl, &d);
-			ERRCHK(tl);
-			e1 = vcc_mk_expr(DURATION, "%g", d);
-		} else if (fmt == BYTES) {
+		if (fmt == BYTES) {
 			vcc_ByteVal(tl, &d);
 			ERRCHK(tl);
 			e1 = vcc_mk_expr(BYTES, "%.1f", d);
-			ERRCHK(tl);
-		} else if (fmt == REAL) {
-			e1 = vcc_mk_expr(REAL, "%f", vcc_DoubleVal(tl));
-			ERRCHK(tl);
-		} else if (fmt == INT) {
-			e1 = vcc_mk_expr(INT, "%.*s", PF(tl->t));
-			vcc_NextToken(tl);
 		} else {
 			vcc_NumVal(tl, &d, &i);
-			if (i)
+			ERRCHK(tl);
+			if (tl->t->tok == ID) {
+				e1 = vcc_mk_expr(DURATION, "%g",
+				    d * vcc_TimeUnit(tl));
+				ERRCHK(tl);
+			} else if (i || fmt == REAL)
 				e1 = vcc_mk_expr(REAL, "%f", d);
 			else
 				e1 = vcc_mk_expr(INT, "%ld", (long)d);
@@ -983,12 +977,51 @@ vcc_expr_string_add(struct vcc *tl, struct expr **e, struct expr *e2)
 	}
 }
 
+static const struct adds {
+	unsigned	op;
+	vcc_type_t	a;
+	vcc_type_t	b;
+	vcc_type_t	fmt;
+} vcc_adds[] = {
+	/* OK */
+	{ '-', TIME,		TIME,		DURATION },
+	{ '+', TIME,		DURATION,	TIME },
+	{ '-', TIME,		DURATION,	TIME },
+	{ '+', DURATION,	DURATION,	DURATION },
+	{ '-', DURATION,	DURATION,	DURATION },
+	{ '+', BYTES,		BYTES,		BYTES },
+	{ '-', BYTES,		BYTES,		BYTES },
+	{ '+', INT,		INT,		INT },
+	{ '-', INT,		INT,		INT },
+	{ '+', REAL,		REAL,		REAL },
+	{ '-', REAL,		REAL,		REAL },
+	{ '+', REAL,		INT,		REAL },
+	{ '-', REAL,		INT,		REAL },
+	{ '+', INT,		REAL,		REAL },
+	{ '-', INT,		REAL,		REAL },
+
+	/* Error */
+	{ '+', TIME,		INT,		VOID },
+	{ '+', TIME,		REAL,		VOID },
+	{ '+', INT,		DURATION,	VOID },
+	{ '+', REAL,		DURATION,	VOID },
+	{ '+', DURATION,	INT,		VOID },
+	{ '+', DURATION,	REAL,		VOID },
+	{ '+', DURATION,	TIME,		VOID },
+	{ '+', DURATION,	STRING,		VOID },
+	{ '+', STRING,		DURATION,	VOID },
+
+	{ EOI, VOID, VOID, VOID }
+};
+
 static void
 vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
+	const struct adds *ap;
 	struct expr  *e2;
 	vcc_type_t f2;
 	struct token *tk;
+	char buf[128];
 
 	*e = NULL;
 	vcc_expr_mul(tl, e, fmt);
@@ -1004,31 +1037,19 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			vcc_expr_mul(tl, &e2, f2);
 		ERRCHK(tl);
 
-#define ADD_OK(op, a, b, c)						  \
-		if (tk->tok == op[0] && (*e)->fmt == a && e2->fmt == b) { \
-			*e = vcc_expr_edit(c, "(\v1" op "\v2)", *e, e2);  \
-			continue;					  \
-		}							  \
+		for (ap = vcc_adds; ap->op != EOI; ap++) {
+			if (tk->tok == ap->op && (*e)->fmt == ap->a &&
+			    e2->fmt == ap->b)
+				break;
+		}
 
-		ADD_OK("-", TIME,	TIME,		DURATION);
-		ADD_OK("+", TIME,	DURATION,	TIME);
-		ADD_OK("-", TIME,	DURATION,	TIME);
-		ADD_OK("+", DURATION,	DURATION,	DURATION);
-		ADD_OK("-", DURATION,	DURATION,	DURATION);
-		ADD_OK("+", BYTES,	BYTES,		BYTES);
-		ADD_OK("-", BYTES,	BYTES,		BYTES);
-		ADD_OK("+", INT,	INT,		INT);
-		ADD_OK("-", INT,	INT,		INT);
-		ADD_OK("+", REAL,	REAL,		REAL);
-		ADD_OK("-", REAL,	REAL,		REAL);
-		ADD_OK("+", REAL,	INT,		REAL);
-		ADD_OK("-", REAL,	INT,		REAL);
-		ADD_OK("+", INT,	REAL,		REAL);
-		ADD_OK("-", INT,	REAL,		REAL);
+		if (ap->fmt != VOID) {
+			bprintf(buf, "(\v1 %c \v2)", ap->op);
+			*e = vcc_expr_edit(ap->fmt, buf, *e, e2);
+			continue;
+		}
 
-#undef ADD_OK
-
-		if (tk->tok == '+') {
+		if (tk->tok == '+' && ap->op == EOI) {
 			if ((*e)->fmt == STRING && e2->fmt == STRING) {
 				vcc_expr_string_add(tl, e, e2);
 				return;
