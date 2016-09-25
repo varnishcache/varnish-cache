@@ -105,10 +105,29 @@ varnish v1 -vcl {
 
 		if (req.ttl) { }
 		if (!req.ttl) { }
-
-		if (!req.url) { }
+		if (req.ttl > 1d) { }
+		if (req.ttl < 1d) { }
 
 		if (1) { }
+		if (2 == 3) { }
+		if (2 < 3) { }
+		if (2 > 3) { }
+
+		if (req.backend_hint == b) { }
+		if (req.backend_hint != b) { }
+
+		if (req.url) { }
+		if (!req.url) { }
+		if (req.url == "foo") { }
+		if (req.url != "foo") { }
+		if (req.url ~ "foo") { }
+		if (req.url !~ "foo") { }
+
+		if (1) { }
+		elsif (2) { }
+		elseif (3) { }
+		else if (4) { }
+		else { }
 	}
 }
 
