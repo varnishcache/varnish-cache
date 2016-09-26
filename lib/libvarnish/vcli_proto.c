@@ -168,7 +168,6 @@ VCLI_ReadResult(int fd, unsigned *status, char **ptr, double tmo)
 
 		*status = u;
 		p = malloc(v + 1L);
-		AN(p);
 		if (p == NULL)
 			break;
 
