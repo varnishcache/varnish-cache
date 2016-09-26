@@ -187,8 +187,7 @@ VCLI_ReadResult(int fd, unsigned *status, char **ptr, double tmo)
 		return (0);
 	} while(0);
 
-	if (p != NULL)
-		free(p);
+	free(p);
 	*status = CLIS_COMMS;
 	if (ptr != NULL)
 		*ptr = strdup(err);
