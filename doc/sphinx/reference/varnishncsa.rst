@@ -118,7 +118,7 @@ Supported formatters are:
 
 %r
   The first line of the request. Synthesized from other fields, so it
-  may not be the request verbatim.
+  may not be the request verbatim. See the NOTES section.
 
 %s
   Status sent to the client.  In backend mode, status received from
@@ -186,6 +186,12 @@ SIGHUP
 
 SIGUSR1
   Flush any outstanding transactions
+
+NOTES
+=====
+
+The %r formatter is equivalent to "%m http://%{Host}i%U%q %H". This
+differs from apache's %r behavior. For the latter use "%m %U%q %H".
 
 EXAMPLE
 =======
