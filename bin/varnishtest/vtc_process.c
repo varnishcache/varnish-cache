@@ -205,6 +205,7 @@ process_start(struct process *p)
 		assert(dup2(out_fd, 1) == 1);
 		assert(dup2(err_fd, 2) == 2);
 		VSUB_closefrom(STDERR_FILENO + 1);
+		AZ(setpgid(0, 0));
 		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(cl), (char*)0));
 		exit(1);
 	}
@@ -255,7 +256,7 @@ process_kill(const struct process *p, const char *sig)
 	if (!p->running || !p->pid)
 		vtc_log(p->vl, 0, "Cannot signal a non-running process");
 
-	bprintf(buf, "kill -%s %d", sig, p->pid);
+	bprintf(buf, "kill -%s -%d", sig, p->pid);
 	vtc_log(p->vl, 4, "CMD: %s", buf);
 
 	s = system(buf);
