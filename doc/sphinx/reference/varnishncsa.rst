@@ -154,12 +154,12 @@ Supported formatters are:
     sent to the backend to the entire header had been received.
 
   Varnish:hitmiss
-    Whether the request was a cache hit or miss. Pipe and pass are
-    considered misses.
+    One of the 'hit' or 'miss' strings, depending on whether the request
+    was a cache hit or miss. Pipe, pass and synth are considered misses.
 
   Varnish:handling
-    How the request was handled, whether it was a cache hit, miss,
-    pass, pipe or synth.
+    One of the 'hit', 'miss', 'pass', 'pipe' or 'synth' strings indicating
+    how the request was handled.
 
   Varnish:side
     Backend or client side. One of two values, 'b' or 'c', depending
@@ -170,28 +170,31 @@ Supported formatters are:
     The VXID of the varnish transaction.
 
   VCL_Log:key
-    Output value set by std.log("key:value") in VCL.
+    The value set by std.log("key:value") in VCL.
 
-  VSL:tag or VSL:tag[field]
-    The value of the VSL entry for the given tag.  If field is specified,
-    only the selected part is shown.  Defaults to '-' when the tag is not
-    seen, or when the field is out of bounds.  If a tag appears several
-    times in a single transaction, only the first occurrence is used.
+  VSL:tag[field]
+    The value of the VSL entry for the given tag. The field will,
+    if present, treat the log record as a white space separated list
+    of fields, and only the nth part of the record will be matched
+    against. Fields start counting at 1. Defaults to '-' when the tag
+    is not seen, or when the field is out of bounds. If a tag appears
+    several times in a single transaction, only the first occurrence
+    is used.
 
 SIGNALS
 =======
 
 SIGHUP
-  Rotate the log file (see -w option)
+  Rotate the log file (see -w option).
 
 SIGUSR1
-  Flush any outstanding transactions
+  Flush any outstanding transactions.
 
 NOTES
 =====
 
 The %r formatter is equivalent to "%m http://%{Host}i%U%q %H". This
-differs from apache's %r behavior. For the latter use "%m %U%q %H".
+differs from apache's %r behavior, equivalent to "%m %U%q %H".
 
 EXAMPLE
 =======
