@@ -109,7 +109,7 @@ since the Epoch.
 Durations
 ~~~~~~~~~
 
-Durations are defined by a number followed by an unit. The number can
+Durations are defined by a number followed by a unit. The number can
 include a fractional part, e.g. 1.5s. The supported units are:
 
   ms
