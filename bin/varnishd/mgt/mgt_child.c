@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
 #include <signal.h>
@@ -583,17 +584,22 @@ mgt_reap_child(void)
 void
 MGT_Child_Cli_Fail(void)
 {
+	int i;
 
 	if (child_state != CH_RUNNING)
 		return;
 	if (child_pid < 0)
 		return;
-	MGT_complain(C_ERR, "Child (%jd) not responding to CLI, killing it.",
-	    (intmax_t)child_pid);
 	if (MGT_FEATURE(FEATURE_NO_COREDUMP))
-		(void)kill(child_pid, SIGKILL);
+		i = kill(child_pid, SIGKILL);
 	else
-		(void)kill(child_pid, SIGQUIT);
+		i = kill(child_pid, SIGQUIT);
+	if (i == 0)
+		MGT_complain(C_ERR, "Child (%jd) not responding to CLI,"
+		    " killing it.", (intmax_t)child_pid);
+	else
+		MGT_complain(C_ERR, "Failed to kill child with PID %jd: %s",
+		    (intmax_t)child_pid, strerror(errno));
 }
 
 /*=====================================================================
