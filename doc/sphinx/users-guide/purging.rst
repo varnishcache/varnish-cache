@@ -71,11 +71,14 @@ prevent new content from entering the cache or being served.
 
 Support for bans is built into Varnish and available in the CLI
 interface. To ban every png object belonging on example.com, issue
-the following command::
+the following command from the shell::
 
-  ban req.http.host == "example.com" && req.url ~ "\\.png$"
+  varnishadm ban req.http.host == example.com '&&' req.url '~' '\\.png$'
 
-Quite powerful, really.
+See :ref:`vcl(7)_ban` for details on the syntax of ban expressions. In
+particular, note that in the example given above, the quotes are
+required for execution from the shell and escaping the backslash is in
+the regular expression is required by the varnish cli interface.
 
 Bans are checked when we hit an object in the cache, but before we
 deliver it. *An object is only checked against newer bans*.
