@@ -77,7 +77,7 @@ the following command from the shell::
 
 See :ref:`vcl(7)_ban` for details on the syntax of ban expressions. In
 particular, note that in the example given above, the quotes are
-required for execution from the shell and escaping the backslash is in
+required for execution from the shell and escaping the backslash in
 the regular expression is required by the varnish cli interface.
 
 Bans are checked when we hit an object in the cache, but before we
