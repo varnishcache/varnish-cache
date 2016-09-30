@@ -830,7 +830,7 @@ vtx_scan_link(struct VSLQ *vslq, struct vtx *vtx, const uint32_t *ptr)
 	if (c_vtx->parent == vtx)
 		/* Link already exists */
 		return (0);
-	if (c_vtx->parent != vtx)
+	if (c_vtx->parent != NULL && c_vtx->parent != vtx)
 		return (vtx_diag_tag(vtx, ptr, "duplicate link"));
 	if (c_vtx->flags & VTX_F_COMPLETE)
 		return (vtx_diag_tag(vtx, ptr, "link too late"));
