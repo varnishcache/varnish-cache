@@ -1071,6 +1071,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 		bo = NULL; /* ref transferred to fetch thread */
 		if (mode == VBF_BACKGROUND) {
 			ObjWaitState(oc, BOS_REQ_DONE);
+			VRB_Ignore(req);
 		} else {
 			ObjWaitState(oc, BOS_STREAM);
 			if (oc->boc->state == BOS_FAILED) {

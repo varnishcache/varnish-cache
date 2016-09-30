@@ -1,0 +1,29 @@
+varnishtest "Always consume the request body in bgfetch"
+
+server s1 {
+	rxreq
+	expect req.bodylen == 0
+	txresp
+	rxreq
+	expect req.bodylen == 0
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.ttl = 0.5s;
+	}
+} -start
+
+client c1 {
+	txreq -bodylen 10
+	rxresp
+	expect resp.status == 200
+	delay 1
+	txreq -bodylen 10
+	rxresp
+	expect resp.status == 200
+	txreq -bodylen 10
+	rxresp
+	expect resp.status == 200
+} -run

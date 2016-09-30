@@ -13,21 +13,15 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
-		set req.http.X-Method = req.method;
-		# We ignore the actual body and verb for this test.
+		# We ignore the actual body for this test.
+		set req.http.method = req.method;
 		return (hash);
 	}
-	sub vcl_miss {
-		return (fetch);
-	}
 	sub vcl_backend_fetch {
-		set bereq.method = bereq.http.X-Method;
-		unset bereq.http.X-Method;
-		set bereq.first_byte_timeout = 1s;
+		set bereq.method = bereq.http.method;
 	}
 	sub vcl_backend_response {
-		set beresp.ttl = 1s;
-		set beresp.grace = 2s;
+		set beresp.ttl = 0.5s;
 	}
 } -start
 
@@ -38,7 +32,7 @@ client c1 {
 	txreq -req "POST" -body "foo"
 	rxresp
 	expect resp.body == "bar"
-	delay 1
+	delay 0.5
 	txreq -req "POST" -body "foo"
 	rxresp
 	expect resp.body == "bar"
