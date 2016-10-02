@@ -54,14 +54,7 @@
 // cache.h
 -emacro(506, INCOMPL) // Constant value Boolean
 
-// cache_center.c
--efunc(525, CNT_Session)	// Negative indentation from line
--efunc(525, http_FilterFields)	// Negative indentation from line
--efunc(539, http_FilterFields)	// Positive indentation from line
-
 // cache_vcl.c
--efunc(525, vcl_handlingname)	// Negative indentation from line
--esym(528, vcl_handlingname)	// Not referenced
 -e641	// Converting enum 'cli_status_e' to int
 
 // Review all below this line ///////////////////////////////////////////////

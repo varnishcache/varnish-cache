@@ -8,14 +8,7 @@
 -e785	// Too few initializers for aggregate
 -e786	// String concatenation within initializer
 
-// cache_center.c
--efunc(525, CNT_Session)	// Negative indentation from line
--efunc(525, http_FilterHeader)	// Negative indentation from line
--efunc(539, http_FilterHeader)	// Positive indentation from line
-
 // cache_vcl.c
--efunc(525, vcl_handlingname)	// Negative indentation from line
--esym(528, vcl_handlingname)	// Not referenced
 -e641	// Converting enum 'cli_status_e' to int
 
 // Review all below this line ///////////////////////////////////////////////

@@ -31,14 +31,6 @@
 // XXX: I think this is a flexelint bug:
 -esym(522, vbit_clr)
 
-// Stuff used outside varnishd
--esym(759, BackSlash)
--esym(765, BackSlash)
--esym(759, BackSlashDecode)
--esym(765, BackSlashDecode)
--esym(757, base64*)
-
-
 // Stuff used by compiled VCL
 -esym(757, VRT_*)
 -esym(759, VRT_*)
@@ -52,7 +44,6 @@
 
 // FLINT Bug20090910_838
 -efunc(838, VRT_purge)
--efunc(838, VRT_purge_string)
 
 // Stuff in VMODs which is used through dl*(3) functions
 -esym(754, Vmod_*_Func::*)
@@ -89,7 +80,6 @@
 -sem(exp_timer, thread_mono)
 -sem(wrk_herdtimer_thread, thread_mono)
 -sem(wrk_herder_thread, thread_mono)
--esym(458, VSL_stats)
 -esym(458, heritage)
 -esym(458, name_key)
 
@@ -144,7 +134,6 @@
 
 // cache_vcl.c
 -esym(528, vcl_call_method)	// Not referenced
--esym(528, vcl_handlingname)	// Not referenced
 
 -e441	//  for clause irregularity: loop variable '___' not found in 2nd for expression
 

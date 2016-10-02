@@ -3,7 +3,6 @@
 -function(__assert(1), vtc_log(2))
 
 -esym(850, av)
--esym(528, iter_call)		// Flexelint bug
 
 -esym(534, snprintf)		// Only for varnishtest, and not really nice
 
