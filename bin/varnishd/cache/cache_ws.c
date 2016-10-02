@@ -176,8 +176,6 @@ WS_Printf(struct ws *ws, const char *fmt, ...)
 	va_list ap;
 	char *p;
 
-	WS_Assert(ws);
-	assert(ws->r == NULL);
 	u = WS_Reserve(ws, 0);
 	p = ws->f;
 	va_start(ap, fmt);
