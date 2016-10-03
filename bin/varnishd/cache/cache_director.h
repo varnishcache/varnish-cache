@@ -45,6 +45,8 @@
 
 typedef unsigned vdi_healthy_f(const struct director *, const struct busyobj *,
     double *changed);
+typedef unsigned vdi_status_f(const struct director *, const struct busyobj *,
+    double *changed, double *load);
 
 typedef const struct director *vdi_resolve_f(const struct director *,
     struct worker *, struct busyobj *);
@@ -70,6 +72,7 @@ struct director {
 	char			*vcl_name;
 	vdi_http1pipe_f		*http1pipe;
 	vdi_healthy_f		*healthy;
+	vdi_status_f		*status;
 	vdi_resolve_f		*resolve;
 	vdi_gethdrs_f		*gethdrs;
 	vdi_getbody_f		*getbody;

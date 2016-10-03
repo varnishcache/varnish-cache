@@ -139,6 +139,20 @@ vbe_dir_healthy(const struct director *d, const struct busyobj *bo,
 	return (VBE_Healthy(be, changed));
 }
 
+static unsigned __match_proto__(vdi_status_f)
+vbe_dir_status(const struct director *d, const struct busyobj *bo,
+    double *changed, double *load)
+{
+	struct backend *be;
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
+	if (load != NULL)
+		*load = be->n_conn;
+	return (VBE_Healthy(be, changed));
+}
+
 static void __match_proto__(vdi_finish_f)
 vbe_dir_finish(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
@@ -353,6 +367,7 @@ VBE_fill_director(struct backend *be)
 	d->vcl_name = be->vcl_name;
 	d->http1pipe = vbe_dir_http1pipe;
 	d->healthy = vbe_dir_healthy;
+	d->status = vbe_dir_status;
 	d->gethdrs = vbe_dir_gethdrs;
 	d->getbody = vbe_dir_getbody;
 	d->getip = vbe_dir_getip;
