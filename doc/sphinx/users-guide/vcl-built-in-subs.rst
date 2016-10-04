@@ -271,6 +271,32 @@ The `vcl_backend_fetch` subroutine may terminate with calling
     background fetch, control is passed to :ref:`vcl_synth` on the
     client side with ``resp.status`` preset to 503.
 
+Before calling `vcl_backend_fetch`, varnish core prepares the `bereq`
+backend request as follows:
+
+* ``set bereq.method = "GET"`` and ``set bereq.proto = "HTTP/1.1"``,
+  unless the request is a `pass`
+
+* ``set bereq.http.Accept_Encoding = "gzip"`` if
+  :ref:`ref_param_http_gzip_support` is enabled
+
+* If there is an existing cache object to be revalidated, set
+  ``bereq.http.If-Modified-Since`` from its ``Last-Modified`` header
+  and/or set ``bereq.http.If-None-Match`` from its ``Etag`` header
+
+* Set ``bereq.http.X-Varnish`` to the current transaction id (`vxid`)
+
+These changes can be undone or modified in `vcl_backend_fetch` before
+the backend request is issued.
+
+In particular, to cache non-GET requests, ``req.method`` needs to be
+saved to a header or variable in :ref:`vcl_recv` and restored to
+``bereq.method``. Notice that caching non-GET requests typically also
+requires changing the cache key in :ref:`vcl_hash` e.g. by also
+hashing the request method and/or request body.
+
+HEAD request can be satisfied from cached GET responses.
+
 .. _vcl_backend_response:
 
 vcl_backend_response
