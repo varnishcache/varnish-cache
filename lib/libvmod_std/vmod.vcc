@@ -226,11 +226,12 @@ Description
 Example
 	set req.url = std.querysort(req.url);
 
-$Function BOOL cache_req_body(BYTES size)
+$Function BOOL cache_req_body(BYTES size, STEVEDORE storage=VRT_stevedore("Transient"))
 
 Description
 	Caches the request body if it is smaller than *size*.  Returns
 	`true` if the body was cached, `false` otherwise.
+	An optional parameter can be used to change the storage.
 
 	Normally the request body is not available after sending it to
 	the backend.  By caching it is possible to retry pass operations,
