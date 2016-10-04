@@ -453,6 +453,14 @@ mgt_launch_child(struct cli *cli)
  * Cleanup when child dies.
  */
 
+static int
+kill_child(void) {
+	if (MGT_FEATURE(FEATURE_NO_COREDUMP))
+		return (kill(child_pid, SIGKILL));
+	else
+		return (kill(child_pid, SIGQUIT));
+}
+
 static void
 mgt_reap_child(void)
 {
@@ -502,10 +510,7 @@ mgt_reap_child(void)
 		VSB_printf(vsb, "Child (%jd) not dying, killing", (intmax_t)r);
 
 		/* Kick it Jim... */
-		if (MGT_FEATURE(FEATURE_NO_COREDUMP))
-			(void)kill(child_pid, SIGKILL);
-		else
-			(void)kill(child_pid, SIGQUIT);
+		(void)kill_child();
 		r = waitpid(child_pid, &status, 0);
 	}
 	if (r != child_pid)
@@ -584,17 +589,12 @@ mgt_reap_child(void)
 void
 MGT_Child_Cli_Fail(void)
 {
-	int i;
 
 	if (child_state != CH_RUNNING)
 		return;
 	if (child_pid < 0)
 		return;
-	if (MGT_FEATURE(FEATURE_NO_COREDUMP))
-		i = kill(child_pid, SIGKILL);
-	else
-		i = kill(child_pid, SIGQUIT);
-	if (i == 0)
+	if (kill_child() == 0)
 		MGT_complain(C_ERR, "Child (%jd) not responding to CLI,"
 		    " killing it.", (intmax_t)child_pid);
 	else
