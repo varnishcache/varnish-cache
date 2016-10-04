@@ -274,10 +274,10 @@ The `vcl_backend_fetch` subroutine may terminate with calling
 Before calling `vcl_backend_fetch`, varnish core prepares the `bereq`
 backend request as follows:
 
-* ``set bereq.method = "GET"`` and ``set bereq.proto = "HTTP/1.1"``,
+* Set ``bereq.method`` to ``GET`` and ``bereq.proto`` to ``HTTP/1.1``,
   unless the request is a `pass`
 
-* ``set bereq.http.Accept_Encoding = "gzip"`` if
+* Set ``bereq.http.Accept_Encoding`` to ``gzip`` if
   :ref:`ref_param_http_gzip_support` is enabled
 
 * If there is an existing cache object to be revalidated, set
