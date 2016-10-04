@@ -44,5 +44,6 @@ client c1 {
 	chunked {BLAS}
 	delay .2
 	chunkedlen 110
-	expect_close
+	rxresp
+	expect resp.status == 413
 } -run
