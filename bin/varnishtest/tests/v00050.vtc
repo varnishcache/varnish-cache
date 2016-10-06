@@ -1,0 +1,16 @@
+varnishtest "Test bind_before_connect"
+
+server s1 {
+       rxreq
+       expect remote.ip == "127.0.0.2"
+       txresp
+} -start
+
+varnish v1 -arg "-B 127.0.0.2" -vcl+backend { } -start
+
+varnish v1 -cliok "param.set feature +bind_before_connect"
+
+client c1 {
+        txreq
+	rxresp
+} -run

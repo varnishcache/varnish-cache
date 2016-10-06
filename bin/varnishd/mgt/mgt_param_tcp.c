@@ -44,7 +44,10 @@
 #include <unistd.h>
 
 #include "mgt/mgt.h"
+#include "common/heritage.h"
 
+#include "vsa.h"
+#include "vss.h"
 #include "vtcp.h"
 
 #include "mgt/mgt_param.h"
@@ -111,4 +114,34 @@ MCF_TcpParams(void)
 	MCF_AddParams(mgt_parspec_tcp_keep);
 	tcp_keep_probes();
 #endif
+}
+
+static int __match_proto__(vss_resolved_f)
+src_callback(void *priv, const struct suckaddr *sa)
+{
+	if (VSA_Get_Proto(sa) == AF_INET) {
+		if (heritage.ipv4_src) {
+			ARGV_ERR("ipv4 source addr is already set\n");
+			return (1);
+		}
+		heritage.ipv4_src = VSA_Clone(sa);
+	}
+	if (VSA_Get_Proto(sa) == AF_INET6) {
+		if (heritage.ipv6_src) {
+			ARGV_ERR("ipv6 source addr is already set\n");
+			return (1);
+		}
+		heritage.ipv6_src = VSA_Clone(sa);
+	}
+	return (0);
+}
+
+void
+SRC_Arg(const char *arg)
+{
+	const char *err;
+	int error;
+	error = VSS_resolver(arg, NULL, src_callback, NULL, &err);
+	if (error)
+		ARGV_ERR("addr %s didn't resolve\n", arg);
 }

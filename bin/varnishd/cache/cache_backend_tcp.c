@@ -37,6 +37,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "common/heritage.h"
 
 #include "vrt.h"
 #include "vsa.h"
@@ -224,8 +225,8 @@ VBT_Open(const struct tcp_pool *tp, double tmo, const struct suckaddr **sa)
 	const struct suckaddr *soa6 = NULL;
 
 	if (FEATURE(FEATURE_BIND_BEFORE_CONNECT)) {
-		soa4 = vsa_ipv4_any;
-		soa6 = vsa_ipv6_any;
+		soa4 = (heritage.ipv4_src ? heritage.ipv4_src : vsa_ipv4_any);
+		soa6 = (heritage.ipv6_src ? heritage.ipv6_src : vsa_ipv6_any);
 	}
 
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
