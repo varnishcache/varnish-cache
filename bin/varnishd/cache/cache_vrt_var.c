@@ -342,7 +342,7 @@ VRT_l_beresp_storage_hint(VRT_CTX, const char *str, ...)
 	b = VRT_String(ctx->bo->ws, NULL, str, ap);	// XXX: ctx->ws ?
 	va_end(ap);
 	if (b == NULL) {
-		VSLb(ctx->vsl, SLT_LostHeader, "storage.hint");
+		VSLb(ctx->vsl, SLT_LostHeader, "storage_hint");
 		WS_MarkOverflow(ctx->bo->beresp->ws);
 		return;
 	}
