@@ -320,6 +320,36 @@ VRT_r_beresp_backend_ip(VRT_CTX)
 /*--------------------------------------------------------------------*/
 
 const char *
+VRT_r_req_storage_hint(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	if (ctx->req->storage_hint != NULL)
+		return (ctx->req->storage_hint);
+	else
+		return (NULL);
+}
+
+void
+VRT_l_req_storage_hint(VRT_CTX, const char *str, ...)
+{
+	va_list ap;
+	const char *b;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	va_start(ap, str);
+	b = VRT_String(ctx->req->ws, NULL, str, ap);	// XXX: ctx->ws ?
+	va_end(ap);
+	if (b == NULL) {
+		VSLb(ctx->vsl, SLT_LostHeader, "storage_hint");
+		WS_MarkOverflow(ctx->req->ws);
+		return;
+	}
+	ctx->req->storage_hint = b;
+}
+
+const char *
 VRT_r_beresp_storage_hint(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);

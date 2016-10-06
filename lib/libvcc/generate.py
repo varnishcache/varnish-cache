@@ -306,6 +306,14 @@ sp_variables = [
 		or backend, respectively.
 		"""
 	),
+	('req.storage_hint',
+		'STRING',
+		('recv', ),
+		('recv', ), """
+		Hint to Varnish that you want to save the request body
+		to a particular storage backend.
+		"""
+	),
 	('req.hash_ignore_busy',
 		'BOOL',
 		('recv',),

@@ -566,6 +566,7 @@ struct req {
 
 	ssize_t			req_bodybytes;	/* Parsed req bodybytes */
 
+	const char		*storage_hint;
 	const struct director	*director_hint;
 	struct vcl		*vcl;
 
