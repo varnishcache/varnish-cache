@@ -555,7 +555,7 @@ VSB_quote(struct vsb *s, const void *v, int len, int how)
 			break;
 		case '\n':
 			if (how & VSB_QUOTE_CSTR)
-				(void)VSB_cat(s, "\"\n\t\"");
+				(void)VSB_cat(s, "\\n\"\n\t\"");
 			else if (how & VSB_QUOTE_NONL)
 				(void)VSB_cat(s, "\n");
 			else
