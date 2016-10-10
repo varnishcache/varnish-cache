@@ -194,6 +194,8 @@ cls_dispatch(struct cli *cli, const struct cli_proto *cp,
 
 	AN(av);
 
+	VSB_clear(cli->sb);
+
 	if (ac > 1 && !strcmp(av[2], "-j"))
 		json = 1;
 
@@ -221,7 +223,6 @@ cls_dispatch(struct cli *cli, const struct cli_proto *cp,
 	}
 
 	cli->result = CLIS_OK;
-	VSB_clear(cli->sb);
 	if (json)
 		cp->jsonfunc(cli, (const char * const *)av, cp->priv);
 	else
