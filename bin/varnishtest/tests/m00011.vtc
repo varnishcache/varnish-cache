@@ -19,6 +19,8 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
+	# Allow for DNS trouble with bogos domains
+	timeout 60
 	txreq
 	rxresp
 	expect resp.http.foo0 == "${localhost}"
