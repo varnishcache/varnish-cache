@@ -455,10 +455,17 @@ mgt_launch_child(struct cli *cli)
 
 static int
 kill_child(void) {
+	int i, error;
+
+	VJ_master(JAIL_MASTER_KILL);
 	if (MGT_FEATURE(FEATURE_NO_COREDUMP))
-		return (kill(child_pid, SIGKILL));
+		i = kill(child_pid, SIGKILL);
 	else
-		return (kill(child_pid, SIGQUIT));
+		i = kill(child_pid, SIGQUIT);
+	error = errno;
+	VJ_master(JAIL_MASTER_LOW);
+	errno = error;
+	return (i);
 }
 
 static void
