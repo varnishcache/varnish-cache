@@ -331,6 +331,7 @@ vcc_Parse(struct vcc *tl)
 	struct toplev *tp;
 	struct token *tok;
 
+	AZ(tl->indent);
 	if (tl->t->tok != ID || !vcc_IdIs(tl->t, "vcl")) {
 		VSB_printf(tl->sb,
 		    "VCL version declaration missing\n"
@@ -395,4 +396,5 @@ vcc_Parse(struct vcc *tl)
 			return;
 		}
 	}
+	AZ(tl->indent);
 }

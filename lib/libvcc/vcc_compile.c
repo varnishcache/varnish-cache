@@ -371,8 +371,10 @@ EmitInitFini(const struct vcc *tl)
 		VTAILQ_FOREACH_REVERSE(p, &tl->inifin, inifinhead, list) {
 			if (VSB_len(p->event)) {
 				Fc(tl, 0, "\t/* %u */\n", p->n);
-				Fc(tl, 0, "\tif (vgc_warmupstep >= %u &&\n", p->n);
-				Fc(tl, 0, "\t    %s != 0)\n", VSB_data(p->event));
+				Fc(tl, 0,
+				    "\tif (vgc_warmupstep >= %u &&\n", p->n);
+				Fc(tl, 0,
+				    "\t    %s != 0)\n", VSB_data(p->event));
 				Fc(tl, 0, "\t\tretval = 1;\n\n");
 			}
 			VSB_destroy(&p->event);
