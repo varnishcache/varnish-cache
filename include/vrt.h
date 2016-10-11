@@ -287,6 +287,7 @@ void VRT_purge(VRT_CTX, double ttl, double grace, double keep);
 
 void VRT_count(VRT_CTX, unsigned);
 void VRT_synth(VRT_CTX, unsigned, const char *);
+void VRT_hit_for_pass(VRT_CTX, VCL_DURATION);
 
 struct http *VRT_selecthttp(VRT_CTX, enum gethdr_e);
 const char *VRT_GetHdr(VRT_CTX, const struct gethdr_s *);

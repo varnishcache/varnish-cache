@@ -192,6 +192,23 @@ parse_hash_data(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static void
+parse_return_pass(struct vcc *tl)
+{
+
+	ExpectErr(tl, '(');
+	vcc_NextToken(tl);
+	Fb(tl, 1, "VRT_hit_for_pass(ctx,\n");
+	tl->indent += INDENT;
+	vcc_Expr(tl, DURATION);
+	ERRCHK(tl);
+	ExpectErr(tl, ')');
+	vcc_NextToken(tl);
+	Fb(tl, 1, ");\n");
+	tl->indent -= INDENT;
+}
+/*--------------------------------------------------------------------*/
+
+static void
 parse_return_synth(struct vcc *tl)
 {
 
@@ -272,7 +289,7 @@ parse_return(struct vcc *tl)
 
 	hand = VCL_RET_MAX;
 	h = NULL;
-#define VCL_RET_MAC(l, U, B) 				\
+#define VCL_RET_MAC(l, U, B)				\
 		if (vcc_IdIs(tl->t, #l)) {		\
 			hand = VCL_RET_ ## U;		\
 			h = #U;				\
@@ -285,7 +302,7 @@ parse_return(struct vcc *tl)
 		ERRCHK(tl);
 	}
 	assert(hand < VCL_RET_MAX);
-		
+
 	vcc_ProcAction(tl->curproc, hand, tl->t);
 	vcc_NextToken(tl);
 	if (tl->t->tok == '(') {
@@ -293,6 +310,8 @@ parse_return(struct vcc *tl)
 			parse_return_synth(tl);
 		else if (hand == VCL_RET_VCL)
 			parse_return_vcl(tl);
+		else if (hand == VCL_RET_PASS)
+			parse_return_pass(tl);
 		else {
 			VSB_printf(tl->sb, "Arguments not allowed.\n");
 			vcc_ErrWhere(tl, tl->t);
