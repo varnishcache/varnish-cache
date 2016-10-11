@@ -195,17 +195,6 @@ static void
 parse_return_synth(struct vcc *tl)
 {
 
-	AN(vcc_IdIs(tl->t, "synth"));
-	vcc_NextToken(tl);
-	if (tl->t->tok == ')') {
-		VSB_printf(tl->sb,
-		    "Syntax has changed, use:\n"
-		    "\treturn(synth(999));\n"
-		    "or\n"
-		    "\treturn(synth(999, \"Response text\"));\n");
-		vcc_ErrWhere(tl, tl->t);
-		return;
-	}
 	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
 	Fb(tl, 1, "VRT_synth(ctx,\n");
@@ -224,11 +213,6 @@ parse_return_synth(struct vcc *tl)
 	ExpectErr(tl, ')');
 	vcc_NextToken(tl);
 	Fb(tl, 1, ");\n");
-	Fb(tl, 1, "VRT_handling(ctx, VCL_RET_SYNTH);\n");
-	Fb(tl, 1, "return (1);\n");
-	vcc_ProcAction(tl->curproc, VCL_RET_SYNTH, tl->t);
-	ExpectErr(tl, ')');
-	vcc_NextToken(tl);
 }
 
 /*--------------------------------------------------------------------*/
@@ -240,8 +224,6 @@ parse_return_vcl(struct vcc *tl)
 	struct inifin *p;
 	char buf[1024];
 
-	AN(vcc_IdIs(tl->t, "vcl"));
-	vcc_NextToken(tl);
 	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
@@ -270,10 +252,6 @@ parse_return_vcl(struct vcc *tl)
 	}
 	Fb(tl, 1, "VRT_vcl_select(ctx, %s);\t/* %.*s */\n",
 	    (const char*)sym->eval_priv, PF(tl->t));
-	Fb(tl, 1, "VRT_handling(ctx, VCL_RET_VCL);\n");
-	Fb(tl, 1, "return (1);\n");
-	vcc_NextToken(tl);
-	ExpectErr(tl, ')');
 	vcc_NextToken(tl);
 	ExpectErr(tl, ')');
 	vcc_NextToken(tl);
@@ -284,39 +262,50 @@ parse_return_vcl(struct vcc *tl)
 static void
 parse_return(struct vcc *tl)
 {
-	int retval = 0;
+	unsigned hand;
+	const char *h;
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 
-	if (vcc_IdIs(tl->t, "synth")) {
-		parse_return_synth(tl);
-		return;
-	}
-	if (vcc_IdIs(tl->t, "vcl")) {
-		parse_return_vcl(tl);
-		return;
-	}
-
-#define VCL_RET_MAC(l, U, B)						\
-	do {								\
-		if (vcc_IdIs(tl->t, #l)) {				\
-			Fb(tl, 1, "VRT_handling(ctx, VCL_RET_" #U ");\n"); \
-			Fb(tl, 1, "return (1);\n");			\
-			vcc_ProcAction(tl->curproc, VCL_RET_##U, tl->t);\
-			retval = 1;					\
-		}							\
-	} while (0);
+	hand = VCL_RET_MAX;
+	h = NULL;
+#define VCL_RET_MAC(l, U, B) 				\
+		if (vcc_IdIs(tl->t, #l)) {		\
+			hand = VCL_RET_ ## U;		\
+			h = #U;				\
+		}
 #include "tbl/vcl_returns.h"
 #undef VCL_RET_MAC
-	if (!retval) {
+	if (h == NULL) {
 		VSB_printf(tl->sb, "Expected return action name.\n");
 		vcc_ErrWhere(tl, tl->t);
 		ERRCHK(tl);
 	}
+	assert(hand < VCL_RET_MAX);
+		
+	vcc_ProcAction(tl->curproc, hand, tl->t);
 	vcc_NextToken(tl);
+	if (tl->t->tok == '(') {
+		if (hand == VCL_RET_SYNTH)
+			parse_return_synth(tl);
+		else if (hand == VCL_RET_VCL)
+			parse_return_vcl(tl);
+		else {
+			VSB_printf(tl->sb, "Arguments not allowed.\n");
+			vcc_ErrWhere(tl, tl->t);
+		}
+	} else {
+		if (hand == VCL_RET_SYNTH || hand == VCL_RET_VCL) {
+			VSB_printf(tl->sb, "Missing argument.\n");
+			vcc_ErrWhere(tl, tl->t);
+		}
+	}
+	ERRCHK(tl);
+	Fb(tl, 1, "VRT_handling(ctx, VCL_RET_%s);\n", h);
+	Fb(tl, 1, "return (1);\n");
 	ExpectErr(tl, ')');
 	vcc_NextToken(tl);
 }

@@ -103,7 +103,17 @@ varnish v1 -errvcl {Unknown token '<<' when looking for STRING_LIST} {
 	sub vcl_synth { synthetic( << "foo"; }
 }
 
-varnish v1 -errvcl {Syntax has changed, use:} {
+varnish v1 -errvcl {Missing argument.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv { return(synth); }
+}
+
+varnish v1 -errvcl {Arguments not allowed.} {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv { return(pipe(XXX); }
+}
+
+varnish v1 -errvcl {Expected return action name.} {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv { return(foobar); }
 }
