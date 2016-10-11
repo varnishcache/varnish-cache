@@ -603,7 +603,7 @@ MGT_Child_Cli_Fail(void)
 		return;
 	if (kill_child() == 0)
 		MGT_complain(C_ERR, "Child (%jd) not responding to CLI,"
-		    " killing it.", (intmax_t)child_pid);
+		    " killed it.", (intmax_t)child_pid);
 	else
 		MGT_complain(C_ERR, "Failed to kill child with PID %jd: %s",
 		    (intmax_t)child_pid, strerror(errno));
