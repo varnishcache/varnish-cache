@@ -88,6 +88,7 @@ enum jail_master_e {
 	JAIL_MASTER_FILE,
 	JAIL_MASTER_STORAGE,
 	JAIL_MASTER_PRIVPORT,
+	JAIL_MASTER_KILL,
 };
 
 typedef int jail_init_f(char **);
