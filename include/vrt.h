@@ -188,6 +188,7 @@ extern const void * const vrt_magic_string_unset;
 	rigid char			*ipv6_addr;		\
 	rigid char			*port;			\
 	rigid char			*hosthdr;		\
+	rigid char			*key;			\
 	double				connect_timeout;	\
 	double				first_byte_timeout;	\
 	double				between_bytes_timeout;	\
