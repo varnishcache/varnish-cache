@@ -131,7 +131,7 @@ SML_MkObject(const struct stevedore *stv, struct objcore *oc, void *ptr)
 
 int __match_proto__(storage_allocobj_f)
 SML_allocobj(struct worker *wrk, const struct stevedore *stv,
-    struct objcore *oc, unsigned wsl, int really)
+    struct objcore *oc, unsigned wsl, int nuke_limit)
 {
 	struct object *o;
 	struct storage *st;
@@ -139,13 +139,13 @@ SML_allocobj(struct worker *wrk, const struct stevedore *stv,
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-	assert(really >= 0);
+	assert(nuke_limit >= 0);
 	ltot = sizeof(struct object) + PRNDUP(wsl);
 	while (1) {
-		if (really > 0) {
+		if (nuke_limit > 0) {
 			if (!LRU_NukeOne(wrk, stv->lru))
 				return (0);
-			really--;
+			nuke_limit--;
 		}
 		AN(stv->sml_alloc);
 		st = stv->sml_alloc(stv, ltot);
@@ -155,7 +155,7 @@ SML_allocobj(struct worker *wrk, const struct stevedore *stv,
 		}
 		if (st != NULL)
 			break;
-		if (!really)
+		if (!nuke_limit)
 			return (0);
 	}
 	AN(st);

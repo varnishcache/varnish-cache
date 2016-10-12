@@ -65,7 +65,7 @@ struct storage {
 typedef void storage_init_f(struct stevedore *, int ac, char * const *av);
 typedef void storage_open_f(struct stevedore *);
 typedef int storage_allocobj_f(struct worker *, const struct stevedore *,
-    struct objcore *, unsigned ltot, int really);
+    struct objcore *, unsigned, int);
 typedef void storage_close_f(const struct stevedore *, int pass);
 typedef int storage_baninfo_f(const struct stevedore *, enum baninfo event,
     const uint8_t *ban, unsigned len);

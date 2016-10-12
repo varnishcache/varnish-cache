@@ -505,7 +505,7 @@ smp_allocx(const struct stevedore *st, size_t min_size, size_t max_size,
 
 static int __match_proto__(storage_allocobj_f)
 smp_allocobj(struct worker *wrk, const struct stevedore *stv,
-    struct objcore *oc, unsigned wsl, int really)
+    struct objcore *oc, unsigned wsl, int nuke_limit)
 {
 	struct object *o;
 	struct storage *st;
@@ -518,7 +518,7 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CAST_OBJ_NOTNULL(sc, stv->priv, SMP_SC_MAGIC);
-	assert(really >= 0);
+	assert(nuke_limit >= 0);
 
 	/* Don't entertain already dead objects */
 	if (oc->flags & OC_F_DYING)
@@ -532,10 +532,10 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
 	ltot = IRNUP(sc, ltot);
 
 	while (1) {
-		if (really > 0) {
+		if (nuke_limit > 0) {
 			if (!LRU_NukeOne(wrk, stv->lru))
 				return (0);
-			really--;
+			nuke_limit--;
 		}
 		st = smp_allocx(stv, ltot, ltot, &so, &objidx, &sg);
 		if (st != NULL && st->space < ltot) {
@@ -544,7 +544,7 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
 		}
 		if (st != NULL)
 			break;
-		if (!really)
+		if (!nuke_limit)
 			return (0);
 	}
 
