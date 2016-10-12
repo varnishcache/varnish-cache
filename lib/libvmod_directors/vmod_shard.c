@@ -104,7 +104,8 @@ VCL_INT __match_proto__(td_directors_shard_key)
 
 VCL_VOID __match_proto__(td_directors_set_warmup)
 vmod_shard_set_warmup(VRT_CTX, struct vmod_directors_shard *vshard,
-    VCL_REAL probability) {
+    VCL_REAL probability)
+{
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 	if (probability < 0 || probability >= 1) {
 		shard_err(ctx, vshard->shardd,

@@ -454,7 +454,8 @@ mgt_launch_child(struct cli *cli)
  */
 
 static int
-kill_child(void) {
+kill_child(void)
+{
 	int i, error;
 
 	VJ_master(JAIL_MASTER_KILL);

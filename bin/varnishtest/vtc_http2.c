@@ -559,7 +559,8 @@ parse_prio(struct stream *s, struct frame *f)
 }
 
 static void
-parse_rst(const struct stream *s, struct frame *f) {
+parse_rst(const struct stream *s, struct frame *f)
+{
 	struct http *hp;
 	uint32_t err;
 	const char *buf;
@@ -2059,7 +2060,8 @@ cmd_txwinup(CMD_ARGS)
 }
 
 static struct frame *
-rxstuff(struct stream *s) {
+rxstuff(struct stream *s)
+{
 	struct frame *f;
 
 	CHECK_OBJ_NOTNULL(s, STREAM_MAGIC);
@@ -2284,7 +2286,8 @@ cmd_rxreqsp(CMD_ARGS)
  *
  */
 static void
-cmd_rxpush(CMD_ARGS) {
+cmd_rxpush(CMD_ARGS)
+{
 	struct stream *s;
 	struct frame *f = NULL;
 	char *p;
@@ -2374,7 +2377,8 @@ RXFUNC(winup,	WINDOW_UPDATE)
  * Receive a frame, any frame.
  */
 static void
-cmd_rxframe(CMD_ARGS) {
+cmd_rxframe(CMD_ARGS)
+{
 	struct stream *s;
 	(void)cmd;
 	(void)vl;

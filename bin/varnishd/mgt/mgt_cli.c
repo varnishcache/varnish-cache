@@ -174,7 +174,8 @@ static struct cli_proto cli_askchild[] = {
  */
 
 int
-mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...) {
+mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
+{
 	int i, j;
 	va_list ap;
 	unsigned u;

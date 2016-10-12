@@ -44,7 +44,8 @@
 #define VBITMAP_BIT(n)	(1U << ((n) % VBITMAP_WORD))
 
 static inline unsigned
-vbit_rndup(unsigned bit, unsigned to) {
+vbit_rndup(unsigned bit, unsigned to)
+{
 	bit += to - 1;
 	bit -= (bit % to);
 

@@ -262,7 +262,8 @@ vjs_init(char **args)
 
 /* for priv_delset() and priv_addset() */
 static inline int
-priv_setop_check(int a) {
+priv_setop_check(int a)
+{
 	if (a == 0)
 		return (1);
 	if (errno == EINVAL)
@@ -280,7 +281,8 @@ priv_setop_check(int a) {
 
 /* for setppriv */
 static inline int
-setppriv_check(int a) {
+setppriv_check(int a)
+{
 	if (a == 0)
 		return (1);
 	if (errno == EPERM)
