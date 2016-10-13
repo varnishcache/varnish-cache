@@ -1,4 +1,4 @@
-varnishtest	"Object/LRU/Stevedores with hinting"
+varnishtest	"Object/LRU/Stevedores with storage set"
 
 server s1 {
 	rxreq
@@ -16,7 +16,7 @@ varnish v1 \
 	-vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
-		set beresp.storage_hint = "s0";
+		set beresp.storage = storage.s0;
 		# Unset Date header to not change the object sizes
 		unset beresp.http.Date;
 	}

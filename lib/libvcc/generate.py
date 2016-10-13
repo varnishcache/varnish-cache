@@ -620,12 +620,20 @@ sp_variables = [
 		IP of the backend this response was fetched from.
 		"""
 	),
+	('beresp.storage',
+		'STEVEDORE',
+		('backend_response', 'backend_error'),
+		('backend_response', 'backend_error'), """
+		The storage backend to use to save this object.
+		"""
+	),
 	('beresp.storage_hint',
 		'STRING',
 		('backend_response', 'backend_error'),
 		('backend_response', 'backend_error'), """
-		Hint to Varnish that you want to save this object to a
-		particular storage backend.
+		Deprecated. Hint to Varnish that you want to
+		save this object to a particular storage backend.
+		Use beresp.storage instead.
 		"""
 	),
 	('obj.proto',

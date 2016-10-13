@@ -36,6 +36,7 @@
 #include "cache_filter.h"
 #include "vtim.h"
 #include "hash/hash_slinger.h"
+#include "storage/storage.h"
 
 /*----------------------------------------------------------------------
  * Pull the req.body in via/into a objcore
@@ -60,7 +61,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 
 	req->body_oc = HSH_Private(req->wrk);
 	AN(req->body_oc);
-	XXXAN(STV_NewObject(req->wrk, req->body_oc, TRANSIENT_STORAGE, 8));
+	XXXAN(STV_NewObject(req->wrk, req->body_oc, stv_transient, 8));
 
 	vfc->oc = req->body_oc;
 

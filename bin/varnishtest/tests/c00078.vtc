@@ -1,0 +1,42 @@
+varnishtest "Stevedores RR, beresp.storage and beresp.storage_hint"
+
+server s1 -repeat 6 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-smalloc,1m" -arg "-smalloc,1m" \
+    -arg "-smalloc,1m" -vcl+backend {
+	import debug;
+	sub vcl_backend_response {
+		if (bereq.url == "/1") {
+			set beresp.storage_hint = "invalid";
+		} else if (bereq.url == "/2") {
+			set beresp.storage_hint = "s1";
+		} else if (bereq.url == "/6") {
+			set beresp.storage = debug.no_stevedore();
+		}
+		set beresp.http.storage = beresp.storage;
+	}
+} -start
+
+client c1 {
+	txreq -url /1
+	rxresp
+	expect resp.http.storage == "storage.s1"
+	txreq -url /2
+	rxresp
+	expect resp.http.storage == "storage.s1"
+	txreq -url /3
+	rxresp
+	expect resp.http.storage == "storage.s0"
+	txreq -url /4
+	rxresp
+	expect resp.http.storage == "storage.s1"
+	txreq -url /5
+	rxresp
+	expect resp.http.storage == "storage.s2"
+	txreq -url /6
+	rxresp
+	expect resp.http.storage == <undef>
+} -run

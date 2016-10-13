@@ -42,6 +42,7 @@ varnish v1 -arg "-i J.F.Nobody" -vcl+backend {
 		set beresp.http.bereq_backend = bereq.backend;
 		set beresp.http.beresp_backend = beresp.backend;
 		set beresp.http.keep = beresp.keep;
+		set beresp.http.stv = beresp.storage;
 		set beresp.http.hint = beresp.storage_hint;
 		set beresp.http.be_ip = beresp.backend.ip;
 		set beresp.http.be_nm = beresp.backend.name;

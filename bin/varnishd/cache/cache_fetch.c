@@ -33,6 +33,7 @@
 #include "cache_director.h"
 #include "cache_filter.h"
 #include "hash/hash_slinger.h"
+#include "storage/storage.h"
 #include "vcl.h"
 #include "vtim.h"
 
@@ -46,7 +47,7 @@ static int
 vbf_allocobj(struct busyobj *bo, unsigned l)
 {
 	struct objcore *oc;
-	const char *storage_hint;
+	const struct stevedore *stv;
 	double lifetime;
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -56,16 +57,20 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 	lifetime = oc->ttl + oc->grace + oc->keep;
 
 	if (bo->uncacheable || lifetime < cache_param->shortlived)
-		storage_hint = TRANSIENT_STORAGE;
+		stv = stv_transient;
 	else
-		storage_hint = bo->storage_hint;
+		stv = bo->storage;
 
+	bo->storage = NULL;
 	bo->storage_hint = NULL;
 
-	if (STV_NewObject(bo->wrk, bo->fetch_objcore, storage_hint, l))
+	if (stv == NULL)
+		return (0);
+
+	if (STV_NewObject(bo->wrk, bo->fetch_objcore, stv, l))
 		return (1);
 
-	if (storage_hint != NULL && !strcmp(storage_hint, TRANSIENT_STORAGE))
+	if (stv == stv_transient)
 		return (0);
 
 	/*
@@ -78,7 +83,7 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 	oc->grace = 0.0;
 	oc->keep = 0.0;
 	return (STV_NewObject(bo->wrk, bo->fetch_objcore,
-	    TRANSIENT_STORAGE, l));
+	    stv_transient, l));
 }
 
 /*--------------------------------------------------------------------
@@ -169,6 +174,7 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo->req, REQ_MAGIC);
 
 	assert(bo->fetch_objcore->boc->state == BOS_INVALID);
+	AZ(bo->storage);
 	AZ(bo->storage_hint);
 
 	HTTP_Setup(bo->bereq0, bo->ws, bo->vsl, SLT_BereqMethod);
@@ -232,6 +238,7 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	assert(bo->director_state == DIR_S_NULL);
 
 	/* reset other bo attributes - See VBO_GetBusyObj */
+	bo->storage = NULL;
 	bo->storage_hint = NULL;
 	bo->do_esi = 0;
 	bo->do_stream = 1;
@@ -260,7 +267,10 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
+	AZ(bo->storage);
 	AZ(bo->storage_hint);
+
+	bo->storage = STV_next();
 
 	if (bo->retries > 0)
 		http_Unset(bo->bereq, "\012X-Varnish:");
