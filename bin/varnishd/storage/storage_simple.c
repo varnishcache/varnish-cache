@@ -54,6 +54,7 @@ sml_stv_alloc(const struct stevedore *stv, size_t size, int flags)
 	struct storage *st;
 
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
+	AN(stv->sml_alloc);
 
 	if (!(flags & LESS_MEM_ALLOCED_IS_OK)) {
 		if (size > cache_param->fetch_maxchunksize)
@@ -70,7 +71,6 @@ sml_stv_alloc(const struct stevedore *stv, size_t size, int flags)
 	for (;;) {
 		/* try to allocate from it */
 		assert(size > 0);
-		AN(stv->sml_alloc);
 		st = stv->sml_alloc(stv, size);
 		if (st != NULL)
 			break;
@@ -138,11 +138,14 @@ SML_allocobj(struct worker *wrk, const struct stevedore *stv,
 	unsigned ltot;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+
+	AN(stv->sml_alloc);
 	assert(nuke_limit >= 0);
+
 	ltot = sizeof(struct object) + PRNDUP(wsl);
 	for (; nuke_limit >= 0; nuke_limit--) {
-		AN(stv->sml_alloc);
 		st = stv->sml_alloc(stv, ltot);
 		if (st != NULL && st->space < ltot) {
 			stv->sml_free(st);
@@ -153,7 +156,7 @@ SML_allocobj(struct worker *wrk, const struct stevedore *stv,
 		if (!nuke_limit || !LRU_NukeOne(wrk, stv->lru))
 			return (0);
 	}
-	AN(st);
+	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	o = SML_MkObject(stv, oc, st->ptr);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
 	st->len = sizeof(*o);
