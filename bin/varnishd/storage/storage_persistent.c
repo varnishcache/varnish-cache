@@ -531,12 +531,7 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
 	ltot = sizeof(struct object) + PRNDUP(wsl);
 	ltot = IRNUP(sc, ltot);
 
-	while (1) {
-		if (nuke_limit > 0) {
-			if (!LRU_NukeOne(wrk, stv->lru))
-				return (0);
-			nuke_limit--;
-		}
+	for (; nuke_limit >= 0; nuke_limit--) {
 		st = smp_allocx(stv, ltot, ltot, &so, &objidx, &sg);
 		if (st != NULL && st->space < ltot) {
 			stv->sml_free(st);		// NOP
@@ -544,7 +539,7 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
 		}
 		if (st != NULL)
 			break;
-		if (!nuke_limit)
+		if (!nuke_limit || !LRU_NukeOne(wrk, stv->lru))
 			return (0);
 	}
 

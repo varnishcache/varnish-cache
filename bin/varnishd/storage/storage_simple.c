@@ -141,12 +141,7 @@ SML_allocobj(struct worker *wrk, const struct stevedore *stv,
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	assert(nuke_limit >= 0);
 	ltot = sizeof(struct object) + PRNDUP(wsl);
-	while (1) {
-		if (nuke_limit > 0) {
-			if (!LRU_NukeOne(wrk, stv->lru))
-				return (0);
-			nuke_limit--;
-		}
+	for (; nuke_limit >= 0; nuke_limit--) {
 		AN(stv->sml_alloc);
 		st = stv->sml_alloc(stv, ltot);
 		if (st != NULL && st->space < ltot) {
@@ -155,7 +150,7 @@ SML_allocobj(struct worker *wrk, const struct stevedore *stv,
 		}
 		if (st != NULL)
 			break;
-		if (!nuke_limit)
+		if (!nuke_limit || !LRU_NukeOne(wrk, stv->lru))
 			return (0);
 	}
 	AN(st);
