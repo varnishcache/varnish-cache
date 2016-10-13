@@ -512,6 +512,7 @@ main(int argc, char * const *argv)
 	char **av;
 	unsigned clilim;
 	int jailed = 0;
+	char Cn_arg[] = "/tmp/varnishd_C_XXXXXXX";
 
 	/* Set up the mgt counters */
 	memset(&static_VSC_C_mgt, 0, sizeof static_VSC_C_mgt);
@@ -685,6 +686,13 @@ main(int argc, char * const *argv)
 		}
 	}
 
+	if (C_flag) {
+		if (b_arg == NULL && f_arg == NULL)
+			ARGV_ERR("-C only good with -b or -f\n");
+		AN(mkdtemp(Cn_arg));
+		n_arg = Cn_arg;
+	}
+
 	if (!jailed)
 		VJ_Init(NULL);
 
@@ -738,7 +746,6 @@ main(int argc, char * const *argv)
 		ARGV_ERR("Cannot create working directory (%s): %s\n",
 		    dirname, strerror(errno));
 
-	/* XXX: should this be relative to the -n arg ? */
 	VJ_master(JAIL_MASTER_FILE);
 	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL)
 		ARGV_ERR("Could not open pid/lock (-P) file (%s): %s\n",
@@ -755,16 +762,16 @@ main(int argc, char * const *argv)
 	mgt_vcl_init();
 
 	if (b_arg != NULL || f_arg != NULL) {
-		mgt_vcc_startup(cli, b_arg, f_arg, vcl, C_flag);
-		if (C_flag && cli->result == CLIS_OK) {
-			AZ(VSB_finish(cli->sb));
-			fprintf(stderr, "%s\n", VSB_data(cli->sb));
+		mgt_vcl_startup(cli, b_arg, f_arg, vcl, C_flag);
+		if (C_flag) {
+			AZ(rmdir(Cn_arg));
+			cli_check(cli);
 			exit(0);
 		}
 		cli_check(cli);
 		free(vcl);
-	} else if (C_flag)
-		ARGV_ERR("-C only good with -b or -f\n");
+	}
+	AZ(C_flag);
 
 	if (VTAILQ_EMPTY(&heritage.socks))
 		MAC_Arg(":80");

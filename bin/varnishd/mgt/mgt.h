@@ -176,7 +176,7 @@ char *mgt_VccCompile(struct cli *, struct vclprog *, const char *vclname,
     const char *vclsrc, const char *vclsrcfile, int C_flag);
 
 void mgt_vcl_init(void);
-void mgt_vcc_startup(struct cli *, const char *b_arg, const char *f_arg,
+void mgt_vcl_startup(struct cli *, const char *b_arg, const char *f_arg,
     const char *vclsrc, int Cflag);
 int mgt_push_vcls_and_start(struct cli *, unsigned *status, char **p);
 void mgt_vcl_export_labels(struct vcc *);

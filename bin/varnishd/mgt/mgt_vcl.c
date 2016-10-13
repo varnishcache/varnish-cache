@@ -369,7 +369,7 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 /*--------------------------------------------------------------------*/
 
 void
-mgt_vcc_startup(struct cli *cli, const char *b_arg, const char *f_arg,
+mgt_vcl_startup(struct cli *cli, const char *b_arg, const char *f_arg,
     const char *vclsrc, int C_flag)
 {
 	char buf[BUFSIZ];
