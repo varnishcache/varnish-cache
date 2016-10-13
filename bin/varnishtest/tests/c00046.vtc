@@ -1,4 +1,4 @@
-varnishtest	"Object/LRU/Stevedores with hinting and body alloc failures"
+varnishtest	"Object/LRU/Stevedores with storage set and body alloc failures"
 
 server s1 {
 	rxreq
@@ -11,7 +11,7 @@ varnish v1 \
 	-arg "-smalloc,1m" \
 	-vcl+backend {
 	sub vcl_backend_response {
-		set beresp.storage_hint = "s0";
+		set beresp.storage = storage.s0;
 	}
 } -start
 

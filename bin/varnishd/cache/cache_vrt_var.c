@@ -333,6 +333,7 @@ VRT_r_beresp_storage_hint(VRT_CTX)
 void
 VRT_l_beresp_storage_hint(VRT_CTX, const char *str, ...)
 {
+	const struct stevedore *stv;
 	va_list ap;
 	const char *b;
 
@@ -347,6 +348,27 @@ VRT_l_beresp_storage_hint(VRT_CTX, const char *str, ...)
 		return;
 	}
 	ctx->bo->storage_hint = b;
+	stv = STV_find(b);
+	if (stv != NULL)
+		ctx->bo->storage = stv;
+}
+
+/*--------------------------------------------------------------------*/
+
+VCL_STEVEDORE
+VRT_r_beresp_storage(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	return (ctx->bo->storage);
+}
+
+void
+VRT_l_beresp_storage(VRT_CTX, VCL_STEVEDORE stv)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	ctx->bo->storage = stv;
 }
 
 /*--------------------------------------------------------------------*/

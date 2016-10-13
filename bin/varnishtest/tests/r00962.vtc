@@ -16,7 +16,7 @@ varnish v1 \
 	-arg "-sdeprecated_persistent,${tmpdir}/_.per2,10m" \
 	-vcl+backend {
 	sub vcl_backend_response {
-		set beresp.storage_hint = "s0";
+		set beresp.storage = storage.s0;
 	}
 } -start
 

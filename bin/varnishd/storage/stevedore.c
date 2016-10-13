@@ -49,24 +49,10 @@ static const struct stevedore * volatile stv_next;
  * XXX: trust pointer writes to be atomic
  */
 
-static struct stevedore *
-stv_pick_stevedore(struct vsl_log *vsl, const char **hint)
+const struct stevedore *
+STV_next()
 {
 	struct stevedore *stv;
-
-	AN(hint);
-	if (*hint != NULL && **hint != '\0') {
-		VTAILQ_FOREACH(stv, &stv_stevedores, list) {
-			if (!strcmp(stv->ident, *hint))
-				return (stv);
-		}
-		if (!strcmp(TRANSIENT_STORAGE, *hint))
-			return (stv_transient);
-
-		/* Hint was not valid, nuke it */
-		VSLb(vsl, SLT_Debug, "Storage hint not usable");
-		*hint = NULL;
-	}
 	if (stv_next == NULL)
 		return (stv_transient);
 	/* pick a stevedore and bump the head along */
@@ -87,31 +73,15 @@ stv_pick_stevedore(struct vsl_log *vsl, const char **hint)
 
 int
 STV_NewObject(struct worker *wrk, struct objcore *oc,
-    const char *hint, unsigned wsl)
+    const struct stevedore *stv, unsigned wsl)
 {
-	struct stevedore *stv, *stv0;
-	int j;
-
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	assert(wsl > 0);
 
-	stv = stv0 = stv_pick_stevedore(wrk->vsl, &hint);
 	AN(stv->allocobj);
-	j = stv->allocobj(wrk, stv, oc, wsl, 0);
-	if (j == 0 && hint == NULL) {
-		do {
-			stv = stv_pick_stevedore(wrk->vsl, &hint);
-			AN(stv->allocobj);
-			j = stv->allocobj(wrk, stv, oc, wsl, 0);
-		} while (j == 0 && stv != stv0);
-	}
-	if (j == 0 && cache_param->nuke_limit > 0) {
-		/* no luck; try to free some space and keep trying */
-		j = stv->allocobj(wrk, stv, oc, wsl, cache_param->nuke_limit);
-	}
-
-	if (j == 0)
+	if (stv->allocobj(wrk, stv, oc, wsl, cache_param->nuke_limit) == 0)
 		return (0);
 
 	wrk->stats->n_object++;
@@ -216,8 +186,8 @@ STV_BanExport(const uint8_t *bans, unsigned len)
  * VRT functions for stevedores
  */
 
-static const struct stevedore *
-stv_find(const char *nm)
+const struct stevedore *
+STV_find(const char *nm)
 {
 	const struct stevedore *stv;
 
@@ -233,7 +203,7 @@ int
 VRT_Stv(const char *nm)
 {
 
-	if (stv_find(nm) != NULL)
+	if (STV_find(nm) != NULL)
 		return (1);
 	return (0);
 }
@@ -250,7 +220,7 @@ VRT_STEVEDORE_string(VCL_STEVEDORE s)
 VCL_STEVEDORE
 VRT_stevedore(const char *nm)
 {
-	return (stv_find(nm));
+	return (STV_find(nm));
 }
 
 #define VRTSTVVAR(nm, vtype, ctype, dval)	\
@@ -259,7 +229,7 @@ VRT_Stv_##nm(const char *nm)			\
 {						\
 	const struct stevedore *stv;		\
 						\
-	stv = stv_find(nm);			\
+	stv = STV_find(nm);			\
 	if (stv == NULL)			\
 		return (dval);			\
 	if (stv->var_##nm == NULL)		\

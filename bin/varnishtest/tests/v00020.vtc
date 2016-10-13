@@ -300,3 +300,11 @@ varnish v1 -errvcl {INT * BLOB not possible.} {
 		set resp.status = 100 * debug.str2blob("a");
 	}
 }
+
+# XXX: should spot nonexistent storage
+varnish v1 -errvcl {Symbol not found: 'storage.foo' (expected type STEVEDORE):} {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_backend_response {
+		set beresp.storage = storage.foo;
+	}
+}

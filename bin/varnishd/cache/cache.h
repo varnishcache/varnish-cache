@@ -507,6 +507,7 @@ struct busyobj {
 	struct acct_bereq	acct;
 
 	const char		*storage_hint;
+	const struct stevedore	*storage;
 	const struct director	*director_req;
 	const struct director	*director_resp;
 	enum director_state_e	director_state;
@@ -1083,7 +1084,7 @@ void RFC2616_Vary_AE(struct http *hp);
 
 /* stevedore.c */
 int STV_NewObject(struct worker *, struct objcore *,
-    const char *hint, unsigned len);
+    const struct stevedore *, unsigned len);
 
 /*
  * A normal pointer difference is signed, but we never want a negative value
