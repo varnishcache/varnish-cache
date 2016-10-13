@@ -30,9 +30,10 @@ server s1 {
 } -start
 
 varnish v1 -arg "-t 300" -vcl+backend {
+	import std;
 	sub vcl_recv {
 		if (req.url == "/ban") {
-			ban("req.url ~ /");
+			std.ban("req.url ~ /");
 		}
 	}
 } -start

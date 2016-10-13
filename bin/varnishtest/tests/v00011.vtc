@@ -9,15 +9,16 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	import std;
 	sub vcl_recv {
 		if (req.method == "PURGE") {
-			ban("");
-			ban("req.url");
-			ban("req.url //");
-			ban("req.url // bar");
-			ban("req.url == bar //");
-			ban("foo == bar //");
-			ban("req.url ~ ^/$");
+			std.ban("");
+			std.ban("req.url");
+			std.ban("req.url //");
+			std.ban("req.url // bar");
+			std.ban("req.url == bar //");
+			std.ban("foo == bar //");
+			std.ban("req.url ~ ^/$");
 			return (synth(209,"foo"));
 		}
 	}

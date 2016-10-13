@@ -13,9 +13,10 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	import std;
 	sub vcl_recv {
 		if (req.method == "BAN") {
-			ban("obj.http.url ~ /");
+			std.ban("obj.http.url ~ /");
 			return (synth(201,"banned"));
 		}
 		return (hash);

@@ -282,7 +282,6 @@ void VRT_re_fini(void *);
 int VRT_re_match(VRT_CTX, const char *, void *re);
 const char *VRT_regsub(VRT_CTX, int all, const char *, void *, const char *);
 
-void VRT_ban_string(VRT_CTX, const char *);
 void VRT_purge(VRT_CTX, double ttl, double grace, double keep);
 
 void VRT_count(VRT_CTX, unsigned);

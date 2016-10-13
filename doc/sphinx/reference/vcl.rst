@@ -382,46 +382,10 @@ available depends on context.
 
 .. include:: ../include/vcl_var.rst
 
-
 Functions
 ---------
 
 The following built-in functions are available:
-
-.. _vcl(7)_ban:
-
-ban(STRING)
-~~~~~~~~~~~
-
-  Invalidates all objects in cache that match the given expression with the
-  ban mechanism.
-
-  The format of `STRING` is::
-
-	<field> <operator> <arg> [&& <field> <oper> <arg> ...]
-
-  * `<field>`:
-
-    * ``req.url``: The request url
-    * ``req.http.*``: Any request header
-    * ``obj.status``: The cache object status
-    * ``obj.http.*``: Any cache object header
-
-  * `<operator>`:
-
-    * ``==``: `<field>` and `<arg>` are equal strings (case sensitive)
-    * ``!=``: `<field>` and `<arg>` are unequal strings (case sensitive)
-    * ``~``: `<field>` matches the regular expression `<arg>`
-    * ``!~``:`<field>` does not match the regular expression `<arg>`
-
-  * `<arg>`: Either a literal string or a regular expression. Note
-    that `<arg>` does not use any of the string delimiters like ``"``
-    or ``{"..."}`` used elsewhere in varnish. To match against strings
-    containing whitespace, regular expressions containing ``\s`` can
-    be used.
-
-  Expressions can be chained using the `and` operator ``&&``. For `or`
-  semantics, use several bans.
 
 hash_data(input)
 ~~~~~~~~~~~~~~~~

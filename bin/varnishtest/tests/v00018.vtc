@@ -80,7 +80,8 @@ varnish v1 -errvcl {bereq.body cannot be set.} {
 
 varnish v1 -errvcl {Unknown token '<<' when looking for STRING} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { ban (<<); }
+	import std;
+	sub vcl_recv { std.ban (<<); }
 }
 
 varnish v1 -errvcl {Expected an action, 'if', '{' or '}'} {
@@ -90,7 +91,8 @@ varnish v1 -errvcl {Expected an action, 'if', '{' or '}'} {
 
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv { ban ("req.url ~ foo"); }
+	import std;
+	sub vcl_recv { std.ban ("req.url ~ foo"); }
 }
 
 varnish v1 -errvcl {Expected an action, 'if', '{' or '}'} {

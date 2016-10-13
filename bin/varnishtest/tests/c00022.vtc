@@ -19,13 +19,14 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	import std;
 	sub vcl_recv {
 		if (req.method == "PURGE") {
-			ban ("req.url == " + req.url);
+			std.ban ("req.url == " + req.url);
 			return (synth(410));
 		}
 		if (req.method == "PURGESTR") {
-			ban ("" + req.http.ban);
+			std.ban ("" + req.http.ban);
 			return (synth(410));
 		}
 	}

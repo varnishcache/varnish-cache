@@ -75,7 +75,7 @@ the following command from the shell::
 
   varnishadm ban req.http.host == example.com '&&' req.url '~' '\\.png$'
 
-See :ref:`vcl(7)_ban` for details on the syntax of ban expressions. In
+See :ref:`func_ban` for details on the syntax of ban expressions. In
 particular, note that in the example given above, the quotes are
 required for execution from the shell and escaping the backslash in
 the regular expression is required by the varnish cli interface.
@@ -99,17 +99,19 @@ impact CPU usage and thereby performance.
 
 You can also add bans to Varnish via HTTP. Doing so requires a bit of VCL::
 
+  import std;
+
   sub vcl_recv {
 	  if (req.method == "BAN") {
-                  # Same ACL check as above:
+		  # Same ACL check as above:
 		  if (!client.ip ~ purge) {
 			  return(synth(403, "Not allowed."));
 		  }
-		  ban("req.http.host == " + req.http.host +
-		        " && req.url == " + req.url);
+		  std.ban("req.http.host == " + req.http.host +
+			  " && req.url == " + req.url);
 
 		  # Throw a synthetic page so the
-                  # request won't go to the backend.
+		  # request won't go to the backend.
 		  return(synth(200, "Ban added"));
 	  }
   }
@@ -134,9 +136,10 @@ You can use the following template to write `ban lurker` friendly bans::
   sub vcl_recv {
     if (req.method == "PURGE") {
       if (client.ip !~ purge) {
-        return(synth(403, "Not allowed"));
+	return(synth(403, "Not allowed"));
       }
-      ban("obj.http.url ~ " + req.url); # Assumes req.url is a regex. This might be a bit too simple
+      # Assumes req.url is a regex. This might be a bit too simple
+      std.ban("obj.http.url ~ " + req.url);
     }
   }
 
