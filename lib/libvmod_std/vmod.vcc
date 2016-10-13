@@ -280,18 +280,3 @@ SEE ALSO
 
 * :ref:`varnishd(1)`
 * :ref:`vsl(7)`
-
-HISTORY
-=======
-
-The Varnish standard module was released along with Varnish Cache 3.0.
-This manual page was written by Per Buer with help from Martin Blix
-Grydeland.
-
-COPYRIGHT
-=========
-
-This document is licensed under the same licence as Varnish
-itself. See LICENCE for details.
-
-* Copyright (c) 2010-2015 Varnish Software AS
