@@ -274,7 +274,7 @@ int VRT_acl_match(VRT_CTX, VCL_ACL, VCL_IP);
 
 /* req related */
 
-VCL_BYTES VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize);
+VCL_BYTES VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize, VCL_STEVEDORE storage);
 
 /* Regexp related */
 void VRT_re_init(void **, const char *);
