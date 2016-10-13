@@ -1,4 +1,22 @@
 ======================================
+Varnish Cache 4.1.4-beta2 (2016-10-13)
+======================================
+
+Bugs fixed
+----------
+
+* 1830_ - VSL API: "duplicate link" errors in request grouping when
+  vsl_buffer is increased
+* 2010_ - varnishadm CLI behaving weirdly
+* 2017_ - varnishncsa docfix: "%r" field is wrong
+* 2107_ - (docfix) HEAD requestes changed to GET
+
+.. _1830: https://github.com/varnishcache/varnish-cache/issues/1830
+.. _2010: https://github.com/varnishcache/varnish-cache/issues/2010
+.. _2017: https://github.com/varnishcache/varnish-cache/issues/2017
+.. _2107: https://github.com/varnishcache/varnish-cache/issues/2107
+
+======================================
 Varnish Cache 4.1.4-beta1 (2016-09-14)
 ======================================
 
