@@ -40,13 +40,13 @@
 
 /*--------------------------------------------------------------------*/
 
-VCL_VOID __match_proto__(td_std_ban)
+VCL_STRING __match_proto__(td_std_ban)
 vmod_ban(VRT_CTX, VCL_STRING spec)
 {
 	char *a1, *a2, *a3;
 	char **av;
 	struct ban_proto *bp;
-	const char *err;
+	const char *err = NULL;
 	int i;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -55,39 +55,38 @@ vmod_ban(VRT_CTX, VCL_STRING spec)
 
 	bp = BAN_Build();
 	if (bp == NULL) {
-		VSLb(ctx->vsl, SLT_VCL_Error, "std.ban(): Out of Memory");
-		return;
+		err = "Out of Memory";
+		VSLb(ctx->vsl, SLT_VCL_Error, "std.ban(): %s", err);
+		return err;
 	}
 	av = VAV_Parse(spec, NULL, ARGV_NOESC);
 	AN(av);
 	if (av[0] != NULL) {
-		VSLb(ctx->vsl, SLT_VCL_Error, "std.ban(): %s", av[0]);
+		err = WS_Copy(ctx->ws, av[0], -1);
+		VSLb(ctx->vsl, SLT_VCL_Error, "std.ban(): %s", err);
 		VAV_Free(av);
 		BAN_Abandon(bp);
-		return;
+		return err;
 	}
 	for (i = 0; ;) {
 		a1 = av[++i];
 		if (a1 == NULL) {
-			VSLb(ctx->vsl, SLT_VCL_Error,
-			    "std.ban(): No ban conditions found.");
+			err = "No ban conditions found.";
 			break;
 		}
 		a2 = av[++i];
 		if (a2 == NULL) {
-			VSLb(ctx->vsl, SLT_VCL_Error,
-			    "std.ban(): Expected comparison operator.");
+			err = "Expected comparison operator.";
 			break;
 		}
 		a3 = av[++i];
 		if (a3 == NULL) {
-			VSLb(ctx->vsl, SLT_VCL_Error,
-			    "std.ban(): Expected second operand.");
+			err = "Expected second operand.";
 			break;
 		}
 		err = BAN_AddTest(bp, a1, a2, a3);
 		if (err) {
-			VSLb(ctx->vsl, SLT_VCL_Error, "std.ban(): %s", err);
+			err = WS_Copy(ctx->ws, err, -1);
 			break;
 		}
 		if (av[++i] == NULL) {
@@ -95,18 +94,20 @@ vmod_ban(VRT_CTX, VCL_STRING spec)
 			if (err == NULL)
 				bp = NULL;
 			else
-				VSLb(ctx->vsl, SLT_VCL_Error,
-				    "std.ban(): %s", err);
+				err = WS_Copy(ctx->ws, err, -1);
 			break;
 		}
 		if (strcmp(av[i], "&&")) {
-			VSLb(ctx->vsl, SLT_VCL_Error,
-			    "std.ban(): Expected && between conditions,"
-			    " found \"%s\"", av[i]);
+			err = WS_Printf(ctx->ws,
+			    "Expected && between conditions, found \"%s\"",
+			    av[i]);
 			break;
 		}
 	}
 	if (bp != NULL)
 		BAN_Abandon(bp);
 	VAV_Free(av);
+	if (err)
+		VSLb(ctx->vsl, SLT_VCL_Error, "std.ban(): %s", err);
+	return err ? err : "";
 }

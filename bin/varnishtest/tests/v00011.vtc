@@ -12,14 +12,25 @@ varnish v1 -vcl+backend {
 	import std;
 	sub vcl_recv {
 		if (req.method == "PURGE") {
-			std.ban("");
-			std.ban("req.url");
-			std.ban("req.url //");
-			std.ban("req.url // bar");
-			std.ban("req.url == bar //");
-			std.ban("foo == bar //");
-			std.ban("req.url ~ ^/$");
+			set req.http.banerr-1 = std.ban("");
+			set req.http.banerr-2 = std.ban("req.url");
+			set req.http.banerr-3 = std.ban("req.url //");
+			set req.http.banerr-4 = std.ban("req.url // bar");
+			set req.http.banerr-5 = std.ban("req.url == bar //");
+			set req.http.banerr-6 = std.ban("foo == bar //");
+			set req.http.banerr-7 = std.ban("req.url ~ ^/$") + "X";
 			return (synth(209,"foo"));
+		}
+	}
+	sub vcl_synth {
+		if (resp.status == 209) {
+			set resp.http.banerr-1 = req.http.banerr-1;
+			set resp.http.banerr-2 = req.http.banerr-2;
+			set resp.http.banerr-3 = req.http.banerr-3;
+			set resp.http.banerr-4 = req.http.banerr-4;
+			set resp.http.banerr-5 = req.http.banerr-5;
+			set resp.http.banerr-6 = req.http.banerr-6;
+			set resp.http.banerr-7 = req.http.banerr-7;
 		}
 	}
 
@@ -36,7 +47,7 @@ logexpect l1 -v v1 -d 1 -g vxid {
 	expect * 1004	VCL_Error {ban[(][)]: Expected comparison operator[.]}
 	expect * 1004	VCL_Error {ban[(][)]: Expected second operand[.]}
 	expect * 1004	VCL_Error {ban[(][)]: expected conditional [(]~, !~, == or !=[)] got "//"}
-	expect * 1004	VCL_Error {ban[(][)]: Expected && between conditions, found .//.}
+	expect * 1004	VCL_Error {ban[(][)]: Expected && between conditions, found "//"}
 	expect * 1004	VCL_Error {ban[(][)]: Unknown or unsupported field .foo.}
 
 } -start
@@ -46,6 +57,13 @@ client c1 {
 	rxresp
 	expect resp.http.X-Varnish == "1004"
 	expect resp.status == 209
+	expect resp.http.banerr-1 == {No ban conditions found.}
+	expect resp.http.banerr-2 == {Expected comparison operator.}
+	expect resp.http.banerr-3 == {Expected second operand.}
+	expect resp.http.banerr-4 == {expected conditional (~, !~, == or !=) got "//"}
+	expect resp.http.banerr-5 == {Expected && between conditions, found "//"}
+	expect resp.http.banerr-6 == {Unknown or unsupported field "foo"}
+	expect resp.http.banerr-7 == "X"
 } -run
 
 logexpect l1 -wait

@@ -274,12 +274,16 @@ Example
 	|	...
 	| }
 
-$Function VOID ban(STRING spec)
+$Function STRING ban(STRING spec)
 
 Description
 
 	Invalidates all objects in cache that match the given
 	expression with the ban mechanism.
+
+	Returns the empty string if successful or an error message if
+	unsuccessful. Errors are also logged under the ``VCL_Error``
+	tag.
 
 	The format of `spec` is::
 
