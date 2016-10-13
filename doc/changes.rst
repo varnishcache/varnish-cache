@@ -1,4 +1,11 @@
 ================================
+MASTER / unreleased
+================================
+
+* ``ban()`` is now ``std.ban()`` and returns any ban error or the
+  empty string if none
+
+================================
 Varnish Cache 5.0.0 (2016-09-15)
 ================================
 
