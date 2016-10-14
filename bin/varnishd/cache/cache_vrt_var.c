@@ -356,6 +356,24 @@ VRT_l_beresp_storage_hint(VRT_CTX, const char *str, ...)
 /*--------------------------------------------------------------------*/
 
 VCL_STEVEDORE
+VRT_r_req_storage(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	return (ctx->req->storage);
+}
+
+void
+VRT_l_req_storage(VRT_CTX, VCL_STEVEDORE stv)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	ctx->req->storage = stv;
+}
+
+/*--------------------------------------------------------------------*/
+
+VCL_STEVEDORE
 VRT_r_beresp_storage(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);

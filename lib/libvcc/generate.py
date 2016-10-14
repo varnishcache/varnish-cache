@@ -257,6 +257,13 @@ sp_variables = [
 		A count of how many times this request has been restarted.
 		"""
 	),
+	('req.storage',
+		'STEVEDORE',
+		('recv',),
+		('recv',), """
+		The storage backend to use to save this request body.
+		"""
+	),
 	('req.esi_level',
 		'INT',
 		('client',),
