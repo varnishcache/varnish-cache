@@ -266,6 +266,11 @@ STRING
 	by using storage allocated from the client or backend
 	workspaces.
 
+STEVEDORE
+	C-type: ``const struct stevedore *``
+
+	A storage backend.
+
 STRING_LIST
 	C-type: ``const char *, ...``
 
