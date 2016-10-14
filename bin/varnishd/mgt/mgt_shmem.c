@@ -152,7 +152,7 @@ vsm_zerofile(const char *fn, ssize_t size)
 
 	fd = flopen(fn, O_RDWR | O_CREAT | O_EXCL | O_NONBLOCK, 0640);
 	if (fd < 0) {
-		fprintf(stderr, "Could not create %s: %s\n",
+		MGT_complain(C_ERR, "Could not create %s: %s",
 		    fn, strerror(errno));
 		return (-1);
 	}
@@ -162,7 +162,7 @@ vsm_zerofile(const char *fn, ssize_t size)
 	flags &= ~O_NONBLOCK;
 	AZ(fcntl(fd, F_SETFL, flags));
 	if (VFIL_allocate(fd, (off_t)size, 1)) {
-		fprintf(stderr, "File allocation error %s: %s\n",
+		MGT_complain(C_ERR, "File allocation error %s: %s",
 		    fn, strerror(errno));
 		return (-1);
 	}
@@ -184,6 +184,17 @@ mgt_shm_size(void)
 	return (size);
 }
 
+static void
+mgt_shm_cleanup(void)
+{
+	char fnbuf[64];
+
+	bprintf(fnbuf, "%s.%jd", VSM_FILENAME, (intmax_t)getpid());
+	VJ_master(JAIL_MASTER_FILE);
+	(void)unlink(fnbuf);
+	VJ_master(JAIL_MASTER_LOW);
+}
+
 void
 mgt_SHM_Create(void)
 {
@@ -200,8 +211,10 @@ mgt_SHM_Create(void)
 	VJ_master(JAIL_MASTER_FILE);
 	vsm_fd = vsm_zerofile(fnbuf, size);
 	VJ_master(JAIL_MASTER_LOW);
-	if (vsm_fd < 0)
+	if (vsm_fd < 0) {
+		mgt_shm_cleanup();
 		exit(1);
+	}
 
 	p = (void *)mmap(NULL, size,
 	    PROT_READ|PROT_WRITE,
@@ -211,7 +224,9 @@ mgt_SHM_Create(void)
 	AZ(close(vsm_fd));
 
 	if (p == MAP_FAILED) {
-		fprintf(stderr, "Mmap error %s: %s\n", fnbuf, strerror(errno));
+		MGT_complain(C_ERR, "Mmap error %s: %s",
+		    fnbuf, strerror(errno));
+		mgt_shm_cleanup();
 		exit(1);
 	}
 
