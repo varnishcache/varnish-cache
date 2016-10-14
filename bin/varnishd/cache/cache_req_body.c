@@ -51,6 +51,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	struct vfp_ctx *vfc;
 	uint8_t *ptr;
 	enum vfp_status vfps = VFP_ERROR;
+	const char *storage_hint;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
@@ -60,7 +61,15 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 
 	req->body_oc = HSH_Private(req->wrk);
 	AN(req->body_oc);
-	XXXAN(STV_NewObject(req->wrk, req->body_oc, TRANSIENT_STORAGE, 8));
+
+	if (req->storage_hint == NULL || req->storage_hint[0] == '\0')
+		storage_hint = TRANSIENT_STORAGE;
+	else
+		storage_hint = req->storage_hint;
+
+	req->storage_hint = NULL;
+
+	XXXAN(STV_NewObject(req->wrk, req->body_oc, storage_hint, 8));
 
 	vfc->oc = req->body_oc;
 
