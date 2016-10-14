@@ -673,6 +673,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	req->hash_always_miss = 0;
 	req->hash_ignore_busy = 0;
 	req->client_identity = NULL;
+	req->storage = NULL;
 
 	http_CollectHdr(req->http, H_Cache_Control);
 

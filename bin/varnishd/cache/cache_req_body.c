@@ -52,6 +52,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	struct vfp_ctx *vfc;
 	uint8_t *ptr;
 	enum vfp_status vfps = VFP_ERROR;
+	const struct stevedore *stv;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
@@ -61,7 +62,15 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 
 	req->body_oc = HSH_Private(req->wrk);
 	AN(req->body_oc);
-	XXXAN(STV_NewObject(req->wrk, req->body_oc, stv_transient, 8));
+
+	if (req->storage != NULL)
+		stv = req->storage;
+	else
+		stv = stv_transient;
+
+	req->storage = NULL;
+
+	XXXAN(STV_NewObject(req->wrk, req->body_oc, stv, 8));
 
 	vfc->oc = req->body_oc;
 
