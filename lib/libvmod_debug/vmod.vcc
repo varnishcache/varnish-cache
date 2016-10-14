@@ -71,6 +71,10 @@ $Function BACKEND no_backend()
 
 Fails at backend selection
 
+$Function STEVEDORE no_stevedore()
+
+Fails at storage selection.
+
 $Object obj(STRING string="default", ENUM { one, two, three } number="one")
 
 Test object

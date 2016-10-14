@@ -184,6 +184,14 @@ vmod_no_backend(VRT_CTX)
 	return (NULL);
 }
 
+VCL_STEVEDORE __match_proto__(td_debug_no_stevedore)
+vmod_no_stevedore(VRT_CTX)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	return (NULL);
+}
+
 VCL_VOID __match_proto__(td_debug_rot52)
 vmod_rot52(VRT_CTX, VCL_HTTP hp)
 {
