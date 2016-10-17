@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * const char **VAV_Parse(const char *s, int comment)
+ * const char **VAV_Parse(const char *s, int *argc, int flag)
  *	Parse a command like line into an argv[]
  *	Index zero contains NULL or an error message
  *	"double quotes" and backslash substitution is handled.
@@ -242,9 +242,29 @@ Test(const char *str)
 	char **av;
 
 	printf("Test: <%V>\n", str);
-	av = VAV_Parse(str, 0);
+	av = VAV_Parse(str, NULL, 0);
 	VAV_Print(av);
 }
+
+#if defined __linux__
+int
+printf_v(FILE *stream, const struct printf_info *info,
+    const void *const *args)
+{
+	const char *v = *((char **)args[0]);
+	return (fprintf(stream, "%*s",
+	    info->left ? -info->width : info->width, v));
+}
+
+int
+printf_v_info(const struct printf_info *info, size_t n, int *argtypes,
+    int *size)
+{
+	if (n > 0)
+		argtypes[0] = PA_STRING;
+	return (1);
+}
+#endif
 
 int
 main(int argc, char **argv)
@@ -254,7 +274,13 @@ main(int argc, char **argv)
 	(void)argc;
 	(void)argv;
 
+#if defined __FreeBSD__
 	register_printf_render_std("V");
+#elif defined __linux__
+	register_printf_specifier('V', printf_v, printf_v_info);
+#else
+#error Unsupported platform
+#endif
 
 	while (fgets(buf, sizeof buf, stdin))
 		Test(buf);
