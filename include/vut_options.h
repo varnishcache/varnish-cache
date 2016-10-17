@@ -57,9 +57,10 @@
 	)
 
 #define VUT_OPT_n							\
-	VOPT("n:", "[-n <name>]", "Varnish instance name",		\
-	    "Specify the name of the varnishd instance to get logs"	\
-	    " from. If -n is not specified, the host name is used."	\
+	VOPT("n:", "[-n <dir>]", "varnishd working directory",		\
+	    "Specify the varnishd working directory (also known as"	\
+	    " instance name) to get logs from. If -n is not specified,"	\
+	    " the host name is used."					\
 	)
 
 #define VUT_OPT_N							\
