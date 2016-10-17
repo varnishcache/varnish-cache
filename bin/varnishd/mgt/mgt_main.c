@@ -689,8 +689,10 @@ main(int argc, char * const *argv)
 	if (C_flag) {
 		if (b_arg == NULL && f_arg == NULL)
 			ARGV_ERR("-C only good with -b or -f\n");
-		AN(mkdtemp(Cn_arg));
-		n_arg = Cn_arg;
+		if (n_arg == NULL) {
+			AN(mkdtemp(Cn_arg));
+			n_arg = Cn_arg;
+		}
 	}
 
 	if (!jailed)
@@ -764,8 +766,10 @@ main(int argc, char * const *argv)
 	if (b_arg != NULL || f_arg != NULL) {
 		mgt_vcl_startup(cli, b_arg, f_arg, vcl, C_flag);
 		if (C_flag) {
-			AZ(rmdir(Cn_arg));
-			cli_check(cli);
+			if (Cn_arg == n_arg)
+				AZ(rmdir(Cn_arg));
+			AZ(VSB_finish(cli->sb));
+			fprintf(stderr, "%s\n", VSB_data(cli->sb));
 			exit(0);
 		}
 		cli_check(cli);
