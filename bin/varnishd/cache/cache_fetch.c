@@ -482,8 +482,8 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 /*--------------------------------------------------------------------
  */
 
-static void
-vbf_fetch_body_helper(struct busyobj *bo)
+static enum fetch_step
+vbf_stp_fetchbody(struct busyobj *bo)
 {
 	ssize_t l;
 	uint8_t *ptr;
@@ -542,6 +542,7 @@ vbf_fetch_body_helper(struct busyobj *bo)
 	}
 
 	ObjTrimStore(bo->wrk, vfc->oc);
+	return (F_STP_FETCHEND);
 }
 
 /*--------------------------------------------------------------------
@@ -695,8 +696,14 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->htc->body_status != BS_NONE) {
 		assert(bo->htc->body_status != BS_ERROR);
-		vbf_fetch_body_helper(bo);
+		return (F_STP_FETCHBODY);
 	}
+	return (F_STP_FETCHEND);
+}
+
+static enum fetch_step
+vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
+{
 
 	VFP_Close(bo->vfc);
 
