@@ -483,7 +483,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
  */
 
 static enum fetch_step
-vbf_stp_fetchbody(struct busyobj *bo)
+vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 {
 	ssize_t l;
 	uint8_t *ptr;
@@ -509,7 +509,7 @@ vbf_stp_fetchbody(struct busyobj *bo)
 			 * objects to be created.
 			 */
 			AN(vfc->oc->flags & OC_F_PASS);
-			VSLb(vfc->wrk->vsl, SLT_FetchError,
+			VSLb(wrk->vsl, SLT_FetchError,
 			    "Pass delivery abandoned");
 			vfps = VFP_END;
 			bo->htc->doclose = SC_RX_BODY;
@@ -535,13 +535,20 @@ vbf_stp_fetchbody(struct busyobj *bo)
 		}
 	} while (vfps == VFP_OK);
 
-	if (vfps == VFP_ERROR) {
-		AN(vfc->failed);
+	if (vfc->failed) {
 		(void)VFP_Error(vfc, "Fetch pipeline failed to process");
 		bo->htc->doclose = SC_RX_BODY;
+		VDI_Finish(wrk, bo);
+		if (!bo->do_stream) {
+			assert(bo->fetch_objcore->boc->state < BOS_STREAM);
+			// XXX: doclose = ?
+			return (F_STP_ERROR);
+		} else {
+			return (F_STP_FAIL);
+		}
 	}
 
-	ObjTrimStore(bo->wrk, vfc->oc);
+	ObjTrimStore(wrk, vfc->oc);
 	return (F_STP_FETCHEND);
 }
 
@@ -698,6 +705,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 		assert(bo->htc->body_status != BS_ERROR);
 		return (F_STP_FETCHBODY);
 	}
+	AZ(bo->vfc->failed);
 	return (F_STP_FETCHEND);
 }
 
@@ -705,18 +713,8 @@ static enum fetch_step
 vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 {
 
+	AZ(bo->vfc->failed);
 	VFP_Close(bo->vfc);
-
-	if (bo->vfc->failed) {
-		VDI_Finish(bo->wrk, bo);
-		if (!bo->do_stream) {
-			assert(bo->fetch_objcore->boc->state < BOS_STREAM);
-			// XXX: doclose = ?
-			return (F_STP_ERROR);
-		} else {
-			return (F_STP_FAIL);
-		}
-	}
 
 	AZ(ObjSetU64(wrk, bo->fetch_objcore, OA_LEN,
 	    bo->fetch_objcore->boc->len_so_far));
@@ -798,22 +796,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		VDI_Finish(bo->wrk, bo);
 		return (F_STP_FAIL);
 	}
-
-	AZ(ObjSetU64(wrk, bo->fetch_objcore, OA_LEN,
-	    bo->fetch_objcore->boc->len_so_far));
-
-	if (!bo->do_stream)
-		HSH_Unbusy(wrk, bo->fetch_objcore);
-
-	HSH_Kill(bo->stale_oc);
-
-	/* Recycle the backend connection before setting BOS_FINISHED to
-	   give predictable backend reuse behavior for varnishtest */
-	VDI_Finish(bo->wrk, bo);
-
-	ObjSetState(wrk, bo->fetch_objcore, BOS_FINISHED);
-	VSLb_ts_busyobj(bo, "BerespBody", W_TIM_real(wrk));
-	return (F_STP_DONE);
+	return (F_STP_FETCHEND);
 }
 
 /*--------------------------------------------------------------------
