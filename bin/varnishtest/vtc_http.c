@@ -92,7 +92,7 @@ static const struct cmds http_cmds[];
  * \-run (client only)
  *        Equivalent to "-start -wait".
  *
- * \repeat NUMBER
+ * \-repeat NUMBER
  *        Instead of processing the specification only once, do it NUMBER times.
  *
  * \-break (server only)
@@ -709,9 +709,9 @@ cmd_http_rxresp(CMD_ARGS)
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
 }
 
-/* SECTION: client-server.spec.rxreqhdrs
+/* SECTION: client-server.spec.rxresphdrs
  *
- * rxresp (client only)
+ * rxresphdrs (client only)
  *         Receive and parse a response's headers.
  */
 static void
@@ -921,7 +921,7 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 	return (av);
 }
 
-/* SECTION: client-server.spec.txre
+/* SECTION: client-server.spec.txreq
  *
  * txreq|txresp [...]
  *         Send a minimal request or response, but overload it if necessary.
@@ -1153,7 +1153,7 @@ cmd_http_rxreqbody(CMD_ARGS)
 
 /* SECTION: client-server.spec.rxrespbody
  *
- * rxrespbody
+ * rxrespbody (client only)
  *         Receive a response's body.
  */
 
@@ -1178,7 +1178,7 @@ cmd_http_rxrespbody(CMD_ARGS)
 /* SECTION: client-server.spec.rxchunk
  *
  * rxchunk
- *         Receive an HTTP chunk
+ *         Receive an HTTP chunk.
  */
 
 static void
@@ -1512,13 +1512,7 @@ cmd_http_timeout(CMD_ARGS)
 /* SECTION: client-server.spec.expect_close
  *
  * expect_close
- *         Wait for the connected client to close the connection.
- */
-
-/* SECTION: client-server.spec.expect_close expect_close (server)
- *
- * Reads from the connection, expecting nothing to read but an EOF.
- *
+ *	Reads from the connection, expecting nothing to read but an EOF.
  */
 static void
 cmd_http_expect_close(CMD_ARGS)
@@ -1563,14 +1557,8 @@ cmd_http_expect_close(CMD_ARGS)
 /* SECTION: client-server.spec.close
  *
  * close (server only)
- *         Close the active TCP connection
- */
-
-/* SECTION: client-server.spec.close close (server)
- *
- * Close the connection. Not that if operating in H/2 mode, no extra (GOAWAY)
- * frame is sent, it's simply a TCP close.
- *
+ *	Close the connection. Note that if operating in HTTP/2 mode no
+ *	extra (GOAWAY) frame is sent, it's simply a TCP close.
  */
 static void
 cmd_http_close(CMD_ARGS)
@@ -1580,6 +1568,7 @@ cmd_http_close(CMD_ARGS)
 	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	ONLY_SERVER(hp, av);
 	AZ(av[1]);
 	assert(hp->sfd != NULL);
 	assert(*hp->sfd >= 0);
@@ -1589,16 +1578,11 @@ cmd_http_close(CMD_ARGS)
 	vtc_log(vl, 4, "Closed");
 }
 
-/* SECTION: client-server.spec.accept_close
+/* SECTION: client-server.spec.accept
  *
  * accept (server only)
- *         Close the active connection (if any) and accept a new one.
- */
-
-/* SECTION: client-server.spec.accept accept (server)
- *
- * Close the potential current connection, and accept a new one. Note that this
- * new connection is H/1.
+ *	Close the current connection, if any, and accept a new one. Note
+ *	that this new connection is HTTP/1.x.
  */
 static void
 cmd_http_accept(CMD_ARGS)
@@ -1608,6 +1592,7 @@ cmd_http_accept(CMD_ARGS)
 	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	ONLY_SERVER(hp, av);
 	AZ(av[1]);
 	assert(hp->sfd != NULL);
 	assert(*hp->sfd >= 0);
@@ -1680,10 +1665,11 @@ cmd_http_fatal(CMD_ARGS)
 
 const char PREFACE[24] = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 
-/* SECTION: client-server.spec.txpri txpri (client)
+/* SECTION: client-server.spec.txpri
  *
- * Send an H/2 preface ("PRI * HTTP/2.0\\r\\n\\r\\nSM\\r\\n\\r\\n") and set
- * client to H/2.
+ * txpri (client only)
+ *	Send an HTTP/2 preface ("PRI * HTTP/2.0\\r\\n\\r\\nSM\\r\\n\\r\\n")
+ *	and set client to HTTP/2.
  */
 static void
 cmd_http_txpri(CMD_ARGS)
@@ -1710,10 +1696,11 @@ cmd_http_txpri(CMD_ARGS)
 	AN(hp->h2);
 }
 
-/* SECTION: client-server.spec.rxpri rxpri (server)
+/* SECTION: client-server.spec.rxpri
  *
- * Receive a preface, and if it matches, sets the server to H/2, aborts
- * otherwise.
+ * rxpri (server only)
+ *	Receive a preface. If valid set the server to HTTP/2, abort
+ *	otherwise.
  */
 static void
 cmd_http_rxpri(CMD_ARGS)
@@ -1735,8 +1722,8 @@ cmd_http_rxpri(CMD_ARGS)
 /* SECTION: client-server.spec.settings
  *
  * settings -dectbl INT
- *         Force internal H/2 settings to certain values. Currently only
- *         support setting the decoding table size.
+ *	Force internal HTTP/2 settings to certain values. Currently only
+ *	support setting the decoding table size.
  */
 static void
 cmd_http_settings(CMD_ARGS)

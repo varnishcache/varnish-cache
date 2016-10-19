@@ -512,13 +512,13 @@ cmd_err_shell(CMD_ARGS)
 	VSB_destroy(&vsb);
 }
 
-/* SECTION: client-server.spec.delay delay
+/* SECTION: delay delay
  *
  * Take a float as argument and sleep for that number of seconds.
  */
 /* SECTION: stream.spec.delay delay
  *
- * Take a float as argument and sleep for that number of seconds.
+ * Same as for the top-level delay.
  */
 void
 cmd_delay(CMD_ARGS)

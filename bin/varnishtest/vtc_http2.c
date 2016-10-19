@@ -1294,10 +1294,11 @@ cmd_sendhex(CMD_ARGS)
 
 /* SECTION: stream.spec.data_0 txreq, txresp, txcont, txpush
  *
- * These four commands are about sending headers. txreq,  txresp will send
- * HEADER frames, txcont will send CONTINUATION frames, and txpush PUSH frames.
- * The only difference between txreq and txresp are the default headers set by
- * each of them.
+ * These four commands are about sending headers. txreq and txresp
+ * will send HEADER frames; txcont will send CONTINUATION frames; txpush
+ * PUSH frames.
+ * The only difference between txreq and txresp are the default headers
+ * set by each of them.
  *
  * \-noadd
  *	Do not add default headers. Useful to avoid duplicates when sending
@@ -2095,7 +2096,7 @@ rxstuff(struct stream *s)
 				wt < TYPE_MAX ? h2_types[wt] : "?", wt); \
 	} while (0);
 
-/* SECTION: stream.spec.data_12 rxhdrs
+/* SECTION: stream.spec.data_11 rxhdrs
  *
  * ``rxhdrs`` will expect one HEADER frame, then, depending on the arguments,
  * zero or more CONTINUATION frame.
@@ -2273,7 +2274,7 @@ cmd_rxreqsp(CMD_ARGS)
 	s->frame = f;
 }
 
-/* SECTION: stream.spec.data_11 rxpush
+/* SECTION: stream.spec.data_12 rxpush
  *
  * This works like ``rxhdrs``, expecting a PUSH frame and then zero or more
  * CONTINUATION frames.
@@ -2338,37 +2339,37 @@ cmd_rxpush(CMD_ARGS)
 
 /* SECTION: stream.spec.prio_rxprio rxprio
  *
- * Receive a PRIORITY frame
+ * Receive a PRIORITY frame.
  */
 RXFUNC(prio,	PRIORITY)
 
 /* SECTION: stream.spec.reset_rxrst rxrst
  *
- * Receive a RST_STREAM frame
+ * Receive a RST_STREAM frame.
  */
 RXFUNC(rst,	RST_STREAM)
 
 /* SECTION: stream.spec.settings_rxsettings rxsettings
  *
- * Receive a SETTINGS frame
+ * Receive a SETTINGS frame.
  */
 RXFUNC(settings,SETTINGS)
 
 /* SECTION: stream.spec.ping_rxping rxping
  *
- * Receive a PING frame
+ * Receive a PING frame.
  */
 RXFUNC(ping,	PING)
 
 /* SECTION: stream.spec.goaway_rxgoaway rxgoaway
  *
- * Receive a GOAWAY frame
+ * Receive a GOAWAY frame.
  */
 RXFUNC(goaway,	GOAWAY)
 
 /* SECTION: stream.spec.winup_rxwinup rxwinup
  *
- * Receive a WINDOW_UPDATE frame
+ * Receive a WINDOW_UPDATE frame.
  */
 RXFUNC(winup,	WINDOW_UPDATE)
 
@@ -2607,29 +2608,31 @@ stream_run(struct stream *s)
 
 
 
-/* SECTION: client-server.spec.zstream stream
+/* SECTION: client-server.spec.stream
  *
- * H/2 introduces the concept of streams, and these come with their own
- * specification, and as it's quite big, have bee move to their own chapter.
+ * stream
+ *	HTTP/2 introduces the concept of streams, and these come with
+ *	their own specification, and as it's quite big, have been moved
+ *	to their own chapter.
  *
  * SECTION: stream stream
  *
- * (note: this section is at the top-level for easier navigation, but it's part
- * of the client/server specification)
+ * (note: this section is at the top-level for easier navigation, but
+ * it's part of the client/server specification)
  *
- * Streams map roughly to a request in H/2, a request is sent on stream N,
- * the response too, then the stream is discarded. The main exception is the
- * first stream, 0, that serves as coordinator.
+ * Streams map roughly to a request in HTTP/2, a request is sent on
+ * stream N, the response too, then the stream is discarded. The main
+ * exception is the first stream, 0, that serves as coordinator.
  *
  * Stream syntax follow the client/server one::
  *
  *	stream ID [SPEC] [ACTION]
  *
- * ID is the H/2 stream number, while SPEC describes what will be done in that
- * stream.
+ * ID is the HTTP/2 stream number, while SPEC describes what will be
+ * done in that stream.
  *
- * Note that, when parsing a stream action, if the entity isn't operating in H/2
- * mode, these spec is ran before::
+ * Note that, when parsing a stream action, if the entity isn't operating
+ * in HTTP/2 mode, these spec is ran before::
  *
  *	txpri/rxpri # client/server
  *	stream 0 {
@@ -2640,7 +2643,7 @@ stream_run(struct stream *s)
  *	    expect settings.ack == true
  *	} -run
  *
- * And H/2 mode is then activated before parsing the specification.
+ * And HTTP/2 mode is then activated before parsing the specification.
  *
  * SECTION: stream.actions Actions
  *
