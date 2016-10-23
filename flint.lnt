@@ -37,7 +37,6 @@
 
 -esym(534, strcat)
 -esym(534, strcpy)
--esym(534, strlcpy)
 -esym(534, strncpy)
 
 -esym(534, sleep)

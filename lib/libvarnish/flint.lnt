@@ -44,7 +44,6 @@
 -esym(534, vsb_putc)	// Ignoring return value of function
 -esym(534, strcat)	// Ignoring return value of function
 -esym(534, strcpy)	// Ignoring return value of function
--esym(534, strlcpy)	// Ignoring return value of function
 
 -emacro(506, isnan)	// constant value boolean
 -emacro(747, isnan)	// significant coersion
