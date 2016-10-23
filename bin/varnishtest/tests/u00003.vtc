@@ -1,0 +1,37 @@
+varnishtest "varnishncsa -F error handling"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+delay 2
+
+err_shell "Missing tag in VSL:" \
+	{varnishncsa -n ${v1_name} -F "%{VSL:}x" 2>&1}
+
+err_shell "Unknown log tag: nonexistent" \
+	{varnishncsa -n ${v1_name} -F "%{VSL:nonexistent}x" 2>&1}
+
+err_shell "Tag not unique: Req" \
+	{varnishncsa -n ${v1_name} -F "%{VSL:Req}x" 2>&1}
+
+err_shell "Syntax error: VSL:Begin[" \
+	{varnishncsa -n ${v1_name} -F "%{VSL:Begin[}x" 2>&1}
+
+err_shell "Syntax error: VSL:Begin]" \
+	{varnishncsa -n ${v1_name} -F "%{VSL:Begin]}x" 2>&1}
+
+err_shell "Unknown log tag: Begin[a" \
+	{varnishncsa -n ${v1_name} -F "%{VSL:Begin[a}x" 2>&1}
+
+err_shell "Syntax error: VSL:Begin[a]" \
+	{varnishncsa -n ${v1_name} -F "%{VSL:Begin[a]}x" 2>&1}
+
+err_shell "Syntax error. Field specifier must be positive: Begin[0]" \
+	{varnishncsa -n ${v1_name} -F "%{VSL:Begin[0]}x" 2>&1}
+
+err_shell "Field specifier 999999999999 for the tag VSL:Begin[999999999999] is probably too high" \
+	{varnishncsa -n ${v1_name} -F "%{VSL:Begin[999999999999]}x" 2>&1}
