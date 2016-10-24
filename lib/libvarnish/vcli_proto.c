@@ -119,6 +119,10 @@ read_tmo(int fd, char *ptr, unsigned len, double tmo)
 	pfd.events = POLLIN;
 	for (j = 0; len > 0; ) {
 		i = poll(&pfd, 1, to);
+		if (i < 0) {
+			errno = EINTR;
+			return (-1);
+		}
 		if (i == 0) {
 			errno = ETIMEDOUT;
 			return (-1);
