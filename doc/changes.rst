@@ -12,6 +12,7 @@ Changes from 4.0.3 to 4.0.4-beta1 (2016-10-24)
 Bugs fixed
 ----------
 
+.. _1879: https://www.varnish-cache.org/trac/ticket/1879
 .. _1768: https://www.varnish-cache.org/trac/ticket/1768
 .. _1815: https://www.varnish-cache.org/trac/ticket/1815
 .. _1862: https://www.varnish-cache.org/trac/ticket/1862
@@ -22,6 +23,7 @@ Bugs fixed
 .. _1602: https://www.varnish-cache.org/trac/ticket/1602
 .. _1598: https://www.varnish-cache.org/trac/ticket/1598
 
+- 1879_ - Wrong set of duplicate haeaders when backend 304 NOT MODIFIED
 - 1768_ - Properly encode HTTP headers with weird characters to C identifiers.
 - 1815_ - Close piped sessions in the absence of backends
 - 1862_ - Request URL with whitespace is allowed
