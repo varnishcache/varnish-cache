@@ -1,7 +1,7 @@
 
-==================================
-Changes from 4.0.3 to (unreleased)
-==================================
+==============================================
+Changes from 4.0.3 to 4.0.4-beta1 (2016-10-24)
+==============================================
 
 * Percent-based storage size configuration was broken
   and has been retired.
