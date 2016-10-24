@@ -221,7 +221,8 @@ are available:
     The port on the backend that Varnish should connect to.
 
   host_header
-    A host header to add.
+    A host header to add to probes and regular backend requests if they have no
+    such header.
 
   connect_timeout
     Timeout for connections.
