@@ -155,28 +155,6 @@ parse_unset(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_ban(struct vcc *tl)
-{
-
-	vcc_NextToken(tl);
-
-	ExpectErr(tl, '(');
-	vcc_NextToken(tl);
-
-	Fb(tl, 1, "VRT_ban_string(ctx, \n");
-	tl->indent += INDENT;
-	vcc_Expr(tl, STRING);
-	tl->indent -= INDENT;
-	ERRCHK(tl);
-	Fb(tl, 1, ");\n");
-
-	ExpectErr(tl, ')');
-	vcc_NextToken(tl);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
 parse_hash_data(struct vcc *tl)
 {
 	vcc_NextToken(tl);
@@ -360,7 +338,6 @@ static struct action_table {
 	unsigned		bitmask;
 } action_table[] = {
 	/* Keep list sorted from here */
-	{ "ban",		parse_ban },
 	{ "call",		parse_call },
 	{ "hash_data",		parse_hash_data, VCL_MET_HASH },
 	{ "new",		vcc_ParseNew, VCL_MET_INIT},

@@ -23,7 +23,8 @@ libvmod_std_la_SOURCES = \
 	vmod_std.c \
 	vmod_std_conversions.c \
 	vmod_std_fileread.c \
-	vmod_std_querysort.c
+	vmod_std_querysort.c \
+	vmod_std_ban.c
 
 nodist_libvmod_std_la_SOURCES = \
 	vcc_if.c \
