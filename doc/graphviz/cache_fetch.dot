@@ -56,13 +56,30 @@ digraph cache_fetch {
 
 		v_b_r_retry [label="RETRY",shape=plaintext]
 
+		vbf_stp_fetchbody [
+			       shape=record
+			       fontcolor=grey
+			       color=grey
+			       label="{vbf_stp_fetchbody:|get storage|read body, run VFPs|{fetch_fail?|error?|<ok>ok?}}"
+			       ]
+		vbf_stp_fetchbody:ok:s -> vbf_stp_fetchend
+
 		vbf_stp_fetch [
 			       shape=record
 			       fontcolor=grey
 			       color=grey
-			       label="{vbf_stp_fetch:|setup VFPs|<fetch>fetch|{fetch_fail?|error?|<ok>ok?}}"
+			       label="{vbf_stp_fetch:|setup VFPs|get object|{error?|<body>body?}}"
 			       ]
-		vbf_stp_fetch:ok:s -> FETCH_DONE
+		vbf_stp_fetch:body:s -> vbf_stp_fetchbody
+		vbf_stp_fetch:body:s -> vbf_stp_fetchend
+
+		vbf_stp_fetchend [
+			       shape=record
+			       fontcolor=grey
+			       color=grey
+			       label="{vbf_stp_fetchend:|finalize object and director|<done>done}"
+			       ]
+		vbf_stp_fetchend:done:s -> FETCH_DONE
 
 		vbf_stp_condfetch [
 			       shape=record
@@ -71,7 +88,7 @@ digraph cache_fetch {
 			       label="{vbf_stp_condfetch:|copy obj attr|steal body|{fetch_fail?|<ok>ok?}}"
 
 		]
-		vbf_stp_condfetch:ok:s -> FETCH_DONE
+		vbf_stp_condfetch:ok:s -> vbf_stp_fetchend
 
 		error [shape=plaintext]
 		error -> FETCH_FAIL
