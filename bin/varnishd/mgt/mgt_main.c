@@ -769,7 +769,7 @@ main(int argc, char * const *argv)
 			if (Cn_arg == n_arg)
 				AZ(rmdir(Cn_arg));
 			AZ(VSB_finish(cli->sb));
-			printf("%s\n", VSB_data(cli->sb));
+			fprintf(stderr, "%s\n", VSB_data(cli->sb));
 			exit(cli->result == CLIS_OK ? 0 : 2);
 		}
 		cli_check(cli);
