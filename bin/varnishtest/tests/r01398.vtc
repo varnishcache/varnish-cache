@@ -6,7 +6,7 @@ varnish v1 -vcl {
 		.port = "9080";
 	}
 	sub vcl_backend_response {
-		set beresp.http.X-BE-Name = beresp.backend.name;
+		set beresp.http.X-BE-Name = beresp.backend;
 		set beresp.http.X-BE-IP = beresp.backend.ip;
 	}
 } -start

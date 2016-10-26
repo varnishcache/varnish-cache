@@ -1,3 +1,9 @@
+======
+master
+======
+
+* retire beresp.backend.name - use beresp.backend in STRING context
+
 ================================
 Varnish Cache 5.0.0 (2016-09-15)
 ================================
