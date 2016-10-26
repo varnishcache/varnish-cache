@@ -190,7 +190,7 @@ pool_poolherder(void *priv)
 	struct pool *pp;
 	uint64_t u;
 
-	THR_SetName("pool_herder");
+	THR_SetName("pool_poolherder");
 	(void)priv;
 
 	nwq = 0;

@@ -438,6 +438,8 @@ pool_herder(void *priv)
 
 	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
 
+	THR_SetName("pool_herder");
+
 	while (1) {
 		/* Make more threads if needed and allowed */
 		if (pp->nthr < cache_param->wthread_min ||
