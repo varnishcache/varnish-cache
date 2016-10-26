@@ -379,10 +379,13 @@ vsc_filter_pt_list(struct VSM_data *vd)
 		VTAILQ_FOREACH_SAFE(pt, &vsc->pt_list, list, pt2) {
 			CHECK_OBJ_NOTNULL(pt, VSC_PT_MAGIC);
 			VSB_clear(vsb);
-			VSB_printf(vsb, "%s.%s.%s",
-			    pt->point.section->type,
-			    pt->point.section->ident,
-			    pt->point.desc->name);
+			if (strcmp(pt->point.section->type, ""))
+				VSB_printf(vsb, "%s.",
+				    pt->point.section->type);
+			if (strcmp(pt->point.section->ident, ""))
+				VSB_printf(vsb, "%s.",
+				    pt->point.section->ident);
+			VSB_printf(vsb, "%s", pt->point.desc->name);
 			VSB_finish(vsb);
 			if (fnmatch(sf->pattern, VSB_data(vsb), 0))
 				continue;

@@ -24,3 +24,7 @@ shell "grep -q mempool ${tmpdir}/p2/stdout"
 err_shell "" "grep -q LCK.vbe.destroy ${tmpdir}/p2/stdout"
 
 shell "cmp -s ${tmpdir}/p1/stdout ${tmpdir}/p2/stdout"
+
+process p3 {varnishstat -1 -n ${v1_name} -f MAIN.cache_hit} -run
+
+shell "grep -q cache_hit ${tmpdir}/p3/stdout"
