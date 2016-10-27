@@ -446,7 +446,8 @@ pool_breed(struct pool *qp)
 /*--------------------------------------------------------------------
  * Herd a single pool
  *
- * This thread wakes every 5 seconds and whenever a pool queues.
+ * This thread wakes up every thread_pool_timeout seconds, whenever a pool
+ * queues and when threads need to be destroyed
  *
  * The trick here is to not be too aggressive about creating threads.  In
  * pool_breed(), we sleep whenever we create a thread and a little while longer
