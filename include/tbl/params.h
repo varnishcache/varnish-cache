@@ -290,6 +290,21 @@ PARAM(
 )
 
 PARAM(
+	/* name */	clock_step,
+	/* typ */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* default */	"1.000",
+	/* units */	"seconds",
+	/* flags */	0,
+	/* s-text */
+	"How much observed clock step we are willing to accept before "
+	"we panic.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
+PARAM(
 	/* name */	connect_timeout,
 	/* typ */	timeout,
 	/* min */	"0.000",
