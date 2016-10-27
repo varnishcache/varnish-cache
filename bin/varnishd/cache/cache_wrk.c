@@ -435,6 +435,7 @@ pool_herder(void *priv)
 	struct pool_task *pt;
 	double t_idle;
 	struct worker *wrk;
+	int delay;
 
 	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
 
@@ -447,6 +448,8 @@ pool_herder(void *priv)
 			pool_breed(pp);
 			continue;
 		}
+
+		delay = cache_param->wthread_timeout;
 		assert(pp->nthr >= cache_param->wthread_min);
 
 		if (pp->nthr > cache_param->wthread_min) {
@@ -472,8 +475,10 @@ pool_herder(void *priv)
 					    &wrk->task, list);
 					wrk->task.func = pool_kiss_of_death;
 					AZ(pthread_cond_signal(&wrk->cond));
-				} else
+				} else {
+					delay = wrk->lastused - t_idle;
 					wrk = NULL;
+				}
 			}
 			Lck_Unlock(&pp->mtx);
 
@@ -483,15 +488,15 @@ pool_herder(void *priv)
 				VSC_C_main->threads--;
 				VSC_C_main->threads_destroyed++;
 				Lck_Unlock(&pool_mtx);
-				VTIM_sleep(cache_param->wthread_destroy_delay);
-				continue;
-			}
+				delay = cache_param->wthread_destroy_delay;
+			} else if (delay < cache_param->wthread_destroy_delay)
+				delay = cache_param->wthread_destroy_delay;
 		}
 
 		Lck_Lock(&pp->mtx);
 		if (!pp->dry) {
 			(void)Lck_CondWait(&pp->herder_cond, &pp->mtx,
-				VTIM_real() + 5);
+				VTIM_real() + delay);
 		} else {
 			/* XXX: unsafe counters */
 			VSC_C_main->threads_limited++;
