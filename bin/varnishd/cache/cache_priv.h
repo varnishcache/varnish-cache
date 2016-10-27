@@ -65,6 +65,9 @@ void CLI_Init(void);
 void CLI_Run(void);
 void CLI_AddFuncs(struct cli_proto *p);
 
+/* cache_dstat.c */
+void Dstat_Init(void);
+
 /* cache_expire.c */
 void EXP_Init(void);
 

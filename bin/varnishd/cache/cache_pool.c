@@ -39,50 +39,12 @@
 
 #include "cache.h"
 #include "cache_pool.h"
+#include "cache_dstat.h"
 
 static pthread_t		thr_pool_herder;
 
-static struct lock		wstat_mtx;
 struct lock			pool_mtx;
 static VTAILQ_HEAD(,pool)	pools = VTAILQ_HEAD_INITIALIZER(pools);
-
-/*--------------------------------------------------------------------
- * Summing of stats into global stats counters
- */
-
-static void
-pool_sumstat(const struct dstat *src)
-{
-
-	Lck_AssertHeld(&wstat_mtx);
-#define L0(n)
-#define L1(n) (VSC_C_main->n += src->n)
-#define VSC_FF(n,t,l,s,f,v,d,e)	L##l(n);
-#include "tbl/vsc_f_main.h"
-#undef L0
-#undef L1
-}
-
-void
-Pool_Sumstat(struct worker *wrk)
-{
-
-	Lck_Lock(&wstat_mtx);
-	pool_sumstat(wrk->stats);
-	Lck_Unlock(&wstat_mtx);
-	memset(wrk->stats, 0, sizeof *wrk->stats);
-}
-
-int
-Pool_TrySumstat(struct worker *wrk)
-{
-	if (Lck_Trylock(&wstat_mtx))
-		return (0);
-	pool_sumstat(wrk->stats);
-	Lck_Unlock(&wstat_mtx);
-	memset(wrk->stats, 0, sizeof *wrk->stats);
-	return (1);
-}
 
 /*--------------------------------------------------------------------
  * Facility for scheduling a task on any convenient pool.
@@ -107,40 +69,6 @@ Pool_Task_Any(struct pool_task *task, enum task_prio prio)
 }
 
 /*--------------------------------------------------------------------
- * Helper function to update stats for purges under lock
- */
-
-void
-Pool_PurgeStat(unsigned nobj)
-{
-	Lck_Lock(&wstat_mtx);
-	VSC_C_main->n_purges++;
-	VSC_C_main->n_obj_purged += nobj;
-	Lck_Unlock(&wstat_mtx);
-}
-
-/*--------------------------------------------------------------------
- * Special function to summ stats
- */
-
-void __match_proto__(task_func_t)
-pool_stat_summ(struct worker *wrk, void *priv)
-{
-	struct dstat *src;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk->pool, POOL_MAGIC);
-	AN(priv);
-	src = priv;
-	Lck_Lock(&wstat_mtx);
-	pool_sumstat(src);
-	Lck_Unlock(&wstat_mtx);
-	memset(src, 0, sizeof *src);
-	AZ(wrk->pool->b_stat);
-	wrk->pool->b_stat = src;
-}
-
-/*--------------------------------------------------------------------
  * Add a thread pool
  */
 
@@ -153,10 +81,6 @@ pool_mkpool(unsigned pool_no)
 	ALLOC_OBJ(pp, POOL_MAGIC);
 	if (pp == NULL)
 		return (NULL);
-	pp->a_stat = calloc(1, sizeof *pp->a_stat);
-	AN(pp->a_stat);
-	pp->b_stat = calloc(1, sizeof *pp->b_stat);
-	AN(pp->b_stat);
 	Lck_New(&pp->mtx, lck_wq);
 
 	VTAILQ_INIT(&pp->idle_queue);
@@ -236,8 +160,6 @@ pool_poolherder(void *priv)
 			VTAILQ_REMOVE(&pools, ppx, list);
 			AZ(pthread_join(ppx->herder_thr, &rvp));
 			AZ(pthread_cond_destroy(&ppx->herder_cond));
-			free(ppx->a_stat);
-			free(ppx->b_stat);
 			SES_DestroyPool(ppx);
 			FREE_OBJ(ppx);
 			VSC_C_main->pools--;
@@ -253,8 +175,6 @@ pool_poolherder(void *priv)
 void
 Pool_Init(void)
 {
-
-	Lck_New(&wstat_mtx, lck_wstat);
 	Lck_New(&pool_mtx, lck_wq);
 	AZ(pthread_create(&thr_pool_herder, NULL, pool_poolherder, NULL));
 	while (!VSC_C_main->pools)

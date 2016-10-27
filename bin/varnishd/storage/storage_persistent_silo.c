@@ -175,7 +175,7 @@ smp_load_seg(struct worker *wrk, const struct smp_sc *sc,
 		(void)HSH_DerefObjCore(wrk, &oc, HSH_RUSH_POLICY);
 		wrk->stats->n_vampireobject++;
 	}
-	Pool_Sumstat(wrk);
+	WRK_Stats_Update(wrk, NOW);
 	sg->flags |= SMP_SEG_LOADED;
 }
 

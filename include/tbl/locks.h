@@ -47,7 +47,7 @@ LOCK(vcl)
 LOCK(vxid)
 LOCK(waiter)
 LOCK(wq)
-LOCK(wstat)
+LOCK(dstat_mbx)
 #undef LOCK
 
 /*lint -restore */

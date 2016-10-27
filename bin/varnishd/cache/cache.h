@@ -254,7 +254,9 @@ struct acct_bereq {
 #define L1(t, n)		t n;
 #define VSC_FF(n,t,l,s,f,v,d,e)	L##l(t, n)
 struct dstat {
-	unsigned		summs;
+	unsigned		magic;
+#define DSTAT_MAGIC		0x8d83b14b
+	VSLIST_ENTRY(dstat)	list;
 #include "tbl/vsc_f_main.h"
 };
 #undef L0
@@ -315,12 +317,13 @@ struct worker {
 	struct objhead		*nobjhead;
 	struct objcore		*nobjcore;
 	void			*nhashpriv;
-	struct dstat		stats[1];
+	struct dstat		*stats;
 	struct vsl_log		*vsl;		// borrowed from req/bo
 
 	struct pool_task	task;
 
 	double			lastused;
+	double			last_stats_update;
 	int			strangelove;
 
 	struct v1l		*v1l;
@@ -921,9 +924,6 @@ const char *sess_close_2str(enum sess_close sc, int want_desc);
 int Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio);
 int Pool_Task_Arg(struct worker *, enum task_prio, task_func_t *,
     const void *arg, size_t arg_len);
-void Pool_Sumstat(struct worker *w);
-int Pool_TrySumstat(struct worker *wrk);
-void Pool_PurgeStat(unsigned nobj);
 int Pool_Task_Any(struct pool_task *task, enum task_prio prio);
 
 /* cache_range.c [VRG] */
@@ -1052,6 +1052,14 @@ char *VRT_StringList(char *d, unsigned dl, const char *p, va_list ap);
 typedef void *bgthread_t(struct worker *, void *priv);
 void WRK_BgThread(pthread_t *thr, const char *name, bgthread_t *func,
     void *priv);
+
+enum wrk_stats_when {
+	PERIODIC,
+	NOW
+};
+void WRK_Stats_Init(struct worker *);
+void WRK_Stats_Update(struct worker *, enum wrk_stats_when);
+void WRK_Stats_Free(struct worker *);
 
 /* cache_ws.c */
 

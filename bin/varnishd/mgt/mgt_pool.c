@@ -186,17 +186,6 @@ struct parspec WRK_parspec[] = {
 		"destroyed and later recreated.",
 		EXPERIMENTAL,
 		"0.2", "seconds" },
-	{ "thread_stats_rate",
-		tweak_uint, &mgt_param.wthread_stats_rate,
-		"0", NULL,
-		"Worker threads accumulate statistics, and dump these into "
-		"the global stats counters if the lock is free when they "
-		"finish a job (request/fetch etc.)\n"
-		"This parameters defines the maximum number of jobs "
-		"a worker thread may handle, before it is forced to dump "
-		"its accumulated stats into the global counters.",
-		EXPERIMENTAL,
-		"10", "requests" },
 	{ "thread_queue_limit", tweak_uint, &mgt_param.wthread_queue_limit,
 		"0", NULL,
 		"Permitted request queue length per thread-pool.\n"

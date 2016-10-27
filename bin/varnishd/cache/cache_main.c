@@ -227,6 +227,8 @@ child_main(void)
 
 	Lck_New(&vxid_lock, lck_vxid);
 
+	Dstat_Init();
+
 	CLI_Init();
 	PAN_Init();
 	VFP_Init();

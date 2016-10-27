@@ -21,6 +21,7 @@ varnishd_SOURCES = \
 	cache/cache_cli.c \
 	cache/cache_deliver_proc.c \
 	cache/cache_director.c \
+	cache/cache_dstat.c \
 	cache/cache_esi_deliver.c \
 	cache/cache_esi_fetch.c \
 	cache/cache_esi_parse.c \
@@ -112,6 +113,7 @@ varnishd_SOURCES = \
 noinst_HEADERS = \
 	builtin_vcl.h \
 	cache/cache_ban.h \
+	cache/cache_dstat.h \
 	cache/cache_esi.h \
 	cache/cache_obj.h \
 	cache/cache_pool.h \

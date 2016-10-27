@@ -150,6 +150,12 @@ struct parspec mgt_parspec[] = {
 		0,
 		"255b",
 		"bytes" },
+	{ "pool_dstat", tweak_poolparam, &mgt_param.wthread_dstat_pool,
+		NULL, NULL,
+		"Parameters for worker statistics memory pool.\n"
+		MEMPOOL_TEXT,
+		0,
+		"10,100,10", ""},	// max_age ~ wthread_timeout
 
 	{ NULL, NULL, NULL }
 };

@@ -447,7 +447,7 @@ vca_accept_task(struct worker *wrk, void *arg)
 				break;
 			}
 			wrk->stats->sess_fail++;
-			(void)Pool_TrySumstat(wrk);
+			WRK_Stats_Update(wrk, NOW);
 			continue;
 		}
 

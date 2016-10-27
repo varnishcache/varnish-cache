@@ -331,7 +331,7 @@ exp_thread(struct worker *wrk, void *priv)
 				oc->exp_flags &= OC_EF_REFD;
 		} else if (tnext > t) {
 			VSL_Flush(&ep->vsl, 0);
-			Pool_Sumstat(wrk);
+			WRK_Stats_Update(wrk, NOW);
 			(void)Lck_CondWait(&ep->condvar, &ep->mtx, tnext);
 		}
 		Lck_Unlock(&ep->mtx);

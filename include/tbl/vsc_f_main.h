@@ -612,12 +612,12 @@ VSC_FF(bans_persisted_fragmentation, uint64_t, 0, 'g', 'B', diag,
 
 /*--------------------------------------------------------------------*/
 
-VSC_FF(n_purges,			uint64_t, 0, 'g', 'i', info,
+VSC_FF(n_purges,			uint64_t, 1, 'g', 'i', info,
     "Number of purge operations executed",
 	""
 )
 
-VSC_FF(n_obj_purged,		uint64_t, 0, 'g', 'i', info,
+VSC_FF(n_obj_purged,		uint64_t, 1, 'g', 'i', info,
     "Number of purged objects",
 	""
 )

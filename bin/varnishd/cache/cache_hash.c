@@ -639,7 +639,8 @@ double keep)
 		}
 	} while (more);
 	WS_Release(wrk->aws, 0);
-	Pool_PurgeStat(nobj);
+	wrk->stats->n_purges++;
+	wrk->stats->n_obj_purged += nobj;
 }
 
 /*---------------------------------------------------------------------

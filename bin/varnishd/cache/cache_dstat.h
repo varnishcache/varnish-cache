@@ -1,9 +1,8 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright 2017 UPLEX - Nils Goroll Systemoptimierung
  * All rights reserved.
  *
- * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Nils Goroll <slink@uplex.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,40 +25,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Private include file for the pool aware code.
+ * Statistics mailman
  */
 
-VTAILQ_HEAD(taskhead, pool_task);
-
-struct poolsock;
-
-struct pool {
-	unsigned			magic;
-#define POOL_MAGIC			0x606658fa
-	VTAILQ_ENTRY(pool)		list;
-	VTAILQ_HEAD(,poolsock)		poolsocks;
-
-	int				die;
-	pthread_cond_t			herder_cond;
-	pthread_t			herder_thr;
-
-	struct lock			mtx;
-	unsigned			nidle;
-	struct taskhead			idle_queue;
-	struct taskhead			queues[TASK_QUEUE_END];
-	unsigned			nthr;
-	unsigned			dry;
-	unsigned			lqueue;
-	uintmax_t			ndropped;
-	uintmax_t			nqueued;
-
-	struct mempool			*mpl_req;
-	struct mempool			*mpl_sess;
-	struct waiter			*waiter;
-};
-
-void *pool_herder(void*);
-task_func_t pool_stat_summ;
-extern struct lock			pool_mtx;
-void VCA_NewPool(struct pool *);
-void VCA_DestroyPool(struct pool *);
+struct dstat *Dstat_Get(void);
+void Dstat_Free(struct dstat **);
+void Dstat_Submit(struct dstat **);
