@@ -422,7 +422,7 @@ pool_breed(struct pool *qp)
  * pool_breed(), we sleep whenever we create a thread and a little while longer
  * whenever we fail to, hopefully missing a lot of cond_signals in the meantime.
  *
- * Idle threads are destroyed at a rate termined by wthread_destroy_delay
+ * Idle threads are destroyed at a rate determined by wthread_destroy_delay
  *
  * XXX: probably need a lot more work.
  *
