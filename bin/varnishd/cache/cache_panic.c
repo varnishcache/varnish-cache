@@ -39,6 +39,8 @@
 #include <stdlib.h>
 #include <signal.h>
 
+#include "vtim.h"
+
 #include "cache.h"
 #include "cache_transport.h"
 
@@ -629,6 +631,8 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	VSB_printf(pan_vsb, "version = %s\n", VCS_version);
 	VSB_printf(pan_vsb, "ident = %s,%s\n",
 	    VSB_data(vident) + 1, Waiter_GetName());
+	VSB_printf(pan_vsb, "now = %f (mono), %f (real)\n",
+	    VTIM_mono(), VTIM_real());
 
 	pan_backtrace(pan_vsb);
 
