@@ -447,7 +447,8 @@ vca_accept_task(struct worker *wrk, void *arg)
 
 		wa.acceptsock = i;
 
-		if (!Pool_Task_Arg(wrk, vca_make_session, &wa, sizeof wa)) {
+		if (!Pool_Task_Arg(wrk, TASK_QUEUE_VCA,
+		    vca_make_session, &wa, sizeof wa)) {
 			/*
 			 * We couldn't get another thread, so we will handle
 			 * the request in this worker thread, but first we
