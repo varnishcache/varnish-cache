@@ -1142,6 +1142,34 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+/* actual location mgt_pool.c */
+PARAM(
+	/* name */	thread_pool_reserve,
+	/* typ */	thread_pool_reserve,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	"0",
+	/* units */	"threads",
+	/* flags */	DELAYED_EFFECT| EXPERIMENTAL,
+	/* s-text */
+	"The number of worker threads reserved for vital tasks "
+	"in each pool.\n"
+	"\n"
+	"Tasks may require other tasks to complete (for example, "
+	"client requests may require backend requests). This reserve "
+	"is to ensure that such tasks still get to run even under high "
+	"load.\n"
+	"\n"
+	"Increasing the reserve may help setups with a high number of "
+	"backend requests at the expense of client performance. "
+	"Setting it too high will waste resources by keeping threads "
+	"unused.\n"
+	"\n"
+	"Default is 0 to auto-tune (currently 5% of thread_pool_min).\n"
+	"Minimum is 1 otherwise, maximum is 95% of thread_pool_min.",
+	/* l-text */	"",
+	/* func */	NULL
+)
 
 /* actual location mgt_pool.c */
 PARAM(

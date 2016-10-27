@@ -62,6 +62,8 @@ tweak_thread_pool_min(struct vsb *vsb, const struct parspec *par,
 		return (-1);
 	MCF_ParamConf(MCF_MINIMUM, "thread_pool_max",
 	    "%u", mgt_param.wthread_min);
+	MCF_ParamConf(MCF_MAXIMUM, "thread_pool_reserve",
+	    "%u", mgt_param.wthread_min * 950 / 1000);
 	return (0);
 }
 
@@ -116,6 +118,25 @@ struct parspec WRK_parspec[] = {
 		"Minimum is 10 threads.",
 		DELAYED_EFFECT,
 		"100", "threads" },
+	{ "thread_pool_reserve", tweak_uint, &mgt_param.wthread_reserve,
+		0, NULL,
+		"The number of worker threads reserved for vital tasks "
+		"in each pool.\n"
+		"\n"
+		"Tasks may require other tasks to complete (for example, "
+		"client requests may require backend requests). This reserve "
+		"is to ensure that such tasks still get to run even under high "
+		"load.\n"
+		"\n"
+		"Increasing the reserve may help setups with a high number of "
+		"backend requests at the expense of client performance. "
+		"Setting it too high will waste resources by keeping threads "
+		"unused.\n"
+		"\n"
+		"Default is 0 to auto-tune (currently 5% of thread_pool_min).\n"
+		"Minimum is 1 otherwise, maximum is 95% of thread_pool_min.",
+		DELAYED_EFFECT,
+		"0", "threads" },
 	{ "thread_pool_timeout",
 		tweak_timeout, &mgt_param.wthread_timeout,
 		"10", NULL,

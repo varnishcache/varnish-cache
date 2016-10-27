@@ -91,6 +91,7 @@ struct params {
 	/* Worker threads and pool */
 	unsigned		wthread_min;
 	unsigned		wthread_max;
+	unsigned		wthread_reserve;
 	double			wthread_timeout;
 	unsigned		wthread_pools;
 	double			wthread_add_delay;
