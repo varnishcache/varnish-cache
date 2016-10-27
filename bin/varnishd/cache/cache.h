@@ -303,7 +303,8 @@ struct pool_task {
 	void				*priv;
 };
 
-enum task_how {
+/* tasks are taken off the queues in this order */
+enum task_prio {
 	TASK_QUEUE_BO,
 	TASK_QUEUE_REQ,
 	TASK_QUEUE_VCA,
@@ -918,13 +919,13 @@ const char *body_status_2str(enum body_status e);
 const char *sess_close_2str(enum sess_close sc, int want_desc);
 
 /* cache_pool.c */
-int Pool_Task(struct pool *pp, struct pool_task *task, enum task_how how);
+int Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio how);
 int Pool_Task_Arg(struct worker *, task_func_t *,
     const void *arg, size_t arg_len);
 void Pool_Sumstat(struct worker *w);
 int Pool_TrySumstat(struct worker *wrk);
 void Pool_PurgeStat(unsigned nobj);
-int Pool_Task_Any(struct pool_task *task, enum task_how how);
+int Pool_Task_Any(struct pool_task *task, enum task_prio how);
 
 /* cache_range.c [VRG] */
 void VRG_dorange(struct req *req, const char *r);
