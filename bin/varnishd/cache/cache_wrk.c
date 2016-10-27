@@ -218,7 +218,7 @@ Pool_Task_Arg(struct worker *wrk, task_func_t *func,
  */
 
 int
-Pool_Task(struct pool *pp, struct pool_task *task, enum task_how how)
+Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio how)
 {
 	struct worker *wrk;
 	int retval = 0;
