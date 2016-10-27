@@ -148,17 +148,35 @@ pool_addstat(struct dstat *dst, struct dstat *src)
 	memset(src, 0, sizeof *src);
 }
 
+static inline int
+pool_reserve(void)
+{
+	unsigned lim;
+
+	if (cache_param->wthread_reserve == 0)
+		return (cache_param->wthread_min / 20 + 1);
+	lim = cache_param->wthread_min * 950 / 1000;
+	if (cache_param->wthread_reserve > lim)
+		return (lim);
+	return (cache_param->wthread_reserve);
+}
+
 /*--------------------------------------------------------------------*/
 
 static struct worker *
-pool_getidleworker(struct pool *pp)
+pool_getidleworker(struct pool *pp, enum task_prio how)
 {
-	struct pool_task *pt;
+	struct pool_task *pt = NULL;
 	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	Lck_AssertHeld(&pp->mtx);
-	pt = VTAILQ_FIRST(&pp->idle_queue);
+	if (how <= TASK_QUEUE_RESERVE || pp->nidle > pool_reserve()) {
+		pt = VTAILQ_FIRST(&pp->idle_queue);
+		if (pt == NULL)
+			AZ(pp->nidle);
+	}
+
 	if (pt == NULL) {
 		if (pp->nthr < cache_param->wthread_max) {
 			pp->dry++;
@@ -179,7 +197,7 @@ pool_getidleworker(struct pool *pp)
  */
 
 int
-Pool_Task_Arg(struct worker *wrk, task_func_t *func,
+Pool_Task_Arg(struct worker *wrk, enum task_prio how, task_func_t *func,
     const void *arg, size_t arg_len)
 {
 	struct pool *pp;
@@ -193,9 +211,11 @@ Pool_Task_Arg(struct worker *wrk, task_func_t *func,
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 
 	Lck_Lock(&pp->mtx);
-	wrk2 = pool_getidleworker(pp);
+	wrk2 = pool_getidleworker(pp, how);
 	if (wrk2 != NULL) {
+		AN(pp->nidle);
 		VTAILQ_REMOVE(&pp->idle_queue, &wrk2->task, list);
+		pp->nidle--;
 		retval = 1;
 	} else {
 		wrk2 = wrk;
@@ -222,7 +242,6 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio how)
 {
 	struct worker *wrk;
 	int retval = 0;
-
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	AN(task);
 	AN(task->func);
@@ -232,9 +251,11 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio how)
 
 	/* The common case first:  Take an idle thread, do it. */
 
-	wrk = pool_getidleworker(pp);
+	wrk = pool_getidleworker(pp, how);
 	if (wrk != NULL) {
+		AN(pp->nidle);
 		VTAILQ_REMOVE(&pp->idle_queue, &wrk->task, list);
+		pp->nidle--;
 		AZ(wrk->task.func);
 		wrk->task.func = task->func;
 		wrk->task.priv = task->priv;
@@ -282,7 +303,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 {
 	struct pool_task *tp;
 	struct pool_task tpx, tps;
-	int i;
+	int i, prio_lim;
 
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	wrk->pool = pp;
@@ -294,7 +315,12 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 		WS_Reset(wrk->aws, NULL);
 		AZ(wrk->vsl);
 
-		for (i = 0; i < TASK_QUEUE_END; i++) {
+		if (pp->nidle < pool_reserve())
+			prio_lim = TASK_QUEUE_RESERVE + 1;
+		else
+			prio_lim = TASK_QUEUE_END;
+
+		for (i = 0; i < prio_lim; i++) {
 			tp = VTAILQ_FIRST(&pp->queues[i]);
 			if (tp != NULL) {
 				pp->lqueue--;
@@ -323,6 +349,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 			wrk->task.func = NULL;
 			wrk->task.priv = wrk;
 			VTAILQ_INSERT_HEAD(&pp->idle_queue, &wrk->task, list);
+			pp->nidle++;
 			do {
 				i = Lck_CondWait(&wrk->cond, &pp->mtx,
 				    wrk->vcl == NULL ?  0 : wrk->lastused+60.);
@@ -468,6 +495,7 @@ pool_herder(void *priv)
 			wrk = NULL;
 			pt = VTAILQ_LAST(&pp->idle_queue, taskhead);
 			if (pt != NULL) {
+				AN(pp->nidle);
 				AZ(pt->func);
 				CAST_OBJ_NOTNULL(wrk, pt->priv, WORKER_MAGIC);
 
@@ -476,6 +504,7 @@ pool_herder(void *priv)
 					/* Give it a kiss on the cheek... */
 					VTAILQ_REMOVE(&pp->idle_queue,
 					    &wrk->task, list);
+					pp->nidle--;
 					wrk->task.func = pool_kiss_of_death;
 					AZ(pthread_cond_signal(&wrk->cond));
 				} else {

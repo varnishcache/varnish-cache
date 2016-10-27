@@ -1,0 +1,23 @@
+varnishtest "thread_pool_reserve max adjustment"
+
+server s1 {
+} -start
+
+varnish v1 \
+	-arg "-p thread_pool_min=10" \
+	-arg "-p thread_pool_max=100" \
+	-arg "-p thread_pools=1" \
+	-arg "-p thread_pool_timeout=10" \
+	-vcl+backend {}
+varnish v1 -start
+
+varnish v1 -cliok "param.set thread_pool_reserve 0"
+varnish v1 -cliok "param.set thread_pool_reserve 1"
+varnish v1 -cliok "param.set thread_pool_reserve 9"
+varnish v1 -clierr 106 "param.set thread_pool_reserve 10"
+
+varnish v1 -cliok "param.set thread_pool_min 100"
+varnish v1 -cliok "param.set thread_pool_reserve 0"
+varnish v1 -cliok "param.set thread_pool_reserve 1"
+varnish v1 -cliok "param.set thread_pool_reserve 95"
+varnish v1 -clierr 106 "param.set thread_pool_reserve 96"

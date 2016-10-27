@@ -55,6 +55,7 @@
 
 static char min_val[20];
 static char max_val[20];
+static char reserve_max_val[20];
 
 static int
 tweak_thread_pool_min(struct vsb *vsb, const struct parspec *par,
@@ -64,10 +65,18 @@ tweak_thread_pool_min(struct vsb *vsb, const struct parspec *par,
 
 	if (tweak_generic_uint(vsb, par->priv, arg, par->min, par->max))
 		return (-1);
+
 	AN(VSB_new(&v2, min_val, sizeof min_val, 0));
 	AZ(tweak_generic_uint(&v2, &mgt_param.wthread_min, NULL, NULL, NULL));
 	AZ(VSB_finish(&v2));
 	MCF_SetMinimum("thread_pool_max", min_val);
+
+	unsigned t = mgt_param.wthread_min * 19 / 20;
+	AN(VSB_new(&v2, reserve_max_val, sizeof reserve_max_val, 0));
+	AZ(tweak_generic_uint(&v2, &t, NULL, NULL, NULL));
+	AZ(VSB_finish(&v2));
+	MCF_SetMaximum("thread_pool_reserve", reserve_max_val);
+
 	return (0);
 }
 
@@ -125,6 +134,25 @@ struct parspec WRK_parspec[] = {
 		"Minimum is 10 threads.",
 		DELAYED_EFFECT,
 		"100", "threads" },
+	{ "thread_pool_reserve", tweak_uint, &mgt_param.wthread_reserve,
+		0, NULL,
+		"The number of worker threads reserved for vital tasks "
+		"in each pool.\n"
+		"\n"
+		"Tasks may require other tasks to complete (for example, "
+		"client requests may require backend requests). This reserve "
+		"is to ensure that such tasks still get to run even under high "
+		"load.\n"
+		"\n"
+		"Increasing the reserve may help setups with a high number of "
+		"backend requests at the expense of client performance. "
+		"Setting it too high will waste resources by keeping threads "
+		"unused.\n"
+		"\n"
+		"Default is 0 to auto-tune (currently 5% of thread_pool_min).\n"
+		"Minimum is 1 otherwise, maximum is 95% of thread_pool_min.",
+		DELAYED_EFFECT,
+		"0", "threads" },
 	{ "thread_pool_timeout",
 		tweak_timeout, &mgt_param.wthread_timeout,
 		"10", NULL,

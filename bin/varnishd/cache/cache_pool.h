@@ -42,6 +42,7 @@ struct pool {
 	pthread_t			herder_thr;
 
 	struct lock			mtx;
+	unsigned			nidle;
 	struct taskhead			idle_queue;
 	struct taskhead			queues[TASK_QUEUE_END];
 	unsigned			nthr;
