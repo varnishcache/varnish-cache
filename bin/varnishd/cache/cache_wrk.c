@@ -243,8 +243,11 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_how how)
 		return (0);
 	}
 
-	/* Acceptors are not subject to queue limits */
-	if (how == TASK_QUEUE_VCA ||
+	/*
+	 * queue limits only apply to client threads - all other
+	 * work is vital and needs do be done at the earliest
+	 */
+	if (how != TASK_QUEUE_REQ ||
 	    pp->lqueue < cache_param->wthread_max +
 	    cache_param->wthread_queue_limit + pp->nthr) {
 		pp->nqueued++;
