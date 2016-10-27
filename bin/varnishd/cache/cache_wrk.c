@@ -435,22 +435,24 @@ pool_herder(void *priv)
 	struct pool_task *pt;
 	double t_idle;
 	struct worker *wrk;
-	int delay;
+	int delay, wthread_min;
 
 	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
 
 	while (1) {
+		wthread_min = cache_param->wthread_min;
+
 		/* Make more threads if needed and allowed */
-		if (pp->nthr < cache_param->wthread_min ||
+		if (pp->nthr < wthread_min ||
 		    (pp->dry && pp->nthr < cache_param->wthread_max)) {
 			pool_breed(pp);
 			continue;
 		}
 
 		delay = cache_param->wthread_timeout;
-		assert(pp->nthr >= cache_param->wthread_min);
+		assert(pp->nthr >= wthread_min);
 
-		if (pp->nthr > cache_param->wthread_min) {
+		if (pp->nthr > wthread_min) {
 
 			t_idle = VTIM_real() - cache_param->wthread_timeout;
 
