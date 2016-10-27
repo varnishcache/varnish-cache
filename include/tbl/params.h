@@ -1215,7 +1215,7 @@ PARAM(
 	/* units */	NULL,
 	/* flags */	EXPERIMENTAL,
 	/* s-text */
-	"Permitted queue length per thread-pool.\n"
+	"Permitted request queue length per thread-pool.\n"
 	"\n"
 	"This sets the number of requests we will queue, waiting for an "
 	"available thread.  Above this limit sessions will be dropped "
