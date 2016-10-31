@@ -223,7 +223,7 @@ fmt_bytes(struct vsb *vsb, uintmax_t t)
 {
 	const char *p;
 
-	if (t & 0xff) {
+	if (t == 0 || t & 0xff) {
 		VSB_printf(vsb, "%jub", t);
 		return;
 	}
