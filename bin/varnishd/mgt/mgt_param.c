@@ -414,7 +414,7 @@ MCF_AddParams(struct parspec *ps)
  */
 
 static void
-mcf_wash_param(struct cli *cli, const struct parspec *pp, const char **val,
+mcf_wash_param(struct cli *cli, struct parspec *pp, const char **val,
     const char *name, struct vsb *vsb)
 {
 	enum tweak_r_e err;
@@ -423,7 +423,9 @@ mcf_wash_param(struct cli *cli, const struct parspec *pp, const char **val,
 	VSB_clear(vsb);
 	VSB_printf(vsb, "FAILED to set %s for param %s: %s\n",
 	    name, pp->name, *val);
+	pp->flags |= _LIMITING;
 	err = pp->func(vsb, pp, *val);
+	pp->flags &= ~_LIMITING;
 	AZ(VSB_finish(vsb));
 	if (err != TWOK) {
 		VCLI_Out(cli, "%s\n", VSB_data(vsb));
@@ -487,6 +489,61 @@ MCF_CollectParams(void)
 	MCF_AddParams(VSL_parspec);
 }
 
+/*--------------------------------------------------------------------
+ * re-check current value against (new) limits
+ */
+static void
+mcf_limit(struct parspec *pp, struct vsb *vsb) {
+	enum tweak_r_e err;
+	struct vsb *vsb2;
+	const char *lim = NULL;
+	const char *why = NULL;
+
+	// break recursion
+	if (pp->flags & _LIMITING)
+		return;
+
+	pp->flags |= _LIMITING;
+
+	VSB_clear(vsb);
+	err = pp->func(vsb, pp, NULL);
+	assert(err == TWOK);
+	AZ(VSB_finish(vsb));
+
+	vsb2 = VSB_new_auto();
+	AN(vsb2);
+
+	err = pp->func(vsb2, pp, VSB_data(vsb));
+	assert(err != TWEFMT);
+
+	switch (err) {
+	case TWOK:
+		break;
+	case TWESMALL:
+		lim = pp->min;
+		why = "small";
+		break;
+	case TWEBIG:
+		lim = pp->max;
+		why = "big";
+		break;
+	default:
+		INCOMPL();
+	}
+
+	if (lim == NULL)
+		return;
+
+	AN(why);
+	printf("%s %s too %s - limiting to %s\n", pp->name,
+	    VSB_data(vsb), why, lim);
+	err = pp->func(vsb2, pp, lim);
+	assert(err == TWOK);
+
+	pp->flags &= ~_LIMITING;
+	VSB_destroy(&vsb2);
+	VSB_clear(vsb);
+}
 /*--------------------------------------------------------------------*/
 
 void
@@ -512,10 +569,12 @@ MCF_ParamConf(enum mcf_which_e which, const char *param, const char *fmt, ...)
 	case MCF_MINIMUM:
 		pp->min = strdup(VSB_data(vsb));
 		AN(pp->min);
+		mcf_limit(pp, vsb);
 		break;
 	case MCF_MAXIMUM:
 		pp->max = strdup(VSB_data(vsb));
 		AN(pp->max);
+		mcf_limit(pp, vsb);
 		break;
 	}
 	VSB_delete(vsb);

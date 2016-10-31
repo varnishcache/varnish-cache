@@ -332,6 +332,8 @@ tweak_vsl_buffer(struct vsb *vsb, struct parspec *par, const char *arg)
 	volatile ssize_t dest;
 	enum tweak_r_e r;
 
+	par->flags |= _LIMITING;
+
 	d1 = par->priv;
 	dest = *d1;
 	r = tweak_generic_bytes(vsb, &dest, arg, par->min, par->max);
@@ -340,6 +342,9 @@ tweak_vsl_buffer(struct vsb *vsb, struct parspec *par, const char *arg)
 		MCF_ParamConf(MCF_MAXIMUM, "vsl_reclen", "%u", *d1 - 12);
 		MCF_ParamConf(MCF_MAXIMUM, "shm_reclen", "%u", *d1 - 12);
 	}
+
+	par->flags &= ~_LIMITING;
+
 	return (r);
 }
 
@@ -350,6 +355,8 @@ tweak_vsl_reclen(struct vsb *vsb, struct parspec *par, const char *arg)
 	volatile ssize_t dest;
 	enum tweak_r_e r;
 
+	par->flags |= _LIMITING;
+
 	d1 = par->priv;
 	dest = *d1;
 	r = tweak_generic_bytes(vsb, &dest, arg, par->min, par->max);
@@ -357,6 +364,9 @@ tweak_vsl_reclen(struct vsb *vsb, struct parspec *par, const char *arg)
 		*d1 = dest;
 		MCF_ParamConf(MCF_MINIMUM, "vsl_buffer", "%u", *d1 + 12);
 	}
+
+	par->flags &= ~_LIMITING;
+
 	return (r);
 }
 

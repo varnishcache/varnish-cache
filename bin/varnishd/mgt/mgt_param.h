@@ -56,6 +56,7 @@ struct parspec {
 #define PROTECTED	(1<<5)
 #define OBJ_STICKY	(1<<6)
 #define ONLY_ROOT	(1<<7)
+#define _LIMITING	(1<<8)
 	const char	*def;
 	const char	*units;
 };
