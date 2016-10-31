@@ -360,8 +360,9 @@ backend name.
 
 `ident` allows to add multiple instances of the same backend.
 
-`rampup`: Optionally specify a rampup time for this backend. Defaults
-to the director rampup time.
+`rampup`: Optionally specify a specific rampup time for this
+backend. The magic default value of `973279260s` instructs the shard
+director to use the default rampup time (see :ref:`func_shard.set_rampup`).
 
 NOTE: Backend changes need to be finalized with `shard.reconfigure()`
 and are only supported on one shard director at a time.
