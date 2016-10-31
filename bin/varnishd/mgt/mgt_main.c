@@ -443,12 +443,12 @@ init_params(struct cli *cli)
 #endif
 
 	low = sysconf(_SC_THREAD_STACK_MIN);
-	MCF_ParamConf(MCF_MINIMUM, "thread_pool_stack", "%jd", (intmax_t)low);
+	MCF_ParamConf(MCF_MINIMUM, "thread_pool_stack", "%jdb", (intmax_t)low);
 
 	def = 48 * 1024;
 	if (def < low)
 		def = low;
-	MCF_ParamConf(MCF_DEFAULT, "thread_pool_stack", "%jd", (intmax_t)def);
+	MCF_ParamConf(MCF_DEFAULT, "thread_pool_stack", "%jdb", (intmax_t)def);
 
 	MCF_ParamConf(MCF_MAXIMUM, "thread_pools", "%d", MAX_THREAD_POOLS);
 
