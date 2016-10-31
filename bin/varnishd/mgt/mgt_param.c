@@ -417,7 +417,7 @@ static void
 mcf_wash_param(struct cli *cli, const struct parspec *pp, const char **val,
     const char *name, struct vsb *vsb)
 {
-	int err;
+	enum tweak_r_e err;
 
 	AN(*val);
 	VSB_clear(vsb);
@@ -425,14 +425,14 @@ mcf_wash_param(struct cli *cli, const struct parspec *pp, const char **val,
 	    name, pp->name, *val);
 	err = pp->func(vsb, pp, *val);
 	AZ(VSB_finish(vsb));
-	if (err) {
+	if (err != TWOK) {
 		VCLI_Out(cli, "%s\n", VSB_data(vsb));
 		VCLI_SetResult(cli, CLIS_CANT);
 		return;
 	}
 	VSB_clear(vsb);
 	err = pp->func(vsb, pp, NULL);
-	AZ(err);
+	assert(err == TWOK);
 	AZ(VSB_finish(vsb));
 	if (strcmp(*val, VSB_data(vsb))) {
 		*val = strdup(VSB_data(vsb));

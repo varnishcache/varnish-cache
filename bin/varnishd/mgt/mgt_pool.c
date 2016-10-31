@@ -53,30 +53,34 @@
  * limit, so they don't end up crossing.
  */
 
-static int
+static enum tweak_r_e __match_proto__(tweak_t)
 tweak_thread_pool_min(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
+	enum tweak_r_e r;
 
-	if (tweak_generic_uint(vsb, par->priv, arg, par->min, par->max))
-		return (-1);
-	MCF_ParamConf(MCF_MINIMUM, "thread_pool_max",
-	    "%u", mgt_param.wthread_min);
-	MCF_ParamConf(MCF_MAXIMUM, "thread_pool_reserve",
-	    "%u", mgt_param.wthread_min * 950 / 1000);
-	return (0);
+	r = tweak_generic_uint(vsb, par->priv, arg, par->min, par->max);
+	if (r == TWOK) {
+		MCF_ParamConf(MCF_MINIMUM, "thread_pool_max",
+		    "%u", mgt_param.wthread_min);
+		MCF_ParamConf(MCF_MAXIMUM, "thread_pool_reserve",
+		    "%u", mgt_param.wthread_min * 950 / 1000);
+	}
+	return (r);
 }
 
-static int
+static enum tweak_r_e __match_proto__(tweak_t)
 tweak_thread_pool_max(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
+	enum tweak_r_e r;
 
-	if (tweak_generic_uint(vsb, par->priv, arg, par->min, par->max))
-		return (-1);
-	MCF_ParamConf(MCF_MAXIMUM, "thread_pool_min",
-	    "%u", mgt_param.wthread_max);
-	return (0);
+	r = tweak_generic_uint(vsb, par->priv, arg, par->min, par->max);
+	if (r == TWOK) {
+		MCF_ParamConf(MCF_MAXIMUM, "thread_pool_min",
+		    "%u", mgt_param.wthread_max);
+	}
+	return (r);
 }
 
 /*--------------------------------------------------------------------*/

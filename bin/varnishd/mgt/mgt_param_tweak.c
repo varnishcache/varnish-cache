@@ -49,7 +49,7 @@
  * Generic handling of double typed parameters
  */
 
-static int
+static enum tweak_r_e __match_proto__(tweak_t)
 tweak_generic_double(struct vsb *vsb, volatile double *dest,
     const char *arg, const char *min, const char *max, const char *fmt)
 {
@@ -60,41 +60,41 @@ tweak_generic_double(struct vsb *vsb, volatile double *dest,
 			minv = VNUM(min);
 			if (isnan(minv)) {
 				VSB_printf(vsb, "Illegal Min: %s\n", min);
-				return (-1);
+				return (TWEFMT);
 			}
 		}
 		if (max != NULL) {
 			maxv = VNUM(max);
 			if (isnan(maxv)) {
 				VSB_printf(vsb, "Illegal Max: %s\n", max);
-				return (-1);
+				return (TWEFMT);
 			}
 		}
 
 		u = VNUM(arg);
 		if (isnan(u)) {
 			VSB_printf(vsb, "Not a number(%s)\n", arg);
-			return (-1);
+			return (TWEFMT);
 		}
 		if (min != NULL && u < minv) {
 			VSB_printf(vsb,
 			    "Must be greater or equal to %s\n", min);
-			return (-1);
+			return (TWESMALL);
 		}
 		if (max != NULL && u > maxv) {
 			VSB_printf(vsb,
 			    "Must be less than or equal to %s\n", max);
-			return (-1);
+			return (TWEBIG);
 		}
 		*dest = u;
 	} else
 		VSB_printf(vsb, fmt, *dest);
-	return (0);
+	return (TWOK);
 }
 
 /*--------------------------------------------------------------------*/
 
-int
+enum tweak_r_e __match_proto__(tweak_t)
 tweak_timeout(struct vsb *vsb, const struct parspec *par,
     const char *arg)
 {
@@ -107,7 +107,7 @@ tweak_timeout(struct vsb *vsb, const struct parspec *par,
 
 /*--------------------------------------------------------------------*/
 
-int
+enum tweak_r_e __match_proto__(tweak_t)
 tweak_double(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile double *dest;
@@ -119,7 +119,7 @@ tweak_double(struct vsb *vsb, const struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
-int
+enum tweak_r_e __match_proto__(tweak_t)
 tweak_bool(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
@@ -144,17 +144,17 @@ tweak_bool(struct vsb *vsb, const struct parspec *par, const char *arg)
 			*dest = 1;
 		else {
 			VSB_printf(vsb, "use \"on\" or \"off\"\n");
-			return (-1);
+			return (TWEFMT);
 		}
 	} else {
 		VSB_printf(vsb, "%s", *dest ? "on" : "off");
 	}
-	return (0);
+	return (TWOK);
 }
 
 /*--------------------------------------------------------------------*/
 
-int
+enum tweak_r_e
 tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
     const char *min, const char *max)
 {
@@ -167,7 +167,7 @@ tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
 			minv = strtoul(min, &p, 0);
 			if (*arg == '\0' || *p != '\0') {
 				VSB_printf(vsb, "Illegal Min: %s\n", min);
-				return (-1);
+				return (TWEFMT);
 			}
 		}
 		if (max != NULL) {
@@ -175,7 +175,7 @@ tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
 			maxv = strtoul(max, &p, 0);
 			if (*arg == '\0' || *p != '\0') {
 				VSB_printf(vsb, "Illegal Max: %s\n", max);
-				return (-1);
+				return (TWEFMT);
 			}
 		}
 		p = NULL;
@@ -185,16 +185,16 @@ tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
 			u = strtoul(arg, &p, 0);
 			if (*arg == '\0' || *p != '\0') {
 				VSB_printf(vsb, "Not a number (%s)\n", arg);
-				return (-1);
+				return (TWEFMT);
 			}
 		}
 		if (min != NULL && u < minv) {
 			VSB_printf(vsb, "Must be at least %s\n", min);
-			return (-1);
+			return (TWESMALL);
 		}
 		if (max != NULL && u > maxv) {
 			VSB_printf(vsb, "Must be no more than %s\n", max);
-			return (-1);
+			return (TWEBIG);
 		}
 		*dest = u;
 	} else if (*dest == UINT_MAX) {
@@ -202,12 +202,12 @@ tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
 	} else {
 		VSB_printf(vsb, "%u", *dest);
 	}
-	return (0);
+	return (TWOK);
 }
 
 /*--------------------------------------------------------------------*/
 
-int
+enum tweak_r_e __match_proto__(tweak_t)
 tweak_uint(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
@@ -241,7 +241,7 @@ fmt_bytes(struct vsb *vsb, uintmax_t t)
 	VSB_printf(vsb, "(bogus number)");
 }
 
-static int
+static enum tweak_r_e __match_proto__(tweak_t)
 tweak_generic_bytes(struct vsb *vsb, volatile ssize_t *dest, const char *arg,
     const char *min, const char *max)
 {
@@ -253,14 +253,14 @@ tweak_generic_bytes(struct vsb *vsb, volatile ssize_t *dest, const char *arg,
 			p = VNUM_2bytes(min, &rmin, 0);
 			if (p != NULL) {
 				VSB_printf(vsb, "Invalid min-val: %s\n", min);
-				return (-1);
+				return (TWEFMT);
 			}
 		}
 		if (max != NULL) {
 			p = VNUM_2bytes(max, &rmax, 0);
 			if (p != NULL) {
 				VSB_printf(vsb, "Invalid max-val: %s\n", max);
-				return (-1);
+				return (TWEFMT);
 			}
 		}
 		p = VNUM_2bytes(arg, &r, 0);
@@ -269,33 +269,33 @@ tweak_generic_bytes(struct vsb *vsb, volatile ssize_t *dest, const char *arg,
 			VSB_printf(vsb, "%s\n", p);
 			VSB_printf(vsb,
 			    "  Try something like '80k' or '120M'\n");
-			return (-1);
+			return (TWEFMT);
 		}
 		if ((uintmax_t)((ssize_t)r) != r) {
 			fmt_bytes(vsb, r);
 			VSB_printf(vsb,
 			    " is too large for this architecture.\n");
-			return (-1);
+			return (TWEFMT);
 		}
 		if (max != NULL && r > rmax) {
 			VSB_printf(vsb, "Must be no more than %s\n", max);
 			VSB_printf(vsb, "\n");
-			return (-1);
+			return (TWEBIG);
 		}
 		if (min != NULL && r < rmin) {
 			VSB_printf(vsb, "Must be at least %s\n", min);
-			return (-1);
+			return (TWESMALL);
 		}
 		*dest = r;
 	} else {
 		fmt_bytes(vsb, *dest);
 	}
-	return (0);
+	return (TWOK);
 }
 
 /*--------------------------------------------------------------------*/
 
-int
+enum tweak_r_e __match_proto__(tweak_t)
 tweak_bytes(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile ssize_t *dest;
@@ -306,58 +306,63 @@ tweak_bytes(struct vsb *vsb, const struct parspec *par, const char *arg)
 
 /*--------------------------------------------------------------------*/
 
-int
+enum tweak_r_e __match_proto__(tweak_t)
 tweak_bytes_u(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *d1;
 	volatile ssize_t dest;
+	enum tweak_r_e r;
 
 	d1 = par->priv;
 	dest = *d1;
-	if (tweak_generic_bytes(vsb, &dest, arg, par->min, par->max))
-		return (-1);
-	*d1 = dest;
-	return (0);
+	r = tweak_generic_bytes(vsb, &dest, arg, par->min, par->max);
+	if (r == TWOK)
+		*d1 = dest;
+	return (r);
 }
 
 /*--------------------------------------------------------------------
  * vsl_buffer and vsl_reclen have dependencies.
  */
 
-int
+enum tweak_r_e __match_proto__(tweak_t)
 tweak_vsl_buffer(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *d1;
 	volatile ssize_t dest;
+	enum tweak_r_e r;
 
 	d1 = par->priv;
 	dest = *d1;
-	if (tweak_generic_bytes(vsb, &dest, arg, par->min, par->max))
-		return (-1);
-	*d1 = dest;
-	MCF_ParamConf(MCF_MAXIMUM, "vsl_reclen", "%u", *d1 - 12);
-	MCF_ParamConf(MCF_MAXIMUM, "shm_reclen", "%u", *d1 - 12);
-	return (0);
+	r = tweak_generic_bytes(vsb, &dest, arg, par->min, par->max);
+	if (r == TWOK) {
+		*d1 = dest;
+		MCF_ParamConf(MCF_MAXIMUM, "vsl_reclen", "%u", *d1 - 12);
+		MCF_ParamConf(MCF_MAXIMUM, "shm_reclen", "%u", *d1 - 12);
+	}
+	return (r);
 }
 
-int
+enum tweak_r_e __match_proto__(tweak_t)
 tweak_vsl_reclen(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile unsigned *d1;
 	volatile ssize_t dest;
+	enum tweak_r_e r;
 
 	d1 = par->priv;
 	dest = *d1;
-	if (tweak_generic_bytes(vsb, &dest, arg, par->min, par->max))
-		return (-1);
-	*d1 = dest;
-	MCF_ParamConf(MCF_MINIMUM, "vsl_buffer", "%u", *d1 + 12);
-	return (0);
+	r = tweak_generic_bytes(vsb, &dest, arg, par->min, par->max);
+	if (r == TWOK) {
+		*d1 = dest;
+		MCF_ParamConf(MCF_MINIMUM, "vsl_buffer", "%u", *d1 + 12);
+	}
+	return (r);
 }
 
 /*--------------------------------------------------------------------*/
 
-int
+enum tweak_r_e __match_proto__(tweak_t)
 tweak_string(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	char **p = TRUST_ME(par->priv);
@@ -369,17 +374,17 @@ tweak_string(struct vsb *vsb, const struct parspec *par, const char *arg)
 	} else {
 		REPLACE(*p, arg);
 	}
-	return (0);
+	return (TWOK);
 }
 
 /*--------------------------------------------------------------------*/
 
-int
+enum tweak_r_e __match_proto__(tweak_t)
 tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
 {
 	volatile struct poolparam *pp, px;
 	char **av;
-	int retval = 0;
+	enum tweak_r_e retval = TWOK;
 
 	pp = par->priv;
 	if (arg == NULL) {
@@ -390,14 +395,14 @@ tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
 		do {
 			if (av[0] != NULL) {
 				VSB_printf(vsb, "Parse error: %s", av[0]);
-				retval = -1;
+				retval = TWEFMT;
 				break;
 			}
 			if (av[1] == NULL || av[2] == NULL || av[3] == NULL) {
 				VSB_printf(vsb,
 				    "Three fields required:"
 				    " min_pool, max_pool and max_age\n");
-				retval = -1;
+				retval = TWEFMT;
 				break;
 			}
 			px = *pp;
@@ -417,7 +422,7 @@ tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
 				VSB_printf(vsb,
 				    "min_pool cannot be larger"
 				    " than max_pool\n");
-				retval = -1;
+				retval = TWEFMT;
 				break;
 			}
 			*pp = px;

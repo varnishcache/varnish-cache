@@ -62,7 +62,7 @@ bit(uint8_t *p, unsigned no, enum bit_do act)
 /*--------------------------------------------------------------------
  */
 
-static int
+static enum tweak_r_e __match_proto__(tweak_t)
 bit_tweak(struct vsb *vsb, uint8_t *p, unsigned l, const char *arg,
     const char * const *tags, const char *desc, const char *sign)
 {
@@ -75,14 +75,14 @@ bit_tweak(struct vsb *vsb, uint8_t *p, unsigned l, const char *arg,
 	if (av[0] != NULL) {
 		VSB_printf(vsb, "Cannot parse: %s\n", av[0]);
 		VAV_Free(av);
-		return (-1);
+		return (TWEFMT);
 	}
 	for (i = 1; av[i] != NULL; i++) {
 		s = av[i];
 		if (*s != '-' && *s != '+') {
 			VSB_printf(vsb, "Missing '+' or '-' (%s)\n", s);
 			VAV_Free(av);
-			return (-1);
+			return (TWEFMT);
 		}
 		for (j = 0; j < l; j++) {
 			if (tags[j] != NULL && !strcasecmp(s + 1, tags[j]))
@@ -91,7 +91,7 @@ bit_tweak(struct vsb *vsb, uint8_t *p, unsigned l, const char *arg,
 		if (tags[j] == NULL) {
 			VSB_printf(vsb, "Unknown %s (%s)\n", desc, s);
 			VAV_Free(av);
-			return (-1);
+			return (TWEFMT);
 		}
 		assert(j < l);
 		if (s[0] == *sign)
@@ -100,7 +100,7 @@ bit_tweak(struct vsb *vsb, uint8_t *p, unsigned l, const char *arg,
 			(void)bit(p, j, BCLR);
 	}
 	VAV_Free(av);
-	return (0);
+	return (TWOK);
 }
 
 
@@ -146,7 +146,7 @@ tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
 		if (*s == '\0')
 			VSB_printf(vsb, "(all enabled)");
 	}
-	return (0);
+	return (TWOK);
 }
 
 /*--------------------------------------------------------------------
@@ -186,7 +186,7 @@ tweak_debug(struct vsb *vsb, const struct parspec *par, const char *arg)
 		if (*s == '\0')
 			VSB_printf(vsb, "none");
 	}
-	return (0);
+	return (TWOK);
 }
 
 /*--------------------------------------------------------------------
@@ -227,7 +227,7 @@ tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
 		if (*s == '\0')
 			VSB_printf(vsb, "none");
 	}
-	return (0);
+	return (TWOK);
 }
 
 /*--------------------------------------------------------------------
