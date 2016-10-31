@@ -148,17 +148,35 @@ pool_addstat(struct dstat *dst, struct dstat *src)
 	memset(src, 0, sizeof *src);
 }
 
+static inline int
+pool_reserve(void)
+{
+	unsigned lim;
+
+	if (cache_param->wthread_reserve == 0)
+		return cache_param->wthread_min / 20 + 1;
+	lim = cache_param->wthread_min * 950 / 1000;
+	if (cache_param->wthread_reserve > lim)
+		return lim;
+	return cache_param->wthread_reserve;
+}
+
 /*--------------------------------------------------------------------*/
 
 static struct worker *
-pool_getidleworker(struct pool *pp)
+pool_getidleworker(struct pool *pp, enum task_prio how)
 {
-	struct pool_task *pt;
+	struct pool_task *pt = NULL;
 	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	Lck_AssertHeld(&pp->mtx);
-	pt = VTAILQ_FIRST(&pp->idle_queue);
+	if (how <= TASK_QUEUE_RESERVE || pp->nidle > pool_reserve()) {
+		pt = VTAILQ_FIRST(&pp->idle_queue);
+		if (pt == NULL)
+			AZ(pp->nidle);
+	}
+
 	if (pt == NULL) {
 		if (pp->nthr < cache_param->wthread_max) {
 			pp->dry++;
@@ -179,7 +197,7 @@ pool_getidleworker(struct pool *pp)
  */
 
 int
-Pool_Task_Arg(struct worker *wrk, task_func_t *func,
+Pool_Task_Arg(struct worker *wrk, enum task_prio how, task_func_t *func,
     const void *arg, size_t arg_len)
 {
 	struct pool *pp;
@@ -193,9 +211,11 @@ Pool_Task_Arg(struct worker *wrk, task_func_t *func,
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 
 	Lck_Lock(&pp->mtx);
-	wrk2 = pool_getidleworker(pp);
+	wrk2 = pool_getidleworker(pp, how);
 	if (wrk2 != NULL) {
+		AN(pp->nidle);
 		VTAILQ_REMOVE(&pp->idle_queue, &wrk2->task, list);
+		pp->nidle--;
 		retval = 1;
 	} else {
 		wrk2 = wrk;
@@ -218,11 +238,10 @@ Pool_Task_Arg(struct worker *wrk, task_func_t *func,
  */
 
 int
-Pool_Task(struct pool *pp, struct pool_task *task, enum task_how how)
+Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio how)
 {
 	struct worker *wrk;
 	int retval = 0;
-
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	AN(task);
 	AN(task->func);
@@ -232,9 +251,11 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_how how)
 
 	/* The common case first:  Take an idle thread, do it. */
 
-	wrk = pool_getidleworker(pp);
+	wrk = pool_getidleworker(pp, how);
 	if (wrk != NULL) {
+		AN(pp->nidle);
 		VTAILQ_REMOVE(&pp->idle_queue, &wrk->task, list);
+		pp->nidle--;
 		AZ(wrk->task.func);
 		wrk->task.func = task->func;
 		wrk->task.priv = task->priv;
@@ -243,8 +264,11 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_how how)
 		return (0);
 	}
 
-	/* Acceptors are not subject to queue limits */
-	if (how == TASK_QUEUE_VCA ||
+	/*
+	 * queue limits only apply to client threads - all other
+	 * work is vital and needs do be done at the earliest
+	 */
+	if (how != TASK_QUEUE_REQ ||
 	    pp->lqueue < cache_param->wthread_max +
 	    cache_param->wthread_queue_limit + pp->nthr) {
 		pp->nqueued++;
@@ -279,7 +303,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 {
 	struct pool_task *tp;
 	struct pool_task tpx, tps;
-	int i;
+	int i, prio_lim;
 
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	wrk->pool = pp;
@@ -291,7 +315,12 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 		WS_Reset(wrk->aws, NULL);
 		AZ(wrk->vsl);
 
-		for (i = 0; i < TASK_QUEUE_END; i++) {
+		if (pp->nidle < pool_reserve())
+			prio_lim = TASK_QUEUE_RESERVE + 1;
+		else
+			prio_lim = TASK_QUEUE_END;
+
+		for (i = 0; i < prio_lim; i++) {
 			tp = VTAILQ_FIRST(&pp->queues[i]);
 			if (tp != NULL) {
 				pp->lqueue--;
@@ -320,6 +349,7 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 			wrk->task.func = NULL;
 			wrk->task.priv = wrk;
 			VTAILQ_INSERT_HEAD(&pp->idle_queue, &wrk->task, list);
+			pp->nidle++;
 			do {
 				i = Lck_CondWait(&wrk->cond, &pp->mtx,
 				    wrk->vcl == NULL ?  0 : wrk->lastused+60.);
@@ -416,7 +446,8 @@ pool_breed(struct pool *qp)
 /*--------------------------------------------------------------------
  * Herd a single pool
  *
- * This thread wakes every 5 seconds and whenever a pool queues.
+ * This thread wakes up every thread_pool_timeout seconds, whenever a pool
+ * queues and when threads need to be destroyed
  *
  * The trick here is to not be too aggressive about creating threads.  In
  * pool_breed(), we sleep whenever we create a thread and a little while longer
@@ -435,21 +466,26 @@ pool_herder(void *priv)
 	struct pool_task *pt;
 	double t_idle;
 	struct worker *wrk;
+	int delay, wthread_min;
 
 	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
 
 	THR_SetName("pool_herder");
 
 	while (1) {
+		wthread_min = cache_param->wthread_min;
+
 		/* Make more threads if needed and allowed */
-		if (pp->nthr < cache_param->wthread_min ||
+		if (pp->nthr < wthread_min ||
 		    (pp->dry && pp->nthr < cache_param->wthread_max)) {
 			pool_breed(pp);
 			continue;
 		}
-		assert(pp->nthr >= cache_param->wthread_min);
 
-		if (pp->nthr > cache_param->wthread_min) {
+		delay = cache_param->wthread_timeout;
+		assert(pp->nthr >= wthread_min);
+
+		if (pp->nthr > wthread_min) {
 
 			t_idle = VTIM_real() - cache_param->wthread_timeout;
 
@@ -462,6 +498,7 @@ pool_herder(void *priv)
 			wrk = NULL;
 			pt = VTAILQ_LAST(&pp->idle_queue, taskhead);
 			if (pt != NULL) {
+				AN(pp->nidle);
 				AZ(pt->func);
 				CAST_OBJ_NOTNULL(wrk, pt->priv, WORKER_MAGIC);
 
@@ -470,10 +507,13 @@ pool_herder(void *priv)
 					/* Give it a kiss on the cheek... */
 					VTAILQ_REMOVE(&pp->idle_queue,
 					    &wrk->task, list);
+					pp->nidle--;
 					wrk->task.func = pool_kiss_of_death;
 					AZ(pthread_cond_signal(&wrk->cond));
-				} else
+				} else {
+					delay = wrk->lastused - t_idle;
 					wrk = NULL;
+				}
 			}
 			Lck_Unlock(&pp->mtx);
 
@@ -483,15 +523,15 @@ pool_herder(void *priv)
 				VSC_C_main->threads--;
 				VSC_C_main->threads_destroyed++;
 				Lck_Unlock(&pool_mtx);
-				VTIM_sleep(cache_param->wthread_destroy_delay);
-				continue;
-			}
+				delay = cache_param->wthread_destroy_delay;
+			} else if (delay < cache_param->wthread_destroy_delay)
+				delay = cache_param->wthread_destroy_delay;
 		}
 
 		Lck_Lock(&pp->mtx);
 		if (!pp->dry) {
 			(void)Lck_CondWait(&pp->herder_cond, &pp->mtx,
-				VTIM_real() + 5);
+				VTIM_real() + delay);
 		} else {
 			/* XXX: unsafe counters */
 			VSC_C_main->threads_limited++;

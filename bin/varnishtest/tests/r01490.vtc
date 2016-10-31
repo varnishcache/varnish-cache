@@ -9,6 +9,7 @@ varnish v1 \
 	-arg "-p thread_pool_min=2" \
 	-arg "-p thread_pool_max=3" \
 	-arg "-p thread_pools=1" \
+	-arg "-p thread_pool_timeout=10" \
 	-vcl+backend {}
 varnish v1 -start
 
@@ -21,16 +22,16 @@ logexpect l1 -v v1 -g raw {
 
 varnish v1 -cliok "param.set thread_pool_min 3"
 
-# Herder thread sleeps 5 seconds. Have to wait longer than that.
-delay 6
+# Have to wait longer than thread_pool_timeout
+delay 11
 
 varnish v1 -expect threads == 3
 
 varnish v1 -cliok "param.set thread_pool_min 2"
 varnish v1 -cliok "param.set thread_pool_max 2"
 
-# Herder thread sleeps 5 seconds. Have to wait longer than that.
-delay 6
+# Have to wait longer than thread_pool_timeout
+delay 11
 
 varnish v1 -expect threads == 2
 
