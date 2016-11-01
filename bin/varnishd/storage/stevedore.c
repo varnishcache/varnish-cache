@@ -99,19 +99,13 @@ STV_open(void)
 	char buf[1024];
 
 	ASSERT_CLI();
-	VTAILQ_FOREACH(stv, &stv_stevedores, list) {
+	STV_Foreach(stv) {
 		bprintf(buf, "storage.%s", stv->ident);
 		stv->vclname = strdup(buf);
 		AN(stv->vclname);
 		if (stv->open != NULL)
 			stv->open(stv);
 	}
-	stv = stv_transient;
-	bprintf(buf, "storage.%s", stv->ident);
-	stv->vclname = strdup(buf);
-	AN(stv->vclname);
-	if (stv->open != NULL)
-		stv->open(stv);
 	stv_next = VTAILQ_FIRST(&stv_stevedores);
 }
 
@@ -124,11 +118,7 @@ STV_close(void)
 	ASSERT_CLI();
 	for (i = 1; i >= 0; i--) {
 		/* First send close warning */
-		VTAILQ_FOREACH(stv, &stv_stevedores, list)
-			if (stv->close != NULL)
-				stv->close(stv, i);
-		stv = stv_transient;
-		if (stv->close != NULL)
+		STV_Foreach(stv)
 			if (stv->close != NULL)
 				stv->close(stv, i);
 	}

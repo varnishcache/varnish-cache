@@ -51,6 +51,25 @@ struct stevedore *stv_transient;
 
 /*--------------------------------------------------------------------*/
 
+int
+STV__iter(struct stevedore **pp)
+{
+
+	if (*pp == stv_transient) {
+		*pp = NULL;
+		return (0);
+	}
+	if (*pp != NULL)
+		*pp = VTAILQ_NEXT(*pp, list);
+	else
+		*pp = VTAILQ_FIRST(&stv_stevedores);
+	if (*pp == NULL)
+		*pp = stv_transient;
+	return (1);
+}
+
+/*--------------------------------------------------------------------*/
+
 static void __match_proto__(cli_func_t)
 stv_cli_list(struct cli *cli, const char * const *av, void *priv)
 {

@@ -131,6 +131,10 @@ extern struct stevedore_head stv_stevedores;
 extern struct stevedore *stv_transient;
 
 /*--------------------------------------------------------------------*/
+#define STV_Foreach(arg) for(arg = NULL; STV__iter(&arg);)
+int STV__iter(struct stevedore **);
+
+/*--------------------------------------------------------------------*/
 int STV_GetFile(const char *fn, int *fdp, const char **fnp, const char *ctx);
 uintmax_t STV_FileSize(int fd, const char *size, unsigned *granularity,
     const char *ctx);
