@@ -136,7 +136,7 @@ STV_BanInfoDrop(const uint8_t *ban, unsigned len)
 	struct stevedore *stv;
 	int r = 0;
 
-	VTAILQ_FOREACH(stv, &stv_stevedores, list)
+	STV_Foreach(stv)
 		if (stv->baninfo != NULL)
 			r |= stv->baninfo(stv, BI_DROP, ban, len);
 
@@ -149,7 +149,7 @@ STV_BanInfoNew(const uint8_t *ban, unsigned len)
 	struct stevedore *stv;
 	int r = 0;
 
-	VTAILQ_FOREACH(stv, &stv_stevedores, list)
+	STV_Foreach(stv)
 		if (stv->baninfo != NULL)
 			r |= stv->baninfo(stv, BI_NEW, ban, len);
 
@@ -167,7 +167,7 @@ STV_BanExport(const uint8_t *bans, unsigned len)
 {
 	struct stevedore *stv;
 
-	VTAILQ_FOREACH(stv, &stv_stevedores, list)
+	STV_Foreach(stv)
 		if (stv->banexport != NULL)
 			stv->banexport(stv, bans, len);
 }
@@ -179,13 +179,11 @@ STV_BanExport(const uint8_t *bans, unsigned len)
 const struct stevedore *
 STV_find(const char *nm)
 {
-	const struct stevedore *stv;
+	struct stevedore *stv;
 
-	VTAILQ_FOREACH(stv, &stv_stevedores, list)
+	STV_Foreach(stv)
 		if (!strcmp(stv->ident, nm))
 			return (stv);
-	if (!strcmp(TRANSIENT_STORAGE, nm))
-		return (stv_transient);
 	return (NULL);
 }
 
