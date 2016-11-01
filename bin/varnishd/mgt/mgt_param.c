@@ -551,6 +551,8 @@ MCF_ParamConf(enum mcf_which_e which, const char *param, const char *fmt, ...)
 {
 	struct parspec *pp;
 	struct vsb *vsb;
+	const char *v;
+	enum tweak_r_e err;
 	va_list ap;
 
 	pp = mcf_findpar(param);
@@ -561,18 +563,25 @@ MCF_ParamConf(enum mcf_which_e which, const char *param, const char *fmt, ...)
 	VSB_vprintf(vsb, fmt, ap);
 	va_end(ap);
 	AZ(VSB_finish(vsb));
+	// XXX leaking
+	v = strdup(VSB_data(vsb));
+	VSB_clear(vsb);
 	switch (which) {
 	case MCF_DEFAULT:
-		pp->def = strdup(VSB_data(vsb));
+		if (pp->def == NULL || !strcmp(pp->def, v)) {
+			err = pp->func(vsb, pp, v);
+			assert(err == TWOK);
+		}
+		pp->def = v;
 		AN(pp->def);
 		break;
 	case MCF_MINIMUM:
-		pp->min = strdup(VSB_data(vsb));
+		pp->min = v;
 		AN(pp->min);
 		mcf_limit(pp, vsb);
 		break;
 	case MCF_MAXIMUM:
-		pp->max = strdup(VSB_data(vsb));
+		pp->max = v;
 		AN(pp->max);
 		mcf_limit(pp, vsb);
 		break;
