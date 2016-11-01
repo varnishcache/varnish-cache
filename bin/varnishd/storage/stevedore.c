@@ -43,7 +43,6 @@
 #include "vrt.h"
 #include "vrt_obj.h"
 
-static const struct stevedore * volatile stv_next;
 
 /*--------------------------------------------------------------------
  * XXX: trust pointer writes to be atomic
@@ -52,16 +51,15 @@ static const struct stevedore * volatile stv_next;
 const struct stevedore *
 STV_next()
 {
-	struct stevedore *stv;
-	if (stv_next == NULL)
-		return (stv_transient);
-	/* pick a stevedore and bump the head along */
-	stv = VTAILQ_NEXT(stv_next, list);
-	if (stv == NULL)
-		stv = VTAILQ_FIRST(&stv_stevedores);
+	static struct stevedore *stv;
+
+	if (!STV__iter(&stv))
+		AN(STV__iter(&stv));
+	if (stv == stv_transient) {
+		stv = NULL;
+		AN(STV__iter(&stv));
+	}
 	AN(stv);
-	AN(stv->name);
-	stv_next = stv;
 	return (stv);
 }
 
@@ -106,7 +104,6 @@ STV_open(void)
 		if (stv->open != NULL)
 			stv->open(stv);
 	}
-	stv_next = VTAILQ_FIRST(&stv_stevedores);
 }
 
 void

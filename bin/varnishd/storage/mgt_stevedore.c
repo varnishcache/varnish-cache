@@ -44,17 +44,19 @@
 #include "storage/storage.h"
 #include "vav.h"
 
-struct stevedore_head stv_stevedores =
-    VTAILQ_HEAD_INITIALIZER(stv_stevedores);
+static VTAILQ_HEAD(, stevedore) stevedores =
+    VTAILQ_HEAD_INITIALIZER(stevedores);
 
 struct stevedore *stv_transient;
 
 /*--------------------------------------------------------------------*/
 
 int
-STV__iter(struct stevedore **pp)
+STV__iter(struct stevedore ** const pp)
 {
 
+	AN(pp);
+	CHECK_OBJ_ORNULL(*pp, STEVEDORE_MAGIC);
 	if (*pp == stv_transient) {
 		*pp = NULL;
 		return (0);
@@ -62,7 +64,7 @@ STV__iter(struct stevedore **pp)
 	if (*pp != NULL)
 		*pp = VTAILQ_NEXT(*pp, list);
 	else
-		*pp = VTAILQ_FIRST(&stv_stevedores);
+		*pp = VTAILQ_FIRST(&stevedores);
 	if (*pp == NULL)
 		*pp = stv_transient;
 	return (1);
@@ -79,9 +81,7 @@ stv_cli_list(struct cli *cli, const char * const *av, void *priv)
 	(void)av;
 	(void)priv;
 	VCLI_Out(cli, "Storage devices:\n");
-	stv = stv_transient;
-		VCLI_Out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
-	VTAILQ_FOREACH(stv, &stv_stevedores, list)
+	STV_Foreach(stv)
 		VCLI_Out(cli, "\tstorage.%s = %s\n", stv->ident, stv->name);
 }
 
@@ -138,6 +138,7 @@ STV_Config(const char *spec)
 	const char *p, *q;
 	struct stevedore *stv;
 	const struct stevedore *stv2;
+	struct stevedore *stv3;
 	int ac, l;
 	static unsigned seq = 0;
 
@@ -185,12 +186,10 @@ STV_Config(const char *spec)
 		bprintf(stv->ident, "%.*s", l, spec);
 	}
 
-	VTAILQ_FOREACH(stv2, &stv_stevedores, list) {
-		if (strcmp(stv2->ident, stv->ident))
-			continue;
-		ARGV_ERR("(-s%s=%s) already defined once\n",
-		    stv->ident, stv->name);
-	}
+	STV_Foreach(stv3)
+		if (!strcmp(stv3->ident, stv->ident))
+			ARGV_ERR("(-s%s=%s) already defined once\n",
+			    stv->ident, stv->name);
 
 	if (stv->init != NULL)
 		stv->init(stv, ac, av);
@@ -204,7 +203,7 @@ STV_Config(const char *spec)
 		AZ(stv_transient);
 		stv_transient = stv;
 	} else {
-		VTAILQ_INSERT_TAIL(&stv_stevedores, stv, list);
+		VTAILQ_INSERT_TAIL(&stevedores, stv, list);
 	}
 	/* NB: Do not free av, stevedore gets to keep it */
 }

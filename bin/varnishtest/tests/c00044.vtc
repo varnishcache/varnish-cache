@@ -18,9 +18,9 @@ server s1 {
 } -start
 
 varnish v1 \
-	-arg "-smalloc,1m" \
-	-arg "-smalloc,1m" \
-	-arg "-smalloc,1m" \
+	-arg "-ss1=malloc,1m" \
+	-arg "-ss2=malloc,1m" \
+	-arg "-ss0=malloc,1m" \
 	-vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_stream = false;

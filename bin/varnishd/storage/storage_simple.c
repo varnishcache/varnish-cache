@@ -134,7 +134,7 @@ SML_allocobj(struct worker *wrk, const struct stevedore *stv,
     struct objcore *oc, unsigned wsl, int nuke_limit)
 {
 	struct object *o;
-	struct storage *st;
+	struct storage *st = NULL;
 	unsigned ltot;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
