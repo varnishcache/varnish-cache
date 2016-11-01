@@ -535,8 +535,10 @@ mcf_limit(struct parspec *pp, struct vsb *vsb) {
 		return;
 
 	AN(why);
+#if 0
 	printf("%s %s too %s - limiting to %s\n", pp->name,
 	    VSB_data(vsb), why, lim);
+#endif
 	err = pp->func(vsb2, pp, lim);
 	assert(err == TWOK);
 
