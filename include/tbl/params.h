@@ -1409,7 +1409,7 @@ PARAM(
 	/* typ */	string,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	/opt/varnish/etc/varnish,
+	/* default */	"/opt/varnish/etc/varnish",
 	/* units */	NULL,
 	/* flags */	0,
 	/* s-text */
@@ -1425,7 +1425,7 @@ PARAM(
 	/* typ */	string,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	/opt/varnish/lib/varnish/vmods,
+	/* default */	"/opt/varnish/lib/varnish/vmods",
 	/* units */	NULL,
 	/* flags */	0,
 	/* s-text */
@@ -1530,7 +1530,7 @@ PARAM(
 	/* typ */	waiter,
 	/* min */	NULL,
 	/* max */	NULL,
-	/* default */	kqueue (possible values: kqueue, poll),
+	/* default */	"kqueue (possible values: kqueue, poll)",
 	/* units */	NULL,
 	/* flags */	MUST_RESTART| WIZARD,
 	/* s-text */
