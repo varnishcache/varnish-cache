@@ -1,6 +1,6 @@
 varnishtest "Code coverage of VCL compiler and RSTdump etc"
 
-shell "varnishd -b 127.0.0.1:80 -C -n ${tmpdir} > /${tmpdir}/_.c"
+shell "varnishd -b 127.0.0.1:80 -C -n ${tmpdir} 2> /${tmpdir}/_.c"
 shell "varnishd -x dumprstparam > /${tmpdir}/_.param"
 shell "varnishd -x dumprstvsl > /${tmpdir}/_.vsl"
 shell "varnishd -x dumprstcli > /${tmpdir}/_.cli"
