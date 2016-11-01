@@ -95,7 +95,7 @@ tweak_generic_double(struct vsb *vsb, volatile double *dest,
 /*--------------------------------------------------------------------*/
 
 enum tweak_r_e __match_proto__(tweak_t)
-tweak_timeout(struct vsb *vsb, const struct parspec *par,
+tweak_timeout(struct vsb *vsb, struct parspec *par,
     const char *arg)
 {
 	volatile double *dest;
@@ -108,7 +108,7 @@ tweak_timeout(struct vsb *vsb, const struct parspec *par,
 /*--------------------------------------------------------------------*/
 
 enum tweak_r_e __match_proto__(tweak_t)
-tweak_double(struct vsb *vsb, const struct parspec *par, const char *arg)
+tweak_double(struct vsb *vsb, struct parspec *par, const char *arg)
 {
 	volatile double *dest;
 
@@ -120,7 +120,7 @@ tweak_double(struct vsb *vsb, const struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 enum tweak_r_e __match_proto__(tweak_t)
-tweak_bool(struct vsb *vsb, const struct parspec *par, const char *arg)
+tweak_bool(struct vsb *vsb, struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
 
@@ -208,7 +208,7 @@ tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest, const char *arg,
 /*--------------------------------------------------------------------*/
 
 enum tweak_r_e __match_proto__(tweak_t)
-tweak_uint(struct vsb *vsb, const struct parspec *par, const char *arg)
+tweak_uint(struct vsb *vsb, struct parspec *par, const char *arg)
 {
 	volatile unsigned *dest;
 
@@ -296,7 +296,7 @@ tweak_generic_bytes(struct vsb *vsb, volatile ssize_t *dest, const char *arg,
 /*--------------------------------------------------------------------*/
 
 enum tweak_r_e __match_proto__(tweak_t)
-tweak_bytes(struct vsb *vsb, const struct parspec *par, const char *arg)
+tweak_bytes(struct vsb *vsb, struct parspec *par, const char *arg)
 {
 	volatile ssize_t *dest;
 
@@ -307,7 +307,7 @@ tweak_bytes(struct vsb *vsb, const struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 enum tweak_r_e __match_proto__(tweak_t)
-tweak_bytes_u(struct vsb *vsb, const struct parspec *par, const char *arg)
+tweak_bytes_u(struct vsb *vsb, struct parspec *par, const char *arg)
 {
 	volatile unsigned *d1;
 	volatile ssize_t dest;
@@ -326,7 +326,7 @@ tweak_bytes_u(struct vsb *vsb, const struct parspec *par, const char *arg)
  */
 
 enum tweak_r_e __match_proto__(tweak_t)
-tweak_vsl_buffer(struct vsb *vsb, const struct parspec *par, const char *arg)
+tweak_vsl_buffer(struct vsb *vsb, struct parspec *par, const char *arg)
 {
 	volatile unsigned *d1;
 	volatile ssize_t dest;
@@ -344,7 +344,7 @@ tweak_vsl_buffer(struct vsb *vsb, const struct parspec *par, const char *arg)
 }
 
 enum tweak_r_e __match_proto__(tweak_t)
-tweak_vsl_reclen(struct vsb *vsb, const struct parspec *par, const char *arg)
+tweak_vsl_reclen(struct vsb *vsb, struct parspec *par, const char *arg)
 {
 	volatile unsigned *d1;
 	volatile ssize_t dest;
@@ -363,7 +363,7 @@ tweak_vsl_reclen(struct vsb *vsb, const struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 enum tweak_r_e __match_proto__(tweak_t)
-tweak_string(struct vsb *vsb, const struct parspec *par, const char *arg)
+tweak_string(struct vsb *vsb, struct parspec *par, const char *arg)
 {
 	char **p = TRUST_ME(par->priv);
 
@@ -380,7 +380,7 @@ tweak_string(struct vsb *vsb, const struct parspec *par, const char *arg)
 /*--------------------------------------------------------------------*/
 
 enum tweak_r_e __match_proto__(tweak_t)
-tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
+tweak_poolparam(struct vsb *vsb, struct parspec *par, const char *arg)
 {
 	volatile struct poolparam *pp, px;
 	char **av;

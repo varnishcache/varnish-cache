@@ -37,7 +37,7 @@ enum tweak_r_e __match_proto__(tweak_t) {
 	TWEBIG		= -3
 };
 
-typedef enum tweak_r_e tweak_t(struct vsb *, const struct parspec *,
+typedef enum tweak_r_e tweak_t(struct vsb *, struct parspec *,
     const char *arg);
 
 struct parspec {

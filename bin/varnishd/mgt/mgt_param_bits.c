@@ -116,7 +116,7 @@ static const char * const VSL_tags[256] = {
 };
 
 static int
-tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
+tweak_vsl_mask(struct vsb *vsb, struct parspec *par, const char *arg)
 {
 	unsigned j;
 	const char *s;
@@ -161,7 +161,7 @@ static const char * const debug_tags[] = {
 };
 
 static int
-tweak_debug(struct vsb *vsb, const struct parspec *par, const char *arg)
+tweak_debug(struct vsb *vsb, struct parspec *par, const char *arg)
 {
 	const char *s;
 	unsigned j;
@@ -201,7 +201,7 @@ static const char * const feature_tags[] = {
 };
 
 static int
-tweak_feature(struct vsb *vsb, const struct parspec *par, const char *arg)
+tweak_feature(struct vsb *vsb, struct parspec *par, const char *arg)
 {
 	const char *s;
 	unsigned j;

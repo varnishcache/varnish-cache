@@ -231,7 +231,7 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 {
 	int n;
 	struct plist *pl;
-	const struct parspec *pp;
+	struct parspec *pp;
 	int lfmt = 0, chg = 0;
 	struct vsb *vsb;
 
@@ -343,7 +343,7 @@ MCF_ParamProtect(struct cli *cli, const char *args)
 void
 MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 {
-	const struct parspec *pp;
+	struct parspec *pp;
 
 	pp = mcf_findpar(param);
 	if (pp == NULL) {
@@ -527,7 +527,7 @@ void
 MCF_DumpRstParam(void)
 {
 	struct plist *pl;
-	const struct parspec *pp;
+	struct parspec *pp;
 	const char *p, *q, *t1, *t2;
 	int j;
 

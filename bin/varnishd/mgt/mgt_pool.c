@@ -54,7 +54,7 @@
  */
 
 static enum tweak_r_e __match_proto__(tweak_t)
-tweak_thread_pool_min(struct vsb *vsb, const struct parspec *par,
+tweak_thread_pool_min(struct vsb *vsb, struct parspec *par,
     const char *arg)
 {
 	enum tweak_r_e r;
@@ -70,7 +70,7 @@ tweak_thread_pool_min(struct vsb *vsb, const struct parspec *par,
 }
 
 static enum tweak_r_e __match_proto__(tweak_t)
-tweak_thread_pool_max(struct vsb *vsb, const struct parspec *par,
+tweak_thread_pool_max(struct vsb *vsb, struct parspec *par,
     const char *arg)
 {
 	enum tweak_r_e r;
