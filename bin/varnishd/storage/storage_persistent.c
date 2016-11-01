@@ -531,6 +531,10 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
 	ltot = sizeof(struct object) + PRNDUP(wsl);
 	ltot = IRNUP(sc, ltot);
 
+	st = NULL;
+	sg = NULL;
+	so = NULL;
+	objidx = 0;
 	for (; nuke_limit >= 0; nuke_limit--) {
 		st = smp_allocx(stv, ltot, ltot, &so, &objidx, &sg);
 		if (st != NULL && st->space < ltot) {
@@ -544,6 +548,8 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
 	}
 
 	AN(st);
+	AN(sg);
+	AN(so);
 	assert(st->space >= ltot);
 
 	o = SML_MkObject(stv, oc, st->ptr);
