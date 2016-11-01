@@ -992,14 +992,13 @@ PARAM(
 	/* func */	NULL
 )
 
-#if 0
-/* actual location mgt_param_tcp.c */
+#if defined(HAVE_TCP_KEEP)
 PARAM(
 	/* name */	tcp_keepalive_intvl,
 	/* typ */	timeout,
-	/* min */	"1.000",
-	/* max */	"100.000",
-	/* default */	"5.000",
+	/* min */	"1",
+	/* max */	"100",
+	/* default */	"",
 	/* units */	"seconds",
 	/* flags */	EXPERIMENTAL,
 	/* s-text */
@@ -1008,13 +1007,12 @@ PARAM(
 	/* func */	NULL
 )
 
-/* actual location mgt_param_tcp.c */
 PARAM(
 	/* name */	tcp_keepalive_probes,
 	/* typ */	uint,
 	/* min */	"1",
 	/* max */	"100",
-	/* default */	"5",
+	/* default */	"",
 	/* units */	"probes",
 	/* flags */	EXPERIMENTAL,
 	/* s-text */
@@ -1025,13 +1023,12 @@ PARAM(
 	/* func */	NULL
 )
 
-/* actual location mgt_param_tcp.c */
 PARAM(
 	/* name */	tcp_keepalive_time,
 	/* typ */	timeout,
-	/* min */	"1.000",
-	/* max */	"7200.000",
-	/* default */	"600.000",
+	/* min */	"1",
+	/* max */	"7200",
+	/* default */	"",
 	/* units */	"seconds",
 	/* flags */	EXPERIMENTAL,
 	/* s-text */
@@ -1041,6 +1038,9 @@ PARAM(
 	/* func */	NULL
 )
 
+#endif /* HAVE_TCP_KEEP */
+
+#if 0
 /* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_add_delay,

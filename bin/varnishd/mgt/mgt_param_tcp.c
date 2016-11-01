@@ -51,28 +51,6 @@
 
 #ifdef HAVE_TCP_KEEP
 
-static struct parspec mgt_parspec_tcp_keep[] = {
-	{ "tcp_keepalive_time", tweak_timeout, &mgt_param.tcp_keepalive_time,
-		"1", "7200",
-		"The number of seconds a connection needs to be idle before "
-		"TCP begins sending out keep-alive probes.",
-		EXPERIMENTAL,
-		"", "seconds" },
-	{ "tcp_keepalive_probes", tweak_uint, &mgt_param.tcp_keepalive_probes,
-		"1", "100",
-		"The maximum number of TCP keep-alive probes to send before "
-		"giving up and killing the connection if no response is "
-		"obtained from the other end.",
-		EXPERIMENTAL,
-		"", "probes" },
-	{ "tcp_keepalive_intvl", tweak_timeout, &mgt_param.tcp_keepalive_intvl,
-		"1", "100",
-		"The number of seconds between TCP keep-alive probes.",
-		EXPERIMENTAL,
-		"", "seconds" },
-	{ NULL, NULL, NULL }
-};
-
 static void
 tcp_probe(int sock, int nam, const char *param, unsigned def)
 {
@@ -108,7 +86,6 @@ void
 MCF_TcpParams(void)
 {
 #ifdef HAVE_TCP_KEEP
-	MCF_AddParams(mgt_parspec_tcp_keep);
 	tcp_keep_probes();
 #endif
 }

@@ -101,12 +101,6 @@ struct params {
 	ssize_t			wthread_stacksize;
 	unsigned		wthread_queue_limit;
 
-#ifdef HAVE_TCP_KEEP
-	double			tcp_keepalive_time;
-	unsigned		tcp_keepalive_probes;
-	double			tcp_keepalive_intvl;
-#endif
-
 	struct vre_limits	vre_limits;
 
 	struct poolparam	req_pool;
