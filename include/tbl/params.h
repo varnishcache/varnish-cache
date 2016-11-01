@@ -921,20 +921,6 @@ PARAM(
 )
 
 PARAM(
-	/* name */	shm_reclen,
-	/* typ */	vsl_reclen,
-	/* min */	"16b",
-	/* max */	NULL,
-	/* default */	"255b",
-	/* units */	"bytes",
-	/* flags */	0,
-	/* s-text */
-	"Old name for vsl_reclen, use that instead.",
-	/* l-text */	"",
-	/* func */	NULL
-)
-
-PARAM(
 	/* name */	shortlived,
 	/* typ */	timeout,
 	/* min */	"0.000",

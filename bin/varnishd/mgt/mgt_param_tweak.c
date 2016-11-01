@@ -340,7 +340,6 @@ tweak_vsl_buffer(struct vsb *vsb, struct parspec *par, const char *arg)
 	if (r == TWOK) {
 		*d1 = dest;
 		MCF_ParamConf(MCF_MAXIMUM, "vsl_reclen", "%ub", *d1 - 12);
-		MCF_ParamConf(MCF_MAXIMUM, "shm_reclen", "%ub", *d1 - 12);
 	}
 
 	par->flags &= ~_LIMITING;
