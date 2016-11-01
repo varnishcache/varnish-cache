@@ -301,7 +301,7 @@ pool_kiss_of_death(struct worker *wrk, void *priv)
 static void
 Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 {
-	struct pool_task *tp;
+	struct pool_task *tp = NULL;
 	struct pool_task tpx, tps;
 	int i, prio_lim;
 
