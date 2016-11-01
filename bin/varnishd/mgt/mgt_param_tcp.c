@@ -47,8 +47,6 @@
 
 #include "vtcp.h"
 
-#include "mgt/mgt_param.h"
-
 #ifdef HAVE_TCP_KEEP
 
 static void
