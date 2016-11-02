@@ -1,6 +1,20 @@
 THINGS TO CONSIDER WHEN WRITING VARNISH RST DOCUMENTATION
 =========================================================
 
+Inline Markup
+-------------
+
+Please try to be consistent with inline markup and fix places which do
+not follow the style:
+
+* VCL language and other literals as ``literal``
+
+* placeholders and emphasis as *emphasis*
+
+* no `interpreted text` except where it actually *is* that
+
+.. _Reference: http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#character-level-inline-markup
+
 References are tricky
 ---------------------
 

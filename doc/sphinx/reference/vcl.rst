@@ -27,9 +27,9 @@ This document focuses on the syntax of the VCL language. For a full
 description of syntax and semantics, with ample examples, please see
 the online documentation at https://www.varnish-cache.org/docs/ .
 
-Starting with Varnish 4.0, each VCL file must start by declaring its version
-with "vcl X.Y;" marker at the top of the file.  See more about this
-under Versioning below.
+Starting with Varnish 4.0, each VCL file must start by declaring its
+version with ``vcl`` *<major>.<minor>*\ ``;`` marker at the top of
+the file.  See more about this under Versioning below.
 
 
 Operators
@@ -37,30 +37,31 @@ Operators
 
 The following operators are available in VCL:
 
-  =
+  ``=``
     Assignment operator.
 
-  ==
+  ``==``
     Comparison.
 
-  ~
+  ``~``
     Match. Can either be used with regular expressions or ACLs.
 
-  !
+  ``!``
     Negation.
 
-  &&
+  ``&&``
     Logical and.
 
-  ||
+  ``||``
     Logical or.
 
 
 Conditionals
 ------------
 
-VCL has *if* and *else* statements. Nested logic can be implemented
-with the *elseif* statement (*elsif*/*elif*/*else if* are equivalent).
+VCL has ``if`` and ``else`` statements. Nested logic can be
+implemented with the ``elseif`` statement (``elsif``\ /\ ``elif``\ /\
+``else if`` are equivalent).
 
 Note that there are no loops or iterators of any kind in VCL.
 
@@ -68,7 +69,7 @@ Note that there are no loops or iterators of any kind in VCL.
 Strings, booleans, time, duration, integers and real numbers
 ------------------------------------------------------------
 
-These are the data types in Varnish. You can *set* or *unset* these.
+These are the data types in Varnish. You can ``set`` or ``unset`` these.
 
 Example::
 
@@ -79,58 +80,59 @@ Example::
 Strings
 ~~~~~~~
 
-Basic strings are enclosed in double quotes (" ... "), and may not contain
-newlines. Long strings are enclosed in {" ... "}. They may contain any
-character including single double quotes ("), newline and other control
-characters except for the NUL (0x00) character.
+Basic strings are enclosed in double quotes ``"``\ *...*\ ``"``, and
+may not contain newlines. Long strings are enclosed in
+``{"``\ *...*\ ``"}``. They may contain any character including single
+double quotes ``"``, newline and other control characters except for the
+*NUL* (0x00) character.
 
 Booleans
 ~~~~~~~~
 
-Booleans can be either *true* or *false*.  In addition, in a boolean
-context some data types will evaluate to *true* or *false* depending on
+Booleans can be either ``true`` or ``false``.  In addition, in a boolean
+context some data types will evaluate to ``true`` or ``false`` depending on
 their value.
 
-String types will evaluate to *false* if they are empty; backend types
-will evalute to *false* if they don't have a backend assigned; integer
-types will evaluate to *false* if their value is zero; duration types
-will evaluate to *false* if their value is equal or less than zero.
+String types will evaluate to ``false`` if they are empty; backend types
+will evalute to ``false`` if they don't have a backend assigned; integer
+types will evaluate to ``false`` if their value is zero; duration types
+will evaluate to ``false`` if their value is equal or less than zero.
 
 Time
 ~~~~
 
 VCL has time. A duration can be added to a time to make another time.
 In string context they return a formatted string in RFC1123 format,
-e.g. Sun, 06 Nov 1994 08:49:37 GMT.
+e.g. ``Sun, 06 Nov 1994 08:49:37 GMT``.
 
-The keyword *now* returns a time representing the current time in seconds
+The keyword ``now`` returns a time representing the current time in seconds
 since the Epoch.
 
 Durations
 ~~~~~~~~~
 
 Durations are defined by a number followed by a unit. The number can
-include a fractional part, e.g. 1.5s. The supported units are:
+include a fractional part, e.g. ``1.5s``. The supported units are:
 
-  ms
+  ``ms``
     milliseconds
 
-  s
+  ``s``
     seconds
 
-  m
+  ``m``
     minutes
 
-  h
+  ``h``
     hours
 
-  d
+  ``d``
     days
 
-  w
+  ``w``
     weeks
 
-  y
+  ``y``
     years
 
 Integers
@@ -172,7 +174,7 @@ To include a VCL file in another file use the include keyword::
 Import statement
 ----------------
 
-The *import* statement is used to load Varnish Modules (VMODs.)
+The ``import`` statement is used to load Varnish Modules (VMODs.)
 
 Example::
 
@@ -184,8 +186,9 @@ Example::
 Comments
 --------
 
-Single lines of VCL can be commented out using // or #. Multi-line blocks can
-be commented out with \/\* block \/\*.
+Single lines of VCL can be commented out using ``//`` or
+``#``. Multi-line blocks can be commented out with
+``/*``\ *block*\ ``*/``.
 
 Example::
 
@@ -202,45 +205,45 @@ Backend definition
 ------------------
 
 A backend declaration creates and initialises a named backend object. A
-declaration start with the keyword *backend* followed by the name of the
+declaration start with the keyword ``backend`` followed by the name of the
 backend. The actual declaration is in curly brackets, in a key/value fashion.::
 
     backend name {
         .attribute = "value";
     }
 
-The only mandatory attribute is *host*. The attributes will inherit
+The only mandatory attribute is ``.host``. The attributes will inherit
 their defaults from the global parameters. The following attributes
 are available:
 
-  host (mandatory)
+  ``.host`` *(mandatory)*
     The host to be used. IP address or a hostname that resolves to a
     single IP address.
 
-  port
+  ``.port``
     The port on the backend that Varnish should connect to.
 
-  host_header
+  ``.host_header``
     A host header to add to probes and regular backend requests if they have no
     such header.
 
-  connect_timeout
+  ``.connect_timeout``
     Timeout for connections.
 
-  first_byte_timeout
+  ``.first_byte_timeout``
     Timeout for first byte.
 
-  between_bytes_timeout
+  ``.between_bytes_timeout``
     Timeout between bytes.
 
-  probe
+  ``.probe``
     Attach a probe to the backend. See `Probes`_
 
-  proxy_header
+  ``.proxy_header``
     The PROXY protocol version Varnish should use when connecting to
     this backend. Allowed values are ``1`` and ``2``.
 
-  max_connections
+  ``.max_connections``
     Maximum number of open connections towards this backend. If
     Varnish reaches the maximum Varnish it will start failing
     connections.
@@ -260,41 +263,41 @@ the backend as down it they fail. A probe is defined as this::
         .attribute = "value";
     }
 
-The probe named `default` is special and will be used for all backends
+The probe named ``default`` is special and will be used for all backends
 which do not explicitly reference a probe.
 
 There are no mandatory options. These are the options you can set:
 
-  url
-    The URL to query. Defaults to "/".
+  ``.url``
+    The URL to query. Defaults to ``/``.
 
-  request
-    Specify a full HTTP request using multiple strings. .request will
-    have \\r\\n automatically inserted after every string. If
-    specified, .request will take precedence over .url.
+  ``.request``
+    Specify a full HTTP request using multiple strings. ``.request`` will
+    have ``\r\n`` automatically inserted after every string. If
+    specified, ``.request`` will take precedence over ``.url``.
 
-  expected_response
-    The expected HTTP response code. Defaults to 200.
+  ``.expected_response``
+    The expected HTTP response code. Defaults to ``200``.
 
-  timeout
-    The timeout for the probe. Default is 2s.
+  ``.timeout``
+    The timeout for the probe. Default is ``2s``.
 
-  interval
-    How often the probe is run. Default is 5s.
+  ``.interval``
+    How often the probe is run. Default is ``5s``.
 
-  initial
-    How many of the polls in .window are considered good when Varnish
-    starts. Defaults to the value of threshold - 1. In this case, the
+  ``.initial``
+    How many of the polls in ``.window`` are considered good when Varnish
+    starts. Defaults to the value of ``.threshold`` - 1. In this case, the
     backend starts as sick and requires one single poll to be
     considered healthy.
 
-  window
+  ``.window``
     How many of the latest polls we examine to determine backend health.
-    Defaults to 8.
+    Defaults to ``8``.
 
-  threshold
+  ``.threshold``
     How many of the polls in .window must have succeeded for us to
-    consider the backend healthy. Defaults to 3.
+    consider the backend healthy. Defaults to ``3``.
 
 
 Access Control List (ACL)
@@ -325,14 +328,14 @@ To match an IP address against an ACL, simply use the match operator::
 VCL objects
 -----------
 
-A VCL object can be instantiated with the *new* keyword::
+A VCL object can be instantiated with the ``new`` keyword::
 
     sub vcl_init {
         new b = directors.round_robin()
         b.add_backend(node1);
     }
 
-This is only available in vcl_init.
+This is only available in ``vcl_init``.
 
 Subroutines
 -----------
@@ -346,10 +349,11 @@ A subroutine is used to group code for legibility or reusability::
     }
 
 Subroutines in VCL do not take arguments, nor do they return
-values. The built in subroutines all have names beginning with vcl\_,
+values. The built in subroutines all have names beginning with ``vcl_``,
 which is reserved.
 
-To call a subroutine, use the call keyword followed by the subroutine's name::
+To call a subroutine, use the ``call`` keyword followed by the
+subroutine's name::
 
     sub vcl_recv {
         call pipe_if_local;
@@ -358,11 +362,11 @@ To call a subroutine, use the call keyword followed by the subroutine's name::
 Return statements
 ~~~~~~~~~~~~~~~~~
 
-The ongoing vcl\_* subroutine execution ends when a return(*action*) statement
-is made.
+The ongoing ``vcl_*`` subroutine execution ends when a
+``return(``\ *<action>*\ ``)`` statement is made.
 
-The *action* specifies how execution should proceed. The context defines
-which actions are available.
+The *<action>* specifies how execution should proceed. The context
+defines which actions are available.
 
 Multiple subroutines
 ~~~~~~~~~~~~~~~~~~~~
@@ -397,59 +401,59 @@ ban(STRING)
   Invalidates all objects in cache that match the given expression with the
   ban mechanism.
 
-  The format of `STRING` is::
+  The format of *STRING* is::
 
 	<field> <operator> <arg> [&& <field> <oper> <arg> ...]
 
-  * `<field>`:
+  * *<field>*:
 
     * ``req.url``: The request url
     * ``req.http.*``: Any request header
     * ``obj.status``: The cache object status
     * ``obj.http.*``: Any cache object header
 
-  * `<operator>`:
+  * *<operator>*:
 
-    * ``==``: `<field>` and `<arg>` are equal strings (case sensitive)
-    * ``!=``: `<field>` and `<arg>` are unequal strings (case sensitive)
-    * ``~``: `<field>` matches the regular expression `<arg>`
-    * ``!~``:`<field>` does not match the regular expression `<arg>`
+    * ``==``: *<field>* and *<arg>* are equal strings (case sensitive)
+    * ``!=``: *<field>* and *<arg>* are unequal strings (case sensitive)
+    * ``~``: *<field>* matches the regular expression *<arg>*
+    * ``!~``:*<field>* does not match the regular expression *<arg>*
 
-  * `<arg>`: Either a literal string or a regular expression. Note
-    that `<arg>` does not use any of the string delimiters like ``"``
-    or ``{"..."}`` used elsewhere in varnish. To match against strings
-    containing whitespace, regular expressions containing ``\s`` can
-    be used.
+  * *<arg>*: Either a literal string or a regular expression. Note
+    that *<arg>* does not use any of the string delimiters like ``"``
+    or ``{"``\ *...*\ ``"}`` used elsewhere in varnish. To match
+    against strings containing whitespace, regular expressions
+    containing ``\s`` can be used.
 
-  Expressions can be chained using the `and` operator ``&&``. For `or`
+  Expressions can be chained using the *and* operator ``&&``. For *or*
   semantics, use several bans.
 
 hash_data(input)
 ~~~~~~~~~~~~~~~~
 
-  Adds an input to the hash input. In the built-in VCL hash_data()
-  is called on the host and URL of the *request*. Available in vcl_hash.
+  Adds an input to the hash input. In the built-in VCL ``hash_data()``
+  is called on the host and URL of the request. Available in ``vcl_hash``.
 
 synthetic(STRING)
 ~~~~~~~~~~~~~~~~~
 
-  Prepare a synthetic response body containing the STRING. Available in
-  vcl_synth and vcl_backend_error.
+  Prepare a synthetic response body containing the *STRING*. Available in
+  ``vcl_synth`` and ``vcl_backend_error``.
 
 .. list above comes from struct action_table[] in vcc_action.c.
 
 regsub(str, regex, sub)
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-  Returns a copy of str with the first occurrence of the regular
-  expression regex replaced with sub. Within sub, \\0 (which can
-  also be spelled \\&) is replaced with the entire matched string,
-  and \\n is replaced with the contents of subgroup n in the
-  matched string.
+  Returns a copy of *str* with the first occurrence of the regular
+  expression *regex* replaced with *sub*. Within *sub*, ``\0`` (which
+  can also be spelled ``\&``) is replaced with the entire matched
+  string, and ``\``\ *n* is replaced with the contents of subgroup *n*
+  in the matched string.
 
 regsuball(str, regex, sub)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-  As regsub() but this replaces all occurrences.
+  As ``regsub()``, but this replaces all occurrences.
 
 .. regsub* is in vcc_expr.c
 
@@ -462,18 +466,19 @@ Versioning
 Multiple versions of the VCL syntax can coexist within certain
 constraints.
 
-The VCL syntax version at the start of VCL file specified with ''-f''
+The VCL syntax version at the start of VCL file specified with ``-f``
 sets the hard limit that cannot be exceeded anywhere, and it selects
 the appropriate version of the builtin VCL.
 
-That means that you can never include "vcl 9.1;" from "vcl 8.7;", but
-the opposite *may* be possible, to the extent the compiler supports it.
+That means that you can never include ``vcl 9.1;`` from ``vcl 8.7;``,
+but the opposite *may* be possible, to the extent the compiler
+supports it.
 
-Files pulled in via ``include`` do not need to have a "vcl X.Y;" but
-it may be a good idea to do it anyway, to not have surprises in the
-future.  The syntax version set in an included file only applies to
-that file and any files it includes - unless these set their own VCL
-syntax version.
+Files pulled in via ``include`` do not need to have a
+``vcl`` *X.Y*\ ``;`` but it may be a good idea to do it anyway, to
+not have surprises in the future.  The syntax version set in an
+included file only applies to that file and any files it includes -
+unless these set their own VCL syntax version.
 
 The version of Varnish this file belongs to supports syntax 4.0 only.
 
