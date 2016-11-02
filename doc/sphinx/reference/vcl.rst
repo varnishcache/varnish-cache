@@ -238,7 +238,7 @@ are available:
 
   proxy_header
     The PROXY protocol version Varnish should use when connecting to
-    this backend.
+    this backend. Allowed values are ``1`` and ``2``.
 
   max_connections
     Maximum number of open connections towards this backend. If
