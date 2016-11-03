@@ -164,14 +164,14 @@ pool_reserve(void)
 /*--------------------------------------------------------------------*/
 
 static struct worker *
-pool_getidleworker(struct pool *pp, enum task_prio how)
+pool_getidleworker(struct pool *pp, enum task_prio prio)
 {
 	struct pool_task *pt = NULL;
 	struct worker *wrk;
 
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	Lck_AssertHeld(&pp->mtx);
-	if (how <= TASK_QUEUE_RESERVE || pp->nidle > pool_reserve()) {
+	if (prio <= TASK_QUEUE_RESERVE || pp->nidle > pool_reserve()) {
 		pt = VTAILQ_FIRST(&pp->idle_queue);
 		if (pt == NULL)
 			AZ(pp->nidle);
@@ -197,7 +197,7 @@ pool_getidleworker(struct pool *pp, enum task_prio how)
  */
 
 int
-Pool_Task_Arg(struct worker *wrk, enum task_prio how, task_func_t *func,
+Pool_Task_Arg(struct worker *wrk, enum task_prio prio, task_func_t *func,
     const void *arg, size_t arg_len)
 {
 	struct pool *pp;
@@ -211,7 +211,7 @@ Pool_Task_Arg(struct worker *wrk, enum task_prio how, task_func_t *func,
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 
 	Lck_Lock(&pp->mtx);
-	wrk2 = pool_getidleworker(pp, how);
+	wrk2 = pool_getidleworker(pp, prio);
 	if (wrk2 != NULL) {
 		AN(pp->nidle);
 		VTAILQ_REMOVE(&pp->idle_queue, &wrk2->task, list);
@@ -238,20 +238,20 @@ Pool_Task_Arg(struct worker *wrk, enum task_prio how, task_func_t *func,
  */
 
 int
-Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio how)
+Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio)
 {
 	struct worker *wrk;
 	int retval = 0;
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	AN(task);
 	AN(task->func);
-	assert(how < TASK_QUEUE_END);
+	assert(prio < TASK_QUEUE_END);
 
 	Lck_Lock(&pp->mtx);
 
 	/* The common case first:  Take an idle thread, do it. */
 
-	wrk = pool_getidleworker(pp, how);
+	wrk = pool_getidleworker(pp, prio);
 	if (wrk != NULL) {
 		AN(pp->nidle);
 		VTAILQ_REMOVE(&pp->idle_queue, &wrk->task, list);
@@ -268,12 +268,12 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio how)
 	 * queue limits only apply to client threads - all other
 	 * work is vital and needs do be done at the earliest
 	 */
-	if (how != TASK_QUEUE_REQ ||
+	if (prio != TASK_QUEUE_REQ ||
 	    pp->lqueue < cache_param->wthread_max +
 	    cache_param->wthread_queue_limit + pp->nthr) {
 		pp->nqueued++;
 		pp->lqueue++;
-		VTAILQ_INSERT_TAIL(&pp->queues[how], task, list);
+		VTAILQ_INSERT_TAIL(&pp->queues[prio], task, list);
 	} else {
 		pp->ndropped++;
 		retval = -1;

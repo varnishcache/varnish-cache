@@ -91,7 +91,7 @@ Pool_TrySumstat(struct worker *wrk)
  */
 
 int
-Pool_Task_Any(struct pool_task *task, enum task_prio how)
+Pool_Task_Any(struct pool_task *task, enum task_prio prio)
 {
 	struct pool *pp;
 
@@ -105,7 +105,7 @@ Pool_Task_Any(struct pool_task *task, enum task_prio how)
 	if (pp == NULL)
 		return (-1);
 	// NB: When we remove pools, is there a race here ?
-	return (Pool_Task(pp, task, how));
+	return (Pool_Task(pp, task, prio));
 }
 
 /*--------------------------------------------------------------------
