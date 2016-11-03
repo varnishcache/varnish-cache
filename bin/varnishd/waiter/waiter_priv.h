@@ -78,5 +78,5 @@ Wait_When(const struct waited *wp)
 void Wait_Call(const struct waiter *, struct waited *,
     enum wait_event ev, double now);
 void Wait_HeapInsert(const struct waiter *, struct waited *);
-void Wait_HeapDelete(const struct waiter *, const struct waited *);
+int Wait_HeapDelete(const struct waiter *, const struct waited *);
 double Wait_HeapDue(const struct waiter *, struct waited **);

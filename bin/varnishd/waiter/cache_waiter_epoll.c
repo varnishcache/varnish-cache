@@ -26,6 +26,8 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * Recommended reading: libev(3) "EVBACKEND_EPOLL" section
+ * - thank you, Marc Alexander Lehmann
  */
 
 //lint -e{766}
@@ -73,7 +75,7 @@ vwe_thread(void *priv)
 	struct waited *wp;
 	struct waiter *w;
 	double now, then;
-	int i, n;
+	int i, n, active;
 	struct vwe *vwe;
 	char c;
 
@@ -101,7 +103,7 @@ vwe_thread(void *priv)
 			CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 			AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_DEL, wp->fd, NULL));
 			vwe->nwaited--;
-			Wait_HeapDelete(w, wp);
+			AN(Wait_HeapDelete(w, wp));
 			Lck_Unlock(&vwe->mtx);
 			Wait_Call(w, wp, WAITER_TIMEOUT, now);
 		}
@@ -125,8 +127,12 @@ vwe_thread(void *priv)
 			}
 			CAST_OBJ_NOTNULL(wp, ep->data.ptr, WAITED_MAGIC);
 			Lck_Lock(&vwe->mtx);
-			Wait_HeapDelete(w, wp);
+			active = Wait_HeapDelete(w, wp);
 			Lck_Unlock(&vwe->mtx);
+			if (! active) {
+				VSL(SLT_Debug, wp->fd, "epoll: spurious event");
+				continue;
+			}
 			AZ(epoll_ctl(vwe->epfd, EPOLL_CTL_DEL, wp->fd, NULL));
 			vwe->nwaited--;
 			if (ep->events & EPOLLIN)
