@@ -126,7 +126,7 @@ vws_port_ev(struct vws *vws, struct waiter *w, port_event_t *ev, double now) {
 		 *          threadID=129476&tstart=0
 		 */
 		vws_del(vws, wp->fd);
-		Wait_HeapDelete(w, wp);
+		AN(Wait_HeapDelete(w, wp));
 		Wait_Call(w, wp, ev->portev_events & POLLERR ?
 		    WAITER_REMCLOSE : WAITER_ACTION,
 		    now);
@@ -165,7 +165,7 @@ vws_thread(void *priv)
 			}
 			CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 			vws_del(vws, wp->fd);
-			Wait_HeapDelete(w, wp);
+			AN(Wait_HeapDelete(w, wp));
 			Wait_Call(w, wp, WAITER_TIMEOUT, now);
 		}
 		then = vws->next - now;

@@ -97,13 +97,15 @@ Wait_HeapInsert(const struct waiter *w, struct waited *wp)
  * XXX: any harm to come from it.  Caveat Emptor.
  */
 
-void
+int
 Wait_HeapDelete(const struct waiter *w, const struct waited *wp)
 {
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
-	if (wp->idx != BINHEAP_NOIDX)
-		binheap_delete(w->heap, wp->idx);
+	if (wp->idx == BINHEAP_NOIDX)
+		return (0);
+	binheap_delete(w->heap, wp->idx);
+	return (1);
 }
 
 double

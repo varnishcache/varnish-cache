@@ -190,13 +190,13 @@ VSL(SLT_Debug, vwp->pollfd[i].fd, "POLL loop i=%d revents=0x%x", i, vwp->pollfd[
 				v--;
 			then = Wait_When(wp);
 			if (then <= now) {
-				Wait_HeapDelete(w, wp);
+				AN(Wait_HeapDelete(w, wp));
 				Wait_Call(w, wp, WAITER_TIMEOUT, now);
 				vwp_del(vwp, i);
 			} else if (vwp->pollfd[i].revents & POLLIN) {
 				assert(wp->fd > 0);
 				assert(wp->fd == vwp->pollfd[i].fd);
-				Wait_HeapDelete(w, wp);
+				AN(Wait_HeapDelete(w, wp));
 				Wait_Call(w, wp, WAITER_ACTION, now);
 				vwp_del(vwp, i);
 			} else {
