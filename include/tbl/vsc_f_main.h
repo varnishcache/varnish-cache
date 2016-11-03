@@ -275,7 +275,8 @@ VSC_F(sess_dropped,		uint64_t, 0, 'c', 'i', info,
 
 VSC_F(n_object,			uint64_t, 1, 'g', 'i', info,
     "object structs made",
-	"Number of object structs made"
+	"Approximate number of HTTP objects (headers + body, if present)"
+	" in the cache."
 )
 VSC_F(n_vampireobject,		uint64_t, 1, 'g', 'i', diag,
     "unresurrected objects",
@@ -283,11 +284,13 @@ VSC_F(n_vampireobject,		uint64_t, 1, 'g', 'i', diag,
 )
 VSC_F(n_objectcore,		uint64_t, 1, 'g', 'i', info,
     "objectcore structs made",
-	"Number of objectcore structs made"
+	"Approximate number of object metadata elements in the cache."
+	" Each object needs an objectcore, extra objectcores are for"
+	" hit-for-pass and busy objects."
 )
 VSC_F(n_objecthead,		uint64_t, 1, 'g', 'i', info,
     "objecthead structs made",
-	"Number of objecthead structs made"
+	"Approximate number of different hash entries in the cache."
 )
 
 VSC_F(n_backend,		uint64_t, 0, 'g', 'i', info,
