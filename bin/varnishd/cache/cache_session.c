@@ -518,11 +518,15 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
 	if (isnan(now))
 		now = VTIM_real();
 	AZ(isnan(sp->t_open));
+	if (now < sp->t_open) {
+		if (now + cache_param->clock_step < sp->t_open)
+			WRONG("Clock step detected");
+		now = sp->t_open; /* Do not log negatives */
+	}
 
 	if (reason == SC_NULL)
 		reason = (enum sess_close)-sp->fd;
 
-	assert(now >= sp->t_open);
 	assert(VTAILQ_EMPTY(&sp->privs->privs));
 	VSL(SLT_SessClose, sp->vxid, "%s %.3f",
 	    sess_close_2str(reason, 0), now - sp->t_open);
