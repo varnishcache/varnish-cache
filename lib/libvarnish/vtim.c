@@ -466,6 +466,29 @@ tst_delta()
 	}
 }
 
+static void
+bench()
+{
+	double s, e, t;
+	int i;
+
+	t = 0;
+	s = VTIM_real();
+	for (i=0; i<100000; i++)
+		t += VTIM_real();
+	e = VTIM_real();
+	printf("real: %fs / %d = %fns - tst val %f\n",
+	    e - s, i, 1e9 * (e - s) / i, t);
+
+	t = 0;
+	s = VTIM_real();
+	for (i=0; i<100000; i++)
+		t += VTIM_mono();
+	e = VTIM_real();
+	printf("mono: %fs / %d = %fns - tst val %f\n",
+	    e - s, i, 1e9 * (e - s) / i, t);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -477,6 +500,8 @@ main(int argc, char **argv)
 
 	AZ(setenv("TZ", "UTC", 1));
 	assert(sizeof t >= 8);
+
+	bench();
 
 	/* Brute force test against libc version */
 	for (t = -2209852800; t < 20000000000; t += 3599) {
