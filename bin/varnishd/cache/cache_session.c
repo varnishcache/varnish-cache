@@ -519,6 +519,9 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
 		now = VTIM_real();
 	AZ(isnan(sp->t_open));
 	if (now < sp->t_open) {
+		VSL(SLT_Debug, sp->vxid,
+		    "Clock step (now=%f < t_open=%f)",
+		    now, sp->t_open);
 		if (now + cache_param->clock_step < sp->t_open)
 			WRONG("Clock step detected");
 		now = sp->t_open; /* Do not log negatives */
