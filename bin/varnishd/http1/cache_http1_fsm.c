@@ -263,16 +263,21 @@ http1_dissect(struct worker *wrk, struct req *req)
 
 	assert (req->req_body_status == REQ_BODY_INIT);
 
-	if (req->htc->body_status == BS_CHUNKED) {
+	switch (req->htc->body_status) {
+	case BS_CHUNKED:
 		req->req_body_status = REQ_BODY_WITHOUT_LEN;
-	} else if (req->htc->body_status == BS_LENGTH) {
+		break;
+	case BS_LENGTH:
 		req->req_body_status = REQ_BODY_WITH_LEN;
-	} else if (req->htc->body_status == BS_NONE) {
+		break;
+	case BS_NONE:
 		req->req_body_status = REQ_BODY_NONE;
-	} else if (req->htc->body_status == BS_EOF) {
+		break;
+	case BS_EOF:
 		req->req_body_status = REQ_BODY_WITHOUT_LEN;
-	} else {
-		WRONG("Unknown req.body_length situation");
+		break;
+	default:
+		WRONG("Unknown req_body_status situation");
 	}
 
 	if (http_GetHdr(req->http, H_Expect, &p)) {
@@ -404,7 +409,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				    "H2 Prior Knowledge Upgrade");
 				http1_setstate(sp, NULL);
 				req->err_code = 1;
-				SES_SetTransport(wrk, sp, req, &H2_transport);
+				SES_SetTransport(wrk, sp, req,
+				    &H2_transport);
 				return;
 			}
 
@@ -424,7 +430,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 					VSLb(req->vsl, SLT_Debug,
 					    "H2 upgrade attempt has body");
 				} else {
-					VSLb(req->vsl, SLT_Debug, "H2 Upgrade");
+					VSLb(req->vsl, SLT_Debug,
+					    "H2 Upgrade");
 					http1_setstate(sp, NULL);
 					req->err_code = 2;
 					SES_SetTransport(wrk, sp, req,
@@ -441,7 +448,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			 */
 			if (VTCP_check_hup(sp->fd)) {
 				AN(req->hash_objhead);
-				(void)HSH_DerefObjHead(wrk, &req->hash_objhead);
+				(void)HSH_DerefObjHead(wrk,
+				    &req->hash_objhead);
 				AZ(req->hash_objhead);
 				SES_Close(sp, SC_REM_CLOSE);
 				AN(Req_Cleanup(sp, wrk, req));
