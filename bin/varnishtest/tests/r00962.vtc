@@ -3,7 +3,7 @@ varnishtest "Test address remapping"
 # VM-remapping is too random on OSX
 feature	!OSX
 # Same on some hardened Linux
-feature cmd "gradm2 >& >/dev/null; [ $? -ne 0 ]"
+feature cmd "test ! -c /dev/grsec"
 
 server s1 {
 	rxreq
