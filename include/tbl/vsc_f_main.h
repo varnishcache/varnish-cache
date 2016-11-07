@@ -249,8 +249,8 @@ VSC_F(busy_sleep,		uint64_t, 1, 'c', 'i', info,
 
 VSC_F(busy_wakeup,		uint64_t, 1, 'c', 'i', info,
     "Number of requests woken after sleep on busy objhdr",
-	"Number of requests taken of the busy object sleep list and"
-	" and rescheduled."
+	"Number of requests taken off the busy object sleep list and"
+	" rescheduled."
 )
 
 VSC_F(busy_killed,		uint64_t, 1, 'c', 'i', info,
