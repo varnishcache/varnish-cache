@@ -5,9 +5,12 @@ server s1 {
 	txresp
 	rxreq
 	txresp
+
+	rxreq
+	txresp
 } -start
 
-varnish v1 -vcl+backend {
+varnish v1 -arg "-p debug=+vclrel" -vcl+backend {
 	import debug;
 	import std;
 
@@ -46,6 +49,14 @@ varnish v1 -vcl+backend {
 		set beresp.http.bx1 = debug.test_priv_task("");
 		set beresp.http.bo1 = obj.test_priv_task("");
 	}
+
+	sub vcl_fini {
+		debug.test_priv_task("cleaning");
+		debug.test_priv_task("up");
+		std.log("func " + debug.test_priv_task());
+		std.log("obj "  + obj.test_priv_task());
+	}
+
 } -start
 
 logexpect l1 -v v1 -g raw -d 1 {
@@ -64,6 +75,10 @@ logexpect l1 -v v1 -g raw -d 1 {
 	expect 0 =    VCL_Log		^foo
 	expect 0 =    BereqHeader	{^bx0: b /snafu}
 	expect 0 =    VCL_Log		^bar
+
+	expect * 0    Debug		{^vcl1: VCL_EVENT_COLD}
+	expect * =    VCL_Log		{^func cleaning up}
+	expect 0 =    VCL_Log		{^obj cleaning up}
 } -start
 
 client c1 {
@@ -85,5 +100,20 @@ client c1 {
 	expect resp.http.bx1 == "b /snafu"
 	expect resp.http.bo1 == "b /snafu"
 } -run
+
+shell "echo 'vcl 4.0; backend foo { .host = \"${s1_addr}\"; .port = \"${s1_port}\"; }' > ${tmpdir}/_b00014.vcl"
+
+varnish v1 -cliok "vcl.load foo ${tmpdir}/_b00014.vcl" \
+	-cliok "vcl.use foo" \
+	-cliok "vcl.list" \
+	-cliok "vcl.discard vcl1" \
+	-cliok "vcl.list"
+
+client c1 {
+	txreq -url /foo
+	rxresp
+} -run
+
+varnish v1 -cliok "vcl.list"
 
 logexpect l1 -wait
