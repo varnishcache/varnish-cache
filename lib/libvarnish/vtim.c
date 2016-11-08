@@ -62,6 +62,9 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#ifdef __MACH__
+#include <mach/mach_time.h>
+#endif
 
 #include "vas.h"
 #include "vtim.h"
@@ -87,6 +90,29 @@ static const int days_before_month[] = {
 	0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
 };
 
+#ifdef __MACH__
+// http://stackoverflow.com/a/21352348
+static uint64_t mt_base;
+static double   mt_scale;
+
+void
+mach_time_init(void)
+{
+	mach_timebase_info_data_t timebase;
+
+	mt_base = mach_absolute_time();
+
+	AZ(mach_timebase_info(&timebase));
+	mt_scale = (double)timebase.numer / (double)timebase.denom * 1e-9;
+}
+
+__attribute__((constructor)) void
+init(void)
+{
+	mach_time_init();
+}
+#endif
+
 /*
  * Note on Solaris: for some reason, clock_gettime(CLOCK_MONOTONIC, &ts) is not
  * implemented in assembly, but falls into a syscall, while gethrtime() doesn't,
@@ -103,11 +129,12 @@ VTIM_mono(void)
 
 	AZ(clock_gettime(CLOCK_MONOTONIC, &ts));
 	return (ts.tv_sec + 1e-9 * ts.tv_nsec);
-#else
-	struct timeval tv;
+#elif  defined(__MACH__)
+	uint64_t mt = mach_absolute_time() - mt_base;
 
-	AZ(gettimeofday(&tv, NULL));
-	return (tv.tv_sec + 1e-6 * tv.tv_usec);
+	return (mt * mt_scale);
+#else
+#error Varnish needs some monotonic time source
 #endif
 }
 
