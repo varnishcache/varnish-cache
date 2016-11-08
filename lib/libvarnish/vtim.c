@@ -95,7 +95,7 @@ static const int days_before_month[] = {
 static uint64_t mt_base;
 static double   mt_scale;
 
-void
+static void
 mach_time_init(void)
 {
 	mach_timebase_info_data_t timebase;
@@ -106,7 +106,7 @@ mach_time_init(void)
 	mt_scale = (double)timebase.numer / (double)timebase.denom * 1e-9;
 }
 
-__attribute__((constructor)) void
+static __attribute__((constructor)) void
 init(void)
 {
 	mach_time_init();
