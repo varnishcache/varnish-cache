@@ -93,6 +93,86 @@ When using the here document style of input there are no restrictions
 on length. When using newline-terminated commands maximum length is
 limited by the varnishd parameter *cli_buffer*.
 
+Quoting pitfalls
+----------------
+
+Integrating with the Varnish CLI can be sometimes surprising when quoting
+is involved. For instance in Bourne Shell the delimiter used with here
+documents may or may not be separated by spaces from the ``<<`` token::
+
+   cat <<EOF
+   hello
+   world
+   EOF
+   hello
+   world
+
+With the Varnish CLI, the ``<<`` and ``EOF`` tokens must be separated by
+at least one blank::
+
+   vcl.inline boot <<EOF
+   106 258
+   Message from VCC-compiler:
+   VCL version declaration missing
+   Update your VCL to Version 4 syntax, and add
+           vcl 4.0;
+   on the first line of the VCL files.
+   ('<vcl.inline>' Line 1 Pos 1)
+   <<EOF
+   ##---
+
+   Running VCC-compiler failed, exited with 2
+   VCL compilation failed
+
+With the missing space, the here document can be added and the actual VCL
+can be loaded::
+
+   vcl.inline test << EOF
+   vcl 4.0;
+
+   backend be {
+           .host = "localhost";
+   }
+   EOF
+   200 14
+   VCL compiled.
+
+When using a front-end to the Varnish-CLI like ``varnishadm``, one must
+take into account the double expansion happening.  First in the shell
+launching the ``varnishadm`` command and then in the Varnish CLI itself.
+When a command's parameter require spaces, you need to ensure that the
+Varnish CLI will see the double quotes::
+
+   varnishadm param.set cc_command '"my alternate cc command"'
+
+   Change will take effect when VCL script is reloaded
+
+Otherwise if you don't quote the quotes, you may get a seemingly unrelated
+error message::
+
+   varnishadm param.set cc_command "my alternate cc command"
+   Unknown request.
+   Type 'help' for more info.
+   Too many parameters
+
+   Command failed with error code 105
+
+If you are quoting with a here document, you must wrap it inside a shell
+multi-line argument::
+
+   varnishadm vcl.inline test '<< EOF
+   vcl 4.0;
+
+   backend be {
+           .host = "localhost";
+   }
+   EOF'
+   VCL compiled.
+
+Other pitfalls include variable expansion of the shell invoking ``varnishadm``
+but this is not directly related to the Varnish CLI. If you get the quoting
+right you should be fine even with complex commands.
+
 Commands
 --------
 
