@@ -51,29 +51,48 @@ that service. Please see :ref:`varnishd(1)` for details.
 Syntax
 ------
 
-Commands are usually terminated with a newline. Long command can be
-entered using shell-style *here document* (here-document or heredoc).
-The format of here document is::
+The Varnish CLI is similar to another command line interface, the Bourne
+Shell. Commands are usually terminated with a newline, and they may take
+arguments. The command and its arguments are *tokenized* before parsing,
+and as such arguments containing must must be enclosed in double quotes.
+
+It means that command parsing of
+
+::
+
+   help banner
+
+is equivalent to
+
+::
+
+   "help" banner
+
+because the double quotes only indicate the boundaries of the ``help``
+token.
+
+Within double quotes you can escape characters with \\ (backslash). The \\n,
+\\r, and \\t get translated to newlines, carriage returns, an tabs.  Double
+quotes and backslashes themselves can be escaped with \\" and \\\\
+respectively.
+
+To enter characters in octals use the \\nnn syntax. Hexadecimals can
+be entered with the \\xnn syntax.
+
+Commands may not end with a newline when a shell-style *here document*
+(here-document or heredoc) is used. The format of a here document is::
 
    << word
 	here document
    word
 
 *word* can be any continuous string chosen to make sure it doesn't appear
-naturally in the following *here document*. Often EOF or END is used.
+naturally in the following *here document*. Traditionally EOF or END is
+used.
 
 When using the here document style of input there are no restrictions
 on length. When using newline-terminated commands maximum length is
 limited by the varnishd parameter *cli_buffer*.
-
-When commands are newline terminated they get *tokenized* before
-parsing so if you have significant spaces enclose your strings in
-double quotes. Within the quotes you can escape characters with
-\\. The \n, \r and \t get translated to newlines, carriage returns and
-tabs. Double quotes themselves can be escaped with a backslash.
-
-To enter characters in octals use the \\nnn syntax. Hexadecimals can
-be entered with the \\xnn syntax.
 
 Commands
 --------
