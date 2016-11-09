@@ -163,15 +163,15 @@ pan_ws(struct vsb *vsb, const struct ws *ws)
 		VSB_printf(vsb, "OVERFLOWED ");
 	VSB_printf(vsb, "id = \"%s\",\n", ws->id);
 	VSB_printf(vsb, "{s, f, r, e} = {%p", ws->s);
-	if (ws->f > ws->s)
+	if (ws->f >= ws->s)
 		VSB_printf(vsb, ", +%ld", (long) (ws->f - ws->s));
 	else
 		VSB_printf(vsb, ", %p", ws->f);
-	if (ws->r > ws->s)
+	if (ws->r >= ws->s)
 		VSB_printf(vsb, ", +%ld", (long) (ws->r - ws->s));
 	else
 		VSB_printf(vsb, ", %p", ws->r);
-	if (ws->e > ws->s)
+	if (ws->e >= ws->s)
 		VSB_printf(vsb, ", +%ld", (long) (ws->e - ws->s));
 	else
 		VSB_printf(vsb, ", %p", ws->e);
