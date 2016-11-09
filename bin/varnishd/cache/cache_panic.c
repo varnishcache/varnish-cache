@@ -193,7 +193,7 @@ pan_htc(struct vsb *vsb, const struct http_conn *htc)
 	PAN_CheckMagic(vsb, htc, HTTP_CONN_MAGIC);
 	VSB_printf(vsb, "fd = %d,\n", htc->fd);
 	VSB_printf(vsb, "doclose = %s,\n", sess_close_2str(htc->doclose, 0));
-	VSB_printf(vsb, "ws = %p,\n", htc->ws);
+	pan_ws(vsb, htc->ws);
 	VSB_printf(vsb, "{rxbuf_b, rxbuf_e} = {%p, %p},\n",
 	    htc->rxbuf_b, htc->rxbuf_e);
 	VSB_printf(vsb, "{pipeline_b, pipeline_e} = {%p, %p},\n",
@@ -222,7 +222,7 @@ pan_http(struct vsb *vsb, const char *id, const struct http *h)
 		return;
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, h, HTTP_MAGIC);
-	VSB_printf(vsb, "ws[%s] = %p,\n", h->ws ? h->ws->id : "", h->ws);
+	pan_ws(vsb, h->ws);
 	VSB_printf(vsb, "hdrs {\n");
 	VSB_indent(vsb, 2);
 	for (i = 0; i < h->nhd; ++i) {
