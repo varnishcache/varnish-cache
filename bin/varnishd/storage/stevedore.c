@@ -52,13 +52,16 @@ const struct stevedore *
 STV_next()
 {
 	static struct stevedore *stv;
+	static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 
+	AZ(pthread_mutex_lock(&mtx));
 	if (!STV__iter(&stv))
 		AN(STV__iter(&stv));
 	if (stv == stv_transient) {
 		stv = NULL;
 		AN(STV__iter(&stv));
 	}
+	AZ(pthread_mutex_unlock(&mtx));
 	AN(stv);
 	return (stv);
 }
