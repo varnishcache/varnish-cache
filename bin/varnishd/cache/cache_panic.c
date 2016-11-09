@@ -518,9 +518,10 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 		VSB_indent(vsb, -2);
 		VSB_printf(vsb, "}");
 	}
+	VSB_printf(vsb, "\n");
 	ci = SES_Get_String_Attr(sp, SA_CLIENT_IP);
 	cp = SES_Get_String_Attr(sp, SA_CLIENT_PORT);
-	VSB_printf(vsb, "\nclient = %s %s,\n", ci, cp);
+	VSB_printf(vsb, "client = %s %s,\n", ci, cp);
 
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
