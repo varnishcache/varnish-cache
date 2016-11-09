@@ -117,8 +117,8 @@ VRY_Create(struct busyobj *bo, struct vsb **psb)
 
 		/* Build a header-matching string out of it */
 		VSB_clear(sbh);
-		VSB_printf(sbh, "%c%.*s:%c",
-		    (char)(1 + (q - p)), (int)(q - p), p, 0);
+		AZ(VSB_printf(sbh, "%c%.*s:%c",
+		    (char)(1 + (q - p)), (int)(q - p), p, 0));
 		AZ(VSB_finish(sbh));
 
 		if (http_GetHdr(bo->bereq, VSB_data(sbh), &h)) {
@@ -139,11 +139,11 @@ VRY_Create(struct busyobj *bo, struct vsb **psb)
 			e = h;
 			l = 0xffff;
 		}
-		VSB_printf(sb, "%c%c", (int)(l >> 8), (int)(l & 0xff));
+		AZ(VSB_printf(sb, "%c%c", (int)(l >> 8), (int)(l & 0xff)));
 		/* Append to vary matching string */
-		VSB_bcat(sb, VSB_data(sbh), VSB_len(sbh));
+		AZ(VSB_bcat(sb, VSB_data(sbh), VSB_len(sbh)));
 		if (e != h)
-			VSB_bcat(sb, h, e - h);
+			AZ(VSB_bcat(sb, h, e - h));
 
 		while (vct_issp(*q))
 			q++;
@@ -291,6 +291,7 @@ VRY_Match(struct req *req, const uint8_t *vary)
 	int i, oflo = 0;
 
 	AN(vsp);
+	AN(vary);
 	while (vary[2]) {
 		if (vsp + 2 >= req->vary_e) {
 			/*
