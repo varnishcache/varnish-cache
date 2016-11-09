@@ -199,8 +199,39 @@ struct parspec WRK_parspec[] = {
 		NULL, NULL,
 		"Worker thread stack size.\n"
 		"This will likely be rounded up to a multiple of 4k"
-		" (or whatever the page_size might be) by the kernel.",
-		EXPERIMENTAL,
+		" (or whatever the page_size might be) by the kernel.\n"
+		"\n"
+		"The required stack size is primarily driven by the"
+		" depth of the call-tree. The most common relevant"
+		" determining factors in varnish core code are GZIP"
+		" (un)compression, ESI processing and regular"
+		" expression matches. VMODs may also require"
+		" significant amounts of additional stack. The"
+		" nesting depth of VCL subs is another factor,"
+		" although typically not predominant.\n"
+		"\n"
+		"The stack size is per thread, so the maximum total"
+		" memory required for worker thread stacks is in the"
+		" order of size = thread_pools x thread_pool_max x"
+		" thread_pool_stack.\n"
+		"\n"
+		"Thus, in particular for setups with many threads,"
+		" keeping the stack size at a minimum helps reduce"
+		" the amount of memory required by Varnish.\n"
+		"\n"
+		"On the other hand, thread_pool_stack must be large"
+		" enough under all circumstances, otherwise varnish"
+		" will crash due to a stack overflow. Usually, a"
+		" stack overflow manifests itself as a segmentation"
+		" fault (aka segfault / SIGSEGV) with the faulting"
+		" address being near the stack pointer (sp).\n"
+		"\n"
+		"Unless stack usage can be reduced,"
+		" thread_pool_stack must be increased when a stack"
+		" overflow occurs. Setting it in 150%-200%"
+		" increments is recommended until stack overflows"
+		" cease to occur.",
+		DELAYED_EFFECT,
 		NULL, "bytes" },	// default set in mgt_main.c
 	{ NULL, NULL, NULL }
 };
