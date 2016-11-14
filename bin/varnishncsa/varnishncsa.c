@@ -600,7 +600,7 @@ parse_x_format(char *buf)
 {
 	char *e, *r, *s;
 	int slt;
-	long i;
+	intmax_t i;
 
 	if (!strcmp(buf, "Varnish:time_firstbyte")) {
 		addf_fragment(&CTX.frag[F_ttfb], "");
@@ -640,7 +640,7 @@ parse_x_format(char *buf)
 			if (r == buf || r[1] == ']')
 				VUT_Error(1, "Syntax error: VSL:%s", buf);
 			e[-1] = '\0';
-			i = strtol(r + 1, &s, 10);
+			i = strtoimax(r + 1, &s, 10);
 			if (s != e - 1)
 				VUT_Error(1, "Syntax error: VSL:%s]", buf);
 			if (i <= 0)
@@ -650,7 +650,7 @@ parse_x_format(char *buf)
 				    buf);
 			if (i > INT_MAX) {
 				VUT_Error(1,
-				    "Field specifier %ld for the tag VSL:%s]"
+				    "Field specifier %jd for the tag VSL:%s]"
 				    " is probably too high",
 				    i, buf);
 			}
