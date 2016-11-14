@@ -743,6 +743,10 @@ sp_variables = [
 
 		Assigning a HTTP standardized code to resp.status will also
 		set resp.reason to the corresponding status message.
+
+		resp.status 200 will get changed into 304 by core code after
+		a return(deliver) from vcl_deliver for conditional requests
+		to cached content if validation succeeds.
 		"""
 	),
 	('resp.reason',
