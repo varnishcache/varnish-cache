@@ -494,6 +494,21 @@ PARAM(
 )
 
 PARAM(
+	/* name */	gethdr_extrachance,
+	/* typ */	uint,
+	/* min */	"0",
+	/* max */	"100",
+	/* default */	"1",
+	/* units */	NULL,
+	/* flags */	EXPERIMENTAL,
+	/* s-text */
+	"Maximum number of retries in vbe_dir_gethdrs. "
+	"Setting this to zero disables the feature.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
+PARAM(
 	/* name */	gzip_buffer,
 	/* typ */	bytes_u,
 	/* min */	"2k",
