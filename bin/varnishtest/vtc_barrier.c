@@ -417,10 +417,6 @@ cmd_barrier(CMD_ARGS)
 			AZ(pthread_mutex_lock(&b->mtx));
 			switch (b->type) {
 			case BARRIER_COND:
-				if (b->cyclic)
-					AZ(b->waiters);
-				else
-					assert(b->waiters == b->expected);
 				break;
 			case BARRIER_SOCK:
 				b->active = 0;
