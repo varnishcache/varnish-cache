@@ -247,8 +247,7 @@ process_run(struct process *p)
 static void
 process_kill(const struct process *p, const char *sig)
 {
-	int s;
-	char buf[64];
+	int j;
 
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
 	AN(sig);
@@ -256,12 +255,19 @@ process_kill(const struct process *p, const char *sig)
 	if (!p->running || !p->pid)
 		vtc_log(p->vl, 0, "Cannot signal a non-running process");
 
-	bprintf(buf, "kill -%s -%d", sig, p->pid);
-	vtc_log(p->vl, 4, "CMD: %s", buf);
+	if (!strcmp(sig, "TERM"))
+		j = SIGTERM;
+	else if (!strcmp(sig, "HUP"))
+		j = SIGHUP;
+	else if (!strcmp(sig, "KILL"))
+		j = SIGKILL;
+	else
+		j = strtoul(sig, NULL, 10);
 
-	s = system(buf);
-	if (s != 0)
-		vtc_log(p->vl, 0, "Failed to send signal (exit status: %d)", s);
+	if (kill(p->pid, j) < 0)
+		vtc_log(p->vl, 0, "Failed to send signal %d (%s)", j, strerror(errno));
+	else
+		vtc_log(p->vl, 4, "Sent signal %d", j);
 }
 
 static inline void
