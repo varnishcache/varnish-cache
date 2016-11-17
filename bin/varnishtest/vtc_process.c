@@ -247,7 +247,7 @@ process_run(struct process *p)
 static void
 process_kill(const struct process *p, const char *sig)
 {
-	int j;
+	int j = 0;
 
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
 	AN(sig);
@@ -257,12 +257,14 @@ process_kill(const struct process *p, const char *sig)
 
 	if (!strcmp(sig, "TERM"))
 		j = SIGTERM;
-	else if (!strcmp(sig, "HUP"))
-		j = SIGHUP;
+	else if (!strcmp(sig, "INT"))
+		j = SIGINT;
 	else if (!strcmp(sig, "KILL"))
 		j = SIGKILL;
+	else if (*sig == '-')
+		j = strtoul(sig + 1, NULL, 10);
 	else
-		j = strtoul(sig, NULL, 10);
+		vtc_log(p->vl, 0, "Could not grok signal (%s)", sig);
 
 	if (kill(p->pid, j) < 0)
 		vtc_log(p->vl, 0, "Failed to send signal %d (%s)", j, strerror(errno));

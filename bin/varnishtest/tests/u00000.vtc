@@ -16,7 +16,7 @@ delay 0.5
 # stop
 process p1 -stop
 process p2 -close
-process p3 -kill "HUP"
+process p3 -kill "INT"
 
 # wait
 process p1 -wait
