@@ -46,7 +46,7 @@ WAITBAD=1		# unit: WAITPERIOD
 
 #######################################################################
 
-if [ ! -d varnish-cache ] ; then
+if ! (cd varnish-cache 2>/dev/null) ; then
 	git clone \
 		https://github.com/varnishcache/varnish-cache.git \
 		varnish-cache
