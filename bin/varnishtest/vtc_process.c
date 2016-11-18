@@ -266,7 +266,7 @@ process_kill(const struct process *p, const char *sig)
 	else
 		vtc_log(p->vl, 0, "Could not grok signal (%s)", sig);
 
-	if (kill(p->pid, j) < 0)
+	if (kill(-p->pid, j) < 0)
 		vtc_log(p->vl, 0, "Failed to send signal %d (%s)", j, strerror(errno));
 	else
 		vtc_log(p->vl, 4, "Sent signal %d", j);
