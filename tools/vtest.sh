@@ -44,6 +44,8 @@ WAITPERIOD=60		# unit: Seconds
 WAITGOOD=60		# unit: WAITPERIOD
 WAITBAD=1		# unit: WAITPERIOD
 
+SSH_DST="-p 203 vtest@varnish-cache.org"
+
 #######################################################################
 
 if ! (cd varnish-cache 2>/dev/null) ; then
@@ -100,9 +102,10 @@ submit () (
 		-o StrictHostKeyChecking=no \
 		-o PasswordAuthentication=no \
 		-o NumberOfPasswordPrompts=0 \
+		-o RequestTTY=no \
 		-i vt_key \
-		-p 203 \
-		vtest@varnish-cache.org < ${1}
+		${SSH_DST} \
+		< ${1}
 )
 
 rm -f _report.tgz
