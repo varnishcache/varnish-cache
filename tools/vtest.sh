@@ -60,13 +60,13 @@ autogen () (
 	set -e
 	cd varnish-cache
 	nice make distclean > /dev/null 2>&1 || true
-	nice /usr/bin/time sh autogen.des
+	nice sh autogen.des
 )
 
 makedistcheck () (
 	set -e
 	cd varnish-cache
-	nice /usr/bin/time make distcheck
+	nice make distcheck
 )
 
 failedtests () (
