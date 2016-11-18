@@ -72,8 +72,8 @@ OPTIONS
 
 -h <type[,options]>
 
-  Specifies the hash algorithm. See `Hash Algorithm Options`_ for a
-  list of supported algorithms.
+  Specifies the hash algorithm. See `Hash Algorithm`_ section for a list
+  of supported algorithms.
 
 -i identity
 
@@ -82,7 +82,7 @@ OPTIONS
 
 -j <jail[,jailoptions]>
 
-  Specify the jailing technology to use.
+  Specify the jailing mechanism to use. See `Jail`_ section.
 
 -l <vsl[,vsm]>
 
@@ -131,7 +131,7 @@ OPTIONS
 
 -s <[name=]type[,options]>
 
-  Use the specified storage backend, see `Storage Backend Options`_.
+  Use the specified storage backend. See `Storage Backend`_ section.
 
   This option can be used multiple times to specify multiple storage
   files. Names are referenced in logs, VCL, statistics, etc.
@@ -156,8 +156,8 @@ OPTIONS
 
 .. _opt_h:
 
-Hash Algorithm Options
-----------------------
+Hash Algorithm
+--------------
 
 The following hash algorithms are available:
 
@@ -183,8 +183,8 @@ The following hash algorithms are available:
 
 .. _ref-varnishd-opt_s:
 
-Storage Backend Options
------------------------
+Storage Backend
+---------------
 
 The following storage types are available:
 
@@ -218,8 +218,8 @@ The following storage types are available:
 
 .. _ref-varnishd-opt_j:
 
-Jail Options
-------------
+Jail
+----
 
 Varnish jails are a generalization over various platform specific
 methods to reduce the privileges of varnish processes. They may have
@@ -231,24 +231,27 @@ specific options. Available jails are:
   required set. Only available on platforms which have the setppriv(2)
   call.
 
--j <unix[,user=`user`][,ccgroup=`group`]>
+-j <unix[,user=`user`][,ccgroup=`group`][,workuser=`user`]>
 
-  Default on all other platforms if `varnishd` is either started with
+  Default on all other platforms when `varnishd` is either started with
   an effective uid of 0 ("as root") or as user ``varnish``.
 
-  With the ``unix`` jail technology activated, varnish will switch to
+  With the ``unix`` jail mechanism activated, varnish will switch to
   an alternative user for subprocesses and change the effective uid of
   the master process whenever possible.
 
   The optional `user` argument specifies which alternative user to
-  use. It defaults to ``varnish``
+  use. It defaults to ``varnish``.
 
   The optional `ccgroup` argument specifies a group to add to varnish
   subprocesses requiring access to a c-compiler. There is no default.
 
+  The optional `workuser` argument specifies an alternative user to use
+  for the worker process. It defaults to ``vcache``.
+
 -j none
 
-  last resort jail choice: With jail technology ``none``, varnish will
+  last resort jail choice: With jail mechanism ``none``, varnish will
   run all processes with the privileges it was started with.
 
 
