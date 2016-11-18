@@ -31,7 +31,7 @@ set -e
 #######################################################################
 # Parameters
 
-export MAKEFLAGS=-j2
+export MAKEFLAGS="${MAKEFLAGS:--j2}"
 
 export TMPDIR=`pwd`/tmp
 mkdir -p tmp
