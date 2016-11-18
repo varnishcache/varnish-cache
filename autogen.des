@@ -12,7 +12,9 @@ if [ -f /usr/bin/clang -a "x${CC}" = "x" ] ; then
 	export CC
 fi
 
-if [ "x`uname -o`" = "xFreeBSD" ] ; then
+if [ "x$DST" != "x" ] ; then
+	:
+elif [ "x`uname -o`" = "xFreeBSD" ] ; then
 	DST="--prefix=/usr/local --mandir=/usr/local/man"
 else
 	DST="--prefix=/opt/varnish --mandir=/opt/varnish/man"
