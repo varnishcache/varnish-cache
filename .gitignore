@@ -110,6 +110,11 @@ cscope.*out
 /bin/varnishtest/tests/*.log-t
 /bin/varnishtest/test-suite.log
 
+# vtest.sh droppings
+tmp/
+vt_key
+vt_key.pub
+
 # Coverity output
 /cov-int
 /myproject.tgz
