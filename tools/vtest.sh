@@ -105,6 +105,7 @@ submit () (
 		-o RequestTTY=no \
 		-i vt_key \
 		${SSH_DST} \
+		true \
 		< ${1}
 )
 
