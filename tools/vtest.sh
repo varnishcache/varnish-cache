@@ -36,8 +36,9 @@ export MAKEFLAGS="${MAKEFLAGS:--j2}"
 export TMPDIR=`pwd`/tmp
 mkdir -p tmp
 
-# Contact email of responsible person
-CONTACT=phk@varnish-cache.org
+# Message to be shown in result pages
+# Max 10 char of [A-Za-z0-9/. _-]
+MESSAGE=
 
 WAITPERIOD=60		# unit: Seconds
 
@@ -141,7 +142,7 @@ do
 	mkdir _report
 	export LOG=_report/_log
 
-	echo "VTEST 1.01" > ${LOG}
+	echo "VTEST 1.02" > ${LOG}
 	echo "DATE `date +%s`" >> ${LOG}
 	echo "BRANCH trunk" >> ${LOG}
 	echo "HOST `hostname`" >> ${LOG}
@@ -151,6 +152,7 @@ do
 	else
 		echo "LSB none" >> ${LOG}
 	fi
+	echo "MESSAGE ${MESSAGE}" >> ${LOG}
 	echo "GITREV $rev" >> ${LOG}
 	if ! autogen >> _report/_autogen 2>&1 ; then
 		echo "AUTOGEN BAD" >> ${LOG}
