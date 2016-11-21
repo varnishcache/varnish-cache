@@ -12,7 +12,7 @@ link_srcdir:
 	   test ! -f $(builddir)/cache_http1_fsm.svg ; then \
 		d=`pwd`/$(builddir) ; \
 		cd $(srcdir) && find . -name \*.svg -type f | \
-		cpio -ldmp $${d} ; \
+		cpio -ldmp $${d} || true ; \
 	fi
 
 dist-hook:
