@@ -32,10 +32,10 @@ request::
     backend default { .host = "127.0.0.1"; }
 
     sub vcl_recv {
-	if (req.http.host ~ "varnish.org$") {
+	if (req.http.host ~ "(?i)varnish.org$") {
 	    return (vcl(l_vo));
 	}
-	if (req.http.host ~ "varnish-cache.org$") {
+	if (req.http.host ~ "(?i)varnish-cache.org$") {
 	    return (vcl(l_vc));
 	}
 	return (synth(302, "http://varnish-cache.org"));
