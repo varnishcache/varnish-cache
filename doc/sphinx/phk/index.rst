@@ -8,6 +8,7 @@ You may or may not want to know what Poul-Henning thinks.
 .. toctree::
 	:maxdepth: 1
 
+	trialerror.rst
 	farfaraway.rst
 	thatslow.rst
 	firstdesign.rst
