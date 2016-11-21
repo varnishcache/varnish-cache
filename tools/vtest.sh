@@ -80,21 +80,26 @@ makedistcheck () (
 )
 
 failedtests () (
-	for t in `grep '^FAIL: tests/' ${1} | sort -u | sed 's/.* //'`
+	set -e
+
+	REPORTDIR=`pwd`/_report
+
+	cd varnish-cache
+
+	VERSION=`./configure --version | awk 'NR == 1 {print $NF}'`
+	LOGDIR=varnish-$VERSION/_build/sub/bin/varnishtest/tests
+	VTCDIR=bin/varnishtest/tests
+
+	grep -l ':test-result: FAIL' $LOGDIR/*.trs |
+	while read trs
 	do
-		printf 'VTCGITREV %s ' "${t}"
-		(
-			cd varnish-cache/bin/varnishtest/
-			git log -n 1 ${t} | head -1
-		)
-		b=`basename ${t} .vtc`
-		for i in `find "${BUILDDIR}" -name ${b}.log -print`
-		do
-			if [ -f ${i} ] ; then
-				mv ${i} "_report/_${b}.log"
-				echo "MANIFEST _${b}.log" >> ${LOG}
-			fi
-		done
+		name=`basename $trs .trs`
+		vtc=${name}.vtc
+		log=${name}.log
+		rev=`git log -n 1 --pretty=format:%H ${VTCDIR}/${vtc}`
+		cp ${LOGDIR}/${log} ${REPORTDIR}/_${log}
+		echo "VTCGITREV ${name} ${rev}"
+		echo "MANIFEST _${log}"
 	done
 )
 
@@ -179,7 +184,7 @@ do
 			echo "MAKEDISTCHECK BAD" >> ${LOG}
 			echo "MANIFEST _autogen" >> ${LOG}
 			echo "MANIFEST _makedistcheck" >> ${LOG}
-			failedtests _report/_makedistcheck >> ${LOG}
+			failedtests >> ${LOG}
 		else
 			echo "MAKEDISTCHECK GOOD" >> ${LOG}
 			waitnext=${WAITGOOD}
