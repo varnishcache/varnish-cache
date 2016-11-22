@@ -682,6 +682,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	req->director_hint = VCL_DefaultDirector(req->vcl);
 	AN(req->director_hint);
 
+	req->vdp_retval = 0;
 	req->d_ttl = -1;
 	req->disable_esi = 0;
 	req->hash_always_miss = 0;

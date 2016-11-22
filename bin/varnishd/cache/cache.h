@@ -593,7 +593,7 @@ struct req {
 	/* Deliver pipeline */
 	struct vdp_entry_s	vdp;
 	struct vdp_entry	*vdp_nxt;
-	unsigned		vdp_errval;
+	int			vdp_retval;
 
 	/* Delivery mode */
 	unsigned		res_mode;

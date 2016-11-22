@@ -32,6 +32,22 @@
 #include "cache.h"
 #include "cache_filter.h"
 
+/* VDP_bytes
+ *
+ * Pushes len bytes at ptr down the delivery processor list.
+ *
+ * This function picks and calls the next delivery processor from the
+ * list. The return value is the return value of the delivery
+ * processor. Upon seeing a non-zero return value, that lowest value
+ * observed is latched in req->vdp_errval and all subsequent calls to
+ * VDP_bytes will return that value directly without calling the next
+ * processor.
+ *
+ * Valid return values (of VDP_bytes and any VDP function):
+ * r < 0:  Error, breaks out early on an error condition
+ * r == 0: Continue
+ * r > 0:  Stop, breaks out early without error condition
+ */
 int
 VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 {
@@ -40,8 +56,8 @@ VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	assert(act == VDP_NULL || act == VDP_FLUSH);
-	if (req->vdp_errval)
-		return (req->vdp_errval);
+	if (req->vdp_retval)
+		return (req->vdp_retval);
 	vdp = req->vdp_nxt;
 	CHECK_OBJ_NOTNULL(vdp, VDP_ENTRY_MAGIC);
 	req->vdp_nxt = VTAILQ_NEXT(vdp, list);
@@ -49,10 +65,10 @@ VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 	assert(act > VDP_NULL || len > 0);
 	/* Call the present layer, while pointing to the next layer down */
 	retval = vdp->func(req, act, &vdp->priv, ptr, len);
-	if (retval)
-		req->vdp_errval = retval; /* Latch error value */
+	if (retval && (req->vdp_retval == 0 || retval < req->vdp_retval))
+		req->vdp_retval = retval; /* Latch return value */
 	req->vdp_nxt = vdp;
-	return (retval);
+	return (req->vdp_retval);
 }
 
 void
@@ -121,6 +137,7 @@ VDP_DeliverObj(struct req *req)
 	ssize_t len;
 	void *oi;
 	void *ptr;
+	int i;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
@@ -137,9 +154,12 @@ VDP_DeliverObj(struct req *req)
 			break;
 		case OIS_DATA:
 		case OIS_STREAM:
-			if (VDP_bytes(req,
-			     ois == OIS_DATA ? VDP_NULL : VDP_FLUSH,  ptr, len))
+			i = VDP_bytes(req,
+			    ois == OIS_DATA ? VDP_NULL : VDP_FLUSH, ptr, len);
+			if (i < 0)
 				ois = OIS_ERROR;
+			else if (i > 0)
+				ois = OIS_DONE;
 			break;
 		default:
 			WRONG("Wrong OIS value");
