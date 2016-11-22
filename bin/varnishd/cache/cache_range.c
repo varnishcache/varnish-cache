@@ -48,7 +48,6 @@ static int __match_proto__(vdp_bytes)
 vrg_range_bytes(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
-	int retval = 0;
 	ssize_t l;
 	const char *p = ptr;
 	struct vrg_priv *vrg_priv;
@@ -76,11 +75,11 @@ vrg_range_bytes(struct req *req, enum vdp_action act, void **priv,
 	if (l > len)
 		l = len;
 	if (l > 0)
-		retval = VDP_bytes(req, act, p, l);
+		(void)VDP_bytes(req, act, p, l);
 	else if (act > VDP_NULL)
-		retval = VDP_bytes(req, act, p, 0);
+		(void)VDP_bytes(req, act, p, 0);
 	vrg_priv->range_off += len;
-	return (retval);
+	return (vrg_priv->range_off >= vrg_priv->range_high ? 1 : 0);
 }
 
 /*--------------------------------------------------------------------*/

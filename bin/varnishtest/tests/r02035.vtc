@@ -1,0 +1,34 @@
+varnishtest "Streaming range early finish"
+
+server s1 {
+	non-fatal
+	rxreq
+	txresp -nolen -hdr "Content-Length: 11"
+	# Delay to get around Nagle. Without the delay the body bytes
+	# would be in the same packet as the headers, and would end
+	# up as pipelined data. Pipelined data wouldn't create a streaming
+	# data event, breaking the test case.
+	delay 0.5
+	send_n 10 "A"
+	# Sema r1 halts the backend thread until client c1 is finished.
+	sema r1 sync 2
+	send "B"
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+client c1 {
+	txreq -hdr "Range: bytes=0-4"
+	rxresp
+	expect resp.status == 206
+	expect resp.bodylen == 5
+
+	# The client thread should be ready to accept another request:
+	txreq -hdr "Range: bytes=5-9"
+	rxresp
+	expect resp.status == 206
+	expect resp.bodylen == 5
+
+	sema r1 sync 2
+} -run
