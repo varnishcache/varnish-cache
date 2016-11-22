@@ -1564,8 +1564,8 @@ PARAM(
 	/* units */	"bytes",
 	/* flags */	DELAYED_EFFECT,
 	/* s-text */
-	"Bytes of HTTP protocol workspace for clients HTTP req/resp.  If "
-	"larger than 4k, use a multiple of 4k for VM efficiency.",
+	"Bytes of HTTP protocol workspace for clients HTTP req/resp.  Use a "
+	"multiple of 4k for VM efficiency.",
 	/* l-text */	"",
 	/* func */	NULL
 )
