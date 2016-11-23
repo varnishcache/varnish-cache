@@ -1,4 +1,26 @@
 ======================================
+Varnish Cache 4.1.4-beta3 (unreleased)
+======================================
+
+Changes since 4.1.4-beta2:
+
+* Include the current time of the panic in the panic output
+* Keep a reserve of idle threads for vital tasks
+
+Bugs fixed
+----------
+
+* 1874_ - clock-step related crash
+* 1889_ - (docfix) What does -p flag for backend.list command means
+* 2115_ - VSM temporary files are not always deleted
+* 2129_ - (docfix) stack overflow with >4 level esi
+
+.. _1874: https://github.com/varnishcache/varnish-cache/issues/1874
+.. _1889: https://github.com/varnishcache/varnish-cache/issues/1889
+.. _2115: https://github.com/varnishcache/varnish-cache/issues/2115
+.. _2129: https://github.com/varnishcache/varnish-cache/issues/2129
+
+======================================
 Varnish Cache 4.1.4-beta2 (2016-10-13)
 ======================================
 
