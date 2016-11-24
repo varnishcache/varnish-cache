@@ -70,6 +70,7 @@ struct vcl {
 	unsigned		discard;
 	const char		*temp;
 	pthread_rwlock_t	temp_rwl;
+	const struct director	*default_director;
 	VTAILQ_HEAD(,backend)	backend_list;
 	VTAILQ_HEAD(,vclref)	ref_list;
 	struct vcl		*label;
@@ -479,13 +480,13 @@ VCL_TestLoad(const char *fn)
 
 /*--------------------------------------------------------------------*/
 
-struct director *
+const struct director *
 VCL_DefaultDirector(const struct vcl *vcl)
 {
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	CHECK_OBJ_NOTNULL(vcl->conf, VCL_CONF_MAGIC);
-	return (*vcl->conf->default_director);
+	return (vcl->default_director);
 }
 
 void
@@ -495,8 +496,7 @@ VCL_SetDefaultDirector(struct vcl *vcl, const struct director *be)
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-
-	INCOMPL();
+	vcl->default_director = be;
 }
 
 const char *
@@ -706,7 +706,7 @@ vcl_cancel_load(VRT_CTX, struct cli *cli, const char *name, const char *step)
 
 	AZ(VSB_finish(ctx->msg));
 	VCLI_SetResult(cli, CLIS_CANT);
-	VCLI_Out(cli, "VCL \"%s\" Failed %s", name, step);
+	VCLI_Out(cli, "VCL \"%s\" failed %s", name, step);
 	if (VSB_len(ctx->msg))
 		VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(ctx->msg));
 	AZ(vcl->conf->event_vcl(ctx, VCL_EVENT_DISCARD));
@@ -749,6 +749,16 @@ vcl_load(struct cli *cli, struct vrt_ctx *ctx,
 		vcl_cancel_load(ctx, cli, name, "initialization");
 		return;
 	}
+
+	if (vcl->default_director == NULL &&
+	    vcl->conf->default_director != NULL)
+		vcl->default_director = *vcl->conf->default_director;
+
+	if (vcl->default_director == NULL) {
+		vcl_cancel_load(ctx, cli, name, "with no default backend");
+		return;
+	}
+
 	VSB_clear(ctx->msg);
 	i = vcl_set_state(ctx, state);
 	if (i) {
