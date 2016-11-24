@@ -160,7 +160,7 @@ returns = (
 sp_variables = [
 	('remote.ip',
 		'IP',
-		('client', 'backend'),
+		('both'),
 		(), """
 		The IP address of the other end of the TCP connection.
 		This can either be the clients IP, or the outgoing IP
@@ -169,7 +169,7 @@ sp_variables = [
 	),
 	('client.ip',
 		'IP',
-		('client', 'backend'),
+		('both'),
 		(), """
 		The client's IP address.
 		"""
@@ -185,14 +185,14 @@ sp_variables = [
 	),
 	('local.ip',
 		'IP',
-		('client', 'backend'),
+		('both'),
 		(), """
 		The IP address of the local end of the TCP connection.
 		"""
 	),
 	('server.ip',
 		'IP',
-		('client', 'backend'),
+		('both'),
 		(), """
 		The IP address of the socket on which the client
 		connection was received.
