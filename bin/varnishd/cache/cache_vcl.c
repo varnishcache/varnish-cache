@@ -488,6 +488,17 @@ VCL_DefaultDirector(const struct vcl *vcl)
 	return (*vcl->conf->default_director);
 }
 
+void
+VCL_SetDefaultDirector(struct vcl *vcl, const struct director *be)
+{
+
+	ASSERT_CLI();
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
+
+	INCOMPL();
+}
+
 const char *
 VCL_Name(const struct vcl *vcl)
 {
