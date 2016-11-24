@@ -39,6 +39,12 @@
  * binary/load-time compatible, increment MAJOR version
  *
  *
+ * 6.0 (unreleased):
+ *	VRT_ipcmp added
+ *	WS_Reset and WS_Snapshot signatures changed
+ *	WS_Front added
+ *	WS_ReserveLumps added
+ *	WS_Inside added
  * 5.0:
  *	Varnish 5.0 release "better safe than sorry" bump
  * 4.0:
@@ -50,7 +56,7 @@
  *	vrt_acl type added
  */
 
-#define VRT_MAJOR_VERSION	5U
+#define VRT_MAJOR_VERSION	6U
 
 #define VRT_MINOR_VERSION	0U
 
