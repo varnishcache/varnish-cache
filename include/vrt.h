@@ -43,16 +43,11 @@
  *	Varnish 5.0 release "better safe than sorry" bump
  * 4.0:
  *	VCL_BYTES changed to long long
+ *	VRT_CacheReqBody changed signature
  * 3.2:
  *	vrt_backend grew .proxy_header field
  *	vrt_ctx grew .sp field.
- *
- * older version:
- * Bump VRT_MINOR_VERSION due to:
- * - VCL_ACL type added
- * Bump VRT_MAJOR_VERSION due to:
- * - VRT_CacheReqBody changed signature
- *
+ *      vrt_acl type added
  */
 
 #define VRT_MAJOR_VERSION	5U
