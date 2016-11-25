@@ -27,7 +27,7 @@ server s1 {
 	txresp -bodylen 48
 } -start
 
-varnish v1 -arg "-sdeprecated_persistent,${tmpdir}/_.per,10m" \
+varnish v1 -arg "-sdeprecated_persistent,${tmpdir}/_.per,5m" \
 	-vcl+backend {} -start
 
 varnish v1 -cliok "debug.fragfetch 32"
