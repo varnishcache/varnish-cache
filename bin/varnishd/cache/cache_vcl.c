@@ -551,8 +551,11 @@ VRT_vcl_select(VRT_CTX, VCL_VCL vcl)
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	VCL_Rel(&req->vcl);
 	vcl_get(&req->vcl, vcl);
+	req->director_hint = vcl->default_director;
 	/* XXX: better logging */
 	VSLb(ctx->req->vsl, SLT_Debug, "Now using %s VCL", vcl->loaded_name);
+	VSLb(ctx->req->vsl, SLT_Debug, "Default backend is %s.%s",
+	    vcl->label->loaded_name, vcl->default_director->vcl_name);
 }
 
 struct vclref *
@@ -929,6 +932,7 @@ vcl_cli_label(struct cli *cli, const char * const *av, void *priv)
 		AN(lbl);
 		bprintf(lbl->state, "%s", VCL_TEMP_LABEL);
 		lbl->temp = VCL_TEMP_WARM;
+		lbl->default_director = vcl->default_director;
 		REPLACE(lbl->loaded_name, av[2]);
 		AZ(errno=pthread_rwlock_init(&lbl->temp_rwl, NULL));
 		VTAILQ_INSERT_TAIL(&vcl_head, lbl, list);
