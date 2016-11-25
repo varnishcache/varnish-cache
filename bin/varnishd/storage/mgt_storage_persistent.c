@@ -205,6 +205,9 @@ smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 	if (sc->base == MAP_FAILED)
 		ARGV_ERR("(-spersistent) failed to mmap (%s)\n",
 		    strerror(errno));
+	if (target != NULL && sc->base != target)
+		fprintf(stderr, "WARNING: Persistent silo lost to ASLR %s\n",
+		    sc->filename);
 
 	smp_def_sign(sc, &sc->idn, 0, "SILO");
 	sc->ident = SIGN_DATA(&sc->idn);
