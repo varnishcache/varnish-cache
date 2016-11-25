@@ -50,6 +50,10 @@
 
 #include "storage/storage_persistent.h"
 
+#ifdef HAVE_SYS_PERSONALITY_H
+#include <sys/personality.h>
+#endif
+
 #ifndef MAP_NOCORE
 #define MAP_NOCORE 0 /* XXX Linux */
 #endif
@@ -138,6 +142,18 @@ smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 	ASSERT_MGT();
 
 	AZ(av[ac]);
+
+
+#ifdef HAVE_SYS_PERSONALITY_H
+	i = personality(0xffffffff); /* Fetch old personality. */
+	if (!(i & ADDR_NO_RANDOMIZE)) {
+		i = personality(i | ADDR_NO_RANDOMIZE);
+		if (i < 0)
+			fprintf(stderr, "WARNING: Could not disable ASLR\n");
+		else
+			fprintf(stderr, "NB: Disabled ASLR for Persistent\n");
+	}
+#endif
 
 	/* Necessary alignment. See also smp_object::__filler__ */
 	assert(sizeof(struct smp_object) % 8 == 0);
