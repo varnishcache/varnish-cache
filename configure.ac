@@ -25,7 +25,6 @@ AC_PROG_LIBTOOL
 AC_GNU_SOURCE
 AC_PROG_CC
 AC_PROG_CC_STDC
-AC_PROG_CPP
 
 AX_PTHREAD(,[AC_MSG_ERROR([Could not configure pthreads support])])
 
@@ -34,7 +33,6 @@ CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 CC="$PTHREAD_CC"
 
 AC_PROG_INSTALL
-AC_PROG_MAKE_SET
 
 AC_ARG_WITH([rst2man],
   AS_HELP_STRING([--with-rst2man=PATH], [Location of rst2man (auto)]),
@@ -101,6 +99,7 @@ NET_LIBS="${LIBS}"
 LIBS="${save_LIBS}"
 AC_SUBST(NET_LIBS)
 
+# XXX: This _may_ be for OS/X
 AC_CHECK_LIBM
 AC_SUBST(LIBM)
 
