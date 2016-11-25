@@ -27,15 +27,19 @@ Next we need to point VCL labels to them::
 Next we write the top-level VCL program, which branches out
 to the other two, depending on the Host: header in the
 request::
+    import std;
 
     /* We have to have a backend, even if we do not use it */
     backend default { .host = "127.0.0.1"; }
 
     sub vcl_recv {
-	if (req.http.host ~ "(?i)varnish.org$") {
+    /* Normalize HTTP host */
+    set req.http.host = std.tolower(req.http.host);
+    
+	if (req.http.host ~ "varnish.org$") {
 	    return (vcl(l_vo));
 	}
-	if (req.http.host ~ "(?i)varnish-cache.org$") {
+	if (req.http.host ~ "varnish-cache.org$") {
 	    return (vcl(l_vc));
 	}
 	return (synth(302, "http://varnish-cache.org"));
