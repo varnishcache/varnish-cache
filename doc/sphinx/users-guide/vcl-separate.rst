@@ -33,8 +33,8 @@ request::
     backend default { .host = "127.0.0.1"; }
 
     sub vcl_recv {
-    /* Normalize HTTP host */
-    set req.http.host = std.tolower(req.http.host);
+    	/* Normalize HTTP host */
+    	set req.http.host = std.tolower(req.http.host);
     
 	if (req.http.host ~ "varnish.org$") {
 	    return (vcl(l_vo));
