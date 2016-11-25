@@ -50,6 +50,10 @@
 #include "vre.h"
 #include "vtim.h"
 
+#ifdef HAVE_SYS_PERSONALITY_H
+#  include <sys/personality.h>
+#endif
+
 #define		MAX_TOKENS		200
 
 volatile sig_atomic_t	vtc_error;	/* Error encountered */
@@ -612,7 +616,17 @@ cmd_feature(CMD_ARGS)
 		FEATURE("user_vcache", getpwnam("vcache") != NULL);
 		FEATURE("group_varnish", getgrnam("varnish") != NULL);
 
-		if (!strcmp(*av, "cmd")) {
+		if (!strcmp(*av, "disable_aslr")) {
+			good = 1;
+#ifdef HAVE_SYS_PERSONALITY_H
+			r = personality(0xffffffff);
+			r = personality(r | ADDR_NO_RANDOMIZE);
+			if (r < 0) {
+				good = 0;
+				vtc_stop = 1;
+			}
+#endif
+		} else if (!strcmp(*av, "cmd")) {
 			av++;
 			if (*av == NULL) {
 				vtc_log(vl, 0, "Missing the command-line");

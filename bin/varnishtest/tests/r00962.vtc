@@ -1,5 +1,7 @@
 varnishtest "Test address remapping"
 
+feature disable_aslr
+
 # VM-remapping is too random on OSX
 feature	!OSX
 # Same on some hardened Linux
