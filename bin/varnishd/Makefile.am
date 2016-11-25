@@ -159,9 +159,6 @@ varnishd_LDADD = \
 	@PCRE_LIBS@ \
 	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${LIBM} ${LIBUMEM}
 
-EXTRA_DIST = builtin.vcl
-DISTCLEANFILES = builtin_vcl.h
-
 noinst_PROGRAMS = vhp_gen_hufdec
 vhp_gen_hufdec_SOURCES = hpack/vhp_gen_hufdec.c
 vhp_gen_hufdec_CFLAGS = -include config.h
@@ -197,12 +194,16 @@ builtin_vcl.h:	builtin.vcl
 	    -e 's/$$/\\n"/' \
 	    -e 's/^/ "/' $(srcdir)/builtin.vcl >> $@
 
+EXTRA_DIST = builtin.vcl
+
 vhp_hufdec.h: vhp_gen_hufdec
 	$(AM_V_GEN) ./vhp_gen_hufdec > vhp_hufdec.h_
 	mv vhp_hufdec.h_ vhp_hufdec.h
 
+DISTCLEANFILES = builtin_vcl.h
+
 BUILT_SOURCES	=	vhp_hufdec.h
-DISTCLEANFILES	=	vhp_hufdec.h
+DISTCLEANFILES	+=	vhp_hufdec.h
 
 # Explicitly record dependency
 mgt/mgt_vcc.c:	builtin_vcl.h
