@@ -49,6 +49,7 @@
 #include "vapi/vsl.h"
 #include "vapi/vsm.h"
 #include "vcli.h"
+#include "vre.h"
 #include "vss.h"
 #include "vsub.h"
 #include "vtcp.h"
@@ -692,18 +693,33 @@ varnish_wait(struct varnish *v)
  */
 
 static void
-varnish_cli(struct varnish *v, const char *cli, unsigned exp)
+varnish_cli(struct varnish *v, const char *cli, unsigned exp, const char *re)
 {
 	enum VCLI_status_e u;
-
+	vre_t *vre = NULL;
+	char *resp = NULL;
+	const char *errptr;
+	int err;
+	
+	if (re != NULL) {
+		vre = VRE_compile(re, 0, &errptr, &err);
+		if (vre == NULL)
+			vtc_log(v->vl, 0, "Illegal regexp");
+	}
 	if (v->cli_fd < 0)
 		varnish_launch(v);
 	if (vtc_error)
 		return;
-	u = varnish_ask_cli(v, cli, NULL);
+	u = varnish_ask_cli(v, cli, &resp);
 	vtc_log(v->vl, 2, "CLI %03u <%s>", u, cli);
 	if (exp != 0 && exp != (unsigned)u)
 		vtc_log(v->vl, 0, "FAIL CLI response %u expected %u", u, exp);
+	if (vre != NULL) {
+		err = VRE_exec(vre, resp, strlen(resp), 0, 0, NULL, 0, NULL);
+		if (err < 1)
+			vtc_log(v->vl, 0, "Expect failed (%d)", err);
+		VRE_free(&vre);
+	}
 }
 
 /**********************************************************************
@@ -1058,10 +1074,11 @@ varnish_expect(const struct varnish *v, char * const *av)
  *         varnish vNAME [-cli STRING] [-cliok STRING] [-clierr STRING]
  *                       [-expect STRING OP NUMBER]
  *
- * \-cli STRING|-cliok STRING|-clierr STATUS STRING
- *         All three of these will send STRING to the CLI, the only difference
- *         is what they expect the return code to be. -cli doesn't expect
- *         anything, -cliok expects 200 and -clierr expects STATUS
+ * \-cli STRING|-cliok STRING|-clierr STATUS STRING|-cliexpect REGEXP STRING
+ *         All four of these will send STRING to the CLI, the only difference
+ *         is what they expect the result to be. -cli doesn't expect
+ *         anything, -cliok expects 200, -clierr expects STATUS, and
+ *         -cliexpect expects the REGEXP to match the returned response.
  *
  * \-expect STRING OP NUMBER
  *         Look into the VSM and make sure the counter identified by STRING has
@@ -1117,27 +1134,34 @@ cmd_varnish(CMD_ARGS)
 			av++;
 			continue;
 		}
+		if (!strcmp(*av, "-cleanup")) {
+			AZ(av[1]);
+			varnish_cleanup(v);
+			continue;
+		}
 		if (!strcmp(*av, "-cli")) {
 			AN(av[1]);
-			varnish_cli(v, av[1], 0);
+			varnish_cli(v, av[1], 0, NULL);
 			av++;
 			continue;
 		}
 		if (!strcmp(*av, "-clierr")) {
 			AN(av[1]);
 			AN(av[2]);
-			varnish_cli(v, av[2], atoi(av[1]));
+			varnish_cli(v, av[2], atoi(av[1]), NULL);
 			av += 2;
 			continue;
 		}
-		if (!strcmp(*av, "-cleanup")) {
-			AZ(av[1]);
-			varnish_cleanup(v);
+		if (!strcmp(*av, "-cliexpect")) {
+			AN(av[1]);
+			AN(av[2]);
+			varnish_cli(v, av[2], 0, av[1]);
+			av += 2;
 			continue;
 		}
 		if (!strcmp(*av, "-cliok")) {
 			AN(av[1]);
-			varnish_cli(v, av[1], (unsigned)CLIS_OK);
+			varnish_cli(v, av[1], (unsigned)CLIS_OK, NULL);
 			av++;
 			continue;
 		}
