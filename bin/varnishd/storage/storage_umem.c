@@ -32,7 +32,7 @@
 //lint -e{766}
 #include "config.h"
 
-#ifdef HAVE_LIBUMEM
+#ifdef HAVE_LIBUMEM && 0
 
 #include <sys/types.h>
 
