@@ -70,7 +70,8 @@ _VARNISH_CHECK_LIB(rt, clock_gettime)
 _VARNISH_CHECK_LIB(dl, dlopen)
 _VARNISH_CHECK_LIB(socket, socket)
 _VARNISH_CHECK_LIB(nsl, getaddrinfo)
-NET_LIBS="${SOCKET_LIBS} ${NSL_LIBS}"
+
+AC_SUBST(NET_LIBS, "${SOCKET_LIBS} ${NSL_LIBS}")
 
 AX_WITH_CURSES
 if test "x$ax_cv_curses" != xyes; then
