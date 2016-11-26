@@ -125,7 +125,7 @@ static const struct choice STV_choice[] = {
 	{ "malloc",			&sma_stevedore },
 	{ "deprecated_persistent",	&smp_stevedore },
 	{ "persistent",			&smp_fake_stevedore },
-#ifdef HAVE_LIBUMEM
+#if defined(HAVE_LIBUMEM) && 0
 	{ "umem",			&smu_stevedore },
 #endif
 	{ NULL,		NULL }
