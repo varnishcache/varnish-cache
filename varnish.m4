@@ -42,6 +42,26 @@
 # any time. Public macros starting with VARNISH_ are documented and will
 # maintain backwards compatibility with older versions of Varnish Cache.
 
+# _VARNISH_CHECK_LIB(LIB, FUNC)
+# -----------------------------
+AC_DEFUN([_VARNISH_CHECK_LIB], [
+	save_LIBS="${LIBS}"
+	LIBS=""
+	AC_CHECK_LIB([$1], [$2])
+	AC_SUBST(m4_toupper($1_LIBS), [$LIBS])
+	LIBS="${save_LIBS}"
+])
+
+# _VARNISH_SEARCH_LIBS(VAR, FUNC, LIBS)
+# -------------------------------------
+AC_DEFUN([_VARNISH_SEARCH_LIBS], [
+	save_LIBS="${LIBS}"
+	LIBS=""
+	AC_SEARCH_LIBS([$2], [$3])
+	AC_SUBST(m4_toupper($1_LIBS), [$LIBS])
+	LIBS="${save_LIBS}"
+])
+
 # _VARNISH_PKG_CONFIG
 # --------------------
 AC_DEFUN([_VARNISH_PKG_CONFIG], [

@@ -65,39 +65,17 @@ AC_ARG_WITH([dot],
 AM_CONDITIONAL(HAVE_DOT,[test "x$DOT" != "xno"])
 
 # Checks for libraries.
-save_LIBS="${LIBS}"
-LIBS=""
-AC_CHECK_LIB(rt, clock_gettime)
-RT_LIBS="${LIBS}"
-LIBS="${save_LIBS}"
-AC_SUBST(RT_LIBS)
-
-save_LIBS="${LIBS}"
-LIBS=""
-AC_CHECK_LIB(dl, dlopen)
-DL_LIBS="${LIBS}"
-LIBS="${save_LIBS}"
-AC_SUBST(DL_LIBS)
+_VARNISH_SEARCH_LIBS(pthread, pthread_create, [thr pthread c_r])
+_VARNISH_CHECK_LIB(rt, clock_gettime)
+_VARNISH_CHECK_LIB(dl, dlopen)
+_VARNISH_CHECK_LIB(socket, socket)
+_VARNISH_CHECK_LIB(nsl, getaddrinfo)
+NET_LIBS="${SOCKET_LIBS} ${NSL_LIBS}"
 
 AX_WITH_CURSES
 if test "x$ax_cv_curses" != xyes; then
    AC_MSG_ERROR([requires an X/Open-compatible Curses library])
 fi
-
-save_LIBS="${LIBS}"
-LIBS=""
-AC_SEARCH_LIBS(pthread_create, [thr pthread c_r])
-PTHREAD_LIBS="${LIBS}"
-LIBS="${save_LIBS}"
-AC_SUBST(PTHREAD_LIBS)
-
-save_LIBS="${LIBS}"
-LIBS=""
-AC_CHECK_LIB(socket, socket)
-AC_CHECK_LIB(nsl, getaddrinfo)
-NET_LIBS="${LIBS}"
-LIBS="${save_LIBS}"
-AC_SUBST(NET_LIBS)
 
 # XXX: This _may_ be for OS/X
 AC_CHECK_LIBM
@@ -320,17 +298,9 @@ AC_SUBST(JEMALLOC_LDADD)
 # Userland slab allocator, available only on Solaris
 case $target in
 *-*-solaris*)
-	AC_CHECK_HEADERS([umem.h])
-	if test "$ac_cv_have_umem_h" = yes; then
-		save_LIBS="${LIBS}"
-		LIBS=""
-		AC_CHECK_LIB(umem, umem_alloc)
-		LIBUMEM="${LIBS}"
-		LIBS="${save_LIBS}"
-	fi
+	AC_CHECK_HEADERS([umem.h], [_VARNISH_CHECK_LIB(umem, umem_alloc)])
 	;;
 esac
-AC_SUBST(LIBUMEM)
 
 # These functions are provided by libcompat on platforms where they
 # are not available
