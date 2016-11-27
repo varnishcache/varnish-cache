@@ -35,8 +35,6 @@
  * See doc/sphinx/reference/varnishncsa.rst for the supported format
  * specifiers.
  *
- * Note: %r is "%m http://%{Host}i%U%q %H"
- *
  */
 
 #include "config.h"
@@ -69,6 +67,7 @@
 
 #define TIME_FMT "[%d/%b/%Y:%T %z]"
 #define FORMAT "%h %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\""
+
 static const char progname[] = "varnishncsa";
 
 struct format;
@@ -178,7 +177,8 @@ openout(int append)
 	AN(CTX.w_arg);
 	CTX.fo = fopen(CTX.w_arg, append ? "a" : "w");
 	if (CTX.fo == NULL)
-		VUT_Error(1, "Can't open output file (%s)", strerror(errno));
+		VUT_Error(1, "Can't open output file (%s)",
+		    strerror(errno));
 }
 
 static int __match_proto__(VUT_cb_f)
@@ -343,7 +343,8 @@ format_time(const struct format *format)
 
 	switch (format->time_type) {
 	case 'D':
-		AZ(VSB_printf(CTX.vsb, "%d", (int)((t_end - t_start) * 1e6)));
+		AZ(VSB_printf(CTX.vsb, "%d",
+		    (int)((t_end - t_start) * 1e6)));
 		break;
 	case 't':
 		AN(format->time_fmt);
@@ -394,7 +395,7 @@ format_auth(const struct format *format)
 		if (format->string == NULL)
 			return (-1);
 		AZ(vsb_esc_cat(CTX.vsb, format->string,
-			format->string + strlen(format->string)));
+		    format->string + strlen(format->string)));
 		return (0);
 	}
 	q = strchr(buf, ':');
@@ -758,7 +759,8 @@ parse_format(const char *format)
 			while (*q && *q != '}')
 				q++;
 			if (!*q)
-				VUT_Error(1, "Unmatched bracket at: %s", p - 2);
+				VUT_Error(1, "Unmatched bracket at: %s",
+				    p - 2);
 			assert(q - p < sizeof buf - 1);
 			strncpy(buf, p, q - p);
 			buf[q - p] = '\0';
@@ -779,13 +781,15 @@ parse_format(const char *format)
 				parse_x_format(buf);
 				break;
 			default:
-				VUT_Error(1, "Unknown format specifier at: %s",
+				VUT_Error(1,
+				    "Unknown format specifier at: %s",
 				    p - 2);
 			}
 			p = q;
 			break;
 		default:
-			VUT_Error(1, "Unknown format specifier at: %s", p - 1);
+			VUT_Error(1, "Unknown format specifier at: %s",
+			    p - 1);
 		}
 	}
 
@@ -800,19 +804,18 @@ parse_format(const char *format)
 }
 
 static int
-isprefix(const char *str, const char *prefix, const char *end,
-    const char **next)
+isprefix(const char *prefix, const char *b, const char *e, const char **next)
 {
 	size_t len;
 
 	len = strlen(prefix);
-	if (end - str < len || strncasecmp(str, prefix, len))
+	if (e - b < len || strncasecmp(b, prefix, len))
 		return (0);
-	str += len;
+	b += len;
 	if (next) {
-		while (str < end && *str && *str == ' ')
-			++str;
-		*next = str;
+		while (b < e && *b && *b == ' ')
+			b++;
+		*next = b;
 	}
 	return (1);
 }
@@ -888,7 +891,7 @@ process_hdr(const struct watch_head *head, const char *b, const char *e)
 	struct watch *w;
 
 	VTAILQ_FOREACH(w, head, list) {
-		if (strncasecmp(b, w->key, w->keylen))
+		if (e - b < w->keylen || strncasecmp(b, w->key, w->keylen))
 			continue;
 		frag_line(1, b + w->keylen, e, &w->frag);
 	}
@@ -988,30 +991,32 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case (SLT_Timestamp + BACKEND_MARKER):
 			case SLT_Timestamp:
-				if (isprefix(b, "Start:", e, &p)) {
+				if (isprefix("Start:", b, e, &p)) {
 					frag_fields(0, p, e, 1,
 					    &CTX.frag[F_tstart], 0, NULL);
 
-				} else if (isprefix(b, "Resp:", e, &p) ||
-					isprefix(b, "PipeSess:", e, &p) ||
-					isprefix(b, "BerespBody:", e, &p)) {
+				} else if (isprefix("Resp:", b, e, &p) ||
+				    isprefix("PipeSess:", b, e, &p) ||
+				    isprefix("BerespBody:", b, e, &p)) {
 					frag_fields(0, p, e, 1,
 					    &CTX.frag[F_tend], 0, NULL);
 
-				} else if (isprefix(b, "Process:", e, &p) ||
-					isprefix(b, "Pipe:", e, &p) ||
-					isprefix(b, "Beresp:", e, &p)) {
+				} else if (isprefix("Process:", b, e, &p) ||
+				    isprefix("Pipe:", b, e, &p) ||
+				    isprefix("Beresp:", b, e, &p)) {
 					frag_fields(0, p, e, 2,
 					    &CTX.frag[F_ttfb], 0, NULL);
 				}
 				break;
 			case (SLT_BereqHeader + BACKEND_MARKER):
 			case SLT_ReqHeader:
-				if (isprefix(b, "Host:", e, &p))
-					frag_line(0, p, e, &CTX.frag[F_host]);
-				else if (isprefix(b, "Authorization:", e, &p) &&
-				    isprefix(p, "basic ", e, &p))
-					frag_line(0, p, e, &CTX.frag[F_auth]);
+				if (isprefix("Authorization:", b, e, &p) &&
+				    isprefix("basic ", p, e, &p))
+					frag_line(0, p, e,
+					    &CTX.frag[F_auth]);
+				else if (isprefix("Host:", b, e, &p))
+					frag_line(0, p, e,
+					    &CTX.frag[F_host]);
 				break;
 			case (SLT_VCL_call + BACKEND_MARKER):
 				break;
@@ -1039,16 +1044,16 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			case (SLT_VCL_return + BACKEND_MARKER):
 				break;
 			case SLT_VCL_return:
-				if (!strcasecmp(b, "restart")) {
-					skip = 1;
-				} else if (!strcasecmp(b, "pipe")) {
+				if (!strcasecmp(b, "pipe")) {
 					CTX.hitmiss = "miss";
 					CTX.handling = "pipe";
-				}
+				} else if (!strcasecmp(b, "restart"))
+					skip = 1;
 				break;
 			default:
 				break;
 			}
+
 			if (tag == SLT_VCL_Log) {
 				VTAILQ_FOREACH(w, &CTX.watch_vcl_log, list) {
 					CHECK_OBJ_NOTNULL(w, WATCH_MAGIC);
@@ -1062,19 +1067,19 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 						continue;
 					frag_line(0, p, e, &w->frag);
 				}
-			}
-			if ((tag == SLT_ReqHeader && CTX.c_opt)
-			    || (tag == SLT_BereqHeader && CTX.b_opt))
+			} else if ((tag == SLT_ReqHeader && CTX.c_opt) ||
+			    (tag == SLT_BereqHeader && CTX.b_opt)) {
 				process_hdr(&CTX.watch_reqhdr, b, e);
-			if ((tag == SLT_RespHeader && CTX.c_opt)
-			    || (tag == SLT_BerespHeader && CTX.b_opt))
+			} else if ((tag == SLT_RespHeader && CTX.c_opt) ||
+			    (tag == SLT_BerespHeader && CTX.b_opt))
 				process_hdr(&CTX.watch_resphdr, b, e);
 
 			VTAILQ_FOREACH(vslw, &CTX.watch_vsl, list) {
 				CHECK_OBJ_NOTNULL(vslw, VSL_WATCH_MAGIC);
 				if (tag == vslw->tag) {
 					if (vslw->idx == 0)
-						frag_line(0, b, e, &vslw->frag);
+						frag_line(0, b, e,
+						    &vslw->frag);
 					else
 						frag_fields(0, b, e,
 						    vslw->idx, &vslw->frag,
@@ -1108,7 +1113,8 @@ read_format(const char *formatfile)
 
 	fmtfile = fopen(formatfile, "r");
 	if (fmtfile == NULL)
-		VUT_Error(1, "Can't open format file (%s)", strerror(errno));
+		VUT_Error(1, "Can't open format file (%s)",
+		    strerror(errno));
 	fmtlen = getline(&fmt, &len, fmtfile);
 	if (fmtlen == -1) {
 		free(fmt);
