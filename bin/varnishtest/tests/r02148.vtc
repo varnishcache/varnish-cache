@@ -1,0 +1,18 @@
+varnishtest "Whitespace after colon is optional"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq -hdr "Host:qux" -hdr "Authorization:Basic Zm9vOmJhcg=="
+	rxresp
+} -run
+
+process p1 {varnishncsa -d -n ${v1_name} -F "%u %{Host}i"} -run
+shell {grep -q "foo qux" ${tmpdir}/p1/stdout}
+process p2 {varnishncsa -d -n ${v1_name} -F "%r"} -run
+shell {grep -q "GET http://qux/ HTTP/1.1" ${tmpdir}/p2/stdout}

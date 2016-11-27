@@ -803,12 +803,12 @@ static int
 isprefix(const char *str, const char *prefix, const char *end,
     const char **next)
 {
+	size_t len;
 
-	while (str < end && *str && *prefix &&
-	    tolower((int)*str) == tolower((int)*prefix))
-		++str, ++prefix;
-	if (*str && *str != ' ')
+	len = strlen(prefix);
+	if (end - str < len || strncasecmp(str, prefix, len))
 		return (0);
+	str += len;
 	if (next) {
 		while (str < end && *str && *str == ' ')
 			++str;
@@ -1010,7 +1010,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				if (isprefix(b, "Host:", e, &p))
 					frag_line(0, p, e, &CTX.frag[F_host]);
 				else if (isprefix(b, "Authorization:", e, &p) &&
-				    isprefix(p, "basic", e, &p))
+				    isprefix(p, "basic ", e, &p))
 					frag_line(0, p, e, &CTX.frag[F_auth]);
 				break;
 			case (SLT_VCL_call + BACKEND_MARKER):
