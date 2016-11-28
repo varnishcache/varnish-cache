@@ -360,6 +360,7 @@ ban_lurker(struct worker *wrk, void *priv)
 		d += VTIM_real();
 		Lck_Lock(&ban_mtx);
 		if (gen == ban_generation) {
+			Pool_Sumstat(wrk);
 			(void)Lck_CondWait(&ban_lurker_cond, &ban_mtx, d);
 			ban_batch = 0;
 		}

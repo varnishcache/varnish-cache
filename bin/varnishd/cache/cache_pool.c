@@ -138,6 +138,7 @@ pool_stat_summ(struct worker *wrk, void *priv)
 	pool_sumstat(src);
 	Lck_Unlock(&wstat_mtx);
 	memset(src, 0, sizeof *src);
+	AZ(wrk->pool->b_stat);
 	wrk->pool->b_stat = src;
 }
 
