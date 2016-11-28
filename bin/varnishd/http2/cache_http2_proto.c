@@ -661,6 +661,9 @@ h2_new_ou_session(struct worker *wrk, struct h2_sess *h2,
 	h2->htc->pipeline_e = req->htc->pipeline_e;
 	req->htc->pipeline_b = NULL;
 	req->htc->pipeline_e = NULL;
+	/* XXX: This call may assert on buffer overflow if the pipelined
+	   data exceeds the available space in the aws workspace. What to
+	   do about the overflowing data is an open issue. */
 	HTC_RxInit(h2->htc, wrk->aws);
 
 	/* Start req thread */

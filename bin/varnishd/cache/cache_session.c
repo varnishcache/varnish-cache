@@ -196,6 +196,7 @@ HTC_RxInit(struct http_conn *htc, struct ws *ws)
 	if (htc->pipeline_b != NULL) {
 		l = htc->pipeline_e - htc->pipeline_b;
 		assert(l > 0);
+		assert(l <= ws->r - htc->rxbuf_b);
 		memmove(htc->rxbuf_b, htc->pipeline_b, l);
 		htc->rxbuf_e += l;
 		htc->pipeline_b = NULL;
