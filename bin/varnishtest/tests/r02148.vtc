@@ -12,6 +12,8 @@ client c1 {
 	rxresp
 } -run
 
+delay 1
+
 process p1 {varnishncsa -d -n ${v1_name} -F "%u %{Host}i"} -run
 shell {grep -q "foo qux" ${tmpdir}/p1/stdout}
 process p2 {varnishncsa -d -n ${v1_name} -F "%r"} -run
