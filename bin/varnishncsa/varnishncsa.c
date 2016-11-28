@@ -1018,8 +1018,6 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 					frag_line(0, p, e,
 					    &CTX.frag[F_host]);
 				break;
-			case (SLT_VCL_call + BACKEND_MARKER):
-				break;
 			case SLT_VCL_call:
 				if (!strcasecmp(b, "recv")) {
 					CTX.hitmiss = "-";
@@ -1041,8 +1039,6 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 					CTX.handling = "synth";
 				}
 				break;
-			case (SLT_VCL_return + BACKEND_MARKER):
-				break;
 			case SLT_VCL_return:
 				if (!strcasecmp(b, "pipe")) {
 					CTX.hitmiss = "miss";
@@ -1050,14 +1046,12 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				} else if (!strcasecmp(b, "restart"))
 					skip = 1;
 				break;
-			default:
-				break;
-			}
-
-			if (tag == SLT_VCL_Log) {
+			case (SLT_VCL_Log + BACKEND_MARKER):
+			case SLT_VCL_Log:
 				VTAILQ_FOREACH(w, &CTX.watch_vcl_log, list) {
 					CHECK_OBJ_NOTNULL(w, WATCH_MAGIC);
-					if (strncmp(b, w->key, w->keylen))
+					if (e - b <= w->keylen ||
+					    strncmp(b, w->key, w->keylen))
 						continue;
 					p = b + w->keylen;
 					if (*p != ':')
@@ -1067,10 +1061,15 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 						continue;
 					frag_line(0, p, e, &w->frag);
 				}
-			} else if ((tag == SLT_ReqHeader && CTX.c_opt) ||
-			    (tag == SLT_BereqHeader && CTX.b_opt)) {
+				break;
+			default:
+				break;
+			}
+
+			if ((tag == SLT_ReqHeader && CTX.c_opt) ||
+			    (tag == SLT_BereqHeader && CTX.b_opt))
 				process_hdr(&CTX.watch_reqhdr, b, e);
-			} else if ((tag == SLT_RespHeader && CTX.c_opt) ||
+			else if ((tag == SLT_RespHeader && CTX.c_opt) ||
 			    (tag == SLT_BerespHeader && CTX.b_opt))
 				process_hdr(&CTX.watch_resphdr, b, e);
 
