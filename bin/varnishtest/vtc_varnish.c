@@ -233,37 +233,40 @@ varnishlog_thread(void *priv)
 
 		opt = VSL_COPT_TAIL;
 
-		i = VSL_Next(c);
+		while(1) {
+			i = VSL_Next(c);
+			if (i != 1)
+				break;
+
+			v->vsl_idle = 0;
+
+			tag = VSL_TAG(c->rec.ptr);
+			vxid = VSL_ID(c->rec.ptr);
+			if (tag != SLT_CLI)
+				v->vsl_idle = 0;
+			if (tag == SLT__Batch)
+				continue;
+			tagname = VSL_tags[tag];
+			len = VSL_LEN(c->rec.ptr);
+			type = VSL_CLIENT(c->rec.ptr) ?
+			    'c' : VSL_BACKEND(c->rec.ptr) ?
+			    'b' : '-';
+			data = VSL_CDATA(c->rec.ptr);
+			v->vsl_tag_count[tag]++;
+			vtc_log(v->vl, 4, "vsl| %10u %-15s %c %.*s",
+			    vxid, tagname, type, (int)len, data);
+		}
 		if (i == 0) {
 			v->vsl_idle++;
 			/* Nothing to do but wait */
 			VTIM_sleep(0.1);
-			continue;
 		} else if (i == -2) {
 			/* Abandoned - try reconnect */
 			VSL_DeleteCursor(c);
 			c = NULL;
 			VSM_Close(vsm);
-			continue;
-		} else if (i != 1)
+		} else 
 			break;
-
-		v->vsl_idle = 0;
-
-		tag = VSL_TAG(c->rec.ptr);
-		vxid = VSL_ID(c->rec.ptr);
-		if (tag != SLT_CLI)
-			v->vsl_idle = 0;
-		if (tag == SLT__Batch)
-			continue;
-		tagname = VSL_tags[tag];
-		len = VSL_LEN(c->rec.ptr);
-		type = VSL_CLIENT(c->rec.ptr) ? 'c' : VSL_BACKEND(c->rec.ptr) ?
-		    'b' : '-';
-		data = VSL_CDATA(c->rec.ptr);
-		v->vsl_tag_count[tag]++;
-		vtc_log(v->vl, 4, "vsl| %10u %-15s %c %.*s", vxid, tagname,
-		    type, (int)len, data);
 	}
 
 	v->vsl_idle = 100;
