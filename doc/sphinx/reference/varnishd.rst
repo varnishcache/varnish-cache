@@ -193,7 +193,7 @@ The following storage types are available:
 
   malloc is a memory based backend.
 
--s <file,path[,size[,granularity]]>
+-s <file,path[,size[,granularity[,advice]]]>
 
   The file backend stores data in a file on disk. The file will be
   accessed using mmap.
@@ -208,6 +208,13 @@ The following storage types are available:
 
   Granularity sets the allocation block size. Defaults to the system
   page size or the filesystem block size, whichever is larger.
+
+  Advice tells the kernel how `varnishd` expects to use this mapped
+  region so that the kernel can choose the appropriate read-ahead
+  and caching techniques. Possible values are ``normal``, ``random``
+  and ``sequencial``, corresponding to MADV_NORMAL, MADV_RANDOM and
+  MADV_SEQUENTIAL madvise() advice argument, respectively. Defaults to
+  ``random``.
 
 -s <persistent,path,size>
 

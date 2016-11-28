@@ -93,12 +93,15 @@ have many small objects.
 File performance is typically limited to the write speed of the
 device, and depending on use, the seek time.
 
-'advice' dictates what Varnish tells the system to optimize reads. Depending
-on your OS, disks and object sizes, it can be beneficial to tweak this. The
-three possible values are "normal", "random" (default) and "sequential" and
-correspond to MADV_NORMAL, MADV_RANDOM, MADV_SEQUENTIAL, respectively.
-For example, large objects and rotational disk should profit from "sequential"
-on Linux.
+The 'advice' parameter tells the kernel how `varnishd` expects to
+use this mapped region so that the kernel can choose the appropriate
+read-ahead and caching techniques.  Possible values are ``normal``,
+``random`` and ``sequencial``, corresponding to MADV_NORMAL, MADV_RANDOM
+and MADV_SEQUENTIAL madvise() advice argument, respectively.  Defaults to
+``random``.
+
+On Linux, large objects and rotational disk should benefit from
+"sequential".
 
 persistent (experimental)
 ~~~~~~~~~~~~~~~~~~~~~~~~~
