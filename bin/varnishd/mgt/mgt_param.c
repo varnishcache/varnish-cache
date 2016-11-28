@@ -97,6 +97,10 @@ static const char ONLY_ROOT_TEXT[] =
 	"\n\n"
 	"NB: This parameter only works if varnishd is run as root.";
 
+static const char NOT_IMPLEMENTED_TEXT[] =
+	"This parameter depends on a feature which is not available"
+	" on this platform.";
+
 /*--------------------------------------------------------------------*/
 
 static struct parspec *
@@ -257,19 +261,34 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 		if (chg && pp->def != NULL && !strcmp(pp->def, VSB_data(vsb)))
 			continue;
 
-		if (lfmt) {
-			VCLI_Out(cli, "%s\n", pp->name);
-			VCLI_Out(cli, "%-*sValue is: ", margin1, " ");
+		if (pp->flags & NOT_IMPLEMENTED) {
+			if (lfmt) {
+				VCLI_Out(cli, "%s\n", pp->name);
+				VCLI_Out(cli, "%-*sNot available", margin1, " ");
+			} else {
+				VCLI_Out(cli, "%-*s-", margin2, pp->name);
+			}
 		} else {
-			VCLI_Out(cli, "%-*s", margin2, pp->name);
+			if (lfmt) {
+				VCLI_Out(cli, "%s\n", pp->name);
+				VCLI_Out(cli, "%-*sValue is: ", margin1, " ");
+			} else {
+				VCLI_Out(cli, "%-*s", margin2, pp->name);
+			}
+
+			VCLI_Out(cli, "%s", VSB_data(vsb));
+			if (pp->units != NULL && *pp->units != '\0')
+				VCLI_Out(cli, " [%s]", pp->units);
+			if (pp->def != NULL && !strcmp(pp->def, VSB_data(vsb)))
+				VCLI_Out(cli, " (default)");
 		}
-		VCLI_Out(cli, "%s", VSB_data(vsb));
-		if (pp->units != NULL && *pp->units != '\0')
-			VCLI_Out(cli, " [%s]", pp->units);
-		if (pp->def != NULL && !strcmp(pp->def, VSB_data(vsb)))
-			VCLI_Out(cli, " (default)");
 		VCLI_Out(cli, "\n");
-		if (lfmt) {
+
+		if (lfmt && pp->flags & NOT_IMPLEMENTED) {
+			VCLI_Out(cli, "\n");
+			mcf_wrap(cli, NOT_IMPLEMENTED_TEXT);
+			VCLI_Out(cli, "\n\n");
+		} else if (lfmt) {
 			if (pp->def != NULL && strcmp(pp->def, VSB_data(vsb)))
 				VCLI_Out(cli, "%-*sDefault is: %s\n",
 				    margin1, "", pp->def);
@@ -466,6 +485,8 @@ MCF_InitParams(struct cli *cli)
 	VTAILQ_FOREACH(pl, &phead, list) {
 		pp = pl->spec;
 
+		if (pp->flags & NOT_IMPLEMENTED)
+			continue;
 		if (pp->min != NULL)
 			mcf_wash_param(cli, pp, &pp->min, "minimum", vsb);
 		if (pp->max != NULL)
@@ -540,6 +561,13 @@ MCF_DumpRstParam(void)
 		for (j = 0; j < strlen(pp->name); j++)
 			printf("~");
 		printf("\n");
+
+		if (pp->flags && pp->flags & NOT_IMPLEMENTED) {
+			printf("\nNot Available: %s\n\n",
+			    NOT_IMPLEMENTED_TEXT);
+			continue;
+		}
+
 		if (pp->units != NULL && *pp->units != '\0')
 			printf("\t* Units: %s\n", pp->units);
 		printf("\t* Default: %s\n", pp->def);
@@ -555,6 +583,9 @@ MCF_DumpRstParam(void)
 		if (pp->flags) {
 			printf("\t* Flags: ");
 			q = "";
+
+			AZ(pp->flags & NOT_IMPLEMENTED);
+
 			if (pp->flags & DELAYED_EFFECT) {
 				printf("%sdelayed", q);
 				q = ", ";

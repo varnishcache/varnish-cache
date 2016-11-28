@@ -1008,6 +1008,11 @@ PARAM(
 )
 
 #if defined(HAVE_TCP_KEEP)
+#define TCP_KEEP_FLAGS	EXPERIMENTAL
+#else
+#define TCP_KEEP_FLAGS	NOT_IMPLEMENTED
+#endif
+
 PARAM(
 	/* name */	tcp_keepalive_intvl,
 	/* typ */	timeout,
@@ -1015,7 +1020,7 @@ PARAM(
 	/* max */	"100",
 	/* default */	"",
 	/* units */	"seconds",
-	/* flags */	EXPERIMENTAL,
+	/* flags */	TCP_KEEP_FLAGS,
 	/* s-text */
 	"The number of seconds between TCP keep-alive probes.",
 	/* l-text */	"",
@@ -1029,7 +1034,7 @@ PARAM(
 	/* max */	"100",
 	/* default */	"",
 	/* units */	"probes",
-	/* flags */	EXPERIMENTAL,
+	/* flags */	TCP_KEEP_FLAGS,
 	/* s-text */
 	"The maximum number of TCP keep-alive probes to send before giving "
 	"up and killing the connection if no response is obtained from the "
@@ -1045,15 +1050,13 @@ PARAM(
 	/* max */	"7200",
 	/* default */	"",
 	/* units */	"seconds",
-	/* flags */	EXPERIMENTAL,
+	/* flags */	TCP_KEEP_FLAGS,
 	/* s-text */
 	"The number of seconds a connection needs to be idle before TCP "
 	"begins sending out keep-alive probes.",
 	/* l-text */	"",
 	/* func */	NULL
 )
-
-#endif /* HAVE_TCP_KEEP */
 
 #if 0
 /* actual location mgt_pool.c */
