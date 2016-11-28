@@ -177,6 +177,7 @@ SES_RxReInit(struct http_conn *htc)
 	if (htc->pipeline_b != NULL) {
 		l = htc->pipeline_e - htc->pipeline_b;
 		assert(l > 0);
+		assert(l <= htc->ws->r - htc->rxbuf_b);
 		memmove(htc->rxbuf_b, htc->pipeline_b, l);
 		htc->rxbuf_e += l;
 		htc->pipeline_b = NULL;
