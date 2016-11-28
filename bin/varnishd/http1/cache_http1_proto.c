@@ -80,7 +80,6 @@ HTTP1_Complete(struct http_conn *htc)
 	if (p == htc->rxbuf_e) {
 		/* All white space */
 		htc->rxbuf_e = htc->rxbuf_b;
-		*htc->rxbuf_e = '\0';
 		return (HTC_S_EMPTY);
 	}
 	/*
