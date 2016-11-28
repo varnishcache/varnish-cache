@@ -590,6 +590,9 @@ varnish_start(struct varnish *v)
 	macro_def(v->vl, v->name, "addr", "%s", h);
 	macro_def(v->vl, v->name, "port", "%s", p);
 	macro_def(v->vl, v->name, "sock", "%s %s", h, p);
+	/* Wait for vsl logging to get underway */
+	while (v->vsl_idle == 0)
+		VTIM_sleep(.1);
 }
 
 /**********************************************************************
