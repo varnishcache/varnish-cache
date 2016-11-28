@@ -1,3 +1,17 @@
+================================
+Varnish Cache 4.1.4 (unreleased)
+================================
+
+Changes since 4.1.4-beta3:
+
+Bugs fixed
+----------
+
+* 2035_ - varnishd stalls with two consecutive Range requests using
+  HTTP persistent connections
+
+.. _2035: https://github.com/varnishcache/varnish-cache/issues/2035
+
 ======================================
 Varnish Cache 4.1.4-beta3 (2016-11-24)
 ======================================
