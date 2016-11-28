@@ -1,0 +1,112 @@
+varnishtest "#1834 - Buffer overflow in backend workspace"
+
+# This test case checks fetch side for buffer overflow when there is little
+# workspace left. If failing it would be because we tripped the canary
+# at the end of the workspace.
+
+server s1 -repeat 64 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import debug;
+	import std;
+
+	sub vcl_recv {
+		return (pass);
+	}
+
+	sub vcl_backend_fetch {
+		debug.workspace_allocate(backend, debug.workspace_free(backend) - std.integer(bereq.http.WS, 256));
+	}
+} -start
+
+client c1 {
+	# Start with enough workspace to receive a good result
+	txreq -hdr "WS: 320"
+	rxresp
+	expect resp.status == 200
+
+	# Continue with decreasing workspaces by decrements of 8 (sizeof void*)
+	txreq -hdr "WS: 312"
+	rxresp
+	txreq -hdr "WS: 304"
+	rxresp
+	txreq -hdr "WS: 296"
+	rxresp
+	txreq -hdr "WS: 288"
+	rxresp
+	txreq -hdr "WS: 280"
+	rxresp
+	txreq -hdr "WS: 272"
+	rxresp
+	txreq -hdr "WS: 264"
+	rxresp
+	txreq -hdr "WS: 256"
+	rxresp
+	txreq -hdr "WS: 248"
+	rxresp
+	txreq -hdr "WS: 240"
+	rxresp
+	txreq -hdr "WS: 232"
+	rxresp
+	txreq -hdr "WS: 224"
+	rxresp
+	txreq -hdr "WS: 216"
+	rxresp
+	txreq -hdr "WS: 208"
+	rxresp
+	txreq -hdr "WS: 200"
+	rxresp
+	txreq -hdr "WS: 192"
+	rxresp
+	txreq -hdr "WS: 184"
+	rxresp
+	txreq -hdr "WS: 176"
+	rxresp
+	txreq -hdr "WS: 168"
+	rxresp
+	txreq -hdr "WS: 160"
+	rxresp
+	txreq -hdr "WS: 152"
+	rxresp
+	txreq -hdr "WS: 144"
+	rxresp
+	txreq -hdr "WS: 136"
+	rxresp
+	txreq -hdr "WS: 128"
+	rxresp
+	txreq -hdr "WS: 120"
+	rxresp
+	txreq -hdr "WS: 112"
+	rxresp
+	txreq -hdr "WS: 104"
+	rxresp
+	txreq -hdr "WS: 096"
+	rxresp
+	txreq -hdr "WS: 088"
+	rxresp
+	txreq -hdr "WS: 080"
+	rxresp
+	txreq -hdr "WS: 072"
+	rxresp
+	txreq -hdr "WS: 064"
+	rxresp
+	txreq -hdr "WS: 056"
+	rxresp
+	txreq -hdr "WS: 048"
+	rxresp
+	txreq -hdr "WS: 040"
+	rxresp
+	txreq -hdr "WS: 032"
+	rxresp
+	txreq -hdr "WS: 024"
+	rxresp
+	txreq -hdr "WS: 016"
+	rxresp
+	txreq -hdr "WS: 008"
+	rxresp
+	txreq -hdr "WS: 000"
+	rxresp
+} -run

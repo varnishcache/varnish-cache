@@ -202,7 +202,6 @@ HTC_RxInit(struct http_conn *htc, struct ws *ws)
 		htc->pipeline_b = NULL;
 		htc->pipeline_e = NULL;
 	}
-	*htc->rxbuf_e = '\0';
 }
 
 void
@@ -241,18 +240,28 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 	int i;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
-
-	if (htc->ws->r - htc->rxbuf_b < maxbytes)
-		maxbytes = (htc->ws->r - htc->rxbuf_b);
+	AN(htc->ws->r);
+	AN(htc->rxbuf_b);
+	assert(htc->rxbuf_b <= htc->rxbuf_e);
 
 	AZ(isnan(tn));
 	if (t1 != NULL)
 		assert(isnan(*t1));
 
+	if (htc->rxbuf_e == htc->ws->r) {
+		/* Can't work with a zero size buffer */
+		WS_ReleaseP(htc->ws, htc->rxbuf_b);
+		return (HTC_S_OVERFLOW);
+	}
+	if ((htc->ws->r - htc->rxbuf_b) - 1L < maxbytes)
+		maxbytes = (htc->ws->r - htc->rxbuf_b) - 1L; /* Space for NUL */
+
 	while (1) {
 		now = VTIM_real();
 		AZ(htc->pipeline_b);
 		AZ(htc->pipeline_e);
+		assert(htc->rxbuf_e < htc->ws->r);
+		*htc->rxbuf_e = '\0';
 		hs = func(htc);
 		if (hs == HTC_S_OVERFLOW || hs == HTC_S_JUNK) {
 			WS_ReleaseP(htc->ws, htc->rxbuf_b);
@@ -271,18 +280,17 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 			/* Working on it */
 			if (t1 != NULL && isnan(*t1))
 				*t1 = now;
-		} else if (hs == HTC_S_EMPTY) {
+		} else if (hs == HTC_S_EMPTY)
 			htc->rxbuf_e = htc->rxbuf_b;
-			*htc->rxbuf_e = '\0';
-		} else
+		else
 			WRONG("htc_status_e");
 
 		tmo = tn - now;
 		if (!isnan(ti) && ti < tn)
 			tmo = ti - now;
-		i = (htc->rxbuf_e - htc->rxbuf_b) + 1L;	/* space for NUL */
-		i = maxbytes - i;
-		if (i <= 0) {
+		i = maxbytes - (htc->rxbuf_e - htc->rxbuf_b);
+		assert(i >= 0);
+		if (i == 0) {
 			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			return (HTC_S_OVERFLOW);
 		}
@@ -292,10 +300,9 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 		if (i == 0 || i == -1) {
 			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			return (HTC_S_EOF);
-		} else if (i > 0) {
+		} else if (i > 0)
 			htc->rxbuf_e += i;
-			*htc->rxbuf_e = '\0';
-		} else if (i == -2) {
+		else if (i == -2) {
 			if (hs == HTC_S_EMPTY && ti <= now) {
 				WS_ReleaseP(htc->ws, htc->rxbuf_b);
 				return (HTC_S_IDLE);
