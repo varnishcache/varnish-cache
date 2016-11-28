@@ -30,7 +30,15 @@
 
 struct parspec;
 
-typedef int tweak_t(struct vsb *, const struct parspec *, const char *arg);
+enum tweak_r_e __match_proto__(tweak_t) {
+	TWOK		= 0,
+	TWEFMT		= -1,
+	TWESMALL	= -2,
+	TWEBIG		= -3
+};
+
+typedef enum tweak_r_e tweak_t(struct vsb *, struct parspec *,
+    const char *arg);
 
 struct parspec {
 	const char	*name;
@@ -48,6 +56,7 @@ struct parspec {
 #define PROTECTED	(1<<5)
 #define OBJ_STICKY	(1<<6)
 #define ONLY_ROOT	(1<<7)
+#define _LIMITING	(1<<8)
 	const char	*def;
 	const char	*units;
 };
@@ -64,7 +73,7 @@ tweak_t tweak_waiter;
 tweak_t tweak_vsl_buffer;
 tweak_t tweak_vsl_reclen;
 
-int tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest,
+enum tweak_r_e tweak_generic_uint(struct vsb *vsb, volatile unsigned *dest,
     const char *arg, const char *min, const char *max);
 
 extern struct parspec mgt_parspec[]; /* mgt_param_tbl.c */

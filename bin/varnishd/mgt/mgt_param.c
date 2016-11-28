@@ -231,7 +231,7 @@ mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 {
 	int n;
 	struct plist *pl;
-	const struct parspec *pp;
+	struct parspec *pp;
 	int lfmt = 0, chg = 0;
 	struct vsb *vsb;
 
@@ -343,7 +343,7 @@ MCF_ParamProtect(struct cli *cli, const char *args)
 void
 MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 {
-	const struct parspec *pp;
+	struct parspec *pp;
 
 	pp = mcf_findpar(param);
 	if (pp == NULL) {
@@ -414,25 +414,27 @@ MCF_AddParams(struct parspec *ps)
  */
 
 static void
-mcf_wash_param(struct cli *cli, const struct parspec *pp, const char **val,
+mcf_wash_param(struct cli *cli, struct parspec *pp, const char **val,
     const char *name, struct vsb *vsb)
 {
-	int err;
+	enum tweak_r_e err;
 
 	AN(*val);
 	VSB_clear(vsb);
 	VSB_printf(vsb, "FAILED to set %s for param %s: %s\n",
 	    name, pp->name, *val);
+	pp->flags |= _LIMITING;
 	err = pp->func(vsb, pp, *val);
+	pp->flags &= ~_LIMITING;
 	AZ(VSB_finish(vsb));
-	if (err) {
+	if (err != TWOK) {
 		VCLI_Out(cli, "%s\n", VSB_data(vsb));
 		VCLI_SetResult(cli, CLIS_CANT);
 		return;
 	}
 	VSB_clear(vsb);
 	err = pp->func(vsb, pp, NULL);
-	AZ(err);
+	assert(err == TWOK);
 	AZ(VSB_finish(vsb));
 	if (strcmp(*val, VSB_data(vsb))) {
 		*val = strdup(VSB_data(vsb));
@@ -487,6 +489,63 @@ MCF_CollectParams(void)
 	MCF_AddParams(VSL_parspec);
 }
 
+/*--------------------------------------------------------------------
+ * re-check current value against (new) limits
+ */
+static void
+mcf_limit(struct parspec *pp, struct vsb *vsb) {
+	enum tweak_r_e err;
+	struct vsb *vsb2;
+	const char *lim = NULL;
+	const char *why = NULL;
+
+	// break recursion
+	if (pp->flags & _LIMITING)
+		return;
+
+	pp->flags |= _LIMITING;
+
+	VSB_clear(vsb);
+	err = pp->func(vsb, pp, NULL);
+	assert(err == TWOK);
+	AZ(VSB_finish(vsb));
+
+	vsb2 = VSB_new_auto();
+	AN(vsb2);
+
+	err = pp->func(vsb2, pp, VSB_data(vsb));
+	assert(err != TWEFMT);
+
+	switch (err) {
+	case TWOK:
+		break;
+	case TWESMALL:
+		lim = pp->min;
+		why = "small";
+		break;
+	case TWEBIG:
+		lim = pp->max;
+		why = "big";
+		break;
+	default:
+		INCOMPL();
+	}
+
+	if (lim == NULL)
+		return;
+
+	AN(why);
+#if 0
+	printf("%s %s too %s - limiting to %s\n", pp->name,
+	    VSB_data(vsb), why, lim);
+#endif
+	err = pp->func(vsb2, pp, lim);
+	assert(err == TWOK);
+
+	pp->flags &= ~_LIMITING;
+	VSB_destroy(&vsb2);
+	VSB_clear(vsb);
+}
 /*--------------------------------------------------------------------*/
 
 void
@@ -494,6 +553,8 @@ MCF_ParamConf(enum mcf_which_e which, const char *param, const char *fmt, ...)
 {
 	struct parspec *pp;
 	struct vsb *vsb;
+	const char *v;
+	enum tweak_r_e err;
 	va_list ap;
 
 	pp = mcf_findpar(param);
@@ -504,18 +565,27 @@ MCF_ParamConf(enum mcf_which_e which, const char *param, const char *fmt, ...)
 	VSB_vprintf(vsb, fmt, ap);
 	va_end(ap);
 	AZ(VSB_finish(vsb));
+	// XXX leaking
+	v = strdup(VSB_data(vsb));
+	VSB_clear(vsb);
 	switch (which) {
 	case MCF_DEFAULT:
-		pp->def = strdup(VSB_data(vsb));
+		if (pp->def == NULL || !strcmp(pp->def, v)) {
+			err = pp->func(vsb, pp, v);
+			assert(err == TWOK);
+		}
+		pp->def = v;
 		AN(pp->def);
 		break;
 	case MCF_MINIMUM:
-		pp->min = strdup(VSB_data(vsb));
+		pp->min = v;
 		AN(pp->min);
+		mcf_limit(pp, vsb);
 		break;
 	case MCF_MAXIMUM:
-		pp->max = strdup(VSB_data(vsb));
+		pp->max = v;
 		AN(pp->max);
+		mcf_limit(pp, vsb);
 		break;
 	}
 	VSB_delete(vsb);
@@ -527,7 +597,7 @@ void
 MCF_DumpRstParam(void)
 {
 	struct plist *pl;
-	const struct parspec *pp;
+	struct parspec *pp;
 	const char *p, *q, *t1, *t2;
 	int j;
 
