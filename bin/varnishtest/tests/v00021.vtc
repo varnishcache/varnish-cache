@@ -1,4 +1,4 @@
-varnishtest "VCL compiler coverage test: vcc_xref.c"
+varnishtest "VCL compiler coverage test: vcc_xref.c vcc_var.c vcc_symb.c"
 
 varnish v1 -errvcl {Variable 'obj.ttl' is read only.} {
 	backend b { .host = "127.0.0.1"; }
@@ -72,3 +72,21 @@ varnish v1 -errvcl {Invalid return "deliver"} {
 		return (deliver);
 	}
 }
+
+varnish v1 -errvcl {HTTP header (buckinghambuckingham..) is too long.} {
+
+	backend foo { .host = "${bad_ip}"; .port = "9080"; }
+
+	sub vcl_deliver {
+		set resp.http.buckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambucking = "foobar";
+	}
+} 
+
+varnish v1 -vcl {
+
+	backend foo { .host = "${bad_ip}"; .port = "9080"; }
+
+	sub vcl_deliver {
+		set resp.http.buckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckin = "foobar";
+	}
+} 

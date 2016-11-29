@@ -51,6 +51,13 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent,
 	vh = parent->wildcard_priv;
 	assert(vh->fmt == HEADER);
 
+	if (b + 127 <= e) {
+		VSB_printf(tl->sb, "HTTP header (%.20s..) is too long.\n", b);
+		VSB_cat(tl->sb, "\nAt: ");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+
 	v = TlAlloc(tl, sizeof *v);
 	AN(v);
 	v->r_methods = vh->r_methods;
@@ -100,6 +107,8 @@ vcc_FindVar(struct vcc *tl, const struct token *t, int wr_access,
 	const struct symbol *sym;
 
 	sym = VCC_SymbolTok(tl, NULL, t, SYM_VAR, 0);
+	if (tl->err)
+		return (NULL);
 	if (sym != NULL) {
 		if (wr_access && sym->w_methods == 0) {
 			VSB_printf(tl->sb, "Variable ");
