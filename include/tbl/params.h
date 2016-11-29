@@ -37,9 +37,13 @@ PARAM(
 	/* max */	NULL,
 	/* default */	"on",
 	/* units */	"bool",
+#if defined(HAVE_ACCEPT_FILTERS)
 	/* flags */	MUST_RESTART,
+#else
+	/* flags */	NOT_IMPLEMENTED,
+#endif
 	/* s-text */
-	"Enable kernel accept-filters (if available in the kernel).",
+	"Enable kernel accept-filters.",
 	/* l-text */	NULL,
 	/* func */	NULL
 )
@@ -1000,9 +1004,13 @@ PARAM(
 	/* max */	NULL,
 	/* default */	"off",
 	/* units */	"bool",
+#if defined(HAVE_TCP_FASTOPEN)
 	/* flags */	MUST_RESTART,
+#else
+	/* flags */	NOT_IMPLEMENTED,
+#endif
 	/* s-text */
-	"Enable TCP Fast Open extension (if available in the kernel).",
+	"Enable TCP Fast Open extension.",
 	/* l-text */	NULL,
 	/* func */	NULL
 )
