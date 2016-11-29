@@ -21,7 +21,7 @@ varnish v1 -arg "-p thread_pools=1" -vcl+backend { } -start
 delay 1
 
 client c1 {
-	txreq -url /bar
+	txreq -url "/bar"
 	rxresp
 	expect resp.status == 200
 } -run
@@ -67,7 +67,7 @@ varnish v1 -expect n_vcl_discard == 1
 
 # Do another request through the new VCL to the new backend
 client c1 {
-	txreq -url /foo
+	txreq -url "/foo"
 	rxresp
 	expect resp.status == 200
 } -run
