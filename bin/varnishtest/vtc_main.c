@@ -159,7 +159,7 @@ tst_cb(const struct vev *ve, int what)
 {
 	struct vtc_job *jp;
 	char buf[BUFSIZ];
-	int ecode, signo;
+	int ecode;
 	int i, stx;
 	pid_t px;
 	double t;
@@ -186,12 +186,10 @@ tst_cb(const struct vev *ve, int what)
 		t = VTIM_mono() - jp->t0;
 		AZ(close(ve->fd));
 
-		ecode = 2;
-		signo = 0;
-		if (WIFEXITED(stx))
+		if (stx)
 			ecode = WEXITSTATUS(stx);
-		if (WIFSIGNALED(stx))
-			signo = WTERMSIG(stx);
+		else
+			ecode = 0;
 
 		if (ecode > 1 && vtc_verbosity)
 			printf("%s\n", jp->buf);
@@ -220,8 +218,8 @@ tst_cb(const struct vev *ve, int what)
 		if (ecode > 1) {
 			printf("#     top  TEST %s FAILED (%.3f)",
 			    jp->tst->filename, t);
-			if (signo)
-				printf(" signal=%d", signo);
+			if (WIFSIGNALED(stx))
+				printf(" signal=%d", WTERMSIG(stx));
 			printf(" exit=%d\n", ecode);
 			if (!vtc_continue) {
 				/* XXX kill -9 other jobs ? */
