@@ -1,0 +1,5 @@
+varnishtest "-junix bad subarg handling"
+
+feature user_varnish
+
+err_shell "have different login groups" "varnishd -junix,workuser=root 2>&1"
