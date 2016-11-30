@@ -138,7 +138,7 @@ vtc_log(struct vtclog *vl, int lvl, const char *fmt, ...)
 	if (lvl > 0)
 		return;
 	if (lvl == 0)
-		vtc_error = 1;
+		vtc_error = 2;
 	if (pthread_self() != vtc_thread)
 		pthread_exit(NULL);
 }
@@ -204,7 +204,7 @@ vtc_dump(struct vtclog *vl, int lvl, const char *pfx, const char *str, int len)
 	vl->act = 0;
 	AZ(pthread_mutex_unlock(&vl->mtx));
 	if (lvl == 0) {
-		vtc_error = 1;
+		vtc_error = 2;
 		if (pthread_self() != vtc_thread)
 			pthread_exit(NULL);
 	}
@@ -264,7 +264,7 @@ vtc_hexdump(struct vtclog *vl, int lvl, const char *pfx,
 	vl->act = 0;
 	AZ(pthread_mutex_unlock(&vl->mtx));
 	if (lvl == 0) {
-		vtc_error = 1;
+		vtc_error = 2;
 		if (pthread_self() != vtc_thread)
 			pthread_exit(NULL);
 	}

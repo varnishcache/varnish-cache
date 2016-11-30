@@ -585,7 +585,7 @@ cmd_feature(CMD_ARGS)
 			if (tst) {			\
 				good = 1;		\
 			} else {			\
-				vtc_stop = 1;		\
+				vtc_stop = 2;		\
 			}				\
 		}					\
 	} while (0)
@@ -596,7 +596,7 @@ cmd_feature(CMD_ARGS)
 #ifdef SO_RCVTIMEO_WORKS
 			good = 1;
 #else
-			vtc_stop = 1;
+			vtc_stop = 2;
 #endif
 		}
 
@@ -604,7 +604,7 @@ cmd_feature(CMD_ARGS)
 #if !defined(__APPLE__) || !defined(__MACH__)
 			good = 1;
 #else
-			vtc_stop = 1;
+			vtc_stop = 2;
 #endif
 		}
 		FEATURE("pcre_jit", VRE_has_jit);
@@ -623,7 +623,7 @@ cmd_feature(CMD_ARGS)
 			r = personality(r | ADDR_NO_RANDOMIZE);
 			if (r < 0) {
 				good = 0;
-				vtc_stop = 1;
+				vtc_stop = 2;
 			}
 #endif
 		} else if (!strcmp(*av, "cmd")) {
@@ -636,7 +636,7 @@ cmd_feature(CMD_ARGS)
 			if (WEXITSTATUS(r) == 0)
 				good = 1;
 			else
-				vtc_stop = 1;
+				vtc_stop = 2;
 		}
 		if (good)
 			continue;
@@ -706,7 +706,8 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	vtc_thread = pthread_self();
 	parse_string(script, cmds, NULL, vltop);
 	old_err = vtc_error;
-	vtc_stop = 1;
+	if (!vtc_stop)
+		vtc_stop = 1;
 	vtc_log(vltop, 1, "RESETTING after %s", fn);
 	reset_cmds(cmds);
 	vtc_error |= old_err;
@@ -716,5 +717,7 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	else
 		vtc_log(vltop, 1, "TEST %s completed", fn);
 
+	if (vtc_stop > 1)
+		return (1);
 	return (vtc_error);
 }

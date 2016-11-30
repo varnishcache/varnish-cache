@@ -94,6 +94,7 @@ static int vtc_continue;		/* Continue on error */
 static int vtc_verbosity = 1;		/* Verbosity Level */
 static int vtc_good;
 static int vtc_fail;
+static int vtc_skip;
 static char *tmppath;
 static char *cwd = NULL;
 char *vmod_path = NULL;
@@ -158,6 +159,7 @@ tst_cb(const struct vev *ve, int what)
 {
 	struct vtc_job *jp;
 	char buf[BUFSIZ];
+	int ecode, signo;
 	int i, stx;
 	pid_t px;
 	double t;
@@ -184,17 +186,26 @@ tst_cb(const struct vev *ve, int what)
 		t = VTIM_mono() - jp->t0;
 		AZ(close(ve->fd));
 
-		if (stx && vtc_verbosity)
+		ecode = 2;
+		signo = 0;
+		if (WIFEXITED(stx))
+			ecode = WEXITSTATUS(stx);
+		if (WIFSIGNALED(stx))
+			signo = WTERMSIG(stx);
+
+		if (ecode > 1 && vtc_verbosity)
 			printf("%s\n", jp->buf);
 		else if (vtc_verbosity > 1)
 			printf("%s\n", jp->buf);
 
-		if (stx)
-			vtc_fail++;
-		else
+		if (!ecode)
 			vtc_good++;
+		else if (ecode == 1)
+			vtc_skip++;
+		else
+			vtc_fail++;
 
-		if (leave_temp == 0 || (leave_temp == 1 && !stx)) {
+		if (leave_temp == 0 || (leave_temp == 1 && ecode <= 1)) {
 			bprintf(buf, "rm -rf %s", jp->tmpdir);
 			AZ(system(buf));
 		} else {
@@ -206,19 +217,20 @@ tst_cb(const struct vev *ve, int what)
 		}
 		free(jp->tmpdir);
 
-		if (stx) {
+		if (ecode > 1) {
 			printf("#     top  TEST %s FAILED (%.3f)",
 			    jp->tst->filename, t);
-			if (WIFSIGNALED(stx))
-				printf(" signal=%d", WTERMSIG(stx));
-			printf(" exit=%d\n", WEXITSTATUS(stx));
+			if (signo)
+				printf(" signal=%d", signo);
+			printf(" exit=%d\n", ecode);
 			if (!vtc_continue) {
 				/* XXX kill -9 other jobs ? */
 				exit(2);
 			}
 		} else if (vtc_verbosity) {
-			printf("#     top  TEST %s passed (%.3f)\n",
-			    jp->tst->filename, t);
+			printf("#     top  TEST %s %s (%.3f)\n",
+			    jp->tst->filename,
+			    ecode ? "skipped" : "passed", t);
 		}
 		AZ(munmap(jp->buf, jp->bufsiz));
 		if (jp->evt != NULL)
@@ -640,9 +652,12 @@ main(int argc, char * const *argv)
 		i = vev_schedule_one(vb);
 	}
 	if (vtc_continue)
-		fprintf(stderr, "%d tests failed, %d tests passed\n",
-		    vtc_fail, vtc_good);
+		fprintf(stderr,
+		    "%d tests failed, %d tests skipped, %d tests passed\n",
+		    vtc_fail, vtc_skip, vtc_good);
 	if (vtc_fail)
 		return (1);
+	if (vtc_skip && !vtc_good)
+		return (77);
 	return (0);
 }
