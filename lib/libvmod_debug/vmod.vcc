@@ -39,7 +39,8 @@ $Function VOID panic(STRING_LIST)
 
 Don't.
 
-$Function STRING author(ENUM { phk, des, kristian, mithrandir } person="phk")
+$Function STRING author(ENUM { phk, des, kristian, mithrandir } person="phk",
+			ENUM { phk, slink, geoff } someone="phk")
 
 Test function for ENUM arguments
 

@@ -59,7 +59,14 @@ logexpect l1 -wait
 varnish v1 -errvcl {Wrong enum value.  Expected one of:} {
 	import debug;
 	sub vcl_deliver {
-		set resp.http.who = debug.author(jfk);
+		set resp.http.who = debug.author(ENUM);
+	}
+}
+
+varnish v1 -errvcl {Wrong enum value.  Expected one of:} {
+	import debug;
+	sub vcl_deliver {
+		set resp.http.who = debug.author(slink);
 	}
 }
 

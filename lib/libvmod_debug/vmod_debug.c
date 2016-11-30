@@ -68,17 +68,18 @@ vmod_panic(VRT_CTX, const char *str, ...)
 }
 
 VCL_STRING __match_proto__(td_debug_author)
-vmod_author(VRT_CTX, VCL_ENUM id)
+vmod_author(VRT_CTX, VCL_ENUM person, VCL_ENUM someone)
 {
+	(void)someone;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (!strcmp(id, "phk"))
+	if (!strcmp(person, "phk"))
 		return ("Poul-Henning");
-	if (!strcmp(id, "des"))
+	if (!strcmp(person, "des"))
 		return ("Dag-Erling");
-	if (!strcmp(id, "kristian"))
+	if (!strcmp(person, "kristian"))
 		return ("Kristian");
-	if (!strcmp(id, "mithrandir"))
+	if (!strcmp(person, "mithrandir"))
 		return ("Tollef");
 	WRONG("Illegal VMOD enum");
 }

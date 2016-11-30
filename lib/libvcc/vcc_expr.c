@@ -548,8 +548,8 @@ vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 			if (vcc_IdIs(tl->t, p))
 				break;
 			p += strlen(p) + 1;
-		} while (*p != '\0');
-		if (*p == '\0') {
+		} while (*p != '\1');
+		if (*p == '\1') {
 			VSB_printf(tl->sb, "Wrong enum value.");
 			VSB_printf(tl->sb, "  Expected one of:\n");
 			do {
