@@ -299,6 +299,7 @@ void VRT_hashdata(VRT_CTX, const char *str, ...);
 /* Simple stuff */
 int VRT_strcmp(const char *s1, const char *s2);
 void VRT_memmove(void *dst, const void *src, unsigned len);
+int VRT_ipcmp(const struct suckaddr *sua1, const struct suckaddr *sua2);
 
 void VRT_Rollback(VRT_CTX, const struct http *);
 

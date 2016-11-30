@@ -1097,6 +1097,9 @@ static const struct cmps {
 	NUM_REL(REAL),
 	NUM_REL(TIME),
 
+	{IP,		T_EQ,	"!VRT_ipcmp(\v1, \v2)" },
+	{IP,		T_NEQ,	"VRT_ipcmp(\v1, \v2)" },
+
 	{STRING,	T_EQ,	"!VRT_strcmp(\v1, \v2)" },
 	{STRING,	T_NEQ,	"VRT_strcmp(\v1, \v2)" },
 

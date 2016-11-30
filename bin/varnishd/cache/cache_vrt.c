@@ -522,3 +522,11 @@ VRT_memmove(void *dst, const void *src, unsigned len)
 
 	(void)memmove(dst, src, len);
 }
+
+int
+VRT_ipcmp(const struct suckaddr *sua1, const struct suckaddr *sua2)
+{
+	if (sua1 == NULL || sua2 == NULL)
+		return(1);
+	return (VSA_Compare_IP(sua1, sua2));
+}

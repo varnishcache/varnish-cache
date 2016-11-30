@@ -1,0 +1,20 @@
+varnishtest "Compare IP addresses"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_deliver {
+		set resp.http.exact-match = (client.ip == remote.ip);
+		set resp.http.loose-match = (client.ip == server.ip);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.exact-match == true
+	expect resp.http.loose-match == true
+} -run

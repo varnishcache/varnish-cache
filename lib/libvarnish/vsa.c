@@ -41,6 +41,7 @@
 #include "vas.h"
 #include "vsa.h"
 #include "vrt.h"
+#include "vdef.h"
 #include "miniobj.h"
 
 /*
@@ -313,6 +314,29 @@ VSA_Compare(const struct suckaddr *sua1, const struct suckaddr *sua2)
 	CHECK_OBJ_NOTNULL(sua1, SUCKADDR_MAGIC);
 	CHECK_OBJ_NOTNULL(sua2, SUCKADDR_MAGIC);
 	return (memcmp(sua1, sua2, vsa_suckaddr_len));
+}
+
+int
+VSA_Compare_IP(const struct suckaddr *sua1, const struct suckaddr *sua2)
+{
+
+	assert(VSA_Sane(sua1));
+	assert(VSA_Sane(sua2));
+
+	if (sua1->sa.sa_family != sua2->sa.sa_family)
+		return (-1);
+
+	switch(sua1->sa.sa_family) {
+		case PF_INET:
+			return (memcmp(&sua1->sa4.sin_addr,
+			    &sua2->sa4.sin_addr, sizeof(struct in_addr)));
+		case PF_INET6:
+			return (memcmp(&sua1->sa6.sin6_addr,
+			    &sua2->sa6.sin6_addr, sizeof(struct in6_addr)));
+	}
+
+	WRONG("Just plain insane");
+	NEEDLESS_RETURN(-1);
 }
 
 struct suckaddr *
