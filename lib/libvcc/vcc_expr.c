@@ -1347,10 +1347,8 @@ vcc_Expr(struct vcc *tl, vcc_type_t fmt)
 		}
 		vcc_expr_fmt(tl->fb, tl->indent, e);
 		VSB_putc(tl->fb, '\n');
-	} else {
-		if (t1 != tl->t)
-			vcc_ErrWhere2(tl, t1, tl->t);
-	}
+	} else if (t1 != tl->t)
+		vcc_ErrWhere2(tl, t1, tl->t);
 	vcc_delete_expr(e);
 }
 
