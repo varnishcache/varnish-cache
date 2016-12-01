@@ -30,6 +30,23 @@
 
 /*lint -save -e525 -e539 */
 
+#ifdef PARAM_RESERVED
+PARAM(
+	/* name */	address,
+	/* typ */	string,
+	/* min */	NULL,
+	/* max */	NULL,
+	/* default */	NULL,
+	/* units */	NULL,
+	/* flags */	RESERVED,
+	/* s-text */
+	"Listen for client requests on the specified address and port.",
+	/* l-text */	NULL,
+	/* func */	NULL
+)
+#endif /* ifdef PARAM_RESERVED */
+
+#ifndef PARAM_RESERVED
 PARAM(
 	/* name */	accept_filter,
 	/* typ */	bool,
@@ -1615,5 +1632,6 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+#endif /* ifndef PARAM_RESERVED */
 
 /*lint -restore */

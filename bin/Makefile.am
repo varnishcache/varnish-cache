@@ -2,6 +2,7 @@
 
 SUBDIRS = \
 	varnishadm \
+	varnishctl \
 	varnishd \
 	varnishhist \
 	varnishlog \

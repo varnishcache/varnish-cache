@@ -1,0 +1,211 @@
+#!/bin/bash
+
+set -e
+set -u
+
+PROG="$0"
+FILE=
+NAME=
+
+#
+# Temporary
+#
+
+shopt -s expand_aliases
+alias INCOMPL='fail "Incomplete code line %d" "$LINENO"'
+
+#
+# Utility functions
+#
+
+warn() {
+	fmt="$1"
+	shift
+	printf "%s: $fmt\n" "$PROG" "$@" >&2
+}
+
+fail() {
+	warn "$@"
+	exit 1
+}
+
+version() {
+	echo varnishctl 0.1 >&2
+	exit
+}
+
+usage() {
+	cat >&2 <<-EOF
+	usage: $PROG [-f config] [-n name] <command> [params...]
+	       $PROG -V
+
+	Available commands: TODO
+	EOF
+	exit 1
+}
+
+#
+# Configuration reader
+#
+# The parameter is a function that will handle all key/value pairs.
+#
+
+read_config() {
+	CALLBACK="$1"
+	[ -z "$CALLBACK" ] && fail "read_config: missing callback argument"
+
+	sed '/^#/d ; /^$/d' |
+	while IFS== read K V
+	do
+		K="$(printf %s "$K" | sed 's/[ \t]*$//')"
+		V="$(printf %s "$V" | sed 's/[ \t]*$// ; s/^[ \t]*//')"
+
+		LEN=$(expr "$K" : '^[a-z0-9_]*$' || :)
+		[ "$LEN" = 0 -o "$LEN" != "${#K}" ] &&
+		fail "invalid key: %s" "$K"
+
+		OPT=
+		case "$K" in
+		address)	OPT=a ;;
+		backend)	OPT=b ;;
+		vcl_file)	OPT=f ;;
+		hash)		OPT=h ;;
+		identity)	OPT=i ;;
+		shmlog)		OPT=l ;;
+		remote_cli)	OPT=M ;;
+		pid_file)	OPT=P ;;
+		read_only)	OPT=r ;;
+		secret_file)	OPT=S ;;
+		storage)	OPT=s ;;
+		cli)		OPT=T ;;
+		waiter)		OPT=W ;;
+		jail)		"$CALLBACK" jail "$V" ;;
+		*)		"$CALLBACK" param "$K" "$V" ;;
+		esac
+
+		[ -z "$OPT" ] || "$CALLBACK" option $OPT "$V"
+	done
+}
+
+#
+# Configuration handlers
+#
+
+jail_opt() {
+	[ "$1" = jail ] || return 0
+	printf " -j %q" "$2"
+}
+
+varnishd_opts() {
+	case "$1" in
+	jail)	return 0 ;;
+	option)	printf " -%s %q" "$2" "$3" ;;
+	param)	printf " -p %s=%q" "$2" "$3" ;;
+	*)	fail "unknown configuration: %s" "$1" ;;
+	esac
+}
+
+varnishadm_opts() {
+	[ "$1" = option ] || return 0
+	case "$2" in
+	S|T)
+		printf " -%s %q" "$2" "$3"
+		;;
+	esac
+}
+
+echo_pidfile() {
+	[ "$1" = option -a "$2" = P ] || return 0
+	printf "%s\n" "$3"
+}
+
+param_set() {
+	[ "$1" = param ] || return 0
+
+	OPTS="$(read_config varnishadm_opts <$FILE)"
+	[ -n "$NAME" ] && OPTS="$(printf "%s %s %q" "$OPTS" -n "$NAME")"
+
+	EXEC="$(printf "varnishadm%s param.set %s %q" "$OPTS" "$2" "$3")"
+	printf >&2 "exec: %s\n" "$EXEC"
+	#eval "exec $EXEC"
+}
+
+#
+# Sub-commands
+#
+
+cmd_varnishd() {
+	[ -z "$FILE" ] && warn "varnishd: missing a config file" && usage
+
+	JAIL="$(read_config jail_opt <$FILE)"
+	OPTS="$(read_config varnishd_opts <$FILE)"
+	[ -n "$NAME" ] && OPTS="$(printf "%s -n %q" "$OPTS" "$NAME")"
+
+	for OPT
+	do
+		OPTS="$(printf "%s %q" "$OPTS" "$OPT")"
+	done
+
+	EXEC="$(printf "varnishd%s%s" "$JAIL" "$OPTS")"
+	printf >&2 "exec: %s\n" "$EXEC"
+	#eval "exec $EXEC"
+}
+
+cmd_pidfile() {
+	[ $# -gt 0 ] && fail "pidfile: too many parameters"
+	[ -z "$FILE" ] && warn "pidfile: missing a config file" && usage
+
+	read_config echo_pidfile <$FILE |
+	tail -1
+}
+
+cmd_param_reload() {
+	[ $# -gt 0 ] && fail "param.reload: too many parameters"
+	[ -z "$FILE" ] && warn "param.reload: missing a config file" && usage
+	read_config param_set <$FILE
+}
+
+cmd_vcl_reload() {
+	INCOMPL
+}
+
+cmd_reload() {
+	cmd_param_reload "$@"
+	cmd_vcl_reload "$@"
+}
+
+#
+# Script execution
+#
+
+while getopts f:n:V OPT
+do
+	case $OPT in
+	f) FILE="$OPTARG" ;;
+	n) NAME="$OPTARG" ;;
+	V) version ;;
+	?) usage ;;
+	esac
+done
+
+shift $((OPTIND - 1))
+
+if [ $# = 0 ]
+then
+	warn "missing a command"
+	usage
+fi
+
+CMD="$1"
+shift
+
+FUNC="$(echo "cmd_$CMD" | tr . _)"
+TYPE="$(command -v "$FUNC" || :)"
+
+if [ "$FUNC" != "$TYPE" ]
+then
+	printf "%s: unknown command: %s\n" "$PROG" "$CMD" >&2
+	usage
+fi
+
+$FUNC "$@"
