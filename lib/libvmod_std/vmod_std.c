@@ -253,3 +253,12 @@ vmod_strstr(VRT_CTX, VCL_STRING s1, VCL_STRING s2)
 		return (NULL);
 	return (strstr(s1, s2));
 }
+
+VCL_STRING __match_proto__(td_std_getenv)
+vmod_getenv(VRT_CTX, VCL_STRING name)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (name == NULL || *name == '\0')
+		return (NULL);
+	return (getenv(name));
+}
