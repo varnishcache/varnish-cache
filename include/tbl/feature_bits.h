@@ -67,4 +67,8 @@ FEATURE_BIT(HTTP2,		http2,
     "Support HTTP/2 protocol",
     "Enable HTTP/2 protocol support."
 )
+FEATURE_BIT(BIND_BEFORE_CONNECT,	bind_before_connect,
+    "Activate bind before connect",
+    "Move the 64k local ports limit to 64k connections per destination."
+)
 /*lint -restore */

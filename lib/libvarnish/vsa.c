@@ -174,6 +174,20 @@ struct suckaddr {
 
 const int vsa_suckaddr_len = sizeof(struct suckaddr);
 
+static const struct suckaddr ipv4_any = { .magic = 0x4b1e9335,
+					 .sa4 = { .sin_family = AF_INET,
+						  .sin_addr.s_addr = INADDR_ANY,
+						  .sin_port = 0 }
+};
+static const struct suckaddr ipv6_any = { .magic = 0x4b1e9335,
+					 .sa6 = { .sin6_family = AF_INET6,
+						  .sin6_addr = IN6ADDR_ANY_INIT,
+						  .sin6_port = 0 }
+};
+
+const struct suckaddr *vsa_ipv4_any = &ipv4_any;
+const struct suckaddr *vsa_ipv6_any = &ipv6_any;
+
 /*
  * This VRT interface is for the VCC generated ACL code, which needs
  * to know the address family and a pointer to the actual address.

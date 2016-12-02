@@ -56,6 +56,10 @@ struct heritage {
 	/* Sockets from which to accept connections */
 	struct listen_sock_head		socks;
 
+	/* Source Addr for bind-before-connect */
+	struct suckaddr			*ipv4_src;
+	struct suckaddr			*ipv6_src;
+
 	/* Hash method */
 	const struct hash_slinger	*hash;
 

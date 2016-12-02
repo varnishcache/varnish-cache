@@ -33,6 +33,9 @@
 struct suckaddr;
 extern const int vsa_suckaddr_len;
 
+extern const struct suckaddr *vsa_ipv4_any;
+extern const struct suckaddr *vsa_ipv6_any;
+
 int VSA_Sane(const struct suckaddr *);
 unsigned VSA_Port(const struct suckaddr *);
 int VSA_Compare(const struct suckaddr *, const struct suckaddr *);

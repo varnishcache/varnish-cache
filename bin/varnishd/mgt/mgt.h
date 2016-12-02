@@ -156,6 +156,7 @@ extern struct params mgt_param;
 
 /* mgt_param_tcp.c */
 void MCF_TcpParams(void);
+void SRC_Arg(const char*);
 
 /* mgt_shmem.c */
 void mgt_SHM_Init(void);

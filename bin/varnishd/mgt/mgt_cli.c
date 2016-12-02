@@ -645,7 +645,7 @@ Marg_poker(const struct vev *e, int what)
 	AN(ma);
 
 	/* Try to connect asynchronously */
-	s = VTCP_connect(ma->sa, -1);
+	s = VTCP_connect(ma->sa, NULL, -1, 0);
 	if (s < 0)
 		return (0);
 

@@ -90,6 +90,42 @@ vtcp_sa_to_ascii(const void *sa, socklen_t l, char *abuf, unsigned alen,
 
 /*--------------------------------------------------------------------*/
 
+static int
+vtcp_bind_socket(int s, const struct suckaddr *name, const char **errp)
+{
+	int val, e;
+	const struct sockaddr *sa;
+	socklen_t sl;
+
+	if (name == NULL)
+		return (-1);
+	AN(VSA_Sane(name));
+	sa = VSA_Get_Sockaddr(name, &sl);
+	AN(sa);
+	AN(sl);
+
+	val = 1;
+	if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &val, sizeof val) != 0) {
+		if (errp != NULL)
+			*errp = "setsockopt(SO_REUSEADDR, 1)";
+		e = errno;
+		AZ(close(s));
+		errno = e;
+		return (-1);
+	}
+	if (bind(s, sa, sl) != 0) {
+		if (errp != NULL)
+			*errp = "bind(2)";
+		e = errno;
+		AZ(close(s));
+		errno = e;
+		return (-1);
+	}
+	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
 void
 VTCP_name(const struct suckaddr *addr, char *abuf, unsigned alen,
     char *pbuf, unsigned plen)
@@ -273,9 +309,9 @@ VTCP_connected(int s)
 }
 
 int
-VTCP_connect(const struct suckaddr *name, int msec)
+VTCP_connect(const struct suckaddr *name, const struct suckaddr *source, int msec, unsigned retry)
 {
-	int s, i;
+	int s, i, r;
 	struct pollfd fds[1];
 	const struct sockaddr *sa;
 	socklen_t sl;
@@ -288,45 +324,64 @@ VTCP_connect(const struct suckaddr *name, int msec)
 	AN(sa);
 	AN(sl);
 
-	s = socket(sa->sa_family, SOCK_STREAM, 0);
-	if (s < 0)
-		return (s);
+	for (r = 0; r <= retry; r++) {
+		s = socket(sa->sa_family, SOCK_STREAM, 0);
+		if (s < 0)
+			return (s);
 
-	/* Set the socket non-blocking */
-	if (msec != 0)
-		(void)VTCP_nonblocking(s);
+		/* Set the socket non-blocking */
+		if (msec != 0)
+			(void)VTCP_nonblocking(s);
 
-	i = connect(s, sa, sl);
-	if (i == 0)
-		return (s);
-	if (errno != EINPROGRESS) {
-		AZ(close(s));
-		return (-1);
+		/* bind before connect logic */
+		if (source != NULL)
+			if (vtcp_bind_socket(s, source, NULL) != 0) {
+				return (-1);
+			}
+
+		i = connect(s, sa, sl);
+		if (msec == 0) {
+			if (i == 0)
+				return (s);
+			if (errno == EADDRNOTAVAIL) {
+				AZ(close(s));
+				continue;
+			}
+		}
+		if (errno != EINPROGRESS) {
+			AZ(close(s));
+			return (-1);
+		}
+
+		if (msec < 0) {
+			/*
+			 * Caller is responsible for waiting and
+			 * calling VTCP_connected
+			 */
+			return (s);
+		}
+
+		assert(msec > 0);
+		/* Exercise our patience, polling for write */
+		fds[0].fd = s;
+		fds[0].events = POLLWRNORM;
+		fds[0].revents = 0;
+		i = poll(fds, 1, msec);
+
+		if (i == 0) {
+			/* Timeout, close and give up */
+			AZ(close(s));
+			errno = ETIMEDOUT;
+			return (-1);
+		} else {
+			i = VTCP_connected(s);
+		}
+		if (i >= 0)
+			return (s);
+		if (errno != EADDRNOTAVAIL)
+			return (-1);
 	}
-
-	if (msec < 0) {
-		/*
-		 * Caller is responsible for waiting and
-		 * calling VTCP_connected
-		 */
-		return (s);
-	}
-
-	assert(msec > 0);
-	/* Exercise our patience, polling for write */
-	fds[0].fd = s;
-	fds[0].events = POLLWRNORM;
-	fds[0].revents = 0;
-	i = poll(fds, 1, msec);
-
-	if (i == 0) {
-		/* Timeout, close and give up */
-		AZ(close(s));
-		errno = ETIMEDOUT;
-		return (-1);
-	}
-
-	return (VTCP_connected(s));
+	return (-1);
 }
 
 /*--------------------------------------------------------------------
@@ -374,7 +429,7 @@ vtcp_open_callback(void *priv, const struct suckaddr *sa)
 {
 	double *p = priv;
 
-	return (VTCP_connect(sa, (int)floor(*p * 1e3)));
+	return (VTCP_connect(sa, NULL, (int)floor(*p * 1e3), 0));
 }
 
 int
@@ -409,8 +464,6 @@ int
 VTCP_bind(const struct suckaddr *sa, const char **errp)
 {
 	int sd, val, e;
-	socklen_t sl;
-	const struct sockaddr *so;
 	int proto;
 
 	if (errp != NULL)
@@ -421,15 +474,6 @@ VTCP_bind(const struct suckaddr *sa, const char **errp)
 	if (sd < 0) {
 		if (errp != NULL)
 			*errp = "socket(2)";
-		return (-1);
-	}
-	val = 1;
-	if (setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof val) != 0) {
-		if (errp != NULL)
-			*errp = "setsockopt(SO_REUSEADDR, 1)";
-		e = errno;
-		AZ(close(sd));
-		errno = e;
 		return (-1);
 	}
 #ifdef IPV6_V6ONLY
@@ -445,15 +489,9 @@ VTCP_bind(const struct suckaddr *sa, const char **errp)
 		return (-1);
 	}
 #endif
-	so = VSA_Get_Sockaddr(sa, &sl);
-	if (bind(sd, so, sl) != 0) {
-		if (errp != NULL)
-			*errp = "bind(2)";
-		e = errno;
-		AZ(close(sd));
-		errno = e;
+	if (vtcp_bind_socket(sd, sa, errp) != 0)
 		return (-1);
-	}
+
 	return (sd);
 }
 

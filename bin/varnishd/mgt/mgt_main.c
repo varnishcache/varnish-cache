@@ -201,6 +201,8 @@ usage(void)
 	fprintf(stderr, FMT, "-b address[:port]", "backend address and port");
 	fprintf(stderr, FMT, "", "  address: hostname or IP");
 	fprintf(stderr, FMT, "", "  port: port or service (default: 80)");
+	fprintf(stderr, FMT, "-B address", "source address used to connect to backends");
+	fprintf(stderr, FMT, "", "  address: hostname or IP");
 	fprintf(stderr, FMT, "-C", "print VCL code compiled to C language");
 	fprintf(stderr, FMT, "-d", "debug");
 	fprintf(stderr, FMT, "-F", "Run in foreground");
@@ -557,6 +559,8 @@ main(int argc, char * const *argv)
 
 	/* Various initializations */
 	VTAILQ_INIT(&heritage.socks);
+	heritage.ipv4_src = NULL;
+	heritage.ipv6_src = NULL;
 	mgt_evb = vev_new_base();
 	AN(mgt_evb);
 
@@ -566,7 +570,7 @@ main(int argc, char * const *argv)
 	cli_check(cli);
 
 	while ((o = getopt(argc, argv,
-	    "a:b:Cdf:Fh:i:j:l:M:n:P:p:r:S:s:T:t:VW:x:")) != -1) {
+	    "a:b:B:Cdf:Fh:i:j:l:M:n:P:p:r:S:s:T:t:VW:x:")) != -1) {
 		/*
 		 * -j must be the first argument if specified, because
 		 * it (may) affect subsequent argument processing.
@@ -589,6 +593,9 @@ main(int argc, char * const *argv)
 			break;
 		case 'b':
 			b_arg = optarg;
+			break;
+		case 'B':
+			SRC_Arg(optarg);
 			break;
 		case 'C':
 			C_flag = 1 - C_flag;
