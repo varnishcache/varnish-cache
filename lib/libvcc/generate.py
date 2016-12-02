@@ -492,6 +492,9 @@ sp_variables = [
 		('backend_response', 'backend_error'),
 		('backend_response', 'backend_error'), """
 		The HTTP status code returned by the server.
+
+		Status codes >1000 can be set for vcl-internal
+		purposes and will be taken modulo 1000 on delivery.
 		"""
 	),
 	('beresp.reason',

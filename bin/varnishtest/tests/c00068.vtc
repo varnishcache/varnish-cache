@@ -20,14 +20,17 @@ varnish v1 -vcl+backend {
 		if (req.url == "/332") {
 			return (synth(332, "FOO"));
 		} else if (req.url == "/333") {
-			return (synth(resp.status, resp.reason));
+			return (synth(resp.status + 1000,
+				resp.reason));
 		} else {
 			return (synth(334, "BAR"));
 		}
 	}
 
 	sub vcl_synth {
-		if (resp.status == 333) {
+		# internal response status >1000 will be taken modulo
+		# 1000 when sent
+		if (resp.status == 1333) {
 			set resp.http.connection = "close";
 		} else if (resp.status == 332) {
 			if (req.restarts == 0) {

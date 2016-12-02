@@ -160,7 +160,7 @@ cnt_synth(struct worker *wrk, struct req *req)
 	now = W_TIM_real(wrk);
 	VSLb_ts_req(req, "Process", now);
 
-	if (req->err_code < 100 || req->err_code > 999)
+	if (req->err_code < 100)
 		req->err_code = 501;
 
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);

@@ -54,11 +54,11 @@ VRT_synth(VRT_CTX, unsigned code, const char *reason)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	if (code < 100 || code > 999)
+	if (code < 100)
 		code = 503;
 	ctx->req->err_code = (uint16_t)code;
-	ctx->req->err_reason =
-	    reason ? reason : http_Status2Reason(ctx->req->err_code, NULL);
+	ctx->req->err_reason = reason ? reason
+	    : http_Status2Reason(ctx->req->err_code % 1000, NULL);
 }
 
 /*--------------------------------------------------------------------*/
