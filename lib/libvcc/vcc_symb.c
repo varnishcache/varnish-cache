@@ -235,6 +235,15 @@ VCC_HandleSymbol(struct vcc *tl, const struct token *tk, vcc_type_t fmt,
 		AN(sym->def_b);
 		vcc_ErrWhere(tl, sym->def_b);
 		return (sym);
+	} else if (sym != NULL && sym->ref_b != NULL) {
+		p = VCC_SymKind(tl, sym);
+		VSB_printf(tl->sb, "%c%s '%.*s' used before defined.\n",
+		    toupper(*p), p + 1, PF(tk));
+		vcc_ErrWhere(tl, tk);
+		VSB_printf(tl->sb, "First use:\n");
+		AN(sym->ref_b);
+		vcc_ErrWhere(tl, sym->ref_b);
+		return (sym);
 	} else if (sym != NULL) {
 		VSB_printf(tl->sb,
 		    "Name %.*s is a reserved name.\n", PF(tk));
