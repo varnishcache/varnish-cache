@@ -647,21 +647,21 @@ sp_variables = [
 		'STRING',
 		('hit',),
 		(), """
-		The HTTP protocol version used when the object was retrieved.
+		The HTTP protocol version stored with the object.
 		"""
 	),
 	('obj.status',
 		'INT',
 		('hit',),
 		(), """
-		The HTTP status code returned by the server.
+		The HTTP status code stored with the object.
 		"""
 	),
 	('obj.reason',
 		'STRING',
 		('hit',),
 		(), """
-		The HTTP status message returned by the server.
+		The HTTP reason phrase stored with the object.
 		"""
 	),
 	('obj.hits',
