@@ -23,7 +23,6 @@ dist-hook:
 SIZE	      = 8.4,11.7
 
 EXTRA_DIST = $(srcdir)/*.dot	\
-	$(PDFS)		\
 	$(SVGS)
 
 PDFS = \
