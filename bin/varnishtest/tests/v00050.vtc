@@ -1,0 +1,158 @@
+varnishtest "VCL/VRT: status >1000 handling"
+
+
+server s1 {
+	rxreq
+	txresp -status 200
+	rxreq
+	txresp -status 301
+	rxreq
+	txresp -status 998
+}
+
+server s1 -start
+
+# - internal status code visible ?
+# - reason phrase set for status %1000 ?
+# - status < 1000 stored/delivered
+varnish v1 -vcl+backend {
+	import std;
+
+	probe sick_probe {
+	    .initial = 0;
+	}
+	backend sick {
+	    .host = "${bad_ip}";
+	    .port = "9080";
+	    .probe = sick_probe;
+	}
+
+	sub vcl_backend_fetch {
+	    if (bereq.retries == 0) {
+		set bereq.backend = s1;
+	    }
+	}
+
+	sub vcl_backend_response {
+	    set beresp.status = beresp.status + 1000;
+	    std.log(beresp.status);
+	    if (beresp.status == 1200) {
+		if (beresp.reason != "OK") {
+		    std.log("!OK");
+		    return (abandon);
+		}
+		return (deliver);
+	    } else if (beresp.status == 1301) {
+		if (beresp.reason != "Moved Permanently") {
+		    std.log("!Moved Permanently");
+		    return (abandon);
+		}
+		return (deliver);
+	    } else {
+		if (beresp.status != 1998) {
+		    std.log("!1998");
+		    return (abandon);
+		}
+		set beresp.status = 1999;
+		set bereq.backend = sick;
+		# to get to vcl_backend_error
+		return (retry);
+	    }
+	    # UNREACHED
+	    std.log("impossible");
+	    return (abandon);
+	}
+
+	sub vcl_backend_error {
+	    # getting here via FetchError "no backend connection"
+	    if (beresp.status != 503) {
+		return (abandon);
+	    }
+	    set beresp.status = 1200;
+	    set beresp.reason = "OK from v_b_e";
+	    if (beresp.status != 1200) {
+		return (abandon);
+	    }
+	    set beresp.ttl = 1m;
+	}
+
+	sub vcl_hash {
+	    if (req.url == "/deliver") {
+		hash_data("/a");
+	    } else {
+		hash_data(req.url);
+	    }
+	    return(lookup);
+	}
+
+	sub vcl_deliver {
+	    if (req.url == "/deliver") {
+		set resp.status = 40404;
+		if (resp.status != 40404) {
+		    return (synth(400));
+		}
+	    }
+	}
+
+	sub vcl_recv {
+	    if (req.url == "/synth") {
+		return (synth(22301, "Hamburg"));
+	    }
+	}
+
+	sub vcl_synth {
+	    std.log("synth " + resp.status + " " + resp.reason);
+	    if (resp.status != 22301) {
+		set resp.status = 501;
+		return (deliver);
+	    }
+	    if (resp.reason != "Hamburg") {
+		set resp.status = 502;
+		return (deliver);
+	    }
+	    set resp.status = 22302;
+	    set resp.reason = "Wrong Postcode";
+	    return (deliver);
+	}
+} -start
+
+client c1 {
+	txreq -url "/a"
+	rxresp
+	expect resp.status == 200
+	txreq -url "/a"
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/b"
+	rxresp
+	expect resp.status == 301
+	txreq -url "/b"
+	rxresp
+	expect resp.status == 301
+
+	txreq -url "/c"
+	rxresp
+	expect resp.status == 200
+	expect resp.reason == "OK from v_b_e"
+	txreq -url "/c"
+	rxresp
+	expect resp.status == 200
+	expect resp.reason == "OK from v_b_e"
+
+	txreq -url "/deliver"
+	rxresp
+	expect resp.status == 404
+	expect resp.reason == "Not Found"
+
+	txreq -url "/synth"
+	rxresp
+	expect resp.status == 302
+	expect resp.reason == "Wrong Postcode"
+}
+
+client c1 -run
+
+server s1 -wait
+
+varnish v1 -stop
