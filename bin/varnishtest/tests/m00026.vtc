@@ -1,0 +1,21 @@
+varnishtest "Test std.getenv"
+
+varnish v1 -vcl {
+	import std;
+
+	backend dummy { .host = "${bad_ip}"; .port = "9080"; }
+
+	sub vcl_recv {
+		return(synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.X-PATH = std.getenv("PATH");
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.X-PATH ~ "^/"
+} -run

@@ -274,6 +274,14 @@ Example
 	|	...
 	| }
 
+$Function STRING getenv(STRING name)
+
+Description
+	Return environment variable *name* or the empty string.
+
+	See getenv(3)
+Example
+	| set req.http.My-Env = getenv("MY_ENV");
 
 SEE ALSO
 ========
