@@ -88,6 +88,9 @@ installed. On a Debian or Ubuntu system these are:
 * `pkg-config`
 * `python-docutils`
 * `python-sphinx`
+
+Optionally, to rebuild the svg files:
+
 * `graphviz`
 
 Build dependencies on Red Hat / CentOS
@@ -108,6 +111,9 @@ packages installed:
 * `pkgconfig`
 * `python-docutils`
 * `python-sphinx`
+
+Optionally, to rebuild the svg files:
+
 * `graphviz`
 
 Build dependencies on a SmartOS Zone
@@ -116,8 +122,11 @@ Build dependencies on a SmartOS Zone
 As of SmartOS pkgsrc 2015Q4, install the following packages::
 
 	pkgin in autoconf automake libedit libtool ncurses \
-		 pcre graphviz py27-sphinx python27 gmake gcc49 \
-		 pkg-config
+		 pcre py27-sphinx python27 gmake gcc49 pkg-config
+
+Optionally, to rebuild the svg files:
+
+        pkgin in graphviz
 
 Optionally, to pull from a repository::
 

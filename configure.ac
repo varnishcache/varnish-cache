@@ -60,7 +60,7 @@ AC_ARG_WITH([dot],
   [AC_CHECK_PROGS(DOT, [dot], [no])
    if test "x$DOT" = "xno"; then
      AC_MSG_WARN(
-       [dot not found - cannot generate graphviz output for documentation.])
+       [dot not found - build will fail if svg files are out of date.])
    fi])
 AM_CONDITIONAL(HAVE_DOT,[test "x$DOT" != "xno"])
 
