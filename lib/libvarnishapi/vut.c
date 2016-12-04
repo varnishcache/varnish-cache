@@ -246,15 +246,15 @@ VUT_Setup(void)
 	/* Create and validate the query expression */
 	VUT.vslq = VSLQ_New(VUT.vsl, NULL, VUT.g_arg, VUT.q_arg);
 	if (VUT.vslq == NULL)
-		VUT_Error(1, "Query expression error:\n%s", VSL_Error(VUT.vsl));
+		VUT_Error(1, "Query expression error:\n%s",
+		    VSL_Error(VUT.vsl));
 
 	/* Setup input */
 	if (VUT.r_arg) {
 		REPLACE(VUT.name, VUT.r_arg);
 		c = VSL_CursorFile(VUT.vsl, VUT.r_arg, 0);
 		if (c == NULL)
-			VUT_Error(1, "Can't open log file (%s)",
-			    VSL_Error(VUT.vsl));
+			VUT_Error(1, "%s", VSL_Error(VUT.vsl));
 	} else {
 		VUT.vsm = VSM_New();
 		AN(VUT.vsm);
@@ -276,7 +276,7 @@ VUT_Setup(void)
 				break;
 
 			if (isnan(t_start) && VUT.t_arg > 0.) {
-				VUT_Error(0, "Can't open log -"
+				VUT_Error(0, "Cannot open log -"
 				    " retrying for %.0f seconds", VUT.t_arg);
 				t_start = VTIM_real();
 			}
@@ -293,11 +293,9 @@ VUT_Setup(void)
 
 		if (VUT.t_arg >= 0. && (i || !c)) {
 			if (i)
-				VUT_Error(1, "Can't open VSM file (%s)",
-				    VSM_Error(VUT.vsm));
+				VUT_Error(1, "%s", VSM_Error(VUT.vsm));
 			else
-				VUT_Error(1, "Can't open log (%s)",
-				    VSL_Error(VUT.vsl));
+				VUT_Error(1, "%s", VSL_Error(VUT.vsl));
 		} else if (!isnan(t_start))
 			VUT_Error(0, "Log opened");
 	}

@@ -137,10 +137,10 @@ VSM_n_Arg(struct VSM_data *vd, const char *arg)
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 
 	if (vd->head)
-		return (vsm_diag(vd, "VSM_n_Arg: Already open\n"));
+		return (vsm_diag(vd, "VSM_n_Arg: Already open"));
 	if (VIN_N_Arg(arg, &name, NULL, &fname))
-		return (vsm_diag(vd, "Invalid instance name: %s\n",
-			strerror(errno)));
+		return (vsm_diag(vd, "Invalid instance name: %s",
+		    strerror(errno)));
 	AN(name);
 	AN(fname);
 
@@ -165,7 +165,7 @@ VSM_N_Arg(struct VSM_data *vd, const char *arg)
 	AN(arg);
 
 	if (vd->head)
-		return (vsm_diag(vd, "VSM_N_Arg: Already open\n"));
+		return (vsm_diag(vd, "VSM_N_Arg: Already open"));
 	REPLACE(vd->name, arg);
 	REPLACE(vd->fname, arg);
 	vd->N_opt = 1;
@@ -234,14 +234,14 @@ VSM_Open(struct VSM_data *vd)
 
 	vd->vsm_fd = open(vd->fname, O_RDONLY);
 	if (vd->vsm_fd < 0)
-		return (vsm_diag(vd, "Cannot open %s: %s\n",
+		return (vsm_diag(vd, "Cannot open %s: %s",
 		    vd->fname, strerror(errno)));
 
 	AZ(fstat(vd->vsm_fd, &vd->fstat));
 	if (!S_ISREG(vd->fstat.st_mode)) {
 		AZ(close(vd->vsm_fd));
 		vd->vsm_fd = -1;
-		return (vsm_diag(vd, "%s is not a regular file\n",
+		return (vsm_diag(vd, "%s is not a regular file",
 		    vd->fname));
 	}
 
@@ -249,22 +249,22 @@ VSM_Open(struct VSM_data *vd)
 	if (i != sizeof slh) {
 		AZ(close(vd->vsm_fd));
 		vd->vsm_fd = -1;
-		return(vsm_diag(vd, "Cannot read %s: %s\n",
+		return (vsm_diag(vd, "Cannot read %s: %s",
 		    vd->fname, strerror(errno)));
 	}
 
 	if (memcmp(slh.marker, VSM_HEAD_MARKER, sizeof slh.marker)) {
 		AZ(close(vd->vsm_fd));
 		vd->vsm_fd = -1;
-		return (vsm_diag(vd, "Not a VSM file %s\n", vd->fname));
+		return (vsm_diag(vd, "Not a VSM file %s", vd->fname));
 	}
 
 	if (!vd->N_opt && slh.alloc_seq == 0) {
 		AZ(close(vd->vsm_fd));
 		vd->vsm_fd = -1;
 		return (vsm_diag(vd,
-			"Abandoned VSM file (Varnish not running?) %s\n",
-			vd->fname));
+		    "Abandoned VSM file (Varnish not running?) %s",
+		    vd->fname));
 	}
 
 	v = mmap(NULL, slh.shm_size,
@@ -272,7 +272,7 @@ VSM_Open(struct VSM_data *vd)
 	if (v == MAP_FAILED) {
 		AZ(close(vd->vsm_fd));
 		vd->vsm_fd = -1;
-		return (vsm_diag(vd, "Cannot mmap %s: %s\n",
+		return (vsm_diag(vd, "Cannot mmap %s: %s",
 		    vd->fname, strerror(errno)));
 	}
 	vd->head = v;

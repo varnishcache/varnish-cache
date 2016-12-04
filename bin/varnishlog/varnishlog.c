@@ -83,7 +83,7 @@ openout(int append)
 	else
 		LOG.fo = VSL_WriteOpen(VUT.vsl, LOG.w_arg, append, 0);
 	if (LOG.fo == NULL)
-		VUT_Error(2, "Can't open output file (%s)",
+		VUT_Error(2, "Cannot open output file (%s)",
 		    LOG.A_opt ? strerror(errno) : VSL_Error(VUT.vsl));
 	VUT.dispatch_priv = LOG.fo;
 }

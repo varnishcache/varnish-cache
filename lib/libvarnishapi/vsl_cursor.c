@@ -250,18 +250,18 @@ VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, unsigned options)
 
 	if (!VSM_Get(vsm, &vf, VSL_CLASS, "", "")) {
 		(void)vsl_diag(vsl,
-		    "No VSL chunk found (child not started ?)\n");
+		    "No VSL chunk found (child not started ?)");
 		return (NULL);
 	}
 
 	head = vf.b;
 	if (memcmp(head->marker, VSL_HEAD_MARKER, sizeof head->marker)) {
-		(void)vsl_diag(vsl, "Not a VSL chunk\n");
+		(void)vsl_diag(vsl, "Not a VSL chunk");
 		return (NULL);
 	}
 	ALLOC_OBJ(c, VSLC_VSM_MAGIC);
 	if (c == NULL) {
-		(void)vsl_diag(vsl, "Out of memory\n");
+		(void)vsl_diag(vsl, "Out of memory");
 		return (NULL);
 	}
 	c->cursor.priv_tbl = &vslc_vsm_tbl;
@@ -276,7 +276,7 @@ VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, unsigned options)
 
 	i = vslc_vsm_reset(&c->cursor);
 	if (i) {
-		(void)vsl_diag(vsl, "Cursor initialization failure (%d)\n", i);
+		(void)vsl_diag(vsl, "Cursor initialization failure (%d)", i);
 		FREE_OBJ(c);
 		return (NULL);
 	}
@@ -405,7 +405,7 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name, unsigned options)
 	else {
 		fd = open(name, O_RDONLY);
 		if (fd < 0) {
-			vsl_diag(vsl, "Could not open %s: %s\n", name,
+			vsl_diag(vsl, "Cannot open %s: %s", name,
 			    strerror(errno));
 			return (NULL);
 		}
@@ -416,7 +416,7 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name, unsigned options)
 	if (i <= 0) {
 		if (close_fd)
 			(void)close(fd);
-		vsl_diag(vsl, "VSL file read error: %s\n",
+		vsl_diag(vsl, "VSL file read error: %s",
 		    i < 0 ? strerror(errno) : "EOF");
 		return (NULL);
 	}
@@ -424,7 +424,7 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name, unsigned options)
 	if (memcmp(buf, VSL_FILE_ID, sizeof buf)) {
 		if (close_fd)
 			(void)close(fd);
-		vsl_diag(vsl, "Not a VSL file: %s\n", name);
+		vsl_diag(vsl, "Not a VSL file: %s", name);
 		return (NULL);
 	}
 
@@ -432,7 +432,7 @@ VSL_CursorFile(struct VSL_data *vsl, const char *name, unsigned options)
 	if (c == NULL) {
 		if (close_fd)
 			(void)close(fd);
-		vsl_diag(vsl, "Out of memory\n");
+		vsl_diag(vsl, "Out of memory");
 		return (NULL);
 	}
 	c->cursor.priv_tbl = &vslc_file_tbl;
