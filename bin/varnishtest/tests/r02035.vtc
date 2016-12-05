@@ -8,7 +8,7 @@ server s1 {
 	# would be in the same packet as the headers, and would end
 	# up as pipelined data. Pipelined data wouldn't create a streaming
 	# data event, breaking the test case.
-	delay 0.5
+	delay 1
 	send_n 10 "A"
 	# Sema r1 halts the backend thread until client c1 is finished.
 	sema r1 sync 2
