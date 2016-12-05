@@ -55,7 +55,7 @@ varnishtest_LDADD = \
 		$(top_builddir)/lib/libvgz/libvgz.a \
 		@SAN_LDFLAGS@ \
 		@PCRE_LIBS@ \
-		${LIBM} ${PTHREAD_LIBS}
+		${PTHREAD_LIBS} ${NET_LIBS} ${LIBM}
 
 varnishtest_CFLAGS = \
 		@SAN_CFLAGS@ \
