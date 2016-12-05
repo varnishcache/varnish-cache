@@ -24,6 +24,7 @@ libvmod_directors_la_SOURCES = \
 	fall_back.c \
 	hash.c \
 	random.c \
+	roll_over.c \
 	round_robin.c \
 	vmod_shard.c \
 	shard_cfg.c \
