@@ -38,9 +38,7 @@
 #endif
 
 #include <netinet/in.h>
-#ifdef __linux
-#  include <netinet/tcp.h>
-#endif
+#include <netinet/tcp.h>
 
 #include <errno.h>
 #include <math.h>
