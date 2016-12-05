@@ -180,8 +180,6 @@ AC_CHECK_HEADERS([edit/readline/readline.h],
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_HEADER_SYS_WAIT
-AC_HEADER_TIME
 AC_CHECK_HEADERS([sys/endian.h])
 AC_CHECK_HEADERS([sys/filio.h])
 AC_CHECK_HEADERS([sys/mount.h], [], [], [#include <sys/param.h>])
@@ -193,23 +191,8 @@ AC_CHECK_HEADERS([execinfo.h])
 AC_CHECK_HEADERS([pthread_np.h], [], [], [#include <pthread.h>])
 AC_CHECK_HEADERS([priv.h])
 
-# Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-AC_CHECK_MEMBERS([struct sockaddr.sa_len],,,[
-#include <sys/types.h>
-#ifdef HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
-])
-
 # Checks for library functions.
-AC_TYPE_SIGNAL
-AC_TYPE_SIZE_T
-AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([strerror])
-AC_FUNC_STRERROR_R
 AC_CHECK_FUNCS([dladdr])
-AC_CHECK_FUNCS([socket])
 AC_CHECK_FUNCS([nanosleep])
 AC_CHECK_FUNCS([setppriv])
 AC_CHECK_FUNCS([fallocate])
@@ -220,7 +203,6 @@ LIBS="${PTHREAD_LIBS}"
 AC_CHECK_FUNCS([pthread_set_name_np])
 AC_CHECK_FUNCS([pthread_setname_np])
 AC_CHECK_FUNCS([pthread_mutex_isowned_np])
-AC_CHECK_FUNCS([pthread_timedjoin_np])
 LIBS="${save_LIBS}"
 
 # Support for visibility attribute
