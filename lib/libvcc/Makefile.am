@@ -11,9 +11,6 @@ noinst_LIBRARIES = libvcc.a
 libvcc_a_CFLAGS = \
 	@SAN_CFLAGS@
 
-libvcc_a_LDFLAGS = $(AM_LDFLAGS) \
-	@SAN_LDFLAGS@
-
 libvcc_a_SOURCES = \
 	vcc_compile.h \
 	vcc_token_defs.h \

@@ -13,8 +13,6 @@ libvarnish_a_CFLAGS = \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
 	@SAN_CFLAGS@
 
-libvarnish_a_LDFLAGS = $(AM_LDFLAGS)
-
 libvarnish_a_SOURCES = \
 	binary_heap.c \
 	vas.c \
