@@ -150,10 +150,10 @@ varnishd_CFLAGS = \
 varnishd_LDFLAGS = -export-dynamic
 
 varnishd_LDADD = \
-	$(top_builddir)/lib/libvarnish/libvarnish.la \
+	$(top_builddir)/lib/libvarnish/libvarnish.a \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
-	$(top_builddir)/lib/libvcc/libvcc.la \
-	$(top_builddir)/lib/libvgz/libvgz.la \
+	$(top_builddir)/lib/libvcc/libvcc.a \
+	$(top_builddir)/lib/libvgz/libvgz.a \
 	@SAN_LDFLAGS@ \
 	@JEMALLOC_LDADD@ \
 	@PCRE_LIBS@ \
@@ -163,19 +163,19 @@ noinst_PROGRAMS = vhp_gen_hufdec
 vhp_gen_hufdec_SOURCES = hpack/vhp_gen_hufdec.c
 vhp_gen_hufdec_CFLAGS = -include config.h
 vhp_gen_hufdec_LDADD = \
-	$(top_builddir)/lib/libvarnish/libvarnish.la
+	$(top_builddir)/lib/libvarnish/libvarnish.a
 
 noinst_PROGRAMS += vhp_table_test
 vhp_table_test_SOURCES = hpack/vhp_table.c
 vhp_table_test_CFLAGS = -DTABLE_TEST_DRIVER -include config.h
 vhp_table_test_LDADD = \
-	$(top_builddir)/lib/libvarnish/libvarnish.la
+	$(top_builddir)/lib/libvarnish/libvarnish.a
 
 noinst_PROGRAMS += vhp_decode_test
 vhp_decode_test_SOURCES = hpack/vhp_decode.c hpack/vhp_table.c
 vhp_decode_test_CFLAGS = -DDECODE_TEST_DRIVER -include config.h
 vhp_decode_test_LDADD = \
-	$(top_builddir)/lib/libvarnish/libvarnish.la
+	$(top_builddir)/lib/libvarnish/libvarnish.a
 
 TESTS = vhp_table_test vhp_decode_test
 

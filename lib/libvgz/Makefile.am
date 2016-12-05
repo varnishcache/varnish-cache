@@ -1,14 +1,16 @@
 #
+
 AM_LDFLAGS  = $(AM_LT_LDFLAGS)
 
-pkglib_LTLIBRARIES = libvgz.la
+noinst_LIBRARIES = libvgz.a
 
-libvgz_la_LDFLAGS = $(AM_LDFLAGS) -avoid-version \
+libvgz_a_CFLAGS = -D_LARGEFILE64_SOURCE=1 -DZLIB_CONST \
+	$(libvgz_extra_cflags) @SAN_CFLAGS@
+
+libvgz_a_LDFLAGS = $(AM_LDFLAGS) \
 	@SAN_LDFLAGS@
-libvgz_la_CFLAGS = -D_LARGEFILE64_SOURCE=1 -DZLIB_CONST $(libvgz_extra_cflags) \
-	@SAN_CFLAGS@
 
-libvgz_la_SOURCES = \
+libvgz_a_SOURCES = \
 	adler32.c \
 	compress.c \
 	crc32.c \
