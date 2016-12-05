@@ -263,8 +263,8 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 	if (boc == NULL) {
 		VTAILQ_FOREACH_SAFE(st, &obj->list, list, checkpoint) {
 			AN(st->len);
-			if (ret == 0 && func(priv, 1, st->ptr, st->len))
-				ret = -1;
+			if (ret == 0)
+				ret = func(priv, 1, st->ptr, st->len);
 			if (final) {
 				VTAILQ_REMOVE(&obj->list, st, list);
 				sml_stv_free(stv, st);
@@ -329,10 +329,9 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 			st = NULL;
 		Lck_Unlock(&boc->mtx);
 		assert(l > 0 || boc->state == BOS_FINISHED);
-		if (func(priv, st != NULL ? final : 1, p, l)) {
-			ret = -1;
+		ret = func(priv, st != NULL ? final : 1, p, l);
+		if (ret)
 			break;
-		}
 	}
 	HSH_DerefBoc(wrk, oc);
 	return (ret);
