@@ -12,7 +12,9 @@ client c1 {
 	rxresp
 } -run
 
-process p1 {varnishncsa -d -n ${v1_name} -F "%u %{Host}i"} -run
+process p1 {varnishncsa -d -n ${v1_name} -F "%u %{Host}i"} -start
+process p1 -wait
 shell {grep -q "foo qux" ${tmpdir}/p1/stdout}
-process p2 {varnishncsa -d -n ${v1_name} -F "%r"} -run
+process p2 {varnishncsa -d -n ${v1_name} -F "%r"} -start
+process p2 -wait
 shell {grep -q "GET http://qux/ HTTP/1.1" ${tmpdir}/p2/stdout}
