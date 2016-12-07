@@ -48,6 +48,9 @@ MAXRUNS="${MAXRUNS:-0}"
 
 SSH_DST="-p 203 vtest@varnish-cache.org"
 
+export SRCDIR=`pwd`/varnish-cache
+export BUILDDIR=${BUILDDIR:-${SRCDIR}}
+
 #######################################################################
 
 if ! (cd varnish-cache 2>/dev/null) ; then
@@ -62,14 +65,14 @@ fi
 
 autogen () (
 	set -e
-	cd varnish-cache
+	cd "${BUILDDIR}"
 	nice make distclean > /dev/null 2>&1 || true
-	nice sh autogen.des
+	nice sh "${SRCDIR}"/autogen.des
 )
 
 makedistcheck () (
 	set -e
-	cd varnish-cache
+	cd "${BUILDDIR}"
 	nice make distcheck
 )
 
@@ -82,7 +85,7 @@ failedtests () (
 			git log -n 1 ${t} | head -1
 		)
 		b=`basename ${t} .vtc`
-		for i in `find varnish-cache -name ${b}.log -print`
+		for i in `find "${BUILDDIR}" -name ${b}.log -print`
 		do
 			if [ -f ${i} ] ; then
 				mv ${i} "_report/_${b}.log"
@@ -141,6 +144,11 @@ do
 	fi
 	waitnext=${WAITBAD}
 	orev=${rev}
+
+	if ! [ -d "${BUILDDIR}" ] && ! mkdir -p "${BUILDDIR}" ; then
+		echo >&1 "could not create BUILDDIR ${BUILDDIR}"
+		exit 2
+	fi
 
 	rm -rf _report
 	mkdir _report

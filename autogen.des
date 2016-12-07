@@ -2,6 +2,8 @@
 #
 # Use this when doing code development
 
+SRCDIR=${SRCDIR:-.}
+
 set -ex
 
 make -k distclean > /dev/null 2>&1 || true
@@ -21,7 +23,7 @@ else
 fi
 
 rm -f configure
-. ./autogen.sh 2>&1 | egrep -v "(subdir-objects|is in a subdirectory)"
+(cd $SRCDIR && . ./autogen.sh 2>&1 | egrep -v "(subdir-objects|is in a subdirectory)")
 
 # autoconf prior to 2.62 has issues with zsh 4.2 and newer
 export CONFIG_SHELL=/bin/sh
@@ -29,7 +31,7 @@ export CONFIG_SHELL=/bin/sh
 # NB: Workaround for make distcheck not working with
 # NB: FreeBSD's make on -current
 # env MAKE=gmake \
-./configure \
+$SRCDIR/configure \
     $DST \
     --enable-developer-warnings \
     --enable-debugging-symbols \
