@@ -9,7 +9,7 @@ AM_CPPFLAGS = \
 vmoddir = $(pkglibdir)/vmods
 vmod_srcdir = $(top_srcdir)/lib/libvmod_debug
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
-vmodtoolargs = --strict
+vmodtoolargs =
 
 noinst_LTLIBRARIES = libvmod_debug.la
 
