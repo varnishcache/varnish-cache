@@ -112,8 +112,8 @@ BUILT_SOURCES = vcs_version.h vmod_abi.h
 MAINTAINERCLEANFILES = vcs_version.h
 vcs_version.h: FORCE
 	@if [ -d "$(top_srcdir)/.git" ]; then \
-		V="$$(git show -s --pretty=format:%h)" \
-		B="$$(git rev-parse --abbrev-ref HEAD)" \
+		V="$$(git --git-dir=$(top_srcdir)/.git show -s --pretty=format:%h)" \
+		B="$$(git --git-dir=$(top_srcdir)/.git rev-parse --abbrev-ref HEAD)" \
 		H="$$(head -n 1 vcs_version.h 2>/dev/null || true)"; \
 		if [ "/* $$V */" != "$$H" ]; then \
 		( \
