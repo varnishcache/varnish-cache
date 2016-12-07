@@ -79,7 +79,7 @@ makedistcheck () (
 failedtests () (
 	for t in `grep '^FAIL: tests/' ${1} | sort -u | sed 's/.* //'`
 	do
-		printf "VTCGITREV ${t} "
+		printf 'VTCGITREV %s ' "${t}"
 		(
 			cd varnish-cache/bin/varnishtest/
 			git log -n 1 ${t} | head -1
