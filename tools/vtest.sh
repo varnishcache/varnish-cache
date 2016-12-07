@@ -44,6 +44,7 @@ WAITPERIOD=60		# unit: Seconds
 
 WAITGOOD=60		# unit: WAITPERIOD
 WAITBAD=1		# unit: WAITPERIOD
+MAXRUNS="${MAXRUNS:-0}"
 
 SSH_DST="-p 203 vtest@varnish-cache.org"
 
@@ -125,9 +126,12 @@ fi
 
 orev=000
 waitnext=${WAITBAD}
+i=0
 
-while true
+while [ $MAXRUNS -eq 0 ] || [ $i -lt $MAXRUNS ]
 do
+	i=`expr $i + 1`
+
 	(cd varnish-cache && git pull > /dev/null 2>&1 || true)
 	rev=`cd varnish-cache && git show -s --pretty=format:%H`
 	if [ "${waitnext}" -gt 0 -a "x${rev}" = "x${orev}" ] ; then
