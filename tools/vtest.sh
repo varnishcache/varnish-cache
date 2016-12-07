@@ -146,7 +146,7 @@ do
 	orev=${rev}
 
 	if ! [ -d "${BUILDDIR}" ] && ! mkdir -p "${BUILDDIR}" ; then
-		echo >&1 "could not create BUILDDIR ${BUILDDIR}"
+		echo >&2 "could not create BUILDDIR ${BUILDDIR}"
 		exit 2
 	fi
 
