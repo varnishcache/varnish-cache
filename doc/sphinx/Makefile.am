@@ -42,6 +42,8 @@ graphviz:
 
 sphinx_prereq: link_srcdir graphviz conf.py
 
+all: link_srcdir
+
 html: sphinx_prereq
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
