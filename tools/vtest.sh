@@ -130,7 +130,7 @@ i=0
 
 while [ $MAXRUNS -eq 0 ] || [ $i -lt $MAXRUNS ]
 do
-	i=`expr $i + 1`
+	i=$((i + 1))
 
 	(cd varnish-cache && git pull > /dev/null 2>&1 || true)
 	rev=`cd varnish-cache && git show -s --pretty=format:%H`
