@@ -605,6 +605,23 @@ if test "x$enable_developer_warnings" != "xno"; then
 	OCFLAGS="${OCFLAGS} ${DEVELOPER_CFLAGS}"
 fi
 
+# gcc on solaris needs -fstack-protector when calling gcc in linker
+# mode but libtool does not pass it on, so we need to trick it
+# specifically
+case $CFLAGS in
+  *-fstack-protector*)
+    case $target in
+      *-*-solaris*)
+	case $CC in
+	  gcc*)
+	    AM_LT_LDFLAGS="${AM_LT_LDFLAGS} -Wc,-fstack-protector"
+	    ;;
+	esac
+	;;
+    esac
+    ;;
+esac
+
 # --enable-debugging-symbols
 AC_ARG_ENABLE(debugging-symbols,
 	AS_HELP_STRING([--enable-debugging-symbols],[enable debugging symbols (default is NO)]),
