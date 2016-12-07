@@ -8,7 +8,7 @@ varnish v1 -errvcl {Instance 'first' redefined.} {
 	}
 }
 
-varnish v1 -errvcl {Name 'first' already used.} {
+varnish v1 -errvcl {Name 'first' already defined.} {
 	import debug;
 
 	backend first { .host = "${bad_ip}"; .port = "9080"; }

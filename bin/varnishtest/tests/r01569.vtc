@@ -1,6 +1,6 @@
 varnishtest "symbol lookup order issue"
 
-varnish v1 -errvcl {Name 'debug' already used.} {
+varnish v1 -errvcl {Name 'debug' already defined.} {
 	vcl 4.0;
 	import debug;
 

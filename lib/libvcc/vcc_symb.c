@@ -229,7 +229,7 @@ VCC_HandleSymbol(struct vcc *tl, const struct token *tk, vcc_type_t fmt,
 		vcc_ErrWhere(tl, sym->def_b);
 		return (sym);
 	} else if (sym != NULL && sym->def_b != NULL) {
-		VSB_printf(tl->sb, "Name '%.*s' already used.\n", PF(tk));
+		VSB_printf(tl->sb, "Name '%.*s' already defined.\n", PF(tk));
 		vcc_ErrWhere(tl, tk);
 		VSB_printf(tl->sb, "First definition:\n");
 		AN(sym->def_b);
@@ -237,7 +237,8 @@ VCC_HandleSymbol(struct vcc *tl, const struct token *tk, vcc_type_t fmt,
 		return (sym);
 	} else if (sym != NULL && sym->kind != kind) {
 		VSB_printf(tl->sb,
-		    "Name %.*s is a reserved name.\n", PF(tk));
+		    "Name %.*s must have type '%s'.\n",
+		    PF(tk), VCC_SymKind(tl, sym));
 		vcc_ErrWhere(tl, tk);
 		return (sym);
 	}
