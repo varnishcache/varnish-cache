@@ -465,6 +465,11 @@ class s_event(stanza):
 		self.vcc.contents.append(self)
 
 	def rstfile(self, fo, man):
+		if len(self.doc) != 0:
+			sys.stderr.write(
+				"NB: Not emitting .RST for $Event %s\n" %
+				self.event_func
+			)
 		return
 
 	def hfile(self, fo):
