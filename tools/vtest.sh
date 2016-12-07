@@ -38,7 +38,7 @@ mkdir -p tmp
 
 # Message to be shown in result pages
 # Max 10 char of [A-Za-z0-9/. _-]
-MESSAGE=
+MESSAGE="${MESSAGE:-}"
 
 WAITPERIOD=60		# unit: Seconds
 
