@@ -1494,7 +1494,7 @@ PARAM(
 	/* name */	vsl_space,
 	/* typ */	bytes,
 	/* min */	"1M",
-	/* max */	NULL,
+	/* max */	"4294967295",	// 4G-1
 	/* default */	"80M",
 	/* units */	"bytes",
 	/* flags */	MUST_RESTART,
