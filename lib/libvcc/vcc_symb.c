@@ -235,13 +235,14 @@ VCC_HandleSymbol(struct vcc *tl, const struct token *tk, vcc_type_t fmt,
 		AN(sym->def_b);
 		vcc_ErrWhere(tl, sym->def_b);
 		return (sym);
-	} else if (sym != NULL) {
+	} else if (sym != NULL && sym->kind != kind) {
 		VSB_printf(tl->sb,
 		    "Name %.*s is a reserved name.\n", PF(tk));
 		vcc_ErrWhere(tl, tk);
 		return (sym);
 	}
-	sym = VCC_SymbolTok(tl, NULL, tk, kind, 1);
+	if (sym == NULL)
+		sym = VCC_SymbolTok(tl, NULL, tk, kind, 1);
 	AN(sym);
 	AZ(sym->ndef);
 	va_start(ap, str);
