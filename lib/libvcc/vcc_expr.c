@@ -1184,6 +1184,14 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		e2 = NULL;
 		vcc_expr0(tl, &e2, (*e)->fmt);
 		ERRCHK(tl);
+		if (e2->fmt != (*e)->fmt) {
+			VSB_printf(tl->sb, "Comparison of different types: ");
+			VSB_printf(tl->sb, "%s ", (*e)->fmt->name);
+			vcc_ErrToken(tl, tk);
+			VSB_printf(tl->sb, " %s\n", e2->fmt->name);
+			vcc_ErrWhere(tl, tk);
+			return;
+		}
 		*e = vcc_expr_edit(BOOL, buf, *e, e2);
 		return;
 	}

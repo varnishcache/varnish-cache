@@ -308,3 +308,14 @@ varnish v1 -errvcl {Symbol not found: 'storage.foo' (expected type STEVEDORE):} 
 		set beresp.storage = storage.foo;
 	}
 }
+
+varnish v1 -errvcl {Comparison of different types: BACKEND '==' STRING} {
+	backend b1 { .host = "127.0.0.1"; }
+
+	sub vcl_backend_response {
+		set beresp.http.bereq_backend = bereq.backend;
+		if (bereq.backend == beresp.http.bereq_backend) {
+			set beresp.http.bereq_backend_cmp = "ok";
+		}
+	}
+}

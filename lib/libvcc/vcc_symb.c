@@ -128,7 +128,7 @@ VCC_Symbol(struct vcc *tl, struct symbol *parent,
 		if (q < e)
 			break;
 		if (kind != SYM_NONE && sym->kind != kind)
-			continue;
+			break;
 		if (kind == SYM_NONE && sym->kind == kind)
 			continue;
 		break;
