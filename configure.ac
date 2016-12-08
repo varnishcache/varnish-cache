@@ -518,16 +518,21 @@ AX_CHECK_COMPILE_FLAG([-Wall],
      [CFLAGS="${CFLAGS} -Wall"
       OCFLAGS="${OCFLAGS} -Wall"])
 
-SUNCC_CFLAGS=" \
-	-errwarn=%all,no%E_EMPTY_TRANSLATION_UNIT,no%E_ATTRIBUTE_UNKNOWN,no%E_STATEMENT_NOT_REACHED,no%E_EMPTY_DECLARATION \
+AC_CHECK_DECL([__SUNPRO_C], [SUNCC="yes"], [SUNCC="no"])
+
+if test "$SUNCC" = "yes" ; then
+    SUNCC_CFLAGS=" \
+	-errwarn=%all,no%E_EMPTY_TRANSLATION_UNIT \
 	-errtags=yes \
 	"
-AX_CHECK_COMPILE_FLAG([-Werror],
-     [CFLAGS="${CFLAGS} -Werror"
-      OCFLAGS="${OCFLAGS} -Werror"],
-     [AX_CHECK_COMPILE_FLAG([${SUNCC_CFLAGS}],
-      [CFLAGS="${CFLAGS} ${SUNCC_CFLAGS}"
-       OCFLAGS="${OCFLAGS} ${SUNCC_CFLAGS}"])])
+    AX_CHECK_COMPILE_FLAG([${SUNCC_CFLAGS}],
+	[CFLAGS="${CFLAGS} ${SUNCC_CFLAGS}"
+	 OCFLAGS="${OCFLAGS} ${SUNCC_CFLAGS}"])
+else
+    AX_CHECK_COMPILE_FLAG([-Werror],
+	[CFLAGS="${CFLAGS} -Werror"
+	 OCFLAGS="${OCFLAGS} -Werror"])
+fi
 
 AX_CHECK_COMPILE_FLAG([-Werror=unused-result],
     [CFLAGS="${CFLAGS} -Wno-error=unused-result"
@@ -586,7 +591,7 @@ AC_ARG_ENABLE(developer-warnings,
 	[],
 	[enable_developer_warnings=no])
 
-if test "x$enable_developer_warnings" != "xno"; then
+if test "x$SUNCC" != "xyes" && test "x$enable_developer_warnings" != "xno"; then
 	# compiler flags not available on gcc3
 	AX_CHECK_COMPILE_FLAG([-Wno-pointer-sign],
 		[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wno-pointer-sign"], [], [])
@@ -625,7 +630,11 @@ esac
 # --enable-debugging-symbols
 AC_ARG_ENABLE(debugging-symbols,
 	AS_HELP_STRING([--enable-debugging-symbols],[enable debugging symbols (default is NO)]),
-	CFLAGS="${CFLAGS} -O0 -g -fno-inline")
+	if test "x$SUNCC" = "xyes" ; then
+		CFLAGS="${CFLAGS} -O0 -g"
+	else
+		CFLAGS="${CFLAGS} -O0 -g -fno-inline"
+	fi)
 
 AC_SUBST(AM_LT_LDFLAGS)
 
@@ -644,7 +653,7 @@ else
 			break
 			;;
 		*cc)
-			VCC_CC="$PTHREAD_CC $OCFLAGS $PTHREAD_CFLAGS -Kpic -G -o %o %s"
+			VCC_CC="$PTHREAD_CC $OCFLAGS -errwarn=%all,no%E_STATEMENT_NOT_REACHED $PTHREAD_CFLAGS -Kpic -G -o %o %s"
 			;;
 		esac
 		;;
