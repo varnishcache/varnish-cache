@@ -392,3 +392,37 @@ vcc_CheckUses(struct vcc *tl)
 	VCC_WalkSymbols(tl, vcc_checkuses, SYM_SUB);
 	return (tl->err);
 }
+
+/*---------------------------------------------------------------------*/
+
+static void
+vcc_pnam(struct vcc *tl, const struct symbol *sym)
+{
+
+	if (sym->parent != tl->symbols) {
+		vcc_pnam(tl, sym->parent);
+		Fc(tl, 0, ".");
+	}
+	Fc(tl, 0, "%s", sym->name);
+}
+
+static void __match_proto__(symwalk_f)
+vcc_xreftable(struct vcc *tl, const struct symbol *sym)
+{
+
+	Fc(tl, 0, " * %-7s ", VCC_SymKind(tl, sym));
+	Fc(tl, 0, " %-9s ", sym->fmt != NULL ? sym->fmt->name : "");
+	vcc_pnam(tl, sym);
+	if (sym->wildcard != NULL)
+		Fc(tl, 0, "*");
+	Fc(tl, 0, "\n");
+}
+
+void
+VCC_XrefTable(struct vcc *tl)
+{
+
+	Fc(tl, 0, "\n/*\n * Symbol Table\n *\n");
+	VCC_WalkSymbols(tl, vcc_xreftable, SYM_NONE);
+	Fc(tl, 0, "*/\n\n");
+}

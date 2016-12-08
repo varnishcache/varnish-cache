@@ -121,6 +121,7 @@ struct symbol {
 	VTAILQ_ENTRY(symbol)		list;
 	VTAILQ_HEAD(,symbol)		children;
 
+	struct symbol			*parent;
 	const char			*vmod;
 
 	char				*name;
@@ -346,6 +347,7 @@ void vcc_ParseNew(struct vcc *tl);
 int vcc_AddDef(struct vcc *tl, const struct token *t, enum symkind type);
 void vcc_AddRef(struct vcc *tl, const struct token *t, enum symkind type);
 int vcc_CheckReferences(struct vcc *tl);
+void VCC_XrefTable(struct vcc *);
 
 void vcc_AddCall(struct vcc *tl, struct token *t);
 struct proc *vcc_AddProc(struct vcc *tl, struct token *t);

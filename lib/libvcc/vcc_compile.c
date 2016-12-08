@@ -669,6 +669,8 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 
 	EmitStruct(tl);
 
+	VCC_XrefTable(tl);
+
 	/* Combine it all */
 
 	vsb = VSB_new_auto();

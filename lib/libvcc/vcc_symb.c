@@ -144,6 +144,7 @@ VCC_Symbol(struct vcc *tl, struct symbol *parent,
 		return (sym);
 	if (sym == NULL) {
 		sym = vcc_new_symbol(tl, b, q);
+		sym->parent = parent;
 		if (sym2 != NULL)
 			VTAILQ_INSERT_BEFORE(sym2, sym, list);
 		else
