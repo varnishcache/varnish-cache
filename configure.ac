@@ -10,7 +10,10 @@ AC_CONFIG_AUX_DIR([build-aux])
 AC_USE_SYSTEM_EXTENSIONS
 
 # save command line CFLAGS for use in VCC_CC (to pass through things like -m64)
+# and make distcheck configure
 OCFLAGS="$CFLAGS"
+EXTCFLAGS="$CFLAGS"
+AC_SUBST(EXTCFLAGS)
 
 AC_CANONICAL_SYSTEM
 AC_LANG(C)

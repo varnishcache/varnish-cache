@@ -22,7 +22,7 @@ DISTCHECK_CONFIGURE_FLAGS = \
     --enable-developer-warnings \
     --enable-debugging-symbols \
     --enable-dependency-tracking \
-    CFLAGS="$(OCFLAGS)"
+    CFLAGS="$(EXTCFLAGS)"
 
 install-data-local:
 	$(install_sh) -d -m 0755 $(DESTDIR)$(localstatedir)/varnish
