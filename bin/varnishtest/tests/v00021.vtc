@@ -80,7 +80,7 @@ varnish v1 -errvcl {HTTP header (buckinghambuckingham..) is too long.} {
 	sub vcl_deliver {
 		set resp.http.buckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambucking = "foobar";
 	}
-} 
+}
 
 varnish v1 -vcl {
 
@@ -89,4 +89,4 @@ varnish v1 -vcl {
 	sub vcl_deliver {
 		set resp.http.buckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckin = "foobar";
 	}
-} 
+}
