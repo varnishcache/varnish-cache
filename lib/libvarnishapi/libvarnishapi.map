@@ -166,10 +166,6 @@ LIBVARNISHAPI_1.5 {
 LIBVARNISHAPI_1.6 {
   global:
 	VTIM_format;
-} LIBVARNISHAPI_1.0;
-
-LIBVARNISHAPI_1.7 {
-  global:
 	VSB_bcat;
 	VSB_quote;
 	VSB_vprintf;
