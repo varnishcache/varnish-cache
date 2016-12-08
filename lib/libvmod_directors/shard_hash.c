@@ -101,7 +101,7 @@ _shard_hash_invalid(VCL_STRING s)
 {
 	(void) s;
 	WRONG("invalid hash fp _ALG_E_ENVALID");
-	NEEDLESS_RETURN(0);
+	NEEDLESS(return(0));
 }
 
 const hash_func shard_hash_f[_ALG_E_MAX] = {

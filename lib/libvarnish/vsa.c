@@ -336,7 +336,7 @@ VSA_Compare_IP(const struct suckaddr *sua1, const struct suckaddr *sua2)
 	}
 
 	WRONG("Just plain insane");
-	NEEDLESS_RETURN(-1);
+	NEEDLESS(return(-1));
 }
 
 struct suckaddr *

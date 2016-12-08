@@ -112,11 +112,9 @@
 #define __state_variable__(varname)	varname /*lint -esym(838,varname) */
 
 #ifdef __SUNPRO_C
-#define NEEDLESS_RETURN		{}
 #define NEEDLESS(s)		{}
 #define __unused
 #else
-#define NEEDLESS_RETURN		return
 #define NEEDLESS(s)		s
 #endif
 

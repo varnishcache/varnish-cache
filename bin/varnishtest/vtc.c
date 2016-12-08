@@ -241,7 +241,7 @@ macro_expand(struct vtclog *vl, const char *text)
 			VSB_destroy(&vsb);
 			vtc_log(vl, 0, "Macro ${%.*s} not found", (int)(q - p),
 			    p);
-			NEEDLESS_RETURN (NULL);
+			NEEDLESS(return (NULL));
 		}
 		VSB_printf(vsb, "%s", m);
 		free(m);
@@ -381,7 +381,7 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 				break;
 		if (cp->name == NULL) {
 			vtc_log(vl, 0, "Unknown command: \"%s\"", token_s[0]);
-			NEEDLESS_RETURN;
+			NEEDLESS(return);
 		}
 
 		assert(cp->cmd != NULL);
