@@ -28,8 +28,17 @@
  * PARAM(nm, ty, mi, ma, de, un, fl, st, lt, fn)
  */
 
+#if defined(XYZZY)
+  #error "Temporary macro XYZZY already defined"
+#endif
+
 /*lint -save -e525 -e539 */
 
+#if defined(HAVE_ACCEPT_FILTERS)
+  #define XYZZY MUST_RESTART
+#else
+  #define XYZZY NOT_IMPLEMENTED
+#endif
 PARAM(
 	/* name */	accept_filter,
 	/* typ */	bool,
@@ -37,16 +46,13 @@ PARAM(
 	/* max */	NULL,
 	/* default */	"on",
 	/* units */	"bool",
-#if defined(HAVE_ACCEPT_FILTERS)
-	/* flags */	MUST_RESTART,
-#else
-	/* flags */	NOT_IMPLEMENTED,
-#endif
+	/* flags */	XYZZY,
 	/* s-text */
 	"Enable kernel accept-filters.",
 	/* l-text */	NULL,
 	/* func */	NULL
 )
+#undef XYZZY
 
 PARAM(
 	/* name */	acceptor_sleep_decay,
@@ -997,6 +1003,11 @@ PARAM(
 	/* func */	NULL
 )
 
+#if defined(HAVE_TCP_FASTOPEN)
+  #define XYZZY MUST_RESTART
+#else
+  #define XYZZY NOT_IMPLEMENTED
+#endif
 PARAM(
 	/* name */	tcp_fastopen,
 	/* typ */	bool,
@@ -1004,23 +1015,19 @@ PARAM(
 	/* max */	NULL,
 	/* default */	"off",
 	/* units */	"bool",
-#if defined(HAVE_TCP_FASTOPEN)
-	/* flags */	MUST_RESTART,
-#else
-	/* flags */	NOT_IMPLEMENTED,
-#endif
+	/* flags */	XYZZY,
 	/* s-text */
 	"Enable TCP Fast Open extension.",
 	/* l-text */	NULL,
 	/* func */	NULL
 )
+#undef XYZZY
 
 #if defined(HAVE_TCP_KEEP)
-#define TCP_KEEP_FLAGS	EXPERIMENTAL
+  #define XYZZY	EXPERIMENTAL
 #else
-#define TCP_KEEP_FLAGS	NOT_IMPLEMENTED
+  #define XYZZY	NOT_IMPLEMENTED
 #endif
-
 PARAM(
 	/* name */	tcp_keepalive_intvl,
 	/* typ */	timeout,
@@ -1028,7 +1035,7 @@ PARAM(
 	/* max */	"100",
 	/* default */	"",
 	/* units */	"seconds",
-	/* flags */	TCP_KEEP_FLAGS,
+	/* flags */	XYZZY,
 	/* s-text */
 	"The number of seconds between TCP keep-alive probes.",
 	/* l-text */	"",
@@ -1042,7 +1049,7 @@ PARAM(
 	/* max */	"100",
 	/* default */	"",
 	/* units */	"probes",
-	/* flags */	TCP_KEEP_FLAGS,
+	/* flags */	XYZZY,
 	/* s-text */
 	"The maximum number of TCP keep-alive probes to send before giving "
 	"up and killing the connection if no response is obtained from the "
@@ -1058,13 +1065,14 @@ PARAM(
 	/* max */	"7200",
 	/* default */	"",
 	/* units */	"seconds",
-	/* flags */	TCP_KEEP_FLAGS,
+	/* flags */	XYZZY,
 	/* s-text */
 	"The number of seconds a connection needs to be idle before TCP "
 	"begins sending out keep-alive probes.",
 	/* l-text */	"",
 	/* func */	NULL
 )
+#undef XYZZY
 
 #if 0
 /* actual location mgt_pool.c */
