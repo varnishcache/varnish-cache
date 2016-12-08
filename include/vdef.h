@@ -114,6 +114,7 @@
 #ifdef __SUNPRO_C
 #define NEEDLESS_RETURN		{}
 #define NEEDLESS(s)		{}
+#define __unused
 #else
 #define NEEDLESS_RETURN		return
 #define NEEDLESS(s)		s
