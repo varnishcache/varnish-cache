@@ -345,6 +345,8 @@ pan_req(struct vsb *vsb, const struct req *req)
 		VSB_printf(vsb, "step = %s,\n", stp);
 	else
 		VSB_printf(vsb, "step = 0x%x,\n", req->req_step);
+	if (req->hash_objhead)
+		VSB_printf(vsb, "hash_objhead = %p\n", req->hash_objhead);
 
 	VSB_printf(vsb, "req_body = %s,\n",
 	    reqbody_status_2str(req->req_body_status));

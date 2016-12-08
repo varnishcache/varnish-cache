@@ -247,27 +247,22 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			req->req_step = R_STP_RECV;
 			sp->sess_step = S_STP_H1PROC;
 			break;
-		case S_STP_H1BUSY:
-			/*
-			 * Return from waitinglist.
-			 * Check to see if the remote has left.
-			 */
-			if (VTCP_check_hup(sp->fd)) {
-				AN(req->hash_objhead);
+		case S_STP_H1PROC:
+			req->transport = &http1_transport;
+			req->task.func = SES_Proto_Req;
+			req->task.priv = req;
+			if (req->hash_objhead && VTCP_check_hup(sp->fd)) {
+				/* Return from waitinglist and the remote
+				   has left. */
 				(void)HSH_DerefObjHead(wrk, &req->hash_objhead);
 				AZ(req->hash_objhead);
 				SES_Close(sp, SC_REM_CLOSE);
 				AN(Req_Cleanup(sp, wrk, req));
 				return;
 			}
-			sp->sess_step = S_STP_H1PROC;
-			break;
-		case S_STP_H1PROC:
-			req->transport = &http1_transport;
-			req->task.func = SES_Proto_Req;
-			req->task.priv = req;
 			if (CNT_Request(wrk, req) == REQ_FSM_DISEMBARK) {
-				sp->sess_step = S_STP_H1BUSY;
+				/* Have been placed on waitinglist. Any
+				   changes to req and sp are unsafe. */
 				return;
 			}
 			req->transport = NULL;
