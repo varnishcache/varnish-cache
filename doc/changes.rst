@@ -1,4 +1,24 @@
 ================================
+Varnish Cache 4.1.5 (unreleased)
+================================
+
+Changes since 4.1.4:
+
+Bugs fixed
+----------
+
+* 1834_ - Panic in workspace exhaustion conditions
+* 2117_ - Panic in SES_Close()
+* 2134_ - Disable Nagle's
+* 2148_ - varnishncsa cannot decode Authorization header if the
+  format is incorrect.
+
+.. _1834: https://github.com/varnishcache/varnish-cache/issues/1834
+.. _2117: https://github.com/varnishcache/varnish-cache/issues/2117
+.. _2134: https://github.com/varnishcache/varnish-cache/issues/2134
+.. _2148: https://github.com/varnishcache/varnish-cache/issues/2148
+
+================================
 Varnish Cache 4.1.4 (2016-12-01)
 ================================
 
