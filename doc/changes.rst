@@ -8,13 +8,14 @@ Bugs fixed
 ----------
 
 * 1834_ - Panic in workspace exhaustion conditions
-* 2117_ - Panic in SES_Close()
+* 2106_ - 4.1.3: Varnish crashes with "Assert error in CNT_Request(),
+  cache/cache_req_fsm.c line 820"
 * 2134_ - Disable Nagle's
 * 2148_ - varnishncsa cannot decode Authorization header if the
   format is incorrect.
 
 .. _1834: https://github.com/varnishcache/varnish-cache/issues/1834
-.. _2117: https://github.com/varnishcache/varnish-cache/issues/2117
+.. _2106: https://github.com/varnishcache/varnish-cache/issues/2106
 .. _2134: https://github.com/varnishcache/varnish-cache/issues/2134
 .. _2148: https://github.com/varnishcache/varnish-cache/issues/2148
 
