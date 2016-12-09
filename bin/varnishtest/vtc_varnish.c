@@ -265,7 +265,7 @@ varnishlog_thread(void *priv)
 			VSL_DeleteCursor(c);
 			c = NULL;
 			VSM_Close(vsm);
-		} else 
+		} else
 			break;
 	}
 
@@ -706,7 +706,7 @@ varnish_cli(struct varnish *v, const char *cli, unsigned exp, const char *re)
 	char *resp = NULL;
 	const char *errptr;
 	int err;
-	
+
 	if (re != NULL) {
 		vre = VRE_compile(re, 0, &errptr, &err);
 		if (vre == NULL)
