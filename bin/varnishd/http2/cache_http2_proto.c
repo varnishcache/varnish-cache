@@ -29,16 +29,12 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-#include <sys/socket.h>
-
 #include <netinet/in.h>
 
 #include <ctype.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "cache/cache.h"
 #include "cache/cache_filter.h"

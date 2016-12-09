@@ -33,8 +33,6 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-
 #include <errno.h>
 #include <stdlib.h>
 #include <netinet/in.h>

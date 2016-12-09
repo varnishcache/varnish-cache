@@ -33,9 +33,7 @@
 #include "config.h"
 
 #include <stdlib.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <math.h>
 #include <time.h>
 
 #include "cache/cache.h"

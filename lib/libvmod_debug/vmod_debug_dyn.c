@@ -29,11 +29,7 @@
 #include "config.h"
 
 #include <netdb.h>
-#include <pthread.h>
 #include <stdlib.h>
-
-#include <sys/socket.h>
-#include <sys/types.h>
 
 #include "vcl.h"
 #include "vrt.h"
