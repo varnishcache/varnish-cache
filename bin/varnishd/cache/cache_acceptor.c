@@ -33,12 +33,13 @@
 
 #include "config.h"
 
+#include "cache.h"
+
 #include <errno.h>
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
-#include "cache.h"
 #include "cache_transport.h"
 #include "cache_pool.h"
 #include "common/heritage.h"

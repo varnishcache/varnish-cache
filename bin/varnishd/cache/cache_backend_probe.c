@@ -37,11 +37,11 @@
 
 #include "config.h"
 
+#include "cache.h"
+
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "cache.h"
 
 #include "binary_heap.h"
 #include "vcli_serve.h"

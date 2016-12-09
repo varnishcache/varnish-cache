@@ -32,11 +32,11 @@
 
 #include "config.h"
 
+#include "cache.h"
+
 #include <fnmatch.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "cache.h"
 
 #include "vcl.h"
 #include "vcli_serve.h"
