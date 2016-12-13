@@ -99,7 +99,7 @@ VRT_l_##obj##_status(VRT_CTX, long num)					\
 		WS_MarkOverflow(ctx->http_##obj->ws);			\
 	} else if ((num % 1000) < 100) {				\
 		VSLb(ctx->vsl, SLT_VCL_Error,				\
-		    "illegal %s.status (..0##)", \ #obj);		\
+		    "illegal %s.status (..0##)", #obj);			\
 		WS_MarkOverflow(ctx->http_##obj->ws);			\
 	} else {							\
 		http_SetStatus(ctx->http_##obj, (uint16_t)num);		\
