@@ -33,12 +33,12 @@
 
 #if defined(HAVE_KQUEUE)
 
+#include "cache/cache.h"
+
 #include <sys/event.h>
 
 #include <errno.h>
 #include <stdlib.h>
-
-#include "cache/cache.h"
 
 #include "waiter/waiter_priv.h"
 #include "waiter/mgt_waiter.h"
