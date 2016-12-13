@@ -171,10 +171,6 @@ LIBVARNISHAPI_1.6 {
 	VSB_vprintf;
 	VSB_delete;
 	VSB_indent;
-} LIBVARNISHAPI_1.0;
-
-LIBVARNISHAPI_1.7 {
-  global:
 	VTIM_parse;
 	VTIM_timespec;
 	VTIM_timeval;
