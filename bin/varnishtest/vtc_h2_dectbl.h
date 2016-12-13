@@ -486,7 +486,7 @@ static struct ssym byte2_pref1_array[] = {
 	/* idx 231 */ {7, 231, NULL},
 	/* idx 232 */ {7, 239, NULL},
 	/* idx 233 */ {7, 239, NULL},
-	/* idx 234 */ {8,   9, NULL},
+	/* idx 234 */ {8,   9, NULL}, /* tab */
 	/* idx 235 */ {8, 142, NULL},
 	/* idx 236 */ {8, 144, NULL},
 	/* idx 237 */ {8, 145, NULL},
@@ -872,10 +872,10 @@ static struct ssym byte0_array[] = {
 	/* idx  77 */ {5, 116, NULL}, /* 't' */
 	/* idx  78 */ {5, 116, NULL}, /* 't' */
 	/* idx  79 */ {5, 116, NULL}, /* 't' */
-	/* idx  80 */ {6,  32, NULL}, /* tab */
-	/* idx  81 */ {6,  32, NULL}, /* tab */
-	/* idx  82 */ {6,  32, NULL}, /* tab */
-	/* idx  83 */ {6,  32, NULL}, /* tab */
+	/* idx  80 */ {6,  32, NULL}, /* ' ' */
+	/* idx  81 */ {6,  32, NULL}, /* ' ' */
+	/* idx  82 */ {6,  32, NULL}, /* ' ' */
+	/* idx  83 */ {6,  32, NULL}, /* ' ' */
 	/* idx  84 */ {6,  37, NULL}, /* '%' */
 	/* idx  85 */ {6,  37, NULL}, /* '%' */
 	/* idx  86 */ {6,  37, NULL}, /* '%' */
