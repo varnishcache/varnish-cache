@@ -36,11 +36,12 @@
 
 #include "config.h"
 
+#include "cache.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "cache.h"
 #include "cache_pool.h"
 #include "cache_transport.h"
 

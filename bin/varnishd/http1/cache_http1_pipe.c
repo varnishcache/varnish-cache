@@ -31,10 +31,10 @@
 
 #include "config.h"
 
+#include "cache/cache.h"
+
 #include <poll.h>
 #include <stdio.h>
-
-#include "cache/cache.h"
 
 #include "vrt.h"
 

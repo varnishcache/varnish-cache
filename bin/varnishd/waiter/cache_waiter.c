@@ -30,13 +30,12 @@
 
 #include "config.h"
 
-#include <errno.h>
+#include "cache/cache.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "binary_heap.h"
-
-#include "cache/cache.h"
 
 #include "waiter/waiter_priv.h"
 #include "waiter/mgt_waiter.h"

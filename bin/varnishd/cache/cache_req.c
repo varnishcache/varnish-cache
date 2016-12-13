@@ -32,12 +32,12 @@
 
 #include "config.h"
 
-#include <errno.h>
+#include "cache.h"
+
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "cache.h"
 #include "cache_pool.h"
 #include "cache_transport.h"
 

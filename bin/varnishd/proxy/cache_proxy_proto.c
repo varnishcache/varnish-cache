@@ -29,17 +29,17 @@
 
 #include "config.h"
 
+#include "cache/cache.h"
+
 #include <netinet/in.h>
 
 #include <netdb.h>
 #include <stdlib.h>
 
-#include "cache/cache.h"
 #include "cache/cache_transport.h"
 
 #include "vend.h"
 #include "vsa.h"
-#include "vsb.h"
 #include "vtcp.h"
 
 /**********************************************************************

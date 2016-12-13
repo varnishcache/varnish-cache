@@ -35,11 +35,11 @@
 
 #include "config.h"
 
+#include "cache.h"
+
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
-
-#include "cache.h"
 
 struct ilck {
 	unsigned		magic;

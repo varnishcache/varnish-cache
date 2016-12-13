@@ -31,10 +31,9 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <stddef.h>
-
 #include "cache.h"
+#include <stdio.h>
 
 #include "vend.h"
 #include "vct.h"

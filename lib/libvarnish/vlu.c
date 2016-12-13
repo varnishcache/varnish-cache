@@ -34,8 +34,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "vas.h"	// XXX Flexelint "not used" - but req'ed for assert()
 #include "miniobj.h"
-#include "vas.h"
 
 #include "vlu.h"
 

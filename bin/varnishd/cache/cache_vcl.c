@@ -30,12 +30,12 @@
 
 #include "config.h"
 
+#include "cache.h"
+
 #include <errno.h>
 #include <dlfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "cache.h"
 
 #include "vcl.h"
 #include "vrt.h"

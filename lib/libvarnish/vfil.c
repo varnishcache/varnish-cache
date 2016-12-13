@@ -29,18 +29,17 @@
 
 #include "config.h"
 
+#include <time.h>
+#include <sys/types.h>
 #include <sys/stat.h>
-
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <string.h>
-#include <sys/types.h>
 #ifdef HAVE_SYS_MOUNT_H
 #  include <sys/param.h>
 #  include <sys/mount.h>

@@ -52,10 +52,11 @@
 
 #include "config.h"
 
+#include "cache.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "cache.h"
 #include "cache/cache_transport.h"
 
 #include "hash/hash_slinger.h"

@@ -31,6 +31,7 @@
 
 #include "config.h"
 
+#include <time.h>
 #include <ctype.h>
 #include <errno.h>
 #include <poll.h>
@@ -39,7 +40,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <unistd.h>
 
 #include "vdef.h"

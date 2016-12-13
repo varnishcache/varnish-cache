@@ -35,13 +35,14 @@
 
 #include "config.h"
 
+#include <stddef.h>
+#include "cache/cache.h"
+
 #include <sys/mman.h>
 
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "cache/cache.h"
 #include "storage/storage.h"
 
 #include "vsha256.h"

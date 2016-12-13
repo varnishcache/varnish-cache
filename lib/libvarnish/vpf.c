@@ -40,8 +40,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "vas.h"	// XXX Flexelint "not used" - but req'ed for assert()
 #include "vfl.h"
-#include "vas.h"
 #include "vpf.h"
 
 struct vpf_fh {

@@ -38,7 +38,7 @@
 #include <unistd.h>
 
 #include "vsm_priv.h"
-#include "vas.h"
+#include "vas.h"	// XXX Flexelint "not used" - but req'ed for assert()
 #include "vdef.h"
 #include "vin.h"
 

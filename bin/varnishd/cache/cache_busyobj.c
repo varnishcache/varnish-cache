@@ -32,8 +32,8 @@
 
 #include "config.h"
 
-#include <stdlib.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 #include "cache.h"
 

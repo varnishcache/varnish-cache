@@ -34,10 +34,11 @@
 
 #include "config.h"
 
+#include "cache/cache.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "cache/cache.h"
 #include "cache/cache_obj.h"
 #include "storage/storage.h"
 #include "storage/storage_simple.h"

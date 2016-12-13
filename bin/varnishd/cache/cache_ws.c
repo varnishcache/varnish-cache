@@ -30,9 +30,9 @@
 
 #include "config.h"
 
-#include <stdio.h>
-
 #include "cache.h"
+
+#include <stdio.h>
 
 void
 WS_Assert(const struct ws *ws)

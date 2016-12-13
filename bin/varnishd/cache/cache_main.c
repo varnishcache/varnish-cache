@@ -29,10 +29,11 @@
 
 #include "config.h"
 
+#include "cache.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "cache.h"
 #include "common/heritage.h"
 
 #include "vcli_serve.h"

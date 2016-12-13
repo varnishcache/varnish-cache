@@ -33,17 +33,17 @@
 
 #include "config.h"
 
+#include "cache/cache.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "cache/cache.h"
 #include "cache/cache_filter.h"
 #include "cache/cache_transport.h"
 #include "cache_http1.h"
 #include "hash/hash_slinger.h"
 
-#include "vsb.h"
 #include "vtcp.h"
 
 static const char H1NEWREQ[] = "HTTP1::NewReq";

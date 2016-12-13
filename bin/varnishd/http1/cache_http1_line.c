@@ -35,11 +35,11 @@
 #include "config.h"
 
 #include <sys/uio.h>
+#include "cache/cache.h"
 
 #include <errno.h>
 #include <stdio.h>
 
-#include "cache/cache.h"
 #include "cache_http1.h"
 #include "vtim.h"
 

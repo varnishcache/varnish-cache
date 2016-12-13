@@ -33,15 +33,15 @@
 
 #include <sys/utsname.h>
 
+#include <stdarg.h>
+#include <time.h>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
-#include <time.h>
 #include <unistd.h>
 
 #include "mgt/mgt.h"

@@ -31,8 +31,8 @@
 #include <pcre.h>
 #include <string.h>
 
+#include "vas.h"	// XXX Flexelint "not used" - but req'ed for assert()
 #include "miniobj.h"
-#include "vas.h"
 
 #include "vre.h"
 

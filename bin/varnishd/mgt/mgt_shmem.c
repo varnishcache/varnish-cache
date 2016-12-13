@@ -46,7 +46,6 @@
 
 #include "vfl.h"
 #include "vsm_priv.h"
-#include "vmb.h"
 #include "vfil.h"
 
 #ifndef MAP_HASSEMAPHORE

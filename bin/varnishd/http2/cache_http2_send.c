@@ -29,6 +29,8 @@
 
 #include "config.h"
 
+#include "cache/cache.h"
+
 #include <netinet/in.h>
 
 #include <ctype.h>
@@ -36,13 +38,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "cache/cache.h"
 #include "cache/cache_filter.h"
 #include "cache/cache_transport.h"
 #include "http2/cache_http2.h"
 
 #include "vend.h"
-#include "vsb.h"
 
 static void
 h2_mk_hdr(uint8_t *hdr, enum h2_frame_e type, uint8_t flags,

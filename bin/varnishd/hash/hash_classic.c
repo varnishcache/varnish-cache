@@ -31,10 +31,10 @@
 
 #include "config.h"
 
+#include "cache/cache.h"
+
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "cache/cache.h"
 
 #include "hash/hash_slinger.h"
 
