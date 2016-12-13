@@ -63,7 +63,7 @@ vrt_do_string(const struct http *hp, int fld,
 
 #define VRT_HDR_L(obj, hdr, fld)					\
 void									\
-VRT_l_##obj##_##hdr(VRT_CTX, const char *p, ...)	\
+VRT_l_##obj##_##hdr(VRT_CTX, const char *p, ...)			\
 {									\
 	va_list ap;							\
 									\
@@ -75,7 +75,7 @@ VRT_l_##obj##_##hdr(VRT_CTX, const char *p, ...)	\
 
 #define VRT_HDR_R(obj, hdr, fld)					\
 const char *								\
-VRT_r_##obj##_##hdr(VRT_CTX)				\
+VRT_r_##obj##_##hdr(VRT_CTX)						\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->http_##obj, HTTP_MAGIC);			\
@@ -88,17 +88,18 @@ VRT_r_##obj##_##hdr(VRT_CTX)				\
 
 #define VRT_STATUS_L(obj)						\
 void									\
-VRT_l_##obj##_status(VRT_CTX, long num)		\
+VRT_l_##obj##_status(VRT_CTX, long num)					\
 {									\
 									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->http_##obj, HTTP_MAGIC);			\
 	if (num > 65535) {						\
-		VSLb(ctx->vsl, SLT_VCL_Error, "%s.status > 65535", #obj); \
+		VSLb(ctx->vsl, SLT_VCL_Error,				\
+		    "%s.status > 65535", #obj);				\
 		WS_MarkOverflow(ctx->http_##obj->ws);			\
 	} else if ((num % 1000) < 100) {				\
-		VSLb(ctx->vsl, SLT_VCL_Error, "illegal %s.status (..0##)", \
-		    #obj);						\
+		VSLb(ctx->vsl, SLT_VCL_Error,				\
+		    "illegal %s.status (..0##)", \ #obj);		\
 		WS_MarkOverflow(ctx->http_##obj->ws);			\
 	} else {							\
 		http_SetStatus(ctx->http_##obj, (uint16_t)num);		\
@@ -107,7 +108,7 @@ VRT_l_##obj##_status(VRT_CTX, long num)		\
 
 #define VRT_STATUS_R(obj)						\
 long									\
-VRT_r_##obj##_status(VRT_CTX)				\
+VRT_r_##obj##_status(VRT_CTX)						\
 {									\
 									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
@@ -177,7 +178,7 @@ VRT_r_obj_reason(VRT_CTX)
 #define VBERESPW0(field)
 #define VBERESPW1(field)						\
 void									\
-VRT_l_beresp_##field(VRT_CTX, unsigned a)		\
+VRT_l_beresp_##field(VRT_CTX, unsigned a)				\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);			\
@@ -187,7 +188,7 @@ VRT_l_beresp_##field(VRT_CTX, unsigned a)		\
 #define VBERESPR0(field)
 #define VBERESPR1(field)						\
 unsigned								\
-VRT_r_beresp_##field(VRT_CTX)				\
+VRT_r_beresp_##field(VRT_CTX)						\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);			\
@@ -268,7 +269,7 @@ VRT_l_client_identity(VRT_CTX, const char *str, ...)
 
 #define BEREQ_TIMEOUT(which)					\
 void								\
-VRT_l_bereq_##which(VRT_CTX, double num)	\
+VRT_l_bereq_##which(VRT_CTX, double num)			\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
@@ -277,7 +278,7 @@ VRT_l_bereq_##which(VRT_CTX, double num)	\
 }								\
 								\
 double								\
-VRT_r_bereq_##which(VRT_CTX)			\
+VRT_r_bereq_##which(VRT_CTX)					\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
@@ -394,7 +395,7 @@ VRT_l_beresp_storage(VRT_CTX, VCL_STEVEDORE stv)
 #define REQ_VAR_L(nm, elem, type,extra)					\
 									\
 void									\
-VRT_l_req_##nm(VRT_CTX, type arg)			\
+VRT_l_req_##nm(VRT_CTX, type arg)					\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);				\
@@ -405,7 +406,7 @@ VRT_l_req_##nm(VRT_CTX, type arg)			\
 #define REQ_VAR_R(nm, elem, type)					\
 									\
 type									\
-VRT_r_req_##nm(VRT_CTX)				\
+VRT_r_req_##nm(VRT_CTX)							\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);				\
@@ -586,7 +587,7 @@ VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore, keep, 0)
 #define VRT_DO_AGE_R(which, oc)					\
 								\
 double								\
-VRT_r_##which##_##age(VRT_CTX)		\
+VRT_r_##which##_##age(VRT_CTX)					\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
@@ -625,22 +626,22 @@ VRT_r_bereq_xid(VRT_CTX)
  */
 
 #define VREQW0(field)
-#define VREQW1(field)						\
+#define VREQW1(field)							\
 void									\
-VRT_l_req_##field(VRT_CTX, unsigned a)		\
+VRT_l_req_##field(VRT_CTX, unsigned a)					\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);				\
 	ctx->req->field = a ? 1 : 0;					\
 }
 
 #define VREQR0(field)
-#define VREQR1(field)						\
+#define VREQR1(field)							\
 unsigned								\
-VRT_r_req_##field(VRT_CTX)				\
+VRT_r_req_##field(VRT_CTX)						\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
-	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);			\
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);				\
 	return (ctx->req->field);					\
 }
 
@@ -756,7 +757,7 @@ VRT_BODY_L(resp)
 
 #define HTTP_VAR(x)						\
 struct http *							\
-VRT_r_##x(VRT_CTX)				\
+VRT_r_##x(VRT_CTX)						\
 {								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
 	CHECK_OBJ_NOTNULL(ctx->http_##x, HTTP_MAGIC);		\
