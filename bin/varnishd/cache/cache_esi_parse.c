@@ -389,7 +389,6 @@ vep_mark_pending(struct vep_state *vep, const char *p)
 	AN(vep->ver_p);
 	l = p - vep->ver_p;
 	assert(l > 0);
-	assert(l >= 0);
 	vep->crcp = crc32(vep->crcp, (const void *)vep->ver_p, l);
 	vep->ver_p = p;
 
