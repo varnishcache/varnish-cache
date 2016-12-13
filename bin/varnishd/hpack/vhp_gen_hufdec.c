@@ -1,8 +1,8 @@
 /*-
- * Copyright (c) 2016 Dridi Boukelmoune
+ * Copyright (c) 2016 Varnish Software AS
  * All rights reserved.
  *
- * Author: Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
+ * Martin Blix Grydeland <martin@varnish-software.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
