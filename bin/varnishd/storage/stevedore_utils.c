@@ -33,16 +33,6 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifdef HAVE_SYS_MOUNT_H
-#  include <sys/param.h>
-#  include <sys/mount.h>
-#endif
-#ifdef HAVE_SYS_STATVFS_H
-#  include <sys/statvfs.h>
-#endif
-#ifdef HAVE_SYS_VFS_H
-#  include <sys/vfs.h>
-#endif
 
 #include <errno.h>
 #include <fcntl.h>
