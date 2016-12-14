@@ -946,8 +946,11 @@ VEP_Parse(struct vep_state *vep, const char *p, size_t l)
 			} else {
 				vep->match_hit = vm;
 				vep->state = *vm->state;
-				if (vm->match != NULL)
-					p += strlen(vm->match) - vep->tag_i;
+				if (vm->match != NULL) {
+					i = strlen(vm->match);
+					if (i > vep->tag_i)
+						p += i - vep->tag_i;
+				}
 				vep->match = NULL;
 				vep->tag_i = 0;
 			}
