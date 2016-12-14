@@ -932,6 +932,13 @@ VEP_Parse(struct vep_state *vep, const char *p, size_t l)
 			memcpy(vep->tag + vep->tag_i, p, i);
 			vm = vep_match(vep, vep->tag,
 			    vep->tag + vep->tag_i + i);
+			Debug("MB (%.*s) tag_i %d i %d = vm %p match %s\n",
+			    vep->tag_i + i, vep->tag,
+			    vep->tag_i,
+			    i,
+			    vm,
+			    vm ? vm->match : "(nil)");
+
 			if (vm == NULL) {
 				vep->tag_i += i;
 				p += i;
