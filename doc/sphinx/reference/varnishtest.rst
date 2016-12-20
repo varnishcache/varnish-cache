@@ -52,7 +52,7 @@ The following options are available:
 
 -q               Quiet mode: report only failures
 
--t duration      Time tests out after this long
+-t duration      Time tests out after this long (default: 60s)
 
 -v               Verbose mode: always report test log
 
