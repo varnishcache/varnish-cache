@@ -426,7 +426,7 @@ init_params(struct cli *cli)
 
 	MCF_TcpParams();
 
-	if (sizeof(void *) < 8) {
+	if (sizeof(void *) < 8) {		/*lint !e506 !e774  */
 		/*
 		 * Adjust default parameters for 32 bit systems to conserve
 		 * VM space.
@@ -487,7 +487,7 @@ identify(const char *i_arg)
 }
 
 static void
-startup_tests(void)
+mgt_tests(void)
 {
 	assert(VTIM_parse("Sun, 06 Nov 1994 08:49:37 GMT") == 784111777);
 	assert(VTIM_parse("Sunday, 06-Nov-94 08:49:37 GMT") == 784111777);
@@ -495,6 +495,40 @@ startup_tests(void)
 
 	/* Check that our SHA256 works */
 	SHA256_Test();
+}
+
+static void
+mgt_initialize(struct cli *cli)
+{
+	static unsigned clilim = 32768;
+
+	/* for ASSERT_MGT() */
+	mgt_pid = getpid();
+
+	/* Create a cli for convenience in otherwise CLI functions */
+	INIT_OBJ(cli, CLI_MAGIC);
+	cli[0].sb = VSB_new_auto();
+	AN(cli[0].sb);
+	cli[0].result = CLIS_OK;
+	cli[0].limit = &clilim;
+
+	mgt_cli_init_cls();		// CLI commands can be registered
+
+	init_params(cli);
+	cli_check(cli);
+}
+
+static void
+mgt_x_arg(const char *x_arg)
+{
+	if (!strcmp(x_arg, "dumprstparam"))
+		MCF_DumpRstParam();
+	else if (!strcmp(x_arg, "dumprstvsl"))
+		mgt_DumpRstVsl();
+	else if (!strcmp(x_arg, "dumprstcli"))
+		mgt_DumpRstCli();
+	else
+		ARGV_ERR("Invalid -x argument\n");
 }
 
 /*--------------------------------------------------------------------*/
@@ -508,6 +542,7 @@ main(int argc, char * const *argv)
 	const char *b_arg = NULL;
 	const char *f_arg = NULL;
 	const char *i_arg = NULL;
+	const char *j_arg = NULL;
 	const char *h_arg = "critbit";
 	const char *M_arg = NULL;
 	const char *n_arg = NULL;
@@ -515,17 +550,54 @@ main(int argc, char * const *argv)
 	const char *S_arg = NULL;
 	const char *s_arg = "malloc,100m";
 	const char *W_arg = NULL;
+	const char *x_arg = NULL;
 	int s_arg_given = 0;
 	const char *T_arg = "localhost:0";
 	char *p, *vcl = NULL;
 	struct cli cli[1];
 	char *dirname;
 	char **av;
-	unsigned clilim;
-	int jailed = 0;
 	char Cn_arg[] = "/tmp/varnishd_C_XXXXXXX";
+	const char * opt_spec = "a:b:Cdf:Fh:i:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
 
-	startup_tests();
+	mgt_tests();
+
+	mgt_initialize(cli);
+
+	/*
+	 * First pass over arguments, to determine what we will be doing
+	 * and what process configuration we will use for it.
+	 */
+	while ((o = getopt(argc, argv, opt_spec)) != -1) {
+		switch (o) {
+			case '?': usage(); break;
+			case 'b': b_arg = optarg; break;
+			case 'C': C_flag = 1; break;
+			case 'd': d_flag++; break;
+			case 'f': f_arg = optarg; break;
+			case 'F': F_flag = 1; break;
+			case 'j': j_arg = optarg; break;
+			case 'x': x_arg = optarg; break;
+			default: break;
+		}
+	}
+
+	if (argc != optind)
+		ARGV_ERR("Too many arguments (%s...)\n", argv[optind]);
+
+	if (x_arg != NULL) {
+		if (argc != 3)
+			ARGV_ERR("-x is incompatible all options/arguments\n");
+		mgt_x_arg(x_arg);
+		exit(0);
+	}
+
+	if (d_flag && F_flag)
+		ARGV_ERR("Only one of -d or -F can be specified\n");
+	if (C_flag && b_arg == NULL && f_arg == NULL)
+		ARGV_ERR("-C only good with -b or -f\n");
+	if (b_arg != NULL && f_arg != NULL)
+		ARGV_ERR("Only one of -b or -f can be specified\n");
 
 	/* Set up the mgt counters */
 	memset(&static_VSC_C_mgt, 0, sizeof static_VSC_C_mgt);
@@ -546,19 +618,6 @@ main(int argc, char * const *argv)
 
 	Symbol_hack(argv[0]);
 
-	/* for ASSERT_MGT() */
-	mgt_pid = getpid();
-
-	/* Create a cli for convenience in otherwise CLI functions */
-	INIT_OBJ(cli, CLI_MAGIC);
-	cli[0].sb = VSB_new_auto();
-	AN(cli[0].sb);
-	cli[0].result = CLIS_OK;
-	clilim = 32768;
-	cli[0].limit = &clilim;
-
-	mgt_cli_init_cls();		// CLI commands can be registered
-
 	/* Various initializations */
 	VTAILQ_INIT(&heritage.socks);
 	mgt_evb = vev_new_base();
@@ -567,51 +626,29 @@ main(int argc, char * const *argv)
 	/* Initialize transport protocols */
 	XPORT_Init();
 
-	init_params(cli);
-	cli_check(cli);
+	VJ_Init(j_arg);
 
-	while ((o = getopt(argc, argv,
-	    "a:b:Cdf:Fh:i:j:l:M:n:P:p:r:S:s:T:t:VW:x:")) != -1) {
-		/*
-		 * -j must be the first argument if specified, because
-		 * it (may) affect subsequent argument processing.
-		 */
-		if (!jailed) {
-			jailed++;
-			if (o == 'j') {
-				VJ_Init(optarg);
-				continue;
-			}
-			VJ_Init(NULL);
-		}
-
+	optind = 1;
+	optreset = 1;
+	while ((o = getopt(argc, argv, opt_spec)) != -1) {
 		switch (o) {
+		case 'b':
+		case 'C':
+		case 'd':
+		case 'f':
+		case 'F':
+		case 'j':
+		case 'x':
+			/* Handled in first pass */
+			break;
 		case 'a':
 			MAC_Arg(optarg);
-			break;
-		case 'b':
-			b_arg = optarg;
-			break;
-		case 'C':
-			C_flag = 1 - C_flag;
-			break;
-		case 'd':
-			d_flag++;
-			break;
-		case 'F':
-			F_flag = 1 - F_flag;
-			break;
-		case 'f':
-			f_arg = optarg;
 			break;
 		case 'h':
 			h_arg = optarg;
 			break;
 		case 'i':
 			i_arg = optarg;
-			break;
-		case 'j':
-			ARGV_ERR("\t-j must be the first argument\n");
 			break;
 		case 'l':
 			av = VAV_Parse(optarg, NULL, ARGV_COMMA);
@@ -659,7 +696,10 @@ main(int argc, char * const *argv)
 			STV_Config(optarg);
 			break;
 		case 'T':
-			T_arg = optarg;
+			if (!strcmp(optarg, "none"))
+				T_arg = NULL;
+			else
+				T_arg = optarg;
 			break;
 		case 't':
 			MCF_ParamSet(cli, "default_ttl", optarg);
@@ -671,45 +711,18 @@ main(int argc, char * const *argv)
 		case 'W':
 			W_arg = optarg;
 			break;
-		case 'x':
-			if (!strcmp(optarg, "dumprstparam")) {
-				MCF_DumpRstParam();
-				exit(0);
-			}
-			if (!strcmp(optarg, "dumprstvsl")) {
-				mgt_DumpRstVsl();
-				exit(0);
-			}
-			if (!strcmp(optarg, "dumprstcli")) {
-				mgt_DumpRstCli();
-				exit(0);
-			}
-			usage();
-			break;
 		default:
 			usage();
 		}
 	}
+	assert(argc == optind);
 
 	if (C_flag) {
-		if (b_arg == NULL && f_arg == NULL)
-			ARGV_ERR("-C only good with -b or -f\n");
 		if (n_arg == NULL) {
 			AN(mkdtemp(Cn_arg));
 			n_arg = Cn_arg;
 		}
 	}
-
-	if (!jailed)
-		VJ_Init(NULL);
-
-	argc -= optind;
-	argv += optind;
-	if (argc != 0)
-		ARGV_ERR("Too many arguments (%s...)\n", argv[0]);
-
-	if (T_arg != NULL && !strcmp(T_arg, "none"))
-		T_arg = NULL;
 
 	/* XXX: we can have multiple CLI actions above, is this enough ? */
 	if (cli[0].result != CLIS_OK) {
@@ -718,11 +731,8 @@ main(int argc, char * const *argv)
 		    VSB_data(cli[0].sb));
 	}
 
-	if (d_flag && F_flag)
-		ARGV_ERR("Only one of -d or -F can be specified\n");
-
-	if (b_arg != NULL && f_arg != NULL)
-		ARGV_ERR("Only one of -b or -f can be specified\n");
+	assert(d_flag == 0 || F_flag == 0);
+	assert(b_arg == NULL || f_arg == NULL);
 
 	if (S_arg != NULL && !strcmp(S_arg, "none")) {
 		fprintf(stderr,
