@@ -486,6 +486,17 @@ identify(const char *i_arg)
 	openlog(p, LOG_PID, LOG_LOCAL0);
 }
 
+static void
+startup_tests(void)
+{
+	assert(VTIM_parse("Sun, 06 Nov 1994 08:49:37 GMT") == 784111777);
+	assert(VTIM_parse("Sunday, 06-Nov-94 08:49:37 GMT") == 784111777);
+	assert(VTIM_parse("Sun Nov  6 08:49:37 1994") == 784111777);
+
+	/* Check that our SHA256 works */
+	SHA256_Test();
+}
+
 /*--------------------------------------------------------------------*/
 
 int
@@ -514,6 +525,8 @@ main(int argc, char * const *argv)
 	int jailed = 0;
 	char Cn_arg[] = "/tmp/varnishd_C_XXXXXXX";
 
+	startup_tests();
+
 	/* Set up the mgt counters */
 	memset(&static_VSC_C_mgt, 0, sizeof static_VSC_C_mgt);
 	VSC_C_mgt = &static_VSC_C_mgt;
@@ -523,13 +536,11 @@ main(int argc, char * const *argv)
 	 * have inherited from sloppy process control daemons.
 	 */
 	VSUB_closefrom(STDERR_FILENO + 1);
-
-	VRND_SeedAll();
-
 	mgt_got_fd(STDERR_FILENO);
-
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
+
+	VRND_SeedAll();
 
 	build_vident();
 
@@ -537,13 +548,6 @@ main(int argc, char * const *argv)
 
 	/* for ASSERT_MGT() */
 	mgt_pid = getpid();
-
-	assert(VTIM_parse("Sun, 06 Nov 1994 08:49:37 GMT") == 784111777);
-	assert(VTIM_parse("Sunday, 06-Nov-94 08:49:37 GMT") == 784111777);
-	assert(VTIM_parse("Sun Nov  6 08:49:37 1994") == 784111777);
-
-	/* Check that our SHA256 works */
-	SHA256_Test();
 
 	/* Create a cli for convenience in otherwise CLI functions */
 	INIT_OBJ(cli, CLI_MAGIC);
@@ -560,6 +564,7 @@ main(int argc, char * const *argv)
 	mgt_evb = vev_new_base();
 	AN(mgt_evb);
 
+	/* Initialize transport protocols */
 	XPORT_Init();
 
 	init_params(cli);
@@ -578,9 +583,6 @@ main(int argc, char * const *argv)
 				continue;
 			}
 			VJ_Init(NULL);
-		} else {
-			if (o == 'j')
-				ARGV_ERR("\t-j must be the first argument\n");
 		}
 
 		switch (o) {
@@ -607,6 +609,9 @@ main(int argc, char * const *argv)
 			break;
 		case 'i':
 			i_arg = optarg;
+			break;
+		case 'j':
+			ARGV_ERR("\t-j must be the first argument\n");
 			break;
 		case 'l':
 			av = VAV_Parse(optarg, NULL, ARGV_COMMA);
