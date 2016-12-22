@@ -589,17 +589,26 @@ main(int argc, char * const *argv)
 
 	if (x_arg != NULL) {
 		if (argc != 3)
-			ARGV_ERR("-x is incompatible all options/arguments\n");
+			ARGV_ERR("-x is incompatible with everything else\n");
 		mgt_x_arg(x_arg);
 		exit(0);
 	}
 
-	if (d_flag && F_flag)
-		ARGV_ERR("Only one of -d or -F can be specified\n");
-	if (C_flag && b_arg == NULL && f_arg == NULL)
-		ARGV_ERR("-C only good with -b or -f\n");
 	if (b_arg != NULL && f_arg != NULL)
 		ARGV_ERR("Only one of -b or -f can be specified\n");
+
+	if (d_flag && F_flag)
+		ARGV_ERR("Only one of -d or -F can be specified\n");
+
+	if (C_flag && b_arg == NULL && f_arg == NULL)
+		ARGV_ERR("-C needs either -b <backend> or -f <vcl_file>\n");
+
+	if (d_flag && C_flag)
+		ARGV_ERR("-d makes no sense with -C\n");
+
+	if (F_flag && C_flag)
+		ARGV_ERR("-F makes no sense with -C\n");
+
 
 	/* Set up the mgt counters */
 	memset(&static_VSC_C_mgt, 0, sizeof static_VSC_C_mgt);
