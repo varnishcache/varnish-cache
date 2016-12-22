@@ -823,6 +823,17 @@ main(int argc, char * const *argv)
 		S_arg = make_secret(dirname);
 	AN(S_arg);
 
+	if (d_flag)
+		mgt_cli_setup(0, 1, 1, "debug", cli_stdin_close, NULL);
+
+	if (strcmp(S_arg, "none"))
+		mgt_cli_secret(S_arg);
+
+	if (M_arg != NULL)
+		mgt_cli_master(M_arg);
+	if (T_arg != NULL)
+		mgt_cli_telnet(T_arg);
+
 	if (!d_flag && !F_flag)
 		AZ(varnish_daemon(1, 0));
 
@@ -835,17 +846,6 @@ main(int argc, char * const *argv)
 	MGT_complain(C_DEBUG, "Platform: %s", VSB_data(vident) + 1);
 
 	mgt_pid = getpid();	/* daemon() changed this */
-
-	if (d_flag)
-		mgt_cli_setup(0, 1, 1, "debug", cli_stdin_close, NULL);
-
-	if (strcmp(S_arg, "none"))
-		mgt_cli_secret(S_arg);
-
-	if (M_arg != NULL)
-		mgt_cli_master(M_arg);
-	if (T_arg != NULL)
-		mgt_cli_telnet(T_arg);
 
 	/* Instantiate VSM */
 	mgt_SHM_Create();

@@ -506,21 +506,17 @@ mgt_cli_secret(const char *S_arg)
 
 	VJ_master(JAIL_MASTER_FILE);
 	fd = open(S_arg, O_RDONLY);
-	if (fd < 0) {
-		fprintf(stderr, "Can not open secret-file \"%s\"\n", S_arg);
-		exit(2);
-	}
+	if (fd < 0)
+		ARGV_ERR("Can not open secret-file \"%s\"\n", S_arg);
+
 	VJ_master(JAIL_MASTER_LOW);
 	mgt_got_fd(fd);
 	i = read(fd, buf, sizeof buf);
-	if (i == 0) {
-		fprintf(stderr, "Empty secret-file \"%s\"\n", S_arg);
-		exit(2);
-	}
-	if (i < 0) {
-		fprintf(stderr, "Can not read secret-file \"%s\"\n", S_arg);
-		exit(2);
-	}
+	if (i == 0)
+		ARGV_ERR("Empty secret-file \"%s\"\n", S_arg);
+	if (i < 0)
+		ARGV_ERR("Can not read secret-file \"%s\"\n", S_arg);
+
 	AZ(close(fd));
 	secret_file = S_arg;
 }
@@ -570,7 +566,7 @@ mgt_cli_telnet(const char *T_arg)
 	AZ(error);
 	AZ(VSB_finish(vsb));
 	if (VSB_len(vsb) == 0)
-		ARGV_ERR("-T %s could not be listened on.", T_arg);
+		ARGV_ERR("-T %s could not be listened on.\n", T_arg);
 	/* Save in shmem */
 	mgt_SHM_static_alloc(VSB_data(vsb), VSB_len(vsb) + 1, "Arg", "-T", "");
 	VSB_destroy(&vsb);
