@@ -73,6 +73,8 @@ struct VSC_C_mgt	*VSC_C_mgt;
 
 static struct vpf_fh *pfh = NULL;
 
+extern int optreset;	// Some has it, some doesn't.  Cheaper than auto*
+
 /*--------------------------------------------------------------------*/
 
 static void
