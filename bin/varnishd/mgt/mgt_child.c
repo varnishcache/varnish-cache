@@ -725,7 +725,7 @@ static struct cli_proto cli_child[] = {
  * and to reincarnate it in case of trouble.
  */
 
-void
+int
 MGT_Run(void)
 {
 	struct sigaction sac;
@@ -771,22 +771,15 @@ MGT_Run(void)
 		MGT_complain(C_ERR, "No VCL loaded yet");
 	else if (!d_flag) {
 		mgt_launch_child(NULL);
-		if (child_state != CH_RUNNING) {
-			// XXX correct? or 0?
-			exit_status = 2;
-			return;
-		}
+		if (child_state != CH_RUNNING)
+			return (2);
 	}
 
 	i = mgt_SHM_Commit();
 	if (i != 0) {
 		MGT_complain(C_ERR, "Could not commit SHM file");
-		return;
+		return (2);
 	}
 
-	i = vev_schedule(mgt_evb);
-	if (i != 0)
-		MGT_complain(C_ERR, "vev_schedule() = %d", i);
-
-	MGT_complain(C_INFO, "manager dies");
+	return(0);
 }

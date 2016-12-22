@@ -60,8 +60,6 @@
 #include "vtim.h"
 #include "waiter/mgt_waiter.h"
 
-#include "compat/daemon.h"
-
 struct heritage		heritage;
 unsigned		d_flag = 0;
 pid_t			mgt_pid;
@@ -533,12 +531,54 @@ mgt_x_arg(const char *x_arg)
 		ARGV_ERR("Invalid -x argument\n");
 }
 
+
+/*--------------------------------------------------------------------*/
+
+#define ERIC_MAGIC 0x2246988a		/* Eric is not random */
+
+static int
+mgt_eric(void)
+{
+	int eric_pipes[2];
+	int fd;
+	unsigned u;
+	ssize_t sz;
+
+	AZ(pipe(eric_pipes));
+
+	switch (fork()) {
+	case -1:
+		fprintf(stderr, "Fork() failed: %s\n", strerror(errno));
+		exit(-1);
+	case 0:
+		AZ(close(eric_pipes[0]));
+		assert(setsid() > 1);
+
+		fd = open("/dev/null", O_RDWR, 0);
+		assert(fd > 0);
+		assert(dup2(fd, STDIN_FILENO) == STDIN_FILENO);
+		if (fd > STDIN_FILENO)
+			AZ(close(fd));
+		return (eric_pipes[1]);
+	default:
+		break;
+	}
+	AZ(close(eric_pipes[1]));
+	sz = read(eric_pipes[0], &u, sizeof u);
+	if (sz == sizeof u && u == ERIC_MAGIC)
+		exit(0);
+	else if (sz == sizeof u && u != 0)
+		exit(u);
+	else
+		exit(-1);
+}
+
 /*--------------------------------------------------------------------*/
 
 int
 main(int argc, char * const *argv)
 {
-	int o;
+	int o, eric_fd = -1;
 	unsigned C_flag = 0;
 	unsigned F_flag = 0;
 	const char *b_arg = NULL;
@@ -561,6 +601,7 @@ main(int argc, char * const *argv)
 	char **av;
 	char Cn_arg[] = "/tmp/varnishd_C_XXXXXXX";
 	const char * opt_spec = "a:b:Cdf:Fh:i:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
+	unsigned u;
 
 	mgt_tests();
 
@@ -609,11 +650,6 @@ main(int argc, char * const *argv)
 	if (F_flag && C_flag)
 		ARGV_ERR("-F makes no sense with -C\n");
 
-
-	/* Set up the mgt counters */
-	memset(&static_VSC_C_mgt, 0, sizeof static_VSC_C_mgt);
-	VSC_C_mgt = &static_VSC_C_mgt;
-
 	/*
 	 * Start out by closing all unwanted file descriptors we might
 	 * have inherited from sloppy process control daemons.
@@ -622,6 +658,19 @@ main(int argc, char * const *argv)
 	mgt_got_fd(STDERR_FILENO);
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
+
+	/*
+	 * Have Eric Daemonize us if need be
+	 */
+	if (!C_flag && !d_flag && !F_flag) {
+		eric_fd = mgt_eric();
+		mgt_got_fd(eric_fd);
+		mgt_pid = getpid();
+	}
+
+	/* Set up the mgt counters */
+	memset(&static_VSC_C_mgt, 0, sizeof static_VSC_C_mgt);
+	VSC_C_mgt = &static_VSC_C_mgt;
 
 	VRND_SeedAll();
 
@@ -832,9 +881,6 @@ main(int argc, char * const *argv)
 		S_arg = make_secret(dirname);
 	AN(S_arg);
 
-	if (!d_flag && !F_flag)
-		AZ(varnish_daemon(1, 0));
-
 	/**************************************************************
 	 * After this point diagnostics will only be seen with -d
 	 */
@@ -842,8 +888,6 @@ main(int argc, char * const *argv)
 	assert(pfh == NULL || !VPF_Write(pfh));
 
 	MGT_complain(C_DEBUG, "Platform: %s", VSB_data(vident) + 1);
-
-	mgt_pid = getpid();	/* daemon() changed this */
 
 	if (d_flag)
 		mgt_cli_setup(0, 1, 1, "debug", cli_stdin_close, NULL);
@@ -859,8 +903,20 @@ main(int argc, char * const *argv)
 	/* Instantiate VSM */
 	mgt_SHM_Create();
 
-	MGT_Run();
+	u = MGT_Run();
 
+	if (eric_fd > 0) {
+		if (u == 0)
+			u = ERIC_MAGIC;
+		assert(write(eric_fd, &u, sizeof u) == sizeof u);
+		AZ(close(eric_fd));
+	}
+
+	o = vev_schedule(mgt_evb);
+	if (o != 0)
+		MGT_complain(C_ERR, "vev_schedule() = %d", o);
+
+	MGT_complain(C_INFO, "manager dies");
 	if (pfh != NULL)
 		(void)VPF_Remove(pfh);
 	exit(exit_status);

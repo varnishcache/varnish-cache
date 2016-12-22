@@ -51,7 +51,7 @@ int MAC_sockets_ready(struct cli *);
 
 /* mgt_child.c */
 extern pid_t child_pid;
-void MGT_Run(void);
+int MGT_Run(void);
 void mgt_stop_child(void);
 void mgt_got_fd(int fd);
 void MGT_Child_Cli_Fail(void);
