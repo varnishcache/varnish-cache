@@ -73,6 +73,7 @@ autogen () (
 makedistcheck () (
 	set -e
 	cd "${BUILDDIR}"
+	nice make vtest-clean
 	nice make distcheck
 )
 
