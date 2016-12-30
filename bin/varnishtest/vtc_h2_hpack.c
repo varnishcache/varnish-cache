@@ -49,8 +49,6 @@ static struct symbol coding_table[] = {
 
 #include "vtc_h2_dectbl.h"
 
-struct symbol *EOS = &coding_table[256];
-
 #define MASK(pack, n) (pack >> (64 - n))
 static int
 huff_decode(char *str, int nm, struct hpk_iter *iter, int ilen)

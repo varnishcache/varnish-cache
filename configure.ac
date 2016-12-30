@@ -590,11 +590,8 @@ then
 	# These GCC flags are not compliable yet
 	#_VARNISH_CHECK_CFLAGS([-Wold-style-definition -Wredundant-decls])
 
-	# These CLANG flags are compilable
-	_VARNISH_CHECK_CFLAGS([
-		-Wmissing-variable-declarations
-		-Wno-string-plus-int
-	])
+	# These CLANG flags are not compilable yet
+	#_VARNISH_CHECK_CFLAGS([-Wmissing-variable-declarations -Wno-string-plus-int])
 
 	# Other GCC flags
 	_VARNISH_CHECK_CFLAGS([

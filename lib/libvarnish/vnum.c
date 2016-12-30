@@ -230,7 +230,7 @@ static struct test_case {
 	{ 0, 0, 0 },
 };
 
-const char *vec[] = {
+static const char *vec[] = {
 	" 1",
 	" 12",
 	" 12.",

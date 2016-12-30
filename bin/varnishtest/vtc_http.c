@@ -1663,7 +1663,7 @@ cmd_http_fatal(CMD_ARGS)
  *	Same as for the top-level barrier
  */
 
-const char PREFACE[24] = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
+static const char PREFACE[24] = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n";
 
 /* SECTION: client-server.spec.txpri
  *

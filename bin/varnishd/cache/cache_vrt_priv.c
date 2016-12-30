@@ -48,7 +48,7 @@ struct vrt_priv {
 	uintptr_t			vmod_id;
 };
 
-struct vmod_priv cli_task_priv;
+static struct vmod_priv cli_task_priv;
 
 /*--------------------------------------------------------------------
  */
