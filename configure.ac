@@ -512,10 +512,25 @@ gl_LD_VERSION_SCRIPT
 # libraries, set CFLAGS to what we want them to be for our own code
 
 # This is a test to see how much havoc vtest exposes.
+#
+# SunCC flags are passed as explicit flags for the compiler, otherwise
+# GCC and clang will happily accept them during the check and then:
+#
+# - clang will fail to compile
+# - GCC will pass them to the linker
+#
+# But then again, GCC does not support -Wc (only -Wa, -Wl and -Wp) to
+# pass flags to an explicit build phase, but clang does and it will emit
+# a warning. This is why the previous flags need to be checked before we
+# can test those: the warning will be turned into an error.
 
 _VARNISH_CHECK_CFLAGS([
 	-Wall
 	-Werror
+	[-Wc,-errwarn=%all]
+	[-Wc,-errwarn=no%E_EMPTY_TRANSLATION_UNIT]
+	[-Wc,-errwarn=no%E_ANONYMOUS_UNION_DECL]
+	[-Wc,-errtags=yes]
 ])
 
 # The reason for -Wno-error=unused-result is a glibc/gcc interaction
@@ -525,28 +540,6 @@ _VARNISH_CHECK_CFLAGS([
 _VARNISH_CHECK_CFLAGS([
 	-Wno-error=unused-result
 	-Wno-unused-result
-])
-
-CFLAGS="${CFLAGS} ${VARNISH_CFLAGS}"
-
-# SunCC flags are passed as explicit flags for the compiler, otherwise
-# GCC and clang will happily accept them during the check and then:
-#
-# - clang will fail to compile
-# - GCC will pass them to the linker
-#
-# But then again, GCC does not support -Wc (only -Wa, -Wl and -Wp) to
-# pass flags to an explicit build phase, but clang does and it will emit
-# a warning. This is why the previous flags need to be committed first
-# before we can test those: the warning will be turned into an error.
-
-VARNISH_FLAGS=
-
-_VARNISH_CHECK_CFLAGS([
-	[-Wc,-errwarn=%all]
-	[-Wc,-errwarn=no%E_EMPTY_TRANSLATION_UNIT]
-	[-Wc,-errwarn=no%E_ANONYMOUS_UNION_DECL]
-	[-Wc,-errtags=yes]
 ])
 
 CFLAGS="${CFLAGS} ${VARNISH_CFLAGS}"
