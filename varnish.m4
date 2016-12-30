@@ -62,6 +62,25 @@ AC_DEFUN([_VARNISH_SEARCH_LIBS], [
 	LIBS="${save_LIBS}"
 ])
 
+# _VARNISH_CHECK_CFLAG
+----------------------
+AC_DEFUN([_VARNISH_CHECK_CFLAG], [
+
+         AX_CHECK_COMPILE_FLAG([$1],
+		 [VARNISH_CFLAGS="${VARNISH_CFLAGS} $1"], [], [])
+
+])
+
+# _VARNISH_CHECK_CFLAGS
+-----------------------
+AC_DEFUN([_VARNISH_CHECK_CFLAGS], [
+
+	m4_foreach([_flag],
+		m4_split(m4_normalize([$1])),
+			[_VARNISH_CHECK_CFLAG(_flag)])
+
+])
+
 # _VARNISH_PKG_CONFIG
 # --------------------
 AC_DEFUN([_VARNISH_PKG_CONFIG], [
