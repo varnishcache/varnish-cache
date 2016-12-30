@@ -52,7 +52,7 @@
 
 static const char progname[] = "varnishlog";
 
-struct log {
+static struct log {
 	/* Options */
 	int		a_opt;
 	int		A_opt;

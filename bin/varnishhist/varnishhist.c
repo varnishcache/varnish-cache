@@ -77,9 +77,9 @@ static unsigned *bucket_miss;
 static unsigned *bucket_hit;
 static char *format;
 static int match_tag;
-double timebend = 0, t0;
-double vsl_t0 = 0, vsl_to, vsl_ts = 0;
-pthread_cond_t timebend_cv;
+static double timebend = 0, t0;
+static double vsl_t0 = 0, vsl_to, vsl_ts = 0;
+static pthread_cond_t timebend_cv;
 static double log_ten;
 
 static int scales[] = {
@@ -106,7 +106,7 @@ static int scales[] = {
 	INT_MAX
 };
 
-struct profile {
+static struct profile {
 	const char *name;
 	char VSL_arg;
 	enum VSL_tag_e tag;

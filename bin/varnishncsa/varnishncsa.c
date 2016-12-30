@@ -134,7 +134,7 @@ struct vsl_watch {
 };
 VTAILQ_HEAD(vsl_watch_head, vsl_watch);
 
-struct ctx {
+static struct ctx {
 	/* Options */
 	int			a_opt;
 	int			b_opt;

@@ -724,7 +724,8 @@ class vcc(object):
 		write_c_file_warning(fo)
 		fo.write("struct vmod_priv;\n")
 		fo.write("\n")
-		fo.write("extern const struct vmod_data Vmod_debug_Data;\n")
+		fo.write("extern const struct vmod_data Vmod_%s_Data;\n" %
+			(self.modname))
 		fo.write("\n")
 
 		for j in self.contents:
@@ -755,7 +756,7 @@ class vcc(object):
 		fo.write("/*lint -restore */\n")
 
 	def api(self, fo):
-		fo.write("\n/*lint -esym(759, Vmod_debug_Data) */\n")
+		fo.write("\n/*lint -esym(759, Vmod_%s_Data) */\n" % (self.modname))
 		fo.write("const struct vmod_data Vmod_%s_Data = {\n" %
 		    self.modname)
 		fo.write("\t.vrt_major =\tVRT_MAJOR_VERSION,\n")
