@@ -134,7 +134,7 @@ mac_callback(void *priv, const struct suckaddr *sa)
 		free(ls->name);
 		FREE_OBJ(ls);
 		if (fail != EAFNOSUPPORT)
-			ARGV_ERR("Could not get socket %s: %s",
+			ARGV_ERR("Could not get socket %s: %s\n",
 			    la->name, strerror(fail));
 		return(0);
 	}
