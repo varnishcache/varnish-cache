@@ -85,21 +85,30 @@ vfil_readfd(int fd, ssize_t *sz)
 	return (f);
 }
 
+static int
+vfil_openfile(const char *pfx, const char *fn, int flags, int mode)
+{
+	char fnb[PATH_MAX + 1];
+
+	if (fn[0] != '/' && pfx != NULL) {
+		/* XXX: graceful length check */
+		bprintf(fnb, "/%s/%s", pfx, fn);
+		fn = fnb;
+	}
+
+	if (flags & O_CREAT)
+		return (open(fn, flags, mode));
+	else
+		return (open(fn, flags));
+}
+
 char *
 VFIL_readfile(const char *pfx, const char *fn, ssize_t *sz)
 {
 	int fd, err;
 	char *r;
-	char fnb[PATH_MAX + 1];
 
-	if (fn[0] == '/')
-		fd = open(fn, O_RDONLY);
-	else if (pfx != NULL) {
-		bprintf(fnb, "/%s/%s", pfx, fn);
-		    /* XXX: graceful length check */
-		fd = open(fnb, O_RDONLY);
-	} else
-		fd = open(fn, O_RDONLY);
+	fd = vfil_openfile(pfx, fn, O_RDONLY, 0);
 	if (fd < 0)
 		return (NULL);
 	r = vfil_readfd(fd, sz);
