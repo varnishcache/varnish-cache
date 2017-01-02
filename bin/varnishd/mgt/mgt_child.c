@@ -305,17 +305,6 @@ mgt_launch_child(struct cli *cli)
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
 		return;
 
-	if (!MAC_sockets_ready(cli)) {
-		child_state = CH_STOPPED;
-		if (cli != NULL) {
-			VCLI_SetResult(cli, CLIS_CANT);
-			return;
-		}
-		MGT_complain(C_ERR,
-		    "Child start failed: could not open sockets");
-		return;
-	}
-
 	child_state = CH_STARTING;
 
 	/* Open pipe for mgr->child CLI */

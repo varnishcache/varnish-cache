@@ -49,8 +49,11 @@
 #include "vss.h"
 #include "vtcp.h"
 
+static VTAILQ_HEAD(,listen_arg) listen_args =
+    VTAILQ_HEAD_INITIALIZER(listen_args);
+
 static int
-mac_opensocket(struct listen_sock *ls, struct cli *cli)
+mac_opensocket(struct listen_sock *ls)
 {
 	int fail;
 
@@ -62,9 +65,6 @@ mac_opensocket(struct listen_sock *ls, struct cli *cli)
 	ls->sock = VTCP_bind(ls->addr, NULL);
 	fail = errno;
 	if (ls->sock < 0) {
-		if (cli != NULL)
-			VCLI_Out(cli, "Could not get socket %s: %s\n",
-			    ls->name, strerror(errno));
 		AN(fail);
 		return (fail);
 	}
@@ -80,106 +80,87 @@ void
 MAC_reopen_sockets(struct cli *cli)
 {
 	struct listen_sock *ls;
+	int fail;
 
-	VJ_master(JAIL_MASTER_PRIVPORT);
-	VTAILQ_FOREACH(ls, &heritage.socks, list)
-		(void)mac_opensocket(ls, cli);
-	VJ_master(JAIL_MASTER_LOW);
-}
-
-/*=====================================================================
- * Make sure we have all our sockets (and try once more to get them)
- */
-
-int
-MAC_sockets_ready(struct cli *cli)
-{
-	int retval = 1;
-	struct listen_sock *ls;
-
-	VJ_master(JAIL_MASTER_PRIVPORT);
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
-		if (ls->sock < 0)
-			(void)mac_opensocket(ls, cli);
-		if (ls->sock < 0)
-			retval = 0;
+		VJ_master(JAIL_MASTER_PRIVPORT);
+		fail = mac_opensocket(ls);
+		VJ_master(JAIL_MASTER_LOW);
+		if (fail == 0)
+			continue;
+		if (cli == NULL)
+			MGT_complain(C_ERR,
+			    "Could not reopen listen socket %s: %s",
+			    ls->name, strerror(fail));
+		else
+			VCLI_Out(cli,
+			    "Could not reopen listen socket %s: %s\n",
+			    ls->name, strerror(fail));
 	}
-	VJ_master(JAIL_MASTER_LOW);
-	return (retval);
 }
 
 /*--------------------------------------------------------------------*/
 
-struct mac_help {
-	unsigned		magic;
-#define MAC_HELP_MAGIC		0x1e00a9d9
-	int			good;
-	const char		*name;
-	const struct transport	*transport;
-};
-
 static int __match_proto__(vss_resolved_f)
 mac_callback(void *priv, const struct suckaddr *sa)
 {
-	struct mac_help *mh;
+	struct listen_arg *la;
 	struct listen_sock *ls;
+	char abuf[VTCP_ADDRBUFSIZE], pbuf[VTCP_PORTBUFSIZE];
+	char nbuf[VTCP_ADDRBUFSIZE+VTCP_PORTBUFSIZE+2];
+	int fail;
 
-	CAST_OBJ_NOTNULL(mh, priv, MAC_HELP_MAGIC);
+	CAST_OBJ_NOTNULL(la, priv, LISTEN_ARG_MAGIC);
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (!VSA_Compare(sa, ls->addr))
 			ARGV_ERR("-a arguments %s and %s have same address\n",
-			    ls->name, mh->name);
+			    ls->arg->name, la->name);
 	}
 	ALLOC_OBJ(ls, LISTEN_SOCK_MAGIC);
 	AN(ls);
+	ls->arg = la;
 	ls->sock = -1;
 	ls->addr = VSA_Clone(sa);
 	AN(ls->addr);
-	ls->name = strdup(mh->name);
+	ls->name = strdup(la->name);
 	AN(ls->name);
-	ls->transport = mh->transport;
-	VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
-	mh->good++;
-	return (0);
-}
-
-void
-MAC_Validate(void)
-{
-	struct listen_sock *ls;
-	int fail;
-	char abuf[VTCP_ADDRBUFSIZE], pbuf[VTCP_PORTBUFSIZE];
-	char nbuf[VTCP_ADDRBUFSIZE+VTCP_PORTBUFSIZE+2];
-
-	VTAILQ_FOREACH(ls, &heritage.socks, list) {
-		VJ_master(JAIL_MASTER_PRIVPORT);
-		fail = mac_opensocket(ls, NULL);
-		VJ_master(JAIL_MASTER_LOW);
-		if (fail)
-			ARGV_ERR("Cannot open socket: %s: %s\n",
-			    ls->name, strerror(fail));
-		if (VSA_Port(ls->addr) == 0) {
-			/*
-			 * If the port number is zero, we adopt whatever
-			 * port number this VTCP_bind() found us, as if
-			 * specified by argument.
-			 */
-			free(ls->addr);
-			ls->addr = VTCP_my_suckaddr(ls->sock);
-			VTCP_myname(ls->sock, abuf, sizeof abuf,
-			    pbuf, sizeof pbuf);
-			bprintf(nbuf, "%s:%s", abuf, pbuf);
-			REPLACE(ls->name, nbuf);
-		}
+	ls->transport = la->transport;
+	VJ_master(JAIL_MASTER_PRIVPORT);
+	fail = mac_opensocket(ls);
+	VJ_master(JAIL_MASTER_LOW);
+	if (fail) {
+		free(ls->addr);
+		free(ls->name);
+		FREE_OBJ(ls);
+		if (fail != EAFNOSUPPORT)
+			ARGV_ERR("Could not get socket %s: %s",
+			    la->name, strerror(fail));
+		return(0);
 	}
+	if (VSA_Port(ls->addr) == 0) {
+		/*
+		 * If the argv port number is zero, we adopt whatever
+		 * port number this VTCP_bind() found us, as if
+		 * it was specified by the argv.
+		 */
+		free(ls->addr);
+		ls->addr = VTCP_my_suckaddr(ls->sock);
+		VTCP_myname(ls->sock, abuf, sizeof abuf,
+		    pbuf, sizeof pbuf);
+		bprintf(nbuf, "%s:%s", abuf, pbuf);
+		REPLACE(ls->name, nbuf);
+	}
+	VTAILQ_INSERT_TAIL(&la->socks, ls, arglist);
+	VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
+	return (0);
 }
 
 void
 MAC_Arg(const char *arg)
 {
 	char **av;
-	struct mac_help *mh;
+	struct listen_arg *la;
 	const char *err;
 	int error;
 	const struct transport *xp;
@@ -190,9 +171,11 @@ MAC_Arg(const char *arg)
 	if (av[0] != NULL)
 		ARGV_ERR("%s\n", av[0]);
 
-	ALLOC_OBJ(mh, MAC_HELP_MAGIC);
-	AN(mh);
-	mh->name = av[1];
+	ALLOC_OBJ(la, LISTEN_ARG_MAGIC);
+	AN(la);
+	VTAILQ_INIT(&la->socks);
+	VTAILQ_INSERT_TAIL(&listen_args, la, list);
+	la->name = av[1];
 
 	if (av[2] == NULL) {
 		xp = XPORT_Find("http/1");
@@ -204,11 +187,10 @@ MAC_Arg(const char *arg)
 			ARGV_ERR("Too many sub-arguments to -a(%s)\n", av[2]);
 	}
 	AN(xp);
-	mh->transport = xp;
+	la->transport = xp;
 
-	error = VSS_resolver(av[1], "80", mac_callback, mh, &err);
-	if (mh->good == 0 || error)
-		ARGV_ERR("socket %s didn't resolve\n", av[1]);
+	error = VSS_resolver(av[1], "80", mac_callback, la, &err);
+	if (VTAILQ_EMPTY(&la->socks) || error)
+		ARGV_ERR("Got no socket(s) for %s\n", av[1]);
 	VAV_Free(av);
-	FREE_OBJ(mh);
 }

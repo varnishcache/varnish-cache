@@ -656,6 +656,7 @@ main(int argc, char * const *argv)
 	 */
 	VSUB_closefrom(STDERR_FILENO + 1);
 	mgt_got_fd(STDERR_FILENO);
+
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 
@@ -854,8 +855,6 @@ main(int argc, char * const *argv)
 
 	if (VTAILQ_EMPTY(&heritage.socks))
 		MAC_Arg(":80");
-
-	MAC_Validate();
 
 	assert(! VTAILQ_EMPTY(&heritage.socks));
 
