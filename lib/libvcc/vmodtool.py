@@ -467,7 +467,7 @@ class s_event(stanza):
 	def rstfile(self, fo, man):
 		if len(self.doc) != 0:
 			err("Not emitting .RST for $Event %s\n" %
-                            self.event_func)
+			    self.event_func)
 
 	def hfile(self, fo):
 		fo.write("#ifdef VCL_MET_MAX\n")

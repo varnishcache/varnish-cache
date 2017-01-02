@@ -314,8 +314,8 @@ void VRT_delete_backend(VRT_CTX, struct director **);
 int VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst);
 
 /* VMOD/Modules related */
-int VRT_Vmod_Init(struct vmod **hdl, void *ptr, int len, const char *nm,
-    const char *path, const char *file_id, VRT_CTX);
+int VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, void *ptr, int len,
+    const char *nm, const char *path, const char *file_id, const char *backup);
 void VRT_Vmod_Fini(struct vmod **hdl);
 
 /* VCL program related */

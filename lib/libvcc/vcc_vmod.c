@@ -196,7 +196,8 @@ vcc_ParseImport(struct vcc *tl)
 
 	ifp = New_IniFin(tl);
 
-	VSB_printf(ifp->ini, "\tif (VRT_Vmod_Init(&VGC_vmod_%.*s,\n", PF(mod));
+	VSB_printf(ifp->ini, "\tif (VRT_Vmod_Init(ctx,\n");
+	VSB_printf(ifp->ini, "\t    &VGC_vmod_%.*s,\n", PF(mod));
 	VSB_printf(ifp->ini, "\t    &Vmod_%.*s_Func,\n", PF(mod));
 	VSB_printf(ifp->ini, "\t    sizeof(Vmod_%.*s_Func),\n", PF(mod));
 	VSB_printf(ifp->ini, "\t    \"%.*s\",\n", PF(mod));
@@ -206,7 +207,9 @@ vcc_ParseImport(struct vcc *tl)
 	AN(vmd);
 	AN(vmd->file_id);
 	VSB_printf(ifp->ini, "\t    \"%s\",\n", vmd->file_id);
-	VSB_printf(ifp->ini, "\t    ctx))\n");
+	VSB_printf(ifp->ini, "\t    \"./_vmod_%.*s.%s\"\n",
+	    PF(mod), vmd->file_id);
+	VSB_printf(ifp->ini, "\t    ))\n");
 	VSB_printf(ifp->ini, "\t\treturn(1);");
 
 	/* XXX: zero the function pointer structure ?*/
