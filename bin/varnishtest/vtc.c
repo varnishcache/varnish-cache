@@ -441,8 +441,12 @@ cmd_varnishtest(CMD_ARGS)
  *
  * The vtc will fail if the return code of the shell is not 0.
  */
+/* SECTION: client-server.spec.shell shell
+ *
+ * Same as for the top-level shell.
+ */
 
-static void
+void
 cmd_shell(CMD_ARGS)
 {
 	(void)priv;
@@ -471,8 +475,12 @@ cmd_shell(CMD_ARGS)
  * err_shell expect the shell command to fail AND stdout to match the string,
  * failing the test case otherwise.
  */
+/* SECTION: client-server.spec.shell err_shell
+ *
+ * Same as for the top-level err_shell.
+ */
 
-static void
+void
 cmd_err_shell(CMD_ARGS)
 {
 	(void)priv;

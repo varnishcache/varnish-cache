@@ -1860,6 +1860,8 @@ static const struct cmds http_cmds[] = {
 	/* general purpose */
 	CMD(barrier),
 	CMD(delay),
+	CMD(err_shell),
+	CMD(shell),
 #undef CMD_HTTP
 #undef CMD
 	{ NULL, NULL }
