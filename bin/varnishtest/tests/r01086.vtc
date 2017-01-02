@@ -23,7 +23,7 @@ server s1 {
 	delay .2
 
 	chunked "FOOBAR"
-	non-fatal
+	non_fatal
 	chunkedlen 0
 } -start
 
@@ -70,7 +70,7 @@ server s1 -wait {
 	delay .2
 
 	chunked "FOOBAR"
-	non-fatal
+	non_fatal
 	chunkedlen 0
 
 } -start

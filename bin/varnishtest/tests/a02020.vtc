@@ -32,7 +32,7 @@ client c1 -connect ${s1_sock} {
 	stream 3 { txreq		} -run
 	stream 0 { txsettings -hdrtbl 0 } -run
 
-	non-fatal
+	non_fatal
 	stream 3 {
 		rxresp
 		expect resp.http.foo == <undef>

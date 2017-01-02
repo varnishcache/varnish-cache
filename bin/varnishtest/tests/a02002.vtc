@@ -1,7 +1,7 @@
 varnishtest "Trigger a compression error via bad index"
 
 server s1 {
-	non-fatal
+	non_fatal
 	stream 1 {
 		rxreq
 		expect req.http.foo == <undef>

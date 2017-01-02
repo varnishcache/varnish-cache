@@ -28,7 +28,7 @@ varnish v1 -expect n_object == 0
 varnish v1 -expect n_objectcore == 0
 
 server s1 -wait {
-	non-fatal
+	non_fatal
 	rxreq
 	send "HTTP/1.0 200 OK\r\nConnection: close\r\n\r\n"
 	delay 0.5

@@ -19,7 +19,7 @@ server s1 {
 		sendhex "00000000"
 	send "\r\n"
 	chunked "FOOBAR"
-	non-fatal
+	non_fatal
 	chunkedlen 0
 } -start
 
@@ -62,7 +62,7 @@ server s1 -wait {
 		sendhex "00000000"
 	send "\r\n"
 	chunked "FOOBAR"
-	non-fatal
+	non_fatal
 	chunkedlen 0
 } -start
 

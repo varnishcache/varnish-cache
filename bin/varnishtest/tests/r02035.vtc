@@ -3,7 +3,7 @@ varnishtest "Streaming range early finish"
 barrier b1 cond 2
 
 server s1 {
-	non-fatal
+	non_fatal
 	rxreq
 	txresp -nolen -hdr "Content-Length: 11"
 	# Delay to get around Nagle. Without the delay the body bytes

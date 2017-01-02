@@ -3,7 +3,7 @@ varnishtest "client abandoning hit-for-pass"
 barrier b1 cond 2
 
 server s1 {
-	non-fatal
+	non_fatal
 	rxreq
 	txresp -nolen -hdr "Transfer-Encoding: chunked" -hdr "Set-Cookie: foo=bar"
 	chunked "foo"

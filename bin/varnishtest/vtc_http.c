@@ -743,7 +743,7 @@ cmd_http_rxresphdrs(CMD_ARGS)
 #define OVERHEAD 64L
 
 static void
-cmd_http_gunzip_body(CMD_ARGS)
+cmd_http_gunzip(CMD_ARGS)
 {
 	int i;
 	z_stream vz;
@@ -1632,7 +1632,7 @@ cmd_http_loop(CMD_ARGS)
 
 /* SECTION: client-server.spec.fatal
  *
- * fatal|non-fatal
+ * fatal|non_fatal
  *         Control whether a failure of this entity should stop the test.
  */
 
@@ -1645,12 +1645,14 @@ cmd_http_fatal(CMD_ARGS)
 	AZ(av[1]);
 	if (!strcmp(av[0], "fatal"))
 		hp->fatal = 0;
-	else if (!strcmp(av[0], "non-fatal"))
+	else if (!strcmp(av[0], "non_fatal"))
 		hp->fatal = -1;
 	else {
 		vtc_log(vl, 0, "XXX: fatal %s", cmd->name);
 	}
 }
+
+#define cmd_http_non_fatal cmd_http_fatal
 
 /* SECTION: client-server.spec.delay
  *
@@ -1779,43 +1781,61 @@ cmd_http_stream(CMD_ARGS)
  */
 
 static const struct cmds http_cmds[] = {
-	{ "timeout",		cmd_http_timeout },
-	{ "txreq",		cmd_http_txreq },
+#define CMD(n) { #n, cmd_##n }
+#define CMD_HTTP(n) { #n, cmd_http_##n }
+	/* session */
+	CMD_HTTP(accept),
+	CMD_HTTP(close),
+	CMD_HTTP(expect_close),
+	CMD_HTTP(recv),
+	CMD_HTTP(send),
+	CMD_HTTP(send_n),
+	CMD_HTTP(send_urgent),
+	CMD_HTTP(sendhex),
+	CMD_HTTP(timeout),
 
-	{ "rxreq",		cmd_http_rxreq },
-	{ "rxreqhdrs",		cmd_http_rxreqhdrs },
-	{ "rxreqbody",		cmd_http_rxreqbody },
-	{ "rxchunk",		cmd_http_rxchunk },
+	/* spec */
+	CMD_HTTP(fatal),
+	CMD_HTTP(loop),
+	CMD_HTTP(non_fatal),
 
-	{ "txresp",		cmd_http_txresp },
-	{ "rxresp",		cmd_http_rxresp },
-	{ "rxresphdrs",		cmd_http_rxresphdrs },
-	{ "rxrespbody",		cmd_http_rxrespbody },
-	{ "gunzip",		cmd_http_gunzip_body },
-	{ "expect",		cmd_http_expect },
-	{ "expect_pattern",	cmd_http_expect_pattern },
-	{ "recv",		cmd_http_recv },
-	{ "send",		cmd_http_send },
-	{ "send_n",		cmd_http_send_n },
-	{ "send_urgent",	cmd_http_send_urgent },
-	{ "sendhex",		cmd_http_sendhex },
-	{ "chunked",		cmd_http_chunked },
-	{ "chunkedlen",		cmd_http_chunkedlen },
-	{ "delay",		cmd_delay },
-	{ "barrier",		cmd_barrier },
-	{ "expect_close",	cmd_http_expect_close },
-	{ "close",		cmd_http_close },
-	{ "accept",		cmd_http_accept },
-	{ "loop",		cmd_http_loop },
-	{ "fatal",		cmd_http_fatal },
-	{ "non-fatal",		cmd_http_fatal },
+	/* body */
+	CMD_HTTP(gunzip),
 
-	{ "rxpri",		cmd_http_rxpri },
-	{ "txpri",		cmd_http_txpri },
-	{ "stream",		cmd_http_stream },
-	{ "settings",		cmd_http_settings },
-	{ "upgrade",		cmd_http_upgrade },
-	{ NULL,			NULL }
+	/* HTTP/1.x */
+	CMD_HTTP(chunked),
+	CMD_HTTP(chunkedlen),
+	CMD_HTTP(rxchunk),
+
+	/* HTTP/2 */
+	CMD_HTTP(stream),
+	CMD_HTTP(settings),
+
+	/* client */
+	CMD_HTTP(rxresp),
+	CMD_HTTP(rxrespbody),
+	CMD_HTTP(rxresphdrs),
+	CMD_HTTP(txpri),
+	CMD_HTTP(txreq),
+
+	/* server */
+	CMD_HTTP(rxpri),
+	CMD_HTTP(rxreq),
+	CMD_HTTP(rxreqbody),
+	CMD_HTTP(rxreqhdrs),
+	CMD_HTTP(txresp),
+	CMD_HTTP(upgrade),
+
+	/* checks */
+	CMD_HTTP(expect),
+	CMD_HTTP(expect_pattern),
+
+	/* general purpose */
+	CMD(barrier),
+	CMD(delay),
+#undef CMD_HTTP
+#undef CMD
+	{ NULL, NULL }
 };
 
 int
