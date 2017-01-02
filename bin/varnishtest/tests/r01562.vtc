@@ -1,13 +1,13 @@
 varnishtest "retrying a short client body read should not panic varnish"
 
 server s1 {
-	non-fatal
+	non_fatal
 	rxreq
 	txresp -status 200 -hdr "Foo: BAR" -body "1234"
 } -start
 
 server s2 {
-	non-fatal
+	non_fatal
 	rxreq
 	txresp -status 200 -hdr "Foo: Foo" -body "56"
 } -start

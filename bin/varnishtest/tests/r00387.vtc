@@ -2,7 +2,7 @@ varnishtest "Regression test for #387: too long chunk header"
 
 server s1 {
 	rxreq
-	non-fatal
+	non_fatal
 	send "HTTP/1.1 200 OK\r\n"
 	send "Transfer-encoding: chunked\r\n"
 	send "\r\n"

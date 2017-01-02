@@ -1,7 +1,7 @@
 varnishtest "POST HTTP/1.0 response"
 
 server s1 {
-	non-fatal
+	non_fatal
 	rxreq
 	txresp -proto HTTP/1.1 -nolen -hdr "Connection: close"
 	send "Hello World\n"

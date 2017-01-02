@@ -33,7 +33,7 @@ varnish v1 -expect SMA.s2.g_space > 1000000
 
 server s1 -wait {
 	rxreq
-	non-fatal
+	non_fatal
 	txresp -hdr "Connection: close" -bodylen 1000001
 } -start
 
@@ -55,7 +55,7 @@ varnish v1 -expect SMA.s2.g_space > 1000000
 
 server s1 -wait {
 	rxreq
-	# non-fatal
+	# non_fatal
 	txresp -hdr "Connection: close" -bodylen 1000002
 } -start
 

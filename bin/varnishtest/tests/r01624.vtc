@@ -25,7 +25,7 @@ varnish v1 -vcl+backend {} -start
 
 client c1 {
 	txreq
-	non-fatal
+	non_fatal
 	timeout 3
 	rxresp
 } -run

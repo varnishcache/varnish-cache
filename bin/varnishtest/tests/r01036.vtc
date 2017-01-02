@@ -3,7 +3,7 @@ varnishtest "Test case for #1036"
 server s1 {
 	rxreq
 	# Send a bodylen of 1,5M, which will exceed cache space of 1M
-	non-fatal
+	non_fatal
 	txresp -bodylen 1572864
 } -start
 

@@ -1,7 +1,7 @@
 varnishtest "C-L/T-E:chunked conflict"
 
 server s1 {
-	non-fatal
+	non_fatal
 	rxreq
 	expect req.bodylen == 20
 
@@ -21,7 +21,7 @@ varnish v1 -vcl+backend { } -start
 
 client c1 {
 
-	non-fatal
+	non_fatal
 	send "PUT /1 HTTP/1.1\r\n"
 	send "Content-Length: 31\r\n"
 	send "Transfer-Encoding: chunked\r\n"
