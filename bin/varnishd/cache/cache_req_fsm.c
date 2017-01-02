@@ -691,8 +691,11 @@ cnt_recv(struct worker *wrk, struct req *req)
 	}
 
 	VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
-	if (wrk->handling == VCL_RET_VCL)
+	if (wrk->handling == VCL_RET_VCL) {
+		req->director_hint = VCL_DefaultDirector(req->vcl);
+		AN(req->director_hint);
 		VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
+	}
 
 	/* Attempts to cache req.body may fail */
 	if (req->req_body_status == REQ_BODY_FAIL) {

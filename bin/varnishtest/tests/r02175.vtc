@@ -1,0 +1,41 @@
+varnishtest "leak backend"
+
+server s1 {
+	rxreq
+	txresp -hdr "Leak: no"
+} -start
+
+server s2 {
+	rxreq
+	txresp -hdr "Leak: yes"
+} -start
+
+varnish v1 -vcl {
+	backend s1 { .host="${s1_addr}"; .port="${s1_port}"; }
+
+	sub vcl_deliver {
+		set resp.http.Label = "yes";
+	}
+}
+
+varnish v1 -cli "vcl.label lbl vcl1"
+
+varnish v1 -vcl {
+	backend s2 { .host="${s2_addr}"; .port="${s2_port}"; }
+
+	sub vcl_recv {
+		set req.backend_hint = s2;
+		return (vcl(lbl));
+	}
+
+	sub vcl_deliver {
+		set resp.http.Label = "no";
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.Label == yes
+	expect resp.http.Leak  == no
+} -run
