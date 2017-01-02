@@ -43,6 +43,7 @@
 #include "vtc_http.h"
 
 #include "vct.h"
+#include "vfil.h"
 #include "vgz.h"
 #include "vnum.h"
 #include "vre.h"
@@ -1776,6 +1777,31 @@ cmd_http_stream(CMD_ARGS)
 	cmd_stream(av, hp, cmd, vl);
 }
 
+/* SECTION: client-server.spec.write_body
+ *
+ * write_body STRING
+ *	Write the body of a request or a response to a file. By using the
+ *	shell or err_shell commands, higher-level checks on the body can
+ *	be performed (eg. XML, JSON, ...) provided that such checks can be
+ *	delegated to an external program.
+ */
+static void
+cmd_http_write_body(CMD_ARGS)
+{
+	struct http *hp;
+
+	(void)cmd;
+	(void)vl;
+	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
+	AN(av[0]);
+	AN(av[1]);
+	AZ(av[2]);
+	AZ(strcmp(av[0], "write_body"));
+	if (VFIL_writefile(NULL, av[1], hp->body, hp->bodyl) != 0)
+		vtc_log(hp->vl, 0, "failed to write body: %s (%d)",
+		    strerror(errno), errno);
+}
+
 /**********************************************************************
  * Execute HTTP specifications
  */
@@ -1801,6 +1827,7 @@ static const struct cmds http_cmds[] = {
 
 	/* body */
 	CMD_HTTP(gunzip),
+	CMD_HTTP(write_body),
 
 	/* HTTP/1.x */
 	CMD_HTTP(chunked),
