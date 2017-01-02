@@ -1,9 +1,14 @@
 varnishtest "Write a body to a file"
 
 server s1 {
+	# First, HTTP checks
 	rxreq
 	expect req.http.Content-Type == "text/plain"
+
+	# Then, payload checks
 	write_body req.txt
+	shell {grep -q request req.txt}
+
 	txresp -hdr "Content-Type: text/plain" -body response
 } -start
 
@@ -11,10 +16,12 @@ varnish v1 -vcl+backend {} -start
 
 client c1 {
 	txreq -req POST -hdr "Content-Type: text/plain" -body request
+
+	# First, HTTP checks
 	rxresp
 	expect resp.http.Content-Type == "text/plain"
-	write_body resp.txt
-} -run
 
-shell {grep -q request req.txt}
-shell {grep -q response resp.txt}
+	# Then, payload checks
+	write_body resp.txt
+	shell {grep -q response resp.txt}
+} -run

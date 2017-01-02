@@ -66,6 +66,8 @@ CMD(varnish);
 CMD(barrier);
 CMD(logexpect);
 CMD(process);
+CMD(err_shell);
+CMD(shell);
 #undef CMD
 
 extern volatile sig_atomic_t vtc_error; /* Error, bail out */
