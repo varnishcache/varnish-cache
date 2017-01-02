@@ -33,6 +33,7 @@ struct vfil_path;
 /* from libvarnish/vfil.c */
 int seed_random(void);
 char *VFIL_readfile(const char *pfx, const char *fn, ssize_t *sz);
+int VFIL_writefile(const char *pfx, const char *fn, const char *buf, size_t sz);
 int VFIL_nonblocking(int fd);
 int VFIL_fsinfo(int fd, unsigned *pbs, uintmax_t *size, uintmax_t *space);
 int VFIL_allocate(int fd, off_t size, int insist);

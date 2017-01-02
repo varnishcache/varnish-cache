@@ -86,6 +86,24 @@ vfil_readfd(int fd, ssize_t *sz)
 }
 
 static int
+vfil_writefd(int fd, const char *buf, size_t sz)
+{
+	ssize_t len;
+
+	while (sz > 0) {
+		len = write(fd, buf, sz);
+		if (len < 0)
+			return (len);
+		if (len == 0)
+			break;
+		buf += len;
+		sz -= len;
+	}
+
+	return (sz == 0 ? 0 : -1);
+}
+
+static int
 vfil_openfile(const char *pfx, const char *fn, int flags, int mode)
 {
 	char fnb[PATH_MAX + 1];
@@ -112,6 +130,22 @@ VFIL_readfile(const char *pfx, const char *fn, ssize_t *sz)
 	if (fd < 0)
 		return (NULL);
 	r = vfil_readfd(fd, sz);
+	err = errno;
+	AZ(close(fd));
+	errno = err;
+	return (r);
+}
+
+int
+VFIL_writefile(const char *pfx, const char *fn, const char *buf, size_t sz)
+{
+	int fd, err;
+	int r;
+
+	fd = vfil_openfile(pfx, fn, O_WRONLY|O_CREAT|O_TRUNC, 0660);
+	if (fd < 0)
+		return (fd);
+	r = vfil_writefd(fd, buf, sz);
 	err = errno;
 	AZ(close(fd));
 	errno = err;
