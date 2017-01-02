@@ -210,8 +210,8 @@ vcc_ParseImport(struct vcc *tl)
 	VSB_printf(ifp->ini, "\t\treturn(1);");
 
 	/* XXX: zero the function pointer structure ?*/
-	VSB_printf(ifp->fin, "\t\tVRT_priv_fini(&vmod_priv_%.*s);", PF(mod));
-	VSB_printf(ifp->fin, "\n\t\tVRT_Vmod_Fini(&VGC_vmod_%.*s);", PF(mod));
+	VSB_printf(ifp->fin, "\t\tVRT_priv_fini(&vmod_priv_%.*s);\n", PF(mod));
+	VSB_printf(ifp->fin, "\t\t\tVRT_Vmod_Fini(&VGC_vmod_%.*s);", PF(mod));
 
 	ifp = NULL;
 
