@@ -436,8 +436,8 @@ smf_alloc(const struct stevedore *st, size_t size)
 
 	CAST_OBJ_NOTNULL(sc, st->priv, SMF_SC_MAGIC);
 	assert(size > 0);
-	size += (sc->pagesize - 1L);
-	size &= ~(sc->pagesize - 1L);
+	size += (sc->pagesize - 1UL);
+	size &= ~(sc->pagesize - 1UL);
 	Lck_Lock(&sc->mtx);
 	sc->stats->c_req++;
 	smf = alloc_smf(sc, size);
