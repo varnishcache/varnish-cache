@@ -1376,6 +1376,12 @@ cmd_sendhex(CMD_ARGS)
  *	\-pad, or one that is generated for you, of length INT is -padlen
  *	case.
  */
+
+#define cmd_txreq	cmd_tx11obj
+#define cmd_txresp	cmd_tx11obj
+#define cmd_txpush	cmd_tx11obj
+#define cmd_txcont	cmd_tx11obj
+
 static void
 cmd_tx11obj(CMD_ARGS)
 {
@@ -2233,8 +2239,12 @@ cmd_rxdata(CMD_ARGS)
  * by a server, and rxresp by a client.
  *
  */
+
+#define cmd_rxreq	cmd_rxmsg
+#define cmd_rxresp	cmd_rxmsg
+
 static void
-cmd_rxreqsp(CMD_ARGS)
+cmd_rxmsg(CMD_ARGS)
 {
 	struct stream *s;
 	struct frame *f;
@@ -2388,10 +2398,8 @@ cmd_rxframe(CMD_ARGS)
 	rxstuff(s);
 }
 
-
-
 static void
-cmd_http_expect(CMD_ARGS)
+cmd_expect(CMD_ARGS)
 {
 	struct http *hp;
 	struct stream *s;
@@ -2465,35 +2473,42 @@ cmd_http_expect(CMD_ARGS)
  * client or a server.
  */
 static const struct cmds stream_cmds[] = {
-	{ "expect",		cmd_http_expect },
-	{ "sendhex",		cmd_sendhex },
-	{ "rxframe",		cmd_rxframe },
-	{ "txdata",		cmd_txdata },
-	{ "rxdata",		cmd_rxdata },
-	{ "rxhdrs",		cmd_rxhdrs },
-	{ "txreq",		cmd_tx11obj },
-	{ "rxreq",		cmd_rxreqsp },
-	{ "txresp",		cmd_tx11obj },
-	{ "rxresp",		cmd_rxreqsp },
-	{ "txprio",		cmd_txprio },
-	{ "rxprio",		cmd_rxprio },
-	{ "txrst",		cmd_txrst },
-	{ "rxrst",		cmd_rxrst },
-	{ "txsettings",		cmd_txsettings },
-	{ "rxsettings",		cmd_rxsettings },
-	{ "txpush",		cmd_tx11obj },
-	{ "rxpush",		cmd_rxpush },
-	{ "txping",		cmd_txping },
-	{ "rxping",		cmd_rxping },
-	{ "txgoaway",		cmd_txgoaway },
-	{ "rxgoaway",		cmd_rxgoaway },
-	{ "txwinup",		cmd_txwinup },
-	{ "rxwinup",		cmd_rxwinup },
-	{ "txcont",		cmd_tx11obj },
-	{ "rxcont",		cmd_rxcont },
-	{ "delay",		cmd_delay },
-	{ "barrier",		cmd_barrier },
+#define CMD(n) { #n, cmd_##n },
+#define CMD_STREAM(n) { #n, cmd_##n },
+	/* spec */
+	CMD_STREAM(expect)
+	CMD_STREAM(rxcont)
+	CMD_STREAM(rxdata)
+	CMD_STREAM(rxframe)
+	CMD_STREAM(rxgoaway)
+	CMD_STREAM(rxhdrs)
+	CMD_STREAM(rxping)
+	CMD_STREAM(rxprio)
+	CMD_STREAM(rxpush)
+	CMD_STREAM(rxreq)
+	CMD_STREAM(rxresp)
+	CMD_STREAM(rxrst)
+	CMD_STREAM(rxsettings)
+	CMD_STREAM(rxwinup)
+	CMD_STREAM(sendhex)
+	CMD_STREAM(txcont)
+	CMD_STREAM(txdata)
+	CMD_STREAM(txgoaway)
+	CMD_STREAM(txping)
+	CMD_STREAM(txprio)
+	CMD_STREAM(txpush)
+	CMD_STREAM(txreq)
+	CMD_STREAM(txresp)
+	CMD_STREAM(txrst)
+	CMD_STREAM(txsettings)
+	CMD_STREAM(txwinup)
+
+	/* general purpose */
+	CMD(barrier)
+	CMD(delay)
 	{ NULL,			NULL }
+#undef CMD_STREAM
+#undef CMD
 };
 
 static void *
