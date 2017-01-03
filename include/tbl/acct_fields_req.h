@@ -31,8 +31,11 @@
  */
 
 /*lint -save -e525 -e539 */
+
 ACCT(req_hdrbytes)
 ACCT(req_bodybytes)
 ACCT(resp_hdrbytes)
 ACCT(resp_bodybytes)
+#undef ACCT
+
 /*lint -restore */

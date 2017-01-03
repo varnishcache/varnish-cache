@@ -102,7 +102,6 @@ mgt_DumpRstVsl(void)
 
 #define SLTM(tag, flags, sdesc, ldesc) mgt_sltm(#tag, sdesc, ldesc);
 #include "tbl/vsl_tags.h"
-#undef SLTM
 }
 
 /*--------------------------------------------------------------------*/

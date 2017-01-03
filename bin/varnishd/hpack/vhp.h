@@ -69,7 +69,6 @@ enum vhd_ret_e {
 #define VHD_RET(NAME, VAL, DESC)		\
 	VHD_##NAME = VAL,
 #include "tbl/vhd_return.h"
-#undef VHD_RET
 };
 
 struct vhd_int {

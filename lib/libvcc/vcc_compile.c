@@ -68,7 +68,6 @@ struct method method_tab[] = {
 	{ "none", 0U, 0},
 #define VCL_MET_MAC(l,U,t,b)	{ "vcl_"#l, b, VCL_MET_##U },
 #include "tbl/vcl_returns.h"
-#undef VCL_MET_MAC
 	{ NULL, 0U, 0}
 };
 
@@ -426,7 +425,6 @@ EmitStruct(const struct vcc *tl)
 #define VCL_MET_MAC(l,u,t,b) \
 	Fc(tl, 0, "\t." #l "_func = VGC_function_vcl_" #l ",\n");
 #include "tbl/vcl_returns.h"
-#undef VCL_MET_MAC
 	Fc(tl, 0, "};\n");
 }
 

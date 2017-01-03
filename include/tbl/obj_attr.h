@@ -31,30 +31,34 @@
 
 /* upper, lower, size */
 #ifdef OBJ_FIXATTR
-OBJ_FIXATTR(LEN, len, 8)
-OBJ_FIXATTR(VXID, vxid, 4)
-OBJ_FIXATTR(FLAGS, flags, 1)
-OBJ_FIXATTR(GZIPBITS, gzipbits, 32)
-OBJ_FIXATTR(LASTMODIFIED, lastmodified, 8)
+  OBJ_FIXATTR(LEN, len, 8)
+  OBJ_FIXATTR(VXID, vxid, 4)
+  OBJ_FIXATTR(FLAGS, flags, 1)
+  OBJ_FIXATTR(GZIPBITS, gzipbits, 32)
+  OBJ_FIXATTR(LASTMODIFIED, lastmodified, 8)
+  #undef OBJ_FIXATTR
 #endif
 
 /* upper, lower */
 #ifdef OBJ_VARATTR
-OBJ_VARATTR(VARY, vary)
-OBJ_VARATTR(HEADERS, headers)
+  OBJ_VARATTR(VARY, vary)
+  OBJ_VARATTR(HEADERS, headers)
+  #undef OBJ_VARATTR
 #endif
 
 /* upper, lower */
 #ifdef OBJ_AUXATTR
-OBJ_AUXATTR(ESIDATA, esidata)
+  OBJ_AUXATTR(ESIDATA, esidata)
+  #undef OBJ_AUXATTR
 #endif
 
 #ifdef OBJ_FLAG
 /* upper, lower, val */
-OBJ_FLAG(GZIPED,	gziped,		(1<<1))
-OBJ_FLAG(CHGGZIP,	chggzip,	(1<<2))
-OBJ_FLAG(IMSCAND,	imscand,	(1<<3))
-OBJ_FLAG(ESIPROC,	esiproc,	(1<<4))
+  OBJ_FLAG(GZIPED,	gziped,		(1<<1))
+  OBJ_FLAG(CHGGZIP,	chggzip,	(1<<2))
+  OBJ_FLAG(IMSCAND,	imscand,	(1<<3))
+  OBJ_FLAG(ESIPROC,	esiproc,	(1<<4))
+  #undef OBJ_FLAG
 #endif
 
 /*lint -restore */

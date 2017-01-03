@@ -55,7 +55,6 @@ VCC_SymKind(struct vcc *tl, const struct symbol *s)
 	switch(s->kind) {
 #define VCC_SYMB(uu, ll)	case SYM_##uu: return(#ll);
 #include "tbl/symbol_kind.h"
-#undef VCC_SYMB
 	default:
 		ErrInternal(tl);
 		VSB_printf(tl->sb, "Symbol Kind 0x%x\n", s->kind);
@@ -204,7 +203,6 @@ vcc_global(struct vcc *tl, struct symbol *sym,
 
 #define VCL_MET_MAC(l,u,t,b)   sym->r_methods |= VCL_MET_##u;
 #include "tbl/vcl_returns.h"
-#undef VCL_MET_MAC
 }
 
 struct symbol *

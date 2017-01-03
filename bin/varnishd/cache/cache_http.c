@@ -41,7 +41,6 @@
 
 #define HTTPH(a, b, c) char b[] = "*" a ":";
 #include "tbl/http_headers.h"
-#undef HTTPH
 
 const char H__Status[]	= "\010:status:";
 const char H__Proto[]	= "\007:proto:";
@@ -671,7 +670,7 @@ http_DoConnection(struct http *hp)
 		    strlen(a) == u && !strncasecmp(a, b, u))	\
 			return (SC_RX_BAD);
 #include "tbl/http_headers.h"
-#undef HTTPH
+
 /*lint -restore */
 
 		v = http_findhdr(hp, u, b);
@@ -813,7 +812,6 @@ http_EstimateWS(const struct http *fm, unsigned how)
 		if (((c) & how) && http_IsHdr(&fm->hd[u], (b))) \
 			continue;
 #include "tbl/http_headers.h"
-#undef HTTPH
 		l += Tlen(fm->hd[u]) + 1L;
 	}
 	return (PRNDUP(l + 1L));
@@ -855,7 +853,6 @@ HTTP_Encode(const struct http *fm, uint8_t *p0, unsigned l, unsigned how)
 		if (((c) & how) && http_IsHdr(&fm->hd[u], (b))) \
 			continue;
 #include "tbl/http_headers.h"
-#undef HTTPH
 		http_VSLH(fm, u);
 		w = Tlen(fm->hd[u]) + 1L;
 		assert(p + w + 1 <= e);
@@ -1049,7 +1046,6 @@ http_filterfields(struct http *to, const struct http *fm, unsigned how)
 		if (((c) & how) && http_IsHdr(&fm->hd[u], (b))) \
 			continue;
 #include "tbl/http_headers.h"
-#undef HTTPH
 		assert (to->nhd < to->shd);
 		to->hd[to->nhd] = fm->hd[u];
 		to->hdf[to->nhd] = 0;
@@ -1221,5 +1217,4 @@ HTTP_Init(void)
 
 #define HTTPH(a, b, c) b[0] = (char)strlen(b + 1);
 #include "tbl/http_headers.h"
-#undef HTTPH
 }

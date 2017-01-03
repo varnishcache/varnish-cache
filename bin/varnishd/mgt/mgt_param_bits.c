@@ -111,7 +111,6 @@ bit_tweak(struct vsb *vsb, uint8_t *p, unsigned l, const char *arg,
 static const char * const VSL_tags[256] = {
 #  define SLTM(foo,flags,sdesc,ldesc) [SLT_##foo] = #foo,
 #  include "tbl/vsl_tags.h"
-#  undef SLTM
 	NULL
 };
 
@@ -156,7 +155,6 @@ tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
 static const char * const debug_tags[] = {
 #  define DEBUG_BIT(U, l, d) [DBG_##U] = #l,
 #  include "tbl/debug_bits.h"
-#  undef DEBUG_BIT
        NULL
 };
 
@@ -196,7 +194,6 @@ tweak_debug(struct vsb *vsb, const struct parspec *par, const char *arg)
 static const char * const feature_tags[] = {
 #  define FEATURE_BIT(U, l, d, ld) [FEATURE_##U] = #l,
 #  include "tbl/feature_bits.h"
-#  undef FEATURE_BIT
        NULL
 };
 

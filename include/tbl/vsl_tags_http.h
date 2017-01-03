@@ -44,21 +44,27 @@
  */
 
 /*lint -save -e525 -e539 */
+
 SLTH(Method,	HTTP_HDR_METHOD,	1, 0, "method",
 	"The HTTP request method used.\n\n"
 )
+
 SLTH(URL,	HTTP_HDR_URL,		1, 0, "URL",
 	"The HTTP request URL.\n\n"
 )
+
 SLTH(Protocol,	HTTP_HDR_PROTO,		1, 1, "protocol",
 	"The HTTP protocol version information.\n\n"
 )
+
 SLTH(Status,	HTTP_HDR_STATUS,	0, 1, "status",
 	"The HTTP status code received.\n\n"
 )
+
 SLTH(Reason,	HTTP_HDR_REASON,	0, 1, "response",
 	"The HTTP response string received.\n\n"
 )
+
 SLTH(Header,	HTTP_HDR_FIRST,		1, 1, "header",
 	"HTTP header contents.\n\n"
 	"The format is::\n\n"
@@ -68,6 +74,7 @@ SLTH(Header,	HTTP_HDR_FIRST,		1, 1, "header",
 	"\t+----- Header name\n"
 	"\n"
 )
+
 SLTH(Unset,	HTTP_HDR_UNSET,		0, 0, "unset header",
 	"HTTP header contents.\n\n"
 	"The format is::\n\n"
@@ -77,7 +84,11 @@ SLTH(Unset,	HTTP_HDR_UNSET,		0, 0, "unset header",
 	"\t+----- Header name\n"
 	"\n"
 )
+
 SLTH(Lost,	HTTP_HDR_LOST,		0, 0, "lost header",
 	""
 )
+
+#undef SLTH
+
 /*lint -restore */

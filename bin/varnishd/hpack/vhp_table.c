@@ -72,7 +72,6 @@ static const struct vht_static static_table[] = {
 #define HPS(NUM, NAME, VAL)			\
 	{ NAME, sizeof NAME - 1, VAL, sizeof VAL - 1 },
 #include "tbl/vhp_static.h"
-#undef HPS
 };
 
 #define TBLSIZE(tbl) ((tbl)->size + (tbl)->n * VHT_ENTRY_SIZE)

@@ -250,7 +250,6 @@ Lck_CreateClass(const char *name)
 
 #define LOCK(nam) struct VSC_C_lck *lck_##nam;
 #include "tbl/locks.h"
-#undef LOCK
 
 void
 LCK_Init(void)
@@ -262,5 +261,4 @@ LCK_Init(void)
 #endif
 #define LOCK(nam)	lck_##nam = Lck_CreateClass(#nam);
 #include "tbl/locks.h"
-#undef LOCK
 }

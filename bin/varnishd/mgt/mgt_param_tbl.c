@@ -46,7 +46,6 @@ struct parspec mgt_parspec[] = {
 #define PARAM(nm, ty, mi, ma, de, un, fl, st, lt, fn)		\
 	{ #nm, tweak_##ty, &mgt_param.nm, mi, ma, st, fl, de, un },
 #include "tbl/params.h"
-#undef PARAM
 
 	{ "cc_command", tweak_string, &mgt_cc_cmd,
 		NULL, NULL,

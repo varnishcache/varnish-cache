@@ -49,6 +49,3 @@ enum VSC_level_e {
 #define VSC_F(n,t,l,s,f,v,d,e)			t n;
 #define VSC_DONE(u,l,t)			};
 #include "tbl/vsc_all.h"
-#undef VSC_DO
-#undef VSC_F
-#undef VSC_DONE

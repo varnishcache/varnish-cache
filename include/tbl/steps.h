@@ -31,30 +31,32 @@
 /*lint -save -e525 -e539 */
 
 #ifdef REQ_STEP
-REQ_STEP(restart,	RESTART,	(wrk, req))
-REQ_STEP(recv,		RECV,		(wrk, req))
-REQ_STEP(pipe,		PIPE,		(wrk, req))
-REQ_STEP(pass,		PASS,		(wrk, req))
-REQ_STEP(lookup,	LOOKUP,		(wrk, req))
-REQ_STEP(purge,		PURGE,		(wrk, req))
-REQ_STEP(miss,		MISS,		(wrk, req))
-REQ_STEP(fetch,		FETCH,		(wrk, req))
-REQ_STEP(deliver,	DELIVER,	(wrk, req))
-REQ_STEP(synth,		SYNTH,		(wrk, req))
-REQ_STEP(transmit,	TRANSMIT,	(wrk, req))
+  REQ_STEP(restart,		RESTART,	(wrk, req))
+  REQ_STEP(recv,		RECV,		(wrk, req))
+  REQ_STEP(pipe,		PIPE,		(wrk, req))
+  REQ_STEP(pass,		PASS,		(wrk, req))
+  REQ_STEP(lookup,		LOOKUP,		(wrk, req))
+  REQ_STEP(purge,		PURGE,		(wrk, req))
+  REQ_STEP(miss,		MISS,		(wrk, req))
+  REQ_STEP(fetch,		FETCH,		(wrk, req))
+  REQ_STEP(deliver,		DELIVER,	(wrk, req))
+  REQ_STEP(synth,		SYNTH,		(wrk, req))
+  REQ_STEP(transmit,		TRANSMIT,	(wrk, req))
+  #undef REQ_STEP
 #endif
 
 #ifdef FETCH_STEP
-FETCH_STEP(mkbereq,	MKBEREQ,	(wrk, bo))
-FETCH_STEP(retry,	RETRY,		(wrk, bo))
-FETCH_STEP(startfetch,	STARTFETCH,	(wrk, bo))
-FETCH_STEP(condfetch,	CONDFETCH,	(wrk, bo))
-FETCH_STEP(fetch,	FETCH,		(wrk, bo))
-FETCH_STEP(fetchbody,	FETCHBODY,	(wrk, bo))
-FETCH_STEP(fetchend,	FETCHEND,	(wrk, bo))
-FETCH_STEP(error,	ERROR,		(wrk, bo))
-FETCH_STEP(fail,	FAIL,		(wrk, bo))
-FETCH_STEP(done,	DONE,		())
+  FETCH_STEP(mkbereq,		MKBEREQ,	(wrk, bo))
+  FETCH_STEP(retry,		RETRY,		(wrk, bo))
+  FETCH_STEP(startfetch,	STARTFETCH,	(wrk, bo))
+  FETCH_STEP(condfetch,		CONDFETCH,	(wrk, bo))
+  FETCH_STEP(fetch,		FETCH,		(wrk, bo))
+  FETCH_STEP(fetchbody,		FETCHBODY,	(wrk, bo))
+  FETCH_STEP(fetchend,		FETCHEND,	(wrk, bo))
+  FETCH_STEP(error,		ERROR,		(wrk, bo))
+  FETCH_STEP(fail,		FAIL,		(wrk, bo))
+  FETCH_STEP(done,		DONE,		())
+  #undef FETCH_STEP
 #endif
 
 /*lint -restore */

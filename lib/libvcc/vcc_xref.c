@@ -231,7 +231,6 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 			vcc_ErrWhere(tl, p->return_tok[VCL_RET_##U]);	\
 		}
 #include "tbl/vcl_returns.h"
-#undef VCL_RET_MAC
 
 		VSB_printf(tl->sb, "\n...in subroutine \"%.*s\"\n",
 		    PF(p->name));
@@ -276,7 +275,6 @@ vcc_checkaction1(struct vcc *tl, const struct symbol *sym)
 			VSB_printf(tl->sb, " \"%s\"", #l);
 
 #include "tbl/vcl_returns.h"
-#undef VCL_RET_MAC
 		VSB_printf(tl->sb, "\n");
 		tl->err = 1;
 	}

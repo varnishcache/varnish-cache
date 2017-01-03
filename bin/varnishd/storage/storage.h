@@ -82,7 +82,6 @@ typedef void sml_free_f(struct storage *);
 #define VRTSTVVAR(nm,vt,ct,def) \
     typedef ct stv_var_##nm(const struct stevedore *);
 #include "tbl/vrt_stv_var.h"
-#undef VRTSTVVAR
 
 /*--------------------------------------------------------------------*/
 
@@ -115,7 +114,6 @@ struct stevedore {
 
 #define VRTSTVVAR(nm, vtype, ctype, dval) stv_var_##nm *var_##nm;
 #include "tbl/vrt_stv_var.h"
-#undef VRTSTVVAR
 
 	/* private fields for the stevedore */
 	void			*priv;

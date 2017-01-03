@@ -27,6 +27,8 @@
  *
  */
 
+/*lint -save -e525 -e539 */
+
 /* Decode integer with prefix */
 #define VHD_FSM_INTEGER(STATE, pfx)				\
 	VHD_FSM(STATE, INTEGER, pfx, 0)
@@ -265,3 +267,7 @@ VHD_FSM_GOTO(TEST_LITERAL_FINISH, IDLE)
 #undef VHD_FSM_BRANCH_ZIDX
 #undef VHD_FSM_BRANCH_BIT0
 #undef VHD_FSM_LITERAL
+
+#undef VHD_FSM
+
+/*lint -restore */

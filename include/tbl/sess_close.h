@@ -45,5 +45,6 @@ SESS_CLOSE(RESP_CLOSE,	  resp_close,	0,	"Backend/VCL requested close")
 SESS_CLOSE(OVERLOAD,	  overload,	1,	"Out of some resource")
 SESS_CLOSE(PIPE_OVERFLOW, pipe_overflow,1,	"Session pipe overflow")
 SESS_CLOSE(RANGE_SHORT,   range_short,  1,	"Insufficient data for range")
+#undef SESS_CLOSE
 
 /*lint -restore */

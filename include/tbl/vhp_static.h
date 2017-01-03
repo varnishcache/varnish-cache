@@ -6,6 +6,8 @@
  * HPACK: Static Table Definition (RFC 7540 Appendix A)
  */
 
+/*lint -save -e525 -e539 */
+
 HPS( 1,	":authority",			"")
 HPS( 2,	":method",			"GET")
 HPS( 3,	":method",			"POST")
@@ -67,3 +69,6 @@ HPS(58,	"user-agent",			"")
 HPS(59,	"vary",				"")
 HPS(60,	"via",				"")
 HPS(61,	"www-authenticate",		"")
+#undef HPS
+
+/*lint -restore */

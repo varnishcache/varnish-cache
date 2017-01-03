@@ -199,7 +199,6 @@ VRT_r_beresp_##field(VRT_CTX)						\
 	VBERESPR##r(l) \
 	VBERESPW##w(l)
 #include "tbl/bo_flags.h"
-#undef BO_FLAG
 
 /*--------------------------------------------------------------------*/
 
@@ -649,7 +648,6 @@ VRT_r_req_##field(VRT_CTX)						\
 	VREQR##r(l) \
 	VREQW##w(l)
 #include "tbl/req_flags.h"
-#undef REQ_FLAG
 
 /*--------------------------------------------------------------------*/
 

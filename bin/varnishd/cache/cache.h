@@ -69,7 +69,6 @@ enum req_fsm_nxt {
 enum body_status {
 #define BODYSTATUS(U,l)	BS_##U,
 #include "tbl/body_status.h"
-#undef BODYSTATUS
 };
 
 /*--------------------------------------------------------------------*/
@@ -77,7 +76,6 @@ enum body_status {
 enum req_body_state_e {
 #define REQ_BODY(U)	REQ_BODY_##U,
 #include <tbl/req_body.h>
-#undef REQ_BODY
 };
 
 /*--------------------------------------------------------------------*/
@@ -86,7 +84,6 @@ enum sess_close {
 	SC_NULL = 0,
 #define SESS_CLOSE(nm, stat, err, desc)	SC_##nm,
 #include "tbl/sess_close.h"
-#undef SESS_CLOSE
 };
 
 /*--------------------------------------------------------------------
@@ -95,7 +92,6 @@ enum sess_close {
 enum {
 #define SLTH(tag, ind, req, resp, sdesc, ldesc)	ind,
 #include "tbl/vsl_tags_http.h"
-#undef SLTH
 };
 
 /*--------------------------------------------------------------------*/
@@ -138,14 +134,12 @@ enum req_step {
 	R_STP_NONE = 0,
 #define REQ_STEP(l, u, arg)	R_STP_##u,
 #include "tbl/steps.h"
-#undef REQ_STEP
 };
 
 enum fetch_step {
 	F_STP_NONE = 0,
 #define FETCH_STEP(l, U, arg)	F_STP_##U,
 #include "tbl/steps.h"
-#undef FETCH_STEP
 };
 
 /*--------------------------------------------------------------------*/
@@ -246,7 +240,6 @@ struct http_conn {
 struct acct_req {
 #define ACCT(foo)	uint64_t	foo;
 #include "tbl/acct_fields_req.h"
-#undef ACCT
 };
 
 /*--------------------------------------------------------------------*/
@@ -254,7 +247,6 @@ struct acct_req {
 struct acct_bereq {
 #define ACCT(foo)	uint64_t	foo;
 #include "tbl/acct_fields_bereq.h"
-#undef ACCT
 };
 
 /*--------------------------------------------------------------------*/
@@ -370,7 +362,6 @@ struct storeobj {
 enum boc_state_e {
 #define BOC_STATE(U, l)       BOS_##U,
 #include "tbl/boc_state.h"
-#undef BOC_STATE
 };
 
 struct boc {
@@ -398,28 +389,22 @@ enum obj_attr {
 #define OBJ_VARATTR(U, l)	OA_##U,
 #define OBJ_AUXATTR(U, l)	OA_##U,
 #include "tbl/obj_attr.h"
-#undef OBJ_AUXATTR
-#undef OBJ_VARATTR
-#undef OBJ_FIXATTR
 				OA__MAX,
 };
 
 enum obj_flags {
 #define OBJ_FLAG(U, l, v)       OF_##U = v,
 #include "tbl/obj_attr.h"
-#undef OBJ_FLAG
 };
 
 enum oc_flags {
 #define OC_FLAG(U, l, v)	OC_F_##U = v,
 #include "tbl/oc_flags.h"
-#undef OC_FLAG
 };
 
 enum oc_exp_flags {
 #define OC_EXP_FLAG(U, l, v)	OC_EF_##U = v,
 #include "tbl/oc_exp_flags.h"
-#undef OC_EXP_FLAG
 };
 
 struct objcore {
@@ -498,7 +483,6 @@ struct busyobj {
 
 #define BO_FLAG(l, r, w, d) unsigned	l:1;
 #include "tbl/bo_flags.h"
-#undef BO_FLAG
 
 	/* Timeouts */
 	double			connect_timeout;
@@ -543,7 +527,6 @@ struct req {
 
 #define REQ_FLAG(l, r, w, d) unsigned	l:1;
 #include "tbl/req_flags.h"
-#undef REQ_FLAG
 
 	uint16_t		err_code;
 	const char		*err_reason;
@@ -635,7 +618,6 @@ enum sess_attr {
 #define SESS_ATTR(UP, low, typ, len)	SA_##UP,
 	SA_TRANSPORT,
 #include "tbl/sess_attr.h"
-#undef SESS_ATTR
 	SA_LAST
 };
 
@@ -817,9 +799,14 @@ uint16_t HTTP1_DissectResponse(struct http_conn *, struct http *resp,
     const struct http *req);
 unsigned HTTP1_Write(const struct worker *w, const struct http *hp, const int*);
 
+#define HTTPH_R_PASS	(1 << 0)	/* Request (c->b) in pass mode */
+#define HTTPH_R_FETCH	(1 << 1)	/* Request (c->b) for fetch */
+#define HTTPH_A_INS	(1 << 2)	/* Response (b->o) for insert */
+#define HTTPH_A_PASS	(1 << 3)	/* Response (b->o) for pass */
+
 #define HTTPH(a, b, c) extern char b[];
 #include "tbl/http_headers.h"
-#undef HTTPH
+
 extern const char H__Status[];
 extern const char H__Proto[];
 extern const char H__Reason[];
@@ -861,7 +848,6 @@ struct VSC_C_lck *Lck_CreateClass(const char *name);
 
 #define LOCK(nam) extern struct VSC_C_lck *lck_##nam;
 #include "tbl/locks.h"
-#undef LOCK
 
 /* cache_mempool.c */
 void MPL_AssertSane(void *item);
@@ -989,7 +975,6 @@ enum htc_status_e HTC_RxStuff(struct http_conn *, htc_complete_f *,
 	int SES_Get_##low(const struct sess *sp, typ **dst);		\
 	void SES_Reserve_##low(struct sess *sp, typ **dst);
 #include "tbl/sess_attr.h"
-#undef SESS_ATTR
 
 void SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src);
 const char *SES_Get_String_Attr(const struct sess *sp, enum sess_attr a);
@@ -1054,7 +1039,6 @@ const char *VCL_Return_Name(unsigned);
     void VCL_##l##_method(struct vcl *, struct worker *, struct req *, \
 	struct busyobj *bo, void *specific);
 #include "tbl/vcl_returns.h"
-#undef VCL_MET_MAC
 
 /* cache_vrt.c */
 

@@ -28,11 +28,11 @@
  * PARAM(nm, ty, mi, ma, de, un, fl, st, lt, fn)
  */
 
+/*lint -save -e525 -e539 */
+
 #if defined(XYZZY)
   #error "Temporary macro XYZZY already defined"
 #endif
-
-/*lint -save -e525 -e539 */
 
 #if defined(HAVE_ACCEPT_FILTERS)
   #define XYZZY MUST_RESTART
@@ -1176,6 +1176,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
 /* actual location mgt_pool.c */
 PARAM(
 	/* name */	thread_pool_reserve,
@@ -1623,5 +1624,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+
+#undef PARAM
 
 /*lint -restore */

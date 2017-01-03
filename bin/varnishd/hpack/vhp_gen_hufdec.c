@@ -47,7 +47,6 @@ static const struct {
 } huf[] = {
 #define HPH(c, h, l) { h, l, (char)c },
 #include "tbl/vhp_huffman.h"
-#undef HPH
 };
 
 #define HUF_LEN (sizeof huf / sizeof huf[0])

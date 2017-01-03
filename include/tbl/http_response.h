@@ -29,6 +29,7 @@
  */
 
 /*lint -save -e525 -e539 */
+
 HTTP_RESP(101, "Switching Protocols")
 HTTP_RESP(200, "OK")
 HTTP_RESP(201, "Created")
@@ -69,4 +70,6 @@ HTTP_RESP(502, "Bad Gateway")
 HTTP_RESP(503, "Service Unavailable")
 HTTP_RESP(504, "Gateway Timeout")
 HTTP_RESP(505, "HTTP Version Not Supported")
+#undef HTTP_RESP
+
 /*lint -restore */

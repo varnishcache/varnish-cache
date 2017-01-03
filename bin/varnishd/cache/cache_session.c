@@ -142,7 +142,6 @@ ses_reserve_attr(struct sess *sp, enum sess_attr a, void **dst, int sz)
 	}
 
 #include "tbl/sess_attr.h"
-#undef SESS_ATTR
 
 void
 SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src)
@@ -155,7 +154,6 @@ SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src)
 	switch (a) {
 #define SESS_ATTR(UP, low, typ, len)	case SA_##UP: assert(len < 0); break;
 #include "tbl/sess_attr.h"
-#undef SESS_ATTR
 	default:  WRONG("wrong sess_attr");
 	}
 
@@ -173,7 +171,6 @@ SES_Get_String_Attr(const struct sess *sp, enum sess_attr a)
 	switch (a) {
 #define SESS_ATTR(UP, low, typ, len)	case SA_##UP: assert(len < 0); break;
 #include "tbl/sess_attr.h"
-#undef SESS_ATTR
 	default:  WRONG("wrong sess_attr");
 	}
 
@@ -483,7 +480,7 @@ ses_close_acct(enum sess_close reason)
 		i = err;				\
 		break;
 #include "tbl/sess_close.h"
-#undef SESS_CLOSE
+
 	default:
 		WRONG("Wrong event in ses_close_acct");
 	}

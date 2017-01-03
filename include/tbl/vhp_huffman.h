@@ -6,6 +6,8 @@
  * HPACK Huffman table, but sorted by codes (RFC 7541 Appendix B)
  */
 
+/*lint -save -e525 -e539 */
+
 HPH(0x30, 0x00000000,  5) /* '0' */
 HPH(0x31, 0x00000001,  5) /* '1' */
 HPH(0x32, 0x00000002,  5) /* '2' */
@@ -262,3 +264,6 @@ HPH(0xf9, 0x0ffffffe, 28)
 HPH(0x0a, 0x3ffffffc, 30)
 HPH(0x0d, 0x3ffffffd, 30)
 HPH(0x16, 0x3ffffffe, 30)
+#undef HPH
+
+/*lint -restore */

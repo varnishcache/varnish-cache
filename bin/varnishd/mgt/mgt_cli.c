@@ -55,12 +55,10 @@
 #define CLI_CMD(U,l,s,h,d,m,M) \
 const struct cli_cmd_desc CLICMD_##U[1] = {{ l, s, h, d, m, M }};
 #include "tbl/cli_cmds.h"
-#undef CLI_CMD
 
 static const struct cli_cmd_desc *cmds[] = {
 #define CLI_CMD(U,l,s,h,d,m,M) CLICMD_##U,
 #include "tbl/cli_cmds.h"
-#undef CLI_CMD
 };
 
 static const int ncmds = sizeof cmds / sizeof cmds[0];

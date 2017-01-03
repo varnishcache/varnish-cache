@@ -48,7 +48,6 @@ static struct SLT tags[SLT__MAX] = {
 #define SLTM(name, flags, sdesc, ldesc)				\
 	[SLT_##name] = { SLT_##name, flags, #name, sdesc, ldesc },
 #include "tbl/vsl_tags.h"
-#undef SLTM
 };
 
 static int

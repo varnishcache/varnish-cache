@@ -27,6 +27,8 @@
  *
  */
 
+/*lint -save -e525 -e539 */
+
 VHD_FSM_FUNC(SKIP, vhd_skip)
 VHD_FSM_FUNC(GOTO, vhd_goto)
 VHD_FSM_FUNC(IDLE, vhd_idle)
@@ -40,3 +42,6 @@ VHD_FSM_FUNC(BRANCH_ZIDX, vhd_branch_zidx)
 VHD_FSM_FUNC(BRANCH_BIT0, vhd_branch_bit0)
 VHD_FSM_FUNC(RAW, vhd_raw)
 VHD_FSM_FUNC(HUFFMAN, vhd_huffman)
+#undef VHD_FSM_FUNC
+
+/*lint -restore */

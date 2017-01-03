@@ -27,10 +27,13 @@
  */
 
 /*lint -save -e525 -e539 */
+
 OC_FLAG(BUSY,		busy,		(1<<1))
 OC_FLAG(PASS,		pass,		(1<<2))
 OC_FLAG(ABANDON,	abandon,	(1<<4))
 OC_FLAG(PRIVATE,	private,	(1<<5))
 OC_FLAG(FAILED,		failed,		(1<<6))
 OC_FLAG(DYING,		dying,		(1<<7))
+#undef OC_FLAG
+
 /*lint -restore */

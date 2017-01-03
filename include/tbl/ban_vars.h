@@ -30,8 +30,11 @@
  */
 
 /*lint -save -e525 -e539 */
+
 PVAR("req.url",		BANS_FLAG_REQ,			BANS_ARG_URL)
 PVAR("req.http.",	BANS_FLAG_REQ | BANS_FLAG_HTTP,	BANS_ARG_REQHTTP)
 PVAR("obj.status",	BANS_FLAG_OBJ,			BANS_ARG_OBJSTATUS)
 PVAR("obj.http.",	BANS_FLAG_OBJ | BANS_FLAG_HTTP,	BANS_ARG_OBJHTTP)
+#undef PVAR
+
 /*lint -restore */

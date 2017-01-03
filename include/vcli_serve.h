@@ -51,7 +51,6 @@ struct cli_cmd_desc {
 
 #define CLI_CMD(U,l,s,h,d,m,M) extern const struct cli_cmd_desc CLICMD_##U[1];
 #include "tbl/cli_cmds.h"
-#undef CLI_CMD
 
 /* A CLI command */
 struct cli_proto {

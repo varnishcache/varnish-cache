@@ -27,10 +27,13 @@
  */
 
 /*lint -save -e525 -e539 */
+
 BOC_STATE(INVALID,	invalid)	/* don't touch (yet) */
 BOC_STATE(REQ_DONE,	req_done)	/* beresp.* can be examined */
 BOC_STATE(PREP_STREAM,	prep_stream)	/* Prepare for streaming */
 BOC_STATE(STREAM,	stream)		/* beresp.* can be examined */
 BOC_STATE(FINISHED,	finished)	/* object is complete */
 BOC_STATE(FAILED,	failed)		/* something went wrong */
+#undef BOC_STATE
+
 /*lint -restore */

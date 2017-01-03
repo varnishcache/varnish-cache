@@ -967,7 +967,6 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 			stp = vbf_stp_##l arg;				\
 			break;
 #include "tbl/steps.h"
-#undef FETCH_STEP
 		default:
 			WRONG("Illegal fetch_step");
 		}

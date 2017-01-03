@@ -863,7 +863,6 @@ CNT_Request(struct worker *wrk, struct req *req)
 			nxt = cnt_##l arg; \
 			break;
 #include "tbl/steps.h"
-#undef REQ_STEP
 		default:
 			WRONG("State engine misfire");
 		}
@@ -903,5 +902,4 @@ CNT_AcctLogCharge(struct dstat *ds, struct req *req)
 	ds->s_##foo += a->foo;		\
 	a->foo = 0;
 #include "tbl/acct_fields_req.h"
-#undef ACCT
 }

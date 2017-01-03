@@ -29,9 +29,12 @@
  */
 
 /*lint -save -e525 -e539 */
+
 BODYSTATUS(NONE, none)
 BODYSTATUS(ERROR, error)
 BODYSTATUS(CHUNKED, chunked)
 BODYSTATUS(LENGTH, length)
 BODYSTATUS(EOF, eof)
+#undef BODYSTATUS
+
 /*lint -restore */

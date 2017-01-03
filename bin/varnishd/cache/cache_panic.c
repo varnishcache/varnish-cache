@@ -74,7 +74,6 @@ body_status_2str(enum body_status e)
 	switch(e) {
 #define BODYSTATUS(U,l)	case BS_##U: return (#l);
 #include "tbl/body_status.h"
-#undef BODYSTATUS
 	default:
 		return ("?");
 	}
@@ -88,7 +87,6 @@ reqbody_status_2str(enum req_body_state_e e)
 	switch (e) {
 #define REQ_BODY(U) case REQ_BODY_##U: return("R_BODY_" #U);
 #include "tbl/req_body.h"
-#undef REQ_BODY
 	default:
 		return("?");
 	}
@@ -102,7 +100,6 @@ boc_state_2str(enum boc_state_e e)
 	switch (e) {
 #define BOC_STATE(U,l) case BOS_##U: return(#l);
 #include "tbl/boc_state.h"
-#undef BOC_STATE
 	default:
 		return ("?");
 	}
@@ -118,7 +115,6 @@ sess_close_2str(enum sess_close sc, int want_desc)
 #define SESS_CLOSE(nm, s, err, desc)			\
 	case SC_##nm: return(want_desc ? desc : #nm);
 #include "tbl/sess_close.h"
-#undef SESS_CLOSE
 
 	default:		return(want_desc ? "(invalid)" : "INVALID");
 	}
@@ -272,14 +268,13 @@ pan_objcore(struct vsb *vsb, const char *typ, const struct objcore *oc)
 #define OC_FLAG(U, l, v) \
 	if (oc->flags & v) { VSB_printf(vsb, "%s" #l, p); p = ", "; }
 #include "tbl/oc_flags.h"
-#undef OC_FLAG
 	VSB_printf(vsb, "},\n");
 	VSB_printf(vsb, "exp_flags = {");
 	p = "";
 #define OC_EXP_FLAG(U, l, v) \
 	if (oc->exp_flags & v) { VSB_printf(vsb, "%s" #l, p); p = ", "; }
 #include "tbl/oc_exp_flags.h"
-#undef OC_EXP_FLAG
+
 	VSB_printf(vsb, "},\n");
 	if (oc->boc != NULL)
 		pan_boc(vsb, oc->boc);
@@ -378,7 +373,6 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 #define BO_FLAG(l, r, w, d) \
 	if(bo->l) { VSB_printf(vsb, "%s" #l, p); p = ", "; }
 #include "tbl/bo_flags.h"
-#undef BO_FLAG
 	/*lint -restore */
 	VSB_printf(vsb, "},\n");
 
@@ -439,7 +433,6 @@ pan_req(struct vsb *vsb, const struct req *req)
 	switch (req->req_step) {
 #define REQ_STEP(l, u, arg) case R_STP_##u: stp = "R_STP_" #u; break;
 #include "tbl/steps.h"
-#undef REQ_STEP
 		default: stp = NULL;
 	}
 	if (stp != NULL)
@@ -482,7 +475,6 @@ pan_req(struct vsb *vsb, const struct req *req)
 	VSB_indent(vsb, 2);
 #define REQ_FLAG(l, r, w, d) if(req->l) VSB_printf(vsb, #l ",\n");
 #include "tbl/req_flags.h"
-#undef REQ_FLAG
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
 

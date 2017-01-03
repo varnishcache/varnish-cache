@@ -166,7 +166,6 @@ VCC_Type(const char *p)
 
 #define VCC_TYPE(foo)	if (!strcmp(p, #foo)) return (foo);
 #include "tbl/vcc_types.h"
-#undef VCC_TYPE
 	return (NULL);
 }
 

@@ -25,9 +25,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- */
-
-/*
+ *
  * Fields (v, l, e, d):
  *    v - Verbosity lvl:	Field name, in C-source
  *    l - Label:		Display name, in stats programs
@@ -36,10 +34,19 @@
  */
 
 /*lint -save -e525 -e539 */
+
 VSC_LEVEL_F(info,	"INFO",		"Informational counters",
-    "Counters giving runtime information")
+    "Counters giving runtime information"
+)
+
 VSC_LEVEL_F(diag,	"DIAG",		"Diagnostic counters",
-    "Counters giving diagnostic information")
+    "Counters giving diagnostic information"
+)
+
 VSC_LEVEL_F(debug,	"DEBUG",	"Debug counters",
-    "Counters giving Varnish internals debug information")
+    "Counters giving Varnish internals debug information"
+)
+
+#undef VSC_LEVEL_F
+
 /*lint -restore */

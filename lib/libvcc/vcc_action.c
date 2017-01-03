@@ -295,7 +295,6 @@ parse_return(struct vcc *tl)
 			h = #U;				\
 		}
 #include "tbl/vcl_returns.h"
-#undef VCL_RET_MAC
 	if (h == NULL) {
 		VSB_printf(tl->sb, "Expected return action name.\n");
 		vcc_ErrWhere(tl, tl->t);

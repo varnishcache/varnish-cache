@@ -26,9 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- */
-
-/*
  * These macros define the common data for requests in the CLI protocol.
  * The fields are:
  *	const char *	upper-case C-ident request_name
@@ -39,6 +36,8 @@
  *	int		minimum_arguments
  *	int		maximum_arguments
  */
+
+/*lint -save -e525 -e539 */
 
 CLI_CMD(BAN,
 	"ban",
@@ -322,3 +321,6 @@ CLI_CMD(STORAGE_LIST,
 	0, 0
 )
 
+#undef CLI_CMD
+
+/*lint -restore */

@@ -126,7 +126,6 @@ Req_Release(struct req *req)
 #define ACCT(foo) \
 	AZ(req->acct.foo);
 #include "tbl/acct_fields_req.h"
-#undef ACCT
 
 	AZ(req->vcl);
 	if (req->vsl->wid)

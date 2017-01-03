@@ -60,13 +60,11 @@ enum vhd_func_e {
 #define VHD_FSM_FUNC(NAME, func)		\
 	VHD_F_##NAME,
 #include "tbl/vhd_fsm_funcs.h"
-#undef VHD_FSM_FUNC
 	VHD_F__MAX,
 };
 #define VHD_FSM_FUNC(NAME, func)		\
 	static vhd_state_f func;
 #include "tbl/vhd_fsm_funcs.h"
-#undef VHD_FSM_FUNC
 
 /* States */
 enum vhd_state_e {
@@ -74,7 +72,6 @@ enum vhd_state_e {
 #define VHD_FSM(STATE, FUNC, arg1, arg2)	\
 	VHD_S_##STATE,
 #include "tbl/vhd_fsm.h"
-#undef VHD_FSM
 	VHD_S__MAX,
 };
 static const struct vhd_state {
@@ -86,7 +83,6 @@ static const struct vhd_state {
 #define VHD_FSM(STATE, FUNC, arg1, arg2)	\
 	[VHD_S_##STATE] = { #STATE, VHD_F_##FUNC, arg1, arg2 },
 #include "tbl/vhd_fsm.h"
-#undef VHD_FSM
 };
 
 /* Utility functions */
@@ -508,7 +504,6 @@ VHD_Error(enum vhd_ret_e r)
 	case VHD_##NAME:				\
 		return ("VHD_" #NAME " (" DESC ")");
 #include "tbl/vhd_return.h"
-#undef VHD_RET
 	default:
 		return ("VHD_UNKNOWN");
 	}
@@ -555,7 +550,6 @@ VHD_Decode(struct vhd_decode *d, struct vht_table *tbl,
 			ret = func(ctx, first);	\
 			break;
 #include "tbl/vhd_fsm_funcs.h"
-#undef VHD_FSM_FUNC
 		default:
 			WRONG("Undefined vhd function");
 			break;

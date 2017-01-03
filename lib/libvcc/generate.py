@@ -986,7 +986,14 @@ def file_header(fo):
  *
  * Edit and run generate.py instead.
  */
+
 """)
+
+def lint_start(fo):
+	fo.write('/*lint -save -e525 -e539 */\n\n')
+
+def lint_end(fo):
+	fo.write('\n/*lint -restore */\n')
 
 #######################################################################
 
@@ -1028,9 +1035,9 @@ fo = open(join(buildroot, "include/tbl/vcl_returns.h"), "w")
 
 file_header(fo)
 
-fo.write("\n/*lint -save -e525 -e539 */\n")
+lint_start(fo)
 
-fo.write("\n#ifdef VCL_RET_MAC\n")
+fo.write("#ifdef VCL_RET_MAC\n")
 ll = sorted(returns)
 for i in sorted(rets.keys()):
 	fo.write("VCL_RET_MAC(%s, %s" % (i.lower(), i.upper()))
@@ -1039,7 +1046,8 @@ for i in sorted(rets.keys()):
 		if i in j[2]:
 			fo.write("%sVCL_MET_%s" % (s, j[0].upper()))
 			s = " |\n\t"
-	fo.write("\n)\n")
+	fo.write("\n)\n\n")
+fo.write("#undef VCL_RET_MAC\n")
 fo.write("#endif\n")
 
 fo.write("\n#ifdef VCL_MET_MAC\n")
@@ -1050,9 +1058,10 @@ for i in ll:
 	for j in sorted(i[2]):
 		fo.write("%s(1U << VCL_RET_%s)" % (p, j.upper()))
 		p = " |\n\t"
-	fo.write("\n))\n")
+	fo.write(")\n)\n\n")
+fo.write("#undef VCL_MET_MAC\n")
 fo.write("#endif\n")
-fo.write("\n/*lint -restore */\n")
+lint_end(fo)
 fo.close()
 
 #######################################################################
@@ -1282,11 +1291,12 @@ fo.close()
 ft = open(join(buildroot, "include/tbl/vcc_types.h"), "w")
 file_header(ft)
 
-ft.write("/*lint -save -e525 -e539 */\n")
+lint_start(ft)
 
 for vcltype in sorted(vcltypes.keys()):
 	ft.write("VCC_TYPE(" + vcltype + ")\n")
-ft.write("/*lint -restore */\n")
+ft.write("#undef VCC_TYPE\n")
+lint_end(ft)
 ft.close()
 
 #######################################################################
@@ -1294,6 +1304,7 @@ ft.close()
 fo = open(join(buildroot, "include/tbl/vrt_stv_var.h"), "w")
 
 file_header(fo)
+lint_start(fo)
 
 for i in stv_variables:
 	ct = vcltypes[i[1]]
@@ -1301,6 +1312,8 @@ for i in stv_variables:
 	fo.write(ct + ",\t" + i[2] + ")")
 	fo.write("\n")
 
+fo.write("#undef VRTSTVVAR\n")
+lint_end(fo)
 fo.close()
 
 #######################################################################

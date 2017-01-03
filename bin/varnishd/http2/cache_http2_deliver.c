@@ -56,7 +56,6 @@ struct hpack_static {
 static const struct hpack_static hp_static[] = {
 #define HPS(I,N,V) [I] = { I, N ":", V },
 #include "tbl/vhp_static.h"
-#undef HPS
 	{ 0, "\377:", ""}		// Terminator
 };
 

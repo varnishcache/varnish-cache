@@ -204,7 +204,6 @@ sml_slim(struct worker *wrk, struct objcore *oc)
 		o->aa_##l = NULL;					\
 	}
 #include "tbl/obj_attr.h"
-#undef OBJ_AUXATTR
 
 	VTAILQ_FOREACH_SAFE(st, &o->list, list, stn) {
 		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
@@ -530,7 +529,6 @@ sml_getattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 		*len = sizeof o->fa_##l;				\
 		return (o->fa_##l);
 #include "tbl/obj_attr.h"
-#undef OBJ_FIXATTR
 
 		/* Variable size attributes */
 #define OBJ_VARATTR(U, l)						\
@@ -540,7 +538,6 @@ sml_getattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 		*len = o->va_##l##_len;					\
 		return (o->va_##l);
 #include "tbl/obj_attr.h"
-#undef OBJ_VARATTR
 
 		/* Auxiliary attributes */
 #define OBJ_AUXATTR(U, l)						\
@@ -551,7 +548,6 @@ sml_getattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 		*len = o->aa_##l->len;					\
 		return (o->aa_##l->ptr);
 #include "tbl/obj_attr.h"
-#undef OBJ_AUXATTR
 
 	default:
 		break;
@@ -581,7 +577,6 @@ sml_setattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 		retval = o->fa_##l;					\
 		break;
 #include "tbl/obj_attr.h"
-#undef OBJ_FIXATTR
 
 		/* Variable size attributes */
 #define OBJ_VARATTR(U, l)						\
@@ -599,7 +594,6 @@ sml_setattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 		}							\
 		break;
 #include "tbl/obj_attr.h"
-#undef OBJ_VARATTR
 
 		/* Auxiliary attributes */
 #define OBJ_AUXATTR(U, l)						\
@@ -622,7 +616,6 @@ sml_setattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 		retval = o->aa_##l->ptr;				\
 		break;
 #include "tbl/obj_attr.h"
-#undef OBJ_AUXATTR
 
 	default:
 		WRONG("Unsupported OBJ_ATTR");
@@ -679,10 +672,6 @@ SML_panic(struct vsb *vsb, const struct objcore *oc)
 	if (o->aa_##l != NULL) sml_panic_st(vsb, #U, o->aa_##l);
 
 #include "tbl/obj_attr.h"
-
-#undef OBJ_FIXATTR
-#undef OBJ_VARATTR
-#undef OBJ_AUXATTR
 
 	VTAILQ_FOREACH(st, &o->list, list) {
 		sml_panic_st(vsb, "Body", st);

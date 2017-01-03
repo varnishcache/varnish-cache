@@ -27,9 +27,12 @@
  */
 
 /*lint -save -e525 -e539 */
+
 OC_EXP_FLAG(POSTED,	posted,		(1<<1))
 OC_EXP_FLAG(REFD,	refd,		(1<<2))
 OC_EXP_FLAG(MOVE,	move,		(1<<3))
 OC_EXP_FLAG(INSERT,	insert,		(1<<4))
 OC_EXP_FLAG(REMOVE,	remove,		(1<<5))
+#undef OC_EXP_FLAG
+
 /*lint -restore */

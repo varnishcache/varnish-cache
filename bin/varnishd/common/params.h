@@ -43,14 +43,12 @@
 enum debug_bits {
 #define DEBUG_BIT(U, l, d) DBG_##U,
 #include "tbl/debug_bits.h"
-#undef DEBUG_BIT
        DBG_Reserved
 };
 
 enum feature_bits {
 #define FEATURE_BIT(U, l, d, ld) FEATURE_##U,
 #include "tbl/feature_bits.h"
-#undef FEATURE_BIT
        FEATURE_Reserved
 };
 
@@ -73,7 +71,6 @@ struct params {
 #define	ptyp_vsl_reclen	unsigned
 #define PARAM(nm, ty, mi, ma, de, un, fl, st, lt, fn) ptyp_##ty nm;
 #include <tbl/params.h>
-#undef PARAM
 #undef ptyp_bool
 #undef ptyp_bytes
 #undef ptyp_bytes_u

@@ -43,6 +43,7 @@
  */
 
 /*lint -save -e525 -e539 */
+
 #define NODEF_NOTICE \
     "NB: This log record is masked by default.\n\n"
 
@@ -76,16 +77,6 @@ SLTM(SessOpen, 0, "Client connection opened",
 	"\t+---------------- Remote IPv4/6 address\n"
 	"\n"
 )
-
-/*
- * XXX: compilers are _so_ picky, and won't let us do an #include
- * XXX: in the middle of a macro invocation :-(
- * XXX: If we could, these three lines would have described the
- * XXX: 'reason' field below.
-#define SESS_CLOSE(nm, s, err, desc) "    " #nm "\n\t" desc "\n\n"
-#include "tbl/sess_close.h"
-#undef SESS_CLOSE
-*/
 
 SLTM(SessClose, 0, "Client connection closed",
 	"SessClose is the last record for any client connection.\n\n"
@@ -208,6 +199,7 @@ SLTM(BogoHeader, 0, "Bogus HTTP received",
 	"Contains the first 20 characters of received HTTP headers we could"
 	" not make sense of.  Applies to both req.http and beresp.http.\n\n"
 )
+
 SLTM(LostHeader, 0, "Failed attempt to set HTTP header",
 	"Logs the header name of a failed HTTP header operation due to"
 	" resource exhaustion or configured limits.\n\n"
@@ -550,4 +542,6 @@ SLTM(H2TxBody, 0, "Transmitted HTTP2 frame body",
 )
 
 #undef NODEF_NOTICE
+#undef SLTM
+
 /*lint -restore */

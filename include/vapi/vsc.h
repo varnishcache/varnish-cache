@@ -189,8 +189,5 @@ const struct VSC_level_desc *VSC_LevelDesc(unsigned level);
 #define VSC_F(n,t,l,s,f,v,d,e)
 #define VSC_DONE(U,l,t)
 #include "tbl/vsc_all.h"
-#undef VSC_DO
-#undef VSC_F
-#undef VSC_DONE
 
 #endif /* VAPI_VSC_H_INCLUDED */

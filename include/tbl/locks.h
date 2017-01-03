@@ -28,6 +28,7 @@
  */
 
 /*lint -save -e525 -e539 */
+
 LOCK(backend)
 LOCK(backend_tcp)
 LOCK(ban)
@@ -47,4 +48,6 @@ LOCK(vxid)
 LOCK(waiter)
 LOCK(wq)
 LOCK(wstat)
+#undef LOCK
+
 /*lint -restore */

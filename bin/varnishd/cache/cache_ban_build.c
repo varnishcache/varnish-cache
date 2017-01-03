@@ -58,7 +58,6 @@ static const struct pvar {
 } pvars[] = {
 #define PVAR(a, b, c)	{ (a), (b), (c) },
 #include "tbl/ban_vars.h"
-#undef PVAR
 	{ 0, 0, 0}
 };
 

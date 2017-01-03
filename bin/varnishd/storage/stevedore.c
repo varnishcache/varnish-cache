@@ -229,4 +229,3 @@ VRT_Stv_##nm(const char *nm)			\
 }
 
 #include "tbl/vrt_stv_var.h"
-#undef VRTSTVVAR

@@ -62,7 +62,6 @@
 const char * const VSL_tags[SLT__MAX] = {
 #  define SLTM(foo,flags,sdesc,ldesc)       [SLT_##foo] = #foo,
 #  include "tbl/vsl_tags.h"
-#  undef SLTM
 };
 
 const unsigned VSL_tagflags[SLT__MAX] = {

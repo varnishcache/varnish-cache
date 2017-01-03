@@ -44,23 +44,20 @@ struct object {
 #define OBJ_FIXATTR(U, l, s)			\
 	uint8_t			fa_##l[s];
 #include "tbl/obj_attr.h"
-#undef OBJ_FIXATTR
 
 	/* Variable size attributes */
 #define OBJ_VARATTR(U, l)			\
 	uint8_t			*va_##l;
 #include "tbl/obj_attr.h"
-#undef OBJ_VARATTR
+
 #define OBJ_VARATTR(U, l)			\
 	unsigned		va_##l##_len;
 #include "tbl/obj_attr.h"
-#undef OBJ_VARATTR
 
 	/* Auxiliary attributes */
 #define OBJ_AUXATTR(U, l)			\
 	struct storage		*aa_##l;
 #include "tbl/obj_attr.h"
-#undef OBJ_AUXATTR
 
 	struct storagehead	list;
 };

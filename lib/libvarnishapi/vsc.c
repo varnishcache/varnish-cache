@@ -54,7 +54,6 @@ enum {
 #define VSC_TYPE_F(n,t,l,e,d) \
 	VSC_type_order_##n,
 #include "tbl/vsc_types.h"
-#undef VSC_TYPE_F
 };
 
 struct vsc_vf {
@@ -304,9 +303,6 @@ vsc_add_pt(struct vsc *vsc, const volatile void *ptr,
 	}
 
 #include "tbl/vsc_all.h"
-#undef VSC_DO
-#undef VSC_F
-#undef VSC_DONE
 
 /*--------------------------------------------------------------------
  */
@@ -329,7 +325,6 @@ vsc_build_vf_list(struct VSM_data *vd)
 			vsc_add_vf(vsc, &vsc->iter_fantom,		\
 			    &VSC_type_desc_##n, VSC_type_order_##n);
 #include "tbl/vsc_types.h"
-#undef VSC_TYPE_F
 	}
 }
 
@@ -459,12 +454,10 @@ VSC_LevelDesc(unsigned level)
 
 #define VSC_TYPE_F(n,t,l,e,d)	const char *VSC_type_##n = t;
 #include "tbl/vsc_types.h"
-#undef VSC_TYPE_F
 
 #define VSC_TYPE_F(n,t,l,e,d)			\
 	const struct VSC_type_desc VSC_type_desc_##n = {l,e,d};
 #include "tbl/vsc_types.h"
-#undef VSC_TYPE_F
 
 #define VSC_DO(U,l,t)		const struct VSC_desc VSC_desc_##l[] = {
 #define VSC_F(n,t,l,s,f,v,d,e)		{#n,#t,s,f,&VSC_level_desc_##v,d,e},

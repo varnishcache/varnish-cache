@@ -225,7 +225,6 @@ VCL_Return_Name(unsigned r)
 	case VCL_RET_##U:	\
 		return(#l);
 #include "tbl/vcl_returns.h"
-#undef VCL_RET_MAC
 	default:
 		return (NULL);
 	}
@@ -240,7 +239,6 @@ VCL_Method_Name(unsigned m)
 	case VCL_MET_##upper:			\
 		return (#upper);
 #include "tbl/vcl_returns.h"
-#undef VCL_MET_MAC
 	default:
 		return (NULL);
 	}
@@ -1056,7 +1054,6 @@ VCL_##func##_method(struct vcl *vcl, struct worker *wrk,		\
 }
 
 #include "tbl/vcl_returns.h"
-#undef VCL_MET_MAC
 
 /*--------------------------------------------------------------------*/
 

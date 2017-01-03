@@ -173,7 +173,6 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	bp->vsc->conn--;
 #define ACCT(foo)	bp->vsc->foo += bo->acct.foo;
 #include "tbl/acct_fields_bereq.h"
-#undef ACCT
 	Lck_Unlock(&bp->mtx);
 	bo->htc = NULL;
 }

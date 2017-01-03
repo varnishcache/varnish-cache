@@ -101,13 +101,11 @@ struct type {
 
 #define VCC_TYPE(foo)		extern const struct type foo[1];
 #include "tbl/vcc_types.h"
-#undef VCC_TYPE
 
 
 enum symkind {
 #define VCC_SYMB(uu, ll)	SYM_##uu,
 #include "tbl/symbol_kind.h"
-#undef VCC_SYMB
 };
 
 typedef void sym_expr_t(struct vcc *tl, struct expr **,

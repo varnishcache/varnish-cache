@@ -25,9 +25,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- */
-
-/*
+ *
  * Fields (n, l, e, d):
  *    n - Name:		Field name, in C-source
  *    t - Type:		Type name, in shm chunk
@@ -41,25 +39,35 @@
  */
 
 /*lint -save -e525 -e539 */
+
 VSC_TYPE_F(main,	"MAIN",		"",		"Child",
     "Child process main counters"
 )
+
 VSC_TYPE_F(mgt,		"MGT",		"MGT",		"Master",
     "Management process counters"
 )
+
 VSC_TYPE_F(mempool,	"MEMPOOL",	"MEMPOOL",	"Memory pool",
     "Memory pool counters"
 )
+
 VSC_TYPE_F(sma,		"SMA",		"SMA",		"Storage malloc",
     "Malloc storage counters"
 )
+
 VSC_TYPE_F(smf,		"SMF",		"SMF",		"Storage file",
     "File storage counters"
 )
+
 VSC_TYPE_F(vbe,		"VBE",		"VBE",		"Backend",
     "Backend counters"
 )
+
 VSC_TYPE_F(lck,		"LCK",		"LCK",		"Lock",
     "Mutex lock counters"
 )
+
+#undef VSC_TYPE_F
+
 /*lint -restore */

@@ -74,7 +74,6 @@ struct vbp_target {
 	/* Collected statistics */
 #define BITMAP(n, c, t, b)	uint64_t	n;
 #include "tbl/backend_poll.h"
-#undef BITMAP
 
 	double				last;
 	double				avg;
@@ -116,7 +115,6 @@ vbp_start_poke(struct vbp_target *vt)
 #define BITMAP(n, c, t, b) \
 	vt->n <<= 1;
 #include "tbl/backend_poll.h"
-#undef BITMAP
 
 	vt->last = 0;
 	vt->resp_buf[0] = '\0';
@@ -161,7 +159,6 @@ vbp_update_backend(struct vbp_target *vt)
 #define BITMAP(n, c, t, b) \
 		bits[i++] = (vt->n & 1) ? c : '-';
 #include "tbl/backend_poll.h"
-#undef BITMAP
 		bits[i] = '\0';
 
 		if (vt->good >= vt->threshold) {
@@ -201,7 +198,6 @@ vbp_reset(struct vbp_target *vt)
 #define BITMAP(n, c, t, b) \
 	vt->n = 0;
 #include "tbl/backend_poll.h"
-#undef BITMAP
 
 	for (u = 0; u < vt->initial; u++) {
 		vbp_start_poke(vt);
@@ -429,7 +425,6 @@ vbp_health_one(struct cli *cli, const struct vbp_target *vt)
 		if ((vt->n != 0) || (b))			\
 			vbp_bitmap(cli, (c), vt->n, (t));
 #include "tbl/backend_poll.h"
-#undef BITMAP
 }
 
 void

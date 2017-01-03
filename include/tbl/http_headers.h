@@ -36,15 +36,7 @@
  *
  */
 
-
 /*lint -save -e525 -e539 */
-
-#ifndef HTTPH_R_PASS
-#define HTTPH_R_PASS	(1 << 0)	/* Request (c->b) in pass mode */
-#define HTTPH_R_FETCH	(1 << 1)	/* Request (c->b) for fetch */
-#define HTTPH_A_INS	(1 << 2)	/* Response (b->o) for insert */
-#define HTTPH_A_PASS	(1 << 3)	/* Response (b->o) for pass */
-#endif
 
 /* Shorthand for this file only, to keep table narrow */
 
@@ -116,5 +108,6 @@ H("X-Forwarded-For",	H_X_Forwarded_For,	0      )	// No RFC
 #undef I
 #undef S
 #undef H
+#undef HTTPH
 
 /*lint -restore */
