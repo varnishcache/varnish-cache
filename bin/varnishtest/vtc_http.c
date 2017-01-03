@@ -1812,7 +1812,6 @@ static const struct cmds http_cmds[] = {
 	/* session */
 	CMD_HTTP(accept)
 	CMD_HTTP(close)
-	CMD_HTTP(expect_close)
 	CMD_HTTP(recv)
 	CMD_HTTP(send)
 	CMD_HTTP(send_n)
@@ -1853,8 +1852,9 @@ static const struct cmds http_cmds[] = {
 	CMD_HTTP(txresp)
 	CMD_HTTP(upgrade)
 
-	/* checks */
+	/* expect */
 	CMD_HTTP(expect)
+	CMD_HTTP(expect_close)
 	CMD_HTTP(expect_pattern)
 
 	/* general purpose */
