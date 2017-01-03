@@ -45,6 +45,7 @@
 #include "vtc_http.h"
 
 #include "vct.h"
+#include "vfil.h"
 #include "vgz.h"
 #include "vnum.h"
 #include "vre.h"
@@ -2467,6 +2468,28 @@ cmd_expect(CMD_ARGS)
 	AZ(pthread_mutex_unlock(&s->hp->mtx));
 }
 
+/* SECTION: stream.spec.write_body
+ *
+ * write_body STRING
+ *	Same as the ``write_body`` command for HTTP/1.
+ */
+static void
+cmd_write_body(CMD_ARGS)
+{
+	struct stream *s;
+
+	(void)cmd;
+	(void)vl;
+	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
+	AN(av[0]);
+	AN(av[1]);
+	AZ(av[2]);
+	AZ(strcmp(av[0], "write_body"));
+	if (VFIL_writefile(NULL, av[1], s->body, s->bodylen) != 0)
+		vtc_log(s->hp->vl, 0, "failed to write body: %s (%d)",
+		    strerror(errno), errno);
+}
+
 /* SECTION: stream.spec Specification
  *
  * The specification of a stream follows the exact same rules as one for a
@@ -2502,6 +2525,7 @@ static const struct cmds stream_cmds[] = {
 	CMD_STREAM(txrst)
 	CMD_STREAM(txsettings)
 	CMD_STREAM(txwinup)
+	CMD_STREAM(write_body)
 
 	/* general purpose */
 	CMD(barrier)

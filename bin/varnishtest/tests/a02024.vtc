@@ -1,0 +1,27 @@
+varnishtest "Write a body to a file"
+
+server s1 {
+	fatal
+	stream 1 {
+		rxreq
+		expect req.http.Content-Type == "text/plain"
+		write_body req.txt
+		txresp -hdr Content-Type text/plain -body response
+	} -run
+
+} -start
+
+client c1 -connect ${s1_sock} {
+	fatal
+	stream 1 {
+		txreq -req POST -hdr Content-Type text/plain -body request
+		rxresp
+		expect resp.http.Content-Type == "text/plain"
+		write_body resp.txt
+	} -run
+} -run
+
+server s1 -wait
+
+shell {grep -q request req.txt}
+shell {grep -q response resp.txt}
