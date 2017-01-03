@@ -2530,6 +2530,8 @@ static const struct cmds stream_cmds[] = {
 	/* general purpose */
 	CMD(barrier)
 	CMD(delay)
+	CMD(err_shell)
+	CMD(shell)
 	{ NULL,			NULL }
 #undef CMD_STREAM
 #undef CMD
