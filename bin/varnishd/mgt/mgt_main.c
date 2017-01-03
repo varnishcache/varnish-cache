@@ -435,9 +435,8 @@ init_params(struct cli *cli)
 		MCF_ParamConf(MCF_DEFAULT, "http_resp_size", "8k");
 		MCF_ParamConf(MCF_DEFAULT, "http_req_size", "12k");
 		MCF_ParamConf(MCF_DEFAULT, "gzip_buffer", "4k");
-	} else {
-		MCF_ParamConf(MCF_MAXIMUM, "vsl_space", "4G");
-		MCF_ParamConf(MCF_MAXIMUM, "vsm_space", "4G");
+		MCF_ParamConf(MCF_MAXIMUM, "vsl_space", "1G");
+		MCF_ParamConf(MCF_MAXIMUM, "vsm_space", "1G");
 	}
 
 #if !defined(HAVE_ACCEPT_FILTERS) || defined(__linux)
