@@ -665,20 +665,20 @@ cmd_feature(CMD_ARGS)
  */
 
 static const struct cmds cmds[] = {
-#define CMD(n) { #n, cmd_##n }
-	CMD(server),
-	CMD(client),
-	CMD(varnish),
-	CMD(delay),
-	CMD(varnishtest),
-	CMD(shell),
-	CMD(err_shell),
-	CMD(barrier),
-	CMD(feature),
-	CMD(logexpect),
-	CMD(process),
+#define CMD(n) { #n, cmd_##n },
+	CMD(server)
+	CMD(client)
+	CMD(varnish)
+	CMD(delay)
+	CMD(varnishtest)
+	CMD(shell)
+	CMD(err_shell)
+	CMD(barrier)
+	CMD(feature)
+	CMD(logexpect)
+	CMD(process)
 #undef CMD
-	{ NULL,		NULL }
+	{ NULL, NULL }
 };
 
 int
