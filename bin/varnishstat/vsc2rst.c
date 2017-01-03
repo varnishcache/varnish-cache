@@ -38,10 +38,6 @@
 
 #define P(x)			\
 	printf(x "\n")
-#define VSC_LEVEL_F(v,l,e,d)		\
-	printf("%s – %s\n\t%s\n\n", l, e, d);
-#define VSC_F(n, t, l, s, f, v, d, e)	\
-	printf("%s – %s (%s)\n\t%s\n\n", #n, d, VSC_level_##v, e);
 
 int main(int argc, char **argv)
 {
@@ -50,18 +46,24 @@ int main(int argc, char **argv)
 	P("COUNTER LEVELS");
 	P("==============");
 	P("");
+#define VSC_LEVEL_F(v,l,e,d)		\
+	printf("%s – %s\n\t%s\n\n", l, e, d);
 #include "tbl/vsc_levels.h"
 
 	P("");
 	P("MAIN COUNTERS (MAIN.*)");
 	P("======================");
 	P("");
+#define VSC_FF(n, t, l, s, f, v, d, e)	\
+	printf("%s – %s (%s)\n\t%s\n\n", #n, d, VSC_level_##v, e);
 #include "tbl/vsc_f_main.h"
 
 	P("MANAGEMENT PROCESS COUNTERS (MGT.*)");
 	P("===================================");
 	P("");
 #define VSC_DO_MGT
+#define VSC_FF(n, t, l, s, f, v, d, e)	\
+	printf("%s – %s (%s)\n\t%s\n\n", #n, d, VSC_level_##v, e);
 #include "tbl/vsc_fields.h"
 #undef VSC_DO_MGT
 
@@ -70,6 +72,8 @@ int main(int argc, char **argv)
 	P("====================================");
 	P("");
 #define VSC_DO_MEMPOOL
+#define VSC_FF(n, t, l, s, f, v, d, e)	\
+	printf("%s – %s (%s)\n\t%s\n\n", #n, d, VSC_level_##v, e);
 #include "tbl/vsc_fields.h"
 #undef VSC_DO_MEMPOOL
 
@@ -78,6 +82,8 @@ int main(int argc, char **argv)
 	P("===================================");
 	P("");
 #define VSC_DO_SMA
+#define VSC_FF(n, t, l, s, f, v, d, e)	\
+	printf("%s – %s (%s)\n\t%s\n\n", #n, d, VSC_level_##v, e);
 #include "tbl/vsc_fields.h"
 #undef  VSC_DO_SMA
 
@@ -86,6 +92,8 @@ int main(int argc, char **argv)
 	P("=================================");
 	P("");
 #define VSC_DO_SMF
+#define VSC_FF(n, t, l, s, f, v, d, e)	\
+	printf("%s – %s (%s)\n\t%s\n\n", #n, d, VSC_level_##v, e);
 #include "tbl/vsc_fields.h"
 #undef VSC_DO_SMF
 
@@ -94,6 +102,8 @@ int main(int argc, char **argv)
 	P("============================");
 	P("");
 #define VSC_DO_VBE
+#define VSC_FF(n, t, l, s, f, v, d, e)	\
+	printf("%s – %s (%s)\n\t%s\n\n", #n, d, VSC_level_##v, e);
 #include "tbl/vsc_fields.h"
 #undef VSC_DO_VBE
 
@@ -102,6 +112,8 @@ int main(int argc, char **argv)
 	P("=====================");
 	P("");
 #define VSC_DO_LCK
+#define VSC_FF(n, t, l, s, f, v, d, e)	\
+	printf("%s – %s (%s)\n\t%s\n\n", #n, d, VSC_level_##v, e);
 #include "tbl/vsc_fields.h"
 #undef VSC_DO_LCK
 

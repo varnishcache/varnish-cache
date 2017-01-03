@@ -58,9 +58,8 @@ pool_sumstat(const struct dstat *src)
 	Lck_AssertHeld(&wstat_mtx);
 #define L0(n)
 #define L1(n) (VSC_C_main->n += src->n)
-#define VSC_F(n,t,l,s,f,v,d,e)	L##l(n);
+#define VSC_FF(n,t,l,s,f,v,d,e)	L##l(n);
 #include "tbl/vsc_f_main.h"
-#undef VSC_F
 #undef L0
 #undef L1
 }

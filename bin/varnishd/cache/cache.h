@@ -253,12 +253,11 @@ struct acct_bereq {
 
 #define L0(t, n)
 #define L1(t, n)		t n;
-#define VSC_F(n,t,l,s,f,v,d,e)	L##l(t, n)
+#define VSC_FF(n,t,l,s,f,v,d,e)	L##l(t, n)
 struct dstat {
 	unsigned		summs;
 #include "tbl/vsc_f_main.h"
 };
-#undef VSC_F
 #undef L0
 #undef L1
 
