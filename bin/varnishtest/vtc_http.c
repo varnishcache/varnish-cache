@@ -1807,61 +1807,61 @@ cmd_http_write_body(CMD_ARGS)
  */
 
 static const struct cmds http_cmds[] = {
-#define CMD(n) { #n, cmd_##n }
-#define CMD_HTTP(n) { #n, cmd_http_##n }
+#define CMD(n) { #n, cmd_##n },
+#define CMD_HTTP(n) { #n, cmd_http_##n },
 	/* session */
-	CMD_HTTP(accept),
-	CMD_HTTP(close),
-	CMD_HTTP(expect_close),
-	CMD_HTTP(recv),
-	CMD_HTTP(send),
-	CMD_HTTP(send_n),
-	CMD_HTTP(send_urgent),
-	CMD_HTTP(sendhex),
-	CMD_HTTP(timeout),
+	CMD_HTTP(accept)
+	CMD_HTTP(close)
+	CMD_HTTP(expect_close)
+	CMD_HTTP(recv)
+	CMD_HTTP(send)
+	CMD_HTTP(send_n)
+	CMD_HTTP(send_urgent)
+	CMD_HTTP(sendhex)
+	CMD_HTTP(timeout)
 
 	/* spec */
-	CMD_HTTP(fatal),
-	CMD_HTTP(loop),
-	CMD_HTTP(non_fatal),
+	CMD_HTTP(fatal)
+	CMD_HTTP(loop)
+	CMD_HTTP(non_fatal)
 
 	/* body */
-	CMD_HTTP(gunzip),
-	CMD_HTTP(write_body),
+	CMD_HTTP(gunzip)
+	CMD_HTTP(write_body)
 
 	/* HTTP/1.x */
-	CMD_HTTP(chunked),
-	CMD_HTTP(chunkedlen),
-	CMD_HTTP(rxchunk),
+	CMD_HTTP(chunked)
+	CMD_HTTP(chunkedlen)
+	CMD_HTTP(rxchunk)
 
 	/* HTTP/2 */
-	CMD_HTTP(stream),
-	CMD_HTTP(settings),
+	CMD_HTTP(stream)
+	CMD_HTTP(settings)
 
 	/* client */
-	CMD_HTTP(rxresp),
-	CMD_HTTP(rxrespbody),
-	CMD_HTTP(rxresphdrs),
-	CMD_HTTP(txpri),
-	CMD_HTTP(txreq),
+	CMD_HTTP(rxresp)
+	CMD_HTTP(rxrespbody)
+	CMD_HTTP(rxresphdrs)
+	CMD_HTTP(txpri)
+	CMD_HTTP(txreq)
 
 	/* server */
-	CMD_HTTP(rxpri),
-	CMD_HTTP(rxreq),
-	CMD_HTTP(rxreqbody),
-	CMD_HTTP(rxreqhdrs),
-	CMD_HTTP(txresp),
-	CMD_HTTP(upgrade),
+	CMD_HTTP(rxpri)
+	CMD_HTTP(rxreq)
+	CMD_HTTP(rxreqbody)
+	CMD_HTTP(rxreqhdrs)
+	CMD_HTTP(txresp)
+	CMD_HTTP(upgrade)
 
 	/* checks */
-	CMD_HTTP(expect),
-	CMD_HTTP(expect_pattern),
+	CMD_HTTP(expect)
+	CMD_HTTP(expect_pattern)
 
 	/* general purpose */
-	CMD(barrier),
-	CMD(delay),
-	CMD(err_shell),
-	CMD(shell),
+	CMD(barrier)
+	CMD(delay)
+	CMD(err_shell)
+	CMD(shell)
 #undef CMD_HTTP
 #undef CMD
 	{ NULL, NULL }
