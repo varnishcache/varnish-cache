@@ -29,13 +29,13 @@
 
 /*lint -save -e525 -e539 */
 
-VSC_DO(MAIN, main, VSC_type_main)
+VSC_DO(MAIN, main, VSC_type_main, "MAIN COUNTERS (MAIN.*)")
   #define VSC_FF VSC_F
   #include "tbl/vsc_f_main.h"
   #undef VSC_FF
 VSC_DONE(MAIN, main, VSC_type_main)
 
-VSC_DO(MGT, mgt, VSC_type_mgt)
+VSC_DO(MGT, mgt, VSC_type_mgt, "MANAGEMENT PROCESS COUNTERS (MGT.*)")
   #define VSC_DO_MGT
     #define VSC_FF VSC_F
     #include "tbl/vsc_fields.h"
@@ -43,7 +43,7 @@ VSC_DO(MGT, mgt, VSC_type_mgt)
   #undef VSC_DO_MGT
 VSC_DONE(MGT, mgt, VSC_type_mgt)
 
-VSC_DO(MEMPOOL, mempool, VSC_type_mempool)
+VSC_DO(MEMPOOL, mempool, VSC_type_mempool, "MEMORY POOL COUNTERS (MEMPOOL.*)")
   #define VSC_DO_MEMPOOL
     #define VSC_FF VSC_F
     #include "tbl/vsc_fields.h"
@@ -51,7 +51,7 @@ VSC_DO(MEMPOOL, mempool, VSC_type_mempool)
   #undef VSC_DO_MEMPOOL
 VSC_DONE(MEMPOOL, mempool, VSC_type_mempool)
 
-VSC_DO(SMA, sma, VSC_type_sma)
+VSC_DO(SMA, sma, VSC_type_sma, "MALLOC STORAGE COUNTERS (SMA.*)")
   #define VSC_DO_SMA
     #define VSC_FF VSC_F
     #include "tbl/vsc_fields.h"
@@ -59,7 +59,7 @@ VSC_DO(SMA, sma, VSC_type_sma)
   #undef VSC_DO_SMA
 VSC_DONE(SMA, sma, VSC_type_sma)
 
-VSC_DO(SMF, smf, VSC_type_smf)
+VSC_DO(SMF, smf, VSC_type_smf, "FILE STORAGE COUNTERS (SMF.*)")
   #define VSC_DO_SMF
     #define VSC_FF VSC_F
     #include "tbl/vsc_fields.h"
@@ -67,7 +67,7 @@ VSC_DO(SMF, smf, VSC_type_smf)
   #undef VSC_DO_SMF
 VSC_DONE(SMF, smf, VSC_type_smf)
 
-VSC_DO(VBE, vbe, VSC_type_vbe)
+VSC_DO(VBE, vbe, VSC_type_vbe, "BACKEND COUNTERS (VBE.*)")
   #define VSC_DO_VBE
     #define VSC_FF VSC_F
     #include "tbl/vsc_fields.h"
@@ -75,7 +75,7 @@ VSC_DO(VBE, vbe, VSC_type_vbe)
   #undef VSC_DO_VBE
 VSC_DONE(VBE, vbe, VSC_type_vbe)
 
-VSC_DO(LCK, lck, VSC_type_lck)
+VSC_DO(LCK, lck, VSC_type_lck, "LOCK COUNTERS (LCK.*)")
   #define VSC_DO_LCK
     #define VSC_FF VSC_F
     #include "tbl/vsc_fields.h"
