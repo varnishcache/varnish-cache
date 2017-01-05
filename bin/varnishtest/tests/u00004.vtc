@@ -1,0 +1,19 @@
+varnishtest "varnishtop coverage"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend "" -start
+
+process p1 {varnishtop -1 -n ${v1_name} > /dev/null} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+process p1 -wait
+
+process p2 {varnishtop -1 -n ${v1_name} > /dev/null} -start -wait

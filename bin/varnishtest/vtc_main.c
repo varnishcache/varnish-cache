@@ -384,7 +384,7 @@ i_mode(void)
 		sep = ":";						\
 	} while (0);
 #include "programs.h"
-#undef VTC_PROG
+
 	VSB_printf(vsb, ":%s", getenv("PATH"));
 	AZ(VSB_finish(vsb));
 
