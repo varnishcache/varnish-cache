@@ -136,7 +136,7 @@ nobase_pkginclude_HEADERS = \
 	cache/cache_backend.h \
 	cache/cache_director.h \
 	common/common.h \
-	common/params.h \
+	common/com_params.h \
 	waiter/waiter.h
 
 varnishd_CFLAGS = \

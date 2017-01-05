@@ -41,7 +41,7 @@
 #include <unistd.h>
 
 #include "common.h"
-#include "common/params.h"
+#include "common/com_params.h"
 
 #include "vsm_priv.h"
 #include "vmb.h"

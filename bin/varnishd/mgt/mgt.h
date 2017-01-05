@@ -31,7 +31,7 @@
 #include <stdint.h>
 
 #include "common/common.h"
-#include "common/params.h"
+#include "common/com_params.h"
 
 struct cli;
 struct parspec;

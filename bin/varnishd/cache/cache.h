@@ -54,7 +54,7 @@
 #include <unistd.h>
 #include <math.h>
 
-#include "common/params.h"
+#include "common/com_params.h"
 
 /*--------------------------------------------------------------------*/
 
