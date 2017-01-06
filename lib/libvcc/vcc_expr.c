@@ -1237,7 +1237,16 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, enum var_type fmt)
 		if (sym == NULL) {
 			VSB_printf(tl->sb, "Backend not found: ");
 			vcc_ErrToken(tl, tl->t);
-			VSB_printf(tl->sb, "\n");
+			VSB_printf(tl->sb,
+			    " (expected a backend identifier)\n");
+			vcc_ErrWhere(tl, tl->t);
+			return;
+		} else if (sym->kind != SYM_BACKEND) {
+			VSB_printf(tl->sb, "Not a backend: ");
+			vcc_ErrToken(tl, tl->t);
+			VSB_printf(tl->sb,
+			    " (right hand side must be a backend - saw a %s)\n",
+			    VCC_SymKind(tl, sym));
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}

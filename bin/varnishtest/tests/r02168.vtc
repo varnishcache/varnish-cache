@@ -1,0 +1,145 @@
+varnishtest "Comparing backends with and without a director"
+
+# How you cannot compare backends - test error handling
+varnish v1 -errvcl {Not a backend} {
+	sub vcl_backend_response {
+		if (bereq.backend == bereq.http.a) {
+		}
+	}
+}
+
+varnish v1 -errvcl {Backend not found} {
+	sub vcl_backend_response {
+		if (bereq.backend == foo) {
+		}
+	}
+}
+
+varnish v1 -errvcl {Expected ID got} {
+	sub vcl_backend_response {
+		if (bereq.backend == "foo") {
+		}
+	}
+}
+
+# Compare backends with regular backend:
+server s1 {
+	rxreq
+	txresp -status 200
+} -start
+
+varnish v1 -vcl {
+	backend b1 {
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+	}
+
+	sub vcl_recv {
+		set req.backend_hint = b1;
+	}
+
+	sub vcl_backend_response {
+		set bereq.http.d1-backend = b1;
+		set bereq.http.req-backend = bereq.backend;
+		if (bereq.http.d1-backend == bereq.http.req-backend) {
+			set beresp.http.be-str-str-compare = "same";
+		} else {
+			set beresp.http.be-str-str-compare = "different";
+		}
+		if (bereq.backend == b1) {
+			set beresp.http.be-back-back-compare = "same";
+		} else {
+			set beresp.http.be-back-back-compare = "different";
+		}
+	}
+
+	sub vcl_deliver {
+		set req.http.d1-backend = b1;
+		set req.http.hint = req.backend_hint;
+		if (req.http.d1-backend == req.http.hint) {
+			set resp.http.deliver-str-str-compare = "same";
+		} else {
+			set resp.http.deliver-str-str-compare = "different";
+		}
+		if (req.backend_hint == b1) {
+			set resp.http.deliver-back-back-compare = "same";
+		} else {
+			set resp.http.deliver-back-back-compare = "different";
+		}
+	}
+
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.be-str-str-compare == "same"
+	expect resp.http.be-back-back-compare == "same"
+	expect resp.http.deliver-str-str-compare == "same"
+	expect resp.http.deliver-back-back-compare == "same"
+} -run
+
+# In the second part, using a director will yield different results (see bottom):
+server s2 {
+	rxreq
+	txresp -status 200
+} -start
+
+varnish v2 -vcl {
+	import ${vmod_directors};
+	backend b1 {
+		.host = "${s2_addr}";
+		.port = "${s2_port}";
+	}
+
+	sub vcl_init {
+		new d1 = directors.round_robin();
+		d1.add_backend(b1);
+	}
+
+	sub vcl_recv {
+		set req.backend_hint = d1.backend();
+	}
+
+	sub vcl_backend_response {
+		set bereq.http.d1-backend = d1.backend();
+		set bereq.http.req-backend = bereq.backend;
+		if (bereq.http.d1-backend == bereq.http.req-backend) {
+			set beresp.http.be-str-str-compare = "same";
+		} else {
+			set beresp.http.be-str-str-compare = "different";
+		}
+		if (bereq.backend == b1) {
+			set beresp.http.be-back-back-compare = "same";
+		} else {
+			set beresp.http.be-back-back-compare = "different";
+		}
+	}
+
+	sub vcl_deliver {
+		set req.http.d1-backend = d1.backend();
+		set req.http.hint = req.backend_hint;
+		if (req.http.d1-backend == req.http.hint) {
+			set resp.http.deliver-str-str-compare = "same";
+		} else {
+			set resp.http.deliver-str-str-compare = "different";
+		}
+		if (req.backend_hint == b1) {
+			set resp.http.deliver-back-back-compare = "same";
+		} else {
+			set resp.http.deliver-back-back-compare = "different";
+		}
+	}
+
+} -start
+
+client c2 -connect ${v2_sock} {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.be-str-str-compare == "same"
+	expect resp.http.be-back-back-compare == "different"
+	expect resp.http.deliver-str-str-compare == "same"
+	expect resp.http.deliver-back-back-compare == "different"
+} -run
