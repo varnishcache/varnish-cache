@@ -511,6 +511,11 @@ gl_LD_VERSION_SCRIPT
 # Now that we're done using the compiler to look for functions and
 # libraries, set CFLAGS to what we want them to be for our own code
 
+_VARNISH_CHECK_CFLAGS([
+	-std=c99
+	-D_POSIX_C_SOURCE=200809L
+])
+
 # This is a test to see how much havoc vtest exposes.
 #
 # SunCC flags are passed as explicit flags for the compiler, otherwise
