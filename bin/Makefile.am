@@ -1,5 +1,7 @@
 #
 
+# XXX: varnishtest MUST always be built last
+
 SUBDIRS = \
 	varnishadm \
 	varnishd \
@@ -7,5 +9,5 @@ SUBDIRS = \
 	varnishlog \
 	varnishncsa \
 	varnishstat \
-	varnishtest \
-	varnishtop
+	varnishtop \
+	varnishtest

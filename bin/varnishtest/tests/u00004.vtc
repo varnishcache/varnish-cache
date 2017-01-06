@@ -7,7 +7,7 @@ server s1 {
 
 varnish v1 -vcl+backend "" -start
 
-process p1 {varnishtop -1 -n ${v1_name} > /dev/null} -start
+process p1 {exec varnishtop -1 -n ${v1_name} >/dev/null} -start
 
 client c1 {
 	txreq
@@ -16,4 +16,4 @@ client c1 {
 
 process p1 -wait
 
-process p2 {varnishtop -1 -n ${v1_name} > /dev/null} -start -wait
+process p2 {exec varnishtop -1 -n ${v1_name} >/dev/null} -start -wait
