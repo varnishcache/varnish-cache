@@ -746,7 +746,7 @@ main(int argc, char * const *argv)
 			av = VAV_Parse(optarg, NULL, ARGV_COMMA);
 			AN(av);
 			if (av[0] != NULL)
-				ARGV_ERR("\t-l ...: %s", av[0]);
+				ARGV_ERR("\t-l ...: %s\n", av[0]);
 			if (av[1] != NULL) {
 				MCF_ParamSet(cli, "vsl_space", av[1]);
 				cli_check(cli);

@@ -1,6 +1,6 @@
 varnishtest "Code coverage of VCL compiler and RSTdump etc"
 
-shell "varnishd -b 127.0.0.1:80 -C -n ${tmpdir} 2> /${tmpdir}/_.c"
+shell "varnishd -b 127.0.0.1:80 -C 2> /${tmpdir}/_.c"
 shell "varnishd -x dumprstparam > /${tmpdir}/_.param"
 shell "varnishd -x dumprstvsl > /${tmpdir}/_.vsl"
 shell "varnishd -x dumprstcli > /${tmpdir}/_.cli"
@@ -16,3 +16,9 @@ err_shell {Only one of -b or -f can be specified} "varnishd -b a -f b 2>&1"
 err_shell {-C needs either -b <backend> or -f <vcl_file>} "varnishd -C 2>&1"
 err_shell {-d makes no sense with -C} "varnishd -C -b 127.0.0.1:80 -d 2>&1"
 err_shell {-F makes no sense with -C} "varnishd -C -b 127.0.0.1:80 -F 2>&1"
+err_shell {usage: varnishd [options]} "varnishd -h 2>&1"
+err_shell {usage: varnishd [options]} "varnishd -? 2>&1"
+err_shell {Invalid backslash sequence} {varnishd -l 'xyz\kk,xyz\foo' 2>&1}
+err_shell {Invalid backslash sequence} {varnishd -l 'ab\8cd' 2>&1}
+err_shell {Copyright (c) 2006} {varnishd -V 2>&1}
+err_shell {Cannot open -S file (/nonexistent)} {varnishd -S /nonexistent 2>&1}
