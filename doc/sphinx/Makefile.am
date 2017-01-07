@@ -183,6 +183,7 @@ VTCSYN_SRC = $(top_srcdir)/bin/varnishtest/vtc.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_http.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_http2.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_logexp.c \
+	     $(top_srcdir)/bin/varnishtest/vtc_process.c \
 	     $(top_srcdir)/bin/varnishtest/vtc_varnish.c
 include/vtc-syntax.rst: vtc-syntax.py $(VTCSYN_SRC)
 	$(PYTHON) $(top_srcdir)/doc/sphinx/vtc-syntax.py $(VTCSYN_SRC) > $@

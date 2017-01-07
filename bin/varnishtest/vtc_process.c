@@ -313,8 +313,47 @@ process_close(struct process *p)
 	p->fds[1] = -1;
 }
 
-/**********************************************************************
- * Process command dispatch
+/* SECTION: process process
+ *
+ * Run a process in the background with stdout and stderr redirected to
+ * ${tmpdir}/pNAME/stdout and ${tmpdir}/pNAME/stderr, respectively::
+ *
+ *	process pNAME SPEC [-wait] [-start] [-run] [-kill STRING] [-stop] \
+ *		[-write STRING] [-writeln STRING] [-close]
+ *
+ * pNAME
+ *	Name of the process. It must start with 'p'.
+ *
+ * SPEC
+ *	The command(s) to run in this process.
+ *
+ * \-start
+ *	Start the process.
+ *
+ * \-wait
+ *	Wait for the process to finish.
+ *
+ * \-run
+ *	Shorthand for -start -wait.
+ *
+ * \-kill STRING
+ *	Send a signal to the process. The argument can be either
+ *	the string "TERM", "INT", or "KILL" for SIGTERM, SIGINT or SIGKILL
+ *	signals, respectively, or a hyphen (-) followed by the signal
+ *	number.
+ *
+ * \-stop
+ *	Shorthand for -kill TERM.
+ *
+ * \-write STRING
+ *	Write a string to the process' stdin.
+ *
+ * \-writeln STRING
+ *	Same as -write followed by a newline (\\n).
+ *
+ * \-close
+ *	Close the process' stdin.
+ *
  */
 
 void
