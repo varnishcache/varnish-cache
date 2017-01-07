@@ -518,7 +518,8 @@ cmd_err_shell(CMD_ARGS)
 
 /* SECTION: delay delay
  *
- * Take a float as argument and sleep for that number of seconds.
+ * Sleep for the number of seconds specified in the argument. The number
+ * can include a fractional part, e.g. 1.5.
  */
 /* SECTION: stream.spec.delay delay
  *
