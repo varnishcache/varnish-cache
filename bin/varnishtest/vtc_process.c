@@ -273,13 +273,6 @@ process_kill(const struct process *p, const char *sig)
 }
 
 static inline void
-process_stop(const struct process *p)
-{
-
-	process_kill(p, "TERM");
-}
-
-static inline void
 process_terminate(const struct process *p)
 {
 
@@ -376,7 +369,7 @@ cmd_process(CMD_ARGS)
 			continue;
 		}
 		if (!strcmp(*av, "-stop")) {
-			process_stop(p);
+			process_kill(p, "TERM");
 			continue;
 		}
 		if (!strcmp(*av, "-write")) {
