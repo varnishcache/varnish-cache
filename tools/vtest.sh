@@ -157,11 +157,12 @@ do
 	mkdir _report
 	export LOG=_report/_log
 
-	echo "VTEST 1.02" > ${LOG}
+	echo "VTEST 1.03" > ${LOG}
 	echo "DATE `date +%s`" >> ${LOG}
 	echo "BRANCH trunk" >> ${LOG}
 	echo "HOST `hostname`" >> ${LOG}
 	echo "UNAME `uname -a`" >> ${LOG}
+	echo "UGID `id`" >> ${LOG}
 	if [ -x /usr/bin/lsb_release ] ; then
 		echo "LSB `lsb_release -d`" >> ${LOG}
 	else
