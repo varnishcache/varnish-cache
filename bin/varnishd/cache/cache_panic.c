@@ -29,12 +29,7 @@
 
 #include "config.h"
 
-#ifndef HAVE_EXECINFO_H
-#include "compat/execinfo.h"
-#else
 #include <execinfo.h>
-#endif
-
 #include <errno.h>
 #include <stdlib.h>
 #include <signal.h>

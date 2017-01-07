@@ -32,8 +32,6 @@
 //lint -e{766}
 #include "config.h"
 
-#ifndef HAVE_DAEMON
-
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -92,5 +90,3 @@ varnish_daemon(int nochdir, int noclose)
 	}
 	return (0);
 }
-
-#endif

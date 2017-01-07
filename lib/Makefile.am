@@ -1,7 +1,6 @@
 #
 
 SUBDIRS = \
-	libvarnishcompat \
 	libvarnish \
 	libvarnishapi \
 	libvcc \

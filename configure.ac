@@ -190,7 +190,6 @@ AC_CHECK_HEADERS([sys/personality.h])
 AC_CHECK_HEADERS([sys/statvfs.h])
 AC_CHECK_HEADERS([sys/vfs.h])
 AC_CHECK_HEADERS([endian.h])
-AC_CHECK_HEADERS([execinfo.h])
 AC_CHECK_HEADERS([pthread_np.h], [], [], [#include <pthread.h>])
 AC_CHECK_HEADERS([priv.h])
 
@@ -284,10 +283,10 @@ case $target in
 esac
 AC_SUBST(JEMALLOC_LDADD)
 
-# These functions are provided by libcompat on platforms where they
-# are not available
 AC_CHECK_FUNCS([setproctitle])
-AC_SEARCH_LIBS(backtrace, [execinfo],[AC_DEFINE([HAVE_BACKTRACE],[1],[Define to 1 if the backtrace function exists])])
+AC_SEARCH_LIBS(backtrace, [execinfo], [], [
+   AC_MSG_ERROR([Could not find backtrace() support])
+])
 # white lie - we don't actually test it
 AC_MSG_CHECKING([whether daemon() works])
 case $target in
@@ -300,6 +299,7 @@ case $target in
 	AC_CHECK_FUNCS([daemon])
 	;;
 esac
+AM_CONDITIONAL(HAVE_DAEMON, [test "x$HAVE_DAEMON" != "xno"])
 
 AC_SYS_LARGEFILE
 
@@ -699,7 +699,6 @@ AC_CONFIG_FILES([
     lib/Makefile
     lib/libvarnish/Makefile
     lib/libvarnishapi/Makefile
-    lib/libvarnishcompat/Makefile
     lib/libvcc/Makefile
     lib/libvgz/Makefile
     lib/libvmod_debug/Makefile

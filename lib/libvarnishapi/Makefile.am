@@ -44,6 +44,10 @@ libvarnishapi_la_SOURCES = \
 	vxp_fixed_token.c \
 	libvarnishapi.map
 
+if ! HAVE_DAEMON
+libvarnishapi_la_SOURCES += daemon.c
+endif
+
 libvarnishapi_la_CFLAGS = \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
 	@SAN_CFLAGS@

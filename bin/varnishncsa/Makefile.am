@@ -17,7 +17,6 @@ varnishncsa_CFLAGS = \
 	@SAN_CFLAGS@
 
 varnishncsa_LDADD = \
-	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
 	@SAN_LDFLAGS@ \
 	${RT_LIBS} ${LIBM}

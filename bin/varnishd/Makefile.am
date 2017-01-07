@@ -151,7 +151,6 @@ varnishd_LDFLAGS = -export-dynamic
 
 varnishd_LDADD = \
 	$(top_builddir)/lib/libvarnish/libvarnish.a \
-	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvcc/libvcc.a \
 	$(top_builddir)/lib/libvgz/libvgz.a \
 	@SAN_LDFLAGS@ \

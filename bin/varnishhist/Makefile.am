@@ -15,7 +15,6 @@ varnishhist_CFLAGS = \
 	@SAN_CFLAGS@
 
 varnishhist_LDADD = \
-	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
 	-lm \
 	@SAN_LDFLAGS@ \
