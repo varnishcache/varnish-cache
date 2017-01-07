@@ -36,6 +36,9 @@ export MAKEFLAGS="${MAKEFLAGS:--j2}"
 export TMPDIR=`pwd`/tmp
 mkdir -p tmp
 
+# Try to make varnish own it, in case we run as root
+chown varnish tmp > /dev/null 2>&1 || true
+
 # Message to be shown in result pages
 # Max 10 char of [A-Za-z0-9/. _-]
 MESSAGE="${MESSAGE:-}"
