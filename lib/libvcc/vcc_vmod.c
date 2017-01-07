@@ -207,7 +207,7 @@ vcc_ParseImport(struct vcc *tl)
 	AN(vmd);
 	AN(vmd->file_id);
 	VSB_printf(ifp->ini, "\t    \"%s\",\n", vmd->file_id);
-	VSB_printf(ifp->ini, "\t    \"./_vmod_%.*s.%s\"\n",
+	VSB_printf(ifp->ini, "\t    \"./vmod_cache/_vmod_%.*s.%s\"\n",
 	    PF(mod), vmd->file_id);
 	VSB_printf(ifp->ini, "\t    ))\n");
 	VSB_printf(ifp->ini, "\t\treturn(1);");
