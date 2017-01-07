@@ -575,6 +575,36 @@ mgt_eric(void)
 		exit(-1);
 }
 
+static void
+mgt_eric_im_done(int eric_fd, unsigned u)
+{
+	int fd;
+
+	if (eric_fd < 0)
+		return;
+
+	if (u == 0)
+		u = ERIC_MAGIC;
+
+	fd = open("/dev/null", O_RDONLY);
+	assert(fd >= 0);
+	assert(dup2(fd, STDIN_FILENO) == STDIN_FILENO);
+	AZ(close(fd));
+
+	fd = open("/dev/null", O_WRONLY);
+	assert(fd >= 0);
+	assert(dup2(fd, STDOUT_FILENO) == STDOUT_FILENO);
+	AZ(close(fd));
+
+	fd = open("/dev/null", O_WRONLY);
+	assert(fd >= 0);
+	assert(dup2(fd, STDERR_FILENO) == STDERR_FILENO);
+	AZ(close(fd));
+
+	assert(write(eric_fd, &u, sizeof u) == sizeof u);
+	AZ(close(eric_fd));
+}
+
 /*--------------------------------------------------------------------*/
 
 int
@@ -906,12 +936,7 @@ main(int argc, char * const *argv)
 
 	u = MGT_Run();
 
-	if (eric_fd > 0) {
-		if (u == 0)
-			u = ERIC_MAGIC;
-		assert(write(eric_fd, &u, sizeof u) == sizeof u);
-		AZ(close(eric_fd));
-	}
+	mgt_eric_im_done(eric_fd, u);
 
 	o = vev_schedule(mgt_evb);
 	if (o != 0)
