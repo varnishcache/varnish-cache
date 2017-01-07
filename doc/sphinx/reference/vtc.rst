@@ -50,7 +50,7 @@ Lines and commands
 Test files take at most one command per line, with the first word of the line
 being the command and the following ones being its arguments. To continue over
 to a new line without breaking the argument string, you can escape the newline
-character (\n) with a backslash (\).
+character (\\n) with a backslash (\\).
 
 SYNTAX
 ======
