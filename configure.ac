@@ -299,7 +299,7 @@ case $target in
 	AC_CHECK_FUNCS([daemon])
 	;;
 esac
-AM_CONDITIONAL(HAVE_DAEMON, [test "x$HAVE_DAEMON" != "xno"])
+AM_CONDITIONAL(HAVE_DAEMON, [test "x$ac_cv_func_daemon" != "xno"])
 
 AC_SYS_LARGEFILE
 
