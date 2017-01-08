@@ -28,4 +28,6 @@ err_shell {usage: varnishd [options]} "varnishd -? 2>&1"
 err_shell {Invalid backslash sequence} {varnishd -l 'xyz\kk,xyz\foo' 2>&1}
 err_shell {Invalid backslash sequence} {varnishd -l 'ab\8cd' 2>&1}
 err_shell {Copyright (c) 2006} "varnishd -V 2>&1"
-err_shell {Cannot open -S file (/nonexistent)} "varnishd -S /nonexistent 2>&1"
+err_shell {Cannot open -S file} {
+	varnishd -S ${tmpdir}/nonexistent -n ${tmpdir}/v0 2>&1
+
