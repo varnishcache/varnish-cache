@@ -42,4 +42,7 @@ cscope:
 	find . -name '*.[hcS]' > cscope.files
 	cscope -b
 
+gcov_digest:
+	${PYTHON} tools/gcov_digest.py -o _gcov
+
 .PHONY: cscope

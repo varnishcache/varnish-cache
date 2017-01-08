@@ -43,7 +43,8 @@ Options:
 
  Arguments:
 
-       directories to process
+	directories to process.
+	default: .
 
 """
 
@@ -95,6 +96,8 @@ def run_gcov(prog, subdir):
 		for i in exclude:
 			if i in dirs:
 				dirs.remove(i)
+		if " ".join(files).find(".gcda") == -1:
+			continue
 		for fn in files:
 			if fn[-2:] != ".o":
 				continue
@@ -106,13 +109,15 @@ def run_gcov(prog, subdir):
 				x = subprocess.check_output(
 				    ["cd " + root + "/.. && " +
 				     "exec " + prog + " -r .libs/" + fn],
-				    stderr=subprocess.STDOUT, shell=True)
+				    stderr=subprocess.STDOUT, shell=True,
+				    universal_newlines=True)
 				pf = ".."
 			else:
 				x = subprocess.check_output(
 				    ["cd " + root + " && " +
 				     "exec " + prog + " -r " + fn],
-				    stderr=subprocess.STDOUT, shell=True)
+				    stderr=subprocess.STDOUT, shell=True,
+				    universal_newlines=True)
 				pf = ""
 
 			for ln in x.split("\n"):
@@ -137,9 +142,9 @@ def produce_output(fdo):
 		"." in count means "same as previous count"
 	"""
 
-	for sn, cnt in counts.iteritems():
+	for sn, cnt in counts.items():
 		fdo.write("/" + sn + " " + str(lengths[sn]) + "\n")
-		lnos = list(cnt.iteritems())
+		lnos = list(cnt.items())
 		lnos.sort()
 		pln = -1
 		pcn = -1
@@ -188,6 +193,8 @@ if __name__ == "__main__":
 			exclude.append(v)
 		else:
 			assert False
+	if len(args) == 0:
+		args = ["."]
 	for dn in args:
 		run_gcov(gcovprog, dn)
 
