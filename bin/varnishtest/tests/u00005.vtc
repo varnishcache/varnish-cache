@@ -1,0 +1,18 @@
+varnishtest "varnishstat coverage"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+delay 1
+
+process p1 "exec varnishstat -h -n ${v1_name}" -run
+process p2 "exec varnishstat -l -n ${v1_name}" -run
+process p3 "exec varnishstat -V -n ${v1_name}" -run
+process p4 "exec varnishstat -1 -n ${v1_name}" -run
+process p5 "exec varnishstat -1 -n ${v1_name} -x" -run
+process p6 "exec varnishstat -1 -n ${v1_name} -j" -run
+process p7 "exec varnishstat -n ${v1_name} extra" -run
