@@ -8,7 +8,20 @@ server s1 {
 varnish v1 -vcl+backend {} -start
 
 process p1 "exec varnishlog -n ${v1_name} -g raw -k 1" -start
-process p2 "exec varnishlog -n ${v1_name} -h" -run
-process p3 "exec varnishlog -n ${v1_name} -V" -run
-process p4 "exec varnishlog -n ${v1_name} extra" -run
+process p2 {
+	exec varnishlog -n ${v1_name} -g raw -k 1 -w ${tmpdir}/p2/output -A
+} -start
+process p3 "exec varnishlog -n ${v1_name} -h" -run
+shell {grep -q "Usage: varnishlog <options>" ${tmpdir}/p3/stderr}
+process p4 "exec varnishlog -n ${v1_name} -V" -run
+shell {grep -q "Copyright (c) 2006 Verdens Gang AS" ${tmpdir}/p4/stderr}
+process p5 "exec varnishlog -n ${v1_name} extra" -run
+shell {grep -q "Usage: varnishlog <options>" ${tmpdir}/p5/stderr}
+process p6 "exec varnishlog -n ${v1_name} -D" -run
+shell {grep -q "Missing -w option" ${tmpdir}/p6/stderr}
+process p7 "exec varnishlog -n ${v1_name} -L 0" -run
+shell {grep -q -- "-L: Range error" ${tmpdir}/p7/stderr}
 process p1 -wait
+shell {grep -q "0 CLI" ${tmpdir}/p1/stdout}
+process p2 -wait
+shell {grep -q "0 CLI" ${tmpdir}/p2/output}
