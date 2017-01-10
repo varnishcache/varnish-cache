@@ -319,7 +319,8 @@ int VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, void *ptr, int len,
 void VRT_Vmod_Fini(struct vmod **hdl);
 
 /* VCL program related */
-VCL_VCL VRT_vcl_lookup(const char *);
+VCL_VCL VRT_vcl_get(VRT_CTX, const char *);
+void VRT_vcl_rel(VRT_CTX, VCL_VCL);
 void VRT_vcl_select(VRT_CTX, VCL_VCL);
 
 struct vmod_priv;

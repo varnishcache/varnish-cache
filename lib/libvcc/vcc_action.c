@@ -264,8 +264,10 @@ parse_return_vcl(struct vcc *tl)
 
 		p = New_IniFin(tl);
 		AN(p);
-		VSB_printf(p->ini, "\t%s = VRT_vcl_lookup(\"%.*s\");",
+		VSB_printf(p->ini, "\t%s = VRT_vcl_get(ctx, \"%.*s\");",
 		    buf, PF(tl->t));
+		VSB_printf(p->fin, "\tVRT_vcl_rel(ctx, %s);",
+		    buf);
 	}
 	Fb(tl, 1, "VRT_vcl_select(ctx, %s);\t/* %.*s */\n",
 	    (const char*)sym->eval_priv, PF(tl->t));

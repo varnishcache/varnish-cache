@@ -72,6 +72,7 @@ struct vcl {
 	pthread_rwlock_t	temp_rwl;
 	VTAILQ_HEAD(,backend)	backend_list;
 	VTAILQ_HEAD(,vclref)	ref_list;
+	int			nrefs;
 	struct vcl		*label;
 	int			nlabels;
 };
@@ -521,13 +522,27 @@ VRT_count(VRT_CTX, unsigned u)
 }
 
 VCL_VCL
-VRT_vcl_lookup(const char *name)
+VRT_vcl_get(VRT_CTX, const char *name)
 {
 	VCL_VCL vcl;
 
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	vcl = vcl_find(name);
 	AN(vcl);
+	Lck_Lock(&vcl_mtx);
+	vcl->nrefs++;
+	Lck_Unlock(&vcl_mtx);
 	return (vcl);
+}
+
+void
+VRT_vcl_rel(VRT_CTX, VCL_VCL vcl)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(vcl);
+	Lck_Lock(&vcl_mtx);
+	vcl->nrefs--;
+	Lck_Unlock(&vcl_mtx);
 }
 
 void
@@ -564,6 +579,7 @@ VRT_ref_vcl(VRT_CTX, const char *desc)
 
 	Lck_Lock(&vcl_mtx);
 	VTAILQ_INSERT_TAIL(&vcl->ref_list, ref, list);
+	vcl->nrefs++;
 	Lck_Unlock(&vcl_mtx);
 
 	return (ref);
@@ -595,6 +611,7 @@ VRT_rel_vcl(VRT_CTX, struct vclref **refp)
 	Lck_Lock(&vcl_mtx);
 	assert(!VTAILQ_EMPTY(&vcl->ref_list));
 	VTAILQ_REMOVE(&vcl->ref_list, ref, list);
+	vcl->nrefs--;
 	/* No garbage collection here, for the same reasons as in VCL_Rel. */
 	Lck_Unlock(&vcl_mtx);
 
@@ -812,12 +829,15 @@ vcl_cli_list(struct cli *cli, const char * const *av, void *priv)
 			flg = "available";
 		VCLI_Out(cli, "%-10s %5s/%-8s %6u %s",
 		    flg, vcl->state, vcl->temp, vcl->busy, vcl->loaded_name);
-		if (vcl->label != NULL)
+		if (vcl->label != NULL) {
 			VCLI_Out(cli, " -> %s", vcl->label->loaded_name);
-		else if (vcl->nlabels > 1)
-			VCLI_Out(cli, " (%d labels)", vcl->nlabels);
-		else if (vcl->nlabels > 0)
-			VCLI_Out(cli, " (%d label)", vcl->nlabels);
+			if (vcl->nrefs)
+				VCLI_Out(cli, " (%d return(vcl)%s)",
+				    vcl->nrefs, vcl->nrefs > 1 ? "'s" : "");
+		} else if (vcl->nlabels > 0) {
+			VCLI_Out(cli, " (%d label%s)",
+			    vcl->nlabels, vcl->nlabels > 1 ? "s" : "");
+		}
 		VCLI_Out(cli, "\n");
 	}
 }

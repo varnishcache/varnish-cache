@@ -643,15 +643,17 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 			    vp->state);
 			VCLI_Out(cli, "/%-8s", vp->warm ?
 			    VCL_STATE_WARM : VCL_STATE_COLD);
-			VCLI_Out(cli, " %6s %s", "", vp->name);
+			VCLI_Out(cli, " %6s %s", "-", vp->name);
 			if (mcf_is_label(vp)) {
 				vd = VTAILQ_FIRST(&vp->dfrom);
 				AN(vd);
 				VCLI_Out(cli, " -> %s", vd->to->name);
-			} else if (vp->nto > 1) {
-				VCLI_Out(cli, " (%d labels)", vp->nto);
+				if (vp->nto > 0)
+					VCLI_Out(cli, " (%d return(vcl)%s)",
+					    vp->nto, vp->nto > 1 ? "'s" : "");
 			} else if (vp->nto > 0) {
-				VCLI_Out(cli, " (%d label)", vp->nto);
+				VCLI_Out(cli, " (%d label%s)",
+				    vp->nto, vp->nto > 1 ? "s" : "");
 			}
 			VCLI_Out(cli, "\n");
 		}
