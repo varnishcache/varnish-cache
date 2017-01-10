@@ -7,12 +7,10 @@ server s1 {
 
 varnish v1 -vcl+backend {} -start
 
-delay 1
-
-process p1 "exec varnishstat -h -n ${v1_name}" -run
-process p2 "exec varnishstat -l -n ${v1_name}" -run
-process p3 "exec varnishstat -V -n ${v1_name}" -run
-process p4 "exec varnishstat -1 -n ${v1_name}" -run
-process p5 "exec varnishstat -1 -n ${v1_name} -x" -run
-process p6 "exec varnishstat -1 -n ${v1_name} -j" -run
+process p1 "exec varnishstat -n ${v1_name} -h" -run
+process p2 "exec varnishstat -n ${v1_name} -l" -run
+process p3 "exec varnishstat -n ${v1_name} -V" -run
+process p4 "exec varnishstat -n ${v1_name} -1" -run
+process p5 "exec varnishstat -n ${v1_name} -x" -run
+process p6 "exec varnishstat -n ${v1_name} -j" -run
 process p7 "exec varnishstat -n ${v1_name} extra" -run

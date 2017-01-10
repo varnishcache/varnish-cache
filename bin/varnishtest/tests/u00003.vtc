@@ -7,8 +7,6 @@ server s1 {
 
 varnish v1 -vcl+backend {} -start
 
-delay 2
-
 err_shell "Missing tag in VSL:" \
 	{varnishncsa -n ${v1_name} -F "%{VSL:}x" 2>&1}
 

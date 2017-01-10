@@ -7,8 +7,6 @@ server s1 {
 
 varnish v1 -vcl+backend {} -start
 
-delay 1
-
 process p1 {varnishstat -1 -n ${v1_name} -f ^LCK.vbe.destroy \
 	-f LCK.vbe.* -f LCK.mempool.* | tr '[1-9]' '0'} -run
 
