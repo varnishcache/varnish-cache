@@ -691,8 +691,10 @@ cnt_recv(struct worker *wrk, struct req *req)
 	}
 
 	VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
-	if (wrk->handling == VCL_RET_VCL) {
+	if (wrk->handling == VCL_RET_VCL && req->restarts == 0) {
 		req->director_hint = VCL_DefaultDirector(req->vcl);
+		HTTP_Copy(req->http, req->http0);
+		WS_Reset(req->ws, req->ws_req);
 		AN(req->director_hint);
 		VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 	}
@@ -724,7 +726,9 @@ cnt_recv(struct worker *wrk, struct req *req)
 	switch(recv_handling) {
 	case VCL_RET_VCL:
 		VSLb(req->vsl, SLT_VCL_Error,
-		    "return(vcl) only allowed from active (top) VCL.");
+		    "Illegal return(vcl): %s",
+		    req->restarts ? "Not after restarts" :
+		    "Only from active VCL");
 		req->err_code = 503;
 		req->req_step = R_STP_SYNTH;
 		return (REQ_FSM_MORE);

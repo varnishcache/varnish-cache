@@ -1,0 +1,64 @@
+varnishtest "restart then switch to label"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+server s2 {
+	rxreq
+	txresp -status 404
+} -start
+
+varnish v1 -vcl {
+	backend s1 { .host="${s1_addr}"; .port="${s1_port}"; }
+} -start
+
+varnish v1 -cli "vcl.label lbl1 vcl1"
+
+varnish v1 -vcl {
+	backend s1 { .host="${s1_addr}"; .port="${s1_port}"; }
+
+	sub vcl_recv {
+		return (vcl(lbl1));
+	}
+}
+
+varnish v1 -cli "vcl.label lbl2 vcl2"
+
+varnish v1 -vcl {
+	backend s2 { .host="${s2_addr}"; .port="${s2_port}"; }
+
+	sub vcl_recv {
+		if (req.restarts > 0) {
+			return (vcl(lbl1));
+		}
+		if (req.http.restart) {
+			return (vcl(lbl2));
+		}
+	}
+
+	sub vcl_miss {
+		return (restart);
+	}
+}
+
+varnish v1 -cliok "vcl.list"
+
+logexpect l1 -v v1 -g raw {
+	expect * * VCL_Error "Illegal return.vcl.: Not after restarts"
+	expect * * VCL_Error "Illegal return.vcl.: Only from active VCL"
+
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+
+	txreq -hdr "restart: yes"
+	rxresp
+	expect resp.status == 503
+} -run
+
+logexpect l1 -wait
