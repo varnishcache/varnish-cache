@@ -137,7 +137,6 @@ main(int argc, char * const *argv)
 		case 'h':
 			/* Usage help */
 			usage(0);
-			break;
 		case 'w':
 			/* Write to file */
 			REPLACE(LOG.w_arg, optarg);

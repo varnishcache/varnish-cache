@@ -644,15 +644,31 @@ main(int argc, char * const *argv)
 	 */
 	while ((o = getopt(argc, argv, opt_spec)) != -1) {
 		switch (o) {
-			case '?': usage(); break;
-			case 'b': b_arg = optarg; break;
-			case 'C': C_flag = 1; break;
-			case 'd': d_flag++; break;
-			case 'f': f_arg = optarg; break;
-			case 'F': F_flag = 1; break;
-			case 'j': j_arg = optarg; break;
-			case 'x': x_arg = optarg; break;
-			default: break;
+		case '?':
+			usage();
+		case 'b':
+			b_arg = optarg;
+			break;
+		case 'C':
+			C_flag = 1;
+			break;
+		case 'd':
+			d_flag++;
+			break;
+		case 'f':
+			f_arg = optarg;
+			break;
+		case 'F':
+			F_flag = 1;
+			break;
+		case 'j':
+			j_arg = optarg;
+			break;
+		case 'x':
+			x_arg = optarg;
+			break;
+		default:
+			break;
 		}
 	}
 

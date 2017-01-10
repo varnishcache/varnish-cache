@@ -484,9 +484,8 @@ main(int argc, char * const *argv)
 	argv += optind;
 
 	if (n_arg != NULL) {
-		if (T_arg != NULL || S_arg != NULL) {
+		if (T_arg != NULL || S_arg != NULL)
 			usage(1);
-		}
 		sock = n_arg_sock(n_arg);
 	} else if (T_arg == NULL) {
 		sock = n_arg_sock("");
