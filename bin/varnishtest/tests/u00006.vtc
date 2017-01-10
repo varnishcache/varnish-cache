@@ -1,0 +1,14 @@
+varnishtest "varnishlog coverage"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+process p1 "exec varnishlog -n ${v1_name} -g raw -k 1" -start
+process p2 "exec varnishlog -n ${v1_name} -h" -run
+process p3 "exec varnishlog -n ${v1_name} -V" -run
+process p4 "exec varnishlog -n ${v1_name} extra" -run
+process p1 -wait
