@@ -12,7 +12,7 @@ server s2 {
 
 varnish v1 -vcl {
 	backend s1 { .host="${s1_addr}"; .port="${s1_port}"; }
-} -start
+}
 
 varnish v1 -cli "vcl.label lbl1 vcl1"
 
@@ -43,6 +43,8 @@ varnish v1 -vcl {
 	}
 }
 
+varnish v1 -cliok "vcl.list"
+varnish v1 -start
 varnish v1 -cliok "vcl.list"
 
 logexpect l1 -v v1 -g raw {

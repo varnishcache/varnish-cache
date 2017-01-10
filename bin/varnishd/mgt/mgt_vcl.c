@@ -74,6 +74,7 @@ struct vclprog {
 	VTAILQ_HEAD(, vcldep)	dfrom;
 	VTAILQ_HEAD(, vcldep)	dto;
 	int			nto;
+	int			loaded;
 };
 
 static VTAILQ_HEAD(, vclprog)	vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
@@ -409,45 +410,46 @@ mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
 {
 	struct vclprog *vp;
 	struct vcldep *vd;
+	int done;
 
 	AN(active_vcl);
 
 	/* The VCL has not been loaded yet, it cannot fail */
 	AZ(mgt_vcl_setstate(cli, active_vcl, VCL_STATE_WARM));
 
-	VTAILQ_FOREACH(vp, &vclhead, list) {
-		if (!VTAILQ_EMPTY(&vp->dfrom))
-			continue;
-		if (mcf_is_label(vp))
-			continue;
-		if (mgt_cli_askchild(status, p, "vcl.load \"%s\" %s %d%s\n",
-		    vp->name, vp->fname, vp->warm, vp->state))
-			return (1);
-		free(*p);
-		*p = NULL;
-	}
-	VTAILQ_FOREACH(vp, &vclhead, list) {
-		if (!mcf_is_label(vp))
-			continue;
-		vd = VTAILQ_FIRST(&vp->dfrom);
-		AN(vd);
-		if (mgt_cli_askchild(status, p, "vcl.label %s %s\n",
-		    vp->name, vd->to->name))
-			return (1);
-		free(*p);
-		*p = NULL;
-	}
-	VTAILQ_FOREACH(vp, &vclhead, list) {
-		if (VTAILQ_EMPTY(&vp->dfrom))
-			continue;
-		if (mcf_is_label(vp))
-			continue;
-		if (mgt_cli_askchild(status, p, "vcl.load \"%s\" %s %d%s\n",
-		    vp->name, vp->fname, vp->warm, vp->state))
-			return (1);
-		free(*p);
-		*p = NULL;
-	}
+	VTAILQ_FOREACH(vp, &vclhead, list)
+		vp->loaded = 0;
+
+	do {
+		done = 1;
+		VTAILQ_FOREACH(vp, &vclhead, list) {
+			if (vp->loaded)
+				continue;
+			VTAILQ_FOREACH(vd, &vp->dfrom, lfrom)
+				if (!vd->to->loaded)
+					break;
+			if (vd != NULL) {
+				done = 0;
+				continue;
+			}
+			if (mcf_is_label(vp)) {
+				vd = VTAILQ_FIRST(&vp->dfrom);
+				AN(vd);
+				if (mgt_cli_askchild(status, p,
+				    "vcl.label %s %s\n",
+				    vp->name, vd->to->name))
+					return (1);
+			} else {
+				if (mgt_cli_askchild(status, p,
+				    "vcl.load \"%s\" %s %d%s\n",
+				    vp->name, vp->fname, vp->warm, vp->state))
+					return (1);
+			}
+			vp->loaded = 1;
+			free(*p);
+			*p = NULL;
+		}
+	} while(!done);
 
 	if (mgt_cli_askchild(status, p, "vcl.use \"%s\"\n", active_vcl->name))
 		return (1);
