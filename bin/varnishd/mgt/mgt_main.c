@@ -363,12 +363,9 @@ cli_stdin_close(void *priv)
 			(void)VPF_Remove(pfh);
 		exit(0);
 	} else {
-		(void)close(0);
-		(void)close(1);
-		(void)close(2);
-		AZ(open("/dev/null", O_RDONLY));
-		assert(open("/dev/null", O_WRONLY) == 1);
-		assert(open("/dev/null", O_WRONLY) == 2);
+		VFIL_null_fd(STDIN_FILENO);
+		VFIL_null_fd(STDOUT_FILENO);
+		VFIL_null_fd(STDERR_FILENO);
 	}
 }
 
@@ -532,7 +529,6 @@ mgt_x_arg(const char *x_arg)
 		ARGV_ERR("Invalid -x argument\n");
 }
 
-
 /*--------------------------------------------------------------------*/
 
 #define ERIC_MAGIC 0x2246988a		/* Eric is not random */
@@ -541,7 +537,6 @@ static int
 mgt_eric(void)
 {
 	int eric_pipes[2];
-	int fd;
 	unsigned u;
 	ssize_t sz;
 
@@ -555,11 +550,7 @@ mgt_eric(void)
 		AZ(close(eric_pipes[0]));
 		assert(setsid() > 1);
 
-		fd = open("/dev/null", O_RDWR, 0);
-		assert(fd > 0);
-		assert(dup2(fd, STDIN_FILENO) == STDIN_FILENO);
-		if (fd > STDIN_FILENO)
-			AZ(close(fd));
+		VFIL_null_fd(STDIN_FILENO);
 		return (eric_pipes[1]);
 	default:
 		break;
@@ -577,28 +568,13 @@ mgt_eric(void)
 static void
 mgt_eric_im_done(int eric_fd, unsigned u)
 {
-	int fd;
-
-	if (eric_fd < 0)
-		return;
 
 	if (u == 0)
 		u = ERIC_MAGIC;
 
-	fd = open("/dev/null", O_RDONLY);
-	assert(fd >= 0);
-	assert(dup2(fd, STDIN_FILENO) == STDIN_FILENO);
-	AZ(close(fd));
-
-	fd = open("/dev/null", O_WRONLY);
-	assert(fd >= 0);
-	assert(dup2(fd, STDOUT_FILENO) == STDOUT_FILENO);
-	AZ(close(fd));
-
-	fd = open("/dev/null", O_WRONLY);
-	assert(fd >= 0);
-	assert(dup2(fd, STDERR_FILENO) == STDERR_FILENO);
-	AZ(close(fd));
+	VFIL_null_fd(STDIN_FILENO);
+	VFIL_null_fd(STDOUT_FILENO);
+	VFIL_null_fd(STDERR_FILENO);
 
 	assert(write(eric_fd, &u, sizeof u) == sizeof u);
 	AZ(close(eric_fd));
@@ -951,7 +927,11 @@ main(int argc, char * const *argv)
 
 	u = MGT_Run();
 
-	mgt_eric_im_done(eric_fd, u);
+	if (eric_fd >= 0)
+		mgt_eric_im_done(eric_fd, u);
+
+	if (F_flag)
+		VFIL_null_fd(STDIN_FILENO);
 
 	o = vev_schedule(mgt_evb);
 	if (o != 0)

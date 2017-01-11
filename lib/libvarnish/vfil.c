@@ -62,6 +62,18 @@
 #include "vfil.h"
 #include "vqueue.h"
 
+void
+VFIL_null_fd(int target)
+{
+	int fd;
+
+	assert(target >= 0);
+	fd = open("/dev/null", O_RDWR);
+	assert(fd >= 0);
+	assert(dup2(fd, target) == target);
+	AZ(close(fd));
+}
+
 static char *
 vfil_readfd(int fd, ssize_t *sz)
 {

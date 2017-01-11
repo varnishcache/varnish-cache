@@ -50,6 +50,7 @@
 #include "vbm.h"
 #include "vcli_serve.h"
 #include "vev.h"
+#include "vfil.h"
 #include "vlu.h"
 #include "vtim.h"
 
@@ -299,7 +300,7 @@ mgt_launch_child(struct cli *cli)
 	unsigned u;
 	char *p;
 	struct vev *e;
-	int i, j, k, cp[2];
+	int i, cp[2];
 	struct sigaction sa;
 
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
@@ -345,8 +346,7 @@ mgt_launch_child(struct cli *cli)
 	if (pid == 0) {
 
 		/* Redirect stdin/out/err */
-		AZ(close(STDIN_FILENO));
-		assert(open("/dev/null", O_RDONLY) == STDIN_FILENO);
+		VFIL_null_fd(STDIN_FILENO);
 		assert(dup2(heritage.std_fd, STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(heritage.std_fd, STDERR_FILENO) == STDERR_FILENO);
 
@@ -366,13 +366,8 @@ mgt_launch_child(struct cli *cli)
 		for (i = STDERR_FILENO + 1; i < CLOSE_FD_UP_TO; i++) {
 			if (vbit_test(fd_map, i))
 				continue;
-			if (close(i) == 0) {
-				k = open("/dev/null", O_RDONLY);
-				assert(k >= 0);
-				j = dup2(k, i);
-				assert(j == i);
-				AZ(close(k));
-			}
+			if (close(i) == 0)
+				VFIL_null_fd(i);
 		}
 #ifdef HAVE_SETPROCTITLE
 		setproctitle("Varnish-Chld %s", heritage.name);

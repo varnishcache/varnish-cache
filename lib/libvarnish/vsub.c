@@ -42,6 +42,7 @@
 
 #include "vas.h"
 #include "vdef.h"
+#include "vfil.h"
 #include "vlu.h"
 #include "vsb.h"
 #include "vsub.h"
@@ -112,8 +113,7 @@ VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
 		return (1);
 	}
 	if (pid == 0) {
-		AZ(close(STDIN_FILENO));
-		assert(open("/dev/null", O_RDONLY) == STDIN_FILENO);
+		VFIL_null_fd(STDIN_FILENO);
 		assert(dup2(p[1], STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(p[1], STDERR_FILENO) == STDERR_FILENO);
 		/* Close all other fds */

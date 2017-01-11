@@ -39,6 +39,7 @@
 #include <unistd.h>
 
 #include "compat/daemon.h"
+#include "vfil.h"
 
 int
 varnish_daemon(int nochdir, int noclose)
@@ -81,12 +82,10 @@ varnish_daemon(int nochdir, int noclose)
 	if (!nochdir)
 		(void)chdir("/");
 
-	if (!noclose && (fd = open("/dev/null", O_RDWR, 0)) != -1) {
-		(void)dup2(fd, STDIN_FILENO);
-		(void)dup2(fd, STDOUT_FILENO);
-		(void)dup2(fd, STDERR_FILENO);
-		if (fd > 2)
-			(void)close(fd);
+	if (!noclose) {
+		VFIL_null_fd(STDIN_FILENO);
+		VFIL_null_fd(STDOUT_FILENO);
+		VFIL_null_fd(STDERR_FILENO);
 	}
 	return (0);
 }
