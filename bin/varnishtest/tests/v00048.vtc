@@ -107,3 +107,23 @@ varnish v1 -cliok "vcl.label snarf vcl1"
 server s1 -start
 client c1 -run
 
+# Test loop detection
+#######################################################################
+
+varnish v1 -cliok vcl.list
+
+varnish v1 -vcl+backend { }
+
+varnish v1 -cliok "vcl.label lblA vcl3"
+
+varnish v1 -vcl+backend { sub vcl_recv { return (vcl(lblA)); } }
+
+varnish v1 -cliok "vcl.label lblB vcl4"
+
+varnish v1 -vcl+backend { sub vcl_recv { return (vcl(lblB)); } }
+
+varnish v1 -clierr 106 "vcl.label lblA vcl5"
+varnish v1 -cliexpect \
+	{can only be used from the active VCL} \
+	{vcl.label lblA vcl5}
+
