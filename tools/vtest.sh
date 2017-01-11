@@ -33,11 +33,9 @@ set -e
 
 export MAKEFLAGS="${MAKEFLAGS:--j2}"
 
-export TMPDIR=`pwd`/tmp
-mkdir -p tmp
-
-# Try to make varnish own it, in case we run as root
-chown varnish tmp > /dev/null 2>&1 || true
+# This tempdirectory must not be used by anything else.
+# Do *NOT* set this to /tmp
+export TMPDIR=`pwd`/_vtest_tmp
 
 # Message to be shown in result pages
 # Max 10 char of [A-Za-z0-9/. _-]
@@ -49,12 +47,28 @@ WAITGOOD=60		# unit: WAITPERIOD
 WAITBAD=1		# unit: WAITPERIOD
 MAXRUNS="${MAXRUNS:-0}"
 
+#######################################################################
+# NB: No User Serviceable Parts Beyond This Point
+#######################################################################
+
+enable_gcov=false
+
 SSH_DST="-p 203 vtest@varnish-cache.org"
 
-export SRCDIR=`pwd`/varnish-cache
-export BUILDDIR=${BUILDDIR:-${SRCDIR}}
+export REPORTDIR=`pwd`/_report
+export VTEST_REPORT="${REPORTDIR}/_log"
 
 #######################################################################
+# Establish TMPDIR
+
+mkdir -p ${TMPDIR}
+rm -rf ${TMPDIR}/*
+
+# Try to make varnish own TMPDIR, in case we run as root
+chown varnish ${TMPDIR} > /dev/null 2>&1 || true
+
+#######################################################################
+# Establish the SRCDIR we build/run/test
 
 if ! (cd varnish-cache 2>/dev/null) ; then
 	git clone \
@@ -62,30 +76,108 @@ if ! (cd varnish-cache 2>/dev/null) ; then
 		varnish-cache
 fi
 
+export SRCDIR=`pwd`/varnish-cache
+
+#######################################################################
+# Submission of results
+
 if [ ! -f vt_key.pub ] ; then
 	ssh-keygen -t ed25519 -N "" -f vt_key
 fi
 
+pack () (
+	cd ${REPORTDIR}
+	tar czf - _log \
+	    `grep '^MANIFEST ' _log | sort -u | sed 's/^MANIFEST *//'` \
+)
+
+submit () (
+	ssh \
+		-T \
+		-o StrictHostKeyChecking=no \
+		-o PasswordAuthentication=no \
+		-o NumberOfPasswordPrompts=0 \
+		-o RequestTTY=no \
+		-i vt_key \
+		${SSH_DST} \
+		true \
+		< ${1}
+)
+
+rm -f ${TMPDIR}/_report.tgz
+touch ${TMPDIR}/_report.tgz
+
+if ! submit ${TMPDIR}/_report.tgz; then
+	echo "Test submit failed"
+	echo
+	echo "You probably need to email this VTEST specific ssh-key"
+	echo "to phk@varnish-cache.org"
+	echo
+	sed 's/^/  /' vt_key.pub
+	echo
+	exit 2
+fi
+
+#######################################################################
+
 autogen () (
 	set -e
-	cd "${BUILDDIR}"
+	cd "${SRCDIR}"
 	nice make distclean > /dev/null 2>&1 || true
 	nice sh "${SRCDIR}"/autogen.des
 )
 
 makedistcheck () (
 	set -e
-	cd "${BUILDDIR}"
+	cd "${SRCDIR}"
 	nice make vtest-clean
 	nice make distcheck
+)
+
+gcovtest () (
+	set -x
+	if [ `id -u` -eq 0 ] && su -m varnish -c 'true' ; then
+		su -m varnish -c "make check" || exit 1
+		cd bin/varnishtest
+		./varnishtest -i tests/[ab]0000?.vtc tests/j*.vtc || exit 1
+	else
+		make check || exit 1
+	fi
+)
+
+makegcov () (
+	set -x
+	cd "${SRCDIR}"
+
+	export CFLAGS="-fprofile-arcs -ftest-coverage -fstack-protector -DDONT_DLCLOSE_VMODS" CC=gcc49
+	export MAKEFLAGS=-j1
+
+	find . -name '*.gc??' -print | xargs rm -f
+
+	sh autogen.des || exit 1
+
+	make || exit 1
+
+	if [ `id -u` -eq 0 ] ; then 
+		chown -R varnish . | true
+	fi
+
+	if gcovtest && make gcov_digest ; then
+		retval=0
+	else
+		retval=1
+	fi
+
+	if [ `id -u` -eq 0 ] ; then 
+		chown -R root . || true
+	fi
+	exit ${retval}
 )
 
 failedtests () (
 	set -e
 
-	REPORTDIR=`pwd`/_report
-
-	cd varnish-cache
+	cd "${SRCDIR}"
 
 	VERSION=`./configure --version | awk 'NR == 1 {print $NF}'`
 	LOGDIR=varnish-$VERSION/_build/sub/bin/varnishtest/tests
@@ -104,48 +196,20 @@ failedtests () (
 	done
 )
 
-pack () (
-	cd _report
-	tar czf - _log \
-	    `grep '^MANIFEST ' _log | sort -u | sed 's/^MANIFEST *//'` \
-)
 
-submit () (
-	ssh \
-		-T \
-		-o StrictHostKeyChecking=no \
-		-o PasswordAuthentication=no \
-		-o NumberOfPasswordPrompts=0 \
-		-o RequestTTY=no \
-		-i vt_key \
-		${SSH_DST} \
-		true \
-		< ${1}
-)
-
-rm -f _report.tgz
-touch _report.tgz
-if ! submit _report.tgz; then
-	echo "Test submit failed"
-	echo
-	echo "You probably need to email this VTEST specific ssh-key"
-	echo "to phk@varnish-cache.org"
-	echo
-	sed 's/^/  /' vt_key.pub
-	echo
-	exit 2
-fi
 
 orev=000
 waitnext=${WAITBAD}
 i=0
 
+last_day=`date +%d`
+
 while [ $MAXRUNS -eq 0 ] || [ $i -lt $MAXRUNS ]
 do
 	i=$((i + 1))
 
-	(cd varnish-cache && git pull > /dev/null 2>&1 || true)
-	rev=`cd varnish-cache && git show -s --pretty=format:%H`
+	(cd "${SRCDIR}" && git pull > /dev/null 2>&1 || true)
+	rev=`cd "${SRCDIR}" && git show -s --pretty=format:%H`
 	if [ "${waitnext}" -gt 0 -a "x${rev}" = "x${orev}" ] ; then
 		sleep ${WAITPERIOD}
 		waitnext=`expr ${waitnext} - 1 || true`
@@ -154,44 +218,66 @@ do
 	waitnext=${WAITBAD}
 	orev=${rev}
 
-	if ! [ -d "${BUILDDIR}" ] && ! mkdir -p "${BUILDDIR}" ; then
-		echo >&2 "could not create BUILDDIR ${BUILDDIR}"
+	if ! [ -d "${SRCDIR}" ] && ! mkdir -p "${SRCDIR}" ; then
+		echo >&2 "could not create SRCDIR ${SRCDIR}"
 		exit 2
 	fi
 
-	rm -rf _report
-	mkdir _report
-	export LOG=_report/_log
+	rm -rf "${REPORTDIR}"
+	mkdir "${REPORTDIR}"
 
-	echo "VTEST 1.03" > ${LOG}
-	echo "DATE `date +%s`" >> ${LOG}
-	echo "BRANCH trunk" >> ${LOG}
-	echo "HOST `hostname`" >> ${LOG}
-	echo "UNAME `uname -a`" >> ${LOG}
-	echo "UGID `id`" >> ${LOG}
-	if [ -x /usr/bin/lsb_release ] ; then
-		echo "LSB `lsb_release -d`" >> ${LOG}
+	if ! $enable_gcov ; then
+		do_gcov=false
+	elif [ -f _force_gcov ] ; then
+		do_gcov=true
+		rm -f _force_gcov
+	elif [ `date +%d` == $last_day ] ; then
+		do_gcov=false
+	elif [ `date +%H` -lt 3 ] ; then
+		do_gcov=false
 	else
-		echo "LSB none" >> ${LOG}
+		do_gcov=true
 	fi
-	echo "MESSAGE ${MESSAGE}" >> ${LOG}
-	echo "GITREV $rev" >> ${LOG}
-	if ! autogen >> _report/_autogen 2>&1 ; then
-		echo "AUTOGEN BAD" >> ${LOG}
-		echo "MANIFEST _autogen" >> ${LOG}
+
+	echo "VTEST 1.04" > ${VTEST_REPORT}
+	echo "DATE `date +%s`" >> ${VTEST_REPORT}
+	echo "BRANCH trunk" >> ${VTEST_REPORT}
+	echo "HOST `hostname`" >> ${VTEST_REPORT}
+	echo "UNAME `uname -a`" >> ${VTEST_REPORT}
+	echo "UGID `id`" >> ${VTEST_REPORT}
+	if [ -x /usr/bin/lsb_release ] ; then
+		echo "LSB `lsb_release -d`" >> ${VTEST_REPORT}
 	else
-		echo "AUTOGEN GOOD" >> ${LOG}
-		if ! makedistcheck >> _report/_makedistcheck 2>&1 ; then
-			echo "MAKEDISTCHECK BAD" >> ${LOG}
-			echo "MANIFEST _autogen" >> ${LOG}
-			echo "MANIFEST _makedistcheck" >> ${LOG}
-			failedtests >> ${LOG}
+		echo "LSB none" >> ${VTEST_REPORT}
+	fi
+	echo "MESSAGE ${MESSAGE}" >> ${VTEST_REPORT}
+	echo "GITREV $rev" >> ${VTEST_REPORT}
+	if ! autogen >> ${REPORTDIR}/_autogen 2>&1 ; then
+		echo "AUTOGEN BAD" >> ${VTEST_REPORT}
+		echo "MANIFEST _autogen" >> ${VTEST_REPORT}
+	else
+		echo "AUTOGEN GOOD" >> ${VTEST_REPORT}
+		if $do_gcov ; then
+			last_day=`date +%d`
+			if makegcov >> ${REPORTDIR}/_makegcov 2>&1 ; then
+				mv ${SRCDIR}/_gcov ${REPORTDIR}/
+				echo "MAKEGCOV GOOD" >> ${VTEST_REPORT}
+				echo "MANIFEST _gcov" >> ${VTEST_REPORT}
+			else
+				echo "MAKEGCOV BAD" >> ${VTEST_REPORT}
+				echo "MANIFEST _makegcov" >> ${VTEST_REPORT}
+			fi
+		elif ! makedistcheck >> ${REPORTDIR}/_makedistcheck 2>&1 ; then
+			echo "MAKEDISTCHECK BAD" >> ${VTEST_REPORT}
+			echo "MANIFEST _autogen" >> ${VTEST_REPORT}
+			echo "MANIFEST _makedistcheck" >> ${VTEST_REPORT}
+			failedtests >> ${VTEST_REPORT}
 		else
-			echo "MAKEDISTCHECK GOOD" >> ${LOG}
+			echo "MAKEDISTCHECK GOOD" >> ${VTEST_REPORT}
 			waitnext=${WAITGOOD}
 		fi
 	fi
-	echo "VTEST END" >> ${LOG}
-	pack > _report.tgz
-	submit _report.tgz
+	echo "VTEST END" >> ${VTEST_REPORT}
+	pack > ${TMPDIR}/_report.tgz
+	submit ${TMPDIR}/_report.tgz
 done
