@@ -1,4 +1,4 @@
-varnishtest "varnishncsa -F error handling"
+varnishtest "varnishncsa error handling"
 
 server s1 {
 	rxreq
@@ -6,6 +6,18 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {} -start
+
+err_shell "Missing -w option" \
+	{varnishncsa -n ${v1_name} -D 2>&1}
+
+err_shell "Unknown format specifier at: %{foo}A" \
+	{varnishncsa -n ${v1_name} -F "%{foo}A" 2>&1}
+
+err_shell "Unknown format specifier at: %A" \
+	{varnishncsa -n ${v1_name} -F "%A" 2>&1}
+
+err_shell "Usage: varnishncsa <options>" \
+	{varnishncsa -n ${v1_name} extra 2>&1}
 
 err_shell "Missing tag in VSL:" \
 	{varnishncsa -n ${v1_name} -F "%{VSL:}x" 2>&1}
