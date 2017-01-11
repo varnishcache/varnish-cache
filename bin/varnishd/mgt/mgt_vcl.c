@@ -691,6 +691,18 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 			VCLI_Out(cli, "%s is not a label", vpl->name);
 			return;
 		}
+		if (!VTAILQ_EMPTY(&vpt->dfrom) &&
+		    !VTAILQ_EMPTY(&vpl->dto)) {
+			VCLI_SetResult(cli, CLIS_PARAM);
+			VCLI_Out(cli, "return(vcl) can only be used from"
+			    " the active VCL.\n\n");
+			VCLI_Out(cli,
+			    "Label %s is used in return(vcl) from VCL %s\n",
+			    vpl->name, VTAILQ_FIRST(&vpl->dto)->from->name);
+			VCLI_Out(cli, "and VCL %s also has return(vcl)",
+			    vpt->name);
+			return;
+		}
 		mgt_vcl_dep_del(VTAILQ_FIRST(&vpl->dfrom));
 		AN(VTAILQ_EMPTY(&vpl->dfrom));
 	} else {
