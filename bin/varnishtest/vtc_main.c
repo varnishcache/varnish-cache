@@ -57,9 +57,6 @@
 #include "vtim.h"
 #include "vct.h"
 
-#define		MAX_FILESIZE		(1024 * 1024)
-
-
 struct vtc_tst {
 	unsigned		magic;
 #define TST_MAGIC		0x618d8b88
@@ -167,7 +164,7 @@ tst_cb(const struct vev *ve, int what)
 
 	CAST_OBJ_NOTNULL(jp, ve->priv, JOB_MAGIC);
 
-	// printf("%p %s %d\n", ve, jp->tst->filename, what);
+	// printf("CB %p %s %d\n", ve, jp->tst->filename, what);
 	if (what == 0)
 		AZ(kill(jp->child, SIGKILL)); /* XXX: Timeout */
 	else
@@ -186,10 +183,9 @@ tst_cb(const struct vev *ve, int what)
 		t = VTIM_mono() - jp->t0;
 		AZ(close(ve->fd));
 
-		if (stx)
+		ecode = WTERMSIG(stx);
+		if (ecode == 0)
 			ecode = WEXITSTATUS(stx);
-		else
-			ecode = 0;
 
 		if (ecode > 1 && vtc_verbosity)
 			printf("%s\n", jp->buf);
