@@ -551,7 +551,7 @@ CFLAGS="${CFLAGS} ${VARNISH_CFLAGS}"
 
 # Developer warnings
 
-VARNISH_FLAGS=
+VARNISH_CFLAGS=
 DEVELOPER_CFLAGS=
 
 AC_ARG_ENABLE(developer-warnings,
