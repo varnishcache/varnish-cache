@@ -42,6 +42,38 @@
 # any time. Public macros starting with VARNISH_ are documented and will
 # maintain backwards compatibility with older versions of Varnish Cache.
 
+# _VARNISH_DIAGNOSTIC
+# -------------------
+AC_DEFUN([_VARNISH_DIAGNOSTIC], [
+AS_ECHO("
+        ==== $PACKAGE diagnostic ====
+
+	version:        $PACKAGE_VERSION
+	prefix:         $prefix
+
+	compiler:       $CC
+	C flags:        $CFLAGS
+	cpp flags:      $CPPFLAGS
+	ld flags:       $LDFLAGS
+
+	vcl compiler:   $VCC_CC
+	vcc flags:      $OCFLAGS
+
+	original flags: $EXTCFLAGS
+
+	libs:           $LIBS
+	curses:         $CURSES_LIB
+	dl:             $DL_LIBS
+	libedit:        $LIBEDIT_LIBS
+	nsl:            $NSL_LIBS
+	pcre:           $PCRE_LIBS
+	pthread:        $PTHREAD_LIBS
+	rt:             $RT_LIBS
+	socket:         $SOCKET_LIBS
+	umem:           $UMEM_LIBS
+")
+])
+
 # _VARNISH_CHECK_LIB(LIB, FUNC)
 # -----------------------------
 AC_DEFUN([_VARNISH_CHECK_LIB], [

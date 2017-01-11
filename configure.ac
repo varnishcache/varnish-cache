@@ -723,4 +723,9 @@ AC_CONFIG_FILES([
     varnishapi.pc
     varnishapi-uninstalled.pc
 ])
+
 AC_OUTPUT
+
+AC_ARG_ENABLE([diagnostic],
+	AS_HELP_STRING([--enable-diagnostic], [Print configure diagnostic]),
+	[_VARNISH_DIAGNOSTIC], [])
