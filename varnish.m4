@@ -64,6 +64,7 @@ AS_ECHO("
 	libs:           $LIBS
 	curses:         $CURSES_LIB
 	dl:             $DL_LIBS
+	jemalloc:       $JEMALLOC_LDADD
 	libedit:        $LIBEDIT_LIBS
 	nsl:            $NSL_LIBS
 	pcre:           $PCRE_LIBS
