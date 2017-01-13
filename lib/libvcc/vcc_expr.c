@@ -1102,6 +1102,8 @@ static const struct cmps {
 
 	{STRING,	T_EQ,	"!VRT_strcmp(\v1, \v2)" },
 	{STRING,	T_NEQ,	"VRT_strcmp(\v1, \v2)" },
+	{STRING_LIST,	T_EQ,	"!VRT_strcmp(\v1, \v2)" },
+	{STRING_LIST,	T_NEQ,	"VRT_strcmp(\v1, \v2)" },
 
 	{VOID, 0, NULL}
 };
@@ -1133,6 +1135,11 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			break;
 	if (cp->fmt != VOID) {
 		vcc_NextToken(tl);
+		if ((*e)->fmt == STRING_LIST) {
+			// XXX: This is not optimal, but we can't pass two
+			// STRING_LIST's to a function anyway...
+			vcc_expr_tostring(tl, e, STRING);
+		}
 		vcc_expr_strfold(tl, &e2, (*e)->fmt);
 		ERRCHK(tl);
 		if (e2->fmt != (*e)->fmt) { /* XXX */

@@ -319,3 +319,22 @@ varnish v1 -errvcl {Comparison of different types: BACKEND '==' STRING} {
 		}
 	}
 }
+
+server s1 {
+	rxreq
+	txresp -hdr "bar: X"
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_deliver {
+		set resp.http.foo =
+		    (resp.http.foo + resp.http.bar) == ("X" + resp.http.foo);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.foo == "true"
+} -run
