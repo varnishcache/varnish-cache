@@ -100,7 +100,7 @@ VJ_Init(const char *j_arg)
 			ARGV_ERR("-j argument: %s\n", av[0]);
 		if (av[1] == NULL)
 			ARGV_ERR("-j argument is emtpy\n");
-		vjt = pick(vj_choice, av[1], "jail");
+		vjt = MGT_Pick(vj_choice, av[1], "jail");
 		CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);
 		(void)vjt->init(av + 2);
 		VAV_Free(av);
@@ -173,7 +173,7 @@ VJ_make_vcldir(const char *dname)
 		return (vjt->make_vcldir(dname));
 
 	if (mkdir(dname, 0755) < 0 && errno != EEXIST) {
-		MGT_complain(C_ERR, "Cannot create VCL directory '%s': %s",
+		MGT_Complain(C_ERR, "Cannot create VCL directory '%s': %s",
 		    dname, strerror(errno));
 		return (1);
 	}

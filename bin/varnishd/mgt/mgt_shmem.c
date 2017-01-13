@@ -151,7 +151,7 @@ vsm_zerofile(const char *fn, ssize_t size)
 
 	fd = VFL_Open(fn, O_RDWR | O_CREAT | O_EXCL | O_NONBLOCK, 0640);
 	if (fd < 0) {
-		MGT_complain(C_ERR, "Could not create %s: %s",
+		MGT_Complain(C_ERR, "Could not create %s: %s",
 		    fn, strerror(errno));
 		return (-1);
 	}
@@ -161,7 +161,7 @@ vsm_zerofile(const char *fn, ssize_t size)
 	flags &= ~O_NONBLOCK;
 	AZ(fcntl(fd, F_SETFL, flags));
 	if (VFIL_allocate(fd, (off_t)size, 1)) {
-		MGT_complain(C_ERR, "File allocation error %s: %s",
+		MGT_Complain(C_ERR, "File allocation error %s: %s",
 		    fn, strerror(errno));
 		return (-1);
 	}
@@ -223,7 +223,7 @@ mgt_SHM_Create(void)
 	AZ(close(vsm_fd));
 
 	if (p == MAP_FAILED) {
-		MGT_complain(C_ERR, "Mmap error %s: %s",
+		MGT_Complain(C_ERR, "Mmap error %s: %s",
 		    fnbuf, strerror(errno));
 		mgt_shm_cleanup();
 		exit(1);
@@ -274,7 +274,7 @@ mgt_SHM_Commit(void)
 	bprintf(fnbuf, "%s.%jd", VSM_FILENAME, (intmax_t)getpid());
 	VJ_master(JAIL_MASTER_FILE);
 	if (rename(fnbuf, VSM_FILENAME)) {
-		MGT_complain(C_ERR, "Rename failed %s -> %s: %s",
+		MGT_Complain(C_ERR, "Rename failed %s -> %s: %s",
 		    fnbuf, VSM_FILENAME, strerror(errno));
 		(void)unlink(fnbuf);
 		retval = -1;

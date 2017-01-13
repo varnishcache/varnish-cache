@@ -59,7 +59,7 @@ Wait_config(const char *arg)
 	ASSERT_MGT();
 
 	if (arg != NULL)
-		waiter = pick(waiter_choice, arg, "waiter");
+		waiter = MGT_Pick(waiter_choice, arg, "waiter");
 	else
 		waiter = waiter_choice[0].ptr;
 }

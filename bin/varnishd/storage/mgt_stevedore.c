@@ -162,7 +162,7 @@ STV_Config(const char *spec)
 	for (ac = 0; av[ac + 2] != NULL; ac++)
 		continue;
 
-	stv2 = pick(STV_choice, av[1], "storage");
+	stv2 = MGT_Pick(STV_choice, av[1], "storage");
 	AN(stv2);
 
 	/* Append strategy to ident string */

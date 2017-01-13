@@ -86,6 +86,7 @@ varnishd_SOURCES = \
 	mgt/mgt_param_tweak.c \
 	mgt/mgt_pool.c \
 	mgt/mgt_shmem.c \
+	mgt/mgt_util.c \
 	mgt/mgt_vcc.c \
 	mgt/mgt_vcl.c \
 	proxy/cache_proxy_proto.c \

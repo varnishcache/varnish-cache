@@ -126,14 +126,12 @@ struct choice {
 	const char      *name;
 	const void	*ptr;
 };
-const void *pick(const struct choice *cp, const char *which, const char *kind);
 
 extern const char C_ERR[];	// Things are not as they should be
 extern const char C_INFO[];	// Normal stuff, keep a record for later
 extern const char C_DEBUG[];	// More detail than you'd normally want
 extern const char C_SECURITY[];	// Security issues
 extern const char C_CLI[];	// CLI traffic between master and child
-void MGT_complain(const char *loud, const char *, ...) __v_printflike(2, 3);
 
 /* mgt_param.c */
 void MCF_InitParams(struct cli *);
@@ -152,9 +150,6 @@ void MCF_DumpRstParam(void);
 void MCF_AddParams(struct parspec *ps);
 extern struct params mgt_param;
 
-/* mgt_param_tcp.c */
-void MCF_TcpParams(void);
-
 /* mgt_shmem.c */
 void mgt_SHM_Init(void);
 void mgt_SHM_static_alloc(const void *, ssize_t size,
@@ -164,6 +159,15 @@ int mgt_SHM_Commit(void);
 void mgt_SHM_Destroy(int keep);
 void mgt_SHM_Size_Adjust(void);
 
+/* mgt_param_tcp.c */
+void MCF_TcpParams(void);
+
+/* mgt_util.c */
+void mgt_DumpRstVsl(void);
+struct vsb *mgt_BuildVident(void);
+void MGT_Complain(const char *, const char *, ...) __v_printflike(2, 3);
+const void *MGT_Pick(const struct choice *, const char *, const char *);
+void mgt_SymbolHack(const char *);
 
 /* stevedore_mgt.c */
 void STV_Config(const char *spec);

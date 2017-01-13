@@ -285,7 +285,7 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 	VCLI_AuthResponse(fd, cli->challenge, buf);
 	AZ(close(fd));
 	if (strcasecmp(buf, av[2])) {
-		MGT_complain(C_SECURITY,
+		MGT_Complain(C_SECURITY,
 		    "CLI Authentication failure from %s", cli->ident);
 		VCLI_SetResult(cli, CLIS_CLOSE);
 		return;
@@ -330,14 +330,14 @@ static void
 mgt_cli_cb_before(const struct cli *cli)
 {
 
-	MGT_complain(C_CLI, "CLI %s Rd %s", cli->ident, cli->cmd);
+	MGT_Complain(C_CLI, "CLI %s Rd %s", cli->ident, cli->cmd);
 }
 
 static void
 mgt_cli_cb_after(const struct cli *cli)
 {
 
-	MGT_complain(C_CLI, "CLI %s Wr %03u %s",
+	MGT_Complain(C_CLI, "CLI %s Wr %03u %s",
 	    cli->ident, cli->result, VSB_data(cli->sb));
 }
 
@@ -610,7 +610,7 @@ Marg_connect(const struct vev *e, int what)
 
 	M_fd = VTCP_connected(M_fd);
 	if (M_fd < 0) {
-		MGT_complain(C_INFO, "Could not connect to CLI-master: %m");
+		MGT_Complain(C_INFO, "Could not connect to CLI-master: %m");
 		ma = VTAILQ_FIRST(&m_addr_list);
 		AN(ma);
 		VTAILQ_REMOVE(&m_addr_list, ma, list);

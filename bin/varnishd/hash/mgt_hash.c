@@ -71,7 +71,7 @@ HSH_config(const char *h_arg)
 	for (ac = 0; av[ac + 2] != NULL; ac++)
 		continue;
 
-	hp = pick(hsh_choice, av[1], "hash");
+	hp = MGT_Pick(hsh_choice, av[1], "hash");
 	CHECK_OBJ_NOTNULL(hp, SLINGER_MAGIC);
 	VSB_printf(vident, ",-h%s", av[1]);
 	heritage.hash = hp;

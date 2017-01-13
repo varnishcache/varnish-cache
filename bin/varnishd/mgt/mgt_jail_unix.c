@@ -230,7 +230,7 @@ vju_subproc(enum jail_subproc_e jse)
 	 * reenable them again.
 	 */
 	if (prctl(PR_SET_DUMPABLE, 1) != 0) {
-		MGT_complain(C_INFO,
+		MGT_Complain(C_INFO,
 		    "Could not set dumpable bit.  Core dumps turned off");
 	}
 #endif
@@ -242,7 +242,7 @@ vju_make_vcldir(const char *dname)
 	AZ(seteuid(0));
 
 	if (mkdir(dname, 0755) < 0 && errno != EEXIST) {
-		MGT_complain(C_ERR, "Cannot create VCL directory '%s': %s",
+		MGT_Complain(C_ERR, "Cannot create VCL directory '%s': %s",
 		    dname, strerror(errno));
 		return (1);
 	}

@@ -89,7 +89,7 @@ MAC_reopen_sockets(struct cli *cli)
 		if (fail == 0)
 			continue;
 		if (cli == NULL)
-			MGT_complain(C_ERR,
+			MGT_Complain(C_ERR,
 			    "Could not reopen listen socket %s: %s",
 			    ls->name, strerror(fail));
 		else
