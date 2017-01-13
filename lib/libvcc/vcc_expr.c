@@ -840,7 +840,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		e1->constant = EXPR_CONST;
 		vcc_NextToken(tl);
 		*e = e1;
-		break;
+		return;
 	case CNUM:
 		/*
 		 * XXX: %g may not have enough decimals by default
@@ -871,14 +871,31 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		}
 		e1->constant = EXPR_CONST;
 		*e = e1;
+		return;
+	case '-':
+		if (fmt == INT || fmt == REAL) {
+			vcc_NextToken(tl);
+			ExpectErr(tl, CNUM);
+			if (fmt == INT) {
+				e1 = vcc_mk_expr(INT, "-%.*s", PF(tl->t));
+				vcc_NextToken(tl);
+			} else {
+				e1 = vcc_mk_expr(REAL, "-%f",
+				    vcc_DoubleVal(tl));
+			}
+			ERRCHK(tl);
+			e1->constant = EXPR_CONST;
+			*e = e1;
+			return;
+		}
 		break;
 	default:
-		VSB_printf(tl->sb, "Unknown token ");
-		vcc_ErrToken(tl, tl->t);
-		VSB_printf(tl->sb, " when looking for %s\n\n", fmt->name);
-		vcc_ErrWhere(tl, tl->t);
 		break;
 	}
+	VSB_printf(tl->sb, "Unknown token ");
+	vcc_ErrToken(tl, tl->t);
+	VSB_printf(tl->sb, " when looking for %s\n\n", fmt->name);
+	vcc_ErrWhere(tl, tl->t);
 }
 
 /*--------------------------------------------------------------------

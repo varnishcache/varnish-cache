@@ -19,9 +19,9 @@ varnish v1 -vcl+backend {
 
 	sub vcl_deliver {
 		set resp.http.foo1 = debug.argtest("1", 2.1, "3a");
-		set resp.http.foo2 = debug.argtest("1", two=2.2, three="3b");
+		set resp.http.foo2 = debug.argtest("1", two=-2.2, three="3b");
 		set resp.http.foo3 = debug.argtest("1", three="3c", two=2.3);
-		set resp.http.foo4 = debug.argtest("1", 2.4, three="3d");
+		set resp.http.foo4 = debug.argtest("1", 2.4, three="3d", four=-1);
 		set resp.http.foo5 = debug.argtest("1", 2.5);
 		set resp.http.foo6 = debug.argtest("1", four=6);
 
@@ -39,9 +39,9 @@ client c1 {
 	rxresp
 	expect resp.bodylen == "6"
 	expect resp.http.foo1 == "1 2.1 3a , 4"
-	expect resp.http.foo2 == "1 2.2 3b , 4"
+	expect resp.http.foo2 == "1 -2.2 3b , 4"
 	expect resp.http.foo3 == "1 2.3 3c , 4"
-	expect resp.http.foo4 == "1 2.4 3d , 4"
+	expect resp.http.foo4 == "1 2.4 3d , -1"
 	expect resp.http.foo5 == "1 2.5 3 , 4"
 	expect resp.http.foo6 == "1 2 3 , 6"
 
