@@ -216,7 +216,8 @@ tst_cb(const struct vev *ve, int what)
 			    jp->tst->filename, t);
 			if (WIFSIGNALED(stx))
 				printf(" signal=%d", WTERMSIG(stx));
-			printf(" exit=%d\n", ecode);
+			else if (WIFEXITED(stx))
+				printf(" exit=%d\n", WEXITSTATUS(stx));
 			if (!vtc_continue) {
 				/* XXX kill -9 other jobs ? */
 				exit(2);
