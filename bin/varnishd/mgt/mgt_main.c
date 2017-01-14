@@ -436,6 +436,7 @@ main(int argc, char * const *argv)
 	int o, eric_fd = -1;
 	unsigned C_flag = 0;
 	unsigned F_flag = 0;
+	unsigned V_flag = 0;
 	const char *b_arg = NULL;
 	const char *f_arg = NULL;
 	const char *i_arg = NULL;
@@ -459,6 +460,9 @@ main(int argc, char * const *argv)
 	unsigned u;
 	struct sigaction sac;
 	struct vev *e;
+
+	setbuf(stdout, NULL);
+	setbuf(stderr, NULL);
 
 	mgt_tests();
 
@@ -490,6 +494,9 @@ main(int argc, char * const *argv)
 		case 'j':
 			j_arg = optarg;
 			break;
+		case 'V':
+			V_flag = 1;
+			break;
 		case 'x':
 			x_arg = optarg;
 			break;
@@ -501,6 +508,12 @@ main(int argc, char * const *argv)
 	if (argc != optind)
 		ARGV_ERR("Too many arguments (%s...)\n", argv[optind]);
 
+	if (V_flag) {
+		if (argc != 2)
+			ARGV_ERR("-V is incompatible with everything else\n");
+		VCS_Message("varnishd");
+		exit(0);
+	}
 	if (x_arg != NULL) {
 		if (argc != 3)
 			ARGV_ERR("-x is incompatible with everything else\n");
@@ -514,7 +527,7 @@ main(int argc, char * const *argv)
 	if (d_flag && F_flag)
 		ARGV_ERR("Only one of -d or -F can be specified\n");
 
-	if (C_flag && b_arg == NULL && f_arg == NULL)
+	if (C_flag && b_arg == NULL && (f_arg == NULL || *f_arg == '\0'))
 		ARGV_ERR("-C needs either -b <backend> or -f <vcl_file>\n");
 
 	if (d_flag && C_flag)
@@ -523,15 +536,18 @@ main(int argc, char * const *argv)
 	if (F_flag && C_flag)
 		ARGV_ERR("-F makes no sense with -C\n");
 
+	if (!d_flag && b_arg == NULL && f_arg == NULL)
+		ARGV_ERR("Neither -b nor -f given. (use -f '' to override)\n");
+
+	if (f_arg != NULL && *f_arg == '\0')
+		f_arg = NULL;
+
 	/*
 	 * Start out by closing all unwanted file descriptors we might
 	 * have inherited from sloppy process control daemons.
 	 */
 	VSUB_closefrom(STDERR_FILENO + 1);
 	MCH_TrackHighFd(STDERR_FILENO);
-
-	setbuf(stdout, NULL);
-	setbuf(stderr, NULL);
 
 	/*
 	 * Have Eric Daemonize us if need be
@@ -541,10 +557,6 @@ main(int argc, char * const *argv)
 		MCH_TrackHighFd(eric_fd);
 		mgt_pid = getpid();
 	}
-
-#ifdef HAVE_SETPROCTITLE
-	setproctitle("Varnish-Mgr %s", heritage.name);
-#endif
 
 	/* Set up the mgt counters */
 	memset(&static_VSC_C_mgt, 0, sizeof static_VSC_C_mgt);
@@ -576,6 +588,7 @@ main(int argc, char * const *argv)
 		case 'f':
 		case 'F':
 		case 'j':
+		case 'V':
 		case 'x':
 			/* Handled in first pass */
 			break;
@@ -642,10 +655,6 @@ main(int argc, char * const *argv)
 		case 't':
 			MCF_ParamSet(cli, "default_ttl", optarg);
 			break;
-		case 'V':
-			/* XXX: we should print the ident here */
-			VCS_Message("varnishd");
-			exit(0);
 		case 'W':
 			W_arg = optarg;
 			break;
@@ -695,6 +704,10 @@ main(int argc, char * const *argv)
 	if (VIN_N_Arg(n_arg, &heritage.name, &dirname, NULL) != 0)
 		ARGV_ERR("Invalid instance (-n) name: %s\n", strerror(errno));
 
+#ifdef HAVE_SETPROCTITLE
+	setproctitle("Varnish-Mgr %s", heritage.name);
+#endif
+
 	identify(i_arg);
 
 	if (VJ_make_workdir(dirname))
@@ -734,16 +747,6 @@ main(int argc, char * const *argv)
 		MAC_Arg(":80");
 
 	assert(! VTAILQ_EMPTY(&heritage.socks));
-
-	if (!d_flag) {
-		if (b_arg == NULL && f_arg == NULL) {
-			fprintf(stderr,
-			    "Warning: Neither -b nor -f given,"
-			    " won't start a worker child.\n"
-			    "         Master process started,"
-			    " use varnishadm to control it.\n");
-		}
-	}
 
 	HSH_config(h_arg);
 

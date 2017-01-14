@@ -12,8 +12,8 @@ err_shell {VCL version declaration missing} {
 	echo 'bad vcl' > ${tmpdir}/t.vcl
 	varnishd -C -f ${tmpdir}/t.vcl -n ${tmpdir} 2>&1
 }
-err_shell {-spersistent has been deprecated} "varnishd -spersistent 2>&1"
-err_shell {Unknown jail method "xyz"} "varnishd -jxyz 2>&1"
+err_shell {-spersistent has been deprecated} "varnishd -spersistent -f '' 2>&1"
+err_shell {Unknown jail method "xyz"} "varnishd -jxyz -f '' 2>&1"
 err_shell {-x is incompatible with everything else} "varnishd -d -x foo 2>&1"
 err_shell {Invalid -x argument} "varnishd -x foo 2>&1"
 err_shell {Too many arguments} "varnishd foo 2>&1"
@@ -24,10 +24,10 @@ err_shell {-C needs either -b <backend> or -f <vcl_file>} \
 err_shell {-d makes no sense with -C} "varnishd -C -b 127.0.0.1:80 -d 2>&1"
 err_shell {-F makes no sense with -C} "varnishd -C -b 127.0.0.1:80 -F 2>&1"
 err_shell {usage: varnishd [options]} "varnishd -? 2>&1"
-err_shell {Invalid backslash sequence} {varnishd -l 'xyz\kk,xyz\foo' 2>&1}
-err_shell {Invalid backslash sequence} {varnishd -l 'ab\8cd' 2>&1}
-err_shell {Copyright (c) 2006} "varnishd -V 2>&1"
+err_shell {Invalid backslash sequence} {varnishd -l 'xyz\kk,xyz\foo' -f '' 2>&1}
+err_shell {Invalid backslash sequence} {varnishd -l 'ab\8cd' -f '' 2>&1}
+err_shell {Copyright (c) 2006} "varnishd -V 2>&1 ; exit 1"
 err_shell {usage: varnishd [options]} "varnishd -A 2>&1"
 err_shell {Cannot open -S file} {
-	varnishd -S ${tmpdir}/nonexistent -n ${tmpdir}/v0 2>&1
+	varnishd -S ${tmpdir}/nonexistent -n ${tmpdir}/v0 -f '' 2>&1
 }
