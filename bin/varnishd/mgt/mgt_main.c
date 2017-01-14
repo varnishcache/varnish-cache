@@ -31,12 +31,11 @@
 
 #include "config.h"
 
-#include <sys/utsname.h>
-
 #include <stdarg.h>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
@@ -397,6 +396,40 @@ mgt_eric_im_done(int eric_fd, unsigned u)
 
 /*--------------------------------------------------------------------*/
 
+static int __match_proto__(vev_cb_f)
+mgt_sigint(const struct vev *e, int what)
+{
+
+	(void)e;
+	(void)what;
+	MGT_Complain(C_ERR, "Manager got SIGINT");
+	(void)fflush(stdout);
+	if (child_pid >= 0)
+		mgt_stop_child();
+	exit(0);
+}
+
+/*--------------------------------------------------------------------*/
+
+static int __match_proto__(vev_cb_f)
+mgt_uptime(const struct vev *e, int what)
+{
+	static double mgt_uptime_t0 = 0;
+
+	(void)e;
+	(void)what;
+	AN(VSC_C_mgt);
+	if (mgt_uptime_t0 == 0)
+		mgt_uptime_t0 = VTIM_real();
+	VSC_C_mgt->uptime = static_VSC_C_mgt.uptime =
+	    (uint64_t)(VTIM_real() - mgt_uptime_t0);
+	if (heritage.vsm != NULL)
+		VSM_common_ageupdate(heritage.vsm);
+	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
 int
 main(int argc, char * const *argv)
 {
@@ -424,6 +457,8 @@ main(int argc, char * const *argv)
 	char Cn_arg[] = "/tmp/varnishd_C_XXXXXXX";
 	const char * opt_spec = "a:b:Cdf:Fh:i:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
 	unsigned u;
+	struct sigaction sac;
+	struct vev *e;
 
 	mgt_tests();
 
@@ -506,6 +541,10 @@ main(int argc, char * const *argv)
 		mgt_got_fd(eric_fd);
 		mgt_pid = getpid();
 	}
+
+#ifdef HAVE_SETPROCTITLE
+	setproctitle("Varnish-Mgr %s", heritage.name);
+#endif
 
 	/* Set up the mgt counters */
 	memset(&static_VSC_C_mgt, 0, sizeof static_VSC_C_mgt);
@@ -718,10 +757,6 @@ main(int argc, char * const *argv)
 		S_arg = make_secret(dirname);
 	AN(S_arg);
 
-	/**************************************************************
-	 * After this point diagnostics will only be seen with -d
-	 */
-
 	assert(pfh == NULL || !VPF_Write(pfh));
 
 	MGT_Complain(C_DEBUG, "Platform: %s", VSB_data(vident) + 1);
@@ -739,14 +774,51 @@ main(int argc, char * const *argv)
 
 	/* Instantiate VSM */
 	mgt_SHM_Create();
-
-	u = MGT_Run();
+	if (mgt_SHM_Commit()) {
+		MGT_Complain(C_ERR, "Could not commit SHM file");
+		u = 2;
+	} else {
+		u = MGT_Run();
+	}
 
 	if (eric_fd >= 0)
 		mgt_eric_im_done(eric_fd, u);
 
+	if (u)
+		exit(u);
+
+	/* Failure is no longer an option */
+
 	if (F_flag)
 		VFIL_null_fd(STDIN_FILENO);
+
+	e = vev_new();
+	AN(e);
+	e->callback = mgt_uptime;
+	e->timeout = 1.0;
+	e->name = "mgt_uptime";
+	AZ(vev_add(mgt_evb, e));
+
+	e = vev_new();
+	AN(e);
+	e->sig = SIGTERM;
+	e->callback = mgt_sigint;
+	e->name = "mgt_sigterm";
+	AZ(vev_add(mgt_evb, e));
+
+	e = vev_new();
+	AN(e);
+	e->sig = SIGINT;
+	e->callback = mgt_sigint;
+	e->name = "mgt_sigint";
+	AZ(vev_add(mgt_evb, e));
+
+	memset(&sac, 0, sizeof sac);
+	sac.sa_handler = SIG_IGN;
+	sac.sa_flags = SA_RESTART;
+
+	AZ(sigaction(SIGPIPE, &sac, NULL));
+	AZ(sigaction(SIGHUP, &sac, NULL));
 
 	o = vev_schedule(mgt_evb);
 	if (o != 0)

@@ -81,7 +81,6 @@ static struct vev	*ev_listen;
 static struct vlu	*child_std_vlu;
 
 static struct vsb *child_panic = NULL;
-static double mgt_uptime_t0 = 0.;
 
 static void mgt_reap_child(void);
 
@@ -667,37 +666,6 @@ mcf_server_status(struct cli *cli, const char * const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static int __match_proto__(vev_cb_f)
-mgt_sigint(const struct vev *e, int what)
-{
-
-	(void)e;
-	(void)what;
-	MGT_Complain(C_ERR, "Manager got SIGINT");
-	(void)fflush(stdout);
-	if (child_pid >= 0)
-		mgt_stop_child();
-	exit(0);
-}
-
-/*--------------------------------------------------------------------*/
-
-static int __match_proto__(vev_cb_f)
-mgt_uptime(const struct vev *e, int what)
-{
-
-	(void)e;
-	(void)what;
-	AN(VSC_C_mgt);
-	VSC_C_mgt->uptime = static_VSC_C_mgt.uptime =
-	    (uint64_t)(VTIM_real() - mgt_uptime_t0);
-	if (heritage.vsm != NULL)
-		VSM_common_ageupdate(heritage.vsm);
-	return (0);
-}
-
-/*--------------------------------------------------------------------*/
-
 static struct cli_proto cli_child[] = {
 	{ CLICMD_SERVER_STATUS,		"", mcf_server_status },
 	{ CLICMD_SERVER_START,		"", mcf_server_start },
@@ -716,44 +684,8 @@ static struct cli_proto cli_child[] = {
 int
 MGT_Run(void)
 {
-	struct sigaction sac;
-	struct vev *e;
-	int i;
 
 	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_child);
-
-	mgt_uptime_t0 = VTIM_real();
-	e = vev_new();
-	XXXAN(e);
-	e->callback = mgt_uptime;
-	e->timeout = 1.0;
-	e->name = "mgt_uptime";
-	AZ(vev_add(mgt_evb, e));
-
-	e = vev_new();
-	XXXAN(e);
-	e->sig = SIGTERM;
-	e->callback = mgt_sigint;
-	e->name = "mgt_sigterm";
-	AZ(vev_add(mgt_evb, e));
-
-	e = vev_new();
-	XXXAN(e);
-	e->sig = SIGINT;
-	e->callback = mgt_sigint;
-	e->name = "mgt_sigint";
-	AZ(vev_add(mgt_evb, e));
-
-#ifdef HAVE_SETPROCTITLE
-	setproctitle("Varnish-Mgr %s", heritage.name);
-#endif
-
-	memset(&sac, 0, sizeof sac);
-	sac.sa_handler = SIG_IGN;
-	sac.sa_flags = SA_RESTART;
-
-	AZ(sigaction(SIGPIPE, &sac, NULL));
-	AZ(sigaction(SIGHUP, &sac, NULL));
 
 	if (!d_flag && !mgt_has_vcl())
 		MGT_Complain(C_ERR, "No VCL loaded yet");
@@ -761,12 +693,6 @@ MGT_Run(void)
 		mgt_launch_child(NULL);
 		if (child_state != CH_RUNNING)
 			return (2);
-	}
-
-	i = mgt_SHM_Commit();
-	if (i != 0) {
-		MGT_Complain(C_ERR, "Could not commit SHM file");
-		return (2);
 	}
 
 	return(0);
