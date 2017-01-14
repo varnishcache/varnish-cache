@@ -2,7 +2,7 @@ varnishtest "-junix bad subarg handling"
 
 feature root
 
-err_shell "unknown sub-argument" "varnishd -junix,bla=foo 2>&1"
-err_shell "user not found" "varnishd -junix,user=/// 2>&1"
-err_shell "user not found" "varnishd -junix,workuser=/// 2>&1"
-err_shell "group not found" "varnishd -junix,ccgroup=/// 2>&1"
+err_shell "unknown sub-argument" "varnishd -junix,bla=foo -f '' 2>&1"
+err_shell "user not found" "varnishd -junix,user=/// -f '' 2>&1"
+err_shell "user not found" "varnishd -junix,workuser=/// -f '' 2>&1"
+err_shell "group not found" "varnishd -junix,ccgroup=/// -f '' 2>&1"

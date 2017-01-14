@@ -3,4 +3,4 @@ varnishtest "-junix bad subarg handling"
 feature root
 feature user_varnish
 
-err_shell "have different login groups" "varnishd -junix,workuser=root 2>&1"
+err_shell "have different login groups" "varnishd -junix,workuser=root -f '' 2>&1"
