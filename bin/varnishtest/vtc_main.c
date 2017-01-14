@@ -215,7 +215,7 @@ tst_cb(const struct vev *ve, int what)
 			printf("#     top  TEST %s FAILED (%.3f)",
 			    jp->tst->filename, t);
 			if (WIFSIGNALED(stx))
-				printf(" signal=%d", WTERMSIG(stx));
+				printf(" signal=%d\n", WTERMSIG(stx));
 			else if (WIFEXITED(stx))
 				printf(" exit=%d\n", WEXITSTATUS(stx));
 			if (!vtc_continue) {
