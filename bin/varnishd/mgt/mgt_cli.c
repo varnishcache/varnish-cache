@@ -282,7 +282,7 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 	VJ_master(JAIL_MASTER_LOW);
 	MCH_TrackHighFd(fd);
 	VCLI_AuthResponse(fd, cli->challenge, buf);
-	AZ(close(fd));
+	closefd(&fd);
 	if (strcasecmp(buf, av[2])) {
 		MGT_Complain(C_SECURITY,
 		    "CLI Authentication failure from %s", cli->ident);
@@ -518,7 +518,7 @@ mgt_cli_secret(const char *S_arg)
 		fprintf(stderr, "Can not read secret-file \"%s\"\n", S_arg);
 		exit(2);
 	}
-	AZ(close(fd));
+	closefd(&fd);
 	secret_file = S_arg;
 }
 

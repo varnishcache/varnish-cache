@@ -128,9 +128,9 @@ vwk_thread(void *priv)
 		if (vwk->nwaited == 0 && vwk->die)
 			break;
 	}
-	AZ(close(vwk->pipe[0]));
-	AZ(close(vwk->pipe[1]));
-	AZ(close(vwk->kq));
+	closefd(&vwk->pipe[0]);
+	closefd(&vwk->pipe[1]);
+	closefd(&vwk->kq);
 	return(NULL);
 }
 

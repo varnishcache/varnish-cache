@@ -218,7 +218,7 @@ mgt_SHM_Create(void)
 	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
 	    vsm_fd, 0);
 
-	AZ(close(vsm_fd));
+	closefd(&vsm_fd);
 
 	if (p == MAP_FAILED) {
 		MGT_Complain(C_ERR, "Mmap error %s: %s",

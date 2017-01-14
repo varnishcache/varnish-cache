@@ -262,8 +262,8 @@ vwp_fini(struct waiter *w)
 	// XXX: set write pipe blocking
 	assert(write(vwp->pipes[1], &vp, sizeof vp) == sizeof vp);
 	AZ(pthread_join(vwp->thread, &vp));
-	AZ(close(vwp->pipes[0]));
-	AZ(close(vwp->pipes[1]));
+	closefd(&vwp->pipes[0]);
+	closefd(&vwp->pipes[1]);
 	free(vwp->pollfd);
 	free(vwp->idx);
 }

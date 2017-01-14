@@ -86,7 +86,7 @@ vrt_vmod_backup_copy(VRT_CTX, const char *nm, const char *fm, const char *to)
 		VSB_printf(ctx->msg, "Opening vmod %s from %s: %s\n",
 		    nm, fm, strerror(errno));
 		AZ(unlink(to));
-		AZ(close(fo));
+		closefd(&fo);
 		return (1);
 	}
 	while (1) {
@@ -101,8 +101,8 @@ vrt_vmod_backup_copy(VRT_CTX, const char *nm, const char *fm, const char *to)
 			break;
 		}
 	}
-	AZ(close(fi));
-	AZ(close(fo));
+	closefd(&fi);
+	closefd(&fo);
 	return(ret);
 }
 

@@ -146,9 +146,9 @@ vwe_thread(void *priv)
 		if (vwe->nwaited == 0 && vwe->die)
 			break;
 	}
-	AZ(close(vwe->pipe[0]));
-	AZ(close(vwe->pipe[1]));
-	AZ(close(vwe->epfd));
+	closefd(&vwe->pipe[0]);
+	closefd(&vwe->pipe[1]);
+	closefd(&vwe->epfd);
 	return (NULL);
 }
 

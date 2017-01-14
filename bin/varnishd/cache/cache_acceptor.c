@@ -305,7 +305,7 @@ vca_make_session(struct worker *wrk, void *arg)
 	CAST_OBJ_NOTNULL(wa, arg, WRK_ACCEPT_MAGIC);
 
 	if (VTCP_blocking(wa->acceptsock)) {
-		AZ(close(wa->acceptsock));
+		closefd(&wa->acceptsock);
 		wrk->stats->sess_drop++;	// XXX Better counter ?
 		WS_Release(wrk->aws, 0);
 		return;
@@ -322,7 +322,7 @@ vca_make_session(struct worker *wrk, void *arg)
 		 */
 		vca_pace_bad();
 		(void)VTCP_nonblocking(wa->acceptsock);
-		AZ(close(wa->acceptsock));
+		closefd(&wa->acceptsock);
 		wrk->stats->sess_drop++;
 		WS_Release(wrk->aws, 0);
 		return;

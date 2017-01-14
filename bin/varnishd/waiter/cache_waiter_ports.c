@@ -256,7 +256,7 @@ vws_fini(struct waiter *w)
 
 	CAST_OBJ_NOTNULL(vws, w->priv, VWS_MAGIC);
 	vws->die = 1;
-	AZ(close(vws->dport));
+	closefd(&vws->dport);
 	AZ(pthread_join(vws->thread, &vp));
 }
 

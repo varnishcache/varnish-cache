@@ -59,7 +59,7 @@ mac_opensocket(struct listen_sock *ls)
 	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
 	if (ls->sock > 0) {
 		MCH_Fd_Inherit(ls->sock, NULL);
-		AZ(close(ls->sock));
+		closefd(&ls->sock);
 	}
 	ls->sock = VTCP_bind(ls->addr, NULL);
 	fail = errno;

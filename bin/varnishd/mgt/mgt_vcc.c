@@ -125,7 +125,7 @@ run_vcc(void *priv)
 		fprintf(stderr, "VCC cannot write %s", vp->csrcfile);
 		exit(2);
 	}
-	AZ(close(fd));
+	closefd(&fd);
 	VSB_destroy(&csrc);
 	exit(0);
 }
@@ -216,7 +216,7 @@ mgt_vcc_touchfile(const char *fn, struct vsb *sb)
 		if (geteuid() == 0)
 			VSB_printf(sb, "Failed to change owner on %s: %s\n",
 			    fn, strerror(errno));
-	AZ(close(i));
+	closefd(&i);
 	return (0);
 }
 

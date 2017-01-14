@@ -219,7 +219,7 @@ make_secret(const char *dirname)
 		AZ(VRND_RandomCrypto(&b, 1));
 		assert(1 == write(fdo, &b, 1));
 	}
-	AZ(close(fdo));
+	closefd(&fdo);
 	VJ_master(JAIL_MASTER_LOW);
 	AZ(atexit(mgt_secret_atexit));
 	return (fn);
@@ -361,7 +361,7 @@ mgt_eric(void)
 		fprintf(stderr, "Fork() failed: %s\n", strerror(errno));
 		exit(-1);
 	case 0:
-		AZ(close(eric_pipes[0]));
+		closefd(&eric_pipes[0]);
 		assert(setsid() > 1);
 
 		VFIL_null_fd(STDIN_FILENO);
@@ -369,7 +369,7 @@ mgt_eric(void)
 	default:
 		break;
 	}
-	AZ(close(eric_pipes[1]));
+	closefd(&eric_pipes[1]);
 	sz = read(eric_pipes[0], &u, sizeof u);
 	if (sz == sizeof u && u == ERIC_MAGIC)
 		exit(0);
@@ -391,7 +391,7 @@ mgt_eric_im_done(int eric_fd, unsigned u)
 	VFIL_null_fd(STDERR_FILENO);
 
 	assert(write(eric_fd, &u, sizeof u) == sizeof u);
-	AZ(close(eric_fd));
+	closefd(&eric_fd);
 }
 
 /*--------------------------------------------------------------------*/
@@ -681,7 +681,7 @@ main(int argc, char * const *argv)
 		if (o < 0)
 			ARGV_ERR("Cannot open -S file (%s): %s\n",
 			    S_arg, strerror(errno));
-		AZ(close(o));
+		closefd(&o);
 		VJ_master(JAIL_MASTER_LOW);
 	}
 

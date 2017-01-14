@@ -156,7 +156,7 @@ VJ_make_workdir(const char *dname)
 		ARGV_ERR("Cannot create test-file in %s (%s)\n"
 		    "Check permissions (or delete old directory)\n",
 		    dname, strerror(errno));
-	AZ(close(fd));
+	closefd(&fd);
 	AZ(unlink("_.testfile"));
 	VJ_master(JAIL_MASTER_LOW);
 	return (0);
