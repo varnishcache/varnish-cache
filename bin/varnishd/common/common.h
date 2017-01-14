@@ -28,6 +28,11 @@
  *
  */
 
+#ifdef COMMON_COMMON_H
+#error "Multiple includes of common/common.h"
+#endif
+#define COMMON_COMMON_H
+
 #include <stdint.h>
 
 #include <sys/types.h>

@@ -34,8 +34,6 @@
 #endif
 #define COMMON_PARAMS_H
 
-#include <stdint.h>
-
 #include "vre.h"
 
 #define VSM_CLASS_PARAM		"Params"

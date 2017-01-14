@@ -42,8 +42,6 @@
 
 #include "config.h"
 
-#include <stdio.h>
-
 #include "mgt/mgt.h"
 
 #include "mgt/mgt_param.h"

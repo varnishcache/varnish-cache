@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * The management process and CLI handling
+ * The management process, various utility functions
  */
 
 #include "config.h"
@@ -34,15 +34,9 @@
 #include <sys/utsname.h>
 
 #include <stdarg.h>
-#include <time.h>
-#include <ctype.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
-#include <unistd.h>
 
 #include "mgt/mgt.h"
 

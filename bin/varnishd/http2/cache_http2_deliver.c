@@ -34,9 +34,7 @@
 #include <netinet/in.h>
 
 #include <ctype.h>
-#include <netdb.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #include "cache/cache_filter.h"
 #include "cache/cache_transport.h"
