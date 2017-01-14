@@ -369,25 +369,20 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 /*--------------------------------------------------------------------*/
 
 void
-mgt_vcl_startup(struct cli *cli, const char *b_arg, const char *f_arg,
-    const char *vclsrc, int C_flag)
+mgt_vcl_startup(struct cli *cli, const char *vclsrc, const char *vclname,
+    const char *origin, int C_flag)
 {
-	char buf[BUFSIZ];
+	char buf[20];
+	static int n = 0;
 
-	if (b_arg == NULL) {
-		AN(vclsrc);
-		AN(f_arg);
-		mgt_new_vcl(cli, "boot", vclsrc, f_arg, NULL, C_flag);
-		return;
+	AN(vclsrc);
+	AN(origin);
+	if (vclname == NULL) {
+		bprintf(buf, "boot%d", n++);
+		vclname = buf;
 	}
-
-	AZ(vclsrc);
-	bprintf(buf,
-	    "vcl 4.0;\n"
-	    "backend default {\n"
-	    "    .host = \"%s\";\n"
-	    "}\n", b_arg);
-	mgt_new_vcl(cli, "boot", buf, "<-b argument>", NULL, C_flag);
+	mgt_new_vcl(cli, vclname, vclsrc, origin, NULL, C_flag);
+	active_vcl = mcf_vcl_byname(vclname);
 }
 
 /*--------------------------------------------------------------------*/

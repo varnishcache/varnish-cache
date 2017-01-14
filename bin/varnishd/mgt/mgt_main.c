@@ -52,6 +52,7 @@
 #include "vin.h"
 #include "vpf.h"
 #include "vrnd.h"
+#include "vsb.h"
 #include "vsha256.h"
 #include "vsub.h"
 #include "vtim.h"
@@ -430,15 +431,23 @@ mgt_uptime(const struct vev *e, int what)
 
 /*--------------------------------------------------------------------*/
 
+struct f_arg {
+	unsigned		magic;
+#define F_ARG_MAGIC		0x840649a8
+	char			*farg;
+	char			*src;
+	VTAILQ_ENTRY(f_arg)	list;
+};
+
 int
 main(int argc, char * const *argv)
 {
 	int o, eric_fd = -1;
 	unsigned C_flag = 0;
+	unsigned f_flag = 0;
 	unsigned F_flag = 0;
 	unsigned V_flag = 0;
 	const char *b_arg = NULL;
-	const char *f_arg = NULL;
 	const char *i_arg = NULL;
 	const char *j_arg = NULL;
 	const char *h_arg = "critbit";
@@ -451,7 +460,7 @@ main(int argc, char * const *argv)
 	const char *x_arg = NULL;
 	int s_arg_given = 0;
 	const char *T_arg = "localhost:0";
-	char *p, *vcl = NULL;
+	char *p;
 	struct cli cli[1];
 	char *dirname;
 	char **av;
@@ -460,6 +469,9 @@ main(int argc, char * const *argv)
 	unsigned u;
 	struct sigaction sac;
 	struct vev *e;
+	struct f_arg *fa;
+	struct vsb *vsb;
+	VTAILQ_HEAD(,f_arg) f_args = VTAILQ_HEAD_INITIALIZER(f_args);
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
@@ -486,7 +498,7 @@ main(int argc, char * const *argv)
 			d_flag++;
 			break;
 		case 'f':
-			f_arg = optarg;
+			f_flag = 1;
 			break;
 		case 'F':
 			F_flag = 1;
@@ -521,13 +533,13 @@ main(int argc, char * const *argv)
 		exit(0);
 	}
 
-	if (b_arg != NULL && f_arg != NULL)
+	if (b_arg != NULL && f_flag)
 		ARGV_ERR("Only one of -b or -f can be specified\n");
 
 	if (d_flag && F_flag)
 		ARGV_ERR("Only one of -d or -F can be specified\n");
 
-	if (C_flag && b_arg == NULL && (f_arg == NULL || *f_arg == '\0'))
+	if (C_flag && b_arg == NULL && !f_flag)
 		ARGV_ERR("-C needs either -b <backend> or -f <vcl_file>\n");
 
 	if (d_flag && C_flag)
@@ -536,11 +548,8 @@ main(int argc, char * const *argv)
 	if (F_flag && C_flag)
 		ARGV_ERR("-F makes no sense with -C\n");
 
-	if (!d_flag && b_arg == NULL && f_arg == NULL)
+	if (!d_flag && b_arg == NULL && !f_flag)
 		ARGV_ERR("Neither -b nor -f given. (use -f '' to override)\n");
-
-	if (f_arg != NULL && *f_arg == '\0')
-		f_arg = NULL;
 
 	/*
 	 * Start out by closing all unwanted file descriptors we might
@@ -582,10 +591,8 @@ main(int argc, char * const *argv)
 	optreset = 1;
 	while ((o = getopt(argc, argv, opt_spec)) != -1) {
 		switch (o) {
-		case 'b':
 		case 'C':
 		case 'd':
-		case 'f':
 		case 'F':
 		case 'j':
 		case 'V':
@@ -594,6 +601,34 @@ main(int argc, char * const *argv)
 			break;
 		case 'a':
 			MAC_Arg(optarg);
+			break;
+		case 'b':
+			ALLOC_OBJ(fa, F_ARG_MAGIC);
+			AN(fa);
+			REPLACE(fa->farg, "<-b argument>");
+			vsb = VSB_new_auto();
+			AN(vsb);
+			VSB_printf(vsb, "vcl 4.0;\n");
+			VSB_printf(vsb, "backend default {\n");
+			VSB_printf(vsb, "    .host = \"%s\";\n", optarg);
+			VSB_printf(vsb, "}\n");
+			AZ(VSB_finish(vsb));
+			fa->src = strdup(VSB_data(vsb));
+			AN(fa->src);
+			VSB_destroy(&vsb);
+			VTAILQ_INSERT_TAIL(&f_args, fa, list);
+			break;
+		case 'f':
+			if (*optarg == '\0')
+				break;
+			ALLOC_OBJ(fa, F_ARG_MAGIC);
+			AN(fa);
+			REPLACE(fa->farg, optarg);
+			fa->src = VFIL_readfile(NULL, fa->farg, NULL);
+			if (fa->src == NULL)
+				ARGV_ERR("Cannot read -f file (%s): %s\n",
+				    fa->farg, strerror(errno));
+			VTAILQ_INSERT_TAIL(&f_args, fa, list);
 			break;
 		case 'h':
 			h_arg = optarg;
@@ -679,7 +714,6 @@ main(int argc, char * const *argv)
 	}
 
 	assert(d_flag == 0 || F_flag == 0);
-	assert(b_arg == NULL || f_arg == NULL);
 
 	if (S_arg != NULL && !strcmp(S_arg, "none")) {
 		fprintf(stderr,
@@ -692,13 +726,6 @@ main(int argc, char * const *argv)
 			    S_arg, strerror(errno));
 		closefd(&o);
 		VJ_master(JAIL_MASTER_LOW);
-	}
-
-	if (f_arg != NULL) {
-		vcl = VFIL_readfile(NULL, f_arg, NULL);
-		if (vcl == NULL)
-			ARGV_ERR("Cannot read -f file (%s): %s\n",
-			    f_arg, strerror(errno));
 	}
 
 	if (VIN_N_Arg(n_arg, &heritage.name, &dirname, NULL) != 0)
@@ -729,19 +756,29 @@ main(int argc, char * const *argv)
 
 	mgt_vcl_init();
 
-	if (b_arg != NULL || f_arg != NULL) {
-		mgt_vcl_startup(cli, b_arg, f_arg, vcl, C_flag);
-		if (C_flag) {
-			if (Cn_arg == n_arg)
-				(void)rmdir(Cn_arg);
+	if (C_flag) {
+		VTAILQ_FOREACH(fa, &f_args, list) {
+			mgt_vcl_startup(cli, fa->src,
+			    VTAILQ_NEXT(fa, list) == NULL ? "boot" : NULL,
+			    fa->farg, 1);
 			AZ(VSB_finish(cli->sb));
 			fprintf(stderr, "%s\n", VSB_data(cli->sb));
-			exit(cli->result == CLIS_OK ? 0 : 2);
+			VSB_clear(cli->sb);
 		}
-		cli_check(cli);
-		free(vcl);
+		(void)rmdir(Cn_arg);
+		exit(cli->result == CLIS_OK ? 0 : 2);
+	} else {
+		while(!VTAILQ_EMPTY(&f_args)) {
+			fa = VTAILQ_FIRST(&f_args);
+			VTAILQ_REMOVE(&f_args, fa, list);
+			mgt_vcl_startup(cli, fa->src,
+			    VTAILQ_EMPTY(&f_args) ? "boot" : NULL,
+			    fa->farg, 0);
+			cli_check(cli);
+			free(fa->src);
+			FREE_OBJ(fa);
+		}
 	}
-	AZ(C_flag);
 
 	if (VTAILQ_EMPTY(&heritage.socks))
 		MAC_Arg(":80");
