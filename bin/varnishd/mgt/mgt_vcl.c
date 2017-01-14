@@ -293,7 +293,7 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 	if (vp->warm == 0)
 		vp->go_cold = 0;
 
-	if (child_pid < 0)
+	if (!MCH_Running())
 		return (0);
 
 	i = mgt_cli_askchild(&status, &p, "vcl.state %s %d%s\n",
@@ -354,7 +354,7 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 	if (active_vcl == NULL)
 		active_vcl = vp;
 
-	if (child_pid < 0)
+	if (!MCH_Running())
 		return;
 
 	if (mgt_cli_askchild(&status, &p, "vcl.load %s %s %d%s\n",
@@ -552,7 +552,7 @@ mcf_vcl_use(struct cli *cli, const char * const *av, void *priv)
 		return;
 	if (mgt_vcl_setstate(cli, vp, VCL_STATE_WARM))
 		return;
-	if (child_pid >= 0 &&
+	if (MCH_Running() &&
 	    mgt_cli_askchild(&status, &p, "vcl.use %s\n", av[2])) {
 		VCLI_SetResult(cli, status);
 		VCLI_Out(cli, "%s", p);
@@ -611,7 +611,7 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 		AN(vp->warm);
 	else
 		(void)mgt_vcl_setstate(cli, vp, VCL_STATE_COLD);
-	if (child_pid >= 0) {
+	if (MCH_Running()) {
 		/* XXX If this fails the child is crashing, figure that later */
 		(void)mgt_cli_askchild(&status, &p, "vcl.discard %s\n", av[2]);
 		free(p);
@@ -631,7 +631,7 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 
 	(void)av;
 	(void)priv;
-	if (child_pid >= 0) {
+	if (MCH_Running()) {
 		if (!mgt_cli_askchild(&status, &p, "vcl.list\n")) {
 			VCLI_SetResult(cli, status);
 			VCLI_Out(cli, "%s", p);
@@ -713,7 +713,7 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 	if (vpt->state == VCL_STATE_COLD)
 		vpt->state = VCL_STATE_AUTO;
 	(void)mgt_vcl_setstate(cli, vpt, VCL_STATE_WARM);
-	if (child_pid < 0)
+	if (!MCH_Running())
 		return;
 
 	i = mgt_cli_askchild(&status, &p, "vcl.label %s %s\n", av[2], av[3]);

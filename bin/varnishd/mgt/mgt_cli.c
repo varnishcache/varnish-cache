@@ -82,7 +82,7 @@ mcf_banner(struct cli *cli, const char *const *av, void *priv)
 	VCLI_Out(cli, "\n");
 	VCLI_Out(cli, "Type 'help' for command list.\n");
 	VCLI_Out(cli, "Type 'quit' to close CLI session.\n");
-	if (child_pid < 0)
+	if (!MCH_Running())
 		VCLI_Out(cli, "Type 'start' to launch worker process.\n");
 	VCLI_SetResult(cli, CLIS_OK);
 }
@@ -146,12 +146,12 @@ mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 		VSB_destroy(&vsb);
 		VCLI_SetResult(cli, CLIS_COMMS);
 		VCLI_Out(cli, "CLI communication error");
-		MGT_Child_Cli_Fail();
+		MCH_Cli_Fail();
 		return;
 	}
 	VSB_destroy(&vsb);
 	if (VCLI_ReadResult(cli_i, &u, &q, mgt_param.cli_timeout))
-		MGT_Child_Cli_Fail();
+		MCH_Cli_Fail();
 	VCLI_SetResult(cli, u);
 	VCLI_Out(cli, "%s", q);
 	free(q);
@@ -199,12 +199,12 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
 			*status = CLIS_COMMS;
 		if (resp != NULL)
 			*resp = strdup("CLI communication error");
-		MGT_Child_Cli_Fail();
+		MCH_Cli_Fail();
 		return (CLIS_COMMS);
 	}
 
 	if (VCLI_ReadResult(cli_i, &u, resp, mgt_param.cli_timeout))
-		MGT_Child_Cli_Fail();
+		MCH_Cli_Fail();
 	if (status != NULL)
 		*status = u;
 	return (u == CLIS_OK ? 0 : u);
@@ -280,7 +280,7 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 		return;
 	}
 	VJ_master(JAIL_MASTER_LOW);
-	mgt_got_fd(fd);
+	MCH_TrackHighFd(fd);
 	VCLI_AuthResponse(fd, cli->challenge, buf);
 	AZ(close(fd));
 	if (strcasecmp(buf, av[2])) {
@@ -484,7 +484,7 @@ telnet_accept(const struct vev *ev, int what)
 	if (i < 0)
 		return (0);
 
-	mgt_got_fd(i);
+	MCH_TrackHighFd(i);
 	tn = telnet_new(i);
 	vsb = sock_id("telnet", i);
 	mgt_cli_setup(i, i, 0, VSB_data(vsb), telnet_close, tn);
@@ -508,7 +508,7 @@ mgt_cli_secret(const char *S_arg)
 		exit(2);
 	}
 	VJ_master(JAIL_MASTER_LOW);
-	mgt_got_fd(fd);
+	MCH_TrackHighFd(fd);
 	i = read(fd, buf, sizeof buf);
 	if (i == 0) {
 		fprintf(stderr, "Empty secret-file \"%s\"\n", S_arg);
@@ -646,7 +646,7 @@ Marg_poker(const struct vev *e, int what)
 	if (s < 0)
 		return (0);
 
-	mgt_got_fd(s);
+	MCH_TrackHighFd(s);
 
 	M_conn = vev_new();
 	AN(M_conn);

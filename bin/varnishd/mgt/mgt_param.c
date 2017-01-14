@@ -383,7 +383,7 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 	if (cli->result != CLIS_OK) {
 		VCLI_Out(cli, "\n(attempting to set param '%s' to '%s')",
 		    pp->name, val);
-	} else if (child_pid >= 0 && pp->flags & MUST_RESTART) {
+	} else if (MCH_Running() && pp->flags & MUST_RESTART) {
 		VCLI_Out(cli,
 		    "\nChange will take effect when child is restarted");
 	} else if (pp->flags & MUST_RELOAD) {

@@ -225,5 +225,5 @@ smp_mgt_init(struct stevedore *parent, int ac, char * const *av)
 	parent->priv = sc;
 
 	/* XXX: only for sendfile I guess... */
-	mgt_child_inherit(sc->fd, "storage_persistent");
+	MCH_Fd_Inherit(sc->fd, "storage_persistent");
 }

@@ -63,7 +63,7 @@ int Symbol_Lookup(struct vsb *vsb, void *ptr);
 
 
 /* Really belongs in mgt.h, but storage_file chokes on both */
-void mgt_child_inherit(int fd, const char *what);
+void MCH_Fd_Inherit(int fd, const char *what);
 
 #define ARGV_ERR(...)						\
 	do {							\

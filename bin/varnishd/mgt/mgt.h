@@ -53,11 +53,11 @@ void MAC_Arg(const char *);
 void MAC_reopen_sockets(struct cli *);
 
 /* mgt_child.c */
-extern pid_t child_pid;
-int MGT_Run(void);
-void mgt_stop_child(void);
-void mgt_got_fd(int fd);
-void MGT_Child_Cli_Fail(void);
+int MCH_Init(int launch);
+int MCH_Running(void);
+void MCH_Stop_Child(void);
+void MCH_TrackHighFd(int fd);
+void MCH_Cli_Fail(void);
 
 /* mgt_cli.c */
 

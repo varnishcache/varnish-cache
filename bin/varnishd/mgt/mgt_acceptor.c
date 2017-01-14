@@ -58,7 +58,7 @@ mac_opensocket(struct listen_sock *ls)
 
 	CHECK_OBJ_NOTNULL(ls, LISTEN_SOCK_MAGIC);
 	if (ls->sock > 0) {
-		mgt_child_inherit(ls->sock, NULL);
+		MCH_Fd_Inherit(ls->sock, NULL);
 		AZ(close(ls->sock));
 	}
 	ls->sock = VTCP_bind(ls->addr, NULL);
@@ -67,7 +67,7 @@ mac_opensocket(struct listen_sock *ls)
 		AN(fail);
 		return (fail);
 	}
-	mgt_child_inherit(ls->sock, "sock");
+	MCH_Fd_Inherit(ls->sock, "sock");
 	return (0);
 }
 

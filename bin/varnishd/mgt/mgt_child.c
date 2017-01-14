@@ -52,7 +52,7 @@
 #include "vlu.h"
 #include "vtim.h"
 
-pid_t			child_pid = -1;
+static pid_t		child_pid = -1;
 
 static struct vbitmap	*fd_map;
 
@@ -84,19 +84,6 @@ static struct vsb *child_panic = NULL;
 
 static void mgt_reap_child(void);
 
-/*---------------------------------------------------------------------
- * A handy little function
- */
-
-static inline void
-closex(int *fd)
-{
-
-	assert(*fd >= 0);
-	AZ(close(*fd));
-	*fd = -1;
-}
-
 /*=====================================================================
  * Panic string evacuation and handling
  */
@@ -127,7 +114,7 @@ mgt_panic_clear(void)
 }
 
 static void __match_proto__(cli_func_t)
-mcf_panic_show(struct cli *cli, const char * const *av, void *priv)
+mch_cli_panic_show(struct cli *cli, const char * const *av, void *priv)
 {
 	(void)av;
 	(void)priv;
@@ -143,7 +130,7 @@ mcf_panic_show(struct cli *cli, const char * const *av, void *priv)
 }
 
 static void __match_proto__(cli_func_t)
-mcf_panic_clear(struct cli *cli, const char * const *av, void *priv)
+mch_cli_panic_clear(struct cli *cli, const char * const *av, void *priv)
 {
 	(void)priv;
 
@@ -180,7 +167,7 @@ static int		mgt_max_fd;
 #define CLOSE_FD_UP_TO	(mgt_max_fd + 100)
 
 void
-mgt_got_fd(int fd)
+MCH_TrackHighFd(int fd)
 {
 	/*
 	 * Assert > 0, to catch bogus opens, we know where stdin goes
@@ -197,7 +184,7 @@ mgt_got_fd(int fd)
  */
 
 void
-mgt_child_inherit(int fd, const char *what)
+MCH_Fd_Inherit(int fd, const char *what)
 {
 
 	assert(fd >= 0);
@@ -260,7 +247,7 @@ child_poker(const struct vev *e, int what)
 		MGT_Complain(C_ERR, "Unexpected reply from ping: %u %s",
 		    status, r);
 		if (status != CLIS_COMMS)
-			MGT_Child_Cli_Fail();
+			MCH_Cli_Fail();
 	}
 	free(r);
 	return 0;
@@ -314,13 +301,13 @@ mgt_launch_child(struct cli *cli)
 	/* Open pipe for mgr->child CLI */
 	AZ(pipe(cp));
 	heritage.cli_in = cp[0];
-	mgt_child_inherit(heritage.cli_in, "cli_in");
+	MCH_Fd_Inherit(heritage.cli_in, "cli_in");
 	child_cli_out = cp[1];
 
 	/* Open pipe for child->mgr CLI */
 	AZ(pipe(cp));
 	heritage.cli_out = cp[1];
-	mgt_child_inherit(heritage.cli_out, "cli_out");
+	MCH_Fd_Inherit(heritage.cli_out, "cli_out");
 	child_cli_in = cp[0];
 
 	/*
@@ -392,13 +379,13 @@ mgt_launch_child(struct cli *cli)
 	VSC_C_mgt->child_start = ++static_VSC_C_mgt.child_start;
 
 	/* Close stuff the child got */
-	closex(&heritage.std_fd);
+	closefd(&heritage.std_fd);
 
-	mgt_child_inherit(heritage.cli_in, NULL);
-	closex(&heritage.cli_in);
+	MCH_Fd_Inherit(heritage.cli_in, NULL);
+	closefd(&heritage.cli_in);
 
-	mgt_child_inherit(heritage.cli_out, NULL);
-	closex(&heritage.cli_out);
+	MCH_Fd_Inherit(heritage.cli_out, NULL);
+	closefd(&heritage.cli_out);
 
 	child_std_vlu = VLU_New(NULL, child_line, 0);
 	AN(child_std_vlu);
@@ -431,7 +418,7 @@ mgt_launch_child(struct cli *cli)
 		    (intmax_t)child_pid, p);
 		free(p);
 		child_state = CH_RUNNING;
-		mgt_stop_child();
+		MCH_Stop_Child();
 	} else
 		child_state = CH_RUNNING;
 }
@@ -472,9 +459,9 @@ mgt_reap_child(void)
 	 */
 	mgt_cli_stop_child();
 	if (child_cli_out >= 0)
-		closex(&child_cli_out);
+		closefd(&child_cli_out);
 	if (child_cli_in >= 0)
-		closex(&child_cli_in);
+		closefd(&child_cli_in);
 
 	/* Stop the poker */
 	if (ev_poker != NULL) {
@@ -555,7 +542,7 @@ mgt_reap_child(void)
 
 	/* Pick up any stuff lingering on stdout/stderr */
 	(void)child_listener(NULL, EV_RD);
-	closex(&child_output);
+	closefd(&child_output);
 	VLU_Destroy(child_std_vlu);
 
 	child_pid = -1;
@@ -581,7 +568,7 @@ mgt_reap_child(void)
  */
 
 void
-MGT_Child_Cli_Fail(void)
+MCH_Cli_Fail(void)
 {
 
 	if (child_state != CH_RUNNING)
@@ -603,7 +590,7 @@ MGT_Child_Cli_Fail(void)
  */
 
 void
-mgt_stop_child(void)
+MCH_Stop_Child(void)
 {
 
 	if (child_state != CH_RUNNING)
@@ -616,12 +603,23 @@ mgt_stop_child(void)
 	mgt_reap_child();
 }
 
+/*====================================================================
+ * Query if the child is running
+ */
+
+int
+MCH_Running(void)
+{
+
+	return (child_pid > 0);
+}
+
 /*=====================================================================
- * CLI commands to start/stop child
+ * CLI commands
  */
 
 static void __match_proto__(cli_func_t)
-mcf_server_start(struct cli *cli, const char * const *av, void *priv)
+mch_cli_server_start(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)av;
@@ -640,37 +638,33 @@ mcf_server_start(struct cli *cli, const char * const *av, void *priv)
 }
 
 static void __match_proto__(cli_func_t)
-mcf_server_stop(struct cli *cli, const char * const *av, void *priv)
+mch_cli_server_stop(struct cli *cli, const char * const *av, void *priv)
 {
 
 	(void)av;
 	(void)priv;
 	if (child_state == CH_RUNNING) {
-		mgt_stop_child();
+		MCH_Stop_Child();
 	} else {
 		VCLI_SetResult(cli, CLIS_CANT);
 		VCLI_Out(cli, "Child in state %s", ch_state[child_state]);
 	}
 }
 
-/*--------------------------------------------------------------------*/
-
 static void
-mcf_server_status(struct cli *cli, const char * const *av, void *priv)
+mch_cli_server_status(struct cli *cli, const char * const *av, void *priv)
 {
 	(void)av;
 	(void)priv;
 	VCLI_Out(cli, "Child in state %s", ch_state[child_state]);
 }
 
-/*--------------------------------------------------------------------*/
-
-static struct cli_proto cli_child[] = {
-	{ CLICMD_SERVER_STATUS,		"", mcf_server_status },
-	{ CLICMD_SERVER_START,		"", mcf_server_start },
-	{ CLICMD_SERVER_STOP,		"", mcf_server_stop },
-	{ CLICMD_PANIC_SHOW,		"", mcf_panic_show },
-	{ CLICMD_PANIC_CLEAR,		"", mcf_panic_clear },
+static struct cli_proto cli_mch[] = {
+	{ CLICMD_SERVER_STATUS,		"", mch_cli_server_status },
+	{ CLICMD_SERVER_START,		"", mch_cli_server_start },
+	{ CLICMD_SERVER_STOP,		"", mch_cli_server_stop },
+	{ CLICMD_PANIC_SHOW,		"", mch_cli_panic_show },
+	{ CLICMD_PANIC_CLEAR,		"", mch_cli_panic_clear },
 	{ NULL }
 };
 
@@ -681,14 +675,12 @@ static struct cli_proto cli_child[] = {
  */
 
 int
-MGT_Run(void)
+MCH_Init(int launch)
 {
 
-	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_child);
+	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_mch);
 
-	if (!d_flag && !mgt_has_vcl())
-		MGT_Complain(C_ERR, "No VCL loaded yet");
-	else if (!d_flag) {
+	if (launch) {
 		mgt_launch_child(NULL);
 		if (child_state != CH_RUNNING)
 			return (2);

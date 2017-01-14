@@ -171,7 +171,7 @@ mgt_stdin_close(void *priv)
 	(void)priv;
 
 	if (d_flag) {
-		mgt_stop_child();
+		MCH_Stop_Child();
 		mgt_cli_close_all();
 		if (pfh != NULL)
 			(void)VPF_Remove(pfh);
@@ -404,8 +404,8 @@ mgt_sigint(const struct vev *e, int what)
 	(void)what;
 	MGT_Complain(C_ERR, "Manager got SIGINT");
 	(void)fflush(stdout);
-	if (child_pid >= 0)
-		mgt_stop_child();
+	if (MCH_Running())
+		MCH_Stop_Child();
 	exit(0);
 }
 
@@ -528,7 +528,7 @@ main(int argc, char * const *argv)
 	 * have inherited from sloppy process control daemons.
 	 */
 	VSUB_closefrom(STDERR_FILENO + 1);
-	mgt_got_fd(STDERR_FILENO);
+	MCH_TrackHighFd(STDERR_FILENO);
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
@@ -538,7 +538,7 @@ main(int argc, char * const *argv)
 	 */
 	if (!C_flag && !d_flag && !F_flag) {
 		eric_fd = mgt_eric();
-		mgt_got_fd(eric_fd);
+		MCH_TrackHighFd(eric_fd);
 		mgt_pid = getpid();
 	}
 
@@ -773,7 +773,11 @@ main(int argc, char * const *argv)
 		mgt_cli_telnet(T_arg);
 
 	mgt_SHM_Create();
-	u = MGT_Run();
+
+	if (!d_flag && !mgt_has_vcl())
+		MGT_Complain(C_ERR, "No VCL loaded yet");
+
+	u = MCH_Init(d_flag ? 0 : 1);
 
 	if (eric_fd >= 0)
 		mgt_eric_im_done(eric_fd, u);
