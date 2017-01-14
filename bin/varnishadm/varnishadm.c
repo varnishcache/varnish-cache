@@ -62,6 +62,7 @@
 #include "vapi/vsm.h"
 #include "vas.h"
 #include "vcli.h"
+#include "vdef.h"
 #include "vnum.h"
 #include "vtcp.h"
 
@@ -302,7 +303,7 @@ interactive(int sock)
 				RL_EXIT(1);
 			}
 
-			sprintf(buf, "%u\n", status);
+			bprintf(buf, "%u\n", status);
 			u = write(1, buf, strlen(buf));
 			if (answer) {
 				u = write(1, answer, strlen(answer));
@@ -352,7 +353,7 @@ pass(int sock)
 				RL_EXIT(1);
 			}
 
-			sprintf(buf, "%u\n", status);
+			bprintf(buf, "%u\n", status);
 			u = write(1, buf, strlen(buf));
 			if (answer) {
 				u = write(1, answer, strlen(answer));

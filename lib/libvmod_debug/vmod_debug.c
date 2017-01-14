@@ -168,7 +168,7 @@ vmod_blob2hex(VRT_CTX, VCL_BLOB b)
 	p = s;
 	q = b->priv;
 	for (i = 0; i < b->len; i++) {
-		sprintf(p, "%02x", *q);
+		assert(snprintf(p, 3, "%02x", *q) == 2);
 		p += 2;
 		q += 1;
 	}

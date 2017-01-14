@@ -66,7 +66,7 @@ vcc_regexp(struct vcc *tl)
 		return (NULL);
 	}
 	VRE_free(&t);
-	sprintf(buf, "VGC_re_%u", tl->unique++);
+	bprintf(buf, "VGC_re_%u", tl->unique++);
 	p = TlAlloc(tl, strlen(buf) + 1);
 	strcpy(p, buf);
 
@@ -124,7 +124,7 @@ vcc_suckaddr(struct vcc *tl, const char *host, const struct suckaddr *vsa,
 
 	q = TlAlloc(tl, 40);
 	AN(q);
-	sprintf(q, "(const void*)suckaddr_%u", tl->unique);
+	assert(snprintf(q, 40, "(const void*)suckaddr_%u", tl->unique) < 40);
 	*ip = q;
 	tl->unique++;
 }

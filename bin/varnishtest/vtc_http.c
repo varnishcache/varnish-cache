@@ -501,7 +501,7 @@ http_splitheader(struct http *hp, int req)
 	assert(*p == '\0');
 
 	for (n = 0; n < 3 || hh[n] != NULL; n++) {
-		sprintf(buf, "http[%2d] ", n);
+		bprintf(buf, "http[%2d] ", n);
 		vtc_dump(hp->vl, 4, buf, hh[n], -1);
 	}
 }
@@ -615,7 +615,7 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 		vtc_dump(hp->vl, 4, "body", hp->body, ll);
 		ll = hp->rxbuf + hp->prxbuf - hp->body;
 		hp->bodyl = ll;
-		sprintf(hp->bodylen, "%d", ll);
+		bprintf(hp->bodylen, "%d", ll);
 		return;
 	}
 	p = http_find_header(hh, "content-length");
@@ -635,7 +635,7 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 		vtc_dump(hp->vl, 4, "rxeof", hp->body, ll);
 	}
 	hp->bodyl = ll;
-	sprintf(hp->bodylen, "%d", ll);
+	bprintf(hp->bodylen, "%d", ll);
 }
 
 /**********************************************************************
@@ -1197,7 +1197,7 @@ cmd_http_rxchunk(CMD_ARGS)
 	if (i == 0) {
 		ll = hp->rxbuf + hp->prxbuf - hp->body;
 		hp->bodyl = ll;
-		sprintf(hp->bodylen, "%d", ll);
+		bprintf(hp->bodylen, "%d", ll);
 		vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
 	}
 }
@@ -1952,7 +1952,7 @@ xxx(void)
 	for(n = 0;  n < 999999999; n++) {
 		*ibuf = 0;
 		for (j = 0; j < 7; j++) {
-			sprintf(strchr(ibuf, 0), "%x",
+			snprintf(strchr(ibuf, 0), 5, "%x",
 			    (unsigned)random() & 0xffff);
 			vz.next_in = TRUST_ME(ibuf);
 			vz.avail_in = strlen(ibuf);

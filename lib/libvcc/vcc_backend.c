@@ -478,7 +478,7 @@ vcc_ParseBackend(struct vcc *tl)
 	t_be = tl->t;
 	vcc_NextToken(tl);
 
-	sprintf(vgcname, "vgc_backend_%.*s", PF(t_be));
+	bprintf(vgcname, "vgc_backend_%.*s", PF(t_be));
 	Fh(tl, 0, "\nstatic struct director *%s;\n", vgcname);
 
 	sym = VCC_HandleSymbol(tl, t_be, BACKEND, "%s", vgcname);

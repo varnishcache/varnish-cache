@@ -458,7 +458,7 @@ vcc_acl_emit(struct vcc *tl, const char *acln, int anon)
 }
 
 void
-vcc_Acl_Hack(struct vcc *tl, char *b)
+vcc_Acl_Hack(struct vcc *tl, char *b, size_t bl)
 {
 	char acln[32];
 	unsigned tcond;
@@ -469,8 +469,8 @@ vcc_Acl_Hack(struct vcc *tl, char *b)
 	bprintf(acln, "%u", tl->unique++);
 	vcc_acl_entry(tl);
 	vcc_acl_emit(tl, acln, 1);
-	sprintf(b, "%smatch_acl_anon_%s(ctx, \v1)",
-	    (tcond == T_NEQ ? "!" : ""), acln);
+	assert(snprintf(b, bl - 1, "%smatch_acl_anon_%s(ctx, \v1)",
+	    (tcond == T_NEQ ? "!" : ""), acln) < bl - 1);
 }
 
 void

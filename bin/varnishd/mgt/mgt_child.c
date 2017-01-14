@@ -265,7 +265,7 @@ child_sigsegv_handler(int s, siginfo_t *si, void *c)
 	(void)s;
 	(void)c;
 
-	sprintf(buf, "Segmentation fault by instruction at %p", si->si_addr);
+	bprintf(buf, "Segmentation fault by instruction at %p", si->si_addr);
 	VAS_Fail(__func__,
 		 __FILE__,
 		 __LINE__,

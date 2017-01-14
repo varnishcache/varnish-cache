@@ -1197,7 +1197,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		return;
 	}
 	if ((*e)->fmt == IP && (tl->t->tok == T_EQ || tl->t->tok == T_NEQ)) {
-		vcc_Acl_Hack(tl, buf);
+		vcc_Acl_Hack(tl, buf, sizeof buf);
 		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
 		return;
 	}

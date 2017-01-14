@@ -401,7 +401,7 @@ VSLb_bin(struct vsl_log *vsl, enum VSL_tag_e tag, ssize_t len, const void *ptr)
 	assert(VSL_END(vsl->wlp, len * 2 + 1) < vsl->wle);
 	p = VSL_DATA(vsl->wlp);
 	for (ll = 0; ll < len; ll++) {
-		(void)sprintf(p, "%02x", *pp++);
+		assert(snprintf(p, 3, "%02x", *pp++) == 2);
 		p += 2;
 	}
 	if (suff)

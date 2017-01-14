@@ -264,7 +264,7 @@ shardcfg_hashcircle(struct sharddir *shardd, VCL_INT replicas, enum alg_e alg)
 		char s[len];
 
 		for (j = 0; j < replicas; j++) {
-			sprintf(s, "%s%d", ident, j);
+			assert(snprintf(s, len, "%s%d", ident, j) < len);
 			shardd->hashcircle[i * replicas + j].point =
 			    shard_hash_f[alg](s);
 			shardd->hashcircle[i * replicas + j].host = i;

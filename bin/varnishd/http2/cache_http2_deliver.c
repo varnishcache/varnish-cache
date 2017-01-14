@@ -130,7 +130,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 		*p++ = 0x18;
 		*p++ = 0x03;
 
-		(void)sprintf((char*)p, "%03d", req->resp->status);
+		assert(snprintf((char*)p, 4, "%03d", req->resp->status) == 3);
 		p += 3;
 		break;
 	}

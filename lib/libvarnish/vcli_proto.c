@@ -65,7 +65,7 @@ VCLI_AuthResponse(int S_fd, const char *challenge,
 	SHA256_Update(&ctx, "\n", 1);
 	SHA256_Final(buf, &ctx);
 	for(i = 0; i < SHA256_LEN; i++)
-		sprintf(response + 2 * i, "%02x", buf[i]);
+		assert(snprintf(response + 2 * i, 3, "%02x", buf[i]) == 2);
 }
 
 int
