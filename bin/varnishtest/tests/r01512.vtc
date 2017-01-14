@@ -33,7 +33,7 @@ client c1 {
 # Then across v_b_e and v_b_f
 
 varnish v1 -vcl {
-	backend bad { .host = "${bad_ip}"; .port = "9080"; }
+	backend bad { .host = "${bad_backend}"; }
 	sub vcl_backend_fetch {
 		set bereq.backend = bad;
 		if (bereq.http.x-abandon == "2") {

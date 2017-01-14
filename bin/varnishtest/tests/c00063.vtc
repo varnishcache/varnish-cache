@@ -2,7 +2,7 @@ varnishtest "cache backend synth object"
 
 varnish v1 -vcl {
 
-	backend b { .host = "${bad_ip}"; .port = "9080"; }
+	backend b { .host = "${bad_backend}"; }
 
 	sub vcl_backend_error {
 		set beresp.ttl = 1s;

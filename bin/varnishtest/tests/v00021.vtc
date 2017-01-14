@@ -43,7 +43,7 @@ varnish v1 -errvcl "Function recurses on" {
 varnish v1 -errvcl {Unused acl foo, defined:} {
 	backend b { .host = "127.0.0.1"; }
 
-	acl foo { "localhost"; }
+	acl foo { "127.0.0.1"; }
 
 }
 
@@ -75,7 +75,7 @@ varnish v1 -errvcl {Invalid return "deliver"} {
 
 varnish v1 -errvcl {HTTP header (buckinghambuckingham..) is too long.} {
 
-	backend foo { .host = "${bad_ip}"; .port = "9080"; }
+	backend foo { .host = "127.0.0.1"; }
 
 	sub vcl_deliver {
 		set resp.http.buckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambucking = "foobar";
@@ -84,7 +84,7 @@ varnish v1 -errvcl {HTTP header (buckinghambuckingham..) is too long.} {
 
 varnish v1 -vcl {
 
-	backend foo { .host = "${bad_ip}"; .port = "9080"; }
+	backend foo { .host = "127.0.0.1"; }
 
 	sub vcl_deliver {
 		set resp.http.buckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckinghambuckin = "foobar";

@@ -2,8 +2,7 @@ varnishtest "unreferenced acls"
 
 varnish v1 -arg "-p vcc_err_unref=off" -vcl {
 	backend s1 {
-		.host = "${bad_ip}";
-		.port = "9090";
+		.host = "127.0.0.1";
 	}
 	acl foo {
 		"127.0.0.1";

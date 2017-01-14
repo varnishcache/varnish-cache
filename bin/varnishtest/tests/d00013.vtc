@@ -14,7 +14,7 @@ varnish v1 -vcl {
 	import std;
 	import debug;
 
-	backend dummy { .host = "${bad_ip}"; .port = "9080"; }
+	backend dummy { .host = "${bad_backend}"; }
 
 	sub vcl_init {
 		new s1 = debug.dyn("${s1_addr}", "${s1_port}");

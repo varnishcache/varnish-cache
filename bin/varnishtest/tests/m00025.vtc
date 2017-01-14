@@ -3,7 +3,7 @@ varnishtest "Pass probe definitions to VMODs"
 varnish v1 -vcl {
 	import debug;
 
-	backend be { .host = "${bad_ip}"; }
+	backend be { .host = "127.0.0.1"; }
 	probe pb { }
 
 	sub vcl_init {

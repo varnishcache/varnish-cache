@@ -448,12 +448,20 @@ dns_works(void)
  * Figure out what IP related magic
  */
 
+static int __match_proto__(vss_resolved_f)
+bind_cb(void *priv, const struct suckaddr *sa)
+{
+	(void)priv;
+	return (VTCP_bind(sa, NULL));
+}
+
 static void
 ip_magic(void)
 {
 	const char *p;
 	int fd;
 	char abuf[VTCP_ADDRBUFSIZE];
+	char pbuf[VTCP_PORTBUFSIZE];
 
 	/*
 	 * In FreeBSD jails localhost/127.0.0.1 becomes the jails IP#
@@ -462,11 +470,13 @@ ip_magic(void)
 	 * XXX: "localhost", but that doesn't work out of the box.
 	 * XXX: Things like "prefer_ipv6" parameter complicates things.
 	 */
-	fd = VTCP_listen_on("127.0.0.1", NULL, 10, &p);
+	fd = VSS_resolver("127.0.0.1", NULL, &bind_cb, NULL, &p);
 	assert(fd >= 0);
-	VTCP_myname(fd, abuf, sizeof abuf, NULL, 0);
-	AZ(close(fd));
+	VTCP_myname(fd, abuf, sizeof abuf, pbuf, sizeof(pbuf));
 	extmacro_def("localhost", "%s", abuf);
+
+	/* Expose a backend that is forever down. */
+	extmacro_def("bad_backend", "%s %s", abuf, pbuf);
 
 	/*
 	 * We need an IP number which will not repond, ever, and that is a

@@ -4,13 +4,12 @@ varnish v1 -vcl {
 	import debug;
 
 	backend default {
-		.host = "${bad_ip}";
-		.port = "9090";
+		.host = "${bad_backend}";
 	}
 
 	sub vcl_backend_fetch {
 		# avoid LostHeader      b Host: %s
-		set bereq.http.Host = "${bad_ip}";
+		set bereq.http.Host = "127.0.0.1";
 		debug.workspace_allocate(backend,
 			debug.workspace_free(backend));
 	}

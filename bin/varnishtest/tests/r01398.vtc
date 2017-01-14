@@ -2,8 +2,7 @@ varnishtest "ticket 1398"
 
 varnish v1 -vcl {
 	backend foo {
-		.host = "${bad_ip}";
-		.port = "9080";
+		.host = "${bad_backend}";
 	}
 	sub vcl_backend_response {
 		set beresp.http.X-BE-Name = beresp.backend.name;

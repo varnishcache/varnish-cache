@@ -22,8 +22,7 @@ varnish v1 -vcl+backend {
 	    .initial = 0;
 	}
 	backend sick {
-	    .host = "${bad_ip}";
-	    .port = "9080";
+	    .host = "${bad_backend}";
 	    .probe = sick_probe;
 	}
 

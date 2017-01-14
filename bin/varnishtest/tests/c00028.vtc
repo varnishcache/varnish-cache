@@ -2,8 +2,7 @@ varnishtest "Test that we can't recurse restarts forever"
 
 varnish v1 -vcl {
 	backend bad {
-		.host = "${bad_ip}";
-		.port = "9090";
+		.host = "${bad_backend}";
 	}
 
 	sub vcl_backend_fetch {

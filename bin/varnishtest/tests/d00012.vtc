@@ -16,7 +16,7 @@ server s1 {
 varnish v1 -arg "-p thread_pools=1" -vcl {
 	import debug;
 
-	backend dummy { .host = "${bad_ip}"; .port = "9080"; }
+	backend dummy { .host = "${bad_backend}"; }
 
 	sub vcl_init {
 		new s1 = debug.dyn("${s1_addr}", "${s1_port}");
@@ -47,7 +47,7 @@ barrier b1 sync
 varnish v1 -vcl {
 	import debug;
 
-	backend dummy { .host = "${bad_ip}"; .port = "9080"; }
+	backend dummy { .host = "${bad_backend}"; }
 
 	sub vcl_init {
 		new s2 = debug.dyn("${s2_addr}", "${s2_port}");

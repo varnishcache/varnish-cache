@@ -2,8 +2,7 @@ varnishtest "Check that we do not close one error"
 
 varnish v1 -vcl {
 	backend foo {
-		.host = "${bad_ip}";
-		.port = "9080";
+		.host = "${bad_backend}";
 	}
 	sub vcl_recv {
 		return (synth(888));
