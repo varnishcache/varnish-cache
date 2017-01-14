@@ -772,14 +772,8 @@ main(int argc, char * const *argv)
 	if (T_arg != NULL)
 		mgt_cli_telnet(T_arg);
 
-	/* Instantiate VSM */
 	mgt_SHM_Create();
-	if (mgt_SHM_Commit()) {
-		MGT_Complain(C_ERR, "Could not commit SHM file");
-		u = 2;
-	} else {
-		u = MGT_Run();
-	}
+	u = MGT_Run();
 
 	if (eric_fd >= 0)
 		mgt_eric_im_done(eric_fd, u);

@@ -160,7 +160,6 @@ void mgt_SHM_Init(void);
 void mgt_SHM_static_alloc(const void *, ssize_t size,
     const char *class, const char *type, const char *ident);
 void mgt_SHM_Create(void);
-int mgt_SHM_Commit(void);
 void mgt_SHM_Destroy(int keep);
 void mgt_SHM_Size_Adjust(void);
 

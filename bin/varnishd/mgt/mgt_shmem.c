@@ -257,28 +257,14 @@ mgt_SHM_Create(void)
 	/* Commit changes, for OS's without coherent VM/buf */
 	AZ(msync(p, getpagesize(), MS_SYNC));
 #endif
-}
-
-/*--------------------------------------------------------------------
- * Commit the VSM
- */
-
-int
-mgt_SHM_Commit(void)
-{
-	char fnbuf[64];
-	int retval = 0;
-
-	bprintf(fnbuf, "%s.%jd", VSM_FILENAME, (intmax_t)getpid());
 	VJ_master(JAIL_MASTER_FILE);
 	if (rename(fnbuf, VSM_FILENAME)) {
 		MGT_Complain(C_ERR, "Rename failed %s -> %s: %s",
 		    fnbuf, VSM_FILENAME, strerror(errno));
 		(void)unlink(fnbuf);
-		retval = -1;
+		exit(1);
 	}
 	VJ_master(JAIL_MASTER_LOW);
-	return (retval);
 }
 
 /*--------------------------------------------------------------------

@@ -549,7 +549,6 @@ mgt_reap_child(void)
 		mgt_SHM_Destroy(MGT_DO_DEBUG(DBG_VSM_KEEP));
 	}
 	mgt_SHM_Create();
-	mgt_SHM_Commit();
 
 	if (child_state == CH_RUNNING)
 		child_state = CH_DIED;
