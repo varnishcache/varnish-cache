@@ -49,6 +49,13 @@
 		    < sizeof buf);					\
 	} while (0)
 
+/* Close and discard filedescriptor */
+#define closefd(fdp)				\
+	do {					\
+		assert(*(fdp) >= 0);		\
+		AZ(close(*(fdp)));		\
+		*(fdp) = -1;			\
+	} while (0)
 
 #ifndef __GNUC_PREREQ
 # if defined __GNUC__ && defined __GNUC_MINOR__
