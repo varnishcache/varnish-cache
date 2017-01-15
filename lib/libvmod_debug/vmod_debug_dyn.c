@@ -58,15 +58,13 @@ dyn_dir_init(VRT_CTX, struct vmod_debug_dyn *dyn,
 	struct director *dir, *dir2;
 	struct vrt_backend vrt;
 
-	vrt.port = port;
-	vrt.hosthdr = addr;
 	CHECK_OBJ_NOTNULL(dyn, VMOD_DEBUG_DYN_MAGIC);
 	XXXAN(addr);
 	XXXAN(port);
 
 	INIT_OBJ(&vrt, VRT_BACKEND_MAGIC);
-	vrt.vcl_name = dyn->vcl_name;
 	vrt.port = port;
+	vrt.vcl_name = dyn->vcl_name;
 	vrt.hosthdr = addr;
 
 	memset(&hints, 0, sizeof(hints));
