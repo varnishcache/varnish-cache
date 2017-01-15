@@ -178,9 +178,11 @@ process_thread(void *priv)
 	}
 	r = wait4(p->pid, &p->status, 0, &ru);
 
-	closefd(&p->fd_to);
 
 	AZ(pthread_mutex_lock(&p->mtx));
+
+	if (p->fd_to >= 0)
+		closefd(&p->fd_to);
 
 	macro_undef(p->vl, p->name, "pid");
 	p->pid = -1;
@@ -361,7 +363,10 @@ process_close(struct process *p)
 	if (!p->hasthread)
 		vtc_log(p->vl, 0, "Cannot close on a non-running process");
 
-	closefd(&p->fd_to);
+	AZ(pthread_mutex_lock(&p->mtx));
+	if (p->fd_to >= 0)
+		closefd(&p->fd_to);
+	AZ(pthread_mutex_unlock(&p->mtx));
 }
 
 /* SECTION: process process
