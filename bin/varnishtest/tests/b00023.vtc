@@ -1,15 +1,23 @@
-varnishtest "Check that the first_byte_timeout works from parameters"
+varnishtest "Check that the first_byte_timeout works"
 
 feature SO_RCVTIMEO_WORKS
 
+# From VCL
+
 server s1 {
 	rxreq
-	delay 1.5
-	txresp -body "foo"
+	delay 1
+	txresp
 } -start
 
-varnish v1 -vcl+backend {} -start
-varnish v1 -cliok "param.set first_byte_timeout 1"
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
+	sub vcl_backend_fetch {
+		set bereq.first_byte_timeout = 0.5s;
+	}
+} -start
 
 client c1 {
 	txreq
@@ -19,14 +27,65 @@ client c1 {
 
 server s1 {
 	rxreq
-	delay 0.5
-	txresp -body "foo"
+	delay 0.2
+	txresp
 } -start
 
-client c1 {
+client c2 {
 	txreq
 	rxresp
 	expect resp.status == 200
 } -run
 
-varnish v1 -expect fetch_failed == 1
+# From CLI
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (pass);
+	}
+}
+varnish v1 -cliok "param.set first_byte_timeout 0.5"
+
+server s1 {
+	rxreq
+	delay 1
+	txresp
+} -start
+
+client c1 -run
+
+server s1 {
+	rxreq
+	delay 0.2
+	txresp
+} -start
+
+client c2 -run
+
+# From backend definition
+
+server s1 {
+	rxreq
+	delay 1
+	txresp
+} -start
+
+varnish v1 -vcl {
+	backend b1 {
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+		.first_byte_timeout = 0.5s;
+	}
+}
+
+client c1 -run
+
+server s1 {
+	rxreq
+	delay 0.2
+	txresp
+} -start
+
+client c2 -run
+
+varnish v1 -expect fetch_failed == 3
