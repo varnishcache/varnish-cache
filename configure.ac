@@ -384,14 +384,17 @@ AC_CACHE_CHECK([whether SO_RCVTIMEO works],
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <errno.h>
     ]],[[
-int sd = socket(AF_INET, SOCK_STREAM, 0);
+int s = socket(AF_INET, SOCK_STREAM, 0);
 struct timeval tv = { 1, 0 };
-if (setsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv) == 0) {
-    socklen_t l = sizeof tv;
-    if (getsockopt(sd, SOL_SOCKET, SO_RCVTIMEO, &tv, &l) == 0) {
-        return (l != sizeof tv);
-    }
+if (s < 0 && errno == EPROTONOSUPPORT)
+  s = socket(AF_INET6, SOCK_STREAM, 0);
+if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof tv) == 0) {
+  socklen_t l = sizeof tv;
+  if (getsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, &l) == 0) {
+    return (l != sizeof tv);
+  }
 }
 return 1;
     ]])],
@@ -412,14 +415,17 @@ AC_CACHE_CHECK([whether SO_SNDTIMEO works],
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
+#include <errno.h>
     ]],[[
-int sd = socket(AF_INET, SOCK_STREAM, 0);
+int s = socket(AF_INET, SOCK_STREAM, 0);
 struct timeval tv = { 1, 0 };
-if (setsockopt(sd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof tv) == 0) {
-    socklen_t l = sizeof tv;
-    if (getsockopt(sd, SOL_SOCKET, SO_SNDTIMEO, &tv, &l) == 0) {
-        return (l != sizeof tv);
-    }
+if (s < 0 && errno == EPROTONOSUPPORT)
+  s = socket(AF_INET6, SOCK_STREAM, 0);
+if (setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof tv) == 0) {
+  socklen_t l = sizeof tv;
+  if (getsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, &l) == 0) {
+    return (l != sizeof tv);
+  }
 }
 return 1;
     ]])],
@@ -443,15 +449,16 @@ AC_CACHE_CHECK([for TCP_KEEP(CNT|IDLE|INTVL) socket options],
   [ac_cv_have_tcp_keep],
   [AC_RUN_IFELSE(
     [AC_LANG_PROGRAM([[
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <errno.h>
     ]],[[
 int s = socket(AF_INET, SOCK_STREAM, 0);
-int i;
-i = 5;
+int i = 5;
+if (s < 0 && errno == EPROTONOSUPPORT)
+  s = socket(AF_INET6, SOCK_STREAM, 0);
 if (setsockopt(s, IPPROTO_TCP, TCP_KEEPCNT, &i, sizeof i))
   return (1);
 if (setsockopt(s, IPPROTO_TCP, TCP_KEEPIDLE, &i, sizeof i))
@@ -475,15 +482,16 @@ AC_CACHE_CHECK([for TCP_FASTOPEN socket option],
   [ac_cv_have_tcp_fastopen],
   [AC_RUN_IFELSE(
     [AC_LANG_PROGRAM([[
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <errno.h>
     ]],[[
 int s = socket(AF_INET, SOCK_STREAM, 0);
-int i;
-i = 5;
+int i = 5;
+if (s < 0 && errno == EPROTONOSUPPORT)
+  s = socket(AF_INET6, SOCK_STREAM, 0);
 if (setsockopt(s, SOL_TCP, TCP_FASTOPEN, &i, sizeof i))
   return (1);
 return (0);
