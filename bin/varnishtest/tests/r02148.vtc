@@ -14,7 +14,7 @@ client c1 {
 
 delay 1
 
-process p1 {varnishncsa -d -n ${v1_name} -F "%u %{Host}i"} -run
-shell {grep -q "foo qux" ${tmpdir}/p1/stdout}
-process p2 {varnishncsa -d -n ${v1_name} -F "%r"} -run
-shell {grep -q "GET http://qux/ HTTP/1.1" ${tmpdir}/p2/stdout}
+shell -expect "foo qux" \
+	{varnishncsa -d -n ${v1_name} -F "%u %{Host}i"}
+shell -expect "GET http://qux/ HTTP/1.1" \
+	{varnishncsa -d -n ${v1_name} -F "%r"}

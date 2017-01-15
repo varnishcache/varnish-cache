@@ -24,9 +24,9 @@ process p2 -wait
 process p3 -wait
 
 # check stdout
-shell "grep foo ${tmpdir}/p1/stdout >/dev/null 2>&1"
-shell "grep bar ${tmpdir}/p2/stdout >/dev/null 2>&1"
-shell "grep baz ${tmpdir}/p3/stdout >/dev/null 2>&1"
+shell "grep -q foo ${tmpdir}/p1/stdout"
+shell "grep -q bar ${tmpdir}/p2/stdout"
+shell "grep -q baz ${tmpdir}/p3/stdout"
 
 # check stderr
 shell "test -f ${tmpdir}/p1/stderr -a ! -s ${tmpdir}/p1/stderr"

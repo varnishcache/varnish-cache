@@ -14,16 +14,19 @@ process p2 {
 process p3 {
 	exec varnishlog -n ${v1_name} -g raw -k 1 -w ${tmpdir}/p3/output.bin
 } -start
-process p4 "exec varnishlog -n ${v1_name} -h" -run
-shell {grep -q "Usage: varnishlog <options>" ${tmpdir}/p4/stderr}
-process p5 "exec varnishlog -n ${v1_name} -V" -run
-shell {grep -q "Copyright (c) 2006 Verdens Gang AS" ${tmpdir}/p5/stderr}
-shell -err -expect "Usage: varnishlog <options>" "varnishlog -n ${v1_name} extra 2>&1"
-shell -err -expect "Missing -w option" "varnishlog -n ${v1_name} -D 2>&1"
-shell -err -expect "-L: Range error" "varnishlog -n ${v1_name} -L 0 2>&1"
+shell -expect "Usage: varnishlog <options>" \
+	"varnishlog -n ${v1_name} -h"
+shell -expect "Copyright (c) 2006 Verdens Gang AS" \
+	"varnishlog -n ${v1_name} -V"
+shell -err -expect "Usage: varnishlog <options>" \
+	"varnishlog -n ${v1_name} extra"
+shell -err -expect "Missing -w option" \
+	"varnishlog -n ${v1_name} -D"
+shell -err -expect "-L: Range error" \
+	"varnishlog -n ${v1_name} -L 0"
 process p1 -wait
 shell {grep -q "0 CLI" ${tmpdir}/p1/stdout}
 process p2 -wait
 shell {grep -q "0 CLI" ${tmpdir}/p2/output}
 process p3 -wait
-shell {varnishlog -g raw -r ${tmpdir}/p3/output.bin | grep -q "0 CLI"}
+shell -expect "0 CLI" {varnishlog -g raw -r ${tmpdir}/p3/output.bin}
