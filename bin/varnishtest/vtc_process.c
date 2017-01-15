@@ -62,8 +62,9 @@ struct process {
 	int			fd_from;
 	pid_t			pid;
 
+	pthread_mutex_t		mtx;
 	pthread_t		tp;
-	unsigned		running;
+	unsigned		hasthread;
 	int			status;
 };
 
@@ -95,6 +96,7 @@ process_new(const char *name)
 	ALLOC_OBJ(p, PROCESS_MAGIC);
 	AN(p);
 	REPLACE(p->name, name);
+	AZ(pthread_mutex_init(&p->mtx, NULL));
 
 	p->vl = vtc_logopen(name);
 	AN(p->vl);
@@ -129,6 +131,7 @@ process_delete(struct process *p)
 {
 
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
+	AZ(pthread_mutex_destroy(&p->mtx));
 	vtc_logclose(p->vl);
 	free(p->name);
 	free(p->workdir);
@@ -174,13 +177,21 @@ process_thread(void *priv)
 			continue;
 	}
 	r = wait4(p->pid, &p->status, 0, &ru);
+
+	closefd(&p->fd_to);
+
+	AZ(pthread_mutex_lock(&p->mtx));
+
 	macro_undef(p->vl, p->name, "pid");
 	p->pid = -1;
-	p->running = 0;
-	vtc_log(p->vl, 2, "R %d Status: %04x (u %.6f s %.6f)", r, p->status,
+
+	vtc_log(p->vl, 2, "R 0x%04x Status: %04x (u %.6f s %.6f)",
+	    r, p->status,
 	    ru.ru_utime.tv_sec + 1e-6 * ru.ru_utime.tv_usec,
 	    ru.ru_stime.tv_sec + 1e-6 * ru.ru_stime.tv_usec
 	);
+
+	AZ(pthread_mutex_unlock(&p->mtx));
 
 	if (WIFEXITED(p->status) && WEXITSTATUS(p->status) == 0)
 		return (NULL);
@@ -192,8 +203,6 @@ process_thread(void *priv)
 	vtc_log(p->vl, 2, "Bad exit code: %04x sig %d exit %d",
 	    p->status, WTERMSIG(p->status), WEXITSTATUS(p->status));
 #endif
-
-	closefd(&p->fd_to);
 
 	return (NULL);
 }
@@ -207,6 +216,8 @@ process_start(struct process *p)
 	int fdt[2];
 
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
+	if (p->hasthread)
+		vtc_log(p->vl, 0, "Already running, (-wait first)");
 
 	vtc_log(p->vl, 4, "CMD: %s", p->spec);
 
@@ -227,7 +238,6 @@ process_start(struct process *p)
 	}
 	p->pid = fork();
 	assert(p->pid >= 0);
-	p->running = 1;
 	if (p->pid == 0) {
 		assert(dup2(fds[0], 0) == 0);
 		assert(dup2(out_fd, 1) == 1);
@@ -249,6 +259,7 @@ process_start(struct process *p)
 		closefd(&err_fd);
 	}
 	VSB_destroy(&cl);
+	p->hasthread = 1;
 	AZ(pthread_create(&p->tp, NULL, process_thread, p));
 }
 
@@ -257,12 +268,14 @@ process_start(struct process *p)
  */
 
 static void
-process_wait(const struct process *p)
+process_wait(struct process *p)
 {
 	void *v;
 
-	if (p->running && p->pid > 0)
+	if (p->hasthread) {
 		AZ(pthread_join(p->tp, &v));
+		p->hasthread = 0;
+	}
 }
 
 static void
@@ -278,14 +291,19 @@ process_run(struct process *p)
  */
 
 static void
-process_kill(const struct process *p, const char *sig)
+process_kill(struct process *p, const char *sig)
 {
 	int j = 0;
+	pid_t pid;
 
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
 	AN(sig);
+	
+	AZ(pthread_mutex_lock(&p->mtx));
+	pid = p->pid;
+	AZ(pthread_mutex_unlock(&p->mtx));
 
-	if (!p->running || p->pid <= 0)
+	if (pid <= 0)
 		vtc_log(p->vl, 0, "Cannot signal a non-running process");
 
 	if (!strcmp(sig, "TERM"))
@@ -299,19 +317,20 @@ process_kill(const struct process *p, const char *sig)
 	else
 		vtc_log(p->vl, 0, "Could not grok signal (%s)", sig);
 
-	if (kill(-p->pid, j) < 0)
-		vtc_log(p->vl, 0, "Failed to send signal %d (%s)", j, strerror(errno));
+	if (kill(-pid, j) < 0)
+		vtc_log(p->vl, 0, "Failed to send signal %d (%s)",
+		    j, strerror(errno));
 	else
 		vtc_log(p->vl, 4, "Sent signal %d", j);
 }
 
 static inline void
-process_terminate(const struct process *p)
+process_terminate(struct process *p)
 {
 
 	process_kill(p, "TERM");
 	sleep(1);
-	if (p->running && p->pid > 0)
+	if (p->pid > 0)
 		process_kill(p, "KILL");
 }
 
@@ -324,7 +343,7 @@ process_write(const struct process *p, const char *text)
 {
 	int r, len;
 
-	if (!p->running || p->pid <= 0)
+	if (!p->hasthread)
 		vtc_log(p->vl, 0, "Cannot write to a non-running process");
 
 	len = strlen(text);
@@ -339,7 +358,7 @@ static void
 process_close(struct process *p)
 {
 
-	if (!p->running || p->pid <= 0)
+	if (!p->hasthread)
 		vtc_log(p->vl, 0, "Cannot close on a non-running process");
 
 	closefd(&p->fd_to);
@@ -403,8 +422,10 @@ cmd_process(CMD_ARGS)
 	if (av == NULL) {
 		/* Reset and free */
 		VTAILQ_FOREACH_SAFE(p, &processes, list, p2) {
-			if (p->running && p->pid > 0)
+			if (p->pid > 0)
 				process_terminate(p);
+			if (p->hasthread)
+				process_wait(p);
 			VTAILQ_REMOVE(&processes, p, list);
 			process_delete(p);
 		}
