@@ -18,9 +18,9 @@ process p4 "exec varnishlog -n ${v1_name} -h" -run
 shell {grep -q "Usage: varnishlog <options>" ${tmpdir}/p4/stderr}
 process p5 "exec varnishlog -n ${v1_name} -V" -run
 shell {grep -q "Copyright (c) 2006 Verdens Gang AS" ${tmpdir}/p5/stderr}
-err_shell "Usage: varnishlog <options>" "varnishlog -n ${v1_name} extra 2>&1"
-err_shell "Missing -w option" "varnishlog -n ${v1_name} -D 2>&1"
-err_shell "-L: Range error" "varnishlog -n ${v1_name} -L 0 2>&1"
+shell -err -expect "Usage: varnishlog <options>" "varnishlog -n ${v1_name} extra 2>&1"
+shell -err -expect "Missing -w option" "varnishlog -n ${v1_name} -D 2>&1"
+shell -err -expect "-L: Range error" "varnishlog -n ${v1_name} -L 0 2>&1"
 process p1 -wait
 shell {grep -q "0 CLI" ${tmpdir}/p1/stdout}
 process p2 -wait

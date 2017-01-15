@@ -19,5 +19,5 @@ process p5 "exec varnishstat -n ${v1_name} -x" -run
 shell {grep -q "<type>MAIN</type>" ${tmpdir}/p5/stdout}
 process p6 "exec varnishstat -n ${v1_name} -j" -run
 shell {grep -q "MAIN.uptime\":"  ${tmpdir}/p6/stdout}
-err_shell "Usage: varnishstat <options>" "varnishstat -n ${v1_name} extra 2>&1"
-err_shell "Cannot open /nonexistent/_.vsm" "varnishstat -n /nonexistent 2>&1"
+shell -err -expect "Usage: varnishstat <options>" "varnishstat -n ${v1_name} extra 2>&1"
+shell -err -expect "Cannot open /nonexistent/_.vsm" "varnishstat -n /nonexistent 2>&1"

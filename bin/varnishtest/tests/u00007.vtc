@@ -9,17 +9,17 @@ varnish v1 -vcl+backend {} -start
 
 process p1 "exec varnishhist -n ${v1_name} -h" -run
 shell {grep -q "Usage: varnishhist <options>" ${tmpdir}/p1/stderr}
-err_shell "Usage: varnishhist <options>" \
+shell -err -expect "Usage: varnishhist <options>" \
     "varnishhist -n ${v1_name} extra 2>&1"
-err_shell "-p: invalid '0'" "varnishhist -n ${v1_name} -p 0 2>&1"
-err_shell "-B: being able to bend time does not mean we can stop it" \
+shell -err -expect "-p: invalid '0'" "varnishhist -n ${v1_name} -p 0 2>&1"
+shell -err -expect "-B: being able to bend time does not mean we can stop it" \
     "varnishhist -n ${v1_name} -B 0 2>&1"
-err_shell "-B: being able to bend time does not mean we can make it go backwards" "varnishhist -n ${v1_name} -B -1 2>&1"
-err_shell "Invalid grouping mode: raw" \
+shell -err -expect "-B: being able to bend time does not mean we can make it go backwards" "varnishhist -n ${v1_name} -B -1 2>&1"
+shell -err -expect "Invalid grouping mode: raw" \
     "varnishhist -n ${v1_name} -g raw 2>&1"
-err_shell "-P: No such profile 'foo'" \
+shell -err -expect "-P: No such profile 'foo'" \
     "varnishhist -n ${v1_name} -P foo 2>&1"
-err_shell "-P: 'foo:bar' is not a valid profile name or definition" \
+shell -err -expect "-P: 'foo:bar' is not a valid profile name or definition" \
     "varnishhist -n ${v1_name} -P foo:bar 2>&1"
-err_shell "-P: 'foo:0:0:0' is not a valid tag name" \
+shell -err -expect "-P: 'foo:0:0:0' is not a valid tag name" \
     "varnishhist -n ${v1_name} -P foo:0:0:0 2>&1"

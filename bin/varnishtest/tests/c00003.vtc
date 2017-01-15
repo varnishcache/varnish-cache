@@ -4,11 +4,11 @@ varnishtest "Check that we fail to start if any listen address does not work"
 # and are on Linux, ensure /proc/net/ipv4/ip_nonlocal_bind is set to 0.
 
 # All bad listen addresses
-err_shell "Error: Could not get socket" {
+shell -err -expect "Error: Could not get socket" {
 	varnishd -F -a "${bad_ip}:0" -b '***' -n ${tmpdir} 2>&1
 }
 
 # old style address list
-err_shell "Unknown protocol" {
+shell -err -expect "Unknown protocol" {
 	varnishd -F -a "127.0.0.1:0,${bad_ip}:0" -b '***' -n ${tmpdir} 2>&1
 }
