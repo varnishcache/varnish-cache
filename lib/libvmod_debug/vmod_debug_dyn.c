@@ -58,19 +58,21 @@ dyn_dir_init(VRT_CTX, struct vmod_debug_dyn *dyn,
 	struct director *dir, *dir2;
 	struct vrt_backend vrt;
 
+	vrt.port = port;
+	vrt.hosthdr = addr;
 	CHECK_OBJ_NOTNULL(dyn, VMOD_DEBUG_DYN_MAGIC);
 	XXXAN(addr);
 	XXXAN(port);
 
 	INIT_OBJ(&vrt, VRT_BACKEND_MAGIC);
-	vrt.port = port;
 	vrt.vcl_name = dyn->vcl_name;
-	vrt.hosthdr = vrt.ipv4_addr;
+	vrt.port = port;
+	vrt.hosthdr = addr;
 
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET;
+	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
-	AZ(getaddrinfo(vrt.ipv4_addr, vrt.port, &hints, &res));
+	AZ(getaddrinfo(addr, port, &hints, &res));
 	XXXAZ(res->ai_next);
 
 	sa = VSA_Malloc(res->ai_addr, res->ai_addrlen);
