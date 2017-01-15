@@ -17,7 +17,6 @@ client c1 {
 	expect resp.status == 503
 } -run
 
-
 server s1 {
 	rxreq
 	delay 0.5
@@ -29,3 +28,5 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 } -run
+
+varnish v1 -expect fetch_failed == 1

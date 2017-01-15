@@ -199,7 +199,7 @@ VSC_FF(fetch_304,		uint64_t, 1, 'c', 'i', info,
 )
 
 VSC_FF(fetch_failed,		uint64_t, 1, 'c', 'i', info,
-    "Fetch failed (all causes), where we do get hold of the backend.",
+    "Fetch failed (all causes)",
 	"beresp fetch failed."
 )
 

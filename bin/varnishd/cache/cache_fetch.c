@@ -544,6 +544,7 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 			// XXX: doclose = ?
 			return (F_STP_ERROR);
 		} else {
+			wrk->stats->fetch_failed++;
 			return (F_STP_FAIL);
 		}
 	}
@@ -794,6 +795,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 		(void)VFP_Error(bo->vfc, "Template object failed");
 	if (bo->vfc->failed) {
 		VDI_Finish(bo->wrk, bo);
+		wrk->stats->fetch_failed++;
 		return (F_STP_FAIL);
 	}
 	return (F_STP_FETCHEND);
@@ -816,6 +818,8 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
 	AN(bo->fetch_objcore->flags & OC_F_BUSY);
 	assert(bo->director_state == DIR_S_NULL);
+
+	wrk->stats->fetch_failed++;
 
 	now = W_TIM_real(wrk);
 	VSLb_ts_busyobj(bo, "Error", now);
@@ -915,7 +919,6 @@ vbf_stp_fail(struct worker *wrk, const struct busyobj *bo)
 	if (!(bo->fetch_objcore->flags & OC_F_BUSY))
 		HSH_Kill(bo->fetch_objcore);
 	ObjSetState(wrk, bo->fetch_objcore, BOS_FAILED);
-	wrk->stats->fetch_failed++;
 	return (F_STP_DONE);
 }
 

@@ -46,4 +46,4 @@ client c1 {
 
 varnish v1 -expect n_object == 1
 varnish v1 -expect n_objectcore == 1
-
+varnish v1 -expect fetch_failed == 1

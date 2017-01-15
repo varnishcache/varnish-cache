@@ -75,3 +75,5 @@ client c3 {
 	expect resp.status == 200
 	expect resp.body == "abcdef"
 } -run
+
+varnish v1 -expect fetch_failed == 2
