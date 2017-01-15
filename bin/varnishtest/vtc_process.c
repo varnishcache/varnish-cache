@@ -42,6 +42,7 @@
 #include <unistd.h>
 
 #include "vtc.h"
+#include "vlu.h"
 #include "vsub.h"
 
 struct process {
@@ -56,7 +57,9 @@ struct process {
 	char			*outdir;
 	char			*out;
 	char			*err;
-	int			fds[2];
+	int			fd_to;
+	int			log;
+	int			fd_from;
 	pid_t			pid;
 
 	pthread_t		tp;
@@ -105,8 +108,8 @@ process_new(const char *name)
 	    p->outdir, p->outdir, p->out, p->err);
 	AZ(system(buf));
 
-	p->fds[0] = -1;
-	p->fds[1] = -1;
+	p->fd_to = -1;
+	p->fd_from = -1;
 
 	if (*p->name != 'p')
 		vtc_log(p->vl, 0, "Process name must start with 'p'");
@@ -146,14 +149,30 @@ process_delete(struct process *p)
  * Start the process thread
  */
 
+static int
+process_vlu_func(void *priv, const char *l)
+{
+	struct process *p;
+
+	CAST_OBJ_NOTNULL(p, priv, PROCESS_MAGIC);
+	vtc_dump(p->vl, 4, "output", l, -1);
+	return (0);
+}
+
 static void *
 process_thread(void *priv)
 {
 	struct process *p;
 	struct rusage ru;
 	int r;
+	struct vlu *vlu;
 
 	CAST_OBJ_NOTNULL(p, priv, PROCESS_MAGIC);
+	if (p->fd_from > 0) {
+		vlu = VLU_New(p, process_vlu_func, 1024);
+		while (!VLU_Fd(p->fd_from, vlu))
+			continue;
+	}
 	r = wait4(p->pid, &p->status, 0, &ru);
 	macro_undef(p->vl, p->name, "pid");
 	p->pid = -1;
@@ -174,8 +193,7 @@ process_thread(void *priv)
 	    p->status, WTERMSIG(p->status), WEXITSTATUS(p->status));
 #endif
 
-	(void)close(p->fds[1]);
-	p->fds[1] = -1;
+	closefd(&p->fd_to);
 
 	return (NULL);
 }
@@ -185,6 +203,8 @@ process_start(struct process *p)
 {
 	struct vsb *cl;
 	int out_fd, err_fd;
+	int fds[2];
+	int fdt[2];
 
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
 
@@ -192,16 +212,24 @@ process_start(struct process *p)
 
 	cl = macro_expand(p->vl, p->spec);
 	AN(cl);
-	AZ(pipe(p->fds));
-	out_fd = open(p->out, O_WRONLY|O_APPEND);
-	assert(out_fd >= 0);
-	err_fd = open(p->err, O_WRONLY|O_APPEND);
-	assert(err_fd >= 0);
+	AZ(pipe(fds));
+	if (p->log) {
+		AZ(pipe(fdt));
+		out_fd = fdt[1];
+		err_fd = fdt[1];
+	} else {
+		fdt[0] = -1;
+		fdt[1] = -1;
+		out_fd = open(p->out, O_WRONLY|O_APPEND);
+		assert(out_fd >= 0);
+		err_fd = open(p->err, O_WRONLY|O_APPEND);
+		assert(err_fd >= 0);
+	}
 	p->pid = fork();
 	assert(p->pid >= 0);
 	p->running = 1;
 	if (p->pid == 0) {
-		assert(dup2(p->fds[0], 0) == 0);
+		assert(dup2(fds[0], 0) == 0);
 		assert(dup2(out_fd, 1) == 1);
 		assert(dup2(err_fd, 2) == 2);
 		VSUB_closefrom(STDERR_FILENO + 1);
@@ -211,10 +239,15 @@ process_start(struct process *p)
 	}
 	vtc_log(p->vl, 3, "PID: %ld", (long)p->pid);
 	macro_def(p->vl, p->name, "pid", "%ld", (long)p->pid);
-	AZ(close(p->fds[0]));
-	AZ(close(out_fd));
-	AZ(close(err_fd));
-	p->fds[0] = -1;
+	closefd(&fds[0]);
+	p->fd_to = fds[1];
+	if (p->log) {
+		closefd(&fdt[1]);
+		p->fd_from = fdt[0];
+	} else {
+		closefd(&out_fd);
+		closefd(&err_fd);
+	}
 	VSB_destroy(&cl);
 	AZ(pthread_create(&p->tp, NULL, process_thread, p));
 }
@@ -296,7 +329,7 @@ process_write(const struct process *p, const char *text)
 
 	len = strlen(text);
 	vtc_log(p->vl, 4, "Writing %d bytes", len);
-	r = write(p->fds[1], text, len);
+	r = write(p->fd_to, text, len);
 	if (r < 0)
 		vtc_log(p->vl, 0, "Failed to write: %s (%d)",
 		    strerror(errno), errno);
@@ -309,8 +342,7 @@ process_close(struct process *p)
 	if (!p->running || p->pid <= 0)
 		vtc_log(p->vl, 0, "Cannot close on a non-running process");
 
-	(void)close(p->fds[1]);
-	p->fds[1] = -1;
+	closefd(&p->fd_to);
 }
 
 /* SECTION: process process
@@ -329,6 +361,9 @@ process_close(struct process *p)
  *
  * \-start
  *	Start the process.
+ *
+ * \-log
+ *	Log stdout/stderr with vtc_dump() (must be before -start/-run)
  *
  * \-wait
  *	Wait for the process to finish.
@@ -392,6 +427,10 @@ cmd_process(CMD_ARGS)
 
 		if (!strcmp(*av, "-start")) {
 			process_start(p);
+			continue;
+		}
+		if (!strcmp(*av, "-log")) {
+			p->log = 1;
 			continue;
 		}
 		if (!strcmp(*av, "-wait")) {
