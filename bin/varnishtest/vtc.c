@@ -425,27 +425,111 @@ cmd_varnishtest(CMD_ARGS)
 	AZ(av[2]);
 }
 
-/**********************************************************************
- * Shell command execution
+/* SECTION: shell shell
+ *
+ * Pass the string given as argument to a shell. If you have multiple commands
+ * to run, you can use curly barces to describe a multi-lines script, eg::
+ *
+ *         shell {
+ *                 echo begin
+ *                 cat /etc/fstab
+ *                 echo end
+ *         }
+ *
+ * By default a zero exit code is expected.
+ *
+ * Notice that the commandstring is prefixed with "exec 2>&1;" to join
+ * stderr and stdout back to the varnishtest process.
+ *
+ * Optional arguments:
+ *
+ *	-err			- expect non-zero exit code
+ *
+ *	-exit N			- expect exit code N
+ *
+ *	-expect string		- expect str to be found in stdout+err
+ *
+ * The vtc will fail if the return code of the shell is not 0.
  */
+/* SECTION: client-server.spec.shell shell
+ *
+ * Same as for the top-level shell.
+ */
+
+static void
+cmd_shell_engine(struct vtclog *vl, int ok,
+    const char *cmd, const char *expect)
+{
+	struct vsb *vsb;
+	FILE *fp;
+	int r, c;
+
+	AN(vl);
+	AN(cmd);
+	vsb = VSB_new_auto();
+	AN(vsb);
+	VSB_printf(vsb, "exec 2>&1 ; %s", cmd);
+	AZ(VSB_finish(vsb));
+	vtc_dump(vl, 4, "shell_cmd", VSB_data(vsb), -1);
+	fp = popen(VSB_data(vsb), "r");
+	if (fp == NULL)
+		vtc_log(vl, 0, "popen fails: %s", strerror(errno));
+	VSB_clear(vsb);
+	do {
+		c = getc(fp);
+		if (c != EOF)
+			VSB_putc(vsb, c);
+	} while (c != EOF);
+	r = pclose(fp);
+	vtc_log(vl, 4, "shell_status = 0x%04x", WEXITSTATUS(r));
+	if (WIFSIGNALED(r))
+		vtc_log(vl, 4, "shell_signal = %d", WTERMSIG(r));
+	if (ok < 0 && !WEXITSTATUS(r))
+		vtc_log(vl, 0, "shell did not fail as expected");
+	else if (ok >= 0 && WEXITSTATUS(r) != ok) {
+		vtc_log(vl, 0,
+		    "shell_exit not as expected: got 0x%04x wanted 0x%04x",
+			WEXITSTATUS(r), ok);
+	}
+	AZ(VSB_finish(vsb));
+	vtc_dump(vl, 4, "shell_out", VSB_data(vsb), VSB_len(vsb));
+	if (expect != NULL) {
+		if (strstr(VSB_data(vsb), expect) == NULL)
+			vtc_log(vl, 0,
+			    "shell_expect not found: (\"%s\")", expect);
+		else
+			vtc_log(vl, 4, "shell_expect found");
+	}
+	VSB_destroy(&vsb);
+}
+
 
 static void
 cmd_shell(CMD_ARGS)
 {
 	(void)priv;
 	(void)cmd;
-	int r, s;
+	int n;
+	int ok = 0;
+	const char *expect = NULL;
 
 	if (av == NULL)
 		return;
-	AN(av[1]);
-	AZ(av[2]);
-	vtc_dump(vl, 4, "shell", av[1], -1);
-	r = system(av[1]);
-	s = WEXITSTATUS(r);
-	if (s != 0)
-		vtc_log(vl, 0, "CMD '%s' failed with status %d (%s)",
-		    av[1], s, strerror(errno));
+	for (n = 1; av[n] != NULL; n++) {
+		if (!strcmp(av[n], "-err")) {
+			ok = -1;
+		} else if (!strcmp(av[n], "-exit")) {
+			n += 1;
+			ok = atoi(av[n]);
+		} else if (!strcmp(av[n], "-expect")) {
+			n += 1;
+			expect = av[n];
+		} else {
+			break;
+		}
+	}
+	AN(av[n]);
+	cmd_shell_engine(vl, ok, av[n], expect);
 }
 
 /**********************************************************************
@@ -457,43 +541,15 @@ cmd_err_shell(CMD_ARGS)
 {
 	(void)priv;
 	(void)cmd;
-	struct vsb *vsb;
-	FILE *fp;
-	int r, c;
 
 	if (av == NULL)
 		return;
 	AN(av[1]);
 	AN(av[2]);
 	AZ(av[3]);
-	vsb = VSB_new_auto();
-	AN(vsb);
-	vtc_dump(vl, 4, "cmd", av[2], -1);
-	fp = popen(av[2], "r");
-	if (fp == NULL)
-		vtc_log(vl, 0, "popen fails: %s", strerror(errno));
-	do {
-		c = getc(fp);
-		if (c != EOF)
-			VSB_putc(vsb, c);
-	} while (c != EOF);
-	r = pclose(fp);
-	vtc_log(vl, 4, "Status = %d", WEXITSTATUS(r));
-	if (WIFSIGNALED(r))
-		vtc_log(vl, 4, "Signal = %d", WTERMSIG(r));
-	if (WEXITSTATUS(r) == 0) {
-		vtc_log(vl, 0,
-		    "expected error from shell");
-	}
-	AZ(VSB_finish(vsb));
-	vtc_dump(vl, 4, "stdout", VSB_data(vsb), VSB_len(vsb));
-	if (strstr(VSB_data(vsb), av[1]) == NULL)
-		vtc_log(vl, 0,
-		    "Did not find expected string: (\"%s\")", av[1]);
-	else
-		vtc_log(vl, 4,
-		    "Found expected string: (\"%s\")", av[1]);
-	VSB_delete(vsb);
+	vtc_log(vl, 1,
+	    "NOTICE: err_shell is deprecated, use 'shell -err -expect'");
+	cmd_shell_engine(vl, -1, av[2], av[1]);
 }
 
 /**********************************************************************
