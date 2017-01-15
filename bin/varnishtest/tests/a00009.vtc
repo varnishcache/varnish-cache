@@ -1,33 +1,63 @@
-varnishtest "Code coverage of VCL compiler and RSTdump etc"
+varnishtest "Code coverage of mgt_main, (VCL compiler and RSTdump etc)"
 
 shell "varnishd -b 127.0.0.1:80 -C 2> ${tmpdir}/_.c"
 shell "varnishd -x dumprstparam > ${tmpdir}/_.param"
 shell "varnishd -x dumprstvsl > ${tmpdir}/_.vsl"
 shell "varnishd -x dumprstcli > ${tmpdir}/_.cli"
-err_shell {VCL version declaration missing} {
+shell -err -expect {VCL version declaration missing} {
 	echo 'bad vcl' > ${tmpdir}/t.vcl
-	varnishd -f ${tmpdir}/t.vcl -n ${tmpdir} 2>&1
+	varnishd -f ${tmpdir}/t.vcl -n ${tmpdir}
 }
-err_shell {VCL version declaration missing} {
+shell -err -expect {VCL version declaration missing} {
 	echo 'bad vcl' > ${tmpdir}/t.vcl
-	varnishd -C -f ${tmpdir}/t.vcl -n ${tmpdir} 2>&1
+	varnishd -C -f ${tmpdir}/t.vcl -n ${tmpdir}
 }
-err_shell {-spersistent has been deprecated} "varnishd -spersistent -f '' 2>&1"
-err_shell {Unknown jail method "xyz"} "varnishd -jxyz -f '' 2>&1"
-err_shell {-x is incompatible with everything else} "varnishd -d -x foo 2>&1"
-err_shell {Invalid -x argument} "varnishd -x foo 2>&1"
-err_shell {Too many arguments} "varnishd foo 2>&1"
-err_shell {Only one of -d or -F can be specified} "varnishd -d -F 2>&1"
-err_shell {Only one of -b or -f can be specified} "varnishd -b a -f b 2>&1"
-err_shell {-C needs either -b <backend> or -f <vcl_file>} \
-	"varnishd -C 2>&1"
-err_shell {-d makes no sense with -C} "varnishd -C -b 127.0.0.1:80 -d 2>&1"
-err_shell {-F makes no sense with -C} "varnishd -C -b 127.0.0.1:80 -F 2>&1"
-err_shell {usage: varnishd [options]} "varnishd -? 2>&1"
-err_shell {Invalid backslash sequence} {varnishd -l 'xyz\kk,xyz\foo' -f '' 2>&1}
-err_shell {Invalid backslash sequence} {varnishd -l 'ab\8cd' -f '' 2>&1}
-err_shell {Copyright (c) 2006} "varnishd -V 2>&1 ; exit 1"
-err_shell {usage: varnishd [options]} "varnishd -A 2>&1"
-err_shell {Cannot open -S file} {
-	varnishd -S ${tmpdir}/nonexistent -n ${tmpdir}/v0 -f '' 2>&1
+shell -err -expect {-spersistent has been deprecated} "varnishd -spersistent -f '' "
+shell -err -expect {Unknown jail method "xyz"} "varnishd -jxyz -f '' "
+shell -err -expect {-x is incompatible with everything else} "varnishd -d -x foo "
+shell -err -expect {Invalid -x argument} "varnishd -x foo "
+shell -err -expect {Too many arguments} "varnishd foo "
+shell -err -expect {Only one of -d or -F can be specified} "varnishd -d -F "
+shell -err -expect {Only one of -b or -f can be specified} "varnishd -b a -f b "
+shell -err -expect {-C needs either -b <backend> or -f <vcl_file>} \
+	"varnishd -C "
+shell -err -expect {-d makes no sense with -C} "varnishd -C -b 127.0.0.1:80 -d "
+shell -err -expect {-F makes no sense with -C} "varnishd -C -b 127.0.0.1:80 -F "
+shell -err -expect {usage: varnishd [options]} "varnishd -? "
+shell -err -expect {Invalid backslash sequence} {varnishd -l 'xyz\kk,xyz\foo' -f '' }
+shell -err -expect {Invalid backslash sequence} {varnishd -l 'ab\8cd' -f '' }
+shell -err -expect {Copyright (c) 2006} "varnishd -V  ; exit 1"
+shell -err -expect {usage: varnishd [options]} "varnishd -A "
+shell -err -expect {Cannot open -S file} {
+	varnishd -S ${tmpdir}/nonexistent -n ${tmpdir}/v0 -f ''
 }
+shell -err -expect {Neither -b nor -f given} { varnishd -n ${tmpdir}/v0  }
+
+# Test -F mode with no VCL loaded
+
+process p1 "exec varnishd -n ${tmpdir}/v0 -F -f '' -a :0" -log -start
+
+delay 1
+
+shell {
+	(
+	echo 'vcl 4.0;'
+	echo 'backend default {'
+	echo '  .host="${bad_backend}";'
+	echo '}'
+	) > ${tmpdir}/vcl
+}
+
+shell -expect {VCL compiled.} {
+	varnishadm -n ${tmpdir}/v0 vcl.load vcl1 ${tmpdir}/vcl
+}
+
+shell -expect {active      auto/warm          - vcl1} {
+	varnishadm -n ${tmpdir}/v0 vcl.list
+}
+
+shell {varnishadm -n ${tmpdir}/v0 start}}
+
+shell {varnishadm -n ${tmpdir}/v0 debug.listen_address}
+
+#process p1 -stop
