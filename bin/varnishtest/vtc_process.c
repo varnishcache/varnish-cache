@@ -156,7 +156,7 @@ process_thread(void *priv)
 	CAST_OBJ_NOTNULL(p, priv, PROCESS_MAGIC);
 	r = wait4(p->pid, &p->status, 0, &ru);
 	macro_undef(p->vl, p->name, "pid");
-	p->pid = 0;
+	p->pid = -1;
 	p->running = 0;
 	vtc_log(p->vl, 2, "R %d Status: %04x (u %.6f s %.6f)", r, p->status,
 	    ru.ru_utime.tv_sec + 1e-6 * ru.ru_utime.tv_usec,
@@ -228,7 +228,7 @@ process_wait(const struct process *p)
 {
 	void *v;
 
-	if (p->running && p->pid)
+	if (p->running && p->pid > 0)
 		AZ(pthread_join(p->tp, &v));
 }
 
@@ -252,7 +252,7 @@ process_kill(const struct process *p, const char *sig)
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
 	AN(sig);
 
-	if (!p->running || !p->pid)
+	if (!p->running || p->pid <= 0)
 		vtc_log(p->vl, 0, "Cannot signal a non-running process");
 
 	if (!strcmp(sig, "TERM"))
@@ -278,7 +278,7 @@ process_terminate(const struct process *p)
 
 	process_kill(p, "TERM");
 	sleep(1);
-	if (p->running && p->pid)
+	if (p->running && p->pid > 0)
 		process_kill(p, "KILL");
 }
 
@@ -291,7 +291,7 @@ process_write(const struct process *p, const char *text)
 {
 	int r, len;
 
-	if (!p->running || !p->pid)
+	if (!p->running || p->pid <= 0)
 		vtc_log(p->vl, 0, "Cannot write to a non-running process");
 
 	len = strlen(text);
@@ -306,7 +306,7 @@ static void
 process_close(struct process *p)
 {
 
-	if (!p->running || !p->pid)
+	if (!p->running || p->pid <= 0)
 		vtc_log(p->vl, 0, "Cannot close on a non-running process");
 
 	(void)close(p->fds[1]);
@@ -368,7 +368,7 @@ cmd_process(CMD_ARGS)
 	if (av == NULL) {
 		/* Reset and free */
 		VTAILQ_FOREACH_SAFE(p, &processes, list, p2) {
-			if (p->running && p->pid)
+			if (p->running && p->pid > 0)
 				process_terminate(p);
 			VTAILQ_REMOVE(&processes, p, list);
 			process_delete(p);
