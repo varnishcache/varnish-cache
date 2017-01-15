@@ -25,9 +25,10 @@ varnish v1 -vcl+backend {} -start
 
 client c1 {
 	txreq
+	rxresphdrs
+	expect resp.status == 200
 	non-fatal
-	timeout 3
-	rxresp
+	rxrespbody
 } -run
 
 delay .2
@@ -38,3 +39,5 @@ client c1 {
 	rxresp
 	expect resp.bodylen == 7
 } -run
+
+varnish v1 -expect fetch_failed == 1

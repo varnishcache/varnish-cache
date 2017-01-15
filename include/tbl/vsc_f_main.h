@@ -184,7 +184,7 @@ VSC_F(fetch_304,		uint64_t, 1, 'c', 'i', info,
 	"beresp with no body because of 304 response."
 )
 VSC_F(fetch_failed,		uint64_t, 1, 'c', 'i', info,
-    "Fetch failed (all causes), where we do get hold of the backend.",
+    "Fetch failed (all causes)",
 	"beresp fetch failed."
 )
 VSC_F(fetch_no_thread,		uint64_t, 1, 'c', 'i', info,

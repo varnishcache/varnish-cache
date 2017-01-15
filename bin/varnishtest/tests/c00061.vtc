@@ -22,3 +22,6 @@ client c1 {
 	rxresp
 	expect resp.status == 504
 } -run
+
+varnish v1 -expect backend_fail == 3
+varnish v1 -expect fetch_failed == 3
