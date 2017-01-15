@@ -459,6 +459,7 @@ main(int argc, char * const *argv)
 	const char *W_arg = NULL;
 	const char *x_arg = NULL;
 	int s_arg_given = 0;
+	int novcl = 0;
 	const char *T_arg = "localhost:0";
 	char *p;
 	struct cli cli[1];
@@ -619,8 +620,10 @@ main(int argc, char * const *argv)
 			VTAILQ_INSERT_TAIL(&f_args, fa, list);
 			break;
 		case 'f':
-			if (*optarg == '\0')
+			if (*optarg == '\0') {
+				novcl = 1;
 				break;
+			}
 			ALLOC_OBJ(fa, F_ARG_MAGIC);
 			AN(fa);
 			REPLACE(fa->farg, optarg);
@@ -814,10 +817,10 @@ main(int argc, char * const *argv)
 
 	mgt_SHM_Create();
 
-	if (!d_flag && !mgt_has_vcl())
+	if (!d_flag && !mgt_has_vcl() && !novcl)
 		MGT_Complain(C_ERR, "No VCL loaded yet");
 
-	u = MCH_Init(d_flag ? 0 : 1);
+	u = MCH_Init(d_flag || novcl ? 0 : 1);
 
 	if (eric_fd >= 0)
 		mgt_eric_im_done(eric_fd, u);
