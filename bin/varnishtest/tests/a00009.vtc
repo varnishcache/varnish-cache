@@ -35,7 +35,7 @@ shell -err -expect {Neither -b nor -f given} { varnishd -n ${tmpdir}/v0  }
 
 # Test -F mode with no VCL loaded
 
-process p1 "exec varnishd -n ${tmpdir}/v0 -F -f '' -a :0" -log -start
+process p1 "exec varnishd -n ${tmpdir}/v0 -F -f '' -a :0 -l2m,3m" -log -start
 
 delay 1
 
@@ -49,7 +49,7 @@ shell {
 }
 
 shell -expect {VCL compiled.} {
-	varnishadm -n ${tmpdir}/v0 vcl.load vcl1 ${tmpdir}/vcl
+	varnishadm -n ${tmpdir}/v0 vcl.load vcl1 ${tmpdir}/vcl 
 }
 
 shell -expect {active      auto/warm          - vcl1} {
@@ -60,4 +60,4 @@ shell {varnishadm -n ${tmpdir}/v0 start}}
 
 shell {varnishadm -n ${tmpdir}/v0 debug.listen_address}
 
-#process p1 -stop
+process p1 -stop -wait
