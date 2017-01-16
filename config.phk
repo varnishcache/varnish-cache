@@ -71,8 +71,7 @@ if true ; then
 		sys/filio.h \
 		sys/mount.h \
 		sys/statvfs.h \
-		sys/vfs.h \
-		umem.h
+		sys/vfs.h
 	do
 		if [ -f /usr/include/$i ] ; then
 			n=`echo $i | tr '[a-z/.]' '[A-Z__]'`
@@ -299,7 +298,6 @@ exit 0
 # SO_SNDTIMEO_WORKS +
 # VCC_CC +
 # HAVE_EPOLL_CTL -
-# HAVE_LIBUMEM -
 # USE_PCRE_JIT -
 # _FILE_OFFSET_BITS -
 #

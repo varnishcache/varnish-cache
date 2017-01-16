@@ -81,9 +81,6 @@ if test "x$ax_cv_curses" != xyes; then
    AC_MSG_ERROR([requires an X/Open-compatible Curses library])
 fi
 
-# Userland slab allocator from Solaris, ported to other systems
-AC_CHECK_HEADERS([umem.h], [_VARNISH_CHECK_LIB(umem, umem_alloc)])
-
 # XXX: This _may_ be for OS/X
 AC_CHECK_LIBM
 AC_SUBST(LIBM)

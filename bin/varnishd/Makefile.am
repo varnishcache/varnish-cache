@@ -101,7 +101,6 @@ varnishd_SOURCES = \
 	storage/storage_persistent_silo.c \
 	storage/storage_persistent_subr.c \
 	storage/storage_simple.c \
-	storage/storage_umem.c \
 	waiter/mgt_waiter.c \
 	waiter/cache_waiter.c \
 	waiter/cache_waiter_epoll.c \
@@ -157,7 +156,7 @@ varnishd_LDADD = \
 	@SAN_LDFLAGS@ \
 	@JEMALLOC_LDADD@ \
 	@PCRE_LIBS@ \
-	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${RT_LIBS} ${LIBM} ${UMEM_LIBS}
+	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${RT_LIBS} ${LIBM}
 
 noinst_PROGRAMS = vhp_gen_hufdec
 vhp_gen_hufdec_SOURCES = hpack/vhp_gen_hufdec.c

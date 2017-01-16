@@ -117,9 +117,6 @@ usage(void)
 	fprintf(stderr, FMT,
 	    "-s [name=]kind[,options]", "Backend storage specification");
 	fprintf(stderr, FMT, "", "  -s malloc[,<size>]");
-#ifdef HAVE_LIBUMEM
-	fprintf(stderr, FMT, "", "  -s umem");
-#endif
 	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>");
 	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>,<size>");
 	fprintf(stderr, FMT, "",
