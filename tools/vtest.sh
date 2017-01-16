@@ -183,6 +183,10 @@ failedtests () (
 	LOGDIR="varnish-$VERSION/_build/sub/bin/varnishtest/tests"
 	VTCDIR=bin/varnishtest/tests
 
+	# cope with older automake, remove the sub directory
+	test ! -d $LOGDIR &&
+	LOGDIR="varnish-$VERSION/_build/bin/varnishtest/tests"
+
 	grep -l ':test-result: FAIL' "$LOGDIR"/*.trs |
 	while read trs
 	do
