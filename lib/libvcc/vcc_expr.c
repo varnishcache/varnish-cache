@@ -1023,7 +1023,7 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 
 #define ADD_OK(op, a, b, c)						  \
 		if (tk->tok == op[0] && (*e)->fmt == a && e2->fmt == b) { \
-			*e = vcc_expr_edit(c, "(\v1" op "\v2)", *e, e2);  \
+			*e = vcc_expr_edit(c, "(\v1 " op " \v2)", *e, e2);\
 			continue;					  \
 		}							  \
 
