@@ -30,6 +30,11 @@
 # Generate various .c and .h files for the VCL compiler and the interfaces
 # for it.
 
+from __future__ import print_function
+
+import subprocess
+import os
+
 #######################################################################
 # These are our tokens
 
@@ -984,7 +989,7 @@ def file_header(fo):
 	fo.write("""/*
  * NB:  This file is machine generated, DO NOT EDIT!
  *
- * Edit and run generate.py instead.
+ * Edit and run lib/libvcc/generate.py instead.
  */
 
 """)
@@ -1371,3 +1376,43 @@ for i in stv_variables:
 		fp_vclvar.write("\t%s\n" % j.strip())
 
 fp_vclvar.close()
+
+#######################################################################
+
+if os.path.isdir(os.path.join(srcroot, ".git")):
+	v = subprocess.check_output([
+		"git --git-dir=" + os.path.join(srcroot, ".git") + 
+		" show -s --pretty=format:%h"
+	], shell=True, universal_newlines=True)
+	b = subprocess.check_output([
+		"git --git-dir=" + os.path.join(srcroot, ".git") + 
+	 	" rev-parse --abbrev-ref HEAD"
+	], shell=True, universal_newlines=True)
+	b = b.strip()
+else:
+	b = "NOGIT"
+	v = "NOGIT"
+		
+vcsfn = os.path.join(srcroot, "include", "vcs_version.h")
+
+try:
+	i = open(vcsfn).readline()
+except IOError:
+	i = ""
+
+if i != "/* " + v + " */":
+	fo = open(vcsfn, "w")
+	file_header(fo)
+	fo.write('#define VCS_Version "%s"\n' % v)
+	fo.write('#define VCS_Branch "%s"\n' % b)
+	fo.close()
+
+	for i in open(os.path.join(srcroot, "Makefile")):
+		if i[:14] == "PACKAGE_STRING":
+			break
+	i = i.split("=")[1].strip()
+
+	fo = open(os.path.join(srcroot, "include", "vmod_abi.h"), "w")
+	file_header(fo)
+	fo.write('#define VMOD_ABI_Version "%s %s"\n' % (i, v))
+	fo.close()
