@@ -280,6 +280,14 @@ sp_variables = [
 		'DURATION',
 		('client',),
 		('client',), """
+		Upper limit on the object age for cache lookups to return hit.
+
+		Usage of req.ttl should be replaced with a check on
+		obj.ttl in vcl_hit, returning miss when needed, but
+		this currently hits bug #1799, so an additional
+		workaround is required.
+
+		Deprecated and scheduled for removal with varnish release 7.
 		"""
 	),
 	('req.xid',
