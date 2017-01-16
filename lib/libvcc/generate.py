@@ -1381,18 +1381,18 @@ fp_vclvar.close()
 
 if os.path.isdir(os.path.join(srcroot, ".git")):
 	v = subprocess.check_output([
-		"git --git-dir=" + os.path.join(srcroot, ".git") + 
+		"git --git-dir=" + os.path.join(srcroot, ".git") +
 		" show -s --pretty=format:%h"
 	], shell=True, universal_newlines=True)
 	b = subprocess.check_output([
-		"git --git-dir=" + os.path.join(srcroot, ".git") + 
-	 	" rev-parse --abbrev-ref HEAD"
+		"git --git-dir=" + os.path.join(srcroot, ".git") +
+		" rev-parse --abbrev-ref HEAD"
 	], shell=True, universal_newlines=True)
 	b = b.strip()
 else:
 	b = "NOGIT"
 	v = "NOGIT"
-		
+
 vcsfn = os.path.join(srcroot, "include", "vcs_version.h")
 
 try:

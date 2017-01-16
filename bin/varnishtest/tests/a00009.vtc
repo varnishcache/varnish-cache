@@ -49,7 +49,7 @@ shell {
 }
 
 shell -expect {VCL compiled.} {
-	varnishadm -n ${tmpdir}/v0 vcl.load vcl1 ${tmpdir}/vcl 
+	varnishadm -n ${tmpdir}/v0 vcl.load vcl1 ${tmpdir}/vcl
 }
 
 shell -expect {active      auto/warm          - vcl1} {

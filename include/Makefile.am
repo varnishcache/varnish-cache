@@ -115,7 +115,7 @@ $(GENERATED_H): $(top_srcdir)/lib/libvcc/generate.py $(top_srcdir)/include/vrt.h
 	mkdir -p tbl
 	@PYTHON@ $(top_srcdir)/lib/libvcc/generate.py $(top_srcdir) $(top_builddir)
 
-BUILT_SOURCES = vcs_version.h vmod_abi.h
+BUILT_SOURCES = $(GENERATED_H)
 MAINTAINERCLEANFILES = vcs_version.h
 
 CLEANFILES = \
