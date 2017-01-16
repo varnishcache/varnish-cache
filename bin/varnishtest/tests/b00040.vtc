@@ -1,4 +1,4 @@
-varnishtest "test certain mailformed reqests"
+varnishtest "test certain mailformed requests"
 
 server s1 {
 	rxreq
