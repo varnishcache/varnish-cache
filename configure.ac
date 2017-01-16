@@ -195,6 +195,7 @@ AC_CHECK_FUNCS([dladdr])
 AC_CHECK_FUNCS([nanosleep])
 AC_CHECK_FUNCS([setppriv])
 AC_CHECK_FUNCS([fallocate])
+AC_CHECK_FUNCS([posix_fallocate])
 AC_CHECK_FUNCS([closefrom])
 
 save_LIBS="${LIBS}"

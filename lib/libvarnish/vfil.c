@@ -263,6 +263,16 @@ VFIL_allocate(int fd, off_t size, int insist)
 		}
 	}
 #endif
+#if defined(HAVE_POSIX_FALLOCATE)
+	{
+		int error;
+		error = posix_fallocate(fd, 0, size);
+		if (!error)
+			return (0);
+		if (error == ENOSPC)
+			return (-1);
+	}
+#endif
 	if (!insist)
 		return (0);
 
