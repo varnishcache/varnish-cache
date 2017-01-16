@@ -1,4 +1,4 @@
-varnishtest "VCL/VRT: req.grace, obj.ttl and obj.grace"
+varnishtest "VCL/VRT: req.ttl / beresp.ttl / beresp.grace"
 
 
 server s1 {
