@@ -76,6 +76,12 @@ static const char * const builtin_vcl =
 #include "builtin_vcl.h"
     ""	;
 
+void
+mgt_DumpBuiltin(void)
+{
+	puts(builtin_vcl);
+}
+
 /*--------------------------------------------------------------------
  * Invoke system VCC compiler in a sub-process
  */

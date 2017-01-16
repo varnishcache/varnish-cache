@@ -340,6 +340,8 @@ mgt_x_arg(const char *x_arg)
 		mgt_DumpRstVsl();
 	else if (!strcmp(x_arg, "dumprstcli"))
 		mgt_DumpRstCli();
+	else if (!strcmp(x_arg, "dumpbuiltin"))
+		mgt_DumpBuiltin();
 	else
 		ARGV_ERR("Invalid -x argument\n");
 }

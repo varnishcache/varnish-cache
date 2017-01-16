@@ -4,6 +4,7 @@ shell "varnishd -b 127.0.0.1:80 -C 2> ${tmpdir}/_.c"
 shell "varnishd -x dumprstparam > ${tmpdir}/_.param"
 shell "varnishd -x dumprstvsl > ${tmpdir}/_.vsl"
 shell "varnishd -x dumprstcli > ${tmpdir}/_.cli"
+shell "varnishd -x dumpbuiltin > ${tmpdir}/_.builtin"
 shell -err -expect {VCL version declaration missing} {
 	echo 'bad vcl' > ${tmpdir}/t.vcl
 	varnishd -f ${tmpdir}/t.vcl -n ${tmpdir}

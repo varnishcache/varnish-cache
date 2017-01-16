@@ -26,17 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
-
- *
- * The built-in (previously called default) VCL code.
- *
- * NB! You do NOT need to copy & paste all of these functions into your
- * own vcl code, if you do not provide a definition of one of these
- * functions, the compiler will automatically fall back to the default
- * code from this file.
- *
- * This code will be prefixed with a backend declaration built from the
- * -b argument.
+ * This is the builtin VCL code
  */
 
 vcl 4.0;
