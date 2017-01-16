@@ -183,7 +183,7 @@ failedtests () (
 	LOGDIR="varnish-$VERSION/_build/sub/bin/varnishtest/tests"
 	VTCDIR=bin/varnishtest/tests
 
-	grep -l ':test-result: FAIL' "$LOGDIR/*.trs" |
+	grep -l ':test-result: FAIL' "$LOGDIR"/*.trs |
 	while read trs
 	do
 		name=`basename $trs .trs`
