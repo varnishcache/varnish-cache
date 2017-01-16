@@ -260,8 +260,7 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 
 	if (boc == NULL) {
 		VTAILQ_FOREACH_SAFE(st, &obj->list, list, checkpoint) {
-			AN(st->len);
-			if (ret == 0)
+			if (ret == 0 && st->len > 0)
 				ret = func(priv, 1, st->ptr, st->len);
 			if (final) {
 				VTAILQ_REMOVE(&obj->list, st, list);
