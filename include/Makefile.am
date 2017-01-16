@@ -109,7 +109,7 @@ GENERATED_H = \
 	vrt_obj.h \
 	vcl.h \
 	vcs_version.h \
-	vmod_abi.h 
+	vmod_abi.h
 
 $(GENERATED_H): $(top_srcdir)/lib/libvcc/generate.py $(top_srcdir)/include/vrt.h
 	mkdir -p tbl

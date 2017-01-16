@@ -158,7 +158,7 @@ makegcov () (
 
 	make || exit 1
 
-	if [ `id -u` -eq 0 ] ; then 
+	if [ `id -u` -eq 0 ] ; then
 		chown -R varnish . | true
 	fi
 
@@ -168,7 +168,7 @@ makegcov () (
 		retval=1
 	fi
 
-	if [ `id -u` -eq 0 ] ; then 
+	if [ `id -u` -eq 0 ] ; then
 		chown -R root . || true
 	fi
 	exit ${retval}

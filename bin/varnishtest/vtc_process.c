@@ -300,7 +300,7 @@ process_kill(struct process *p, const char *sig)
 
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
 	AN(sig);
-	
+
 	AZ(pthread_mutex_lock(&p->mtx));
 	pid = p->pid;
 	AZ(pthread_mutex_unlock(&p->mtx));
