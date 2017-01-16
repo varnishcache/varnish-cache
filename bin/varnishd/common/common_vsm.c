@@ -180,6 +180,7 @@ VSM_common_cleaner(struct vsm_sc *sc, struct VSC_C_main *stats)
 			break;
 		VTAILQ_REMOVE(&sc->r_cooling, vr, list);
 		sc->g_cooling -= vr->len;
+		sc->g_free += vr->len;
 		vsm_common_insert_free(sc, vr);
 	}
 	stats->vsm_free = sc->g_free;
