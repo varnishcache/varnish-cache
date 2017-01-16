@@ -180,17 +180,17 @@ failedtests () (
 	cd "${SRCDIR}"
 
 	VERSION=`./configure --version | awk 'NR == 1 {print $NF}'`
-	LOGDIR=varnish-$VERSION/_build/sub/bin/varnishtest/tests
+	LOGDIR="varnish-$VERSION/_build/sub/bin/varnishtest/tests"
 	VTCDIR=bin/varnishtest/tests
 
-	grep -l ':test-result: FAIL' $LOGDIR/*.trs |
+	grep -l ':test-result: FAIL' "$LOGDIR/*.trs" |
 	while read trs
 	do
 		name=`basename $trs .trs`
-		vtc=${name}.vtc
-		log=${name}.log
-		rev=`git log -n 1 --pretty=format:%H ${VTCDIR}/${vtc}`
-		cp ${LOGDIR}/${log} ${REPORTDIR}/_${log}
+		vtc="${name}.vtc"
+		log="${name}.log"
+		rev=`git log -n 1 --pretty=format:%H "${VTCDIR}/${vtc}"`
+		cp "${LOGDIR}/${log}" "${REPORTDIR}/_${log}"
 		echo "VTCGITREV ${name} ${rev}"
 		echo "MANIFEST _${log}"
 	done
