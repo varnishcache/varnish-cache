@@ -78,6 +78,8 @@ varnish v1 -vcl {
 
 		set req.http.foo = now - now;
 
+		set req.http.foo = 1- -1;
+
 		set req.http.foo = 1 + 1;
 		set req.http.foo = 1 - 1;
 		set req.http.foo = 3 * 2;
