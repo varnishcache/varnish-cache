@@ -21,7 +21,7 @@ and Management of Systems Prototyping"* etc.  etc.
 The grey-beard at my workplace laconically said *"We already do that,
 only we call it Trial&Error."*
 
-Programming as always been Trial&Error, and probably always will.
+Programming has always been Trial&Error, and probably always will.
 
 All the early pioneers, like Wheeler, complained about how
 batch-scheduling of machine resources removed the "intimate" contact
@@ -103,8 +103,8 @@ So it is only fair to dedicate VTEST to the friend I chatted with:
 
 `Bjarne <http://www.stroustrup.com/>`_ tried to model how to best
 distribute operating system kernels across a network, wrote a
-adequate programming language tool for the job, which wass also
-an adeqaute tool for a lot of other programming jobs.
+adequate programming language tool for the job, which was also
+an adequate tool for a lot of other programming jobs.
 
 Thanks Bjarne!
 
