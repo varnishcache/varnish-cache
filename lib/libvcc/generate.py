@@ -1392,6 +1392,7 @@ if os.path.isdir(os.path.join(srcroot, ".git")):
 		"git --git-dir=" + os.path.join(srcroot, ".git") +
 		" show -s --pretty=format:%h"
 	], shell=True, universal_newlines=True)
+	v = v.strip()
 	b = subprocess.check_output([
 		"git --git-dir=" + os.path.join(srcroot, ".git") +
 		" rev-parse --abbrev-ref HEAD"
