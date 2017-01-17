@@ -374,8 +374,8 @@ process_close(struct process *p)
  * Run a process in the background with stdout and stderr redirected to
  * ${tmpdir}/pNAME/stdout and ${tmpdir}/pNAME/stderr, respectively::
  *
- *	process pNAME SPEC [-wait] [-start] [-run] [-kill STRING] [-stop] \
- *		[-write STRING] [-writeln STRING] [-close]
+ *	process pNAME SPEC [-start] [-log] [-wait] [-run] [-kill STRING] \
+ *		[-stop] [-write STRING] [-writeln STRING] [-close]
  *
  * pNAME
  *	Name of the process. It must start with 'p'.
