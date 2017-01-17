@@ -148,6 +148,3 @@ void LRU_Touch(struct worker *, struct objcore *, double now);
 extern const struct stevedore sma_stevedore;
 extern const struct stevedore smf_stevedore;
 extern const struct stevedore smp_stevedore;
-#ifdef HAVE_LIBUMEM
-extern const struct stevedore smu_stevedore;
-#endif
