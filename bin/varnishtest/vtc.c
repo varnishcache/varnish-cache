@@ -681,7 +681,6 @@ cmd_feature(CMD_ARGS)
 			av++;
 			if (*av == NULL) {
 				vtc_fatal(vl, "Missing the command-line");
-				return;
 			}
 			r = system(*av);
 			if (WEXITSTATUS(r) == 0)
