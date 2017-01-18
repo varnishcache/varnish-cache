@@ -114,7 +114,7 @@ process_new(const char *name)
 	p->fd_from = -1;
 
 	if (*p->name != 'p')
-		vtc_log(p->vl, 0, "Process name must start with 'p'");
+		vtc_fatal(p->vl, "Process name must start with 'p'");
 
 	VTAILQ_INSERT_TAIL(&processes, p, list);
 	return (p);
@@ -219,7 +219,7 @@ process_start(struct process *p)
 
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
 	if (p->hasthread)
-		vtc_log(p->vl, 0, "Already running, (-wait first)");
+		vtc_fatal(p->vl, "Already running, (-wait first)");
 
 	vtc_log(p->vl, 4, "CMD: %s", p->spec);
 
@@ -306,7 +306,7 @@ process_kill(struct process *p, const char *sig)
 	AZ(pthread_mutex_unlock(&p->mtx));
 
 	if (pid <= 0)
-		vtc_log(p->vl, 0, "Cannot signal a non-running process");
+		vtc_fatal(p->vl, "Cannot signal a non-running process");
 
 	if (!strcmp(sig, "TERM"))
 		j = SIGTERM;
@@ -317,10 +317,10 @@ process_kill(struct process *p, const char *sig)
 	else if (*sig == '-')
 		j = strtoul(sig + 1, NULL, 10);
 	else
-		vtc_log(p->vl, 0, "Could not grok signal (%s)", sig);
+		vtc_fatal(p->vl, "Could not grok signal (%s)", sig);
 
 	if (kill(-pid, j) < 0)
-		vtc_log(p->vl, 0, "Failed to send signal %d (%s)",
+		vtc_fatal(p->vl, "Failed to send signal %d (%s)",
 		    j, strerror(errno));
 	else
 		vtc_log(p->vl, 4, "Sent signal %d", j);
@@ -346,13 +346,13 @@ process_write(const struct process *p, const char *text)
 	int r, len;
 
 	if (!p->hasthread)
-		vtc_log(p->vl, 0, "Cannot write to a non-running process");
+		vtc_fatal(p->vl, "Cannot write to a non-running process");
 
 	len = strlen(text);
 	vtc_log(p->vl, 4, "Writing %d bytes", len);
 	r = write(p->fd_to, text, len);
 	if (r < 0)
-		vtc_log(p->vl, 0, "Failed to write: %s (%d)",
+		vtc_fatal(p->vl, "Failed to write: %s (%d)",
 		    strerror(errno), errno);
 }
 
@@ -361,7 +361,7 @@ process_close(struct process *p)
 {
 
 	if (!p->hasthread)
-		vtc_log(p->vl, 0, "Cannot close on a non-running process");
+		vtc_fatal(p->vl, "Cannot close on a non-running process");
 
 	AZ(pthread_mutex_lock(&p->mtx));
 	if (p->fd_to >= 0)
@@ -492,7 +492,7 @@ cmd_process(CMD_ARGS)
 			continue;
 		}
 		if (**av == '-')
-			vtc_log(p->vl, 0, "Unknown process argument: %s", *av);
+			vtc_fatal(p->vl, "Unknown process argument: %s", *av);
 		REPLACE(p->spec, *av);
 	}
 }

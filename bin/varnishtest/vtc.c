@@ -239,7 +239,7 @@ macro_expand(struct vtclog *vl, const char *text)
 		m = macro_get(p, q);
 		if (m == NULL) {
 			VSB_destroy(&vsb);
-			vtc_log(vl, 0, "Macro ${%.*s} not found", (int)(q - p),
+			vtc_fatal(vl, "Macro ${%.*s} not found", (int)(q - p),
 			    p);
 			NEEDLESS(return (NULL));
 		}
@@ -330,7 +330,7 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 						q++;
 					} else {
 						if (*p == '\n')
-							vtc_log(vl, 0,
+							vtc_fatal(vl,
 				"Unterminated quoted string in line: %*.*s",
 				(int)(p - f), (int)(p - f), f);
 						assert(*p != '\n');
@@ -380,7 +380,7 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 			if (!strcmp(token_s[0], cp->name))
 				break;
 		if (cp->name == NULL) {
-			vtc_log(vl, 0, "Unknown command: \"%s\"", token_s[0]);
+			vtc_fatal(vl, "Unknown command: \"%s\"", token_s[0]);
 			NEEDLESS(return);
 		}
 
@@ -476,7 +476,7 @@ cmd_shell_engine(struct vtclog *vl, int ok,
 	vtc_dump(vl, 4, "shell_cmd", VSB_data(vsb), -1);
 	fp = popen(VSB_data(vsb), "r");
 	if (fp == NULL)
-		vtc_log(vl, 0, "popen fails: %s", strerror(errno));
+		vtc_fatal(vl, "popen fails: %s", strerror(errno));
 	VSB_clear(vsb);
 	do {
 		c = getc(fp);
@@ -488,9 +488,9 @@ cmd_shell_engine(struct vtclog *vl, int ok,
 	if (WIFSIGNALED(r))
 		vtc_log(vl, 4, "shell_signal = %d", WTERMSIG(r));
 	if (ok < 0 && !WEXITSTATUS(r))
-		vtc_log(vl, 0, "shell did not fail as expected");
+		vtc_fatal(vl, "shell did not fail as expected");
 	else if (ok >= 0 && WEXITSTATUS(r) != ok) {
-		vtc_log(vl, 0,
+		vtc_fatal(vl,
 		    "shell_exit not as expected: got 0x%04x wanted 0x%04x",
 			WEXITSTATUS(r), ok);
 	}
@@ -498,7 +498,7 @@ cmd_shell_engine(struct vtclog *vl, int ok,
 	vtc_dump(vl, 4, "shell_out", VSB_data(vsb), VSB_len(vsb));
 	if (expect != NULL) {
 		if (strstr(VSB_data(vsb), expect) == NULL)
-			vtc_log(vl, 0,
+			vtc_fatal(vl,
 			    "shell_expect not found: (\"%s\")", expect);
 		else
 			vtc_log(vl, 4, "shell_expect found");
@@ -680,7 +680,7 @@ cmd_feature(CMD_ARGS)
 		} else if (!strcmp(*av, "cmd")) {
 			av++;
 			if (*av == NULL) {
-				vtc_log(vl, 0, "Missing the command-line");
+				vtc_fatal(vl, "Missing the command-line");
 				return;
 			}
 			r = system(*av);
@@ -693,7 +693,7 @@ cmd_feature(CMD_ARGS)
 			continue;
 
 		if (!vtc_stop) {
-			vtc_log(vl, 0,
+			vtc_fatal(vl,
 			    "FAIL test, unknown feature: %s", *av);
 		} else {
 			vtc_log(vl, 1,

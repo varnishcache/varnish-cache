@@ -126,7 +126,7 @@ server_listen(struct server *s)
 		VTCP_close(&s->sock);
 	s->sock = VTCP_listen_on(s->listen, "0", s->depth, &err);
 	if (err != NULL)
-		vtc_log(s->vl, 0,
+		vtc_fatal(s->vl,
 		    "Server listen address (%s) cannot be resolved: %s",
 		    s->listen, err);
 	assert(s->sock > 0);
@@ -166,13 +166,13 @@ server_thread(void *priv)
 		l = sizeof addr_s;
 		fd = accept(s->sock, addr, &l);
 		if (fd < 0)
-			vtc_log(vl, 0, "Accept failed: %s", strerror(errno));
+			vtc_fatal(vl, "Accept failed: %s", strerror(errno));
 		vtc_log(vl, 3, "accepted fd %d", fd);
 		fd = http_process(vl, s->spec, fd, &s->sock);
 		vtc_log(vl, 3, "shutting fd %d", fd);
 		j = shutdown(fd, SHUT_WR);
 		if (!VTCP_Check(j))
-			vtc_log(vl, 0, "Shutdown failed: %s", strerror(errno));
+			vtc_fatal(vl, "Shutdown failed: %s", strerror(errno));
 		VTCP_close(&fd);
 	}
 	vtc_log(vl, 2, "Ending");
@@ -217,7 +217,7 @@ server_dispatch_wrk(void *priv)
 	vtc_log(vl, 3, "shutting fd %d", fd);
 	j = shutdown(fd, SHUT_WR);
 	if (!VTCP_Check(j))
-		vtc_log(vl, 0, "Shutdown failed: %s", strerror(errno));
+		vtc_fatal(vl, "Shutdown failed: %s", strerror(errno));
 	VTCP_close(&s->fd);
 	vtc_log(vl, 2, "Ending");
 	return (NULL);
@@ -245,7 +245,7 @@ server_dispatch_thread(void *priv)
 		l = sizeof addr_s;
 		fd = accept(s->sock, addr, &l);
 		if (fd < 0)
-			vtc_log(vl, 0, "Accepted failed: %s", strerror(errno));
+			vtc_fatal(vl, "Accepted failed: %s", strerror(errno));
 		bprintf(snbuf, "s%d", sn++);
 		vtc_log(vl, 3, "dispatch fd %d -> %s", fd, snbuf);
 		s2 = server_new(snbuf);
@@ -298,7 +298,7 @@ server_wait(struct server *s)
 	vtc_log(s->vl, 2, "Waiting for server (%d/%d)", s->sock, s->fd);
 	AZ(pthread_join(s->tp, &res));
 	if (res != NULL && !vtc_stop)
-		vtc_log(s->vl, 0, "Server returned \"%p\"",
+		vtc_fatal(s->vl, "Server returned \"%p\"",
 		    (char *)res);
 	s->tp = 0;
 	s->run = 0;
@@ -382,7 +382,7 @@ cmd_server(CMD_ARGS)
 			break;
 		if (!strcmp(*av, "-wait")) {
 			if (!s->run)
-				vtc_log(s->vl, 0, "Server not -started");
+				vtc_fatal(s->vl, "Server not -started");
 			server_wait(s);
 			continue;
 		}
@@ -426,7 +426,7 @@ cmd_server(CMD_ARGS)
 			continue;
 		}
 		if (**av == '-')
-			vtc_log(s->vl, 0, "Unknown server argument: %s", *av);
+			vtc_fatal(s->vl, "Unknown server argument: %s", *av);
 		s->spec = *av;
 	}
 }

@@ -140,22 +140,22 @@ static const struct cmds http_cmds[];
 #define ONLY_CLIENT(hp, av)						\
 	do {								\
 		if (hp->h2)						\
-			vtc_log(hp->vl, 0,				\
+			vtc_fatal(hp->vl,				\
 			    "\"%s\" only possible before H/2 upgrade",	\
 					av[0]);				\
 		if (hp->sfd != NULL)					\
-			vtc_log(hp->vl, 0,				\
+			vtc_fatal(hp->vl,				\
 			    "\"%s\" only possible in client", av[0]);	\
 	} while (0)
 
 #define ONLY_SERVER(hp, av)						\
 	do {								\
 		if (hp->h2)						\
-			vtc_log(hp->vl, 0,				\
+			vtc_fatal(hp->vl,				\
 			    "\"%s\" only possible before H/2 upgrade",	\
 					av[0]);				\
 		if (hp->sfd == NULL)					\
-			vtc_log(hp->vl, 0,				\
+			vtc_fatal(hp->vl,				\
 			    "\"%s\" only possible in server", av[0]);	\
 	} while (0)
 
@@ -373,7 +373,7 @@ cmd_http_expect(CMD_ARGS)
 	if (!strcmp(cmp, "~") || !strcmp(cmp, "!~")) {
 		vre = VRE_compile(crhs, 0, &error, &erroroffset);
 		if (vre == NULL)
-			vtc_log(hp->vl, 0, "REGEXP error: %s (@%d) (%s)",
+			vtc_fatal(hp->vl, "REGEXP error: %s (@%d) (%s)",
 			    error, erroroffset, crhs);
 		i = VRE_exec(vre, clhs, strlen(clhs), 0, 0, NULL, 0, 0);
 		retval = (i >= 0 && *cmp == '~') || (i < 0 && *cmp == '!');
@@ -396,7 +396,7 @@ cmd_http_expect(CMD_ARGS)
 	}
 
 	if (retval == -1)
-		vtc_log(hp->vl, 0,
+		vtc_fatal(hp->vl,
 		    "EXPECT %s (%s) %s %s (%s) test not implemented",
 		    av[0], clhs, av[1], av[2], crhs);
 	else
@@ -419,7 +419,7 @@ cmd_http_expect_pattern(CMD_ARGS)
 	AZ(av[0]);
 	for (p = hp->body; *p != '\0'; p++) {
 		if (*p != t)
-			vtc_log(hp->vl, 0,
+			vtc_fatal(hp->vl,
 			    "EXPECT PATTERN FAIL @%zd should 0x%02x is 0x%02x",
 			    p - hp->body, t, *p);
 		t += 1;
@@ -694,12 +694,12 @@ cmd_http_rxresp(CMD_ARGS)
 		if (!strcmp(*av, "-no_obj"))
 			has_obj = 0;
 		else
-			vtc_log(hp->vl, 0,
+			vtc_fatal(hp->vl,
 			    "Unknown http rxresp spec: %s\n", *av);
 	http_rxhdr(hp);
 	http_splitheader(hp, 0);
 	if (http_count_header(hp->resp, "Content-Length") > 1)
-		vtc_log(hp->vl, 0,
+		vtc_fatal(hp->vl,
 		    "Multiple Content-Length headers.\n");
 	if (!has_obj)
 		return;
@@ -728,11 +728,11 @@ cmd_http_rxresphdrs(CMD_ARGS)
 	av++;
 
 	for(; *av != NULL; av++)
-		vtc_log(hp->vl, 0, "Unknown http rxresp spec: %s\n", *av);
+		vtc_fatal(hp->vl, "Unknown http rxresp spec: %s\n", *av);
 	http_rxhdr(hp);
 	http_splitheader(hp, 0);
 	if (http_count_header(hp->resp, "Content-Length") > 1)
-		vtc_log(hp->vl, 0,
+		vtc_fatal(hp->vl,
 		    "Multiple Content-Length headers.\n");
 }
 
@@ -1026,7 +1026,7 @@ cmd_http_txresp(CMD_ARGS)
 
 	av = http_tx_parse_args(av, vl, hp, body);
 	if (*av != NULL)
-		vtc_log(hp->vl, 0, "Unknown http txresp spec: %s\n", *av);
+		vtc_fatal(hp->vl, "Unknown http txresp spec: %s\n", *av);
 
 	http_write(hp, 4, "txresp");
 }
@@ -1043,16 +1043,16 @@ cmd_http_upgrade(CMD_ARGS)
 
 	h = http_find_header(hp->req, "Upgrade");
 	if (!h || strcmp(h, "h2c"))
-		vtc_log(vl, 0, "Req misses \"Upgrade: h2c\" header");
+		vtc_fatal(vl, "Req misses \"Upgrade: h2c\" header");
 
 	h = http_find_header(hp->req, "Connection");
 	if (!h || strcmp(h, "Upgrade, HTTP2-Settings"))
-		vtc_log(vl, 0, "Req misses \"Connection: "
+		vtc_fatal(vl, "Req misses \"Connection: "
 			"Upgrade, HTTP2-Settings\" header");
 
 	h = http_find_header(hp->req, "HTTP2-Settings");
 	if (!h)
-		vtc_log(vl, 0, "Req misses \"HTTP2-Settings\" header");
+		vtc_fatal(vl, "Req misses \"HTTP2-Settings\" header");
 
 
 	parse_string("txresp -status 101 "
@@ -1092,11 +1092,11 @@ cmd_http_rxreq(CMD_ARGS)
 	av++;
 
 	for(; *av != NULL; av++)
-		vtc_log(vl, 0, "Unknown http rxreq spec: %s\n", *av);
+		vtc_fatal(vl, "Unknown http rxreq spec: %s\n", *av);
 	http_rxhdr(hp);
 	http_splitheader(hp, 1);
 	if (http_count_header(hp->req, "Content-Length") > 1)
-		vtc_log(vl, 0,
+		vtc_fatal(vl,
 		    "Multiple Content-Length headers.\n");
 	http_swallow_body(hp, hp->req, 0);
 	vtc_log(vl, 4, "bodylen = %s", hp->bodylen);
@@ -1120,11 +1120,11 @@ cmd_http_rxreqhdrs(CMD_ARGS)
 	av++;
 
 	for(; *av != NULL; av++)
-		vtc_log(hp->vl, 0, "Unknown http rxreq spec: %s\n", *av);
+		vtc_fatal(hp->vl, "Unknown http rxreq spec: %s\n", *av);
 	http_rxhdr(hp);
 	http_splitheader(hp, 1);
 	if (http_count_header(hp->req, "Content-Length") > 1)
-		vtc_log(hp->vl, 0,
+		vtc_fatal(hp->vl,
 		    "Multiple Content-Length headers.\n");
 }
 
@@ -1147,7 +1147,7 @@ cmd_http_rxreqbody(CMD_ARGS)
 	av++;
 
 	for(; *av != NULL; av++)
-		vtc_log(hp->vl, 0, "Unknown http rxreq spec: %s\n", *av);
+		vtc_fatal(hp->vl, "Unknown http rxreq spec: %s\n", *av);
 	http_swallow_body(hp, hp->req, 0);
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
 }
@@ -1171,7 +1171,7 @@ cmd_http_rxrespbody(CMD_ARGS)
 	av++;
 
 	for(; *av != NULL; av++)
-		vtc_log(hp->vl, 0, "Unknown http rxrespbody spec: %s\n", *av);
+		vtc_fatal(hp->vl, "Unknown http rxrespbody spec: %s\n", *av);
 	http_swallow_body(hp, hp->resp, 0);
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
 }
@@ -1249,7 +1249,7 @@ cmd_http_txreq(CMD_ARGS)
 
 	av = http_tx_parse_args(av, vl, hp, NULL);
 	if (*av != NULL)
-		vtc_log(hp->vl, 0, "Unknown http txreq spec: %s\n", *av);
+		vtc_fatal(hp->vl, "Unknown http txreq spec: %s\n", *av);
 	http_write(hp, 4, "txreq");
 
 	if (up) {
@@ -1411,7 +1411,7 @@ cmd_http_sendhex(CMD_ARGS)
 		q += 2;
 		buf[2] = '\0';
 		if (!vct_ishex(buf[0]) || !vct_ishex(buf[1]))
-			vtc_log(hp->vl, 0, "Illegal Hex char \"%c%c\"",
+			vtc_fatal(hp->vl, "Illegal Hex char \"%c%c\"",
 			    buf[0], buf[1]);
 		p[i] = (uint8_t)strtoul(buf, NULL, 16);
 	}
@@ -1506,7 +1506,7 @@ cmd_http_timeout(CMD_ARGS)
 	AZ(av[2]);
 	d = VNUM(av[1]);
 	if (isnan(d))
-		vtc_log(vl, 0, "timeout is not a number (%s)", av[1]);
+		vtc_fatal(vl, "timeout is not a number (%s)", av[1]);
 	hp->timeout = (int)(d * 1000.0);
 }
 
@@ -1649,7 +1649,7 @@ cmd_http_fatal(CMD_ARGS)
 	else if (!strcmp(av[0], "non_fatal"))
 		hp->fatal = -1;
 	else {
-		vtc_log(vl, 0, "XXX: fatal %s", cmd->name);
+		vtc_fatal(vl, "XXX: fatal %s", cmd->name);
 	}
 }
 
@@ -1715,9 +1715,9 @@ cmd_http_rxpri(CMD_ARGS)
 
 	hp->prxbuf = 0;
 	if (!http_rxchar(hp, sizeof(PREFACE), 0))
-		vtc_log(vl, 0, "Couldn't retrieve connection preface");
+		vtc_fatal(vl, "Couldn't retrieve connection preface");
 	if (memcmp(hp->rxbuf, PREFACE, sizeof(PREFACE)))
-		vtc_log(vl, 0, "Received invalid preface\n");
+		vtc_fatal(vl, "Received invalid preface\n");
 	start_h2(hp);
 	AN(hp->h2);
 }
@@ -1738,7 +1738,7 @@ cmd_http_settings(CMD_ARGS)
 	(void)cmd;
 
 	if (!hp->h2)
-		vtc_log(hp->vl, 0, "Only possible in H/2 mode");
+		vtc_fatal(hp->vl, "Only possible in H/2 mode");
 
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 
@@ -1746,12 +1746,12 @@ cmd_http_settings(CMD_ARGS)
 		if (!strcmp(*av, "-dectbl")) {
 			n = strtoul(av[1], &p, 0);
 			if (*p != '\0')
-				vtc_log(hp->vl, 0, "-dectbl takes an integer as"
+				vtc_fatal(hp->vl, "-dectbl takes an integer as"
 						" argument (found %s)", av[1]);
 			HPK_ResizeTbl(hp->decctx, n);
 			av++;
 		} else
-			vtc_log(vl, 0, "Unknown settings spec: %s\n", *av);
+			vtc_fatal(vl, "Unknown settings spec: %s\n", *av);
 	}
 }
 
@@ -1798,7 +1798,7 @@ cmd_http_write_body(CMD_ARGS)
 	AZ(av[2]);
 	AZ(strcmp(av[0], "write_body"));
 	if (VFIL_writefile(NULL, av[1], hp->body, hp->bodyl) != 0)
-		vtc_log(hp->vl, 0, "failed to write body: %s (%d)",
+		vtc_fatal(hp->vl, "failed to write body: %s (%d)",
 		    strerror(errno), errno);
 }
 

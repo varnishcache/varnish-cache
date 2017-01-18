@@ -78,9 +78,9 @@ barrier_new(char *name, struct vtclog *vl)
 	AN(b);
 	AN(name);
 	if (*name != 'b')
-		vtc_log(vl, 0, "Barrier name must start with 'b' (%s)", name);
+		vtc_fatal(vl, "Barrier name must start with 'b' (%s)", name);
 	if (pthread_self() != vtc_thread)
-		vtc_log(vl, 0,
+		vtc_fatal(vl,
 		    "Barrier %s can only be created on the top thread", name);
 	REPLACE(b->name, name);
 
@@ -102,14 +102,14 @@ barrier_expect(struct barrier *b, const char *av, struct vtclog *vl)
 	unsigned expected;
 
 	if (b->type != BARRIER_NONE)
-		vtc_log(vl, 0,
+		vtc_fatal(vl,
 		    "Barrier(%s) use error: already initialized", b->name);
 
 	AZ(b->expected);
 	AZ(b->waiters);
 	expected = strtoul(av, NULL, 0);
 	if (expected < 2)
-		vtc_log(vl, 0,
+		vtc_fatal(vl,
 		    "Barrier(%s) use error: wrong expectation (%u)",
 		    b->name, expected);
 
@@ -148,7 +148,7 @@ barrier_sock_thread(void *priv)
 	if (sock < 0) {
 		AZ(pthread_cond_signal(&b->cond));
 		AZ(pthread_mutex_unlock(&b->mtx));
-		vtc_log(vl, 0, "Barrier(%s) %s fails: %s (errno=%d)",
+		vtc_fatal(vl, "Barrier(%s) %s fails: %s (errno=%d)",
 		    b->name, err, strerror(errno), errno);
 	}
 	assert(sock > 0);
@@ -178,14 +178,14 @@ barrier_sock_thread(void *priv)
 			if (errno == EINTR)
 				continue;
 			AZ(close(sock));
-			vtc_log(vl, 0,
+			vtc_fatal(vl,
 			    "Barrier(%s) select fails: %s (errno=%d)",
 			    b->name, strerror(errno), errno);
 		}
 		assert(i == 1);
 		assert(b->waiters <= b->expected);
 		if (b->waiters == b->expected)
-			vtc_log(vl, 0,
+			vtc_fatal(vl,
 			    "Barrier(%s) use error: "
 			    "more waiters than the %u expected",
 			    b->name, b->expected);
@@ -193,7 +193,7 @@ barrier_sock_thread(void *priv)
 		i = accept(sock, NULL, NULL);
 		if (i < 0) {
 			AZ(close(sock));
-			vtc_log(vl, 0,
+			vtc_fatal(vl,
 			    "Barrier(%s) accept fails: %s (errno=%d)",
 			    b->name, strerror(errno), errno);
 		}
@@ -251,11 +251,11 @@ barrier_cyclic(struct barrier *b, struct vtclog *vl)
 	CHECK_OBJ_NOTNULL(b, BARRIER_MAGIC);
 
 	if (b->type == BARRIER_NONE)
-		vtc_log(vl, 0,
+		vtc_fatal(vl,
 		    "Barrier(%s) use error: not initialized", b->name);
 
 	if (b->waiters != 0)
-		vtc_log(vl, 0,
+		vtc_fatal(vl,
 		    "Barrier(%s) use error: already in use", b->name);
 
 	b->cyclic = 1;
@@ -274,7 +274,7 @@ barrier_cond_sync(struct barrier *b, struct vtclog *vl)
 
 	assert(b->waiters <= b->expected);
 	if (b->waiters == b->expected)
-		vtc_log(vl, 0,
+		vtc_fatal(vl,
 		    "Barrier(%s) use error: more waiters than the %u expected",
 		    b->name, b->expected);
 
@@ -311,7 +311,7 @@ barrier_sock_sync(struct barrier *b, struct vtclog *vl)
 
 	sock = VTCP_open(VSB_data(vsb), NULL, 0., &err);
 	if (sock < 0)
-		vtc_log(vl, 0, "Barrier(%s) connection failed: %s",
+		vtc_fatal(vl, "Barrier(%s) connection failed: %s",
 		    b->name, err);
 
 	VSB_delete(vsb);
@@ -325,10 +325,10 @@ barrier_sock_sync(struct barrier *b, struct vtclog *vl)
 	AZ(close(sock));
 
 	if (sz < 0)
-		vtc_log(vl, 0, "Barrier(%s) read failed: %s (errno=%d)",
+		vtc_fatal(vl, "Barrier(%s) read failed: %s (errno=%d)",
 		    b->name, strerror(i), i);
 	if (sz > 0)
-		vtc_log(vl, 0, "Barrier(%s) unexpected data (%zdB)",
+		vtc_fatal(vl, "Barrier(%s) unexpected data (%zdB)",
 		    b->name, sz);
 }
 
@@ -340,7 +340,7 @@ barrier_sync(struct barrier *b, struct vtclog *vl)
 
 	switch (b->type) {
 	case BARRIER_NONE:
-		vtc_log(vl, 0,
+		vtc_fatal(vl,
 		    "Barrier(%s) use error: not initialized", b->name);
 		break;
 	case BARRIER_COND:
@@ -465,7 +465,7 @@ cmd_barrier(CMD_ARGS)
 			barrier_cyclic(b, vl);
 			continue;
 		}
-		vtc_log(vl, 0, "Unknown barrier argument: %s", *av);
+		vtc_fatal(vl, "Unknown barrier argument: %s", *av);
 	}
 	AZ(pthread_mutex_unlock(&b->mtx));
 }

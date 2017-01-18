@@ -97,6 +97,8 @@ struct vtclog *vtc_logopen(const char *id);
 void vtc_logclose(struct vtclog *vl);
 void vtc_log(struct vtclog *vl, int lvl, const char *fmt, ...)
     __v_printflike(3, 4);
+void vtc_fatal(struct vtclog *vl, const char *, ...)
+    __attribute__((__noreturn__)) __v_printflike(2,3);
 void vtc_dump(struct vtclog *vl, int lvl, const char *pfx,
     const char *str, int len);
 void vtc_hexdump(struct vtclog *vl, int lvl, const char *pfx,

@@ -93,14 +93,14 @@ client_proxy(struct vtclog *vl, int fd, int version, const char *spec)
 
 	error = VSS_resolver(p, NULL, proxy_cb, &sac, &err);
 	if (err != NULL)
-		vtc_log(vl, 0, "Could not resolve client address: %s", err);
+		vtc_fatal(vl, "Could not resolve client address: %s", err);
 	assert(error == 1);
 	error = VSS_resolver(p2, NULL, proxy_cb, &sas, &err);
 	if (err != NULL)
-		vtc_log(vl, 0, "Could not resolve server address: %s", err);
+		vtc_fatal(vl, "Could not resolve server address: %s", err);
 	assert(error == 1);
 	if (vtc_send_proxy(fd, version, sac, sas))
-		vtc_log(vl, 0, "Write failed: %s", strerror(errno));
+		vtc_fatal(vl, "Write failed: %s", strerror(errno));
 	free(p);
 	free(sac);
 	free(sas);
@@ -140,7 +140,7 @@ client_thread(void *priv)
 		vtc_log(vl, 3, "Connect to %s", VSB_data(vsb));
 		fd = VTCP_open(VSB_data(vsb), NULL, 10., &err);
 		if (fd < 0)
-			vtc_log(c->vl, 0, "Failed to open %s: %s",
+			vtc_fatal(c->vl, "Failed to open %s: %s",
 			    VSB_data(vsb), err);
 		assert(fd >= 0);
 		/* VTCP_blocking does its own checks, trust it */
@@ -176,7 +176,7 @@ client_new(const char *name)
 	c->vl = vtc_logopen(name);
 	AN(c->vl);
 	if (*c->name != 'c')
-		vtc_log(c->vl, 0, "Client name must start with 'c'");
+		vtc_fatal(c->vl, "Client name must start with 'c'");
 
 	bprintf(c->connect, "%s", "${v1_sock}");
 	VTAILQ_INSERT_TAIL(&clients, c, list);
@@ -227,7 +227,7 @@ client_wait(struct client *c)
 	vtc_log(c->vl, 2, "Waiting for client");
 	AZ(pthread_join(c->tp, &res));
 	if (res != NULL)
-		vtc_log(c->vl, 0, "Client returned \"%s\"", (char *)res);
+		vtc_fatal(c->vl, "Client returned \"%s\"", (char *)res);
 	c->tp = 0;
 	c->running = 0;
 }
@@ -323,7 +323,7 @@ cmd_client(CMD_ARGS)
 			continue;
 		}
 		if (**av == '-')
-			vtc_log(c->vl, 0, "Unknown client argument: %s", *av);
+			vtc_fatal(c->vl, "Unknown client argument: %s", *av);
 		REPLACE(c->spec, *av);
 	}
 }

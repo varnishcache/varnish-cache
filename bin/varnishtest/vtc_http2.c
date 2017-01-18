@@ -131,14 +131,14 @@ clean_headers(struct hpk_hdr *h)
 #define ONLY_CLIENT(hp, av)						\
 	do {								\
 		if (hp->sfd != NULL)					\
-			vtc_log(hp->vl, 0,				\
+			vtc_fatal(hp->vl,				\
 			    "\"%s\" only possible in client", av[0]);	\
 	} while (0)
 
 #define ONLY_SERVER(hp, av)						\
 	do {								\
 		if (hp->sfd == NULL)					\
-			vtc_log(hp->vl, 0,				\
+			vtc_fatal(hp->vl,				\
 			    "\"%s\" only possible in server", av[0]);	\
 	} while (0)
 
@@ -537,7 +537,7 @@ parse_prio(struct stream *s, struct frame *f)
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);;
 
 	if (f->size != 5)
-		vtc_log(hp->vl, 0, "Size should be 5, but isn't (%d)", f->size);
+		vtc_fatal(hp->vl, "Size should be 5, but isn't (%d)", f->size);
 
 	buf = f->data;
 	AN(buf);
@@ -570,7 +570,7 @@ parse_rst(const struct stream *s, struct frame *f)
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);;
 
 	if (f->size != 4)
-		vtc_log(hp->vl, 0, "Size should be 4, but isn't (%d)", f->size);
+		vtc_fatal(hp->vl, "Size should be 4, but isn't (%d)", f->size);
 
 	err = vbe32dec(f->data);
 	f->md.rst_err = err;
@@ -596,7 +596,7 @@ parse_settings(const struct stream *s, struct frame *f)
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);;
 
 	if (f->size % 6)
-		vtc_log(hp->vl, 0, "Size should be a multiple of 6, but isn't (%d)", f->size);
+		vtc_fatal(hp->vl, "Size should be a multiple of 6, but isn't (%d)", f->size);
 
 	for (i = 0; i <= SETTINGS_MAX; i++)
 		f->md.settings[i] = NAN;
@@ -630,7 +630,7 @@ parse_ping(const struct stream *s, struct frame *f)
 	CHECK_OBJ_NOTNULL(s, STREAM_MAGIC);
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);;
 	if (f->size != 8)
-		vtc_log(hp->vl, 0, "Size should be 8, but isn't (%d)", f->size);
+		vtc_fatal(hp->vl, "Size should be 8, but isn't (%d)", f->size);
 	f->md.ping.ack = f->flags & ACK;
 	memcpy(f->md.ping.data, f->data, 8);
 	f->md.ping.data[8] = '\0';
@@ -650,9 +650,9 @@ parse_goaway(const struct stream *s, struct frame *f)
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);;
 
 	if (f->size < 8)
-		vtc_log(hp->vl, 0, "Size should be at least 8, but isn't (%d)", f->size);
+		vtc_fatal(hp->vl, "Size should be at least 8, but isn't (%d)", f->size);
 	if (f->data[0] & (1<<7))
-		vtc_log(hp->vl, 0, "First bit of data is reserved and should be 0");
+		vtc_fatal(hp->vl, "First bit of data is reserved and should be 0");
 
 	stid = vbe32dec(f->data);
 	err = vbe32dec(f->data + 4);
@@ -688,7 +688,7 @@ parse_winup(const struct stream *s, struct frame *f)
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);;
 
 	if (f->size != 4)
-		vtc_log(hp->vl, 0, "Size should be 4, but isn't (%d)", f->size);
+		vtc_fatal(hp->vl, "Size should be 4, but isn't (%d)", f->size);
 	if (f->data[0] & (1<<7))
 		vtc_log(hp->vl, s->hp->fatal, "First bit of data is reserved and should be 0");
 
@@ -764,7 +764,7 @@ receive_frame(void *priv)
 
 		if (expect_cont && (f->type != TYPE_CONTINUATION ||
 					expect_cont != s->id))
-			vtc_log(hp->vl, 0, "Expected CONTINUATION frame for"
+			vtc_fatal(hp->vl, "Expected CONTINUATION frame for"
 					" stream %u", expect_cont);
 
 		/* parse the frame according to it type, and fill the metada */
@@ -834,7 +834,7 @@ receive_frame(void *priv)
 	do { \
 	n = strtoul(s, &p, 0); \
 	if (*p != '\0') { \
-		vtc_log(v, 0, "%s takes an integer as argument" \
+		vtc_fatal(v, "%s takes an integer as argument" \
 			"(found %s)", c, s); \
 		WRONG("Couldn't convert to integer");\
 	} \
@@ -846,13 +846,13 @@ do {									\
 	AN(*sp);							\
 	STRTOU32(n, *sp, p, v, c);					\
 	if (l && n >= (1U << l))					\
-		vtc_log(v, 0,						\
+		vtc_fatal(v,						\
 		    c " must be a %d-bits integer (found %s)", l, *sp);	\
 } while (0)
 
 #define CHECK_LAST_FRAME(TYPE) \
 	if (!f || f->type != TYPE_ ## TYPE) { \
-		vtc_log(s->hp->vl, 0, "Last frame was not of type " #TYPE); \
+		vtc_fatal(s->hp->vl, "Last frame was not of type " #TYPE); \
 	}
 
 #define RETURN_SETTINGS(idx) \
@@ -1060,7 +1060,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	else if (!strncmp(spec, "frame.", 6)) {
 		spec += 6;
 		if (!f)
-			vtc_log(s->hp->vl, 0, "No frame received yet.");
+			vtc_fatal(s->hp->vl, "No frame received yet.");
 		if (!strcmp(spec, "data"))   { return (f->data); }
 		else if (!strcmp(spec, "type"))   { RETURN_BUFFED(f->type); }
 		else if (!strcmp(spec, "size"))	  { RETURN_BUFFED(f->size); }
@@ -1069,7 +1069,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 			if (f->type != TYPE_DATA &&
 					f->type != TYPE_HEADERS &&
 					f->type != TYPE_PUSH_PROMISE)
-				vtc_log(s->hp->vl, 0,
+				vtc_fatal(s->hp->vl,
 						"Last frame was not of type "
 						"DATA, HEADERS or PUSH");
 			RETURN_BUFFED(f->md.padded);
@@ -1252,7 +1252,7 @@ cmd_sendhex(CMD_ARGS)
 		q += 2;
 		tmp[2] = '\0';
 		if (!vct_ishex(tmp[0]) || !vct_ishex(tmp[1]))
-			vtc_log(vl, 0, "Illegal Hex char \"%c%c\"",
+			vtc_fatal(vl, "Illegal Hex char \"%c%c\"",
 					tmp[0], tmp[1]);
 		buf[i] = (uint8_t)strtoul(tmp, NULL, 16);
 	}
@@ -1285,7 +1285,7 @@ cmd_sendhex(CMD_ARGS)
 	     if (AV_IS("plain")) { hdr.field.huff = 0; }		       \
 	else if (AV_IS("huf"))   { hdr.field.huff = 1; }		       \
 	else								       \
-		vtc_log(vl, 0, str " arg can be huf or plain (got: %s)", *av); \
+		vtc_fatal(vl, str " arg can be huf or plain (got: %s)", *av); \
 	av++;								       \
 	AN(*av);							       \
 	hdr.field.ptr = *av;						       \
@@ -1484,7 +1484,7 @@ cmd_tx11obj(CMD_ARGS)
 			else if (AV_IS("not"))   { hdr.t = hpk_not;   }
 			else if (AV_IS("never")) { hdr.t = hpk_never; }
 			else
-				vtc_log(vl, 0, "first -litidxHdr arg can be "
+				vtc_fatal(vl, "first -litidxHdr arg can be "
 						"inc, not, never (got: %s)",
 						*av);
 
@@ -1502,7 +1502,7 @@ cmd_tx11obj(CMD_ARGS)
 			else if (AV_IS("not"))   { hdr.t = hpk_not;   }
 			else if (AV_IS("never")) { hdr.t = hpk_never; }
 			else
-				vtc_log(vl, 0, "first -litHdr arg can be inc, "
+				vtc_fatal(vl, "first -litHdr arg can be inc, "
 						"not, never (got: %s)", *av);
 
 			STR_ENC(av, key,   "second -litHdr");
@@ -1561,7 +1561,7 @@ cmd_tx11obj(CMD_ARGS)
 #undef CMD_IS
 #undef AV_IS
 	if (*av != NULL)
-		vtc_log(vl, 0, "Unknown %s spec: %s\n", cmd_str, *av);
+		vtc_fatal(vl, "Unknown %s spec: %s\n", cmd_str, *av);
 
 	memset(&hdr, 0, sizeof(hdr));
 	hdr.t = hpk_not;
@@ -1589,7 +1589,7 @@ cmd_tx11obj(CMD_ARGS)
 	}
 	if (pad) {
 		if (strlen(pad) >= 128)
-			vtc_log(vl, 0, "Padding is limited to 128 bytes");
+			vtc_fatal(vl, "Padding is limited to 128 bytes");
 		f.flags |= PADDED;
 		assert(f.size + strlen(pad) < BUF_SIZE);
 		memmove(buf + 1, buf, f.size);
@@ -1675,7 +1675,7 @@ cmd_txdata(CMD_ARGS)
 			break;
 	}
 	if (*av != NULL)
-		vtc_log(vl, 0, "Unknown txdata spec: %s\n", *av);
+		vtc_fatal(vl, "Unknown txdata spec: %s\n", *av);
 
 	if (!body)
 		body = strdup("");
@@ -1683,7 +1683,7 @@ cmd_txdata(CMD_ARGS)
 	if (pad) {
 		f.flags |= PADDED;
 		if (strlen(pad) >= 128)
-			vtc_log(vl, 0, "Padding is limited to 128 bytes");
+			vtc_fatal(vl, "Padding is limited to 128 bytes");
 		data = malloc( 1 + strlen(body) + strlen(pad));
 		AN(data);
 		*((uint8_t *)data) = strlen(pad);
@@ -1741,7 +1741,7 @@ cmd_txrst(CMD_ARGS)
 			break;
 	}
 	if (*av != NULL)
-		vtc_log(vl, 0, "Unknown txrst spec: %s\n", *av);
+		vtc_fatal(vl, "Unknown txrst spec: %s\n", *av);
 
 	err = htonl(err);
 	f.data = (void *)&err;
@@ -1791,7 +1791,7 @@ cmd_txprio(CMD_ARGS)
 			break;
 	}
 	if (*av != NULL)
-		vtc_log(vl, 0, "Unknown txprio spec: %s\n", *av);
+		vtc_fatal(vl, "Unknown txprio spec: %s\n", *av);
 	s->weight = weight & 0xff;
 	s->dependency = stid;
 
@@ -1870,7 +1870,7 @@ cmd_txsettings(CMD_ARGS)
 			else if (!strcmp(*av, "true"))
 				vbe32enc(cursor, 1);
 			else
-				vtc_log(vl, 0, "Push parameter is either "
+				vtc_fatal(vl, "Push parameter is either "
 						"\"true\" or \"false\", not %s",
 						*av);
 			cursor += sizeof(uint32_t);
@@ -1901,7 +1901,7 @@ cmd_txsettings(CMD_ARGS)
 			break;
 	}
 	if (*av != NULL)
-		vtc_log(vl, 0, "Unknown txsettings spec: %s\n", *av);
+		vtc_fatal(vl, "Unknown txsettings spec: %s\n", *av);
 
 	write_frame(hp, &f, 0);
 	AZ(pthread_mutex_unlock(&hp->mtx));
@@ -1933,9 +1933,9 @@ cmd_txping(CMD_ARGS)
 		if (!strcmp(*av, "-data")) {
 			av++;
 			if (f.data)
-				vtc_log(vl, 0, "this frame already has data");
+				vtc_fatal(vl, "this frame already has data");
 			if (strlen(*av) != 8)
-				vtc_log(vl, 0, "data must be a 8-char string, found  (%s)", *av);
+				vtc_fatal(vl, "data must be a 8-char string, found  (%s)", *av);
 			f.data = *av;
 		} else if (!strcmp(*av, "-ack")) {
 			f.flags |= 1;
@@ -1943,7 +1943,7 @@ cmd_txping(CMD_ARGS)
 			break;
 	}
 	if (*av != NULL)
-		vtc_log(vl, 0, "Unknown txping spec: %s\n", *av);
+		vtc_fatal(vl, "Unknown txping spec: %s\n", *av);
 	if (!f.data)
 		f.data = buf;
 	write_frame(s->hp, &f, 1);
@@ -2000,7 +2000,7 @@ cmd_txgoaway(CMD_ARGS)
 		} else if (!strcmp(*av, "-debug")) {
 			++av;
 			if (f.data)
-				vtc_log(vl, 0, "this frame already has debug data");
+				vtc_fatal(vl, "this frame already has debug data");
 			f.size = 8 + strlen(*av);
 			f.data = malloc(f.size);
 			memcpy(f.data + 8, *av, f.size - 8);
@@ -2008,7 +2008,7 @@ cmd_txgoaway(CMD_ARGS)
 			break;
 	}
 	if (*av != NULL)
-		vtc_log(vl, 0, "Unknown txgoaway spec: %s\n", *av);
+		vtc_fatal(vl, "Unknown txgoaway spec: %s\n", *av);
 
 	if (!f.data)
 		f.data = malloc(2);
@@ -2054,7 +2054,7 @@ cmd_txwinup(CMD_ARGS)
 			break;
 	}
 	if (*av != NULL)
-		vtc_log(vl, 0, "Unknown txwinup spec: %s\n", *av);
+		vtc_fatal(vl, "Unknown txwinup spec: %s\n", *av);
 
 	AZ(pthread_mutex_lock(&hp->mtx));
 	if (s->id == 0)
@@ -2096,7 +2096,7 @@ rxstuff(struct stream *s)
 #define CHKFRAME(rt, wt, rcv, func) \
 	do { \
 	if (rt != wt) \
-		vtc_log(vl, 0, "Frame #%d for %s was of type %s (%d) " \
+		vtc_fatal(vl, "Frame #%d for %s was of type %s (%d) " \
 				"instead of %s (%d)", \
 				rcv, func, \
 				rt < TYPE_MAX ? h2_types[rt] : "?", rt, \
@@ -2139,7 +2139,7 @@ cmd_rxhdrs(CMD_ARGS)
 			break;
 	}
 	if (*av != NULL)
-		vtc_log(vl, 0, "Unknown rxhdrs spec: %s\n", *av);
+		vtc_fatal(vl, "Unknown rxhdrs spec: %s\n", *av);
 
 	while (rcv++ < times || (loop && !(f->flags & END_HEADERS))) {
 		f = rxstuff(s);
@@ -2174,7 +2174,7 @@ cmd_rxcont(CMD_ARGS)
 			break;
 	}
 	if (*av != NULL)
-		vtc_log(vl, 0, "Unknown rxcont spec: %s\n", *av);
+		vtc_fatal(vl, "Unknown rxcont spec: %s\n", *av);
 
 	while (rcv++ < times || (loop && !(f->flags & END_HEADERS))) {
 		f = rxstuff(s);
@@ -2222,7 +2222,7 @@ cmd_rxdata(CMD_ARGS)
 			break;
 	}
 	if (*av != NULL)
-		vtc_log(vl, 0, "Unknown rxdata spec: %s\n", *av);
+		vtc_fatal(vl, "Unknown rxdata spec: %s\n", *av);
 
 	while (rcv++ < times || (loop && !(f->flags & END_STREAM))) {
 		f = rxstuff(s);
@@ -2321,7 +2321,7 @@ cmd_rxpush(CMD_ARGS)
 			break;
 	}
 	if (*av != NULL)
-		vtc_log(vl, 0, "Unknown rxpush spec: %s\n", *av);
+		vtc_fatal(vl, "Unknown rxpush spec: %s\n", *av);
 
 	while (rcv++ < times || (loop && !(f->flags & END_HEADERS))) {
 		f = rxstuff(s);
@@ -2343,7 +2343,7 @@ cmd_rxpush(CMD_ARGS)
 		if ((s->frame = rxstuff(s))) \
 				return; \
 		if (s->frame->type != TYPE_ ## upctype) \
-			vtc_log(vl, 0, "Received frame of type %d " \
+			vtc_fatal(vl, "Received frame of type %d " \
 					"is invalid for %s", \
 					s->frame->type, "rx ## lctype"); \
 	}
@@ -2436,7 +2436,7 @@ cmd_expect(CMD_ARGS)
 	if (!strcmp(cmp, "~") || !strcmp(cmp, "!~")) {
 		vre = VRE_compile(crhs, 0, &error, &erroroffset);
 		if (vre == NULL)
-			vtc_log(vl, 0, "REGEXP error: %s (@%d) (%s)",
+			vtc_fatal(vl, "REGEXP error: %s (@%d) (%s)",
 			    error, erroroffset, crhs);
 		i = VRE_exec(vre, clhs, strlen(clhs), 0, 0, NULL, 0, 0);
 		retval = (i >= 0 && *cmp == '~') || (i < 0 && *cmp == '!');
@@ -2459,7 +2459,7 @@ cmd_expect(CMD_ARGS)
 	}
 
 	if (retval == -1)
-		vtc_log(vl, 0,
+		vtc_fatal(vl,
 		    "EXPECT %s (%s) %s %s (%s) test not implemented",
 		    av[0], clhs, av[1], av[2], crhs);
 	else
@@ -2486,7 +2486,7 @@ cmd_write_body(CMD_ARGS)
 	AZ(av[2]);
 	AZ(strcmp(av[0], "write_body"));
 	if (VFIL_writefile(NULL, av[1], s->body, s->bodylen) != 0)
-		vtc_log(s->hp->vl, 0, "failed to write body: %s (%d)",
+		vtc_fatal(s->hp->vl, "failed to write body: %s (%d)",
 		    strerror(errno), errno);
 }
 
@@ -2574,7 +2574,7 @@ stream_new(const char *name, struct http *h)
 
 	STRTOU32(s->id, name, p, h->vl, "stream");
 	if (s->id & (1U << 31))
-		vtc_log(h->vl, 0, "Stream id must be a 31-bits integer "
+		vtc_fatal(h->vl, "Stream id must be a 31-bits integer "
 				"(found %s)", name);
 
 	CHECK_OBJ_NOTNULL(h, HTTP_MAGIC);
@@ -2626,7 +2626,7 @@ stream_wait(struct stream *s)
 	vtc_log(s->hp->vl, 2, "Waiting for stream %u", s->id);
 	AZ(pthread_join(s->tp, &res));
 	if (res != NULL)
-		vtc_log(s->hp->vl, 0, "Stream %u returned \"%s\"", s->id,
+		vtc_fatal(s->hp->vl, "Stream %u returned \"%s\"", s->id,
 				(char *)res);
 
 	VTAILQ_FOREACH_SAFE(f, &s->fq, list, f2)
@@ -2740,7 +2740,7 @@ cmd_stream(CMD_ARGS)
 			continue;
 		}
 		if (**av == '-')
-			vtc_log(vl, 0, "Unknown client argument: %s", *av);
+			vtc_fatal(vl, "Unknown client argument: %s", *av);
 		REPLACE(s->spec, *av);
 	}
 }
@@ -2766,7 +2766,7 @@ b64_settings(const struct http *hp, const char *s)
 			else if (*s == '_') {
 				v |= (uint64_t)63 << shift;
 			} else
-				vtc_log(hp->vl, 0, "Bad \"HTTP2-Settings\" "
+				vtc_fatal(hp->vl, "Bad \"HTTP2-Settings\" "
 						"header");
 			s++;
 		}

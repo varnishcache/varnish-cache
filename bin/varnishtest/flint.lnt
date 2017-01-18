@@ -1,6 +1,9 @@
 
-// vtc_log's arg2 acts like an assert
+// Tell FlexeLint when these don't return
+-function(exit, vtc_fatal)
 -function(__assert(1), vtc_log(2))
+-function(__assert(1), vtc_dump(2))
+-function(__assert(1), vtc_hexdump(2))
 
 -esym(850, av)
 
