@@ -375,34 +375,22 @@ logexp_start(struct logexp *le)
 	AN(le->vsl);
 	AZ(le->vslq);
 
-	if (le->n_arg == NULL) {
+	if (le->n_arg == NULL)
 		vtc_fatal(le->vl, "-v argument not given");
-		return;
-	}
-	if (VSM_n_Arg(le->vsm, VSB_data(le->n_arg)) <= 0) {
+	if (VSM_n_Arg(le->vsm, VSB_data(le->n_arg)) <= 0)
 		vtc_fatal(le->vl, "-v argument error: %s",
 		    VSM_Error(le->vsm));
-		return;
-	}
-	if (VSM_Open(le->vsm)) {
+	if (VSM_Open(le->vsm))
 		vtc_fatal(le->vl, "VSM_Open: %s", VSM_Error(le->vsm));
-		return;
-	}
 	AN(le->vsl);
 	c = VSL_CursorVSM(le->vsl, le->vsm,
 	    (le->d_arg ? 0 : VSL_COPT_TAIL) | VSL_COPT_BATCH);
-	if (c == NULL) {
+	if (c == NULL)
 		vtc_fatal(le->vl, "VSL_CursorVSM: %s", VSL_Error(le->vsl));
-		logexp_close(le);
-		return;
-	}
 	le->vslq = VSLQ_New(le->vsl, &c, le->g_arg, le->query);
 	if (le->vslq == NULL) {
 		VSL_DeleteCursor(c);
 		vtc_fatal(le->vl, "VSLQ_New: %s", VSL_Error(le->vsl));
-		AZ(le->vslq);
-		logexp_close(le);
-		return;
 	}
 	AZ(c);
 
@@ -442,19 +430,15 @@ cmd_logexp_expect(CMD_ARGS)
 
 	(void)cmd;
 	CAST_OBJ_NOTNULL(le, priv, LOGEXP_MAGIC);
-	if (av[1] == NULL || av[2] == NULL || av[3] == NULL) {
+	if (av[1] == NULL || av[2] == NULL || av[3] == NULL)
 		vtc_fatal(vl, "Syntax error");
-		return;
-	}
 
 	if (!strcmp(av[1], "*"))
 		skip_max = LE_ANY;
 	else {
 		skip_max = (int)strtol(av[1], &end, 10);
-		if (*end != '\0' || skip_max < 0) {
+		if (*end != '\0' || skip_max < 0)
 			vtc_fatal(vl, "Not a positive integer: '%s'", av[1]);
-			return;
-		}
 	}
 	if (!strcmp(av[2], "*"))
 		vxid = LE_ANY;
@@ -462,10 +446,8 @@ cmd_logexp_expect(CMD_ARGS)
 		vxid = LE_LAST;
 	else {
 		vxid = (int)strtol(av[2], &end, 10);
-		if (*end != '\0' || vxid < 0) {
+		if (*end != '\0' || vxid < 0)
 			vtc_fatal(vl, "Not a positive integer: '%s'", av[2]);
-			return;
-		}
 	}
 	if (!strcmp(av[3], "*"))
 		tag = LE_ANY;
@@ -473,19 +455,15 @@ cmd_logexp_expect(CMD_ARGS)
 		tag = LE_LAST;
 	else {
 		tag = VSL_Name2Tag(av[3], strlen(av[3]));
-		if (tag < 0) {
+		if (tag < 0)
 			vtc_fatal(vl, "Unknown tag name: '%s'", av[3]);
-			return;
-		}
 	}
 	vre = NULL;
 	if (av[4]) {
 		vre = VRE_compile(av[4], 0, &err, &pos);
-		if (vre == NULL) {
+		if (vre == NULL)
 			vtc_fatal(vl, "Regex error (%s): '%s' pos %d",
 			    err, av[4], pos);
-			return;
-		}
 	}
 
 	ALLOC_OBJ(test, LOGEXP_TEST_MAGIC);
@@ -558,11 +536,9 @@ cmd_logexpect(CMD_ARGS)
 		if (vtc_error)
 			break;
 		if (!strcmp(*av, "-wait")) {
-			if (!le->run) {
+			if (!le->run)
 				vtc_fatal(le->vl, "logexp not -started '%s'",
 					*av);
-				return;
-			}
 			logexp_wait(le);
 			continue;
 		}
@@ -576,10 +552,8 @@ cmd_logexpect(CMD_ARGS)
 		AZ(le->run);
 
 		if (!strcmp(*av, "-v")) {
-			if (av[1] == NULL) {
+			if (av[1] == NULL)
 				vtc_fatal(le->vl, "Missing -v argument");
-				return;
-			}
 			if (le->n_arg != NULL)
 				VSB_destroy(&le->n_arg);
 			vsb = VSB_new_auto();
@@ -594,33 +568,25 @@ cmd_logexpect(CMD_ARGS)
 			continue;
 		}
 		if (!strcmp(*av, "-d")) {
-			if (av[1] == NULL) {
+			if (av[1] == NULL)
 				vtc_fatal(le->vl, "Missing -d argument");
-				return;
-			}
 			le->d_arg = atoi(av[1]);
 			av++;
 			continue;
 		}
 		if (!strcmp(*av, "-g")) {
-			if (av[1] == NULL) {
+			if (av[1] == NULL)
 				vtc_fatal(le->vl, "Missing -g argument");
-				return;
-			}
 			le->g_arg = VSLQ_Name2Grouping(av[1], strlen(av[1]));
-			if (le->g_arg < 0) {
+			if (le->g_arg < 0) 
 				vtc_fatal(le->vl, "Unknown grouping '%s'",
 				    av[1]);
-				return;
-			}
 			av++;
 			continue;
 		}
 		if (!strcmp(*av, "-q")) {
-			if (av[1] == NULL) {
+			if (av[1] == NULL)
 				vtc_fatal(le->vl, "Missing -q argument");
-				return;
-			}
 			REPLACE(le->query, av[1]);
 			av++;
 			continue;
@@ -641,10 +607,8 @@ cmd_logexpect(CMD_ARGS)
 					continue;
 				}
 				vtc_fatal(le->vl, "%s", VSL_Error(le->vsl));
-				return;
 			}
 			vtc_fatal(le->vl, "Unknown logexp argument: %s", *av);
-			return;
 		}
 		logexp_spec(le, *av);
 	}

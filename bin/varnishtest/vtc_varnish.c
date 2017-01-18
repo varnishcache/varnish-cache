@@ -116,11 +116,9 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 			    cmd, errno, strerror(errno));
 	}
 	i = VCLI_ReadResult(v->cli_fd, &retval, &r, vtc_maxdur);
-	if (i != 0) {
+	if (i != 0)
 		vtc_fatal(v->vl, "CLI failed (%s) = %d %u %s",
 		    cmd, i, retval, r);
-		return ((enum VCLI_status_e)retval);
-	}
 	AZ(i);
 	vtc_log(v->vl, 3, "CLI RX  %u", retval);
 	vtc_dump(v->vl, 4, "CLI RX", r, -1);
@@ -172,12 +170,9 @@ wait_running(const struct varnish *v)
 		if (st != CLIS_OK)
 			vtc_fatal(v->vl,
 			    "CLI status command failed: %u %s", st, r);
-		if (!strcmp(r, "Child in state stopped")) {
+		if (!strcmp(r, "Child in state stopped"))
 			vtc_fatal(v->vl,
 			    "Child stopped before running: %u %s", st, r);
-			free(r);
-			break;
-		}
 		if (!strcmp(r, "Child in state running")) {
 			free(r);
 			break;
@@ -503,7 +498,6 @@ varnish_launch(struct varnish *v)
 		AZ(close(v->cli_fd));
 		v->cli_fd = -1;
 		vtc_fatal(v->vl, "FAIL no CLI connection accepted");
-		return;
 	}
 
 	AZ(close(v->cli_fd));
@@ -754,7 +748,6 @@ varnish_vcl(struct varnish *v, const char *vcl, int fail, char **resp)
 		VSB_destroy(&vsb);
 		vtc_fatal(v->vl,
 		    "VCL compilation succeeded expected failure");
-		return;
 	} else if (u == CLIS_OK) {
 		VSB_clear(vsb);
 		VSB_printf(vsb, "vcl.use vcl%d", v->vcl_nbr);
@@ -765,7 +758,6 @@ varnish_vcl(struct varnish *v, const char *vcl, int fail, char **resp)
 		VSB_destroy(&vsb);
 		vtc_fatal(v->vl,
 		    "VCL compilation failed expected success");
-		return;
 	} else {
 		vtc_log(v->vl, 2, "VCL compilation failed (as expected)");
 	}
@@ -807,7 +799,6 @@ varnish_vclbackend(struct varnish *v, const char *vcl)
 		VSB_destroy(&vsb);
 		VSB_destroy(&vsb2);
 		vtc_fatal(v->vl, "FAIL VCL does not compile");
-		return;
 	}
 	VSB_clear(vsb);
 	VSB_printf(vsb, "vcl.use vcl%d", v->vcl_nbr);
@@ -967,10 +958,8 @@ varnish_expect(const struct varnish *v, char * const *av)
 			continue;
 		}
 
-		if (not) {
+		if (not)
 			vtc_fatal(v->vl, "Found (not expected): %s", av[0]+1);
-			return;
-		}
 
 		good = 0;
 		ref = strtoumax(av[2], &p, 0);
