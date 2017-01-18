@@ -221,7 +221,6 @@ struct transport HTTP1_transport = {
 static int
 http1_dissect(struct worker *wrk, struct req *req)
 {
-	const char *r_100 = "HTTP/1.1 100 Continue\r\n\r\n";
 	const char *r_400 = "HTTP/1.1 400 Bad Request\r\n\r\n";
 	const char *r_417 = "HTTP/1.1 417 Expectation Failed\r\n\r\n";
 	const char *p;
@@ -292,13 +291,8 @@ http1_dissect(struct worker *wrk, struct req *req)
 			req->doclose = SC_RX_JUNK;
 			return (-1);
 		}
-		r = write(req->sp->fd, r_100, strlen(r_100));
-		if (r > 0)
-			req->acct.resp_hdrbytes += r;
-		if (r != strlen(r_100)) {
-			req->doclose = SC_REM_CLOSE;
-			return (-1);
-		}
+		if (req->http->protover >= 11)
+			req->want100cont = 1;
 		http_Unset(req->http, H_Expect);
 	}
 

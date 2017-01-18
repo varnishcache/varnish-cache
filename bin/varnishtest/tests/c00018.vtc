@@ -3,9 +3,19 @@ varnishtest "Check Expect headers"
 server s1 {
 	rxreq
 	txresp
+	rxreq
+	txresp
+	rxreq
+	txresp
 } -start
 
-varnish v1 -vcl+backend { } -start
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.url == "/err") {
+			return (synth(405));
+		}
+	}
+} -start
 
 client c1 {
 	txreq -url "/" -req POST -hdr "Expect: 100-continue " -body "foo"
@@ -13,7 +23,25 @@ client c1 {
 	expect resp.status == 100
 	rxresp
 	expect resp.status == 200
+
+	txreq -url "/" -req POST -hdr "Expect: 100-continue " -body ""
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/err" -req POST -hdr "Expect: 100-continue " -body "foo"
+	rxresp
+	expect resp.status == 100
+	rxresp
+	expect resp.status == 405
+
 	txreq -url "/" -req POST -hdr "Expect: 101-continue" -body "foo"
 	rxresp
 	expect resp.status == 417
+} -run
+
+client c1 {
+	txreq -url "/" -proto HTTP/1.0 -req POST -hdr "Expect: 100-continue " \
+	      -body "foo"
+	rxresp
+	expect resp.status == 200
 } -run
