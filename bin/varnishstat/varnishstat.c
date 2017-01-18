@@ -250,7 +250,7 @@ list_fields(struct VSM_data *vd)
 
 /*--------------------------------------------------------------------*/
 
-static void
+static void __attribute__((__noreturn__))
 usage(int status)
 {
 	const char **opt;
