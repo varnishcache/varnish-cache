@@ -76,7 +76,7 @@ vgz_msg(const struct vgz *vg)
  */
 
 static struct vgz *
-vgz_alloc_vgz(struct vsl_log *vsl, const char *id)
+vgz_gunzip(struct vsl_log *vsl, const char *id)
 {
 	struct vgz *vg;
 
@@ -84,17 +84,7 @@ vgz_alloc_vgz(struct vsl_log *vsl, const char *id)
 	AN(vg);
 	vg->vsl = vsl;
 	vg->id = id;
-	return (vg);
-}
-
-static struct vgz *
-VGZ_NewUngzip(struct vsl_log *vsl, const char *id)
-{
-	struct vgz *vg;
-
-	vg = vgz_alloc_vgz(vsl, id);
 	vg->dir = VGZ_UN;
-	VSC_C_main->n_gunzip++;
 
 	/*
 	 * Max memory usage according to zonf.h:
@@ -106,15 +96,32 @@ VGZ_NewUngzip(struct vsl_log *vsl, const char *id)
 	return (vg);
 }
 
+static struct vgz *
+VGZ_NewGunzip(struct vsl_log *vsl, const char *id)
+{
+	VSC_C_main->n_gunzip++;
+	return (vgz_gunzip(vsl, id));
+}
+
+static struct vgz *
+VGZ_NewTestGunzip(struct vsl_log *vsl, const char *id)
+{
+	VSC_C_main->n_test_gunzip++;
+	return (vgz_gunzip(vsl, id));
+}
+
 struct vgz *
 VGZ_NewGzip(struct vsl_log *vsl, const char *id)
 {
 	struct vgz *vg;
 	int i;
 
-	vg = vgz_alloc_vgz(vsl, id);
-	vg->dir = VGZ_GZ;
 	VSC_C_main->n_gzip++;
+	ALLOC_OBJ(vg, VGZ_MAGIC);
+	AN(vg);
+	vg->vsl = vsl;
+	vg->id = id;
+	vg->dir = VGZ_GZ;
 
 	/*
 	 * From zconf.h:
@@ -293,7 +300,7 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	if (act == VDP_INIT) {
-		vg = VGZ_NewUngzip(req->vsl, "U D -");
+		vg = VGZ_NewGunzip(req->vsl, "U D -");
 		AN(vg);
 		if (vgz_getmbuf(vg)) {
 			(void)VGZ_Destroy(&vg);
@@ -451,7 +458,10 @@ vfp_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	} else {
 		if (!http_HdrIs(vc->http, H_Content_Encoding, "gzip"))
 			return (VFP_NULL);
-		vg = VGZ_NewUngzip(vc->wrk->vsl, vfe->vfp->priv1);
+		if (vfe->vfp->priv2 == VFP_GUNZIP)
+			vg = VGZ_NewGunzip(vc->wrk->vsl, vfe->vfp->priv1);
+		else
+			vg = VGZ_NewTestGunzip(vc->wrk->vsl, vfe->vfp->priv1);
 	}
 	if (vg == NULL)
 		return (VFP_ERROR);

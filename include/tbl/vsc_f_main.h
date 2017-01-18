@@ -662,6 +662,11 @@ VSC_FF(n_gunzip,			uint64_t, 0, 'c', 'i', info,
 	""
 )
 
+VSC_FF(n_test_gunzip,			uint64_t, 0, 'c', 'i', info,
+    "Test gunzip operations",
+	""
+)
+
 /*--------------------------------------------------------------------*/
 
 VSC_FF(vsm_free,			uint64_t, 0, 'g', 'B', diag,

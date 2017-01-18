@@ -50,3 +50,7 @@ client c1 {
 	expect resp.http.content-encoding == <undef>
 	expect resp.bodylen == 4109
 } -run
+
+varnish v1 -expect n_gzip == 1
+varnish v1 -expect n_gunzip == 3
+varnish v1 -expect n_test_gunzip == 0
