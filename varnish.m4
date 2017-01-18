@@ -29,7 +29,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # varnish.m4 - Macros to define VMOD builds.            -*- Autoconf -*-
-# serial 6 (varnish-5.0.1)
+# serial 6 (varnish-5.1.0)
 #
 # This collection of macros helps create VMODs or tools interacting with
 # Varnish Cache using the GNU build system (autotools). In order to work
@@ -318,7 +318,7 @@ AC_DEFUN([VARNISH_VMODS], [
 # --------------------------------------------------
 # Since: Varnish 4.1.4
 #
-# Since Varnish 5.0.1:
+# Since Varnish 5.1.0:
 # - VARNISH_TEST_PATH added
 # - VARNISH_LIBRARY_PATH added
 # - VARNISHAPI_LIBDIR added
