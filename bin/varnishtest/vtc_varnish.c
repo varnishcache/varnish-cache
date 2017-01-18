@@ -475,24 +475,12 @@ varnish_launch(struct varnish *v)
 	i = poll(fd, 2, 10000);
 	vtc_log(v->vl, 4, "CLIPOLL %d 0x%x 0x%x",
 	    i, fd[0].revents, fd[1].revents);
-	if (i == 0) {
+	if (i == 0)
 		vtc_fatal(v->vl, "FAIL timeout waiting for CLI connection");
-		AZ(close(v->cli_fd));
-		v->cli_fd = -1;
-		return;
-	}
-	if (fd[1].revents & POLLHUP) {
+	if (fd[1].revents & POLLHUP) 
 		vtc_fatal(v->vl, "FAIL debug pipe closed");
-		AZ(close(v->cli_fd));
-		v->cli_fd = -1;
-		return;
-	}
-	if (!(fd[0].revents & POLLIN)) {
+	if (!(fd[0].revents & POLLIN))
 		vtc_fatal(v->vl, "FAIL CLI connection wait failure");
-		AZ(close(v->cli_fd));
-		v->cli_fd = -1;
-		return;
-	}
 	nfd = accept(v->cli_fd, NULL, NULL);
 	if (nfd < 0) {
 		AZ(close(v->cli_fd));
