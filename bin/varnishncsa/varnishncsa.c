@@ -158,7 +158,7 @@ static struct ctx {
 	int32_t			vxid;
 } CTX;
 
-static void
+static void __attribute__((__noreturn__))
 usage(int status)
 {
 	const char **opt;

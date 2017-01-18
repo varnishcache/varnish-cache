@@ -310,7 +310,7 @@ dump(void)
 	}
 }
 
-static void
+static void __attribute__((__noreturn__))
 usage(int status)
 {
 	const char **opt;

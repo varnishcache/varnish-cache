@@ -358,7 +358,8 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		// Lck_CondWait
 		ts.tv_nsec = (long)(modf(when, &t) * 1e9);
 		ts.tv_sec = (long)t;
-		(void)pthread_cond_timedwait(&timebend_cv, &mtx, &ts);
+		i = pthread_cond_timedwait(&timebend_cv, &mtx, &ts);
+		assert(i == 0 || i == ETIMEDOUT);
 	}
 	AZ(pthread_mutex_unlock(&mtx));
 
@@ -444,7 +445,7 @@ do_curses(void *arg)
 		}
 
 		if (ch == '<' || ch == '>') {
-			pthread_mutex_lock(&mtx);
+			AZ(pthread_mutex_lock(&mtx));
 			vsl_to = vsl_t0 = vsl_ts;
 			t0 = VTIM_mono();
 			if (timebend == 0)
@@ -453,8 +454,8 @@ do_curses(void *arg)
 				timebend /= 2;
 			else
 				timebend *= 2;
-			pthread_cond_broadcast(&timebend_cv);
-			pthread_mutex_unlock(&mtx);
+			AZ(pthread_cond_broadcast(&timebend_cv));
+			AZ(pthread_mutex_unlock(&mtx));
 		}
 	}
 	NEEDLESS(pthread_exit(NULL));
@@ -462,7 +463,7 @@ do_curses(void *arg)
 
 /*--------------------------------------------------------------------*/
 
-static void
+static void __attribute__((__noreturn__))
 usage(int status)
 {
 	const char **opt;
