@@ -578,7 +578,7 @@ cmd_logexpect(CMD_ARGS)
 			if (av[1] == NULL)
 				vtc_fatal(le->vl, "Missing -g argument");
 			le->g_arg = VSLQ_Name2Grouping(av[1], strlen(av[1]));
-			if (le->g_arg < 0) 
+			if (le->g_arg < 0)
 				vtc_fatal(le->vl, "Unknown grouping '%s'",
 				    av[1]);
 			av++;

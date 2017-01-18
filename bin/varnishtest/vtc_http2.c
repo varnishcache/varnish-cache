@@ -830,14 +830,12 @@ receive_frame(void *priv)
 	return (NULL);
 }
 
-#define STRTOU32(n, s, p, v, c) \
-	do { \
-	n = strtoul(s, &p, 0); \
-	if (*p != '\0') { \
-		vtc_fatal(v, "%s takes an integer as argument" \
-			"(found %s)", c, s); \
-		WRONG("Couldn't convert to integer");\
-	} \
+#define STRTOU32(n, s, p, v, c)						\
+	do {								\
+		n = strtoul(s, &p, 0);					\
+		if (*p != '\0')						\
+			vtc_fatal(v, "%s takes an integer as argument"	\
+				"(found %s)", c, s);			\
 	} while (0)
 
 #define STRTOU32_CHECK(n, sp, p, v, c, l)				\
@@ -851,7 +849,7 @@ do {									\
 } while (0)
 
 #define CHECK_LAST_FRAME(TYPE) \
-	if (!f || f->type != TYPE_ ## TYPE) { \
+	if (!f || f->type != TYPE_ ## TYPE) {				   \
 		vtc_fatal(s->hp->vl, "Last frame was not of type " #TYPE); \
 	}
 
