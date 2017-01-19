@@ -64,6 +64,7 @@ struct barrier {
 	/* fields below are only for BARRIER_SOCK */
 	pthread_t		thread;
 	volatile unsigned	active;
+	volatile unsigned	need_join;
 };
 
 static pthread_mutex_t		barrier_mtx;
@@ -236,6 +237,7 @@ barrier_sock(struct barrier *b, const char *av, struct vtclog *vl)
 	barrier_expect(b, av, vl);
 	b->type = BARRIER_SOCK;
 	b->active = 1;
+	b->need_join = 1;
 
 	/* NB. We can use the BARRIER_COND's pthread_cond_t to wait until the
 	 *     socket is ready for convenience.
@@ -419,8 +421,11 @@ cmd_barrier(CMD_ARGS)
 			case BARRIER_COND:
 				break;
 			case BARRIER_SOCK:
-				b->active = 0;
-				AZ(pthread_join(b->thread, NULL));
+				if (b->need_join) {
+					b->active = 0;
+					AZ(pthread_join(b->thread, NULL));
+					b->need_join = 0;
+				}
 				break;
 			default:
 				WRONG("Wrong barrier type");
