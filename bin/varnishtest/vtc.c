@@ -723,15 +723,39 @@ static const struct cmds cmds[] = {
 	{ NULL, NULL }
 };
 
+static const char *tfn;
+
+int
+fail_out(void)
+{
+	unsigned old_err;
+
+	old_err = vtc_error;
+	if (!vtc_stop)
+		vtc_stop = 1;
+	vtc_log(vltop, 1, "RESETTING after %s", tfn);
+	reset_cmds(cmds);
+	vtc_error |= old_err;
+
+	if (vtc_error)
+		vtc_log(vltop, 1, "TEST %s FAILED", tfn);
+	else
+		vtc_log(vltop, 1, "TEST %s completed", tfn);
+
+	if (vtc_stop > 1)
+		return (1);
+	return (vtc_error);
+}
+
 int
 exec_file(const char *fn, const char *script, const char *tmpdir,
     char *logbuf, unsigned loglen)
 {
-	unsigned old_err;
 	FILE *f;
 
 	(void)signal(SIGPIPE, SIG_IGN);
 
+	tfn = fn;
 	vtc_loginit(logbuf, loglen);
 	vltop = vtc_logopen("top");
 	AN(vltop);
@@ -755,19 +779,5 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 
 	vtc_thread = pthread_self();
 	parse_string(script, cmds, NULL, vltop);
-	old_err = vtc_error;
-	if (!vtc_stop)
-		vtc_stop = 1;
-	vtc_log(vltop, 1, "RESETTING after %s", fn);
-	reset_cmds(cmds);
-	vtc_error |= old_err;
-
-	if (vtc_error)
-		vtc_log(vltop, 1, "TEST %s FAILED", fn);
-	else
-		vtc_log(vltop, 1, "TEST %s completed", fn);
-
-	if (vtc_stop > 1)
-		return (1);
-	return (vtc_error);
+	return(fail_out());
 }

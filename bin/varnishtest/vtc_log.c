@@ -101,6 +101,18 @@ vtc_logclose(struct vtclog *vl)
 	FREE_OBJ(vl);
 }
 
+static void __attribute__((__noreturn__))
+vtc_logfail(void)
+{
+
+	vtc_error = 2;
+	if (pthread_self() != vtc_thread) {
+		fprintf(stderr, "FAIL thread %p\n", pthread_self());
+		pthread_exit(NULL);
+	} else
+		exit(fail_out());
+}
+
 static const char * const lead[] = {
 	"----",
 	"*   ",
@@ -162,11 +174,9 @@ vtc_fatal(struct vtclog *vl, const char *fmt, ...)
 	va_end(ap);
 	REL_VL(vl);
 
-	vtc_error = 2;
-	if (pthread_self() != vtc_thread)
-		pthread_exit(NULL);
-	while(1) continue;
+	vtc_logfail();
 }
+
 void
 vtc_log(struct vtclog *vl, int lvl, const char *fmt, ...)
 {
@@ -184,9 +194,7 @@ vtc_log(struct vtclog *vl, int lvl, const char *fmt, ...)
 	if (lvl > 0)
 		return;
 	if (lvl == 0)
-		vtc_error = 2;
-	if (pthread_self() != vtc_thread)
-		pthread_exit(NULL);
+		vtc_logfail();
 }
 
 /**********************************************************************
@@ -213,11 +221,8 @@ vtc_dump(struct vtclog *vl, int lvl, const char *pfx, const char *str, int len)
 			VSB_printf(vl->vsb, "%s [...] (%d)", buf, len - 1024);
 	}
 	REL_VL(vl);
-	if (lvl == 0) {
-		vtc_error = 2;
-		if (pthread_self() != vtc_thread)
-			pthread_exit(NULL);
-	}
+	if (lvl == 0)
+		vtc_logfail();
 }
 
 /**********************************************************************
@@ -255,11 +260,8 @@ vtc_hexdump(struct vtclog *vl, int lvl, const char *pfx,
 	if (!nl)
 		VSB_printf(vl->vsb, "\n");
 	REL_VL(vl);
-	if (lvl == 0) {
-		vtc_error = 2;
-		if (pthread_self() != vtc_thread)
-			pthread_exit(NULL);
-	}
+	if (lvl == 0)
+		vtc_logfail();
 }
 
 /**********************************************************************/

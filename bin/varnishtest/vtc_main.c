@@ -227,6 +227,9 @@ tst_cb(const struct vev *ve, int what)
 		free(jp->tmpdir);
 		VSB_destroy(&v);
 
+		if (jp->killed)
+			printf("#    top  TEST %s TIMED OUT (kill -9)\n",
+			    jp->tst->filename);
 		if (ecode > 1) {
 			printf("#    top  TEST %s FAILED (%.3f)",
 			    jp->tst->filename, t);

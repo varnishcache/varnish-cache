@@ -57,6 +57,7 @@ struct cmds {
 
 void parse_string(const char *spec, const struct cmds *cmd, void *priv,
     struct vtclog *vl);
+int fail_out(void);
 
 #define CMD(n) cmd_f cmd_##n
 CMD(delay);

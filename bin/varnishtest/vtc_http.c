@@ -524,14 +524,18 @@ http_rxchar(struct http *hp, int n, int eof)
 		i = poll(pfd, 1, hp->timeout);
 		if (i < 0 && errno == EINTR)
 			continue;
-		if (i == 0)
+		if (i == 0) {
 			vtc_log(hp->vl, hp->fatal,
 			    "HTTP rx timeout (fd:%d %u ms)",
 			    hp->fd, hp->timeout);
-		if (i < 0)
+			continue;
+		}
+		if (i < 0) {
 			vtc_log(hp->vl, hp->fatal,
 			    "HTTP rx failed (fd:%d poll: %s)",
 			    hp->fd, strerror(errno));
+			continue;
+		}
 		assert(i > 0);
 		assert(hp->prxbuf + n < hp->nrxbuf);
 		i = read(hp->fd, hp->rxbuf + hp->prxbuf, n);
@@ -541,14 +545,18 @@ http_rxchar(struct http *hp, int n, int eof)
 			    hp->fd, pfd[0].revents, n, i);
 		if (i == 0 && eof)
 			return (i);
-		if (i == 0)
+		if (i == 0) {
 			vtc_log(hp->vl, hp->fatal,
 			    "HTTP rx EOF (fd:%d read: %s) %d",
 			    hp->fd, strerror(errno), n);
-		if (i < 0)
+			return (-1);
+		}
+		if (i < 0) {
 			vtc_log(hp->vl, hp->fatal,
 			    "HTTP rx failed (fd:%d read: %s)",
 			    hp->fd, strerror(errno));
+			return (-1);
+		}
 		hp->prxbuf += i;
 		hp->rxbuf[hp->prxbuf] = '\0';
 		n -= i;
@@ -563,9 +571,10 @@ http_rxchunk(struct http *hp)
 	int l, i;
 
 	l = hp->prxbuf;
-	do
-		(void)http_rxchar(hp, 1, 0);
-	while (hp->rxbuf[hp->prxbuf - 1] != '\n');
+	do {
+		if (http_rxchar(hp, 1, 0) < 0)
+			return (-1);
+	} while (hp->rxbuf[hp->prxbuf - 1] != '\n');
 	vtc_dump(hp->vl, 4, "len", hp->rxbuf + l, -1);
 	i = strtoul(hp->rxbuf + l, &q, 16);
 	bprintf(hp->chunklen, "%d", i);
@@ -573,25 +582,31 @@ http_rxchunk(struct http *hp)
 		(*q != '\0' && !vct_islws(*q))) {
 		vtc_log(hp->vl, hp->fatal, "chunked fail %02x @ %td",
 		    *q, q - (hp->rxbuf + l));
+		return (-1);
 	}
 	assert(q != hp->rxbuf + l);
 	assert(*q == '\0' || vct_islws(*q));
 	hp->prxbuf = l;
 	if (i > 0) {
-		(void)http_rxchar(hp, i, 0);
-		vtc_dump(hp->vl, 4, "chunk",
-		    hp->rxbuf + l, i);
+		if (http_rxchar(hp, i, 0) < 0)
+			return (-1);
+		vtc_dump(hp->vl, 4, "chunk", hp->rxbuf + l, i);
 	}
 	l = hp->prxbuf;
-	(void)http_rxchar(hp, 2, 0);
-	if(!vct_iscrlf(hp->rxbuf + l))
+	if (http_rxchar(hp, 2, 0) < 0)
+		return (-1);
+	if(!vct_iscrlf(hp->rxbuf + l)) {
 		vtc_log(hp->vl, hp->fatal,
 		    "Wrong chunk tail[0] = %02x",
 		    hp->rxbuf[l] & 0xff);
-	if(!vct_iscrlf(hp->rxbuf + l + 1))
+		return (-1);
+	}
+	if(!vct_iscrlf(hp->rxbuf + l + 1)) {
 		vtc_log(hp->vl, hp->fatal,
 		    "Wrong chunk tail[1] = %02x",
 		    hp->rxbuf[l + 1] & 0xff);
+		return (-1);
+	}
 	hp->prxbuf = l;
 	hp->rxbuf[l] = '\0';
 	return (i);
