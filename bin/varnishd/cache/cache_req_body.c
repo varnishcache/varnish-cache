@@ -244,10 +244,12 @@ VRB_Ignore(struct req *req)
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
+	if (req->doclose)
+		return (0);
 	if (req->req_body_status == REQ_BODY_WITH_LEN ||
 	    req->req_body_status == REQ_BODY_WITHOUT_LEN)
 		(void)VRB_Iterate(req, httpq_req_body_discard, NULL);
-	return(0);
+	return (0);
 }
 
 /*----------------------------------------------------------------------
