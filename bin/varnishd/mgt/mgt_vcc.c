@@ -79,7 +79,7 @@ static const char * const builtin_vcl =
 void
 mgt_DumpBuiltin(void)
 {
-	puts(builtin_vcl);
+	printf("%s", builtin_vcl);
 }
 
 /*--------------------------------------------------------------------
