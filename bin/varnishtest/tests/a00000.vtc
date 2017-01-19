@@ -1,21 +1,27 @@
-# the first token in a varnishtest file must be "varnishtest",
-    # but whitespace (SP)
-	# and (TAB) and comments are fine
+varnishtest "Test varnishtest itself"
 
-varnishtest "basic default HTTP transactions"
+shell -exit 1 -expect {usage: varnishtest} {varnishtest -h}
 
-server s1 {
-	rxreq
-	txresp
+shell {
+	pwd
+	echo 'notvarnishtest foo bar' > _.vtc
+	echo 'shell "exit 9"' >> _.vtc
 }
 
-server s1 -start
-
-client c1 -connect ${s1_sock} {
-	txreq
-	rxresp
+shell -exit 2 -expect {doesn't start with 'varnishtest'} {
+	varnishtest -v _.vtc
 }
 
-client c1 -run
+shell -exit 77 -expect {0 tests failed, 1 tests skipped, 0 tests passed} {
+	unset TMPDIR
+	varnishtest -k _.vtc
+}
 
-server s1 -wait
+# Test external macro-def with a a two-turtle test
+shell -expect {__=barf} {
+	echo varnishtest foo > _.vtc
+	printf 'shell {echo %c{foobar} > ${tmpdir}/__}' '$'  >> _.vtc
+	varnishtest -q -Dfoobar=barf _.vtc
+	echo __=`cat __`
+}
+

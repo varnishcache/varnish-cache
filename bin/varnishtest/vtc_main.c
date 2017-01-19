@@ -544,6 +544,7 @@ read_file(const char *fn, int ntest)
 		fprintf(stderr,
 		    "File \"%s\" doesn't start with 'varnishtest'\n", fn);
 		free(p);
+		vtc_skip++;
 		return(2);
 	}
 	ALLOC_OBJ(tp, TST_MAGIC);
