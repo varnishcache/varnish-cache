@@ -625,7 +625,7 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 	ll = 0;
 	p = http_find_header(hh, "transfer-encoding");
 	if (p != NULL && !strcasecmp(p, "chunked")) {
-		while (http_rxchunk(hp) != 0)
+		while (http_rxchunk(hp) > 0)
 			continue;
 		vtc_dump(hp->vl, 4, "body", hp->body, ll);
 		ll = hp->rxbuf + hp->prxbuf - hp->body;
@@ -636,7 +636,8 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 	p = http_find_header(hh, "content-length");
 	if (p != NULL) {
 		l = strtoul(p, NULL, 10);
-		(void)http_rxchar(hp, l, 0);
+		if (http_rxchar(hp, l, 0) < 0)
+			return;
 		vtc_dump(hp->vl, 4, "body", hp->body, l);
 		hp->bodyl = l;
 		bprintf(hp->bodylen, "%d", l);
@@ -645,6 +646,8 @@ http_swallow_body(struct http *hp, char * const *hh, int body)
 	if (body) {
 		do  {
 			i = http_rxchar(hp, 1, 1);
+			if (i < 0)
+				return;
 			ll += i;
 		} while (i > 0);
 		vtc_dump(hp->vl, 4, "rxeof", hp->body, ll);
