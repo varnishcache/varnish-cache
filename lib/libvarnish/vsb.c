@@ -500,16 +500,25 @@ VSB_destroy(struct vsb **s)
  * Quote a string
  */
 void
-VSB_quote(struct vsb *s, const void *v, int len, int how)
+VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 {
 	const char *p;
 	const char *q;
 	int quote = 0;
+	int nl = 0;
 	const unsigned char *u, *w;
 
 	assert(v != NULL);
 	if (len == -1)
 		len = strlen(v);
+
+	if (len == 0 && (how & VSB_QUOTE_CSTR)) {
+		VSB_printf(s, "%s\"\"", pfx);
+		return;
+	} else if (len == 0)
+		return;
+
+	VSB_cat(s, pfx);
 
 	if (how & VSB_QUOTE_HEX) {
 		u = v;
@@ -537,8 +546,14 @@ VSB_quote(struct vsb *s, const void *v, int len, int how)
 		(void)VSB_bcat(s, p, len);
 		return;
 	}
-	(void)VSB_putc(s, '"');
+
+	if (how & VSB_QUOTE_CSTR)
+		(void)VSB_putc(s, '"');
+
 	for (q = p; q < p + len; q++) {
+		if (nl)
+			VSB_cat(s, pfx);
+		nl = 0;
 		switch (*q) {
 		case '?':
 			if (how & VSB_QUOTE_CSTR)
@@ -554,12 +569,14 @@ VSB_quote(struct vsb *s, const void *v, int len, int how)
 			(void)VSB_putc(s, *q);
 			break;
 		case '\n':
-			if (how & VSB_QUOTE_CSTR)
-				(void)VSB_cat(s, "\\n\"\n\t\"");
-			else if (how & VSB_QUOTE_NONL)
-				(void)VSB_cat(s, "\n");
-			else
-				(void)VSB_cat(s, "\\n");
+			if (how & VSB_QUOTE_CSTR) {
+				(void)VSB_printf(s, "\\n\"\n%s\t\"", pfx);
+			} else if (how & VSB_QUOTE_NONL) {
+				(void)VSB_printf(s, "\n");
+				nl = 1;
+			} else {
+				(void)VSB_printf(s, "\\n");
+			}
 			break;
 		case '\r':
 			(void)VSB_cat(s, "\\r");
@@ -576,7 +593,16 @@ VSB_quote(struct vsb *s, const void *v, int len, int how)
 			break;
 		}
 	}
-	(void)VSB_putc(s, '"');
+	if (how & VSB_QUOTE_CSTR)
+		(void)VSB_putc(s, '"');
+	if ((how & VSB_QUOTE_NONL && !nl))
+		(void)VSB_putc(s, '\n');
+}
+
+void
+VSB_quote(struct vsb *s, const void *v, int len, int how)
+{
+	VSB_quote_pfx(s, "", v, len, how);
 }
 
 /*
