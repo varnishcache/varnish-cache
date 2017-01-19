@@ -477,7 +477,7 @@ varnish_launch(struct varnish *v)
 	    i, fd[0].revents, fd[1].revents);
 	if (i == 0)
 		vtc_fatal(v->vl, "FAIL timeout waiting for CLI connection");
-	if (fd[1].revents & POLLHUP) 
+	if (fd[1].revents & POLLHUP)
 		vtc_fatal(v->vl, "FAIL debug pipe closed");
 	if (!(fd[0].revents & POLLIN))
 		vtc_fatal(v->vl, "FAIL CLI connection wait failure");

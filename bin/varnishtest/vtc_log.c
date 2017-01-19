@@ -196,41 +196,22 @@ vtc_log(struct vtclog *vl, int lvl, const char *fmt, ...)
 void
 vtc_dump(struct vtclog *vl, int lvl, const char *pfx, const char *str, int len)
 {
-	int nl = 1, olen;
-	unsigned l;
+	char buf[64];
 
 	AN(pfx);
 	GET_VL(vl);
 	if (str == NULL)
 		vtc_leadin(vl, lvl, "%s(null)\n", pfx);
 	else {
-		olen = len;
+		bprintf(buf, "%s %-4s %4.1f %s|",
+		    lead[lvl < 0 ? 1: lvl], vl->id, vl->tx, pfx);
 		if (len < 0)
 			len = strlen(str);
-		for (l = 0; l < len; l++, str++) {
-			if (l > 1024 && olen != -2) {
-				VSB_printf(vl->vsb, "...");
-				break;
-			}
-			if (nl) {
-				vtc_leadin(vl, lvl, "%s| ", pfx);
-				nl = 0;
-			}
-			if (*str == '\r')
-				VSB_printf(vl->vsb, "\\r");
-			else if (*str == '\t')
-				VSB_printf(vl->vsb, "\\t");
-			else if (*str == '\n') {
-				VSB_printf(vl->vsb, "\\n\n");
-				nl = 1;
-			} else if (*str < 0x20 || *str > 0x7e)
-				VSB_printf(vl->vsb, "\\x%02x", (*str) & 0xff);
-			else
-				VSB_printf(vl->vsb, "%c", *str);
-		}
+		VSB_quote_pfx(vl->vsb, buf, str,len > 1024 ? 1024 : len,
+		    VSB_QUOTE_NONL);
+		if (len > 1024)
+			VSB_printf(vl->vsb, "%s [...] (%d)", buf, len - 1024);
 	}
-	if (!nl)
-		VSB_printf(vl->vsb, "\n");
 	REL_VL(vl);
 	if (lvl == 0) {
 		vtc_error = 2;
