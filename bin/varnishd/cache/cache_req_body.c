@@ -87,6 +87,10 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	yet = req->htc->content_length;
 	if (yet != 0 && req->want100cont) {
 		/* H2 TODO */
+		VSLb(req->vsl, SLT_RespProtocol, "HTTP/1.1");
+		VSLb(req->vsl, SLT_RespStatus, "100");
+		VSLb(req->vsl, SLT_RespReason, "Continue");
+
 		r = write(req->sp->fd, r_100, strlen(r_100));
 		if (r > 0)
 			req->acct.resp_hdrbytes += r;
