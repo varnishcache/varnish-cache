@@ -117,7 +117,6 @@ vtc_leadinv(const struct vtclog *vl, int lvl, const char *fmt, va_list ap)
 
 	assert(lvl < (int)NLEAD);
 	assert(lvl >= 0);
-	VSB_clear(vl->vsb);
 	VSB_printf(vl->vsb, "%s %-4s %4.1f ",
 	    lead[lvl < 0 ? 1: lvl], vl->id, vl->tx);
 	if (fmt != NULL)
