@@ -77,6 +77,8 @@ struct vtc_job {
 	char			*tmpdir;
 	unsigned		bufsiz;
 	double			t0;
+	struct vsb		*diag;
+	int			killed;
 };
 
 int iflg = 0;
@@ -161,21 +163,23 @@ tst_cb(const struct vev *ve, int what)
 	pid_t px;
 	double t;
 	FILE *f;
+	char *p;
+	struct vsb *v;
 
 	CAST_OBJ_NOTNULL(jp, ve->priv, JOB_MAGIC);
 
 	// printf("CB %p %s %d\n", ve, jp->tst->filename, what);
-	if (what == 0)
+	if (what == 0) {
+		jp->killed = 1;
 		AZ(kill(jp->child, SIGKILL)); /* XXX: Timeout */
-	else
+	} else {
 		assert(what & (EV_RD | EV_HUP));
+	}
 
 	*buf = '\0';
-	i = read(ve->fd, buf, sizeof buf - 1);
-	if (i > 0) {
-		buf[i] = '\0';
-		printf("######## %s ########\n%s", jp->tst->filename, buf);
-	}
+	i = read(ve->fd, buf, sizeof buf);
+	if (i > 0)
+		VSB_bcat(jp->diag, buf, i);
 	if (i == 0) {
 		njob--;
 		px = wait4(jp->child, &stx, 0, NULL);
@@ -187,10 +191,21 @@ tst_cb(const struct vev *ve, int what)
 		if (ecode == 0)
 			ecode = WEXITSTATUS(stx);
 
-		if (ecode > 1 && vtc_verbosity)
-			printf("%s\n", jp->buf);
-		else if (vtc_verbosity > 1)
-			printf("%s\n", jp->buf);
+		AZ(VSB_finish(jp->diag));
+		v = VSB_new_auto();
+		AN(v);
+		VSB_cat(v, jp->buf);
+		p = strchr(jp->buf, '\0');
+		if (p > jp->buf && p[-1] != '\n')
+			VSB_putc(v, '\n');
+		VSB_quote_pfx(v, "*    diag  0.0 ",
+		    VSB_data(jp->diag), -1, VSB_QUOTE_NONL);
+		AZ(VSB_finish(v));
+		VSB_destroy(&jp->diag);
+		AZ(munmap(jp->buf, jp->bufsiz));
+
+		if ((ecode > 1 && vtc_verbosity) || vtc_verbosity > 1)
+			printf("%s", VSB_data(v));
 
 		if (!ecode)
 			vtc_good++;
@@ -206,13 +221,14 @@ tst_cb(const struct vev *ve, int what)
 			bprintf(buf, "%s/LOG", jp->tmpdir);
 			f = fopen(buf, "w");
 			AN(f);
-			(void)fprintf(f, "%s\n", jp->buf);
+			(void)fprintf(f, "%s\n", VSB_data(v));
 			AZ(fclose(f));
 		}
 		free(jp->tmpdir);
+		VSB_destroy(&v);
 
 		if (ecode > 1) {
-			printf("#     top  TEST %s FAILED (%.3f)",
+			printf("#    top  TEST %s FAILED (%.3f)",
 			    jp->tst->filename, t);
 			if (WIFSIGNALED(stx))
 				printf(" signal=%d\n", WTERMSIG(stx));
@@ -223,11 +239,10 @@ tst_cb(const struct vev *ve, int what)
 				exit(2);
 			}
 		} else if (vtc_verbosity) {
-			printf("#     top  TEST %s %s (%.3f)\n",
+			printf("#    top  TEST %s %s (%.3f)\n",
 			    jp->tst->filename,
 			    ecode ? "skipped" : "passed", t);
 		}
-		AZ(munmap(jp->buf, jp->bufsiz));
 		if (jp->evt != NULL)
 			vev_del(vb, jp->evt);
 
@@ -251,6 +266,9 @@ start_test(void)
 
 	ALLOC_OBJ(jp, JOB_MAGIC);
 	AN(jp);
+
+	jp->diag = VSB_new_auto();
+	AN(jp->diag);
 
 	jp->bufsiz = vtc_bufsiz;
 
