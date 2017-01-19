@@ -37,6 +37,7 @@
 #include "vtim.h"
 #include "hash/hash_slinger.h"
 #include "storage/storage.h"
+#include "cache_transport.h"
 
 /*----------------------------------------------------------------------
  * Pull the req.body in via/into a objcore
@@ -48,7 +49,6 @@
 static ssize_t
 vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 {
-	const char *r_100 = "HTTP/1.1 100 Continue\r\n\r\n";
 	ssize_t l, r = 0, yet;
 	struct vfp_ctx *vfc;
 	uint8_t *ptr;
@@ -86,18 +86,9 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	AN(req->htc);
 	yet = req->htc->content_length;
 	if (yet != 0 && req->want100cont) {
-		/* H2 TODO */
-		VSLb(req->vsl, SLT_RespProtocol, "HTTP/1.1");
-		VSLb(req->vsl, SLT_RespStatus, "100");
-		VSLb(req->vsl, SLT_RespReason, "Continue");
-
-		r = write(req->sp->fd, r_100, strlen(r_100));
-		if (r > 0)
-			req->acct.resp_hdrbytes += r;
-		if (r != strlen(r_100)) {
-			req->doclose = SC_REM_CLOSE;
+		req->transport->sresp(req, R_100);
+		if (req->doclose)
 			return (-1);
-		}
 	}
 	if (yet < 0)
 		yet = 0;

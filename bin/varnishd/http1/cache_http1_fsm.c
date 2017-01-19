@@ -207,13 +207,14 @@ static struct http1_simple_response_msg {
 	const char	*r, *resp;
 } http1_simple_response_msg[] = {
 #define SRESP(s, r) [R_##s] = { s, r, "HTTP/1.1 " #s " " r "\r\n\r\n" }
+	SRESP(100, "Continue"),
 	SRESP(400, "Bad Request"),
 	SRESP(417, "Expectation Failed")
 };
 #undef SRESP
 
-static void
-http1_simple_response(struct req *req, enum http1_simple_response_status sr)
+static void __match_proto__(vtr_sresp_f)
+http1_simple_response(struct req *req, enum vtr_sresp sr)
 {
 	const struct http1_simple_response_msg *m;
 	ssize_t l;
@@ -231,6 +232,9 @@ http1_simple_response(struct req *req, enum http1_simple_response_status sr)
 	l = write(req->sp->fd, m->resp, strlen(m->resp));
 	if (l > 0)
 		req->acct.resp_hdrbytes += l;
+	if (! req->doclose && l != strlen(m->resp))
+		req->doclose = SC_REM_CLOSE;
+
 }
 
 struct transport HTTP1_transport = {
@@ -244,13 +248,14 @@ struct transport HTTP1_transport = {
 	.sess_panic =		http1_sess_panic,
 	.req_panic =		http1_req_panic,
 	.reembark =		http1_reembark,
+	.sresp =		http1_simple_response,
 };
 
 /*----------------------------------------------------------------------
  */
 
 static inline void
-http1_abort(struct req *req, enum http1_simple_response_status sr)
+http1_abort(struct req *req, enum vtr_sresp sr)
 {
 	AN(req->doclose);
 	assert(sr >= R_400);

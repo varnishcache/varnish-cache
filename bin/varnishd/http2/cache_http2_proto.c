@@ -757,4 +757,5 @@ struct transport H2_transport = {
 	.new_session =		h2_new_session,
 	.sess_panic =		h2_sess_panic,
 	.deliver =		h2_deliver,
+	.sresp =		h2_simple_response,
 };

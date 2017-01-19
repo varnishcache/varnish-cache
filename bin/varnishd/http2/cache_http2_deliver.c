@@ -92,6 +92,44 @@ h2_bytes(struct req *req, enum vdp_action act, void **priv,
 	return (0);
 }
 
+static struct h2_simple_response_msg {
+	const char	*p;
+	size_t		l;
+	unsigned	s;
+	const char	*r;
+} h2_simple_response_msg[] = {
+	[R_400] = { "\x92", 1, 400, "Bad Request"},
+#define SRESP(s, r) [R_##s] = { "\x18\x03" #s, 5, s, r}
+	SRESP(100, "Continue"),
+	SRESP(417, "Expectation Failed")
+};
+
+void __match_proto__(vtr_sresp_f)
+h2_simple_response(struct req *req, enum vtr_sresp sr)
+{
+	const struct h2_simple_response_msg *m;
+	struct h2_req *r2;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
+
+	assert(sr < R_LIM);
+	m = &h2_simple_response_msg[sr];
+	AN(m->p);
+	AN(m->l);
+
+	VSLb(req->vsl, SLT_RespProtocol, "HTTP/2.0");
+	VSLb(req->vsl, SLT_RespStatus, "%03d", m->s);
+	VSLb(req->vsl, SLT_RespReason, "%s", m->r);
+
+	if (m->s >= 400)
+		req->err_code = m->s;
+
+	H2_Send(req->wrk, r2, 1,
+	    H2_FRAME_HEADERS, H2FF_HEADERS_END_HEADERS,
+	    m->l, m->p);
+}
+
 void __match_proto__(vtr_deliver_f)
 h2_deliver(struct req *req, struct boc *boc, int sendbody)
 {
