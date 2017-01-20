@@ -102,6 +102,7 @@ static struct h2_simple_response_msg {
 #define SRESP(s, r) [R_##s] = { "\x18\x03" #s, 5, s, r}
 	SRESP(100, "Continue"),
 	SRESP(417, "Expectation Failed")
+#undef SRESP
 };
 
 void __match_proto__(vtr_sresp_f)

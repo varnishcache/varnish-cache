@@ -210,8 +210,8 @@ static struct http1_simple_response_msg {
 	SRESP(100, "Continue"),
 	SRESP(400, "Bad Request"),
 	SRESP(417, "Expectation Failed")
-};
 #undef SRESP
+};
 
 static void __match_proto__(vtr_sresp_f)
 http1_simple_response(struct req *req, enum vtr_sresp sr)
