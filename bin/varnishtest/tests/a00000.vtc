@@ -25,3 +25,17 @@ shell -expect {__=barf} {
 	echo __=`cat __`
 }
 
+# Test a test failure
+shell -exit 2 -expect {TEST _.vtc FAILED} {
+	echo varnishtest foo > _.vtc
+	echo 'shell {false}' >> _.vtc
+	exec varnishtest -v _.vtc || true
+}
+
+# Test a test skip
+shell -exit 77 -expect {TEST _.vtc skipped} {
+	echo varnishtest foo > _.vtc
+	echo 'feature cmd false' >> _.vtc
+	exec varnishtest -v _.vtc || true
+}
+
