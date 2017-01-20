@@ -1,19 +1,20 @@
 varnishtest "varnishlog coverage"
 
-server s1 {
+server s1 -repeat 2 {
 	rxreq
 	txresp
 } -start
 
 varnish v1 -vcl+backend {} -start
 
-process p1 "exec varnishlog -n ${v1_name} -g raw -k 1" -start
-process p2 {
-	exec varnishlog -n ${v1_name} -g raw -k 1 -w ${tmpdir}/p2/output -A
+process p1 {
+	exec varnishlog -n ${v1_name} -g raw -k 3 -w ${tmpdir}/vlog -A
 } -start
-process p3 {
-	exec varnishlog -n ${v1_name} -g raw -k 1 -w ${tmpdir}/p3/output.bin
-} -start
+shell {
+	exec varnishlog -n ${v1_name} -D -P ${tmpdir}/vlog.pid \
+	    -w ${tmpdir}/vlog.bin
+}
+
 shell -expect "Usage: varnishlog <options>" \
 	"varnishlog -h"
 shell -expect "Copyright (c) 2006 Verdens Gang AS" \
@@ -38,9 +39,31 @@ shell -err -expect {-x: Syntax error in "**"} \
 	{varnishlog -x "**"}
 shell -err -expect {-X: Syntax error in "**"} \
 	{varnishlog -X "**:bar"}
+
 process p1 -wait
-shell {grep -q "0 CLI" ${p1_out}}
-process p2 -wait
-shell {grep -q "0 CLI" ${p2_dir}/output}
-process p3 -wait
-shell -expect "0 CLI" {varnishlog -g raw -r ${p3_dir}/output.bin}
+shell {grep -q "0 CLI" ${tmpdir}/vlog}
+shell -expect "0 CLI" "varnishlog -n ${v1_name} -d -g raw"
+
+client c1 {
+	txreq -url /foo
+	rxresp
+} -run
+
+delay 1
+
+shell "mv ${tmpdir}/vlog.bin ${tmpdir}/vlog.bin~ >/dev/null 2>&1"
+shell "kill -HUP `cat ${tmpdir}/vlog.pid`"
+
+client c1 {
+	txreq -url /bar
+	rxresp
+} -run
+
+delay 1
+
+shell "kill `cat ${tmpdir}/vlog.pid`"
+
+shell -expect "/foo" {
+	varnishlog -r ${tmpdir}/vlog.bin~ -i ReqURL -q "RespStatus == 200"
+}
+shell -expect "/bar" "varnishlog -r ${tmpdir}/vlog.bin -x ReqURL"
