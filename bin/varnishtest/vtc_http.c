@@ -1799,9 +1799,9 @@ cmd_http_stream(CMD_ARGS)
  *
  * write_body STRING
  *	Write the body of a request or a response to a file. By using the
- *	shell or err_shell commands, higher-level checks on the body can
- *	be performed (eg. XML, JSON, ...) provided that such checks can be
- *	delegated to an external program.
+ *	shell command, higher-level checks on the body can be performed
+ *	(eg. XML, JSON, ...) provided that such checks can be delegated
+ *	to an external program.
  */
 static void
 cmd_http_write_body(CMD_ARGS)
@@ -1878,7 +1878,6 @@ static const struct cmds http_cmds[] = {
 	/* general purpose */
 	CMD(barrier)
 	CMD(delay)
-	CMD(err_shell)
 	CMD(shell)
 #undef CMD_HTTP
 #undef CMD

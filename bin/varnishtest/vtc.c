@@ -546,10 +546,6 @@ cmd_shell(CMD_ARGS)
  * err_shell expect the shell command to fail AND stdout to match the string,
  * failing the test case otherwise.
  */
-/* SECTION: client-server.spec.shell err_shell
- *
- * Same as for the top-level err_shell.
- */
 
 void
 cmd_err_shell(CMD_ARGS)
