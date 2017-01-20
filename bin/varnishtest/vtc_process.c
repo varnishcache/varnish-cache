@@ -53,8 +53,7 @@ struct process {
 	VTAILQ_ENTRY(process)	list;
 
 	char			*spec;
-	char			*workdir;
-	char			*outdir;
+	char			*dir;
 	char			*out;
 	char			*err;
 	int			fd_to;
@@ -101,13 +100,12 @@ process_new(const char *name)
 	p->vl = vtc_logopen(name);
 	AN(p->vl);
 
-	PROCESS_EXPAND(workdir, "%s", "${pwd}");
-	PROCESS_EXPAND(outdir, "${tmpdir}/%s", name);
+	PROCESS_EXPAND(dir, "${tmpdir}/%s", name);
 	PROCESS_EXPAND(out, "${tmpdir}/%s/stdout", name);
 	PROCESS_EXPAND(err, "${tmpdir}/%s/stderr", name);
 
 	bprintf(buf, "rm -rf %s ; mkdir -p %s ; touch %s %s",
-	    p->outdir, p->outdir, p->out, p->err);
+	    p->dir, p->dir, p->out, p->err);
 	AZ(system(buf));
 
 	p->fd_to = -1;
@@ -134,18 +132,28 @@ process_delete(struct process *p)
 	AZ(pthread_mutex_destroy(&p->mtx));
 	vtc_logclose(p->vl);
 	free(p->name);
-	free(p->workdir);
-	free(p->outdir);
+	free(p->dir);
 	free(p->out);
 	free(p->err);
 
 	/*
-	 * We do not delete the outdir, it may contain useful stdout
-	 * and stderr files.
+	 * We do not delete the directory, it may contain useful stdout
+	 * and stderr files. They will be deleted on account of belonging
+	 * to the test's tmpdir.
 	 */
 
 	/* XXX: MEMLEAK (?) */
 	FREE_OBJ(p);
+}
+
+static void
+process_undef(struct process *p)
+{
+	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
+
+	macro_undef(p->vl, p->name, "dir");
+	macro_undef(p->vl, p->name, "out");
+	macro_undef(p->vl, p->name, "err");
 }
 
 /**********************************************************************
@@ -184,6 +192,7 @@ process_thread(void *priv)
 	if (p->fd_to >= 0)
 		closefd(&p->fd_to);
 
+	/* NB: We keep the other macros around */
 	macro_undef(p->vl, p->name, "pid");
 	p->pid = -1;
 
@@ -251,6 +260,9 @@ process_start(struct process *p)
 	}
 	vtc_log(p->vl, 3, "PID: %ld", (long)p->pid);
 	macro_def(p->vl, p->name, "pid", "%ld", (long)p->pid);
+	macro_def(p->vl, p->name, "dir", "%s", p->dir);
+	macro_def(p->vl, p->name, "out", "%s", p->out);
+	macro_def(p->vl, p->name, "err", "%s", p->err);
 	closefd(&fds[0]);
 	p->fd_to = fds[1];
 	if (p->log) {
@@ -372,9 +384,9 @@ process_close(struct process *p)
 /* SECTION: process process
  *
  * Run a process in the background with stdout and stderr redirected to
- * ${tmpdir}/pNAME/stdout and ${tmpdir}/pNAME/stderr, respectively::
+ * ${pNAME_out} and ${pNAME_err}, both located in ${pNAME_dir}::
  *
- *	process pNAME SPEC [-start] [-log] [-wait] [-run] [-kill STRING] \
+ *	process pNAME SPEC [-log] [-start] [-wait] [-run] [-kill STRING] \
  *		[-stop] [-write STRING] [-writeln STRING] [-close]
  *
  * pNAME
@@ -383,11 +395,11 @@ process_close(struct process *p)
  * SPEC
  *	The command(s) to run in this process.
  *
- * \-start
- *	Start the process.
- *
  * \-log
  *	Log stdout/stderr with vtc_dump() (must be before -start/-run)
+ *
+ * \-start
+ *	Start the process.
  *
  * \-wait
  *	Wait for the process to finish.
@@ -395,11 +407,32 @@ process_close(struct process *p)
  * \-run
  *	Shorthand for -start -wait.
  *
+ *	In most cases, if you just want to start a process and wait for it
+ *	to finish, you can use the varnishtest ``shell`` command instead.
+ *	The following commands are equivalent::
+ *
+ *	    shell "do --something"
+ *
+ *	    process p1 "do --something" -run
+ *
+ *	However, you may use the the ``process`` variant to conveniently
+ *	collect the standard input and output without dealing with shell
+ *	redirections yourself. The ``shell`` command can also expect an
+ *	expression from either output, consider using it if you only need
+ *	to match one.
+ *
  * \-kill STRING
  *	Send a signal to the process. The argument can be either
  *	the string "TERM", "INT", or "KILL" for SIGTERM, SIGINT or SIGKILL
  *	signals, respectively, or a hyphen (-) followed by the signal
  *	number.
+ *
+ *	If you need to use other signals, you can use the ``kill``\(1) command
+ *	directly::
+ *
+ *	    shell "kill -USR1 ${pNAME_pid}"
+ *
+ *	Note that SIGHUP usage is discouraged in test cases.
  *
  * \-stop
  *	Shorthand for -kill TERM.
@@ -432,6 +465,7 @@ cmd_process(CMD_ARGS)
 			if (p->hasthread)
 				process_wait(p);
 			VTAILQ_REMOVE(&processes, p, list);
+			process_undef(p);
 			process_delete(p);
 		}
 		return;

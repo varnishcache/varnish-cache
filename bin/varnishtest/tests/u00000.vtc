@@ -24,11 +24,11 @@ process p2 -wait
 process p3 -wait
 
 # check stdout
-shell "grep -q foo ${tmpdir}/p1/stdout"
-shell "grep -q bar ${tmpdir}/p2/stdout"
-shell "grep -q baz ${tmpdir}/p3/stdout"
+shell "grep -q foo ${p1_out}"
+shell "grep -q bar ${p2_out}"
+shell "grep -q baz ${p3_out}"
 
 # check stderr
-shell "test -f ${tmpdir}/p1/stderr -a ! -s ${tmpdir}/p1/stderr"
-shell "test -f ${tmpdir}/p2/stderr -a ! -s ${tmpdir}/p2/stderr"
-shell "test -f ${tmpdir}/p3/stderr -a ! -s ${tmpdir}/p3/stderr"
+shell "test -f ${p1_err} -a ! -s ${p1_err}"
+shell "test -f ${p2_err} -a ! -s ${p2_err}"
+shell "test -f ${p3_err} -a ! -s ${p3_err}"

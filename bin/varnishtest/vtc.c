@@ -439,20 +439,21 @@ cmd_varnishtest(CMD_ARGS)
  *                 echo end
  *         }
  *
- * By default a zero exit code is expected.
+ * By default a zero exit code is expected, otherwise the vtc will fail.
  *
  * Notice that the commandstring is prefixed with "exec 2>&1;" to join
  * stderr and stdout back to the varnishtest process.
  *
  * Optional arguments:
  *
- *	-err			- expect non-zero exit code
+ * \-err
+ * 	Expect non-zero exit code.
  *
- *	-exit N			- expect exit code N
+ * \-exit N
+ * 	Expect exit code N instead of zero.
  *
- *	-expect string		- expect str to be found in stdout+err
- *
- * The vtc will fail if the return code of the shell is not 0.
+ * \-expect string
+ * 	Expect str to be found in stdout+err.
  */
 /* SECTION: client-server.spec.shell shell
  *

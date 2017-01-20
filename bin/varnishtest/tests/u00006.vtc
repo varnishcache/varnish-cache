@@ -39,8 +39,8 @@ shell -err -expect {-x: Syntax error in "**"} \
 shell -err -expect {-X: Syntax error in "**"} \
 	{varnishlog -X "**:bar"}
 process p1 -wait
-shell {grep -q "0 CLI" ${tmpdir}/p1/stdout}
+shell {grep -q "0 CLI" ${p1_out}}
 process p2 -wait
-shell {grep -q "0 CLI" ${tmpdir}/p2/output}
+shell {grep -q "0 CLI" ${p2_dir}/output}
 process p3 -wait
-shell -expect "0 CLI" {varnishlog -g raw -r ${tmpdir}/p3/output.bin}
+shell -expect "0 CLI" {varnishlog -g raw -r ${p3_dir}/output.bin}
