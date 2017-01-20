@@ -38,9 +38,11 @@ shell -err -expect "Syntax error. Field specifier must be positive: Begin[0]" \
 shell -err -expect "Field specifier 999999999999 for the tag VSL:Begin[999999999999] is probably too high" \
 	{varnishncsa -F "%{VSL:Begin[999999999999]}x"}
 shell -err -expect "Can't open format file (No such file or directory)" \
-	{varnishncsa -n ${v1_name} -f /nonexistent}
+	{varnishncsa -f /nonexistent/file}
 shell -err -expect "Empty format file" \
-	{varnishncsa -n ${v1_name} -f /dev/null}
+	{varnishncsa -f /dev/null}
+shell -err -expect "Can't read format from file (Is a directory)" \
+	{varnishncsa -f ${tmpdir}}
 
 delay 1
 
@@ -67,5 +69,5 @@ shell "grep -q /foo ${tmpdir}/ncsa.old.log"
 shell "grep -q /bar ${tmpdir}/ncsa.log"
 
 shell {echo "%{VSL:Begin}x %{Varnish:vxid}x %D %T %{Varnish:handling}x %{%Z}t" >${tmpdir}/format}
-shell -expect "0 miss GMT" \
+shell -expect "0 miss" \
 	{varnishncsa -n ${v1_name} -d -f ${tmpdir}/format}
