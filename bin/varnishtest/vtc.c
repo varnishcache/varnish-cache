@@ -485,6 +485,8 @@ cmd_shell_engine(struct vtclog *vl, int ok,
 			VSB_putc(vsb, c);
 	} while (c != EOF);
 	r = pclose(fp);
+	AZ(VSB_finish(vsb));
+	vtc_dump(vl, 4, "shell_out", VSB_data(vsb), VSB_len(vsb));
 	vtc_log(vl, 4, "shell_status = 0x%04x", WEXITSTATUS(r));
 	if (WIFSIGNALED(r))
 		vtc_log(vl, 4, "shell_signal = %d", WTERMSIG(r));
@@ -495,8 +497,6 @@ cmd_shell_engine(struct vtclog *vl, int ok,
 		    "shell_exit not as expected: got 0x%04x wanted 0x%04x",
 			WEXITSTATUS(r), ok);
 	}
-	AZ(VSB_finish(vsb));
-	vtc_dump(vl, 4, "shell_out", VSB_data(vsb), VSB_len(vsb));
 	if (expect != NULL) {
 		if (strstr(VSB_data(vsb), expect) == NULL)
 			vtc_fatal(vl,
