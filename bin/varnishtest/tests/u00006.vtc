@@ -15,15 +15,29 @@ process p3 {
 	exec varnishlog -n ${v1_name} -g raw -k 1 -w ${tmpdir}/p3/output.bin
 } -start
 shell -expect "Usage: varnishlog <options>" \
-	"varnishlog -n ${v1_name} -h"
+	"varnishlog -h"
 shell -expect "Copyright (c) 2006 Verdens Gang AS" \
-	"varnishlog -n ${v1_name} -V"
+	"varnishlog -V"
 shell -err -expect "Usage: varnishlog <options>" \
-	"varnishlog -n ${v1_name} extra"
+	"varnishlog extra"
 shell -err -expect "Missing -w option" \
-	"varnishlog -n ${v1_name} -D"
+	"varnishlog -D"
 shell -err -expect "-L: Range error" \
-	"varnishlog -n ${v1_name} -L 0"
+	"varnishlog -L 0"
+shell -err -expect {-i: "foo" matches zero tags} \
+	"varnishlog -i foo"
+shell -err -expect {-i: "Resp" is ambiguous} \
+	"varnishlog -i Resp"
+shell -err -expect {-I: "foo" matches zero tags} \
+	"varnishlog -I foo:bar"
+shell -err -expect {-I: "Resp" is ambiguous} \
+	"varnishlog -I Resp:bar"
+shell -err -expect {-I: Regex error at position 4 (missing ))} \
+	{varnishlog -I "(foo"}
+shell -err -expect {-x: Syntax error in "**"} \
+	{varnishlog -x "**"}
+shell -err -expect {-X: Syntax error in "**"} \
+	{varnishlog -X "**:bar"}
 process p1 -wait
 shell {grep -q "0 CLI" ${tmpdir}/p1/stdout}
 process p2 -wait
