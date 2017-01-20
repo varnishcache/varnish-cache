@@ -41,8 +41,10 @@ shell -err -expect "Can't open format file (No such file or directory)" \
 	{varnishncsa -f /nonexistent/file}
 shell -err -expect "Empty format file" \
 	{varnishncsa -f /dev/null}
-shell -err -expect "Can't read format from file (Is a directory)" \
-	{varnishncsa -f ${tmpdir}}
+# In Linux and SunOS, getline(3) fails when the stream refers to a
+# directory but happily works in FreeBSD.
+#shell -err -expect "Can't read format from file (Is a directory)" \
+#	{varnishncsa -f ${tmpdir}}
 
 delay 1
 
