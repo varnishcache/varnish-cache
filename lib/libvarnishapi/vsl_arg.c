@@ -244,13 +244,13 @@ vsl_ix_arg(struct VSL_data *vsl, int opt, const char *arg)
 	    vsl->vbm_supress);
 	if (i == -1)
 		return (vsl_diag(vsl, "-%c: \"%s\" matches zero tags",
-			(char)opt, arg));
+		    (char)opt, arg));
 	else if (i == -2)
 		return (vsl_diag(vsl, "-%c: \"%s\" is ambiguous",
-			(char)opt, arg));
+		    (char)opt, arg));
 	else if (i == -3)
 		return (vsl_diag(vsl, "-%c: Syntax error in \"%s\"",
-			(char)opt, arg));
+		    (char)opt, arg));
 
 	return (1);
 }
@@ -278,16 +278,16 @@ vsl_IX_arg(struct VSL_data *vsl, int opt, const char *arg)
 			vbit_destroy(tags);
 		if (i == -1)
 			return (vsl_diag(vsl,
-				"-%c: \"%*.*s\" matches zero tags",
-				(char)opt, l, l, b));
+			    "-%c: \"%*.*s\" matches zero tags",
+			    (char)opt, l, l, b));
 		else if (i == -2)
 			return (vsl_diag(vsl,
-				"-%c: \"%*.*s\" is ambiguous",
-				(char)opt, l, l, b));
+			    "-%c: \"%*.*s\" is ambiguous",
+			    (char)opt, l, l, b));
 		else if (i <= -3)
 			return (vsl_diag(vsl,
-				"-%c: Syntax error in \"%*.*s\"",
-				(char)opt, l, l, b));
+			    "-%c: Syntax error in \"%*.*s\"",
+			    (char)opt, l, l, b));
 		b = e + 1;
 	}
 
@@ -295,8 +295,8 @@ vsl_IX_arg(struct VSL_data *vsl, int opt, const char *arg)
 	if (vre == NULL) {
 		if (tags)
 			vbit_destroy(tags);
-		return (vsl_diag(vsl, "-%c: Regex error at position %d (%s)\n",
-			(char)opt, off, err));
+		return (vsl_diag(vsl, "-%c: Regex error at position %d (%s)",
+		    (char)opt, off, err));
 	}
 
 	ALLOC_OBJ(vslf, VSLF_MAGIC);
