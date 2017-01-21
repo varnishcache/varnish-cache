@@ -39,7 +39,24 @@
 #include <unistd.h>
 
 #include "compat/daemon.h"
-#include "vfil.h"
+#include "vas.h"
+
+/*
+ * Copied from libvarnish/vfil.c to avoid pulling libvarnish or vfil.c
+ * directly when daemon() is not working/available (i.e. OSX).
+ *
+ */
+static void
+vfil_null_fd(int target)
+{
+	int fd;
+
+	assert(target >= 0);
+	fd = open("/dev/null", O_RDWR);
+	assert(fd >= 0);
+	assert(dup2(fd, target) == target);
+	AZ(close(fd));
+}
 
 int
 varnish_daemon(int nochdir, int noclose)
@@ -82,9 +99,9 @@ varnish_daemon(int nochdir, int noclose)
 		(void)chdir("/");
 
 	if (!noclose) {
-		VFIL_null_fd(STDIN_FILENO);
-		VFIL_null_fd(STDOUT_FILENO);
-		VFIL_null_fd(STDERR_FILENO);
+		vfil_null_fd(STDIN_FILENO);
+		vfil_null_fd(STDOUT_FILENO);
+		vfil_null_fd(STDERR_FILENO);
 	}
 	return (0);
 }
