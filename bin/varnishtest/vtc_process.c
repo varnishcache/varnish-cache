@@ -228,7 +228,7 @@ process_start(struct process *p)
 
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
 	if (p->hasthread)
-		vtc_fatal(p->vl, "Already running, (-wait first)");
+		vtc_fatal(p->vl, "Already running, -wait first");
 
 	vtc_log(p->vl, 4, "CMD: %s", p->spec);
 
@@ -255,7 +255,8 @@ process_start(struct process *p)
 		assert(dup2(err_fd, 2) == 2);
 		VSUB_closefrom(STDERR_FILENO + 1);
 		AZ(setpgid(0, 0));
-		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(cl), (char*)0));
+		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(cl),
+		    (char *)NULL));
 		exit(1);
 	}
 	vtc_log(p->vl, 3, "PID: %ld", (long)p->pid);
@@ -338,16 +339,6 @@ process_kill(struct process *p, const char *sig)
 		vtc_log(p->vl, 4, "Sent signal %d", j);
 }
 
-static inline void
-process_terminate(struct process *p)
-{
-
-	process_kill(p, "TERM");
-	sleep(1);
-	if (p->pid > 0)
-		process_kill(p, "KILL");
-}
-
 /**********************************************************************
  * Write to a process' stdin
  */
@@ -373,7 +364,7 @@ process_close(struct process *p)
 {
 
 	if (!p->hasthread)
-		vtc_fatal(p->vl, "Cannot close on a non-running process");
+		vtc_fatal(p->vl, "Cannot close a non-running process");
 
 	AZ(pthread_mutex_lock(&p->mtx));
 	if (p->fd_to >= 0)
@@ -396,7 +387,7 @@ process_close(struct process *p)
  *	The command(s) to run in this process.
  *
  * \-log
- *	Log stdout/stderr with vtc_dump() (must be before -start/-run)
+ *	Log stdout/stderr with vtc_dump(). Must be before -start/-run.
  *
  * \-start
  *	Start the process.
@@ -427,8 +418,8 @@ process_close(struct process *p)
  *	signals, respectively, or a hyphen (-) followed by the signal
  *	number.
  *
- *	If you need to use other signals, you can use the ``kill``\(1) command
- *	directly::
+ *	If you need to use other signal names, you can use the ``kill``\(1)
+ *	command directly::
  *
  *	    shell "kill -USR1 ${pNAME_pid}"
  *
@@ -460,8 +451,12 @@ cmd_process(CMD_ARGS)
 	if (av == NULL) {
 		/* Reset and free */
 		VTAILQ_FOREACH_SAFE(p, &processes, list, p2) {
-			if (p->pid > 0)
-				process_terminate(p);
+			if (p->pid > 0) {
+				process_kill(p, "TERM");
+				sleep(1);
+				if (p->pid > 0)
+					process_kill(p, "KILL");
+			}
 			if (p->hasthread)
 				process_wait(p);
 			VTAILQ_REMOVE(&processes, p, list);
@@ -490,6 +485,9 @@ cmd_process(CMD_ARGS)
 			continue;
 		}
 		if (!strcmp(*av, "-log")) {
+			if (p->hasthread)
+				vtc_fatal(p->vl,
+				    "Cannot log a running process");
 			p->log = 1;
 			continue;
 		}
@@ -526,7 +524,8 @@ cmd_process(CMD_ARGS)
 			continue;
 		}
 		if (**av == '-')
-			vtc_fatal(p->vl, "Unknown process argument: %s", *av);
+			vtc_fatal(p->vl, "Unknown process argument: %s",
+			    *av);
 		REPLACE(p->spec, *av);
 	}
 }
