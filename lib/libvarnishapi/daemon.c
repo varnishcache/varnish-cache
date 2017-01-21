@@ -45,7 +45,6 @@ int
 varnish_daemon(int nochdir, int noclose)
 {
 	struct sigaction osa, sa;
-	int fd;
 	pid_t newgrp;
 	int oerrno;
 	int osa_ok;
