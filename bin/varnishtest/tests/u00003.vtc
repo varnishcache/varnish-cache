@@ -9,6 +9,10 @@ varnish v1 -vcl+backend {} -start
 
 shell "varnishncsa -n ${v1_name} -D -P ${tmpdir}/ncsa.pid -w ${tmpdir}/ncsa.log"
 
+shell -expect "Usage: varnishncsa <options>" \
+	"varnishncsa -h"
+shell -expect "Copyright (c) 2006 Verdens Gang AS" \
+	"varnishncsa -V"
 shell -err -expect "Missing -w option" \
 	{varnishncsa -D}
 shell -err -expect "Unknown format specifier at: %{foo}A" \
@@ -71,5 +75,5 @@ shell "grep -q /foo ${tmpdir}/ncsa.old.log"
 shell "grep -q /bar ${tmpdir}/ncsa.log"
 
 shell {echo "%{VSL:Begin}x %{Varnish:vxid}x %D %T %{Varnish:handling}x %{%Z}t" >${tmpdir}/format}
-shell -expect "0 miss" \
+shell -match "req 1000 rxreq 1001 [0-9]{5} 0 miss [A-Z]{3,}" \
 	{varnishncsa -n ${v1_name} -d -f ${tmpdir}/format}

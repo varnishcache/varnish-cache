@@ -430,8 +430,9 @@ cmd_varnishtest(CMD_ARGS)
 
 /* SECTION: shell shell
  *
- * Pass the string given as argument to a shell. If you have multiple commands
- * to run, you can use curly barces to describe a multi-lines script, eg::
+ * Pass the string given as argument to a shell. If you have multiple
+ * commands to run, you can use curly barces to describe a multi-lines
+ * script, eg::
  *
  *         shell {
  *                 echo begin
@@ -452,8 +453,11 @@ cmd_varnishtest(CMD_ARGS)
  * \-exit N
  * 	Expect exit code N instead of zero.
  *
- * \-expect string
- * 	Expect str to be found in stdout+err.
+ * \-expect STRING
+ * 	Expect string to be found in stdout+err.
+ *
+ * \-match REGEXP
+ * 	Expect regexp to match the stdout+err output.
  */
 /* SECTION: client-server.spec.shell shell
  *
@@ -461,17 +465,26 @@ cmd_varnishtest(CMD_ARGS)
  */
 
 static void
-cmd_shell_engine(struct vtclog *vl, int ok,
-    const char *cmd, const char *expect)
+cmd_shell_engine(struct vtclog *vl, int ok, const char *cmd,
+    const char *expect, const char *re)
 {
 	struct vsb *vsb;
 	FILE *fp;
+	vre_t *vre = NULL;
+	const char *errptr;
 	int r, c;
+	int err;
 
 	AN(vl);
 	AN(cmd);
 	vsb = VSB_new_auto();
 	AN(vsb);
+	if (re != NULL) {
+		vre = VRE_compile(re, 0, &errptr, &err);
+		if (vre == NULL)
+			vtc_fatal(vl, "shell_match invalid regexp (\"%s\")",
+			    re);
+	}
 	VSB_printf(vsb, "exec 2>&1 ; %s", cmd);
 	AZ(VSB_finish(vsb));
 	vtc_dump(vl, 4, "shell_cmd", VSB_data(vsb), -1);
@@ -503,6 +516,14 @@ cmd_shell_engine(struct vtclog *vl, int ok,
 			    "shell_expect not found: (\"%s\")", expect);
 		else
 			vtc_log(vl, 4, "shell_expect found");
+	} else if (vre != NULL) {
+		if (VRE_exec(vre, VSB_data(vsb), VSB_len(vsb), 0, 0,
+		    NULL, 0, NULL) < 1)
+			vtc_fatal(vl,
+			    "shell_match failed: (\"%s\")", re);
+		else
+			vtc_log(vl, 4, "shell_match succeeded");
+		VRE_free(&vre);
 	}
 	VSB_destroy(&vsb);
 }
@@ -511,11 +532,13 @@ cmd_shell_engine(struct vtclog *vl, int ok,
 void
 cmd_shell(CMD_ARGS)
 {
-	(void)priv;
-	(void)cmd;
+	const char *expect = NULL;
+	const char *re = NULL;
 	int n;
 	int ok = 0;
-	const char *expect = NULL;
+
+	(void)priv;
+	(void)cmd;
 
 	if (av == NULL)
 		return;
@@ -526,14 +549,23 @@ cmd_shell(CMD_ARGS)
 			n += 1;
 			ok = atoi(av[n]);
 		} else if (!strcmp(av[n], "-expect")) {
+			if (re != NULL)
+				vtc_fatal(vl,
+				    "Cannot use -expect with -match");
 			n += 1;
 			expect = av[n];
+		} else if (!strcmp(av[n], "-match")) {
+			if (expect != NULL)
+				vtc_fatal(vl,
+				    "Cannot use -match with -expect");
+			n += 1;
+			re = av[n];
 		} else {
 			break;
 		}
 	}
 	AN(av[n]);
-	cmd_shell_engine(vl, ok, av[n], expect);
+	cmd_shell_engine(vl, ok, av[n], expect, re);
 }
 
 /* SECTION: err_shell err_shell
@@ -560,7 +592,7 @@ cmd_err_shell(CMD_ARGS)
 	AZ(av[3]);
 	vtc_log(vl, 1,
 	    "NOTICE: err_shell is deprecated, use 'shell -err -expect'");
-	cmd_shell_engine(vl, -1, av[2], av[1]);
+	cmd_shell_engine(vl, -1, av[2], av[1], NULL);
 }
 
 /* SECTION: delay delay

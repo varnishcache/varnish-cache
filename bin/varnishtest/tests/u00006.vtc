@@ -42,7 +42,8 @@ shell -err -expect {-X: Syntax error in "**"} \
 
 process p1 -wait
 shell {grep -q "0 CLI" ${tmpdir}/vlog}
-shell -expect "0 CLI" "varnishlog -n ${v1_name} -d -g raw"
+shell -match "0 CLI[ ]+- Wr 200 [0-9]+ PONG" \
+	{varnishlog -n ${v1_name} -d -g raw -X "Wr 200 [0-9]+ [^P]"}
 
 client c1 {
 	txreq -url /foo
@@ -63,7 +64,10 @@ delay 1
 
 shell "kill `cat ${tmpdir}/vlog.pid`"
 
-shell -expect "/foo" {
-	varnishlog -r ${tmpdir}/vlog.bin~ -i ReqURL -q "RespStatus == 200"
+shell -match {^\*[ ]+<< Request\s+>>[ ]+1001[ ]+
+-[ ]+1001 ReqURL[ ]+c /foo
+$} {
+	varnishlog -v -r ${tmpdir}/vlog.bin~ -i ReqURL -q "RespStatus == 200"
 }
-shell -expect "/bar" "varnishlog -r ${tmpdir}/vlog.bin -x ReqURL"
+shell -match "-[ ]+BereqURL[ ]+/bar" \
+	"varnishlog -r ${tmpdir}/vlog.bin -x ReqURL"
