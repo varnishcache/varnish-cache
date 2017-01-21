@@ -1,0 +1,79 @@
+varnishtest "varnishncsa coverage"
+
+server s1 -repeat 2 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+shell "varnishncsa -n ${v1_name} -D -P ${tmpdir}/ncsa.pid -w ${tmpdir}/ncsa.log"
+
+shell -expect "Usage: varnishncsa <options>" \
+	"varnishncsa -h"
+shell -expect "Copyright (c) 2006 Verdens Gang AS" \
+	"varnishncsa -V"
+shell -err -expect "Missing -w option" \
+	{varnishncsa -D}
+shell -err -expect "Unknown format specifier at: %{foo}A" \
+	{varnishncsa -F "%{foo}A"}
+shell -err -expect "Unknown format specifier at: %A" \
+	{varnishncsa -F "%A"}
+shell -err -expect "Unknown formatting extension: foo" \
+	{varnishncsa -F "%{foo}x"}
+shell -err -expect "Usage: varnishncsa <options>" \
+	{varnishncsa extra}
+shell -err -expect "Missing tag in VSL:" \
+	{varnishncsa -F "%{VSL:}x"}
+shell -err -expect "Unknown log tag: nonexistent" \
+	{varnishncsa -F "%{VSL:nonexistent}x"}
+shell -err -expect "Tag not unique: Req" \
+	{varnishncsa -F "%{VSL:Req}x"}
+shell -err -expect "Unknown log tag: Begin[" \
+	{varnishncsa -F "%{VSL:Begin[}x"}
+shell -err -expect "Syntax error: VSL:Begin]" \
+	{varnishncsa -F "%{VSL:Begin]}x"}
+shell -err -expect "Unknown log tag: Begin[a" \
+	{varnishncsa -F "%{VSL:Begin[a}x"}
+shell -err -expect "Syntax error: VSL:Begin[a]" \
+	{varnishncsa -F "%{VSL:Begin[a]}x"}
+shell -err -expect "Syntax error. Field specifier must be positive: Begin[0]" \
+	{varnishncsa -F "%{VSL:Begin[0]}x"}
+shell -err -expect "Field specifier 999999999999 for the tag VSL:Begin[999999999999] is probably too high" \
+	{varnishncsa -F "%{VSL:Begin[999999999999]}x"}
+shell -err -expect "Can't open format file (No such file or directory)" \
+	{varnishncsa -f /nonexistent/file}
+shell -err -expect "Empty format file" \
+	{varnishncsa -f /dev/null}
+# In Linux and SunOS, getline(3) fails when the stream refers to a
+# directory but happily works in FreeBSD.
+#shell -err -expect "Can't read format from file (Is a directory)" \
+#	{varnishncsa -f ${tmpdir}}
+
+delay 1
+
+client c1 {
+	txreq -url /foo
+	rxresp
+} -run
+
+delay 1
+
+shell "mv ${tmpdir}/ncsa.log ${tmpdir}/ncsa.old.log >/dev/null 2>&1"
+shell "kill -HUP `cat ${tmpdir}/ncsa.pid`"
+
+client c1 {
+	txreq -url /bar
+	rxresp
+} -run
+
+delay 1
+
+shell "kill `cat ${tmpdir}/ncsa.pid`"
+
+shell "grep -q /foo ${tmpdir}/ncsa.old.log"
+shell "grep -q /bar ${tmpdir}/ncsa.log"
+
+shell {echo "%{VSL:Begin}x %{Varnish:vxid}x %D %T %{Varnish:handling}x %{%Z}t" >${tmpdir}/format}
+shell -match "req 1000 rxreq 1001 [0-9]{5} 0 miss [A-Z]{3,}" \
+	{varnishncsa -n ${v1_name} -d -f ${tmpdir}/format}

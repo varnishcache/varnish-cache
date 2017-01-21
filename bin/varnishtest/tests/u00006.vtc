@@ -1,0 +1,73 @@
+varnishtest "varnishlog coverage"
+
+server s1 -repeat 2 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+process p1 {
+	exec varnishlog -n ${v1_name} -g raw -k 3 -w ${tmpdir}/vlog -A
+} -start
+shell {
+	exec varnishlog -n ${v1_name} -D -P ${tmpdir}/vlog.pid \
+	    -w ${tmpdir}/vlog.bin
+}
+
+shell -expect "Usage: varnishlog <options>" \
+	"varnishlog -h"
+shell -expect "Copyright (c) 2006 Verdens Gang AS" \
+	"varnishlog -V"
+shell -err -expect "Usage: varnishlog <options>" \
+	"varnishlog extra"
+shell -err -expect "Missing -w option" \
+	"varnishlog -D"
+shell -err -expect "-L: Range error" \
+	"varnishlog -L 0"
+shell -err -expect {-i: "foo" matches zero tags} \
+	"varnishlog -i foo"
+shell -err -expect {-i: "Resp" is ambiguous} \
+	"varnishlog -i Resp"
+shell -err -expect {-I: "foo" matches zero tags} \
+	"varnishlog -I foo:bar"
+shell -err -expect {-I: "Resp" is ambiguous} \
+	"varnishlog -I Resp:bar"
+shell -err -expect {-I: Regex error at position 4 (missing ))} \
+	{varnishlog -I "(foo"}
+shell -err -expect {-x: Syntax error in "**"} \
+	{varnishlog -x "**"}
+shell -err -expect {-X: Syntax error in "**"} \
+	{varnishlog -X "**:bar"}
+
+process p1 -wait
+shell {grep -q "0 CLI" ${tmpdir}/vlog}
+shell -match "0 CLI[ ]+- Wr 200 [0-9]+ PONG" \
+	{varnishlog -n ${v1_name} -d -g raw -X "Wr 200 [0-9]+ [^P]"}
+
+client c1 {
+	txreq -url /foo
+	rxresp
+} -run
+
+delay 1
+
+shell "mv ${tmpdir}/vlog.bin ${tmpdir}/vlog.bin~ >/dev/null 2>&1"
+shell "kill -HUP `cat ${tmpdir}/vlog.pid`"
+
+client c1 {
+	txreq -url /bar
+	rxresp
+} -run
+
+delay 1
+
+shell "kill `cat ${tmpdir}/vlog.pid`"
+
+shell -match {^\*[ ]+<< Request\s+>>[ ]+1001[ ]+
+-[ ]+1001 ReqURL[ ]+c /foo
+$} {
+	varnishlog -v -r ${tmpdir}/vlog.bin~ -i ReqURL -q "RespStatus == 200"
+}
+shell -match "-[ ]+BereqURL[ ]+/bar" \
+	"varnishlog -r ${tmpdir}/vlog.bin -x ReqURL"
