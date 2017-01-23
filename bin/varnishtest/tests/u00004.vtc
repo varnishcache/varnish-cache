@@ -5,15 +5,18 @@ server s1 {
 	txresp
 } -start
 
-varnish v1 -vcl+backend "" -start
-
-process p1 {exec varnishtop -1 -n ${v1_name} >/dev/null} -start
+varnish v1 -vcl+backend { } -start
 
 client c1 {
 	txreq
 	rxresp
 } -run
 
-process p1 -wait
+shell -expect "fetch" "varnishtop -n ${v1_name} -1 -d"
 
-process p2 {exec varnishtop -1 -n ${v1_name} >/dev/null} -run
+shell -expect "Usage: varnishtop <options>" \
+	"varnishtop -h"
+shell -expect "Copyright (c) 2006 Verdens Gang AS" \
+	"varnishtop -V"
+shell -err -expect "Usage: varnishtop <options>" \
+	"varnishtop extra"

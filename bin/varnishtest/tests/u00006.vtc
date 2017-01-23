@@ -71,3 +71,8 @@ $} {
 }
 shell -match "-[ ]+BereqURL[ ]+/bar" \
 	"varnishlog -r ${tmpdir}/vlog.bin -x ReqURL"
+shell -match {^\*[ ]+<< BeReq\s+>>[ ]+1005[ ]+
+-[ ]+BereqURL[ ]+/bar
+$} {
+	varnishlog -r ${tmpdir}/vlog.bin -b -C -I BAR
+}
