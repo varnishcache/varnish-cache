@@ -7,10 +7,20 @@ server s1 {
 	txresp
 	rxreq
 	txresp
+	rxreq
+	txresp
+	rxreq
+	txresp
 } -start
 
 varnish v1 -vcl+backend {
+	import std;
+
 	sub vcl_recv {
+		if (req.url ~ "^/explicit") {
+			std.send_100_continue();
+			return (pass);
+		}
 		if (req.url ~ "^/err") {
 			return (synth(405));
 		}
@@ -30,6 +40,19 @@ client c1 {
 	expect resp.status == 200
 
 	txreq -url "/" -req POST -hdr "Expect: 100-continue " -body ""
+	rxresp
+	expect resp.status == 200
+
+	# next 2 same as above, but hitting the explicit send_100_continue
+
+	txreq -url "/explicit" -req POST -hdr "Expect: 100-continue " \
+	      -body "foo"
+	rxresp
+	expect resp.status == 100
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/explicit" -req POST -hdr "Expect: 100-continue " -body ""
 	rxresp
 	expect resp.status == 200
 

@@ -38,6 +38,8 @@
  * Whenever something is deleted or changed in a way which is not
  * binary/load-time compatible, increment MAJOR version
  *
+ * 5.1:
+ *	Added VRT_100cont
  *
  * 5.0:
  *	Varnish 5.0 release "better safe than sorry" bump
@@ -58,7 +60,7 @@
 
 #define VRT_MAJOR_VERSION	5U
 
-#define VRT_MINOR_VERSION	0U
+#define VRT_MINOR_VERSION	1U
 
 
 /***********************************************************************/
@@ -276,6 +278,7 @@ int VRT_acl_match(VRT_CTX, VCL_ACL, VCL_IP);
 /* req related */
 
 VCL_BYTES VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize);
+void VRT_100cont(VRT_CTX);
 
 /* Regexp related */
 void VRT_re_init(void **, const char *);

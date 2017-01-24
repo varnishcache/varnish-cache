@@ -240,6 +240,29 @@ Example
 	|	...
 	| }
 
+$Function VOID send_100_continue()
+
+Description
+	Send a `100 Continue` response if the client requested it.
+
+	Use of this function is not required. It should only be called
+	when a decision has been made in VCL to process a request body
+	uncached (:ref:`cache_req_body` is not used).
+
+	The only purpose of this function is to signal to the client
+	that it should start sending a request body as early as
+	possible to reduce latency.
+
+Example
+	| sub vcl_recv {
+	|     ...
+	|     if (req.method == "POST") {
+	|	  std.send_100_continue();
+	|	  return (pass);
+	|     }
+	|     ...
+	| }
+
 $Function STRING strstr(STRING s1, STRING s2)
 
 Description

@@ -87,6 +87,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	yet = req->htc->content_length;
 	if (yet != 0 && req->want100cont) {
 		req->transport->sresp(req, R_100);
+		req->want100cont = 0;
 	}
 	if (yet < 0)
 		yet = 0;
