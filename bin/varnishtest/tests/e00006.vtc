@@ -43,3 +43,49 @@ client c1 {
 
 client c1 -run
 varnish v1 -expect esi_errors == 0
+
+# Now try with invalid URLs
+
+server s1 {
+	rxreq
+	expect req.url == /http
+	txresp -body {<esi:include src="http://foobar" />1234}
+	rxreq
+	expect req.url == /https
+	txresp -body {<esi:include src="https://foobar" />123456}
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		set req.backend_hint = s2;
+		set req.backend_hint = s1;
+	}
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+	}
+}
+
+varnish v1 -cliok "param.set feature +esi_ignore_https"
+
+logexpect l1 -v v1 -g raw {
+	expect * * ESI_xmlerror "ERR at 35 ESI 1.0 <esi:include> invalid src= URL"
+	expect * * ESI_xmlerror "WARN at 36 ESI 1.0 <esi:include> https:// treated as http://"
+	expect * * ESI_xmlerror "ERR at 36 ESI 1.0 <esi:include> invalid src= URL"
+} -start
+
+client c1 {
+	txreq -url /http
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 4
+	txreq -url /https
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 6
+}
+
+client c1 -run
+
+logexpect l1 -wait
+
+varnish v1 -expect esi_errors == 2
