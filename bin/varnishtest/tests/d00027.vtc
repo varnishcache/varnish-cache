@@ -1,0 +1,90 @@
+varnishtest "Test vmod.directors round robin and fallback directors stacked"
+
+server s1 {
+	loop 2 {
+		rxreq
+		txresp -body "1"
+	}
+} -start
+
+server s2 {
+	loop 2 {
+		rxreq
+		txresp -body "22"
+	}
+} -start
+
+server s3 {
+	loop 3 {
+		rxreq
+		txresp -body "333"
+	}
+} -start
+
+server s4 {
+	rxreq
+	txresp -body "4444"
+} -start
+
+varnish v1 -vcl+backend {
+
+	import directors;
+	sub vcl_init {
+		new rr1 = directors.round_robin();
+		rr1.add_backend(s1);
+		rr1.add_backend(s3);
+
+		new rr2 = directors.round_robin();
+		rr2.add_backend(s2);
+		rr2.add_backend(s4);
+
+		new rr3 = directors.fallback();
+		rr3.add_backend(rr1.backend());
+		rr3.add_backend(rr2.backend());
+	}
+
+	sub vcl_backend_fetch {
+		set bereq.backend = rr3.backend();
+	}
+} -start
+
+client c1 {
+	timeout 3
+	txreq -url "/foo1"
+	rxresp
+	expect resp.bodylen == 1
+	txreq -url "/foo3"
+	rxresp
+	expect resp.bodylen == 3
+	txreq -url "/foo11"
+	rxresp
+	expect resp.bodylen == 1
+} -run
+
+varnish v1 -cliok "backend.set_health s1 sick"
+varnish v1 -cliok "backend.set_health s3 sick"
+
+client c1 {
+	timeout 3
+	txreq -url "/foo22"
+	rxresp
+	expect resp.bodylen == 2
+	txreq -url "/foo44"
+	rxresp
+	expect resp.bodylen == 4
+	txreq -url "/foo22_bar"
+	rxresp
+	expect resp.bodylen == 2
+} -run
+
+varnish v1 -cliok "backend.set_health s3 healthy"
+
+client c1 {
+	timeout 3
+	txreq -url "/foo333"
+	rxresp
+	expect resp.bodylen == 3
+	txreq -url "/foo333_bar"
+	rxresp
+	expect resp.bodylen == 3
+} -run
