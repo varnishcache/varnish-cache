@@ -448,16 +448,16 @@ cmd_varnishtest(CMD_ARGS)
  * Optional arguments:
  *
  * \-err
- * 	Expect non-zero exit code.
+ *	Expect non-zero exit code.
  *
  * \-exit N
- * 	Expect exit code N instead of zero.
+ *	Expect exit code N instead of zero.
  *
  * \-expect STRING
- * 	Expect string to be found in stdout+err.
+ *	Expect string to be found in stdout+err.
  *
  * \-match REGEXP
- * 	Expect regexp to match the stdout+err output.
+ *	Expect regexp to match the stdout+err output.
  */
 /* SECTION: client-server.spec.shell shell
  *
