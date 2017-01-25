@@ -67,7 +67,6 @@ CMD(varnish);
 CMD(barrier);
 CMD(logexpect);
 CMD(process);
-CMD(err_shell);
 CMD(shell);
 #undef CMD
 

@@ -579,7 +579,7 @@ cmd_shell(CMD_ARGS)
  * failing the test case otherwise.
  */
 
-void
+static void
 cmd_err_shell(CMD_ARGS)
 {
 	(void)priv;

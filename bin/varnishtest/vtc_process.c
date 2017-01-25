@@ -147,7 +147,7 @@ process_delete(struct process *p)
 }
 
 static void
-process_undef(struct process *p)
+process_undef(const struct process *p)
 {
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
 
