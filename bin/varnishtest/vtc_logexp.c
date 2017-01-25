@@ -232,7 +232,7 @@ logexp_next(struct logexp *le)
 
 	CHECK_OBJ_ORNULL(le->test, LOGEXP_TEST_MAGIC);
 	if (le->test)
-		vtc_log(le->vl, 3, "waitfor| %s", VSB_data(le->test->str));
+		vtc_log(le->vl, 3, "expecting| %s", VSB_data(le->test->str));
 }
 
 static int __match_proto__(VSLQ_dispatch_f)
@@ -336,7 +336,7 @@ logexp_thread(void *priv)
 	AN(le->vslq);
 
 	AZ(le->test);
-	vtc_log(le->vl, 4, "beg|");
+	vtc_log(le->vl, 4, "begin|");
 	if (le->query != NULL)
 		vtc_log(le->vl, 4, "qry| %s", le->query);
 	logexp_next(le);
