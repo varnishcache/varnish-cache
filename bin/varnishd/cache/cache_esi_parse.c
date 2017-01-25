@@ -489,7 +489,14 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 	if (l > 7 && !memcmp(p, "http://", 7)) {
 		h = p + 7;
 		p = strchr(h, '/');
-		AN(p);
+		if (p == NULL) {
+			vep_error(vep,
+			    "ESI 1.0 <esi:include> invalid src= URL");
+			vep->state = VEP_TAGERROR;
+			AZ(vep->attr_vsb);
+			VSB_destroy(&vep->include_src);
+			return;
+		}
 		Debug("HOST <%.*s> PATH <%s>\n", (int)(p-h),h, p);
 		VSB_printf(vep->vsb, "%c", VEC_INCL);
 		VSB_printf(vep->vsb, "Host: %.*s%c", (int)(p-h), h, 0);
@@ -506,7 +513,14 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 		    "ESI 1.0 <esi:include> https:// treated as http://");
 		h = p + 8;
 		p = strchr(h, '/');
-		AN(p);
+		if (p == NULL) {
+			vep_error(vep,
+			    "ESI 1.0 <esi:include> invalid src= URL");
+			vep->state = VEP_TAGERROR;
+			AZ(vep->attr_vsb);
+			VSB_destroy(&vep->include_src);
+			return;
+		}
 		VSB_printf(vep->vsb, "%c", VEC_INCL);
 		VSB_printf(vep->vsb, "Host: %.*s%c", (int)(p-h), h, 0);
 	} else if (*p == '/') {
