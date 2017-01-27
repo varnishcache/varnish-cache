@@ -42,6 +42,8 @@ struct vmod_directors_fallback {
 	unsigned				magic;
 #define VMOD_DIRECTORS_FALLBACK_MAGIC		0xad4e26ba
 	struct vdir				*vd;
+	VCL_BOOL				st;
+	unsigned				cur;
 };
 
 static unsigned __match_proto__(vdi_healthy)
@@ -66,12 +68,16 @@ vmod_fallback_resolve(const struct director *dir, struct worker *wrk,
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_FALLBACK_MAGIC);
-	vdir_rdlock(rr->vd);
+	vdir_wrlock(rr->vd);
+	if (!rr->st)
+		rr->cur = 0;
 	for (u = 0; u < rr->vd->n_backend; u++) {
-		be = rr->vd->backend[u];
+		be = rr->vd->backend[rr->cur];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
 		if (be->healthy(be, bo, NULL))
 			break;
+		if (++rr->cur == rr->vd->n_backend)
+			rr->cur = 0;
 	}
 	vdir_unlock(rr->vd);
 	if (u == rr->vd->n_backend)
@@ -81,7 +87,7 @@ vmod_fallback_resolve(const struct director *dir, struct worker *wrk,
 
 VCL_VOID __match_proto__()
 vmod_fallback__init(VRT_CTX,
-    struct vmod_directors_fallback **rrp, const char *vcl_name)
+    struct vmod_directors_fallback **rrp, const char *vcl_name, VCL_BOOL sticky)
 {
 	struct vmod_directors_fallback *rr;
 
@@ -93,6 +99,7 @@ vmod_fallback__init(VRT_CTX,
 	*rrp = rr;
 	vdir_new(&rr->vd, "fallback", vcl_name, vmod_fallback_healthy,
 	    vmod_fallback_resolve, rr);
+	rr->st = sticky;
 }
 
 VCL_VOID __match_proto__()
@@ -123,7 +130,7 @@ vmod_fallback_remove_backend(VRT_CTX,
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(fb, VMOD_DIRECTORS_FALLBACK_MAGIC);
-	vdir_remove_backend(fb->vd, be, NULL);
+	vdir_remove_backend(fb->vd, be, &fb->cur);
 }
 
 VCL_BACKEND __match_proto__()

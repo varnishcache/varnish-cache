@@ -95,13 +95,17 @@ Example
 	set req.backend_hint = vdir.backend();
 
 
-$Object fallback()
+$Object fallback(BOOL sticky = 0)
 
 Description
 	Create a fallback director.
 
 	A fallback director will try each of the added backends in turn,
 	and return the first one that is healthy.
+
+	If ``sticky`` is set to true, the director will keep using the healthy
+	backend, even if a higher-priority backend becomes available. Once the
+	whole backend list is exhausted, it'll start over at the beginning.
 
 Example
 	new vdir = directors.fallback();
