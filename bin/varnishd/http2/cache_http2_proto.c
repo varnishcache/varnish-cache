@@ -136,7 +136,7 @@ h2_new_sess(const struct worker *wrk, struct sess *sp, struct req *srq)
 		h2->ws = srq->ws;
 		h2->vsl = srq->vsl;
 		h2->vsl->wid = sp->vxid;
-		h2->htc->fd = sp->fd;
+		h2->htc->rfd = &sp->fd;
 		h2->sess = sp;
 		VTAILQ_INIT(&h2->streams);
 #define H2_SETTINGS(n,v,d)					\
@@ -496,7 +496,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	enum h2frame ft;
 	struct h2_req *r2 = NULL;
 
-	(void)VTCP_blocking(h2->htc->fd);
+	(void)VTCP_blocking(*h2->htc->rfd);
 	h2->sess->t_idle = VTIM_real();
 	hs = HTC_RxStuff(h2->htc, h2_frame_complete,
 	    NULL, NULL, NAN,

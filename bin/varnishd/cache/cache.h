@@ -218,7 +218,7 @@ struct http_conn {
 	unsigned		magic;
 #define HTTP_CONN_MAGIC		0x3e19edd1
 
-	int			fd;
+	int			*rfd;
 	enum sess_close		doclose;
 	enum body_status	body_status;
 	struct ws		*ws;

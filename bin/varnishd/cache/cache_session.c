@@ -238,6 +238,8 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 	int i;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	AN(htc->rfd);
+	assert(*htc->rfd > 0);
 	AN(htc->ws->r);
 	AN(htc->rxbuf_b);
 	assert(htc->rxbuf_b <= htc->rxbuf_e);
@@ -294,7 +296,7 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 		}
 		if (tmo <= 0.0)
 			tmo = 1e-3;
-		i = VTCP_read(htc->fd, htc->rxbuf_e, i, tmo);
+		i = VTCP_read(*htc->rfd, htc->rxbuf_e, i, tmo);
 		if (i == 0 || i == -1) {
 			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			return (HTC_S_EOF);

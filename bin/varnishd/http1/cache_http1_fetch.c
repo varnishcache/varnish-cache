@@ -88,6 +88,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr,
 	CHECK_OBJ_ORNULL(bo->req, REQ_MAGIC);
 
 	htc = bo->htc;
+	assert(*htc->rfd > 0);
 	hp = bo->bereq;
 
 	if (bo->req != NULL &&
@@ -96,11 +97,11 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr,
 		do_chunked = 1;
 	}
 
-	VTCP_hisname(htc->fd, abuf, sizeof abuf, pbuf, sizeof pbuf);
+	VTCP_hisname(*htc->rfd, abuf, sizeof abuf, pbuf, sizeof pbuf);
 	VSLb(bo->vsl, SLT_BackendStart, "%s %s", abuf, pbuf);
 
-	(void)VTCP_blocking(htc->fd);	/* XXX: we should timeout instead */
-	V1L_Reserve(wrk, wrk->aws, &htc->fd, bo->vsl, bo->t_prev);
+	(void)VTCP_blocking(*htc->rfd);	/* XXX: we should timeout instead */
+	V1L_Reserve(wrk, wrk->aws, htc->rfd, bo->vsl, bo->t_prev);
 	*ctr += HTTP1_Write(wrk, hp, HTTP1_Req);
 
 	/* Deal with any message-body the request might (still) have */
@@ -150,6 +151,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 	CHECK_OBJ_ORNULL(bo->req, REQ_MAGIC);
 
 	htc = bo->htc;
+	assert(*htc->rfd > 0);
 
 	VSC_C_main->backend_req++;
 
@@ -189,7 +191,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 		}
 		return (htc->rxbuf_e == htc->rxbuf_b ? 1 : -1);
 	}
-	VTCP_set_read_timeout(htc->fd, htc->between_bytes_timeout);
+	VTCP_set_read_timeout(*htc->rfd, htc->between_bytes_timeout);
 
 	hp = bo->beresp;
 

@@ -183,7 +183,8 @@ pan_htc(struct vsb *vsb, const struct http_conn *htc)
 		return;
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, htc, HTTP_CONN_MAGIC);
-	VSB_printf(vsb, "fd = %d,\n", htc->fd);
+	if (htc->rfd != NULL)
+		VSB_printf(vsb, "fd = %d (@%p),\n", *htc->rfd, htc->rfd);
 	VSB_printf(vsb, "doclose = %s,\n", sess_close_2str(htc->doclose, 0));
 	pan_ws(vsb, htc->ws);
 	VSB_printf(vsb, "{rxbuf_b, rxbuf_e} = {%p, %p},\n",
