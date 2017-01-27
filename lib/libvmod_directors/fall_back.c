@@ -50,78 +50,79 @@ static unsigned __match_proto__(vdi_healthy)
 vmod_fallback_healthy(const struct director *dir, const struct busyobj *bo,
     double *changed)
 {
-	struct vmod_directors_fallback *rr;
+	struct vmod_directors_fallback *fb;
 
-	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_FALLBACK_MAGIC);
-	return (vdir_any_healthy(rr->vd, bo, changed));
+	CAST_OBJ_NOTNULL(fb, dir->priv, VMOD_DIRECTORS_FALLBACK_MAGIC);
+	return (vdir_any_healthy(fb->vd, bo, changed));
 }
 
 static const struct director * __match_proto__(vdi_resolve_f)
 vmod_fallback_resolve(const struct director *dir, struct worker *wrk,
     struct busyobj *bo)
 {
-	struct vmod_directors_fallback *rr;
+	struct vmod_directors_fallback *fb;
 	unsigned u;
 	VCL_BACKEND be = NULL;
 
 	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_FALLBACK_MAGIC);
-	vdir_wrlock(rr->vd);
-	if (!rr->st)
-		rr->cur = 0;
-	for (u = 0; u < rr->vd->n_backend; u++) {
-		be = rr->vd->backend[rr->cur];
+	CAST_OBJ_NOTNULL(fb, dir->priv, VMOD_DIRECTORS_FALLBACK_MAGIC);
+
+	vdir_wrlock(fb->vd);
+	if (!fb->st)
+		fb->cur = 0;
+	for (u = 0; u < fb->vd->n_backend; u++) {
+		be = fb->vd->backend[fb->cur];
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
 		if (be->healthy(be, bo, NULL))
 			break;
-		if (++rr->cur == rr->vd->n_backend)
-			rr->cur = 0;
+		if (++fb->cur == fb->vd->n_backend)
+			fb->cur = 0;
 	}
-	vdir_unlock(rr->vd);
-	if (u == rr->vd->n_backend)
+	vdir_unlock(fb->vd);
+	if (u == fb->vd->n_backend)
 		be = NULL;
 	return (be);
 }
 
 VCL_VOID __match_proto__()
 vmod_fallback__init(VRT_CTX,
-    struct vmod_directors_fallback **rrp, const char *vcl_name, VCL_BOOL sticky)
+    struct vmod_directors_fallback **fbp, const char *vcl_name, VCL_BOOL sticky)
 {
-	struct vmod_directors_fallback *rr;
+	struct vmod_directors_fallback *fb;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(rrp);
-	AZ(*rrp);
-	ALLOC_OBJ(rr, VMOD_DIRECTORS_FALLBACK_MAGIC);
-	AN(rr);
-	*rrp = rr;
-	vdir_new(&rr->vd, "fallback", vcl_name, vmod_fallback_healthy,
-	    vmod_fallback_resolve, rr);
-	rr->st = sticky;
+	AN(fbp);
+	AZ(*fbp);
+	ALLOC_OBJ(fb, VMOD_DIRECTORS_FALLBACK_MAGIC);
+	AN(fb);
+	*fbp = fb;
+	vdir_new(&fb->vd, "fallback", vcl_name, vmod_fallback_healthy,
+	    vmod_fallback_resolve, fb);
+	fb->st = sticky;
 }
 
 VCL_VOID __match_proto__()
-vmod_fallback__fini(struct vmod_directors_fallback **rrp)
+vmod_fallback__fini(struct vmod_directors_fallback **fbp)
 {
-	struct vmod_directors_fallback *rr;
+	struct vmod_directors_fallback *fb;
 
-	rr = *rrp;
-	*rrp = NULL;
-	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_FALLBACK_MAGIC);
-	vdir_delete(&rr->vd);
-	FREE_OBJ(rr);
+	fb = *fbp;
+	*fbp = NULL;
+	CHECK_OBJ_NOTNULL(fb, VMOD_DIRECTORS_FALLBACK_MAGIC);
+	vdir_delete(&fb->vd);
+	FREE_OBJ(fb);
 }
 
 VCL_VOID __match_proto__()
 vmod_fallback_add_backend(VRT_CTX,
-    struct vmod_directors_fallback *rr, VCL_BACKEND be)
+    struct vmod_directors_fallback *fb, VCL_BACKEND be)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_FALLBACK_MAGIC);
-	(void)vdir_add_backend(rr->vd, be, 0.0);
+	CHECK_OBJ_NOTNULL(fb, VMOD_DIRECTORS_FALLBACK_MAGIC);
+	(void)vdir_add_backend(fb->vd, be, 0.0);
 }
 
 VCL_VOID __match_proto__()
@@ -135,9 +136,9 @@ vmod_fallback_remove_backend(VRT_CTX,
 
 VCL_BACKEND __match_proto__()
 vmod_fallback_backend(VRT_CTX,
-    struct vmod_directors_fallback *rr)
+    struct vmod_directors_fallback *fb)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_FALLBACK_MAGIC);
-	return (rr->vd->dir);
+	CHECK_OBJ_NOTNULL(fb, VMOD_DIRECTORS_FALLBACK_MAGIC);
+	return (fb->vd->dir);
 }
