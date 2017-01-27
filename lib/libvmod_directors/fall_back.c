@@ -123,7 +123,7 @@ vmod_fallback_remove_backend(VRT_CTX,
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(fb, VMOD_DIRECTORS_FALLBACK_MAGIC);
-	(void)vdir_remove_backend(fb->vd, be);
+	vdir_remove_backend(fb->vd, be);
 }
 
 VCL_BACKEND __match_proto__()

@@ -118,7 +118,7 @@ VCL_VOID vmod_random_remove_backend(VRT_CTX,
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_RANDOM_MAGIC);
-	(void)vdir_remove_backend(rr->vd, be);
+	vdir_remove_backend(rr->vd, be);
 }
 
 VCL_BACKEND __match_proto__()
