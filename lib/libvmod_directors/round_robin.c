@@ -127,7 +127,7 @@ vmod_round_robin_remove_backend(VRT_CTX,
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
-	vdir_remove_backend(rr->vd, be);
+	vdir_remove_backend(rr->vd, be, NULL);
 }
 
 VCL_BACKEND __match_proto__()
