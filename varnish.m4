@@ -133,7 +133,8 @@ AC_DEFUN([_VARNISH_VMOD_CONFIG], [
 		[NONE], [
 			vmoddir=$VARNISHAPI_VMODDIR
 			ac_default_prefix=$VARNISHAPI_PREFIX],
-		[vmoddir=$libdir/varnish/vmods]
+		[vmoddir=$($PKG_CONFIG --define-variable=libdir=$libdir \
+			--variable=vmoddir varnishapi)]
 	)
 	AC_SUBST([vmoddir])
 
