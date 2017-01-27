@@ -133,14 +133,14 @@ vdir_add_backend(struct vdir *vd, VCL_BACKEND be, double weight)
 	return (u);
 }
 
-unsigned
+void
 vdir_remove_backend(struct vdir *vd, VCL_BACKEND be)
 {
 	unsigned u, n;
 
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
 	if (be == NULL)
-		return (vd->n_backend);
+		return;
 	CHECK_OBJ(be, DIRECTOR_MAGIC);
 	vdir_wrlock(vd);
 	for (u = 0; u < vd->n_backend; u++)
@@ -148,7 +148,7 @@ vdir_remove_backend(struct vdir *vd, VCL_BACKEND be)
 			break;
 	if (u == vd->n_backend) {
 		vdir_unlock(vd);
-		return (vd->n_backend);
+		return;
 	}
 	vd->total_weight -= vd->weight[u];
 	n = (vd->n_backend - u) - 1;
@@ -156,7 +156,6 @@ vdir_remove_backend(struct vdir *vd, VCL_BACKEND be)
 	memmove(&vd->weight[u], &vd->weight[u+1], n * sizeof(vd->weight[0]));
 	vd->n_backend--;
 	vdir_unlock(vd);
-	return (vd->n_backend);
 }
 
 unsigned
