@@ -57,8 +57,8 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	CHECK_OBJ_NOTNULL(req->htc, HTTP_CONN_MAGIC);
-	CHECK_OBJ_NOTNULL(req->htc->vfc, VFP_CTX_MAGIC);
-	vfc = req->htc->vfc;
+	CHECK_OBJ_NOTNULL(req->vfc, VFP_CTX_MAGIC);
+	vfc = req->vfc;
 
 	req->body_oc = HSH_Private(req->wrk);
 	AN(req->body_oc);
@@ -291,8 +291,7 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 
 	if (req->htc->content_length > maxsize) {
 		req->req_body_status = REQ_BODY_FAIL;
-		(void)VFP_Error(req->htc->vfc,
-		    "Request body too big to cache");
+		(void)VFP_Error(req->vfc, "Request body too big to cache");
 		return (-1);
 	}
 

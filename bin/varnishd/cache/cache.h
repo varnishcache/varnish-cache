@@ -227,7 +227,6 @@ struct http_conn {
 	char			*pipeline_b;
 	char			*pipeline_e;
 	ssize_t			content_length;
-	struct vfp_ctx		vfc[1];
 	void			*priv;
 
 	/* Timeouts */
@@ -567,6 +566,7 @@ struct req {
 	double			t_req;		/* Headers complete */
 
 	struct http_conn	htc[1];
+	struct vfp_ctx		vfc[1];
 	const char		*client_identity;
 
 	/* HTTP request */

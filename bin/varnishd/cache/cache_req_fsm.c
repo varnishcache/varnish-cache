@@ -678,9 +678,9 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	http_CollectHdr(req->http, H_Cache_Control);
 
-	VFP_Setup(req->htc->vfc);
-	req->htc->vfc->http = req->http;
-	req->htc->vfc->wrk = wrk;
+	VFP_Setup(req->vfc);
+	req->vfc->http = req->http;
+	req->vfc->wrk = wrk;
 	if (req->transport->req_body != NULL) {
 		req->transport->req_body(req);
 
