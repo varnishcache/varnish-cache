@@ -1,3 +1,5 @@
 varnishtest "Duplicate -a arguments"
 
-shell -err -expect {have same address} "varnishd -d -a 127.0.0.1:38484 -a 127.0.0.1:38484 -b localhost:80 2>&1"
+shell -err -match "(have same address)|(already in use)" {
+	varnishd -d -a 127.0.0.1:38484 -a 127.0.0.1:38484 -b localhost:80
+}
