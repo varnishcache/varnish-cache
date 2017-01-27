@@ -34,18 +34,7 @@ struct waiter_impl;
 /* mgt_waiter.c */
 extern struct waiter_impl const * waiter;
 
-#if defined(HAVE_EPOLL_CTL)
-extern const struct waiter_impl waiter_epoll;
-#endif
-
-#if defined(HAVE_KQUEUE)
-extern const struct waiter_impl waiter_kqueue;
-#endif
-
-#if defined(HAVE_PORT_CREATE)
-extern const struct waiter_impl waiter_ports;
-#endif
-
-extern const struct waiter_impl waiter_poll;
+#define WAITER(nm) extern const struct waiter_impl waiter_##nm;
+#include "tbl/waiters.h"
 
 void Wait_config(const char *arg);

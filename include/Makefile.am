@@ -44,6 +44,7 @@ nobase_pkginclude_HEADERS = \
 	tbl/vsc_types.h \
 	tbl/vsl_tags.h \
 	tbl/vsl_tags_http.h \
+	tbl/waiters.h \
 	vapi/vsm.h \
 	vapi/vsm_int.h \
 	vapi/vsc.h \

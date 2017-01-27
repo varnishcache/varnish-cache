@@ -1,6 +1,5 @@
 /*-
- * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright (c) 2017 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -26,32 +25,22 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * WAITER(nm)
  */
 
-#include "config.h"
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
+/*lint -save -e525 -e539 */
 
-#include "mgt/mgt.h"
-#include "waiter/mgt_waiter.h"
+#if defined(HAVE_KQUEUE)
+  WAITER(kqueue)
+#endif
 
-static const struct choice waiter_choice[] = {
-#define WAITER(nm) { #nm, &waiter_##nm },
-#include "tbl/waiters.h"
-	{ NULL,		NULL}
-};
+#if defined(HAVE_PORT_CREATE)
+  WAITER(ports)
+#endif
 
-struct waiter_impl const *waiter;
+#if defined(HAVE_EPOLL_CTL)
+  WAITER(epoll)
+#endif
 
-void
-Wait_config(const char *arg)
-{
-
-	ASSERT_MGT();
-
-	if (arg != NULL)
-		waiter = MGT_Pick(waiter_choice, arg, "waiter");
-	else
-		waiter = waiter_choice[0].ptr;
-}
+WAITER(poll)
+#undef WAITER

@@ -129,18 +129,8 @@ usage(void)
 	fprintf(stderr, FMT, "-t TTL", "Default TTL");
 	fprintf(stderr, FMT, "-V", "version");
 	fprintf(stderr, FMT, "-W waiter", "Waiter implementation");
-#if defined(HAVE_KQUEUE)
-	fprintf(stderr, FMT, "", "  -W kqueue");
-#endif
-#if defined(HAVE_PORT_CREATE)
-	fprintf(stderr, FMT, "", "  -W ports");
-#endif
-#if defined(HAVE_EPOLL_CTL)
-	fprintf(stderr, FMT, "", "  -W epoll");
-#endif
-	fprintf(stderr, FMT, "", "  -W poll");
-
-#undef FMT
+#define WAITER(nm) fprintf(stderr, FMT, "", "  -W " #nm);
+#include "tbl/waiters.h"
 	exit(1);
 }
 
