@@ -41,6 +41,7 @@ struct vev {
 	const char		*name;
 	int			fd;
 	unsigned		fd_flags;
+	unsigned		fd_events;
 #define		EV_RD		POLLIN
 #define		EV_WR		POLLOUT
 #define		EV_ERR		POLLERR
@@ -54,11 +55,9 @@ struct vev {
 
 	/* priv */
 	double			__when;
-	VTAILQ_ENTRY(vev)	__list;
 	unsigned		__binheap_idx;
 	unsigned		__privflags;
 	struct vev_base		*__vevb;
-	int			__poll_idx;
 };
 
 struct vev_base *vev_new_base(void);
