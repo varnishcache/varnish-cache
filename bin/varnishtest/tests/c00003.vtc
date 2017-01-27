@@ -1,11 +1,11 @@
 varnishtest "Check that we fail to start with erroneous -a/-b arguments"
 
-server s1 {}
-varnish v1 -vcl+backend {} -start
-varnish v1 -stop
+varnish v1 -vcl {
+	backend dummy { .host = "${bad_backend}"; }
+} -start -stop
 
 # Duplicate -a arguments
-shell -err -expect "have same address" {
+shell -err -match "have same address|already in use" {
 	varnishd -d -a 127.0.0.1:${v1_port} -a 127.0.0.1:${v1_port} \
 	    -b localhost:80
 }
