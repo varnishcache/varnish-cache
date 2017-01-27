@@ -139,7 +139,7 @@ AC_DEFUN([_VARNISH_VMOD_CONFIG], [
 	AC_SUBST([vmoddir])
 
 	dnl Define an automake silent execution for vmodtool
-	[am__v_VMODTOOL_0='@echo "  VMODTOOL" $<;']
+	[am__v_VMODTOOL_0='@echo "  VMODTOOL" $''@;']
 	[am__v_VMODTOOL_1='']
 	[am__v_VMODTOOL_='$(am__v_VMODTOOL_$(AM_DEFAULT_VERBOSITY))']
 	[AM_V_VMODTOOL='$(am__v_VMODTOOL_$(V))']
