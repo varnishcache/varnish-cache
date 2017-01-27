@@ -43,7 +43,6 @@
 #include "vas.h"
 
 #include "binary_heap.h"
-#include "vqueue.h"
 #include "vev.h"
 #include "vtim.h"
 
@@ -67,13 +66,11 @@ static int			vev_nsig;
 struct vev_base {
 	unsigned		magic;
 #define VEV_BASE_MAGIC		0x477bcf3d
-	VTAILQ_HEAD(,vev)	events;
 	struct pollfd		*pfd;
+	struct vev		**pev;
 	unsigned		npfd;
 	unsigned		lpfd;
 	struct binheap		*binheap;
-	unsigned char		compact_pfd;
-	unsigned char		disturbed;
 	unsigned		psig;
 	pthread_t		thread;
 #ifdef DEBUG_EVENTS
@@ -90,6 +87,7 @@ struct vev_base {
 	} while (0);
 #else
 #define DBG(evb, ...)	/* ... */
+//#define DBG(evb, ...)	fprintf(stderr, __VA_ARGS__);
 #endif
 
 /*--------------------------------------------------------------------*/
@@ -102,7 +100,14 @@ vev_bh_update(void *priv, void *a, unsigned u)
 
 	CAST_OBJ_NOTNULL(evb, priv, VEV_BASE_MAGIC);
 	CAST_OBJ_NOTNULL(e, a, VEV_MAGIC);
+	assert(u < evb->lpfd);
 	e->__binheap_idx = u;
+	if (u != BINHEAP_NOIDX) {
+		evb->pev[u] = e;
+		evb->pfd[u].fd = e->fd;
+		evb->pfd[u].events =
+		    e->fd_flags & (EV_RD|EV_WR|EV_ERR|EV_HUP);
+	}
 }
 
 static int __match_proto__(binheap_cmp_t)
@@ -123,7 +128,6 @@ static int
 vev_get_pfd(struct vev_base *evb)
 {
 	unsigned u;
-	void *p;
 
 	if (evb->lpfd + 1 < evb->npfd)
 		return (0);
@@ -134,11 +138,11 @@ vev_get_pfd(struct vev_base *evb)
 		u = evb->npfd + 256;
 	else
 		u = evb->npfd * 2;
-	p = realloc(evb->pfd, sizeof *evb->pfd * u);
-	if (p == NULL)
-		return (1);
 	evb->npfd = u;
-	evb->pfd = p;
+	evb->pfd = realloc(evb->pfd, sizeof(*evb->pfd) * u);
+	AN(evb->pfd);
+	evb->pev = realloc(evb->pev, sizeof(*evb->pev) * u);
+	AN(evb->pev);
 	return (0);
 }
 
@@ -190,12 +194,12 @@ vev_new_base(void)
 	evb = calloc(sizeof *evb, 1);
 	if (evb == NULL)
 		return (evb);
+	evb->lpfd = BINHEAP_NOIDX + 1;
 	if (vev_get_pfd(evb)) {
 		free(evb);
 		return (NULL);
 	}
 	evb->magic = VEV_BASE_MAGIC;
-	VTAILQ_INIT(&evb->events);
 	evb->binheap = binheap_new(evb, vev_bh_cmp, vev_bh_update);
 	evb->thread = pthread_self();
 #ifdef DEBUG_EVENTS
@@ -248,13 +252,14 @@ vev_add(struct vev_base *evb, struct vev *e)
 	assert(evb->thread == pthread_self());
 	DBG(evb, "ev_add(%p) fd = %d\n", e, e->fd);
 
-	if (e->sig > 0 && vev_get_sig(e->sig))
-		return (ENOMEM);
-
-	if (e->fd >= 0 && vev_get_pfd(evb))
+	if (vev_get_pfd(evb))
 		return (ENOMEM);
 
 	if (e->sig > 0) {
+		if (vev_get_sig(e->sig))
+			return (ENOMEM);
+
+		assert(e->fd < 0);
 		es = &vev_sigs[e->sig];
 		if (es->vev != NULL)
 			return (EBUSY);
@@ -267,36 +272,19 @@ vev_add(struct vev_base *evb, struct vev *e)
 		es = NULL;
 	}
 
-	if (e->fd >= 0) {
-		assert(evb->lpfd < evb->npfd);
-		evb->pfd[evb->lpfd].fd = e->fd;
-		evb->pfd[evb->lpfd].events =
-		    e->fd_flags & (EV_RD|EV_WR|EV_ERR|EV_HUP);
-		e->__poll_idx = evb->lpfd;
-		evb->lpfd++;
-		DBG(evb, "... pidx = %d lpfd = %d\n",
-		    e->__poll_idx, evb->lpfd);
-	} else
-		e->__poll_idx = -1;
-
 	e->magic = VEV_MAGIC;	/* before binheap_insert() */
 
-	if (e->timeout != 0.0) {
+	if (e->timeout != 0.0)
 		e->__when += VTIM_mono() + e->timeout;
-		binheap_insert(evb->binheap, e);
-		assert(e->__binheap_idx > 0);
-		DBG(evb, "... bidx = %d\n", e->__binheap_idx);
-	} else {
-		e->__when = 0.0;
-		e->__binheap_idx = 0;
-	}
+	else
+		e->__when = 9e99;
+
+	evb->lpfd++;
+	binheap_insert(evb->binheap, e);
+	assert(e->__binheap_idx != BINHEAP_NOIDX);
 
 	e->__vevb = evb;
 	e->__privflags = 0;
-	if (e->fd < 0)
-		VTAILQ_INSERT_TAIL(&evb->events, e, __list);
-	else
-		VTAILQ_INSERT_HEAD(&evb->events, e, __list);
 
 	if (e->sig > 0) {
 		assert(es != NULL);
@@ -315,24 +303,16 @@ vev_del(struct vev_base *evb, struct vev *e)
 
 	CHECK_OBJ_NOTNULL(evb, VEV_BASE_MAGIC);
 	CHECK_OBJ_NOTNULL(e, VEV_MAGIC);
-	DBG(evb, "ev_del(%p) fd = %d\n", e, e->fd);
+	DBG(evb, "ev_del(%p) fd = %d i=%u L=%d\n", e, e->fd, e->__binheap_idx, evb->lpfd);
 	assert(evb == e->__vevb);
 	assert(evb->thread == pthread_self());
+	assert(evb->pev[e->__binheap_idx] == e);
 
-	if (e->__binheap_idx != 0)
-		binheap_delete(evb->binheap, e->__binheap_idx);
-	AZ(e->__binheap_idx);
-
-	if (e->fd >= 0) {
-		DBG(evb, "... pidx = %d\n", e->__poll_idx);
-		evb->pfd[e->__poll_idx].fd = -1;
-		if (e->__poll_idx == evb->lpfd - 1)
-			evb->lpfd--;
-		else
-			evb->compact_pfd++;
-		e->fd = -1;
-		DBG(evb, "... lpfd = %d\n", evb->lpfd);
-	}
+	assert(e->__binheap_idx != BINHEAP_NOIDX);
+	e->fd = -1;
+	binheap_delete(evb->binheap, e->__binheap_idx);
+	assert(e->__binheap_idx == BINHEAP_NOIDX);
+	evb->lpfd--;
 
 	if (e->sig > 0) {
 		assert(e->sig < vev_nsig);
@@ -346,12 +326,8 @@ vev_del(struct vev_base *evb, struct vev *e)
 		es->happened = 0;
 	}
 
-	VTAILQ_REMOVE(&evb->events, e, __list);
-
 	e->magic = 0;
 	e->__vevb = NULL;
-
-	evb->disturbed = 1;
 }
 
 /*--------------------------------------------------------------------*/
@@ -367,38 +343,6 @@ vev_schedule(struct vev_base *evb)
 		i = vev_schedule_one(evb);
 	while (i == 1);
 	return (i);
-}
-
-/*--------------------------------------------------------------------*/
-
-static void
-vev_compact_pfd(struct vev_base *evb)
-{
-	unsigned u;
-	struct pollfd *p;
-	struct vev *ep;
-	int lfd;
-
-	DBG(evb, "compact_pfd() lpfd = %d\n", evb->lpfd);
-	p = evb->pfd;
-	for (u = 0; u < evb->lpfd; u++, p++) {
-		DBG(evb, "...[%d] fd = %d\n", u, p->fd);
-		if (p->fd >= 0)
-			continue;
-		if (u == evb->lpfd - 1)
-			break;
-		lfd = evb->pfd[evb->lpfd - 1].fd;
-		VTAILQ_FOREACH(ep, &evb->events, __list)
-			if (ep->fd == lfd)
-				break;
-		AN(ep);
-		DBG(evb, "...[%d] move %p pidx %d\n", u, ep, ep->__poll_idx);
-		*p = evb->pfd[--evb->lpfd];
-		ep->__poll_idx = u;
-	}
-	evb->lpfd = u;
-	evb->compact_pfd = 0;
-	DBG(evb, "... lpfd = %d\n", evb->lpfd);
 }
 
 /*--------------------------------------------------------------------*/
@@ -449,16 +393,20 @@ int
 vev_schedule_one(struct vev_base *evb)
 {
 	double t;
-	struct vev *e, *e2, *e3;
-	int i, j, tmo;
-	struct pollfd *pfd;
+	struct vev *e;
+	int i, j, k, tmo;
 
 	CHECK_OBJ_NOTNULL(evb, VEV_BASE_MAGIC);
 	assert(evb->thread == pthread_self());
+	assert(evb->lpfd < evb->npfd);
+
+	if (evb->psig)
+		return (vev_sched_signal(evb));
+
 	e = binheap_root(evb->binheap);
 	if (e != NULL) {
 		CHECK_OBJ_NOTNULL(e, VEV_MAGIC);
-		assert(e->__binheap_idx == 1);
+		assert(e->__binheap_idx == BINHEAP_NOIDX + 1);
 		t = VTIM_mono();
 		if (e->__when <= t)
 			return (vev_sched_timeout(evb, e, t));
@@ -468,54 +416,43 @@ vev_schedule_one(struct vev_base *evb)
 	} else
 		tmo = INFTIM;
 
-	if (evb->compact_pfd)
-		vev_compact_pfd(evb);
-
-	if (tmo == INFTIM && evb->lpfd == 0)
+	if (tmo == INFTIM && evb->lpfd == BINHEAP_NOIDX + 1)
 		return (0);
 
-	if (evb->psig)
-		return (vev_sched_signal(evb));
-	assert(evb->lpfd < evb->npfd);
-	i = poll(evb->pfd, evb->lpfd, tmo);
+	i = poll(evb->pfd + 1, evb->lpfd - 1, tmo);
 	if (i == -1 && errno == EINTR)
 		return (vev_sched_signal(evb));
+
 	if (i == 0) {
 		assert(e != NULL);
 		t = VTIM_mono();
 		if (e->__when <= t)
 			return (vev_sched_timeout(evb, e, t));
 	}
-	evb->disturbed = 0;
-	VTAILQ_FOREACH_SAFE(e, &evb->events, __list, e2) {
-		if (i == 0)
-			break;
-		if (e->fd < 0)
-			continue;
-		assert(e->__poll_idx < evb->lpfd);
-		pfd = &evb->pfd[e->__poll_idx];
-		assert(pfd->fd == e->fd);
-		if (!pfd->revents)
-			continue;
-		DBG(evb, "callback(%p) fd = %d what = 0x%x pidx = %d\n",
-		    e, e->fd, pfd->revents, e->__poll_idx);
-		j = e->callback(e, pfd->revents);
-		i--;
-		if (evb->disturbed) {
-			VTAILQ_FOREACH(e3, &evb->events, __list) {
-				if (e3 == e) {
-					e3 = VTAILQ_NEXT(e, __list);
-					break;
-				} else if (e3 == e2)
-					break;
+
+	k = 0;
+	for(j = 1; j < evb->lpfd; j++) {
+		evb->pev[j]->fd_events = evb->pfd[j].revents;
+		if (evb->pev[j]->fd_events)
+			k++;
+	}
+	assert(k == i);
+
+	DBG(evb, "EVENTS %d\n", i);
+	while (i > 0) {
+		for(j = BINHEAP_NOIDX + 1; j < evb->lpfd; j++) {
+			e = evb->pev[j];
+			if (e->fd_events == 0)
+				continue;
+			DBG(evb, "EVENT %p j=%d fd=%d ev=0x%x %d\n",
+			    e, j, e->fd, e->fd_events, i);
+			k = e->callback(e, e->fd_events);
+			e->fd_events = 0;
+			i--;
+			if (k) {
+				vev_del(evb, e);
+				free(e);
 			}
-			e2 = e3;
-			evb->disturbed = 0;
-		}
-		if (j) {
-			vev_del(evb, e);
-			evb->disturbed = 0;
-			free(e);
 		}
 	}
 	AZ(i);
