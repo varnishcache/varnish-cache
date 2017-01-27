@@ -171,7 +171,6 @@ void mgt_DumpRstVsl(void);
 struct vsb *mgt_BuildVident(void);
 void MGT_Complain(const char *, const char *, ...) __v_printflike(2, 3);
 const void *MGT_Pick(const struct choice *, const char *, const char *);
-void mgt_SymbolHack(const char *);
 
 /* stevedore_mgt.c */
 void STV_Config(const char *spec);

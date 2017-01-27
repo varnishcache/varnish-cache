@@ -31,6 +31,7 @@
 
 #include <execinfo.h>
 #include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
 
@@ -526,6 +527,7 @@ pan_backtrace(struct vsb *vsb)
 	size_t i;
 	char **strings;
 	char *p;
+	char buf[32];
 
 	size = backtrace (array, BACKTRACE_LEVELS);
 	if (size > BACKTRACE_LEVELS) {
@@ -535,18 +537,21 @@ pan_backtrace(struct vsb *vsb)
 	VSB_printf(vsb, "Backtrace:\n");
 	VSB_indent(vsb, 2);
 	for (i = 0; i < size; i++) {
-		if (Symbol_Lookup(vsb, array[i]) < 0) {
-			strings = backtrace_symbols(&array[i], 1);
-			if (strings == NULL || strings[0] == NULL) {
-				VSB_printf(vsb, "%p: (?)", array[i]);
-			} else {
-				p = strrchr(strings[0], '/');
-				if (p == NULL)
-					p = strings[0];
-				else
+		bprintf(buf, "%p", array[i]);
+		VSB_printf(vsb, "%s: ", buf);
+		strings = backtrace_symbols(&array[i], 1);
+		if (strings == NULL || strings[0] == NULL) {
+			VSB_printf(vsb, "(?)");
+		} else {
+			p = strings[0];
+			if (!memcmp(buf, p, strlen(buf))) {
+				p += strlen(buf);
+				if (*p == ':')
 					p++;
-				VSB_printf(vsb, "%p: %s", array[i], p);
+				while(*p == ' ')
+					p++;
 			}
+			VSB_printf(vsb, "%s", p);
 		}
 		VSB_printf (vsb, "\n");
 	}

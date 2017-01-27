@@ -59,8 +59,6 @@ extern pid_t mgt_pid;
 
 /* varnishd.c */
 extern struct vsb *vident;		// XXX: -> heritage ?
-int Symbol_Lookup(struct vsb *vsb, void *ptr);
-
 
 /* Really belongs in mgt.h, but storage_file chokes on both */
 void MCH_Fd_Inherit(int fd, const char *what);

@@ -565,8 +565,6 @@ main(int argc, char * const *argv)
 
 	vident = mgt_BuildVident();
 
-	mgt_SymbolHack(argv[0]);
-
 	/* Various initializations */
 	VTAILQ_INIT(&heritage.socks);
 	mgt_evb = vev_new_base();
