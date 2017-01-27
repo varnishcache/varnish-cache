@@ -240,8 +240,6 @@ process_start(struct process *p)
 		out_fd = fdt[1];
 		err_fd = fdt[1];
 	} else {
-		fdt[0] = -1;
-		fdt[1] = -1;
 		out_fd = open(p->out, O_WRONLY|O_APPEND);
 		assert(out_fd >= 0);
 		err_fd = open(p->err, O_WRONLY|O_APPEND);
@@ -291,14 +289,6 @@ process_wait(struct process *p)
 		AZ(pthread_join(p->tp, &v));
 		p->hasthread = 0;
 	}
-}
-
-static void
-process_run(struct process *p)
-{
-
-	process_start(p);
-	process_wait(p);
 }
 
 /**********************************************************************
@@ -496,7 +486,8 @@ cmd_process(CMD_ARGS)
 			continue;
 		}
 		if (!strcmp(*av, "-run")) {
-			process_run(p);
+			process_start(p);
+			process_wait(p);
 			continue;
 		}
 		if (!strcmp(*av, "-kill")) {
