@@ -71,10 +71,9 @@ Wait_Call(const struct waiter *w, struct waited *wp,
 {
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
-	CHECK_OBJ_NOTNULL(wp->waitfor, WAITFOR_MAGIC);
-	AN(wp->waitfor->func);
+	AN(wp->func);
 	assert(wp->idx == BINHEAP_NOIDX);
-	wp->waitfor->func(wp, ev, now);
+	wp->func(wp, ev, now);
 }
 
 /**********************************************************************/
@@ -133,7 +132,8 @@ Wait_Enter(const struct waiter *w, struct waited *wp)
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	CHECK_OBJ_NOTNULL(wp, WAITED_MAGIC);
 	assert(wp->fd > 0);			// stdin never comes here
-	CHECK_OBJ_NOTNULL(wp->waitfor, WAITFOR_MAGIC);
+	AN(wp->func);
+	AN(wp->tmo);
 	wp->idx = BINHEAP_NOIDX;
 	return (w->impl->enter(w->priv, wp));
 }

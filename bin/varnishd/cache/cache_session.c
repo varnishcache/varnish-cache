@@ -455,7 +455,8 @@ SES_Wait(struct sess *sp, const struct transport *xp)
 	wp->priv1 = sp;
 	wp->priv2 = (uintptr_t)xp;
 	wp->idle = sp->t_idle;
-	wp->waitfor = &pp->wf;
+	wp->func = ses_handle;
+	wp->tmo = &cache_param->timeout_idle;
 	if (Wait_Enter(pp->waiter, wp))
 		SES_Delete(sp, SC_PIPE_OVERFLOW, NAN);
 }
@@ -594,8 +595,5 @@ SES_NewPool(struct pool *pp, unsigned pool_no)
 	pp->mpl_sess = MPL_New(nb, &cache_param->sess_pool,
 	    &cache_param->workspace_session);
 
-	INIT_OBJ(&pp->wf, WAITFOR_MAGIC);
-	pp->wf.func = ses_handle;
-	pp->wf.tmo = &cache_param->timeout_idle;
 	pp->waiter = Waiter_New();
 }

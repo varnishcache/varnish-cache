@@ -51,7 +51,6 @@ struct pool {
 	struct dstat			*a_stat;
 	struct dstat			*b_stat;
 
-	struct waitfor			wf;
 	struct mempool			*mpl_req;
 	struct mempool			*mpl_sess;
 	struct waiter			*waiter;

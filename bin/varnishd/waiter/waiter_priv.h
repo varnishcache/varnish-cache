@@ -62,17 +62,16 @@ static inline double
 Wait_Tmo(const struct waited *wp)
 {
 	CHECK_OBJ_ORNULL(wp, WAITED_MAGIC);
-	CHECK_OBJ_NOTNULL(wp->waitfor, WAITFOR_MAGIC);
-	AN(wp->waitfor->tmo);
-	return (*wp->waitfor->tmo);
+	AN(wp->tmo);
+	return (*wp->tmo);
 }
 
 static inline double
 Wait_When(const struct waited *wp)
 {
 	CHECK_OBJ_ORNULL(wp, WAITED_MAGIC);
-	CHECK_OBJ_NOTNULL(wp->waitfor, WAITFOR_MAGIC);
-	return (wp->idle + *wp->waitfor->tmo);
+	AN(wp->tmo);
+	return (wp->idle + *wp->tmo);
 }
 
 void Wait_Call(const struct waiter *, struct waited *,

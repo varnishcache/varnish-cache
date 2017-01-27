@@ -59,8 +59,6 @@ struct tcp_pool {
 	int			refcnt;
 	struct lock		mtx;
 
-	struct waitfor		waitfor;
-
 	VTAILQ_HEAD(, vbc)	connlist;
 	int			n_conn;
 
@@ -162,9 +160,6 @@ VBT_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6)
 	VTAILQ_INIT(&tp->connlist);
 	VTAILQ_INIT(&tp->killlist);
 	VTAILQ_INSERT_HEAD(&pools, tp, list);
-	INIT_OBJ(&tp->waitfor, WAITFOR_MAGIC);
-	tp->waitfor.func = tcp_handle;
-	tp->waitfor.tmo = &cache_param->backend_idle_timeout;
 	return (tp);
 }
 
@@ -265,7 +260,8 @@ VBT_Recycle(const struct worker *wrk, struct tcp_pool *tp, struct vbc **vbcp)
 	vbc->waited->fd = vbc->fd;
 	vbc->waited->idle = VTIM_real();
 	vbc->state = VBC_STATE_AVAIL;
-	vbc->waited->waitfor =  &tp->waitfor;
+	vbc->waited->func = tcp_handle;
+	vbc->waited->tmo = &cache_param->backend_idle_timeout;
 	if (Wait_Enter(wrk->pool->waiter, vbc->waited)) {
 		VTCP_close(&vbc->fd);
 		memset(vbc, 0x33, sizeof *vbc);
