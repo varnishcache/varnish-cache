@@ -499,9 +499,6 @@ ip_magic(void)
 	/* Expose a backend that is forever down. */
 	extmacro_def("bad_backend", "%s %s", abuf, pbuf);
 
-	/* Expose a port that ought to be free */
-	extmacro_def("random_port", "%s", pbuf);
-
 	/*
 	 * We need an IP number which will not repond, ever, and that is a
 	 * lot harder than it sounds.  This IP# is from RFC5737 and a
