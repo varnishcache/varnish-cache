@@ -408,6 +408,7 @@ void
 cmd_barrier(CMD_ARGS)
 {
 	struct barrier *b, *b2;
+	int r;
 
 	(void)priv;
 	(void)cmd;
@@ -416,7 +417,8 @@ cmd_barrier(CMD_ARGS)
 		AZ(pthread_mutex_lock(&barrier_mtx));
 		/* Reset and free */
 		VTAILQ_FOREACH_SAFE(b, &barriers, list, b2) {
-			AZ(pthread_mutex_lock(&b->mtx));
+			r = pthread_mutex_trylock(&b->mtx);
+			assert(r == 0 || r == EBUSY);
 			switch (b->type) {
 			case BARRIER_COND:
 				break;
