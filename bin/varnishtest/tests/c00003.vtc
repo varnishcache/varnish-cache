@@ -7,20 +7,22 @@ shell -err -match "have same address|already in use" {
 }
 
 # -a bad protocol specs
-shell -err -expect "Too many sub-arguments" \
-	"varnishd -a 127.0.0.1:80000,PROXY,FOO -d 2>&1"
-shell -err -expect "Too many sub-arguments" \
-	"varnishd -a 127.0.0.1:80000,HTTP/1,FOO -d 2>&1"
+shell -err -expect "Too many sub-arguments" {
+	varnishd -a 127.0.0.1:80000,PROXY,FOO -d
+}
+shell -err -expect "Too many sub-arguments" {
+	varnishd -a 127.0.0.1:80000,HTTP/1,FOO -d
+}
 
 # This requires non-local binds to be disabled.  If you see this fail
 # and are on Linux, ensure /proc/net/ipv4/ip_nonlocal_bind is set to 0.
 
 # All bad listen addresses
 shell -err -expect "Error: Could not get socket" {
-	varnishd -F -a "${bad_ip}:0" -b '***' -n ${tmpdir} 2>&1
+	varnishd -F -a "${bad_ip}:0" -b '***' -n ${tmpdir}
 }
 
 # old style address list
 shell -err -expect "Unknown protocol" {
-	varnishd -F -a "127.0.0.1:0,${bad_ip}:0" -b '***' -n ${tmpdir} 2>&1
+	varnishd -F -a "127.0.0.1:0,${bad_ip}:0" -b '***' -n ${tmpdir}
 }
