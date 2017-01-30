@@ -171,7 +171,9 @@ http1_req_panic(struct vsb *vsb, const struct req *req)
 static void __match_proto__(vtr_req_fail_f)
 http1_req_fail(struct req *req, enum sess_close reason)
 {
-	if (req->sp->fd >= 0)
+	assert(reason > 0);
+	assert(req->sp->fd != 0);
+	if (req->sp->fd > 0)
 		SES_Close(req->sp, reason);
 }
 
@@ -401,6 +403,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				if (!FEATURE(FEATURE_HTTP2)) {
 					VSLb(req->vsl, SLT_Debug,
 					    "H2 attempt");
+					assert(req->doclose > 0);
 					SES_Close(req->sp, req->doclose);
 					http1_setstate(sp, H1CLEANUP);
 					continue;
@@ -418,6 +421,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			req->acct.req_hdrbytes +=
 			    req->htc->rxbuf_e - req->htc->rxbuf_b;
 			if (i) {
+				assert(req->doclose > 0);
 				SES_Close(req->sp, req->doclose);
 				http1_setstate(sp, H1CLEANUP);
 				continue;

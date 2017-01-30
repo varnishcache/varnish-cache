@@ -502,12 +502,12 @@ SES_Close(struct sess *sp, enum sess_close reason)
 {
 	int i;
 
+	assert(reason > 0);
 	assert(sp->fd >= 0);
 	i = close(sp->fd);
 	assert(i == 0 || errno != EBADF); /* XXX EINVAL seen */
 	sp->fd = -(int)reason;
-	if (reason != SC_NULL)
-		ses_close_acct(reason);
+	ses_close_acct(reason);
 }
 
 /*--------------------------------------------------------------------
