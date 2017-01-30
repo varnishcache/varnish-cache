@@ -861,7 +861,8 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			} else if (i || fmt == REAL)
 				e1 = vcc_mk_expr(REAL, "%f", d);
 			else
-				e1 = vcc_mk_expr(INT, "%ld", (long)d);
+				e1 = vcc_mk_expr(INT, "%ld",
+				    (unsigned long)d);
 		}
 		e1->constant = EXPR_CONST;
 		*e = e1;
