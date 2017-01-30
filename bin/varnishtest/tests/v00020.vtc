@@ -165,8 +165,7 @@ varnish v1 -errvcl {TIME + TIME not possible.} {
 	}
 }
 
-# XXX: error message should say something about DURATION
-varnish v1 -errvcl {Expected ID got ';'} {
+varnish v1 -errvcl {TIME + INT not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = now + 1;
@@ -187,56 +186,42 @@ varnish v1 -errvcl {INT + TIME not possible.} {
 	}
 }
 
-# XXX: error message should spot DURATION
-varnish v1 -errvcl {Expected ';' got 's'} {
+varnish v1 -errvcl {INT + DURATION not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 1 + 1s;
 	}
 }
 
-# XXX: should spot DURATION
-varnish v1 -errvcl {Expected ';' got 's'} {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv {
-		set req.http.foo = 1s;
-	}
-}
-
-# XXX: should spot DURATION
-varnish v1 -errvcl {Expected ';' got 's'} {
+varnish v1 -errvcl {DURATION + INT not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 1s + 1;
 	}
 }
 
-# XXX: should spot DURATION
-varnish v1 -errvcl {Expected ';' got 's'} {
+varnish v1 -errvcl {DURATION + TIME not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 1s + now;
 	}
 }
 
-# XXX: should spot DURATION
-varnish v1 -errvcl {Expected ';' got 's'} {
+varnish v1 -errvcl {DURATION + STRING not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 1s + "foo";
 	}
 }
 
-# XXX: should spot DURATION
-varnish v1 -errvcl {Expected ';' got 's'} {
+varnish v1 -errvcl {STRING + DURATION not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = "foo" + 1s;
 	}
 }
 
-# XXX: should spot DURATION
-varnish v1 -errvcl {Expected ID got ';'} {
+varnish v1 -errvcl {DURATION + INT not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.ttl = 1s + 1;
