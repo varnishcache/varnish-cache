@@ -434,6 +434,7 @@ SES_Wait(struct sess *sp, const struct transport *xp)
 	CHECK_OBJ_NOTNULL(xp, TRANSPORT_MAGIC);
 	pp = sp->pool;
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
+	assert(sp->fd > 0);
 	/*
 	 * XXX: waiter_epoll prevents us from zeroing the struct because
 	 * XXX: it keeps state across calls.
@@ -503,7 +504,7 @@ SES_Close(struct sess *sp, enum sess_close reason)
 	int i;
 
 	assert(reason > 0);
-	assert(sp->fd >= 0);
+	assert(sp->fd > 0);
 	i = close(sp->fd);
 	assert(i == 0 || errno != EBADF); /* XXX EINVAL seen */
 	sp->fd = -(int)reason;
