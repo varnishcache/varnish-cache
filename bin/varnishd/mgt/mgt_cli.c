@@ -567,7 +567,7 @@ mgt_cli_telnet(const char *T_arg)
 	AZ(error);
 	AZ(VSB_finish(vsb));
 	if (VSB_len(vsb) == 0)
-		ARGV_ERR("-T %s could not be listened on.", T_arg);
+		ARGV_ERR("-T %s could not be listened on.\n", T_arg);
 	/* Save in shmem */
 	mgt_SHM_static_alloc(VSB_data(vsb), VSB_len(vsb) + 1, "Arg", "-T", "");
 	VSB_destroy(&vsb);
