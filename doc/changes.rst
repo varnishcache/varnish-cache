@@ -7,17 +7,30 @@ Changes since 4.1.4:
 Bugs fixed
 ----------
 
+* 1704_ - (docfix) Clarify description of fetch_failed counter
 * 1834_ - Panic in workspace exhaustion conditions
 * 2106_ - 4.1.3: Varnish crashes with "Assert error in CNT_Request(),
   cache/cache_req_fsm.c line 820"
 * 2134_ - Disable Nagle's
 * 2148_ - varnishncsa cannot decode Authorization header if the
   format is incorrect.
+* 2168_ - Compare 'bereq.backend' / 'req.backend_hint'
+  myDirector.backend() does not work
+* 2178_ - 4.1 branch does not compile on FreeBSD
+* 2188_ - Fix vsm_free (never incremented)
+* 2190_ - (docfix)varnishncsa: The %r formatter is NOT equivalent to...
+* 2197_ - ESI parser panic on malformed src URL
 
+.. _1704: https://github.com/varnishcache/varnish-cache/issues/1704
 .. _1834: https://github.com/varnishcache/varnish-cache/issues/1834
 .. _2106: https://github.com/varnishcache/varnish-cache/issues/2106
 .. _2134: https://github.com/varnishcache/varnish-cache/issues/2134
 .. _2148: https://github.com/varnishcache/varnish-cache/issues/2148
+.. _2168: https://github.com/varnishcache/varnish-cache/issues/2168
+.. _2178: https://github.com/varnishcache/varnish-cache/issues/2178
+.. _2188: https://github.com/varnishcache/varnish-cache/pull/2188
+.. _2190: https://github.com/varnishcache/varnish-cache/issues/2190
+.. _2197: https://github.com/varnishcache/varnish-cache/issues/2197
 
 ================================
 Varnish Cache 4.1.4 (2016-12-01)
