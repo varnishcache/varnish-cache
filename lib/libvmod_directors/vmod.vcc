@@ -134,6 +134,47 @@ Example
 	set req.backend_hint = vdir.backend();
 
 
+$Object rollover()
+
+Description
+	Create a rollover director.
+
+	A rollover director will behave as a "sticky" fallback director: it'll
+	return the first healthy backend and will keep using it. If it gets sick
+	it'll progress through the list to find a new healthy backend.
+
+	Once it has gone through the whole list, it'll start over.
+
+Example
+	new vdir = directors.rollover();
+
+$Method VOID .add_backend(BACKEND)
+
+Description
+	Add a backend to the director.
+
+	Note that the order in which this is done matters for the rollover
+	director.
+
+Example
+	vdir.add_backend(backend1);
+	vdir.add_backend(backend2);
+
+$Method VOID .remove_backend(BACKEND)
+
+Description
+	Remove a backend from the director.
+Example
+	vdir.remove_backend(backend1);
+	vdir.remove_backend(backend2);
+
+$Method BACKEND .backend()
+
+Description
+	Pick a backend from the director.
+Example
+	set req.backend_hint = vdir.backend();
+
 $Object random()
 
 Description
