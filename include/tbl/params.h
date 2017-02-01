@@ -1466,6 +1466,8 @@ PARAM(
 	/* s-text */
 	"Bytes of (req-/backend-)workspace dedicated to buffering VSL "
 	"records.\n"
+	"When this parameter is adjusted, most likely workspace_client "
+	"and workspace_backend will have to be adjusted by the same amount.\n\n"
 	"Setting this too high costs memory, setting it too low will cause "
 	"more VSL flushes and likely increase lock-contention on the VSL "
 	"mutex.\n\n"
