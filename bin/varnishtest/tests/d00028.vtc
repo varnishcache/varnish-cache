@@ -6,7 +6,7 @@ server s1 {
 	txresp
 } -start
 
-server s2 {}
+server s2 {} -start
 
 server s3 {
 	rxreq
@@ -22,7 +22,7 @@ server s3 {
 	txresp
 } -start
 
-server s4 {}
+server s4 {} -start
 
 varnish v1 -vcl+backend {
 	import directors;
