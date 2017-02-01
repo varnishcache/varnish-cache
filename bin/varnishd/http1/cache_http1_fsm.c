@@ -401,10 +401,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 
 			if (H2_prism_complete(req->htc) == HTC_S_COMPLETE) {
 				if (!FEATURE(FEATURE_HTTP2)) {
-					VSLb(req->vsl, SLT_Debug,
-					    "H2 attempt");
-					assert(req->doclose > 0);
-					SES_Close(req->sp, req->doclose);
+					SES_Close(req->sp, SC_REQ_HTTP20);
 					http1_setstate(sp, H1CLEANUP);
 					continue;
 				}
@@ -412,8 +409,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				    "H2 Prior Knowledge Upgrade");
 				http1_setstate(sp, NULL);
 				req->err_code = 1;
-				SES_SetTransport(wrk, sp, req,
-				    &H2_transport);
+				SES_SetTransport(wrk, sp, req, &H2_transport);
 				return;
 			}
 
