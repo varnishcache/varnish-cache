@@ -157,7 +157,6 @@ vdir_remove_backend(struct vdir *vd, VCL_BACKEND be, unsigned *cur)
 	vd->n_backend--;
 
 	if (cur) {
-		assert(*cur >= 0);
 		assert(*cur <= vd->n_backend);
 		if (u < *cur)
 			(*cur)--;
