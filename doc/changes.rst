@@ -1,4 +1,11 @@
 ================================
+Varnish Cache 5.1.0 (unreleased)
+================================
+
+* The fallback director has now an extra, optional parameter to keep using the
+  current backend until it falls sick.
+
+================================
 Varnish Cache 5.0.0 (2016-09-15)
 ================================
 
