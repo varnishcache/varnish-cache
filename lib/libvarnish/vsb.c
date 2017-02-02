@@ -567,13 +567,14 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 			break;
 		case '\\':
 		case '"':
-			(void)VSB_putc(s, '\\');
+			if (!(how & VSB_QUOTE_UNSAFE))
+				(void)VSB_putc(s, '\\');
 			(void)VSB_putc(s, *q);
 			break;
 		case '\n':
 			if (how & VSB_QUOTE_CSTR) {
 				(void)VSB_printf(s, "\\n\"\n%s\t\"", pfx);
-			} else if (how & VSB_QUOTE_NONL) {
+			} else if (how & (VSB_QUOTE_NONL|VSB_QUOTE_UNSAFE)) {
 				(void)VSB_printf(s, "\n");
 				nl = 1;
 			} else {

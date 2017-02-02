@@ -200,6 +200,8 @@ vtc_log(struct vtclog *vl, int lvl, const char *fmt, ...)
  * Dump a string
  */
 
+#define MAX_DUMP 8192
+
 void
 vtc_dump(struct vtclog *vl, int lvl, const char *pfx, const char *str, int len)
 {
@@ -214,10 +216,11 @@ vtc_dump(struct vtclog *vl, int lvl, const char *pfx, const char *str, int len)
 		    lead[lvl < 0 ? 1: lvl], vl->id, vl->tx, pfx);
 		if (len < 0)
 			len = strlen(str);
-		VSB_quote_pfx(vl->vsb, buf, str,len > 1024 ? 1024 : len,
-		    VSB_QUOTE_NONL);
-		if (len > 1024)
-			VSB_printf(vl->vsb, "%s [...] (%d)", buf, len - 1024);
+		VSB_quote_pfx(vl->vsb, buf, str,
+		    len > MAX_DUMP ? MAX_DUMP : len, VSB_QUOTE_UNSAFE);
+		if (len > MAX_DUMP)
+			VSB_printf(vl->vsb, "%s [...] (%d)\n",
+			    buf, len - MAX_DUMP);
 	}
 	REL_VL(vl);
 	if (lvl == 0)
