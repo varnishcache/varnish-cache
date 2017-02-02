@@ -1,6 +1,5 @@
 varnishtest "Check -f command line arg"
 
-
 server s1 {
 	rxreq
 	expect req.url == "/foo"

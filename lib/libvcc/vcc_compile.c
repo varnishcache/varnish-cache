@@ -311,6 +311,8 @@ EmitInitFini(const struct vcc *tl)
 	}
 
 	Fc(tl, 0, "\t(void)VGC_function_vcl_init(ctx);\n");
+	Fc(tl, 0, "\tif (*ctx->handling == 0)\n");
+	Fc(tl, 0, "\t\tVRT_handling(ctx, VCL_RET_OK);\n");
 	Fc(tl, 0, "\treturn (*ctx->handling == VCL_RET_OK ? 0: -1);\n");
 	Fc(tl, 0, "}\n");
 
@@ -655,8 +657,6 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 		 * in members called from vcl_init, so set OK up front
 		 * and return with whatever was set last.
 		 */
-		if (method_tab[i].bitval == VCL_MET_INIT)
-			Fc(tl, 1, "  VRT_handling(ctx, VCL_RET_OK);\n");
 		Fc(tl, 1, "%s", VSB_data(tl->fm[i]));
 		if (method_tab[i].bitval == VCL_MET_INIT)
 			Fc(tl, 1, "  return (1);\n");

@@ -107,6 +107,7 @@ vcl_get_ctx(unsigned method, int msg)
 {
 	AZ(ctx_cli.handling);
 	INIT_OBJ(&ctx_cli, VRT_CTX_MAGIC);
+	handling_cli = 0;
 	ctx_cli.handling = &handling_cli;
 	ctx_cli.method = method;
 	if (msg) {
@@ -148,6 +149,7 @@ vcl_send_event(VRT_CTX, enum vcl_event_e ev)
 	       ev == VCL_EVENT_COLD ||
 	       ev == VCL_EVENT_DISCARD);
 	AN(ctx->handling);
+	*ctx->handling = 0;
 	AN(ctx->ws);
 
 	if (ev == VCL_EVENT_LOAD || ev == VCL_EVENT_WARM)
@@ -713,6 +715,7 @@ vcl_cancel_load(VRT_CTX, struct cli *cli, const char *name, const char *step)
 	VCLI_Out(cli, "VCL \"%s\" Failed %s", name, step);
 	if (VSB_len(ctx->msg))
 		VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(ctx->msg));
+	*ctx->handling = 0;
 	AZ(vcl->conf->event_vcl(ctx, VCL_EVENT_DISCARD));
 	vcl_KillBackends(vcl);
 	VCL_Close(&vcl);
@@ -753,6 +756,7 @@ vcl_load(struct cli *cli, struct vrt_ctx *ctx,
 		vcl_cancel_load(ctx, cli, name, "initialization");
 		return;
 	}
+	assert(*ctx->handling == VCL_RET_OK);
 	VSB_clear(ctx->msg);
 	i = vcl_set_state(ctx, state);
 	if (i) {
@@ -761,7 +765,6 @@ vcl_load(struct cli *cli, struct vrt_ctx *ctx,
 		return;
 	}
 	bprintf(vcl->state, "%s", state + 1);
-	assert(*ctx->handling == VCL_RET_OK);
 	VCLI_Out(cli, "Loaded \"%s\" as \"%s\"", fn , name);
 	VTAILQ_INSERT_TAIL(&vcl_head, vcl, list);
 	Lck_Lock(&vcl_mtx);
@@ -1041,9 +1044,9 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	ctx.vsl = vsl;
 	ctx.specific = specific;
 	ctx.method = method;
+	wrk->handling = 0;
 	ctx.handling = &wrk->handling;
 	aws = WS_Snapshot(wrk->aws);
-	wrk->handling = 0;
 	wrk->cur_method = method;
 	wrk->seen_methods |= method;
 	AN(vsl);

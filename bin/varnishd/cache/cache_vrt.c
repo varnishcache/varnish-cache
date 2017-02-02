@@ -252,7 +252,9 @@ VRT_handling(VRT_CTX, unsigned hand)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	assert(hand > 0);
 	assert(hand < VCL_RET_MAX);
+	// XXX:NOTYET assert(*ctx->handling == 0);
 	*ctx->handling = hand;
 }
 
