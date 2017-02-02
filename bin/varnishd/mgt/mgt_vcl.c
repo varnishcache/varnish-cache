@@ -298,13 +298,15 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 
 	i = mgt_cli_askchild(&status, &p, "vcl.state %s %d%s\n",
 	    vp->name, vp->warm, vp->state);
-	if (i) {
-		AN(cli);
-		XXXAN(vp->warm);	/* XXX: should restart child instead */
+	if (i && cli != NULL) {
 		VCLI_SetResult(cli, status);
 		VCLI_Out(cli, "%s", p);
+	} else if (i) {
+		MGT_Complain(C_ERR,
+		    "Please file ticket: VCL poker problem: "
+		    "'vcl.state %s %d%s' -> %03d '%s'",
+		    vp->name, vp->warm, vp->state, i, p);
 	}
-
 	free(p);
 	return (i);
 }
