@@ -638,7 +638,7 @@ sp_variables = [
 	),
 	('beresp.backend.ip',
 		'IP',
-		('backend_response', 'backend_error'),
+		('backend_response',),
 		(), """
 		IP of the backend this response was fetched from.
 		"""
