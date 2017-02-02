@@ -74,6 +74,48 @@ struct vslq_query {
 	}
 
 static int
+vslq_test_vxid(const struct vex *vex, const struct VSL_transaction *trans)
+{
+	const struct vex_rhs *rhs;
+
+	AN(vex);
+	AN(trans);
+
+	rhs = vex->rhs;
+	CHECK_OBJ_NOTNULL(rhs, VEX_RHS_MAGIC);
+
+	/* Prepare */
+	switch (vex->tok) {
+	case T_EQ:		/* == */
+	case T_NEQ:		/* != */
+	case '<':
+	case '>':
+	case T_LEQ:		/* <= */
+	case T_GEQ:		/* >= */
+		if (rhs->type != VEX_INT)
+			WRONG("Wrong RHS type for vxid");
+		/* FALLTHROUGH */
+	default:
+		break;
+	}
+
+	/* Compare */
+	switch (vex->tok) {
+	#define VXID_TEST_NUMOP(OP) return (trans->vxid OP rhs->val_int);
+	case T_EQ:	VXID_TEST_NUMOP(==);
+	case T_NEQ:	VXID_TEST_NUMOP(!=);
+	case '<':	VXID_TEST_NUMOP(<);
+	case '>':	VXID_TEST_NUMOP(>);
+	case T_LEQ:	VXID_TEST_NUMOP(<=);
+	case T_GEQ:	VXID_TEST_NUMOP(>=);
+	#undef VXID_TEST_NUMOP
+	default:	WRONG("Bad vxid expression token");
+	}
+
+	NEEDLESS(return (0));
+}
+
+static int
 vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 {
 	const struct vex_rhs *rhs;
@@ -226,6 +268,17 @@ vslq_test(const struct vex *vex, struct VSL_transaction * const ptrans[])
 	CHECK_OBJ_NOTNULL(vex, VEX_MAGIC);
 	CHECK_OBJ_NOTNULL(vex->lhs, VEX_LHS_MAGIC);
 	AN(vex->lhs->tags);
+	assert(vex->lhs->vxid <= 1);
+
+	if (vex->lhs->vxid) {
+		AZ(vex->lhs->taglist);
+		for (t = ptrans[0]; t != NULL; t = *++ptrans)
+			if (vslq_test_vxid(vex, t))
+				return (1);
+		return (0);
+	}
+
+	AN(vex->lhs->taglist);
 
 	for (t = ptrans[0]; t != NULL; t = *++ptrans) {
 		if (vex->lhs->level >= 0) {
