@@ -86,6 +86,8 @@ struct vex_lhs {
 	int			field;
 	int			level;
 	int			level_pm;
+	unsigned		taglist;
+	unsigned		vxid;
 };
 
 enum vex_rhs_e {
