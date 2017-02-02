@@ -1,0 +1,64 @@
+varnishtest "A top-level VCL program with no backend"
+
+server s1 {
+	rxreq
+	expect req.http.host == varnish.org
+	txresp
+} -start
+
+server s2 {
+	rxreq
+	expect req.http.host == varnish-cache.org
+	txresp -status 204 -nolen
+} -start
+
+varnish v1 -vcl {
+	backend s1 { .host = "${s1_addr}"; .port="${s1_port}"; }
+}
+
+varnish v1 -vcl {
+	backend s2 { .host = "${s2_addr}"; .port="${s2_port}"; }
+}
+
+varnish v1 -cli "vcl.label l_vo vcl1"
+varnish v1 -cli "vcl.label l_vc vcl2"
+
+varnish v1 -vcl {
+	import directors;
+
+	sub vcl_init {
+		new dummy = directors.fallback();
+		set default_backend = dummy.backend();
+	}
+
+	# stolen from vcl-separate.rst
+	sub vcl_recv {
+		if (req.http.host ~ "varnish.org$") {
+			return (vcl(l_vo));
+		}
+		if (req.http.host ~ "varnish-cache.org$") {
+			return (vcl(l_vc));
+		}
+		return (synth(302, "http://varnish-cache.org"));
+	}
+
+	sub vcl_synth {
+		if (resp.status == 301 || resp.status == 302) {
+			set resp.http.location = resp.reason;
+			set resp.reason = "Moved";
+			return (deliver);
+		}
+	}
+}
+
+varnish v1 -start
+
+client c1 {
+	txreq -hdr "Host: varnish.org"
+	rxresp
+	expect resp.status == 200
+
+	txreq -hdr "Host: varnish-cache.org"
+	rxresp
+	expect resp.status == 204
+} -run

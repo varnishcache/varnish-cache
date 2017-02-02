@@ -163,6 +163,18 @@ returns = (
 # 'both' means all methods tagged "B" or "C"
 
 sp_variables = [
+	('default_backend',
+		'BACKEND',
+		(),
+		('init',), """
+		The default backend. It can be set in vcl_init{}. This
+		is useful if your default backend is a director.
+		If the default backend is not manually set, it falls
+		back to the VCL's default backend. When a top-level VCL
+		selects a label, the label's default backend is also
+		selected.
+		"""
+	),
 	('remote.ip',
 		'IP',
 		('both',),

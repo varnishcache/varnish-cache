@@ -1,0 +1,55 @@
+varnishtest "default_backend coverage"
+
+# A dummy VCL to start the child
+
+varnish v1 -arg "-b ${bad_ip}:8090" -start
+
+# Illegal uses of default_backend
+
+varnish v1 -errvcl {VCL "vcl1" failed with no default backend} {}
+
+varnish v1 -errvcl "The default backend can't be NULL." {
+	import debug;
+
+	sub vcl_init {
+		set default_backend = debug.no_backend();
+	}
+}
+
+# Set a director as the default backend
+
+varnish v1 -vcl {
+	import directors;
+
+	backend b1 { .host = "${bad_ip}"; .port = "8090"; }
+	backend b2 { .host = "${bad_ip}"; .port = "8090"; }
+
+	sub vcl_init {
+		new rr = directors.round_robin();
+		rr.add_backend(b1);
+		rr.add_backend(b2);
+		set default_backend = rr.backend();
+	}
+}
+
+# Useful with dynamic backends too
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl {
+	import debug;
+
+	sub vcl_init {
+		new s1 = debug.dyn("${s1_addr}", "${s1_port}");
+		set default_backend = s1.backend();
+	}
+}
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run

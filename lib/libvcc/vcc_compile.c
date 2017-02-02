@@ -414,7 +414,8 @@ EmitStruct(const struct vcc *tl)
 	Fc(tl, 0, "\nconst struct VCL_conf VCL_conf = {\n");
 	Fc(tl, 0, "\t.magic = VCL_CONF_MAGIC,\n");
 	Fc(tl, 0, "\t.event_vcl = VGC_Event,\n");
-	Fc(tl, 0, "\t.default_director = &%s,\n", tl->default_director);
+	if (tl->default_director != NULL)
+		Fc(tl, 0, "\t.default_director = &%s,\n", tl->default_director);
 	if (tl->default_probe != NULL)
 		Fc(tl, 0, "\t.default_probe = &%s,\n", tl->default_probe);
 	Fc(tl, 0, "\t.ref = VGC_ref,\n");
@@ -613,17 +614,17 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 	if (tl->err)
 		return (NULL);
 
-	/* Check if we have any backends at all */
-	if (tl->default_director == NULL) {
-		VSB_printf(tl->sb,
-		    "No backends or directors found in VCL program, "
-		    "at least one is necessary.\n");
-		tl->err = 1;
-		return (NULL);
-	}
-
-	/* Configure the default director */
-	vcc_AddRef(tl, tl->t_default_director, SYM_BACKEND);
+	/* NB: Check whether we have any backends at all and reference the
+	 * default one. It may effectively be unused and slip through the
+	 * reference checks if it's overridden in vcl_init{} and not actually
+	 * used anywhere. We can solve this in the realm of static analysis
+	 * or decide it's a good-enough trade off.
+	 *
+	 * It is OK not to have backends as long as a director is set at load
+	 * time.
+	 */
+	if (tl->default_director != NULL)
+		vcc_AddRef(tl, tl->t_default_director, SYM_BACKEND);
 
 	/* Check for orphans */
 	if (vcc_CheckReferences(tl))

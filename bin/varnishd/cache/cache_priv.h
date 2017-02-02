@@ -108,7 +108,8 @@ void VSL_ChgId(struct vsl_log *vsl, const char *typ, const char *why,
 void VSL_End(struct vsl_log *vsl);
 
 /* cache_vcl.c */
-struct director *VCL_DefaultDirector(const struct vcl *);
+const struct director *VCL_DefaultDirector(const struct vcl *);
+void VCL_SetDefaultDirector(struct vcl *, const struct director *);
 const struct vrt_backend_probe *VCL_DefaultProbe(const struct vcl *);
 void VCL_Init(void);
 void VCL_Panic(struct vsb *, const struct vcl *);

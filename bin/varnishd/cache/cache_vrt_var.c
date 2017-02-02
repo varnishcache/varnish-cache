@@ -35,6 +35,7 @@
 #include "hash/hash_slinger.h"
 
 #include "cache_director.h"
+#include "vcl.h"
 #include "vrt.h"
 #include "vrt_obj.h"
 
@@ -766,3 +767,23 @@ HTTP_VAR(req)
 HTTP_VAR(resp)
 HTTP_VAR(bereq)
 HTTP_VAR(beresp)
+
+/*--------------------------------------------------------------------*/
+
+void
+VRT_l_default_backend(VRT_CTX, const struct director *be)
+{
+
+	ASSERT_CLI();
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_ORNULL(be, DIRECTOR_MAGIC);
+	AN(ctx->msg);
+
+	if (be == NULL) {
+		VSB_printf(ctx->msg, "The default backend can't be NULL.");
+		VRT_handling(ctx, VCL_RET_FAIL);
+		return;
+	}
+
+	VCL_SetDefaultDirector(ctx->vcl, be);
+}

@@ -70,6 +70,7 @@ struct vcl {
 	unsigned		discard;
 	const char		*temp;
 	pthread_rwlock_t	temp_rwl;
+	const struct director	*default_director;
 	VTAILQ_HEAD(,backend)	backend_list;
 	VTAILQ_HEAD(,vclref)	ref_list;
 	int			nrefs;
@@ -478,13 +479,23 @@ VCL_TestLoad(const char *fn)
 
 /*--------------------------------------------------------------------*/
 
-struct director *
+const struct director *
 VCL_DefaultDirector(const struct vcl *vcl)
 {
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	CHECK_OBJ_NOTNULL(vcl->conf, VCL_CONF_MAGIC);
-	return (*vcl->conf->default_director);
+	return (vcl->default_director);
+}
+
+void
+VCL_SetDefaultDirector(struct vcl *vcl, const struct director *be)
+{
+
+	ASSERT_CLI();
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
+	CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
+	vcl->default_director = be;
 }
 
 const char *
@@ -553,8 +564,11 @@ VRT_vcl_select(VRT_CTX, VCL_VCL vcl)
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	VCL_Rel(&req->vcl);
 	vcl_get(&req->vcl, vcl);
+	req->director_hint = vcl->default_director;
 	/* XXX: better logging */
 	VSLb(ctx->req->vsl, SLT_Debug, "Now using %s VCL", vcl->loaded_name);
+	VSLb(ctx->req->vsl, SLT_Debug, "Default backend is %s.%s",
+	    vcl->label->loaded_name, vcl->default_director->vcl_name);
 }
 
 struct vclref *
@@ -710,7 +724,7 @@ vcl_cancel_load(VRT_CTX, struct cli *cli, const char *name, const char *step)
 
 	AZ(VSB_finish(ctx->msg));
 	VCLI_SetResult(cli, CLIS_CANT);
-	VCLI_Out(cli, "VCL \"%s\" Failed %s", name, step);
+	VCLI_Out(cli, "VCL \"%s\" failed %s", name, step);
 	if (VSB_len(ctx->msg))
 		VCLI_Out(cli, "\nMessage:\n\t%s", VSB_data(ctx->msg));
 	AZ(vcl->conf->event_vcl(ctx, VCL_EVENT_DISCARD));
@@ -753,6 +767,16 @@ vcl_load(struct cli *cli, struct vrt_ctx *ctx,
 		vcl_cancel_load(ctx, cli, name, "initialization");
 		return;
 	}
+
+	if (vcl->default_director == NULL &&
+	    vcl->conf->default_director != NULL)
+		vcl->default_director = *vcl->conf->default_director;
+
+	if (vcl->default_director == NULL) {
+		vcl_cancel_load(ctx, cli, name, "with no default backend");
+		return;
+	}
+
 	VSB_clear(ctx->msg);
 	i = vcl_set_state(ctx, state);
 	if (i) {
@@ -926,6 +950,7 @@ vcl_cli_label(struct cli *cli, const char * const *av, void *priv)
 		AN(lbl);
 		bprintf(lbl->state, "%s", VCL_TEMP_LABEL);
 		lbl->temp = VCL_TEMP_WARM;
+		lbl->default_director = vcl->default_director;
 		REPLACE(lbl->loaded_name, av[2]);
 		AZ(errno=pthread_rwlock_init(&lbl->temp_rwl, NULL));
 		VTAILQ_INSERT_TAIL(&vcl_head, lbl, list);
