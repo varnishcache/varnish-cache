@@ -112,14 +112,19 @@ vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 
 	while (1) {
 		/* The tags this expression applies to */
-		if (vxp->t->tok != VAL) {
+		if (vxp->t->tok == VXID) {
+			(*plhs)->vxid++;
+			i = 0;
+		} else if (vxp->t->tok != VAL) {
 			VSB_printf(vxp->sb, "Expected VSL tag name got '%.*s' ",
 			    PF(vxp->t));
 			vxp_ErrWhere(vxp, vxp->t, -1);
 			return;
+		} else {
+			(*plhs)->taglist++;
+			i = VSL_Glob2Tags(vxp->t->dec, -1, vsl_vbm_bitset,
+			    (*plhs)->tags);
 		}
-		i = VSL_Glob2Tags(vxp->t->dec, -1, vsl_vbm_bitset,
-		    (*plhs)->tags);
 		if (i == -1) {
 			VSB_printf(vxp->sb, "Tag name matches zero tags ");
 			vxp_ErrWhere(vxp, vxp->t, -1);
@@ -135,7 +140,7 @@ vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 			vxp_ErrWhere(vxp, vxp->t, -1);
 			return;
 		}
-		assert(i > 0);
+		assert(i > 0 || vxp->t->tok == VXID);
 		vxp_NextToken(vxp);
 		if (vxp->t->tok != ',')
 			break;
@@ -177,10 +182,20 @@ vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 		ExpectErr(vxp, ']');
 		vxp_NextToken(vxp);
 	}
+
+	if ((*plhs)->vxid == 0)
+		return;
+
+	if ((*plhs)->vxid > 1 || (*plhs)->level >= 0 ||
+	    (*plhs)->field > 0 || (*plhs)->prefixlen > 0 ||
+	    (*plhs)->taglist > 0) {
+		VSB_printf(vxp->sb, "Unexpected taglist selection for vxid ");
+		vxp_ErrWhere(vxp, vxp->t, -1);
+	}
 }
 
 static void
-vxp_expr_num(struct vxp *vxp, struct vex_rhs **prhs)
+vxp_expr_num(struct vxp *vxp, struct vex_rhs **prhs, int vxid)
 {
 	char *endptr;
 
@@ -212,6 +227,12 @@ vxp_expr_num(struct vxp *vxp, struct vex_rhs **prhs)
 			vxp_ErrWhere(vxp, vxp->t, -1);
 			return;
 		}
+	}
+	if (vxid && (*prhs)->type != VEX_INT) {
+		VSB_printf(vxp->sb, "Expected integer got '%.*s' ",
+		    PF(vxp->t));
+		vxp_ErrWhere(vxp, vxp->t, 0);
+		return;
 	}
 	vxp_NextToken(vxp);
 }
@@ -269,6 +290,28 @@ vxp_expr_regex(struct vxp *vxp, struct vex_rhs **prhs)
 	vxp_NextToken(vxp);
 }
 
+static void
+vxp_vxid_cmp(struct vxp *vxp)
+{
+
+	switch (vxp->t->tok) {
+	/* Valid operators */
+	case T_EQ:		/* == */
+	case '<':		/* < */
+	case '>':		/* > */
+	case T_GEQ:		/* >= */
+	case T_LEQ:		/* <= */
+	case T_NEQ:		/* != */
+		break;
+
+	/* Error */
+	default:
+		VSB_printf(vxp->sb, "Expected vxid operator got '%.*s' ",
+		    PF(vxp->t));
+		vxp_ErrWhere(vxp, vxp->t, -1);
+	}
+}
+
 /*
  * SYNTAX:
  *   expr_cmp:
@@ -286,6 +329,11 @@ vxp_expr_cmp(struct vxp *vxp, struct vex **pvex)
 	AN(*pvex);
 	vxp_expr_lhs(vxp, &(*pvex)->lhs);
 	ERRCHK(vxp);
+
+	if ((*pvex)->lhs->vxid) {
+		vxp_vxid_cmp(vxp);
+		ERRCHK(vxp);
+	}
 
 	/* Test operator */
 	switch (vxp->t->tok) {
@@ -333,7 +381,7 @@ vxp_expr_cmp(struct vxp *vxp, struct vex **pvex)
 	case T_GEQ:		/* >= */
 	case T_LEQ:		/* <= */
 	case T_NEQ:		/* != */
-		vxp_expr_num(vxp, &(*pvex)->rhs);
+		vxp_expr_num(vxp, &(*pvex)->rhs, (*pvex)->lhs->vxid);
 		break;
 	case T_SEQ:		/* eq */
 	case T_SNEQ:		/* ne */
