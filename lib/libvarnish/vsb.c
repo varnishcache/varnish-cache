@@ -598,7 +598,7 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 	}
 	if (how & VSB_QUOTE_CSTR)
 		(void)VSB_putc(s, '"');
-	if ((how & VSB_QUOTE_NONL) && !nl)
+	if ((how & (VSB_QUOTE_NONL|VSB_QUOTE_UNSAFE)) && !nl)
 		(void)VSB_putc(s, '\n');
 }
 
