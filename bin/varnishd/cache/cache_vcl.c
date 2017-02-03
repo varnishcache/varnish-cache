@@ -521,6 +521,9 @@ VRT_count(VRT_CTX, unsigned u)
 	if (ctx->vsl != NULL)
 		VSLb(ctx->vsl, SLT_VCL_trace, "%u %u.%u", u,
 		    ctx->vcl->conf->ref[u].line, ctx->vcl->conf->ref[u].pos);
+	else
+		VSL(SLT_VCL_trace, 0, "%u %u.%u", u,
+		    ctx->vcl->conf->ref[u].line, ctx->vcl->conf->ref[u].pos);
 }
 
 VCL_VCL
