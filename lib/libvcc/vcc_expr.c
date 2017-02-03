@@ -1027,7 +1027,6 @@ static const struct adds {
 	{ '+', DURATION,	REAL,		VOID },
 	{ '+', DURATION,	TIME,		VOID },
 	{ '+', DURATION,	STRING,		VOID },
-	{ '+', STRING,		DURATION,	VOID },
 
 	{ EOI, VOID, VOID, VOID }
 };

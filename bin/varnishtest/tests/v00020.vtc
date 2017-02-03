@@ -141,6 +141,9 @@ varnish v1 -vcl {
 		else if (4) { }
 		else { }
 	}
+	sub vcl_backend_response {
+		set beresp.http.buzz = "ttl=" + beresp.ttl;
+	}
 }
 
 # XXX: not the most clear error message
@@ -211,13 +214,6 @@ varnish v1 -errvcl {DURATION + STRING not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 1s + "foo";
-	}
-}
-
-varnish v1 -errvcl {STRING + DURATION not possible.} {
-	backend b { .host = "127.0.0.1"; }
-	sub vcl_recv {
-		set req.http.foo = "foo" + 1s;
 	}
 }
 
