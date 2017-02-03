@@ -18,7 +18,7 @@ varnish v1 -errvcl "Missing dynamic backend address or port" {
 	}
 }
 
-shell -err {
+shell {
 	set -e
 	varnishlog -n ${v1_name} -d -g raw >v1.log
 	! grep "Should not happen" v1.log
