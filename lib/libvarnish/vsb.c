@@ -544,7 +544,8 @@ VSB_quote_pfx(struct vsb *s, const char *pfx, const void *v, int len, int how)
 	}
 	if (!quote && !(how & (VSB_QUOTE_JSON|VSB_QUOTE_CSTR))) {
 		(void)VSB_bcat(s, p, len);
-		if ((how & VSB_QUOTE_NONL) && p[len-1] != '\n')
+		if ((how & (VSB_QUOTE_UNSAFE|VSB_QUOTE_NONL))
+		    && p[len-1] != '\n')
 			(void)VSB_putc(s, '\n');
 		return;
 	}
