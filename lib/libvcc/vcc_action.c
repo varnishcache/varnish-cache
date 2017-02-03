@@ -47,8 +47,7 @@ parse_call(struct vcc *tl)
 	ExpectErr(tl, ID);
 	vcc_AddCall(tl, tl->t);
 	vcc_AddRef(tl, tl->t, SYM_SUB);
-	Fb(tl, 1, "if (VGC_function_%.*s(ctx))\n", PF(tl->t));
-	Fb(tl, 1, "\treturn (1);\n");
+	Fb(tl, 1, "VGC_function_%.*s(ctx);\n", PF(tl->t));
 	vcc_NextToken(tl);
 }
 
@@ -325,7 +324,6 @@ parse_return(struct vcc *tl)
 	}
 	ERRCHK(tl);
 	Fb(tl, 1, "VRT_handling(ctx, VCL_RET_%s);\n", h);
-	Fb(tl, 1, "return (1);\n");
 	ExpectErr(tl, ')');
 	vcc_NextToken(tl);
 }

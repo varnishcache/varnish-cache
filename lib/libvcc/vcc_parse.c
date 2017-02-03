@@ -196,7 +196,7 @@ vcc_Compound(struct vcc *tl)
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
-		Fb(tl, 1, "if (*ctx->handling) return(1);\n");
+		Fb(tl, 1, "if (*ctx->handling) return;\n");
 	}
 }
 
@@ -246,9 +246,8 @@ vcc_ParseFunction(struct vcc *tl)
 			return;
 		}
 		tl->curproc = vcc_AddProc(tl, tl->t);
-		Fh(tl, 0, "int VGC_function_%.*s "
-		    "(VRT_CTX);\n", PF(tl->t));
-		Fc(tl, 1, "\nint __match_proto__(vcl_func_t)\n");
+		Fh(tl, 0, "void VGC_function_%.*s(VRT_CTX);\n", PF(tl->t));
+		Fc(tl, 1, "\nvoid __match_proto__(vcl_func_t)\n");
 		Fc(tl, 1, "VGC_function_%.*s(VRT_CTX)\n",
 		    PF(tl->t));
 	}
@@ -256,13 +255,6 @@ vcc_ParseFunction(struct vcc *tl)
 	tl->indent += INDENT;
 	Fb(tl, 1, "{\n");
 	L(tl, vcc_Compound(tl));
-	if (m == -1) {
-		/*
-		 * non-method subroutines must have an explicit non-action
-		 * return in case they just fall through the bottom.
-		 */
-		Fb(tl, 1, "  return(0);\n");
-	}
 	Fb(tl, 1, "}\n");
 	tl->indent -= INDENT;
 	tl->fb = NULL;

@@ -237,7 +237,7 @@ vcc_ParseImport(struct vcc *tl)
 			    p, PF(mod));
 			VSB_printf(ifp->fin,
 			    "\t\t(void)%s(ctx, &vmod_priv_%.*s,\n"
-			    "\t\t    VCL_EVENT_DISCARD);\n", p, PF(mod));
+			    "\t\t\t    VCL_EVENT_DISCARD);\n", p, PF(mod));
 			VSB_printf(ifp->event, "\t%s(ctx, &vmod_priv_%.*s, ev)",
 			    p, PF(mod));
 		} else if (!strcmp(p, "$FUNC")) {

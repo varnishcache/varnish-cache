@@ -186,6 +186,7 @@ sub vcl_backend_error {
 # Housekeeping
 
 sub vcl_init {
+    return (ok);
 }
 
 sub vcl_fini {

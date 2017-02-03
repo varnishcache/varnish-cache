@@ -755,7 +755,7 @@ vcl_load(struct cli *cli, struct vrt_ctx *ctx,
 
 	VSB_clear(ctx->msg);
 	i = vcl_send_event(ctx, VCL_EVENT_LOAD);
-	if (i) {
+	if (i || *ctx->handling != VCL_RET_OK) {
 		vcl_cancel_load(ctx, cli, name, "initialization");
 		return;
 	}
@@ -1054,7 +1054,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	wrk->seen_methods |= method;
 	AN(vsl);
 	VSLb(vsl, SLT_VCL_call, "%s", VCL_Method_Name(method));
-	(void)func(&ctx);
+	func(&ctx);
 	VSLb(vsl, SLT_VCL_return, "%s", VCL_Return_Name(wrk->handling));
 	wrk->cur_method |= 1;		// Magic marker
 

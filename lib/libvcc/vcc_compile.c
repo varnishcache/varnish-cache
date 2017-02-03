@@ -310,18 +310,13 @@ EmitInitFini(const struct vcc *tl)
 			has_event = 1;
 	}
 
-	Fc(tl, 0, "\t(void)VGC_function_vcl_init(ctx);\n");
-	Fc(tl, 0, "\tif (*ctx->handling == 0)\n");
-	Fc(tl, 0, "\t\tVRT_handling(ctx, VCL_RET_OK);\n");
-	Fc(tl, 0, "\treturn (*ctx->handling == VCL_RET_OK ? 0: -1);\n");
+	Fc(tl, 0, "\treturn(0);\n");
 	Fc(tl, 0, "}\n");
 
 	/*
 	 * DISCARD
 	 */
 	Fc(tl, 0, "\nstatic int\nVGC_Discard(VRT_CTX)\n{\n\n");
-
-	Fc(tl, 0, "\t(void)VGC_function_vcl_fini(ctx);\n\n");
 
 	Fc(tl, 0, "\tswitch (vgc_inistep) {\n\n");
 	VTAILQ_FOREACH_REVERSE(p, &tl->inifin, inifinhead, list) {
@@ -336,7 +331,7 @@ EmitInitFini(const struct vcc *tl)
 		}
 		VSB_destroy(&p->fin);
 	}
-	Fc(tl, 0, "\t}\n\n");
+	Fc(tl, 0, "\t}\n");
 
 	Fc(tl, 0, "\treturn (0);\n");
 	Fc(tl, 0, "}\n");
@@ -558,6 +553,7 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 	struct symbol *sym;
 	const struct var *v;
 	struct vsb *vsb;
+	struct inifin *ifp;
 	int i;
 
 	vcc_Expr_Init(tl);
@@ -639,14 +635,19 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 	if (vcc_CheckUses(tl) || tl->err)
 		return (NULL);
 
+	/* Tie vcl_init/fini in */
+	ifp = New_IniFin(tl);
+	VSB_printf(ifp->ini, "\tVGC_function_vcl_init(ctx);");
+	VSB_printf(ifp->fin, "\t\tVGC_function_vcl_fini(ctx);");
+
 	/* Emit method functions */
 	Fh(tl, 1, "\n");
 	for (i = 1; i < VCL_MET_MAX; i++) {
 		Fh(tl, 1,
-		    "int __match_proto__(vcl_func_f) "
+		    "void __match_proto__(vcl_func_f) "
 		    "VGC_function_%s(VRT_CTX);\n",
 		    method_tab[i].name);
-		Fc(tl, 1, "\nint __match_proto__(vcl_func_f)\n");
+		Fc(tl, 1, "\nvoid __match_proto__(vcl_func_f)\n");
 		Fc(tl, 1,
 		    "VGC_function_%s(VRT_CTX)\n",
 		    method_tab[i].name);
@@ -659,7 +660,7 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 		 */
 		Fc(tl, 1, "%s", VSB_data(tl->fm[i]));
 		if (method_tab[i].bitval == VCL_MET_INIT)
-			Fc(tl, 1, "  return (1);\n");
+			Fc(tl, 1, "  return;\n");
 		Fc(tl, 1, "}\n");
 	}
 
