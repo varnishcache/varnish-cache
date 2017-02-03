@@ -196,6 +196,7 @@ vcc_Compound(struct vcc *tl)
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
+		Fb(tl, 1, "if (*ctx->handling) return(1);\n");
 	}
 }
 

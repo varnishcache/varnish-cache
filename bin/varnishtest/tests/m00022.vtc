@@ -7,18 +7,32 @@ server s1 {
 
 varnish v1 -vcl+backend { } -start
 
+logexpect l1 -v v1 -g raw {
+	expect * 0	VCL_Log         "Should happen first"
+	expect 0 0	VCL_Log         "Should happen second"
+
+} -start
+
 varnish v1 -errvcl "Planned failure in vcl_init" {
 
 	import debug;
+	import std;
 
 	backend default {
 		.host = "${s1_addr}";
 	}
 
 	sub vcl_init {
+		std.log("Should happen first");
 		debug.init_fail();
+		std.log("Should not happen");
+	}
+	sub vcl_fini {
+		std.log("Should happen second");
 	}
 }
+
+logexpect l1 -wait
 
 varnish v1 -cliok "param.set nuke_limit 42"
 
