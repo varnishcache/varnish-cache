@@ -732,21 +732,19 @@ varnish_vcl(struct varnish *v, const char *vcl, int fail, char **resp)
 	AZ(VSB_finish(vsb));
 
 	u = varnish_ask_cli(v, VSB_data(vsb), resp);
-	if (u == CLIS_OK && fail) {
-		VSB_destroy(&vsb);
-		vtc_fatal(v->vl,
-		    "VCL compilation succeeded expected failure");
-	} else if (u == CLIS_OK) {
+	if (u == CLIS_OK) {
 		VSB_clear(vsb);
 		VSB_printf(vsb, "vcl.use vcl%d", v->vcl_nbr);
 		AZ(VSB_finish(vsb));
 		u = varnish_ask_cli(v, VSB_data(vsb), NULL);
-		assert(u == CLIS_OK);
-	} else if (!fail) {
+	}
+	if (u == CLIS_OK && fail) {
 		VSB_destroy(&vsb);
-		vtc_fatal(v->vl,
-		    "VCL compilation failed expected success");
-	} else {
+		vtc_fatal(v->vl, "VCL compilation succeeded expected failure");
+	} else if (u != CLIS_OK && !fail) {
+		VSB_destroy(&vsb);
+		vtc_fatal(v->vl, "VCL compilation failed expected success");
+	} else if (fail) {
 		vtc_log(v->vl, 2, "VCL compilation failed (as expected)");
 	}
 	VSB_destroy(&vsb);
