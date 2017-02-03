@@ -117,6 +117,14 @@ vmod_dyn__init(VRT_CTX, struct vmod_debug_dyn **dynp,
 	AZ(*dynp);
 	AN(vcl_name);
 
+	if (*addr == '\0' || *port == '\0') {
+		AN(ctx->handling);
+		AZ(*ctx->handling);
+		VSB_printf(ctx->msg, "Missing dynamic backend address or port");
+		VRT_handling(ctx, VCL_RET_FAIL);
+		return;
+	}
+
 	ALLOC_OBJ(dyn, VMOD_DEBUG_DYN_MAGIC);
 	AN(dyn);
 	REPLACE(dyn->vcl_name, vcl_name);
@@ -134,6 +142,9 @@ vmod_dyn__fini(struct vmod_debug_dyn **dynp)
 	struct vmod_debug_dyn *dyn;
 
 	AN(dynp);
+	if (*dynp == NULL)
+		return; /* failed initialization */
+
 	CAST_OBJ_NOTNULL(dyn, *dynp, VMOD_DEBUG_DYN_MAGIC);
 	/* at this point all backends will be deleted by the vcl */
 	free(dyn->vcl_name);

@@ -153,7 +153,7 @@ Sleep the current worker thread.
 
 $Object dyn(STRING addr, STRING port)
 
-Dynamically create a single-backend director
+Dynamically create a single-backend director, addr and port must not be empty.
 
 $Method BACKEND .backend()
 

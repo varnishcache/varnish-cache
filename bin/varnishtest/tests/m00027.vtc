@@ -1,0 +1,25 @@
+varnishtest "Test object initialization failure"
+
+server s1 { } -start
+
+varnish v1 -vcl+backend { } -start
+
+varnish v1 -errvcl "Missing dynamic backend address or port" {
+	import debug;
+	import std;
+
+	backend be {
+		.host = "${bad_backend}";
+	}
+
+	sub vcl_init {
+		new obj = debug.dyn("", "");
+		std.log("Should not happen");
+	}
+}
+
+shell -err {
+	set -e
+	varnishlog -n ${v1_name} -d -g raw >v1.log
+	! grep "Should not happen" v1.log
+}
