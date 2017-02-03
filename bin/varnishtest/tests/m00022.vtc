@@ -34,6 +34,12 @@ varnish v1 -errvcl "Planned failure in vcl_init" {
 
 logexpect l1 -wait
 
+shell {
+	set -e
+	varnishlog -n ${v1_name} -d -g raw >v1.log
+	! grep "Should not happen" v1.log
+}
+
 varnish v1 -cliok "param.set nuke_limit 42"
 
 varnish v1 -errvcl "nuke_limit is not the answer." {
