@@ -504,7 +504,7 @@ cmd_shell_engine(struct vtclog *vl, int ok, const char *cmd,
 	if (WIFSIGNALED(r))
 		vtc_log(vl, 4, "shell_signal = %d", WTERMSIG(r));
 
-	if (ok < 0 && !WEXITSTATUS(r) && !WIFSIGNALED(r))
+	if (ok < 0 && (!WEXITSTATUS(r) || WIFSIGNALED(r)))
 		vtc_fatal(vl, "shell did not fail as expected");
 	else if (ok >= 0 && WEXITSTATUS(r) != ok) {
 		vtc_fatal(vl,
