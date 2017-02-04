@@ -379,10 +379,9 @@ parse_string(const char *spec, const struct cmds *cmd, void *priv,
 		for (cp = cmd; cp->name != NULL; cp++)
 			if (!strcmp(token_s[0], cp->name))
 				break;
-		if (cp->name == NULL) {
+
+		if (cp->name == NULL)
 			vtc_fatal(vl, "Unknown command: \"%s\"", token_s[0]);
-			NEEDLESS(return);
-		}
 
 		assert(cp->cmd != NULL);
 		cp->cmd(token_s, priv, cmd, vl);
@@ -506,11 +505,10 @@ cmd_shell_engine(struct vtclog *vl, int ok, const char *cmd,
 
 	if (ok < 0 && !WEXITSTATUS(r) && !WIFSIGNALED(r))
 		vtc_fatal(vl, "shell did not fail as expected");
-	else if (ok >= 0 && WEXITSTATUS(r) != ok) {
-		vtc_fatal(vl,
-		    "shell_exit not as expected: got 0x%04x wanted 0x%04x",
-			WEXITSTATUS(r), ok);
-	}
+	else if (ok >= 0 && WEXITSTATUS(r) != ok)
+		vtc_fatal(vl, "shell_exit not as expected: "
+		    "got 0x%04x wanted 0x%04x", WEXITSTATUS(r), ok);
+
 	if (expect != NULL) {
 		if (strstr(VSB_data(vsb), expect) == NULL)
 			vtc_fatal(vl,
@@ -709,9 +707,8 @@ cmd_feature(CMD_ARGS)
 #endif
 		} else if (!strcmp(*av, "cmd")) {
 			av++;
-			if (*av == NULL) {
+			if (*av == NULL)
 				vtc_fatal(vl, "Missing the command-line");
-			}
 			r = system(*av);
 			if (WEXITSTATUS(r) == 0)
 				good = 1;
@@ -721,13 +718,11 @@ cmd_feature(CMD_ARGS)
 		if (good)
 			continue;
 
-		if (!vtc_stop) {
-			vtc_fatal(vl,
-			    "FAIL test, unknown feature: %s", *av);
-		} else {
+		if (!vtc_stop)
+			vtc_fatal(vl, "FAIL test, unknown feature: %s", *av);
+		else
 			vtc_log(vl, 1,
 			    "SKIPPING test, lacking feature: %s", *av);
-		}
 		return;
 	}
 }

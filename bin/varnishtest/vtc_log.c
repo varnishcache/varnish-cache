@@ -281,10 +281,9 @@ vtc_log_VAS_Fail(const char *func, const char *file, int line,
 		    "Assert error in %s(), %s line %d:\n"
 		    "  Condition(%s) not true.\n",
 		    func, file, line, cond);
-	} else {
+	} else
 		vtc_fatal(vl, "Assert error in %s(), %s line %d:"
 		    "  Condition(%s) not true.\n", func, file, line, cond);
-	}
 	abort();
 }
 

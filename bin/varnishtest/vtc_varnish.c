@@ -744,9 +744,8 @@ varnish_vcl(struct varnish *v, const char *vcl, int fail, char **resp)
 	} else if (u != CLIS_OK && !fail) {
 		VSB_destroy(&vsb);
 		vtc_fatal(v->vl, "VCL compilation failed expected success");
-	} else if (fail) {
+	} else if (fail)
 		vtc_log(v->vl, 2, "VCL compilation failed (as expected)");
-	}
 	VSB_destroy(&vsb);
 }
 
@@ -957,9 +956,8 @@ varnish_expect(const struct varnish *v, char * const *av)
 		else if (!strcmp(av[1], "<"))  { if (sp.val < ref)  good = 1; }
 		else if (!strcmp(av[1], ">=")) { if (sp.val >= ref) good = 1; }
 		else if (!strcmp(av[1], "<=")) { if (sp.val <= ref) good = 1; }
-		else {
+		else
 			vtc_fatal(v->vl, "comparison %s unknown", av[1]);
-		}
 		if (good)
 			break;
 	}

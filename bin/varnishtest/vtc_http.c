@@ -1114,8 +1114,7 @@ cmd_http_rxreq(CMD_ARGS)
 	http_rxhdr(hp);
 	http_splitheader(hp, 1);
 	if (http_count_header(hp->req, "Content-Length") > 1)
-		vtc_fatal(vl,
-		    "Multiple Content-Length headers.\n");
+		vtc_fatal(vl, "Multiple Content-Length headers.\n");
 	http_swallow_body(hp, hp->req, 0);
 	vtc_log(vl, 4, "bodylen = %s", hp->bodylen);
 }
@@ -1142,8 +1141,7 @@ cmd_http_rxreqhdrs(CMD_ARGS)
 	http_rxhdr(hp);
 	http_splitheader(hp, 1);
 	if (http_count_header(hp->req, "Content-Length") > 1)
-		vtc_fatal(hp->vl,
-		    "Multiple Content-Length headers.\n");
+		vtc_fatal(hp->vl, "Multiple Content-Length headers.\n");
 }
 
 /* SECTION: client-server.spec.rxreqbody
@@ -1666,9 +1664,8 @@ cmd_http_fatal(CMD_ARGS)
 		hp->fatal = 0;
 	else if (!strcmp(av[0], "non_fatal"))
 		hp->fatal = -1;
-	else {
+	else
 		vtc_fatal(vl, "XXX: fatal %s", cmd->name);
-	}
 }
 
 #define cmd_http_non_fatal cmd_http_fatal
@@ -1764,8 +1761,8 @@ cmd_http_settings(CMD_ARGS)
 		if (!strcmp(*av, "-dectbl")) {
 			n = strtoul(av[1], &p, 0);
 			if (*p != '\0')
-				vtc_fatal(hp->vl, "-dectbl takes an integer as"
-						" argument (found %s)", av[1]);
+				vtc_fatal(hp->vl, "-dectbl takes an integer as "
+				    "argument (found %s)", av[1]);
 			HPK_ResizeTbl(hp->decctx, n);
 			av++;
 		} else

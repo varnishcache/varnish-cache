@@ -596,7 +596,8 @@ parse_settings(const struct stream *s, struct frame *f)
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);;
 
 	if (f->size % 6)
-		vtc_fatal(hp->vl, "Size should be a multiple of 6, but isn't (%d)", f->size);
+		vtc_fatal(hp->vl,
+		    "Size should be a multiple of 6, but isn't (%d)", f->size);
 
 	for (i = 0; i <= SETTINGS_MAX; i++)
 		f->md.settings[i] = NAN;
@@ -650,9 +651,11 @@ parse_goaway(const struct stream *s, struct frame *f)
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);;
 
 	if (f->size < 8)
-		vtc_fatal(hp->vl, "Size should be at least 8, but isn't (%d)", f->size);
+		vtc_fatal(hp->vl,
+		    "Size should be at least 8, but isn't (%d)", f->size);
 	if (f->data[0] & (1<<7))
-		vtc_fatal(hp->vl, "First bit of data is reserved and should be 0");
+		vtc_fatal(hp->vl,
+		    "First bit of data is reserved and should be 0");
 
 	stid = vbe32dec(f->data);
 	err = vbe32dec(f->data + 4);
@@ -690,7 +693,8 @@ parse_winup(const struct stream *s, struct frame *f)
 	if (f->size != 4)
 		vtc_fatal(hp->vl, "Size should be 4, but isn't (%d)", f->size);
 	if (f->data[0] & (1<<7))
-		vtc_log(hp->vl, s->hp->fatal, "First bit of data is reserved and should be 0");
+		vtc_log(hp->vl, s->hp->fatal,
+		    "First bit of data is reserved and should be 0");
 
 	size = vbe32dec(f->data);
 	f->md.winup_size = size;
@@ -748,10 +752,9 @@ receive_frame(void *priv)
 		AZ(pthread_mutex_lock(&hp->mtx));
 		s = NULL;
 		while (!s) {
-			VTAILQ_FOREACH(s, &hp->streams, list) {
+			VTAILQ_FOREACH(s, &hp->streams, list)
 				if (s->id == f->stid)
 					break;
-			}
 			if (!s)
 				AZ(pthread_cond_wait(&hp->cond, &hp->mtx));
 			if (!hp->h2) {
@@ -762,10 +765,10 @@ receive_frame(void *priv)
 		}
 		AZ(pthread_mutex_unlock(&hp->mtx));
 
-		if (expect_cont && (f->type != TYPE_CONTINUATION ||
-					expect_cont != s->id))
-			vtc_fatal(hp->vl, "Expected CONTINUATION frame for"
-					" stream %u", expect_cont);
+		if (expect_cont &&
+		    (f->type != TYPE_CONTINUATION || expect_cont != s->id))
+			vtc_fatal(hp->vl, "Expected CONTINUATION frame for "
+			    "stream %u", expect_cont);
 
 		/* parse the frame according to it type, and fill the metada */
 		switch (f->type) {
@@ -1028,15 +1031,12 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 		spec += 7;
 		CHECK_LAST_FRAME(GOAWAY);
 
-		if (!strcmp(spec, "err")) {
+		if (!strcmp(spec, "err"))
 			RETURN_BUFFED(f->md.goaway.err);
-		}
-		else if (!strcmp(spec, "laststream")) {
+		else if (!strcmp(spec, "laststream"))
 			RETURN_BUFFED(f->md.goaway.stream);
-		}
-		else if (!strcmp(spec, "debug")) {
+		else if (!strcmp(spec, "debug"))
 			return (f->md.goaway.debug);
-		}
 	}
 	/* SECTION: stream.spec.zexpect.zframe Generic frame
 	 * frame.data
@@ -1093,17 +1093,15 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 		if (s->id) {
 			snprintf(buf, 20, "%d", s->weight);
 			return (buf);
-		} else {
-			return NULL;
-		}
+		} else
+			return (NULL);
 	}
 	else if (!strcmp(spec, "stream.dependency")) {
 		if (s->id) {
 			snprintf(buf, 20, "%d", s->dependency);
 			return (buf);
-		} else {
-			return NULL;
-		}
+		} else
+			return (NULL);
 	}
 	/* SECTION: stream.spec.zexpect.ztable Index tables
 	 * tbl.dec.size / tbl.enc.size
@@ -1123,8 +1121,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	 *	Value of the header at index INT of the decoding/encoding
 	 *	table.
 	 */
-	else if (!strncmp(spec, "tbl.dec", 7) ||
-			!strncmp(spec, "tbl.enc", 7)) {
+	else if (!strncmp(spec, "tbl.dec", 7) || !strncmp(spec, "tbl.enc", 7)) {
 		if (spec[4] == 'd')
 			ctx = s->hp->decctx;
 		else
@@ -1141,15 +1138,12 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 			h = HPK_GetHdr(ctx, idx + 61);
 			return (h ? h->value.ptr : NULL);
 		}
-		else if (!strcmp(spec, ".size")) {
+		else if (!strcmp(spec, ".size"))
 			RETURN_BUFFED(HPK_GetTblSize(ctx));
-		}
-		else if (!strcmp(spec, ".maxsize")) {
+		else if (!strcmp(spec, ".maxsize"))
 			RETURN_BUFFED(HPK_GetTblMaxSize(ctx));
-		}
-		else if (!strcmp(spec, ".length")) {
+		else if (!strcmp(spec, ".length"))
 			RETURN_BUFFED(HPK_GetTblLength(ctx));
-		}
 	}
 	/* SECTION: stream.spec.zexpect.zre Request and response
 	 *
@@ -1483,11 +1477,10 @@ cmd_tx11obj(CMD_ARGS)
 			else if (AV_IS("never")) { hdr.t = hpk_never; }
 			else
 				vtc_fatal(vl, "first -litidxHdr arg can be "
-						"inc, not, never (got: %s)",
-						*av);
+				    "inc, not, never (got: %s)", *av);
 
 			STRTOU32_CHECK(hdr.i, av, p, vl,
-					"second -litidxHdr arg", 0);
+			    "second -litidxHdr arg", 0);
 
 			hdr.key.ptr = NULL;
 			hdr.key.len = 0;
@@ -1501,7 +1494,7 @@ cmd_tx11obj(CMD_ARGS)
 			else if (AV_IS("never")) { hdr.t = hpk_never; }
 			else
 				vtc_fatal(vl, "first -litHdr arg can be inc, "
-						"not, never (got: %s)", *av);
+				    "not, never (got: %s)", *av);
 
 			STR_ENC(av, key,   "second -litHdr");
 			STR_ENC(av, value, "fourth -litHdr");
@@ -1869,8 +1862,7 @@ cmd_txsettings(CMD_ARGS)
 				vbe32enc(cursor, 1);
 			else
 				vtc_fatal(vl, "Push parameter is either "
-						"\"true\" or \"false\", not %s",
-						*av);
+				    "\"true\" or \"false\", not %s", *av);
 			cursor += sizeof(uint32_t);
 			f.size += 6;
 		}
@@ -1878,24 +1870,21 @@ cmd_txsettings(CMD_ARGS)
 			PUT_KV(av, vl, hdrtbl, val, 0x1);
 			HPK_ResizeTbl(s->hp->decctx, val);
 		}
-		else if (!strcmp(*av, "-maxstreams")) {
+		else if (!strcmp(*av, "-maxstreams"))
 			PUT_KV(av, vl, maxstreams, val, 0x3);
-		}
 		else if (!strcmp(*av, "-winsize"))	{
 			PUT_KV(av, vl, winsize, val, 0x4);
 			VTAILQ_FOREACH(_s, &hp->streams, list)
 				_s->ws += (val - hp->iws);
 			hp->iws = val;
 		}
-		else if (!strcmp(*av, "-framesize"))	{
+		else if (!strcmp(*av, "-framesize"))
 			PUT_KV(av, vl, framesize, val, 0x5);
-		}
-		else if (!strcmp(*av, "-hdrsize")){
+		else if (!strcmp(*av, "-hdrsize"))
 			PUT_KV(av, vl, hdrsize, val, 0x6);
-		}
-		else if (!strcmp(*av, "-ack")) {
+		else if (!strcmp(*av, "-ack"))
 			f.flags |= 1;
-		} else
+		else
 			break;
 	}
 	if (*av != NULL)
@@ -1935,9 +1924,9 @@ cmd_txping(CMD_ARGS)
 			if (strlen(*av) != 8)
 				vtc_fatal(vl, "data must be a 8-char string, found  (%s)", *av);
 			f.data = *av;
-		} else if (!strcmp(*av, "-ack")) {
+		} else if (!strcmp(*av, "-ack"))
 			f.flags |= 1;
-		} else
+		else
 			break;
 	}
 	if (*av != NULL)
@@ -1984,10 +1973,9 @@ cmd_txgoaway(CMD_ARGS)
 	while (*++av) {
 		if (!strcmp(*av, "-err")) {
 			++av;
-			for (err=0; h2_errs[err]; err++) {
+			for (err=0; h2_errs[err]; err++)
 				if (!strcmp(h2_errs[err], *av))
 					break;
-			}
 
 			if (h2_errs[err])
 				continue;
@@ -2045,12 +2033,11 @@ cmd_txwinup(CMD_ARGS)
 	INIT_FRAME(f, WINDOW_UPDATE, 4, s->id, 0);
 	f.data = buf;
 
-	while (*++av) {
+	while (*++av)
 		if (!strcmp(*av, "-size")) {
 			STRTOU32_CHECK(size, av, p, vl, "-size", 0);
 		} else
 			break;
-	}
 	if (*av != NULL)
 		vtc_fatal(vl, "Unknown txwinup spec: %s\n", *av);
 
@@ -2095,10 +2082,10 @@ rxstuff(struct stream *s)
 	do { \
 	if (rt != wt) \
 		vtc_fatal(vl, "Frame #%d for %s was of type %s (%d) " \
-				"instead of %s (%d)", \
-				rcv, func, \
-				rt < TYPE_MAX ? h2_types[rt] : "?", rt, \
-				wt < TYPE_MAX ? h2_types[wt] : "?", wt); \
+		    "instead of %s (%d)", \
+		    rcv, func, \
+		    rt < TYPE_MAX ? h2_types[rt] : "?", rt, \
+		    wt < TYPE_MAX ? h2_types[wt] : "?", wt); \
 	} while (0);
 
 /* SECTION: stream.spec.data_11 rxhdrs
@@ -2131,9 +2118,9 @@ cmd_rxhdrs(CMD_ARGS)
 		if (!strcmp(*av, "-some")) {
 			STRTOU32_CHECK(times, av, p, vl, "-some", 0);
 			AN(times);
-		} else if (!strcmp(*av, "-all")) {
+		} else if (!strcmp(*av, "-all"))
 			loop = 1;
-		} else
+		else
 			break;
 	}
 	if (*av != NULL)
@@ -2163,14 +2150,13 @@ cmd_rxcont(CMD_ARGS)
 	(void)av;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 
-	while (*++av) {
-		if (!strcmp(*av, "-some")) {
+	while (*++av)
+		if (!strcmp(*av, "-some"))
 			STRTOU32_CHECK(times, av, p, vl, "-some", 0);
-		} else if (!strcmp(*av, "-all")) {
+		else if (!strcmp(*av, "-all"))
 			loop = 1;
-		} else
+		else
 			break;
-	}
 	if (*av != NULL)
 		vtc_fatal(vl, "Unknown rxcont spec: %s\n", *av);
 
@@ -2211,14 +2197,13 @@ cmd_rxdata(CMD_ARGS)
 	(void)av;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 
-	while (*++av) {
-		if (!strcmp(*av, "-some")) {
+	while (*++av)
+		if (!strcmp(*av, "-some"))
 			STRTOU32_CHECK(times, av, p, vl, "-some", 0);
-		} else if (!strcmp(*av, "-all")) {
+		else if (!strcmp(*av, "-all"))
 			loop = 1;
-		} else
+		else
 			break;
-	}
 	if (*av != NULL)
 		vtc_fatal(vl, "Unknown rxdata spec: %s\n", *av);
 
@@ -2339,11 +2324,11 @@ cmd_rxpush(CMD_ARGS)
 		(void)av; \
 		CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC); \
 		if ((s->frame = rxstuff(s))) \
-				return; \
+			return; \
 		if (s->frame->type != TYPE_ ## upctype) \
 			vtc_fatal(vl, "Received frame of type %d " \
-					"is invalid for %s", \
-					s->frame->type, "rx ## lctype"); \
+			    "is invalid for %s", \
+			    s->frame->type, "rx ## lctype"); \
 	}
 
 /* SECTION: stream.spec.prio_rxprio rxprio
@@ -2572,7 +2557,7 @@ stream_new(const char *name, struct http *h)
 	STRTOU32(s->id, name, p, h->vl, "stream");
 	if (s->id & (1U << 31))
 		vtc_fatal(h->vl, "Stream id must be a 31-bits integer "
-				"(found %s)", name);
+		    "(found %s)", name);
 
 	CHECK_OBJ_NOTNULL(h, HTTP_MAGIC);
 	s->hp = h;
@@ -2624,7 +2609,7 @@ stream_wait(struct stream *s)
 	AZ(pthread_join(s->tp, &res));
 	if (res != NULL)
 		vtc_fatal(s->hp->vl, "Stream %u returned \"%s\"", s->id,
-				(char *)res);
+		    (char *)res);
 
 	VTAILQ_FOREACH_SAFE(f, &s->fq, list, f2)
 		clean_frame(&f);
@@ -2752,27 +2737,27 @@ b64_settings(const struct http *hp, const char *s)
 	while (*s) {
 		v = 0;
 		for (shift = 42; shift >= 0; shift -= 6) {
-			if (*s >= 'A' && *s <= 'Z') {
+			if (*s >= 'A' && *s <= 'Z')
 				v |= (uint64_t)(*s - 'A') << shift;
-			} else if (*s >= 'a' && *s <= 'z') {
+			else if (*s >= 'a' && *s <= 'z')
 				v |= (uint64_t)(*s - 'a' + 26) << shift;
-			} else if (*s >= '0' && *s <= '9') {
+			else if (*s >= '0' && *s <= '9')
 				v |= (uint64_t)(*s - '0' + 52) << shift;
-			} else if (*s == '-')
+			else if (*s == '-')
 				v |= (uint64_t)62 << shift;
-			else if (*s == '_') {
+			else if (*s == '_')
 				v |= (uint64_t)63 << shift;
-			} else
-				vtc_fatal(hp->vl, "Bad \"HTTP2-Settings\" "
-						"header");
+			else
+				vtc_fatal(hp->vl,
+				    "Bad \"HTTP2-Settings\" header");
 			s++;
 		}
 		i = v >> 32;
 		v &= 0xffff;
 
-		if (i <= SETTINGS_MAX) {
+		if (i <= SETTINGS_MAX)
 			buf = h2_settings[i];
-		} else
+		else
 			buf = "unknown";
 
 		if (v == 1) {
