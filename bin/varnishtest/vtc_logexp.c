@@ -101,8 +101,10 @@
  *         Tag to match against
  *
  * regex:
- *         regular expression to match against (optional) ('*' is anything, '='
- *         is the value of the last matched record)
+ *         regular expression to match against (optional)
+ *
+ * For skip, vxid and tag, '*' matches anything, '=' expects the value of the
+ * previous matched record.
  */
 
 #include "config.h"
@@ -431,6 +433,9 @@ cmd_logexp_expect(CMD_ARGS)
 	(void)cmd;
 	CAST_OBJ_NOTNULL(le, priv, LOGEXP_MAGIC);
 	if (av[1] == NULL || av[2] == NULL || av[3] == NULL)
+		vtc_fatal(vl, "Syntax error");
+
+	if (av[4] != NULL && av[5] != NULL)
 		vtc_fatal(vl, "Syntax error");
 
 	if (!strcmp(av[1], "*"))
