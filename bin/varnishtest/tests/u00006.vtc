@@ -52,7 +52,7 @@ client c1 {
 
 delay 1
 
-shell "mv ${tmpdir}/vlog.bin ${tmpdir}/vlog.bin~ >/dev/null 2>&1"
+shell "mv ${tmpdir}/vlog.bin ${tmpdir}/vlog.bin~"
 shell "kill -HUP `cat ${tmpdir}/vlog.pid`"
 
 client c1 {

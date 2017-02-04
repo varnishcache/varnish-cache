@@ -15,4 +15,4 @@ client c1 {
 delay .2
 
 shell -err -expect {Could not open pid/lock} \
-	"varnishd -P ${tmpdir}/v1/varnishd.pid -b 127.0.0.1:80 -a :0 -n ${tmpdir} 2>&1"
+	"varnishd -P ${v1_name}/varnishd.pid -b 127.0.0.1:80 -a :0 -n ${tmpdir}"

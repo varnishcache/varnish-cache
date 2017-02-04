@@ -67,7 +67,7 @@ client c1 {
 
 delay 1
 
-shell "mv ${tmpdir}/ncsa.log ${tmpdir}/ncsa.old.log >/dev/null 2>&1"
+shell "mv ${tmpdir}/ncsa.log ${tmpdir}/ncsa.old.log"
 shell "kill -HUP `cat ${tmpdir}/ncsa.pid`"
 
 client c1 {
