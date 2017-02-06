@@ -253,11 +253,13 @@ vmod_register_obj_events(VRT_CTX, struct vmod_priv *priv)
 }
 
 VCL_VOID __match_proto__()
-vmod_init_fail(VRT_CTX)
+vmod_fail(VRT_CTX)
 {
 
-	AN(ctx->msg);
-	VSB_printf(ctx->msg, "Planned failure in vcl_init{}");
+	if(ctx->msg != NULL)
+		VSB_printf(ctx->msg, "Forced failure");
+	else if (ctx->vsl != NULL)
+		VSLb(ctx->vsl, SLT_Debug, "Forced failure");
 	VRT_handling(ctx, VCL_RET_FAIL);
 }
 

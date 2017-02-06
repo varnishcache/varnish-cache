@@ -143,9 +143,9 @@ $Function VOID register_obj_events(PRIV_VCL)
 
 Register the vmod to receive expiry callbacks
 
-$Function VOID init_fail()
+$Function VOID fail()
 
-Function to fail vcl_init{}
+Function to fail vcl code.  (See also: RFC748)
 
 $Function VOID sleep(DURATION)
 

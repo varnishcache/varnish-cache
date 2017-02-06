@@ -13,7 +13,7 @@ logexpect l1 -v v1 -g raw {
 
 } -start
 
-varnish v1 -errvcl "Planned failure in vcl_init" {
+varnish v1 -errvcl "Forced failure" {
 
 	import debug;
 	import std;
@@ -24,7 +24,7 @@ varnish v1 -errvcl "Planned failure in vcl_init" {
 
 	sub vcl_init {
 		std.log("Should happen first");
-		debug.init_fail();
+		debug.fail();
 		std.log("Should not happen");
 	}
 	sub vcl_fini {

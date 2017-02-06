@@ -19,7 +19,7 @@ varnish v1 -vcl+backend {
 
 	sub vcl_init {
 		if (!debug.match_acl(loopback, "127.0.0.127")) {
-			debug.init_fail();
+			debug.fail();
 		}
 	}
 
