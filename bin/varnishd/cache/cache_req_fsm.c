@@ -601,6 +601,10 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	VCL_pipe_method(req->vcl, wrk, req, bo, NULL);
 
 	switch (wrk->handling) {
+	case VCL_RET_FAIL:
+		req->req_step = R_STP_VCLFAIL;
+		nxt = REQ_FSM_MORE;
+		break;
 	case VCL_RET_SYNTH:
 		req->req_step = R_STP_SYNTH;
 		nxt = REQ_FSM_MORE;

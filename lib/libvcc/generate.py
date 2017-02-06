@@ -94,7 +94,7 @@ returns = (
 	),
 	('pipe',
 		"C",
-		('synth', 'pipe',)
+		('fail', 'synth', 'pipe',)
 	),
 	('pass',
 		"C",

@@ -8,6 +8,9 @@ server s1 {
 varnish v1 -vcl+backend {
 	import debug;
 	sub vcl_recv {
+		if (req.http.foo == "pipe") {
+			return(pipe);
+		}
 		if (req.http.foo == "bar") {
 			return(synth(748));
 		}
@@ -18,6 +21,12 @@ varnish v1 -vcl+backend {
 	}
 	sub vcl_hash {
 		if (req.http.foo == "hash") {
+			debug.fail();
+			set req.http.not = "Should not happen";
+		}
+	}
+	sub vcl_pipe {
+		if (req.http.foo == "pipe") {
 			debug.fail();
 			set req.http.not = "Should not happen";
 		}
@@ -111,6 +120,28 @@ client c1 {
 } -run
 
 varnish v1 -expect sc_vcl_failure == 4
+
+logexpect l1 -wait
+
+#######################################################################
+# Fail in vcl_pipe, no handling in vcl_synth
+
+logexpect l1 -v v1 -g raw {
+	expect * 1012	VCL_call	"PIPE"
+	expect 0 1012	Debug		"Forced failure"
+	expect 0 1012	VCL_return	"fail"
+} -start
+
+client c1 {
+	txreq -hdr "foo: pipe"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+} -run
+
+delay 1
+
+varnish v1 -expect sc_vcl_failure == 5
 
 logexpect l1 -wait
 
