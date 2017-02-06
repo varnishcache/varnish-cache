@@ -13,16 +13,19 @@ varnish v1 -vcl+backend {
 		}
 		if (req.restarts == 0) {
 			debug.fail();
+			set req.http.not = "Should not happen";
 		}
 	}
 	sub vcl_hash {
 		if (req.http.foo == "hash") {
 			debug.fail();
+			set req.http.not = "Should not happen";
 		}
 	}
 	sub vcl_synth {
 		if (resp.status == 748) {
 			debug.fail();
+			set req.http.not = "Should not happen";
 		}
 		if (req.restarts == 0 && req.http.foo == "foo") {
 			return (restart);
