@@ -2,67 +2,27 @@ varnishtest "Test VCL failures"
 
 server s1 {
 	rxreq
+	expect req.url == /hit
 	txresp
 } -start
 
 varnish v1 -vcl+backend {
 	import debug;
 	sub vcl_recv {
-		if (req.http.foo == "pipe") { return(pipe); }
-		if (req.http.foo == "pass") { return(pass); }
-		if (req.http.foo == "purge") { return(purge); }
-		if (req.http.foo == "miss") { return(hash); }
-		if (req.http.foo == "bar") {
-			return(synth(748));
-		}
 		if (req.restarts == 0) {
 			debug.fail();
 			set req.http.not = "Should not happen";
 		}
 	}
-	sub vcl_hash {
-		if (req.http.foo == "hash") {
-			debug.fail();
-			set req.http.not = "Should not happen";
-		}
-	}
-	sub vcl_miss {
-		if (req.http.foo == "miss") {
-			debug.fail();
-			set req.http.not = "Should not happen";
-		}
-	}
-	sub vcl_pipe {
-		if (req.http.foo == "pipe") {
-			debug.fail();
-			set req.http.not = "Should not happen";
-		}
-	}
-	sub vcl_pass {
-		if (req.http.foo == "pass") {
-			debug.fail();
-			set req.http.not = "Should not happen";
-		}
-	}
-	sub vcl_purge {
-		if (req.http.foo == "purge") {
-			debug.fail();
-			set req.http.not = "Should not happen";
-		}
-	}
 	sub vcl_synth {
-		if (resp.status == 748) {
-			debug.fail();
-			set req.http.not = "Should not happen";
-		}
-		if (req.restarts == 0 && req.http.foo == "foo") {
+		if (req.restarts == 0 && req.http.foo == "restart") {
 			return (restart);
 		}
 	}
 } -start
 
 #######################################################################
-# Fail in vcl_recv, no handling in vcl_synth
+# Fail in vcl_recv
 
 logexpect l1 -v v1 -g raw {
 	expect * 1001	VCL_call	"RECV"
@@ -93,7 +53,7 @@ logexpect l1 -v v1 -g raw {
 } -start
 
 client c1 {
-	txreq -hdr "foo: foo"
+	txreq -url /hit -hdr "foo: restart"
 	rxresp
 	expect resp.status == 200
 	expect resp.reason == "OK"
@@ -107,6 +67,21 @@ logexpect l1 -wait
 #######################################################################
 # Fail in vcl_synth
 
+varnish v1 -vcl+backend {
+	import debug;
+	sub vcl_recv {
+		if (req.http.foo == "synth") {
+			return(synth(748));
+		}
+	}
+	sub vcl_synth {
+		if (resp.status == 748) {
+			debug.fail();
+			set req.http.not = "Should not happen";
+		}
+	}
+}
+
 logexpect l1 -v v1 -g raw {
 	expect * 1007	VCL_call	"SYNTH"
 	expect * 1007	Debug		"Forced failure"
@@ -114,7 +89,7 @@ logexpect l1 -v v1 -g raw {
 } -start
 
 client c1 {
-	txreq -hdr "foo: bar"
+	txreq -hdr "foo: synth"
 	expect_close
 } -run
 
@@ -123,7 +98,17 @@ varnish v1 -expect sc_vcl_failure == 3
 logexpect l1 -wait
 
 #######################################################################
-# Fail in vcl_hash, no handling in vcl_synth
+# Fail in vcl_hash
+
+varnish v1 -vcl+backend {
+	import debug;
+	sub vcl_hash {
+		if (req.http.foo == "hash") {
+			debug.fail();
+			set req.http.not = "Should not happen";
+		}
+	}
+}
 
 logexpect l1 -v v1 -g raw {
 	expect * 1009	VCL_call	"HASH"
@@ -143,7 +128,21 @@ varnish v1 -expect sc_vcl_failure == 4
 logexpect l1 -wait
 
 #######################################################################
-# Fail in vcl_pipe, no handling in vcl_synth
+# Fail in vcl_pipe
+
+varnish v1 -vcl+backend {
+	import debug;
+	sub vcl_recv {
+		if (req.http.foo == "pipe") { return(pipe); }
+	}
+	sub vcl_pipe {
+		if (req.http.foo == "pipe") {
+			debug.fail();
+			set req.http.not = "Should not happen";
+		}
+	}
+}
+
 
 logexpect l1 -v v1 -g raw {
 	expect * 1012	VCL_call	"PIPE"
@@ -165,6 +164,19 @@ logexpect l1 -wait
 #######################################################################
 # Fail in vcl_pass, no handling in vcl_synth
 
+varnish v1 -vcl+backend {
+	import debug;
+	sub vcl_recv {
+		if (req.http.foo == "pass") { return(pass); }
+	}
+	sub vcl_pass {
+		if (req.http.foo == "pass") {
+			debug.fail();
+			set req.http.not = "Should not happen";
+		}
+	}
+}
+
 logexpect l1 -v v1 -g raw {
 	expect * 1014	VCL_call	"PASS"
 	expect 0 1014	Debug		"Forced failure"
@@ -183,7 +195,20 @@ varnish v1 -expect sc_vcl_failure == 6
 logexpect l1 -wait
 
 #######################################################################
-# Fail in vcl_purge, no handling in vcl_synth
+# Fail in vcl_purge
+
+varnish v1 -vcl+backend {
+	import debug;
+	sub vcl_recv {
+		if (req.http.foo == "purge") { return(purge); }
+	}
+	sub vcl_purge {
+		if (req.http.foo == "purge") {
+			debug.fail();
+			set req.http.not = "Should not happen";
+		}
+	}
+}
 
 logexpect l1 -v v1 -g raw {
 	expect * 1016	VCL_call	"PURGE"
@@ -203,7 +228,20 @@ varnish v1 -expect sc_vcl_failure == 7
 logexpect l1 -wait
 
 #######################################################################
-# Fail in vcl_miss, no handling in vcl_synth
+# Fail in vcl_miss
+
+varnish v1 -vcl+backend {
+	import debug;
+	sub vcl_recv {
+		if (req.http.foo == "miss") { return(hash); }
+	}
+	sub vcl_miss {
+		if (req.http.foo == "miss") {
+			debug.fail();
+			set req.http.not = "Should not happen";
+		}
+	}
+}
 
 logexpect l1 -v v1 -g raw {
 	expect * 1018	VCL_call	"MISS"
@@ -217,8 +255,6 @@ client c1 {
 	expect resp.status == 503
 	expect resp.reason == "VCL failed"
 } -run
-
-delay 1
 
 varnish v1 -expect sc_vcl_failure == 8
 
