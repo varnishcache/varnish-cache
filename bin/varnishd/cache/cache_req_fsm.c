@@ -752,7 +752,10 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	SHA256_Init(&sha256ctx);
 	VCL_hash_method(req->vcl, wrk, req, NULL, &sha256ctx);
-	assert(wrk->handling == VCL_RET_LOOKUP);
+	if (wrk->handling == VCL_RET_FAIL)
+		recv_handling = wrk->handling;
+	else
+		assert(wrk->handling == VCL_RET_LOOKUP);
 	SHA256_Final(req->digest, &sha256ctx);
 
 	switch(recv_handling) {

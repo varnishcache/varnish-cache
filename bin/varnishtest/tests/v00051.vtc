@@ -15,6 +15,11 @@ varnish v1 -vcl+backend {
 			debug.fail();
 		}
 	}
+	sub vcl_hash {
+		if (req.http.foo == "hash") {
+			debug.fail();
+		}
+	}
 	sub vcl_synth {
 		if (resp.status == 748) {
 			debug.fail();
@@ -85,3 +90,24 @@ client c1 {
 varnish v1 -expect sc_vcl_failure == 3
 
 logexpect l1 -wait
+
+#######################################################################
+# Fail in vcl_hash, no handling in vcl_synth
+
+logexpect l1 -v v1 -g raw {
+	expect * 1009	VCL_call	"HASH"
+	expect 0 1009	Debug		"Forced failure"
+	expect 0 1009	VCL_return	"fail"
+} -start
+
+client c1 {
+	txreq -hdr "foo: hash"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+} -run
+
+varnish v1 -expect sc_vcl_failure == 4
+
+logexpect l1 -wait
+

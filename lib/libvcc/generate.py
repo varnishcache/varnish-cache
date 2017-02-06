@@ -102,7 +102,7 @@ returns = (
 	),
 	('hash',
 		"C",
-		('lookup',)
+		('fail', 'lookup',)
 	),
 	('purge',
 		"C",
