@@ -519,6 +519,9 @@ cnt_miss(struct worker *wrk, struct req *req)
 			(void)HSH_DerefObjCore(wrk, &req->stale_oc, 0);
 		req->req_step = R_STP_FETCH;
 		return (REQ_FSM_MORE);
+	case VCL_RET_FAIL:
+		req->req_step = R_STP_VCLFAIL;
+		break;
 	case VCL_RET_SYNTH:
 		req->req_step = R_STP_SYNTH;
 		break;
@@ -553,6 +556,9 @@ cnt_pass(struct worker *wrk, struct req *req)
 
 	VCL_pass_method(req->vcl, wrk, req, NULL, NULL);
 	switch (wrk->handling) {
+	case VCL_RET_FAIL:
+		req->req_step = R_STP_VCLFAIL;
+		break;
 	case VCL_RET_SYNTH:
 		req->req_step = R_STP_SYNTH;
 		break;
@@ -836,6 +842,9 @@ cnt_purge(struct worker *wrk, struct req *req)
 	switch (wrk->handling) {
 	case VCL_RET_RESTART:
 		req->req_step = R_STP_RESTART;
+		break;
+	case VCL_RET_FAIL:
+		req->req_step = R_STP_VCLFAIL;
 		break;
 	case VCL_RET_SYNTH:
 		req->req_step = R_STP_SYNTH;

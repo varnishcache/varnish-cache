@@ -98,7 +98,7 @@ returns = (
 	),
 	('pass',
 		"C",
-		('synth', 'restart', 'fetch',)
+		('fail', 'synth', 'restart', 'fetch',)
 	),
 	('hash',
 		"C",
@@ -106,11 +106,11 @@ returns = (
 	),
 	('purge',
 		"C",
-		('synth', 'restart',)
+		('fail', 'synth', 'restart',)
 	),
 	('miss',
 		"C",
-		('synth', 'restart', 'pass', 'fetch',)
+		('fail', 'synth', 'restart', 'pass', 'fetch',)
 	),
 	('hit',
 		"C",
