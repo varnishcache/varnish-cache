@@ -495,6 +495,11 @@ VSC_FF(n_vcl_discard,		uint64_t, 0, 'c', 'i', diag,
 	""
 )
 
+VSC_FF(vcl_fail,		uint64_t, 1, 'c', 'i', info,
+    "VCL failures",
+	"Count of failures which prevented VCL from completing."
+)
+
 /*--------------------------------------------------------------------*/
 
 VSC_FF(bans,			uint64_t, 0, 'g', 'i', info,

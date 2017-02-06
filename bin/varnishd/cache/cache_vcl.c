@@ -1057,6 +1057,8 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 	func(&ctx);
 	VSLb(vsl, SLT_VCL_return, "%s", VCL_Return_Name(wrk->handling));
 	wrk->cur_method |= 1;		// Magic marker
+	if (wrk->handling == VCL_RET_FAIL)
+		wrk->stats->vcl_fail++;
 
 	/*
 	 * VCL/Vmods are not allowed to make permanent allocations from

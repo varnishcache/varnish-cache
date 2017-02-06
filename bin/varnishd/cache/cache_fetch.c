@@ -280,7 +280,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	VCL_backend_fetch_method(bo->vcl, wrk, NULL, bo, NULL);
 
 	bo->uncacheable = bo->do_pass;
-	if (wrk->handling == VCL_RET_ABANDON)
+	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL)
 		return (F_STP_FAIL);
 
 	assert (wrk->handling == VCL_RET_FETCH);
@@ -442,7 +442,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, NULL);
 
-	if (wrk->handling == VCL_RET_ABANDON) {
+	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL) {
 		bo->htc->doclose = SC_RESP_CLOSE;
 		VDI_Finish(bo->wrk, bo);
 		return (F_STP_FAIL);
@@ -859,7 +859,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	AZ(VSB_finish(synth_body));
 
-	if (wrk->handling == VCL_RET_ABANDON) {
+	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL) {
 		VSB_destroy(&synth_body);
 		return (F_STP_FAIL);
 	}

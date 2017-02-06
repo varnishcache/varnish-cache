@@ -130,15 +130,15 @@ returns = (
 
 	('backend_fetch',
 		"B",
-		('fetch', 'abandon')
+		('fail', 'fetch', 'abandon')
 	),
 	('backend_response',
 		"B",
-		('deliver', 'retry', 'abandon')
+		('fail', 'deliver', 'retry', 'abandon')
 	),
 	('backend_error',
 		"B",
-		('deliver', 'retry', 'abandon')
+		('fail', 'deliver', 'retry', 'abandon')
 	),
 
 	###############################################################

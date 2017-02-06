@@ -37,6 +37,7 @@ client c1 {
 	expect resp.reason == "VCL failed"
 } -run
 
+varnish v1 -expect vcl_fail == 1
 varnish v1 -expect sc_vcl_failure == 1
 
 logexpect l1 -wait
@@ -59,6 +60,7 @@ client c1 {
 	expect resp.reason == "OK"
 } -run
 
+varnish v1 -expect vcl_fail == 2
 # NB: This is correct, req->doclose = SC_VCL_FAILURE latches
 varnish v1 -expect sc_vcl_failure == 2
 
@@ -93,6 +95,7 @@ client c1 {
 	expect_close
 } -run
 
+varnish v1 -expect vcl_fail == 3
 varnish v1 -expect sc_vcl_failure == 3
 
 logexpect l1 -wait
@@ -123,6 +126,7 @@ client c1 {
 	expect resp.reason == "VCL failed"
 } -run
 
+varnish v1 -expect vcl_fail == 4
 varnish v1 -expect sc_vcl_failure == 4
 
 logexpect l1 -wait
@@ -157,6 +161,7 @@ client c1 {
 	expect resp.reason == "VCL failed"
 } -run
 
+varnish v1 -expect vcl_fail == 5
 varnish v1 -expect sc_vcl_failure == 5
 
 logexpect l1 -wait
@@ -190,6 +195,7 @@ client c1 {
 	expect resp.reason == "VCL failed"
 } -run
 
+varnish v1 -expect vcl_fail == 6
 varnish v1 -expect sc_vcl_failure == 6
 
 logexpect l1 -wait
@@ -223,6 +229,7 @@ client c1 {
 	expect resp.reason == "VCL failed"
 } -run
 
+varnish v1 -expect vcl_fail == 7
 varnish v1 -expect sc_vcl_failure == 7
 
 logexpect l1 -wait
@@ -253,6 +260,7 @@ client c1 {
 	expect resp.reason == "VCL failed"
 } -run
 
+varnish v1 -expect vcl_fail == 8
 varnish v1 -expect sc_vcl_failure == 8
 
 logexpect l1 -wait
@@ -283,6 +291,7 @@ client c1 {
 	expect resp.reason == "VCL failed"
 } -run
 
+varnish v1 -expect vcl_fail == 9
 varnish v1 -expect sc_vcl_failure == 9
 
 logexpect l1 -wait
@@ -313,6 +322,105 @@ client c1 {
 	expect resp.reason == "VCL failed"
 } -run
 
+varnish v1 -expect vcl_fail == 10
+varnish v1 -expect sc_vcl_failure == 10
+
+logexpect l1 -wait
+
+#######################################################################
+# Fail in vcl_backend_fetch
+
+varnish v1 -vcl+backend {
+	import debug;
+	sub vcl_backend_fetch {
+		debug.fail();
+		set bereq.http.not = "Should not happen";
+	}
+}
+
+logexpect l1 -v v1 -g raw {
+	expect * 1025	VCL_call	"BACKEND_FETCH"
+	expect 0 1025	Debug		"Forced failure"
+	expect 0 1025	VCL_return	"fail"
+} -start
+
+client c1 {
+	txreq -url /backend_fetch
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "Service Unavailable"
+} -run
+
+varnish v1 -expect vcl_fail == 11
+varnish v1 -expect sc_vcl_failure == 10
+
+logexpect l1 -wait
+
+#######################################################################
+# Fail in vcl_backend_error
+
+server s1 {
+	rxreq
+	expect req.url == /backend_error
+} -start
+
+varnish v1 -vcl+backend {
+	import debug;
+	sub vcl_backend_error {
+		debug.fail();
+		set bereq.http.not = "Should not happen";
+	}
+}
+
+logexpect l1 -v v1 -g raw {
+	expect * 1028	VCL_call	"BACKEND_ERROR"
+	expect 0 1028	Debug		"Forced failure"
+	expect 0 1028	VCL_return	"fail"
+} -start
+
+client c1 {
+	txreq -url /backend_error
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "Service Unavailable"
+} -run
+
+varnish v1 -expect vcl_fail == 12
+varnish v1 -expect sc_vcl_failure == 10
+
+logexpect l1 -wait
+
+#######################################################################
+# Fail in vcl_backend_response
+
+server s1 {
+	rxreq
+	expect req.url == /backend_response
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import debug;
+	sub vcl_backend_response {
+		debug.fail();
+		set bereq.http.not = "Should not happen";
+	}
+}
+
+logexpect l1 -v v1 -g raw {
+	expect * 1031	VCL_call	"BACKEND_RESPONSE"
+	expect 0 1031	Debug		"Forced failure"
+	expect 0 1031	VCL_return	"fail"
+} -start
+
+client c1 {
+	txreq -url /backend_response
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "Service Unavailable"
+} -run
+
+varnish v1 -expect vcl_fail == 13
 varnish v1 -expect sc_vcl_failure == 10
 
 logexpect l1 -wait
