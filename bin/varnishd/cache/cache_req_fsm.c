@@ -117,6 +117,9 @@ cnt_deliver(struct worker *wrk, struct req *req)
 		case VCL_RET_RESTART:
 			req->req_step = R_STP_RESTART;
 			break;
+		case VCL_RET_FAIL:
+			req->req_step = R_STP_VCLFAIL;
+			break;
 		case VCL_RET_SYNTH:
 			req->req_step = R_STP_SYNTH;
 			break;
@@ -473,6 +476,9 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		return (REQ_FSM_MORE);
 	case VCL_RET_RESTART:
 		req->req_step = R_STP_RESTART;
+		break;
+	case VCL_RET_FAIL:
+		req->req_step = R_STP_VCLFAIL;
 		break;
 	case VCL_RET_SYNTH:
 		req->req_step = R_STP_SYNTH;

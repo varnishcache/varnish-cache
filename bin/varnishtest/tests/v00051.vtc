@@ -232,9 +232,6 @@ logexpect l1 -wait
 
 varnish v1 -vcl+backend {
 	import debug;
-	sub vcl_recv {
-		if (req.http.foo == "miss") { return(hash); }
-	}
 	sub vcl_miss {
 		if (req.http.foo == "miss") {
 			debug.fail();
@@ -250,13 +247,73 @@ logexpect l1 -v v1 -g raw {
 } -start
 
 client c1 {
-	txreq -url /x -hdr "foo: miss"
+	txreq -url /miss -hdr "foo: miss"
 	rxresp
 	expect resp.status == 503
 	expect resp.reason == "VCL failed"
 } -run
 
 varnish v1 -expect sc_vcl_failure == 8
+
+logexpect l1 -wait
+
+#######################################################################
+# Fail in vcl_hit
+
+varnish v1 -vcl+backend {
+	import debug;
+	sub vcl_hit {
+		if (req.http.foo == "hit") {
+			debug.fail();
+			set req.http.not = "Should not happen";
+		}
+	}
+}
+
+logexpect l1 -v v1 -g raw {
+	expect * 1020	VCL_call	"HIT"
+	expect 0 1020	Debug		"Forced failure"
+	expect 0 1020	VCL_return	"fail"
+} -start
+
+client c1 {
+	txreq -url /hit -hdr "foo: hit"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+} -run
+
+varnish v1 -expect sc_vcl_failure == 9
+
+logexpect l1 -wait
+
+#######################################################################
+# Fail in vcl_deliver
+
+varnish v1 -vcl+backend {
+	import debug;
+	sub vcl_deliver {
+		if (req.http.foo == "deliver") {
+			debug.fail();
+			set req.http.not = "Should not happen";
+		}
+	}
+}
+
+logexpect l1 -v v1 -g raw {
+	expect * 1022	VCL_call	"DELIVER"
+	expect 0 1022	Debug		"Forced failure"
+	expect 0 1022	VCL_return	"fail"
+} -start
+
+client c1 {
+	txreq -url /hit -hdr "foo: deliver"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+} -run
+
+varnish v1 -expect sc_vcl_failure == 10
 
 logexpect l1 -wait
 
