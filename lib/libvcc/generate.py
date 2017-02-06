@@ -90,7 +90,7 @@ returns = (
 
 	('recv',
 		"C",
-		('synth', 'pass', 'pipe', 'hash', 'purge', 'vcl')
+		('fail', 'synth', 'pass', 'pipe', 'hash', 'purge', 'vcl')
 	),
 	('pipe',
 		"C",
@@ -122,7 +122,7 @@ returns = (
 	),
 	('synth',
 		"C",
-		('restart', 'deliver',)
+		('fail', 'restart', 'deliver',)
 	),
 
 	###############################################################

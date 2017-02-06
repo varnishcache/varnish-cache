@@ -1,0 +1,87 @@
+varnishtest "Test VCL failures"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import debug;
+	sub vcl_recv {
+		if (req.http.foo == "bar") {
+			return(synth(748));
+		}
+		if (req.restarts == 0) {
+			debug.fail();
+		}
+	}
+	sub vcl_synth {
+		if (resp.status == 748) {
+			debug.fail();
+		}
+		if (req.restarts == 0 && req.http.foo == "foo") {
+			return (restart);
+		}
+	}
+} -start
+
+#######################################################################
+# Fail in vcl_recv, no handling in vcl_synth
+
+logexpect l1 -v v1 -g raw {
+	expect * 1001	VCL_call	"RECV"
+	expect 0 1001	Debug		"Forced failure"
+	expect 0 1001	VCL_return	"fail"
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+} -run
+
+varnish v1 -expect sc_vcl_failure == 1
+
+logexpect l1 -wait
+
+#######################################################################
+# Fail in vcl_recv, vcl_synth restarts successfully
+
+logexpect l1 -v v1 -g raw {
+	expect * 1003	VCL_call	"RECV"
+	expect 0 1003	Debug		"Forced failure"
+	expect 0 1003	VCL_return	"fail"
+	expect * 1003	VCL_call	"SYNTH"
+	expect 0 1003	VCL_return	"restart"
+} -start
+
+client c1 {
+	txreq -hdr "foo: foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.reason == "OK"
+} -run
+
+# NB: This is correct, req->doclose = SC_VCL_FAILURE latches
+varnish v1 -expect sc_vcl_failure == 2
+
+logexpect l1 -wait
+
+#######################################################################
+# Fail in vcl_synth
+
+logexpect l1 -v v1 -g raw {
+	expect * 1007	VCL_call	"SYNTH"
+	expect * 1007	Debug		"Forced failure"
+	expect 0 1007	VCL_return	"fail"
+} -start
+
+client c1 {
+	txreq -hdr "foo: bar"
+	expect_close
+} -run
+
+varnish v1 -expect sc_vcl_failure == 3
+
+logexpect l1 -wait

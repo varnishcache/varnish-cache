@@ -140,6 +140,26 @@ cnt_deliver(struct worker *wrk, struct req *req)
 }
 
 /*--------------------------------------------------------------------
+ * VCL failed, die horribly
+ */
+
+static enum req_fsm_nxt
+cnt_vclfail(const struct worker *wrk, struct req *req)
+{
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	HTTP_Copy(req->http, req->http0);
+	WS_Reset(req->ws, req->ws_req);
+	req->err_code = 503;
+	req->err_reason = "VCL failed";
+	req->req_step = R_STP_SYNTH;
+	req->doclose = SC_VCL_FAILURE;
+	return (REQ_FSM_MORE);
+}
+
+/*--------------------------------------------------------------------
  * Emit a synthetic response
  */
 
@@ -177,20 +197,32 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	AZ(VSB_finish(synth_body));
 
-	http_Unset(h, H_Content_Length);
-	http_PrintfHeader(req->resp, "Content-Length: %zd",
-	    VSB_len(synth_body));
-
-	/* Discard any lingering request body before delivery */
-	(void)VRB_Ignore(req);
+	if (wrk->handling == VCL_RET_FAIL) {
+		VSB_destroy(&synth_body);
+		req->doclose = SC_VCL_FAILURE;
+		VSLb_ts_req(req, "Resp", W_TIM_real(wrk));
+		http_Teardown(req->resp);
+		return (REQ_FSM_DONE);
+	}
 
 	if (wrk->handling == VCL_RET_RESTART) {
+		/*
+		 * XXX: Should we reset req->doclose = SC_VCL_FAILURE
+		 * XXX: If so, to what ?
+		 */
 		HTTP_Setup(h, req->ws, req->vsl, SLT_RespMethod);
 		VSB_destroy(&synth_body);
 		req->req_step = R_STP_RESTART;
 		return (REQ_FSM_MORE);
 	}
 	assert(wrk->handling == VCL_RET_DELIVER);
+
+	http_Unset(h, H_Content_Length);
+	http_PrintfHeader(req->resp, "Content-Length: %zd",
+	    VSB_len(synth_body));
+
+	/* Discard any lingering request body before delivery */
+	(void)VRB_Ignore(req);
 
 	req->objcore = HSH_Private(wrk);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
@@ -753,6 +785,9 @@ cnt_recv(struct worker *wrk, struct req *req)
 		return (REQ_FSM_MORE);
 	case VCL_RET_SYNTH:
 		req->req_step = R_STP_SYNTH;
+		return (REQ_FSM_MORE);
+	case VCL_RET_FAIL:
+		req->req_step = R_STP_VCLFAIL;
 		return (REQ_FSM_MORE);
 	default:
 		WRONG("Illegal return from vcl_recv{}");
