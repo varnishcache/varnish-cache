@@ -38,10 +38,10 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include "vdef.h"
 #include "vas.h"
 #include "vsa.h"
 #include "vrt.h"
-#include "vdef.h"
 #include "miniobj.h"
 
 /*

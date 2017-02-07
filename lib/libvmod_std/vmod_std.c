@@ -34,13 +34,14 @@
 #include <stdlib.h>
 #include <syslog.h>
 
+#include "cache/cache.h"
+
 #include "vrnd.h"
 #include "vrt.h"
 #include "vtcp.h"
 #include "vsa.h"
 #include "vtim.h"
 
-#include "cache/cache.h"
 #include "cache/cache_director.h"
 
 #include "vcc_if.h"

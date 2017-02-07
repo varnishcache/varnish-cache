@@ -30,9 +30,9 @@
 
 #include <stdlib.h>
 
-#include "vrt.h"
-
 #include "cache/cache.h"
+
+#include "vrt.h"
 
 #include "vcc_if.h"
 

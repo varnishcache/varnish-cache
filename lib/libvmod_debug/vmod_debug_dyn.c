@@ -31,10 +31,11 @@
 #include <netdb.h>
 #include <stdlib.h>
 
+#include "cache/cache.h"
+
 #include "vcl.h"
 #include "vrt.h"
 
-#include "cache/cache.h"
 #include "cache/cache_director.h"
 #include "cache/cache_backend.h"
 
