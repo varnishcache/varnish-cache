@@ -97,17 +97,14 @@ VRT_l_##obj##_status(VRT_CTX, long num)					\
 									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->http_##obj, HTTP_MAGIC);			\
-	if (num > 65535) {						\
-		VSLb(ctx->vsl, SLT_VCL_Error,				\
-		    "%s.status > 65535", #obj);				\
-		WS_MarkOverflow(ctx->http_##obj->ws);			\
-	} else if ((num % 1000) < 100) {				\
-		VSLb(ctx->vsl, SLT_VCL_Error,				\
-		    "illegal %s.status (..0##)", #obj);			\
-		WS_MarkOverflow(ctx->http_##obj->ws);			\
-	} else {							\
+	if (num < 0)							\
+		VRT_fail(ctx, "%s.status (%ld) is negative", #obj, num); \
+	else if (num > 65535)						\
+		VRT_fail(ctx, "%s.status (%ld) > 65535", #obj, num);	\
+	else if ((num % 1000) < 100)					\
+		VRT_fail(ctx, "illegal %s.status (%ld) (..0##)", #obj, num); \
+	else								\
 		http_SetStatus(ctx->http_##obj, (uint16_t)num);		\
-	}								\
 }
 
 #define VRT_STATUS_R(obj)						\

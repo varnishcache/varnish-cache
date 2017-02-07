@@ -91,6 +91,15 @@ varnish v1 -vcl+backend {
 		    return (synth(400));
 		}
 	    }
+	    if (req.http.huge == "yes") {
+		set resp.status = 65536;
+	    }
+	    if (req.http.small == "yes") {
+		set resp.status = 99;
+	    }
+	    if (req.http.negative == "yes") {
+		set resp.status = -200;
+	    }
 	}
 
 	sub vcl_recv {
@@ -100,6 +109,9 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_synth {
+	    if (resp.reason == "VCL failed") {
+		return (deliver);
+	    }
 	    std.log("synth " + resp.status + " " + resp.reason);
 	    if (resp.status != 22301) {
 		set resp.status = 501;
@@ -148,10 +160,35 @@ client c1 {
 	rxresp
 	expect resp.status == 302
 	expect resp.reason == "Wrong Postcode"
-}
+} -run
 
-client c1 -run
+logexpect l1 -v v1 {
+	expect * * VCL_Error "illegal resp.status .99. ...0##."
+	expect * * VCL_Error "resp.status .65536. > 65535"
+	expect * * VCL_Error "resp.status .-200. is negative"
+} -start
 
-server s1 -wait
+client c1 {
+	txreq -url "/a" -hdr "Small: yes"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
 
-varnish v1 -stop
+	expect_close
+} -run
+
+client c1 {
+	txreq -url "/a" -hdr "Huge: yes"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+} -run
+
+client c1 {
+	txreq -url "/a" -hdr "Negative: yes"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+} -run
+
+logexpect l1 -wait
