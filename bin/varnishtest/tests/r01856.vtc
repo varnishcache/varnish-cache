@@ -1,0 +1,24 @@
+varnishtest "setting empty strings in line1 fields"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		set req.url = "";
+	}
+} -start
+
+logexpect l1 -v v1 -g raw {
+	expect * 1001 VCL_Error	"Setting req.url to empty string"
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.reason == "VCL failed"
+} -run
+
+logexpect l1 -wait

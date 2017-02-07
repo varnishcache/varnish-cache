@@ -45,7 +45,7 @@ static char vrt_hostname[255] = "";
  */
 
 static void
-vrt_do_string(const struct http *hp, int fld,
+vrt_do_string(VRT_CTX, const struct http *hp, int fld,
     const char *err, const char *p, va_list ap)
 {
 	const char *b;
@@ -53,9 +53,13 @@ vrt_do_string(const struct http *hp, int fld,
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 
 	b = VRT_String(hp->ws, NULL, p, ap);
-	if (b == NULL || *b == '\0') {
-		VSLb(hp->vsl, SLT_LostHeader, "%s", err);
+	if (b == NULL) {
+		VRT_fail(ctx, "Workspace overflow (%s)", err);
 		WS_MarkOverflow(hp->ws);
+		return;
+	}
+	if (*b == '\0') {
+		VRT_fail(ctx, "Setting %s to empty string", err);
 		return;
 	}
 	http_SetH(hp, fld, b);
@@ -69,7 +73,7 @@ VRT_l_##obj##_##hdr(VRT_CTX, const char *p, ...)			\
 									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	va_start(ap, p);						\
-	vrt_do_string(ctx->http_##obj, fld, #obj "." #hdr, p, ap);	\
+	vrt_do_string(ctx, ctx->http_##obj, fld, #obj "." #hdr, p, ap);	\
 	va_end(ap);							\
 }
 
