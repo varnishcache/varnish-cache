@@ -1001,9 +1001,9 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, enum var_type fmt)
 		ERRCHK(tl);
 		assert(e2->fmt == f2);
 		if (tk->tok == '*')
-			*e = vcc_expr_edit(f3, "(\v1*\v2)", *e, e2);
+			*e = vcc_expr_edit(f3, "(\v1 * \v2)", *e, e2);
 		else
-			*e = vcc_expr_edit(f3, "(\v1/\v2)", *e, e2);
+			*e = vcc_expr_edit(f3, "(\v1 / \v2)", *e, e2);
 	}
 }
 
@@ -1113,11 +1113,11 @@ vcc_expr_add(struct vcc *tl, struct expr **e, enum var_type fmt)
 			return;
 		}
 		if (tk->tok == '+')
-			*e = vcc_expr_edit(f2, "(\v1+\v2)", *e, e2);
+			*e = vcc_expr_edit(f2, "(\v1 + \v2)", *e, e2);
 		else if (f2 == TIME && e2->fmt == TIME)
-			*e = vcc_expr_edit(DURATION, "(\v1-\v2)", *e, e2);
+			*e = vcc_expr_edit(DURATION, "(\v1 - \v2)", *e, e2);
 		else
-			*e = vcc_expr_edit(f2, "(\v1-\v2)", *e, e2);
+			*e = vcc_expr_edit(f2, "(\v1 - \v2)", *e, e2);
 	}
 }
 
