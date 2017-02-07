@@ -26,7 +26,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g raw {
 	expect * 1001	VCL_call	"RECV"
-	expect 0 1001	Debug		"Forced failure"
+	expect 0 1001	VCL_Error	"Forced failure"
 	expect 0 1001	VCL_return	"fail"
 } -start
 
@@ -47,7 +47,7 @@ logexpect l1 -wait
 
 logexpect l1 -v v1 -g raw {
 	expect * 1003	VCL_call	"RECV"
-	expect 0 1003	Debug		"Forced failure"
+	expect 0 1003	VCL_Error	"Forced failure"
 	expect 0 1003	VCL_return	"fail"
 	expect * 1003	VCL_call	"SYNTH"
 	expect 0 1003	VCL_return	"restart"
@@ -86,7 +86,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g raw {
 	expect * 1007	VCL_call	"SYNTH"
-	expect * 1007	Debug		"Forced failure"
+	expect * 1007	VCL_Error	"Forced failure"
 	expect 0 1007	VCL_return	"fail"
 } -start
 
@@ -115,7 +115,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g raw {
 	expect * 1009	VCL_call	"HASH"
-	expect 0 1009	Debug		"Forced failure"
+	expect 0 1009	VCL_Error	"Forced failure"
 	expect 0 1009	VCL_return	"fail"
 } -start
 
@@ -150,7 +150,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g raw {
 	expect * 1012	VCL_call	"PIPE"
-	expect 0 1012	Debug		"Forced failure"
+	expect 0 1012	VCL_Error	"Forced failure"
 	expect 0 1012	VCL_return	"fail"
 } -start
 
@@ -184,7 +184,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g raw {
 	expect * 1014	VCL_call	"PASS"
-	expect 0 1014	Debug		"Forced failure"
+	expect 0 1014	VCL_Error	"Forced failure"
 	expect 0 1014	VCL_return	"fail"
 } -start
 
@@ -218,7 +218,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g raw {
 	expect * 1016	VCL_call	"PURGE"
-	expect 0 1016	Debug		"Forced failure"
+	expect 0 1016	VCL_Error	"Forced failure"
 	expect 0 1016	VCL_return	"fail"
 } -start
 
@@ -249,7 +249,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g raw {
 	expect * 1018	VCL_call	"MISS"
-	expect 0 1018	Debug		"Forced failure"
+	expect 0 1018	VCL_Error	"Forced failure"
 	expect 0 1018	VCL_return	"fail"
 } -start
 
@@ -280,7 +280,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g raw {
 	expect * 1020	VCL_call	"HIT"
-	expect 0 1020	Debug		"Forced failure"
+	expect 0 1020	VCL_Error	"Forced failure"
 	expect 0 1020	VCL_return	"fail"
 } -start
 
@@ -311,7 +311,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g raw {
 	expect * 1022	VCL_call	"DELIVER"
-	expect 0 1022	Debug		"Forced failure"
+	expect 0 1022	VCL_Error	"Forced failure"
 	expect 0 1022	VCL_return	"fail"
 } -start
 
@@ -340,7 +340,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g raw {
 	expect * 1025	VCL_call	"BACKEND_FETCH"
-	expect 0 1025	Debug		"Forced failure"
+	expect 0 1025	VCL_Error	"Forced failure"
 	expect 0 1025	VCL_return	"fail"
 } -start
 
@@ -374,7 +374,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g raw {
 	expect * 1028	VCL_call	"BACKEND_ERROR"
-	expect 0 1028	Debug		"Forced failure"
+	expect 0 1028	VCL_Error	"Forced failure"
 	expect 0 1028	VCL_return	"fail"
 } -start
 
@@ -409,7 +409,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -g raw {
 	expect * 1031	VCL_call	"BACKEND_RESPONSE"
-	expect 0 1031	Debug		"Forced failure"
+	expect 0 1031	VCL_Error	"Forced failure"
 	expect 0 1031	VCL_return	"fail"
 } -start
 

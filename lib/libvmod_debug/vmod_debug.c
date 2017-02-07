@@ -256,11 +256,7 @@ VCL_VOID __match_proto__()
 vmod_fail(VRT_CTX)
 {
 
-	if(ctx->msg != NULL)
-		VSB_printf(ctx->msg, "Forced failure");
-	else if (ctx->vsl != NULL)
-		VSLb(ctx->vsl, SLT_Debug, "Forced failure");
-	VRT_handling(ctx, VCL_RET_FAIL);
+	VRT_fail(ctx, "Forced failure");
 }
 
 static void __match_proto__(vmod_priv_free_f)

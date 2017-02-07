@@ -258,6 +258,26 @@ VRT_handling(VRT_CTX, unsigned hand)
 	*ctx->handling = hand;
 }
 
+/*--------------------------------------------------------------------*/
+
+void
+VRT_fail(VRT_CTX, const char *fmt, ...)
+{
+	va_list ap;
+
+	assert(ctx->vsl != NULL || ctx->msg != NULL);
+	AZ(strchr(fmt, '\n'));
+	va_start(ap, fmt);
+	if (ctx->vsl != NULL)
+		VSLbv(ctx->vsl, SLT_VCL_Error, fmt, ap);
+	else {
+		VSB_vprintf(ctx->msg, fmt, ap);
+		VSB_putc(ctx->msg, '\n');
+	}
+	va_end(ap);
+	VRT_handling(ctx, VCL_RET_FAIL);
+}
+
 /*--------------------------------------------------------------------
  * Feed data into the hash calculation
  */
