@@ -785,6 +785,7 @@ class vcc(object):
 
 		fn2 = fn + ".tmp2"
 
+		fo.write('#include <stdio.h>\n')
 		for i in ["config", "vdef", "vcl", "vrt", self.pfx, "vmod_abi"]:
 			fo.write('#include "%s.h"\n' % i)
 
