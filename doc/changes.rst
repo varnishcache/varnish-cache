@@ -1,4 +1,26 @@
 ======================================
+Varnish Cache 4.1.5-beta2 (unreleased)
+======================================
+
+Changes since 4.1.5-beta1:
+
+* Update devicedetect.vcl
+
+Bugs fixed
+----------
+* 1704_ - Reverted the docfix and made the fech_failed counter do
+what the documentation sais it should do
+* 1865_ - Panic accessing beresp.backend.ip in vcl_backend_error
+* 2167_ - VCC will not parse a literal negative number where INT is
+  expected
+* 2184_ - Cannot subtract a negative number #2184
+
+.. _1704: https://github.com/varnishcache/varnish-cache/issues/1704
+.. _1865: https://github.com/varnishcache/varnish-cache/issues/1865
+.. _2167: https://github.com/varnishcache/varnish-cache/issues/2167
+.. _2184: https://github.com/varnishcache/varnish-cache/issues/2184
+
+======================================
 Varnish Cache 4.1.5-beta1 (2017-02-02)
 ======================================
 
