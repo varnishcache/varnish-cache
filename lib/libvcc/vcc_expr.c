@@ -376,10 +376,11 @@ vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	uint8_t	constant = EXPR_VAR;
 
 	CHECK_OBJ_NOTNULL(*e, EXPR_MAGIC);
-	AN(fmt == STRING || fmt == STRING_LIST);
-	AZ(fmt == (*e)->fmt);
+	assert(fmt == STRING || fmt == STRING_LIST);
+	assert(fmt != (*e)->fmt);
 
-	if ((*e)->fmt == STRING || ((*e)->fmt == STRING_LIST && vcc_isconst(*e))) {
+	if ((*e)->fmt == STRING ||
+	    ((*e)->fmt == STRING_LIST && vcc_isconst(*e))) {
 		(*e)->fmt = fmt;
 		return;
 	}
@@ -1018,17 +1019,6 @@ static const struct adds {
 	{ '+', INT,		REAL,		REAL },
 	{ '-', INT,		REAL,		REAL },
 
-	/* Error */
-	{ '+', DURATION,	INT,		VOID },
-	{ '+', DURATION,	REAL,		VOID },
-	{ '+', DURATION,	TIME,		VOID },
-	{ '+', DURATION,	STRING,		VOID },
-	{ '+', INT,		DURATION,	VOID },
-	{ '+', IP,		IP,		VOID },
-	{ '+', REAL,		DURATION,	VOID },
-	{ '+', TIME,		INT,		VOID },
-	{ '+', TIME,		REAL,		VOID },
-
 	{ EOI, VOID, VOID, VOID }
 };
 
@@ -1044,15 +1034,27 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	*e = NULL;
 	vcc_expr_mul(tl, e, fmt);
 	ERRCHK(tl);
+
+	if (tl->t->tok != '+' && tl->t->tok != '-')
+		return;
+
 	f2 = (*e)->fmt;
+	for (ap = vcc_adds; ap->op != EOI; ap++)
+		if (ap->a == f2 && ap->op == tl->t->tok)
+			break;
+
+	if (ap->op == EOI &&
+	    (fmt == STRING || fmt == STRING_LIST) &&
+	    f2 != STRING && f2 != STRING_LIST) {
+		vcc_expr_tostring(tl, e, fmt);
+		f2 = (*e)->fmt;
+	}
 
 	while (tl->t->tok == '+' || tl->t->tok == '-') {
 		tk = tl->t;
 		vcc_NextToken(tl);
 		if (f2 == TIME)
 			vcc_expr_mul(tl, &e2, DURATION);
-		else if (f2 == IP)
-			vcc_expr_mul(tl, &e2, STRING);
 		else
 			vcc_expr_mul(tl, &e2, f2);
 		ERRCHK(tl);
