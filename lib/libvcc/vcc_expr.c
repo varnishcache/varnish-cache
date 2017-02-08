@@ -1019,14 +1019,15 @@ static const struct adds {
 	{ '-', INT,		REAL,		REAL },
 
 	/* Error */
-	{ '+', TIME,		INT,		VOID },
-	{ '+', TIME,		REAL,		VOID },
-	{ '+', INT,		DURATION,	VOID },
-	{ '+', REAL,		DURATION,	VOID },
 	{ '+', DURATION,	INT,		VOID },
 	{ '+', DURATION,	REAL,		VOID },
 	{ '+', DURATION,	TIME,		VOID },
 	{ '+', DURATION,	STRING,		VOID },
+	{ '+', INT,		DURATION,	VOID },
+	{ '+', IP,		IP,		VOID },
+	{ '+', REAL,		DURATION,	VOID },
+	{ '+', TIME,		INT,		VOID },
+	{ '+', TIME,		REAL,		VOID },
 
 	{ EOI, VOID, VOID, VOID }
 };
@@ -1050,6 +1051,8 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		vcc_NextToken(tl);
 		if (f2 == TIME)
 			vcc_expr_mul(tl, &e2, DURATION);
+		else if (f2 == IP)
+			vcc_expr_mul(tl, &e2, STRING);
 		else
 			vcc_expr_mul(tl, &e2, f2);
 		ERRCHK(tl);

@@ -108,6 +108,10 @@ varnish v1 -vcl {
 		set req.http.foo = req.http.foo + "bar" ~ "bar";
 		set req.http.foo = req.http.foo + "bar" !~ "bar";
 
+		set req.http.foo = "foo" + req.ttl;
+
+		set req.http.foo = client.ip + ", " + server.ip;
+
 		set req.ttl = 1s;
 		set req.ttl *= 1.5;
 		set req.ttl = 1.5 s * 2.5;
@@ -140,9 +144,6 @@ varnish v1 -vcl {
 		elseif (3) { }
 		else if (4) { }
 		else { }
-	}
-	sub vcl_backend_response {
-		set beresp.http.buzz = "ttl=" + beresp.ttl;
 	}
 }
 
@@ -235,6 +236,13 @@ varnish v1 -errvcl {DURATION + STRING not possible.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.ttl = 1s + "foo";
+	}
+}
+
+varnish v1 -errvcl {IP + IP not possible.} {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv {
+		set req.ttl = client.ip + server.ip;
 	}
 }
 
