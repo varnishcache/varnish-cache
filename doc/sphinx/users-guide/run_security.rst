@@ -162,7 +162,7 @@ Furthermore you may want to look at and lock down:
 
 :ref:`ref_param_vmod_path`
         The directory (or colon separated list of directories) where
-        Varnish will will look for modules. This could potentially be
+        Varnish will look for modules. This could potentially be
         used to load rogue modules into Varnish.
 
 The CLI interface
