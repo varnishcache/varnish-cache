@@ -726,9 +726,6 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	http_CollectHdr(req->http, H_Cache_Control);
 
-	VFP_Setup(req->vfc);
-	req->vfc->http = req->http;
-	req->vfc->wrk = wrk;
 	if (req->transport->req_body != NULL) {
 		req->transport->req_body(req);
 
@@ -898,6 +895,10 @@ CNT_Request(struct worker *wrk, struct req *req)
 
 	req->wrk = wrk;
 	wrk->vsl = req->vsl;
+
+	VFP_Setup(req->vfc);
+	req->vfc->http = req->http;
+	req->vfc->wrk = wrk;
 
 	for (nxt = REQ_FSM_MORE; nxt == REQ_FSM_MORE; ) {
 		/*
