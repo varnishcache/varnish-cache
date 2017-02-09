@@ -19,7 +19,7 @@ Bugs fixed
 * 1865_ - Panic accessing beresp.backend.ip in vcl_backend_error
 * 2167_ - VCC will not parse a literal negative number where INT is
   expected
-* 2184_ - Cannot subtract a negative number #2184
+* 2184_ - Cannot subtract a negative number
 
 .. _1704: https://github.com/varnishcache/varnish-cache/issues/1704
 .. _1865: https://github.com/varnishcache/varnish-cache/issues/1865
