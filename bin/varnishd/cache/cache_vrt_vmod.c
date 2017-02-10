@@ -61,6 +61,9 @@ struct vmod {
 	void			*hdl;
 	const void		*funcs;
 	int			funclen;
+	const char		*abi;
+	int			vrt_major;
+	int			vrt_minor;
 };
 
 static VTAILQ_HEAD(,vmod)	vmods = VTAILQ_HEAD_INITIALIZER(vmods);
@@ -179,6 +182,9 @@ VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, void *ptr, int len, const char *nm,
 
 		v->funclen = d->func_len;
 		v->funcs = d->func;
+		v->abi = d->abi;
+		v->vrt_major = d->vrt_major;
+		v->vrt_minor = d->vrt_minor;
 
 		REPLACE(v->nm, nm);
 		REPLACE(v->path, path);
@@ -221,6 +227,20 @@ VRT_Vmod_Fini(struct vmod **hdl)
 	VTAILQ_REMOVE(&vmods, v, list);
 	VSC_C_main->vmods--;
 	FREE_OBJ(v);
+}
+
+void
+VMOD_Panic(struct vsb *vsb)
+{
+	struct vmod *v;
+
+	VSB_printf(vsb, "vmods = {\n");
+	VSB_indent(vsb, 2);
+	VTAILQ_FOREACH(v, &vmods, list)
+		VSB_printf(vsb, "%s = {%s, %d.%d},\n",
+		    v->nm, v->abi, v->vrt_major, v->vrt_minor);
+	VSB_indent(vsb, -2);
+	VSB_printf(vsb, "},\n");
 }
 
 /*---------------------------------------------------------------------*/

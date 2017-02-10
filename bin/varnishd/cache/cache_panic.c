@@ -398,6 +398,7 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	if (bo->stale_oc)
 		pan_objcore(vsb, "ims", bo->stale_oc);
 	VCL_Panic(vsb, bo->vcl);
+	VMOD_Panic(vsb);
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
 }
@@ -462,6 +463,7 @@ pan_req(struct vsb *vsb, const struct req *req)
 		pan_http(vsb, "resp", req->resp);
 
 	VCL_Panic(vsb, req->vcl);
+	VMOD_Panic(vsb);
 
 	if (req->body_oc != NULL)
 		pan_objcore(vsb, "BODY", req->body_oc);
@@ -622,7 +624,8 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	if (q != NULL)
 		VSB_printf(pan_vsb, "thread = (%s)\n", q);
 
-	VSB_printf(pan_vsb, "version = %s\n", VCS_version);
+	VSB_printf(pan_vsb, "version = %s, vrt api = %d.%d\n",
+	    VCS_version, VRT_MAJOR_VERSION, VRT_MINOR_VERSION);
 	VSB_printf(pan_vsb, "ident = %s,%s\n",
 	    VSB_data(vident) + 1, Waiter_GetName());
 	VSB_printf(pan_vsb, "now = %f (mono), %f (real)\n",
