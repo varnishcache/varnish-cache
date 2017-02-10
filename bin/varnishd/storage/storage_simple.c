@@ -642,7 +642,7 @@ const struct obj_methods SML_methods = {
 static void
 sml_panic_st(struct vsb *vsb, const char *hd, const struct storage *st)
 {
-	VSB_printf(vsb, "%s %p {priv=%p, ptr=%p, len=%u, space=%u}\n",
+	VSB_printf(vsb, "%s = %p {priv=%p, ptr=%p, len=%u, space=%u},\n",
 	    hd, st, st->priv, st->ptr, st->len, st->space);
 }
 
@@ -652,7 +652,7 @@ SML_panic(struct vsb *vsb, const struct objcore *oc)
 	struct object *o;
 	struct storage *st;
 
-	VSB_printf(vsb, "Simple = %p\n", oc->stobj->priv);
+	VSB_printf(vsb, "Simple = %p,\n", oc->stobj->priv);
 	if (oc->stobj->priv == NULL)
 		return;
 	CAST_OBJ_NOTNULL(o, oc->stobj->priv, OBJECT_MAGIC);
@@ -661,10 +661,10 @@ SML_panic(struct vsb *vsb, const struct objcore *oc)
 #define OBJ_FIXATTR(U, l, sz) \
 	VSB_printf(vsb, "%s = ", #U); \
 	VSB_quote(vsb, (const void*)o->fa_##l, sz, VSB_QUOTE_HEX); \
-	VSB_printf(vsb, "\n");
+	VSB_printf(vsb, ",\n");
 
 #define OBJ_VARATTR(U, l) \
-	VSB_printf(vsb, "%s = {len=%u, ptr=%p}\n", \
+	VSB_printf(vsb, "%s = {len=%u, ptr=%p},\n", \
 	    #U, o->va_##l##_len, o->va_##l);
 
 #define OBJ_AUXATTR(U, l) \
