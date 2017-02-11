@@ -103,6 +103,7 @@ struct stream {
 	pthread_t		tp;
 	struct http		*hp;
 	int64_t			ws;
+	int			wf;
 
 	VTAILQ_HEAD(, frame)   fq;
 
@@ -720,6 +721,7 @@ receive_frame(void *priv)
 	AZ(pthread_mutex_lock(&hp->mtx));
 	while (hp->h2) {
 		/*no wanted frames? */
+		assert(hp->wf >= 0);
 		if (hp->wf == 0) {
 			AZ(pthread_cond_wait(&hp->cond, &hp->mtx));
 			continue;
@@ -824,8 +826,12 @@ receive_frame(void *priv)
 
 		AZ(pthread_mutex_lock(&hp->mtx));
 		VTAILQ_INSERT_HEAD(&s->fq, f, list);
-		hp->wf--;
-		AZ(pthread_cond_signal(&s->cond));
+		if (s->wf) {
+			assert(hp->wf > 0);
+			hp->wf--;
+			s->wf = 0;
+			AZ(pthread_cond_signal(&s->cond));
+		}
 		continue;
 	}
 	AZ(pthread_mutex_unlock(&hp->mtx));
@@ -2060,8 +2066,10 @@ rxstuff(struct stream *s)
 	CHECK_OBJ_NOTNULL(s, STREAM_MAGIC);
 
 	AZ(pthread_mutex_lock(&s->hp->mtx));
-	s->hp->wf++;
 	if (VTAILQ_EMPTY(&s->fq)) {
+		assert(s->hp->wf >= 0);
+		s->hp->wf++;
+		s->wf = 1;
 		AZ(pthread_cond_signal(&s->hp->cond));
 		AZ(pthread_cond_wait(&s->cond, &s->hp->mtx));
 	}
