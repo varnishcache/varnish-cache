@@ -260,8 +260,6 @@ h2_vsl_frame(const struct h2_sess *h2, const void *ptr, size_t len)
 	if (len > 9)
 		VSLb_bin(h2->vsl, SLT_H2RxBody, len - 9, b + 9);
 
-	u = vbe32dec(b) >> 8;
-
 	vsb = VSB_new_auto();
 	AN(vsb);
 	p = h2_framename((enum h2frame)b[3]);
@@ -269,13 +267,15 @@ h2_vsl_frame(const struct h2_sess *h2, const void *ptr, size_t len)
 		VSB_cat(vsb, p);
 	else
 		VSB_quote(vsb, b + 3, 1, VSB_QUOTE_HEX);
+
+	u = vbe32dec(b) >> 8;
 	VSB_printf(vsb, "[%u] ", u);
 	VSB_quote(vsb, b + 4, 1, VSB_QUOTE_HEX);
 	VSB_putc(vsb, ' ');
 	VSB_quote(vsb, b + 5, 4, VSB_QUOTE_HEX);
 	if (u > 0) {
 		VSB_putc(vsb, ' ');
-		VSB_quote(vsb, b + 9, u, VSB_QUOTE_HEX);
+		VSB_quote(vsb, b + 9, len - 9, VSB_QUOTE_HEX);
 	}
 	AZ(VSB_finish(vsb));
 	VSLb(h2->vsl, SLT_Debug, "H2RXF %s", VSB_data(vsb));
