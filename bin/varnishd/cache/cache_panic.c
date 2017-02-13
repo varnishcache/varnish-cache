@@ -624,7 +624,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	if (q != NULL)
 		VSB_printf(pan_vsb, "thread = (%s)\n", q);
 
-	VSB_printf(pan_vsb, "version = %s, vrt api = %d.%d\n",
+	VSB_printf(pan_vsb, "version = %s, vrt api = %u.%u\n",
 	    VCS_version, VRT_MAJOR_VERSION, VRT_MINOR_VERSION);
 	VSB_printf(pan_vsb, "ident = %s,%s\n",
 	    VSB_data(vident) + 1, Waiter_GetName());
