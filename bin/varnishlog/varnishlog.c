@@ -62,7 +62,7 @@ static struct log {
 	FILE		*fo;
 } LOG;
 
-static void
+static void __attribute__((__noreturn__))
 usage(int status)
 {
 	const char **opt;
