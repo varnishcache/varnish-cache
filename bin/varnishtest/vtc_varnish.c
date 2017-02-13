@@ -696,8 +696,11 @@ varnish_cli(struct varnish *v, const char *cli, unsigned exp, const char *re)
 	}
 	if (v->cli_fd < 0)
 		varnish_launch(v);
-	if (vtc_error)
+	if (vtc_error) {
+		if (vre != NULL)
+			VRE_free(&vre);
 		return;
+	}
 	u = varnish_ask_cli(v, cli, &resp);
 	vtc_log(v->vl, 2, "CLI %03u <%s>", u, cli);
 	if (exp != 0 && exp != (unsigned)u)
