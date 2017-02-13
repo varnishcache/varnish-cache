@@ -1217,10 +1217,10 @@ main(int argc, char * const *argv)
 		openout(CTX.a_opt);
 		AN(CTX.fo);
 		if (VUT.D_opt)
-			VUT.sighup_f = &rotateout;
+			VUT.sighup_f = rotateout;
 	} else
 		CTX.fo = stdout;
-	VUT.idle_f = &flushout;
+	VUT.idle_f = flushout;
 
 	VUT_Setup();
 	VUT_Main();
