@@ -822,7 +822,7 @@ do_stat_dump_cb(void *priv, const struct VSC_point * const pt)
 	u = *(const volatile uint64_t*)pt->ptr;
 
 	strcpy(buf, pt->section->type);
-	if (pt->section->ident[0] != '\0') 
+	if (pt->section->ident[0] != '\0')
 		bprintf(buf, ".%s.%s", pt->section->ident, pt->desc->name);
 	else
 		bprintf(buf, ".%s", pt->desc->name);
