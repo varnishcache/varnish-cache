@@ -1002,22 +1002,21 @@ static const struct adds {
 	vcc_type_t	b;
 	vcc_type_t	fmt;
 } vcc_adds[] = {
-	/* OK */
+	{ '+', BYTES,		BYTES,		BYTES },
+	{ '-', BYTES,		BYTES,		BYTES },
+	{ '+', DURATION,	DURATION,	DURATION },
+	{ '-', DURATION,	DURATION,	DURATION },
+	{ '+', INT,		INT,		INT },
+	{ '-', INT,		INT,		INT },
+	{ '+', INT,		REAL,		REAL },
+	{ '-', INT,		REAL,		REAL },
+	{ '+', REAL,		INT,		REAL },
+	{ '-', REAL,		INT,		REAL },
+	{ '+', REAL,		REAL,		REAL },
+	{ '-', REAL,		REAL,		REAL },
 	{ '-', TIME,		TIME,		DURATION },
 	{ '+', TIME,		DURATION,	TIME },
 	{ '-', TIME,		DURATION,	TIME },
-	{ '+', DURATION,	DURATION,	DURATION },
-	{ '-', DURATION,	DURATION,	DURATION },
-	{ '+', BYTES,		BYTES,		BYTES },
-	{ '-', BYTES,		BYTES,		BYTES },
-	{ '+', INT,		INT,		INT },
-	{ '-', INT,		INT,		INT },
-	{ '+', REAL,		REAL,		REAL },
-	{ '-', REAL,		REAL,		REAL },
-	{ '+', REAL,		INT,		REAL },
-	{ '-', REAL,		INT,		REAL },
-	{ '+', INT,		REAL,		REAL },
-	{ '-', INT,		REAL,		REAL },
 
 	{ EOI, VOID, VOID, VOID }
 };
@@ -1053,10 +1052,7 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	while (tl->t->tok == '+' || tl->t->tok == '-') {
 		tk = tl->t;
 		vcc_NextToken(tl);
-		if (f2 == TIME)
-			vcc_expr_mul(tl, &e2, DURATION);
-		else
-			vcc_expr_mul(tl, &e2, f2);
+		vcc_expr_mul(tl, &e2, f2);
 		ERRCHK(tl);
 
 		for (ap = vcc_adds; ap->op != EOI; ap++) {
