@@ -85,8 +85,6 @@ Varnish Cache 4.1.5 (2017-02-09)
 Varnish Cache 4.1.5-beta2 (2017-02-08)
 ======================================
 
-Changes since 4.1.5-beta1:
-
 * Update devicedetect.vcl
 
 Bugs fixed
@@ -106,8 +104,6 @@ Bugs fixed
 ======================================
 Varnish Cache 4.1.5-beta1 (2017-02-02)
 ======================================
-
-Changes since 4.1.4:
 
 Bugs fixed
 ----------
@@ -141,8 +137,6 @@ Bugs fixed
 Varnish Cache 4.1.4 (2016-12-01)
 ================================
 
-Changes since 4.1.4-beta3:
-
 Bugs fixed
 ----------
 
@@ -154,8 +148,6 @@ Bugs fixed
 ======================================
 Varnish Cache 4.1.4-beta3 (2016-11-24)
 ======================================
-
-Changes since 4.1.4-beta2:
 
 * Include the current time of the panic in the panic output
 * Keep a reserve of idle threads for vital tasks
@@ -195,8 +187,6 @@ Bugs fixed
 Varnish Cache 4.1.4-beta1 (2016-09-14)
 ======================================
 
-Changes since 4.1.3:
-
 * [varnishhist] Various improvements
 * [varnishtest] A `cmd` feature for custom shell-based checks
 * Documentation improvements (do_stream, sess_herd, timeout_linger, thread_pools)
@@ -223,15 +213,11 @@ Bugs fixed
 Varnish Cache 4.1.3 (2016-07-06)
 ================================
 
-Changes since 4.1.3-beta2:
-
 * Be stricter when parsing request headers to harden against smuggling attacks.
 
 ======================================
 Varnish Cache 4.1.3-beta2 (2016-06-28)
 ======================================
-
-Changes since 4.1.3-beta1:
 
 * New parameter `vsm_free_cooldown`. Specifies how long freed VSM
   memory (shared log) will be kept around before actually being freed.
@@ -254,8 +240,6 @@ Bugs fixed
 ======================================
 Varnish Cache 4.1.3-beta1 (2016-06-15)
 ======================================
-
-Changes since 4.1.2:
 
 * varnishncsa can now access and log backend requests. (PR #1905)
 
@@ -432,8 +416,6 @@ Bugs fixed
 Varnish Cache 4.1.1-beta1 (2016-01-15)
 ======================================
 
-Changes since 4.1.0:
-
 - Format of "ban.list" has changed slightly.
 - [varnishncsa] -w is now required when running deamonized.
 - [varnishncsa] Log format can now be read from file.
@@ -487,8 +469,6 @@ Bugs fixed
 Varnish Cache 4.1.0 (2015-09-30)
 ================================
 
-Changes since 4.1.0-beta1:
-
 - Documentation updates.
 - Stabilization fixes on testcase p00005.vtc.
 - Avoid compiler warning in zlib.
@@ -500,8 +480,6 @@ Changes since 4.1.0-beta1:
 ======================================
 Varnish Cache 4.1.0-beta1 (2015-09-11)
 ======================================
-
-Changes since 4.1.0-tp1:
 
 - Redhat packaging files are now separate from the normal tree.
 - Client workspace overflow should now result in a 500 response
@@ -565,8 +543,6 @@ Bugs fixed
 Changes from 4.0.3-rc1 to 4.0.3-rc2 (2015-01-28)
 ================================================
 
-Changes since 4.0.3-rc1:
-
 - Assorted documentation updates.
 
 Bugs fixed
@@ -593,8 +569,6 @@ Bugs fixed
 ============================================
 Changes from 4.0.2 to 4.0.3-rc1 (2015-01-15)
 ============================================
-
-Changes since 4.0.2:
 
 - Support older autoconf (< 2.63b) (el5)
 - A lot of minor documentation fixes.
