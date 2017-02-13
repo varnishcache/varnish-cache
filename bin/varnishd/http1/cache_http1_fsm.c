@@ -327,9 +327,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 			wrk->stats->client_req_417++;
 			return (-1);
 		}
-		http1_simple_response(req, R_100);
-		if (req->doclose)
-			return (-1);
+		req->want100cont = 1;
 		http_Unset(req->http, H_Expect);
 	}
 

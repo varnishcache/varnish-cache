@@ -37,6 +37,7 @@
 #include "vtim.h"
 #include "hash/hash_slinger.h"
 #include "storage/storage.h"
+#include "cache_transport.h"
 
 /*----------------------------------------------------------------------
  * Pull the req.body in via/into a objcore
@@ -84,6 +85,10 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	AZ(req->req_bodybytes);
 	AN(req->htc);
 	yet = req->htc->content_length;
+	if (yet != 0 && req->want100cont) {
+		req->want100cont = 0;
+		req->transport->sresp(req, R_100);
+	}
 	if (yet < 0)
 		yet = 0;
 	do {
