@@ -116,7 +116,7 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 			    cmd, errno, strerror(errno));
 	}
 	i = VCLI_ReadResult(v->cli_fd, &retval, &r, vtc_maxdur);
-	if (i != 0)
+	if (i != 0 && !vtc_stop)
 		vtc_fatal(v->vl, "CLI failed (%s) = %d %u %s",
 		    cmd, i, retval, r);
 	AZ(i);
