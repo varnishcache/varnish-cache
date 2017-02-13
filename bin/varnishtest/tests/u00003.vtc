@@ -83,7 +83,7 @@ shell "grep -q /foo ${tmpdir}/ncsa.old.log"
 shell "grep -q /bar ${tmpdir}/ncsa.log"
 
 shell {echo "%{VSL:Begin}x %{Varnish:vxid}x %{VCL_Log:foo}x %D %T %{Varnish:handling}x %{%Z}t" >${tmpdir}/format}
-shell -match "^req 1000 rxreq 1001  [0-9]{5} 0 miss [A-Z]{3,}" \
+shell -match "^req 1000 rxreq 1001  [0-9]+ 0 miss [A-Z]{3,}" \
 	{varnishncsa -n ${v1_name} -d -f ${tmpdir}/format}
-shell -match "^bereq 1001 fetch 1002 qux [0-9]{5} 0 - [A-Z]{3,}" \
+shell -match "^bereq 1001 fetch 1002 qux [0-9]+ 0 - [A-Z]{3,}" \
 	{varnishncsa -n ${v1_name} -d -f ${tmpdir}/format -b}
