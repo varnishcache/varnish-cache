@@ -1,0 +1,73 @@
+varnishtest "Test setenv"
+
+setenv FOO "BAR BAZ"
+
+varnish v1 -vcl {
+	import ${vmod_std};
+
+	backend dummy { .host = "${bad_ip}"; .port = "9080"; }
+
+	sub vcl_recv {
+		return(synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.X-FOO = std.getenv("FOO");
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.X-FOO == "BAR BAZ"
+} -run
+
+varnish v1 -stop
+
+setenv FOO QUUX
+
+varnish v2 -vcl {
+	import ${vmod_std};
+
+	backend dummy { .host = "${bad_ip}"; .port = "9080"; }
+
+	sub vcl_recv {
+		return(synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.X-FOO = std.getenv("FOO");
+	}
+} -start
+
+client c2 -connect ${v2_sock} {
+	txreq
+	rxresp
+	expect resp.http.X-FOO == "BAR BAZ"
+} -run
+
+varnish v2 -stop
+
+setenv -force FOO QUUX
+
+varnish v3 -vcl {
+	import ${vmod_std};
+
+	backend dummy { .host = "${bad_ip}"; .port = "9080"; }
+
+	sub vcl_recv {
+		return(synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.X-FOO = std.getenv("FOO");
+	}
+} -start
+
+client c3 -connect ${v3_sock} {
+	txreq
+	rxresp
+	expect resp.http.X-FOO == "QUUX"
+} -run
+
+varnish v2 -stop

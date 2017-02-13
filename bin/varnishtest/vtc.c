@@ -497,6 +497,38 @@ cmd_err_shell(CMD_ARGS)
 }
 
 /**********************************************************************
+ * Set environment variables
+ */
+
+static void
+cmd_setenv(CMD_ARGS)
+{
+	int r;
+	int force;
+
+	(void)priv;
+	(void)cmd;
+
+	if (av == NULL)
+		return;
+	AN(av[1]);
+	AN(av[2]);
+
+	force = 0;
+	if (strcmp("-force", av[1]) == 0) {
+		force = 1;
+		av++;
+		AN(av[2]);
+	}
+	if (av[3] != NULL)
+		vtc_log(vl, 0, "CMD setenv: Unexpected argument '%s'", av[3]);
+	r = setenv(av[1], av[2], force);
+	if (r != 0)
+		vtc_log(vl, 0, "CMD setenv %s=\"%s\" failed: %s",
+		    av[1], av[2], strerror(errno));
+}
+
+/**********************************************************************
  * Dump command arguments
  */
 
@@ -659,6 +691,7 @@ static const struct cmds cmds[] = {
 	{ "feature",	cmd_feature },
 	{ "logexpect",	cmd_logexp },
 	{ "process",	cmd_process },
+	{ "setenv",	cmd_setenv },
 	{ NULL,		NULL }
 };
 
