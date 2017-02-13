@@ -31,11 +31,11 @@ Issues fixed:
 * 2008_ - Panic: Assert error in VBE_Delete()
 * 1800_ - PRIV_TASK in vcl_init/fini
 
-.. _2086: https://www.varnish-cache.org/trac/ticket/2086
-.. _2054: https://www.varnish-cache.org/trac/ticket/2054
-.. _2022: https://www.varnish-cache.org/trac/ticket/2022
-.. _2008: https://www.varnish-cache.org/trac/ticket/2008
-.. _1800: https://www.varnish-cache.org/trac/ticket/1800
+.. _2086: https://github.com/varnishcache/varnish-cache/issues/2086
+.. _2054: https://github.com/varnishcache/varnish-cache/issues/2054
+.. _2022: https://github.com/varnishcache/varnish-cache/issues/2022
+.. _2008: https://github.com/varnishcache/varnish-cache/issues/2008
+.. _1800: https://github.com/varnishcache/varnish-cache/issues/1800
 
 
 ======================================
