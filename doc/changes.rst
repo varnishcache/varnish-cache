@@ -75,6 +75,182 @@ News for Vmod Authors
 * PRIV_* now also work for object methods with unchanged scope.
 
 
+================================
+Varnish Cache 4.1.5 (2017-02-09)
+================================
+
+* No code changes since 4.1.5-beta2.
+
+======================================
+Varnish Cache 4.1.5-beta2 (2017-02-08)
+======================================
+
+Changes since 4.1.5-beta1:
+
+* Update devicedetect.vcl
+
+Bugs fixed
+----------
+* 1704_ - Reverted the docfix and made the fech_failed counter do
+  what the documentation sais it should do
+* 1865_ - Panic accessing beresp.backend.ip in vcl_backend_error
+* 2167_ - VCC will not parse a literal negative number where INT is
+  expected
+* 2184_ - Cannot subtract a negative number
+
+.. _1704: https://github.com/varnishcache/varnish-cache/issues/1704
+.. _1865: https://github.com/varnishcache/varnish-cache/issues/1865
+.. _2167: https://github.com/varnishcache/varnish-cache/issues/2167
+.. _2184: https://github.com/varnishcache/varnish-cache/issues/2184
+
+======================================
+Varnish Cache 4.1.5-beta1 (2017-02-02)
+======================================
+
+Changes since 4.1.4:
+
+Bugs fixed
+----------
+
+* 1704_ - (docfix) Clarify description of fetch_failed counter
+* 1834_ - Panic in workspace exhaustion conditions
+* 2106_ - 4.1.3: Varnish crashes with "Assert error in CNT_Request(),
+  cache/cache_req_fsm.c line 820"
+* 2134_ - Disable Nagle's
+* 2148_ - varnishncsa cannot decode Authorization header if the
+  format is incorrect.
+* 2168_ - Compare 'bereq.backend' / 'req.backend_hint'
+  myDirector.backend() does not work
+* 2178_ - 4.1 branch does not compile on FreeBSD
+* 2188_ - Fix vsm_free (never incremented)
+* 2190_ - (docfix)varnishncsa: The %r formatter is NOT equivalent to...
+* 2197_ - ESI parser panic on malformed src URL
+
+.. _1704: https://github.com/varnishcache/varnish-cache/issues/1704
+.. _1834: https://github.com/varnishcache/varnish-cache/issues/1834
+.. _2106: https://github.com/varnishcache/varnish-cache/issues/2106
+.. _2134: https://github.com/varnishcache/varnish-cache/issues/2134
+.. _2148: https://github.com/varnishcache/varnish-cache/issues/2148
+.. _2168: https://github.com/varnishcache/varnish-cache/issues/2168
+.. _2178: https://github.com/varnishcache/varnish-cache/issues/2178
+.. _2188: https://github.com/varnishcache/varnish-cache/pull/2188
+.. _2190: https://github.com/varnishcache/varnish-cache/issues/2190
+.. _2197: https://github.com/varnishcache/varnish-cache/issues/2197
+
+================================
+Varnish Cache 4.1.4 (2016-12-01)
+================================
+
+Changes since 4.1.4-beta3:
+
+Bugs fixed
+----------
+
+* 2035_ - varnishd stalls with two consecutive Range requests using
+  HTTP persistent connections
+
+.. _2035: https://github.com/varnishcache/varnish-cache/issues/2035
+
+======================================
+Varnish Cache 4.1.4-beta3 (2016-11-24)
+======================================
+
+Changes since 4.1.4-beta2:
+
+* Include the current time of the panic in the panic output
+* Keep a reserve of idle threads for vital tasks
+
+Bugs fixed
+----------
+
+* 1874_ - clock-step related crash
+* 1889_ - (docfix) What does -p flag for backend.list command means
+* 2115_ - VSM temporary files are not always deleted
+* 2129_ - (docfix) stack overflow with >4 level esi
+
+.. _1874: https://github.com/varnishcache/varnish-cache/issues/1874
+.. _1889: https://github.com/varnishcache/varnish-cache/issues/1889
+.. _2115: https://github.com/varnishcache/varnish-cache/issues/2115
+.. _2129: https://github.com/varnishcache/varnish-cache/issues/2129
+
+======================================
+Varnish Cache 4.1.4-beta2 (2016-10-13)
+======================================
+
+Bugs fixed
+----------
+
+* 1830_ - VSL API: "duplicate link" errors in request grouping when
+  vsl_buffer is increased
+* 2010_ - varnishadm CLI behaving weirdly
+* 2017_ - varnishncsa docfix: "%r" field is wrong
+* 2107_ - (docfix) HEAD requestes changed to GET
+
+.. _1830: https://github.com/varnishcache/varnish-cache/issues/1830
+.. _2010: https://github.com/varnishcache/varnish-cache/issues/2010
+.. _2017: https://github.com/varnishcache/varnish-cache/issues/2017
+.. _2107: https://github.com/varnishcache/varnish-cache/issues/2107
+
+======================================
+Varnish Cache 4.1.4-beta1 (2016-09-14)
+======================================
+
+Changes since 4.1.3:
+
+* [varnishhist] Various improvements
+* [varnishtest] A `cmd` feature for custom shell-based checks
+* Documentation improvements (do_stream, sess_herd, timeout_linger, thread_pools)
+* [varnishtop] Documented behavior when both -p and -1 are specified
+
+Bugs fixed
+----------
+
+* 2027_ - Racy backend selection
+* 2024_ - panic vmod_rr_resolve() round_robin.c line 75 (be) != NULL
+* 2011_ - VBE.*.conn (concurrent connections to backend) not working as expected
+* 2008_ - Assert error in VBE_Delete()
+* 2007_ - Update documentation part about CLI/management port authentication paramater
+* 1881_ - std.cache_req_body() w/ return(pipe) is broken
+
+.. _2027: https://github.com/varnishcache/varnish-cache/issues/2027
+.. _2024: https://github.com/varnishcache/varnish-cache/issues/2024
+.. _2011: https://github.com/varnishcache/varnish-cache/issues/2011
+.. _2008: https://github.com/varnishcache/varnish-cache/issues/2008
+.. _2007: https://github.com/varnishcache/varnish-cache/issues/2007
+.. _1881: https://github.com/varnishcache/varnish-cache/issues/1881
+
+================================
+Varnish Cache 4.1.3 (2016-07-06)
+================================
+
+Changes since 4.1.3-beta2:
+
+* Be stricter when parsing request headers to harden against smuggling attacks.
+
+======================================
+Varnish Cache 4.1.3-beta2 (2016-06-28)
+======================================
+
+Changes since 4.1.3-beta1:
+
+* New parameter `vsm_free_cooldown`. Specifies how long freed VSM
+  memory (shared log) will be kept around before actually being freed.
+
+* varnishncsa now accepts `-L` argument to configure the limit on incomplete
+  transactions kept. (Issue 1994_)
+
+Bugs fixed
+----------
+
+* 1984_ - Make the counter vsm_cooling act according to spec
+* 1963_ - Avoid abort when changing to a VCL name which is a path
+* 1933_ - Don't trust dlopen refcounting
+
+.. _1994: https://github.com/varnishcache/varnish-cache/issues/1994
+.. _1984: https://github.com/varnishcache/varnish-cache/issues/1984
+.. _1963: https://github.com/varnishcache/varnish-cache/issues/1963
+.. _1933: https://github.com/varnishcache/varnish-cache/issues/1933
+
 ======================================
 Varnish Cache 4.1.3-beta1 (2016-06-15)
 ======================================
