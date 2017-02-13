@@ -62,8 +62,8 @@ struct vmod {
 	const void		*funcs;
 	int			funclen;
 	const char		*abi;
-	int			vrt_major;
-	int			vrt_minor;
+	unsigned		vrt_major;
+	unsigned		vrt_minor;
 };
 
 static VTAILQ_HEAD(,vmod)	vmods = VTAILQ_HEAD_INITIALIZER(vmods);
@@ -237,7 +237,7 @@ VMOD_Panic(struct vsb *vsb)
 	VSB_printf(vsb, "vmods = {\n");
 	VSB_indent(vsb, 2);
 	VTAILQ_FOREACH(v, &vmods, list)
-		VSB_printf(vsb, "%s = {%s, %d.%d},\n",
+		VSB_printf(vsb, "%s = {%s, %u.%u},\n",
 		    v->nm, v->abi, v->vrt_major, v->vrt_minor);
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
