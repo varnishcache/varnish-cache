@@ -5,11 +5,140 @@ server s1 {
 	txresp
 	rxreq
 	txresp
+	rxreq
+	txresp
+	rxreq
+	txresp
 } -start
 
-varnish v1 -vcl+backend { } -start
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_recv {
+	    if (req.url == "/") {
+		return (pass);
+	    }
+
+	    std.late_100_continue(true);
+
+	    if (req.url ~ "^/err") {
+		return (synth(405));
+	    }
+
+	    if (req.url == "/latecache") {
+		std.cache_req_body(1KB);
+	    }
+	    return (pass);
+
+	}
+	sub vcl_synth {
+	    if (req.url == "/errcl") {
+		set resp.http.Connection = "close";
+	    }
+	}
+
+} -start
+
+logexpect l1 -v v1 -g raw {
+	# base case: bad Expect
+	expect * 1001	RespStatus      417
+
+	# base case: Immediate 100-continue
+	expect * 1003	ReqUnset        {^Expect: 100-continue$}
+	expect 0 1003	ReqStart        {^.}
+	expect 0 1003	ReqMethod       {^POST$}
+	expect 0 1003	ReqURL          {^/$}
+	expect 0 1003	ReqProtocol     {^HTTP/1.1$}
+	expect 0 1003	ReqHeader       {^Content-Length: 20$}
+	expect 0 1003	ReqHeader       {^X-Forwarded-For:}
+	expect 0 1003	VCL_call        {^RECV$}
+	expect 0 1003	VCL_return      {^pass$}
+	expect 0 1003	RespProtocol    {^HTTP/1.1$}
+	expect 0 1003	RespStatus      {^100$}
+	expect 0 1003	RespReason      {^Continue$}
+	expect 0 1003	VCL_call        {^HASH$}
+
+	# no 100 if client has already sent body (and it fits)
+	expect * 1005	ReqUnset        {^Expect: 100-continue$}
+	expect 0 1005	ReqStart        {^.}
+	expect 0 1005	ReqMethod       {^POST$}
+	expect 0 1005	ReqURL          {^/$}
+	expect 0 1005	ReqProtocol     {^HTTP/1.1$}
+	expect 0 1005	ReqHeader       {^Content-Length: 3$}
+	expect 0 1005	ReqHeader       {^X-Forwarded-For:}
+	expect 0 1005	VCL_call        {^RECV$}
+	expect 0 1005	VCL_return      {^pass$}
+	expect 0 1005	VCL_call        {^HASH$}
+
+	# late no cache
+	expect * 1007	ReqUnset        {^Expect: 100-continue$}
+	expect 0 1007	ReqStart        {^.}
+	expect 0 1007	ReqMethod       {^POST$}
+	expect 0 1007	ReqURL          {^/late$}
+	expect 0 1007	ReqProtocol     {^HTTP/1.1$}
+	expect 0 1007	ReqHeader       {^Content-Length: 20$}
+	expect 0 1007	ReqHeader       {^X-Forwarded-For:}
+	expect 0 1007	VCL_call        {^RECV$}
+	expect 0 1007	VCL_return      {^pass$}
+	expect 0 1007	VCL_call        {^HASH$}
+	expect 0 1007	VCL_return      {^lookup$}
+	expect 0 1007	VCL_call        {^PASS$}
+	expect 0 1007	VCL_return      {^fetch$}
+	expect 0 1007	Link            {^bereq 1008 pass$}
+	expect 0 1007	Storage         {^malloc Transient$}
+	expect 0 1007	RespProtocol    {^HTTP/1.1$}
+	expect 0 1007	RespStatus      {^100$}
+	expect 0 1007	RespReason      {^Continue$}
+	expect 0 1007	Timestamp       {^ReqBody:}
+	expect 0 1007	Timestamp       {^Fetch:}
+
+	# late cache
+	expect * 1009	ReqUnset        {^Expect: 100-continue$}
+	expect 0 1009	ReqStart        {^.}
+	expect 0 1009	ReqMethod       {^POST$}
+	expect 0 1009	ReqURL          {^/latecache$}
+	expect 0 1009	ReqProtocol     {^HTTP/1.1$}
+	expect 0 1009	ReqHeader       {^Content-Length: 20$}
+	expect 0 1009	ReqHeader       {^X-Forwarded-For:}
+	expect 0 1009	VCL_call        {^RECV$}
+	expect 0 1009	Storage         {^malloc Transient$}
+	expect 0 1009	RespProtocol    {^HTTP/1.1$}
+	expect 0 1009	RespStatus      {^100$}
+	expect 0 1009	RespReason      {^Continue$}
+	expect 0 1009	Timestamp       {^ReqBody:}
+	expect 0 1009	VCL_return      {^pass$}
+	expect 0 1009	VCL_call        {^HASH$}
+
+	# err
+	expect * 1011	ReqUnset        {^Expect: 100-continue$}
+	expect 0 1011	ReqStart        {^.}
+	expect 0 1011	ReqMethod       {^POST$}
+	expect 0 1011	ReqURL          {^/err$}
+	expect 0 1011	ReqProtocol     {^HTTP/1.1$}
+	expect 0 1011	ReqHeader       {^Content-Length: 20$}
+	expect 0 1011	ReqHeader       {^X-Forwarded-For:}
+	expect 0 1011	VCL_call        {^RECV$}
+	expect 0 1011	VCL_return      {^synth$}
+	expect 0 1011	VCL_call        {^HASH$}
+	expect 0 1011	VCL_return      {^lookup$}
+	expect 0 1011	Timestamp       {^Process:}
+	expect 0 1011	RespHeader      {^Date:}
+	expect 0 1011	RespHeader      {^Server: Varnish$}
+	expect 0 1011	RespHeader      {^X-Varnish: 1011$}
+	expect 0 1011	RespProtocol    {^HTTP/1.1$}
+	expect 0 1011	RespStatus      {^405$}
+
+} -start
 
 client c1 {
+	# base case: bad Expect
+	txreq -url "/" -req POST -hdr "Expect: 101-continue" -body "foo"
+	rxresp
+	expect resp.status == 417
+} -run
+
+client c1 {
+	# base case: Immediate 100-continue
 	txreq -url "/" -req POST -hdr "Expect: 100-continue " \
 		-hdr "Content-Length: 20"
 	rxresp
@@ -18,11 +147,35 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 
+	# no 100 if client has already sent body (and it fits)
 	txreq -url "/" -req POST -hdr "Expect: 100-continue " -body "foo"
 	rxresp
 	expect resp.status == 200
 
-	txreq -url "/" -req POST -hdr "Expect: 101-continue" -body "foo"
+	# late no cache
+	txreq -url "/late" -req POST -hdr "Expect: 100-continue " \
+		-hdr "Content-Length: 20"
 	rxresp
-	expect resp.status == 417
+	expect resp.status == 100
+	send "01234567890123456789"
+	rxresp
+	expect resp.status == 200
+
+	# late cache
+	txreq -url "/latecache" -req POST -hdr "Expect: 100-continue " \
+		-hdr "Content-Length: 20"
+	rxresp
+	expect resp.status == 100
+	send "01234567890123456789"
+	rxresp
+	expect resp.status == 200
+
+	# err
+	txreq -url "/err" -req POST -hdr "Expect: 100-continue " \
+		-hdr "Content-Length: 20"
+	rxresp
+	expect resp.status == 405
+	expect_close
 } -run
+
+logexpect l1 -wait
