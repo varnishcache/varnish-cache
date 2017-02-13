@@ -1035,31 +1035,20 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	vcc_expr_mul(tl, e, fmt);
 	ERRCHK(tl);
 
-	if (tl->t->tok != '+' && tl->t->tok != '-')
-		return;
-
 	f2 = (*e)->fmt;
-	for (ap = vcc_adds; ap->op != EOI; ap++)
-		if (ap->a == f2 && ap->op == tl->t->tok)
-			break;
-
-	if (ap->op == EOI &&
-	    (fmt == STRING || fmt == STRING_LIST) &&
-	    f2 != STRING && f2 != STRING_LIST) {
-		vcc_expr_tostring(tl, e, fmt);
-		f2 = (*e)->fmt;
-	}
 
 	while (tl->t->tok == '+' || tl->t->tok == '-') {
 		tk = tl->t;
 		vcc_NextToken(tl);
 		if (f2 == TIME)
 			vcc_expr_mul(tl, &e2, DURATION);
+		else if (f2 == IP)
+			vcc_expr_mul(tl, &e2, STRING);
 		else
 			vcc_expr_mul(tl, &e2, f2);
 		ERRCHK(tl);
 
-		for (ap = vcc_adds; ap->op != EOI; ap++) {
+		for (ap = vcc_adds; ap->fmt != VOID; ap++) {
 			if (tk->tok == ap->op && (*e)->fmt == ap->a &&
 			    e2->fmt == ap->b)
 				break;
@@ -1071,13 +1060,14 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			continue;
 		}
 
-		if (tk->tok == '+' && ap->op == EOI) {
+		if (tk->tok == '+') {
 			if ((*e)->fmt == STRING && e2->fmt == STRING) {
 				vcc_expr_string_add(tl, e, e2);
 				return;
 			}
 
-			if (fmt == STRING || fmt == STRING_LIST) {
+			if ((fmt == STRING || fmt == STRING_LIST) &&
+			    ((*e)->fmt == STRING || e2->fmt == STRING)) {
 				/* Time to fold and add as string */
 				if ((*e)->fmt != fmt)
 					vcc_expr_tostring(tl, e, fmt);
