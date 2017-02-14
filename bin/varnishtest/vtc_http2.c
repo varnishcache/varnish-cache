@@ -2556,7 +2556,7 @@ stream_new(const char *name, struct http *h)
 
 	ALLOC_OBJ(s, STREAM_MAGIC);
 	AN(s);
-	pthread_cond_init(&s->cond, NULL);
+	AZ(pthread_cond_init(&s->cond, NULL));
 	REPLACE(s->name, name);
 	AN(name);
 	VTAILQ_INIT(&s->fq);
