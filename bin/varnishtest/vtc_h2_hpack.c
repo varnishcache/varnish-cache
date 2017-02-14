@@ -88,6 +88,7 @@ huff_decode(char *str, int nm, struct hpk_iter *iter, int ilen)
 		if (sym->csm == 0 || pl < sym->csm)
 			return (0);
 
+		assert(sym->csm <= 8);
 		pack <<= sym->csm;
 		assert(sym->csm <= pl);
 		pl -= sym->csm;
