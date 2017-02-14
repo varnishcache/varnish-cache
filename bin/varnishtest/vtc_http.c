@@ -1415,7 +1415,7 @@ cmd_http_sendhex(CMD_ARGS)
 	AN(av[1]);
 	AZ(av[2]);
 	l = strlen(av[1]) / 2;
-	p = malloc(l);
+	p = calloc(1, l);
 	AN(p);
 	q = av[1];
 	for (i = 0; i < l; i++) {
