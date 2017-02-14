@@ -2161,7 +2161,7 @@ cmd_rxcont(CMD_ARGS)
 	while (*++av)
 		if (!strcmp(*av, "-some")) {
 			STRTOU32(times, *av, p, vl, "-some");
-			if (time <= 0)
+			if (times <= 0)
 				vtc_fatal(vl, "-some argument must be more"
 					       "than 0 (found \"%s\")\n", *av);
 		} else if (!strcmp(*av, "-all"))
@@ -2211,7 +2211,7 @@ cmd_rxdata(CMD_ARGS)
 	while (*++av)
 		if (!strcmp(*av, "-some")) {
 			STRTOU32(times, *av, p, vl, "-some");
-			if (time <= 0)
+			if (times <= 0)
 				vtc_fatal(vl, "-some argument must be more"
 					       "than 0 (found \"%s\")\n", *av);
 		} else if (!strcmp(*av, "-all"))
