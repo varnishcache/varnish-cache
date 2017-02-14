@@ -2136,13 +2136,14 @@ cmd_rxhdrs(CMD_ARGS)
 	if (*av != NULL)
 		vtc_fatal(vl, "Unknown rxhdrs spec: %s\n", *av);
 
-	while (rcv++ < times || (loop && !(f->flags & END_HEADERS))) {
+	do {
 		f = rxstuff(s);
 		if (!f)
 			return;
+		rcv++;
 		CHKFRAME(f->type, expect, rcv, "rxhdrs");
 		expect = TYPE_CONTINUATION;
-	}
+	} while (rcv < times || (loop && !(f->flags & END_HEADERS)));
 	s->frame = f;
 }
 
@@ -2173,12 +2174,13 @@ cmd_rxcont(CMD_ARGS)
 	if (*av != NULL)
 		vtc_fatal(vl, "Unknown rxcont spec: %s\n", *av);
 
-	while (rcv++ < times || (loop && !(f->flags & END_HEADERS))) {
+	do {
 		f = rxstuff(s);
 		if (!f)
 			return;
+		rcv++;
 		CHKFRAME(f->type, TYPE_CONTINUATION, rcv, "rxcont");
-	}
+	} while (rcv < times || (loop && !(f->flags & END_HEADERS)));
 	s->frame = f;
 }
 
@@ -2223,12 +2225,13 @@ cmd_rxdata(CMD_ARGS)
 	if (*av != NULL)
 		vtc_fatal(vl, "Unknown rxdata spec: %s\n", *av);
 
-	while (rcv++ < times || (loop && !(f->flags & END_STREAM))) {
+	do {
 		f = rxstuff(s);
 		if (!f)
 			return;
+		rcv++;
 		CHKFRAME(f->type, TYPE_DATA, rcv, "rxhdata");
-	}
+	} while (rcv < times || (loop && !(f->flags & END_STREAM)));
 	s->frame = f;
 }
 
@@ -2324,13 +2327,14 @@ cmd_rxpush(CMD_ARGS)
 	if (*av != NULL)
 		vtc_fatal(vl, "Unknown rxpush spec: %s\n", *av);
 
-	while (rcv++ < times || (loop && !(f->flags & END_HEADERS))) {
+	do {
 		f = rxstuff(s);
 		if (!f)
 			return;
+		rcv++;
 		CHKFRAME(f->type, expect, rcv, "rxpush");
 		expect = TYPE_CONTINUATION;
-	}
+	} while (rcv < times || (loop && !(f->flags & END_HEADERS)));
 	s->frame = f;
 }
 
