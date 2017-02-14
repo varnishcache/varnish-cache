@@ -1654,7 +1654,7 @@ cmd_txdata(CMD_ARGS)
 			av++;
 			body = strdup(*av);
 		} else if (!strcmp(*av, "-datalen")) {
-			AZ(data);
+			AZ(body);
 			av++;
 			body = synth_body(*av, 0);
 		} else if (!strcmp(*av, "-pad")) {
