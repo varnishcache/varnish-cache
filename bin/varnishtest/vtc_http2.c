@@ -2115,7 +2115,7 @@ cmd_rxhdrs(CMD_ARGS)
 	struct frame *f = NULL;
 	char *p;
 	int loop = 0;
-	int times = 1;
+	unsigned long int times = 1;
 	int rcv = 0;
 	enum h2_type expect = TYPE_HEADERS;
 
@@ -2125,7 +2125,9 @@ cmd_rxhdrs(CMD_ARGS)
 	while (*++av) {
 		if (!strcmp(*av, "-some")) {
 			STRTOU32_CHECK(times, av, p, vl, "-some", 0);
-			AN(times);
+			if (!times)
+				vtc_fatal(vl, "-some argument must be more"
+					       "than 0 (found \"%s\")\n", *av);
 		} else if (!strcmp(*av, "-all"))
 			loop = 1;
 		else
@@ -2151,7 +2153,7 @@ cmd_rxcont(CMD_ARGS)
 	struct frame *f = NULL;
 	char *p;
 	int loop = 0;
-	int times = 1;
+	unsigned long int times = 1;
 	int rcv = 0;
 
 	(void)cmd;
@@ -2161,7 +2163,7 @@ cmd_rxcont(CMD_ARGS)
 	while (*++av)
 		if (!strcmp(*av, "-some")) {
 			STRTOU32(times, *av, p, vl, "-some");
-			if (times <= 0)
+			if (!times)
 				vtc_fatal(vl, "-some argument must be more"
 					       "than 0 (found \"%s\")\n", *av);
 		} else if (!strcmp(*av, "-all"))
@@ -2201,7 +2203,7 @@ cmd_rxdata(CMD_ARGS)
 	struct frame *f = NULL;
 	char *p;
 	int loop = 0;
-	int times = 1;
+	unsigned long int times = 1;
 	int rcv = 0;
 
 	(void)cmd;
@@ -2211,7 +2213,7 @@ cmd_rxdata(CMD_ARGS)
 	while (*++av)
 		if (!strcmp(*av, "-some")) {
 			STRTOU32(times, *av, p, vl, "-some");
-			if (times <= 0)
+			if (!times)
 				vtc_fatal(vl, "-some argument must be more"
 					       "than 0 (found \"%s\")\n", *av);
 		} else if (!strcmp(*av, "-all"))
@@ -2301,7 +2303,7 @@ cmd_rxpush(CMD_ARGS)
 	struct frame *f = NULL;
 	char *p;
 	int loop = 0;
-	int times = 1;
+	unsigned long int times = 1;
 	int rcv = 0;
 	enum h2_type expect = TYPE_PUSH_PROMISE;
 
@@ -2311,7 +2313,9 @@ cmd_rxpush(CMD_ARGS)
 	while (*++av) {
 		if (!strcmp(*av, "-some")) {
 			STRTOU32_CHECK(times, av, p, vl, "-some", 0);
-			AN(times);
+			if (!times)
+				vtc_fatal(vl, "-some argument must be more"
+					       "than 0 (found \"%s\")\n", *av);
 		} else if (!strcmp(*av, "-all")) {
 			loop = 1;
 		} else
