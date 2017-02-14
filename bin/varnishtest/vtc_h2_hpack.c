@@ -266,7 +266,6 @@ str_decode(struct hpk_iter *iter, struct txt *t)
 		/* XXX: do we care? */
 		t->ptr = realloc(t->ptr, num + 1L);
 		AN(t->ptr);
-		memcpy(t->ptr, t->ptr, num);
 	} else { /* literal string */
 		t->huff = 0;
 		t->ptr = malloc(num + 1L);
