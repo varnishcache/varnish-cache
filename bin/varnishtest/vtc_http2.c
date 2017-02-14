@@ -2209,9 +2209,12 @@ cmd_rxdata(CMD_ARGS)
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 
 	while (*++av)
-		if (!strcmp(*av, "-some"))
-			STRTOU32_CHECK(times, av, p, vl, "-some", 0);
-		else if (!strcmp(*av, "-all"))
+		if (!strcmp(*av, "-some")) {
+			STRTOU32(times, *av, p, vl, "-some");
+			if (time <= 0)
+				vtc_fatal(vl, "-some argument must be more"
+					       "than 0 (found \"%s\")\n", *av);
+		} else if (!strcmp(*av, "-all"))
 			loop = 1;
 		else
 			break;
