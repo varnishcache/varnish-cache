@@ -241,6 +241,16 @@ WS_Reserve(struct ws *ws, unsigned bytes)
 	return (pdiff(ws->f, ws->r));
 }
 
+unsigned
+WS_ReserveLumps(struct ws *ws, size_t sz)
+{
+	unsigned u;
+
+	u = WS_Reserve(ws, 0);
+	u /= sz;
+	return (u);
+}
+
 void
 WS_Release(struct ws *ws, unsigned bytes)
 {

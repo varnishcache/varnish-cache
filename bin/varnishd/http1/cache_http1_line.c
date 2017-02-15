@@ -88,16 +88,15 @@ V1L_Reserve(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	v1l->ws = ws;
 	v1l->res = res;
 
-	u = WS_Reserve(ws, 0);
-	u = PRNDDN(u);
-	u /= sizeof(struct iovec);
+	u = WS_ReserveLumps(ws, sizeof(struct iovec));
 	if (u == 0) {
 		WS_Release(ws, 0);
 		WS_MarkOverflow(ws);
 		return;
-	} else if (u > IOV_MAX)
+	}
+	if (u > IOV_MAX)
 		u = IOV_MAX;
-	v1l->iov = (void*)PRNDUP(ws->f);
+	v1l->iov = (void*)ws->f;
 	v1l->siov = u;
 	v1l->ciov = u;
 	v1l->werr = 0;

@@ -56,6 +56,7 @@ vmod_querysort(VRT_CTX, VCL_STRING url)
 	char *p, *r;
 	const char **pp;
 	const char **pe;
+	unsigned u;
 	int np;
 	int i;
 
@@ -78,16 +79,14 @@ vmod_querysort(VRT_CTX, VCL_STRING url)
 	if (r == NULL)
 		return (url);
 
-	(void)WS_Reserve(ctx->ws, 0);
-	/* We trust cache_ws.c to align sensibly */
+	u = WS_ReserveLumps(ctx->ws, sizeof(const char **));
 	pp = (const char**)(void*)(ctx->ws->f);
-	pe = (const char**)(void*)(ctx->ws->e);
-
-	if (pp + 4 > pe) {
+	if (u < 4) {
 		WS_Release(ctx->ws, 0);
 		WS_MarkOverflow(ctx->ws);
 		return (url);
 	}
+	pe = pp + u;
 
 	/* Collect params as pointer pairs */
 	np = 0;
