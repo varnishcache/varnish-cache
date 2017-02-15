@@ -94,8 +94,7 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 	assert(namelen <= len);
 
 	if (len > UINT_MAX) {	/* XXX: cache_param max header size */
-		VSLb(hp->vsl, SLT_BogoHeader, "Header too large: %.*s",
-		    (int)(len > 20 ? 20 : len), b);
+		VSLb(hp->vsl, SLT_BogoHeader, "Header too large: %.20s", b);
 		return (H2E_ENHANCE_YOUR_CALM);
 	}
 
