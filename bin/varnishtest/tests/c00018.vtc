@@ -3,9 +3,34 @@ varnishtest "Check Expect headers"
 server s1 {
 	rxreq
 	txresp
+	rxreq
+	txresp
+	rxreq
+	txresp
+	rxreq
+	txresp
+	rxreq
+	txresp
 } -start
 
-varnish v1 -vcl+backend { } -start
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_recv {
+		if (req.url ~ "^/explicit") {
+			std.send_100_continue();
+			return (pass);
+		}
+		if (req.url ~ "^/err") {
+			return (synth(405));
+		}
+	}
+	sub vcl_synth {
+		if (req.url == "/errcl") {
+			set resp.http.Connection = "close";
+		}
+	}
+} -start
 
 client c1 {
 	txreq -url "/" -req POST -hdr "Expect: 100-continue " -body "foo"
@@ -13,7 +38,45 @@ client c1 {
 	expect resp.status == 100
 	rxresp
 	expect resp.status == 200
+
+	txreq -url "/" -req POST -hdr "Expect: 100-continue " -body ""
+	rxresp
+	expect resp.status == 200
+
+	# next 2 same as above, but hitting the explicit send_100_continue
+
+	txreq -url "/explicit" -req POST -hdr "Expect: 100-continue " \
+	      -body "foo"
+	rxresp
+	expect resp.status == 100
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/explicit" -req POST -hdr "Expect: 100-continue " -body ""
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/err" -req POST -hdr "Expect: 100-continue " -body "foo"
+	rxresp
+	expect resp.status == 100
+	rxresp
+	expect resp.status == 405
+
 	txreq -url "/" -req POST -hdr "Expect: 101-continue" -body "foo"
 	rxresp
 	expect resp.status == 417
+} -run
+
+client c1 {
+	txreq -url "/errcl" -req POST -hdr "Expect: 100-continue " -body "foo"
+	rxresp
+	expect resp.status == 405
+	expect_close
+} -run
+
+client c1 {
+	txreq -url "/" -proto HTTP/1.0 -req POST -hdr "Expect: 100-continue " \
+	      -body "foo"
+	rxresp
+	expect resp.status == 200
 } -run

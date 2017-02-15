@@ -238,6 +238,13 @@ vmod_cache_req_body(VRT_CTX, VCL_BYTES size)
 	return (1);
 }
 
+VCL_VOID __match_proto__(td_send_100_continue)
+vmod_send_100_continue(VRT_CTX)
+{
+	VRT_100cont(ctx);
+	return;
+}
+
 VCL_STRING __match_proto__(td_std_strstr)
 vmod_strstr(VRT_CTX, VCL_STRING s1, VCL_STRING s2)
 {

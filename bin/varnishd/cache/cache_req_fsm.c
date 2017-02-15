@@ -224,6 +224,9 @@ cnt_synth(struct worker *wrk, struct req *req)
 	http_PrintfHeader(req->resp, "Content-Length: %zd",
 	    VSB_len(synth_body));
 
+	if (!req->doclose && http_HdrIs(req->resp, H_Connection, "close"))
+		req->doclose = SC_RESP_CLOSE;
+
 	/* Discard any lingering request body before delivery */
 	(void)VRB_Ignore(req);
 

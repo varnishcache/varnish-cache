@@ -34,6 +34,7 @@
 #include "cache.h"
 
 #include "cache_director.h"
+#include "cache_transport.h"
 #include "hash/hash_slinger.h"
 #include "vav.h"
 #include "vcl.h"
@@ -508,6 +509,28 @@ VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize)
 		return (-1);
 	}
 	return (VRB_Cache(ctx->req, maxsize));
+}
+
+void
+VRT_100cont(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req->htc, HTTP_CONN_MAGIC);
+	if (! ctx->req->want100cont || ctx->req->htc->content_length == 0)
+		return;
+	if (ctx->method == VCL_MET_RECV ||
+	    ctx->method == VCL_MET_MISS ||
+	    ctx->method == VCL_MET_HIT ||
+	    ctx->method == VCL_MET_PASS ||
+	    ctx->method == VCL_MET_SYNTH) {
+		ctx->req->transport->sresp(ctx->req, R_100);
+		ctx->req->want100cont = 0;
+	} else {
+		VSLb(ctx->vsl, SLT_VCL_Error,
+		    "VRT_100cont only makes sense in clint side "
+		    "request processing");
+	}
 }
 
 /*--------------------------------------------------------------------

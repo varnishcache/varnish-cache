@@ -1,0 +1,59 @@
+varnishtest "H2 Check Expect headers"
+
+feature cmd false
+# - missing DATA implementation to test
+# - missing H2 417 implementation
+
+server s1 {
+	rxreq
+	txresp
+	rxreq
+	txresp
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-pfeature=+http2" -arg "-pdebug=+syncvsl" -vcl+backend {
+	sub vcl_recv {
+		if (req.url ~ "^/err") {
+			return (synth(405));
+		}
+	}
+	sub vcl_synth {
+		if (req.url == "/errcl") {
+			set resp.http.Connection = "close";
+		}
+	}
+} -start
+
+client c1 {
+	stream 1 {
+		txreq -url "/" -req POST -hdr expect "100-continue" -body "foo"
+		rxresp
+		expect resp.status == 100
+		rxresp
+		expect resp.status == 200
+
+		txreq -url "/" -req POST -hdr expect "100-continue" -body ""
+		rxresp
+		expect resp.status == 200
+
+		txreq -url "/err" -req POST -hdr expect "100-continue" \
+		      -body "foo"
+		rxresp
+		expect resp.status == 100
+		rxresp
+		expect resp.status == 405
+
+		txreq -url "/" -req POST -hdr expect "101-continue" -body "foo"
+		rxresp
+		expect resp.status == 417
+	} -run
+	stream 2 {
+		txreq -url "/errcl" -req POST -hdr expect: "100-continue" \
+		      -body "foo"
+		rxresp
+		expect resp.status == 405
+		expect_close
+	} -run
+} -run
