@@ -61,10 +61,6 @@
 #define AC(x) x
 #endif
 
-static const char progname[] = "varnishtop";
-static float period = 60; /* seconds */
-static int end_of_file = 0;
-
 struct top {
 	uint8_t			tag;
 	const char		*rec_data;
@@ -75,6 +71,16 @@ struct top {
 	VRB_ENTRY(top)		e_key;
 	double			count;
 };
+
+static const char progname[] = "varnishtop";
+static float period = 60; /* seconds */
+static int end_of_file = 0;
+static unsigned ntop;
+static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
+static int f_flag = 0;
+static unsigned maxfieldlen = 0;
+
+volatile sig_atomic_t quit = 0;
 
 static VRB_HEAD(t_order, top) h_order = VRB_INITIALIZER(&h_order);
 static VRB_HEAD(t_key, top) h_key = VRB_INITIALIZER(&h_key);
@@ -100,14 +106,6 @@ cmp_order(const struct top *a, const struct top *b)
 		return (1);
 	return (cmp_key(a, b));
 }
-
-static unsigned ntop;
-
-static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
-
-static int f_flag = 0;
-
-static unsigned maxfieldlen = 0;
 
 VRB_PROTOTYPE_STATIC(t_order, top, e_order, cmp_order)
 VRB_GENERATE_STATIC(t_order, top, e_order, cmp_order)
@@ -183,7 +181,8 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 static int __match_proto__(VUT_cb_f)
 sighup(void)
 {
-	exit (1);
+	quit = 1;
+	return (1);
 }
 
 static void
@@ -258,7 +257,7 @@ do_curses(void *arg)
 	AC(intrflush(stdscr, FALSE));
 	(void)curs_set(0);
 	AC(erase());
-	for (;;) {
+	while (!quit) {
 		AZ(pthread_mutex_lock(&mtx));
 		update(period);
 		AZ(pthread_mutex_unlock(&mtx));
@@ -287,13 +286,14 @@ do_curses(void *arg)
 		case 'q':
 			AZ(raise(SIGINT));
 			AC(endwin());
-			return NULL;
+			return (NULL);
 		default:
 			AC(beep());
 			break;
 		}
 	}
-	NEEDLESS(return NULL);
+	AC(endwin());
+	return (NULL);
 }
 
 static void

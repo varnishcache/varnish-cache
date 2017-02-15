@@ -131,6 +131,8 @@ profiles[] = {
 
 static struct profile *active_profile;
 
+volatile sig_atomic_t quit = 0;
+
 static void
 update(void)
 {
@@ -369,7 +371,8 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 static int __match_proto__(VUT_cb_f)
 sighup(void)
 {
-	exit(1);
+	quit = 1;
+	return (1);
 }
 
 static void *
@@ -385,7 +388,7 @@ do_curses(void *arg)
 	intrflush(stdscr, FALSE);
 	curs_set(0);
 	erase();
-	for (;;) {
+	while (!quit) {
 		AZ(pthread_mutex_lock(&mtx));
 		update();
 		AZ(pthread_mutex_unlock(&mtx));
@@ -414,7 +417,7 @@ do_curses(void *arg)
 		case 'q':
 			raise(SIGINT);
 			endwin();
-			pthread_exit(NULL);
+			return (NULL);
 		case '0':
 		case '1':
 		case '2':
@@ -458,7 +461,8 @@ do_curses(void *arg)
 			AZ(pthread_mutex_unlock(&mtx));
 		}
 	}
-	NEEDLESS(pthread_exit(NULL));
+	endwin();
+	return (NULL);
 }
 
 /*--------------------------------------------------------------------*/
