@@ -194,18 +194,12 @@ cnt_synth(struct worker *wrk, struct req *req)
 	http_PutResponse(h, "HTTP/1.1", req->err_code, req->err_reason);
 
 	/*
-	 * Even with an unanswered Expect: 100-continue, the client may or may
-	 * not send data, so we would need to make an attempt to drain-read the
-	 * body. But if the client has not started sending a body, we'd read the
-	 * next request.
-	 *
-	 * So Connection: close is our only way out and for this specific case
-	 * we do not allow VCL to veto it.
+	 * For late 100-continue, we suggest to VCL to close the conenction to
+	 * neither send a 100-continue nor drain-read the request. But VCL has
+	 * the option to veto by removing Connection: close
 	 */
 	if (req->want100cont) {
 		http_SetHeader(h, "Connection: close");
-		req->doclose = SC_RESP_CLOSE;
-		req->want100cont = 0;
 	}
 
 	synth_body = VSB_new_auto();

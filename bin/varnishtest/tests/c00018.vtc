@@ -25,6 +25,10 @@ varnish v1 -vcl+backend {
 		return (synth(405));
 	    }
 
+	    if (req.url ~ "^/synthnocl") {
+		return (synth(200));
+	    }
+
 	    if (req.url == "/latecache") {
 		std.cache_req_body(1KB);
 	    }
@@ -32,8 +36,8 @@ varnish v1 -vcl+backend {
 
 	}
 	sub vcl_synth {
-	    if (req.url == "/errcl") {
-		set resp.http.Connection = "close";
+	    if (req.url == "/synthnocl") {
+		unset resp.http.Connection;
 	    }
 	}
 
@@ -176,6 +180,17 @@ client c1 {
 	rxresp
 	expect resp.status == 405
 	expect_close
+} -run
+
+client c1 {
+	# vcl vetoing the Connection: close in synth
+	txreq -url "/synthnocl" -req POST -hdr "Expect: 100-continue " \
+		-hdr "Content-Length: 20"
+	rxresp
+	expect resp.status == 100
+	send "01234567890123456789"
+	rxresp
+	expect resp.status == 200
 } -run
 
 logexpect l1 -wait
