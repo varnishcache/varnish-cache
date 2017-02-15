@@ -201,8 +201,8 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 		return (1);
 	}
 
-	WS_Reset(req->ws, NULL);
-	WS_Reset(wrk->aws, NULL);
+	WS_Reset(req->ws, 0);
+	WS_Reset(wrk->aws, 0);
 	return (0);
 }
 

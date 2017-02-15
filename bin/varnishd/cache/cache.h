@@ -468,7 +468,7 @@ struct busyobj {
 	struct vfp_ctx		vfc[1];
 
 	struct ws		ws[1];
-	char			*ws_bo;
+	uintptr_t		ws_bo;
 	struct http		*bereq0;
 	struct http		*bereq;
 	struct http		*beresp;
@@ -558,7 +558,7 @@ struct req {
 	const struct director	*director_hint;
 	struct vcl		*vcl;
 
-	char			*ws_req;	/* WS above request data */
+	uintptr_t		ws_req;		/* WS above request data */
 
 	/* Timestamps */
 	double			t_first;	/* First timestamp logged */
@@ -1062,10 +1062,10 @@ void WS_MarkOverflow(struct ws *ws);
 void WS_Release(struct ws *ws, unsigned bytes);
 void WS_ReleaseP(struct ws *ws, char *ptr);
 void WS_Assert(const struct ws *ws);
-void WS_Reset(struct ws *ws, char *p);
+void WS_Reset(struct ws *ws, uintptr_t);
 void *WS_Alloc(struct ws *ws, unsigned bytes);
 void *WS_Copy(struct ws *ws, const void *str, int len);
-char *WS_Snapshot(struct ws *ws);
+uintptr_t WS_Snapshot(struct ws *ws);
 int WS_Overflowed(const struct ws *ws);
 void *WS_Printf(struct ws *ws, const char *fmt, ...) __v_printflike(2, 3);
 

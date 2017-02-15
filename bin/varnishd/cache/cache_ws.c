@@ -106,10 +106,12 @@ ws_ClearOverflow(struct ws *ws)
  */
 
 void
-WS_Reset(struct ws *ws, char *p)
+WS_Reset(struct ws *ws, uintptr_t pp)
 {
+	char *p;
 
 	WS_Assert(ws);
+	p = (char *)pp;
 	DSL(DBG_WORKSPACE, 0, "WS_Reset(%p, %p)", ws, p);
 	assert(ws->r == NULL);
 	if (p == NULL)
@@ -191,14 +193,14 @@ WS_Printf(struct ws *ws, const char *fmt, ...)
 	return (p);
 }
 
-char *
+uintptr_t
 WS_Snapshot(struct ws *ws)
 {
 
 	WS_Assert(ws);
 	assert(ws->r == NULL);
 	DSL(DBG_WORKSPACE, 0, "WS_Snapshot(%p) = %p", ws, ws->f);
-	return (ws->f);
+	return ((uintptr_t)ws->f);
 }
 
 unsigned

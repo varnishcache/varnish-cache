@@ -98,7 +98,7 @@ static struct vcl		*vcl_active; /* protected by vcl_mtx */
 static struct vrt_ctx ctx_cli;
 static unsigned handling_cli;
 static struct ws ws_cli;
-static char *ws_snapshot_cli;
+static uintptr_t ws_snapshot_cli;
 
 /*--------------------------------------------------------------------*/
 
@@ -1011,7 +1011,7 @@ static void
 vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
     void *specific, unsigned method, vcl_func_f *func)
 {
-	char *aws;
+	uintptr_t aws;
 	struct vsl_log *vsl = NULL;
 	struct vrt_ctx ctx;
 

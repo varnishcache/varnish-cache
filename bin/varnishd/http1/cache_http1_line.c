@@ -60,7 +60,7 @@ struct v1l {
 	struct vsl_log		*vsl;
 	ssize_t			cnt;	/* Flushed byte count */
 	struct ws		*ws;
-	void			*res;
+	uintptr_t		res;
 };
 
 /*--------------------------------------------------------------------
@@ -72,7 +72,7 @@ V1L_Reserve(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 {
 	struct v1l *v1l;
 	unsigned u;
-	void *res;
+	uintptr_t res;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	AZ(wrk->v1l);

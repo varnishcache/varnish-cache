@@ -690,7 +690,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	struct sess *sp;
 	struct h2_sess *h2;
 	struct h2_req *r2, *r22;
-	char *wsp;
+	uintptr_t wsp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);

@@ -442,7 +442,7 @@ vmod_workspace_overflowed(VRT_CTX, VCL_ENUM which)
 	return (WS_Overflowed(ws));
 }
 
-static char *debug_ws_snap;
+static uintptr_t debug_ws_snap;
 
 void
 vmod_workspace_snap(VRT_CTX, VCL_ENUM which)
