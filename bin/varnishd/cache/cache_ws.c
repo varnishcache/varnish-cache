@@ -215,7 +215,7 @@ WS_Snapshot(struct ws *ws)
 	WS_Assert(ws);
 	assert(ws->r == NULL);
 	DSL(DBG_WORKSPACE, 0, "WS_Snapshot(%p) = %p", ws, ws->f);
-	return ((uintptr_t)ws->f);
+	return (ws->f == ws->s ? 0 : (uintptr_t)ws->f);
 }
 
 unsigned

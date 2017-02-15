@@ -915,7 +915,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 		 * empty on state-transitions.
 		 */
 		WS_Assert(wrk->aws);
-		assert(wrk->aws->s == wrk->aws->f);
+		AZ(WS_Snapshot(wrk->aws));
 
 		switch (req->req_step) {
 #define REQ_STEP(l,u,arg) \

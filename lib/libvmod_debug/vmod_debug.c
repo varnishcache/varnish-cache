@@ -420,14 +420,17 @@ VCL_INT
 vmod_workspace_free(VRT_CTX, VCL_ENUM which)
 {
 	struct ws *ws;
+	unsigned u;
+
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	ws = wsfind(ctx, which);
 
 	WS_Assert(ws);
-	AZ(ws->r);
+	u = WS_Reserve(ws, 0);
+	WS_Release(ws, 0);
 
-	return (pdiff(ws->f, ws->e));
+	return (u);
 }
 
 VCL_BOOL
