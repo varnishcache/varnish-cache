@@ -59,6 +59,21 @@ WS_Assert(const struct ws *ws)
 	assert(*ws->e == 0x15);
 }
 
+int
+WS_Inside(const struct ws *ws, const void *bb, const void *ee)
+{
+	const char *b = bb;
+	const char *e = ee;
+
+	WS_Assert(ws);
+	if (b < ws->s || b >= ws->e)
+		return (0);
+	if (e != NULL && (e < b || e > ws->e))
+		return (0);
+	return (1);
+}
+
+
 /*
  * NB: The id must be max 3 char and lower-case.
  * (upper-case the first char to indicate overflow)

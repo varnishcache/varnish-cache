@@ -1097,7 +1097,7 @@ http_CopyHome(const struct http *hp)
 			assert(u < HTTP_HDR_FIRST);
 			continue;
 		}
-		if (hp->hd[u].b >= hp->ws->s && hp->hd[u].e <= hp->ws->e)
+		if (WS_Inside(hp->ws, hp->hd[u].b, hp->hd[u].e))
 			continue;
 
 		l = Tlen(hp->hd[u]);

@@ -137,7 +137,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 
 	hp = req->resp;
 	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {
-		assert((char*)p < req->ws->e);
+		assert(WS_Inside(req->ws, p, NULL));
 
 		r = strchr(hp->hd[u].b, ':');
 		AN(r);
@@ -194,7 +194,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 
 		memcpy(p, r, sz);
 		p += sz;
-		assert((char*)p < req->ws->e);
+		assert(WS_Inside(req->ws, p, NULL));
 	}
 	sz = (char*)p - req->ws->f;
 
