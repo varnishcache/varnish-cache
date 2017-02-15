@@ -239,7 +239,7 @@ V1L_Write(const struct worker *wrk, const void *ptr, ssize_t len)
 		return (0);
 	if (len == -1)
 		len = strlen(ptr);
-	if (v1l->niov >= v1l->siov - (v1l->ciov < v1l->siov ? 1 : 0))
+	if (v1l->niov >= v1l->siov - (v1l->ciov < v1l->siov ? 2 : 0))
 		(void)V1L_Flush(wrk);
 	v1l->iov[v1l->niov].iov_base = TRUST_ME(ptr);
 	v1l->iov[v1l->niov].iov_len = len;
