@@ -117,8 +117,8 @@ h2_status(char *p, uint16_t status) {
 	return (l);
 }
 
-int __match_proto__(vtr_sresp_f)
-h2_simple_response(struct req *req, uint16_t status)
+int __match_proto__(vtr_minimal_response_f)
+h2_minimal_response(struct req *req, uint16_t status)
 {
 	struct h2_req *r2;
 	const size_t spc = 6;

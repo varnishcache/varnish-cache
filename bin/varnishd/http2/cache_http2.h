@@ -125,7 +125,7 @@ vtr_sess_panic_f h2_sess_panic;
 /* http2/cache_http2_deliver.c */
 #ifdef TRANSPORT_MAGIC
 vtr_deliver_f h2_deliver;
-vtr_sresp_f h2_simple_response;
+vtr_minimal_response_f h2_minimal_response;
 #endif /* TRANSPORT_MAGIC */
 
 /* http2/cache_http2_hpack.c */

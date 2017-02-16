@@ -202,8 +202,8 @@ http1_reembark(struct worker *wrk, struct req *req)
 	usleep(10000);
 }
 
-static int __match_proto__(vtr_sresp_f)
-http1_simple_response(struct req *req, uint16_t status)
+static int __match_proto__(vtr_minimal_response_f)
+http1_minimal_response(struct req *req, uint16_t status)
 {
 	size_t wl, l, spc = 80;
 	char buf[spc];
@@ -246,7 +246,7 @@ struct transport HTTP1_transport = {
 	.sess_panic =		http1_sess_panic,
 	.req_panic =		http1_req_panic,
 	.reembark =		http1_reembark,
-	.sresp =		http1_simple_response,
+	.minimal_response =	http1_minimal_response,
 };
 
 /*----------------------------------------------------------------------
@@ -257,7 +257,7 @@ http1_abort(struct req *req, unsigned status)
 {
 	AN(req->doclose);
 	assert(status >= 400);
-	(void) http1_simple_response(req, status);
+	(void) http1_minimal_response(req, status);
 	return;
 }
 

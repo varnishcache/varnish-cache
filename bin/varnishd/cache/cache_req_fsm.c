@@ -766,7 +766,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	if (req->want100cont && !req->late100cont) {
 		req->want100cont = 0;
-		if (req->transport->sresp(req, 100))
+		if (req->transport->minimal_response(req, 100))
 			return (-1);
 	}
 
