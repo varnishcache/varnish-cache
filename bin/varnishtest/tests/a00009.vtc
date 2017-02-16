@@ -1,6 +1,9 @@
 varnishtest "Code coverage of mgt_main, (VCL compiler and RSTdump etc)"
 
 shell "varnishd -b 127.0.0.1:80 -C 2> ${tmpdir}/_.c"
+# -C to ignore other arguments
+shell {varnishd -b 127.0.0.1:80 -a foo -h foo -l foo -M foo -P foo \
+       -S foo -s foo -T foo -W foo -C 2> ${tmpdir}/_.c}
 shell "varnishd -x dumprstparam > ${tmpdir}/_.param"
 shell "varnishd -x dumprstvsl > ${tmpdir}/_.vsl"
 shell "varnishd -x dumprstcli > ${tmpdir}/_.cli"
