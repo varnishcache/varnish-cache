@@ -9,6 +9,8 @@ server s1 {
 	txresp
 	rxreq
 	txresp
+	rxreq
+	txresp
 } -start
 
 varnish v1 -vcl+backend {
@@ -183,6 +185,19 @@ client c1 {
 } -run
 
 client c1 {
+	# Immediate 100-continue with Client Connection: close
+	txreq -url "/" -req POST -hdr "Expect: 100-continue " \
+		-hdr "Content-Length: 20" \
+		-hdr "Connection: close"
+	rxresp
+	expect resp.status == 100
+	send "01234567890123456789"
+	rxresp
+	expect resp.status == 200
+	expect_close
+} -run
+
+client c1 {
 	# vcl vetoing the Connection: close in synth
 	txreq -url "/synthnocl" -req POST -hdr "Expect: 100-continue " \
 		-hdr "Content-Length: 20"
@@ -191,6 +206,14 @@ client c1 {
 	send "01234567890123456789"
 	rxresp
 	expect resp.status == 200
+
+	# vcl vetoing the Connection: close in synth but client close
+	txreq -url "/synthnocl" -req POST -hdr "Expect: 100-continue " \
+		-hdr "Content-Length: 20" \
+		-hdr "Connection: close"
+	rxresp
+	expect resp.status == 200
+	expect_close
 } -run
 
 logexpect l1 -wait

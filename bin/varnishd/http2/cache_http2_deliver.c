@@ -105,7 +105,7 @@ static struct h2_simple_response_msg {
 #undef SRESP
 };
 
-void __match_proto__(vtr_sresp_f)
+int __match_proto__(vtr_sresp_f)
 h2_simple_response(struct req *req, enum vtr_sresp sr)
 {
 	const struct h2_simple_response_msg *m;
@@ -126,9 +126,11 @@ h2_simple_response(struct req *req, enum vtr_sresp sr)
 	if (m->s >= 400)
 		req->err_code = m->s;
 
+	/* XXX return code checking once H2_Send returns anything but 0 */
 	H2_Send(req->wrk, r2, 1,
 	    H2_FRAME_HEADERS, H2FF_HEADERS_END_HEADERS,
 	    m->l, m->p);
+	return (0);
 }
 
 void __match_proto__(vtr_deliver_f)

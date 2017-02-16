@@ -49,7 +49,7 @@ typedef void vtr_sess_panic_f (struct vsb *, const struct sess *);
 typedef void vtr_req_panic_f (struct vsb *, const struct req *);
 typedef void vtr_req_fail_f (struct req *, enum sess_close);
 typedef void vtr_reembark_f (struct worker *, struct req *);
-typedef void vtr_sresp_f (struct req *, enum vtr_sresp);
+typedef int vtr_sresp_f (struct req *, enum vtr_sresp);
 
 struct transport {
 	unsigned			magic;

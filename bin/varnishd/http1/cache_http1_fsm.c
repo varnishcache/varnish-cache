@@ -213,7 +213,7 @@ static struct http1_simple_response_msg {
 #undef SRESP
 };
 
-static void __match_proto__(vtr_sresp_f)
+static int __match_proto__(vtr_sresp_f)
 http1_simple_response(struct req *req, enum vtr_sresp sr)
 {
 	const struct http1_simple_response_msg *m;
@@ -232,8 +232,11 @@ http1_simple_response(struct req *req, enum vtr_sresp sr)
 	l = write(req->sp->fd, m->resp, strlen(m->resp));
 	if (l > 0)
 		req->acct.resp_hdrbytes += l;
-	if (! req->doclose && l != strlen(m->resp))
+	if (! req->doclose && l != strlen(m->resp)) {
 		req->doclose = SC_REM_CLOSE;
+		return (-1);
+	}
+	return (0);
 }
 
 struct transport HTTP1_transport = {
@@ -258,7 +261,7 @@ http1_abort(struct req *req, enum vtr_sresp sr)
 {
 	AN(req->doclose);
 	assert(sr >= R_400);
-	http1_simple_response(req, sr);
+	(void) http1_simple_response(req, sr);
 	return;
 }
 
