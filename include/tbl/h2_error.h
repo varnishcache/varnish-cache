@@ -26,24 +26,26 @@
  * SUCH DAMAGE.
  *
  * RFC7540 section 11.4
+ *
+ * Fields: Upper, value, conn=1|stream=2, description
  */
 
 /*lint -save -e525 -e539 */
 
-H2_ERROR(NO_ERROR,		0x0, "Graceful shutdown")
-H2_ERROR(PROTOCOL_ERROR,	0x1, "Protocol error detected")
-H2_ERROR(INTERNAL_ERROR,	0x2, "Implementation fault")
-H2_ERROR(FLOW_CONTROL_ERROR,	0x3, "Flow-control limits exceeded")
-H2_ERROR(SETTINGS_TIMEOUT,	0x4, "Settings not acknowledged")
-H2_ERROR(STREAM_CLOSED,		0x5, "Frame received for closed stream")
-H2_ERROR(FRAME_SIZE_ERROR,	0x6, "Frame size incorrect")
-H2_ERROR(REFUSED_STREAM,	0x7, "Stream not processed")
-H2_ERROR(CANCEL,		0x8, "Stream cancelled")
-H2_ERROR(COMPRESSION_ERROR,	0x9, "Compression state not updated")
-H2_ERROR(CONNECT_ERROR,		0xa, "TCP connection error for CONNECT method")
-H2_ERROR(ENHANCE_YOUR_CALM,	0xb, "Processing capacity exceeded")
-H2_ERROR(INADEQUATE_SECURITY,	0xc, "Negotiated TLS parameters not acceptable")
-H2_ERROR(HTTP_1_1_REQUIRED,	0xd, "Use HTTP/1.1 for the request")
+H2_ERROR(NO_ERROR,	     0x0,0, "Graceful shutdown")
+H2_ERROR(PROTOCOL_ERROR,     0x1,3, "Protocol error detected")
+H2_ERROR(INTERNAL_ERROR,     0x2,3, "Implementation fault")
+H2_ERROR(FLOW_CONTROL_ERROR, 0x3,3, "Flow-control limits exceeded")
+H2_ERROR(SETTINGS_TIMEOUT,   0x4,1, "Settings not acknowledged")
+H2_ERROR(STREAM_CLOSED,	     0x5,2, "Frame received for closed stream")
+H2_ERROR(FRAME_SIZE_ERROR,   0x6,3, "Frame size incorrect")
+H2_ERROR(REFUSED_STREAM,     0x7,2, "Stream not processed")
+H2_ERROR(CANCEL,	     0x8,2, "Stream cancelled")
+H2_ERROR(COMPRESSION_ERROR,  0x9,1, "Compression state not updated")
+H2_ERROR(CONNECT_ERROR,	     0xa,2, "TCP connection error for CONNECT method")
+H2_ERROR(ENHANCE_YOUR_CALM,  0xb,3, "Processing capacity exceeded")
+H2_ERROR(INADEQUATE_SECURITY,0xc,1, "Negotiated TLS parameters not acceptable")
+H2_ERROR(HTTP_1_1_REQUIRED,  0xd,1, "Use HTTP/1.1 for the request")
 #undef H2_ERROR
 
 /*lint -restore */

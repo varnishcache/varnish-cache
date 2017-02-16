@@ -33,7 +33,7 @@ struct h2_sess;
 
 enum h2_error_e {
 	H2E__DUMMY = -1,
-#define H2_ERROR(NAME, val, desc)		\
+#define H2_ERROR(NAME, val, sc, desc) \
 	H2E_##NAME = val,
 #include "tbl/h2_error.h"
 };

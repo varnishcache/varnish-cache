@@ -56,7 +56,7 @@
 #define BUF_SIZE	(1024*2048)
 
 static const char *const h2_errs[] = {
-#define H2_ERROR(n,v,t)	[v] = #n,
+#define H2_ERROR(n,v,sc,t) [v] = #n,
 #include <tbl/h2_error.h>
 	NULL
 };

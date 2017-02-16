@@ -13,7 +13,7 @@ varnish v1 -cliok "param.set debug +syncvsl"
 
 client c1 {
 	stream 1 {
-		txprio -weight 10 -stream 0 
+		txprio -weight 10 -stream 0
 	} -run
 	stream 3 {
 		txprio -weight 10 -stream 0
