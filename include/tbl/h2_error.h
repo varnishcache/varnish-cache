@@ -32,7 +32,7 @@
 
 /*lint -save -e525 -e539 */
 
-H2_ERROR(NO_ERROR,	     0x0,0, "Graceful shutdown")
+H2_ERROR(NO_ERROR,	     0x0,3, "Graceful shutdown")
 H2_ERROR(PROTOCOL_ERROR,     0x1,3, "Protocol error detected")
 H2_ERROR(INTERNAL_ERROR,     0x2,3, "Implementation fault")
 H2_ERROR(FLOW_CONTROL_ERROR, 0x3,3, "Flow-control limits exceeded")

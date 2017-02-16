@@ -37,7 +37,7 @@
 #include "http2/cache_http2.h"
 #include "vct.h"
 
-static int
+static h2_error
 h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 {
 	const char *p;
@@ -49,7 +49,7 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 
 	if (namelen == 2) {
 		VSLb(hp->vsl, SLT_BogoHeader, "Empty name");
-		return (H2E_PROTOCOL_ERROR);
+		return (H2E_C_PROTOCOL_ERROR);
 	}
 
 	for (p = b; p < b + len; p++) {
@@ -64,7 +64,7 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 			VSLb(hp->vsl, SLT_BogoHeader,
 			    "Illegal header name: %.*s",
 			    (int)(len > 20 ? 20 : len), b);
-			return (H2E_PROTOCOL_ERROR);
+			return (H2E_C_PROTOCOL_ERROR);
 		} else if (p < b + namelen) {
 			/* ': ' added by us */
 			assert(*p == ':' || *p == ' ');
@@ -75,14 +75,14 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 			VSLb(hp->vsl, SLT_BogoHeader,
 			    "Illegal header value: %.*s",
 			    (int)(len > 20 ? 20 : len), b);
-			return (H2E_PROTOCOL_ERROR);
+			return (H2E_C_PROTOCOL_ERROR);
 		}
 	}
 
 	return (0);
 }
 
-static int
+static h2_error
 h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 {
 	/* XXX: This might belong in cache/cache_http.c */
@@ -95,7 +95,7 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 
 	if (len > UINT_MAX) {	/* XXX: cache_param max header size */
 		VSLb(hp->vsl, SLT_BogoHeader, "Header too large: %.20s", b);
-		return (H2E_ENHANCE_YOUR_CALM);
+		return (H2E_S_ENHANCE_YOUR_CALM);
 	}
 
 	if (b[0] == ':') {
@@ -127,7 +127,7 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 			VSLb(hp->vsl, SLT_BogoHeader,
 			    "Unknown pseudo-header: %.*s",
 			    (int)(len > 20 ? 20 : len), b);
-			return (H2E_PROTOCOL_ERROR);
+			return (H2E_S_PROTOCOL_ERROR);
 		}
 	} else
 		n = hp->nhd;
@@ -138,14 +138,14 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 			VSLb(hp->vsl, SLT_BogoHeader,
 			    "Duplicate pseudo-header: %.*s",
 			    (int)(len > 20 ? 20 : len), b);
-			return (H2E_PROTOCOL_ERROR);
+			return (H2E_S_PROTOCOL_ERROR);
 		}
 	} else {
 		/* Check for space in struct http */
 		if (n >= hp->shd) {
 			VSLb(hp->vsl, SLT_LostHeader, "Too many headers: %.*s",
 			    (int)(len > 20 ? 20 : len), b);
-			return (H2E_ENHANCE_YOUR_CALM);
+			return (H2E_S_ENHANCE_YOUR_CALM);
 		}
 		hp->nhd++;
 	}
@@ -181,10 +181,10 @@ h2h_decode_init(const struct h2_sess *h2, struct h2h_decode *d)
  * H2E_ENHANCE_YOUR_CALM: Ran out of workspace or http header space. This
  * is a stream level error.
  */
-int
+h2_error
 h2h_decode_fini(const struct h2_sess *h2, struct h2h_decode *d)
 {
-	int ret;
+	h2_error ret;
 
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(h2->new_req, REQ_MAGIC);
@@ -195,7 +195,7 @@ h2h_decode_fini(const struct h2_sess *h2, struct h2h_decode *d)
 		   boundary */
 		VSLb(h2->new_req->http->vsl, SLT_BogoHeader,
 		    "HPACK compression error (%s)", VHD_Error(d->vhd_ret));
-		ret = H2E_COMPRESSION_ERROR;
+		ret = H2E_C_COMPRESSION_ERROR;
 	} else
 		ret = d->error;
 	d->magic = 0;
@@ -209,7 +209,7 @@ h2h_decode_fini(const struct h2_sess *h2, struct h2h_decode *d)
  *
  * H2E_PROTOCOL_ERROR: Malformed header or duplicate pseudo-header.
  */
-int
+h2_error
 h2h_decode_bytes(struct h2_sess *h2, struct h2h_decode *d,
     const uint8_t *in, size_t in_l)
 {
@@ -227,7 +227,7 @@ h2h_decode_bytes(struct h2_sess *h2, struct h2h_decode *d,
 	/* Only H2E_ENHANCE_YOUR_CALM indicates that we should continue
 	   processing. Other errors should have been returned and handled
 	   by the caller. */
-	assert(d->error == 0 || d->error == H2E_ENHANCE_YOUR_CALM);
+	assert(d->error == 0 || d->error == H2E_S_ENHANCE_YOUR_CALM);
 
 	while (1) {
 		AN(d->out);
@@ -239,14 +239,14 @@ h2h_decode_bytes(struct h2_sess *h2, struct h2h_decode *d,
 			VSLb(hp->vsl, SLT_BogoHeader,
 			    "HPACK compression error (%s)",
 			    VHD_Error(d->vhd_ret));
-			d->error = H2E_COMPRESSION_ERROR;
+			d->error = H2E_C_COMPRESSION_ERROR;
 			break;
 		} else if (d->vhd_ret == VHD_OK || d->vhd_ret == VHD_MORE) {
 			assert(in_u == in_l);
 			break;
 		}
 
-		if (d->error == H2E_ENHANCE_YOUR_CALM) {
+		if (d->error == H2E_S_ENHANCE_YOUR_CALM) {
 			d->out_u = 0;
 			assert(d->out_u < d->out_l);
 			continue;
@@ -258,7 +258,7 @@ h2h_decode_bytes(struct h2_sess *h2, struct h2h_decode *d,
 		case VHD_NAME:
 			assert(d->namelen == 0);
 			if (d->out_l - d->out_u < 2) {
-				d->error = H2E_ENHANCE_YOUR_CALM;
+				d->error = H2E_S_ENHANCE_YOUR_CALM;
 				break;
 			}
 			d->out[d->out_u++] = ':';
@@ -271,7 +271,7 @@ h2h_decode_bytes(struct h2_sess *h2, struct h2h_decode *d,
 		case VHD_VALUE:
 			assert(d->namelen > 0);
 			if (d->out_l - d->out_u < 1) {
-				d->error = H2E_ENHANCE_YOUR_CALM;
+				d->error = H2E_S_ENHANCE_YOUR_CALM;
 				break;
 			}
 			d->error = h2h_checkhdr(hp, d->out, d->namelen,
@@ -289,7 +289,7 @@ h2h_decode_bytes(struct h2_sess *h2, struct h2h_decode *d,
 			break;
 
 		case VHD_BUF:
-			d->error = H2E_ENHANCE_YOUR_CALM;
+			d->error = H2E_S_ENHANCE_YOUR_CALM;
 			break;
 
 		default:
@@ -297,7 +297,7 @@ h2h_decode_bytes(struct h2_sess *h2, struct h2h_decode *d,
 			break;
 		}
 
-		if (d->error == H2E_ENHANCE_YOUR_CALM) {
+		if (d->error == H2E_S_ENHANCE_YOUR_CALM) {
 			http_Teardown(hp);
 			d->out = d->reset;
 			d->out_l = hp->ws->r - d->out;
@@ -307,7 +307,7 @@ h2h_decode_bytes(struct h2_sess *h2, struct h2h_decode *d,
 			break;
 	}
 
-	if (d->error == H2E_ENHANCE_YOUR_CALM)
+	if (d->error == H2E_S_ENHANCE_YOUR_CALM)
 		return (0); /* Stream error, delay reporting until
 			       h2h_decode_fini so that we can process the
 			       complete header block */

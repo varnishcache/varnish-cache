@@ -40,6 +40,16 @@
 #include "vtcp.h"
 #include "vtim.h"
 
+#define H2EC0(U,v,d)
+#define H2EC1(U,v,d) const struct h2_error_s H2E_C_##U[1] = {{#U,d,v,0,1}};
+#define H2EC2(U,v,d) const struct h2_error_s H2E_S_##U[1] = {{#U,d,v,1,0}};
+#define H2EC3(U,v,d) H2EC1(U,v,d) H2EC2(U,v,d)
+#define H2_ERROR(NAME, val, sc, desc) H2EC##sc(NAME, val, desc)
+#include "tbl/h2_error.h"
+#undef H2EC1
+#undef H2EC2
+#undef H2EC3
+
 enum h2frame {
 #define H2_FRAME(l,u,t,f)	H2F_##u = t,
 #include "tbl/h2_frames.h"
@@ -189,7 +199,7 @@ h2_new_req(const struct worker *wrk, struct h2_sess *h2,
 }
 
 static void
-h2_del_req(struct worker *wrk, struct h2_req *r2, enum h2_error_e err)
+h2_del_req(struct worker *wrk, struct h2_req *r2, h2_error err)
 {
 	struct h2_sess *h2;
 	struct sess *sp;
@@ -384,7 +394,7 @@ h2_do_req(struct worker *wrk, void *priv)
 	VSL(SLT_Debug, 0, "H2REQ CNT done");
 	/* XXX clean up req */
 	r2->state = H2_S_CLOSED;
-	h2_del_req(wrk, r2, H2E_NO_ERROR);
+	h2_del_req(wrk, r2, H2E_S_NO_ERROR);
 }
 
 void __match_proto__(h2_frame_f)
@@ -394,7 +404,6 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	struct h2h_decode d[1];
 	const uint8_t *p;
 	size_t l;
-	int i;
 
 	/* XXX: This still lacks support for CONTINUATION frames, half
 	 * read frames and proper error handling.
@@ -436,14 +445,8 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		p += 5;
 		l -= 5;
 	}
-	i = h2h_decode_bytes(h2, d, p, l);
-	if (i)
-		VSLb(h2->vsl, SLT_Debug, "H2H_decode_bytes = %d", i);
-	XXXAZ(i);
-	i = h2h_decode_fini(h2, d);
-	if (i)
-		VSLb(h2->vsl, SLT_Debug, "H2H_decode_fini = %d", i);
-	XXXAZ(i);
+	XXXAZ(h2h_decode_bytes(h2, d, p, l));
+	XXXAZ(h2h_decode_fini(h2, d));
 	VSLb_ts_req(req, "Req", req->t_req);
 	http_SetH(req->http, HTTP_HDR_PROTO, "HTTP/2.0");
 
@@ -762,7 +765,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	/* Delete all idle streams */
 	VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
 		if (r2->state == H2_S_IDLE)
-			h2_del_req(wrk, r2, H2E_NO_ERROR);
+			h2_del_req(wrk, r2, H2E_S_NO_ERROR);
 	}
 }
 

@@ -31,12 +31,25 @@ struct h2_sess;
 
 #include "hpack/vhp.h"
 
-enum h2_error_e {
-	H2E__DUMMY = -1,
-#define H2_ERROR(NAME, val, sc, desc) \
-	H2E_##NAME = val,
-#include "tbl/h2_error.h"
+struct h2_error_s {
+	const char			*name;
+	const char			*txt;
+	uint32_t			val;
+	int				stream;
+	int				connection;
 };
+
+typedef const struct h2_error_s *h2_error;
+
+#define H2EC0(U,v,d)
+#define H2EC1(U,v,d) extern const struct h2_error_s H2E_C_##U[1];
+#define H2EC2(U,v,d) extern const struct h2_error_s H2E_S_##U[1];
+#define H2EC3(U,v,d) H2EC1(U,v,d) H2EC2(U,v,d)
+#define H2_ERROR(NAME, val, sc, desc) H2EC##sc(NAME, val, desc)
+#include "tbl/h2_error.h"
+#undef H2EC1
+#undef H2EC2
+#undef H2EC3
 
 enum h2_frame_e {
 	H2_FRAME__DUMMY = -1,
@@ -118,7 +131,7 @@ struct h2h_decode {
 	unsigned			magic;
 #define H2H_DECODE_MAGIC		0xd092bde4
 
-	int				error;
+	h2_error			error;
 	enum vhd_ret_e			vhd_ret;
 	char				*out;
 	char				*reset;
@@ -129,8 +142,8 @@ struct h2h_decode {
 };
 
 void h2h_decode_init(const struct h2_sess *h2, struct h2h_decode *d);
-int h2h_decode_fini(const struct h2_sess *h2, struct h2h_decode *d);
-int h2h_decode_bytes(struct h2_sess *h2, struct h2h_decode *d,
+h2_error h2h_decode_fini(const struct h2_sess *h2, struct h2h_decode *d);
+h2_error h2h_decode_bytes(struct h2_sess *h2, struct h2h_decode *d,
     const uint8_t *ptr, size_t len);
 
 int H2_Send_Frame(struct worker *, const struct h2_sess *,
