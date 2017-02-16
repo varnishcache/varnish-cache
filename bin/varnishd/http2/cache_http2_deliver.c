@@ -93,7 +93,7 @@ h2_bytes(struct req *req, enum vdp_action act, void **priv,
 }
 
 static inline size_t
-h2_status(char *p, uint16_t status) {
+h2_status(uint8_t *p, uint16_t status) {
 	size_t l = 1;
 
 	switch (status) {
