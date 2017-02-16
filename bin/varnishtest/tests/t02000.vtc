@@ -13,7 +13,7 @@ varnish v1 -cliok "param.set debug +syncvsl"
 
 client c1 {
 	stream 1 {
-		txprio -weight 10 -stream 0
+		txprio -weight 10 -stream 0 
 	} -run
 	stream 3 {
 		txprio -weight 10 -stream 0
@@ -22,7 +22,7 @@ client c1 {
 		txprio -weight 10 -stream 2
 	} -run
 	stream 7 {
-		txreq -hdr :authority foo.bar
+		txreq -hdr :authority foo.bar -pad cotton
 		rxresp
 		expect resp.status == 200
 	} -start

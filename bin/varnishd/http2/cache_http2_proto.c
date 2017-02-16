@@ -400,7 +400,6 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	 * read frames and proper error handling.
 	 */
 
-	xxxassert(h2->rxf_stream & 1);
 	xxxassert(r2->state == H2_S_IDLE);
 	r2->state = H2_S_OPEN;
 
@@ -429,7 +428,11 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	/* XXX: Error handling */
 	p = h2->rxf_data;
 	l = h2->rxf_len;
-	if (h2->rxf_flags & 0x20) {
+	if (h2->rxf_flags & H2FF_HEADERS_PADDED) {
+		l -= 1 + *p;
+		p += 1;
+	}
+	if (h2->rxf_flags & H2FF_HEADERS_PRIORITY) {
 		p += 5;
 		l -= 5;
 	}
@@ -518,6 +521,15 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 
 	h2_vsl_frame(h2, h2->htc->rxbuf_b, 9L + h2->rxf_len);
 
+	if (h2->rxf_stream != 0 && !(h2->rxf_stream & 1)) {
+		/* We don't do push, so all streams must be zero or odd# */
+		Lck_Lock(&h2->sess->mtx);
+		VSLb(h2->vsl, SLT_Debug, "H2: illegal stream (=%u)",
+		    h2->rxf_stream);
+		Lck_Unlock(&h2->sess->mtx);
+		return (0);
+	}
+
 	Lck_Lock(&h2->sess->mtx);
 	VTAILQ_FOREACH(r2, &h2->streams, list)
 		if (r2->stream == h2->rxf_stream)
@@ -544,7 +556,10 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		break;
 #include "tbl/h2_frames.h"
 	default:
-		INCOMPL();
+		VSLb(h2->vsl, SLT_Debug, "H2: Bad frame type 0x%02x on ",
+		    h2->htc->rxbuf_b[3]);
+		Lck_Unlock(&h2->sess->mtx);
+		return (0);
 	}
 	Lck_Unlock(&h2->sess->mtx);
 	return (1);
