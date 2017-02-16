@@ -22,7 +22,7 @@ client c1 {
 } -start
 
 barrier b1 sync
-varnish v1 -expect SMA.s0.g_bytes > 10000
+varnish v1 -expect SMA.s0.g_bytes > 8000
 
 barrier b2 sync
 
