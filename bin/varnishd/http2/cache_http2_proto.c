@@ -41,8 +41,8 @@
 #include "vtim.h"
 
 #define H2EC0(U,v,d)
-#define H2EC1(U,v,d) const struct h2_error_s H2E_C_##U[1] = {{#U,d,v,0,1}};
-#define H2EC2(U,v,d) const struct h2_error_s H2E_S_##U[1] = {{#U,d,v,1,0}};
+#define H2EC1(U,v,d) const struct h2_error_s H2CE_##U[1] = {{#U,d,v,0,1}};
+#define H2EC2(U,v,d) const struct h2_error_s H2SE_##U[1] = {{#U,d,v,1,0}};
 #define H2EC3(U,v,d) H2EC1(U,v,d) H2EC2(U,v,d)
 #define H2_ERROR(NAME, val, sc, desc) H2EC##sc(NAME, val, desc)
 #include "tbl/h2_error.h"
@@ -394,7 +394,7 @@ h2_do_req(struct worker *wrk, void *priv)
 	VSL(SLT_Debug, 0, "H2REQ CNT done");
 	/* XXX clean up req */
 	r2->state = H2_S_CLOSED;
-	h2_del_req(wrk, r2, H2E_S_NO_ERROR);
+	h2_del_req(wrk, r2, H2SE_NO_ERROR);
 }
 
 void __match_proto__(h2_frame_f)
@@ -765,7 +765,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	/* Delete all idle streams */
 	VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
 		if (r2->state == H2_S_IDLE)
-			h2_del_req(wrk, r2, H2E_S_NO_ERROR);
+			h2_del_req(wrk, r2, H2SE_NO_ERROR);
 	}
 }
 

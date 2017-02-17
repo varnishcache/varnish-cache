@@ -42,8 +42,8 @@ struct h2_error_s {
 typedef const struct h2_error_s *h2_error;
 
 #define H2EC0(U,v,d)
-#define H2EC1(U,v,d) extern const struct h2_error_s H2E_C_##U[1];
-#define H2EC2(U,v,d) extern const struct h2_error_s H2E_S_##U[1];
+#define H2EC1(U,v,d) extern const struct h2_error_s H2CE_##U[1];
+#define H2EC2(U,v,d) extern const struct h2_error_s H2SE_##U[1];
 #define H2EC3(U,v,d) H2EC1(U,v,d) H2EC2(U,v,d)
 #define H2_ERROR(NAME, val, sc, desc) H2EC##sc(NAME, val, desc)
 #include "tbl/h2_error.h"
