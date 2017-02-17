@@ -1207,6 +1207,9 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 		else
 			return (NULL);
 	}
+#define H2_ERROR(U,v,sc,t) \
+	else if (!strcmp(spec, #U)) { return (#v); }
+#include "tbl/h2_error.h"
 	else
 		return (spec);
 	return(NULL);
