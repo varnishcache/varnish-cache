@@ -528,34 +528,49 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2)
 	h2_error h2e;
 
 	if (h2->rxf_stream != 0 && !(h2->rxf_stream & 1)) {
-		/* We don't do push, so all streams must be zero or odd# */
+		/* No even streams, we don't do PUSH_PROMISE */
 		VSLb(h2->vsl, SLT_Debug, "H2: illegal stream (=%u)",
 		    h2->rxf_stream);
-		return (0);
+		return (H2CE_PROTOCOL_ERROR);		// rfc7540 5.1.1
 	}
 
 	VTAILQ_FOREACH(r2, &h2->streams, list)
 		if (r2->stream == h2->rxf_stream)
 			break;
 	if (r2 == NULL) {
-		xxxassert(h2->rxf_stream > h2->highest_stream);
+		if (h2->rxf_stream <= h2->highest_stream)
+			return (H2CE_PROTOCOL_ERROR);	// rfc7540 5.1.1
 		h2->highest_stream = h2->rxf_stream;
 		r2 = h2_new_req(wrk, h2, h2->rxf_stream, NULL);
+		AN(r2);
 	}
 
 	if (h2->htc->rxbuf_b[3] >= H2FMAX) {
+		h2->bogosity++;
 		VSLb(h2->vsl, SLT_Debug,
-		    "H2: Unknown Frame %d", h2->htc->rxbuf_b[3]);
-		return (0);
+		    "H2: Unknown Frame 0x%02x", h2->htc->rxbuf_b[3]);
+		return (0);				// rfc7540 4.1
 	}
 	h2f = h2flist + h2->htc->rxbuf_b[3];
-	AN(h2f->name);
+	if (h2f->name == NULL || h2f->func == NULL) {
+		h2->bogosity++;
+		VSLb(h2->vsl, SLT_Debug,
+		    "H2: Unimplemented Frame 0x%02x", h2->htc->rxbuf_b[3]);
+		return (0);				// rfc7540 4.1
+	}
 	if (h2->rxf_flags & ~h2f->flags) {
+		h2->bogosity++;
 		VSLb(h2->vsl, SLT_Debug, "H2: Bad flags 0x%02x on %s",
 		    h2->rxf_flags, h2f->name);
-		return (0);
+		h2->rxf_flags &= h2f->flags;		// rfc7540 4.1
 	}
 	h2e = h2f->func(wrk, h2, r2);
+	if (h2e == 0)
+		return (0);
+	if (h2->rxf_stream == 0 || h2e->connection)
+		return (h2e);	// Connection errors one level up
+
+	/* XXX handle stream error */
 	XXXAZ(h2e);
 	return (0);
 }
