@@ -251,6 +251,7 @@ AC_CHECK_FUNCS([strerror])
 AC_FUNC_STRERROR_R
 AC_CHECK_FUNCS([dladdr])
 AC_CHECK_FUNCS([socket])
+AC_CHECK_FUNCS([explicit_bzero])
 AC_CHECK_FUNCS([nanosleep])
 AC_CHECK_FUNCS([setppriv])
 AC_CHECK_FUNCS([fallocate])

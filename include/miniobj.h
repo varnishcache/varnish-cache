@@ -5,6 +5,12 @@
  *
  */
 
+#if HAVE_EXPLICIT_BZERO
+#  define ZERO_OBJ(to, sz)	explicit_bzero(to, sz)
+#else
+#  define ZERO_OBJ(to, sz)	(void)memset(to, 0, sz)
+#endif
+
 #define INIT_OBJ(to, type_magic)					\
 	do {								\
 		(void)memset(to, 0, sizeof *to);			\
@@ -20,7 +26,7 @@
 
 #define FREE_OBJ(to)							\
 	do {								\
-		(to)->magic = (0);					\
+		ZERO_OBJ(&(to)->magic, sizeof (to)->magic);		\
 		free(to);						\
 		to = NULL;						\
 	} while (0)
