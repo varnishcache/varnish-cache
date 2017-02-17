@@ -594,6 +594,47 @@ cmd_err_shell(CMD_ARGS)
 	cmd_shell_engine(vl, -1, av[2], av[1], NULL);
 }
 
+/* SECTION: setenv setenv
+ *
+ * Set or change an environment variable::
+ *
+ *         setenv FOO "bar baz"
+ *
+ * The above will set the environment variable $FOO to the value
+ * provided. There is also an ``-ifunset`` argument which will only
+ * set the value if the the environment variable does not already
+ * exist::
+ *
+ *        setenv -ifunset FOO quux
+ */
+static void
+cmd_setenv(CMD_ARGS)
+{
+	int r;
+	int force;
+
+	(void)priv;
+	(void)cmd;
+
+	if (av == NULL)
+		return;
+	AN(av[1]);
+	AN(av[2]);
+
+	force = 1;
+	if (strcmp("-ifunset", av[1]) == 0) {
+		force = 0;
+		av++;
+		AN(av[2]);
+	}
+	if (av[3] != NULL)
+		vtc_log(vl, 0, "CMD setenv: Unexpected argument '%s'", av[3]);
+	r = setenv(av[1], av[2], force);
+	if (r != 0)
+		vtc_log(vl, 0, "CMD setenv %s=\"%s\" failed: %s",
+		    av[1], av[2], strerror(errno));
+}
+
 /* SECTION: delay delay
  *
  * Sleep for the number of seconds specified in the argument. The number
@@ -744,6 +785,7 @@ static const struct cmds cmds[] = {
 	CMD(feature)
 	CMD(logexpect)
 	CMD(process)
+	CMD(setenv)
 #undef CMD
 	{ NULL, NULL }
 };
