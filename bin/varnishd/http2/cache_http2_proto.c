@@ -104,7 +104,7 @@ static const uint8_t H2_settings[] = {
 
 /**********************************************************************/
 #define DUMMY_FRAME(l) \
-	void \
+	h2_error __match_proto__(h2_frame_f) \
 	h2_rx_##l(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2) \
 	__match_proto__(h2_frame_f) \
 	{ (void)wrk; (void)r2; VSLb(h2->vsl, SLT_Debug, "XXX implement " #l); INCOMPL(); }
@@ -296,7 +296,7 @@ h2_vsl_frame(const struct h2_sess *h2, const void *ptr, size_t len)
 /**********************************************************************
  */
 
-void __match_proto__(h2_frame_f)
+h2_error __match_proto__(h2_frame_f)
 h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	(void)r2;
@@ -305,12 +305,13 @@ h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	xxxassert(h2->rxf_stream == 0);
 	H2_Send_Frame(wrk, h2,
 	    H2_FRAME_PING, H2FF_PING_ACK, 8, 0, h2->rxf_data);
+	return (0);
 }
 
 /**********************************************************************
  */
 
-void __match_proto__(h2_frame_f)
+h2_error __match_proto__(h2_frame_f)
 h2_rx_goaway(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	uint32_t	error;
@@ -321,9 +322,10 @@ h2_rx_goaway(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	error = vbe32dec(h2->rxf_data + 4);
 	/*XXX*/(void)error;
 	h2->go_away = 1;
+	return (0);
 }
 
-void __match_proto__(h2_frame_f)
+h2_error __match_proto__(h2_frame_f)
 h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	uint32_t wu;
@@ -335,26 +337,28 @@ h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	xxxassert(wu != 0);			// stream PROTOCOL_ERROR
 	r2->window += wu;
 	xxxassert(r2->window < (1LLU<<32));	// FLOW_CONTROL_ERROR
+	return (0);
 }
 
 /**********************************************************************
  * Incoming PRIORITY, possibly an ACK of one we sent.
  */
 
-void __match_proto__(h2_frame_f)
+h2_error __match_proto__(h2_frame_f)
 h2_rx_priority(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 
 	(void)wrk;
 	(void)h2;
 	xxxassert(r2->stream & 1);
+	return (0);
 }
 
 /**********************************************************************
  * Incoming SETTINGS, possibly an ACK of one we sent.
  */
 
-void __match_proto__(h2_frame_f)
+h2_error __match_proto__(h2_frame_f)
 h2_rx_settings(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	const uint8_t *p = h2->rxf_data;
@@ -376,6 +380,7 @@ h2_rx_settings(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	} else {
 		WRONG("SETTINGS FRAME");
 	}
+	return (0);
 }
 
 /**********************************************************************
@@ -397,7 +402,7 @@ h2_do_req(struct worker *wrk, void *priv)
 	h2_del_req(wrk, r2, H2SE_NO_ERROR);
 }
 
-void __match_proto__(h2_frame_f)
+h2_error __match_proto__(h2_frame_f)
 h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	struct req *req;
@@ -459,6 +464,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	req->task.func = h2_do_req;
 	req->task.priv = req;
 	XXXAZ(Pool_Task(wrk->pool, &req->task, TASK_QUEUE_REQ));
+	return (0);
 }
 
 /**********************************************************************/
@@ -548,7 +554,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 #define H2_FRAME(l,u,t,f)					\
 	case H2F_##u:						\
 		if (!(h2->rxf_flags & ~f)) {			\
-			h2_rx_##l(wrk, h2, r2);			\
+			(void)h2_rx_##l(wrk, h2, r2);		\
 		} else {					\
 			VSLb(h2->vsl, SLT_Debug,		\
 			    "H2: Bad flags 0x%02x on " #u,	\
