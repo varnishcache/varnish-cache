@@ -199,14 +199,13 @@ h2_new_req(const struct worker *wrk, struct h2_sess *h2,
 }
 
 static void
-h2_del_req(struct worker *wrk, struct h2_req *r2, h2_error err)
+h2_del_req(struct worker *wrk, struct h2_req *r2)
 {
 	struct h2_sess *h2;
 	struct sess *sp;
 	struct req *req;
 	int r;
 
-	(void)err;
 	h2 = r2->h2sess;
 	sp = h2->sess;
 	Lck_Lock(&sp->mtx);
@@ -405,7 +404,7 @@ h2_do_req(struct worker *wrk, void *priv)
 	VSL(SLT_Debug, 0, "H2REQ CNT done");
 	/* XXX clean up req */
 	r2->state = H2_S_CLOSED;
-	h2_del_req(wrk, r2, H2SE_NO_ERROR);
+	h2_del_req(wrk, r2);
 }
 
 h2_error __match_proto__(h2_frame_f)
@@ -526,6 +525,7 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2)
 	struct h2_req *r2 = NULL;
 	const struct h2flist_s *h2f;
 	h2_error h2e;
+	char b[4];
 
 	if (h2->rxf_stream != 0 && !(h2->rxf_stream & 1)) {
 		/* No even streams, we don't do PUSH_PROMISE */
@@ -570,8 +570,14 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2)
 	if (h2->rxf_stream == 0 || h2e->connection)
 		return (h2e);	// Connection errors one level up
 
-	/* XXX handle stream error */
-	XXXAZ(h2e);
+	VSLb(h2->vsl, SLT_Debug, "H2: stream %u: %s",
+	    h2->rxf_stream, h2e->txt);
+	vbe32enc(b, h2e->val);
+	(void)H2_Send_Frame(wrk, h2, H2_FRAME_RST_STREAM,
+	    0, sizeof b, h2->rxf_stream, b);
+	Lck_Unlock(&h2->sess->mtx);
+	h2_del_req(wrk, r2);
+	Lck_Lock(&h2->sess->mtx);
 	return (0);
 }
 
@@ -580,6 +586,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 {
 	enum htc_status_e hs;
 	h2_error h2e;
+	char b[8];
 
 	(void)VTCP_blocking(*h2->htc->rfd);
 	h2->sess->t_idle = VTIM_real();
@@ -605,10 +612,15 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 
 	Lck_Lock(&h2->sess->mtx);
 	h2e = h2_procframe(wrk, h2);
+	if (h2e) {
+		VSLb(h2->vsl, SLT_Debug, "H2: stream 0: %s", h2e->txt);
+		vbe32enc(b, h2->highest_stream);
+		vbe32enc(b + 4, h2e->val);
+		(void)H2_Send_Frame(wrk, h2, H2_FRAME_GOAWAY,
+		    0, sizeof b, 0, b);
+	}
 	Lck_Unlock(&h2->sess->mtx);
-	if (h2e)
-		return (0);
-	return (1);
+	return (h2e ? 0 : 1);
 }
 
 
@@ -808,7 +820,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	/* Delete all idle streams */
 	VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
 		if (r2->state == H2_S_IDLE)
-			h2_del_req(wrk, r2, H2SE_NO_ERROR);
+			h2_del_req(wrk, r2);
 	}
 }
 
