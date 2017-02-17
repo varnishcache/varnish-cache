@@ -501,12 +501,25 @@ h2_frame_complete(struct http_conn *htc)
 	return (HTC_S_COMPLETE);
 }
 
+struct h2flist_s {
+	const char	*name;
+	h2_frame_f	*func;
+	uint8_t		flags;
+};
+
+static const struct h2flist_s h2flist[] = {
+#define H2_FRAME(l,U,t,f) [t] = { #U, h2_rx_##l, f },
+#include "tbl/h2_frames.h"
+};
+
+#define H2FMAX (sizeof(h2flist) / sizeof(h2flist[0]))
+
 static int
 h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 {
 	enum htc_status_e hs;
-	enum h2frame ft;
 	struct h2_req *r2 = NULL;
+	const struct h2flist_s *h2f;
 
 	(void)VTCP_blocking(*h2->htc->rfd);
 	h2->sess->t_idle = VTIM_real();
@@ -549,27 +562,22 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		r2 = h2_new_req(wrk, h2, h2->rxf_stream, NULL);
 	}
 
-	ft = (enum h2frame)h2->htc->rxbuf_b[3];
-	switch (ft) {
-#define H2_FRAME(l,u,t,f)					\
-	case H2F_##u:						\
-		if (!(h2->rxf_flags & ~f)) {			\
-			(void)h2_rx_##l(wrk, h2, r2);		\
-		} else {					\
-			VSLb(h2->vsl, SLT_Debug,		\
-			    "H2: Bad flags 0x%02x on " #u,	\
-			    h2->rxf_flags);			\
-			Lck_Unlock(&h2->sess->mtx);		\
-			return (0);				\
-		}						\
-		break;
-#include "tbl/h2_frames.h"
-	default:
-		VSLb(h2->vsl, SLT_Debug, "H2: Bad frame type 0x%02x on ",
-		    h2->htc->rxbuf_b[3]);
+	if (h2->htc->rxbuf_b[3] >= H2FMAX) {
+		VSLb(h2->vsl, SLT_Debug,
+		    "H2: Unknown Frame %d", h2->htc->rxbuf_b[3]);
 		Lck_Unlock(&h2->sess->mtx);
 		return (0);
 	}
+	h2f = h2flist + h2->htc->rxbuf_b[3];
+	AN(h2f->name);
+	if (h2->rxf_flags & ~h2f->flags) {
+		VSLb(h2->vsl, SLT_Debug, "H2: Bad flags 0x%02x on %s",
+		    h2->rxf_flags, h2f->name);
+		Lck_Unlock(&h2->sess->mtx);
+		return (0);
+	}
+	(void)h2f->func(wrk, h2, r2);
+
 	Lck_Unlock(&h2->sess->mtx);
 	return (1);
 }
