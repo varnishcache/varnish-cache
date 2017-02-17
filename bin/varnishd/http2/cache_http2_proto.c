@@ -299,10 +299,13 @@ h2_vsl_frame(const struct h2_sess *h2, const void *ptr, size_t len)
 h2_error __match_proto__(h2_frame_f)
 h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
+
 	(void)r2;
-	xxxassert(h2->rxf_len == 8);
-	xxxassert(h2->rxf_flags == 0);
-	xxxassert(h2->rxf_stream == 0);
+	if (h2->rxf_len != 8)
+		return (H2CE_FRAME_SIZE_ERROR);
+	if (h2->rxf_stream != 0)
+		return (H2CE_PROTOCOL_ERROR);
+	xxxassert(h2->rxf_flags == 0);	// XXX: we never send pings
 	H2_Send_Frame(wrk, h2,
 	    H2_FRAME_PING, H2FF_PING_ACK, 8, 0, h2->rxf_data);
 	return (0);
@@ -332,11 +335,14 @@ h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 
 	(void)wrk;
 	Lck_AssertHeld(&h2->sess->mtx);
-	xxxassert(h2->rxf_len == 4);		// conn FRAME_SIZE_ERROR
-	wu = vbe32dec(h2->rxf_data);
-	xxxassert(wu != 0);			// stream PROTOCOL_ERROR
+	if (h2->rxf_len != 4)
+		return (H2CE_FRAME_SIZE_ERROR);
+	wu = vbe32dec(h2->rxf_data) & ~(1LU<<31);
+	if (wu == 0)
+		return (H2SE_PROTOCOL_ERROR);
 	r2->window += wu;
-	xxxassert(r2->window < (1LLU<<32));	// FLOW_CONTROL_ERROR
+	if (r2->window >= (1LLU << 31))
+		return (H2SE_FLOW_CONTROL_ERROR);
 	return (0);
 }
 
@@ -514,12 +520,51 @@ static const struct h2flist_s h2flist[] = {
 
 #define H2FMAX (sizeof(h2flist) / sizeof(h2flist[0]))
 
+static h2_error
+h2_procframe(struct worker *wrk, struct h2_sess *h2)
+{
+	struct h2_req *r2 = NULL;
+	const struct h2flist_s *h2f;
+	h2_error h2e;
+
+	if (h2->rxf_stream != 0 && !(h2->rxf_stream & 1)) {
+		/* We don't do push, so all streams must be zero or odd# */
+		VSLb(h2->vsl, SLT_Debug, "H2: illegal stream (=%u)",
+		    h2->rxf_stream);
+		return (0);
+	}
+
+	VTAILQ_FOREACH(r2, &h2->streams, list)
+		if (r2->stream == h2->rxf_stream)
+			break;
+	if (r2 == NULL) {
+		xxxassert(h2->rxf_stream > h2->highest_stream);
+		h2->highest_stream = h2->rxf_stream;
+		r2 = h2_new_req(wrk, h2, h2->rxf_stream, NULL);
+	}
+
+	if (h2->htc->rxbuf_b[3] >= H2FMAX) {
+		VSLb(h2->vsl, SLT_Debug,
+		    "H2: Unknown Frame %d", h2->htc->rxbuf_b[3]);
+		return (0);
+	}
+	h2f = h2flist + h2->htc->rxbuf_b[3];
+	AN(h2f->name);
+	if (h2->rxf_flags & ~h2f->flags) {
+		VSLb(h2->vsl, SLT_Debug, "H2: Bad flags 0x%02x on %s",
+		    h2->rxf_flags, h2f->name);
+		return (0);
+	}
+	h2e = h2f->func(wrk, h2, r2);
+	XXXAZ(h2e);
+	return (0);
+}
+
 static int
 h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 {
 	enum htc_status_e hs;
-	struct h2_req *r2 = NULL;
-	const struct h2flist_s *h2f;
+	h2_error h2e;
 
 	(void)VTCP_blocking(*h2->htc->rfd);
 	h2->sess->t_idle = VTIM_real();
@@ -543,42 +588,11 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 
 	h2_vsl_frame(h2, h2->htc->rxbuf_b, 9L + h2->rxf_len);
 
-	if (h2->rxf_stream != 0 && !(h2->rxf_stream & 1)) {
-		/* We don't do push, so all streams must be zero or odd# */
-		Lck_Lock(&h2->sess->mtx);
-		VSLb(h2->vsl, SLT_Debug, "H2: illegal stream (=%u)",
-		    h2->rxf_stream);
-		Lck_Unlock(&h2->sess->mtx);
-		return (0);
-	}
-
 	Lck_Lock(&h2->sess->mtx);
-	VTAILQ_FOREACH(r2, &h2->streams, list)
-		if (r2->stream == h2->rxf_stream)
-			break;
-	if (r2 == NULL) {
-		xxxassert(h2->rxf_stream > h2->highest_stream);
-		h2->highest_stream = h2->rxf_stream;
-		r2 = h2_new_req(wrk, h2, h2->rxf_stream, NULL);
-	}
-
-	if (h2->htc->rxbuf_b[3] >= H2FMAX) {
-		VSLb(h2->vsl, SLT_Debug,
-		    "H2: Unknown Frame %d", h2->htc->rxbuf_b[3]);
-		Lck_Unlock(&h2->sess->mtx);
-		return (0);
-	}
-	h2f = h2flist + h2->htc->rxbuf_b[3];
-	AN(h2f->name);
-	if (h2->rxf_flags & ~h2f->flags) {
-		VSLb(h2->vsl, SLT_Debug, "H2: Bad flags 0x%02x on %s",
-		    h2->rxf_flags, h2f->name);
-		Lck_Unlock(&h2->sess->mtx);
-		return (0);
-	}
-	(void)h2f->func(wrk, h2, r2);
-
+	h2e = h2_procframe(wrk, h2);
 	Lck_Unlock(&h2->sess->mtx);
+	if (h2e)
+		return (0);
 	return (1);
 }
 
