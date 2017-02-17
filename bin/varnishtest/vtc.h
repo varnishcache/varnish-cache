@@ -124,3 +124,6 @@ void cmd_stream(CMD_ARGS);
 void start_h2(struct http *hp);
 void stop_h2(struct http *hp);
 void b64_settings(const struct http *hp, const char *s);
+
+/* vtc_subr.c */
+struct vsb *vtc_hex_to_bin(struct vtclog *vl, const char *arg);

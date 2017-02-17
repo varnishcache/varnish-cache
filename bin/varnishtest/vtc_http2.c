@@ -1225,41 +1225,20 @@ cmd_sendhex(CMD_ARGS)
 {
 	struct http *hp;
 	struct stream *s;
-	char *q;
-	char *buf;
-	char tmp[3];
-	int i;
-	unsigned size = 0;
-	(void)cmd;
+	struct vsb *vsb;
 
+	(void)cmd;
+	(void)vl;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 	CAST_OBJ_NOTNULL(hp, s->hp, HTTP_MAGIC);
 	AN(av[1]);
 	AZ(av[2]);
-
-	q = av[1];
-	size = strlen(q)/2;
-	buf = malloc(size);
-	AN(buf);
-	for (i = 0; i < size; i++) {
-		while (vct_issp(*q))
-			q++;
-		if (*q == '\0')
-			break;
-		memcpy(tmp, q, 2);
-		q += 2;
-		tmp[2] = '\0';
-		if (!vct_ishex(tmp[0]) || !vct_ishex(tmp[1]))
-			vtc_fatal(vl, "Illegal Hex char \"%c%c\"",
-					tmp[0], tmp[1]);
-		buf[i] = (uint8_t)strtoul(tmp, NULL, 16);
-	}
+	vsb = vtc_hex_to_bin(hp->vl, av[1]);
+	vtc_hexdump(hp->vl, 4, "sendhex", VSB_data(vsb), VSB_len(vsb));
 	AZ(pthread_mutex_lock(&hp->mtx));
-	http_write(hp, 4, buf, i, "sendhex");
-
+	http_write(hp, 4, VSB_data(vsb), VSB_len(vsb), "sendhex");
 	AZ(pthread_mutex_unlock(&hp->mtx));
-	vtc_hexdump(vl, 4, "sendhex", (void *)buf, size);
-	free(buf);
+	VSB_destroy(&vsb);
 }
 
 #define ENC(hdr, k, v)			\

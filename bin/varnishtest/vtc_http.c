@@ -1404,38 +1404,20 @@ cmd_http_send_urgent(CMD_ARGS)
 static void
 cmd_http_sendhex(CMD_ARGS)
 {
+	struct vsb *vsb;
 	struct http *hp;
-	char buf[3], *q;
-	uint8_t *p;
-	int i, j, l;
+	int j;
 
 	(void)cmd;
 	(void)vl;
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 	AN(av[1]);
 	AZ(av[2]);
-	l = strlen(av[1]) / 2;
-	p = calloc(1, l);
-	AN(p);
-	q = av[1];
-	for (i = 0; i < l; i++) {
-		while (vct_issp(*q))
-			q++;
-		if (*q == '\0')
-			break;
-		memcpy(buf, q, 2);
-		q += 2;
-		buf[2] = '\0';
-		if (!vct_ishex(buf[0]) || !vct_ishex(buf[1]))
-			vtc_fatal(hp->vl, "Illegal Hex char \"%c%c\"",
-			    buf[0], buf[1]);
-		p[i] = (uint8_t)strtoul(buf, NULL, 16);
-	}
-	vtc_hexdump(hp->vl, 4, "sendhex", (void*)p, i);
-	j = write(hp->fd, p, i);
-	assert(j == i);
-	free(p);
-
+	vsb = vtc_hex_to_bin(hp->vl, av[1]);
+	vtc_hexdump(hp->vl, 4, "sendhex", VSB_data(vsb), VSB_len(vsb));
+	j = write(hp->fd, VSB_data(vsb), VSB_len(vsb));
+	assert(j == VSB_len(vsb));
+	VSB_destroy(&vsb);
 }
 
 /* SECTION: client-server.spec.chunked
