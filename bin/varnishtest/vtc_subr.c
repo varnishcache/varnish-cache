@@ -28,6 +28,8 @@
 
 #include "config.h"
 
+#include <sys/types.h>
+
 #include "vtc.h"
 
 #include "vct.h"
