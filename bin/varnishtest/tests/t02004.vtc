@@ -19,6 +19,8 @@ varnish v1 -cliok "param.set debug +syncvsl"
 client c1 {
 	stream 1 {
 		txreq -hdr :authority foo.bar -pad cotton
-		delay 3
 	} -run
+	expect_close
 } -run
+
+varnish v1 -wait-stopped
