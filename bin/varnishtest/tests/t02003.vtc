@@ -10,6 +10,37 @@ varnish v1 -vcl+backend {} -start
 varnish v1 -cliok "param.set feature +http2"
 varnish v1 -cliok "param.set debug +syncvsl"
 
+# Test Even stream numbers
+
+client c1 {
+	stream 0 {
+		rxgoaway
+		expect goaway.laststream == 0
+		expect goaway.err == PROTOCOL_ERROR
+	} -start
+	stream 2 {
+		txwinup -size 1
+	} -run
+	stream 0 -wait
+} -run
+
+# Test reverse order stream numbers
+
+client c1 {
+	stream 0 {
+		rxgoaway
+		expect goaway.laststream == 3
+		expect goaway.err == PROTOCOL_ERROR
+	} -start
+	stream 3 {
+		txwinup -size 1
+	} -run
+	stream 1 {
+		txwinup -size 1
+	} -run
+	stream 0 -wait
+} -run
+
 # Test WINDOW_UPDATE error conditions
 
 client c1 {
