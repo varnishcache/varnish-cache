@@ -102,7 +102,7 @@ void vtc_fatal(struct vtclog *vl, const char *, ...)
 void vtc_dump(struct vtclog *vl, int lvl, const char *pfx,
     const char *str, int len);
 void vtc_hexdump(struct vtclog *vl, int lvl, const char *pfx,
-    const unsigned char *str, int len);
+    const char *str, int len);
 
 int vtc_send_proxy(int fd, int version, const struct suckaddr *sac,
     const struct suckaddr *sas);
