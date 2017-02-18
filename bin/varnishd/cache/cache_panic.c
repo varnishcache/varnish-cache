@@ -127,6 +127,10 @@ pan_already(struct vsb *vsb, const void *ptr)
 {
 	int i;
 
+	if (ptr == NULL) {
+		VSB_printf(vsb, "},\n");
+		return (1);
+	}
 	for (i = 0; i < already_idx; i++) {
 		if (already_list[i] == ptr) {
 			VSB_printf(vsb, "  [Already dumped, see above]\n");
@@ -635,15 +639,18 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 
 	if (!FEATURE(FEATURE_SHORT_PANIC)) {
 		req = THR_GetRequest();
-		if (req != NULL) {
-			pan_req(pan_vsb, req);
+		VSB_cat(pan_vsb, "thr.");
+		pan_req(pan_vsb, req);
+		if (req != NULL)
 			VSL_Flush(req->vsl, 0);
-		}
 		bo = THR_GetBusyobj();
-		if (bo != NULL) {
-			pan_busyobj(pan_vsb, bo);
+		VSB_cat(pan_vsb, "thr.");
+		pan_busyobj(pan_vsb, bo);
+		if (bo != NULL)
 			VSL_Flush(bo->vsl, 0);
-		}
+	} else {
+		VSB_printf(pan_vsb,
+		    "Feature short panic supressed details.\n");
 	}
 	VSB_printf(pan_vsb, "\n");
 	VSB_putc(pan_vsb, '\0');	/* NUL termination */

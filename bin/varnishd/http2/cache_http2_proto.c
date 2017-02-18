@@ -400,7 +400,9 @@ h2_do_req(struct worker *wrk, void *priv)
 
 	CAST_OBJ_NOTNULL(req, priv, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
+	THR_SetRequest(req);
 	assert(CNT_Request(wrk, req) != REQ_FSM_DISEMBARK);
+	THR_SetRequest(NULL);
 	VSL(SLT_Debug, 0, "H2REQ CNT done");
 	/* XXX clean up req */
 	r2->state = H2_S_CLOSED;
@@ -772,7 +774,6 @@ h2_new_session(struct worker *wrk, void *arg)
 
 	assert(req->transport == &H2_transport);
 
-	THR_SetRequest(req);
 	wsp = WS_Snapshot(wrk->aws);
 
 	switch(req->err_code) {
