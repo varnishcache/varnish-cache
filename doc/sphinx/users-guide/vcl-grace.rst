@@ -41,7 +41,7 @@ default looks like this::
 
   sub vcl_hit {
      if (obj.ttl >= 0s) {
-         // A pure unadultered hit, deliver it
+         // A pure unadulterated hit, deliver it
          return (deliver);
      }
      if (obj.ttl + obj.grace > 0s) {

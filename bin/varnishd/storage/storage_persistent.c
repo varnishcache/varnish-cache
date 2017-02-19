@@ -608,7 +608,7 @@ const struct stevedore smp_stevedore = {
 };
 
 /*--------------------------------------------------------------------
- * Persistence is a bear to test unadultered, so we cheat by adding
+ * Persistence is a bear to test unadulterated, so we cheat by adding
  * a cli command we can use to make it do tricks for us.
  */
 
