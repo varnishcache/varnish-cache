@@ -1,0 +1,36 @@
+varnishtest "Deconfigure thread pool"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+varnish v1 -cliok "param.set debug +drop_pools"
+varnish v1 -cliok "param.set thread_pools 1"
+
+delay 2
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -vsc *poo*
+
+delay 2
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -vsc *poo*
+varnish v1 -expect MAIN.pools == 1
+
+client c1 {
+	txreq
+	rxresp
+} -run
+

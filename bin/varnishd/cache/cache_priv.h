@@ -99,6 +99,7 @@ task_func_t VPX_Proto_Sess;
 
 /* cache_session.c */
 void SES_NewPool(struct pool *, unsigned pool_no);
+void SES_DestroyPool(struct pool *);
 
 /* cache_shmlog.c */
 void VSM_Init(void);

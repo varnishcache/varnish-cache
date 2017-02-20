@@ -600,3 +600,11 @@ SES_NewPool(struct pool *pp, unsigned pool_no)
 
 	pp->waiter = Waiter_New();
 }
+
+void
+SES_DestroyPool(struct pool *pp)
+{
+	MPL_Destroy(&pp->mpl_req);
+	MPL_Destroy(&pp->mpl_sess);
+	Waiter_Destroy(&pp->waiter);
+}

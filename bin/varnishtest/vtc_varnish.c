@@ -823,9 +823,9 @@ do_stat_dump_cb(void *priv, const struct VSC_point * const pt)
 
 	strcpy(buf, pt->section->type);
 	if (pt->section->ident[0] != '\0')
-		bprintf(buf, ".%s.%s", pt->section->ident, pt->desc->name);
+		bprintf(buf, "%s.%s", pt->section->ident, pt->desc->name);
 	else
-		bprintf(buf, ".%s", pt->desc->name);
+		bprintf(buf, "MAIN.%s", pt->desc->name);
 
 	if (strcmp(dp->arg, "*")) {
 		if (fnmatch(dp->arg, buf, 0))

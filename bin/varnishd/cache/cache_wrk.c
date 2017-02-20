@@ -465,14 +465,17 @@ pool_herder(void *priv)
 	struct pool_task *pt;
 	double t_idle;
 	struct worker *wrk;
-	int delay, wthread_min;
+	double delay;
+	int wthread_min;
 
 	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
 
 	THR_SetName("pool_herder");
 
-	while (1) {
+	while (!pp->die || pp->nthr > 0) {
 		wthread_min = cache_param->wthread_min;
+		if (pp->die)
+			wthread_min = 0;
 
 		/* Make more threads if needed and allowed */
 		if (pp->nthr < wthread_min ||
@@ -501,7 +504,7 @@ pool_herder(void *priv)
 				AZ(pt->func);
 				CAST_OBJ_NOTNULL(wrk, pt->priv, WORKER_MAGIC);
 
-				if (wrk->lastused < t_idle ||
+				if (pp->die || wrk->lastused < t_idle ||
 				    pp->nthr > cache_param->wthread_max) {
 					/* Give it a kiss on the cheek... */
 					VTAILQ_REMOVE(&pp->idle_queue,
@@ -527,6 +530,14 @@ pool_herder(void *priv)
 				delay = cache_param->wthread_destroy_delay;
 		}
 
+		if (pp->die) {
+			if (delay < 2)
+				delay = 10e-3;
+			else
+				delay = 1;
+			VTIM_sleep(delay);
+			continue;
+		}
 		Lck_Lock(&pp->mtx);
 		if (!pp->dry) {
 			(void)Lck_CondWait(&pp->herder_cond, &pp->mtx,
@@ -538,5 +549,5 @@ pool_herder(void *priv)
 		}
 		Lck_Unlock(&pp->mtx);
 	}
-	NEEDLESS(return NULL);
+	return (NULL);
 }

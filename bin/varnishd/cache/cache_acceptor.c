@@ -68,6 +68,7 @@ struct wrk_accept {
 struct poolsock {
 	unsigned			magic;
 #define POOLSOCK_MAGIC			0x1b0a2d38
+	VTAILQ_ENTRY(poolsock)		list;
 	struct listen_sock		*lsock;
 	struct pool_task		task;
 	struct pool			*pool;
@@ -402,7 +403,7 @@ vca_accept_task(struct worker *wrk, void *arg)
 	while (!pool_accepting)
 		VTIM_sleep(.1);
 
-	while (1) {
+	while (!ps->pool->die) {
 		INIT_OBJ(&wa, WRK_ACCEPT_MAGIC);
 		wa.acceptlsock = ls;
 
@@ -413,6 +414,12 @@ vca_accept_task(struct worker *wrk, void *arg)
 			i = accept(ls->sock, (void*)&wa.acceptaddr,
 				   &wa.acceptaddrlen);
 		} while (i < 0 && errno == EAGAIN);
+
+		if (i < 0 && ps->pool->die) {
+			VSL(SLT_Debug, 0, "XXX Accept thread dies %p", ps);
+			FREE_OBJ(ps);
+			return;
+		}
 
 		if (i < 0 && ls->sock == -2) {
 			/* Shut down in progress */
@@ -454,7 +461,9 @@ vca_accept_task(struct worker *wrk, void *arg)
 			 * must reschedule the listening task so it will be
 			 * taken up by another thread again.
 			 */
-			AZ(Pool_Task(wrk->pool, &ps->task, TASK_QUEUE_VCA));
+			if (!ps->pool->die)
+				AZ(Pool_Task(wrk->pool, &ps->task,
+				    TASK_QUEUE_VCA));
 			return;
 		}
 
@@ -485,7 +494,19 @@ VCA_NewPool(struct pool *pp)
 		ps->task.func = vca_accept_task;
 		ps->task.priv = ps;
 		ps->pool = pp;
+		VTAILQ_INSERT_TAIL(&pp->poolsocks, ps, list);
 		AZ(Pool_Task(pp, &ps->task, TASK_QUEUE_VCA));
+	}
+}
+
+void
+VCA_DestroyPool(struct pool *pp)
+{
+	struct poolsock *ps;
+
+	while (!VTAILQ_EMPTY(&pp->poolsocks)) {
+		ps = VTAILQ_FIRST(&pp->poolsocks);
+		VTAILQ_REMOVE(&pp->poolsocks, ps, list);
 	}
 }
 
