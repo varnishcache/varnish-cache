@@ -1070,6 +1070,7 @@ uintptr_t WS_Snapshot(struct ws *ws);
 int WS_Overflowed(const struct ws *ws);
 void *WS_Printf(struct ws *ws, const char *fmt, ...) __v_printflike(2, 3);
 int WS_Inside(const struct ws *, const void *, const void *);
+void WS_Assert_Allocated(const struct ws *ws, const void *ptr, ssize_t len);
 
 static inline char*
 WS_Front(const struct ws *ws)
