@@ -59,6 +59,17 @@ WS_Assert(const struct ws *ws)
 	assert(*ws->e == 0x15);
 }
 
+void
+WS_Assert_Allocated(const struct ws *ws, const void *ptr, ssize_t len)
+{
+	const char *p = ptr;
+
+	WS_Assert(ws);
+	if (len < 0)
+		len = strlen(p) + 1;
+	assert(p >= ws->s && (p + len) < ws->f);
+}
+
 /*
  * NB: The id must be max 3 char and lower-case.
  * (upper-case the first char to indicate overflow)
@@ -83,7 +94,6 @@ WS_Init(struct ws *ws, const char *id, void *space, unsigned len)
 	strcpy(ws->id, id);
 	WS_Assert(ws);
 }
-
 
 void
 WS_MarkOverflow(struct ws *ws)

@@ -1047,6 +1047,7 @@ void *WS_Copy(struct ws *ws, const void *str, int len);
 char *WS_Snapshot(struct ws *ws);
 int WS_Overflowed(const struct ws *ws);
 void *WS_Printf(struct ws *ws, const char *fmt, ...) __v_printflike(2, 3);
+void WS_Assert_Allocated(const struct ws *ws, const void *ptr, ssize_t len);
 
 /* cache_rfc2616.c */
 void RFC2616_Ttl(struct busyobj *, double now);
