@@ -1071,6 +1071,12 @@ int WS_Overflowed(const struct ws *ws);
 void *WS_Printf(struct ws *ws, const char *fmt, ...) __v_printflike(2, 3);
 int WS_Inside(const struct ws *, const void *, const void *);
 
+static inline char*
+WS_Front(const struct ws *ws)
+{
+	return ws->f;
+}
+
 /* cache_rfc2616.c */
 void RFC2616_Ttl(struct busyobj *, double now, double *t_origin,
     float *ttl, float *grace, float *keep);
