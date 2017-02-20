@@ -270,11 +270,12 @@ vtc_hexdump(struct vtclog *vl, int lvl, const char *pfx,
 
 static void __attribute__((__noreturn__))
 vtc_log_VAS_Fail(const char *func, const char *file, int line,
-    const char *cond, enum vas_e why)
+    const char *cond, const void *addr, enum vas_e why)
 {
 	struct vtclog *vl;
 
 	(void)why;
+	(void)addr;
 	vl = pthread_getspecific(log_key);
 	if (vl == NULL || vl->act) {
 		fprintf(stderr,

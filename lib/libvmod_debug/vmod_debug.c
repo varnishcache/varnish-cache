@@ -63,7 +63,7 @@ vmod_panic(VRT_CTX, const char *str, ...)
 	va_start(ap, str);
 	b = VRT_String(ctx->ws, "PANIC: ", str, ap);
 	va_end(ap);
-	VAS_Fail("VCL", "", 0, b, VAS_VCL);
+	VAS_Fail("VCL", "", 0, b, NULL, VAS_VCL);
 }
 
 VCL_STRING __match_proto__(td_debug_author)
