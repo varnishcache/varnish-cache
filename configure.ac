@@ -345,19 +345,10 @@ else
 fi
 
 AM_MISSING_HAS_RUN
-AC_CHECK_PROGS(PYTHON, [python3 python3.1 python3.2 python2.7 python2 python], "no")
-if test "x$PYTHON" = "xno"; then
-  AC_MSG_ERROR([Python is needed to build Varnish, please install python 2.7 or later.])
-fi
 
-py_ver=`"$PYTHON" -V 2>&1`
-case "$py_ver" in
-Python?3.* | Python?2.[7-9].*)
-	;;
-*)
-	AC_MSG_ERROR([Python >= 2.7 is required])
-	;;
-esac
+AM_PATH_PYTHON([2.7], [], [
+	AC_MSG_ERROR([Python 2.7 or later is needed to build Varnish.])
+])
 
 AC_CHECK_DECL([SO_ACCEPTFILTER],
     AC_DEFINE(HAVE_ACCEPT_FILTERS,1,[Define to 1 if you have accept filters]),

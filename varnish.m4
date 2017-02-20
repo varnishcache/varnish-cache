@@ -114,8 +114,8 @@ AC_DEFUN([_VARNISH_VMOD_CONFIG], [
 	AC_REQUIRE([AC_PROG_CPP])
 	AC_REQUIRE([AC_PROG_CPP_WERROR])
 
-	AM_PATH_PYTHON([2.6], [], [
-		AC_MSG_ERROR([Python is needed to build VMODs.])
+	AM_PATH_PYTHON([2.7], [], [
+		AC_MSG_ERROR([Python 2.7 or later is needed to build VMODs.])
 	])
 
 	AS_IF([test -z "$RST2MAN"], [
