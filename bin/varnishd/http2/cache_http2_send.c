@@ -130,8 +130,10 @@ H2_Send_Frame(struct worker *wrk, const struct h2_sess *h2,
 	Lck_Lock(&h2->sess->mtx);
 	VSLb_bin(h2->vsl, SLT_H2TxHdr, 9, hdr);
 	h2->srq->acct.resp_hdrbytes += 9;
-	if (ftyp->overhead)
+	if (ftyp->overhead) {
 		h2->srq->acct.resp_bodybytes += len;
+		h2->srq->acct.resp_protobytes += len;
+	}
 	Lck_Unlock(&h2->sess->mtx);
 
 	s = write(h2->sess->fd, hdr, sizeof hdr);

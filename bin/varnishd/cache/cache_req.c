@@ -54,13 +54,15 @@ Req_AcctLogCharge(struct VSC_main *ds, struct req *req)
 	a = &req->acct;
 
 	if (req->vsl->wid && !(req->res_mode & RES_PIPE)) {
-		VSLb(req->vsl, SLT_ReqAcct, "%ju %ju %ju %ju %ju %ju",
+		VSLb(req->vsl, SLT_ReqAcct, "%ju %ju %ju %ju %ju %ju %ju %ju",
 		    (uintmax_t)a->req_hdrbytes,
 		    (uintmax_t)a->req_bodybytes,
 		    (uintmax_t)(a->req_hdrbytes + a->req_bodybytes),
 		    (uintmax_t)a->resp_hdrbytes,
 		    (uintmax_t)a->resp_bodybytes,
-		    (uintmax_t)(a->resp_hdrbytes + a->resp_bodybytes));
+		    (uintmax_t)(a->resp_hdrbytes + a->resp_bodybytes),
+		    (uintmax_t)a->req_protobytes,
+		    (uintmax_t)a->resp_protobytes);
 	}
 
 #define ACCT(foo)			\

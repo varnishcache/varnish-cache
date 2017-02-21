@@ -227,8 +227,10 @@ http1_minimal_response(struct req *req, uint16_t status)
 		req->err_code = status;
 	wl = write(req->sp->fd, buf, l);
 
-	if (wl > 0)
+	if (wl > 0) {
 		req->acct.resp_hdrbytes += wl;
+		req->acct.resp_protobytes += wl;
+	}
 	if (wl != l) {
 		VTCP_Assert(1);
 		if (!req->doclose)
@@ -402,6 +404,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			if (hs < HTC_S_EMPTY) {
 				req->acct.req_hdrbytes +=
 				    req->htc->rxbuf_e - req->htc->rxbuf_b;
+				req->acct.req_protobytes +=
+				    req->htc->rxbuf_e - req->htc->rxbuf_b;
 				Req_AcctLogCharge(wrk->stats, req);
 				Req_Release(req);
 				switch (hs) {
@@ -445,6 +449,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 
 			i = http1_dissect(wrk, req);
 			req->acct.req_hdrbytes +=
+			    req->htc->rxbuf_e - req->htc->rxbuf_b;
+			req->acct.req_protobytes +=
 			    req->htc->rxbuf_e - req->htc->rxbuf_b;
 			if (i) {
 				assert(req->doclose > 0);

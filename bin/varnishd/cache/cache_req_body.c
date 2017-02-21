@@ -109,6 +109,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 		if (l > 0 && vfps != VFP_ERROR) {
 			req->req_bodybytes += l;
 			req->acct.req_bodybytes += l;
+			req->acct.req_protobytes += l;
 			if (yet >= l)
 				yet -= l;
 			if (func != NULL) {

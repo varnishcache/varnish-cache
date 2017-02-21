@@ -30,8 +30,8 @@
 struct VSC_vbe;
 
 /* cache_http1_fetch.c [V1F] */
-int V1F_SendReq(struct worker *, struct busyobj *, uint64_t *ctr,
-    int onlycached);
+int V1F_SendReq(struct worker *, struct busyobj *, uint64_t *ctr_hdrbytes,
+    uint64_t *ctr_protobytes, int onlycached);
 int V1F_FetchRespHdr(struct busyobj *);
 int V1F_Setup_Fetch(struct vfp_ctx *vfc, struct http_conn *htc);
 
@@ -59,5 +59,5 @@ void V1L_EndChunk(const struct worker *w);
 void V1L_Open(struct worker *, struct ws *, int *fd, struct vsl_log *,
     double t0, unsigned niov);
 unsigned V1L_Flush(const struct worker *w);
-unsigned V1L_Close(struct worker *w);
+unsigned V1L_Close(struct worker *w, uint64_t *protobytes);
 size_t V1L_Write(const struct worker *w, const void *ptr, ssize_t len);

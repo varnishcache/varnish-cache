@@ -12,6 +12,14 @@
 	:level:	info
 	:oneliner:	Happy health probes
 
+.. varnish_vsc:: bereq_protobytes
+	:type:	counter
+	:level:	info
+	:format: bytes
+	:oneliner:	Request body bytes
+
+	Total backend request bytes sent including protocol overhead
+
 .. varnish_vsc:: bereq_hdrbytes
 	:type:	counter
 	:level:	info
@@ -43,6 +51,14 @@
 	:oneliner:	Response body bytes
 
 	Total backend response body bytes received
+
+.. varnish_vsc:: beresp_protobytes
+	:type:	counter
+	:level:	info
+	:format: bytes
+	:oneliner:	Response body bytes
+
+	Total backend response bytes received including protocol overhead
 
 .. varnish_vsc:: pipe_hdrbytes
 	:type:	counter

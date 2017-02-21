@@ -343,6 +343,12 @@
 
 	Total request body bytes received
 
+.. varnish_vsc:: s_req_protobytes
+	:oneliner: 	Request protocol bytes
+	:format:	bytes
+
+	Total request bytes received including protocol overhead
+
 .. varnish_vsc:: s_resp_hdrbytes
 	:oneliner:	Response header bytes
 	:format:	bytes
@@ -355,6 +361,12 @@
 
 	Total response body bytes transmitted
 	:format:	bytes
+
+.. varnish_vsc:: s_resp_protobytes
+	:oneliner:	Response protocol bytes
+	:format:	bytes
+
+	Total response bytes transmitted including protocol overhead
 
 .. varnish_vsc:: s_pipe_hdrbytes
 	:oneliner:	Pipe request header bytes

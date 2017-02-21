@@ -36,6 +36,8 @@ ACCT(req_hdrbytes)
 ACCT(req_bodybytes)
 ACCT(resp_hdrbytes)
 ACCT(resp_bodybytes)
+ACCT(req_protobytes)
+ACCT(resp_protobytes)
 #undef ACCT
 
 /*lint -restore */

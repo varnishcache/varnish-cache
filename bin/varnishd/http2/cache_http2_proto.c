@@ -969,14 +969,17 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		    (uint8_t)h2->rxf_type);
 		Lck_Unlock(&h2->sess->mtx);
 		h2->srq->acct.req_bodybytes += h2->rxf_len;
+		h2->srq->acct.req_protobytes += h2->rxf_len;
 		return (1);
 	}
 	h2f = h2flist[h2->rxf_type];
 
 	AN(h2f->name);
 	AN(h2f->rxfunc);
-	if (h2f->overhead)
+	if (h2f->overhead) {
 		h2->srq->acct.req_bodybytes += h2->rxf_len;
+		h2->srq->acct.req_protobytes += h2->rxf_len;
+	}
 
 	if (h2->rxf_flags & ~h2f->flags) {
 		// rfc7540,l,687,688
