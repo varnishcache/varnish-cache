@@ -13,7 +13,7 @@
 
 #define INIT_OBJ(to, type_magic)					\
 	do {								\
-		(void)memset(to, 0, sizeof *to);			\
+		(void)memset(to, 0, sizeof *(to));			\
 		(to)->magic = (type_magic);				\
 	} while (0)
 
