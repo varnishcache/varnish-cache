@@ -178,7 +178,7 @@ barrier_sock_thread(void *priv)
 		if (i < 0) {
 			if (errno == EINTR)
 				continue;
-			AZ(close(sock));
+			closefd(&sock);
 			vtc_fatal(vl,
 			    "Barrier(%s) select fails: %s (errno=%d)",
 			    b->name, strerror(errno), errno);
@@ -193,7 +193,7 @@ barrier_sock_thread(void *priv)
 
 		i = accept(sock, NULL, NULL);
 		if (i < 0) {
-			AZ(close(sock));
+			closefd(&sock);
 			vtc_fatal(vl,
 			    "Barrier(%s) accept fails: %s (errno=%d)",
 			    b->name, strerror(errno), errno);
@@ -212,7 +212,7 @@ barrier_sock_thread(void *priv)
 
 		vtc_log(vl, 4, "Barrier(%s) wake %u", b->name, b->expected);
 		for (i = 0; i < b->expected; i++)
-			AZ(close(conns[i]));
+			closefd(&conns[i]);
 
 		if (b->cyclic)
 			b->waiters = 0;
@@ -223,7 +223,7 @@ barrier_sock_thread(void *priv)
 	macro_undef(vl, b->name, "addr");
 	macro_undef(vl, b->name, "port");
 	macro_undef(vl, b->name, "sock");
-	AZ(close(sock));
+	closefd(&sock);
 	free(conns);
 
 	return (NULL);
@@ -324,7 +324,7 @@ barrier_sock_sync(struct barrier *b, struct vtclog *vl)
 	AZ(pthread_mutex_lock(&b->mtx));
 
 	i = errno;
-	AZ(close(sock));
+	closefd(&sock);
 
 	if (sz < 0)
 		vtc_fatal(vl, "Barrier(%s) read failed: %s (errno=%d)",

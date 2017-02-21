@@ -41,6 +41,7 @@
 #include <unistd.h>
 
 #include "vas.h"
+#include "vdef.h"
 #include "vrnd.h"
 
 /**********************************************************************
@@ -158,7 +159,7 @@ VRND_RandomCrypto(void *ptr, size_t len)
 		if (l != 1)
 			break;
 	}
-	AZ(close(fd));
+	closefd(&fd);
 	return (len == 0 ? 0 : -1);
 }
 

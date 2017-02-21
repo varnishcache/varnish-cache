@@ -71,7 +71,7 @@ VFIL_null_fd(int target)
 	fd = open("/dev/null", O_RDWR);
 	assert(fd >= 0);
 	assert(dup2(fd, target) == target);
-	AZ(close(fd));
+	closefd(&fd);
 }
 
 static char *
@@ -143,7 +143,7 @@ VFIL_readfile(const char *pfx, const char *fn, ssize_t *sz)
 		return (NULL);
 	r = vfil_readfd(fd, sz);
 	err = errno;
-	AZ(close(fd));
+	closefd(&fd);
 	errno = err;
 	return (r);
 }
@@ -159,7 +159,7 @@ VFIL_writefile(const char *pfx, const char *fn, const char *buf, size_t sz)
 		return (fd);
 	r = vfil_writefd(fd, buf, sz);
 	err = errno;
-	AZ(close(fd));
+	closefd(&fd);
 	errno = err;
 	return (r);
 }

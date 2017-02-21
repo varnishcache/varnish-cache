@@ -45,6 +45,7 @@
 
 #include "vtc.h"
 
+#include "vdef.h"
 #include "vev.h"
 #include "vfil.h"
 #include "vnum.h"
@@ -312,7 +313,7 @@ start_test(void)
 		    jp->tmpdir, jp->buf, jp->bufsiz);
 		exit(retval);
 	}
-	AZ(close(p[1]));
+	closefd(&p[1]);
 
 	jp->ev = vev_new();
 	AN(jp->ev);

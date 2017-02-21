@@ -524,7 +524,7 @@ vmod_barrier_sync(VRT_CTX, VCL_STRING addr)
 
 	sz = read(sock, buf, sizeof buf);
 	i = errno;
-	AZ(close(sock));
+	closefd(&sock);
 	if (sz == 0)
 		return (1);
 	if (sz < 0)

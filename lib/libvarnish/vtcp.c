@@ -262,7 +262,7 @@ VTCP_connected(int s)
 	/* An error means no connection established */
 	errno = k;
 	if (k) {
-		AZ(close(s));
+		closefd(&s);
 		return (-1);
 	}
 
@@ -302,7 +302,7 @@ VTCP_connect(const struct suckaddr *name, int msec)
 	if (i == 0)
 		return (s);
 	if (errno != EINPROGRESS) {
-		AZ(close(s));
+		closefd(&s);
 		return (-1);
 	}
 
@@ -323,7 +323,7 @@ VTCP_connect(const struct suckaddr *name, int msec)
 
 	if (i == 0) {
 		/* Timeout, close and give up */
-		AZ(close(s));
+		closefd(&s);
 		errno = ETIMEDOUT;
 		return (-1);
 	}
@@ -430,7 +430,7 @@ VTCP_bind(const struct suckaddr *sa, const char **errp)
 		if (errp != NULL)
 			*errp = "setsockopt(SO_REUSEADDR, 1)";
 		e = errno;
-		AZ(close(sd));
+		closefd(&sd);
 		errno = e;
 		return (-1);
 	}
@@ -442,7 +442,7 @@ VTCP_bind(const struct suckaddr *sa, const char **errp)
 		if (errp != NULL)
 			*errp = "setsockopt(IPV6_V6ONLY, 1)";
 		e = errno;
-		AZ(close(sd));
+		closefd(&sd);
 		errno = e;
 		return (-1);
 	}
@@ -452,7 +452,7 @@ VTCP_bind(const struct suckaddr *sa, const char **errp)
 		if (errp != NULL)
 			*errp = "bind(2)";
 		e = errno;
-		AZ(close(sd));
+		closefd(&sd);
 		errno = e;
 		return (-1);
 	}
@@ -476,7 +476,7 @@ VTCP_listen(const struct suckaddr *sa, int depth, const char **errp)
 	if (sd >= 0)  {
 		if (listen(sd, depth) != 0) {
 			e = errno;
-			AZ(close(sd));
+			closefd(&sd);
 			errno = e;
 			if (errp != NULL)
 				*errp = "listen(2)";

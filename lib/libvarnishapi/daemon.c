@@ -55,7 +55,7 @@ vfil_null_fd(int target)
 	fd = open("/dev/null", O_RDWR);
 	assert(fd >= 0);
 	assert(dup2(fd, target) == target);
-	AZ(close(fd));
+	closefd(&fd);
 }
 
 int

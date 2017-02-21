@@ -445,10 +445,10 @@ varnish_launch(struct varnish *v)
 		AZ(dup2(v->fds[0], 0));
 		assert(dup2(v->fds[3], 1) == 1);
 		assert(dup2(1, 2) == 2);
-		AZ(close(v->fds[0]));
-		AZ(close(v->fds[1]));
-		AZ(close(v->fds[2]));
-		AZ(close(v->fds[3]));
+		closefd(&v->fds[0]);
+		closefd(&v->fds[1]);
+		closefd(&v->fds[2]);
+		closefd(&v->fds[3]);
 		VSUB_closefrom(STDERR_FILENO + 1);
 		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(vsb), (char*)0));
 		exit(1);
@@ -457,8 +457,8 @@ varnish_launch(struct varnish *v)
 		macro_def(v->vl, v->name, "pid", "%ld", (long)v->pid);
 		macro_def(v->vl, v->name, "name", "%s", v->workdir);
 	}
-	AZ(close(v->fds[0]));
-	AZ(close(v->fds[3]));
+	closefd(&v->fds[0]);
+	closefd(&v->fds[3]);
 	v->fds[0] = v->fds[2];
 	v->fds[2] = v->fds[3] = -1;
 	VSB_destroy(&vsb);
@@ -482,12 +482,12 @@ varnish_launch(struct varnish *v)
 		vtc_fatal(v->vl, "FAIL CLI connection wait failure");
 	nfd = accept(v->cli_fd, NULL, NULL);
 	if (nfd < 0) {
-		AZ(close(v->cli_fd));
+		closefd(&v->cli_fd);
 		v->cli_fd = -1;
 		vtc_fatal(v->vl, "FAIL no CLI connection accepted");
 	}
 
-	AZ(close(v->cli_fd));
+	closefd(&v->cli_fd);
 	v->cli_fd = nfd;
 
 	vtc_log(v->vl, 3, "CLI connection fd = %d", v->cli_fd);
@@ -507,7 +507,7 @@ varnish_launch(struct varnish *v)
 	assert(sizeof abuf >= CLI_AUTH_RESPONSE_LEN + 7);
 	strcpy(abuf, "auth ");
 	VCLI_AuthResponse(nfd, r, abuf + 5);
-	AZ(close(nfd));
+	closefd(&nfd);
 	free(r);
 	r = NULL;
 	strcat(abuf, "\n");
@@ -619,15 +619,15 @@ varnish_cleanup(struct varnish *v)
 		(void)usleep(200000);
 
 	/* Close the CLI connection */
-	AZ(close(v->cli_fd));
+	closefd(&v->cli_fd);
 	v->cli_fd = -1;
 
 	/* Close the STDIN connection. */
-	AZ(close(v->fds[1]));
+	closefd(&v->fds[1]);
 
 	/* Wait until STDOUT+STDERR closes */
 	AZ(pthread_join(v->tp, &p));
-	AZ(close(v->fds[0]));
+	closefd(&v->fds[0]);
 
 	r = wait4(v->pid, &status, 0, &ru);
 	v->pid = 0;

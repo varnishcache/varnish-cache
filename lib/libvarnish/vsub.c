@@ -109,8 +109,8 @@ VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
 	if ((pid = fork()) < 0) {
 		VSB_printf(sb, "Starting %s: fork() failed: %s",
 		    name, strerror(errno));
-		AZ(close(p[0]));
-		AZ(close(p[1]));
+		closefd(&p[0]);
+		closefd(&p[1]);
 		return (1);
 	}
 	if (pid == 0) {
@@ -127,11 +127,11 @@ VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
 		 */
 		_exit(4);
 	}
-	AZ(close(p[1]));
+	closefd(&p[1]);
 	vlu = VLU_New(&sp, vsub_vlu, 0);
 	while (!VLU_Fd(p[0], vlu))
 		continue;
-	AZ(close(p[0]));
+	closefd(&p[0]);
 	VLU_Destroy(vlu);
 	if (sp.maxlines >= 0 && sp.lines > sp.maxlines)
 		VSB_printf(sb, "[%d lines truncated]\n",
