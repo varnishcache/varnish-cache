@@ -402,7 +402,7 @@ shard_get_key(VRT_CTX, const struct vmod_directors_shard_param *p)
 	switch (p->by) {
 	case BY_HASH:
 		if (ctx->bo) {
-			CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+			CHECK_OBJ(ctx->bo, BUSYOBJ_MAGIC);
 			return (vbe32dec(ctx->bo->digest));
 		}
 		/* FALLTHROUGH */

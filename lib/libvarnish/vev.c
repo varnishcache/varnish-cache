@@ -413,7 +413,7 @@ VEV_Once(struct vev_root *evb)
 	tmo = INFTIM;
 	e = binheap_root(evb->binheap);
 	if (e != NULL) {
-		CHECK_OBJ_NOTNULL(e, VEV_MAGIC);
+		CHECK_OBJ(e, VEV_MAGIC);
 		assert(e->__binheap_idx == BINHEAP_NOIDX + 1);
 		t = VTIM_mono();
 		if (e->__when <= t)

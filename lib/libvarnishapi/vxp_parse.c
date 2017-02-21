@@ -629,7 +629,7 @@ vex_print(const struct vex *vex, int indent)
 
 	fprintf(stderr, "%*s%s", indent, "", vxp_tnames[vex->tok]);
 	if (vex->lhs != NULL) {
-		CHECK_OBJ_NOTNULL(vex->lhs, VEX_LHS_MAGIC);
+		CHECK_OBJ(vex->lhs, VEX_LHS_MAGIC);
 		AN(vex->lhs->tags);
 		fprintf(stderr, " lhs=");
 		if (vex->lhs->level >= 0)

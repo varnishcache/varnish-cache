@@ -503,7 +503,7 @@ VRT_u_bereq_body(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 	if (ctx->bo->req != NULL) {
-		CHECK_OBJ_NOTNULL(ctx->bo->req, REQ_MAGIC);
+		CHECK_OBJ(ctx->bo->req, REQ_MAGIC);
 		ctx->bo->req = NULL;
 		ObjSetState(ctx->bo->wrk,
 		    ctx->bo->fetch_objcore, BOS_REQ_DONE);

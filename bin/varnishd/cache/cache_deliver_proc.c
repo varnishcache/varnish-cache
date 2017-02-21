@@ -127,7 +127,7 @@ VDP_close(struct req *req)
 		if (vdc->retval >= 0)
 			AN(vdpe);
 		if (vdpe != NULL) {
-			CHECK_OBJ_NOTNULL(vdpe, VDP_ENTRY_MAGIC);
+			CHECK_OBJ(vdpe, VDP_ENTRY_MAGIC);
 			VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
 			if (vdpe->vdp->fini != NULL)
 				AZ(vdpe->vdp->fini(req, &vdpe->priv));
