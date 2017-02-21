@@ -101,6 +101,16 @@ AC_DEFUN([_VARNISH_CHECK_DEVEL], [
 	[CPPFLAGS=$_orig_cppflags]
 ])
 
+# _VARNISH_CHECK_PYTHON
+# ---------------------
+AC_DEFUN([_VARNISH_CHECK_PYTHON], [
+
+	AM_PATH_PYTHON([2.7], [], [
+		AC_MSG_ERROR([Python >= 2.7 is required.])
+	])
+
+])
+
 # _VARNISH_VMOD_CONFIG
 # --------------------
 AC_DEFUN([_VARNISH_VMOD_CONFIG], [
@@ -114,9 +124,7 @@ AC_DEFUN([_VARNISH_VMOD_CONFIG], [
 	AC_REQUIRE([AC_PROG_CPP])
 	AC_REQUIRE([AC_PROG_CPP_WERROR])
 
-	AM_PATH_PYTHON([2.7], [], [
-		AC_MSG_ERROR([Python 2.7 or later is needed to build VMODs.])
-	])
+	_VARNISH_CHECK_PYTHON
 
 	AS_IF([test -z "$RST2MAN"], [
 		AC_MSG_ERROR([rst2man is needed to build VMOD manuals.])

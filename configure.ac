@@ -67,7 +67,10 @@ AC_ARG_WITH([dot],
    fi])
 AM_CONDITIONAL(HAVE_DOT,[test "x$DOT" != "xno"])
 
-# Checks for libraries.
+# Check for python.
+_VARNISH_CHECK_PYTHON
+
+# Check for libraries.
 _VARNISH_SEARCH_LIBS(pthread, pthread_create, [thr pthread c_r])
 _VARNISH_CHECK_LIB(rt, clock_gettime)
 _VARNISH_CHECK_LIB(dl, dlopen)
@@ -345,10 +348,6 @@ else
 fi
 
 AM_MISSING_HAS_RUN
-
-AM_PATH_PYTHON([2.7], [], [
-	AC_MSG_ERROR([Python 2.7 or later is needed to build Varnish.])
-])
 
 AC_CHECK_DECL([SO_ACCEPTFILTER],
     AC_DEFINE(HAVE_ACCEPT_FILTERS,1,[Define to 1 if you have accept filters]),
