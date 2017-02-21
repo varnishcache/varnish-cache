@@ -669,7 +669,9 @@ VSC_FF(n_gunzip,			uint64_t, 0, 'c', 'i', info,
 
 VSC_FF(n_test_gunzip,			uint64_t, 0, 'c', 'i', info,
     "Test gunzip operations",
-	""
+	"Those operations occur when Varnish receives a compressed"
+	" object from a backend. They are done to verify the gzip"
+	" stream while it's inserted in storage."
 )
 
 /*--------------------------------------------------------------------*/
