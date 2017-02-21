@@ -240,7 +240,6 @@ VSM_Open(struct VSM_data *vd)
 	AZ(fstat(vd->vsm_fd, &vd->fstat));
 	if (!S_ISREG(vd->fstat.st_mode)) {
 		closefd(&vd->vsm_fd);
-		vd->vsm_fd = -1;
 		return (vsm_diag(vd, "%s is not a regular file",
 		    vd->fname));
 	}
@@ -248,20 +247,17 @@ VSM_Open(struct VSM_data *vd)
 	i = read(vd->vsm_fd, &slh, sizeof slh);
 	if (i != sizeof slh) {
 		closefd(&vd->vsm_fd);
-		vd->vsm_fd = -1;
 		return (vsm_diag(vd, "Cannot read %s: %s",
 		    vd->fname, strerror(errno)));
 	}
 
 	if (memcmp(slh.marker, VSM_HEAD_MARKER, sizeof slh.marker)) {
 		closefd(&vd->vsm_fd);
-		vd->vsm_fd = -1;
 		return (vsm_diag(vd, "Not a VSM file %s", vd->fname));
 	}
 
 	if (!vd->N_opt && slh.alloc_seq == 0) {
 		closefd(&vd->vsm_fd);
-		vd->vsm_fd = -1;
 		return (vsm_diag(vd,
 		    "Abandoned VSM file (Varnish not running?) %s",
 		    vd->fname));
@@ -271,7 +267,6 @@ VSM_Open(struct VSM_data *vd)
 	    PROT_READ, MAP_SHARED|MAP_HASSEMAPHORE, vd->vsm_fd, 0);
 	if (v == MAP_FAILED) {
 		closefd(&vd->vsm_fd);
-		vd->vsm_fd = -1;
 		return (vsm_diag(vd, "Cannot mmap %s: %s",
 		    vd->fname, strerror(errno)));
 	}
@@ -311,7 +306,6 @@ VSM_Close(struct VSM_data *vd)
 	vd->e = NULL;
 	vd->head = NULL;
 	closefd(&vd->vsm_fd);
-	vd->vsm_fd = -1;
 }
 
 /*--------------------------------------------------------------------*/

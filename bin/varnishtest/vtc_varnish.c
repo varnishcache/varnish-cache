@@ -483,7 +483,6 @@ varnish_launch(struct varnish *v)
 	nfd = accept(v->cli_fd, NULL, NULL);
 	if (nfd < 0) {
 		closefd(&v->cli_fd);
-		v->cli_fd = -1;
 		vtc_fatal(v->vl, "FAIL no CLI connection accepted");
 	}
 
@@ -620,7 +619,6 @@ varnish_cleanup(struct varnish *v)
 
 	/* Close the CLI connection */
 	closefd(&v->cli_fd);
-	v->cli_fd = -1;
 
 	/* Close the STDIN connection. */
 	closefd(&v->fds[1]);
