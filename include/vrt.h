@@ -45,6 +45,7 @@
  *	WS_Front added
  *	WS_ReserveLumps added
  *	WS_Inside added
+ *	WS_Assert_Allocated added
  * 5.0:
  *	Varnish 5.0 release "better safe than sorry" bump
  * 4.0:
