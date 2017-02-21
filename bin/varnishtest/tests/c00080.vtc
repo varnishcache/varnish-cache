@@ -27,6 +27,15 @@ client c1 {
 } -run
 
 varnish v1 -vsc *poo*
+
+delay 2
+
+client c1 {
+       txreq
+       rxresp
+} -run
+
+varnish v1 -vsc *poo*
 varnish v1 -expect MAIN.pools == 1
 
 client c1 {
