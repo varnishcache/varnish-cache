@@ -57,6 +57,8 @@ client c1 {
 
 	barrier b1 sync
 
+	delay 0.1
+
 	# Get new object, from cache
 	txreq -req "POST" -body "foo"
 	rxresp
