@@ -24,3 +24,26 @@ varnish v1 -errvcl {Probe 'p1' redefined} {
 	probe p1 { }
 	backend s1 { .host = "127.0.0.1"; .probe = p1;}
 }
+
+varnish v1 -errvcl {Expected '(' got ';'} {
+	backend s1 { .host = "127.0.0.1"; }
+	sub vcl_recv { return; }
+}
+
+varnish v1 -vcl+backend {
+
+	sub foobar {
+		set resp.http.foo = "foo";
+		return;
+		set resp.http.foo = "bar";
+	}
+	sub vcl_deliver {
+		call foobar;
+	}
+}
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.foo == "foo"
+} -run

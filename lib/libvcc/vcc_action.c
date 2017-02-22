@@ -284,6 +284,11 @@ parse_return(struct vcc *tl)
 	const char *h;
 
 	vcc_NextToken(tl);
+	if (tl->t->tok == ';' && tl->fb == tl->fc) {
+		/* fb == fc means we're in a subroutine */
+		Fb(tl, 1, "return;\n");
+		return;
+	}
 	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
