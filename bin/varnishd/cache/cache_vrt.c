@@ -85,6 +85,21 @@ VRT_acl_match(VRT_CTX, VCL_ACL acl, VCL_IP ip)
 	return (acl->match(ctx, ip));
 }
 
+void
+VRT_hit_for_pass(VRT_CTX, VCL_DURATION d)
+{
+	struct objcore *oc;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	oc = ctx->bo->fetch_objcore;
+	oc->ttl = d;
+	oc->grace = 0.0;
+	oc->keep = 0.0;
+	VSLb(ctx->vsl, SLT_TTL, "HFP %.0f %.0f %.0f %.0f",
+	    oc->ttl, oc->grace, oc->keep, oc->t_origin);
+}
+
 /*--------------------------------------------------------------------*/
 
 struct http *

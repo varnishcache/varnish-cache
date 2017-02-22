@@ -436,7 +436,10 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			/* If still valid, use it */
 			assert(oh->refcnt > 1);
 			assert(oc->objhead == oh);
-			if (oc->flags & OC_F_PASS) {
+			if (oc->flags & OC_F_HFP) {
+				wrk->stats->cache_hitpass++;
+				oc = NULL;
+			} else if (oc->flags & OC_F_PASS) {
 				wrk->stats->cache_hitpass++;
 				oc = NULL;
 				*bocp = hsh_insert_busyobj(wrk, oh);

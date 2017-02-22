@@ -427,10 +427,13 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	if (lr == HSH_MISS) {
 		/* Found nothing */
 		AZ(oc);
-		AN(busy);
-		AN(busy->flags & OC_F_BUSY);
-		req->objcore = busy;
-		req->req_step = R_STP_MISS;
+		if (busy != NULL) {
+			AN(busy->flags & OC_F_BUSY);
+			req->objcore = busy;
+			req->req_step = R_STP_MISS;
+		} else {
+			req->req_step = R_STP_PASS;
+		}
 		return (REQ_FSM_MORE);
 	}
 

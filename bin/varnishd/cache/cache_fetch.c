@@ -471,6 +471,11 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	if (bo->do_esi)
 		bo->do_stream = 0;
+	if (wrk->handling == VCL_RET_PASS) {
+		bo->fetch_objcore->flags |= OC_F_HFP;
+		bo->uncacheable = 1;
+		wrk->handling = VCL_RET_DELIVER;
+	}
 	if (bo->do_pass || bo->uncacheable)
 		bo->fetch_objcore->flags |= OC_F_PASS;
 

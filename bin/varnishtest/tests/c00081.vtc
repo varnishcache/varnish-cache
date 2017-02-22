@@ -1,0 +1,46 @@
+varnishtest "Hit-for-pass (mk II)"
+
+server s1 {
+	rxreq
+	txresp -hdr "foo: 1"
+	rxreq
+	txresp -hdr "foo: 2"
+	rxreq
+	txresp -hdr "foo: 3"
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_miss {
+		set req.http.miss = "True";
+	}
+	sub vcl_pass {
+		set req.http.pass = "True";
+	}
+
+	sub vcl_backend_response {
+		return (pass(2s));
+	}
+
+	sub vcl_deliver {
+		set resp.http.miss = req.http.miss;
+		set resp.http.pass = req.http.pass;
+	}
+
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.miss == True
+
+	txreq
+	rxresp
+	expect resp.http.pass == True
+
+	delay 3
+
+	txreq
+	rxresp
+	expect resp.http.miss == True
+} -run

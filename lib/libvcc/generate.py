@@ -134,7 +134,7 @@ returns = (
 	),
 	('backend_response',
 		"B",
-		('fail', 'deliver', 'retry', 'abandon')
+		('fail', 'deliver', 'retry', 'abandon', 'pass')
 	),
 	('backend_error',
 		"B",
