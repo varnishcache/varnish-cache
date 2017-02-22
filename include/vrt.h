@@ -40,6 +40,7 @@
  *
  *
  * 6.0 (unreleased):
+ *	VRT_hit_for_pass added
  *	VRT_ipcmp added
  *	WS_Reset and WS_Snapshot signatures changed
  *	WS_Front added
