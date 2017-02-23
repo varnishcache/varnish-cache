@@ -747,6 +747,12 @@ cnt_recv(struct worker *wrk, struct req *req)
 		VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 	}
 
+	if (req->want100cont) {
+		req->want100cont = 0;
+		if (req->transport->minimal_response(req, 100))
+			return (-1);
+	}
+
 	/* Attempts to cache req.body may fail */
 	if (req->req_body_status == REQ_BODY_FAIL) {
 		req->doclose = SC_RX_BODY;
