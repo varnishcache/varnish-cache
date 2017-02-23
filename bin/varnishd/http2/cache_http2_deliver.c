@@ -92,6 +92,62 @@ h2_bytes(struct req *req, enum vdp_action act, void **priv,
 	return (0);
 }
 
+static inline size_t
+h2_status(uint8_t *p, uint16_t status) {
+	size_t l = 1;
+
+	switch (status) {
+	case 200: *p = 0x80 |  8; break;
+	case 204: *p = 0x80 |  9; break;
+	case 206: *p = 0x80 | 10; break;
+	case 304: *p = 0x80 | 11; break;
+	case 400: *p = 0x80 | 12; break;
+	case 404: *p = 0x80 | 13; break;
+	case 500: *p = 0x80 | 14; break;
+	default:
+		*p++ = 0x18;
+		*p++ = 0x03;
+		l = 2;
+
+		l += snprintf((char*)p, 4, "%03d", status);
+		assert(l == 5);
+		break;
+	}
+
+	return (l);
+}
+
+int __match_proto__(vtr_minimal_response_f)
+h2_minimal_response(struct req *req, uint16_t status)
+{
+	struct h2_req *r2;
+	const size_t spc = 6;
+	size_t l;
+	uint8_t buf[spc];
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
+
+	assert(status >= 100);
+	assert(status < 1000);
+
+	l = h2_status(buf, status);
+	assert(l < spc);
+
+	VSLb(req->vsl, SLT_RespProtocol, "HTTP/2.0");
+	VSLb(req->vsl, SLT_RespStatus, "%03d", status);
+	VSLb(req->vsl, SLT_RespReason, "%s", http_Status2Reason(status, NULL));
+
+	if (status >= 400)
+		req->err_code = status;
+
+	/* XXX return code checking once H2_Send returns anything but 0 */
+	H2_Send(req->wrk, r2, 1,
+	    H2_FRAME_HEADERS, H2FF_HEADERS_END_HEADERS,
+	    l, buf);
+	return (0);
+}
+
 void __match_proto__(vtr_deliver_f)
 h2_deliver(struct req *req, struct boc *boc, int sendbody)
 {
@@ -118,22 +174,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	(void)WS_Reserve(req->ws, 0);
 	p = (void*)req->ws->f;
 
-	switch (req->resp->status) {
-	case 200: *p++ = 0x80 |  8; break;
-	case 204: *p++ = 0x80 |  9; break;
-	case 206: *p++ = 0x80 | 10; break;
-	case 304: *p++ = 0x80 | 11; break;
-	case 400: *p++ = 0x80 | 12; break;
-	case 404: *p++ = 0x80 | 13; break;
-	case 500: *p++ = 0x80 | 14; break;
-	default:
-		*p++ = 0x18;
-		*p++ = 0x03;
-
-		assert(snprintf((char*)p, 4, "%03d", req->resp->status) == 3);
-		p += 3;
-		break;
-	}
+	p += h2_status(p, req->resp->status);
 
 	hp = req->resp;
 	for (u = HTTP_HDR_FIRST; u < hp->nhd; u++) {

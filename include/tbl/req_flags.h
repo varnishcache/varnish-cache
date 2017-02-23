@@ -35,6 +35,8 @@ REQ_FLAG(hash_ignore_busy,	1, 1, "")
 REQ_FLAG(hash_always_miss,	1, 1, "")
 REQ_FLAG(is_hit,		0, 0, "")
 REQ_FLAG(waitinglist,		0, 0, "")
+REQ_FLAG(want100cont,		0, 0, "")
+REQ_FLAG(late100cont,		0, 0, "")
 #undef REQ_FLAG
 
 /*lint -restore */
