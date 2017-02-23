@@ -52,22 +52,22 @@ The grouping modes are:
   together. Client connections are open ended when using HTTP
   keep-alives, so it is undefined when the session will be
   reported. If the transaction timeout period is exceeded an
-  incomplete session will be reported. Non-transactional data (VXID
+  incomplete session will be reported. Non-transactional data (vxid
   == 0) is not reported.
 
 * Request
 
   Transactions are grouped by request, where the set will include the
   request itself as well as any backend requests or ESI-subrequests.
-  Session data and non-transactional data (VXID == 0) is not
+  Session data and non-transactional data (vxid == 0) is not
   reported.
 
 * VXID
 
-  Transactions are not grouped, so each VXID is reported in it's
+  Transactions are not grouped, so each vxid is reported in it's
   entirety. Sessions, requests, ESI-requests and backend requests are
   all reported individually. Non-transactional data is not reported
-  (VXID == 0). This is the default.
+  (vxid == 0). This is the default.
 
 * Raw
 
