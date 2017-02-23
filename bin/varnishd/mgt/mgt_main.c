@@ -440,7 +440,8 @@ mgt_f_arg(struct f_arg *fa)
 	if (p != NULL) {
 		q = memchr(fa->farg, ',', p - fa->farg);
 		if (q != NULL) {
-			fa->label = strndup(q, p - q);
+			/* Off by one to avoid the comma */
+			fa->label = strndup(q + 1, p - q - 1);
 			AN(fa->label);
 		}
 		else
