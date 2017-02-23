@@ -193,6 +193,15 @@ cnt_synth(struct worker *wrk, struct req *req)
 	http_PrintfHeader(req->resp, "X-Varnish: %u", VXID(req->vsl->wid));
 	http_PutResponse(h, "HTTP/1.1", req->err_code, req->err_reason);
 
+	/*
+	 * For late 100-continue, we suggest to VCL to close the connection to
+	 * neither send a 100-continue nor drain-read the request. But VCL has
+	 * the option to veto by removing Connection: close
+	 */
+	if (req->want100cont) {
+		http_SetHeader(h, "Connection: close");
+	}
+
 	synth_body = VSB_new_auto();
 	AN(synth_body);
 
@@ -223,6 +232,9 @@ cnt_synth(struct worker *wrk, struct req *req)
 	http_Unset(h, H_Content_Length);
 	http_PrintfHeader(req->resp, "Content-Length: %zd",
 	    VSB_len(synth_body));
+
+	if (!req->doclose && http_HdrIs(req->resp, H_Connection, "close"))
+		req->doclose = SC_RESP_CLOSE;
 
 	/* Discard any lingering request body before delivery */
 	(void)VRB_Ignore(req);
@@ -613,6 +625,11 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	http_PrintfHeader(bo->bereq, "X-Varnish: %u", VXID(req->vsl->wid));
 	http_SetHeader(bo->bereq, "Connection: close");
 
+	if (req->want100cont) {
+		http_SetHeader(bo->bereq, "Expect: 100-continue");
+		req->want100cont = 0;
+	}
+
 	VCL_pipe_method(req->vcl, wrk, req, bo, NULL);
 
 	switch (wrk->handling) {
@@ -747,7 +764,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 		VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 	}
 
-	if (req->want100cont) {
+	if (req->want100cont && !req->late100cont) {
 		req->want100cont = 0;
 		if (req->transport->minimal_response(req, 100))
 			return (-1);

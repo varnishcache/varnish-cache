@@ -41,6 +41,7 @@
 #include "vtcp.h"
 #include "vsa.h"
 #include "vtim.h"
+#include "vcl.h"
 
 #include "cache/cache_director.h"
 
@@ -254,4 +255,25 @@ vmod_getenv(VRT_CTX, VCL_STRING name)
 	if (name == NULL || *name == '\0')
 		return (NULL);
 	return (getenv(name));
+}
+
+VCL_VOID __match_proto__(td_std_late_100_continue)
+vmod_late_100_continue(VRT_CTX, VCL_BOOL late)
+{
+	struct req *req;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (ctx->method != VCL_MET_RECV) {
+		VSLb(ctx->vsl, SLT_VCL_Error,
+		    "std.late_100_continue() only valid in vcl_recv{}");
+		return;
+	}
+
+	req = ctx->req;
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	if (! req->want100cont)
+		return;
+
+	req->late100cont = !!late;
 }

@@ -283,6 +283,31 @@ Description
 Example
 	| set req.http.My-Env = getenv("MY_ENV");
 
+$Function VOID late_100_continue(BOOL late)
+
+Description
+	Controls when varnish reacts to an `Expect: 100-continue` client
+	request header.
+
+	Varnish always generates a `100 Continue` response if
+	requested by the by the client trough the `Expect:
+	100-continue` header when waiting for request body data.
+
+	But, by default, the `100 Continue` response is already
+	generated immediately after `vcl_recv` returns to reduce
+	latencies under the assumption that the request body will be
+	read eventually.
+
+	Calling `std.late_100_continue(true)` in `vcl_recv` will cause
+	the `100 Continue` response to only be sent when needed. This
+	may cause additional latencies for processing request bodies,
+	but is the correct behavior by strict interpretation of
+	RFC7231.
+
+	This function has no effect outside `vcl_recv` and after
+	calling `std.cache_req_body()` or any other function consuming
+	the request body.
+
 SEE ALSO
 ========
 
