@@ -1414,6 +1414,7 @@ cmd_http_sendhex(CMD_ARGS)
 	AN(av[1]);
 	AZ(av[2]);
 	vsb = vtc_hex_to_bin(hp->vl, av[1]);
+	assert(VSB_len(vsb) >= 0);
 	vtc_hexdump(hp->vl, 4, "sendhex", VSB_data(vsb), VSB_len(vsb));
 	j = write(hp->fd, VSB_data(vsb), VSB_len(vsb));
 	assert(j == VSB_len(vsb));

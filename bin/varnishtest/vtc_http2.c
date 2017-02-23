@@ -1237,6 +1237,7 @@ cmd_sendhex(CMD_ARGS)
 	AN(av[1]);
 	AZ(av[2]);
 	vsb = vtc_hex_to_bin(hp->vl, av[1]);
+	assert(VSB_len(vsb) >= 0);
 	vtc_hexdump(hp->vl, 4, "sendhex", VSB_data(vsb), VSB_len(vsb));
 	AZ(pthread_mutex_lock(&hp->mtx));
 	http_write(hp, 4, VSB_data(vsb), VSB_len(vsb), "sendhex");
