@@ -6,12 +6,12 @@ shell "varnishd -x dumprstvsl > ${tmpdir}/_.vsl"
 shell "varnishd -x dumprstcli > ${tmpdir}/_.cli"
 shell "varnishd -x dumpbuiltin > ${tmpdir}/_.builtin"
 shell -err -expect {VCL version declaration missing} {
-	echo 'bad vcl' > ${tmpdir}/t.vcl
-	varnishd -f ${tmpdir}/t.vcl -n ${tmpdir}
+	echo 'bad vcl' > ${tmpdir}/bad.vcl
+	varnishd -f ${tmpdir}/bad.vcl -n ${tmpdir}
 }
 shell -err -expect {VCL version declaration missing} {
-	echo 'bad vcl' > ${tmpdir}/t.vcl
-	varnishd -C -f ${tmpdir}/t.vcl -n ${tmpdir}
+	echo 'bad vcl' > ${tmpdir}/bad.vcl
+	varnishd -C -f ${tmpdir}/bad.vcl -n ${tmpdir}
 }
 shell -err -expect {-spersistent has been deprecated} "varnishd -spersistent -f '' "
 shell -err -expect {Unknown jail method "xyz"} "varnishd -jxyz -f '' "
