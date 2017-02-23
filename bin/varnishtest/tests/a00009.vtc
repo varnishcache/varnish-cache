@@ -91,3 +91,15 @@ shell -match "available.*boot0" {varnishadm -n ${tmpdir}/v0 vcl.list}
 shell -match "active.*boot"     {varnishadm -n ${tmpdir}/v0 vcl.list}
 
 process p2 -stop -wait
+
+# Test multiple -f options with a bad VCL
+
+shell -err {
+	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
+	    -f ${tmpdir}/ok2 -f ${tmpdir}/bad
+}
+
+shell -err {
+	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
+	    -f ${tmpdir}/bad -f ${tmpdir}/ok2
+}
