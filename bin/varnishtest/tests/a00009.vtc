@@ -103,3 +103,16 @@ shell -err {
 	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
 	    -f ${tmpdir}/bad -f ${tmpdir}/ok2
 }
+
+# Test multiple -f options with an empty value
+# XXX: two conflicting features, probably not what we want
+
+process p3 {
+	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
+	    -f '' -f ${tmpdir}/ok2
+} -log -start
+
+delay 1
+shell -match "stopped" {varnishadm -n ${tmpdir}/v0 status}
+
+process p3 -stop -wait
