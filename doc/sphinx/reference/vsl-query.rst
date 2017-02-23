@@ -30,6 +30,8 @@ A query is run on a group of transactions. A query expression is true
 if there is a log record within the group that satisfies the
 condition. It is false only if none of the log records satisfies the
 condition. Query expressions can be combined using boolean functions.
+In addition to log records, it is possible to query transaction ids
+(vxid) in query.
 
 GROUPING
 ========
@@ -118,6 +120,16 @@ optionally an operator and a value to match against the selected
 records. ::
 
   <record selection criteria> <operator> <operand>
+
+Additionally, a query expression can occur on the transaction
+itself rather than log records belonging to the transaction. ::
+
+  vxid <numerical operator> <integer>
+
+A ``vxid`` query allows you to directly target a specific transacion,
+whose id can be obtained from an ``X-Varnish`` HTTP header, the
+default "guru meditation" error page, or ``Begin`` and ``Link`` log
+records.
 
 Record selection criteria
 -------------------------
@@ -272,6 +284,10 @@ QUERY EXPRESSION EXAMPLES
   their ESI subrequests. (Assumes request grouping mode). ::
 
     BerespStatus >= 500 or {2+}Timestamp:Process[2] > 1.
+
+* Log non-transactional errors. (Assumes raw grouping mode). ::
+
+    vxid == 0 and Error
 
 HISTORY
 =======
