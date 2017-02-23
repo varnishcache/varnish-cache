@@ -57,7 +57,7 @@ shell -expect {active      auto/warm          - vcl1} {
 	varnishadm -n ${tmpdir}/v0 vcl.list
 }
 
-shell {varnishadm -n ${tmpdir}/v0 start}}
+shell {varnishadm -n ${tmpdir}/v0 start}
 
 shell {varnishadm -n ${tmpdir}/v0 debug.listen_address}
 
