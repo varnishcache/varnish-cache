@@ -328,7 +328,8 @@ http1_dissect(struct worker *wrk, struct req *req)
 			wrk->stats->client_req_417++;
 			return (-1);
 		}
-		req->want100cont = 1;
+		if (req->http->protover >= 11 && req->htc->pipeline_b == NULL)
+			req->want100cont = 1;
 		http_Unset(req->http, H_Expect);
 	}
 

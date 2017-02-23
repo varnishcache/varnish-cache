@@ -1,6 +1,8 @@
-varnishtest "Check Expect headers"
+varnishtest "Check Expect headers / 100 Continue"
 
 server s1 {
+	rxreq
+	txresp
 	rxreq
 	txresp
 } -start
@@ -8,11 +10,18 @@ server s1 {
 varnish v1 -vcl+backend { } -start
 
 client c1 {
-	txreq -url "/" -req POST -hdr "Expect: 100-continue " -body "foo"
+	txreq -url "/" -req POST -hdr "Expect: 100-continue " \
+		-hdr "Content-Length: 20"
 	rxresp
 	expect resp.status == 100
+	send "01234567890123456789"
 	rxresp
 	expect resp.status == 200
+
+	txreq -url "/" -req POST -hdr "Expect: 100-continue " -body "foo"
+	rxresp
+	expect resp.status == 200
+
 	txreq -url "/" -req POST -hdr "Expect: 101-continue" -body "foo"
 	rxresp
 	expect resp.status == 417
