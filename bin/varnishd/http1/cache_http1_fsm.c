@@ -202,6 +202,41 @@ http1_reembark(struct worker *wrk, struct req *req)
 	usleep(10000);
 }
 
+static int __match_proto__(vtr_minimal_response_f)
+http1_minimal_response(struct req *req, uint16_t status)
+{
+	size_t wl, l, spc = 80;
+	char buf[spc];
+	const char *reason;
+
+	assert(status >= 100);
+	assert(status < 1000);
+
+	reason = http_Status2Reason(status, NULL);
+
+	l = snprintf(buf, spc,
+	    "HTTP/1.1 %03d %s\r\n\r\n", status, reason);
+	assert (l < spc);
+
+	VSLb(req->vsl, SLT_RespProtocol, "HTTP/1.1");
+	VSLb(req->vsl, SLT_RespStatus, "%03d", status);
+	VSLb(req->vsl, SLT_RespReason, "%s", reason);
+
+	if (status >= 400)
+		req->err_code = status;
+	wl = write(req->sp->fd, buf, l);
+
+	if (wl > 0)
+		req->acct.resp_hdrbytes += wl;
+	if (wl != l) {
+		VTCP_Assert(1);
+		if (! req->doclose)
+			req->doclose = SC_REM_CLOSE;
+		return (-1);
+	}
+	return (0);
+}
+
 struct transport HTTP1_transport = {
 	.name =			"HTTP/1",
 	.magic =		TRANSPORT_MAGIC,
@@ -213,19 +248,25 @@ struct transport HTTP1_transport = {
 	.sess_panic =		http1_sess_panic,
 	.req_panic =		http1_req_panic,
 	.reembark =		http1_reembark,
+	.minimal_response =	http1_minimal_response,
 };
 
 /*----------------------------------------------------------------------
  */
 
+static inline void
+http1_abort(struct req *req, unsigned status)
+{
+	AN(req->doclose);
+	assert(status >= 400);
+	(void) http1_minimal_response(req, status);
+	return;
+}
+
 static int
 http1_dissect(struct worker *wrk, struct req *req)
 {
-	const char *r_100 = "HTTP/1.1 100 Continue\r\n\r\n";
-	const char *r_400 = "HTTP/1.1 400 Bad Request\r\n\r\n";
-	const char *r_417 = "HTTP/1.1 417 Expectation Failed\r\n\r\n";
 	const char *p;
-	ssize_t r;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -256,10 +297,8 @@ http1_dissect(struct worker *wrk, struct req *req)
 		    (int)(req->htc->rxbuf_e - req->htc->rxbuf_b),
 		    req->htc->rxbuf_b);
 		wrk->stats->client_req_400++;
-		r = write(req->sp->fd, r_400, strlen(r_400));
-		if (r > 0)
-			req->acct.resp_hdrbytes += r;
 		req->doclose = SC_RX_JUNK;
+		http1_abort(req, 400);
 		return (-1);
 	}
 
@@ -284,21 +323,14 @@ http1_dissect(struct worker *wrk, struct req *req)
 
 	if (http_GetHdr(req->http, H_Expect, &p)) {
 		if (strcasecmp(p, "100-continue")) {
-			wrk->stats->client_req_417++;
-			req->err_code = 417;
-			r = write(req->sp->fd, r_417, strlen(r_417));
-			if (r > 0)
-				req->acct.resp_hdrbytes += r;
 			req->doclose = SC_RX_JUNK;
+			http1_abort(req, 417);
+			wrk->stats->client_req_417++;
 			return (-1);
 		}
-		r = write(req->sp->fd, r_100, strlen(r_100));
-		if (r > 0)
-			req->acct.resp_hdrbytes += r;
-		if (r != strlen(r_100)) {
-			req->doclose = SC_REM_CLOSE;
+		http1_simple_response(req, R_100);
+		if (req->doclose)
 			return (-1);
-		}
 		http_Unset(req->http, H_Expect);
 	}
 
@@ -310,9 +342,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 
 	req->doclose = http_DoConnection(req->http);
 	if (req->doclose == SC_RX_BAD) {
-		r = write(req->sp->fd, r_400, strlen(r_400));
-		if (r > 0)
-			req->acct.resp_hdrbytes += r;
+		http1_abort(req, 400);
 		return (-1);
 	}
 

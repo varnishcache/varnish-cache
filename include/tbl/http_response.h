@@ -30,6 +30,7 @@
 
 /*lint -save -e525 -e539 */
 
+HTTP_RESP(100, "Continue")
 HTTP_RESP(101, "Switching Protocols")
 HTTP_RESP(200, "OK")
 HTTP_RESP(201, "Created")
