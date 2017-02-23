@@ -807,6 +807,13 @@ main(int argc, char * const *argv)
 	if (!d_flag && !mgt_has_vcl() && !novcl)
 		MGT_Complain(C_ERR, "No VCL loaded yet");
 
+	memset(&sac, 0, sizeof sac);
+	sac.sa_handler = SIG_IGN;
+	sac.sa_flags = SA_RESTART;
+
+	AZ(sigaction(SIGPIPE, &sac, NULL));
+	AZ(sigaction(SIGHUP, &sac, NULL));
+
 	u = MCH_Init(d_flag || novcl ? 0 : 1);
 
 	if (eric_fd >= 0)
@@ -841,12 +848,6 @@ main(int argc, char * const *argv)
 	e->name = "mgt_sigint";
 	AZ(vev_add(mgt_evb, e));
 
-	memset(&sac, 0, sizeof sac);
-	sac.sa_handler = SIG_IGN;
-	sac.sa_flags = SA_RESTART;
-
-	AZ(sigaction(SIGPIPE, &sac, NULL));
-	AZ(sigaction(SIGHUP, &sac, NULL));
 
 	o = vev_schedule(mgt_evb);
 	if (o != 0)
