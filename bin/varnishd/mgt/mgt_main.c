@@ -578,18 +578,8 @@ main(int argc, char * const *argv)
 	optind = 1;
 	optreset = 1;
 	while ((o = getopt(argc, argv, opt_spec)) != -1) {
+		/* Arguments required for C_flag */
 		switch (o) {
-		case 'C':
-		case 'd':
-		case 'F':
-		case 'j':
-		case 'V':
-		case 'x':
-			/* Handled in first pass */
-			break;
-		case 'a':
-			MAC_Arg(optarg);
-			break;
 		case 'b':
 			ALLOC_OBJ(fa, F_ARG_MAGIC);
 			AN(fa);
@@ -605,11 +595,11 @@ main(int argc, char * const *argv)
 			AN(fa->src);
 			VSB_destroy(&vsb);
 			VTAILQ_INSERT_TAIL(&f_args, fa, list);
-			break;
+			continue;
 		case 'f':
 			if (*optarg == '\0') {
 				novcl = 1;
-				break;
+				continue;
 			}
 			ALLOC_OBJ(fa, F_ARG_MAGIC);
 			AN(fa);
@@ -619,12 +609,54 @@ main(int argc, char * const *argv)
 				ARGV_ERR("Cannot read -f file (%s): %s\n",
 				    fa->farg, strerror(errno));
 			VTAILQ_INSERT_TAIL(&f_args, fa, list);
+			continue;
+		case 'i':
+			i_arg = optarg;
+			continue;
+		case 'n':
+			n_arg = optarg;
+			continue;
+		case 'p':
+			p = strchr(optarg, '=');
+			if (p == NULL)
+				usage();
+			AN(p);
+			*p++ = '\0';
+			MCF_ParamSet(cli, optarg, p);
+			*--p = '=';
+			cli_check(cli);
+			continue;
+		case 'r':
+			MCF_ParamProtect(cli, optarg);
+			cli_check(cli);
+			continue;
+		case 't':
+			MCF_ParamSet(cli, "default_ttl", optarg);
+			continue;
+		default:
+			break;
+		}
+
+		if (C_flag)
+			continue;
+
+		/* Arguments irrelevant for C_flag */
+		switch (o) {
+		case 'C':
+			assert(0);
+			break;
+		case 'd':
+		case 'F':
+		case 'j':
+		case 'V':
+		case 'x':
+			/* Handled in first pass */
+			break;
+		case 'a':
+			MAC_Arg(optarg);
 			break;
 		case 'h':
 			h_arg = optarg;
-			break;
-		case 'i':
-			i_arg = optarg;
 			break;
 		case 'l':
 			av = VAV_Parse(optarg, NULL, ARGV_COMMA);
@@ -644,25 +676,8 @@ main(int argc, char * const *argv)
 		case 'M':
 			M_arg = optarg;
 			break;
-		case 'n':
-			n_arg = optarg;
-			break;
 		case 'P':
 			P_arg = optarg;
-			break;
-		case 'p':
-			p = strchr(optarg, '=');
-			if (p == NULL)
-				usage();
-			AN(p);
-			*p++ = '\0';
-			MCF_ParamSet(cli, optarg, p);
-			*--p = '=';
-			cli_check(cli);
-			break;
-		case 'r':
-			MCF_ParamProtect(cli, optarg);
-			cli_check(cli);
 			break;
 		case 'S':
 			S_arg = optarg;
@@ -676,9 +691,6 @@ main(int argc, char * const *argv)
 				T_arg = NULL;
 			else
 				T_arg = optarg;
-			break;
-		case 't':
-			MCF_ParamSet(cli, "default_ttl", optarg);
 			break;
 		case 'W':
 			W_arg = optarg;
@@ -694,6 +706,41 @@ main(int argc, char * const *argv)
 			AN(mkdtemp(Cn_arg));
 			n_arg = Cn_arg;
 		}
+	}
+
+	if (VIN_N_Arg(n_arg, &heritage.name, &dirname, NULL) != 0)
+		ARGV_ERR("Invalid instance (-n) name: %s\n", strerror(errno));
+
+#ifdef HAVE_SETPROCTITLE
+	setproctitle("Varnish-Mgr %s", heritage.name);
+#endif
+
+	identify(i_arg);
+
+	if (VJ_make_workdir(dirname))
+		ARGV_ERR("Cannot create working directory (%s): %s\n",
+		    dirname, strerror(errno));
+
+	/* If no -s argument specified, process default -s argument */
+	if (!s_arg_given)
+		STV_Config(s_arg);
+
+	/* Configure Transient storage, if user did not */
+	STV_Config_Transient();
+
+	mgt_vcl_init();
+
+	if (C_flag) {
+		VTAILQ_FOREACH(fa, &f_args, list) {
+			mgt_vcl_startup(cli, fa->src,
+			    VTAILQ_NEXT(fa, list) == NULL ? "boot" : NULL,
+			    fa->farg, 1);
+			AZ(VSB_finish(cli->sb));
+			fprintf(stderr, "%s\n", VSB_data(cli->sb));
+			VSB_clear(cli->sb);
+		}
+		(void)rmdir(Cn_arg);
+		exit(cli->result == CLIS_OK ? 0 : 2);
 	}
 
 	/* XXX: we can have multiple CLI actions above, is this enough ? */
@@ -718,56 +765,21 @@ main(int argc, char * const *argv)
 		VJ_master(JAIL_MASTER_LOW);
 	}
 
-	if (VIN_N_Arg(n_arg, &heritage.name, &dirname, NULL) != 0)
-		ARGV_ERR("Invalid instance (-n) name: %s\n", strerror(errno));
-
-#ifdef HAVE_SETPROCTITLE
-	setproctitle("Varnish-Mgr %s", heritage.name);
-#endif
-
-	identify(i_arg);
-
-	if (VJ_make_workdir(dirname))
-		ARGV_ERR("Cannot create working directory (%s): %s\n",
-		    dirname, strerror(errno));
-
 	VJ_master(JAIL_MASTER_FILE);
 	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL)
 		ARGV_ERR("Could not open pid/lock (-P) file (%s): %s\n",
 		    P_arg, strerror(errno));
 	VJ_master(JAIL_MASTER_LOW);
 
-	/* If no -s argument specified, process default -s argument */
-	if (!s_arg_given)
-		STV_Config(s_arg);
-
-	/* Configure Transient storage, if user did not */
-	STV_Config_Transient();
-
-	mgt_vcl_init();
-
-	if (C_flag) {
-		VTAILQ_FOREACH(fa, &f_args, list) {
-			mgt_vcl_startup(cli, fa->src,
-			    VTAILQ_NEXT(fa, list) == NULL ? "boot" : NULL,
-			    fa->farg, 1);
-			AZ(VSB_finish(cli->sb));
-			fprintf(stderr, "%s\n", VSB_data(cli->sb));
-			VSB_clear(cli->sb);
-		}
-		(void)rmdir(Cn_arg);
-		exit(cli->result == CLIS_OK ? 0 : 2);
-	} else {
-		while(!VTAILQ_EMPTY(&f_args)) {
-			fa = VTAILQ_FIRST(&f_args);
-			VTAILQ_REMOVE(&f_args, fa, list);
-			mgt_vcl_startup(cli, fa->src,
-			    VTAILQ_EMPTY(&f_args) ? "boot" : NULL,
-			    fa->farg, 0);
-			cli_check(cli);
-			free(fa->src);
-			FREE_OBJ(fa);
-		}
+	while(!VTAILQ_EMPTY(&f_args)) {
+		fa = VTAILQ_FIRST(&f_args);
+		VTAILQ_REMOVE(&f_args, fa, list);
+		mgt_vcl_startup(cli, fa->src,
+		    VTAILQ_EMPTY(&f_args) ? "boot" : NULL,
+		    fa->farg, 0);
+		cli_check(cli);
+		free(fa->src);
+		FREE_OBJ(fa);
 	}
 
 	if (VTAILQ_EMPTY(&heritage.socks))
