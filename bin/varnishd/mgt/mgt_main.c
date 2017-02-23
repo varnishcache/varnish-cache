@@ -423,10 +423,34 @@ mgt_uptime(const struct vev *e, int what)
 struct f_arg {
 	unsigned		magic;
 #define F_ARG_MAGIC		0x840649a8
-	char			*farg;
+	const char		*farg;
+	const char		*file;
+	char			*name;
+	char			*label;
 	char			*src;
 	VTAILQ_ENTRY(f_arg)	list;
 };
+
+static void
+mgt_f_arg(struct f_arg *fa)
+{
+	const char *p, *q;
+
+	p = strchr(fa->farg, '=');
+	if (p != NULL) {
+		q = memchr(fa->farg, ',', p - fa->farg);
+		if (q != NULL) {
+			fa->label = strndup(q, p - q);
+			AN(fa->label);
+		}
+		else
+			q = p;
+		fa->name = strndup(fa->farg, q - fa->farg);
+		fa->file = p + 1;
+	}
+	else
+		fa->file = fa->farg;
+}
 
 int
 main(int argc, char * const *argv)
@@ -449,6 +473,7 @@ main(int argc, char * const *argv)
 	const char *x_arg = NULL;
 	int s_arg_given = 0;
 	int novcl = 0;
+	int retval;
 	const char *T_arg = "localhost:0";
 	char *p;
 	struct cli cli[1];
@@ -593,7 +618,7 @@ main(int argc, char * const *argv)
 		case 'b':
 			ALLOC_OBJ(fa, F_ARG_MAGIC);
 			AN(fa);
-			REPLACE(fa->farg, "<-b argument>");
+			fa->farg = "<-b argument>";
 			vsb = VSB_new_auto();
 			AN(vsb);
 			VSB_printf(vsb, "vcl 4.0;\n");
@@ -613,11 +638,12 @@ main(int argc, char * const *argv)
 			}
 			ALLOC_OBJ(fa, F_ARG_MAGIC);
 			AN(fa);
-			REPLACE(fa->farg, optarg);
-			fa->src = VFIL_readfile(NULL, fa->farg, NULL);
+			fa->farg = optarg;
+			mgt_f_arg(fa);
+			fa->src = VFIL_readfile(NULL, fa->file, NULL);
 			if (fa->src == NULL)
 				ARGV_ERR("Cannot read -f file (%s): %s\n",
-				    fa->farg, strerror(errno));
+				    fa->file, strerror(errno));
 			VTAILQ_INSERT_TAIL(&f_args, fa, list);
 			break;
 		case 'h':
@@ -748,9 +774,12 @@ main(int argc, char * const *argv)
 
 	if (C_flag) {
 		VTAILQ_FOREACH(fa, &f_args, list) {
-			mgt_vcl_startup(cli, fa->src,
+			retval = mgt_vcl_startup(cli, fa->src,
 			    VTAILQ_NEXT(fa, list) == NULL ? "boot" : NULL,
-			    fa->farg, 1);
+			    NULL, fa->farg, 1);
+			if (retval != 0)
+				ARGV_ERR("Cannot load two VCLs with the same"
+				    " name.\n");
 			AZ(VSB_finish(cli->sb));
 			fprintf(stderr, "%s\n", VSB_data(cli->sb));
 			VSB_clear(cli->sb);
@@ -761,11 +790,16 @@ main(int argc, char * const *argv)
 		while(!VTAILQ_EMPTY(&f_args)) {
 			fa = VTAILQ_FIRST(&f_args);
 			VTAILQ_REMOVE(&f_args, fa, list);
-			mgt_vcl_startup(cli, fa->src,
-			    VTAILQ_EMPTY(&f_args) ? "boot" : NULL,
-			    fa->farg, 0);
+			if (VTAILQ_EMPTY(&f_args) && fa->name == NULL)
+				REPLACE(fa->name, "boot");
+			retval = mgt_vcl_startup(cli, fa->src, fa->name,
+			    fa->label, fa->farg, 0);
+			if (retval != 0)
+				ARGV_ERR("Cannot load two VCLs with the same"
+				    " name.\n");
 			cli_check(cli);
-			free(fa->farg);
+			free(fa->name);
+			free(fa->label);
 			free(fa->src);
 			FREE_OBJ(fa);
 		}

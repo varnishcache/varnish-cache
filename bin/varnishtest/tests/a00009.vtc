@@ -116,3 +116,21 @@ delay 1
 shell -match "stopped" {varnishadm -n ${tmpdir}/v0 status}
 
 process p3 -stop -wait
+
+# Test an -f option with a VCL name
+
+process p4 {
+	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ok1=${tmpdir}/ok1
+} -log -start
+
+delay 1
+shell -match "active.*ok1" {varnishadm -n ${tmpdir}/v0 vcl.list}
+
+process p4 -stop -wait
+
+# Test multiple -f options with a VCL name collision
+
+shell -err -expect "Error: Cannot load two VCLs with the same name." {
+	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f boot=${tmpdir}/ok1 \
+	    -f ${tmpdir}/ok2
+}
