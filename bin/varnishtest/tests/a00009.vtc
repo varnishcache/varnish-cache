@@ -62,3 +62,32 @@ shell {varnishadm -n ${tmpdir}/v0 start}
 shell {varnishadm -n ${tmpdir}/v0 debug.listen_address}
 
 process p1 -stop -wait
+
+# Test multiple -f options
+
+shell {
+	cat >${tmpdir}/ok1 <<-EOF
+	vcl 4.0;
+	backend ok1 {
+	  .host="${bad_backend}";
+	}
+	EOF
+
+	cat >${tmpdir}/ok2 <<-EOF
+	vcl 4.0;
+	backend ok2 {
+	  .host="${bad_backend}";
+	}
+	EOF
+}
+
+process p2 {
+	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
+	    -f ${tmpdir}/ok2
+} -log -start
+
+delay 1
+shell -match "available.*boot0" {varnishadm -n ${tmpdir}/v0 vcl.list}
+shell -match "active.*boot"     {varnishadm -n ${tmpdir}/v0 vcl.list}
+
+process p2 -stop -wait
