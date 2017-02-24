@@ -86,7 +86,7 @@ process p2 {
 	    -f ${tmpdir}/ok2
 } -log -start
 
-delay 1
+delay 2
 shell -match "available.*boot0" {varnishadm -n ${tmpdir}/v0 vcl.list}
 shell -match "active.*boot"     {varnishadm -n ${tmpdir}/v0 vcl.list}
 
@@ -112,7 +112,7 @@ process p3 {
 	    -f '' -f ${tmpdir}/ok2
 } -log -start
 
-delay 1
+delay 2
 shell -match "stopped" {varnishadm -n ${tmpdir}/v0 status}
 
 process p3 -stop -wait
