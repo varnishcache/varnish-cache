@@ -765,6 +765,7 @@ main(int argc, char * const *argv)
 			    VTAILQ_EMPTY(&f_args) ? "boot" : NULL,
 			    fa->farg, 0);
 			cli_check(cli);
+			free(fa->farg);
 			free(fa->src);
 			FREE_OBJ(fa);
 		}
