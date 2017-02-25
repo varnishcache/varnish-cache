@@ -91,6 +91,9 @@ struct h2_sess {
 	unsigned			magic;
 #define H2_SESS_MAGIC			0xa16f7e4b
 
+	struct h2_req			*mailcall;
+	pthread_cond_t			*cond;
+
 	struct sess			*sess;
 	int				refcnt;
 	uint32_t			highest_stream;

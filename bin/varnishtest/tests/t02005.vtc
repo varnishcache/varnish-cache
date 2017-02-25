@@ -1,0 +1,24 @@
+varnishtest "H2 POST"
+
+server s1 {
+	rxreq
+	txresp -hdr "Content-Type: text/plain" -body response
+} -start
+
+varnish v1 -vcl+backend {} -cliok "param.set feature +http2" -start
+varnish v1 -cliok "param.set debug +syncvsl"
+
+client c1 {
+	stream 1 {
+		txreq -req POST -hdr content-type text/plain -hdr content-length 7 -body request
+
+		# First, HTTP checks
+		rxresp
+		expect resp.http.content-Type == "text/plain"
+
+		# Then, payload checks
+		write_body resp.txt
+		shell {grep -q response resp.txt}
+	} -run
+} -run
+

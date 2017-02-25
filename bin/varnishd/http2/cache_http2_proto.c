@@ -34,6 +34,7 @@
 #include <stdio.h>
 
 #include "cache/cache_transport.h"
+#include "cache/cache_filter.h"
 #include "http2/cache_http2.h"
 
 #include "vend.h"
@@ -109,7 +110,6 @@ static const uint8_t H2_settings[] = {
 	__match_proto__(h2_frame_f) \
 	{ (void)wrk; (void)r2; VSLb(h2->vsl, SLT_Debug, "XXX implement " #l); INCOMPL(); }
 
-DUMMY_FRAME(data)
 DUMMY_FRAME(rst_stream)
 DUMMY_FRAME(push_promise)
 DUMMY_FRAME(continuation)
@@ -471,7 +471,10 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	VSLb_ts_req(req, "Req", req->t_req);
 	http_SetH(req->http, HTTP_HDR_PROTO, "HTTP/2.0");
 
-	req->req_body_status = REQ_BODY_NONE;
+	if (h2->rxf_flags & H2FF_HEADERS_END_STREAM)
+		req->req_body_status = REQ_BODY_NONE;
+	else
+		req->req_body_status = REQ_BODY_WITHOUT_LEN;
 	wrk->stats->client_req++;
 	wrk->stats->s_req++;
 	req->ws_req = WS_Snapshot(req->ws);
@@ -481,6 +484,78 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	req->task.priv = req;
 	XXXAZ(Pool_Task(wrk->pool, &req->task, TASK_QUEUE_REQ));
 	return (0);
+}
+
+/**********************************************************************/
+
+h2_error __match_proto__(h2_frame_f)
+h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+{
+	(void)wrk;
+	Lck_AssertHeld(&h2->sess->mtx);
+	AZ(h2->mailcall);
+	h2->mailcall = r2;
+	AZ(pthread_cond_broadcast(h2->cond));
+	while (h2->mailcall != NULL)
+		AZ(Lck_CondWait(h2->cond, &h2->sess->mtx, 0));
+	return (0);
+}
+
+static enum vfp_status __match_proto__(vfp_pull_f)
+h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
+{
+	struct h2_req *r2;
+	struct h2_sess *h2;
+	unsigned l;
+	enum vfp_status retval = VFP_OK;
+
+	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
+	CAST_OBJ_NOTNULL(r2, vfe->priv1, H2_REQ_MAGIC);
+	h2 = r2->h2sess;
+
+	AN(ptr);
+	AN(lp);
+	l = *lp;
+	*lp = 0;
+
+	Lck_Lock(&h2->sess->mtx);
+	while (h2->mailcall != r2)
+		AZ(Lck_CondWait(h2->cond, &h2->sess->mtx, 0));
+	if (l > h2->rxf_len)
+		l = h2->rxf_len;
+	if (l > 0) {
+		memcpy(ptr, h2->rxf_data, l);
+		h2->rxf_data += l;
+		h2->rxf_len -= l;
+	}
+	*lp = l;
+	if (h2->rxf_len == 0) {
+		if (h2->rxf_flags & H2FF_DATA_END_STREAM)
+			retval = VFP_END;
+		h2->mailcall = NULL;
+		AZ(pthread_cond_broadcast(h2->cond));
+	}
+	Lck_Unlock(&h2->sess->mtx);
+	return (retval);
+}
+
+static const struct vfp h2_body = {
+	.name = "H2_BODY",
+	.pull = h2_vfp_body,
+};
+
+static void __match_proto__(vtr_req_body_t)
+h2_req_body(struct req *req)
+{
+	struct h2_req *r2;
+	struct vfp_entry *vfe;
+
+	CHECK_OBJ(req, REQ_MAGIC);
+	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
+	vfe = VFP_Push(req->vfc, &h2_body, 0);
+	AN(vfe);
+	vfe->priv1 = r2;
 }
 
 /**********************************************************************/
@@ -820,6 +895,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	    H2_FRAME_SETTINGS, H2FF_NONE, sizeof H2_settings, 0, H2_settings);
 
 	/* and off we go... */
+	h2->cond = &wrk->cond;
 	Lck_Unlock(&h2->sess->mtx);
 
 	while (h2_rxframe(wrk, h2)) {
@@ -832,6 +908,7 @@ h2_new_session(struct worker *wrk, void *arg)
 		if (r2->state == H2_S_IDLE)
 			h2_del_req(wrk, r2);
 	}
+	h2->cond = NULL;
 }
 
 struct transport H2_transport = {
@@ -840,5 +917,6 @@ struct transport H2_transport = {
 	.new_session =		h2_new_session,
 	.sess_panic =		h2_sess_panic,
 	.deliver =		h2_deliver,
+	.req_body =		h2_req_body,
 	.minimal_response =	h2_minimal_response,
 };
