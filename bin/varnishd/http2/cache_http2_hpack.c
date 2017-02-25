@@ -57,10 +57,17 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 			/* Check valid name characters */
 			if (p == b && *p == ':')
 				continue; /* pseudo-header */
-			if (vct_istchar(*p) && (!isupper(*p)))
+			if (isupper(*p)) {
+				VSLb(hp->vsl, SLT_BogoHeader,
+				    "Illegal header name (upper-case): %.*s",
+				    (int)(len > 20 ? 20 : len), b);
+				return (H2CE_PROTOCOL_ERROR);
+			}
+			if (vct_istchar(*p)) {
 				/* XXX: vct should have a proper class for
 				   this avoiding two checks */
 				continue;
+			}
 			VSLb(hp->vsl, SLT_BogoHeader,
 			    "Illegal header name: %.*s",
 			    (int)(len > 20 ? 20 : len), b);
