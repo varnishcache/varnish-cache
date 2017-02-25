@@ -109,8 +109,6 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 	AN(ptr);
 	AN(lp);
 
-	AN(ptr);
-	AN(lp);
 	l = *lp;
 	*lp = 0;
 	if (vfe->priv2 == -1) {
