@@ -370,11 +370,15 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 
 /*--------------------------------------------------------------------*/
 
-void
+static void __match_proto__(cli_func_t)
+mcf_vcl_label(struct cli *cli, const char * const *av, void *priv);
+
+int
 mgt_vcl_startup(struct cli *cli, const char *vclsrc, const char *vclname,
-    const char *origin, int C_flag)
+    const char *vcllabel, const char *origin, int C_flag)
 {
 	char buf[20];
+	const char *av[5];
 	static int n = 0;
 
 	AN(vclsrc);
@@ -383,8 +387,20 @@ mgt_vcl_startup(struct cli *cli, const char *vclsrc, const char *vclname,
 		bprintf(buf, "boot%d", n++);
 		vclname = buf;
 	}
+	if (mcf_vcl_byname(vclname) != NULL)
+		return (-1);
 	mgt_new_vcl(cli, vclname, vclsrc, origin, NULL, C_flag);
 	active_vcl = mcf_vcl_byname(vclname);
+	if (active_vcl != NULL && vcllabel != NULL) {
+		/* XXX: not sure what goes in av */
+		av[0] = NULL;
+		av[1] = NULL;
+		av[2] = vcllabel;
+		av[3] = vclname;
+		av[4] = NULL;
+		mcf_vcl_label(cli, av, NULL);
+	}
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/

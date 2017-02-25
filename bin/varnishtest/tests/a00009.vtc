@@ -116,3 +116,43 @@ delay 2
 shell -match "stopped" {varnishadm -n ${tmpdir}/v0 status}
 
 process p3 -stop -wait
+
+# Test an -f option with a VCL name
+
+process p4 {
+	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ok1=${tmpdir}/ok1
+} -log -start
+
+delay 1
+shell -match "active.*ok1" {varnishadm -n ${tmpdir}/v0 vcl.list}
+
+process p4 -stop -wait
+
+# Test multiple -f options with a VCL name collision
+
+shell -err -expect "Error: Cannot load two VCLs with the same name." {
+	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f boot=${tmpdir}/ok1 \
+	    -f ${tmpdir}/ok2
+}
+
+# Test an -f option with a VCL name and label
+
+process p5 {
+	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ok1,lbl=${tmpdir}/ok1
+} -log -start
+
+delay 1
+shell -match "ok1 .1 label." {varnishadm -n ${tmpdir}/v0 vcl.list}
+shell -match "lbl -> ok1"    {varnishadm -n ${tmpdir}/v0 vcl.list}
+
+process p5 -stop -wait
+
+# Test an -f option with an invalid VCL name or label
+
+shell -err -expect "Illegal character in VCL name ('!')" {
+	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f !!!,lbl=${tmpdir}/ok1
+}
+
+shell -err -expect "Illegal character in VCL name ('!')" {
+	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ok1,!!!=${tmpdir}/ok1
+}
