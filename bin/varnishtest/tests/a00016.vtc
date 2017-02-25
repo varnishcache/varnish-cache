@@ -1,0 +1,13 @@
+varnishtest "Test -I argument"
+
+shell -err -expect {Only one -I allowed} {
+	touch foo bar
+	varnishd -f '' -I foo -I bar -n ${tmpdir}/v0 -a :0
+}
+
+shell -err -expect {Error: -I file CLI command failed (104)} {
+	echo "vcl.list" > foo
+	echo "-foobar" >> foo
+	echo "vcl.load" >> foo
+	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0
+}
