@@ -96,7 +96,6 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
     ssize_t *lp)
 {
 	struct http_conn *htc;
-	int i;
 	char buf[20];		/* XXX: 20 is arbitrary */
 	char *q;
 	unsigned u;
@@ -171,8 +170,7 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 		return (VFP_OK);
 	}
 	AZ(vfe->priv2);
-	i = v1f_read(vc, htc, buf, 1);
-	if (i <= 0)
+	if (v1f_read(vc, htc, buf, 1) <= 0)
 		return (VFP_Error(vc, "chunked read err"));
 	if (buf[0] == '\r' && v1f_read(vc, htc, buf, 1) <= 0)
 		return (VFP_Error(vc, "chunked read err"));

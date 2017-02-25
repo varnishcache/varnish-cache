@@ -121,9 +121,8 @@ int __match_proto__(vtr_minimal_response_f)
 h2_minimal_response(struct req *req, uint16_t status)
 {
 	struct h2_req *r2;
-	const size_t spc = 6;
 	size_t l;
-	uint8_t buf[spc];
+	uint8_t buf[6];
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
@@ -132,7 +131,7 @@ h2_minimal_response(struct req *req, uint16_t status)
 	assert(status < 1000);
 
 	l = h2_status(buf, status);
-	assert(l < spc);
+	assert(l < sizeof(buf));
 
 	VSLb(req->vsl, SLT_RespProtocol, "HTTP/2.0");
 	VSLb(req->vsl, SLT_RespStatus, "%03d", status);

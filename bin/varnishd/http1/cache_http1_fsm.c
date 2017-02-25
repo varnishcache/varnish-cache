@@ -205,8 +205,8 @@ http1_reembark(struct worker *wrk, struct req *req)
 static int __match_proto__(vtr_minimal_response_f)
 http1_minimal_response(struct req *req, uint16_t status)
 {
-	size_t wl, l, spc = 80;
-	char buf[spc];
+	size_t wl, l;
+	char buf[80];
 	const char *reason;
 
 	assert(status >= 100);
@@ -214,9 +214,9 @@ http1_minimal_response(struct req *req, uint16_t status)
 
 	reason = http_Status2Reason(status, NULL);
 
-	l = snprintf(buf, spc,
+	l = snprintf(buf, sizeof(buf),
 	    "HTTP/1.1 %03d %s\r\n\r\n", status, reason);
-	assert (l < spc);
+	assert (l < sizeof(buf));
 
 	VSLb(req->vsl, SLT_RespProtocol, "HTTP/1.1");
 	VSLb(req->vsl, SLT_RespStatus, "%03d", status);
