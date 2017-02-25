@@ -344,7 +344,10 @@ cls_vlu(void *priv, const char *p)
 			return (0);
 		REPLACE(cli->cmd, p);
 
-		av = VAV_Parse(p, NULL, 0);
+		if (p[0] == '-')
+			av = VAV_Parse(p + 1, NULL, 0);
+		else
+			av = VAV_Parse(p, NULL, 0);
 		AN(av);
 		if (av[0] != NULL) {
 			i = cls_vlu2(priv, av);
@@ -429,6 +432,7 @@ VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 	cfd->cli->vlu = VLU_New(cfd, cls_vlu, *cs->maxlen);
 	cfd->cli->sb = VSB_new_auto();
 	cfd->cli->limit = cs->limit;
+	cfd->cli->priv = priv;
 	cfd->closefunc = closefunc;
 	cfd->priv = priv;
 	AN(cfd->cli->sb);

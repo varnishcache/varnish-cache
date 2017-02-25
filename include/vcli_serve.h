@@ -70,6 +70,7 @@ struct cli_proto {
 struct cli {
 	unsigned                magic;
 #define CLI_MAGIC		0x4038d570
+	void			*priv;
 	struct vsb              *sb;
 	enum VCLI_status_e      result;
 	char                    *cmd;
