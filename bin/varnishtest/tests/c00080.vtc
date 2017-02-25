@@ -8,33 +8,19 @@ server s1 {
 varnish v1 -vcl+backend {} -start
 
 varnish v1 -cliok "param.set debug +drop_pools"
+varnish v1 -cliok "param.set debug +slow_acceptor"
 varnish v1 -cliok "param.set thread_pools 1"
 
 delay 2
 
-client c1 {
+client c1 -repeat 2 {
 	txreq
 	rxresp
 } -run
 
-varnish v1 -vsc *poo*
-
 delay 2
 
-client c1 {
-	txreq
-	rxresp
-} -run
-
-varnish v1 -vsc *poo*
-
-delay 2
-
-client c1 {
-       txreq
-       rxresp
-} -run
-
+varnish v1 -vsc *thr*
 varnish v1 -vsc *poo*
 varnish v1 -expect MAIN.pools == 1
 

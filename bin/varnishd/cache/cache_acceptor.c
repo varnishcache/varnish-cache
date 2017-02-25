@@ -466,6 +466,8 @@ vca_accept_task(struct worker *wrk, void *arg)
 				    TASK_QUEUE_VCA));
 			return;
 		}
+		if (!ps->pool->die && DO_DEBUG(DBG_SLOW_ACCEPTOR))
+			VTIM_sleep(2.0);
 
 		/*
 		 * We were able to hand off, so release this threads VCL
