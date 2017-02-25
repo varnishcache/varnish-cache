@@ -38,7 +38,7 @@ shell -err -expect {Neither -b nor -f given} { varnishd -n ${tmpdir}/v0  }
 
 process p1 "exec varnishd -n ${tmpdir}/v0 -F -f '' -a :0 -l2m,3m" -log -start
 
-delay 1
+delay 2
 
 shell {
 	(
