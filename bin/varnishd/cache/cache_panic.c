@@ -605,7 +605,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	case VAS_MISSING:
 		VSB_printf(pan_vsb,
 		    "Missing errorhandling code in %s(), %s line %d:\n"
-		    "  Condition(%s) not true.",
+		    "  Condition(%s) not true.\n",
 		    func, file, line, cond);
 		break;
 	case VAS_INCOMPLETE:
@@ -621,13 +621,6 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 		    func, file, line, cond);
 		break;
 	}
-	if (err)
-		VSB_printf(pan_vsb, "errno = %d (%s)\n", err, strerror(err));
-
-	q = THR_GetName();
-	if (q != NULL)
-		VSB_printf(pan_vsb, "thread = (%s)\n", q);
-
 	VSB_printf(pan_vsb, "version = %s, vrt api = %u.%u\n",
 	    VCS_version, VRT_MAJOR_VERSION, VRT_MINOR_VERSION);
 	VSB_printf(pan_vsb, "ident = %s,%s\n",
@@ -636,6 +629,13 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	    VTIM_mono(), VTIM_real());
 
 	pan_backtrace(pan_vsb);
+
+	if (err)
+		VSB_printf(pan_vsb, "errno = %d (%s)\n", err, strerror(err));
+
+	q = THR_GetName();
+	if (q != NULL)
+		VSB_printf(pan_vsb, "thread = (%s)\n", q);
 
 	if (!FEATURE(FEATURE_SHORT_PANIC)) {
 		req = THR_GetRequest();
