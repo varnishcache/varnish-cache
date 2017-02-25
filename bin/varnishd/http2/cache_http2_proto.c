@@ -414,6 +414,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	struct req *req;
 	struct h2h_decode d[1];
+	h2_error h2e;
 	const uint8_t *p;
 	size_t l;
 
@@ -457,8 +458,16 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		p += 5;
 		l -= 5;
 	}
-	XXXAZ(h2h_decode_bytes(h2, d, p, l));
-	XXXAZ(h2h_decode_fini(h2, d));
+	h2e = h2h_decode_bytes(h2, d, p, l);
+	if (h2e != NULL) {
+		VSL(SLT_Debug, 0, "H2H_DECODE_BYTES %s", h2e->name);
+		return (h2e);
+	}
+	h2e = h2h_decode_fini(h2, d);
+	if (h2e != NULL) {
+		VSL(SLT_Debug, 0, "H2H_DECODE_FINI %s", h2e->name);
+		return (h2e);
+	}
 	VSLb_ts_req(req, "Req", req->t_req);
 	http_SetH(req->http, HTTP_HDR_PROTO, "HTTP/2.0");
 
