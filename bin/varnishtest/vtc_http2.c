@@ -884,7 +884,7 @@ find_header(const struct hpk_hdr *h, const char *k)
 
 	int kl = strlen(k);
 	while (h->t) {
-		if (kl == h->key.len  && !memcmp(h->key.ptr, k, kl))
+		if (kl == h->key.len  && !strncasecmp(h->key.ptr, k, kl))
 			return h->value.ptr;
 		h++;
 	}
