@@ -66,6 +66,7 @@ int			exit_status = 0;
 struct vsb		*vident;
 struct VSC_C_mgt	static_VSC_C_mgt;
 struct VSC_C_mgt	*VSC_C_mgt;
+static int		I_fd = -1;
 
 static struct vpf_fh *pfh = NULL;
 
@@ -73,7 +74,7 @@ int optreset;	// Some has it, some doesn't.  Cheaper than auto*
 
 /*--------------------------------------------------------------------*/
 
-static void
+static void __attribute__((__noreturn__))
 usage(void)
 {
 #define FMT "    %-28s # %s\n"
@@ -97,6 +98,7 @@ usage(void)
 	fprintf(stderr, FMT, "", "  -h classic");
 	fprintf(stderr, FMT, "", "  -h classic,<buckets>");
 	fprintf(stderr, FMT, "-i identity", "Identity of varnish instance");
+	fprintf(stderr, FMT, "-I file", "Initialization CLI commands");
 	fprintf(stderr, FMT, "-j jail[,jailoptions]", "Jail specification");
 #ifdef HAVE_SETPPRIV
 	fprintf(stderr, FMT, "", "  -j solaris");
@@ -420,6 +422,16 @@ mgt_uptime(const struct vev *e, int what)
 
 /*--------------------------------------------------------------------*/
 
+static void
+mgt_I_close(void *priv)
+{
+	(void)priv;
+	fprintf(stderr, "END of -I file processing\n");
+	closefd(&I_fd);
+}
+
+/*--------------------------------------------------------------------*/
+
 struct f_arg {
 	unsigned		magic;
 #define F_ARG_MAGIC		0x840649a8
@@ -427,6 +439,8 @@ struct f_arg {
 	char			*src;
 	VTAILQ_ENTRY(f_arg)	list;
 };
+
+static const char opt_spec[] = "a:b:Cdf:Fh:i:I:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
 
 int
 main(int argc, char * const *argv)
@@ -455,7 +469,6 @@ main(int argc, char * const *argv)
 	char *dirname;
 	char **av;
 	char Cn_arg[] = "/tmp/varnishd_C_XXXXXXX";
-	const char * opt_spec = "a:b:Cdf:Fh:i:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
 	unsigned u;
 	struct sigaction sac;
 	struct vev *e;
@@ -478,6 +491,7 @@ main(int argc, char * const *argv)
 		switch (o) {
 		case '?':
 			usage();
+			break;
 		case 'b':
 			b_arg = optarg;
 			break;
@@ -625,6 +639,14 @@ main(int argc, char * const *argv)
 			break;
 		case 'i':
 			i_arg = optarg;
+			break;
+		case 'I':
+			if (I_fd >= 0)
+				ARGV_ERR("\tOnly one -I allowed\n");
+			I_fd = open(optarg, O_RDONLY);
+			if (I_fd < 0)
+				ARGV_ERR("\tCant open %s: %s\n",
+				    optarg, strerror(errno));
 			break;
 		case 'l':
 			av = VAV_Parse(optarg, NULL, ARGV_COMMA);
@@ -817,6 +839,17 @@ main(int argc, char * const *argv)
 
 	u = MCH_Init(d_flag || novcl ? 0 : 1);
 
+	if (I_fd >= 0) {
+		fprintf(stderr, "BEGIN of -I file processing\n");
+		mgt_cli_setup(I_fd, 2, 1, "-I file", mgt_I_close, stderr);
+		while (I_fd >= 0) {
+			o = vev_schedule_one(mgt_evb);
+			if (o != 1)
+				MGT_Complain(C_ERR,
+				    "vev_schedule_one() = %d", o);
+		}
+	}
+
 	if (eric_fd >= 0)
 		mgt_eric_im_done(eric_fd, u);
 
@@ -848,7 +881,6 @@ main(int argc, char * const *argv)
 	e->callback = mgt_sigint;
 	e->name = "mgt_sigint";
 	AZ(vev_add(mgt_evb, e));
-
 
 	o = vev_schedule(mgt_evb);
 	if (o != 0)

@@ -343,7 +343,9 @@ cls_vlu(void *priv, const char *p)
 		if (*p == '\0')
 			return (0);
 		REPLACE(cli->cmd, p);
+		AN(p);	/* for FlexeLint */
 
+		/* We ignore a single leading '-' (for -I cli_file) */
 		if (p[0] == '-')
 			av = VAV_Parse(p + 1, NULL, 0);
 		else

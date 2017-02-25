@@ -62,7 +62,7 @@ void MCH_Cli_Fail(void);
 /* mgt_cli.c */
 
 typedef void mgt_cli_close_f(void *priv);
-void mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident,
+void mgt_cli_setup(int fdi, int fdo, int auth, const char *ident,
     mgt_cli_close_f *close_func, void *priv);
 int mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
     __v_printflike(3, 4);

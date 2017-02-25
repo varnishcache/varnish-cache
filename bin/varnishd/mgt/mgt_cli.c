@@ -329,6 +329,8 @@ static void
 mgt_cli_cb_before(const struct cli *cli)
 {
 
+	if (cli->priv == stderr)
+		fprintf(stderr, "> %s\n", cli->cmd);
 	MGT_Complain(C_CLI, "CLI %s Rd %s", cli->ident, cli->cmd);
 }
 
@@ -338,6 +340,12 @@ mgt_cli_cb_after(const struct cli *cli)
 
 	MGT_Complain(C_CLI, "CLI %s Wr %03u %s",
 	    cli->ident, cli->result, VSB_data(cli->sb));
+	if (cli->priv == stderr &&
+	    cli->result != CLIS_OK && cli->cmd[0] != '-') {
+		MGT_Complain(C_ERR, "-I file CLI command failed (%d)\n%s\n",
+		    cli->result, VSB_data(cli->sb));
+		exit(2);
+	}
 }
 
 /*--------------------------------------------------------------------*/
@@ -384,20 +392,17 @@ mgt_cli_callback2(const struct vev *e, int what)
 /*--------------------------------------------------------------------*/
 
 void
-mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident,
+mgt_cli_setup(int fdi, int fdo, int auth, const char *ident,
     mgt_cli_close_f *closefunc, void *priv)
 {
 	struct cli *cli;
 	struct vev *ev;
 
-	(void)ident;
-	(void)verbose;
-
 	cli = VCLS_AddFd(mgt_cls, fdi, fdo, closefunc, priv);
 
-	cli->ident = strdup(ident);
+	REPLACE(cli->ident, ident);
 
-	if (fdi != 0 && secret_file != NULL) {
+	if (!auth && secret_file != NULL) {
 		cli->auth = MCF_NOAUTH;
 		mgt_cli_challenge(cli);
 	} else {
@@ -406,7 +411,6 @@ mgt_cli_setup(int fdi, int fdo, int verbose, const char *ident,
 	}
 	AZ(VSB_finish(cli->sb));
 	(void)VCLI_WriteResult(fdo, cli->result, VSB_data(cli->sb));
-
 
 	ev = vev_new();
 	AN(ev);
