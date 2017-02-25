@@ -411,7 +411,6 @@ shardcfg_backend_add(struct backend_reconfig *re,
 
 	re->shardd->n_backend++;
 	shardcfg_backend_copyin(&bb[i], b);
-	return;
 }
 
 static void

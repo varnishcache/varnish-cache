@@ -259,8 +259,7 @@ http1_abort(struct req *req, unsigned status)
 {
 	AN(req->doclose);
 	assert(status >= 400);
-	(void) http1_minimal_response(req, status);
-	return;
+	(void)http1_minimal_response(req, status);
 }
 
 static int

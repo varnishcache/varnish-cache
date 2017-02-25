@@ -340,7 +340,6 @@ ObjTrimStore(struct worker *wrk, struct objcore *oc)
 
 	if (om->objtrimstore != NULL)
 		om->objtrimstore(wrk, oc);
-	return;
 }
 
 /*====================================================================
