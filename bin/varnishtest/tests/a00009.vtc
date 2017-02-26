@@ -36,7 +36,7 @@ shell -err -expect {Neither -b nor -f given} { varnishd -n ${tmpdir}/v0  }
 
 # Test -F mode with no VCL loaded
 
-process p1 "exec varnishd -n ${tmpdir}/v1 -F -f '' -a :0 -l2m,3m" -log -start
+process p1 "exec varnishd -n ${tmpdir}/v1 -F -f '' -a :0 -l2m,3m -s malloc,1m" -log -start
 
 delay 2
 
@@ -81,38 +81,19 @@ shell {
 	EOF
 }
 
-process p2 {
-	exec varnishd -n ${tmpdir}/v2 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
-	    -f ${tmpdir}/ok2
-} -log -start
-
-delay 2
-shell -match "available.*boot0" {varnishadm -n ${tmpdir}/v2 vcl.list}
-shell -match "active.*boot"     {varnishadm -n ${tmpdir}/v2 vcl.list}
-
-process p2 -stop -wait
+varnish v2 -arg "-f ${tmpdir}/ok1" -arg "-f ${tmpdir}/ok2" -start
+varnish v2 -cliexpect {available *auto/warm *0 boot0} "vcl.list"
+varnish v2 -cliexpect {active *auto/warm *0 boot} "vcl.list"
+varnish v2 -stop -wait
 
 # Test multiple -f options with a bad VCL
 
-shell -err {
+shell -err -expect {Cannot read -f file} {
 	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
 	    -f ${tmpdir}/ok2 -f ${tmpdir}/bad
 }
 
-shell -err {
+shell -err -expect {Cannot read -f file} {
 	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
 	    -f ${tmpdir}/bad -f ${tmpdir}/ok2
 }
-
-# Test multiple -f options with an empty value
-# XXX: two conflicting features, probably not what we want
-
-process p3 {
-	exec varnishd -n ${tmpdir}/v3 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
-	    -f '' -f ${tmpdir}/ok2
-} -log -start
-
-delay 2
-shell -match "stopped" {varnishadm -n ${tmpdir}/v3 status}
-
-process p3 -stop -wait
