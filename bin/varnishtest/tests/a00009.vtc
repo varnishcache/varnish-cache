@@ -36,7 +36,7 @@ shell -err -expect {Neither -b nor -f given} { varnishd -n ${tmpdir}/v0  }
 
 # Test -F mode with no VCL loaded
 
-process p1 "exec varnishd -n ${tmpdir}/v0 -F -f '' -a :0 -l2m,3m" -log -start
+process p1 "exec varnishd -n ${tmpdir}/v1 -F -f '' -a :0 -l2m,3m" -log -start
 
 delay 2
 
@@ -50,16 +50,16 @@ shell {
 }
 
 shell -expect {VCL compiled.} {
-	varnishadm -n ${tmpdir}/v0 vcl.load vcl1 ${tmpdir}/vcl
+	varnishadm -n ${tmpdir}/v1 vcl.load vcl1 ${tmpdir}/vcl
 }
 
 shell -expect {active      auto/warm          - vcl1} {
-	varnishadm -n ${tmpdir}/v0 vcl.list
+	varnishadm -n ${tmpdir}/v1 vcl.list
 }
 
-shell {varnishadm -n ${tmpdir}/v0 start}
+shell {varnishadm -n ${tmpdir}/v1 start}
 
-shell {varnishadm -n ${tmpdir}/v0 debug.listen_address}
+shell {varnishadm -n ${tmpdir}/v1 debug.listen_address}
 
 process p1 -stop -wait
 
@@ -82,13 +82,13 @@ shell {
 }
 
 process p2 {
-	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
+	exec varnishd -n ${tmpdir}/v2 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
 	    -f ${tmpdir}/ok2
 } -log -start
 
 delay 2
-shell -match "available.*boot0" {varnishadm -n ${tmpdir}/v0 vcl.list}
-shell -match "active.*boot"     {varnishadm -n ${tmpdir}/v0 vcl.list}
+shell -match "available.*boot0" {varnishadm -n ${tmpdir}/v2 vcl.list}
+shell -match "active.*boot"     {varnishadm -n ${tmpdir}/v2 vcl.list}
 
 process p2 -stop -wait
 
@@ -108,11 +108,11 @@ shell -err {
 # XXX: two conflicting features, probably not what we want
 
 process p3 {
-	exec varnishd -n ${tmpdir}/v0 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
+	exec varnishd -n ${tmpdir}/v3 -F -a :0 -l2m,3m -f ${tmpdir}/ok1 \
 	    -f '' -f ${tmpdir}/ok2
 } -log -start
 
 delay 2
-shell -match "stopped" {varnishadm -n ${tmpdir}/v0 status}
+shell -match "stopped" {varnishadm -n ${tmpdir}/v3 status}
 
 process p3 -stop -wait
