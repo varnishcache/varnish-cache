@@ -62,16 +62,18 @@ CNT_GotReq(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->http, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
+	assert(req->req_body_status != REQ_BODY_INIT);
 	AN(req->transport->minimal_response);
 
 	if (http_GetHdr(req->http, H_Expect, &p)) {
-		if (strcasecmp(p, "100-continue")) {
+		if (strcasecmp(p, "100-continue") ||
+		    req->http->protover < 11) {
 			req->doclose = SC_RX_JUNK;
 			(void)req->transport->minimal_response(req, 417);
 			wrk->stats->client_req_417++;
 			return (-1);
 		}
-		if (req->http->protover >= 11 && req->htc->pipeline_b == NULL)
+		if (req->htc->pipeline_b == NULL)	// XXX: HTTP1 vs 2 ?
 			req->want100cont = 1;
 		http_Unset(req->http, H_Expect);
 	}
@@ -87,8 +89,6 @@ CNT_GotReq(struct worker *wrk, struct req *req)
 		(void)req->transport->minimal_response(req, 400);
 		return (-1);
 	}
-
-	assert(req->req_body_status != REQ_BODY_INIT);
 
 	HTTP_Copy(req->http0, req->http);	// For ESI & restart
 	return (0);

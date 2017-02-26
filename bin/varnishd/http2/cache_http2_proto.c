@@ -401,7 +401,8 @@ h2_do_req(struct worker *wrk, void *priv)
 	CAST_OBJ_NOTNULL(req, priv, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
 	THR_SetRequest(req);
-	assert(CNT_Request(wrk, req) != REQ_FSM_DISEMBARK);
+	if (!CNT_GotReq(wrk, req))
+		assert(CNT_Request(wrk, req) != REQ_FSM_DISEMBARK);
 	THR_SetRequest(NULL);
 	VSL(SLT_Debug, 0, "H2REQ CNT done");
 	/* XXX clean up req */
@@ -470,15 +471,12 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	}
 	VSLb_ts_req(req, "Req", req->t_req);
 	http_SetH(req->http, HTTP_HDR_PROTO, "HTTP/2.0");
+	req->http->protover = 20;
 
 	if (h2->rxf_flags & H2FF_HEADERS_END_STREAM)
 		req->req_body_status = REQ_BODY_NONE;
 	else
 		req->req_body_status = REQ_BODY_WITHOUT_LEN;
-	wrk->stats->client_req++;
-	wrk->stats->s_req++;
-	req->ws_req = WS_Snapshot(req->ws);
-	HTTP_Copy(req->http0, req->http);
 
 	req->task.func = h2_do_req;
 	req->task.priv = req;

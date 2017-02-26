@@ -142,7 +142,9 @@ h2_minimal_response(struct req *req, uint16_t status)
 
 	/* XXX return code checking once H2_Send returns anything but 0 */
 	H2_Send(req->wrk, r2, 1,
-	    H2_FRAME_HEADERS, H2FF_HEADERS_END_HEADERS,
+	    H2_FRAME_HEADERS,
+	    H2FF_HEADERS_END_HEADERS |
+		(status < 200 ? 0 : H2FF_HEADERS_END_STREAM),
 	    l, buf);
 	return (0);
 }

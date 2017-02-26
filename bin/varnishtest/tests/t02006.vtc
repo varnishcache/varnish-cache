@@ -1,0 +1,27 @@
+varnishtest "H2 POST w/ 100 Continue"
+
+server s1 {
+	rxreq
+	txresp -hdr "Content-Type: text/plain" -body response
+} -start
+
+varnish v1 -vcl+backend {} -cliok "param.set feature +http2" -start
+varnish v1 -cliok "param.set debug +syncvsl"
+
+client c1 {
+	stream 1 {
+		txreq -req POST -hdr expect 100-continue -hdr content-type text/plain -hdr content-length 7 -body request
+
+		rxhdrs
+		expect resp.status == 100
+
+		rxresp
+		expect resp.status == 200
+		expect resp.http.content-Type == "text/plain"
+
+		# Then, payload checks
+		write_body resp.txt
+		shell {grep -q response resp.txt}
+	} -run
+} -run
+
