@@ -83,7 +83,6 @@ varnish v1 -vcl {
 		set req.http.foo = 1 - 1;
 		set req.http.foo = 1 + -1;
 		set req.http.foo = 1 - -1;
-		set req.http.foo = 1- -1; # regression test for #2184
 		set req.http.foo = 3 * 2;
 		set req.http.foo = 3 / 2;
 		set req.http.foo = 3 * -2;
