@@ -787,6 +787,7 @@ receive_frame(void *priv)
 					else
 						hdrs = s->resp;
 				}
+				hdrs[0].t = 0;
 				AZ(vsb);
 				vsb = VSB_new_auto();
 				/*FALLTHROUGH*/
