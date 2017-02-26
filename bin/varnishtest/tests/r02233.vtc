@@ -1,0 +1,24 @@
+varnishtest "Fail earlier if we cannot fit the query string"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-p workspace_client=9k" -vcl+backend {
+	import ${vmod_std};
+
+	sub vcl_recv {
+		set req.url = std.querysort(req.url);
+	}
+} -start
+
+client c1 {
+	send "GET /?a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1"
+	send "&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1"
+	send "&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1"
+	send " HTTP/1.1\r\n"
+	send "Host: foo\r\n\r\n"
+	rxresp
+	expect resp.status == 500
+} -run

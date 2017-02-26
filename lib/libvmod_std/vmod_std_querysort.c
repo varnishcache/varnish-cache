@@ -94,7 +94,7 @@ vmod_querysort(VRT_CTX, VCL_STRING url)
 	pp[np++] = 1 + cu;
 	for (cq = 1 + cu; *cq != '\0'; cq++) {
 		if (*cq == '&') {
-			if (pp + 3 > pe) {
+			if (pp + np + 3 > pe) {
 				WS_Release(ctx->ws, 0);
 				WS_MarkOverflow(ctx->ws);
 				return (url);
