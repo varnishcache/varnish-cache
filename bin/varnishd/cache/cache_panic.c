@@ -265,6 +265,8 @@ pan_objcore(struct vsb *vsb, const char *typ, const struct objcore *oc)
 	PAN_CheckMagic(vsb, oc, OBJCORE_MAGIC);
 	VSB_printf(vsb, "refcnt = %d,\n", oc->refcnt);
 	VSB_printf(vsb, "flags = {");
+
+/*lint -save -esym(438,p) -esym(838,p) -e539 */
 	p = "";
 #define OC_FLAG(U, l, v) \
 	if (oc->flags & v) { VSB_printf(vsb, "%s" #l, p); p = ", "; }
@@ -275,8 +277,9 @@ pan_objcore(struct vsb *vsb, const char *typ, const struct objcore *oc)
 #define OC_EXP_FLAG(U, l, v) \
 	if (oc->exp_flags & v) { VSB_printf(vsb, "%s" #l, p); p = ", "; }
 #include "tbl/oc_exp_flags.h"
-
+/*lint -restore */
 	VSB_printf(vsb, "},\n");
+
 	if (oc->boc != NULL)
 		pan_boc(vsb, oc->boc);
 	VSB_printf(vsb, "exp = {%f, %f, %f, %f},\n",
@@ -370,11 +373,11 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	VSB_printf(vsb, "failed = %d, ", bo->vfc->failed);
 	VSB_printf(vsb, "flags = {");
 	p = "";
-	/*lint -save -esym(438,p) */
+/*lint -save -esym(438,p) -e539 */
 #define BO_FLAG(l, r, w, d) \
 	if (bo->l) { VSB_printf(vsb, "%s" #l, p); p = ", "; }
 #include "tbl/bo_flags.h"
-	/*lint -restore */
+/*lint -restore */
 	VSB_printf(vsb, "},\n");
 
 	if (VALID_OBJ(bo->htc, HTTP_CONN_MAGIC))
