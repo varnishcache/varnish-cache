@@ -940,6 +940,7 @@ void VRB_Free(struct req *);
 /* cache_req_fsm.c [CNT] */
 enum req_fsm_nxt CNT_Request(struct worker *, struct req *);
 void CNT_AcctLogCharge(struct dstat *, struct req *);
+int CNT_GotReq(struct worker *, struct req *);
 
 /* cache_session.c [SES] */
 struct sess *SES_New(struct pool *);

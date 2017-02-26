@@ -50,6 +50,51 @@
 #include "vtim.h"
 
 /*--------------------------------------------------------------------
+ * Handle "Expect:" and "Connection:" on incoming request
+ */
+
+int
+CNT_GotReq(struct worker *wrk, struct req *req)
+{
+	const char *p;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->http, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
+	AN(req->transport->minimal_response);
+
+	if (http_GetHdr(req->http, H_Expect, &p)) {
+		if (strcasecmp(p, "100-continue")) {
+			req->doclose = SC_RX_JUNK;
+			(void)req->transport->minimal_response(req, 417);
+			wrk->stats->client_req_417++;
+			return (-1);
+		}
+		if (req->http->protover >= 11 && req->htc->pipeline_b == NULL)
+			req->want100cont = 1;
+		http_Unset(req->http, H_Expect);
+	}
+
+	wrk->stats->client_req++;
+	wrk->stats->s_req++;
+
+	AZ(req->err_code);
+	req->ws_req = WS_Snapshot(req->ws);
+
+	req->doclose = http_DoConnection(req->http);
+	if (req->doclose == SC_RX_BAD) {
+		(void)req->transport->minimal_response(req, 400);
+		return (-1);
+	}
+
+	assert(req->req_body_status != REQ_BODY_INIT);
+
+	HTTP_Copy(req->http0, req->http);	// For ESI & restart
+	return (0);
+}
+
+/*--------------------------------------------------------------------
  * Deliver an object to client
  */
 
@@ -766,8 +811,10 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	if (req->want100cont && !req->late100cont) {
 		req->want100cont = 0;
-		if (req->transport->minimal_response(req, 100))
-			return (-1);
+		if (req->transport->minimal_response(req, 100)) {
+			req->doclose = SC_REM_CLOSE;
+			return (REQ_FSM_DONE);
+		}
 	}
 
 	/* Attempts to cache req.body may fail */

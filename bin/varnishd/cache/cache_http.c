@@ -664,13 +664,12 @@ http_DoConnection(struct http *hp)
 			retval = SC_NULL;
 
 		/* Refuse removal of well-known-headers if they would pass. */
-/*lint -save -e506 */
+/*lint -save -e506 [constant value boolean] */
 #define HTTPH(a, x, c)						\
 		if (!((c) & HTTPH_R_PASS) &&			\
 		    strlen(a) == u && !strncasecmp(a, b, u))	\
 			return (SC_RX_BAD);
 #include "tbl/http_headers.h"
-
 /*lint -restore */
 
 		v = http_findhdr(hp, u, b);

@@ -255,7 +255,7 @@ struct transport HTTP1_transport = {
  */
 
 static inline void
-http1_abort(struct req *req, unsigned status)
+http1_abort(struct req *req, uint16_t status)
 {
 	AN(req->doclose);
 	assert(status >= 400);
@@ -265,7 +265,6 @@ http1_abort(struct req *req, unsigned status)
 static int
 http1_dissect(struct worker *wrk, struct req *req)
 {
-	const char *p;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -320,35 +319,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 		WRONG("Unknown req_body_status situation");
 	}
 
-	if (http_GetHdr(req->http, H_Expect, &p)) {
-		if (strcasecmp(p, "100-continue")) {
-			req->doclose = SC_RX_JUNK;
-			http1_abort(req, 417);
-			wrk->stats->client_req_417++;
-			return (-1);
-		}
-		if (req->http->protover >= 11 && req->htc->pipeline_b == NULL)
-			req->want100cont = 1;
-		http_Unset(req->http, H_Expect);
-	}
-
-	wrk->stats->client_req++;
-	wrk->stats->s_req++;
-
-	AZ(req->err_code);
-	req->ws_req = WS_Snapshot(req->ws);
-
-	req->doclose = http_DoConnection(req->http);
-	if (req->doclose == SC_RX_BAD) {
-		http1_abort(req, 400);
-		return (-1);
-	}
-
-	assert(req->req_body_status != REQ_BODY_INIT);
-
-	HTTP_Copy(req->http0, req->http);	// For ESI & restart
-
-	return (0);
+	return (CNT_GotReq(wrk, req));
 }
 
 /*----------------------------------------------------------------------
