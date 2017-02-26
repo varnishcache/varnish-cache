@@ -268,6 +268,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
 
 	/* Allocate a new vxid now that we know we'll need it. */
 	AZ(req->vsl->wid);
@@ -353,9 +354,12 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 		return;
 	}
 
+	req->transport = &HTTP1_transport;
+
 	while (1) {
 		st = http1_getstate(sp);
 		if (st == H1NEWREQ) {
+			CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
 			assert(isnan(req->t_prev));
 			assert(isnan(req->t_req));
 			AZ(req->vcl);
@@ -441,6 +445,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			req->req_step = R_STP_RECV;
 			http1_setstate(sp, H1PROC);
 		} else if (st == H1BUSY) {
+			CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
 			/*
 			 * Return from waitinglist.
 			 * Check to see if the remote has left.
@@ -456,12 +461,10 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			}
 			http1_setstate(sp, H1PROC);
 		} else if (st == H1PROC) {
-			req->transport = &HTTP1_transport;
 			req->task.func = http1_req;
 			req->task.priv = req;
 			if (CNT_Request(wrk, req) == REQ_FSM_DISEMBARK)
 				return;
-			req->transport = NULL;
 			req->task.func = NULL;
 			req->task.priv = NULL;
 			http1_setstate(sp, H1CLEANUP);

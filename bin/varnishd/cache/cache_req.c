@@ -175,7 +175,6 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 	req->req_bodybytes = 0;
 
-
 	if (!isnan(req->t_prev) && req->t_prev > 0.)
 		sp->t_idle = req->t_prev;
 	else
