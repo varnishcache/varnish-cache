@@ -147,7 +147,7 @@ const void *
 MGT_Pick(const struct choice *cp, const char *which, const char *kind)
 {
 
-	for(; cp->name != NULL; cp++) {
+	for (; cp->name != NULL; cp++) {
 		if (!strcmp(cp->name, which))
 			return (cp->ptr);
 	}

@@ -385,7 +385,7 @@ vcc_ParseAction(struct vcc *tl)
 
 	at = tl->t;
 	assert(at->tok == ID);
-	for(atp = action_table; atp->name != NULL; atp++) {
+	for (atp = action_table; atp->name != NULL; atp++) {
 		if (vcc_IdIs(at, atp->name)) {
 			if (atp->bitmask != 0)
 				vcc_AddUses(tl, at, atp->bitmask,

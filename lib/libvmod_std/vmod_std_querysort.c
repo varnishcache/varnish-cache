@@ -43,7 +43,7 @@ compa(const void *a, const void *b)
 	const char * const *pb = b;
 	const char *a1, *b1;
 
-	for(a1 = pa[0], b1 = pb[0]; a1 < pa[1] && b1 < pb[1]; a1++, b1++)
+	for (a1 = pa[0], b1 = pb[0]; a1 < pa[1] && b1 < pb[1]; a1++, b1++)
 		if (*a1 != *b1)
 			return (*a1 - *b1);
 	return (0);
@@ -100,7 +100,7 @@ vmod_querysort(VRT_CTX, VCL_STRING url)
 			}
 			pp[np++] = cq;
 			/* Skip trivially empty params */
-			while(cq[1] == '&')
+			while (cq[1] == '&')
 				cq++;
 			pp[np++] = cq + 1;
 		}

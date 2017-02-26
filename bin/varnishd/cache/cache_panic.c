@@ -372,7 +372,7 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	p = "";
 	/*lint -save -esym(438,p) */
 #define BO_FLAG(l, r, w, d) \
-	if(bo->l) { VSB_printf(vsb, "%s" #l, p); p = ", "; }
+	if (bo->l) { VSB_printf(vsb, "%s" #l, p); p = ", "; }
 #include "tbl/bo_flags.h"
 	/*lint -restore */
 	VSB_printf(vsb, "},\n");
@@ -476,7 +476,7 @@ pan_req(struct vsb *vsb, const struct req *req)
 
 	VSB_printf(vsb, "flags = {\n");
 	VSB_indent(vsb, 2);
-#define REQ_FLAG(l, r, w, d) if(req->l) VSB_printf(vsb, #l ",\n");
+#define REQ_FLAG(l, r, w, d) if (req->l) VSB_printf(vsb, #l ",\n");
 #include "tbl/req_flags.h"
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
@@ -555,7 +555,7 @@ pan_backtrace(struct vsb *vsb)
 				p += strlen(buf);
 				if (*p == ':')
 					p++;
-				while(*p == ' ')
+				while (*p == ' ')
 					p++;
 			}
 			VSB_printf(vsb, "%s", p);

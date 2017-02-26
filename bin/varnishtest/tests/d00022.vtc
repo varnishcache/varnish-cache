@@ -44,17 +44,17 @@ varnish v1 -vcl+backend {
 		    alt=req.restarts,
 		    healthy=ALL);
 
-		if(req.url == "/2" && req.restarts > 0) {
+		if (req.url == "/2" && req.restarts > 0) {
 			unset req.http.vrstart;
 		}
-		if(req.url == "/3" && req.restarts > 1) {
+		if (req.url == "/3" && req.restarts > 1) {
 			unset req.http.vrstart;
 		}
 		return(pass);
 	}
 
 	sub vcl_deliver {
-		if(req.http.vrstart) {
+		if (req.http.vrstart) {
 			return(restart);
 		}
 	}

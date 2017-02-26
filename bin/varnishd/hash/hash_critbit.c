@@ -210,7 +210,7 @@ hcb_insert(struct worker *wrk, struct hcb_root *root, const uint8_t *digest,
 		return (oh2);
 	}
 
-	while(hcb_is_y(pp)) {
+	while (hcb_is_y(pp)) {
 		y = hcb_l_y(pp);
 		CHECK_OBJ_NOTNULL(y, HCB_Y_MAGIC);
 		assert(y->ptr < DIGEST_LEN);
@@ -253,7 +253,7 @@ hcb_insert(struct worker *wrk, struct hcb_root *root, const uint8_t *digest,
 	p = &root->origo;
 	AN(*p);
 
-	while(hcb_is_y(*p)) {
+	while (hcb_is_y(*p)) {
 		y = hcb_l_y(*p);
 		CHECK_OBJ_NOTNULL(y, HCB_Y_MAGIC);
 		assert(y->critbit != y2->critbit);
@@ -287,7 +287,7 @@ hcb_delete(struct hcb_root *r, struct objhead *oh)
 	assert(hcb_is_y(*p));
 
 	y = NULL;
-	while(1) {
+	while (1) {
 		assert(hcb_is_y(*p));
 		y = hcb_l_y(*p);
 		assert(y->ptr < DIGEST_LEN);

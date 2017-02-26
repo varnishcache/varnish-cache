@@ -379,7 +379,7 @@ smf_open_chunk(struct smf_sc *sc, off_t sz, off_t off, off_t *fail, off_t *sum)
 		p = mmap(NULL, sz, PROT_READ|PROT_WRITE,
 		    MAP_NOCORE | MAP_NOSYNC | MAP_SHARED, sc->fd, off);
 		if (p != MAP_FAILED) {
-			(void) madvise(p, sz, sc->advice);
+			(void)madvise(p, sz, sc->advice);
 			(*sum) += sz;
 			new_smf(sc, p, off, sz);
 			return;

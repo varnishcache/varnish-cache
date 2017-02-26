@@ -420,7 +420,7 @@ tweak_poolparam(struct vsb *vsb, const struct parspec *par, const char *arg)
 				break;
 			}
 			*pp = px;
-		} while(0);
+		} while (0);
 		VAV_Free(av);
 	}
 	return (retval);

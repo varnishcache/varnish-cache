@@ -431,7 +431,7 @@ vev_schedule_one(struct vev_base *evb)
 	}
 
 	k = 0;
-	for(j = 1; j < evb->lpfd; j++) {
+	for (j = 1; j < evb->lpfd; j++) {
 		evb->pev[j]->fd_events = evb->pfd[j].revents;
 		if (evb->pev[j]->fd_events)
 			k++;
@@ -440,7 +440,7 @@ vev_schedule_one(struct vev_base *evb)
 
 	DBG(evb, "EVENTS %d\n", i);
 	while (i > 0) {
-		for(j = BINHEAP_NOIDX + 1; j < evb->lpfd; j++) {
+		for (j = BINHEAP_NOIDX + 1; j < evb->lpfd; j++) {
 			e = evb->pev[j];
 			if (e->fd_events == 0)
 				continue;

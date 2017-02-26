@@ -595,13 +595,13 @@ http_rxchunk(struct http *hp)
 	l = hp->prxbuf;
 	if (http_rxchar(hp, 2, 0) < 0)
 		return (-1);
-	if(!vct_iscrlf(hp->rxbuf + l)) {
+	if (!vct_iscrlf(hp->rxbuf + l)) {
 		vtc_log(hp->vl, hp->fatal,
 		    "Wrong chunk tail[0] = %02x",
 		    hp->rxbuf[l] & 0xff);
 		return (-1);
 	}
-	if(!vct_iscrlf(hp->rxbuf + l + 1)) {
+	if (!vct_iscrlf(hp->rxbuf + l + 1)) {
 		vtc_log(hp->vl, hp->fatal,
 		    "Wrong chunk tail[1] = %02x",
 		    hp->rxbuf[l + 1] & 0xff);
@@ -708,7 +708,7 @@ cmd_http_rxresp(CMD_ARGS)
 	AZ(strcmp(av[0], "rxresp"));
 	av++;
 
-	for(; *av != NULL; av++)
+	for (; *av != NULL; av++)
 		if (!strcmp(*av, "-no_obj"))
 			has_obj = 0;
 		else
@@ -745,7 +745,7 @@ cmd_http_rxresphdrs(CMD_ARGS)
 	AZ(strcmp(av[0], "rxresphdrs"));
 	av++;
 
-	for(; *av != NULL; av++)
+	for (; *av != NULL; av++)
 		vtc_fatal(hp->vl, "Unknown http rxresp spec: %s\n", *av);
 	http_rxhdr(hp);
 	http_splitheader(hp, 0);
@@ -876,7 +876,7 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 	(void)vl;
 	nullbody = body;
 
-	for(; *av != NULL; av++) {
+	for (; *av != NULL; av++) {
 		if (!strcmp(*av, "-nolen")) {
 			nolen = 1;
 		} else if (!strcmp(*av, "-hdr")) {
@@ -885,7 +885,7 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 		} else
 			break;
 	}
-	for(; *av != NULL; av++) {
+	for (; *av != NULL; av++) {
 		if (!strcmp(*av, "-body")) {
 			assert(body == nullbody);
 			REPLACE(body, av[1]);
@@ -894,9 +894,9 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 			av++;
 			bodylen = strlen(body);
 			for (b = body; *b != '\0'; b++) {
-				if(*b == '\\' && b[1] == '0') {
+				if (*b == '\\' && b[1] == '0') {
 					*b = '\0';
-					for(c = b+1; *c != '\0'; c++) {
+					for (c = b+1; *c != '\0'; c++) {
 						*c = c[1];
 					}
 					b++;
@@ -1022,7 +1022,7 @@ cmd_http_txresp(CMD_ARGS)
 
 	VSB_clear(hp->vsb);
 
-	for(; *av != NULL; av++) {
+	for (; *av != NULL; av++) {
 		if (!strcmp(*av, "-proto")) {
 			proto = av[1];
 			av++;
@@ -1109,7 +1109,7 @@ cmd_http_rxreq(CMD_ARGS)
 	AZ(strcmp(av[0], "rxreq"));
 	av++;
 
-	for(; *av != NULL; av++)
+	for (; *av != NULL; av++)
 		vtc_fatal(vl, "Unknown http rxreq spec: %s\n", *av);
 	http_rxhdr(hp);
 	http_splitheader(hp, 1);
@@ -1136,7 +1136,7 @@ cmd_http_rxreqhdrs(CMD_ARGS)
 	AZ(strcmp(av[0], "rxreqhdrs"));
 	av++;
 
-	for(; *av != NULL; av++)
+	for (; *av != NULL; av++)
 		vtc_fatal(hp->vl, "Unknown http rxreq spec: %s\n", *av);
 	http_rxhdr(hp);
 	http_splitheader(hp, 1);
@@ -1162,7 +1162,7 @@ cmd_http_rxreqbody(CMD_ARGS)
 	AZ(strcmp(av[0], "rxreqbody"));
 	av++;
 
-	for(; *av != NULL; av++)
+	for (; *av != NULL; av++)
 		vtc_fatal(hp->vl, "Unknown http rxreq spec: %s\n", *av);
 	http_swallow_body(hp, hp->req, 0);
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
@@ -1186,7 +1186,7 @@ cmd_http_rxrespbody(CMD_ARGS)
 	AZ(strcmp(av[0], "rxrespbody"));
 	av++;
 
-	for(; *av != NULL; av++)
+	for (; *av != NULL; av++)
 		vtc_fatal(hp->vl, "Unknown http rxrespbody spec: %s\n", *av);
 	http_swallow_body(hp, hp->resp, 0);
 	vtc_log(hp->vl, 4, "bodylen = %s", hp->bodylen);
@@ -1240,7 +1240,7 @@ cmd_http_txreq(CMD_ARGS)
 
 	VSB_clear(hp->vsb);
 
-	for(; *av != NULL; av++) {
+	for (; *av != NULL; av++) {
 		if (!strcmp(*av, "-url")) {
 			url = av[1];
 			av++;
@@ -1740,7 +1740,7 @@ cmd_http_settings(CMD_ARGS)
 
 	CAST_OBJ_NOTNULL(hp, priv, HTTP_MAGIC);
 
-	for(; *av != NULL; av++) {
+	for (; *av != NULL; av++) {
 		if (!strcmp(*av, "-dectbl")) {
 			n = strtoul(av[1], &p, 0);
 			if (*p != '\0')
@@ -1946,7 +1946,7 @@ xxx(void)
 
 	memset(&vz, 0, sizeof vz);
 
-	for(n = 0;  n < 999999999; n++) {
+	for (n = 0;  n < 999999999; n++) {
 		*ibuf = 0;
 		for (j = 0; j < 7; j++) {
 			snprintf(strchr(ibuf, 0), 5, "%x",

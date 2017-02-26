@@ -740,7 +740,7 @@ h2_b64url_settings(struct h2_sess *h2, struct req *req)
 	n = 0;
 	x = 0;
 	up = u;
-	for(;*p; p++) {
+	for (;*p; p++) {
 		q = strchr(s, *p);
 		if (q == NULL)
 			return (-1);

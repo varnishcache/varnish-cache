@@ -110,7 +110,7 @@ static inline void
 vws_port_ev(struct vws *vws, struct waiter *w, port_event_t *ev, double now)
 {
 	struct waited *wp;
-	if(ev->portev_source == PORT_SOURCE_USER) {
+	if (ev->portev_source == PORT_SOURCE_USER) {
 		CAST_OBJ_NOTNULL(wp, ev->portev_user, WAITED_MAGIC);
 		assert(wp->fd >= 0);
 		vws->nwaited++;

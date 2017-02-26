@@ -507,7 +507,7 @@ http_GetHdrToken(const struct http *hp, const char *hdr,
 		return (0);
 	AN(h);
 
-	while(http_split(&h, NULL, ",", &b, &e))
+	while (http_split(&h, NULL, ",", &b, &e))
 		if (http_istoken(&b, e, token))
 			break;
 	if (b == NULL)
@@ -543,7 +543,7 @@ http_GetHdrQ(const struct http *hp, const char *hdr, const char *field)
 
 	if (hb == NULL)
 		return (1.);
-	while(http_split(&hb, he, ";", &b, &e)) {
+	while (http_split(&hb, he, ";", &b, &e)) {
 		if (*b != 'q')
 			continue;
 		for (b++; b < e && vct_issp(*b); b++)

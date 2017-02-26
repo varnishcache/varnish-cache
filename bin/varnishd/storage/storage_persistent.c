@@ -232,7 +232,7 @@ smp_open_segs(struct smp_sc *sc, struct smp_signspace *spc)
 
 	sg1 = NULL;
 	sg2 = NULL;
-	for(; ss <= se; ss++) {
+	for (; ss <= se; ss++) {
 		ALLOC_OBJ(sg, SMP_SEG_MAGIC);
 		AN(sg);
 		VTAILQ_INIT(&sg->objcores);

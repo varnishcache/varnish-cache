@@ -235,7 +235,7 @@ vbp_poke(struct vbp_target *vt)
 	i = VSA_Get_Proto(sa);
 	if (i == AF_INET)
 		vt->good_ipv4 |= 1;
-	else if(i == AF_INET6)
+	else if (i == AF_INET6)
 		vt->good_ipv6 |= 1;
 	else
 		WRONG("Wrong probe protocol family");
@@ -455,7 +455,7 @@ vbp_build_req(struct vbp_target *vt, const struct vrt_backend_probe *vbp,
 	vsb = VSB_new_auto();
 	AN(vsb);
 	VSB_clear(vsb);
-	if(vbp->request != NULL) {
+	if (vbp->request != NULL) {
 		VSB_cat(vsb, vbp->request);
 	} else {
 		VSB_printf(vsb, "GET %s HTTP/1.1\r\n",

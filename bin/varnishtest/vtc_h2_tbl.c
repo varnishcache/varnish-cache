@@ -285,7 +285,7 @@ void
 HPK_FreeCtx(struct hpk_ctx *ctx)
 {
 
-	while(!VTAILQ_EMPTY(&ctx->dyntbl))
+	while (!VTAILQ_EMPTY(&ctx->dyntbl))
 		pop_header(ctx);
 	free(ctx);
 }

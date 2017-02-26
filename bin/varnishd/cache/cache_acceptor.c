@@ -599,7 +599,7 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 	 * a race where varnishtest::client would attempt to connect(2)
 	 * before listen(2) has been called.
 	 */
-	while(!pool_accepting)
+	while (!pool_accepting)
 		VTIM_sleep(.1);
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {

@@ -24,7 +24,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
-		if(req.url == "/") {
+		if (req.url == "/") {
 			set req.esi = false;
 		}
 	}

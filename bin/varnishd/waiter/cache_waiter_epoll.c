@@ -128,7 +128,7 @@ vwe_thread(void *priv)
 			Lck_Lock(&vwe->mtx);
 			active = Wait_HeapDelete(w, wp);
 			Lck_Unlock(&vwe->mtx);
-			if (! active) {
+			if (!active) {
 				VSL(SLT_Debug, wp->fd, "epoll: spurious event");
 				continue;
 			}

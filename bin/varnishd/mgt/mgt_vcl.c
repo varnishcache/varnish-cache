@@ -445,7 +445,7 @@ mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
 			free(*p);
 			*p = NULL;
 		}
-	} while(!done);
+	} while (!done);
 
 	if (mgt_cli_askchild(status, p, "vcl.use \"%s\"\n", active_vcl->name))
 		return (1);

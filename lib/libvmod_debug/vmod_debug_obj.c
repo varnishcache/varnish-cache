@@ -125,27 +125,27 @@ VCL_VOID __match_proto__()
 vmod_obj_test_priv_call(VRT_CTX,
     struct vmod_debug_obj *o, struct vmod_priv *priv)
 {
-	(void) o;
+	(void)o;
 	vmod_test_priv_call(ctx, priv);
 }
 VCL_VOID __match_proto__()
 vmod_obj_test_priv_vcl(VRT_CTX,
     struct vmod_debug_obj *o, struct vmod_priv *priv)
 {
-	(void) o;
+	(void)o;
 	vmod_test_priv_vcl(ctx, priv);
 }
 VCL_STRING __match_proto__()
 vmod_obj_test_priv_task(VRT_CTX,
     struct vmod_debug_obj *o, struct vmod_priv *priv, VCL_STRING s)
 {
-	(void) o;
+	(void)o;
 	return (vmod_test_priv_task(ctx, priv, s));
 }
 VCL_STRING __match_proto__()
 vmod_obj_test_priv_top(VRT_CTX,
     struct vmod_debug_obj *o, struct vmod_priv *priv, VCL_STRING s)
 {
-	(void) o;
+	(void)o;
 	return (vmod_test_priv_top(ctx, priv, s));
 }

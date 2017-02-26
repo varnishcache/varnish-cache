@@ -230,7 +230,7 @@ http1_minimal_response(struct req *req, uint16_t status)
 		req->acct.resp_hdrbytes += wl;
 	if (wl != l) {
 		VTCP_Assert(1);
-		if (! req->doclose)
+		if (!req->doclose)
 			req->doclose = SC_REM_CLOSE;
 		return (-1);
 	}

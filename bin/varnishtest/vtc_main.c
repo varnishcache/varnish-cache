@@ -666,7 +666,7 @@ main(int argc, char * const *argv)
 	vb = vev_new_base();
 
 	i = 0;
-	while(!VTAILQ_EMPTY(&tst_head) || i) {
+	while (!VTAILQ_EMPTY(&tst_head) || i) {
 		if (!VTAILQ_EMPTY(&tst_head) && njob < npar) {
 			start_test();
 			njob++;

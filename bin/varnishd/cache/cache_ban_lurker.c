@@ -288,7 +288,7 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 
 	dt = 49.62;		// Random, non-magic
 	if (cache_param->ban_lurker_sleep == 0) {
-		(void) ban_cleantail(NULL);
+		(void)ban_cleantail(NULL);
 		return (dt);
 	}
 

@@ -13,7 +13,7 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
-		if(bereq.retries == 0) {
+		if (bereq.retries == 0) {
 			return(retry);
 		}
 	}

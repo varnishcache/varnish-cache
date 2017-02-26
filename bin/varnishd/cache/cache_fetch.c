@@ -829,7 +829,7 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	now = W_TIM_real(wrk);
 	VSLb_ts_busyobj(bo, "Error", now);
 
-	if(bo->fetch_objcore->stobj->stevedore != NULL)
+	if (bo->fetch_objcore->stobj->stevedore != NULL)
 		ObjFreeObj(bo->wrk, bo->fetch_objcore);
 
 	// XXX: reset all beresp flags ?

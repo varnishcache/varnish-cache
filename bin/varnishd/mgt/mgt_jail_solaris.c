@@ -255,7 +255,7 @@ jail_master_gen(enum jail_master_e e)
 static int __match_proto__(jail_init_f)
 vjs_init(char **args)
 {
-	(void) args;
+	(void)args;
 	return 0;
 }
 
@@ -390,7 +390,7 @@ vjs_setup(enum jail_gen_e jge)
 {
 	priv_set_t *priv_all;
 
-	if (! (priv_all = priv_allocset())) {
+	if (!(priv_all = priv_allocset())) {
 		MGT_Complain(C_SECURITY,
 		    "Solaris Jail warning: "
 		    " vjs_setup - priv_allocset failed: errno=%d (%s)",

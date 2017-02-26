@@ -139,7 +139,7 @@ shard_next(struct shard_state *state, VCL_INT skip, VCL_BOOL healthy)
 
 		c = state->shardd->hashcircle[state->idx].host;
 
-		if (! vbit_test(state->picklist, c)) {
+		if (!vbit_test(state->picklist, c)) {
 
 			vbit_set(state->picklist, c);
 			state->pickcount++;
@@ -303,7 +303,7 @@ sharddir_pick_be(VRT_CTX, struct sharddir *shardd,
 	init_state(&state, ctx, shardd, vbit_init(picklist_spc, picklist_sz));
 
 	sharddir_rdlock(shardd);
-	if(shardd->n_backend == 0) {
+	if (shardd->n_backend == 0) {
 		shard_err0(ctx, shardd, "no backends");
 		goto err;
 	}
@@ -369,7 +369,7 @@ sharddir_pick_be(VRT_CTX, struct sharddir *shardd,
 		 * - no change if alternative host is also in rampup or the dice
 		 *   has rolled in favour of the chosen host
 		 */
-		if (! rampup ||
+		if (!rampup ||
 		    ctx->now - state.last.changed < alt_r ||
 		    VRND_RandomTestableDouble() * chosen_r <
 		     (ctx->now - state.previous.changed))

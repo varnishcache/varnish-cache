@@ -93,7 +93,7 @@ vcc_stevedore(struct vcc *vcc, const char *stv_name)
 	sym->rname = TlDup(vcc, buf);
 	sym->r_methods = ~0;
 
-	for(sv = stvars; sv->name != NULL; sv++) {
+	for (sv = stvars; sv->name != NULL; sv++) {
 		bprintf(buf, "storage.%s.%s", stv_name, sv->name);
 		sym = VCC_Symbol(vcc, NULL, buf, NULL, SYM_VAR, 1);
 		AN(sym);

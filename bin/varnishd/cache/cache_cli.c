@@ -100,7 +100,7 @@ CLI_Run(void)
 
 	do {
 		i = VCLS_Poll(cls, -1);
-	} while(i > 0);
+	} while (i > 0);
 	VSL(SLT_CLI, 0, "EOF on CLI connection, worker stops");
 }
 

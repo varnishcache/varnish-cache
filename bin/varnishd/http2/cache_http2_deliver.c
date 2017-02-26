@@ -216,12 +216,12 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 				*p++ = (uint8_t)sz - 0x7f;
 			}
 
-			for(sz1 = 0; sz1 < sz; sz1++)
+			for (sz1 = 0; sz1 < sz; sz1++)
 				*p++ = (uint8_t)tolower(hp->hd[u].b[sz1]);
 
 		}
 
-		while(vct_islws(*++r))
+		while (vct_islws(*++r))
 			continue;
 		sz = hp->hd[u].e - r;
 		assert(sz <= 254);

@@ -1775,7 +1775,7 @@ cmd_txprio(CMD_ARGS)
 	s->weight = weight & 0xff;
 	s->dependency = stid;
 
-	if(exclusive)
+	if (exclusive)
 		exclusive_stream_dependency(s);
 
 	vbe32enc(buf, (stid | exclusive));

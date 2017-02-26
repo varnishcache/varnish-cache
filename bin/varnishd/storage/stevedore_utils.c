@@ -189,7 +189,7 @@ STV_FileSize(int fd, const char *size, unsigned *granularity, const char *ctx)
 	 * just add OFF_MAX to <limits.h>...
 	 */
 	i = 0;
-	while(1) {
+	while (1) {
 		o = l;
 		if (o == l && o > 0)
 			break;

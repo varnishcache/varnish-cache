@@ -170,7 +170,7 @@ name##_VSPLAY_INSERT(struct name *head, struct type *elm)		\
 	    int __comp;							\
 	    name##_VSPLAY(head, elm);					\
 	    __comp = (cmp)(elm, (head)->sph_root);			\
-	    if(__comp < 0) {						\
+	    if (__comp < 0) {						\
 		    VSPLAY_LEFT(elm, field) = VSPLAY_LEFT((head)->sph_root, field);\
 		    VSPLAY_RIGHT(elm, field) = (head)->sph_root;	\
 		    VSPLAY_LEFT((head)->sph_root, field) = NULL;	\

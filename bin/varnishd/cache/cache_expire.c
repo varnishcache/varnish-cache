@@ -150,7 +150,7 @@ EXP_Rearm(struct objcore *oc, double now, double ttl, double grace, double keep)
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	assert(oc->refcnt > 0);
 
-	if (! (oc->exp_flags & OC_EF_REFD))
+	if (!(oc->exp_flags & OC_EF_REFD))
 		return;
 
 	if (!isnan(ttl))

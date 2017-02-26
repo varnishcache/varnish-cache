@@ -780,7 +780,7 @@ main(int argc, char * const *argv)
 		(void)rmdir(Cn_arg);
 		exit(cli->result == CLIS_OK ? 0 : 2);
 	} else {
-		while(!VTAILQ_EMPTY(&f_args)) {
+		while (!VTAILQ_EMPTY(&f_args)) {
 			fa = VTAILQ_FIRST(&f_args);
 			VTAILQ_REMOVE(&f_args, fa, list);
 			mgt_vcl_startup(cli, fa->src,

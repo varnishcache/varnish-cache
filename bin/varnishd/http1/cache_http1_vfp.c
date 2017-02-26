@@ -137,7 +137,7 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 			return (VFP_Error(vc, "chunked header too long"));
 
 		/* Skip trailing white space */
-		while(vct_islws(buf[u]) && buf[u] != '\n') {
+		while (vct_islws(buf[u]) && buf[u] != '\n') {
 			lr = v1f_read(vc, htc, buf + u, 1);
 			if (lr <= 0)
 				return (VFP_Error(vc, "chunked read err"));
@@ -152,7 +152,7 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 		if (q == NULL || *q != '\0')
 			return (VFP_Error(vc, "chunked header number syntax"));
 		cl = (ssize_t)cll;
-		if((uintmax_t)cl != cll)
+		if ((uintmax_t)cl != cll)
 			return (VFP_Error(vc, "bogusly large chunk size"));
 
 		vfe->priv2 = cl;

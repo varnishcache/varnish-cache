@@ -564,7 +564,7 @@ hsh_rush2(struct worker *wrk, struct rush *r)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(r, RUSH_MAGIC);
 
-	while(!VTAILQ_EMPTY(&r->reqs)) {
+	while (!VTAILQ_EMPTY(&r->reqs)) {
 		req = VTAILQ_FIRST(&r->reqs);
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 		VTAILQ_REMOVE(&r->reqs, req, w_list);

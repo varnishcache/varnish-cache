@@ -193,7 +193,7 @@ VTIM_format(double t, char *p)
 #define WEEKDAY()						\
 	do {							\
 		int i;						\
-		for(i = 0; i < 7; i++) {			\
+		for (i = 0; i < 7; i++) {			\
 			if (!memcmp(p, weekday_name[i], 3)) {	\
 				weekday = i;			\
 				break;				\
@@ -208,7 +208,7 @@ VTIM_format(double t, char *p)
 #define MONTH()							\
 	do {							\
 		int i;						\
-		for(i = 0; i < 12; i++) {			\
+		for (i = 0; i < 12; i++) {			\
 			if (!memcmp(p, month_name[i], 3)) {	\
 				month = i + 1;			\
 				break;				\

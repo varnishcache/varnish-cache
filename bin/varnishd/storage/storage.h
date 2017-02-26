@@ -127,7 +127,7 @@ extern struct stevedore *stv_transient;
 
 /*--------------------------------------------------------------------*/
 
-#define STV_Foreach(arg) for(arg = NULL; STV__iter(&arg);)
+#define STV_Foreach(arg) for (arg = NULL; STV__iter(&arg);)
 
 int STV__iter(struct stevedore ** const );
 

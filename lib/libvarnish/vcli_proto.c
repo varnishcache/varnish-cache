@@ -64,7 +64,7 @@ VCLI_AuthResponse(int S_fd, const char *challenge,
 	SHA256_Update(&ctx, challenge, 32);
 	SHA256_Update(&ctx, "\n", 1);
 	SHA256_Final(buf, &ctx);
-	for(i = 0; i < SHA256_LEN; i++)
+	for (i = 0; i < SHA256_LEN; i++)
 		assert(snprintf(response + 2 * i, 3, "%02x", buf[i]) == 2);
 }
 
@@ -189,7 +189,7 @@ VCLI_ReadResult(int fd, unsigned *status, char **ptr, double tmo)
 		else
 			*ptr = p;
 		return (0);
-	} while(0);
+	} while (0);
 
 	free(p);
 	*status = CLIS_COMMS;

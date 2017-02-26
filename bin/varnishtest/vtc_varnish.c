@@ -227,7 +227,7 @@ varnishlog_thread(void *priv)
 
 		opt = VSL_COPT_TAIL;
 
-		while(1) {
+		while (1) {
 			i = VSL_Next(c);
 			if (i != 1)
 				break;
@@ -815,7 +815,7 @@ do_stat_dump_cb(void *priv, const struct VSC_point * const pt)
 	dp = priv;
 	v = dp->v;
 
-	if(strcmp(pt->desc->ctype, "uint64_t"))
+	if (strcmp(pt->desc->ctype, "uint64_t"))
 		return (0);
 	u = *(const volatile uint64_t*)pt->ptr;
 

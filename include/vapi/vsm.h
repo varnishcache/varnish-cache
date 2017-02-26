@@ -160,7 +160,7 @@ void VSM__iter0(const struct VSM_data *vd, struct VSM_fantom *vf);
 int VSM__itern(const struct VSM_data *vd, struct VSM_fantom *vf);
 
 #define VSM_FOREACH(vf, vd) \
-    for(VSM__iter0((vd), (vf)); VSM__itern((vd), (vf));)
+    for (VSM__iter0((vd), (vf)); VSM__itern((vd), (vf));)
 	/*
 	 * Iterate over all chunks in shared memory
 	 * vf = "struct VSM_fantom *"

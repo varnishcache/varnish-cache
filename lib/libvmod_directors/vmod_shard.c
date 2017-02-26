@@ -62,7 +62,7 @@ vmod_shard__init(VRT_CTX, struct vmod_directors_shard **vshardp,
 	t2b = (uint32_t)t1;
 	assert(t2a == t2b);
 
-	(void) ctx;
+	(void)ctx;
 	AN(vshardp);
 	AZ(*vshardp);
 	ALLOC_OBJ(vshard, VMOD_SHARD_SHARD_MAGIC);
@@ -95,8 +95,8 @@ VCL_INT __match_proto__(td_directors_shard_key)
 	enum alg_e alg = parse_alg_e(alg_s);
 	hash_func hash_fp = shard_hash_f[alg];
 
-	(void) ctx;
-	(void) vshard;;
+	(void)ctx;
+	(void)vshard;;
 
 	return (VCL_INT)hash_fp(s ? s : "");
 }
@@ -118,7 +118,7 @@ VCL_VOID __match_proto__(td_directors_set_rampup)
 vmod_shard_set_rampup(VRT_CTX, struct vmod_directors_shard *vshard,
     VCL_DURATION duration)
 {
-	(void) ctx;
+	(void)ctx;
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 	shardcfg_set_rampup(vshard->shardd, duration);
 }
@@ -270,6 +270,6 @@ vmod_shard_debug(VRT_CTX, struct vmod_directors_shard *vshard,
 {
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 
-	(void) ctx;
+	(void)ctx;
 	sharddir_debug(vshard->shardd, i & UINT32_MAX);
 }

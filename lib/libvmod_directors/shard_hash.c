@@ -96,7 +96,7 @@ shard_hash_rs(VCL_STRING s)
 static uint32_t __match_proto__(hash_func)
 _shard_hash_invalid(VCL_STRING s)
 {
-	(void) s;
+	(void)s;
 	WRONG("invalid hash fp _ALG_E_ENVALID");
 	NEEDLESS(return(0));
 }
