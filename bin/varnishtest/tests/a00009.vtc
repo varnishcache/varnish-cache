@@ -1,10 +1,6 @@
 varnishtest "Code coverage of mgt_main, (VCL compiler and RSTdump etc)"
 
 shell "varnishd -b 127.0.0.1:80 -C 2> ${tmpdir}/_.c"
-shell "varnishd -x dumprstparam > ${tmpdir}/_.param"
-shell "varnishd -x dumprstvsl > ${tmpdir}/_.vsl"
-shell "varnishd -x dumprstcli > ${tmpdir}/_.cli"
-shell "varnishd -x dumpbuiltin > ${tmpdir}/_.builtin"
 shell -err -expect {VCL version declaration missing} {
 	echo 'bad vcl' > ${tmpdir}/bad.vcl
 	varnishd -f ${tmpdir}/bad.vcl -n ${tmpdir}
@@ -15,8 +11,19 @@ shell -err -expect {VCL version declaration missing} {
 }
 shell -err -expect {-spersistent has been deprecated} "varnishd -spersistent -f '' "
 shell -err -expect {Unknown jail method "xyz"} "varnishd -jxyz -f '' "
-shell -err -expect {-x is incompatible with everything else} "varnishd -d -x foo "
+
+shell -err -expect {-x must be the first argument} "varnishd -d -x foo "
+shell -err -expect {Too many arguments for -x} "varnishd -x foo bar"
 shell -err -expect {Invalid -x argument} "varnishd -x foo "
+shell "varnishd -x dumprstparam > ${tmpdir}/_.param"
+shell "varnishd -x dumprstvsl > ${tmpdir}/_.vsl"
+shell "varnishd -x dumprstcli > ${tmpdir}/_.cli"
+shell "varnishd -x dumpbuiltin > ${tmpdir}/_.builtin"
+
+shell -err -expect {-V must be the first argument} "varnishd -d -V foo "
+shell -err -expect {Too many arguments for -V} "varnishd -V -V"
+shell -expect {Copyright (c) 2006} "varnishd -V"
+
 shell -err -expect {Too many arguments} "varnishd foo "
 shell -err -expect {Only one of -d or -F can be specified} "varnishd -d -F "
 shell -err -expect {Only one of -b or -f can be specified} "varnishd -b a -f b "
@@ -27,7 +34,6 @@ shell -err -expect {-F makes no sense with -C} "varnishd -C -b 127.0.0.1:80 -F "
 shell -err -expect {usage: varnishd [options]} "varnishd -? "
 shell -err -expect {Invalid backslash sequence} {varnishd -l 'xyz\kk,xyz\foo' -f '' }
 shell -err -expect {Invalid backslash sequence} {varnishd -l 'ab\8cd' -f '' }
-shell -err -expect {Copyright (c) 2006} "varnishd -V  ; exit 1"
 shell -err -expect {usage: varnishd [options]} "varnishd -A "
 shell -err -expect {Cannot open -S file} {
 	varnishd -S ${tmpdir}/nonexistent -n ${tmpdir}/v0 -f ''

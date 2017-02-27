@@ -74,7 +74,7 @@ int optreset;	// Some has it, some doesn't.  Cheaper than auto*
 
 /*--------------------------------------------------------------------*/
 
-static void __attribute__((__noreturn__))
+static void 
 usage(void)
 {
 #define FMT "    %-28s # %s\n"
@@ -449,7 +449,6 @@ main(int argc, char * const *argv)
 	unsigned C_flag = 0;
 	unsigned f_flag = 0;
 	unsigned F_flag = 0;
-	unsigned V_flag = 0;
 	const char *b_arg = NULL;
 	const char *i_arg = NULL;
 	const char *j_arg = NULL;
@@ -460,7 +459,6 @@ main(int argc, char * const *argv)
 	const char *S_arg = NULL;
 	const char *s_arg = "malloc,100m";
 	const char *W_arg = NULL;
-	const char *x_arg = NULL;
 	int s_arg_given = 0;
 	int novcl = 0;
 	const char *T_arg = "localhost:0";
@@ -483,15 +481,34 @@ main(int argc, char * const *argv)
 
 	mgt_initialize(cli);
 
-	/*
-	 * First pass over arguments, to determine what we will be doing
-	 * and what process configuration we will use for it.
-	 */
-	while ((o = getopt(argc, argv, opt_spec)) != -1) {
+	/* Check if first argument is a special flag */
+
+	o = getopt(argc, argv, opt_spec);
+	switch (o) {
+	case '?':
+		usage();
+		exit(1);
+	case 'x':
+		if (argc != 3)
+			ARGV_ERR("Too many arguments for -x\n");
+		mgt_x_arg(optarg);
+		exit(0);
+	case 'V':
+		if (argc != 2)
+			ARGV_ERR("Too many arguments for -V\n");
+		VCS_Message("varnishd");
+		exit(0);
+	default:
+		break;
+	}
+
+	/* First pass over arguments to determine overall configuration */
+
+	do {
 		switch (o) {
 		case '?':
 			usage();
-			break;
+			exit(1);
 		case 'b':
 			b_arg = optarg;
 			break;
@@ -511,31 +528,17 @@ main(int argc, char * const *argv)
 			j_arg = optarg;
 			break;
 		case 'V':
-			V_flag = 1;
-			break;
 		case 'x':
-			x_arg = optarg;
+			ARGV_ERR("-%c must be the first argument\n", o);
 			break;
 		default:
 			break;
 		}
-	}
+		o = getopt(argc, argv, opt_spec);
+	} while (o != -1);
 
 	if (argc != optind)
 		ARGV_ERR("Too many arguments (%s...)\n", argv[optind]);
-
-	if (V_flag) {
-		if (argc != 2)
-			ARGV_ERR("-V is incompatible with everything else\n");
-		VCS_Message("varnishd");
-		exit(0);
-	}
-	if (x_arg != NULL) {
-		if (argc != 3)
-			ARGV_ERR("-x is incompatible with everything else\n");
-		mgt_x_arg(x_arg);
-		exit(0);
-	}
 
 	if (b_arg != NULL && f_flag)
 		ARGV_ERR("Only one of -b or -f can be specified\n");
@@ -597,7 +600,6 @@ main(int argc, char * const *argv)
 		case 'd':
 		case 'F':
 		case 'j':
-		case 'V':
 		case 'x':
 			/* Handled in first pass */
 			break;
@@ -674,8 +676,10 @@ main(int argc, char * const *argv)
 			break;
 		case 'p':
 			p = strchr(optarg, '=');
-			if (p == NULL)
+			if (p == NULL) {
 				usage();
+				exit(2);
+			}
 			AN(p);
 			*p++ = '\0';
 			MCF_ParamSet(cli, optarg, p);
@@ -706,7 +710,7 @@ main(int argc, char * const *argv)
 			W_arg = optarg;
 			break;
 		default:
-			usage();
+			WRONG("Error in argument parsing");
 		}
 	}
 	assert(argc == optind);
