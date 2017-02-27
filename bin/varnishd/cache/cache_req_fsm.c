@@ -66,14 +66,14 @@ CNT_GotReq(struct worker *wrk, struct req *req)
 	AN(req->transport->minimal_response);
 
 	if (http_GetHdr(req->http, H_Expect, &p)) {
-		if (strcasecmp(p, "100-continue") ||
-		    req->http->protover < 11) {
+		if (strcasecmp(p, "100-continue")) {
 			req->doclose = SC_RX_JUNK;
 			(void)req->transport->minimal_response(req, 417);
 			wrk->stats->client_req_417++;
 			return (-1);
 		}
-		if (req->htc->pipeline_b == NULL)	// XXX: HTTP1 vs 2 ?
+		if (req->http->protover >= 11 &&
+		    req->htc->pipeline_b == NULL)	// XXX: HTTP1 vs 2 ?
 			req->want100cont = 1;
 		http_Unset(req->http, H_Expect);
 	}
