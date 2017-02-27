@@ -84,8 +84,9 @@ STV_NewObject(struct worker *wrk, struct objcore *oc,
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
 	assert(wsl > 0);
 
+	wrk->strangelove = cache_param->nuke_limit;
 	AN(stv->allocobj);
-	if (stv->allocobj(wrk, stv, oc, wsl, cache_param->nuke_limit) == 0)
+	if (stv->allocobj(wrk, stv, oc, wsl) == 0)
 		return (0);
 
 	wrk->stats->n_object++;

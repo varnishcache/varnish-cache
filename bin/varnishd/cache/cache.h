@@ -321,6 +321,7 @@ struct worker {
 	struct pool_task	task;
 
 	double			lastused;
+	int			strangelove;
 
 	struct v1l		*v1l;
 

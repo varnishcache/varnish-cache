@@ -82,8 +82,7 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 		oc->ttl = cache_param->shortlived;
 	oc->grace = 0.0;
 	oc->keep = 0.0;
-	return (STV_NewObject(bo->wrk, bo->fetch_objcore,
-	    stv_transient, l));
+	return (STV_NewObject(bo->wrk, bo->fetch_objcore, stv_transient, l));
 }
 
 /*--------------------------------------------------------------------

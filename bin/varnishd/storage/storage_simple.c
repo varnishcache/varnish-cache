@@ -130,7 +130,7 @@ SML_MkObject(const struct stevedore *stv, struct objcore *oc, void *ptr)
 
 int __match_proto__(storage_allocobj_f)
 SML_allocobj(struct worker *wrk, const struct stevedore *stv,
-    struct objcore *oc, unsigned wsl, int nuke_limit)
+    struct objcore *oc, unsigned wsl)
 {
 	struct object *o;
 	struct storage *st = NULL;
@@ -141,20 +141,19 @@ SML_allocobj(struct worker *wrk, const struct stevedore *stv,
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	AN(stv->sml_alloc);
-	assert(nuke_limit >= 0);
 
 	ltot = sizeof(struct object) + PRNDUP(wsl);
-	for (; nuke_limit >= 0; nuke_limit--) {
+
+	do {
 		st = stv->sml_alloc(stv, ltot);
 		if (st != NULL && st->space < ltot) {
 			stv->sml_free(st);
 			st = NULL;
 		}
-		if (st != NULL)
-			break;
-		if (!nuke_limit || !LRU_NukeOne(wrk, stv->lru))
-			return (0);
-	}
+	} while (st == NULL && LRU_NukeOne(wrk, stv->lru));
+	if (st == NULL)
+		return (0);
+
 	CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
 	o = SML_MkObject(stv, oc, st->ptr);
 	CHECK_OBJ_NOTNULL(o, OBJECT_MAGIC);
@@ -342,7 +341,6 @@ objallocwithnuke(struct worker *wrk, const struct stevedore *stv, size_t size,
     int flags)
 {
 	struct storage *st = NULL;
-	unsigned fail;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
@@ -355,7 +353,7 @@ objallocwithnuke(struct worker *wrk, const struct stevedore *stv, size_t size,
 
 	assert(size <= UINT_MAX);	/* field limit in struct storage */
 
-	for (fail = 0; fail <= cache_param->nuke_limit; fail++) {
+	do {
 		/* try to allocate from it */
 		st = sml_stv_alloc(stv, size, flags);
 		if (st != NULL)
@@ -364,10 +362,8 @@ objallocwithnuke(struct worker *wrk, const struct stevedore *stv, size_t size,
 		/* no luck; try to free some space and keep trying */
 		if (stv->lru == NULL)
 			break;
-		if (fail < cache_param->nuke_limit &&
-		    !LRU_NukeOne(wrk, stv->lru))
-			break;
-	}
+	} while (LRU_NukeOne(wrk, stv->lru));
+
 	CHECK_OBJ_ORNULL(st, STORAGE_MAGIC);
 	return (st);
 }
