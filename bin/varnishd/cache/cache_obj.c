@@ -239,7 +239,6 @@ objallocwithnuke(struct worker *wrk, const struct stevedore *stv,
     size_t size, int flags)
 {
 	struct storage *st = NULL;
-	unsigned fail;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(stv, STEVEDORE_MAGIC);
@@ -252,18 +251,11 @@ objallocwithnuke(struct worker *wrk, const struct stevedore *stv,
 
 	assert(size <= UINT_MAX);	/* field limit in struct storage */
 
-	for (fail = 0; fail <= cache_param->nuke_limit; fail++) {
-		/* try to allocate from it */
-		AN(stv->alloc);
+	AN(stv->alloc);
+	do {
 		st = STV_alloc(stv, size, flags);
-		if (st != NULL)
-			break;
+	} while (st == NULL && EXP_NukeOne(wrk, stv->lru) == 1);
 
-		/* no luck; try to free some space and keep trying */
-		if (fail < cache_param->nuke_limit &&
-		    EXP_NukeOne(wrk, stv->lru) == -1)
-			break;
-	}
 	CHECK_OBJ_ORNULL(st, STORAGE_MAGIC);
 	return (st);
 }

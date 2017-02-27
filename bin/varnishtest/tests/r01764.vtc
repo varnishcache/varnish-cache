@@ -1,0 +1,53 @@
+varnishtest "Test nuke_limit"
+
+server s1 {
+	# First consume (almost) all of the storage
+	rxreq
+	expect req.url == /url1
+	txresp -bodylen 200000
+
+	rxreq
+	expect req.url == /url2
+	txresp -bodylen 200000
+
+	rxreq
+	expect req.url == /url3
+	txresp -bodylen 200000
+
+	rxreq
+	expect req.url == /url4
+	txresp -bodylen 200000
+
+	rxreq
+	expect req.url == /url5
+	txresp -bodylen 1000000
+} -start
+
+varnish v1  -arg "-smalloc,1M" -arg "-p nuke_limit=1" -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_stream = false;
+	}
+} -start
+
+
+client c1 {
+	txreq -url /url1
+	rxresp
+	expect resp.status == 200
+
+	txreq -url /url2
+	rxresp
+	expect resp.status == 200
+
+	txreq -url /url3
+	rxresp
+	expect resp.status == 200
+
+	txreq -url /url4
+	rxresp
+	expect resp.status == 200
+
+	txreq -url /url5
+	rxresp
+	expect resp.status == 503
+} -run
