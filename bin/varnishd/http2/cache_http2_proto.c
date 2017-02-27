@@ -821,6 +821,7 @@ h2_new_ou_session(struct worker *wrk, struct h2_sess *h2,
 	req->task.priv = req;
 	req->err_code = 0;
 	http_SetH(req->http, HTTP_HDR_PROTO, "HTTP/2.0");
+	req->http->protover = 20;
 	XXXAZ(Pool_Task(wrk->pool, &req->task, TASK_QUEUE_REQ));
 
 	/* Wait for PRISM response */

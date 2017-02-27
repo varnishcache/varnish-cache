@@ -193,7 +193,7 @@ HTC_RxInit(struct http_conn *htc, struct ws *ws)
 	htc->rxbuf_e = ws->f;
 	if (htc->pipeline_b != NULL) {
 		AN(htc->pipeline_e);
-		assert(WS_Inside(ws, htc->pipeline_b, htc->pipeline_e));
+		// assert(WS_Inside(ws, htc->pipeline_b, htc->pipeline_e));
 		l = htc->pipeline_e - htc->pipeline_b;
 		assert(l > 0);
 		assert(l <= ws->r - htc->rxbuf_b);
