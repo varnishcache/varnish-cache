@@ -177,7 +177,8 @@ cnt_deliver(struct worker *wrk, struct req *req)
 
 	assert(wrk->handling == VCL_RET_DELIVER);
 
-	if (!(req->objcore->flags & OC_F_PASS)
+	if (((req->objcore->flags & OC_F_PASS) == 0
+		|| (req->objcore->flags & OC_F_HFP) != 0)
 	    && req->esi_level == 0
 	    && http_IsStatus(req->resp, 200)
 	    && req->http->conds && RFC2616_Do_Cond(req))

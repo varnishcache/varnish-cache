@@ -1,0 +1,261 @@
+varnishtest "Hit-for-pass and conditional requests"
+
+# hit-for-pass: if the conditions apply for sending a client response
+# with status 304, then do so, even if the hfp TTL had just expired,
+# so that the backend fetch was a miss, hence not conditional, and
+# obtained beresp.status 200.
+
+server s1 {
+	rxreq
+	expect req.url == "/etag"
+	txresp -hdr "ETag: foo" -bodylen 7
+
+	rxreq
+	expect req.url == "/etag"
+	expect req.http.If-None-Match == "foo"
+	txresp -status 304 -hdr "ETag: foo"
+
+	rxreq
+	expect req.url == "/etag"
+	expect req.http.If-None-Match == <undef>
+	txresp -hdr "ETag: foo" -bodylen 7
+
+	rxreq
+	expect req.url == "/lm"
+	txresp -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+	    -bodylen 8
+
+	rxreq
+	expect req.url == "/lm"
+	expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
+	txresp -status 304 -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT"
+
+	rxreq
+	expect req.url == "/lm"
+	expect req.http.If-Modified-Since == <undef>
+	txresp -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+	    -bodylen 8
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_miss {
+		set req.http.X-Cache = "MISS";
+	}
+
+	sub vcl_pass {
+		set req.http.X-Cache = "PASS";
+	}
+
+	sub vcl_backend_response {
+		return (pass(1s));
+	}
+
+	sub vcl_deliver {
+		set resp.http.X-Cache = req.http.X-Cache;
+	}
+
+} -start
+
+client c1 {
+	txreq -url "/etag"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 7
+	expect resp.http.ETag == "foo"
+	expect resp.http.X-Cache == "MISS"
+
+	txreq -url "/etag" -hdr "If-None-Match: foo"
+	rxresp
+	expect resp.status == 304
+	expect resp.bodylen == 0
+	expect resp.http.ETag == "foo"
+	expect resp.http.X-Cache == "PASS"
+
+	delay 1.1
+
+	txreq -url "/etag" -hdr "If-None-Match: foo"
+	rxresp
+	expect resp.status == 304
+	expect resp.bodylen == 0
+	expect resp.http.ETag == "foo"
+	expect resp.http.X-Cache == "MISS"
+
+	txreq -url "/lm"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 8
+	expect resp.http.Last-Modified == "Thu, 26 Jun 2008 12:00:01 GMT"
+	expect resp.http.X-Cache == "MISS"
+
+	txreq -url "/lm" \
+	    -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:01 GMT"
+	rxresp
+	expect resp.status == 304
+	expect resp.bodylen == 0
+	expect resp.http.Last-Modified == "Thu, 26 Jun 2008 12:00:01 GMT"
+	expect resp.http.X-Cache == "PASS"
+
+	delay 1.1
+
+	txreq -url "/lm" \
+	    -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:01 GMT"
+	rxresp
+	expect resp.status == 304
+	expect resp.bodylen == 0
+	expect resp.http.Last-Modified == "Thu, 26 Jun 2008 12:00:01 GMT"
+	expect resp.http.X-Cache == "MISS"
+} -run
+
+# "Ordinary" pass (return(pass) from vcl_recv) works differently
+# (cf. r01206.vtc) -- if the backend declines to set
+# beresp.status==304, but sets ETag/Last-Modified to match INM/IMS,
+# then the resp.status==200, even though
+# resp.http.{ETag,Last-Modified} matches req.http.{INM,IMS}.
+
+server s1 {
+	rxreq
+	expect req.url == "/etag2"
+	txresp -hdr "ETag: foo" -bodylen 7
+
+	rxreq
+	expect req.url == "/etag2"
+	expect req.http.If-None-Match == "foo"
+	txresp -hdr "ETag: foo" -bodylen 7
+
+	rxreq
+	expect req.url == "/lm2"
+	txresp -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+	    -bodylen 8
+
+	rxreq
+	expect req.url == "/lm2"
+	expect req.http.If-Modified-Since == "Thu, 26 Jun 2008 12:00:01 GMT"
+	txresp -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+	    -bodylen 8
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return(pass);
+	}
+
+	sub vcl_miss {
+		set req.http.X-Cache = "MISS";
+	}
+
+	sub vcl_pass {
+		set req.http.X-Cache = "PASS";
+	}
+
+	sub vcl_deliver {
+		set resp.http.X-Cache = req.http.X-Cache;
+	}
+}
+
+client c1 {
+	txreq -url "/etag2"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 7
+	expect resp.http.ETag == "foo"
+	expect resp.http.X-Cache == "PASS"
+
+	txreq -url "/etag2" -hdr "If-None-Match: foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 7
+	expect resp.http.ETag == "foo"
+	expect resp.http.X-Cache == "PASS"
+
+	txreq -url "/lm2"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 8
+	expect resp.http.Last-Modified == "Thu, 26 Jun 2008 12:00:01 GMT"
+	expect resp.http.X-Cache == "PASS"
+
+
+	txreq -url "/lm2" \
+	    -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:01 GMT"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 8
+	expect resp.http.Last-Modified == "Thu, 26 Jun 2008 12:00:01 GMT"
+	expect resp.http.X-Cache == "PASS"
+} -run
+
+# beresp.uncacheable ("hit-for-miss") works like the ordinary pass case,
+# but unlike hit-for-pass.
+
+server s1 {
+	rxreq
+	expect req.url == "/etag3"
+	txresp -hdr "ETag: foo" -bodylen 7
+
+	rxreq
+	expect req.url == "/etag3"
+	expect req.http.If-None-Match == <undef>
+	txresp -hdr "ETag: foo" -bodylen 7
+
+	rxreq
+	expect req.url == "/lm3"
+	txresp -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+	    -bodylen 8
+
+	rxreq
+	expect req.url == "/lm3"
+	expect req.http.If-Modified-Since == <undef>
+	txresp -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
+	    -bodylen 8
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_miss {
+		set req.http.X-Cache = "MISS";
+	}
+
+	sub vcl_pass {
+		set req.http.X-Cache = "PASS";
+	}
+
+	sub vcl_backend_response {
+		set beresp.uncacheable = true;
+	}
+
+	sub vcl_deliver {
+		set resp.http.X-Cache = req.http.X-Cache;
+	}
+}
+
+client c1 {
+	txreq -url "/etag3"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 7
+	expect resp.http.ETag == "foo"
+	expect resp.http.X-Cache == "MISS"
+
+	txreq -url "/etag3" -hdr "If-None-Match: foo"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 7
+	expect resp.http.ETag == "foo"
+	expect resp.http.X-Cache == "MISS"
+
+	txreq -url "/lm3"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 8
+	expect resp.http.Last-Modified == "Thu, 26 Jun 2008 12:00:01 GMT"
+	expect resp.http.X-Cache == "MISS"
+
+
+	txreq -url "/lm3" \
+	    -hdr "If-Modified-Since: Thu, 26 Jun 2008 12:00:01 GMT"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 8
+	expect resp.http.Last-Modified == "Thu, 26 Jun 2008 12:00:01 GMT"
+	expect resp.http.X-Cache == "MISS"
+} -run
