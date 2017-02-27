@@ -196,7 +196,7 @@ ban_lurker_getfirst(struct vsl_log *vsl, struct ban *bt)
 
 static void
 ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
-    struct banhead_s *obans, struct ban *bd)
+    struct banhead_s *obans, struct ban *bd, int kill)
 {
 	struct ban *bl, *bln;
 	struct objcore *oc;
@@ -238,16 +238,30 @@ ban_lurker_test_ban(struct worker *wrk, struct vsl_log *vsl, struct ban *bt,
 				VTAILQ_REMOVE(obans, bl, l_list);
 				continue;
 			}
-			AZ(bl->flags & BANS_FLAG_REQ);
-			tests = 0;
-			i = ban_evaluate(wrk, bl->spec, oc, NULL, &tests);
-			VSC_C_main->bans_lurker_tested++;
-			VSC_C_main->bans_lurker_tests_tested += tests;
+			if (kill == 1)
+				i = 1;
+			else {
+				AZ(bl->flags & BANS_FLAG_REQ);
+				tests = 0;
+				i = ban_evaluate(wrk, bl->spec, oc, NULL,
+				    &tests);
+				VSC_C_main->bans_lurker_tested++;
+				VSC_C_main->bans_lurker_tests_tested += tests;
+			}
 			if (i) {
-				VSLb(vsl, SLT_ExpBan, "%u banned by lurker",
-				    ObjGetXID(wrk, oc));
+				if (kill) {
+					VSLb(vsl, SLT_ExpBan,
+					    "%u killed for lurker cutoff",
+					    ObjGetXID(wrk, oc));
+					VSC_C_main->
+					    bans_lurker_obj_killed_cutoff++;
+				} else {
+					VSLb(vsl, SLT_ExpBan,
+					    "%u banned by lurker",
+					    ObjGetXID(wrk, oc));
+					VSC_C_main->bans_lurker_obj_killed++;
+				}
 				HSH_Kill(oc);
-				VSC_C_main->bans_lurker_obj_killed++;
 				break;
 			}
 		}
@@ -285,12 +299,15 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 	struct ban *b, *bd;
 	struct banhead_s obans;
 	double d, dt, n;
+	unsigned count = 0, cutoff = UINT_MAX;
 
 	dt = 49.62;		// Random, non-magic
 	if (cache_param->ban_lurker_sleep == 0) {
 		(void)ban_cleantail(NULL);
 		return (dt);
 	}
+	if (cache_param->ban_cutoff > 0)
+		cutoff = cache_param->ban_cutoff;
 
 	Lck_Lock(&ban_mtx);
 	b = ban_start;
@@ -300,14 +317,17 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 	VTAILQ_INIT(&obans);
 	for (; b != NULL; b = VTAILQ_NEXT(b, list)) {
 		if (bd != NULL && bd != b)
-			ban_lurker_test_ban(wrk, vsl, b, &obans, bd);
+			ban_lurker_test_ban(wrk, vsl, b, &obans, bd,
+			    count > cutoff);
 		if (b->flags & BANS_FLAG_COMPLETED)
 			continue;
-		if (b->flags & BANS_FLAG_REQ) {
+		if (b->flags & BANS_FLAG_REQ &&
+		    count <= cutoff) {
 			if (bd != NULL)
 				bd = VTAILQ_NEXT(b, list);
 			continue;
 		}
+		count++;
 		n = ban_time(b->spec) - d;
 		if (n < 0) {
 			VTAILQ_INSERT_TAIL(&obans, b, l_list);

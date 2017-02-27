@@ -571,7 +571,13 @@ VSC_FF(bans_lurker_tests_tested,	uint64_t, 0, 'c', 'i', diag,
 
 VSC_FF(bans_lurker_obj_killed,	uint64_t, 0, 'c', 'i', diag,
     "Objects killed by bans (lurker)",
-	"Number of objects killed by ban-lurker."
+	"Number of objects killed by the ban-lurker."
+)
+
+VSC_FF(bans_lurker_obj_killed_cutoff,	uint64_t, 0, 'c', 'i', diag,
+    "Objects killed by bans for cutoff (lurker)",
+	"Number of objects killed by the ban-lurker to keep the number of"
+	" bans below ban_cutoff."
 )
 
 VSC_FF(bans_dups,		uint64_t, 0, 'c', 'i', diag,

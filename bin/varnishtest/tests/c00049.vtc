@@ -188,3 +188,38 @@ varnish v1 -expect bans_lurker_obj_killed == 4
 varnish v1 -expect bans_dups == 0
 
 varnish v1 -expect n_object == 3
+
+# adding more bans than the cutoff purges all untested objects
+# (here: all objects)
+
+varnish v1 -cliok "param.set ban_lurker_age 2"
+varnish v1 -cliok "param.set ban_cutoff 4"
+
+varnish v1 -cliok "ban.list"
+varnish v1 -cliok "ban obj.http.nomatch == 1"
+varnish v1 -cliok "ban obj.http.nomatch == 2"
+varnish v1 -cliok "ban obj.http.nomatch == 3"
+varnish v1 -cliok "ban obj.http.nomatch == 4"
+varnish v1 -cliok "ban obj.http.nomatch == 5"
+varnish v1 -cliok "ban.list"
+varnish v1 -cliok "param.set ban_lurker_age .1"
+delay 3
+
+varnish v1 -cliok "ban.list"
+
+varnish v1 -expect bans == 1
+varnish v1 -expect bans_completed == 1
+varnish v1 -expect bans_req == 0
+varnish v1 -expect bans_obj == 1
+varnish v1 -expect bans_added == 11
+varnish v1 -expect bans_deleted == 10
+varnish v1 -expect bans_tested == 2
+varnish v1 -expect bans_tests_tested == 2
+varnish v1 -expect bans_obj_killed == 1
+varnish v1 -expect bans_lurker_tested == 8
+varnish v1 -expect bans_lurker_tests_tested == 9
+varnish v1 -expect bans_lurker_obj_killed == 4
+varnish v1 -expect bans_lurker_obj_killed_cutoff == 3
+varnish v1 -expect bans_dups == 0
+
+varnish v1 -expect n_object == 0

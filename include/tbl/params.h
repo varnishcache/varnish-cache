@@ -137,6 +137,30 @@ PARAM(
 )
 
 PARAM(
+	/* name */	ban_cutoff,
+	/* typ */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"0",
+	/* units */	"bans",
+	/* flags */	EXPERIMENTAL,
+	/* s-text */
+	"Expurge long tail content from the cache to keep the number of bans "
+	"below this value. 0 disables.\n"
+	"This is a safety net to avoid bad response times due to bans being "
+	"tested at lookup time. Setting a cutoff trades response time for "
+	"cache efficiency. The recommended value is proportional to "
+	"rate(bans_lurker_tests_tested) / n_objects while the ban lurker is "
+	"working, which is the number of bans the system can sustain. The "
+	"additional latency due to request ban testing is in the order of "
+	"ban_cutoff / rate(bans_lurker_tests_tested). For example, for "
+	"rate(bans_lurker_tests_tested) = 2M/s and a tolerable latency of "
+	"100ms, a good value for ban_cutoff may be 200K.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
+PARAM(
 	/* name */	ban_lurker_age,
 	/* typ */	timeout,
 	/* min */	"0",
