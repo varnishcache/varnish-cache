@@ -126,7 +126,7 @@ include $(TOPDIR)/Makefile.inc.phk
 $(PARST): $(PROGNAME)
 	-ls -l $(PARST) $(PROGNAME)
 	mkdir -p $(TOPDIR)/doc/sphinx/include
-	./varnishd -x dumprstparam > $(PARST)
+	./varnishd -x parameter > $(PARST)
 
 #
 # Turn the builtin.vcl file into a C-string we can include in the program.

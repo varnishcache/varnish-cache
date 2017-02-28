@@ -201,7 +201,7 @@ distclean-local:
 
 # XXX: here be dragons
 include/params.rst: ../../bin/varnishd/varnishd
-	../../bin/varnishd/varnishd -x dumprstparam > $@
+	../../bin/varnishd/varnishd -x parameter > $@
 
 
 # only sphinx needs the opt2rst stuff anyway

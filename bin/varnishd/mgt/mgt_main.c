@@ -74,66 +74,80 @@ int optreset;	// Some has it, some doesn't.  Cheaper than auto*
 
 /*--------------------------------------------------------------------*/
 
-static void 
+static void
 usage(void)
 {
-#define FMT "    %-28s # %s\n"
+#define FMT "  %-28s # %s\n"
 
-	fprintf(stderr, "usage: varnishd [options]\n");
-	fprintf(stderr, FMT, "-a address[:port][,proto]",
-	    "HTTP listen address and port (default: *:80)");
-	fprintf(stderr, FMT, "", "  address: defaults to loopback");
-	fprintf(stderr, FMT, "", "  port: port or service (default: 80)");
-	fprintf(stderr, FMT, "", "  proto: HTTP/1 (default), PROXY");
-	fprintf(stderr, FMT, "-b address[:port]", "backend address and port");
-	fprintf(stderr, FMT, "", "  address: hostname or IP");
-	fprintf(stderr, FMT, "", "  port: port or service (default: 80)");
-	fprintf(stderr, FMT, "-C", "print VCL code compiled to C language");
-	fprintf(stderr, FMT, "-d", "debug");
-	fprintf(stderr, FMT, "-F", "Run in foreground");
-	fprintf(stderr, FMT, "-f file", "VCL script");
-	fprintf(stderr, FMT, "-h kind[,hashoptions]", "Hash specification");
-	fprintf(stderr, FMT, "", "  -h critbit [default]");
-	fprintf(stderr, FMT, "", "  -h simple_list");
-	fprintf(stderr, FMT, "", "  -h classic");
-	fprintf(stderr, FMT, "", "  -h classic,<buckets>");
-	fprintf(stderr, FMT, "-i identity", "Identity of varnish instance");
-	fprintf(stderr, FMT, "-I file", "Initialization CLI commands");
-	fprintf(stderr, FMT, "-j jail[,jailoptions]", "Jail specification");
+	printf( "Usage: varnishd [options]\n");
+
+	printf("\nBasic options:\n");
+
+	printf(FMT, "-a address[:port][,proto]",
+	    "HTTP listen address and port");
+	printf(FMT, "", "Can be specified multiple times.");
+	printf(FMT, "", "  default: \":80,HTTP/1\"");
+	printf(FMT, "-b address[:port]", "Backend address and port");
+	printf(FMT, "", "  default: \":80\"");
+	printf(FMT, "-f vclfile", "VCL program");
+	printf(FMT, "", "Can be specified multiple times.");
+	printf(FMT, "-n dir", "Working directory");
+
+	printf("\n-b can be used only once, and not together with -f\n");
+
+	printf("\nDocumentation options:\n");
+	printf(FMT, "-?", "Prints this usage message");
+	printf(FMT, "-x parameter", "Parameter documentation");
+	printf(FMT, "-x vsl", "VSL record documentation");
+	printf(FMT, "-x cli", "CLI command documentation");
+	printf(FMT, "-x builtin", "Builtin VCL program");
+
+	printf("\nOperations options:\n");
+
+	printf(FMT, "-F", "Run in foreground");
+	printf(FMT, "-T address[:port]", "CLI address");
+	printf(FMT, "", "Can be specified multiple times.");
+	printf(FMT, "-M address:port", "Reverse CLI destination");
+	printf(FMT, "", "Can be specified multiple times.");
+	printf(FMT, "-P file", "PID file");
+	printf(FMT, "-i identity", "Identity of varnish instance");
+	printf(FMT, "-I clifile", "Initialization CLI commands");
+
+	printf("\nTuning options:\n");
+
+	printf(FMT, "-t TTL", "Default TTL");
+	printf(FMT, "-p param=value", "set parameter");
+	printf(FMT, "", "Can be specified multiple times.");
+
+	printf(FMT, "-s [name=]kind[,options]", "Storage specification");
+	printf(FMT, "", "Can be specified multiple times.");
+	printf(FMT, "", "  -s malloc");
+	printf(FMT, "", "  -s file");
+
+	printf(FMT, "-l vsl[,vsm]", "Size of shared memory file");
+	printf(FMT, "", "  vsl: space for VSL records [80m]");
+	printf(FMT, "", "  vsm: space for stats counters [1m]");
+
+	printf("\nSecurity options:\n");
+
+	printf(FMT, "-r param[,param...]", "Set parameters read-only from CLI");
+	printf(FMT, "", "Can be specified multiple times.");
+	printf(FMT, "-S secret-file", "Secret file for CLI authentication");
+	printf(FMT, "-j jail[,options]", "Jail specification");
 #ifdef HAVE_SETPPRIV
-	fprintf(stderr, FMT, "", "  -j solaris");
+	printf(FMT, "", "  -j solaris");
 #endif
-	fprintf(stderr, FMT, "", "  -j unix[,user=<user>][,ccgroup=<group>]");
-	fprintf(stderr, FMT, "", "  -j none");
-	fprintf(stderr, FMT, "-l vsl[,vsm]", "Size of shared memory file");
-	fprintf(stderr, FMT, "", "  vsl: space for VSL records [80m]");
-	fprintf(stderr, FMT, "", "  vsm: space for stats counters [1m]");
-	fprintf(stderr, FMT, "-M address:port", "Reverse CLI destination");
-	fprintf(stderr, FMT, "-n dir", "varnishd working directory");
-	fprintf(stderr, FMT, "-P file", "PID file");
-	fprintf(stderr, FMT, "-p param=value", "set parameter");
-	fprintf(stderr, FMT,
-	    "-r param[,param...]", "make parameter read-only");
-	fprintf(stderr, FMT, "-S secret-file",
-	    "Secret file for CLI authentication");
-	fprintf(stderr, FMT,
-	    "-s [name=]kind[,options]", "Backend storage specification");
-	fprintf(stderr, FMT, "", "  -s malloc[,<size>]");
-	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>");
-	fprintf(stderr, FMT, "", "  -s file,<dir_or_file>,<size>");
-	fprintf(stderr, FMT, "",
-	    "  -s file,<dir_or_file>,<size>,<granularity>");
-	fprintf(stderr, FMT, "",
-	    "  -s file,<dir_or_file>,<size>,<granularity>,<advice>");
-	fprintf(stderr, FMT, "", "  -s persistent (experimental)");
-	fprintf(stderr, FMT, "-T address:port",
-	    "Telnet listen address and port");
-	fprintf(stderr, FMT, "-t TTL", "Default TTL");
-	fprintf(stderr, FMT, "-V", "version");
-	fprintf(stderr, FMT, "-W waiter", "Waiter implementation");
-#define WAITER(nm) fprintf(stderr, FMT, "", "  -W " #nm);
-#include "tbl/waiters.h"
-	exit(1);
+	printf(FMT, "", "  -j unix");
+	printf(FMT, "", "  -j none");
+
+	printf("\nAdvanced/Dev/Debug options:\n");
+
+	printf(FMT, "-d", "debug mode");
+	printf(FMT, "", "Stay in forground, CLI on stdin.");
+	printf(FMT, "-C", "Output VCL code compiled to C language");
+	printf(FMT, "-V", "version");
+	printf(FMT, "-h kind[,options]", "Hash specification");
+	printf(FMT, "-W waiter", "Waiter implementation");
 }
 
 /*--------------------------------------------------------------------*/
@@ -323,13 +337,13 @@ mgt_initialize(struct cli *cli)
 static void
 mgt_x_arg(const char *x_arg)
 {
-	if (!strcmp(x_arg, "dumprstparam"))
+	if (!strcmp(x_arg, "parameter"))
 		MCF_DumpRstParam();
-	else if (!strcmp(x_arg, "dumprstvsl"))
+	else if (!strcmp(x_arg, "vsl"))
 		mgt_DumpRstVsl();
-	else if (!strcmp(x_arg, "dumprstcli"))
+	else if (!strcmp(x_arg, "cli"))
 		mgt_DumpRstCli();
-	else if (!strcmp(x_arg, "dumpbuiltin"))
+	else if (!strcmp(x_arg, "builtin"))
 		mgt_DumpBuiltin();
 	else
 		ARGV_ERR("Invalid -x argument\n");
@@ -485,9 +499,6 @@ main(int argc, char * const *argv)
 
 	o = getopt(argc, argv, opt_spec);
 	switch (o) {
-	case '?':
-		usage();
-		exit(1);
 	case 'x':
 		if (argc != 3)
 			ARGV_ERR("Too many arguments for -x\n");
@@ -507,8 +518,16 @@ main(int argc, char * const *argv)
 	do {
 		switch (o) {
 		case '?':
-			usage();
-			exit(1);
+			if (optopt == '?') {
+				usage();
+				exit(1);
+			}
+			ARGV_ERR("Option '%c' unknown.\n",
+			    optopt);
+		case 'V':
+		case 'x':
+			ARGV_ERR("-%c must be the first argument\n", o);
+			break;
 		case 'b':
 			b_arg = optarg;
 			break;
@@ -526,10 +545,6 @@ main(int argc, char * const *argv)
 			break;
 		case 'j':
 			j_arg = optarg;
-			break;
-		case 'V':
-		case 'x':
-			ARGV_ERR("-%c must be the first argument\n", o);
 			break;
 		default:
 			break;
@@ -600,7 +615,6 @@ main(int argc, char * const *argv)
 		case 'd':
 		case 'F':
 		case 'j':
-		case 'x':
 			/* Handled in first pass */
 			break;
 		case 'a':
@@ -676,10 +690,8 @@ main(int argc, char * const *argv)
 			break;
 		case 'p':
 			p = strchr(optarg, '=');
-			if (p == NULL) {
-				usage();
-				exit(2);
-			}
+			if (p == NULL)
+				ARGV_ERR("\t-p lacks '='\n");
 			AN(p);
 			*p++ = '\0';
 			MCF_ParamSet(cli, optarg, p);

@@ -15,10 +15,10 @@ shell -err -expect {Unknown jail method "xyz"} "varnishd -jxyz -f '' "
 shell -err -expect {-x must be the first argument} "varnishd -d -x foo "
 shell -err -expect {Too many arguments for -x} "varnishd -x foo bar"
 shell -err -expect {Invalid -x argument} "varnishd -x foo "
-shell "varnishd -x dumprstparam > ${tmpdir}/_.param"
-shell "varnishd -x dumprstvsl > ${tmpdir}/_.vsl"
-shell "varnishd -x dumprstcli > ${tmpdir}/_.cli"
-shell "varnishd -x dumpbuiltin > ${tmpdir}/_.builtin"
+shell "varnishd -x parameter > ${tmpdir}/_.param"
+shell "varnishd -x vsl > ${tmpdir}/_.vsl"
+shell "varnishd -x cli > ${tmpdir}/_.cli"
+shell "varnishd -x builtin > ${tmpdir}/_.builtin"
 
 shell -err -expect {-V must be the first argument} "varnishd -d -V foo "
 shell -err -expect {Too many arguments for -V} "varnishd -V -V"
@@ -31,10 +31,10 @@ shell -err -expect {-C needs either -b <backend> or -f <vcl_file>} \
 	"varnishd -C "
 shell -err -expect {-d makes no sense with -C} "varnishd -C -b 127.0.0.1:80 -d "
 shell -err -expect {-F makes no sense with -C} "varnishd -C -b 127.0.0.1:80 -F "
-shell -err -expect {usage: varnishd [options]} "varnishd -? "
+shell -err -expect {Usage: varnishd [options]} "varnishd -? "
 shell -err -expect {Invalid backslash sequence} {varnishd -l 'xyz\kk,xyz\foo' -f '' }
 shell -err -expect {Invalid backslash sequence} {varnishd -l 'ab\8cd' -f '' }
-shell -err -expect {usage: varnishd [options]} "varnishd -A "
+shell -err -expect {Option 'A' unknown.} "varnishd -A "
 shell -err -expect {Cannot open -S file} {
 	varnishd -S ${tmpdir}/nonexistent -n ${tmpdir}/v0 -f ''
 }

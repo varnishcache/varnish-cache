@@ -126,11 +126,11 @@ distclean-local:
 	rm -rf $(BUILDDIR)
 
 include/cli.rst: $(top_builddir)/bin/varnishd/varnishd
-	$(top_builddir)/bin/varnishd/varnishd -x dumprstcli > $@
+	$(top_builddir)/bin/varnishd/varnishd -x cli > $@
 BUILT_SOURCES = include/cli.rst
 
 include/params.rst: $(top_builddir)/bin/varnishd/varnishd
-	$(top_builddir)/bin/varnishd/varnishd -x dumprstparam > $@
+	$(top_builddir)/bin/varnishd/varnishd -x parameter > $@
 BUILT_SOURCES += include/params.rst
 
 include/counters.rst: $(top_builddir)/bin/varnishstat/vsc2rst
