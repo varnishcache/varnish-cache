@@ -190,7 +190,6 @@ exp_inbox(struct exp_priv *ep, struct objcore *oc, unsigned flags)
 			binheap_delete(ep->heap, oc->timer_idx);
 		}
 		assert(oc->timer_idx == BINHEAP_NOIDX);
-		oc->exp_flags &= ~OC_EF_REFD;
 		assert(oc->refcnt > 0);
 		AZ(oc->exp_flags);
 		ObjSendEvent(ep->wrk, oc, OEV_EXPIRE);
@@ -326,7 +325,10 @@ exp_thread(struct worker *wrk, void *priv)
 			VSC_C_main->exp_received++;
 			tnext = 0;
 			flags = oc->exp_flags;
-			oc->exp_flags &= OC_EF_REFD;
+			if (flags & OC_EF_REMOVE)
+				oc->exp_flags = 0;
+			else
+				oc->exp_flags &= OC_EF_REFD;
 		} else if (tnext > t) {
 			VSL_Flush(&ep->vsl, 0);
 			Pool_Sumstat(wrk);
