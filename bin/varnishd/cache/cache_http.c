@@ -798,7 +798,8 @@ http_ForceField(struct http *to, unsigned n, const char *t)
 	if (to->hd[n].b == NULL || strcmp(to->hd[n].b, t)) {
 		i = (HTTP_HDR_UNSET - HTTP_HDR_METHOD);
 		i += to->logtag;
-		VSLbt(to->vsl, (enum VSL_tag_e)i, to->hd[n]);
+		if (n >= HTTP_HDR_FIRST)
+			VSLbt(to->vsl, (enum VSL_tag_e)i, to->hd[n]);
 		http_SetH(to, n, t);
 	}
 }

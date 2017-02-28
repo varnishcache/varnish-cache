@@ -13,9 +13,7 @@ varnish v1 -vcl+backend {
 logexpect l1 -v v1 -g request {
 	expect * 1001	ReqMethod	"HEAD"
 	expect * =	ReqProtocol	"HTTP/1.0"
-	expect * 1002	BereqUnset	"HEAD"
-	expect 0 =	BereqMethod	"GET"
-	expect * =	BereqUnset	"HTTP/1.0"
+	expect * 1002	BereqMethod	"GET"
 	expect 0 =	BereqProtocol	"HTTP/1.1"
 } -start
 
