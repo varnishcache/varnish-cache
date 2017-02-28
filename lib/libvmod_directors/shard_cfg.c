@@ -321,6 +321,9 @@ shardcfg_backend_cmp(const struct shard_backend *a,
 	ai = a->ident;
 	bi = b->ident;
 
+	assert(ai || a->backend);
+	assert(bi || b->backend);
+
 	/* vcl_names are unique, so we can compare the backend pointers */
 	if (ai == NULL && bi == NULL)
 		return a->backend != b->backend;
@@ -339,7 +342,9 @@ static int
 shardcfg_backend_del_cmp(const struct shard_backend *task,
     const struct shard_backend *b)
 {
-	if (task->backend && task->ident == NULL)
+	assert(task->backend || task->ident);
+
+	if (task->ident == NULL)
 		return task->backend != b->backend;
 
 	return shardcfg_backend_cmp(task, b);
