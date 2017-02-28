@@ -199,12 +199,37 @@ HTTP_Copy(struct http *to, const struct http * const fm)
 	memcpy(&to->nhd, &fm->nhd, sizeof *to - offsetof(struct http, nhd));
 	memcpy(to->hd, fm->hd, fm->nhd * sizeof *to->hd);
 	memcpy(to->hdf, fm->hdf, fm->nhd * sizeof *to->hdf);
+	to->protover = fm->protover;
 }
 
 /*--------------------------------------------------------------------*/
 
 void
-http_SetH(const struct http *to, unsigned n, const char *fm)
+http_Proto(struct http *to)
+{
+	const char *fm;
+
+	fm = to->hd[HTTP_HDR_PROTO].b;
+
+	if ((fm[0] == 'H' || fm[0] == 'h') &&
+	    (fm[1] == 'T' || fm[0] == 't') &&
+	    (fm[2] == 'T' || fm[0] == 't') &&
+	    (fm[3] == 'P' || fm[0] == 'p') &&
+	    fm[4] == '/' &&
+	    vct_isdigit(fm[5]) &&
+	    fm[6] == '.' &&
+	    vct_isdigit(fm[7]) &&
+	    fm[8] == '\0') {
+		to->protover = 10 * (fm[5] - '0') + (fm[7] - '0');
+	} else {
+		to->protover = 0;
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+http_SetH(struct http *to, unsigned n, const char *fm)
 {
 
 	assert(n < to->nhd);
@@ -213,12 +238,14 @@ http_SetH(const struct http *to, unsigned n, const char *fm)
 	to->hd[n].e = strchr(to->hd[n].b, '\0');
 	to->hdf[n] = 0;
 	http_VSLH(to, n);
+	if (n == HTTP_HDR_PROTO)
+		http_Proto(to);
 }
 
 /*--------------------------------------------------------------------*/
 
 static void
-http_PutField(const struct http *to, int field, const char *string)
+http_PutField(struct http *to, int field, const char *string)
 {
 	char *p;
 
@@ -233,6 +260,8 @@ http_PutField(const struct http *to, int field, const char *string)
 	to->hd[field].e = strchr(p, '\0');
 	to->hdf[field] = 0;
 	http_VSLH(to, field);
+	if (field == HTTP_HDR_PROTO)
+		http_Proto(to);
 }
 
 /*--------------------------------------------------------------------*/
@@ -759,7 +788,7 @@ http_GetMethod(const struct http *hp)
  */
 
 void
-http_ForceField(const struct http *to, unsigned n, const char *t)
+http_ForceField(struct http *to, unsigned n, const char *t)
 {
 	int i;
 
@@ -1077,6 +1106,7 @@ http_FilterReq(struct http *to, const struct http *fm, unsigned how)
 	http_linkh(to, fm, HTTP_HDR_METHOD);
 	http_linkh(to, fm, HTTP_HDR_URL);
 	http_linkh(to, fm, HTTP_HDR_PROTO);
+	to->protover = fm->protover;
 	http_filterfields(to, fm, how);
 }
 

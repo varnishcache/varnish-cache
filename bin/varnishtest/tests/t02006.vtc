@@ -2,6 +2,7 @@ varnishtest "H2 POST w/ 100 Continue"
 
 server s1 {
 	rxreq
+	expect req.proto == HTTP/1.1
 	txresp -hdr "Content-Type: text/plain" -body response
 } -start
 

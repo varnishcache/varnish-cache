@@ -45,7 +45,7 @@ static char vrt_hostname[255] = "";
  */
 
 static void
-vrt_do_string(VRT_CTX, const struct http *hp, int fld,
+vrt_do_string(VRT_CTX, struct http *hp, int fld,
     const char *err, const char *p, va_list ap)
 {
 	const char *b;

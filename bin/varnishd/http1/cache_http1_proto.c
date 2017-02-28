@@ -285,6 +285,8 @@ http1_splitline(struct http *hp, struct http_conn *htc, const int *hf,
 	*p = '\0';
 	p += i;
 
+	http_Proto(hp);
+
 	return (http1_dissect_hdrs(hp, p, htc, maxhdr));
 }
 
@@ -340,19 +342,6 @@ http1_body_status(const struct http *hp, struct http_conn *htc, int request)
 
 /*--------------------------------------------------------------------*/
 
-static int8_t
-http1_proto_ver(const struct http *hp)
-{
-	if (!strcasecmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.0"))
-		return (10);
-	else if (!strcasecmp(hp->hd[HTTP_HDR_PROTO].b, "HTTP/1.1"))
-		return (11);
-	else
-		return (0);
-}
-
-/*--------------------------------------------------------------------*/
-
 uint16_t
 HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 {
@@ -367,8 +356,8 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 	    HTTP1_Req, cache_param->http_req_hdr_len);
 	if (retval != 0)
 		return (retval);
-	hp->protover = http1_proto_ver(hp);
-	if (hp->protover == 0)
+
+	if (hp->protover < 10 || hp->protover > 11)
 		return (400);
 
 	if (http_CountHdr(hp, H_Host) > 1)
@@ -418,29 +407,24 @@ HTTP1_DissectRequest(struct http_conn *htc, struct http *hp)
 
 uint16_t
 HTTP1_DissectResponse(struct http_conn *htc, struct http *hp,
-    const struct http *req)
+    const struct http *rhttp)
 {
 	uint16_t retval = 0;
 	const char *p;
-	int8_t rv;
-
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
-	CHECK_OBJ_NOTNULL(req, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(rhttp, HTTP_MAGIC);
 
 	if (http1_splitline(hp, htc,
 	    HTTP1_Resp, cache_param->http_resp_hdr_len))
 		retval = 503;
 
-	if (retval == 0) {
-		hp->protover = http1_proto_ver(hp);
-		if (hp->protover == 0)
-			retval = 503;
-		rv = http1_proto_ver(req);
-		if (hp->protover > rv)
-			hp->protover = rv;
-	}
+	if (retval == 0 && hp->protover < 10)
+		retval = 503;
+
+	if (retval == 0 && hp->protover > rhttp->protover)
+		http_SetH(hp, HTTP_HDR_PROTO, rhttp->hd[HTTP_HDR_PROTO].b);
 
 	if (retval == 0 && Tlen(hp->hd[HTTP_HDR_STATUS]) != 3)
 		retval = 503;

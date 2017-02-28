@@ -471,7 +471,6 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	}
 	VSLb_ts_req(req, "Req", req->t_req);
 	http_SetH(req->http, HTTP_HDR_PROTO, "HTTP/2.0");
-	req->http->protover = 20;
 
 	if (h2->rxf_flags & H2FF_HEADERS_END_STREAM)
 		req->req_body_status = REQ_BODY_NONE;
@@ -821,7 +820,6 @@ h2_new_ou_session(struct worker *wrk, struct h2_sess *h2,
 	req->task.priv = req;
 	req->err_code = 0;
 	http_SetH(req->http, HTTP_HDR_PROTO, "HTTP/2.0");
-	req->http->protover = 20;
 	XXXAZ(Pool_Task(wrk->pool, &req->task, TASK_QUEUE_REQ));
 
 	/* Wait for PRISM response */

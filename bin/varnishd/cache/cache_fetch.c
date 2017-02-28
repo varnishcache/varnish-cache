@@ -185,9 +185,12 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 		http_ForceField(bo->bereq0, HTTP_HDR_PROTO, "HTTP/1.1");
 		if (cache_param->http_gzip_support)
 			http_ForceHeader(bo->bereq0, H_Accept_Encoding, "gzip");
-		http_CopyHome(bo->bereq0);
-	} else
+	} else {
 		AZ(bo->stale_oc);
+		if (bo->bereq0->protover > 11)
+			http_ForceField(bo->bereq0, HTTP_HDR_PROTO, "HTTP/1.1");
+	}
+	http_CopyHome(bo->bereq0);
 
 	if (bo->stale_oc != NULL &&
 	    ObjCheckFlag(bo->wrk, bo->stale_oc, OF_IMSCAND) &&
