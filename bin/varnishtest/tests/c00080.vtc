@@ -1,5 +1,7 @@
 varnishtest "Deconfigure thread pool"
 
+# First with default waiter
+
 server s1 {
 	rxreq
 	txresp
@@ -29,3 +31,33 @@ client c1 {
 	rxresp
 } -run
 
+# Then with poll waiter
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v2 -arg "-Wpoll" -vcl+backend {} -start
+
+varnish v2 -cliok "param.set debug +drop_pools"
+varnish v2 -cliok "param.set debug +slow_acceptor"
+varnish v2 -cliok "param.set thread_pools 1"
+
+delay 2
+
+client c2 -connect ${v2_sock} -repeat 2 {
+	txreq
+	rxresp
+} -run
+
+delay 2
+
+varnish v2 -vsc *thr*
+varnish v2 -vsc *poo*
+varnish v2 -expect MAIN.pools == 1
+
+client c2 -connect ${v2_sock} {
+	txreq
+	rxresp
+} -run
