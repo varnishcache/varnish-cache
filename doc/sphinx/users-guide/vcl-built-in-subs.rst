@@ -335,6 +335,11 @@ The `vcl_backend_response` subroutine may terminate with calling
     delivery to any waiting client requests, possibly in parallel
     (streaming).
 
+  ``pass(duration)``
+    Mark the object as a hit-for-pass for the given duration. Subsequent
+    lookups hitting this object will be turned into passed transactions,
+    as if ``vcl_recv`` had returned ``pass``.
+
   ``abandon``
     Abandon the backend request. Unless the backend request was a
     background fetch, control is passed to :ref:`vcl_synth` on the

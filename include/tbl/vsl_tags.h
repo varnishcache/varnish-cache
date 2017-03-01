@@ -219,7 +219,7 @@ SLTM(TTL, 0, "TTL set on object",
 	"\t|  |  |  +------------------ Keep\n"
 	"\t|  |  +--------------------- Grace\n"
 	"\t|  +------------------------ TTL\n"
-	"\t+--------------------------- \"RFC\" or \"VCL\"\n"
+	"\t+--------------------------- \"RFC\", \"VCL\" or \"HFP\"\n"
 	"\n"
 	"The last four fields are only present in \"RFC\" headers.\n\n"
 	"Examples::\n\n"
