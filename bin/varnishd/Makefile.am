@@ -71,6 +71,7 @@ varnishd_SOURCES = \
 	http2/cache_http2_hpack.c \
 	http2/cache_http2_panic.c \
 	http2/cache_http2_proto.c \
+	http2/cache_http2_session.c \
 	http2/cache_http2_send.c \
 	mgt/mgt_acceptor.c \
 	mgt/mgt_child.c \

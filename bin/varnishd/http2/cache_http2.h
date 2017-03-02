@@ -158,8 +158,9 @@ int H2_Send_Frame(struct worker *, const struct h2_sess *,
 int H2_Send(struct worker *, struct h2_req *, int flush,
     enum h2_frame_e type, uint8_t flags, uint32_t len, const void *);
 
-typedef h2_error h2_frame_f(struct worker *, struct h2_sess *,
-    struct h2_req *);
-#define H2_FRAME(l,u,t,f) h2_frame_f h2_rx_##l ;
-#include "tbl/h2_frames.h"
+/* cache_http2_proto.c */
+int h2_rxframe(struct worker *, struct h2_sess *);
+void h2_req_body(struct req*);
+
+
 
