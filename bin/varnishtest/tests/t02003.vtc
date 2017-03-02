@@ -74,3 +74,14 @@ client c1 {
 		expect goaway.err == FLOW_CONTROL_ERROR
 	} -run
 } -run
+
+# Test PING error conditions
+
+client c1 {
+	stream 0 {
+		txping -ack -data "FOOBAR42"
+		rxgoaway
+		expect goaway.laststream == 0
+		expect goaway.err == PROTOCOL_ERROR
+	} -run
+} -run
