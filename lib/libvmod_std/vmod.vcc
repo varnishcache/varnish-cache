@@ -290,8 +290,8 @@ Description
 	request header.
 
 	Varnish always generates a `100 Continue` response if
-	requested by the by the client trough the `Expect:
-	100-continue` header when waiting for request body data.
+	requested by the client trough the `Expect: 100-continue`
+	header when waiting for request body data.
 
 	But, by default, the `100 Continue` response is already
 	generated immediately after `vcl_recv` returns to reduce
@@ -307,6 +307,17 @@ Description
 	This function has no effect outside `vcl_recv` and after
 	calling `std.cache_req_body()` or any other function consuming
 	the request body.
+
+Example
+	| vcl_recv {
+	|	std.late_100_continue(true);
+	|
+	|	if (req.method == "POST") {
+	|		std.late_100_continue(false);
+	|		return (pass);
+	|	}
+	|	...
+	| }
 
 SEE ALSO
 ========
