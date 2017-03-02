@@ -86,17 +86,6 @@ h2_settingname(enum h2setting h2f)
 #define H2_FRAME_FLAGS(l,u,v)	const uint8_t H2FF_##u = v;
 #include "tbl/h2_frames.h"
 
-/**********************************************************************/
-#define DUMMY_FRAME(l) \
-	static h2_error __match_proto__(h2_frame_f) \
-	h2_rx_##l(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2) \
-	__match_proto__(h2_frame_f) \
-	{ (void)wrk; (void)r2; VSLb(h2->vsl, SLT_Debug, "XXX implement " #l); INCOMPL(); }
-
-DUMMY_FRAME(rst_stream)
-DUMMY_FRAME(push_promise)
-DUMMY_FRAME(continuation)
-
 /**********************************************************************
  */
 
@@ -151,31 +140,6 @@ h2_del_req(struct worker *wrk, struct h2_req *r2)
 	Req_Cleanup(sp, wrk, req);
 	Req_Release(req);
 	SES_Delete(sp, SC_RX_JUNK, NAN);
-}
-
-/**********************************************************************
- * Update and VSL a single SETTING rx'ed from the other side
- * 'd' must point to six bytes.
- */
-
-static void
-h2_setting(struct h2_sess *h2, const uint8_t *d)
-{
-	uint16_t x;
-	uint32_t y;
-	const char *n;
-	char nb[8];
-
-	x = vbe16dec(d);
-	y = vbe32dec(d + 2);
-	n = h2_settingname((enum h2setting)x);
-	if (n == NULL) {
-		bprintf(nb, "0x%04x", x);
-		n = nb;
-	}
-	VSLb(h2->vsl, SLT_Debug, "H2SETTING %s 0x%08x", n, y);
-	if (x > 0 && x < H2_SETTINGS_N)
-		h2->their_settings[x] = y;
 }
 
 /**********************************************************************/
@@ -242,6 +206,42 @@ h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
  */
 
 static h2_error __match_proto__(h2_frame_f)
+h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+{
+	(void)wrk;
+	(void)h2;
+	(void)r2;
+	INCOMPL();
+}
+
+/**********************************************************************
+ */
+
+static h2_error __match_proto__(h2_frame_f)
+h2_rx_push_promise(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+{
+	(void)wrk;
+	(void)h2;
+	(void)r2;
+	return (H2CE_PROTOCOL_ERROR);
+}
+
+/**********************************************************************
+ */
+
+static h2_error __match_proto__(h2_frame_f)
+h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+{
+	(void)wrk;
+	(void)h2;
+	(void)r2;
+	INCOMPL();
+}
+
+/**********************************************************************
+ */
+
+static h2_error __match_proto__(h2_frame_f)
 h2_rx_goaway(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	uint32_t	error;
@@ -254,6 +254,9 @@ h2_rx_goaway(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	h2->go_away = 1;
 	return (0);
 }
+
+/**********************************************************************
+ */
 
 static h2_error __match_proto__(h2_frame_f)
 h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
@@ -290,6 +293,26 @@ h2_rx_priority(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 /**********************************************************************
  * Incoming SETTINGS, possibly an ACK of one we sent.
  */
+
+static void
+h2_setting(struct h2_sess *h2, const uint8_t *d)
+{
+	uint16_t x;
+	uint32_t y;
+	const char *n;
+	char nb[8];
+
+	x = vbe16dec(d);
+	y = vbe32dec(d + 2);
+	n = h2_settingname((enum h2setting)x);
+	if (n == NULL) {
+		bprintf(nb, "0x%04x", x);
+		n = nb;
+	}
+	VSLb(h2->vsl, SLT_Debug, "H2SETTING %s 0x%08x", n, y);
+	if (x > 0 && x < H2_SETTINGS_N)
+		h2->their_settings[x] = y;
+}
 
 static h2_error __match_proto__(h2_frame_f)
 h2_rx_settings(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
