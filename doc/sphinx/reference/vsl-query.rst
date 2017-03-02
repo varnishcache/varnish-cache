@@ -232,14 +232,17 @@ Boolean functions
 Query expressions can be linked together using boolean functions. The
 following are available, in decreasing precedence:
 
+* ! <expr>
 * not <expr>
 
   Inverts the result of <expr>
 
+* <expr1> && <expr2>
 * <expr1> and <expr2>
 
   True only if both expr1 and expr2 are true
 
+* <expr1> || <expr2>
 * <expr1> or <expr2>
 
   True if either of expr1 or expr2 is true

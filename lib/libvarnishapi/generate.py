@@ -59,8 +59,11 @@ tokens = {
 
 	# Boolean operators
 	"T_AND":        "and",
+	"T_AND":        "&&",
 	"T_OR":         "or",
+	"T_OR":         "||",
 	"T_NOT":        "not",
+	"T_NOT":        "!",
 
 	# Miscellaneous
 	None:           "<>~[]{}():,",
