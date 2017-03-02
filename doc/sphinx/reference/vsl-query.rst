@@ -226,10 +226,10 @@ The following types of operands are available:
   A PCRE regular expression. Valid for the regular expression
   operators.
 
-Boolean functions
+Boolean operators
 -----------------
 
-Query expressions can be linked together using boolean functions. The
+Query expressions can be linked together using boolean operators. The
 following are available, in decreasing precedence:
 
 * ! <expr>
