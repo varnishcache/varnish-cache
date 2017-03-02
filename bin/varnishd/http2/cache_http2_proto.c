@@ -212,6 +212,7 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	(void)h2;
 	(void)r2;
 	INCOMPL();
+	NEEDLESS(return (H2CE_PROTOCOL_ERROR));
 }
 
 /**********************************************************************
@@ -236,6 +237,7 @@ h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	(void)h2;
 	(void)r2;
 	INCOMPL();
+	NEEDLESS(return (H2CE_PROTOCOL_ERROR));
 }
 
 /**********************************************************************
