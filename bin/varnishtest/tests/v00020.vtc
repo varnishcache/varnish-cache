@@ -37,15 +37,6 @@ varnish v1 -errvcl {Symbol not found: 'vcl_recv' (expected type STRING_LIST)} {
 	}
 }
 
-# XXX: not obvious if this actually fails for the desired reason ?
-varnish v1 -errvcl {Unknown token '-' when looking for DURATION} {
-	sub vcl_recv {
-		if (req.ttl < -3s || req.ttl) {
-			set req.http.foo = vcl_recv;
-		}
-	}
-}
-
 varnish v1 -errvcl {Operator * not possible on type STRING.} {
 	sub vcl_recv {
 		set req.http.foo = "bla" * "foo";
@@ -113,6 +104,7 @@ varnish v1 -vcl {
 
 		set req.http.foo = client.ip + ", " + server.ip;
 
+		set req.ttl = -1s;
 		set req.ttl = 1s;
 		set req.ttl *= 1.5;
 		set req.ttl = 1.5 s * 2.5;

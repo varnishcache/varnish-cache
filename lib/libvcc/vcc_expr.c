@@ -869,15 +869,21 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		*e = e1;
 		return;
 	case '-':
-		if (fmt == INT || fmt == REAL) {
+		if (fmt == INT || fmt == REAL || fmt == DURATION) {
 			vcc_NextToken(tl);
 			ExpectErr(tl, CNUM);
 			if (fmt == INT) {
-				e1 = vcc_mk_expr(INT, "-%.*s", PF(tl->t));
+				e1 = vcc_mk_expr(fmt, "-%.*s", PF(tl->t));
 				vcc_NextToken(tl);
+			} else if (fmt == REAL) {
+				e1 = vcc_mk_expr(fmt, "-%f", vcc_DoubleVal(tl));
+			} else if (fmt == DURATION) {
+				vcc_NumVal(tl, &d, &i);
+				ERRCHK(tl);
+				e1 = vcc_mk_expr(fmt, "-%g",
+				    d * vcc_TimeUnit(tl));
 			} else {
-				e1 = vcc_mk_expr(REAL, "-%f",
-				    vcc_DoubleVal(tl));
+				INCOMPL();
 			}
 			ERRCHK(tl);
 			e1->constant = EXPR_CONST;
