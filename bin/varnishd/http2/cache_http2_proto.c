@@ -32,6 +32,7 @@
 #include "cache/cache.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "cache/cache_transport.h"
 #include "cache/cache_filter.h"
@@ -206,19 +207,6 @@ h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
  */
 
 static h2_error __match_proto__(h2_frame_f)
-h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
-{
-	(void)wrk;
-	(void)h2;
-	(void)r2;
-	INCOMPL();
-	NEEDLESS(return (H2CE_PROTOCOL_ERROR));
-}
-
-/**********************************************************************
- */
-
-static h2_error __match_proto__(h2_frame_f)
 h2_rx_push_promise(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	(void)wrk;
@@ -363,20 +351,41 @@ h2_do_req(struct worker *wrk, void *priv)
 	h2_del_req(wrk, r2);
 }
 
+static h2_error
+h2_end_headers(struct worker *wrk, struct h2_sess *h2, struct req *req,
+    struct h2_req *r2)
+{
+	h2_error h2e;
+
+	h2e = h2h_decode_fini(h2, r2->decode);
+	FREE_OBJ(r2->decode);
+	if (h2e != NULL) {
+		VSL(SLT_Debug, 0, "H2H_DECODE_FINI %s", h2e->name);
+		return (h2e);
+	}
+	VSLb_ts_req(req, "Req", req->t_req);
+
+	if (h2->rxf_flags & H2FF_HEADERS_END_STREAM)
+		req->req_body_status = REQ_BODY_NONE;
+	else
+		req->req_body_status = REQ_BODY_WITHOUT_LEN;
+
+	req->task.func = h2_do_req;
+	req->task.priv = req;
+	XXXAZ(Pool_Task(wrk->pool, &req->task, TASK_QUEUE_REQ));
+	return (0);
+}
+
 static h2_error __match_proto__(h2_frame_f)
 h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	struct req *req;
-	struct h2h_decode d[1];
 	h2_error h2e;
 	const uint8_t *p;
 	size_t l;
 
-	/* XXX: This still lacks support for CONTINUATION frames, half
-	 * read frames and proper error handling.
-	 */
-
-	xxxassert(r2->state == H2_S_IDLE);
+	if (r2->state != H2_S_IDLE)
+		return (H2CE_PROTOCOL_ERROR);	// XXX spec ?
 	r2->state = H2_S_OPEN;
 
 	req = r2->req;
@@ -400,7 +409,12 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	wrk->vcl = NULL;
 
 	HTTP_Setup(req->http, req->ws, req->vsl, SLT_ReqMethod);
-	h2h_decode_init(h2, d);
+	http_SetH(req->http, HTTP_HDR_PROTO, "HTTP/2.0");
+
+	ALLOC_OBJ(r2->decode, H2H_DECODE_MAGIC);
+	AN(r2->decode);
+	h2h_decode_init(h2, r2->decode);
+
 	/* XXX: Error handling */
 	p = h2->rxf_data;
 	l = h2->rxf_len;
@@ -412,27 +426,36 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		p += 5;
 		l -= 5;
 	}
-	h2e = h2h_decode_bytes(h2, d, p, l);
+	h2e = h2h_decode_bytes(h2, r2->decode, p, l);
 	if (h2e != NULL) {
 		VSL(SLT_Debug, 0, "H2H_DECODE_BYTES %s", h2e->name);
 		return (h2e);
 	}
-	h2e = h2h_decode_fini(h2, d);
+	if (h2->rxf_flags & H2FF_HEADERS_END_HEADERS)
+		return (h2_end_headers(wrk, h2, req, r2));
+	return (0);
+}
+
+/**********************************************************************
+ * XXX: Check hard sequence req. for Cont.
+ */
+
+static h2_error __match_proto__(h2_frame_f)
+h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+{
+	struct req *req;
+	h2_error h2e;
+
+	if (r2->state != H2_S_OPEN)
+		return (H2CE_PROTOCOL_ERROR);	// XXX spec ?
+	req = r2->req;
+	h2e = h2h_decode_bytes(h2, r2->decode, h2->rxf_data, h2->rxf_len);
 	if (h2e != NULL) {
-		VSL(SLT_Debug, 0, "H2H_DECODE_FINI %s", h2e->name);
+		VSL(SLT_Debug, 0, "H2H_DECODE_BYTES %s", h2e->name);
 		return (h2e);
 	}
-	VSLb_ts_req(req, "Req", req->t_req);
-	http_SetH(req->http, HTTP_HDR_PROTO, "HTTP/2.0");
-
-	if (h2->rxf_flags & H2FF_HEADERS_END_STREAM)
-		req->req_body_status = REQ_BODY_NONE;
-	else
-		req->req_body_status = REQ_BODY_WITHOUT_LEN;
-
-	req->task.func = h2_do_req;
-	req->task.priv = req;
-	XXXAZ(Pool_Task(wrk->pool, &req->task, TASK_QUEUE_REQ));
+	if (h2->rxf_flags & H2FF_HEADERS_END_HEADERS)
+		return (h2_end_headers(wrk, h2, req, r2));
 	return (0);
 }
 

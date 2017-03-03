@@ -28,6 +28,7 @@
  */
 
 struct h2_sess;
+struct h2h_decode;
 
 #include "hpack/vhp.h"
 
@@ -83,6 +84,7 @@ struct h2_req {
 	struct req			*req;
 	VTAILQ_ENTRY(h2_req)		list;
 	int64_t				window;
+	struct h2h_decode		*decode;
 };
 
 VTAILQ_HEAD(h2_req_s, h2_req);

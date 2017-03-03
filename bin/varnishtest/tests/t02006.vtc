@@ -11,7 +11,18 @@ varnish v1 -cliok "param.set debug +syncvsl"
 
 client c1 {
 	stream 1 {
-		txreq -req POST -hdr expect 100-continue -hdr content-type text/plain -hdr content-length 7 -body request
+		txreq \
+			-req POST \
+			-hdr content-type text/plain \
+			-nostrend \
+			-nohdrend
+		txcont \
+			-hdr expect 100-continue \
+			-hdr content-length 7 \
+			-nostrend
+
+		txdata \
+			-data request
 
 		rxhdrs
 		expect resp.status == 100
