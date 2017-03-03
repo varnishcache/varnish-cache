@@ -81,6 +81,8 @@ server_new(const char *name)
 	REPLACE(s->name, name);
 	s->vl = vtc_logopen(s->name);
 	AN(s->vl);
+	if (*s->name != 's')
+		vtc_fatal(s->vl, "Server name must start with 's'");
 
 	bprintf(s->listen, "%s", "127.0.0.1 0");
 	s->repeat = 1;
@@ -361,12 +363,6 @@ cmd_server(CMD_ARGS)
 	AZ(strcmp(av[0], "server"));
 	av++;
 
-	if (*av[0] != 's') {
-		fprintf(stderr, "Server name must start with 's' (is: %s)\n",
-		    av[0]);
-		exit(1);
-	}
-
 	AZ(pthread_mutex_lock(&server_mtx));
 	VTAILQ_FOREACH(s, &servers, list)
 		if (!strcmp(s->name, av[0]))
@@ -417,11 +413,9 @@ cmd_server(CMD_ARGS)
 			continue;
 		}
 		if (!strcmp(*av, "-dispatch")) {
-			if (strcmp(s->name, "s0")) {
-				fprintf(stderr,
-				    "server -dispatch only works on s0\n");
-				exit(1);
-			}
+			if (strcmp(s->name, "s0"))
+				vtc_fatal(s->vl,
+				    "server -dispatch only works on s0");
 			server_dispatch(s);
 			continue;
 		}
