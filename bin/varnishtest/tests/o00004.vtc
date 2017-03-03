@@ -21,7 +21,7 @@ varnish v1 -proto PROXY -vcl+backend {
 varnish v2 -proto PROXY -vcl {
 	import std;
 
-	probe p {
+	probe default {
 		.window = 1;
 		.threshold = 1;
 		.interval =0.5s;
@@ -30,7 +30,6 @@ varnish v2 -proto PROXY -vcl {
 		.host = "${v1_addr}";
 		.port = "${v1_port}";
 		.proxy_header = 1;
-		.probe = p;
 	}
 	backend bp2 {
 		.host = "${v1_addr}";
@@ -48,3 +47,4 @@ server s1 -wait
 
 delay 1
 varnish v2 -cliexpect "vcl1.bp1[ ]+probe[ ]+Healthy[ ]+1/1" backend.list
+varnish v2 -cliexpect "vcl1.bp2[ ]+probe[ ]+Healthy[ ]+1/1" backend.list

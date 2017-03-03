@@ -92,6 +92,11 @@ static struct lock			vbp_mtx;
 static pthread_cond_t			vbp_cond;
 static struct binheap			*vbp_heap;
 
+static unsigned char vbp_proxy_local[] = {
+	0x0d, 0x0a, 0x0d, 0x0a, 0x00, 0x0d, 0x0a, 0x51,
+	0x55, 0x49, 0x54, 0x0a, 0x20, 0x00, 0x00, 0x00,
+};
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -300,8 +305,9 @@ vbp_poke(struct vbp_target *vt)
 	if (vt->backend->proxy_header == 1) {
 		if (vbp_write_proxy_v1(vt, s) != 0)
 			return;
-	} else if (vt->backend->proxy_header == 2)
-		INCOMPL();
+	} else if (vt->backend->proxy_header == 2 &&
+	    vbp_write(vt, s, vbp_proxy_local, sizeof vbp_proxy_local) != 0)
+		return;
 
 	/* Send the request */
 	if (vbp_write(vt, s, vt->req, vt->req_len) != 0)
