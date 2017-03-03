@@ -43,6 +43,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+
 #include "binary_heap.h"
 #include "vcli_serve.h"
 #include "vrt.h"
@@ -213,6 +216,49 @@ vbp_reset(struct vbp_target *vt)
  * want to measure the backends response without local distractions.
  */
 
+static int
+vbp_write(struct vbp_target *vt, int sock, const void *buf, size_t len)
+{
+	int i;
+
+	i = write(sock, buf, len);
+	if (i != len) {
+		if (i < 0)
+			vt->err_xmit |= 1;
+		VTCP_close(&sock);
+		return (-1);
+	}
+	return (0);
+}
+
+static int
+vbp_write_proxy_v1(struct vbp_target *vt, int sock)
+{
+	char buf[105]; /* maximum size for a TCP6 PROXY line with null char */
+	char addr[VTCP_ADDRBUFSIZE];
+	char port[VTCP_PORTBUFSIZE];
+	struct sockaddr_storage ss;
+	struct vsb vsb;
+	socklen_t l;
+
+	VTCP_myname(sock, addr, sizeof addr, port, sizeof port);
+	AN(VSB_new(&vsb, buf, sizeof buf, VSB_FIXEDLEN));
+	AZ(VSB_cat(&vsb, "PROXY"));
+
+	l = sizeof ss;
+	AZ(getsockname(sock, (void *)&ss, &l));
+	if (ss.ss_family == AF_INET6)
+		VSB_printf(&vsb, " TCP6 ");
+	else if (ss.ss_family == AF_INET)
+		VSB_printf(&vsb, " TCP4 ");
+	else
+		WRONG("Unknown family");
+	VSB_printf(&vsb, "%s %s %s %s\r\n", addr, addr, port, port);
+	AZ(VSB_finish(&vsb));
+
+	return (vbp_write(vt, sock, VSB_data(&vsb), VSB_len(&vsb)));
+}
+
 static void
 vbp_poke(struct vbp_target *vt)
 {
@@ -248,14 +294,18 @@ vbp_poke(struct vbp_target *vt)
 		return;
 	}
 
+	/* Send the PROXY header */
+	assert(vt->backend->proxy_header >= 0);
+	assert(vt->backend->proxy_header <= 2);
+	if (vt->backend->proxy_header == 1) {
+		if (vbp_write_proxy_v1(vt, s) != 0)
+			return;
+	} else if (vt->backend->proxy_header == 2)
+		INCOMPL();
+
 	/* Send the request */
-	i = write(s, vt->req, vt->req_len);
-	if (i != vt->req_len) {
-		if (i < 0)
-			vt->err_xmit |= 1;
-		VTCP_close(&s);
+	if (vbp_write(vt, s, vt->req, vt->req_len) != 0)
 		return;
-	}
 	vt->good_xmit |= 1;
 
 	pfd->fd = s;
