@@ -875,16 +875,15 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			if (fmt == INT) {
 				e1 = vcc_mk_expr(fmt, "-%.*s", PF(tl->t));
 				vcc_NextToken(tl);
-			} else if (fmt == REAL) {
-				e1 = vcc_mk_expr(fmt, "-%f", vcc_DoubleVal(tl));
 			} else if (fmt == DURATION) {
-				vcc_NumVal(tl, &d, &i);
+				vcc_Duration(tl, &d);
 				ERRCHK(tl);
-				e1 = vcc_mk_expr(fmt, "-%g",
-				    d * vcc_TimeUnit(tl));
-			} else {
+				e1 = vcc_mk_expr(fmt, "-%g", d);
+			} else if (fmt == REAL)
+				e1 = vcc_mk_expr(fmt, "-%f",
+				    vcc_DoubleVal(tl));
+			else
 				INCOMPL();
-			}
 			ERRCHK(tl);
 			e1->constant = EXPR_CONST;
 			*e = e1;
