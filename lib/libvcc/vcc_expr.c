@@ -756,12 +756,13 @@ static void
 vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 	struct expr *e1, *e2;
-	const char *ip;
+	const char *ip, *sign;
 	const struct symbol *sym;
 	enum symkind kind;
 	double d;
 	int i;
 
+	sign = "";
 	*e = NULL;
 	if (tl->t->tok == '(') {
 		SkipToken(tl, '(');
@@ -842,6 +843,13 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		vcc_NextToken(tl);
 		*e = e1;
 		return;
+	case '-':
+		if (fmt != INT && fmt != REAL && fmt != DURATION)
+			break;
+		vcc_NextToken(tl);
+		ExpectErr(tl, CNUM);
+		sign = "-";
+		/* FALLTHROUGH */
 	case CNUM:
 		/*
 		 * XXX: %g may not have enough decimals by default
@@ -856,40 +864,19 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			vcc_NumVal(tl, &d, &i);
 			ERRCHK(tl);
 			if (tl->t->tok == ID) {
-				e1 = vcc_mk_expr(DURATION, "%g",
-				    d * vcc_TimeUnit(tl));
+				e1 = vcc_mk_expr(DURATION, "%s%g",
+				    sign, d * vcc_TimeUnit(tl));
 				ERRCHK(tl);
 			} else if (i || fmt == REAL)
-				e1 = vcc_mk_expr(REAL, "%f", d);
+				e1 = vcc_mk_expr(REAL, "%s%f",
+				    sign, d);
 			else
-				e1 = vcc_mk_expr(INT, "%ld",
-				    (unsigned long)d);
+				e1 = vcc_mk_expr(INT, "%s%ld",
+				    sign, (unsigned long)d);
 		}
 		e1->constant = EXPR_CONST;
 		*e = e1;
 		return;
-	case '-':
-		if (fmt == INT || fmt == REAL || fmt == DURATION) {
-			vcc_NextToken(tl);
-			ExpectErr(tl, CNUM);
-			if (fmt == INT) {
-				e1 = vcc_mk_expr(fmt, "-%.*s", PF(tl->t));
-				vcc_NextToken(tl);
-			} else if (fmt == DURATION) {
-				vcc_Duration(tl, &d);
-				ERRCHK(tl);
-				e1 = vcc_mk_expr(fmt, "-%g", d);
-			} else if (fmt == REAL)
-				e1 = vcc_mk_expr(fmt, "-%f",
-				    vcc_DoubleVal(tl));
-			else
-				INCOMPL();
-			ERRCHK(tl);
-			e1->constant = EXPR_CONST;
-			*e = e1;
-			return;
-		}
-		break;
 	default:
 		break;
 	}
