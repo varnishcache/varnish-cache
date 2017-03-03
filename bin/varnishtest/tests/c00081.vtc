@@ -44,3 +44,6 @@ client c1 {
 	rxresp
 	expect resp.http.miss == True
 } -run
+
+varnish v1 -expect MAIN.cache_hitpass == 1
+varnish v1 -expect MAIN.cache_miss == 2

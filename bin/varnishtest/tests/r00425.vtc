@@ -29,4 +29,5 @@ client c1 {
 	rxresp
 } -run
 
-varnish v1 -expect cache_hitpass == 2
+varnish v1 -expect cache_hitpass == 0
+varnish v1 -expect cache_miss == 3
