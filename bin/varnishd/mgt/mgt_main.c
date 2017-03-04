@@ -40,6 +40,7 @@
 #include <string.h>
 #include <syslog.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #include "mgt/mgt.h"
 #include "common/heritage.h"
@@ -730,6 +731,7 @@ main(int argc, char * const *argv)
 	if (C_flag) {
 		if (n_arg == NULL) {
 			AN(mkdtemp(Cn_arg));
+			AZ(chmod(Cn_arg, 0755));
 			n_arg = Cn_arg;
 		}
 	}
