@@ -188,6 +188,7 @@ int mgt_push_vcls_and_start(struct cli *, unsigned *status, char **p);
 void mgt_vcl_export_labels(struct vcc *);
 int mgt_has_vcl(void);
 void mgt_vcl_depends(struct vclprog *vp1, const char *name);
+void mgt_vcl_vmod(struct vclprog *, const char *src, const char *dst);
 extern char *mgt_cc_cmd;
 extern const char *mgt_vcl_path;
 extern const char *mgt_vmod_path;

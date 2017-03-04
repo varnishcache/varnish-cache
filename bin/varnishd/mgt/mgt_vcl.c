@@ -31,6 +31,7 @@
 
 #include "config.h"
 
+#include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
@@ -51,6 +52,15 @@ static const char * const VCL_STATE_AUTO = "auto";
 static const char * const VCL_STATE_LABEL = "label";
 
 struct vclprog;
+struct vmodfile;
+
+struct vmoddep {
+	unsigned		magic;
+#define VMODDEP_MAGIC		0xc1490542
+	VTAILQ_ENTRY(vmoddep)	lfrom;
+	struct vmodfile		*to;
+	VTAILQ_ENTRY(vmoddep)	lto;
+};
 
 struct vcldep {
 	unsigned		magic;
@@ -74,9 +84,19 @@ struct vclprog {
 	VTAILQ_HEAD(, vcldep)	dto;
 	int			nto;
 	int			loaded;
+	VTAILQ_HEAD(, vmoddep)	vmods;
+};
+
+struct vmodfile {
+	unsigned		magic;
+#define VMODFILE_MAGIC		0xffa1a0d5
+	char			*fname;
+	VTAILQ_ENTRY(vmodfile)	list;
+	VTAILQ_HEAD(, vmoddep)	vcls;
 };
 
 static VTAILQ_HEAD(, vclprog)	vclhead = VTAILQ_HEAD_INITIALIZER(vclhead);
+static VTAILQ_HEAD(, vmodfile)	vmodhead = VTAILQ_HEAD_INITIALIZER(vmodhead);
 static struct vclprog		*active_vcl;
 static struct vev *e_poker;
 
@@ -202,6 +222,7 @@ mgt_vcl_add(const char *name, const char *state)
 	REPLACE(vp->name, name);
 	VTAILQ_INIT(&vp->dfrom);
 	VTAILQ_INIT(&vp->dto);
+	VTAILQ_INIT(&vp->vmods);
 	vp->state = state;
 
 	if (vp->state != VCL_STATE_COLD)
@@ -215,6 +236,8 @@ static void
 mgt_vcl_del(struct vclprog *vp)
 {
 	char *p;
+	struct vmoddep *vd;
+	struct vmodfile *vf;
 
 	CHECK_OBJ_NOTNULL(vp, VCLPROG_MAGIC);
 	while (!VTAILQ_EMPTY(&vp->dto))
@@ -239,6 +262,22 @@ mgt_vcl_del(struct vclprog *vp)
 		VJ_master(JAIL_MASTER_LOW);
 		free(vp->fname);
 	}
+	while (!VTAILQ_EMPTY(&vp->vmods)) {
+		vd = VTAILQ_FIRST(&vp->vmods);
+		CHECK_OBJ(vd, VMODDEP_MAGIC);
+		vf = vd->to;
+		CHECK_OBJ(vf, VMODFILE_MAGIC);
+		VTAILQ_REMOVE(&vp->vmods, vd, lfrom);
+		VTAILQ_REMOVE(&vf->vcls, vd, lto);
+		FREE_OBJ(vd);
+
+		if (VTAILQ_EMPTY(&vf->vcls)) {
+			AZ(unlink(vf->fname));
+			VTAILQ_REMOVE(&vmodhead, vf, list);
+			free(vf->fname);
+			FREE_OBJ(vf);
+		}
+	}
 	free(vp->name);
 	FREE_OBJ(vp);
 }
@@ -253,6 +292,78 @@ mgt_vcl_depends(struct vclprog *vp1, const char *name)
 	vp2 = mcf_vcl_byname(name);
 	CHECK_OBJ_NOTNULL(vp2, VCLPROG_MAGIC);
 	mgt_vcl_dep_add(vp1, vp2);
+}
+
+static int
+mgt_vcl_cache_vmod(const char *nm, const char *fm, const char *to)
+{
+	int fi, fo;
+	int ret = 0;
+	ssize_t sz;
+	char buf[BUFSIZ];
+
+	fo = open(to, O_WRONLY | O_CREAT | O_EXCL, 0744);
+	if (fo < 0 && errno == EEXIST)
+		return (0);
+	if (fo < 0) {
+		fprintf(stderr, "Creating copy of vmod %s: %s\n",
+		    nm, strerror(errno));
+		return (1);
+	}
+	fi = open(fm, O_RDONLY);
+	if (fi < 0) {
+		fprintf(stderr, "Opening vmod %s from %s: %s\n",
+		    nm, fm, strerror(errno));
+		AZ(unlink(to));
+		closefd(&fo);
+		return (1);
+	}
+	while (1) {
+		sz = read(fi, buf, sizeof buf);
+		if (sz == 0)
+			break;
+		if (sz < 0 || sz != write(fo, buf, sz)) {
+			fprintf(stderr, "Copying vmod %s: %s\n",
+			    nm, strerror(errno));
+			AZ(unlink(to));
+			ret = 1;
+			break;
+		}
+	}
+	closefd(&fi);
+	AZ(fchmod(fo, 0444));
+	closefd(&fo);
+	return(ret);
+}
+
+void
+mgt_vcl_vmod(struct vclprog *vp, const char *src, const char *dst)
+{
+	struct vmodfile *vf;
+	struct vmoddep *vd;
+
+	CHECK_OBJ_NOTNULL(vp, VCLPROG_MAGIC);
+	AN(src);
+	AN(dst);
+	assert(!strncmp(dst, "./vmod_cache/", 13));
+
+	VTAILQ_FOREACH(vf, &vmodhead, list)
+		if (!strcmp(vf->fname, dst))
+			break;
+	if (vf == NULL) {
+		ALLOC_OBJ(vf, VMODFILE_MAGIC);
+		AN(vf);
+		REPLACE(vf->fname, dst);
+		AN(vf->fname);
+		VTAILQ_INIT(&vf->vcls);
+		AZ(mgt_vcl_cache_vmod(vp->name, src, dst));
+		VTAILQ_INSERT_TAIL(&vmodhead, vf, list);
+	}
+	ALLOC_OBJ(vd, VMODDEP_MAGIC);
+	AN(vd);
+	vd->to = vf;
+	VTAILQ_INSERT_TAIL(&vp->vmods, vd, lfrom);
+	VTAILQ_INSERT_TAIL(&vf->vcls, vd, lto);
 }
 
 int
