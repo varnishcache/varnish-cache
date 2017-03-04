@@ -62,7 +62,7 @@ static const char *const h2_errs[] = {
 };
 
 static const char *const h2_types[] = {
-#define H2_FRAME(l,u,t,f) [t] = #u,
+#define H2_FRAME(l,u,t,f,...) [t] = #u,
 #include <tbl/h2_frames.h>
 	NULL
 };
@@ -77,7 +77,7 @@ static const char * const h2_settings[] = {
 };
 
 enum h2_type {
-#define H2_FRAME(l,u,t,f) TYPE_##u = t,
+#define H2_FRAME(l,u,t,f,...) TYPE_##u = t,
 #include <tbl/h2_frames.h>
 	TYPE_MAX
 };

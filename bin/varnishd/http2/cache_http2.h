@@ -54,7 +54,7 @@ typedef const struct h2_error_s *h2_error;
 
 enum h2_frame_e {
 	H2_FRAME__DUMMY = -1,
-#define H2_FRAME(l,u,t,f) H2_FRAME_##u = t,
+#define H2_FRAME(l,u,t,f,...) H2_FRAME_##u = t,
 #include "tbl/h2_frames.h"
 };
 

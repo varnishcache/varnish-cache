@@ -31,17 +31,61 @@
 /*lint -save -e525 -e539 */
 
 #ifdef H2_FRAME
-/*	   lower,               upper,         type, valid flags */
-  H2_FRAME(data,		DATA,		0x0, 0x09)
-  H2_FRAME(headers,		HEADERS,	0x1, 0x2d)
-  H2_FRAME(priority,		PRIORITY,	0x2, 0x00)
-  H2_FRAME(rst_stream,		RST_STREAM,	0x3, 0x00)
-  H2_FRAME(settings,		SETTINGS,	0x4, 0x01)
-  H2_FRAME(push_promise,	PUSH_PROMISE,	0x5, 0x0c)
-  H2_FRAME(ping,		PING,		0x6, 0x01)
-  H2_FRAME(goaway,		GOAWAY,		0x7, 0x00)
-  H2_FRAME(window_update,	WINDOW_UPDATE,	0x8, 0x00)
-  H2_FRAME(continuation,	CONTINUATION,	0x9, 0x04)
+/*	   lower,               upper,         type, flags
+ *	stream-zero
+ *	stream-nonzero
+ *	stream-idle
+ */
+  H2_FRAME(data,		DATA,		0x0, 0x09,
+	H2CE_PROTOCOL_ERROR,		// rfc7540,l,1758,1761
+	0,
+	H2CE_PROTOCOL_ERROR
+  )
+  H2_FRAME(headers,		HEADERS,	0x1, 0x2d,
+	H2CE_PROTOCOL_ERROR,		// rfc7540,l,1876,1879
+	0,
+	0				// rfc7540,l,938,940
+  )
+  H2_FRAME(priority,		PRIORITY,	0x2, 0x00,
+	H2CE_PROTOCOL_ERROR,		// rfc7540,l,1933,1936
+	0,
+	0				// rfc7540,l,938,940
+  )
+  H2_FRAME(rst_stream,		RST_STREAM,	0x3, 0x00,
+	H2CE_PROTOCOL_ERROR,		// rfc7540,l,1993,1996
+	0,
+	H2CE_PROTOCOL_ERROR
+  )
+  H2_FRAME(settings,		SETTINGS,	0x4, 0x01,
+	0,
+	H2CE_PROTOCOL_ERROR,		// rfc7540,l,2052,2056
+	H2CE_PROTOCOL_ERROR
+  )
+  H2_FRAME(push_promise,	PUSH_PROMISE,	0x5, 0x0c,
+	H2CE_PROTOCOL_ERROR,		// rfc7540,l,2262,2263
+	0,
+	H2CE_PROTOCOL_ERROR
+  )
+  H2_FRAME(ping,		PING,		0x6, 0x01,
+	0,
+	H2CE_PROTOCOL_ERROR,		// rfc7540,l,2359,2362
+	H2CE_PROTOCOL_ERROR
+  )
+  H2_FRAME(goaway,		GOAWAY,		0x7, 0x00,
+	0,
+	H2CE_PROTOCOL_ERROR,		// rfc7540,l,2432,2435
+	H2CE_PROTOCOL_ERROR
+  )
+  H2_FRAME(window_update,	WINDOW_UPDATE,	0x8, 0x00,
+	0,
+	0,
+	H2CE_PROTOCOL_ERROR
+  )
+  H2_FRAME(continuation,	CONTINUATION,	0x9, 0x04,
+	H2CE_PROTOCOL_ERROR,		// rfc7540,l,2764,2767
+	0,
+	H2CE_PROTOCOL_ERROR
+  )
   #undef H2_FRAME
 #endif
 

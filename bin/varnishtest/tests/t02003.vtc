@@ -35,10 +35,10 @@ client c1 {
 		expect goaway.err == PROTOCOL_ERROR
 	} -start
 	stream 3 {
-		txwinup -size 1
+		txprio
 	} -run
 	stream 1 {
-		txwinup -size 1
+		txprio
 	} -run
 	stream 0 -wait
 } -run
@@ -48,11 +48,13 @@ client c1 {
 
 client c1 {
 	stream 1 {
+		txprio
 		txwinup -size 0
 		rxrst
 		expect rst.err == PROTOCOL_ERROR
 	} -run
 	stream 3 {
+		txprio
 		txwinup -size 0x40000000
 		txwinup -size 0x40000000
 		rxrst
@@ -64,6 +66,7 @@ client c1 {
 		expect goaway.err == FRAME_SIZE_ERROR
 	} -start
 	stream 5 {
+		txprio
 		sendhex "000003 08 00 00000005 010203"
 	} -run
 	stream 0 -wait
@@ -97,7 +100,7 @@ client c1 {
 	stream 0 {
 		rxgoaway
 		expect goaway.err == PROTOCOL_ERROR
-		expect goaway.laststream == 1
+		expect goaway.laststream == 0
 	} -start
 	stream 1 {
 		sendhex "000008 05 00 00000001 0001020304050607"
@@ -119,12 +122,16 @@ client c1 {
 
 client c1 {
 	stream 0 {
-		# RST wrong length
-		sendhex "000005 03 00 00000001 0000000800"
 		rxgoaway
 		expect goaway.err == FRAME_SIZE_ERROR
-		expect goaway.laststream == 0
+		expect goaway.laststream == 1
+	} -start
+	stream 1 {
+		txprio
+		# RST wrong length
+		sendhex "000005 03 00 00000001 0000000800"
 	} -run
+	stream 0 -wait
 } -run
 
 client c1 {
@@ -132,7 +139,7 @@ client c1 {
 		# RST stream zero
 		sendhex "000000 03 00 00000000 00000008"
 		rxgoaway
-		expect goaway.err == FRAME_SIZE_ERROR
+		expect goaway.err == PROTOCOL_ERROR
 		expect goaway.laststream == 0
 	} -run
 } -run

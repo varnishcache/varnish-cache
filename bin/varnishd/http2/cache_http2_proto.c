@@ -55,7 +55,7 @@
 typedef h2_error h2_frame_f(struct worker *, struct h2_sess *, struct h2_req *);
 
 enum h2frame {
-#define H2_FRAME(l,u,t,f)	H2F_##u = t,
+#define H2_FRAME(l,u,t,f,...)	H2F_##u = t,
 #include "tbl/h2_frames.h"
 };
 
@@ -64,7 +64,7 @@ h2_framename(enum h2frame h2f)
 {
 
 	switch(h2f) {
-#define H2_FRAME(l,u,t,f)	case H2F_##u: return #u;
+#define H2_FRAME(l,u,t,f,...)	case H2F_##u: return #u;
 #include "tbl/h2_frames.h"
 	default:
 		return (NULL);
@@ -557,10 +557,13 @@ struct h2flist_s {
 	const char	*name;
 	h2_frame_f	*func;
 	uint8_t		flags;
+	h2_error	act_szero;
+	h2_error	act_snonzero;
+	h2_error	act_sidle;
 };
 
 static const struct h2flist_s h2flist[] = {
-#define H2_FRAME(l,U,t,f) [t] = { #U, h2_rx_##l, f },
+#define H2_FRAME(l,U,t,f,az,anz,ai) [t] = { #U, h2_rx_##l, f, az, anz,ai },
 #include "tbl/h2_frames.h"
 };
 
@@ -573,39 +576,6 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2)
 	const struct h2flist_s *h2f;
 	h2_error h2e;
 	char b[4];
-
-	if (h2->rxf_stream != 0 && !(h2->rxf_stream & 1)) {
-		// rfc7540,l,1140,1145
-		// rfc7540,l,1153,1158
-		/* No even streams, we don't do PUSH_PROMISE */
-		VSLb(h2->vsl, SLT_Debug, "H2: illegal stream (=%u)",
-		    h2->rxf_stream);
-		return (H2CE_PROTOCOL_ERROR);
-	}
-
-	VTAILQ_FOREACH(r2, &h2->streams, list)
-		if (r2->stream == h2->rxf_stream)
-			break;
-
-	if (h2->rxf_type == H2_FRAME_RST_STREAM) {
-		/* Special case RST_STREAM to avoid creating streams */
-		if (h2->rxf_len != 4)			// rfc7540,l,2003,2004
-			return (H2CE_FRAME_SIZE_ERROR);
-		if (h2->rxf_stream == 0)		// rfc7540,l,1993,1996
-			return (H2CE_PROTOCOL_ERROR);
-		if (h2->rxf_stream > h2->highest_stream)// rfc7540,l,1998,2001
-			return (H2CE_PROTOCOL_ERROR);	
-		if (r2 == NULL)
-			return (0);
-	}
-
-	if (r2 == NULL) {
-		if (h2->rxf_stream <= h2->highest_stream)
-			return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1153,1158
-		h2->highest_stream = h2->rxf_stream;
-		r2 = h2_new_req(wrk, h2, h2->rxf_stream, NULL);
-		AN(r2);
-	}
 
 	if (h2->rxf_type >= H2FMAX) {
 		// rfc7540,l,679,681
@@ -629,6 +599,49 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2)
 		    h2->rxf_flags, h2f->name);
 		h2->rxf_flags &= h2f->flags;
 	}
+
+	if (h2->rxf_stream == 0 && h2f->act_szero != 0)
+		return (h2f->act_szero);
+
+	if (h2->rxf_stream != 0 && h2f->act_snonzero != 0)
+		return (h2f->act_snonzero);
+
+	if (h2->rxf_stream > h2->highest_stream && h2f->act_sidle != 0)
+		return (h2f->act_sidle);
+
+	if (h2->rxf_stream != 0 && !(h2->rxf_stream & 1)) {
+		// rfc7540,l,1140,1145
+		// rfc7540,l,1153,1158
+		/* No even streams, we don't do PUSH_PROMISE */
+		VSLb(h2->vsl, SLT_Debug, "H2: illegal stream (=%u)",
+		    h2->rxf_stream);
+		return (H2CE_PROTOCOL_ERROR);
+	}
+
+	VTAILQ_FOREACH(r2, &h2->streams, list)
+		if (r2->stream == h2->rxf_stream)
+			break;
+
+	if (h2->rxf_type == H2_FRAME_RST_STREAM) {
+		/* Special case RST_STREAM to avoid creating streams */
+		if (h2->rxf_len != 4)			// rfc7540,l,2003,2004
+			return (H2CE_FRAME_SIZE_ERROR);
+		if (h2->rxf_stream == 0)		// rfc7540,l,1993,1996
+			return (H2CE_PROTOCOL_ERROR);
+		if (h2->rxf_stream > h2->highest_stream)// rfc7540,l,1998,2001
+			return (H2CE_PROTOCOL_ERROR);
+		if (r2 == NULL)
+			return (0);
+	}
+
+	if (r2 == NULL) {
+		if (h2->rxf_stream <= h2->highest_stream)
+			return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1153,1158
+		h2->highest_stream = h2->rxf_stream;
+		r2 = h2_new_req(wrk, h2, h2->rxf_stream, NULL);
+		AN(r2);
+	}
+
 	h2e = h2f->func(wrk, h2, r2);
 	if (h2e == 0)
 		return (0);
