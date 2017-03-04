@@ -39,19 +39,6 @@
 
 #include "vend.h"
 
-static const char *
-h2_settingname(enum h2setting h2f)
-{
-
-	switch(h2f) {
-#define H2_SETTINGS(n,v,d) case H2S_##n: return #n;
-#include "tbl/h2_settings.h"
-#undef H2_SETTINGS
-	default:
-		return (NULL);
-	}
-}
-
 static const char h2_resp_101[] =
 	"HTTP/1.1 101 Switching Protocols\r\n"
 	"Connection: Upgrade\r\n"
@@ -125,87 +112,6 @@ h2_new_sess(const struct worker *wrk, struct sess *sp, struct req *srq)
 	AN(up);
 	CAST_OBJ_NOTNULL(h2, (void*)(*up), H2_SESS_MAGIC);
 	return (h2);
-}
-
-/**********************************************************************
- */
-
-static struct h2_req *
-h2_new_req(const struct worker *wrk, struct h2_sess *h2,
-    unsigned stream, struct req *req)
-{
-	struct h2_req *r2;
-
-	Lck_AssertHeld(&h2->sess->mtx);
-	if (req == NULL)
-		req = Req_New(wrk, h2->sess);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
-	r2 = WS_Alloc(req->ws, sizeof *r2);
-	AN(r2);
-	INIT_OBJ(r2, H2_REQ_MAGIC);
-	r2->state = H2_S_IDLE;
-	r2->h2sess = h2;
-	r2->stream = stream;
-	r2->req = req;
-	req->transport_priv = r2;
-	// XXX: ordering ?
-	VTAILQ_INSERT_TAIL(&h2->streams, r2, list);
-	h2->refcnt++;
-	return (r2);
-}
-
-static void
-h2_del_req(struct worker *wrk, const struct h2_req *r2)
-{
-	struct h2_sess *h2;
-	struct sess *sp;
-	struct req *req;
-	int r;
-
-	h2 = r2->h2sess;
-	sp = h2->sess;
-	Lck_Lock(&sp->mtx);
-	assert(h2->refcnt > 0);
-	r = --h2->refcnt;
-	/* XXX: PRIORITY reshuffle */
-	VTAILQ_REMOVE(&h2->streams, r2, list);
-	Lck_Unlock(&sp->mtx);
-	Req_Cleanup(sp, wrk, r2->req);
-	Req_Release(r2->req);
-	if (r)
-		return;
-
-	/* All streams gone, including stream #0, clean up */
-	req = h2->srq;
-	Req_Cleanup(sp, wrk, req);
-	Req_Release(req);
-	SES_Delete(sp, SC_RX_JUNK, NAN);
-}
-
-/**********************************************************************
- * Update and VSL a single SETTING rx'ed from the other side
- * 'd' must point to six bytes.
- */
-
-static void
-h2_setting(struct h2_sess *h2, const uint8_t *d)
-{
-	uint16_t x;
-	uint32_t y;
-	const char *n;
-	char nb[8];
-
-	x = vbe16dec(d);
-	y = vbe32dec(d + 2);
-	n = h2_settingname((enum h2setting)x);
-	if (n == NULL) {
-		bprintf(nb, "0x%04x", x);
-		n = nb;
-	}
-	VSLb(h2->vsl, SLT_Debug, "H2SETTING %s 0x%08x", n, y);
-	if (x > 0 && x < H2_SETTINGS_N)
-		h2->their_settings[x] = y;
 }
 
 /**********************************************************************
@@ -370,7 +276,6 @@ h2_new_ou_session(struct worker *wrk, struct h2_sess *h2,
 		/* XXX clean up req thread */
 		VSLb(h2->vsl, SLT_Debug, "H2: No OU PRISM (hs=%d)", hs);
 		Req_Release(req);
-		Lck_Unlock(&h2->sess->mtx);
 		SES_Delete(h2->sess, SC_RX_JUNK, NAN);
 		return (0);
 	}
@@ -402,13 +307,11 @@ h2_new_session(struct worker *wrk, void *arg)
 	case 0:
 		/* Direct H2 connection (via Proxy) */
 		h2 = h2_new_sess(wrk, sp, req);
-		Lck_Lock(&h2->sess->mtx);
 		(void)h2_new_req(wrk, h2, 0, NULL);
 		break;
 	case 1:
 		/* Prior Knowledge H1->H2 upgrade */
 		h2 = h2_new_sess(wrk, sp, req);
-		Lck_Lock(&h2->sess->mtx);
 		(void)h2_new_req(wrk, h2, 0, NULL);
 
 		if (!h2_new_pu_session(wrk, h2))
@@ -417,7 +320,6 @@ h2_new_session(struct worker *wrk, void *arg)
 	case 2:
 		/* Optimistic H1->H2 upgrade */
 		h2 = h2_new_sess(wrk, sp, NULL);
-		Lck_Lock(&h2->sess->mtx);
 		(void)h2_new_req(wrk, h2, 0, NULL);
 
 		if (!h2_new_ou_session(wrk, h2, req))
@@ -429,6 +331,7 @@ h2_new_session(struct worker *wrk, void *arg)
 
 	THR_SetRequest(h2->srq);
 
+	Lck_Lock(&h2->sess->mtx);
 	H2_Send_Frame(wrk, h2,
 	    H2_FRAME_SETTINGS, H2FF_NONE, sizeof H2_settings, 0, H2_settings);
 

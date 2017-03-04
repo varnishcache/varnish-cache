@@ -162,7 +162,11 @@ int H2_Send(struct worker *, struct h2_req *, int flush,
     enum h2_frame_e type, uint8_t flags, uint32_t len, const void *);
 
 /* cache_http2_proto.c */
+struct h2_req * h2_new_req(const struct worker *, struct h2_sess *,
+    unsigned stream, struct req *);
+void h2_del_req(struct worker *, struct h2_req *);
 int h2_rxframe(struct worker *, struct h2_sess *);
+void h2_setting(struct h2_sess *, const uint8_t *);
 void h2_req_body(struct req*);
 
 
