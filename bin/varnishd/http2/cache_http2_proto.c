@@ -192,11 +192,11 @@ h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 
 	(void)r2;
-	if (h2->rxf_len != 8)
+	if (h2->rxf_len != 8)				// rfc7540,l,2364,2366
 		return (H2CE_FRAME_SIZE_ERROR);
-	if (h2->rxf_stream != 0)
+	if (h2->rxf_stream != 0)			// rfc7540,l,2359,2362
 		return (H2CE_PROTOCOL_ERROR);
-	if (h2->rxf_flags != 0)
+	if (h2->rxf_flags != 0)				// We never send pings
 		return (H2SE_PROTOCOL_ERROR);
 	H2_Send_Frame(wrk, h2,
 	    H2_FRAME_PING, H2FF_PING_ACK, 8, 0, h2->rxf_data);
@@ -209,6 +209,7 @@ h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 static h2_error __match_proto__(h2_frame_f)
 h2_rx_push_promise(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
+	// rfc7540,l,2262,2267
 	(void)wrk;
 	(void)h2;
 	(void)r2;
@@ -574,10 +575,12 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2)
 	char b[4];
 
 	if (h2->rxf_stream != 0 && !(h2->rxf_stream & 1)) {
+		// rfc7540,l,1140,1145
+		// rfc7540,l,1153,1158
 		/* No even streams, we don't do PUSH_PROMISE */
 		VSLb(h2->vsl, SLT_Debug, "H2: illegal stream (=%u)",
 		    h2->rxf_stream);
-		return (H2CE_PROTOCOL_ERROR);		// rfc7540 5.1.1
+		return (H2CE_PROTOCOL_ERROR);
 	}
 
 	VTAILQ_FOREACH(r2, &h2->streams, list)
@@ -586,42 +589,45 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2)
 
 	if (h2->rxf_type == H2_FRAME_RST_STREAM) {
 		/* Special case RST_STREAM to avoid creating streams */
-		if (h2->rxf_len != 4)
-			return (H2CE_FRAME_SIZE_ERROR);	// rfc7540 6.4
-		if (h2->rxf_stream == 0)
-			return (H2CE_PROTOCOL_ERROR);	// rfc7540 6.4
-		if (h2->rxf_stream > h2->highest_stream)
-			return (H2CE_PROTOCOL_ERROR);	// rfc7540 6.4
+		if (h2->rxf_len != 4)			// rfc7540,l,2003,2004
+			return (H2CE_FRAME_SIZE_ERROR);
+		if (h2->rxf_stream == 0)		// rfc7540,l,1993,1996
+			return (H2CE_PROTOCOL_ERROR);
+		if (h2->rxf_stream > h2->highest_stream)// rfc7540,l,1998,2001
+			return (H2CE_PROTOCOL_ERROR);	
 		if (r2 == NULL)
 			return (0);
 	}
 
 	if (r2 == NULL) {
 		if (h2->rxf_stream <= h2->highest_stream)
-			return (H2CE_PROTOCOL_ERROR);	// rfc7540 5.1.1
+			return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1153,1158
 		h2->highest_stream = h2->rxf_stream;
 		r2 = h2_new_req(wrk, h2, h2->rxf_stream, NULL);
 		AN(r2);
 	}
 
 	if (h2->rxf_type >= H2FMAX) {
+		// rfc7540,l,679,681
 		h2->bogosity++;
 		VSLb(h2->vsl, SLT_Debug,
 		    "H2: Unknown Frame 0x%02x", h2->rxf_type);
-		return (0);				// rfc7540 4.1
+		return (0);
 	}
 	h2f = h2flist + h2->rxf_type;
 	if (h2f->name == NULL || h2f->func == NULL) {
+		// rfc7540,l,679,681
 		h2->bogosity++;
 		VSLb(h2->vsl, SLT_Debug,
 		    "H2: Unimplemented Frame 0x%02x", h2->rxf_type);
-		return (0);				// rfc7540 4.1
+		return (0);
 	}
 	if (h2->rxf_flags & ~h2f->flags) {
+		// rfc7540,l,687,688
 		h2->bogosity++;
 		VSLb(h2->vsl, SLT_Debug, "H2: Bad flags 0x%02x on %s",
 		    h2->rxf_flags, h2f->name);
-		h2->rxf_flags &= h2f->flags;		// rfc7540 4.1
+		h2->rxf_flags &= h2f->flags;
 	}
 	h2e = h2f->func(wrk, h2, r2);
 	if (h2e == 0)
