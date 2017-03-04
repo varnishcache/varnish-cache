@@ -223,8 +223,11 @@ static h2_error __match_proto__(h2_frame_f)
 h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	(void)wrk;
-	(void)h2;
-	(void)r2;
+	
+	if (h2->rxf_len != 4)			// rfc7540,l,2003,2004
+		return (H2CE_FRAME_SIZE_ERROR);
+	if (r2 == NULL)
+		return (0);
 	INCOMPL();
 	NEEDLESS(return (H2CE_PROTOCOL_ERROR));
 }
@@ -622,19 +625,7 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2)
 		if (r2->stream == h2->rxf_stream)
 			break;
 
-	if (h2->rxf_type == H2_FRAME_RST_STREAM) {
-		/* Special case RST_STREAM to avoid creating streams */
-		if (h2->rxf_len != 4)			// rfc7540,l,2003,2004
-			return (H2CE_FRAME_SIZE_ERROR);
-		if (h2->rxf_stream == 0)		// rfc7540,l,1993,1996
-			return (H2CE_PROTOCOL_ERROR);
-		if (h2->rxf_stream > h2->highest_stream)// rfc7540,l,1998,2001
-			return (H2CE_PROTOCOL_ERROR);
-		if (r2 == NULL)
-			return (0);
-	}
-
-	if (r2 == NULL) {
+	if (r2 == NULL && h2f->act_sidle == 0) {
 		if (h2->rxf_stream <= h2->highest_stream)
 			return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1153,1158
 		h2->highest_stream = h2->rxf_stream;
