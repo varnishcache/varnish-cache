@@ -107,11 +107,11 @@ varnish_ask_cli(const struct varnish *v, const char *cmd, char **repl)
 	if (cmd != NULL) {
 		vtc_dump(v->vl, 4, "CLI TX", cmd, -1);
 		i = write(v->cli_fd, cmd, strlen(cmd));
-		if (i != strlen(cmd))
+		if (i != strlen(cmd) && !vtc_stop)
 			vtc_fatal(v->vl, "CLI write failed (%s) = %u %s",
 			    cmd, errno, strerror(errno));
 		i = write(v->cli_fd, "\n", 1);
-		if (i != 1)
+		if (i != 1 && !vtc_stop)
 			vtc_fatal(v->vl, "CLI write failed (%s) = %u %s",
 			    cmd, errno, strerror(errno));
 	}
