@@ -110,6 +110,7 @@ struct h2_sess {
 	struct vht_table		dectbl[1];
 
 	unsigned			rxf_len;
+	unsigned			rxf_type;
 	unsigned			rxf_flags;
 	unsigned			rxf_stream;
 	uint8_t				*rxf_data;

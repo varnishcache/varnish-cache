@@ -352,8 +352,8 @@ h2_do_req(struct worker *wrk, void *priv)
 }
 
 static h2_error
-h2_end_headers(struct worker *wrk, struct h2_sess *h2, struct req *req,
-    struct h2_req *r2)
+h2_end_headers(const struct worker *wrk, const struct h2_sess *h2,
+    struct req *req, struct h2_req *r2)
 {
 	h2_error h2e;
 
@@ -583,6 +583,19 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2)
 	VTAILQ_FOREACH(r2, &h2->streams, list)
 		if (r2->stream == h2->rxf_stream)
 			break;
+
+	if (h2->rxf_type == H2_FRAME_RST_STREAM) {
+		/* Special case RST_STREAM to avoid creating streams */
+		if (h2->rxf_len != 4)
+			return (H2CE_FRAME_SIZE_ERROR);	// rfc7540 6.4
+		if (h2->rxf_stream == 0)
+			return (H2CE_PROTOCOL_ERROR);	// rfc7540 6.4
+		if (h2->rxf_stream > h2->highest_stream)
+			return (H2CE_PROTOCOL_ERROR);	// rfc7540 6.4
+		if (r2 == NULL)
+			return (0);
+	}
+
 	if (r2 == NULL) {
 		if (h2->rxf_stream <= h2->highest_stream)
 			return (H2CE_PROTOCOL_ERROR);	// rfc7540 5.1.1
@@ -591,17 +604,17 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2)
 		AN(r2);
 	}
 
-	if (h2->htc->rxbuf_b[3] >= H2FMAX) {
+	if (h2->rxf_type >= H2FMAX) {
 		h2->bogosity++;
 		VSLb(h2->vsl, SLT_Debug,
-		    "H2: Unknown Frame 0x%02x", h2->htc->rxbuf_b[3]);
+		    "H2: Unknown Frame 0x%02x", h2->rxf_type);
 		return (0);				// rfc7540 4.1
 	}
-	h2f = h2flist + h2->htc->rxbuf_b[3];
+	h2f = h2flist + h2->rxf_type;
 	if (h2f->name == NULL || h2f->func == NULL) {
 		h2->bogosity++;
 		VSLb(h2->vsl, SLT_Debug,
-		    "H2: Unimplemented Frame 0x%02x", h2->htc->rxbuf_b[3]);
+		    "H2: Unimplemented Frame 0x%02x", h2->rxf_type);
 		return (0);				// rfc7540 4.1
 	}
 	if (h2->rxf_flags & ~h2f->flags) {
@@ -652,6 +665,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	}
 
 	h2->rxf_len =  vbe32dec(h2->htc->rxbuf_b) >> 8;
+	h2->rxf_type =  h2->htc->rxbuf_b[3];
 	h2->rxf_flags = h2->htc->rxbuf_b[4];
 	h2->rxf_stream = vbe32dec(h2->htc->rxbuf_b + 5);
 	h2->rxf_data = (void*)(h2->htc->rxbuf_b + 9);
