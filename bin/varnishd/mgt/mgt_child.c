@@ -292,12 +292,6 @@ mgt_launch_child(struct cli *cli)
 
 	child_state = CH_STARTING;
 
-	if (VJ_make_vcldir("vmod_cache")) {
-		VCLI_Out(cli, "Could not create vmod cache dir");
-		VCLI_SetResult(cli, CLIS_UNKNOWN);
-		return;
-	}
-
 	/* Open pipe for mgr->child CLI */
 	AZ(pipe(cp));
 	heritage.cli_in = cp[0];

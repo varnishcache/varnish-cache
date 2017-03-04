@@ -771,6 +771,12 @@ main(int argc, char * const *argv)
 		ARGV_ERR("Cannot create working directory (%s): %s\n",
 		    dirname, strerror(errno));
 
+	if (VJ_make_vcldir("vmod_cache")) {
+		ARGV_ERR(
+		    "Cannot create vmod directory (%s/vmod_cache): %s\n",
+		    dirname, strerror(errno));
+	}
+
 	VJ_master(JAIL_MASTER_FILE);
 	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL)
 		ARGV_ERR("Could not open pid/lock (-P) file (%s): %s\n",
