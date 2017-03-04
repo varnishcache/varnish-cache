@@ -1,0 +1,30 @@
+varnishtest "Check that Age is always less than max-age while not stale"
+
+server s1 {
+	rxreq
+	expect req.url == "/"
+	txresp -hdr "Cache-control: max-age=2"
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Age == 0
+
+	delay 0.8
+
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Age == 0
+
+	delay 1.0
+
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Age == 1
+} -run
