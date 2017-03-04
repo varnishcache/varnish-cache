@@ -373,8 +373,10 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 		AZ(av[0]);
 		AZ(strcmp(av[1], "/*"));
 		AZ(strcmp(av[ac-1], "*/"));
-		AZ(strcmp(av[3], "VCL"));
-		mgt_vcl_depends(vcl, av[4]);
+		if (!strcmp(av[3], "VCL"))
+			mgt_vcl_depends(vcl, av[4]);
+		else if (strcmp(av[3], "VMOD"))
+			WRONG("Wrong VCCINFO");
 		VAV_Free(av);
 	}
 	AZ(fclose(fcs));

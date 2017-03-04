@@ -37,6 +37,7 @@
 
 #include "vcs_version.h"
 
+#include "libvcc.h"
 #include "vfil.h"
 #include "vmod_abi.h"
 #include "vrt.h"
@@ -211,6 +212,9 @@ vcc_ParseImport(struct vcc *tl)
 	    PF(mod), vmd->file_id);
 	VSB_printf(ifp->ini, "\t    ))\n");
 	VSB_printf(ifp->ini, "\t\treturn(1);");
+
+	VSB_printf(tl->fi, "%s VMOD %s ./vmod_cache/_vmod_%.*s.%s */\n",
+	    VCC_INFO_PREFIX, fnp, PF(mod), vmd->file_id);
 
 	/* XXX: zero the function pointer structure ?*/
 	VSB_printf(ifp->fin, "\t\tVRT_priv_fini(&vmod_priv_%.*s);\n", PF(mod));
