@@ -758,6 +758,11 @@ main(int argc, char * const *argv)
 		VJ_master(JAIL_MASTER_LOW);
 	}
 
+	if (M_arg != NULL)
+		mgt_cli_master(M_arg);
+	if (T_arg != NULL)
+		mgt_cli_telnet(T_arg);
+
 	if (VIN_N_Arg(n_arg, &heritage.name, &dirname, NULL) != 0)
 		ARGV_ERR("Invalid instance (-n) name: %s\n", strerror(errno));
 
@@ -843,11 +848,6 @@ main(int argc, char * const *argv)
 
 	if (strcmp(S_arg, "none"))
 		mgt_cli_secret(S_arg);
-
-	if (M_arg != NULL)
-		mgt_cli_master(M_arg);
-	if (T_arg != NULL)
-		mgt_cli_telnet(T_arg);
 
 	mgt_SHM_Create();
 
