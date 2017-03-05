@@ -81,6 +81,17 @@ client c1 {
 	} -run
 } -run
 
+client c1 {
+	stream 1 {
+		txreq
+		rxresp
+	} -run
+	stream 1 {
+		# WINDOW_UPDATE on closed stream
+		txwinup -size 0x4000
+	} -run
+} -run
+
 #######################################################################
 # Test PING error conditions
 

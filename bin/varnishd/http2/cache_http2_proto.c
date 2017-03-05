@@ -279,6 +279,8 @@ h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	wu = vbe32dec(h2->rxf_data) & ~(1LU<<31);
 	if (wu == 0)
 		return (H2SE_PROTOCOL_ERROR);
+	if (r2 == NULL)
+		return (0);
 	Lck_Lock(&h2->sess->mtx);
 	r2->window += wu;
 	Lck_Unlock(&h2->sess->mtx);
