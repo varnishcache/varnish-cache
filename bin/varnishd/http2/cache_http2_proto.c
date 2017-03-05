@@ -668,7 +668,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	h2->rxf_type =  h2->htc->rxbuf_b[3];
 	h2->rxf_flags = h2->htc->rxbuf_b[4];
 	h2->rxf_stream = vbe32dec(h2->htc->rxbuf_b + 5);
-	h2->rxf_stream &= ~(1LU<<31);			// rfc7450,l,690,692
+	h2->rxf_stream &= ~(1LU<<31);			// rfc7540,l,690,692
 	h2->rxf_data = (void*)(h2->htc->rxbuf_b + 9);
 	/* XXX: later full DATA will not be rx'ed yet. */
 	HTC_RxPipeline(h2->htc, h2->htc->rxbuf_b + h2->rxf_len + 9);
