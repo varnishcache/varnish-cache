@@ -758,11 +758,6 @@ main(int argc, char * const *argv)
 		VJ_master(JAIL_MASTER_LOW);
 	}
 
-	if (M_arg != NULL)
-		mgt_cli_master(M_arg);
-	if (T_arg != NULL)
-		mgt_cli_telnet(T_arg);
-
 	if (VIN_N_Arg(n_arg, &heritage.name, &dirname, NULL) != 0)
 		ARGV_ERR("Invalid instance (-n) name: %s\n", strerror(errno));
 
@@ -832,6 +827,11 @@ main(int argc, char * const *argv)
 	Wait_config(W_arg);
 
 	mgt_SHM_Init();
+
+	if (M_arg != NULL)
+		mgt_cli_master(M_arg);
+	if (T_arg != NULL)
+		mgt_cli_telnet(T_arg);
 
 	AZ(VSB_finish(vident));
 
