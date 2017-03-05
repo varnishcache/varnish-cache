@@ -702,7 +702,9 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		h2->rxf_flags &= h2f->flags;
 	}
 
+	Lck_Lock(&h2->sess->mtx);
 	h2_vsl_frame(h2, h2->htc->rxbuf_b, 9L + h2->rxf_len);
+	Lck_Unlock(&h2->sess->mtx);
 
 	h2e = h2_procframe(wrk, h2, h2f);
 	if (h2e) {
