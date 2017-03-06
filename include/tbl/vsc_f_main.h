@@ -99,6 +99,15 @@ VSC_FF(cache_hitpass,		uint64_t, 1, 'c', 'i', info,
 	" decision is being used."
 )
 
+VSC_FF(cache_hitmiss,		uint64_t, 1, 'c', 'i', info,
+    "Cache hits for miss.",
+	"Count of hits for miss."
+	" A cache hit for miss indicates that Varnish is going to"
+	" proceed as for a cache miss without request coalescing, and"
+	" this decision has been cached. This counts how many times the"
+	" cached decision is being used."
+)
+
 VSC_FF(cache_miss,		uint64_t, 1, 'c', 'i', info,
     "Cache misses",
 	"Count of misses."
