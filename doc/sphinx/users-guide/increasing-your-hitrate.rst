@@ -442,6 +442,23 @@ validated for a fairly long time. If the backend can send a 304
 response long after the TTL has expired, you save bandwith on the
 fetch; if not, then it's no different from any other cache miss.
 
+If, however, you would prefer that backend fetches are not
+conditional, just remove the If-* headers in ``vcl_backend_fetch``::
+
+  sub vcl_backend_fetch {
+    # To prevent conditional backend fetches.
+    unset bereq.http.If-None-Match;
+    unset bereq.http.If-Modified-Since;
+  }
+
+That should only be necessary if the conditional fetches are
+problematic for the backend, for example if evaluating whether the
+response is unchanged is too costly for the backend app, or if the
+responses are just buggy. From the perspective of Varnish, 304
+responses are clearly preferable; fetches with the empty response body
+save bandwidth, and storage does not have to be allocated in the
+cache, since the existing cache object is re-used.
+
 To summarize, you can improve performance even in the case of cache
 misses by:
 
@@ -517,6 +534,22 @@ default ``vcl_recv`` gets executed; so take a close look at ``vcl_recv``
 in ``builtin.vcl``, and duplicate any part of it that you require in
 your own ``vcl_recv``.
 
+As with cache hits and misses, Varnish decides to send a 304 response
+to the client after a pass if the client request headers and the
+response headers allow it. This might mean that Varnish will send a
+304 response to the client even after the backend saw the same request
+headers (``If-Modified-Since`` and/or ``If-None-Match``), but decided
+not to respond with status 304, while nevertheless setting the
+response headers ``ETag`` and/or ``Last-Modified`` so that 304 would
+appear to be warranted. If you would prefer that Varnish doesn't do
+that, then remove the If-* client request headers in ``vcl_pass``::
+
+  sub vcl_pass {
+    # To prevent 304 client responses after a pass.
+    unset req.http.If-None-Match;
+    unset req.http.If-Modified-Since;
+  }
+
 hit-for-miss
 ~~~~~~~~~~~~
 
@@ -542,6 +575,10 @@ are just like cache misses, meaning that:
 * fetches cannot be conditional, so ``If-Modified-Since`` and
   ``If-None-Match`` headers are removed from the backend request.
 
+When Varnish sees that it has hit a hit-for-miss object on a new
+request, it executes ``vcl_miss``, so any custom VCL you have written
+for cache misses will apply in the hit-for-miss case as well.
+
 ``builtin.vcl`` sets ``beresp.uncacheable`` to ``true``, invoking the
 hit-for-miss state, under a number of conditions that indicate that
 the response cannot be cached, for example if the TTL was computed to
@@ -556,6 +593,18 @@ if you need hit-for-miss on other conditions::
 
 Note that once ``beresp.uncacheable`` has been set to ``true`` it
 cannot be set back to ``false``; attempts to do so in VCL are ignored.
+
+Although the backend fetches are never conditional for hit-for-miss,
+Varnish may decide (as in all other cases) to send a 304 response to
+the client if the client request headers and response headers ``ETag``
+or ``Last-Modified`` allow it. If you want to prevent that, remove
+the If-* client request headers in ``vcl_miss``::
+
+  sub vcl_miss {
+    # To prevent 304 client responses on hit-for-miss.
+    unset req.http.If-None-Match;
+    unset req.http.If-Modified-Since;
+  }
 
 hit-for-pass
 ~~~~~~~~~~~~
@@ -586,6 +635,18 @@ returned pass.  This means that there is no request coalescing, and
 that ``If-Modified-Since`` and ``If-None-Match`` headers in the client
 request are passed along to the backend, so that the backend response
 may be 304.
+
+Varnish executes ``vcl_pass`` when it hits a hit-for-pass object. So
+again, you can arrange for your own handling of both pass and
+hit-for-pass with the same code in VCL.
+
+If you want to prevent Varnish from sending conditional requests to
+the backend, then remove the If-* headers from the backend request in
+``vcl_backend_fetch``, as shown above for cache misses. And if you
+want to prevent Varnish from deciding at delivery time to send a 304
+response to the client based on the client request and response
+headers, then remove the headers from the client request in
+``vcl_pass``, as shown above for pass.
 
 The hit-for-pass state ends when the "hit-for-pass TTL" given in the
 ``return`` statement elapses. The next request for that object is then
