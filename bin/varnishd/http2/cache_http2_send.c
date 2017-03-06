@@ -55,22 +55,34 @@ h2_mk_hdr(uint8_t *hdr, h2_frame ftyp, uint8_t flags,
  * the session mtx must be held.
  */
 
-int
+h2_error
 H2_Send_Frame(struct worker *wrk, const struct h2_sess *h2,
     h2_frame ftyp, uint8_t flags,
     uint32_t len, uint32_t stream, const void *ptr)
 {
 	uint8_t hdr[9];
+	ssize_t s;
 
-	Lck_AssertHeld(&h2->sess->mtx);
 	(void)wrk;
+	Lck_AssertHeld(&h2->sess->mtx);
+
+	AN(ftyp);
+	AZ(flags & ~(ftyp->flags));
+	if (stream == 0)
+		AZ(ftyp->act_szero);
+	else
+		AZ(ftyp->act_snonzero);
 
 	h2_mk_hdr(hdr, ftyp, flags, len, stream);
 	VSLb_bin(h2->vsl, SLT_H2TxHdr, 9, hdr);
 
-	/*XXX*/(void)write(h2->sess->fd, hdr, sizeof hdr);
+	s = write(h2->sess->fd, hdr, sizeof hdr);
+	if (s != sizeof hdr)
+		return (H2CE_PROTOCOL_ERROR);		// XXX Need private ?
 	if (len > 0) {
-		/*XXX*/(void)write(h2->sess->fd, ptr, len);
+		s = write(h2->sess->fd, ptr, len);
+		if (s != len)
+			return (H2CE_PROTOCOL_ERROR);	// XXX Need private ?
 		VSLb_bin(h2->vsl, SLT_H2TxBody, len, ptr);
 	}
 	return (0);
@@ -82,11 +94,11 @@ H2_Send_Frame(struct worker *wrk, const struct h2_sess *h2,
  * XXX: priority
  */
 
-int
+h2_error
 H2_Send(struct worker *wrk, struct h2_req *r2, int flush,
     h2_frame ftyp, uint8_t flags, uint32_t len, const void *ptr)
 {
-	int retval;
+	h2_error retval;
 	struct h2_sess *h2;
 	uint32_t mfs, tf;
 	const char *p;
@@ -98,16 +110,24 @@ H2_Send(struct worker *wrk, struct h2_req *r2, int flush,
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	assert(len == 0 || ptr != NULL);
 
+	AN(ftyp);
+	AZ(flags & ~(ftyp->flags));
+	if (r2->stream == 0)
+		AZ(ftyp->act_szero);
+	else
+		AZ(ftyp->act_snonzero);
+
 	Lck_Lock(&h2->sess->mtx);
 	mfs = h2->their_settings[H2S_MAX_FRAME_SIZE];
 	if (len < mfs) {
 		retval = H2_Send_Frame(wrk, h2,
 		    ftyp, flags, len, r2->stream, ptr);
-	} else if (ftyp == H2_F_DATA) {
+	} else {
 		AN(ptr);
 		AN(len);
 		p = ptr;
 		do {
+			AN(ftyp->continuation);
 			tf = mfs;
 			if (tf > len)
 				tf = len;
@@ -116,9 +136,8 @@ H2_Send(struct worker *wrk, struct h2_req *r2, int flush,
 			    tf, r2->stream, p);
 			p += tf;
 			len -= tf;
-		} while (len > 0);
-	} else {
-		INCOMPL();
+			ftyp = ftyp->continuation;
+		} while (len > 0 && retval == 0);
 	}
 	Lck_Unlock(&h2->sess->mtx);
 	return (retval);

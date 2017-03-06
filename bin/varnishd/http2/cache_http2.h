@@ -30,6 +30,7 @@
 struct h2_sess;
 struct h2_req;
 struct h2h_decode;
+struct h2_frame_s;
 
 #include "hpack/vhp.h"
 
@@ -46,6 +47,8 @@ typedef const struct h2_error_s *h2_error;
 typedef h2_error h2_rxframe_f(struct worker *, struct h2_sess *,
     struct h2_req *);
 
+typedef const struct h2_frame_s *h2_frame;
+
 struct h2_frame_s {
 	const char	*name;
 	h2_rxframe_f	*rxfunc;
@@ -54,9 +57,10 @@ struct h2_frame_s {
 	h2_error	act_szero;
 	h2_error	act_snonzero;
 	h2_error	act_sidle;
+	int		respect_window;
+	h2_frame	continuation;
 };
 
-typedef const struct h2_frame_s *h2_frame;
 
 #define H2_FRAME(l,U,...) extern const struct h2_frame_s H2_F_##U[1];
 #include "tbl/h2_frames.h"
@@ -167,11 +171,11 @@ h2_error h2h_decode_fini(const struct h2_sess *h2, struct h2h_decode *d);
 h2_error h2h_decode_bytes(struct h2_sess *h2, struct h2h_decode *d,
     const uint8_t *ptr, size_t len);
 
-int H2_Send_Frame(struct worker *, const struct h2_sess *,
+h2_error H2_Send_Frame(struct worker *, const struct h2_sess *,
     h2_frame type, uint8_t flags, uint32_t len, uint32_t stream,
     const void *);
 
-int H2_Send(struct worker *, struct h2_req *, int flush,
+h2_error H2_Send(struct worker *, struct h2_req *, int flush,
     h2_frame type, uint8_t flags, uint32_t len, const void *);
 
 /* cache_http2_proto.c */
