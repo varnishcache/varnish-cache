@@ -451,3 +451,146 @@ misses by:
 
 * setting a keep time for cached objects that can be validated with
   a 304 response after they have gone stale.
+
+
+Uncacheable content
+-------------------
+
+Some responses cannot be cached, for various reasons. The content may
+be personalized, depending on the content of the ``Cookie`` header, or
+it might just be the sort of thing that is generated anew on each
+request.  The cache can't help with that, but nevertheless there are
+some decisions you can make that will help Varnish deal with
+uncacheable responses in a way that is best for your requirements.
+
+The issues to consider are:
+
+* preventing request coalescing
+
+* whether (and how soon) the response for the same object may become
+  cacheable again
+
+* whether you want to pass along ``If-Modified-Since`` and
+  ``If-None-Match`` headers from the client request to the backend, to
+  allow the backend to respond with status 304
+
+Passing client requests
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Depending on how you site works, you may be able to recognize a client
+request for a response that cannot be cached, for example if the URL
+matches certain patterns, or due to the contents of a request header.
+In that case, you can set the fetch to *pass* with ``return(pass)``
+from ``vcl_recv``::
+
+  sub vcl_recv {
+    if (req.url ~ "^/this/is/personal/") {
+      return(pass);
+    }
+  }
+
+For passes there is no request coalescing. Since pass indicates that
+the response will not be cacheable, there is no point in waiting for a
+response that might be cached, and all pending fetches for the object
+are concurrent. Otherwise, fetches waiting for an object that turns
+out to be uncacheable after all may be serialized.
+
+When a request is passed, this can be recognized in the
+``vcl_backend_*`` subroutine by the fact that ``bereq.uncacheable``
+and ``beresp.uncachable`` are both true. The backend response will not
+be cached, even if it fulfills conditions that otherwise would allow
+it, for example if ``Cache-Control`` sets a positive TTL.
+
+Pass is the default (that is, ``builtin.vcl`` calls ``return(pass)`` in
+``vcl_recv``) if the client request meets these conditions:
+
+* the request method is not ``GET`` or ``HEAD``
+
+* there is either a ``Cookie`` or an ``Authorization`` header, indicating
+  that the response may be personalized
+
+If you want to override the default, say if you are certain that the
+response may be cacheable despite the presence of a Cookie, make sure
+that a ``return`` gets called at the end of any path that may be taken
+through your own ``vcl_recv``. But if you do that, no part of the
+default ``vcl_recv`` gets executed; so take a close look at ``vcl_recv``
+in ``builtin.vcl``, and duplicate any part of it that you require in
+your own ``vcl_recv``.
+
+hit-for-miss
+~~~~~~~~~~~~
+
+You may not be able to recognize all requests for uncacheable content
+in ``vcl_recv``. You might want to allow backends to determine their
+own cacheability by setting the ``Cache-Control`` header, but that
+cannot be seen until Varnish receives the backend response, so
+``vcl_recv`` can't know about it.
+
+By default, if a request is not passed and the backend response turns
+out to be uncacheable, the cache object is set to "hit-for-miss", by
+setting ``beresp.uncacheable`` to ``true`` in
+``vcl_backend_response``.  A minimal object is saved in the cache, so
+that the "hit-for-miss" state can be recognized on subsequent
+lookups. (The cache is used to remember that the object is
+uncacheable.)  In that case, no request coalescing is performed, so
+that fetches can run concurrently. Otherwise, fetches for hit-for-miss
+are just like cache misses, meaning that:
+
+* the response may become cacheable on a later request, for example
+  if it sets a positive TTL with ``Cache-Control``, and
+
+* fetches cannot be conditional, so ``If-Modified-Since`` and
+  ``If-None-Match`` headers are removed from the backend request.
+
+``builtin.vcl`` sets ``beresp.uncacheable`` to ``true``, invoking the
+hit-for-miss state, under a number of conditions that indicate that
+the response cannot be cached, for example if the TTL was computed to
+be 0 or if there is a ``Set-Cookie`` header. You can set it yourself
+if you need hit-for-miss on other conditions::
+
+  sub vcl_backend_response {
+    if (beresp.http.X-This-Is == "personal") {
+      set beresp.uncacheable = true;
+    }
+  }
+
+Note that once ``beresp.uncacheable`` has been set to ``true`` it
+cannot be set back to ``false``; attempts to do so in VCL are ignored.
+
+hit-for-pass
+~~~~~~~~~~~~
+
+A consequence of hit-for-miss is that backend fetches cannot be
+conditional, since hit-for-miss allows subsequent responses to be
+cacheable. This may be problematic for responses that are very large
+and not cacheable, but may be validated with a 304 response. For
+example, you may want clients to validate an object via the backend
+every time, only sending the response when it has been changed.
+
+For a situation like this, you can set an object to "hit-for-pass" with
+``return(pass(DURATION))`` from ``vcl_backend_response``, where the
+DURATION determines how long the hit-for-pass state lasts::
+
+  sub vcl_backend_response {
+    # Set hit-for-pass for two minutes if TTL is 0 and response headers
+    # allow for validation.
+    if (beresp.ttl <= 0s && (beresp.http.ETag || beresp.http.Last-Modified)) {
+      return(pass(120s));
+    }
+  }
+
+As with hit-for-miss, a minimal object is entered into the cache so
+that the hit-for-pass state is recognized on subsequent requests. The
+request is then processed as a pass, just as if ``vcl_recv`` had
+returned pass.  This means that there is no request coalescing, and
+that ``If-Modified-Since`` and ``If-None-Match`` headers in the client
+request are passed along to the backend, so that the backend response
+may be 304.
+
+The hit-for-pass state ends when the "hit-for-pass TTL" given in the
+``return`` statement elapses. The next request for that object is then
+handled as an ordinary miss.
+
+hit-for-miss is the default treatment of uncacheable content. No part
+of ``builtin.vcl`` invokes hit-for-pass, so if you need it, you have to
+add the necessary ``return`` statement to your own VCL.
