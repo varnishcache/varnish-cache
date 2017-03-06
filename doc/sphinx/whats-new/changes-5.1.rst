@@ -72,6 +72,45 @@ the "hit-for-pass TTL" elapses, the next request will be an ordinary
 miss. So a hit-for-pass object cannot become cacheable again until
 that much time has passed.
 
+304 Not Modified responses after a pass
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Related to the previous topic, there has been a change in the way
+Varnish handles a very specific case: deciding whether to send a "304
+Not Modified" response to the client after a pass, when the backend
+had the opportunity to send a 304 response, but chose not to by
+sending a 200 response status instead.
+
+Previously, Varnish went along with the backend when this happened,
+sending the 200 response together with the response body to the
+client. This was the case even if the backend set the response headers
+``ETag`` and/or ``Last-Modified`` so that, when compared to the
+request headers ``If-None-Match`` and ``If-Modified-Since``, a 304
+response would seem to be warranted. Since those headers are passed
+back to the client, the result could appear a bit odd from the
+client's perspective -- the client used the request headers to ask if
+the response was unmodified, and the response headers seem to indicate
+that it wasn't, and yet the response status suggests that it was.
+
+Now the decision to send a 304 client response status is made solely
+at delivery time, based on the contents of the client request headers
+and the headers in the response that Varnish is preparing to send,
+regardless of whether the backend fetch was a pass. So Varnish may
+send a 304 client response after a pass, even though the backend chose
+not to, having seen the same request headers (if the response headers
+permit it).
+
+We made this change for consistency -- for hits, misses, hit-for-miss,
+hit-for-pass, and now pass, the decision to send a 304 client response
+is based solely on the contents of client request headers and the
+response headers.
+
+You can restore the previous behavior -- don't send a 304 client
+response on pass if the backend didn't -- with VCL means, either by
+removing the ``ETag`` or ``Last-Modified`` headers in
+``vcl_backend_response``, or by removing the If-* client request
+headers in ``vcl_pass``.
+
 
 News for authors of VMODs and Varnish API client applications
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
