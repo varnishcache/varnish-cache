@@ -15,5 +15,5 @@ matches certain criteria::
 
 
 
-We also remove any Set-Cookie headers in order to avoid a `hit-for-pass`
-object to be created. See :ref:`user-guide-vcl_actions`.
+We also remove any Set-Cookie headers in order to avoid creation of a
+`hit-for-miss` object. See :ref:`user-guide-vcl_actions`.
