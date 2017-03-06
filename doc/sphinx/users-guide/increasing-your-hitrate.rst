@@ -102,7 +102,7 @@ https://addons.mozilla.org/en-US/firefox/addon/3829/ or by googling
 
 
 The role of HTTP Headers
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
 Along with each HTTP request and response comes a bunch of headers
 carrying metadata. Varnish will look at these headers to determine if
@@ -122,7 +122,7 @@ Let's take a look at the important headers you should be aware of:
 .. _users-guide-cookies:
 
 Cookies
--------
+~~~~~~~
 
 Varnish will, in the default configuration, not cache an object coming
 from the backend with a 'Set-Cookie' header present. Also, if the client
@@ -135,7 +135,7 @@ cookie is used by the client side javascript and is therefore of no
 interest to the server.
 
 Cookies from the client
-~~~~~~~~~~~~~~~~~~~~~~~
++++++++++++++++++++++++
 
 For a lot of web applications it makes sense to completely disregard the
 cookies unless you are accessing a special part of the web site. This
@@ -216,7 +216,7 @@ Varnish Cache Wiki.
 
 
 Cookies coming from the backend
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
++++++++++++++++++++++++++++++++
 
 If your backend server sets a cookie using the 'Set-Cookie' header
 Varnish will not cache the page when using the default configuration.
