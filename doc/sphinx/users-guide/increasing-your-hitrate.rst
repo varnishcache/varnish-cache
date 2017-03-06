@@ -383,3 +383,71 @@ So if you *really* need to vary based on 'User-Agent' be sure to
 normalize the header or your hit rate will suffer badly. Use the
 above code as a template.
 
+Cache misses
+------------
+
+When Varnish does not find an object for a request in the cache, then
+by default it performs a fetch from the backend on the hypothesis that
+the response might be cached. This has two important consequences:
+
+* Concurrent backend requests for the same object are *coalesced* --
+  only one fetch is executed at a time, and the other pending fetches
+  wait for the result. This is to prevent your backend from being hit
+  by a "thundering herd" when the cached response has expired, or if
+  it was never cached in the first place.  If it turns out that the
+  response to the first fetch is cached, then that cache object
+  satisfies the other pending requests.
+
+* The backend request for the cache miss cannot be conditional if
+  Varnish does not have an object in the cache to validate; that is,
+  it cannot contain the headers ``If-Modified-Since`` or
+  ``If-None-Match``, which might cause the backend to return status
+  "304 Not Modified" with no response body. Otherwise, there might not
+  be a response to cache. If those headers were present in the client
+  request, they are removed from the backend request.
+
+By setting a grace time for cached objects (default 10 seconds), you
+allow Varnish to serve stale content while waiting for coalesced fetches,
+which are run asynchronously while the stale response is sent to the
+client. For details see :ref:`users-guide-handling_misbehaving_servers`.
+
+Although the headers for a conditional request are removed from the
+backend fetch on a cache miss, Varnish may nevertheless respond to the
+client request with "304 Not Modified" if the resulting response
+allows it. At delivery time, if the client request had an
+``If-None-Match`` header that matches the ``ETag`` header in the
+response, or if the time in an ``If-Modified-Since`` request header is
+equal to or later than the time in the ``Last-Modified`` response
+header, Varnish will send the 304 response to the client. This happens
+for both hits and misses.
+
+Varnish can send conditional requests to the backend if it has an
+object in the cache against which the validation can be performed. You
+can ensure that an object is retained for this purpose by setting
+``beresp.keep`` in ``vcl_backend_response``::
+
+  sub vcl_backend_response {
+    # Keep the response in cache for 4 hours if the response has
+    # validating headers.
+    if (beresp.http.ETag || beresp.http.Last-Modified) {
+      set beresp.keep = 4h;
+    }
+  }
+
+A stale object is not removed from the cache for the duration of
+``beresp.keep`` after its TTL and grace time have expired. This will
+increase the storage requirements for your cache, but if you have the
+space, it might be worth it to keep stale objects that can be
+validated for a fairly long time. If the backend can send a 304
+response long after the TTL has expired, you save bandwith on the
+fetch; if not, then it's no different from any other cache miss.
+
+To summarize, you can improve performance even in the case of cache
+misses by:
+
+* ensuring that cached objects have a grace time during which a stale
+  object can be served to the client while fetches are performed in
+  the background, and
+
+* setting a keep time for cached objects that can be validated with
+  a 304 response after they have gone stale.
