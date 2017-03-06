@@ -304,7 +304,7 @@ VSC_FF(n_objectcore,		uint64_t, 1, 'g', 'i', info,
     "objectcore structs made",
 	"Approximate number of object metadata elements in the cache."
 	" Each object needs an objectcore, extra objectcores are for"
-	" hit-for-pass and busy objects."
+	" hit-for-miss, hit-for-pass and busy objects."
 )
 
 VSC_FF(n_objecthead,		uint64_t, 1, 'g', 'i', info,
