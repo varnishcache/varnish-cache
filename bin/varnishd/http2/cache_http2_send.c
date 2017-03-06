@@ -102,6 +102,7 @@ H2_Send(struct worker *wrk, struct h2_req *r2, int flush,
 	struct h2_sess *h2;
 	uint32_t mfs, tf;
 	const char *p;
+	uint8_t final_flags;
 
 	(void)flush;
 
@@ -126,14 +127,20 @@ H2_Send(struct worker *wrk, struct h2_req *r2, int flush,
 		AN(ptr);
 		AN(len);
 		p = ptr;
+		final_flags = ftyp->final_flags & flags;
+		flags &= ~ftyp->final_flags;
 		do {
 			AN(ftyp->continuation);
 			tf = mfs;
-			if (tf > len)
+			if (tf > len) {
 				tf = len;
-			retval = H2_Send_Frame(wrk, h2, ftyp,
-			    tf == len ? flags : 0,
-			    tf, r2->stream, p);
+				retval = H2_Send_Frame(wrk, h2, ftyp,
+				    flags, tf, r2->stream, p);
+				flags = 0;
+			} else {
+				retval = H2_Send_Frame(wrk, h2, ftyp,
+				    final_flags, tf, r2->stream, p);
+			}
 			p += tf;
 			len -= tf;
 			ftyp = ftyp->continuation;

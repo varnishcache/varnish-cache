@@ -59,6 +59,7 @@ struct h2_frame_s {
 	h2_error	act_sidle;
 	int		respect_window;
 	h2_frame	continuation;
+	uint8_t		final_flags;
 };
 
 

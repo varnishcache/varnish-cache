@@ -37,25 +37,29 @@
  *	rx_stream-idle
  *	tx_flow-control			// rfc7540,l,1265,1270
  *	tx_continuation
+ *	tx_final-flags
  */
   H2_FRAME(data,		DATA,		0x0, 0x09,
 	H2CE_PROTOCOL_ERROR,		// rfc7540,l,1758,1761
 	0,
 	H2CE_PROTOCOL_ERROR,
 	1,
-	H2_F_DATA
+	H2_F_DATA,
+	H2FF_DATA_END_STREAM		// rfc7540,l,1750,1753
   )
   H2_FRAME(headers,		HEADERS,	0x1, 0x2d,
 	H2CE_PROTOCOL_ERROR,		// rfc7540,l,1876,1879
 	0,
 	0,				// rfc7540,l,938,940
 	0,
-	H2_F_CONTINUATION
+	H2_F_CONTINUATION,
+	H2FF_HEADERS_END_HEADERS,	// rfc7540,l,1855,1857
   )
   H2_FRAME(priority,		PRIORITY,	0x2, 0x00,
 	H2CE_PROTOCOL_ERROR,		// rfc7540,l,1933,1936
 	0,
 	0,				// rfc7540,l,938,940
+	0,
 	0,
 	0
   )
@@ -64,12 +68,14 @@
 	0,
 	H2CE_PROTOCOL_ERROR,
 	0,
+	0,
 	0
   )
   H2_FRAME(settings,		SETTINGS,	0x4, 0x01,
 	0,
 	H2CE_PROTOCOL_ERROR,		// rfc7540,l,2052,2056
 	H2CE_PROTOCOL_ERROR,
+	0,
 	0,
 	0
   )
@@ -78,12 +84,14 @@
 	0,
 	H2CE_PROTOCOL_ERROR,
 	0,
-	H2_F_CONTINUATION
+	H2_F_CONTINUATION,
+	H2FF_PUSH_PROMISE_END_HEADERS,	// rfc7540,l,2249,2251
   )
   H2_FRAME(ping,		PING,		0x6, 0x01,
 	0,
 	H2CE_PROTOCOL_ERROR,		// rfc7540,l,2359,2362
 	H2CE_PROTOCOL_ERROR,
+	0,
 	0,
 	0
   )
@@ -92,12 +100,14 @@
 	H2CE_PROTOCOL_ERROR,		// rfc7540,l,2432,2435
 	H2CE_PROTOCOL_ERROR,
 	0,
+	0,
 	0
   )
   H2_FRAME(window_update,	WINDOW_UPDATE,	0x8, 0x00,
 	0,
 	0,
 	H2CE_PROTOCOL_ERROR,
+	0,
 	0,
 	0
   )
@@ -106,7 +116,8 @@
 	0,
 	H2CE_PROTOCOL_ERROR,
 	0,
-	H2_F_CONTINUATION
+	H2_F_CONTINUATION,
+	H2FF_CONTINUATION_END_HEADERS	// rfc7540,l,2753,2754
   )
   #undef H2_FRAME
 #endif
