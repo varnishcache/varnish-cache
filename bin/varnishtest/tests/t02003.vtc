@@ -165,3 +165,45 @@ client c1 {
 		expect goaway.laststream == 0
 	} -run
 } -run
+
+#######################################################################
+# Test SETTING error conditions
+
+client c1 {
+	stream 0 {
+		# SETTING ACK with data
+		sendhex "000001 04 01 00000000 aa"
+		rxgoaway
+		expect goaway.err == FRAME_SIZE_ERROR
+		expect goaway.laststream == 0
+	} -run
+} -run
+
+client c1 {
+	stream 0 {
+		# SETTING ACK with bad length
+		sendhex "000001 04 00 00000000 aa"
+		rxgoaway
+		expect goaway.err == PROTOCOL_ERROR
+		expect goaway.laststream == 0
+	} -run
+} -run
+
+client c1 {
+	stream 0 {
+		# SETTING ACK with bad value
+		txsettings -winsize 0x80000000
+		rxgoaway
+		expect goaway.err == FLOW_CONTROL_ERROR
+		expect goaway.laststream == 0
+	} -run
+} -run
+
+client c1 {
+	stream 0 {
+		# SETTING unknown vlaue
+		sendhex "000006 04 00 00000000 ffff00000000"
+		txping
+		rxping
+	} -run
+} -run

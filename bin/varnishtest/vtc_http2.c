@@ -71,7 +71,7 @@ static const char *const h2_types[] = {
 
 static const char * const h2_settings[] = {
 	[0] = "unknown",
-#define H2_SETTINGS(U,v,d) [v] = #U,
+#define H2_SETTING(U,l,v,...) [v] = #U,
 #include <tbl/h2_settings.h>
 	NULL
 };

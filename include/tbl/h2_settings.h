@@ -26,16 +26,72 @@
  * SUCH DAMAGE.
  *
  * RFC7540 section 11.3
+ *
+ * Upper
+ * lower
+ * tag
+ * default
+ * min
+ * max
+ * range_error
  */
 
 /*lint -save -e525 -e539 */
 
-H2_SETTINGS(HEADER_TABLE_SIZE,		0x1,       4096)
-H2_SETTINGS(ENABLE_PUSH,		0x2,          1)
-H2_SETTINGS(MAX_CONCURRENT_STREAMS,	0x3, 0xffffffff)
-H2_SETTINGS(INITIAL_WINDOW_SIZE,	0x4,      65535)
-H2_SETTINGS(MAX_FRAME_SIZE,		0x5,      16384)
-H2_SETTINGS(MAX_HEADER_LIST_SIZE,	0x6, 0xffffffff)
-#undef H2_SETTINGS
+H2_SETTING(					// rfc7540,l,2097,2103
+	HEADER_TABLE_SIZE,
+	header_table_size,
+	0x1,
+	4096,
+	0,
+	0xffffffff,
+	0
+)
+H2_SETTING(					// rfc7540,l,2105,2114
+	ENABLE_PUSH,
+	enable_push,
+	0x2,
+	1,
+	0,
+	1,
+	H2CE_PROTOCOL_ERROR
+)
+H2_SETTING(					// rfc7540,l,2116,2121
+	MAX_CONCURRENT_STREAMS,
+	max_concurrent_streams,
+	0x3,
+	0xffffffff,
+	0,
+	0xffffffff,
+	0
+)
+H2_SETTING(					// rfc7540,l,2139,2148
+	INITIAL_WINDOW_SIZE,
+	initial_window_size,
+	0x4,
+	65535,
+	0,
+	0x7fffffff,
+	H2CE_FLOW_CONTROL_ERROR
+)
+H2_SETTING(					// rfc7540,l,2150,2157
+	MAX_FRAME_SIZE,
+	max_frame_size,
+	0x5,
+	16384,
+	16384,
+	0x00ffffff,
+	H2CE_PROTOCOL_ERROR
+)
+H2_SETTING(					// rfc7540,l,2159,2167
+	MAX_HEADER_LIST_SIZE,
+	max_header_list_size,
+	0x6,
+	0xffffffff,
+	0,
+	0xffffffff,
+	0
+)
+#undef H2_SETTING
 
 /*lint -restore */
