@@ -52,8 +52,6 @@
 #undef H2EC2
 #undef H2EC3
 
-typedef h2_error h2_frame_f(struct worker *, struct h2_sess *, struct h2_req *);
-
 enum h2frame {
 #define H2_FRAME(l,u,t,f,...)	H2F_##u = t,
 #include "tbl/h2_frames.h"
@@ -86,17 +84,6 @@ h2_settingname(enum h2setting h2f)
 
 #define H2_FRAME_FLAGS(l,u,v)	const uint8_t H2FF_##u = v;
 #include "tbl/h2_frames.h"
-
-/**********************************************************************/
-
-struct h2flist_s {
-	const char	*name;
-	h2_frame_f	*func;
-	uint8_t		flags;
-	h2_error	act_szero;
-	h2_error	act_snonzero;
-	h2_error	act_sidle;
-};
 
 /**********************************************************************
  */
@@ -214,7 +201,7 @@ h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		return (H2SE_PROTOCOL_ERROR);
 	Lck_Lock(&h2->sess->mtx);
 	H2_Send_Frame(wrk, h2,
-	    H2_FRAME_PING, H2FF_PING_ACK, 8, 0, h2->rxf_data);
+	    H2_F_PING, H2FF_PING_ACK, 8, 0, h2->rxf_data);
 	Lck_Unlock(&h2->sess->mtx);
 	return (0);
 }
@@ -346,7 +333,7 @@ h2_rx_settings(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 			    "NB: SETTINGS had %u dribble-bytes", l);
 		Lck_Lock(&h2->sess->mtx);
 		H2_Send_Frame(wrk, h2,
-		    H2_FRAME_SETTINGS, H2FF_SETTINGS_ACK, 0, 0, NULL);
+		    H2_F_SETTINGS, H2FF_SETTINGS_ACK, 0, 0, NULL);
 		Lck_Unlock(&h2->sess->mtx);
 	} else {
 		WRONG("SETTINGS FRAME");
@@ -580,7 +567,7 @@ h2_frame_complete(struct http_conn *htc)
 
 static h2_error
 h2_procframe(struct worker *wrk, struct h2_sess *h2,
-    const struct h2flist_s *h2f)
+    h2_frame h2f)
 {
 	struct h2_req *r2 = NULL;
 	h2_error h2e;
@@ -616,7 +603,7 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2,
 		AN(r2);
 	}
 
-	h2e = h2f->func(wrk, h2, r2);
+	h2e = h2f->rxfunc(wrk, h2, r2);
 	if (h2e == 0)
 		return (0);
 	if (h2->rxf_stream == 0 || h2e->connection)
@@ -626,7 +613,7 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2,
 	vbe32enc(b, h2e->val);
 
 	Lck_Lock(&h2->sess->mtx);
-	(void)H2_Send_Frame(wrk, h2, H2_FRAME_RST_STREAM,
+	(void)H2_Send_Frame(wrk, h2, H2_F_RST_STREAM,
 	    0, sizeof b, h2->rxf_stream, b);
 	Lck_Unlock(&h2->sess->mtx);
 
@@ -638,8 +625,12 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2,
  * Called in loop from h2_new_session()
  */
 
-static const struct h2flist_s h2flist[] = {
-#define H2_FRAME(l,U,t,f,az,anz,ai) [t] = { #U, h2_rx_##l, f, az, anz,ai },
+#define H2_FRAME(l,U,...) const struct h2_frame_s H2_F_##U[1] = \
+    {{ #U, h2_rx_##l, __VA_ARGS__ }};
+#include "tbl/h2_frames.h"
+
+static const h2_frame h2flist[] = {
+#define H2_FRAME(l,U,t,...) [t] = H2_F_##U,
 #include "tbl/h2_frames.h"
 };
 
@@ -649,7 +640,7 @@ int
 h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 {
 	enum htc_status_e hs;
-	const struct h2flist_s *h2f;
+	h2_frame h2f;
 	h2_error h2e;
 	char b[8];
 
@@ -688,10 +679,10 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		    (uint8_t)h2->rxf_type);
 		return (1);
 	}
-	h2f = h2flist + h2->rxf_type;
+	h2f = h2flist[h2->rxf_type];
 #if 1
 	AN(h2f->name);
-	AN(h2f->func);
+	AN(h2f->rxfunc);
 #else
 	/* If we ever get holes in the frame table... */
 	if (h2f->name == NULL || h2f->func == NULL) {
@@ -718,7 +709,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		vbe32enc(b, h2->highest_stream);
 		vbe32enc(b + 4, h2e->val);
 		Lck_Lock(&h2->sess->mtx);
-		(void)H2_Send_Frame(wrk, h2, H2_FRAME_GOAWAY, 0, 8, 0, b);
+		(void)H2_Send_Frame(wrk, h2, H2_F_GOAWAY, 0, 8, 0, b);
 		Lck_Unlock(&h2->sess->mtx);
 	}
 	return (h2e ? 0 : 1);

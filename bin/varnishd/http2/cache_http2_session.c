@@ -333,7 +333,7 @@ h2_new_session(struct worker *wrk, void *arg)
 
 	Lck_Lock(&h2->sess->mtx);
 	H2_Send_Frame(wrk, h2,
-	    H2_FRAME_SETTINGS, H2FF_NONE, sizeof H2_settings, 0, H2_settings);
+	    H2_F_SETTINGS, H2FF_NONE, sizeof H2_settings, 0, H2_settings);
 
 	/* and off we go... */
 	h2->cond = &wrk->cond;

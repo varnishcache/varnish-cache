@@ -37,14 +37,14 @@
 #include "vend.h"
 
 static void
-h2_mk_hdr(uint8_t *hdr, enum h2_frame_e type, uint8_t flags,
+h2_mk_hdr(uint8_t *hdr, h2_frame ftyp, uint8_t flags,
     uint32_t len, uint32_t stream)
 {
 
 	AN(hdr);
 	assert(len < (1U << 24));
 	vbe32enc(hdr, len << 8);
-	hdr[3] = (uint8_t)type;
+	hdr[3] = ftyp->type;
 	hdr[4] = flags;
 	vbe32enc(hdr + 5, stream);
 }
@@ -57,7 +57,7 @@ h2_mk_hdr(uint8_t *hdr, enum h2_frame_e type, uint8_t flags,
 
 int
 H2_Send_Frame(struct worker *wrk, const struct h2_sess *h2,
-    enum h2_frame_e type, uint8_t flags,
+    h2_frame ftyp, uint8_t flags,
     uint32_t len, uint32_t stream, const void *ptr)
 {
 	uint8_t hdr[9];
@@ -65,7 +65,7 @@ H2_Send_Frame(struct worker *wrk, const struct h2_sess *h2,
 	Lck_AssertHeld(&h2->sess->mtx);
 	(void)wrk;
 
-	h2_mk_hdr(hdr, type, flags, len, stream);
+	h2_mk_hdr(hdr, ftyp, flags, len, stream);
 	VSLb_bin(h2->vsl, SLT_H2TxHdr, 9, hdr);
 
 	/*XXX*/(void)write(h2->sess->fd, hdr, sizeof hdr);
@@ -84,7 +84,7 @@ H2_Send_Frame(struct worker *wrk, const struct h2_sess *h2,
 
 int
 H2_Send(struct worker *wrk, struct h2_req *r2, int flush,
-    enum h2_frame_e type, uint8_t flags, uint32_t len, const void *ptr)
+    h2_frame ftyp, uint8_t flags, uint32_t len, const void *ptr)
 {
 	int retval;
 	struct h2_sess *h2;
@@ -102,8 +102,8 @@ H2_Send(struct worker *wrk, struct h2_req *r2, int flush,
 	mfs = h2->their_settings[H2S_MAX_FRAME_SIZE];
 	if (len < mfs) {
 		retval = H2_Send_Frame(wrk, h2,
-		    type, flags, len, r2->stream, ptr);
-	} else if (type == H2_FRAME_DATA) {
+		    ftyp, flags, len, r2->stream, ptr);
+	} else if (ftyp == H2_F_DATA) {
 		AN(ptr);
 		AN(len);
 		p = ptr;
@@ -111,7 +111,7 @@ H2_Send(struct worker *wrk, struct h2_req *r2, int flush,
 			tf = mfs;
 			if (tf > len)
 				tf = len;
-			retval = H2_Send_Frame(wrk, h2, type,
+			retval = H2_Send_Frame(wrk, h2, ftyp,
 			    tf == len ? flags : 0,
 			    tf, r2->stream, p);
 			p += tf;

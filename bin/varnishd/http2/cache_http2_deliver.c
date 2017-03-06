@@ -86,8 +86,7 @@ h2_bytes(struct req *req, enum vdp_action act, void **priv,
 	AZ(req->vdp_nxt);	       /* always at the bottom of the pile */
 
 	H2_Send(req->wrk, r2,
-	    act == VDP_FLUSH ? 1 : 0,
-	    H2_FRAME_DATA, H2FF_NONE, len, ptr);
+	    act == VDP_FLUSH ? 1 : 0, H2_F_DATA, H2FF_NONE, len, ptr);
 
 	return (0);
 }
@@ -142,7 +141,7 @@ h2_minimal_response(struct req *req, uint16_t status)
 
 	/* XXX return code checking once H2_Send returns anything but 0 */
 	H2_Send(req->wrk, r2, 1,
-	    H2_FRAME_HEADERS,
+	    H2_F_HEADERS,
 	    H2FF_HEADERS_END_HEADERS |
 		(status < 200 ? 0 : H2FF_HEADERS_END_STREAM),
 	    l, buf);
@@ -241,7 +240,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	sz = (char*)p - req->ws->f;
 
 	/* XXX: Optimize !sendbody case */
-	H2_Send(req->wrk, r2, 1, H2_FRAME_HEADERS, H2FF_HEADERS_END_HEADERS,
+	H2_Send(req->wrk, r2, 1, H2_F_HEADERS, H2FF_HEADERS_END_HEADERS,
 	    sz, req->ws->f);
 
 	WS_Release(req->ws, 0);
@@ -255,7 +254,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 		err = VDP_DeliverObj(req);
 	/*XXX*/(void)err;
 
-	H2_Send(req->wrk, r2, 1, H2_FRAME_DATA, H2FF_DATA_END_STREAM, 0, NULL);
+	H2_Send(req->wrk, r2, 1, H2_F_DATA, H2FF_DATA_END_STREAM, 0, NULL);
 
 	AZ(req->wrk->v1l);
 	VDP_close(req);

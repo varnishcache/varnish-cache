@@ -28,6 +28,7 @@
  */
 
 struct h2_sess;
+struct h2_req;
 struct h2h_decode;
 
 #include "hpack/vhp.h"
@@ -42,6 +43,24 @@ struct h2_error_s {
 
 typedef const struct h2_error_s *h2_error;
 
+typedef h2_error h2_rxframe_f(struct worker *, struct h2_sess *,
+    struct h2_req *);
+
+struct h2_frame_s {
+	const char	*name;
+	h2_rxframe_f	*rxfunc;
+	uint8_t		type;
+	uint8_t		flags;
+	h2_error	act_szero;
+	h2_error	act_snonzero;
+	h2_error	act_sidle;
+};
+
+typedef const struct h2_frame_s *h2_frame;
+
+#define H2_FRAME(l,U,...) extern const struct h2_frame_s H2_F_##U[1];
+#include "tbl/h2_frames.h"
+
 #define H2EC0(U,v,d)
 #define H2EC1(U,v,d) extern const struct h2_error_s H2CE_##U[1];
 #define H2EC2(U,v,d) extern const struct h2_error_s H2SE_##U[1];
@@ -51,12 +70,6 @@ typedef const struct h2_error_s *h2_error;
 #undef H2EC1
 #undef H2EC2
 #undef H2EC3
-
-enum h2_frame_e {
-	H2_FRAME__DUMMY = -1,
-#define H2_FRAME(l,u,t,f,...) H2_FRAME_##u = t,
-#include "tbl/h2_frames.h"
-};
 
 enum h2_stream_e {
 	H2_STREAM__DUMMY = -1,
@@ -155,11 +168,11 @@ h2_error h2h_decode_bytes(struct h2_sess *h2, struct h2h_decode *d,
     const uint8_t *ptr, size_t len);
 
 int H2_Send_Frame(struct worker *, const struct h2_sess *,
-    enum h2_frame_e type, uint8_t flags, uint32_t len, uint32_t stream,
+    h2_frame type, uint8_t flags, uint32_t len, uint32_t stream,
     const void *);
 
 int H2_Send(struct worker *, struct h2_req *, int flush,
-    enum h2_frame_e type, uint8_t flags, uint32_t len, const void *);
+    h2_frame type, uint8_t flags, uint32_t len, const void *);
 
 /* cache_http2_proto.c */
 struct h2_req * h2_new_req(const struct worker *, struct h2_sess *,
