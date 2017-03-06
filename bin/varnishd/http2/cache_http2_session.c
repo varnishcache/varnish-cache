@@ -58,6 +58,12 @@ static const uint8_t H2_settings[] = {
 	0x00, 0x00, 0xff, 0xff
 };
 
+static const struct h2_settings H2_proto_settings = {
+#define H2_SETTING(U,l,v,d,...) . l = d,
+#include "tbl/h2_settings.h"
+};
+
+
 /**********************************************************************
  * The h2_sess struct needs many of the same things as a request,
  * WS, VSL, HTC &c,  but rather than implement all that stuff over, we
@@ -93,18 +99,12 @@ h2_new_sess(const struct worker *wrk, struct sess *sp, struct req *srq)
 		h2->htc->rfd = &sp->fd;
 		h2->sess = sp;
 		VTAILQ_INIT(&h2->streams);
-#define H2_SETTINGS(n,v,d)					\
-		do {						\
-			assert(v < H2_SETTINGS_N);		\
-			h2->their_settings[v] = d;		\
-			h2->our_settings[v] = d;		\
-		} while (0);
-#include "tbl/h2_settings.h"
-#undef H2_SETTINGS
+		h2->local_settings = H2_proto_settings;
+		h2->remote_settings = H2_proto_settings;
 
 		/* XXX: Lacks a VHT_Fini counterpart. Will leak memory. */
 		AZ(VHT_Init(h2->dectbl,
-			h2->our_settings[H2S_HEADER_TABLE_SIZE]));
+			h2->local_settings.header_table_size));
 
 		SES_Reserve_xport_priv(sp, &up);
 		*up = (uintptr_t)h2;
@@ -199,7 +199,7 @@ h2_b64url_settings(struct h2_sess *h2, struct req *req)
 		n -= 8;
 		if (up == u + sizeof u) {
 			AZ(n);
-			h2_setting(h2, (void*)u);
+			h2_set_setting(h2, (void*)u);
 			up = u;
 		}
 	}

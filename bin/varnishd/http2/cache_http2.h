@@ -34,6 +34,8 @@ struct h2_frame_s;
 
 #include "hpack/vhp.h"
 
+/**********************************************************************/
+
 struct h2_error_s {
 	const char			*name;
 	const char			*txt;
@@ -43,6 +45,18 @@ struct h2_error_s {
 };
 
 typedef const struct h2_error_s *h2_error;
+
+#define H2EC0(U,v,d)
+#define H2EC1(U,v,d) extern const struct h2_error_s H2CE_##U[1];
+#define H2EC2(U,v,d) extern const struct h2_error_s H2SE_##U[1];
+#define H2EC3(U,v,d) H2EC1(U,v,d) H2EC2(U,v,d)
+#define H2_ERROR(NAME, val, sc, desc) H2EC##sc(NAME, val, desc)
+#include "tbl/h2_error.h"
+#undef H2EC1
+#undef H2EC2
+#undef H2EC3
+
+/**********************************************************************/
 
 typedef h2_error h2_rxframe_f(struct worker *, struct h2_sess *,
     struct h2_req *);
@@ -62,19 +76,32 @@ struct h2_frame_s {
 	uint8_t		final_flags;
 };
 
-
 #define H2_FRAME(l,U,...) extern const struct h2_frame_s H2_F_##U[1];
 #include "tbl/h2_frames.h"
 
-#define H2EC0(U,v,d)
-#define H2EC1(U,v,d) extern const struct h2_error_s H2CE_##U[1];
-#define H2EC2(U,v,d) extern const struct h2_error_s H2SE_##U[1];
-#define H2EC3(U,v,d) H2EC1(U,v,d) H2EC2(U,v,d)
-#define H2_ERROR(NAME, val, sc, desc) H2EC##sc(NAME, val, desc)
-#include "tbl/h2_error.h"
-#undef H2EC1
-#undef H2EC2
-#undef H2EC3
+/**********************************************************************/
+
+struct h2_settings {
+#define H2_SETTING(U,l,...) uint32_t l;
+#include "tbl/h2_settings.h"
+};
+
+typedef void h2_setsetting_f(struct h2_settings*, uint32_t);
+
+struct h2_setting_s {
+	const char	*name;
+	h2_setsetting_f	*setfunc;
+	uint16_t	ident;
+	uint32_t	defval;
+	uint32_t	minval;
+	uint32_t	maxval;
+	h2_error	range_error;
+};
+
+#define H2_SETTING(U,...) extern const struct h2_setting_s H2_SET_##U[1];
+#include "tbl/h2_settings.h"
+
+/**********************************************************************/
 
 enum h2_stream_e {
 	H2_STREAM__DUMMY = -1,
@@ -84,14 +111,6 @@ enum h2_stream_e {
 
 #define H2_FRAME_FLAGS(l,u,v)   extern const uint8_t H2FF_##u;
 #include "tbl/h2_frames.h"
-
-enum h2setting {
-	H2_SETTINGS__DUMMY = -1,
-#define H2_SETTINGS(n,v,d) H2S_##n = v,
-#include "tbl/h2_settings.h"
-#undef H2_SETTINGS
-	H2_SETTINGS_N
-};
 
 struct h2_req {
 	unsigned			magic;
@@ -133,8 +152,8 @@ struct h2_sess {
 	unsigned			rxf_stream;
 	uint8_t				*rxf_data;
 
-	uint32_t			their_settings[H2_SETTINGS_N];
-	uint32_t			our_settings[H2_SETTINGS_N];
+	struct h2_settings		remote_settings;
+	struct h2_settings		local_settings;
 
 	struct req			*new_req;
 	int				go_away;
@@ -184,7 +203,7 @@ struct h2_req * h2_new_req(const struct worker *, struct h2_sess *,
     unsigned stream, struct req *);
 void h2_del_req(struct worker *, struct h2_req *);
 int h2_rxframe(struct worker *, struct h2_sess *);
-void h2_setting(struct h2_sess *, const uint8_t *);
+h2_error h2_set_setting(struct h2_sess *, const uint8_t *);
 void h2_req_body(struct req*);
 
 

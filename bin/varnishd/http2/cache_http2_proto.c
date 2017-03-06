@@ -69,19 +69,6 @@ h2_framename(enum h2frame h2f)
 	}
 }
 
-static const char *
-h2_settingname(enum h2setting h2f)
-{
-
-	switch(h2f) {
-#define H2_SETTINGS(n,v,d) case H2S_##n: return #n;
-#include "tbl/h2_settings.h"
-#undef H2_SETTINGS
-	default:
-		return (NULL);
-	}
-}
-
 #define H2_FRAME_FLAGS(l,u,v)	const uint8_t H2FF_##u = v;
 #include "tbl/h2_frames.h"
 
@@ -294,49 +281,85 @@ h2_rx_priority(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
  * Incoming SETTINGS, possibly an ACK of one we sent.
  */
 
-void
-h2_setting(struct h2_sess *h2, const uint8_t *d)
+#define H2_SETTING(U,l, ...)					\
+static void __match_proto__(h2_setsetting_f)			\
+h2_setting_##l(struct h2_settings* s, uint32_t v)		\
+{								\
+	s -> l = v;						\
+}
+#include <tbl/h2_settings.h>
+
+#define H2_SETTING(U, l, ...)					\
+const struct h2_setting_s H2_SET_##U[1] = {{			\
+	#l,							\
+	h2_setting_##l,						\
+	__VA_ARGS__						\
+}};
+#include <tbl/h2_settings.h>
+
+static const struct h2_setting_s * const h2_setting_tbl[] = {
+#define H2_SETTING(U,l,v, ...) [v] = H2_SET_##U,
+#include <tbl/h2_settings.h>
+};
+
+#define H2_SETTING_TBL_LEN (sizeof(h2_setting_tbl)/sizeof(h2_setting_tbl[0]))
+
+h2_error
+h2_set_setting(struct h2_sess *h2, const uint8_t *d)
 {
+	const struct h2_setting_s *s;
 	uint16_t x;
 	uint32_t y;
-	const char *n;
-	char nb[8];
 
 	x = vbe16dec(d);
 	y = vbe32dec(d + 2);
-	n = h2_settingname((enum h2setting)x);
-	if (n == NULL) {
-		bprintf(nb, "0x%04x", x);
-		n = nb;
+	if (x >= H2_SETTING_TBL_LEN || h2_setting_tbl[x] == NULL) {
+		// rfc7540,l,2181,2182
+		VSLb(h2->vsl, SLT_Debug,
+		    "H2SETTING unknown setting 0x%04x=%08x (ignored)", x, y);
+		return (0);
 	}
-	VSLb(h2->vsl, SLT_Debug, "H2SETTING %s 0x%08x", n, y);
-	if (x > 0 && x < H2_SETTINGS_N)
-		h2->their_settings[x] = y;
+	s = h2_setting_tbl[x];
+	AN(s);
+	if (y < s->minval || y > s->maxval) {
+		VSLb(h2->vsl, SLT_Debug, "H2SETTING invalid %s=0x%08x",
+		    s->name, y);
+		AN(s->range_error);
+		return (s->range_error);
+	}
+	VSLb(h2->vsl, SLT_Debug, "H2SETTING %s=0x%08x", s->name, y);
+	AN(s->setfunc);
+	s->setfunc(&h2->remote_settings, y);
+	return (0);
 }
 
 static h2_error __match_proto__(h2_frame_f)
 h2_rx_settings(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
-	const uint8_t *p = h2->rxf_data;
-	unsigned l = h2->rxf_len;
+	const uint8_t *p;
+	unsigned l;
+	h2_error retval = 0;
 
-	(void)wrk;
-	(void)r2;
+	AN(wrk);
+	AN(r2);
 	AZ(h2->rxf_stream);
 	if (h2->rxf_flags == H2FF_SETTINGS_ACK) {
-		XXXAZ(h2->rxf_len);
-	} else if (h2->rxf_flags == 0) {
-		for (;l >= 6; l -= 6, p += 6)
-			h2_setting(h2, p);
-		if (l > 0)
-			VSLb(h2->vsl, SLT_Debug,
-			    "NB: SETTINGS had %u dribble-bytes", l);
+		if (h2->rxf_len > 0)			// rfc7540,l,2047,2049
+			return (H2CE_FRAME_SIZE_ERROR);
+		return (0);
+	} else {
+		if (h2->rxf_len % 6)			// rfc7540,l,2062,2064
+			return (H2CE_PROTOCOL_ERROR);
+		p = h2->rxf_data;
+		for (l = h2->rxf_len; l >= 6; l -= 6, p += 6) {
+			retval = h2_set_setting(h2, p);
+			if (retval)
+				return (retval);
+		}
 		Lck_Lock(&h2->sess->mtx);
 		H2_Send_Frame(wrk, h2,
 		    H2_F_SETTINGS, H2FF_SETTINGS_ACK, 0, 0, NULL);
 		Lck_Unlock(&h2->sess->mtx);
-	} else {
-		WRONG("SETTINGS FRAME");
 	}
 	return (0);
 }

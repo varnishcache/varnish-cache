@@ -119,7 +119,7 @@ H2_Send(struct worker *wrk, struct h2_req *r2, int flush,
 		AZ(ftyp->act_snonzero);
 
 	Lck_Lock(&h2->sess->mtx);
-	mfs = h2->their_settings[H2S_MAX_FRAME_SIZE];
+	mfs = h2->remote_settings.max_frame_size;
 	if (len < mfs) {
 		retval = H2_Send_Frame(wrk, h2,
 		    ftyp, flags, len, r2->stream, ptr);
