@@ -675,6 +675,10 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	/* XXX: later full DATA will not be rx'ed yet. */
 	HTC_RxPipeline(h2->htc, h2->htc->rxbuf_b + h2->rxf_len + 9);
 
+	Lck_Lock(&h2->sess->mtx);
+	h2_vsl_frame(h2, h2->htc->rxbuf_b, 9L + h2->rxf_len);
+	Lck_Unlock(&h2->sess->mtx);
+
 	if (h2->rxf_type >= H2FMAX) {
 		// rfc7540,l,679,681
 		// XXX: later, drain rest of frame
@@ -708,10 +712,6 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		    (uint8_t)h2->rxf_flags, h2f->name);
 		h2->rxf_flags &= h2f->flags;
 	}
-
-	Lck_Lock(&h2->sess->mtx);
-	h2_vsl_frame(h2, h2->htc->rxbuf_b, 9L + h2->rxf_len);
-	Lck_Unlock(&h2->sess->mtx);
 
 	h2e = h2_procframe(wrk, h2, h2f);
 	if (h2e) {
