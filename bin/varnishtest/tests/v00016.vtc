@@ -2,6 +2,8 @@ varnishtest "Various VCL compiler coverage tests"
 
 shell "true > ${tmpdir}/_varnishtest_empty_file"
 
+feature dns
+
 varnish v1 -vcl {
 	backend b { .host = "127.0.0.1"; }
 	include "${tmpdir}/_varnishtest_empty_file" ;
@@ -70,5 +72,23 @@ varnish v1 -errvcl {Symbol not found: 'c' (expected type BACKEND):} {
 		if (beresp.backend == c) {
 			set beresp.ttl = 1h;
 		}
+	}
+}
+
+varnish v1 -errvcl {Regexp compilation error:} {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv {
+		if (req.url ~ "[a") {}
+	}
+}
+
+varnish v1 -errvcl {resolves to neither IPv4 nor IPv6 addresses.} {
+	backend b { .host = "/"; }
+}
+
+varnish v1 -errvcl {resolves to too many addresses} {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv {
+		if (remote.ip == "varnish-cache.org") {}
 	}
 }

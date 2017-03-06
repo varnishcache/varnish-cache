@@ -1,6 +1,12 @@
-varnishtest "Test import vs. unsafe_path"
+varnishtest "VCL compiler vmod coverage / vmod loading"
 
 feature topbuild
+
+varnish v1 -errvcl {Module debug conflicts with other symbol.} {
+	backend b { .host = "127.0.0.1"; }
+	sub debug {}
+	import debug;
+}
 
 server s1 {
 	rxreq
@@ -32,3 +38,9 @@ varnish v1 -cliok "param.set vmod_path /nowhere:/else"
 varnish v1 -vcl+backend {
 	import std from "${topbuild}/lib/libvmod_std/.libs/";
 }
+
+varnish v1 -errvcl {Malformed VMOD std} {
+	backend default { .host = "${s1_sock}"; }
+	import std from "${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so";
+}
+
