@@ -2,13 +2,16 @@ varnishtest "Sending proxy headers via health probes"
 
 # Double-proxy scheme stolen from o00002.vtc
 
+# Get ${v1_addr} defined so s1 can use it so v1 can use ${s1_addr}
+varnish v1 -proto PROXY -vcl {backend foo { .host = ":80"; }} -start
+
 server s1 {
 	rxreq
-	expect req.http.x-forwarded-for == "127.0.0.1"
+	expect req.http.x-forwarded-for == ${v1_addr}
 	txresp
 } -start
 
-varnish v1 -proto PROXY -vcl+backend {
+varnish v1 -vcl+backend {
 	import debug;
 
 	sub vcl_recv {
@@ -16,7 +19,7 @@ varnish v1 -proto PROXY -vcl+backend {
 			return (synth(400));
 		}
 	}
-} -start
+}
 
 varnish v2 -proto PROXY -vcl {
 	import std;
