@@ -20,7 +20,7 @@ client c1 {
 		expect goaway.err == PROTOCOL_ERROR
 	} -start
 	stream 2 {
-		txwinup -size 1
+		txprio
 	} -run
 	stream 0 -wait
 } -run
@@ -104,6 +104,15 @@ client c1 {
 	} -run
 } -run
 
+client c1 {
+	stream 0 {
+		sendhex "000008 06 00 00000001 0102030405060708"
+		rxgoaway
+		expect goaway.laststream == 0
+		expect goaway.err == PROTOCOL_ERROR
+	} -run
+} -run
+
 #######################################################################
 # Test PUSH_PROMISE error conditions
 
@@ -111,9 +120,10 @@ client c1 {
 	stream 0 {
 		rxgoaway
 		expect goaway.err == PROTOCOL_ERROR
-		expect goaway.laststream == 0
+		expect goaway.laststream == 1
 	} -start
 	stream 1 {
+		txprio
 		sendhex "000008 05 00 00000001 0001020304050607"
 	} -run
 	stream 0 -wait
