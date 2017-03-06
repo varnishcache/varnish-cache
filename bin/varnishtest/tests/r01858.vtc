@@ -1,4 +1,4 @@
-varnishtest "Test a hit-for-pass does not issue an IMS request"
+varnishtest "Test a hit-for-miss does not issue an IMS request"
 
 server s1 {
 	rxreq

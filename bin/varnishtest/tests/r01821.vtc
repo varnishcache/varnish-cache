@@ -1,4 +1,4 @@
-varnishtest "Slim down hit-for-pass objects"
+varnishtest "Slim down hit-for-miss objects"
 
 server s1 -repeat 2 {
 	rxreq

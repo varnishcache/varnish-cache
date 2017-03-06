@@ -1,4 +1,4 @@
-varnishtest "#1956: graced hit-for-pass, backend ims and obj flags inheritance"
+varnishtest "#1956: graced hit-for-miss, backend ims and obj flags inheritance"
 
 server s1 {
 	rxreq

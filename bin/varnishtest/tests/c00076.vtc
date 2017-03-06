@@ -1,4 +1,4 @@
-varnishtest "Complex son-of-hit-for-pass test"
+varnishtest "Complex son-of-hit-for-miss test"
 
 server s1 {
 	rxreq

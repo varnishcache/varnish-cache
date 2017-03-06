@@ -1,4 +1,4 @@
-varnishtest "client abandoning hit-for-pass"
+varnishtest "client abandoning hit-for-miss"
 
 barrier b1 cond 2
 
