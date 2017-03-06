@@ -680,10 +680,16 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		// XXX: later, drain rest of frame
 		h2->bogosity++;
 		VSLb(h2->vsl, SLT_Debug,
-		    "H2: Unknown frame type 0x%02x (ignored)", h2->rxf_type);
+		    "H2: Unknown frame type 0x%02x (ignored)",
+		    (uint8_t)h2->rxf_type);
 		return (1);
 	}
 	h2f = h2flist + h2->rxf_type;
+#if 1
+	AN(h2f->name);
+	AN(h2f->func);
+#else
+	/* If we ever get holes in the frame table... */
 	if (h2f->name == NULL || h2f->func == NULL) {
 		// rfc7540,l,679,681
 		// XXX: later, drain rest of frame
@@ -693,12 +699,13 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		    h2->rxf_type);
 		return (0);
 	}
+#endif
 	if (h2->rxf_flags & ~h2f->flags) {
 		// rfc7540,l,687,688
 		h2->bogosity++;
 		VSLb(h2->vsl, SLT_Debug,
 		    "H2: Unknown flags 0x%02x on %s (ignored)",
-		    h2->rxf_flags, h2f->name);
+		    (uint8_t)h2->rxf_flags, h2f->name);
 		h2->rxf_flags &= h2f->flags;
 	}
 

@@ -20,6 +20,7 @@ client c1 {
 		expect goaway.err == PROTOCOL_ERROR
 	} -start
 	stream 2 {
+		sendhex "000003 80 00 00000002 010203"
 		txprio
 	} -run
 	stream 0 -wait
@@ -106,7 +107,7 @@ client c1 {
 
 client c1 {
 	stream 0 {
-		sendhex "000008 06 00 00000001 0102030405060708"
+		sendhex "000008 06 80 00000001 0102030405060708"
 		rxgoaway
 		expect goaway.laststream == 0
 		expect goaway.err == PROTOCOL_ERROR
