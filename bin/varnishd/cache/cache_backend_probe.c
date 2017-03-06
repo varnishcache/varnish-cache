@@ -300,7 +300,6 @@ vbp_poke(struct vbp_target *vt)
 	}
 
 	/* Send the PROXY header */
-	assert(vt->backend->proxy_header >= 0);
 	assert(vt->backend->proxy_header <= 2);
 	if (vt->backend->proxy_header == 1) {
 		if (vbp_write_proxy_v1(vt, s) != 0)
