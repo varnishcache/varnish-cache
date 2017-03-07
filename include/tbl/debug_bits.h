@@ -46,6 +46,7 @@ DEBUG_BIT(WITNESS,		witness,	"Emit WITNESS lock records")
 DEBUG_BIT(VSM_KEEP,		vsm_keep,	"Keep the VSM file on restart")
 DEBUG_BIT(DROP_POOLS,		drop_pools,	"Drop thread pools (testing)")
 DEBUG_BIT(SLOW_ACCEPTOR,	slow_acceptor,	"Slow down Acceptor")
+DEBUG_BIT(H2_NOCHECK,		h2_nocheck,	"Disable various H2 checks")
 #undef DEBUG_BIT
 
 /*lint -restore */

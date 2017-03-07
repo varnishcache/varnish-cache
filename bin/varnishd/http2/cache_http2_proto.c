@@ -325,7 +325,8 @@ h2_set_setting(struct h2_sess *h2, const uint8_t *d)
 		VSLb(h2->vsl, SLT_Debug, "H2SETTING invalid %s=0x%08x",
 		    s->name, y);
 		AN(s->range_error);
-		return (s->range_error);
+		if (!DO_DEBUG(DBG_H2_NOCHECK))
+			return (s->range_error);
 	}
 	VSLb(h2->vsl, SLT_Debug, "H2SETTING %s=0x%08x", s->name, y);
 	AN(s->setfunc);
