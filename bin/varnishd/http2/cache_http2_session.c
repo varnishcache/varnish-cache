@@ -99,6 +99,7 @@ h2_new_sess(const struct worker *wrk, struct sess *sp, struct req *srq)
 		h2->htc->rfd = &sp->fd;
 		h2->sess = sp;
 		VTAILQ_INIT(&h2->streams);
+		VTAILQ_INIT(&h2->txqueue);
 		h2->local_settings = H2_proto_settings;
 		h2->remote_settings = H2_proto_settings;
 
@@ -108,6 +109,8 @@ h2_new_sess(const struct worker *wrk, struct sess *sp, struct req *srq)
 
 		SES_Reserve_xport_priv(sp, &up);
 		*up = (uintptr_t)h2;
+		INIT_OBJ(h2->req0, H2_REQ_MAGIC);
+		h2->req0->h2sess = h2;
 	}
 	AN(up);
 	CAST_OBJ_NOTNULL(h2, (void*)(*up), H2_SESS_MAGIC);
@@ -333,13 +336,13 @@ h2_new_session(struct worker *wrk, void *arg)
 
 	THR_SetRequest(h2->srq);
 
-	Lck_Lock(&h2->sess->mtx);
+	H2_Send_Get(wrk, h2, h2->req0);
 	H2_Send_Frame(wrk, h2,
 	    H2_F_SETTINGS, H2FF_NONE, sizeof H2_settings, 0, H2_settings);
+	H2_Send_Rel(wrk, h2, h2->req0);
 
 	/* and off we go... */
 	h2->cond = &wrk->cond;
-	Lck_Unlock(&h2->sess->mtx);
 
 	while (h2_rxframe(wrk, h2)) {
 		WS_Reset(h2->ws, wsp);

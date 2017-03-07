@@ -122,6 +122,9 @@ struct h2_req {
 	VTAILQ_ENTRY(h2_req)		list;
 	int64_t				window;
 	struct h2h_decode		*decode;
+
+	struct worker			*tx_wrk;
+	VTAILQ_ENTRY(h2_req)		tx_list;
 };
 
 VTAILQ_HEAD(h2_req_s, h2_req);
@@ -158,6 +161,10 @@ struct h2_sess {
 	struct req			*new_req;
 	int				go_away;
 	uint32_t			go_away_last_stream;
+
+	VTAILQ_HEAD(,h2_req)		txqueue;
+
+	struct h2_req			req0[1];
 };
 
 /* http2/cache_http2_panic.c */
@@ -190,6 +197,10 @@ void h2h_decode_init(const struct h2_sess *h2, struct h2h_decode *d);
 h2_error h2h_decode_fini(const struct h2_sess *h2, struct h2h_decode *d);
 h2_error h2h_decode_bytes(struct h2_sess *h2, struct h2h_decode *d,
     const uint8_t *ptr, size_t len);
+
+/* cache_http2_send.c */
+void H2_Send_Get(struct worker *, struct h2_sess *, struct h2_req *);
+void H2_Send_Rel(struct worker *, struct h2_sess *, struct h2_req *);
 
 h2_error H2_Send_Frame(struct worker *, const struct h2_sess *,
     h2_frame type, uint8_t flags, uint32_t len, uint32_t stream,

@@ -186,10 +186,10 @@ h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		return (H2CE_PROTOCOL_ERROR);
 	if (h2->rxf_flags != 0)				// We never send pings
 		return (H2SE_PROTOCOL_ERROR);
-	Lck_Lock(&h2->sess->mtx);
+	H2_Send_Get(wrk, h2, r2);
 	H2_Send_Frame(wrk, h2,
 	    H2_F_PING, H2FF_PING_ACK, 8, 0, h2->rxf_data);
-	Lck_Unlock(&h2->sess->mtx);
+	H2_Send_Rel(wrk, h2, r2);
 	return (0);
 }
 
@@ -357,10 +357,10 @@ h2_rx_settings(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 			if (retval)
 				return (retval);
 		}
-		Lck_Lock(&h2->sess->mtx);
+		H2_Send_Get(wrk, h2, r2);
 		H2_Send_Frame(wrk, h2,
 		    H2_F_SETTINGS, H2FF_SETTINGS_ACK, 0, 0, NULL);
-		Lck_Unlock(&h2->sess->mtx);
+		H2_Send_Rel(wrk, h2, r2);
 	}
 	return (0);
 }
@@ -636,10 +636,10 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2,
 	VSLb(h2->vsl, SLT_Debug, "H2: stream %u: %s", h2->rxf_stream, h2e->txt);
 	vbe32enc(b, h2e->val);
 
-	Lck_Lock(&h2->sess->mtx);
+	H2_Send_Get(wrk, h2, r2);
 	(void)H2_Send_Frame(wrk, h2, H2_F_RST_STREAM,
 	    0, sizeof b, h2->rxf_stream, b);
-	Lck_Unlock(&h2->sess->mtx);
+	H2_Send_Rel(wrk, h2, r2);
 
 	h2_del_req(wrk, r2);
 	return (0);
@@ -732,9 +732,9 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	if (h2e) {
 		vbe32enc(b, h2->highest_stream);
 		vbe32enc(b + 4, h2e->val);
-		Lck_Lock(&h2->sess->mtx);
+		H2_Send_Get(wrk, h2, h2->req0);
 		(void)H2_Send_Frame(wrk, h2, H2_F_GOAWAY, 0, 8, 0, b);
-		Lck_Unlock(&h2->sess->mtx);
+		H2_Send_Rel(wrk, h2, h2->req0);
 	}
 	return (h2e ? 0 : 1);
 }

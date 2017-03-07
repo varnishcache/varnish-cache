@@ -36,6 +36,36 @@
 
 #include "vend.h"
 
+void
+H2_Send_Get(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+{
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+
+	r2->tx_wrk = wrk;
+	Lck_Lock(&h2->sess->mtx);
+	VTAILQ_INSERT_TAIL(&h2->txqueue, r2, tx_list);
+	while (VTAILQ_FIRST(&h2->txqueue) != r2)
+		Lck_CondWait(&wrk->cond, &h2->sess->mtx, 0);
+	Lck_Unlock(&h2->sess->mtx);
+}
+
+void
+H2_Send_Rel(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+{
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	Lck_Lock(&h2->sess->mtx);
+	assert(VTAILQ_FIRST(&h2->txqueue) == r2);
+	VTAILQ_REMOVE(&h2->txqueue, r2, tx_list);
+	r2 = VTAILQ_FIRST(&h2->txqueue);
+	if (r2 != NULL)
+		AZ(pthread_cond_signal(&r2->tx_wrk->cond));
+	Lck_Unlock(&h2->sess->mtx);
+}
+
 static void
 h2_mk_hdr(uint8_t *hdr, h2_frame ftyp, uint8_t flags,
     uint32_t len, uint32_t stream)
@@ -64,7 +94,6 @@ H2_Send_Frame(struct worker *wrk, const struct h2_sess *h2,
 	ssize_t s;
 
 	(void)wrk;
-	Lck_AssertHeld(&h2->sess->mtx);
 
 	AN(ftyp);
 	AZ(flags & ~(ftyp->flags));
@@ -74,7 +103,9 @@ H2_Send_Frame(struct worker *wrk, const struct h2_sess *h2,
 		AZ(ftyp->act_snonzero);
 
 	h2_mk_hdr(hdr, ftyp, flags, len, stream);
+	Lck_Lock(&h2->sess->mtx);
 	VSLb_bin(h2->vsl, SLT_H2TxHdr, 9, hdr);
+	Lck_Unlock(&h2->sess->mtx);
 
 	s = write(h2->sess->fd, hdr, sizeof hdr);
 	if (s != sizeof hdr)
@@ -83,7 +114,9 @@ H2_Send_Frame(struct worker *wrk, const struct h2_sess *h2,
 		s = write(h2->sess->fd, ptr, len);
 		if (s != len)
 			return (H2CE_PROTOCOL_ERROR);	// XXX Need private ?
+		Lck_Lock(&h2->sess->mtx);
 		VSLb_bin(h2->vsl, SLT_H2TxBody, len, ptr);
+		Lck_Unlock(&h2->sess->mtx);
 	}
 	return (0);
 }
@@ -106,10 +139,13 @@ H2_Send(struct worker *wrk, struct h2_req *r2, int flush,
 
 	(void)flush;
 
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	h2 = r2->h2sess;
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	assert(len == 0 || ptr != NULL);
+
+	assert(VTAILQ_FIRST(&h2->txqueue) == r2);
 
 	AN(ftyp);
 	AZ(flags & ~(ftyp->flags));
@@ -120,6 +156,7 @@ H2_Send(struct worker *wrk, struct h2_req *r2, int flush,
 
 	Lck_Lock(&h2->sess->mtx);
 	mfs = h2->remote_settings.max_frame_size;
+	Lck_Unlock(&h2->sess->mtx);
 	if (len < mfs) {
 		retval = H2_Send_Frame(wrk, h2,
 		    ftyp, flags, len, r2->stream, ptr);
@@ -145,6 +182,5 @@ H2_Send(struct worker *wrk, struct h2_req *r2, int flush,
 			ftyp = ftyp->continuation;
 		} while (len > 0 && retval == 0);
 	}
-	Lck_Unlock(&h2->sess->mtx);
 	return (retval);
 }
