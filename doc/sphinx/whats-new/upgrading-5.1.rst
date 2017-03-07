@@ -16,10 +16,20 @@ vcl_backend_response
 Other changes
 =============
 
-* Added the ``cache_hitmiss`` stat to ``varnishstat(1)`` to count hits on
-  hit-for-miss objects.
+* ``varnishstat(1)``:
 
-* The ``cache_hitpass`` stat now only counts hits on hit-for-pass objects.
+  * Added the ``cache_hitmiss`` stat to  to count hits on
+    hit-for-miss objects.
 
-* An entry with the ``TTL`` tag and the prefix ``HFP`` is logged in
-  ``varnishlog(1)`` to record the duration set for hit-for-pass objects.
+  * The ``cache_hitpass`` stat now only counts hits on hit-for-pass
+    objects.
+
+* ``varnishlog(1)``:
+
+  * Hits on hit-for-miss and hit-for-pass objects are logged with
+    the ``HitMiss`` and ``HitPass`` tags, respectively. In each case,
+    the log payload is the VXID of the previous transaction in which
+    the object was saved in the cache (as with ``Hit``).
+
+  * An entry with the ``TTL`` tag and the prefix ``HFP`` is logged to
+    record the duration set for hit-for-pass objects.
