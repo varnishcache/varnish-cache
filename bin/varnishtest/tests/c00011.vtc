@@ -1,4 +1,4 @@
-varnishtest "Test hit for pass (pass from fetch)"
+varnishtest "Test hit for miss (beresp.uncacheable = true)"
 
 server s1 {
 	rxreq
@@ -20,6 +20,10 @@ varnish v1 -vcl+backend {
 		set resp.http.o_grace = obj.grace;
 		set resp.http.o_keep = obj.keep;
 	}
+} -start
+
+logexpect l1 -v v1 -g vxid {
+	expect 1003 *	HitMiss "^1002$"
 } -start
 
 client c1 {
@@ -49,3 +53,5 @@ client c1 {
 }
 
 client c1 -run
+
+logexpect l1 -wait
