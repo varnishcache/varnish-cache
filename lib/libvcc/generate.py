@@ -452,8 +452,8 @@ sp_variables = [
 		('backend', ),
 		(), """
 		Indicates whether this request is uncacheable due
-		to a pass in the client side or a hit on an existing
-		uncacheable object (aka hit-for-pass).
+		to a pass in the client side or a hit on an hit-for-pass
+		object.
 		"""
 	),
 	('bereq.connect_timeout',
@@ -578,7 +578,7 @@ sp_variables = [
 		Inherited from bereq.uncacheable, see there.
 
 		Setting this variable makes the object uncacheable, which may
-		get stored as a hit-for-pass object in the cache.
+		get stored as a hit-for-miss object in the cache.
 
 		Clearing the variable has no effect and will log the warning
 		"Ignoring attempt to reset beresp.uncacheable".
@@ -727,7 +727,8 @@ sp_variables = [
 		'BOOL',
 		('deliver',),
 		(), """
-		Whether the object is uncacheable (pass or hit-for-pass).
+		Whether the object is uncacheable (pass, hit-for-pass or
+		hit-for-miss).
 		"""
 	),
 	('resp',
