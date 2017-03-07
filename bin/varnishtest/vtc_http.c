@@ -872,6 +872,7 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 	char *b, *c;
 	char *nullbody = NULL;
 	int nolen = 0;
+	int l;
 
 	(void)vl;
 	nullbody = body;
@@ -882,6 +883,13 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 		} else if (!strcmp(*av, "-hdr")) {
 			VSB_printf(hp->vsb, "%s%s", av[1], nl);
 			av++;
+		} else if (!strcmp(*av, "-hdrlen")) {
+			VSB_printf(hp->vsb, "%s: ", av[1]);
+			l = atoi(av[2]);
+			while (l-- > 0)
+				VSB_putc(hp->vsb, '0' + (l % 10));
+			VSB_printf(hp->vsb, "%s", nl);
+			av+=2;
 		} else
 			break;
 	}
@@ -976,6 +984,9 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
  *         \-hdr STRING
  *                 Add STRING as a header, it must follow this format:
  *                 "name: value". It can be called multiple times.
+ *
+ *         \-hdrlen STRING NUMBER
+ *                 Add STRING as a header with NUMBER bytes of content.
  *
  *         You can then use the arguments related to the body:
  *
