@@ -82,10 +82,6 @@ varnish v1 -errvcl {Regexp compilation error:} {
 	}
 }
 
-varnish v1 -errvcl {resolves to neither IPv4 nor IPv6 addresses.} {
-	backend b { .host = "/"; }
-}
-
 varnish v1 -errvcl {resolves to too many addresses} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
