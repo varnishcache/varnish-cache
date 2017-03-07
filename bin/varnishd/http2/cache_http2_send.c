@@ -125,21 +125,20 @@ H2_Send(struct worker *wrk, struct h2_req *r2, int flush,
 		    ftyp, flags, len, r2->stream, ptr);
 	} else {
 		AN(ptr);
-		AN(len);
 		p = ptr;
 		final_flags = ftyp->final_flags & flags;
 		flags &= ~ftyp->final_flags;
 		do {
 			AN(ftyp->continuation);
 			tf = mfs;
-			if (tf > len) {
-				tf = len;
+			if (tf < len) {
 				retval = H2_Send_Frame(wrk, h2, ftyp,
 				    flags, tf, r2->stream, p);
-				flags = 0;
 			} else {
+				tf = len;
 				retval = H2_Send_Frame(wrk, h2, ftyp,
 				    final_flags, tf, r2->stream, p);
+				flags = 0;
 			}
 			p += tf;
 			len -= tf;

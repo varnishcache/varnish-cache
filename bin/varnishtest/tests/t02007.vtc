@@ -1,0 +1,41 @@
+varnishtest "H2 Huge response headers"
+
+server s1 {
+	rxreq
+	expect req.proto == HTTP/1.1
+	txresp -hdr "Content-Type: text/plain" -hdrlen Foo 100 -bodylen 100
+} -start
+
+varnish v1 -vcl+backend {} -cliok "param.set feature +http2" -start
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -cliok "param.set debug +h2_nocheck"
+
+client c1 {
+	stream 0 {
+		txsettings -framesize 64
+		rxsettings
+	} -run
+	stream 1 {
+		txreq \
+			-req POST \
+			-hdr content-type text/plain \
+			-nostrend \
+			-nohdrend
+		txcont \
+			-hdr expect 100-continue \
+			-hdr content-length 7 \
+			-nostrend
+
+		txdata \
+			-data request
+
+		rxhdrs
+		expect resp.status == 100
+
+		rxresp
+		expect resp.status == 200
+		expect resp.http.content-Type == "text/plain"
+		expect resp.bodylen == 100
+	} -run
+} -run
+
