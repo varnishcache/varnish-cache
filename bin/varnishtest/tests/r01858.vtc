@@ -22,6 +22,11 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+# Tests logging hit-for-miss on an expired object
+logexpect l1 -v v1 -g vxid {
+	expect 1003 *	HitMiss "^1002$"
+} -start
+
 client c1 {
 	txreq
 	rxresp
@@ -36,3 +41,4 @@ client c1 {
 	expect resp.body == "bar"
 } -run
 
+logexpect l1 -wait

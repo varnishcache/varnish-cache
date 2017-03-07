@@ -443,6 +443,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 				oc = NULL;
 			} else if (oc->flags & OC_F_PASS) {
 				wrk->stats->cache_hitmiss++;
+				VSLb(req->vsl, SLT_HitMiss, "%u",
+				     ObjGetXID(wrk, oc));
 				oc = NULL;
 				*bocp = hsh_insert_busyobj(wrk, oh);
 			} else {
@@ -466,6 +468,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 
 	if (exp_oc != NULL && exp_oc->flags & OC_F_PASS) {
 		wrk->stats->cache_hitmiss++;
+		VSLb(req->vsl, SLT_HitMiss, "%u", ObjGetXID(wrk, exp_oc));
 		exp_oc = NULL;
 		busy_found = 0;
 	}

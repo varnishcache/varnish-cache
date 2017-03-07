@@ -541,6 +541,11 @@ SLTM(H2TxBody, 0, "Transmitted HTTP2 frame body",
 	"Binary data"
 )
 
+SLTM(HitMiss, 0, "Hit for miss object in cache.",
+	"Hit-for-miss object looked up in cache. Shows the VXID of the"
+	" hit-for-miss object.\n\n"
+)
+
 #undef NODEF_NOTICE
 #undef SLTM
 
