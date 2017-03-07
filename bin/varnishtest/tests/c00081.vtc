@@ -29,6 +29,10 @@ varnish v1 -vcl+backend {
 
 } -start
 
+logexpect l1 -v v1 -g vxid {
+	expect 1003 *	HitPass "^1002$"
+} -start
+
 client c1 {
 	txreq
 	rxresp
@@ -44,6 +48,8 @@ client c1 {
 	rxresp
 	expect resp.http.miss == True
 } -run
+
+logexpect l1 -wait
 
 varnish v1 -expect MAIN.cache_hitpass == 1
 varnish v1 -expect MAIN.cache_miss == 2
