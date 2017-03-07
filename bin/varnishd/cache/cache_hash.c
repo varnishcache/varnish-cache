@@ -438,6 +438,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			assert(oc->objhead == oh);
 			if (oc->flags & OC_F_HFP) {
 				wrk->stats->cache_hitpass++;
+				VSLb(req->vsl, SLT_HitPass, "%u",
+				     ObjGetXID(wrk, oc));
 				oc = NULL;
 			} else if (oc->flags & OC_F_PASS) {
 				wrk->stats->cache_hitmiss++;
