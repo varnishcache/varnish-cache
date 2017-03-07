@@ -81,13 +81,14 @@ h2_bytes(struct req *req, enum vdp_action act, void **priv,
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
 	(void)priv;
-	if (act == VDP_INIT || act == VDP_FINI)
+	if (act == VDP_INIT)
 		return (0);
-	AZ(req->vdp_nxt);	       /* always at the bottom of the pile */
-
 	H2_Send_Get(req->wrk, r2->h2sess, r2);
 	H2_Send(req->wrk, r2,
-	    act == VDP_FLUSH ? 1 : 0, H2_F_DATA, H2FF_NONE, len, ptr);
+	    act != VDP_NULL ? 1 : 0,
+	    H2_F_DATA,
+	    act == VDP_FINI ? H2FF_DATA_END_STREAM : H2FF_NONE,
+	    len, ptr);
 	H2_Send_Rel(req->wrk, r2->h2sess, r2);
 
 	return (0);
@@ -171,7 +172,6 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-	(void)sendbody;
 
 	VSLb(req->vsl, SLT_Debug, "H2: Deliver");
 
@@ -243,26 +243,27 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	}
 	sz = (char*)p - req->ws->f;
 
+	AZ(req->wrk->v1l);
+
 	/* XXX: Optimize !sendbody case */
+
+	if (sendbody && req->resp_len == 0)
+		sendbody = 0;
+
 	H2_Send_Get(req->wrk, r2->h2sess, r2);
-	H2_Send(req->wrk, r2, 1, H2_F_HEADERS, H2FF_HEADERS_END_HEADERS,
+	H2_Send(req->wrk, r2, 1, H2_F_HEADERS,
+	    (sendbody ? 0 : H2FF_HEADERS_END_STREAM) | H2FF_HEADERS_END_HEADERS,
 	    sz, req->ws->f);
 	H2_Send_Rel(req->wrk, r2->h2sess, r2);
 
 	WS_Release(req->ws, 0);
 
-	if (sendbody && req->resp_len != 0)
+
+	if (sendbody) {
 		VDP_push(req, h2_bytes, NULL, 1, "H2");
-
-	AZ(req->wrk->v1l);
-
-	if (sendbody && req->resp_len != 0)
 		err = VDP_DeliverObj(req);
-	/*XXX*/(void)err;
-
-	H2_Send_Get(req->wrk, r2->h2sess, r2);
-	H2_Send(req->wrk, r2, 1, H2_F_DATA, H2FF_DATA_END_STREAM, 0, NULL);
-	H2_Send_Rel(req->wrk, r2->h2sess, r2);
+		/*XXX*/(void)err;
+	}
 
 	AZ(req->wrk->v1l);
 	VDP_close(req);
