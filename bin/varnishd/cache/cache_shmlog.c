@@ -470,13 +470,13 @@ VSM_Init(void)
 	   problems with regard to readers on that event visible */
 	vsl_segment_n = UINT_MAX - VSL_SEGMENTS + 1;
 	AZ(vsl_segment_n % VSL_SEGMENTS);
-	vsl_head->segment_n = vsl_segment_n;
 	vsl_ptr = vsl_head->log;
 	*vsl_ptr = VSL_ENDMARKER;
 
 	memset(vsl_head, 0, sizeof *vsl_head);
 	vsl_head->segsize = vsl_segsize;
 	vsl_head->offset[0] = 0;
+	vsl_head->segment_n = vsl_segment_n;
 	for (i = 1; i < VSL_SEGMENTS; i++)
 		vsl_head->offset[i] = -1;
 	VWMB();
