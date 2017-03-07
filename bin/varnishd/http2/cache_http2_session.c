@@ -227,7 +227,7 @@ h2_new_pu_session(struct worker *wrk, const struct h2_sess *h2)
 		return (0);
 	}
 	HTC_RxPipeline(h2->htc, h2->htc->rxbuf_b + sizeof(H2_prism));
-	HTC_RxInit(h2->htc, wrk->aws);
+	HTC_RxInit(h2->htc, h2->ws);
 
 	VSLb(h2->vsl, SLT_Debug, "H2: Got pu PRISM");
 	return (1);
@@ -255,9 +255,9 @@ h2_new_ou_session(struct worker *wrk, struct h2_sess *h2,
 	req->htc->pipeline_b = NULL;
 	req->htc->pipeline_e = NULL;
 	/* XXX: This call may assert on buffer overflow if the pipelined
-	   data exceeds the available space in the aws workspace. What to
+	   data exceeds the available space in the ws workspace. What to
 	   do about the overflowing data is an open issue. */
-	HTC_RxInit(h2->htc, wrk->aws);
+	HTC_RxInit(h2->htc, h2->ws);
 
 	/* Start req thread */
 	(void)h2_new_req(wrk, h2, 1, req);
@@ -280,7 +280,7 @@ h2_new_ou_session(struct worker *wrk, struct h2_sess *h2,
 		return (0);
 	}
 	HTC_RxPipeline(h2->htc, h2->htc->rxbuf_b + sizeof(H2_prism));
-	HTC_RxInit(h2->htc, wrk->aws);
+	HTC_RxInit(h2->htc, h2->ws);
 	VSLb(h2->vsl, SLT_Debug, "H2: Got PRISM");
 	return (1);
 }
@@ -301,17 +301,18 @@ h2_new_session(struct worker *wrk, void *arg)
 
 	assert(req->transport == &H2_transport);
 
-	wsp = WS_Snapshot(wrk->aws);
 
 	switch(req->err_code) {
 	case 0:
 		/* Direct H2 connection (via Proxy) */
 		h2 = h2_new_sess(wrk, sp, req);
+		wsp = WS_Snapshot(h2->ws);
 		(void)h2_new_req(wrk, h2, 0, NULL);
 		break;
 	case 1:
 		/* Prior Knowledge H1->H2 upgrade */
 		h2 = h2_new_sess(wrk, sp, req);
+		wsp = WS_Snapshot(h2->ws);
 		(void)h2_new_req(wrk, h2, 0, NULL);
 
 		if (!h2_new_pu_session(wrk, h2))
@@ -320,6 +321,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	case 2:
 		/* Optimistic H1->H2 upgrade */
 		h2 = h2_new_sess(wrk, sp, NULL);
+		wsp = WS_Snapshot(h2->ws);
 		(void)h2_new_req(wrk, h2, 0, NULL);
 
 		if (!h2_new_ou_session(wrk, h2, req))
@@ -340,8 +342,8 @@ h2_new_session(struct worker *wrk, void *arg)
 	Lck_Unlock(&h2->sess->mtx);
 
 	while (h2_rxframe(wrk, h2)) {
-		WS_Reset(wrk->aws, wsp);
-		HTC_RxInit(h2->htc, wrk->aws);
+		WS_Reset(h2->ws, wsp);
+		HTC_RxInit(h2->htc, h2->ws);
 	}
 
 	/* Delete all idle streams */
