@@ -20,42 +20,42 @@ logexpect l1 -wait
 
 # vxid only supports integer operations
 
-shell -err -expect "Expected vxid operator got '~'" {
-	varnishlog -n ${v1_name} -d -q 'vxid ~ 1001'
+err_shell "Expected vxid operator got '~'" {
+	varnishlog -n ${v1_name} -d -q 'vxid ~ 1001' 2>&1
 }
 
-shell -err -expect "Expected vxid operator got '!~'" {
-	varnishlog -n ${v1_name} -d -q 'vxid !~ 1001'
+err_shell "Expected vxid operator got '!~'" {
+	varnishlog -n ${v1_name} -d -q 'vxid !~ 1001' 2>&1
 }
 
-shell -err -expect "Expected vxid operator got 'eq'" {
-	varnishlog -n ${v1_name} -d -q 'vxid eq 1001'
+err_shell "Expected vxid operator got 'eq'" {
+	varnishlog -n ${v1_name} -d -q 'vxid eq 1001' 2>&1
 }
 
-shell -err -expect "Expected vxid operator got 'ne'" {
-	varnishlog -n ${v1_name} -d -q 'vxid ne 1001'
+err_shell "Expected vxid operator got 'ne'" {
+	varnishlog -n ${v1_name} -d -q 'vxid ne 1001' 2>&1
 }
 
 # vxid only supports integer operands
 
-shell -err -expect "Expected integer got '1001.5'" {
-	varnishlog -n ${v1_name} -d -q 'vxid != 1001.5'
+err_shell "Expected integer got '1001.5'" {
+	varnishlog -n ${v1_name} -d -q 'vxid != 1001.5' 2>&1
 }
 
 # vxid doesn't support taglist selection
 
-shell -err -expect "Unexpected taglist selection for vxid" {
-	varnishlog -n ${v1_name} -d -q 'vxid[1] >= 1001'
+err_shell "Unexpected taglist selection for vxid" {
+	varnishlog -n ${v1_name} -d -q 'vxid[1] >= 1001' 2>&1
 }
 
-shell -err -expect "Unexpected taglist selection for vxid" {
-	varnishlog -n ${v1_name} -d -q '{1}vxid <= 1001'
+err_shell "Unexpected taglist selection for vxid" {
+	varnishlog -n ${v1_name} -d -q '{1}vxid <= 1001' 2>&1
 }
 
-shell -err -expect "Unexpected taglist selection for vxid" {
-	varnishlog -n ${v1_name} -d -q 'vxid,Link > 1001'
+err_shell "Unexpected taglist selection for vxid" {
+	varnishlog -n ${v1_name} -d -q 'vxid,Link > 1001' 2>&1
 }
 
-shell -err -expect "Unexpected taglist selection for vxid" {
-	varnishlog -n ${v1_name} -d -q 'vxid,vxid < 1001'
+err_shell "Unexpected taglist selection for vxid" {
+	varnishlog -n ${v1_name} -d -q 'vxid,vxid < 1001' 2>&1
 }
