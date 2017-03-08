@@ -5,12 +5,13 @@ Varnish Cache 5.1.0 (unreleased)
 * The fallback director has now an extra, optional parameter to keep using the
   current backend until it falls sick.
 
-Issues fixed:
+Bugs fixed
+----------
 
-* 2245_ - [trunk]Varnish doesn't start, if use vmod (vmod_cache dir was permission denied)
+* 2245_ - Varnish doesn't start, if use vmod (vmod_cache dir was permission denied)
 * 2241_ - VSL fails to get hold of SHM
-* 2233_ - Varnish 4.1.5 crash on "Assert error in WS_Assert(), cache/cache_ws.c line 59"
-* 2227_ - `-C` flag broken at HEAD
+* 2233_ - Crash on "Assert error in WS_Assert(), cache/cache_ws.c line 59"
+* 2227_ - -C flag broken in HEAD
 * 2217_ - fix argument processing -C regression
 * 2207_ - Assert error in V1L_Write()
 * 2205_ - Strange bug when I set client.ip with another string
@@ -32,7 +33,7 @@ Issues fixed:
 * 2134_ - Disable Nagle's
 * 2129_ - stack overflow with >4 level esi
 * 2128_ - SIGSEGV NULL Pointer in STV__iter()
-* 2118_ - "varnishstat -f MAIN.sess_conn -1" produces empty output #2118
+* 2118_ - "varnishstat -f MAIN.sess_conn -1" produces empty output
 * 2117_ - SES_Close() EBADF / Wait_Enter() wp->fd <= 0
 * 2115_ - VSM temporary files are not always deleted
 * 2110_ - [CLI] vcl.inline failures
@@ -55,7 +56,7 @@ Issues fixed:
 * 1988_ - Lost req.url gives misleading error
 * 1914_ - set a custom storage for cache_req_body
 * 1899_ - varnishadm vcl.inline is overly obscure
-* 1874_ - [4.1/master] clock-step related crash
+* 1874_ - clock-step related crash
 * 1865_ - Panic accessing beresp.backend.ip in vcl_backend_error{}
 * 1856_ - LostHeader setting req.url to an empty string
 * 1834_ - WS_Assert(), cache/cache_ws.c line 59
@@ -139,7 +140,8 @@ Varnish Cache 5.0.0 (2016-09-15)
 
 * std.integer() can now convert from REAL.
 
-Issues fixed:
+Bugs fixed
+----------
 
 * 2086_ - Ignore H2 upgrades if the feature is not enabled.
 * 2054_ - Introduce new macros for out-of-tree VMODs
@@ -205,6 +207,7 @@ Varnish Cache 4.1.5-beta2 (2017-02-08)
 
 Bugs fixed
 ----------
+
 * 1704_ - Reverted the docfix and made the fech_failed counter do
   what the documentation says it should do
 * 1865_ - Panic accessing beresp.backend.ip in vcl_backend_error
