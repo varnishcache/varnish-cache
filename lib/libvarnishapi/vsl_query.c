@@ -112,7 +112,7 @@ vslq_test_vxid(const struct vex *vex, const struct VSL_transaction *trans)
 	default:	WRONG("Bad vxid expression token");
 	}
 
-	NEEDLESS(return (0));
+	NEEDLESS_RETURN(0);
 }
 
 static int
