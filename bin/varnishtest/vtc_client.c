@@ -165,18 +165,16 @@ client_thread(void *priv)
  */
 
 static struct client *
-client_new(const char *name)
+client_new(char *name, struct vtclog *vl)
 {
 	struct client *c;
 
-	AN(name);
+	VTC_CHECK_NAME(vl, name, "Client", 'c');
 	ALLOC_OBJ(c, CLIENT_MAGIC);
 	AN(c);
 	REPLACE(c->name, name);
 	c->vl = vtc_logopen(name);
 	AN(c->vl);
-	if (*c->name != 'c')
-		vtc_fatal(c->vl, "Client name must start with 'c'");
 
 	bprintf(c->connect, "%s", "${v1_sock}");
 	VTAILQ_INSERT_TAIL(&clients, c, list);
@@ -256,7 +254,6 @@ cmd_client(CMD_ARGS)
 
 	(void)priv;
 	(void)cmd;
-	(void)vl;
 
 	if (av == NULL) {
 		/* Reset and free */
@@ -276,7 +273,7 @@ cmd_client(CMD_ARGS)
 		if (!strcmp(c->name, av[0]))
 			break;
 	if (c == NULL)
-		c = client_new(av[0]);
+		c = client_new(av[0], vl);
 	av++;
 
 	for (; *av != NULL; av++) {

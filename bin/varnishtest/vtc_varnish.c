@@ -278,13 +278,13 @@ varnishlog_thread(void *priv)
  */
 
 static struct varnish *
-varnish_new(const char *name)
+varnish_new(char *name, struct vtclog *vl)
 {
 	struct varnish *v;
 	struct vsb *vsb;
 	char buf[1024];
 
-	AN(name);
+	VTC_CHECK_NAME(vl, name, "Varnish", 'v');
 	ALLOC_OBJ(v, VARNISH_MAGIC);
 	AN(v);
 	REPLACE(v->name, name);
@@ -305,9 +305,6 @@ varnish_new(const char *name)
 
 	bprintf(buf, "rm -rf %s ; mkdir -p %s", v->workdir, v->workdir);
 	AZ(system(buf));
-
-	if (*v->name != 'v')
-		vtc_fatal(v->vl, "Varnish name must start with 'v'");
 
 	v->args = VSB_new_auto();
 
@@ -1077,7 +1074,6 @@ cmd_varnish(CMD_ARGS)
 
 	(void)priv;
 	(void)cmd;
-	(void)vl;
 
 	if (av == NULL) {
 		/* Reset and free */
@@ -1097,7 +1093,7 @@ cmd_varnish(CMD_ARGS)
 		if (!strcmp(v->name, av[0]))
 			break;
 	if (v == NULL)
-		v = varnish_new(av[0]);
+		v = varnish_new(av[0], vl);
 	av++;
 
 	for (; *av != NULL; av++) {

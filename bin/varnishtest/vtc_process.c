@@ -85,13 +85,13 @@ static VTAILQ_HEAD(, process)	processes =
 	} while (0)
 
 static struct process *
-process_new(const char *name)
+process_new(char *name, struct vtclog *vl)
 {
 	struct process *p;
 	struct vsb *vsb;
 	char buf[1024];
 
-	AN(name);
+	VTC_CHECK_NAME(vl, name, "Process", 'p');
 	ALLOC_OBJ(p, PROCESS_MAGIC);
 	AN(p);
 	REPLACE(p->name, name);
@@ -110,9 +110,6 @@ process_new(const char *name)
 
 	p->fd_to = -1;
 	p->fd_from = -1;
-
-	if (*p->name != 'p')
-		vtc_fatal(p->vl, "Process name must start with 'p'");
 
 	VTAILQ_INSERT_TAIL(&processes, p, list);
 	return (p);
@@ -436,7 +433,6 @@ cmd_process(CMD_ARGS)
 
 	(void)priv;
 	(void)cmd;
-	(void)vl;
 
 	if (av == NULL) {
 		/* Reset and free */
@@ -463,7 +459,7 @@ cmd_process(CMD_ARGS)
 		if (!strcmp(p->name, av[0]))
 			break;
 	if (p == NULL)
-		p = process_new(av[0]);
+		p = process_new(av[0], vl);
 	av++;
 
 	for (; *av != NULL; av++) {

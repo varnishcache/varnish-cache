@@ -199,11 +199,11 @@ logexp_delete(struct logexp *le)
 }
 
 static struct logexp *
-logexp_new(const char *name)
+logexp_new(char *name, struct vtclog *vl)
 {
 	struct logexp *le;
 
-	AN(name);
+	VTC_CHECK_NAME(vl, name, "Logexpect", 'l');
 	ALLOC_OBJ(le, LOGEXP_MAGIC);
 	AN(le);
 	REPLACE(le->name, name);
@@ -510,7 +510,6 @@ cmd_logexpect(CMD_ARGS)
 
 	(void)priv;
 	(void)cmd;
-	(void)vl;
 
 	if (av == NULL) {
 		/* Reset and free */
@@ -534,7 +533,7 @@ cmd_logexpect(CMD_ARGS)
 			break;
 	}
 	if (le == NULL)
-		le = logexp_new(av[0]);
+		le = logexp_new(av[0], vl);
 	av++;
 
 	for (; *av != NULL; av++) {

@@ -75,11 +75,9 @@ barrier_new(char *name, struct vtclog *vl)
 {
 	struct barrier *b;
 
+	VTC_CHECK_NAME(vl, name, "Barrier", 'b');
 	ALLOC_OBJ(b, BARRIER_MAGIC);
 	AN(b);
-	AN(name);
-	if (*name != 'b')
-		vtc_fatal(vl, "Barrier name must start with 'b' (%s)", name);
 	if (pthread_self() != vtc_thread)
 		vtc_fatal(vl,
 		    "Barrier %s can only be created on the top thread", name);

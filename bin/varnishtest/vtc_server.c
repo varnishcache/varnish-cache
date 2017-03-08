@@ -71,18 +71,16 @@ static VTAILQ_HEAD(, server)	servers =
  */
 
 static struct server *
-server_new(const char *name)
+server_new(char *name, struct vtclog *vl)
 {
 	struct server *s;
 
-	AN(name);
+	VTC_CHECK_NAME(vl, name, "Server", 's');
 	ALLOC_OBJ(s, SERVER_MAGIC);
 	AN(s);
 	REPLACE(s->name, name);
 	s->vl = vtc_logopen(s->name);
 	AN(s->vl);
-	if (*s->name != 's')
-		vtc_fatal(s->vl, "Server name must start with 's'");
 
 	bprintf(s->listen, "%s", "127.0.0.1 0");
 	s->repeat = 1;
@@ -240,6 +238,7 @@ server_dispatch_thread(void *priv)
 	assert(s->sock >= 0);
 
 	vl = vtc_logopen(s->name);
+	AN(vl);
 	vtc_log(vl, 2, "Dispatch started on %s", s->listen);
 
 	while (1) {
@@ -250,7 +249,7 @@ server_dispatch_thread(void *priv)
 			vtc_fatal(vl, "Accepted failed: %s", strerror(errno));
 		bprintf(snbuf, "s%d", sn++);
 		vtc_log(vl, 3, "dispatch fd %d -> %s", fd, snbuf);
-		s2 = server_new(snbuf);
+		s2 = server_new(snbuf, vl);
 		s2->spec = s->spec;
 		strcpy(s2->listen, s->listen);
 		s2->fd = fd;
@@ -336,7 +335,6 @@ cmd_server(CMD_ARGS)
 
 	(void)priv;
 	(void)cmd;
-	(void)vl;
 
 	if (av == NULL) {
 		/* Reset and free */
@@ -369,7 +367,7 @@ cmd_server(CMD_ARGS)
 			break;
 	AZ(pthread_mutex_unlock(&server_mtx));
 	if (s == NULL)
-		s = server_new(av[0]);
+		s = server_new(av[0], vl);
 	CHECK_OBJ_NOTNULL(s, SERVER_MAGIC);
 	av++;
 
