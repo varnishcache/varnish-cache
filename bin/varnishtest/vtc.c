@@ -628,7 +628,7 @@ cmd_setenv(CMD_ARGS)
 		AN(av[2]);
 	}
 	if (av[3] != NULL)
-		vtc_log(vl, 0, "CMD setenv: Unexpected argument '%s'", av[3]);
+		vtc_fatal(vl, "CMD setenv: Unexpected argument '%s'", av[3]);
 	r = setenv(av[1], av[2], force);
 	if (r != 0)
 		vtc_log(vl, 0, "CMD setenv %s=\"%s\" failed: %s",
