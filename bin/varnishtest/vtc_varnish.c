@@ -278,7 +278,7 @@ varnishlog_thread(void *priv)
  */
 
 static struct varnish *
-varnish_new(char *name, struct vtclog *vl)
+varnish_new(const char *name, struct vtclog *vl)
 {
 	struct varnish *v;
 	struct vsb *vsb;

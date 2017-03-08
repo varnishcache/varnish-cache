@@ -70,7 +70,7 @@ struct barrier {
 static VTAILQ_HEAD(, barrier)	barriers = VTAILQ_HEAD_INITIALIZER(barriers);
 
 static struct barrier *
-barrier_new(char *name, struct vtclog *vl)
+barrier_new(const char *name, struct vtclog *vl)
 {
 	struct barrier *b;
 

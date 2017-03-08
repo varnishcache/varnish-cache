@@ -85,7 +85,7 @@ static VTAILQ_HEAD(, process)	processes =
 	} while (0)
 
 static struct process *
-process_new(char *name, struct vtclog *vl)
+process_new(const char *name, struct vtclog *vl)
 {
 	struct process *p;
 	struct vsb *vsb;

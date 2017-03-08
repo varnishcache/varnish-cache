@@ -165,7 +165,7 @@ client_thread(void *priv)
  */
 
 static struct client *
-client_new(char *name, struct vtclog *vl)
+client_new(const char *name, struct vtclog *vl)
 {
 	struct client *c;
 

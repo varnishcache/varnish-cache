@@ -199,7 +199,7 @@ logexp_delete(struct logexp *le)
 }
 
 static struct logexp *
-logexp_new(char *name, struct vtclog *vl)
+logexp_new(const char *name, struct vtclog *vl)
 {
 	struct logexp *le;
 

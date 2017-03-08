@@ -71,7 +71,7 @@ static VTAILQ_HEAD(, server)	servers =
  */
 
 static struct server *
-server_new(char *name, struct vtclog *vl)
+server_new(const char *name, struct vtclog *vl)
 {
 	struct server *s;
 
