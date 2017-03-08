@@ -3,8 +3,52 @@
 Changes in Varnish 5.1
 ======================
 
-Varnish 5.1 ... XXX
+We have a couple of new and interesting features in Varnish 5.1,
+and we have a lot of smaller improvements and bugfixes all all over
+the place, in total we have made about 750 commits since Varnish 5.0,
+so this is just some of the highlights:
 
+Startup CLI command file
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The new '-I cli_file' option to varnishd will make it much more
+practical to use the vcl labels introduced in Varnish 5.0.
+
+The cli commands in the file will be executed before the worker
+process starts, so it could for instance contain::
+
+	vcl.load panic /etc/varnish_panic.vcl
+	vcl.load siteA0 /etc/varnish_siteA.vcl
+	vcl.load siteB0 /etc/varnish_siteB.vcl
+	vcl.load siteC0 /etc/varnish_siteC.vcl
+	vsl.label siteA siteA0
+	vsl.label siteB siteB0
+	vsl.label siteC siteC0
+	vcl.load main /etc/varnish_main.vcl
+	vcl.use main
+
+If the command is prefixed with '-', failure will not abort
+the startup.
+
+Related to this change we have reordered the argument checking so
+that argument problems are reported more consistently.
+
+In case you didn't hear about them yet, labeling VCL programs
+allows you to branch out to other VCLs in the main::vcl_recv{},
+which in the above example could look like::
+
+	sub vcl_recv {
+	    if (req.http.host ~ "asite.example.com$") {
+		return(vcl(siteA));
+	    }
+	    if (req.http.host ~ "bsite.example.com$") {
+		return(vcl(siteB));
+	    }
+	    if (req.http.host ~ "csite.example.com$") {
+		return(vcl(siteC));
+	    }
+	    // Main site processing ...
+	}
 
 Progress on HTTP/2 support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
