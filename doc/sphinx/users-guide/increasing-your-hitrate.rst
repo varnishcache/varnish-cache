@@ -392,11 +392,13 @@ the response might be cached. This has two important consequences:
 
 * Concurrent backend requests for the same object are *coalesced* --
   only one fetch is executed at a time, and the other pending fetches
-  wait for the result. This is to prevent your backend from being hit
-  by a "thundering herd" when the cached response has expired, or if
-  it was never cached in the first place.  If it turns out that the
-  response to the first fetch is cached, then that cache object
-  satisfies the other pending requests.
+  wait for the result (unless you have brought about one of the states
+  described below in :ref:`users-guide-uncacheable`). This is to
+  prevent your backend from being hit by a "thundering herd" when the
+  cached response has expired, or if it was never cached in the first
+  place. If it turns out that the response to the first fetch is
+  cached, then that cache object can be delivered immediately to other
+  pending requests.
 
 * The backend request for the cache miss cannot be conditional if
   Varnish does not have an object in the cache to validate; that is,
@@ -440,7 +442,8 @@ increase the storage requirements for your cache, but if you have the
 space, it might be worth it to keep stale objects that can be
 validated for a fairly long time. If the backend can send a 304
 response long after the TTL has expired, you save bandwith on the
-fetch; if not, then it's no different from any other cache miss.
+fetch and reduce pressure on the storage; if not, then it's no
+different from any other cache miss.
 
 If, however, you would prefer that backend fetches are not
 conditional, just remove the If-* headers in ``vcl_backend_fetch``::
@@ -469,6 +472,8 @@ misses by:
 * setting a keep time for cached objects that can be validated with
   a 304 response after they have gone stale.
 
+
+.. _users-guide-uncacheable:
 
 Uncacheable content
 -------------------
@@ -510,10 +515,13 @@ For passes there is no request coalescing. Since pass indicates that
 the response will not be cacheable, there is no point in waiting for a
 response that might be cached, and all pending fetches for the object
 are concurrent. Otherwise, fetches waiting for an object that turns
-out to be uncacheable after all may be serialized.
+out to be uncacheable after all may be serialized -- pending fetches
+would wait for the first one, and when the result is not entered into
+the cache, the next fetch begins while all of the others wait, and so
+on.
 
 When a request is passed, this can be recognized in the
-``vcl_backend_*`` subroutine by the fact that ``bereq.uncacheable``
+``vcl_backend_*`` subroutines by the fact that ``bereq.uncacheable``
 and ``beresp.uncachable`` are both true. The backend response will not
 be cached, even if it fulfills conditions that otherwise would allow
 it, for example if ``Cache-Control`` sets a positive TTL.
@@ -521,7 +529,8 @@ it, for example if ``Cache-Control`` sets a positive TTL.
 Pass is the default (that is, ``builtin.vcl`` calls ``return(pass)`` in
 ``vcl_recv``) if the client request meets these conditions:
 
-* the request method is not ``GET`` or ``HEAD``
+* the request method is a standard HTTP/1.1 method, but not ``GET`` or
+  ``HEAD``
 
 * there is either a ``Cookie`` or an ``Authorization`` header, indicating
   that the response may be personalized
@@ -530,9 +539,9 @@ If you want to override the default, say if you are certain that the
 response may be cacheable despite the presence of a Cookie, make sure
 that a ``return`` gets called at the end of any path that may be taken
 through your own ``vcl_recv``. But if you do that, no part of the
-default ``vcl_recv`` gets executed; so take a close look at ``vcl_recv``
-in ``builtin.vcl``, and duplicate any part of it that you require in
-your own ``vcl_recv``.
+built-in ``vcl_recv`` gets executed; so take a close look at
+``vcl_recv`` in ``builtin.vcl``, and duplicate any part of it that you
+require in your own ``vcl_recv``.
 
 As with cache hits and misses, Varnish decides to send a 304 response
 to the client after a pass if the client request headers and the
@@ -565,15 +574,27 @@ setting ``beresp.uncacheable`` to ``true`` in
 ``vcl_backend_response``.  A minimal object is saved in the cache, so
 that the "hit-for-miss" state can be recognized on subsequent
 lookups. (The cache is used to remember that the object is
-uncacheable.)  In that case, no request coalescing is performed, so
-that fetches can run concurrently. Otherwise, fetches for hit-for-miss
-are just like cache misses, meaning that:
+uncacheable, for a limited time.)  In that case, no request coalescing
+is performed, so that fetches can run concurrently. Otherwise, fetches
+for hit-for-miss are just like cache misses, meaning that:
 
 * the response may become cacheable on a later request, for example
   if it sets a positive TTL with ``Cache-Control``, and
 
 * fetches cannot be conditional, so ``If-Modified-Since`` and
   ``If-None-Match`` headers are removed from the backend request.
+
+When ``beresp.uncacheable`` is set to ``true``, then ``beresp.ttl``
+determines how long the hit-for-miss state may last at most. The
+hit-for-miss state ends after this period of time elapses, or if a
+cacheable response is returned by the backend before it elapses (the
+elapse of ``beresp.ttl`` just means that the minimal cache object
+expires, like any other cache object expiration). If a cacheable
+response is returned, then that object replaces the hit-for-miss
+object, and subsequent requests for it will be cache hits. If no
+cacheable response is returned before ``beresp.ttl`` elapses, then the
+next request for that object will be an ordinary miss, and hence will
+be subject to request coalescing.
 
 When Varnish sees that it has hit a hit-for-miss object on a new
 request, it executes ``vcl_miss``, so any custom VCL you have written
@@ -582,8 +603,12 @@ for cache misses will apply in the hit-for-miss case as well.
 ``builtin.vcl`` sets ``beresp.uncacheable`` to ``true``, invoking the
 hit-for-miss state, under a number of conditions that indicate that
 the response cannot be cached, for example if the TTL was computed to
-be 0 or if there is a ``Set-Cookie`` header. You can set it yourself
-if you need hit-for-miss on other conditions::
+be 0 or if there is a ``Set-Cookie`` header. ``beresp.ttl`` is set to
+two minutes by ``builtin.vcl`` in this case, so that is how long
+hit-for-miss lasts by default.
+
+You can set ``beresp.uncacheable`` yourself if you need hit-for-miss
+on other conditions::
 
   sub vcl_backend_response {
     if (beresp.http.X-This-Is == "personal") {
@@ -649,8 +674,12 @@ headers, then remove the headers from the client request in
 ``vcl_pass``, as shown above for pass.
 
 The hit-for-pass state ends when the "hit-for-pass TTL" given in the
-``return`` statement elapses. The next request for that object is then
-handled as an ordinary miss.
+``return`` statement elapses. As with passes, the response to a
+hit-for-pass fetch is never cached, even if it would otherwise fulfill
+conditions for cacheability.  So unlike hit-for-miss, it is not
+possible to end the hit-for-pass state ahead of time with a cacheable
+response. After the "hit-for-pass TTL" elapses, the next request for
+that object is handled as an ordinary miss.
 
 hit-for-miss is the default treatment of uncacheable content. No part
 of ``builtin.vcl`` invokes hit-for-pass, so if you need it, you have to
