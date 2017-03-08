@@ -190,8 +190,6 @@ vtc_log(struct vtclog *vl, int lvl, const char *fmt, ...)
 	va_end(ap);
 	REL_VL(vl);
 
-	if (lvl > 0)
-		return;
 	if (lvl == 0)
 		vtc_logfail();
 }
