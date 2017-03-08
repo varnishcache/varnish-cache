@@ -6,6 +6,11 @@ Changes in Varnish 5.1
 Varnish 5.1 ... XXX
 
 
+Progress on HTTP/2 support
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+XXX
+
 .. _whatsnew_changes_5.1_hitpass:
 
 Hit-For-Pass has returned
