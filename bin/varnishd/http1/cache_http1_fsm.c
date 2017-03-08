@@ -408,11 +408,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 					http1_setstate(sp, H1CLEANUP);
 					continue;
 				}
-				VSLb(req->vsl, SLT_Debug,
-				    "H2 Prior Knowledge Upgrade");
 				http1_setstate(sp, NULL);
-				req->err_code = 1;
-				SES_SetTransport(wrk, sp, req, &H2_transport);
+				H2_PU_Sess(wrk, sp, req);
 				return;
 			}
 
@@ -433,12 +430,9 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 					VSLb(req->vsl, SLT_Debug,
 					    "H2 upgrade attempt has body");
 				} else {
-					VSLb(req->vsl, SLT_Debug,
-					    "H2 Upgrade");
 					http1_setstate(sp, NULL);
 					req->err_code = 2;
-					SES_SetTransport(wrk, sp, req,
-					    &H2_transport);
+					H2_OU_Sess(wrk, sp, req);
 					return;
 				}
 			}

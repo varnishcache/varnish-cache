@@ -288,6 +288,28 @@ h2_new_ou_session(struct worker *wrk, struct h2_sess *h2,
 	return (1);
 }
 
+/**********************************************************************
+ */
+
+#define H2_PU_MARKER	1
+#define H2_OU_MARKER	2
+
+void
+H2_PU_Sess(struct worker *wrk, struct sess *sp, struct req *req)
+{
+	VSLb(req->vsl, SLT_Debug, "H2 Prior Knowledge Upgrade");
+	req->err_code = H2_PU_MARKER;
+	SES_SetTransport(wrk, sp, req, &H2_transport);
+}
+
+void
+H2_OU_Sess(struct worker *wrk, struct sess *sp, struct req *req)
+{
+	VSLb(req->vsl, SLT_Debug, "H2 Optimistic Upgrade");
+	req->err_code = H2_OU_MARKER;
+	SES_SetTransport(wrk, sp, req, &H2_transport);
+}
+
 static void __match_proto__(task_func_t)
 h2_new_session(struct worker *wrk, void *arg)
 {
@@ -304,35 +326,17 @@ h2_new_session(struct worker *wrk, void *arg)
 
 	assert(req->transport == &H2_transport);
 
+	assert (req->err_code == H2_PU_MARKER || req->err_code == H2_OU_MARKER);
 
-	switch(req->err_code) {
-	case 0:
-		/* Direct H2 connection (via Proxy) */
-		h2 = h2_new_sess(wrk, sp, req);
-		wsp = WS_Snapshot(h2->ws);
-		(void)h2_new_req(wrk, h2, 0, NULL);
-		break;
-	case 1:
-		/* Prior Knowledge H1->H2 upgrade */
-		h2 = h2_new_sess(wrk, sp, req);
-		wsp = WS_Snapshot(h2->ws);
-		(void)h2_new_req(wrk, h2, 0, NULL);
+	h2 = h2_new_sess(wrk, sp, req->err_code == H2_PU_MARKER ? req : NULL);
+	wsp = WS_Snapshot(h2->ws);
+	(void)h2_new_req(wrk, h2, 0, NULL);
 
-		if (!h2_new_pu_session(wrk, h2))
-			return;
-		break;
-	case 2:
-		/* Optimistic H1->H2 upgrade */
-		h2 = h2_new_sess(wrk, sp, NULL);
-		wsp = WS_Snapshot(h2->ws);
-		(void)h2_new_req(wrk, h2, 0, NULL);
+	if (req->err_code == H2_PU_MARKER && !h2_new_pu_session(wrk, h2))
+		return;
 
-		if (!h2_new_ou_session(wrk, h2, req))
-			return;
-		break;
-	default:
-		WRONG("Bad req->err_code");
-	}
+	if (req->err_code == H2_OU_MARKER && !h2_new_ou_session(wrk, h2, req))
+		return;
 
 	THR_SetRequest(h2->srq);
 
