@@ -499,11 +499,11 @@ The issues to consider are:
 Passing client requests
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Depending on how you site works, you may be able to recognize a client
-request for a response that cannot be cached, for example if the URL
-matches certain patterns, or due to the contents of a request header.
-In that case, you can set the fetch to *pass* with ``return(pass)``
-from ``vcl_recv``::
+Depending on how your site works, you may be able to recognize a
+client request for a response that cannot be cached, for example if
+the URL matches certain patterns, or due to the contents of a request
+header.  In that case, you can set the fetch to *pass* with
+``return(pass)`` from ``vcl_recv``::
 
   sub vcl_recv {
     if (req.url ~ "^/this/is/personal/") {
