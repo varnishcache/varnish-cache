@@ -16,7 +16,7 @@ client c1 {
 	rxresp
 } -run
 
-logexpect -wait
+logexpect l1 -wait
 
 # vxid only supports integer operations
 
