@@ -49,5 +49,7 @@ uint32_t HPK_GetTblSize(const struct hpk_ctx *ctx);
 uint32_t HPK_GetTblMaxSize(const struct hpk_ctx *ctx);
 uint32_t HPK_GetTblLength(const struct hpk_ctx *ctx);
 
+#if 0
 /* DEBUG */
 void dump_dyn_tbl(const struct hpk_ctx *ctx);
+#endif

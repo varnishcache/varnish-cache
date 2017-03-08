@@ -55,10 +55,6 @@
 #include "vtcp.h"
 #include "vtim.h"
 
-extern int leave_temp;
-extern char *vmod_path;
-extern struct vsb *params_vsb;
-
 struct varnish {
 	unsigned		magic;
 #define VARNISH_MAGIC		0x208cd8e3
@@ -85,7 +81,7 @@ struct varnish {
 
 	unsigned		vsl_tag_count[256];
 
-	volatile int		vsl_idle;
+	volatile int		vsl_rec;
 };
 
 #define NONSENSE	"%XJEIFLH|)Xspa8P"
@@ -209,9 +205,8 @@ varnishlog_thread(void *priv)
 
 	c = NULL;
 	opt = 0;
-	while (v->pid) {
+	while (v->pid || c != NULL) {
 		if (c == NULL) {
-			v->vsl_idle++;
 			VTIM_sleep(0.1);
 			if (VSM_Open(vsm)) {
 				VSM_ResetError(vsm);
@@ -232,12 +227,10 @@ varnishlog_thread(void *priv)
 			if (i != 1)
 				break;
 
-			v->vsl_idle = 0;
+			v->vsl_rec = 1;
 
 			tag = VSL_TAG(c->rec.ptr);
 			vxid = VSL_ID(c->rec.ptr);
-			if (tag != SLT_CLI)
-				v->vsl_idle = 0;
 			if (tag == SLT__Batch)
 				continue;
 			tagname = VSL_tags[tag];
@@ -251,7 +244,6 @@ varnishlog_thread(void *priv)
 			    vxid, tagname, type, (int)len, data);
 		}
 		if (i == 0) {
-			v->vsl_idle++;
 			/* Nothing to do but wait */
 			VTIM_sleep(0.1);
 		} else if (i == -2) {
@@ -262,8 +254,6 @@ varnishlog_thread(void *priv)
 		} else
 			break;
 	}
-
-	v->vsl_idle = 100;
 
 	if (c)
 		VSL_DeleteCursor(c);
@@ -568,7 +558,7 @@ varnish_start(struct varnish *v)
 	macro_def(v->vl, v->name, "port", "%s", p);
 	macro_def(v->vl, v->name, "sock", "%s %s", h, p);
 	/* Wait for vsl logging to get underway */
-	while (v->vsl_idle == 0)
+	while (v->vsl_rec == 0)
 		VTIM_sleep(.1);
 }
 
@@ -609,10 +599,6 @@ varnish_cleanup(struct varnish *v)
 	void *p;
 	int status, r;
 	struct rusage ru;
-
-	/* Give the VSL log time to finish */
-	while (v->vsl_idle < 10)
-		(void)usleep(200000);
 
 	/* Close the CLI connection */
 	closefd(&v->cli_fd);

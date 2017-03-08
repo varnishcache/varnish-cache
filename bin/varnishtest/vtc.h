@@ -90,12 +90,9 @@ extern int leave_temp;
 extern int vtc_witness;
 extern int feature_dns;
 
-void init_barrier(void);
 void init_server(void);
 
 int http_process(struct vtclog *vl, const char *spec, int sock, int *sfd);
-int http2_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
-		unsigned nosettings);
 
 char * synth_body(const char *len, int rnd);
 
