@@ -5,6 +5,122 @@ Varnish Cache 5.1.0 (unreleased)
 * The fallback director has now an extra, optional parameter to keep using the
   current backend until it falls sick.
 
+Issues fixed:
+
+* 2245_ - [trunk]Varnish doesn't start, if use vmod (vmod_cache dir was permission denied)
+* 2241_ - VSL fails to get hold of SHM
+* 2233_ - Varnish 4.1.5 crash on "Assert error in WS_Assert(), cache/cache_ws.c line 59"
+* 2227_ - `-C` flag broken at HEAD
+* 2217_ - fix argument processing -C regression
+* 2207_ - Assert error in V1L_Write()
+* 2205_ - Strange bug when I set client.ip with another string
+* 2203_ - unhandled SIGPIPE
+* 2200_ - Assert error in vev_compact_pfd(), vev.c line 394
+* 2197_ - ESI parser panic on malformed src URL
+* 2190_ - varnishncsa: The %r formatter is NOT equivalent to "%m http://%{Host}i%U%q %H"
+* 2186_ - Assert error in sml_iterator(), storage/storage_simple.c line 263
+* 2184_ - Cannot subtract a negative number
+* 2177_ - Clarify interactions between restarts and labels
+* 2175_ - Backend leak between a top VCL and a label
+* 2174_ - Cflags overhaul
+* 2167_ - VCC will not parse a literal negative number where INT is expected
+* 2155_ - vmodtool removes text following $Event from RST docs
+* 2151_ - Health probes do not honor a backend's PROXY protocol setting
+* 2142_ - ip comparison fails
+* 2148_ - varnishncsa cannot decode Authorization header if the format is incorrect.
+* 2143_ - Assert error in exp_inbox(), cache/cache_expire.c line 195
+* 2134_ - Disable Nagle's
+* 2129_ - stack overflow with >4 level esi
+* 2128_ - SIGSEGV NULL Pointer in STV__iter()
+* 2118_ - "varnishstat -f MAIN.sess_conn -1" produces empty output #2118
+* 2117_ - SES_Close() EBADF / Wait_Enter() wp->fd <= 0
+* 2115_ - VSM temporary files are not always deleted
+* 2110_ - [CLI] vcl.inline failures
+* 2104_ - Assert error in VFP_Open(), cache/cache_fetch_proc.c line 139: Condition((vc->wrk->vsl) != 0) not true
+* 2099_ - VCC BACKEND/HDR comparison produces duplicate gethdr_s definition
+* 2096_ - H2 t2002 fail on arm64/arm32
+* 2094_ - H2 t2000 fail on arm64/arm32
+* 2078_ - VCL comparison doesn't fold STRING_LIST
+* 2052_ - d12.vtc flaky when compiling with suncc
+* 2042_ - Send a 304 response for a just-gone-stale hitpass object when appropriate
+* 2041_ - Parent process should exit if it fails to start child
+* 2035_ - varnishd stalls with two consecutive Range requests using HTTP persistent connections
+* 2026_ - Add restart of poll in read_tmo
+* 2021_ - vcc "used before defined" check
+* 2017_ - "%r" field is wrong
+* 2016_ - confusing vcc error when acl referenced before definition
+* 2014_ - req.ttl: retire or document+vtc
+* 2010_ - varnishadm CLI behaving weirdly
+* 1991_ - Starting varnish on Linux with boot param ipv6.disable=1 fails
+* 1988_ - Lost req.url gives misleading error
+* 1914_ - set a custom storage for cache_req_body
+* 1899_ - varnishadm vcl.inline is overly obscure
+* 1874_ - [4.1/master] clock-step related crash
+* 1865_ - Panic accessing beresp.backend.ip in vcl_backend_error{}
+* 1856_ - LostHeader setting req.url to an empty string
+* 1834_ - WS_Assert(), cache/cache_ws.c line 59
+* 1830_ - VSL API: "duplicate link" errors in request grouping when vsl_buffer is increased
+* 1764_ - nuke_limit is not honored
+* 1750_ - Fail more gracefully on -l >= 4GB
+* 1704_ - fetch_failed not incremented
+
+.. _2245: https://github.com/varnishcache/varnish-cache/issues/2245
+.. _2241: https://github.com/varnishcache/varnish-cache/issues/2241
+.. _2233: https://github.com/varnishcache/varnish-cache/issues/2233
+.. _2227: https://github.com/varnishcache/varnish-cache/issues/2227
+.. _2217: https://github.com/varnishcache/varnish-cache/issues/2217
+.. _2207: https://github.com/varnishcache/varnish-cache/issues/2207
+.. _2205: https://github.com/varnishcache/varnish-cache/issues/2205
+.. _2203: https://github.com/varnishcache/varnish-cache/issues/2203
+.. _2200: https://github.com/varnishcache/varnish-cache/issues/2200
+.. _2197: https://github.com/varnishcache/varnish-cache/issues/2197
+.. _2190: https://github.com/varnishcache/varnish-cache/issues/2190
+.. _2186: https://github.com/varnishcache/varnish-cache/issues/2186
+.. _2184: https://github.com/varnishcache/varnish-cache/issues/2184
+.. _2177: https://github.com/varnishcache/varnish-cache/issues/2177
+.. _2175: https://github.com/varnishcache/varnish-cache/issues/2175
+.. _2174: https://github.com/varnishcache/varnish-cache/issues/2174
+.. _2167: https://github.com/varnishcache/varnish-cache/issues/2167
+.. _2155: https://github.com/varnishcache/varnish-cache/issues/2155
+.. _2151: https://github.com/varnishcache/varnish-cache/issues/2151
+.. _2142: https://github.com/varnishcache/varnish-cache/issues/2142
+.. _2148: https://github.com/varnishcache/varnish-cache/issues/2148
+.. _2143: https://github.com/varnishcache/varnish-cache/issues/2143
+.. _2134: https://github.com/varnishcache/varnish-cache/issues/2134
+.. _2129: https://github.com/varnishcache/varnish-cache/issues/2129
+.. _2128: https://github.com/varnishcache/varnish-cache/issues/2128
+.. _2118: https://github.com/varnishcache/varnish-cache/issues/2118
+.. _2117: https://github.com/varnishcache/varnish-cache/issues/2117
+.. _2115: https://github.com/varnishcache/varnish-cache/issues/2115
+.. _2110: https://github.com/varnishcache/varnish-cache/issues/2110
+.. _2104: https://github.com/varnishcache/varnish-cache/issues/2104
+.. _2099: https://github.com/varnishcache/varnish-cache/issues/2099
+.. _2096: https://github.com/varnishcache/varnish-cache/issues/2096
+.. _2094: https://github.com/varnishcache/varnish-cache/issues/2094
+.. _2078: https://github.com/varnishcache/varnish-cache/issues/2078
+.. _2052: https://github.com/varnishcache/varnish-cache/issues/2052
+.. _2042: https://github.com/varnishcache/varnish-cache/issues/2042
+.. _2041: https://github.com/varnishcache/varnish-cache/issues/2041
+.. _2035: https://github.com/varnishcache/varnish-cache/issues/2035
+.. _2026: https://github.com/varnishcache/varnish-cache/issues/2026
+.. _2021: https://github.com/varnishcache/varnish-cache/issues/2021
+.. _2017: https://github.com/varnishcache/varnish-cache/issues/2017
+.. _2016: https://github.com/varnishcache/varnish-cache/issues/2016
+.. _2014: https://github.com/varnishcache/varnish-cache/issues/2014
+.. _2010: https://github.com/varnishcache/varnish-cache/issues/2010
+.. _1991: https://github.com/varnishcache/varnish-cache/issues/1991
+.. _1988: https://github.com/varnishcache/varnish-cache/issues/1988
+.. _1914: https://github.com/varnishcache/varnish-cache/issues/1914
+.. _1899: https://github.com/varnishcache/varnish-cache/issues/1899
+.. _1874: https://github.com/varnishcache/varnish-cache/issues/1874
+.. _1865: https://github.com/varnishcache/varnish-cache/issues/1865
+.. _1856: https://github.com/varnishcache/varnish-cache/issues/1856
+.. _1834: https://github.com/varnishcache/varnish-cache/issues/1834
+.. _1830: https://github.com/varnishcache/varnish-cache/issues/1830
+.. _1764: https://github.com/varnishcache/varnish-cache/issues/1764
+.. _1750: https://github.com/varnishcache/varnish-cache/issues/1750
+.. _1704: https://github.com/varnishcache/varnish-cache/issues/1704
+
 ================================
 Varnish Cache 5.0.0 (2016-09-15)
 ================================
