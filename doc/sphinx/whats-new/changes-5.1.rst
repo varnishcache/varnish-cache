@@ -6,7 +6,25 @@ Changes in Varnish 5.1
 We have a couple of new and interesting features in Varnish 5.1,
 and we have a lot of smaller improvements and bugfixes all all over
 the place, in total we have made about 750 commits since Varnish 5.0,
-so this is just some of the highlights:
+so this is just some of the highlights.
+
+Probably the biggest change in Varnish 5.1 is that a couple of very
+significant contributors to Varnish have changed jobs, and therefore
+stopped being active contributors to the Varnish Project.
+
+Per Buer was one of the first people who realized that Varnish was
+not just "Some program for a couple of nordic newspapers",  and he
+started the company Varnish Software, which is one of the major
+sponsors of the Varnish Project.
+
+Lasse Karstensen got roped into Varnish Software by Per, and in
+addition to his other duties, he has taken care of the projects
+system administration and release engineering for most of the 11
+years we have been around now.
+
+Guys, "Thanks" doesn't even start to cover it and we wish you all
+the best for the future!
+
 
 Startup CLI command file
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -49,6 +67,31 @@ which in the above example could look like::
 	    }
 	    // Main site processing ...
 	}
+
+Universal VCL return(fail)
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is now possible to ``return(fail)`` anywhere in VCL,
+including inside VMODs.  This will cause VCL processing
+to terminate forthright.
+
+In addition to ``return(fail)``, this mechanism will be
+used to handle all failure conditions without a safe
+fallback, for instance workspace exhaustion, too many
+headers etc.
+
+In ``vcl_init{}`` failing causes the ``vcl.load`` to fail.
+
+A failure in any of the client side VCL methods (``vcl_recv{}``,
+``vcl_hash{}`` ...) *except* ``vcl_synth{}``, sends the request
+to ``vcl_synth{}`` with a 503, and reason "VCL failed".
+
+A failure on the backend side (``vcl_backend_*{}``) causes the
+fetch to fail.
+
+(VMOD writers should use the new ``VRT_fail(ctx, format_string, ...)``
+function which logs a SLT_VCL_Error record.)
+
 
 Progress on HTTP/2 support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -160,6 +203,36 @@ removing the ``ETag`` or ``Last-Modified`` headers in
 ``vcl_backend_response``, or by removing the If-* client request
 headers in ``vcl_pass``.
 
+Project tool improvements
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We have spent a fair amount of time on the tools we use internally
+in the project.
+
+The ``varnishtest`` program has been improved in many small ways,
+in particular it is now much easier to execute and examine
+results from other programs with the ``shell`` and ``process``
+commands.
+
+The project now has *KISS* web-backend which summarizes 
+``make distcheck`` results from various platforms:
+
+http://varnish-cache.org/vtest/
+
+If you want Varnish to be tested on a platform not already
+covered, all you need to do is run the tools/vtest.sh script
+from the source tree.  We would love to see more platforms
+covered (arm64, ppc, mips) and OS/X would also be nice.
+
+We also publish our code-coverage status now:
+
+http://varnish-cache.org/gcov/
+
+Our goal is 90+% coverage, but we need to finish implementing
+terminal emulation in ``varnishtest`` before we can test the curses(1)
+based programs (top/stat/hist) comprehensively, so they currently
+drag us down.
+
 
 News for authors of VMODs and Varnish API client applications
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -186,3 +259,17 @@ News for authors of VMODs and Varnish API client applications
 
   * All of the ``VSB_*`` functions for working with safe string
     buffers.
+
+
+* VMOD version coexistence improvements:  In difference from executable
+  files, shared libraries are not protected against overwriting under
+  UNIX, and this has generally caused grief when VMODs were updated
+  by package management tools.
+
+  We have decided to bite the bullet, and now the Varnishd management
+  process makes a copy of the VMOD shared library to a version-unique
+  name inside the workdir, from which the running VCL access it.  This
+  ensures that Varnishd can always restart the worker process, no matter
+  what happened to the original VMOD file.
+  
+  
