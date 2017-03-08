@@ -67,7 +67,6 @@ struct barrier {
 	volatile unsigned	need_join;
 };
 
-static pthread_mutex_t		barrier_mtx;
 static VTAILQ_HEAD(, barrier)	barriers = VTAILQ_HEAD_INITIALIZER(barriers);
 
 static struct barrier *
@@ -412,7 +411,6 @@ cmd_barrier(CMD_ARGS)
 	(void)cmd;
 
 	if (av == NULL) {
-		AZ(pthread_mutex_lock(&barrier_mtx));
 		/* Reset and free */
 		VTAILQ_FOREACH_SAFE(b, &barriers, list, b2) {
 			r = pthread_mutex_trylock(&b->mtx);
@@ -432,23 +430,20 @@ cmd_barrier(CMD_ARGS)
 			}
 			AZ(pthread_mutex_unlock(&b->mtx));
 		}
-		AZ(pthread_mutex_unlock(&barrier_mtx));
 		return;
 	}
 
 	AZ(strcmp(av[0], "barrier"));
 	av++;
 
-	AZ(pthread_mutex_lock(&barrier_mtx));
 	VTAILQ_FOREACH(b, &barriers, list)
 		if (!strcmp(b->name, av[0]))
 			break;
 	if (b == NULL)
 		b = barrier_new(av[0], vl);
 	av++;
-	AZ(pthread_mutex_lock(&b->mtx));
-	AZ(pthread_mutex_unlock(&barrier_mtx));
 
+	AZ(pthread_mutex_lock(&b->mtx));
 	for (; *av != NULL; av++) {
 		if (!strcmp(*av, "cond")) {
 			av++;
@@ -473,11 +468,4 @@ cmd_barrier(CMD_ARGS)
 		vtc_fatal(vl, "Unknown barrier argument: %s", *av);
 	}
 	AZ(pthread_mutex_unlock(&b->mtx));
-}
-
-void
-init_barrier(void)
-{
-
-	AZ(pthread_mutex_init(&barrier_mtx, NULL));
 }

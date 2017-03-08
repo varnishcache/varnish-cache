@@ -828,7 +828,6 @@ exec_file(const char *fn, const char *script, const char *tmpdir,
 	AN(vltop);
 
 	init_macro();
-	init_barrier();
 	init_server();
 
 	/* Move into our tmpdir */
