@@ -1417,7 +1417,7 @@ if i != "/* " + v + " */":
 	fo.write('#define VCS_Branch "%s"\n' % b)
 	fo.close()
 
-	for i in open(os.path.join(srcroot, "Makefile")):
+	for i in open(os.path.join(buildroot, "Makefile")):
 		if i[:14] == "PACKAGE_STRING":
 			break
 	i = i.split("=")[1].strip()

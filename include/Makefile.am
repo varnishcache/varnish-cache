@@ -131,18 +131,16 @@ CLEANFILES = \
 
 TESTS = vbm_test vrt_test
 
-noinst_PROGRAMS = ${TESTS}
+noinst_PROGRAMS = vbm_test
 
 vbm_test_SOURCES = vbm_test.c vbm.h
 
-vrt_test_SOURCES = vrt.c
-
 vrt.c: vrt.h
-	cp vrt.h vrt.c
+	cp $(srcdir)/vrt.h $@
 
 vrt_test: vrt.c
-	echo "exec ${CC} -c -o _vrt_test $(top_srcdir)/include/vrt.c" > vrt_test
-	chmod +x vrt_test
+	echo "exec ${CC} -c -o _vrt_test vrt.c" > $@
+	chmod +x $@
 
 test: ${TESTS}
 	@for test in ${TESTS} ; do ./$${test} ; done
