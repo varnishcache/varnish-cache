@@ -681,6 +681,14 @@ possible to end the hit-for-pass state ahead of time with a cacheable
 response. After the "hit-for-pass TTL" elapses, the next request for
 that object is handled as an ordinary miss.
 
+It is possible to end the hit-for-pass state of a cache object by
+setting ``req.hash_always_miss`` to ``true`` in ``vcl_recv`` for a
+request that will hit the object (you'll have to write VCL that brings
+that about). The request in which that happens is forced to be a cache
+miss, and the state of the object afterwards depends on the
+disposition of the backend response -- it may become a cache hit,
+hit-for-miss, or may be set to hit-for-pass again.
+
 hit-for-miss is the default treatment of uncacheable content. No part
 of ``builtin.vcl`` invokes hit-for-pass, so if you need it, you have to
 add the necessary ``return`` statement to your own VCL.
