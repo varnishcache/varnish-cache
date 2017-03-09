@@ -61,6 +61,31 @@ client c1 {
 	} -run
 } -run
 
+client c1 {
+	# Illegal HTTP2-Settings
+	send "GET /noupgrade HTTP/1.1\r\n"
+	send "Host: foo.bar\r\n"
+	send "Upgrade: h2c\r\n"
+	send "HTTP2-Settings: #######\r\n"
+	send "\r\n"
+	expect_close
+} -run
+
+client c1 {
+	# PRISM with error in last bit
+	send "GET /noupgrade HTTP/1.1\r\n"
+	send "Host: foo.bar\r\n"
+	send "Upgrade: h2c\r\n"
+	send "HTTP2-Settings: AAMAAABkAAQAAP__\r\n"
+	send "\r\n"
+	rxresp
+	expect resp.status == 101
+	expect resp.http.upgrade == h2c
+	expect resp.http.connection == Upgrade
+	sendhex "505249202a20485454502f322e300d0a0d0a534d0d0a0d0b"
+	expect_close
+} -run
+
 # XXX: Tests temporarily neutered, they are too flakey
 #varnish v1 -expect MEMPOOL.req0.live == 0
 #varnish v1 -expect MEMPOOL.req1.live == 0

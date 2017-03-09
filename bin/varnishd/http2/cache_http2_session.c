@@ -202,7 +202,8 @@ h2_b64url_settings(struct h2_sess *h2, struct req *req)
 		n -= 8;
 		if (up == u + sizeof u) {
 			AZ(n);
-			h2_set_setting(h2, (void*)u);
+			if (h2_set_setting(h2, (void*)u))
+				return (-1);
 			up = u;
 		}
 	}
@@ -245,10 +246,15 @@ h2_new_ou_session(const struct worker *wrk, struct h2_sess *h2,
 	ssize_t sz;
 	enum htc_status_e hs;
 
+
+	if (h2_b64url_settings(h2, req)) {
+		VSLb(h2->vsl, SLT_Debug, "H2: Bad HTTP-Settings");
+		return (0);
+	}
+
 	sz = write(h2->sess->fd, h2_resp_101, strlen(h2_resp_101));
 	assert(sz == strlen(h2_resp_101));
 
-	AZ(h2_b64url_settings(h2, req));
 	http_Unset(req->http, H_Upgrade);
 	http_Unset(req->http, H_HTTP2_Settings);
 
@@ -270,18 +276,15 @@ h2_new_ou_session(const struct worker *wrk, struct h2_sess *h2,
 	req->task.priv = req;
 	req->err_code = 0;
 	http_SetH(req->http, HTTP_HDR_PROTO, "HTTP/2.0");
-	XXXAZ(Pool_Task(wrk->pool, &req->task, TASK_QUEUE_REQ));
 
 	/* Wait for PRISM response */
 	hs = HTC_RxStuff(h2->htc, H2_prism_complete,
 	    NULL, NULL, NAN, h2->sess->t_idle + cache_param->timeout_idle, 256);
 	if (hs != HTC_S_COMPLETE) {
-		/* XXX clean up req thread */
 		VSLb(h2->vsl, SLT_Debug, "H2: No OU PRISM (hs=%d)", hs);
-		Req_Release(req);
-		SES_Delete(h2->sess, SC_RX_JUNK, NAN);
 		return (0);
 	}
+	XXXAZ(Pool_Task(wrk->pool, &req->task, TASK_QUEUE_REQ));
 	HTC_RxPipeline(h2->htc, h2->htc->rxbuf_b + sizeof(H2_prism));
 	HTC_RxInit(h2->htc, h2->ws);
 	VSLb(h2->vsl, SLT_Debug, "H2: Got PRISM");
@@ -335,8 +338,13 @@ h2_new_session(struct worker *wrk, void *arg)
 	if (req->err_code == H2_PU_MARKER && !h2_new_pu_session(wrk, h2))
 		return;
 
-	if (req->err_code == H2_OU_MARKER && !h2_new_ou_session(wrk, h2, req))
+	if (req->err_code == H2_OU_MARKER && !h2_new_ou_session(wrk, h2, req)) {
+		CNT_AcctLogCharge(wrk->stats, req);
+		VCL_Rel(&req->vcl);
+		Req_Release(req);
+		SES_Delete(h2->sess, SC_RX_JUNK, NAN);
 		return;
+	}
 
 	THR_SetRequest(h2->srq);
 
