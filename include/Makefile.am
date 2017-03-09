@@ -140,7 +140,7 @@ vrt_test_SOURCES = vrt.c
 vrt.c: vrt.h
 	cp vrt.h vrt.c
 
-vrt_test$(EXEEXT): vrt.c
+vrt_test: vrt.c
 	echo "exec ${CC} -c -o _vrt_test $(top_srcdir)/include/vrt.c" > vrt_test
 	chmod +x vrt_test
 
