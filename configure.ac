@@ -515,69 +515,94 @@ gl_LD_VERSION_SCRIPT
 # Now that we're done using the compiler to look for functions and
 # libraries, set CFLAGS to what we want them to be for our own code
 
-# This is a test to see how much havoc Jenkins exposes.
+_VARNISH_CHECK_CFLAGS([
+	-std=c99
+	-D_POSIX_C_SOURCE=200809L
+])
+
+# This is a test to see how much havoc vtest exposes.
 #
+# SunCC flags are passed as explicit flags for the compiler, otherwise
+# GCC and clang will happily accept them during the check and then:
+#
+# - clang will fail to compile
+# - GCC will pass them to the linker
+#
+# But then again, GCC does not support -Wc (only -Wa, -Wl and -Wp) to
+# pass flags to an explicit build phase, but clang does and it will emit
+# a warning. This is why the previous flags need to be checked before we
+# can test those: the warning will be turned into an error.
+
+_VARNISH_CHECK_CFLAGS([
+	-Wall
+	-Werror
+	[-Wc,-errwarn=%all]
+	[-Wc,-errwarn=no%E_EMPTY_TRANSLATION_UNIT]
+	[-Wc,-errwarn=no%E_ANONYMOUS_UNION_DECL]
+	[-Wc,-errtags=yes]
+])
+
 # The reason for -Wno-error=unused-result is a glibc/gcc interaction
 # idiocy where write is marked as warn_unused_result, causing build
 # failures.
 
-AX_CHECK_COMPILE_FLAG([-Wall],
-     [CFLAGS="${CFLAGS} -Wall"
-      OCFLAGS="${OCFLAGS} -Wall"])
+_VARNISH_CHECK_CFLAGS([
+	-Wno-error=unused-result
+	-Wno-unused-result
+])
 
-AC_CHECK_DECL([__SUNPRO_C], [SUNCC="yes"], [SUNCC="no"])
+CFLAGS="${CFLAGS} ${VARNISH_CFLAGS}"
 
-if test "$SUNCC" = "yes" ; then
-    SUNCC_CFLAGS=" \
-	-errwarn=%all,no%E_EMPTY_TRANSLATION_UNIT \
-	-errtags=yes \
-	"
-    AX_CHECK_COMPILE_FLAG([${SUNCC_CFLAGS}],
-	[CFLAGS="${CFLAGS} ${SUNCC_CFLAGS}"
-	 OCFLAGS="${OCFLAGS} ${SUNCC_CFLAGS}"])
-else
-    AX_CHECK_COMPILE_FLAG([-Werror],
-	[CFLAGS="${CFLAGS} -Werror"
-	 OCFLAGS="${OCFLAGS} -Werror"])
+# Developer warnings
+
+VARNISH_CFLAGS=
+DEVELOPER_CFLAGS=
+
+AC_ARG_ENABLE(developer-warnings,
+	AS_HELP_STRING(
+		[--enable-developer-warnings],
+		[enable strict warnings (default is NO)]),
+	[],
+	[enable_developer_warnings=no])
+
+if test "$enable_developer_warnings" != no
+then
+	# This corresponds to FreeBSD's WARNS level 6
+	_VARNISH_CHECK_CFLAGS([
+		-Werror
+		-Wall
+		-Wno-format-y2k
+		-W
+		-Wstrict-prototypes
+		-Wmissing-prototypes
+		-Wpointer-arith
+		-Wreturn-type
+		-Wcast-qual
+		-Wwrite-strings
+		-Wswitch
+		-Wshadow
+		-Wunused-parameter
+		-Wcast-align
+		-Wchar-subscripts
+		-Wnested-externs
+		-Wextra
+		-Wno-sign-compare
+	])
+
+	# These GCC flags are not compliable yet
+	#_VARNISH_CHECK_CFLAGS([-Wold-style-definition -Wredundant-decls])
+
+	# These CLANG flags are not compilable yet
+	#_VARNISH_CHECK_CFLAGS([-Wmissing-variable-declarations -Wno-string-plus-int])
+
+	# Other GCC flags
+	_VARNISH_CHECK_CFLAGS([
+		-Wno-pointer-sign
+		-Wno-address
+	])
+
+	DEVELOPER_CFLAGS="$VARNISH_CFLAGS"
 fi
-
-AX_CHECK_COMPILE_FLAG([-Werror=unused-result],
-    [CFLAGS="${CFLAGS} -Wno-error=unused-result"
-     OCFLAGS="${OCFLAGS} -Wno-error=unused-result"],
-    [AX_CHECK_COMPILE_FLAG([-Wunused-result],
-     [CFLAGS="${CFLAGS} -Wno-unused-result"
-      OCFLAGS="${OCFLAGS} -Wno-unused-result"])])
-
-# This corresponds to FreeBSD's WARNS level 6
-DEVELOPER_CFLAGS=" \
-	-Werror \
-	-Wall \
-	-Wno-format-y2k \
-	-W \
-	-Wstrict-prototypes \
-	-Wmissing-prototypes \
-	-Wpointer-arith \
-	-Wreturn-type \
-	-Wcast-qual \
-	-Wwrite-strings \
-	-Wswitch \
-	-Wshadow \
-	-Wunused-parameter \
-	-Wcast-align \
-	-Wchar-subscripts \
-	-Wnested-externs \
-	-Wextra \
-	-Wno-sign-compare \
-"
-
-# These are not compliable yet
-DEVELOPER_GCC_CFLAGS="-Wold-style-definition -Wredundant-decls "
-#DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} ${DEVELOPER_GCC_CFLAGS}"
-
-# These are compilable
-DEVELOPER_CLANG_CFLAGS="-Wmissing-variable-declarations -Wno-string-plus-int"
-# -Wno-empty-body
-#DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} ${DEVELOPER_CLANG_CFLAGS}"
 
 # --enable-stack-protector
 AC_ARG_ENABLE(stack-protector,
@@ -592,20 +617,9 @@ if test "x$enable_stack_protector" != "xno"; then
 		[], [])
 fi
 
-# --enable-developer-warnings
-AC_ARG_ENABLE(developer-warnings,
-	AS_HELP_STRING([--enable-developer-warnings],[enable strict warnings (default is NO)]),
-	[],
-	[enable_developer_warnings=no])
+AC_CHECK_DECL([__SUNPRO_C], [SUNCC="yes"], [SUNCC="no"])
 
 if test "x$SUNCC" != "xyes" && test "x$enable_developer_warnings" != "xno"; then
-	# compiler flags not available on gcc3
-	AX_CHECK_COMPILE_FLAG([-Wno-pointer-sign],
-		[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wno-pointer-sign"], [], [])
-	# Not available in gcc 4.1.2
-	AX_CHECK_COMPILE_FLAG([-Wno-address],
-		[DEVELOPER_CFLAGS="${DEVELOPER_CFLAGS} -Wno-address"])
-
 	# no known way to specifically disabling missing-field-initializers warnings
 	# keeping the rest of Wextra
 	AX_CHECK_COMPILE_FLAG([-Wno-missing-field-initializers],
@@ -712,4 +726,9 @@ AC_CONFIG_FILES([
     varnishapi.pc
     varnishapi-uninstalled.pc
 ])
+
 AC_OUTPUT
+
+AC_ARG_ENABLE([diagnostic],
+	AS_HELP_STRING([--enable-diagnostic], [Print configure diagnostic]),
+	[_VARNISH_DIAGNOSTIC], [])

@@ -42,6 +42,39 @@
 # any time. Public macros starting with VARNISH_ are documented and will
 # maintain backwards compatibility with older versions of Varnish Cache.
 
+# _VARNISH_DIAGNOSTIC
+# -------------------
+AC_DEFUN([_VARNISH_DIAGNOSTIC], [
+AS_ECHO("
+        ==== $PACKAGE diagnostic ====
+
+	version:        $PACKAGE_VERSION
+	prefix:         $prefix
+
+	compiler:       $CC
+	C flags:        $CFLAGS
+	cpp flags:      $CPPFLAGS
+	ld flags:       $LDFLAGS
+
+	vcl compiler:   $VCC_CC
+	vcc flags:      $OCFLAGS
+
+	original flags: $EXTCFLAGS
+
+	libs:           $LIBS
+	curses:         $CURSES_LIB
+	dl:             $DL_LIBS
+	jemalloc:       $JEMALLOC_LDADD
+	libedit:        $LIBEDIT_LIBS
+	nsl:            $NSL_LIBS
+	pcre:           $PCRE_LIBS
+	pthread:        $PTHREAD_LIBS
+	rt:             $RT_LIBS
+	socket:         $SOCKET_LIBS
+	umem:           $UMEM_LIBS
+")
+])
+
 # _VARNISH_CHECK_LIB(LIB, FUNC)
 # -----------------------------
 AC_DEFUN([_VARNISH_CHECK_LIB], [
@@ -60,6 +93,27 @@ AC_DEFUN([_VARNISH_SEARCH_LIBS], [
 	AC_SEARCH_LIBS([$2], [$3])
 	AC_SUBST(m4_toupper($1_LIBS), "$LIBS")
 	LIBS="${save_LIBS}"
+])
+
+# _VARNISH_CHECK_CFLAG
+----------------------
+AC_DEFUN([_VARNISH_CHECK_CFLAG], [
+
+         AX_CHECK_COMPILE_FLAG([$1],
+		 [VARNISH_CFLAGS="${VARNISH_CFLAGS} $1"],
+		 [],
+		 [$CFLAGS $VARNISH_CFLAGS])
+
+])
+
+# _VARNISH_CHECK_CFLAGS
+-----------------------
+AC_DEFUN([_VARNISH_CHECK_CFLAGS], [
+
+	m4_foreach([_flag],
+		m4_split(m4_normalize([$1])),
+			[_VARNISH_CHECK_CFLAG(_flag)])
+
 ])
 
 # _VARNISH_PKG_CONFIG
