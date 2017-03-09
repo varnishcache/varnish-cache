@@ -136,7 +136,7 @@ vbm_test_SOURCES = vbm_test.c vbm.h
 
 vrt_test_SOURCES =
 
-vrt_test:
+vrt_test$(EXEEXT):
 	echo "exec ${CC} -c -o _vrt_test $(top_srcdir)/include/vrt.h" > vrt_test
 	chmod +x vrt_test
 
