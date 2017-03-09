@@ -2,15 +2,25 @@ varnishtest "hash_always_miss overrides hit-for-pass"
 
 server s1 {
 	rxreq
+	expect req.http.Uncacheable == false
 	txresp -hdr "Hit-Pass: forever"
 
 	rxreq
+	expect req.http.Uncacheable == true
+	txresp
+
+	rxreq
+	expect req.http.Uncacheable == false
 	txresp
 } -start
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
 		set req.hash_always_miss = (req.http.Hash == "always-miss");
+	}
+
+	sub vcl_backend_fetch {
+		set bereq.http.Uncacheable = bereq.uncacheable;
 	}
 
 	sub vcl_backend_response {
@@ -24,7 +34,23 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+logexpect l1 -v v1 -g request {
+	expect * 1001	VCL_return	lookup
+	expect * 1001	VCL_call	MISS
+	expect * 1002	TTL		"^HFP 31536000 "
+	expect * 1003	VCL_return	lookup
+	expect * 1003	VCL_call	PASS
+	expect * 1005	VCL_return	lookup
+	expect * 1005	VCL_call	MISS
+	expect * 1007	VCL_return	lookup
+	expect * 1007	VCL_call	HIT
+} -start
+
 client c1 {
+	txreq
+	rxresp
+	expect resp.http.Obj-Hits == 0
+
 	txreq
 	rxresp
 	expect resp.http.Obj-Hits == 0
@@ -37,3 +63,5 @@ client c1 {
 	rxresp
 	expect resp.http.Obj-Hits == 1
 } -run
+
+logexpect l1 -wait
