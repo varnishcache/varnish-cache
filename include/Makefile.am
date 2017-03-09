@@ -124,13 +124,21 @@ CLEANFILES = \
 	tbl/vrt_stv_var.h \
 	vcl.h \
 	vrt_obj.h \
-	vmod_abi.h
+	vmod_abi.h \
+	vrt_test \
+	_vrt_test
 
-TESTS = vbm_test
+TESTS = vbm_test vrt_test
 
 noinst_PROGRAMS = ${TESTS}
 
 vbm_test_SOURCES = vbm_test.c vbm.h
+
+vrt_test_SOURCES =
+
+vrt_test:
+	echo "exec ${CC} -c -o _vrt_test $(top_srcdir)/include/vrt.h" > vrt_test
+	chmod +x vrt_test
 
 test: ${TESTS}
 	@for test in ${TESTS} ; do ./$${test} ; done

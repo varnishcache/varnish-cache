@@ -65,6 +65,10 @@
 
 /***********************************************************************/
 
+#ifndef __v_printflike
+#  define __v_printflike(a,b)
+#endif
+
 struct VCL_conf;
 struct vrt_acl;
 struct busyobj;
