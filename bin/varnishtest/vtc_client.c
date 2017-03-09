@@ -165,11 +165,10 @@ client_thread(void *priv)
  */
 
 static struct client *
-client_new(const char *name, struct vtclog *vl)
+client_new(const char *name)
 {
 	struct client *c;
 
-	VTC_CHECK_NAME(vl, name, "Client", 'c');
 	ALLOC_OBJ(c, CLIENT_MAGIC);
 	AN(c);
 	REPLACE(c->name, name);
@@ -269,11 +268,12 @@ cmd_client(CMD_ARGS)
 	AZ(strcmp(av[0], "client"));
 	av++;
 
+	VTC_CHECK_NAME(vl, av[0], "Client", 'c');
 	VTAILQ_FOREACH(c, &clients, list)
 		if (!strcmp(c->name, av[0]))
 			break;
 	if (c == NULL)
-		c = client_new(av[0], vl);
+		c = client_new(av[0]);
 	av++;
 
 	for (; *av != NULL; av++) {

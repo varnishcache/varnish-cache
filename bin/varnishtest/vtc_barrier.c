@@ -74,7 +74,6 @@ barrier_new(const char *name, struct vtclog *vl)
 {
 	struct barrier *b;
 
-	VTC_CHECK_NAME(vl, name, "Barrier", 'b');
 	ALLOC_OBJ(b, BARRIER_MAGIC);
 	AN(b);
 	if (pthread_self() != vtc_thread)
@@ -436,6 +435,7 @@ cmd_barrier(CMD_ARGS)
 	AZ(strcmp(av[0], "barrier"));
 	av++;
 
+	VTC_CHECK_NAME(vl, av[0], "Barrier", 'b');
 	VTAILQ_FOREACH(b, &barriers, list)
 		if (!strcmp(b->name, av[0]))
 			break;

@@ -199,11 +199,10 @@ logexp_delete(struct logexp *le)
 }
 
 static struct logexp *
-logexp_new(const char *name, struct vtclog *vl)
+logexp_new(const char *name)
 {
 	struct logexp *le;
 
-	VTC_CHECK_NAME(vl, name, "Logexpect", 'l');
 	ALLOC_OBJ(le, LOGEXP_MAGIC);
 	AN(le);
 	REPLACE(le->name, name);
@@ -528,12 +527,13 @@ cmd_logexpect(CMD_ARGS)
 	AZ(strcmp(av[0], "logexpect"));
 	av++;
 
+	VTC_CHECK_NAME(vl, av[0], "Logexpect", 'l');
 	VTAILQ_FOREACH(le, &logexps, list) {
 		if (!strcmp(le->name, av[0]))
 			break;
 	}
 	if (le == NULL)
-		le = logexp_new(av[0], vl);
+		le = logexp_new(av[0]);
 	av++;
 
 	for (; *av != NULL; av++) {

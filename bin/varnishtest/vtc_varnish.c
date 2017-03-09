@@ -268,13 +268,12 @@ varnishlog_thread(void *priv)
  */
 
 static struct varnish *
-varnish_new(const char *name, struct vtclog *vl)
+varnish_new(const char *name)
 {
 	struct varnish *v;
 	struct vsb *vsb;
 	char buf[1024];
 
-	VTC_CHECK_NAME(vl, name, "Varnish", 'v');
 	ALLOC_OBJ(v, VARNISH_MAGIC);
 	AN(v);
 	REPLACE(v->name, name);
@@ -1075,11 +1074,12 @@ cmd_varnish(CMD_ARGS)
 	AZ(strcmp(av[0], "varnish"));
 	av++;
 
+	VTC_CHECK_NAME(vl, av[0], "Varnish", 'v');
 	VTAILQ_FOREACH(v, &varnishes, list)
 		if (!strcmp(v->name, av[0]))
 			break;
 	if (v == NULL)
-		v = varnish_new(av[0], vl);
+		v = varnish_new(av[0]);
 	av++;
 
 	for (; *av != NULL; av++) {

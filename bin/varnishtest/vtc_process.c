@@ -85,13 +85,12 @@ static VTAILQ_HEAD(, process)	processes =
 	} while (0)
 
 static struct process *
-process_new(const char *name, struct vtclog *vl)
+process_new(const char *name)
 {
 	struct process *p;
 	struct vsb *vsb;
 	char buf[1024];
 
-	VTC_CHECK_NAME(vl, name, "Process", 'p');
 	ALLOC_OBJ(p, PROCESS_MAGIC);
 	AN(p);
 	REPLACE(p->name, name);
@@ -455,11 +454,12 @@ cmd_process(CMD_ARGS)
 	AZ(strcmp(av[0], "process"));
 	av++;
 
+	VTC_CHECK_NAME(vl, av[0], "Process", 'p');
 	VTAILQ_FOREACH(p, &processes, list)
 		if (!strcmp(p->name, av[0]))
 			break;
 	if (p == NULL)
-		p = process_new(av[0], vl);
+		p = process_new(av[0]);
 	av++;
 
 	for (; *av != NULL; av++) {
