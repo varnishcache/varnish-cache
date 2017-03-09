@@ -1,0 +1,39 @@
+varnishtest "hash_always_miss overrides hit-for-pass"
+
+server s1 {
+	rxreq
+	txresp -hdr "Hit-Pass: forever"
+
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		set req.hash_always_miss = (req.http.Hash == "always-miss");
+	}
+
+	sub vcl_backend_response {
+		if (beresp.http.Hit-Pass == "forever") {
+			return (pass(1y));
+		}
+	}
+
+	sub vcl_deliver {
+		set resp.http.Obj-Hits = obj.hits;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.Obj-Hits == 0
+
+	txreq -hdr "Hash: always-miss"
+	rxresp
+	expect resp.http.Obj-Hits == 0
+
+	txreq
+	rxresp
+	expect resp.http.Obj-Hits == 1
+} -run
