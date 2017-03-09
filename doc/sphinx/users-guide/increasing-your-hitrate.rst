@@ -383,3 +383,304 @@ So if you *really* need to vary based on 'User-Agent' be sure to
 normalize the header or your hit rate will suffer badly. Use the
 above code as a template.
 
+Cache misses
+------------
+
+When Varnish does not find an object for a request in the cache, then
+by default it performs a fetch from the backend on the hypothesis that
+the response might be cached. This has two important consequences:
+
+* Concurrent backend requests for the same object are *coalesced* --
+  only one fetch is executed at a time, and the other pending fetches
+  wait for the result (unless you have brought about one of the states
+  described below in :ref:`users-guide-uncacheable`). This is to
+  prevent your backend from being hit by a "thundering herd" when the
+  cached response has expired, or if it was never cached in the first
+  place. If it turns out that the response to the first fetch is
+  cached, then that cache object can be delivered immediately to other
+  pending requests.
+
+* The backend request for the cache miss cannot be conditional if
+  Varnish does not have an object in the cache to validate; that is,
+  it cannot contain the headers ``If-Modified-Since`` or
+  ``If-None-Match``, which might cause the backend to return status
+  "304 Not Modified" with no response body. Otherwise, there might not
+  be a response to cache. If those headers were present in the client
+  request, they are removed from the backend request.
+
+By setting a grace time for cached objects (default 10 seconds), you
+allow Varnish to serve stale content while waiting for coalesced fetches,
+which are run asynchronously while the stale response is sent to the
+client. For details see :ref:`users-guide-handling_misbehaving_servers`.
+
+Although the headers for a conditional request are removed from the
+backend fetch on a cache miss, Varnish may nevertheless respond to the
+client request with "304 Not Modified" if the resulting response
+allows it. At delivery time, if the client request had an
+``If-None-Match`` header that matches the ``ETag`` header in the
+response, or if the time in an ``If-Modified-Since`` request header is
+equal to or later than the time in the ``Last-Modified`` response
+header, Varnish will send the 304 response to the client. This happens
+for both hits and misses.
+
+Varnish can send conditional requests to the backend if it has an
+object in the cache against which the validation can be performed. You
+can ensure that an object is retained for this purpose by setting
+``beresp.keep`` in ``vcl_backend_response``::
+
+  sub vcl_backend_response {
+    # Keep the response in cache for 4 hours if the response has
+    # validating headers.
+    if (beresp.http.ETag || beresp.http.Last-Modified) {
+      set beresp.keep = 4h;
+    }
+  }
+
+A stale object is not removed from the cache for the duration of
+``beresp.keep`` after its TTL and grace time have expired. This will
+increase the storage requirements for your cache, but if you have the
+space, it might be worth it to keep stale objects that can be
+validated for a fairly long time. If the backend can send a 304
+response long after the TTL has expired, you save bandwith on the
+fetch and reduce pressure on the storage; if not, then it's no
+different from any other cache miss.
+
+If, however, you would prefer that backend fetches are not
+conditional, just remove the If-* headers in ``vcl_backend_fetch``::
+
+  sub vcl_backend_fetch {
+    # To prevent conditional backend fetches.
+    unset bereq.http.If-None-Match;
+    unset bereq.http.If-Modified-Since;
+  }
+
+That should only be necessary if the conditional fetches are
+problematic for the backend, for example if evaluating whether the
+response is unchanged is too costly for the backend app, or if the
+responses are just buggy. From the perspective of Varnish, 304
+responses are clearly preferable; fetches with the empty response body
+save bandwidth, and storage does not have to be allocated in the
+cache, since the existing cache object is re-used.
+
+To summarize, you can improve performance even in the case of cache
+misses by:
+
+* ensuring that cached objects have a grace time during which a stale
+  object can be served to the client while fetches are performed in
+  the background, and
+
+* setting a keep time for cached objects that can be validated with
+  a 304 response after they have gone stale.
+
+
+.. _users-guide-uncacheable:
+
+Uncacheable content
+-------------------
+
+Some responses cannot be cached, for various reasons. The content may
+be personalized, depending on the content of the ``Cookie`` header, or
+it might just be the sort of thing that is generated anew on each
+request.  The cache can't help with that, but nevertheless there are
+some decisions you can make that will help Varnish deal with
+uncacheable responses in a way that is best for your requirements.
+
+The issues to consider are:
+
+* preventing request coalescing
+
+* whether (and how soon) the response for the same object may become
+  cacheable again
+
+* whether you want to pass along ``If-Modified-Since`` and
+  ``If-None-Match`` headers from the client request to the backend, to
+  allow the backend to respond with status 304
+
+Passing client requests
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Depending on how your site works, you may be able to recognize a
+client request for a response that cannot be cached, for example if
+the URL matches certain patterns, or due to the contents of a request
+header.  In that case, you can set the fetch to *pass* with
+``return(pass)`` from ``vcl_recv``::
+
+  sub vcl_recv {
+    if (req.url ~ "^/this/is/personal/") {
+      return(pass);
+    }
+  }
+
+For passes there is no request coalescing. Since pass indicates that
+the response will not be cacheable, there is no point in waiting for a
+response that might be cached, and all pending fetches for the object
+are concurrent. Otherwise, fetches waiting for an object that turns
+out to be uncacheable after all may be serialized -- pending fetches
+would wait for the first one, and when the result is not entered into
+the cache, the next fetch begins while all of the others wait, and so
+on.
+
+When a request is passed, this can be recognized in the
+``vcl_backend_*`` subroutines by the fact that ``bereq.uncacheable``
+and ``beresp.uncachable`` are both true. The backend response will not
+be cached, even if it fulfills conditions that otherwise would allow
+it, for example if ``Cache-Control`` sets a positive TTL.
+
+Pass is the default (that is, ``builtin.vcl`` calls ``return(pass)`` in
+``vcl_recv``) if the client request meets these conditions:
+
+* the request method is a standard HTTP/1.1 method, but not ``GET`` or
+  ``HEAD``
+
+* there is either a ``Cookie`` or an ``Authorization`` header, indicating
+  that the response may be personalized
+
+If you want to override the default, say if you are certain that the
+response may be cacheable despite the presence of a Cookie, make sure
+that a ``return`` gets called at the end of any path that may be taken
+through your own ``vcl_recv``. But if you do that, no part of the
+built-in ``vcl_recv`` gets executed; so take a close look at
+``vcl_recv`` in ``builtin.vcl``, and duplicate any part of it that you
+require in your own ``vcl_recv``.
+
+As with cache hits and misses, Varnish decides to send a 304 response
+to the client after a pass if the client request headers and the
+response headers allow it. This might mean that Varnish will send a
+304 response to the client even after the backend saw the same request
+headers (``If-Modified-Since`` and/or ``If-None-Match``), but decided
+not to respond with status 304, while nevertheless setting the
+response headers ``ETag`` and/or ``Last-Modified`` so that 304 would
+appear to be warranted. If you would prefer that Varnish doesn't do
+that, then remove the If-* client request headers in ``vcl_pass``::
+
+  sub vcl_pass {
+    # To prevent 304 client responses after a pass.
+    unset req.http.If-None-Match;
+    unset req.http.If-Modified-Since;
+  }
+
+hit-for-miss
+~~~~~~~~~~~~
+
+You may not be able to recognize all requests for uncacheable content
+in ``vcl_recv``. You might want to allow backends to determine their
+own cacheability by setting the ``Cache-Control`` header, but that
+cannot be seen until Varnish receives the backend response, so
+``vcl_recv`` can't know about it.
+
+By default, if a request is not passed and the backend response turns
+out to be uncacheable, the cache object is set to "hit-for-miss", by
+setting ``beresp.uncacheable`` to ``true`` in
+``vcl_backend_response``.  A minimal object is saved in the cache, so
+that the "hit-for-miss" state can be recognized on subsequent
+lookups. (The cache is used to remember that the object is
+uncacheable, for a limited time.)  In that case, no request coalescing
+is performed, so that fetches can run concurrently. Otherwise, fetches
+for hit-for-miss are just like cache misses, meaning that:
+
+* the response may become cacheable on a later request, for example
+  if it sets a positive TTL with ``Cache-Control``, and
+
+* fetches cannot be conditional, so ``If-Modified-Since`` and
+  ``If-None-Match`` headers are removed from the backend request.
+
+When ``beresp.uncacheable`` is set to ``true``, then ``beresp.ttl``
+determines how long the hit-for-miss state may last at most. The
+hit-for-miss state ends after this period of time elapses, or if a
+cacheable response is returned by the backend before it elapses (the
+elapse of ``beresp.ttl`` just means that the minimal cache object
+expires, like any other cache object expiration). If a cacheable
+response is returned, then that object replaces the hit-for-miss
+object, and subsequent requests for it will be cache hits. If no
+cacheable response is returned before ``beresp.ttl`` elapses, then the
+next request for that object will be an ordinary miss, and hence will
+be subject to request coalescing.
+
+When Varnish sees that it has hit a hit-for-miss object on a new
+request, it executes ``vcl_miss``, so any custom VCL you have written
+for cache misses will apply in the hit-for-miss case as well.
+
+``builtin.vcl`` sets ``beresp.uncacheable`` to ``true``, invoking the
+hit-for-miss state, under a number of conditions that indicate that
+the response cannot be cached, for example if the TTL was computed to
+be 0 or if there is a ``Set-Cookie`` header. ``beresp.ttl`` is set to
+two minutes by ``builtin.vcl`` in this case, so that is how long
+hit-for-miss lasts by default.
+
+You can set ``beresp.uncacheable`` yourself if you need hit-for-miss
+on other conditions::
+
+  sub vcl_backend_response {
+    if (beresp.http.X-This-Is == "personal") {
+      set beresp.uncacheable = true;
+    }
+  }
+
+Note that once ``beresp.uncacheable`` has been set to ``true`` it
+cannot be set back to ``false``; attempts to do so in VCL are ignored.
+
+Although the backend fetches are never conditional for hit-for-miss,
+Varnish may decide (as in all other cases) to send a 304 response to
+the client if the client request headers and response headers ``ETag``
+or ``Last-Modified`` allow it. If you want to prevent that, remove
+the If-* client request headers in ``vcl_miss``::
+
+  sub vcl_miss {
+    # To prevent 304 client responses on hit-for-miss.
+    unset req.http.If-None-Match;
+    unset req.http.If-Modified-Since;
+  }
+
+hit-for-pass
+~~~~~~~~~~~~
+
+A consequence of hit-for-miss is that backend fetches cannot be
+conditional, since hit-for-miss allows subsequent responses to be
+cacheable. This may be problematic for responses that are very large
+and not cacheable, but may be validated with a 304 response. For
+example, you may want clients to validate an object via the backend
+every time, only sending the response when it has been changed.
+
+For a situation like this, you can set an object to "hit-for-pass" with
+``return(pass(DURATION))`` from ``vcl_backend_response``, where the
+DURATION determines how long the hit-for-pass state lasts::
+
+  sub vcl_backend_response {
+    # Set hit-for-pass for two minutes if TTL is 0 and response headers
+    # allow for validation.
+    if (beresp.ttl <= 0s && (beresp.http.ETag || beresp.http.Last-Modified)) {
+      return(pass(120s));
+    }
+  }
+
+As with hit-for-miss, a minimal object is entered into the cache so
+that the hit-for-pass state is recognized on subsequent requests. The
+request is then processed as a pass, just as if ``vcl_recv`` had
+returned pass.  This means that there is no request coalescing, and
+that ``If-Modified-Since`` and ``If-None-Match`` headers in the client
+request are passed along to the backend, so that the backend response
+may be 304.
+
+Varnish executes ``vcl_pass`` when it hits a hit-for-pass object. So
+again, you can arrange for your own handling of both pass and
+hit-for-pass with the same code in VCL.
+
+If you want to prevent Varnish from sending conditional requests to
+the backend, then remove the If-* headers from the backend request in
+``vcl_backend_fetch``, as shown above for cache misses. And if you
+want to prevent Varnish from deciding at delivery time to send a 304
+response to the client based on the client request and response
+headers, then remove the headers from the client request in
+``vcl_pass``, as shown above for pass.
+
+The hit-for-pass state ends when the "hit-for-pass TTL" given in the
+``return`` statement elapses. As with passes, the response to a
+hit-for-pass fetch is never cached, even if it would otherwise fulfill
+conditions for cacheability.  So unlike hit-for-miss, it is not
+possible to end the hit-for-pass state ahead of time with a cacheable
+response. After the "hit-for-pass TTL" elapses, the next request for
+that object is handled as an ordinary miss.
+
+hit-for-miss is the default treatment of uncacheable content. No part
+of ``builtin.vcl`` invokes hit-for-pass, so if you need it, you have to
+add the necessary ``return`` statement to your own VCL.
