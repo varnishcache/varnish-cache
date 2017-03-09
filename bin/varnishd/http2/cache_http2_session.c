@@ -239,7 +239,7 @@ h2_new_pu_session(struct worker *wrk, const struct h2_sess *h2)
 /**********************************************************************/
 
 static int
-h2_new_ou_session(struct worker *wrk, struct h2_sess *h2,
+h2_new_ou_session(const struct worker *wrk, struct h2_sess *h2,
     struct req *req)
 {
 	ssize_t sz;
@@ -343,7 +343,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	H2_Send_Get(wrk, h2, h2->req0);
 	H2_Send_Frame(wrk, h2,
 	    H2_F_SETTINGS, H2FF_NONE, sizeof H2_settings, 0, H2_settings);
-	H2_Send_Rel(wrk, h2, h2->req0);
+	H2_Send_Rel(h2, h2->req0);
 
 	/* and off we go... */
 	h2->cond = &wrk->cond;

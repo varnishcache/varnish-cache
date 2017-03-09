@@ -42,7 +42,6 @@
 #include "vtcp.h"
 #include "vtim.h"
 
-#define H2EC0(U,v,d)
 #define H2EC1(U,v,d) const struct h2_error_s H2CE_##U[1] = {{#U,d,v,0,1}};
 #define H2EC2(U,v,d) const struct h2_error_s H2SE_##U[1] = {{#U,d,v,1,0}};
 #define H2EC3(U,v,d) H2EC1(U,v,d) H2EC2(U,v,d)
@@ -51,6 +50,14 @@
 #undef H2EC1
 #undef H2EC2
 #undef H2EC3
+
+static const struct h2_error_s H2NN_ERROR[1] = {{
+	"UNKNOWN_ERROR",
+	"Unknown error number",
+	0xffffffff,
+	1,
+	1
+}};
 
 enum h2frame {
 #define H2_FRAME(l,u,t,f,...)	H2F_##u = t,
@@ -71,6 +78,56 @@ h2_framename(enum h2frame h2f)
 
 #define H2_FRAME_FLAGS(l,u,v)	const uint8_t H2FF_##u = v;
 #include "tbl/h2_frames.h"
+
+/**********************************************************************
+ */
+
+static const h2_error stream_errors[] = {
+#define H2EC1(U,v,d)
+#define H2EC2(U,v,d) [v] = H2SE_##U,
+#define H2EC3(U,v,d) H2EC1(U,v,d) H2EC2(U,v,d)
+#define H2_ERROR(NAME, val, sc, desc) H2EC##sc(NAME, val, desc)
+#include "tbl/h2_error.h"
+#undef H2EC1
+#undef H2EC2
+#undef H2EC3
+};
+
+#define NSTREAMERRORS (sizeof(stream_errors)/sizeof(stream_errors[0]))
+
+h2_error
+H2_StreamError(uint32_t u)
+{
+	if (u < NSTREAMERRORS && stream_errors[u] != NULL)
+		return (stream_errors[u]);
+	else
+		return (H2NN_ERROR);
+}
+
+/**********************************************************************
+ */
+
+static const h2_error conn_errors[] = {
+#define H2EC1(U,v,d) [v] = H2CE_##U,
+#define H2EC2(U,v,d)
+#define H2EC3(U,v,d) H2EC1(U,v,d) H2EC2(U,v,d)
+#define H2_ERROR(NAME, val, sc, desc) H2EC##sc(NAME, val, desc)
+#include "tbl/h2_error.h"
+#undef H2EC1
+#undef H2EC2
+#undef H2EC3
+};
+
+#define NCONNERRORS (sizeof(conn_errors)/sizeof(conn_errors[0]))
+
+h2_error
+H2_ConnectionError(uint32_t u)
+{
+	if (u < NCONNERRORS && conn_errors[u] != NULL)
+		return (conn_errors[u]);
+	else
+		return (H2NN_ERROR);
+}
 
 /**********************************************************************
  */
@@ -189,7 +246,7 @@ h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	H2_Send_Get(wrk, h2, r2);
 	H2_Send_Frame(wrk, h2,
 	    H2_F_PING, H2FF_PING_ACK, 8, 0, h2->rxf_data);
-	H2_Send_Rel(wrk, h2, r2);
+	H2_Send_Rel(h2, r2);
 	return (0);
 }
 
@@ -218,8 +275,11 @@ h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		return (H2CE_FRAME_SIZE_ERROR);
 	if (r2 == NULL)
 		return (0);
-	INCOMPL();
-	NEEDLESS(return (H2CE_PROTOCOL_ERROR));
+	Lck_Lock(&h2->sess->mtx);
+	r2->error = H2_StreamError(vbe32dec(h2->rxf_data));
+	if (r2->wrk != NULL)
+		AZ(pthread_cond_signal(&r2->wrk->cond));
+	return (0);
 }
 
 /**********************************************************************
@@ -228,14 +288,11 @@ h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 static h2_error __match_proto__(h2_frame_f)
 h2_rx_goaway(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
-	uint32_t	error;
 
 	(void)wrk;
 	(void)r2;
-	h2->go_away_last_stream = vbe32dec(h2->rxf_data);
-	error = vbe32dec(h2->rxf_data + 4);
-	/*XXX*/(void)error;
-	h2->go_away = 1;
+	h2->goaway_last_stream = vbe32dec(h2->rxf_data);
+	h2->error = H2_ConnectionError(vbe32dec(h2->rxf_data + 4));
 	return (0);
 }
 
@@ -360,7 +417,7 @@ h2_rx_settings(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		H2_Send_Get(wrk, h2, r2);
 		H2_Send_Frame(wrk, h2,
 		    H2_F_SETTINGS, H2FF_SETTINGS_ACK, 0, 0, NULL);
-		H2_Send_Rel(wrk, h2, r2);
+		H2_Send_Rel(h2, r2);
 	}
 	return (0);
 }
@@ -639,7 +696,7 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2,
 	H2_Send_Get(wrk, h2, r2);
 	(void)H2_Send_Frame(wrk, h2, H2_F_RST_STREAM,
 	    0, sizeof b, h2->rxf_stream, b);
-	H2_Send_Rel(wrk, h2, r2);
+	H2_Send_Rel(h2, r2);
 
 	h2_del_req(wrk, r2);
 	return (0);
@@ -734,7 +791,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		vbe32enc(b + 4, h2e->val);
 		H2_Send_Get(wrk, h2, h2->req0);
 		(void)H2_Send_Frame(wrk, h2, H2_F_GOAWAY, 0, 8, 0, b);
-		H2_Send_Rel(wrk, h2, h2->req0);
+		H2_Send_Rel(h2, h2->req0);
 	}
 	return (h2e ? 0 : 1);
 }

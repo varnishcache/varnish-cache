@@ -123,8 +123,11 @@ struct h2_req {
 	int64_t				window;
 	struct h2h_decode		*decode;
 
-	struct worker			*tx_wrk;
+	/* Where to wake this stream up */
+	struct worker			*wrk;
+
 	VTAILQ_ENTRY(h2_req)		tx_list;
+	h2_error			error;
 };
 
 VTAILQ_HEAD(h2_req_s, h2_req);
@@ -159,12 +162,12 @@ struct h2_sess {
 	struct h2_settings		local_settings;
 
 	struct req			*new_req;
-	int				go_away;
-	uint32_t			go_away_last_stream;
+	uint32_t			goaway_last_stream;
 
 	VTAILQ_HEAD(,h2_req)		txqueue;
 
 	struct h2_req			req0[1];
+	h2_error			error;
 };
 
 /* http2/cache_http2_panic.c */
@@ -200,13 +203,13 @@ h2_error h2h_decode_bytes(struct h2_sess *h2, struct h2h_decode *d,
 
 /* cache_http2_send.c */
 void H2_Send_Get(struct worker *, struct h2_sess *, struct h2_req *);
-void H2_Send_Rel(struct worker *, struct h2_sess *, struct h2_req *);
+void H2_Send_Rel(struct h2_sess *, const struct h2_req *);
 
 h2_error H2_Send_Frame(struct worker *, const struct h2_sess *,
     h2_frame type, uint8_t flags, uint32_t len, uint32_t stream,
     const void *);
 
-h2_error H2_Send(struct worker *, struct h2_req *, int flush,
+h2_error H2_Send(struct worker *, const struct h2_req *,
     h2_frame type, uint8_t flags, uint32_t len, const void *);
 
 /* cache_http2_proto.c */
@@ -216,6 +219,5 @@ void h2_del_req(struct worker *, struct h2_req *);
 int h2_rxframe(struct worker *, struct h2_sess *);
 h2_error h2_set_setting(struct h2_sess *, const uint8_t *);
 void h2_req_body(struct req*);
-
-
-
+h2_error H2_StreamError(uint32_t);
+h2_error H2_ConnectionError(uint32_t);

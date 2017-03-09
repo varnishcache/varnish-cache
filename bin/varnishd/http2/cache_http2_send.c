@@ -43,26 +43,28 @@ H2_Send_Get(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 
-	r2->tx_wrk = wrk;
 	Lck_Lock(&h2->sess->mtx);
+	r2->wrk = wrk;
 	VTAILQ_INSERT_TAIL(&h2->txqueue, r2, tx_list);
 	while (VTAILQ_FIRST(&h2->txqueue) != r2)
-		Lck_CondWait(&wrk->cond, &h2->sess->mtx, 0);
+		AZ(Lck_CondWait(&wrk->cond, &h2->sess->mtx, 0));
+	r2->wrk = NULL;
 	Lck_Unlock(&h2->sess->mtx);
 }
 
 void
-H2_Send_Rel(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+H2_Send_Rel(struct h2_sess *h2, const struct h2_req *r2)
 {
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	Lck_Lock(&h2->sess->mtx);
 	assert(VTAILQ_FIRST(&h2->txqueue) == r2);
 	VTAILQ_REMOVE(&h2->txqueue, r2, tx_list);
 	r2 = VTAILQ_FIRST(&h2->txqueue);
-	if (r2 != NULL)
-		AZ(pthread_cond_signal(&r2->tx_wrk->cond));
+	if (r2 != NULL) {
+		CHECK_OBJ_NOTNULL(r2->wrk, WORKER_MAGIC);
+		AZ(pthread_cond_signal(&r2->wrk->cond));
+	}
 	Lck_Unlock(&h2->sess->mtx);
 }
 
@@ -128,7 +130,7 @@ H2_Send_Frame(struct worker *wrk, const struct h2_sess *h2,
  */
 
 h2_error
-H2_Send(struct worker *wrk, struct h2_req *r2, int flush,
+H2_Send(struct worker *wrk, const struct h2_req *r2,
     h2_frame ftyp, uint8_t flags, uint32_t len, const void *ptr)
 {
 	h2_error retval;
@@ -137,8 +139,6 @@ H2_Send(struct worker *wrk, struct h2_req *r2, int flush,
 	const char *p;
 	uint8_t final_flags;
 
-	(void)flush;
-
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	h2 = r2->h2sess;
@@ -146,6 +146,12 @@ H2_Send(struct worker *wrk, struct h2_req *r2, int flush,
 	assert(len == 0 || ptr != NULL);
 
 	assert(VTAILQ_FIRST(&h2->txqueue) == r2);
+
+	if (r2->error)
+		return (r2->error);
+
+	if (h2->error && r2->stream > h2->goaway_last_stream)
+		return (h2->error);
 
 	AN(ftyp);
 	AZ(flags & ~(ftyp->flags));
