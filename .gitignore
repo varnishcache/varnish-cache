@@ -110,6 +110,10 @@ cscope.*out
 /bin/varnishtest/tests/*.log
 /bin/varnishtest/tests/*.log-t
 /bin/varnishtest/test-suite.log
+/include/vrt.c
+/include/_vrt_test
+/include/vrt_test
+/include/vrt_test.*
 
 # vtest.sh droppings
 tmp/

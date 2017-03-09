@@ -126,7 +126,8 @@ CLEANFILES = \
 	vrt_obj.h \
 	vmod_abi.h \
 	vrt_test \
-	_vrt_test
+	_vrt_test \
+	vrt.c
 
 TESTS = vbm_test vrt_test
 
@@ -134,10 +135,13 @@ noinst_PROGRAMS = ${TESTS}
 
 vbm_test_SOURCES = vbm_test.c vbm.h
 
-vrt_test_SOURCES =
+vrt_test_SOURCES = vrt.c
 
-vrt_test$(EXEEXT):
-	echo "exec ${CC} -c -o _vrt_test $(top_srcdir)/include/vrt.h" > vrt_test
+vrt.c: vrt.h
+	cp vrt.h vrt.c
+
+vrt_test$(EXEEXT): vrt.c
+	echo "exec ${CC} -c -o _vrt_test $(top_srcdir)/include/vrt.c" > vrt_test
 	chmod +x vrt_test
 
 test: ${TESTS}
