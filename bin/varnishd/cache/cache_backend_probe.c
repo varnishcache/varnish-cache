@@ -222,22 +222,22 @@ vbp_reset(struct vbp_target *vt)
  */
 
 static int
-vbp_write(struct vbp_target *vt, int sock, const void *buf, size_t len)
+vbp_write(struct vbp_target *vt, int *sock, const void *buf, size_t len)
 {
 	int i;
 
-	i = write(sock, buf, len);
+	i = write(*sock, buf, len);
 	if (i != len) {
 		if (i < 0)
 			vt->err_xmit |= 1;
-		VTCP_close(&sock);
+		VTCP_close(sock);
 		return (-1);
 	}
 	return (0);
 }
 
 static int
-vbp_write_proxy_v1(struct vbp_target *vt, int sock)
+vbp_write_proxy_v1(struct vbp_target *vt, int *sock)
 {
 	char buf[105]; /* maximum size for a TCP6 PROXY line with null char */
 	char addr[VTCP_ADDRBUFSIZE];
@@ -246,12 +246,12 @@ vbp_write_proxy_v1(struct vbp_target *vt, int sock)
 	struct vsb vsb;
 	socklen_t l;
 
-	VTCP_myname(sock, addr, sizeof addr, port, sizeof port);
+	VTCP_myname(*sock, addr, sizeof addr, port, sizeof port);
 	AN(VSB_new(&vsb, buf, sizeof buf, VSB_FIXEDLEN));
 	AZ(VSB_cat(&vsb, "PROXY"));
 
 	l = sizeof ss;
-	AZ(getsockname(sock, (void *)&ss, &l));
+	AZ(getsockname(*sock, (void *)&ss, &l));
 	if (ss.ss_family == AF_INET6)
 		VSB_printf(&vsb, " TCP6 ");
 	else if (ss.ss_family == AF_INET)
@@ -302,14 +302,14 @@ vbp_poke(struct vbp_target *vt)
 	/* Send the PROXY header */
 	assert(vt->backend->proxy_header <= 2);
 	if (vt->backend->proxy_header == 1) {
-		if (vbp_write_proxy_v1(vt, s) != 0)
+		if (vbp_write_proxy_v1(vt, &s) != 0)
 			return;
 	} else if (vt->backend->proxy_header == 2 &&
-	    vbp_write(vt, s, vbp_proxy_local, sizeof vbp_proxy_local) != 0)
+	    vbp_write(vt, &s, vbp_proxy_local, sizeof vbp_proxy_local) != 0)
 		return;
 
 	/* Send the request */
-	if (vbp_write(vt, s, vt->req, vt->req_len) != 0)
+	if (vbp_write(vt, &s, vt->req, vt->req_len) != 0)
 		return;
 	vt->good_xmit |= 1;
 
