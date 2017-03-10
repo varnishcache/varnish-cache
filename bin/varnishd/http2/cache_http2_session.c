@@ -210,30 +210,6 @@ h2_b64url_settings(struct h2_sess *h2, struct req *req)
 	return (0);
 }
 
-/**********************************************************************/
-
-static int
-h2_pu_session(struct worker *wrk, const struct h2_sess *h2)
-{
-	enum htc_status_e hs;
-
-	(void)wrk;
-
-	hs = H2_prism_complete(h2->htc);
-	if (hs == HTC_S_MORE) {
-		VSLb(h2->vsl, SLT_Debug, "Short pu PRISM");
-		return (0);
-	}
-	if (hs != HTC_S_COMPLETE) {
-		VSLb(h2->vsl, SLT_Debug, "Wrong pu PRISM");
-		return (0);
-	}
-	HTC_RxPipeline(h2->htc, h2->htc->rxbuf_b + sizeof(H2_prism));
-	HTC_RxInit(h2->htc, h2->ws);
-
-	VSLb(h2->vsl, SLT_Debug, "H2: Got pu PRISM");
-	return (1);
-}
 
 /**********************************************************************/
 
@@ -243,7 +219,6 @@ h2_ou_session(const struct worker *wrk, struct h2_sess *h2,
 {
 	ssize_t sz;
 	enum htc_status_e hs;
-
 
 	if (h2_b64url_settings(h2, req)) {
 		VSLb(h2->vsl, SLT_Debug, "H2: Bad HTTP-Settings");
@@ -283,9 +258,6 @@ h2_ou_session(const struct worker *wrk, struct h2_sess *h2,
 		return (0);
 	}
 	XXXAZ(Pool_Task(wrk->pool, &req->task, TASK_QUEUE_REQ));
-	HTC_RxPipeline(h2->htc, h2->htc->rxbuf_b + sizeof(H2_prism));
-	HTC_RxInit(h2->htc, h2->ws);
-	VSLb(h2->vsl, SLT_Debug, "H2: Got PRISM");
 	return (1);
 }
 
@@ -333,14 +305,17 @@ h2_new_session(struct worker *wrk, void *arg)
 	wsp = WS_Snapshot(h2->ws);
 	h2->req0 = h2_new_req(wrk, h2, 0, NULL);
 
-	if ((req->err_code == H2_PU_MARKER && !h2_pu_session(wrk, h2)) ||
-	    (req->err_code == H2_OU_MARKER && !h2_ou_session(wrk, h2, req))) {
+	if (req->err_code == H2_OU_MARKER && !h2_ou_session(wrk, h2, req)) {
 		CNT_AcctLogCharge(wrk->stats, req);
 		VCL_Rel(&req->vcl);
 		Req_Release(req);
 		SES_Delete(h2->sess, SC_RX_JUNK, NAN);
 		return;
 	}
+	assert(HTC_S_COMPLETE == H2_prism_complete(h2->htc));
+	HTC_RxPipeline(h2->htc, h2->htc->rxbuf_b + sizeof(H2_prism));
+	HTC_RxInit(h2->htc, h2->ws);
+	VSLb(h2->vsl, SLT_Debug, "H2: Got pu PRISM");
 
 	THR_SetRequest(h2->srq);
 
