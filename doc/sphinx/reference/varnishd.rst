@@ -15,7 +15,7 @@ HTTP accelerator daemon
 SYNOPSIS
 ========
 
-varnishd [-a address[:port][,PROTO]] [-b host[:port]] [-C] [-d] [-F] [-f config] [-h type[,options]] [-i identity] [-j jail[,jailoptions]] [-l vsl[,vsm]] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...]] [-S secret-file] [-s [name=]kind[,options]] [-T address[:port]] [-t TTL] [-V] [-W waiter]
+varnishd [-a address[:port][,PROTO]] [-b host[:port]] [-C] [-d] [-F] [-f config] [-h type[,options]] [-I clifile] [-i identity] [-j jail[,jailoptions]] [-l vsl[,vsm]] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...]] [-S secret-file] [-s [name=]kind[,options]] [-T address[:port]] [-t TTL] [-V] [-W waiter] [-x parameter|vsl|cli|builtin] [-?]
 
 DESCRIPTION
 ===========
@@ -28,6 +28,9 @@ satisfy future requests for the same document.
 
 OPTIONS
 =======
+
+Basic options
+-------------
 
 -a <address[:port][,PROTO]>
 
@@ -44,58 +47,25 @@ OPTIONS
 -b <host[:port]>
 
   Use the specified host as backend server. If port is not specified,
-  the default is 8080.
-
--C
-
-  Print VCL code compiled to C language and exit. Specify the VCL file
-  to compile with the -f option.
-
--d
-
-  Enables debugging mode: The parent process runs in the foreground
-  with a CLI connection on stdin/stdout, and the child process must be
-  started explicitly with a CLI command. Terminating the parent
-  process will also terminate the child.
-
--F
-
-  Do not fork, run in the foreground.
+  the default is 8080. -b can be used only once, and not together with
+  -f.
 
 -f config
 
   Use the specified VCL configuration file instead of the builtin
   default.  See :ref:`vcl(7)` for details on VCL syntax.
 
-  When neither a -f nor a -b argument are given, `varnishd` will not
-  start the worker process but process cli commands.
+  If a single -f option is used, then the VCL instance loaded from the
+  file is named "boot" and immediately becomes active. If more than
+  one -f option is used, the VCL instances are named "boot0", "boot1"
+  and so forth, in the order corresponding to the -f arguments, and
+  the last one is named "boot", which becomes active.
 
--h <type[,options]>
-
-  Specifies the hash algorithm. See `Hash Algorithm`_ section for a list
-  of supported algorithms.
-
--i identity
-
-  Specify the identity of the Varnish server. This can be accessed
-  using ``server.identity`` from VCL.
-
--j <jail[,jailoptions]>
-
-  Specify the jailing mechanism to use. See `Jail`_ section.
-
--l <vsl[,vsm]>
-
-  Specifies size of shmlog file. vsl is the space for the VSL records
-  [80M] and vsm is the space for stats counters [1M]. Scaling suffixes
-  like 'K' and 'M' can be used up to (G)igabytes.
-  Default is 81 Megabytes.
-
--M <address:port>
-
-  Connect to this port and offer the command line interface.  Think of
-  it as a reverse shell. When running with -M and there is no backend
-  defined the child process (the cache) will not start initially.
+  Either -b or one or more -f options must be specified, but not both,
+  and they cannot both be left out, unless -d is used to start
+  `varnishd` in debugging mode. If the empty string is specified as
+  the sole -f option, then `varnishd` starts without starting the
+  worker process, and the management process will accept CLI commands.
 
 -n name
 
@@ -105,15 +75,99 @@ OPTIONS
   begins with a forward slash, it is interpreted as the absolute path
   to the directory which should be used for this purpose.
 
+Documentation options
+---------------------
+
+For these options, `varnishd` prints information to standard output
+and exits. When a -x option is used, it must be the only option.
+
+-?
+
+  Print the usage message.
+
+-x parameter
+
+  Print documentation of the runtime parameters (-p options), see
+  `List of Parameters`_.
+
+-x vsl
+
+  Print documentation of the tags used in the Varnish shared memory
+  log, see :ref:`vsl(7)`.
+
+-x cli
+
+  Print documentation of the command line interface, see
+  :ref:`varnish-cli(7)`.
+
+-x builtin
+
+  Print the contents of the default VCL program ``builtin.vcl``.
+
+Operations options
+------------------
+
+-F
+
+  Do not fork, run in the foreground. Only one of -F or -d can be
+  specified, and -F cannot be used together with -C.
+
+-T <address[:port]>
+
+  Offer a management interface on the specified address and port. See
+  :ref:`varnish-cli(7)` for documentation of the management commands.
+  To disable the management interface use ``none``.
+
+-M <address:port>
+
+  Connect to this port and offer the command line interface.  Think of
+  it as a reverse shell. When running with -M and there is no backend
+  defined the child process (the cache) will not start initially.
+
 -P file
 
   Write the PID of the process to the specified file.
+
+-i identity
+
+  Specify the identity of the Varnish server. This can be accessed
+  using ``server.identity`` from VCL.
+
+-I clifile
+
+  Execute the management commands in the file given as ``clifile``
+  before the the worker process starts, see `CLI Command File`_.
+
+Tuning options
+--------------
+
+-t TTL
+
+  Specifies the default time to live (TTL) for cached objects. This is
+  a shortcut for specifying the *default_ttl* run-time parameter.
 
 -p <param=value>
 
   Set the parameter specified by param to the specified value, see
   `List of Parameters`_ for details. This option can be used multiple
   times to specify multiple parameters.
+
+-s <[name=]type[,options]>
+
+  Use the specified storage backend. See `Storage Backend`_ section.
+
+  This option can be used multiple times to specify multiple storage
+  files. Names are referenced in logs, VCL, statistics, etc.
+
+-l <vsl[,vsm]>
+
+  Specifies size of shmlog file. vsl is the space for the VSL records
+  [80M] and vsm is the space for stats counters [1M]. Scaling suffixes
+  like 'K' and 'M' can be used up to (G)igabytes.
+  Default is 81 Megabytes.
+
+Security options
+----------------
 
 -r <param[,param...]>
 
@@ -129,27 +183,37 @@ OPTIONS
   the management port. If not provided a new secret will be drawn
   from the system PRNG.  To disable authentication use ``none``.
 
--s <[name=]type[,options]>
+-j <jail[,jailoptions]>
 
-  Use the specified storage backend. See `Storage Backend`_ section.
+  Specify the jailing mechanism to use. See `Jail`_ section.
 
-  This option can be used multiple times to specify multiple storage
-  files. Names are referenced in logs, VCL, statistics, etc.
+Advanced, development and debugging options
+-------------------------------------------
 
--T <address[:port]>
+-d
 
-  Offer a management interface on the specified address and port. See
-  `Management Interface`_ for a list of management commands.  To disable
-  the management interface use ``none``.
+  Enables debugging mode: The parent process runs in the foreground
+  with a CLI connection on stdin/stdout, and the child process must be
+  started explicitly with a CLI command. Terminating the parent
+  process will also terminate the child.
 
--t TTL
+  Only one of -d or -F can be specified, and -d cannot be used together
+  with -C.
 
-  Specifies the default time to live (TTL) for cached objects. This is
-  a shortcut for specifying the *default_ttl* run-time parameter.
+-C
+
+  Print VCL code compiled to C language and exit. Specify the VCL file
+  to compile with the -f option. Either -f or -b must be used with -C,
+  and -C cannot be used with -F.
 
 -V
 
-  Display the version number and exit.
+  Display the version number and exit. This must be the only option.
+
+-h <type[,options]>
+
+  Specifies the hash algorithm. See `Hash Algorithm`_ section for a list
+  of supported algorithms.
 
 -W waiter
 
@@ -271,9 +335,31 @@ Management Interface
 If the -T option was specified, `varnishd` will offer a command-line
 management interface on the specified address and port.  The
 recommended way of connecting to the command-line management interface
-is through varnishadm(1).
+is through :ref:`varnishadm(1)`.
 
-The commands available are documented in varnish(7).
+The commands available are documented in :ref:`varnish-cli(7)`.
+
+CLI Command File
+----------------
+
+The -I option makes it possible to run arbitrary management commands
+when `varnishd` is launched, before the worker process is started. In
+particular, this is the way to load configurations, apply labels to
+them, and make a VCL instance active that uses those labels on
+startup::
+
+  vcl.load panic /etc/varnish_panic.vcl
+  vcl.load siteA0 /etc/varnish_siteA.vcl
+  vcl.load siteB0 /etc/varnish_siteB.vcl
+  vcl.load siteC0 /etc/varnish_siteC.vcl
+  vcl.label siteA siteA0
+  vcl.label siteB siteB0
+  vcl.label siteC siteC0
+  vcl.load main /etc/varnish_main.vcl
+  vcl.use main
+
+If a command in the file is prefixed with '-', failure will not abort
+the startup.
 
 .. _ref-varnishd-params:
 
