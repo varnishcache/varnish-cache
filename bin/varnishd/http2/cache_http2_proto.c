@@ -95,8 +95,8 @@ static const h2_error stream_errors[] = {
 
 #define NSTREAMERRORS (sizeof(stream_errors)/sizeof(stream_errors[0]))
 
-h2_error
-H2_StreamError(uint32_t u)
+static h2_error
+h2_streamerror(uint32_t u)
 {
 	if (u < NSTREAMERRORS && stream_errors[u] != NULL)
 		return (stream_errors[u]);
@@ -120,8 +120,8 @@ static const h2_error conn_errors[] = {
 
 #define NCONNERRORS (sizeof(conn_errors)/sizeof(conn_errors[0]))
 
-h2_error
-H2_ConnectionError(uint32_t u)
+static h2_error
+h2_connectionerror(uint32_t u)
 {
 	if (u < NCONNERRORS && conn_errors[u] != NULL)
 		return (conn_errors[u]);
@@ -150,7 +150,6 @@ h2_new_req(const struct worker *wrk, struct h2_sess *h2,
 	r2->stream = stream;
 	r2->req = req;
 	req->transport_priv = r2;
-	// XXX: ordering ?
 	Lck_Lock(&h2->sess->mtx);
 	VTAILQ_INSERT_TAIL(&h2->streams, r2, list);
 	Lck_Unlock(&h2->sess->mtx);
@@ -276,9 +275,10 @@ h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	if (r2 == NULL)
 		return (0);
 	Lck_Lock(&h2->sess->mtx);
-	r2->error = H2_StreamError(vbe32dec(h2->rxf_data));
+	r2->error = h2_streamerror(vbe32dec(h2->rxf_data));
 	if (r2->wrk != NULL)
 		AZ(pthread_cond_signal(&r2->wrk->cond));
+	Lck_Unlock(&h2->sess->mtx);
 	return (0);
 }
 
@@ -292,8 +292,9 @@ h2_rx_goaway(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	(void)wrk;
 	(void)r2;
 	h2->goaway_last_stream = vbe32dec(h2->rxf_data);
-	h2->error = H2_ConnectionError(vbe32dec(h2->rxf_data + 4));
-	return (0);
+	h2->error = h2_connectionerror(vbe32dec(h2->rxf_data + 4));
+	VSLb(h2->vsl, SLT_Debug, "GOAWAY %s", h2->error->name);
+	return (h2->error);
 }
 
 /**********************************************************************
@@ -562,7 +563,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	h2->mailcall = r2;
 	Lck_Lock(&h2->sess->mtx);
 	AZ(pthread_cond_broadcast(h2->cond));
-	while (h2->mailcall != NULL)
+	while (h2->mailcall != NULL && h2->error == 0 && r2->error == 0)
 		AZ(Lck_CondWait(h2->cond, &h2->sess->mtx, 0));
 	Lck_Unlock(&h2->sess->mtx);
 	return (0);
@@ -587,21 +588,26 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 	*lp = 0;
 
 	Lck_Lock(&h2->sess->mtx);
-	while (h2->mailcall != r2)
+	while (h2->mailcall != r2 && h2->error == 0 && r2->error == 0)
 		AZ(Lck_CondWait(h2->cond, &h2->sess->mtx, 0));
-	if (l > h2->rxf_len)
-		l = h2->rxf_len;
-	if (l > 0) {
-		memcpy(ptr, h2->rxf_data, l);
-		h2->rxf_data += l;
-		h2->rxf_len -= l;
-	}
-	*lp = l;
-	if (h2->rxf_len == 0) {
-		if (h2->rxf_flags & H2FF_DATA_END_STREAM)
-			retval = VFP_END;
+	if (h2->mailcall == r2) {
+		assert(h2->mailcall == r2);
+		if (l > h2->rxf_len)
+			l = h2->rxf_len;
+		if (l > 0) {
+			memcpy(ptr, h2->rxf_data, l);
+			h2->rxf_data += l;
+			h2->rxf_len -= l;
+		}
+		*lp = l;
+		if (h2->rxf_len == 0) {
+			if (h2->rxf_flags & H2FF_DATA_END_STREAM)
+				retval = VFP_END;
+		}
 		h2->mailcall = NULL;
 		AZ(pthread_cond_broadcast(h2->cond));
+	} else {
+		retval = VFP_ERROR;
 	}
 	Lck_Unlock(&h2->sess->mtx);
 	return (retval);
@@ -734,6 +740,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	if (hs != HTC_S_COMPLETE) {
 		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug, "H2: No frame (hs=%d)", hs);
+		h2->error = H2CE_NO_ERROR;
 		Lck_Unlock(&h2->sess->mtx);
 		return (0);
 	}
@@ -786,7 +793,8 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	}
 
 	h2e = h2_procframe(wrk, h2, h2f);
-	if (h2e) {
+	if (h2->error == 0 && h2e) {
+		h2->error = h2e;
 		vbe32enc(b, h2->highest_stream);
 		vbe32enc(b + 4, h2e->val);
 		H2_Send_Get(wrk, h2, h2->req0);

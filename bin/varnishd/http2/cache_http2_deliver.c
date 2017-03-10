@@ -81,15 +81,17 @@ h2_bytes(struct req *req, enum vdp_action act, void **priv,
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
 	(void)priv;
+
 	if (act == VDP_INIT)
 		return (0);
+	if (r2->error)
+		return (-1);
 	H2_Send_Get(req->wrk, r2->h2sess, r2);
 	H2_Send(req->wrk, r2,
 	    H2_F_DATA,
 	    act == VDP_FINI ? H2FF_DATA_END_STREAM : H2FF_NONE,
 	    len, ptr);
 	H2_Send_Rel(r2->h2sess, r2);
-
 	return (0);
 }
 

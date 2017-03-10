@@ -1,0 +1,49 @@
+varnishtest "Test GOAWAY/session cleanup"
+
+server s1 {
+	rxreq
+	txresp -hdr "Content-Type: text/plain" -body response
+} -start
+
+varnish v1 -vcl+backend {} -start
+varnish v1 -cliok {param.set feature +http2}
+varnish v1 -cliok "param.set debug +syncvsl"
+
+client c1 {
+	stream 1 {
+		txprio
+	} -run
+	stream 3 {
+		txreq
+
+		# First, HTTP checks
+		rxresp
+		expect resp.http.content-Type == "text/plain"
+
+		# Then, payload checks
+		expect resp.body == response
+	} -run
+	stream 5 {
+		txprio
+	} -run
+	stream 0 {
+		txgoaway -err 7
+	} -run
+	expect_close
+} -run
+
+delay .1
+
+client c1 {
+	stream 1 {
+		txreq
+
+		# First, HTTP checks
+		rxresp
+		expect resp.http.content-Type == "text/plain"
+
+		# Then, payload checks
+		expect resp.body == response
+	} -run
+} -run
+

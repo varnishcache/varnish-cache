@@ -289,7 +289,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	struct req *req;
 	struct sess *sp;
 	struct h2_sess *h2;
-	struct h2_req *r2, *r22;
+	struct h2_req *r2;
 	uintptr_t wsp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -332,12 +332,30 @@ h2_new_session(struct worker *wrk, void *arg)
 		HTC_RxInit(h2->htc, h2->ws);
 	}
 
+	AN(h2->error);
 	/* Delete all idle streams */
-	VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
-		if (r2->state == H2_S_IDLE)
-			h2_del_req(wrk, r2);
+	Lck_Lock(&sp->mtx);
+	VSLb(h2->vsl, SLT_Debug, "H2 CLEANUP %p", h2->error);
+	VTAILQ_FOREACH(r2, &h2->streams, list) {
+		if (r2->error == 0)
+			r2->error = h2->error;
+		if (r2->wrk != NULL)
+			AZ(pthread_cond_signal(&r2->wrk->cond));
 	}
+	while (1) {
+		VTAILQ_FOREACH(r2, &h2->streams, list)
+			if (r2->state == H2_S_IDLE && r2 != h2->req0)
+				break;
+		if (r2 == NULL)
+			break;
+		Lck_Unlock(&sp->mtx);
+		h2_del_req(wrk, r2);
+		Lck_Lock(&sp->mtx);
+	}
+	VSLb(h2->vsl, SLT_Debug, "H2CLEAN done");
+	Lck_Unlock(&sp->mtx);
 	h2->cond = NULL;
+	h2_del_req(wrk, h2->req0);
 }
 
 struct transport H2_transport = {

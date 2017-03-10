@@ -220,5 +220,3 @@ void h2_del_req(struct worker *, struct h2_req *);
 int h2_rxframe(struct worker *, struct h2_sess *);
 h2_error h2_set_setting(struct h2_sess *, const uint8_t *);
 void h2_req_body(struct req*);
-h2_error H2_StreamError(uint32_t);
-h2_error H2_ConnectionError(uint32_t);
