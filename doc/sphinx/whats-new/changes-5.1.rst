@@ -13,7 +13,7 @@ significant contributors to Varnish have changed jobs, and therefore
 stopped being active contributors to the Varnish Project.
 
 Per Buer was one of the first people who realized that Varnish was
-not just "Some program for a couple of nordic newspapers",  and he
+not just "Some program for a couple of Nordic newspapers",  and he
 started the company Varnish Software, which is one of the major
 sponsors of the Varnish Project.
 
@@ -30,7 +30,7 @@ Startup CLI command file
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 The new '-I cli_file' option to varnishd will make it much more
-practical to use the vcl labels introduced in Varnish 5.0.
+practical to use the VCL labels introduced in Varnish 5.0.
 
 The cli commands in the file will be executed before the worker
 process starts, so it could for instance contain::
@@ -51,7 +51,7 @@ the startup.
 Related to this change we have reordered the argument checking so
 that argument problems are reported more consistently.
 
-In case you didn't hear about them yet, labeling VCL programs
+In case you didn't hear about them yet, labelling VCL programs
 allows you to branch out to other VCLs in the main::vcl_recv{},
 which in the above example could look like::
 
@@ -113,7 +113,7 @@ state in the argument to ``pass``. For example:
 ``return(pass(120s))``.
 
 To recap: when ``beresp.uncacheable`` is set to ``true`` in
-``vcl_backend_response``, Varnish makes a note of it with a mininal
+``vcl_backend_response``, Varnish makes a note of it with a minimal
 object in the cache, and finds that information again on the next
 lookup for the same object. In essence, the cache is used to remember
 that the last backend response was not cacheable. In that case,

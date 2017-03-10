@@ -89,7 +89,7 @@ All VCL subroutines (except ``vcl_fini``)
   all cases but ``vcl_synth``, control is directed to ``vcl_synth``
   with ``resp.status`` and ``resp.reason`` set to 503 and "VCL
   failed", respectively. ``vcl_synth`` is aborted on ``return(fail)``.
-  ``vcl_fini`` is executed whan a VCL instance in unloaded (enters the
+  ``vcl_fini`` is executed when a VCL instance in unloaded (enters the
   COLD state) and has no failure condition.
 
 Client-side VCL subroutines
@@ -125,7 +125,7 @@ command-line option for varnishd, but none is explicitly set in
 limit has been reworked (see :ref:`ref_param_nuke_limit`). Previously,
 a storage backend was tried first with a nuke limit of 0, and retried
 on failure with the limit configured as the ``-p`` parameter
-``nuke_limit``. When no storage was specfied, Varnish went through
+``nuke_limit``. When no storage was specified, Varnish went through
 every one in round-robin order with a nuke limit of 0 before retrying.
 
 Now ``beresp.storage`` is initialized with a storage backend before
