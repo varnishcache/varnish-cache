@@ -203,6 +203,8 @@ removing the ``ETag`` or ``Last-Modified`` headers in
 ``vcl_backend_response``, or by removing the If-* client request
 headers in ``vcl_pass``.
 
+.. _whatsnew_changes_5.1_vtest:
+
 Project tool improvements
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
