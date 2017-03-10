@@ -133,12 +133,6 @@ Now ``beresp.storage`` is initialized with a storage backend before
 ``beresp.storage`` after its execution will be used. The configured
 nuke limit is used in all cases.
 
-vcl_backend_error
-~~~~~~~~~~~~~~~~~
-
-* ``beresp.backend.ip`` is only available when the backend connection
-  is open, and hence not in ``vcl_backend_error``.
-
 VMOD std
 ~~~~~~~~
 
