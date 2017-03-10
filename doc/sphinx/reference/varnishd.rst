@@ -204,7 +204,7 @@ Advanced, development and debugging options
 
   Print VCL code compiled to C language and exit. Specify the VCL file
   to compile with the -f option. Either -f or -b must be used with -C,
-  and -C cannot be used with -F.
+  and -C cannot be used with -F or -d.
 
 -V
 

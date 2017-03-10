@@ -25,6 +25,7 @@ years we have been around now.
 Guys, "Thanks" doesn't even start to cover it and we wish you all
 the best for the future!
 
+.. _whatsnew_clifile:
 
 Startup CLI command file
 ~~~~~~~~~~~~~~~~~~~~~~~~

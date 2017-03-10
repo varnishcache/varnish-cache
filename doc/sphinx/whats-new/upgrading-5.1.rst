@@ -7,6 +7,38 @@ Upgrading to Varnish 5.1
 varnishd command-line options
 =============================
 
+If you have to change anything at all for version 5.1, then most
+likely the command-line options for `varnishd` in your start scripts,
+because we have tightened restrictions on which options may be used
+together. This has served mainly to clarify the use of options for
+testing purposes, for example using ``varnishd -C`` to check a VCL
+source for syntactic correctness. We have also added some new options.
+
+The details are given in :ref:`varnishd(1)`, but here's a summary:
+
+* Added ``-I clifile`` to run CLI commands at startup, before the
+  worker process starts. See :ref:`whatsnew_clifile`.
+
+* More than one ``-f`` option is now permitted, to pre-load VCL
+  instances at startup. The last of these becomes the "boot" instance
+  that is is active at startup.
+
+* Either ``-b`` or one or more ``-f`` options must be specified, but
+  not both, and they cannot both be left out, unless ``-d`` is used to
+  start `varnishd` in debugging mode. If the empty string is specified
+  as the sole ``-f`` option, then `varnishd` starts without starting
+  the worker process, and the management process will accept CLI
+  commands.
+
+* Added ``-?`` to print the usage message, which is only printed for
+  this option.
+
+* Added the ``-x`` option to print certain kinds of documentation and
+  exit. When ``-x`` is used, it must be the only option.
+
+* Only one of ``-F`` or ``-d`` may be used, and neither of these can
+  be used with ``-C``.
+
 * Added the ``workuser`` parameter to the ``-j`` option.
 
 varnishd parameters
