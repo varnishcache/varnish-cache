@@ -104,6 +104,9 @@ vcl_recv
   use if you choose to save the request body (see
   :ref:`func_cache_req_body`).
 
+* ``return(vcl(LABEL))`` may not be called after a restart. It can
+  only be called from the active VCL instance.
+
 vcl_backend_response
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -169,7 +172,8 @@ Other changes
 
 * ``varnishtest(1)``:
 
-  * Added the ``process`` and ``setenv`` commands, see :ref:`vtc(7)` .
+  * Added the ``process``, ``setenv`` and ``write_body`` commands, see
+    :ref:`vtc(7)` .
 
   * ``-reason`` replaces ``-msg`` to set the reason string for a
     response (default "OK").
