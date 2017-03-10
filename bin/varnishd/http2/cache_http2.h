@@ -144,6 +144,8 @@ struct h2_sess {
 	uint32_t			highest_stream;
 	int				bogosity;
 
+	struct h2_req			*req0;
+
 	struct h2_req_s			streams;
 
 	struct req			*srq;
@@ -166,7 +168,6 @@ struct h2_sess {
 
 	VTAILQ_HEAD(,h2_req)		txqueue;
 
-	struct h2_req			req0[1];
 	h2_error			error;
 };
 

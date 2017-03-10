@@ -109,8 +109,6 @@ h2_new_sess(const struct worker *wrk, struct sess *sp, struct req *srq)
 
 		SES_Reserve_xport_priv(sp, &up);
 		*up = (uintptr_t)h2;
-		INIT_OBJ(h2->req0, H2_REQ_MAGIC);
-		h2->req0->h2sess = h2;
 	}
 	AN(up);
 	CAST_OBJ_NOTNULL(h2, (void*)(*up), H2_SESS_MAGIC);
@@ -215,7 +213,7 @@ h2_b64url_settings(struct h2_sess *h2, struct req *req)
 /**********************************************************************/
 
 static int
-h2_new_pu_session(struct worker *wrk, const struct h2_sess *h2)
+h2_pu_session(struct worker *wrk, const struct h2_sess *h2)
 {
 	enum htc_status_e hs;
 
@@ -240,7 +238,7 @@ h2_new_pu_session(struct worker *wrk, const struct h2_sess *h2)
 /**********************************************************************/
 
 static int
-h2_new_ou_session(const struct worker *wrk, struct h2_sess *h2,
+h2_ou_session(const struct worker *wrk, struct h2_sess *h2,
     struct req *req)
 {
 	ssize_t sz;
@@ -333,12 +331,10 @@ h2_new_session(struct worker *wrk, void *arg)
 
 	h2 = h2_new_sess(wrk, sp, req->err_code == H2_PU_MARKER ? req : NULL);
 	wsp = WS_Snapshot(h2->ws);
-	(void)h2_new_req(wrk, h2, 0, NULL);
+	h2->req0 = h2_new_req(wrk, h2, 0, NULL);
 
-	if (req->err_code == H2_PU_MARKER && !h2_new_pu_session(wrk, h2))
-		return;
-
-	if (req->err_code == H2_OU_MARKER && !h2_new_ou_session(wrk, h2, req)) {
+	if ((req->err_code == H2_PU_MARKER && !h2_pu_session(wrk, h2)) ||
+	    (req->err_code == H2_OU_MARKER && !h2_ou_session(wrk, h2, req))) {
 		CNT_AcctLogCharge(wrk->stats, req);
 		VCL_Rel(&req->vcl);
 		Req_Release(req);
