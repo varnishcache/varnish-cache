@@ -39,9 +39,9 @@ process starts, so it could for instance contain::
 	vcl.load siteA0 /etc/varnish_siteA.vcl
 	vcl.load siteB0 /etc/varnish_siteB.vcl
 	vcl.load siteC0 /etc/varnish_siteC.vcl
-	vsl.label siteA siteA0
-	vsl.label siteB siteB0
-	vsl.label siteC siteC0
+	vcl.label siteA siteA0
+	vcl.label siteB siteB0
+	vcl.label siteC siteC0
 	vcl.load main /etc/varnish_main.vcl
 	vcl.use main
 
