@@ -9,5 +9,5 @@ shell -err -expect {Error: -I file CLI command failed (104)} {
 	echo "vcl.list" > foo
 	echo "-foobar" >> foo
 	echo "vcl.load" >> foo
-	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0
+	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2m,1m
 }

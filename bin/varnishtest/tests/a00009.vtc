@@ -42,7 +42,7 @@ shell -err -expect {Neither -b nor -f given} { varnishd -n ${tmpdir}/v0  }
 
 # Test -F mode with no VCL loaded
 
-process p1 "exec varnishd -n ${tmpdir}/v1 -F -f '' -a :0 -l2m,3m -s malloc,1m" -log -start
+process p1 "exec varnishd -n ${tmpdir}/v1 -F -f '' -a :0 -l2m,1m" -log -start
 
 delay 2
 
