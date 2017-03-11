@@ -5,7 +5,7 @@
  *
  */
 
-#if HAVE_EXPLICIT_BZERO
+#ifdef HAVE_EXPLICIT_BZERO
 #  define ZERO_OBJ(to, sz)	explicit_bzero(to, sz)
 #else
 #  define ZERO_OBJ(to, sz)	(void)memset(to, 0, sz)
