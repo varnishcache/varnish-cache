@@ -6,13 +6,6 @@ compiler:
 os:
   - linux
   - osx
-matrix:
-  include:
-  - os: linux
-    dist: trusty
-    sudo: false
-  - os: osx
-    osx_image: xcode8.2
 addons:
   apt:
     packages:
@@ -24,4 +17,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install nghttp2 ; fi
   - ./autogen.sh
   - ./configure
+dist: trusty
+sudo: false
+osx_image: xcode8.2
 script: make -j3 check VERBOSE=1
