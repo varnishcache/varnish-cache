@@ -92,14 +92,12 @@ AC_DEFUN([_VARNISH_PKG_CONFIG], [
 	AC_SUBST([VARNISH_TEST_PATH],
 		[$VARNISHAPI_SBINDIR:$VARNISHAPI_BINDIR:$PATH])
 
+	dnl Inherit Varnish's prefix if undefined
+	test "$prefix" = NONE && ac_default_prefix=$VARNISHAPI_PREFIX
+
 	dnl Define the VCL directory for automake
-	AS_CASE([$prefix],
-		[NONE], [
-			vcldir=$VARNISHAPI_VCLDIR
-			ac_default_prefix=$VARNISHAPI_PREFIX],
-		[vcldir=$($PKG_CONFIG --define-variable=datarootdir=$datarootdir \
-			--variable=vcldir varnishapi)]
-	)
+	vcldir=$($PKG_CONFIG --define-variable=datarootdir=$datarootdir \
+		--variable=vcldir varnishapi)
 	AC_SUBST([vcldir])
 
 	dnl Define the VCL directory for this package
@@ -158,13 +156,8 @@ AC_DEFUN([_VARNISH_VMOD_CONFIG], [
 	AC_SUBST([VARNISHAPI_DATAROOTDIR])
 
 	dnl Define the VMOD directory for libtool
-	AS_CASE([$prefix],
-		[NONE], [
-			vmoddir=$VARNISHAPI_VMODDIR
-			ac_default_prefix=$VARNISHAPI_PREFIX],
-		[vmoddir=$($PKG_CONFIG --define-variable=libdir=$libdir \
-			--variable=vmoddir varnishapi)]
-	)
+	vmoddir=$($PKG_CONFIG --define-variable=libdir=$libdir \
+		--variable=vmoddir varnishapi)
 	AC_SUBST([vmoddir])
 
 	dnl Define an automake silent execution for vmodtool
