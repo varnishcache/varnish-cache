@@ -244,6 +244,7 @@ AC_CHECK_MEMBERS([struct sockaddr.sa_len],,,[
 ])
 
 # Checks for library functions.
+_VARNISH_CHECK_EXPLICIT_BZERO
 AC_TYPE_SIGNAL
 AC_TYPE_SIZE_T
 AC_FUNC_VPRINTF
