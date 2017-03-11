@@ -3,11 +3,16 @@ language: c
 compiler:
   - clang
   - gcc
+os:
+  - linux
+  - osx
 addons:
   apt:
     packages:
     - python-docutils
 before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install docutils; fi
   - ./autogen.sh
   - ./configure
 sudo: false
