@@ -32,8 +32,7 @@ client c1 {
 		expect resp.http.content-Type == "text/plain"
 
 		# Then, payload checks
-		write_body resp.txt
-		shell {grep -q response resp.txt}
+		expect resp.body == response
 	} -run
 } -run
 
