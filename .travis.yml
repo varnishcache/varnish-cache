@@ -3,17 +3,22 @@ language: c
 compiler:
   - clang
   - gcc
-os:
-  - linux
-  - osx
+matrix:
+  include:
+  - os: linux
+    dist: trusty
+    sudo: false
+  - os: osx
+    osx_image: xcode8.2
 addons:
   apt:
     packages:
     - python-docutils
+    - nghttp2
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install docutils; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install nghttp2 ; fi
   - ./autogen.sh
   - ./configure
-sudo: false
-script: 'make -j3 check VERBOSE=1'
+script: make -j3 check VERBOSE=1
