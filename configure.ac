@@ -505,8 +505,8 @@ VARNISH_STATE_DIR='${localstatedir}/varnish'
 AC_SUBST(VARNISH_STATE_DIR)
 
 # Default configuration directory.
-varnishconfdir='${sysconfdir}/varnish'
-AC_SUBST(varnishconfdir)
+pkgsysconfdir='${sysconfdir}/varnish'
+AC_SUBST(pkgsysconfdir)
 
 # Check for linker script support
 gl_LD_VERSION_SCRIPT
