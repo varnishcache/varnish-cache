@@ -84,7 +84,7 @@ h2_bytes(struct req *req, enum vdp_action act, void **priv,
 
 	if (act == VDP_INIT)
 		return (0);
-	if (r2->error)
+	if (r2->error && act != VDP_FINI)
 		return (-1);
 	H2_Send_Get(req->wrk, r2->h2sess, r2);
 	H2_Send(req->wrk, r2,
