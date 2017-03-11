@@ -39,6 +39,7 @@
 #include <unistd.h>
 
 #include "compat/daemon.h"
+#include "vdef.h"
 #include "vas.h"
 
 /*
