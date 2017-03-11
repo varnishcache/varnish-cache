@@ -3,6 +3,9 @@ language: c
 compiler:
   - clang
   - gcc
+os:
+  - linux
+  - osx
 matrix:
   include:
   - os: linux
