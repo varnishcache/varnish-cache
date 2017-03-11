@@ -9,7 +9,7 @@ os:
 addons:
   apt:
     packages:
-    - python-docutils
+      - python-docutils
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install docutils; fi
@@ -19,4 +19,7 @@ before_install:
 dist: trusty
 sudo: false
 osx_image: xcode8.2
-script: make -j3 check VERBOSE=1
+script:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      export PYTHONPATH=`brew --prefix`/lib/python2.7/site-packages; fi
+  - make -j3 check VERBOSE=1
