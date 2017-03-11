@@ -310,7 +310,7 @@ clean-vmod-$1:
 # is a minimal setup:
 #
 #     AM_TESTS_ENVIRONMENT = \
-#         PATH="$(VARNISH_TEST_PATH)" \
+#         PATH="$(VARNISH_TEST_PATH):$(PATH)" \
 #         LD_LIBRARY_PATH="$(VARNISH_LIBRARY_PATH)"
 #     TEST_EXTENSIONS = .vtc
 #     VTC_LOG_COMPILER = varnishtest -v
@@ -319,7 +319,7 @@ clean-vmod-$1:
 # Setting up the different paths is mostly relevant when you aren't building
 # against the system installation of Varnish. In the case of the PATH, you
 # may also need to preserve the original PATH if you run commands outside of
-# the Varnish distribution in your test cases.
+# the Varnish distribution in your test cases (as shown above).
 #
 # The $(VMOD_*) variables contain a proper import statement if the relevant
 # VMOD was built in the same directory as the test runner. With the example
