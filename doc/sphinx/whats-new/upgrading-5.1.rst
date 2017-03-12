@@ -199,14 +199,15 @@ vcl_backend_response
   to a valid storage will set ``beresp.storage`` as well. If the
   storage is invalid, ``beresp.storage`` is left untouched.
 
-When multiple storage backends have been defined with the ``-s``
-command-line option for varnishd, but none is explicitly set in
-``vcl_backend_response``, storage selection and the use of the nuke
-limit has been reworked (see :ref:`ref_param_nuke_limit`). Previously,
-a storage backend was tried first with a nuke limit of 0, and retried
-on failure with the limit configured as the ``-p`` parameter
-``nuke_limit``. When no storage was specified, Varnish went through
-every one in round-robin order with a nuke limit of 0 before retrying.
+For the case where multiple storage backends have been defined with
+the ``-s`` command-line option for varnishd, but none is explicitly
+set in ``vcl_backend_response``, storage selection and the use of the
+nuke limit has been reworked (see
+:ref:`ref_param_nuke_limit`). Previously, a storage backend was tried
+first with a nuke limit of 0, and retried on failure with the limit
+configured as the ``-p`` parameter ``nuke_limit``. When no storage was
+specified, Varnish went through every one in round-robin order with a
+nuke limit of 0 before retrying.
 
 Now ``beresp.storage`` is initialized with a storage backend before
 ``vcl_backend_response`` executes, and the storage set in
