@@ -4,7 +4,7 @@ Changes in Varnish 5.1
 ======================
 
 We have a couple of new and interesting features in Varnish 5.1,
-and we have a lot of smaller improvements and bugfixes all all over
+and we have a lot of smaller improvements and bugfixes all over
 the place, in total we have made about 750 commits since Varnish 5.0,
 so this is just some of the highlights.
 
@@ -22,8 +22,8 @@ addition to his other duties, he has taken care of the projects
 system administration and release engineering for most of the 11
 years we have been around now.
 
-Guys, "Thanks" doesn't even start to cover it and we wish you all
-the best for the future!
+Per & Lasse:  "Thanks" doesn't even start to cover it, and we wish
+you all the best for the future!
 
 .. _whatsnew_clifile:
 
@@ -46,8 +46,8 @@ process starts, so it could for instance contain::
 	vcl.load main /etc/varnish_main.vcl
 	vcl.use main
 
-If the command is prefixed with '-', failure will not abort
-the startup.
+If a command in the file is prefixed with '-', failure will not
+abort the startup.
 
 Related to this change we have reordered the argument checking so
 that argument problems are reported more consistently.
@@ -79,7 +79,8 @@ to terminate forthright.
 In addition to ``return(fail)``, this mechanism will be
 used to handle all failure conditions without a safe
 fallback, for instance workspace exhaustion, too many
-headers etc.
+headers etc. (This is a work in progress, there is a
+lot of code to review before we are done.)
 
 In ``vcl_init{}`` failing causes the ``vcl.load`` to fail.
 
@@ -97,7 +98,23 @@ function which logs a SLT_VCL_Error record.)
 Progress on HTTP/2 support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-XXX
+HTTP/2 support is better than in 5.0, and is now enabled and survives
+pretty well on our own varnish-cache.org website, but there are
+still things missing, most notably windows and priority, which may
+be fatal to more complex websites.
+
+We expect HTTP/2 support to be production ready in the autumn 2017
+release of Varnish-Cache, but that requires a testing and feedback
+from real-world applications.
+
+So if you have a chance to test our HTTP/2 code, by all means do
+so, please report any crashes, bugs or other trouble back to us.
+
+To enable HTTP/2 you need to ``param.set feature +http2`` but due
+to internet-politics, you will only see HTTP/2 traffic if you have
+an SSL proxy in front of Varnish which advertises HTTP2 with ALPN.
+
+For the hitch SSL proxy, add the argument ``--alpn-protos="h2,http/1.1"``
 
 .. _whatsnew_changes_5.1_hitpass:
 
@@ -274,5 +291,5 @@ News for authors of VMODs and Varnish API client applications
   name inside the workdir, from which the running VCL access it.  This
   ensures that Varnishd can always restart the worker process, no matter
   what happened to the original VMOD file.
-  
-  
+ 
+*EOF* 
