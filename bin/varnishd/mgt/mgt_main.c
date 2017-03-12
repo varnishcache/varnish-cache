@@ -68,6 +68,7 @@ struct vsb		*vident;
 struct VSC_C_mgt	static_VSC_C_mgt;
 struct VSC_C_mgt	*VSC_C_mgt;
 static int		I_fd = -1;
+char			Cn_arg[] = "/tmp/varnishd_C_XXXXXXX";
 
 static struct vpf_fh *pfh = NULL;
 
@@ -228,6 +229,17 @@ make_secret(const char *dirname)
 	VJ_master(JAIL_MASTER_LOW);
 	AZ(atexit(mgt_secret_atexit));
 	return (fn);
+}
+
+static void
+mgt_Cflag_atexit(void)
+{
+
+	/* Only master process */
+	if (getpid() != mgt_pid)
+		return;
+	(void)rmdir("vmod_cache");
+	(void)rmdir(Cn_arg);
 }
 
 /*--------------------------------------------------------------------*/
@@ -481,7 +493,6 @@ main(int argc, char * const *argv)
 	struct cli cli[1];
 	char *dirname;
 	char **av;
-	char Cn_arg[] = "/tmp/varnishd_C_XXXXXXX";
 	unsigned u;
 	struct sigaction sac;
 	struct vev *e;
@@ -728,14 +739,6 @@ main(int argc, char * const *argv)
 	}
 	assert(argc == optind);
 
-	if (C_flag) {
-		if (n_arg == NULL) {
-			AN(mkdtemp(Cn_arg));
-			AZ(chmod(Cn_arg, 0755));
-			n_arg = Cn_arg;
-		}
-	}
-
 	/* XXX: we can have multiple CLI actions above, is this enough ? */
 	if (cli[0].result != CLIS_OK) {
 		AZ(VSB_finish(cli[0].sb));
@@ -744,6 +747,15 @@ main(int argc, char * const *argv)
 	}
 
 	assert(d_flag == 0 || F_flag == 0);
+
+	if (C_flag) {
+		if (n_arg == NULL) {
+			AN(mkdtemp(Cn_arg));
+			AZ(chmod(Cn_arg, 0755));
+			AZ(atexit(mgt_Cflag_atexit));
+			n_arg = Cn_arg;
+		}
+	}
 
 	if (S_arg != NULL && !strcmp(S_arg, "none")) {
 		fprintf(stderr,
@@ -801,7 +813,6 @@ main(int argc, char * const *argv)
 			fprintf(stderr, "%s\n", VSB_data(cli->sb));
 			VSB_clear(cli->sb);
 		}
-		(void)rmdir(Cn_arg);
 		exit(cli->result == CLIS_OK ? 0 : 2);
 	} else {
 		while (!VTAILQ_EMPTY(&f_args)) {
