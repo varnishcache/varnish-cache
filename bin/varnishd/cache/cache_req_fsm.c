@@ -94,6 +94,17 @@ CNT_GotReq(struct worker *wrk, struct req *req)
 	return (0);
 }
 
+static enum req_fsm_nxt
+cnt_transport(struct worker *wrk, struct req *req)
+{
+
+	if (CNT_GotReq(wrk, req))
+		return (REQ_FSM_DONE);
+
+	req->req_step = R_STP_RECV;
+	return (REQ_FSM_MORE);
+}
+
 /*--------------------------------------------------------------------
  * Deliver an object to client
  */
@@ -961,6 +972,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 	 */
 	assert(
 	    req->req_step == R_STP_LOOKUP ||
+	    req->req_step == R_STP_TRANSPORT ||
 	    req->req_step == R_STP_RECV);
 
 	AN(req->vsl->wid & VSL_CLIENTMARKER);

@@ -115,28 +115,6 @@ h2_new_sess(const struct worker *wrk, struct sess *sp, struct req *srq)
 	return (h2);
 }
 
-/**********************************************************************
- * Incoming HEADERS, this is where the partys at...
- */
-
-static void __match_proto__(task_func_t)
-h2_do_req(struct worker *wrk, void *priv)
-{
-	struct req *req;
-	struct h2_req *r2;
-
-	CAST_OBJ_NOTNULL(req, priv, REQ_MAGIC);
-	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
-	THR_SetRequest(req);
-	if (!CNT_GotReq(wrk, req))
-		assert(CNT_Request(wrk, req) != REQ_FSM_DISEMBARK);
-	THR_SetRequest(NULL);
-	VSL(SLT_Debug, 0, "H2REQ CNT done");
-	/* XXX clean up req */
-	r2->state = H2_S_CLOSED;
-	h2_del_req(wrk, r2);
-}
-
 /**********************************************************************/
 
 enum htc_status_e __match_proto__(htc_complete_f)

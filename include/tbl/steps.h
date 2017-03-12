@@ -31,6 +31,7 @@
 /*lint -save -e525 -e539 */
 
 #ifdef REQ_STEP
+  REQ_STEP(transport,		TRANSPORT,	(wrk, req))
   REQ_STEP(restart,		RESTART,	(wrk, req))
   REQ_STEP(recv,		RECV,		(wrk, req))
   REQ_STEP(pipe,		PIPE,		(wrk, req))

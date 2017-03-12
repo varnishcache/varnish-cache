@@ -427,7 +427,7 @@ h2_rx_settings(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
  * Incoming HEADERS, this is where the partys at...
  */
 
-static void __match_proto__(task_func_t)
+void __match_proto__(task_func_t)
 h2_do_req(struct worker *wrk, void *priv)
 {
 	struct req *req;
@@ -436,8 +436,8 @@ h2_do_req(struct worker *wrk, void *priv)
 	CAST_OBJ_NOTNULL(req, priv, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
 	THR_SetRequest(req);
-	if (!CNT_GotReq(wrk, req))
-		assert(CNT_Request(wrk, req) != REQ_FSM_DISEMBARK);
+	req->req_step = R_STP_TRANSPORT;
+	assert(CNT_Request(wrk, req) != REQ_FSM_DISEMBARK);
 	THR_SetRequest(NULL);
 	VSL(SLT_Debug, 0, "H2REQ CNT done");
 	/* XXX clean up req */
@@ -491,7 +491,6 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 
 	h2->new_req = req;
 	req->sp = h2->sess;
-	req->req_step = R_STP_RECV;
 	req->transport = &H2_transport;
 
 	req->t_first = VTIM_real();
