@@ -175,6 +175,8 @@ VMOD std
 Other changes
 =============
 
+* The storage backend type umem, long in disuse, has been retired.
+
 * ``varnishstat(1)``:
 
   * Added the ``cache_hitmiss`` stat to  to count hits on
@@ -198,6 +200,10 @@ Other changes
   * Clarified the meaning of the ``%r`` formatter, see NOTES in
     :ref:`varnishncsa(1)`.
 
+  * Clarified the meaning of the ``%{X}i`` and ``%{X}o`` formatters
+    when the header X appears more than once (the last occurrence is
+    is used).
+
 * ``varnishtest(1)``:
 
   * Added the ``process``, ``setenv`` and ``write_body`` commands, see
@@ -208,6 +214,11 @@ Other changes
 
   * Added ``-cliexpect`` to match expected CLI responses to regular
     expressions.
+
+  * Added the ``-match`` operator for the ``shell`` command.
+
+  * The ``err_shell`` command is deprecated, use ``shell -err
+    -expect`` instead.
 
   * ``varnishtest`` can be stopped with the ``TERM``, ``INT`` of ``KILL``
     signals, but not with ``HUP``. These signals kill the process group,
