@@ -49,8 +49,9 @@ varnishd parameters
   command-line option and on the ``vsl_space`` and ``vsm_space``
   parameters.
 
-* Added ``clock_step`` and ``thread_pool_reserve`` (see
-  :ref:`ref_param_clock_step`, :ref:`ref_param_thread_pool_reserve`).
+* Added ``clock_step``, ``thread_pool_reserve`` and ``ban_cutoff`` (see
+  :ref:`ref_param_clock_step`, :ref:`ref_param_thread_pool_reserve`,
+  :ref:`ref_param_ban_cutoff`).
 
 * ``thread_pool_stack`` is no longer considered experimental, and is
   more extensively documented, see :ref:`ref_param_thread_pool_stack`.
@@ -167,6 +168,10 @@ All VCL subroutines (except ``vcl_fini``)
   ``vcl_fini`` is executed when a VCL instance in unloaded (enters the
   COLD state) and has no failure condition.
 
+* VCL failure is invoked on any attempt to set one of the fields in the
+  the first line of a request or response to the empty string, such
+  as ``req.url``, ``req.proto``, ``req.reason`` and so forth.
+
 Client-side VCL subroutines
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -213,6 +218,8 @@ VMOD std
 
 * Added ``std.getenv()``, see :ref:`func_getenv`.
 
+* Added ``std.late_100_continue(BOOL)``, see :ref:`func_late_100_continue`.
+
 Other changes
 =============
 
@@ -226,6 +233,19 @@ Other changes
   * The ``cache_hitpass`` stat now only counts hits on hit-for-pass
     objects.
 
+  * ``fetch_failed`` is incremented for any kind of fetch failure --
+    when there is a failure after ``return(deliver)`` from
+    ``vcl_backend_response``, or when control is diverted to
+    ``vcl_backend_error``.
+
+  * Added the ``n_test_gunzip`` stat, which is incremented when
+    Varnish verifies a compressed response from a backend -- this
+    operation was previously counted together with ``n_gunzip``.
+
+  * Added the ``bans_lurker_obj_killed_cutoff`` to count the number of
+    objects killed by the ban lurker to keep the number of bans below
+    ``ban_cutoff``.
+
 * ``varnishlog(1)``:
 
   * Hits on hit-for-miss and hit-for-pass objects are logged with
@@ -235,6 +255,10 @@ Other changes
 
   * An entry with the ``TTL`` tag and the prefix ``HFP`` is logged to
     record the duration set for hit-for-pass objects.
+
+  * Added ``vxid`` as a lefthand side token for VSL queries, allowing
+    for queries that search for transaction IDs in the log. See
+    :ref:`vsl-query(7)`.
 
 * ``varnishncsa(1)``:
 
@@ -258,8 +282,15 @@ Other changes
 
   * Added the ``-match`` operator for the ``shell`` command.
 
+  * Added the ``-hdrlen`` operator to generate a header with a
+    given name and length.
+
   * The ``err_shell`` command is deprecated, use ``shell -err
     -expect`` instead.
+
+  * The ``${bad_backend}`` macro can now be used for a backend that
+    is always down, which does not require a port definition (as does
+    ``${bad_ip}`` in a backend definition).
 
   * ``varnishtest`` can be stopped with the ``TERM``, ``INT`` of ``KILL``
     signals, but not with ``HUP``. These signals kill the process group,
