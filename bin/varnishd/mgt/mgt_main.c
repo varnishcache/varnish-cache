@@ -862,9 +862,6 @@ main(int argc, char * const *argv)
 
 	mgt_SHM_Create();
 
-	if (!d_flag && !mgt_has_vcl() && !novcl)
-		MGT_Complain(C_ERR, "No VCL loaded yet");
-
 	memset(&sac, 0, sizeof sac);
 	sac.sa_handler = SIG_IGN;
 	sac.sa_flags = SA_RESTART;
@@ -872,7 +869,7 @@ main(int argc, char * const *argv)
 	AZ(sigaction(SIGPIPE, &sac, NULL));
 	AZ(sigaction(SIGHUP, &sac, NULL));
 
-	u = MCH_Init(d_flag || novcl ? 0 : 1);
+	MCH_Init();
 
 	if (I_fd >= 0) {
 		fprintf(stderr, "BEGIN of -I file processing\n");
@@ -884,6 +881,14 @@ main(int argc, char * const *argv)
 				    "vev_schedule_one() = %d", o);
 		}
 	}
+
+	if (!d_flag && !mgt_has_vcl() && !novcl)
+		MGT_Complain(C_ERR, "No VCL loaded yet");
+
+	if (mgt_has_vcl() && ! d_flag)
+		u = MCH_Start_Child();
+	else
+		u = 0;
 
 	if (eric_fd >= 0)
 		mgt_eric_im_done(eric_fd, u);

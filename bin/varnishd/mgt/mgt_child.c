@@ -597,6 +597,18 @@ MCH_Stop_Child(void)
 	mgt_reap_child();
 }
 
+/*=====================================================================
+ */
+
+int
+MCH_Start_Child(void)
+{
+	mgt_launch_child(NULL);
+	if (child_state != CH_RUNNING)
+		return (2);
+	return(0);
+}
+
 /*====================================================================
  * Query if the child is running
  */
@@ -668,17 +680,9 @@ static struct cli_proto cli_mch[] = {
  * and to reincarnate it in case of trouble.
  */
 
-int
-MCH_Init(int launch)
+void
+MCH_Init(void)
 {
 
 	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_mch);
-
-	if (launch) {
-		mgt_launch_child(NULL);
-		if (child_state != CH_RUNNING)
-			return (2);
-	}
-
-	return(0);
 }
