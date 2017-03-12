@@ -223,6 +223,7 @@ h2_ou_session(const struct worker *wrk, struct h2_sess *h2,
 	(void)h2_new_req(wrk, h2, 1, req);
 	req->req_step = R_STP_RECV;
 	req->transport = &H2_transport;
+	req->req_step = R_STP_TRANSPORT;
 	req->task.func = h2_do_req;
 	req->task.priv = req;
 	req->err_code = 0;
@@ -336,6 +337,30 @@ h2_new_session(struct worker *wrk, void *arg)
 	h2_del_req(wrk, h2->req0);
 }
 
+static void __match_proto__(vtr_reembark_f)
+h2_reembark(struct worker *wrk, struct req *req)
+{
+	struct sess *sp;
+
+	sp = req->sp;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	assert(req->transport == &H2_transport);
+
+	if (!SES_Reschedule_Req(req))
+		return;
+
+	/* Couldn't schedule, ditch */
+	wrk->stats->busy_wakeup--;
+	wrk->stats->busy_killed++;
+	AN (req->vcl);
+	VCL_Rel(&req->vcl);
+	CNT_AcctLogCharge(wrk->stats, req);
+	Req_Release(req);
+	DSL(DBG_WAITINGLIST, req->vsl->wid, "kill from waiting list");
+	usleep(10000);
+}
+
+
 struct transport H2_transport = {
 	.name =			"H2",
 	.magic =		TRANSPORT_MAGIC,
@@ -344,4 +369,5 @@ struct transport H2_transport = {
 	.deliver =		h2_deliver,
 	.req_body =		h2_req_body,
 	.minimal_response =	h2_minimal_response,
+	.reembark =		h2_reembark,
 };

@@ -1,0 +1,31 @@
+varnishtest "H2 on waiting list"
+
+barrier b1 cond 2
+
+server s1 {
+	rxreq
+	barrier b1 sync
+	delay 1
+	txresp -hdr "Content-Type: text/plain" -body response
+} -start
+
+varnish v1 -vcl+backend {} -start
+varnish v1 -cliok {param.set feature +http2}
+varnish v1 -cliok "param.set debug +syncvsl"
+
+client c1 {
+	stream 1 {
+		txreq 
+		rxresp
+		expect resp.http.content-Type == "text/plain"
+		expect resp.body == response
+	} -start
+	stream 5 {
+		barrier b1 sync
+		txreq 
+		rxresp
+		expect resp.http.content-Type == "text/plain"
+		expect resp.body == response
+	} -run
+	stream 1 -wait
+} -run

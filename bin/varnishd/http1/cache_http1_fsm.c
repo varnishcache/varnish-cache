@@ -51,6 +51,8 @@ static const char H1PROC[] = "HTTP1::Proc";
 static const char H1BUSY[] = "HTTP1::Busy";
 static const char H1CLEANUP[] = "HTTP1::Cleanup";
 
+static void HTTP1_Session(struct worker *, struct req *);
+
 static void
 http1_setstate(const struct sess *sp, const char *s)
 {
@@ -325,7 +327,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 /*----------------------------------------------------------------------
  */
 
-void
+static void
 HTTP1_Session(struct worker *wrk, struct req *req)
 {
 	enum htc_status_e hs;

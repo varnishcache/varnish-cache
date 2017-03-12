@@ -34,7 +34,6 @@ int V1F_FetchRespHdr(struct busyobj *);
 int V1F_Setup_Fetch(struct vfp_ctx *vfc, struct http_conn *htc);
 
 /* cache_http1_fsm.c [HTTP1] */
-void HTTP1_Session(struct worker *, struct req *);
 extern const int HTTP1_Req[3];
 extern const int HTTP1_Resp[3];
 

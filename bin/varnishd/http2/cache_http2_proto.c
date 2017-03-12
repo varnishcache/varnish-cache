@@ -436,13 +436,12 @@ h2_do_req(struct worker *wrk, void *priv)
 	CAST_OBJ_NOTNULL(req, priv, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
 	THR_SetRequest(req);
-	req->req_step = R_STP_TRANSPORT;
-	assert(CNT_Request(wrk, req) != REQ_FSM_DISEMBARK);
+	if (CNT_Request(wrk, req) != REQ_FSM_DISEMBARK) {
+		VSL(SLT_Debug, 0, "H2REQ CNT done");
+		r2->state = H2_S_CLOSED;
+		h2_del_req(wrk, r2);
+	}
 	THR_SetRequest(NULL);
-	VSL(SLT_Debug, 0, "H2REQ CNT done");
-	/* XXX clean up req */
-	r2->state = H2_S_CLOSED;
-	h2_del_req(wrk, r2);
 }
 
 static h2_error
@@ -464,6 +463,7 @@ h2_end_headers(const struct worker *wrk, const struct h2_sess *h2,
 	else
 		req->req_body_status = REQ_BODY_WITHOUT_LEN;
 
+	req->req_step = R_STP_TRANSPORT;
 	req->task.func = h2_do_req;
 	req->task.priv = req;
 	XXXAZ(Pool_Task(wrk->pool, &req->task, TASK_QUEUE_REQ));
