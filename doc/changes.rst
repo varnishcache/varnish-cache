@@ -2,8 +2,83 @@
 Varnish Cache 5.1.0 (unreleased)
 ================================
 
-* The fallback director has now an extra, optional parameter to keep using the
-  current backend until it falls sick.
+* Added varnishd command-line options -I, -x and -?, and tightened
+  restrictions on permitted combinations of options.
+
+* More progess on support for HTTP/2.
+
+* Add ``return(fail)`` to almost all VCL subroutines.
+
+* Restored the old hit-for-pass, invoked with
+  ``return(pass(DURATION))`` from
+  ``vcl_backend_response``. hit-for-miss remains the default.  Added
+  the cache_hitmiss stat, and cache_hitpass only counts the new/old
+  hit-for-pass cases. Restored HitPass to the Varnish log, and added
+  HitMiss. Added the HFP prefix to TTL log entries to log a
+  hit-for-pass duration.
+
+* Rolled back the fix for #1206. Client delivery decides solely whether
+  to send a 304 client response, based on client request and response
+  headers.
+
+* Added vtest.sh.
+
+* Added vxid as a lefthand side for VSL queries.
+
+* Added the process, setenv and write_body commands for Varnish test
+  cases (vtc's). err_shell is deprecated. Also added the operators
+  -cliexpect, -match and -hdrlen, and -reason replaces -msg. Added the
+  ${bad_backend} macro.
+
+* varnishtest can be stopped with the TERM, INT and KILL signals, but
+  not with HUP.
+
+* The fallback director has now an extra, optional parameter to keep
+  using the current backend until it falls sick.
+
+* VMOD shared libraries are now copied to the workdir, to avoid problems
+  when VMODs are updated via packaging systems.
+
+* Bump the VRT version to 6.0.
+
+* Export more symbols from libvarnishapi.so.
+
+* The size of the VSL log is limited to 4G-1b, placing upper bounds on
+  the -l option and the vsl_space and vsm_space parameters.
+
+* Added parameters clock_step, thread_pool_reserve and ban_cutoff.
+
+* All parameters are defined, even on platforms that don't support
+  them.  An unsupported parameter is documented as such in
+  param.show. Setting such a parameter is not an error, but has no
+  effect.
+
+* Clarified the interpretations of the + and - operators in VCL with
+  operands of the various data types.
+
+* DURATION types may be used in boolean contexts.
+
+* Response codes 1000 or greater may now be set in VCL internally.
+  resp.status is delivered modulo 1000 in client responses.
+
+* IP addresses can be compared for equality in VCL.
+
+* Introduce the STEVEDORE data type, and the objects storage.SNAME
+  in VCL.  Added req.storage and beresp.storage; beresp.storage_hint
+  is deprecated.
+
+* Retired the umem stevedore.
+
+* req.ttl is deprecated.
+
+* Added std.getenv() and std.late_100_continue(BOOL).
+
+* The fetch_failed stat is incremented for any kind of fetch failure.
+
+* Added the stats n_test_gunzip and bans_lurker_obj_killed_cutoff.
+
+* Clarified the meanings of the %r, %{X}i and %{X}o formatters in
+  varnishncsa.
 
 Bugs fixed
 ----------
