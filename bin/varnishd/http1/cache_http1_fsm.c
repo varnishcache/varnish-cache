@@ -319,8 +319,7 @@ http1_dissect(struct worker *wrk, struct req *req)
 	default:
 		WRONG("Unknown req_body_status situation");
 	}
-
-	return (CNT_GotReq(wrk, req));
+	return (0);
 }
 
 /*----------------------------------------------------------------------
@@ -436,7 +435,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 					return;
 				}
 			}
-			req->req_step = R_STP_RECV;
+			req->req_step = R_STP_TRANSPORT;
 			http1_setstate(sp, H1PROC);
 		} else if (st == H1BUSY) {
 			CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);

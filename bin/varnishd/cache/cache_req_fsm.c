@@ -53,8 +53,8 @@
  * Handle "Expect:" and "Connection:" on incoming request
  */
 
-int
-CNT_GotReq(struct worker *wrk, struct req *req)
+static enum req_fsm_nxt
+cnt_transport(struct worker *wrk, struct req *req)
 {
 	const char *p;
 
@@ -70,7 +70,7 @@ CNT_GotReq(struct worker *wrk, struct req *req)
 			req->doclose = SC_RX_JUNK;
 			(void)req->transport->minimal_response(req, 417);
 			wrk->stats->client_req_417++;
-			return (-1);
+			return (REQ_FSM_DONE);
 		}
 		if (req->http->protover >= 11 &&
 		    req->htc->pipeline_b == NULL)	// XXX: HTTP1 vs 2 ?
@@ -87,20 +87,10 @@ CNT_GotReq(struct worker *wrk, struct req *req)
 	req->doclose = http_DoConnection(req->http);
 	if (req->doclose == SC_RX_BAD) {
 		(void)req->transport->minimal_response(req, 400);
-		return (-1);
+		return (REQ_FSM_DONE);
 	}
 
 	HTTP_Copy(req->http0, req->http);	// For ESI & restart
-	return (0);
-}
-
-static enum req_fsm_nxt
-cnt_transport(struct worker *wrk, struct req *req)
-{
-
-	if (CNT_GotReq(wrk, req))
-		return (REQ_FSM_DONE);
-
 	req->req_step = R_STP_RECV;
 	return (REQ_FSM_MORE);
 }
