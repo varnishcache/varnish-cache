@@ -220,8 +220,8 @@ Other changes
 
 * ``varnishstat(1)``:
 
-  * Added the ``cache_hitmiss`` stat to  to count hits on
-    hit-for-miss objects.
+  * Added the ``cache_hitmiss`` stat to count hits on hit-for-miss
+    objects.
 
   * The ``cache_hitpass`` stat now only counts hits on hit-for-pass
     objects.
