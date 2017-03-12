@@ -70,8 +70,49 @@ varnishd parameters
 Changes to VCL
 ==============
 
+VCL written for Varnish 5.0 will very likely work without changes in
+version 5.1. We have added some new elements and capabilities to the
+language (which you might like to start using), clarified some
+matters, and deprecated some little-used language elements.
+
 Type conversions
 ~~~~~~~~~~~~~~~~
+
+We have put some thought to the interpretation of the ``+`` and ``-``
+operators for various combinations of operands with differing data
+types, many of which count as corner cases (what does it mean, for
+example, to subtract a string from an IP address?). Recall that ``+``
+denotes addition for numeric operands, and string concatenation for
+string operands; operands may be converted to strings and
+concatenated, if a string is expected and there is no sensible numeric
+interpretation.
+
+The semantics have not changed in nearly all cases, but the error
+messages for illegal combinations of operands have improved. Most
+importantly, we have taken the time to review these cases, so this
+will be the way VCL works going forward.
+
+To summarize:
+
+* If both operands of ``+`` or ``-`` are one of BYTES, DURATION, INT
+  or REAL, then the result has the same data type, with the obvious
+  numeric interpretation.
+
+* INTs and REALs can be added or subtracted to yield a REAL.
+
+* A DURATION can be added to or subtracted from a TIME to yield a
+  TIME.
+
+* No other combinations of operand types are legal with ``-``.
+
+* If an expression with ``+`` is evaluated in a context where a STRING
+  is expected, then for all other combinations of operand data types,
+  the operands are converted to STRINGs and concatenated.
+
+* If a STRING is not expected for the ``+`` expression, then no other
+  combination of data types is legal.
+
+Other notes on data types:
 
 * When ``bereq.backend`` is set to a director, then it returns an
   actual backend on subsequent reads if the director resolves to a
