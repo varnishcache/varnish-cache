@@ -46,7 +46,7 @@ varnishd.1: \
 	$(top_builddir)/doc/sphinx/reference/varnishd.rst \
 	$(top_builddir)/doc/sphinx/include/params.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $(top_builddir)/doc/sphinx/reference/varnishd.rst $@
-	@sed -i 's/Q.*UESTION_MARK_HACK/?/' $@
+	@sed -i -e 's/Q.*UESTION_MARK_HACK/?/' $@
 
 varnishncsa.1: \
 	$(top_builddir)/doc/sphinx/reference/varnishncsa.rst \
