@@ -5,7 +5,7 @@ Varnish Cache 5.1.0 (unreleased)
 * Added varnishd command-line options -I, -x and -?, and tightened
   restrictions on permitted combinations of options.
 
-* More progess on support for HTTP/2.
+* More progress on support for HTTP/2.
 
 * Add ``return(fail)`` to almost all VCL subroutines.
 
@@ -58,6 +58,8 @@ Varnish Cache 5.1.0 (unreleased)
 
 * DURATION types may be used in boolean contexts.
 
+* INT, DURATION and REAL values can now be negative.
+
 * Response codes 1000 or greater may now be set in VCL internally.
   resp.status is delivered modulo 1000 in client responses.
 
@@ -71,7 +73,7 @@ Varnish Cache 5.1.0 (unreleased)
 
 * req.ttl is deprecated.
 
-* Added std.getenv() and std.late_100_continue(BOOL).
+* Added std.getenv() and std.late_100_continue().
 
 * The fetch_failed stat is incremented for any kind of fetch failure.
 

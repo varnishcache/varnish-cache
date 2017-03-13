@@ -127,6 +127,8 @@ Other notes on data types:
   false when the duration is less than or equal to zero, true
   otherwise.
 
+* INT, DURATION and REAL values can now be negative.
+
 Response codes
 ~~~~~~~~~~~~~~
 
@@ -214,12 +216,12 @@ Now ``beresp.storage`` is initialized with a storage backend before
 ``beresp.storage`` after its execution will be used. The configured
 nuke limit is used in all cases.
 
-VMOD std
+vmod_std
 ~~~~~~~~
 
 * Added ``std.getenv()``, see :ref:`func_getenv`.
 
-* Added ``std.late_100_continue(BOOL)``, see :ref:`func_late_100_continue`.
+* Added ``std.late_100_continue()``, see :ref:`func_late_100_continue`.
 
 Other changes
 =============

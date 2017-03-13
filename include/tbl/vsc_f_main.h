@@ -574,7 +574,7 @@ VSC_FF(bans_lurker_tests_tested,	uint64_t, 0, 'c', 'i', diag,
     "Ban tests tested against objects (lurker)",
 	"Count of how many tests and objects have been tested against"
 	" each other by the ban-lurker."
-	"  'ban req.url == foo && req.http.host == bar'"
+	" 'ban req.url == foo && req.http.host == bar'"
 	" counts as one in 'bans_tested' and as two in 'bans_tests_tested'"
 )
 
