@@ -233,7 +233,8 @@ in the project.
 The ``varnishtest`` program has been improved in many small ways,
 in particular it is now much easier to execute and examine
 results from other programs with the ``shell`` and ``process``
-commands.
+commands. It might break existing test cases if you were already
+using ``varnishtest``.
 
 The project now has *KISS* web-backend which summarizes 
 ``make distcheck`` results from various platforms:
