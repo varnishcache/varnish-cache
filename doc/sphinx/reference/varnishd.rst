@@ -66,6 +66,9 @@ Basic options
   `varnishd` in debugging mode. If the empty string is specified as
   the sole -f option, then `varnishd` starts without starting the
   worker process, and the management process will accept CLI commands.
+  You can also combine an empty -f option with an initialization
+  script (-I option) and the child process will be started if there
+  is an active VCL at the end of the initialization.
 
 -n name
 
