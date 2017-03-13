@@ -436,6 +436,7 @@ h2_do_req(struct worker *wrk, void *priv)
 	CAST_OBJ_NOTNULL(req, priv, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
 	THR_SetRequest(req);
+	req->http->conds = 1;
 	if (CNT_Request(wrk, req) != REQ_FSM_DISEMBARK) {
 		VSL(SLT_Debug, 0, "H2REQ CNT done");
 		r2->state = H2_S_CLOSED;
