@@ -25,10 +25,9 @@ Varnish Cache 5.1.0 (unreleased)
 
 * Added vxid as a lefthand side for VSL queries.
 
-* Added the process, setenv and write_body commands for Varnish test
-  cases (vtc's). err_shell is deprecated. Also added the operators
-  -cliexpect, -match and -hdrlen, and -reason replaces -msg. Added the
-  ${bad_backend} macro.
+* Added the setenv and write_body commands for Varnish test cases (VTCs).
+  err_shell is deprecated. Also added the operators -cliexpect, -match and
+  -hdrlen, and -reason replaces -msg. Added the ${bad_backend} macro.
 
 * varnishtest can be stopped with the TERM, INT and KILL signals, but
   not with HUP.

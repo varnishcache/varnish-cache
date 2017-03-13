@@ -280,8 +280,7 @@ Other changes
 
 * ``varnishtest(1)``:
 
-  * Added the ``process``, ``setenv`` and ``write_body`` commands, see
-    :ref:`vtc(7)` .
+  * Added the ``setenv`` and ``write_body`` commands, see :ref:`vtc(7)`.
 
   * ``-reason`` replaces ``-msg`` to set the reason string for a
     response (default "OK").
