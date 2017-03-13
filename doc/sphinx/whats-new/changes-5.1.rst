@@ -291,5 +291,10 @@ News for authors of VMODs and Varnish API client applications
   name inside the workdir, from which the running VCL access it.  This
   ensures that Varnishd can always restart the worker process, no matter
   what happened to the original VMOD file.
+
+  It also means that VMODs maintaining state spanning VCL reloads might
+  break. It is still possible to maintain global state in a VMOD despite
+  VMOD caching: one solution is to move the global state into separate
+  shared library that won't be cached by Varnish.
  
 *EOF* 
