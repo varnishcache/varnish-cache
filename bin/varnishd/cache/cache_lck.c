@@ -184,7 +184,6 @@ int __match_proto__()
 Lck_CondWait(pthread_cond_t *cond, struct lock *lck, double when)
 {
 	struct ilck *ilck;
-	int retval = 0;
 	struct timespec ts;
 	double t;
 
@@ -193,19 +192,20 @@ Lck_CondWait(pthread_cond_t *cond, struct lock *lck, double when)
 	assert(pthread_equal(ilck->owner, pthread_self()));
 	ilck->held = 0;
 	if (when == 0) {
-		AZ(pthread_cond_wait(cond, &ilck->mtx));
+		errno = pthread_cond_wait(cond, &ilck->mtx);
+		AZ(errno);
 	} else {
 		ts.tv_nsec = (long)(modf(when, &t) * 1e9);
 		ts.tv_sec = (long)t;
-		retval = pthread_cond_timedwait(cond, &ilck->mtx, &ts);
-		assert(retval == 0 ||
-		    retval == ETIMEDOUT ||
-		    retval == EINTR);
+		errno = pthread_cond_timedwait(cond, &ilck->mtx, &ts);
+		assert(errno == 0 ||
+		    errno == ETIMEDOUT ||
+		    errno == EINTR);
 	}
 	AZ(ilck->held);
 	ilck->held = 1;
 	ilck->owner = pthread_self();
-	return (retval);
+	return (errno);
 }
 
 void
