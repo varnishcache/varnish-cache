@@ -68,7 +68,7 @@ struct vsb		*vident;
 struct VSC_C_mgt	static_VSC_C_mgt;
 struct VSC_C_mgt	*VSC_C_mgt;
 static int		I_fd = -1;
-char			Cn_arg[] = "/tmp/varnishd_C_XXXXXXX";
+static char		Cn_arg[] = "/tmp/varnishd_C_XXXXXXX";
 
 static struct vpf_fh *pfh = NULL;
 
