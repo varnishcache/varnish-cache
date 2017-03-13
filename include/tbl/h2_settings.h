@@ -42,7 +42,7 @@ H2_SETTING(					// rfc7540,l,2097,2103
 	HEADER_TABLE_SIZE,
 	header_table_size,
 	0x1,
-	4096,
+	4096,					// rfc7540,l,4224,4224
 	0,
 	0xffffffff,
 	0
@@ -51,7 +51,7 @@ H2_SETTING(					// rfc7540,l,2105,2114
 	ENABLE_PUSH,
 	enable_push,
 	0x2,
-	1,
+	1,					// rfc7540,l,4225,4225
 	0,
 	1,
 	H2CE_PROTOCOL_ERROR
@@ -60,7 +60,7 @@ H2_SETTING(					// rfc7540,l,2116,2121
 	MAX_CONCURRENT_STREAMS,
 	max_concurrent_streams,
 	0x3,
-	0xffffffff,
+	0xffffffff,				// rfc7540,l,4226,4226
 	0,
 	0xffffffff,
 	0
@@ -69,7 +69,7 @@ H2_SETTING(					// rfc7540,l,2139,2148
 	INITIAL_WINDOW_SIZE,
 	initial_window_size,
 	0x4,
-	65535,
+	65535,					// rfc7540,l,4227,4227
 	0,
 	0x7fffffff,
 	H2CE_FLOW_CONTROL_ERROR
@@ -78,7 +78,7 @@ H2_SETTING(					// rfc7540,l,2150,2157
 	MAX_FRAME_SIZE,
 	max_frame_size,
 	0x5,
-	16384,
+	16384,					// rfc7540,l,4228,4228
 	16384,
 	0x00ffffff,
 	H2CE_PROTOCOL_ERROR
@@ -87,7 +87,7 @@ H2_SETTING(					// rfc7540,l,2159,2167
 	MAX_HEADER_LIST_SIZE,
 	max_header_list_size,
 	0x6,
-	0xffffffff,
+	0xffffffff,				// rfc7540,l,4229,4229
 	0,
 	0xffffffff,
 	0

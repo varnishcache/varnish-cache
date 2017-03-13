@@ -1651,6 +1651,38 @@ PARAM(
 	/* func */	NULL
 )
 
+PARAM(
+	/* name */	h2_rx_window_low_water,
+	/* typ */	bytes_u,
+	/* min */	"65535",
+	/* max */	"1G",
+	/* default */	"10M",
+	/* units */	"bytes",
+	/* flags */	WIZARD,
+	/* s-text */
+	"HTTP2 Receive Window low water mark.\n"
+	"We try to keep the window at least this big\n"
+	"Only affects incoming request bodies (ie: POST, PUT etc.)",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
+PARAM(
+	/* name */	h2_rx_window_increment,
+	/* typ */	bytes_u,
+	/* min */	"1M",
+	/* max */	"1G",
+	/* default */	"1M",
+	/* units */	"bytes",
+	/* flags */	WIZARD,
+	/* s-text */
+	"HTTP2 Receive Window Increments.\n"
+	"How big credits we send in WINDOW_UPDATE frames\n"
+	"Only affects incoming request bodies (ie: POST, PUT etc.)",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
 #undef PARAM
 
 /*lint -restore */

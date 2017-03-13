@@ -120,7 +120,8 @@ struct h2_req {
 	struct h2_sess			*h2sess;
 	struct req			*req;
 	VTAILQ_ENTRY(h2_req)		list;
-	int64_t				window;
+	int64_t				t_window;
+	int64_t				r_window;
 	struct h2h_decode		*decode;
 
 	/* Where to wake this stream up */
@@ -138,6 +139,9 @@ struct h2_sess {
 
 	struct h2_req			*mailcall;
 	pthread_cond_t			*cond;
+
+	int64_t				r_window;
+	int64_t				t_window;
 
 	struct sess			*sess;
 	int				refcnt;

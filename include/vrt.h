@@ -68,7 +68,7 @@
 #ifdef __v_printflike
 #  define __vrt_printflike(a,b) __v_printflike(a,b)
 #else
-#  define __vrt_printflike(a,b) 
+#  define __vrt_printflike(a,b)
 #endif
 
 struct VCL_conf;

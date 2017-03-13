@@ -12,6 +12,7 @@ client c1 {
 	stream 1 {
 		txreq -req POST -hdr content-type text/plain -hdr content-length 7 -body request
 
+		rxwinup
 		# First, HTTP checks
 		rxresp
 		expect resp.http.content-Type == "text/plain"

@@ -149,6 +149,8 @@ h2_new_req(const struct worker *wrk, struct h2_sess *h2,
 	r2->h2sess = h2;
 	r2->stream = stream;
 	r2->req = req;
+	r2->r_window = h2->local_settings.initial_window_size;
+	r2->t_window = h2->remote_settings.initial_window_size;
 	req->transport_priv = r2;
 	Lck_Lock(&h2->sess->mtx);
 	VTAILQ_INSERT_TAIL(&h2->streams, r2, list);
@@ -314,9 +316,9 @@ h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	if (r2 == NULL)
 		return (0);
 	Lck_Lock(&h2->sess->mtx);
-	r2->window += wu;
+	r2->t_window += wu;
 	Lck_Unlock(&h2->sess->mtx);
-	if (r2->window >= (1LLU << 31))
+	if (r2->t_window >= (1LLU << 31))
 		return (H2SE_FLOW_CONTROL_ERROR);
 	return (0);
 }
@@ -558,14 +560,40 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 static h2_error __match_proto__(h2_frame_f)
 h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
+	int w1 = 0, w2 = 0;
+	char buf[4];
+	unsigned wi;
+
 	(void)wrk;
 	AZ(h2->mailcall);
 	h2->mailcall = r2;
 	Lck_Lock(&h2->sess->mtx);
+	h2->r_window -= h2->rxf_len;
+	r2->r_window -= h2->rxf_len;
 	AZ(pthread_cond_broadcast(h2->cond));
 	while (h2->mailcall != NULL && h2->error == 0 && r2->error == 0)
 		AZ(Lck_CondWait(h2->cond, &h2->sess->mtx, 0));
+	wi = cache_param->h2_rx_window_increment;
+	if (h2->r_window < cache_param->h2_rx_window_low_water) {
+		h2->r_window += wi;
+		w1 = 1;
+	}
+	if (r2->r_window < cache_param->h2_rx_window_low_water) {
+		r2->r_window += wi;
+		w2 = 1;
+	}
 	Lck_Unlock(&h2->sess->mtx);
+	if (w1 || w2) {
+		vbe32enc(buf, wi);
+		H2_Send_Get(wrk, h2, r2);
+		if (w1)
+			H2_Send_Frame(wrk, h2, H2_F_WINDOW_UPDATE, 0,
+			    4, 0, buf);
+		if (w2)
+			H2_Send_Frame(wrk, h2, H2_F_WINDOW_UPDATE, 0,
+			    4, r2->stream, buf);
+		H2_Send_Rel(h2, r2);
+	}
 	return (0);
 }
 

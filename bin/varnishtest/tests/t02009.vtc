@@ -15,14 +15,14 @@ varnish v1 -cliok "param.set debug +syncvsl"
 
 client c1 {
 	stream 1 {
-		txreq 
+		txreq
 		rxresp
 		expect resp.http.content-Type == "text/plain"
 		expect resp.body == response
 	} -start
 	stream 5 {
 		barrier b1 sync
-		txreq 
+		txreq
 		rxresp
 		expect resp.http.content-Type == "text/plain"
 		expect resp.body == response
