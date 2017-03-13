@@ -14,91 +14,91 @@
 </g>
 <!-- RETRY -->
 <g id="node1" class="node"><title>RETRY</title>
-<text text-anchor="middle" x="384" y="-942.04" font-family="Times,serif" font-size="14.00">RETRY</text>
+<text text-anchor="middle" x="383" y="-942.04" font-family="Times,serif" font-size="14.00">RETRY</text>
 </g>
 <!-- v_b_f -->
 <g id="node4" class="node"><title>v_b_f</title>
-<polygon fill="none" stroke="black" points="158.5,-821.24 158.5,-890.24 347.5,-890.24 347.5,-821.24 158.5,-821.24"/>
-<text text-anchor="middle" x="253" y="-875.04" font-family="Times,serif" font-size="14.00">vbf_stp_startfetch:</text>
-<polyline fill="none" stroke="black" points="158.5,-867.24 347.5,-867.24 "/>
-<text text-anchor="middle" x="224.5" y="-852.04" font-family="Times,serif" font-size="14.00">vcl_backend_fetch{}</text>
-<polyline fill="none" stroke="black" points="290.5,-844.24 290.5,-867.24 "/>
-<text text-anchor="middle" x="319" y="-852.04" font-family="Times,serif" font-size="14.00">bereq.*</text>
-<polyline fill="none" stroke="black" points="158.5,-844.24 347.5,-844.24 "/>
-<text text-anchor="middle" x="210" y="-829.04" font-family="Times,serif" font-size="14.00">abandon</text>
-<polyline fill="none" stroke="black" points="261.5,-821.24 261.5,-844.24 "/>
-<text text-anchor="middle" x="304.5" y="-829.04" font-family="Times,serif" font-size="14.00">fetch</text>
+<polygon fill="none" stroke="black" points="157.5,-821.24 157.5,-890.24 346.5,-890.24 346.5,-821.24 157.5,-821.24"/>
+<text text-anchor="middle" x="252" y="-875.04" font-family="Times,serif" font-size="14.00">vbf_stp_startfetch:</text>
+<polyline fill="none" stroke="black" points="157.5,-867.24 346.5,-867.24 "/>
+<text text-anchor="middle" x="223.5" y="-852.04" font-family="Times,serif" font-size="14.00">vcl_backend_fetch{}</text>
+<polyline fill="none" stroke="black" points="289.5,-844.24 289.5,-867.24 "/>
+<text text-anchor="middle" x="318" y="-852.04" font-family="Times,serif" font-size="14.00">bereq.*</text>
+<polyline fill="none" stroke="black" points="157.5,-844.24 346.5,-844.24 "/>
+<text text-anchor="middle" x="209" y="-829.04" font-family="Times,serif" font-size="14.00">abandon</text>
+<polyline fill="none" stroke="black" points="260.5,-821.24 260.5,-844.24 "/>
+<text text-anchor="middle" x="303.5" y="-829.04" font-family="Times,serif" font-size="14.00">fetch</text>
 </g>
 <!-- RETRY&#45;&gt;v_b_f -->
 <g id="edge4" class="edge"><title>RETRY&#45;&gt;v_b_f</title>
-<path fill="none" stroke="purple" d="M358.431,-927.564C344.989,-918.534 327.918,-907.067 311.449,-896.003"/>
-<polygon fill="purple" stroke="purple" points="313.166,-892.941 302.914,-890.27 309.263,-898.752 313.166,-892.941"/>
+<path fill="none" stroke="purple" d="M357.431,-927.564C343.989,-918.534 326.918,-907.067 310.449,-896.003"/>
+<polygon fill="purple" stroke="purple" points="312.166,-892.941 301.914,-890.27 308.263,-898.752 312.166,-892.941"/>
 </g>
 <!-- v_b_f_BGFETCH -->
 <g id="node2" class="node"><title>v_b_f_BGFETCH</title>
-<polygon fill="turquoise" stroke="turquoise" points="335,-963.74 257,-963.74 257,-927.74 335,-927.74 335,-963.74"/>
-<text text-anchor="middle" x="296" y="-942.04" font-family="Times,serif" font-size="14.00">BGFETCH</text>
+<polygon fill="turquoise" stroke="turquoise" points="334,-963.74 256,-963.74 256,-927.74 334,-927.74 334,-963.74"/>
+<text text-anchor="middle" x="295" y="-942.04" font-family="Times,serif" font-size="14.00">BGFETCH</text>
 </g>
 <!-- v_b_f_BGFETCH&#45;&gt;v_b_f -->
 <g id="edge1" class="edge"><title>v_b_f_BGFETCH&#45;&gt;v_b_f</title>
-<path fill="none" stroke="green" stroke-width="2" d="M287.505,-927.354C283.569,-919.301 278.703,-909.342 273.879,-899.468"/>
-<polygon fill="green" stroke="green" stroke-width="2" points="277.023,-897.93 269.488,-890.482 270.733,-901.003 277.023,-897.93"/>
+<path fill="none" stroke="green" stroke-width="2" d="M286.505,-927.354C282.569,-919.301 277.703,-909.342 272.879,-899.468"/>
+<polygon fill="green" stroke="green" stroke-width="2" points="276.023,-897.93 268.488,-890.482 269.733,-901.003 276.023,-897.93"/>
 </g>
 <!-- v_b_f_FETCH -->
 <g id="node3" class="node"><title>v_b_f_FETCH</title>
-<polygon fill="turquoise" stroke="turquoise" points="238.5,-963.74 179.5,-963.74 179.5,-927.74 238.5,-927.74 238.5,-963.74"/>
-<text text-anchor="middle" x="209" y="-942.04" font-family="Times,serif" font-size="14.00">FETCH</text>
+<polygon fill="turquoise" stroke="turquoise" points="237.5,-963.74 178.5,-963.74 178.5,-927.74 237.5,-927.74 237.5,-963.74"/>
+<text text-anchor="middle" x="208" y="-942.04" font-family="Times,serif" font-size="14.00">FETCH</text>
 </g>
 <!-- v_b_f_FETCH&#45;&gt;v_b_f -->
 <g id="edge2" class="edge"><title>v_b_f_FETCH&#45;&gt;v_b_f</title>
-<path fill="none" stroke="blue" stroke-width="2" d="M212.189,-927.354C215.348,-919.301 219.913,-909.342 224.888,-899.468"/>
-<polygon fill="blue" stroke="blue" stroke-width="2" points="228.052,-900.971 229.545,-890.482 221.836,-897.751 228.052,-900.971"/>
+<path fill="none" stroke="blue" stroke-width="2" d="M211.189,-927.354C214.348,-919.301 218.913,-909.342 223.888,-899.468"/>
+<polygon fill="blue" stroke="blue" stroke-width="2" points="227.052,-900.971 228.545,-890.482 220.836,-897.751 227.052,-900.971"/>
 </g>
 <!-- v_b_f_FETCH&#45;&gt;v_b_f -->
 <g id="edge3" class="edge"><title>v_b_f_FETCH&#45;&gt;v_b_f</title>
-<path fill="none" stroke="red" stroke-width="2" d="M223.197,-927.354C228.042,-919.383 233.376,-909.545 238.233,-899.771"/>
-<polygon fill="red" stroke="red" stroke-width="2" points="241.521,-901.01 242.713,-890.482 235.217,-897.969 241.521,-901.01"/>
+<path fill="none" stroke="red" stroke-width="2" d="M222.197,-927.354C227.042,-919.383 232.376,-909.545 237.233,-899.771"/>
+<polygon fill="red" stroke="red" stroke-width="2" points="240.521,-901.01 241.713,-890.482 234.217,-897.969 240.521,-901.01"/>
 </g>
 <!-- v_b_hdrs -->
 <g id="node5" class="node"><title>v_b_hdrs</title>
-<ellipse fill="none" stroke="black" cx="305" cy="-756.87" rx="94.0904" ry="26.7407"/>
-<text text-anchor="middle" x="305" y="-760.67" font-family="Times,serif" font-size="14.00">send bereq,</text>
-<text text-anchor="middle" x="305" y="-745.67" font-family="Times,serif" font-size="14.00">read beresp (headers)</text>
+<ellipse fill="none" stroke="black" cx="304" cy="-756.87" rx="94.0904" ry="26.7407"/>
+<text text-anchor="middle" x="304" y="-760.67" font-family="Times,serif" font-size="14.00">send bereq,</text>
+<text text-anchor="middle" x="304" y="-745.67" font-family="Times,serif" font-size="14.00">read beresp (headers)</text>
 </g>
 <!-- v_b_f&#45;&gt;v_b_hdrs -->
 <g id="edge5" class="edge"><title>v_b_f:fetch:s&#45;&gt;v_b_hdrs</title>
-<path fill="none" stroke="black" stroke-width="2" d="M305,-820.74C305,-812.127 305,-802.849 305,-794.136"/>
-<polygon fill="black" stroke="black" stroke-width="2" points="308.5,-793.87 305,-783.87 301.5,-793.87 308.5,-793.87"/>
+<path fill="none" stroke="black" stroke-width="2" d="M304,-820.74C304,-812.127 304,-802.849 304,-794.136"/>
+<polygon fill="black" stroke="black" stroke-width="2" points="307.5,-793.87 304,-783.87 300.5,-793.87 307.5,-793.87"/>
 </g>
 <!-- v_b_r -->
 <g id="node6" class="node"><title>v_b_r</title>
-<polygon fill="none" stroke="black" points="291,-577.5 291,-692.5 529,-692.5 529,-577.5 291,-577.5"/>
-<text text-anchor="middle" x="410" y="-677.3" font-family="Times,serif" font-size="14.00">vbf_stp_startfetch:</text>
-<polyline fill="none" stroke="black" points="291,-669.5 529,-669.5 "/>
+<polygon fill="none" stroke="black" points="290.5,-577.5 290.5,-692.5 531.5,-692.5 531.5,-577.5 290.5,-577.5"/>
+<text text-anchor="middle" x="411" y="-677.3" font-family="Times,serif" font-size="14.00">vbf_stp_startfetch:</text>
+<polyline fill="none" stroke="black" points="290.5,-669.5 531.5,-669.5 "/>
 <text text-anchor="middle" x="373" y="-642.8" font-family="Times,serif" font-size="14.00">vcl_backend_response{}</text>
-<polyline fill="none" stroke="black" points="455,-623.5 455,-669.5 "/>
-<text text-anchor="middle" x="492" y="-654.3" font-family="Times,serif" font-size="14.00">bereq.*</text>
-<polyline fill="none" stroke="black" points="455,-646.5 529,-646.5 "/>
-<text text-anchor="middle" x="492" y="-631.3" font-family="Times,serif" font-size="14.00">beresp.*</text>
-<polyline fill="none" stroke="black" points="291,-623.5 529,-623.5 "/>
-<text text-anchor="middle" x="332.5" y="-608.3" font-family="Times,serif" font-size="14.00">retry</text>
-<polyline fill="none" stroke="black" points="291,-600.5 374,-600.5 "/>
-<text text-anchor="middle" x="314.5" y="-585.3" font-family="Times,serif" font-size="14.00">max?</text>
-<polyline fill="none" stroke="black" points="338,-577.5 338,-600.5 "/>
-<text text-anchor="middle" x="356" y="-585.3" font-family="Times,serif" font-size="14.00">ok?</text>
-<polyline fill="none" stroke="black" points="374,-577.5 374,-623.5 "/>
-<text text-anchor="middle" x="405" y="-596.8" font-family="Times,serif" font-size="14.00">abandon</text>
-<polyline fill="none" stroke="black" points="436,-577.5 436,-623.5 "/>
-<text text-anchor="middle" x="482.5" y="-608.3" font-family="Times,serif" font-size="14.00">deliver</text>
-<polyline fill="none" stroke="black" points="436,-600.5 529,-600.5 "/>
+<polyline fill="none" stroke="black" points="455.5,-623.5 455.5,-669.5 "/>
+<text text-anchor="middle" x="493.5" y="-654.3" font-family="Times,serif" font-size="14.00">bereq.*</text>
+<polyline fill="none" stroke="black" points="455.5,-646.5 531.5,-646.5 "/>
+<text text-anchor="middle" x="493.5" y="-631.3" font-family="Times,serif" font-size="14.00">beresp.*</text>
+<polyline fill="none" stroke="black" points="290.5,-623.5 531.5,-623.5 "/>
+<text text-anchor="middle" x="332" y="-608.3" font-family="Times,serif" font-size="14.00">retry</text>
+<polyline fill="none" stroke="black" points="290.5,-600.5 373.5,-600.5 "/>
+<text text-anchor="middle" x="314" y="-585.3" font-family="Times,serif" font-size="14.00">max?</text>
+<polyline fill="none" stroke="black" points="337.5,-577.5 337.5,-600.5 "/>
+<text text-anchor="middle" x="355.5" y="-585.3" font-family="Times,serif" font-size="14.00">ok?</text>
+<polyline fill="none" stroke="black" points="373.5,-577.5 373.5,-623.5 "/>
+<text text-anchor="middle" x="404.5" y="-596.8" font-family="Times,serif" font-size="14.00">abandon</text>
+<polyline fill="none" stroke="black" points="435.5,-577.5 435.5,-623.5 "/>
+<text text-anchor="middle" x="483.5" y="-608.3" font-family="Times,serif" font-size="14.00">deliver or pass</text>
+<polyline fill="none" stroke="black" points="435.5,-600.5 531.5,-600.5 "/>
 <text text-anchor="middle" x="457.5" y="-585.3" font-family="Times,serif" font-size="14.00">304?</text>
-<polyline fill="none" stroke="black" points="479,-577.5 479,-600.5 "/>
-<text text-anchor="middle" x="504" y="-585.3" font-family="Times,serif" font-size="14.00">other?</text>
+<polyline fill="none" stroke="black" points="479.5,-577.5 479.5,-600.5 "/>
+<text text-anchor="middle" x="505.5" y="-585.3" font-family="Times,serif" font-size="14.00">other?</text>
 </g>
 <!-- v_b_hdrs&#45;&gt;v_b_r -->
 <g id="edge6" class="edge"><title>v_b_hdrs&#45;&gt;v_b_r</title>
-<path fill="none" stroke="black" stroke-width="2" d="M327.011,-730.741C334.851,-721.792 344.078,-711.258 353.478,-700.527"/>
-<polygon fill="black" stroke="black" stroke-width="2" points="356.379,-702.526 360.336,-692.698 351.114,-697.914 356.379,-702.526"/>
+<path fill="none" stroke="black" stroke-width="2" d="M326.431,-730.741C334.497,-721.705 344.005,-711.053 353.68,-700.214"/>
+<polygon fill="black" stroke="black" stroke-width="2" points="356.342,-702.489 360.39,-692.698 351.119,-697.827 356.342,-702.489"/>
 </g>
 <!-- v_b_e -->
 <g id="node7" class="node"><title>v_b_e</title>
@@ -123,13 +123,13 @@
 </g>
 <!-- v_b_hdrs&#45;&gt;v_b_e -->
 <g id="edge7" class="edge"><title>v_b_hdrs&#45;&gt;v_b_e</title>
-<path fill="none" stroke="black" d="M293.904,-730.001C289.536,-718.814 284.884,-705.455 282,-693 271.075,-645.821 265.567,-591.411 262.795,-549.798"/>
-<polygon fill="black" stroke="black" points="266.285,-549.536 262.163,-539.776 259.299,-549.977 266.285,-549.536"/>
+<path fill="none" stroke="black" d="M292.876,-730.008C288.503,-718.822 283.855,-705.462 281,-693 270.192,-645.818 264.946,-591.408 262.4,-549.796"/>
+<polygon fill="black" stroke="black" points="265.893,-549.557 261.824,-539.775 258.904,-549.959 265.893,-549.557"/>
 </g>
 <!-- v_b_r&#45;&gt;v_b_e -->
 <g id="edge9" class="edge"><title>v_b_r:max&#45;&gt;v_b_e</title>
-<path fill="none" stroke="black" d="M290,-589C284.941,-589 278.94,-570.896 273.639,-549.652"/>
-<polygon fill="black" stroke="black" points="276.994,-548.632 271.259,-539.724 270.187,-550.264 276.994,-548.632"/>
+<path fill="none" stroke="black" d="M314,-577C314,-567.432 311.87,-557.956 308.457,-548.915"/>
+<polygon fill="black" stroke="black" points="311.642,-547.462 304.47,-539.663 305.213,-550.232 311.642,-547.462"/>
 </g>
 <!-- v_b_r_retry -->
 <g id="node8" class="node"><title>v_b_r_retry</title>
@@ -137,26 +137,26 @@
 </g>
 <!-- v_b_r&#45;&gt;v_b_r_retry -->
 <g id="edge8" class="edge"><title>v_b_r:retry&#45;&gt;v_b_r_retry</title>
-<path fill="none" stroke="purple" d="M356,-577C356,-562.594 374.938,-531.341 389.957,-508.822"/>
-<polygon fill="purple" stroke="purple" points="392.967,-510.618 395.677,-500.376 387.171,-506.693 392.967,-510.618"/>
+<path fill="none" stroke="purple" d="M355,-577C355,-562.528 374.302,-531.289 389.61,-508.791"/>
+<polygon fill="purple" stroke="purple" points="392.635,-510.57 395.44,-500.353 386.876,-506.591 392.635,-510.57"/>
 </g>
 <!-- vbf_stp_condfetch -->
 <g id="node9" class="node"><title>vbf_stp_condfetch</title>
-<polygon fill="none" stroke="grey" points="343.5,-313.5 343.5,-405.5 464.5,-405.5 464.5,-313.5 343.5,-313.5"/>
-<text text-anchor="middle" x="404" y="-390.3" font-family="Times,serif" font-size="14.00" fill="grey">vbf_stp_condfetch:</text>
-<polyline fill="none" stroke="grey" points="343.5,-382.5 464.5,-382.5 "/>
-<text text-anchor="middle" x="404" y="-367.3" font-family="Times,serif" font-size="14.00" fill="grey">copy obj attr</text>
-<polyline fill="none" stroke="grey" points="343.5,-359.5 464.5,-359.5 "/>
-<text text-anchor="middle" x="404" y="-344.3" font-family="Times,serif" font-size="14.00" fill="grey">steal body</text>
-<polyline fill="none" stroke="grey" points="343.5,-336.5 464.5,-336.5 "/>
-<text text-anchor="middle" x="383" y="-321.3" font-family="Times,serif" font-size="14.00" fill="grey">fetch_fail?</text>
-<polyline fill="none" stroke="grey" points="422.5,-313.5 422.5,-336.5 "/>
-<text text-anchor="middle" x="443.5" y="-321.3" font-family="Times,serif" font-size="14.00" fill="grey">ok?</text>
+<polygon fill="none" stroke="grey" points="342.5,-313.5 342.5,-405.5 463.5,-405.5 463.5,-313.5 342.5,-313.5"/>
+<text text-anchor="middle" x="403" y="-390.3" font-family="Times,serif" font-size="14.00" fill="grey">vbf_stp_condfetch:</text>
+<polyline fill="none" stroke="grey" points="342.5,-382.5 463.5,-382.5 "/>
+<text text-anchor="middle" x="403" y="-367.3" font-family="Times,serif" font-size="14.00" fill="grey">copy obj attr</text>
+<polyline fill="none" stroke="grey" points="342.5,-359.5 463.5,-359.5 "/>
+<text text-anchor="middle" x="403" y="-344.3" font-family="Times,serif" font-size="14.00" fill="grey">steal body</text>
+<polyline fill="none" stroke="grey" points="342.5,-336.5 463.5,-336.5 "/>
+<text text-anchor="middle" x="382" y="-321.3" font-family="Times,serif" font-size="14.00" fill="grey">fetch_fail?</text>
+<polyline fill="none" stroke="grey" points="421.5,-313.5 421.5,-336.5 "/>
+<text text-anchor="middle" x="442.5" y="-321.3" font-family="Times,serif" font-size="14.00" fill="grey">ok?</text>
 </g>
 <!-- v_b_r&#45;&gt;vbf_stp_condfetch -->
 <g id="edge10" class="edge"><title>v_b_r:fetch_304:s&#45;&gt;vbf_stp_condfetch</title>
-<path fill="none" stroke="black" d="M458,-577C458,-508.824 469.318,-488.419 447,-424 445.932,-420.918 444.675,-417.844 443.274,-414.805"/>
-<polygon fill="black" stroke="black" points="446.352,-413.136 438.688,-405.82 440.117,-416.318 446.352,-413.136"/>
+<path fill="none" stroke="black" d="M458,-577C458,-508.824 469.663,-488.299 447,-424 445.908,-420.901 444.621,-417.813 443.188,-414.764"/>
+<polygon fill="black" stroke="black" points="446.219,-413.006 438.496,-405.754 440.011,-416.24 446.219,-413.006"/>
 </g>
 <!-- vbf_stp_fetch -->
 <g id="node10" class="node"><title>vbf_stp_fetch</title>
@@ -173,19 +173,19 @@
 </g>
 <!-- v_b_r&#45;&gt;vbf_stp_fetch -->
 <g id="edge11" class="edge"><title>v_b_r:non_304:s&#45;&gt;vbf_stp_fetch</title>
-<path fill="none" stroke="black" d="M504,-577C504,-564.273 506.014,-550.848 508.85,-538.252"/>
-<polygon fill="black" stroke="black" points="512.294,-538.903 511.277,-528.357 505.495,-537.235 512.294,-538.903"/>
+<path fill="none" stroke="black" d="M506,-577C506,-564.333 507.839,-550.932 510.428,-538.341"/>
+<polygon fill="black" stroke="black" points="513.874,-538.969 512.645,-528.446 507.043,-537.439 513.874,-538.969"/>
 </g>
 <!-- FETCH_DONE -->
 <g id="node13" class="node"><title>FETCH_DONE</title>
-<polygon fill="turquoise" stroke="turquoise" points="372,-44 268,-44 268,-8 372,-8 372,-44"/>
-<text text-anchor="middle" x="320" y="-22.3" font-family="Times,serif" font-size="14.00">FETCH_DONE</text>
+<polygon fill="turquoise" stroke="turquoise" points="370,-44 266,-44 266,-8 370,-8 370,-44"/>
+<text text-anchor="middle" x="318" y="-22.3" font-family="Times,serif" font-size="14.00">FETCH_DONE</text>
 </g>
 <!-- v_b_e&#45;&gt;FETCH_DONE -->
 <g id="edge18" class="edge"><title>v_b_e:deliver&#45;&gt;FETCH_DONE</title>
-<path fill="none" stroke="black" d="M333,-424C333,-309.415 285.028,-283.15 295,-169 298.516,-128.756 307.534,-82.8201 313.72,-54.3619"/>
-<polygon fill="black" stroke="black" points="317.19,-54.8792 315.935,-44.359 310.356,-53.3659 317.19,-54.8792"/>
-<text text-anchor="middle" x="340.5" y="-172.8" font-family="Times,serif" font-size="14.00">&quot;backend synth&quot;</text>
+<path fill="none" stroke="black" d="M333,-424C333,-309.281 283.017,-283.284 293,-169 296.516,-128.756 305.534,-82.8201 311.72,-54.3619"/>
+<polygon fill="black" stroke="black" points="315.19,-54.8792 313.935,-44.359 308.356,-53.3659 315.19,-54.8792"/>
+<text text-anchor="middle" x="338.5" y="-172.8" font-family="Times,serif" font-size="14.00">&quot;backend synth&quot;</text>
 </g>
 <!-- FETCH_FAIL -->
 <g id="node15" class="node"><title>FETCH_FAIL</title>
@@ -208,52 +208,52 @@
 </g>
 <!-- vbf_stp_fetchend -->
 <g id="node12" class="node"><title>vbf_stp_fetchend</title>
-<polygon fill="none" stroke="grey" points="342.5,-81.5 342.5,-150.5 505.5,-150.5 505.5,-81.5 342.5,-81.5"/>
-<text text-anchor="middle" x="424" y="-135.3" font-family="Times,serif" font-size="14.00" fill="grey">vbf_stp_fetchend:</text>
-<polyline fill="none" stroke="grey" points="342.5,-127.5 505.5,-127.5 "/>
-<text text-anchor="middle" x="424" y="-112.3" font-family="Times,serif" font-size="14.00" fill="grey">finalize object and director</text>
-<polyline fill="none" stroke="grey" points="342.5,-104.5 505.5,-104.5 "/>
-<text text-anchor="middle" x="424" y="-89.3" font-family="Times,serif" font-size="14.00" fill="grey">done</text>
+<polygon fill="none" stroke="grey" points="340.5,-81.5 340.5,-150.5 503.5,-150.5 503.5,-81.5 340.5,-81.5"/>
+<text text-anchor="middle" x="422" y="-135.3" font-family="Times,serif" font-size="14.00" fill="grey">vbf_stp_fetchend:</text>
+<polyline fill="none" stroke="grey" points="340.5,-127.5 503.5,-127.5 "/>
+<text text-anchor="middle" x="422" y="-112.3" font-family="Times,serif" font-size="14.00" fill="grey">finalize object and director</text>
+<polyline fill="none" stroke="grey" points="340.5,-104.5 503.5,-104.5 "/>
+<text text-anchor="middle" x="422" y="-89.3" font-family="Times,serif" font-size="14.00" fill="grey">done</text>
 </g>
 <!-- vbf_stp_condfetch&#45;&gt;vbf_stp_fetchend -->
 <g id="edge16" class="edge"><title>vbf_stp_condfetch:ok:s&#45;&gt;vbf_stp_fetchend</title>
-<path fill="none" stroke="black" d="M444,-313C444,-287.702 404.792,-315.523 390,-295 361.474,-255.422 379.981,-198.481 399.009,-159.733"/>
-<polygon fill="black" stroke="black" points="402.148,-161.282 403.572,-150.783 395.912,-158.103 402.148,-161.282"/>
+<path fill="none" stroke="black" d="M443,-313C443,-287.28 403.096,-315.824 388,-295 359.366,-255.5 377.896,-198.542 396.959,-159.769"/>
+<polygon fill="black" stroke="black" points="400.102,-161.311 401.53,-150.813 393.867,-158.129 400.102,-161.311"/>
 </g>
 <!-- vbf_stp_fetchbody -->
 <g id="node11" class="node"><title>vbf_stp_fetchbody</title>
-<polygon fill="none" stroke="grey" points="398.5,-202.5 398.5,-294.5 557.5,-294.5 557.5,-202.5 398.5,-202.5"/>
-<text text-anchor="middle" x="478" y="-279.3" font-family="Times,serif" font-size="14.00" fill="grey">vbf_stp_fetchbody:</text>
-<polyline fill="none" stroke="grey" points="398.5,-271.5 557.5,-271.5 "/>
-<text text-anchor="middle" x="478" y="-256.3" font-family="Times,serif" font-size="14.00" fill="grey">get storage</text>
-<polyline fill="none" stroke="grey" points="398.5,-248.5 557.5,-248.5 "/>
-<text text-anchor="middle" x="478" y="-233.3" font-family="Times,serif" font-size="14.00" fill="grey">read body, run VFPs</text>
-<polyline fill="none" stroke="grey" points="398.5,-225.5 557.5,-225.5 "/>
-<text text-anchor="middle" x="435.5" y="-210.3" font-family="Times,serif" font-size="14.00" fill="grey">fetch_fail?</text>
-<polyline fill="none" stroke="grey" points="472.5,-202.5 472.5,-225.5 "/>
-<text text-anchor="middle" x="497" y="-210.3" font-family="Times,serif" font-size="14.00" fill="grey">error?</text>
-<polyline fill="none" stroke="grey" points="521.5,-202.5 521.5,-225.5 "/>
-<text text-anchor="middle" x="539.5" y="-210.3" font-family="Times,serif" font-size="14.00" fill="grey">ok?</text>
+<polygon fill="none" stroke="grey" points="397.5,-202.5 397.5,-294.5 556.5,-294.5 556.5,-202.5 397.5,-202.5"/>
+<text text-anchor="middle" x="477" y="-279.3" font-family="Times,serif" font-size="14.00" fill="grey">vbf_stp_fetchbody:</text>
+<polyline fill="none" stroke="grey" points="397.5,-271.5 556.5,-271.5 "/>
+<text text-anchor="middle" x="477" y="-256.3" font-family="Times,serif" font-size="14.00" fill="grey">get storage</text>
+<polyline fill="none" stroke="grey" points="397.5,-248.5 556.5,-248.5 "/>
+<text text-anchor="middle" x="477" y="-233.3" font-family="Times,serif" font-size="14.00" fill="grey">read body, run VFPs</text>
+<polyline fill="none" stroke="grey" points="397.5,-225.5 556.5,-225.5 "/>
+<text text-anchor="middle" x="434.5" y="-210.3" font-family="Times,serif" font-size="14.00" fill="grey">fetch_fail?</text>
+<polyline fill="none" stroke="grey" points="471.5,-202.5 471.5,-225.5 "/>
+<text text-anchor="middle" x="496" y="-210.3" font-family="Times,serif" font-size="14.00" fill="grey">error?</text>
+<polyline fill="none" stroke="grey" points="520.5,-202.5 520.5,-225.5 "/>
+<text text-anchor="middle" x="538.5" y="-210.3" font-family="Times,serif" font-size="14.00" fill="grey">ok?</text>
 </g>
 <!-- vbf_stp_fetch&#45;&gt;vbf_stp_fetchbody -->
 <g id="edge13" class="edge"><title>vbf_stp_fetch:body:s&#45;&gt;vbf_stp_fetchbody</title>
-<path fill="none" stroke="black" d="M552,-435C552,-388.333 531.545,-339.461 512.144,-303.602"/>
-<polygon fill="black" stroke="black" points="515.158,-301.822 507.247,-294.775 509.037,-305.218 515.158,-301.822"/>
+<path fill="none" stroke="black" d="M552,-435C552,-388.245 531.268,-339.378 511.605,-303.543"/>
+<polygon fill="black" stroke="black" points="514.596,-301.722 506.642,-294.723 508.495,-305.154 514.596,-301.722"/>
 </g>
 <!-- vbf_stp_fetch&#45;&gt;vbf_stp_fetchend -->
 <g id="edge14" class="edge"><title>vbf_stp_fetch:body:s&#45;&gt;vbf_stp_fetchend</title>
-<path fill="none" stroke="black" d="M552,-435C552,-331.258 602.593,-299.074 566,-202 556.964,-178.028 536.996,-160.443 514.807,-147.705"/>
-<polygon fill="black" stroke="black" points="516.337,-144.553 505.874,-142.884 513.013,-150.713 516.337,-144.553"/>
+<path fill="none" stroke="black" d="M552,-435C552,-331.258 603.409,-298.763 566,-202 556.486,-177.39 535.576,-159.54 512.562,-146.753"/>
+<polygon fill="black" stroke="black" points="514.141,-143.629 503.658,-142.097 510.897,-149.832 514.141,-143.629"/>
 </g>
 <!-- vbf_stp_fetchbody&#45;&gt;vbf_stp_fetchend -->
 <g id="edge12" class="edge"><title>vbf_stp_fetchbody:ok:s&#45;&gt;vbf_stp_fetchend</title>
-<path fill="none" stroke="black" d="M540,-202C540,-182.334 529.018,-166.722 513.811,-154.533"/>
-<polygon fill="black" stroke="black" points="515.649,-151.541 505.51,-148.467 511.519,-157.193 515.649,-151.541"/>
+<path fill="none" stroke="black" d="M539,-202C539,-182.009 527.682,-166.232 512.087,-153.979"/>
+<polygon fill="black" stroke="black" points="513.748,-150.864 503.579,-147.89 509.674,-156.556 513.748,-150.864"/>
 </g>
 <!-- vbf_stp_fetchend&#45;&gt;FETCH_DONE -->
 <g id="edge15" class="edge"><title>vbf_stp_fetchend:done:s&#45;&gt;FETCH_DONE</title>
-<path fill="none" stroke="black" d="M424,-81C424,-58.3033 404.249,-45.1333 381.962,-37.4971"/>
-<polygon fill="black" stroke="black" points="382.891,-34.1214 372.305,-34.5516 380.849,-40.8169 382.891,-34.1214"/>
+<path fill="none" stroke="black" d="M422,-81C422,-58.3033 402.249,-45.1333 379.962,-37.4971"/>
+<polygon fill="black" stroke="black" points="380.891,-34.1214 370.305,-34.5516 378.849,-40.8169 380.891,-34.1214"/>
 </g>
 <!-- error -->
 <g id="node14" class="node"><title>error</title>

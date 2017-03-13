@@ -47,7 +47,7 @@ digraph cache_fetch {
 		v_b_hdrs -> v_b_e
 		v_b_r [
 			    shape=record
-			    label="{vbf_stp_startfetch:|{vcl_backend_response\{\}|{bereq.*|beresp.*}}|{{retry|{<max>max?|<retry>ok?}}|abandon|{deliver|{<fetch_304>304?|<non_304>other?}}}}"
+			    label="{vbf_stp_startfetch:|{vcl_backend_response\{\}|{bereq.*|beresp.*}}|{{retry|{<max>max?|<retry>ok?}}|abandon|{deliver or pass|{<fetch_304>304?|<non_304>other?}}}}"
 		]
 		v_b_r:retry -> v_b_r_retry [color=purple]
 		v_b_r:max -> v_b_e
