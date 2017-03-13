@@ -585,14 +585,14 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	Lck_Unlock(&h2->sess->mtx);
 	if (w1 || w2) {
 		vbe32enc(buf, wi);
-		H2_Send_Get(wrk, h2, r2);
+		H2_Send_Get(wrk, h2, h2->req0);
 		if (w1)
 			H2_Send_Frame(wrk, h2, H2_F_WINDOW_UPDATE, 0,
 			    4, 0, buf);
 		if (w2)
 			H2_Send_Frame(wrk, h2, H2_F_WINDOW_UPDATE, 0,
 			    4, r2->stream, buf);
-		H2_Send_Rel(h2, r2);
+		H2_Send_Rel(h2, h2->req0);
 	}
 	return (0);
 }
