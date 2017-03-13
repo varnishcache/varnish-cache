@@ -118,10 +118,16 @@ Other notes on data types:
 * When ``bereq.backend`` is set to a director, then it returns an
   actual backend on subsequent reads if the director resolves to a
   backend immediately, or the director otherwise. If ``bereq.backend``
-  was set to a director, then ``beresp.backend`` returns the backend
+  was set to a director, then ``beresp.backend`` references the backend
   to which it was set for the fetch.  When either of these is used in
   string context, it returns the name of the director or of the
   resolved backend.
+
+* Comparisons between symbols of type BACKEND now work properly::
+
+      if (bereq.backend == foo.backend()) {
+          # do something specific to the foo backends
+      }
 
 * DURATION types may be used in boolean contexts, and are evaluated as
   false when the duration is less than or equal to zero, true
