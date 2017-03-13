@@ -250,7 +250,7 @@ We also publish our code-coverage status now:
 
 http://varnish-cache.org/gcov/
 
-Our goal is 90+% coverage, but we need to finish implementing
+Our goal is 90+% coverage, but we need to start implementing
 terminal emulation in ``varnishtest`` before we can test the curses(1)
 based programs (top/stat/hist) comprehensively, so they currently
 drag us down.
