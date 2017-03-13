@@ -46,8 +46,6 @@ all: link_srcdir
 
 html: sphinx_prereq
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
-	@sed -i 's/Q.*UESTION_MARK_HACK/?/' \
-	    $(BUILDDIR)/html/reference/varnishd.html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 

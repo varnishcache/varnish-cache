@@ -85,7 +85,7 @@ For these options, `varnishd` prints information to standard output
 and exits. When a -x option is used, it must be the only option (it
 outputs documentation in reStructuredText, aka RST).
 
--QUESTION_MARK_HACK
+-?
 
   Print the usage message.
 
