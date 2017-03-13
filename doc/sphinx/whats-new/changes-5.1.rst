@@ -298,5 +298,5 @@ News for authors of VMODs and Varnish API client applications
   break. It is still possible to maintain global state in a VMOD despite
   VMOD caching: one solution is to move the global state into separate
   shared library that won't be cached by Varnish.
- 
-*EOF* 
+
+*EOF*
