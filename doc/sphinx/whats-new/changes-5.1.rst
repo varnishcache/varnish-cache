@@ -82,7 +82,8 @@ fallback, for instance workspace exhaustion, too many
 headers etc. (This is a work in progress, there is a
 lot of code to review before we are done.)
 
-In ``vcl_init{}`` failing causes the ``vcl.load`` to fail.
+In ``vcl_init{}`` failing causes the ``vcl.load`` to fail,
+this is nothing new for this sub-routine.
 
 A failure in any of the client side VCL methods (``vcl_recv{}``,
 ``vcl_hash{}`` ...) *except* ``vcl_synth{}``, sends the request
