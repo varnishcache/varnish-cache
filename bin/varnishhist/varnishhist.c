@@ -357,7 +357,6 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	if (vsl_ts > vsl_to) {
 		double when = VTIM_real() + vsl_ts - vsl_to;
 		struct timespec ts;
-		// Lck_CondWait
 		ts.tv_nsec = (long)(modf(when, &t) * 1e9);
 		ts.tv_sec = (long)t;
 		i = pthread_cond_timedwait(&timebend_cv, &mtx, &ts);
