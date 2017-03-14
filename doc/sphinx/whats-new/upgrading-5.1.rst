@@ -181,7 +181,7 @@ All VCL subroutines (except ``vcl_fini``)
 
 * VCL failure is invoked on any attempt to set one of the fields in the
   the first line of a request or response to the empty string, such
-  as ``req.url``, ``req.proto``, ``req.reason`` and so forth.
+  as ``req.url``, ``req.proto``, ``resp.reason`` and so forth.
 
 Client-side VCL subroutines
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
