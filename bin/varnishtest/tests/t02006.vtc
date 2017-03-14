@@ -21,11 +21,11 @@ client c1 {
 			-hdr content-length 7 \
 			-nostrend
 
-		txdata \
-			-data request
-
 		rxhdrs
 		expect resp.status == 100
+
+		txdata \
+			-data request
 
 		rxwinup
 		rxresp
