@@ -254,9 +254,9 @@ Other changes
     Varnish verifies a compressed response from a backend -- this
     operation was previously counted together with ``n_gunzip``.
 
-  * Added the ``bans_lurker_obj_killed_cutoff`` to count the number of
-    objects killed by the ban lurker to keep the number of bans below
-    ``ban_cutoff``.
+  * Added the ``bans_lurker_obj_killed_cutoff`` stat to count the
+    number of objects killed by the ban lurker to keep the number of
+    bans below ``ban_cutoff``.
 
 * ``varnishlog(1)``:
 
