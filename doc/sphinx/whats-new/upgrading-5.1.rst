@@ -97,7 +97,10 @@ To summarize:
 
 * If both operands of ``+`` or ``-`` are one of BYTES, DURATION, INT
   or REAL, then the result has the same data type, with the obvious
-  numeric interpretation.
+  numeric interpretation. If such an expression is evaluated in a
+  context that expects a STRING (for example for assignment to a
+  header), then the arithmetic is done first, and the result it
+  converted to a STRING.
 
 * INTs and REALs can be added or subtracted to yield a REAL.
 
@@ -106,9 +109,9 @@ To summarize:
 
 * No other combinations of operand types are legal with ``-``.
 
-* If an expression with ``+`` is evaluated in a context where a STRING
-  is expected, then for all other combinations of operand data types,
-  the operands are converted to STRINGs and concatenated.
+* When a ``+`` expression is evaluated in a STRING context, then for
+  all other combinations of operand data types, the operands are
+  converted to STRINGs and concatenated.
 
 * If a STRING is not expected for the ``+`` expression, then no other
   combination of data types is legal.
