@@ -47,6 +47,9 @@ Varnish Cache 5.1.0 (unreleased)
 
 * Added parameters clock_step, thread_pool_reserve and ban_cutoff.
 
+* Parameters vcl_dir and vmod_dir are deprecated, use vcl_path and
+  vmod_path instead.
+
 * All parameters are defined, even on platforms that don't support
   them.  An unsupported parameter is documented as such in
   param.show. Setting such a parameter is not an error, but has no

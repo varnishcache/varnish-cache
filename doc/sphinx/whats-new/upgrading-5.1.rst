@@ -59,6 +59,10 @@ varnishd parameters
 * ``thread_queue_limit`` only applies to queued client requests, see
   :ref:`ref_param_thread_queue_limit`.
 
+* ``vcl_dir`` and ``vmod_dir`` are deprecated and will be removed from
+  a future release, use ``vcl_path`` and ``vmod_path`` instead (see
+  :ref:`ref_param_vcl_path`, :ref:`ref_param_vmod_path`).
+
 * All parameters are defined on every platform, including those that
   that are not functional on every platform. Most of these involve
   features of the TCP stack, such as ``tcp_keepalive_intvl``,
