@@ -100,6 +100,10 @@ static const char NOT_IMPLEMENTED_TEXT[] =
 	"This parameter depends on a feature which is not available"
 	" on this platform.";
 
+static const char NOT_IMPLEMENTED_DOC[] =
+	"NB: This parameter depends on a feature which is not available"
+	" on all platforms.";
+
 /*--------------------------------------------------------------------*/
 
 static struct parspec *
@@ -561,11 +565,8 @@ MCF_DumpRstParam(void)
 			printf("~");
 		printf("\n");
 
-		if (pp->flags && pp->flags & NOT_IMPLEMENTED) {
-			printf("\nNot Available: %s\n\n",
-			    NOT_IMPLEMENTED_TEXT);
-			continue;
-		}
+		if (pp->flags && pp->flags & NOT_IMPLEMENTED)
+			printf("\n%s\n\n", NOT_IMPLEMENTED_DOC);
 
 		if (pp->units != NULL && *pp->units != '\0')
 			printf("\t* Units: %s\n", pp->units);
@@ -582,8 +583,6 @@ MCF_DumpRstParam(void)
 		if (pp->flags) {
 			printf("\t* Flags: ");
 			q = "";
-
-			AZ(pp->flags & NOT_IMPLEMENTED);
 
 			if (pp->flags & DELAYED_EFFECT) {
 				printf("%sdelayed", q);
