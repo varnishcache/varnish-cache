@@ -42,6 +42,11 @@
  * 6.0 (unreleased):
  *	VRT_hit_for_pass added
  *	VRT_ipcmp added
+ *	VRT_Vmod_Init signature changed
+ *	VRT_vcl_lookup removed
+ *	VRT_vcl_get added
+ *	VRT_vcl_rel added
+ *	VRT_fail added
  *	WS_Reset and WS_Snapshot signatures changed
  *	WS_Front added
  *	WS_ReserveLumps added
