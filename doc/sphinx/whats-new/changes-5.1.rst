@@ -222,6 +222,63 @@ removing the ``ETag`` or ``Last-Modified`` headers in
 ``vcl_backend_response``, or by removing the If-* client request
 headers in ``vcl_pass``.
 
+VXID in VSL queries
+~~~~~~~~~~~~~~~~~~~
+
+The Varnish Shared Log (VSL) became much more powerful starting Varnish
+4.0 and hasn't changed much since. Changes usually consist in adding new
+log records when new feature are introduced, or when we realize that some
+missing piece of information could really help troubleshooting.
+
+Varnish UTilities (VUT) relying on the VSL usually share the same ``-q``
+option for querying, which allows to filter transactions based on log
+records. For example you could be looking for figures on a specific
+domain::
+
+    varnishtop -i ReqURL -q 'ReqHeader:Host eq www.example.com'
+
+While options like ``-i`` and ``-q`` were until now both limited to log
+records, it also meant you could only query a specific transaction using
+the ``X-Varnish`` header. Depending on the nature of the transaction
+(client or backend side) the syntax is not the same and you can't match
+a session.
+
+For instance, we are looking for the transaction 1234 that occurred very
+recently and we would like to collect everything from the same session.
+We have two options::
+
+    # client side
+    varnishlog -d -g session -q 'RespHeader:X-Varnish[1] == 1234'
+
+    # backend side
+    varnishlog -d -g session -q 'BereqHeader:X-Varnish == 1234'
+
+There was no simple way to match any transaction using its id until the
+introduction of ``vxid`` as a possible left-hand side of a ``-q`` query
+expression::
+
+    # client side
+    varnishlog -d -g session -q 'vxid == 1234'
+
+    # backend side
+    varnishlog -d -g session -q 'vxid == 1234'
+
+    # session
+    varnishlog -d -g session -q 'vxid == 1234'
+
+Another use case is the collection of non-transactional logs. With raw
+grouping the output is organized differently and each record starts with
+its transaction id or zero for non-transactional logs::
+
+    # before 5.1
+    varnishlog -g raw | awk '$1 == 0'
+
+    # from now on
+    varnishlog -g raw -q 'vxid == 0'
+
+This should offer you a more concise, and more consistent means to filter
+transactions with ``varnishlog`` and other VUTs.
+
 .. _whatsnew_changes_5.1_vtest:
 
 Project tool improvements
@@ -236,7 +293,7 @@ results from other programs with the ``shell`` and ``process``
 commands. It might break existing test cases if you were already
 using ``varnishtest``.
 
-The project now has *KISS* web-backend which summarizes 
+The project now has *KISS* web-backend which summarizes
 ``make distcheck`` results from various platforms:
 
 http://varnish-cache.org/vtest/
