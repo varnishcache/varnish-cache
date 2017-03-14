@@ -120,9 +120,9 @@ You can also group several backend into a group of backends. These
 groups are called directors. This will give you increased performance
 and resilience.
 
-You can define several backends and group them together in a
-director. This requires you to load a VMOD, a Varnish module, and then to
-call certain actions in `vcl_init`.::
+You can define several backends and group them together in a director.
+This requires you to load a VMOD, a VCL module, and then to call certain
+actions in `vcl_init`.::
 
 
     import directors;    # load the directors

@@ -1,8 +1,8 @@
 .. _ref-vmod:
 
-%%%%%%%%%%%%%%%%%%%%%%
-VMOD - Varnish Modules
-%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%
+VMOD - VCL Modules
+%%%%%%%%%%%%%%%%%%
 
 For all you can do in VCL, there are things you can not do.
 Look an IP number up in a database file for instance.
