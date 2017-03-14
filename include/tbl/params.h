@@ -1473,7 +1473,7 @@ PARAM(
 	/* units */	NULL,
 	/* flags */	0,
 	/* s-text */
-	"Directory where VCL modules are to be found.",
+	"Directory where Varnish modules are to be found.",
 	/* l-text */	"",
 	/* func */	NULL
 )

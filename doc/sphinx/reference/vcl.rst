@@ -174,7 +174,7 @@ To include a VCL file in another file use the include keyword::
 Import statement
 ----------------
 
-The ``import`` statement is used to load VCL modules (VMODs.)
+The ``import`` statement is used to load Varnish Modules (VMODs.)
 
 Example::
 
