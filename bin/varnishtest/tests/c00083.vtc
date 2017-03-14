@@ -1,0 +1,30 @@
+varnishtest "VSM overflow allocation"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-pvcc_allow_inline_c=true" -vcl+backend {
+
+	C{
+	void *VSM_Alloc(unsigned size, const char *class, const char *type,
+	    const char *ident);
+	void VSM_Free(void *ptr);
+	}C
+
+	sub vcl_recv {
+		C{
+		void *p;
+		p = VSM_Alloc(3 * 1024 * 1024, "TEST", "TYPE", "0");
+		VSM_Free(p);
+		}C
+	}
+
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
