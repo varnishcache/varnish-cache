@@ -580,6 +580,8 @@ main(int argc, char * const *argv)
 
 	params_vsb = VSB_new_auto();
 	AN(params_vsb);
+	if (getenv("VARNISHTEST_DURATION"))
+		vtc_maxdur = atoi(getenv("VARNISHTEST_DURATION"));
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
