@@ -81,6 +81,7 @@ AC_DEFUN([_VARNISH_PKG_CONFIG], [
 	PKG_CHECK_VAR([VARNISHAPI_LIBDIR], [varnishapi], [libdir])
 	PKG_CHECK_VAR([VARNISHAPI_BINDIR], [varnishapi], [bindir])
 	PKG_CHECK_VAR([VARNISHAPI_SBINDIR], [varnishapi], [sbindir])
+	PKG_CHECK_VAR([VARNISHAPI_VCLDIR], [varnishapi], [vcldir])
 	PKG_CHECK_VAR([VARNISHAPI_VMODDIR], [varnishapi], [vmoddir])
 
 	PKG_CHECK_VAR([VMODTOOL], [varnishapi], [vmodtool])
@@ -90,6 +91,17 @@ AC_DEFUN([_VARNISH_PKG_CONFIG], [
 
 	AC_SUBST([VARNISH_TEST_PATH],
 		[$VARNISHAPI_SBINDIR:$VARNISHAPI_BINDIR:$PATH])
+
+	dnl Inherit Varnish's prefix if undefined
+	test "$prefix" = NONE && ac_default_prefix=$VARNISHAPI_PREFIX
+
+	dnl Define the VCL directory for automake
+	vcldir=$($PKG_CONFIG --define-variable=datarootdir=$datarootdir \
+		--variable=vcldir varnishapi)
+	AC_SUBST([vcldir])
+
+	dnl Define the VCL directory for this package
+	AC_SUBST([pkgvcldir], [\${vcldir}/\${PACKAGE}])
 ])
 
 # _VARNISH_CHECK_DEVEL
@@ -144,13 +156,8 @@ AC_DEFUN([_VARNISH_VMOD_CONFIG], [
 	AC_SUBST([VARNISHAPI_DATAROOTDIR])
 
 	dnl Define the VMOD directory for libtool
-	AS_CASE([$prefix],
-		[NONE], [
-			vmoddir=$VARNISHAPI_VMODDIR
-			ac_default_prefix=$VARNISHAPI_PREFIX],
-		[vmoddir=$($PKG_CONFIG --define-variable=libdir=$libdir \
-			--variable=vmoddir varnishapi)]
-	)
+	vmoddir=$($PKG_CONFIG --define-variable=libdir=$libdir \
+		--variable=vmoddir varnishapi)
 	AC_SUBST([vmoddir])
 
 	dnl Define an automake silent execution for vmodtool
@@ -183,6 +190,9 @@ AC_DEFUN([_VARNISH_VMOD], [
 	VMOD_IMPORT="$1 from \\\"$VMOD_FILE\\\""
 	AC_SUBST(m4_toupper(VMOD_$1), [$VMOD_IMPORT])
 
+	dnl Define the VCL directory for automake
+	AC_SUBST([vmod_$1_vcldir], [\${vcldir}/$1])
+
 	VMOD_RULES="
 
 vmod_$1.lo: vcc_$1_if.c vcc_$1_if.h
@@ -214,6 +224,9 @@ clean-vmod-$1:
 # --------------------
 # Since: Varnish 4.1.4
 #
+# Since Varnish 5.1.0:
+# - vmod_*_vcldir added
+#
 # Set up the VMOD tool-chain to build the collection of NAMES modules. The
 # definition of key variables is made available for use in Makefile rules
 # to build the modules:
@@ -222,6 +235,7 @@ clean-vmod-$1:
 # - VMOD_TEST_PATH (an alias for VARNISH_TEST_PATH)
 # - VMODTOOL (to generate a VMOD's interface)
 # - vmoddir (the install prefix for VMODs)
+# - vmod_*_vcldir (the install prefix for the VMODs VCL files)
 #
 # Configuring your VMOD build with libtool can be as simple as:
 #
@@ -267,7 +281,8 @@ clean-vmod-$1:
 # hand python detection is done and the resulting PYTHON variable to use
 # the VMODTOOL. Since nothing requires RST2MAN to be written in python, it
 # is left outside of the scope. You may even define a phony RST2MAN to
-# skip man page generation as it is often the case from a dist archive.
+# skip man page generation as it is often the case from a dist archive
+# (usually /bin/true when the manual is distributed).
 #
 # Two notable variables are exposed from Varnish's pkg-config:
 #
@@ -288,7 +303,7 @@ clean-vmod-$1:
 # is a minimal setup:
 #
 #     AM_TESTS_ENVIRONMENT = \
-#         PATH="$(VARNISH_TEST_PATH)" \
+#         PATH="$(VARNISH_TEST_PATH):$(PATH)" \
 #         LD_LIBRARY_PATH="$(VARNISH_LIBRARY_PATH)"
 #     TEST_EXTENSIONS = .vtc
 #     VTC_LOG_COMPILER = varnishtest -v
@@ -297,7 +312,7 @@ clean-vmod-$1:
 # Setting up the different paths is mostly relevant when you aren't building
 # against the system installation of Varnish. In the case of the PATH, you
 # may also need to preserve the original PATH if you run commands outside of
-# the Varnish distribution in your test cases.
+# the Varnish distribution in your test cases (as shown above).
 #
 # The $(VMOD_*) variables contain a proper import statement if the relevant
 # VMOD was built in the same directory as the test runner. With the example
@@ -322,6 +337,22 @@ clean-vmod-$1:
 #
 #     EXTRA_DIST = vmod_foo.vcc vmod_bar.vcc $(TESTS)
 #
+# If a VMOD is actually a combination of both a library and VCL sub-routines,
+# automake directories are available for installation:
+#
+#     vmod_foo_vcl_DATA = some_addition.vcl
+#
+# This way the end-user's VCL only needs few lines of code to start using both
+# VMODs and VCLs assuming Varnish's default vmod_path and vcl_path were not
+# changed:
+#
+#     vcl 4.0;
+#
+#     import foo;
+#     import bar;
+#
+#     include "foo/some_addition.vcl";
+#
 # Now, you can focus on writing this VMOD of yours.
 #
 AC_DEFUN([VARNISH_VMODS], [
@@ -338,6 +369,9 @@ AC_DEFUN([VARNISH_VMODS], [
 # - VARNISH_TEST_PATH added
 # - VARNISH_LIBRARY_PATH added
 # - VARNISHAPI_LIBDIR added
+# - VARNISHAPI_VCLDIR added
+# - vcldir added
+# - pkgvcldir added
 #
 # Verify that the version of Varnish Cache found by pkg-config is at least
 # MINIMUM-VERSION. If MAXIMUM-VERSION is specified, verify that the version
@@ -360,8 +394,22 @@ AC_DEFUN([VARNISH_VMODS], [
 # - VARNISHAPI_LIBDIR
 # - VARNISHAPI_BINDIR
 # - VARNISHAPI_SBINDIR
+# - VARNISHAPI_VCLDIR
 # - VARNISHAPI_VMODDIR
 # - VMODTOOL
+#
+# In addition, two directories are set up for installation in automake:
+#
+# - vcldir
+# - pkgvcldir
+#
+# The vcldir is where Varnish will by default look up VCL files using relative
+# paths not found in its sysconfdir (by default /etc/varnish). The pkgvcldir on
+# the other hand is a recommended location for your package's VCL files, it
+# defaults to "${vcldir}/${PACKAGE}".
+#
+# This provides a namespace facility for installed VCL files needing including
+# other VCL files, which can be overridden if the package name is not desired.
 #
 AC_DEFUN([VARNISH_PREREQ], [
 	AC_REQUIRE([_VARNISH_PKG_CONFIG])

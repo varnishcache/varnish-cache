@@ -3,11 +3,14 @@ exec_prefix=@exec_prefix@
 bindir=@bindir@
 sbindir=@sbindir@
 libdir=@libdir@
+sysconfdir=@sysconfdir@
+pkgsysconfdir=${sysconfdir}/@PACKAGE@
 includedir=@includedir@
 pkgincludedir=${includedir}/@PACKAGE@
 datarootdir=@datarootdir@
 datadir=@datadir@
 pkgdatadir=${datadir}/@PACKAGE@
+vcldir=${pkgdatadir}/vcl
 vmoddir=${libdir}/@PACKAGE@/vmods
 vmodtool=${pkgdatadir}/vmodtool.py
 
