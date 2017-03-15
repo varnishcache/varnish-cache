@@ -1,5 +1,5 @@
 ================================
-Varnish Cache 5.1.0 (unreleased)
+Varnish Cache 5.1.0 (2017-03-15)
 ================================
 
 * Added varnishd command-line options -I, -x and -?, and tightened
