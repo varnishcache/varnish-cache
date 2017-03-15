@@ -330,6 +330,8 @@ http1_dissect(struct worker *wrk, struct req *req)
 static int
 http1_req_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 {
+	AZ(wrk->aws->r);
+	AZ(req->ws->r);
 	Req_Cleanup(sp, wrk, req);
 
 	if (sp->fd >= 0 && req->doclose != SC_NULL)
@@ -369,10 +371,12 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 	 * On systems which return errors for ioctl, we close early
 	 */
 	if (http1_getstate(sp) == H1NEWREQ && VTCP_blocking(sp->fd)) {
+		AN(req->htc->ws->r);
 		if (errno == ECONNRESET)
 			SES_Close(sp, SC_REM_CLOSE);
 		else
 			SES_Close(sp, SC_TX_ERROR);
+		WS_Release(req->htc->ws, 0);
 		AN(http1_req_cleanup(sp, wrk, req));
 		return;
 	}
@@ -387,13 +391,14 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			assert(isnan(req->t_req));
 			AZ(req->vcl);
 			AZ(req->esi_level);
+			AN(req->htc->ws->r);
 
 			hs = HTC_RxStuff(req->htc, HTTP1_Complete,
 			    &req->t_first, &req->t_req,
 			    sp->t_idle + cache_param->timeout_linger,
 			    sp->t_idle + cache_param->timeout_idle,
 			    cache_param->http_req_size);
-			XXXAZ(req->htc->ws->r);
+			AZ(req->htc->ws->r);
 			if (hs < HTC_S_EMPTY) {
 				req->acct.req_hdrbytes +=
 				    req->htc->rxbuf_e - req->htc->rxbuf_b;
