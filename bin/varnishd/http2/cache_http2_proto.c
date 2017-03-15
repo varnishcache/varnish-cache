@@ -453,6 +453,8 @@ h2_end_headers(const struct worker *wrk, const struct h2_sess *h2,
 {
 	h2_error h2e;
 
+	assert(r2->state == H2_S_OPEN);
+	r2->state = H2_S_CLOS_REM;
 	h2e = h2h_decode_fini(h2, r2->decode);
 	FREE_OBJ(r2->decode);
 	if (h2e != NULL) {

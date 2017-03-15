@@ -327,6 +327,28 @@ http1_dissect(struct worker *wrk, struct req *req)
 /*----------------------------------------------------------------------
  */
 
+static int
+http1_req_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
+{
+	Req_Cleanup(sp, wrk, req);
+
+	if (sp->fd >= 0 && req->doclose != SC_NULL)
+		SES_Close(sp, req->doclose);
+
+	if (sp->fd < 0) {
+		wrk->stats->sess_closed++;
+		AZ(req->vcl);
+		Req_Release(req);
+		SES_Delete(sp, SC_NULL, NAN);
+		return (1);
+	}
+
+	return (0);
+}
+
+/*----------------------------------------------------------------------
+ */
+
 static void
 HTTP1_Session(struct worker *wrk, struct req *req)
 {
@@ -351,7 +373,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			SES_Close(sp, SC_REM_CLOSE);
 		else
 			SES_Close(sp, SC_TX_ERROR);
-		AN(Req_Cleanup(sp, wrk, req));
+		AN(http1_req_cleanup(sp, wrk, req));
 		return;
 	}
 
@@ -451,7 +473,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				    &req->hash_objhead);
 				AZ(req->hash_objhead);
 				SES_Close(sp, SC_REM_CLOSE);
-				AN(Req_Cleanup(sp, wrk, req));
+				AN(http1_req_cleanup(sp, wrk, req));
 				return;
 			}
 			http1_setstate(sp, H1PROC);
@@ -464,7 +486,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			req->task.priv = NULL;
 			http1_setstate(sp, H1CLEANUP);
 		} else if (st == H1CLEANUP) {
-			if (Req_Cleanup(sp, wrk, req))
+			if (http1_req_cleanup(sp, wrk, req))
 				return;
 			HTC_RxInit(req->htc, req->ws);
 			if (req->htc->rxbuf_e != req->htc->rxbuf_b)

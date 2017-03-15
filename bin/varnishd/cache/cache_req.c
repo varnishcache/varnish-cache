@@ -143,7 +143,7 @@ Req_Release(struct req *req)
 /*----------------------------------------------------------------------
  */
 
-int
+void
 Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 {
 
@@ -189,20 +189,8 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->hash_ignore_busy = 0;
 	req->is_hit = 0;
 
-	if (sp->fd >= 0 && req->doclose != SC_NULL)
-		SES_Close(sp, req->doclose);
-
-	if (sp->fd < 0) {
-		wrk->stats->sess_closed++;
-		AZ(req->vcl);
-		Req_Release(req);
-		SES_Delete(sp, SC_NULL, NAN);
-		return (1);
-	}
-
 	WS_Reset(req->ws, 0);
 	WS_Reset(wrk->aws, 0);
-	return (0);
 }
 
 /*----------------------------------------------------------------------
