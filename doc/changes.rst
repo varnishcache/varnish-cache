@@ -87,6 +87,7 @@ Varnish Cache 5.1.0 (unreleased)
 Bugs fixed
 ----------
 
+* 2251_ - varnishapi.pc and varnishconfdir
 * 2250_ - vrt.h now depends on vdef.h making current vmod fail.
 * 2249_ - "logexpect -wait" doesn't fail
 * 2245_ - Varnish doesn't start, if use vmod (vmod_cache dir was permission denied)
@@ -146,6 +147,7 @@ Bugs fixed
 * 1750_ - Fail more gracefully on -l >= 4GB
 * 1704_ - fetch_failed not incremented
 
+.. _2251: https://github.com/varnishcache/varnish-cache/issues/2251
 .. _2250: https://github.com/varnishcache/varnish-cache/issues/2250
 .. _2249: https://github.com/varnishcache/varnish-cache/issues/2249
 .. _2245: https://github.com/varnishcache/varnish-cache/issues/2245

@@ -339,6 +339,9 @@ News for authors of VMODs and Varnish API client applications
   * All of the ``VSB_*`` functions for working with safe string
     buffers.
 
+* ``varnish.m4`` and ``varnishapi.pc`` now expose more information about
+  the Varnish installation. See "Since 5.1.0" comments for a comprehensive
+  list of what was added.
 
 * VMOD version coexistence improvements:  In difference from executable
   files, shared libraries are not protected against overwriting under
