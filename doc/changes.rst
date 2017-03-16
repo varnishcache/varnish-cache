@@ -1,5 +1,5 @@
 ================================
-Varnish Cache trunk (unreleased)
+Varnish Cache 5.1.1 (2017-03-16)
 ================================
 
 * Fix bug introduced by stubborn old bugger right before release
