@@ -433,6 +433,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			if (H2_prism_complete(req->htc) == HTC_S_COMPLETE) {
 				if (!FEATURE(FEATURE_HTTP2)) {
 					SES_Close(req->sp, SC_REQ_HTTP20);
+					AZ(req->ws->r);
+					AZ(wrk->aws->r);
 					http1_setstate(sp, H1CLEANUP);
 					continue;
 				}
@@ -447,6 +449,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			if (i) {
 				assert(req->doclose > 0);
 				SES_Close(req->sp, req->doclose);
+				AZ(req->ws->r);
+				AZ(wrk->aws->r);
 				http1_setstate(sp, H1CLEANUP);
 				continue;
 			}
@@ -473,9 +477,10 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			 * Check to see if the remote has left.
 			 */
 			if (VTCP_check_hup(sp->fd)) {
+				AN(req->ws->r);
+				WS_Release(req->ws, 0);
 				AN(req->hash_objhead);
-				(void)HSH_DerefObjHead(wrk,
-				    &req->hash_objhead);
+				(void)HSH_DerefObjHead(wrk, &req->hash_objhead);
 				AZ(req->hash_objhead);
 				SES_Close(sp, SC_REM_CLOSE);
 				AN(http1_req_cleanup(sp, wrk, req));
@@ -489,6 +494,8 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				return;
 			req->task.func = NULL;
 			req->task.priv = NULL;
+			AZ(req->ws->r);
+			AZ(wrk->aws->r);
 			http1_setstate(sp, H1CLEANUP);
 		} else if (st == H1CLEANUP) {
 			if (http1_req_cleanup(sp, wrk, req))
