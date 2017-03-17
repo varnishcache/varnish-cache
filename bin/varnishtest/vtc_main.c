@@ -627,7 +627,7 @@ main(int argc, char * const *argv)
 			break;
 		case 'p':
 			VSB_printf(params_vsb, " -p ");
-			VSB_quote(params_vsb, optarg, -1, VSB_QUOTE_NONL);
+			VSB_quote(params_vsb, optarg, -1, 0);
 			break;
 		case 'q':
 			if (vtc_verbosity > 0)

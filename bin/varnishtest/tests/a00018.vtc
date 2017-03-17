@@ -1,0 +1,8 @@
+varnishtest "Test varnishtest -p flag"
+
+shell {
+    echo 'varnishtest params' > _.vtc
+    echo 'varnish v1 -cliexpect {Value is: \+workspace} "param.show debug"' >> _.vtc
+    echo 'varnish v1 -cliexpect {Value is: 123\.000} "param.show default_grace"' >> _.vtc
+    exec varnishtest -p debug=+workspace -p default_grace=123 _.vtc
+}
