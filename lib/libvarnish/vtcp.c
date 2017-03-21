@@ -577,7 +577,7 @@ VTCP_Check(int a)
 	 * connection.
 	 * This is a bug in Solaris and documented behaviour on NetBSD.
 	 */
-	if (errno == EINVAL || errno == ETIMEDOUT)
+	if (errno == EINVAL || errno == ETIMEDOUT || errno == EPIPE)
 		return (1);
 #endif
 	return (0);
