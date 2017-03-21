@@ -663,6 +663,15 @@ h2_req_body(struct req *req)
 
 /**********************************************************************/
 
+void __match_proto__(vtr_req_fail_f)
+h2_req_fail(struct req *req, enum sess_close reason)
+{
+	assert(reason > 0);
+	assert(req->sp->fd != 0);
+}
+
+/**********************************************************************/
+
 static enum htc_status_e __match_proto__(htc_complete_f)
 h2_frame_complete(struct http_conn *htc)
 {

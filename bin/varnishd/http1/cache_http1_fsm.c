@@ -243,14 +243,14 @@ struct transport HTTP1_transport = {
 	.name =			"HTTP/1",
 	.magic =		TRANSPORT_MAGIC,
 	.deliver =		V1D_Deliver,
-	.unwait =		http1_unwait,
+	.minimal_response =	http1_minimal_response,
+	.new_session =		http1_new_session,
+	.reembark =		http1_reembark,
 	.req_body =		http1_req_body,
 	.req_fail =		http1_req_fail,
-	.new_session =		http1_new_session,
-	.sess_panic =		http1_sess_panic,
 	.req_panic =		http1_req_panic,
-	.reembark =		http1_reembark,
-	.minimal_response =	http1_minimal_response,
+	.sess_panic =		http1_sess_panic,
+	.unwait =		http1_unwait,
 };
 
 /*----------------------------------------------------------------------

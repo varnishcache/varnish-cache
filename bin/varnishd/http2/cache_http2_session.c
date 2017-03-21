@@ -364,10 +364,11 @@ h2_reembark(struct worker *wrk, struct req *req)
 struct transport H2_transport = {
 	.name =			"H2",
 	.magic =		TRANSPORT_MAGIC,
-	.new_session =		h2_new_session,
-	.sess_panic =		h2_sess_panic,
 	.deliver =		h2_deliver,
-	.req_body =		h2_req_body,
 	.minimal_response =	h2_minimal_response,
+	.new_session =		h2_new_session,
 	.reembark =		h2_reembark,
+	.req_body =		h2_req_body,
+	.req_fail =		h2_req_fail,
+	.sess_panic =		h2_sess_panic,
 };

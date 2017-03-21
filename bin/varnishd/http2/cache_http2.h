@@ -225,3 +225,6 @@ int h2_rxframe(struct worker *, struct h2_sess *);
 h2_error h2_set_setting(struct h2_sess *, const uint8_t *);
 void h2_req_body(struct req*);
 task_func_t h2_do_req;
+#ifdef TRANSPORT_MAGIC
+vtr_req_fail_f h2_req_fail;
+#endif
