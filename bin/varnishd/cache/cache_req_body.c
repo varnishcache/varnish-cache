@@ -218,7 +218,9 @@ VRB_Iterate(struct req *req, objiterate_f *func, void *priv)
 /*----------------------------------------------------------------------
  * VRB_Ignore() is a dedicated function, because we might
  * be able to disuade or terminate its transmission in some protocols.
- * For HTTP1 we have no such luck, and we just iterate it into oblivion.
+ *
+ * For HTTP1, we do nothing if we are going to close the connection anyway or
+ * just iterate it into oblivion.
  */
 
 static int __match_proto__(objiterate_f)
