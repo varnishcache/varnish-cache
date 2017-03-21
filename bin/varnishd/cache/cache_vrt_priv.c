@@ -54,6 +54,38 @@ static struct vmod_priv cli_task_priv;
  */
 
 void
+pan_privs(struct vsb *vsb, const struct vrt_privs *privs)
+{
+	struct vrt_priv *vp;
+
+	VSB_printf(vsb, "privs = %p {\n", privs);
+	if (PAN_already(vsb, privs))
+		return;
+	VSB_indent(vsb, 2);
+	PAN_CheckMagic(vsb, privs, VRT_PRIVS_MAGIC);
+	if (privs->magic == VRT_PRIVS_MAGIC) {
+		VTAILQ_FOREACH(vp, &privs->privs, list) {
+			PAN_CheckMagic(vsb, vp, VRT_PRIV_MAGIC);
+			VSB_printf(vsb,
+			    "priv {p %p l %d f %p} vcl %p id %jx vmod %jx\n",
+			    vp->priv->priv,
+			    vp->priv->len,
+			    vp->priv->free,
+			    vp->vcl,
+			    (uintmax_t)vp->id,
+			    (uintmax_t)vp->vmod_id
+			);
+		}
+	}
+	VSB_indent(vsb, -2);
+	VSB_printf(vsb, "},\n");
+}
+
+
+/*--------------------------------------------------------------------
+ */
+
+void
 VRTPRIV_init(struct vrt_privs *privs)
 {
 

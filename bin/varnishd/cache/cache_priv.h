@@ -90,6 +90,7 @@ void ObjInit(void);
 
 /* cache_panic.c */
 void PAN_Init(void);
+int PAN_already(struct vsb *, const void *);
 
 /* cache_pool.c */
 void Pool_Init(void);
@@ -118,6 +119,7 @@ void VCL_Poll(void);
 /* cache_vrt.c */
 void VRTPRIV_init(struct vrt_privs *privs);
 void VRTPRIV_dynamic_kill(struct vrt_privs *privs, uintptr_t id);
+void pan_privs(struct vsb *, const struct vrt_privs *);
 
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);

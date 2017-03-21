@@ -122,8 +122,8 @@ sess_close_2str(enum sess_close sc, int want_desc)
 static const void *already_list[N_ALREADY];
 static int already_idx;
 
-static int
-pan_already(struct vsb *vsb, const void *ptr)
+int
+PAN_already(struct vsb *vsb, const void *ptr)
 {
 	int i;
 
@@ -143,7 +143,6 @@ pan_already(struct vsb *vsb, const void *ptr)
 	return (0);
 }
 
-
 /*--------------------------------------------------------------------*/
 
 static void
@@ -151,7 +150,7 @@ pan_ws(struct vsb *vsb, const struct ws *ws)
 {
 
 	VSB_printf(vsb, "ws = %p {\n", ws);
-	if (pan_already(vsb, ws))
+	if (PAN_already(vsb, ws))
 		return;
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, ws, WS_MAGIC);
@@ -183,7 +182,7 @@ pan_htc(struct vsb *vsb, const struct http_conn *htc)
 {
 
 	VSB_printf(vsb, "http_conn = %p {\n", htc);
-	if (pan_already(vsb, htc))
+	if (PAN_already(vsb, htc))
 		return;
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, htc, HTTP_CONN_MAGIC);
@@ -215,7 +214,7 @@ pan_http(struct vsb *vsb, const char *id, const struct http *h)
 	int i;
 
 	VSB_printf(vsb, "http[%s] = %p {\n", id, h);
-	if (pan_already(vsb, h))
+	if (PAN_already(vsb, h))
 		return;
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, h, HTTP_MAGIC);
@@ -239,7 +238,7 @@ static void
 pan_boc(struct vsb *vsb, const struct boc *boc)
 {
 	VSB_printf(vsb, "boc = %p {\n", boc);
-	if (pan_already(vsb, boc))
+	if (PAN_already(vsb, boc))
 		return;
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, boc, BOC_MAGIC);
@@ -259,7 +258,7 @@ pan_objcore(struct vsb *vsb, const char *typ, const struct objcore *oc)
 	const char *p;
 
 	VSB_printf(vsb, "objcore[%s] = %p {\n", typ, oc);
-	if (pan_already(vsb, oc))
+	if (PAN_already(vsb, oc))
 		return;
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, oc, OBJCORE_MAGIC);
@@ -314,7 +313,7 @@ pan_wrk(struct vsb *vsb, const struct worker *wrk)
 	const char *p;
 
 	VSB_printf(vsb, "worker = %p {\n", wrk);
-	if (pan_already(vsb, wrk))
+	if (PAN_already(vsb, wrk))
 		return;
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, wrk, WORKER_MAGIC);
@@ -364,7 +363,7 @@ pan_busyobj(struct vsb *vsb, const struct busyobj *bo)
 	const char *p;
 
 	VSB_printf(vsb, "busyobj = %p {\n", bo);
-	if (pan_already(vsb, bo))
+	if (PAN_already(vsb, bo))
 		return;
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, bo, BUSYOBJ_MAGIC);
@@ -419,7 +418,7 @@ pan_req(struct vsb *vsb, const struct req *req)
 	const struct transport *xp;
 
 	VSB_printf(vsb, "req = %p {\n", req);
-	if (pan_already(vsb, req))
+	if (PAN_already(vsb, req))
 		return;
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, req, REQ_MAGIC);
@@ -498,7 +497,7 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 	const struct transport *xp;
 
 	VSB_printf(vsb, "sp = %p {\n", sp);
-	if (pan_already(vsb, sp))
+	if (PAN_already(vsb, sp))
 		return;
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, sp, SESS_MAGIC);
@@ -520,6 +519,8 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 	ci = SES_Get_String_Attr(sp, SA_CLIENT_IP);
 	cp = SES_Get_String_Attr(sp, SA_CLIENT_PORT);
 	VSB_printf(vsb, "client = %s %s,\n", ci, cp);
+
+	pan_privs(vsb, sp->privs);
 
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
