@@ -288,6 +288,7 @@ h2_new_session(struct worker *wrk, void *arg)
 		CNT_AcctLogCharge(wrk->stats, req);
 		VCL_Rel(&req->vcl);
 		Req_Release(req);
+		h2_del_req(wrk, h2->req0);
 		SES_Delete(h2->sess, SC_RX_JUNK, NAN);
 		return;
 	}
