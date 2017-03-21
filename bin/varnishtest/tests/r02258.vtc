@@ -1,0 +1,24 @@
+varnishtest "Streaming range premature finish"
+
+server s1 {
+	non_fatal
+	rxreq
+	txresp -nolen -hdr "Content-length: 9"
+	delay 1
+	send "BLA"
+	delay .4
+	send "BLA"
+	delay .3
+	send "BL"
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+	txreq -hdr "range: bytes=0-16"
+	rxresp -no_obj
+	expect resp.status == 206
+	expect resp.http.content-length == 9
+	recv 8
+	expect_close
+} -run
