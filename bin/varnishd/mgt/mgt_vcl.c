@@ -387,14 +387,14 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 	}
 	if (vs == VCL_STATE_AUTO) {
 		now = VTIM_mono();
-		vs = vp->warm ? VCL_STATE_WARM : VCL_STATE_COLD;
+		vs = (vp->warm ? VCL_STATE_WARM : VCL_STATE_COLD);
 		if (vp->go_cold > 0 && vp->state == VCL_STATE_AUTO &&
 		    vp->go_cold + mgt_param.vcl_cooldown < now)
 			vs = VCL_STATE_COLD;
 	}
 
 	assert(vs != VCL_STATE_AUTO);
-	warm = vs == VCL_STATE_WARM ? 1 : 0;
+	warm = (vs == VCL_STATE_WARM ? 1 : 0);
 
 	if (vp->warm == warm)
 		return (0);
