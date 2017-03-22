@@ -209,11 +209,15 @@ varnishlog_thread(void *priv)
 		if (c == NULL) {
 			VTIM_sleep(0.1);
 			if (VSM_Open(vsm)) {
+				vtc_log(v->vl, 3, "vsm|%s",
+				    VSM_Error(vsm));
 				VSM_ResetError(vsm);
 				continue;
 			}
 			c = VSL_CursorVSM(vsl, vsm, opt);
 			if (c == NULL) {
+				vtc_log(v->vl, 3, "vsl|%s",
+				    VSL_Error(vsl));
 				VSL_ResetError(vsl);
 				continue;
 			}
