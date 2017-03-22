@@ -136,7 +136,7 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 	}
 
 	if ((V1L_FlushRelease(req->wrk) || err) && req->sp->fd >= 0)
-		SES_Close(req->sp, SC_REM_CLOSE);
+		Req_Fail(req, SC_REM_CLOSE);
 	AZ(req->wrk->v1l);
 	VDP_close(req);
 }
