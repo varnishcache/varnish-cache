@@ -82,6 +82,7 @@ struct varnish {
 	unsigned		vsl_tag_count[256];
 
 	volatile int		vsl_rec;
+	volatile int		vsl_idle;
 };
 
 #define NONSENSE	"%XJEIFLH|)Xspa8P"
@@ -182,6 +183,16 @@ wait_running(const struct varnish *v)
  * Varnishlog gatherer thread
  */
 
+static void
+vsl_catchup(const struct varnish *v)
+{
+	int vsl_idle;
+
+	vsl_idle = v->vsl_idle;
+	while (vsl_idle == v->vsl_idle)
+		VTIM_sleep(0.1);
+}
+
 static void *
 varnishlog_thread(void *priv)
 {
@@ -249,6 +260,7 @@ varnishlog_thread(void *priv)
 		}
 		if (i == 0) {
 			/* Nothing to do but wait */
+			v->vsl_idle++;
 			VTIM_sleep(0.1);
 		} else if (i == -2) {
 			/* Abandoned - try reconnect */
@@ -1054,6 +1066,10 @@ varnish_expect(const struct varnish *v, char * const *av)
  *         style pattern (ie: fnmatch(3)) as used in shell filename expansion.
  *         To see all counters use pattern "*", to see all counters about
  *         requests use "*req*".
+ *
+ * \-vsl_catchup
+ *         Wait until the logging thread has idled to make sure that all
+ *         the generated log is flushed
  */
 
 void
@@ -1207,6 +1223,10 @@ cmd_varnish(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-wait")) {
 			varnish_wait(v);
+			continue;
+		}
+		if (!strcmp(*av, "-vsl_catchup")) {
+			vsl_catchup(v);
 			continue;
 		}
 		vtc_fatal(v->vl, "Unknown varnish argument: %s", *av);
