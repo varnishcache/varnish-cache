@@ -90,4 +90,5 @@ varnish v1 -clierr 300 "vcl.state vcl1 warm"
 
 # A warm-up failure can also fail a child start
 varnish v1 -cliok stop
+varnish v1 -cliok "vcl.state vcl1 warm"
 varnish v1 -clierr 300 start
