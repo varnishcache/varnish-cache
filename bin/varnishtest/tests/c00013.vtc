@@ -1,4 +1,4 @@
-varnishtest "Test parking second request on backend delay"
+varnishtest "Test parking second request on backend delay (waitinglist)"
 
 barrier b1 cond 2
 barrier b2 cond 2
