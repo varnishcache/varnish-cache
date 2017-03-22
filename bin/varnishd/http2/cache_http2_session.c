@@ -192,11 +192,12 @@ h2_b64url_settings(struct h2_sess *h2, struct req *req)
 /**********************************************************************/
 
 static int
-h2_ou_session(const struct worker *wrk, struct h2_sess *h2,
+h2_ou_session(struct worker *wrk, struct h2_sess *h2,
     struct req *req)
 {
 	ssize_t sz;
 	enum htc_status_e hs;
+	struct h2_req *r2;
 
 	if (h2_b64url_settings(h2, req)) {
 		VSLb(h2->vsl, SLT_Debug, "H2: Bad HTTP-Settings");
@@ -220,7 +221,7 @@ h2_ou_session(const struct worker *wrk, struct h2_sess *h2,
 	HTC_RxInit(h2->htc, h2->ws);
 
 	/* Start req thread */
-	(void)h2_new_req(wrk, h2, 1, req);
+	r2 = h2_new_req(wrk, h2, 1, req);
 	req->req_step = R_STP_RECV;
 	req->transport = &H2_transport;
 	req->req_step = R_STP_TRANSPORT;
@@ -233,7 +234,8 @@ h2_ou_session(const struct worker *wrk, struct h2_sess *h2,
 	hs = HTC_RxStuff(h2->htc, H2_prism_complete,
 	    NULL, NULL, NAN, h2->sess->t_idle + cache_param->timeout_idle, 256);
 	if (hs != HTC_S_COMPLETE) {
-		VSLb(h2->vsl, SLT_Debug, "H2: No OU PRISM (hs=%d)", hs);
+		VSLb(h2->vsl, SLT_Debug, "H2: No/Bad OU PRISM (hs=%d)", hs);
+		h2_del_req(wrk, r2);
 		return (0);
 	}
 	XXXAZ(Pool_Task(wrk->pool, &req->task, TASK_QUEUE_REQ));
@@ -285,11 +287,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	h2->req0 = h2_new_req(wrk, h2, 0, NULL);
 
 	if (req->err_code == H2_OU_MARKER && !h2_ou_session(wrk, h2, req)) {
-		CNT_AcctLogCharge(wrk->stats, req);
-		VCL_Rel(&req->vcl);
-		Req_Release(req);
 		h2_del_req(wrk, h2->req0);
-		SES_Delete(h2->sess, SC_RX_JUNK, NAN);
 		return;
 	}
 	assert(HTC_S_COMPLETE == H2_prism_complete(h2->htc));

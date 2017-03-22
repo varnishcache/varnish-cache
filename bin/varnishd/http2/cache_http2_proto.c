@@ -181,7 +181,6 @@ h2_del_req(struct worker *wrk, struct h2_req *r2)
 	Req_Release(r2->req);
 	if (r)
 		return;
-
 	/* All streams gone, including stream #0, clean up */
 	req = h2->srq;
 	Req_Cleanup(sp, wrk, req);

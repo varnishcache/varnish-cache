@@ -27,16 +27,41 @@ client c1 {
 
 server s1 {
 	rxreq
-	expect req.url == /upgrade
+	expect req.url == /upgrade1
+	expect req.http.host == foo.bar
+	expect req.bodylen == 4
+	txresp -status 401 -bodylen 8
+
+	rxreq
+	expect req.url == /upgrade2
 	expect req.http.host == foo.bar
 	barrier b1 sync
-	txresp -status 401 -bodylen 11
+	txresp -status 402 -bodylen 11
 } -start
+
+delay .5
 
 varnish v1 -cliok "param.set feature +http2"
 
+# We don't support upgrades with body
+
 client c1 {
-	send "GET /upgrade HTTP/1.1\r\n"
+	send "POST /upgrade1 HTTP/1.1\r\n"
+	send "Host: foo.bar\r\n"
+	send "Upgrade: h2c\r\n"
+	send "HTTP2-Settings: AAMAAABkAAQAAP__\r\n"
+	send "Content-Length: 4\r\n"
+	send "\r\n"
+	send "FOO\n"
+	rxresp
+	expect resp.status == 401
+	expect resp.bodylen == 8
+} -run
+
+delay .5
+
+client c1 {
+	send "GET /upgrade2 HTTP/1.1\r\n"
 	send "Host: foo.bar\r\n"
 	send "Upgrade: h2c\r\n"
 	send "HTTP2-Settings: AAMAAABkAAQAAP__\r\n"
@@ -56,7 +81,7 @@ client c1 {
 	barrier b1 sync
 	stream 1 {
 		rxresp
-		expect resp.status == 401
+		expect resp.status == 402
 		expect resp.bodylen == 11
 	} -run
 } -run

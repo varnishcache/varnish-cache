@@ -8,8 +8,16 @@ server s1 {
 
 varnish v1 -vcl+backend {} -start
 
-varnish v1 -cliok "param.set feature +http2"
 varnish v1 -cliok "param.set debug +syncvsl"
+
+varnish v1 -cliok "param.set feature -http2"
+
+client c1 {
+	txpri
+	expect_close
+} -run
+
+varnish v1 -cliok "param.set feature +http2"
 
 client c1 {
 	stream 1 {
