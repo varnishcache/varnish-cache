@@ -90,6 +90,14 @@ cnt_transport(struct worker *wrk, struct req *req)
 		return (REQ_FSM_DONE);
 	}
 
+	if (req->req_body_status < REQ_BODY_TAKEN) {
+		AN(req->transport->req_body != NULL);
+		VFP_Setup(req->vfc);
+		req->vfc->http = req->http;
+		req->vfc->wrk = wrk;
+		req->transport->req_body(req);
+	}
+
 	HTTP_Copy(req->http0, req->http);	// For ESI & restart
 	req->req_step = R_STP_RECV;
 	return (REQ_FSM_MORE);
@@ -791,13 +799,9 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	http_CollectHdr(req->http, H_Cache_Control);
 
-	if (req->transport->req_body != NULL) {
-		req->transport->req_body(req);
-
-		if (req->req_body_status == REQ_BODY_FAIL) {
-			req->doclose = SC_OVERLOAD;
-			return (REQ_FSM_DONE);
-		}
+	if (req->req_body_status == REQ_BODY_FAIL) {
+		req->doclose = SC_OVERLOAD;
+		return (REQ_FSM_DONE);
 	}
 
 	VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
@@ -967,13 +971,8 @@ CNT_Request(struct worker *wrk, struct req *req)
 
 	AN(req->vsl->wid & VSL_CLIENTMARKER);
 
-	req->wrk = wrk;
+	req->vfc->wrk = req->wrk = wrk;
 	wrk->vsl = req->vsl;
-
-	VFP_Setup(req->vfc);
-	req->vfc->http = req->http;
-	req->vfc->wrk = wrk;
-
 	for (nxt = REQ_FSM_MORE; nxt == REQ_FSM_MORE; ) {
 		/*
 		 * This is a good place to be paranoid about the various

@@ -32,6 +32,7 @@
 REQ_BODY(INIT)
 REQ_BODY(WITHOUT_LEN)
 REQ_BODY(WITH_LEN)
+/* states >= TAKEN imply that no body is to be read */
 REQ_BODY(TAKEN)
 REQ_BODY(CACHED)
 REQ_BODY(FAIL)
