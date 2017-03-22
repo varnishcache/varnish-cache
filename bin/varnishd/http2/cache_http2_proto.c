@@ -440,6 +440,7 @@ h2_do_req(struct worker *wrk, void *priv)
 	req->http->conds = 1;
 	if (CNT_Request(wrk, req) != REQ_FSM_DISEMBARK) {
 		VSL(SLT_Debug, 0, "H2REQ CNT done");
+		AZ(req->ws->r);
 		r2->state = H2_S_CLOSED;
 		h2_del_req(wrk, r2);
 	}

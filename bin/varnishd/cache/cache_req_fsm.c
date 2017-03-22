@@ -1011,6 +1011,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 		VRB_Free(req);
 		req->wrk = NULL;
 	}
+	assert(nxt == REQ_FSM_DISEMBARK || req->ws->r == NULL);
 	return (nxt);
 }
 
