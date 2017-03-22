@@ -154,6 +154,24 @@ h2_minimal_response(struct req *req, uint16_t status)
 	return (0);
 }
 
+static uint8_t *
+h2_enc_len(uint8_t *p, unsigned bits, unsigned val)
+{
+	assert(bits < 8);
+	unsigned mask = (1U << bits) - 1U;
+
+	if (val >= mask) {
+		*p++ |= (uint8_t)mask;
+		val -= mask;
+		while (val >= 128) {
+			*p++ = 0x80 | ((uint8_t)val & 0x7f);
+			val >>= 7;
+		}
+	}
+	*p++ = (uint8_t)val;
+	return (p);
+}
+
 void __match_proto__(vtr_deliver_f)
 h2_deliver(struct req *req, struct boc *boc, int sendbody)
 {
@@ -205,23 +223,13 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 			VSLb(req->vsl, SLT_Debug,
 			    "HP {%d, \"%s\", \"%s\"} <%s>",
 			    hps->idx, hps->name, hps->val, hp->hd[u].b);
-			if (hps->idx < 15) {
-				*p++ = 0x10 | hps->idx;
-			} else {
-				*p++ = 0x1f;
-				*p++ = hps->idx - 0x0f;
-			}
+			*p = 0x10;
+			p = h2_enc_len(p, 4, hps->idx);
 		} else {
 
 			*p++ = 0x10;
 			sz--;
-			if (sz < 127) {
-				*p++ = (uint8_t)sz;
-			} else {
-				*p++ = 0x7f;
-				*p++ = (uint8_t)sz - 0x7f;
-			}
-
+			p = h2_enc_len(p, 7, sz);
 			for (sz1 = 0; sz1 < sz; sz1++)
 				*p++ = (uint8_t)tolower(hp->hd[u].b[sz1]);
 
@@ -230,14 +238,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 		while (vct_islws(*++r))
 			continue;
 		sz = hp->hd[u].e - r;
-		assert(sz <= 254);
-		if (sz < 127) {
-			*p++ = (uint8_t)sz;
-		} else if (sz < 127 * 2) {
-			*p++ = 0x7f;
-			*p++ = (uint8_t)sz - 0x7f;
-		}
-
+		p = h2_enc_len(p, 7, sz);
 		memcpy(p, r, sz);
 		p += sz;
 		assert(WS_Inside(req->ws, p, NULL));
