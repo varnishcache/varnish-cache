@@ -481,8 +481,13 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 		mgt_vcl_del(vp);
 		VCLI_Out(cli, "%s", p);
 		VCLI_SetResult(cli, status);
+		free(p);
+		return;
 	}
 	free(p);
+
+	if (vp->warm && !strcmp(vp->state, "auto"))
+		vp->go_cold = VTIM_mono();
 }
 
 /*--------------------------------------------------------------------*/
