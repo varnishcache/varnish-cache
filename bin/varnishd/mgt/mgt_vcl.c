@@ -216,6 +216,8 @@ mgt_new_vcl(struct cli *cli, const char *vclname, const char *vclsrc,
 
 	if (!mgt_cli_askchild(&status, &p, "vcl.load %s %s %d%s\n",
 	    vp->name, vp->fname, vp->warm, vp->state)) {
+		if (vp->warm && !strcmp(vp->state, "auto"))
+			vp->go_cold = VTIM_mono();
 		free(p);
 		return;
 	}

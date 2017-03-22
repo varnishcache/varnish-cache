@@ -1,0 +1,19 @@
+varnishtest "Test that never used VCLs go cold automatically"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-p vcl_cooldown=1" -vcl+backend {
+} -start
+
+varnish v1 -expect VBE.vcl1.s1.happy >= 0
+
+varnish v1 -cliok {vcl.inline vcl2 "vcl 4.0; backend s1 {.host = \"${s1_addr}\"; .port = \"${s1_port}\"; }"}
+
+varnish v1 -expect VBE.vcl2.s1.happy >= 0
+
+delay 5
+
+varnish v1 -expect !VBE.vcl2.s1.happy
