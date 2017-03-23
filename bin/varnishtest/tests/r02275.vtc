@@ -1,0 +1,39 @@
+varnishtest "Chunked with no space for iov's on workspace"
+
+server s1 -repeat 2 {
+	rxreq
+	txresp -nolen -hdr "Transfer-encoding: chunked"
+	delay 1
+	chunkedlen 10
+	delay .1
+	chunkedlen 10
+	delay .1
+	chunkedlen 0
+} -start
+
+varnish v1 -vcl+backend {
+	import debug;
+
+	sub vcl_deliver {
+		if (req.url == "/1") {
+			debug.workspace_allocate(client,
+			    -1 * (40 + debug.typesize("p") * 25));
+		} else {
+			debug.workspace_allocate(client,
+			    -1 * (48 + debug.typesize("p") * 25));
+		}
+		set resp.http.foo = debug.workspace_free(client);
+	}
+} -start
+
+client c1 {
+	txreq -url /1
+	rxresp
+	expect resp.status == 500
+} -run
+client c1 {
+	txreq -url /2
+	rxresp
+	expect resp.status == 200
+} -run
+
