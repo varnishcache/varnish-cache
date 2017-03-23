@@ -167,6 +167,8 @@ $Function VOID workspace_allocate(ENUM { client, backend, session, thread },
 	  INT size)
 
 Allocate and zero out SIZE bytes from a workspace.
+If SIZE is negative, all but that many bytes are allocated from the workspace.
+(NB: Beware of the alignment imposed on workspace allocations.)
 
 $Function BOOL workspace_overflowed(ENUM { client, backend, session, thread })
 
@@ -203,3 +205,17 @@ Synchronize with a varnishtest shared barrier.
 $Function VOID test_probe(PROBE probe, PROBE same = 0)
 
 Only here to make sure probe definitions are passed properly.
+
+$Function INT typesize(STRING)
+
+Returns the size in bytes of a collection of C-datatypes.
+
+* 'p' = pointer
+* 'i' = int
+* 'd' = double
+* 'f' = float
+* 'l' = long
+* 's' = short
+* 'z' = size_t
+* 'o' = off_t
+* 'j' = intmax_t

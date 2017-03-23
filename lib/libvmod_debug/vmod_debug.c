@@ -410,6 +410,10 @@ vmod_workspace_allocate(VRT_CTX, VCL_ENUM which, VCL_INT size)
 	WS_Assert(ws);
 	AZ(ws->r);
 
+	if (size < 0) {
+		size += WS_Reserve(ws, 0);
+		WS_Release(ws, 0);
+	}
 	s = WS_Alloc(ws, size);
 	if (!s)
 		return;
@@ -543,4 +547,28 @@ vmod_test_probe(VRT_CTX, VCL_PROBE probe, VCL_PROBE same)
 	CHECK_OBJ_NOTNULL(probe, VRT_BACKEND_PROBE_MAGIC);
 	CHECK_OBJ_ORNULL(same, VRT_BACKEND_PROBE_MAGIC);
 	AZ(same == NULL || probe == same);
+}
+
+VCL_INT
+vmod_typesize(VRT_CTX, VCL_STRING s)
+{
+	int i = 0;
+	const char *p;
+
+	(void)ctx;
+	for (p = s; *p; p++) {
+		switch (*p) {
+		case 'p':	i += sizeof(void *); break;
+		case 'i':	i += sizeof(int); break;
+		case 'd':	i += sizeof(double); break;
+		case 'f':	i += sizeof(float); break;
+		case 'l':	i += sizeof(long); break;
+		case 's':	i += sizeof(short); break;
+		case 'z':	i += sizeof(size_t); break;
+		case 'o':	i += sizeof(off_t); break;
+		case 'j':	i += sizeof(intmax_t); break;
+		default:	return(-1);
+		}
+	}
+	return (i);
 }
