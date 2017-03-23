@@ -193,7 +193,7 @@ vsl_catchup(const struct varnish *v)
 	int vsl_idle;
 
 	vsl_idle = v->vsl_idle;
-	while (vsl_idle == v->vsl_idle)
+	while (!vtc_error && v->pid && vsl_idle == v->vsl_idle)
 		VTIM_sleep(0.1);
 }
 
