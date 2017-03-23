@@ -33,7 +33,7 @@ client c1 {
 		txprio -weight 10 -stream 2
 	} -run
 	stream 7 {
-		txreq -hdr :authority foo.bar -pad cotton
+		txreq -dep 3 -hdr :authority foo.bar -pad cotton
 		rxresp
 		expect resp.status == 200
 	} -start
