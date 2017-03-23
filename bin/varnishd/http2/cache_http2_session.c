@@ -313,7 +313,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	AN(h2->error);
 	/* Delete all idle streams */
 	Lck_Lock(&sp->mtx);
-	VSLb(h2->vsl, SLT_Debug, "H2 CLEANUP %p", h2->error);
+	VSLb(h2->vsl, SLT_Debug, "H2 CLEANUP %s", h2->error->name);
 	VTAILQ_FOREACH(r2, &h2->streams, list) {
 		if (r2->error == 0)
 			r2->error = h2->error;

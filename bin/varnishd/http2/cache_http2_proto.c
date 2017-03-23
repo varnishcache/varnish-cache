@@ -177,12 +177,14 @@ h2_del_req(struct worker *wrk, struct h2_req *r2)
 	/* XXX: PRIORITY reshuffle */
 	VTAILQ_REMOVE(&h2->streams, r2, list);
 	Lck_Unlock(&sp->mtx);
+	AZ(r2->req->ws->r);
 	Req_Cleanup(sp, wrk, r2->req);
 	Req_Release(r2->req);
 	if (r)
 		return;
 	/* All streams gone, including stream #0, clean up */
 	req = h2->srq;
+	AZ(req->ws->r);
 	Req_Cleanup(sp, wrk, req);
 	Req_Release(req);
 	SES_Delete(sp, SC_RX_JUNK, NAN);
@@ -271,15 +273,21 @@ h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	(void)wrk;
 
+	AN(r2);
 	if (h2->rxf_len != 4)			// rfc7540,l,2003,2004
 		return (H2CE_FRAME_SIZE_ERROR);
-	if (r2 == NULL)
-		return (0);
 	Lck_Lock(&h2->sess->mtx);
 	r2->error = h2_streamerror(vbe32dec(h2->rxf_data));
+VSLb(h2->vsl, SLT_Debug, "H2RST %u %d %s", r2->stream, r2->state, r2->error->name);
 	if (r2->wrk != NULL)
-		AZ(pthread_cond_signal(&r2->wrk->cond));
+		AZ(pthread_cond_signal(h2->cond));
+	if (r2->state != H2_S_IDLE) {
+		r2->state = H2_S_CLOSED;
+		r2 = NULL;
+	}
 	Lck_Unlock(&h2->sess->mtx);
+	if (r2 != NULL)
+		h2_del_req(wrk, r2);
 	return (0);
 }
 
@@ -620,7 +628,9 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 	Lck_Lock(&h2->sess->mtx);
 	while (h2->mailcall != r2 && h2->error == 0 && r2->error == 0)
 		AZ(Lck_CondWait(h2->cond, &h2->sess->mtx, 0));
-	if (h2->mailcall == r2) {
+	if (h2->error || r2->error) {
+		retval = VFP_ERROR;
+	} else {
 		assert(h2->mailcall == r2);
 		if (l > h2->rxf_len)
 			l = h2->rxf_len;
@@ -636,8 +646,6 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 		}
 		h2->mailcall = NULL;
 		AZ(pthread_cond_broadcast(h2->cond));
-	} else {
-		retval = VFP_ERROR;
 	}
 	Lck_Unlock(&h2->sess->mtx);
 	return (retval);

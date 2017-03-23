@@ -4,6 +4,19 @@ server s1 {
 	rxreq
 	expect req.proto == HTTP/1.1
 	txresp -hdr "Content-Type: text/plain" -hdrlen Foo 100 -bodylen 100
+
+	non_fatal
+	close
+	accept
+	rxreq
+	expect req.url == /3
+	expect req.proto == HTTP/1.1
+	txresp -hdr "Content-Type: text/plain" -hdrlen Foo 50 -bodylen 50
+
+	close
+	accept
+	rxreq
+	expect req.url == /5
 } -start
 
 varnish v1 -vcl+backend {} -cliok "param.set feature +http2" -start
@@ -40,3 +53,36 @@ client c1 {
 	} -run
 } -run
 
+varnish v1 -vsl_catchup
+
+client c1 {
+	stream 3 {
+		txreq \
+			-req POST \
+			-url /3 \
+			-hdr content-type text/plain \
+			-nostrend
+		delay .2
+		txdata \
+			-nostrend \
+			-data request
+		delay .2
+		txrst -err 0x333
+	} -run
+	delay 2
+
+	stream 5 {
+		txreq \
+			-req POST \
+			-url /5 \
+			-hdr content-type text/plain \
+			-nostrend
+		delay .2
+		txdata \
+			-nostrend \
+			-data request
+		delay .2
+	} -run
+} -run
+
+varnish v1 -vsl_catchup
