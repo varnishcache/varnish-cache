@@ -41,13 +41,13 @@
 #include "vqueue.h"
 #include "vsb.h"
 
-#define VTC_CHECK_NAME(vl, name, type, chr)				\
+#define VTC_CHECK_NAME(vl, nm, type, chr)				\
 	do {								\
-		AN(name);						\
-		if (*(name) != chr)					\
+		AN(nm);							\
+		if (*(nm) != chr)					\
 			vtc_fatal(vl,					\
 			    type " name must start with '%c' (got %s)",	\
-			    chr, name);					\
+			    chr, nm);					\
 	} while (0)
 
 struct vtclog;

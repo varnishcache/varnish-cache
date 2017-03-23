@@ -840,12 +840,12 @@ receive_frame(void *priv)
 	return (NULL);
 }
 
-#define STRTOU32(n, s, p, v, c)						\
+#define STRTOU32(n, ss, p, v, c)					\
 	do {								\
-		n = strtoul(s, &p, 0);					\
+		n = strtoul(ss, &p, 0);					\
 		if (*p != '\0')						\
 			vtc_fatal(v, "%s takes an integer as argument"	\
-				"(found %s)", c, s);			\
+				"(found %s)", c, ss);			\
 	} while (0)
 
 #define STRTOU32_CHECK(n, sp, p, v, c, l)				\
@@ -2336,7 +2336,7 @@ cmd_rxpush(CMD_ARGS)
 		if (s->frame->type != TYPE_ ## upctype) \
 			vtc_fatal(vl, "Received frame of type %d " \
 			    "is invalid for %s", \
-			    s->frame->type, "rx ## lctype"); \
+			    s->frame->type, "rx" #lctype); \
 	}
 
 /* SECTION: stream.spec.prio_rxprio rxprio
