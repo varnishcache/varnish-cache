@@ -10,8 +10,7 @@ vmoddir = $(pkglibdir)/vmods
 vmod_srcdir = $(top_srcdir)/lib/libvmod_debug
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
 vmodtoolargs =
-
-noinst_LTLIBRARIES = libvmod_debug.la
+vmod_LTLIBRARIES = libvmod_debug.la
 
 libvmod_debug_la_CFLAGS = \
 	@SAN_CFLAGS@
