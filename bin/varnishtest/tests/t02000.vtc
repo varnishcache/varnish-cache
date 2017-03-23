@@ -36,6 +36,8 @@ client c1 {
 		txreq -dep 3 -hdr :authority foo.bar -pad cotton
 		rxresp
 		expect resp.status == 200
+		delay 1
+		txrst -err 0x1111
 	} -start
 	stream 0 {
 		txping -data "_-__-_-_"

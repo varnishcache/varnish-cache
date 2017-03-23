@@ -273,9 +273,10 @@ h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	(void)wrk;
 
-	AN(r2);
 	if (h2->rxf_len != 4)			// rfc7540,l,2003,2004
 		return (H2CE_FRAME_SIZE_ERROR);
+	if (r2 == NULL)
+		return (0);
 	Lck_Lock(&h2->sess->mtx);
 	r2->error = h2_streamerror(vbe32dec(h2->rxf_data));
 VSLb(h2->vsl, SLT_Debug, "H2RST %u %d %s", r2->stream, r2->state, r2->error->name);
