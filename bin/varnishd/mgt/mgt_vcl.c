@@ -387,28 +387,27 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 	}
 	if (vs == VCL_STATE_AUTO) {
 		now = VTIM_mono();
-		vs = vp->warm ? VCL_STATE_WARM : VCL_STATE_COLD;
+		vs = (vp->warm ? VCL_STATE_WARM : VCL_STATE_COLD);
 		if (vp->go_cold > 0 && vp->state == VCL_STATE_AUTO &&
 		    vp->go_cold + mgt_param.vcl_cooldown < now)
 			vs = VCL_STATE_COLD;
 	}
 
 	assert(vs != VCL_STATE_AUTO);
-	warm = vs == VCL_STATE_WARM ? 1 : 0;
+	warm = (vs == VCL_STATE_WARM ? 1 : 0);
 
 	if (vp->warm == warm)
 		return (0);
 
-	vp->warm = warm;
-
-	if (vp->warm == 0)
-		vp->go_cold = 0;
-
-	if (!MCH_Running())
+	if (!MCH_Running()) {
+		vp->warm = warm;
+		if (vp->warm == 0)
+			vp->go_cold = 0;
 		return (0);
+	}
 
 	i = mgt_cli_askchild(&status, &p, "vcl.state %s %d%s\n",
-	    vp->name, vp->warm, vp->state);
+	    vp->name, warm, vp->state);
 	if (i && cli != NULL) {
 		VCLI_SetResult(cli, status);
 		VCLI_Out(cli, "%s", p);
@@ -416,8 +415,15 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 		MGT_Complain(C_ERR,
 		    "Please file ticket: VCL poker problem: "
 		    "'vcl.state %s %d%s' -> %03d '%s'",
-		    vp->name, vp->warm, vp->state, i, p);
+		    vp->name, warm, vp->state, i, p);
+	} else {
+		/* Success, update mgt's VCL state to reflect child's
+		   state */
+		vp->warm = warm;
+		if (vp->warm == 0)
+			vp->go_cold = 0;
 	}
+
 	free(p);
 	return (i);
 }
