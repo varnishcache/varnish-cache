@@ -161,9 +161,7 @@ V1L_Flush(const struct worker *wrk)
 	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
 	AN(v1l->wfd);
 
-	/* For chunked, there must be one slot reserved for the chunked tail */
-	if (v1l->ciov < v1l->siov)
-		assert(v1l->niov < v1l->siov);
+	assert(v1l->niov <= v1l->siov);
 
 	if (*v1l->wfd >= 0 && v1l->liov > 0 && v1l->werr == 0) {
 		if (v1l->ciov < v1l->siov && v1l->cliov > 0) {
@@ -174,6 +172,7 @@ V1L_Flush(const struct worker *wrk)
 			v1l->iov[v1l->ciov].iov_len = i;
 			v1l->liov += i;
 
+			/* This is OK, because siov was --'ed */
 			v1l->iov[v1l->niov].iov_base = cbuf + i - 2;
 			v1l->iov[v1l->niov++].iov_len = 2;
 			v1l->liov += 2;
@@ -240,16 +239,14 @@ V1L_Write(const struct worker *wrk, const void *ptr, ssize_t len)
 		return (0);
 	if (len == -1)
 		len = strlen(ptr);
-	if (v1l->niov >= v1l->siov - (v1l->ciov < v1l->siov ? 2 : 0))
-		(void)V1L_Flush(wrk);
+	assert(v1l->niov < v1l->siov);
 	v1l->iov[v1l->niov].iov_base = TRUST_ME(ptr);
 	v1l->iov[v1l->niov].iov_len = len;
 	v1l->liov += len;
 	v1l->niov++;
-	if (v1l->ciov < v1l->siov) {
-		assert(v1l->niov < v1l->siov);
-		v1l->cliov += len;
-	}
+	v1l->cliov += len;
+	if (v1l->niov >= v1l->siov)
+		(void)V1L_Flush(wrk);
 	return (len);
 }
 
@@ -270,6 +267,7 @@ V1L_Chunked(const struct worker *wrk)
 	 */
 	if (v1l->niov + 3 >= v1l->siov)
 		(void)V1L_Flush(wrk);
+	v1l->siov--;
 	v1l->ciov = v1l->niov++;
 	v1l->cliov = 0;
 	assert(v1l->ciov < v1l->siov);
@@ -294,6 +292,7 @@ V1L_EndChunk(const struct worker *wrk)
 
 	assert(v1l->ciov < v1l->siov);
 	(void)V1L_Flush(wrk);
+	v1l->siov++;
 	v1l->ciov = v1l->siov;
 	v1l->niov = 0;
 	v1l->cliov = 0;
