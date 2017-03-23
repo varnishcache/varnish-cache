@@ -1,0 +1,10 @@
+varnishtest "varnishtest -p"
+
+shell {
+cat >_.vtc <<EOF
+varnishtest -p
+varnish v1 -cliexpect 42 "param.show default_ttl"
+EOF
+
+exec varnishtest -v -t 5 -p default_ttl=42 _.vtc
+}
