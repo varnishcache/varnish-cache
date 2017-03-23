@@ -220,7 +220,7 @@ process_start(struct process *p)
 	struct vsb *cl;
 	int out_fd, err_fd;
 	int fds[2];
-	int fdt[2];
+	int fdt[2] = { -1, -1 };
 
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
 	if (p->hasthread)
