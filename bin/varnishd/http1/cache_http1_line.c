@@ -92,7 +92,8 @@ V1L_Reserve(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	u = WS_Reserve(ws, 0);
 	u = PRNDDN(u);
 	u /= sizeof(struct iovec);
-	if (u == 0) {
+	if (u < 3) {
+		/* Must have at least 3 in case of chunked encoding */
 		WS_Release(ws, 0);
 		WS_MarkOverflow(ws);
 		return;
@@ -264,6 +265,7 @@ V1L_Chunked(const struct worker *wrk)
 	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
 
 	assert(v1l->ciov == v1l->siov);
+	assert(v1l->siov >= 3);
 	/*
 	 * If there are not space for chunked header, a chunk of data and
 	 * a chunk tail, we might as well flush right away.
