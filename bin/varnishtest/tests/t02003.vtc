@@ -1,4 +1,4 @@
-varnishtest "H2 Stream error conditions"
+varnishtest "H2 Frame coverage/error conditions"
 
 server s1 {
 	rxreq
@@ -26,6 +26,13 @@ client c1 {
 	stream 0 -wait
 } -run
 
+varnish v1 -vsl_catchup
+
+varnish v1 -expect MEMPOOL.req0.live == 0
+varnish v1 -expect MEMPOOL.req1.live == 0
+varnish v1 -expect MEMPOOL.sess0.live == 0
+varnish v1 -expect MEMPOOL.sess1.live == 0
+
 #######################################################################
 # Test reverse order stream numbers
 
@@ -43,6 +50,13 @@ client c1 {
 	} -run
 	stream 0 -wait
 } -run
+
+varnish v1 -vsl_catchup
+
+varnish v1 -expect MEMPOOL.req0.live == 0
+varnish v1 -expect MEMPOOL.req1.live == 0
+varnish v1 -expect MEMPOOL.sess0.live == 0
+varnish v1 -expect MEMPOOL.sess1.live == 0
 
 #######################################################################
 # Test WINDOW_UPDATE error conditions
@@ -68,7 +82,13 @@ client c1 {
 	} -start
 	stream 5 {
 		txprio
-		sendhex "000003 08 00 00000005 010203"
+		sendhex "000003 08 00 00000005"
+		delay .1
+		sendhex 01
+		delay .1
+		sendhex 02
+		delay .1
+		sendhex 03
 	} -run
 	stream 0 -wait
 } -run
@@ -93,6 +113,13 @@ client c1 {
 	} -run
 } -run
 
+varnish v1 -vsl_catchup
+
+varnish v1 -expect MEMPOOL.req0.live == 0
+varnish v1 -expect MEMPOOL.req1.live == 0
+varnish v1 -expect MEMPOOL.sess0.live == 0
+varnish v1 -expect MEMPOOL.sess1.live == 0
+
 #######################################################################
 # Test PING error conditions
 
@@ -114,6 +141,22 @@ client c1 {
 	} -run
 } -run
 
+client c1 {
+	stream 0 {
+		sendhex "000007 06 80 00000000 01020304050607"
+		rxgoaway
+		expect goaway.laststream == 0
+		expect goaway.err == FRAME_SIZE_ERROR
+	} -run
+} -run
+
+varnish v1 -vsl_catchup
+
+varnish v1 -expect MEMPOOL.req0.live == 0
+varnish v1 -expect MEMPOOL.req1.live == 0
+varnish v1 -expect MEMPOOL.sess0.live == 0
+varnish v1 -expect MEMPOOL.sess1.live == 0
+
 #######################################################################
 # Test PUSH_PROMISE error conditions
 
@@ -130,6 +173,14 @@ client c1 {
 	stream 0 -wait
 } -run
 
+varnish v1 -vsl_catchup
+
+varnish v1 -expect MEMPOOL.req0.live == 0
+varnish v1 -expect MEMPOOL.req1.live == 0
+varnish v1 -expect MEMPOOL.sess0.live == 0
+varnish v1 -expect MEMPOOL.sess1.live == 0
+
+#######################################################################
 # Test RST_STREAM error conditions
 
 client c1 {
@@ -166,6 +217,20 @@ client c1 {
 	} -run
 } -run
 
+client c1 {
+	stream 1 {
+		txreq -nohdrend
+		txrst -err 0x666
+	} -run
+} -run
+
+varnish v1 -vsl_catchup
+
+varnish v1 -expect MEMPOOL.req0.live == 0
+varnish v1 -expect MEMPOOL.req1.live == 0
+varnish v1 -expect MEMPOOL.sess0.live == 0
+varnish v1 -expect MEMPOOL.sess1.live == 0
+
 #######################################################################
 # Test SETTING error conditions
 
@@ -186,8 +251,7 @@ client c1 {
 		rxgoaway
 		expect goaway.err == PROTOCOL_ERROR
 		expect goaway.laststream == 0
-	} -run
-} -run
+	} -run } -run
 
 client c1 {
 	stream 0 {
@@ -207,3 +271,112 @@ client c1 {
 		rxping
 	} -run
 } -run
+
+varnish v1 -vsl_catchup
+
+varnish v1 -expect MEMPOOL.req0.live == 0
+varnish v1 -expect MEMPOOL.req1.live == 0
+varnish v1 -expect MEMPOOL.sess0.live == 0
+varnish v1 -expect MEMPOOL.sess1.live == 0
+
+#######################################################################
+# Test GOAWAY error conditions
+
+client c1 {
+	stream 0 {
+		txgoaway -err 2
+	} -run
+	expect_close
+} -run
+
+client c1 {
+	stream 0 {
+		txgoaway -err 2222
+	} -run
+	expect_close
+} -run
+
+
+varnish v1 -vsl_catchup
+
+varnish v1 -expect MEMPOOL.req0.live == 0
+varnish v1 -expect MEMPOOL.req1.live == 0
+varnish v1 -expect MEMPOOL.sess0.live == 0
+varnish v1 -expect MEMPOOL.sess1.live == 0
+
+#######################################################################
+# Test HEADERS error conditions
+
+client c1 {
+	stream 1 {
+		txreq -nostrend
+		txreq -nostrend
+	} -run
+	stream 0 {
+		rxgoaway
+	} -run
+	expect_close
+} -run
+
+client c1 {
+	stream 0 {
+		sendhex 00000c
+		sendhex 01
+		sendhex 05
+		sendhex 00000001
+		sendhex ffffffff
+		sendhex ffffffff
+		sendhex ffffffff
+		rxgoaway
+		expect goaway.err == COMPRESSION_ERROR
+	} -run
+} -run
+
+varnish v1 -vsl_catchup
+
+varnish v1 -expect MEMPOOL.req0.live == 0
+varnish v1 -expect MEMPOOL.req1.live == 0
+varnish v1 -expect MEMPOOL.sess0.live == 0
+varnish v1 -expect MEMPOOL.sess1.live == 0
+
+#######################################################################
+# Test CONTINUATION error conditions
+
+client c1 {
+	stream 1 {
+		txreq -nostrend
+		txcont -hdr "foo" "bar"
+	} -run
+	stream 0 {
+		rxgoaway
+	} -run
+	expect_close
+} -run
+
+client c1 {
+	stream 0 {
+		sendhex 000014
+		sendhex 01
+		sendhex 01
+		sendhex 00000001
+		sendhex {8286 8441 0f77 7777 2e65 7861 6d70 6c65 2e63 6f6d}
+
+		sendhex 00000c
+		sendhex 09
+		sendhex 04
+		sendhex 00000001
+		sendhex ffffffff
+		sendhex ffffffff
+		sendhex ffffffff
+		rxgoaway
+		expect goaway.err == COMPRESSION_ERROR
+	} -run
+} -run
+
+varnish v1 -vsl_catchup
+
+varnish v1 -expect MEMPOOL.req0.live == 0
+varnish v1 -expect MEMPOOL.req1.live == 0
+varnish v1 -expect MEMPOOL.sess0.live == 0
+varnish v1 -expect MEMPOOL.sess1.live == 0
+

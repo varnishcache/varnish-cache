@@ -27,7 +27,7 @@ client c1 {
 		txprio
 	} -run
 	stream 0 {
-		txgoaway -err 7
+		txgoaway -err 2
 	} -run
 	expect_close
 } -run

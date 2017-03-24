@@ -260,7 +260,6 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 
 	WS_Release(req->ws, 0);
 
-
 	if (sendbody) {
 		VDP_push(req, h2_bytes, NULL, 1, "H2");
 		err = VDP_DeliverObj(req);

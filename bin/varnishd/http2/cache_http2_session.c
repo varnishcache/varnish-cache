@@ -201,6 +201,10 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 
 	if (h2_b64url_settings(h2, req)) {
 		VSLb(h2->vsl, SLT_Debug, "H2: Bad HTTP-Settings");
+		AN (req->vcl);
+		VCL_Rel(&req->vcl);
+		CNT_AcctLogCharge(wrk->stats, req);
+		Req_Release(req);
 		return (0);
 	}
 
@@ -317,20 +321,25 @@ h2_new_session(struct worker *wrk, void *arg)
 	VTAILQ_FOREACH(r2, &h2->streams, list) {
 		if (r2->error == 0)
 			r2->error = h2->error;
+#if 0
 		if (r2->wrk != NULL)
-			AZ(pthread_cond_signal(&r2->wrk->cond));
+			AZ(pthread_cond_signal(&r2->wrk->cond)); // XXX Why?
+#endif
 	}
+	AZ(pthread_cond_signal(h2->cond));
 	while (1) {
 		VTAILQ_FOREACH(r2, &h2->streams, list)
-			if (r2->state == H2_S_IDLE && r2 != h2->req0)
+			if (r2->state != H2_S_CLOS_REM && r2 != h2->req0)
 				break;
 		if (r2 == NULL)
 			break;
 		Lck_Unlock(&sp->mtx);
-		h2_del_req(wrk, r2);
+		h2_kill_req(wrk, h2, r2, h2->error);
 		Lck_Lock(&sp->mtx);
 	}
 	VSLb(h2->vsl, SLT_Debug, "H2CLEAN done");
+	VTAILQ_FOREACH(r2, &h2->streams, list)
+		VSLb(h2->vsl, SLT_Debug, "ST %u %d", r2->stream, r2->state);
 	Lck_Unlock(&sp->mtx);
 	h2->cond = NULL;
 	h2_del_req(wrk, h2->req0);

@@ -221,6 +221,8 @@ h2_error H2_Send(struct worker *, const struct h2_req *,
 struct h2_req * h2_new_req(const struct worker *, struct h2_sess *,
     unsigned stream, struct req *);
 void h2_del_req(struct worker *, struct h2_req *);
+void h2_kill_req(struct worker *, const struct h2_sess *,
+    struct h2_req *, h2_error);
 int h2_rxframe(struct worker *, struct h2_sess *);
 h2_error h2_set_setting(struct h2_sess *, const uint8_t *);
 void h2_req_body(struct req*);

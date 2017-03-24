@@ -190,6 +190,31 @@ h2_del_req(struct worker *wrk, struct h2_req *r2)
 	SES_Delete(sp, SC_RX_JUNK, NAN);
 }
 
+void
+h2_kill_req(struct worker *wrk, const struct h2_sess *h2,
+    struct h2_req *r2, h2_error h2e)
+{
+
+	VSLb(h2->vsl, SLT_Debug, "KILL st=%u state=%d", r2->stream, r2->state);
+	Lck_Lock(&h2->sess->mtx);
+	r2->error = h2e;
+	switch (r2->state) {
+	case H2_S_CLOS_REM:
+		if (r2->wrk != NULL)
+			AZ(pthread_cond_signal(h2->cond));
+		r2 = NULL;
+		break;
+	case H2_S_OPEN:
+		(void)h2h_decode_fini(h2, r2->decode);
+		break;
+	default:
+		break;
+	}
+	Lck_Unlock(&h2->sess->mtx);
+	if (r2 != NULL)
+		h2_del_req(wrk, r2);
+}
+
 /**********************************************************************/
 
 static void
@@ -241,8 +266,7 @@ h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	(void)r2;
 	if (h2->rxf_len != 8)				// rfc7540,l,2364,2366
 		return (H2CE_FRAME_SIZE_ERROR);
-	if (h2->rxf_stream != 0)			// rfc7540,l,2359,2362
-		return (H2CE_PROTOCOL_ERROR);
+	AZ(h2->rxf_stream);				// rfc7540,l,2359,2362
 	if (h2->rxf_flags != 0)				// We never send pings
 		return (H2SE_PROTOCOL_ERROR);
 	H2_Send_Get(wrk, h2, r2);
@@ -275,20 +299,9 @@ h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 
 	if (h2->rxf_len != 4)			// rfc7540,l,2003,2004
 		return (H2CE_FRAME_SIZE_ERROR);
-	if (r2 == NULL)
-		return (0);
-	Lck_Lock(&h2->sess->mtx);
-	r2->error = h2_streamerror(vbe32dec(h2->rxf_data));
-VSLb(h2->vsl, SLT_Debug, "H2RST %u %d %s", r2->stream, r2->state, r2->error->name);
-	if (r2->wrk != NULL)
-		AZ(pthread_cond_signal(h2->cond));
-	if (r2->state != H2_S_IDLE) {
-		r2->state = H2_S_CLOSED;
-		r2 = NULL;
-	}
-	Lck_Unlock(&h2->sess->mtx);
 	if (r2 != NULL)
-		h2_del_req(wrk, r2);
+		h2_kill_req(wrk, h2, r2,
+		    h2_streamerror(vbe32dec(h2->rxf_data)));
 	return (0);
 }
 
@@ -463,7 +476,6 @@ h2_end_headers(const struct worker *wrk, const struct h2_sess *h2,
 	h2_error h2e;
 
 	assert(r2->state == H2_S_OPEN);
-	r2->state = H2_S_CLOS_REM;
 	h2e = h2h_decode_fini(h2, r2->decode);
 	FREE_OBJ(r2->decode);
 	if (h2e != NULL) {
@@ -480,6 +492,7 @@ h2_end_headers(const struct worker *wrk, const struct h2_sess *h2,
 	req->req_step = R_STP_TRANSPORT;
 	req->task.func = h2_do_req;
 	req->task.priv = req;
+	r2->state = H2_S_CLOS_REM;		// XXX: not _quite_ true
 	XXXAZ(Pool_Task(wrk->pool, &req->task, TASK_QUEUE_REQ));
 	return (0);
 }
@@ -535,7 +548,10 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	}
 	h2e = h2h_decode_bytes(h2, r2->decode, p, l);
 	if (h2e != NULL) {
-		VSL(SLT_Debug, 0, "H2H_DECODE_BYTES %s", h2e->name);
+		VSL(SLT_Debug, 0, "H2H_DECODE_BYTES(hdr) %s", h2e->name);
+		(void)h2h_decode_fini(h2, r2->decode);
+		AZ(r2->req->ws->r);
+		h2_del_req(wrk, r2);
 		return (h2e);
 	}
 	if (h2->rxf_flags & H2FF_HEADERS_END_HEADERS)
@@ -558,7 +574,10 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	req = r2->req;
 	h2e = h2h_decode_bytes(h2, r2->decode, h2->rxf_data, h2->rxf_len);
 	if (h2e != NULL) {
-		VSL(SLT_Debug, 0, "H2H_DECODE_BYTES %s", h2e->name);
+		VSL(SLT_Debug, 0, "H2H_DECODE_BYTES(cont) %s", h2e->name);
+		(void)h2h_decode_fini(h2, r2->decode);
+		AZ(r2->req->ws->r);
+		h2_del_req(wrk, r2);
 		return (h2e);
 	}
 	if (h2->rxf_flags & H2FF_HEADERS_END_HEADERS)
@@ -677,6 +696,7 @@ h2_req_fail(struct req *req, enum sess_close reason)
 {
 	assert(reason > 0);
 	assert(req->sp->fd != 0);
+	VSLb(req->vsl, SLT_Debug, "H2FAILREQ");
 }
 
 /**********************************************************************/
@@ -836,7 +856,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		h2->bogosity++;
 		VSLb(h2->vsl, SLT_Debug,
 		    "H2: Unknown flags 0x%02x on %s (ignored)",
-		    (uint8_t)h2->rxf_flags, h2f->name);
+		    (uint8_t)h2->rxf_flags & ~h2f->flags, h2f->name);
 		h2->rxf_flags &= h2f->flags;
 	}
 
