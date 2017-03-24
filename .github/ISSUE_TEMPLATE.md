@@ -2,6 +2,11 @@
 
 ## Expected Behavior
 <!--- Did you check that there are no similar bug reports or pull requests? -->
+<!---
+    If your panic happens in the child_sigsegv_handler function, look at the
+    backtrace to determine whether it is similar to another issue. When in
+    doubt, open a new one and it will be closed as a duplicate if needed.
+-->
 <!--- If you're describing a bug, tell us what should happen -->
 <!--- If you're suggesting a change/improvement, tell us how it should work -->
 <!---
