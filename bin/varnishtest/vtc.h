@@ -107,8 +107,7 @@ void vtc_fatal(struct vtclog *vl, const char *, ...)
     __attribute__((__noreturn__)) __v_printflike(2,3);
 void vtc_dump(struct vtclog *vl, int lvl, const char *pfx,
     const char *str, int len);
-void vtc_hexdump(struct vtclog *vl, int lvl, const char *pfx,
-    const char *str, int len);
+void vtc_hexdump(struct vtclog *, int , const char *, const void *, int );
 
 int vtc_send_proxy(int fd, int version, const struct suckaddr *sac,
     const struct suckaddr *sas);

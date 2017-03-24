@@ -231,17 +231,18 @@ vtc_dump(struct vtclog *vl, int lvl, const char *pfx, const char *str, int len)
 
 void
 vtc_hexdump(struct vtclog *vl, int lvl, const char *pfx,
-    const char *str, int len)
+    const void *ptr, int len)
 {
 	int nl = 1;
 	unsigned l;
+	const uint8_t *ss = ptr;
 
 	AN(pfx);
 	GET_VL(vl);
-	if (str == NULL)
+	if (ss == NULL)
 		vtc_leadin(vl, lvl, "%s(null)\n", pfx);
 	else {
-		for (l = 0; l < len; l++, str++) {
+		for (l = 0; l < len; l++, ss++) {
 			if (l > 512) {
 				VSB_printf(vl->vsb, "...");
 				break;
@@ -250,7 +251,7 @@ vtc_hexdump(struct vtclog *vl, int lvl, const char *pfx,
 				vtc_leadin(vl, lvl, "%s| ", pfx);
 				nl = 0;
 			}
-			VSB_printf(vl->vsb, " %02x", *str);
+			VSB_printf(vl->vsb, " %02x", *ss);
 			if ((l & 0xf) == 0xf) {
 				VSB_printf(vl->vsb, "\n");
 				nl = 1;
