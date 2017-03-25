@@ -49,7 +49,7 @@ h2_sess_panic(struct vsb *vsb, const struct sess *sp)
 	VSB_indent(vsb, 2);
 	VTAILQ_FOREACH(r2, &h2->streams, list) {
 		VSB_printf(vsb, "0x%08x", r2->stream);
-		switch(r2->state) {
+		switch (r2->state) {
 #define H2_STREAM(U,sd,d) case H2_S_##U: VSB_printf(vsb, " %-6s", sd); break;
 #include <tbl/h2_stream.h>
 		default:

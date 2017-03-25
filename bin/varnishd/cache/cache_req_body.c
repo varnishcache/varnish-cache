@@ -177,7 +177,7 @@ VRB_Iterate(struct req *req, objiterate_f *func, void *priv)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(func);
 
-	switch(req->req_body_status) {
+	switch (req->req_body_status) {
 	case REQ_BODY_CACHED:
 		if (req->req_bodybytes > 0 &&
 		    ObjIterate(req->wrk, req->body_oc, priv, func, 0))
@@ -284,7 +284,7 @@ VRB_Cache(struct req *req, ssize_t maxsize)
 		return (-1);
 
 	assert (req->req_step == R_STP_RECV);
-	switch(req->req_body_status) {
+	switch (req->req_body_status) {
 	case REQ_BODY_CACHED:
 		return (req->req_bodybytes);
 	case REQ_BODY_FAIL:

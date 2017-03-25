@@ -89,7 +89,7 @@ tcp_handle(struct waited *w, enum wait_event ev, double now)
 
 	Lck_Lock(&tp->mtx);
 
-	switch(vbc->state) {
+	switch (vbc->state) {
 	case VBC_STATE_STOLEN:
 		vbc->state = VBC_STATE_USED;
 		VTAILQ_REMOVE(&tp->connlist, vbc, list);

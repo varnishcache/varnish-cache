@@ -301,7 +301,7 @@ vcc_expr_edit(vcc_type_t fmt, const char *p, struct expr *e1,
 			continue;
 		}
 		assert(*p == '\v');
-		switch(*++p) {
+		switch (*++p) {
 		case '+': VSB_cat(e->vsb, "\v+"); break;
 		case '-': VSB_cat(e->vsb, "\v-"); break;
 		case '1':
@@ -356,7 +356,7 @@ vcc_expr_fmt(struct vsb *d, int ind, const struct expr *e1)
 			continue;
 		}
 		p++;
-		switch(*p) {
+		switch (*p) {
 		case '+': ind += 2; break;
 		case '-': ind -= 2; break;
 		default:
@@ -772,7 +772,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		*e = vcc_expr_edit(e2->fmt, "(\v1)", e2, NULL);
 		return;
 	}
-	switch(tl->t->tok) {
+	switch (tl->t->tok) {
 	case ID:
 		/*
 		 * XXX: what if var and func/proc had same name ?
@@ -798,7 +798,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
-		switch(sym->kind) {
+		switch (sym->kind) {
 		case SYM_VAR:
 		case SYM_FUNC:
 		case SYM_ACL:

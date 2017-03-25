@@ -144,7 +144,7 @@ http1_req_body(struct req *req)
 {
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	switch(req->htc->body_status) {
+	switch (req->htc->body_status) {
 	case BS_EOF:
 	case BS_LENGTH:
 	case BS_CHUNKED:
@@ -404,7 +404,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 				    req->htc->rxbuf_e - req->htc->rxbuf_b;
 				CNT_AcctLogCharge(wrk->stats, req);
 				Req_Release(req);
-				switch(hs) {
+				switch (hs) {
 				case HTC_S_CLOSE:
 					SES_Delete(sp, SC_REM_CLOSE, NAN);
 					return;

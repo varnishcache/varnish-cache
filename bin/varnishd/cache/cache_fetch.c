@@ -971,7 +971,7 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	while (stp != F_STP_DONE) {
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 		assert(bo->fetch_objcore->boc->refcount >= 1);
-		switch(stp) {
+		switch (stp) {
 #define FETCH_STEP(l, U, arg)						\
 		case F_STP_##U:						\
 			stp = vbf_stp_##l arg;				\
@@ -1022,7 +1022,7 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	CHECK_OBJ_ORNULL(oldoc, OBJCORE_MAGIC);
 
 
-	switch(mode) {
+	switch (mode) {
 	case VBF_PASS:		how = "pass"; break;
 	case VBF_NORMAL:	how = "fetch"; break;
 	case VBF_BACKGROUND:	how = "bgfetch"; break;

@@ -831,7 +831,7 @@ main(int argc, char * const *argv)
 	if (VTAILQ_EMPTY(&heritage.socks))
 		MAC_Arg(":80");
 
-	assert(! VTAILQ_EMPTY(&heritage.socks));
+	assert(!VTAILQ_EMPTY(&heritage.socks));
 
 	HSH_config(h_arg);
 

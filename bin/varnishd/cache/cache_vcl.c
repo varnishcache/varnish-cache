@@ -661,7 +661,7 @@ vcl_set_state(VRT_CTX, const char *state)
 	AZ(errno=pthread_rwlock_wrlock(&vcl->temp_rwl));
 	AN(vcl->temp);
 
-	switch(state[0]) {
+	switch (state[0]) {
 	case '0':
 		assert(vcl->temp != VCL_TEMP_COLD);
 		if (vcl->busy == 0 && VCL_WARM(vcl)) {

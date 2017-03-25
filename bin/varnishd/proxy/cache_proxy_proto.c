@@ -192,7 +192,7 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	}
 
 	/* Command @12 bottom half */
-	switch(p[12] & 0x0f) {
+	switch (p[12] & 0x0f) {
 	case 0x0:
 		/* Local connection from proxy, ignore addresses */
 		return (0);
@@ -206,7 +206,7 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	}
 
 	/* Address family & protocol @13 */
-	switch(p[13]) {
+	switch (p[13]) {
 	case 0x00:
 		/* UNSPEC|UNSPEC, ignore proxy header */
 		VSL(SLT_ProxyGarbage, req->sp->vxid,

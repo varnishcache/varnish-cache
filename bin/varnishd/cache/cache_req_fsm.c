@@ -848,7 +848,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 		assert(wrk->handling == VCL_RET_LOOKUP);
 	SHA256_Final(req->digest, &sha256ctx);
 
-	switch(recv_handling) {
+	switch (recv_handling) {
 	case VCL_RET_VCL:
 		VSLb(req->vsl, SLT_VCL_Error,
 		    "Illegal return(vcl): %s",

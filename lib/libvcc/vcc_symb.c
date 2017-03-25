@@ -52,7 +52,7 @@ VCC_HandleKind(vcc_type_t fmt)
 const char *
 VCC_SymKind(struct vcc *tl, const struct symbol *s)
 {
-	switch(s->kind) {
+	switch (s->kind) {
 #define VCC_SYMB(uu, ll)	case SYM_##uu: return(#ll);
 #include "tbl/symbol_kind.h"
 	default:

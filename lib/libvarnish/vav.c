@@ -55,7 +55,7 @@ VAV_BackSlash(const char *s, char *res)
 
 	assert(*s == '\\');
 	r = c = 0;
-	switch(s[1]) {
+	switch (s[1]) {
 	case 'n':
 		c = '\n';
 		r = 2;

@@ -255,7 +255,7 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, ssize_t *plen, enum vgz_flag flags)
 	AN(vg->vz.next_out);
 	AN(vg->vz.avail_out);
 	before = vg->vz.next_out;
-	switch(flags) {
+	switch (flags) {
 	case VGZ_NORMAL:	zflg = Z_NO_FLUSH; break;
 	case VGZ_ALIGN:		zflg = Z_SYNC_FLUSH; break;
 	case VGZ_RESET:		zflg = Z_FULL_FLUSH; break;

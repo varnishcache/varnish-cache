@@ -67,7 +67,7 @@ static void pan_sess(struct vsb *, const struct sess *);
 const char *
 body_status_2str(enum body_status e)
 {
-	switch(e) {
+	switch (e) {
 #define BODYSTATUS(U,l)	case BS_##U: return (#l);
 #include "tbl/body_status.h"
 	default:
@@ -597,7 +597,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	   desired effect */
 	(void)sigaction(SIGABRT, &sa, NULL);
 
-	switch(kind) {
+	switch (kind) {
 	case VAS_WRONG:
 		VSB_printf(pan_vsb,
 		    "Wrong turn at %s:%d:\n%s\n", file, line, cond);

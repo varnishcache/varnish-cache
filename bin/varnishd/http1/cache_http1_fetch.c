@@ -167,7 +167,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 	if (hs != HTC_S_COMPLETE) {
 		bo->acct.beresp_hdrbytes +=
 		    htc->rxbuf_e - htc->rxbuf_b;
-		switch(hs) {
+		switch (hs) {
 		case HTC_S_JUNK:
 			VSLb(bo->vsl, SLT_FetchError, "Received junk");
 			htc->doclose = SC_RX_JUNK;

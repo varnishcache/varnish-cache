@@ -199,7 +199,7 @@ vcc_acl_try_getaddrinfo(struct vcc *tl, struct acl_e *ae)
 
 	i4 = i6 = 0;
 	for (res = res0; res != NULL; res = res->ai_next) {
-		switch(res->ai_family) {
+		switch (res->ai_family) {
 		case PF_INET:
 			assert(PF_INET < 256);
 			sin4 = (void*)res->ai_addr;

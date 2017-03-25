@@ -615,7 +615,7 @@ ved_objiterate(void *priv, int flush, const void *ptr, ssize_t len)
 		foo->ll++;
 		len--;
 		pp++;
-		switch((int)(foo->stop & 7)) {
+		switch ((int)(foo->stop & 7)) {
 		case 1: /*
 			 * x000....
 			 * 00000000 00000000 11111111 11111111
