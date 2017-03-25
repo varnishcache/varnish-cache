@@ -220,6 +220,10 @@ client c1 {
 client c1 {
 	stream 1 {
 		txreq -nohdrend
+		txrst -err 2
+	} -run
+	stream 3 {
+		txreq -nohdrend
 		txrst -err 0x666
 	} -run
 } -run
@@ -332,6 +336,18 @@ client c1 {
 	} -run
 } -run
 
+client c1 {
+	stream 0 {
+		sendhex 000012
+		sendhex 01
+		sendhex 05
+		sendhex 00000001
+		sendhex {8286 8441 0f77 7777 2e65 7861 6d70 6c65 2e63}
+		rxgoaway
+		expect goaway.err == COMPRESSION_ERROR
+	} -run
+} -run
+
 varnish v1 -vsl_catchup
 
 varnish v1 -expect MEMPOOL.req0.live == 0
@@ -345,7 +361,7 @@ varnish v1 -expect MEMPOOL.sess1.live == 0
 client c1 {
 	stream 1 {
 		txreq -nostrend
-		txcont -hdr "foo" "bar"
+		txcont -hdr "bar" "foo"
 	} -run
 	stream 0 {
 		rxgoaway

@@ -470,7 +470,7 @@ h2_do_req(struct worker *wrk, void *priv)
 }
 
 static h2_error
-h2_end_headers(const struct worker *wrk, const struct h2_sess *h2,
+h2_end_headers(struct worker *wrk, const struct h2_sess *h2,
     struct req *req, struct h2_req *r2)
 {
 	h2_error h2e;
@@ -478,8 +478,11 @@ h2_end_headers(const struct worker *wrk, const struct h2_sess *h2,
 	assert(r2->state == H2_S_OPEN);
 	h2e = h2h_decode_fini(h2, r2->decode);
 	FREE_OBJ(r2->decode);
+	r2->state = H2_S_CLOS_REM;		// XXX: not _quite_ true
 	if (h2e != NULL) {
 		VSL(SLT_Debug, 0, "H2H_DECODE_FINI %s", h2e->name);
+		AZ(r2->req->ws->r);
+		h2_del_req(wrk, r2);
 		return (h2e);
 	}
 	VSLb_ts_req(req, "Req", req->t_req);
@@ -492,7 +495,6 @@ h2_end_headers(const struct worker *wrk, const struct h2_sess *h2,
 	req->req_step = R_STP_TRANSPORT;
 	req->task.func = h2_do_req;
 	req->task.priv = req;
-	r2->state = H2_S_CLOS_REM;		// XXX: not _quite_ true
 	XXXAZ(Pool_Task(wrk->pool, &req->task, TASK_QUEUE_REQ));
 	return (0);
 }

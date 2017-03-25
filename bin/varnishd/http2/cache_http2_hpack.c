@@ -201,7 +201,7 @@ h2h_decode_fini(const struct h2_sess *h2, struct h2h_decode *d)
 		/* HPACK header block didn't finish at an instruction
 		   boundary */
 		VSLb(h2->new_req->http->vsl, SLT_BogoHeader,
-		    "HPACK compression error (%s)", VHD_Error(d->vhd_ret));
+		    "HPACK compression error/fini (%s)", VHD_Error(d->vhd_ret));
 		ret = H2CE_COMPRESSION_ERROR;
 	} else
 		ret = d->error;

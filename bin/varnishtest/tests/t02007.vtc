@@ -35,6 +35,10 @@ client c1 {
 			-nostrend \
 			-nohdrend
 		txcont \
+			-hdr foo bar \
+			-nohdrend \
+			-nostrend
+		txcont \
 			-hdr expect 100-continue \
 			-hdr content-length 7 \
 			-nostrend
