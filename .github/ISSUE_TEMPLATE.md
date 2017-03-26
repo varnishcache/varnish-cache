@@ -1,3 +1,24 @@
+<!--- Things to check before you report a bug
+
+    - Is the issue you are seeing clearly an issue in varnish core or
+      could it be a support question? We do not use github issues for
+      support questions, please refer to
+      http://varnish-cache.org/support/index.html when in doubt.
+
+    - For panics (varnish crashes), bug reports are most useful if
+
+      - you are running recent code
+	- ideally master
+	- but at least the latest release of a supported version
+
+      - you got
+	- debuginfo packages installed when running binaries from packages
+	- or have compiled with debug information whenever possible
+	  (configure --enable-debugging-symbols)
+
+    If you have considered these recommendations, please go ahead and
+    follow this template
+-->
 <!--- Provide a general summary of the issue in the Title above -->
 
 ## Expected Behavior
@@ -42,3 +63,4 @@
 <!--- Include as many relevant details about the environment you experienced the bug in -->
 * Version used:
 * Operating System and version:
+* Source of binary packages used (if any)
