@@ -12,7 +12,10 @@
 	- but at least the latest release of a supported version
 
       - you got
-	- debuginfo packages installed when running binaries from packages
+	- debuginfo packages installed when running binaries from
+	  packages if these are available from the package source
+	  you are using
+
 	- or have compiled with debug information whenever possible
 	  (configure --enable-debugging-symbols)
 
