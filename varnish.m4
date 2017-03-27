@@ -1,4 +1,4 @@
-# Copyright (c) 2016 Varnish Software AS
+# Copyright (c) 2016-2017 Varnish Software AS
 # All rights reserved.
 #
 # Author: Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
@@ -29,7 +29,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # varnish.m4 - Macros to define VMOD builds.            -*- Autoconf -*-
-# serial 6 (varnish-5.1.0)
+# serial 7 (varnish-5.1.2)
 #
 # This collection of macros helps create VMODs or tools interacting with
 # Varnish Cache using the GNU build system (autotools). In order to work
@@ -93,7 +93,12 @@ AC_DEFUN([_VARNISH_PKG_CONFIG], [
 		[$VARNISHAPI_SBINDIR:$VARNISHAPI_BINDIR:$PATH])
 
 	dnl Inherit Varnish's prefix if undefined
-	test "$prefix" = NONE && ac_default_prefix=$VARNISHAPI_PREFIX
+	dnl Also the libdir for multi-lib systems
+	if test "$prefix" = NONE
+	then
+		ac_default_prefix=$VARNISHAPI_PREFIX
+		libdir=$VARNISHAPI_LIBDIR
+	fi
 
 	dnl Define the VCL directory for automake
 	vcldir=$($PKG_CONFIG --define-variable=datadir=$datadir \
