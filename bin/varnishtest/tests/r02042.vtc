@@ -20,6 +20,9 @@ server s1 {
 	expect req.http.If-None-Match == <undef>
 	txresp -hdr "ETag: foo" -bodylen 7
 
+	close
+	accept
+
 	rxreq
 	expect req.url == "/lm"
 	txresp -hdr "Last-Modified: Thu, 26 Jun 2008 12:00:01 GMT" \
@@ -107,6 +110,8 @@ client c1 {
 	expect resp.http.X-Cache == "MISS"
 } -run
 
+varnish v1 -vsl_catchup
+
 # The next two tests are adapted from the former r01206.vtc, reflecting
 # changes for the recv->pass and beresp.uncacheable (hit-for-miss) cases
 # after rolling back the fix for #1206, and verifying that they are
@@ -124,6 +129,9 @@ server s1 {
 	expect req.url == "/etag2"
 	expect req.http.If-None-Match == "foo"
 	txresp -hdr "ETag: foo" -bodylen 7
+
+	close
+	accept
 
 	rxreq
 	expect req.url == "/lm2"
@@ -200,6 +208,9 @@ server s1 {
 	expect req.url == "/etag3"
 	expect req.http.If-None-Match == <undef>
 	txresp -hdr "ETag: foo" -bodylen 7
+
+	close
+	accept
 
 	rxreq
 	expect req.url == "/lm3"
