@@ -52,7 +52,7 @@ static int
 tweak_generic_double(struct vsb *vsb, volatile double *dest,
     const char *arg, const char *min, const char *max, const char *fmt)
 {
-	double u, minv = 0, maxv = 0;
+	volatile double u, minv = 0, maxv = 0;
 
 	if (arg != NULL) {
 		if (min != NULL) {
