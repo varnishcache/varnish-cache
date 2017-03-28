@@ -152,6 +152,8 @@ server_thread(void *priv)
 	struct sockaddr_storage addr_s;
 	struct sockaddr *addr;
 	socklen_t l;
+	char abuf[VTCP_ADDRBUFSIZE];
+	char pbuf[VTCP_PORTBUFSIZE];
 
 	CAST_OBJ_NOTNULL(s, priv, SERVER_MAGIC);
 	assert(s->sock >= 0);
@@ -167,7 +169,8 @@ server_thread(void *priv)
 		fd = accept(s->sock, addr, &l);
 		if (fd < 0)
 			vtc_fatal(vl, "Accept failed: %s", strerror(errno));
-		vtc_log(vl, 3, "accepted fd %d", fd);
+		VTCP_hisname(fd, abuf, sizeof abuf, pbuf, sizeof pbuf);
+		vtc_log(vl, 3, "accepted fd %d %s %s", fd, abuf, pbuf);
 		fd = http_process(vl, s->spec, fd, &s->sock);
 		vtc_log(vl, 3, "shutting fd %d", fd);
 		j = shutdown(fd, SHUT_WR);
