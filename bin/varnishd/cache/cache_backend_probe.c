@@ -267,7 +267,7 @@ vbp_write_proxy_v1(struct vbp_target *vt, int *sock)
 static void
 vbp_poke(struct vbp_target *vt)
 {
-	int s, tmo, i;
+	int s, tmo, i, proxy_header;
 	double t_start, t_now, t_end;
 	unsigned rlen, resp;
 	char buf[8192], *p;
@@ -299,12 +299,22 @@ vbp_poke(struct vbp_target *vt)
 		return;
 	}
 
+	Lck_Lock(&vbp_mtx);
+	if (vt->backend != NULL)
+		proxy_header = vt->backend->proxy_header;
+	else
+		proxy_header = -1;
+	Lck_Unlock(&vbp_mtx);
+
+	if (proxy_header < 0)
+		return;
+
 	/* Send the PROXY header */
-	assert(vt->backend->proxy_header <= 2);
-	if (vt->backend->proxy_header == 1) {
+	assert(proxy_header <= 2);
+	if (proxy_header == 1) {
 		if (vbp_write_proxy_v1(vt, &s) != 0)
 			return;
-	} else if (vt->backend->proxy_header == 2 &&
+	} else if (proxy_header == 2 &&
 	    vbp_write(vt, &s, vbp_proxy_local, sizeof vbp_proxy_local) != 0)
 		return;
 
