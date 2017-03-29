@@ -38,6 +38,7 @@
 #include "http2/cache_http2.h"
 
 #include "vend.h"
+#include "vtim.h"
 
 static const char h2_resp_101[] =
 	"HTTP/1.1 101 Switching Protocols\r\n"
@@ -340,7 +341,7 @@ h2_new_session(struct worker *wrk, void *arg)
 		VTAILQ_FOREACH(r2, &h2->streams, list)
 			VSLb(h2->vsl, SLT_Debug, "ST %u %d", r2->stream, r2->state);
 		Lck_Lock(&h2->sess->mtx);
-		(void)Lck_CondWait(h2->cond, &h2->sess->mtx, .1);
+		(void)Lck_CondWait(h2->cond, &h2->sess->mtx, VTIM_real() + .1);
 		Lck_Unlock(&h2->sess->mtx);
 	}
 	h2->cond = NULL;
