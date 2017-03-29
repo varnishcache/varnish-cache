@@ -218,6 +218,8 @@ varnishlog_thread(void *priv)
 	opt = 0;
 	while (v->pid || c != NULL) {
 		if (c == NULL) {
+			if (vtc_error)
+				break;
 			VTIM_sleep(0.1);
 			if (VSM_Open(vsm)) {
 				vtc_log(v->vl, 3, "vsm|%s",
