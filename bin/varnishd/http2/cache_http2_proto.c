@@ -838,21 +838,10 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		return (1);
 	}
 	h2f = h2flist[h2->rxf_type];
-#if 1
+
 	AN(h2f->name);
 	AN(h2f->rxfunc);
-#else
-	/* If we ever get holes in the frame table... */
-	if (h2f->name == NULL || h2f->func == NULL) {
-		// rfc7540,l,679,681
-		// XXX: later, drain rest of frame
-		h2->bogosity++;
-		VSLb(h2->vsl, SLT_Debug,
-		    "H2: Unimplemented frame type 0x%02x (ignored)",
-		    h2->rxf_type);
-		return (0);
-	}
-#endif
+
 	if (h2->rxf_flags & ~h2f->flags) {
 		// rfc7540,l,687,688
 		h2->bogosity++;
