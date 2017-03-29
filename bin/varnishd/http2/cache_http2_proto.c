@@ -469,7 +469,6 @@ h2_do_req(struct worker *wrk, void *priv)
 	THR_SetRequest(req);
 	req->http->conds = 1;
 	if (CNT_Request(wrk, req) != REQ_FSM_DISEMBARK) {
-		VSL(SLT_Debug, 0, "H2REQ CNT done");
 		AZ(req->ws->r);
 		r2->scheduled = 0;
 		r2->state = H2_S_CLOSED;
@@ -491,7 +490,7 @@ h2_end_headers(struct worker *wrk, const struct h2_sess *h2,
 	FREE_OBJ(r2->decode);
 	r2->state = H2_S_CLOS_REM;
 	if (h2e != NULL) {
-		VSL(SLT_Debug, 0, "H2H_DECODE_FINI %s", h2e->name);
+		VSLb(h2->vsl, SLT_Debug, "HPACK/FINI %s", h2e->name);
 		AZ(r2->req->ws->r);
 		h2_del_req(wrk, r2);
 		return (h2e);
@@ -558,12 +557,12 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		p += 1;
 	}
 	if (h2->rxf_flags & H2FF_HEADERS_PRIORITY) {
-		p += 5;
 		l -= 5;
+		p += 5;
 	}
 	h2e = h2h_decode_bytes(h2, r2->decode, p, l);
 	if (h2e != NULL) {
-		VSL(SLT_Debug, 0, "H2H_DECODE_BYTES(hdr) %s", h2e->name);
+		VSLb(h2->vsl, SLT_Debug, "HPACK(hdr) %s", h2e->name);
 		(void)h2h_decode_fini(h2, r2->decode);
 		AZ(r2->req->ws->r);
 		h2_del_req(wrk, r2);
@@ -590,7 +589,7 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	req = r2->req;
 	h2e = h2h_decode_bytes(h2, r2->decode, h2->rxf_data, h2->rxf_len);
 	if (h2e != NULL) {
-		VSL(SLT_Debug, 0, "H2H_DECODE_BYTES(cont) %s", h2e->name);
+		VSLb(h2->vsl, SLT_Debug, "HPACK(cont) %s", h2e->name);
 		(void)h2h_decode_fini(h2, r2->decode);
 		AZ(r2->req->ws->r);
 		h2_del_req(wrk, r2);
@@ -733,7 +732,6 @@ h2_frame_complete(struct http_conn *htc)
 	if (l < 9)
 		return (HTC_S_MORE);
 	u = vbe32dec(htc->rxbuf_b) >> 8;
-	VSL(SLT_Debug, 0, "RX %p %d %u", htc->rxbuf_b, l, u);
 	if (l < u + 9)	// XXX: Only for !DATA frames
 		return (HTC_S_MORE);
 	return (HTC_S_COMPLETE);
@@ -792,12 +790,11 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2,
 	VSLb(h2->vsl, SLT_Debug, "H2: stream %u: %s", h2->rxf_stream, h2e->txt);
 	vbe32enc(b, h2e->val);
 
-	H2_Send_Get(wrk, h2, r2);
+	H2_Send_Get(wrk, h2, h2->req0);
 	(void)H2_Send_Frame(wrk, h2, H2_F_RST_STREAM,
 	    0, sizeof b, h2->rxf_stream, b);
-	H2_Send_Rel(h2, r2);
+	H2_Send_Rel(h2, h2->req0);
 
-	h2_del_req(wrk, r2);
 	return (0);
 }
 

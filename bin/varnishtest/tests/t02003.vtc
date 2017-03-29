@@ -349,6 +349,14 @@ client c1 {
 	} -run
 } -run
 
+client c1 {
+	stream 1 {
+		txreq -hdr ":bla" "foo"
+		rxrst
+		expect rst.err == PROTOCOL_ERROR
+	} -run
+} -run
+
 varnish v1 -vsl_catchup
 
 varnish v1 -expect MEMPOOL.req0.live == 0
