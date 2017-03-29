@@ -171,6 +171,7 @@ h2_del_req(struct worker *wrk, struct h2_req *r2)
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	h2 = r2->h2sess;
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	ASSERT_RXTHR(h2);
 	sp = h2->sess;
 	Lck_Lock(&sp->mtx);
 	assert(h2->refcnt > 0);
@@ -196,20 +197,19 @@ h2_kill_req(struct worker *wrk, const struct h2_sess *h2,
     struct h2_req *r2, h2_error h2e)
 {
 
+	ASSERT_RXTHR(h2);
+	AN(h2e);
 	VSLb(h2->vsl, SLT_Debug, "KILL st=%u state=%d", r2->stream, r2->state);
 	Lck_Lock(&h2->sess->mtx);
-	r2->error = h2e;
-	switch (r2->state) {
-	case H2_S_CLOS_REM:
+	if (r2->error == NULL)
+		r2->error = h2e;
+	if (r2->scheduled) {
 		if (r2->cond != NULL)
 			AZ(pthread_cond_signal(r2->cond));
 		r2 = NULL;
-		break;
-	case H2_S_OPEN:
-		(void)h2h_decode_fini(h2, r2->decode);
-		break;
-	default:
-		break;
+	} else {
+		if (r2->state == H2_S_OPEN)
+			(void)h2h_decode_fini(h2, r2->decode);
 	}
 	Lck_Unlock(&h2->sess->mtx);
 	if (r2 != NULL)
@@ -304,9 +304,9 @@ h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 
 	if (h2->rxf_len != 4)			// rfc7540,l,2003,2004
 		return (H2CE_FRAME_SIZE_ERROR);
-	if (r2 != NULL)
-		h2_kill_req(wrk, h2, r2,
-		    h2_streamerror(vbe32dec(h2->rxf_data)));
+	if (r2 == NULL)
+		return (0);
+	h2_kill_req(wrk, h2, r2, h2_streamerror(vbe32dec(h2->rxf_data)));
 	return (0);
 }
 
@@ -473,7 +473,8 @@ h2_do_req(struct worker *wrk, void *priv)
 		AZ(req->ws->r);
 		r2->scheduled = 0;
 		r2->state = H2_S_CLOSED;
-		h2_del_req(wrk, r2);
+		if (r2->h2sess->error)
+			AZ(pthread_cond_signal(r2->h2sess->cond));
 	}
 	THR_SetRequest(NULL);
 }
@@ -744,7 +745,7 @@ static h2_error
 h2_procframe(struct worker *wrk, struct h2_sess *h2,
     h2_frame h2f)
 {
-	struct h2_req *r2 = NULL;
+	struct h2_req *r2 = NULL, *r22;
 	h2_error h2e;
 	char b[4];
 
@@ -767,9 +768,12 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2,
 		return (H2CE_PROTOCOL_ERROR);
 	}
 
-	VTAILQ_FOREACH(r2, &h2->streams, list)
+	VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
 		if (r2->stream == h2->rxf_stream)
 			break;
+		if (r2->state == H2_S_CLOSED && !r2->scheduled)
+			h2_del_req(wrk, r2);
+	}
 
 	if (r2 == NULL && h2f->act_sidle == 0) {
 		if (h2->rxf_stream <= h2->highest_stream)

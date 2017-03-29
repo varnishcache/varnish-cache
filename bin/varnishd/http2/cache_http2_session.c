@@ -275,8 +275,9 @@ h2_new_session(struct worker *wrk, void *arg)
 	struct req *req;
 	struct sess *sp;
 	struct h2_sess *h2;
-	struct h2_req *r2;
+	struct h2_req *r2, *r22;
 	uintptr_t wsp;
+	int again;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
@@ -316,32 +317,32 @@ h2_new_session(struct worker *wrk, void *arg)
 	}
 
 	AN(h2->error);
+
 	/* Delete all idle streams */
-	Lck_Lock(&sp->mtx);
 	VSLb(h2->vsl, SLT_Debug, "H2 CLEANUP %s", h2->error->name);
 	VTAILQ_FOREACH(r2, &h2->streams, list) {
 		if (r2->error == 0)
 			r2->error = h2->error;
-#if 0
-		if (r2->wrk != NULL)
-			AZ(pthread_cond_signal(&r2->wrk->cond)); // XXX Why?
-#endif
+		if (r2->cond != NULL)
+			AZ(pthread_cond_signal(r2->cond));
 	}
 	AZ(pthread_cond_signal(h2->cond));
-	while (1) {
-		VTAILQ_FOREACH(r2, &h2->streams, list)
-			if (r2->state != H2_S_CLOS_REM && r2 != h2->req0)
-				break;
-		if (r2 == NULL)
+	while(1) {
+		again = 0;
+		VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
+			if (r2 != h2->req0) {
+				h2_kill_req(wrk, h2, r2, h2->error);
+				again++;
+			}
+		}
+		if (!again)
 			break;
-		Lck_Unlock(&sp->mtx);
-		h2_kill_req(wrk, h2, r2, h2->error);
-		Lck_Lock(&sp->mtx);
+		VTAILQ_FOREACH(r2, &h2->streams, list)
+			VSLb(h2->vsl, SLT_Debug, "ST %u %d", r2->stream, r2->state);
+		Lck_Lock(&h2->sess->mtx);
+		(void)Lck_CondWait(h2->cond, &h2->sess->mtx, .1);
+		Lck_Unlock(&h2->sess->mtx);
 	}
-	VSLb(h2->vsl, SLT_Debug, "H2CLEAN done");
-	VTAILQ_FOREACH(r2, &h2->streams, list)
-		VSLb(h2->vsl, SLT_Debug, "ST %u %d", r2->stream, r2->state);
-	Lck_Unlock(&sp->mtx);
 	h2->cond = NULL;
 	h2_del_req(wrk, h2->req0);
 }
