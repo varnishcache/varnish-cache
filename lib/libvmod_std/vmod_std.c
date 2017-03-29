@@ -28,14 +28,17 @@
 
 #include "config.h"
 
-#include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <netinet/in.h>
 
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <syslog.h>
+#include <unistd.h>
 
 #include "vrt.h"
 #include "vtcp.h"
@@ -174,6 +177,15 @@ vmod_syslog(VRT_CTX, VCL_INT fac, const char *fmt, ...)
 	} else
 		vsyslog((int)fac, fmt, ap);
 	va_end(ap);
+}
+
+VCL_BOOL __match_proto__(td_std_file_exists)
+vmod_file_exists(VRT_CTX, VCL_STRING file_name)
+{
+	struct stat st;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	return (stat(file_name, &st) == 0);
 }
 
 VCL_VOID __match_proto__(td_std_collect)

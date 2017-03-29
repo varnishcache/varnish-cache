@@ -1,0 +1,22 @@
+varnishtest "Test std.file_exists"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import ${vmod_std};
+
+	sub vcl_deliver {
+		set resp.http.existsA = std.file_exists("/non/existent");
+		set resp.http.existsB = std.file_exists("${tmpdir}/v1/_.vsm");
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.existsA == "false"
+	expect resp.http.existsB == "true"
+} -run
