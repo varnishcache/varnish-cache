@@ -1,0 +1,83 @@
+varnishtest "Test file_exists for std VMOD"
+
+shell {
+	touch "${tmpdir}/m00029_file_empty"
+	touch "${tmpdir}/m00029_file_noperm"; chmod 000 "${tmpdir}/m00029_file_noperm"
+	printf "Content" > "${tmpdir}/m00029_file_content"
+}
+
+server s1 {
+	rxreq
+	expect req.http.exists == "true"
+	txresp
+	rxreq
+	expect req.http.exists == "true"
+	txresp
+	rxreq
+	expect req.http.exists == "true"
+	txresp
+	rxreq
+	expect req.http.exists == "false"
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_recv {
+		set req.http.exists = std.file_exists("${tmpdir}/m00029_file_" + req.http.filename);
+	}
+} -start
+
+client c1 {
+	txreq -hdr "filename: empty"
+	rxresp
+	expect resp.status == 200
+
+	txreq -hdr "filename: noperm"
+	rxresp
+	expect resp.status == 200
+
+	txreq -hdr "filename: content"
+	rxresp
+	expect resp.status == 200
+
+	txreq -hdr "filename: nowhere"
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_recv {
+		if (req.url == "/healthcheck") {
+			if (std.file_exists("${tmpdir}/exclude_me_from_loadbalancer")) {
+				return (synth(503, "Varnish is in maintenance"));
+			}
+			else {
+				return (synth(200, "Varnish is healthy"));
+			}
+		}
+	}
+}
+
+varnish v1 -cli "vcl.list"
+varnish v1 -cli "vcl.use vcl2"
+varnish v1 -cli "vcl.discard vcl1"
+
+client c1 {
+	txreq -url "/healthcheck"
+	rxresp
+	expect resp.status == 200
+} -run
+
+shell {
+	touch "${tmpdir}/exclude_me_from_loadbalancer"
+}
+
+client c1 {
+	txreq -url "/healthcheck"
+	rxresp
+	expect resp.status == 503
+} -run
