@@ -107,6 +107,16 @@ Description
 Example
 	set beresp.http.served-by = std.fileread("/etc/hostname");
 
+$Function BOOL file_exists(STRING path)
+
+Description
+	Returns `true` if path or the file pointed to by path exists,
+	`false` otherwise.
+Example
+	| if (std.file_exists("/etc/return_503")) {
+	| 	return (synth(503, "Varnish is in maintenance"));
+	| }
+
 $Function VOID collect(HEADER hdr, STRING sep=", ")
 
 Description
