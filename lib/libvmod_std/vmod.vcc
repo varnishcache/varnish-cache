@@ -112,9 +112,9 @@ $Function BOOL file_exists(STRING path)
 Description
 	Return TRUE if path exists, else FALSE.
 Example
-	if (std.file_exists("/etc/return_503")) {
-		return (synth(503, "Varnish is in maintenance"));
-        }
+	| if (std.file_exists("/etc/return_503")) {
+	| 	return (synth(503, "Varnish is in maintenance"));
+	| }
 
 $Function VOID collect(HEADER hdr)
 
