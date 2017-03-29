@@ -269,8 +269,9 @@ client c1 {
 
 client c1 {
 	stream 0 {
-		# SETTING unknown vlaue
+		# SETTING unknown value
 		sendhex "000006 04 00 00000000 ffff00000000"
+		rxsettings
 		txping
 		rxping
 	} -run

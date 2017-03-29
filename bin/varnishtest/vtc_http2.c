@@ -177,27 +177,30 @@ get_bytes(const struct http *hp, char *buf, int n)
 		if (i < 0 && errno == EINTR)
 			continue;
 		if (i == 0)
-			vtc_log(hp->vl, hp->fatal,
+			vtc_log(hp->vl, 3,
 			    "HTTP2 rx timeout (fd:%d %u ms)",
 			    hp->fd, hp->timeout);
 		if (i < 0)
-			vtc_log(hp->vl, hp->fatal,
+			vtc_log(hp->vl, 3,
 			    "HTTP2 rx failed (fd:%d poll: %s)",
 			    hp->fd, strerror(errno));
-		assert(i > 0);
+		if (i <= 0)
+			return (i);
 		i = read(hp->fd, buf, n);
 		if (!(pfd[0].revents & POLLIN))
 			vtc_log(hp->vl, 4,
 			    "HTTP2 rx poll (fd:%d revents: %x n=%d, i=%d)",
 			    hp->fd, pfd[0].revents, n, i);
 		if (i == 0)
-			vtc_log(hp->vl, hp->fatal,
+			vtc_log(hp->vl, 3,
 			    "HTTP2 rx EOF (fd:%d read: %s)",
 			    hp->fd, strerror(errno));
 		if (i < 0)
-			vtc_log(hp->vl, hp->fatal,
+			vtc_log(hp->vl, 3,
 			    "HTTP2 rx failed (fd:%d read: %s)",
 			    hp->fd, strerror(errno));
+		if (i <= 0)
+			return (i);
 		n -= i;
 	}
 	return (1);
@@ -729,7 +732,12 @@ receive_frame(void *priv)
 		AZ(pthread_mutex_unlock(&hp->mtx));
 
 		if (!get_bytes(hp, hdr, 9)) {
-			vtc_log(hp->vl, 1, "could not get header");
+			AZ(pthread_mutex_lock(&hp->mtx));
+			VTAILQ_FOREACH(s, &hp->streams, list)
+				AZ(pthread_cond_signal(&s->cond));
+			AZ(pthread_mutex_unlock(&hp->mtx));
+			vtc_log(hp->vl, hp->fatal,
+			    "could not get frame header");
 			return (NULL);
 		}
 		ALLOC_OBJ(f, FRAME_MAGIC);
@@ -747,7 +755,15 @@ receive_frame(void *priv)
 			f->data = malloc(f->size + 1L);
 			AN(f->data);
 			f->data[f->size] = '\0';
-			AN(get_bytes(hp, f->data, f->size));
+			if (get_bytes(hp, f->data, f->size) <= 0) {
+				AZ(pthread_mutex_lock(&hp->mtx));
+				VTAILQ_FOREACH(s, &hp->streams, list)
+					AZ(pthread_cond_signal(&s->cond));
+				AZ(pthread_mutex_unlock(&hp->mtx));
+				vtc_log(hp->vl, hp->fatal,
+				    "could not get frame body");
+				return (NULL);
+			}
 		}
 
 		/* is the corresponding stream waiting? */
@@ -2331,12 +2347,13 @@ cmd_rxpush(CMD_ARGS)
 		(void)cmd; \
 		(void)av; \
 		CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC); \
-		if ((s->frame = rxstuff(s))) \
-			return; \
-		if (s->frame->type != TYPE_ ## upctype) \
-			vtc_fatal(vl, "Received frame of type %d " \
-			    "is invalid for %s", \
-			    s->frame->type, "rx" #lctype); \
+		s->frame = rxstuff(s); \
+		if (s->frame != NULL && s->frame->type != TYPE_ ## upctype) \
+			vtc_fatal(vl, \
+			    "Wrong frame type %s (%d) wanted %s", \
+			    s->frame->type < TYPE_MAX ? \
+			    h2_types[s->frame->type] : "?", \
+			    s->frame->type, #upctype); \
 	}
 
 /* SECTION: stream.spec.prio_rxprio rxprio
