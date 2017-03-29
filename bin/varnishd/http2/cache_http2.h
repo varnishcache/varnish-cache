@@ -116,6 +116,7 @@ struct h2_req {
 	unsigned			magic;
 #define H2_REQ_MAGIC			0x03411584
 	uint32_t			stream;
+	int				scheduled;
 	enum h2_stream_e		state;
 	struct h2_sess			*h2sess;
 	struct req			*req;
@@ -137,6 +138,7 @@ struct h2_sess {
 	unsigned			magic;
 #define H2_SESS_MAGIC			0xa16f7e4b
 
+	pthread_t			rxthr;
 	struct h2_req			*mailcall;
 	pthread_cond_t			*cond;
 
@@ -174,6 +176,8 @@ struct h2_sess {
 
 	h2_error			error;
 };
+
+#define ASSERT_RXTHR(h2) do {assert(h2->rxthr == pthread_self());} while(0)
 
 /* http2/cache_http2_panic.c */
 #ifdef TRANSPORT_MAGIC

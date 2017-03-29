@@ -98,6 +98,7 @@ h2_new_sess(const struct worker *wrk, struct sess *sp, struct req *srq)
 		h2->vsl->wid = sp->vxid;
 		h2->htc->rfd = &sp->fd;
 		h2->sess = sp;
+		h2->rxthr = pthread_self();
 		VTAILQ_INIT(&h2->streams);
 		VTAILQ_INIT(&h2->txqueue);
 		h2->local_settings = H2_proto_settings;

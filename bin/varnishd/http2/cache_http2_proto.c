@@ -263,6 +263,7 @@ static h2_error __match_proto__(h2_frame_f)
 h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 
+	ASSERT_RXTHR(h2);
 	(void)r2;
 	if (h2->rxf_len != 8)				// rfc7540,l,2364,2366
 		return (H2CE_FRAME_SIZE_ERROR);
@@ -282,9 +283,10 @@ h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 static h2_error __match_proto__(h2_frame_f)
 h2_rx_push_promise(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
-	// rfc7540,l,2262,2267
+
 	(void)wrk;
-	(void)h2;
+	ASSERT_RXTHR(h2);
+	// rfc7540,l,2262,2267
 	(void)r2;
 	return (H2CE_PROTOCOL_ERROR);
 }
@@ -295,7 +297,9 @@ h2_rx_push_promise(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 static h2_error __match_proto__(h2_frame_f)
 h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
+
 	(void)wrk;
+	ASSERT_RXTHR(h2);
 
 	if (h2->rxf_len != 4)			// rfc7540,l,2003,2004
 		return (H2CE_FRAME_SIZE_ERROR);
@@ -313,6 +317,7 @@ h2_rx_goaway(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 
 	(void)wrk;
+	ASSERT_RXTHR(h2);
 	(void)r2;
 	h2->goaway_last_stream = vbe32dec(h2->rxf_data);
 	h2->error = h2_connectionerror(vbe32dec(h2->rxf_data + 4));
@@ -329,6 +334,7 @@ h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	uint32_t wu;
 
 	(void)wrk;
+	ASSERT_RXTHR(h2);
 	if (h2->rxf_len != 4)
 		return (H2CE_FRAME_SIZE_ERROR);
 	wu = vbe32dec(h2->rxf_data) & ~(1LU<<31);
@@ -353,7 +359,7 @@ h2_rx_priority(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 
 	(void)wrk;
-	(void)h2;
+	ASSERT_RXTHR(h2);
 	xxxassert(r2->stream & 1);
 	return (0);
 }
@@ -423,6 +429,7 @@ h2_rx_settings(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	h2_error retval = 0;
 
 	AN(wrk);
+	ASSERT_RXTHR(h2);
 	AN(r2);
 	AZ(h2->rxf_stream);
 	if (h2->rxf_flags == H2FF_SETTINGS_ACK) {
@@ -463,6 +470,7 @@ h2_do_req(struct worker *wrk, void *priv)
 	if (CNT_Request(wrk, req) != REQ_FSM_DISEMBARK) {
 		VSL(SLT_Debug, 0, "H2REQ CNT done");
 		AZ(req->ws->r);
+		r2->scheduled = 0;
 		r2->state = H2_S_CLOSED;
 		h2_del_req(wrk, r2);
 	}
@@ -475,6 +483,7 @@ h2_end_headers(struct worker *wrk, const struct h2_sess *h2,
 {
 	h2_error h2e;
 
+	ASSERT_RXTHR(h2);
 	assert(r2->state == H2_S_OPEN);
 	h2e = h2h_decode_fini(h2, r2->decode);
 	FREE_OBJ(r2->decode);
@@ -495,6 +504,7 @@ h2_end_headers(struct worker *wrk, const struct h2_sess *h2,
 	req->req_step = R_STP_TRANSPORT;
 	req->task.func = h2_do_req;
 	req->task.priv = req;
+	r2->scheduled = 1;
 	XXXAZ(Pool_Task(wrk->pool, &req->task, TASK_QUEUE_REQ));
 	return (0);
 }
@@ -507,6 +517,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	const uint8_t *p;
 	size_t l;
 
+	ASSERT_RXTHR(h2);
 	if (r2->state != H2_S_IDLE)
 		return (H2CE_PROTOCOL_ERROR);	// XXX spec ?
 	r2->state = H2_S_OPEN;
@@ -571,6 +582,7 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	struct req *req;
 	h2_error h2e;
 
+	ASSERT_RXTHR(h2);
 	if (r2->state != H2_S_OPEN)
 		return (H2CE_PROTOCOL_ERROR);	// XXX spec ?
 	req = r2->req;
@@ -597,6 +609,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	unsigned wi;
 
 	(void)wrk;
+	ASSERT_RXTHR(h2);
 	AZ(h2->mailcall);
 	h2->mailcall = r2;
 	Lck_Lock(&h2->sess->mtx);
@@ -730,6 +743,7 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2,
 	h2_error h2e;
 	char b[4];
 
+	ASSERT_RXTHR(h2);
 	if (h2->rxf_stream == 0 && h2f->act_szero != 0)
 		return (h2f->act_szero);
 
@@ -801,6 +815,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	h2_error h2e;
 	char b[8];
 
+	ASSERT_RXTHR(h2);
 	(void)VTCP_blocking(*h2->htc->rfd);
 	h2->sess->t_idle = VTIM_real();
 	hs = HTC_RxStuff(h2->htc, h2_frame_complete,
