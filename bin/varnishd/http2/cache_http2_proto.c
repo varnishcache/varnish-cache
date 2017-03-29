@@ -138,6 +138,7 @@ h2_new_req(const struct worker *wrk, struct h2_sess *h2,
 {
 	struct h2_req *r2;
 
+	ASSERT_RXTHR(h2);
 	if (req == NULL)
 		req = Req_New(wrk, h2->sess);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -200,8 +201,8 @@ h2_kill_req(struct worker *wrk, const struct h2_sess *h2,
 	r2->error = h2e;
 	switch (r2->state) {
 	case H2_S_CLOS_REM:
-		if (r2->wrk != NULL)
-			AZ(pthread_cond_signal(h2->cond));
+		if (r2->cond != NULL)
+			AZ(pthread_cond_signal(r2->cond));
 		r2 = NULL;
 		break;
 	case H2_S_OPEN:
@@ -487,7 +488,7 @@ h2_end_headers(struct worker *wrk, const struct h2_sess *h2,
 	assert(r2->state == H2_S_OPEN);
 	h2e = h2h_decode_fini(h2, r2->decode);
 	FREE_OBJ(r2->decode);
-	r2->state = H2_S_CLOS_REM;		// XXX: not _quite_ true
+	r2->state = H2_S_CLOS_REM;
 	if (h2e != NULL) {
 		VSL(SLT_Debug, 0, "H2H_DECODE_FINI %s", h2e->name);
 		AZ(r2->req->ws->r);
@@ -610,12 +611,13 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 
 	(void)wrk;
 	ASSERT_RXTHR(h2);
+	Lck_Lock(&h2->sess->mtx);
 	AZ(h2->mailcall);
 	h2->mailcall = r2;
-	Lck_Lock(&h2->sess->mtx);
 	h2->r_window -= h2->rxf_len;
 	r2->r_window -= h2->rxf_len;
-	AZ(pthread_cond_broadcast(h2->cond));
+	if (r2->cond)
+		AZ(pthread_cond_signal(r2->cond));
 	while (h2->mailcall != NULL && h2->error == 0 && r2->error == 0)
 		AZ(Lck_CondWait(h2->cond, &h2->sess->mtx, 0));
 	wi = cache_param->h2_rx_window_increment;
@@ -628,6 +630,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		w2 = 1;
 	}
 	Lck_Unlock(&h2->sess->mtx);
+
 	if (w1 || w2) {
 		vbe32enc(buf, wi);
 		H2_Send_Get(wrk, h2, h2->req0);
@@ -661,8 +664,10 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 	*lp = 0;
 
 	Lck_Lock(&h2->sess->mtx);
+	r2->cond = &vc->wrk->cond;
 	while (h2->mailcall != r2 && h2->error == 0 && r2->error == 0)
-		AZ(Lck_CondWait(h2->cond, &h2->sess->mtx, 0));
+		AZ(Lck_CondWait(r2->cond, &h2->sess->mtx, 0));
+	r2->cond = NULL;
 	if (h2->error || r2->error) {
 		retval = VFP_ERROR;
 	} else {
@@ -680,7 +685,7 @@ h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 				retval = VFP_END;
 		}
 		h2->mailcall = NULL;
-		AZ(pthread_cond_broadcast(h2->cond));
+		AZ(pthread_cond_signal(h2->cond));
 	}
 	Lck_Unlock(&h2->sess->mtx);
 	return (retval);
