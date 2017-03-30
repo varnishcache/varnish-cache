@@ -343,13 +343,14 @@ http_CollectHdrSep(struct http *hp, const char *hdr, const char *sep)
 {
 	unsigned u, l, lsep, ml, f, x, d;
 	char *b = NULL, *e = NULL;
+	const char *v;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	if (WS_Overflowed(hp->ws))
 		return;
 
 	if (sep == NULL || *sep == '\0')
-		sep = ",";
+		sep = ", ";
 	lsep = strlen(sep);
 
 	l = hdr[0];
@@ -390,6 +391,13 @@ http_CollectHdrSep(struct http *hp, const char *hdr, const char *sep)
 
 		/* Append the Nth header we found */
 		x = Tlen(hp->hd[u]) - l;
+
+		v = hp->hd[u].b + *hdr;
+		while (vct_issp(*v)) {
+			v++;
+			x--;
+		}
+
 		if (b + lsep + x >= e) {
 			http_fail(hp);
 			VSLb(hp->vsl, SLT_LostHeader, "%s", hdr + 1);
@@ -398,7 +406,7 @@ http_CollectHdrSep(struct http *hp, const char *hdr, const char *sep)
 		}
 		memcpy(b, sep, lsep);
 		b += lsep;
-		memcpy(b, hp->hd[u].b + *hdr, x);
+		memcpy(b, v, x);
 		b += x;
 	}
 	if (b == NULL)

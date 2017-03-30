@@ -107,7 +107,7 @@ Description
 Example
 	set beresp.http.served-by = std.fileread("/etc/hostname");
 
-$Function VOID collect(HEADER hdr, STRING sep=",")
+$Function VOID collect(HEADER hdr, STRING sep=", ")
 
 Description
 	Collapses multiple *hdr* headers into one long header.
