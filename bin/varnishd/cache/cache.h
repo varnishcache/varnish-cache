@@ -783,6 +783,7 @@ void http_CopyHome(const struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
 unsigned http_CountHdr(const struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
+void http_CollectHdrSep(struct http *hp, const char *hdr, const char *sep);
 void http_VSL_log(const struct http *hp);
 void HTTP_Merge(struct worker *, struct objcore *, struct http *to);
 uint16_t HTTP_GetStatusPack(struct worker *, struct objcore *oc);

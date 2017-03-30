@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2015 Varnish Software AS
+ * Copyright (c) 2006-2017 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -328,12 +328,30 @@ http_CountHdr(const struct http *hp, const char *hdr)
 void
 http_CollectHdr(struct http *hp, const char *hdr)
 {
-	unsigned u, l, ml, f, x, d;
+
+	http_CollectHdrSep(hp, hdr, NULL);
+}
+
+/*--------------------------------------------------------------------
+ * You may prefer to collapse header fields using a different separator.
+ * For Cookie headers, the separator is "; " for example. That's probably
+ * the only example too.
+ */
+
+void
+http_CollectHdrSep(struct http *hp, const char *hdr, const char *sep)
+{
+	unsigned u, l, lsep, ml, f, x, d;
 	char *b = NULL, *e = NULL;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);
 	if (WS_Overflowed(hp->ws))
 		return;
+
+	if (sep == NULL || *sep == '\0')
+		sep = ",";
+	lsep = strlen(sep);
+
 	l = hdr[0];
 	assert(l == strlen(hdr + 1));
 	assert(hdr[l] == ':');
@@ -371,15 +389,15 @@ http_CollectHdr(struct http *hp, const char *hdr)
 		AN(e);
 
 		/* Append the Nth header we found */
-		if (b < e)
-			*b++ = ',';
 		x = Tlen(hp->hd[u]) - l;
-		if (b + x >= e) {
+		if (b + lsep + x >= e) {
 			http_fail(hp);
 			VSLb(hp->vsl, SLT_LostHeader, "%s", hdr + 1);
 			WS_Release(hp->ws, 0);
 			return;
 		}
+		memcpy(b, sep, lsep);
+		b += lsep;
 		memcpy(b, hp->hd[u].b + *hdr, x);
 		b += x;
 	}
