@@ -13,7 +13,7 @@ logexpect l1 -v v1 {
 	expect * = BereqHeader		"Cookie: user=alice"
 	expect * = BereqHeader		"Cookie: peer=bob"
 	expect * * BereqProtocol	HTTP/2.0
-	expect * = BereqHeader		"cookie: user=alice;  peer=bob"
+	expect * = BereqHeader		"cookie: user=alice; peer=bob"
 } -start
 
 client c1 {
