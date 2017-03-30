@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2015 Varnish Software AS
+ * Copyright (c) 2006-2017 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -798,6 +798,9 @@ cnt_recv(struct worker *wrk, struct req *req)
 	req->storage = NULL;
 
 	http_CollectHdr(req->http, H_Cache_Control);
+
+	if (req->http->protover == 20) // rfc7540,l,3114,3120
+		http_CollectHdrSep(req->http, H_Cookie, "; ");
 
 	if (req->req_body_status == REQ_BODY_FAIL) {
 		req->doclose = SC_OVERLOAD;
