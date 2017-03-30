@@ -281,7 +281,6 @@ MPL_Get(struct mempool *mpl, unsigned *size)
 	struct memitem *mi;
 
 	CHECK_OBJ_NOTNULL(mpl, MEMPOOL_MAGIC);
-	AN(size);
 
 	Lck_Lock(&mpl->mtx);
 
@@ -311,7 +310,9 @@ MPL_Get(struct mempool *mpl, unsigned *size)
 
 	if (mi == NULL)
 		mi = mpl_alloc(mpl);
-	*size = mi->size - sizeof *mi;
+
+	if (size)
+		*size = mi->size - sizeof *mi;
 
 	CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
 	/* Throw away sizeof info for FlexeLint: */
