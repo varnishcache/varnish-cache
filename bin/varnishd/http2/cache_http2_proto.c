@@ -767,10 +767,10 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2,
 	}
 
 	VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
-		if (r2->stream == h2->rxf_stream)
-			break;
 		if (r2->state == H2_S_CLOSED && !r2->scheduled)
 			h2_del_req(wrk, r2);
+		else if (r2->stream == h2->rxf_stream)
+			break;
 	}
 
 	if (r2 == NULL && h2f->act_sidle == 0) {
