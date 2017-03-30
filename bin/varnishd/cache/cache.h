@@ -852,9 +852,10 @@ struct VSC_C_lck *Lck_CreateClass(const char *name);
 #include "tbl/locks.h"
 
 /* cache_mempool.c */
+#define MPL_F_SIZE_ISH		1
 void MPL_AssertSane(void *item);
 struct mempool * MPL_New(const char *name, volatile struct poolparam *pp,
-    volatile unsigned *cur_size);
+    const unsigned flags, volatile unsigned *cur_size);
 void MPL_Destroy(struct mempool **mpp);
 void *MPL_Get(struct mempool *mpl, unsigned *size);
 void MPL_Free(struct mempool *mpl, void *item);

@@ -596,10 +596,10 @@ SES_NewPool(struct pool *pp, unsigned pool_no)
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
 	bprintf(nb, "req%u", pool_no);
 	pp->mpl_req = MPL_New(nb, &cache_param->req_pool,
-	    &cache_param->workspace_client);
+	    0, &cache_param->workspace_client);
 	bprintf(nb, "sess%u", pool_no);
 	pp->mpl_sess = MPL_New(nb, &cache_param->sess_pool,
-	    &cache_param->workspace_session);
+	    0, &cache_param->workspace_session);
 
 	pp->waiter = Waiter_New();
 }
