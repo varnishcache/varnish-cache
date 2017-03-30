@@ -1,7 +1,7 @@
 varnishtest "Test std.getenv"
 
 varnish v1 -vcl {
-	import std;
+	import ${vmod_std};
 
 	backend dummy { .host = "${bad_ip}"; .port = "9080"; }
 
