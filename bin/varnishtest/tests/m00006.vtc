@@ -20,7 +20,7 @@ varnish v1 -vcl+backend {
 		std.collect(beresp.http.bar);
 	}
 	sub vcl_deliver {
-		std.collect(resp.http.qux);
+		std.collect(resp.http.qux, "; ");
 	}
 } -start
 
@@ -28,5 +28,5 @@ client c1 {
 	txreq -hdr "Foo: 1" -hdr "Foo: 2" -hdr "Baz: 3" -hdr "Baz: 4"
 	rxresp
 	expect resp.http.bar == "a, b"
-	expect resp.http.qux == "c, d"
+	expect resp.http.qux == "c; d"
 } -run
