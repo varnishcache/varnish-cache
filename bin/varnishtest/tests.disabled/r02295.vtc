@@ -1,0 +1,53 @@
+varnishtest "Test cooled dynamic backend clean up"
+
+# This test is disabled because it needs a timeout of 80 seconds (-t80 to
+# varnishtest). This is because the cooled backend timeout in varnish core
+# is hard coded to 60 seconds.
+
+server s1 {
+	rxreq
+	delay 70
+	txresp
+} -start
+
+varnish v1 -arg "-p cli_timeout=2 -p first_byte_timeout=80" -vcl {
+	import debug;
+
+	backend dummy { .host = "${bad_backend}"; }
+
+	sub vcl_init {
+		new s1 = debug.dyn("${s1_addr}", "${s1_port}");
+	}
+
+	sub vcl_recv {
+		if (req.url == "/refresh") {
+			s1.refresh("${s1_addr}", "${s1_port}");
+			return (synth(200, "OK"));
+		}
+	}
+
+	sub vcl_backend_fetch {
+		set bereq.backend = s1.backend();
+	}
+} -start
+
+client c1 {
+	timeout 120
+	txreq
+	rxresp
+	expect resp.status == 200
+} -start
+
+delay 1
+
+client c2 {
+	txreq -url /refresh
+	rxresp
+	expect resp.status == 200
+} -run
+
+delay 61
+
+varnish v1 -cliok "ping"
+
+client c1 -wait
