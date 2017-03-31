@@ -110,16 +110,17 @@ Example
 $Function VOID collect(HEADER hdr, STRING sep=", ")
 
 Description
-	Collapses multiple *hdr* headers into one long header.
-	The header values are joined with a comma (",") unless a
-	different separator is specified.
+	Collapses multiple *hdr* headers into one long header. The
+	default separator *sep* is the standard comma separator to
+	use when collapsing headers, with an additional  whitespace
+	for pretty printing.
 
 	Care should be taken when collapsing headers. In particular
 	collapsing Set-Cookie will lead to unexpected results on the
 	browser side.
 Examples
-	std.collect(req.http.accept);
-	std.collect(req.http.cookie, "; ");
+	| std.collect(req.http.accept);
+	| std.collect(req.http.cookie, "; ");
 
 $Function DURATION duration(STRING s, DURATION fallback)
 
