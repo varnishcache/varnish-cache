@@ -194,6 +194,7 @@ VBE_Event(struct backend *be, enum vcl_event_e ev)
 void
 VBE_Delete(struct backend *be)
 {
+	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 
 	if (be->probe != NULL)
@@ -437,6 +438,7 @@ VBE_Poll(void)
 	struct backend *be;
 	double now = VTIM_real();
 
+	ASSERT_CLI();
 	Lck_Lock(&backends_mtx);
 	while (1) {
 		be = VTAILQ_FIRST(&cool_backends);
