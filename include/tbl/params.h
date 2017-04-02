@@ -1611,7 +1611,11 @@ PARAM(
 	/* flags */	DELAYED_EFFECT,
 	/* s-text */
 	"Bytes of HTTP protocol workspace for clients HTTP req/resp.  Use a "
-	"multiple of 4k for VM efficiency.",
+	"multiple of 4k for VM efficiency.\n"
+	"For HTTP/2 compliance this must be at least 20k, in order to "
+	"receive fullsize (=16k) frames from the client.   That usually "
+	"happens only in POST/PUT bodies.  For other traffic-patterns "
+	"smaller values work just fine.",
 	/* l-text */	"",
 	/* func */	NULL
 )
