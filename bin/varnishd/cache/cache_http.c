@@ -147,7 +147,7 @@ HTTP_estimate(unsigned nhttp)
 }
 
 struct http *
-HTTP_create(void *p, uint16_t nhttp)
+HTTP_create(void *p, uint16_t nhttp, unsigned len)
 {
 	struct http *hp;
 
@@ -156,6 +156,7 @@ HTTP_create(void *p, uint16_t nhttp)
 	hp->hd = (void*)(hp + 1);
 	hp->shd = nhttp;
 	hp->hdf = (void*)(hp->hd + nhttp);
+	assert((unsigned char*)p + len == hp->hdf + nhttp);
 	return (hp);
 }
 

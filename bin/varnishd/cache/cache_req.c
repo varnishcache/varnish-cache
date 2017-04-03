@@ -77,17 +77,17 @@ Req_New(const struct worker *wrk, struct sess *sp)
 	nhttp = (uint16_t)cache_param->http_max_hdr;
 	hl = HTTP_estimate(nhttp);
 
-	req->http = HTTP_create(p, nhttp);
+	req->http = HTTP_create(p, nhttp, hl);
 	p += hl;
 	p = (void*)PRNDUP(p);
 	assert(p < e);
 
-	req->http0 = HTTP_create(p, nhttp);
+	req->http0 = HTTP_create(p, nhttp, hl);
 	p += hl;
 	p = (void*)PRNDUP(p);
 	assert(p < e);
 
-	req->resp = HTTP_create(p, nhttp);
+	req->resp = HTTP_create(p, nhttp, hl);
 	p += hl;
 	p = (void*)PRNDUP(p);
 	assert(p < e);
