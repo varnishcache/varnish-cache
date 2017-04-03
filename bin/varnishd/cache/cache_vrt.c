@@ -91,6 +91,11 @@ VRT_hit_for_pass(VRT_CTX, VCL_DURATION d)
 	struct objcore *oc;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (ctx->bo == NULL) {
+		VSLb(ctx->vsl, SLT_Error,
+		    "Note: Ignoring DURATION argument to return(pass);");
+		return;
+	}
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 	oc = ctx->bo->fetch_objcore;
 	oc->ttl = d;

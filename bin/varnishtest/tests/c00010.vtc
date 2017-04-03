@@ -17,7 +17,7 @@ varnish v1 -vcl+backend {
 		if (req.url == "/foo") {
 			return(hash);
 		} else {
-			return(pass);
+			return(pass(10m));
 		}
 	}
 	sub vcl_hit {
