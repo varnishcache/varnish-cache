@@ -197,7 +197,7 @@ http1_reembark(struct worker *wrk, struct req *req)
 	wrk->stats->busy_killed++;
 	AN (req->vcl);
 	VCL_Rel(&req->vcl);
-	CNT_AcctLogCharge(wrk->stats, req);
+	Req_AcctLogCharge(wrk->stats, req);
 	Req_Release(req);
 	SES_Delete(sp, SC_OVERLOAD, NAN);
 	DSL(DBG_WAITINGLIST, req->vsl->wid, "kill from waiting list");
@@ -402,7 +402,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			if (hs < HTC_S_EMPTY) {
 				req->acct.req_hdrbytes +=
 				    req->htc->rxbuf_e - req->htc->rxbuf_b;
-				CNT_AcctLogCharge(wrk->stats, req);
+				Req_AcctLogCharge(wrk->stats, req);
 				Req_Release(req);
 				switch (hs) {
 				case HTC_S_CLOSE:

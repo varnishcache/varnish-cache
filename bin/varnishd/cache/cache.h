@@ -933,6 +933,7 @@ struct req *Req_New(const struct worker *, struct sess *);
 void Req_Release(struct req *);
 void Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req);
 void Req_Fail(struct req *req, enum sess_close reason);
+void Req_AcctLogCharge(struct dstat *, struct req *);
 
 /* cache_req_body.c */
 int VRB_Ignore(struct req *);
@@ -942,7 +943,6 @@ void VRB_Free(struct req *);
 
 /* cache_req_fsm.c [CNT] */
 enum req_fsm_nxt CNT_Request(struct worker *, struct req *);
-void CNT_AcctLogCharge(struct dstat *, struct req *);
 
 /* cache_session.c [SES] */
 void SES_Wait(struct sess *, const struct transport *);

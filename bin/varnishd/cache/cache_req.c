@@ -43,6 +43,32 @@
 
 #include "vtim.h"
 
+void
+Req_AcctLogCharge(struct dstat *ds, struct req *req)
+{
+	struct acct_req *a;
+
+	AN(ds);
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	a = &req->acct;
+
+	if (req->vsl->wid && !(req->res_mode & RES_PIPE)) {
+		VSLb(req->vsl, SLT_ReqAcct, "%ju %ju %ju %ju %ju %ju",
+		    (uintmax_t)a->req_hdrbytes,
+		    (uintmax_t)a->req_bodybytes,
+		    (uintmax_t)(a->req_hdrbytes + a->req_bodybytes),
+		    (uintmax_t)a->resp_hdrbytes,
+		    (uintmax_t)a->resp_bodybytes,
+		    (uintmax_t)(a->resp_hdrbytes + a->resp_bodybytes));
+	}
+
+#define ACCT(foo)			\
+	ds->s_##foo += a->foo;		\
+	a->foo = 0;
+#include "tbl/acct_fields_req.h"
+}
+
 /*--------------------------------------------------------------------
  * Alloc/Free a request
  */
@@ -170,7 +196,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 
 	/* Charge and log byte counters */
 	if (req->vsl->wid) {
-		CNT_AcctLogCharge(wrk->stats, req);
+		Req_AcctLogCharge(wrk->stats, req);
 		VSL_End(req->vsl);
 	}
 	req->req_bodybytes = 0;

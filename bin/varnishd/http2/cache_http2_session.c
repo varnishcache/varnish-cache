@@ -205,7 +205,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 		VSLb(h2->vsl, SLT_Debug, "H2: Bad HTTP-Settings");
 		AN (req->vcl);
 		VCL_Rel(&req->vcl);
-		CNT_AcctLogCharge(wrk->stats, req);
+		Req_AcctLogCharge(wrk->stats, req);
 		Req_Release(req);
 		return (0);
 	}
@@ -366,7 +366,7 @@ h2_reembark(struct worker *wrk, struct req *req)
 	wrk->stats->busy_killed++;
 	AN (req->vcl);
 	VCL_Rel(&req->vcl);
-	CNT_AcctLogCharge(wrk->stats, req);
+	Req_AcctLogCharge(wrk->stats, req);
 	Req_Release(req);
 	DSL(DBG_WAITINGLIST, req->vsl->wid, "kill from waiting list");
 	usleep(10000);
