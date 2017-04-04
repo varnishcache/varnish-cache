@@ -1,7 +1,10 @@
 varnishtest "H2 POST"
 
+barrier b1 cond 2
+
 server s1 {
 	rxreq
+	barrier b1 sync
 	txresp -hdr "Content-Type: text/plain" -body response
 } -start
 
@@ -13,6 +16,7 @@ client c1 {
 		txreq -req POST -hdr content-type text/plain -hdr content-length 7 -body request
 
 		rxwinup
+		barrier b1 sync
 		# First, HTTP checks
 		rxresp
 		expect resp.http.content-Type == "text/plain"
