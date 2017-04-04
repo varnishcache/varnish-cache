@@ -23,6 +23,12 @@ server s1 {
 		txresp -proto "FROBOZ" -status 200 -hdr "Bar: foo" -body "foobar"
 		accept
 	}
+	loop 2 {
+		rxreq
+		expect req.url == "/"
+		send "HTTP/1.1 200 \r\n"
+		accept
+	}
 
 	barrier b1 sync
 } -start
@@ -42,4 +48,4 @@ varnish v1 -vcl {
 
 barrier b1 sync
 
-varnish v1 -cli "backend.list -p"
+varnish v1 -cliexpect "^CLI RX|  -+H{10}-{5}H{2}-{0,5} Happy" "backend.list -p"
