@@ -1,0 +1,29 @@
+varnishtest "ESI Cookie"
+
+server s1 {
+	fatal
+	rxreq
+	expect req.http.cookie == "Foo=Bar; B=C"
+	txresp -body "<html><esi:include src='/esi_test'/>"
+
+	rxreq
+	expect req.http.cookie == "Foo=Bar; B=C"
+	txresp
+} -start
+
+varnish v1 -cliok {param.set feature +http2}
+varnish v1 -cliok {param.set debug +syncvsl}
+
+
+varnish v1 -vcl+backend  {
+	sub vcl_backend_response {
+		set beresp.do_esi = true;
+	}
+} -start
+
+client c1 {
+	stream 1 {
+		txreq -url "/" -hdr cookie "Foo=Bar" -hdr cookie "B=C"
+		rxresp
+	} -start
+} -run

@@ -467,6 +467,12 @@ h2_do_req(struct worker *wrk, void *priv)
 	CAST_OBJ_NOTNULL(req, priv, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
 	THR_SetRequest(req);
+
+	// XXX: Smarter to do this already at HPACK time into tail end of
+	// XXX: WS, then copy back once all headers received.
+	// XXX: Have I mentioned H/2 Is hodge-podge ?
+	http_CollectHdrSep(req->http, H_Cookie, "; ");	// rfc7540,l,3114,3120
+
 	req->http->conds = 1;
 	if (CNT_Request(wrk, req) != REQ_FSM_DISEMBARK) {
 		AZ(req->ws->r);

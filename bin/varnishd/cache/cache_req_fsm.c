@@ -799,9 +799,6 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	http_CollectHdr(req->http, H_Cache_Control);
 
-	if (req->http->protover == 20) // rfc7540,l,3114,3120
-		http_CollectHdrSep(req->http, H_Cookie, "; ");
-
 	if (req->req_body_status == REQ_BODY_FAIL) {
 		req->doclose = SC_OVERLOAD;
 		return (REQ_FSM_DONE);
