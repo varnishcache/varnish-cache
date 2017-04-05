@@ -199,8 +199,8 @@ h2_kill_req(struct worker *wrk, const struct h2_sess *h2,
 
 	ASSERT_RXTHR(h2);
 	AN(h2e);
-	VSLb(h2->vsl, SLT_Debug, "KILL st=%u state=%d", r2->stream, r2->state);
 	Lck_Lock(&h2->sess->mtx);
+	VSLb(h2->vsl, SLT_Debug, "KILL st=%u state=%d", r2->stream, r2->state);
 	if (r2->error == NULL)
 		r2->error = h2e;
 	if (r2->scheduled) {
@@ -230,10 +230,6 @@ h2_vsl_frame(const struct h2_sess *h2, const void *ptr, size_t len)
 	assert(len >= 9);
 	b = ptr;
 
-	VSLb_bin(h2->vsl, SLT_H2RxHdr, 9, b);
-	if (len > 9)
-		VSLb_bin(h2->vsl, SLT_H2RxBody, len - 9, b + 9);
-
 	vsb = VSB_new_auto();
 	AN(vsb);
 	p = h2_framename((enum h2frame)b[3]);
@@ -252,7 +248,13 @@ h2_vsl_frame(const struct h2_sess *h2, const void *ptr, size_t len)
 		VSB_quote(vsb, b + 9, len - 9, VSB_QUOTE_HEX);
 	}
 	AZ(VSB_finish(vsb));
+	Lck_Lock(&h2->sess->mtx);
+	VSLb_bin(h2->vsl, SLT_H2RxHdr, 9, b);
+	if (len > 9)
+		VSLb_bin(h2->vsl, SLT_H2RxBody, len - 9, b + 9);
+
 	VSLb(h2->vsl, SLT_Debug, "H2RXF %s", VSB_data(vsb));
+	Lck_Unlock(&h2->sess->mtx);
 	VSB_destroy(&vsb);
 }
 
@@ -322,7 +324,9 @@ h2_rx_goaway(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	(void)r2;
 	h2->goaway_last_stream = vbe32dec(h2->rxf_data);
 	h2->error = h2_connectionerror(vbe32dec(h2->rxf_data + 4));
+	Lck_Lock(&h2->sess->mtx);
 	VSLb(h2->vsl, SLT_Debug, "GOAWAY %s", h2->error->name);
+	Lck_Unlock(&h2->sess->mtx);
 	return (h2->error);
 }
 
@@ -403,20 +407,26 @@ h2_set_setting(struct h2_sess *h2, const uint8_t *d)
 	y = vbe32dec(d + 2);
 	if (x >= H2_SETTING_TBL_LEN || h2_setting_tbl[x] == NULL) {
 		// rfc7540,l,2181,2182
+		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug,
 		    "H2SETTING unknown setting 0x%04x=%08x (ignored)", x, y);
+		Lck_Unlock(&h2->sess->mtx);
 		return (0);
 	}
 	s = h2_setting_tbl[x];
 	AN(s);
 	if (y < s->minval || y > s->maxval) {
+		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug, "H2SETTING invalid %s=0x%08x",
 		    s->name, y);
+		Lck_Unlock(&h2->sess->mtx);
 		AN(s->range_error);
 		if (!DO_DEBUG(DBG_H2_NOCHECK))
 			return (s->range_error);
 	}
+	Lck_Lock(&h2->sess->mtx);
 	VSLb(h2->vsl, SLT_Debug, "H2SETTING %s=0x%08x", s->name, y);
+	Lck_Unlock(&h2->sess->mtx);
 	AN(s->setfunc);
 	s->setfunc(&h2->remote_settings, y);
 	return (0);
@@ -496,7 +506,9 @@ h2_end_headers(struct worker *wrk, const struct h2_sess *h2,
 	FREE_OBJ(r2->decode);
 	r2->state = H2_S_CLOS_REM;
 	if (h2e != NULL) {
+		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug, "HPACK/FINI %s", h2e->name);
+		Lck_Unlock(&h2->sess->mtx);
 		AZ(r2->req->ws->r);
 		h2_del_req(wrk, r2);
 		return (h2e);
@@ -568,7 +580,9 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	}
 	h2e = h2h_decode_bytes(h2, r2->decode, p, l);
 	if (h2e != NULL) {
+		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug, "HPACK(hdr) %s", h2e->name);
+		Lck_Unlock(&h2->sess->mtx);
 		(void)h2h_decode_fini(h2, r2->decode);
 		AZ(r2->req->ws->r);
 		h2_del_req(wrk, r2);
@@ -595,7 +609,9 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	req = r2->req;
 	h2e = h2h_decode_bytes(h2, r2->decode, h2->rxf_data, h2->rxf_len);
 	if (h2e != NULL) {
+		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug, "HPACK(cont) %s", h2e->name);
+		Lck_Unlock(&h2->sess->mtx);
 		(void)h2h_decode_fini(h2, r2->decode);
 		AZ(r2->req->ws->r);
 		h2_del_req(wrk, r2);
@@ -767,8 +783,10 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2,
 		// rfc7540,l,1140,1145
 		// rfc7540,l,1153,1158
 		/* No even streams, we don't do PUSH_PROMISE */
+		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug, "H2: illegal stream (=%u)",
 		    h2->rxf_stream);
+		Lck_Unlock(&h2->sess->mtx);
 		return (H2CE_PROTOCOL_ERROR);
 	}
 
@@ -793,7 +811,9 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2,
 	if (h2->rxf_stream == 0 || h2e->connection)
 		return (h2e);	// Connection errors one level up
 
+	Lck_Lock(&h2->sess->mtx);
 	VSLb(h2->vsl, SLT_Debug, "H2: stream %u: %s", h2->rxf_stream, h2e->txt);
+	Lck_Unlock(&h2->sess->mtx);
 	vbe32enc(b, h2e->val);
 
 	H2_Send_Get(wrk, h2, h2->req0);
@@ -851,17 +871,17 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	/* XXX: later full DATA will not be rx'ed yet. */
 	HTC_RxPipeline(h2->htc, h2->htc->rxbuf_b + h2->rxf_len + 9);
 
-	Lck_Lock(&h2->sess->mtx);
 	h2_vsl_frame(h2, h2->htc->rxbuf_b, 9L + h2->rxf_len);
-	Lck_Unlock(&h2->sess->mtx);
 
 	if (h2->rxf_type >= H2FMAX) {
 		// rfc7540,l,679,681
 		// XXX: later, drain rest of frame
 		h2->bogosity++;
+		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug,
 		    "H2: Unknown frame type 0x%02x (ignored)",
 		    (uint8_t)h2->rxf_type);
+		Lck_Unlock(&h2->sess->mtx);
 		return (1);
 	}
 	h2f = h2flist[h2->rxf_type];
@@ -872,9 +892,11 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	if (h2->rxf_flags & ~h2f->flags) {
 		// rfc7540,l,687,688
 		h2->bogosity++;
+		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug,
 		    "H2: Unknown flags 0x%02x on %s (ignored)",
 		    (uint8_t)h2->rxf_flags & ~h2f->flags, h2f->name);
+		Lck_Unlock(&h2->sess->mtx);
 		h2->rxf_flags &= h2f->flags;
 	}
 
