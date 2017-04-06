@@ -308,7 +308,6 @@ h2h_decode_bytes(struct h2_sess *h2, struct h2h_decode *d,
 			d->out = d->reset;
 			d->out_l = hp->ws->r - d->out;
 			d->out_u = 0;
-			http_Teardown(hp);
 			assert(d->out_u < d->out_l);
 		} else if (d->error)
 			break;
