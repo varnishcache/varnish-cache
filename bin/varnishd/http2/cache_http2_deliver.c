@@ -91,6 +91,7 @@ h2_bytes(struct req *req, enum vdp_action act, void **priv,
 	    H2_F_DATA,
 	    act == VDP_FINI ? H2FF_DATA_END_STREAM : H2FF_NONE,
 	    len, ptr);
+	req->acct.resp_bodybytes += len;
 	H2_Send_Rel(r2->h2sess, r2);
 	return (0);
 }
@@ -256,6 +257,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	H2_Send(req->wrk, r2, H2_F_HEADERS,
 	    (sendbody ? 0 : H2FF_HEADERS_END_STREAM) | H2FF_HEADERS_END_HEADERS,
 	    sz, req->ws->f);
+	req->acct.resp_hdrbytes += sz;
 	H2_Send_Rel(r2->h2sess, r2);
 
 	WS_Release(req->ws, 0);

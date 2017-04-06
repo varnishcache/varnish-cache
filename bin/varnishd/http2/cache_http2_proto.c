@@ -537,6 +537,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	size_t l;
 
 	ASSERT_RXTHR(h2);
+	AN(r2);
 	if (r2->state != H2_S_IDLE)
 		return (H2CE_PROTOCOL_ERROR);	// XXX spec ?
 	r2->state = H2_S_OPEN;
@@ -559,6 +560,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	VCL_Refresh(&wrk->vcl);
 	req->vcl = wrk->vcl;
 	wrk->vcl = NULL;
+	req->acct.req_hdrbytes += h2->rxf_len;
 
 	HTTP_Setup(req->http, req->ws, req->vsl, SLT_ReqMethod);
 	http_SetH(req->http, HTTP_HDR_PROTO, "HTTP/2.0");
@@ -604,10 +606,12 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	h2_error h2e;
 
 	ASSERT_RXTHR(h2);
+	AN(r2);
 	if (r2->state != H2_S_OPEN)
 		return (H2CE_PROTOCOL_ERROR);	// XXX spec ?
 	req = r2->req;
 	h2e = h2h_decode_bytes(h2, r2->decode, h2->rxf_data, h2->rxf_len);
+	r2->req->acct.req_hdrbytes += h2->rxf_len;
 	if (h2e != NULL) {
 		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug, "HPACK(cont) %s", h2e->name);
@@ -632,12 +636,14 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	unsigned wi;
 
 	(void)wrk;
+	AN(r2);
 	ASSERT_RXTHR(h2);
 	Lck_Lock(&h2->sess->mtx);
 	AZ(h2->mailcall);
 	h2->mailcall = r2;
 	h2->r_window -= h2->rxf_len;
 	r2->r_window -= h2->rxf_len;
+	// req_bodybytes accounted in CNT code.
 	if (r2->cond)
 		AZ(pthread_cond_signal(r2->cond));
 	while (h2->mailcall != NULL && h2->error == 0 && r2->error == 0)
@@ -872,6 +878,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	HTC_RxPipeline(h2->htc, h2->htc->rxbuf_b + h2->rxf_len + 9);
 
 	h2_vsl_frame(h2, h2->htc->rxbuf_b, 9L + h2->rxf_len);
+	h2->srq->acct.req_hdrbytes += 9;
 
 	if (h2->rxf_type >= H2FMAX) {
 		// rfc7540,l,679,681
@@ -882,12 +889,15 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		    "H2: Unknown frame type 0x%02x (ignored)",
 		    (uint8_t)h2->rxf_type);
 		Lck_Unlock(&h2->sess->mtx);
+		h2->srq->acct.req_bodybytes += h2->rxf_len;
 		return (1);
 	}
 	h2f = h2flist[h2->rxf_type];
 
 	AN(h2f->name);
 	AN(h2f->rxfunc);
+	if (h2f->overhead)
+		h2->srq->acct.req_bodybytes += h2->rxf_len;
 
 	if (h2->rxf_flags & ~h2f->flags) {
 		// rfc7540,l,687,688

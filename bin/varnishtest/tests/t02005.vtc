@@ -11,7 +11,19 @@ server s1 {
 varnish v1 -vcl+backend {} -cliok "param.set feature +http2" -start
 varnish v1 -cliok "param.set debug +syncvsl"
 
+logexpect l1 -v v1 -g raw {
+	expect	* 1001 ReqAcct	"80 7 87 106 8 114"
+	expect	* 1000 ReqAcct	"45 8 53 72 28 100"
+} -start
+
 client c1 {
+	stream 0 {
+		txping
+		rxping
+	} -run
+	stream 0 {
+		rxwinup
+	} -start
 	stream 1 {
 		txreq -req POST -hdr content-type text/plain -hdr content-length 7 -body request
 
@@ -24,5 +36,8 @@ client c1 {
 		# Then, payload checks
 		expect resp.body == response
 	} -run
+	stream 0 -wait
 } -run
 
+
+logexpect l1 -wait
