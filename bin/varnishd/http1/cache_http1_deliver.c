@@ -99,8 +99,6 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		}
 	}
 
-	VSLb(req->vsl, SLT_Debug, "RES_MODE %x", req->res_mode);
-
 	if (!req->doclose && http_HdrIs(req->resp, H_Connection, "close")) {
 		req->doclose = SC_RESP_CLOSE;
 	} else if (req->doclose) {

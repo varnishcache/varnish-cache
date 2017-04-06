@@ -193,8 +193,6 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	VSLb(req->vsl, SLT_Debug, "H2: Deliver");
-
 	(void)WS_Reserve(req->ws, 0);
 	p = (void*)req->ws->f;
 
