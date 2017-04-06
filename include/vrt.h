@@ -40,7 +40,7 @@
  *
  *
  * 6.1 (unreleased):
- * 	http_CollectHdrSep added
+ *	http_CollectHdrSep added
  * 6.0 (2017-03-15):
  *	VRT_hit_for_pass added
  *	VRT_ipcmp added
