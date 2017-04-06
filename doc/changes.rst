@@ -1,3 +1,10 @@
+======================================
+Varnish Cache 4.1.6-beta1 (unreleased)
+======================================
+
+* Introduce a vxid left hand side for VSL queries. This allows
+  matching on records matching a known vxid.
+
 ================================
 Varnish Cache 4.1.5 (2017-02-09)
 ================================
