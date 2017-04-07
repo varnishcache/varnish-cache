@@ -4,6 +4,8 @@ barrier b1 cond 2
 
 server s1 {
 	rxreq
+	expect req.http.content-length == <undef>
+	expect req.http.transfer-encoding == chunked
 	expect req.proto == HTTP/1.1
 	barrier b1 sync
 	txresp -hdr "Content-Type: text/plain" -body response
@@ -21,7 +23,6 @@ client c1 {
 			-nohdrend
 		txcont \
 			-hdr expect 100-continue \
-			-hdr content-length 7 \
 			-nostrend
 
 		rxhdrs

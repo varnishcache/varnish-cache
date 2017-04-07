@@ -473,6 +473,7 @@ h2_do_req(struct worker *wrk, void *priv)
 {
 	struct req *req;
 	struct h2_req *r2;
+	const char *b;
 
 	CAST_OBJ_NOTNULL(req, priv, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
@@ -482,6 +483,15 @@ h2_do_req(struct worker *wrk, void *priv)
 	// XXX: WS, then copy back once all headers received.
 	// XXX: Have I mentioned H/2 Is hodge-podge ?
 	http_CollectHdrSep(req->http, H_Cookie, "; ");	// rfc7540,l,3114,3120
+
+	if (req->req_body_status == REQ_BODY_INIT) {
+		if (!http_GetHdr(req->http, H_Content_Length, &b))
+			req->req_body_status = REQ_BODY_WITHOUT_LEN;
+		else
+			req->req_body_status = REQ_BODY_WITH_LEN;
+	} else {
+		assert (req->req_body_status == REQ_BODY_NONE);
+	}
 
 	req->http->conds = 1;
 	if (CNT_Request(wrk, req) != REQ_FSM_DISEMBARK) {
@@ -517,8 +527,6 @@ h2_end_headers(struct worker *wrk, const struct h2_sess *h2,
 
 	if (h2->rxf_flags & H2FF_HEADERS_END_STREAM)
 		req->req_body_status = REQ_BODY_NONE;
-	else
-		req->req_body_status = REQ_BODY_WITHOUT_LEN;
 
 	req->req_step = R_STP_TRANSPORT;
 	req->task.func = h2_do_req;

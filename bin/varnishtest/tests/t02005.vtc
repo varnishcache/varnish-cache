@@ -4,6 +4,8 @@ barrier b1 cond 2
 
 server s1 {
 	rxreq
+	expect req.http.content-length == 7
+	expect req.http.transfer-encoding == <undef>
 	barrier b1 sync
 	txresp -hdr "Content-Type: text/plain" -body response
 } -start
