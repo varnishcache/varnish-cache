@@ -667,8 +667,10 @@ varnish_wait(struct varnish *v)
 
 	vtc_log(v->vl, 2, "Wait");
 
-	/* Do a backend.list to log if child is still running */
-	varnish_ask_cli(v, "backend.list", &resp);
+	if (!vtc_error) {
+		/* Do a backend.list to log if child is still running */
+		varnish_ask_cli(v, "backend.list", &resp);
+	}
 
 	/* Then stop it */
 	varnish_stop(v);
