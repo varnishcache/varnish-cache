@@ -636,8 +636,9 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	unsigned wi;
 
 	(void)wrk;
-	AN(r2);
 	ASSERT_RXTHR(h2);
+	if (r2 == NULL)
+		return (0);
 	Lck_Lock(&h2->sess->mtx);
 	AZ(h2->mailcall);
 	h2->mailcall = r2;
