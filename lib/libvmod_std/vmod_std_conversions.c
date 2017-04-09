@@ -125,7 +125,7 @@ vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d)
 	const struct addrinfo *res;
 	int error;
 	void *p;
-	struct suckaddr *r;
+	const struct suckaddr *r;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(d);
@@ -135,7 +135,7 @@ vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d)
 	if (p == NULL) {
 		VSLb(ctx->vsl, SLT_VCL_Error,
 		    "vmod std.ip(): insufficient workspace");
-		return d;
+		return (d);
 	}
 	r = NULL;
 
@@ -153,8 +153,8 @@ vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d)
 		}
 	}
 	if (r == NULL) {
-		r = p;
-		memcpy(r, d, vsa_suckaddr_len);
+		WS_Reset(ctx->ws, (uintptr_t)p);
+		r = d;
 	}
 	if (res0 != NULL)
 		freeaddrinfo(res0);
