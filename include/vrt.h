@@ -67,7 +67,7 @@
 
 #define VRT_MAJOR_VERSION	6U
 
-#define VRT_MINOR_VERSION	0U
+#define VRT_MINOR_VERSION	1U
 
 
 /***********************************************************************/
