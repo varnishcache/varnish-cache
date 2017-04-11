@@ -969,6 +969,8 @@ PARAM(
 	/* func */	NULL
 )
 
+#if 0
+/* actual location mgt_param_tbl.c */
 PARAM(
 	/* name */	shm_reclen,
 	/* typ */	vsl_reclen,
@@ -982,6 +984,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+#endif
 
 PARAM(
 	/* name */	shortlived,
