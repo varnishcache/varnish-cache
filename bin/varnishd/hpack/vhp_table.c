@@ -191,14 +191,14 @@ int
 VHT_NewEntry_Indexed(struct vht_table *tbl, unsigned idx)
 {
 	struct vht_entry *e, *e2;
-	unsigned l, l2, lbuf, lentry, lname, u;
-	uint8_t buf[48];
+	unsigned l, l2, lentry, lname, u;
+	uint8_t tmp[48];
 
 	/* Referenced name insertion. This has to be done carefully
 	   because the referenced name may be evicted as the result of the
 	   insertion (RFC 7541 section 4.4). */
 
-	assert(sizeof buf >= VHT_ENTRY_SIZE);
+	assert(sizeof tmp >= VHT_ENTRY_SIZE);
 
 	CHECK_OBJ_NOTNULL(tbl, VHT_TABLE_MAGIC);
 	assert(tbl->maxsize <= tbl->protomax);
@@ -248,8 +248,8 @@ VHT_NewEntry_Indexed(struct vht_table *tbl, unsigned idx)
 	}
 
 	/* The tricky case: The referenced name will be evicted as a
-	   result of the insertion. Move the element data to the end of
-	   the buffer through a local buffer. */
+	   result of the insertion. Move the referenced element data to
+	   the end of the buffer through a local buffer. */
 
 	/* Remove the referenced element from the entry list */
 	assert(idx == tbl->n - 1);
@@ -260,22 +260,16 @@ VHT_NewEntry_Indexed(struct vht_table *tbl, unsigned idx)
 	memmove(TBLENTRY(tbl, 1), TBLENTRY(tbl, 0), (tbl->n - 1) * sizeof *e);
 	tbl->n--;
 
-	/* Shift the referenced element last in the buffer. Use what space
-	   is available in the table buffer and the local buffer to keep
-	   memmove operations to a minimum. */
+	/* Shift the referenced element last using a temporary buffer. */
 	l = 0;
 	while (l < lentry) {
 		l2 = lentry - l;
-		if (l2 > tbl->maxsize - TBLSIZE(tbl))
-			l2 = tbl->maxsize - TBLSIZE(tbl);
-		lbuf = lentry - l - l2;
-		if (lbuf > sizeof buf)
-			lbuf = sizeof buf;
-		memcpy(tbl->buf + tbl->size, tbl->buf, l2);
-		memcpy(buf, tbl->buf + l2, lbuf);
-		memmove(tbl->buf, tbl->buf + l2 + lbuf, tbl->size + l2);
-		memcpy(tbl->buf + tbl->size - lbuf, buf, lbuf);
-		l += l2 + lbuf;
+		if (l2 > sizeof tmp)
+			l2 = sizeof tmp;
+		memcpy(tmp, tbl->buf, l2);
+		memmove(tbl->buf, tbl->buf + l2, tbl->size - l2);
+		memcpy(tbl->buf + tbl->size - l2, tmp, l2);
+		l += l2;
 	}
 	assert(l == lentry);
 	tbl->size -= lentry;
@@ -754,6 +748,55 @@ test_4(void)
 		printf("\n");
 }
 
+static void
+test_5(void)
+{
+	struct vht_table tbl[1];
+	char buf_a[3];
+	char buf_b[2];
+	int i;
+
+	if (verbose)
+		printf("Test 5:\n");
+
+	assert(sizeof buf_a > 0);
+	for (i = 0; i < sizeof buf_a - 1; i++)
+		buf_a[i] = 'a';
+	buf_a[i++] = '\0';
+
+	assert(sizeof buf_b > 0);
+	for (i = 0; i < sizeof buf_b - 1; i++)
+		buf_b[i] = 'b';
+	buf_b[i++] = '\0';
+
+	AZ(VHT_Init(tbl,
+		3 * ((sizeof buf_a - 1)+(sizeof buf_b - 1)+VHT_ENTRY_SIZE)));
+
+	VHT_NewEntry(tbl);
+	VHT_AppendName(tbl, buf_a, sizeof buf_a - 1);
+	VHT_AppendValue(tbl, buf_b, sizeof buf_b - 1);
+	AZ(vht_matchtable(tbl, buf_a, buf_b, NULL));
+
+	VHT_NewEntry(tbl);
+	VHT_AppendName(tbl, buf_a, sizeof buf_a - 1);
+	VHT_AppendValue(tbl, buf_b, sizeof buf_b - 1);
+	AZ(vht_matchtable(tbl, buf_a, buf_b, buf_a, buf_b, NULL));
+
+	VHT_NewEntry(tbl);
+	VHT_AppendName(tbl, buf_a, sizeof buf_a - 1);
+	VHT_AppendValue(tbl, buf_b, sizeof buf_b - 1);
+	AZ(vht_matchtable(tbl, buf_a, buf_b, buf_a, buf_b, buf_a, buf_b, NULL));
+
+	AZ(VHT_NewEntry_Indexed(tbl, VHT_DYNAMIC + 2));
+	VHT_AppendValue(tbl, buf_b, sizeof buf_b - 1);
+	AZ(vht_matchtable(tbl, buf_a, buf_b, buf_a, buf_b, buf_a, buf_b, NULL));
+
+	VHT_Fini(tbl);
+	printf("Test 5 finished successfully\n");
+	if (verbose)
+		printf("\n");
+}
+
 int
 main(int argc, char **argv)
 {
@@ -777,6 +820,7 @@ main(int argc, char **argv)
 	test_2();
 	test_3();
 	test_4();
+	test_5();
 
 	return (0);
 }
