@@ -33,6 +33,9 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <syslog.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "cache/cache.h"
 
@@ -171,6 +174,15 @@ vmod_syslog(VRT_CTX, VCL_INT fac, const char *fmt, ...)
 	if (t.e != NULL)
 		syslog((int)fac, "%s", t.b);
 	WS_Release(ctx->ws, 0);
+}
+
+VCL_BOOL __match_proto__(td_std_file_exists)
+vmod_file_exists(VRT_CTX, VCL_STRING file_name)
+{
+	struct stat st;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	return (stat(file_name, &st) == 0);
 }
 
 VCL_VOID __match_proto__(td_std_collect)
