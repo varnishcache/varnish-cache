@@ -38,6 +38,7 @@
 #include "http2/cache_http2.h"
 
 #include "vend.h"
+#include "vtim.h"
 
 static const char h2_resp_101[] =
 	"HTTP/1.1 101 Switching Protocols\r\n"
@@ -204,7 +205,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 		VSLb(h2->vsl, SLT_Debug, "H2: Bad HTTP-Settings");
 		AN (req->vcl);
 		VCL_Rel(&req->vcl);
-		CNT_AcctLogCharge(wrk->stats, req);
+		Req_AcctLogCharge(wrk->stats, req);
 		Req_Release(req);
 		return (0);
 	}
@@ -237,7 +238,8 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 
 	/* Wait for PRISM response */
 	hs = HTC_RxStuff(h2->htc, H2_prism_complete,
-	    NULL, NULL, NAN, h2->sess->t_idle + cache_param->timeout_idle, 256);
+	    NULL, NULL, NAN, h2->sess->t_idle + cache_param->timeout_idle,
+	    sizeof H2_prism);
 	if (hs != HTC_S_COMPLETE) {
 		VSLb(h2->vsl, SLT_Debug, "H2: No/Bad OU PRISM (hs=%d)", hs);
 		h2_del_req(wrk, r2);
@@ -337,10 +339,11 @@ h2_new_session(struct worker *wrk, void *arg)
 		}
 		if (!again)
 			break;
-		VTAILQ_FOREACH(r2, &h2->streams, list)
-			VSLb(h2->vsl, SLT_Debug, "ST %u %d", r2->stream, r2->state);
 		Lck_Lock(&h2->sess->mtx);
-		(void)Lck_CondWait(h2->cond, &h2->sess->mtx, .1);
+		VTAILQ_FOREACH(r2, &h2->streams, list)
+			VSLb(h2->vsl, SLT_Debug, "ST %u %d",
+			    r2->stream, r2->state);
+		(void)Lck_CondWait(h2->cond, &h2->sess->mtx, VTIM_real() + .1);
 		Lck_Unlock(&h2->sess->mtx);
 	}
 	h2->cond = NULL;
@@ -364,7 +367,7 @@ h2_reembark(struct worker *wrk, struct req *req)
 	wrk->stats->busy_killed++;
 	AN (req->vcl);
 	VCL_Rel(&req->vcl);
-	CNT_AcctLogCharge(wrk->stats, req);
+	Req_AcctLogCharge(wrk->stats, req);
 	Req_Release(req);
 	DSL(DBG_WAITINGLIST, req->vsl->wid, "kill from waiting list");
 	usleep(10000);

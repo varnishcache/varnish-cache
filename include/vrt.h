@@ -39,6 +39,8 @@
  * binary/load-time compatible, increment MAJOR version
  *
  *
+ * 6.1 (unreleased):
+ *	http_CollectHdrSep added
  * 6.0 (2017-03-15):
  *	VRT_hit_for_pass added
  *	VRT_ipcmp added
@@ -65,7 +67,7 @@
 
 #define VRT_MAJOR_VERSION	6U
 
-#define VRT_MINOR_VERSION	0U
+#define VRT_MINOR_VERSION	1U
 
 
 /***********************************************************************/

@@ -74,6 +74,7 @@ struct h2_frame_s {
 	int		respect_window;
 	h2_frame	continuation;
 	uint8_t		final_flags;
+	int		overhead;
 };
 
 #define H2_FRAME(l,U,...) extern const struct h2_frame_s H2_F_##U[1];

@@ -237,7 +237,7 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 	double tmo;
 	double now;
 	enum htc_status_e hs;
-	int i;
+	ssize_t z;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	AN(htc->rfd);
@@ -255,15 +255,16 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 		WS_ReleaseP(htc->ws, htc->rxbuf_b);
 		return (HTC_S_OVERFLOW);
 	}
-	if ((htc->ws->r - htc->rxbuf_b) - 1L < maxbytes)
-		maxbytes = (htc->ws->r - htc->rxbuf_b) - 1L; /* Space for NUL */
+	z = (htc->ws->r - htc->rxbuf_b);
+	if (z < maxbytes)
+		maxbytes = z;
 
 	while (1) {
 		now = VTIM_real();
 		AZ(htc->pipeline_b);
 		AZ(htc->pipeline_e);
-		assert(htc->rxbuf_e < htc->ws->r);
-		*htc->rxbuf_e = '\0';
+		assert(htc->rxbuf_e <= htc->ws->r);
+
 		hs = func(htc);
 		if (hs == HTC_S_OVERFLOW || hs == HTC_S_JUNK) {
 			WS_ReleaseP(htc->ws, htc->rxbuf_b);
@@ -290,21 +291,21 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 		tmo = tn - now;
 		if (!isnan(ti) && ti < tn)
 			tmo = ti - now;
-		i = maxbytes - (htc->rxbuf_e - htc->rxbuf_b);
-		assert(i >= 0);
-		if (i == 0) {
+		z = maxbytes - (htc->rxbuf_e - htc->rxbuf_b);
+		assert(z >= 0);
+		if (z == 0) {
 			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			return (HTC_S_OVERFLOW);
 		}
 		if (tmo <= 0.0)
 			tmo = 1e-3;
-		i = VTCP_read(*htc->rfd, htc->rxbuf_e, i, tmo);
-		if (i == 0 || i == -1) {
+		z = VTCP_read(*htc->rfd, htc->rxbuf_e, z, tmo);
+		if (z == 0 || z == -1) {
 			WS_ReleaseP(htc->ws, htc->rxbuf_b);
 			return (HTC_S_EOF);
-		} else if (i > 0)
-			htc->rxbuf_e += i;
-		else if (i == -2) {
+		} else if (z > 0)
+			htc->rxbuf_e += z;
+		else if (z == -2) {
 			if (hs == HTC_S_EMPTY && ti <= now) {
 				WS_ReleaseP(htc->ws, htc->rxbuf_b);
 				return (HTC_S_IDLE);

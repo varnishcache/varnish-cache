@@ -194,6 +194,7 @@ VBE_Event(struct backend *be, enum vcl_event_e ev)
 void
 VBE_Delete(struct backend *be)
 {
+	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 
 	if (be->probe != NULL)
@@ -434,14 +435,13 @@ static struct cli_proto backend_cmds[] = {
 void
 VBE_Poll(void)
 {
-	struct backend *be;
+	struct backend *be, *be2;
 	double now = VTIM_real();
 
+	ASSERT_CLI();
 	Lck_Lock(&backends_mtx);
-	while (1) {
-		be = VTAILQ_FIRST(&cool_backends);
-		if (be == NULL)
-			break;
+	VTAILQ_FOREACH_SAFE(be, &cool_backends, list, be2) {
+		CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 		if (be->cooled > now)
 			break;
 		if (be->n_conn > 0)

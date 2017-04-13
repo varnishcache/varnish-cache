@@ -530,12 +530,9 @@ main(int argc, char * const *argv)
 	do {
 		switch (o) {
 		case '?':
-			if (optopt == '?') {
+			if (optopt == '?')
 				usage();
-				exit(1);
-			}
-			ARGV_ERR("Option '%c' unknown.\n",
-			    optopt);
+			exit(2);
 		case 'V':
 		case 'x':
 			ARGV_ERR("-%c must be the first argument\n", o);

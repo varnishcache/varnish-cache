@@ -49,7 +49,7 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 
 	if (namelen == 2) {
 		VSLb(hp->vsl, SLT_BogoHeader, "Empty name");
-		return (H2CE_PROTOCOL_ERROR);
+		return (H2SE_PROTOCOL_ERROR);
 	}
 
 	for (p = b; p < b + len; p++) {
@@ -61,7 +61,7 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 				VSLb(hp->vsl, SLT_BogoHeader,
 				    "Illegal header name (upper-case): %.*s",
 				    (int)(len > 20 ? 20 : len), b);
-				return (H2CE_PROTOCOL_ERROR);
+				return (H2SE_PROTOCOL_ERROR);
 			}
 			if (vct_istchar(*p)) {
 				/* XXX: vct should have a proper class for
@@ -71,7 +71,7 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 			VSLb(hp->vsl, SLT_BogoHeader,
 			    "Illegal header name: %.*s",
 			    (int)(len > 20 ? 20 : len), b);
-			return (H2CE_PROTOCOL_ERROR);
+			return (H2SE_PROTOCOL_ERROR);
 		} else if (p < b + namelen) {
 			/* ': ' added by us */
 			assert(*p == ':' || *p == ' ');
@@ -82,7 +82,7 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 			VSLb(hp->vsl, SLT_BogoHeader,
 			    "Illegal header value: %.*s",
 			    (int)(len > 20 ? 20 : len), b);
-			return (H2CE_PROTOCOL_ERROR);
+			return (H2SE_PROTOCOL_ERROR);
 		}
 	}
 
@@ -134,7 +134,7 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 			VSLb(hp->vsl, SLT_BogoHeader,
 			    "Unknown pseudo-header: %.*s",
 			    (int)(len > 20 ? 20 : len), b);
-			return (H2SE_PROTOCOL_ERROR);
+			return (H2SE_PROTOCOL_ERROR);	// rfc7540,l,2990,2992
 		}
 	} else
 		n = hp->nhd;
@@ -145,7 +145,7 @@ h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 			VSLb(hp->vsl, SLT_BogoHeader,
 			    "Duplicate pseudo-header: %.*s",
 			    (int)(len > 20 ? 20 : len), b);
-			return (H2SE_PROTOCOL_ERROR);
+			return (H2SE_PROTOCOL_ERROR);	// rfc7540,l,3158,3162
 		}
 	} else {
 		/* Check for space in struct http */
@@ -305,7 +305,6 @@ h2h_decode_bytes(struct h2_sess *h2, struct h2h_decode *d,
 		}
 
 		if (d->error == H2SE_ENHANCE_YOUR_CALM) {
-			http_Teardown(hp);
 			d->out = d->reset;
 			d->out_l = hp->ws->r - d->out;
 			d->out_u = 0;

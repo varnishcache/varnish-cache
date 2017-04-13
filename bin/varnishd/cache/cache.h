@@ -749,7 +749,7 @@ void VGZ_UpdateObj(const struct vfp_ctx *, struct vgz*, enum vgz_ua_e);
 /* cache_http.c */
 unsigned HTTP_estimate(unsigned nhttp);
 void HTTP_Copy(struct http *to, const struct http * const fm);
-struct http *HTTP_create(void *p, uint16_t nhttp);
+struct http *HTTP_create(void *p, uint16_t nhttp, unsigned);
 const char *http_Status2Reason(unsigned, const char **);
 unsigned http_EstimateWS(const struct http *fm, unsigned how);
 void http_PutResponse(struct http *to, const char *proto, uint16_t status,
@@ -783,6 +783,7 @@ void http_CopyHome(const struct http *hp);
 void http_Unset(struct http *hp, const char *hdr);
 unsigned http_CountHdr(const struct http *hp, const char *hdr);
 void http_CollectHdr(struct http *hp, const char *hdr);
+void http_CollectHdrSep(struct http *hp, const char *hdr, const char *sep);
 void http_VSL_log(const struct http *hp);
 void HTTP_Merge(struct worker *, struct objcore *, struct http *to);
 uint16_t HTTP_GetStatusPack(struct worker *, struct objcore *oc);
@@ -932,6 +933,7 @@ struct req *Req_New(const struct worker *, struct sess *);
 void Req_Release(struct req *);
 void Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req);
 void Req_Fail(struct req *req, enum sess_close reason);
+void Req_AcctLogCharge(struct dstat *, struct req *);
 
 /* cache_req_body.c */
 int VRB_Ignore(struct req *);
@@ -941,7 +943,6 @@ void VRB_Free(struct req *);
 
 /* cache_req_fsm.c [CNT] */
 enum req_fsm_nxt CNT_Request(struct worker *, struct req *);
-void CNT_AcctLogCharge(struct dstat *, struct req *);
 
 /* cache_session.c [SES] */
 void SES_Wait(struct sess *, const struct transport *);

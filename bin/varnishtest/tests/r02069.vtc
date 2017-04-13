@@ -1,0 +1,38 @@
+varnishtest "Probe response without a reason"
+
+server s1 -repeat 20 {
+	rxreq
+	send "HTTP/1.1 200\r\n\r\n"
+} -start
+
+varnish v1 -vcl {
+	import std;
+
+	backend s1 {
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+		.probe = {
+			.initial = 0;
+			.window = 5;
+			.threshold = 5;
+			.interval = 100ms;
+		}
+	}
+
+	sub vcl_recv {
+		if (std.healthy(req.backend_hint)) {
+			return (synth(200));
+		}
+		else {
+			return (synth(500));
+		}
+	}
+} -start
+
+delay 1
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run

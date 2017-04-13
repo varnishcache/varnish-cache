@@ -36,7 +36,7 @@ vcl 4.0;
 
 sub vcl_recv {
     if (req.method == "PRI") {
-	/* We do not support SPDY or HTTP/2.0 */
+	/* This will never happen in properly formed traffic (see: RFC7540) */
 	return (synth(405));
     }
     if (req.method != "GET" &&

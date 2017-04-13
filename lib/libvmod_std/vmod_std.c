@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2010-2015 Varnish Software AS
+ * Copyright (c) 2010-2017 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@FreeBSD.org>
@@ -186,13 +186,13 @@ vmod_file_exists(VRT_CTX, VCL_STRING file_name)
 }
 
 VCL_VOID __match_proto__(td_std_collect)
-vmod_collect(VRT_CTX, VCL_HEADER hdr)
+vmod_collect(VRT_CTX, VCL_HEADER hdr, VCL_STRING sep)
 {
 	struct http *hp;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	hp = VRT_selecthttp(ctx, hdr->where);
-	http_CollectHdr(hp, hdr->what);
+	http_CollectHdrSep(hp, hdr->what, sep);
 }
 
 VCL_BOOL __match_proto__(td_std_healthy)

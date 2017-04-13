@@ -1,0 +1,4 @@
+varnishtest "shm_reclen alias for vsl_reclen"
+
+varnish v1 -cli "param.set shm_reclen 42"
+varnish v1 -cliexpect 42b "param.show vsl_reclen"

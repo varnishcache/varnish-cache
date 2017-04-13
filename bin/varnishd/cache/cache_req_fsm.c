@@ -1,6 +1,6 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
- * Copyright (c) 2006-2015 Varnish Software AS
+ * Copyright (c) 2006-2017 Varnish Software AS
  * All rights reserved.
  *
  * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
@@ -864,15 +864,20 @@ cnt_recv(struct worker *wrk, struct req *req)
 		req->req_step = R_STP_LOOKUP;
 		return (REQ_FSM_MORE);
 	case VCL_RET_PIPE:
-		if (req->esi_level == 0) {
+		if (req->esi_level > 0) {
+			VSLb(req->vsl, SLT_VCL_Error,
+			    "vcl_recv{} returns pipe for ESI included object."
+			    "  Doing pass.");
+			req->req_step = R_STP_PASS;
+		} else if (req->http0->protover > 11) {
+			VSLb(req->vsl, SLT_VCL_Error,
+			    "vcl_recv{} returns pipe for HTTP/2 request."
+			    "  Doing pass.");
+			req->req_step = R_STP_PASS;
+		} else {
 			req->req_step = R_STP_PIPE;
-			return (REQ_FSM_MORE);
 		}
-		VSLb(req->vsl, SLT_VCL_Error,
-		    "vcl_recv{} returns pipe for ESI included object."
-		    "  Doing pass.");
-		req->req_step = R_STP_PASS;
-		return (REQ_FSM_DONE);
+		return (REQ_FSM_MORE);
 	case VCL_RET_PASS:
 		req->req_step = R_STP_PASS;
 		return (REQ_FSM_MORE);
@@ -1012,30 +1017,4 @@ CNT_Request(struct worker *wrk, struct req *req)
 	}
 	assert(nxt == REQ_FSM_DISEMBARK || req->ws->r == NULL);
 	return (nxt);
-}
-
-void
-CNT_AcctLogCharge(struct dstat *ds, struct req *req)
-{
-	struct acct_req *a;
-
-	AN(ds);
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
-	a = &req->acct;
-
-	if (req->vsl->wid && !(req->res_mode & RES_PIPE)) {
-		VSLb(req->vsl, SLT_ReqAcct, "%ju %ju %ju %ju %ju %ju",
-		    (uintmax_t)a->req_hdrbytes,
-		    (uintmax_t)a->req_bodybytes,
-		    (uintmax_t)(a->req_hdrbytes + a->req_bodybytes),
-		    (uintmax_t)a->resp_hdrbytes,
-		    (uintmax_t)a->resp_bodybytes,
-		    (uintmax_t)(a->resp_hdrbytes + a->resp_bodybytes));
-	}
-
-#define ACCT(foo)			\
-	ds->s_##foo += a->foo;		\
-	a->foo = 0;
-#include "tbl/acct_fields_req.h"
 }

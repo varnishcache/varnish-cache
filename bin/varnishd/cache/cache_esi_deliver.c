@@ -98,18 +98,21 @@ ved_include(struct req *preq, const char *src, const char *host,
     struct ecx *ecx)
 {
 	struct worker *wrk;
+	struct sess *sp;
 	struct req *req;
 	enum req_fsm_nxt s;
 
 	CHECK_OBJ_NOTNULL(preq, REQ_MAGIC);
+	sp = preq->sp;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(ecx, ECX_MAGIC);
 	wrk = preq->wrk;
 
 	if (preq->esi_level >= cache_param->max_esi_depth)
 		return;
 
-	req = Req_New(wrk, preq->sp);
-	SES_Ref(preq->sp);
+	req = Req_New(wrk, sp);
+	SES_Ref(sp);
 	req->req_body_status = REQ_BODY_NONE;
 	AZ(req->vsl->wid);
 	req->vsl->wid = VXID_Get(wrk, VSL_CLIENTMARKER);
@@ -158,6 +161,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 	/* Reset request to status before we started messing with it */
 	HTTP_Copy(req->http, req->http0);
 
+	AZ(req->vcl);
 	req->vcl = preq->vcl;
 	preq->vcl = NULL;
 
@@ -189,27 +193,27 @@ ved_include(struct req *preq, const char *src, const char *host,
 		DSL(DBG_WAITINGLIST, req->vsl->wid,
 		    "loop waiting for ESI (%d)", (int)s);
 		assert(s == REQ_FSM_DISEMBARK);
-		Lck_Lock(&req->sp->mtx);
+		Lck_Lock(&sp->mtx);
 		if (!ecx->woken)
 			(void)Lck_CondWait(
-			    &ecx->preq->wrk->cond, &req->sp->mtx, 0);
-		Lck_Unlock(&req->sp->mtx);
+			    &ecx->preq->wrk->cond, &sp->mtx, 0);
+		Lck_Unlock(&sp->mtx);
 		ecx->woken = 0;
 		AZ(req->wrk);
 	}
 
-	VRTPRIV_dynamic_kill(req->sp->privs, (uintptr_t)req);
-	CNT_AcctLogCharge(wrk->stats, req);
-	VSL_End(req->vsl);
+	VRTPRIV_dynamic_kill(sp->privs, (uintptr_t)req);
 
+	AZ(preq->vcl);
 	preq->vcl = req->vcl;
 	req->vcl = NULL;
 
 	req->wrk = NULL;
-
 	THR_SetRequest(preq);
-	SES_Rel(req->sp);
+
+	Req_AcctLogCharge(wrk->stats, req);
 	Req_Release(req);
+	SES_Rel(sp);
 }
 
 /*--------------------------------------------------------------------*/

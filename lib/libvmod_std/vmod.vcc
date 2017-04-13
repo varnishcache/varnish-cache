@@ -1,5 +1,5 @@
 #-
-# Copyright (c) 2010-2015 Varnish Software AS
+# Copyright (c) 2010-2017 Varnish Software AS
 # All rights reserved.
 #
 # Author: Poul-Henning Kamp <phk@FreeBSD.org>
@@ -116,17 +116,20 @@ Example
 	| 	return (synth(503, "Varnish is in maintenance"));
 	| }
 
-$Function VOID collect(HEADER hdr)
+$Function VOID collect(HEADER hdr, STRING sep=", ")
 
 Description
-	Collapses multiple *hdr* headers into one long header.
-	The header values are joined with a comma (",").
+	Collapses multiple *hdr* headers into one long header. The
+	default separator *sep* is the standard comma separator to
+	use when collapsing headers, with an additional  whitespace
+	for pretty printing.
 
 	Care should be taken when collapsing headers. In particular
 	collapsing Set-Cookie will lead to unexpected results on the
 	browser side.
-Example
-	std.collect(req.http.cookie);
+Examples
+	| std.collect(req.http.accept);
+	| std.collect(req.http.cookie, "; ");
 
 $Function DURATION duration(STRING s, DURATION fallback)
 

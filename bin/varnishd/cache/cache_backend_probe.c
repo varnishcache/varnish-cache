@@ -369,9 +369,9 @@ vbp_poke(struct vbp_target *vt)
 	if (p != NULL)
 		*p = '\0';
 
-	i = sscanf(vt->resp_buf, "HTTP/%*f %u %s", &resp, buf);
+	i = sscanf(vt->resp_buf, "HTTP/%*f %u ", &resp);
 
-	if ((i == 1 || i == 2) && resp == vt->exp_status)
+	if (i == 1 && resp == vt->exp_status)
 		vt->happy |= 1;
 }
 

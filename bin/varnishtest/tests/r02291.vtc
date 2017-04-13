@@ -1,0 +1,33 @@
+varnishtest "Collect cookie headers in HTTP/2"
+
+server s1 -repeat 2 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend { } -start
+varnish v1 -cliok "param.set feature +http2"
+
+logexpect l1 -v v1 {
+	expect * * BereqProtocol	HTTP/1.1
+	expect * = BereqHeader		"Cookie: user=alice"
+	expect * = BereqHeader		"Cookie: peer=bob"
+	expect * * BereqProtocol	HTTP/2.0
+	expect * = BereqHeader		"cookie: user=alice; peer=bob"
+} -start
+
+client c1 {
+	txreq -hdr "Cookie: user=alice" -hdr "Cookie: peer=bob"
+	rxresp
+	expect resp.status == 200
+} -run
+
+client c2 {
+	stream 1 {
+		txreq -hdr cookie user=alice -hdr cookie peer=bob
+		rxresp
+		expect resp.status == 200
+	} -run
+} -run
+
+logexpect l1 -wait

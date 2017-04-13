@@ -1,4 +1,26 @@
 ================================
+Varnish Cache 5.1.2 (2017-04-07)
+================================
+
+* Fix an endless loop in Backend Polling (#2295)
+
+* Fix a Chunked bug in tight workspaces (#2207, #2275)
+
+* Fix a bug relating to req.body when on waitinglist (#2266)
+
+* Handle EPIPE on broken TCP connections (#2267)
+
+* Work around the x86 arch's turbo-double FP format in parameter
+  setup code. (#1875)
+
+* Fix race related to backend probe with proxy header (#2278)
+
+* Keep VCL temperature consistent between mgt/worker also when
+  worker protests.
+
+* A lot of HTTP/2 fixes.
+
+================================
 Varnish Cache 5.1.1 (2017-03-16)
 ================================
 

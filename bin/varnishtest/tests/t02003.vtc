@@ -228,6 +228,18 @@ client c1 {
 	} -run
 } -run
 
+client c1 {
+	stream 1 {
+		txreq
+		rxresp
+	} -run
+	stream 1 {
+		# RST_STREAM on closed stream
+		txrst
+	} -run
+} -run
+
+
 varnish v1 -vsl_catchup
 
 varnish v1 -expect MEMPOOL.req0.live == 0
@@ -349,6 +361,14 @@ client c1 {
 	} -run
 } -run
 
+client c1 {
+	stream 1 {
+		txreq -hdr ":bla" "foo"
+		rxrst
+		expect rst.err == PROTOCOL_ERROR
+	} -run
+} -run
+
 varnish v1 -vsl_catchup
 
 varnish v1 -expect MEMPOOL.req0.live == 0
@@ -387,6 +407,38 @@ client c1 {
 		sendhex ffffffff
 		rxgoaway
 		expect goaway.err == COMPRESSION_ERROR
+	} -run
+} -run
+
+varnish v1 -vsl_catchup
+
+varnish v1 -expect MEMPOOL.req0.live == 0
+varnish v1 -expect MEMPOOL.req1.live == 0
+varnish v1 -expect MEMPOOL.sess0.live == 0
+varnish v1 -expect MEMPOOL.sess1.live == 0
+
+#######################################################################
+# Test DATA error conditions
+
+client c1 {
+	stream 1 {
+		txdata -data "FOOBAR"
+	} -run
+	stream 0 {
+		rxgoaway
+	} -run
+	expect_close
+} -run
+
+client c1 {
+	stream 1 {
+		txreq
+		rxresp
+		txdata -data "FOOBAR"
+	} -run
+	stream 3 {
+		txreq
+		rxresp
 	} -run
 } -run
 
