@@ -1,26 +1,30 @@
 varnishtest "Fail earlier if we cannot fit the query string"
 
-feature 64bit
-
 server s1 {
 	rxreq
 	txresp
 } -start
 
-varnish v1 -arg "-p workspace_client=9k" -vcl+backend {
+varnish v1 -vcl+backend {
+	import debug;
 	import std;
 
 	sub vcl_recv {
-		set req.url = std.querysort(req.url);
+		debug.workspace_allocate(client, -92);
+		if (std.querysort(req.url) == req.url) {
+			std.log("querysort failed");
+		}
 	}
 } -start
 
+logexpect l1 -v v1 {
+	expect * *	VCL_Log	"querysort failed"
+} -start
+
 client c1 {
-	send "GET /?a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1"
-	send "&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1"
-	send "&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1"
-	send " HTTP/1.1\r\n"
-	send "Host: foo\r\n\r\n"
+	txreq -url /?a=2&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1&a=1
 	rxresp
 	expect resp.status == 500
 } -run
+
+logexpect l1 -wait
