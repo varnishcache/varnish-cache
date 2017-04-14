@@ -9,6 +9,30 @@ varnish v1 -vcl+backend {} -start
 
 shell "varnishncsa -n ${v1_name} -D -P ${tmpdir}/ncsa.pid -w ${tmpdir}/ncsa.log"
 
+delay 1
+
+client c1 {
+	txreq -url /foo
+	rxresp
+} -run
+
+delay 1
+
+shell "mv ${tmpdir}/ncsa.log ${tmpdir}/ncsa.old.log"
+shell "kill -HUP `cat ${tmpdir}/ncsa.pid`"
+
+client c1 {
+	txreq -url /bar
+	rxresp
+} -run
+
+delay 1
+
+shell "kill `cat ${tmpdir}/ncsa.pid`"
+
+shell "grep -q /foo ${tmpdir}/ncsa.old.log"
+shell "grep -q /bar ${tmpdir}/ncsa.log"
+
 shell -expect "Usage: varnishncsa <options>" \
 	"varnishncsa -h"
 shell -expect "Copyright (c) 2006 Verdens Gang AS" \
@@ -50,30 +74,10 @@ shell -err -expect "Empty format file" \
 #shell -err -expect "Can't read format from file (Is a directory)" \
 #	{varnishncsa -f ${tmpdir}}
 
-delay 1
-
-client c1 {
-	txreq -url /foo
-	rxresp
-} -run
-
-delay 1
-
-shell "mv ${tmpdir}/ncsa.log ${tmpdir}/ncsa.old.log >/dev/null 2>&1"
-shell "kill -HUP `cat ${tmpdir}/ncsa.pid`"
-
-client c1 {
-	txreq -url /bar
-	rxresp
-} -run
-
-delay 1
-
-shell "kill `cat ${tmpdir}/ncsa.pid`"
-
-shell "grep -q /foo ${tmpdir}/ncsa.old.log"
-shell "grep -q /bar ${tmpdir}/ncsa.log"
-
-shell {echo "%{VSL:Begin}x %{Varnish:vxid}x %D %T %{Varnish:handling}x %{%Z}t" >${tmpdir}/format}
-shell -match "req 1000 rxreq 1001 [0-9]{5} 0 miss [A-Z]{3,}" \
+shell {echo "%{VSL:Begin}x %{Varnish:vxid}x %{VCL_Log:foo}x %D %T %{Varnish:handling}x %{%Z}t" >${tmpdir}/format}
+shell -match "^req 1000 rxreq 1001  [0-9]+ 0 miss [A-Z]{3,}" \
 	{varnishncsa -n ${v1_name} -d -f ${tmpdir}/format}
+shell -match "^bereq 1001 fetch 1002  [0-9]+ 0 - [A-Z]{3,}" \
+	{varnishncsa -n ${v1_name} -d -f ${tmpdir}/format -b}
+shell -match "\d{10}\.\d{6} \d\.\d{6} \d\.\d{6} - \d{10}\.\d{6}" \
+	{varnishncsa -n ${v1_name} -d -F "%{VSL:Timestamp:Resp}x %{VSL:Timestamp:foo}x %{VSL:Timestamp:Resp[2]}x"}

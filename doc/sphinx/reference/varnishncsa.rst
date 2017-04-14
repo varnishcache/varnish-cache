@@ -174,13 +174,22 @@ Supported formatters are:
   VCL_Log:key
     Output value set by std.log("key:value") in VCL.
 
-  VSL:tag[field]
-    The value of the VSL entry for the given tag. The field will,
-    if present, treat the log record as a white space separated list
-    of fields, and only the nth part of the record will be matched
-    against. Fields start counting at 1. Defaults to '-' when the tag
-    is not seen, or when the field is out of bounds. If a tag appears
-    multiple times in a single transaction, the first occurrence is used.
+  VSL:tag:record-prefix[field]
+    The value of the VSL entry for the given tag-record prefix-field
+    combination. Tag is mandatory, the other components are optional.
+
+    The record prefix will limit the matches to those records that
+    have this prefix as the first part of the record content followed
+    by a colon.
+
+    The field will, if present, treat the log record as a white
+    space separated list of fields, and only the nth part of the
+    record will be matched against. Fields start counting at 1.
+
+    Defaults to '-' when the tag is not seen, the record prefix
+    does not match or the field is out of bounds. If a tag appears
+    multiple times in a single transaction, the first occurrence
+    is used.
 
 SIGNALS
 =======
@@ -202,10 +211,14 @@ multiple times in a single transaction, the first occurrence is used.
 EXAMPLE
 =======
 
-Log the second field of the Begin tag, corresponding to the VXID of the
-parent transaction::
+Log the second field of the Begin record, corresponding to the VXID
+of the parent transaction::
 
   varnishncsa -F "%{VSL:Begin[2]}x"
+
+Log the entire Timestamp record associated with the processing length::
+
+  varnishncsa -F "%{VSL:Timestamp:Process}x"
 
 SEE ALSO
 ========
