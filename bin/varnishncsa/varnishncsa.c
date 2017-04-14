@@ -804,11 +804,10 @@ parse_format(const char *format)
 }
 
 static int
-isprefix(const char *prefix, const char *b, const char *e, const char **next)
+isprefix(const char *prefix, size_t len, const char *b,
+    const char *e, const char **next)
 {
-	size_t len;
-
-	len = strlen(prefix);
+	assert(len > 0);
 	if (e - b < len || strncasecmp(b, prefix, len))
 		return (0);
 	b += len;
@@ -897,6 +896,24 @@ process_hdr(const struct watch_head *head, const char *b, const char *e)
 	}
 }
 
+
+static void
+process_vsl(const struct vsl_watch_head *head, enum VSL_tag_e tag,
+    const char *b, const char *e)
+{
+	struct vsl_watch *w;
+
+	VTAILQ_FOREACH(w, head, list) {
+		CHECK_OBJ_NOTNULL(w, VSL_WATCH_MAGIC);
+		if (tag != w->tag)
+			continue;
+		if (w->idx == 0)
+			frag_line(0, b, e, &w->frag);
+		else
+			frag_fields(0, b, e, w->idx, &w->frag, 0, NULL);
+	}
+}
+
 static int __match_proto__(VSLQ_dispatch_f)
 dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
     void *priv)
@@ -905,7 +922,6 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	unsigned tag;
 	const char *b, *e, *p;
 	struct watch *w;
-	struct vsl_watch *vslw;
 	int i, skip, be_mark;
 	(void)vsl;
 	(void)priv;
@@ -991,32 +1007,34 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case (SLT_Timestamp + BACKEND_MARKER):
 			case SLT_Timestamp:
-				if (isprefix("Start:", b, e, &p)) {
+#define PREFIX(a, b, c, d)	isprefix(a, strlen(a), b, c, d)
+				if (PREFIX("Start:", b, e, &p)) {
 					frag_fields(0, p, e, 1,
 					    &CTX.frag[F_tstart], 0, NULL);
 
-				} else if (isprefix("Resp:", b, e, &p) ||
-				    isprefix("PipeSess:", b, e, &p) ||
-				    isprefix("BerespBody:", b, e, &p)) {
+				} else if (PREFIX("Resp:", b, e, &p) ||
+				    PREFIX("PipeSess:", b, e, &p) ||
+				    PREFIX("BerespBody:", b, e, &p)) {
 					frag_fields(0, p, e, 1,
 					    &CTX.frag[F_tend], 0, NULL);
 
-				} else if (isprefix("Process:", b, e, &p) ||
-				    isprefix("Pipe:", b, e, &p) ||
-				    isprefix("Beresp:", b, e, &p)) {
+				} else if (PREFIX("Process:", b, e, &p) ||
+				    PREFIX("Pipe:", b, e, &p) ||
+				    PREFIX("Beresp:", b, e, &p)) {
 					frag_fields(0, p, e, 2,
 					    &CTX.frag[F_ttfb], 0, NULL);
 				}
 				break;
 			case (SLT_BereqHeader + BACKEND_MARKER):
 			case SLT_ReqHeader:
-				if (isprefix("Authorization:", b, e, &p) &&
-				    isprefix("basic ", p, e, &p))
+				if (PREFIX("Authorization:", b, e, &p) &&
+				    PREFIX("basic ", p, e, &p))
 					frag_line(0, p, e,
 					    &CTX.frag[F_auth]);
-				else if (isprefix("Host:", b, e, &p))
+				else if (PREFIX("Host:", b, e, &p))
 					frag_line(0, p, e,
 					    &CTX.frag[F_host]);
+#undef PREFIX
 				break;
 			case SLT_VCL_call:
 				if (!strcasecmp(b, "recv")) {
@@ -1073,18 +1091,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			    (tag == SLT_BerespHeader && CTX.b_opt))
 				process_hdr(&CTX.watch_resphdr, b, e);
 
-			VTAILQ_FOREACH(vslw, &CTX.watch_vsl, list) {
-				CHECK_OBJ_NOTNULL(vslw, VSL_WATCH_MAGIC);
-				if (tag == vslw->tag) {
-					if (vslw->idx == 0)
-						frag_line(0, b, e,
-						    &vslw->frag);
-					else
-						frag_fields(0, b, e,
-						    vslw->idx, &vslw->frag,
-						    0, NULL);
-				}
-			}
+			process_vsl(&CTX.watch_vsl, tag, b ,e);
 		}
 		if (skip)
 			continue;
