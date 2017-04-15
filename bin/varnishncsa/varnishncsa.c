@@ -827,7 +827,7 @@ isprefix(const char *prefix, size_t len, const char *b,
 		return (0);
 	b += len;
 	if (next) {
-		while (b < e && *b && *b == ' ')
+		while (b < e && *b == ' ')
 			b++;
 		*next = b;
 	}
@@ -891,7 +891,7 @@ frag_line(int force, const char *b, const char *e, struct fragment *f)
 		++b;
 
 	/* Skip trailing space */
-	while (e > b && isspace(*(e - 1)))
+	while (e > b && isspace(e[-1]))
 		--e;
 
 	f->gen = CTX.gen;
@@ -910,7 +910,6 @@ process_hdr(const struct watch_head *head, const char *b, const char *e)
 		frag_line(1, b + w->keylen, e, &w->frag);
 	}
 }
-
 
 static void
 process_vsl(const struct vsl_watch_head *head, enum VSL_tag_e tag,
@@ -1027,34 +1026,34 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case (SLT_Timestamp + BACKEND_MARKER):
 			case SLT_Timestamp:
-#define PREFIX(a, b, c, d)	isprefix(a, strlen(a), b, c, d)
-				if (PREFIX("Start:", b, e, &p)) {
+#define ISPREFIX(a, b, c, d)	isprefix(a, strlen(a), b, c, d)
+				if (ISPREFIX("Start:", b, e, &p)) {
 					frag_fields(0, p, e, 1,
 					    &CTX.frag[F_tstart], 0, NULL);
 
-				} else if (PREFIX("Resp:", b, e, &p) ||
-				    PREFIX("PipeSess:", b, e, &p) ||
-				    PREFIX("BerespBody:", b, e, &p)) {
+				} else if (ISPREFIX("Resp:", b, e, &p) ||
+				    ISPREFIX("PipeSess:", b, e, &p) ||
+				    ISPREFIX("BerespBody:", b, e, &p)) {
 					frag_fields(0, p, e, 1,
 					    &CTX.frag[F_tend], 0, NULL);
 
-				} else if (PREFIX("Process:", b, e, &p) ||
-				    PREFIX("Pipe:", b, e, &p) ||
-				    PREFIX("Beresp:", b, e, &p)) {
+				} else if (ISPREFIX("Process:", b, e, &p) ||
+				    ISPREFIX("Pipe:", b, e, &p) ||
+				    ISPREFIX("Beresp:", b, e, &p)) {
 					frag_fields(0, p, e, 2,
 					    &CTX.frag[F_ttfb], 0, NULL);
 				}
 				break;
 			case (SLT_BereqHeader + BACKEND_MARKER):
 			case SLT_ReqHeader:
-				if (PREFIX("Authorization:", b, e, &p) &&
-				    PREFIX("basic ", p, e, &p))
+				if (ISPREFIX("Authorization:", b, e, &p) &&
+				    ISPREFIX("basic ", p, e, &p))
 					frag_line(0, p, e,
 					    &CTX.frag[F_auth]);
-				else if (PREFIX("Host:", b, e, &p))
+				else if (ISPREFIX("Host:", b, e, &p))
 					frag_line(0, p, e,
 					    &CTX.frag[F_host]);
-#undef PREFIX
+#undef ISPREFIX
 				break;
 			case SLT_VCL_call:
 				if (!strcasecmp(b, "recv")) {
