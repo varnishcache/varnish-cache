@@ -111,7 +111,7 @@ shell -err -expect "Usage: varnishncsa <options>" \
 	{varnishncsa extra}
 
 # -b
-shell -match {^127.0.0.1 100
+shell -match {^\d+.\d+.\d+.\d+ 100
 - 0$} \
 	{varnishncsa -n ${v1_name} -b -d -F "%{Host}i %b"}
 # -c
