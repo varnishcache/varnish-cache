@@ -2,7 +2,7 @@ varnishtest "varnishncsa coverage"
 
 server s1 -repeat 2 {
 	rxreq
-	txresp
+	txresp -bodylen 100
 } -start
 
 varnish v1 -vcl+backend {
@@ -12,10 +12,15 @@ varnish v1 -vcl+backend {
 		if (req.url == "/2") {
 			return (pipe);
 		}
+		return (hash);
 	}
 
 	sub vcl_miss {
 		std.log("quux:quuz");
+	}
+
+	sub vcl_hit {
+		return (synth(404));
 	}
 } -start
 
@@ -27,9 +32,9 @@ shell {
 delay 1
 
 client c1 {
-	txreq -url /1?foo=bar -hdr "baz: qux"
+	txreq -url /1?foo=bar -hdr "authorization: basic dXNlcjpwYXNz"
 	rxresp
-	txreq -url /1?foo=bar
+	txreq -url /1?foo=bar -hdr "baz: qux"
 	rxresp
 } -run
 
@@ -48,8 +53,10 @@ delay 1
 shell "kill `cat ${tmpdir}/ncsa.pid`"
 
 # default formatter and rotation
-shell -match {\d+.\d+.\d+.\d+ - - \[../.../20[1-9][0-9]:..:..:.. \+....\] (?#
-)"GET http://localhost/1\?foo=bar HTTP/1.1" 200 0 "-" "-"} \
+shell -match {^\d+.\d+.\d+.\d+ - user \[../.../20[1-9][0-9]:..:..:.. (?#
+)[+-]....\] "GET http://localhost/1\?foo=bar HTTP/1.1" 200 100 "-" "-"
+\d+.\d+.\d+.\d+ - - \[../.../20[1-9][0-9]:..:..:.. [+-]....\] (?#
+)"GET http://localhost/1\?foo=bar HTTP/1.1" 404 \d+ "-" "-"$} \
 	"cat ${tmpdir}/ncsa.old.log"
 shell "grep -q /2 ${tmpdir}/ncsa.log"
 
@@ -103,20 +110,30 @@ shell -err -expect "Can't open output file (No such file or directory)" \
 shell -err -expect "Usage: varnishncsa <options>" \
 	{varnishncsa extra}
 
+# -b
+shell -match {^127.0.0.1 100
+- 0$} \
+	{varnishncsa -n ${v1_name} -b -d -F "%{Host}i %b"}
+# -c
+shell -match {^- 100
+- \d+
+- -$} \
+	{varnishncsa -n ${v1_name} -c -d -F "%{Host}i %b"}
+
 # -f and standard formatters
 shell {echo "%b %D %H %h %I %{baz}i %l %m %{Age}o %O %q %s %t %{%Y}t \
 %T %U %u" > ${tmpdir}/format}
-shell -match {^\d+ \d+ HTTP/1.1 \d+.\d+.\d+.\d+ \d+ qux - GET 0 \d+ (?#
-)\?foo=bar 200 \[../.../(20[1-9][0-9]):..:..:.. \+....\] \1 \d+ /1 -
-\d+ \d+ HTTP/1.1 \d+.\d+.\d+.\d+ \d+ - - GET 0 \d+ (?#
-)\?foo=bar 200 \[../.../(20[1-9][0-9]):..:..:.. \+....\] \1 \d+ /1 -
+shell -match {^100 \d+ HTTP/1.1 \d+.\d+.\d+.\d+ \d+ - - GET 0 \d+ (?#
+)\?foo=bar 200 \[../.../(20[1-9][0-9]):..:..:.. [+-]....\] \1 \d+ /1 user
+\d+ \d+ HTTP/1.1 \d+.\d+.\d+.\d+ \d+ qux - GET - \d+ (?#
+)\?foo=bar 404 \[../.../(20[1-9][0-9]):..:..:.. [+-]....\] \1 \d+ /1 -
 - \d+ HTTP/1.1 \d+.\d+.\d+.\d+ \d+ - - GET - \d+ (?#
-) - \[../.../(20[1-9][0-9]):..:..:.. \+....\] \1 \d+ /2 -$} \
+) - \[../.../(20[1-9][0-9]):..:..:.. [+-]....\] \1 \d+ /2 -$} \
 	{varnishncsa -n ${v1_name} -d -f ${tmpdir}/format}
 
 # extended variables
 shell -match {^\d+.\d{6} miss miss c 1001 quuz
-\d+.\d{6} hit hit c 1003\s
+\d+.\d{6} miss synth c 1003\s
 \d+.\d{6} miss pipe c 1005\s$} \
 	{varnishncsa -n ${v1_name} -d -F "%{Varnish:time_firstbyte}x \
 %{Varnish:hitmiss}x %{Varnish:handling}x %{Varnish:side}x \

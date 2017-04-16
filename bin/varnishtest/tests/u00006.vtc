@@ -39,6 +39,8 @@ shell -err -expect {-x: Syntax error in "**"} \
 	{varnishlog -x "**"}
 shell -err -expect {-X: Syntax error in "**"} \
 	{varnishlog -X "**:bar"}
+shell -err -expect "Cannot open output file (No such file or directory)" \
+	{varnishlog -w /nonexistent/file}
 
 process p1 -wait
 shell {grep -q "0 CLI" ${tmpdir}/vlog}
@@ -66,13 +68,12 @@ shell "kill `cat ${tmpdir}/vlog.pid`"
 
 shell -match {^\*[ ]+<< Request\s+>>[ ]+1001[ ]+
 -[ ]+1001 ReqURL[ ]+c /foo
-$} {
-	varnishlog -v -r ${tmpdir}/vlog.bin~ -i ReqURL -q "RespStatus == 200"
-}
+$} \
+	{varnishlog -r ${tmpdir}/vlog.bin~ -i ReqURL -v \
+	-q "RespStatus == 200"}
 shell -match "-[ ]+BereqURL[ ]+/bar" \
 	"varnishlog -r ${tmpdir}/vlog.bin -x ReqURL"
 shell -match {^\*[ ]+<< BeReq\s+>>[ ]+1005[ ]+
 -[ ]+BereqURL[ ]+/bar
-$} {
-	varnishlog -r ${tmpdir}/vlog.bin -b -C -I BAR
-}
+$} \
+	"varnishlog -r ${tmpdir}/vlog.bin -b -C -I BAR"
