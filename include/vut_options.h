@@ -29,7 +29,7 @@
 
 /* VUT options */
 
-#define VUT_OPT_d \
+#define VUT_OPT_d							\
 	VOPT("d", "[-d]", "Process old log entries and exit",		\
 	    "Process log records at the head of the log and exit."	\
 	)
