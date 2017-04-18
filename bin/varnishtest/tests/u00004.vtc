@@ -14,9 +14,9 @@ client c1 {
 
 shell -expect "fetch" "varnishtop -n ${v1_name} -1 -d"
 
-shell -expect "Usage: varnishtop <options>" \
+shell -match "Usage: .*varnishtop <options>" \
 	"varnishtop -h"
 shell -expect "Copyright (c) 2006 Verdens Gang AS" \
 	"varnishtop -V"
-shell -err -expect "Usage: varnishtop <options>" \
+shell -err -match "Usage: .*varnishtop <options>" \
 	"varnishtop extra"

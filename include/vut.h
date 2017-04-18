@@ -71,6 +71,8 @@ void VUT_Error(int status, const char *fmt, ...)
 
 int VUT_Arg(int opt, const char *arg);
 
+#define VUT_InitProg(argc, argv, spec) VUT_Init(argv[0], argc, argv, spec)
+
 void VUT_Init(const char *progname, int argc, char * const *argv,
     const struct vopt_spec *);
 
