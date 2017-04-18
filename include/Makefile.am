@@ -48,7 +48,9 @@ nobase_pkginclude_HEADERS = \
 	vapi/vsl_int.h \
 	vapi/voptget.h \
 	vapi/vapi_options.h \
-	vcli.h
+	vcli.h \
+	vut.h \
+	vut_options.h
 
 # Headers for use with vmods
 nobase_pkginclude_HEADERS += \
@@ -95,9 +97,7 @@ nobase_noinst_HEADERS = \
 	vsub.h \
 	vss.h \
 	vtcp.h \
-	vtree.h \
-	vut.h \
-	vut_options.h
+	vtree.h
 
 GENERATED_H = \
 	tbl/vrt_stv_var.h \
