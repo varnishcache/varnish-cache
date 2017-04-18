@@ -42,6 +42,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#define VOPT_DEFINITION
+#define VOPT_INC "varnishhist_options.h"
+
 #include "vdef.h"
 #include "vcurses.h"
 #include "vapi/vsl.h"

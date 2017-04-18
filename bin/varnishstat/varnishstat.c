@@ -39,6 +39,9 @@
 #include <unistd.h>
 #include <math.h>
 
+#define VOPT_DEFINITION
+#define VOPT_INC "varnishstat_options.h"
+
 #include "vapi/voptget.h"
 #include "vapi/vsl.h"
 #include "vdef.h"
