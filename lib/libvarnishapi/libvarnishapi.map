@@ -40,9 +40,9 @@ LIBVARNISHAPI_1.0 {
 	VSM_Head;
 	VSM_Find_Chunk;
 	VSM_Close;
-	VSM_iter0;
-	VSM_intern;
-	
+	VSM__iter0;
+	VSM__itern;
+
 	VSC_Setup;
 	VSC_Arg;
 	VSC_Open;
