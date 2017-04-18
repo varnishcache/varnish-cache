@@ -7,11 +7,11 @@ server s1 {
 
 varnish v1 -vcl+backend {} -start
 
-shell -expect "Usage: varnishhist <options>" \
+shell -match "Usage: .*varnishhist <options>" \
 	"varnishhist -h"
 shell -expect "Copyright (c) 2006 Verdens Gang AS" \
 	"varnishhist -V"
-shell -err -expect "Usage: varnishhist <options>" \
+shell -err -match "Usage: .*varnishhist <options>" \
 	"varnishhist extra"
 shell -err -expect "-p: invalid '0'" \
 	"varnishhist -p 0"

@@ -69,8 +69,6 @@
 #define TIME_FMT "[%d/%b/%Y:%T %z]"
 #define FORMAT "%h %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\""
 
-static const char progname[] = "varnishncsa";
-
 struct format;
 
 enum e_frag {
@@ -165,7 +163,7 @@ usage(int status)
 {
 	const char **opt;
 
-	fprintf(stderr, "Usage: %s <options>\n\n", progname);
+	fprintf(stderr, "Usage: %s <options>\n\n", VUT.progname);
 	fprintf(stderr, "Options:\n");
 	for (opt = vopt_spec.vopt_usage; *opt != NULL; opt += 2)
 		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
@@ -1144,7 +1142,7 @@ main(int argc, char * const *argv)
 	signed char opt;
 	char *format = NULL;
 
-	VUT_Init(progname, argc, argv, &vopt_spec);
+	VUT_InitProg(argc, argv, &vopt_spec);
 	memset(&CTX, 0, sizeof CTX);
 	VTAILQ_INIT(&CTX.format);
 	VTAILQ_INIT(&CTX.watch_vcl_log);

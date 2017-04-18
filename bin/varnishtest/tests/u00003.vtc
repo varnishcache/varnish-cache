@@ -61,7 +61,7 @@ shell -match {^\d+.\d+.\d+.\d+ - user \[../.../20[1-9][0-9]:..:..:.. (?#
 shell "grep -q /2 ${tmpdir}/ncsa.log"
 
 # command line
-shell -expect "Usage: varnishncsa <options>" \
+shell -match "Usage: .*varnishncsa <options>" \
 	"varnishncsa -h"
 shell -expect "Copyright (c) 2006 Verdens Gang AS" \
 	"varnishncsa -V"
@@ -107,7 +107,7 @@ shell -err -expect "Invalid grouping mode: session" \
 	{varnishncsa -g session}
 shell -err -expect "Can't open output file (No such file or directory)" \
 	{varnishncsa -w /nonexistent/file}
-shell -err -expect "Usage: varnishncsa <options>" \
+shell -err -match "Usage: .*varnishncsa <options>" \
 	{varnishncsa extra}
 
 # -b
