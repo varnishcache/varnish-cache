@@ -49,8 +49,6 @@
 
 #include "varnishstat.h"
 
-static const char progname[] = "varnishstat";
-
 /*--------------------------------------------------------------------*/
 
 static int __match_proto__(VSC_iter_f)
@@ -243,7 +241,7 @@ usage(int status)
 {
 	const char **opt;
 
-	fprintf(stderr, "Usage: %s <options>\n\n", progname);
+	fprintf(stderr, "Usage: %s <options>\n\n", VUT.progname);
 	fprintf(stderr, "Options:\n");
 	for (opt = vopt_spec.vopt_usage; *opt != NULL; opt +=2)
 		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
@@ -259,7 +257,7 @@ main(int argc, char * const *argv)
 	int i;
 	struct vsc *vsc;
 
-	VUT_Init(progname, argc, argv, &vopt_spec);
+	VUT_InitProg(argc, argv, &vopt_spec);
 	vd = VSM_New();
 	AN(vd);
 	vsc = VSC_New();

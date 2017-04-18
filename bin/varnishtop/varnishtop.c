@@ -71,7 +71,6 @@ struct top {
 	double			count;
 };
 
-static const char progname[] = "varnishtop";
 static float period = 60; /* seconds */
 static int end_of_file = 0;
 static unsigned ntop;
@@ -318,7 +317,7 @@ usage(int status)
 {
 	const char **opt;
 
-	fprintf(stderr, "Usage: %s <options>\n\n", progname);
+	fprintf(stderr, "Usage: %s <options>\n\n", VUT.progname);
 	fprintf(stderr, "Options:\n");
 	for (opt = vopt_spec.vopt_usage; *opt != NULL; opt +=2)
 		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
@@ -331,7 +330,7 @@ main(int argc, char **argv)
 	int o, once = 0;
 	pthread_t thr;
 
-	VUT_Init(progname, argc, argv, &vopt_spec);
+	VUT_InitProg(argc, argv, &vopt_spec);
 
 	while ((o = getopt(argc, argv, vopt_spec.vopt_optstring)) != -1) {
 		switch (o) {

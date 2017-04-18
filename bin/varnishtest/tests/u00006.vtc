@@ -15,11 +15,11 @@ shell {
 	    -w ${tmpdir}/vlog.bin
 }
 
-shell -expect "Usage: varnishlog <options>" \
+shell -match "Usage: .*varnishlog <options>" \
 	"varnishlog -h"
 shell -expect "Copyright (c) 2006 Verdens Gang AS" \
 	"varnishlog -V"
-shell -err -expect "Usage: varnishlog <options>" \
+shell -err -match "Usage: .*varnishlog <options>" \
 	"varnishlog extra"
 shell -err -expect "Missing -w option" \
 	"varnishlog -D"

@@ -50,8 +50,6 @@
 #include "vut.h"
 #include "miniobj.h"
 
-static const char progname[] = "varnishlog";
-
 static struct log {
 	/* Options */
 	int		a_opt;
@@ -66,7 +64,7 @@ static void __attribute__((__noreturn__))
 usage(int status)
 {
 	const char **opt;
-	fprintf(stderr, "Usage: %s <options>\n\n", progname);
+	fprintf(stderr, "Usage: %s <options>\n\n", VUT.progname);
 	fprintf(stderr, "Options:\n");
 	for (opt = vopt_spec.vopt_usage; *opt != NULL; opt += 2)
 		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
@@ -121,7 +119,7 @@ main(int argc, char * const *argv)
 {
 	int opt;
 
-	VUT_Init(progname, argc, argv, &vopt_spec);
+	VUT_InitProg(argc, argv, &vopt_spec);
 	memset(&LOG, 0, sizeof LOG);
 
 	while ((opt = getopt(argc, argv, vopt_spec.vopt_optstring)) != -1) {

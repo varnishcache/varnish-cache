@@ -29,13 +29,13 @@ shell -expect "MGT.uptime" \
 shell -match "^MGT" \
 	"varnishstat -1 -n ${v1_name} -f ^foo"
 
-shell -expect "Usage: varnishstat <options>" \
+shell -match "Usage: .*varnishstat <options>" \
 	"varnishstat -h"
 shell -expect "Varnishstat -f option fields:" \
 	"varnishstat -n ${v1_name} -l"
 shell -expect "Copyright (c) 2006 Verdens Gang AS" \
 	"varnishstat -V"
-shell -err -expect "Usage: varnishstat <options>" \
+shell -err -match "Usage: .*varnishstat <options>" \
 	"varnishstat extra"
 shell -err -expect "-t: Invalid argument: -1" \
 	"varnishstat -t -1"

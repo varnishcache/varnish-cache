@@ -57,8 +57,6 @@
 #define HIST_N 2000		/* how far back we remember */
 #define HIST_RES 100		/* bucket resolution */
 
-static const char progname[] = "varnishhist";
-
 static int hist_low;
 static int hist_high;
 static int hist_range;
@@ -471,7 +469,7 @@ usage(int status)
 {
 	const char **opt;
 
-	fprintf(stderr, "Usage: %s <options>\n\n", progname);
+	fprintf(stderr, "Usage: %s <options>\n\n", VUT.progname);
 	fprintf(stderr, "Options:\n");
 	for (opt = vopt_spec.vopt_usage; *opt != NULL; opt += 2)
 		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
@@ -497,7 +495,7 @@ main(int argc, char **argv)
 	struct profile cli_p = {0};
 	cli_p.name = 0;
 
-	VUT_Init(progname, argc, argv, &vopt_spec);
+	VUT_InitProg(argc, argv, &vopt_spec);
 	AZ(pthread_cond_init(&timebend_cv, NULL));
 
 	while ((i = getopt(argc, argv, vopt_spec.vopt_optstring)) != -1) {
