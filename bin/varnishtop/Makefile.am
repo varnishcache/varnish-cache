@@ -6,9 +6,9 @@ AM_CPPFLAGS = \
 
 bin_PROGRAMS = varnishtop
 
-varnishtop_SOURCES = varnishtop.c \
-	varnishtop_options.h \
-	varnishtop_options.c
+varnishtop_SOURCES = \
+	varnishtop.c \
+	varnishtop_options.h
 
 
 varnishtop_CFLAGS = \

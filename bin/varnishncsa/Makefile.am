@@ -9,7 +9,6 @@ bin_PROGRAMS = varnishncsa
 varnishncsa_SOURCES = \
 	varnishncsa.c \
 	varnishncsa_options.h \
-	varnishncsa_options.c \
 	base64.h \
 	base64.c
 

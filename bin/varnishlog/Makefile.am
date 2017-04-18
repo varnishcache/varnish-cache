@@ -8,8 +8,7 @@ bin_PROGRAMS = varnishlog
 
 varnishlog_SOURCES = \
 	varnishlog.c \
-	varnishlog_options.h \
-	varnishlog_options.c
+	varnishlog_options.h
 
 varnishlog_CFLAGS = \
 	@SAN_CFLAGS@

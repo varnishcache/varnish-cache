@@ -39,6 +39,10 @@
 #include <errno.h>
 #include <stdint.h>
 
+#define VOPT_DEFINITION
+#define VOPT_INC "varnishlog_options.h"
+
+#include "vapi/vsm.h"
 #include "vapi/vsl.h"
 #include "vapi/voptget.h"
 #include "vas.h"

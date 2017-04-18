@@ -6,10 +6,10 @@ AM_CPPFLAGS = \
 
 bin_PROGRAMS = varnishhist
 
-varnishhist_SOURCES = varnishhist.c \
+varnishhist_SOURCES = \
+	varnishhist.c \
 	varnishhist_options.h \
-	varnishhist_profiles.h \
-	varnishhist_options.c
+	varnishhist_profiles.h
 
 varnishhist_CFLAGS = \
 	@SAN_CFLAGS@
