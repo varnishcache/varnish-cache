@@ -118,7 +118,7 @@ struct watch {
 
 	VTAILQ_ENTRY(watch)	list;
 	char			*key;
-	unsigned		keylen;
+	int			keylen;
 	struct fragment		frag;
 };
 VTAILQ_HEAD(watch_head, watch);
@@ -522,8 +522,8 @@ addf_vcl_log(const char *key, const char *str)
 	AN(key);
 	ALLOC_OBJ(w, WATCH_MAGIC);
 	AN(w);
-	assert(asprintf(&w->key, "%s:", key) > 0);
-	w->keylen = strlen(w->key);
+	w->keylen = asprintf(&w->key, "%s:", key);
+	assert(w->keylen > 0);
 	VTAILQ_INSERT_TAIL(&CTX.watch_vcl_log, w, list);
 
 	ALLOC_OBJ(f, FORMAT_MAGIC);
@@ -574,8 +574,8 @@ addf_vsl(enum VSL_tag_e tag, long i, const char *prefix)
 	assert(i <= INT_MAX);
 	w->idx = i;
 	if (prefix) {
-		assert(asprintf(&w->prefix, "%s:", prefix) > 0);
-		w->prefixlen = strlen(w->prefix);
+		w->prefixlen = asprintf(&w->prefix, "%s:", prefix);
+		assert(w->prefixlen > 0);
 	}
 	VTAILQ_INSERT_TAIL(&CTX.watch_vsl, w, list);
 
