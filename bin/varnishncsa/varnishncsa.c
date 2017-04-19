@@ -393,7 +393,7 @@ format_auth(const struct format *format)
 
 	if (CTX.frag[F_auth].gen != CTX.gen ||
 	    VB64_decode(buf, sizeof buf, CTX.frag[F_auth].b,
-		CTX.frag[F_auth].e)) {
+	    CTX.frag[F_auth].e)) {
 		if (format->string == NULL)
 			return (-1);
 		AZ(vsb_esc_cat(CTX.vsb, format->string,
@@ -514,7 +514,7 @@ addf_requestline(void)
 }
 
 static void
-addf_vcl_log(const char *key, const char *str)
+addf_vcl_log(const char *key)
 {
 	struct watch *w;
 	struct format *f;
@@ -530,15 +530,13 @@ addf_vcl_log(const char *key, const char *str)
 	AN(f);
 	f->func = &format_fragment;
 	f->frag = &w->frag;
-	if (str != NULL) {
-		f->string = strdup(str);
-		AN(f->string);
-	}
+	f->string = strdup("");
+	AN(f->string);
 	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
 }
 
 static void
-addf_hdr(struct watch_head *head, const char *key, const char *str)
+addf_hdr(struct watch_head *head, const char *key)
 {
 	struct watch *w;
 	struct format *f;
@@ -547,19 +545,16 @@ addf_hdr(struct watch_head *head, const char *key, const char *str)
 	AN(key);
 	ALLOC_OBJ(w, WATCH_MAGIC);
 	AN(w);
-	w->key = strdup(key);
-	AN(w->key);
-	w->keylen = strlen(w->key);
+	w->keylen = asprintf(&w->key, "%s:", key);
+	assert(w->keylen > 0);
 	VTAILQ_INSERT_TAIL(head, w, list);
 
 	ALLOC_OBJ(f, FORMAT_MAGIC);
 	AN(f);
 	f->func = &format_fragment;
 	f->frag = &w->frag;
-	if (str != NULL) {
-		f->string = strdup(str);
-		AN(f->string);
-	}
+	f->string = strdup("-");
+	AN(f->string);
 	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
 }
 
@@ -573,27 +568,24 @@ addf_vsl(enum VSL_tag_e tag, long i, const char *prefix)
 	w->tag = tag;
 	assert(i <= INT_MAX);
 	w->idx = i;
-	if (prefix) {
+	if (prefix != NULL) {
 		w->prefixlen = asprintf(&w->prefix, "%s:", prefix);
 		assert(w->prefixlen > 0);
 	}
 	VTAILQ_INSERT_TAIL(&CTX.watch_vsl, w, list);
-
 	addf_fragment(&w->frag, "-");
 }
 
 static void
-addf_auth(const char *str)
+addf_auth(void)
 {
 	struct format *f;
 
 	ALLOC_OBJ(f, FORMAT_MAGIC);
 	AN(f);
 	f->func = &format_auth;
-	if (str != NULL) {
-		f->string = strdup(str);
-		AN(f->string);
-	}
+	f->string = strdup("-");
+	AN(f->string);
 	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
 }
 
@@ -625,7 +617,7 @@ parse_x_format(char *buf)
 		return;
 	}
 	if (!strncmp(buf, "VCL_Log:", 8)) {
-		addf_vcl_log(buf + 8, "");
+		addf_vcl_log(buf + 8);
 		return;
 	}
 	if (!strncmp(buf, "VSL:", 4)) {
@@ -758,7 +750,7 @@ parse_format(const char *format)
 			addf_time(*p, NULL);
 			break;
 		case 'u':	/* Remote user from auth */
-			addf_auth("-");
+			addf_auth();
 			break;
 		case 'U':	/* URL */
 			addf_fragment(&CTX.frag[F_U], "-");
@@ -777,12 +769,10 @@ parse_format(const char *format)
 			q++;
 			switch (*q) {
 			case 'i':
-				strcat(buf, ":");
-				addf_hdr(&CTX.watch_reqhdr, buf, "-");
+				addf_hdr(&CTX.watch_reqhdr, buf);
 				break;
 			case 'o':
-				strcat(buf, ":");
-				addf_hdr(&CTX.watch_resphdr, buf, "-");
+				addf_hdr(&CTX.watch_resphdr, buf);
 				break;
 			case 't':
 				addf_time(*q, buf);
