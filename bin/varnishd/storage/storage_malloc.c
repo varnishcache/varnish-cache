@@ -35,6 +35,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/mman.h>
 
 #include "storage/storage.h"
 #include "storage/storage_simple.h"
@@ -124,6 +125,13 @@ sma_alloc(const struct stevedore *st, size_t size)
 	sma->s.len = 0;
 	sma->s.space = size;
 	sma->s.magic = STORAGE_MAGIC;
+
+	/* If we are on Linux, avoid gigabyte/terabyte sized core dumps by
+	 * skipping the storage data.
+	 */
+#ifdef MADV_DONTDUMP
+	(void)madvise(sma->s.ptr, sma->sz, MADV_DONTDUMP);
+#endif
 	return (&sma->s);
 }
 
@@ -145,6 +153,9 @@ sma_free(struct storage *s)
 	if (sma_sc->sma_max != SIZE_MAX)
 		sma_sc->stats->g_space += sma->sz;
 	Lck_Unlock(&sma_sc->sma_mtx);
+#ifdef MADV_DODUMP
+	(void)madvise(sma->s.ptr, sma->sz, MADV_DODUMP);
+#endif
 	free(sma->s.ptr);
 	free(sma);
 }
