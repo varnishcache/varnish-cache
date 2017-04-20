@@ -47,6 +47,10 @@ varnish v1 -errvcl {Malformed VMOD std} {
 # Check creation and cleanup of copied shared objects for VMODs
 shell "test -e ./v1/vmod_cache/_vmod_std.*"
 
+# In case varnishtest was invoked with -L or -l, in which case the
+# bit is switched on.
+varnish v1 -cliok "param.set debug -vmod_so_keep"
+
 varnish v1 -stop
 varnish v1 -cleanup
 shell -err "test -e ./v1/vmod_cache/_vmod_std.*"

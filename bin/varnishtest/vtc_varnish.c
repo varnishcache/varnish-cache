@@ -418,8 +418,10 @@ varnish_launch(struct varnish *v)
 	VSB_cat(vsb, VSB_data(params_vsb));
 	if (vtc_witness)
 		VSB_cat(vsb, " -p debug=+witness");
-	if (leave_temp)
+	if (leave_temp) {
 		VSB_cat(vsb, " -p debug=+vsm_keep");
+		VSB_cat(vsb, " -p debug=+vmod_so_keep");
+        }
 	VSB_printf(vsb, " -l 2m,1m,-");
 	VSB_printf(vsb, " -p auto_restart=off");
 	VSB_printf(vsb, " -p syslog_cli_traffic=off");
