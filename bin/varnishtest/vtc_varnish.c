@@ -1045,7 +1045,7 @@ varnish_expect(const struct varnish *v, char * const *av)
  *
  * \-cleanup
  *         Once Varnish is stopped, clean everything after it. This is only used
- *         in one test and you should never need it.
+ *         in very few tests and you should never need it.
  *
  * Once Varnish is started, you can talk to it (as you would through
  * ``varnishadm``) with these additional switches::

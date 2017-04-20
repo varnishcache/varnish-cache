@@ -1,0 +1,17 @@
+varnishtest "debug bit vmod_so_keep"
+
+feature topbuild
+
+varnish v1 -vcl {
+	import std from "${topbuild}/lib/libvmod_std/.libs/";
+	backend b { .host = "${bad_backend}"; }
+} -start
+
+shell "test -e ./v1/vmod_cache/_vmod_std.*"
+
+varnish v1 -cliok "param.set debug +vmod_so_keep"
+
+# cf m00008.vtc
+varnish v1 -stop
+varnish v1 -cleanup
+shell "test -e ./v1/vmod_cache/_vmod_std.*"

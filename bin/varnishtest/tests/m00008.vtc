@@ -44,3 +44,9 @@ varnish v1 -errvcl {Malformed VMOD std} {
 	import std from "${topbuild}/lib/libvmod_debug/.libs/libvmod_debug.so";
 }
 
+# Check creation and cleanup of copied shared objects for VMODs
+shell "test -e ./v1/vmod_cache/_vmod_std.*"
+
+varnish v1 -stop
+varnish v1 -cleanup
+shell -err "test -e ./v1/vmod_cache/_vmod_std.*"
