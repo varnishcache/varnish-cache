@@ -114,7 +114,7 @@ Description
 	`false` otherwise.
 Example
 	| if (std.file_exists("/etc/return_503")) {
-	| 	return (synth(503, "Varnish is in maintenance"));
+	|	return (synth(503, "Varnish is in maintenance"));
 	| }
 
 $Function VOID collect(HEADER hdr, STRING sep=", ")

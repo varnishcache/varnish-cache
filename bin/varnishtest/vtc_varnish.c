@@ -421,7 +421,7 @@ varnish_launch(struct varnish *v)
 	if (leave_temp) {
 		VSB_cat(vsb, " -p debug=+vsm_keep");
 		VSB_cat(vsb, " -p debug=+vmod_so_keep");
-        }
+	}
 	VSB_printf(vsb, " -l 2m,1m,-");
 	VSB_printf(vsb, " -p auto_restart=off");
 	VSB_printf(vsb, " -p syslog_cli_traffic=off");
@@ -999,7 +999,7 @@ varnish_expect(const struct varnish *v, char * const *av)
  * With:
  *
  * vNAME
- *         Identify the Varnish server with a string, it must starts with 'v'.
+ *	   Identify the Varnish server with a string, it must starts with 'v'.
  *
  * \-arg STRING
  *         Pass an argument to varnishd, for example "-h simple_list".
