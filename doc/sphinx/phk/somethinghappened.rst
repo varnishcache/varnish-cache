@@ -66,7 +66,7 @@ house-building-moving-finding-where-I-put-the-computer madness
 is over late in summer, and then I would probably still insist
 on delaying it for a month just to catch my bearings.
 
-That would have held some 
+That would have held some
 `pretty significant new code </docs/5.1/whats-new/changes-5.1.html>`_
 from our users for another half year, for no particular reason.
 
