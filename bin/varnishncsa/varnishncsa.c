@@ -414,6 +414,7 @@ print(void)
 
 	VSB_clear(CTX.vsb);
 	VTAILQ_FOREACH(f, &CTX.format, list) {
+		CHECK_OBJ_NOTNULL(f, FORMAT_MAGIC);
 		i = (f->func)(f);
 		if (r > i)
 			r = i;
@@ -890,6 +891,7 @@ process_hdr(const struct watch_head *head, const char *b, const char *e)
 	const char *p;
 
 	VTAILQ_FOREACH(w, head, list) {
+		CHECK_OBJ_NOTNULL(w, WATCH_MAGIC);
 		if (!isprefix(w->key, w->keylen, b, e, &p))
 			continue;
 		frag_line(1, p, e, &w->frag);
