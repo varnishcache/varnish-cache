@@ -27,6 +27,8 @@
  *
  */
 
+#ifndef __FLEXELINT__
+
 #include "config.h"
 
 #include <stdio.h>
@@ -67,3 +69,5 @@ int main(int argc, char **argv)
 #include "tbl/vsc_all.h"
 	return (0);
 }
+
+#endif // __FLEXELINT__
