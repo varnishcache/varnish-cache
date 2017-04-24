@@ -8,6 +8,7 @@ fi
 
 flexelint \
 	../../flint.lnt \
+	../flint.lnt \
 	flint.lnt \
 	-I. \
 	-I../../include \

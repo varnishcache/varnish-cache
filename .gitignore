@@ -123,3 +123,7 @@ vt_key.pub
 # Coverity output
 /cov-int
 /myproject.tgz
+
+# Flexelint droppings
+_.fl
+_.fl.old
