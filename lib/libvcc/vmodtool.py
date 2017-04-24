@@ -811,7 +811,7 @@ class vcc(object):
 
 		self.cstruct(fx, "struct " + csn)
 
-		fo.write("\n/*lint -esym(754, Vmod_debug_Func::*) */\n")
+		fo.write("\n/*lint -esym(754, Vmod_" + self.modname + "_Func::*) */\n")
 		self.cstruct_init(fo, "struct " + csn)
 
 		fx.close()
