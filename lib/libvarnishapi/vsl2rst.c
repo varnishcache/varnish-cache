@@ -27,6 +27,8 @@
  *
  */
 
+#ifndef __FLEXELINT__
+
 #include "config.h"
 
 #include <stdint.h>
@@ -111,3 +113,5 @@ main(int argc, char *argv[])
 
 	return (0);
 }
+
+#endif // __FLEXELINT__

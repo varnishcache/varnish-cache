@@ -26,6 +26,8 @@
  * SUCH DAMAGE.
  */
 
+#ifndef __FLEXELINT__
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -84,3 +86,5 @@ main(int argc, char * const *argv)
 
 	return (0);
 }
+
+#endif // __FLEXELINT__

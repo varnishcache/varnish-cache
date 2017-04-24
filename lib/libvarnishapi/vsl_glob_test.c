@@ -28,6 +28,8 @@
  * Test what VSL_Name2Tag and VSL_Glob2Tags produces
  */
 
+#ifndef __FLEXELINT__
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -69,3 +71,5 @@ main(int argc, char * const *argv)
 
 	return (0);
 }
+
+#endif // __FLEXELINT__
