@@ -1,10 +1,8 @@
 #!/bin/sh
 
-flexelint \
-	-u \
-	../../flint.lnt \
-	-I. \
-	-I../.. \
-	-I../../include \
-	-I../../bin/varnishd \
+FLOPS='
+	-I../../bin/varnishd
 	*.c
+'
+
+. ../../tools/flint_skel.sh
