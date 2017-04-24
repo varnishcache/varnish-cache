@@ -205,10 +205,10 @@ vmod_$1.lo: vcc_$1_if.c vcc_$1_if.h
 vcc_$1_if.h vmod_$1.rst vmod_$1.man.rst: vcc_$1_if.c
 
 vcc_$1_if.c: vmod_$1.vcc
-	\$(AM_V_VMODTOOL) $PYTHON $VMODTOOL -o vcc_$1_if \$(srcdir)/vmod_$1.vcc
+	\$(AM_V_VMODTOOL) \$(PYTHON) \$(VMODTOOL) -o vcc_$1_if \$(srcdir)/vmod_$1.vcc
 
 vmod_$1.3: vmod_$1.man.rst
-	$RST2MAN vmod_$1.man.rst vmod_$1.3
+	\$(A""M_V_GEN) \$(RST2MAN) vmod_$1.man.rst vmod_$1.3
 
 clean: clean-vmod-$1
 
