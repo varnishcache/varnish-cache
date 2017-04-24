@@ -40,5 +40,3 @@
 -e726	// Extraneous comma ignored
 
 -e825	// control flows into case/default without -fallthrough comment
--e835	// A zero has been given as ___ argument to operator '___'  (<<)
-

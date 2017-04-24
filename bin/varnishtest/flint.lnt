@@ -30,7 +30,8 @@
 -e737	// [45]  Loss of sign in promotion from int to unsigned
 -e713	// Loss of precision (assignment) (unsigned long long to long long)
 -e574	// Signed-unsigned mix with relational
--e835	//  A zero has been given as ___ argument to operator '___'  (<<)
+-emacro(835, STRTOU32_CHECK)    // A zero has been given as ___ argument to operator '___'
+
 -e788	// enum value not used in defaulted switch
 
 -efile(451, vmods.h)

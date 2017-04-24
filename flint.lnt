@@ -56,6 +56,16 @@
 -emacro(774, VALID_OBJ)		// boolean always true
 
 ///////////////////////////////////////////////////////////////////////
+// Places where we use x<<0 for reasons of symmetry
+
+-emacro(835, VCT_SP)		// A zero has been given as ___ argument to operator '___'
+-emacro(835, VSL_COPT_TAIL)	// A zero has been given as ___ argument to operator '___'
+-emacro(835, SLT_F_UNUSED)	// A zero has been given as ___ argument to operator '___'
+-emacro(835, ARGV_COMMENT)	// A zero has been given as ___ argument to operator '___'
+-emacro(835, F_SEEN_ixIX)	// A zero has been given as ___ argument to operator '___'
+-emacro(835, VEX_OPT_CASELESS)	// A zero has been given as ___ argument to operator '___'
+
+///////////////////////////////////////////////////////////////////////
 // <vsb.h>
 
 -esym(759, VSB_*)		// header decl could be moved

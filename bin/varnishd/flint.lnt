@@ -61,7 +61,17 @@
 
 -esym(458, params)	// unlocked access
 
--emacro(835, HTTPH)	// Info 835: A zero has been given as left argument to operator '&'
+-emacro(835, HCB_BIT_NODE)	// Info 835: A zero has been given as left argument to operator '<<'
+-emacro(835, VBC_STATE_AVAIL)	// Info 835: A zero has been given as left argument to operator '<<'
+-emacro(835, BANS_FLAG_REQ)	// Info 835: A zero has been given as left argument to operator '<<'
+-emacro(835, HTTPH)	// Info 835: A zero has been given as left argument to operator '<<'
+-emacro(835, HTTPH_R_PASS)	// Info 835: A zero has been given as left argument to operator '<<'
+-emacro(835, SMP_SC_LOADED)	// Info 835: A zero has been given as left argument to operator '<<'
+-emacro(835, SMP_SEG_MUSTLOAD)	// Info 835: A zero has been given as left argument to operator '<<'
+-emacro(835, DELAYED_EFFECT)	// Info 835: A zero has been given as left argument to operator '<<'
+-emacro(835, HDF_FILTER)	// Info 835: A zero has been given as left argument to operator '<<'
+-emacro(835, O_LARGEFILE)	// Info 835: A zero has been given as left argument to operator '<<'
+
 -emacro(845, HTTPH)	// Info 845: The left argument to operator '&&' is certain to be 0
 -esym(773, PCRE_DATE)	// Expression-like macro '___' not parenthesized
 //////////////

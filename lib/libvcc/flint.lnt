@@ -29,6 +29,7 @@
 -e716			// while(1) ...
 -e732			// Loss of sign (arg. no. 2) (int to unsigned int)
 
+-emacro(835, EXPR_VAR)	// // Info 835: A zero has been given as right argument to operator '<<'
 
 -e763	// Redundant declaration for symbol '...' previously declared
 
