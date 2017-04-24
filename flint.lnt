@@ -18,6 +18,7 @@
 -e726		// Extraneous comma ignored
 -e641		// Converting enum '...' to int
 -e763		// Redundant declaration for symbol '...' previously declared
+-e786		// String concatenation within initializer
 
 // +e958		// padding
 
@@ -99,6 +100,8 @@
 
 ///////////////////////////////////////////////////////////////////////
 
+// It is ok to default after handling a few select SLT_* tags
+-esym(788, VSL_tag_e::SLT_*)	//  enum constant '...' not used within defaulted switch
 
 -esym(785,VSL_tags)				// Sparse array
 

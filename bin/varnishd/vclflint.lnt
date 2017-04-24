@@ -17,9 +17,6 @@
 
 			// Harmless
 
--e786			// String concatenation within initializer
-			// Harmless
-
 -e752			// local declarator [...] not referenced
 -e754			// local structure member [...] not referenced
 -e526			// Symbol [...] not defined

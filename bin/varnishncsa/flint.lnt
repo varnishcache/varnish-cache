@@ -6,7 +6,6 @@
 -e728	// Symbol ... not explicitly initialized
 -e716	// while(1) ...
 -e785	// Too few initializers for aggregate
--e786	// String concatenation within initializer
 
 // cache_vcl.c
 -e641	// Converting enum 'cli_status_e' to int

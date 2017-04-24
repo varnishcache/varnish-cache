@@ -27,7 +27,6 @@
 -esym(534, memset)	// Ignoring return value of function
 -e788			// enum constant 'HND_Unclass' not used within defaulted switch
 -e716			// while(1) ...
--e786			// String concatenation within initializer
 -e732			// Loss of sign (arg. no. 2) (int to unsigned int)
 
 

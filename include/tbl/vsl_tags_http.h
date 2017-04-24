@@ -43,7 +43,7 @@
  *
  */
 
-/*lint -save -e525 -e539 */
+/*lint -save -e525 -e539 -e835 */
 
 SLTH(Method,	HTTP_HDR_METHOD,	1, 0, "method",
 	"The HTTP request method used.\n\n"
