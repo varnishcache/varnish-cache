@@ -106,7 +106,7 @@ static int scales[] = {
 	INT_MAX
 };
 
-static struct profile {
+struct profile {
 	const char *name;
 	char VSL_arg;
 	enum VSL_tag_e tag;
@@ -114,13 +114,14 @@ static struct profile {
 	int field;
 	int hist_low;
 	int hist_high;
-}
+};
+
 #define HIS_PROF(name,vsl_arg,tag,prefix,field,hist_low,high_high,doc)	\
 	{name,vsl_arg,tag,prefix,field,hist_low,high_high},
 #define HIS_NO_PREFIX	NULL
 #define HIS_CLIENT	'c'
 #define HIS_BACKEND	'b'
-profiles[] = {
+static const struct profile profiles[] = {
 #include "varnishhist_profiles.h"
 	{ NULL }
 };
@@ -129,7 +130,7 @@ profiles[] = {
 #undef HIS_CLIENT
 #undef HIS_PROF
 
-static struct profile *active_profile;
+static const struct profile *active_profile;
 
 volatile sig_atomic_t quit = 0;
 
@@ -224,7 +225,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 {
 	int i, tag, skip, match, hit;
 	unsigned u;
-	double value;
+	double value = 0;
 	struct VSL_transaction *tr;
 	double t;
 	const char *tsp;
@@ -582,6 +583,7 @@ main(int argc, char **argv)
 				break;
 		}
 	}
+	AN(active_profile);
 	if (!active_profile->name)
 		VUT_Error(1, "-P: No such profile '%s'", profile);
 
@@ -599,7 +601,8 @@ main(int argc, char **argv)
 	if (timebend > 0)
 		t0 = VTIM_mono();
 
-	format = malloc(4 * fnum);
+	format = malloc(4L * fnum);
+	AN(format);
 	for (i = 0; i < fnum - 1; i++)
 		strcpy(format + 4 * i, "%*s ");
 	strcpy(format + 4 * (fnum - 1), "%lf");
