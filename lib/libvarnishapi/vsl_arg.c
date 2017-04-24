@@ -53,7 +53,6 @@
 #include "vre.h"
 
 #include "vapi/vsl.h"
-#include "vapi/vsm.h"
 
 #include "vsl_api.h"
 #include "vsm_api.h"
