@@ -15,10 +15,15 @@ FLOPS='
 	proxy/*.c
 	storage/*.c
 	waiter/*.c
+	../../lib/libvarnish/flint.lnt
 	../../lib/libvarnish/*.c
+	../../lib/libvcc/flint.lnt
 	../../lib/libvcc/*.c
+	../../lib/libvmod_std/flint.lnt
 	../../lib/libvmod_std/*.c
+	../../lib/libvmod_debug/flint.lnt
 	../../lib/libvmod_debug/*.c
+	../../lib/libvmod_directors/flint.lnt
 	../../lib/libvmod_directors/*.c
 '
 
