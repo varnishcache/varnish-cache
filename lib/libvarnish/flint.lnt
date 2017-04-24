@@ -47,6 +47,9 @@
 -emacro(506, assert)	// constant value boolean
 -emacro(774, HTTPH)	// always false
 
+-efunc(835, SHA256_Transform)	// A zero has been given as ___ argument to operator '___'
+-efunc(778, SHA256_Transform)	// Constant expression evaluates to 0 in operation '___'
+
 // cache.h
 -emacro(506, INCOMPL) // Constant value Boolean
 
