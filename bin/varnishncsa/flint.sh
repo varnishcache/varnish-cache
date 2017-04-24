@@ -1,31 +1,26 @@
 #!/bin/sh
 
-T=/tmp/_$$
+if [ "x$1" = "x-ok" -a -f _.fl ] ; then
+	echo "Saved as reference"
+	mv _.fl _.fl.old
+	exit 0
+fi
+
 flexelint \
-	-I/usr/include \
-	-I. \
-	-I../.. \
-	-I../../include \
+	../../flint.lnt \
 	../flint.lnt \
 	flint.lnt \
-	*.c > $T 2>&1
+	-I. \
+	-I../../include \
+	-I../.. \
+	*.c \
+	2>&1 | tee _.fl
 
-for t in Error Warning Info
-do
-	sed -n "/$t [0-9][0-9][0-9]:/s/.*\($t [0-9][0-9][0-9]\).*/\1/p" $T
-done | awk '
-$2 == 830	{ next }
-$2 == 831	{ next }
-	{
-	i=$2"_"$1
-	h[i]++
-	n++
-	}
-END	{
-	printf "%5d %s\n", n, "Total"
-	for (i in h)
-		printf "%5d %s\n", h[i], i
-	}
-' | sort -rn
+if [ -f _.fl.old ] ; then
+	diff -u _.fl.old _.fl
+fi
 
-cat $T
+if [ "x$1" = "x-ok" ] ; then
+	echo "Saved as reference"
+	mv _.fl _.fl.old
+fi

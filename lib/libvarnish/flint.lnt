@@ -1,5 +1,3 @@
--passes=8
-
 +libh mgt_event.h
 +libh ../../config.h
 
