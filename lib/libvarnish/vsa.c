@@ -333,9 +333,9 @@ VSA_Compare_IP(const struct suckaddr *sua1, const struct suckaddr *sua2)
 	case PF_INET6:
 		return (memcmp(&sua1->sa6.sin6_addr,
 		    &sua2->sa6.sin6_addr, sizeof(struct in6_addr)));
+	default:
+		WRONG("Just plain insane");
 	}
-
-	WRONG("Just plain insane");
 	NEEDLESS(return(-1));
 }
 

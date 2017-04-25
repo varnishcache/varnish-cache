@@ -112,7 +112,7 @@ VAV_BackSlashDecode(const char *s, const char *e)
 	if (e == NULL)
 		e = strchr(s, '\0');
 	assert(e != NULL);
-	p = calloc((e - s) + 1, 1);
+	p = calloc((e - s) + 1L, 1);
 	if (p == NULL)
 		return (p);
 	for (r = p, q = s; q < e; ) {
@@ -193,7 +193,7 @@ VAV_Parse(const char *s, int *argc, int flag)
 			assert(argv != NULL);
 		}
 		if (flag & ARGV_NOESC) {
-			argv[nargv] = malloc(1 + (s - p));
+			argv[nargv] = malloc(1L + (s - p));
 			assert(argv[nargv] != NULL);
 			memcpy(argv[nargv], p, s - p);
 			argv[nargv][s - p] = '\0';

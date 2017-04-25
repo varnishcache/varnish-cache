@@ -188,7 +188,7 @@ VPF_Write(struct vpf_fh *pfh)
 		return (-1);
 	}
 
-	error = snprintf(pidstr, sizeof(pidstr), "%ju", (uintmax_t)getpid());
+	error = snprintf(pidstr, sizeof(pidstr), "%jd", (intmax_t)getpid());
 	assert(error < sizeof pidstr);
 	if (pwrite(fd, pidstr, strlen(pidstr), 0) != (ssize_t)strlen(pidstr)) {
 		error = errno;
