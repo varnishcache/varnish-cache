@@ -114,11 +114,10 @@ mac_callback(void *priv, const struct suckaddr *sa)
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (!VSA_Compare(sa, ls->addr))
 			ARGV_ERR("-a arguments %s and %s have same address\n",
-			    ls->arg->name, la->name);
+			    ls->name, la->name);
 	}
 	ALLOC_OBJ(ls, LISTEN_SOCK_MAGIC);
 	AN(ls);
-	ls->arg = la;
 	ls->sock = -1;
 	ls->addr = VSA_Clone(sa);
 	AN(ls->addr);

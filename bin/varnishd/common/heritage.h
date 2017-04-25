@@ -48,7 +48,6 @@ struct listen_sock {
 	VTAILQ_ENTRY(listen_sock)	list;
 	VTAILQ_ENTRY(listen_sock)	arglist;
 	int				sock;
-	const struct listen_arg		*arg;
 	char				*name;
 	struct suckaddr			*addr;
 	const struct transport		*transport;
