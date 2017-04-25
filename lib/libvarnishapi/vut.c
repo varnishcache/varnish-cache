@@ -153,6 +153,7 @@ VUT_Arg(int opt, const char *arg)
 		return (1);
 	case 'g':
 		/* Grouping */
+		AN(arg);
 		return (VUT_g_Arg(arg));
 	case 'k':
 		/* Log transaction limit */
@@ -163,18 +164,22 @@ VUT_Arg(int opt, const char *arg)
 		return (1);
 	case 'n':
 		/* Varnish instance name */
+		AN(arg);
 		REPLACE(VUT.n_arg, arg);
 		return (1);
 	case 'P':
 		/* PID file */
+		AN(arg);
 		REPLACE(VUT.P_arg, arg);
 		return (1);
 	case 'q':
 		/* Query to use */
+		AN(arg);
 		REPLACE(VUT.q_arg, arg);
 		return (1);
 	case 'r':
 		/* Binary file input */
+		AN(arg);
 		REPLACE(VUT.r_arg, arg);
 		return (1);
 	case 't':
