@@ -586,6 +586,8 @@ main(int argc, char **argv)
 	if (!active_profile->name)
 		VUT_Error(1, "-P: No such profile '%s'", profile);
 
+	assert(active_profile->VSL_arg == 'b' ||
+	    active_profile->VSL_arg == 'c');
 	assert(VUT_Arg(active_profile->VSL_arg, NULL));
 	match_tag = active_profile->tag;
 	fnum = active_profile->field;
