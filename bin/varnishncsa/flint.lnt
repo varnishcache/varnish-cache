@@ -22,6 +22,5 @@
 -e534	// Ignoring return value of function
 -e557	// unrecog format
 -e732   // Loss of sign (arg. no. 2) (int to unsigned
--e737	// [45]  Loss of sign in promotion from int to unsigned
 -e788	// tag not used in defaulted switch
 

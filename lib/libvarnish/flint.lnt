@@ -59,7 +59,6 @@
 // Review all below this line ///////////////////////////////////////////////
 
 -e732   // Loss of sign (arg. no. 2) (int to unsigned
--e737	// [45]  Loss of sign in promotion from int to unsigned
 -e713	// Loss of precision (assignment) (unsigned long long to long long)
 -e574	// Signed-unsigned mix with relational
 -e712	// Loss of precision (assignment) (long long to

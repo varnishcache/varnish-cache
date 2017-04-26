@@ -33,7 +33,6 @@
 -e763	// Redundant declaration for symbol '...' previously declared
 
 
--e737	// Loss of sign in promotion from int to unsigned int
 -e534	// Ignoring return value of function
 -e506	// Constant value boolean
 -e774	// Boolean within 'if' always evaluates to False

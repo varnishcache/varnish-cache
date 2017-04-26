@@ -366,8 +366,9 @@ VSL_PrintTransactions(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			if (t->level > 3)
 				VSL_PRINT(fo, "*%1.1u* ", t->level);
 			else
-				VSL_PRINT(fo, "%-3.*s ", t->level, "***");
-			VSL_PRINT(fo, "%*.s%-14s %*.s%-10u\n",
+				VSL_PRINT(fo, "%-3.*s ",
+				    (int)(t->level), "***");
+			VSL_PRINT(fo, "%*.s%-14s %*.s%-10d\n",
 			    verbose ? 10 + 1 : 0, " ",
 			    VSL_transactions[t->type],
 			    verbose ? 1 + 1 : 0, " ",
@@ -387,7 +388,8 @@ VSL_PrintTransactions(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			if (t->level > 3)
 				VSL_PRINT(fo, "-%1.1u- ", t->level);
 			else if (t->level)
-				VSL_PRINT(fo, "%-3.*s ", t->level, "---");
+				VSL_PRINT(fo, "%-3.*s ",
+				    (int)(t->level), "---");
 			if (verbose)
 				i = VSL_Print(vsl, t->c, fo);
 			else

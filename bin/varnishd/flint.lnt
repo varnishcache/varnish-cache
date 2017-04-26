@@ -136,7 +136,6 @@
 
 // Review all below this line ///////////////////////////////////////////////
 
--e737	// 143 Loss of sign in promotion from ___ to ___
 -e713	// 42 Loss of precision (___) (___ to ___)
 -e574	// 48 Signed-unsigned mix with relational
 -e840	// Use of nul character in a string literal (see: vcc_if.c)
