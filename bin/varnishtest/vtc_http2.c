@@ -2004,7 +2004,7 @@ cmd_txgoaway(CMD_ARGS)
 		vtc_fatal(vl, "Unknown txgoaway spec: %s\n", *av);
 
 	if (!f.data)
-		f.data = malloc(2);
+		f.data = malloc(8);
 	vbe32enc(f.data, ls);
 	vbe32enc(f.data + 4, err);
 	write_frame(s->hp, &f, 1);
