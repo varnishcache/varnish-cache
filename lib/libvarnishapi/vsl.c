@@ -172,7 +172,7 @@ vsl_match_IX(struct VSL_data *vsl, const vslf_list *list,
 	const struct vslf *vslf;
 
 	(void)vsl;
-	tag = VSL_TAG(c->rec.ptr);
+	tag = (enum VSL_tag_e)VSL_TAG(c->rec.ptr);
 	cdata = VSL_CDATA(c->rec.ptr);
 	len = VSL_LEN(c->rec.ptr);
 
@@ -194,7 +194,7 @@ VSL_Match(struct VSL_data *vsl, const struct VSL_cursor *c)
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 	if (c == NULL || c->rec.ptr == NULL)
 		return (0);
-	tag = VSL_TAG(c->rec.ptr);
+	tag = (enum VSL_tag_e)VSL_TAG(c->rec.ptr);
 	if (tag <= SLT__Bogus || tag >= SLT__Reserved)
 		return (0);
 	if (vsl->c_opt && !VSL_CLIENT(c->rec.ptr))
@@ -245,7 +245,7 @@ VSL_Print(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
 		return (0);
 	if (fo == NULL)
 		fo = stdout;
-	tag = VSL_TAG(c->rec.ptr);
+	tag = (enum VSL_tag_e)VSL_TAG(c->rec.ptr);
 	vxid = VSL_ID(c->rec.ptr);
 	len = VSL_LEN(c->rec.ptr);
 	type = VSL_CLIENT(c->rec.ptr) ? 'c' : VSL_BACKEND(c->rec.ptr) ?
@@ -283,7 +283,7 @@ VSL_PrintTerse(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
 		return (0);
 	if (fo == NULL)
 		fo = stdout;
-	tag = VSL_TAG(c->rec.ptr);
+	tag = (enum VSL_tag_e)VSL_TAG(c->rec.ptr);
 	len = VSL_LEN(c->rec.ptr);
 	data = VSL_CDATA(c->rec.ptr);
 

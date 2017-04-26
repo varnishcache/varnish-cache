@@ -75,9 +75,10 @@
 
 #define REPLACE(ptr, val)						\
 	do {								\
+		const char *_vreplace = (val);				\
 		free(ptr);						\
-		if ((val) != NULL) {					\
-			ptr = strdup(val);				\
+		if (_vreplace != NULL) {				\
+			ptr = strdup(_vreplace);			\
 			AN((ptr));					\
 		} else {						\
 			ptr = NULL;					\

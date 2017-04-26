@@ -37,7 +37,6 @@
 -e506	// Constant value boolean
 -e774	// Boolean within 'if' always evaluates to False
 -e713	// Loss of precision (assignment) (unsigned long long to long long)
--e574	// Signed-unsigned mix with relational
 -e539	// Did not expect positive indentation
 -e734	// Loss of precision (assignment) (31 bits to 8 bits)
 -e747	// Significant prototype coercion (arg. no. 2) long

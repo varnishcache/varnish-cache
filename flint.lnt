@@ -27,6 +27,7 @@
 
 ///////////////////////////////////////////////////////////////////////
 // General stylistic issues
+-e574		// Signed-unsigned mix with relational
 -e641		// Converting enum '...' to int
 -e716		// while(1) ...
 -e726		// Extraneous comma ignored
