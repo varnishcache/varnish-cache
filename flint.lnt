@@ -17,6 +17,15 @@
 +libh(../../config.h)
 
 ///////////////////////////////////////////////////////////////////////
+// Thread/locking, too many false positives still
+-e454		// A thread mutex has been locked but not unlocked___
+-e455		// A thread mutex that had not been locked is being unlocked
+-e456		// Two execution paths are being combined with different mutex lock states
+-e457		// unprotected write access
+-e458		// unprotected access
+-e459		// unprotected access
+
+///////////////////////////////////////////////////////////////////////
 // General stylistic issues
 -e641		// Converting enum '...' to int
 -e716		// while(1) ...

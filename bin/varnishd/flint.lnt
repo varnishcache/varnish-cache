@@ -55,10 +55,6 @@
 //-sem (pthread_mutex_lock, thread_lock)
 -sem (pthread_mutex_trylock, thread_lock)
 -sem (VBE_DropRefLocked, thread_unlock)
--e454	// mutex not released (...ReleaseLocked)
--e457	// unprotected access
-
--esym(458, params)	// unlocked access
 
 -emacro(835, HCB_BIT_NODE)	// Info 835: A zero has been given as left argument to operator '<<'
 -emacro(835, VBC_STATE_AVAIL)	// Info 835: A zero has been given as left argument to operator '<<'
@@ -80,8 +76,6 @@
 -efile(451, "symbol_kind.h")	// No include guard
 -efile(451, "config.h")	// No include guard
 //////////////
-// -e458			// unprotected access
-// -e456			// merged locking paths
 -sem(vca_thread_acct, thread_mono)
 -sem(vca_epoll_thread, thread_mono)
 -sem(vca_kqueue_thread, thread_mono)
@@ -90,8 +84,6 @@
 -sem(exp_timer, thread_mono)
 -sem(wrk_herdtimer_thread, thread_mono)
 -sem(wrk_herder_thread, thread_mono)
--esym(458, heritage)
--esym(458, name_key)
 
 //////////////
 // 436 = Apparent preprocessor directive in invocation of macro '___'
@@ -113,8 +105,6 @@
 
 -sem(vdi_dns_cache_list_add, custodial(3))
 
--e455	// thread lock
--e458	// unprotected read
 -e717	// do ... while(1) ...
 -e850	// for loop index variable '___' whose type category is '___'
 	// is modified in body of the for loop that began at '___'
