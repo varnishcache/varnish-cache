@@ -15,10 +15,21 @@
 
 ///////////////////////////////////////////////////////////////////////
 // General stylistic issues
--e726		// Extraneous comma ignored
 -e641		// Converting enum '...' to int
+-e726		// Extraneous comma ignored
 -e763		// Redundant declaration for symbol '...' previously declared
+-e777		// Testing floats for equality
 -e786		// String concatenation within initializer
+
+-esym(818, argv)	// Pointer parameter '...' could be declared as pointing to const
+
+/*
+ * va_list's are opaque for a reason, but we pretend to FlexeLint that it
+ * is just a void*, so it proposes constification, which is not generally OK,
+ * for instance on register-spilling architectures.
+ * XXX: Maybe 'ap' is a badly chosen conventional name here...
+ */
+-esym(818, ap)		// Pointer parameter '...' could be declared as pointing to const
 
 // +e958		// padding
 

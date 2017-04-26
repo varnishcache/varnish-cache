@@ -119,7 +119,6 @@ static WINDOW *w_info = NULL;
 
 static int verbosity = VSC_level_info;
 static int keep_running = 1;
-static int show_info = 1;
 static int hide_unseen = 1;
 static int page_start = 0;
 static int current = 0;
@@ -476,7 +475,7 @@ make_windows(void)
 	l_status = LINES_STATUS;
 	l_bar_t = LINES_BAR_T;
 	l_bar_b = LINES_BAR_B;
-	l_info = (show_info ? LINES_INFO : 0);
+	l_info = LINES_INFO;
 	l_points = Y - (l_status + l_bar_t + l_bar_b + l_info);
 	if (l_points < LINES_POINTS_MIN) {
 		l_points += l_info;
@@ -634,7 +633,7 @@ draw_bar_t(void)
 }
 
 static void
-draw_line_default(WINDOW *w, int y, int x, int X, struct pt *pt)
+draw_line_default(WINDOW *w, int y, int x, int X, const struct pt *pt)
 {
 	enum {
 		COL_CUR,
@@ -722,7 +721,7 @@ print_trunc(WINDOW *w, uintmax_t val)
 }
 
 static void
-draw_line_bytes(WINDOW *w, int y, int x, int X, struct pt *pt)
+draw_line_bytes(WINDOW *w, int y, int x, int X, const struct pt *pt)
 {
 	enum {
 		COL_CUR,
@@ -779,7 +778,7 @@ draw_line_bytes(WINDOW *w, int y, int x, int X, struct pt *pt)
 }
 
 static void
-draw_line_bitmap(WINDOW *w, int y, int x, int X, struct pt *pt)
+draw_line_bitmap(WINDOW *w, int y, int x, int X, const struct pt *pt)
 {
 	int ch;
 	enum {
@@ -822,7 +821,7 @@ draw_line_bitmap(WINDOW *w, int y, int x, int X, struct pt *pt)
 }
 
 static void
-draw_line_duration(WINDOW *w, int y, int x, int X, struct pt *pt)
+draw_line_duration(WINDOW *w, int y, int x, int X, const struct pt *pt)
 {
 	enum {
 		COL_DUR,
@@ -853,7 +852,7 @@ draw_line_duration(WINDOW *w, int y, int x, int X, struct pt *pt)
 }
 
 static void
-draw_line(WINDOW *w, int y, struct pt *pt)
+draw_line(WINDOW *w, int y, const struct pt *pt)
 {
 	int x, X;
 

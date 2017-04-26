@@ -82,7 +82,7 @@ static double vsl_t0 = 0, vsl_to, vsl_ts = 0;
 static pthread_cond_t timebend_cv;
 static double log_ten;
 
-static int scales[] = {
+static const int scales[] = {
 	1,
 	2,
 	3,

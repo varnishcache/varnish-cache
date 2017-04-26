@@ -57,7 +57,6 @@
 -sem (VBE_DropRefLocked, thread_unlock)
 -e454	// mutex not released (...ReleaseLocked)
 -e457	// unprotected access
--e777	// float equality comparison
 
 -esym(458, params)	// unlocked access
 
