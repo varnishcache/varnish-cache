@@ -1228,7 +1228,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 #include "tbl/h2_error.h"
 	else
 		return (spec);
-	return(NULL);
+	return (NULL);
 }
 
 /* SECTION: stream.spec.frame_sendhex sendhex
@@ -1726,7 +1726,7 @@ cmd_txrst(CMD_ARGS)
 	while (*++av) {
 		if (!strcmp(*av, "-err")) {
 			++av;
-			for (err=0; h2_errs[err]; err++) {
+			for (err = 0; h2_errs[err]; err++) {
 				if (!strcmp(h2_errs[err], *av))
 					break;
 			}
@@ -1944,12 +1944,12 @@ cmd_txping(CMD_ARGS)
 }
 
 /*
- * SECTION: stream.spec.goaway_txgoaway rxgoaway
+ * SECTION: stream.spec.goaway_txgoaway txgoaway
  *
  * Possible options include:
  *
  * \-err STRING|INT
- *	set the error code to eplain the termination. The second argument
+ *	set the error code to explain the termination. The second argument
  *	can be a integer or the string version of the error code as found
  *	in rfc7540#7.
  *
@@ -1969,18 +1969,16 @@ cmd_txgoaway(CMD_ARGS)
 	uint32_t err = 0;
 	uint32_t ls = 0;
 	struct frame f;
-	char buf[8];
 
 	(void)cmd;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
-	memset(buf, 0, 8);
 
 	INIT_FRAME(f, GOAWAY, 8, s->id, 0);
 
 	while (*++av) {
 		if (!strcmp(*av, "-err")) {
 			++av;
-			for (err=0; h2_errs[err]; err++)
+			for (err = 0; h2_errs[err]; err++)
 				if (!strcmp(h2_errs[err], *av))
 					break;
 
@@ -1996,6 +1994,7 @@ cmd_txgoaway(CMD_ARGS)
 				vtc_fatal(vl, "this frame already has debug data");
 			f.size = 8 + strlen(*av);
 			f.data = malloc(f.size);
+			AN(f.data);
 			memcpy(f.data + 8, *av, f.size - 8);
 		} else
 			break;
@@ -2003,8 +2002,10 @@ cmd_txgoaway(CMD_ARGS)
 	if (*av != NULL)
 		vtc_fatal(vl, "Unknown txgoaway spec: %s\n", *av);
 
-	if (!f.data)
+	if (!f.data) {
 		f.data = malloc(8);
+		AN(f.data);
+	}
 	vbe32enc(f.data, ls);
 	vbe32enc(f.data + 4, err);
 	write_frame(s->hp, &f, 1);
