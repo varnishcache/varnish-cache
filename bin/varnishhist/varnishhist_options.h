@@ -78,11 +78,11 @@ HIS_OPT_p
 #define HIS_CLIENT	"client"
 #define HIS_BACKEND	"backend"
 #define HIS_NO_PREFIX	""
-#define HIS_PROF(name,cb,tag,prefix,field,hist_low,high_high,doc)	\
+#define HIS_PROF(name,cb,tg,prefix,fld,hist_low,high_high,doc)		\
 	VOPT("P:", "[-P " name "]",					\
 	     "Predefined " cb " profile",				\
 	     "Predefined " cb " profile: " doc				\
-	     " (field " #field " of " #tag " " prefix " VSL tag)."	\
+	     " (field " #fld " of " #tg " " prefix " VSL tag)."		\
 	    )
 #include "varnishhist_profiles.h"
 #undef HIS_NO_PREFIX

@@ -130,7 +130,7 @@ static const struct profile profiles[] = {
 
 static const struct profile *active_profile;
 
-volatile sig_atomic_t quit = 0;
+static volatile sig_atomic_t quit = 0;
 
 static void
 update(void)

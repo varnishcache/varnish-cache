@@ -418,7 +418,7 @@ VSL_WriteOpen(struct VSL_data *vsl, const char *name, int append, int unbuf)
 	if (0 == ftell(f)) {
 		if (fwrite(head, 1, sizeof head, f) != sizeof head) {
 			vsl_diag(vsl, "%s", strerror(errno));
-			fclose(f);
+			(void)fclose(f);
 			return (NULL);
 		}
 	}

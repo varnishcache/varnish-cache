@@ -51,7 +51,6 @@
 #include "vnum.h"
 #include "vqueue.h"
 #include "vrnd.h"
-#include "vsa.h"
 #include "vss.h"
 #include "vsub.h"
 #include "vtcp.h"

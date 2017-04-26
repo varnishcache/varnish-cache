@@ -4,9 +4,6 @@
 -esym(763, sess)	// Redundant declaration for symbol 'sess'
 -esym(763, cli)		// Redundant declaration for symbol 'cli'
 
--e785		// Too few initializers for aggregate '___' of type '___'
-
-
 -esym(750, VCL_RET_*)	// not ref
 -esym(750, VCL_MET_*)	// not ref
 

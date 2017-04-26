@@ -26,9 +26,6 @@
 -ffc	// No automatic custody
 
 -e763	// Redundant declaration for symbol '...' previously declared
--e726	// Extraneous comma ignored
--e716	// while(1) ...
--e785	// Too few initializers for aggregate
 
 -esym(534, sprintf)	// Ignoring return value of function
 -esym(534, asprintf)	// Ignoring return value of function

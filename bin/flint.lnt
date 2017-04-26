@@ -37,6 +37,4 @@
 
 -emacro(702, WEXITSTATUS)	// signed shift right
 
--e726	// Extraneous comma ignored
-
 -e825	// control flows into case/default without -fallthrough comment

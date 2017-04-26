@@ -70,7 +70,6 @@
 static const char progname[] = "varnishncsa";
 
 struct format;
-struct fragment;
 
 enum e_frag {
 	F_H,			/* %H Proto */

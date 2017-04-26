@@ -378,7 +378,7 @@ vsc_filter_pt_list(struct VSM_data *vd)
 				VSB_printf(vsb, "%s.",
 				    pt->point.section->ident);
 			VSB_printf(vsb, "%s", pt->point.desc->name);
-			VSB_finish(vsb);
+			AZ(VSB_finish(vsb));
 			if (fnmatch(sf->pattern, VSB_data(vsb), 0))
 				continue;
 			VTAILQ_REMOVE(&vsc->pt_list, pt, list);

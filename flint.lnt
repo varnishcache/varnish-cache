@@ -19,10 +19,12 @@
 ///////////////////////////////////////////////////////////////////////
 // General stylistic issues
 -e641		// Converting enum '...' to int
+-e716		// while(1) ...
 -e726		// Extraneous comma ignored
 -e728		// Symbol ... not explicitly initialized
 -e763		// Redundant declaration for symbol '...' previously declared
 -e777		// Testing floats for equality
+-e785		// Too few initializers for aggregate
 -e786		// String concatenation within initializer
 
 -esym(818, argv)	// Pointer parameter '...' could be declared as pointing to const
@@ -121,9 +123,18 @@
 -emacro(740, VTAILQ_LAST) // Unusual pointer cast (incompatible indirect types)
 -emacro(740, VTAILQ_PREV) // Unusual pointer cast (incompatible indirect types)
 
+-esym(754, "*::vtqh_first")	// local struct member '...' not referenced
+
 ///////////////////////////////////////////////////////////////////////
 // <vdef.h>
 -emacro(527, NEEDLESS)	// unreachable code
+
+///////////////////////////////////////////////////////////////////////
+// <libvarnishapi>
+
+-esym(765, vsl_vbm_bitclr)
+-esym(765, vsl_vbm_bitset)
+-esym(765, vsm_diag)
 
 ///////////////////////////////////////////////////////////////////////
 

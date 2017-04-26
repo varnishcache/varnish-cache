@@ -32,8 +32,7 @@
 #define VSL_FILE_ID			"VSL"
 
 /*lint -esym(534, vsl_diag) */
-int vsl_diag(struct VSL_data *vsl, const char *fmt, ...)
-    __v_printflike(2, 3);
+int vsl_diag(struct VSL_data *vsl, const char *fmt, ...) __v_printflike(2, 3);
 void vsl_vbm_bitset(int bit, void *priv);
 void vsl_vbm_bitclr(int bit, void *priv);
 

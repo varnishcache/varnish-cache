@@ -26,7 +26,6 @@
 -esym(534, vsb_vprintf)	// Ignoring return value of function
 -esym(534, memset)	// Ignoring return value of function
 -e788			// enum constant 'HND_Unclass' not used within defaulted switch
--e716			// while(1) ...
 -e732			// Loss of sign (arg. no. 2) (int to unsigned int)
 
 -emacro(835, EXPR_VAR)	// // Info 835: A zero has been given as right argument to operator '<<'

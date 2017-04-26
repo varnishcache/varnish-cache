@@ -2,7 +2,6 @@
 -e747	// 16      Info    747     Significant prototype coercion (___) ___ to ___
 
 -e763	// Redundant declaration for symbol '...' previously declared
--e716	// while(1) ...
 
 -efile(451, "varnishlog_options.h")
 

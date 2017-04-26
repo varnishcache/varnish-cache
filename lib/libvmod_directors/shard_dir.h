@@ -105,7 +105,6 @@ void sharddir_debug(struct sharddir *shardd, const uint32_t flags);
 void sharddir_err(VRT_CTX, enum VSL_tag_e tag,  const char *fmt, ...);
 void sharddir_new(struct sharddir **sharddp, const char *vcl_name);
 void sharddir_delete(struct sharddir **sharddp);
-void sharddir_rdlock(struct sharddir *shardd);
 void sharddir_wrlock(struct sharddir *shardd);
 void sharddir_unlock(struct sharddir *shardd);
 VCL_BACKEND sharddir_pick_be(VRT_CTX, struct sharddir *, uint32_t, VCL_INT,

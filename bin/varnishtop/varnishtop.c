@@ -78,7 +78,7 @@ static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 static int f_flag = 0;
 static unsigned maxfieldlen = 0;
 
-volatile sig_atomic_t quit = 0;
+static volatile sig_atomic_t quit = 0;
 
 static VRB_HEAD(t_order, top) h_order = VRB_INITIALIZER(&h_order);
 static VRB_HEAD(t_key, top) h_key = VRB_INITIALIZER(&h_key);

@@ -68,7 +68,7 @@ varnish_daemon(int nochdir, int noclose)
 	int osa_ok;
 
 	/* A SIGHUP may be thrown when the parent exits below. */
-	sigemptyset(&sa.sa_mask);
+	AZ(sigemptyset(&sa.sa_mask));
 	sa.sa_handler = SIG_IGN;
 	sa.sa_flags = 0;
 	osa_ok = sigaction(SIGHUP, &sa, &osa);
@@ -89,7 +89,7 @@ varnish_daemon(int nochdir, int noclose)
 	newgrp = setsid();
 	oerrno = errno;
 	if (osa_ok != -1)
-		sigaction(SIGHUP, &osa, NULL);
+		AZ(sigaction(SIGHUP, &osa, NULL));
 
 	if (newgrp == -1) {
 		errno = oerrno;

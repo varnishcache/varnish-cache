@@ -4,9 +4,6 @@
 -efile(451, "varnishncsa_options.h")
 
 -e763	// Redundant declaration for symbol '...' previously declared
--e726	// Extraneous comma ignored
--e716	// while(1) ...
--e785	// Too few initializers for aggregate
 
 // cache_vcl.c
 -e641	// Converting enum 'cli_status_e' to int

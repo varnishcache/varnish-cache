@@ -20,7 +20,6 @@
 -e679	// Suspicious Truncation in arithmetic expression combining with pointer
 
 -e763	// Redundant declaration for symbol '...' previously declared
--e716	// while(1) ...
 
 -e457 // unprotected write access
 -e459 // unprotected access
