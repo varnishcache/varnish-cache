@@ -44,7 +44,6 @@
 #include "vtc.h"
 #include "vtc_http.h"
 
-#include "vct.h"
 #include "vfil.h"
 #include "vgz.h"
 #include "vnum.h"

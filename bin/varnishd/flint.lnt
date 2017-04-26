@@ -115,7 +115,6 @@
 
 -e455	// thread lock
 -e458	// unprotected read
--e728	// Symbol ... not explicitly initialized
 -e716	// while(1) ...
 -e717	// do ... while(1) ...
 -e785	// Too few initializers for aggregate

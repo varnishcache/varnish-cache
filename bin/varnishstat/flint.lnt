@@ -1,6 +1,8 @@
 
 +libh mgt_event.h
 
+-efile(451, varnishstat_options.h)
+
 -esym(850, av)
 
 -e712	// 14      Info    712     Loss of precision (___) (___ to ___)

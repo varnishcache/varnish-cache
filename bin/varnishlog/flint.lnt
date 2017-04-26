@@ -4,6 +4,8 @@
 -e763	// Redundant declaration for symbol '...' previously declared
 -e716	// while(1) ...
 
+-efile(451, "varnishlog_options.h")
+
 -e457 // unprotected write access
 -e459 // unprotected access
 -e458 // unprotected access

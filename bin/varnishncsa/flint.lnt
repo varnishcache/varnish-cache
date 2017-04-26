@@ -1,9 +1,10 @@
 
 +d__attribute__()=
 
+-efile(451, "varnishncsa_options.h")
+
 -e763	// Redundant declaration for symbol '...' previously declared
 -e726	// Extraneous comma ignored
--e728	// Symbol ... not explicitly initialized
 -e716	// while(1) ...
 -e785	// Too few initializers for aggregate
 

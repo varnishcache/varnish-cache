@@ -46,7 +46,6 @@
 #include "vas.h"
 #include "vdef.h"
 #include "vpf.h"
-#include "vsb.h"
 #include "vut.h"
 #include "miniobj.h"
 

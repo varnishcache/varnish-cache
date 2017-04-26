@@ -49,10 +49,8 @@
 #include "vdef.h"
 #include "vcurses.h"
 #include "vapi/vsl.h"
-#include "vapi/vsm.h"
 #include "vapi/voptget.h"
 #include "vas.h"
-#include "vcs.h"
 #include "vut.h"
 #include "vtim.h"
 
@@ -612,7 +610,7 @@ main(int argc, char **argv)
 	VUT_Setup();
 	if (pthread_create(&thr, NULL, do_curses, NULL) != 0)
 		VUT_Error(1, "pthread_create(): %s", strerror(errno));
-	VUT.dispatch_f = &accumulate;
+	VUT.dispatch_f = accumulate;
 	VUT.dispatch_priv = NULL;
 	VUT.sighup_f = sighup;
 	VUT_Main();

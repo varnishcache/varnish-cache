@@ -8,6 +8,9 @@
 -efile(451, "tbl/*.h")		// No include guard
 -efile(537, "tbl/*.h")		// Repeated include
 
+-efile(451, "../../include/vut_options.h")		// No include guard
+-efile(451, "../../include/vapi/vapi_options.h")	// No include guard
+
 -efile(451, ../../config.h)	// No include guard
 -efile(766, ../../config.h)	// Header file '___' not used in module '___'
 
@@ -17,6 +20,7 @@
 // General stylistic issues
 -e641		// Converting enum '...' to int
 -e726		// Extraneous comma ignored
+-e728		// Symbol ... not explicitly initialized
 -e763		// Redundant declaration for symbol '...' previously declared
 -e777		// Testing floats for equality
 -e786		// String concatenation within initializer
@@ -30,6 +34,8 @@
  * XXX: Maybe 'ap' is a badly chosen conventional name here...
  */
 -esym(818, ap)		// Pointer parameter '...' could be declared as pointing to const
+
+-efunc(789, main)	// Assigning address of auto variable '...' to static
 
 // +e958		// padding
 
