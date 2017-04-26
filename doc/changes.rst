@@ -17,8 +17,13 @@ Bugs fixed
 * 2241_ - VSL fails to get hold of SHM
 * 2270_ - Newly loaded auto VCLs don't get their go_cold timer set
 * 2273_ - Master cooling problem
+* 2275_ - If the client workspace is almost, but not quite exhaused, we may
+  not be able to get enough iovec's to do Chunked transmission.
 * 2295_ - Spinning loop in VBE_Poll causes master to kill child on
   CLI timeout
+* 2301_ - Don't attempt to check if varnishd is still running if we have
+  already failed.
+* 2313_ - Cannot link to varnishapi, symbols missing
 
 .. _2200: https://github.com/varnishcache/varnish-cache/issues/2200
 .. _2216: https://github.com/varnishcache/varnish-cache/pull/2216
@@ -26,7 +31,10 @@ Bugs fixed
 .. _2241: https://github.com/varnishcache/varnish-cache/issues/2241
 .. _2270: https://github.com/varnishcache/varnish-cache/issues/2270
 .. _2273: https://github.com/varnishcache/varnish-cache/pull/2273
+.. _2275: https://github.com/varnishcache/varnish-cache/issues/2275
 .. _2295: https://github.com/varnishcache/varnish-cache/issues/2295
+.. _2301: https://github.com/varnishcache/varnish-cache/issues/2301
+.. _2313: https://github.com/varnishcache/varnish-cache/issues/2313
 
 ================================
 Varnish Cache 4.1.5 (2017-02-09)
