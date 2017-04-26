@@ -142,8 +142,11 @@
 // <libvarnishapi>
 
 -esym(765, vsl_vbm_bitclr)
+-esym(759, vsl_vbm_bitclr)
 -esym(765, vsl_vbm_bitset)
+-esym(759, vsl_vbm_bitset)
 -esym(765, vsm_diag)
+-esym(759, vsm_diag)
 
 ///////////////////////////////////////////////////////////////////////
 
