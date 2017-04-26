@@ -28,9 +28,10 @@
 
 #include "config.h"
 
+#include <sys/types.h>
 #include <math.h>
 #include <string.h>
-#include <sys/types.h>
+#include <stdint.h>
 
 #include "vct.h"
 #include "vnum.h"
