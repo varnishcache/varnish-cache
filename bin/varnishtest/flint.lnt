@@ -24,7 +24,6 @@
 //
 -e732   // Loss of sign (arg. no. 2) (int to unsigned
 -e713	// Loss of precision (assignment) (unsigned long long to long long)
--e574	// Signed-unsigned mix with relational
 -emacro(835, STRTOU32_CHECK)    // A zero has been given as ___ argument to operator '___'
 
 -e788	// enum value not used in defaulted switch

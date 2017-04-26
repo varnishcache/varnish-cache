@@ -28,11 +28,14 @@
 
 #include "config.h"
 
+#include <math.h>
+#include <string.h>
 #include <sys/types.h>
 
-#include "vtc.h"
-
 #include "vct.h"
+#include "vnum.h"
+#include "vre.h"
+#include "vtc.h"
 
 struct vsb *
 vtc_hex_to_bin(struct vtclog *vl, const char *arg)
@@ -65,4 +68,62 @@ vtc_hex_to_bin(struct vtclog *vl, const char *arg)
 		VSB_putc(vsb, b);
 	AZ(VSB_finish(vsb));
 	return (vsb);
+}
+
+void
+vtc_expect(struct vtclog *vl,
+    const char *olhs, const char *lhs,
+    const char *cmp,
+    const char *orhs, const char *rhs)
+{
+	vre_t *vre;
+	const char *error;
+	int erroroffset;
+	int i, j, retval = -1;
+	double fl, fr;
+
+	j = lhs == NULL || rhs == NULL;
+	if (lhs == NULL)
+		lhs = "<undef>";
+	if (rhs == NULL)
+		rhs = "<undef>";
+
+	if (!strcmp(cmp, "~") || !strcmp(cmp, "!~")) {
+		vre = VRE_compile(rhs, 0, &error, &erroroffset);
+		if (vre == NULL)
+			vtc_fatal(vl, "REGEXP error: %s (@%d) (%s)",
+			    error, erroroffset, rhs);
+		i = VRE_exec(vre, lhs, strlen(lhs), 0, 0, NULL, 0, 0);
+		retval = (i >= 0 && *cmp == '~') || (i < 0 && *cmp == '!');
+		VRE_free(&vre);
+	} else if (!strcmp(cmp, "==")) {
+		retval = strcmp(lhs, rhs) == 0;
+	} else if (!strcmp(cmp, "!=")) {
+		retval = strcmp(lhs, rhs) != 0;
+	} else if (j) {
+		// fail inequality comparisons if either side is undef'ed
+		retval = 0;
+	} else {
+		fl = VNUM(lhs);
+		fr = VNUM(rhs);
+		if (!strcmp(cmp, "<"))
+			retval = isless(fl, fr);
+		else if (!strcmp(cmp, ">"))
+			retval = isgreater(fl, fr);
+		else if (!strcmp(cmp, "<="))
+			retval = islessequal(fl, fr);
+		else if (!strcmp(cmp, ">="))
+			retval = isgreaterequal(fl, fr);
+	}
+
+	if (retval == -1)
+		vtc_fatal(vl,
+		    "EXPECT %s (%s) %s %s (%s) test not implemented",
+		    olhs, lhs, cmp, orhs, rhs);
+	else if (retval == 0)
+		vtc_fatal(vl, "EXPECT %s (%s) %s \"%s\" failed",
+		    olhs, lhs, cmp, rhs);
+	else
+		vtc_log(vl, 4, "EXPECT %s (%s) %s \"%s\" match",
+		    olhs, lhs, cmp, rhs);
 }

@@ -132,3 +132,5 @@ void b64_settings(const struct http *hp, const char *s);
 
 /* vtc_subr.c */
 struct vsb *vtc_hex_to_bin(struct vtclog *vl, const char *arg);
+void vtc_expect(struct vtclog *, const char *, const char *, const char *,
+    const char *, const char *);
