@@ -65,7 +65,7 @@ const unsigned VRE_CASELESS = PCRE_CASELESS;
 const unsigned VRE_NOTEMPTY = PCRE_NOTEMPTY;
 
 vre_t *
-VRE_compile(const char *pattern, int options,
+VRE_compile(const char *pattern, unsigned options,
     const char **errptr, int *erroffset)
 {
 	vre_t *v;

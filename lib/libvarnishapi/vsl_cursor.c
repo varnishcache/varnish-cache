@@ -318,7 +318,7 @@ vslc_file_delete(const struct VSL_cursor *cursor)
 static ssize_t
 vslc_file_readn(int fd, void *buf, size_t n)
 {
-	size_t t = 0;
+	ssize_t t = 0;
 	ssize_t l;
 
 	while (t < n) {
@@ -335,7 +335,7 @@ vslc_file_next(const struct VSL_cursor *cursor)
 {
 	struct vslc_file *c;
 	ssize_t i;
-	size_t l;
+	ssize_t l;
 
 	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_FILE_MAGIC);
 	assert(&c->cursor == cursor);

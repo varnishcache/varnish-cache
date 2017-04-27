@@ -64,7 +64,7 @@ struct vxp {
 	struct token		*t;
 
 	unsigned		vex_options;
-	int			vre_options;
+	unsigned		vre_options;
 
 	struct vsb		*sb;
 	int			err;

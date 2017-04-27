@@ -195,7 +195,7 @@ vxp_expr_lhs(struct vxp *vxp, struct vex_lhs **plhs)
 }
 
 static void
-vxp_expr_num(struct vxp *vxp, struct vex_rhs **prhs, int vxid)
+vxp_expr_num(struct vxp *vxp, struct vex_rhs **prhs, unsigned vxid)
 {
 	char *endptr;
 

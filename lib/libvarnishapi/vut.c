@@ -237,10 +237,10 @@ VUT_Setup(void)
 	AZ(VUT.vsm);
 	AZ(VUT.vslq);
 
-	/* Check input arguments */
-	if ((VUT.n_arg == NULL ? 0 : 1) +
-	    (VUT.N_arg == NULL ? 0 : 1) +
-	    (VUT.r_arg == NULL ? 0 : 1) > 1)
+	/* Check input arguments (2 used for bug in FlexeLint) */
+	if ((VUT.n_arg == NULL ? 0 : 2) +
+	    (VUT.N_arg == NULL ? 0 : 2) +
+	    (VUT.r_arg == NULL ? 0 : 2) > 2)
 		VUT_Error(1, "Only one of -n, -N and -r options may be used");
 
 	/* Create and validate the query expression */
