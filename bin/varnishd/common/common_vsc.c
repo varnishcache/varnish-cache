@@ -28,6 +28,8 @@
  *
  */
 
+#include "config.h"
+
 #include "common.h"
 
 /* Build the static vsc type names */
