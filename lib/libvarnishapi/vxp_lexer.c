@@ -141,7 +141,7 @@ vxp_Lexer(struct vxp *vxp)
 			vxp_add_token(vxp, VAL, p, q);
 			if (quote != '\0') {
 				VSB_printf(vxp->sb, "Unterminated string ");
-				vxp_ErrWhere(vxp, vxp->t, q - p - 1);
+				vxp_ErrWhere(vxp, vxp->t, q - p);
 				return;
 			}
 			if (vxp_decstr(vxp, 1))
