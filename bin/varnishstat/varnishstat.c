@@ -326,8 +326,8 @@ main(int argc, char * const *argv)
 		if (!i)
 			break;
 		if (isnan(t_start) && t_arg > 0.) {
-			VUT_Error(0, "Can't open log -"
-			    " retrying for %.0f seconds", t_arg);
+			fprintf(stderr, "Can't open log -"
+			    " retrying for %.0f seconds\n", t_arg);
 			t_start = VTIM_real();
 		}
 		if (t_arg <= 0.)

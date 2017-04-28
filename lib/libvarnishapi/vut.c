@@ -115,14 +115,14 @@ VUT_Error(int status, const char *fmt, ...)
 {
 	va_list ap;
 
+	assert(status != 0);
 	AN(fmt);
 	va_start(ap, fmt);
 	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 	fprintf(stderr, "\n");
 
-	if (status)
-		exit(status);
+	exit(status);
 }
 
 int
@@ -278,8 +278,8 @@ VUT_Setup(void)
 				break;
 
 			if (isnan(t_start) && VUT.t_arg > 0.) {
-				VUT_Error(0, "Cannot open log -"
-				    " retrying for %.0f seconds", VUT.t_arg);
+				fprintf(stderr, "Cannot open log -"
+				    " retrying for %.0f seconds\n", VUT.t_arg);
 				t_start = VTIM_real();
 			}
 			VSM_Close(VUT.vsm);
@@ -299,7 +299,7 @@ VUT_Setup(void)
 			else
 				VUT_Error(1, "%s", VSL_Error(VUT.vsl));
 		} else if (!isnan(t_start))
-			VUT_Error(0, "Log opened");
+			fprintf(stderr, "Log opened\n");
 	}
 
 	if (c)
@@ -394,7 +394,7 @@ VUT_Main(void)
 			}
 			VSLQ_SetCursor(VUT.vslq, &c);
 			AZ(c);
-			VUT_Error(0, "Log reacquired");
+			fprintf(stderr, "Log reacquired\n");
 		}
 
 		i = VSLQ_Dispatch(VUT.vslq, vut_dispatch, NULL);
@@ -424,10 +424,10 @@ VUT_Main(void)
 
 		if (i == -2)
 			/* Abandoned */
-			VUT_Error(0, "Log abandoned");
+			fprintf(stderr, "Log abandoned\n");
 		else if (i < -2)
 			/* Overrun */
-			VUT_Error(0, "Log overrun");
+			fprintf(stderr, "Log overrun\n");
 
 		VSM_Close(VUT.vsm);
 	}

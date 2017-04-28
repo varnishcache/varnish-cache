@@ -67,8 +67,9 @@ struct VUT {
 
 extern struct VUT VUT;
 
+//lint -sem(VUT_Error, r_no)
 void VUT_Error(int status, const char *fmt, ...)
-	__v_printflike(2, 3);
+	__v_printflike(2, 3) __attribute__((__noreturn__));
 
 int VUT_g_Arg(const char *arg);
 
