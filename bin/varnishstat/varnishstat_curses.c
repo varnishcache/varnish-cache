@@ -45,6 +45,7 @@
 #include <stdint.h>
 #include <math.h>
 
+#include "vdef.h"
 #include "vas.h"
 #include "miniobj.h"
 #include "vqueue.h"
@@ -276,9 +277,8 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 	CAST_OBJ_NOTNULL(pt_priv, priv, PT_PRIV_MAGIC);
 
 	AZ(strcmp(vpt->desc->ctype, "uint64_t"));
-	snprintf(buf, sizeof buf, "%s.%s.%s", vpt->section->type,
+	bprintf(buf, "%s.%s.%s", vpt->section->type,
 	    vpt->section->ident, vpt->desc->name);
-	buf[sizeof buf - 1] = '\0';
 
 	VTAILQ_FOREACH(pt, &ptlist, list) {
 		CHECK_OBJ_NOTNULL(pt, PT_MAGIC);
@@ -301,17 +301,13 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 	pt->key = strdup(buf);
 	AN(pt->key);
 
-	*buf = '\0';
-	if (strcmp(vpt->section->type, "")) {
-		strncat(buf, vpt->section->type, sizeof buf - strlen(buf) - 1);
-		strncat(buf, ".", sizeof buf - strlen(buf) - 1);
-	}
-	if (strcmp(vpt->section->ident, "")) {
-		strncat(buf, vpt->section->ident, sizeof buf - strlen(buf) - 1);
-		strncat(buf, ".", sizeof buf - strlen(buf) - 1);
-	}
-	strncat(buf, vpt->desc->name, sizeof buf - strlen(buf) - 1);
-	pt->name = strdup(buf);
+	if (*vpt->section->type != '\0')
+		bprintf(buf, "%s.%s", vpt->section->type, vpt->desc->name);
+	else if (*vpt->section->ident != '\0')
+		bprintf(buf, "%s.%s", vpt->section->ident, vpt->desc->name);
+	else
+		bprintf(buf, "%s", vpt->desc->name);
+	REPLACE(pt->name, buf);
 	AN(pt->name);
 
 	pt->vpt = vpt;
@@ -937,7 +933,7 @@ draw_bar_b(void)
 	if (current < n_ptarray - 1)
 		mvwprintw(w_bar_b, 0, x, "%s", ptarray[current]->name);
 
-	snprintf(buf, sizeof(buf) - 1, "%d-%d/%d", page_start + 1,
+	bprintf(buf, "%d-%d/%d", page_start + 1,
 	    page_start + l_points < n_ptarray ?
 		page_start + l_points : n_ptarray,
 	    n_ptarray);
