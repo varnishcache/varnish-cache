@@ -158,6 +158,33 @@
 -esym(785,VSL_tags)				// Sparse array
 
 ///////////////////////////////////////////////////////////////////////
+// -lcurses
+-esym(534, beep)
+-esym(534, curs_set)
+-esym(534, delwin)
+-esym(534, doupdate)
+-esym(534, endwin)
+-esym(534, initscr)
+-esym(534, intrflush)
+-esym(534, keypad)
+-esym(534, mvprintw)
+-esym(534, mvwprintw)
+-esym(534, nodelay)
+-esym(534, noecho)
+-esym(534, nonl)
+-esym(534, raw)
+-esym(534, waddch)
+-esym(534, wattr_off)
+-esym(534, wattr_on)
+-esym(534, wbkgd)
+-esym(534, werase)
+-esym(534, wmove)
+-esym(534, wnoutrefresh)
+-esym(534, wprintw)
+-esym(534, wredrawln)
+-esym(534, wrefresh)
+
+///////////////////////////////////////////////////////////////////////
 // Noise reduction, review periodically
 
 -e459	// unlocked access from func-ptr
@@ -165,4 +192,3 @@
 -e712	// Loss of precision (___) (___ to ___)
 -e732	// Loss of sign (___) (___ to ___)
 -e747	// Significant prototype coercion (___) ___ to ___
-
