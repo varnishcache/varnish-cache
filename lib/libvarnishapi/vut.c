@@ -66,7 +66,7 @@ static void
 vut_vpf_remove(void)
 {
 	if (VUT.pfh) {
-		VPF_Remove(VUT.pfh);
+		AZ(VPF_Remove(VUT.pfh));
 		VUT.pfh = NULL;
 	}
 }
@@ -326,7 +326,7 @@ VUT_Setup(void)
 
 	/* Write PID and setup exit handler */
 	if (VUT.pfh != NULL) {
-		VPF_Write(VUT.pfh);
+		AZ(VPF_Write(VUT.pfh));
 		AZ(atexit(vut_vpf_remove));
 	}
 }
