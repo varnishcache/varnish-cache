@@ -436,7 +436,7 @@ addf_string(const char *str)
 	AN(str);
 	ALLOC_OBJ(f, FORMAT_MAGIC);
 	AN(f);
-	f->func = &format_string;
+	f->func = format_string;
 	f->string = strdup(str);
 	AN(f->string);
 	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
@@ -450,7 +450,7 @@ addf_strptr(const char *const *strptr)
 	AN(strptr);
 	ALLOC_OBJ(f, FORMAT_MAGIC);
 	AN(f);
-	f->func = &format_strptr;
+	f->func = format_strptr;
 	f->strptr = strptr;
 	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
 }
@@ -463,7 +463,7 @@ addf_fragment(struct fragment *frag, const char *str)
 	AN(frag);
 	ALLOC_OBJ(f, FORMAT_MAGIC);
 	AN(f);
-	f->func = &format_fragment;
+	f->func = format_fragment;
 	f->frag = frag;
 	if (str != NULL) {
 		f->string = strdup(str);
@@ -480,7 +480,7 @@ addf_int32(int32_t *i)
 	AN(i);
 	ALLOC_OBJ(f, FORMAT_MAGIC);
 	AN(f);
-	f->func = &format_int32;
+	f->func = format_int32;
 	f->int32 = i;
 	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
 }
@@ -492,7 +492,7 @@ addf_time(char type, const char *fmt)
 
 	ALLOC_OBJ(f, FORMAT_MAGIC);
 	AN(f);
-	f->func = &format_time;
+	f->func = format_time;
 	f->time_type = type;
 	if (fmt != NULL) {
 		f->time_fmt = strdup(fmt);
@@ -508,7 +508,7 @@ addf_requestline(void)
 
 	ALLOC_OBJ(f, FORMAT_MAGIC);
 	AN(f);
-	f->func = &format_requestline;
+	f->func = format_requestline;
 	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
 }
 
@@ -527,7 +527,7 @@ addf_vcl_log(const char *key)
 
 	ALLOC_OBJ(f, FORMAT_MAGIC);
 	AN(f);
-	f->func = &format_fragment;
+	f->func = format_fragment;
 	f->frag = &w->frag;
 	f->string = strdup("");
 	AN(f->string);
@@ -550,7 +550,7 @@ addf_hdr(struct watch_head *head, const char *key)
 
 	ALLOC_OBJ(f, FORMAT_MAGIC);
 	AN(f);
-	f->func = &format_fragment;
+	f->func = format_fragment;
 	f->frag = &w->frag;
 	f->string = strdup("-");
 	AN(f->string);
@@ -582,7 +582,7 @@ addf_auth(void)
 
 	ALLOC_OBJ(f, FORMAT_MAGIC);
 	AN(f);
-	f->func = &format_auth;
+	f->func = format_auth;
 	f->string = strdup("-");
 	AN(f->string);
 	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
@@ -1122,6 +1122,7 @@ read_format(const char *formatfile)
 	if (fmtfile == NULL)
 		VUT_Error(1, "Can't open format file (%s)",
 		    strerror(errno));
+	AN(fmtfile);
 	fmtlen = getline(&fmt, &len, fmtfile);
 	if (fmtlen == -1) {
 		free(fmt);
@@ -1185,6 +1186,7 @@ main(int argc, char * const *argv)
 		case 'h':
 			/* Usage help */
 			usage(0);
+			break;
 		case 'w':
 			/* Write to file */
 			REPLACE(CTX.w_arg, optarg);
@@ -1218,7 +1220,7 @@ main(int argc, char * const *argv)
 	format = NULL;
 
 	/* Setup output */
-	VUT.dispatch_f = &dispatch_f;
+	VUT.dispatch_f = dispatch_f;
 	VUT.dispatch_priv = NULL;
 	VUT.sighup_f = sighup;
 	if (CTX.w_arg) {

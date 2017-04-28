@@ -157,6 +157,7 @@ VUT_Arg(int opt, const char *arg)
 		return (VUT_g_Arg(arg));
 	case 'k':
 		/* Log transaction limit */
+		AN(arg);
 		VUT.k_arg = (int)strtol(arg, &p, 10);
 		if (*p != '\0' || VUT.k_arg <= 0)
 			VUT_Error(1, "-k: Invalid number '%s'", arg);
@@ -183,6 +184,7 @@ VUT_Arg(int opt, const char *arg)
 		return (1);
 	case 't':
 		/* VSM connect timeout */
+		AN(arg);
 		if (!strcasecmp("off", arg))
 			VUT.t_arg = -1.;
 		else {
