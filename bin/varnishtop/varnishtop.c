@@ -203,10 +203,10 @@ update(int p)
 		n++;
 	AC(erase());
 	if (end_of_file)
-		AC(mvprintw(0, COLS - 1 - strlen(VUT.name) - 5, "%s (EOF)",
+		AC(mvprintw(0, (COLS - strlen(VUT.name)) - (1 + 6), "%s (EOF)",
 			VUT.name));
 	else
-		AC(mvprintw(0, COLS - 1 - strlen(VUT.name), "%s", VUT.name));
+		AC(mvprintw(0, (COLS - strlen(VUT.name)) - 1, "%s", VUT.name));
 	AC(mvprintw(0, 0, "list length %u", ntop));
 	for (tp = VRB_MIN(t_order, &h_order); tp != NULL; tp = tp2) {
 		tp2 = VRB_NEXT(t_order, &h_order, tp);
@@ -308,6 +308,7 @@ dump(void)
 	}
 }
 
+//lint -sem(usage, r_no)
 static void __attribute__((__noreturn__))
 usage(int status)
 {
@@ -366,7 +367,7 @@ main(int argc, char **argv)
 			exit(1);
 		}
 	}
-	VUT.dispatch_f = &accumulate;
+	VUT.dispatch_f = accumulate;
 	VUT.dispatch_priv = NULL;
 	VUT.sighup_f = sighup;
 	VUT_Main();

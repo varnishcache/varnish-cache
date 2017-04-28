@@ -61,19 +61,21 @@ struct vslq_query {
 	struct vex		*vex;
 };
 
-#define VSLQ_TEST_NUMOP(TYPE, PRE_LHS, OP, PRE_RHS)	\
-	switch (TYPE) {					\
-	case VEX_INT:					\
-		if (PRE_LHS##_int OP PRE_RHS##_int)	\
-			return (1);			\
-		return (0);				\
-	case VEX_FLOAT:					\
-		if (PRE_LHS##_float OP PRE_RHS##_float)	\
-			return (1);			\
-		return (0);				\
-	default:					\
-		WRONG("Wrong RHS type");		\
-	}
+#define VSLQ_TEST_NUMOP(TYPE, PRE_LHS, OP, PRE_RHS)		\
+	do {							\
+		switch (TYPE) {					\
+		case VEX_INT:					\
+			if (PRE_LHS##_int OP PRE_RHS##_int)	\
+				return (1);			\
+			return (0);				\
+		case VEX_FLOAT:					\
+			if (PRE_LHS##_float OP PRE_RHS##_float)	\
+				return (1);			\
+			return (0);				\
+		default:					\
+			WRONG("Wrong RHS type");		\
+		}						\
+	} while(0)						\
 
 static int
 vslq_test_vxid(const struct vex *vex, const struct VSL_transaction *trans)
@@ -103,7 +105,7 @@ vslq_test_vxid(const struct vex *vex, const struct VSL_transaction *trans)
 
 	/* Compare */
 	switch (vex->tok) {
-	#define VXID_TEST_NUMOP(OP) return (trans->vxid OP rhs->val_int);
+#define VXID_TEST_NUMOP(OP) return (trans->vxid OP rhs->val_int)
 	case T_EQ:	VXID_TEST_NUMOP(==);
 	case T_NEQ:	VXID_TEST_NUMOP(!=);
 	case '<':	VXID_TEST_NUMOP(<);
@@ -185,10 +187,9 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 		switch (rhs->type) {
 		case VEX_INT:
 			lhs_int = strtoll(b, &p, 0);
-			if (*p == '\0' || isspace(*p))
-				break;
-			/* Can't parse - no match */
-			return (0);
+			if (*p != '\0' && !isspace(*p))
+				return (0); /* Can't parse - no match */
+			break;
 		case VEX_FLOAT:
 			lhs_float = VNUMpfx(b, &q);
 			if (isnan(lhs_float))
@@ -257,8 +258,7 @@ vslq_test_rec(const struct vex *vex, const struct VSLC_ptr *rec)
 	default:
 		WRONG("Bad expression token");
 	}
-
-	return (0);
+	NEEDLESS(return (0));
 }
 
 static int

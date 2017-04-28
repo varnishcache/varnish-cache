@@ -60,6 +60,7 @@
 // ignore retval
 -esym(534, printf)
 -esym(534, fprintf)
+-esym(534, vfprintf)
 -esym(534, sprintf)
 
 -esym(534, memset)
@@ -151,6 +152,10 @@
 -esym(759, vsm_diag)
 
 ///////////////////////////////////////////////////////////////////////
+// "miniobj.h"
+
+-emacro(774, REPLACE)
+
 
 // It is ok to default after handling a few select SLT_* tags
 -esym(788, VSL_tag_e::SLT_*)	//  enum constant '...' not used within defaulted switch

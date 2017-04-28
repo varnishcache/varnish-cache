@@ -1023,7 +1023,7 @@ handle_keypress(int ch)
 		break;
 	case 'G':
 		current = n_ptarray - 1;
-		page_start = current - l_points + 1;
+		page_start = (current - l_points) + 1;
 		break;
 	case 'v':
 		verbosity++;

@@ -373,7 +373,7 @@ VUT_Main(void)
 		if (VUT.sigusr1) {
 			/* Flush and report any incomplete records */
 			VUT.sigusr1 = 0;
-			VSLQ_Flush(VUT.vslq, vut_dispatch, NULL);
+			(void)VSLQ_Flush(VUT.vslq, vut_dispatch, NULL);
 		}
 
 		if (VUT.vsm != NULL && !VSM_IsOpen(VUT.vsm)) {
@@ -420,7 +420,7 @@ VUT_Main(void)
 
 		/* XXX: Make continuation optional */
 
-		VSLQ_Flush(VUT.vslq, vut_dispatch, NULL);
+		(void)VSLQ_Flush(VUT.vslq, vut_dispatch, NULL);
 
 		if (i == -2)
 			/* Abandoned */

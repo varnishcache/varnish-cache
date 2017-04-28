@@ -70,8 +70,6 @@ struct vxp {
 	int			err;
 };
 
-struct vex;
-
 struct vex_lhs {
 	/* Left-hand-side of a vex expression. Stores the information
 	   about which records and what parts of those records the

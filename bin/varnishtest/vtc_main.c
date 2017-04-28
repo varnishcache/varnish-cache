@@ -491,7 +491,7 @@ ip_magic(void)
 	 * XXX: "localhost", but that doesn't work out of the box.
 	 * XXX: Things like "prefer_ipv6" parameter complicates things.
 	 */
-	fd = VSS_resolver("127.0.0.1", NULL, &bind_cb, NULL, &p);
+	fd = VSS_resolver("127.0.0.1", NULL, bind_cb, NULL, &p);
 	assert(fd >= 0);
 	VTCP_myname(fd, abuf, sizeof abuf, pbuf, sizeof(pbuf));
 	extmacro_def("localhost", "%s", abuf);
