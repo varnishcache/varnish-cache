@@ -1269,7 +1269,7 @@ cmd_sendhex(CMD_ARGS)
 	hdr.value.ptr = strdup(v);	\
 	AN(hdr.value.ptr);		\
 	hdr.value.len = strlen(v);	\
-	HPK_EncHdr(iter, &hdr);		\
+	(void)HPK_EncHdr(iter, &hdr);	\
 	free(hdr.key.ptr);		\
 	free(hdr.value.ptr);		\
 }

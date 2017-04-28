@@ -40,7 +40,7 @@ struct symbol {
 	uint8_t		size;
 };
 
-static struct symbol coding_table[] = {
+static const struct symbol coding_table[] = {
 #define HPACK(i, v, l) {v, l},
 #include "vtc_h2_enctbl.h"
 #undef HPACK

@@ -532,6 +532,8 @@ read_file(const char *fn, int ntest)
 		if (*q != '#')
 			break;
 		q = strchr(q, '\n');
+		if (q == NULL)
+			break;
 	}
 
 	if (q == NULL || *q == '\0') {
@@ -566,6 +568,7 @@ main(int argc, char * const *argv)
 	int ch, i;
 	int ntest = 1;			/* Run tests this many times */
 	uintmax_t bufsiz;
+	const char *p;
 
 	if (getenv("TMPDIR") != NULL)
 		tmppath = strdup(getenv("TMPDIR"));
@@ -579,8 +582,9 @@ main(int argc, char * const *argv)
 
 	params_vsb = VSB_new_auto();
 	AN(params_vsb);
-	if (getenv("VARNISHTEST_DURATION"))
-		vtc_maxdur = atoi(getenv("VARNISHTEST_DURATION"));
+	p = getenv("VARNISHTEST_DURATION");
+	if (p != NULL)
+		vtc_maxdur = atoi(p);
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);

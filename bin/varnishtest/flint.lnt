@@ -16,6 +16,8 @@
 -e850	// for loop index variable '___' whose type category is '___' is modified in body of the for loop that began at '___'
 -e443	// for clause irregularity: variable '___' initialized in 1st expression does not match '___' modified in 3rd
 
+-emacro({506,774},FEATURE)
+-emacro({506,774},STRTOU32_CHECK)
 
 -e679	// Suspicious Truncation in arithmetic expression combining with pointer
 
