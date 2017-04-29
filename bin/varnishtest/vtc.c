@@ -33,6 +33,9 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <grp.h>
+#include <math.h>
+#include <pwd.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -40,8 +43,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <pwd.h>
-#include <grp.h>
 
 #include "vtc.h"
 
@@ -656,6 +657,8 @@ cmd_delay(CMD_ARGS)
 	AN(av[1]);
 	AZ(av[2]);
 	f = VNUM(av[1]);
+	if (isnan(f))
+		vtc_fatal(vl, "Syntax error in number (%s)", av[1]);
 	vtc_log(vl, 3, "delaying %g second(s)", f);
 	VTIM_sleep(f);
 }
