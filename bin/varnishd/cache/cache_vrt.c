@@ -170,7 +170,7 @@ VRT_StringList(char *d, unsigned dl, const char *p, va_list ap)
 	b = d;
 	e = b + dl;
 	while (p != vrt_magic_string_end && b < e) {
-		if (p != NULL) {
+		if (p != NULL && *p != '\0') {
 			x = strlen(p);
 			if (b + x < e)
 				memcpy(b, p, x);
