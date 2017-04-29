@@ -407,6 +407,7 @@ VTIM_timeval(double t)
 {
 	struct timeval tv;
 
+	AZ(isnan(t));
 	tv.tv_sec = (time_t)trunc(t);
 	tv.tv_usec = (int)(1e6 * (t - tv.tv_sec));
 	return (tv);
@@ -417,6 +418,7 @@ VTIM_timespec(double t)
 {
 	struct timespec tv;
 
+	AZ(isnan(t));
 	tv.tv_sec = (time_t)trunc(t);
 	tv.tv_nsec = (int)(1e9 * (t - tv.tv_sec));
 	return (tv);
