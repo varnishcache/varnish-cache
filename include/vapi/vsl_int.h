@@ -70,7 +70,7 @@
 #define VSL_END(ptr, len)	((ptr) + 2 + VSL_WORDS(len))
 #define VSL_NEXT(ptr)		VSL_END(ptr, VSL_LEN(ptr))
 #define VSL_LEN(ptr)		((ptr)[0] & VSL_LENMASK)
-#define VSL_TAG(ptr)		((ptr)[0] >> 24)
+#define VSL_TAG(ptr)		((enum VSL_tag_e)((ptr)[0] >> 24))
 #define VSL_ID(ptr)		(((ptr)[1]) & VSL_IDENTMASK)
 #define VSL_CLIENT(ptr)		(((ptr)[1]) & VSL_CLIENTMARKER)
 #define VSL_BACKEND(ptr)	(((ptr)[1]) & VSL_BACKENDMARKER)

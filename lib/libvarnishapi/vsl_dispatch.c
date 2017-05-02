@@ -861,7 +861,7 @@ vtx_scan(struct VSLQ *vslq, struct vtx *vtx)
 			continue;
 		}
 
-		tag = (enum VSL_tag_e)VSL_TAG(ptr);
+		tag = VSL_TAG(ptr);
 		assert(tag != SLT__Batch);
 
 		switch (tag) {
