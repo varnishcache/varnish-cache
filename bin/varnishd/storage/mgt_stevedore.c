@@ -57,17 +57,11 @@ STV__iter(struct stevedore ** const pp)
 
 	AN(pp);
 	CHECK_OBJ_ORNULL(*pp, STEVEDORE_MAGIC);
-	if (*pp == stv_transient) {
-		*pp = NULL;
-		return (0);
-	}
 	if (*pp != NULL)
 		*pp = VTAILQ_NEXT(*pp, list);
 	else
 		*pp = VTAILQ_FIRST(&stevedores);
-	if (*pp == NULL)
-		*pp = stv_transient;
-	return (1);
+	return (*pp != NULL);
 }
 
 /*--------------------------------------------------------------------*/
@@ -128,6 +122,26 @@ static const struct choice STV_choice[] = {
 	{ NULL,		NULL }
 };
 
+static void
+stv_check_ident(const char *spec, const char *ident)
+{
+	struct stevedore *stv;
+	unsigned found = 0;
+
+	if (!strcmp(ident, TRANSIENT_STORAGE))
+		found = (stv_transient != NULL);
+	else {
+		STV_Foreach(stv)
+			if (!strcmp(stv->ident, ident)) {
+				found = 1;
+				break;
+			}
+	}
+
+	if (found)
+		ARGV_ERR("(-s %s) '%s' is already defined\n", spec, ident);
+}
+
 void
 STV_Config(const char *spec)
 {
@@ -135,7 +149,6 @@ STV_Config(const char *spec)
 	const char *p, *q;
 	struct stevedore *stv;
 	const struct stevedore *stv2;
-	struct stevedore *stv3;
 	int ac, l;
 	static unsigned seq = 0;
 
@@ -183,15 +196,12 @@ STV_Config(const char *spec)
 		bprintf(stv->ident, "%.*s", l, spec);
 	}
 
-	STV_Foreach(stv3)
-		if (!strcmp(stv3->ident, stv->ident))
-			ARGV_ERR("(-s%s=%s) already defined once\n",
-			    stv->ident, stv->name);
+	stv_check_ident(spec, stv->ident);
 
 	if (stv->init != NULL)
 		stv->init(stv, ac, av);
 	else if (ac != 0)
-		ARGV_ERR("(-s%s) too many arguments\n", stv->name);
+		ARGV_ERR("(-s %s) too many arguments\n", stv->name);
 
 	AN(stv->allocobj);
 	AN(stv->methods);
@@ -199,9 +209,8 @@ STV_Config(const char *spec)
 	if (!strcmp(stv->ident, TRANSIENT_STORAGE)) {
 		AZ(stv_transient);
 		stv_transient = stv;
-	} else {
+	} else
 		VTAILQ_INSERT_TAIL(&stevedores, stv, list);
-	}
 	/* NB: Do not free av, stevedore gets to keep it */
 }
 
@@ -216,4 +225,5 @@ STV_Config_Transient(void)
 	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_stv);
 	if (stv_transient == NULL)
 		STV_Config(TRANSIENT_STORAGE "=malloc");
+	VTAILQ_INSERT_TAIL(&stevedores, stv_transient, list);
 }
