@@ -39,6 +39,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <sys/stat.h>
 
 #include "vapi/vsm.h"
 #include "vapi/vsl.h"
