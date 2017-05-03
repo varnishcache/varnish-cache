@@ -37,6 +37,7 @@ code instead::
             char                    *vcl_name;
             vdi_http1pipe_f         *http1pipe;
             vdi_healthy_f           *healthy;
+            vdi_status_f            *status;
             vdi_resolve_f           *resolve;
             vdi_gethdrs_f           *gethdrs;
             vdi_getbody_f           *getbody;
@@ -117,6 +118,16 @@ is cooling. You are also encouraged to comply with the
 
 
 .. _ref-writing-a-director-cluster:
+
+
+vdi_status_f (NEW)
+==================
+
+It extand ``healthy`` function to also report the load of backends.
+With default TCP backends, the load is the number of active connections.
+
+It will used for least-connections director (least-busy director in general case).
+
 
 Health Probes
 =============
