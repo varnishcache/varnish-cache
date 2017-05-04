@@ -461,7 +461,7 @@ tst_delta()
 	err += tst_delta_check("VTIM_real", r_begin, r_end, ref);
 
 	if (err) {
-		printf("%d time delta test errrors\n", err);
+		printf("%d time delta test errors\n", err);
 		exit(4);
 	}
 }
