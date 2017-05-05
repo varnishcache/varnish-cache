@@ -145,7 +145,6 @@ usage(void)
 	fprintf(stderr, FMT, "-t duration", "Time tests out after this long");
 	fprintf(stderr, FMT, "-v", "Verbose mode: always report test log");
 	fprintf(stderr, FMT, "-W", "Enable the witness facility for locking");
-	fprintf(stderr, "\n");
 	exit(1);
 }
 
@@ -653,7 +652,10 @@ main(int argc, char * const *argv)
 	argc -= optind;
 	argv += optind;
 
-	for (;argc > 0; argc--, argv++) {
+	if (argc < 1)
+		usage();
+
+	for (; argc > 0; argc--, argv++) {
 		if (!read_file(*argv, ntest))
 			continue;
 		if (!vtc_continue)
