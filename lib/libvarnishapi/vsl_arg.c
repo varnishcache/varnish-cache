@@ -199,6 +199,7 @@ VSLQ_Name2Grouping(const char *name, int l)
 {
 	int i, n;
 
+	AN(name);
 	if (l == -1)
 		l = strlen(name);
 	n = -1;
@@ -264,6 +265,7 @@ vsl_IX_arg(struct VSL_data *vsl, int opt, const char *arg)
 	struct vbitmap *tags = NULL;
 
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
+	AN(arg);
 	vsl->flags |= F_SEEN_ixIX;
 
 	b = arg;
@@ -337,6 +339,7 @@ VSL_Arg(struct VSL_data *vsl, int opt, const char *arg)
 	case 'i': case 'x': return (vsl_ix_arg(vsl, opt, arg));
 	case 'I': case 'X': return (vsl_IX_arg(vsl, opt, arg));
 	case 'L':
+		AN(arg);
 		l = strtol(arg, &p, 0);
 		while (isspace(*p))
 			p++;
@@ -347,6 +350,7 @@ VSL_Arg(struct VSL_data *vsl, int opt, const char *arg)
 		vsl->L_opt = (int)l;
 		return (1);
 	case 'T':
+		AN(arg);
 		d = VNUM(arg);
 		if (isnan(d))
 			return (vsl_diag(vsl, "-T: Syntax error"));
