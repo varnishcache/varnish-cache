@@ -31,6 +31,7 @@
 
 struct vsm_sc;
 struct suckaddr;
+struct listen_sock;
 struct transport;
 
 struct listen_arg {
