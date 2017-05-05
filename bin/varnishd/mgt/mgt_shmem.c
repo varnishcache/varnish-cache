@@ -43,7 +43,6 @@
 #include "common/heritage.h"
 
 #include "vfl.h"
-#include "vpf.h"
 #include "vsm_priv.h"
 #include "vfil.h"
 
@@ -59,8 +58,6 @@
 
 static void *mgt_vsm_p;
 static ssize_t mgt_vsm_l;
-
-static struct vpf_fh *priv_vpf;
 
 /*--------------------------------------------------------------------
  * Use a bogo-VSM to hold master-copies of the VSM chunks the master
@@ -276,16 +273,6 @@ mgt_shm_atexit(void)
 void
 mgt_SHM_Init(void)
 {
-	pid_t pid = 0;
-
-	priv_vpf = VPF_Open("_.pid", 0644, &pid);
-	if (priv_vpf == NULL && errno == EEXIST)
-		ARGV_ERR("Varnishd is already running (pid=%jd)\n",
-		    (intmax_t)pid);
-	if (priv_vpf == NULL)
-		ARGV_ERR("Failure on _.pid: %s\n", strerror(errno));
-	AZ(VPF_Write(priv_vpf));
-
 	/* Create our static VSM instance */
 	static_vsm = VSM_common_new(static_vsm_buf, sizeof static_vsm_buf);
 

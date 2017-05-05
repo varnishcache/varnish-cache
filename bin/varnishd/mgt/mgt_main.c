@@ -70,7 +70,8 @@ struct VSC_C_mgt	*VSC_C_mgt;
 static int		I_fd = -1;
 static char		Cn_arg[] = "/tmp/varnishd_C_XXXXXXX";
 
-static struct vpf_fh *pfh = NULL;
+static struct vpf_fh *pfh1 = NULL;
+static struct vpf_fh *pfh2 = NULL;
 
 int optreset;	// Some has it, some doesn't.  Cheaper than auto*
 
@@ -179,8 +180,9 @@ mgt_stdin_close(void *priv)
 	if (d_flag) {
 		MCH_Stop_Child();
 		mgt_cli_close_all();
-		if (pfh != NULL)
-			(void)VPF_Remove(pfh);
+		(void)VPF_Remove(pfh1);
+		if (pfh2 != NULL)
+			(void)VPF_Remove(pfh2);
 		exit(0);
 	} else {
 		VFIL_null_fd(STDIN_FILENO);
@@ -787,13 +789,25 @@ main(int argc, char * const *argv)
 		    dirname, strerror(errno));
 	}
 
+	vsb = VSB_new_auto();
+	AN(vsb);
+	VSB_printf(vsb, "%s/_.pid", dirname);
+	AZ(VSB_finish(vsb));
 	VJ_master(JAIL_MASTER_FILE);
+	pfh1 = VPF_Open(VSB_data(vsb), 0644, &pid);
+	if (pfh1 == NULL && errno == EEXIST)
+		ARGV_ERR("Varnishd is already running (pid=%jd)\n",
+		    (intmax_t)pid);
+	if (pfh1 == NULL)
+		ARGV_ERR("Could not open pid-file (%s): %s\n",
+		    VSB_data(vsb), strerror(errno));
+	VSB_destroy(&vsb);
 	if (P_arg) {
-		pfh = VPF_Open(P_arg, 0644, &pid);
-		if (pfh == NULL && errno == EEXIST)
+		pfh2 = VPF_Open(P_arg, 0644, &pid);
+		if (pfh2 == NULL && errno == EEXIST)
 			ARGV_ERR("Varnishd is already running (pid=%jd)\n",
 			    (intmax_t)pid);
-		if (pfh == NULL)
+		if (pfh2 == NULL)
 			ARGV_ERR("Could not open pid-file (%s): %s\n",
 			    P_arg, strerror(errno));
 	}
@@ -854,7 +868,8 @@ main(int argc, char * const *argv)
 		S_arg = make_secret(dirname);
 	AN(S_arg);
 
-	assert(pfh == NULL || !VPF_Write(pfh));
+	assert(!VPF_Write(pfh1));
+	assert(pfh2 == NULL || !VPF_Write(pfh2));
 
 	MGT_Complain(C_DEBUG, "Platform: %s", VSB_data(vident) + 1);
 
@@ -931,7 +946,8 @@ main(int argc, char * const *argv)
 		MGT_Complain(C_ERR, "vev_schedule() = %d", o);
 
 	MGT_Complain(C_INFO, "manager dies");
-	if (pfh != NULL)
-		(void)VPF_Remove(pfh);
+	(void)VPF_Remove(pfh1);
+	if (pfh2 != NULL)
+		(void)VPF_Remove(pfh2);
 	exit(exit_status);
 }
