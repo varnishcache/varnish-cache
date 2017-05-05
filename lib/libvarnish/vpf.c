@@ -76,7 +76,7 @@ vpf_read(const char *path, pid_t *pidptr)
 	char buf[16], *endptr;
 	int error, fd, i;
 
-	fd = open(path, O_RDONLY);
+	fd = open(path, O_RDONLY | O_CLOEXEC);
 	if (fd == -1)
 		return (errno);
 
@@ -85,6 +85,8 @@ vpf_read(const char *path, pid_t *pidptr)
 	(void)close(fd);
 	if (i == -1)
 		return (error);
+	else if (i == 0)
+		return (EAGAIN);
 	buf[i] = '\0';
 
 	*pidptr = strtol(buf, &endptr, 10);
@@ -105,17 +107,10 @@ VPF_Open(const char *path, mode_t mode, pid_t *pidptr)
 	if (pfh == NULL)
 		return (NULL);
 
-#if 0
-	if (path == NULL)
-		len = snprintf(pfh->pf_path, sizeof(pfh->pf_path),
-		    "/var/run/%s.pid", getprogname());
-	else
-#endif
-	{
-		assert(path != NULL);
-		len = snprintf(pfh->pf_path, sizeof(pfh->pf_path),
-		    "%s", path);
-	}
+	assert(path != NULL);
+	len = snprintf(pfh->pf_path, sizeof(pfh->pf_path),
+	    "%s", path);
+
 	if (len >= (int)sizeof(pfh->pf_path)) {
 		free(pfh);
 		errno = ENAMETOOLONG;
@@ -124,12 +119,12 @@ VPF_Open(const char *path, mode_t mode, pid_t *pidptr)
 
 	/*
 	 * Open the PID file and obtain exclusive lock.
-	 * We truncate PID file here only to remove old PID immediatelly,
+	 * We truncate PID file here only to remove old PID immediately,
 	 * PID file will be truncated again in VPF_Write(), so
 	 * VPF_Write() can be called multiple times.
 	 */
 	fd = VFL_Open(pfh->pf_path,
-	    O_WRONLY | O_CREAT | O_TRUNC | O_NONBLOCK, mode);
+	    O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC | O_NONBLOCK, mode);
 	if (fd == -1) {
 		if (errno == EWOULDBLOCK && pidptr != NULL) {
 			errno = vpf_read(pfh->pf_path, pidptr);
@@ -139,6 +134,7 @@ VPF_Open(const char *path, mode_t mode, pid_t *pidptr)
 		free(pfh);
 		return (NULL);
 	}
+
 	/*
 	 * Remember file information, so in VPF_Write() we are sure we write
 	 * to the proper descriptor.
