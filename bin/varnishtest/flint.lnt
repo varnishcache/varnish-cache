@@ -9,6 +9,8 @@
 
 -esym(534, snprintf)		// Only for varnishtest, and not really nice
 
+-esym(765, http_cmds)		// No, cannot be made static
+
 -e712	// 14      Info    712     Loss of precision (___) (___ to ___)
 -e747	// 16      Info    747     Significant prototype coercion (___) ___ to ___
 

@@ -49,7 +49,7 @@
 #include "vtcp.h"
 #include "hpack.h"
 
-static const struct cmds http_cmds[];
+extern const struct cmds http_cmds[];
 
 /* SECTION: client-server client/server
  *
@@ -1780,7 +1780,7 @@ cmd_http_write_body(CMD_ARGS)
  * Execute HTTP specifications
  */
 
-static const struct cmds http_cmds[] = {
+const struct cmds http_cmds[] = {
 #define CMD(n) { #n, cmd_##n },
 #define CMD_HTTP(n) { #n, cmd_http_##n },
 	/* session */
