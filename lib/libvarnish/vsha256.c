@@ -232,7 +232,7 @@ SHA256_Pad(SHA256_CTX * ctx)
 	}
 
 	/* Add the terminating bit-count. */
-	be64enc(&ctx->buf[56], ctx->count);
+	vbe64enc(&ctx->buf[56], ctx->count);
 
 	/* Mix in the final block. */
 	SHA256_Transform(ctx->state, ctx->buf);
