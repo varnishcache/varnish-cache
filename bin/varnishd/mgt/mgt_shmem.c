@@ -43,6 +43,7 @@
 #include "common/heritage.h"
 
 #include "vfl.h"
+#include "vpf.h"
 #include "vsm_priv.h"
 #include "vfil.h"
 
@@ -58,6 +59,8 @@
 
 static void *mgt_vsm_p;
 static ssize_t mgt_vsm_l;
+
+static struct vpf_fh *priv_vpf;
 
 /*--------------------------------------------------------------------
  * Use a bogo-VSM to hold master-copies of the VSM chunks the master
@@ -81,60 +84,6 @@ mgt_SHM_static_alloc(const void *ptr, ssize_t size,
 		AN(p);
 		memcpy(p, ptr, size);
 	}
-}
-
-/*--------------------------------------------------------------------
- * Check that we are not started with the same -n argument as an already
- * running varnishd.
- *
- * Non-zero return means we should exit and not trample the file.
- *
- */
-
-static int
-vsm_n_check(void)
-{
-	int fd, i;
-	struct stat st;
-	pid_t pid;
-	struct VSM_head vsmh;
-	int retval = 1;
-
-	fd = open(VSM_FILENAME, O_RDWR);
-	if (fd < 0)
-		return (0);
-
-	AZ(fstat(fd, &st));
-	if (!S_ISREG(st.st_mode)) {
-		fprintf(stderr,
-		    "VSM (%s) not a regular file.\n", VSM_FILENAME);
-	} else {
-		i = VFL_Test(fd, &pid);
-		if (i < 0) {
-			fprintf(stderr,
-			    "Cannot determine locking status of VSM (%s)\n.",
-			    VSM_FILENAME);
-		} else if (i == 0) {
-			/*
-			 * File is unlocked, mark it as dead, to help any
-			 * consumers still stuck on it.
-			 */
-			if (pread(fd, &vsmh, sizeof vsmh, 0) == sizeof vsmh) {
-				vsmh.alloc_seq = 0;
-				assert(sizeof vsmh ==
-				    pwrite(fd, &vsmh, sizeof vsmh, 0));
-			}
-			retval = 0;
-		} else {
-			/* The VSM is locked, we won't touch it. */
-			fprintf(stderr,
-			    "VSM locked by running varnishd master (pid=%jd)\n"
-			    "(Use unique -n arguments if you want"
-			    "  multiple instances)\n", (intmax_t)pid);
-		}
-	}
-	(void)close(fd);
-	return (retval);
 }
 
 /*--------------------------------------------------------------------
@@ -327,12 +276,15 @@ mgt_shm_atexit(void)
 void
 mgt_SHM_Init(void)
 {
-	int i;
+	pid_t pid = 0;
 
-	/* Collision check with already running varnishd */
-	i = vsm_n_check();
-	if (i)
-		exit(2);
+	priv_vpf = VPF_Open("_.pid", 0644, &pid);
+	if (priv_vpf == NULL && errno == EEXIST)
+		ARGV_ERR("Varnishd is already running (pid=%jd)\n",
+		    (intmax_t)pid);
+	if (priv_vpf == NULL)
+		ARGV_ERR("Failure on _.pid: %s\n", strerror(errno));
+	AZ(VPF_Write(priv_vpf));
 
 	/* Create our static VSM instance */
 	static_vsm = VSM_common_new(static_vsm_buf, sizeof static_vsm_buf);

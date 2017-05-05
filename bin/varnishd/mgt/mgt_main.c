@@ -499,6 +499,7 @@ main(int argc, char * const *argv)
 	struct f_arg *fa;
 	struct vsb *vsb;
 	VTAILQ_HEAD(,f_arg) f_args = VTAILQ_HEAD_INITIALIZER(f_args);
+	pid_t pid;
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
@@ -787,9 +788,15 @@ main(int argc, char * const *argv)
 	}
 
 	VJ_master(JAIL_MASTER_FILE);
-	if (P_arg && (pfh = VPF_Open(P_arg, 0644, NULL)) == NULL)
-		ARGV_ERR("Could not open pid/lock (-P) file (%s): %s\n",
-		    P_arg, strerror(errno));
+	if (P_arg) {
+		pfh = VPF_Open(P_arg, 0644, &pid);
+		if (pfh == NULL && errno == EEXIST)
+			ARGV_ERR("Varnishd is already running (pid=%jd)\n",
+			    (intmax_t)pid);
+		if (pfh == NULL)
+			ARGV_ERR("Could not open pid-file (%s): %s\n",
+			    P_arg, strerror(errno));
+	}
 	VJ_master(JAIL_MASTER_LOW);
 
 	/* If no -s argument specified, process default -s argument */
