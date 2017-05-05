@@ -1,5 +1,10 @@
 -efunc(835, SHA256_Transform)	// A zero has been given as ___ argument to operator '___'
 -efunc(778, SHA256_Transform)	// Constant expression evaluates to 0 in operation '___'
+-efunc(661, SHA256_Transform)	// Possible access of out-of-bounds pointer
+-efunc(662, SHA256_Transform)	// Possible creation of out-of-bounds pointer
+-efunc(662, SHA256_Update)	// Possible creation of out-of-bounds pointer
+-efunc(662, be32dec_vect)	// Possible creation of out-of-bounds pointer
+-efunc(670, SHA256_Update)	// Possible access beyond array for function '___',
 +fan			// Allow anon unions
 
 -e713	// Loss of precision (assignment) (unsigned long long to long long)
@@ -7,3 +12,4 @@
 -dVARNISH_STATE_DIR="foo"
 
 --emacro((835),BINHEAP_NOIDX)
+--emacro((835),O_CLOEXEC)

@@ -30,6 +30,7 @@
 #define _SHA256_H_
 
 #define SHA256_LEN		32
+#define SHA256_DIGEST_LENGTH	32
 
 typedef struct SHA256Context {
 	uint32_t state[8];
