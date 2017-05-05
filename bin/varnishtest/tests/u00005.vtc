@@ -22,10 +22,6 @@ shell -err "grep -q LCK.vbe.destroy ${p1_out}"
 process p2 {varnishstat -1 -n ${v1_name} -f ^*vbe.destroy \
 	-f *vbe* -f *mempool* | tr '[1-9]' '0'} -run
 
-shell "grep -q vbe ${p2_out}"
-shell "grep -q mempool ${p2_out}"
-shell -err "grep -q LCK.vbe.destroy ${p2_out}"
-
 shell "cmp -s ${p1_out} ${p2_out}"
 
 shell -expect "cache_hit" \
@@ -39,8 +35,12 @@ shell -expect "Copyright (c) 2006 Verdens Gang AS" \
 	"varnishstat -V"
 shell -err -expect "Usage: varnishstat <options>" \
 	"varnishstat extra"
+shell -err -expect "-t: Range error" \
+	"varnishstat -n /nonexistent -t -1"
+shell -err -expect "-t: Syntax error" \
+	"varnishstat -n /nonexistent -t foo"
 shell -err -expect "Cannot open /nonexistent/_.vsm" \
-	"varnishstat -n /nonexistent"
+	"varnishstat -n /nonexistent -t 1"
 shell -expect "MAIN.uptime" \
 	"varnishstat -n ${v1_name} -1"
 shell -expect "<type>MAIN</type>" \
