@@ -225,5 +225,6 @@ STV_Config_Transient(void)
 	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_stv);
 	if (stv_transient == NULL)
 		STV_Config(TRANSIENT_STORAGE "=malloc");
+	AN(stv_transient);
 	VTAILQ_INSERT_TAIL(&stevedores, stv_transient, list);
 }
