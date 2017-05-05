@@ -113,6 +113,7 @@ struct poolparam;
 struct transport;
 struct req;
 struct sess;
+struct stevedore;
 struct suckaddr;
 struct vrt_priv;
 struct vsb;
