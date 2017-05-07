@@ -55,7 +55,6 @@
 #include "vapi/vsl.h"
 
 #include "vsl_api.h"
-#include "vsm_api.h"
 
 /*--------------------------------------------------------------------
  * Look up a tag
