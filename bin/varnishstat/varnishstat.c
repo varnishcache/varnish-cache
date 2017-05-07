@@ -68,10 +68,10 @@ do_xml_cb(void *priv, const struct VSC_point * const pt)
 	sec = pt->section;
 
 	printf("\t<stat>\n");
-	if (strcmp(sec->fantom->type, ""))
-		printf("\t\t<type>%s</type>\n", sec->fantom->type);
-	if (strcmp(sec->fantom->ident, ""))
-		printf("\t\t<ident>%s</ident>\n", sec->fantom->ident);
+	if (strcmp(sec->type, ""))
+		printf("\t\t<type>%s</type>\n", sec->type);
+	if (strcmp(sec->ident, ""))
+		printf("\t\t<ident>%s</ident>\n", sec->ident);
 	printf("\t\t<name>%s</name>\n", pt->desc->name);
 	printf("\t\t<value>%ju</value>\n", (uintmax_t)val);
 	printf("\t\t<flag>%c</flag>\n", pt->desc->semantics);
@@ -120,17 +120,17 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 
 	printf("  \"");
 	/* build the JSON key name.  */
-	if (sec->fantom->type[0])
-		printf("%s.", sec->fantom->type);
-	if (sec->fantom->ident[0])
-		printf("%s.", sec->fantom->ident);
+	if (sec->type[0])
+		printf("%s.", sec->type);
+	if (sec->ident[0])
+		printf("%s.", sec->ident);
 	printf("%s\": {\n", pt->desc->name);
 	printf("    \"description\": \"%s\",\n", pt->desc->sdesc);
 
-	if (strcmp(sec->fantom->type, ""))
-		printf("    \"type\": \"%s\", ", sec->fantom->type);
-	if (strcmp(sec->fantom->ident, ""))
-		printf("\"ident\": \"%s\", ", sec->fantom->ident);
+	if (strcmp(sec->type, ""))
+		printf("    \"type\": \"%s\", ", sec->type);
+	if (strcmp(sec->ident, ""))
+		printf("\"ident\": \"%s\", ", sec->ident);
 	printf("\"flag\": \"%c\", ", pt->desc->semantics);
 	printf("\"format\": \"%c\",\n", pt->desc->format);
 	printf("    \"value\": %ju", (uintmax_t)val);
@@ -182,10 +182,10 @@ do_once_cb(void *priv, const struct VSC_point * const pt)
 	val = *(const volatile uint64_t*)pt->ptr;
 	sec = pt->section;
 	i = 0;
-	if (strcmp(sec->fantom->type, ""))
-		i += printf("%s.", sec->fantom->type);
-	if (strcmp(sec->fantom->ident, ""))
-		i += printf("%s.", sec->fantom->ident);
+	if (strcmp(sec->type, ""))
+		i += printf("%s.", sec->type);
+	if (strcmp(sec->ident, ""))
+		i += printf("%s.", sec->ident);
 	i += printf("%s", pt->desc->name);
 	if (i >= op->pad)
 		op->pad = i + 1;
@@ -227,10 +227,10 @@ do_list_cb(void *priv, const struct VSC_point * const pt)
 
 	sec = pt->section;
 	i = 0;
-	if (strcmp(sec->fantom->type, ""))
-		i += printf("%s.", sec->fantom->type);
-	if (strcmp(sec->fantom->ident, ""))
-		i += printf("%s.", sec->fantom->ident);
+	if (strcmp(sec->type, ""))
+		i += printf("%s.", sec->type);
+	if (strcmp(sec->ident, ""))
+		i += printf("%s.", sec->ident);
 	i += printf("%s", pt->desc->name);
 	if (i < 30)
 		printf("%*s", i - 30, "");

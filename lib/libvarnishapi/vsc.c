@@ -256,7 +256,6 @@ vsc_add_vf(struct vsc *vsc, const struct VSM_fantom *fantom,
 	vf->section.type = vf->fantom.type;
 	vf->section.ident = vf->fantom.ident;
 	vf->section.desc = desc;
-	vf->section.fantom = &vf->fantom;
 	vf->order = order;
 
 	VTAILQ_FOREACH(vf2, &vsc->vf_list, list) {

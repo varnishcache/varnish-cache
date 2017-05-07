@@ -117,7 +117,6 @@ struct VSC_section {
 	const char *type;
 	const char *ident;
 	const struct VSC_type_desc *desc;
-	struct VSM_fantom *fantom;
 };
 
 /* See include/tbl/vsc_fields.h for descriptions */
