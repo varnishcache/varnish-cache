@@ -36,7 +36,7 @@
 #define VSL_PRIV_H_INCLUDED
 
 #include "vapi/vsl_int.h"
-#include "vapi/vsm_int.h"
+#include "vsm_priv.h"
 
 #define VSL_CLASS		"Log"
 #define VSL_SEGMENTS		8U	// power of two

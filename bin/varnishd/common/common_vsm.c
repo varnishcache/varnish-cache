@@ -27,7 +27,7 @@
  *
  * VSM stuff common to manager and child.
  *
- * Please see comments in <vapi/vsm_int.h> for details of protocols and
+ * Please see comments in <vsm_priv.h> for details of protocols and
  * data consistency.
  *
  */

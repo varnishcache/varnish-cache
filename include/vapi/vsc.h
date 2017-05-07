@@ -114,8 +114,8 @@ struct VSC_type_desc {
 };
 
 struct VSC_section {
-	const char *type;
-	const char *ident;
+	char *type;
+	char *ident;
 	const struct VSC_type_desc *desc;
 };
 

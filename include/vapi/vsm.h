@@ -36,8 +36,6 @@
 #ifndef VAPI_VSM_H_INCLUDED
 #define VAPI_VSM_H_INCLUDED
 
-#include "vsm_int.h"
-
 struct VSM_chunk;
 struct VSM_data;
 
@@ -50,12 +48,12 @@ struct VSM_fantom {
 	void			*b;		/* first byte of payload */
 	void			*e;		/* first byte past payload */
 	uintptr_t		priv;		/* VSM private */
-	char			class[VSM_MARKER_LEN];
-	char			type[VSM_MARKER_LEN];
-	char			ident[VSM_IDENT_LEN];
+	char			*class;
+	char			*type;
+	char			*ident;
 };
 
-#define VSM_FANTOM_NULL { 0, 0, 0, 0, {0}, {0}, {0} }
+#define VSM_FANTOM_NULL { 0, 0, 0, 0, 0, 0, 0 }
 
 /*---------------------------------------------------------------------
  * VSM level access functions

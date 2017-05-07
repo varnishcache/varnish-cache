@@ -397,12 +397,15 @@ VSM__itern(const struct VSM_data *vd, struct VSM_fantom *vf)
 	vf->priv = vd->head->alloc_seq;
 	vf->b = (void*)(vf->chunk + 1);
 	vf->e = (char*)vf->b + vf->chunk->len;
-	strncpy(vf->class, vf->chunk->class, sizeof vf->class);
-	vf->class[sizeof vf->class - 1] = '\0';
-	strncpy(vf->type, vf->chunk->type, sizeof vf->type);
-	vf->type[sizeof vf->type - 1] = '\0';
-	strncpy(vf->ident, vf->chunk->ident, sizeof vf->ident);
-	vf->ident[sizeof vf->ident - 1] = '\0';
+
+	AZ(vf->chunk->class[sizeof vf->chunk->class - 1]);
+	REPLACE(vf->class, vf->chunk->class);
+
+	AZ(vf->chunk->type[sizeof vf->chunk->type - 1]);
+	REPLACE(vf->type, vf->chunk->type);
+
+	AZ(vf->chunk->ident[sizeof vf->chunk->ident - 1]);
+	REPLACE(vf->ident, vf->chunk->ident);
 
 	return (1);
 }

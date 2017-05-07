@@ -96,7 +96,9 @@
 #ifndef VSM_PRIV_H_INCLUDED
 #define VSM_PRIV_H_INCLUDED
 
-#include <vapi/vsm_int.h>
+#define VSM_FILENAME		"_.vsm"
+#define VSM_MARKER_LEN	8
+#define VSM_IDENT_LEN	128
 
 struct VSM_chunk {
 #define VSM_CHUNK_MARKER	"VSMCHUNK"

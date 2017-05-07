@@ -253,8 +253,8 @@ vsc_add_vf(struct vsc *vsc, const struct VSM_fantom *fantom,
 	ALLOC_OBJ(vf, VSC_VF_MAGIC);
 	AN(vf);
 	vf->fantom = *fantom;
-	vf->section.type = vf->fantom.type;
-	vf->section.ident = vf->fantom.ident;
+	REPLACE(vf->section.type, vf->fantom.type);
+	REPLACE(vf->section.ident, vf->fantom.ident);
 	vf->section.desc = desc;
 	vf->order = order;
 
@@ -336,7 +336,7 @@ vsc_build_pt_list(struct VSM_data *vd)
 	VTAILQ_FOREACH(vf, &vsc->vf_list, list) {
 #define VSC_DO(U,l,t,h)						\
 		CHECK_OBJ_NOTNULL(vf, VSC_VF_MAGIC);		\
-		if (!strcmp(vf->fantom.type, t))		\
+		if (!strcmp(vf->section.type, t))		\
 			iter_##l(vsc, VSC_desc_##l, vf);
 #define VSC_F(n,t,l,s,f,v,d,e)
 #define VSC_DONE(a,b,c)

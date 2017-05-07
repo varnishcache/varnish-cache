@@ -39,7 +39,6 @@
 #include "common/common.h"
 
 #include "vapi/vsl_int.h"
-#include "vapi/vsm_int.h"
 
 #include "waiter/waiter.h"
 
