@@ -1,5 +1,5 @@
 /*-
- * Copyright (c) 2007 Dag-Erling Coïdan Smørgrav
+ * Copyright (c) 2007-2009 Dag-Erling Coïdan Smørgrav
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,26 +24,33 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  * Derived from:
- * $FreeBSD: head/lib/libutil/flopen.c 184094 2008-10-20 18:11:30Z des $
+ * $FreeBSD: head/lib/libutil/flopen.c 309344 2016-12-01 02:21:36Z cem $
  */
 
 #include "config.h"
 
+#include <sys/file.h>
 #include <sys/stat.h>
 
 #include <errno.h>
-#include <fcntl.h>
 #include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
 
 #include "vfl.h"
 
+/*
+ * Reliably open and lock a file.
+ *
+ * Please do not modify this code without first reading the revision history
+ * and discussing your changes with <des@freebsd.org>.  Don't be fooled by the
+ * code's apparent simplicity; there would be no need for this function if it
+ * was easy to get right.
+ */
 int
 VFL_Open(const char *path, int flags, ...)
 {
 	int fd, operation, serrno, trunc;
-	struct flock lock;
 	struct stat sb, fsb;
 	mode_t mode;
 
@@ -60,10 +67,9 @@ VFL_Open(const char *path, int flags, ...)
 		va_end(ap);
 	}
 
-	memset(&lock, 0, sizeof lock);
-	lock.l_type = ((flags & O_ACCMODE) == O_RDONLY) ? F_RDLCK : F_WRLCK;
-	lock.l_whence = SEEK_SET;
-	operation = (flags & O_NONBLOCK) ? F_SETLK : F_SETLKW;
+	operation = LOCK_EX;
+	if (flags & O_NONBLOCK)
+		operation |= LOCK_NB;
 
 	trunc = (flags & O_TRUNC);
 	flags &= ~O_TRUNC;
@@ -72,7 +78,7 @@ VFL_Open(const char *path, int flags, ...)
 		if ((fd = open(path, flags, mode)) == -1)
 			/* non-existent or no access */
 			return (-1);
-		if (fcntl(fd, operation, &lock) == -1) {
+		if (flock(fd, operation) == -1) {
 			/* unsupported or interrupted */
 			serrno = errno;
 			(void)close(fd);
@@ -104,6 +110,18 @@ VFL_Open(const char *path, int flags, ...)
 			errno = serrno;
 			return (-1);
 		}
+		/*
+		 * The following change is provided as a specific example to
+		 * avoid.
+		 */
+#if 0
+		if (fcntl(fd, F_SETFD, FD_CLOEXEC) != 0) {
+			serrno = errno;
+			(void)close(fd);
+			errno = serrno;
+			return (-1);
+		}
+#endif
 		return (fd);
 	}
 }
