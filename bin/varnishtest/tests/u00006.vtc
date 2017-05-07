@@ -23,6 +23,12 @@ shell -err -expect "Usage: varnishlog <options>" \
 	"varnishlog extra"
 shell -err -expect "Missing -w option" \
 	"varnishlog -D"
+shell -err -expect "Ambiguous grouping type: r" \
+	"varnishlog -g r"
+shell -err -expect "Unknown grouping type: foo" \
+	"varnishlog -g foo"
+shell -err -expect "-k: Invalid number 'foo'" \
+	"varnishlog -k foo"
 shell -err -expect "-L: Range error" \
 	"varnishlog -L 0"
 shell -err -expect {-i: "foo" matches zero tags} \
@@ -35,6 +41,10 @@ shell -err -expect {-I: "Resp" is ambiguous} \
 	"varnishlog -I Resp:bar"
 shell -err -expect {-I: Regex error at position 4 (missing ))} \
 	{varnishlog -I "(foo"}
+shell -err -expect "-t: Range error" \
+	"varnishlog -t -1"
+shell -err -expect "-t: Syntax error" \
+	"varnishlog -t foo"
 shell -err -expect {-x: Syntax error in "**"} \
 	{varnishlog -x "**"}
 shell -err -expect {-X: Syntax error in "**"} \

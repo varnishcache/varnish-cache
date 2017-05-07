@@ -36,9 +36,9 @@ shell -expect "Copyright (c) 2006 Verdens Gang AS" \
 shell -err -expect "Usage: varnishstat <options>" \
 	"varnishstat extra"
 shell -err -expect "-t: Range error" \
-	"varnishstat -n /nonexistent -t -1"
+	"varnishstat -t -1"
 shell -err -expect "-t: Syntax error" \
-	"varnishstat -n /nonexistent -t foo"
+	"varnishstat -t foo"
 shell -err -expect "Cannot open /nonexistent/_.vsm" \
 	"varnishstat -n /nonexistent -t 1"
 shell -expect "MAIN.uptime" \
