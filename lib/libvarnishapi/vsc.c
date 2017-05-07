@@ -307,8 +307,6 @@ vsc_add_pt(struct vsc *vsc, const volatile void *ptr,
 /*--------------------------------------------------------------------
  */
 
-#include <stdio.h>
-
 static void
 vsc_build_vf_list(struct VSM_data *vd)
 {
