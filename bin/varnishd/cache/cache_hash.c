@@ -428,6 +428,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 
 		if (ObjHasAttr(wrk, oc, OA_VARY)) {
 			vary = ObjGetAttr(wrk, oc, OA_VARY, NULL);
+			AN(vary);
 			if (!VRY_Match(req, vary))
 				continue;
 		}
