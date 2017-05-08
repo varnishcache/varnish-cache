@@ -167,10 +167,6 @@ VUT_Arg(int opt, const char *arg)
 		/* Varnish instance name */
 		REPLACE(VUT.n_arg, arg);
 		return (1);
-	case 'N':
-		/* Varnish stale VSM file */
-		REPLACE(VUT.N_arg, arg);
-		return (1);
 	case 'P':
 		/* PID file */
 		REPLACE(VUT.P_arg, arg);
@@ -242,9 +238,8 @@ VUT_Setup(void)
 
 	/* Check input arguments (2 used for bug in FlexeLint) */
 	if ((VUT.n_arg == NULL ? 0 : 2) +
-	    (VUT.N_arg == NULL ? 0 : 2) +
 	    (VUT.r_arg == NULL ? 0 : 2) > 2)
-		VUT_Error(1, "Only one of -n, -N and -r options may be used");
+		VUT_Error(1, "Only one of -n and -r options may be used");
 
 	/* Create and validate the query expression */
 	VUT.vslq = VSLQ_New(VUT.vsl, NULL, VUT.g_arg, VUT.q_arg);
@@ -262,8 +257,6 @@ VUT_Setup(void)
 		VUT.vsm = VSM_New();
 		AN(VUT.vsm);
 		if (VUT.n_arg && VSM_n_Arg(VUT.vsm, VUT.n_arg) <= 0)
-			VUT_Error(1, "%s", VSM_Error(VUT.vsm));
-		if (VUT.N_arg && VSM_N_Arg(VUT.vsm, VUT.N_arg) <= 0)
 			VUT_Error(1, "%s", VSM_Error(VUT.vsm));
 		REPLACE(VUT.name, VSM_Name(VUT.vsm));
 		t_start = NAN;
@@ -336,7 +329,6 @@ void
 VUT_Fini(void)
 {
 	free(VUT.n_arg);
-	free(VUT.N_arg);
 	free(VUT.r_arg);
 	free(VUT.P_arg);
 	free(VUT.name);

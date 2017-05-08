@@ -51,8 +51,8 @@ shell -err -expect {-X: Syntax error in "**"} \
 	{varnishlog -X "**:bar"}
 shell -err -expect "Cannot open output file (No such file or directory)" \
 	{varnishlog -w /nonexistent/file}
-shell -err -expect "Only one of -n, -N and -r options may be used" \
-	{varnishlog -n ${v1_name} -N ${v1_name}/_.vsm}
+shell -err -expect "Only one of -n and -r options may be used" \
+	{varnishlog -n ${v1_name} -r ${v1_name}/_.vsm}
 
 process p1 -wait
 shell {grep -q "0 CLI" ${tmpdir}/vlog}

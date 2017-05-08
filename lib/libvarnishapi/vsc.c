@@ -201,7 +201,6 @@ VSC_Arg(struct VSM_data *vd, int arg, const char *opt)
 	switch (arg) {
 	case 'f': return (vsc_f_arg(vd, opt));
 	case 'n': return (VSM_n_Arg(vd, opt));
-	case 'N': return (VSM_N_Arg(vd, opt));
 	default:
 		return (0);
 	}

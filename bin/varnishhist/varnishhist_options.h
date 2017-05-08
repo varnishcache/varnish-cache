@@ -73,7 +73,6 @@ HIS_OPT_g
 VUT_OPT_h
 VSL_OPT_L
 VUT_OPT_n
-VUT_OPT_N
 HIS_OPT_p
 #define HIS_CLIENT	"client"
 #define HIS_BACKEND	"backend"

@@ -63,12 +63,6 @@
 	    " the host name is used."					\
 	)
 
-#define VUT_OPT_N							\
-	VOPT("N:", "[-N <filename>]", "VSM filename",			\
-	    "Specify the filename of a stale VSM instance. When using"	\
-	    " this option the abandonment checking is disabled."	\
-	)
-
 #define VUT_OPT_P							\
 	VOPT("P:", "[-P <file>]", "PID file",				\
 		"Write the process' PID to the specified file."		\

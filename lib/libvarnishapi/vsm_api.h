@@ -38,8 +38,8 @@ struct VSM_data {
 	struct vsb		*diag;
 
 	char			*name;
-	char			*fname;
-	int			N_opt;
+	char			*dname;
+	char			*iname;
 
 	struct stat		fstat;
 

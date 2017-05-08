@@ -774,7 +774,7 @@ main(int argc, char * const *argv)
 		VJ_master(JAIL_MASTER_LOW);
 	}
 
-	if (VIN_N_Arg(n_arg, &heritage.name, &dirname, NULL) != 0)
+	if (VIN_n_Arg(n_arg, &heritage.name, &dirname) != 0)
 		ARGV_ERR("Invalid instance (-n) name: %s\n", strerror(errno));
 
 #ifdef HAVE_SETPROCTITLE
