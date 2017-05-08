@@ -585,6 +585,7 @@ sml_setattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 			assert(st->len + len <= st->space);		\
 			o->va_##l = st->ptr + st->len;			\
 			st->len += len;					\
+			o->va_##l##_len = len;				\
 			retval = o->va_##l;				\
 		}							\
 		break;
