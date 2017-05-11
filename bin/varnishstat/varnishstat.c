@@ -192,7 +192,8 @@ do_once_cb(void *priv, const struct VSC_point * const pt)
 	printf("%*.*s", op->pad - i, op->pad - i, "");
 	if (pt->desc->semantics == 'c')
 		printf("%12ju %12.2f %s\n",
-		    (uintmax_t)val, val / op->up, pt->desc->sdesc);
+		    (uintmax_t)val, op->up ? val / op->up : 0,
+		    pt->desc->sdesc);
 	else
 		printf("%12ju %12s %s\n",
 		    (uintmax_t)val, ".  ", pt->desc->sdesc);
