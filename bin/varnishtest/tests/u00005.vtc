@@ -13,19 +13,21 @@ varnish v1 -vcl+backend {} -start
 delay 1
 
 process p1 {varnishstat -1 -n ${v1_name} -f ^LCK.vbe.destroy \
-	-f LCK.vbe.* -f LCK.mempool.* | tr '[1-9]' '0'} -run
+	-f LCK.vbe.* -f LCK.mempool.creat | tr '[1-9]' '0'} -run
 
 shell "grep -q vbe ${p1_out}"
-shell "grep -q mempool ${p1_out}"
+shell "grep -q LCK.mempool.creat ${p1_out}"
 shell -err "grep -q LCK.vbe.destroy ${p1_out}"
 
-process p2 {varnishstat -1 -n ${v1_name} -f ^*vbe.destroy \
-	-f *vbe* -f *mempool* | tr '[1-9]' '0'} -run
+process p2 {varnishstat -1 -n ${v1_name} -f *vbe* \
+	-f ^*vbe.destroy -f LCK.mempool.c* | tr '[1-9]' '0'} -run
 
 shell "cmp -s ${p1_out} ${p2_out}"
 
-shell -expect "cache_hit" \
-	"varnishstat -1 -n ${v1_name} -f MAIN.cache_hit"
+shell -expect "MGT.uptime" \
+	"varnishstat -1 -n ${v1_name} -f ^MAIN*"
+shell -match "^MAIN" \
+	"varnishstat -1 -n ${v1_name} -f ^foo"
 
 shell -expect "Usage: varnishstat <options>" \
 	"varnishstat -h"

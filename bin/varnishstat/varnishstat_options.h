@@ -40,9 +40,9 @@
 	VOPT("f:", "[-f <glob>]", "Field inclusion glob",		\
 	    "Field inclusion glob."					\
 	    " Use backslash to escape characters. If the argument"	\
-	    " starts with '^' it is used as an exclusion glob."		\
-	    " Multiple -f arguments may be given, and they will be"	\
-	    " applied in order."					\
+	    " starts with '^' it is used as an exclusive glob."		\
+	    " Multiple -f arguments may be given. Inclusive globs"	\
+	    " are accumulative and are run before exclusive ones."	\
 	)
 #define STAT_OPT_j							\
 	VOPT("j", "[-j]", "Print statistics to stdout as JSON",		\
