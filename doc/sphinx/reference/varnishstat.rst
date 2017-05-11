@@ -35,9 +35,9 @@ The following options are available:
 
 -f
 	Field inclusion glob.  Use backslash to escape characters. If
-	the argument starts with '^' it is used as an exclusion glob.
-	Multiple -f arguments may be given, and they will be applied
-	in order.
+	the argument starts with '^' it is used as an exclusive glob.
+	Multiple -f arguments may be given. Inclusive globs are
+	accumulative and are run before exclusive ones.
 
 -l
 	Lists the available fields to use with the -f option.

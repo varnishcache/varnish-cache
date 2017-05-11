@@ -72,22 +72,24 @@ struct vsc_pt {
 	VTAILQ_ENTRY(vsc_pt)	list;
 	struct VSC_point	point;
 };
+VTAILQ_HEAD(vsc_pt_head, vsc_pt);
 
 struct vsc_sf {
 	unsigned		magic;
 #define VSC_SF_MAGIC		0x558478dd
 	VTAILQ_ENTRY(vsc_sf)	list;
 	char			*pattern;
-	unsigned		exclude;
 };
+VTAILQ_HEAD(vsc_sf_head, vsc_sf);
 
 struct vsc {
 	unsigned		magic;
 #define VSC_MAGIC		0x3373554a
 
 	VTAILQ_HEAD(, vsc_vf)	vf_list;
-	VTAILQ_HEAD(, vsc_pt)	pt_list;
-	VTAILQ_HEAD(, vsc_sf)	sf_list;
+	struct vsc_pt_head	pt_list;
+	struct vsc_sf_head	sf_list_include;
+	struct vsc_sf_head	sf_list_exclude;
 	struct VSM_fantom	iter_fantom;
 };
 
@@ -104,7 +106,8 @@ vsc_setup(struct VSM_data *vd)
 		AN(vd->vsc);
 		VTAILQ_INIT(&vd->vsc->vf_list);
 		VTAILQ_INIT(&vd->vsc->pt_list);
-		VTAILQ_INIT(&vd->vsc->sf_list);
+		VTAILQ_INIT(&vd->vsc->sf_list_include);
+		VTAILQ_INIT(&vd->vsc->sf_list_exclude);
 	}
 	CHECK_OBJ_NOTNULL(vd->vsc, VSC_MAGIC);
 	return (vd->vsc);
@@ -126,27 +129,27 @@ vsc_delete_vf_list(struct vsc *vsc)
 }
 
 static void
-vsc_delete_pt_list(struct vsc *vsc)
+vsc_delete_pt_list(struct vsc_pt_head *head)
 {
 	struct vsc_pt *pt;
 
-	while (!VTAILQ_EMPTY(&vsc->pt_list)) {
-		pt = VTAILQ_FIRST(&vsc->pt_list);
+	while (!VTAILQ_EMPTY(head)) {
+		pt = VTAILQ_FIRST(head);
 		CHECK_OBJ_NOTNULL(pt, VSC_PT_MAGIC);
-		VTAILQ_REMOVE(&vsc->pt_list, pt, list);
+		VTAILQ_REMOVE(head, pt, list);
 		FREE_OBJ(pt);
 	}
 }
 
 static void
-vsc_delete_sf_list(struct vsc *vsc)
+vsc_delete_sf_list(struct vsc_sf_head *head)
 {
 	struct vsc_sf *sf;
 
-	while (!VTAILQ_EMPTY(&vsc->sf_list)) {
-		sf = VTAILQ_FIRST(&vsc->sf_list);
+	while (!VTAILQ_EMPTY(head)) {
+		sf = VTAILQ_FIRST(head);
 		CHECK_OBJ_NOTNULL(sf, VSC_SF_MAGIC);
-		VTAILQ_REMOVE(&vsc->sf_list, sf, list);
+		VTAILQ_REMOVE(head, sf, list);
 		free(sf->pattern);
 		FREE_OBJ(sf);
 	}
@@ -161,8 +164,9 @@ VSC_Delete(struct VSM_data *vd)
 	vsc = vd->vsc;
 	vd->vsc = NULL;
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
-	vsc_delete_sf_list(vsc);
-	vsc_delete_pt_list(vsc);
+	vsc_delete_sf_list(&vsc->sf_list_include);
+	vsc_delete_sf_list(&vsc->sf_list_exclude);
+	vsc_delete_pt_list(&vsc->pt_list);
 	vsc_delete_vf_list(vsc);
 	FREE_OBJ(vsc);
 }
@@ -174,6 +178,7 @@ vsc_f_arg(struct VSM_data *vd, const char *opt)
 {
 	struct vsc *vsc = vsc_setup(vd);
 	struct vsc_sf *sf;
+	unsigned exclude = 0;
 
 	AN(vd);
 	AN(opt);
@@ -182,14 +187,18 @@ vsc_f_arg(struct VSM_data *vd, const char *opt)
 	AN(sf);
 
 	if (opt[0] == '^') {
-		sf->exclude = 1;
+		exclude = 1;
 		opt++;
 	}
 
 	sf->pattern = strdup(opt);
 	AN(sf->pattern);
 
-	VTAILQ_INSERT_TAIL(&vsc->sf_list, sf, list);
+	if (exclude)
+		VTAILQ_INSERT_TAIL(&vsc->sf_list_exclude, sf, list);
+	else
+		VTAILQ_INSERT_TAIL(&vsc->sf_list_include, sf, list);
+
 	return (1);
 }
 
@@ -318,7 +327,7 @@ vsc_build_vf_list(struct VSM_data *vd)
 {
 	struct vsc *vsc = vsc_setup(vd);
 
-	vsc_delete_pt_list(vsc);
+	vsc_delete_pt_list(&vsc->pt_list);
 	vsc_delete_vf_list(vsc);
 
 	VSM_FOREACH(&vsc->iter_fantom, vd) {
@@ -339,7 +348,7 @@ vsc_build_pt_list(struct VSM_data *vd)
 	struct vsc *vsc = vsc_setup(vd);
 	struct vsc_vf *vf;
 
-	vsc_delete_pt_list(vsc);
+	vsc_delete_pt_list(&vsc->pt_list);
 
 	VTAILQ_FOREACH(vf, &vsc->vf_list, list) {
 #define VSC_DO(U,l,t)						\
@@ -358,48 +367,71 @@ vsc_build_pt_list(struct VSM_data *vd)
 /*--------------------------------------------------------------------
  */
 
+static int
+vsc_filter_match_pt(struct vsb *vsb, const struct vsc_sf *sf, const
+    struct vsc_pt *pt)
+{
+	VSB_clear(vsb);
+	if (strcmp(pt->point.section->type, ""))
+		VSB_printf(vsb, "%s.", pt->point.section->type);
+	if (strcmp(pt->point.section->ident, ""))
+		VSB_printf(vsb, "%s.", pt->point.section->ident);
+	VSB_printf(vsb, "%s", pt->point.desc->name);
+	AZ(VSB_finish(vsb));
+	return (!fnmatch(sf->pattern, VSB_data(vsb), 0));
+}
+
 static void
 vsc_filter_pt_list(struct VSM_data *vd)
 {
 	struct vsc *vsc = vsc_setup(vd);
+	struct vsc_pt_head tmplist;
 	struct vsc_sf *sf;
 	struct vsc_pt *pt, *pt2;
-	VTAILQ_HEAD(, vsc_pt) pt_list;
 	struct vsb *vsb;
 
-	if (VTAILQ_EMPTY(&vsc->sf_list))
+	if (VTAILQ_EMPTY(&vsc->sf_list_include) &&
+	    VTAILQ_EMPTY(&vsc->sf_list_exclude))
 		return;
 
 	vsb = VSB_new_auto();
 	AN(vsb);
+	VTAILQ_INIT(&tmplist);
 
-	VTAILQ_INIT(&pt_list);
-	VTAILQ_FOREACH(sf, &vsc->sf_list, list) {
+	/* Include filters. Empty include filter list implies one that
+	 * matches everything. Points are sorted by the order of include
+	 * filter they match. */
+	if (!VTAILQ_EMPTY(&vsc->sf_list_include)) {
+		VTAILQ_FOREACH(sf, &vsc->sf_list_include, list) {
+			CHECK_OBJ_NOTNULL(sf, VSC_SF_MAGIC);
+			VTAILQ_FOREACH_SAFE(pt, &vsc->pt_list, list, pt2) {
+				CHECK_OBJ_NOTNULL(pt, VSC_PT_MAGIC);
+				if (vsc_filter_match_pt(vsb, sf, pt)) {
+					VTAILQ_REMOVE(&vsc->pt_list,
+					    pt, list);
+					VTAILQ_INSERT_TAIL(&tmplist,
+					    pt, list);
+				}
+			}
+		}
+		vsc_delete_pt_list(&vsc->pt_list);
+		VTAILQ_CONCAT(&vsc->pt_list, &tmplist, list);
+	}
+
+	/* Exclude filters */
+	VTAILQ_FOREACH(sf, &vsc->sf_list_exclude, list) {
 		CHECK_OBJ_NOTNULL(sf, VSC_SF_MAGIC);
 		VTAILQ_FOREACH_SAFE(pt, &vsc->pt_list, list, pt2) {
 			CHECK_OBJ_NOTNULL(pt, VSC_PT_MAGIC);
-			VSB_clear(vsb);
-			if (strcmp(pt->point.section->type, ""))
-				VSB_printf(vsb, "%s.",
-				    pt->point.section->type);
-			if (strcmp(pt->point.section->ident, ""))
-				VSB_printf(vsb, "%s.",
-				    pt->point.section->ident);
-			VSB_printf(vsb, "%s", pt->point.desc->name);
-			VSB_finish(vsb);
-			if (fnmatch(sf->pattern, VSB_data(vsb), 0))
-				continue;
-			VTAILQ_REMOVE(&vsc->pt_list, pt, list);
-			if (sf->exclude)
-				FREE_OBJ(pt);
-			else
-				VTAILQ_INSERT_TAIL(&pt_list, pt, list);
+			if (vsc_filter_match_pt(vsb, sf, pt)) {
+				VTAILQ_REMOVE(&vsc->pt_list, pt, list);
+				VTAILQ_INSERT_TAIL(&tmplist, pt, list);
+			}
 		}
 	}
+	vsc_delete_pt_list(&tmplist);
 
 	VSB_destroy(&vsb);
-	vsc_delete_pt_list(vsc);
-	VTAILQ_CONCAT(&vsc->pt_list, &pt_list, list);
 }
 
 /*--------------------------------------------------------------------
