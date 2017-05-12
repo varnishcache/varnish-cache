@@ -715,10 +715,11 @@ PARAM(
 	/* units */	"seconds",
 	/* flags */	XYZZY,
 	/* s-text */
-	"Time to wait with no data sent. If no data has been transmitted "
-	"in this many\n"
-	"seconds the session is closed.\n"
-	"See setsockopt(2) under SO_SNDTIMEO for more information.",
+	"Send timeout for individual pieces of data on client connections."
+	" May get extended if 'send_timeout' applies.\n\n"
+	"When this timeout is hit, the session is closed.\n\n"
+	"See the man page for `setsockopt(2)` under ``SO_SNDTIMEO`` for more"
+	" information.",
 	/* l-text */	"",
 	/* func */	NULL
 )
@@ -980,10 +981,12 @@ PARAM(
 	/* units */	"seconds",
 	/* flags */	XYZZY,
 	/* s-text */
-	"Send timeout for client connections. If the HTTP response hasn't "
-	"been transmitted in this many\n"
-	"seconds the session is closed.\n"
-	"See setsockopt(2) under SO_SNDTIMEO for more information.",
+	"Total timeout for ordinary HTTP1 responses. Does not apply to some"
+	" internally generated errors and pipe mode.\n\n"
+	"When 'send_idle_timeout' is hit while sending an HTTP1 response, the"
+	" timeout is extended unless the total time already taken for sending"
+	" the response in its entirety exceeds this many seconds.\n\n"
+	"When this timeout is hit, the session is closed",
 	/* l-text */	"",
 	/* func */	NULL
 )
