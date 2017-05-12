@@ -697,6 +697,15 @@ PARAM(
 	/* func */	NULL
 )
 
+#if defined(XYZZY)
+  #error "Temporary macro XYZZY already defined"
+#endif
+
+#if defined(SO_SNDTIMEO_WORKS)
+  #define XYZZY DELAYED_EFFECT
+#else
+  #define XYZZY NOT_IMPLEMENTED
+#endif
 PARAM(
 	/* name */	idle_send_timeout,
 	/* typ */	timeout,
@@ -704,7 +713,7 @@ PARAM(
 	/* max */	NULL,
 	/* default */	"60.000",
 	/* units */	"seconds",
-	/* flags */	DELAYED_EFFECT,
+	/* flags */	XYZZY,
 	/* s-text */
 	"Time to wait with no data sent. If no data has been transmitted "
 	"in this many\n"
@@ -713,6 +722,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+#undef XYZZY
 
 PARAM(
 	/* name */	listen_depth,
@@ -952,6 +962,15 @@ PARAM(
 	/* func */	NULL
 )
 
+#if defined(XYZZY)
+  #error "Temporary macro XYZZY already defined"
+#endif
+
+#if defined(SO_SNDTIMEO_WORKS)
+  #define XYZZY DELAYED_EFFECT
+#else
+  #define XYZZY NOT_IMPLEMENTED
+#endif
 PARAM(
 	/* name */	send_timeout,
 	/* typ */	timeout,
@@ -959,7 +978,7 @@ PARAM(
 	/* max */	NULL,
 	/* default */	"600.000",
 	/* units */	"seconds",
-	/* flags */	DELAYED_EFFECT,
+	/* flags */	XYZZY,
 	/* s-text */
 	"Send timeout for client connections. If the HTTP response hasn't "
 	"been transmitted in this many\n"
@@ -968,6 +987,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+#undef XYZZY
 
 #if 0
 /* actual location mgt_param_tbl.c */
