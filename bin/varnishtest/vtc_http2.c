@@ -849,7 +849,8 @@ receive_frame(void *priv)
 		continue;
 	}
 	AZ(pthread_mutex_unlock(&hp->mtx));
-	assert(vtc_error || vsb == NULL);
+	if (!vtc_error)
+		AZ(vsb);
 	return (NULL);
 }
 
