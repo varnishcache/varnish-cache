@@ -1376,9 +1376,12 @@ PARAM(
 	/* units */	"seconds",
 	/* flags */	XYZZY,
 	/* s-text */
-	"Idle timeout for client connections.\n"
-	"A connection is considered idle, until we have received the full "
-	"request headers.",
+	"Idle timeout for client connections.\n\n"
+	"A connection is considered idle until we have received the full"
+	" request headers.\n\n"
+	"This parameter is particularly relevant for HTTP1 keepalive "
+	" connections which are closed unless the next request is received"
+	" before this timeout is reached.",
 	/* l-text */	"",
 	/* func */	NULL
 )
