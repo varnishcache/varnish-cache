@@ -1355,6 +1355,15 @@ PARAM(
 )
 #endif
 
+#if defined(XYZZY)
+  #error "Temporary macro XYZZY already defined"
+#endif
+
+#if defined(SO_RCVTIMEO_WORKS)
+  #define XYZZY 0
+#else
+  #define XYZZY NOT_IMPLEMENTED
+#endif
 PARAM(
 	/* name */	timeout_idle,
 	/* typ */	timeout,
@@ -1362,7 +1371,7 @@ PARAM(
 	/* max */	NULL,
 	/* default */	"5.000",
 	/* units */	"seconds",
-	/* flags */	0,
+	/* flags */	XYZZY,
 	/* s-text */
 	"Idle timeout for client connections.\n"
 	"A connection is considered idle, until we have received the full "
@@ -1370,6 +1379,7 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+#undef XYZZY
 
 PARAM(
 	/* name */	timeout_linger,
