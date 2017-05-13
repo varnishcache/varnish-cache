@@ -152,7 +152,10 @@ VSM_n_Arg(struct VSM_data *vd, const char *arg)
 	REPLACE(vd->name, name);
 	REPLACE(vd->dname, dname);
 	REPLACE(vd->iname, VSB_data(vsb));
+
 	VSB_destroy(&vsb);
+	free(name);
+	free(dname);
 
 	return (1);
 }
