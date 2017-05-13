@@ -34,6 +34,7 @@
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -89,8 +90,10 @@ VIN_n_Arg(const char *n_arg, char **name, char **dir)
 	}
 	if (dir != NULL) {
 		*dir = strdup(dn);
-		if (*dir == NULL)
+		if (*dir == NULL) {
+			free(*name);
 			return (-1);
+		}
 	}
 	return (0);
 }
