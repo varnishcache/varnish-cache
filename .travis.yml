@@ -11,7 +11,7 @@ matrix:
     sudo: false
     compiler: clang
   - os: osx
-    osx_image: xcode8.2
+    osx_image: xcode8.3
     compiler: clang
   allow_failures:
   - os: osx
