@@ -64,6 +64,7 @@ struct vsc_vf {
 	struct VSC_section	section;
 	int			order;
 };
+VTAILQ_HEAD(vsc_vf_head, vsc_vf);
 
 struct vsc_pt {
 	unsigned		magic;
@@ -85,7 +86,7 @@ struct vsc {
 	unsigned		magic;
 #define VSC_MAGIC		0x3373554a
 
-	VTAILQ_HEAD(, vsc_vf)	vf_list;
+	struct vsc_vf_head	vf_list;
 	struct vsc_pt_head	pt_list;
 	struct vsc_sf_head	sf_list_include;
 	struct vsc_sf_head	sf_list_exclude;
@@ -115,14 +116,14 @@ vsc_setup(struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 static void
-vsc_delete_vf_list(struct vsc *vsc)
+vsc_delete_vf_list(struct vsc_vf_head *head)
 {
 	struct vsc_vf *vf;
 
-	while (!VTAILQ_EMPTY(&vsc->vf_list)) {
-		vf = VTAILQ_FIRST(&vsc->vf_list);
+	while (!VTAILQ_EMPTY(head)) {
+		vf = VTAILQ_FIRST(head);
 		CHECK_OBJ_NOTNULL(vf, VSC_VF_MAGIC);
-		VTAILQ_REMOVE(&vsc->vf_list, vf, list);
+		VTAILQ_REMOVE(head, vf, list);
 		FREE_OBJ(vf);
 	}
 }
@@ -166,7 +167,7 @@ VSC_Delete(struct VSM_data *vd)
 	vsc_delete_sf_list(&vsc->sf_list_include);
 	vsc_delete_sf_list(&vsc->sf_list_exclude);
 	vsc_delete_pt_list(&vsc->pt_list);
-	vsc_delete_vf_list(vsc);
+	vsc_delete_vf_list(&vsc->vf_list);
 	FREE_OBJ(vsc);
 }
 
@@ -320,7 +321,7 @@ vsc_build_vf_list(struct VSM_data *vd)
 	struct vsc *vsc = vsc_setup(vd);
 
 	vsc_delete_pt_list(&vsc->pt_list);
-	vsc_delete_vf_list(vsc);
+	vsc_delete_vf_list(&vsc->vf_list);
 
 	VSM_FOREACH(&vsc->iter_fantom, vd) {
 		if (strcmp(vsc->iter_fantom.class, VSC_CLASS))
