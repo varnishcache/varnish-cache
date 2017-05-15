@@ -32,7 +32,11 @@
 //lint -e{766}
 #include "config.h"
 
+#include <errno.h>
+#include <fcntl.h>
 #include <signal.h>
+#include <unistd.h>
+#include <stdio.h>
 
 #include "compat/daemon.h"
 #include "vdef.h"
