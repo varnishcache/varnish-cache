@@ -233,8 +233,8 @@ specific options. Available jails are:
 
 -j <unix[,user=`user`][,ccgroup=`group`][,workuser=`user`]>
 
-  Default on all other platforms when `varnishd` is either started with
-  an effective uid of 0 ("as root") or as user ``varnish``.
+  Default on all other platforms when `varnishd` is started with an
+  effective uid of 0 ("as root").
 
   With the ``unix`` jail mechanism activated, varnish will switch to
   an alternative user for subprocesses and change the effective uid of
