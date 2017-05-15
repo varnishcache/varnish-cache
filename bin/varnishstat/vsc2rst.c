@@ -34,7 +34,7 @@
 #include <stdio.h>
 
 #define VSC_LEVEL_F(v,l,e,d)		\
-	static const char VSC_level_##v[] = l;
+	static const char VSC_level_##v[] = #v;
 #include "tbl/vsc_levels.h"
 #undef VSC_LEVEL_F
 
@@ -61,8 +61,19 @@ int main(int argc, char **argv)
 
 #define VSC_DO(U,l,t,h) L(h);
 
-#define VSC_F(n, t, l, s, f, v, d, e)	\
-	printf("%s – %s (%s)\n\t%s\n\n", #n, d, VSC_level_##v, e);
+#define VSC_F(n, t, l, s, f, v, d, e)					\
+	do {								\
+		printf("``%s`` – ", #n);				\
+		if (s == 'c')						\
+			printf("`counter` - ");				\
+		else if (s == 'g')					\
+			printf("`gauge` - ");				\
+		else if (s == 'b')					\
+			printf("`bitmap` - ");				\
+		printf("%s\n\n", VSC_level_##v);			\
+		printf("\t%s\n\n", d);					\
+		printf("\t%s\n\n", e);					\
+	} while (0);
 
 #define VSC_DONE(U,l,t)
 
