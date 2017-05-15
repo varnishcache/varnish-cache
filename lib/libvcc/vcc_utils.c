@@ -32,13 +32,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 
 #include "vcc_compile.h"
 
 #include "vre.h"
-#include "vrt.h"
 #include "vsa.h"
 #include "vss.h"
 #include "vtcp.h"

@@ -31,7 +31,6 @@
 
 #include "config.h"
 
-#include <stdarg.h>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -53,7 +52,6 @@
 #include "vin.h"
 #include "vpf.h"
 #include "vrnd.h"
-#include "vsb.h"
 #include "vsha256.h"
 #include "vsub.h"
 #include "vtim.h"

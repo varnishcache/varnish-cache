@@ -36,8 +36,6 @@
 #include <poll.h>
 #include <stdio.h>
 
-#include "vrt.h"
-
 #include "cache_http1.h"
 
 static struct lock pipestat_mtx;

@@ -30,13 +30,10 @@
 
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 
 #include <ctype.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,7 +46,6 @@
 #include "vev.h"
 #include "vfil.h"
 #include "vnum.h"
-#include "vqueue.h"
 #include "vrnd.h"
 #include "vss.h"
 #include "vsub.h"

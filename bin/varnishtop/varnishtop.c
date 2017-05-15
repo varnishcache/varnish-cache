@@ -35,17 +35,14 @@
 
 #include <ctype.h>
 #include <errno.h>
-#include <limits.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 #include "vcurses.h"
-#include "vapi/vsm.h"
 #include "vapi/vsl.h"
 #include "vapi/voptget.h"
 #include "vas.h"

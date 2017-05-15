@@ -38,8 +38,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "hash/hash_slinger.h"
-
 #include "storage/storage.h"
 #include "vrt.h"
 #include "vrt_obj.h"

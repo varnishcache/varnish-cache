@@ -87,7 +87,6 @@
 #include "cache_obj.h"
 #include "vend.h"
 #include "storage/storage.h"
-#include "hash/hash_slinger.h"
 
 static const struct obj_methods *
 obj_getmethods(const struct objcore *oc)

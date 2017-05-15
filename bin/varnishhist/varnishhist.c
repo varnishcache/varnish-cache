@@ -33,15 +33,11 @@
 
 #include "config.h"
 
-#include <sys/types.h>
-
 #include <errno.h>
 #include <limits.h>
 #include <math.h>
 #include <pthread.h>
-#include <regex.h>
 #include <signal.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>

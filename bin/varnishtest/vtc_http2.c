@@ -38,14 +38,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <ctype.h>
 #include <netinet/in.h>
 
 #include "vtc.h"
 #include "vtc_http.h"
 
 #include "vfil.h"
-#include "vgz.h"
 #include "hpack.h"
 #include "vend.h"
 

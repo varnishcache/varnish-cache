@@ -35,12 +35,9 @@
 #include "config.h"
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
-#include <time.h>
-#include <sys/time.h>
 #include <poll.h>
 #include <stdint.h>
 #include <math.h>
@@ -49,8 +46,6 @@
 #include "vas.h"
 #include "miniobj.h"
 #include "vqueue.h"
-#include "vapi/vsm.h"
-#include "vapi/vsc.h"
 #include "vtim.h"
 
 #include "varnishstat.h"

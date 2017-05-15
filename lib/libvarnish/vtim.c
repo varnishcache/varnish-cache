@@ -61,7 +61,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #ifdef __MACH__
 #include <mach/mach_time.h>
 #endif

@@ -32,12 +32,7 @@
 
 #include <ctype.h>
 #include <math.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-#include <unistd.h>
 
 #include "vdef.h"
 #include "vas.h"

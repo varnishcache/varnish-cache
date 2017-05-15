@@ -41,7 +41,6 @@
 #include <string.h>
 #include <signal.h>
 #include <math.h>
-#include <sys/stat.h>
 
 #include "compat/daemon.h"
 #include "vdef.h"

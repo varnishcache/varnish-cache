@@ -43,9 +43,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-
 #include "binary_heap.h"
 #include "vcli_serve.h"
 #include "vrt.h"

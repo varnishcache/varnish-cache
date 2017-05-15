@@ -37,16 +37,12 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-#include <stdarg.h>
 #include <stdint.h>
-#include <sys/stat.h>
 
-#include "vapi/vsm.h"
 #include "vapi/vsl.h"
 #include "vapi/voptget.h"
 #include "vas.h"
 #include "vdef.h"
-#include "vpf.h"
 #include "vut.h"
 #include "miniobj.h"
 

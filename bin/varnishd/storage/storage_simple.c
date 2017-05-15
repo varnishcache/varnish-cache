@@ -31,9 +31,6 @@
 
 #include "cache/cache.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "cache/cache_obj.h"
 #include "hash/hash_slinger.h"
 

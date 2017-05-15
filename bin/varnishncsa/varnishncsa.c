@@ -54,7 +54,6 @@
 #include <math.h>
 
 #include "base64.h"
-#include "vapi/vsm.h"
 #include "vapi/vsl.h"
 #include "vapi/voptget.h"
 #include "vas.h"

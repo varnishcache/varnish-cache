@@ -58,7 +58,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "vapi/vsl.h"
 #include "vapi/vsm.h"
 #include "vas.h"
 #include "vcli.h"

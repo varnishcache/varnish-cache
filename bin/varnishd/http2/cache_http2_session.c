@@ -34,10 +34,8 @@
 #include <stdio.h>
 
 #include "cache/cache_transport.h"
-#include "cache/cache_filter.h"
 #include "http2/cache_http2.h"
 
-#include "vend.h"
 #include "vtim.h"
 
 static const char h2_resp_101[] =

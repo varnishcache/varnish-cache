@@ -33,7 +33,6 @@
 #include <stdlib.h>
 
 #include "cache/cache.h"
-#include "cache/cache_obj.h"
 #include "hash/hash_slinger.h"
 
 #include "storage/storage.h"

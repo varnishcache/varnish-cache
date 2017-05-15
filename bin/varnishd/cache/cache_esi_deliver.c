@@ -32,7 +32,6 @@
 
 #include "cache.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "cache_transport.h"

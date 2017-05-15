@@ -39,7 +39,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "cache/cache_filter.h"
 #include "cache/cache_transport.h"
 #include "cache_http1.h"
 #include "hash/hash_slinger.h"

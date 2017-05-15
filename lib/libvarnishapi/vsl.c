@@ -30,16 +30,10 @@
 
 #include "config.h"
 
-#include <sys/stat.h>
-#include <sys/types.h>
-
 #include <errno.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 
 #include "vdef.h"
 #include "vas.h"
@@ -51,7 +45,6 @@
 #include "vre.h"
 #include "vsb.h"
 
-#include "vapi/vsm.h"
 #include "vapi/vsl.h"
 
 #include "vsl_api.h"

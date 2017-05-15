@@ -37,7 +37,6 @@
 
 #include "cache/cache.h"
 
-#include <sys/param.h>
 #include <sys/mman.h>
 
 #include <stdio.h>

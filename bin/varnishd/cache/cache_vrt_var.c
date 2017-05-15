@@ -32,7 +32,6 @@
 
 #include "cache.h"
 #include "common/heritage.h"
-#include "hash/hash_slinger.h"
 
 #include "cache_director.h"
 #include "vrt.h"

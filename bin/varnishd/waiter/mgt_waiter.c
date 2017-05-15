@@ -29,9 +29,7 @@
  */
 
 #include "config.h"
-#include <stdio.h>
 #include <unistd.h>
-#include <string.h>
 
 #include "mgt/mgt.h"
 #include "waiter/mgt_waiter.h"

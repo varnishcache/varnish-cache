@@ -32,7 +32,6 @@
 
 #include "cache/cache.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "binary_heap.h"
