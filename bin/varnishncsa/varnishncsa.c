@@ -678,6 +678,9 @@ parse_format(const char *format)
 	struct vsb *vsb;
 	char buf[256];
 
+	if (format == NULL)
+		format = FORMAT;
+
 	vsb = VSB_new_auto();
 	AN(vsb);
 
@@ -1212,8 +1215,6 @@ main(int argc, char * const *argv)
 		    VSLQ_grouping[VUT.g_arg]);
 
 	/* Prepare output format */
-	if (format == NULL)
-		format = strdup(FORMAT);
 	parse_format(format);
 	free(format);
 	format = NULL;
