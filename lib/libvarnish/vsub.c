@@ -35,6 +35,7 @@
 
 #include <errno.h>
 #include <stdint.h>
+#include <stdlib.h>		// Solaris closefrom(3c)
 #include <string.h>
 #include <unistd.h>
 
