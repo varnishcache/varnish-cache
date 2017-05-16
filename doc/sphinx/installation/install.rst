@@ -119,12 +119,16 @@ Optionally, to rebuild the svg files:
 Build dependencies on a SmartOS Zone
 ------------------------------------
 
-As of SmartOS pkgsrc 2015Q4, install the following packages::
+As of SmartOS pkgsrc 2017Q1, install the following packages::
 
 	pkgin in autoconf automake libedit libtool ncurses \
 		 pcre py27-sphinx python27 gmake gcc49 pkg-config
+		 
+For the `configure` step (below) use::
 
-Optionally, to rebuild the svg files:
+	sh configure --prefix=/opt/local --mandir=/opt/local/man
+
+Optionally, to rebuild the svg files::
 
         pkgin in graphviz
 
