@@ -99,7 +99,8 @@ struct parspec WRK_parspec[] = {
 		"2", "pools" },
 	{ "thread_pool_max", tweak_thread_pool_max, &mgt_param.wthread_max,
 		NULL, NULL,
-		"The maximum number of worker threads in each pool.\n"
+		"The maximum number of worker threads in each pool. The "
+		"minimum value depends on thread_pool_min.\n"
 		"\n"
 		"Do not set this higher than you have to, since excess "
 		"worker threads soak up RAM and CPU and generally just get "
@@ -108,7 +109,8 @@ struct parspec WRK_parspec[] = {
 		"5000", "threads" },
 	{ "thread_pool_min", tweak_thread_pool_min, &mgt_param.wthread_min,
 		NULL, NULL,
-		"The minimum number of worker threads in each pool.\n"
+		"The minimum number of worker threads in each pool. The "
+		"maximum value depends on thread_pool_max.\n"
 		"\n"
 		"Increasing this may help ramp up faster from low load "
 		"situations or when threads have expired.\n"
