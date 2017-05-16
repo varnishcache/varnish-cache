@@ -67,7 +67,7 @@ WS_Assert_Allocated(const struct ws *ws, const void *ptr, ssize_t len)
 	WS_Assert(ws);
 	if (len < 0)
 		len = strlen(p) + 1;
-	assert(p >= ws->s && (p + len) < ws->f);
+	assert(p >= ws->s && (p + len) <= ws->f);
 }
 
 /*
