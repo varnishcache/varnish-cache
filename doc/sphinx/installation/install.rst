@@ -119,14 +119,14 @@ Optionally, to rebuild the svg files:
 Build dependencies on a SmartOS Zone
 ------------------------------------
 
-As of SmartOS pkgsrc 2015Q4, install the following packages::
+As of SmartOS pkgsrc 2017Q1, install the following packages::
 
 	pkgin in autoconf automake libedit libtool ncurses \
 		 pcre py27-sphinx python27 gmake gcc49 pkg-config
 
-Optionally, to rebuild the svg files:
+Optionally, to rebuild the svg files::
 
-        pkgin in graphviz
+	pkgin in graphviz
 
 Optionally, to pull from a repository::
 
@@ -138,6 +138,12 @@ Building on Solaris and other Solaris-ish OSes
 Building with gcc should be straight forward, as long as the above
 requirements are installed.
 
+By convention, consider installing Varnish under `/opt/local` using::
+
+	./configure \
+	--prefix=/opt/local \
+	--mandir=/opt/local/man
+
 Alternatively, building with Solaris Studio 12.4 should work
 considering the following recommendations:
 
@@ -146,6 +152,8 @@ considering the following recommendations:
   dependencies are installed. Example for `/opt/local`::
 
 	./configure \
+	--prefix=/opt/local \
+	--mandir=/opt/local/man
 	CPPFLAGS="-I/opt/local/include" \
 	CFLAGS="-m64" \
 	LDFLAGS="-L/opt/local/lib -R/opt/local/lib"
