@@ -26,6 +26,7 @@
 # SUCH DAMAGE.
 
 $Module debug 3 Development, test and debug
+$ABI strict
 
 DESCRIPTION
 ===========

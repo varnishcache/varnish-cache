@@ -33,6 +33,7 @@
 # SUCH DAMAGE.
 
 $Module directors 3 Varnish Directors Module
+$ABI strict
 
 DESCRIPTION
 ===========

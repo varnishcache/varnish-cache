@@ -26,6 +26,7 @@
 # SUCH DAMAGE.
 
 $Module std 3 Varnish Standard Module
+$ABI strict
 
 DESCRIPTION
 ===========

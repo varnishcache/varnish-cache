@@ -38,6 +38,7 @@
 #include <stdlib.h>
 
 #include "vcli_serve.h"
+#include "vmod_abi.h"
 #include "vrt.h"
 
 /*--------------------------------------------------------------------
@@ -65,6 +66,16 @@ struct vmod {
 
 static VTAILQ_HEAD(,vmod)	vmods = VTAILQ_HEAD_INITIALIZER(vmods);
 
+static unsigned
+vmod_abi_mismatch(const struct vmod_data *d)
+{
+
+	if (d->vrt_major == 0 && d->vrt_minor == 0)
+		return (d->abi == NULL || strcmp(d->abi, VMOD_ABI_Version));
+
+	return (d->vrt_major != VRT_MAJOR_VERSION ||
+	    d->vrt_minor > VRT_MINOR_VERSION);
+}
 
 int
 VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, void *ptr, int len, const char *nm,
@@ -112,15 +123,13 @@ VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, void *ptr, int len, const char *nm,
 			FREE_OBJ(v);
 			return (1);
 		}
-		if (d->vrt_major != VRT_MAJOR_VERSION ||
-		    d->vrt_minor > VRT_MINOR_VERSION ||
+		if (vmod_abi_mismatch(d) ||
 		    d->name == NULL ||
 		    strcmp(d->name, nm) ||
 		    d->func == NULL ||
 		    d->func_len <= 0 ||
 		    d->proto == NULL ||
-		    d->spec == NULL ||
-		    d->abi == NULL) {
+		    d->spec == NULL) {
 			VSB_printf(ctx->msg,
 			    "Loading VMOD %s from %s:\n", nm, path);
 			VSB_printf(ctx->msg, "VMOD data is mangled.\n");
