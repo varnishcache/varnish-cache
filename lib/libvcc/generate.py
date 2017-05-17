@@ -1417,7 +1417,6 @@ if i != "/* " + v + " */":
 	fo = open(vcsfn, "w")
 	file_header(fo)
 	fo.write('#define VCS_Version "%s"\n' % v)
-	fo.write('#define VCS_Branch "%s"\n' % b)
 	fo.close()
 
 	for i in open(os.path.join(buildroot, "Makefile")):

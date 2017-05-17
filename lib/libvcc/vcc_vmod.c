@@ -155,7 +155,7 @@ vcc_ParseImport(struct vcc *tl)
 		vcc_ErrWhere(tl, mod);
 		return;
 	}
-	if (strcmp(VCS_Branch, "master") == 0 &&
+	if (vmd->vrt_major == 0 && vmd->vrt_minor == 0 &&
 	    strcmp(vmd->abi, VMOD_ABI_Version) != 0) {
 		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(mod));
 		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
@@ -164,8 +164,8 @@ vcc_ParseImport(struct vcc *tl)
 		vcc_ErrWhere(tl, mod);
 		return;
 	}
-	if (vmd->vrt_major != VRT_MAJOR_VERSION ||
-	    vmd->vrt_minor > VRT_MINOR_VERSION) {
+	if (vmd->vrt_major != 0 && (vmd->vrt_major != VRT_MAJOR_VERSION ||
+	    vmd->vrt_minor > VRT_MINOR_VERSION)) {
 		VSB_printf(tl->sb, "Incompatible VMOD %.*s\n", PF(mod));
 		VSB_printf(tl->sb, "\tFile name: %s\n", fnp);
 		VSB_printf(tl->sb, "\tVMOD version %u.%u\n",
