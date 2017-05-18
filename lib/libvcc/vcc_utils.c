@@ -55,7 +55,6 @@ vcc_regexp(struct vcc *tl)
 	Expect(tl, CSTR);
 	if (tl->err)
 		return (NULL);
-	memset(&t, 0, sizeof t);
 	t = VRE_compile(tl->t->dec, 0, &error, &erroroffset);
 	if (t == NULL) {
 		VSB_printf(tl->sb,
