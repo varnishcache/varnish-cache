@@ -754,6 +754,7 @@ receive_frame(void *priv)
 				AZ(pthread_mutex_lock(&hp->mtx));
 				VTAILQ_FOREACH(s, &hp->streams, list)
 					AZ(pthread_cond_signal(&s->cond));
+				clean_frame(&f);
 				AZ(pthread_mutex_unlock(&hp->mtx));
 				vtc_log(hp->vl, hp->fatal,
 				    "could not get frame body");
