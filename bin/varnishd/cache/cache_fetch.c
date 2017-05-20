@@ -518,7 +518,6 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 			AN(vfc->oc->flags & OC_F_PASS);
 			VSLb(wrk->vsl, SLT_FetchError,
 			    "Pass delivery abandoned");
-			vfps = VFP_END;
 			bo->htc->doclose = SC_RX_BODY;
 			break;
 		}
