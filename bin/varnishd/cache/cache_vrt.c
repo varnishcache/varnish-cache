@@ -252,7 +252,30 @@ const char *
 VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
 {
 	char *b, *e;
+	const char *q;
 	unsigned u, x;
+	va_list aq;
+
+	while (p == NULL ||
+	       (p != vrt_magic_string_end && *p == '\0'))
+		p = va_arg(ap, const char *);
+
+	if (h == NULL) {
+		q = p;
+
+		if (q == vrt_magic_string_end)
+			p = "";
+		else if (WS_Inside(ws, q, NULL)) {
+			va_copy(aq, ap);
+			do
+				q = va_arg(aq, const char *);
+			while (q == NULL ||
+			       (q != vrt_magic_string_end && *q == '\0'));
+			va_end(aq);
+		}
+		if (q == vrt_magic_string_end)
+			return (p);
+	}
 
 	u = WS_Reserve(ws, 0);
 	e = b = ws->f;
