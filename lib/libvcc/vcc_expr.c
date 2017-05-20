@@ -433,7 +433,7 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym,
 	vcc_NextToken(tl);
 
 	bprintf(buf, "VRT_regsub(ctx, %d,\v+\n\v1,\n%s", all, p);
-	*e = vcc_expr_edit(STRING, buf, e2, *e);
+	*e = vcc_expr_edit(STRING, buf, e2, NULL);
 
 	SkipToken(tl, ',');
 	vcc_expr0(tl, &e2, STRING);
