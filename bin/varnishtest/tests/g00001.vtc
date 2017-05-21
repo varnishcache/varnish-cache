@@ -3,7 +3,13 @@ varnishtest "test basic gunzip for client"
 server s1 {
 	rxreq
 	expect req.http.accept-encoding == "gzip"
-	txresp -gzipbody FOO
+	txresp -nolen -hdr "Content-Length: 49" -hdr "Content-Encoding: gzip"
+
+	# "date > _ ; gzip -9 _" - contains filename + timestamp
+	sendhex "1f 8b 08 08 ef 00 22 59  02 03 5f 00 0b 2e cd 53"
+	sendhex "f0 4d ac 54 30 32 04 22  2b 03 13 2b 13 73 85 d0"
+	sendhex "10 67 05 23 03 43 73 2e  00 cf 9b db c0 1d 00 00"
+	sendhex "00"
 } -start
 
 varnish v1 -cliok "param.set http_gzip_support true" -vcl+backend {
@@ -12,26 +18,26 @@ varnish v1 -cliok "param.set http_gzip_support true" -vcl+backend {
 client c1 {
 	txreq
 	rxresp
-	expect resp.bodylen == "3"
+	expect resp.bodylen == "29"
 	expect resp.http.content-encoding == <undef>
 
 	txreq -hdr "Accept-encoding: gzip;q=0.1"
 	rxresp
 	expect resp.http.content-encoding == "gzip"
 	gunzip
-	expect resp.bodylen == "3"
+	expect resp.bodylen == "29"
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 client c1 {
 	txreq -proto HTTP/1.0
 	rxresp
-	expect resp.bodylen == "3"
+	expect resp.bodylen == "29"
 	expect resp.http.content-encoding == <undef>
 } -run
 
-delay .1
+varnish v1 -vsl_catchup
 
 client c1 {
 	txreq -req HEAD
@@ -40,7 +46,7 @@ client c1 {
 
 	txreq -req HEAD -hdr "Accept-encoding: gzip;q=0.1"
 	rxresp -no_obj
-	expect resp.http.content-length == "26"
+	expect resp.http.content-length == "49"
 	expect resp.http.content-encoding == "gzip"
 } -run
 

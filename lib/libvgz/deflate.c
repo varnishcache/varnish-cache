@@ -1118,7 +1118,7 @@ int ZEXPORT deflateEnd (strm)
     return status == BUSY_STATE ? Z_DATA_ERROR : Z_OK;
 }
 
-#ifdef NOVGZ 
+#ifdef NOVGZ
 
 /* =========================================================================
  * Copy the source state to the destination state.
