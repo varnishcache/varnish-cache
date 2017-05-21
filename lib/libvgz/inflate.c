@@ -99,8 +99,10 @@ local int updatewindow OF((z_streamp strm, const unsigned char FAR *end,
 #ifdef BUILDFIXED
    void makefixed OF((void));
 #endif
+#ifdef NOVGZ
 local unsigned syncsearch OF((unsigned FAR *have, const unsigned char FAR *buf,
                               unsigned len));
+#endif
 
 local int inflateStateCheck(strm)
 z_streamp strm;
@@ -1294,6 +1296,8 @@ z_streamp strm;
     return Z_OK;
 }
 
+#ifdef NOVGZ
+
 int ZEXPORT inflateGetDictionary(strm, dictionary, dictLength)
 z_streamp strm;
 Bytef *dictionary;
@@ -1565,3 +1569,5 @@ z_streamp strm;
     state = (struct inflate_state FAR *)strm->state;
     return (unsigned long)(state->next - state->codes);
 }
+
+#endif

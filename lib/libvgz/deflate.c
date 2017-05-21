@@ -82,8 +82,10 @@ local block_state deflate_fast   OF((deflate_state *s, int flush));
 #ifndef FASTEST
 local block_state deflate_slow   OF((deflate_state *s, int flush));
 #endif
+#ifdef NOVGZ
 local block_state deflate_rle    OF((deflate_state *s, int flush));
 local block_state deflate_huff   OF((deflate_state *s, int flush));
+#endif
 local void lm_init        OF((deflate_state *s));
 local void putShortMSB    OF((deflate_state *s, uInt b));
 local void flush_pending  OF((z_streamp strm));
@@ -260,6 +262,9 @@ int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
      * output size for (length,distance) codes is <= 24 bits.
      */
 
+    if (strategy != Z_DEFAULT_STRATEGY)
+        return Z_STREAM_ERROR;
+
     if (version == Z_NULL || version[0] != my_version[0] ||
         stream_size != sizeof(z_stream)) {
         return Z_VERSION_ERROR;
@@ -375,6 +380,8 @@ local int deflateStateCheck (strm)
     return 0;
 }
 
+#ifdef NOVGZ
+
 /* ========================================================================= */
 int ZEXPORT deflateSetDictionary (strm, dictionary, dictLength)
     z_streamp strm;
@@ -466,6 +473,8 @@ int ZEXPORT deflateGetDictionary (strm, dictionary, dictLength)
     return Z_OK;
 }
 
+#endif
+
 /* ========================================================================= */
 int ZEXPORT deflateResetKeep (strm)
     z_streamp strm;
@@ -516,6 +525,8 @@ int ZEXPORT deflateReset (strm)
         lm_init(strm->state);
     return ret;
 }
+
+#ifdef NOVGZ
 
 /* ========================================================================= */
 int ZEXPORT deflateSetHeader (strm, head)
@@ -711,6 +722,8 @@ uLong ZEXPORT deflateBound(strm, sourceLen)
     return sourceLen + (sourceLen >> 12) + (sourceLen >> 14) +
            (sourceLen >> 25) + 13 - 6 + wraplen;
 }
+
+#endif
 
 /* =========================================================================
  * Put a short in the pending buffer. The 16-bit value is put in MSB order.
@@ -1005,8 +1018,8 @@ int ZEXPORT deflate (strm, flush)
         block_state bstate;
 
         bstate = s->level == 0 ? deflate_stored(s, flush) :
-                 s->strategy == Z_HUFFMAN_ONLY ? deflate_huff(s, flush) :
-                 s->strategy == Z_RLE ? deflate_rle(s, flush) :
+                 // s->strategy == Z_HUFFMAN_ONLY ? deflate_huff(s, flush) :
+                 // s->strategy == Z_RLE ? deflate_rle(s, flush) :
                  (*(configuration_table[s->level].func))(s, flush);
 
         if (bstate == finish_started || bstate == finish_done) {
@@ -2056,6 +2069,8 @@ local block_state deflate_slow(s, flush)
 }
 #endif /* FASTEST */
 
+#ifdef NOVGZ
+
 /* ===========================================================================
  * For Z_RLE, simply look for runs of bytes, generate matches only of distance
  * one.  Do not maintain a hash table.  (It will be regenerated if this run of
@@ -2168,3 +2183,5 @@ local block_state deflate_huff(s, flush)
         FLUSH_BLOCK(s, 0);
     return block_done;
 }
+
+#endif
