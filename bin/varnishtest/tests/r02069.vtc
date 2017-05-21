@@ -6,7 +6,7 @@ server s1 -repeat 20 {
 } -start
 
 varnish v1 -vcl {
-	import std;
+	import ${vmod_std};
 
 	backend s1 {
 		.host = "${s1_addr}";
