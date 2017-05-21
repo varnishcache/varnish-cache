@@ -229,6 +229,8 @@ local void slide_hash(s)
 #endif
 }
 
+#ifdef NOVGZ
+
 /* ========================================================================= */
 int ZEXPORT deflateInit_(strm, level, version, stream_size)
     z_streamp strm;
@@ -240,6 +242,8 @@ int ZEXPORT deflateInit_(strm, level, version, stream_size)
                          Z_DEFAULT_STRATEGY, version, stream_size);
     /* To do: ignore strm->next_in if we use it as window */
 }
+
+#endif
 
 /* ========================================================================= */
 int ZEXPORT deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
@@ -1114,6 +1118,8 @@ int ZEXPORT deflateEnd (strm)
     return status == BUSY_STATE ? Z_DATA_ERROR : Z_OK;
 }
 
+#ifdef NOVGZ 
+
 /* =========================================================================
  * Copy the source state to the destination state.
  * To simplify the source, this is not supported for 16-bit MSDOS (which
@@ -1173,6 +1179,8 @@ int ZEXPORT deflateCopy (dest, source)
     return Z_OK;
 #endif /* MAXSEG_64K */
 }
+
+#endif
 
 /* ===========================================================================
  * Read a new buffer from the current input stream, update the adler32

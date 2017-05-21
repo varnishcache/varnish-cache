@@ -239,6 +239,8 @@ int stream_size;
     return ret;
 }
 
+#ifdef NOVGZ
+
 int ZEXPORT inflateInit_(strm, version, stream_size)
 z_streamp strm;
 const char *version;
@@ -267,6 +269,8 @@ int value;
     state->bits += (uInt)bits;
     return Z_OK;
 }
+
+#endif
 
 /*
    Return state with length and distance decoding tables and index sizes set to
