@@ -119,11 +119,7 @@ BUILT_SOURCES = $(GENERATED_H)
 MAINTAINERCLEANFILES = vcs_version.h
 
 CLEANFILES = \
-	tbl/vcl_returns.h \
-	tbl/vrt_stv_var.h \
-	vcl.h \
-	vrt_obj.h \
-	vmod_abi.h \
+	$(GENERATED_H) \
 	vrt_test \
 	_vrt_test \
 	vrt.c
