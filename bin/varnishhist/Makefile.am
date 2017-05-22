@@ -18,4 +18,4 @@ varnishhist_LDADD = \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
 	-lm \
 	@SAN_LDFLAGS@ \
-	@CURSES_LIB@ ${RT_LIBS} ${PTHREAD_LIBS}
+	@CURSES_LIBS@ ${RT_LIBS} ${PTHREAD_LIBS}
