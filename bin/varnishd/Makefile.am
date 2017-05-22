@@ -109,8 +109,10 @@ varnishd_SOURCES = \
 	waiter/cache_waiter_poll.c \
 	waiter/cache_waiter_ports.c
 
+nodist_varnishd_SOURCES = \
+	builtin_vcl.c
+
 noinst_HEADERS = \
-	builtin_vcl.h \
 	cache/cache_ban.h \
 	cache/cache_esi.h \
 	cache/cache_obj.h \
@@ -187,17 +189,20 @@ TESTS = vhp_table_test vhp_decode_test
 #
 # Turn the builtin.vcl file into a C-string we can include in the program.
 #
-builtin_vcl.h:	builtin.vcl
+builtin_vcl.c:	builtin.vcl
 	echo '/*' > $@
 	echo ' * NB:  This file is machine generated, DO NOT EDIT!' >> $@
 	echo ' *' >> $@
 	echo ' * Edit builtin.vcl instead and run make' >> $@
 	echo ' *' >> $@
 	echo ' */' >> $@
+	echo '#include "mgt/mgt.h"' >> $@
 	echo '' >> $@
+	echo 'const char * const builtin_vcl =' >> $@
 	sed -e 's/"/\\"/g' \
 	    -e 's/$$/\\n"/' \
 	    -e 's/^/ "/' $(srcdir)/builtin.vcl >> $@
+	echo ';' >> $@
 
 EXTRA_DIST = builtin.vcl
 
@@ -205,10 +210,8 @@ vhp_hufdec.h: vhp_gen_hufdec
 	$(AM_V_GEN) ./vhp_gen_hufdec > vhp_hufdec.h_
 	mv vhp_hufdec.h_ vhp_hufdec.h
 
-DISTCLEANFILES = builtin_vcl.h
+DISTCLEANFILES = builtin_vcl.c
 
 BUILT_SOURCES	=	vhp_hufdec.h
 DISTCLEANFILES	+=	vhp_hufdec.h
 
-# Explicitly record dependency
-mgt/mgt_vcc.c:	builtin_vcl.h

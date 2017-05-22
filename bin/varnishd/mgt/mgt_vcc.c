@@ -71,10 +71,6 @@ unsigned mgt_vcc_unsafe_path;
 
 /*--------------------------------------------------------------------*/
 
-static const char * const builtin_vcl =
-#include "builtin_vcl.h"
-    ""	;
-
 void
 mgt_DumpBuiltin(void)
 {
