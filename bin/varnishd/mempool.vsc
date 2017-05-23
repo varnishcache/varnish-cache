@@ -1,0 +1,77 @@
+..
+	This is *NOT* a RST file but the syntax has been chosen so
+	that it may become an RST file at some later date.
+
+	XXX: For now this file must be kept in 100% agreement with
+	XXX: include/tbl/vsc_fields.h
+
+.. varnish_vsc_begin::	mempool
+	:oneliner:	MEMORY POOL COUNTERS (MEMPOOL.*)
+
+.. varnish_vsc:: live
+	:type:	gauge
+	:level:	debug
+	:oneliner:	In use
+
+
+.. varnish_vsc:: pool
+	:type:	gauge
+	:level:	debug
+	:oneliner:	In Pool
+
+
+.. varnish_vsc:: sz_wanted
+	:type:	gauge
+	:level:	debug
+	:oneliner:	Size requested
+
+
+.. varnish_vsc:: sz_actual
+	:type:	gauge
+	:level:	debug
+	:oneliner:	Size allocated
+
+
+.. varnish_vsc:: allocs
+	:type:	counter
+	:level:	debug
+	:oneliner:	Allocations
+
+
+.. varnish_vsc:: frees
+	:type:	counter
+	:level:	debug
+	:oneliner:	Frees
+
+
+.. varnish_vsc:: recycle
+	:type:	counter
+	:level:	debug
+	:oneliner:	Recycled from pool
+
+
+.. varnish_vsc:: timeout
+	:type:	counter
+	:level:	debug
+	:oneliner:	Timed out from pool
+
+
+.. varnish_vsc:: toosmall
+	:type:	counter
+	:level:	debug
+	:oneliner:	Too small to recycle
+
+
+.. varnish_vsc:: surplus
+	:type:	counter
+	:level:	debug
+	:oneliner:	Too many for pool
+
+
+.. varnish_vsc:: randry
+	:type:	counter
+	:level:	debug
+	:oneliner:	Pool ran dry
+
+
+.. varnish_vsc_end::	mempool

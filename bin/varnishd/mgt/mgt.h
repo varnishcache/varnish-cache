@@ -38,6 +38,8 @@
 #include "common/common.h"
 #include "common/com_params.h"
 
+#include "VSC_mgt.h"
+
 struct cli;
 struct parspec;
 struct vcc;
@@ -130,8 +132,8 @@ extern const struct jail_tech jail_tech_unix;
 extern const struct jail_tech jail_tech_solaris;
 
 /* mgt_main.c */
-extern struct VSC_C_mgt	*VSC_C_mgt;
-extern struct VSC_C_mgt static_VSC_C_mgt;
+extern struct VSC_mgt	*VSC_C_mgt;
+extern struct VSC_mgt	static_VSC_C_mgt;
 struct choice {
 	const char      *name;
 	const void	*ptr;

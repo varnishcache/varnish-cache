@@ -63,8 +63,8 @@ pid_t			mgt_pid;
 struct vev_base		*mgt_evb;
 int			exit_status = 0;
 struct vsb		*vident;
-struct VSC_C_mgt	static_VSC_C_mgt;
-struct VSC_C_mgt	*VSC_C_mgt;
+struct VSC_mgt		static_VSC_C_mgt;
+struct VSC_mgt		*VSC_C_mgt;
 static int		I_fd = -1;
 static char		Cn_arg[] = "/tmp/varnishd_C_XXXXXXX";
 

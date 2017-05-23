@@ -1,0 +1,61 @@
+..
+	This is *NOT* a RST file but the syntax has been chosen so
+	that it may become an RST file at some later date.
+
+	XXX: For now this file must be kept in 100% agreement with
+	XXX: include/tbl/vsc_fields.h
+
+.. varnish_vsc_begin::	mgt
+	:class:	MGT
+	:oneliner:	MANAGEMENT PROCESS COUNTERS (MGT.*)
+
+.. varnish_vsc:: uptime
+	:type:	counter
+	:level:	info
+	:oneliner:	Management process uptime
+
+Uptime in seconds of the management process
+
+.. varnish_vsc:: child_start
+	:type:	counter
+	:level:	diag
+	:oneliner:	Child process started
+
+Number of times the child process has been started
+
+.. varnish_vsc:: child_exit
+	:type:	counter
+	:level:	diag
+	:oneliner:	Child process normal exit
+
+Number of times the child process has been cleanly stopped
+
+.. varnish_vsc:: child_stop
+	:type:	counter
+	:level:	diag
+	:oneliner:	Child process unexpected exit
+
+Number of times the child process has exited with an unexpected return code
+
+.. varnish_vsc:: child_died
+	:type:	counter
+	:level:	diag
+	:oneliner:	Child process died (signal)
+
+Number of times the child process has died due to signals
+
+.. varnish_vsc:: child_dump
+	:type:	counter
+	:level:	diag
+	:oneliner:	Child process core dumped
+
+Number of times the child process has produced core dumps
+
+.. varnish_vsc:: child_panic
+	:type:	counter
+	:level:	diag
+	:oneliner:	Child process panic
+
+Number of times the management process has caught a child panic
+
+.. varnish_vsc_end::	mgt

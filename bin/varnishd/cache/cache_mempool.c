@@ -38,6 +38,8 @@
 
 #include "vtim.h"
 
+#include "VSC_mempool.h"
+
 struct memitem {
 	unsigned			magic;
 #define MEMITEM_MAGIC			0x42e55401
@@ -58,7 +60,7 @@ struct mempool {
 	volatile struct poolparam	*param;
 	volatile unsigned		*cur_size;
 	uint64_t			live;
-	struct VSC_C_mempool		*vsc;
+	struct VSC_mempool		*vsc;
 	unsigned			n_pool;
 	pthread_t			thread;
 	double				t_now;
@@ -236,8 +238,7 @@ MPL_New(const char *name,
 	VTAILQ_INIT(&mpl->surplus);
 	Lck_New(&mpl->mtx, lck_mempool);
 	/* XXX: prealloc min_pool */
-	mpl->vsc = VSM_Alloc(sizeof *mpl->vsc,
-	    VSC_CLASS, VSC_type_mempool, mpl->name + 4);
+	mpl->vsc = VSC_mempool_New(mpl->name + 4);
 	AN(mpl->vsc);
 	AZ(pthread_create(&mpl->thread, NULL, mpl_guard, mpl));
 	AZ(pthread_detach(mpl->thread));

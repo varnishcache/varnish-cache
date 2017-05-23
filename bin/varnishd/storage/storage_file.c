@@ -45,6 +45,8 @@
 #include "vnum.h"
 #include "vfil.h"
 
+#include "VSC_smf.h"
+
 #ifndef MAP_NOCORE
 #define MAP_NOCORE 0 /* XXX Linux */
 #endif
@@ -91,7 +93,7 @@ struct smf_sc {
 	unsigned		magic;
 #define SMF_SC_MAGIC		0x52962ee7
 	struct lock		mtx;
-	struct VSC_C_smf	*stats;
+	struct VSC_smf		*stats;
 
 	const char		*filename;
 	int			fd;
@@ -410,8 +412,7 @@ smf_open(struct stevedore *st)
 	if (lck_smf == NULL)
 		lck_smf = Lck_CreateClass("smf");
 	CAST_OBJ_NOTNULL(sc, st->priv, SMF_SC_MAGIC);
-	sc->stats = VSM_Alloc(sizeof *sc->stats,
-	    VSC_CLASS, VSC_type_smf, st->ident);
+	sc->stats = VSC_smf_New(st->ident);
 	Lck_New(&sc->mtx, lck_smf);
 	Lck_Lock(&sc->mtx);
 	smf_open_chunk(sc, sc->filesize, 0, &fail, &sum);

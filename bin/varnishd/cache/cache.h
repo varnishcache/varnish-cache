@@ -977,8 +977,6 @@ void SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src);
 const char *SES_Get_String_Attr(const struct sess *sp, enum sess_attr a);
 
 /* cache_shmlog.c */
-void *VSM_Alloc(unsigned size, const char *class, const char *type,
-    const char *ident);
 void VSM_Free(void *ptr);
 #ifdef VSL_ENDMARKER
 void VSLv(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, va_list va);

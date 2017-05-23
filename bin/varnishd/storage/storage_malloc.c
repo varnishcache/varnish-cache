@@ -42,13 +42,15 @@
 #include "vrt.h"
 #include "vnum.h"
 
+#include "VSC_sma.h"
+
 struct sma_sc {
 	unsigned		magic;
 #define SMA_SC_MAGIC		0x1ac8a345
 	struct lock		sma_mtx;
 	size_t			sma_max;
 	size_t			sma_alloc;
-	struct VSC_C_sma	*stats;
+	struct VSC_sma		*stats;
 };
 
 struct sma {
@@ -211,8 +213,7 @@ sma_open(struct stevedore *st)
 		lck_sma = Lck_CreateClass("sma");
 	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
 	Lck_New(&sma_sc->sma_mtx, lck_sma);
-	sma_sc->stats = VSM_Alloc(sizeof *sma_sc->stats,
-	    VSC_CLASS, VSC_type_sma, st->ident);
+	sma_sc->stats = VSC_sma_New(st->ident);
 	memset(sma_sc->stats, 0, sizeof *sma_sc->stats);
 	if (sma_sc->sma_max != SIZE_MAX)
 		sma_sc->stats->g_space = sma_sc->sma_max;

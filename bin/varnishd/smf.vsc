@@ -1,0 +1,78 @@
+..
+	This is *NOT* a RST file but the syntax has been chosen so
+	that it may become an RST file at some later date.
+
+	XXX: For now this file must be kept in 100% agreement with
+	XXX: include/tbl/vsc_fields.h
+
+.. varnish_vsc_begin::	smf
+	:oneliner:	FILE STORAGE COUNTERS (SMF.*)
+
+.. varnish_vsc:: c_req
+	:type:	counter
+	:level:	info
+	:oneliner:	Allocator requests
+
+Number of times the storage has been asked to provide a storage segment.
+
+.. varnish_vsc:: c_fail
+	:type:	counter
+	:level:	info
+	:oneliner:	Allocator failures
+
+Number of times the storage has failed to provide a storage segment.
+
+.. varnish_vsc:: c_bytes
+	:type:	counter
+	:level:	info
+	:oneliner:	Bytes allocated
+
+Number of total bytes allocated by this storage.
+
+.. varnish_vsc:: c_freed
+	:type:	counter
+	:level:	info
+	:oneliner:	Bytes freed
+
+Number of total bytes returned to this storage.
+
+.. varnish_vsc:: g_alloc
+	:type:	gauge
+	:level:	info
+	:oneliner:	Allocations outstanding
+
+Number of storage allocations outstanding.
+
+.. varnish_vsc:: g_bytes
+	:type:	gauge
+	:level:	info
+	:oneliner:	Bytes outstanding
+
+Number of bytes allocated from the storage.
+
+.. varnish_vsc:: g_space
+	:type:	gauge
+	:level:	info
+	:oneliner:	Bytes available
+
+Number of bytes left in the storage.
+
+.. varnish_vsc:: g_smf
+	:type:	gauge
+	:level:	info
+	:oneliner:	N struct smf
+
+
+.. varnish_vsc:: g_smf_frag
+	:type:	gauge
+	:level:	info
+	:oneliner:	N small free smf
+
+
+.. varnish_vsc:: g_smf_large
+	:type:	gauge
+	:level:	info
+	:oneliner:	N large free smf
+
+
+.. varnish_vsc_end::	smf

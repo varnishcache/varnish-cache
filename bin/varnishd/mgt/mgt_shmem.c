@@ -193,8 +193,7 @@ mgt_SHM_Create(void)
 	AN(heritage.panic_str);
 
 	/* Copy management counters to shm and update pointer */
-	VSC_C_mgt = VSM_common_alloc(heritage.vsm,
-	    sizeof *VSC_C_mgt, VSC_CLASS, VSC_type_mgt, "");
+	VSC_C_mgt = VSC_mgt_New("");
 	AN(VSC_C_mgt);
 	*VSC_C_mgt = static_VSC_C_mgt;
 

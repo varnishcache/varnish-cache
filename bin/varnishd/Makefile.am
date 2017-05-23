@@ -247,3 +247,48 @@ $(varnishd_OBJECTS):	VSC_vbe.h
 EXTRA_DIST	+=	vbe.vsc
 DISTCLEANFILES	+=	VSC_vbe.c VSC_vbe.h
 nodist_varnishd_SOURCES +=	VSC_vbe.c
+
+#######################################################################
+
+VSC_sma.c VSC_sma.h: $(srcdir)/sma.vsc $(top_builddir)/lib/libvcc/vsctool.py
+	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py $(srcdir)/sma.vsc
+
+$(varnishd_OBJECTS):	VSC_sma.h
+
+EXTRA_DIST	+=	sma.vsc
+DISTCLEANFILES	+=	VSC_sma.c VSC_sma.h
+nodist_varnishd_SOURCES +=	VSC_sma.c
+
+#######################################################################
+
+VSC_smf.c VSC_smf.h: $(srcdir)/smf.vsc $(top_builddir)/lib/libvcc/vsctool.py
+	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py $(srcdir)/smf.vsc
+
+$(varnishd_OBJECTS):	VSC_smf.h
+
+EXTRA_DIST	+=	smf.vsc
+DISTCLEANFILES	+=	VSC_smf.c VSC_smf.h
+nodist_varnishd_SOURCES +=	VSC_smf.c
+
+#######################################################################
+
+VSC_mempool.c VSC_mempool.h: $(srcdir)/mempool.vsc $(top_builddir)/lib/libvcc/vsctool.py
+	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py $(srcdir)/mempool.vsc
+
+$(varnishd_OBJECTS):	VSC_mempool.h
+
+EXTRA_DIST	+=	mempool.vsc
+DISTCLEANFILES	+=	VSC_mempool.c VSC_mempool.h
+nodist_varnishd_SOURCES +=	VSC_mempool.c
+
+#######################################################################
+
+VSC_mgt.c VSC_mgt.h: $(srcdir)/mgt.vsc $(top_builddir)/lib/libvcc/vsctool.py
+	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py $(srcdir)/mgt.vsc
+
+$(varnishd_OBJECTS):	VSC_mgt.h
+
+EXTRA_DIST	+=	mgt.vsc
+DISTCLEANFILES	+=	VSC_mgt.c VSC_mgt.h
+nodist_varnishd_SOURCES +=	VSC_mgt.c
+
