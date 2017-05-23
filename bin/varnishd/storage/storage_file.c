@@ -64,7 +64,7 @@
  */
 #define NBUCKET			(128 / 4 + 1)
 
-static struct VSC_C_lck *lck_smf;
+static struct VSC_lck *lck_smf;
 
 /*--------------------------------------------------------------------*/
 

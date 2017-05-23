@@ -37,6 +37,8 @@
 
 #include "common/heritage.h"
 
+#include "vend.h"
+#include "vgz.h"
 #include "vsl_priv.h"
 #include "vmb.h"
 #include "vtim.h"
@@ -471,16 +473,32 @@ VSL_End(struct vsl_log *vsl)
 /*--------------------------------------------------------------------*/
 
 void *
-VSC_Alloc(const char *nm, size_t sj, const unsigned char *zj, size_t szj,
+VSC_Alloc(const char *nm, size_t sd,
+    size_t sj, const unsigned char *zj, size_t szj,
     const char *fmt, va_list va)
 {
+	char *p;
+	z_stream vz;
+
 	(void)nm;
-	(void)zj;
-	(void)szj;
-	(void)sj;
 	(void)fmt;
 	(void)va;
-	return (0);
+
+	p = VSM_Alloc(sd + sj, VSC_CLASS, nm, fmt);
+	AN(p);
+
+	memset(p, 0, sd);
+	vbe64enc(p, sd);		// fills .zero
+
+	memset(&vz, 0, sizeof vz);
+	assert(Z_OK == inflateInit2(&vz, 31));
+	vz.next_in = TRUST_ME(zj);
+	vz.avail_in = szj;
+	vz.next_out = (void*)(p + sd);
+	vz.avail_out = sj;
+	assert(Z_STREAM_END == inflate(&vz, Z_FINISH));
+	assert(Z_OK == inflateEnd(&vz));
+	return (p);
 }
 
 void
@@ -540,10 +558,8 @@ VSM_Init(void)
 	VWMB();
 	memcpy(vsl_head->marker, VSL_HEAD_MARKER, sizeof vsl_head->marker);
 
-	VSC_C_main = VSM_Alloc(sizeof *VSC_C_main,
-	    VSC_CLASS, VSC_type_main, "");
+	VSC_C_main = VSC_main_New("");
 	AN(VSC_C_main);
-	memset(VSC_C_main, 0, sizeof *VSC_C_main);
 
 	AZ(pthread_create(&tp, NULL, vsm_cleaner, NULL));
 }

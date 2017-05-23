@@ -41,6 +41,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "VSC_lck.h"
+
 struct ilck {
 	unsigned		magic;
 #define ILCK_MAGIC		0x7b86c8a5
@@ -48,7 +50,7 @@ struct ilck {
 	pthread_mutex_t		mtx;
 	pthread_t		owner;
 	const char		*w;
-	struct VSC_C_lck	*stat;
+	struct VSC_lck		*stat;
 };
 
 static pthread_mutexattr_t attr;
@@ -214,7 +216,7 @@ Lck_CondWait(pthread_cond_t *cond, struct lock *lck, double when)
 }
 
 void
-Lck__New(struct lock *lck, struct VSC_C_lck *st, const char *w)
+Lck__New(struct lock *lck, struct VSC_lck *st, const char *w)
 {
 	struct ilck *ilck;
 
@@ -242,14 +244,13 @@ Lck_Delete(struct lock *lck)
 	FREE_OBJ(ilck);
 }
 
-struct VSC_C_lck *
+struct VSC_lck *
 Lck_CreateClass(const char *name)
 {
-	return(VSM_Alloc(sizeof(struct VSC_C_lck),
-	   VSC_CLASS, VSC_type_lck, name));
+	return(VSC_lck_New(name));
 }
 
-#define LOCK(nam) struct VSC_C_lck *lck_##nam;
+#define LOCK(nam) struct VSC_lck *lck_##nam;
 #include "tbl/locks.h"
 
 void

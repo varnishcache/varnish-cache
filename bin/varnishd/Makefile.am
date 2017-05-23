@@ -107,8 +107,7 @@ varnishd_SOURCES = \
 	waiter/cache_waiter_epoll.c \
 	waiter/cache_waiter_kqueue.c \
 	waiter/cache_waiter_poll.c \
-	waiter/cache_waiter_ports.c \
-	VSC_main.c
+	waiter/cache_waiter_ports.c
 
 nodist_varnishd_SOURCES = \
 	builtin_vcl.c
@@ -219,10 +218,21 @@ DISTCLEANFILES	+=	vhp_hufdec.h
 
 #######################################################################
 VSC_main.c VSC_main.h: $(srcdir)/main.vsc $(top_builddir)/lib/libvcc/vsctool.py
-	$(PYTHON) $(top_builddir)/lib/libvcc/vsctool.py $(srcdir)/main.vsc
+	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py $(srcdir)/main.vsc
 
 $(varnishd_OBJECTS):	VSC_main.h
 
 EXTRA_DIST	+=	main.vsc
 DISTCLEANFILES	+=	VSC_main.c VSC_main.h
+nodist_varnishd_SOURCES +=	VSC_main.c
 
+#######################################################################
+
+VSC_lck.c VSC_lck.h: $(srcdir)/lck.vsc $(top_builddir)/lib/libvcc/vsctool.py
+	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py $(srcdir)/lck.vsc
+
+$(varnishd_OBJECTS):	VSC_lck.h
+
+EXTRA_DIST	+=	lck.vsc
+DISTCLEANFILES	+=	VSC_lck.c VSC_lck.h
+nodist_varnishd_SOURCES +=	VSC_lck.c

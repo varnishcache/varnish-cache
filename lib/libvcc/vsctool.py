@@ -49,8 +49,8 @@ def genhdr(fo, name):
 	fo.write(' * NB:  This file is machine generated, DO NOT EDIT!\n')
 	fo.write(' *\n')
 	fo.write(' * Edit %s.vsc run lib/libvcc/vsctool.py instead.\n' % name)
- 	fo.write(' */\n')
- 	fo.write('\n')
+	fo.write(' */\n')
+	fo.write('\n')
 
 #######################################################################
 
@@ -90,11 +90,11 @@ class vscset(object):
 			ed["1line"] = i.param["oneliner"].strip()
 			ed["docs"] = i.getdoc()
 		s=json.dumps(dd, separators=(",",":"))
-		fo.write("\nstatic const size_t %s_jsonlen = %dL;\n" %
+		fo.write("\nstatic const size_t vsc_%s_jsonlen = %dL;\n" %
 		    (self.name, len(s)))
 		z = gzip_str(s)
 		fo.write("\nstatic const unsigned char");
-		fo.write(" %s_zjson[%d] = {\n" % (self.name, len(z)))
+		fo.write(" vsc_%s_zjson[%d] = {\n" % (self.name, len(z)))
 		bz = bytearray(z)
 		t = "\t"
 		for i in bz:
@@ -116,6 +116,7 @@ class vscset(object):
 		fo = open(fon, "w")
 		genhdr(fo, self.name)
 		fo.write(self.struct + " {\n")
+		fo.write("\tuint64_t\tzero;\n")
 		for i in self.mbrs:
 			fo.write("\tuint64_t\t%s;\n" % i.arg)
 		fo.write("};\n")
@@ -135,6 +136,10 @@ class vscset(object):
 		fo.write('#include <stdint.h>\n')
 		fo.write('#include "common/common.h"\n')
 		fo.write('#include "VSC_%s.h"\n' % self.name)
+		fo.write("\n")
+		fo.write('static const char vsc_%s_name[] = "%s";\n' %
+		    (self.name, self.name.upper()))
+
 		self.emit_json(fo)
 		fo.write("\n")
 		fo.write(self.struct + "*\n");
@@ -146,10 +151,11 @@ class vscset(object):
 		fo.write("\n")
 		fo.write("\tva_start(ap, fmt);\n")
 		fo.write("\tretval = VSC_Alloc")
-		fo.write('("' + self.name + '", ')
-		fo.write(self.name + "_jsonlen, ")
-		fo.write(self.name + "_zjson, ")
-		fo.write("sizeof " + self.name + "_zjson,\n")
+		fo.write("(vsc_" + self.name + "_name, ")
+		fo.write("sizeof(" + self.struct + "),\n\t    ")
+		fo.write("vsc_" + self.name + "_jsonlen, ")
+		fo.write("vsc_" + self.name + "_zjson, ")
+		fo.write("sizeof vsc_" + self.name + "_zjson,\n")
 		fo.write("\t    fmt, ap);\n")
 		fo.write("\tva_end(ap);\n")
 		fo.write("\treturn(retval);\n")
@@ -309,6 +315,6 @@ if __name__ == "__main__":
 		exit(2)
 
 	vf = vsc_file(args[0])
-	vf.emit_rst("_.rst")
+	# vf.emit_rst("_.rst")
 	vf.emit_h()
 	vf.emit_c()

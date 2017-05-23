@@ -753,4 +753,4 @@ to communicate with tools like varnishstat, varnishlog etc. If this
 counter is not zero, consider increasing the runtime variable
 vsm_space.
 
-.. varnish_vsc_end::	MAIN
+.. varnish_vsc_end::	main

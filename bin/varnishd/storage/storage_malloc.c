@@ -59,7 +59,7 @@ struct sma {
 	struct sma_sc		*sc;
 };
 
-static struct VSC_C_lck *lck_sma;
+static struct VSC_lck *lck_sma;
 
 static struct storage * __match_proto__(sml_alloc_f)
 sma_alloc(const struct stevedore *st, size_t size)

@@ -95,7 +95,7 @@ enum {
 
 /*--------------------------------------------------------------------*/
 
-struct VSC_C_lck;
+struct VSC_lck;
 struct ban;
 struct ban_proto;
 struct backend;
@@ -828,7 +828,7 @@ extern pthread_key_t witness_key;
 void Lck__Lock(struct lock *lck, const char *p,  int l);
 void Lck__Unlock(struct lock *lck, const char *p,  int l);
 int Lck__Trylock(struct lock *lck, const char *p,  int l);
-void Lck__New(struct lock *lck, struct VSC_C_lck *, const char *);
+void Lck__New(struct lock *lck, struct VSC_lck *, const char *);
 int Lck__Held(const struct lock *lck);
 int Lck__Owned(const struct lock *lck);
 
@@ -846,9 +846,9 @@ int Lck_CondWait(pthread_cond_t *cond, struct lock *lck, double);
 		assert(Lck__Owned(a));	\
 	} while (0)
 
-struct VSC_C_lck *Lck_CreateClass(const char *name);
+struct VSC_lck *Lck_CreateClass(const char *name);
 
-#define LOCK(nam) extern struct VSC_C_lck *lck_##nam;
+#define LOCK(nam) extern struct VSC_lck *lck_##nam;
 #include "tbl/locks.h"
 
 /* cache_mempool.c */

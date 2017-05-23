@@ -1,0 +1,30 @@
+..
+	This is *NOT* a RST file but the syntax has been chosen so
+	that it may become an RST file at some later date.
+
+	XXX: For now this file must be kept in 100% agreement with
+	XXX: include/tbl/vsc_fields.h
+
+.. varnish_vsc_begin::	lck
+	:oneliner:	LOCK COUNTERS (LCK.*)
+
+.. varnish_vsc:: creat
+	:type:	counter
+	:level:	debug
+	:oneliner:	Created locks
+
+
+.. varnish_vsc:: destroy
+	:type:	counter
+	:level:	debug
+	:oneliner:	Destroyed locks
+
+
+.. varnish_vsc:: locks
+	:type:	counter
+	:level:	debug
+	:oneliner:	Lock Operations
+
+
+.. varnish_vsc_end::	lck
+

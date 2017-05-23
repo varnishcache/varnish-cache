@@ -91,7 +91,7 @@ void VSM_common_copy(struct vsm_sc *to, const struct vsm_sc *from);
 void VSM_common_cleaner(struct vsm_sc *sc, struct VSC_C_main *stats);
 void VSM_common_ageupdate(const struct vsm_sc *sc);
 
-void *VSC_Alloc(const char *, size_t, const unsigned char *, size_t,
+void *VSC_Alloc(const char *, size_t, size_t, const unsigned char *, size_t,
     const char *, va_list);
 void VSC_Destroy(const char *, void *);
 

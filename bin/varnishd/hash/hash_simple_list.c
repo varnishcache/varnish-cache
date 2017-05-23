@@ -35,7 +35,7 @@
 
 #include "hash/hash_slinger.h"
 
-static struct VSC_C_lck *lck_hsl;
+static struct VSC_lck *lck_hsl;
 
 /*--------------------------------------------------------------------*/
 
