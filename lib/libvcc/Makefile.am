@@ -36,7 +36,8 @@ EXTRA_DIST = \
 	generate.py
 
 dist_pkgdata_SCRIPTS = \
-	vmodtool.py
+	vmodtool.py \
+	vsctool.py
 
 vcc_obj.c vcc_fixed_token.c vcc_token_defs.h: \
 	$(top_builddir)/include/vcl.h

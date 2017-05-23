@@ -51,8 +51,7 @@ static uint32_t			*vsl_ptr;
 static unsigned			vsl_segment_n;
 static ssize_t			vsl_segsize;
 
-struct VSC_C_main       *VSC_C_main;
-
+struct VSC_main *VSC_C_main;
 
 static void
 vsl_sanity(const struct vsl_log *vsl)
@@ -471,6 +470,28 @@ VSL_End(struct vsl_log *vsl)
 
 /*--------------------------------------------------------------------*/
 
+void *
+VSC_Alloc(const char *nm, size_t sj, const unsigned char *zj, size_t szj,
+    const char *fmt, va_list va)
+{
+	(void)nm;
+	(void)zj;
+	(void)szj;
+	(void)sj;
+	(void)fmt;
+	(void)va;
+	return (0);
+}
+
+void
+VSC_Destroy(const char *nm, void *p)
+{
+	(void)nm;
+	(void)p;
+}
+
+/*--------------------------------------------------------------------*/
+
 static void *
 vsm_cleaner(void *priv)
 {
@@ -478,7 +499,7 @@ vsm_cleaner(void *priv)
 	THR_SetName("vsm_cleaner");
 	while (1) {
 		AZ(pthread_mutex_lock(&vsm_mtx));
-		VSM_common_cleaner(heritage.vsm, VSC_C_main);
+		VSM_common_cleaner(heritage.vsm, (void*)VSC_C_main);
 		AZ(pthread_mutex_unlock(&vsm_mtx));
 		VTIM_sleep(1.1);
 	}

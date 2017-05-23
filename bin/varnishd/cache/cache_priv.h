@@ -29,6 +29,8 @@
  * Stuff that should *never* be exposed to a VMOD
  */
 
+#include "VSC_main.h"
+
 /* Prototypes etc ----------------------------------------------------*/
 
 /* cache_acceptor.c */
@@ -103,6 +105,7 @@ void SES_NewPool(struct pool *, unsigned pool_no);
 void SES_DestroyPool(struct pool *);
 
 /* cache_shmlog.c */
+extern struct VSC_main *VSC_C_main;
 void VSM_Init(void);
 void VSL_Setup(struct vsl_log *vsl, void *ptr, size_t len);
 void VSL_ChgId(struct vsl_log *vsl, const char *typ, const char *why,

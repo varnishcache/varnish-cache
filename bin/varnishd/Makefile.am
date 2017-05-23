@@ -107,12 +107,14 @@ varnishd_SOURCES = \
 	waiter/cache_waiter_epoll.c \
 	waiter/cache_waiter_kqueue.c \
 	waiter/cache_waiter_poll.c \
-	waiter/cache_waiter_ports.c
+	waiter/cache_waiter_ports.c \
+	VSC_main.c
 
 nodist_varnishd_SOURCES = \
 	builtin_vcl.c
 
 noinst_HEADERS = \
+	VSC_main.h \
 	cache/cache_ban.h \
 	cache/cache_esi.h \
 	cache/cache_obj.h \
@@ -214,4 +216,13 @@ DISTCLEANFILES = builtin_vcl.c
 
 BUILT_SOURCES	=	vhp_hufdec.h
 DISTCLEANFILES	+=	vhp_hufdec.h
+
+#######################################################################
+VSC_main.c VSC_main.h: $(srcdir)/main.vsc $(top_builddir)/lib/libvcc/vsctool.py
+	$(PYTHON) $(top_builddir)/lib/libvcc/vsctool.py $(srcdir)/main.vsc
+
+$(varnishd_OBJECTS):	VSC_main.h
+
+EXTRA_DIST	+=	main.vsc
+DISTCLEANFILES	+=	VSC_main.c VSC_main.h
 
