@@ -333,7 +333,6 @@ vsc_build_vf_list(struct VSM_data *vd)
 {
 	uint64_t u;
 	struct vsc *vsc = vsc_setup(vd);
-	struct vjsn *vj;
 	const char *p;
 	const char *e;
 
@@ -343,20 +342,16 @@ vsc_build_vf_list(struct VSM_data *vd)
 	VSM_FOREACH(&vsc->iter_fantom, vd) {
 		if (strcmp(vsc->iter_fantom.class, VSC_CLASS))
 			continue;
-		u = vbe64dec(vsc->iter_fantom.b);
 		vsc_build_old_vf_list(vsc);
-		if (u == 0) {
-			fprintf(stderr, "%s has no JSON\n", vsc->iter_fantom.type);
-			exit(2);
-		}
+		u = vbe64dec(vsc->iter_fantom.b);
+		assert(u > 0);
 		p = (char*)vsc->iter_fantom.b + 8 + u;
-		vj = vjsn_parse(p, &e);
+		(void)vjsn_parse(p, &e);
 		if (e != NULL) {
 			fprintf(stderr, "%s\n", p);
 			fprintf(stderr, "JSON ERROR %s\n", e);
 		}
 		AZ(e);
-		//vjsn_dump(vj, stdout);
 	}
 }
 
