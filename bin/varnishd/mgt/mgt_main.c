@@ -47,6 +47,7 @@
 #include "hash/hash_slinger.h"
 #include "vav.h"
 #include "vcli_serve.h"
+#include "vend.h"
 #include "vev.h"
 #include "vfil.h"
 #include "vin.h"

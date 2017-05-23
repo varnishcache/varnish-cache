@@ -186,10 +186,8 @@ VBE_Event(struct backend *be, enum vcl_event_e ev)
 	if (be->probe != NULL && ev == VCL_EVENT_COLD)
 		VBP_Control(be, 0);
 
-	if (ev == VCL_EVENT_COLD) {
-		VSM_Free(be->vsc);
-		be->vsc = NULL;
-	}
+	if (ev == VCL_EVENT_COLD)
+		VSC_vbe_Destroy(&be->vsc);
 }
 
 void

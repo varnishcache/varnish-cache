@@ -160,7 +160,7 @@ mpl_guard(void *priv)
 				FREE_OBJ(mi);
 				mi = NULL;
 			}
-			VSM_Free(mpl->vsc);
+			VSC_mempool_Destroy(&mpl->vsc);
 			Lck_Unlock(&mpl->mtx);
 			Lck_Delete(&mpl->mtx);
 			FREE_OBJ(mpl);

@@ -472,6 +472,18 @@ VSL_End(struct vsl_log *vsl)
 
 /*--------------------------------------------------------------------*/
 
+struct vsc_segs {
+	unsigned		magic;
+#define VSC_SEGS_MAGIC		0x9b355991
+
+	VTAILQ_ENTRY(vsc_segs)	list;
+	void			*seg;
+	void			*ptr;
+};
+
+static VTAILQ_HEAD(,vsc_segs)	vsc_seglist =
+    VTAILQ_HEAD_INITIALIZER(vsc_seglist);
+
 void *
 VSC_Alloc(const char *nm, size_t sd,
     size_t sj, const unsigned char *zj, size_t szj,
@@ -479,33 +491,50 @@ VSC_Alloc(const char *nm, size_t sd,
 {
 	char *p;
 	z_stream vz;
+	struct vsc_segs *vsg;
 
 	(void)nm;
 	(void)fmt;
 	(void)va;
 
-	p = VSM_Alloc(sd + sj, VSC_CLASS, nm, fmt);
+
+	p = VSM_Alloc(8 + sd + sj, VSC_CLASS, nm, fmt);
 	AN(p);
 
 	memset(p, 0, sd);
-	vbe64enc(p, sd);		// fills .zero
+	vbe64enc(p, sd);
 
 	memset(&vz, 0, sizeof vz);
 	assert(Z_OK == inflateInit2(&vz, 31));
 	vz.next_in = TRUST_ME(zj);
 	vz.avail_in = szj;
-	vz.next_out = (void*)(p + sd);
+	vz.next_out = (void*)(p + 8 + sd);
 	vz.avail_out = sj;
 	assert(Z_STREAM_END == inflate(&vz, Z_FINISH));
 	assert(Z_OK == inflateEnd(&vz));
-	return (p);
+	ALLOC_OBJ(vsg, VSC_SEGS_MAGIC);
+	vsg->seg = p;
+	vsg->ptr = p + 8;
+	VTAILQ_INSERT_TAIL(&vsc_seglist, vsg, list);
+	return (p + 8);
 }
 
 void
 VSC_Destroy(const char *nm, void *p)
 {
+	struct vsc_segs *vsg;
+
 	(void)nm;
-	(void)p;
+	VTAILQ_FOREACH(vsg, &vsc_seglist, list) {
+		if (vsg->ptr != p)
+			continue;
+		VSM_Free(vsg->seg);
+		VTAILQ_REMOVE(&vsc_seglist, vsg, list);
+		FREE_OBJ(vsg);
+		return;
+		
+	}
+	WRONG("Freeing unknown VSC");
 }
 
 /*--------------------------------------------------------------------*/

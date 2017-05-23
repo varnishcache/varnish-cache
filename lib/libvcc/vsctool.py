@@ -89,7 +89,7 @@ class vscset(object):
 			ed["level"] = i.param["level"]
 			ed["1line"] = i.param["oneliner"].strip()
 			ed["docs"] = i.getdoc()
-		s=json.dumps(dd, separators=(",",":"))
+		s=json.dumps(dd, separators=(",",":")) + "\0"
 		fo.write("\nstatic const size_t vsc_%s_jsonlen = %dL;\n" %
 		    (self.name, len(s)))
 		z = gzip_str(s)
@@ -116,14 +116,13 @@ class vscset(object):
 		fo = open(fon, "w")
 		genhdr(fo, self.name)
 		fo.write(self.struct + " {\n")
-		fo.write("\tuint64_t\tzero;\n")
 		for i in self.mbrs:
 			fo.write("\tuint64_t\t%s;\n" % i.arg)
 		fo.write("};\n")
 		fo.write("\n");
 		fo.write(self.struct + " *VSC_" + self.name + "_New")
 		fo.write("(const char *fmt, ...);\n");
-		fo.write("void VSCL_" + self.name + "_Destroy")
+		fo.write("void VSC_" + self.name + "_Destroy")
 		fo.write("(" + self.struct + "**);\n")
 
 	def emit_c(self):
@@ -162,7 +161,7 @@ class vscset(object):
 		fo.write("}\n")
 		fo.write("\n")
 		fo.write("void\n")
-		fo.write("VSCL_" + self.name + "_Destroy")
+		fo.write("VSC_" + self.name + "_Destroy")
 		fo.write("(" + self.struct + "**pp)\n")
 		fo.write("{\n")
 		fo.write("\n")
@@ -284,8 +283,6 @@ class vsc_file(object):
 		self.vscset = []
 		for i in self.c:
 			i.vscset(self.vscset)
-
-		print(self.vscset)
 
 	def emit_h(self):
 		for i in self.vscset:

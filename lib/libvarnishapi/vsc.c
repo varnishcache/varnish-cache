@@ -34,6 +34,7 @@
 
 #include <fnmatch.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -41,7 +42,9 @@
 #include "vas.h"
 #include "miniobj.h"
 #include "vqueue.h"
+#include "vjsn.h"
 #include "vsb.h"
+#include "vend.h"
 
 #include "vapi/vsc.h"
 #include "vapi/vsm.h"
@@ -246,7 +249,7 @@ VSC_Get(const struct VSM_data *vd, struct VSM_fantom *fantom, const char *type,
 	if (VSM_invalid == VSM_StillValid(vd, fantom) &&
 	    !VSM_Get(vd, fantom, VSC_CLASS, type, ident))
 		return (NULL);
-	return ((void*)fantom->b);
+	return ((void*)((char*)fantom->b + 8));
 }
 
 /*--------------------------------------------------------------------*/
@@ -300,7 +303,7 @@ vsc_add_pt(struct vsc *vsc, const volatile void *ptr,
 		struct VSC_C_##l *st;					\
 									\
 		CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);			\
-		st = vf->fantom.b;
+		st = (void*)((char*)vf->fantom.b + 8);
 
 #define VSC_F(nn,tt,ll,ss,ff,vv,dd,ee)					\
 		vsc_add_pt(vsc, &st->nn, descs++, vf);
@@ -314,9 +317,25 @@ vsc_add_pt(struct vsc *vsc, const volatile void *ptr,
  */
 
 static void
+vsc_build_old_vf_list(struct vsc *vsc)
+{
+#define VSC_TYPE_F(n,t,l,e,d)						\
+	if (!strcmp(vsc->iter_fantom.type, t))				\
+		vsc_add_vf(vsc, &vsc->iter_fantom,			\
+		    &VSC_type_desc_##n, VSC_type_order_##n);
+#include "tbl/vsc_types.h"
+}
+
+#include <stdio.h>
+
+static void
 vsc_build_vf_list(struct VSM_data *vd)
 {
+	uint64_t u;
 	struct vsc *vsc = vsc_setup(vd);
+	struct vjsn *vj;
+	const char *p;
+	const char *e;
 
 	vsc_delete_pt_list(&vsc->pt_list);
 	vsc_delete_vf_list(&vsc->vf_list);
@@ -324,11 +343,20 @@ vsc_build_vf_list(struct VSM_data *vd)
 	VSM_FOREACH(&vsc->iter_fantom, vd) {
 		if (strcmp(vsc->iter_fantom.class, VSC_CLASS))
 			continue;
-#define VSC_TYPE_F(n,t,l,e,d)						\
-		if (!strcmp(vsc->iter_fantom.type, t))			\
-			vsc_add_vf(vsc, &vsc->iter_fantom,		\
-			    &VSC_type_desc_##n, VSC_type_order_##n);
-#include "tbl/vsc_types.h"
+		u = vbe64dec(vsc->iter_fantom.b);
+		vsc_build_old_vf_list(vsc);
+		if (u == 0) {
+			fprintf(stderr, "%s has no JSON\n", vsc->iter_fantom.type);
+			exit(2);
+		}
+		p = (char*)vsc->iter_fantom.b + 8 + u;
+		vj = vjsn_parse(p, &e);
+		if (e != NULL) {
+			fprintf(stderr, "%s\n", p);
+			fprintf(stderr, "JSON ERROR %s\n", e);
+		}
+		AZ(e);
+		//vjsn_dump(vj, stdout);
 	}
 }
 
