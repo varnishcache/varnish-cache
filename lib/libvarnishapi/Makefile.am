@@ -12,6 +12,8 @@ lib_LTLIBRARIES = libvarnishapi.la
 libvarnishapi_la_LDFLAGS = $(AM_LDFLAGS) -version-info 1:6:0
 
 libvarnishapi_la_SOURCES = \
+	vjsn.c \
+	vjsn.h \
 	vsm_api.h \
 	vsl_api.h \
 	vxp.h \

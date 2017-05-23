@@ -1,5 +1,7 @@
 +fan
 
+-esym(759, VJSN_*)			// could be moved hdr->mod 
+-esym(765, VJSN_*)			// could be made static
 -esym(788, vex_rhs_e::*)
 -esym(788, VSL_transaction_e::*)
 -esym(769, vex_rhs_e::VEX__UNSET)
