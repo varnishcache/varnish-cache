@@ -23,65 +23,65 @@ CLEANFILES = $(dist_man_MANS)
 RST2ANY_FLAGS = --halt=2
 
 varnish-cli.7: $(top_builddir)/doc/sphinx/reference/varnish-cli.rst
-	${RST2MAN} $(RST2ANY_FLAGS) $(top_builddir)/doc/sphinx/reference/varnish-cli.rst $@
+	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/varnish-cli.rst $@
 
 varnish-counters.7: $(top_builddir)/doc/sphinx/reference/varnish-counters.rst
-	${RST2MAN} $(RST2ANY_FLAGS) $(top_builddir)/doc/sphinx/reference/varnish-counters.rst $@
+	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/varnish-counters.rst $@
 
 vcl.7: $(top_builddir)/doc/sphinx/reference/vcl.rst \
 	$(top_builddir)/bin/varnishd/builtin.vcl
-	${RST2MAN} $(RST2ANY_FLAGS) $(top_builddir)/doc/sphinx/reference/vcl.rst $@
+	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/vcl.rst $@
 
 vsl.7: $(top_builddir)/doc/sphinx/reference/vsl.rst \
 	$(top_builddir)/doc/sphinx/include/vsl-tags.rst
-	${RST2MAN} $(RST2ANY_FLAGS) $(top_builddir)/doc/sphinx/reference/vsl.rst $@
+	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/vsl.rst $@
 
 vsl-query.7: $(top_builddir)/doc/sphinx/reference/vsl-query.rst
-	${RST2MAN} $(RST2ANY_FLAGS) $(top_builddir)/doc/sphinx/reference/vsl-query.rst $@
+	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/vsl-query.rst $@
 
 varnishadm.1: $(top_builddir)/doc/sphinx/reference/varnishadm.rst
-	${RST2MAN} $(RST2ANY_FLAGS) $(top_builddir)/doc/sphinx/reference/varnishadm.rst $@
+	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/varnishadm.rst $@
 
 varnishd.1: \
 	$(top_builddir)/doc/sphinx/reference/varnishd.rst \
 	$(top_builddir)/doc/sphinx/include/params.rst
-	${RST2MAN} $(RST2ANY_FLAGS) $(top_builddir)/doc/sphinx/reference/varnishd.rst $@
+	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/varnishd.rst $@
 
 varnishncsa.1: \
 	$(top_builddir)/doc/sphinx/reference/varnishncsa.rst \
 	$(top_builddir)/doc/sphinx/include/varnishncsa_options.rst \
 	$(top_builddir)/doc/sphinx/include/varnishncsa_synopsis.rst
-	${RST2MAN} $(RST2ANY_FLAGS) $(top_builddir)/doc/sphinx/reference/varnishncsa.rst $@
+	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/varnishncsa.rst $@
 
 varnishlog.1: \
 	$(top_builddir)/doc/sphinx/reference/varnishlog.rst \
 	$(top_builddir)/doc/sphinx/include/varnishlog_options.rst \
 	$(top_builddir)/doc/sphinx/include/varnishlog_synopsis.rst
-	${RST2MAN} $(RST2ANY_FLAGS) $(top_builddir)/doc/sphinx/reference/varnishlog.rst $@
+	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/varnishlog.rst $@
 
 varnishstat.1: $(top_builddir)/doc/sphinx/reference/varnishstat.rst \
 	$(top_builddir)/doc/sphinx/include/varnishstat_options.rst \
 	$(top_builddir)/doc/sphinx/include/varnishstat_synopsis.rst
-	${RST2MAN} $(RST2ANY_FLAGS) $(top_builddir)/doc/sphinx/reference/varnishstat.rst $@
+	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/varnishstat.rst $@
 
 varnishtest.1: $(top_builddir)/doc/sphinx/reference/varnishtest.rst
-	${RST2MAN} $(RST2ANY_FLAGS) $(top_builddir)/doc/sphinx/reference/varnishtest.rst $@
+	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/varnishtest.rst $@
 
 vtc.7: $(top_builddir)/doc/sphinx/reference/vtc.rst \
 	$(top_builddir)/doc/sphinx/include/vtc-syntax.rst
-	${RST2MAN} $(RST2ANY_FLAGS) $(top_builddir)/doc/sphinx/reference/vtc.rst $@
+	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/vtc.rst $@
 
 varnishtop.1: \
 	$(top_builddir)/doc/sphinx/reference/varnishtop.rst \
 	$(top_builddir)/doc/sphinx/include/varnishtop_options.rst \
 	$(top_builddir)/doc/sphinx/include/varnishtop_synopsis.rst
-	${RST2MAN} $(RST2ANY_FLAGS) $(top_builddir)/doc/sphinx/reference/varnishtop.rst $@
+	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/varnishtop.rst $@
 
 varnishhist.1: \
 	$(top_builddir)/doc/sphinx/reference/varnishhist.rst \
 	$(top_builddir)/doc/sphinx/include/varnishhist_options.rst \
 	$(top_builddir)/doc/sphinx/include/varnishhist_synopsis.rst
-	${RST2MAN} $(RST2ANY_FLAGS) $(top_builddir)/doc/sphinx/reference/varnishhist.rst $@
+	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/varnishhist.rst $@
 
 vmod_std.3: $(top_builddir)/lib/libvmod_std/vmod_std.man.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $? $@
