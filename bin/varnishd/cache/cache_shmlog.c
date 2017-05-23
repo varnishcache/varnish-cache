@@ -513,6 +513,7 @@ VSC_Alloc(const char *nm, size_t sd,
 	assert(Z_STREAM_END == inflate(&vz, Z_FINISH));
 	assert(Z_OK == inflateEnd(&vz));
 	ALLOC_OBJ(vsg, VSC_SEGS_MAGIC);
+	AN(vsg);
 	vsg->seg = p;
 	vsg->ptr = p + 8;
 	VTAILQ_INSERT_TAIL(&vsc_seglist, vsg, list);
@@ -520,7 +521,7 @@ VSC_Alloc(const char *nm, size_t sd,
 }
 
 void
-VSC_Destroy(const char *nm, void *p)
+VSC_Destroy(const char *nm, const void *p)
 {
 	struct vsc_segs *vsg;
 

@@ -93,7 +93,7 @@ void VSM_common_ageupdate(const struct vsm_sc *sc);
 
 void *VSC_Alloc(const char *, size_t, size_t, const unsigned char *, size_t,
     const char *, va_list);
-void VSC_Destroy(const char *, void *);
+void VSC_Destroy(const char *, const void *);
 
 /* mgt_cli.c */
 extern struct VCLS	*mgt_cls;
