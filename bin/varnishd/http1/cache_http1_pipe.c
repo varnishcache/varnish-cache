@@ -38,6 +38,8 @@
 
 #include "cache_http1.h"
 
+#include "VSC_vbe.h"
+
 static struct lock pipestat_mtx;
 
 static int
@@ -61,7 +63,7 @@ rdf(int fd0, int fd1, uint64_t *pcnt)
 }
 
 void
-V1P_Charge(struct req *req, const struct v1p_acct *a, struct VSC_C_vbe *b)
+V1P_Charge(struct req *req, const struct v1p_acct *a, struct VSC_vbe *b)
 {
 
 	AN(b);

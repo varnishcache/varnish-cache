@@ -236,3 +236,14 @@ $(varnishd_OBJECTS):	VSC_lck.h
 EXTRA_DIST	+=	lck.vsc
 DISTCLEANFILES	+=	VSC_lck.c VSC_lck.h
 nodist_varnishd_SOURCES +=	VSC_lck.c
+
+#######################################################################
+
+VSC_vbe.c VSC_vbe.h: $(srcdir)/vbe.vsc $(top_builddir)/lib/libvcc/vsctool.py
+	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py $(srcdir)/vbe.vsc
+
+$(varnishd_OBJECTS):	VSC_vbe.h
+
+EXTRA_DIST	+=	vbe.vsc
+DISTCLEANFILES	+=	VSC_vbe.c VSC_vbe.h
+nodist_varnishd_SOURCES +=	VSC_vbe.c

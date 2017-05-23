@@ -27,6 +27,8 @@
  *
  */
 
+struct VSC_vbe;
+
 /* cache_http1_fetch.c [V1F] */
 int V1F_SendReq(struct worker *, struct busyobj *, uint64_t *ctr,
     int onlycached);
@@ -49,7 +51,7 @@ struct v1p_acct {
 };
 
 void V1P_Process(struct req *, int fd, struct v1p_acct *);
-void V1P_Charge(struct req *, const struct v1p_acct *, struct VSC_C_vbe *);
+void V1P_Charge(struct req *, const struct v1p_acct *, struct VSC_vbe *);
 
 /* cache_http1_line.c */
 void V1L_Chunked(const struct worker *w);

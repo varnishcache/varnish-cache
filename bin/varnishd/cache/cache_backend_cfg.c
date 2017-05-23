@@ -46,6 +46,8 @@
 #include "cache_director.h"
 #include "cache_backend.h"
 
+#include "VSC_vbe.h"
+
 static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
 static VTAILQ_HEAD(, backend) cool_backends =
     VTAILQ_HEAD_INITIALIZER(cool_backends);
@@ -174,8 +176,7 @@ VBE_Event(struct backend *be, enum vcl_event_e ev)
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 
 	if (ev == VCL_EVENT_WARM) {
-		be->vsc = VSM_Alloc(sizeof *be->vsc,
-		    VSC_CLASS, VSC_type_vbe, be->display_name);
+		be->vsc = VSC_vbe_New(be->display_name);
 		AN(be->vsc);
 	}
 

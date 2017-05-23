@@ -1,0 +1,76 @@
+..
+	This is *NOT* a RST file but the syntax has been chosen so
+	that it may become an RST file at some later date.
+
+	XXX: For now this file must be kept in 100% agreement with
+	XXX: include/tbl/vsc_fields.h
+
+.. varnish_vsc_begin::	vbe
+	:oneliner:	BACKEND COUNTERS (VBE.*)
+
+.. varnish_vsc:: happy
+	:type:	bitmap
+	:level:	info
+	:oneliner:	Happy health probes
+
+.. varnish_vsc:: bereq_hdrbytes
+	:type:	counter
+	:level:	info
+	:oneliner:	Request header bytes
+
+Total backend request header bytes sent
+
+.. varnish_vsc:: bereq_bodybytes
+	:type:	counter
+	:level:	info
+	:oneliner:	Request body bytes
+
+Total backend request body bytes sent
+
+.. varnish_vsc:: beresp_hdrbytes
+	:type:	counter
+	:level:	info
+	:oneliner:	Response header bytes
+
+Total backend response header bytes received
+
+.. varnish_vsc:: beresp_bodybytes
+	:type:	counter
+	:level:	info
+	:oneliner:	Response body bytes
+
+Total backend response body bytes received
+
+.. varnish_vsc:: pipe_hdrbytes
+	:type:	counter
+	:level:	info
+	:oneliner:	Pipe request header bytes
+
+Total request bytes sent for piped sessions
+
+.. varnish_vsc:: pipe_out
+	:type:	counter
+	:level:	info
+	:oneliner:	Piped bytes to backend
+
+Total number of bytes forwarded to backend in pipe sessions
+
+.. varnish_vsc:: pipe_in
+	:type:	counter
+	:level:	info
+	:oneliner:	Piped bytes from backend
+
+Total number of bytes forwarded from backend in pipe sessions
+
+.. varnish_vsc:: conn
+	:type:	gauge
+	:level:	info
+	:oneliner:	Concurrent connections to backend
+
+.. varnish_vsc:: req
+	:type:	counter
+	:level:	info
+	:oneliner:	Backend requests sent
+
+.. varnish_vsc_end::	vbe
+

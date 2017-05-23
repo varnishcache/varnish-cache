@@ -45,6 +45,8 @@
 #include "cache_transport.h"
 #include "http1/cache_http1.h"
 
+#include "VSC_vbe.h"
+
 #define FIND_TMO(tmx, dst, bo, be)					\
 	do {								\
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);			\

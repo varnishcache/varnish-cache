@@ -67,7 +67,7 @@ struct backend {
 	const char		*admin_health;
 	double			health_changed;
 
-	struct VSC_C_vbe	*vsc;
+	struct VSC_vbe		*vsc;
 
 	struct tcp_pool		*tcp_pool;
 

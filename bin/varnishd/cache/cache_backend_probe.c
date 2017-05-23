@@ -53,6 +53,8 @@
 #include "cache_director.h"
 #include "cache_backend.h"
 
+#include "VSC_vbe.h"
+
 /* Default averaging rate, we want something pretty responsive */
 #define AVG_RATE			4
 
