@@ -34,7 +34,6 @@
 
 #include <fnmatch.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -42,9 +41,7 @@
 #include "vas.h"
 #include "miniobj.h"
 #include "vqueue.h"
-#include "vjsn.h"
 #include "vsb.h"
-#include "vend.h"
 
 #include "vapi/vsc.h"
 #include "vapi/vsm.h"
@@ -317,25 +314,9 @@ vsc_add_pt(struct vsc *vsc, const volatile void *ptr,
  */
 
 static void
-vsc_build_old_vf_list(struct vsc *vsc)
-{
-#define VSC_TYPE_F(n,t,l,e,d)						\
-	if (!strcmp(vsc->iter_fantom.type, t))				\
-		vsc_add_vf(vsc, &vsc->iter_fantom,			\
-		    &VSC_type_desc_##n, VSC_type_order_##n);
-#include "tbl/vsc_types.h"
-}
-
-#include <stdio.h>
-
-static void
 vsc_build_vf_list(struct VSM_data *vd)
 {
-	uint64_t u;
 	struct vsc *vsc = vsc_setup(vd);
-	struct vjsn *vj;
-	const char *p;
-	const char *e;
 
 	vsc_delete_pt_list(&vsc->pt_list);
 	vsc_delete_vf_list(&vsc->vf_list);
@@ -343,20 +324,11 @@ vsc_build_vf_list(struct VSM_data *vd)
 	VSM_FOREACH(&vsc->iter_fantom, vd) {
 		if (strcmp(vsc->iter_fantom.class, VSC_CLASS))
 			continue;
-		u = vbe64dec(vsc->iter_fantom.b);
-		vsc_build_old_vf_list(vsc);
-		if (u == 0) {
-			fprintf(stderr, "%s has no JSON\n", vsc->iter_fantom.type);
-			exit(2);
-		}
-		p = (char*)vsc->iter_fantom.b + u;
-		vj = vjsn_parse(p, &e);
-		if (e != NULL) {
-			fprintf(stderr, "%s\n", p);
-			fprintf(stderr, "JSON ERROR %s\n", e);
-		}
-		AZ(e);
-		//vjsn_dump(vj, stdout);
+#define VSC_TYPE_F(n,t,l,e,d)						\
+		if (!strcmp(vsc->iter_fantom.type, t))			\
+			vsc_add_vf(vsc, &vsc->iter_fantom,		\
+			    &VSC_type_desc_##n, VSC_type_order_##n);
+#include "tbl/vsc_types.h"
 	}
 }
 
