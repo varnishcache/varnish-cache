@@ -55,9 +55,6 @@ static ssize_t			vsl_segsize;
 
 struct VSC_main *VSC_C_main;
 
-static void *VSM_Alloc(unsigned size, const char *class, const char *type,
-    const char *ident);
-
 static void
 vsl_sanity(const struct vsl_log *vsl)
 {
@@ -569,7 +566,7 @@ VSM_Init(void)
 
 /*--------------------------------------------------------------------*/
 
-static void *
+void *
 VSM_Alloc(unsigned size, const char *class, const char *type,
     const char *ident)
 {
