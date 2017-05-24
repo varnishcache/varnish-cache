@@ -162,7 +162,13 @@ vjsn_unicode(struct vjsn *js, char **d)
 	unsigned u1, u2;
 
 	u1 = vjsn_unumber(js);
+	if (js->err)
+		return;
 
+	if (u1 >= 0xdc00 && u1 <= 0xdfff) {
+		js->err = "Lone second UTF-16 Surrogate";
+		return;
+	}
 	if (u1 >= 0xd800 && u1 <= 0xdc00) {
 		u2 = vjsn_unumber(js);
 		if (u2 < 0xdc00 || u2 > 0xdfff) {
@@ -173,26 +179,24 @@ vjsn_unicode(struct vjsn *js, char **d)
 		u2 -= 0xdc00;
 		u1 <<= 10;
 		u1 |= u2;
+		u1 |= 0x10000;
 	}
+	assert(u1 < 0x110000);
 	/*lint -save -e734 -e713 */
 	if (u1 < 0x80)
 		*(*d)++ = u1;
 	else if (u1 < 0x800) {
 		*(*d)++ = 0xc0 + u1 / 64;
 		*(*d)++ = 0x80 + u1 % 64;
-	} else if (u1 - 0xd800u < 0x800) {
-		js->err = "Bad UNICODE point";
 	} else if (u1 < 0x10000) {
 		*(*d)++ = 0xe0 + u1 / 4096;
 		*(*d)++ = 0x80 + u1 / 64 % 64;
 		*(*d)++ = 0x80 + u1 % 64;
-	} else if (u1 < 0x110000) {
+	} else {
 		*(*d)++ = 0xf0 + u1 / 262144;
 		*(*d)++ = 0x80 + u1 / 4096 % 64;
 		*(*d)++ = 0x80 + u1 / 64 % 64;
 		*(*d)++ = 0x80 + u1 % 64;
-	} else {
-		js->err = "Bad UNICODE point";
 	}
 	/*lint -restore */
 }
@@ -897,6 +901,13 @@ main(int argc, char **argv)
 		test_good(*s);
 	for(s = bad; *s != NULL; s++)
 		test_bad(*s);
+
+	/*
+	 * This is part of Nicolas i(ndeterminate) test set, for reasons I
+	 * do not fully grasp, but we want it to test bad.
+	 */
+	test_bad("\"\\uDFAA\"");
+	printf("Tests done\n");
 	return (0);
 }
 
