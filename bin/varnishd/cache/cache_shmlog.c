@@ -45,7 +45,7 @@
 
 /* These cannot be struct lock, which depends on vsm/vsl working */
 static pthread_mutex_t vsl_mtx;
-static pthread_mutex_t vsm_mtx;
+static pthread_mutex_t vsm_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 static struct VSL_head		*vsl_head;
 static const uint32_t		*vsl_end;
