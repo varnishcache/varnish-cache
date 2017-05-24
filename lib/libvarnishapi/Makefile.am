@@ -104,3 +104,11 @@ vsl_glob_test_SOURCES = \
 vsl_glob_test_LDADD = @PCRE_LIBS@ ${RT_LIBS} ${LIBM} libvarnishapi.la
 
 vsl_glob_test_CFLAGS = -I$(top_srcdir)/include
+
+TESTS = vjsn_test
+
+noinst_PROGRAMS += ${TESTS}
+
+vjsn_test_SOURCES = vjsn.c
+vjsn_test_CFLAGS = -DVJSN_TEST
+vjsn_test_LDADD = libvarnishapi.la
