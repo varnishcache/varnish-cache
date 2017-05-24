@@ -166,6 +166,25 @@ struct once_priv {
 };
 
 static int
+do_once_cb_first(void *priv, const struct VSC_point * const pt)
+{
+	struct once_priv *op;
+	uint64_t val;
+	const struct VSC_section *sec;
+
+	if (pt == NULL)
+		return (0);
+	op = priv;
+	AZ(strcmp(pt->desc->ctype, "uint64_t"));
+	sec = pt->section;
+	if (strcmp(sec->type, "MAIN") || strcmp(pt->desc->name, "uptime"))
+		return (0);
+	val = *(const volatile uint64_t*)pt->ptr;
+	op->up = (double)val;
+	return (1);
+}
+
+static int
 do_once_cb(void *priv, const struct VSC_point * const pt)
 {
 	struct once_priv *op;
@@ -199,15 +218,14 @@ do_once_cb(void *priv, const struct VSC_point * const pt)
 }
 
 static void
-do_once(struct VSM_data *vd, const struct VSC_C_main *VSC_C_main)
+do_once(struct VSM_data *vd)
 {
 	struct once_priv op;
 
 	memset(&op, 0, sizeof op);
-	if (VSC_C_main != NULL)
-		op.up = VSC_C_main->uptime;
 	op.pad = 18;
 
+	(void)VSC_Iter(vd, NULL, do_once_cb_first, &op);
 	(void)VSC_Iter(vd, NULL, do_once_cb, &op);
 }
 
@@ -352,7 +370,7 @@ main(int argc, char * const *argv)
 	else if (json)
 		do_json(vd);
 	else if (once)
-		do_once(vd, VSC_Main(vd, NULL));
+		do_once(vd);
 	else if (f_list)
 		list_fields(vd);
 	else

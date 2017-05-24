@@ -102,8 +102,12 @@ static VTAILQ_HEAD(, pt) ptlist = VTAILQ_HEAD_INITIALIZER(ptlist);
 static int n_ptlist = 0;
 static int n_ptarray = 0;
 static struct pt **ptarray = NULL;
-static const struct VSC_C_mgt *VSC_C_mgt = NULL;
-static const struct VSC_C_main *VSC_C_main = NULL;
+static const volatile uint64_t *mgt_uptime;
+static const volatile uint64_t *main_uptime;
+static const volatile uint64_t *main_hit;
+static const volatile uint64_t *main_miss;
+static const volatile uint64_t *main_cache_hit;
+static const volatile uint64_t *main_cache_miss;
 
 static int l_status, l_bar_t, l_points, l_bar_b, l_info;
 static int colw_name = COLW_NAME_MIN;
@@ -129,9 +133,9 @@ static void
 init_hitrate(void)
 {
 	memset(&hitrate, 0, sizeof (struct hitrate));
-	if (VSC_C_main != NULL) {
-		hitrate.lhit = VSC_C_main->cache_hit;
-		hitrate.lmiss = VSC_C_main->cache_miss;
+	if (main_cache_hit != NULL) {
+		hitrate.lhit = *main_cache_hit;
+		hitrate.lmiss = *main_cache_miss;
 	}
 	hitrate.hr_10.nmax = 10;
 	hitrate.hr_100.nmax = 100;
@@ -275,6 +279,19 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 	bprintf(buf, "%s.%s.%s", vpt->section->type,
 	    vpt->section->ident, vpt->desc->name);
 
+	if (!strcmp(buf, "MGT..uptime"))
+		mgt_uptime = vpt->ptr;
+	if (!strcmp(buf, "MAIN..uptime"))
+		main_uptime = vpt->ptr;
+	if (!strcmp(buf, "MAIN..hit"))
+		main_hit = vpt->ptr;
+	if (!strcmp(buf, "MAIN..miss"))
+		main_miss = vpt->ptr;
+	if (!strcmp(buf, "MAIN..cache_hit"))
+		main_cache_hit = vpt->ptr;
+	if (!strcmp(buf, "MAIN..cache_miss"))
+		main_cache_miss = vpt->ptr;
+
 	VTAILQ_FOREACH(pt, &ptlist, list) {
 		CHECK_OBJ_NOTNULL(pt, PT_MAGIC);
 		AN(pt->key);
@@ -339,6 +356,13 @@ build_pt_list(struct VSM_data *vd, struct VSM_fantom *fantom)
 	VTAILQ_INIT(&pt_priv.ptlist);
 	pt_priv.n_ptlist = 0;
 
+	mgt_uptime = NULL;
+	main_uptime = NULL;
+	main_hit = NULL;
+	main_miss = NULL;
+	main_cache_hit = NULL;
+	main_cache_miss = NULL;
+
 	(void)VSC_Iter(vd, fantom, build_pt_list_cb, &pt_priv);
 	delete_pt_list();
 	AN(VTAILQ_EMPTY(&ptlist));
@@ -384,8 +408,8 @@ sample_points(void)
 			update_ma(&pt->ma_100, (int64_t)pt->cur);
 			update_ma(&pt->ma_1000, (int64_t)pt->cur);
 		} else if (pt->semantics == 'c') {
-			if (VSC_C_main != NULL && VSC_C_main->uptime)
-				pt->avg = pt->cur / VSC_C_main->uptime;
+			if (main_uptime != NULL && *main_uptime)
+				pt->avg = pt->cur / *main_uptime;
 			else
 				pt->avg = 0.;
 			if (pt->t_last) {
@@ -403,11 +427,11 @@ sample_hitrate(void)
 	double hr, mr, ratio;
 	uint64_t hit, miss;
 
-	if (VSC_C_main == NULL)
+	if (main_hit == NULL)
 		return;
 
-	hit = VSC_C_main->cache_hit;
-	miss = VSC_C_main->cache_miss;
+	hit = *main_hit;
+	miss = *main_miss;
 	hr = hit - hitrate.lhit;
 	mr = miss - hitrate.lmiss;
 	hitrate.lhit = hit;
@@ -542,17 +566,17 @@ draw_status(void)
 
 	werase(w_status);
 
-	if (VSC_C_mgt != NULL)
-		up_mgt = VSC_C_mgt->uptime;
-	if (VSC_C_main != NULL)
-		up_chld = VSC_C_main->uptime;
+	if (mgt_uptime != NULL)
+		up_mgt = *mgt_uptime;
+	if (main_uptime != NULL)
+		up_chld = *main_uptime;
 
 	mvwprintw(w_status, 0, 0, "Uptime mgt:  ");
 	print_duration(w_status, up_mgt);
 	mvwprintw(w_status, 1, 0, "Uptime child:");
 	print_duration(w_status, up_chld);
 
-	if (VSC_C_mgt == NULL)
+	if (mgt_uptime == NULL)
 		mvwprintw(w_status, 0, COLS - strlen(discon), discon);
 	else if (COLS > 70) {
 		mvwprintw(w_status, 0, getmaxx(w_status) - 37,
@@ -1053,8 +1077,6 @@ do_curses(struct VSM_data *vd, double delay)
 	long t;
 	int ch;
 	double now;
-	struct VSM_fantom f_main = VSM_FANTOM_NULL;
-	struct VSM_fantom f_mgt = VSM_FANTOM_NULL;
 	struct VSM_fantom f_iter = VSM_FANTOM_NULL;
 
 	interval = delay;
@@ -1071,8 +1093,6 @@ do_curses(struct VSM_data *vd, double delay)
 	make_windows();
 	doupdate();
 
-	VSC_C_mgt = VSC_Mgt(vd, &f_mgt);
-	VSC_C_main = VSC_Main(vd, &f_main);
 	init_hitrate();
 	while (keep_running) {
 		if (VSM_Abandoned(vd)) {
@@ -1081,8 +1101,6 @@ do_curses(struct VSM_data *vd, double delay)
 			VSM_Close(vd);
 			VSM_Open(vd);
 		}
-		VSC_C_mgt = VSC_Mgt(vd, &f_mgt);
-		VSC_C_main = VSC_Main(vd, &f_main);
 		if (VSM_valid != VSM_StillValid(vd, &f_iter))
 			build_pt_list(vd, &f_iter);
 

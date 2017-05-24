@@ -533,7 +533,6 @@ VSC_Destroy(const char *nm, const void *p)
 		VTAILQ_REMOVE(&vsc_seglist, vsg, list);
 		FREE_OBJ(vsg);
 		return;
-		
 	}
 	WRONG("Freeing unknown VSC");
 }

@@ -217,24 +217,6 @@ VSC_Arg(struct VSM_data *vd, int arg, const char *opt)
 	}
 }
 
-/*--------------------------------------------------------------------*/
-
-struct VSC_C_mgt *
-VSC_Mgt(const struct VSM_data *vd, struct VSM_fantom *fantom)
-{
-
-	return (VSC_Get(vd, fantom, VSC_type_mgt, ""));
-}
-
-/*--------------------------------------------------------------------*/
-
-struct VSC_C_main *
-VSC_Main(const struct VSM_data *vd, struct VSM_fantom *fantom)
-{
-
-	return (VSC_Get(vd, fantom, VSC_type_main, ""));
-}
-
 /*--------------------------------------------------------------------
  */
 
