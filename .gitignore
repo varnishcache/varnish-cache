@@ -16,6 +16,7 @@ Makefile.in
 # Various auto-tools artifacts
 /aclocal.m4
 /autom4te.cache/
+/build-aux
 /compile
 /config.guess
 /config.h
@@ -38,17 +39,18 @@ Makefile.in
 /missing
 /stamp-h1
 /varnishapi.pc
-/build-aux
+/varnishapi-uninstalled.pc
 TAGS
 tags
 cscope.*out
-/varnishapi-uninstalled.pc
 
 # Default vcl made from bin/varnishd/default.vcl
-/bin/varnishd/builtin_vcl.h
+/bin/varnishd/builtin_vcl.c
 /etc/builtin.vcl
 
 # Various auto-generated code snippets
+/bin/varnishd/vhp_hufdec.h
+/bin/varnishd/vhp_gen_hufdec
 /include/vcl.h
 /include/vrt_obj.h
 /include/vmod_abi.h
@@ -56,21 +58,18 @@ cscope.*out
 /include/tbl/vrt_stv_var.h
 /include/tbl/vcc_types.h
 /include/vcs_version.h
-/include/vbm_test
-/include/vbm_test.log
-/include/test-suite.log
 /lib/libvcc/vcc_fixed_token.c
 /lib/libvcc/vcc_obj.c
 /lib/libvcc/vcc_token_defs.h
-/lib/libvarnish/vnum_c_test
-/lib/libvarnish/vnum_c_test.log
-/lib/libvarnish/test-suite.log
+/lib/libvarnishapi/vsl2rst
 /lib/libvarnishapi/vxp_fixed_token.c
 /lib/libvarnishapi/vxp_tokens.h
-/lib/libvarnishapi/vsl2rst
+
+# Stats
+/bin/varnishd/VSC_*.c
+/bin/varnishd/VSC_*.h
 
 # Misc. generated files for included vmods.
-/bin/varnishd/vhp_hufdec.h
 /lib/libvmod_*/vcc_if.c
 /lib/libvmod_*/vcc_if.h
 /lib/libvmod_*/vmod_*.rst
@@ -103,22 +102,28 @@ cscope.*out
 /nbproject/private/
 
 # Test droppings
-/bin/varnishd/vhp_decode_test
-/bin/varnishd/vhp_gen_hufdec
-/bin/varnishd/vhp_table_test
 /bin/varnishd/*.log
+/bin/varnishd/vhp_decode_test
+/bin/varnishd/vhp_table_test
+/bin/varnishtest/*.log
 /bin/varnishtest/tests/*.log
 /bin/varnishtest/tests/*.log-t
-/bin/varnishtest/test-suite.log
+/include/*.log
 /include/vrt.c
 /include/_vrt_test
 /include/vrt_test
-/include/vrt_test.*
+/include/vbm_test
+/lib/libvarnish/*.log
+/lib/libvarnish/vnum_c_test
+/lib/libvarnishapi/*.log
+/lib/libvarnishapi/vjsn_test
 
 # vtest.sh droppings
-tmp/
-vt_key
-vt_key.pub
+/tools/tmp/
+/tools/_vtest_tmp/
+/tools/varnish-cache/
+/tools/vt_key
+/tools/vt_key.pub
 
 # Coverity output
 /cov-int
