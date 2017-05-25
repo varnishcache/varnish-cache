@@ -110,5 +110,5 @@ TESTS = vjsn_test
 noinst_PROGRAMS += ${TESTS}
 
 vjsn_test_SOURCES = vjsn.c
-vjsn_test_CFLAGS = -DVJSN_TEST
-vjsn_test_LDADD = libvarnishapi.la
+vjsn_test_CFLAGS = -DVJSN_TEST @SAN_LDFLAGS@
+vjsn_test_LDADD = libvarnishapi.la @SAN_LDFLAGS@
