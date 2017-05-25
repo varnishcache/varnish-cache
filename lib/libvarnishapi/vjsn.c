@@ -377,7 +377,7 @@ vjsn_value(struct vjsn *js)
 		js->ptr += 4;
 		return (vjsn_val_new(VJSN_TRUE));
 	}
-	if (!memcmp(js->ptr, "false", 4)) {
+	if (!memcmp(js->ptr, "false", 5)) {
 		js->ptr += 5;
 		return (vjsn_val_new(VJSN_FALSE));
 	}
