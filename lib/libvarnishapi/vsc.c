@@ -100,25 +100,27 @@ struct vsc {
 	struct VSM_fantom	iter_fantom;
 };
 
-/**********************************************************************
- * Precompiled VSC_type_desc's and VSC_desc's for all know VSCs.
+/*--------------------------------------------------------------------
+ * Build the static level, type and point descriptions
  */
 
-#define VSC_LEVEL_F(v,l,e,d) \
-	extern const struct VSC_level_desc VSC_level_desc_##v;
+#define VSC_LEVEL_F(v,l,e,d)			\
+	const struct VSC_level_desc VSC_level_desc_##v = \
+		{VSC_level_##v, l, e, d};
 #include "tbl/vsc_levels.h"
 #undef VSC_LEVEL_F
 
-#define VSC_TYPE_F(n,t,l,e,d) \
-	extern const struct VSC_type_desc VSC_type_desc_##n;
+#define VSC_TYPE_F(n,t,l,e,d)	const char *VSC_type_##n = t;
 #include "tbl/vsc_types.h"
-#undef VSC_TYPE_F
 
-#define VSC_DO(U,l,t,h) extern const struct VSC_desc VSC_desc_##l[];
-#define VSC_F(n,t,l,s,f,v,d,e)
-#define VSC_DONE(U,l,t)
+#define VSC_TYPE_F(n,t,l,e,d)			\
+	const struct VSC_type_desc VSC_type_desc_##n = {l,e,d};
+#include "tbl/vsc_types.h"
+
+#define VSC_DO(U,l,t,h)		const struct VSC_desc VSC_desc_##l[] = {
+#define VSC_F(n,t,l,s,f,v,d,e)		{#n,#t,s,f,&VSC_level_desc_##v,d,e},
+#define VSC_DONE(U,l,t)		};
 #include "tbl/vsc_all.h"
-
 
 /*--------------------------------------------------------------------*/
 
@@ -496,24 +498,3 @@ VSC_LevelDesc(unsigned level)
 	}
 }
 
-/*--------------------------------------------------------------------
- * Build the static level, type and point descriptions
- */
-
-#define VSC_LEVEL_F(v,l,e,d)			\
-	const struct VSC_level_desc VSC_level_desc_##v = \
-		{VSC_level_##v, l, e, d};
-#include "tbl/vsc_levels.h"
-#undef VSC_LEVEL_F
-
-#define VSC_TYPE_F(n,t,l,e,d)	const char *VSC_type_##n = t;
-#include "tbl/vsc_types.h"
-
-#define VSC_TYPE_F(n,t,l,e,d)			\
-	const struct VSC_type_desc VSC_type_desc_##n = {l,e,d};
-#include "tbl/vsc_types.h"
-
-#define VSC_DO(U,l,t,h)		const struct VSC_desc VSC_desc_##l[] = {
-#define VSC_F(n,t,l,s,f,v,d,e)		{#n,#t,s,f,&VSC_level_desc_##v,d,e},
-#define VSC_DONE(U,l,t)		};
-#include "tbl/vsc_all.h"
