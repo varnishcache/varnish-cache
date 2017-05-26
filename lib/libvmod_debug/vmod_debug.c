@@ -552,7 +552,7 @@ vmod_test_probe(VRT_CTX, VCL_PROBE probe, VCL_PROBE same)
 VCL_INT
 vmod_typesize(VRT_CTX, VCL_STRING s)
 {
-	int i = 0;
+	size_t i = 0;
 	const char *p;
 
 	(void)ctx;
@@ -570,5 +570,5 @@ vmod_typesize(VRT_CTX, VCL_STRING s)
 		default:	return(-1);
 		}
 	}
-	return (i);
+	return ((VCL_INT)i);
 }
