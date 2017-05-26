@@ -37,7 +37,3 @@ enum VSC_level_e {
 #include "tbl/vsc_levels.h"
 	VSC_level_MAX,
 };
-
-/* Forward declare the static vsc type names */
-#define VSC_TYPE_F(n,t,l,e,d)		extern const char *VSC_type_##n;
-#include "tbl/vsc_types.h"

@@ -269,7 +269,6 @@ vsc_add_vf(struct vsc *vsc, const struct VSM_fantom *fantom, int order)
 	vf->fantom = *fantom;
 	REPLACE(vf->section.type, vf->fantom.type);
 	REPLACE(vf->section.ident, vf->fantom.ident);
-	// vf->section.desc = desc;
 	vf->order = order;
 
 	VTAILQ_FOREACH(vf2, &vsc->vf_list, list) {

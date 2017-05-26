@@ -44,7 +44,6 @@
 #include "vdef.h"
 #include "vqueue.h"
 #include "vsb.h"
-#include "vapi/vsc_int.h"
 
 /**********************************************************************/
 

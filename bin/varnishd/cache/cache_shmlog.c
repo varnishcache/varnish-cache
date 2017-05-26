@@ -40,6 +40,7 @@
 #include "vend.h"
 #include "vgz.h"
 #include "vsl_priv.h"
+#include "vapi/vsc_int.h"
 #include "vmb.h"
 #include "vtim.h"
 
