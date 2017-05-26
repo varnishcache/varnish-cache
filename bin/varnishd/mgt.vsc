@@ -6,8 +6,7 @@
 	XXX: include/tbl/vsc_fields.h
 
 .. varnish_vsc_begin::	mgt
-	:class:	MGT
-	:oneliner:	MANAGEMENT PROCESS COUNTERS (MGT.*)
+	:oneliner:	Management Process Counters
 
 .. varnish_vsc:: uptime
 	:type:	counter

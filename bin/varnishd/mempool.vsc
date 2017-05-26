@@ -6,7 +6,7 @@
 	XXX: include/tbl/vsc_fields.h
 
 .. varnish_vsc_begin::	mempool
-	:oneliner:	MEMORY POOL COUNTERS (MEMPOOL.*)
+	:oneliner:	Memory Pool Counters
 
 .. varnish_vsc:: live
 	:type:	gauge

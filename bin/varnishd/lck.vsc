@@ -6,7 +6,7 @@
 	XXX: include/tbl/vsc_fields.h
 
 .. varnish_vsc_begin::	lck
-	:oneliner:	LOCK COUNTERS (LCK.*)
+	:oneliner:	Lock Counters
 
 .. varnish_vsc:: creat
 	:type:	counter

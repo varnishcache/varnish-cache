@@ -6,7 +6,7 @@
 	XXX: include/tbl/vsc_fields.h
 
 .. varnish_vsc_begin::	smf
-	:oneliner:	FILE STORAGE COUNTERS (SMF.*)
+	:oneliner:	File Stevedore Counters
 
 .. varnish_vsc:: c_req
 	:type:	counter

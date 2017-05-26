@@ -6,7 +6,7 @@
 	XXX: include/tbl/vsc_fields.h
 
 .. varnish_vsc_begin::	sma
-	:oneliner:	MALLOC STORAGE COUNTERS (SMA.*)
+	:oneliner:	Malloc Stevedore Counters
 
 .. varnish_vsc:: c_req
 	:type:	counter

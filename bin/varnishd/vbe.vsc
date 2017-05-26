@@ -6,7 +6,7 @@
 	XXX: include/tbl/vsc_fields.h
 
 .. varnish_vsc_begin::	vbe
-	:oneliner:	BACKEND COUNTERS (VBE.*)
+	:oneliner:	Backend Counters
 
 .. varnish_vsc:: happy
 	:type:	bitmap
