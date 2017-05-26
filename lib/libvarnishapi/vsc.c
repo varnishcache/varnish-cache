@@ -51,6 +51,12 @@
 
 #include "vsm_api.h"
 
+/* Define the vsc type structs */
+#define VSC_DO(u,l,t,h)                 struct VSC_C_##l {
+#define VSC_F(n,t,l,s,f,v,d,e)                  t n;
+#define VSC_DONE(u,l,t)                 };
+#include "tbl/vsc_all.h"
+
 enum {
 #define VSC_TYPE_F(n,t,l,e,d) \
 	VSC_type_order_##n,

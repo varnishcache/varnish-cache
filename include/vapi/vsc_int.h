@@ -41,9 +41,3 @@ enum VSC_level_e {
 /* Forward declare the static vsc type names */
 #define VSC_TYPE_F(n,t,l,e,d)		extern const char *VSC_type_##n;
 #include "tbl/vsc_types.h"
-
-/* Define the vsc type structs */
-#define VSC_DO(u,l,t,h)			struct VSC_C_##l {
-#define VSC_F(n,t,l,s,f,v,d,e)			t n;
-#define VSC_DONE(u,l,t)			};
-#include "tbl/vsc_all.h"

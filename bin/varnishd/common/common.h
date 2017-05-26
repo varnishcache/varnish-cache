@@ -81,14 +81,14 @@ int VCL_TestLoad(const char *);
 
 /* common_vsm.c */
 struct vsm_sc;
-struct VSC_C_main;
+struct VSC_main;
 struct vsm_sc *VSM_common_new(void *ptr, ssize_t len);
 void *VSM_common_alloc(struct vsm_sc *sc, ssize_t size,
     const char *class, const char *type, const char *ident);
 void VSM_common_free(struct vsm_sc *sc, void *ptr);
 void VSM_common_delete(struct vsm_sc **sc);
 void VSM_common_copy(struct vsm_sc *to, const struct vsm_sc *from);
-void VSM_common_cleaner(struct vsm_sc *sc, struct VSC_C_main *stats);
+void VSM_common_cleaner(struct vsm_sc *sc, struct VSC_main *stats);
 void VSM_common_ageupdate(const struct vsm_sc *sc);
 
 void *VSC_Alloc(const char *, size_t, size_t, const unsigned char *, size_t,

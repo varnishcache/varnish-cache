@@ -45,6 +45,8 @@
 #include "vmb.h"
 #include "vtim.h"
 
+#include "VSC_main.h"
+
 extern volatile struct params * cache_param;
 
 /*--------------------------------------------------------------------*/
@@ -165,7 +167,7 @@ VSM_common_new(void *p, ssize_t l)
  */
 
 void
-VSM_common_cleaner(struct vsm_sc *sc, struct VSC_C_main *stats)
+VSM_common_cleaner(struct vsm_sc *sc, struct VSC_main *stats)
 {
 	double now = VTIM_real();
 	struct vsm_range *vr, *vr2;
