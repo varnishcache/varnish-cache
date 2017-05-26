@@ -143,11 +143,11 @@ tea while it runs, it usually takes a couple of minutes::
 
 	make check
 
-Don't worry if one or two tests fail, some of the tests are a
-bit too timing sensitive (Please tell us which so we can fix them.) but
-if a lot of them fails, and in particular if the `b00000.vtc` test
-fails, something is horribly wrong, and you will get nowhere without
-figuring out what.
+Don't worry if one or two tests fail. Some of the tests are a
+bit too timing sensitive (Please tell us which so we can fix them). 
+However, if a lot of them fail, and in particular if the `b00000.vtc` test
+fails, something is horribly wrong. You will get nowhere without
+figuring this one out.
 
 Installing
 ----------
