@@ -84,16 +84,9 @@ struct VSC_level_desc {
 	const char *ldesc;		/* long description */
 };
 
-struct VSC_type_desc {
-	const char *label;		/* label */
-	const char *sdesc;		/* short description */
-	const char *ldesc;		/* long description */
-};
-
 struct VSC_section {
 	char *type;
 	char *ident;
-	const struct VSC_type_desc *desc;
 };
 
 /* See include/tbl/vsc_fields.h for descriptions */

@@ -113,10 +113,6 @@ struct vsc {
 #define VSC_TYPE_F(n,t,l,e,d)	const char *VSC_type_##n = t;
 #include "tbl/vsc_types.h"
 
-#define VSC_TYPE_F(n,t,l,e,d)			\
-	const struct VSC_type_desc VSC_type_desc_##n = {l,e,d};
-#include "tbl/vsc_types.h"
-
 #define VSC_DO(U,l,t,h)		const struct VSC_desc VSC_desc_##l[] = {
 #define VSC_F(n,t,l,s,f,v,d,e)		{#n,#t,s,f,&VSC_level_desc_##v,d,e},
 #define VSC_DONE(U,l,t)		};
@@ -264,8 +260,7 @@ VSC_Get(const struct VSM_data *vd, struct VSM_fantom *fantom, const char *type,
 /*--------------------------------------------------------------------*/
 
 static void
-vsc_add_vf(struct vsc *vsc, const struct VSM_fantom *fantom,
-    const struct VSC_type_desc *desc, int order)
+vsc_add_vf(struct vsc *vsc, const struct VSM_fantom *fantom, int order)
 {
 	struct vsc_vf *vf, *vf2;
 
@@ -274,7 +269,7 @@ vsc_add_vf(struct vsc *vsc, const struct VSM_fantom *fantom,
 	vf->fantom = *fantom;
 	REPLACE(vf->section.type, vf->fantom.type);
 	REPLACE(vf->section.ident, vf->fantom.ident);
-	vf->section.desc = desc;
+	// vf->section.desc = desc;
 	vf->order = order;
 
 	VTAILQ_FOREACH(vf2, &vsc->vf_list, list) {
@@ -331,7 +326,7 @@ vsc_build_old_vf_list(struct vsc *vsc)
 #define VSC_TYPE_F(n,t,l,e,d)						\
 	if (!strcmp(vsc->iter_fantom.type, t))				\
 		vsc_add_vf(vsc, &vsc->iter_fantom,			\
-		    &VSC_type_desc_##n, VSC_type_order_##n);
+		    VSC_type_order_##n);
 #include "tbl/vsc_types.h"
 }
 
