@@ -175,3 +175,8 @@ LIBVARNISHAPI_1.6 {
 	VTIM_timespec;
 	VTIM_timeval;
 } LIBVARNISHAPI_1.0;
+
+LIBVARNISHAPI_1.7 {
+  global:
+	VSC_ChangeLevel;
+} LIBVARNISHAPI_1.0;

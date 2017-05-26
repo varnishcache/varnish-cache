@@ -117,7 +117,7 @@ static WINDOW *w_points = NULL;
 static WINDOW *w_bar_b = NULL;
 static WINDOW *w_info = NULL;
 
-static int verbosity = VSC_level_info;
+static const struct VSC_level_desc *verbosity;
 static int keep_running = 1;
 static int hide_unseen = 1;
 static int page_start = 0;
@@ -216,7 +216,7 @@ build_pt_array(void)
 		CHECK_OBJ_NOTNULL(pt, PT_MAGIC);
 		if (!pt->seen && hide_unseen)
 			continue;
-		if (pt->vpt->desc->level->verbosity > verbosity)
+		if (pt->vpt->desc->level > verbosity)
 			continue;
 		assert(n_ptarray < n_ptlist);
 		ptarray[n_ptarray++] = pt;
@@ -938,7 +938,6 @@ static void
 draw_bar_b(void)
 {
 	int x, X;
-	const struct VSC_level_desc *level;
 	char buf[64];
 
 	AN(w_bar_b);
@@ -959,11 +958,10 @@ draw_bar_b(void)
 	mvwprintw(w_bar_b, 0, X - strlen(buf), "%s", buf);
 	X -= strlen(buf) + 2;
 
-	level = VSC_LevelDesc(verbosity);
-	if (level != NULL) {
-		mvwprintw(w_bar_b, 0, X - strlen(level->label), "%s",
-		    level->label);
-		X -= strlen(level->label) + 2;
+	if (verbosity != NULL) {
+		mvwprintw(w_bar_b, 0, X - strlen(verbosity->label), "%s",
+		    verbosity->label);
+		X -= strlen(verbosity->label) + 2;
 	}
 	if (!hide_unseen)
 		mvwprintw(w_bar_b, 0, X - 6, "%s", "UNSEEN");
@@ -1045,9 +1043,11 @@ handle_keypress(int ch)
 		page_start = (current - l_points) + 1;
 		break;
 	case 'v':
-		verbosity++;
-		if (VSC_LevelDesc(verbosity) == NULL)
-			verbosity = 0;
+		verbosity = VSC_ChangeLevel(verbosity, 1);
+		rebuild = 1;
+		break;
+	case 'V':
+		verbosity = VSC_ChangeLevel(verbosity, -1);
 		rebuild = 1;
 		break;
 	case 'q':
@@ -1080,6 +1080,8 @@ do_curses(struct VSM_data *vd, double delay)
 	struct VSM_fantom f_iter = VSM_FANTOM_NULL;
 
 	interval = delay;
+
+	verbosity = VSC_ChangeLevel(NULL, 0);
 
 	initscr();
 	raw();

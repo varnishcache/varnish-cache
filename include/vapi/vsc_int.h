@@ -29,11 +29,3 @@
  */
 
 #define VSC_CLASS		"Stat"
-
-/* vsc levels */
-enum VSC_level_e {
-#define VSC_LEVEL_F(v,l,e,d)		\
-	VSC_level_##v,
-#include "tbl/vsc_levels.h"
-	VSC_level_MAX,
-};

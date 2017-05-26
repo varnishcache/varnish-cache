@@ -78,7 +78,7 @@ struct VSC_desc;
 struct VSC_point;
 
 struct VSC_level_desc {
-	unsigned verbosity;
+	const char *name;		/* name */
 	const char *label;		/* label */
 	const char *sdesc;		/* short description */
 	const char *ldesc;		/* long description */
@@ -138,6 +138,6 @@ int VSC_Iter(struct VSM_data *vd, struct VSM_fantom *fantom, VSC_iter_f *func,
 	 *	0:	Done
 	 */
 
-const struct VSC_level_desc *VSC_LevelDesc(unsigned level);
+const struct VSC_level_desc *VSC_ChangeLevel(const struct VSC_level_desc*, int);
 
 #endif /* VAPI_VSC_H_INCLUDED */

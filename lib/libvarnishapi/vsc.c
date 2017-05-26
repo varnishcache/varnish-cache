@@ -104,17 +104,24 @@ struct vsc {
  * Build the static level, type and point descriptions
  */
 
-#define VSC_LEVEL_F(v,l,e,d)			\
-	const struct VSC_level_desc VSC_level_desc_##v = \
-		{VSC_level_##v, l, e, d};
+#define VSC_LEVEL_F(v,l,e,d) \
+    static const struct VSC_level_desc level_##v = {#v, l, e, d};
+#include "tbl/vsc_levels.h"
+
+static const struct VSC_level_desc * const levels[] = {
+#define VSC_LEVEL_F(v,l,e,d) &level_##v,
 #include "tbl/vsc_levels.h"
 #undef VSC_LEVEL_F
+};
+
+static const size_t nlevels =
+    sizeof(levels)/sizeof(*levels);
 
 #define VSC_TYPE_F(n,t,l,e,d)	const char *VSC_type_##n = t;
 #include "tbl/vsc_types.h"
 
 #define VSC_DO(U,l,t,h)		const struct VSC_desc VSC_desc_##l[] = {
-#define VSC_F(n,t,l,s,f,v,d,e)		{#n,#t,s,f,&VSC_level_desc_##v,d,e},
+#define VSC_F(n,t,l,s,f,v,d,e)		{#n,#t,s,f,&level_##v,d,e},
 #define VSC_DONE(U,l,t)		};
 #include "tbl/vsc_all.h"
 
@@ -479,16 +486,23 @@ VSC_Iter(struct VSM_data *vd, struct VSM_fantom *fantom, VSC_iter_f *func,
  */
 
 const struct VSC_level_desc *
-VSC_LevelDesc(unsigned level)
+VSC_ChangeLevel(const struct VSC_level_desc *old, int chg)
 {
-	switch (level) {
-#define VSC_LEVEL_F(v,l,e,d)	\
-	case VSC_level_##v:	\
-		return (&VSC_level_desc_##v);
-#include "tbl/vsc_levels.h"
-#undef VSC_LEVEL_F
-	default:
-		return (NULL);
-	}
+	int i;
+
+	if (old == NULL)
+		old = levels[0];
+	for (i = 0; i < nlevels; i++)
+		if (old == levels[i])
+			break;
+	if (i == nlevels)
+		i = 0;
+	else
+		i += chg;
+	if (i >= nlevels)
+		i = nlevels - 1;
+	if (i < 0)
+		i = 0;
+	return (levels[i]);
 }
 
