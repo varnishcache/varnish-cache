@@ -125,4 +125,9 @@
 #define NEEDLESS(s)		s
 #endif
 
+#ifndef STATIC_ASSERT
+#  define _Static_assert(a,b)
+#endif
+
+
 #endif /* VDEF_H_INCLUDED */
