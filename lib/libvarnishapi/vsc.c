@@ -51,24 +51,13 @@
 
 #include "vsm_api.h"
 
-/* Define the vsc type structs */
-#define VSC_DO(u,l,t,h)                 struct VSC_C_##l {
-#define VSC_F(n,t,l,s,f,v,d,e)                  t n;
-#define VSC_DONE(u,l,t)                 };
-#include "tbl/vsc_all.h"
-
-enum {
-#define VSC_TYPE_F(n,t,l,e,d) \
-	VSC_type_order_##n,
-#include "tbl/vsc_types.h"
-};
-
 struct vsc_vf {
 	unsigned		magic;
 #define VSC_VF_MAGIC		0x516519f8
 	VTAILQ_ENTRY(vsc_vf)	list;
 	struct VSM_fantom	fantom;
 	struct VSC_section	section;
+	struct vjsn		*vjsn;
 	int			order;
 };
 VTAILQ_HEAD(vsc_vf_head, vsc_vf);
@@ -116,14 +105,6 @@ static const struct VSC_level_desc * const levels[] = {
 
 static const size_t nlevels =
     sizeof(levels)/sizeof(*levels);
-
-#define VSC_TYPE_F(n,t,l,e,d)	const char *VSC_type_##n = t;
-#include "tbl/vsc_types.h"
-
-#define VSC_DO(U,l,t,h)		const struct VSC_desc VSC_desc_##l[] = {
-#define VSC_F(n,t,l,s,f,v,d,e)		{#n,#t,s,f,&level_##v,d,e},
-#define VSC_DONE(U,l,t)		};
-#include "tbl/vsc_all.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -266,7 +247,7 @@ VSC_Get(const struct VSM_data *vd, struct VSM_fantom *fantom, const char *type,
 
 /*--------------------------------------------------------------------*/
 
-static void
+static struct vsc_vf *
 vsc_add_vf(struct vsc *vsc, const struct VSM_fantom *fantom, int order)
 {
 	struct vsc_vf *vf, *vf2;
@@ -286,9 +267,11 @@ vsc_add_vf(struct vsc *vsc, const struct VSM_fantom *fantom, int order)
 		VTAILQ_INSERT_BEFORE(vf2, vf, list);
 	else
 		VTAILQ_INSERT_TAIL(&vsc->vf_list, vf, list);
+	return (vf);
 }
 
 /*lint -esym(528, vsc_add_pt) */
+/*lint -sem(vsc_add_pt, custodial(3)) */
 static void
 vsc_add_pt(struct vsc *vsc, const volatile void *ptr,
     const struct VSC_desc *desc, const struct vsc_vf *vf)
@@ -305,38 +288,8 @@ vsc_add_pt(struct vsc *vsc, const volatile void *ptr,
 	VTAILQ_INSERT_TAIL(&vsc->pt_list, pt, list);
 }
 
-#define VSC_DO(U,l,t,h)							\
-	static void							\
-	iter_##l(struct vsc *vsc, const struct VSC_desc *descs,		\
-	    struct vsc_vf *vf)						\
-	{								\
-		struct VSC_C_##l *st;					\
-									\
-		CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);			\
-		st = (void*)((char*)vf->fantom.b + 8);
-
-#define VSC_F(nn,tt,ll,ss,ff,vv,dd,ee)					\
-		vsc_add_pt(vsc, &st->nn, descs++, vf);
-
-#define VSC_DONE(U,l,t)							\
-	}
-
-#include "tbl/vsc_all.h"
-
 /*--------------------------------------------------------------------
  */
-
-static void
-vsc_build_old_vf_list(struct vsc *vsc)
-{
-#define VSC_TYPE_F(n,t,l,e,d)						\
-	if (!strcmp(vsc->iter_fantom.type, t))				\
-		vsc_add_vf(vsc, &vsc->iter_fantom,			\
-		    VSC_type_order_##n);
-#include "tbl/vsc_types.h"
-}
-
-#include <stdio.h>
 
 static void
 vsc_build_vf_list(struct VSM_data *vd)
@@ -345,6 +298,9 @@ vsc_build_vf_list(struct VSM_data *vd)
 	struct vsc *vsc = vsc_setup(vd);
 	const char *p;
 	const char *e;
+	struct vjsn *vj;
+	struct vjsn_val *vv;
+	struct vsc_vf *vf;
 
 	vsc_delete_pt_list(&vsc->pt_list);
 	vsc_delete_vf_list(&vsc->vf_list);
@@ -352,15 +308,23 @@ vsc_build_vf_list(struct VSM_data *vd)
 	VSM_FOREACH(&vsc->iter_fantom, vd) {
 		if (strcmp(vsc->iter_fantom.class, VSC_CLASS))
 			continue;
-		vsc_build_old_vf_list(vsc);
 		u = vbe64dec(vsc->iter_fantom.b);
 		assert(u > 0);
 		p = (char*)vsc->iter_fantom.b + 8 + u;
-		(void)vjsn_parse(p, &e);
+		vj = vjsn_parse(p, &e);
 		if (e != NULL) {
 			fprintf(stderr, "%s\n", p);
 			fprintf(stderr, "JSON ERROR %s\n", e);
+			exit(2);
 		}
+		AN(vj);
+		vv = vjsn_child(vj->value, "order");
+		AN(vv);
+		assert(vv->type == VJSN_NUMBER);
+		vf = vsc_add_vf(vsc, &vsc->iter_fantom, atoi(vv->value));
+		AN(vf);
+		vf->vjsn = vj;
+		// vjsn_dump(vf->vjsn, stderr);
 		AZ(e);
 	}
 }
@@ -370,17 +334,36 @@ vsc_build_pt_list(struct VSM_data *vd)
 {
 	struct vsc *vsc = vsc_setup(vd);
 	struct vsc_vf *vf;
+	struct vjsn_val *vve, *vv, *vt;
+	struct VSC_desc *vdsc = NULL;
 
 	vsc_delete_pt_list(&vsc->pt_list);
 
 	VTAILQ_FOREACH(vf, &vsc->vf_list, list) {
-#define VSC_DO(U,l,t,h)						\
-		CHECK_OBJ_NOTNULL(vf, VSC_VF_MAGIC);		\
-		if (!strcmp(vf->section.type, t))		\
-			iter_##l(vsc, VSC_desc_##l, vf);
-#define VSC_F(n,t,l,s,f,v,d,e)
-#define VSC_DONE(a,b,c)
-#include "tbl/vsc_all.h"
+		vve = vjsn_child(vf->vjsn->value, "elem");
+		AN(vve);
+		VTAILQ_FOREACH(vv, &vve->children, list) {
+			vdsc = calloc(sizeof *vd, 1);
+			AN(vdsc);
+
+#define DOF(n, k)						\
+			vt = vjsn_child(vv, k);			\
+			AN(vt);					\
+			assert(vt->type == VJSN_STRING);	\
+			vdsc->n = vt->value;
+
+			DOF(name,  "name");
+			DOF(ctype, "ctype");
+			DOF(sdesc, "oneliner");
+			DOF(ldesc, "docs");
+#undef DOF
+			vdsc->level = &level_info;
+			vt = vjsn_child(vv, "index");
+			AN(vt);
+			vsc_add_pt(vsc,
+			    (char*)vf->fantom.b + atoi(vt->value),
+			    vdsc, vf);
+		}
 	}
 }
 

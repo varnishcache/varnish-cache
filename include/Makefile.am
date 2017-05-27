@@ -37,11 +37,7 @@ nobase_pkginclude_HEADERS = \
 	tbl/vhp_huffman.h \
 	tbl/vhp_static.h \
 	tbl/vrt_stv_var.h \
-	tbl/vsc_all.h \
-	tbl/vsc_f_main.h \
-	tbl/vsc_fields.h \
 	tbl/vsc_levels.h \
-	tbl/vsc_types.h \
 	tbl/vsl_tags.h \
 	tbl/vsl_tags_http.h \
 	tbl/waiters.h \

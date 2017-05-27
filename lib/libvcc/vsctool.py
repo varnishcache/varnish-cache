@@ -88,7 +88,8 @@ class vscset(object):
 		dd = collections.OrderedDict()
 		dd["version"] = "1"
 		dd["name"] = self.name
-		dd["1line"] = self.head.param["oneliner"].strip()
+		dd["oneliner"] = self.head.param["oneliner"].strip()
+		dd["order"] = int(self.head.param["order"])
 		dd["docs"] = "\n".join(self.head.getdoc())
 		dd["elements"] = len(self.mbrs)
 		el = collections.OrderedDict()
@@ -96,11 +97,11 @@ class vscset(object):
 		for i in self.mbrs:
 			ed = collections.OrderedDict()
 			el[i.arg] = ed
+			for j in PARAMS:
+				if j in i.param:
+					ed[j] = i.param[j]
 			ed["index"] = i.param["index"]
 			ed["name"] = i.arg
-			ed["type"] = i.param["type"]
-			ed["level"] = i.param["level"]
-			ed["1line"] = i.param["oneliner"].strip()
 			ed["docs"] = "\n".join(i.getdoc())
 		s=json.dumps(dd, separators=(",",":")) + "\0"
 		fo.write("\nstatic const size_t vsc_%s_jsonlen = %dL;\n" %

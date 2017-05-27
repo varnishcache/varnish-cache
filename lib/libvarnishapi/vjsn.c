@@ -428,6 +428,20 @@ vjsn_parse(const char *src, const char **err)
 	return (js);
 }
 
+struct vjsn_val *
+vjsn_child(const struct vjsn_val *vv, const char *key)
+{
+	struct vjsn_val *vc;
+
+	CHECK_OBJ_NOTNULL(vv, VJSN_VAL_MAGIC);
+	AN(key);
+	VTAILQ_FOREACH(vc, &vv->children, list) {
+		if (vc->name != NULL && !strcmp(vc->name, key))
+			return (vc);
+	}
+	return (NULL);
+}
+
 static void
 vjsn_dump_i(const struct vjsn_val *jsv, FILE *fo, int indent)
 {
