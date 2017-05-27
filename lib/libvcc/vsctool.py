@@ -166,8 +166,8 @@ class vscset(object):
 		for i in self.mbrs:
 			fo.write("_Static_assert(offsetof(" + self.struct)
 			fo.write(", " + i.arg + ")")
-			fo.write(" == %d," % (i.param["index"] - 8))
-			fo.write(' "VSC element offset is wrong");\n')
+			fo.write(" == %d,\n" % (i.param["index"] - 8))
+			fo.write('    "VSC element offset is wrong");\n')
 
 		self.emit_json(fo)
 
