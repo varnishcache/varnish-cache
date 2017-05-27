@@ -40,6 +40,17 @@ import gzip
 import StringIO
 import collections
 
+TYPES = [ "counter", "gauge", "bitmap" ]
+CTYPES = [ "uint64_t" ]
+LEVELS = [ "info", "diag", "debug" ]
+
+PARAMS = {
+	"type":		["counter", TYPES],
+	"ctype":	["uint64_t", CTYPES],
+	"level":	["info", LEVELS],
+	"oneliner":	True,
+}
+
 def gzip_str(s):
 	out = StringIO.StringIO()
 	gzip.GzipFile(fileobj=out, mode="w").write(s)
@@ -265,10 +276,27 @@ class rst_vsc_begin(directive):
 class rst_vsc(directive):
 	def __init__(self, s):
 		super(rst_vsc, self).__init__(s)
-		if "type" not in self.param:
-			self.param["type"] = "counter"
-		if "level" not in self.param:
-			self.param["level"] = "info"
+
+		for i,v in PARAMS.iteritems():
+			if v is not True:
+				self.do_default(i, v[0], v[1])
+
+		for p in self.param:
+			if p in PARAMS:
+				continue
+			sys.stderr.write("Unknown paramter ")
+			sys.stderr.write("'" + p + "'")
+			sys.stderr.write(" on field '" + self.arg + "'\n")
+			exit(2)
+
+	def do_default(self, p, v, s):
+		if p not in self.param:
+			self.param[p] = v
+		if self.param[p] not in s:
+			sys.stderr.write("Wrong " + p + " '" + self.param[p])
+			sys.stderr.write("' on field '" + self.arg + "'\n")
+			exit(2)
+
 
 	def emit_rst(self, fo):
 		fo.write("\n``%s`` – " % self.arg)
