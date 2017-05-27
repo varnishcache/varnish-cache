@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- encoding: utf-8 -*-
 #
 # Copyright (c) 2017 Varnish Software AS
 # All rights reserved.
@@ -241,6 +242,16 @@ class rst_vsc_begin(directive):
 	def vscset(self, ss):
 		ss.append(vscset(self.arg, self))
 
+	def emit_rst(self, fo):
+		fo.write("\n..\n\t" + self.cmd + ":: " + self.arg + "\n")
+
+		s = self.arg.upper() + " – " + self.param["oneliner"]
+		fo.write("\n")
+		fo.write(s + "\n")
+		fo.write("=" * len(s) + "\n")
+
+		self.emit_rst_doc(fo)
+
 class rst_vsc(directive):
 	def __init__(self, s):
 		super(rst_vsc, self).__init__(s)
@@ -250,9 +261,11 @@ class rst_vsc(directive):
 			self.param["level"] = "info"
 
 	def emit_rst(self, fo):
-		fo.write("\n``%s`` - " % self.arg)
+		fo.write("\n``%s`` – " % self.arg)
 		fo.write("`%s` - " % self.param["type"])
-		fo.write("%s\n" % self.param["level"])
+		fo.write("%s\n\n" % self.param["level"])
+
+		fo.write("\t" + self.param["oneliner"] + "\n")
 		self.emit_rst_doc(fo)
 
 	def vscset(self, ss):
@@ -265,6 +278,10 @@ class rst_vsc_end(directive):
 
 	def vscset(self, ss):
 		ss[-1].complete()
+
+	def emit_rst(self, fo):
+		fo.write("\n..\n\t" + self.cmd + ":: " + self.arg + "\n")
+		self.emit_rst_doc(fo)
 
 class other(object):
 	def __init__(self, s):
@@ -316,8 +333,8 @@ class vsc_file(object):
 		for i in self.vscset:
 			i.emit_c()
 
-	def emit_rst(self, fon):
-		fo = open(fon, "w")
+	def emit_rst(self):
+		fo = sys.stdout
 		for i in self.c:
 			i.emit_rst(fo)
 
@@ -330,13 +347,13 @@ if __name__ == "__main__":
 	fo = sys.stdout
 
 	if len(args) != 1:
-		print("Need exactly one filename argument")
+		sys.stderr.write("Need exactly one filename argument\n")
 		exit(2)
 
 	vf = vsc_file(args[0])
 	for f,v in optlist:
 		if f == '-r':
-			vf.emit_rst("_.rst")
+			vf.emit_rst()
 		if f == '-h':
 			vf.emit_h()
 		if f == '-c':

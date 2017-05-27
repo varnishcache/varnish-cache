@@ -8,6 +8,9 @@
 .. varnish_vsc_begin::	lck
 	:oneliner:	Lock Counters
 
+	Counters which track the activity in the different classes
+	of mutex-locks.
+
 .. varnish_vsc:: creat
 	:type:	counter
 	:level:	debug

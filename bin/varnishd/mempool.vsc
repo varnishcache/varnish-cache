@@ -37,12 +37,10 @@
 	:level:	debug
 	:oneliner:	Allocations
 
-
 .. varnish_vsc:: frees
 	:type:	counter
 	:level:	debug
 	:oneliner:	Frees
-
 
 .. varnish_vsc:: recycle
 	:type:	counter

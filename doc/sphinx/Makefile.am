@@ -123,8 +123,21 @@ include/params.rst: $(top_builddir)/bin/varnishd/varnishd
 	$(top_builddir)/bin/varnishd/varnishd -x parameter > $@
 BUILT_SOURCES += include/params.rst
 
-include/counters.rst: $(top_builddir)/bin/varnishstat/vsc2rst
-	$(top_builddir)/bin/varnishstat/vsc2rst > $@
+COUNTERS = \
+	$(top_srcdir)/bin/varnishd/main.vsc \
+	$(top_srcdir)/bin/varnishd/mgt.vsc \
+	$(top_srcdir)/bin/varnishd/mempool.vsc \
+	$(top_srcdir)/bin/varnishd/sma.vsc \
+	$(top_srcdir)/bin/varnishd/smf.vsc \
+	$(top_srcdir)/bin/varnishd/vbe.vsc \
+	$(top_srcdir)/bin/varnishd/lck.vsc
+
+include/counters.rst: $(top_srcdir)/lib/libvcc/vsctool.py $(COUNTERS)
+	echo -n '' > $@
+	for i in $(COUNTERS); do \
+		$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -r $$i >> $@ ; \
+	done
+
 BUILT_SOURCES += include/counters.rst
 
 # XXX add varnishstat here when it's been _opt2rst'ed

@@ -10,78 +10,79 @@
 	:sumfunction:
 
 .. varnish_vsc:: summs
+	:level:	debug
 	:oneliner:	stat summ operations
 
 .. varnish_vsc:: uptime
 	:oneliner:	Child process uptime
 
-How long the child process has been running.
+	How long the child process has been running.
 
 .. varnish_vsc:: sess_conn
 	:oneliner:	Sessions accepted
 
-Count of sessions successfully accepted
+	Count of sessions successfully accepted
 
 .. varnish_vsc:: sess_drop
 	:oneliner:	Sessions dropped
 
-Count of sessions silently dropped due to lack of worker thread.
+	Count of sessions silently dropped due to lack of worker thread.
 
 .. varnish_vsc:: sess_fail
 	:oneliner:	Session accept failures
 
-Count of failures to accept TCP connection.  Either the client
-changed its mind, or the kernel ran out of some resource like file
-descriptors.
+	Count of failures to accept TCP connection.  Either the client
+	changed its mind, or the kernel ran out of some resource like file
+	descriptors.
 
 .. varnish_vsc:: client_req_400
 	:oneliner:	Client requests received, subject to 400 errors
 
-400 means we couldn't make sense of the request, it was malformed
-in some drastic way.
+	400 means we couldn't make sense of the request, it was malformed
+	in some drastic way.
 
 .. varnish_vsc:: client_req_417
 	:oneliner:	Client requests received, subject to 417 errors
 
-417 means that something went wrong with an Expect: header.
+	417 means that something went wrong with an Expect: header.
 
 .. varnish_vsc:: client_req
 	:oneliner:	Good client requests received
 
-The count of parseable client requests seen.
+	The count of parseable client requests seen.
 
 .. varnish_vsc:: cache_hit
 	:oneliner:	Cache hits
 
-Count of cache hits.  A cache hit indicates that an object has been
-delivered to a client without fetching it from a backend server.
+	Count of cache hits.  A cache hit indicates that an object has been
+	delivered to a client without fetching it from a backend server.
 
 .. varnish_vsc:: cache_hitpass
 	:oneliner:	Cache hits for pass.
 
-Count of hits for pass. A cache hit for pass indicates that Varnish
-is going to pass the request to the backend and this decision has
-been cached in it self. This counts how many times the cached
-decision is being used.
+	Count of hits for pass. A cache hit for pass indicates that Varnish
+	is going to pass the request to the backend and this decision has
+	been cached in it self. This counts how many times the cached
+	decision is being used.
 
 .. varnish_vsc:: cache_hitmiss
 	:oneliner:	Cache hits for miss.
 
-Count of hits for miss. A cache hit for miss indicates that Varnish
-is going to proceed as for a cache miss without request coalescing,
-and this decision has been cached. This counts how many times the
-cached decision is being used.
+	Count of hits for miss. A cache hit for miss indicates that Varnish
+	is going to proceed as for a cache miss without request coalescing,
+	and this decision has been cached. This counts how many times the
+	cached decision is being used.
 
 .. varnish_vsc:: cache_miss
 	:oneliner:	Cache misses
 
-Count of misses. A cache miss indicates the object was fetched from
-the backend before delivering it to the client.
+	Count of misses. A cache miss indicates the object was fetched from
+	the backend before delivering it to the client.
 
 .. varnish_vsc:: backend_conn
 	:oneliner:	Backend conn. success
 
-How many backend connections have successfully been established.
+	How many backend connections have successfully been established.
 
 .. varnish_vsc:: backend_unhealthy
 	:oneliner:	Backend conn. not attempted
@@ -98,16 +99,16 @@ How many backend connections have successfully been established.
 .. varnish_vsc:: backend_reuse
 	:oneliner:	Backend conn. reuses
 
-Count of backend connection reuses. This counter is increased
-whenever we reuse a recycled connection.
+	Count of backend connection reuses. This counter is increased
+	whenever we reuse a recycled connection.
 
 .. varnish_vsc:: backend_recycle
 	:oneliner:	Backend conn. recycles
 
-Count of backend connection recycles. This counter is increased
-whenever we have a keep-alive connection that is put back into the
-pool of connections. It has not yet been used, but it might be,
-unless the backend closes it.
+	Count of backend connection recycles. This counter is increased
+	whenever we have a keep-alive connection that is put back into the
+	pool of connections. It has not yet been used, but it might be,
+	unless the backend closes it.
 
 .. varnish_vsc:: backend_retry
 	:oneliner:	Backend conn. retry
@@ -116,183 +117,183 @@ unless the backend closes it.
 .. varnish_vsc:: fetch_head
 	:oneliner:	Fetch no body (HEAD)
 
-beresp with no body because the request is HEAD.
+	beresp with no body because the request is HEAD.
 
 .. varnish_vsc:: fetch_length
 	:oneliner:	Fetch with Length
 
-beresp.body with Content-Length.
+	beresp.body with Content-Length.
 
 .. varnish_vsc:: fetch_chunked
 	:oneliner:	Fetch chunked
 
-beresp.body with Chunked.
+	beresp.body with Chunked.
 
 .. varnish_vsc:: fetch_eof
 	:oneliner:	Fetch EOF
 
-beresp.body with EOF.
+	beresp.body with EOF.
 
 .. varnish_vsc:: fetch_bad
 	:oneliner:	Fetch bad T-E
 
-beresp.body length/fetch could not be determined.
+	beresp.body length/fetch could not be determined.
 
 .. varnish_vsc:: fetch_none
 	:oneliner:	Fetch no body
 
-beresp.body empty
+	beresp.body empty
 
 .. varnish_vsc:: fetch_1xx
 	:oneliner:	Fetch no body (1xx)
 
-beresp with no body because of 1XX response.
+	beresp with no body because of 1XX response.
 
 .. varnish_vsc:: fetch_204
 	:oneliner:	Fetch no body (204)
 
-beresp with no body because of 204 response.
+	beresp with no body because of 204 response.
 
 .. varnish_vsc:: fetch_304
 	:oneliner:	Fetch no body (304)
 
-beresp with no body because of 304 response.
+	beresp with no body because of 304 response.
 
 .. varnish_vsc:: fetch_failed
 	:oneliner:	Fetch failed (all causes)
 
-beresp fetch failed.
+	beresp fetch failed.
 
 .. varnish_vsc:: fetch_no_thread
 	:oneliner:	Fetch failed (no thread)
 
-beresp fetch failed, no thread available.
+	beresp fetch failed, no thread available.
 
 .. varnish_vsc:: pools
 	:type:	gauge
 	:oneliner:	Number of thread pools
 
-Number of thread pools. See also parameter thread_pools. NB: Presently
-pools cannot be removed once created.
+	Number of thread pools. See also parameter thread_pools. NB: Presently
+	pools cannot be removed once created.
 
 .. varnish_vsc:: threads
 	:type:	gauge
 	:oneliner:	Total number of threads
 
-Number of threads in all pools. See also parameters thread_pools,
-thread_pool_min and thread_pool_max.
+	Number of threads in all pools. See also parameters thread_pools,
+	thread_pool_min and thread_pool_max.
 
 .. varnish_vsc:: threads_limited
 	:oneliner:	Threads hit max
 
-Number of times more threads were needed, but limit was reached in
-a thread pool. See also parameter thread_pool_max.
+	Number of times more threads were needed, but limit was reached in
+	a thread pool. See also parameter thread_pool_max.
 
 .. varnish_vsc:: threads_created
 	:oneliner:	Threads created
 
-Total number of threads created in all pools.
+	Total number of threads created in all pools.
 
 .. varnish_vsc:: threads_destroyed
 	:oneliner:	Threads destroyed
 
-Total number of threads destroyed in all pools.
+	Total number of threads destroyed in all pools.
 
 .. varnish_vsc:: threads_failed
 	:oneliner:	Thread creation failed
 
-Number of times creating a thread failed. See VSL::Debug for
-diagnostics. See also parameter thread_fail_delay.
+	Number of times creating a thread failed. See VSL::Debug for
+	diagnostics. See also parameter thread_fail_delay.
 
 .. varnish_vsc:: thread_queue_len
 	:type:	gauge
 	:oneliner:	Length of session queue
 
-Length of session queue waiting for threads. NB: Only updates once
-per second. See also parameter thread_queue_limit.
+	Length of session queue waiting for threads. NB: Only updates once
+	per second. See also parameter thread_queue_limit.
 
 .. varnish_vsc:: busy_sleep
 	:oneliner:	Number of requests sent to sleep on busy objhdr
 
-Number of requests sent to sleep without a worker thread because
-they found a busy object.
+	Number of requests sent to sleep without a worker thread because
+	they found a busy object.
 
 .. varnish_vsc:: busy_wakeup
 	:oneliner:	Number of requests woken after sleep on busy objhdr
 
-Number of requests taken off the busy object sleep list and rescheduled.
+	Number of requests taken off the busy object sleep list and rescheduled.
 
 .. varnish_vsc:: busy_killed
 	:oneliner:	Number of requests killed after sleep on busy objhdr
 
-Number of requests killed from the busy object sleep list due to
-lack of resources.
+	Number of requests killed from the busy object sleep list due to
+	lack of resources.
 
 .. varnish_vsc:: sess_queued
 	:oneliner:	Sessions queued for thread
 
-Number of times session was queued waiting for a thread. See also
-parameter thread_queue_limit.
+	Number of times session was queued waiting for a thread. See also
+	parameter thread_queue_limit.
 
 .. varnish_vsc:: sess_dropped
 	:oneliner:	Sessions dropped for thread
 
-Number of times session was dropped because the queue were too long
-already. See also parameter thread_queue_limit.
+	Number of times session was dropped because the queue were too long
+	already. See also parameter thread_queue_limit.
 
 .. varnish_vsc:: n_object
 	:type:	gauge
 	:oneliner:	object structs made
 
-Approximate number of HTTP objects (headers + body, if present) in
-the cache.
+	Approximate number of HTTP objects (headers + body, if present) in
+	the cache.
 
 .. varnish_vsc:: n_vampireobject
 	:type:	gauge
 	:level:	diag
 	:oneliner:	unresurrected objects
 
-Number of unresurrected objects
+	Number of unresurrected objects
 
 .. varnish_vsc:: n_objectcore
 	:type:	gauge
 	:oneliner:	objectcore structs made
 
-Approximate number of object metadata elements in the cache. Each
-object needs an objectcore, extra objectcores are for hit-for-miss,
-hit-for-pass and busy objects.
+	Approximate number of object metadata elements in the cache. Each
+	object needs an objectcore, extra objectcores are for hit-for-miss,
+	hit-for-pass and busy objects.
 
 .. varnish_vsc:: n_objecthead
 	:type:	gauge
 	:oneliner:	objecthead structs made
 
-Approximate number of different hash entries in the cache.
+	Approximate number of different hash entries in the cache.
 
 .. varnish_vsc:: n_backend
 	:type:	gauge
 	:oneliner:	Number of backends
 
-Number of backends known to us.
+	Number of backends known to us.
 
 .. varnish_vsc:: n_expired
 	:type:	gauge
 	:oneliner:	Number of expired objects
 
-Number of objects that expired from cache because of old age.
+	Number of objects that expired from cache because of old age.
 
 .. varnish_vsc:: n_lru_nuked
 	:type:	gauge
 	:oneliner:	Number of LRU nuked objects
 
-How many objects have been forcefully evicted from storage to make
-room for a new object.
+	How many objects have been forcefully evicted from storage to make
+	room for a new object.
 
 .. varnish_vsc:: n_lru_moved
 	:type:	gauge
 	:level:	diag
 	:oneliner:	Number of LRU moved objects
 
-Number of move operations done on the LRU list.
+	Number of move operations done on the LRU list.
 
 .. varnish_vsc:: losthdr
 	:oneliner:	HTTP header overflows
@@ -325,37 +326,37 @@ Number of move operations done on the LRU list.
 .. varnish_vsc:: s_req_hdrbytes
 	:oneliner:	Request header bytes
 
-Total request header bytes received
+	Total request header bytes received
 
 .. varnish_vsc:: s_req_bodybytes
 	:oneliner:	Request body bytes
 
-Total request body bytes received
+	Total request body bytes received
 
 .. varnish_vsc:: s_resp_hdrbytes
 	:oneliner:	Response header bytes
 
-Total response header bytes transmitted
+	Total response header bytes transmitted
 
 .. varnish_vsc:: s_resp_bodybytes
 	:oneliner:	Response body bytes
 
-Total response body bytes transmitted
+	Total response body bytes transmitted
 
 .. varnish_vsc:: s_pipe_hdrbytes
 	:oneliner:	Pipe request header bytes
 
-Total request bytes received for piped sessions
+	Total request bytes received for piped sessions
 
 .. varnish_vsc:: s_pipe_in
 	:oneliner:	Piped bytes from client
 
-Total number of bytes forwarded from clients in pipe sessions
+	Total number of bytes forwarded from clients in pipe sessions
 
 .. varnish_vsc:: s_pipe_out
 	:oneliner:	Piped bytes to client
 
-Total number of bytes forwarded to clients in pipe sessions
+	Total number of bytes forwarded to clients in pipe sessions
 
 .. varnish_vsc:: sess_closed
 	:oneliner:	Session Closed
@@ -364,8 +365,8 @@ Total number of bytes forwarded to clients in pipe sessions
 .. varnish_vsc:: sess_closed_err
 	:oneliner:	Session Closed with error
 
-Total number of sessions closed with errors. See sc_* diag counters
-for detailed breakdown
+	Total number of sessions closed with errors. See sc_* diag counters
+	for detailed breakdown
 
 .. varnish_vsc:: sess_readahead
 	:oneliner:	Session Read Ahead
@@ -375,109 +376,109 @@ for detailed breakdown
 	:level:	diag
 	:oneliner:	Session herd
 
-Number of times the timeout_linger triggered
+	Number of times the timeout_linger triggered
 
 .. varnish_vsc:: sc_rem_close
 	:level:	diag
 	:oneliner:	Session OK  REM_CLOSE
 
-Number of session closes with REM_CLOSE (Client Closed)
+	Number of session closes with REM_CLOSE (Client Closed)
 
 .. varnish_vsc:: sc_req_close
 	:level:	diag
 	:oneliner:	Session OK  REQ_CLOSE
 
-Number of session closes with REQ_CLOSE (Client requested close)
+	Number of session closes with REQ_CLOSE (Client requested close)
 
 .. varnish_vsc:: sc_req_http10
 	:level:	diag
 	:oneliner:	Session Err REQ_HTTP10
 
-Number of session closes with Error REQ_HTTP10 (Proto < HTTP/1.1)
+	Number of session closes with Error REQ_HTTP10 (Proto < HTTP/1.1)
 
 .. varnish_vsc:: sc_rx_bad
 	:level:	diag
 	:oneliner:	Session Err RX_BAD
 
-Number of session closes with Error RX_BAD (Received bad req/resp)
+	Number of session closes with Error RX_BAD (Received bad req/resp)
 
 .. varnish_vsc:: sc_rx_body
 	:level:	diag
 	:oneliner:	Session Err RX_BODY
 
-Number of session closes with Error RX_BODY (Failure receiving req.body)
+	Number of session closes with Error RX_BODY (Failure receiving req.body)
 
 .. varnish_vsc:: sc_rx_junk
 	:level:	diag
 	:oneliner:	Session Err RX_JUNK
 
-Number of session closes with Error RX_JUNK (Received junk data)
+	Number of session closes with Error RX_JUNK (Received junk data)
 
 .. varnish_vsc:: sc_rx_overflow
 	:level:	diag
 	:oneliner:	Session Err RX_OVERFLOW
 
-Number of session closes with Error RX_OVERFLOW (Received buffer overflow)
+	Number of session closes with Error RX_OVERFLOW (Received buffer overflow)
 
 .. varnish_vsc:: sc_rx_timeout
 	:level:	diag
 	:oneliner:	Session Err RX_TIMEOUT
 
-Number of session closes with Error RX_TIMEOUT (Receive timeout)
+	Number of session closes with Error RX_TIMEOUT (Receive timeout)
 
 .. varnish_vsc:: sc_tx_pipe
 	:level:	diag
 	:oneliner:	Session OK  TX_PIPE
 
-Number of session closes with TX_PIPE (Piped transaction)
+	Number of session closes with TX_PIPE (Piped transaction)
 
 .. varnish_vsc:: sc_tx_error
 	:level:	diag
 	:oneliner:	Session Err TX_ERROR
 
-Number of session closes with Error TX_ERROR (Error transaction)
+	Number of session closes with Error TX_ERROR (Error transaction)
 
 .. varnish_vsc:: sc_tx_eof
 	:level:	diag
 	:oneliner:	Session OK  TX_EOF
 
-Number of session closes with TX_EOF (EOF transmission)
+	Number of session closes with TX_EOF (EOF transmission)
 
 .. varnish_vsc:: sc_resp_close
 	:level:	diag
 	:oneliner:	Session OK  RESP_CLOSE
 
-Number of session closes with RESP_CLOSE (Backend/VCL requested close)
+	Number of session closes with RESP_CLOSE (Backend/VCL requested close)
 
 .. varnish_vsc:: sc_overload
 	:level:	diag
 	:oneliner:	Session Err OVERLOAD
 
-Number of session closes with Error OVERLOAD (Out of some resource)
+	Number of session closes with Error OVERLOAD (Out of some resource)
 
 .. varnish_vsc:: sc_pipe_overflow
 	:level:	diag
 	:oneliner:	Session Err PIPE_OVERFLOW
 
-Number of session closes with Error PIPE_OVERFLOW (Session pipe overflow)
+	Number of session closes with Error PIPE_OVERFLOW (Session pipe overflow)
 
 .. varnish_vsc:: sc_range_short
 	:level:	diag
 	:oneliner:	Session Err RANGE_SHORT
 
-Number of session closes with Error RANGE_SHORT (Insufficient data for range)
+	Number of session closes with Error RANGE_SHORT (Insufficient data for range)
 
 .. varnish_vsc:: sc_req_http20
 	:level:	diag
 	:oneliner:	Session Err REQ_HTTP20
 
-Number of session closes with Error REQ_HTTP20 (HTTP2 not accepted)
+	Number of session closes with Error REQ_HTTP20 (HTTP2 not accepted)
 
 .. varnish_vsc:: sc_vcl_failure
 	:level:	diag
 	:oneliner:	Session Err VCL_FAILURE
 
-Number of session closes with Error VCL_FAILURE (VCL failure)
+	Number of session closes with Error VCL_FAILURE (VCL failure)
 
 .. varnish_vsc:: shm_records
 	:level:	diag
@@ -525,126 +526,126 @@ Number of session closes with Error VCL_FAILURE (VCL failure)
 .. varnish_vsc:: vcl_fail
 	:oneliner:	VCL failures
 
-Count of failures which prevented VCL from completing.
+	Count of failures which prevented VCL from completing.
 
 .. varnish_vsc:: bans
 	:type:	gauge
 	:oneliner:	Count of bans
 
-Number of all bans in system, including bans superseded by newer
-bans and bans already checked by the ban-lurker.
+	Number of all bans in system, including bans superseded by newer
+	bans and bans already checked by the ban-lurker.
 
 .. varnish_vsc:: bans_completed
 	:type:	gauge
 	:level:	diag
 	:oneliner:	Number of bans marked 'completed'
 
-Number of bans which are no longer active, either because they got
-checked by the ban-lurker or superseded by newer identical bans.
+	Number of bans which are no longer active, either because they got
+	checked by the ban-lurker or superseded by newer identical bans.
 
 .. varnish_vsc:: bans_obj
 	:type:	gauge
 	:level:	diag
 	:oneliner:	Number of bans using obj.*
 
-Number of bans which use obj.* variables.  These bans can possibly
-be washed by the ban-lurker.
+	Number of bans which use obj.* variables.  These bans can possibly
+	be washed by the ban-lurker.
 
 .. varnish_vsc:: bans_req
 	:type:	gauge
 	:level:	diag
 	:oneliner:	Number of bans using req.*
 
-Number of bans which use req.* variables.  These bans can not be
-washed by the ban-lurker.
+	Number of bans which use req.* variables.  These bans can not be
+	washed by the ban-lurker.
 
 .. varnish_vsc:: bans_added
 	:level:	diag
 	:oneliner:	Bans added
 
-Counter of bans added to ban list.
+	Counter of bans added to ban list.
 
 .. varnish_vsc:: bans_deleted
 	:level:	diag
 	:oneliner:	Bans deleted
 
-Counter of bans deleted from ban list.
+	Counter of bans deleted from ban list.
 
 .. varnish_vsc:: bans_tested
 	:level:	diag
 	:oneliner:	Bans tested against objects (lookup)
 
-Count of how many bans and objects have been tested against each
-other during hash lookup.
+	Count of how many bans and objects have been tested against each
+	other during hash lookup.
 
 .. varnish_vsc:: bans_obj_killed
 	:level:	diag
 	:oneliner:	Objects killed by bans (lookup)
 
-Number of objects killed by bans during object lookup.
+	Number of objects killed by bans during object lookup.
 
 .. varnish_vsc:: bans_lurker_tested
 	:level:	diag
 	:oneliner:	Bans tested against objects (lurker)
 
-Count of how many bans and objects have been tested against each
-other by the ban-lurker.
+	Count of how many bans and objects have been tested against each
+	other by the ban-lurker.
 
 .. varnish_vsc:: bans_tests_tested
 	:level:	diag
 	:oneliner:	Ban tests tested against objects (lookup)
 
-Count of how many tests and objects have been tested against each
-other during lookup. 'ban req.url == foo && req.http.host == bar'
-counts as one in 'bans_tested' and as two in 'bans_tests_tested'
+	Count of how many tests and objects have been tested against each
+	other during lookup. 'ban req.url == foo && req.http.host == bar'
+	counts as one in 'bans_tested' and as two in 'bans_tests_tested'
 
 .. varnish_vsc:: bans_lurker_tests_tested
 	:level:	diag
 	:oneliner:	Ban tests tested against objects (lurker)
 
-Count of how many tests and objects have been tested against each
-other by the ban-lurker. 'ban req.url == foo && req.http.host ==
-bar' counts as one in 'bans_tested' and as two in 'bans_tests_tested'
+	Count of how many tests and objects have been tested against each
+	other by the ban-lurker. 'ban req.url == foo && req.http.host ==
+	bar' counts as one in 'bans_tested' and as two in 'bans_tests_tested'
 
 .. varnish_vsc:: bans_lurker_obj_killed
 	:level:	diag
 	:oneliner:	Objects killed by bans (lurker)
 
-Number of objects killed by the ban-lurker.
+	Number of objects killed by the ban-lurker.
 
 .. varnish_vsc:: bans_lurker_obj_killed_cutoff
 	:level:	diag
 	:oneliner:	Objects killed by bans for cutoff (lurker)
 
-Number of objects killed by the ban-lurker to keep the number of
-bans below ban_cutoff.
+	Number of objects killed by the ban-lurker to keep the number of
+	bans below ban_cutoff.
 
 .. varnish_vsc:: bans_dups
 	:level:	diag
 	:oneliner:	Bans superseded by other bans
 
-Count of bans replaced by later identical bans.
+	Count of bans replaced by later identical bans.
 
 .. varnish_vsc:: bans_lurker_contention
 	:level:	diag
 	:oneliner:	Lurker gave way for lookup
 
-Number of times the ban-lurker had to wait for lookups.
+	Number of times the ban-lurker had to wait for lookups.
 
 .. varnish_vsc:: bans_persisted_bytes
 	:type:	gauge
 	:level:	diag
 	:oneliner:	Bytes used by the persisted ban lists
 
-Number of bytes used by the persisted ban lists.
+	Number of bytes used by the persisted ban lists.
 
 .. varnish_vsc:: bans_persisted_fragmentation
 	:type:	gauge
 	:level:	diag
 	:oneliner:	Extra bytes in persisted ban lists due to fragmentation
 
-Number of extra bytes accumulated through dropped and completed
-bans in the persistent ban lists.
+	Number of extra bytes accumulated through dropped and completed
+	bans in the persistent ban lists.
 
 .. varnish_vsc:: n_purges
 	:type:	gauge
@@ -660,13 +661,13 @@ bans in the persistent ban lists.
 	:level:	diag
 	:oneliner:	Number of objects mailed to expiry thread
 
-Number of objects mailed to expiry thread for handling.
+	Number of objects mailed to expiry thread for handling.
 
 .. varnish_vsc:: exp_received
 	:level:	diag
 	:oneliner:	Number of objects received by expiry thread
 
-Number of objects received by expiry thread for handling.
+	Number of objects received by expiry thread for handling.
 
 .. varnish_vsc:: hcb_nolock
 	:level:	debug
@@ -709,52 +710,52 @@ Number of objects received by expiry thread for handling.
 .. varnish_vsc:: n_test_gunzip
 	:oneliner:	Test gunzip operations
 
-Those operations occur when Varnish receives a compressed object
-from a backend. They are done to verify the gzip stream while it's
-inserted in storage.
+	Those operations occur when Varnish receives a compressed object
+	from a backend. They are done to verify the gzip stream while it's
+	inserted in storage.
 
 .. varnish_vsc:: vsm_free
 	:type:	gauge
 	:level:	diag
 	:oneliner:	Free VSM space
 
-Number of bytes free in the shared memory used to communicate with
-tools like varnishstat, varnishlog etc.
+	Number of bytes free in the shared memory used to communicate with
+	tools like varnishstat, varnishlog etc.
 
 .. varnish_vsc:: vsm_used
 	:type:	gauge
 	:level:	diag
 	:oneliner:	Used VSM space
 
-Number of bytes used in the shared memory used to communicate with
-tools like varnishstat, varnishlog etc.
+	Number of bytes used in the shared memory used to communicate with
+	tools like varnishstat, varnishlog etc.
 
 .. varnish_vsc:: vsm_cooling
 	:type:	gauge
 	:level:	debug
 	:oneliner:	Cooling VSM space
 
-Number of bytes which will soon (max 1 minute) be freed in the
-shared memory used to communicate with tools like varnishstat,
-varnishlog etc.
+	Number of bytes which will soon (max 1 minute) be freed in the
+	shared memory used to communicate with tools like varnishstat,
+	varnishlog etc.
 
 .. varnish_vsc:: vsm_overflow
 	:type:	gauge
 	:level:	diag
 	:oneliner:	Overflow VSM space
 
-Number of bytes which does not fit in the shared memory used to
-communicate with tools like varnishstat, varnishlog etc. If this
-counter is not zero, consider increasing the runtime variable
-vsm_space.
+	Number of bytes which does not fit in the shared memory used to
+	communicate with tools like varnishstat, varnishlog etc. If this
+	counter is not zero, consider increasing the runtime variable
+	vsm_space.
 
 .. varnish_vsc:: vsm_overflowed
 	:level:	diag
 	:oneliner:	Overflowed VSM space
 
-Total number of bytes which did not fit in the shared memory used
-to communicate with tools like varnishstat, varnishlog etc. If this
-counter is not zero, consider increasing the runtime variable
-vsm_space.
+	Total number of bytes which did not fit in the shared memory used
+	to communicate with tools like varnishstat, varnishlog etc. If this
+	counter is not zero, consider increasing the runtime variable
+	vsm_space.
 
 .. varnish_vsc_end::	main
