@@ -47,6 +47,8 @@ struct ban * volatile ban_start;
 
 static pthread_t ban_thread;
 static int ban_holds;
+uint64_t bans_persisted_bytes;
+uint64_t bans_persisted_fragmentation;
 
 struct ban_test {
 	uint8_t			oper;
@@ -165,8 +167,9 @@ ban_mark_completed(struct ban *b)
 		VWMB();
 		vbe32enc(b->spec + BANS_LENGTH, BANS_HEAD_LEN);
 		VSC_C_main->bans_completed++;
-		VSC_C_main->bans_persisted_fragmentation +=
-		    ln - ban_len(b->spec);
+		bans_persisted_fragmentation += ln - ban_len(b->spec);
+		VSC_C_main->bans_persisted_fragmentation =
+		    bans_persisted_fragmentation;
 	}
 }
 
@@ -303,19 +306,19 @@ ban_export(void)
 	unsigned ln;
 
 	Lck_AssertHeld(&ban_mtx);
-	ln = VSC_C_main->bans_persisted_bytes -
-	    VSC_C_main->bans_persisted_fragmentation;
+	ln = bans_persisted_bytes - bans_persisted_fragmentation;
 	vsb = VSB_new_auto();
 	AN(vsb);
-	VTAILQ_FOREACH_REVERSE(b, &ban_head, banhead_s, list) {
+	VTAILQ_FOREACH_REVERSE(b, &ban_head, banhead_s, list)
 		AZ(VSB_bcat(vsb, b->spec, ban_len(b->spec)));
-	}
 	AZ(VSB_finish(vsb));
 	assert(VSB_len(vsb) == ln);
 	STV_BanExport((const uint8_t *)VSB_data(vsb), VSB_len(vsb));
 	VSB_destroy(&vsb);
-	VSC_C_main->bans_persisted_bytes = ln;
-	VSC_C_main->bans_persisted_fragmentation = 0;
+	VSC_C_main->bans_persisted_bytes =
+	    bans_persisted_bytes = ln;
+	VSC_C_main->bans_persisted_fragmentation =
+	    bans_persisted_fragmentation = 0;
 }
 
 /*
@@ -395,7 +398,8 @@ ban_reload(const uint8_t *ban, unsigned len)
 		VTAILQ_INSERT_TAIL(&ban_head, b2, list);
 	else
 		VTAILQ_INSERT_BEFORE(b, b2, list);
-	VSC_C_main->bans_persisted_bytes += len;
+	bans_persisted_bytes += len;
+	VSC_C_main->bans_persisted_bytes = bans_persisted_bytes;
 
 	/* Hunt down older duplicates */
 	for (b = VTAILQ_NEXT(b2, list); b != NULL; b = VTAILQ_NEXT(b, list)) {

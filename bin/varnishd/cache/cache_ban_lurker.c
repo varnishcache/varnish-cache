@@ -86,8 +86,10 @@ ban_cleantail(const struct ban *victim)
 			VSC_C_main->bans_deleted++;
 			VTAILQ_REMOVE(&ban_head, b, list);
 			VTAILQ_INSERT_TAIL(&freelist, b, list);
-			VSC_C_main->bans_persisted_fragmentation +=
+			bans_persisted_fragmentation +=
 			    ban_len(b->spec);
+			VSC_C_main->bans_persisted_fragmentation =
+			    bans_persisted_fragmentation;
 			ban_info_drop(b->spec, ban_len(b->spec));
 		} else {
 			b = NULL;

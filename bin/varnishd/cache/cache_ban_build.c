@@ -296,7 +296,8 @@ BAN_Commit(struct ban_proto *bp)
 
 	VSC_C_main->bans++;
 	VSC_C_main->bans_added++;
-	VSC_C_main->bans_persisted_bytes += ln;
+	bans_persisted_bytes += ln;
+	VSC_C_main->bans_persisted_bytes = bans_persisted_bytes;
 
 	if (b->flags & BANS_FLAG_OBJ)
 		VSC_C_main->bans_obj++;
