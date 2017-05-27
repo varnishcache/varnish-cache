@@ -325,17 +325,19 @@ class vsc_file(object):
 
 if __name__ == "__main__":
 
-	optlist, args = getopt.getopt(sys.argv[1:], "")
+	optlist, args = getopt.getopt(sys.argv[1:], "chr")
 
 	fo = sys.stdout
 
-	for f, v in optlist:
-		assert False
 	if len(args) != 1:
 		print("Need exactly one filename argument")
 		exit(2)
 
 	vf = vsc_file(args[0])
-	# vf.emit_rst("_.rst")
-	vf.emit_h()
-	vf.emit_c()
+	for f,v in optlist:
+		if f == '-r':
+			vf.emit_rst("_.rst")
+		if f == '-h':
+			vf.emit_h()
+		if f == '-c':
+			vf.emit_c()
