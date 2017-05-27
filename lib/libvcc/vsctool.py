@@ -62,10 +62,13 @@ class vscset(object):
 		self.mbrs = []
 		self.head = m
 		self.completed = False
+		self.off = 8
 
 	def addmbr(self, m):
 		assert not self.completed
 		self.mbrs.append(m)
+		m.param["index"] = self.off
+		self.off += 8
 
 	def complete(self):
 		self.completed = True
@@ -79,12 +82,10 @@ class vscset(object):
 		dd["elements"] = len(self.mbrs)
 		el = collections.OrderedDict()
 		dd["elem"] = el
-		en = 0
 		for i in self.mbrs:
-			en += 1
 			ed = collections.OrderedDict()
 			el[i.arg] = ed
-			ed["index"] = en
+			ed["index"] = i.param["index"]
 			ed["name"] = i.arg
 			ed["type"] = i.param["type"]
 			ed["level"] = i.param["level"]
@@ -138,14 +139,23 @@ class vscset(object):
 		fo = open(fon, "w")
 		genhdr(fo, self.name)
 		fo.write('#include "config.h"\n')
+		fo.write('#include <stddef.h>\n')
 		fo.write('#include <stdarg.h>\n')
 		fo.write('#include <stdio.h>\n')
 		fo.write('#include <stdint.h>\n')
 		fo.write('#include "common/common.h"\n')
 		fo.write('#include "VSC_%s.h"\n' % self.name)
+
 		fo.write("\n")
 		fo.write('static const char vsc_%s_name[] = "%s";\n' %
 		    (self.name, self.name.upper()))
+
+		fo.write("\n")
+		for i in self.mbrs:
+			fo.write("_Static_assert(offsetof(" + self.struct)
+			fo.write(", " + i.arg + ")")
+			fo.write(" == %d," % (i.param["index"] - 8))
+			fo.write(' "VSC element offset is wrong");\n')
 
 		self.emit_json(fo)
 
