@@ -120,10 +120,17 @@ class vscset(object):
 			fo.write("\tuint64_t\t%s;\n" % i.arg)
 		fo.write("};\n")
 		fo.write("\n");
+
 		fo.write(self.struct + " *VSC_" + self.name + "_New")
 		fo.write("(const char *fmt, ...);\n");
+
 		fo.write("void VSC_" + self.name + "_Destroy")
 		fo.write("(" + self.struct + "**);\n")
+
+		if 'sumfunction' in self.head.param:
+			fo.write("void VSC_" + self.name + "_Summ")
+			fo.write("(" + self.struct + " *, ")
+			fo.write("const " + self.struct + " *);\n")
 
 	def emit_c(self):
 		fon="VSC_" + self.name + ".c"
@@ -140,6 +147,7 @@ class vscset(object):
 		    (self.name, self.name.upper()))
 
 		self.emit_json(fo)
+
 		fo.write("\n")
 		fo.write(self.struct + "*\n");
 		fo.write("VSC_" + self.name + "_New")
@@ -159,6 +167,7 @@ class vscset(object):
 		fo.write("\tva_end(ap);\n")
 		fo.write("\treturn(retval);\n")
 		fo.write("}\n")
+
 		fo.write("\n")
 		fo.write("void\n")
 		fo.write("VSC_" + self.name + "_Destroy")
@@ -169,6 +178,21 @@ class vscset(object):
 		fo.write('\tVSC_Destroy("%s", *pp);\n' % self.name)
 		fo.write("\t*pp = NULL;\n")
 		fo.write("}\n")
+
+		if 'sumfunction' in self.head.param:
+			fo.write("\n")
+			fo.write("void\n")
+			fo.write("VSC_" + self.name + "_Summ")
+			fo.write("(" + self.struct + " *dst, ")
+			fo.write("const " + self.struct + " *src)\n")
+			fo.write("{\n")
+			fo.write("\n")
+			fo.write("\tAN(dst);\n")
+			fo.write("\tAN(src);\n")
+			for i in self.mbrs:
+				fo.write("\tdst->" + i.arg)
+				fo.write(" += src->" + i.arg + ";\n")
+			fo.write("}\n")
 
 #######################################################################
 
