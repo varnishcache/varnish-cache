@@ -47,5 +47,5 @@ shell -expect "MAIN.uptime" \
 	"varnishstat -n ${v1_name} -1"
 shell -expect "<type>MAIN</type>" \
 	"varnishstat -n ${v1_name} -x"
-shell -expect "MAIN.uptime\":" \
+shell -match {"MAIN.uptime":} \
 	"varnishstat -n ${v1_name} -j"
