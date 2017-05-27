@@ -31,18 +31,6 @@
 
 #include "VSC_main.h"
 
-/*--------------------------------------------------------------------*/
-
-#define L0(t, n)
-#define L1(t, n)		t n;
-#define VSC_FF(n,t,l,s,f,v,d,e)	L##l(t, n)
-struct dstat {
-	unsigned		summs;
-#include "tbl/vsc_f_main.h"
-};
-#undef L0
-#undef L1
-
 /* Prototypes etc ----------------------------------------------------*/
 
 /* cache_acceptor.c */

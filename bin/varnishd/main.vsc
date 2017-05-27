@@ -9,6 +9,9 @@
 	:oneliner:	Main counters
 	:sumfunction:
 
+.. varnish_vsc:: summs
+	:oneliner:	stat summ operations
+
 .. varnish_vsc:: uptime
 	:oneliner:	Child process uptime
 

@@ -33,6 +33,8 @@
 
 /*lint -save -e525 -e539 */
 
+VSC_FF(summs, uint64_t, 0, 'c', 'd', debug, "", "")
+
 /*--------------------------------------------------------------------
  * Globals, not related to traffic
  */

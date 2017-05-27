@@ -119,6 +119,10 @@ struct vsb;
 struct worker;
 struct v1l;
 
+struct VSC_main;
+
+#define dstat VSC_main
+
 #define DIGEST_LEN		32
 
 /*--------------------------------------------------------------------*/
