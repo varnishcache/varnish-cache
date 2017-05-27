@@ -7,6 +7,7 @@
 
 .. varnish_vsc_begin::	main
 	:oneliner:	Main counters
+	:order:		10
 	:sumfunction:
 
 .. varnish_vsc:: summs

@@ -7,6 +7,7 @@
 
 .. varnish_vsc_begin::	smf
 	:oneliner:	File Stevedore Counters
+	:order:		50
 
 .. varnish_vsc:: c_req
 	:type:	counter

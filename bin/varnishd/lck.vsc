@@ -7,6 +7,7 @@
 
 .. varnish_vsc_begin::	lck
 	:oneliner:	Lock Counters
+	:order:		70
 
 	Counters which track the activity in the different classes
 	of mutex-locks.

@@ -7,6 +7,7 @@
 
 .. varnish_vsc_begin::	mempool
 	:oneliner:	Memory Pool Counters
+	:order:		30
 
 .. varnish_vsc:: live
 	:type:	gauge

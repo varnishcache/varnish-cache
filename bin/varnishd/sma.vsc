@@ -7,6 +7,7 @@
 
 .. varnish_vsc_begin::	sma
 	:oneliner:	Malloc Stevedore Counters
+	:order:		40
 
 .. varnish_vsc:: c_req
 	:type:	counter
