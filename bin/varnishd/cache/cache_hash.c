@@ -72,7 +72,8 @@ struct rush {
 static const struct hash_slinger *hash;
 static struct objhead *private_oh;
 
-static void hsh_rush1(struct worker *, struct objhead *, struct rush *, int);
+static void hsh_rush1(const struct worker *, struct objhead *,
+    struct rush *, int);
 static void hsh_rush2(struct worker *, struct rush *);
 
 /*---------------------------------------------------------------------*/
@@ -116,7 +117,7 @@ hsh_prealloc(struct worker *wrk)
 /*---------------------------------------------------------------------*/
 
 struct objcore *
-HSH_Private(struct worker *wrk)
+HSH_Private(const struct worker *wrk)
 {
 	struct objcore *oc;
 
@@ -156,7 +157,7 @@ HSH_Cleanup(struct worker *wrk)
 }
 
 void
-HSH_DeleteObjHead(struct worker *wrk, struct objhead *oh)
+HSH_DeleteObjHead(const struct worker *wrk, struct objhead *oh)
 {
 
 	AZ(oh->refcnt);
@@ -529,7 +530,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
  */
 
 static void
-hsh_rush1(struct worker *wrk, struct objhead *oh, struct rush *r, int max)
+hsh_rush1(const struct worker *wrk, struct objhead *oh, struct rush *r, int max)
 {
 	unsigned u;
 	struct req *req;

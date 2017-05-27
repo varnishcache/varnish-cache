@@ -64,7 +64,7 @@ pool_sumstat(const struct dstat *src)
 }
 
 void
-Pool_Sumstat(struct worker *wrk)
+Pool_Sumstat(const struct worker *wrk)
 {
 
 	Lck_Lock(&wstat_mtx);
@@ -74,7 +74,7 @@ Pool_Sumstat(struct worker *wrk)
 }
 
 int
-Pool_TrySumstat(struct worker *wrk)
+Pool_TrySumstat(const struct worker *wrk)
 {
 	if (Lck_Trylock(&wstat_mtx))
 		return (0);

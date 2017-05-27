@@ -250,18 +250,6 @@ struct acct_bereq {
 
 /*--------------------------------------------------------------------*/
 
-#define L0(t, n)
-#define L1(t, n)		t n;
-#define VSC_FF(n,t,l,s,f,v,d,e)	L##l(t, n)
-struct dstat {
-	unsigned		summs;
-#include "tbl/vsc_f_main.h"
-};
-#undef L0
-#undef L1
-
-/*--------------------------------------------------------------------*/
-
 struct vsl_log {
 	uint32_t		*wlb, *wlp, *wle;
 	unsigned		wlr;
@@ -315,7 +303,7 @@ struct worker {
 	struct objhead		*nobjhead;
 	struct objcore		*nobjcore;
 	void			*nhashpriv;
-	struct dstat		stats[1];
+	struct dstat		*stats;
 	struct vsl_log		*vsl;		// borrowed from req/bo
 
 	struct pool_task	task;
@@ -860,8 +848,8 @@ void *MPL_Get(struct mempool *mpl, unsigned *size);
 void MPL_Free(struct mempool *mpl, void *item);
 
 /* cache_obj.c */
-struct objcore * ObjNew(struct worker *);
-void ObjDestroy(struct worker *, struct objcore **);
+struct objcore * ObjNew(const struct worker *);
+void ObjDestroy(const struct worker *, struct objcore **);
 typedef int objiterate_f(void *priv, int flush, const void *ptr, ssize_t len);
 int ObjIterate(struct worker *, struct objcore *,
     void *priv, objiterate_f *func, int final);
@@ -920,8 +908,8 @@ const char *sess_close_2str(enum sess_close sc, int want_desc);
 int Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio);
 int Pool_Task_Arg(struct worker *, enum task_prio, task_func_t *,
     const void *arg, size_t arg_len);
-void Pool_Sumstat(struct worker *w);
-int Pool_TrySumstat(struct worker *wrk);
+void Pool_Sumstat(const struct worker *w);
+int Pool_TrySumstat(const struct worker *wrk);
 void Pool_PurgeStat(unsigned nobj);
 int Pool_Task_Any(struct pool_task *task, enum task_prio prio);
 
