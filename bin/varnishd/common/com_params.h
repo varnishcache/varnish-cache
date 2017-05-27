@@ -95,6 +95,7 @@ struct params {
 	unsigned		wthread_stats_rate;
 	ssize_t			wthread_stacksize;
 	unsigned		wthread_queue_limit;
+	struct poolparam	wthread_dstat_pool;
 
 	struct vre_limits	vre_limits;
 

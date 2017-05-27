@@ -930,7 +930,7 @@ varnish_expect(const struct varnish *v, char * const *av)
 	sp.v = v;
 	ref = 0;
 	good = 0;
-	for (i = 0; i < 10; i++, (void)usleep(100000)) {
+	for (i = 0; i < 20; i++, (void)usleep(100000)) {
 		if (VSM_Abandoned(v->vd)) {
 			VSM_Close(v->vd);
 			good = VSM_Open(v->vd);

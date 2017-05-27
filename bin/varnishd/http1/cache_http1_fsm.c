@@ -383,6 +383,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 	req->transport = &HTTP1_transport;
 
 	while (1) {
+		WRK_Stats_Update(wrk, PERIODIC);
 		st = http1_getstate(sp);
 		if (st == H1NEWREQ) {
 			CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);

@@ -53,12 +53,14 @@ VTAILQ_HEAD(memhead_s, memitem);
 struct mempool {
 	unsigned			magic;
 #define MEMPOOL_MAGIC			0x37a75a8d
+	unsigned			flags;
 	char				name[12];
 	struct memhead_s		list;
 	struct memhead_s		surplus;
 	struct lock			mtx;
 	volatile struct poolparam	*param;
 	volatile unsigned		*cur_size;
+	unsigned			fixed_size;	// MPL_F_SIZE_ISH
 	uint64_t			live;
 	struct VSC_mempool		*vsc;
 	unsigned			n_pool;
@@ -78,6 +80,7 @@ mpl_alloc(const struct mempool *mpl)
 
 	CHECK_OBJ_NOTNULL(mpl, MEMPOOL_MAGIC);
 	tsz = *mpl->cur_size;
+	assert(tsz > sizeof *mi);
 	mi = calloc(tsz, 1);
 	AN(mi);
 	mi->magic = MEMITEM_MAGIC;
@@ -225,7 +228,8 @@ mpl_guard(void *priv)
 
 struct mempool *
 MPL_New(const char *name,
-    volatile struct poolparam *pp, volatile unsigned *cur_size)
+    volatile struct poolparam *pp, const unsigned flags,
+    volatile unsigned *cur_size)
 {
 	struct mempool *mpl;
 
@@ -233,7 +237,14 @@ MPL_New(const char *name,
 	AN(mpl);
 	bprintf(mpl->name, "MPL_%s", name);
 	mpl->param = pp;
-	mpl->cur_size = cur_size;
+	mpl->flags = flags;
+	if (flags & MPL_F_SIZE_ISH) {
+		mpl->fixed_size = *cur_size + sizeof(struct memitem);
+		mpl->cur_size = &mpl->fixed_size;
+	} else {
+		mpl->fixed_size = 0;
+		mpl->cur_size = cur_size;
+	}
 	VTAILQ_INIT(&mpl->list);
 	VTAILQ_INIT(&mpl->surplus);
 	Lck_New(&mpl->mtx, lck_mempool);
@@ -271,7 +282,6 @@ MPL_Get(struct mempool *mpl, unsigned *size)
 	struct memitem *mi;
 
 	CHECK_OBJ_NOTNULL(mpl, MEMPOOL_MAGIC);
-	AN(size);
 
 	Lck_Lock(&mpl->mtx);
 
@@ -288,6 +298,7 @@ MPL_Get(struct mempool *mpl, unsigned *size)
 		CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
 		VTAILQ_REMOVE(&mpl->list, mi, list);
 		if (mi->size < *mpl->cur_size) {
+			AZ(mpl->flags & MPL_F_SIZE_ISH);
 			mpl->vsc->toosmall++;
 			VTAILQ_INSERT_HEAD(&mpl->surplus, mi, list);
 			mi = NULL;
@@ -300,7 +311,9 @@ MPL_Get(struct mempool *mpl, unsigned *size)
 
 	if (mi == NULL)
 		mi = mpl_alloc(mpl);
-	*size = mi->size - sizeof *mi;
+
+	if (size)
+		*size = mi->size - sizeof *mi;
 
 	CHECK_OBJ_NOTNULL(mi, MEMITEM_MAGIC);
 	/* Throw away sizeof info for FlexeLint: */
@@ -325,6 +338,7 @@ MPL_Free(struct mempool *mpl, void *item)
 	mpl->vsc->live = --mpl->live;
 
 	if (mi->size < *mpl->cur_size) {
+		AZ(mpl->flags & MPL_F_SIZE_ISH);
 		mpl->vsc->toosmall++;
 		VTAILQ_INSERT_HEAD(&mpl->surplus, mi, list);
 	} else {

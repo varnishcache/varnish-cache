@@ -1336,27 +1336,24 @@ PARAM(
 	/* l-text */	"",
 	/* func */	NULL
 )
+#endif
 
-/* actual location mgt_pool.c */
 PARAM(
-	/* name */	thread_stats_rate,
-	/* typ */	uint,
-	/* min */	"0",
+	/* name */	thread_stats_latency,
+	/* typ */	timeout,
+	/* min */	"0.010",
 	/* max */	NULL,
-	/* default */	"10",
-	/* units */	"requests",
+	/* default */	"1.000",
+	/* units */	"seconds",
 	/* flags */	EXPERIMENTAL,
 	/* s-text */
-	"Worker threads accumulate statistics, and dump these into the "
-	"global stats counters if the lock is free when they finish a job "
-	"(request/fetch etc).\n"
-	"This parameters defines the maximum number of jobs a worker "
-	"thread may handle, before it is forced to dump its accumulated "
-	"stats into the global counters.",
+	"Maximum latency goal for worker thread statistics to appear in "
+	"the global stats counters.\n"
+	"Increasing this latency goal will reduce overhead and contention "
+	"on the lck_dstat_mbx lock.",
 	/* l-text */	"",
 	/* func */	NULL
 )
-#endif
 
 #if defined(XYZZY)
   #error "Temporary macro XYZZY already defined"

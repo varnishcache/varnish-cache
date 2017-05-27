@@ -36,6 +36,7 @@
 
 #include "cache.h"
 #include "cache_pool.h"
+#include "cache_dstat.h"
 
 #include "vtim.h"
 
@@ -65,6 +66,7 @@ wrk_bgthread(void *arg)
 	CAST_OBJ_NOTNULL(bt, arg, BGTHREAD_MAGIC);
 	THR_SetName(bt->name);
 	INIT_OBJ(&wrk, WORKER_MAGIC);
+	WRK_Stats_Init(&wrk);
 
 	(void)bt->func(&wrk, bt->priv);
 
@@ -116,6 +118,8 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 	/* XXX: assuming stack grows down. */
 	w->stack_end = w->stack_start - stacksize;
 
+	WRK_Stats_Init(w);
+
 	VSL(SLT_WorkThread, 0, "%p start", w);
 
 	Pool_Work_Thread(qp, w);
@@ -126,25 +130,29 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 		VCL_Rel(&w->vcl);
 	AZ(pthread_cond_destroy(&w->cond));
 	HSH_Cleanup(w);
-	Pool_Sumstat(w);
+	WRK_Stats_Free(w);
 }
 
-/*--------------------------------------------------------------------
- * Summing of stats into pool counters
- */
+void
+WRK_Stats_Init(struct worker *wrk) {
+	AZ(wrk->stats);
+	wrk->stats = Dstat_Get();
+}
 
-static void
-pool_addstat(struct dstat *dst, struct dstat *src)
-{
+void
+WRK_Stats_Update(struct worker *wrk, enum wrk_stats_when when) {
+	if (when == NOW ||
+	    (wrk->lastused - wrk->last_stats_update) >=
+	    cache_param->thread_stats_latency / 2) {
+		Dstat_Submit(&wrk->stats);
+		WRK_Stats_Init(wrk);
+		wrk->last_stats_update = wrk->lastused;
+	}
+}
 
-	dst->summs++;
-#define L0(n)
-#define L1(n) (dst->n += src->n)
-#define VSC_FF(n,t,l,s,f,v,d,e)	L##l(n);
-#include "tbl/vsc_f_main.h"
-#undef L0
-#undef L1
-	memset(src, 0, sizeof *src);
+void
+WRK_Stats_Free(struct worker *wrk) {
+	Dstat_Submit(&wrk->stats);
 }
 
 static inline int
@@ -301,7 +309,7 @@ static void
 Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 {
 	struct pool_task *tp = NULL;
-	struct pool_task tpx, tps;
+	struct pool_task tpx;
 	int i, prio_lim;
 
 	CHECK_OBJ_NOTNULL(pp, POOL_MAGIC);
@@ -328,20 +336,9 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 			}
 		}
 
-		if ((tp == NULL && wrk->stats->summs > 0) ||
-		    (wrk->stats->summs >= cache_param->wthread_stats_rate))
-			pool_addstat(pp->a_stat, wrk->stats);
+		WRK_Stats_Update(wrk, (tp == NULL) ? NOW : PERIODIC);
 
-		if (tp != NULL) {
-			wrk->stats->summs++;
-		} else if (pp->b_stat != NULL && pp->a_stat->summs) {
-			/* Nothing to do, push pool stats into global pool */
-			tps.func = pool_stat_summ;
-			tps.priv = pp->a_stat;
-			pp->a_stat = pp->b_stat;
-			pp->b_stat = NULL;
-			tp = &tps;
-		} else {
+		if (tp == NULL) {
 			/* Nothing to do: To sleep, perchance to dream ... */
 			if (isnan(wrk->lastused))
 				wrk->lastused = VTIM_real();
@@ -357,7 +354,6 @@ Pool_Work_Thread(struct pool *pp, struct worker *wrk)
 			} while (wrk->task.func == NULL);
 			tpx = wrk->task;
 			tp = &tpx;
-			wrk->stats->summs++;
 		}
 		Lck_Unlock(&pp->mtx);
 
