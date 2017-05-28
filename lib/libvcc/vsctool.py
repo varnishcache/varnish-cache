@@ -196,11 +196,11 @@ class vscset(object):
 		fo.write("\n")
 		fo.write("void\n")
 		fo.write("VSC_" + self.name + "_Destroy")
-		fo.write("(" + self.struct + "**pp)\n")
+		fo.write("(" + self.struct + " **pp)\n")
 		fo.write("{\n")
 		fo.write("\n")
 		fo.write("\tAN(pp);\n")
-		fo.write('\tVSC_Destroy("%s", *pp);\n' % self.name)
+		fo.write('\tVSC_Destroy(vsc_%s_name, *pp);\n' % self.name)
 		fo.write("\t*pp = NULL;\n")
 		fo.write("}\n")
 
