@@ -34,6 +34,7 @@ libvarnish_a_SOURCES = \
 	vsa.c \
 	vsb.c \
 	vsha256.c \
+	vsmw.c \
 	vss.c \
 	vsub.c \
 	vtcp.c \
