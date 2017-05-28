@@ -43,6 +43,7 @@
 
 #include "mgt/mgt.h"
 #include "common/heritage.h"
+#include "common/common_vsm.h"
 
 #include "hash/hash_slinger.h"
 #include "vav.h"
@@ -448,7 +449,7 @@ mgt_uptime(const struct vev *e, int what)
 	VSC_C_mgt->uptime = static_VSC_C_mgt.uptime =
 	    (uint64_t)(VTIM_real() - mgt_uptime_t0);
 	if (heritage.vsm != NULL)
-		VSM_common_ageupdate(heritage.vsm);
+		CVSM_ageupdate(heritage.vsm);
 	return (0);
 }
 

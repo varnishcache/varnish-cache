@@ -155,7 +155,9 @@ class vscset(object):
 		fo.write('#include <stdarg.h>\n')
 		fo.write('#include <stdio.h>\n')
 		fo.write('#include <stdint.h>\n')
-		fo.write('#include "common/common.h"\n')
+		fo.write('#include "vdef.h"\n')
+		fo.write('#include "vas.h"\n')
+		fo.write('#include "common/common_vsm.h"\n')
 		fo.write('#include "VSC_%s.h"\n' % self.name)
 
 		fo.write("\n")

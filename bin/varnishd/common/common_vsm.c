@@ -40,6 +40,7 @@
 
 #include "common.h"
 #include "common/com_params.h"
+#include "common/common_vsm.h"
 
 #include "vsm_priv.h"
 #include "vmb.h"
@@ -127,7 +128,7 @@ vsm_common_insert_free(struct vsm_sc *sc, struct vsm_range *vr)
  */
 
 struct vsm_sc *
-VSM_common_new(void *p, ssize_t l)
+CVSM_new(void *p, ssize_t l)
 {
 	struct vsm_sc *sc;
 	struct vsm_range *vr;
@@ -167,7 +168,7 @@ VSM_common_new(void *p, ssize_t l)
  */
 
 void
-VSM_common_cleaner(struct vsm_sc *sc, struct VSC_main *stats)
+CVSM_cleaner(struct vsm_sc *sc, struct VSC_main *stats)
 {
 	double now = VTIM_real();
 	struct vsm_range *vr, *vr2;
@@ -195,7 +196,7 @@ VSM_common_cleaner(struct vsm_sc *sc, struct VSC_main *stats)
  */
 
 void *
-VSM_common_alloc(struct vsm_sc *sc, ssize_t size,
+CVSM_alloc(struct vsm_sc *sc, ssize_t size,
     const char *class, const char *type, const char *ident)
 {
 	struct vsm_range *vr, *vr2, *vr3;
@@ -286,7 +287,7 @@ VSM_common_alloc(struct vsm_sc *sc, ssize_t size,
  */
 
 void
-VSM_common_free(struct vsm_sc *sc, void *ptr)
+CVSM_free(struct vsm_sc *sc, void *ptr)
 {
 	struct vsm_range *vr, *vr2;
 
@@ -337,7 +338,7 @@ VSM_common_free(struct vsm_sc *sc, void *ptr)
  */
 
 void
-VSM_common_delete(struct vsm_sc **scp)
+CVSM_delete(struct vsm_sc **scp)
 {
 	struct vsm_range *vr, *vr2;
 	struct vsm_sc *sc;
@@ -366,7 +367,7 @@ VSM_common_delete(struct vsm_sc **scp)
  */
 
 void
-VSM_common_copy(struct vsm_sc *to, const struct vsm_sc *from)
+CVSM_copy(struct vsm_sc *to, const struct vsm_sc *from)
 {
 	struct vsm_range *vr;
 	void *p;
@@ -374,7 +375,7 @@ VSM_common_copy(struct vsm_sc *to, const struct vsm_sc *from)
 	CHECK_OBJ_NOTNULL(to, VSM_SC_MAGIC);
 	CHECK_OBJ_NOTNULL(from, VSM_SC_MAGIC);
 	VTAILQ_FOREACH(vr, &from->r_used, list) {
-		p = VSM_common_alloc(to, vr->chunk->len,
+		p = CVSM_alloc(to, vr->chunk->len,
 		    vr->chunk->class, vr->chunk->type, vr->chunk->ident);
 		AN(p);
 		memcpy(p, vr->chunk + 1, vr->chunk->len);
@@ -386,7 +387,7 @@ VSM_common_copy(struct vsm_sc *to, const struct vsm_sc *from)
  */
 
 void
-VSM_common_ageupdate(const struct vsm_sc *sc)
+CVSM_ageupdate(const struct vsm_sc *sc)
 {
 
 	CHECK_OBJ_NOTNULL(sc, VSM_SC_MAGIC);

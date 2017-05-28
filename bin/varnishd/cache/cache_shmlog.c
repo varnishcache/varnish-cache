@@ -36,6 +36,7 @@
 #include <stdlib.h>
 
 #include "common/heritage.h"
+#include "common/common_vsm.h"
 
 #include "vend.h"
 #include "vgz.h"
@@ -547,7 +548,7 @@ vsm_cleaner(void *priv)
 	THR_SetName("vsm_cleaner");
 	while (1) {
 		AZ(pthread_mutex_lock(&vsm_mtx));
-		VSM_common_cleaner(heritage.vsm, (void*)VSC_C_main);
+		CVSM_cleaner(heritage.vsm, (void*)VSC_C_main);
 		AZ(pthread_mutex_unlock(&vsm_mtx));
 		VTIM_sleep(1.1);
 	}
@@ -603,7 +604,7 @@ VSM_Alloc(unsigned size, const char *class, const char *type,
 	volatile void *p;
 
 	AZ(pthread_mutex_lock(&vsm_mtx));
-	p = VSM_common_alloc(heritage.vsm, size, class, type, ident);
+	p = CVSM_alloc(heritage.vsm, size, class, type, ident);
 	AZ(pthread_mutex_unlock(&vsm_mtx));
 	return (TRUST_ME(p));
 }
@@ -613,6 +614,6 @@ VSM_Free(void *ptr)
 {
 
 	AZ(pthread_mutex_lock(&vsm_mtx));
-	VSM_common_free(heritage.vsm, ptr);
+	CVSM_free(heritage.vsm, ptr);
 	AZ(pthread_mutex_unlock(&vsm_mtx));
 }

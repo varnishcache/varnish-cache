@@ -120,6 +120,7 @@ noinst_HEADERS = \
 	cache/cache_priv.h \
 	cache/cache_transport.h \
 	common/heritage.h \
+	common/common_vsm.h \
 	hash/hash_slinger.h \
 	hpack/vhp.h \
 	http1/cache_http1.h \
