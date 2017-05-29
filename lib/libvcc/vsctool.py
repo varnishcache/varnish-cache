@@ -287,7 +287,7 @@ class rst_vsc(directive):
 		for p in self.param:
 			if p in PARAMS:
 				continue
-			sys.stderr.write("Unknown paramter ")
+			sys.stderr.write("Unknown parameter ")
 			sys.stderr.write("'" + p + "'")
 			sys.stderr.write(" on field '" + self.arg + "'\n")
 			exit(2)
