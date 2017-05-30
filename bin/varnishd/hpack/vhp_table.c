@@ -373,10 +373,12 @@ VHT_SetProtoMax(struct vht_table *tbl, size_t protomax)
 	if (buf == NULL)
 		return (-1);
 
-	memcpy(buf, tbl->buf, tbl->size);
-	memcpy(ENTRIES(buf, bufsize, tbl->n), TBLENTRIES(tbl),
-	    sizeof (struct vht_entry) * tbl->n);
-	free(tbl->buf);
+	if (tbl->buf != NULL) {
+		memcpy(buf, tbl->buf, tbl->size);
+		memcpy(ENTRIES(buf, bufsize, tbl->n), TBLENTRIES(tbl),
+		    sizeof (struct vht_entry) * tbl->n);
+		free(tbl->buf);
+	}
 	tbl->buf = buf;
 	tbl->bufsize = bufsize;
 	tbl->protomax = protomax;

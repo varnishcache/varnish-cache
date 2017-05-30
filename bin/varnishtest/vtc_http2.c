@@ -400,12 +400,16 @@ parse_data(struct stream *s, struct frame *f)
 		vtc_log(hp->vl, 4, "padding: %3d", f->md.padded);
 	}
 
-	if (!size)
-		vtc_log(hp->vl, 4, "s%u - no data", s->id);
-
 	if (s->id)
 		s->ws -= size;
+
 	s->hp->ws -= size;
+
+	if (!size) {
+		AZ(data);
+		vtc_log(hp->vl, 4, "s%u - no data", s->id);
+		return;
+	}
 
 	if (s->body) {
 		s->body = realloc(s->body, s->bodylen + size + 1L);

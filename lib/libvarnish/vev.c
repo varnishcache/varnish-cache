@@ -160,9 +160,10 @@ vev_get_sig(int sig)
 	if (os == NULL)
 		return (ENOMEM);
 
-	memcpy(os, vev_sigs, vev_nsig * sizeof *os);
-
-	free(vev_sigs);
+	if (vev_sigs != NULL) {
+		memcpy(os, vev_sigs, vev_nsig * sizeof *os);
+		free(vev_sigs);
+	}
 	vev_sigs = os;
 	vev_nsig = sig + 1;
 
