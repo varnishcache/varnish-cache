@@ -1706,7 +1706,7 @@ cmd_txrst(CMD_ARGS)
 {
 	struct stream *s;
 	char *p;
-	uint32_t err;
+	uint32_t err = 0;
 	struct frame f;
 	(void)cmd;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
