@@ -584,7 +584,7 @@ cnt_pipe(struct worker *wrk, struct req *req)
 	HTTP_Setup(bo->bereq, bo->ws, bo->vsl, SLT_BereqMethod);
 	http_FilterReq(bo->bereq, req->http, 0);	// XXX: 0 ?
 	http_PrintfHeader(bo->bereq, "X-Varnish: %u", VXID(req->vsl->wid));
-	http_SetHeader(bo->bereq, "Connection: close");
+	http_ForceHeader(bo->bereq, H_Connection, "close");
 
 	VCL_pipe_method(req->vcl, wrk, req, bo, NULL);
 
