@@ -579,6 +579,13 @@ VTCP_Check(int a)
 	 */
 	if (errno == EINVAL || errno == ETIMEDOUT)
 		return (1);
+#elif defined (__APPLE__)
+	/*
+	 * MacOS returns EINVAL if the other end unexpectedly reset
+	 * the connection.
+	 */
+	if (errno == EINVAL)
+		return (1);
 #endif
 	return (0);
 }
