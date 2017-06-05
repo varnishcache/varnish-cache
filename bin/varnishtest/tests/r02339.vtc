@@ -1,0 +1,183 @@
+varnishtest "VMOD purge"
+
+server s1 -repeat 12 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-p thread_pools=1" -vcl+backend {
+	import debug;
+
+	sub vcl_recv {
+		if (req.url == "recv") { debug.purge(); }
+		if (req.url == "pass") { return (pass); }
+		if (req.url == "purge") { return (purge); }
+		if (req.url == "synth") { return (synth(200)); }
+	}
+	sub vcl_hash {
+		if (req.url == "hash") { debug.purge(); }
+	}
+	sub vcl_miss {
+		if (req.url == "miss") { debug.purge(); }
+	}
+	sub vcl_hit {
+		if (req.url == "hit") { debug.purge(); }
+	}
+	sub vcl_purge {
+		if (req.url == "purge") { debug.purge(); }
+	}
+	sub vcl_pass {
+		if (req.url == "pass") { debug.purge(); }
+	}
+	sub vcl_deliver {
+		if (req.url == "deliver") { debug.purge(); }
+	}
+	sub vcl_synth {
+		if (req.url == "synth") { debug.purge(); }
+	}
+	sub vcl_backend_fetch {
+		if (bereq.url == "fetch") { debug.purge(); }
+		if (bereq.url == "error") {
+			set bereq.backend = debug.no_backend();
+		}
+	}
+	sub vcl_backend_error {
+		if (bereq.url == "error") { debug.purge(); }
+	}
+	sub vcl_backend_response {
+		if (bereq.url == "response") { debug.purge(); }
+	}
+} -start
+
+logexpect l0 -v v1 -g raw {
+	expect * 0 ExpKill	"EXP_Expired x=1002"
+} -start
+
+logexpect l1 -v v1 {
+	expect * 1002	Begin		"bereq 1001 fetch"
+
+	expect * 1003	VCL_call	HIT
+	expect * =	VCL_Log		PURGE
+	expect * =	VCL_call	DELIVER
+
+	expect * 1004	VCL_call	MISS
+	expect * =	VCL_Log		PURGE
+	expect * =	VCL_call	DELIVER
+
+	expect * 1007	VCL_call	RECV
+	expect * =	VCL_Log		PURGE
+	expect * =	VCL_Error	purge
+	expect * =	VCL_return	fail
+
+	expect * 1009	VCL_call	HASH
+	expect * =	VCL_Log		PURGE
+	expect * =	VCL_Error	purge
+	expect * =	VCL_return	fail
+
+	expect * 1011	VCL_call	PURGE
+	expect * =	VCL_Log		PURGE
+	expect * =	VCL_Error	purge
+
+	expect * 1013	VCL_call	PASS
+	expect * =	VCL_Log		PURGE
+	expect * =	VCL_Error	purge
+
+	expect * 1015	VCL_call	DELIVER
+	expect * =	VCL_Log		PURGE
+	expect * =	VCL_Error	purge
+
+	expect * 1018	VCL_call	SYNTH
+	expect * =	VCL_Log		PURGE
+	expect * =	VCL_Error	purge
+
+	expect * 1021	VCL_call	BACKEND_FETCH
+	expect * =	VCL_Log		PURGE
+	expect * =	VCL_Error	purge
+
+	expect * 1024	VCL_call	BACKEND_ERROR
+	expect * =	VCL_Log		PURGE
+	expect * =	VCL_Error	purge
+
+	expect * 1027	VCL_call	BACKEND_RESPONSE
+	expect * =	VCL_Log		PURGE
+	expect * =	VCL_Error	purge
+} -start
+
+client c1 {
+	txreq -url hit
+	rxresp
+	expect resp.status == 200
+
+	txreq -url hit
+	rxresp
+	expect resp.status == 200
+
+	txreq -url miss
+	rxresp
+	expect resp.status == 200
+} -run
+
+logexpect l0 -wait
+
+client c1 {
+	txreq -url recv
+	rxresp
+	expect resp.status == 503
+	expect_close
+} -run
+
+client c1 {
+	txreq -url hash
+	rxresp
+	expect resp.status == 503
+	expect_close
+} -run
+
+client c1 {
+	txreq -url purge
+	rxresp
+	expect resp.status == 503
+	expect_close
+} -run
+
+client c1 {
+	txreq -url pass
+	rxresp
+	expect resp.status == 503
+	expect_close
+} -run
+
+client c1 {
+	txreq -url deliver
+	rxresp
+	expect resp.status == 503
+	expect_close
+} -run
+
+client c1 {
+	txreq -url synth
+	expect_close
+} -run
+
+client c1 {
+	txreq -url fetch
+	rxresp
+	expect resp.status == 503
+	expect_close
+} -run
+
+client c1 {
+	txreq -url error
+	rxresp
+	expect resp.status == 503
+	expect_close
+} -run
+
+client c1 {
+	txreq -url response
+	rxresp
+	expect resp.status == 503
+	expect_close
+} -run
+
+logexpect l1 -wait
