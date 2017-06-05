@@ -6,6 +6,9 @@ Varnish Cache Trunk (ongoing)
 
 * On platforms with setproctitle(3), use the -i argument rather than -n
 
+* VRT_purge fails a transaction if used outside of ``vcl_hit`` and
+  ``vcl_miss`` (#2339)
+
 * VSM_Name() returns the -i argument name, rather than the -n name.
 
 * VUT.name is goine, use VSM_Name(VUT.vsm)

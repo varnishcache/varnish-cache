@@ -41,6 +41,7 @@
  *
  * 6.1 (unreleased):
  *	http_CollectHdrSep added
+ *	VRT_purge modified (may fail a transaction)
  * 6.0 (2017-03-15):
  *	VRT_hit_for_pass added
  *	VRT_ipcmp added

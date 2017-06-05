@@ -572,3 +572,13 @@ vmod_typesize(VRT_CTX, VCL_STRING s)
 	}
 	return ((VCL_INT)i);
 }
+
+VCL_VOID
+vmod_purge(VRT_CTX, double ttl, double grace, double keep)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	VSLb(ctx->vsl, SLT_VCL_Log, "PURGE");
+	VRT_purge(ctx, ttl, grace, keep);
+}
