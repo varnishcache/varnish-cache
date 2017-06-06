@@ -1,3 +1,13 @@
+=============================
+Varnish Cache Trunk (ongoing)
+=============================
+
+* On platforms with setproctitle(3), use the -i argument rather than -n
+
+* VSM_Name() returns the -i argument name, rather than the -n name.
+
+* VUT.name is goine, use VSM_Name(VUT.vsm)
+
 ================================
 Varnish Cache 5.1.2 (2017-04-07)
 ================================
