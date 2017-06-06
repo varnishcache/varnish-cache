@@ -290,37 +290,6 @@ init_params(struct cli *cli)
 	MCF_InitParams(cli);
 }
 
-
-/*--------------------------------------------------------------------*/
-
-static void
-identify(const char *i_arg)
-{
-	char id[17], *p;
-	int i;
-
-	strcpy(id, "varnishd");
-
-	if (i_arg != NULL) {
-		if (strlen(i_arg) + 1 > 1024)
-			ARGV_ERR("Identity (-i) name too long (max 1023).\n");
-		heritage.identity = strdup(i_arg);
-		AN(heritage.identity);
-		i = strlen(id);
-		id[i++] = '/';
-		for (; i < (sizeof(id) - 1L); i++) {
-			if (!isalnum(*i_arg))
-				break;
-			id[i] = *i_arg++;
-		}
-		id[i] = '\0';
-	}
-	p = strdup(id);
-	AN(p);
-
-	openlog(p, LOG_PID, LOG_LOCAL0);
-}
-
 static void
 mgt_tests(void)
 {
@@ -781,7 +750,11 @@ main(int argc, char * const *argv)
 	setproctitle("Varnish-Mgr %s", heritage.name);
 #endif
 
-	identify(i_arg);
+	if (i_arg == NULL || *i_arg == '\0')
+		i_arg = "varnishd";
+	heritage.identity = i_arg;
+
+	openlog("varnishd", LOG_PID, LOG_LOCAL0);
 
 	if (VJ_make_workdir(dirname))
 		ARGV_ERR("Cannot create working directory (%s): %s\n",
@@ -860,6 +833,8 @@ main(int argc, char * const *argv)
 	Wait_config(W_arg);
 
 	mgt_SHM_Init();
+
+	mgt_SHM_static_alloc(i_arg, strlen(i_arg) + 1L, "Arg", "-i", "");
 
 	if (M_arg != NULL)
 		mgt_cli_master(M_arg);
