@@ -58,9 +58,9 @@ tokens = {
 	"T_NOMATCH":    "!~",
 
 	# Boolean operators
-	"T_AND":        "and",
-	"T_OR":         "or",
-	"T_NOT":        "not",
+	"T_AND":        ["and", "&&"],
+	"T_OR":         ["or", "||"],
+	"T_NOT":        ["not", "!"],
 
 	# Miscellaneous
 	None:           "<>~[]{}():,",
@@ -82,9 +82,13 @@ def emit_vxp_fixed_token(fo, tokens):
 	emit = dict()
 	for i in tokens:
 		j = tokens[i]
-		if (j != None):
-			recog.append(j)
-			emit[j] = i
+		if (j == None):
+			continue
+		if (not isinstance(j, list)):
+			j = [j]
+		for jj in j:
+			recog.append(jj)
+			emit[jj] = i
 
 	recog.sort()
 	rrecog = copy.copy(recog)
@@ -132,10 +136,10 @@ def emit_vxp_tnames(fo, tokens):
 	l.sort()
 	for i in l:
 		j = tokens[i]
-		if j == None:
+		if j == None or i[0] == "'":
 			j = i
-		if i[0] == "'":
-			j = i
+		elif (isinstance(j, list)):
+			j = j[0]
 		fo.write("\t[%s] = \"%s\",\n" % (i, j))
 	fo.write("};\n")
 
