@@ -215,7 +215,6 @@ VUT_Init(const char *progname, int argc, char * const *argv,
 		exit(vut_options(voc));
 
 	VUT.progname = progname;
-	REPLACE(VUT.name, "");
 	VUT.g_arg = VSL_g_vxid;
 	AZ(VUT.vsl);
 	VUT.vsl = VSL_New();
@@ -248,7 +247,6 @@ VUT_Setup(void)
 
 	/* Setup input */
 	if (VUT.r_arg) {
-		REPLACE(VUT.name, VUT.r_arg);
 		c = VSL_CursorFile(VUT.vsl, VUT.r_arg, 0);
 		if (c == NULL)
 			VUT_Error(1, "%s", VSL_Error(VUT.vsl));
@@ -257,7 +255,6 @@ VUT_Setup(void)
 		AN(VUT.vsm);
 		if (VUT.n_arg && VSM_n_Arg(VUT.vsm, VUT.n_arg) <= 0)
 			VUT_Error(1, "%s", VSM_Error(VUT.vsm));
-		REPLACE(VUT.name, VSM_Name(VUT.vsm));
 		t_start = NAN;
 		c = NULL;
 		while (1) {
@@ -330,7 +327,6 @@ VUT_Fini(void)
 	free(VUT.n_arg);
 	free(VUT.r_arg);
 	free(VUT.P_arg);
-	free(VUT.name);
 
 	vut_vpf_remove();
 	AZ(VUT.pfh);

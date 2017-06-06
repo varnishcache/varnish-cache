@@ -45,6 +45,7 @@
 #include "vdef.h"
 #include "vcurses.h"
 #include "vapi/vsl.h"
+#include "vapi/vsm.h"
 #include "vapi/voptget.h"
 #include "vas.h"
 #include "vut.h"
@@ -152,7 +153,7 @@ update(void)
 	if (end_of_file)
 		mvprintw(0, 0, "%*s", COLS - 1, "EOF");
 	else
-		mvprintw(0, 0, "%*s", COLS - 1, VUT.name);
+		mvprintw(0, 0, "%*s", COLS - 1, VSM_Name(VUT.vsm));
 
 	/* count our flock */
 	for (i = 0; i < n; ++i)

@@ -44,6 +44,7 @@
 
 #include "vcurses.h"
 #include "vapi/vsl.h"
+#include "vapi/vsm.h"
 #include "vapi/voptget.h"
 #include "vas.h"
 #include "vdef.h"
@@ -188,6 +189,7 @@ update(int p)
 	double t = 0;
 	static time_t last = 0;
 	static unsigned n;
+	const char *q;
 	time_t now;
 
 	now = time(NULL);
@@ -199,11 +201,12 @@ update(int p)
 	if (n < p)
 		n++;
 	AC(erase());
+	q = VSM_Name(VUT.vsm);
+	len = COLS - strlen(q);
 	if (end_of_file)
-		AC(mvprintw(0, (COLS - strlen(VUT.name)) - (1 + 6), "%s (EOF)",
-			VUT.name));
+		AC(mvprintw(0, len - (1 + 6), "%s (EOF)", q));
 	else
-		AC(mvprintw(0, (COLS - strlen(VUT.name)) - 1, "%s", VUT.name));
+		AC(mvprintw(0, len - 1, "%s", q));
 	AC(mvprintw(0, 0, "list length %u", ntop));
 	for (tp = VRB_MIN(t_order, &h_order); tp != NULL; tp = tp2) {
 		tp2 = VRB_NEXT(t_order, &h_order, tp);
