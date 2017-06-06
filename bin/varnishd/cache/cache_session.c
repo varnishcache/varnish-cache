@@ -521,6 +521,7 @@ SES_Close(struct sess *sp, enum sess_close reason)
 void
 SES_Delete(struct sess *sp, enum sess_close reason, double now)
 {
+	double d;
 
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
@@ -544,8 +545,21 @@ SES_Delete(struct sess *sp, enum sess_close reason, double now)
 		reason = (enum sess_close)-sp->fd;
 
 	assert(VTAILQ_EMPTY(&sp->privs->privs));
+
+	d = now - sp->t_open;
+	if (d < 0) {
+		/*
+		 * this should be assert(now >= sp->t_open), but CLOCK_REALTIME
+		 * is not monotonic and may got stepped backwards (by ntpd)
+		 *
+		 * XXX needs attention when going over the timekeeping code
+		 */
+		VSL(SLT_Error, sp->vxid, "Session delete before open - "
+		    "clock step by at least %.3fs?", d);
+		d = 0;
+	}
 	VSL(SLT_SessClose, sp->vxid, "%s %.3f",
-	    sess_close_2str(reason, 0), now - sp->t_open);
+	    sess_close_2str(reason, 0), d);
 	VSL(SLT_End, sp->vxid, "%s", "");
 	SES_Rel(sp);
 }
