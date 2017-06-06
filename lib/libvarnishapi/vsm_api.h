@@ -37,7 +37,6 @@ struct VSM_data {
 
 	struct vsb		*diag;
 
-	char			*name;
 	char			*dname;
 	char			*iname;
 

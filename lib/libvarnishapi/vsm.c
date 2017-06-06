@@ -70,7 +70,6 @@ VSM_New(void)
 	if (vd == NULL)
 		return (vd);
 
-	REPLACE(vd->name, "");
 	vd->vsm_fd = -1;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -129,7 +128,6 @@ VSM_ResetError(struct VSM_data *vd)
 int
 VSM_n_Arg(struct VSM_data *vd, const char *arg)
 {
-	char *name = NULL;
 	char *dname = NULL;
 	struct vsb *vsb;
 
@@ -137,22 +135,19 @@ VSM_n_Arg(struct VSM_data *vd, const char *arg)
 
 	if (vd->head)
 		return (vsm_diag(vd, "VSM_n_Arg: Already open"));
-	if (VIN_n_Arg(arg, &name, &dname))
+	if (VIN_n_Arg(arg, &dname))
 		return (vsm_diag(vd, "Invalid instance name: %s",
 		    strerror(errno)));
-	AN(name);
 	AN(dname);
 	vsb = VSB_new_auto();
 	AN(vsb);
 	VSB_printf(vsb, "%s%s", dname, VSM_FILENAME);
 	AZ(VSB_finish(vsb));
 
-	REPLACE(vd->name, name);
 	REPLACE(vd->dname, dname);
 	REPLACE(vd->iname, VSB_data(vsb));
 
 	VSB_destroy(&vsb);
-	free(name);
 	free(dname);
 
 	return (1);
@@ -163,10 +158,12 @@ VSM_n_Arg(struct VSM_data *vd, const char *arg)
 const char *
 VSM_Name(const struct VSM_data *vd)
 {
+	struct VSM_fantom vt;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-
-	return (vd->name);
+	if (VSM_Get(vd, &vt, "Arg", "-i", ""))
+		return (vt.b);
+	return ("");
 }
 
 /*--------------------------------------------------------------------*/
@@ -181,7 +178,6 @@ VSM_Delete(struct VSM_data *vd)
 	if (vd->vsc != NULL)
 		VSC_Delete(vd);
 	VSM_ResetError(vd);
-	free(vd->name);
 	free(vd->dname);
 	FREE_OBJ(vd);
 }

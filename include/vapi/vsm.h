@@ -100,7 +100,7 @@ int VSM_n_Arg(struct VSM_data *vd, const char *n_arg);
 
 const char *VSM_Name(const struct VSM_data *vd);
 	/*
-	 * Return the instance name.
+	 * Return the instance name (-i argument to varnishd)
 	 */
 
 int VSM_Open(struct VSM_data *vd);

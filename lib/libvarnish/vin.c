@@ -44,7 +44,7 @@
 #include "vin.h"
 
 int
-VIN_n_Arg(const char *n_arg, char **name, char **dir)
+VIN_n_Arg(const char *n_arg, char **dir)
 {
 	char nm[PATH_MAX];
 	char dn[PATH_MAX];
@@ -83,18 +83,10 @@ VIN_n_Arg(const char *n_arg, char **name, char **dir)
 
 	strcat(dn, "/");
 
-	if (name != NULL) {
-		*name = strdup(nm);
-		if (*name == NULL)
-			return (-1);
-	}
 	if (dir != NULL) {
 		*dir = strdup(dn);
-		if (*dir == NULL) {
-			if (name != NULL)
-				free(*name);
+		if (*dir == NULL) 
 			return (-1);
-		}
 	}
 	return (0);
 }
