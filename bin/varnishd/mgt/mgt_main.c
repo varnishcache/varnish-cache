@@ -743,16 +743,15 @@ main(int argc, char * const *argv)
 		VJ_master(JAIL_MASTER_LOW);
 	}
 
-	if (VIN_n_Arg(n_arg, &heritage.name, &dirname) != 0)
+	if (VIN_n_Arg(n_arg, &p, &dirname) != 0)
 		ARGV_ERR("Invalid instance (-n) name: %s\n", strerror(errno));
-
-#ifdef HAVE_SETPROCTITLE
-	setproctitle("Varnish-Mgr %s", heritage.name);
-#endif
+	free(p);
 
 	if (i_arg == NULL || *i_arg == '\0')
 		i_arg = "varnishd";
 	heritage.identity = i_arg;
+
+	mgt_ProcTitle("Mgr");
 
 	openlog("varnishd", LOG_PID, LOG_LOCAL0);
 

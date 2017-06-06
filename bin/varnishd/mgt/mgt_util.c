@@ -37,9 +37,26 @@
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
+#include <unistd.h>
 
 #include "mgt/mgt.h"
 
+#include "common/heritage.h"
+
+/*--------------------------------------------------------------------*/
+
+void
+mgt_ProcTitle(const char *comp)
+{
+#ifdef HAVE_SETPROCTITLE
+	if (strcmp(heritage.identity, "varnishd"))
+		setproctitle("Varnish-%s -i %s", comp, heritage.identity);
+	else
+		setproctitle("Varnish-%s", comp);
+#else
+	(void)comp;
+#endif
+}
 
 /*--------------------------------------------------------------------*/
 

@@ -174,6 +174,7 @@ void mgt_SHM_Size_Adjust(void);
 void MCF_TcpParams(void);
 
 /* mgt_util.c */
+void mgt_ProcTitle(const char *comp);
 void mgt_DumpRstVsl(void);
 struct vsb *mgt_BuildVident(void);
 void MGT_Complain(const char *, const char *, ...) __v_printflike(2, 3);

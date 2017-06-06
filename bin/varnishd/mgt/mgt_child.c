@@ -347,10 +347,7 @@ mgt_launch_child(struct cli *cli)
 			if (close(i) == 0)
 				VFIL_null_fd(i);
 		}
-#ifdef HAVE_SETPROCTITLE
-		setproctitle("Varnish-Chld %s", heritage.name);
-#endif
-
+		mgt_ProcTitle("Child");
 		if (mgt_param.sigsegv_handler) {
 			memset(&sa, 0, sizeof sa);
 			sa.sa_sigaction = child_sigsegv_handler;

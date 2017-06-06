@@ -75,7 +75,6 @@ struct heritage {
 
 	struct params			*param;
 
-	char				*name;
 	const char			*identity;
 
 	char				*panic_str;

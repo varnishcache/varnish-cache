@@ -679,7 +679,7 @@ VRT_r_server_identity(VRT_CTX)
 	if (heritage.identity != NULL)
 		return (heritage.identity);
 	else
-		return (heritage.name);
+		return ("varnishd");
 }
 
 const char*
