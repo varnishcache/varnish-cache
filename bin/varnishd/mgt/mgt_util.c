@@ -45,6 +45,20 @@
 
 /*--------------------------------------------------------------------*/
 
+char *
+mgt_HostName(void)
+{
+	char *p;
+	char buf[1024];
+
+	AZ(gethostname(buf, sizeof buf));
+	p = strdup(buf);
+	AN(p);
+	return (p);
+}
+
+/*--------------------------------------------------------------------*/
+
 void
 mgt_ProcTitle(const char *comp)
 {

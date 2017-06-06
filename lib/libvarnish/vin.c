@@ -85,7 +85,7 @@ VIN_n_Arg(const char *n_arg, char **dir)
 
 	if (dir != NULL) {
 		*dir = strdup(dn);
-		if (*dir == NULL) 
+		if (*dir == NULL)
 			return (-1);
 	}
 	return (0);

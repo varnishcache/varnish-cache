@@ -216,7 +216,7 @@ sp_variables = [
 		(), """
 		The identity of the server, as set by the -i
 		parameter.  If the -i parameter is not passed to varnishd,
-		server.identity will be set to "varnishd".
+		server.identity will be set to the hostname of the machine.
 		"""
 	),
 	('req',

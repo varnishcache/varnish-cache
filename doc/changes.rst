@@ -2,6 +2,8 @@
 Varnish Cache Trunk (ongoing)
 =============================
 
+* Default the -i argument to gethostname(3)
+
 * On platforms with setproctitle(3), use the -i argument rather than -n
 
 * VSM_Name() returns the -i argument name, rather than the -n name.

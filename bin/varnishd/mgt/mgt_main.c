@@ -747,7 +747,7 @@ main(int argc, char * const *argv)
 		ARGV_ERR("Invalid instance (-n) name: %s\n", strerror(errno));
 
 	if (i_arg == NULL || *i_arg == '\0')
-		i_arg = "varnishd";
+		i_arg = mgt_HostName();
 	heritage.identity = i_arg;
 
 	mgt_ProcTitle("Mgr");

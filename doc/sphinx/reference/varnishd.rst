@@ -135,7 +135,7 @@ Operations options
 
   Specify the identity of the Varnish server. This can be accessed
   using ``server.identity`` from VCL and with VSM_Name() from
-  utilities.
+  utilities.  If not specified the output of gethostname(3) is used.
 
 -I clifile
 
