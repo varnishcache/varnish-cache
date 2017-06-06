@@ -42,6 +42,27 @@
 /* Flags for allocating memory in sml_stv_alloc */
 #define LESS_MEM_ALLOCED_IS_OK	1
 
+// https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+static inline unsigned int
+rnddn_pow2(unsigned int v)
+{
+	v--;
+	v |= v >> 1;
+	v |= v >> 2;
+	v |= v >> 4;
+	v |= v >> 8;
+	v |= v >> 16;
+#if UINT_MAX > 1<<32
+	v |= v >> 32;
+#if UINT_MAX > 1<<64
+#error really more than 64bit integers?
+#endif
+#endif
+	v++;
+	v >>= 1;
+	return (v);
+}
+
 /*-------------------------------------------------------------------*/
 
 static struct storage *
@@ -63,6 +84,10 @@ sml_stv_alloc(const struct stevedore *stv, size_t size, int flags)
 		size = cache_param->fetch_maxchunksize;
 
 	assert(size <= UINT_MAX);	/* field limit in struct storage */
+
+	if (size > 4096) {
+		size = rnddn_pow2(size);
+	}
 
 	for (;;) {
 		/* try to allocate from it */
