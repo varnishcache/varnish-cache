@@ -72,11 +72,10 @@ Basic options
 
 -n name
 
-  Specify the name for this instance.  Amongst other things, this name
-  is used to construct the name of the directory in which `varnishd`
-  keeps temporary files and persistent state. If the specified name
-  begins with a forward slash, it is interpreted as the absolute path
-  to the directory which should be used for this purpose.
+  Specify the name for this instance.  This name is used to construct
+  the name of the directory in which `varnishd` keeps temporary files
+  and persistent state. If the specified name begins with a forward slash,
+  it is interpreted as the absolute path to the directory.
 
 Documentation options
 ---------------------
@@ -135,7 +134,8 @@ Operations options
 -i identity
 
   Specify the identity of the Varnish server. This can be accessed
-  using ``server.identity`` from VCL.
+  using ``server.identity`` from VCL and with VSM_Name() from
+  utilities.
 
 -I clifile
 
