@@ -64,7 +64,7 @@
 static struct vbc *
 vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 {
-	struct vbc *vc;
+	struct vbc *vbc;
 	double tmod;
 	char abuf1[VTCP_ADDRBUFSIZE], abuf2[VTCP_ADDRBUFSIZE];
 	char pbuf1[VTCP_PORTBUFSIZE], pbuf2[VTCP_PORTBUFSIZE];
@@ -94,16 +94,16 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	bo->htc->doclose = SC_NULL;
 
 	FIND_TMO(connect_timeout, tmod, bo, bp);
-	vc = VBT_Get(bp->tcp_pool, tmod, bp, wrk);
-	if (vc == NULL) {
+	vbc = VBT_Get(bp->tcp_pool, tmod, bp, wrk);
+	if (vbc == NULL) {
 		// XXX: Per backend stats ?
 		VSC_C_main->backend_fail++;
 		bo->htc = NULL;
 		return (NULL);
 	}
 
-	assert(vc->fd >= 0);
-	AN(vc->addr);
+	assert(vbc->fd >= 0);
+	AN(vbc->addr);
 
 	Lck_Lock(&bp->mtx);
 	bp->n_conn++;
@@ -112,21 +112,21 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	Lck_Unlock(&bp->mtx);
 
 	if (bp->proxy_header != 0)
-		VPX_Send_Proxy(vc->fd, bp->proxy_header, bo->sp);
+		VPX_Send_Proxy(vbc->fd, bp->proxy_header, bo->sp);
 
-	VTCP_myname(vc->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-	VTCP_hisname(vc->fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
+	VTCP_myname(vbc->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
+	VTCP_hisname(vbc->fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
 	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s",
-	    vc->fd, bp->display_name, abuf2, pbuf2, abuf1, pbuf1);
+	    vbc->fd, bp->display_name, abuf2, pbuf2, abuf1, pbuf1);
 
 	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
-	bo->htc->priv = vc;
-	bo->htc->rfd = &vc->fd;
+	bo->htc->priv = vbc;
+	bo->htc->rfd = &vbc->fd;
 	FIND_TMO(first_byte_timeout,
 	    bo->htc->first_byte_timeout, bo, bp);
 	FIND_TMO(between_bytes_timeout,
 	    bo->htc->between_bytes_timeout, bo, bp);
-	return (vc);
+	return (vbc);
 }
 
 static unsigned __match_proto__(vdi_healthy_f)
