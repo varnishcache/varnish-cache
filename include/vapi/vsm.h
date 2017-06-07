@@ -153,13 +153,15 @@ int VSM__itern(const struct VSM_data *vd, struct VSM_fantom *vf);
 	 * vd = "struct VSM_data *"
 	 */
 
-enum VSM_valid_e {
-	VSM_invalid,
-	VSM_valid,
-	VSM_similar,
+struct vsm_valid {
+	const char *name;
 };
 
-enum VSM_valid_e VSM_StillValid(const struct VSM_data *vd,
+extern const struct vsm_valid VSM_invalid[];
+extern const struct vsm_valid VSM_valid[];
+extern const struct vsm_valid VSM_similar[];
+
+const struct vsm_valid *VSM_StillValid(const struct VSM_data *vd,
     struct VSM_fantom *vf);
 	/*
 	 * Check the validity of a previously looked up VSM_fantom.

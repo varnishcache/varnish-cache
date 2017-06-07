@@ -58,6 +58,9 @@
 #define MAP_HASSEMAPHORE 0 /* XXX Linux */
 #endif
 
+const struct vsm_valid VSM_invalid[1] = {{"invalid"}};
+const struct vsm_valid VSM_valid[1] = {{"valid"}};
+const struct vsm_valid VSM_similar[1] = {{"similar"}};
 
 /*--------------------------------------------------------------------*/
 
@@ -390,7 +393,7 @@ VSM__itern(const struct VSM_data *vd, struct VSM_fantom *vf)
 
 /*--------------------------------------------------------------------*/
 
-enum VSM_valid_e
+const struct vsm_valid *
 VSM_StillValid(const struct VSM_data *vd, struct VSM_fantom *vf)
 {
 	struct VSM_fantom f2;
