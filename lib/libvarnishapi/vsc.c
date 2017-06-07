@@ -49,7 +49,7 @@
 #include "vapi/vsc.h"
 #include "vapi/vsm.h"
 
-#include "vsm_api.h"
+#include "vsc_priv.h"
 
 struct vsc_vf {
 	unsigned		magic;
@@ -111,18 +111,20 @@ static const size_t nlevels =
 static struct vsc *
 vsc_setup(struct VSM_data *vd)
 {
+	struct vsc *vsc;
 
-	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	if (vd->vsc == NULL) {
-		ALLOC_OBJ(vd->vsc, VSC_MAGIC);
-		AN(vd->vsc);
-		VTAILQ_INIT(&vd->vsc->vf_list);
-		VTAILQ_INIT(&vd->vsc->pt_list);
-		VTAILQ_INIT(&vd->vsc->sf_list_include);
-		VTAILQ_INIT(&vd->vsc->sf_list_exclude);
+	vsc = VSM_GetVSC(vd);
+	if (vsc == NULL) {
+		ALLOC_OBJ(vsc, VSC_MAGIC);
+		AN(vsc);
+		VTAILQ_INIT(&vsc->vf_list);
+		VTAILQ_INIT(&vsc->pt_list);
+		VTAILQ_INIT(&vsc->sf_list_include);
+		VTAILQ_INIT(&vsc->sf_list_exclude);
+		VSM_SetVSC(vd, vsc);
 	}
-	CHECK_OBJ_NOTNULL(vd->vsc, VSC_MAGIC);
-	return (vd->vsc);
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
+	return (vsc);
 }
 
 /*--------------------------------------------------------------------*/
@@ -168,13 +170,9 @@ vsc_delete_sf_list(struct vsc_sf_head *head)
 }
 
 void
-VSC_Delete(struct VSM_data *vd)
+VSC_Delete(struct vsc *vsc)
 {
-	struct vsc *vsc;
 
-	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	vsc = vd->vsc;
-	vd->vsc = NULL;
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 	vsc_delete_sf_list(&vsc->sf_list_include);
 	vsc_delete_sf_list(&vsc->sf_list_exclude);
@@ -343,7 +341,7 @@ vsc_build_pt_list(struct VSM_data *vd)
 		vve = vjsn_child(vf->vjsn->value, "elem");
 		AN(vve);
 		VTAILQ_FOREACH(vv, &vve->children, list) {
-			vdsc = calloc(sizeof *vd, 1);
+			vdsc = calloc(sizeof *vdsc, 1);
 			AN(vdsc);
 
 #define DOF(n, k)						\

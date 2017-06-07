@@ -48,11 +48,11 @@
 #include "vin.h"
 #include "vsb.h"
 #include "vsm_priv.h"
+#include "vsc_priv.h"
 #include "vtim.h"
 
 #include "vapi/vsm.h"
 
-#include "vsm_api.h"
 
 #ifndef MAP_HASSEMAPHORE
 #define MAP_HASSEMAPHORE 0 /* XXX Linux */
@@ -61,6 +61,32 @@
 const struct vsm_valid VSM_invalid[1] = {{"invalid"}};
 const struct vsm_valid VSM_valid[1] = {{"valid"}};
 const struct vsm_valid VSM_similar[1] = {{"similar"}};
+
+/*--------------------------------------------------------------------*/
+
+struct vsc;
+
+struct VSM_data {
+	unsigned		magic;
+#define VSM_MAGIC		0x6e3bd69b
+
+	struct vsb		*diag;
+
+	char			*dname;
+	char			*iname;
+
+	struct stat		fstat;
+
+	int			vsm_fd;
+	struct VSM_head		*head;
+	char			*b;
+	char			*e;
+
+	uint64_t		age_ok;
+	double			t_ok;
+
+	struct vsc		*vsc;
+};
 
 /*--------------------------------------------------------------------*/
 
@@ -81,7 +107,25 @@ VSM_New(void)
 
 /*--------------------------------------------------------------------*/
 
-int
+void
+VSM_SetVSC(struct VSM_data *vd, struct vsc *vsc)
+{
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+
+	vd->vsc = vsc;
+}
+
+struct vsc *
+VSM_GetVSC(const struct VSM_data *vd)
+{
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+
+	return (vd->vsc);
+}
+
+/*--------------------------------------------------------------------*/
+
+static int
 vsm_diag(struct VSM_data *vd, const char *fmt, ...)
 {
 	va_list ap;
@@ -179,7 +223,7 @@ VSM_Delete(struct VSM_data *vd)
 
 	VSM_Close(vd);
 	if (vd->vsc != NULL)
-		VSC_Delete(vd);
+		VSC_Delete(vd->vsc);
 	VSM_ResetError(vd);
 	free(vd->dname);
 	FREE_OBJ(vd);

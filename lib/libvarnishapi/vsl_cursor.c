@@ -54,7 +54,6 @@
 #include "vapi/vsm.h"
 
 #include "vsl_api.h"
-#include "vsm_api.h"
 
 struct vslc_vsm {
 	unsigned			magic;
@@ -125,7 +124,6 @@ vslc_vsm_next(const struct VSL_cursor *cursor)
 
 	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_VSM_MAGIC);
 	assert(&c->cursor == cursor);
-	CHECK_OBJ_NOTNULL(c->vsm, VSM_MAGIC);
 
 	while (1) {
 		i = vslc_vsm_check(&c->cursor, &c->next);
@@ -248,7 +246,6 @@ VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, unsigned options)
 	int i;
 
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
-	CHECK_OBJ_NOTNULL(vsm, VSM_MAGIC);
 
 	if (!VSM_Get(vsm, &vf, VSL_CLASS, "", "")) {
 		(void)vsl_diag(vsl,

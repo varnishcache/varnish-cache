@@ -29,30 +29,8 @@
  */
 
 struct vsc;
-struct vsb;
+struct VSM_data;
 
-struct VSM_data {
-	unsigned		magic;
-#define VSM_MAGIC		0x6e3bd69b
-
-	struct vsb		*diag;
-
-	char			*dname;
-	char			*iname;
-
-	struct stat		fstat;
-
-	int			vsm_fd;
-	struct VSM_head		*head;
-	char			*b;
-	char			*e;
-
-	uint64_t		age_ok;
-	double			t_ok;
-
-	struct vsc		*vsc;
-};
-
-int vsm_diag(struct VSM_data *vd, const char *fmt, ...)
-    __v_printflike(2, 3);
-void VSC_Delete(struct VSM_data *vd);
+void VSM_SetVSC(struct VSM_data *, struct vsc *);
+struct vsc *VSM_GetVSC(const struct VSM_data *);
+void VSC_Delete(struct vsc *);
