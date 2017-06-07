@@ -9,7 +9,7 @@ check: check-am check-local
 check-am: check-local
 # See if list of checks have changed, recheck
 check-local:
-	mkdir -p tests ; \
+	@mkdir -p tests ; \
 	LC_ALL=C; \
 	if [ "$$(cd $(srcdir) && echo tests/*.vtc)" != "@VTC_TESTS@" ]; then \
 		cd $(top_builddir) && ./config.status --recheck ; \
