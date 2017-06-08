@@ -153,6 +153,8 @@ int VSM__itern(const struct vsm *vd, struct VSM_fantom *vf);
 	 * vd = "struct vsm *"
 	 */
 
+int VSM_Map(struct vsm *vd, struct VSM_fantom *vf);
+
 struct vsm_valid {
 	const char *name;
 };

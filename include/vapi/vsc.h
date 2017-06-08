@@ -53,7 +53,7 @@ int VSC_Arg(struct vsm *vd, int arg, const char *opt);
 	 *	 1 Handled.
 	 */
 
-void *VSC_Get(const struct vsm *vd, struct VSM_fantom *fantom,
+void *VSC_Get(struct vsm *vd, struct VSM_fantom *fantom,
     const char *type, const char *ident);
 	/*
 	 * Looks up the given VSC type and identifier. If fantom is

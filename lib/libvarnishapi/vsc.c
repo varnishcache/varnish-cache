@@ -230,7 +230,7 @@ VSC_Arg(struct vsm *vd, int arg, const char *opt)
  */
 
 void *
-VSC_Get(const struct vsm *vd, struct VSM_fantom *fantom, const char *type,
+VSC_Get(struct vsm *vd, struct VSM_fantom *fantom, const char *type,
     const char *ident)
 {
 	struct VSM_fantom f2 = VSM_FANTOM_NULL;
@@ -240,6 +240,8 @@ VSC_Get(const struct vsm *vd, struct VSM_fantom *fantom, const char *type,
 	if (VSM_invalid == VSM_StillValid(vd, fantom) &&
 	    !VSM_Get(vd, fantom, VSC_CLASS, type, ident))
 		return (NULL);
+	AZ(VSM_Map(vd, fantom));
+	AN(fantom->b);
 	return ((void*)((char*)fantom->b + 8));
 }
 
@@ -313,6 +315,7 @@ vsc_build_vf_list(struct vsm *vd)
 	VSM_FOREACH(&vsc->iter_fantom, vd) {
 		if (strcmp(vsc->iter_fantom.class, VSC_CLASS))
 			continue;
+		AZ(VSM_Map(vd, &vsc->iter_fantom));
 		u = vbe64dec(vsc->iter_fantom.b);
 		assert(u > 0);
 		p = (char*)vsc->iter_fantom.b + 8 + u;

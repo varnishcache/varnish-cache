@@ -182,4 +182,5 @@ LIBVARNISHAPI_1.7 {
 	VSM_invalid;
 	VSM_valid;
 	VSM_similar;
+	VSM_Map;
 } LIBVARNISHAPI_1.0;

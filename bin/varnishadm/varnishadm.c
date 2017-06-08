@@ -416,10 +416,12 @@ n_arg_sock(const char *n_arg)
 		VSM_Delete(vsm);
 		return (-1);
 	}
+	AZ(VSM_Map(vsm, &vt));
 	AN(vt.b);
 	T_start = T_arg = strdup(vt.b);
 
 	if (VSM_Get(vsm, &vt, "Arg", "-S", "")) {
+		AZ(VSM_Map(vsm, &vt));
 		AN(vt.b);
 		S_arg = strdup(vt.b);
 	}

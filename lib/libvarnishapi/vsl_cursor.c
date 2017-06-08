@@ -252,6 +252,8 @@ VSL_CursorVSM(struct VSL_data *vsl, struct vsm *vsm, unsigned options)
 		    "No VSL chunk found (child not started ?)");
 		return (NULL);
 	}
+	AZ(VSM_Map(vsm, &vf));
+	AN(vf.b);
 
 	head = vf.b;
 	if (memcmp(head->marker, VSL_HEAD_MARKER, sizeof head->marker)) {
