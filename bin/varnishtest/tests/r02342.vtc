@@ -1,0 +1,20 @@
+varnishtest "honor vcl_path with varnishd -f"
+
+shell {
+	cat >unlikely_file_name.vcl <<-EOF
+	vcl 4.0;
+
+	backend be {
+		.host = "${bad_backend}";
+	}
+	EOF
+}
+
+shell -err -expect "Cannot read -f file 'unlikely_file_name.vcl'" {
+	varnishd -F -a :0 -n ${tmpdir}/tmp -f unlikely_file_name.vcl
+}
+
+varnish v1 -arg "-p vcl_path=${tmpdir} -f unlikely_file_name.vcl" -start
+
+# Even when loaded from a relative path, show an absolute one
+varnish v1 -cliexpect "VCL.SHOW .+ ${tmpdir}/unlikely_file_name.vcl" "vcl.show -v boot"
