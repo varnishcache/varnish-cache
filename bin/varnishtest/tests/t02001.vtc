@@ -139,3 +139,20 @@ varnish v1 -expect MEMPOOL.req0.live == 0
 varnish v1 -expect MEMPOOL.req1.live == 0
 varnish v1 -expect MEMPOOL.sess0.live == 0
 varnish v1 -expect MEMPOOL.sess1.live == 0
+
+
+client c1 {
+	# Missing HTTP2-Settings
+	send "GET /noupgrade HTTP/1.1\r\n"
+	send "Host: foo.bar\r\n"
+	send "Upgrade: h2c\r\n"
+	send "\r\n"
+	expect_close
+} -run
+
+varnish v1 -vsl_catchup
+
+varnish v1 -expect MEMPOOL.req0.live == 0
+varnish v1 -expect MEMPOOL.req1.live == 0
+varnish v1 -expect MEMPOOL.sess0.live == 0
+varnish v1 -expect MEMPOOL.sess1.live == 0
