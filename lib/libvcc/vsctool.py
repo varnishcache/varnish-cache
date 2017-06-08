@@ -43,12 +43,14 @@ import collections
 TYPES = [ "counter", "gauge", "bitmap" ]
 CTYPES = [ "uint64_t" ]
 LEVELS = [ "info", "diag", "debug" ]
+FORMATS = [ "integer", "bytes", "duration" ]
 
 PARAMS = {
 	"type":		["counter", TYPES],
 	"ctype":	["uint64_t", CTYPES],
 	"level":	["info", LEVELS],
 	"oneliner":	True,
+	"format":	[ "integer", FORMATS],
 }
 
 def gzip_str(s):

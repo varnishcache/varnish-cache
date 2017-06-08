@@ -276,8 +276,7 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 	CAST_OBJ_NOTNULL(pt_priv, priv, PT_PRIV_MAGIC);
 
 	AZ(strcmp(vpt->desc->ctype, "uint64_t"));
-	bprintf(buf, "%s.%s.%s", vpt->section->type,
-	    vpt->section->ident, vpt->desc->name);
+	bprintf(buf, "%s.%s", vpt->section->ident, vpt->desc->name);
 
 	if (!strcmp(buf, "MGT..uptime"))
 		mgt_uptime = vpt->ptr;
@@ -313,12 +312,7 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 	pt->key = strdup(buf);
 	AN(pt->key);
 
-	if (*vpt->section->type != '\0')
-		bprintf(buf, "%s.%s", vpt->section->type, vpt->desc->name);
-	else if (*vpt->section->ident != '\0')
-		bprintf(buf, "%s.%s", vpt->section->ident, vpt->desc->name);
-	else
-		bprintf(buf, "%s", vpt->desc->name);
+	bprintf(buf, "%s.%s", vpt->section->ident, vpt->desc->name);
 	REPLACE(pt->name, buf);
 	AN(pt->name);
 

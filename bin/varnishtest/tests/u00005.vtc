@@ -45,7 +45,7 @@ shell -err -expect "Cannot open /nonexistent/_.vsm" \
 	"varnishstat -n /nonexistent -t 1"
 shell -expect "MAIN.uptime" \
 	"varnishstat -n ${v1_name} -1"
-shell -expect "<type>MAIN</type>" \
+shell -expect "<name>MAIN.uptime</name>" \
 	"varnishstat -n ${v1_name} -x"
 shell -match {"MAIN.uptime":} \
 	"varnishstat -n ${v1_name} -j"

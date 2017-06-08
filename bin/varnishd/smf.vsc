@@ -26,6 +26,7 @@
 .. varnish_vsc:: c_bytes
 	:type:	counter
 	:level:	info
+	:format: bytes
 	:oneliner:	Bytes allocated
 
 	Number of total bytes allocated by this storage.
@@ -33,6 +34,7 @@
 .. varnish_vsc:: c_freed
 	:type:	counter
 	:level:	info
+	:format: bytes
 	:oneliner:	Bytes freed
 
 	Number of total bytes returned to this storage.
@@ -47,6 +49,7 @@
 .. varnish_vsc:: g_bytes
 	:type:	gauge
 	:level:	info
+	:format: bytes
 	:oneliner:	Bytes outstanding
 
 	Number of bytes allocated from the storage.
@@ -54,6 +57,7 @@
 .. varnish_vsc:: g_space
 	:type:	gauge
 	:level:	info
+	:format: bytes
 	:oneliner:	Bytes available
 
 	Number of bytes left in the storage.

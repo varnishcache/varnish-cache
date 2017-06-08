@@ -822,11 +822,7 @@ do_stat_dump_cb(void *priv, const struct VSC_point * const pt)
 		return (0);
 	u = *(const volatile uint64_t*)pt->ptr;
 
-	strcpy(buf, pt->section->type);
-	if (pt->section->ident[0] != '\0')
-		bprintf(buf, "%s.%s", pt->section->ident, pt->desc->name);
-	else
-		bprintf(buf, "MAIN.%s", pt->desc->name);
+	bprintf(buf, "%s.%s", pt->section->ident, pt->desc->name);
 
 	if (strcmp(dp->arg, "*")) {
 		if (fnmatch(dp->arg, buf, 0))
@@ -858,7 +854,6 @@ varnish_vsc(const struct varnish *v, const char *arg)
  */
 
 struct stat_priv {
-	char target_type[256];
 	char target_ident[256];
 	char target_name[256];
 	uintmax_t val;
@@ -873,8 +868,6 @@ do_stat_cb(void *priv, const struct VSC_point * const pt)
 	if (pt == NULL)
 		return(0);
 
-	if (strcmp(pt->section->type, sp->target_type))
-		return(0);
 	if (strcmp(pt->section->ident, sp->target_ident))
 		return(0);
 	if (strcmp(pt->desc->name, sp->target_name))
@@ -895,7 +888,6 @@ varnish_expect(const struct varnish *v, char * const *av)
 	int good;
 	char *r;
 	char *p;
-	char *q;
 	int i, not = 0;
 	struct stat_priv sp;
 
@@ -908,22 +900,13 @@ varnish_expect(const struct varnish *v, char * const *av)
 		AN(av[1]);
 		AN(av[2]);
 	}
-	p = strchr(r, '.');
+	p = strrchr(r, '.');
 	if (p == NULL) {
-		strcpy(sp.target_type, "MAIN");
-		sp.target_ident[0] = '\0';
+		strcpy(sp.target_ident, "MAIN");
 		bprintf(sp.target_name, "%s", r);
 	} else {
-		bprintf(sp.target_type, "%.*s", (int)(p - r), r);
-		p++;
-		q = strrchr(p, '.');
-		if (q == NULL) {
-			sp.target_ident[0] = '\0';
-			bprintf(sp.target_name, "%s", p);
-		} else {
-			bprintf(sp.target_ident, "%.*s", (int)(q - p), p);
-			bprintf(sp.target_name, "%s", q + 1);
-		}
+		bprintf(sp.target_ident, "%.*s", (int)(p - r), r);
+		bprintf(sp.target_name, "%s", p + 1);
 	}
 
 	sp.val = 0;

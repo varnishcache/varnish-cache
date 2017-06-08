@@ -249,12 +249,19 @@ static struct vsc_vf *
 vsc_add_vf(struct vsc *vsc, const struct VSM_fantom *fantom, int order)
 {
 	struct vsc_vf *vf, *vf2;
+	struct vsb *vsb;
 
 	ALLOC_OBJ(vf, VSC_VF_MAGIC);
 	AN(vf);
 	vf->fantom = *fantom;
-	REPLACE(vf->section.type, vf->fantom.type);
-	REPLACE(vf->section.ident, vf->fantom.ident);
+	vsb = VSB_new_auto();
+	AN(vsb);
+	VSB_printf(vsb, "%s", vf->fantom.type);
+	if (*vf->fantom.ident != '\0')
+		VSB_printf(vsb, ".%s", vf->fantom.ident);
+	AZ(VSB_finish(vsb));
+	REPLACE(vf->section.ident, VSB_data(vsb));
+	VSB_destroy(&vsb);
 	vf->order = order;
 
 	VTAILQ_FOREACH(vf2, &vsc->vf_list, list) {
@@ -355,7 +362,38 @@ vsc_build_pt_list(struct VSM_data *vd)
 			DOF(sdesc, "oneliner");
 			DOF(ldesc, "docs");
 #undef DOF
+			vt = vjsn_child(vv, "type");
+			AN(vt);
+			assert(vt->type == VJSN_STRING);
+
+			if (!strcmp(vt->value, "counter")) {
+				vdsc->semantics = 'c';
+			} else if (!strcmp(vt->value, "gauge")) {
+				vdsc->semantics = 'g';
+			} else if (!strcmp(vt->value, "bitmap")) {
+				vdsc->semantics = 'b';
+			} else {
+				vdsc->semantics = '?';
+			}
+
+			vt = vjsn_child(vv, "format");
+			AN(vt);
+			assert(vt->type == VJSN_STRING);
+
+			if (!strcmp(vt->value, "integer")) {
+				vdsc->format = 'i';
+			} else if (!strcmp(vt->value, "bytes")) {
+				vdsc->format = 'B';
+			} else if (!strcmp(vt->value, "bitmap")) {
+				vdsc->format = 'b';
+			} else if (!strcmp(vt->value, "duration")) {
+				vdsc->format = 'd';
+			} else {
+				vdsc->format = '?';
+			}
+
 			vdsc->level = &level_info;
+
 			vt = vjsn_child(vv, "index");
 			AN(vt);
 			vsc_add_pt(vsc,
@@ -373,8 +411,6 @@ vsc_filter_match_pt(struct vsb *vsb, const struct vsc_sf *sf, const
     struct vsc_pt *pt)
 {
 	VSB_clear(vsb);
-	if (strcmp(pt->point.section->type, ""))
-		VSB_printf(vsb, "%s.", pt->point.section->type);
 	if (strcmp(pt->point.section->ident, ""))
 		VSB_printf(vsb, "%s.", pt->point.section->ident);
 	VSB_printf(vsb, "%s", pt->point.desc->name);

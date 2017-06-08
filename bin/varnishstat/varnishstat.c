@@ -66,11 +66,7 @@ do_xml_cb(void *priv, const struct VSC_point * const pt)
 	sec = pt->section;
 
 	printf("\t<stat>\n");
-	if (strcmp(sec->type, ""))
-		printf("\t\t<type>%s</type>\n", sec->type);
-	if (strcmp(sec->ident, ""))
-		printf("\t\t<ident>%s</ident>\n", sec->ident);
-	printf("\t\t<name>%s</name>\n", pt->desc->name);
+	printf("\t\t<name>%s.%s</name>\n", sec->ident, pt->desc->name);
 	printf("\t\t<value>%ju</value>\n", (uintmax_t)val);
 	printf("\t\t<flag>%c</flag>\n", pt->desc->semantics);
 	printf("\t\t<format>%c</format>\n", pt->desc->format);
@@ -118,18 +114,12 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 
 	printf("  \"");
 	/* build the JSON key name.  */
-	if (sec->type[0])
-		printf("%s.", sec->type);
 	if (sec->ident[0])
 		printf("%s.", sec->ident);
 	printf("%s\": {\n", pt->desc->name);
 	printf("    \"description\": \"%s\",\n", pt->desc->sdesc);
 
-	if (strcmp(sec->type, ""))
-		printf("    \"type\": \"%s\", ", sec->type);
-	if (strcmp(sec->ident, ""))
-		printf("\"ident\": \"%s\", ", sec->ident);
-	printf("\"flag\": \"%c\", ", pt->desc->semantics);
+	printf("    \"flag\": \"%c\", ", pt->desc->semantics);
 	printf("\"format\": \"%c\",\n", pt->desc->format);
 	printf("    \"value\": %ju", (uintmax_t)val);
 	printf("\n  }");
@@ -177,7 +167,7 @@ do_once_cb_first(void *priv, const struct VSC_point * const pt)
 	op = priv;
 	AZ(strcmp(pt->desc->ctype, "uint64_t"));
 	sec = pt->section;
-	if (strcmp(sec->type, "MAIN") || strcmp(pt->desc->name, "uptime"))
+	if (strcmp(sec->ident, "MAIN") || strcmp(pt->desc->name, "uptime"))
 		return (0);
 	val = *(const volatile uint64_t*)pt->ptr;
 	op->up = (double)val;
@@ -199,8 +189,6 @@ do_once_cb(void *priv, const struct VSC_point * const pt)
 	val = *(const volatile uint64_t*)pt->ptr;
 	sec = pt->section;
 	i = 0;
-	if (strcmp(sec->type, ""))
-		i += printf("%s.", sec->type);
 	if (strcmp(sec->ident, ""))
 		i += printf("%s.", sec->ident);
 	i += printf("%s", pt->desc->name);
@@ -244,8 +232,6 @@ do_list_cb(void *priv, const struct VSC_point * const pt)
 
 	sec = pt->section;
 	i = 0;
-	if (strcmp(sec->type, ""))
-		i += printf("%s.", sec->type);
 	if (strcmp(sec->ident, ""))
 		i += printf("%s.", sec->ident);
 	i += printf("%s", pt->desc->name);

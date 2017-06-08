@@ -16,6 +16,7 @@
 
 .. varnish_vsc:: uptime
 	:oneliner:	Child process uptime
+	:format:	duration
 
 	How long the child process has been running.
 

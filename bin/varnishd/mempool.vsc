@@ -24,12 +24,14 @@
 .. varnish_vsc:: sz_wanted
 	:type:	gauge
 	:level:	debug
+	:format: bytes
 	:oneliner:	Size requested
 
 
 .. varnish_vsc:: sz_actual
 	:type:	gauge
 	:level:	debug
+	:format: bytes
 	:oneliner:	Size allocated
 
 

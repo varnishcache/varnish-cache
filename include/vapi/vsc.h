@@ -85,7 +85,6 @@ struct VSC_level_desc {
 };
 
 struct VSC_section {
-	char *type;
 	char *ident;
 };
 
