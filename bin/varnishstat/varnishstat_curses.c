@@ -334,7 +334,7 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 }
 
 static void
-build_pt_list(struct VSM_data *vd, struct VSM_fantom *fantom)
+build_pt_list(struct vsm *vd, struct VSM_fantom *fantom)
 {
 	struct pt_priv pt_priv;
 	int i;
@@ -1065,7 +1065,7 @@ handle_keypress(int ch)
 }
 
 void
-do_curses(struct VSM_data *vd, double delay)
+do_curses(struct vsm *vd, double delay)
 {
 	struct pollfd pollfd;
 	long t;

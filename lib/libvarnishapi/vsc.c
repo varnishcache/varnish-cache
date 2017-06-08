@@ -109,7 +109,7 @@ static const size_t nlevels =
 /*--------------------------------------------------------------------*/
 
 static struct vsc *
-vsc_setup(struct VSM_data *vd)
+vsc_setup(struct vsm *vd)
 {
 	struct vsc *vsc;
 
@@ -184,7 +184,7 @@ VSC_Delete(struct vsc *vsc)
 /*--------------------------------------------------------------------*/
 
 static int
-vsc_f_arg(struct VSM_data *vd, const char *opt)
+vsc_f_arg(struct vsm *vd, const char *opt)
 {
 	struct vsc *vsc = vsc_setup(vd);
 	struct vsc_sf *sf;
@@ -215,7 +215,7 @@ vsc_f_arg(struct VSM_data *vd, const char *opt)
 /*--------------------------------------------------------------------*/
 
 int
-VSC_Arg(struct VSM_data *vd, int arg, const char *opt)
+VSC_Arg(struct vsm *vd, int arg, const char *opt)
 {
 
 	switch (arg) {
@@ -230,7 +230,7 @@ VSC_Arg(struct VSM_data *vd, int arg, const char *opt)
  */
 
 void *
-VSC_Get(const struct VSM_data *vd, struct VSM_fantom *fantom, const char *type,
+VSC_Get(const struct vsm *vd, struct VSM_fantom *fantom, const char *type,
     const char *ident)
 {
 	struct VSM_fantom f2 = VSM_FANTOM_NULL;
@@ -297,7 +297,7 @@ vsc_add_pt(struct vsc *vsc, const volatile void *ptr,
  */
 
 static void
-vsc_build_vf_list(struct VSM_data *vd)
+vsc_build_vf_list(struct vsm *vd)
 {
 	uint64_t u;
 	struct vsc *vsc = vsc_setup(vd);
@@ -335,7 +335,7 @@ vsc_build_vf_list(struct VSM_data *vd)
 }
 
 static void
-vsc_build_pt_list(struct VSM_data *vd)
+vsc_build_pt_list(struct vsm *vd)
 {
 	struct vsc *vsc = vsc_setup(vd);
 	struct vsc_vf *vf;
@@ -419,7 +419,7 @@ vsc_filter_match_pt(struct vsb *vsb, const struct vsc_sf *sf, const
 }
 
 static void
-vsc_filter_pt_list(struct VSM_data *vd)
+vsc_filter_pt_list(struct vsm *vd)
 {
 	struct vsc *vsc = vsc_setup(vd);
 	struct vsc_pt_head tmplist;
@@ -475,7 +475,7 @@ vsc_filter_pt_list(struct VSM_data *vd)
  */
 
 int
-VSC_Iter(struct VSM_data *vd, struct VSM_fantom *fantom, VSC_iter_f *func,
+VSC_Iter(struct vsm *vd, struct VSM_fantom *fantom, VSC_iter_f *func,
     void *priv)
 {
 	struct vsc *vsc = vsc_setup(vd);

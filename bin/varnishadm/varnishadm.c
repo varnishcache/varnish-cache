@@ -393,7 +393,7 @@ n_arg_sock(const char *n_arg)
 {
 	char *T_arg = NULL, *T_start = NULL;
 	char *S_arg = NULL;
-	struct VSM_data *vsm;
+	struct vsm *vsm;
 	char *p;
 	int sock;
 	struct VSM_fantom vt;

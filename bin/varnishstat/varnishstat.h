@@ -35,4 +35,4 @@
 #include "vas.h"
 #include "vcs.h"
 
-void do_curses(struct VSM_data *vd, double delay);
+void do_curses(struct vsm *vd, double delay);

@@ -29,8 +29,8 @@
  */
 
 struct vsc;
-struct VSM_data;
+struct vsm;
 
-void VSM_SetVSC(struct VSM_data *, struct vsc *);
-struct vsc *VSM_GetVSC(const struct VSM_data *);
+void VSM_SetVSC(struct vsm *, struct vsc *);
+struct vsc *VSM_GetVSC(const struct vsm *);
 void VSC_Delete(struct vsc *);

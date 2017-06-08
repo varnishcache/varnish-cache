@@ -49,7 +49,7 @@ struct VUT {
 
 	/* State */
 	struct VSL_data	*vsl;
-	struct VSM_data	*vsm;
+	struct vsm	*vsm;
 	struct VSLQ	*vslq;
 	struct vpf_fh	*pfh;
 	int		sighup;

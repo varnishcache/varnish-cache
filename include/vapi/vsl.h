@@ -38,7 +38,7 @@
 
 #include "vapi/vsl_int.h"
 
-struct VSM_data;
+struct vsm;
 
 /*
  * enum VSL_tag_e enumerates the SHM log tags, where the identifiers are
@@ -266,7 +266,7 @@ void VSL_ResetError(struct VSL_data *vsl);
 #define VSL_COPT_TAIL		(1 << 0)
 #define VSL_COPT_BATCH		(1 << 1)
 #define VSL_COPT_TAILSTOP	(1 << 2)
-struct VSL_cursor *VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm,
+struct VSL_cursor *VSL_CursorVSM(struct VSL_data *vsl, struct vsm *vsm,
     unsigned options);
        /*
 	* Set the cursor pointed to by cursor up as a raw cursor in the

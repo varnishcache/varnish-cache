@@ -63,7 +63,7 @@ struct vslc_vsm {
 
 	unsigned			options;
 
-	struct VSM_data			*vsm;
+	struct vsm			*vsm;
 	struct VSM_fantom		vf;
 
 	const struct VSL_head		*head;
@@ -238,7 +238,7 @@ static const struct vslc_tbl vslc_vsm_tbl = {
 };
 
 struct VSL_cursor *
-VSL_CursorVSM(struct VSL_data *vsl, struct VSM_data *vsm, unsigned options)
+VSL_CursorVSM(struct VSL_data *vsl, struct vsm *vsm, unsigned options)
 {
 	struct vslc_vsm *c;
 	struct VSM_fantom vf;

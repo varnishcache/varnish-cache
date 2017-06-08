@@ -76,7 +76,7 @@ do_xml_cb(void *priv, const struct VSC_point * const pt)
 }
 
 static void
-do_xml(struct VSM_data *vd)
+do_xml(struct vsm *vd)
 {
 	char time_stamp[20];
 	time_t now;
@@ -130,7 +130,7 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 }
 
 static void
-do_json(struct VSM_data *vd)
+do_json(struct vsm *vd)
 {
 	char time_stamp[20];
 	time_t now;
@@ -206,7 +206,7 @@ do_once_cb(void *priv, const struct VSC_point * const pt)
 }
 
 static void
-do_once(struct VSM_data *vd)
+do_once(struct vsm *vd)
 {
 	struct once_priv op;
 
@@ -242,7 +242,7 @@ do_list_cb(void *priv, const struct VSC_point * const pt)
 }
 
 static void
-list_fields(struct VSM_data *vd)
+list_fields(struct vsm *vd)
 {
 	printf("Varnishstat -f option fields:\n");
 	printf("Field name                     Description\n");
@@ -268,7 +268,7 @@ usage(int status)
 int
 main(int argc, char * const *argv)
 {
-	struct VSM_data *vd;
+	struct vsm *vd;
 	double t_arg = 5.0, t_start = NAN;
 	int once = 0, xml = 0, json = 0, f_list = 0, curses = 0;
 	signed char opt;

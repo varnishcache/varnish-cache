@@ -76,7 +76,7 @@ struct varnish {
 	char			*jail;
 	char			*proto;
 
-	struct VSM_data		*vd;		/* vsc use */
+	struct vsm		*vd;		/* vsc use */
 
 	unsigned		vsl_tag_count[256];
 
@@ -197,7 +197,7 @@ varnishlog_thread(void *priv)
 {
 	struct varnish *v;
 	struct VSL_data *vsl;
-	struct VSM_data *vsm;
+	struct vsm *vsm;
 	struct VSL_cursor *c;
 	enum VSL_tag_e tag;
 	uint32_t vxid;

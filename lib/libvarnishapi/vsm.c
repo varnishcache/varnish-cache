@@ -66,7 +66,7 @@ const struct vsm_valid VSM_similar[1] = {{"similar"}};
 
 struct vsc;
 
-struct VSM_data {
+struct vsm {
 	unsigned		magic;
 #define VSM_MAGIC		0x6e3bd69b
 
@@ -90,10 +90,10 @@ struct VSM_data {
 
 /*--------------------------------------------------------------------*/
 
-struct VSM_data *
+struct vsm *
 VSM_New(void)
 {
-	struct VSM_data *vd;
+	struct vsm *vd;
 
 	ALLOC_OBJ(vd, VSM_MAGIC);
 	if (vd == NULL)
@@ -108,7 +108,7 @@ VSM_New(void)
 /*--------------------------------------------------------------------*/
 
 void
-VSM_SetVSC(struct VSM_data *vd, struct vsc *vsc)
+VSM_SetVSC(struct vsm *vd, struct vsc *vsc)
 {
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 
@@ -116,7 +116,7 @@ VSM_SetVSC(struct VSM_data *vd, struct vsc *vsc)
 }
 
 struct vsc *
-VSM_GetVSC(const struct VSM_data *vd)
+VSM_GetVSC(const struct vsm *vd)
 {
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 
@@ -126,7 +126,7 @@ VSM_GetVSC(const struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 static int
-vsm_diag(struct VSM_data *vd, const char *fmt, ...)
+vsm_diag(struct vsm *vd, const char *fmt, ...)
 {
 	va_list ap;
 
@@ -146,7 +146,7 @@ vsm_diag(struct VSM_data *vd, const char *fmt, ...)
 /*--------------------------------------------------------------------*/
 
 const char *
-VSM_Error(const struct VSM_data *vd)
+VSM_Error(const struct vsm *vd)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -160,7 +160,7 @@ VSM_Error(const struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 void
-VSM_ResetError(struct VSM_data *vd)
+VSM_ResetError(struct vsm *vd)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -173,7 +173,7 @@ VSM_ResetError(struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 int
-VSM_n_Arg(struct VSM_data *vd, const char *arg)
+VSM_n_Arg(struct vsm *vd, const char *arg)
 {
 	char *dname = NULL;
 	struct vsb *vsb;
@@ -203,7 +203,7 @@ VSM_n_Arg(struct VSM_data *vd, const char *arg)
 /*--------------------------------------------------------------------*/
 
 const char *
-VSM_Name(const struct VSM_data *vd)
+VSM_Name(const struct vsm *vd)
 {
 	struct VSM_fantom vt;
 
@@ -216,7 +216,7 @@ VSM_Name(const struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 void
-VSM_Delete(struct VSM_data *vd)
+VSM_Delete(struct vsm *vd)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -241,7 +241,7 @@ VSM_Delete(struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 int
-VSM_Open(struct VSM_data *vd)
+VSM_Open(struct vsm *vd)
 {
 	int i;
 	struct VSM_head slh;
@@ -310,7 +310,7 @@ VSM_Open(struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 int
-VSM_IsOpen(const struct VSM_data *vd)
+VSM_IsOpen(const struct vsm *vd)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -320,7 +320,7 @@ VSM_IsOpen(const struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 void
-VSM_Close(struct VSM_data *vd)
+VSM_Close(struct vsm *vd)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -339,7 +339,7 @@ VSM_Close(struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 int
-VSM_Abandoned(struct VSM_data *vd)
+VSM_Abandoned(struct vsm *vd)
 {
 	struct stat st;
 	double now;
@@ -376,7 +376,7 @@ VSM_Abandoned(struct VSM_data *vd)
 /*--------------------------------------------------------------------*/
 
 void
-VSM__iter0(const struct VSM_data *vd, struct VSM_fantom *vf)
+VSM__iter0(const struct vsm *vd, struct VSM_fantom *vf)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -386,7 +386,7 @@ VSM__iter0(const struct VSM_data *vd, struct VSM_fantom *vf)
 }
 
 int
-VSM__itern(const struct VSM_data *vd, struct VSM_fantom *vf)
+VSM__itern(const struct vsm *vd, struct VSM_fantom *vf)
 {
 	struct VSM_chunk *c = NULL;
 
@@ -438,7 +438,7 @@ VSM__itern(const struct VSM_data *vd, struct VSM_fantom *vf)
 /*--------------------------------------------------------------------*/
 
 const struct vsm_valid *
-VSM_StillValid(const struct VSM_data *vd, struct VSM_fantom *vf)
+VSM_StillValid(const struct vsm *vd, struct VSM_fantom *vf)
 {
 	struct VSM_fantom f2;
 
@@ -468,7 +468,7 @@ VSM_StillValid(const struct VSM_data *vd, struct VSM_fantom *vf)
 }
 
 int
-VSM_Get(const struct VSM_data *vd, struct VSM_fantom *vf,
+VSM_Get(const struct vsm *vd, struct VSM_fantom *vf,
     const char *class, const char *type, const char *ident)
 {
 

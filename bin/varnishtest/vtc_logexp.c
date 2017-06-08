@@ -155,7 +155,7 @@ struct logexp {
 	int				g_arg;
 	char				*query;
 
-	struct VSM_data			*vsm;
+	struct vsm			*vsm;
 	struct vsb			*n_arg;
 	struct VSL_data			*vsl;
 	struct VSLQ			*vslq;

@@ -37,14 +37,14 @@
 
 #include "vapi/vsc_int.h"
 
-struct VSM_data;
+struct vsm;
 struct VSM_fantom;
 
 /*---------------------------------------------------------------------
  * VSC level access functions
  */
 
-int VSC_Arg(struct VSM_data *vd, int arg, const char *opt);
+int VSC_Arg(struct vsm *vd, int arg, const char *opt);
 	/*
 	 * Handle standard stat-presenter arguments
 	 * Return:
@@ -53,7 +53,7 @@ int VSC_Arg(struct VSM_data *vd, int arg, const char *opt);
 	 *	 1 Handled.
 	 */
 
-void *VSC_Get(const struct VSM_data *vd, struct VSM_fantom *fantom,
+void *VSC_Get(const struct vsm *vd, struct VSM_fantom *fantom,
     const char *type, const char *ident);
 	/*
 	 * Looks up the given VSC type and identifier. If fantom is
@@ -61,7 +61,7 @@ void *VSC_Get(const struct VSM_data *vd, struct VSM_fantom *fantom,
 	 * VSM_StillValid.
 	 *
 	 * Arguments:
-	 *	vd:	The VSM_data context
+	 *	vd:	The vsm context
 	 *	fantom: Pointer to a fantom. Can be NULL.
 	 *	type:	The type of the counter segment
 	 *	ident:	The identifier of the counter segment
@@ -107,7 +107,7 @@ struct VSC_point {
 
 typedef int VSC_iter_f(void *priv, const struct VSC_point *const pt);
 
-int VSC_Iter(struct VSM_data *vd, struct VSM_fantom *fantom, VSC_iter_f *func,
+int VSC_Iter(struct vsm *vd, struct VSM_fantom *fantom, VSC_iter_f *func,
     void *priv);
 	/*
 	 * Iterate over all statistics counters, calling "func" for
@@ -126,7 +126,7 @@ int VSC_Iter(struct VSM_data *vd, struct VSM_fantom *fantom, VSC_iter_f *func,
 	 * change (child restart, allocations/deallocations)
 	 *
 	 * Arguments:
-	 *	    vd: The VSM_data context
+	 *	    vd: The vsm context
 	 *	fantom: Pointer to a fantom. Can be NULL.
 	 *	  func: The callback function
 	 *	  priv: Passed as argument to func
