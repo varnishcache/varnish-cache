@@ -155,9 +155,9 @@ h2_b64url_settings(struct h2_sess *h2, struct req *req)
 	 * If there is trouble with this, we could reject the upgrade
 	 * but putting this on the H1 side is just plain wrong...
 	 */
-	AN(http_GetHdr(req->http, H_HTTP2_Settings, &p));
-	if (p == NULL)
+	if (!http_GetHdr(req->http, H_HTTP2_Settings, &p))
 		return (-1);
+	AN(p);
 	VSLb(req->vsl, SLT_Debug, "H2CS %s", p);
 
 	n = 0;
