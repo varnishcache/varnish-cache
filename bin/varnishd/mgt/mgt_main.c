@@ -73,6 +73,9 @@ static char		Cn_arg[] = "/tmp/varnishd_C_XXXXXXX";
 static struct vpf_fh *pfh1 = NULL;
 static struct vpf_fh *pfh2 = NULL;
 
+static struct vfil_path *vcl_path = NULL;
+VTAILQ_HEAD(,f_arg) f_args = VTAILQ_HEAD_INITIALIZER(f_args);
+
 int optreset;	// Some has it, some doesn't.  Cheaper than auto*
 
 /*--------------------------------------------------------------------*/
@@ -442,6 +445,27 @@ struct f_arg {
 	VTAILQ_ENTRY(f_arg)	list;
 };
 
+static void
+mgt_f_read(const char *fn)
+{
+	struct f_arg *fa;
+	char *f, *fnp;
+
+	ALLOC_OBJ(fa, F_ARG_MAGIC);
+	AN(fa);
+	REPLACE(fa->farg, fn);
+	VFIL_setpath(&vcl_path, mgt_vcl_path);
+	if (VFIL_searchpath(vcl_path, NULL, &f, fn, &fnp) || f == NULL) {
+		ARGV_ERR("Cannot read -f file '%s' (%s)\n",
+		    fnp != NULL ? fnp : fn, strerror(errno));
+		free(fnp);
+	}
+	free(fa->farg);
+	fa->farg = fnp;
+	fa->src = f;
+	VTAILQ_INSERT_TAIL(&f_args, fa, list);
+}
+
 static const char opt_spec[] = "a:b:Cdf:Fh:i:I:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
 
 int
@@ -473,7 +497,6 @@ main(int argc, char * const *argv)
 	struct vev *e;
 	struct f_arg *fa;
 	struct vsb *vsb;
-	VTAILQ_HEAD(,f_arg) f_args = VTAILQ_HEAD_INITIALIZER(f_args);
 	pid_t pid;
 
 	setbuf(stdout, NULL);
@@ -626,14 +649,7 @@ main(int argc, char * const *argv)
 				novcl = 1;
 				break;
 			}
-			ALLOC_OBJ(fa, F_ARG_MAGIC);
-			AN(fa);
-			REPLACE(fa->farg, optarg);
-			fa->src = VFIL_readfile(NULL, fa->farg, NULL);
-			if (fa->src == NULL)
-				ARGV_ERR("Cannot read -f file (%s): %s\n",
-				    fa->farg, strerror(errno));
-			VTAILQ_INSERT_TAIL(&f_args, fa, list);
+			mgt_f_read(optarg);
 			break;
 		case 'h':
 			h_arg = optarg;
