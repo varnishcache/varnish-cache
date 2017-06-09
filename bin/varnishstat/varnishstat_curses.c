@@ -104,8 +104,6 @@ static int n_ptarray = 0;
 static struct pt **ptarray = NULL;
 static const volatile uint64_t *mgt_uptime;
 static const volatile uint64_t *main_uptime;
-static const volatile uint64_t *main_hit;
-static const volatile uint64_t *main_miss;
 static const volatile uint64_t *main_cache_hit;
 static const volatile uint64_t *main_cache_miss;
 
@@ -278,17 +276,13 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 	AZ(strcmp(vpt->desc->ctype, "uint64_t"));
 	bprintf(buf, "%s.%s", vpt->section->ident, vpt->desc->name);
 
-	if (!strcmp(buf, "MGT..uptime"))
+	if (!strcmp(buf, "MGT.uptime"))
 		mgt_uptime = vpt->ptr;
-	if (!strcmp(buf, "MAIN..uptime"))
+	if (!strcmp(buf, "MAIN.uptime"))
 		main_uptime = vpt->ptr;
-	if (!strcmp(buf, "MAIN..hit"))
-		main_hit = vpt->ptr;
-	if (!strcmp(buf, "MAIN..miss"))
-		main_miss = vpt->ptr;
-	if (!strcmp(buf, "MAIN..cache_hit"))
+	if (!strcmp(buf, "MAIN.cache_hit"))
 		main_cache_hit = vpt->ptr;
-	if (!strcmp(buf, "MAIN..cache_miss"))
+	if (!strcmp(buf, "MAIN.cache_miss"))
 		main_cache_miss = vpt->ptr;
 
 	VTAILQ_FOREACH(pt, &ptlist, list) {
@@ -352,8 +346,6 @@ build_pt_list(struct vsm *vd, struct VSM_fantom *fantom)
 
 	mgt_uptime = NULL;
 	main_uptime = NULL;
-	main_hit = NULL;
-	main_miss = NULL;
 	main_cache_hit = NULL;
 	main_cache_miss = NULL;
 
@@ -421,11 +413,11 @@ sample_hitrate(void)
 	double hr, mr, ratio;
 	uint64_t hit, miss;
 
-	if (main_hit == NULL)
+	if (main_cache_hit == NULL)
 		return;
 
-	hit = *main_hit;
-	miss = *main_miss;
+	hit = *main_cache_hit;
+	miss = *main_cache_miss;
 	hr = hit - hitrate.lhit;
 	mr = miss - hitrate.lmiss;
 	hitrate.lhit = hit;
