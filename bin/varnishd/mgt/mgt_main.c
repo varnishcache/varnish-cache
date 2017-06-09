@@ -832,7 +832,7 @@ main(int argc, char * const *argv)
 
 	mgt_SHM_Init();
 
-	mgt_SHM_static_alloc(i_arg, strlen(i_arg) + 1L, "Arg", "-i", "");
+	mgt_SHM_static_alloc(i_arg, strlen(i_arg) + 1L, "Arg", "-i", "-i");
 
 	if (M_arg != NULL)
 		mgt_cli_master(M_arg);

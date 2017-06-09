@@ -77,6 +77,7 @@ struct varnish {
 	char			*proto;
 
 	struct vsm		*vd;		/* vsc use */
+	struct VSM_fantom	mgt_arg_i;
 
 	unsigned		vsl_tag_count[256];
 
@@ -525,6 +526,7 @@ varnish_launch(struct varnish *v)
 
 	(void)VSM_n_Arg(v->vd, v->workdir);
 	AZ(VSM_Open(v->vd));
+	assert(VSM_Get(v->vd, &v->mgt_arg_i, "Arg", "-i") > 0);
 }
 
 /**********************************************************************
@@ -834,14 +836,14 @@ do_stat_dump_cb(void *priv, const struct VSC_point * const pt)
 }
 
 static void
-varnish_vsc(const struct varnish *v, const char *arg)
+varnish_vsc(struct varnish *v, const char *arg)
 {
 	struct dump_priv dp;
 
 	memset(&dp, 0, sizeof dp);
 	dp.v = v;
 	dp.arg = arg;
-	if (VSM_Abandoned(v->vd)) {
+	if (VSM_StillValid(v->vd, &v->mgt_arg_i) != VSM_valid) {
 		VSM_Close(v->vd);
 		VSM_Open(v->vd);
 	}
@@ -882,7 +884,7 @@ do_stat_cb(void *priv, const struct VSC_point * const pt)
  */
 
 static void
-varnish_expect(const struct varnish *v, char * const *av)
+varnish_expect(struct varnish *v, char * const *av)
 {
 	uint64_t ref;
 	int good;
@@ -914,7 +916,7 @@ varnish_expect(const struct varnish *v, char * const *av)
 	ref = 0;
 	good = 0;
 	for (i = 0; i < 10; i++, (void)usleep(100000)) {
-		if (VSM_Abandoned(v->vd)) {
+		if (VSM_StillValid(v->vd, &v->mgt_arg_i) != VSM_valid) {
 			VSM_Close(v->vd);
 			good = VSM_Open(v->vd);
 		}
