@@ -503,7 +503,7 @@ mgt_cli_secret(const char *S_arg)
 	char buf[BUFSIZ];
 
 	/* Save in shmem */
-	mgt_SHM_static_alloc(S_arg, strlen(S_arg) + 1L, "Arg", "-S", "");
+	mgt_SHM_static_alloc(S_arg, strlen(S_arg) + 1L, "Arg", "", "-S");
 
 	VJ_master(JAIL_MASTER_FILE);
 	fd = open(S_arg, O_RDONLY);
@@ -573,7 +573,7 @@ mgt_cli_telnet(const char *T_arg)
 	if (VSB_len(vsb) == 0)
 		ARGV_ERR("-T %s could not be listened on.\n", T_arg);
 	/* Save in shmem */
-	mgt_SHM_static_alloc(VSB_data(vsb), VSB_len(vsb) + 1, "Arg", "-T", "");
+	mgt_SHM_static_alloc(VSB_data(vsb), VSB_len(vsb) + 1, "Arg", "", "-T");
 	VSB_destroy(&vsb);
 }
 

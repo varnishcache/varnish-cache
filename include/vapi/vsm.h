@@ -196,11 +196,11 @@ const struct vsm_valid *VSM_StillValid(const struct vsm *vd,
 	 */
 
 int VSM_Get(const struct vsm *vd, struct VSM_fantom *vf,
-    const char *class, const char *type, const char *ident);
+    const char *class, const char *ident);
 	/*
 	 * Find a chunk, produce fantom for it.
 	 * Returns zero on failure.
-	 * class is mandatory, type and ident optional.
+	 * class is mandatory, ident optional.
 	 */
 
 #endif /* VAPI_VSM_H_INCLUDED */

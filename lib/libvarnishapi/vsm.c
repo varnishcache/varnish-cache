@@ -208,7 +208,7 @@ VSM_Name(const struct vsm *vd)
 	struct VSM_fantom vt;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	if (VSM_Get(vd, &vt, "Arg", "-i", ""))
+	if (VSM_Get(vd, &vt, "Arg", "-i"))
 		return (vt.b);
 	return ("");
 }
@@ -481,14 +481,12 @@ VSM_StillValid(const struct vsm *vd, struct VSM_fantom *vf)
 
 int
 VSM_Get(const struct vsm *vd, struct VSM_fantom *vf,
-    const char *class, const char *type, const char *ident)
+    const char *class, const char *ident)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	VSM_FOREACH(vf, vd) {
 		if (strcmp(vf->class, class))
-			continue;
-		if (type != NULL && strcmp(vf->type, type))
 			continue;
 		if (ident != NULL && strcmp(vf->ident, ident))
 			continue;

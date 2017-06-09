@@ -247,7 +247,7 @@ VSL_CursorVSM(struct VSL_data *vsl, struct vsm *vsm, unsigned options)
 
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 
-	if (!VSM_Get(vsm, &vf, VSL_CLASS, "", "")) {
+	if (!VSM_Get(vsm, &vf, VSL_CLASS, NULL)) {
 		(void)vsl_diag(vsl,
 		    "No VSL chunk found (child not started ?)");
 		return (NULL);
