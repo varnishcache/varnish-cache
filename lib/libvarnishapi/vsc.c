@@ -226,25 +226,6 @@ VSC_Arg(struct vsm *vd, int arg, const char *opt)
 	}
 }
 
-/*--------------------------------------------------------------------
- */
-
-void *
-VSC_Get(struct vsm *vd, struct VSM_fantom *fantom, const char *type,
-    const char *ident)
-{
-	struct VSM_fantom f2 = VSM_FANTOM_NULL;
-
-	if (fantom == NULL)
-		fantom = &f2;
-	if (VSM_invalid == VSM_StillValid(vd, fantom) &&
-	    !VSM_Get(vd, fantom, VSC_CLASS, type, ident))
-		return (NULL);
-	AZ(VSM_Map(vd, fantom));
-	AN(fantom->b);
-	return ((void*)((char*)fantom->b + 8));
-}
-
 /*--------------------------------------------------------------------*/
 
 static struct vsc_vf *

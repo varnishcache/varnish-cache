@@ -53,24 +53,6 @@ int VSC_Arg(struct vsm *vd, int arg, const char *opt);
 	 *	 1 Handled.
 	 */
 
-void *VSC_Get(struct vsm *vd, struct VSM_fantom *fantom,
-    const char *type, const char *ident);
-	/*
-	 * Looks up the given VSC type and identifier. If fantom is
-	 * non-NULL, it can if successful later be used with
-	 * VSM_StillValid.
-	 *
-	 * Arguments:
-	 *	vd:	The vsm context
-	 *	fantom: Pointer to a fantom. Can be NULL.
-	 *	type:	The type of the counter segment
-	 *	ident:	The identifier of the counter segment
-	 *
-	 * Return values:
-	 *  NULL:	Failure
-	 *  non-NULL:	A void pointer to the stats structure.
-	 */
-
 struct VSC_level_desc;
 struct VSC_type_desc;
 struct VSC_section;
