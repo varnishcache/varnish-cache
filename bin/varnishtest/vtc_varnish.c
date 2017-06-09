@@ -822,7 +822,7 @@ do_stat_dump_cb(void *priv, const struct VSC_point * const pt)
 
 	if (strcmp(pt->desc->ctype, "uint64_t"))
 		return (0);
-	u = *(const volatile uint64_t*)pt->ptr;
+	u = *pt->ptr;
 
 	bprintf(buf, "%s.%s", pt->section->ident, pt->desc->name);
 
@@ -876,7 +876,7 @@ do_stat_cb(void *priv, const struct VSC_point * const pt)
 		return(0);
 
 	AZ(strcmp(pt->desc->ctype, "uint64_t"));
-	sp->val = *(const volatile uint64_t*)pt->ptr;
+	sp->val = *pt->ptr;
 	return (1);
 }
 

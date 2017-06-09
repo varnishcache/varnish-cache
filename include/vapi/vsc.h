@@ -83,7 +83,7 @@ struct VSC_desc {
 
 struct VSC_point {
 	const struct VSC_desc *desc;	/* point description		*/
-	const volatile void *ptr;	/* field value			*/
+	const volatile uint64_t *ptr;	/* field value			*/
 	const struct VSC_section *section;
 };
 

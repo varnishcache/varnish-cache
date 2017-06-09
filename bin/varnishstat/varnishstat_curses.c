@@ -75,11 +75,7 @@ struct pt {
 
 	const struct VSC_point	*vpt;
 
-	char			*key;
 	char			*name;
-	int			semantics;
-	int			format;
-	const volatile uint64_t	*ptr;
 
 	char			seen;
 
@@ -287,8 +283,8 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 
 	VTAILQ_FOREACH(pt, &ptlist, list) {
 		CHECK_OBJ_NOTNULL(pt, PT_MAGIC);
-		AN(pt->key);
-		if (strcmp(buf, pt->key))
+		AN(pt->name);
+		if (strcmp(buf, pt->name))
 			continue;
 		VTAILQ_REMOVE(&ptlist, pt, list);
 		AN(n_ptlist);
@@ -303,19 +299,12 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 	ALLOC_OBJ(pt, PT_MAGIC);
 	AN(pt);
 
-	pt->key = strdup(buf);
-	AN(pt->key);
-
-	bprintf(buf, "%s.%s", vpt->section->ident, vpt->desc->name);
 	REPLACE(pt->name, buf);
 	AN(pt->name);
 
 	pt->vpt = vpt;
 
-	pt->ptr = vpt->ptr;
-	pt->last = *pt->ptr;
-	pt->semantics = vpt->desc->semantics;
-	pt->format = vpt->desc->format;
+	pt->last = *pt->vpt->ptr;
 
 	pt->ma_10.nmax = 10;
 	pt->ma_100.nmax = 100;
@@ -369,18 +358,20 @@ static void
 sample_points(void)
 {
 	struct pt *pt;
+	uint64_t v;
 
 	VTAILQ_FOREACH(pt, &ptlist, list) {
 		AN(pt->vpt);
-		AN(pt->ptr);
-		if (*pt->ptr == 0 && !pt->seen)
+		AN(pt->vpt->ptr);
+		v = *pt->vpt->ptr;
+		if (v == 0 && !pt->seen)
 			continue;
 		if (!pt->seen) {
 			pt->seen = 1;
 			rebuild = 1;
 		}
 		pt->last = pt->cur;
-		pt->cur = *pt->ptr;
+		pt->cur = v;
 		pt->t_last = pt->t_cur;
 		pt->t_cur = VTIM_mono();
 
@@ -388,12 +379,12 @@ sample_points(void)
 			pt->chg = ((int64_t)pt->cur - (int64_t)pt->last) /
 			    (pt->t_cur - pt->t_last);
 
-		if (pt->semantics == 'g') {
+		if (pt->vpt->desc->semantics == 'g') {
 			pt->avg = 0.;
 			update_ma(&pt->ma_10, (int64_t)pt->cur);
 			update_ma(&pt->ma_100, (int64_t)pt->cur);
 			update_ma(&pt->ma_1000, (int64_t)pt->cur);
-		} else if (pt->semantics == 'c') {
+		} else if (pt->vpt->desc->semantics == 'c') {
 			if (main_uptime != NULL && *main_uptime)
 				pt->avg = pt->cur / *main_uptime;
 			else
@@ -790,7 +781,7 @@ draw_line_bitmap(WINDOW *w, int y, int x, int X, const struct pt *pt)
 
 	AN(w);
 	AN(pt);
-	assert(pt->format == 'b');
+	assert(pt->vpt->desc->format == 'b');
 
 	col = 0;
 	while (col < COL_LAST) {
@@ -866,7 +857,7 @@ draw_line(WINDOW *w, int y, const struct pt *pt)
 		mvwprintw(w, y, x, "%.*s", colw_name, pt->name);
 	x += colw_name;
 
-	switch (pt->format) {
+	switch (pt->vpt->desc->format) {
 	case 'b':
 		draw_line_bitmap(w, y, x, X, pt);
 		break;
