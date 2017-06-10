@@ -55,7 +55,7 @@ PARAMS = {
 
 def gzip_str(s):
 	out = StringIO.StringIO()
-	gzip.GzipFile(fileobj=out, mode="w").write(s)
+	gzip.GzipFile(fileobj=out, mode="w", mtime=0x12bfd58).write(s)
 	return out.getvalue()
 
 def genhdr(fo, name):
