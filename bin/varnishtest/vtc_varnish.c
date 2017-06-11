@@ -668,7 +668,7 @@ varnish_wait(struct varnish *v)
 
 	if (!vtc_error) {
 		/* Do a backend.list to log if child is still running */
-		varnish_ask_cli(v, "backend.list", &resp);
+		(void)varnish_ask_cli(v, "backend.list", &resp);
 	}
 
 	/* Then stop it */
@@ -845,7 +845,9 @@ varnish_vsc(struct varnish *v, const char *arg)
 	dp.arg = arg;
 	if (VSM_StillValid(v->vd, &v->mgt_arg_i) != VSM_valid) {
 		VSM_Close(v->vd);
-		VSM_Open(v->vd);
+		if (VSM_Open(v->vd) < 0)
+			vtc_fatal(v->vl, "Could not open VSM (%s)",
+			    VSM_Error(v->vd));
 	}
 
 	(void)VSC_Iter(v->vd, NULL, do_stat_dump_cb, &dp);
