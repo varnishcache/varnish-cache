@@ -876,6 +876,7 @@ do_stat_cb(void *priv, const struct VSC_point * const pt)
 		return(0);
 
 	AZ(strcmp(pt->desc->ctype, "uint64_t"));
+	AN(pt->ptr);
 	sp->val = *pt->ptr;
 	return (1);
 }
