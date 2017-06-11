@@ -50,6 +50,7 @@
 #include "vsm_priv.h"
 #include "vsc_priv.h"
 #include "vtim.h"
+#include "vmb.h"
 
 #include "vapi/vsm.h"
 
@@ -112,6 +113,7 @@ VSM_SetVSC(struct vsm *vd, struct vsc *vsc)
 {
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 
+	VWMB();
 	vd->vsc = vsc;
 }
 
@@ -120,6 +122,7 @@ VSM_GetVSC(const struct vsm *vd)
 {
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 
+	VRMB();
 	return (vd->vsc);
 }
 
