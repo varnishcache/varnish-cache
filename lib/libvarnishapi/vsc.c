@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "vdef.h"
 #include "vas.h"
@@ -300,6 +301,11 @@ vsc_build_vf_list(struct vsm *vd)
 			continue;
 		AZ(VSM_Map(vd, &vsc->iter_fantom));
 		u = vbe64dec(vsc->iter_fantom.b);
+		if (u == 0) {
+			VRMB();
+			usleep(100000);
+			u = vbe64dec(vsc->iter_fantom.b);
+		}
 		assert(u > 0);
 		p = (char*)vsc->iter_fantom.b + 8 + u;
 		vj = vjsn_parse(p, &e);

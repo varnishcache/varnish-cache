@@ -39,6 +39,7 @@
 
 #include "vend.h"
 #include "vgz.h"
+#include "vmb.h"
 #include "vapi/vsc_int.h"
 
 /*--------------------------------------------------------------------*/
@@ -79,7 +80,6 @@ VSC_Alloc(const char *nm, size_t sd,
 	AN(p);
 
 	memset(p, 0, sd);
-	vbe64enc(p, sd);
 
 	memset(&vz, 0, sizeof vz);
 	assert(Z_OK == inflateInit2(&vz, 31));
@@ -94,6 +94,8 @@ VSC_Alloc(const char *nm, size_t sd,
 	vsg->seg = p;
 	vsg->ptr = p + 8;
 	VTAILQ_INSERT_TAIL(&vsc_seglist, vsg, list);
+	VWMB();
+	vbe64enc(p, sd);
 	return (p + 8);
 }
 
