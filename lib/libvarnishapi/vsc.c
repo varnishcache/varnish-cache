@@ -46,6 +46,7 @@
 #include "vjsn.h"
 #include "vsb.h"
 #include "vend.h"
+#include "vmb.h"
 
 #include "vapi/vsc.h"
 #include "vapi/vsm.h"
