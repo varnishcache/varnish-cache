@@ -240,6 +240,8 @@ VSM_Delete(struct vsm *vd)
 
 /*--------------------------------------------------------------------*/
 
+static void *ppp;
+
 int
 VSM_Open(struct vsm *vd)
 {
@@ -291,13 +293,21 @@ VSM_Open(struct vsm *vd)
 		    vd->iname));
 	}
 
-	v = mmap(NULL, slh.shm_size,
+	v = mmap(ppp, slh.shm_size,
 	    PROT_READ, MAP_SHARED|MAP_HASSEMAPHORE, vd->vsm_fd, 0);
+	if (v == MAP_FAILED)
+		v = mmap(NULL, slh.shm_size,
+		    PROT_READ, MAP_SHARED|MAP_HASSEMAPHORE, vd->vsm_fd, 0);
 	if (v == MAP_FAILED) {
 		closefd(&vd->vsm_fd);
 		return (vsm_diag(vd, "Cannot mmap %s: %s",
 		    vd->iname, strerror(errno)));
 	}
+	/*
+	 * Force failure of client depends on remapping at same address. 
+	 */
+	ppp = (char*)v + getpagesize() * 1000;
+
 	vd->head = v;
 	vd->b = v;
 	vd->e = vd->b + slh.shm_size;
