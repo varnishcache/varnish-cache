@@ -473,7 +473,8 @@ VSC_Iter(struct vsm *vd, struct VSM_fantom *fantom, VSC_iter_f *func,
 	struct vsc_pt *pt;
 	int i;
 
-	if (VSM_valid != VSM_StillValid(vd, &vsc->iter_fantom)) {
+	/* XXX: workaround: Force reload */
+	if (1 || VSM_valid != VSM_StillValid(vd, &vsc->iter_fantom)) {
 		/* Tell app that list will be nuked */
 		(void)func(priv, NULL);
 		vsc_build_vf_list(vd);
