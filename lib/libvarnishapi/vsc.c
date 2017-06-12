@@ -46,7 +46,6 @@
 #include "vjsn.h"
 #include "vsb.h"
 #include "vend.h"
-#include "vmb.h"
 
 #include "vapi/vsc.h"
 #include "vapi/vsm.h"
@@ -274,7 +273,6 @@ vsc_add_pt(struct vsc *vsc, const volatile void *ptr,
 	pt->point.desc = desc;
 	pt->point.ptr = ptr;
 	pt->point.section = &vf->section;
-	VWMB();
 
 	VTAILQ_INSERT_TAIL(&vsc->pt_list, pt, list);
 }
@@ -484,7 +482,6 @@ VSC_Iter(struct vsm *vd, struct VSM_fantom *fantom, VSC_iter_f *func,
 	if (fantom != NULL)
 		*fantom = vsc->iter_fantom;
 	VTAILQ_FOREACH(pt, &vsc->pt_list, list) {
-		VRMB();
 		i = func(priv, &pt->point);
 		if (i)
 			return (i);
