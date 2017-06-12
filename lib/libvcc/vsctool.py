@@ -43,7 +43,7 @@ import collections
 TYPES = [ "counter", "gauge", "bitmap" ]
 CTYPES = [ "uint64_t" ]
 LEVELS = [ "info", "diag", "debug" ]
-FORMATS = [ "integer", "bytes", "duration" ]
+FORMATS = [ "integer", "bytes", "bitmap", "duration" ]
 
 PARAMS = {
 	"type":		["counter", TYPES],

@@ -11,6 +11,7 @@
 
 .. varnish_vsc:: uptime
 	:type:	counter
+	:format:	duration
 	:level:	info
 	:oneliner:	Management process uptime
 

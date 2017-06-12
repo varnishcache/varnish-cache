@@ -327,36 +327,44 @@
 
 .. varnish_vsc:: s_req_hdrbytes
 	:oneliner:	Request header bytes
+	:format:	bytes
 
 	Total request header bytes received
 
 .. varnish_vsc:: s_req_bodybytes
 	:oneliner:	Request body bytes
+	:format:	bytes
 
 	Total request body bytes received
 
 .. varnish_vsc:: s_resp_hdrbytes
 	:oneliner:	Response header bytes
+	:format:	bytes
 
 	Total response header bytes transmitted
 
 .. varnish_vsc:: s_resp_bodybytes
 	:oneliner:	Response body bytes
+	:format:	bytes
 
 	Total response body bytes transmitted
+	:format:	bytes
 
 .. varnish_vsc:: s_pipe_hdrbytes
 	:oneliner:	Pipe request header bytes
+	:format:	bytes
 
 	Total request bytes received for piped sessions
 
 .. varnish_vsc:: s_pipe_in
 	:oneliner:	Piped bytes from client
+	:format:	bytes
 
 	Total number of bytes forwarded from clients in pipe sessions
 
 .. varnish_vsc:: s_pipe_out
 	:oneliner:	Piped bytes to client
+	:format:	bytes
 
 	Total number of bytes forwarded to clients in pipe sessions
 
@@ -636,6 +644,7 @@
 
 .. varnish_vsc:: bans_persisted_bytes
 	:type:	gauge
+	:format:	bytes
 	:level:	diag
 	:oneliner:	Bytes used by the persisted ban lists
 
@@ -643,6 +652,7 @@
 
 .. varnish_vsc:: bans_persisted_fragmentation
 	:type:	gauge
+	:format:	bytes
 	:level:	diag
 	:oneliner:	Extra bytes in persisted ban lists due to fragmentation
 
@@ -718,6 +728,7 @@
 
 .. varnish_vsc:: vsm_free
 	:type:	gauge
+	:format:	bytes
 	:level:	diag
 	:oneliner:	Free VSM space
 
@@ -726,6 +737,7 @@
 
 .. varnish_vsc:: vsm_used
 	:type:	gauge
+	:format:	bytes
 	:level:	diag
 	:oneliner:	Used VSM space
 
@@ -734,6 +746,7 @@
 
 .. varnish_vsc:: vsm_cooling
 	:type:	gauge
+	:format:	bytes
 	:level:	debug
 	:oneliner:	Cooling VSM space
 
@@ -743,6 +756,7 @@
 
 .. varnish_vsc:: vsm_overflow
 	:type:	gauge
+	:format:	bytes
 	:level:	diag
 	:oneliner:	Overflow VSM space
 
@@ -753,6 +767,7 @@
 
 .. varnish_vsc:: vsm_overflowed
 	:level:	diag
+	:format:	bytes
 	:oneliner:	Overflowed VSM space
 
 	Total number of bytes which did not fit in the shared memory used
