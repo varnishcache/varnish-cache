@@ -213,9 +213,9 @@ http_Proto(struct http *to)
 	fm = to->hd[HTTP_HDR_PROTO].b;
 
 	if ((fm[0] == 'H' || fm[0] == 'h') &&
-	    (fm[1] == 'T' || fm[0] == 't') &&
-	    (fm[2] == 'T' || fm[0] == 't') &&
-	    (fm[3] == 'P' || fm[0] == 'p') &&
+	    (fm[1] == 'T' || fm[1] == 't') &&
+	    (fm[2] == 'T' || fm[2] == 't') &&
+	    (fm[3] == 'P' || fm[3] == 'p') &&
 	    fm[4] == '/' &&
 	    vct_isdigit(fm[5]) &&
 	    fm[6] == '.' &&
