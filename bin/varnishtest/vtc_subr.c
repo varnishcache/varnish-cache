@@ -48,7 +48,7 @@ vtc_hex_to_bin(struct vtclog *vl, const char *arg)
 	vsb = VSB_new_auto();
 	AN(vsb);
 	for (; *arg != '\0'; arg++) {
-		if (vct_issp(*arg))
+		if (vct_issp(*arg) || *arg == '\n')
 			continue;
 		c = (uint8_t)*arg;
 		if (c >= '0' && c <= '9')
