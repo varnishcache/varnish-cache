@@ -56,7 +56,6 @@ int VSC_Arg(struct vsm *vd, int arg, const char *opt);
 struct VSC_level_desc;
 struct VSC_type_desc;
 struct VSC_section;
-struct VSC_desc;
 struct VSC_point;
 
 struct VSC_level_desc {
@@ -66,12 +65,8 @@ struct VSC_level_desc {
 	const char *ldesc;		/* long description */
 };
 
-struct VSC_section {
-	char *ident;
-};
-
-/* See include/tbl/vsc_fields.h for descriptions */
-struct VSC_desc {
+struct VSC_point {
+	const volatile uint64_t *ptr;	/* field value			*/
 	const char *name;		/* field name			*/
 	const char *ctype;		/* C-type			*/
 	int semantics;			/* semantics			*/
@@ -81,11 +76,9 @@ struct VSC_desc {
 	const char *ldesc;		/* long description		*/
 };
 
-struct VSC_point {
-	const struct VSC_desc *desc;	/* point description		*/
-	const volatile uint64_t *ptr;	/* field value			*/
-	const struct VSC_section *section;
-};
+struct VSC_point *VSC_Clone_Point(const struct VSC_point * const);
+
+void VSC_Destroy_Point(struct VSC_point **);
 
 typedef int VSC_iter_f(void *priv, const struct VSC_point *const pt);
 

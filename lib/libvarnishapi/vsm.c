@@ -304,7 +304,7 @@ VSM_Open(struct vsm *vd)
 		    vd->iname, strerror(errno)));
 	}
 	/*
-	 * Force failure of client depends on remapping at same address. 
+	 * Force failure of client depends on remapping at same address.
 	 */
 	ppp = (char*)v + getpagesize() * 1000;
 

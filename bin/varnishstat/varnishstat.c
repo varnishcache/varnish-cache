@@ -56,21 +56,19 @@ static int
 do_xml_cb(void *priv, const struct VSC_point * const pt)
 {
 	uint64_t val;
-	const struct VSC_section *sec;
 
 	(void)priv;
 	if (pt == NULL)
 		return (0);
-	AZ(strcmp(pt->desc->ctype, "uint64_t"));
+	AZ(strcmp(pt->ctype, "uint64_t"));
 	val = *(const volatile uint64_t*)pt->ptr;
-	sec = pt->section;
 
 	printf("\t<stat>\n");
-	printf("\t\t<name>%s.%s</name>\n", sec->ident, pt->desc->name);
+	printf("\t\t<name>%s</name>\n", pt->name);
 	printf("\t\t<value>%ju</value>\n", (uintmax_t)val);
-	printf("\t\t<flag>%c</flag>\n", pt->desc->semantics);
-	printf("\t\t<format>%c</format>\n", pt->desc->format);
-	printf("\t\t<description>%s</description>\n", pt->desc->sdesc);
+	printf("\t\t<flag>%c</flag>\n", pt->semantics);
+	printf("\t\t<format>%c</format>\n", pt->format);
+	printf("\t\t<description>%s</description>\n", pt->sdesc);
 	printf("\t</stat>\n");
 	return (0);
 }
@@ -97,15 +95,13 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 {
 	uint64_t val;
 	int *jp;
-	const struct VSC_section *sec;
 
 	if (pt == NULL)
 		return (0);
 
 	jp = priv;
-	AZ(strcmp(pt->desc->ctype, "uint64_t"));
+	AZ(strcmp(pt->ctype, "uint64_t"));
 	val = *(const volatile uint64_t*)pt->ptr;
-	sec = pt->section;
 
 	if (*jp)
 		*jp = 0;
@@ -114,13 +110,11 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 
 	printf("  \"");
 	/* build the JSON key name.  */
-	if (sec->ident[0])
-		printf("%s.", sec->ident);
-	printf("%s\": {\n", pt->desc->name);
-	printf("    \"description\": \"%s\",\n", pt->desc->sdesc);
+	printf("%s\": {\n", pt->name);
+	printf("    \"description\": \"%s\",\n", pt->sdesc);
 
-	printf("    \"flag\": \"%c\", ", pt->desc->semantics);
-	printf("\"format\": \"%c\",\n", pt->desc->format);
+	printf("    \"flag\": \"%c\", ", pt->semantics);
+	printf("\"format\": \"%c\",\n", pt->format);
 	printf("    \"value\": %ju", (uintmax_t)val);
 	printf("\n  }");
 
@@ -160,14 +154,12 @@ do_once_cb_first(void *priv, const struct VSC_point * const pt)
 {
 	struct once_priv *op;
 	uint64_t val;
-	const struct VSC_section *sec;
 
 	if (pt == NULL)
 		return (0);
 	op = priv;
-	AZ(strcmp(pt->desc->ctype, "uint64_t"));
-	sec = pt->section;
-	if (strcmp(sec->ident, "MAIN") || strcmp(pt->desc->name, "uptime"))
+	AZ(strcmp(pt->ctype, "uint64_t"));
+	if (strcmp(pt->name, "MAIN.uptime"))
 		return (0);
 	val = *(const volatile uint64_t*)pt->ptr;
 	op->up = (double)val;
@@ -180,28 +172,24 @@ do_once_cb(void *priv, const struct VSC_point * const pt)
 	struct once_priv *op;
 	uint64_t val;
 	int i;
-	const struct VSC_section *sec;
 
 	if (pt == NULL)
 		return (0);
 	op = priv;
-	AZ(strcmp(pt->desc->ctype, "uint64_t"));
+	AZ(strcmp(pt->ctype, "uint64_t"));
 	val = *(const volatile uint64_t*)pt->ptr;
-	sec = pt->section;
 	i = 0;
-	if (strcmp(sec->ident, ""))
-		i += printf("%s.", sec->ident);
-	i += printf("%s", pt->desc->name);
+	i += printf("%s", pt->name);
 	if (i >= op->pad)
 		op->pad = i + 1;
 	printf("%*.*s", op->pad - i, op->pad - i, "");
-	if (pt->desc->semantics == 'c')
+	if (pt->semantics == 'c')
 		printf("%12ju %12.2f %s\n",
 		    (uintmax_t)val, op->up ? val / op->up : 0,
-		    pt->desc->sdesc);
+		    pt->sdesc);
 	else
 		printf("%12ju %12s %s\n",
-		    (uintmax_t)val, ".  ", pt->desc->sdesc);
+		    (uintmax_t)val, ".  ", pt->sdesc);
 	return (0);
 }
 
@@ -223,21 +211,17 @@ static int
 do_list_cb(void *priv, const struct VSC_point * const pt)
 {
 	int i;
-	const struct VSC_section * sec;
 
 	(void)priv;
 
 	if (pt == NULL)
 		return (0);
 
-	sec = pt->section;
 	i = 0;
-	if (strcmp(sec->ident, ""))
-		i += printf("%s.", sec->ident);
-	i += printf("%s", pt->desc->name);
+	i += printf("%s", pt->name);
 	if (i < 30)
 		printf("%*s", i - 30, "");
-	printf(" %s\n", pt->desc->sdesc);
+	printf(" %s\n", pt->sdesc);
 	return (0);
 }
 

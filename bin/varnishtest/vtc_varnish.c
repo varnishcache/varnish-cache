@@ -813,25 +813,22 @@ do_stat_dump_cb(void *priv, const struct VSC_point * const pt)
 	const struct varnish *v;
 	struct dump_priv *dp;
 	uint64_t u;
-	char buf[1024];
 
 	if (pt == NULL)
 		return (0);
 	dp = priv;
 	v = dp->v;
 
-	if (strcmp(pt->desc->ctype, "uint64_t"))
+	if (strcmp(pt->ctype, "uint64_t"))
 		return (0);
 	u = *pt->ptr;
 
-	bprintf(buf, "%s.%s", pt->section->ident, pt->desc->name);
-
 	if (strcmp(dp->arg, "*")) {
-		if (fnmatch(dp->arg, buf, 0))
+		if (fnmatch(dp->arg, pt->name, 0))
 			return (0);
 	}
 
-	vtc_log(v->vl, 4, "VSC %s %ju",  buf, (uintmax_t)u);
+	vtc_log(v->vl, 4, "VSC %s %ju",  pt->name, (uintmax_t)u);
 	return (0);
 }
 
@@ -858,7 +855,6 @@ varnish_vsc(struct varnish *v, const char *arg)
  */
 
 struct stat_priv {
-	char target_ident[256];
 	char target_name[256];
 	uintmax_t val;
 	const struct varnish *v;
@@ -872,12 +868,10 @@ do_stat_cb(void *priv, const struct VSC_point * const pt)
 	if (pt == NULL)
 		return(0);
 
-	if (strcmp(pt->section->ident, sp->target_ident))
-		return(0);
-	if (strcmp(pt->desc->name, sp->target_name))
+	if (strcmp(pt->name, sp->target_name))
 		return(0);
 
-	AZ(strcmp(pt->desc->ctype, "uint64_t"));
+	AZ(strcmp(pt->ctype, "uint64_t"));
 	AN(pt->ptr);
 	sp->val = *pt->ptr;
 	return (1);
@@ -907,11 +901,9 @@ varnish_expect(struct varnish *v, char * const *av)
 	}
 	p = strrchr(r, '.');
 	if (p == NULL) {
-		strcpy(sp.target_ident, "MAIN");
-		bprintf(sp.target_name, "%s", r);
+		bprintf(sp.target_name, "MAIN.%s", r);
 	} else {
-		bprintf(sp.target_ident, "%.*s", (int)(p - r), r);
-		bprintf(sp.target_name, "%s", p + 1);
+		bprintf(sp.target_name, "%s", r);
 	}
 
 	sp.val = 0;

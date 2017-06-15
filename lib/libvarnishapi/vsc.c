@@ -58,7 +58,7 @@ struct vsc_vf {
 #define VSC_VF_MAGIC		0x516519f8
 	VTAILQ_ENTRY(vsc_vf)	list;
 	struct VSM_fantom	fantom;
-	struct VSC_section	section;
+	char			*ident;
 	struct vjsn		*vjsn;
 	int			order;
 };
@@ -68,6 +68,7 @@ struct vsc_pt {
 	unsigned		magic;
 #define VSC_PT_MAGIC		0xa4ff159a
 	VTAILQ_ENTRY(vsc_pt)	list;
+	char			*name;
 	struct VSC_point	point;
 };
 VTAILQ_HEAD(vsc_pt_head, vsc_pt);
@@ -107,6 +108,21 @@ static const struct VSC_level_desc * const levels[] = {
 
 static const size_t nlevels =
     sizeof(levels)/sizeof(*levels);
+
+/*--------------------------------------------------------------------*/
+
+struct VSC_point *
+VSC_Clone_Point(const struct VSC_point * const vp)
+{
+	return ((void*)(uintptr_t)vp);
+}
+
+void
+VSC_Destroy_Point(struct VSC_point **p)
+{
+	AN(p);
+	*p = NULL;
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -153,6 +169,7 @@ vsc_delete_pt_list(struct vsc_pt_head *head)
 		pt = VTAILQ_FIRST(head);
 		CHECK_OBJ_NOTNULL(pt, VSC_PT_MAGIC);
 		VTAILQ_REMOVE(head, pt, list);
+		REPLACE(pt->name, NULL);
 		FREE_OBJ(pt);
 	}
 }
@@ -245,7 +262,7 @@ vsc_add_vf(struct vsc *vsc, const struct VSM_fantom *fantom, int order)
 	if (*vf->fantom.ident != '\0')
 		VSB_printf(vsb, ".%s", vf->fantom.ident);
 	AZ(VSB_finish(vsb));
-	REPLACE(vf->section.ident, VSB_data(vsb));
+	REPLACE(vf->ident, VSB_data(vsb));
 	VSB_destroy(&vsb);
 	vf->order = order;
 
@@ -258,24 +275,6 @@ vsc_add_vf(struct vsc *vsc, const struct VSM_fantom *fantom, int order)
 	else
 		VTAILQ_INSERT_TAIL(&vsc->vf_list, vf, list);
 	return (vf);
-}
-
-/*lint -esym(528, vsc_add_pt) */
-/*lint -sem(vsc_add_pt, custodial(3)) */
-static void
-vsc_add_pt(struct vsc *vsc, const volatile void *ptr,
-    const struct VSC_desc *desc, const struct vsc_vf *vf)
-{
-	struct vsc_pt *pt;
-
-	ALLOC_OBJ(pt, VSC_PT_MAGIC);
-	AN(pt);
-
-	pt->point.desc = desc;
-	pt->point.ptr = ptr;
-	pt->point.section = &vf->section;
-
-	VTAILQ_INSERT_TAIL(&vsc->pt_list, pt, list);
 }
 
 /*--------------------------------------------------------------------
@@ -331,24 +330,36 @@ vsc_build_pt_list(struct vsm *vd)
 	struct vsc *vsc = vsc_setup(vd);
 	struct vsc_vf *vf;
 	struct vjsn_val *vve, *vv, *vt;
-	struct VSC_desc *vdsc = NULL;
+	struct vsc_pt *pt;
+	struct vsb *vsb;
 
 	vsc_delete_pt_list(&vsc->pt_list);
+	vsb = VSB_new_auto();
+	AN(vsb);
 
 	VTAILQ_FOREACH(vf, &vsc->vf_list, list) {
 		vve = vjsn_child(vf->vjsn->value, "elem");
 		AN(vve);
 		VTAILQ_FOREACH(vv, &vve->children, list) {
-			vdsc = calloc(sizeof *vdsc, 1);
-			AN(vdsc);
+			ALLOC_OBJ(pt, VSC_PT_MAGIC);
+			AN(pt);
+
+			vt = vjsn_child(vv, "name");
+			AN(vt);
+			assert(vt->type == VJSN_STRING);
+
+			VSB_clear(vsb);
+			VSB_printf(vsb, "%s.%s", vf->ident, vt->value);
+			AZ(VSB_finish(vsb));
+			REPLACE(pt->name, VSB_data(vsb));
+			pt->point.name = pt->name;
 
 #define DOF(n, k)						\
 			vt = vjsn_child(vv, k);			\
 			AN(vt);					\
 			assert(vt->type == VJSN_STRING);	\
-			vdsc->n = vt->value;
+			pt->point.n = vt->value;
 
-			DOF(name,  "name");
 			DOF(ctype, "ctype");
 			DOF(sdesc, "oneliner");
 			DOF(ldesc, "docs");
@@ -358,13 +369,13 @@ vsc_build_pt_list(struct vsm *vd)
 			assert(vt->type == VJSN_STRING);
 
 			if (!strcmp(vt->value, "counter")) {
-				vdsc->semantics = 'c';
+				pt->point.semantics = 'c';
 			} else if (!strcmp(vt->value, "gauge")) {
-				vdsc->semantics = 'g';
+				pt->point.semantics = 'g';
 			} else if (!strcmp(vt->value, "bitmap")) {
-				vdsc->semantics = 'b';
+				pt->point.semantics = 'b';
 			} else {
-				vdsc->semantics = '?';
+				pt->point.semantics = '?';
 			}
 
 			vt = vjsn_child(vv, "format");
@@ -372,41 +383,38 @@ vsc_build_pt_list(struct vsm *vd)
 			assert(vt->type == VJSN_STRING);
 
 			if (!strcmp(vt->value, "integer")) {
-				vdsc->format = 'i';
+				pt->point.format = 'i';
 			} else if (!strcmp(vt->value, "bytes")) {
-				vdsc->format = 'B';
+				pt->point.format = 'B';
 			} else if (!strcmp(vt->value, "bitmap")) {
-				vdsc->format = 'b';
+				pt->point.format = 'b';
 			} else if (!strcmp(vt->value, "duration")) {
-				vdsc->format = 'd';
+				pt->point.format = 'd';
 			} else {
-				vdsc->format = '?';
+				pt->point.format = '?';
 			}
 
-			vdsc->level = &level_info;
+			pt->point.level = &level_info;
 
 			vt = vjsn_child(vv, "index");
 			AN(vt);
-			vsc_add_pt(vsc,
-			    (char*)vf->fantom.b + atoi(vt->value),
-			    vdsc, vf);
+
+			pt->point.ptr = (volatile void*)
+			    ((volatile char*)vf->fantom.b + atoi(vt->value));
+
+			VTAILQ_INSERT_TAIL(&vsc->pt_list, pt, list);
 		}
 	}
+	VSB_destroy(&vsb);
 }
 
 /*--------------------------------------------------------------------
  */
 
 static int
-vsc_filter_match_pt(struct vsb *vsb, const struct vsc_sf *sf, const
-    struct vsc_pt *pt)
+vsc_filter_match_pt(const struct vsc_sf *sf, const struct vsc_pt *pt)
 {
-	VSB_clear(vsb);
-	if (strcmp(pt->point.section->ident, ""))
-		VSB_printf(vsb, "%s.", pt->point.section->ident);
-	VSB_printf(vsb, "%s", pt->point.desc->name);
-	AZ(VSB_finish(vsb));
-	return (!fnmatch(sf->pattern, VSB_data(vsb), 0));
+	return (!fnmatch(sf->pattern, pt->point.name, 0));
 }
 
 static void
@@ -416,14 +424,11 @@ vsc_filter_pt_list(struct vsm *vd)
 	struct vsc_pt_head tmplist;
 	struct vsc_sf *sf;
 	struct vsc_pt *pt, *pt2;
-	struct vsb *vsb;
 
 	if (VTAILQ_EMPTY(&vsc->sf_list_include) &&
 	    VTAILQ_EMPTY(&vsc->sf_list_exclude))
 		return;
 
-	vsb = VSB_new_auto();
-	AN(vsb);
 	VTAILQ_INIT(&tmplist);
 
 	/* Include filters. Empty include filter list implies one that
@@ -434,7 +439,7 @@ vsc_filter_pt_list(struct vsm *vd)
 			CHECK_OBJ_NOTNULL(sf, VSC_SF_MAGIC);
 			VTAILQ_FOREACH_SAFE(pt, &vsc->pt_list, list, pt2) {
 				CHECK_OBJ_NOTNULL(pt, VSC_PT_MAGIC);
-				if (vsc_filter_match_pt(vsb, sf, pt)) {
+				if (vsc_filter_match_pt(sf, pt)) {
 					VTAILQ_REMOVE(&vsc->pt_list,
 					    pt, list);
 					VTAILQ_INSERT_TAIL(&tmplist,
@@ -451,15 +456,13 @@ vsc_filter_pt_list(struct vsm *vd)
 		CHECK_OBJ_NOTNULL(sf, VSC_SF_MAGIC);
 		VTAILQ_FOREACH_SAFE(pt, &vsc->pt_list, list, pt2) {
 			CHECK_OBJ_NOTNULL(pt, VSC_PT_MAGIC);
-			if (vsc_filter_match_pt(vsb, sf, pt)) {
+			if (vsc_filter_match_pt(sf, pt)) {
 				VTAILQ_REMOVE(&vsc->pt_list, pt, list);
 				VTAILQ_INSERT_TAIL(&tmplist, pt, list);
 			}
 		}
 	}
 	vsc_delete_pt_list(&tmplist);
-
-	VSB_destroy(&vsb);
 }
 
 /*--------------------------------------------------------------------

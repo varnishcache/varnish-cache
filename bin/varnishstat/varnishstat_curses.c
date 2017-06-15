@@ -73,9 +73,7 @@ struct pt {
 #define PT_MAGIC		0x41698E4F
 	VTAILQ_ENTRY(pt)	list;
 
-	const struct VSC_point	*vpt;
-
-	char			*name;
+	struct VSC_point	*vpt;
 
 	char			seen;
 
@@ -210,7 +208,7 @@ build_pt_array(void)
 		CHECK_OBJ_NOTNULL(pt, PT_MAGIC);
 		if (!pt->seen && hide_unseen)
 			continue;
-		if (pt->vpt->desc->level > verbosity)
+		if (pt->vpt->level > verbosity)
 			continue;
 		assert(n_ptarray < n_ptlist);
 		ptarray[n_ptarray++] = pt;
@@ -240,7 +238,7 @@ delete_pt_list(void)
 		pt = VTAILQ_FIRST(&ptlist);
 		CHECK_OBJ_NOTNULL(pt, PT_MAGIC);
 		VTAILQ_REMOVE(&ptlist, pt, list);
-		free(pt->name);
+		VSC_Destroy_Point(&pt->vpt);
 		FREE_OBJ(pt);
 		i++;
 	}
@@ -262,34 +260,34 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 {
 	struct pt_priv *pt_priv;
 	struct pt *pt;
-	char buf[128];
 
 	if (vpt == NULL)
 		return (0);
 
 	CAST_OBJ_NOTNULL(pt_priv, priv, PT_PRIV_MAGIC);
 
-	AZ(strcmp(vpt->desc->ctype, "uint64_t"));
-	bprintf(buf, "%s.%s", vpt->section->ident, vpt->desc->name);
+	AZ(strcmp(vpt->ctype, "uint64_t"));
 
-	if (!strcmp(buf, "MGT.uptime"))
+	if (!strcmp(vpt->name, "MGT.uptime"))
 		mgt_uptime = vpt->ptr;
-	if (!strcmp(buf, "MAIN.uptime"))
+	if (!strcmp(vpt->name, "MAIN.uptime"))
 		main_uptime = vpt->ptr;
-	if (!strcmp(buf, "MAIN.cache_hit"))
+	if (!strcmp(vpt->name, "MAIN.cache_hit"))
 		main_cache_hit = vpt->ptr;
-	if (!strcmp(buf, "MAIN.cache_miss"))
+	if (!strcmp(vpt->name, "MAIN.cache_miss"))
 		main_cache_miss = vpt->ptr;
 
 	VTAILQ_FOREACH(pt, &ptlist, list) {
 		CHECK_OBJ_NOTNULL(pt, PT_MAGIC);
-		AN(pt->name);
-		if (strcmp(buf, pt->name))
+		AN(pt->vpt->name);
+		if (strcmp(vpt->name, pt->vpt->name))
 			continue;
 		VTAILQ_REMOVE(&ptlist, pt, list);
 		AN(n_ptlist);
 		n_ptlist--;
-		pt->vpt = vpt;
+		VSC_Destroy_Point(&pt->vpt);
+		pt->vpt = VSC_Clone_Point(vpt);
+		AN(pt->vpt);
 		VTAILQ_INSERT_TAIL(&pt_priv->ptlist, pt, list);
 		pt_priv->n_ptlist++;
 		return (0);
@@ -299,10 +297,8 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 	ALLOC_OBJ(pt, PT_MAGIC);
 	AN(pt);
 
-	REPLACE(pt->name, buf);
-	AN(pt->name);
-
-	pt->vpt = vpt;
+	pt->vpt = VSC_Clone_Point(vpt);
+	AN(pt->vpt);
 
 	pt->last = *pt->vpt->ptr;
 
@@ -379,12 +375,12 @@ sample_points(void)
 			pt->chg = ((int64_t)pt->cur - (int64_t)pt->last) /
 			    (pt->t_cur - pt->t_last);
 
-		if (pt->vpt->desc->semantics == 'g') {
+		if (pt->vpt->semantics == 'g') {
 			pt->avg = 0.;
 			update_ma(&pt->ma_10, (int64_t)pt->cur);
 			update_ma(&pt->ma_100, (int64_t)pt->cur);
 			update_ma(&pt->ma_1000, (int64_t)pt->cur);
-		} else if (pt->vpt->desc->semantics == 'c') {
+		} else if (pt->vpt->semantics == 'c') {
 			if (main_uptime != NULL && *main_uptime)
 				pt->avg = pt->cur / *main_uptime;
 			else
@@ -781,7 +777,7 @@ draw_line_bitmap(WINDOW *w, int y, int x, int X, const struct pt *pt)
 
 	AN(w);
 	AN(pt);
-	assert(pt->vpt->desc->format == 'b');
+	assert(pt->vpt->format == 'b');
 
 	col = 0;
 	while (col < COL_LAST) {
@@ -851,13 +847,13 @@ draw_line(WINDOW *w, int y, const struct pt *pt)
 	assert(colw_name >= COLW_NAME_MIN);
 	X = getmaxx(w);
 	x = 0;
-	if (strlen(pt->name) > colw_name)
-		mvwprintw(w, y, x, "%.*s...", colw_name - 3, pt->name);
+	if (strlen(pt->vpt->name) > colw_name)
+		mvwprintw(w, y, x, "%.*s...", colw_name - 3, pt->vpt->name);
 	else
-		mvwprintw(w, y, x, "%.*s", colw_name, pt->name);
+		mvwprintw(w, y, x, "%.*s", colw_name, pt->vpt->name);
 	x += colw_name;
 
-	switch (pt->vpt->desc->format) {
+	switch (pt->vpt->format) {
 	case 'b':
 		draw_line_bitmap(w, y, x, X, pt);
 		break;
@@ -926,7 +922,7 @@ draw_bar_b(void)
 		mvwprintw(w_bar_b, 0, x, "vvv");
 	x += 4;
 	if (current < n_ptarray - 1)
-		mvwprintw(w_bar_b, 0, x, "%s", ptarray[current]->name);
+		mvwprintw(w_bar_b, 0, x, "%s", ptarray[current]->vpt->name);
 
 	bprintf(buf, "%d-%d/%d", page_start + 1,
 	    page_start + l_points < n_ptarray ?
@@ -957,9 +953,9 @@ draw_info(void)
 	if (current < n_ptarray - 1) {
 		/* XXX: Word wrapping, and overflow handling? */
 		mvwprintw(w_info, 0, 0, "%s:",
-		    ptarray[current]->vpt->desc->sdesc);
+		    ptarray[current]->vpt->sdesc);
 		mvwprintw(w_info, 1, 0, "%s",
-		    ptarray[current]->vpt->desc->ldesc);
+		    ptarray[current]->vpt->ldesc);
 	}
 	wnoutrefresh(w_info);
 }
