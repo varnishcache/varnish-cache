@@ -2,15 +2,30 @@
 Varnish Cache 4.1.7-beta1 (unreleased)
 ======================================
 
+Changes since 4.1.6:
+
+* Add -vsl_catchup to varnishtest
+* Add record-prefix support to varnishncsa
+
 Bugs fixed
 ----------
 * 1764_ - Correctly honor nuke_limit parameter
-* 2320_ - Rework and fix varnishstat counter filtering
+* 2022_ - varnishstat -1 -f field inclusion glob doesn't allow VBE
+  backend fields
+* 2069_ - Health probes fail when HTTP response does not contain
+  reason phrase
+* 2118_ - "varnishstat -f MAIN.sess_conn -1" produces empty output
 * 2219_ - Remember to reset workspace
+* 2320_ - Rework and fix varnishstat counter filtering
+* 2329_ - Docfix: Only root can jail
 
 .. _1764: https://github.com/varnishcache/varnish-cache/issues/1764
-.. _2320: https://github.com/varnishcache/varnish-cache/issues/2320
+.. _2022: https://github.com/varnishcache/varnish-cache/issues/2022
+.. _2069: https://github.com/varnishcache/varnish-cache/issues/2069
+.. _2118: https://github.com/varnishcache/varnish-cache/issues/2118
 .. _2219: https://github.com/varnishcache/varnish-cache/issues/2219
+.. _2320: https://github.com/varnishcache/varnish-cache/issues/2320
+.. _2329: https://github.com/varnishcache/varnish-cache/issues/2329
 
 ================================
 Varnish Cache 4.1.6 (2017-04-26)
