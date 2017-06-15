@@ -1,3 +1,13 @@
+======================================
+Varnish Cache 4.1.7-beta1 (unreleased)
+======================================
+
+Bugs fixed
+----------
+* 1764_ - Correctly honor nuke_limit parameter
+
+.. _1764: https://github.com/varnishcache/varnish-cache/issues/1764
+
 ================================
 Varnish Cache 4.1.6 (2017-04-26)
 ================================
