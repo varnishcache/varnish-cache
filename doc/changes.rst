@@ -5,8 +5,10 @@ Varnish Cache 4.1.7-beta1 (unreleased)
 Bugs fixed
 ----------
 * 1764_ - Correctly honor nuke_limit parameter
+* 2320_ - Rework and fix varnishstat counter filtering
 
 .. _1764: https://github.com/varnishcache/varnish-cache/issues/1764
+.. _2320: https://github.com/varnishcache/varnish-cache/issues/2320
 
 ================================
 Varnish Cache 4.1.6 (2017-04-26)
