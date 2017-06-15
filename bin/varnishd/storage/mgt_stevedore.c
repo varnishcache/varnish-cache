@@ -116,6 +116,28 @@ static const struct choice STV_choice[] = {
 	{ NULL,		NULL }
 };
 
+static void
+stv_check_ident(const char *spec, const char *ident)
+{
+	struct stevedore *stv;
+	unsigned found = 0;
+
+	if (!strcmp(ident, TRANSIENT_STORAGE))
+		found = (stv_transient != NULL);
+	else {
+		VTAILQ_FOREACH(stv, &stv_stevedores, list) {
+			CHECK_OBJ(stv, STEVEDORE_MAGIC);
+			if (!strcmp(stv->ident, ident)) {
+				found = 1;
+				break;
+			}
+		}
+	}
+
+	if (found)
+		ARGV_ERR("(-s %s) '%s' is already defined\n", spec, ident);
+}
+
 void
 STV_Config(const char *spec)
 {
@@ -170,17 +192,12 @@ STV_Config(const char *spec)
 		bprintf(stv->ident, "%.*s", l, spec);
 	}
 
-	VTAILQ_FOREACH(stv2, &stv_stevedores, list) {
-		if (strcmp(stv2->ident, stv->ident))
-			continue;
-		ARGV_ERR("(-s%s=%s) already defined once\n",
-		    stv->ident, stv->name);
-	}
+	stv_check_ident(spec, stv->ident);
 
 	if (stv->init != NULL)
 		stv->init(stv, ac, av);
 	else if (ac != 0)
-		ARGV_ERR("(-s%s) too many arguments\n", stv->name);
+		ARGV_ERR("(-s %s) too many arguments\n", stv->name);
 
 	AN(stv->alloc);
 	if (stv->allocobj == NULL)

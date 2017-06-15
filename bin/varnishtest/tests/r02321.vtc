@@ -1,0 +1,19 @@
+varnishtest "Storage name collisions"
+
+# intentional collision
+shell -err -expect "Error: (-s main=malloc,100m) 'main' is already defined" {
+	exec varnishd -a :0 -f '' -n ${tmpdir} \
+		-s main=malloc,10m -s main=malloc,100m
+}
+
+# pseudo-accidental collision
+shell -err -expect "Error: (-s s0=malloc,100m) 's0' is already defined" {
+	exec varnishd -a :0 -f '' -n ${tmpdir} \
+		-s malloc,10m -s s0=malloc,100m
+}
+
+# Transient collision
+shell -err -expect "Error: (-s Transient=malloc,100m) 'Transient' is already defined" {
+	exec varnishd -a :0 -f '' -n ${tmpdir} \
+		-s Transient=malloc,10m -s Transient=malloc,100m
+}
