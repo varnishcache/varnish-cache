@@ -53,26 +53,6 @@
 
 #include "vsc_priv.h"
 
-struct vsc_vf {
-	unsigned		magic;
-#define VSC_VF_MAGIC		0x516519f8
-	VTAILQ_ENTRY(vsc_vf)	list;
-	struct VSM_fantom	fantom;
-	char			*ident;
-	struct vjsn		*vjsn;
-	int			order;
-};
-VTAILQ_HEAD(vsc_vf_head, vsc_vf);
-
-struct vsc_pt {
-	unsigned		magic;
-#define VSC_PT_MAGIC		0xa4ff159a
-	VTAILQ_ENTRY(vsc_pt)	list;
-	char			*name;
-	struct VSC_point	point;
-};
-VTAILQ_HEAD(vsc_pt_head, vsc_pt);
-
 struct vsc_sf {
 	unsigned		magic;
 #define VSC_SF_MAGIC		0x558478dd
@@ -85,11 +65,8 @@ struct vsc {
 	unsigned		magic;
 #define VSC_MAGIC		0x3373554a
 
-	struct vsc_vf_head	vf_list;
-	struct vsc_pt_head	pt_list;
 	struct vsc_sf_head	sf_list_include;
 	struct vsc_sf_head	sf_list_exclude;
-	struct VSM_fantom	iter_fantom;
 };
 
 /*--------------------------------------------------------------------
@@ -114,13 +91,26 @@ static const size_t nlevels =
 struct VSC_point *
 VSC_Clone_Point(const struct VSC_point * const vp)
 {
-	return ((void*)(uintptr_t)vp);
+	struct VSC_point *pt;
+	char *p;
+
+	pt = calloc(sizeof *pt, 1);
+	AN(pt);
+	*pt = *vp;
+	p = strdup(pt->name); AN(p); pt->name = p;
+	p = strdup(pt->sdesc); AN(p); pt->sdesc = p;
+	p = strdup(pt->ldesc); AN(p); pt->ldesc = p;
+	return (pt);
 }
 
 void
 VSC_Destroy_Point(struct VSC_point **p)
 {
 	AN(p);
+	free(TRUST_ME((*p)->ldesc));
+	free(TRUST_ME((*p)->sdesc));
+	free(TRUST_ME((*p)->name));
+	free(*p);
 	*p = NULL;
 }
 
@@ -135,8 +125,6 @@ vsc_setup(struct vsm *vd)
 	if (vsc == NULL) {
 		ALLOC_OBJ(vsc, VSC_MAGIC);
 		AN(vsc);
-		VTAILQ_INIT(&vsc->vf_list);
-		VTAILQ_INIT(&vsc->pt_list);
 		VTAILQ_INIT(&vsc->sf_list_include);
 		VTAILQ_INIT(&vsc->sf_list_exclude);
 		VSM_SetVSC(vd, vsc);
@@ -146,33 +134,6 @@ vsc_setup(struct vsm *vd)
 }
 
 /*--------------------------------------------------------------------*/
-
-static void
-vsc_delete_vf_list(struct vsc_vf_head *head)
-{
-	struct vsc_vf *vf;
-
-	while (!VTAILQ_EMPTY(head)) {
-		vf = VTAILQ_FIRST(head);
-		CHECK_OBJ_NOTNULL(vf, VSC_VF_MAGIC);
-		VTAILQ_REMOVE(head, vf, list);
-		FREE_OBJ(vf);
-	}
-}
-
-static void
-vsc_delete_pt_list(struct vsc_pt_head *head)
-{
-	struct vsc_pt *pt;
-
-	while (!VTAILQ_EMPTY(head)) {
-		pt = VTAILQ_FIRST(head);
-		CHECK_OBJ_NOTNULL(pt, VSC_PT_MAGIC);
-		VTAILQ_REMOVE(head, pt, list);
-		REPLACE(pt->name, NULL);
-		FREE_OBJ(pt);
-	}
-}
 
 static void
 vsc_delete_sf_list(struct vsc_sf_head *head)
@@ -195,8 +156,6 @@ VSC_Delete(struct vsc *vsc)
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 	vsc_delete_sf_list(&vsc->sf_list_include);
 	vsc_delete_sf_list(&vsc->sf_list_exclude);
-	vsc_delete_pt_list(&vsc->pt_list);
-	vsc_delete_vf_list(&vsc->vf_list);
 	FREE_OBJ(vsc);
 }
 
@@ -245,224 +204,132 @@ VSC_Arg(struct vsm *vd, int arg, const char *opt)
 	}
 }
 
-/*--------------------------------------------------------------------*/
-
-static struct vsc_vf *
-vsc_add_vf(struct vsc *vsc, const struct VSM_fantom *fantom, int order)
-{
-	struct vsc_vf *vf, *vf2;
-	struct vsb *vsb;
-
-	ALLOC_OBJ(vf, VSC_VF_MAGIC);
-	AN(vf);
-	vf->fantom = *fantom;
-	vsb = VSB_new_auto();
-	AN(vsb);
-	VSB_printf(vsb, "%s", vf->fantom.type);
-	if (*vf->fantom.ident != '\0')
-		VSB_printf(vsb, ".%s", vf->fantom.ident);
-	AZ(VSB_finish(vsb));
-	REPLACE(vf->ident, VSB_data(vsb));
-	VSB_destroy(&vsb);
-	vf->order = order;
-
-	VTAILQ_FOREACH(vf2, &vsc->vf_list, list) {
-		if (vf->order < vf2->order)
-			break;
-	}
-	if (vf2 != NULL)
-		VTAILQ_INSERT_BEFORE(vf2, vf, list);
-	else
-		VTAILQ_INSERT_TAIL(&vsc->vf_list, vf, list);
-	return (vf);
-}
-
 /*--------------------------------------------------------------------
  */
 
-static void
-vsc_build_vf_list(struct vsm *vd)
-{
-	uint64_t u;
-	struct vsc *vsc = vsc_setup(vd);
-	const char *p;
-	const char *e;
-	struct vjsn *vj;
-	struct vjsn_val *vv;
-	struct vsc_vf *vf;
-
-	vsc_delete_pt_list(&vsc->pt_list);
-	vsc_delete_vf_list(&vsc->vf_list);
-
-	VSM_FOREACH(&vsc->iter_fantom, vd) {
-		if (strcmp(vsc->iter_fantom.class, VSC_CLASS))
-			continue;
-		AZ(VSM_Map(vd, &vsc->iter_fantom));
-		u = vbe64dec(vsc->iter_fantom.b);
-		if (u == 0) {
-			VRMB();
-			usleep(100000);
-			u = vbe64dec(vsc->iter_fantom.b);
-		}
-		assert(u > 0);
-		p = (char*)vsc->iter_fantom.b + 8 + u;
-		vj = vjsn_parse(p, &e);
-		if (e != NULL) {
-			fprintf(stderr, "%s\n", p);
-			fprintf(stderr, "JSON ERROR %s\n", e);
-			exit(2);
-		}
-		AN(vj);
-		vv = vjsn_child(vj->value, "order");
-		AN(vv);
-		assert(vv->type == VJSN_NUMBER);
-		vf = vsc_add_vf(vsc, &vsc->iter_fantom, atoi(vv->value));
-		AN(vf);
-		vf->vjsn = vj;
-		// vjsn_dump(vf->vjsn, stderr);
-		AZ(e);
-	}
-}
-
-static void
-vsc_build_pt_list(struct vsm *vd)
+static int
+vsc_filter(struct vsm *vd, const char *nm)
 {
 	struct vsc *vsc = vsc_setup(vd);
-	struct vsc_vf *vf;
-	struct vjsn_val *vve, *vv, *vt;
-	struct vsc_pt *pt;
-	struct vsb *vsb;
+	struct vsc_sf *sf;
 
-	vsc_delete_pt_list(&vsc->pt_list);
-	vsb = VSB_new_auto();
-	AN(vsb);
-
-	VTAILQ_FOREACH(vf, &vsc->vf_list, list) {
-		vve = vjsn_child(vf->vjsn->value, "elem");
-		AN(vve);
-		VTAILQ_FOREACH(vv, &vve->children, list) {
-			ALLOC_OBJ(pt, VSC_PT_MAGIC);
-			AN(pt);
-
-			vt = vjsn_child(vv, "name");
-			AN(vt);
-			assert(vt->type == VJSN_STRING);
-
-			VSB_clear(vsb);
-			VSB_printf(vsb, "%s.%s", vf->ident, vt->value);
-			AZ(VSB_finish(vsb));
-			REPLACE(pt->name, VSB_data(vsb));
-			pt->point.name = pt->name;
-
-#define DOF(n, k)						\
-			vt = vjsn_child(vv, k);			\
-			AN(vt);					\
-			assert(vt->type == VJSN_STRING);	\
-			pt->point.n = vt->value;
-
-			DOF(ctype, "ctype");
-			DOF(sdesc, "oneliner");
-			DOF(ldesc, "docs");
-#undef DOF
-			vt = vjsn_child(vv, "type");
-			AN(vt);
-			assert(vt->type == VJSN_STRING);
-
-			if (!strcmp(vt->value, "counter")) {
-				pt->point.semantics = 'c';
-			} else if (!strcmp(vt->value, "gauge")) {
-				pt->point.semantics = 'g';
-			} else if (!strcmp(vt->value, "bitmap")) {
-				pt->point.semantics = 'b';
-			} else {
-				pt->point.semantics = '?';
-			}
-
-			vt = vjsn_child(vv, "format");
-			AN(vt);
-			assert(vt->type == VJSN_STRING);
-
-			if (!strcmp(vt->value, "integer")) {
-				pt->point.format = 'i';
-			} else if (!strcmp(vt->value, "bytes")) {
-				pt->point.format = 'B';
-			} else if (!strcmp(vt->value, "bitmap")) {
-				pt->point.format = 'b';
-			} else if (!strcmp(vt->value, "duration")) {
-				pt->point.format = 'd';
-			} else {
-				pt->point.format = '?';
-			}
-
-			pt->point.level = &level_info;
-
-			vt = vjsn_child(vv, "index");
-			AN(vt);
-
-			pt->point.ptr = (volatile void*)
-			    ((volatile char*)vf->fantom.b + atoi(vt->value));
-
-			VTAILQ_INSERT_TAIL(&vsc->pt_list, pt, list);
-		}
-	}
-	VSB_destroy(&vsb);
+	VTAILQ_FOREACH(sf, &vsc->sf_list_exclude, list)
+		if (!fnmatch(sf->pattern, nm, 0))
+			return (1);
+	if (VTAILQ_EMPTY(&vsc->sf_list_include))
+		return (0);
+	VTAILQ_FOREACH(sf, &vsc->sf_list_include, list)
+		if (!fnmatch(sf->pattern, nm, 0))
+			return (0);
+	return (1);
 }
 
 /*--------------------------------------------------------------------
  */
 
 static int
-vsc_filter_match_pt(const struct vsc_sf *sf, const struct vsc_pt *pt)
+vsc_iter_elem(struct vsm *vd, const struct VSM_fantom *fantom,
+    const struct vjsn_val *vv, struct vsb *vsb, VSC_iter_f *func, void *priv)
 {
-	return (!fnmatch(sf->pattern, pt->point.name, 0));
+	struct VSC_point	point;
+	struct vjsn_val *vt;
+
+	memset(&point, 0, sizeof point);
+
+	vt = vjsn_child(vv, "name");
+	AN(vt);
+	assert(vt->type == VJSN_STRING);
+
+	VSB_clear(vsb);
+	VSB_printf(vsb, "%s", fantom->type);
+	if (*fantom->ident)
+		VSB_printf(vsb, ".%s", fantom->ident);
+	VSB_printf(vsb, ".%s", vt->value);
+	AZ(VSB_finish(vsb));
+
+	if (vsc_filter(vd, VSB_data(vsb)))
+		return (0);
+
+	point.name = VSB_data(vsb);
+
+#define DOF(n, k)				\
+	vt = vjsn_child(vv, k);			\
+	AN(vt);					\
+	assert(vt->type == VJSN_STRING);	\
+	point.n = vt->value;
+
+	DOF(ctype, "ctype");
+	DOF(sdesc, "oneliner");
+	DOF(ldesc, "docs");
+#undef DOF
+	vt = vjsn_child(vv, "type");
+	AN(vt);
+	assert(vt->type == VJSN_STRING);
+
+	if (!strcmp(vt->value, "counter")) {
+		point.semantics = 'c';
+	} else if (!strcmp(vt->value, "gauge")) {
+		point.semantics = 'g';
+	} else if (!strcmp(vt->value, "bitmap")) {
+		point.semantics = 'b';
+	} else {
+		point.semantics = '?';
+	}
+
+	vt = vjsn_child(vv, "format");
+	AN(vt);
+	assert(vt->type == VJSN_STRING);
+
+	if (!strcmp(vt->value, "integer")) {
+		point.format = 'i';
+	} else if (!strcmp(vt->value, "bytes")) {
+		point.format = 'B';
+	} else if (!strcmp(vt->value, "bitmap")) {
+		point.format = 'b';
+	} else if (!strcmp(vt->value, "duration")) {
+		point.format = 'd';
+	} else {
+		point.format = '?';
+	}
+
+	point.level = &level_info;
+
+	vt = vjsn_child(vv, "index");
+	AN(vt);
+
+	point.ptr = (volatile void*)
+	    ((volatile char*)fantom->b + atoi(vt->value));
+
+	return (func(priv, &point));
 }
 
-static void
-vsc_filter_pt_list(struct vsm *vd)
+static int
+vsc_iter_fantom(struct vsm *vd, const struct VSM_fantom *fantom,
+    struct vsb *vsb, VSC_iter_f *func, void *priv)
 {
-	struct vsc *vsc = vsc_setup(vd);
-	struct vsc_pt_head tmplist;
-	struct vsc_sf *sf;
-	struct vsc_pt *pt, *pt2;
+	int i = 0;
+	const char *p;
+	const char *e;
+	struct vjsn *vj;
+	struct vjsn_val *vv, *vve;
 
-	if (VTAILQ_EMPTY(&vsc->sf_list_include) &&
-	    VTAILQ_EMPTY(&vsc->sf_list_exclude))
-		return;
-
-	VTAILQ_INIT(&tmplist);
-
-	/* Include filters. Empty include filter list implies one that
-	 * matches everything. Points are sorted by the order of include
-	 * filter they match. */
-	if (!VTAILQ_EMPTY(&vsc->sf_list_include)) {
-		VTAILQ_FOREACH(sf, &vsc->sf_list_include, list) {
-			CHECK_OBJ_NOTNULL(sf, VSC_SF_MAGIC);
-			VTAILQ_FOREACH_SAFE(pt, &vsc->pt_list, list, pt2) {
-				CHECK_OBJ_NOTNULL(pt, VSC_PT_MAGIC);
-				if (vsc_filter_match_pt(sf, pt)) {
-					VTAILQ_REMOVE(&vsc->pt_list,
-					    pt, list);
-					VTAILQ_INSERT_TAIL(&tmplist,
-					    pt, list);
-				}
-			}
-		}
-		vsc_delete_pt_list(&vsc->pt_list);
-		VTAILQ_CONCAT(&vsc->pt_list, &tmplist, list);
+	p = (char*)fantom->b + 8 + vbe64dec(fantom->b);
+	vj = vjsn_parse(p, &e);
+	if (e != NULL) {
+		fprintf(stderr, "%s\n", p);
+		fprintf(stderr, "JSON ERROR %s\n", e);
+		exit(2);
 	}
-
-	/* Exclude filters */
-	VTAILQ_FOREACH(sf, &vsc->sf_list_exclude, list) {
-		CHECK_OBJ_NOTNULL(sf, VSC_SF_MAGIC);
-		VTAILQ_FOREACH_SAFE(pt, &vsc->pt_list, list, pt2) {
-			CHECK_OBJ_NOTNULL(pt, VSC_PT_MAGIC);
-			if (vsc_filter_match_pt(sf, pt)) {
-				VTAILQ_REMOVE(&vsc->pt_list, pt, list);
-				VTAILQ_INSERT_TAIL(&tmplist, pt, list);
-			}
-		}
+	AN(vj);
+	vve = vjsn_child(vj->value, "elem");
+	AN(vve);
+	VTAILQ_FOREACH(vv, &vve->children, list) {
+		i = vsc_iter_elem(vd, fantom, vv, vsb, func, priv);
+		if (i)
+			break;
 	}
-	vsc_delete_pt_list(&tmplist);
+	// XXX: destroy vj
+	return (i);
 }
 
 /*--------------------------------------------------------------------
@@ -472,26 +339,33 @@ int
 VSC_Iter(struct vsm *vd, struct VSM_fantom *fantom, VSC_iter_f *func,
     void *priv)
 {
-	struct vsc *vsc = vsc_setup(vd);
-	struct vsc_pt *pt;
-	int i;
+	struct VSM_fantom	ifantom;
+	uint64_t u;
+	int i = 0;
+	struct vsb *vsb;
 
-	/* XXX: workaround: Force reload */
-	if (1 || VSM_valid != VSM_StillValid(vd, &vsc->iter_fantom)) {
-		/* Tell app that list will be nuked */
-		(void)func(priv, NULL);
-		vsc_build_vf_list(vd);
-		vsc_build_pt_list(vd);
-		vsc_filter_pt_list(vd);
-	}
-	if (fantom != NULL)
-		*fantom = vsc->iter_fantom;
-	VTAILQ_FOREACH(pt, &vsc->pt_list, list) {
-		i = func(priv, &pt->point);
+	vsb = VSB_new_auto();
+	AN(vsb);
+	VSM_FOREACH(&ifantom, vd) {
+		if (strcmp(ifantom.class, VSC_CLASS))
+			continue;
+		AZ(VSM_Map(vd, &ifantom));
+		u = vbe64dec(ifantom.b);
+		if (u == 0) {
+			VRMB();
+			usleep(100000);
+			u = vbe64dec(ifantom.b);
+		}
+		assert(u > 0);
+		if (fantom != NULL)
+			*fantom = ifantom;
+		i = vsc_iter_fantom(vd, &ifantom, vsb, func, priv);
+		// AZ(VSM_Unmap(vd, &ifantom));
 		if (i)
-			return (i);
+			break;
 	}
-	return (0);
+	VSB_destroy(&vsb);
+	return (i);
 }
 
 /*--------------------------------------------------------------------

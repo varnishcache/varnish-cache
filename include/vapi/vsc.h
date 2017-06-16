@@ -54,8 +54,6 @@ int VSC_Arg(struct vsm *vd, int arg, const char *opt);
 	 */
 
 struct VSC_level_desc;
-struct VSC_type_desc;
-struct VSC_section;
 struct VSC_point;
 
 struct VSC_level_desc {

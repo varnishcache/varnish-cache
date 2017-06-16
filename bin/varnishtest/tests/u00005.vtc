@@ -26,7 +26,7 @@ shell "cmp -s ${p1_out} ${p2_out}"
 
 shell -expect "MGT.uptime" \
 	"varnishstat -1 -n ${v1_name} -f ^MAIN*"
-shell -match "^MAIN" \
+shell -match "^MGT" \
 	"varnishstat -1 -n ${v1_name} -f ^foo"
 
 shell -expect "Usage: varnishstat <options>" \
