@@ -34,6 +34,7 @@
 
 #include "config.h"
 
+#include <errno.h>
 #include <stdlib.h>
 
 #include "cache.h"
@@ -381,12 +382,17 @@ VBT_Get(struct tcp_pool *tp, double tmo, const struct backend *be,
 }
 
 /*--------------------------------------------------------------------
+ * Return value:
+ *   0 success
+ *   1 failure
  */
 
-void
-VBT_Wait(struct worker *wrk, struct vbc *vbc)
+int
+VBT_Wait(struct worker *wrk, struct vbc *vbc, double tmo)
 {
 	struct tcp_pool *tp;
+	double t;
+	int r;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
@@ -394,9 +400,24 @@ VBT_Wait(struct worker *wrk, struct vbc *vbc)
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
 	assert(vbc->cond == &wrk->cond);
 	Lck_Lock(&tp->mtx);
-	while (vbc->state == VBC_STATE_STOLEN)
-		AZ(Lck_CondWait(&wrk->cond, &tp->mtx, 0));
-	assert(vbc->state == VBC_STATE_USED);
+	while (vbc->state == VBC_STATE_STOLEN) {
+		t = tmo ? VTIM_real() + tmo : 0;
+		r = Lck_CondWait(&wrk->cond, &tp->mtx, t);
+		if (r != 0) {
+			assert(t > 0);
+			assert(r == ETIMEDOUT || r == EINTR);
+			assert(vbc->state == VBC_STATE_STOLEN);
+			VTAILQ_REMOVE(&tp->connlist, vbc, list);
+			tp->n_used--;
+			vbc->state = VBC_STATE_CLEANUP;
+			(void)shutdown(vbc->fd, SHUT_WR);
+			VTAILQ_INSERT_HEAD(&tp->killlist, vbc, list);
+			tp->n_kill++;
+		}
+	}
+	assert(vbc->state == VBC_STATE_USED ||
+	    vbc->state == VBC_STATE_CLEANUP);
 	vbc->cond = NULL;
 	Lck_Unlock(&tp->mtx);
+	return (vbc->state == VBC_STATE_USED ? 0 : 1);
 }

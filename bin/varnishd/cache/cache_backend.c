@@ -157,7 +157,7 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	CAST_OBJ_NOTNULL(vbc, bo->htc->priv, VBC_MAGIC);
 	bo->htc->priv = NULL;
 	if (vbc->state != VBC_STATE_USED)
-		VBT_Wait(wrk, vbc);
+		AZ(VBT_Wait(wrk, vbc, 0));
 	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s", vbc->fd,
 		    bp->display_name);
@@ -206,14 +206,18 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 			VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 			return (-1);
 		}
-		AN(bo->htc);
+		CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
 		if (vbc->state != VBC_STATE_STOLEN)
 			extrachance = 0;
 
 		i = V1F_SendReq(wrk, bo, &bo->acct.bereq_hdrbytes, 0);
 
-		if (vbc->state != VBC_STATE_USED)
-			VBT_Wait(wrk, vbc);
+		if (vbc->state != VBC_STATE_USED &&
+		    VBT_Wait(wrk, vbc, bo->htc->first_byte_timeout)) {
+			VSLb(bo->vsl, SLT_FetchError, "timed out reusing backend connection");
+			bo->htc = NULL;
+			return (-1);
+		}
 
 		assert(vbc->state == VBC_STATE_USED);
 
