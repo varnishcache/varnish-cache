@@ -360,7 +360,7 @@ VSC_Iter(struct vsm *vd, struct VSM_fantom *fantom, VSC_iter_f *func,
 		if (fantom != NULL)
 			*fantom = ifantom;
 		i = vsc_iter_fantom(vd, &ifantom, vsb, func, priv);
-		// AZ(VSM_Unmap(vd, &ifantom));
+		AZ(VSM_Unmap(vd, &ifantom));
 		if (i)
 			break;
 	}

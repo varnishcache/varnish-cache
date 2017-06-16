@@ -183,6 +183,7 @@ LIBVARNISHAPI_1.7 {
 	VSM_valid;
 	VSM_similar;
 	VSM_Map;
+	VSM_Unmap;
 	VSC_Destroy_Point;
 	VSC_Clone_Point;
 } LIBVARNISHAPI_1.0;

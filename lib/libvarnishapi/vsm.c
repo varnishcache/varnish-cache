@@ -459,6 +459,18 @@ VSM_Map(struct vsm *vd, struct VSM_fantom *vf)
 
 /*--------------------------------------------------------------------*/
 
+int
+VSM_Unmap(struct vsm *vd, struct VSM_fantom *vf)
+{
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	AN(vf);
+	AN(vf->b);
+	return (0);
+}
+
+/*--------------------------------------------------------------------*/
+
 const struct vsm_valid *
 VSM_StillValid(const struct vsm *vd, struct VSM_fantom *vf)
 {

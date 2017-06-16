@@ -154,6 +154,7 @@ int VSM__itern(const struct vsm *vd, struct VSM_fantom *vf);
 	 */
 
 int VSM_Map(struct vsm *vd, struct VSM_fantom *vf);
+int VSM_Unmap(struct vsm *vd, struct VSM_fantom *vf);
 
 struct vsm_valid {
 	const char *name;
