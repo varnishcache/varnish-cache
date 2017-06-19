@@ -313,7 +313,7 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 }
 
 static void
-build_pt_list(struct vsm *vd, struct VSM_fantom *fantom)
+build_pt_list(struct vsm *vd, struct vsm_fantom *fantom)
 {
 	struct pt_priv pt_priv;
 	int i;
@@ -1050,7 +1050,7 @@ do_curses(struct vsm *vd, double delay)
 	long t;
 	int ch;
 	double now;
-	struct VSM_fantom f_iter = VSM_FANTOM_NULL;
+	struct vsm_fantom f_iter = VSM_FANTOM_NULL;
 
 	interval = delay;
 

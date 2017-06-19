@@ -396,7 +396,7 @@ n_arg_sock(const char *n_arg)
 	struct vsm *vsm;
 	char *p;
 	int sock;
-	struct VSM_fantom vt;
+	struct vsm_fantom vt;
 
 	vsm = VSM_New();
 	AN(vsm);

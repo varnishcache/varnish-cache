@@ -228,7 +228,7 @@ vsc_filter(struct vsm *vd, const char *nm)
  */
 
 static int
-vsc_iter_elem(struct vsm *vd, const struct VSM_fantom *fantom,
+vsc_iter_elem(struct vsm *vd, const struct vsm_fantom *fantom,
     const struct vjsn_val *vv, struct vsb *vsb, VSC_iter_f *func, void *priv)
 {
 	struct VSC_point	point;
@@ -304,7 +304,7 @@ vsc_iter_elem(struct vsm *vd, const struct VSM_fantom *fantom,
 }
 
 static int
-vsc_iter_fantom(struct vsm *vd, const struct VSM_fantom *fantom,
+vsc_iter_fantom(struct vsm *vd, const struct vsm_fantom *fantom,
     struct vsb *vsb, VSC_iter_f *func, void *priv)
 {
 	int i = 0;
@@ -336,10 +336,10 @@ vsc_iter_fantom(struct vsm *vd, const struct VSM_fantom *fantom,
  */
 
 int
-VSC_Iter(struct vsm *vd, struct VSM_fantom *fantom, VSC_iter_f *func,
+VSC_Iter(struct vsm *vd, struct vsm_fantom *fantom, VSC_iter_f *func,
     void *priv)
 {
-	struct VSM_fantom	ifantom;
+	struct vsm_fantom	ifantom;
 	uint64_t u;
 	int i = 0;
 	struct vsb *vsb;

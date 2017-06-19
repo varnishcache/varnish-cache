@@ -205,7 +205,7 @@ VSM_n_Arg(struct vsm *vd, const char *arg)
 const char *
 VSM_Name(const struct vsm *vd)
 {
-	struct VSM_fantom vt;
+	struct vsm_fantom vt;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	if (VSM_Get(vd, &vt, "Arg", "-i"))
@@ -386,7 +386,7 @@ VSM_Abandoned(struct vsm *vd)
 /*--------------------------------------------------------------------*/
 
 void
-VSM__iter0(const struct vsm *vd, struct VSM_fantom *vf)
+VSM__iter0(const struct vsm *vd, struct vsm_fantom *vf)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -396,7 +396,7 @@ VSM__iter0(const struct vsm *vd, struct VSM_fantom *vf)
 }
 
 int
-VSM__itern(const struct vsm *vd, struct VSM_fantom *vf)
+VSM__itern(const struct vsm *vd, struct vsm_fantom *vf)
 {
 	struct VSM_chunk *c = NULL;
 
@@ -448,7 +448,7 @@ VSM__itern(const struct vsm *vd, struct VSM_fantom *vf)
 /*--------------------------------------------------------------------*/
 
 int
-VSM_Map(struct vsm *vd, struct VSM_fantom *vf)
+VSM_Map(struct vsm *vd, struct vsm_fantom *vf)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -460,7 +460,7 @@ VSM_Map(struct vsm *vd, struct VSM_fantom *vf)
 /*--------------------------------------------------------------------*/
 
 int
-VSM_Unmap(struct vsm *vd, struct VSM_fantom *vf)
+VSM_Unmap(struct vsm *vd, struct vsm_fantom *vf)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -472,9 +472,9 @@ VSM_Unmap(struct vsm *vd, struct VSM_fantom *vf)
 /*--------------------------------------------------------------------*/
 
 const struct vsm_valid *
-VSM_StillValid(const struct vsm *vd, struct VSM_fantom *vf)
+VSM_StillValid(const struct vsm *vd, struct vsm_fantom *vf)
 {
-	struct VSM_fantom f2;
+	struct vsm_fantom f2;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AN(vf);
@@ -502,7 +502,7 @@ VSM_StillValid(const struct vsm *vd, struct VSM_fantom *vf)
 }
 
 int
-VSM_Get(const struct vsm *vd, struct VSM_fantom *vf,
+VSM_Get(const struct vsm *vd, struct vsm_fantom *vf,
     const char *class, const char *ident)
 {
 

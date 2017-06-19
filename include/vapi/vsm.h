@@ -43,7 +43,7 @@ struct vsm;
  * This structure is used to reference a VSM chunk
  */
 
-struct VSM_fantom {
+struct vsm_fantom {
 	struct VSM_chunk	*chunk;
 	void			*b;		/* first byte of payload */
 	void			*e;		/* first byte past payload */
@@ -142,19 +142,19 @@ void VSM_Close(struct vsm *vd);
 	 */
 
 
-void VSM__iter0(const struct vsm *vd, struct VSM_fantom *vf);
-int VSM__itern(const struct vsm *vd, struct VSM_fantom *vf);
+void VSM__iter0(const struct vsm *vd, struct vsm_fantom *vf);
+int VSM__itern(const struct vsm *vd, struct vsm_fantom *vf);
 
 #define VSM_FOREACH(vf, vd) \
     for (VSM__iter0((vd), (vf)); VSM__itern((vd), (vf));)
 	/*
 	 * Iterate over all chunks in shared memory
-	 * vf = "struct VSM_fantom *"
+	 * vf = "struct vsm_fantom *"
 	 * vd = "struct vsm *"
 	 */
 
-int VSM_Map(struct vsm *vd, struct VSM_fantom *vf);
-int VSM_Unmap(struct vsm *vd, struct VSM_fantom *vf);
+int VSM_Map(struct vsm *vd, struct vsm_fantom *vf);
+int VSM_Unmap(struct vsm *vd, struct vsm_fantom *vf);
 
 struct vsm_valid {
 	const char *name;
@@ -165,9 +165,9 @@ extern const struct vsm_valid VSM_valid[];
 extern const struct vsm_valid VSM_similar[];
 
 const struct vsm_valid *VSM_StillValid(const struct vsm *vd,
-    struct VSM_fantom *vf);
+    struct vsm_fantom *vf);
 	/*
-	 * Check the validity of a previously looked up VSM_fantom.
+	 * Check the validity of a previously looked up vsm_fantom.
 	 *
 	 * VSM_invalid means that the SHM chunk this fantom points to does
 	 * not exist in the log file any longer. Using the fantom's
@@ -196,7 +196,7 @@ const struct vsm_valid *VSM_StillValid(const struct vsm *vd,
 	 *   VSM_similar: a fantom with same dimensions exist in same position.
 	 */
 
-int VSM_Get(const struct vsm *vd, struct VSM_fantom *vf,
+int VSM_Get(const struct vsm *vd, struct vsm_fantom *vf,
     const char *class, const char *ident);
 	/*
 	 * Find a chunk, produce fantom for it.

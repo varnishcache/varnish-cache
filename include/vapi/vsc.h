@@ -38,7 +38,7 @@
 #include "vapi/vsc_int.h"
 
 struct vsm;
-struct VSM_fantom;
+struct vsm_fantom;
 
 /*---------------------------------------------------------------------
  * VSC level access functions
@@ -80,13 +80,13 @@ void VSC_Destroy_Point(struct VSC_point **);
 
 typedef int VSC_iter_f(void *priv, const struct VSC_point *const pt);
 
-int VSC_Iter(struct vsm *vd, struct VSM_fantom *fantom, VSC_iter_f *func,
+int VSC_Iter(struct vsm *vd, struct vsm_fantom *fantom, VSC_iter_f *func,
     void *priv);
 	/*
 	 * Iterate over all statistics counters, calling "func" for
 	 * each counter not suppressed by any "-f" arguments.
 	 *
-	 * fantom points to a struct VSM_fantom. If non-NULL, it can be
+	 * fantom points to a struct vsm_fantom. If non-NULL, it can be
 	 * used with VSM_StillValid to check the validity of the points
 	 * returned.
 	 *

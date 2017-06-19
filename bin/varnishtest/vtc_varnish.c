@@ -77,7 +77,7 @@ struct varnish {
 	char			*proto;
 
 	struct vsm		*vd;		/* vsc use */
-	struct VSM_fantom	mgt_arg_i;
+	struct vsm_fantom	mgt_arg_i;
 
 	unsigned		vsl_tag_count[256];
 

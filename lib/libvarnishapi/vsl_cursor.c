@@ -64,7 +64,7 @@ struct vslc_vsm {
 	unsigned			options;
 
 	struct vsm			*vsm;
-	struct VSM_fantom		vf;
+	struct vsm_fantom		vf;
 
 	const struct VSL_head		*head;
 	const uint32_t			*end;
@@ -241,7 +241,7 @@ struct VSL_cursor *
 VSL_CursorVSM(struct VSL_data *vsl, struct vsm *vsm, unsigned options)
 {
 	struct vslc_vsm *c;
-	struct VSM_fantom vf;
+	struct vsm_fantom vf;
 	struct VSL_head *head;
 	int i;
 
