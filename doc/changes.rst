@@ -8,7 +8,9 @@ Varnish Cache Trunk (ongoing)
 
 * VSM_Name() returns the -i argument name, rather than the -n name.
 
-* VUT.name is goine, use VSM_Name(VUT.vsm)
+* VUT.name is gone, use VSM_Name(VUT.vsm)
+
+* varnishd honors vcl_path (#2342)
 
 ================================
 Varnish Cache 5.1.2 (2017-04-07)

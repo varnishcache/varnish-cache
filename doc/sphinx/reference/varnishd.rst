@@ -70,6 +70,13 @@ Basic options
   script (-I option) and the child process will be started if there
   is an active VCL at the end of the initialization.
 
+  When used with a relative file name, config is searched in the
+  ``vcl_path``. It is possible to set this path prior to using ``-f``
+  options with a ``-p`` option. During startup, `varnishd` doesn't
+  complain about unsafe VCL paths: unlike the `varnish-cli(7)` that
+  could later be accessed remotely, starting `varnishd` requires
+  local privileges.
+
 -n name
 
   Specify the name for this instance.  This name is used to construct
