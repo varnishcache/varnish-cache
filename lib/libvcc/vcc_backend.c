@@ -91,7 +91,7 @@ vcc_ProbeRedef(struct vcc *tl, struct token **t_did,
 }
 
 static void
-vcc_ParseProbeSpec(struct vcc *tl, const struct token *nm, char **name)
+vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **name)
 {
 	struct fld_spec *fs;
 	struct token *t_field;
@@ -117,12 +117,13 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct token *nm, char **name)
 
 	vsb = VSB_new_auto();
 	AN(vsb);
-	if (nm != NULL)
-		VSB_printf(vsb, "vgc_probe_%.*s", PF(nm));
+	if (sym != NULL)
+		VSB_cat(vsb, sym->rname);
 	else
 		VSB_printf(vsb, "vgc_probe__%d", tl->nprobe++);
 	AZ(VSB_finish(vsb));
 	retval = TlDup(tl, VSB_data(vsb));
+	AN(retval);
 	VSB_destroy(&vsb);
 	if (name != NULL)
 		*name = retval;
@@ -131,7 +132,7 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct token *nm, char **name)
 	threshold = 0;
 	initial = 0;
 	status = 0;
-	Fh(tl, 0, "static const struct vrt_backend_probe %s = {\n", retval);
+	Fh(tl, 0, "static const struct vrt_backend_probe %s[] = {{\n", retval);
 	Fh(tl, 0, "\t.magic = VRT_BACKEND_PROBE_MAGIC,\n");
 	while (tl->t->tok != '}') {
 
@@ -237,7 +238,7 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct token *nm, char **name)
 		Fh(tl, 0, "\t.initial = ~0U,\n");
 	if (status > 0)
 		Fh(tl, 0, "\t.exp_status = %u,\n", status);
-	Fh(tl, 0, "};\n");
+	Fh(tl, 0, "}};\n");
 	SkipToken(tl, '}');
 }
 
@@ -249,6 +250,7 @@ void
 vcc_ParseProbe(struct vcc *tl)
 {
 	struct token *t_probe;
+	struct symbol *sym;
 	char *p;
 
 	vcc_NextToken(tl);			/* ID: probe */
@@ -258,10 +260,11 @@ vcc_ParseProbe(struct vcc *tl)
 	t_probe = tl->t;
 	vcc_NextToken(tl);
 
-	(void)VCC_HandleSymbol(tl, t_probe, PROBE, "&vgc_probe");
+	sym = VCC_HandleSymbol(tl, t_probe, PROBE, "vgc_probe");
 	ERRCHK(tl);
+	AN(sym);
 
-	vcc_ParseProbeSpec(tl, t_probe, &p);
+	vcc_ParseProbeSpec(tl, sym, &p);
 	if (vcc_IdIs(t_probe, "default")) {
 		(void)vcc_AddRef(tl, t_probe, SYM_PROBE);
 		tl->default_probe = p;
@@ -282,6 +285,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	struct token *t_host = NULL;
 	struct token *t_port = NULL;
 	struct token *t_hosthdr = NULL;
+	struct symbol *pb;
 	struct fld_spec *fs;
 	struct inifin *ifp;
 	struct vsb *vsb;
@@ -385,16 +389,17 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			Fb(tl, 0, "\t.proxy_header = %u,\n", u);
 		} else if (vcc_IdIs(t_field, "probe") && tl->t->tok == '{') {
 			vcc_ParseProbeSpec(tl, NULL, &p);
-			Fb(tl, 0, "\t.probe = &%s,\n", p);
+			Fb(tl, 0, "\t.probe = %s,\n", p);
 			ERRCHK(tl);
 		} else if (vcc_IdIs(t_field, "probe") && tl->t->tok == ID) {
-			if (!VCC_SymbolTok(tl, NULL, tl->t, SYM_PROBE, 0)) {
+			pb = VCC_SymbolTok(tl, NULL, tl->t, SYM_PROBE, 0);
+			if (pb == NULL) {
 				VSB_printf(tl->sb, "Probe %.*s not found\n",
 				    PF(tl->t));
 				vcc_ErrWhere(tl, tl->t);
 				return;
 			}
-			Fb(tl, 0, "\t.probe = &vgc_probe_%.*s,\n", PF(tl->t));
+			Fb(tl, 0, "\t.probe = %s,\n", pb->rname);
 			(void)vcc_AddRef(tl, tl->t, SYM_PROBE);
 			vcc_NextToken(tl);
 			SkipToken(tl, ';');
@@ -457,7 +462,6 @@ vcc_ParseBackend(struct vcc *tl)
 {
 	struct token *t_first, *t_be;
 	struct symbol *sym;
-	char vgcname[MAX_BACKEND_NAME + 20];
 
 	t_first = tl->t;
 	vcc_NextToken(tl);		/* ID: backend */
@@ -465,6 +469,7 @@ vcc_ParseBackend(struct vcc *tl)
 	vcc_ExpectCid(tl, "backend");	/* ID: name */
 	ERRCHK(tl);
 
+	/* XXX: lift this limit once VSM ident becomes dynamic */
 	if (tl->t->e - tl->t->b > MAX_BACKEND_NAME) {
 		VSB_printf(tl->sb,
 		    "Name of %.*s too long (max %d, is %zu):\n",
@@ -477,13 +482,12 @@ vcc_ParseBackend(struct vcc *tl)
 	t_be = tl->t;
 	vcc_NextToken(tl);
 
-	bprintf(vgcname, "vgc_backend_%.*s", PF(t_be));
-	Fh(tl, 0, "\nstatic struct director *%s;\n", vgcname);
-
 	sym = VCC_HandleSymbol(tl, t_be, BACKEND, "vgc_backend");
 	ERRCHK(tl);
 
-	vcc_ParseHostDef(tl, t_be, vgcname);
+	Fh(tl, 0, "\nstatic struct director *%s;\n", sym->rname);
+
+	vcc_ParseHostDef(tl, t_be, sym->rname);
 	ERRCHK(tl);
 
 	if (tl->err) {

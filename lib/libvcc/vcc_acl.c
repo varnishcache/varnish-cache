@@ -353,7 +353,7 @@ vcc_acl_emit(struct vcc *tl, const char *acln, int anon)
 	Fh(tl, 0, "\nstatic int __match_proto__(acl_match_f)\n");
 	Fh(tl, 0,
 	    "match_acl_%s_%s(VRT_CTX, const VCL_IP p)\n",
-	    anon ? "anon" : "named", acln);
+	    anon ? "anon" : "named", acln); /* XXX: acln isn't an rname */
 	Fh(tl, 0, "{\n");
 	Fh(tl, 0, "\tconst unsigned char *a;\n");
 	Fh(tl, 0, "\tint fam;\n");
@@ -447,10 +447,10 @@ vcc_acl_emit(struct vcc *tl, const char *acln, int anon)
 		return;
 
 	/* Emit the struct that will be referenced */
-	Fh(tl, 0, "\nconst struct vrt_acl vrt_acl_named_%s = {\n", acln);
+	Fh(tl, 0, "\nconst struct vrt_acl vrt_acl_named_%s[] = {{\n", acln);
 	Fh(tl, 0, "\t.magic = VRT_ACL_MAGIC,\n");
 	Fh(tl, 0, "\t.match = &match_acl_named_%s,\n", acln);
-	Fh(tl, 0, "};\n\n");
+	Fh(tl, 0, "}};\n\n");
 }
 
 void
@@ -473,7 +473,7 @@ void
 vcc_ParseAcl(struct vcc *tl)
 {
 	struct token *an;
-	char *acln;
+	struct symbol *sym;
 
 	vcc_NextToken(tl);
 	VTAILQ_INIT(&tl->acl);
@@ -483,10 +483,9 @@ vcc_ParseAcl(struct vcc *tl)
 	an = tl->t;
 	vcc_NextToken(tl);
 
-	acln = TlDupTok(tl, an);
-
-	(void)VCC_HandleSymbol(tl, an, ACL, ACL_SYMBOL_PREFIX);
+	sym = VCC_HandleSymbol(tl, an, ACL, ACL_SYMBOL_PREFIX);
 	ERRCHK(tl);
+	AN(sym);
 
 	SkipToken(tl, '{');
 
@@ -497,5 +496,5 @@ vcc_ParseAcl(struct vcc *tl)
 	}
 	SkipToken(tl, '}');
 
-	vcc_acl_emit(tl, acln, 0);
+	vcc_acl_emit(tl, sym->name, 0);
 }

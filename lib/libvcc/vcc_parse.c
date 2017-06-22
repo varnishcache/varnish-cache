@@ -240,17 +240,17 @@ vcc_ParseFunction(struct vcc *tl)
 	} else {
 		tl->fb = tl->fc;
 		sym = vcc_AddDef(tl, tl->t, SYM_SUB);
+		VCC_GlobalSymbol(sym, SUB, "VGC_function");
 		if (sym->ndef > 1) {
 			VSB_printf(tl->sb,
-			    "Function '%.*s' redefined\n", PF(tl->t));
+			    "Function '%s' redefined\n", sym->name);
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
 		tl->curproc = vcc_AddProc(tl, tl->t);
-		Fh(tl, 0, "void VGC_function_%.*s(VRT_CTX);\n", PF(tl->t));
+		Fh(tl, 0, "void %s(VRT_CTX);\n", sym->rname);
 		Fc(tl, 1, "\nvoid __match_proto__(vcl_func_t)\n");
-		Fc(tl, 1, "VGC_function_%.*s(VRT_CTX)\n",
-		    PF(tl->t));
+		Fc(tl, 1, "%s(VRT_CTX)\n", sym->rname);
 	}
 	vcc_NextToken(tl);
 	tl->indent += INDENT;
