@@ -179,14 +179,16 @@ VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, enum symkind kind)
 }
 
 static void
-vcc_global(struct vcc *tl, struct symbol *sym,
-    vcc_type_t fmt, const char *str, va_list ap)
+vcc_global(struct vcc *tl, struct symbol *sym, vcc_type_t fmt, const char *pfx)
 {
 	struct vsb *vsb;
 
+	CHECK_OBJ_NOTNULL(sym, SYMBOL_MAGIC);
+	AN(pfx);
+
 	vsb = VSB_new_auto();
 	AN(vsb);
-	VSB_vprintf(vsb, str, ap);
+	VSB_printf(vsb, "%s_%s", pfx, sym->name);
 	AZ(VSB_finish(vsb));
 	if (tl != NULL)
 		sym->rname = TlDup(tl, VSB_data(vsb));
@@ -194,6 +196,7 @@ vcc_global(struct vcc *tl, struct symbol *sym,
 		sym->rname = strdup(VSB_data(vsb));
 	AN(sym->rname);
 	VSB_destroy(&vsb);
+
 	sym->fmt = fmt;
 	sym->kind = VCC_HandleKind(sym->fmt);
 	if (sym->kind != SYM_NONE)
@@ -207,12 +210,11 @@ vcc_global(struct vcc *tl, struct symbol *sym,
 
 struct symbol *
 VCC_HandleSymbol(struct vcc *tl, const struct token *tk, vcc_type_t fmt,
-    const char *str, ...)
+    const char *pfx)
 {
 	struct symbol *sym;
 	enum symkind kind;
 	const char *p;
-	va_list ap;
 
 	kind = VCC_HandleKind(fmt);
 	assert(kind != SYM_NONE);
@@ -245,9 +247,7 @@ VCC_HandleSymbol(struct vcc *tl, const struct token *tk, vcc_type_t fmt,
 		sym = VCC_SymbolTok(tl, NULL, tk, kind, 1);
 	AN(sym);
 	AZ(sym->ndef);
-	va_start(ap, str);
-	vcc_global(tl, sym, fmt, str, ap);
-	va_end(ap);
+	vcc_global(tl, sym, fmt, pfx);
 	sym->ndef = 1;
 	if (sym->def_b == NULL)
 		sym->def_b = tk;

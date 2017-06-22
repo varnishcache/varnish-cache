@@ -282,7 +282,7 @@ vcc_ParseNew(struct vcc *tl)
 	ExpectErr(tl, ID);
 	vcc_ExpectCid(tl, "VCL object");
 	ERRCHK(tl);
-	sy1 = VCC_HandleSymbol(tl, tl->t, INSTANCE, "XXX");
+	sy1 = VCC_HandleSymbol(tl, tl->t, INSTANCE, "vo");
 	ERRCHK(tl);
 
 	/* We allow implicit use of VMOD objects:  Pretend it's ref'ed */
@@ -309,10 +309,10 @@ vcc_ParseNew(struct vcc *tl)
 	s_obj = p;
 	p += strlen(p) + 1;
 
-	Fh(tl, 0, "static %s *vo_%s;\n\n", p, sy1->name);
+	Fh(tl, 0, "static %s *%s;\n\n", p, sy1->rname);
 	p += strlen(p) + 1;
 
-	bprintf(buf1, ", &vo_%s, \"%s\"", sy1->name, sy1->name);
+	bprintf(buf1, ", &%s, \"%s\"", sy1->rname, sy1->name);
 	vcc_Eval_Func(tl, p, buf1, sy2);
 	ExpectErr(tl, ';');
 
@@ -322,14 +322,14 @@ vcc_ParseNew(struct vcc *tl)
 
 	ifp = New_IniFin(tl);
 	p += strlen(p) + 1;
-	VSB_printf(ifp->fin, "\t\t%s(&vo_%s);", p, sy1->name);
+	VSB_printf(ifp->fin, "\t\t%s(&%s);", p, sy1->rname);
 
 	while (p[0] != '\0' || p[1] != '\0' || p[2] != '\0')
 		p++;
 	p += 3;
 
 	/* Instantiate symbols for the methods */
-	bprintf(buf1, ", vo_%s", sy1->name);
+	bprintf(buf1, ", %s", sy1->rname);
 	while (*p != '\0') {
 		p += strlen(s_obj);
 		bprintf(buf2, "%s%s", sy1->name, p);

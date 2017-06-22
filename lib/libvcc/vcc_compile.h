@@ -280,7 +280,7 @@ void vcc_Eval_Func(struct vcc *tl, const char *spec,
     const char *extra, const struct symbol *sym);
 enum symkind VCC_HandleKind(vcc_type_t fmt);
 struct symbol *VCC_HandleSymbol(struct vcc *, const struct token *,
-    vcc_type_t fmt, const char *str, ...);
+    vcc_type_t fmt, const char *pfx);
 
 /* vcc_obj.c */
 extern const struct var vcc_vars[];

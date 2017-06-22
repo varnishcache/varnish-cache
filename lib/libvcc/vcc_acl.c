@@ -485,7 +485,7 @@ vcc_ParseAcl(struct vcc *tl)
 
 	acln = TlDupTok(tl, an);
 
-	(void)VCC_HandleSymbol(tl, an, ACL, "&vrt_acl_named_%s", acln);
+	(void)VCC_HandleSymbol(tl, an, ACL, "&vrt_acl_named");
 	ERRCHK(tl);
 
 	SkipToken(tl, '{');
