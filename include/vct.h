@@ -44,6 +44,8 @@
 
 extern const uint16_t vct_typtab[256];
 
+const char *VCT_invalid_name(const char *b, const char *e);
+
 static inline int
 vct_is(int x, uint16_t y)
 {

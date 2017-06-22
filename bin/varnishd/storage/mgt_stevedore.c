@@ -42,6 +42,7 @@
 
 #include "storage/storage.h"
 #include "vav.h"
+#include "vct.h"
 
 static VTAILQ_HEAD(, stevedore) stevedores =
     VTAILQ_HEAD_INITIALIZER(stevedores);
@@ -189,6 +190,9 @@ STV_Config(const char *spec)
 	if (p == NULL)
 		bprintf(stv->ident, "s%u", seq++);
 	else {
+		if (VCT_invalid_name(spec, p) != NULL)
+			ARGV_ERR("invalid storage name (-s %s)\n", spec);
+		/* XXX: no need for truncation once VSM ident becomes dynamic */
 		l = p - spec;
 		if (l > sizeof stv->ident - 1)
 			l = sizeof stv->ident - 1;

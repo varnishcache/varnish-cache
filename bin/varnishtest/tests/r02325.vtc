@@ -1,0 +1,5 @@
+varnishtest "validate storage identifiers"
+
+shell -err -expect "Error: invalid storage name (-s ...=malloc)" {
+	varnishd -a :0 -n ${tmpdir} -F -f '' -s ...=malloc
+}

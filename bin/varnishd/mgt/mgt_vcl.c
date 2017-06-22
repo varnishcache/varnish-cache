@@ -116,28 +116,21 @@ mcf_vcl_byname(const char *name)
 static int
 mcf_invalid_vclname(struct cli *cli, const char *name)
 {
-	const char *p;
-	int bad = 0;
+	const char *bad;
 
 	AN(name);
-	p = name;
-	if (!vct_isalpha(*p))
-		bad = *p;
-	for (p++; bad == 0 && *p != '\0'; p++)
-		if (!vct_isalpha(*p) &&
-		    !vct_isdigit(*p) &&
-		    *p != '_' &&
-		    *p != '-')
-			bad = *p;
-	if (bad) {
+	bad = VCT_invalid_name(name, NULL);
+
+	if (bad != NULL) {
 		VCLI_SetResult(cli, CLIS_PARAM);
 		VCLI_Out(cli, "Illegal character in VCL name ");
-		if (bad > 0x20 && bad < 0x7f)
-			VCLI_Out(cli, "('%c')", bad);
+		if (*bad > 0x20 && *bad < 0x7f)
+			VCLI_Out(cli, "('%c')", *bad);
 		else
-			VCLI_Out(cli, "(0x%02x)", bad & 0xff);
+			VCLI_Out(cli, "(0x%02x)", *bad & 0xff);
+		return (-1);
 	}
-	return (bad);
+	return (0);
 }
 
 static struct vclprog *
