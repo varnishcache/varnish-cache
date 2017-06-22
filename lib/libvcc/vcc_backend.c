@@ -258,8 +258,7 @@ vcc_ParseProbe(struct vcc *tl)
 	t_probe = tl->t;
 	vcc_NextToken(tl);
 
-	(void)VCC_HandleSymbol(tl, t_probe, PROBE, "&vgc_probe_%.*s",
-	    PF(t_probe));
+	(void)VCC_HandleSymbol(tl, t_probe, PROBE, "&vgc_probe");
 	ERRCHK(tl);
 
 	vcc_ParseProbeSpec(tl, t_probe, &p);
@@ -481,7 +480,7 @@ vcc_ParseBackend(struct vcc *tl)
 	bprintf(vgcname, "vgc_backend_%.*s", PF(t_be));
 	Fh(tl, 0, "\nstatic struct director *%s;\n", vgcname);
 
-	sym = VCC_HandleSymbol(tl, t_be, BACKEND, "%s", vgcname);
+	sym = VCC_HandleSymbol(tl, t_be, BACKEND, "vgc_backend");
 	ERRCHK(tl);
 
 	vcc_ParseHostDef(tl, t_be, vgcname);
