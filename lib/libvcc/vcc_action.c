@@ -42,12 +42,14 @@
 static void
 parse_call(struct vcc *tl)
 {
+	struct symbol *sym;
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 	vcc_AddCall(tl, tl->t);
-	(void)vcc_AddRef(tl, tl->t, SYM_SUB);
-	Fb(tl, 1, "VGC_function_%.*s(ctx);\n", PF(tl->t));
+	sym = vcc_AddRef(tl, tl->t, SYM_SUB);
+	VCC_GlobalSymbol(sym, SUB, "VGC_function");
+	Fb(tl, 1, "%s(ctx);\n", sym->rname);
 	vcc_NextToken(tl);
 }
 
@@ -251,25 +253,25 @@ parse_return_vcl(struct vcc *tl)
 		return;
 	}
 	if (sym->eval_priv == NULL) {
-		VSB_printf(tl->fi, "%s VCL %.*s */\n",
-		    VCC_INFO_PREFIX, PF(tl->t));
+		VSB_printf(tl->fi, "%s VCL %s */\n", VCC_INFO_PREFIX,
+		    sym->name);
 
 		bprintf(buf, "vgc_vcl_%u", tl->unique++);
 		sym->eval_priv = strdup(buf);
 		AN(sym->eval_priv);
 
 		Fh(tl, 0, "static VCL_VCL %s;", buf);
-		Fh(tl, 0, "\t/* VCL %.*s */\n", PF(tl->t));
+		Fh(tl, 0, "\t/* VCL %s */\n", sym->name);
 
 		p = New_IniFin(tl);
 		AN(p);
-		VSB_printf(p->ini, "\t%s = VRT_vcl_get(ctx, \"%.*s\");",
-		    buf, PF(tl->t));
+		VSB_printf(p->ini, "\t%s = VRT_vcl_get(ctx, \"%s\");",
+		    buf, sym->name);
 		VSB_printf(p->fin, "\tVRT_vcl_rel(ctx, %s);",
 		    buf);
 	}
-	Fb(tl, 1, "VRT_vcl_select(ctx, %s);\t/* %.*s */\n",
-	    (const char*)sym->eval_priv, PF(tl->t));
+	Fb(tl, 1, "VRT_vcl_select(ctx, %s);\t/* %s */\n",
+	    (const char*)sym->eval_priv, sym->name);
 	vcc_NextToken(tl);
 	ExpectErr(tl, ')');
 	vcc_NextToken(tl);

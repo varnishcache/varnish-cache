@@ -820,6 +820,7 @@ stv_variables = (
 
 vcltypes = {
 	'STRING_LIST':	"void*",
+	'SUB':			"void*",
 }
 
 fi = open(join(srcroot, "include/vrt.h"))

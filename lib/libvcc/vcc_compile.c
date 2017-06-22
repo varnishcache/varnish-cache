@@ -411,7 +411,7 @@ EmitStruct(const struct vcc *tl)
 	Fc(tl, 0, "\t.event_vcl = VGC_Event,\n");
 	Fc(tl, 0, "\t.default_director = &%s,\n", tl->default_director);
 	if (tl->default_probe != NULL)
-		Fc(tl, 0, "\t.default_probe = &%s,\n", tl->default_probe);
+		Fc(tl, 0, "\t.default_probe = %s,\n", tl->default_probe);
 	Fc(tl, 0, "\t.ref = VGC_ref,\n");
 	Fc(tl, 0, "\t.nref = VGC_NREFS,\n");
 	Fc(tl, 0, "\t.nsrc = VGC_NSRCS,\n");
