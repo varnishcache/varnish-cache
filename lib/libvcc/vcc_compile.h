@@ -318,7 +318,7 @@ void vcc_ErrWhere2(struct vcc *, const struct token *, const struct token *);
 
 void vcc__Expect(struct vcc *tl, unsigned tok, unsigned line);
 int vcc_IdIs(const struct token *t, const char *p);
-void vcc_ExpectCid(struct vcc *tl, const char *what);
+void vcc_ExpectVid(struct vcc *tl, const char *what);
 void vcc_Lexer(struct vcc *tl, struct source *sp);
 void vcc_NextToken(struct vcc *tl);
 void vcc__ErrInternal(struct vcc *tl, const char *func,

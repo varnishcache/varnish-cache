@@ -1,0 +1,38 @@
+varnishtest "legal symbol names"
+
+varnish v1 -arg "-s my-store=malloc" -vcl {
+	import directors;
+
+	acl my-acl { "127.0.0.1"; }
+
+	probe my-pb { }
+	backend my-be {
+		.host = "${bad_backend}";
+		.probe = my-pb;
+	}
+
+	sub vcl_init {
+		new my-dir = directors.round_robin();
+		my-dir.add_backend(my-be);
+	}
+
+	sub vcl_recv {
+		call my-sub;
+	}
+
+	sub my-sub {
+		if (client.ip ~ my-acl) { }
+		set req.storage = storage.my-store;
+		set req.backend_hint = my-dir.backend();
+	}
+} -start
+
+varnish v1 -cli "vcl.label my-label vcl1"
+
+varnish v1 -vcl {
+	backend dummy { .host = "${bad_backend}"; }
+
+	sub vcl_recv {
+		return (vcl(my-label));
+	}
+}

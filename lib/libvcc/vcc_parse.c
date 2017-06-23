@@ -213,7 +213,7 @@ vcc_ParseFunction(struct vcc *tl)
 	int m, i;
 
 	vcc_NextToken(tl);
-	vcc_ExpectCid(tl, "function");
+	vcc_ExpectVid(tl, "function");
 	ERRCHK(tl);
 
 	m = IsMethod(tl->t);

@@ -255,7 +255,7 @@ vcc_ParseProbe(struct vcc *tl)
 
 	vcc_NextToken(tl);			/* ID: probe */
 
-	vcc_ExpectCid(tl, "backend probe");	/* ID: name */
+	vcc_ExpectVid(tl, "backend probe");	/* ID: name */
 	ERRCHK(tl);
 	t_probe = tl->t;
 	vcc_NextToken(tl);
@@ -466,7 +466,7 @@ vcc_ParseBackend(struct vcc *tl)
 	t_first = tl->t;
 	vcc_NextToken(tl);		/* ID: backend */
 
-	vcc_ExpectCid(tl, "backend");	/* ID: name */
+	vcc_ExpectVid(tl, "backend");	/* ID: name */
 	ERRCHK(tl);
 
 	/* XXX: lift this limit once VSM ident becomes dynamic */
