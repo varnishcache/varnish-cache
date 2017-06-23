@@ -471,7 +471,7 @@ vcc_Eval_Handle(struct vcc *tl, struct expr **e, const struct symbol *sym,
 		*e = vcc_mk_expr(STRING, "\"%s\"", sym->name);
 		(void)vcc_AddRef(tl, tl->t, sym->kind);
 	} else {
-		vcc_ExpectCid(tl, "handle");
+		vcc_ExpectVid(tl, "handle");
 		(void)vcc_AddRef(tl, tl->t, sym->kind);
 		*e = vcc_mk_expr(sym->fmt, "%s", sym->rname);
 		(*e)->constant = EXPR_VAR;	/* XXX ? */
@@ -1203,7 +1203,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	    (tl->t->tok == '~' || tl->t->tok == T_NOMATCH)) {
 		not = tl->t->tok == '~' ? "" : "!";
 		vcc_NextToken(tl);
-		vcc_ExpectCid(tl, "ACL");
+		vcc_ExpectVid(tl, "ACL");
 		sym = vcc_AddRef(tl, tl->t, SYM_ACL);
 		VCC_GlobalSymbol(sym, ACL, ACL_SYMBOL_PREFIX);
 		bprintf(buf, "%sVRT_acl_match(ctx, %s, \v1)", not, sym->rname);

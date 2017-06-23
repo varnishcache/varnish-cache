@@ -484,7 +484,7 @@ vcc_ParseAcl(struct vcc *tl)
 	vcc_NextToken(tl);
 	VTAILQ_INIT(&tl->acl);
 
-	vcc_ExpectCid(tl, "ACL");
+	vcc_ExpectVid(tl, "ACL");
 	ERRCHK(tl);
 	an = tl->t;
 	vcc_NextToken(tl);

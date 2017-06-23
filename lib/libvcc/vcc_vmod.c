@@ -280,7 +280,7 @@ vcc_ParseNew(struct vcc *tl)
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	vcc_ExpectCid(tl, "VCL object");
+	vcc_ExpectVid(tl, "VCL object");
 	ERRCHK(tl);
 	sy1 = VCC_HandleSymbol(tl, tl->t, INSTANCE, "vo");
 	ERRCHK(tl);

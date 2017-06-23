@@ -291,26 +291,25 @@ vcc_IdIs(const struct token *t, const char *p)
 }
 
 /*--------------------------------------------------------------------
- * Check that we have a C-identifier
+ * Check that we have a Varnish identifier
  */
 
 void
-vcc_ExpectCid(struct vcc *tl, const char *what)
+vcc_ExpectVid(struct vcc *tl, const char *what)
 {
-	const char *q;
+	const char *bad;
 
 	ExpectErr(tl, ID);
 	ERRCHK(tl);
-	/* XXX: too soon to use vct_invalid_name() */
-	for (q = tl->t->b; q < tl->t->e; q++) {
-		if (!vct_isalnum(*q) && *q != '_') {
-			VSB_printf(tl->sb, "Name of %s, ", what);
-			vcc_ErrToken(tl, tl->t);
-			VSB_printf(tl->sb,
-			    ", contains illegal character '%c'\n", *q);
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
+
+	bad = VCT_invalid_name(tl->t->b, tl->t->e);
+	if (bad != NULL) {
+		VSB_printf(tl->sb, "Name of %s, ", what);
+		vcc_ErrToken(tl, tl->t);
+		VSB_printf(tl->sb,
+		    ", contains illegal character '%c'\n", *bad);
+		vcc_ErrWhere(tl, tl->t);
+		return;
 	}
 }
 

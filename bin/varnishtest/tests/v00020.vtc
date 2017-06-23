@@ -204,12 +204,12 @@ varnish v1 -errvcl {IP + IP not possible.} {
 	}
 }
 
-varnish v1 -errvcl {Name of function, 'foo-bar', contains illegal character '-'} {
+varnish v1 -errvcl {Name of function, 'foo.bar', contains illegal character '.'} {
 	backend b { .host = "127.0.0.1"; }
-	sub foo-bar {
+	sub foo.bar {
 	}
 	sub vcl_recv {
-		call foo-bar;
+		call foo.bar;
 	}
 }
 
@@ -238,9 +238,9 @@ varnish v1 -errvcl {'beresp.status': Not available in method 'vcl_recv'.} {
 	}
 }
 
-varnish v1 -errvcl {Name of ACL, 'foo-bar', contains illegal character '-'} {
+varnish v1 -errvcl {Name of ACL, 'foo.bar', contains illegal character '.'} {
 	backend b { .host = "127.0.0.1"; }
-	acl foo-bar {
+	acl foo.bar {
 	}
 	sub vcl_recv {
 		if (client.ip ~ foo.bar) {
