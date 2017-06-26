@@ -11,6 +11,7 @@ server s1 {
 varnish v1 -vcl+backend {
 	sub vcl_recv {
 		if (req.method == "PURGE") {
+			ban(req.http.doesntexist);
 			ban("");
 			ban("req.url");
 			ban("req.url //");
@@ -31,6 +32,7 @@ client c1 {
 } -run
 
 logexpect l1 -v v1 -d 1 -g vxid {
+	expect * 1004	VCL_Error {ban[(][)]: Null argument}
 	expect * 1004	VCL_Error {ban[(][)]: No ban conditions found[.]}
 	expect * 1004	VCL_Error {ban[(][)]: Expected comparison operator[.]}
 	expect * 1004	VCL_Error {ban[(][)]: Expected second operand[.]}
