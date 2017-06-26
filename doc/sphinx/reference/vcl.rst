@@ -428,6 +428,11 @@ ban(STRING)
   Expressions can be chained using the *and* operator ``&&``. For *or*
   semantics, use several bans.
 
+  The unset *<field>* is not equal to any string, such that, for a
+  non-existing header, the operators ``==`` and ``~`` always evaluate
+  as false, while the operators ``!=`` and ``!~`` always evaluate as
+  true, respectively, for any value of *<arg>*.
+
 hash_data(input)
 ~~~~~~~~~~~~~~~~
 
