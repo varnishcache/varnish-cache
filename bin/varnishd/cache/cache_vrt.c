@@ -416,7 +416,11 @@ VRT_ban_string(VRT_CTX, const char *str)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(ctx->vsl);
-	AN(str);
+
+	if (str == NULL) {
+		VSLb(ctx->vsl, SLT_VCL_Error, "ban(): Null argument");
+		return;
+	}
 
 	bp = BAN_Build();
 	if (bp == NULL) {
