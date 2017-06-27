@@ -71,6 +71,7 @@ struct tcp_pool {
 
 };
 
+static struct lock		pools_mtx;
 static VTAILQ_HEAD(, tcp_pool)	pools = VTAILQ_HEAD_INITIALIZER(pools);
 
 /*--------------------------------------------------------------------
@@ -127,6 +128,7 @@ VBT_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6)
 {
 	struct tcp_pool *tp;
 
+	Lck_Lock(&pools_mtx);
 	VTAILQ_FOREACH(tp, &pools, list) {
 		assert(tp->refcnt > 0);
 		if (ip4 == NULL) {
@@ -148,8 +150,10 @@ VBT_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6)
 				continue;
 		}
 		tp->refcnt++;
+		Lck_Unlock(&pools_mtx);
 		return (tp);
 	}
+	Lck_Unlock(&pools_mtx);
 
 	ALLOC_OBJ(tp, TCP_POOL_MAGIC);
 	AN(tp);
@@ -161,10 +165,14 @@ VBT_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6)
 	Lck_New(&tp->mtx, lck_backend_tcp);
 	VTAILQ_INIT(&tp->connlist);
 	VTAILQ_INIT(&tp->killlist);
-	VTAILQ_INSERT_HEAD(&pools, tp, list);
 	INIT_OBJ(&tp->waitfor, WAITFOR_MAGIC);
 	tp->waitfor.func = tcp_handle;
 	tp->waitfor.tmo = &cache_param->backend_idle_timeout;
+
+	Lck_Lock(&pools_mtx);
+	VTAILQ_INSERT_HEAD(&pools, tp, list);
+	Lck_Unlock(&pools_mtx);
+
 	return (tp);
 }
 
@@ -182,11 +190,16 @@ VBT_Rel(struct tcp_pool **tpp)
 	tp = *tpp;
 	*tpp = NULL;
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
+	Lck_Lock(&pools_mtx);
 	assert(tp->refcnt > 0);
-	if (--tp->refcnt > 0)
+	if (--tp->refcnt > 0) {
+		Lck_Unlock(&pools_mtx);
 		return;
+	}
 	AZ(tp->n_used);
 	VTAILQ_REMOVE(&pools, tp, list);
+	Lck_Unlock(&pools_mtx);
+
 	free(tp->name);
 	free(tp->ip4);
 	free(tp->ip6);
@@ -407,4 +420,12 @@ VBT_Wait(struct worker *wrk, struct vbc *vbc)
 	assert(vbc->state == VBC_STATE_USED);
 	vbc->cond = NULL;
 	Lck_Unlock(&tp->mtx);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VBT_Init(void)
+{
+	Lck_New(&pools_mtx, lck_backend);
 }
