@@ -238,6 +238,7 @@ child_main(void)
 	HTTP_Init();
 
 	VBO_Init();
+	VBT_Init();
 	VBP_Init();
 	VBE_InitCfg();
 	Pool_Init();
