@@ -41,6 +41,9 @@ void VCA_Shutdown(void);
 void VBE_InitCfg(void);
 void VBE_Poll(void);
 
+/* cache_backend_tcp.c */
+void VBT_Init(void);
+
 /* cache_backend_poll.c */
 void VBP_Init(void);
 
