@@ -88,8 +88,8 @@ const uint16_t vct_typtab[256] = {
 	[0x2a]  =	VCT_TCHAR,
 	[0x2b]  =	VCT_TCHAR,
 	[0x2c]  =	VCT_SEPARATOR,
-	[0x2d]	=	VCT_XMLNAME | VCT_TCHAR,
-	[0x2e]	=	VCT_XMLNAME | VCT_TCHAR,
+	[0x2d]	=	VCT_XMLNAME | VCT_TCHAR | VCT_NAME,
+	[0x2e]	=	VCT_XMLNAME | VCT_TCHAR | VCT_VAR,
 	[0x2f]  =	VCT_SEPARATOR,
 	[0x30]	=	VCT_DIGIT | VCT_HEX | VCT_XMLNAME,
 	[0x31]	=	VCT_DIGIT | VCT_HEX | VCT_XMLNAME,
@@ -138,7 +138,7 @@ const uint16_t vct_typtab[256] = {
 	[0x5c]  =	VCT_SEPARATOR,
 	[0x5d]  =	VCT_SEPARATOR,
 	[0x5e]  =	VCT_TCHAR,
-	[0x5f]	=	VCT_XMLNAMESTART | VCT_TCHAR,
+	[0x5f]	=	VCT_XMLNAMESTART | VCT_TCHAR | VCT_NAME,
 	[0x60]	=	VCT_TCHAR,
 	[0x61]	=	VCT_LOALPHA | VCT_HEX | VCT_XMLNAMESTART,
 	[0x62]	=	VCT_LOALPHA | VCT_HEX | VCT_XMLNAMESTART,
@@ -245,14 +245,11 @@ VCT_invalid_name(const char *b, const char *e)
 		e = strchr(b, '\0');
 	assert(b < e);
 
-	if (!vct_isalpha(*b))
+	if (!vct_isident1(*b))
 		return (b);
 
 	for (; b < e; b++)
-		if (!vct_isalpha(*b) &&
-		    !vct_isdigit(*b) &&
-		    *b != '_' &&
-		    *b != '-')
+		if (!vct_isident(*b))
 			return (b);
 
 	return (NULL);

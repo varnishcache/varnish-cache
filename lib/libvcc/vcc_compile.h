@@ -49,9 +49,6 @@ struct vsb;
 struct token;
 struct sockaddr_storage;
 
-#define isident1(c) (isalpha(c))
-#define isident(c) (isalpha(c) || isdigit(c) || (c) == '_' || (c) == '-')
-#define isvar(c) (isident(c) || (c) == '.')
 unsigned vcl_fixed_token(const char *p, const char **q);
 extern const char * const vcl_tnames[256];
 void vcl_output_lang_h(struct vsb *sb);
