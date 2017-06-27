@@ -679,7 +679,7 @@ http_GetContentLength(const struct http *hp)
 	cl = 0;
 	if (!vct_isdigit(*b))
 		return (-2);
-	for (;vct_isdigit(*b); b++) {
+	for (; vct_isdigit(*b); b++) {
 		cll = cl;
 		cl *= 10;
 		cl += *b - '0';

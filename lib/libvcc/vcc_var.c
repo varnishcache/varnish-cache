@@ -66,7 +66,7 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent,
 	AN(vsb);
 	VSB_printf(vsb, "&VGC_%s_", vh->rname);
 	for (p = b, u = 1; p < e; p++, u++)
-		if (vct_isalpha(*p) || vct_isdigit(*p))
+		if (vct_isalnum(*p))
 			VSB_putc(vsb, *p);
 		else
 			VSB_printf(vsb, "_%02x_", *p);
