@@ -1277,9 +1277,6 @@ fo.write("""
 
 #include "config.h"
 
-#include <ctype.h>
-#include <stdio.h>
-
 #include "vcc_compile.h"
 """)
 
