@@ -1204,9 +1204,9 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		not = tl->t->tok == '~' ? "" : "!";
 		vcc_NextToken(tl);
 		vcc_ExpectCid(tl, "ACL");
-		(void)vcc_AddRef(tl, tl->t, SYM_ACL);
-		bprintf(buf, "%smatch_acl_named_%.*s(ctx, \v1)",
-		    not, PF(tl->t));
+		sym = vcc_AddRef(tl, tl->t, SYM_ACL);
+		VCC_GlobalSymbol(sym, ACL, ACL_SYMBOL_PREFIX);
+		bprintf(buf, "%sVRT_acl_match(ctx, %s, \v1)", not, sym->rname);
 		vcc_NextToken(tl);
 		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
 		return;
