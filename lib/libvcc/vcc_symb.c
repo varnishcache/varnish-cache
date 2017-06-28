@@ -36,6 +36,8 @@
 
 #include "vcc_compile.h"
 
+#include "vct.h"
+
 /*--------------------------------------------------------------------*/
 
 enum symkind
@@ -61,6 +63,24 @@ VCC_SymKind(struct vcc *tl, const struct symbol *s)
 		VSB_printf(tl->sb, "Symbol Kind 0x%x\n", s->kind);
 		return("INTERNALERROR");
 	}
+}
+
+void
+VCC_PrintCName(struct vsb *vsb, const char *b, const char *e)
+{
+
+	AN(vsb);
+	AN(b);
+
+	if (e == NULL)
+		e = strchr(b, '\0');
+	assert(b < e);
+
+	for (; b < e; b++)
+		if (vct_isalnum(*b))
+			VSB_putc(vsb, *b);
+		else
+			VSB_printf(vsb, "_%02x_", *b);
 }
 
 static struct symbol *
@@ -189,7 +209,8 @@ VCC_GlobalSymbol(struct symbol *sym, vcc_type_t fmt, const char *pfx)
 
 	vsb = VSB_new_auto();
 	AN(vsb);
-	VSB_printf(vsb, "%s_%s", pfx, sym->name);
+	VSB_printf(vsb, "%s_", pfx);
+	VCC_PrintCName(vsb, sym->name, NULL);
 	AZ(VSB_finish(vsb));
 	REPLACE(sym->rname, VSB_data(vsb));
 	AN(sym->rname);

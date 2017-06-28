@@ -342,31 +342,36 @@ vcc_acl_entry(struct vcc *tl)
  */
 
 static void
-vcc_acl_emit(struct vcc *tl, const char *acln, int anon)
+vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
 {
 	struct acl_e *ae;
 	int depth, l, m, i;
 	unsigned at[VRT_ACL_MAXADDR + 1];
 	struct token *t;
 	struct inifin *ifp;
+	struct vsb *func;
+
+	func = VSB_new_auto();
+	AN(func);
+	VSB_printf(func, "match_acl_%s_", anon ? "anon" : "named");
+	VCC_PrintCName(func, name, NULL);
+	AZ(VSB_finish(func));
 
 	Fh(tl, 0, "\nstatic int __match_proto__(acl_match_f)\n");
-	Fh(tl, 0,
-	    "match_acl_%s_%s(VRT_CTX, const VCL_IP p)\n",
-	    anon ? "anon" : "named", acln); /* XXX: acln isn't an rname */
+	Fh(tl, 0, "%s(VRT_CTX, const VCL_IP p)\n", VSB_data(func));
 	Fh(tl, 0, "{\n");
 	Fh(tl, 0, "\tconst unsigned char *a;\n");
 	Fh(tl, 0, "\tint fam;\n");
 	Fh(tl, 0, "\n");
 	Fh(tl, 0, "\tfam = VRT_VSA_GetPtr(p, &a);\n");
 	Fh(tl, 0, "\tif (fam < 0) {\n");
-	Fh(tl, 0, "\t\tVRT_acl_log(ctx, \"NO_FAM %s\");\n", acln);
+	Fh(tl, 0, "\t\tVRT_acl_log(ctx, \"NO_FAM %s\");\n", name);
 	Fh(tl, 0, "\t\treturn(0);\n");
 	Fh(tl, 0, "\t}\n\n");
 	if (!tl->err_unref && !anon) {
 		ifp = New_IniFin(tl);
 		VSB_printf(ifp->ini,
-			"\tif (0) match_acl_named_%s(0, 0);\n", acln);
+			"\tif (0) %s(0, 0);\n", VSB_data(func));
 	}
 	depth = -1;
 	at[0] = 256;
@@ -414,7 +419,7 @@ vcc_acl_emit(struct vcc *tl, const char *acln, int anon)
 
 		if (!anon) {
 			Fh(tl, 0, "\t%*sVRT_acl_log(ctx, \"%sMATCH %s \" ",
-			    -i, "", ae->not ? "NEG_" : "", acln);
+			    -i, "", ae->not ? "NEG_" : "", name);
 			t = ae->t_addr;
 			do {
 				if (t->tok == CSTR) {
@@ -440,33 +445,34 @@ vcc_acl_emit(struct vcc *tl, const char *acln, int anon)
 
 	/* Deny by default */
 	if (!anon)
-		Fh(tl, 0, "\tVRT_acl_log(ctx, \"NO_MATCH %s\");\n", acln);
+		Fh(tl, 0, "\tVRT_acl_log(ctx, \"NO_MATCH %s\");\n", name);
 	Fh(tl, 0, "\treturn (0);\n}\n");
 
 	if (anon)
 		return;
 
 	/* Emit the struct that will be referenced */
-	Fh(tl, 0, "\nconst struct vrt_acl vrt_acl_named_%s[] = {{\n", acln);
+	Fh(tl, 0, "\nconst struct vrt_acl %s[] = {{\n", rname);
 	Fh(tl, 0, "\t.magic = VRT_ACL_MAGIC,\n");
-	Fh(tl, 0, "\t.match = &match_acl_named_%s,\n", acln);
+	Fh(tl, 0, "\t.match = &%s,\n", VSB_data(func));
 	Fh(tl, 0, "}};\n\n");
+	VSB_destroy(&func);
 }
 
 void
 vcc_Acl_Hack(struct vcc *tl, char *b, size_t bl)
 {
-	char acln[32];
+	char name[32];
 	unsigned tcond;
 
 	VTAILQ_INIT(&tl->acl);
 	tcond = tl->t->tok;
 	vcc_NextToken(tl);
-	bprintf(acln, "%u", tl->unique++);
+	bprintf(name, "%u", tl->unique++);
 	vcc_acl_entry(tl);
-	vcc_acl_emit(tl, acln, 1);
+	vcc_acl_emit(tl, name, name, 1);
 	assert(snprintf(b, bl - 1, "%smatch_acl_anon_%s(ctx, \v1)",
-	    (tcond == T_NEQ ? "!" : ""), acln) < bl - 1);
+	    (tcond == T_NEQ ? "!" : ""), name) < bl - 1);
 }
 
 void
@@ -496,5 +502,5 @@ vcc_ParseAcl(struct vcc *tl)
 	}
 	SkipToken(tl, '}');
 
-	vcc_acl_emit(tl, sym->name, 0);
+	vcc_acl_emit(tl, sym->name, sym->rname, 0);
 }

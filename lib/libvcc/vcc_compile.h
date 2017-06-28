@@ -300,6 +300,7 @@ void Resolve_Sockaddr(struct vcc *tl, const char *host, const char *defport,
 void vcc_stevedore(struct vcc *vcc, const char *stv_name);
 
 /* vcc_symb.c */
+void VCC_PrintCName(struct vsb *vsb, const char *b, const char *e);
 struct symbol *VCC_Symbol(struct vcc *, struct symbol *,
     const char *, const char *, enum symkind, int);
 #define VCC_SymbolTok(vcc, sym, tok, kind, create) \
