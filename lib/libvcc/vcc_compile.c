@@ -619,7 +619,7 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 	}
 
 	/* Configure the default director */
-	vcc_AddRef(tl, tl->t_default_director, SYM_BACKEND);
+	(void)vcc_AddRef(tl, tl->t_default_director, SYM_BACKEND);
 
 	/* Check for orphans */
 	if (vcc_CheckReferences(tl))

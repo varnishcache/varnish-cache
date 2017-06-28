@@ -263,7 +263,7 @@ vcc_ParseProbe(struct vcc *tl)
 
 	vcc_ParseProbeSpec(tl, t_probe, &p);
 	if (vcc_IdIs(t_probe, "default")) {
-		vcc_AddRef(tl, t_probe, SYM_PROBE);
+		(void)vcc_AddRef(tl, t_probe, SYM_PROBE);
 		tl->default_probe = p;
 	}
 }
@@ -395,7 +395,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 				return;
 			}
 			Fb(tl, 0, "\t.probe = &vgc_probe_%.*s,\n", PF(tl->t));
-			vcc_AddRef(tl, tl->t, SYM_PROBE);
+			(void)vcc_AddRef(tl, tl->t, SYM_PROBE);
 			vcc_NextToken(tl);
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "probe")) {
