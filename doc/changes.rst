@@ -1,3 +1,19 @@
+================================
+Varnish Cache 4.1.7 (unreleased)
+================================
+
+Changes since 4.1.7-beta1:
+
+* Add extra locking to protect the pools list and refcounts
+* Don't panic on a null ban
+
+Bugs fixed
+----------
+
+* 2321_ - Prevent storage backends name collisions
+
+.. _2321: https://github.com/varnishcache/varnish-cache/issues/2321
+
 ======================================
 Varnish Cache 4.1.7-beta1 (2017-06-15)
 ======================================
