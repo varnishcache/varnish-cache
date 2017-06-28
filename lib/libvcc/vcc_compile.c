@@ -568,9 +568,9 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 		sym->fmt = v->fmt;
 		sym->eval = vcc_Eval_Var;
 		sym->r_methods = v->r_methods;
-		sym->rname = v->rname;
 		sym->w_methods = v->w_methods;
 		sym->lname = v->lname;
+		REPLACE(sym->rname, v->rname);
 	}
 
 	Fh(tl, 0, "/* ---===### VCC generated .h code ###===---*/\n");
