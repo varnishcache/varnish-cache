@@ -98,6 +98,8 @@ int VSM_n_Arg(struct vsm *vd, const char *n_arg);
 	 *	 <0 on failure, VSM_Error() returns diagnostic string
 	 */
 
+int VSM_Start(struct vsm *vd, double patience, int progress_fd);
+
 const char *VSM_Name(const struct vsm *vd);
 	/*
 	 * Return the instance name (-i argument to varnishd)

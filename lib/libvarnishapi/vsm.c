@@ -85,6 +85,8 @@ struct vsm {
 	uint64_t		age_ok;
 	double			t_ok;
 
+	int			started;
+
 	struct vsc		*vsc;
 };
 
@@ -179,6 +181,7 @@ VSM_n_Arg(struct vsm *vd, const char *arg)
 	struct vsb *vsb;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	AZ(vd->started);
 
 	if (vd->head)
 		return (vsm_diag(vd, "VSM_n_Arg: Already open"));
@@ -198,6 +201,37 @@ VSM_n_Arg(struct vsm *vd, const char *arg)
 	free(dname);
 
 	return (1);
+}
+
+/*--------------------------------------------------------------------*/
+
+int
+VSM_Start(struct vsm *vd, double patience, int progress)
+{
+	double t0;
+	int i, n = 0;
+
+	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	AN(vd->dname);
+	t0 = VTIM_mono();
+	while (1) {
+		i = VSM_Open(vd);
+		if (patience <= 0. || i == 0) {
+			if (progress >= 0 && n > 4)
+				(void)write(progress, "\n", 1);
+			vd->started = 1;
+			return (i);
+		}
+		if (t0 + patience < VTIM_mono()) {
+			if (progress >= 0 && n > 4)
+				(void)write(progress, "\n", 1);
+			return (vsm_diag(vd,
+			    "Could not get hold of varnishd, is it running?"));
+		}
+		if (progress >= 0 && !(++n % 4))
+			(void)write(progress, ".", 1);
+		VTIM_sleep(.25);
+	}
 }
 
 /*--------------------------------------------------------------------*/

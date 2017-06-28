@@ -405,7 +405,7 @@ n_arg_sock(const char *n_arg)
 		VSM_Destroy(&vsm);
 		return (-1);
 	}
-	if (VSM_Open(vsm)) {
+	if (VSM_Start(vsm, 0, -1)) {
 		fprintf(stderr, "%s\n", VSM_Error(vsm));
 		VSM_Destroy(&vsm);
 		return (-1);

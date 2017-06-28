@@ -227,8 +227,6 @@ void
 VUT_Setup(void)
 {
 	struct VSL_cursor *c;
-	double t_start;
-	int i;
 
 	AN(VUT.vsl);
 	AZ(VUT.vsm);
@@ -255,45 +253,16 @@ VUT_Setup(void)
 		AN(VUT.vsm);
 		if (VUT.n_arg && VSM_n_Arg(VUT.vsm, VUT.n_arg) <= 0)
 			VUT_Error(1, "%s", VSM_Error(VUT.vsm));
-		t_start = NAN;
-		c = NULL;
-		while (1) {
-			i = VSM_Open(VUT.vsm);
-			if (!i)
-				c = VSL_CursorVSM(VUT.vsl, VUT.vsm,
-				    (VUT.d_opt ? VSL_COPT_TAILSTOP :
-					VSL_COPT_TAIL)
-				    | VSL_COPT_BATCH);
-			if (c)
-				break;
-
-			if (isnan(t_start) && VUT.t_arg > 0.) {
-				fprintf(stderr, "Cannot open log -"
-				    " retrying for %.0f seconds\n", VUT.t_arg);
-				t_start = VTIM_real();
-			}
-			VSM_Close(VUT.vsm);
-			if (VUT.t_arg <= 0.)
-				break;
-			if (VTIM_real() - t_start > VUT.t_arg)
-				break;
-
-			VSM_ResetError(VUT.vsm);
-			VSL_ResetError(VUT.vsl);
-			VTIM_sleep(0.5);
-		}
-
-		if (VUT.t_arg >= 0. && (i || !c)) {
-			if (i)
-				VUT_Error(1, "%s", VSM_Error(VUT.vsm));
-			else
-				VUT_Error(1, "%s", VSL_Error(VUT.vsl));
-		} else if (!isnan(t_start))
-			fprintf(stderr, "Log opened\n");
+		if (VSM_Start(VUT.vsm, VUT.t_arg, STDERR_FILENO))
+			VUT_Error(1, "VSM: %s", VSM_Error(VUT.vsm));
+		c = VSL_CursorVSM(VUT.vsl, VUT.vsm,
+		    (VUT.d_opt ? VSL_COPT_TAILSTOP : VSL_COPT_TAIL)
+		    | VSL_COPT_BATCH);
+		if (c == 0)
+			VUT_Error(1, "VSL: %s", VSL_Error(VUT.vsl));
 	}
 
-	if (c)
-		VSLQ_SetCursor(VUT.vslq, &c);
+	VSLQ_SetCursor(VUT.vslq, &c);
 	AZ(c);
 
 	/* Signal handlers */

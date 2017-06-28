@@ -142,6 +142,7 @@ struct logexp {
 	VTAILQ_ENTRY(logexp)		list;
 
 	char				*name;
+	char				*vname;
 	struct vtclog			*vl;
 	char				run;
 	VTAILQ_HEAD(,logexp_test)	tests;
@@ -156,7 +157,6 @@ struct logexp {
 	char				*query;
 
 	struct vsm			*vsm;
-	struct vsb			*n_arg;
 	struct VSL_data			*vsl;
 	struct VSLQ			*vslq;
 	pthread_t			tp;
@@ -193,15 +193,14 @@ logexp_delete(struct logexp *le)
 	free(le->name);
 	free(le->query);
 	VSM_Destroy(&le->vsm);
-	if (le->n_arg)
-		VSB_destroy(&le->n_arg);
 	FREE_OBJ(le);
 }
 
 static struct logexp *
-logexp_new(const char *name)
+logexp_new(const char *name, const char *varg)
 {
 	struct logexp *le;
+	struct vsb *vsb, *n_arg;
 
 	ALLOC_OBJ(le, LOGEXP_MAGIC);
 	AN(le);
@@ -217,6 +216,21 @@ logexp_new(const char *name)
 	AN(le->vsl);
 
 	VTAILQ_INSERT_TAIL(&logexps, le, list);
+
+	REPLACE(le->vname, varg);
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+	AZ(VSB_printf(vsb, "${tmpdir}/%s", varg));
+	AZ(VSB_finish(vsb));
+	n_arg = macro_expand(le->vl, VSB_data(vsb));
+	VSB_destroy(&vsb);
+	if (n_arg == NULL)
+		vtc_fatal(le->vl, "-v argument problems");
+	if (VSM_n_Arg(le->vsm, VSB_data(n_arg)) <= 0)
+		vtc_fatal(le->vl, "-v argument error: %s",
+		    VSM_Error(le->vsm));
+	VSB_destroy(&n_arg);
 	return (le);
 }
 
@@ -376,13 +390,8 @@ logexp_start(struct logexp *le)
 	AN(le->vsl);
 	AZ(le->vslq);
 
-	if (le->n_arg == NULL)
-		vtc_fatal(le->vl, "-v argument not given");
-	if (VSM_n_Arg(le->vsm, VSB_data(le->n_arg)) <= 0)
-		vtc_fatal(le->vl, "-v argument error: %s",
-		    VSM_Error(le->vsm));
-	if (VSM_Open(le->vsm))
-		vtc_fatal(le->vl, "VSM_Open: %s", VSM_Error(le->vsm));
+	if (VSM_Start(le->vsm, 0, -1))
+		vtc_fatal(le->vl, "VSM_Start: %s", VSM_Error(le->vsm));
 	AN(le->vsl);
 	c = VSL_CursorVSM(le->vsl, le->vsm,
 	    (le->d_arg ? 0 : VSL_COPT_TAIL) | VSL_COPT_BATCH);
@@ -504,8 +513,6 @@ void
 cmd_logexpect(CMD_ARGS)
 {
 	struct logexp *le, *le2;
-	const char tmpdir[] = "${tmpdir}";
-	struct vsb *vsb;
 
 	(void)priv;
 	(void)cmd;
@@ -532,8 +539,12 @@ cmd_logexpect(CMD_ARGS)
 		if (!strcmp(le->name, av[0]))
 			break;
 	}
-	if (le == NULL)
-		le = logexp_new(av[0]);
+	if (le == NULL) {
+		if (strcmp(av[1], "-v") || av[2] == NULL)
+			vtc_fatal(vl, "new logexp lacks -v");
+		le = logexp_new(av[0], av[2]);
+		av += 2;
+	}
 	av++;
 
 	for (; *av != NULL; av++) {
@@ -556,18 +567,8 @@ cmd_logexpect(CMD_ARGS)
 		AZ(le->run);
 
 		if (!strcmp(*av, "-v")) {
-			if (av[1] == NULL)
-				vtc_fatal(le->vl, "Missing -v argument");
-			if (le->n_arg != NULL)
-				VSB_destroy(&le->n_arg);
-			vsb = VSB_new_auto();
-			AN(vsb);
-			AZ(VSB_printf(vsb, "%s/%s", tmpdir, av[1]));
-			AZ(VSB_finish(vsb));
-			le->n_arg = macro_expand(le->vl, VSB_data(vsb));
-			VSB_destroy(&vsb);
-			if (le->n_arg == NULL)
-				return;
+			if (av[1] == NULL || strcmp(av[1], le->vname))
+				vtc_fatal(le->vl, "-v argument cannot change");
 			av++;
 			continue;
 		}

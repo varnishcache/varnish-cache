@@ -253,7 +253,7 @@ int
 main(int argc, char * const *argv)
 {
 	struct vsm *vd;
-	double t_arg = 5.0, t_start = NAN;
+	double t_arg = 5.0;
 	int once = 0, xml = 0, json = 0, f_list = 0, curses = 0;
 	signed char opt;
 	int i;
@@ -308,34 +308,12 @@ main(int argc, char * const *argv)
 	if (!(xml || json || once || f_list))
 		curses = 1;
 
-	while (1) {
-		i = VSM_Open(vd);
-		if (!i)
-			break;
-		if (isnan(t_start) && t_arg > 0.) {
-			fprintf(stderr, "Can't open log -"
-			    " retrying for %.0f seconds\n", t_arg);
-			t_start = VTIM_real();
-		}
-		if (t_arg <= 0.)
-			break;
-		if (VTIM_real() - t_start > t_arg)
-			break;
-		VSM_ResetError(vd);
-		VTIM_sleep(0.5);
-	}
-
-	if (curses) {
-		if (i && t_arg >= 0.)
-			VUT_Error(1, "%s", VSM_Error(vd));
-		do_curses(vd, 1.0);
-		exit(0);
-	}
-
-	if (i)
+	if (VSM_Start(vd, t_arg, STDERR_FILENO))
 		VUT_Error(1, "%s", VSM_Error(vd));
 
-	if (xml)
+	if (curses)
+		do_curses(vd, 1.0);
+	else if (xml)
 		do_xml(vd);
 	else if (json)
 		do_json(vd);

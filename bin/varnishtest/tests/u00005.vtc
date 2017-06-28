@@ -41,7 +41,7 @@ shell -err -expect "-t: Range error" \
 	"varnishstat -t -1"
 shell -err -expect "-t: Syntax error" \
 	"varnishstat -t foo"
-shell -err -expect "Cannot open /nonexistent/_.vsm" \
+shell -err -expect "Could not get hold of varnishd" \
 	"varnishstat -n /nonexistent -t 1"
 shell -expect "MAIN.uptime" \
 	"varnishstat -n ${v1_name} -1"
