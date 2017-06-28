@@ -70,7 +70,7 @@ struct vsm *VSM_New(void);
 	 *	NULL: malloc failed.
 	 */
 
-void VSM_Delete(struct vsm *vd);
+void VSM_Destroy(struct vsm **vd);
 	/*
 	 * Close and deallocate all storage and mappings.
 	 * (including any VSC and VSL "sub-classes")

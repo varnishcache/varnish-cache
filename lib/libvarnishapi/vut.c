@@ -336,7 +336,7 @@ VUT_Fini(void)
 	if (VUT.vsl)
 		VSL_Delete(VUT.vsl);
 	if (VUT.vsm)
-		VSM_Delete(VUT.vsm);
+		VSM_Destroy(&VUT.vsm);
 
 	memset(&VUT, 0, sizeof VUT);
 }

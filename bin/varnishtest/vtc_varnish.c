@@ -276,7 +276,7 @@ varnishlog_thread(void *priv)
 	if (c)
 		VSL_DeleteCursor(c);
 	VSL_Delete(vsl);
-	VSM_Delete(vsm);
+	VSM_Destroy(&vsm);
 
 	return (NULL);
 }
@@ -335,7 +335,7 @@ varnish_delete(struct varnish *v)
 	free(v->name);
 	free(v->workdir);
 	if (v->vd != NULL)
-		VSM_Delete(v->vd);
+		VSM_Destroy(&v->vd);
 
 	/*
 	 * We do not delete the workdir, it may contain stuff people

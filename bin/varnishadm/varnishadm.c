@@ -402,18 +402,18 @@ n_arg_sock(const char *n_arg)
 	AN(vsm);
 	if (VSM_n_Arg(vsm, n_arg) < 0) {
 		fprintf(stderr, "%s\n", VSM_Error(vsm));
-		VSM_Delete(vsm);
+		VSM_Destroy(&vsm);
 		return (-1);
 	}
 	if (VSM_Open(vsm)) {
 		fprintf(stderr, "%s\n", VSM_Error(vsm));
-		VSM_Delete(vsm);
+		VSM_Destroy(&vsm);
 		return (-1);
 	}
 
 	if (!VSM_Get(vsm, &vt, "Arg", "-T")) {
 		fprintf(stderr, "No -T arg in shared memory\n");
-		VSM_Delete(vsm);
+		VSM_Destroy(&vsm);
 		return (-1);
 	}
 	AZ(VSM_Map(vsm, &vt));
@@ -426,7 +426,7 @@ n_arg_sock(const char *n_arg)
 		S_arg = strdup(vt.b);
 	}
 
-	VSM_Delete(vsm);
+	VSM_Destroy(&vsm);
 
 	sock = -1;
 	while (*T_arg) {

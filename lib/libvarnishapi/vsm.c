@@ -216,8 +216,13 @@ VSM_Name(const struct vsm *vd)
 /*--------------------------------------------------------------------*/
 
 void
-VSM_Delete(struct vsm *vd)
+VSM_Destroy(struct vsm **vdp)
 {
+	struct vsm *vd;
+
+	AN(vdp);
+	vd = *vdp;
+	*vdp = NULL;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 
