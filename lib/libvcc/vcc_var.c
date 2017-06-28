@@ -44,9 +44,8 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent,
 	struct symbol *sym;
 	struct var *v;
 	const struct var *vh;
-	unsigned u;
-	const char *p;
 	struct vsb *vsb;
+	unsigned len;
 
 	vh = parent->wildcard_priv;
 	assert(vh->fmt == HEADER);
@@ -68,17 +67,14 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent,
 	vsb = VSB_new_auto();
 	AN(vsb);
 	VSB_printf(vsb, "&VGC_%s_", vh->rname);
-	for (p = b, u = 1; p < e; p++, u++)
-		if (vct_isalnum(*p))
-			VSB_putc(vsb, *p);
-		else
-			VSB_printf(vsb, "_%02x_", *p);
+	VCC_PrintCName(vsb, b, e);
 	AZ(VSB_finish(vsb));
 
 	/* Create the static identifier */
+	len = (unsigned)(e - b);
 	Fh(tl, 0, "static const struct gethdr_s %s =\n", VSB_data(vsb) + 1);
 	Fh(tl, 0, "    { %s, \"\\%03o%.*s:\"};\n",
-	    vh->rname, u, (int)(e - b), b);
+	    vh->rname, len + 1, len, b);
 
 	/* Create the symbol r/l values */
 	v->rname = TlDup(tl, VSB_data(vsb));
