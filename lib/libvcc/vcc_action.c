@@ -46,7 +46,7 @@ parse_call(struct vcc *tl)
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 	vcc_AddCall(tl, tl->t);
-	vcc_AddRef(tl, tl->t, SYM_SUB);
+	(void)vcc_AddRef(tl, tl->t, SYM_SUB);
 	Fb(tl, 1, "VGC_function_%.*s(ctx);\n", PF(tl->t));
 	vcc_NextToken(tl);
 }
