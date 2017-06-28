@@ -29,6 +29,9 @@
 
 #include "config.h"
 
+#include <stdlib.h>
+#include <string.h>
+
 #include "vcc_compile.h"
 #include "vct.h"
 
@@ -90,9 +93,9 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent,
 	sym->fmt = v->fmt;
 	sym->eval = vcc_Eval_Var;
 	sym->r_methods = v->r_methods;
-	sym->rname = v->rname;
 	sym->w_methods = v->w_methods;
 	sym->lname = v->lname;
+	REPLACE(sym->rname, v->rname);
 }
 
 /*--------------------------------------------------------------------*/

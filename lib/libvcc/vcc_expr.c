@@ -1150,6 +1150,7 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	const char *re;
 	const char *not;
 	struct token *tk;
+	struct symbol *sym;
 	enum symkind kind;
 
 	*e = NULL;
