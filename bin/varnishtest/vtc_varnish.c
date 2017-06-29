@@ -77,6 +77,7 @@ struct varnish {
 	char			*proto;
 
 	struct vsm		*vd;		/* vsc use */
+	struct vsm		*vdl;		/* log use */
 	struct vsm_fantom	mgt_arg_i;
 
 	unsigned		vsl_tag_count[256];
@@ -210,12 +211,15 @@ varnishlog_thread(void *priv)
 
 	vsl = VSL_New();
 	AN(vsl);
-	vsm = VSM_New();
+	vsm = v->vdl;
+#if 0
+	//vsm = VSM_New();
 	AN(vsm);
 	(void)VSM_n_Arg(vsm, v->workdir);
 
 	if (VSM_Start(vsm, vtc_maxdur, 2))
 		vtc_fatal(v->vl, "vsm|%s", VSM_Error(vsm));
+#endif
 
 	c = NULL;
 	opt = 0;
@@ -279,7 +283,7 @@ varnishlog_thread(void *priv)
 	if (c)
 		VSL_DeleteCursor(c);
 	VSL_Delete(vsl);
-	VSM_Destroy(&vsm);
+	VSM_Destroy(&v->vdl);
 
 	return (NULL);
 }
@@ -402,8 +406,6 @@ varnish_launch(struct varnish *v)
 	const char *err;
 	char *r = NULL;
 
-	v->vd = VSM_New();
-
 	/* Create listener socket */
 	v->cli_fd = VTCP_listen_on("127.0.0.1:0", NULL, 1, &err);
 	if (err != NULL)
@@ -472,7 +474,6 @@ varnish_launch(struct varnish *v)
 	v->fds[2] = v->fds[3] = -1;
 	VSB_destroy(&vsb);
 	AZ(pthread_create(&v->tp, NULL, varnish_thread, v));
-	AZ(pthread_create(&v->tp_vsl, NULL, varnishlog_thread, v));
 
 	/* Wait for the varnish to call home */
 	memset(fd, 0, sizeof fd);
@@ -527,9 +528,15 @@ varnish_launch(struct varnish *v)
 		vtc_fatal(v->vl, "CLI auth command failed: %u %s", u, r);
 	free(r);
 
+	v->vd = VSM_New();
 	(void)VSM_n_Arg(v->vd, v->workdir);
-	AZ(VSM_Open(v->vd));
+	AZ(VSM_Start(v->vd, vtc_maxdur, -1));
 	assert(VSM_Get(v->vd, &v->mgt_arg_i, "Arg", "-i") > 0);
+
+	v->vdl = VSM_New();
+	(void)VSM_n_Arg(v->vdl, v->workdir);
+	AZ(VSM_Start(v->vdl, vtc_maxdur, -1));
+	AZ(pthread_create(&v->tp_vsl, NULL, varnishlog_thread, v));
 }
 
 /**********************************************************************
