@@ -214,7 +214,7 @@ varnishlog_thread(void *priv)
 	AN(vsm);
 	(void)VSM_n_Arg(vsm, v->workdir);
 
-	if (VSM_Start(vsm, vtc_maxdur, -1))
+	if (VSM_Start(vsm, vtc_maxdur, 2))
 		vtc_fatal(v->vl, "vsm|%s", VSM_Error(vsm));
 
 	c = NULL;
