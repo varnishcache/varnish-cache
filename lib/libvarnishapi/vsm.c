@@ -215,6 +215,7 @@ VSM_Start(struct vsm *vd, double patience, int progress)
 	AN(vd->dname);
 	t0 = VTIM_mono();
 	while (1) {
+		VSM_ResetError(vd);
 		i = VSM_Open(vd);
 		if (patience <= 0. || i == 0) {
 			if (progress >= 0 && n > 4)
