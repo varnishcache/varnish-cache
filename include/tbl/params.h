@@ -819,6 +819,35 @@ PARAM(
 	/* func */	NULL
 )
 
+PARAM(
+	/* name */	pipe_max_session_timeout,
+	/* typ */	timeout,
+	/* min */	"0.000",
+	/* max */	NULL,
+	/* default */	"43200.000",
+	/* units */	"seconds",
+	/* flags */	0,
+	/* s-text */
+	"Maximum timeout for PIPE sessions. "
+	"The session is closed after it expiration.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
+PARAM(
+	/* name */	pipe_thread_max,
+	/* typ */	uint,
+	/* min */	"0",
+	/* max */	NULL,
+	/* default */	"0",
+	/* units */	"threads",
+	/* flags */	0,
+	/* s-text */
+	"Maximum number of threads dedicated to pipe connections.",
+	/* l-text */	"",
+	/* func */	NULL
+)
+
 #if 0
 /* actual location mgt_param_tbl.c */
 PARAM(

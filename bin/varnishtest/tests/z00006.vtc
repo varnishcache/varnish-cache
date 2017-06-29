@@ -1,0 +1,49 @@
+varnishtest "'pipe_max_session_timeout' parameter"
+
+server s1 {
+	rxreq
+	expect req.http.connection == "Upgrade"
+	expect req.http.Upgrade == "websocket"
+	txresp -hdr "Connection: Upgrade" -hdr "Upgrade: websocket" -body "Resp 1 -- 1\n"
+
+	delay 4
+	txresp -body "Resp 2 -- 22\n"
+	delay 4
+	txresp -body "Resp 3 -- 333\n"
+	delay 4
+	txresp -body "Resp 4 -- 4444\n"
+	delay 4
+	txresp -body "Resp 5 -- 55555\n"
+
+	delay 2
+} -start
+
+varnish v1 -arg {-p pipe_max_session_timeout=15} -vcl+backend {
+	sub vcl_recv {
+		if (req.http.Upgrade ~ "(?i)websocket") {
+			return (pipe);
+		}
+	}
+
+	sub vcl_pipe {
+		if (req.http.upgrade ~ "(?i)websocket") {
+			set bereq.http.Upgrade = req.http.upgrade;
+		}
+	}
+} -start
+
+client c1 {
+	txreq -hdr "Connection: Upgrade" -hdr "Upgrade: websocket" -body "Client 1 -- 012345\n"
+	rxresp
+	rxresp
+	rxresp
+	rxresp
+	rxresp
+} -start
+
+
+client c1 -wait
+server s1 -wait
+
+varnish v1 -expect sc_pipe_sess_tmo == 1
+varnish v1 -expect sc_pipe_tmo == 0

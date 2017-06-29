@@ -33,14 +33,32 @@
 
 #include <poll.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "cache/cache.h"
 
+#include "vtim.h"
 #include "vrt.h"
 
 #include "cache_http1.h"
 
+static struct lock pipe_mtx;
+static struct lock pipe_drop_mtx;
 static struct lock pipestat_mtx;
+
+/*****************************************************************************/
+
+static struct pipe_sess_handlers pipe_sess_handler = {NULL, NULL, NULL, NULL};
+
+void set_pipe_handlers(vpi_start_f sf, vpi_finish_f ff, vpi_closetmo_f cf, vpi_closeall_f af)
+{
+	pipe_sess_handler.start = sf;
+	pipe_sess_handler.finish = ff;
+	pipe_sess_handler.closetmo = cf;
+	pipe_sess_handler.closeall = af;
+}
+
+/***************************************************************************/
 
 static int
 rdf(int fd0, int fd1, uint64_t *pcnt)
@@ -59,7 +77,26 @@ rdf(int fd0, int fd1, uint64_t *pcnt)
 		if (i != j)
 			(void)usleep(100000);		/* XXX hack */
 	}
+
 	return (0);
+}
+
+void
+V1P_Shutdown()
+{
+	if (pipe_sess_handler.closeall) pipe_sess_handler.closeall();
+}
+
+int
+V1P_Drop()
+{
+	if (cache_param->pipe_thread_max && VSC_C_main->n_pipe >= cache_param->pipe_thread_max) {
+		Lck_Lock(&pipe_drop_mtx);
+		VSC_C_main->n_pipe_drop++;
+		Lck_Unlock(&pipe_drop_mtx);
+		return 1;
+	}
+	return 0;
 }
 
 void
@@ -83,11 +120,13 @@ V1P_Charge(struct req *req, const struct v1p_acct *a, struct VSC_C_vbe *b)
 	Lck_Unlock(&pipestat_mtx);
 }
 
-void
+enum sess_close
 V1P_Process(struct req *req, int fd, struct v1p_acct *v1a)
 {
 	struct pollfd fds[2];
 	int i, j;
+	int tdiff;
+	enum sess_close retval = SC_TX_PIPE;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
@@ -97,11 +136,17 @@ V1P_Process(struct req *req, int fd, struct v1p_acct *v1a)
 		j = write(fd,  req->htc->pipeline_b,
 		    req->htc->pipeline_e - req->htc->pipeline_b);
 		if (j < 0)
-			return;
+			return retval;
 		req->htc->pipeline_b = NULL;
 		req->htc->pipeline_e = NULL;
 		v1a->in += j;
 	}
+
+	Lck_Lock(&pipe_mtx);
+	VSC_C_main->n_pipe++;
+	Lck_Unlock(&pipe_mtx);
+	if (pipe_sess_handler.start) pipe_sess_handler.start(req, fd);
+
 	memset(fds, 0, sizeof fds);
 	fds[0].fd = fd;
 	fds[0].events = POLLIN | POLLERR;
@@ -113,6 +158,10 @@ V1P_Process(struct req *req, int fd, struct v1p_acct *v1a)
 		fds[1].revents = 0;
 		i = poll(fds, 2,
 		    (int)(cache_param->pipe_timeout * 1e3));
+		if (i == 0) {
+			retval = SC_PIPE_TMO;
+			break;
+		}
 		if (i < 1)
 			break;
 		if (fds[0].revents &&
@@ -133,7 +182,20 @@ V1P_Process(struct req *req, int fd, struct v1p_acct *v1a)
 			fds[1].events = 0;
 			fds[1].fd = -1;
 		}
+		tdiff = (int) (VTIM_real() - req->sp->t_idle);
+		if (tdiff > cache_param->pipe_max_session_timeout) {
+			retval = SC_PIPE_SESS_TMO;
+			// close connection by tmo
+			if (pipe_sess_handler.closetmo) pipe_sess_handler.closetmo(req, fd);
+			break;
+		}
 	}
+	Lck_Lock(&pipe_mtx);
+	VSC_C_main->n_pipe--;
+	Lck_Unlock(&pipe_mtx);
+	if (pipe_sess_handler.finish) pipe_sess_handler.finish(req, fd);
+
+	return retval;
 }
 
 /*--------------------------------------------------------------------*/
@@ -141,6 +203,7 @@ V1P_Process(struct req *req, int fd, struct v1p_acct *v1a)
 void
 V1P_Init(void)
 {
-
+	Lck_New(&pipe_mtx, lck_pipe);
+	Lck_New(&pipe_drop_mtx, lck_pipedrop);
 	Lck_New(&pipestat_mtx, lck_pipestat);
 }

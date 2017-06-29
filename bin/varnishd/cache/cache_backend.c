@@ -287,6 +287,7 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 	struct backend *bp;
 	struct v1p_acct v1a;
 	struct vbc *vbc;
+	enum sess_close retval = SC_TX_PIPE;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -307,13 +308,17 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 		SES_Close(req->sp, SC_RX_TIMEOUT);
 	} else {
-		i = V1F_SendReq(req->wrk, bo, &v1a.bereq, 1);
-		VSLb_ts_req(req, "Pipe", W_TIM_real(req->wrk));
-		if (i == 0)
-			V1P_Process(req, vbc->fd, &v1a);
-		VSLb_ts_req(req, "PipeSess", W_TIM_real(req->wrk));
-		SES_Close(req->sp, SC_TX_PIPE);
-		bo->htc->doclose = SC_TX_PIPE;
+		if (V1P_Drop()) {
+			retval = SC_PIPE_DROP;
+		} else {
+			i = V1F_SendReq(req->wrk, bo, &v1a.bereq, 1);
+			VSLb_ts_req(req, "Pipe", W_TIM_real(req->wrk));
+			if (i == 0)
+				retval = V1P_Process(req, vbc->fd, &v1a);
+			VSLb_ts_req(req, "PipeSess", W_TIM_real(req->wrk));
+		}
+		SES_Close(req->sp, retval);
+		bo->htc->doclose = retval;
 		vbe_dir_finish(d, req->wrk, bo);
 	}
 	V1P_Charge(req, &v1a, bp->vsc);

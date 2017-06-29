@@ -280,6 +280,7 @@ child_main(void)
 	CLI_Run();
 
 	VCA_Shutdown();
+	V1P_Shutdown();
 	BAN_Shutdown();
 	STV_close();
 

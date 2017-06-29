@@ -45,5 +45,8 @@ SESS_CLOSE(RESP_CLOSE,	  resp_close,	0,	"Backend/VCL requested close")
 SESS_CLOSE(OVERLOAD,	  overload,	1,	"Out of some resource")
 SESS_CLOSE(PIPE_OVERFLOW, pipe_overflow,1,	"Session pipe overflow")
 SESS_CLOSE(RANGE_SHORT,   range_short,  1,	"Insufficient data for range")
+SESS_CLOSE(PIPE_TMO,   pipe_tmo,  0,	"Pipe timeout")
+SESS_CLOSE(PIPE_SESS_TMO,   pipe_sess_tmo,  1,	"Pipe session timeout")
+SESS_CLOSE(PIPE_DROP,   pipe_drop,  1,	"Pipe connection is droppped")
 
 /*lint -restore */

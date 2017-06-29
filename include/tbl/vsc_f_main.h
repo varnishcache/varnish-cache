@@ -654,3 +654,15 @@ VSC_F(vsm_overflowed,		uint64_t, 0, 'c', 'B', diag,
 	" If this counter is not zero, consider"
 	" increasing the runtime variable vsm_space."
 )
+
+/*--------------------------------------------------------------------*/
+
+VSC_F(n_pipe,			uint64_t, 0, 'c', 'i', info,
+    "N pipe",
+	""
+)
+
+VSC_F(n_pipe_drop,		uint64_t, 0, 'c', 'a', info,
+    "N dropped pipe requests due throttling",
+	""
+)
