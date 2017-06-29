@@ -214,7 +214,7 @@ vjsn_string(struct vjsn *js)
 			js->err = "Unterminate string";
 			return (NULL);
 		}
-		if (*js->ptr >= 0x00 && *js->ptr <= 0x1f) {
+		if ((unsigned char)(*js->ptr) <= 0x1f) {
 			js->err = "unescaped control char in string";
 			return (NULL);
 		}
