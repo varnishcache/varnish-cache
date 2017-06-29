@@ -151,8 +151,8 @@ parse_new(struct vcc *tl)
 	struct symbol *sy1, *sy2, *sy3;
 	struct inifin *ifp;
 	const char *p, *s_obj, *s_init, *s_struct, *s_fini;
-	char buf1[128];
-	char buf2[128];
+	char buf1[256];
+	char buf2[256];
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
