@@ -78,6 +78,7 @@ installed. On a Debian or Ubuntu system these are:
 
 ..  grep-dctrl -n -sBuild-Depends -r ^ ../../../../varnish-cache-debian/control | tr -d '\n' | awk -F,\  '{ for (i = 0; ++i <= NF;) { sub (/ .*/, "", $i); print "* `" $i "`"; }}' | egrep -v '(debhelper)'
 
+* `make`
 * `automake`
 * `autotools-dev`
 * `libedit-dev`
@@ -101,6 +102,7 @@ packages installed:
 
 .. gawk '/^BuildRequires/ {print "* `" $2 "`"}' ../../../redhat/varnish.spec | sort | uniq | egrep -v '(systemd)'
 
+* `make`
 * `autoconf`
 * `automake`
 * `jemalloc-devel`
