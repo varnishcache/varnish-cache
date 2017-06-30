@@ -1,0 +1,85 @@
+varnishtest "Sticky fallback director, removing backends"
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	txresp
+} -start
+
+server s2 {} -start
+
+server s3 {
+	rxreq
+	expect req.url == "/bar"
+	txresp
+
+	rxreq
+	expect req.url == "/baz"
+	txresp
+
+	rxreq
+	expect req.url == "/qux"
+	txresp
+} -start
+
+server s4 {} -start
+
+varnish v1 -vcl+backend {
+	import directors;
+
+	sub vcl_init {
+		new vd = directors.fallback(sticky = true);
+		vd.add_backend(s1);
+		vd.add_backend(s2);
+		vd.add_backend(s3);
+		vd.add_backend(s4);
+	}
+
+	sub vcl_recv {
+		set req.backend_hint = vd.backend();
+		return(pass);
+	}
+
+	sub vcl_deliver {
+		if (req.url == "/bar") {
+			vd.remove_backend(s2);
+		} else if (req.url == "/baz") {
+			vd.remove_backend(s4);
+		} else if (req.url == "/qux") {
+			vd.remove_backend(s3);
+		}
+	}
+} -start
+
+varnish v1 -cliok "backend.set_health s1 sick"
+varnish v1 -cliok "backend.set_health s2 sick"
+
+client c1 {
+	txreq -url /bar
+	rxresp
+	expect resp.status == 200
+} -run
+
+varnish v1 -cliok "backend.set_health s2 healthy"
+
+client c1 {
+	txreq -url /baz
+	rxresp
+	expect resp.status == 200
+
+	txreq -url /qux
+	rxresp
+	expect resp.status == 200
+
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+varnish v1 -cliok "backend.set_health s1 healthy"
+
+client c1 {
+	txreq -url /foo
+	rxresp
+	expect resp.status == 200
+} -run
