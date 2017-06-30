@@ -212,11 +212,11 @@ VSM_Start(struct vsm *vd, double patience, int progress)
 	int i, n = 0;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-	AN(vd->dname);
 	t0 = VTIM_mono();
 	while (1) {
 		VSM_ResetError(vd);
 		i = VSM_Open(vd);
+		AN(vd->dname);
 		if (patience <= 0. || i == 0) {
 			if (progress >= 0 && n > 4)
 				(void)write(progress, "\n", 1);
