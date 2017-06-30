@@ -52,8 +52,20 @@ static VTAILQ_HEAD(, backend) cool_backends =
     VTAILQ_HEAD_INITIALIZER(cool_backends);
 static struct lock backends_mtx;
 
+struct director_q {
+	unsigned		magic;
+#define DIRECTOR_MAGIC_Q		0x3336351e
+	VTAILQ_ENTRY(director_q)	list;
+	struct director	*dir;
+};
+
+static VTAILQ_HEAD(, director_q) directors = VTAILQ_HEAD_INITIALIZER(directors);
+
+extern struct busyobj * vbo_New(void);
+static struct busyobj *bo = NULL;
+
 static const char * const vbe_ah_healthy	= "healthy";
-static const char * const vbe_ah_sick		= "sick";
+const char * const vbe_ah_sick				= "sick";
 static const char * const vbe_ah_probe		= "probe";
 static const char * const vbe_ah_deleted	= "deleted";
 
@@ -167,6 +179,30 @@ VRT_delete_backend(VRT_CTX, struct director **dp)
 	// this is why we don't bust the director's magic number.
 }
 
+void
+VRT_new_director(struct director *d)
+{
+	struct director_q *dq;
+
+	ALLOC_OBJ(dq, DIRECTOR_MAGIC_Q);
+	dq->dir = d;
+	VTAILQ_INSERT_TAIL(&directors, dq, list);
+}
+
+void
+VRT_delete_director(struct director *d)
+{
+	struct director_q *dq, *dq2;
+
+	VTAILQ_FOREACH_SAFE(dq, &directors, list, dq2) {
+		if (dq->dir == d) {
+			VTAILQ_REMOVE(&directors, dq, list);
+			break;
+		}
+	}
+
+}
+
 /*---------------------------------------------------------------------
  * These are for cross-calls with cache_vcl.c only.
  */
@@ -222,6 +258,15 @@ VBE_Delete(struct backend *be)
 	AZ(be->vsc);
 	Lck_Delete(&be->mtx);
 	FREE_OBJ(be);
+}
+
+/*--------------------------------------------------------------------*/
+
+static void _create_dummy_sess()
+{
+	if (! bo) {
+		bo = vbo_New();
+	}
 }
 
 /*---------------------------------------------------------------------
@@ -280,14 +325,16 @@ VBE_Healthy(const struct backend *backend, double *changed)
  */
 
 typedef int bf_func(struct cli *cli, struct backend *b, void *priv);
+typedef int df_func(struct cli *cli, struct director *b, void *priv);
 
 static int
-backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
+backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv, df_func *dfunc)
 {
 	int i, found = 0;
 	struct vsb *vsb;
 	struct vcl *vcc = NULL;
 	struct backend *b;
+	struct director_q *dq;
 
 	VCL_Refresh(&vcc);
 	AN(vcc);
@@ -317,6 +364,13 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 			break;
 		}
 	}
+
+	if (dfunc) {
+		VTAILQ_FOREACH(dq, &directors, list) {
+			dfunc(cli, dq->dir, bo);
+		}
+	}
+
 	Lck_Unlock(&backends_mtx);
 	VSB_delete(vsb);
 	VCL_Rel(&vcc);
@@ -347,8 +401,17 @@ do_list(struct cli *cli, struct backend *b, void *priv)
 			VCLI_Out(cli, " %s", "Sick ");
 		VBP_Status(cli, b, *probes);
 	}
-
 	/* XXX: report b->health_changed */
+
+	return (0);
+}
+
+static int __match_proto__()
+do_list_dir(struct cli *cli, struct director *d, void *priv)
+{
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+
+	VCLI_Out(cli, "\n%-30s %-10s %s", d->vcl_name, "", d->healthy(d, priv, NULL) ? "healthy" : "sick");
 
 	return (0);
 }
@@ -373,7 +436,7 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 		return;
 	}
 	VCLI_Out(cli, "%-30s %-10s %s", "Backend name", "Admin", "Probe");
-	(void)backend_find(cli, av[2], do_list, &probes);
+	(void)backend_find(cli, av[2], do_list, &probes, do_list_dir);
 }
 
 /*---------------------------------------------------------------------*/
@@ -415,7 +478,7 @@ cli_backend_set_health(struct cli *cli, const char * const *av, void *priv)
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
-	n = backend_find(cli, av[2], do_set_health, &ah);
+	n = backend_find(cli, av[2], do_set_health, &ah, NULL);
 	if (n == 0) {
 		VCLI_Out(cli, "No Backends matches");
 		VCLI_SetResult(cli, CLIS_PARAM);
@@ -432,6 +495,28 @@ static struct cli_proto backend_cmds[] = {
 	    "backend.set_health <backend_expression> <state>",
 	    "\tSet health status on the backends.",
 	    2, 2, "", cli_backend_set_health },
+	{ NULL }
+};
+
+static void
+cli_debug_backend(struct cli *cli, const char * const *av, void *priv)
+{
+	struct backend *b;
+
+	(void)av;
+	(void)priv;
+	ASSERT_CLI();
+	VTAILQ_FOREACH(b, &backends, list) {
+		CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+		VCLI_Out(cli, "%p %s(%s,%s,:%s) %d %.2f\n",
+			b, b->vcl_name, b->ipv4_addr, b->ipv6_addr, b->port,
+			b->n_conn, b->cooled);
+	}
+}
+
+static struct cli_proto debug_cmds[] = {
+	{ "debug.backend", "debug.backend",
+	    "\tExamine Backend internals\n", 0, 0, "d", cli_debug_backend },
 	{ NULL }
 };
 
@@ -463,7 +548,9 @@ VBE_Poll(void)
 void
 VBE_InitCfg(void)
 {
+	_create_dummy_sess();
 
 	CLI_AddFuncs(backend_cmds);
+	CLI_AddFuncs(debug_cmds);
 	Lck_New(&backends_mtx, lck_vbe);
 }

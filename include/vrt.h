@@ -286,6 +286,10 @@ void VRT_synth_page(VRT_CTX, const char *, ...);
 struct director *VRT_new_backend(VRT_CTX, const struct vrt_backend *);
 void VRT_delete_backend(VRT_CTX, struct director **);
 
+/* Director related */
+void VRT_new_director(struct director *);
+void VRT_delete_director(struct director *);
+
 /* Suckaddr related */
 int VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst);
 

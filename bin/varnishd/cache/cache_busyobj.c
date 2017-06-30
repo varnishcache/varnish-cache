@@ -58,7 +58,7 @@ VBO_Init(void)
  * BusyObj handling
  */
 
-static struct busyobj *
+struct busyobj *
 vbo_New(void)
 {
 	struct busyobj *bo;

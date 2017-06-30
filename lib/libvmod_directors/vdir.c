@@ -74,6 +74,8 @@ vdir_new(struct vdir **vdp, const char *name, const char *vcl_name,
 	vd->dir->resolve = resolve;
 	vd->vbm = vbit_init(8);
 	AN(vd->vbm);
+
+	VRT_new_director(vd->dir);
 }
 
 void
@@ -86,6 +88,7 @@ vdir_delete(struct vdir **vdp)
 	*vdp = NULL;
 
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
+	VRT_delete_director(vd->dir);
 
 	free(vd->backend);
 	free(vd->weight);
