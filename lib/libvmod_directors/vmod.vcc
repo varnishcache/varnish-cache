@@ -32,9 +32,9 @@ DESCRIPTION
 
 `vmod_directors` enables backend load balancing in Varnish.
 
-The module implements a set of basic load balancing techniques, and
-also serves as an example on how one could extend the load balancing
-capabilities of Varnish.
+The module implements load balancing techniques, and also serves as an
+example on how one could extend the load balancing capabilities of
+Varnish.
 
 To enable load balancing you must import this vmod (directors).
 
@@ -88,13 +88,17 @@ Example
 	set req.backend_hint = vdir.backend();
 
 
-$Object fallback()
+$Object fallback(BOOL sticky = 0)
 
 Description
 	Create a fallback director.
 
 	A fallback director will try each of the added backends in turn,
 	and return the first one that is healthy.
+
+	If ``sticky`` is set to true, the director will keep using the healthy
+	backend, even if a higher-priority backend becomes available. Once the
+	whole backend list is exhausted, it'll start over at the beginning.
 
 Example
 	new vdir = directors.fallback();
@@ -134,6 +138,8 @@ Description
 
 	The random director distributes load over the backends using
 	a weighted random probability distribution.
+	The "testable" random generator in varnishd is used, which
+	enables deterministic tests to be run (See: d00004.vtc).
 
 Example
 	new vdir = directors.random();

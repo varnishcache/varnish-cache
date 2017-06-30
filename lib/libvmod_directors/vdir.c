@@ -83,11 +83,7 @@ vdir_delete(struct vdir **vdp)
 {
 	struct vdir *vd;
 
-	AN(vdp);
-	vd = *vdp;
-	*vdp = NULL;
-
-	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
+	TAKE_OBJ_NOTNULL(vd, vdp, VDIR_MAGIC);
 	VRT_delete_director(vd->dir);
 
 	free(vd->backend);
@@ -140,14 +136,14 @@ vdir_add_backend(struct vdir *vd, VCL_BACKEND be, double weight)
 	return (u);
 }
 
-unsigned
-vdir_remove_backend(struct vdir *vd, VCL_BACKEND be)
+void
+vdir_remove_backend(struct vdir *vd, VCL_BACKEND be, unsigned *cur)
 {
 	unsigned u, n;
 
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
 	if (be == NULL)
-		return (vd->n_backend);
+		return;
 	CHECK_OBJ(be, DIRECTOR_MAGIC);
 	vdir_wrlock(vd);
 	for (u = 0; u < vd->n_backend; u++)
@@ -155,15 +151,22 @@ vdir_remove_backend(struct vdir *vd, VCL_BACKEND be)
 			break;
 	if (u == vd->n_backend) {
 		vdir_unlock(vd);
-		return (vd->n_backend);
+		return;
 	}
 	vd->total_weight -= vd->weight[u];
 	n = (vd->n_backend - u) - 1;
 	memmove(&vd->backend[u], &vd->backend[u+1], n * sizeof(vd->backend[0]));
 	memmove(&vd->weight[u], &vd->weight[u+1], n * sizeof(vd->weight[0]));
 	vd->n_backend--;
+
+	if (cur) {
+		assert(*cur <= vd->n_backend);
+		if (u < *cur)
+			(*cur)--;
+		else if (*cur == vd->n_backend)
+			*cur = 0;
+	}
 	vdir_unlock(vd);
-	return (vd->n_backend);
 }
 
 unsigned
