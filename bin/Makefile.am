@@ -6,6 +6,8 @@ SUBDIRS = \
 	varnishhist \
 	varnishlog \
 	varnishncsa \
+	varnishreplay \
+	varnishreplaymon \
 	varnishstat \
 	varnishtest \
 	varnishtop

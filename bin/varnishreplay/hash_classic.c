@@ -1,0 +1,226 @@
+/*-
+ * Copyright (c) 2006 Verdens Gang AS
+ * Copyright (c) 2006-2011 Varnish Software AS
+ * All rights reserved.
+ *
+ * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ * A classic bucketed hash - simplified version of 'varnish classic hash'
+ */
+
+#include "config.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "cache/cache.h"
+
+#include "hash/hash_slinger.h"
+
+
+struct ilck {
+	unsigned		magic;
+#define ILCK_MAGIC		0x7b86c8a5
+	int			held;
+	pthread_mutex_t		mtx;
+	pthread_t		owner;
+	const char		*w;
+	struct VSC_C_lck	*stat;
+};
+
+/*--------------------------------------------------------------------*/
+
+struct hcl_hd {
+	unsigned		magic;
+#define HCL_HEAD_MAGIC		0x0f327016
+	VTAILQ_HEAD(, objhead)	head;
+	pthread_mutex_t	mtx;
+};
+
+static unsigned			hcl_nhash = 16383;
+static struct hcl_hd	*hcl_head;
+
+struct objhead *
+create_objhead()
+{
+	struct objhead *oh;
+	struct ilck *ilck;
+	struct lock *lck;
+
+	ALLOC_OBJ(oh, OBJHEAD_MAGIC);
+	XXXAN(oh);
+	oh->refcnt = 1;
+	VTAILQ_INIT(&oh->objcs);
+
+	lck = &oh->mtx;
+
+	AZ(lck->priv);
+	ALLOC_OBJ(ilck, ILCK_MAGIC);
+	AN(ilck);
+	AZ(pthread_mutex_init(&ilck->mtx, NULL));
+	lck->priv = ilck;
+
+	return oh;
+}
+
+/*--------------------------------------------------------------------
+ * The ->init method allows the management process to pass arguments
+ */
+
+static void __match_proto__(hash_init_f)
+hcl_init(int ac, char * const *av)
+{
+	int i;
+	unsigned u;
+
+	if (ac == 0)
+		return;
+	if (ac > 1)
+		ARGV_ERR("(-hclassic) too many arguments\n");
+	i = sscanf(av[0], "%u", &u);
+	if (i <= 0 || u == 0)
+		return;
+	if (u > 2 && !(u & (u - 1))) {
+		fprintf(stderr,
+		    "NOTE:\n"
+		    "\tA power of two number of hash buckets is "
+		    "marginally less efficient\n"
+		    "\twith systematic URLs.  Reducing by one"
+		    " hash bucket.\n");
+		u--;
+	}
+	hcl_nhash = u;
+	fprintf(stderr, "Classic hash: %u buckets\n", hcl_nhash);
+}
+
+/*--------------------------------------------------------------------
+ * The ->start method is called during cache process start and allows
+ * initialization to happen before the first lookup.
+ */
+
+static void __match_proto__(hash_start_f)
+hcl_start(void)
+{
+	unsigned u;
+
+	hcl_head = calloc(sizeof *hcl_head, hcl_nhash);
+	XXXAN(hcl_head);
+
+	for (u = 0; u < hcl_nhash; u++) {
+		VTAILQ_INIT(&hcl_head[u].head);
+		pthread_mutex_init(&hcl_head[u].mtx, NULL);
+		hcl_head[u].magic = HCL_HEAD_MAGIC;
+	}
+}
+
+/*--------------------------------------------------------------------
+ * Lookup and possibly insert element.
+ * If nobj != NULL and the lookup does not find key, nobj is inserted.
+ * If nobj == NULL and the lookup does not find key, NULL is returned.
+ * A reference to the returned object is held.
+ * We use a two-pass algorithm to handle inserts as they are quite
+ * rare and collisions even rarer.
+ */
+
+static struct objhead * __match_proto__(hash_lookup_f)
+hcl_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
+{
+	struct objhead *oh;
+	struct hcl_hd *hp;
+	unsigned u1, hdigest;
+	int i;
+	struct ilck *ilck;
+
+	AN(digest);
+	if (noh != NULL)
+		CHECK_OBJ_NOTNULL(*noh, OBJHEAD_MAGIC);
+
+	assert(sizeof oh->digest >= sizeof hdigest);
+	memcpy(&hdigest, digest, sizeof hdigest);
+	u1 = hdigest % hcl_nhash;
+	hp = &hcl_head[u1];
+
+	pthread_mutex_lock(&hp->mtx);
+	VTAILQ_FOREACH(oh, &hp->head, hoh_list) {
+		CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+		i = memcmp(oh->digest, digest, sizeof oh->digest);
+		if (i < 0)
+			continue;
+		if (i > 0)
+			break;
+		pthread_mutex_unlock(&hp->mtx);
+		CAST_OBJ_NOTNULL(ilck, (&oh->mtx)->priv, ILCK_MAGIC);
+		return (oh);
+	}
+
+	if (noh == NULL) {
+		pthread_mutex_unlock(&hp->mtx);
+		return (NULL);
+	}
+
+	if (oh != NULL)
+		VTAILQ_INSERT_BEFORE(oh, *noh, hoh_list);
+	else
+		VTAILQ_INSERT_TAIL(&hp->head, *noh, hoh_list);
+
+	oh = *noh;
+	*noh = NULL;
+	memcpy(oh->digest, digest, sizeof oh->digest);
+
+	oh->hoh_head = hp;
+
+	pthread_mutex_unlock(&hp->mtx);
+	CAST_OBJ_NOTNULL(ilck, (&oh->mtx)->priv, ILCK_MAGIC);
+	return (oh);
+}
+
+/*--------------------------------------------------------------------
+ * Dereference and if no references are left, free.
+ */
+
+static int __match_proto__(hash_deref_f)
+hcl_deref(struct objhead *oh)
+{
+	struct hcl_hd *hp;
+	int ret;
+
+	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	CAST_OBJ_NOTNULL(hp, oh->hoh_head, HCL_HEAD_MAGIC);
+	pthread_mutex_lock(&hp->mtx);
+		VTAILQ_REMOVE(&hp->head, oh, hoh_list);
+		ret = 0;
+	pthread_mutex_unlock(&hp->mtx);
+	return (ret);
+}
+
+/*--------------------------------------------------------------------*/
+
+const struct hash_slinger hcl_slinger = {
+	.magic	=	SLINGER_MAGIC,
+	.name	=	"classic",
+	.init	=	hcl_init,
+	.start	=	hcl_start,
+	.lookup =	hcl_lookup,
+	.deref	=	hcl_deref,
+};
