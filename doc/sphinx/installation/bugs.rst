@@ -154,5 +154,3 @@ You can also try setting the ``vsl_mask=+VCL_trace`` parameter (or use
 ``varnishadm param.set vsl_mask +VCL_trace`` on a running instance),
 that will generate log records with like and character number for each
 statement executed in your VCL program.
-
-.. XXX:Example of the command perhaps? benc
