@@ -69,6 +69,13 @@ const char * const vbe_ah_sick				= "sick";
 static const char * const vbe_ah_probe		= "probe";
 static const char * const vbe_ah_deleted	= "deleted";
 
+typedef enum {
+	backendListNoArg = 0,
+	backendListProbe = 1,
+	backendListOldFormat = 2,
+	backendListLastArg = 3,
+} backendListArgs_e;
+
 /*--------------------------------------------------------------------
  * Create a new static or dynamic director::backend instance.
  */
@@ -382,13 +389,22 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv, df
 static int __match_proto__()
 do_list(struct cli *cli, struct backend *b, void *priv)
 {
-	int *probes;
+	int *arg;
+	char buf[128];
 
 	AN(priv);
-	probes = priv;
+	arg = priv;
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 
-	VCLI_Out(cli, "\n%-30s", b->display_name);
+	if (*arg == backendListOldFormat) {
+		bprintf(buf, "%s(%s,%s,%s)",
+			b->vcl_name,
+			b->ipv4_addr == NULL ? "" : b->ipv4_addr,
+			b->ipv6_addr == NULL ? "" : b->ipv6_addr, b->port);
+		VCLI_Out(cli, "\n%-30s %-6d", buf, b->n_conn);
+	} else {
+		VCLI_Out(cli, "\n%-30s", b->display_name);
+	}
 
 	VCLI_Out(cli, " %-10s", b->admin_health);
 
@@ -399,7 +415,7 @@ do_list(struct cli *cli, struct backend *b, void *priv)
 			VCLI_Out(cli, " %s", "Healthy ");
 		else
 			VCLI_Out(cli, " %s", "Sick ");
-		VBP_Status(cli, b, *probes);
+		VBP_Status(cli, b, *arg == backendListProbe);
 	}
 	/* XXX: report b->health_changed */
 
@@ -419,13 +435,16 @@ do_list_dir(struct cli *cli, struct director *d, void *priv)
 static void
 cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 {
-	int probes = 0;
+	int arg = backendListNoArg;
 
 	(void)priv;
 	ASSERT_CLI();
 	if (av[2] != NULL && !strcmp(av[2], "-p")) {
 		av++;
-		probes = 1;
+		arg = backendListProbe;
+	} else if (av[2] != NULL && !strcmp(av[2], "-o")) {
+		av++;
+		arg = backendListOldFormat;
 	} else if (av[2] != NULL && av[2][0] == '-') {
 		VCLI_Out(cli, "Invalid flags %s", av[2]);
 		VCLI_SetResult(cli, CLIS_PARAM);
@@ -435,8 +454,12 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
-	VCLI_Out(cli, "%-30s %-10s %s", "Backend name", "Admin", "Probe");
-	(void)backend_find(cli, av[2], do_list, &probes, do_list_dir);
+	if (arg == backendListOldFormat)
+		VCLI_Out(cli, "%-30s %-6s %-10s %s",
+			"Backend name", "Conn", "Admin", "Probe");
+	else
+		VCLI_Out(cli, "%-30s %-10s %s", "Backend name", "Admin", "Probe");
+	(void)backend_find(cli, av[2], do_list, &arg, do_list_dir);
 }
 
 /*---------------------------------------------------------------------*/
@@ -488,8 +511,8 @@ cli_backend_set_health(struct cli *cli, const char * const *av, void *priv)
 /*---------------------------------------------------------------------*/
 
 static struct cli_proto backend_cmds[] = {
-	{ "backend.list", "backend.list [-p] [<backend_expression>]",
-	    "\tList backends.",
+	{ "backend.list", "backend.list [-p] [-o] [<backend_expression>]",
+	    "\tList backends, '-p' - extended probe, '-o' - old format.",
 	    0, 2, "", cli_backend_list },
 	{ "backend.set_health",
 	    "backend.set_health <backend_expression> <state>",
