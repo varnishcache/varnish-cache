@@ -545,6 +545,83 @@ static struct cli_proto debug_cmds[] = {
 
 /*---------------------------------------------------------------------*/
 
+vdi_ac_e
+vbe_str2diraction(const char *action)
+{
+#define FOO(x, y) if (strcasecmp(action, #x) == 0) return (vdi_ac_##y)
+	FOO(reset,	reset);
+	FOO(show,	show);
+#undef FOO
+	return (vdi_ac_no);
+}
+
+static int
+director_find(struct cli *cli, const char *matcher, bf_func *func, void *priv, df_func *dfunc)
+{
+	int found = 0;
+	struct director_q *dq;
+
+	Lck_Lock(&backends_mtx);
+	VTAILQ_FOREACH(dq, &directors, list) {
+		if (! strcmp(matcher, dq->dir->vcl_name)) {
+			found++;
+			dfunc(cli, dq->dir, priv);
+		}
+	}
+	Lck_Unlock(&backends_mtx);
+
+	return (found);
+}
+
+static int __match_proto__()
+do_action_dir(struct cli *cli, struct director *d, void *priv)
+{
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+
+	vdi_ac_e act = *((vdi_ac_e *) priv);
+
+	if (d->action) d->action(d, act, cli);
+
+	return (0);
+}
+
+
+static void
+cli_director_action(struct cli *cli, const char * const *av, void *priv)
+{
+	vdi_ac_e ah;
+	int n;
+
+	(void)av;
+	(void)priv;
+	ASSERT_CLI();
+	AN(av[2]);
+	AN(av[3]);
+	ah = vbe_str2diraction(av[3]);
+	if (ah == vdi_ac_no) {
+		VCLI_Out(cli, "Invalid action %s", av[3]);
+		VCLI_SetResult(cli, CLIS_PARAM);
+		return;
+	}
+	n = director_find(cli, av[2], NULL, &ah, do_action_dir);
+	if (n == 0) {
+		VCLI_Out(cli, "No Director matches");
+		VCLI_SetResult(cli, CLIS_PARAM);
+	}
+}
+
+static struct cli_proto director_cmds[] = {
+	{ "director.action", "director.action <director_expression> <action>",
+	    "\tPerform action on the director, available actions:" \
+	    " reset" \
+	    " show" \
+	    ".",
+	    2, 2, "", cli_director_action },
+	{ NULL }
+};
+
+/*---------------------------------------------------------------------*/
+
 void
 VBE_Poll(void)
 {
@@ -575,5 +652,6 @@ VBE_InitCfg(void)
 
 	CLI_AddFuncs(backend_cmds);
 	CLI_AddFuncs(debug_cmds);
+	CLI_AddFuncs(director_cmds);
 	Lck_New(&backends_mtx, lck_vbe);
 }

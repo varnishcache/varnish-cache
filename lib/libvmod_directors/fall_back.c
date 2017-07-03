@@ -32,6 +32,7 @@
 
 #include "cache/cache.h"
 #include "cache/cache_director.h"
+#include "vcli_priv.h"
 
 #include "vrt.h"
 #include "vcc_if.h"
@@ -86,6 +87,33 @@ vmod_fallback_resolve(const struct director *dir, struct worker *wrk,
 	return (be);
 }
 
+static void __match_proto__(vdi_action_f)
+vmod_fallback_action(const struct director *dir, vdi_ac_e act,
+    void *priv)
+{
+	struct vmod_directors_fallback *fb;
+	struct cli *cli = priv;
+	VCL_BACKEND be = NULL;
+
+	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(fb, dir->priv, VMOD_DIRECTORS_FALLBACK_MAGIC);
+	vdir_rdlock(fb->vd);
+
+	switch (act) {
+	case vdi_ac_reset:
+		fb->cur = 0;
+		break;
+	case vdi_ac_show:
+		be = fb->vd->backend[fb->cur];
+		VCLI_Out(cli, "%s(%d)\n",
+			be->vcl_name, fb->cur);
+		break;
+	default:
+		break;
+	}
+	vdir_unlock(fb->vd);
+}
+
 VCL_VOID __match_proto__()
 vmod_fallback__init(VRT_CTX,
     struct vmod_directors_fallback **fbp, const char *vcl_name, VCL_BOOL sticky)
@@ -101,6 +129,7 @@ vmod_fallback__init(VRT_CTX,
 	vdir_new(&fb->vd, "fallback", vcl_name, vmod_fallback_healthy,
 	    vmod_fallback_resolve, fb);
 	fb->st = sticky;
+	fb->vd->dir->action = vmod_fallback_action;
 }
 
 VCL_VOID __match_proto__()

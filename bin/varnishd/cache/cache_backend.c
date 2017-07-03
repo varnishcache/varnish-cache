@@ -368,4 +368,5 @@ VBE_fill_director(struct backend *be)
 	d->getip = vbe_dir_getip;
 	d->finish = vbe_dir_finish;
 	d->panic = vbe_panic;
+	d->action = NULL;
 }

@@ -63,6 +63,15 @@ typedef void vdi_http1pipe_f(const struct director *, struct req *,
 
 typedef void vdi_panic_f(const struct director *, struct vsb *);
 
+typedef enum {
+	vdi_ac_no = 0,
+	vdi_ac_reset = 1,
+	vdi_ac_show = 2,
+	vdi_ac_last = 3,
+} vdi_ac_e;
+
+typedef void vdi_action_f(const struct director *, vdi_ac_e, void *);
+
 struct director {
 	unsigned		magic;
 #define DIRECTOR_MAGIC		0x3336351d
@@ -76,6 +85,7 @@ struct director {
 	vdi_getip_f		*getip;
 	vdi_finish_f		*finish;
 	vdi_panic_f		*panic;
+	vdi_action_f		*action;
 	void			*priv;
 	const void		*priv2;
 };
