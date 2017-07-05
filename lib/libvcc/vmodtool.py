@@ -47,7 +47,8 @@ from os.path import dirname, exists, join, realpath
 from pprint import pprint, pformat
 from tempfile import mkstemp
 
-rstfmt=False
+rstfmt = False
+strict_abi = True
 
 ctypes = {
 	'ACL':		"VCL_ACL",
@@ -459,6 +460,13 @@ class s_module(stanza):
 			fo.write("* :ref:`%s`\n" % i[1])
 		fo.write("\n")
 
+class s_abi(stanza):
+	def parse(self):
+		if self.line[1] not in ('strict', 'lenient'):
+			err("Valid ABI types are 'strict' or 'lenient', got '%s'\n" %
+			    self.line[1])
+		strict_abi = self.line[1] == 'strict'
+
 class s_event(stanza):
 	def parse(self):
 		self.event_func = self.line[1]
@@ -677,6 +685,8 @@ class vcc(object):
 					err("$Module must be first stanze")
 			if c[0] == "Module":
 				s_module(c, b[1:], self)
+			elif c[0] == "ABI":
+				s_abi(c, b[1:], self)
 			elif c[0] == "Event":
 				s_event(c, b[1:], self)
 			elif c[0] == "Function":
@@ -760,8 +770,12 @@ class vcc(object):
 			fo.write("\n/*lint -esym(%d, Vmod_%s_Data) */\n" % (i, self.modname))
 		fo.write("const struct vmod_data Vmod_%s_Data = {\n" %
 		    self.modname)
-		fo.write("\t.vrt_major =\tVRT_MAJOR_VERSION,\n")
-		fo.write("\t.vrt_minor =\tVRT_MINOR_VERSION,\n")
+		if strict_abi:
+			fo.write("\t.vrt_major =\t0,\n")
+			fo.write("\t.vrt_minor =\t0,\n")
+		else:
+			fo.write("\t.vrt_major =\tVRT_MAJOR_VERSION,\n")
+			fo.write("\t.vrt_minor =\tVRT_MINOR_VERSION,\n")
 		fo.write('\t.name =\t\t"%s",\n' % self.modname)
 		fo.write('\t.func =\t\t&Vmod_Func,\n')
 		fo.write('\t.func_len =\tsizeof(Vmod_Func),\n')
