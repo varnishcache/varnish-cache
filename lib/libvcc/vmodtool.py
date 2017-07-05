@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#-
+#
 # Copyright (c) 2010-2016 Varnish Software
 # All rights reserved.
 #
@@ -42,12 +42,8 @@ import re
 import optparse
 import unittest
 import random
-from os import fdopen, rename, unlink
-from os.path import dirname, exists, join, realpath
-from pprint import pprint, pformat
-from tempfile import mkstemp
 
-rstfmt=False
+rstfmt = False
 
 ctypes = {
 	'ACL':		"VCL_ACL",
@@ -91,10 +87,10 @@ def write_rst_file_warning(fo):
 	write_file_warning(fo, "..", "..", "..")
 
 def write_rst_hdr(fo, s, below="-", above=None):
-	if above != None:
+	if above is not None:
 		fo.write(above * len(s) + "\n")
 	fo.write(s + "\n")
-	if below != None:
+	if below is not None:
 		fo.write(below * len(s) + "\n")
 
 #######################################################################
@@ -121,7 +117,7 @@ def lwrap(s, width=64):
 def quote(s):
 	return s.replace("\"", "\\\"")
 
-def indent(p,n):
+def indent(p, n):
 	n = len(p.expandtabs()) + n
 	p = "\t" * int(n / 8)
 	p += " " * int(n % 8)
@@ -129,33 +125,12 @@ def indent(p,n):
 
 #######################################################################
 
-def is_c_name(s):
-	return re.match("^[a-zA-Z][a-zA-Z0-9_]*$", s) is not None
-
-
-class ParseError(Exception):
-	"An error reading the input file."
-	pass
-
-class FormatError(Exception):
-	"""
-	Raised if the content of the (otherwise well-formed) input file
-	is invalid.
-	"""
-	def __init__(self, msg, details):
-		self.msg = msg
-		self.details = details
-		Exception.__init__(self)
-
-#######################################################################
-
 def err(str, warn=True):
 	if opts.strict or not warn:
-		print("ERROR: " + str, file = sys.stderr)
+		print("ERROR: " + str, file=sys.stderr)
 		exit(1)
-		raise FormatError(str, "")
 	else:
-		print("WARNING: " + str, file = sys.stderr)
+		print("WARNING: " + str, file=sys.stderr)
 
 def fmt_cstruct(fo, mn, x):
 	a = "\ttd_" + mn + "_" + x
@@ -175,18 +150,18 @@ class ctype(object):
 
 	def __str__(self):
 		s = "<" + self.vt
-		if self.nm != None:
+		if self.nm is not None:
 			s += " " + self.nm
-		if self.defval != None:
+		if self.defval is not None:
 			s += " VAL=" + self.defval
-		if self.spec != None:
+		if self.spec is not None:
 			s += " SPEC=" + str(self.spec)
 		return s + ">"
 
 	def vcl(self):
 		if self.vt == "STRING_LIST":
 			return "STRING"
-		if self.spec == None:
+		if self.spec is None:
 			return self.vt
 		return self.vt + " {" + ",".join(self.spec) + "}"
 
@@ -194,7 +169,7 @@ class ctype(object):
 		fo.write(p + '"' + self.vt)
 		fo.write('\\0"\n')
 		p = indent(p, 4)
-		if self.spec != None:
+		if self.spec is not None:
 			fo.write(p + '"\\1"\n')
 			p = indent(p, 4)
 			for i in self.spec:
@@ -203,9 +178,9 @@ class ctype(object):
 			# This terminating \1 is necessary to ensure that
 			# a prototype always ends with three \0's
 			fo.write(p + '"\\1\\0"\n')
-		if self.nm != None:
+		if self.nm is not None:
 			fo.write(p + '"\\2" "' + self.nm + '\\0"\n')
-		if self.defval != None:
+		if self.defval is not None:
 			fo.write(p + '"\\3" "' + quote(self.defval) + '\\0"\n')
 
 def vtype(txt):
@@ -231,9 +206,9 @@ def vtype(txt):
 	return ct, r
 
 def arg(txt):
-	a,s = vtype(txt)
+	a, s = vtype(txt)
 	if len(s) == 0 or s[0] == ',':
-		return a,s
+		return a, s
 
 	i = s.find('=')
 	j = s.find(',')
@@ -250,7 +225,7 @@ def arg(txt):
 		return a, s
 
 	a.nm = s[:i].rstrip()
-	s = s[i+1:].lstrip()
+	s = s[i + 1:].lstrip()
 	if s[0] == '"' or s[0] == "'":
 		m = re.match("(['\"]).*?(\\1)", s)
 		if not m:
@@ -264,7 +239,7 @@ def arg(txt):
 		a.defval = s[:i].rstrip()
 		s = s[i:]
 
-	return a,s
+	return a, s
 
 # XXX cant have ( or ) in an argument default value
 class prototype(object):
@@ -280,7 +255,7 @@ class prototype(object):
 			st.doc = n[1]
 
 		if retval:
-			self.retval,s = vtype(l)
+			self.retval, s = vtype(l)
 		else:
 			self.retval = None
 			s = l
@@ -293,11 +268,11 @@ class prototype(object):
 		s = s[1:-1].lstrip()
 		self.args = []
 		while len(s) > 0:
-			a,s = arg(s)
+			a, s = arg(s)
 			self.args.append(a)
 			s = s.lstrip()
 			if len(s) == 0:
-				break;
+				break
 			assert s[0] == ','
 			s = s[1:].lstrip()
 
@@ -306,16 +281,16 @@ class prototype(object):
 
 	def vcl_proto(self, short):
 		s = ""
-		if self.retval != None:
+		if self.retval is not None:
 			s += self.retval.vcl() + " "
 		s += self.name + "("
 		l = []
 		for i in self.args:
 			t = i.vcl()
 			if not short:
-				if i.nm != None:
+				if i.nm is not None:
 					t += " " + i.nm
-				if i.defval != None:
+				if i.defval is not None:
 					t += "=" + i.defval
 			l.append(t)
 		s += ", ".join(l) + ")"
@@ -333,13 +308,13 @@ class prototype(object):
 		return ", ".join(l)
 
 	def specstr(self, fo, cfunc, p):
-		if self.retval == None:
+		if self.retval is None:
 			fo.write(p + '"VOID\\0"\n')
 		else:
 			self.retval.specstr(fo, p)
 		fo.write(p + '"' + cfunc + '\\0"\n')
 		p = indent(p, 4)
-		if self.args != None:
+		if self.args is not None:
 			for i in self.args:
 				i.specstr(fo, p)
 		fo.write(p + '"\\0"\n')
@@ -363,7 +338,7 @@ class stanza(object):
 		print(type(self), self.line)
 
 	def rstfile(self, fo, man):
-		if self.rstlbl != None:
+		if self.rstlbl is not None:
 			fo.write(".. _" + self.rstlbl + ":\n\n")
 
 		self.rsthead(fo, man)
@@ -371,7 +346,7 @@ class stanza(object):
 		self.rsttail(fo, man)
 
 	def rsthead(self, fo, man):
-		if self.proto == None:
+		if self.proto is None:
 			return
 		if rstfmt:
 			s = self.proto.vcl_proto(short=False)
@@ -436,7 +411,7 @@ class s_module(stanza):
 
 		if man:
 			for i in self.vcc.contents[1:]:
-				if i.rstlbl == None:
+				if i.rstlbl is None:
 					continue
 				fo.write("* %s\n" %
 				    i.proto.vcl_proto(short=True))
@@ -446,9 +421,9 @@ class s_module(stanza):
 		l = []
 		for i in self.vcc.contents[1:]:
 			j = i.rstlbl
-			if j != None:
+			if j is not None:
 				l.append([j.split("_", 1)[1], j])
-			if i.methods == None:
+			if i.methods is None:
 				continue
 			for x in i.methods:
 				j = x.rstlbl
@@ -580,7 +555,6 @@ class s_object(stanza):
 		self.chfile(fo, False)
 
 	def cstruct(self, fo):
-		td = "td_" + self.vcc.modname + "_" + self.proto.name + "_"
 		fmt_cstruct(fo, self.vcc.modname, self.proto.name + "__init")
 		fmt_cstruct(fo, self.vcc.modname, self.proto.name + "__fini")
 		for i in self.methods:
@@ -672,7 +646,7 @@ class vcc(object):
 				else:
 					self.copyright = a[0]
 				continue
-			if i == 1 and self.copyright != None:
+			if i == 1 and self.copyright is not None:
 				if c[0] != "Module":
 					err("$Module must be first stanze")
 			if c[0] == "Module":
@@ -700,7 +674,7 @@ class vcc(object):
 		fo.write(a + "\n")
 
 	def rstfile(self, man=False):
-		fn = join(self.rstdir, "vmod_" + self.modname)
+		fn = os.path.join(self.rstdir, "vmod_" + self.modname)
 		if man:
 			fn += ".man"
 		fn += ".rst"
@@ -712,7 +686,7 @@ class vcc(object):
 		for i in self.contents:
 			i.rstfile(fo, man)
 
-		if self.copyright != None:
+		if self.copyright is not None:
 			self.rst_copyright(fo)
 
 		fo.close()
@@ -867,9 +841,9 @@ if __name__ == "__main__":
 		exit()
 
 	i_vcc = None
-	if len(args) == 1 and exists(args[0]):
+	if len(args) == 1 and os.path.exists(args[0]):
 		i_vcc = args[0]
-	elif exists("vmod.vcc"):
+	elif os.path.exists("vmod.vcc"):
 		if not i_vcc:
 			i_vcc = "vmod.vcc"
 	else:

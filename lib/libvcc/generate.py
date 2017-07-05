@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#-
+#
 # Copyright (c) 2006 Verdens Gang AS
 # Copyright (c) 2006-2015 Varnish Software AS
 # All rights reserved.
@@ -1177,7 +1177,6 @@ def restrict(fo, spec):
 			assert j in vcls
 			d[j] = True
 	p = ""
-	n = 0
 	l = list(d.keys())
 	l.sort()
 	w = 0
