@@ -58,7 +58,7 @@
  */
 
 static struct vsb pan_vsb_storage, *pan_vsb;
-static pthread_mutex_t panicstr_mtx = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t panicstr_mtx;
 
 static void pan_sess(struct vsb *, const struct sess *);
 
@@ -690,6 +690,7 @@ void
 PAN_Init(void)
 {
 
+	AZ(pthread_mutex_init(&panicstr_mtx, NULL));
 	VAS_Fail = pan_ic;
 	pan_vsb = &pan_vsb_storage;
 	AN(heritage.panic_str);

@@ -43,6 +43,8 @@
 #include "vrt_obj.h"
 
 
+static pthread_mutex_t stv_mtx;
+
 /*--------------------------------------------------------------------
  * XXX: trust pointer writes to be atomic
  */
@@ -52,9 +54,8 @@ STV_next()
 {
 	static struct stevedore *stv;
 	struct stevedore *r;
-	static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 
-	AZ(pthread_mutex_lock(&mtx));
+	AZ(pthread_mutex_lock(&stv_mtx));
 	if (!STV__iter(&stv))
 		AN(STV__iter(&stv));
 	if (stv == stv_transient) {
@@ -62,7 +63,7 @@ STV_next()
 		AN(STV__iter(&stv));
 	}
 	r = stv;
-	AZ(pthread_mutex_unlock(&mtx));
+	AZ(pthread_mutex_unlock(&stv_mtx));
 	AN(r);
 	return (r);
 }
@@ -102,6 +103,7 @@ STV_open(void)
 	char buf[1024];
 
 	ASSERT_CLI();
+	AZ(pthread_mutex_init(&stv_mtx, NULL));
 	STV_Foreach(stv) {
 		bprintf(buf, "storage.%s", stv->ident);
 		stv->vclname = strdup(buf);
