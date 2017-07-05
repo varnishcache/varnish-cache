@@ -1,0 +1,35 @@
+varnishtest "feature ignore_unknown_macro"
+
+feature ignore_unknown_macro
+
+server s1 {
+	rxreq
+	expect req.http.Foo == "${foo}"
+	txresp -hdr "Bar: ${bar}"
+} -start
+
+varnish v1 -vcl {
+	backend default {
+		.host = "${s1_addr}";
+		.port = "${s1_port}";
+	}
+
+	sub vcl_deliver {
+		if (resp.http.Bar == "${bar}") {
+			set resp.http.Baz = "${baz}";
+		}
+	}
+} -start
+
+client c1 {
+	txreq -hdr "Foo: ${foo}"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.Bar == "${bar}"
+	expect resp.http.Baz == "${baz}"
+} -run
+
+shell {
+	touch ${tmpdir}/tst
+	rm ${tmpdir}/tst
+}

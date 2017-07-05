@@ -56,6 +56,7 @@ volatile sig_atomic_t	vtc_error;	/* Error encountered */
 int			vtc_stop;	/* Stops current test without error */
 pthread_t		vtc_thread;
 static struct vtclog	*vltop;
+static int		ign_unknown_macro = 0;
 
 /**********************************************************************
  * Macro facility
@@ -197,13 +198,18 @@ macro_expand(struct vtclog *vl, const char *text)
 		p += 2;
 		m = macro_get(p, q);
 		if (m == NULL) {
-			VSB_delete(vsb);
-			vtc_log(vl, 0, "Macro ${%.*s} not found", (int)(q - p),
-			    p);
-			return (NULL);
+			if (!ign_unknown_macro) {
+				VSB_delete(vsb);
+				vtc_log(vl, 0, "Macro ${%.*s} not found",
+				    (int)(q - p), p);
+				return (NULL);
+			}
+			VSB_printf(vsb, "${%.*s}", (int)(q - p), p);
 		}
-		VSB_printf(vsb, "%s", m);
-		free(m);
+		else {
+			VSB_printf(vsb, "%s", m);
+			free(m);
+		}
 		text = q + 1;
 	}
 	AZ(VSB_finish(vsb));
@@ -744,6 +750,9 @@ cmd_feature(CMD_ARGS)
 				good = 1;
 			else
 				vtc_stop = 1;
+		} else if (!strcmp(*av, "ignore_unknown_macro")) {
+			ign_unknown_macro = 1;
+			good = 1;
 		}
 		if (good)
 			continue;
