@@ -58,6 +58,7 @@ volatile sig_atomic_t	vtc_error;	/* Error encountered */
 int			vtc_stop;	/* Stops current test without error */
 pthread_t		vtc_thread;
 static struct vtclog	*vltop;
+static int		ign_unknown_macro = 0;
 
 /**********************************************************************
  * Macro facility
@@ -236,13 +237,18 @@ macro_expand(struct vtclog *vl, const char *text)
 		p += 2;
 		m = macro_get(p, q);
 		if (m == NULL) {
-			VSB_destroy(&vsb);
-			vtc_fatal(vl, "Macro ${%.*s} not found", (int)(q - p),
-			    p);
-			NEEDLESS(return (NULL));
+			if (!ign_unknown_macro) {
+				VSB_destroy(&vsb);
+				vtc_fatal(vl, "Macro ${%.*s} not found",
+					  (int)(q - p), p);
+				NEEDLESS(return (NULL));
+			}
+			VSB_printf(vsb, "${%.*s}", (int)(q - p), p);
 		}
-		VSB_printf(vsb, "%s", m);
-		free(m);
+		else {
+			VSB_printf(vsb, "%s", m);
+			free(m);
+		}
 		text = q + 1;
 	}
 	AZ(VSB_finish(vsb));
@@ -662,8 +668,9 @@ cmd_delay(CMD_ARGS)
 
 /* SECTION: feature feature
  *
- * Test that the required feature(s) for a test are available, and skip the test
- * otherwise. feature takes any number of arguments from this list:
+ * Test that the required feature(s) for a test are available, and skip
+ * the test otherwise; or change the interpretation of the test, as
+ * documented below. feature takes any number of arguments from this list:
  *
  * SO_RCVTIMEO_WORKS
  *        The SO_RCVTIMEO socket option is working
@@ -685,6 +692,13 @@ cmd_delay(CMD_ARGS)
  *        The varnish group is present
  * cmd <command-line>
  *        A command line that should execute with a zero exit status
+ * ignore_unknown_macro
+ *        Do not fail the test if a string of the form ${...} is not
+ *        recognized as a macro.
+ *
+ * Be careful with the last feature, because it may cause a test with a
+ * misspelled macro to fail silently. You should only need it if you must
+ * run a test with strings of the form "${...}".
  */
 
 static void
@@ -755,6 +769,9 @@ cmd_feature(CMD_ARGS)
 				good = 1;
 			else
 				vtc_stop = 2;
+		} else if (!strcmp(*av, "ignore_unknown_macro")) {
+			ign_unknown_macro = 1;
+			good = 1;
 		}
 		if (good)
 			continue;
