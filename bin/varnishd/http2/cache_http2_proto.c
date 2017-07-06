@@ -577,14 +577,17 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	AN(r2->decode);
 	h2h_decode_init(h2, r2->decode);
 
-	/* XXX: Error handling */
 	p = h2->rxf_data;
 	l = h2->rxf_len;
 	if (h2->rxf_flags & H2FF_HEADERS_PADDED) {
+		if (*p > l)
+			return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1884,1887
 		l -= 1 + *p;
 		p += 1;
 	}
 	if (h2->rxf_flags & H2FF_HEADERS_PRIORITY) {
+		if (l < 5)
+			return (H2CE_PROTOCOL_ERROR);
 		l -= 5;
 		p += 5;
 	}
