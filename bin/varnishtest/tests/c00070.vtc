@@ -1,4 +1,4 @@
-varnishtest "Test workspace functions in vmod_debug"
+varnishtest "Test workspace functions in vmod_vtc"
 
 server s1 {
 	rxreq
@@ -9,20 +9,20 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import debug;
+	import vtc;
 	sub vcl_backend_response {
-		set beresp.http.free_backend = debug.workspace_free(backend);
+		set beresp.http.free_backend = vtc.workspace_free(backend);
 	}
 
 	sub vcl_deliver {
-		set resp.http.free_session = debug.workspace_free(session);
-		set resp.http.free_thread = debug.workspace_free(thread);
+		set resp.http.free_session = vtc.workspace_free(session);
+		set resp.http.free_thread = vtc.workspace_free(thread);
 
-		set resp.http.overflowed = debug.workspace_overflowed(client);
-		debug.workspace_allocate(client, 2048);
+		set resp.http.overflowed = vtc.workspace_overflowed(client);
+		vtc.workspace_alloc(client, 2048);
 
 		if (req.url == "/bar") {
-			debug.workspace_overflow(client);
+			vtc.workspace_overflow(client);
 		}
 	}
 } -start

@@ -13,6 +13,7 @@ server s2 {
 varnish v1 -vcl {
 	import std;
 	import debug;
+	import vtc;
 
 	backend dummy { .host = "${bad_backend}"; }
 
@@ -27,7 +28,7 @@ varnish v1 -vcl {
 		}
 		set req.backend_hint = s1.backend();
 		# hot swap should happen while we sleep
-		debug.sleep(2s);
+		vtc.sleep(2s);
 		if (std.healthy(req.backend_hint)) {
 			return(synth(800));
 		} else {

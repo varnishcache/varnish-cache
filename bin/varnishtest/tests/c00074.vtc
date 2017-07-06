@@ -6,14 +6,14 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import debug;
 	import std;
+	import vtc;
 
 	sub vcl_recv {
-		set req.http.ws-free = debug.workspace_free(session);
-		debug.workspace_allocate(session, std.integer(req.http.ws-free, 0));
-		debug.workspace_snap(session);
-		debug.workspace_reset(session);
+		set req.http.ws-free = vtc.workspace_free(session);
+		vtc.workspace_alloc(session, std.integer(req.http.ws-free, 0));
+		vtc.workspace_snapshot(session);
+		vtc.workspace_reset(session);
 	}
 } -start
 

@@ -66,6 +66,7 @@ SEE ALSO
 ========
 
 * :ref:`varnishtest(1)`
+* :ref:`vmod_vtc(3)`
 
 COPYRIGHT
 =========

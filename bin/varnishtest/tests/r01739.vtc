@@ -6,12 +6,12 @@ server s1 {
 } -start
 
 
-varnish v1 \
- -vcl+backend {
-	import debug;
+varnish v1 -vcl+backend {
+	import vtc;
+
 	sub vcl_backend_response {
 		set beresp.do_gzip = true;
-		debug.workspace_allocate(backend, debug.workspace_free(backend) - 16);
+		vtc.workspace_alloc(backend, vtc.workspace_free(backend) - 16);
 	}
 } -start
 

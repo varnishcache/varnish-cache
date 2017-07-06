@@ -15,6 +15,8 @@ Varnish Cache Trunk (ongoing)
 
 * varnishd honors vcl_path (#2342)
 
+* New vmod vtc for advanced varnishtest usage (#2276)
+
 ================================
 Varnish Cache 5.1.2 (2017-04-07)
 ================================

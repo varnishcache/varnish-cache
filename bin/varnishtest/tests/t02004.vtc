@@ -6,10 +6,10 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import debug;
+	import vtc;
 
 	sub vcl_recv {
-		debug.panic("H2 panic");
+		vtc.panic("H2 panic");
 	}
 } -start
 
