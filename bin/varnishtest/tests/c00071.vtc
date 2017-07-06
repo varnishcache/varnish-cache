@@ -12,9 +12,9 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import debug;
+	import vtc;
 	sub vcl_deliver {
-		debug.workspace_allocate(client, -192);
+		vtc.workspace_alloc(client, -192);
 
 		if (req.url ~ "/bar") {
 			set resp.http.x-foo = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -22,7 +22,7 @@ varnish v1 -vcl+backend {
 		else if (req.url ~ "/baz") {
 			set resp.http.x-foo = regsub(req.url, "baz", "baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz");
 		}
-		set resp.http.x-of = debug.workspace_overflowed(client);
+		set resp.http.x-of = vtc.workspace_overflowed(client);
 	}
 } -start
 

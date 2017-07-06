@@ -1,7 +1,7 @@
 varnishtest "workspace overflow with failed backend fetch"
 
 varnish v1 -vcl {
-	import debug;
+	import vtc;
 
 	backend default {
 		.host = "${bad_backend}";
@@ -10,8 +10,7 @@ varnish v1 -vcl {
 	sub vcl_backend_fetch {
 		# avoid LostHeader      b Host: %s
 		set bereq.http.Host = "127.0.0.1";
-		debug.workspace_allocate(backend,
-			debug.workspace_free(backend));
+		vtc.workspace_alloc(backend, vtc.workspace_free(backend));
 	}
 
 	sub vcl_backend_error {

@@ -21,18 +21,15 @@ server s1 {
 	expect req.url == /5
 } -start
 
-
 varnish v1 -cliok "param.set feature +http2"
 varnish v1 -cliok "param.set debug +syncvsl"
 varnish v1 -cliok "param.set debug +h2_nocheck"
 
 varnish v1 -vcl+backend {
-	import debug;
+	import vtc;
 	sub vcl_deliver {
 		if (req.url == "/1") {
-			if (!debug.barrier_sync("${b1_sock}")) {
-				return (synth(400));
-			}
+			vtc.barrier_sync("${b1_sock}");
 		}
 	}
 } -start

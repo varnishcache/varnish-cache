@@ -729,6 +729,7 @@ AC_CONFIG_FILES([
     lib/libvmod_debug/Makefile
     lib/libvmod_std/Makefile
     lib/libvmod_directors/Makefile
+    lib/libvmod_vtc/Makefile
     man/Makefile
     varnishapi.pc
     varnishapi-uninstalled.pc

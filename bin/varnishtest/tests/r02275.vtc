@@ -12,17 +12,17 @@ server s1 -repeat 2 {
 } -start
 
 varnish v1 -vcl+backend {
-	import debug;
+	import vtc;
 
 	sub vcl_deliver {
 		if (req.url == "/1") {
-			debug.workspace_allocate(client,
-			    -1 * (40 + debug.typesize("p") * 25));
+			vtc.workspace_alloc(client,
+			    -1 * (40 + vtc.typesize("p") * 25));
 		} else {
-			debug.workspace_allocate(client,
-			    -1 * (56 + debug.typesize("p") * 25));
+			vtc.workspace_alloc(client,
+			    -1 * (56 + vtc.typesize("p") * 25));
 		}
-		set resp.http.foo = debug.workspace_free(client);
+		set resp.http.foo = vtc.workspace_free(client);
 	}
 } -start
 

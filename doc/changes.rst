@@ -25,12 +25,14 @@ VCL
 
 * Added ``bereq.is_bgfetch`` which is true for background fetches.
 
-C APIs (for vmod authors)
--------------------------
+C APIs (for vmod and utility authors)
+-------------------------------------
 
 * ``VSM_Name()`` returns the -i argument name, rather than the -n name.
 
 * ``VUT.name`` is gone, use ``VSM_Name(VUT.vsm)``
+
+* New vmod vtc for advanced varnishtest usage (#2276)
 
 ================================
 Varnish Cache 5.1.3 (2017-08-02)

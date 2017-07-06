@@ -202,7 +202,7 @@ vmod_rot52(VRT_CTX, VCL_HTTP hp)
 	http_PrintfHeader(hp, "Encrypted: ROT52");
 }
 
-VCL_STRING
+VCL_STRING __match_proto__(td_debug_argtest)
 vmod_argtest(VRT_CTX, VCL_STRING one, VCL_REAL two, VCL_STRING three,
     VCL_STRING comma, VCL_INT four)
 {
@@ -212,7 +212,7 @@ vmod_argtest(VRT_CTX, VCL_STRING one, VCL_REAL two, VCL_STRING three,
 	return (WS_Copy(ctx->ws, buf, -1));
 }
 
-VCL_INT
+VCL_INT __match_proto__(td_debug_vre_limit)
 vmod_vre_limit(VRT_CTX)
 {
 	(void)ctx;
@@ -239,7 +239,7 @@ obj_cb(struct worker *wrk, void *priv, struct objcore *oc, unsigned event)
 	    (intmax_t)(uintptr_t)oc);
 }
 
-VCL_VOID __match_proto__()
+VCL_VOID __match_proto__(td_debug_register_obj_events)
 vmod_register_obj_events(VRT_CTX, struct vmod_priv *priv)
 {
 	struct priv_vcl *priv_vcl;
@@ -252,7 +252,7 @@ vmod_register_obj_events(VRT_CTX, struct vmod_priv *priv)
 	VSL(SLT_Debug, 0, "Subscribed to Object Events");
 }
 
-VCL_VOID __match_proto__()
+VCL_VOID __match_proto__(td_debug_fail)
 vmod_fail(VRT_CTX)
 {
 
@@ -487,7 +487,7 @@ vmod_workspace_overflow(VRT_CTX, VCL_ENUM which)
 	WS_MarkOverflow(ws);
 }
 
-void
+VCL_VOID __match_proto__(td_debug_vcl_release_delay)
 vmod_vcl_release_delay(VRT_CTX, VCL_DURATION delay)
 {
 
@@ -496,7 +496,7 @@ vmod_vcl_release_delay(VRT_CTX, VCL_DURATION delay)
 	vcl_release_delay = delay;
 }
 
-VCL_BOOL
+VCL_BOOL __match_proto__(td_debug_match_acl)
 vmod_match_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip)
 {
 
@@ -539,7 +539,7 @@ vmod_barrier_sync(VRT_CTX, VCL_STRING addr)
 	return (0);
 }
 
-VCL_VOID
+VCL_VOID __match_proto__(td_debug_test_probe)
 vmod_test_probe(VRT_CTX, VCL_PROBE probe, VCL_PROBE same)
 {
 
@@ -573,7 +573,7 @@ vmod_typesize(VRT_CTX, VCL_STRING s)
 	return ((VCL_INT)i);
 }
 
-VCL_VOID
+VCL_VOID __match_proto__(td_debug_purge)
 vmod_purge(VRT_CTX, double ttl, double grace, double keep)
 {
 

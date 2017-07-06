@@ -223,10 +223,10 @@ varnish v1 -errvcl {VCL sub's named 'vcl*' are reserved names.} {
 }
 
 varnish v1 -errvcl {Function returns VOID} {
-	import debug;
+	import vtc;
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
-		set req.http.foo = debug.sleep(1m);
+		set req.http.foo = vtc.sleep(1m);
 	}
 }
 
@@ -253,10 +253,10 @@ varnish v1 -errvcl {Expected 'from path ...'} {
 }
 
 varnish v1 -errvcl {INT * BLOB not possible.} {
-	import debug;
+	import vtc;
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_deliver {
-		set resp.status = 100 * debug.str2blob("a");
+		set resp.status = 100 * vtc.str2blob("a");
 	}
 }
 

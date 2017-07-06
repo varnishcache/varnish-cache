@@ -1,4 +1,4 @@
-varnishtest "Test debug.barrier_sync"
+varnishtest "Test vtc.barrier_sync"
 
 barrier b1 sock 2
 barrier b2 sock 2
@@ -9,18 +9,14 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import debug;
+	import vtc;
 
 	sub vcl_recv {
-		if (!debug.barrier_sync("${b1_sock}")) {
-			return (synth(400));
-		}
+		vtc.barrier_sync("${b1_sock}");
 	}
 
 	sub vcl_backend_response {
-		if (!debug.barrier_sync("${b2_sock}")) {
-			return (abandon);
-		}
+		vtc.barrier_sync("${b2_sock}");
 	}
 } -start
 
