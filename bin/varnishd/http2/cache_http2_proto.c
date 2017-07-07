@@ -185,6 +185,7 @@ h2_del_req(struct worker *wrk, struct h2_req *r2)
 	if (r)
 		return;
 	/* All streams gone, including stream #0, clean up */
+	VHT_Fini(h2->dectbl);
 	req = h2->srq;
 	AZ(req->ws->r);
 	Req_Cleanup(sp, wrk, req);
