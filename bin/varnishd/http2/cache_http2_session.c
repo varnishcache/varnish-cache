@@ -103,7 +103,6 @@ h2_new_sess(const struct worker *wrk, struct sess *sp, struct req *srq)
 		h2->local_settings = H2_proto_settings;
 		h2->remote_settings = H2_proto_settings;
 
-		/* XXX: Lacks a VHT_Fini counterpart. Will leak memory. */
 		AZ(VHT_Init(h2->dectbl,
 			h2->local_settings.header_table_size));
 
