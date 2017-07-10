@@ -146,7 +146,7 @@ mac_callback(void *priv, const struct suckaddr *sa)
 			    la->endpoint, strerror(fail));
 		return(0);
 	}
-	if (VSA_Port(ls->addr) == 0) {
+	if (VSA_Port(ls->addr) == 0 && VSA_Get_Proto(ls->addr) != PF_UNIX) {
 		/*
 		 * If the argv port number is zero, we adopt whatever
 		 * port number this VTCP_bind() found us, as if
@@ -204,7 +204,11 @@ MAC_Arg(const char *spec)
 	AN(xp);
 	la->transport = xp;
 
-	error = VSS_resolver(av[1], "80", mac_callback, la, &err);
+	if (la->endpoint[0] != '/')
+		error = VSS_resolver(av[1], "80", mac_callback, la, &err);
+	else
+		error = VSS_unix(av[1], mac_callback, la, &err);
+
 	if (VTAILQ_EMPTY(&la->socks) || error)
 		ARGV_ERR("Got no socket(s) for %s\n", av[1]);
 	VAV_Free(av);

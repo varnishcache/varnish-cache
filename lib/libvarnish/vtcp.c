@@ -107,7 +107,7 @@ VTCP_my_suckaddr(int sock)
 
 	l = sizeof addr_s;
 	AZ(getsockname(sock, (void *)&addr_s, &l));
-	return (VSA_Malloc(&addr_s, l));
+	return (VSA_Malloc(&addr_s, l, NULL)); /* XXX malloc uds? */
 }
 
 /*--------------------------------------------------------------------*/
@@ -445,6 +445,15 @@ VTCP_bind(const struct suckaddr *sa, const char **errp)
 		return (-1);
 	}
 #endif
+	if (proto == PF_UNIX && unlink(VSA_Path(sa)) != 0 && errno != ENOENT) {
+		if (errp != NULL)
+			*errp = "unlink(2)";
+		e = errno;
+		closefd(&sd);
+		errno = e;
+		return (-1);
+	}
+
 	so = VSA_Get_Sockaddr(sa, &sl);
 	if (bind(sd, so, sl) != 0) {
 		if (errp != NULL)

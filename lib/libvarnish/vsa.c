@@ -36,6 +36,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <netinet/in.h>
 
 #include "vdef.h"
@@ -165,11 +166,12 @@
 struct suckaddr {
 	unsigned			magic;
 #define SUCKADDR_MAGIC			0x4b1e9335
+	sa_family_t			sa_family;
 	union {
-		struct sockaddr		sa;
-		struct sockaddr_in	sa4;
-		struct sockaddr_in6	sa6;
-	};
+		struct sockaddr_in		sa4;
+		struct sockaddr_in6		sa6;
+		const struct sockaddr_un	*sau;
+	}				sa;
 };
 
 const int vsa_suckaddr_len = sizeof(struct suckaddr);
@@ -188,15 +190,19 @@ VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst)
 		return (-1);
 	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
 
-	switch (sua->sa.sa_family) {
+	switch (sua->sa_family) {
 	case PF_INET:
-		assert(sua->sa.sa_family == sua->sa4.sin_family);
-		*dst = (const unsigned char *)&sua->sa4.sin_addr;
-		return (sua->sa4.sin_family);
+		assert(sua->sa_family == sua->sa.sa4.sin_family);
+		*dst = (const unsigned char *)&sua->sa.sa4.sin_addr;
+		return (sua->sa.sa4.sin_family);
 	case PF_INET6:
-		assert(sua->sa.sa_family == sua->sa6.sin6_family);
-		*dst = (const unsigned char *)&sua->sa6.sin6_addr;
-		return (sua->sa6.sin6_family);
+		assert(sua->sa_family == sua->sa.sa6.sin6_family);
+		*dst = (const unsigned char *)&sua->sa.sa6.sin6_addr;
+		return (sua->sa.sa6.sin6_family);
+	case PF_UNIX:
+		assert(sua->sa_family == sua->sa.sau->sun_family);
+		*dst = (const unsigned char *)sua->sa.sau->sun_path;
+		return (sua->sa.sau->sun_family);
 	default:
 		*dst = NULL;
 		return (-1);
@@ -208,7 +214,7 @@ VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst)
  */
 
 struct suckaddr *
-VSA_Malloc(const void *s, unsigned  sal)
+VSA_Malloc(const void *s, unsigned  sal, const void *suds)
 {
 	struct suckaddr *sua = NULL;
 	const struct sockaddr *sa = s;
@@ -217,27 +223,32 @@ VSA_Malloc(const void *s, unsigned  sal)
 	AN(s);
 	switch (sa->sa_family) {
 	case PF_INET:
-		if (sal == sizeof sua->sa4)
+		if (sal == sizeof sua->sa.sa4)
 			l = sal;
 		break;
 	case PF_INET6:
-		if (sal == sizeof sua->sa6)
+		if (sal == sizeof sua->sa.sa6)
 			l = sal;
 		break;
 	default:
 		break;
 	}
-	if (l != 0) {
+	if (l != 0 || sa->sa_family == PF_UNIX) {
 		ALLOC_OBJ(sua, SUCKADDR_MAGIC);
-		if (sua != NULL)
+		if (sua == NULL)
+			return (NULL);
+		sua->sa_family = sa->sa_family;
+		if (sa->sa_family != PF_UNIX)
 			memcpy(&sua->sa, s, l);
+		else
+			sua->sa.sau = suds;
 	}
 	return (sua);
 }
 
 /* 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage */
 struct suckaddr *
-VSA_Build(void *d, const void *s, unsigned sal)
+VSA_Build(void *d, const void *s, unsigned sal, const void *suds)
 {
 	struct suckaddr *sua = d;
 	const struct sockaddr *sa = s;
@@ -247,20 +258,24 @@ VSA_Build(void *d, const void *s, unsigned sal)
 	AN(s);
 	switch (sa->sa_family) {
 	case PF_INET:
-		if (sal == sizeof sua->sa4)
+		if (sal == sizeof sua->sa.sa4)
 			l = sal;
 		break;
 	case PF_INET6:
-		if (sal == sizeof sua->sa6)
+		if (sal == sizeof sua->sa.sa6)
 			l = sal;
 		break;
 	default:
 		break;
 	}
-	if (l != 0) {
+	if (l != 0 || sa->sa_family == PF_UNIX) {
 		memset(sua, 0, sizeof *sua);
 		sua->magic = SUCKADDR_MAGIC;
-		memcpy(&sua->sa, s, l);
+		sua->sa_family = sa->sa_family;
+		if (sa->sa_family != PF_UNIX)
+			memcpy(&sua->sa, s, l);
+		else
+			sua->sa.sau = suds;
 		return (sua);
 	}
 	return (NULL);
@@ -272,17 +287,19 @@ VSA_Get_Sockaddr(const struct suckaddr *sua, socklen_t *sl)
 
 	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
 	AN(sl);
-	switch (sua->sa.sa_family) {
+	switch (sua->sa_family) {
 	case PF_INET:
-		*sl = sizeof sua->sa4;
-		break;
+		*sl = sizeof sua->sa.sa4;
+		return (&sua->sa.sa4);
 	case PF_INET6:
-		*sl = sizeof sua->sa6;
-		break;
+		*sl = sizeof sua->sa.sa6;
+		return (&sua->sa.sa6);
+	case PF_UNIX:
+		*sl = sizeof *sua->sa.sau;
+		return (sua->sa.sau);
 	default:
 		return (NULL);
 	}
-	return (&sua->sa);
 }
 
 int
@@ -290,7 +307,7 @@ VSA_Get_Proto(const struct suckaddr *sua)
 {
 
 	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
-	return (sua->sa.sa_family);
+	return (sua->sa_family);
 }
 
 int
@@ -298,9 +315,10 @@ VSA_Sane(const struct suckaddr *sua)
 {
 	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
 
-	switch (sua->sa.sa_family) {
+	switch (sua->sa_family) {
 	case PF_INET:
 	case PF_INET6:
+	case PF_UNIX:
 		return (1);
 	default:
 		return (0);
@@ -313,8 +331,14 @@ VSA_Compare(const struct suckaddr *sua1, const struct suckaddr *sua2)
 
 	CHECK_OBJ_NOTNULL(sua1, SUCKADDR_MAGIC);
 	CHECK_OBJ_NOTNULL(sua2, SUCKADDR_MAGIC);
+	if (sua1->sa_family == PF_UNIX)
+		return (sua2->sa_family == PF_UNIX
+			&& memcmp(sua1->sa.sau, sua2->sa.sau,
+				  sizeof(struct sockaddr_un)));
 	return (memcmp(sua1, sua2, vsa_suckaddr_len));
 }
+
+/* XXX For UDSen compare the paths. Maybe rename to VSA_Compare_Addr. */
 
 int
 VSA_Compare_IP(const struct suckaddr *sua1, const struct suckaddr *sua2)
@@ -323,16 +347,18 @@ VSA_Compare_IP(const struct suckaddr *sua1, const struct suckaddr *sua2)
 	assert(VSA_Sane(sua1));
 	assert(VSA_Sane(sua2));
 
-	if (sua1->sa.sa_family != sua2->sa.sa_family)
+	if (sua1->sa_family != sua2->sa_family)
 		return (-1);
 
-	switch (sua1->sa.sa_family) {
+	switch (sua1->sa_family) {
 	case PF_INET:
-		return (memcmp(&sua1->sa4.sin_addr,
-		    &sua2->sa4.sin_addr, sizeof(struct in_addr)));
+		return (memcmp(&sua1->sa.sa4.sin_addr,
+		    &sua2->sa.sa4.sin_addr, sizeof(struct in_addr)));
 	case PF_INET6:
-		return (memcmp(&sua1->sa6.sin6_addr,
-		    &sua2->sa6.sin6_addr, sizeof(struct in6_addr)));
+		return (memcmp(&sua1->sa.sa6.sin6_addr,
+		    &sua2->sa.sa6.sin6_addr, sizeof(struct in6_addr)));
+	case PF_UNIX:
+		return (strcmp(sua1->sa.sau->sun_path, sua2->sa.sau->sun_path));
 	default:
 		WRONG("Just plain insane");
 	}
@@ -343,11 +369,18 @@ struct suckaddr *
 VSA_Clone(const struct suckaddr *sua)
 {
 	struct suckaddr *sua2;
+	struct sockaddr_un *suds;
 
 	assert(VSA_Sane(sua));
 	sua2 = calloc(1, vsa_suckaddr_len);
 	XXXAN(sua2);
 	memcpy(sua2, sua, vsa_suckaddr_len);
+	if (sua->sa_family == PF_UNIX && sua->sa.sau != NULL) {
+		suds = calloc(1, sizeof(struct sockaddr_un));
+		XXXAN(suds);
+		memcpy(suds, sua->sa.sau, sizeof(struct sockaddr_un));
+		sua2->sa.sau = suds;
+	}
 	return (sua2);
 }
 
@@ -356,12 +389,30 @@ VSA_Port(const struct suckaddr *sua)
 {
 
 	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
-	switch (sua->sa.sa_family) {
+	switch (sua->sa_family) {
 	case PF_INET:
-		return (ntohs(sua->sa4.sin_port));
+		return (ntohs(sua->sa.sa4.sin_port));
 	case PF_INET6:
-		return (ntohs(sua->sa6.sin6_port));
+		return (ntohs(sua->sa.sa6.sin6_port));
+	case PF_UNIX:
 	default:
 		return (0);
 	}
+}
+
+const char *
+VSA_Path(const struct suckaddr *sua)
+{
+
+	CHECK_OBJ_NOTNULL(sua, SUCKADDR_MAGIC);
+	switch (sua->sa_family) {
+	case PF_INET:
+	case PF_INET6:
+		return (NULL);
+	case PF_UNIX:
+		return (sua->sa.sau->sun_path);
+	default:
+		WRONG("invalid sockaddr family");
+	}
+	NEEDLESS(return(NULL));
 }

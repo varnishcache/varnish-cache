@@ -31,6 +31,7 @@
 #include "config.h"
 
 #include <sys/socket.h>
+#include <sys/un.h>
 
 #include <netdb.h>
 #include <stdlib.h>
@@ -135,7 +136,7 @@ VSS_resolver(const char *addr, const char *def_port, vss_resolved_f *func,
 		return (-1);
 	}
 	for (res = res0; res != NULL; res = res->ai_next) {
-		vsa = VSA_Malloc(res->ai_addr, res->ai_addrlen);
+		vsa = VSA_Malloc(res->ai_addr, res->ai_addrlen, NULL);
 		if (vsa != NULL) {
 			ret = func(priv, vsa);
 			free(vsa);
@@ -145,4 +146,32 @@ VSS_resolver(const char *addr, const char *def_port, vss_resolved_f *func,
 	}
 	freeaddrinfo(res0);
 	return (ret);
+}
+
+int
+VSS_unix(const char *path, vss_resolved_f *func, void *priv, const char **err)
+{
+	struct sockaddr_un uds;
+	struct suckaddr *vsa;
+	int ret = 0;
+
+	AN(path);
+	assert(path[0] == '/');
+
+	*err = NULL;
+	if (strlen(path) + 1 > sizeof(uds.sun_path)/sizeof(uds.sun_path[0])) {
+		*err = "Path too long for a Unix domain socket";
+		return(-1);
+	}
+	strcpy(uds.sun_path, path);
+	uds.sun_family = PF_UNIX;
+	vsa = VSA_Malloc(&uds, sizeof(uds), &uds);
+	if (vsa == NULL) {
+		*err = "Could not allocate socket address";
+		return(-1);
+	}
+	if (func != NULL)
+		ret = func(priv, vsa);
+	free(vsa);
+	return(ret);
 }

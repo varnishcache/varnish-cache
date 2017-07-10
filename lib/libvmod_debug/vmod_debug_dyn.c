@@ -71,7 +71,7 @@ dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
 	AZ(getaddrinfo(addr, port, &hints, &res));
 	XXXAZ(res->ai_next);
 
-	sa = VSA_Malloc(res->ai_addr, res->ai_addrlen);
+	sa = VSA_Malloc(res->ai_addr, res->ai_addrlen, NULL);
 	AN(sa);
 	if (VSA_Get_Proto(sa) == AF_INET) {
 		vrt.ipv4_addr = addr;

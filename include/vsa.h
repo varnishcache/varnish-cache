@@ -45,12 +45,15 @@ int VSA_Get_Proto(const struct suckaddr *);
 /*
  * 's' is a sockaddr of some kind, 'sal' is its length
  */
-struct suckaddr *VSA_Malloc(const void *s, unsigned  sal);
+struct suckaddr *VSA_Malloc(const void *s, unsigned  sal, const void *suds);
 
 /*
  * 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage,
  * 's' is a sockaddr of some kind, 'sal' is its length.
  */
-struct suckaddr *VSA_Build(void *d, const void *s, unsigned sal);
+struct suckaddr *VSA_Build(void *d, const void *s, unsigned sal,
+			   const void *suds);
+
+const char * VSA_Path(const struct suckaddr *sua);
 
 #endif
