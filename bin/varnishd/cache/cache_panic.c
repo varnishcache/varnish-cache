@@ -47,6 +47,7 @@
 
 #include "storage/storage.h"
 #include "vcli_serve.h"
+#include "vsa.h"
 
 /*
  * The panic string is constructed in memory, then copied to the
@@ -495,6 +496,8 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 	const char *ci;
 	const char *cp;
 	const struct transport *xp;
+	struct suckaddr *sac;
+	int ret;
 
 	VSB_printf(vsb, "sp = %p {\n", sp);
 	if (PAN_already(vsb, sp))
@@ -517,9 +520,14 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 		VSB_printf(vsb, "}");
 	}
 	VSB_printf(vsb, "\n");
-	ci = SES_Get_String_Attr(sp, SA_CLIENT_IP);
-	cp = SES_Get_String_Attr(sp, SA_CLIENT_PORT);
-	VSB_printf(vsb, "client = %s %s,\n", ci, cp);
+	ret = SES_Get_client_addr(sp, &sac);
+	if (ret == 0 && VSA_Get_Proto(sac) == PF_UNIX)
+		VSB_printf(vsb, "client = %s,\n", VSA_Path(sac));
+	else {
+		ci = SES_Get_String_Attr(sp, SA_CLIENT_IP);
+		cp = SES_Get_String_Attr(sp, SA_CLIENT_PORT);
+		VSB_printf(vsb, "client = %s %s,\n", ci, cp);
+	}
 
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
