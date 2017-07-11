@@ -294,7 +294,8 @@ VTCP_connect(const struct suckaddr *name, int msec)
 		(void)VTCP_nonblocking(s);
 
 	val = 1;
-	AZ(setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &val, sizeof val));
+	if (VSA_Get_Proto(name) != PF_UNIX)
+		AZ(setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &val, sizeof val));
 
 	i = connect(s, sa, sl);
 	if (i == 0)

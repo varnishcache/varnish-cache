@@ -331,10 +331,11 @@ VSA_Compare(const struct suckaddr *sua1, const struct suckaddr *sua2)
 
 	CHECK_OBJ_NOTNULL(sua1, SUCKADDR_MAGIC);
 	CHECK_OBJ_NOTNULL(sua2, SUCKADDR_MAGIC);
-	if (sua1->sa_family == PF_UNIX)
-		return (sua2->sa_family == PF_UNIX
-			&& memcmp(sua1->sa.sau, sua2->sa.sau,
-				  sizeof(struct sockaddr_un)));
+	if (sua1->sa_family == PF_UNIX) {
+		if (sua2->sa_family != PF_UNIX)
+			return 1;
+		return (strcmp(sua1->sa.sau->sun_path, sua2->sa.sau->sun_path));
+	}
 	return (memcmp(sua1, sua2, vsa_suckaddr_len));
 }
 

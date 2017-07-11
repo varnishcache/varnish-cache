@@ -41,6 +41,7 @@ struct vbp_target;
 struct vrt_ctx;
 struct vrt_backend_probe;
 struct tcp_pool;
+struct suckaddr;
 
 /*--------------------------------------------------------------------
  * An instance of a backend from a VCL program.
@@ -56,6 +57,9 @@ struct backend {
 	struct lock		mtx;
 
 	VRT_BACKEND_FIELDS()
+
+	struct suckaddr		*uds_suckaddr;
+	const void		*uds_addr;
 
 	struct vbp_target	*probe;
 

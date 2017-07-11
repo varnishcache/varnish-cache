@@ -243,6 +243,7 @@ extern const void * const vrt_magic_string_unset;
 	rigid char			*vcl_name;		\
 	rigid char			*ipv4_addr;		\
 	rigid char			*ipv6_addr;		\
+	rigid char			*path;			\
 	rigid char			*port;			\
 	rigid char			*hosthdr;		\
 	double				connect_timeout;	\
@@ -256,6 +257,7 @@ extern const void * const vrt_magic_string_unset;
 		DA(vcl_name);			\
 		DA(ipv4_addr);			\
 		DA(ipv6_addr);			\
+		DA(path);			\
 		DA(port);			\
 		DA(hosthdr);			\
 		DN(connect_timeout);		\
