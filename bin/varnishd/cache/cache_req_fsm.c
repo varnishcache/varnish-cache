@@ -49,6 +49,7 @@
 #include "vcl.h"
 #include "vsha256.h"
 #include "vtim.h"
+#include "vsa.h"
 
 /*--------------------------------------------------------------------
  * Handle "Expect:" and "Connection:" on incoming request
@@ -768,22 +769,26 @@ cnt_restart(struct worker *wrk, struct req *req)
  */
 
 static void
-cnt_recv_prep(struct req *req, const char *ci)
+cnt_recv_prep(struct req *req, const char *ci, int proto)
 {
 	const char *xff;
 
 	if (req->restarts == 0) {
-		/*
-		 * This really should be done earlier, but we want to capture
-		 * it in the VSL log.
-		 */
-		http_CollectHdr(req->http, H_X_Forwarded_For);
-		if (http_GetHdr(req->http, H_X_Forwarded_For, &xff)) {
-			http_Unset(req->http, H_X_Forwarded_For);
-			http_PrintfHeader(req->http, "X-Forwarded-For: %s, %s",
-			    xff, ci);
-		} else {
-			http_PrintfHeader(req->http, "X-Forwarded-For: %s", ci);
+		if (proto != PF_UNIX) {
+			/*
+			 * This really should be done earlier, but we want
+			 * to capture it in the VSL log.
+			 */
+			http_CollectHdr(req->http, H_X_Forwarded_For);
+			if (http_GetHdr(req->http, H_X_Forwarded_For, &xff)) {
+				http_Unset(req->http, H_X_Forwarded_For);
+				http_PrintfHeader(req->http,
+						  "X-Forwarded-For: %s, %s",
+						  xff, ci);
+			} else {
+				http_PrintfHeader(req->http,
+						  "X-Forwarded-For: %s", ci);
+			}
 		}
 		http_CollectHdr(req->http, H_Cache_Control);
 
@@ -813,7 +818,9 @@ cnt_recv(struct worker *wrk, struct req *req)
 {
 	unsigned recv_handling;
 	struct VSHA256Context sha256ctx;
-	const char *ci, *cp;
+	const char *ci = NULL, *cp;
+	struct suckaddr *sac;
+	int proto;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -826,13 +833,19 @@ cnt_recv(struct worker *wrk, struct req *req)
 	AZ(isnan(req->t_prev));
 	AZ(isnan(req->t_req));
 
-	ci = SES_Get_String_Attr(req->sp, SA_CLIENT_IP);
-	cp = SES_Get_String_Attr(req->sp, SA_CLIENT_PORT);
-	VSLb(req->vsl, SLT_ReqStart, "%s %s", ci, cp);
+	AZ(SES_Get_client_addr(req->sp, &sac));
+	proto = VSA_Get_Proto(sac);
+	if (proto != PF_UNIX) {
+		ci = SES_Get_String_Attr(req->sp, SA_CLIENT_IP);
+		cp = SES_Get_String_Attr(req->sp, SA_CLIENT_PORT);
+		VSLb(req->vsl, SLT_ReqStart, "%s %s", ci, cp);
+	}
+	else
+		VSLb(req->vsl, SLT_ReqStart, "%s -", VSA_Path(sac));
 
 	http_VSL_log(req->http);
 
-	cnt_recv_prep(req, ci);
+	cnt_recv_prep(req, ci, proto);
 
 	if (req->req_body_status == REQ_BODY_FAIL) {
 		req->doclose = SC_OVERLOAD;
@@ -843,7 +856,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	if (wrk->handling == VCL_RET_VCL && req->restarts == 0) {
 		HTTP_Copy(req->http, req->http0);
 		WS_Reset(req->ws, req->ws_req);
-		cnt_recv_prep(req, ci);
+		cnt_recv_prep(req, ci, proto);
 		VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 	}
 
