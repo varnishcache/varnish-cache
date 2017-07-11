@@ -31,6 +31,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <sys/ioctl.h>
 #ifdef HAVE_SYS_FILIO_H
 #  include <sys/filio.h>
@@ -58,10 +59,20 @@ static void
 vtcp_sa_to_ascii(const void *sa, socklen_t l, char *abuf, unsigned alen,
     char *pbuf, unsigned plen)
 {
+	const struct sockaddr *soa = sa;
 	int i;
 
 	assert(abuf == NULL || alen > 0);
 	assert(pbuf == NULL || plen > 0);
+
+	if (soa->sa_family == PF_UNIX) {
+		const struct sockaddr_un *suds = sa;
+
+		(void)snprintf(abuf, alen, "%s", suds->sun_path);
+		(void)snprintf(pbuf, plen, "<none>");
+		return;
+	}
+
 	i = getnameinfo(sa, l, abuf, alen, pbuf, plen,
 	   NI_NUMERICHOST | NI_NUMERICSERV);
 	if (i) {
@@ -93,6 +104,10 @@ VTCP_name(const struct suckaddr *addr, char *abuf, unsigned alen,
 	const struct sockaddr *sa;
 	socklen_t sl;
 
+	if (VSA_Get_Proto(addr) == PF_UNIX) {
+		(void)snprintf(abuf, alen, "%s", VSA_Path(addr));
+		(void)snprintf(pbuf, plen, "<none>");
+	}
 	sa = VSA_Get_Sockaddr(addr, &sl);
 	vtcp_sa_to_ascii(sa, sl, abuf, alen, pbuf, plen);
 }

@@ -137,10 +137,16 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	if (bp->proxy_header != 0)
 		VPX_Send_Proxy(vtp->fd, bp->proxy_header, bo->sp);
 
-	VTCP_myname(vtp->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-	VTCP_hisname(vtp->fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
-	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s",
-	    vtp->fd, bp->director->display_name, abuf2, pbuf2, abuf1, pbuf1);
+	if (VSA_Get_Proto(vtp->addr) == PF_UNIX)
+		VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s - - -", vtp->fd,
+		     bp->director->display_name, VSA_Path(vtp->addr));
+	else {
+		VTCP_myname(vtp->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
+		VTCP_hisname(vtp->fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
+		VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s",
+		     vtp->fd, bp->director-> display_name, abuf2, pbuf2,
+		     abuf1, pbuf1);
+	}
 
 	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
 	bo->htc->priv = vtp;

@@ -31,8 +31,11 @@
 struct suckaddr;
 
 /* from libvarnish/tcp.c */
-/* NI_MAXHOST and NI_MAXSERV are ridiculously long for numeric format */
-#define VTCP_ADDRBUFSIZE		64
+/*
+ * NI_MAXHOST and NI_MAXSERV are ridiculously long for numeric format
+ * VTCP_ADDRBUFSIZE is more than enough to hold a UDS path.
+ */
+#define VTCP_ADDRBUFSIZE		128
 #define VTCP_PORTBUFSIZE		16
 
 int VTCP_Check(int a);
