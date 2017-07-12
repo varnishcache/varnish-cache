@@ -454,6 +454,20 @@ client c1 {
 	} -run
 } -run
 
+# 2350: Don't accept a continuation frame after stream is closed
+client c1 {
+	stream 1 {
+		txreq
+		rxresp
+		txcont -hdr "foo" "bar"
+	} -run
+
+	stream 0 {
+		rxgoaway
+		expect goaway.err == PROTOCOL_ERROR
+	} -run
+} -run
+
 varnish v1 -vsl_catchup
 
 varnish v1 -expect MEMPOOL.req0.live == 0

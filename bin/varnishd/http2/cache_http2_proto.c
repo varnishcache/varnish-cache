@@ -619,8 +619,7 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	h2_error h2e;
 
 	ASSERT_RXTHR(h2);
-	AN(r2);
-	if (r2->state != H2_S_OPEN)
+	if (r2 == NULL || r2->state != H2_S_OPEN)
 		return (H2CE_PROTOCOL_ERROR);	// XXX spec ?
 	req = r2->req;
 	h2e = h2h_decode_bytes(h2, r2->decode, h2->rxf_data, h2->rxf_len);
