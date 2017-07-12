@@ -411,6 +411,16 @@ vpx_enc_port(struct vsb *vsb, const struct suckaddr *s)
 	VSB_bcat(vsb, b, sizeof(b));
 }
 
+static void
+vpx_enc_path(struct vsb *vsb, const struct suckaddr *s)
+{
+	char b[108] = { 0 };
+
+	strcpy(b, VSA_Path(s));
+	VSB_bcat(vsb, b, sizeof(b));
+	VSB_bcat(vsb, b, sizeof(b));
+}
+
 void
 VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 {
@@ -429,20 +439,24 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 	AZ(SES_Get_server_addr(sp, &sas));
 	AN(sas);
 	proto = VSA_Get_Proto(sas);
-	assert(proto == PF_INET6 || proto == PF_INET);
+	assert(proto == PF_INET6 || proto == PF_INET || proto == PF_UNIX);
 
 	if (version == 1) {
 		VSB_bcat(vsb, vpx1_sig, sizeof(vpx1_sig));
-		p1 = SES_Get_String_Attr(sp, SA_CLIENT_IP);
-		AN(p1);
-		p2 = SES_Get_String_Attr(sp, SA_CLIENT_PORT);
-		AN(p2);
-		VTCP_name(sas, ha, sizeof ha, pa, sizeof pa);
-		if (proto == PF_INET6)
-			VSB_printf(vsb, " TCP6 ");
-		else if (proto == PF_INET)
-			VSB_printf(vsb, " TCP4 ");
-		VSB_printf(vsb, "%s %s %s %s\r\n", p1, ha, p2, pa);
+		if (proto != PF_UNIX) {
+			p1 = SES_Get_String_Attr(sp, SA_CLIENT_IP);
+			AN(p1);
+			p2 = SES_Get_String_Attr(sp, SA_CLIENT_PORT);
+			AN(p2);
+			VTCP_name(sas, ha, sizeof ha, pa, sizeof pa);
+			if (proto == PF_INET6)
+				VSB_printf(vsb, " TCP6 ");
+			else if (proto == PF_INET)
+				VSB_printf(vsb, " TCP4 ");
+			VSB_printf(vsb, "%s %s %s %s\r\n", p1, ha, p2, pa);
+		}
+		else
+			VSB_printf(vsb, " UNKNOWN\r\n");
 	} else if (version == 2) {
 		AZ(SES_Get_client_addr(sp, &sac));
 		AN(sac);
@@ -457,11 +471,20 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 			VSB_putc(vsb, 0x11);
 			VSB_putc(vsb, 0x00);
 			VSB_putc(vsb, 0x0c);
+		} else if (proto == PF_UNIX) {
+			VSB_putc(vsb, 0x31);
+			VSB_putc(vsb, 0x00);
+			VSB_putc(vsb, 0xd8);
 		}
-		vpx_enc_addr(vsb, proto, sac);
-		vpx_enc_addr(vsb, proto, sas);
-		vpx_enc_port(vsb, sac);
-		vpx_enc_port(vsb, sas);
+		if (proto != PF_UNIX) {
+			vpx_enc_addr(vsb, proto, sac);
+			vpx_enc_addr(vsb, proto, sas);
+			vpx_enc_port(vsb, sac);
+			vpx_enc_port(vsb, sas);
+		}
+		else {
+			vpx_enc_path(vsb, sac);
+		}
 	} else
 		WRONG("Wrong proxy version");
 
