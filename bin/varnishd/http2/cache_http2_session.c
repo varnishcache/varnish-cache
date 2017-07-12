@@ -231,6 +231,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	req->req_step = R_STP_TRANSPORT;
 	req->task.func = h2_do_req;
 	req->task.priv = req;
+	r2->scheduled = 1;
 	req->err_code = 0;
 	http_SetH(req->http, HTTP_HDR_PROTO, "HTTP/2.0");
 
