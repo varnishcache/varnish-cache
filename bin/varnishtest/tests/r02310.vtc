@@ -1,0 +1,40 @@
+varnishtest "#2310: Panic on premature hangup after Upgrade: h2c"
+
+barrier b1 cond 2
+
+server s1 {
+	rxreq
+	barrier b1 sync
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+varnish v1 -cliok "param.set feature +http2"
+
+client c1 {
+	send "GET / HTTP/1.1\r\n"
+	send "Host: foo\r\n"
+	send "Connection: Upgrade, HTTP2-Settings\r\n"
+	send "Upgrade: h2c\r\n"
+	send "HTTP2-Settings: AAMAAABkAARAAAAA\r\n"
+	send "\r\n"
+	rxresp
+	expect resp.status == 101
+	expect resp.http.upgrade == h2c
+	expect resp.http.connection == Upgrade
+	txpri
+	stream 0 {
+		rxsettings
+		txsettings
+		txsettings -ack
+		rxsettings
+		expect settings.ack == true
+	} -run
+
+} -run
+
+barrier b1 sync
+varnish v1 -expect client_req != 0
+varnish v1 -wait
+
