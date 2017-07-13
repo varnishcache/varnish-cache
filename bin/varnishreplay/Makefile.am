@@ -2,6 +2,7 @@
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/bin/varnishd \
 	-I$(top_builddir)/include
 
 bin_PROGRAMS = varnishreplay
@@ -14,6 +15,7 @@ varnishreplay_SOURCES = \
 	rsm.c \
 	stat_cnt.h \
 	stat_cnt.c \
+	hash_classic.c \
 	$(top_srcdir)/lib/libvarnishtools/vut.c \
 	$(top_srcdir)/lib/libvarnish/vas.c \
 	$(top_srcdir)/lib/libvarnish/flopen.c \
@@ -25,6 +27,7 @@ varnishreplay_SOURCES = \
 varnishreplay_LDADD = \
 	$(top_builddir)/lib/libvarnishcompat/libvarnishcompat.la \
 	$(top_builddir)/lib/libvarnishapi/libvarnishapi.la \
+	$(top_builddir)/lib/libvarnish/libvarnish.la \
 	${RT_LIBS} ${LIBM} ${PTHREAD_LIBS}
 
 noinst_PROGRAMS = varnishreplay_opt2rst
