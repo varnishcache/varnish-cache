@@ -43,6 +43,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "vcs.h"
 #include "vtcp.h"
 #include "vapi/vsc.h"
 #include "../varnishreplay/rsm.h"
