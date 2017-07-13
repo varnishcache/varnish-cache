@@ -54,7 +54,7 @@ Syntax
 The Varnish CLI is similar to another command line interface, the Bourne
 Shell. Commands are usually terminated with a newline, and they may take
 arguments. The command and its arguments are *tokenized* before parsing,
-and as such arguments containing must must be enclosed in double quotes.
+and as such arguments containing spaces must be enclosed in double quotes.
 
 It means that command parsing of
 
