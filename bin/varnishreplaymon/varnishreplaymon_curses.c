@@ -95,7 +95,7 @@ do_curses(struct replay_shm* rsmh,
 	unsigned n0, n1, n2, n3;
 
 	time_t rt;
-	int ch, line, i;
+	int ch = 0, line, i;
 
 	int x, y;
 	int stat_cnt, neq_stat_cnt, thr_cnt, thr_sh_cnt, thr_req_cnt, thr_resp_cnt, thr_lns_cnt;
