@@ -1,0 +1,18 @@
+PROG_SRC += hash_classic.c
+PROG_SRC += rsm.c
+PROG_SRC += stat_cnt.c
+PROG_SRC += varnishreplay.c
+PROG_SRC += varnishreplay_options.c
+
+LD_ADD	+= ${LIB_VARNISHTOOLS}
+LD_ADD	+= ${LIB_VARNISHAPI}
+LD_ADD	+= ${LIB_VARNISH}
+LD_ADD	+= ${LIB_PCRE}
+LD_ADD	+= -lm
+
+TODO_ALL += build_man
+
+TOPDIR  = $(CURDIR)/../..
+include $(TOPDIR)/Makefile.inc.phk
+
+.PHONY: build_man
