@@ -33,11 +33,14 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pwd.h>
+#include <grp.h>
 
 #include "mgt/mgt.h"
 #include "common/heritage.h"
@@ -56,6 +59,15 @@ struct listen_arg {
 	const char			*name;
 	VTAILQ_HEAD(,listen_sock)	socks;
 	const struct transport		*transport;
+	const struct uds_perms		*perms;
+};
+
+struct uds_perms {
+	unsigned	magic;
+#define UDS_PERMS_MAGIC 0x84fb5635
+	mode_t		mode;
+	uid_t		uid;
+	gid_t		gid;
 };
 
 static VTAILQ_HEAD(,listen_arg) listen_args =
@@ -76,6 +88,18 @@ mac_opensocket(struct listen_sock *ls)
 	if (ls->sock < 0) {
 		AN(fail);
 		return (fail);
+	}
+	if (ls->perms != NULL) {
+		/* XXX race here between bind and setting permissions */
+		/* XXX platform-dependent? */
+		CHECK_OBJ(ls->perms, UDS_PERMS_MAGIC);
+		assert(VSA_Get_Proto(ls->addr) == PF_UNIX);
+		errno = 0;
+		if (ls->perms->mode != 0
+		    && chmod(ls->endpoint, ls->perms->mode) != 0)
+			return errno;
+		if (chown(ls->endpoint, ls->perms->uid, ls->perms->gid) != 0)
+			return errno;
 	}
 	MCH_Fd_Inherit(ls->sock, "sock");
 	return (0);
@@ -134,6 +158,7 @@ mac_callback(void *priv, const struct suckaddr *sa)
 	AN(ls->endpoint);
 	ls->name = la->name;
 	ls->transport = la->transport;
+	ls->perms = la->perms;
 	VJ_master(JAIL_MASTER_PRIVPORT);
 	fail = mac_opensocket(ls);
 	VJ_master(JAIL_MASTER_LOW);
@@ -171,10 +196,14 @@ MAC_Arg(const char *spec)
 	struct listen_arg *la;
 	const char *err;
 	int error;
-	const struct transport *xp;
 	const char *name;
 	char name_buf[8];
 	static unsigned seq = 0;
+	const struct transport *xp = NULL;
+	struct passwd *pwd = NULL;
+	struct group *grp = NULL;
+	mode_t mode = 0;
+	struct uds_perms *perms;
 
 	av = MGT_NamedArg(spec, &name, "-a");
 	AN(av);
@@ -192,17 +221,97 @@ MAC_Arg(const char *spec)
 	}
 	la->name = name;
 
-	if (av[2] == NULL) {
-		xp = XPORT_Find("http");
-	} else {
-		xp = XPORT_Find(av[2]);
-		if (xp == NULL)
-			ARGV_ERR("Unknown protocol '%s'\n", av[2]);
-		if (av[3] != NULL)
-			ARGV_ERR("Too many sub-arguments to -a(%s)\n", av[2]);
+	for (int i = 2; av[i] != NULL; i++) {
+		char *eq, *val;
+		size_t len;
+
+		if ((eq = strchr(av[i], '=')) == NULL) {
+			if (xp != NULL)
+				ARGV_ERR("Too many protocol sub-args in -a "
+					 "(%s)\n", av[i]);
+			xp = XPORT_Find(av[i]);
+			if (xp == NULL)
+				ARGV_ERR("Unknown protocol '%s'\n", av[i]);
+			continue;
+		}
+		if (la->endpoint[0] != '/')
+			ARGV_ERR("Invalid sub-arg %s for IP addresses in -a\n",
+				 av[i]);
+
+		val = eq + 1;
+		len = eq - av[i];
+		assert(len >= 0);
+		if (len == 0)
+			ARGV_ERR("Invalid sub-arg %s in -a\n", av[i]);
+
+		if (strncmp(av[i], "user", len) == 0) {
+			if (pwd != NULL)
+				ARGV_ERR("Too many user sub-args in -a (%s)\n",
+					 av[i]);
+			pwd = getpwnam(val);
+			if (pwd == NULL)
+				ARGV_ERR("Unknown user %s in -a\n", val);
+			continue;
+		}
+
+		if (strncmp(av[i], "group", len) == 0) {
+			if (grp != NULL)
+				ARGV_ERR("Too many group sub-args in -a (%s)\n",
+					 av[i]);
+			grp = getgrnam(val);
+			if (grp == NULL)
+				ARGV_ERR("Unknown group %s in -a\n", val);
+			continue;
+		}
+
+		if (strncmp(av[i], "mode", len) == 0) {
+			long m;
+			char *p;
+
+			if (mode != 0)
+				ARGV_ERR("Too many mode sub-args in -a (%s)\n",
+					 av[i]);
+			if (*val == '\0')
+				ARGV_ERR("Empty mode sub-arg in -a\n");
+			errno = 0;
+			m = strtol(val, &p, 8);
+			if (*p != '\0')
+				ARGV_ERR("Invalid mode sub-arg %s in -a\n",
+					 val);
+			if (errno)
+				ARGV_ERR("Cannot parse mode sub-arg %s in -a: "
+					 "%s\n", val, strerror(errno));
+			if (m <= 0 || m > 0777)
+				ARGV_ERR("Mode sub-arg %s out of range in -a\n",
+					 val);
+			mode = (mode_t) m;
+			continue;
+		}
+
+		ARGV_ERR("Invalid sub-arg %s in -a\n", av[i]);
 	}
+
+	if (xp == NULL)
+		xp = XPORT_Find("http");
 	AN(xp);
 	la->transport = xp;
+
+	if (pwd != NULL || grp != NULL || mode != 0) {
+		ALLOC_OBJ(perms, UDS_PERMS_MAGIC);
+		AN(perms);
+		if (pwd != NULL)
+			perms->uid = pwd->pw_uid;
+		else
+			perms->uid = -1;
+		if (grp != NULL)
+			perms->gid = grp->gr_gid;
+		else
+			perms->gid = -1;
+		perms->mode = mode;
+		la->perms = perms;
+	}
+	else
+		AZ(la->perms);
 
 	if (la->endpoint[0] != '/')
 		error = VSS_resolver(av[1], "80", mac_callback, la, &err);
