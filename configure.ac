@@ -696,6 +696,8 @@ AC_CONFIG_FILES([
     bin/varnishhist/Makefile
     bin/varnishtest/Makefile
     bin/varnishncsa/Makefile
+    bin/varnishreplay/Makefile
+    bin/varnishreplaymon/Makefile
     doc/Makefile
     doc/graphviz/Makefile
     doc/sphinx/Makefile
