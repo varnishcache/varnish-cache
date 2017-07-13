@@ -51,6 +51,6 @@ typedef enum {
 	MAX_ERR_IND,
 } rsm_err_ind_e;
 
-static char* rsm_err_labels[] = {"ENC", "CHK", "CHENC", "MTDNS", "ERROR"};
+static char* const rsm_err_labels[] = {"ENC", "CHK", "CHENC", "MTDNS", "ERROR"};
 
 #endif
