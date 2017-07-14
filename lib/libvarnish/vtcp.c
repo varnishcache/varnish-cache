@@ -403,8 +403,11 @@ VTCP_open(const char *addr, const char *def_port, double timeout,
 	if (errp != NULL)
 		*errp = NULL;
 	assert(timeout >= 0);
-	error = VSS_resolver(addr, def_port, vtcp_open_callback,
-	    &timeout, &err);
+	if (addr[0] != '/')
+		error = VSS_resolver(addr, def_port, vtcp_open_callback,
+				     &timeout, &err);
+	else
+		error = VSS_unix(addr, vtcp_open_callback, &timeout, &err);
 	if (err != NULL) {
 		if (errp != NULL)
 			*errp = err;
@@ -541,7 +544,10 @@ VTCP_listen_on(const char *addr, const char *def_port, int depth,
 	h.depth = depth;
 	h.errp = errp;
 
-	sock = VSS_resolver(addr, def_port, vtcp_lo_cb, &h, errp);
+	if (addr[0] != '/')
+		sock = VSS_resolver(addr, def_port, vtcp_lo_cb, &h, errp);
+	else
+		sock = VSS_unix(addr, vtcp_lo_cb, &h, errp);
 	if (*errp != NULL)
 		return (-1);
 	return(sock);
