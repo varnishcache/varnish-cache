@@ -1,0 +1,32 @@
+varnishtest "Check aborted backend body with a backend listening at UDS"
+
+barrier b1 cond 2
+barrier b2 cond 2
+
+server s1 -listen "${tmpdir}/s1.sock" {
+	rxreq
+	txresp -nolen -hdr "Transfer-encoding: chunked"
+	chunked {<HTML>}
+	barrier b1 sync
+	chunked {<HTML>}
+	barrier b2 sync
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl" -vcl+backend {
+
+} -start
+
+
+client c1 {
+	txreq
+	rxresphdrs
+	expect resp.status == 200
+	rxchunk
+	barrier b1 sync
+	rxchunk
+	barrier b2 sync
+	expect_close
+} -run
+
+
+

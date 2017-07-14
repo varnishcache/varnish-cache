@@ -1,0 +1,18 @@
+varnishtest "Check poll acceptor on a UDS listen address"
+
+server s1 {
+	rxreq
+	txresp -hdr "Connection: close" -body "012345\n"
+} -start
+
+varnish v1 -arg "-a ${tmpdir}/v1.sock -Wpoll" -vcl+backend {} -start
+
+client c1 -connect "${tmpdir}/v1.sock" {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+	delay .1
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+} -run
