@@ -142,8 +142,12 @@ client_thread(void *priv)
 		/* VTCP_blocking does its own checks, trust it */
 		(void)VTCP_blocking(fd);
 		VTCP_myname(fd, mabuf, sizeof mabuf, mpbuf, sizeof mpbuf);
-		vtc_log(vl, 3, "connected fd %d from %s %s to %s",
-		    fd, mabuf, mpbuf, VSB_data(vsb));
+		if (strcmp(mpbuf, "<none>") != 0)
+			vtc_log(vl, 3, "connected fd %d from %s %s to %s",
+				fd, mabuf, mpbuf, VSB_data(vsb));
+		else
+			vtc_log(vl, 3, "connected fd %d to %s",
+				fd, VSB_data(vsb));
 		if (c->proxy_spec != NULL)
 			client_proxy(vl, fd, c->proxy_version, c->proxy_spec);
 		fd = http_process(vl, c->spec, fd, NULL);
