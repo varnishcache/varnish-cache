@@ -249,12 +249,17 @@ VRT_r_beresp_uncacheable(VRT_CTX)
 const char *
 VRT_r_client_identity(VRT_CTX)
 {
+	const char *id;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	if (ctx->req->client_identity != NULL)
 		return (ctx->req->client_identity);
-	return (SES_Get_String_Attr(ctx->req->sp, SA_CLIENT_IP));
+	id = SES_Get_String_Attr(ctx->req->sp, SA_CLIENT_IP);
+	if (id != NULL)
+		return id;
+	VRT_fail(ctx, "client.identity not set and there is no client IP");
+	return (NULL);
 }
 
 void
