@@ -1,4 +1,4 @@
-varnishtest "std.ip() and std.port() don't work for UDS addresses"
+varnishtest "std.ip(), .port() and .set_ip_tos() don't work for UDS addresses"
 
 # Note that the fallback in std.ip() may be NULL now, since *.ip is
 # NULL for UDS.
@@ -39,3 +39,24 @@ varnish v1 -errvcl {Cannot convert to an IP address:} {
 		set resp.http.s1port = std.port("${s1_addr}");
 	}
 }
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_recv {
+	    # Invokes VCL failure for a UDS
+	    std.set_ip_tos(0);
+	}
+}
+
+client c1 -connect "${tmpdir}/v1.sock" {
+	txreq
+	rxresp
+	expect resp.status == 503
+} -run
+
+logexpect l1 -v v1 -d 1 -g vxid -q "VCL_Error" {
+	expect 0 * Begin req
+	expect * = VCL_Error "std.set_ip_tos.. cannot be applied to a Unix domain socket"
+	expect * = End
+} -run
