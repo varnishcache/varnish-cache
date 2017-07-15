@@ -691,6 +691,14 @@ vardef('beresp.backend.ip',
 	IP of the backend this response was fetched from.
 	"""
 )
+vardef('beresp.backend.path',
+       'STRING',
+       ('backend_response',),
+       (), """
+       Socket path of the backend this response was fetched from,
+       if it was a Unix domain socket. NULL if it was an IP.
+       """
+)
 vardef('beresp.storage',
 	'STEVEDORE',
 	('backend_response', 'backend_error'),

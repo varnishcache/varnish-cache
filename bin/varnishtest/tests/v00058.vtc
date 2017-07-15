@@ -1,0 +1,37 @@
+varnishtest "beresp.backend.path"
+
+server s1 -listen "${tmpdir}/s1.sock" {
+	rxreq
+	txresp
+} -start
+
+server s2 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+
+	sub vcl_backend_fetch {
+		if (bereq.url == "/uds") {
+			set bereq.backend = s1;
+		}
+		else {
+			set bereq.backend = s2;
+		}
+	}
+
+	sub vcl_backend_response {
+		set beresp.http.path = beresp.backend.path;
+	}
+
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.path == ""
+	txreq -url "/uds"
+	rxresp
+	expect resp.http.path == "${tmpdir}/s1.sock"
+} -run

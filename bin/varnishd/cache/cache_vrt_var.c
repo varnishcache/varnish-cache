@@ -340,6 +340,21 @@ VRT_r_beresp_backend_ip(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
+const char*
+VRT_r_beresp_backend_path(VRT_CTX)
+{
+	VCL_IP ip;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	ip = VDI_GetIP(ctx->bo->wrk, ctx->bo);
+	if (VSA_Get_Proto(ip) == PF_UNIX)
+		return VSA_Path(ip);
+	return (NULL);
+}
+
+/*--------------------------------------------------------------------*/
+
 VCL_STEVEDORE
 VRT_r_req_storage(VRT_CTX)
 {
