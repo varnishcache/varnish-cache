@@ -218,6 +218,15 @@ vardef('server.ip',
 	connection was received.
 	"""
 )
+vardef('local.path',
+       'STRING',
+       ('both',),
+       (), """
+       The socket path at which a client request was
+       received, if it is a Unix domain socket. NULL
+       if the request was received at an IP address.
+       """
+)
 vardef('server.hostname',
 	'STRING',
 	('all',),

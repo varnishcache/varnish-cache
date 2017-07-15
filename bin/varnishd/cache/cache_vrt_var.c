@@ -670,6 +670,18 @@ GIP(server)
 /*--------------------------------------------------------------------*/
 
 const char*
+VRT_r_local_path(VRT_CTX)
+{
+	struct suckaddr *sa;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AZ(SES_Get_local_addr(ctx->sp, &sa));
+	return(VSA_Path(sa));
+}
+
+/*--------------------------------------------------------------------*/
+
+const char*
 VRT_r_server_identity(VRT_CTX)
 {
 
