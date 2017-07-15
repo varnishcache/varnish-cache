@@ -450,16 +450,15 @@ VRT_IP_string(VRT_CTX, VCL_IP ip)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (ip == NULL)
 		return (NULL);
+	if (VSA_Get_Proto(ip) == PF_UNIX)
+		return NULL;
 	len = WS_Reserve(ctx->ws, 0);
 	if (len == 0) {
 		WS_Release(ctx->ws, 0);
 		return (NULL);
 	}
 	p = ctx->ws->f;
-	if (VSA_Get_Proto(ip) != PF_UNIX)
-		VTCP_name(ip, p, len, NULL, 0);
-	else
-		strcpy(p, VSA_Path(ip));
+	VTCP_name(ip, p, len, NULL, 0);
 	WS_Release(ctx->ws, strlen(p) + 1);
 	return (p);
 }
