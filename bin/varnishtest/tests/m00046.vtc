@@ -1,0 +1,41 @@
+varnishtest "std.ip() and std.port() don't work for UDS addresses"
+
+# Note that the fallback in std.ip() may be NULL now, since *.ip is
+# NULL for UDS.
+
+server s1 -listen "${tmpdir}/s1.sock" {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-a ${tmpdir}/v1.sock" -vcl+backend {
+	import std;
+
+	sub vcl_deliver {
+		set resp.http.foobar = std.ip("/foo/bar", client.ip);
+		set resp.http.s1 = std.ip("${s1_addr}", server.ip);
+	}
+} -start
+
+client c1 -connect "${tmpdir}/v1.sock" {
+	txreq
+	rxresp
+	expect resp.http.foobar == ""
+	expect resp.http.s1 == ""
+} -run
+
+varnish v1 -errvcl {Cannot convert to an IP address:} {
+	import std;
+
+	sub vcl_recv {
+		set resp.http.fooport = std.port("/foo/bar");
+	}
+}
+
+varnish v1 -errvcl {Cannot convert to an IP address:} {
+	import std;
+
+	sub vcl_recv {
+		set resp.http.s1port = std.port("${s1_addr}");
+	}
+}
