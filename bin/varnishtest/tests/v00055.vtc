@@ -45,7 +45,7 @@ client c1 -connect "${tmpdir}/v1.sock" {
 # To compare a string with IP, VCC attempts to resolve the string as
 # an address. We make no attempt to convert a path to a UDS suckaddr.
 
-varnish v1 -errvcl {could not be resolved} {
+varnish v1 -errvcl {Cannot convert to an IP address} {
 
 	sub vcl_backend_response {
 	    set beresp.http.compare = beresp.backend.ip == "${s1_addr}";
