@@ -1,0 +1,58 @@
+varnishtest	"Direct H2 start over Unix domain sockets"
+
+server s1 -listen "${tmpdir}/s1.sock" {
+	rxreq
+	expect req.http.host == foo.bar
+	txresp \
+		-hdr "H234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789I: foo" \
+		-hdr "Foo: H234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789I" \
+		-bodylen 10
+} -start
+
+varnish v1 -arg "-a ${tmpdir}/v1.sock" -vcl+backend {
+	sub vcl_recv {
+		return (pipe);
+	}
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
+
+varnish v1 -cliok "param.set feature -http2"
+
+client c1 -connect "${tmpdir}/v1.sock" {
+	txpri
+	expect_close
+} -run
+
+varnish v1 -cliok "param.set feature +http2"
+
+client c1 -connect "${tmpdir}/v1.sock" {
+	stream 1 {
+		txprio -weight 10 -stream 0
+	} -run
+	stream 3 {
+		txprio -weight 10 -stream 0
+	} -run
+	stream 5 {
+		txprio -weight 10 -stream 2
+	} -run
+	stream 7 {
+		txreq -dep 3 -hdr :authority foo.bar -pad cotton
+		rxresp
+		expect resp.status == 200
+		delay 1
+		txrst -err 0x1111
+	} -start
+	stream 0 {
+		txping -data "_-__-_-_"
+		rxping
+		expect ping.ack == "true"
+		expect ping.data == "_-__-_-_"
+	} -run
+	stream 7 -wait
+} -run
+
+varnish v1 -expect MEMPOOL.req0.live == 0
+varnish v1 -expect MEMPOOL.req1.live == 0
+varnish v1 -expect MEMPOOL.sess0.live == 0
+varnish v1 -expect MEMPOOL.sess1.live == 0
