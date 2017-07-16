@@ -1,0 +1,41 @@
+varnishtest "vtc remote.ip and remote.port"
+
+server s1 {
+	rxreq
+	expect remote.ip == "${localhost}"
+	expect remote.port > 0
+	txresp
+} -start
+
+server s2 -listen "${tmpdir}/s2.sock" {
+	rxreq
+	expect remote.ip == <undef>
+	expect remote.port == <undef>
+	txresp
+} -start
+
+varnish v1 -arg "-a ${tmpdir}/v1.sock" -vcl+backend {
+
+	sub vcl_recv {
+		if (req.url == "/s1") {
+			set req.backend_hint = s1;
+		}
+		else {
+			set req.backend_hint = s2;
+		}
+	}
+} -start
+
+client c1 {
+	txreq -url "/s1"
+	rxresp
+	expect remote.ip == "${v1_addr}"
+	expect remote.port == "${v1_port}"
+} -run
+
+client c1 -connect "${tmpdir}/v1.sock" {
+	txreq -url "/s2"
+	rxresp
+	expect remote.ip == <undef>
+	expect remote.port == <undef>
+} -run

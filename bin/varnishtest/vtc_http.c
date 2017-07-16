@@ -1840,7 +1840,8 @@ const struct cmds http_cmds[] = {
 };
 
 int
-http_process(struct vtclog *vl, const char *spec, int sock, int *sfd)
+http_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
+	     enum sock_e stype)
 {
 	struct http *hp;
 	int retval;
@@ -1870,8 +1871,19 @@ http_process(struct vtclog *vl, const char *spec, int sock, int *sfd)
 	hp->gziplevel = 0;
 	hp->gzipresidual = -1;
 
-	VTCP_hisname(sock,
-	    hp->rem_ip, VTCP_ADDRBUFSIZE, hp->rem_port, VTCP_PORTBUFSIZE);
+	switch(stype) {
+	case IP:
+		VTCP_hisname(sock, hp->rem_ip, VTCP_ADDRBUFSIZE, hp->rem_port,
+			     VTCP_PORTBUFSIZE);
+		break;
+	case UDS_CONNECT:
+	case UDS_LISTEN:
+		hp->rem_ip = NULL;
+		hp->rem_port = NULL;
+		break;
+	default:
+		WRONG("socket type enum");
+	}
 	parse_string(spec, http_cmds, hp, vl);
 	if (hp->h2)
 		stop_h2(hp);

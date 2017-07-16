@@ -191,10 +191,13 @@ server_thread(void *priv)
 		if (s->listen[0] != '/') {
 			VTCP_hisname(fd, abuf, sizeof abuf, pbuf, sizeof pbuf);
 			vtc_log(vl, 3, "accepted fd %d %s %s", fd, abuf, pbuf);
+			fd = http_process(vl, s->spec, fd, &s->sock, IP);
 		}
-		else
+		else {
 			vtc_log(vl, 3, "accepted fd %d", fd);
-		fd = http_process(vl, s->spec, fd, &s->sock);
+			fd = http_process(vl, s->spec, fd, &s->sock,
+					  UDS_LISTEN);
+		}
 		vtc_log(vl, 3, "shutting fd %d", fd);
 		j = shutdown(fd, SHUT_WR);
 		if (!VTCP_Check(j))
@@ -239,7 +242,10 @@ server_dispatch_wrk(void *priv)
 	fd = s->fd;
 
 	vtc_log(vl, 3, "start with fd %d", fd);
-	fd = http_process(vl, s->spec, fd, &s->sock);
+	if (s->listen[0] != '/')
+		fd = http_process(vl, s->spec, fd, &s->sock, IP);
+	else
+		fd = http_process(vl, s->spec, fd, &s->sock, UDS_LISTEN);
 	vtc_log(vl, 3, "shutting fd %d", fd);
 	j = shutdown(fd, SHUT_WR);
 	if (!VTCP_Check(j))

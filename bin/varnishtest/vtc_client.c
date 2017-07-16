@@ -150,7 +150,10 @@ client_thread(void *priv)
 				fd, VSB_data(vsb));
 		if (c->proxy_spec != NULL)
 			client_proxy(vl, fd, c->proxy_version, c->proxy_spec);
-		fd = http_process(vl, c->spec, fd, NULL);
+		if (strcmp(mpbuf, "<none>") != 0)
+			fd = http_process(vl, c->spec, fd, NULL, IP);
+		else
+			fd = http_process(vl, c->spec, fd, NULL, UDS_CONNECT);
 		vtc_log(vl, 3, "closing fd %d", fd);
 		VTCP_close(&fd);
 	}
