@@ -14,6 +14,7 @@ struct http {
 	char			*rxbuf;
 	char			*rem_ip;
 	char			*rem_port;
+	char			*rem_path;
 	int			prxbuf;
 	char			*body;
 	unsigned		bodyl;

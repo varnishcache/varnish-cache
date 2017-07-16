@@ -1,9 +1,10 @@
-varnishtest "vtc remote.ip and remote.port"
+varnishtest "vtc remote.ip, remote.port and remote.path"
 
 server s1 {
 	rxreq
 	expect remote.ip == "${localhost}"
 	expect remote.port > 0
+	expect remote.path == <undef>
 	txresp
 } -start
 
@@ -11,6 +12,7 @@ server s2 -listen "${tmpdir}/s2.sock" {
 	rxreq
 	expect remote.ip == <undef>
 	expect remote.port == <undef>
+	expect remote.path == "${tmpdir}/s2.sock"
 	txresp
 } -start
 
@@ -31,6 +33,7 @@ client c1 {
 	rxresp
 	expect remote.ip == "${v1_addr}"
 	expect remote.port == "${v1_port}"
+	expect remote.path == <undef>
 } -run
 
 client c1 -connect "${tmpdir}/v1.sock" {
@@ -38,4 +41,5 @@ client c1 -connect "${tmpdir}/v1.sock" {
 	rxresp
 	expect remote.ip == <undef>
 	expect remote.port == <undef>
+	expect remote.path == "${tmpdir}/v1.sock"
 } -run
