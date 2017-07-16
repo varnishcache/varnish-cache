@@ -1,0 +1,68 @@
+varnishtest "Unix domain sockets don't work with ACLs"
+
+varnish v1 -arg "-a ${tmpdir}/v1.sock" -vcl {
+	backend b { .host = "${bad_ip}"; }
+
+	acl acl1 {
+		"${localhost}";
+	}
+
+	sub vcl_recv {
+		return(synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.client = client.ip ~ acl1;
+		set resp.http.server = server.ip ~ acl1;
+		set resp.http.local = local.ip ~ acl1;
+		set resp.http.remote = remote.ip ~ acl1;
+	}
+} -start
+
+client c1 -connect "${tmpdir}/v1.sock" {
+	txreq -url "foo"
+	rxresp
+	expect resp.http.client == "false"
+	expect resp.http.server == "false"
+	expect resp.http.local == "false"
+	expect resp.http.remote == "false"
+} -run
+
+logexpect l1 -v v1 -d 1 -g vxid -q "VCL_acl" {
+	expect 0 * Begin req
+	expect * = VCL_acl "^NO_FAM acl1$"
+	expect * = VCL_acl "^NO_FAM acl1$"
+	expect * = VCL_acl "^NO_FAM acl1$"
+	expect * = VCL_acl "^NO_FAM acl1$"
+	expect * = End
+} -run
+
+varnish v1 -errvcl {Expected CSTR got 'acl1'} {
+	backend b { .host = "${bad_ip}"; }
+
+	acl acl1 {
+		"${localhost}";
+	}
+
+	sub vcl_recv {
+		if (local.path ~ acl1) {
+			return(pass);
+		}
+	}
+}
+
+varnish v1 -errvcl {.../mask is not numeric.} {
+	backend b { .host = "${bad_ip}"; }
+
+	acl acl1 {
+		"${tmpdir}/v1.sock";
+	}
+}
+
+varnish v1 -errvcl {DNS lookup():} {
+	backend b { .host = "${bad_ip}"; }
+
+	acl acl1 {
+		"/8";
+	}
+}
