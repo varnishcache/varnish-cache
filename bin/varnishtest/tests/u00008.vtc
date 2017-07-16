@@ -37,4 +37,3 @@ process p1 -need-bytes 5000 -screen_dump
 process p1 -winsz 25 132
 
 process p1 -need-bytes 7000 -screen_dump -write {q} -wait
-
