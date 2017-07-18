@@ -2,7 +2,6 @@ varnishtest "'pipe_thread_max' parameter"
 
 server s1 {
 	rxreq
-	expect req.http.connection == "Upgrade"
 	expect req.http.Upgrade == "websocket"
 	txresp -status 101 -hdr "Connection: Upgrade" -hdr "Upgrade: websocket" -body "Resp 1 -- 1\n"
 	sema r1 sync 6
@@ -10,7 +9,6 @@ server s1 {
 
 server s2 {
 	rxreq
-	expect req.http.connection == "Upgrade"
 	expect req.http.upgrade == "websocket"
 	txresp -status 101 -hdr "Connection: Upgrade" -hdr "Upgrade: websocket" -body "Resp 2 -- 22\n"
 	sema r1 sync 6

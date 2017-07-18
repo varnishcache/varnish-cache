@@ -2,7 +2,6 @@ varnishtest "'pipe_max_session_timeout' parameter"
 
 server s1 {
 	rxreq
-	expect req.http.connection == "Upgrade"
 	expect req.http.Upgrade == "websocket"
 	txresp -hdr "Connection: Upgrade" -hdr "Upgrade: websocket" -body "Resp 1 -- 1\n"
 
