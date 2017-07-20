@@ -489,17 +489,17 @@ VSC_FF(backend_req,		uint64_t, 0, 'c', 'i', info,
 
 /*--------------------------------------------------------------------*/
 
-VSC_FF(n_vcl,			uint64_t, 0, 'c', 'i', info,
+VSC_FF(n_vcl,			uint64_t, 0, 'g', 'i', info,
     "Number of loaded VCLs in total",
 	""
 )
 
-VSC_FF(n_vcl_avail,		uint64_t, 0, 'c', 'i', diag,
+VSC_FF(n_vcl_avail,		uint64_t, 0, 'g', 'i', diag,
     "Number of VCLs available",
 	""
 )
 
-VSC_FF(n_vcl_discard,		uint64_t, 0, 'c', 'i', diag,
+VSC_FF(n_vcl_discard,		uint64_t, 0, 'g', 'i', diag,
     "Number of discarded VCLs",
 	""
 )
