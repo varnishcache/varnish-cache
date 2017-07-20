@@ -520,15 +520,18 @@
 
 
 .. varnish_vsc:: n_vcl
+	:type:	gauge
 	:oneliner:	Number of loaded VCLs in total
 
 
 .. varnish_vsc:: n_vcl_avail
+	:type:	gauge
 	:level:	diag
 	:oneliner:	Number of VCLs available
 
 
 .. varnish_vsc:: n_vcl_discard
+	:type:	gauge
 	:level:	diag
 	:oneliner:	Number of discarded VCLs
 
