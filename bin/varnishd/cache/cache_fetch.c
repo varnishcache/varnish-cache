@@ -998,16 +998,25 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	AN(oc->flags & OC_F_BUSY);
 	CHECK_OBJ_ORNULL(oldoc, OBJCORE_MAGIC);
 
-
-	switch(mode) {
-	case VBF_PASS:		how = "pass"; break;
-	case VBF_NORMAL:	how = "fetch"; break;
-	case VBF_BACKGROUND:	how = "bgfetch"; break;
-	default:		WRONG("Wrong fetch mode");
-	}
-
 	bo = VBO_GetBusyObj(wrk, req);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+
+	switch (mode) {
+	case VBF_PASS:
+		how = "pass";
+		bo->do_pass = 1;
+		break;
+	case VBF_NORMAL:
+		how = "fetch";
+		break;
+	case VBF_BACKGROUND:
+		how = "bgfetch";
+		bo->is_bgfetch = 1;
+		break;
+	default:
+		WRONG("Wrong fetch mode");
+	}
+
 	VSLb(bo->vsl, SLT_Begin, "bereq %u %s", VXID(req->vsl->wid), how);
 	VSLb(req->vsl, SLT_Link, "bereq %u %s", VXID(bo->vsl->wid), how);
 
@@ -1019,9 +1028,6 @@ VBF_Fetch(struct worker *wrk, struct req *req, struct objcore *oc,
 	oc->busyobj = bo;
 
 	AN(bo->vcl);
-
-	if (mode == VBF_PASS)
-		bo->do_pass = 1;
 
 	bo->vary = req->vary_b;
 	req->vary_b = NULL;

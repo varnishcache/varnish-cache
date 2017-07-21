@@ -440,6 +440,13 @@ sp_variables = [
 		backend.  Not available in pipe mode.
 		"""
 	),
+	('bereq.is_bgfetch',
+		'BOOL',
+		('backend', ),
+		(), """
+		True for background fetches.
+		"""
+	),
 	('beresp',
 		'HTTP',
 		( 'backend_response', 'backend_error'),

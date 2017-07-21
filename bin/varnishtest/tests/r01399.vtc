@@ -2,6 +2,7 @@ varnishtest "1399 race issue with bg-fetches"
 
 server s1 {
 	rxreq
+	expect req.http.Is-bg == "false"
 	txresp -bodylen 1
 
 	sema r1 sync 2
@@ -17,11 +18,15 @@ server s1 {
 	# And see if it has all its marbles still...
 	rxreq
 	expect req.url == "/"
+	expect req.http.Is-bg == "true"
 	txresp -bodylen 2
 
 } -start
 
 varnish v1 -vcl+backend {
+	sub vcl_backend_fetch {
+		set bereq.http.Is-bg = bereq.is_bgfetch;
+	}
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
 		set beresp.ttl = 2s;

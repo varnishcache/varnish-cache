@@ -1,3 +1,9 @@
+======================================
+Varnish Cache 4.1.9-beta1 (unreleased)
+======================================
+
+* Added ``bereq.is_bgfetch`` which is true for background fetches.
+
 ================================
 Varnish Cache 4.1.8 (2017-08-02)
 ================================
