@@ -203,6 +203,14 @@ VRT_r_beresp_##field(VRT_CTX)						\
 /*--------------------------------------------------------------------*/
 
 unsigned
+VRT_r_bereq_is_bgfetch(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	return (ctx->bo->is_bgfetch);
+}
+
+unsigned
 VRT_r_bereq_uncacheable(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
