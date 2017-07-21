@@ -19,6 +19,8 @@ Varnish Cache Trunk (ongoing)
   ``MAIN.client_req``. VSM consumers should be changed to use the
   latter if necessary.
 
+* Added ``bereq.is_bgfetch`` which is true for background fetches.
+
 ================================
 Varnish Cache 5.1.2 (2017-04-07)
 ================================
