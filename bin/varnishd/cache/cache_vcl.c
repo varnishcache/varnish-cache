@@ -45,6 +45,7 @@
 
 #include "cache_director.h"
 #include "cache_backend.h"
+#include "cache_vcl.h"
 #include "vcli.h"
 #include "vcli_priv.h"
 
@@ -57,22 +58,6 @@ static const char * const VCL_TEMP_COOLING = "cooling";
 /* NB: The COOLING temperature is neither COLD nor WARM. */
 #define VCL_WARM(v) ((v)->temp == VCL_TEMP_WARM || (v)->temp == VCL_TEMP_BUSY)
 #define VCL_COLD(v) ((v)->temp == VCL_TEMP_INIT || (v)->temp == VCL_TEMP_COLD)
-
-struct vcl {
-	unsigned		magic;
-#define VCL_MAGIC		0x214188f2
-	VTAILQ_ENTRY(vcl)	list;
-	void			*dlh;
-	const struct VCL_conf	*conf;
-	char			state[8];
-	char			*loaded_name;
-	unsigned		busy;
-	unsigned		discard;
-	const char		*temp;
-	pthread_rwlock_t	temp_rwl;
-	VTAILQ_HEAD(,backend)	backend_list;
-	VTAILQ_HEAD(,vclref)	ref_list;
-};
 
 struct vclref {
 	unsigned		magic;

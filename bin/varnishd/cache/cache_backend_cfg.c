@@ -280,7 +280,7 @@ static void _create_dummy_sess()
  * String to admin_health
  */
 
-static const char *
+const char *
 vbe_str2adminhealth(const char *wstate)
 {
 
