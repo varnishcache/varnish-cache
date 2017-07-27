@@ -586,7 +586,7 @@ HTTP1_Chunked(struct http_conn *htc, intptr_t *priv, const char **error,
 		if (q == NULL || *q != '\0')
 			ERR("chunked header number syntax");
 		cl = (ssize_t)cll;
-		if((uintmax_t)cl != cll)
+		if (cl < 0 || (uintmax_t)cl != cll)
 			ERR("bogusly large chunk size");
 
 		*priv = cl;

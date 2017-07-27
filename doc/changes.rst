@@ -1,3 +1,14 @@
+========================================
+Changes from 4.0.4 to 4.0.5 (unreleased)
+========================================
+
+Bugs fixed
+----------
+
+* 2379_ - Correctly handle bogusly large chunk sizes (VSV00001)
+
+.. _2379: https://github.com/varnishcache/varnish-cache/issues/2379
+
 ==============================================
 Changes from 4.0.4-beta1 to 4.0.4 (2016-11-30)
 ==============================================

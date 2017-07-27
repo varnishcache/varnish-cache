@@ -1,0 +1,83 @@
+varnishtest "Check that we handle bogusly large chunks correctly"
+
+# Check that the bug has been fixed
+
+server s1 {
+	rxreq
+	txresp
+
+	accept
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+} -start
+
+client c1 {
+	send "POST / HTTP/1.1\r\n"
+	send "Transfer-Encoding: chunked\r\n\r\n"
+	send "FFFFFFFFFFFFFFED\r\n"
+	send "0\r\n\r\n"
+
+	rxresp
+	expect resp.status == 503
+} -run
+
+# Check that the published workaround does not cause harm
+
+varnish v1 -cliok "param.set vcc_allow_inline_c true"
+
+varnish v1 -vcl+backend {
+	sub exploit_workaround {
+		# This needs to be defined before your vcl_recv function
+		# Make sure that the runtime parameter vcc_allow_inline_c is set to true
+		# This code is only valid with version 4.0 of Varnish Cache
+		if (req.http.transfer-encoding ~ "(?i)chunked") {
+			C{
+			struct dummy_req {
+				unsigned	magic;
+				int		restarts;
+				int		esi_level;
+				int		disable_esi;
+				char		hash_ignore_busy;
+				char		hash_always_miss;
+				void		*sp;
+				void		*wrk;
+				int		req_step;
+				struct {
+					void *	a;
+					void *	b;
+				};
+				int		req_body_status;
+			};
+			((struct dummy_req *)ctx->req)->req_body_status = 6;
+			}C
+
+			return (synth(503, "Bad request"));
+		}
+	}
+
+	sub vcl_recv {
+		# Call this early in your vcl_recv function
+		call exploit_workaround;
+	}
+}
+
+client c1 {
+	send "POST / HTTP/1.1\r\n"
+	send "Transfer-Encoding: chunked\r\n\r\n"
+	send "FFFFFFFFFFFFFFED\r\n"
+	send "0\r\n\r\n"
+
+	rxresp
+	expect resp.status == 400
+} -run
+
+# Make sure that varnish is still running
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
