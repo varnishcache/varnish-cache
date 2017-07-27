@@ -1,4 +1,15 @@
 ================================
+Varnish Cache 5.1.3 (unreleased)
+================================
+
+Bugs fixed
+----------
+
+* 2379_ - Correctly handle bogusly large chunk sizes (VSV00001)
+
+.. _2379: https://github.com/varnishcache/varnish-cache/issues/2379
+
+================================
 Varnish Cache 5.1.2 (2017-04-07)
 ================================
 
