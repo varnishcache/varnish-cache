@@ -70,9 +70,9 @@ vmod_rr_resolve(const struct director *dir, struct worker *wrk,
 	CAST_OBJ_NOTNULL(rr, dir->priv, VMOD_DIRECTORS_ROUND_ROBIN_MAGIC);
 	vdir_rdlock(rr->vd);
 	for (u = 0; u < rr->vd->n_backend; u++) {
-		nxt = rr->nxt %= rr->vd->n_backend;
+		nxt = rr->nxt % rr->vd->n_backend;
+		rr->nxt = nxt + 1;
 		be = rr->vd->backend[nxt];
-		rr->nxt++;
 		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
 		if (be->healthy(be, bo, NULL))
 			break;
