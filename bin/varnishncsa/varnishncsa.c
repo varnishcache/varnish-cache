@@ -591,8 +591,8 @@ static void
 parse_x_format(char *buf)
 {
 	char *e, *r, *s;
+	long lval;
 	int slt;
-	intmax_t i;
 
 	if (!strcmp(buf, "Varnish:time_firstbyte")) {
 		addf_fragment(&CTX.frag[F_ttfb], "");
@@ -632,23 +632,18 @@ parse_x_format(char *buf)
 			if (r == buf || r[1] == ']')
 				VUT_Error(1, "Syntax error: VSL:%s", buf);
 			e[-1] = '\0';
-			i = strtoimax(r + 1, &s, 10);
+			lval = strtol(r + 1, &s, 10);
 			if (s != e - 1)
 				VUT_Error(1, "Syntax error: VSL:%s]", buf);
-			if (i <= 0)
+			if (lval <= 0 || lval > 255) {
 				VUT_Error(1,
 				    "Syntax error. Field specifier must be"
-				    " positive: %s]",
+				    " between 1 and 255: %s]",
 				    buf);
-			if (i > INT_MAX) {
-				VUT_Error(1,
-				    "Field specifier %jd for the tag VSL:%s]"
-				    " is probably too high",
-				    i, buf);
 			}
 			*r = '\0';
 		} else
-			i = 0;
+			lval = 0;
 		r = buf;
 		while (r < e && *r != ':')
 			r++;
@@ -665,7 +660,7 @@ parse_x_format(char *buf)
 			VUT_Error(1, "Unknown log tag: %s", buf);
 		assert(slt >= 0);
 
-		addf_vsl(slt, i, r);
+		addf_vsl(slt, lval, r);
 		return;
 	}
 	VUT_Error(1, "Unknown formatting extension: %s", buf);

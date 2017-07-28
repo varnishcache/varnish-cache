@@ -90,10 +90,10 @@ shell -err -expect "Unknown log tag: Begin[a" \
 shell -err -expect "Syntax error: VSL:Begin[a]" \
 	{varnishncsa -F "%{VSL:Begin[a]}x"}
 shell -err -match {Syntax error. (?#
-)Field specifier must be positive: Begin\[0\]} \
+)Field specifier must be between 1 and 255: Begin\[0\]} \
 	{varnishncsa -F "%{VSL:Begin[0]}x"}
-shell -err -match {Field specifier 999999999999 for the tag (?#
-)VSL:Begin\[999999999999\] is probably too high} \
+shell -err -match {Syntax error. (?#
+)Field specifier must be between 1 and 255: Begin\[999999999999\]} \
 	{varnishncsa -F "%{VSL:Begin[999999999999]}x"}
 shell -err -expect "Can't open format file (No such file or directory)" \
 	{varnishncsa -f /nonexistent/file}

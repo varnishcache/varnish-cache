@@ -184,7 +184,8 @@ Supported formatters are:
 
     The field will, if present, treat the log record as a white
     space separated list of fields, and only the nth part of the
-    record will be matched against. Fields start counting at 1.
+    record will be matched against. Fields start counting at 1 and
+    run up to 255.
 
     Defaults to '-' when the tag is not seen, the record prefix
     does not match or the field is out of bounds. If a tag appears
