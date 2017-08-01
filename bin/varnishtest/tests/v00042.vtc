@@ -72,4 +72,4 @@ client c1 {
 	expect resp.http.o1 == "/b0"
 } -run
 
-varnish v1 -expect s_req == 2
+varnish v1 -expect client_req == 2

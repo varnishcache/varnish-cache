@@ -15,6 +15,10 @@ Varnish Cache Trunk (ongoing)
 
 * varnishd honors vcl_path (#2342)
 
+* The ``MAIN.s_req`` statistic has been removed, as tt was identical to
+  ``MAIN.client_req``. VSM consumers should be changed to use the
+  latter if necessary.
+
 ================================
 Varnish Cache 5.1.2 (2017-04-07)
 ================================

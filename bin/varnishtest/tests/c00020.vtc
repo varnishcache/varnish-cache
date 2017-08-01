@@ -69,5 +69,4 @@ varnish v1 -expect cache_hit == 3
 varnish v1 -expect cache_miss == 3
 varnish v1 -expect client_req == 6
 varnish v1 -expect s_sess == 3
-varnish v1 -expect s_req == 6
 varnish v1 -expect s_fetch == 3

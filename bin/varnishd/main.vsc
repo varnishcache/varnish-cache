@@ -305,10 +305,6 @@
 	:oneliner:	Total sessions seen
 
 
-.. varnish_vsc:: s_req
-	:oneliner:	Total requests seen
-
-
 .. varnish_vsc:: s_pipe
 	:oneliner:	Total pipe sessions seen
 
