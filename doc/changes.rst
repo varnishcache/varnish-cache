@@ -1,4 +1,19 @@
 ================================
+Varnish Cache 4.1.8 (unreleased)
+================================
+
+Changes since 4.1.7:
+
+* Update in the documentation of timestamps
+
+Bugs fixed
+----------
+
+* 2379_ - Correctly handle bogusly large chunk sizes (VSV00001)
+
+.. _2379: https://github.com/varnishcache/varnish-cache/issues/2379
+
+================================
 Varnish Cache 4.1.7 (2017-06-28)
 ================================
 
