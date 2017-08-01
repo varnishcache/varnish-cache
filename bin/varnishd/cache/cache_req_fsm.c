@@ -79,7 +79,6 @@ cnt_transport(struct worker *wrk, struct req *req)
 	}
 
 	wrk->stats->client_req++;
-	wrk->stats->s_req++;
 
 	AZ(req->err_code);
 	req->ws_req = WS_Snapshot(req->ws);
