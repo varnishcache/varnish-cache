@@ -1,0 +1,179 @@
+.. _phk_vsv00001:
+
+Yah!  A security issue - finally!
+=================================
+
+As embarrased as I am to find out that after 35 years of writing
+C-programs I *still* dont understand signed/unsigned variables, I
+am also incredibly proud that it took eleven years before Varnish
+had a major security incident.
+
+One side-effect of this episode is that the ink is still wet on
+most of the policies for handling security issues in the Varnish
+Project.
+
+We are, in the inimitable words of Amanda F. Palmer,
+*"guilty of making shit up as you go along."*
+
+So here is what we made up:
+
+VWV - Vulnerability Workaround in VCL
+-------------------------------------
+
+Rolling a new Varnish release, even with an trivial one-line patch
+is not a fast operation, getting from patch to packages rolled and
+pushed into operating system respositories takes at least several
+days, provided you can get everybodys attention.
+
+Being able to offer users a way to mitigate security issues in VCL
+bypasses all that red tape:  The moment you have the advisory in
+hand, you can defend your Varnish instance.
+
+VCL mititation will always be our priority number one.
+
+WLIC - We Love Inline C
+-----------------------
+
+Brian W. Kernighan famously said that `he didn't like the
+programming language PASCAL <https://www.lysator.liu.se/c/bwk-on-pascal.html>`_
+because *"There is no escape."*
+
+That quote is why Varnish got inline-C code from day one, to make sure
+there would always be an escape.
+
+However, recently we have been wondering if we should discontinue
+inline-C code, now that we have the much nicer and more structured
+VMOD facility.
+
+Well, that's all settled now:  Inline-C stays, because it enabled us
+to craft the VCL-snippets to mitigate this "deep-code" security issue.
+
+VSV - Varnish Security Vulnerability
+------------------------------------
+
+To my utter surprise, I could not get an embargoed CVE number,
+without having to reveal what was going on.
+
+There are good and sane reasons for that, and I harbour no
+ill feelings against the people who refused.  Their policies
+need to target the really buggy software, and history has
+shown that to be anything but easy.
+
+But being unable to get a CVE number when we needed one, left us
+without a handle, and there being no signs that this was a fluke,
+we decided to start our own numbering of Varnish Security
+Vulnerabilities.
+
+We are starting from VSV number 1, as this one is the first real
+flag day for us, and we have reserved VTC testnames `f%05d` to
+go with it.
+
+Five digits should be enough for everybody.
+
+As soon as possible, if possible, we will of course try to get a
+unique CVE number attached to each VSV, but the VSV will be
+our own primary handle.
+
+VIVU - Very Important Varnish Users
+-----------------------------------
+
+I have been struggling with this problem for a long time, because
+sooner or later we would hit this event.
+
+Clearly some people deserve to get an early heads-up on
+security advisories, but who ?
+
+Any list big enough to be fair would also be too easy to sneak into
+for people who should not be on it.
+
+Such a list would also be a major head-ache for us to maintain, not
+to mention setting and judging the qualification criteria, and
+dealing with appeals from the ones we rejected.
+
+Instead I have decided that we are simply going to follow the money.
+
+People and companies who paid at least €1000 for a `Varnish Moral
+License <http://phk.freebsd.dk/VML/>`_ in the 12 months before the
+publication date, get advance warning of our security advisories.
+
+Those €1000 per year goes almost [#f1]_ 100% to maintain, develop and
+improve Varnish, so even if there are no security advisories, the
+money will be well spent beneficially for a Varnish user.
+
+Of course nothing prevents Wile E. Hacker from also paying €1000
+every year to receive advance notice, but I suspect it would sting
+a bit to know that your own money is being used to prevent the event
+you are gambling on - and that it might take eleven years for the
+ball to stop.
+
+But we will *also* maintain a VIVU-list, for people and companies
+who contribute materially to the Varnish Project in some way,
+(documentation, code, machines, testing, meeting-rooms...) or
+people we judge should be there for some other good reason.
+
+If you feel you should be on the VIVU list, drop me an email, 
+don't forget to include your PGP key.
+
+VQS - Varnish Quality Software
+------------------------------
+
+From the very first line of code, Varnish has also been a software
+quality experiment, I wanted to show the world that software
+does not have to suck.
+
+Strange as it sounds, now that we finally had a major security
+issue, I feel kind of vindicated, in a strange kind of *"The house
+burned down but I'm happy to know that the fire-alarm did work"*
+kind of way.
+
+We have had some CVE's before, but none of them were major issues.
+
+The closest was probably
+`CVE-2013-4484 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2013-4484>`_
+four years ago, which in many ways was like VSV00001, but it only affected users
+with a not so common VCL construct.
+
+VSV00001 on the other hand exposes all contemporary Varnishes,
+it doesn't get any more major than that.
+
+But it took eleven years [#f2]_ to get to that point, primarily
+because Varnish is a software quality experiment.
+
+How unusual our level of software quality is, was brought home by
+the response to my request for a CVE number under embargo:
+*"I can do an embargoed CVE, but I'm not comfortable assigning one
+blindly to someone who doesn't have a history of requesting them."*
+- that sounds like praise by faint damnation to me.
+
+Anyway, I will not promise that we will have no major security
+issues until the year 2028, but I'll do my damnest to make it so.
+
+VDR - Varnish Developers Rock
+-----------------------------
+
+When this issue surfaced I had contractors and moving boxes all
+around me and barely had workable internet connectivity in the new
+house.
+
+The usual gang of Varnish developers did a smashing job, largely on
+their own, and I am incredibly thankful for that.
+
+Much appreciated guys!
+
+And also a big round of thanks to the sponsors and VML contributors
+who have had patience with me trying to do the right thing, even
+if it took a while longer:  I hope you agree that it has been
+worth it.
+
+*phk*
+
+PS: This was written before the public announcement.
+
+.. rubric:: Footnotes
+
+.. [#f1] There is practically no overhead on the VML, only the banking
+         fees to receive the payments.
+
+.. [#f2] It can be argued that we should only count until the bug was
+         introduced in the codebase, rather than until it was discovered.
+	 In that case it is not eleven years but "only" eight years.
