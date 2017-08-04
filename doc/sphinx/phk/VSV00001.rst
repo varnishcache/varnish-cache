@@ -29,7 +29,7 @@ Being able to offer users a way to mitigate security issues in VCL
 bypasses all that red tape:  The moment you have the advisory in
 hand, you can defend your Varnish instance.
 
-VCL mititation will always be our priority number one.
+VCL mitigation will always be our priority number one.
 
 WLIC - We Love Inline C
 -----------------------
