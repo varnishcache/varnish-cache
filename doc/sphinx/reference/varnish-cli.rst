@@ -355,7 +355,7 @@ Ban all documents where the serving host is "example.com" or
 "www.example.com", and where the Set-Cookie header received from the
 backend contains "USERID=1663"::
 
-    ban req.http.host ~ "^(?i)(www\\.)example.com$" && obj.http.set-cookie ~ "USERID=1663"
+    ban req.http.host ~ "^(?i)(www\\.)?example\\.com$" && obj.http.set-cookie ~ "USERID=1663"
 
 AUTHORS
 =======
