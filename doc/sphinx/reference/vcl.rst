@@ -145,7 +145,7 @@ To send flags to the PCRE engine, such as to do case insensitive matching, add
 the flag within parens following a question mark, like this::
 
     # If host is NOT example dot com..
-    if (req.http.host !~ "(?i)example.com$") {
+    if (req.http.host !~ "(?i)example\.com$") {
         ...
     }
 
