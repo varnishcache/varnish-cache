@@ -223,7 +223,7 @@ MAC_Arg(const char *spec)
 
 	for (int i = 2; av[i] != NULL; i++) {
 		char *eq, *val;
-		size_t len;
+		int len;
 
 		if ((eq = strchr(av[i], '=')) == NULL) {
 			if (xp != NULL)
