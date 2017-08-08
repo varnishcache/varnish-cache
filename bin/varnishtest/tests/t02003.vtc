@@ -410,6 +410,15 @@ client c1 {
 	} -run
 } -run
 
+client c1 {
+	stream 1 {
+		txreq -nohdrend
+		txcont -hdr "bar" "foo"
+		rxresp
+		expect resp.status == 200
+	} -run
+} -run
+
 varnish v1 -vsl_catchup
 
 varnish v1 -expect MEMPOOL.req0.live == 0

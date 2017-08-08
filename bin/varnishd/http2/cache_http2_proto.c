@@ -525,9 +525,6 @@ h2_end_headers(struct worker *wrk, const struct h2_sess *h2,
 	}
 	VSLb_ts_req(req, "Req", req->t_req);
 
-	if (h2->rxf_flags & H2FF_HEADERS_END_STREAM)
-		req->req_body_status = REQ_BODY_NONE;
-
 	req->req_step = R_STP_TRANSPORT;
 	req->task.func = h2_do_req;
 	req->task.priv = req;
@@ -598,6 +595,10 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		h2_del_req(wrk, r2);
 		return (h2e);
 	}
+
+	if (h2->rxf_flags & H2FF_HEADERS_END_STREAM)
+		req->req_body_status = REQ_BODY_NONE;
+
 	if (h2->rxf_flags & H2FF_HEADERS_END_HEADERS)
 		return (h2_end_headers(wrk, h2, req, r2));
 	return (0);
