@@ -2,24 +2,35 @@
 Varnish Cache Trunk (ongoing)
 =============================
 
-* Default the -i argument to gethostname(3)
+Usage
+-----
 
-* On platforms with setproctitle(3), use the -i argument rather than -n
+* The default for the the -i argument is now the hostname as returned
+  by gethostname(3)
+
+* Where possible (on platforms with setproctitle(3)), the -i argument
+  rather than the -n argument is used for process names
+
+* varnishd honors ``vcl_path`` (#2342)
+
+* The ``MAIN.s_req`` statistic has been removed, as it was identical to
+  ``MAIN.client_req``. VSM consumers should be changed to use the
+  latter if necessary.
+
+VCL
+---
 
 * VRT_purge fails a transaction if used outside of ``vcl_hit`` and
   ``vcl_miss`` (#2339)
 
-* VSM_Name() returns the -i argument name, rather than the -n name.
-
-* VUT.name is gone, use VSM_Name(VUT.vsm)
-
-* varnishd honors vcl_path (#2342)
-
-* The ``MAIN.s_req`` statistic has been removed, as tt was identical to
-  ``MAIN.client_req``. VSM consumers should be changed to use the
-  latter if necessary.
-
 * Added ``bereq.is_bgfetch`` which is true for background fetches.
+
+C APIs (for vmod authors)
+-------------------------
+
+* ``VSM_Name()`` returns the -i argument name, rather than the -n name.
+
+* ``VUT.name`` is gone, use ``VSM_Name(VUT.vsm)``
 
 ================================
 Varnish Cache 5.1.2 (2017-04-07)
