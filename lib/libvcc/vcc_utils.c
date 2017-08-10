@@ -267,6 +267,7 @@ Emit_Sockaddr_Un(struct vcc *tl, const struct token *t_path, const char *errid)
 {
 	struct stat st;
 
+	AN(t_path);
 	AN(t_path->dec);
 
 	if (t_path->dec[0] != '/') {

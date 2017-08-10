@@ -302,11 +302,11 @@ MAC_Arg(const char *spec)
 		if (pwd != NULL)
 			perms->uid = pwd->pw_uid;
 		else
-			perms->uid = -1;
+			perms->uid = (uid_t) -1;
 		if (grp != NULL)
 			perms->gid = grp->gr_gid;
 		else
-			perms->gid = -1;
+			perms->gid = (gid_t) -1;
 		perms->mode = mode;
 		la->perms = perms;
 	}

@@ -59,14 +59,16 @@ static void
 vtcp_sa_to_ascii(const void *sa, socklen_t l, char *abuf, unsigned alen,
     char *pbuf, unsigned plen)
 {
-	const struct sockaddr *soa = sa;
+	const struct sockaddr *soa;
 	int i;
 
+	AN(sa);
 	assert(abuf == NULL || alen > 0);
 	assert(pbuf == NULL || plen > 0);
 
+	soa = sa;					//lint !e826
 	if (soa->sa_family == PF_UNIX) {
-		const struct sockaddr_un *suds = sa;
+		const struct sockaddr_un *suds = sa;	//lint !e826
 
 		(void)snprintf(abuf, alen, "%s", suds->sun_path);
 		(void)snprintf(pbuf, plen, "<none>");

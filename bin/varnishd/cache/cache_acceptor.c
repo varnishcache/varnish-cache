@@ -37,6 +37,8 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 
 #include "cache_varnishd.h"
 

@@ -415,8 +415,10 @@ static void
 vpx_enc_path(struct vsb *vsb, const struct suckaddr *s)
 {
 	char b[108] = { 0 };
+	const char *p = VSA_Path(s);
 
-	strcpy(b, VSA_Path(s));
+	AN(p);
+	strcpy(b, p);
 	VSB_bcat(vsb, b, sizeof(b));
 	VSB_bcat(vsb, b, sizeof(b));
 }
