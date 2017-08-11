@@ -578,7 +578,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	p = h2->rxf_data;
 	l = h2->rxf_len;
 	if (h2->rxf_flags & H2FF_HEADERS_PADDED) {
-		if (*p > l)
+		if (*p + 1 > l)
 			return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1884,1887
 		l -= 1 + *p;
 		p += 1;

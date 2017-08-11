@@ -387,7 +387,24 @@ client c1 {
 	expect_close
 } -run
 
-#2349: Integer underrun may also occur when the padding flag is set
+#2349: Padding equal to frame size
+client c1 {
+	stream 1 {
+		sendhex 000001
+		sendhex 01
+		sendhex 09
+		sendhex 00000001
+		sendhex 01
+	} -run
+	stream 0 {
+		rxgoaway
+		expect goaway.err == PROTOCOL_ERROR
+		expect goaway.laststream == 1
+	} -run
+	expect_close
+} -run
+
+#2349: Integer underrun may also occur when the priority flag is set
 client c1 {
 	stream 1 {
 		sendhex 000004
