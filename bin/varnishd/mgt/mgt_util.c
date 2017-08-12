@@ -194,7 +194,9 @@ char **
 MGT_NamedArg(const char *spec, const char **name, const char *what)
 {
 	const char *p, *q;
+	char *r;
 	char **av;
+	int l;
 
 	ASSERT_MGT();
 	p = strchr(spec, '=');
@@ -214,6 +216,15 @@ MGT_NamedArg(const char *spec, const char **name, const char *what)
 
 	if (av[0] != NULL)
 		ARGV_ERR("%s\n", av[0]);
-	*name = p;
+	if (p == NULL) {
+		*name = NULL;
+	} else {
+		l = p - spec;
+		r = malloc(1L + l);
+		AN(r);
+		memcpy(r, spec, l);
+		r[l] = '\0';
+		*name = r;
+	}
 	return (av);
 }

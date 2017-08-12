@@ -178,10 +178,10 @@ STV_Config(const char *spec)
 		bprintf(stv->ident, "s%u", seq++);
 	else {
 		/* XXX: no need for truncation once VSM ident becomes dynamic */
-		l = name - spec;
+		l = strlen(name);
 		if (l > sizeof stv->ident - 1)
 			l = sizeof stv->ident - 1;
-		bprintf(stv->ident, "%.*s", l, spec);
+		bprintf(stv->ident, "%.*s", l, name);
 	}
 
 	stv_check_ident(spec, stv->ident);
