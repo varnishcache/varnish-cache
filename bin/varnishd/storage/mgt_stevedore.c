@@ -41,8 +41,6 @@
 #include "vcli_serve.h"
 
 #include "storage/storage.h"
-#include "vav.h"
-#include "vct.h"
 
 static VTAILQ_HEAD(, stevedore) stevedores =
     VTAILQ_HEAD_INITIALIZER(stevedores);
@@ -146,25 +144,14 @@ void
 STV_Config(const char *spec)
 {
 	char **av;
-	const char *p, *q;
+	const char *name;
 	struct stevedore *stv;
 	const struct stevedore *stv2;
 	int ac, l;
 	static unsigned seq = 0;
 
-	ASSERT_MGT();
-	p = strchr(spec, '=');
-	q = strchr(spec, ',');
-	if (p != NULL && (q == NULL || q > p)) {
-		av = VAV_Parse(p + 1, NULL, ARGV_COMMA);
-	} else {
-		av = VAV_Parse(spec, NULL, ARGV_COMMA);
-		p = NULL;
-	}
+	av = MGT_NamedArg(spec, &name, "-s");
 	AN(av);
-
-	if (av[0] != NULL)
-		ARGV_ERR("%s\n", av[0]);
 
 	if (av[1] == NULL)
 		ARGV_ERR("-s argument lacks strategy {malloc, file, ...}\n");
@@ -187,13 +174,11 @@ STV_Config(const char *spec)
 	*stv = *stv2;
 	AN(stv->name);
 
-	if (p == NULL)
+	if (name == NULL)
 		bprintf(stv->ident, "s%u", seq++);
 	else {
-		if (VCT_invalid_name(spec, p) != NULL)
-			ARGV_ERR("invalid storage name (-s %s)\n", spec);
 		/* XXX: no need for truncation once VSM ident becomes dynamic */
-		l = p - spec;
+		l = name - spec;
 		if (l > sizeof stv->ident - 1)
 			l = sizeof stv->ident - 1;
 		bprintf(stv->ident, "%.*s", l, spec);

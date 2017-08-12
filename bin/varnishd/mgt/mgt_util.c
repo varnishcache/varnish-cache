@@ -43,6 +43,9 @@
 
 #include "common/heritage.h"
 
+#include "vav.h"
+#include "vct.h"
+
 /*--------------------------------------------------------------------*/
 
 char *
@@ -183,4 +186,34 @@ MGT_Pick(const struct choice *cp, const char *which, const char *kind)
 			return (cp->ptr);
 	}
 	ARGV_ERR("Unknown %s method \"%s\"\n", kind, which);
+}
+
+/*--------------------------------------------------------------------*/
+
+char **
+MGT_NamedArg(const char *spec, const char **name, const char *what)
+{
+	const char *p, *q;
+	char **av;
+
+	ASSERT_MGT();
+	p = strchr(spec, '=');
+	q = strchr(spec, ',');
+	if (p == NULL || (q != NULL && q < p)) {
+		av = VAV_Parse(spec, NULL, ARGV_COMMA);
+		p = NULL;
+	} else if (VCT_invalid_name(spec, p) != NULL) {
+		ARGV_ERR("invalid %s name \"%.*s\"=[...]\n",
+		    what, (int)(p - spec), spec);
+	} else if (p[1] == '\0') {
+		ARGV_ERR("Empty named %s argument \"%s\"\n", what, spec);
+	} else {
+		av = VAV_Parse(p + 1, NULL, ARGV_COMMA);
+	}
+	AN(av);
+
+	if (av[0] != NULL)
+		ARGV_ERR("%s\n", av[0]);
+	*name = p;
+	return (av);
 }
