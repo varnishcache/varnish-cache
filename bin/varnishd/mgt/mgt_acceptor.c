@@ -89,11 +89,11 @@ MAC_reopen_sockets(struct cli *cli)
 		if (cli == NULL)
 			MGT_Complain(C_ERR,
 			    "Could not reopen listen socket %s: %s",
-			    ls->name, strerror(fail));
+			    ls->endpoint, strerror(fail));
 		else
 			VCLI_Out(cli,
 			    "Could not reopen listen socket %s: %s\n",
-			    ls->name, strerror(fail));
+			    ls->endpoint, strerror(fail));
 	}
 }
 
@@ -113,26 +113,26 @@ mac_callback(void *priv, const struct suckaddr *sa)
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		if (!VSA_Compare(sa, ls->addr))
 			ARGV_ERR("-a arguments %s and %s have same address\n",
-			    ls->name, la->name);
+			    ls->endpoint, la->endpoint);
 	}
 	ALLOC_OBJ(ls, LISTEN_SOCK_MAGIC);
 	AN(ls);
 	ls->sock = -1;
 	ls->addr = VSA_Clone(sa);
 	AN(ls->addr);
-	ls->name = strdup(la->name);
-	AN(ls->name);
+	ls->endpoint = strdup(la->endpoint);
+	AN(ls->endpoint);
 	ls->transport = la->transport;
 	VJ_master(JAIL_MASTER_PRIVPORT);
 	fail = mac_opensocket(ls);
 	VJ_master(JAIL_MASTER_LOW);
 	if (fail) {
 		free(ls->addr);
-		free(ls->name);
+		free(ls->endpoint);
 		FREE_OBJ(ls);
 		if (fail != EAFNOSUPPORT)
 			ARGV_ERR("Could not get socket %s: %s\n",
-			    la->name, strerror(fail));
+			    la->endpoint, strerror(fail));
 		return(0);
 	}
 	if (VSA_Port(ls->addr) == 0) {
@@ -146,7 +146,7 @@ mac_callback(void *priv, const struct suckaddr *sa)
 		VTCP_myname(ls->sock, abuf, sizeof abuf,
 		    pbuf, sizeof pbuf);
 		bprintf(nbuf, "%s:%s", abuf, pbuf);
-		REPLACE(ls->name, nbuf);
+		REPLACE(ls->endpoint, nbuf);
 	}
 	VTAILQ_INSERT_TAIL(&la->socks, ls, arglist);
 	VTAILQ_INSERT_TAIL(&heritage.socks, ls, list);
@@ -172,7 +172,7 @@ MAC_Arg(const char *arg)
 	AN(la);
 	VTAILQ_INIT(&la->socks);
 	VTAILQ_INSERT_TAIL(&listen_args, la, list);
-	la->name = av[1];
+	la->endpoint = av[1];
 
 	if (av[2] == NULL) {
 		xp = XPORT_Find("http/1");
