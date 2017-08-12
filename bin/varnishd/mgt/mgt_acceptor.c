@@ -122,6 +122,7 @@ mac_callback(void *priv, const struct suckaddr *sa)
 	AN(ls->addr);
 	ls->endpoint = strdup(la->endpoint);
 	AN(ls->endpoint);
+	la->name = ls->name;
 	ls->transport = la->transport;
 	VJ_master(JAIL_MASTER_PRIVPORT);
 	fail = mac_opensocket(ls);
@@ -154,25 +155,24 @@ mac_callback(void *priv, const struct suckaddr *sa)
 }
 
 void
-MAC_Arg(const char *arg)
+MAC_Arg(const char *spec)
 {
 	char **av;
 	struct listen_arg *la;
 	const char *err;
 	int error;
 	const struct transport *xp;
+	const char *name;
 
-	av = VAV_Parse(arg, NULL, ARGV_COMMA);
-	if (av == NULL)
-		ARGV_ERR("Parse error: out of memory\n");
-	if (av[0] != NULL)
-		ARGV_ERR("%s\n", av[0]);
+	av = MGT_NamedArg(spec, &name, "-a");
+	AN(av);
 
 	ALLOC_OBJ(la, LISTEN_ARG_MAGIC);
 	AN(la);
 	VTAILQ_INIT(&la->socks);
 	VTAILQ_INSERT_TAIL(&listen_args, la, list);
 	la->endpoint = av[1];
+	la->name = name;
 
 	if (av[2] == NULL) {
 		xp = XPORT_Find("http/1");

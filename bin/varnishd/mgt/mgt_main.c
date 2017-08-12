@@ -838,7 +838,7 @@ main(int argc, char * const *argv)
 	}
 
 	if (VTAILQ_EMPTY(&heritage.socks))
-		MAC_Arg(":80");
+		MAC_Arg(":80\0");	// XXX: extra NUL for FlexeLint
 
 	assert(!VTAILQ_EMPTY(&heritage.socks));
 

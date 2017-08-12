@@ -39,6 +39,7 @@ struct listen_arg {
 #define LISTEN_ARG_MAGIC		0xbb2fc333
 	VTAILQ_ENTRY(listen_arg)	list;
 	const char			*endpoint;
+	const char			*name;
 	VTAILQ_HEAD(,listen_sock)	socks;
 	const struct transport		*transport;
 };
@@ -50,6 +51,7 @@ struct listen_sock {
 	VTAILQ_ENTRY(listen_sock)	arglist;
 	int				sock;
 	char				*endpoint;
+	const char			*name;
 	struct suckaddr			*addr;
 	const struct transport		*transport;
 };
