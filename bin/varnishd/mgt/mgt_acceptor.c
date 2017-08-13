@@ -122,7 +122,7 @@ mac_callback(void *priv, const struct suckaddr *sa)
 	AN(ls->addr);
 	ls->endpoint = strdup(la->endpoint);
 	AN(ls->endpoint);
-	la->name = ls->name;
+	ls->name = la->name;
 	ls->transport = la->transport;
 	VJ_master(JAIL_MASTER_PRIVPORT);
 	fail = mac_opensocket(ls);

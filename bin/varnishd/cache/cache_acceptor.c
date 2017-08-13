@@ -358,7 +358,10 @@ vca_make_session(struct worker *wrk, void *arg)
 	VSL(SLT_Begin, sp->vxid, "sess 0 %s",
 	    wa->acceptlsock->transport->name);
 	VSL(SLT_SessOpen, sp->vxid, "%s %s %s %s %s %.6f %d",
-	    raddr, rport, wa->acceptlsock->endpoint, laddr, lport,
+	    raddr, rport,
+	    wa->acceptlsock->name != NULL ?
+		wa->acceptlsock->name : wa->acceptlsock->endpoint,
+	    laddr, lport,
 	    sp->t_open, sp->fd);
 
 	WS_Release(wrk->aws, 0);

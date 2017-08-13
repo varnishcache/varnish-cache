@@ -6,14 +6,16 @@ server s1 {
 } -start
 
 
-varnish v1 -proto "PROXY" -vcl+backend {
+varnish v1 -arg "-afoo=127.0.0.1:0,PROXY" -vcl+backend {
 } -start
 
 logexpect l1 -v v1 -d 0 -g session {
 	expect * *	Begin	{^sess .* PROXY$}
+	expect * =	SessOpen	{^.* foo .*}
 	expect * =	Proxy	{^1 }
 	expect * *	Begin	{^req}
 	expect * *	Begin	{^sess .* PROXY$}
+	expect * =	SessOpen	{^.* foo .*}
 	expect * =	Proxy	{^2 }
 	expect * *	Begin	{^req}
 } -start

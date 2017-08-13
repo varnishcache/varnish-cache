@@ -78,6 +78,7 @@ struct varnish {
 
 	struct vsm		*vd;		/* vsc use */
 	struct vsm		*vdl;		/* log use */
+	int			has_a_arg;
 	struct vsm_fantom	mgt_arg_i;
 
 	unsigned		vsl_tag_count[256];
@@ -433,9 +434,11 @@ varnish_launch(struct varnish *v)
 	VSB_printf(vsb, " -p sigsegv_handler=on");
 	VSB_printf(vsb, " -p thread_pool_min=10");
 	VSB_printf(vsb, " -p debug=+vtc_mode");
-	VSB_printf(vsb, " -a '%s'", "127.0.0.1:0");
-	if (v->proto != NULL)
-		VSB_printf(vsb, ",%s", v->proto);
+	if (!v->has_a_arg) {
+		VSB_printf(vsb, " -a '%s'", "127.0.0.1:0");
+		if (v->proto != NULL)
+			VSB_printf(vsb, ",%s", v->proto);
+	}
 	VSB_printf(vsb, " -M '%s %s'", abuf, pbuf);
 	VSB_printf(vsb, " -P %s/varnishd.pid", v->workdir);
 	if (vmod_path != NULL)
@@ -1105,6 +1108,8 @@ cmd_varnish(CMD_ARGS)
 			AZ(v->pid);
 			VSB_cat(v->args, " ");
 			VSB_cat(v->args, av[1]);
+			if (av[1][0] == '-' && av[1][1] == 'a')
+				v->has_a_arg = 1;
 			av++;
 			continue;
 		}
