@@ -35,8 +35,6 @@
 
 #include "vcc_compile.h"
 
-#include "vcs_version.h"
-
 #include "libvcc.h"
 #include "vfil.h"
 #include "vmod_abi.h"
