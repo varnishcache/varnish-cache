@@ -42,6 +42,14 @@
 #include "vtim.h"
 #include "vcc_if.h"
 
+#define WARN_RETIRED()							\
+	do {								\
+		VSL(SLT_Error, 0,					\
+		    "debug.%s is deprecated, use vmod-vtc instead.",	\
+		    __func__);						\
+	} while (0)
+
+
 struct priv_vcl {
 	unsigned		magic;
 #define PRIV_VCL_MAGIC		0x8E62FA9D
@@ -60,6 +68,7 @@ vmod_panic(VRT_CTX, const char *str, ...)
 	const char *b;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	WARN_RETIRED();
 	va_start(ap, str);
 	b = VRT_String(ctx->ws, "PANIC: ", str, ap);
 	va_end(ap);
@@ -148,6 +157,7 @@ vmod_str2blob(VRT_CTX, VCL_STRING s)
 	struct vmod_priv *p;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	WARN_RETIRED();
 	p = (void*)WS_Alloc(ctx->ws, sizeof *p);
 	AN(p);
 	memset(p, 0, sizeof *p);
@@ -163,6 +173,7 @@ vmod_blob2hex(VRT_CTX, VCL_BLOB b)
 	uint8_t *q;
 	int i;
 
+	WARN_RETIRED();
 	s = WS_Alloc(ctx->ws, b->len * 2 + 2);
 	AN(s);
 	p = s;
@@ -181,6 +192,7 @@ vmod_no_backend(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	WARN_RETIRED();
 	return (NULL);
 }
 
@@ -189,6 +201,7 @@ vmod_no_stevedore(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	WARN_RETIRED();
 	return (NULL);
 }
 
@@ -380,6 +393,7 @@ vmod_sleep(VRT_CTX, VCL_DURATION t)
 {
 
 	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
+	WARN_RETIRED();
 	VTIM_sleep(t);
 }
 
@@ -404,6 +418,7 @@ vmod_workspace_allocate(VRT_CTX, VCL_ENUM which, VCL_INT size)
 	struct ws *ws;
 	char *s;
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	WARN_RETIRED();
 
 	ws = wsfind(ctx, which);
 
@@ -427,6 +442,7 @@ vmod_workspace_free(VRT_CTX, VCL_ENUM which)
 	unsigned u;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	WARN_RETIRED();
 
 	ws = wsfind(ctx, which);
 
@@ -442,6 +458,7 @@ vmod_workspace_overflowed(VRT_CTX, VCL_ENUM which)
 {
 	struct ws *ws;
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	WARN_RETIRED();
 
 	ws = wsfind(ctx, which);
 	WS_Assert(ws);
@@ -456,6 +473,7 @@ vmod_workspace_snap(VRT_CTX, VCL_ENUM which)
 {
 	struct ws *ws;
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	WARN_RETIRED();
 
 	ws = wsfind(ctx, which);
 	WS_Assert(ws);
@@ -468,6 +486,7 @@ vmod_workspace_reset(VRT_CTX, VCL_ENUM which)
 {
 	struct ws *ws;
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	WARN_RETIRED();
 
 	ws = wsfind(ctx, which);
 	WS_Assert(ws);
@@ -480,6 +499,7 @@ vmod_workspace_overflow(VRT_CTX, VCL_ENUM which)
 {
 	struct ws *ws;
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	WARN_RETIRED();
 
 	ws = wsfind(ctx, which);
 	WS_Assert(ws);
@@ -516,6 +536,7 @@ vmod_barrier_sync(VRT_CTX, VCL_STRING addr)
 	ssize_t sz;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	WARN_RETIRED();
 	AN(addr);
 	AN(*addr);
 
@@ -555,6 +576,7 @@ vmod_typesize(VRT_CTX, VCL_STRING s)
 	size_t i = 0;
 	const char *p;
 
+	WARN_RETIRED();
 	(void)ctx;
 	for (p = s; *p; p++) {
 		switch (*p) {
