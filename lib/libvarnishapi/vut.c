@@ -209,6 +209,11 @@ VUT_Init(const char *progname, int argc, char * const *argv,
     const struct vopt_spec *voc)
 {
 
+	AN(progname);
+	AN(argv);
+	AN(voc);
+	AZ(VUT.progname);
+
 	if (argc == 2 && !strcmp(argv[1], "--synopsis"))
 		exit(vut_synopsis(voc));
 	if (argc == 2 && !strcmp(argv[1], "--options"))
@@ -293,6 +298,8 @@ VUT_Setup(void)
 void
 VUT_Fini(void)
 {
+	AN(VUT.progname);
+
 	free(VUT.n_arg);
 	free(VUT.r_arg);
 	free(VUT.P_arg);
