@@ -577,7 +577,7 @@ HSH_Purge(struct worker *wrk, struct objhead *oh, double ttl, double grace,
 double keep)
 {
 	struct objcore *oc, **ocp;
-	unsigned spc, ospc, nobj, n;
+	unsigned spc, ospc, nobj, n, n_tot = 0;
 	int more = 0;
 	double now;
 
@@ -585,6 +585,20 @@ double keep)
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
 	ospc = WS_Reserve(wrk->aws, 0);
 	assert(ospc >= sizeof *ocp);
+	/*
+	 * Because of "soft" purges, there might be oc's in the list that has
+	 * the OC_F_PURGED flag set. We do not want to let these slip through,
+	 * so we need to clear the flag before entering the do..while loop.
+	 */
+	Lck_Lock(&oh->mtx);
+	assert(oh->refcnt > 0);
+	VTAILQ_FOREACH(oc, &oh->objcs, list) {
+		CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
+		assert(oc->objhead == oh);
+		oc->flags &= ~OC_F_PURGED;
+	}
+	Lck_Unlock(&oh->mtx);
+
 	do {
 		more = 0;
 		spc = ospc;
@@ -608,6 +622,15 @@ double keep)
 			}
 			if (oc->exp_flags & OC_EF_DYING)
 				continue;
+			if (oc->flags & OC_F_PURGED) {
+				/*
+				 * We have already called EXP_Rearm on this
+				 * object, and we do not want to do it
+				 * again. Plus the space in the ocp array may
+				 * be limited.
+				 */
+				continue;
+			}
 			if (spc < sizeof *ocp) {
 				/* Iterate if aws is not big enough */
 				more = 1;
@@ -616,6 +639,7 @@ double keep)
 			oc->refcnt++;
 			spc -= sizeof *ocp;
 			ocp[nobj++] = oc;
+			oc->flags |= OC_F_PURGED;
 		}
 		Lck_Unlock(&oh->mtx);
 
@@ -625,9 +649,10 @@ double keep)
 			EXP_Rearm(oc, now, ttl, grace, keep);
 			(void)HSH_DerefObjCore(wrk, &oc);
 		}
+		n_tot += nobj;
 	} while (more);
 	WS_Release(wrk->aws, 0);
-	Pool_PurgeStat(nobj);
+	Pool_PurgeStat(n_tot);
 }
 
 /*---------------------------------------------------------------------

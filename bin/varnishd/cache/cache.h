@@ -414,6 +414,7 @@ struct objcore {
 #define OC_F_INCOMPLETE		(1<<3)
 #define OC_F_PRIVATE		(1<<8)
 #define OC_F_FAILED		(1<<9)
+#define OC_F_PURGED		(1<<13)
 
 	uint16_t		exp_flags;
 #define OC_EF_OFFLRU		(1<<4)
