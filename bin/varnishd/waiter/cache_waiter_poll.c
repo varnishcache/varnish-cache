@@ -269,6 +269,8 @@ vwp_fini(struct waiter *w)
 
 /*--------------------------------------------------------------------*/
 
+#include "waiter/mgt_waiter.h"
+
 const struct waiter_impl waiter_poll = {
 	.name =		"poll",
 	.init =		vwp_init,

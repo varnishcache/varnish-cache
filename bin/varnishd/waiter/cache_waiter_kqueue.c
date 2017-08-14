@@ -41,7 +41,6 @@
 #include <stdlib.h>
 
 #include "waiter/waiter_priv.h"
-#include "waiter/mgt_waiter.h"
 #include "vtim.h"
 
 #define NKEV	256
@@ -201,6 +200,8 @@ vwk_fini(struct waiter *w)
 }
 
 /*--------------------------------------------------------------------*/
+
+#include "waiter/mgt_waiter.h"
 
 const struct waiter_impl waiter_kqueue = {
 	.name =		"kqueue",

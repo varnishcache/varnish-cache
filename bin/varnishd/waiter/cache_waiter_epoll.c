@@ -219,6 +219,8 @@ vwe_fini(struct waiter *w)
 
 /*--------------------------------------------------------------------*/
 
+#include "waiter/mgt_waiter.h"
+
 const struct waiter_impl waiter_epoll = {
 	.name =		"epoll",
 	.init =		vwe_init,
