@@ -264,7 +264,6 @@ void EncToken(struct vsb *sb, const struct token *t);
 int IsMethod(const struct token *t);
 void *TlAlloc(struct vcc *tl, unsigned len);
 char *TlDup(struct vcc *tl, const char *s);
-char *TlDupTok(struct vcc *tl, const struct token *tok);
 
 /* vcc_expr.c */
 double vcc_DoubleVal(struct vcc *tl);

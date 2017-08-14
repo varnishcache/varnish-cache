@@ -93,20 +93,6 @@ TlDup(struct vcc *tl, const char *s)
 	return (p);
 }
 
-char *
-TlDupTok(struct vcc *tl, const struct token *tok)
-{
-	char *p;
-	int i;
-
-	i = tok->e - tok->b;
-	p = TlAlloc(tl, i + 1);
-	AN(p);
-	memcpy(p, tok->b, i);
-	p[i] = '\0';
-	return (p);
-}
-
 /*--------------------------------------------------------------------*/
 
 struct inifin *
