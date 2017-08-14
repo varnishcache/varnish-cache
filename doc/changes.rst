@@ -43,6 +43,8 @@ Bugs fixed
 
 .. _2379: https://github.com/varnishcache/varnish-cache/issues/2379
 
+* New vmod vtc for advanced varnishtest usage (#2276)
+
 ================================
 Varnish Cache 5.1.2 (2017-04-07)
 ================================

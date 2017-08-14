@@ -25,17 +25,16 @@ server s1 {
 } -start
 
 varnish v1 -arg "-smalloc,1m" -vcl+backend {
-
-	import debug;
+	import vtc;
 
 	sub vcl_backend_response {
 		if (beresp.http.panic == "fetch") {
-			debug.panic("Had Panic header: " + beresp.http.panic);
+			vtc.panic("Had Panic header: " + beresp.http.panic);
 		}
 	}
 	sub vcl_deliver {
 		if (resp.http.panic == "deliver") {
-			debug.panic("Had Panic header: " + resp.http.panic);
+			vtc.panic("Had Panic header: " + resp.http.panic);
 		}
 	}
 } -start

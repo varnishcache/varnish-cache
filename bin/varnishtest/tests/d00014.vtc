@@ -3,10 +3,10 @@ varnishtest "Backend as a boolean expression"
 server s1 -start
 
 varnish v1 -vcl+backend {
-	import debug;
+	import vtc;
 
 	sub vcl_recv {
-		set req.backend_hint = debug.no_backend();
+		set req.backend_hint = vtc.no_backend();
 		if (!req.backend_hint) {
 			return (synth(404));
 		}

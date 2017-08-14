@@ -7,6 +7,7 @@ server s1 -repeat 12 {
 
 varnish v1 -arg "-p thread_pools=1" -vcl+backend {
 	import debug;
+	import vtc;
 
 	sub vcl_recv {
 		if (req.url == "recv") { debug.purge(); }
@@ -38,7 +39,7 @@ varnish v1 -arg "-p thread_pools=1" -vcl+backend {
 	sub vcl_backend_fetch {
 		if (bereq.url == "fetch") { debug.purge(); }
 		if (bereq.url == "error") {
-			set bereq.backend = debug.no_backend();
+			set bereq.backend = vtc.no_backend();
 		}
 	}
 	sub vcl_backend_error {

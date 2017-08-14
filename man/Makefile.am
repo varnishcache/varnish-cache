@@ -16,7 +16,8 @@ dist_man_MANS = \
 	vtc.7 \
 	varnishtop.1 \
 	vmod_directors.3 \
-	vmod_std.3
+	vmod_std.3 \
+	vmod_vtc.3
 
 CLEANFILES = $(dist_man_MANS)
 
@@ -83,10 +84,13 @@ varnishhist.1: \
 	$(top_builddir)/doc/sphinx/include/varnishhist_synopsis.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $(top_srcdir)/doc/sphinx/reference/varnishhist.rst $@
 
+vmod_directors.3: $(top_builddir)/lib/libvmod_directors/vmod_directors.man.rst
+	${RST2MAN} $(RST2ANY_FLAGS) $? $@
+
 vmod_std.3: $(top_builddir)/lib/libvmod_std/vmod_std.man.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $? $@
 
-vmod_directors.3: $(top_builddir)/lib/libvmod_directors/vmod_directors.man.rst
+vmod_vtc.3: $(top_builddir)/lib/libvmod_vtc/vmod_vtc.man.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $? $@
 
 .NOPATH: $(dist_man_MANS)

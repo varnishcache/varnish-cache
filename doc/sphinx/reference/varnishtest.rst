@@ -184,6 +184,7 @@ SEE ALSO
 * :ref:`varnishtop(1)`
 * :ref:`vcl(7)`
 * :ref:`vtc(7)`
+* :ref:`vmod_vtc(3)`
 
 HISTORY
 =======

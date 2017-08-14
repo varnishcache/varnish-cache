@@ -6,11 +6,11 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import debug;
 	import std;
+	import vtc;
 
 	sub vcl_recv {
-		debug.workspace_allocate(client, -92);
+		vtc.workspace_alloc(client, -92);
 		if (std.querysort(req.url) == req.url) {
 			std.log("querysort failed");
 		}

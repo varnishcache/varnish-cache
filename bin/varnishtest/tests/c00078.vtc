@@ -10,14 +10,14 @@ varnish v1 \
     -arg "-ss2=malloc,1m" \
     -arg "-ss0=malloc,1m" \
     -vcl+backend {
-	import debug;
+	import vtc;
 	sub vcl_backend_response {
 		if (bereq.url == "/1") {
 			set beresp.storage_hint = "invalid";
 		} else if (bereq.url == "/2") {
 			set beresp.storage_hint = "s1";
 		} else if (bereq.url == "/6") {
-			set beresp.storage = debug.no_stevedore();
+			set beresp.storage = vtc.no_stevedore();
 		}
 		set beresp.http.storage = beresp.storage;
 	}

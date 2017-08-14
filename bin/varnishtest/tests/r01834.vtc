@@ -10,15 +10,15 @@ server s1 -repeat 64 {
 } -start
 
 varnish v1 -vcl+backend {
-	import debug;
 	import std;
+	import vtc;
 
 	sub vcl_recv {
 		return (pass);
 	}
 
 	sub vcl_backend_fetch {
-		debug.workspace_allocate(backend, -1 * std.integer(bereq.http.WS, 256));
+		vtc.workspace_alloc(backend, -1 * std.integer(bereq.http.WS, 256));
 	}
 } -start
 

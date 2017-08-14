@@ -7,4 +7,5 @@ SUBDIRS = \
 	libvgz \
 	libvmod_debug \
 	libvmod_std \
-	libvmod_directors
+	libvmod_directors \
+	libvmod_vtc
