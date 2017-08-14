@@ -1,0 +1,32 @@
+varnishtest "Count purges when there are many variants"
+
+server s1 -repeat 40 {
+	rxreq
+	txresp -hdr "Vary: foo"
+} -start
+
+varnish v1 -arg "-p workspace_thread=256" -vcl+backend {
+	import std;
+
+	sub vcl_recv {
+		if (req.method == "PURGE") {
+			return (purge);
+		}
+		set req.http.foo = "x" + std.random(1,10) * 1000000000;
+	}
+} -start
+
+client c1 -repeat 40 {
+	txreq
+	rxresp
+} -run
+
+client c2 {
+	txreq -req "PURGE"
+	rxresp
+} -run
+
+varnish v1 -expect n_lru_nuked == 0
+varnish v1 -expect cache_hit == 0
+varnish v1 -expect n_purges == 1
+varnish v1 -expect n_obj_purged == 40
