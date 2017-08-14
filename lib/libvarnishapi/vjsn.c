@@ -545,7 +545,7 @@ vjsn_dump(const struct vjsn *js, FILE *fo)
 
 */
 
-const char *good[] = {
+static const char *good[] = {
 	"\x5b\x31\x32\x33\x65\x36\x35\x5d",
 	"\x5b\x5b\x5d\x20\x20\x20\x5d",
 	"\x5b\x22\x22\x5d",
@@ -680,7 +680,7 @@ const char *good[] = {
 	"\x20\x5b\x5d\x20",
 	NULL
 };
-const char *bad[] = {
+static const char *bad[] = {
 	"\x5b\x31\x20\x74\x72\x75\x65\x5d",
 	"\x5b\x61\xe5\x5d",
 	"\x5b\x22\x22\x3a\x20\x31\x5d",
