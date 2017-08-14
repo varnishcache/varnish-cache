@@ -74,7 +74,7 @@ static struct vpf_fh *pfh1 = NULL;
 static struct vpf_fh *pfh2 = NULL;
 
 static struct vfil_path *vcl_path = NULL;
-VTAILQ_HEAD(,f_arg) f_args = VTAILQ_HEAD_INITIALIZER(f_args);
+static VTAILQ_HEAD(,f_arg) f_args = VTAILQ_HEAD_INITIALIZER(f_args);
 
 int optreset;	// Some has it, some doesn't.  Cheaper than auto*
 
