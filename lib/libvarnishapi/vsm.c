@@ -238,7 +238,7 @@ VSM_Start(struct vsm *vd, double patience, int progress)
 /*--------------------------------------------------------------------*/
 
 const char *
-VSM_Name(const struct vsm *vd)
+VSM_Name(struct vsm *vd)
 {
 	struct vsm_fantom vt;
 
@@ -426,7 +426,7 @@ VSM_Abandoned(struct vsm *vd)
 /*--------------------------------------------------------------------*/
 
 void
-VSM__iter0(const struct vsm *vd, struct vsm_fantom *vf)
+VSM__iter0(struct vsm *vd, struct vsm_fantom *vf)
 {
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -436,7 +436,7 @@ VSM__iter0(const struct vsm *vd, struct vsm_fantom *vf)
 }
 
 int
-VSM__itern(const struct vsm *vd, struct vsm_fantom *vf)
+VSM__itern(struct vsm *vd, struct vsm_fantom *vf)
 {
 	struct VSM_chunk *c = NULL;
 
@@ -512,7 +512,7 @@ VSM_Unmap(struct vsm *vd, struct vsm_fantom *vf)
 /*--------------------------------------------------------------------*/
 
 const struct vsm_valid *
-VSM_StillValid(const struct vsm *vd, struct vsm_fantom *vf)
+VSM_StillValid(struct vsm *vd, struct vsm_fantom *vf)
 {
 	struct vsm_fantom f2;
 
@@ -542,7 +542,7 @@ VSM_StillValid(const struct vsm *vd, struct vsm_fantom *vf)
 }
 
 int
-VSM_Get(const struct vsm *vd, struct vsm_fantom *vf,
+VSM_Get(struct vsm *vd, struct vsm_fantom *vf,
     const char *class, const char *ident)
 {
 

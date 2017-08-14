@@ -88,7 +88,7 @@ void VSM_ResetError(struct vsm *vd);
 
 #define VSM_n_USAGE	"[-n varnish_name]"
 
-int VSM_n_Arg(struct vsm *vd, const char *n_arg);
+int VSM_n_Arg(struct vsm *, const char *n_arg);
 	/*
 	 * Configure which varnishd instance to access.
 	 * Uses hostname if n_arg is NULL or "".
@@ -98,14 +98,14 @@ int VSM_n_Arg(struct vsm *vd, const char *n_arg);
 	 *	 <0 on failure, VSM_Error() returns diagnostic string
 	 */
 
-int VSM_Start(struct vsm *vd, double patience, int progress_fd);
+int VSM_Start(struct vsm *, double patience, int progress_fd);
 
-const char *VSM_Name(const struct vsm *vd);
+const char *VSM_Name(struct vsm *);
 	/*
 	 * Return the instance name (-i argument to varnishd)
 	 */
 
-int VSM_Open(struct vsm *vd);
+int VSM_Open(struct vsm *);
 	/*
 	 * Attempt to open and map the VSM file.
 	 *
@@ -144,8 +144,8 @@ void VSM_Close(struct vsm *vd);
 	 */
 
 
-void VSM__iter0(const struct vsm *vd, struct vsm_fantom *vf);
-int VSM__itern(const struct vsm *vd, struct vsm_fantom *vf);
+void VSM__iter0(struct vsm *, struct vsm_fantom *vf);
+int VSM__itern(struct vsm *, struct vsm_fantom *vf);
 
 #define VSM_FOREACH(vf, vd) \
     for (VSM__iter0((vd), (vf)); VSM__itern((vd), (vf));)
@@ -155,8 +155,8 @@ int VSM__itern(const struct vsm *vd, struct vsm_fantom *vf);
 	 * vd = "struct vsm *"
 	 */
 
-int VSM_Map(struct vsm *vd, struct vsm_fantom *vf);
-int VSM_Unmap(struct vsm *vd, struct vsm_fantom *vf);
+int VSM_Map(struct vsm *, struct vsm_fantom *vf);
+int VSM_Unmap(struct vsm *, struct vsm_fantom *vf);
 
 struct vsm_valid {
 	const char *name;
@@ -166,8 +166,7 @@ extern const struct vsm_valid VSM_invalid[];
 extern const struct vsm_valid VSM_valid[];
 extern const struct vsm_valid VSM_similar[];
 
-const struct vsm_valid *VSM_StillValid(const struct vsm *vd,
-    struct vsm_fantom *vf);
+const struct vsm_valid *VSM_StillValid(struct vsm *, struct vsm_fantom *vf);
 	/*
 	 * Check the validity of a previously looked up vsm_fantom.
 	 *
@@ -198,7 +197,7 @@ const struct vsm_valid *VSM_StillValid(const struct vsm *vd,
 	 *   VSM_similar: a fantom with same dimensions exist in same position.
 	 */
 
-int VSM_Get(const struct vsm *vd, struct vsm_fantom *vf,
+int VSM_Get(struct vsm *, struct vsm_fantom *vf,
     const char *class, const char *ident);
 	/*
 	 * Find a chunk, produce fantom for it.
