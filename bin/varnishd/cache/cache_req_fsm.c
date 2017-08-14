@@ -81,7 +81,6 @@ cnt_transport(struct worker *wrk, struct req *req)
 	wrk->stats->client_req++;
 
 	AZ(req->err_code);
-	req->ws_req = WS_Snapshot(req->ws);
 
 	req->doclose = http_DoConnection(req->http);
 	if (req->doclose == SC_RX_BAD) {
@@ -97,6 +96,7 @@ cnt_transport(struct worker *wrk, struct req *req)
 		req->transport->req_body(req);
 	}
 
+	req->ws_req = WS_Snapshot(req->ws);
 	HTTP_Copy(req->http0, req->http);	// For ESI & restart
 	req->req_step = R_STP_RECV;
 	return (REQ_FSM_MORE);

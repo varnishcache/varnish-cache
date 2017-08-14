@@ -1,0 +1,22 @@
+varnishtest "POST and return(vcl(..))"
+
+server s1 {
+	rxreq
+	expect req.bodylen == 4
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+varnish v1 -cliok "vcl.label vclA vcl1"
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (vcl(vclA));
+	}
+}
+
+client c1 {
+	txreq -req POST -body "asdf"
+	rxresp
+	expect resp.status == 200
+} -run
