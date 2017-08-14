@@ -22,6 +22,7 @@ The Varnish Reference Manual
 	vmod.rst
 	vmod_std.generated.rst
 	vmod_directors.generated.rst
+	vmod_vtc.generated.rst
 	directors.rst
 	varnish-counters.rst
 	vsl.rst
