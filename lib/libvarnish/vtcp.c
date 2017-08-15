@@ -71,7 +71,7 @@ vtcp_sa_to_ascii(const void *sa, socklen_t l, char *abuf, unsigned alen,
 		const struct sockaddr_un *suds = sa;	//lint !e826
 
 		(void)snprintf(abuf, alen, "%s", suds->sun_path);
-		(void)snprintf(pbuf, plen, "<none>");
+		(void)snprintf(pbuf, plen, "-");
 		return;
 	}
 
@@ -108,7 +108,8 @@ VTCP_name(const struct suckaddr *addr, char *abuf, unsigned alen,
 
 	if (VSA_Get_Proto(addr) == PF_UNIX) {
 		(void)snprintf(abuf, alen, "%s", VSA_Path(addr));
-		(void)snprintf(pbuf, plen, "<none>");
+		(void)snprintf(pbuf, plen, "-");
+		return;
 	}
 	sa = VSA_Get_Sockaddr(addr, &sl);
 	vtcp_sa_to_ascii(sa, sl, abuf, alen, pbuf, plen);
