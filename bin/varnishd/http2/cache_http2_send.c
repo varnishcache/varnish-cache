@@ -36,28 +36,41 @@
 
 #include "vend.h"
 
-void
-H2_Send_Get(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
+static void
+h2_send_get(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
-	Lck_Lock(&h2->sess->mtx);
+	Lck_AssertHeld(&h2->sess->mtx);
 	r2->wrk = wrk;
 	VTAILQ_INSERT_TAIL(&h2->txqueue, r2, tx_list);
 	while (VTAILQ_FIRST(&h2->txqueue) != r2)
 		AZ(Lck_CondWait(&wrk->cond, &h2->sess->mtx, 0));
 	r2->wrk = NULL;
-	Lck_Unlock(&h2->sess->mtx);
 }
 
 void
-H2_Send_Rel(struct h2_sess *h2, const struct h2_req *r2)
+H2_Send_Get(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
+
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
 	Lck_Lock(&h2->sess->mtx);
+	h2_send_get(wrk, h2, r2);
+	Lck_Unlock(&h2->sess->mtx);
+}
+
+static void
+h2_send_rel(struct h2_sess *h2, const struct h2_req *r2)
+{
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+
+	Lck_AssertHeld(&h2->sess->mtx);
 	assert(VTAILQ_FIRST(&h2->txqueue) == r2);
 	VTAILQ_REMOVE(&h2->txqueue, r2, tx_list);
 	r2 = VTAILQ_FIRST(&h2->txqueue);
@@ -65,6 +78,16 @@ H2_Send_Rel(struct h2_sess *h2, const struct h2_req *r2)
 		CHECK_OBJ_NOTNULL(r2->wrk, WORKER_MAGIC);
 		AZ(pthread_cond_signal(&r2->wrk->cond));
 	}
+}
+
+void
+H2_Send_Rel(struct h2_sess *h2, const struct h2_req *r2)
+{
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+
+	Lck_Lock(&h2->sess->mtx);
+	h2_send_rel(h2, r2);
 	Lck_Unlock(&h2->sess->mtx);
 }
 
