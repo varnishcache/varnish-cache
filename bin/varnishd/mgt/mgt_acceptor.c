@@ -163,6 +163,8 @@ MAC_Arg(const char *spec)
 	int error;
 	const struct transport *xp;
 	const char *name;
+	char name_buf[8];
+	static unsigned seq = 0;
 
 	av = MGT_NamedArg(spec, &name, "-a");
 	AN(av);
@@ -172,6 +174,12 @@ MAC_Arg(const char *spec)
 	VTAILQ_INIT(&la->socks);
 	VTAILQ_INSERT_TAIL(&listen_args, la, list);
 	la->endpoint = av[1];
+
+	if (name == NULL) {
+		bprintf(name_buf, "a%u", seq++);
+		name = strdup(name_buf);
+		AN(name);
+	}
 	la->name = name;
 
 	if (av[2] == NULL) {

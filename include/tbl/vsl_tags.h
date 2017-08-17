@@ -72,7 +72,7 @@ SLTM(SessOpen, 0, "Client connection opened",
 	"\t|  |  |  |  |  +- File descriptor number\n"
 	"\t|  |  |  |  +---- Local TCP port\n"
 	"\t|  |  |  +------- Local IPv4/6 address\n"
-	"\t|  |  +---------- Listen socket (-a argument)\n"
+	"\t|  |  +---------- Socket name (from -a argument)\n"
 	"\t|  +------------- Remote TCP port\n"
 	"\t+---------------- Remote IPv4/6 address\n"
 	"\n"
