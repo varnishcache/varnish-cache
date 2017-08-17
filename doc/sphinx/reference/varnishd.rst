@@ -15,7 +15,11 @@ HTTP accelerator daemon
 SYNOPSIS
 ========
 
-varnishd [-a [name=]address[:port][,PROTO]] [-b host[:port]] [-C] [-d] [-F] [-f config] [-h type[,options]] [-I clifile] [-i identity] [-j jail[,jailoptions]] [-l vsl[,vsm]] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...]] [-S secret-file] [-s [name=]kind[,options]] [-T address[:port]] [-t TTL] [-V] [-W waiter] [-x parameter|vsl|cli|builtin] [-?]
+varnishd [-a [name=]address[:port][,PROTO]] [-b host[:port]] [-C] [-d] [-F] [-f config] [-h type[,options]] [-I clifile] [-i identity] [-j jail[,jailoptions]] [-l vsl[,vsm]] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...]] [-S secret-file] [-s [name=]kind[,options]] [-T address[:port]] [-t TTL] [-V] [-W waiter]
+
+varnishd [-x parameter|vsl|cli|builtin]
+
+varnishd [-?]
 
 DESCRIPTION
 ===========
