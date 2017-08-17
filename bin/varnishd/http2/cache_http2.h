@@ -144,9 +144,6 @@ struct h2_sess {
 	struct h2_req			*mailcall;
 	pthread_cond_t			*cond;
 
-	int64_t				r_window;
-	int64_t				t_window;
-
 	struct sess			*sess;
 	int				refcnt;
 	uint32_t			highest_stream;
