@@ -37,7 +37,6 @@
 
 #include <sys/event.h>
 
-#include <errno.h>
 #include <stdlib.h>
 
 #include "waiter/waiter_priv.h"
