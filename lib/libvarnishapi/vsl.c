@@ -114,6 +114,7 @@ vsl_IX_free(vslf_list *filters)
 		AN(vslf->vre);
 		VRE_free(&vslf->vre);
 		AZ(vslf->vre);
+		FREE_OBJ(vslf);
 	}
 }
 
