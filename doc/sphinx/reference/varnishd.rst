@@ -15,7 +15,7 @@ HTTP accelerator daemon
 SYNOPSIS
 ========
 
-varnishd [-a [name=]address[:port][,PROTO]] [-b host[:port]] [-C] [-d] [-F] [-f config] [-h type[,options]] [-I clifile] [-i identity] [-j jail[,jailoptions]] [-l vsl[,vsm]] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...]] [-S secret-file] [-s [name=]kind[,options]] [-T address[:port]] [-t TTL] [-V] [-W waiter]
+varnishd [-a [name=][address][:port][,PROTO]] [-b host[:port]] [-C] [-d] [-F] [-f config] [-h type[,options]] [-I clifile] [-i identity] [-j jail[,jailoptions]] [-l vsl[,vsm]] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...]] [-S secret-file] [-s [name=]kind[,options]] [-T address[:port]] [-t TTL] [-V] [-W waiter]
 
 varnishd [-x parameter|vsl|cli|builtin]
 
@@ -36,18 +36,22 @@ OPTIONS
 Basic options
 -------------
 
--a <[name=]address[:port][,PROTO]>
+-a <[name=][address][:port][,PROTO]>
 
   Listen for client requests on the specified address and port. The
   address can be a host name ("localhost"), an IPv4 dotted-quad
   ("127.0.0.1"), or an IPv6 address enclosed in square brackets
-  ("[::1]"). If address is not specified, `varnishd` will listen on all
-  available IPv4 and IPv6 interfaces. If port is not specified, port
-  80 (http) is used. Names are referenced in logs, and when omitted they fall
-  back to "a0", "a1" etc.
-  An additional protocol type can be set for the listening socket with PROTO.
-  Valid protocol types are: HTTP/1 (default), and PROXY.
-  Multiple listening addresses can be specified by using multiple -a arguments.
+  ("[::1]"). If address is not specified, `varnishd` will listen
+  on all available IPv4 and IPv6 interfaces. If port is not specified,
+  port 80 (http) is used. At least one of address or port is required.
+
+  Name is referenced in logs. If name is not specified, "a0", "a1",
+  etc. is used. An additional protocol type can be set for the
+  listening socket with PROTO. Valid protocol types are: HTTP/1
+  (default), and PROXY.
+
+  Multiple listening addresses can be specified by using different
+  -a arguments.
 
 -b <host[:port]>
 
@@ -173,8 +177,8 @@ Tuning options
   Use the specified storage backend. See `Storage Backend`_ section.
 
   This option can be used multiple times to specify multiple storage
-  files. Names are referenced in logs, VCL, statistics... When omitted
-  names fall back to "s0", "s1" etc.
+  files. Name is referenced in logs, VCL, statistics, etc. If name
+  is not specified, "s0", "s1" and so forth is used.
 
 -l <vsl[,vsm]>
 
@@ -293,7 +297,7 @@ The following storage types are available:
   Advice tells the kernel how `varnishd` expects to use this mapped
   region so that the kernel can choose the appropriate read-ahead
   and caching techniques. Possible values are ``normal``, ``random``
-  and ``sequencial``, corresponding to MADV_NORMAL, MADV_RANDOM and
+  and ``sequential``, corresponding to MADV_NORMAL, MADV_RANDOM and
   MADV_SEQUENTIAL madvise() advice argument, respectively. Defaults to
   ``random``.
 

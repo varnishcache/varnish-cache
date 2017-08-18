@@ -96,7 +96,7 @@ device, and depending on use, the seek time.
 The 'advice' parameter tells the kernel how `varnishd` expects to
 use this mapped region so that the kernel can choose the appropriate
 read-ahead and caching techniques.  Possible values are ``normal``,
-``random`` and ``sequencial``, corresponding to MADV_NORMAL, MADV_RANDOM
+``random`` and ``sequential``, corresponding to MADV_NORMAL, MADV_RANDOM
 and MADV_SEQUENTIAL madvise() advice argument, respectively.  Defaults to
 ``random``.
 
