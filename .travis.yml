@@ -12,13 +12,13 @@ matrix:
   - os: linux
     dist: trusty
     compiler: clang
-    env: CC=clang-4.0
+    env: CLANG=4.0
   - os: osx
     osx_image: xcode8.3
     compiler: clang
   allow_failures:
   - os: osx
-  - env: CC=clang-4.0
+  - env: CLANG=4.0
 addons:
   apt:
     packages:
@@ -28,13 +28,14 @@ before_install:
       brew update;
       brew install docutils nghttp2;
     fi
-  - if [[ "$CC" == "clang-4.0" ]]; then
+  - if [[ "$CLANG" == "4.0" ]]; then
       wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key |
         sudo apt-key add -;
       sudo apt-add-repository -y
         'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main';
       sudo apt-get update;
       sudo apt-get install -y clang-4.0;
+      export CC="clang-4.0";
       export CONFIGURE_ARGS="--enable-asan --enable-ubsan";
       export ASAN_OPTIONS="detect_odr_violation=0,detect_leaks=0";
     fi
