@@ -29,7 +29,6 @@
 
 #include "config.h"
 
-#include <stdio.h>
 #include <string.h>
 
 #include "vcc_compile.h"

@@ -1212,8 +1212,6 @@ file_header(fo)
 fo.write("""
 #include "config.h"
 
-#include <stdio.h>
-
 #include "vcc_compile.h"
 
 const struct var vcc_vars[] = {

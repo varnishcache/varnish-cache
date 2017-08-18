@@ -39,8 +39,6 @@
 
 #include "config.h"
 
-#include <stdio.h>
-
 #include "vcc_compile.h"
 
 /*--------------------------------------------------------------------*/

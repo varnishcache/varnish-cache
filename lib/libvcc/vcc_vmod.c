@@ -29,7 +29,6 @@
 #include "config.h"
 
 #include <dlfcn.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
