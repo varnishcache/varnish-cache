@@ -138,7 +138,7 @@ vjsn_unumber(struct vjsn *js)
 
 	VJSN_EXPECT(js, '\\', 0);
 	VJSN_EXPECT(js, 'u', 0);
-	for(i = 0; i < 4; i++) {
+	for (i = 0; i < 4; i++) {
 		u <<= 4;
 		c = *js->ptr;
 		if (c >= '0' && c <= '9')
@@ -222,7 +222,7 @@ vjsn_string(struct vjsn *js)
 			*p++ = *js->ptr++;
 			continue;
 		}
-		switch(js->ptr[1]) {
+		switch (js->ptr[1]) {
 		case '\\':
 		case '/':
 		case '"': *p++ = js->ptr[1]; js->ptr += 2; break;
@@ -233,7 +233,7 @@ vjsn_string(struct vjsn *js)
 		case 'r': *p++ = 0x0d; js->ptr += 2; break;
 		case 'u':
 			vjsn_unicode(js, &p);
-			if(js->err != NULL)
+			if (js->err != NULL)
 				return(NULL);
 			break;
 		default:
@@ -275,7 +275,7 @@ vjsn_object(struct vjsn *js)
 			jsve->name = s;
 			VTAILQ_INSERT_TAIL(&jsv->children, jsve, list);
 			vjsn_skip_ws(js);
-			if(*js->ptr == '}')
+			if (*js->ptr == '}')
 				break;
 			VJSN_EXPECT(js, ',', jsv);
 		}
@@ -306,7 +306,7 @@ vjsn_array(struct vjsn *js)
 			CHECK_OBJ_NOTNULL(jsve, VJSN_VAL_MAGIC);
 			VTAILQ_INSERT_TAIL(&jsv->children, jsve, list);
 			vjsn_skip_ws(js);
-			if(*js->ptr == ']')
+			if (*js->ptr == ']')
 				break;
 			VJSN_EXPECT(js, ',', jsv);
 		}
@@ -917,9 +917,9 @@ main(int argc, char **argv)
 
 	(void)argc;
 	(void)argv;
-	for(s = good; *s != NULL; s++)
+	for (s = good; *s != NULL; s++)
 		test_good(*s);
-	for(s = bad; *s != NULL; s++)
+	for (s = bad; *s != NULL; s++)
 		test_bad(*s);
 
 	/*

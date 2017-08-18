@@ -111,7 +111,7 @@ who contribute materially to the Varnish Project in some way,
 (documentation, code, machines, testing, meeting-rooms...) or
 people we judge should be there for some other good reason.
 
-If you feel you should be on the VIVU list, drop me an email, 
+If you feel you should be on the VIVU list, drop me an email,
 don't forget to include your PGP key.
 
 VQS - Varnish Quality Software

@@ -1,8 +1,8 @@
 +fan
 
--esym(759, VJSN_*)			// could be moved hdr->mod 
+-esym(759, VJSN_*)			// could be moved hdr->mod
 -esym(765, VJSN_*)			// could be made static
--esym(759, vjsn_dump)			// could be moved hdr->mod 
+-esym(759, vjsn_dump)			// could be moved hdr->mod
 -esym(765, vjsn_dump)			// could be made static
 -esym(714, vjsn_dump)			// not ref
 -esym(788, vex_rhs_e::*)
