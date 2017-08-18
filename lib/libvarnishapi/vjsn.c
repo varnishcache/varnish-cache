@@ -266,8 +266,11 @@ vjsn_object(struct vjsn *js)
 			vjsn_skip_ws(js);
 			VJSN_EXPECT(js, ':', jsv);
 			jsve = vjsn_value(js);
-			if (js->err != NULL)
+			if (js->err != NULL) {
+				if (jsve != NULL)
+					vjsn_val_delete(jsve);
 				return (jsv);
+			}
 			CHECK_OBJ_NOTNULL(jsve, VJSN_VAL_MAGIC);
 			jsve->name = s;
 			VTAILQ_INSERT_TAIL(&jsv->children, jsve, list);
@@ -295,8 +298,11 @@ vjsn_array(struct vjsn *js)
 	if (*js->ptr != ']') {
 		while (1) {
 			jsve = vjsn_value(js);
-			if (js->err != NULL)
+			if (js->err != NULL) {
+				if (jsve != NULL)
+					vjsn_val_delete(jsve);
 				return (jsv);
+			}
 			CHECK_OBJ_NOTNULL(jsve, VJSN_VAL_MAGIC);
 			VTAILQ_INSERT_TAIL(&jsv->children, jsve, list);
 			vjsn_skip_ws(js);
