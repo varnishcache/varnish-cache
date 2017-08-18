@@ -1,30 +1,45 @@
 ---
+sudo: required
 language: c
 matrix:
   include:
   - os: linux
     dist: trusty
-    sudo: false
     compiler: gcc
   - os: linux
     dist: trusty
-    sudo: false
     compiler: clang
+  - os: linux
+    dist: trusty
+    compiler: clang
+    env: CC=clang-4.0
   - os: osx
     osx_image: xcode8.3
     compiler: clang
   allow_failures:
   - os: osx
+  - env: CC=clang-4.0
 addons:
   apt:
     packages:
       - python-docutils
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install docutils; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install nghttp2 ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      brew update;
+      brew install docutils nghttp2;
+    fi
+  - if [[ "$CC" == "clang-4.0" ]]; then
+      wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key |
+        sudo apt-key add -;
+      sudo apt-add-repository -y
+        'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main';
+      sudo apt-get update;
+      sudo apt-get install -y clang-4.0;
+      export CONFIGURE_ARGS="--enable-asan --enable-ubsan";
+      export ASAN_OPTIONS="detect_odr_violation=0,detect_leaks=0";
+    fi
   - ./autogen.sh
-  - ./configure
+  - ./configure ${CONFIGURE_ARGS}
 script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       export PYTHONPATH=`brew --prefix`/lib/python2.7/site-packages; fi
