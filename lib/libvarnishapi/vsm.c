@@ -266,6 +266,7 @@ VSM_Destroy(struct vsm **vdp)
 		VSC_Delete(vd->vsc);
 	VSM_ResetError(vd);
 	free(vd->dname);
+	free(vd->iname);
 	FREE_OBJ(vd);
 }
 
