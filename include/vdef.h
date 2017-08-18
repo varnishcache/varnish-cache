@@ -110,7 +110,7 @@
  * even if that means not const'ing a const'able argument.
  * The typedef should be specified as argument to the macro.
  */
-#define __match_proto__(xxx)		/*lint -e{818} */
+#define __match_proto__(xxx)		/*lint --e{818} */
 
 /*
  * State variables may change value before we have considered the
