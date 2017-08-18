@@ -176,9 +176,9 @@ process_thread(void *priv)
 		vlu = VLU_New(p, process_vlu_func, 1024);
 		while (!VLU_Fd(p->fd_from, vlu))
 			continue;
+		VLU_Destroy(vlu);
 	}
 	r = wait4(p->pid, &p->status, 0, &ru);
-
 
 	AZ(pthread_mutex_lock(&p->mtx));
 

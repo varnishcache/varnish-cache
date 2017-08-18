@@ -590,6 +590,7 @@ varnish_start(struct varnish *v)
 	macro_def(v->vl, v->name, "addr", "%s", h);
 	macro_def(v->vl, v->name, "port", "%s", p);
 	macro_def(v->vl, v->name, "sock", "%s %s", h, p);
+	free(resp);
 	/* Wait for vsl logging to get underway */
 	while (v->vsl_rec == 0)
 		VTIM_sleep(.1);
@@ -602,7 +603,7 @@ varnish_start(struct varnish *v)
 static void
 varnish_stop(struct varnish *v)
 {
-	char *r;
+	char *r = NULL;
 
 	if (v->cli_fd < 0)
 		varnish_launch(v);
@@ -611,12 +612,14 @@ varnish_stop(struct varnish *v)
 	vtc_log(v->vl, 2, "Stop");
 	(void)varnish_ask_cli(v, "stop", NULL);
 	while (1) {
-		r = NULL;
 		(void)varnish_ask_cli(v, "status", &r);
 		AN(r);
-		if (!strcmp(r, "Child in state stopped"))
+		if (!strcmp(r, "Child in state stopped")) {
+			free(r);
 			break;
+		}
 		free(r);
+		r = NULL;
 		(void)sleep (1);
 		/* XXX: should fail eventually */
 	}
@@ -672,8 +675,6 @@ varnish_cleanup(struct varnish *v)
 static void
 varnish_wait(struct varnish *v)
 {
-	char *resp;
-
 	if (v->cli_fd < 0)
 		return;
 
@@ -681,7 +682,7 @@ varnish_wait(struct varnish *v)
 
 	if (!vtc_error) {
 		/* Do a backend.list to log if child is still running */
-		(void)varnish_ask_cli(v, "backend.list", &resp);
+		(void)varnish_ask_cli(v, "backend.list", NULL);
 	}
 
 	/* Then stop it */
@@ -726,6 +727,7 @@ varnish_cli(struct varnish *v, const char *cli, unsigned exp, const char *re)
 			vtc_fatal(v->vl, "Expect failed (%d)", err);
 		VRE_free(&vre);
 	}
+	free(resp);
 }
 
 /**********************************************************************
