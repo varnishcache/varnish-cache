@@ -38,7 +38,6 @@ before_install:
       export CC="clang-4.0";
       export CONFIGURE_ARGS="--enable-asan --enable-ubsan";
       export ASAN_OPTIONS="detect_odr_violation=0,detect_leaks=0,abort_on_error=1";
-      export ASAN_SYMBOLIZER_PATH="/usr/bin/llvm-symbolizer-4.0";
       export UBSAN_OPTIONS="halt_on_error=1,print_stacktrace=1";
     fi
   - ./autogen.sh
