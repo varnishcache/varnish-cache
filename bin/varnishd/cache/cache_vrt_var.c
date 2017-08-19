@@ -30,12 +30,15 @@
  */
 #include "config.h"
 
+#include <stdio.h>
+
 #include "cache.h"
 #include "common/heritage.h"
 
 #include "cache_director.h"
 #include "vrt.h"
 #include "vrt_obj.h"
+#include "vsha256.h"
 
 static char vrt_hostname[255] = "";
 
@@ -758,6 +761,40 @@ VRT_l_##which##_body(VRT_CTX, const char *str, ...)		\
 
 VRT_BODY_L(beresp)
 VRT_BODY_L(resp)
+
+/*--------------------------------------------------------------------*/
+
+const char *
+VRT_r_req_hash(VRT_CTX)
+{
+	char *p;
+	int i;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	p = WS_Alloc(ctx->ws, SHA256_LEN * 2 + 1);
+	if (p == NULL)
+		return (NULL);
+	for (i = 0; i < SHA256_LEN; i++)
+		sprintf(&p[i * 2], "%02x", ctx->req->digest[i]);
+	return (p);
+}
+
+const char *
+VRT_r_bereq_hash(VRT_CTX)
+{
+	char *p;
+	int i;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	p = WS_Alloc(ctx->ws, SHA256_LEN * 2 + 1);
+	if (p == NULL)
+		return (NULL);
+	for (i = 0; i < SHA256_LEN; i++)
+		sprintf(&p[i * 2], "%02x", ctx->bo->digest[i]);
+	return (p);
+}
 
 /*--------------------------------------------------------------------*/
 

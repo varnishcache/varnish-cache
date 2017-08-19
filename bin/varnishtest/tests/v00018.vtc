@@ -38,9 +38,9 @@ varnish v1 -errvcl {Expected ';' got 'if'} {
 	sub vcl_recv { set req.url = "foo" if "bar"; }
 }
 
-varnish v1 -errvcl {Symbol not found: 'req.hash' (expected type STRING_LIST):} {
+varnish v1 -errvcl {Symbol not found: 'req.foo' (expected type STRING_LIST):} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_hash { hash_data(req.hash); }
+	sub vcl_hash { hash_data(req.foo); }
 }
 
 varnish v1 -vcl {

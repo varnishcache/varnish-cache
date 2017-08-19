@@ -41,9 +41,9 @@ varnish v1 -errvcl {Operator > not possible on BACKEND} {
 	sub vcl_recv { if (a > b) { } }
 }
 
-varnish v1 -errvcl {Symbol not found: 'req.hash' (expected type BOOL):} {
+varnish v1 -errvcl {Symbol not found: 'req.foo' (expected type BOOL):} {
 	backend b { .host = "127.0.0.1"; }
-	sub vcl_hash { if (req.hash != "foo") { } }
+	sub vcl_hash { if (req.foo != "bar") { } }
 }
 
 varnish v1 -errvcl {Symbol not found: 'foo.bar'} {

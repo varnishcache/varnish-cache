@@ -233,6 +233,13 @@ sp_variables = [
 		The request type (e.g. "GET", "HEAD").
 		"""
 	),
+        ('req.hash',
+		'STRING',
+		('hit', 'miss', 'pass', 'purge', 'deliver', ),
+		(), """
+		The hash key of this request.
+		"""
+	),
 	('req.url',
 		'STRING',
 		('client',),
@@ -416,6 +423,13 @@ sp_variables = [
 		(),
 		('backend_fetch',), """
 		The request body.
+		"""
+	),
+        ('bereq.hash',
+		'STRING',
+		('pipe', 'backend', ),
+		(), """
+		The hash key of this request.
 		"""
 	),
 	('bereq.method',
