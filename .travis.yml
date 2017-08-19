@@ -35,10 +35,10 @@ before_install:
         'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main';
       sudo apt-get update;
       sudo apt-get install -y clang-4.0 llvm-4.0;
-      export CC="clang-4.0";
-      export CONFIGURE_ARGS="--enable-asan --enable-ubsan";
-      export ASAN_OPTIONS="detect_odr_violation=0,detect_leaks=0,abort_on_error=1";
-      export UBSAN_OPTIONS="halt_on_error=1,print_stacktrace=1";
+      export CC=clang-4.0;
+      export CONFIGURE_ARGS="--enable-developer-warnings --enable-debugging-symbols --enable-asan --enable-ubsan";
+      export ASAN_OPTIONS=detect_odr_violation=0,detect_leaks=0,abort_on_error=1;
+      export UBSAN_OPTIONS=halt_on_error=1,print_stacktrace=1;
     fi
   - ./autogen.sh
   - ./configure ${CONFIGURE_ARGS}
