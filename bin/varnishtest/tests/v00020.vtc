@@ -142,70 +142,60 @@ varnish v1 -vcl {
 
 # XXX: not the most clear error message
 varnish v1 -errvcl {STRING - STRING not possible.} {
-	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = "foo" - "bar";
 	}
 }
 
 varnish v1 -errvcl {TIME + STRING not possible.} {
-	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.ttl = now + "foo";
 	}
 }
 
 varnish v1 -errvcl {TIME + TIME not possible.} {
-	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.ttl = now + now;
 	}
 }
 
 varnish v1 -errvcl {INT + STRING not possible.} {
-	backend b { .host = "127.0.0.1"; }
 	sub vcl_backend_response {
 		set beresp.status = 1 + "foo";
 	}
 }
 
 varnish v1 -errvcl {INT + TIME not possible.} {
-	backend b { .host = "127.0.0.1"; }
 	sub vcl_backend_response {
 		set beresp.status = 1 + now;
 	}
 }
 
 varnish v1 -errvcl {DURATION + INT not possible.} {
-	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.ttl = 1s + 1;
 	}
 }
 
 varnish v1 -errvcl {DURATION + TIME not possible.} {
-	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.ttl = 1s + now;
 	}
 }
 
 varnish v1 -errvcl {DURATION + STRING not possible.} {
-	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.ttl = 1s + "foo";
 	}
 }
 
 varnish v1 -errvcl {IP + IP not possible.} {
-	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.ttl = client.ip + server.ip;
 	}
 }
 
 varnish v1 -errvcl {Name of function, 'foo.bar', contains illegal character '.'} {
-	backend b { .host = "127.0.0.1"; }
 	sub foo.bar {
 	}
 	sub vcl_recv {
@@ -214,7 +204,6 @@ varnish v1 -errvcl {Name of function, 'foo.bar', contains illegal character '.'}
 }
 
 varnish v1 -errvcl {VCL sub's named 'vcl*' are reserved names.} {
-	backend b { .host = "127.0.0.1"; }
 	sub vcl_bar {
 	}
 	sub vcl_recv {
@@ -224,22 +213,33 @@ varnish v1 -errvcl {VCL sub's named 'vcl*' are reserved names.} {
 
 varnish v1 -errvcl {Function returns VOID} {
 	import vtc;
-	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = vtc.sleep(1m);
 	}
 }
 
+varnish v1 -errvcl {'req.hash': Not available in method 'vcl_recv'.} {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv {
+		set req.http.foo = req.hash;
+	}
+}
+
+varnish v1 -errvcl {'req.hash': Not available in method 'vcl_hash'.} {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_hash {
+		set req.http.foo = req.hash;
+	}
+}
+
 varnish v1 -errvcl {'beresp.status': Not available in method 'vcl_recv'.} {
 	backend b { .host = "127.0.0.1"; }
-
 	sub vcl_recv {
 		set req.http.foo = 100 + beresp.status;
 	}
 }
 
 varnish v1 -errvcl {Name of ACL, 'foo.bar', contains illegal character '.'} {
-	backend b { .host = "127.0.0.1"; }
 	acl foo.bar {
 	}
 	sub vcl_recv {
@@ -254,7 +254,6 @@ varnish v1 -errvcl {Expected 'from path ...'} {
 
 varnish v1 -errvcl {INT * BLOB not possible.} {
 	import vtc;
-	backend b { .host = "127.0.0.1"; }
 	sub vcl_deliver {
 		set resp.status = 100 * vtc.str2blob("a");
 	}
@@ -262,15 +261,12 @@ varnish v1 -errvcl {INT * BLOB not possible.} {
 
 # XXX: should spot nonexistent storage
 varnish v1 -errvcl {Symbol not found: 'storage.foo' (expected type STEVEDORE):} {
-	backend b { .host = "127.0.0.1"; }
 	sub vcl_backend_response {
 		set beresp.storage = storage.foo;
 	}
 }
 
 varnish v1 -errvcl {Comparison of different types: BACKEND '==' STRING} {
-	backend b1 { .host = "127.0.0.1"; }
-
 	sub vcl_backend_response {
 		set beresp.http.bereq_backend = bereq.backend;
 		if (bereq.backend == beresp.http.bereq_backend) {
@@ -285,7 +281,6 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-
 	sub vcl_deliver {
 		set resp.http.foo =
 		    (resp.http.foo + resp.http.bar) == ("X" + resp.http.foo);
