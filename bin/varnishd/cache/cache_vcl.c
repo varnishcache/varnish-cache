@@ -161,26 +161,25 @@ VCL_Method_Name(unsigned m)
 static void
 VCL_Get(struct vcl **vcc)
 {
+	AN(vcc);
+
 	while (vcl_active == NULL)
 		(void)usleep(100000);
 
-	CHECK_OBJ_NOTNULL(vcl_active, VCL_MAGIC);
-	AZ(pthread_rwlock_rdlock(&vcl_active->temp_rwl));
-	assert(VCL_WARM(vcl_active));
-	AZ(pthread_rwlock_unlock(&vcl_active->temp_rwl));
 	Lck_Lock(&vcl_mtx);
-	AN(vcl_active);
+	CHECK_OBJ_NOTNULL(vcl_active, VCL_MAGIC);
 	*vcc = vcl_active;
-	AN(*vcc);
 	AZ((*vcc)->discard);
 	(*vcc)->busy++;
 	Lck_Unlock(&vcl_mtx);
+	AZ(pthread_rwlock_rdlock(&(*vcc)->temp_rwl));
+	assert(VCL_WARM(*vcc));
+	AZ(pthread_rwlock_unlock(&(*vcc)->temp_rwl));
 }
 
 void
 VCL_Refresh(struct vcl **vcc)
 {
-	CHECK_OBJ_NOTNULL(vcl_active, VCL_MAGIC);
 	if (*vcc == vcl_active)
 		return;
 	if (*vcc != NULL)
