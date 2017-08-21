@@ -19,6 +19,7 @@ Naming scheme
 	id ~ ^c		--> Complex functionality tests
 	id ~ ^d		--> Director VMOD tests
 	id ~ ^e		--> ESI tests
+	id ~ ^f		--> Security related tests
 	id ~ ^g		--> GZIP tests
 	id ~ ^j		--> JAIL tests
 	id ~ ^l		--> VSL tests
