@@ -252,13 +252,13 @@ VCL_Method_Name(unsigned m)
 static void
 vcl_get(struct vcl **vcc, struct vcl *vcl)
 {
+	AN(vcc);
 
-	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
-	assert(VCL_WARM(vcl));
-	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
 	Lck_Lock(&vcl_mtx);
-	AN(vcl);
+	if (vcl == NULL)
+		vcl = vcl_active; /* Sample vcl_active under lock to avoid
+				   * race */
+	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	if (vcl->label == NULL) {
 		AN(strcmp(vcl->state, VCL_TEMP_LABEL));
 		*vcc = vcl;
@@ -266,16 +266,18 @@ vcl_get(struct vcl **vcc, struct vcl *vcl)
 		AZ(strcmp(vcl->state, VCL_TEMP_LABEL));
 		*vcc = vcl->label;
 	}
-	AN(*vcc);
+	CHECK_OBJ_NOTNULL(*vcc, VCL_MAGIC);
 	AZ((*vcc)->discard);
 	(*vcc)->busy++;
 	Lck_Unlock(&vcl_mtx);
+	AZ(errno=pthread_rwlock_rdlock(&(*vcc)->temp_rwl));
+	assert(VCL_WARM(*vcc));
+	AZ(errno=pthread_rwlock_unlock(&(*vcc)->temp_rwl));
 }
 
 void
 VCL_Refresh(struct vcl **vcc)
 {
-	CHECK_OBJ_NOTNULL(vcl_active, VCL_MAGIC);
 	if (*vcc == vcl_active)
 		return;
 	if (*vcc != NULL)
@@ -284,7 +286,7 @@ VCL_Refresh(struct vcl **vcc)
 	while (vcl_active == NULL)
 		(void)usleep(100000);
 
-	vcl_get(vcc, vcl_active);
+	vcl_get(vcc, NULL);
 }
 
 void
