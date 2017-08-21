@@ -1,0 +1,2 @@
+# https://github.com/madler/zlib/issues/290
+nonnull-attribute:trees.c
