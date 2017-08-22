@@ -47,8 +47,8 @@ Not only is it possible to synchronize between test entities, with the
 ``barrier_sync`` function you can even synchronize VCL code::
 
     sub vcl_recv {
-        # wait for some barrier b1 to complete
-        vtc.barrier_sync("${b1_sock}");
+	# wait for some barrier b1 to complete
+	vtc.barrier_sync("${b1_sock}");
     }
 
 If the function fails to synchronize with the barrier for some reason, or if

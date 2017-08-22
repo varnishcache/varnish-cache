@@ -233,7 +233,7 @@ sp_variables = [
 		The request type (e.g. "GET", "HEAD").
 		"""
 	),
-        ('req.hash',
+	('req.hash',
 		'STRING',
 		('hit', 'miss', 'pass', 'purge', 'deliver', ),
 		(), """
@@ -425,7 +425,7 @@ sp_variables = [
 		The request body.
 		"""
 	),
-        ('bereq.hash',
+	('bereq.hash',
 		'STRING',
 		('pipe', 'backend', ),
 		(), """
