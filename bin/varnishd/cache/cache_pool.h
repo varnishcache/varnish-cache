@@ -50,7 +50,8 @@ struct pool {
 	unsigned			nthr;
 	unsigned			dry;
 	unsigned			lqueue;
-	uintmax_t			ndropped;
+	uintmax_t			sdropped;
+	uintmax_t			rdropped;
 	uintmax_t			nqueued;
 	struct dstat			*a_stat;
 	struct dstat			*b_stat;
