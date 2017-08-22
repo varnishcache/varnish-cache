@@ -240,8 +240,14 @@
 .. varnish_vsc:: sess_dropped
 	:oneliner:	Sessions dropped for thread
 
-	Number of times session was dropped because the queue were too long
-	already. See also parameter thread_queue_limit.
+	Number of times an HTTP/1 session was dropped because the queue was
+	too long already. See also parameter thread_queue_limit.
+
+.. varnish_vsc:: req_dropped
+	:oneliner:	Requests dropped
+
+	Number of times an HTTP/2 stream was refused because the queue was
+	too long already. See also parameter thread_queue_limit.
 
 .. varnish_vsc:: n_object
 	:type:	gauge

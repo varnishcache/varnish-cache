@@ -294,9 +294,13 @@ enum task_prio {
 	TASK_QUEUE_BO,
 #define TASK_QUEUE_RESERVE	TASK_QUEUE_BO
 	TASK_QUEUE_REQ,
+	TASK_QUEUE_STR,
 	TASK_QUEUE_VCA,
 	TASK_QUEUE_END
 };
+
+#define TASK_QUEUE_CLIENT(prio) \
+	(prio == TASK_QUEUE_REQ || prio == TASK_QUEUE_STR)
 
 /*--------------------------------------------------------------------*/
 

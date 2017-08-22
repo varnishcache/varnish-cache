@@ -26,6 +26,7 @@ varnish v1 -cliok "param.set thread_pool_min 4"
 varnish v1 -cliok "param.set thread_pool_max 4"
 varnish v1 -cliok "param.set thread_pool_reserve 1"
 varnish v1 -cliok "param.set thread_queue_limit 0"
+varnish v1 -cliok "param.set thread_stats_rate 1"
 varnish v1 -cliok "param.set feature +http2"
 varnish v1 -cliok "param.set debug +syncvsl"
 
@@ -66,3 +67,10 @@ client c1 {
 
 	barrier b2 sync
 } -run
+
+# trigger an update of the stats
+varnish v1 -cliok "param.set thread_pool_min 3"
+delay 1
+varnish v1 -expect sess_drop == 0
+varnish v1 -expect sess_dropped == 0
+varnish v1 -expect req_dropped == 1

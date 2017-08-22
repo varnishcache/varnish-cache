@@ -268,14 +268,17 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio)
 	 * queue limits only apply to client threads - all other
 	 * work is vital and needs do be done at the earliest
 	 */
-	if (prio != TASK_QUEUE_REQ ||
+	if (!TASK_QUEUE_CLIENT(prio) ||
 	    pp->lqueue + pp->nthr < cache_param->wthread_max +
 	    cache_param->wthread_queue_limit) {
 		pp->nqueued++;
 		pp->lqueue++;
 		VTAILQ_INSERT_TAIL(&pp->queues[prio], task, list);
 	} else {
-		pp->ndropped++;
+		if (prio == TASK_QUEUE_REQ)
+			pp->sdropped++;
+		else
+			pp->rdropped++;
 		retval = -1;
 	}
 	Lck_Unlock(&pp->mtx);
@@ -495,8 +498,9 @@ pool_herder(void *priv)
 			Lck_Lock(&pp->mtx);
 			/* XXX: unsafe counters */
 			VSC_C_main->sess_queued += pp->nqueued;
-			VSC_C_main->sess_dropped += pp->ndropped;
-			pp->nqueued = pp->ndropped = 0;
+			VSC_C_main->sess_dropped += pp->sdropped;
+			VSC_C_main->req_dropped += pp->rdropped;
+			pp->nqueued = pp->sdropped = pp->rdropped = 0;
 
 			wrk = NULL;
 			pt = VTAILQ_LAST(&pp->idle_queue, taskhead);
@@ -541,6 +545,8 @@ pool_herder(void *priv)
 		}
 		Lck_Lock(&pp->mtx);
 		if (!pp->dry) {
+			if (DO_DEBUG(DBG_VTC_MODE))
+				delay = 0.5;
 			(void)Lck_CondWait(&pp->herder_cond, &pp->mtx,
 				VTIM_real() + delay);
 		} else {
