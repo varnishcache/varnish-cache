@@ -911,6 +911,8 @@ vcl_cli_discard(struct cli *cli, const char * const *av, void *priv)
 	if (!strcmp(vcl->state, VCL_TEMP_LABEL)) {
 		VTAILQ_REMOVE(&vcl_head, vcl, list);
 		free(vcl->loaded_name);
+		AZ(errno=pthread_rwlock_destroy(&vcl->temp_rwl));
+		FREE_OBJ(vcl);
 	} else if (vcl->temp == VCL_TEMP_COLD)
 		VCL_Poll();
 }
