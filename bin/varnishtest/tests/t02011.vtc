@@ -1,0 +1,68 @@
+varnishtest "Can't schedule stream"
+
+barrier b1 sock 3
+barrier b2 sock 3
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+# We need to confirm that a refused stream doesn't harm other streams, so we
+# want a round trip to the backend to ensure that. This requires 3 threads to
+# be busy simultaneously before a stream can be refused:
+#
+# - one for c1's session
+# - one for stream 1
+# - one for the backend request
+#
+# To work around the reserve's default logic, an additional thread can be
+# created, but won't be consumed for stream 3 because the pool will reserve
+# it for a backend transaction. Otherwise it could starve the pool and dead
+# lock v1.
+
+varnish v1 -cliok "param.set thread_pools 1"
+varnish v1 -cliok "param.set thread_pool_min 4"
+varnish v1 -cliok "param.set thread_pool_max 4"
+varnish v1 -cliok "param.set thread_pool_reserve 1"
+varnish v1 -cliok "param.set thread_queue_limit 0"
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set debug +syncvsl"
+
+varnish v1 -vcl+backend {
+	import vtc;
+
+	sub vcl_recv {
+		if (req.http.should == "reset") {
+			return (fail);
+		}
+	}
+
+	sub vcl_backend_fetch {
+		vtc.barrier_sync("${b1_sock}");
+		vtc.barrier_sync("${b2_sock}");
+	}
+} -start
+
+client c1 {
+	txpri
+	stream 0 rxsettings -run
+
+	stream 1 {
+		txreq -hdr should sync
+		barrier b1 sync
+		barrier b2 sync
+		rxresp
+		expect resp.status == 200
+	} -start
+
+	barrier b1 sync
+
+	stream 3 {
+		txreq -hdr should reset
+		rxrst
+		expect rst.err == REFUSED_STREAM
+	} -run
+
+	barrier b2 sync
+} -run
