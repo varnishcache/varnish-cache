@@ -221,6 +221,10 @@ MAC_Arg(const char *spec)
 	}
 	la->name = name;
 
+	if (la->endpoint[0] != '/' && strchr(la->endpoint, '/') != NULL)
+		ARGV_ERR("Unix domain socket addresses must be absolute paths in -a "
+			 "(%s)\n", la->endpoint);
+
 	for (int i = 2; av[i] != NULL; i++) {
 		char *eq, *val;
 		int len;

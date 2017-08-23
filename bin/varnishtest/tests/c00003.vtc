@@ -18,6 +18,11 @@ shell -err -expect "Too many protocol sub-args" {
 	varnishd -a 127.0.0.1:80000,HTTP,FOO -d
 }
 
+# -a relative path for a UDS address not permitted
+shell -err -expect "Unix domain socket addresses must be absolute paths" {
+	varnishd -a foo/bar.sock -d
+}
+
 # -a args for UDS permissions not permitted with IP addresses
 shell -err -expect "Invalid sub-arg user=u for IP addresses" {
 	varnishd -a 127.0.0.1:80000,user=u -d
