@@ -249,7 +249,9 @@ ASAN_CFLAGS=
 ASAN_LDFLAGS=
 AC_ARG_ENABLE(asan,
 	AS_HELP_STRING([--enable-asan],[enable address sanitizer (default is NO)]),
-	ASAN_FLAGS="-fsanitize=address")
+	ASAN_FLAGS="-fsanitize=address"
+	AX_CHECK_COMPILE_FLAG([-fsanitize=address -fsanitize-address-use-after-scope],
+			      [ASAN_FLAGS="${ASAN_FLAGS} -fsanitize-address-use-after-scope"]))
 
 MSAN_CFLAGS=
 MSAN_LDFLAGS=
