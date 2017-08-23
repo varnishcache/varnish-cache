@@ -352,9 +352,23 @@ mgt_launch_child(struct cli *cli)
 			memset(&sa, 0, sizeof sa);
 			sa.sa_sigaction = child_signal_handler;
 			sa.sa_flags = SA_SIGINFO;
-			(void)sigaction(SIGSEGV, &sa, NULL);
 			(void)sigaction(SIGBUS, &sa, NULL);
 			(void)sigaction(SIGABRT, &sa, NULL);
+
+#ifdef HAVE_SIGALTSTACK
+			stack_t ss;
+			size_t sz = SIGSTKSZ + 4096;
+			if (sz < mgt_param.wthread_stacksize)
+				sz = mgt_param.wthread_stacksize;
+			ss.ss_sp = malloc(sz);
+			AN(ss.ss_sp);
+			ss.ss_size = sz;
+			ss.ss_flags = 0;
+			AZ(sigaltstack(&ss, NULL));
+			sa.sa_flags |= SA_ONSTACK;
+#endif
+			(void)sigaction(SIGSEGV, &sa, NULL);
+
 		}
 		(void)signal(SIGINT, SIG_DFL);
 		(void)signal(SIGTERM, SIG_DFL);
