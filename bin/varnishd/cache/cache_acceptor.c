@@ -362,7 +362,7 @@ vca_mk_uds(struct wrk_accept *wa, struct sess *sp)
 
 	suds = VSA_Get_Sockaddr(wa->acceptlsock->addr, &sl);
 	SES_Reserve_remote_addr(sp, &sa);
-	AN(VSA_Build(sa, &wa->acceptaddr, wa->acceptaddrlen, suds));
+	AN(VSA_Build_UDS(sa, suds));
 	sp->sattr[SA_CLIENT_ADDR] = sp->sattr[SA_REMOTE_ADDR];
 	sp->sattr[SA_LOCAL_ADDR] = sp->sattr[SA_REMOTE_ADDR];
 	sp->sattr[SA_SERVER_ADDR] = sp->sattr[SA_REMOTE_ADDR];

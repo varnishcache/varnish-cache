@@ -63,6 +63,15 @@ struct suckaddr *VSA_Malloc_UDS(const struct suckaddr *uds, void **uds_sockaddr)
 struct suckaddr *VSA_Build(void *d, const void *s, unsigned sal,
 			   const void *suds);
 
+/*
+ * 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage,
+ * 's' is a sockaddr_un whose storage is "owned" by the caller, who is
+ * responsible for freeing it.
+ * Store the suckaddr in d that points to the sockaddr_un storage, and
+ * return a pointer to the suckaddr.
+ */
+struct suckaddr *VSA_Build_UDS(void *d, const void *s);
+
 const char * VSA_Path(const struct suckaddr *sua);
 
 #endif
