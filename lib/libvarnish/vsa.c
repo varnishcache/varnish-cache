@@ -281,6 +281,35 @@ VSA_Build(void *d, const void *s, unsigned sal, const void *suds)
 	return (NULL);
 }
 
+/*
+ * 'uds' is a PF_UNIX suckaddr. '*uds_sockaddr' will point to storage for
+ * the sockaddr_un that will be "owned" by the caller -- the caller is
+ * responsible for freeing it.
+ * Allocate the sockaddr_un in *uds_sockaddr, and return a dup of uds that
+ * points to the newly allocated sockaddr_un.
+ */
+struct suckaddr *
+VSA_Malloc_UDS(const struct suckaddr *uds, void **uds_sockaddr)
+{
+	struct suckaddr *sua;
+
+	CHECK_OBJ_NOTNULL(uds, SUCKADDR_MAGIC);
+	assert(uds->sa_family == PF_UNIX);
+	AN(uds_sockaddr);
+
+	*uds_sockaddr = malloc(sizeof *uds->sa.sau);
+	if (*uds_sockaddr == NULL)
+		return (NULL);
+	memcpy(*uds_sockaddr, uds->sa.sau, sizeof *uds->sa.sau);
+
+	ALLOC_OBJ(sua, SUCKADDR_MAGIC);
+	if (sua == NULL)
+		return (NULL);
+	sua->sa_family = PF_UNIX;
+	sua->sa.sau = *uds_sockaddr;
+	return (sua);
+}
+
 const void *
 VSA_Get_Sockaddr(const struct suckaddr *sua, socklen_t *sl)
 {

@@ -48,6 +48,15 @@ int VSA_Get_Proto(const struct suckaddr *);
 struct suckaddr *VSA_Malloc(const void *s, unsigned  sal, const void *suds);
 
 /*
+ * 'uds' is a PF_UNIX suckaddr. '*uds_sockaddr' will point to storage for
+ * the sockaddr_un that will be "owned" by the caller -- the caller is
+ * responsible for freeing it.
+ * Allocate the sockaddr_un in *uds_sockaddr, and return a dup of uds that
+ * points to the newly allocated sockaddr_un.
+ */
+struct suckaddr *VSA_Malloc_UDS(const struct suckaddr *uds, void **uds_sockaddr);
+
+/*
  * 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage,
  * 's' is a sockaddr of some kind, 'sal' is its length.
  */

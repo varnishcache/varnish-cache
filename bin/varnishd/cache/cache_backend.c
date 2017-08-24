@@ -429,18 +429,12 @@ static int v_matchproto_(vss_resolved_f)
 uds_callback(void *priv, const struct suckaddr *sa)
 {
 	struct backend *b;
-	const void *uds_addr;
-	unsigned sl;
 
 	CAST_OBJ_NOTNULL(b, priv, BACKEND_MAGIC);
 	AN(sa);
-	uds_addr = VSA_Get_Sockaddr(sa, &sl);
-	AN(uds_addr);
-	b->uds_addr = malloc(sl);
-	AN(b->uds_addr);
-	memcpy(b->uds_addr, uds_addr, sl);
-	b->uds_suckaddr = VSA_Malloc(b->uds_addr, 0, b->uds_addr);
+	b->uds_suckaddr = VSA_Malloc_UDS(sa, &b->uds_addr);
 	AN(b->uds_suckaddr);
+	AN(b->uds_addr);
 	return(0);
 }
 
