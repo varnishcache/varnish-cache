@@ -68,6 +68,16 @@ void MAC_Arg(const char *);
 void MAC_reopen_sockets(void);
 
 /* mgt_child.c */
+enum child_state_e {
+	CH_STOPPED = 0,
+	CH_STARTING = 1,
+	CH_RUNNING = 2,
+	CH_STOPPING = 3,
+	CH_NOT_RESPONDING = 4,
+	CH_DIED = 5
+};
+extern enum child_state_e child_state;
+
 void MCH_Init(void);
 int MCH_Running(void);
 void MCH_Stop_Child(void);

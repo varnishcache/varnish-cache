@@ -213,7 +213,12 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
 		return (CLIS_COMMS);
 	}
 
-	if (VCLI_ReadResult(cli_i, &u, resp, mgt_param.cli_timeout))
+	// For CH_NOT_RESPONDING, it's useless to wait for the full timeout
+	// again. XXX: better idea? Should be shorter than varnishadm default
+	// timeout
+	if (VCLI_ReadResult(cli_i, &u, resp,
+			    child_state == CH_NOT_RESPONDING ? 1 :
+			    mgt_param.cli_timeout))
 		MCH_Cli_Fail();
 	if (status != NULL)
 		*status = u;

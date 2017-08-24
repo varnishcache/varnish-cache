@@ -63,20 +63,15 @@ static int		child_cli_in = -1;
 static int		child_cli_out = -1;
 static int		child_output = -1;
 
-static enum {
-	CH_STOPPED = 0,
-	CH_STARTING = 1,
-	CH_RUNNING = 2,
-	CH_STOPPING = 3,
-	CH_DIED = 4
-}			child_state = CH_STOPPED;
+enum child_state_e child_state = CH_STOPPED;
 
 static const char * const ch_state[] = {
 	[CH_STOPPED] =	"stopped",
 	[CH_STARTING] =	"starting",
 	[CH_RUNNING] =	"running",
 	[CH_STOPPING] =	"stopping",
-	[CH_DIED] =	"died, (restarting)",
+	[CH_NOT_RESPONDING] =	"not responding",
+	[CH_DIED] =	"died",
 };
 
 static struct vev	*ev_poker;
@@ -242,16 +237,23 @@ child_poker(const struct vev *e, int what)
 
 	(void)e;
 	(void)what;
-	if (child_state != CH_RUNNING)
+	if (child_state != CH_RUNNING &&
+	    child_state != CH_NOT_RESPONDING)
 		return (1);
 	if (child_pid < 0)
 		return (0);
+	if (kill(child_pid, 0) == -1 && errno == ESRCH) {
+		child_pid = -1;
+		child_state = CH_DIED;
+		return (0);
+	}
 	if (mgt_cli_askchild(&status, &r, "ping\n") || strncmp("PONG ", r, 5)) {
 		MGT_Complain(C_ERR, "Unexpected reply from ping: %u %s",
 		    status, r);
 		if (status != CLIS_COMMS)
 			MCH_Cli_Fail();
-	}
+	} else
+		child_state = CH_RUNNING;
 	free(r);
 	return 0;
 }
@@ -547,6 +549,16 @@ MCH_Cli_Fail(void)
 		return;
 	if (child_pid < 0)
 		return;
+	if (kill(child_pid, 0) == -1 && errno == ESRCH) {
+		child_state = CH_DIED;
+		return;
+	}
+	child_state = CH_NOT_RESPONDING;
+	if (! mgt_param.auto_restart) {
+		MGT_Complain(C_ERR, "Child (%jd) not responding to CLI",
+			     (intmax_t)child_pid);
+		return;
+	}
 	if (kill_child() == 0)
 		MGT_Complain(C_ERR, "Child (%jd) not responding to CLI,"
 		    " killed it.", (intmax_t)child_pid);
@@ -565,7 +577,8 @@ void
 MCH_Stop_Child(void)
 {
 
-	if (child_state != CH_RUNNING)
+	if (child_state != CH_RUNNING &&
+	    child_state != CH_NOT_RESPONDING)
 		return;
 
 	child_state = CH_STOPPING;
@@ -581,6 +594,9 @@ MCH_Stop_Child(void)
 int
 MCH_Start_Child(void)
 {
+	if (child_state == CH_NOT_RESPONDING)
+		MCH_Stop_Child();
+
 	mgt_launch_child(NULL);
 	if (child_state != CH_RUNNING)
 		return (2);
@@ -595,7 +611,7 @@ int
 MCH_Running(void)
 {
 
-	return (child_pid > 0);
+	return (child_state == CH_RUNNING);
 }
 
 /*=====================================================================
@@ -608,8 +624,11 @@ mch_cli_server_start(struct cli *cli, const char * const *av, void *priv)
 
 	(void)av;
 	(void)priv;
-	if (child_state == CH_STOPPED) {
+	if (child_state == CH_STOPPED ||
+	    child_state == CH_NOT_RESPONDING) {
 		if (mgt_has_vcl()) {
+			if (child_state == CH_NOT_RESPONDING)
+				MCH_Stop_Child();
 			mgt_launch_child(cli);
 		} else {
 			VCLI_SetResult(cli, CLIS_CANT);
@@ -627,7 +646,8 @@ mch_cli_server_stop(struct cli *cli, const char * const *av, void *priv)
 
 	(void)av;
 	(void)priv;
-	if (child_state == CH_RUNNING) {
+	if (child_state == CH_RUNNING ||
+	    child_state == CH_NOT_RESPONDING) {
 		MCH_Stop_Child();
 	} else {
 		VCLI_SetResult(cli, CLIS_CANT);
