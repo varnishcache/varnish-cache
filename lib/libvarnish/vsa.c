@@ -210,17 +210,18 @@ VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst)
 }
 
 /*
- * Malloc a suckaddr from a sockaddr of some kind.
+ * Malloc a suckaddr from a PF_INET* sockaddr.
  */
 
 struct suckaddr *
-VSA_Malloc(const void *s, unsigned  sal, const void *suds)
+VSA_Malloc(const void *s, unsigned  sal)
 {
 	struct suckaddr *sua = NULL;
 	const struct sockaddr *sa = s;
 	unsigned l = 0;
 
 	AN(s);
+	assert(sa->sa_family != PF_UNIX);
 	switch (sa->sa_family) {
 	case PF_INET:
 		if (sal == sizeof sua->sa.sa4)
@@ -233,15 +234,12 @@ VSA_Malloc(const void *s, unsigned  sal, const void *suds)
 	default:
 		break;
 	}
-	if (l != 0 || sa->sa_family == PF_UNIX) {
+	if (l != 0) {
 		ALLOC_OBJ(sua, SUCKADDR_MAGIC);
 		if (sua == NULL)
 			return (NULL);
 		sua->sa_family = sa->sa_family;
-		if (sa->sa_family != PF_UNIX)
-			memcpy(&sua->sa, s, l);
-		else
-			sua->sa.sau = suds;
+		memcpy(&sua->sa, s, l);
 	}
 	return (sua);
 }

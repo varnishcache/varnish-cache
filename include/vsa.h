@@ -43,9 +43,9 @@ const void *VSA_Get_Sockaddr(const struct suckaddr *, socklen_t *sl);
 int VSA_Get_Proto(const struct suckaddr *);
 
 /*
- * 's' is a sockaddr of some kind, 'sal' is its length
+ * 's' is a PF_INET* sockaddr, 'sal' is its length
  */
-struct suckaddr *VSA_Malloc(const void *s, unsigned  sal, const void *suds);
+struct suckaddr *VSA_Malloc(const void *s, unsigned  sal);
 
 /*
  * 'uds' is a PF_UNIX suckaddr. '*uds_sockaddr' will point to storage for

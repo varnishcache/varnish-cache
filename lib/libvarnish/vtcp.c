@@ -125,7 +125,7 @@ VTCP_my_suckaddr(int sock)
 
 	l = sizeof addr_s;
 	AZ(getsockname(sock, (void *)&addr_s, &l));
-	return (VSA_Malloc(&addr_s, l, NULL)); /* XXX malloc uds? */
+	return (VSA_Malloc(&addr_s, l));
 }
 
 /*--------------------------------------------------------------------*/

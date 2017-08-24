@@ -136,7 +136,7 @@ VSS_resolver(const char *addr, const char *def_port, vss_resolved_f *func,
 		return (-1);
 	}
 	for (res = res0; res != NULL; res = res->ai_next) {
-		vsa = VSA_Malloc(res->ai_addr, res->ai_addrlen, NULL);
+		vsa = VSA_Malloc(res->ai_addr, res->ai_addrlen);
 		if (vsa != NULL) {
 			ret = func(priv, vsa);
 			free(vsa);
