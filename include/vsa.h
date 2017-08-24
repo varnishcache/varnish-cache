@@ -58,10 +58,9 @@ struct suckaddr *VSA_Malloc_UDS(const struct suckaddr *uds, void **uds_sockaddr)
 
 /*
  * 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage,
- * 's' is a sockaddr of some kind, 'sal' is its length.
+ * 's' is a PF_INET* sockaddr, 'sal' is its length.
  */
-struct suckaddr *VSA_Build(void *d, const void *s, unsigned sal,
-			   const void *suds);
+struct suckaddr *VSA_Build(void *d, const void *s, unsigned sal);
 
 /*
  * 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage,

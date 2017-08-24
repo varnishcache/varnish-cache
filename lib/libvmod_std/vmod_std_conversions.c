@@ -109,8 +109,7 @@ vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d, VCL_BOOL n)
 		error = getaddrinfo(s, "80", &hints, &res0);
 		if (!error) {
 			for (res = res0; res != NULL; res = res->ai_next) {
-				r = VSA_Build(p, res->ai_addr, res->ai_addrlen,
-					      NULL);
+				r = VSA_Build(p, res->ai_addr, res->ai_addrlen);
 				if (r != NULL)
 					break;
 			}

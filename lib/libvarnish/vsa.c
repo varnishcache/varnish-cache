@@ -246,7 +246,7 @@ VSA_Malloc(const void *s, unsigned  sal)
 
 /* 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage */
 struct suckaddr *
-VSA_Build(void *d, const void *s, unsigned sal, const void *suds)
+VSA_Build(void *d, const void *s, unsigned sal)
 {
 	struct suckaddr *sua = d;
 	const struct sockaddr *sa = s;
@@ -254,6 +254,7 @@ VSA_Build(void *d, const void *s, unsigned sal, const void *suds)
 
 	AN(d);
 	AN(s);
+	assert(sa->sa_family != PF_UNIX);
 	switch (sa->sa_family) {
 	case PF_INET:
 		if (sal == sizeof sua->sa.sa4)
@@ -266,14 +267,11 @@ VSA_Build(void *d, const void *s, unsigned sal, const void *suds)
 	default:
 		break;
 	}
-	if (l != 0 || sa->sa_family == PF_UNIX) {
+	if (l != 0) {
 		memset(sua, 0, sizeof *sua);
 		sua->magic = SUCKADDR_MAGIC;
 		sua->sa_family = sa->sa_family;
-		if (sa->sa_family != PF_UNIX)
-			memcpy(&sua->sa, s, l);
-		else
-			sua->sa.sau = suds;
+		memcpy(&sua->sa, s, l);
 		return (sua);
 	}
 	return (NULL);

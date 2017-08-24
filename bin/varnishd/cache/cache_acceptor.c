@@ -329,7 +329,7 @@ vca_mk_tcp(struct wrk_accept *wa, struct sess *sp)
 	char rport[VTCP_PORTBUFSIZE];
 
 	SES_Reserve_remote_addr(sp, &sa);
-	AN(VSA_Build(sa, &wa->acceptaddr, wa->acceptaddrlen, NULL));
+	AN(VSA_Build(sa, &wa->acceptaddr, wa->acceptaddrlen));
 	sp->sattr[SA_CLIENT_ADDR] = sp->sattr[SA_REMOTE_ADDR];
 
 	VTCP_name(sa, raddr, sizeof raddr, rport, sizeof rport);
@@ -339,7 +339,7 @@ vca_mk_tcp(struct wrk_accept *wa, struct sess *sp)
 	sl = sizeof ss;
 	AZ(getsockname(sp->fd, (void*)&ss, &sl));
 	SES_Reserve_local_addr(sp, &sa);
-	AN(VSA_Build(sa, &ss, sl, NULL));
+	AN(VSA_Build(sa, &ss, sl));
 	sp->sattr[SA_SERVER_ADDR] = sp->sattr[SA_LOCAL_ADDR];
 
 	VSL(SLT_Begin, sp->vxid, "sess 0 %s", wa->acceptlsock->transport->name);

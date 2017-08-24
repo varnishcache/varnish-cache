@@ -118,7 +118,7 @@ vpx_proto1(const struct worker *wrk, struct req *req)
 		return (-1);
 	}
 	SES_Reserve_client_addr(req->sp, &sa);
-	AN(VSA_Build(sa, res->ai_addr, res->ai_addrlen, NULL));
+	AN(VSA_Build(sa, res->ai_addr, res->ai_addrlen));
 	SES_Set_String_Attr(req->sp, SA_CLIENT_IP, fld[1]);
 	SES_Set_String_Attr(req->sp, SA_CLIENT_PORT, fld[3]);
 	freeaddrinfo(res);
@@ -139,7 +139,7 @@ vpx_proto1(const struct worker *wrk, struct req *req)
 		return (-1);
 	}
 	SES_Reserve_server_addr(req->sp, &sa);
-	AN(VSA_Build(sa, res->ai_addr, res->ai_addrlen, NULL));
+	AN(VSA_Build(sa, res->ai_addr, res->ai_addrlen));
 	freeaddrinfo(res);
 
 	VSL(SLT_Proxy, req->sp->vxid, "1 %s %s %s %s",
@@ -245,14 +245,14 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 		memcpy(&sin4.sin_addr, p + 20, 4);
 		memcpy(&sin4.sin_port, p + 26, 2);
 		SES_Reserve_server_addr(req->sp, &sa);
-		AN(VSA_Build(sa, &sin4, sizeof sin4, NULL));
+		AN(VSA_Build(sa, &sin4, sizeof sin4));
 		VTCP_name(sa, ha, sizeof ha, pa, sizeof pa);
 
 		/* src/client */
 		memcpy(&sin4.sin_addr, p + 16, 4);
 		memcpy(&sin4.sin_port, p + 24, 2);
 		SES_Reserve_client_addr(req->sp, &sa);
-		AN(VSA_Build(sa, &sin4, sizeof sin4, NULL));
+		AN(VSA_Build(sa, &sin4, sizeof sin4));
 		break;
 	case AF_INET6:
 		memset(&sin6, 0, sizeof sin6);
@@ -262,14 +262,14 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 		memcpy(&sin6.sin6_addr, p + 32, 16);
 		memcpy(&sin6.sin6_port, p + 50, 2);
 		SES_Reserve_server_addr(req->sp, &sa);
-		AN(VSA_Build(sa, &sin6, sizeof sin6, NULL));
+		AN(VSA_Build(sa, &sin6, sizeof sin6));
 		VTCP_name(sa, ha, sizeof ha, pa, sizeof pa);
 
 		/* src/client */
 		memcpy(&sin6.sin6_addr, p + 16, 16);
 		memcpy(&sin6.sin6_port, p + 48, 2);
 		SES_Reserve_client_addr(req->sp, &sa);
-		AN(VSA_Build(sa, &sin6, sizeof sin6, NULL));
+		AN(VSA_Build(sa, &sin6, sizeof sin6));
 		break;
 	default:
 		WRONG("Wrong pfam");
