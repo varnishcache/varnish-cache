@@ -721,6 +721,7 @@ vcl_cancel_load(VRT_CTX, struct cli *cli, const char *name, const char *step)
 	*ctx->handling = 0;
 	AZ(vcl->conf->event_vcl(ctx, VCL_EVENT_DISCARD));
 	vcl_KillBackends(vcl);
+	free(vcl->loaded_name);
 	VCL_Close(&vcl);
 }
 
