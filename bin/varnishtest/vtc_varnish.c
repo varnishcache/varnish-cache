@@ -79,7 +79,7 @@ struct varnish {
 	struct vsm		*vd;		/* vsc use */
 	struct vsm		*vdl;		/* log use */
 	int			has_a_arg;
-	struct vsm_fantom	mgt_arg_i;
+	struct vsm_fantom	vf;
 
 	unsigned		vsl_tag_count[256];
 
@@ -534,7 +534,7 @@ varnish_launch(struct varnish *v)
 	v->vd = VSM_New();
 	(void)VSM_n_Arg(v->vd, v->workdir);
 	AZ(VSM_Start(v->vd, vtc_maxdur, -1));
-	assert(VSM_Get(v->vd, &v->mgt_arg_i, "Arg", "-i") > 0);
+	assert(VSM_Get(v->vd, &v->vf, "Arg", "-i") > 0);
 
 	v->vdl = VSM_New();
 	(void)VSM_n_Arg(v->vdl, v->workdir);
@@ -855,7 +855,7 @@ varnish_vsc(struct varnish *v, const char *arg)
 	memset(&dp, 0, sizeof dp);
 	dp.v = v;
 	dp.arg = arg;
-	if (VSM_StillValid(v->vd, &v->mgt_arg_i) != VSM_valid) {
+	if (VSM_StillValid(v->vd, &v->vf) != VSM_valid) {
 		VSM_Close(v->vd);
 		if (VSM_Open(v->vd) < 0)
 			vtc_fatal(v->vl, "Could not open VSM (%s)",
@@ -926,7 +926,7 @@ varnish_expect(struct varnish *v, char * const *av)
 	ref = 0;
 	good = 0;
 	for (i = 0; i < 10; i++, (void)usleep(100000)) {
-		if (VSM_StillValid(v->vd, &v->mgt_arg_i) != VSM_valid) {
+		if (VSM_StillValid(v->vd, &v->vf) != VSM_valid) {
 			VSM_Close(v->vd);
 			good = VSM_Open(v->vd);
 		}
