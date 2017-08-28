@@ -55,14 +55,6 @@
 #include "vfil.h"
 #include "vrnd.h"
 
-#ifndef MAP_HASSEMAPHORE
-#  define MAP_HASSEMAPHORE 0 /* XXX Linux */
-#endif
-
-#ifndef MAP_NOSYNC
-#  define MAP_NOSYNC 0 /* XXX Linux */
-#endif
-
 /*--------------------------------------------------------------------*/
 
 struct vsmwseg {
