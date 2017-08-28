@@ -440,13 +440,13 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			assert(oc->objhead == oh);
 			if (oc->flags & OC_F_HFP) {
 				wrk->stats->cache_hitpass++;
-				VSLb(req->vsl, SLT_HitPass, "%u",
-				     ObjGetXID(wrk, oc));
+				VSLb(req->vsl, SLT_HitPass, "%u %.6f",
+				    ObjGetXID(wrk, oc), EXP_Dttl(req, oc));
 				oc = NULL;
 			} else if (oc->flags & OC_F_PASS) {
 				wrk->stats->cache_hitmiss++;
-				VSLb(req->vsl, SLT_HitMiss, "%u",
-				     ObjGetXID(wrk, oc));
+				VSLb(req->vsl, SLT_HitMiss, "%u %.6f",
+				    ObjGetXID(wrk, oc), EXP_Dttl(req, oc));
 				oc = NULL;
 				*bocp = hsh_insert_busyobj(wrk, oh);
 			} else {
@@ -470,7 +470,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 
 	if (exp_oc != NULL && exp_oc->flags & OC_F_PASS) {
 		wrk->stats->cache_hitmiss++;
-		VSLb(req->vsl, SLT_HitMiss, "%u", ObjGetXID(wrk, exp_oc));
+		VSLb(req->vsl, SLT_HitMiss, "%u %.6f", ObjGetXID(wrk, exp_oc),
+		    EXP_Dttl(req, exp_oc));
 		exp_oc = NULL;
 		busy_found = 0;
 	}

@@ -276,12 +276,25 @@ SLTM(ReqStart, 0, "Client request start",
 )
 
 SLTM(Hit, 0, "Hit object in cache",
-	"Object looked up in cache. Shows the VXID of the object.\n\n"
+	"Object looked up in cache.\n\n"
+	"The format is::\n\n"
+	"\t%u %f %f %f\n"
+	"\t|  |  |  |\n"
+	"\t|  |  |  +- Keep period\n"
+	"\t|  |  +---- Grace period\n"
+	"\t|  +------- Remaining TTL\n"
+	"\t+---------- VXID of the object\n"
+	"\n"
 )
 
 SLTM(HitPass, 0, "Hit for pass object in cache.",
-	"Hit-for-pass object looked up in cache. Shows the VXID of the"
-	" hit-for-pass object.\n\n"
+	"Hit-for-pass object looked up in cache.\n\n"
+	"The format is::\n\n"
+	"\t%u %f\n"
+	"\t|  |\n"
+	"\t|  +- Remaining TTL\n"
+	"\t+---- VXID of the object\n"
+	"\n"
 )
 
 SLTM(ExpBan, 0, "Object evicted due to ban",
@@ -543,8 +556,13 @@ SLTM(H2TxBody, 0, "Transmitted HTTP2 frame body",
 )
 
 SLTM(HitMiss, 0, "Hit for miss object in cache.",
-	"Hit-for-miss object looked up in cache. Shows the VXID of the"
-	" hit-for-miss object.\n\n"
+	"Hit-for-miss object looked up in cache.\n\n"
+	"The format is::\n\n"
+	"\t%u %f\n"
+	"\t|  |\n"
+	"\t|  +- Remaining TTL\n"
+	"\t+---- VXID of the object\n"
+	"\n"
 )
 
 #undef NODEF_NOTICE

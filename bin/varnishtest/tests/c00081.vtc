@@ -30,7 +30,7 @@ varnish v1 -vcl+backend {
 } -start
 
 logexpect l1 -v v1 -g vxid {
-	expect 1003 *	HitPass "^1002$"
+	expect 1003 *	HitPass "^1002 1.*$"
 } -start
 
 client c1 {
