@@ -53,8 +53,6 @@
 #include "cache_director.h"
 #include "cache_backend.h"
 
-#include "VSC_vbe.h"
-
 /* Default averaging rate, we want something pretty responsive */
 #define AVG_RATE			4
 
@@ -167,6 +165,7 @@ vbp_update_backend(struct vbp_target *vt)
 		bits[i++] = (vt->n & 1) ? c : '-';
 #include "tbl/backend_poll.h"
 		bits[i] = '\0';
+		assert(i < sizeof bits);
 
 		if (vt->good >= vt->threshold) {
 			if (vt->backend->healthy)
@@ -188,8 +187,7 @@ vbp_update_backend(struct vbp_target *vt)
 		    vt->backend->display_name, logmsg, bits,
 		    vt->good, vt->threshold, vt->window,
 		    vt->last, vt->avg, vt->resp_buf);
-		if (vt->backend != NULL && vt->backend->vsc != NULL)
-			vt->backend->vsc->happy = vt->happy;
+		VBE_SetHappy(vt->backend, vt->happy);
 	}
 	Lck_Unlock(&vbp_mtx);
 }

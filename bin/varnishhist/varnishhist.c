@@ -76,6 +76,7 @@ static double timebend = 0, t0;
 static double vsl_t0 = 0, vsl_to, vsl_ts = 0;
 static pthread_cond_t timebend_cv;
 static double log_ten;
+static char *ident;
 
 static const int scales[] = {
 	1,
@@ -153,7 +154,7 @@ update(void)
 	if (end_of_file)
 		mvprintw(0, 0, "%*s", COLS - 1, "EOF");
 	else
-		mvprintw(0, 0, "%*s", COLS - 1, VSM_Name(VUT.vsm));
+		mvprintw(0, 0, "%*s", COLS - 1, ident);
 
 	/* count our flock */
 	for (i = 0; i < n; ++i)
@@ -605,6 +606,7 @@ main(int argc, char **argv)
 	log_ten = log(10.0);
 
 	VUT_Setup();
+	ident = VSM_Dup(VUT.vsm, "Arg", "-i");
 	if (pthread_create(&thr, NULL, do_curses, NULL) != 0)
 		VUT_Error(1, "pthread_create(): %s", strerror(errno));
 	VUT.dispatch_f = accumulate;

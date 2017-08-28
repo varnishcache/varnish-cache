@@ -133,7 +133,6 @@ extern const struct jail_tech jail_tech_solaris;
 
 /* mgt_main.c */
 extern struct VSC_mgt	*VSC_C_mgt;
-extern struct VSC_mgt	static_VSC_C_mgt;
 struct choice {
 	const char      *name;
 	const void	*ptr;
@@ -165,10 +164,14 @@ extern struct params mgt_param;
 /* mgt_shmem.c */
 void mgt_SHM_Init(void);
 void mgt_SHM_static_alloc(const void *, ssize_t size,
-    const char *class, const char *type, const char *ident);
+    const char *class, const char *ident);
 void mgt_SHM_Create(void);
 void mgt_SHM_Destroy(int keep);
-void mgt_SHM_Size_Adjust(void);
+
+extern struct vsmw *mgt_vsmw;
+extern struct vsmw *child_vsmw;
+void mgt_SHM_ChildNew(void);
+void mgt_SHM_ChildDestroy(void);
 
 /* mgt_param_tcp.c */
 void MCF_TcpParams(void);

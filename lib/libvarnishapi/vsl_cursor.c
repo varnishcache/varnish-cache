@@ -77,6 +77,7 @@ vslc_vsm_delete(const struct VSL_cursor *cursor)
 	struct vslc_vsm *c;
 
 	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_VSM_MAGIC);
+	AZ(VSM_Unmap(c->vsm, &c->vf));
 	assert(&c->cursor == cursor);
 	FREE_OBJ(c);
 }
@@ -143,8 +144,7 @@ vslc_vsm_next(const struct VSL_cursor *cursor)
 		}
 
 		if (t == VSL_ENDMARKER) {
-			if (VSM_invalid == VSM_StillValid(c->vsm, &c->vf) ||
-			    VSM_Abandoned(c->vsm))
+			if (VSM_StillValid(c->vsm, &c->vf) != VSM_valid)
 				return (-2); /* VSL abandoned */
 			if (c->options & VSL_COPT_TAILSTOP)
 				return (-1); /* EOF */
@@ -252,16 +252,22 @@ VSL_CursorVSM(struct VSL_data *vsl, struct vsm *vsm, unsigned options)
 		    "No VSL chunk found (child not started ?)");
 		return (NULL);
 	}
-	AZ(VSM_Map(vsm, &vf));
+	if (VSM_Map(vsm, &vf)) {
+		(void)vsl_diag(vsl,
+		    "VSM_Map(): %s", VSM_Error(vsm));
+		return (NULL);
+	}
 	AN(vf.b);
 
 	head = vf.b;
 	if (memcmp(head->marker, VSL_HEAD_MARKER, sizeof head->marker)) {
+		AZ(VSM_Unmap(vsm, &vf));
 		(void)vsl_diag(vsl, "Not a VSL chunk");
 		return (NULL);
 	}
 	ALLOC_OBJ(c, VSLC_VSM_MAGIC);
 	if (c == NULL) {
+		AZ(VSM_Unmap(vsm, &vf));
 		(void)vsl_diag(vsl, "Out of memory");
 		return (NULL);
 	}

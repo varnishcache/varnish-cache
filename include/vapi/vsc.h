@@ -44,7 +44,7 @@ struct vsm_fantom;
  * VSC level access functions
  */
 
-int VSC_Arg(struct vsm *vd, int arg, const char *opt);
+int VSC_Arg(struct vsm *vd, char arg, const char *opt);
 	/*
 	 * Handle standard stat-presenter arguments
 	 * Return:

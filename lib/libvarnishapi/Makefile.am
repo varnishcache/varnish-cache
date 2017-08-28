@@ -23,6 +23,7 @@ libvarnishapi_la_SOURCES = \
 	../../include/vcs_version.h \
 	../libvarnish/version.c \
 	../libvarnish/vcli_proto.c \
+	../libvarnish/vfil.c \
 	../libvarnish/vfl.c \
 	../libvarnish/vin.c \
 	../libvarnish/vmb.c \

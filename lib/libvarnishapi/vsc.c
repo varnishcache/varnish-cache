@@ -193,12 +193,14 @@ vsc_f_arg(struct vsm *vd, const char *opt)
 /*--------------------------------------------------------------------*/
 
 int
-VSC_Arg(struct vsm *vd, int arg, const char *opt)
+VSC_Arg(struct vsm *vd, char arg, const char *opt)
 {
 
 	switch (arg) {
 	case 'f': return (vsc_f_arg(vd, opt));
-	case 'n': return (VSM_n_Arg(vd, opt));
+	case 'n':
+	case 't':
+		return (VSM_Arg(vd, arg, opt));
 	default:
 		return (0);
 	}
@@ -241,10 +243,7 @@ vsc_iter_elem(struct vsm *vd, const struct vsm_fantom *fantom,
 	assert(vt->type == VJSN_STRING);
 
 	VSB_clear(vsb);
-	VSB_printf(vsb, "%s", fantom->type);
-	if (*fantom->ident)
-		VSB_printf(vsb, ".%s", fantom->ident);
-	VSB_printf(vsb, ".%s", vt->value);
+	VSB_printf(vsb, "%s.%s", fantom->ident, vt->value);
 	AZ(VSB_finish(vsb));
 
 	if (vsc_filter(vd, VSB_data(vsb)))
@@ -314,6 +313,7 @@ vsc_iter_fantom(struct vsm *vd, const struct vsm_fantom *fantom,
 	struct vjsn_val *vv, *vve;
 
 	p = (char*)fantom->b + 8 + vbe64dec(fantom->b);
+	assert (p < (char*)fantom->e);
 	vj = vjsn_parse(p, &e);
 	if (e != NULL) {
 		fprintf(stderr, "%s\n", p);
@@ -360,7 +360,8 @@ VSC_Iter(struct vsm *vd, struct vsm_fantom *fantom, VSC_iter_f *func,
 		if (fantom != NULL)
 			*fantom = ifantom;
 		i = vsc_iter_fantom(vd, &ifantom, vsb, func, priv);
-		AZ(VSM_Unmap(vd, &ifantom));
+		if (fantom == NULL)
+			AZ(VSM_Unmap(vd, &ifantom));
 		if (i)
 			break;
 	}

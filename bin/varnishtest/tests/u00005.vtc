@@ -37,9 +37,11 @@ shell -expect "Copyright (c) 2006 Verdens Gang AS" \
 	"varnishstat -V"
 shell -err -expect "Usage: varnishstat <options>" \
 	"varnishstat extra"
-shell -err -expect "-t: Range error" \
+shell -err -expect "-t: Invalid argument: -1" \
 	"varnishstat -t -1"
-shell -err -expect "-t: Syntax error" \
+shell -err -expect "-t: Invalid argument: Nan" \
+	"varnishstat -t Nan"
+shell -err -expect "-t: Invalid argument: foo" \
 	"varnishstat -t foo"
 shell -err -expect "Could not get hold of varnishd" \
 	"varnishstat -n /nonexistent -t 1"

@@ -165,6 +165,16 @@ VRT_delete_backend(VRT_CTX, struct director **dp)
 	// this is why we don't bust the director's magic number.
 }
 
+void
+VBE_SetHappy(const struct backend *be, uint64_t happy)
+{
+
+		Lck_Lock(&backends_mtx);
+		if (be->vsc != NULL)
+			be->vsc->happy = happy;
+		Lck_Unlock(&backends_mtx);
+}
+
 /*---------------------------------------------------------------------
  * These are for cross-calls with cache_vcl.c only.
  */
@@ -176,8 +186,10 @@ VBE_Event(struct backend *be, enum vcl_event_e ev)
 	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 
 	if (ev == VCL_EVENT_WARM) {
+		Lck_Lock(&backends_mtx);
 		be->vsc = VSC_vbe_New(be->display_name);
 		AN(be->vsc);
+		Lck_Unlock(&backends_mtx);
 	}
 
 	if (be->probe != NULL && ev == VCL_EVENT_WARM)
@@ -186,8 +198,11 @@ VBE_Event(struct backend *be, enum vcl_event_e ev)
 	if (be->probe != NULL && ev == VCL_EVENT_COLD)
 		VBP_Control(be, 0);
 
-	if (ev == VCL_EVENT_COLD)
+	if (ev == VCL_EVENT_COLD) {
+		Lck_Lock(&backends_mtx);
 		VSC_vbe_Destroy(&be->vsc);
+		Lck_Unlock(&backends_mtx);
+	}
 }
 
 void

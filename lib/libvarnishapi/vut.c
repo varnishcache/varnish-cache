@@ -51,7 +51,6 @@
 #include "vas.h"
 #include "miniobj.h"
 #include "vcs.h"
-#include "vnum.h"
 
 #include "vut.h"
 
@@ -180,16 +179,7 @@ VUT_Arg(int opt, const char *arg)
 		return (1);
 	case 't':
 		/* VSM connect timeout */
-		AN(arg);
-		if (!strcasecmp("off", arg))
-			VUT.t_arg = -1.;
-		else {
-			VUT.t_arg = VNUM(arg);
-			if (isnan(VUT.t_arg))
-				VUT_Error(1, "-t: Syntax error");
-			if (VUT.t_arg < 0.)
-				VUT_Error(1, "-t: Range error");
-		}
+		REPLACE(VUT.t_arg, arg);
 		return (1);
 	case 'V':
 		/* Print version number and exit */
@@ -225,7 +215,6 @@ VUT_Init(const char *progname, int argc, char * const *argv,
 	VUT.vsl = VSL_New();
 	AN(VUT.vsl);
 	VUT.k_arg = -1;
-	VUT.t_arg = 5.;
 }
 
 void
@@ -253,22 +242,19 @@ VUT_Setup(void)
 		c = VSL_CursorFile(VUT.vsl, VUT.r_arg, 0);
 		if (c == NULL)
 			VUT_Error(1, "%s", VSL_Error(VUT.vsl));
+		VSLQ_SetCursor(VUT.vslq, &c);
+		AZ(c);
 	} else {
 		VUT.vsm = VSM_New();
 		AN(VUT.vsm);
-		if (VUT.n_arg && VSM_n_Arg(VUT.vsm, VUT.n_arg) <= 0)
+		if (VUT.n_arg && VSM_Arg(VUT.vsm, 'n', VUT.n_arg) <= 0)
 			VUT_Error(1, "%s", VSM_Error(VUT.vsm));
-		if (VSM_Start(VUT.vsm, VUT.t_arg, STDERR_FILENO))
+		if (VUT.t_arg && VSM_Arg(VUT.vsm, 't', VUT.t_arg) <= 0)
+			VUT_Error(1, "%s", VSM_Error(VUT.vsm));
+		if (VSM_Attach(VUT.vsm, STDERR_FILENO))
 			VUT_Error(1, "VSM: %s", VSM_Error(VUT.vsm));
-		c = VSL_CursorVSM(VUT.vsl, VUT.vsm,
-		    (VUT.d_opt ? VSL_COPT_TAILSTOP : VSL_COPT_TAIL)
-		    | VSL_COPT_BATCH);
-		if (c == 0)
-			VUT_Error(1, "VSL: %s", VSL_Error(VUT.vsl));
+		// Cursor is handled in VUT_Main()
 	}
-
-	VSLQ_SetCursor(VUT.vslq, &c);
-	AZ(c);
 
 	/* Signal handlers */
 	(void)signal(SIGHUP, vut_sighup);
@@ -322,6 +308,7 @@ VUT_Main(void)
 {
 	struct VSL_cursor *c;
 	int i = -1;
+	int hascursor = -1;
 
 	AN(VUT.vslq);
 
@@ -340,25 +327,32 @@ VUT_Main(void)
 			(void)VSLQ_Flush(VUT.vslq, vut_dispatch, NULL);
 		}
 
-		if (VUT.vsm != NULL && !VSM_IsOpen(VUT.vsm)) {
+		// We must repeatedly call VSM_Status() when !hascursor
+		// to make VSM discover our segment.
+		if (VUT.vsm != NULL &&
+		    (VSM_Status(VUT.vsm) & VSM_WRK_RESTARTED)) {
+			if (hascursor < 1) {
+				fprintf(stderr, "Log abandonned\n");
+				VSLQ_SetCursor(VUT.vslq, NULL);
+				hascursor = 0;
+			}
+		}
+		if (VUT.vsm != NULL && hascursor < 1) {
 			/* Reconnect VSM */
 			AZ(VUT.r_arg);
 			VTIM_sleep(0.1);
-			if (VSM_Open(VUT.vsm)) {
-				VSM_ResetError(VUT.vsm);
-				continue;
-			}
 			c = VSL_CursorVSM(VUT.vsl, VUT.vsm,
 			    (VUT.d_opt ? VSL_COPT_TAILSTOP : VSL_COPT_TAIL)
 			    | VSL_COPT_BATCH);
 			if (c == NULL) {
 				VSL_ResetError(VUT.vsl);
-				VSM_Close(VUT.vsm);
 				continue;
 			}
+			if (hascursor >= 0)
+				fprintf(stderr, "Log reacquired\n");
+			hascursor = 1;
 			VSLQ_SetCursor(VUT.vslq, &c);
 			AZ(c);
-			fprintf(stderr, "Log reacquired\n");
 		}
 
 		i = VSLQ_Dispatch(VUT.vslq, vut_dispatch, NULL);
@@ -386,14 +380,14 @@ VUT_Main(void)
 
 		(void)VSLQ_Flush(VUT.vslq, vut_dispatch, NULL);
 
-		if (i == -2)
+		if (i == -2) {
 			/* Abandoned */
 			fprintf(stderr, "Log abandoned\n");
-		else if (i < -2)
+			VSLQ_SetCursor(VUT.vslq, NULL);
+			hascursor = 0;
+		} else if (i < -2)
 			/* Overrun */
 			fprintf(stderr, "Log overrun\n");
-
-		VSM_Close(VUT.vsm);
 	}
 
 	return (i);

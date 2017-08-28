@@ -16,4 +16,6 @@ varnish v1 -expect VBE.vcl2.s1.happy >= 0
 
 delay 5
 
+varnish v1 -vsc VBE.*
+
 varnish v1 -expect !VBE.vcl2.s1.happy

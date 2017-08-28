@@ -36,7 +36,6 @@
 #ifndef VAPI_VSM_H_INCLUDED
 #define VAPI_VSM_H_INCLUDED
 
-struct VSM_chunk;
 struct vsm;
 
 /*
@@ -44,16 +43,15 @@ struct vsm;
  */
 
 struct vsm_fantom {
+	uintptr_t		priv;		/* VSM private */
 	struct VSM_chunk	*chunk;
 	void			*b;		/* first byte of payload */
 	void			*e;		/* first byte past payload */
-	uintptr_t		priv;		/* VSM private */
 	char			*class;
-	char			*type;
 	char			*ident;
 };
 
-#define VSM_FANTOM_NULL { 0, 0, 0, 0, 0, 0, 0 }
+#define VSM_FANTOM_NULL { 0, 0, 0, 0, 0, 0 }
 
 /*---------------------------------------------------------------------
  * VSM level access functions
@@ -62,7 +60,7 @@ struct vsm_fantom {
 struct vsm *VSM_New(void);
 	/*
 	 * Allocate and initialize a VSL_data handle structure.
-	 * This is the first thing you will have to do, always.
+	 * This is the first thing you will always have to do.
 	 * You can have multiple active vsm handles at the same time
 	 * referencing the same or different shared memory files.
 	 * Returns:
@@ -73,78 +71,70 @@ struct vsm *VSM_New(void);
 void VSM_Destroy(struct vsm **vd);
 	/*
 	 * Close and deallocate all storage and mappings.
-	 * (including any VSC and VSL "sub-classes")
+	 * (including any VSC and VSL "sub-classes" XXX?)
 	 */
 
 const char *VSM_Error(const struct vsm *vd);
 	/*
-	 * Return the latest error message.
+	 * Return the first recorded error message.
 	 */
 
 void VSM_ResetError(struct vsm *vd);
 	/*
-	 * Reset any error message.
+	 * Reset recorded error message.
 	 */
 
 #define VSM_n_USAGE	"[-n varnish_name]"
+#define VSM_t_USAGE	"[-t <seconds|off>]"
 
-int VSM_n_Arg(struct vsm *, const char *n_arg);
+int VSM_Arg(struct vsm *, char flag, const char *t_arg);
 	/*
-	 * Configure which varnishd instance to access.
-	 * Uses hostname if n_arg is NULL or "".
+	 * Handle all VSM specific command line arguments.
 	 *
 	 * Returns:
 	 *	 1 on success
 	 *	 <0 on failure, VSM_Error() returns diagnostic string
+	 *
+	 * 't' Configure patience during startup
+	 *
+	 *	If t_arg is "off", VSM_Attach() will wait forever.
+	 *	Otherwise t_arg is the number of seconds to be patient
+	 *	while the varnishd manager process gets started.
+	 *
+	 *	The default is five seconds.
+	 *
+	 * 'n' Configure varnishd instance to access
+	 *
+	 *	The default is the hostname.
 	 */
 
-int VSM_Start(struct vsm *, double patience, int progress_fd);
-
-const char *VSM_Name(struct vsm *);
+int VSM_Attach(struct vsm *, int progress);
 	/*
-	 * Return the instance name (-i argument to varnishd)
-	 */
-
-int VSM_Open(struct vsm *);
-	/*
-	 * Attempt to open and map the VSM file.
+	 * Attach to the master process VSM segment, according to
+	 * the 't' argument.  If `progress_fd` is non-negative, a
+	 * period ('.') will be output for each second waited, and if
+	 * any periods were output, a NL ('\n') is outout before the
+	 * function returns.
 	 *
 	 * Returns:
-	 *	0 on success, or the VSM log was already open
-	 *	<0 on failure, VSM_Error() returns diagnostic string
+	 *	0	Attached
+	 *	-1	Not Attached.
 	 */
 
-int VSM_IsOpen(const struct vsm *vd);
+#define VSM_MGT_RUNNING		(1U<<1)
+#define VSM_MGT_CHANGED		(1U<<2)
+#define VSM_MGT_RESTARTED	(1U<<3)
+#define VSM_WRK_RUNNING		(1U<<9)
+#define VSM_WRK_CHANGED		(1U<<10)
+#define VSM_WRK_RESTARTED	(1U<<11)
+
+unsigned VSM_Status(struct vsm *);
 	/*
-	 * Check if the VSM is open.
-	 *
-	 * Returns:
-	 *       1: Is open
-	 *       0: Is closed
+	 * Returns a bitmap of the current status and changes in it
+	 * since the previous call to VSM_Status
 	 */
 
-int VSM_Abandoned(struct vsm *vd);
-	/*
-	 * Find out if the VSM file has been abandoned or closed and should
-	 * be reopened.  This function calls stat(2) and should only be
-	 * used when lack of activity or invalidation of fantoms indicate
-	 * abandonment.
-	 *
-	 * Returns:
-	 *	0  No reopen needed.
-	 *	1  VSM abandoned.
-	 */
-
-void VSM_Close(struct vsm *vd);
-	/*
-	 * Close and unmap shared memory, if open. Any reference to
-	 * previously returned memory areas will cause segmentation
-	 * fault. This includes any VSC counter areas or any VSL SHM
-	 * record references.
-	 */
-
-
-void VSM__iter0(struct vsm *, struct vsm_fantom *vf);
+void VSM__iter0(const struct vsm *, struct vsm_fantom *vf);
 int VSM__itern(struct vsm *, struct vsm_fantom *vf);
 
 #define VSM_FOREACH(vf, vd) \
@@ -164,37 +154,20 @@ struct vsm_valid {
 
 extern const struct vsm_valid VSM_invalid[];
 extern const struct vsm_valid VSM_valid[];
-extern const struct vsm_valid VSM_similar[];
 
-const struct vsm_valid *VSM_StillValid(struct vsm *, struct vsm_fantom *vf);
+const struct vsm_valid *VSM_StillValid(const struct vsm *, const struct vsm_fantom *vf);
 	/*
 	 * Check the validity of a previously looked up vsm_fantom.
 	 *
 	 * VSM_invalid means that the SHM chunk this fantom points to does
-	 * not exist in the log file any longer. Using the fantom's
-	 * pointer gives undefined results. Further checking with
-	 * VSM_Abandoned() may be a good idea.
+	 * not exist in the log file any longer.
 	 *
-	 * VSM_valid means that the SHM structure has not changed since
-	 * the fantom was looked up or since the last call to
-	 * VSM_StillValid().
-	 *
-	 * VSM_similar means that the SHM structure has changed, but there
-	 * is still a valid chunk present with the same the same type and
-	 * identifier. The fantom's pointers and dimensions haven't
-	 * changed. The next call to VSM_StillValid() on this fantom will
-	 * return VSM_valid.
-	 *
-	 * Applications using the fantom to monitor a single chunk can
-	 * treat VSM_similar as equal to VSM_valid.  Applications using a
-	 * fantom to monitor the SHM file for new or removed chunks,
-	 * should reiterate over the chunks on VSM_similar as the
-	 * structure has changed.
+	 * VSM_valid means that the SHM chunk this fantom points to is still
+	 * good.
 	 *
 	 * Return:
 	 *   VSM_invalid: fantom is not valid any more.
 	 *   VSM_valid:   fantom is still the same.
-	 *   VSM_similar: a fantom with same dimensions exist in same position.
 	 */
 
 int VSM_Get(struct vsm *, struct vsm_fantom *vf,
@@ -203,6 +176,15 @@ int VSM_Get(struct vsm *, struct vsm_fantom *vf,
 	 * Find a chunk, produce fantom for it.
 	 * Returns zero on failure.
 	 * class is mandatory, ident optional.
+	 */
+
+char *VSM_Dup(struct vsm*, const char *class, const char *ident);
+	/*
+	 * Returns a malloc'ed copy of the fanton.
+	 *
+	 * Return:
+	 *   NULL = Failure
+	 *   !NULL = malloc'ed pointer
 	 */
 
 #endif /* VAPI_VSM_H_INCLUDED */

@@ -76,10 +76,8 @@ struct varnish {
 	char			*jail;
 	char			*proto;
 
-	struct vsm		*vd;		/* vsc use */
-	struct vsm		*vdl;		/* log use */
+	struct vsm		*vd;
 	int			has_a_arg;
-	struct vsm_fantom	vf;
 
 	unsigned		vsl_tag_count[256];
 
@@ -212,15 +210,7 @@ varnishlog_thread(void *priv)
 
 	vsl = VSL_New();
 	AN(vsl);
-	vsm = v->vdl;
-#if 0
-	//vsm = VSM_New();
-	AN(vsm);
-	(void)VSM_n_Arg(vsm, v->workdir);
-
-	if (VSM_Start(vsm, vtc_maxdur, 2))
-		vtc_fatal(v->vl, "vsm|%s", VSM_Error(vsm));
-#endif
+	vsm = v->vd;
 
 	c = NULL;
 	opt = 0;
@@ -229,16 +219,10 @@ varnishlog_thread(void *priv)
 			if (vtc_error)
 				break;
 			VTIM_sleep(0.1);
-			if (VSM_Open(vsm)) {
-				vtc_log(v->vl, 3, "vsm|%s",
-				    VSM_Error(vsm));
-				VSM_ResetError(vsm);
-				continue;
-			}
+			(void)VSM_Status(vsm);
 			c = VSL_CursorVSM(vsl, vsm, opt);
 			if (c == NULL) {
-				vtc_log(v->vl, 3, "vsl|%s",
-				    VSL_Error(vsl));
+				vtc_log(v->vl, 3, "vsl|%s", VSL_Error(vsl));
 				VSL_ResetError(vsl);
 				continue;
 			}
@@ -271,12 +255,17 @@ varnishlog_thread(void *priv)
 		if (i == 0) {
 			/* Nothing to do but wait */
 			v->vsl_idle++;
-			VTIM_sleep(0.1);
+			if (!(VSM_Status(vsm) & VSM_WRK_RUNNING)) {
+				/* Abandoned - try reconnect */
+				VSL_DeleteCursor(c);
+				c = NULL;
+			} else {
+				VTIM_sleep(0.1);
+			}
 		} else if (i == -2) {
 			/* Abandoned - try reconnect */
 			VSL_DeleteCursor(c);
 			c = NULL;
-			VSM_Close(vsm);
 		} else
 			break;
 	}
@@ -284,7 +273,6 @@ varnishlog_thread(void *priv)
 	if (c)
 		VSL_DeleteCursor(c);
 	VSL_Delete(vsl);
-	VSM_Destroy(&v->vdl);
 
 	return (NULL);
 }
@@ -532,13 +520,9 @@ varnish_launch(struct varnish *v)
 	free(r);
 
 	v->vd = VSM_New();
-	(void)VSM_n_Arg(v->vd, v->workdir);
-	AZ(VSM_Start(v->vd, vtc_maxdur, -1));
-	assert(VSM_Get(v->vd, &v->vf, "Arg", "-i") > 0);
+	(void)VSM_Arg(v->vd, 'n', v->workdir);
+	AZ(VSM_Attach(v->vd, -1));
 
-	v->vdl = VSM_New();
-	(void)VSM_n_Arg(v->vdl, v->workdir);
-	AZ(VSM_Start(v->vdl, vtc_maxdur, -1));
 	AZ(pthread_create(&v->tp_vsl, NULL, varnishlog_thread, v));
 }
 
@@ -848,19 +832,14 @@ do_stat_dump_cb(void *priv, const struct VSC_point * const pt)
 }
 
 static void
-varnish_vsc(struct varnish *v, const char *arg)
+varnish_vsc(const struct varnish *v, const char *arg)
 {
 	struct dump_priv dp;
 
 	memset(&dp, 0, sizeof dp);
 	dp.v = v;
 	dp.arg = arg;
-	if (VSM_StillValid(v->vd, &v->vf) != VSM_valid) {
-		VSM_Close(v->vd);
-		if (VSM_Open(v->vd) < 0)
-			vtc_fatal(v->vl, "Could not open VSM (%s)",
-			    VSM_Error(v->vd));
-	}
+	(void)VSM_Status(v->vd);
 
 	(void)VSC_Iter(v->vd, NULL, do_stat_dump_cb, &dp);
 }
@@ -876,7 +855,7 @@ struct stat_priv {
 };
 
 static int
-do_stat_cb(void *priv, const struct VSC_point * const pt)
+do_expect_cb(void *priv, const struct VSC_point * const pt)
 {
 	struct stat_priv *sp = priv;
 
@@ -896,7 +875,7 @@ do_stat_cb(void *priv, const struct VSC_point * const pt)
  */
 
 static void
-varnish_expect(struct varnish *v, char * const *av)
+varnish_expect(const struct varnish *v, char * const *av)
 {
 	uint64_t ref;
 	int good;
@@ -925,15 +904,10 @@ varnish_expect(struct varnish *v, char * const *av)
 	sp.v = v;
 	ref = 0;
 	good = 0;
-	for (i = 0; i < 10; i++, (void)usleep(100000)) {
-		if (VSM_StillValid(v->vd, &v->vf) != VSM_valid) {
-			VSM_Close(v->vd);
-			good = VSM_Open(v->vd);
-		}
-		if (good < 0)
-			continue;
+	for (i = 0; i < 50; i++, (void)usleep(100000)) {
+		(void)VSM_Status(v->vd);
 
-		good = VSC_Iter(v->vd, NULL, do_stat_cb, &sp);
+		good = VSC_Iter(v->vd, NULL, do_expect_cb, &sp);
 		if (!good) {
 			good = -2;
 			continue;

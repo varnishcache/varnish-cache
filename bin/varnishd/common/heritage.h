@@ -29,7 +29,7 @@
  * This file contains the heritage passed when mgt forks cache
  */
 
-struct vsm_sc;
+struct vsmw;
 struct suckaddr;
 struct listen_sock;
 struct transport;
@@ -67,13 +67,13 @@ struct heritage {
 	/* File descriptor for stdout/stderr */
 	int				std_fd;
 
+	int				vsm_fd;
+
 	/* Sockets from which to accept connections */
 	struct listen_sock_head		socks;
 
 	/* Hash method */
 	const struct hash_slinger	*hash;
-
-	struct vsm_sc			*vsm;
 
 	struct params			*param;
 

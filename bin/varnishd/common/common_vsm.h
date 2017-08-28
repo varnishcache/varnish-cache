@@ -33,17 +33,14 @@
 #endif
 #define COMMON_COMMON_VSM_H
 
-/* common_vsm.c */
-struct vsm_sc;
-struct VSC_main;
-struct vsm_sc *CVSM_new(void *ptr, ssize_t len);
-void *CVSM_alloc(struct vsm_sc *sc, ssize_t size,
-    const char *class, const char *type, const char *ident);
-void CVSM_free(struct vsm_sc *sc, void *ptr);
-void CVSM_delete(struct vsm_sc **sc);
-void CVSM_copy(struct vsm_sc *to, const struct vsm_sc *from);
-void CVSM_cleaner(struct vsm_sc *sc, struct VSC_main *stats);
-void CVSM_ageupdate(const struct vsm_sc *sc);
+struct vsmw;
+
+extern struct vsmw *proc_vsmw;
+
+typedef void vsc_callback_f(void);
+
+extern vsc_callback_f *vsc_lock;
+extern vsc_callback_f *vsc_unlock;
 
 void *VSC_Alloc(const char *, size_t, size_t, const unsigned char *, size_t,
     const char *, va_list);

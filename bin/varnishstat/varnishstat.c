@@ -253,7 +253,6 @@ int
 main(int argc, char * const *argv)
 {
 	struct vsm *vd;
-	double t_arg = 5.0;
 	int once = 0, xml = 0, json = 0, f_list = 0, curses = 0;
 	signed char opt;
 	int i;
@@ -272,17 +271,6 @@ main(int argc, char * const *argv)
 			usage(0);
 		case 'l':
 			f_list = 1;
-			break;
-		case 't':
-			if (!strcasecmp(optarg, "off"))
-				t_arg = -1.;
-			else {
-				t_arg = VNUM(optarg);
-				if (isnan(t_arg))
-					VUT_Error(1, "-t: Syntax error");
-				if (t_arg < 0.)
-					VUT_Error(1, "-t: Range error");
-			}
 			break;
 		case 'V':
 			VCS_Message("varnishstat");
@@ -308,7 +296,7 @@ main(int argc, char * const *argv)
 	if (!(xml || json || once || f_list))
 		curses = 1;
 
-	if (VSM_Start(vd, t_arg, STDERR_FILENO))
+	if (VSM_Attach(vd, STDERR_FILENO))
 		VUT_Error(1, "%s", VSM_Error(vd));
 
 	if (curses)

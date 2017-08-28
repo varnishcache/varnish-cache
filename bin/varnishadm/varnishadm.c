@@ -389,44 +389,32 @@ usage(int status)
 }
 
 static int
-n_arg_sock(const char *n_arg)
+n_arg_sock(const char *n_arg, const char *t_arg)
 {
 	char *T_arg = NULL, *T_start = NULL;
 	char *S_arg = NULL;
 	struct vsm *vsm;
 	char *p;
 	int sock;
-	struct vsm_fantom vt;
 
 	vsm = VSM_New();
 	AN(vsm);
-	if (VSM_n_Arg(vsm, n_arg) < 0) {
+	if (VSM_Arg(vsm, 'n', n_arg) < 0 ||
+	    VSM_Arg(vsm, 't', t_arg) < 0 ||
+	    VSM_Attach(vsm, STDERR_FILENO) < 0) {
 		fprintf(stderr, "%s\n", VSM_Error(vsm));
 		VSM_Destroy(&vsm);
 		return (-1);
 	}
-	if (VSM_Start(vsm, 0, -1)) {
-		fprintf(stderr, "%s\n", VSM_Error(vsm));
-		VSM_Destroy(&vsm);
-		return (-1);
-	}
 
-	if (!VSM_Get(vsm, &vt, "Arg", "-T")) {
-		fprintf(stderr, "No -T arg in shared memory\n");
-		VSM_Destroy(&vsm);
-		return (-1);
-	}
-	AZ(VSM_Map(vsm, &vt));
-	AN(vt.b);
-	T_start = T_arg = strdup(vt.b);
-
-	if (VSM_Get(vsm, &vt, "Arg", "-S")) {
-		AZ(VSM_Map(vsm, &vt));
-		AN(vt.b);
-		S_arg = strdup(vt.b);
-	}
-
+	T_start = T_arg = VSM_Dup(vsm, "Arg", "-T");
+	S_arg = VSM_Dup(vsm, "Arg", "-S");
 	VSM_Destroy(&vsm);
+
+	if (T_arg == NULL) {
+		fprintf(stderr, "No -T in shared memory\n");
+		return (-1);
+	}
 
 	sock = -1;
 	while (*T_arg) {
@@ -449,6 +437,7 @@ main(int argc, char * const *argv)
 	const char *T_arg = NULL;
 	const char *S_arg = NULL;
 	const char *n_arg = NULL;
+	const char *t_arg = NULL;
 	int opt, sock;
 
 	/*
@@ -474,9 +463,7 @@ main(int argc, char * const *argv)
 			T_arg = optarg;
 			break;
 		case 't':
-			timeout = VNUM(optarg);
-			if (isnan(timeout))
-				usage(1);
+			t_arg = optarg;
 			break;
 		default:
 			usage(1);
@@ -486,27 +473,23 @@ main(int argc, char * const *argv)
 	argc -= optind;
 	argv += optind;
 
-	if (n_arg != NULL) {
-		if (T_arg != NULL || S_arg != NULL)
+	if (T_arg != NULL) {
+		if (n_arg != NULL)
 			usage(1);
-		sock = n_arg_sock(n_arg);
-	} else if (T_arg == NULL) {
-		sock = n_arg_sock("");
-	} else {
-		assert(T_arg != NULL);
 		sock = cli_sock(T_arg, S_arg);
+	} else {
+		if (S_arg != NULL)
+			usage(1);
+		sock = n_arg_sock(n_arg, t_arg);
 	}
 	if (sock < 0)
 		exit(2);
 
 	if (argc > 0)
 		do_args(sock, argc, argv);
-	else {
-		if (isatty(0)) {
-			interactive(sock);
-		} else {
-			pass(sock);
-		}
-	}
+	else if (isatty(0))
+		interactive(sock);
+	else
+		pass(sock);
 	exit(0);
 }

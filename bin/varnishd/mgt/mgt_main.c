@@ -43,7 +43,6 @@
 
 #include "mgt/mgt.h"
 #include "common/heritage.h"
-#include "common/common_vsm.h"
 
 #include "hash/hash_slinger.h"
 #include "vav.h"
@@ -65,7 +64,6 @@ pid_t			mgt_pid;
 struct vev_base		*mgt_evb;
 int			exit_status = 0;
 struct vsb		*vident;
-struct VSC_mgt		static_VSC_C_mgt;
 struct VSC_mgt		*VSC_C_mgt;
 static int		I_fd = -1;
 static char		Cn_arg[] = "/tmp/varnishd_C_XXXXXXX";
@@ -418,10 +416,7 @@ mgt_uptime(const struct vev *e, int what)
 	AN(VSC_C_mgt);
 	if (mgt_uptime_t0 == 0)
 		mgt_uptime_t0 = VTIM_real();
-	VSC_C_mgt->uptime = static_VSC_C_mgt.uptime =
-	    (uint64_t)(VTIM_real() - mgt_uptime_t0);
-	if (heritage.vsm != NULL)
-		CVSM_ageupdate(heritage.vsm);
+	VSC_C_mgt->uptime = (uint64_t)(VTIM_real() - mgt_uptime_t0);
 	return (0);
 }
 
@@ -458,7 +453,6 @@ mgt_f_read(const char *fn)
 	if (VFIL_searchpath(vcl_path, NULL, &f, fn, &fnp) || f == NULL) {
 		ARGV_ERR("Cannot read -f file '%s' (%s)\n",
 		    fnp != NULL ? fnp : fn, strerror(errno));
-		free(fnp);
 	}
 	free(fa->farg);
 	fa->farg = fnp;
@@ -596,10 +590,6 @@ main(int argc, char * const *argv)
 		MCH_TrackHighFd(eric_fd);
 		mgt_pid = getpid();
 	}
-
-	/* Set up the mgt counters */
-	memset(&static_VSC_C_mgt, 0, sizeof static_VSC_C_mgt);
-	VSC_C_mgt = &static_VSC_C_mgt;
 
 	VRND_SeedAll();
 
@@ -848,7 +838,8 @@ main(int argc, char * const *argv)
 
 	mgt_SHM_Init();
 
-	mgt_SHM_static_alloc(i_arg, strlen(i_arg) + 1L, "Arg", "-i", "-i");
+	mgt_SHM_static_alloc(i_arg, strlen(i_arg) + 1L, "Arg", "-i");
+	VSC_C_mgt = VSC_mgt_New("");
 
 	if (M_arg != NULL)
 		mgt_cli_master(M_arg);
@@ -871,8 +862,6 @@ main(int argc, char * const *argv)
 
 	if (strcmp(S_arg, "none"))
 		mgt_cli_secret(S_arg);
-
-	mgt_SHM_Create();
 
 	memset(&sac, 0, sizeof sac);
 	sac.sa_handler = SIG_IGN;

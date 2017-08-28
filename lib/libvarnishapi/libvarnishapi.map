@@ -188,4 +188,9 @@ LIBVARNISHAPI_1.7 {
 	VSM_Unmap;
 	VSC_Destroy_Point;
 	VSC_Clone_Point;
+	VSM_Refresh;
+	VSM_Attach;
+	VSM_Status;
+	VSM_Arg;
+	VSM_Dup;
 } LIBVARNISHAPI_1.0;

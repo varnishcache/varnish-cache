@@ -38,7 +38,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "vsm_priv.h"
 #include "vas.h"	// XXX Flexelint "not used" - but req'ed for assert()
 #include "vdef.h"
 #include "vin.h"
@@ -73,12 +72,6 @@ VIN_n_Arg(const char *n_arg, char **dir)
 		return (-1);
 	} else {
 		bprintf(dn, "%s/%s", VARNISH_STATE_DIR, nm);
-	}
-
-	/* Definitive length check */
-	if (strlen(dn) + 1 + strlen(VSM_FILENAME) >= sizeof dn) {
-		errno = ENAMETOOLONG;
-		return (-1);
 	}
 
 	strcat(dn, "/");

@@ -227,10 +227,12 @@ logexp_new(const char *name, const char *varg)
 	VSB_destroy(&vsb);
 	if (n_arg == NULL)
 		vtc_fatal(le->vl, "-v argument problems");
-	if (VSM_n_Arg(le->vsm, VSB_data(n_arg)) <= 0)
+	if (VSM_Arg(le->vsm, 'n', VSB_data(n_arg)) <= 0)
 		vtc_fatal(le->vl, "-v argument error: %s",
 		    VSM_Error(le->vsm));
 	VSB_destroy(&n_arg);
+	if (VSM_Attach(le->vsm, -1))
+		vtc_fatal(le->vl, "VSM_Attach: %s", VSM_Error(le->vsm));
 	return (le);
 }
 
@@ -378,7 +380,6 @@ logexp_close(struct logexp *le)
 	if (le->vslq)
 		VSLQ_Delete(&le->vslq);
 	AZ(le->vslq);
-	VSM_Close(le->vsm);
 }
 
 static void
@@ -390,9 +391,8 @@ logexp_start(struct logexp *le)
 	AN(le->vsl);
 	AZ(le->vslq);
 
-	if (VSM_Start(le->vsm, 0, -1))
-		vtc_fatal(le->vl, "VSM_Start: %s", VSM_Error(le->vsm));
 	AN(le->vsl);
+	(void)VSM_Status(le->vsm);
 	c = VSL_CursorVSM(le->vsl, le->vsm,
 	    (le->d_arg ? 0 : VSL_COPT_TAIL) | VSL_COPT_BATCH);
 	if (c == NULL)

@@ -42,11 +42,11 @@
 #include "vgz.h"
 #include "vsl_priv.h"
 #include "vmb.h"
-#include "vtim.h"
+#include "vsmw.h"
 
 /* These cannot be struct lock, which depends on vsm/vsl working */
 static pthread_mutex_t vsl_mtx;
-static pthread_mutex_t vsm_mtx = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t vsm_mtx;
 
 static struct VSL_head		*vsl_head;
 static const uint32_t		*vsl_end;
@@ -471,20 +471,16 @@ VSL_End(struct vsl_log *vsl)
 	vsl->wid = 0;
 }
 
-/*--------------------------------------------------------------------*/
-
-static void *
-vsm_cleaner(void *priv)
+static void
+vsm_vsc_lock(void)
 {
-	(void)priv;
-	THR_SetName("vsm_cleaner");
-	while (1) {
-		AZ(pthread_mutex_lock(&vsm_mtx));
-		CVSM_cleaner(heritage.vsm, (void*)VSC_C_main);
-		AZ(pthread_mutex_unlock(&vsm_mtx));
-		VTIM_sleep(1.1);
-	}
-	NEEDLESS(return NULL);
+	AZ(pthread_mutex_lock(&vsm_mtx));
+}
+
+static void
+vsm_vsc_unlock(void)
+{
+	AZ(pthread_mutex_unlock(&vsm_mtx));
 }
 
 /*--------------------------------------------------------------------*/
@@ -493,14 +489,21 @@ void
 VSM_Init(void)
 {
 	int i;
-	pthread_t tp;
 
 	assert(UINT_MAX % VSL_SEGMENTS == VSL_SEGMENTS - 1);
 
 	AZ(pthread_mutex_init(&vsl_mtx, NULL));
 	AZ(pthread_mutex_init(&vsm_mtx, NULL));
 
-	vsl_head = VSM_Alloc(cache_param->vsl_space, VSL_CLASS, "", "");
+	vsc_lock = vsm_vsc_lock;
+	vsc_unlock = vsm_vsc_unlock;
+
+	VSC_C_main = VSC_main_New("");
+	AN(VSC_C_main);
+
+	AN(proc_vsmw);
+	vsl_head = VSMW_Allocf(proc_vsmw, VSL_CLASS,
+	    cache_param->vsl_space, VSL_CLASS);
 	AN(vsl_head);
 	vsl_segsize = ((cache_param->vsl_space - sizeof *vsl_head) /
 	    sizeof *vsl_end) / VSL_SEGMENTS;
@@ -520,32 +523,4 @@ VSM_Init(void)
 		vsl_head->offset[i] = -1;
 	VWMB();
 	memcpy(vsl_head->marker, VSL_HEAD_MARKER, sizeof vsl_head->marker);
-
-	VSC_C_main = VSC_main_New("");
-	AN(VSC_C_main);
-
-	AZ(pthread_create(&tp, NULL, vsm_cleaner, NULL));
-}
-
-/*--------------------------------------------------------------------*/
-
-void *
-VSM_Alloc(unsigned size, const char *class, const char *type,
-    const char *ident)
-{
-	volatile void *p;
-
-	AZ(pthread_mutex_lock(&vsm_mtx));
-	p = CVSM_alloc(heritage.vsm, size, class, type, ident);
-	AZ(pthread_mutex_unlock(&vsm_mtx));
-	return (TRUST_ME(p));
-}
-
-void
-VSM_Free(void *ptr)
-{
-
-	AZ(pthread_mutex_lock(&vsm_mtx));
-	CVSM_free(heritage.vsm, ptr);
-	AZ(pthread_mutex_unlock(&vsm_mtx));
 }

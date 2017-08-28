@@ -10,7 +10,7 @@ varnish v1 -vcl+backend {
 
 	sub vcl_deliver {
 		set resp.http.existsA = std.file_exists("/non/existent");
-		set resp.http.existsB = std.file_exists("${tmpdir}/v1/_.vsm");
+		set resp.http.existsB = std.file_exists("${tmpdir}/v1/_.vsm_mgt/_.index");
 	}
 } -start
 

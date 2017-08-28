@@ -75,6 +75,7 @@ static unsigned ntop;
 static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 static int f_flag = 0;
 static unsigned maxfieldlen = 0;
+static char *ident;
 
 static volatile sig_atomic_t quit = 0;
 
@@ -201,7 +202,7 @@ update(int p)
 	if (n < p)
 		n++;
 	AC(erase());
-	q = VSM_Name(VUT.vsm);
+	q = ident;
 	len = COLS - strlen(q);
 	if (end_of_file)
 		AC(mvprintw(0, len - (1 + 6), "%s (EOF)", q));
@@ -360,6 +361,7 @@ main(int argc, char **argv)
 		usage(1);
 
 	VUT_Setup();
+	ident = VSM_Dup(VUT.vsm, "Arg", "-i");
 	if (!once) {
 		if (pthread_create(&thr, NULL, do_curses, NULL) != 0) {
 			fprintf(stderr, "pthread_create(): %s\n",

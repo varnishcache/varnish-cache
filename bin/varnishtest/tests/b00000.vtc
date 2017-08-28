@@ -14,10 +14,12 @@ varnish v1 -vcl+backend {
 varnish v1 -cliok "param.set debug +workspace"
 varnish v1 -cliok "param.set debug +witness"
 
-varnish v1 -expect n_object == 0
-varnish v1 -expect sess_conn == 0
-varnish v1 -expect client_req == 0
-varnish v1 -expect cache_miss == 0
+varnish v1 -vsc *
+
+varnish v1 -expect MAIN.n_object == 0
+varnish v1 -expect MAIN.sess_conn == 0
+varnish v1 -expect MAIN.client_req == 0
+varnish v1 -expect MAIN.cache_miss == 0
 
 client c1 {
 	txreq -url "/"

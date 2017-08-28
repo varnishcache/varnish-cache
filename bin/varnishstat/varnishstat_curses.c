@@ -1043,6 +1043,8 @@ handle_keypress(int ch)
 	redraw = 1;
 }
 
+#include <syslog.h>
+
 void
 do_curses(struct vsm *vd, double delay)
 {
@@ -1070,14 +1072,13 @@ do_curses(struct vsm *vd, double delay)
 
 	init_hitrate();
 	while (keep_running) {
-		if (VSM_Abandoned(vd)) {
+		if (VSM_Status(vd) | (VSM_MGT_CHANGED|VSM_WRK_CHANGED)) {
 			init_hitrate();
 			delete_pt_list();
-			VSM_Close(vd);
-			VSM_Open(vd);
-		}
-		if (VSM_valid != VSM_StillValid(vd, &f_iter))
 			build_pt_list(vd, &f_iter);
+			rebuild = 1;
+			redraw = 1;
+		}
 
 		now = VTIM_mono();
 		if (now - t_sample > interval)
@@ -1107,6 +1108,6 @@ do_curses(struct vsm *vd, double delay)
 			break;
 		}
 	}
-	VSM_Close(vd);
+	VSM_Destroy(&vd);
 	AZ(endwin());
 }

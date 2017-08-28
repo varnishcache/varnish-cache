@@ -38,15 +38,12 @@
 #include "common/common_vsm.h"
 
 #include "vend.h"
+#include "vsmw.h"
 #include "vgz.h"
 #include "vmb.h"
 #include "vapi/vsc_int.h"
 
-/*--------------------------------------------------------------------*/
-
-void *VSM_Alloc(unsigned size, const char *class, const char *type,
-    const char *ident);
-void VSM_Free(void *ptr);
+struct vsmw *proc_vsmw;
 
 /*--------------------------------------------------------------------*/
 
@@ -54,6 +51,7 @@ struct vsc_segs {
 	unsigned		magic;
 #define VSC_SEGS_MAGIC		0x9b355991
 
+	const char		*nm;
 	VTAILQ_ENTRY(vsc_segs)	list;
 	void			*seg;
 	void			*ptr;
@@ -62,24 +60,29 @@ struct vsc_segs {
 static VTAILQ_HEAD(,vsc_segs)	vsc_seglist =
     VTAILQ_HEAD_INITIALIZER(vsc_seglist);
 
+vsc_callback_f *vsc_lock;
+vsc_callback_f *vsc_unlock;
+
 void *
-VSC_Alloc(const char *nm, size_t sd,
-    size_t sj, const unsigned char *zj, size_t szj,
-    const char *fmt, va_list va)
+VSC_Alloc(const char *nm, size_t sd, size_t sj, const unsigned char *zj,
+    size_t szj, const char *fmt, va_list va)
 {
 	char *p;
 	z_stream vz;
 	struct vsc_segs *vsg;
+	char buf[1024];
 
-	(void)nm;
-	(void)fmt;
-	(void)va;
+	if (vsc_lock != NULL)
+		vsc_lock();
 
+	if (*fmt == '\0')
+		bprintf(buf, "%s", nm);
+	else
+		bprintf(buf, "%s.%s", nm, fmt);
 
-	p = VSM_Alloc(8 + sd + sj, VSC_CLASS, nm, fmt);
+	AN(proc_vsmw);
+	p = VSMW_Allocv(proc_vsmw, VSC_CLASS, 8 + sd + sj, buf, va);
 	AN(p);
-
-	memset(p, 0, sd);
 
 	memset(&vz, 0, sizeof vz);
 	assert(Z_OK == inflateInit2(&vz, 31));
@@ -96,6 +99,9 @@ VSC_Alloc(const char *nm, size_t sd,
 	VTAILQ_INSERT_TAIL(&vsc_seglist, vsg, list);
 	VWMB();
 	vbe64enc(p, sd);
+	vsg->nm = nm;
+	if (vsc_unlock != NULL)
+		vsc_unlock();
 	return (p + 8);
 }
 
@@ -104,14 +110,19 @@ VSC_Destroy(const char *nm, const void *p)
 {
 	struct vsc_segs *vsg;
 
-	(void)nm;
+	if (vsc_lock != NULL)
+		vsc_lock();
+
+	AN(proc_vsmw);
 	VTAILQ_FOREACH(vsg, &vsc_seglist, list) {
 		if (vsg->ptr != p)
 			continue;
-		VSM_Free(vsg->seg);
+		assert(vsg->nm == nm);
+		VSMW_Free(proc_vsmw, &vsg->seg);
 		VTAILQ_REMOVE(&vsc_seglist, vsg, list);
 		FREE_OBJ(vsg);
-		return;
+		break;
 	}
-	WRONG("Freeing unknown VSC");
+	if (vsc_unlock != NULL)
+		vsc_unlock();
 }

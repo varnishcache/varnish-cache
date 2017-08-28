@@ -44,6 +44,7 @@
 
 #include "mgt/mgt.h"
 #include "common/heritage.h"
+#include "common/common_vsm.h"
 
 #include "vbm.h"
 #include "vcli_serve.h"
@@ -51,6 +52,7 @@
 #include "vfil.h"
 #include "vlu.h"
 #include "vtim.h"
+#include "vsmw.h"
 
 static pid_t		child_pid = -1;
 
@@ -139,7 +141,7 @@ mch_cli_panic_clear(struct cli *cli, const char * const *av, void *priv)
 		VCLI_Out(cli, "Unknown parameter \"%s\".", av[2]);
 		return;
 	} else if (av[2] != NULL) {
-		VSC_C_mgt->child_panic = static_VSC_C_mgt.child_panic = 0;
+		VSC_C_mgt->child_panic = 0;
 		if (child_panic == NULL)
 			return;
 	}
@@ -312,16 +314,18 @@ mgt_launch_child(struct cli *cli)
 	heritage.std_fd = cp[1];
 	child_output = cp[0];
 
-	AN(heritage.vsm);
-	mgt_SHM_Size_Adjust();
-	AN(heritage.vsm);
+	mgt_SHM_ChildNew();
+
 	AN(heritage.param);
+	AN(heritage.panic_str);
 	if ((pid = fork()) < 0) {
-		/* XXX */
 		perror("Could not fork child");
-		exit(1);
+		exit(1);		// XXX Harsh ?
 	}
 	if (pid == 0) {
+
+		proc_vsmw = VSMW_New(heritage.vsm_fd, 0640, "_.index");
+		AN(proc_vsmw);
 
 		/* Redirect stdin/out/err */
 		VFIL_null_fd(STDIN_FILENO);
@@ -381,7 +385,7 @@ mgt_launch_child(struct cli *cli)
 	}
 	assert(pid > 1);
 	MGT_Complain(C_DEBUG, "Child (%jd) Started", (intmax_t)pid);
-	VSC_C_mgt->child_start = ++static_VSC_C_mgt.child_start;
+	VSC_C_mgt->child_start++;
 
 	/* Close stuff the child got */
 	closefd(&heritage.std_fd);
@@ -512,20 +516,20 @@ mgt_reap_child(void)
 		VSB_printf(vsb, " status=%d", WEXITSTATUS(status));
 		exit_status |= 0x20;
 		if (WEXITSTATUS(status) == 1)
-			VSC_C_mgt->child_exit = ++static_VSC_C_mgt.child_exit;
+			VSC_C_mgt->child_exit++;
 		else
-			VSC_C_mgt->child_stop = ++static_VSC_C_mgt.child_stop;
+			VSC_C_mgt->child_stop++;
 	}
 	if (WIFSIGNALED(status)) {
 		VSB_printf(vsb, " signal=%d", WTERMSIG(status));
 		exit_status |= 0x40;
-		VSC_C_mgt->child_died = ++static_VSC_C_mgt.child_died;
+		VSC_C_mgt->child_died++;
 	}
 #ifdef WCOREDUMP
 	if (WCOREDUMP(status)) {
 		VSB_printf(vsb, " (core dumped)");
 		exit_status |= 0x80;
-		VSC_C_mgt->child_dump = ++static_VSC_C_mgt.child_dump;
+		VSC_C_mgt->child_dump++;
 	}
 #endif
 	AZ(VSB_finish(vsb));
@@ -535,12 +539,10 @@ mgt_reap_child(void)
 	/* Dispose of shared memory but evacuate panic messages first */
 	if (heritage.panic_str[0] != '\0') {
 		mgt_panic_record(r);
-		mgt_SHM_Destroy(1);
-		VSC_C_mgt->child_panic = ++static_VSC_C_mgt.child_panic;
-	} else {
-		mgt_SHM_Destroy(MGT_DO_DEBUG(DBG_VSM_KEEP));
+		VSC_C_mgt->child_panic++;
 	}
-	mgt_SHM_Create();
+
+	mgt_SHM_ChildDestroy();
 
 	if (child_state == CH_RUNNING)
 		child_state = CH_DIED;

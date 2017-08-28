@@ -85,9 +85,20 @@ struct vsmw {
 	char				*idx;
 	VTAILQ_HEAD(, vsmwseg)		segs;
 	struct vsb			*vsb;
+	pid_t				pid;
+	time_t				birth;
 };
 
 /*--------------------------------------------------------------------*/
+
+static void
+vsmw_idx_head(const struct vsmw *vsmw, int fd)
+{
+	char buf[64];
+
+	bprintf(buf, "# %jd %jd\n", (intmax_t)vsmw->pid, (intmax_t)vsmw->birth);
+	assert(write(fd, buf, strlen(buf)) == strlen(buf));
+}
 
 static void
 vsmw_write_index(const struct vsmw *vsmw, int fd, const struct vsmwseg *seg)
@@ -116,7 +127,9 @@ vsmw_mkent(const struct vsmw *vsmw, const char *pfx)
 
 	while (1) {
 		VSB_clear(vsmw->vsb);
-		VSB_printf(vsmw->vsb, "%s.%lx", pfx, VRND_RandomTestable());
+		VSB_printf(vsmw->vsb, "_.%s", pfx);
+		VSB_printf(vsmw->vsb, ".%08lx", VRND_RandomTestable());
+		VSB_printf(vsmw->vsb, "%08lx", VRND_RandomTestable());
 		AZ(VSB_finish(vsmw->vsb));
 		fd = openat(vsmw->vdirfd, VSB_data(vsmw->vsb), O_RDONLY);
 		if (fd < 0 && errno == ENOENT)
@@ -215,12 +228,13 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg, int fixidx)
 		vsmw_mkent(vsmw, vsmw->idx);
 		REPLACE(t, VSB_data(vsmw->vsb));
 		AN(t);
-		fd = open(t, O_WRONLY|O_CREAT|O_EXCL, vsmw->mode);
+		fd = openat(vsmw->vdirfd, t, O_WRONLY|O_CREAT|O_EXCL, vsmw->mode);
 		assert(fd >= 0);
+		vsmw_idx_head(vsmw, fd);
 		VTAILQ_FOREACH(seg, &vsmw->segs, list)
 			vsmw_write_index(vsmw, fd, seg);
 		AZ(close(fd));
-		AZ(rename(t, vsmw->idx));
+		AZ(renameat(vsmw->vdirfd, t, vsmw->vdirfd, vsmw->idx));
 		REPLACE(t, NULL);
 	}
 }
@@ -256,19 +270,24 @@ VSMW_New(int vdirfd, int mode, const char *idxname)
 	assert(vdirfd > 0);
 	assert(mode > 0);
 	AN(idxname);
+
 	ALLOC_OBJ(vsmw, VSMW_MAGIC);
 	AN(vsmw);
+
 	VTAILQ_INIT(&vsmw->segs);
 	vsmw->vsb = VSB_new_auto();
 	AN(vsmw->vsb);
 	REPLACE(vsmw->idx, idxname);
 	vsmw->mode = mode;
 	vsmw->vdirfd = vdirfd;
+	vsmw->pid = getpid();
+	vsmw->birth = time(NULL);
 
 	(void)unlinkat(vdirfd, vsmw->idx, 0);
 	fd = openat(vdirfd,
 	    vsmw->idx, O_APPEND | O_WRONLY | O_CREAT, vsmw->mode);
 	assert(fd >= 0);
+	vsmw_idx_head(vsmw, fd);
 	AZ(close(fd));
 
 	return (vsmw);
