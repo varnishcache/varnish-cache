@@ -361,7 +361,7 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 	    st.st_mode != vs->fst.st_mode ||
 	    st.st_size != vs->fst.st_size ||
 	    st.st_nlink < 1 ||
-	    memcmp(&st.st_mtim, &vs->fst.st_mtim, sizeof st.st_mtim))) {
+	    memcmp(&st.st_mtime, &vs->fst.st_mtime, sizeof st.st_mtime))) {
 		closefd(&vs->fd);
 	}
 
