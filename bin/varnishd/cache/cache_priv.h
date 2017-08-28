@@ -52,6 +52,8 @@ double EXP_Ttl(const struct req *, const struct objcore *);
 void EXP_Insert(struct worker *wrk, struct objcore *oc);
 void EXP_Remove(struct objcore *);
 
+#define EXP_Dttl(req, oc) (oc->ttl - (req->t_req - oc->t_origin))
+
 /* From cache_main.c */
 void BAN_Init(void);
 void BAN_Compile(void);
