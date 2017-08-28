@@ -1072,7 +1072,7 @@ do_curses(struct vsm *vd, double delay)
 
 	init_hitrate();
 	while (keep_running) {
-		if (VSM_Status(vd) | (VSM_MGT_CHANGED|VSM_WRK_CHANGED)) {
+		if (VSM_Status(vd) & (VSM_MGT_CHANGED|VSM_WRK_CHANGED)) {
 			init_hitrate();
 			delete_pt_list();
 			build_pt_list(vd, &f_iter);
