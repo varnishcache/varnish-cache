@@ -116,7 +116,7 @@ VRT_r_##obj##_status(VRT_CTX)						\
 									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->http_##obj, HTTP_MAGIC);			\
-	return(ctx->http_##obj->status);				\
+	return (ctx->http_##obj->status);				\
 }
 
 VRT_HDR_LR(req,    method,	HTTP_HDR_METHOD)
@@ -161,7 +161,8 @@ VRT_r_obj_proto(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
 
-	return (HTTP_GetHdrPack(ctx->req->wrk, ctx->req->objcore, H__Proto));
+	return (HTTP_GetHdrPack(ctx->req->wrk, ctx->req->objcore,
+	    H__Proto));
 }
 
 const char *
@@ -171,7 +172,8 @@ VRT_r_obj_reason(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
 
-	return (HTTP_GetHdrPack(ctx->req->wrk, ctx->req->objcore, H__Reason));
+	return (HTTP_GetHdrPack(ctx->req->wrk, ctx->req->objcore,
+	    H__Reason));
 }
 
 /*--------------------------------------------------------------------
@@ -253,7 +255,7 @@ VRT_r_client_identity(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	if (ctx->req->client_identity != NULL)
 		return (ctx->req->client_identity);
-	return(SES_Get_String_Attr(ctx->req->sp, SA_CLIENT_IP));
+	return (SES_Get_String_Attr(ctx->req->sp, SA_CLIENT_IP));
 }
 
 void
@@ -420,7 +422,7 @@ VRT_r_req_##nm(VRT_CTX)							\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);				\
-	return(ctx->req->elem);						\
+	return (ctx->req->elem);					\
 }
 
 REQ_VAR_L(backend_hint, director_hint, const struct director *,)
@@ -503,7 +505,7 @@ VRT_r_req_esi_level(VRT_CTX)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	return(ctx->req->esi_level);
+	return (ctx->req->esi_level);
 }
 
 /*--------------------------------------------------------------------*/
@@ -574,7 +576,7 @@ VRT_r_##which##_##fld(VRT_CTX)					\
 	if (d <= 0.0)						\
 		d = 0.0;					\
 	d -= (offset);						\
-	return(d);						\
+	return (d);						\
 }
 
 VRT_DO_EXP_R(obj, ctx->req->objcore, ttl,
@@ -601,7 +603,7 @@ VRT_r_##which##_##age(VRT_CTX)					\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	return(ctx->now - oc->t_origin);			\
+	return (ctx->now - oc->t_origin);			\
 }
 
 VRT_DO_AGE_R(obj, ctx->req->objcore)
@@ -618,7 +620,8 @@ VRT_r_req_xid(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 
-	return (WS_Printf(ctx->req->http->ws, "%u", VXID(ctx->req->vsl->wid)));
+	return (WS_Printf(ctx->req->http->ws, "%u",
+	    VXID(ctx->req->vsl->wid)));
 }
 
 const char *
@@ -628,7 +631,8 @@ VRT_r_bereq_xid(VRT_CTX)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 
-	return (WS_Printf(ctx->bo->bereq->ws, "%u", VXID(ctx->bo->vsl->wid)));
+	return (WS_Printf(ctx->bo->bereq->ws, "%u",
+	    VXID(ctx->bo->vsl->wid)));
 }
 
 /*--------------------------------------------------------------------
