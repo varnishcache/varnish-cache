@@ -41,7 +41,7 @@
  *
  * 6.1 (unreleased):
  *	http_CollectHdrSep added
- *	VRT_purge modified (may fail a transaction)
+ *	VRT_purge modified (may fail a transaction, signature changed)
  * 6.0 (2017-03-15):
  *	VRT_hit_for_pass added
  *	VRT_ipcmp added
@@ -300,7 +300,7 @@ int VRT_re_match(VRT_CTX, const char *, void *re);
 const char *VRT_regsub(VRT_CTX, int all, const char *, void *, const char *);
 
 void VRT_ban_string(VRT_CTX, const char *);
-void VRT_purge(VRT_CTX, double ttl, double grace, double keep);
+unsigned VRT_purge(VRT_CTX, double ttl, double grace, double keep);
 
 void VRT_count(VRT_CTX, unsigned);
 void VRT_synth(VRT_CTX, unsigned, const char *);

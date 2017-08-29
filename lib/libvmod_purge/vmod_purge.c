@@ -1,8 +1,8 @@
 /*-
- * Copyright (c) 2013 Varnish Software AS
+ * Copyright (c) 2017 Varnish Software AS
  * All rights reserved.
  *
- * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Author: Dridi Boukelmoune <dridi.boukelmoune@gmail.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -24,11 +24,36 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
  */
 
-VTC_VMOD(std)
-VTC_VMOD(debug)
-VTC_VMOD(directors)
-VTC_VMOD(purge)
-VTC_VMOD(vtc)
+#include "config.h"
+
+#include "math.h"
+
+#include "cache/cache.h"
+
+#include "vrt.h"
+
+#include "vcc_if.h"
+
+VCL_INT __match_proto__(td_purge_hard)
+vmod_hard(VRT_CTX)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	return (VRT_purge(ctx, 0, 0, 0));
+}
+
+VCL_INT __match_proto__(td_purge_soft)
+vmod_soft(VRT_CTX, VCL_DURATION ttl, VCL_DURATION grace, VCL_DURATION keep)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (ttl < 0)
+		ttl = NAN;
+	if (grace < 0)
+		grace = NAN;
+	if (keep < 0)
+		keep = NAN;
+	return (VRT_purge(ctx, ttl, grace, keep));
+}

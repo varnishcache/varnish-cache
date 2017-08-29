@@ -586,7 +586,7 @@ hsh_rush2(struct worker *wrk, struct rush *r)
  * Purge an entire objhead
  */
 
-void
+unsigned
 HSH_Purge(struct worker *wrk, struct objhead *oh, double ttl, double grace,
 double keep)
 {
@@ -667,6 +667,7 @@ double keep)
 	} while (more);
 	WS_Release(wrk->aws, 0);
 	Pool_PurgeStat(n_tot);
+	return (n_tot);
 }
 
 /*---------------------------------------------------------------------

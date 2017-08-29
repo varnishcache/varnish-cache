@@ -538,7 +538,7 @@ VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize)
  * purges
  */
 
-void
+unsigned
 VRT_purge(VRT_CTX, double ttl, double grace, double keep)
 {
 
@@ -548,12 +548,13 @@ VRT_purge(VRT_CTX, double ttl, double grace, double keep)
 		VSLb(ctx->vsl, SLT_VCL_Error,
 		    "purge can only happen in vcl_hit{} or vcl_miss{}");
 		VRT_handling(ctx, VCL_RET_FAIL);
-		return;
+		return (0);
 	}
 
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req->wrk, WORKER_MAGIC);
-	HSH_Purge(ctx->req->wrk, ctx->req->objcore->objhead, ttl, grace, keep);
+	return (HSH_Purge(ctx->req->wrk, ctx->req->objcore->objhead,
+	    ttl, grace, keep));
 }
 
 /*--------------------------------------------------------------------
