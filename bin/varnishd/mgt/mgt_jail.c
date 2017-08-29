@@ -189,7 +189,7 @@ VJ_fix_storage_file(int fd)
 }
 
 void
-VJ_fix_vsm_file(int fd)
+VJ_fix_vsm_dir(int fd)
 {
 
 	CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);

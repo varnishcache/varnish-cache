@@ -279,7 +279,7 @@ child_signal_handler(int s, siginfo_t *si, void *c)
 		 __FILE__,
 		 __LINE__,
 		 buf,
-		 VAS_ASSERT);
+		 VAS_WRONG);
 }
 
 /*=====================================================================
@@ -331,8 +331,6 @@ mgt_launch_child(struct cli *cli)
 	}
 	if (pid == 0) {
 
-		proc_vsmw = VSMW_New(heritage.vsm_fd, 0640, "_.index");
-		AN(proc_vsmw);
 
 		/* Redirect stdin/out/err */
 		VFIL_null_fd(STDIN_FILENO);
@@ -385,6 +383,9 @@ mgt_launch_child(struct cli *cli)
 		(void)signal(SIGTERM, SIG_DFL);
 
 		VJ_subproc(JAIL_SUBPROC_WORKER);
+
+		proc_vsmw = VSMW_New(heritage.vsm_fd, 0640, "_.index");
+		AN(proc_vsmw);
 
 		child_main();
 

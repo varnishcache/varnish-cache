@@ -125,7 +125,7 @@ void VJ_master(enum jail_master_e jme);
 void VJ_subproc(enum jail_subproc_e jse);
 int VJ_make_workdir(const char *dname);
 int VJ_make_vcldir(const char *dname);
-void VJ_fix_vsm_file(int fd);
+void VJ_fix_vsm_dir(int fd);
 void VJ_fix_storage_file(int fd);
 
 extern const struct jail_tech jail_tech_unix;

@@ -73,11 +73,13 @@ mgt_shm_atexit(void)
 	/* Do not let VCC kill our VSM */
 	if (getpid() != mgt_pid)
 		return;
+	VJ_master(JAIL_MASTER_FILE);
 	VSMW_Destroy(&mgt_vsmw);
 	if (!MGT_DO_DEBUG(DBG_VTC_MODE)) {
 		AZ(system("rm -rf " VSM_MGT_DIRNAME));
 		AZ(system("rm -rf " VSM_CHILD_DIRNAME));
 	}
+	VJ_master(JAIL_MASTER_LOW);
 }
 
 /*--------------------------------------------------------------------
@@ -88,11 +90,12 @@ void
 mgt_SHM_Init(void)
 {
 
-	// XXX: VJ/mode/owner/group
+	VJ_master(JAIL_MASTER_FILE);
 	AZ(system("rm -rf " VSM_MGT_DIRNAME));
 	AZ(mkdir(VSM_MGT_DIRNAME, 0755));
 	mgt_vsmw = VSMW_New(open(VSM_MGT_DIRNAME, O_RDONLY), 0640, "_.index");
 	AN(mgt_vsmw);
+	VJ_master(JAIL_MASTER_LOW);
 
 	proc_vsmw = mgt_vsmw;
 
@@ -104,13 +107,18 @@ void
 mgt_SHM_ChildNew(void)
 {
 
+	VJ_master(JAIL_MASTER_FILE);
 	AZ(system("rm -rf " VSM_CHILD_DIRNAME));
-	AZ(mkdir(VSM_CHILD_DIRNAME, 0755));
+	AZ(mkdir(VSM_CHILD_DIRNAME, 0750));
 
 	heritage.vsm_fd = open(VSM_CHILD_DIRNAME, O_RDONLY);
 	assert(heritage.vsm_fd >= 0);
+	VJ_fix_vsm_dir(heritage.vsm_fd);
+	VJ_master(JAIL_MASTER_LOW);
+
 	MCH_Fd_Inherit(heritage.vsm_fd, "VSMW");
 
+	VJ_master(JAIL_MASTER_FILE);
 	heritage.param = VSMW_Allocf(mgt_vsmw, VSM_CLASS_PARAM,
 	    sizeof *heritage.param, "");
 	AN(heritage.param);
@@ -120,6 +128,7 @@ mgt_SHM_ChildNew(void)
 	heritage.panic_str = VSMW_Allocf(mgt_vsmw, "Panic",
 	    heritage.panic_str_len, "");
 	AN(heritage.panic_str);
+	VJ_master(JAIL_MASTER_LOW);
 }
 
 void
@@ -127,8 +136,11 @@ mgt_SHM_ChildDestroy(void)
 {
 
 	closefd(&heritage.vsm_fd);
-	if (!MGT_DO_DEBUG(DBG_VTC_MODE))
+	if (!MGT_DO_DEBUG(DBG_VTC_MODE)) {
+		VJ_master(JAIL_MASTER_FILE);
 		AZ(system("rm -rf " VSM_CHILD_DIRNAME));
+		VJ_master(JAIL_MASTER_LOW);
+	}
 	heritage.panic_str = NULL;
 	heritage.param = NULL;
 }
