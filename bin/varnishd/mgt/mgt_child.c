@@ -263,8 +263,15 @@ static void __match_proto__()
 child_signal_handler(int s, siginfo_t *si, void *c)
 {
 	char buf[1024];
+	struct sigaction sa;
 
 	(void)c;
+
+	/* Don't come back */
+	memset(&sa, 0, sizeof sa);
+	sa.sa_handler = SIG_DFL;
+	(void)sigaction(SIGSEGV, &sa, NULL);
+	(void)sigaction(SIGABRT, &sa, NULL);
 
 	bprintf(buf, "Signal %d (%s) received at %p si_code %d",
 		s, strsignal(s), si->si_addr, si->si_code);
