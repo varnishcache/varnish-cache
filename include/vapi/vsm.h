@@ -113,7 +113,7 @@ int VSM_Attach(struct vsm *, int progress);
 	 * Attach to the master process VSM segment, according to
 	 * the 't' argument.  If `progress_fd` is non-negative, a
 	 * period ('.') will be output for each second waited, and if
-	 * any periods were output, a NL ('\n') is outout before the
+	 * any periods were output, a NL ('\n') is output before the
 	 * function returns.
 	 *
 	 * Returns:

@@ -147,7 +147,7 @@ usage(void)
 	printf("\nAdvanced/Dev/Debug options:\n");
 
 	printf(FMT, "-d", "debug mode");
-	printf(FMT, "", "Stay in forground, CLI on stdin.");
+	printf(FMT, "", "Stay in foreground, CLI on stdin.");
 	printf(FMT, "-C", "Output VCL code compiled to C language");
 	printf(FMT, "-V", "version");
 	printf(FMT, "-h kind[,options]", "Hash specification");

@@ -86,7 +86,7 @@ enum sess_close {
 };
 
 /*--------------------------------------------------------------------
- * Indicies into http->hd[]
+ * Indices into http->hd[]
  */
 enum {
 #define SLTH(tag, ind, req, resp, sdesc, ldesc)	ind,
