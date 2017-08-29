@@ -1,0 +1,116 @@
+varnishtest "Test purge vmod"
+
+server s1 {
+	rxreq
+	expect req.http.Accept-Language == fr
+	txresp -hdr "Vary: Accept-Language" -body fr
+
+	rxreq
+	expect req.http.Accept-Language == fr
+	txresp -hdr "Vary: Accept-Language" -body fr
+
+	rxreq
+	expect req.http.Accept-Language == en
+	txresp -hdr "Vary: Accept-Language" -body en
+} -start
+
+varnish v1 -vcl+backend {
+	import purge;
+
+	sub vcl_recv {
+		if (req.method ~ "PURGE") {
+			return (hash);
+		}
+	}
+
+	sub my_purge {
+		if (req.method == "PURGE") {
+			set req.http.purged = purge.hard();
+		}
+		else {
+			set req.http.purged = purge.soft();
+		}
+		if (req.http.purged == "0") {
+			return (synth(404));
+		}
+		else {
+			return (synth(200));
+		}
+	}
+
+	sub vcl_hit {
+		if (req.method ~ "PURGE") { call my_purge; }
+	}
+
+	sub vcl_miss {
+		if (req.method ~ "PURGE") { call my_purge; }
+	}
+
+	sub vcl_synth {
+		if (req.method ~ "PURGE") {
+			set resp.http.purged = req.http.purged;
+			return (deliver);
+		}
+	}
+
+	sub vcl_backend_response {
+		set beresp.http.X-Varnish-Be = bereq.xid;
+	}
+} -start
+
+logexpect l1 -v v1 -q Hit -i Hit {
+	expect * * Hit "^1002 -.+ 10.000000 0.000000$"
+} -start
+
+logexpect l2 -v v1 -q "Begin ~ bgfetch" {
+	expect * * BerespHeader "X-Varnish-Be: 1005"
+} -start
+
+logexpect l3 -v v1 -g raw -q "vxid == 0" {
+	expect * * ExpKill x=1008
+} -start
+
+client c1 {
+	txreq -hdr "Accept-Language: fr"
+	rxresp
+	expect resp.body == fr
+	expect resp.http.X-Varnish-Be == 1002
+
+	txreq -req SOFTPURGE
+	rxresp
+	expect resp.status == 200
+	expect resp.http.purged == 1
+
+	txreq -hdr "Accept-Language: fr"
+	rxresp
+	expect resp.body == fr
+	expect resp.http.X-Varnish == "1004 1002"
+	expect resp.http.X-Varnish-Be == 1002
+} -run
+
+# Wait until bgfetch triggered by 1004 is done
+logexpect l2 -wait
+
+client c1 {
+	txreq -hdr "Accept-Language: en"
+	rxresp
+	expect resp.body == en
+	expect resp.http.X-Varnish-Be == 1008
+
+	txreq -req PURGE
+	rxresp
+	expect resp.status == 200
+	expect resp.http.purged == 2
+} -run
+
+# Wait until the expire thread kicks in
+logexpect l3 -wait
+
+client c1 {
+	txreq -req PURGE
+	rxresp
+	expect resp.status == 404
+	expect resp.http.purged == 0
+} -run
+
+logexpect l1 -wait

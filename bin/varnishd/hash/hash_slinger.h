@@ -69,7 +69,7 @@ void HSH_Init(const struct hash_slinger *slinger);
 void HSH_AddString(struct req *, void *ctx, const char *str);
 void HSH_Insert(struct worker *, const void *hash, struct objcore *,
     struct ban *);
-void HSH_Purge(struct worker *, struct objhead *, double ttl, double grace,
+unsigned HSH_Purge(struct worker *, struct objhead *, double ttl, double grace,
     double keep);
 void HSH_config(const char *h_arg);
 struct boc *HSH_RefBoc(const struct objcore *);

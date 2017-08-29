@@ -205,6 +205,10 @@ reference/vmod_directors.generated.rst: reference $(top_builddir)/lib/libvmod_di
 	cp $(top_builddir)/lib/libvmod_directors/vmod_directors.rst $@ || true
 BUILT_SOURCES += reference/vmod_directors.generated.rst
 
+reference/vmod_purge.generated.rst: reference $(top_builddir)/lib/libvmod_purge/vmod_purge.rst
+	cp $(top_builddir)/lib/libvmod_purge/vmod_purge.rst $@ || true
+BUILT_SOURCES += reference/vmod_purge.generated.rst
+
 reference/vmod_vtc.generated.rst: reference $(top_builddir)/lib/libvmod_vtc/vmod_vtc.rst
 	cp $(top_builddir)/lib/libvmod_vtc/vmod_vtc.rst $@ || true
 BUILT_SOURCES += reference/vmod_vtc.generated.rst
