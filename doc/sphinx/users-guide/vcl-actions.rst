@@ -31,7 +31,8 @@ The most common actions to return are these:
 
 *restart*
   Restart processing of the request. You can restart the processing of
-  the whole transaction. Changes to the `req` object are retained.
+  the whole transaction. Changes to the `req` object are retained, except
+  for `req.backend_hint`, which gets reset to the default backend.
 
 *retry*
   Retry the request against the backend. This can be returned from

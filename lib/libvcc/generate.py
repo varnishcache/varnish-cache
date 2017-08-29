@@ -330,6 +330,8 @@ sp_variables = [
 		or the director otherwise.
 		When used in string context, returns the name of the director
 		or backend, respectively.
+		Note: backend_hint gets reset to the default backend by
+		restarts!
 		"""
 	),
 	('req.hash_ignore_busy',
