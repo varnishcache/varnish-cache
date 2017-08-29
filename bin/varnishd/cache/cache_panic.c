@@ -697,5 +697,8 @@ PAN_Init(void)
 	AN(heritage.panic_str_len);
 	AN(VSB_new(pan_vsb, heritage.panic_str, heritage.panic_str_len,
 	    VSB_FIXEDLEN));
+	VSB_printf(pan_vsb, "This is a test\n");
+	AZ(VSB_finish(pan_vsb));
+	VSB_clear(pan_vsb);
 	CLI_AddFuncs(debug_cmds);
 }
