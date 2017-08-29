@@ -294,6 +294,26 @@ VSM_ResetError(struct vsm *vd)
 /*--------------------------------------------------------------------
  */
 
+static void
+vsm_unmap(struct vsm_seg *vg)
+{
+	size_t sz, ps, len;
+
+	CHECK_OBJ_NOTNULL(vg, VSM_SEG_MAGIC);
+	AN(vg->b);
+	AN(vg->e);
+	sz = strtoul(vg->av[2], NULL, 10);
+	assert(sz > 0);
+	ps = getpagesize();
+	len = RUP2(sz, ps);
+	AZ(munmap(vg->b, len));
+	vg->b = NULL;
+	vg->e = NULL;
+}
+
+/*--------------------------------------------------------------------
+ */
+
 #define VSM_NUKE_ALL	(1U << 16)
 
 static int
@@ -324,7 +344,6 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 	uintmax_t id1, id2;
 	char **av;
 	struct vsm_seg *vg, *vg2;
-
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	CHECK_OBJ_NOTNULL(vs, VSM_SET_MAGIC);
@@ -463,7 +482,8 @@ vsm_refresh_set(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 				vg->stale = 1;
 				VTAILQ_INSERT_TAIL(&vs->stale, vg, list);
 			} else {
-				// XXX: munmap
+				if (vg->b != NULL)
+					vsm_unmap(vg);
 				VAV_Free(vg->av);
 				FREE_OBJ(vg);
 			}
@@ -696,7 +716,6 @@ int
 VSM_Unmap(struct vsm *vd, struct vsm_fantom *vf)
 {
 	struct vsm_seg *vg;
-	size_t sz, ps, len;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AN(vd->attached);
@@ -716,12 +735,7 @@ VSM_Unmap(struct vsm *vd, struct vsm_fantom *vf)
 		VAV_Free(vg->av);
 		FREE_OBJ(vg);
 	} else {
-		sz = strtoul(vg->av[2], NULL, 10);
-		assert(sz > 0);
-		ps = getpagesize();
-		len = RUP2(sz, ps);
-		AZ(munmap(vg->b, len));
-		vg->b = vg->e = NULL;
+		vsm_unmap(vg);
 	}
 	return (0);
 }
