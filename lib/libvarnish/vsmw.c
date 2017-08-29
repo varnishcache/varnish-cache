@@ -214,6 +214,7 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg, int fixidx)
 	VTAILQ_REMOVE(&vsmw->segs, seg, list);
 	AZ(unlinkat(vsmw->vdirfd, seg->fn, 0));
 	REPLACE(seg->fn, NULL);
+	REPLACE(seg->class, NULL);
 	REPLACE(seg->id, NULL);
 	FREE_OBJ(seg);
 
