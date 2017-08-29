@@ -1043,8 +1043,6 @@ handle_keypress(int ch)
 	redraw = 1;
 }
 
-#include <syslog.h>
-
 void
 do_curses(struct vsm *vd, double delay)
 {
