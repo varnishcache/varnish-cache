@@ -87,7 +87,7 @@ void VSM_ResetError(struct vsm *vd);
 #define VSM_n_USAGE	"[-n varnish_name]"
 #define VSM_t_USAGE	"[-t <seconds|off>]"
 
-int VSM_Arg(struct vsm *, char flag, const char *t_arg);
+int VSM_Arg(struct vsm *, char flag, const char *arg);
 	/*
 	 * Handle all VSM specific command line arguments.
 	 *
@@ -97,8 +97,8 @@ int VSM_Arg(struct vsm *, char flag, const char *t_arg);
 	 *
 	 * 't' Configure patience during startup
 	 *
-	 *	If t_arg is "off", VSM_Attach() will wait forever.
-	 *	Otherwise t_arg is the number of seconds to be patient
+	 *	If arg is "off", VSM_Attach() will wait forever.
+	 *	Otherwise arg is the number of seconds to be patient
 	 *	while the varnishd manager process gets started.
 	 *
 	 *	The default is five seconds.
