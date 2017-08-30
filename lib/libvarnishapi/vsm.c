@@ -58,6 +58,14 @@
 
 #include "vapi/vsm.h"
 
+#ifndef MAP_HASSEMAPHORE
+#  define MAP_HASSEMAPHORE 0 /* XXX Linux */
+#endif
+
+#ifndef MAP_NOSYNC
+#  define MAP_NOSYNC 0 /* XXX Linux */
+#endif
+
 const struct vsm_valid VSM_invalid[1] = {{"invalid"}};
 const struct vsm_valid VSM_valid[1] = {{"valid"}};
 

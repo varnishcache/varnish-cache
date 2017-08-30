@@ -129,12 +129,4 @@
 #  define _Static_assert(a,b)
 #endif
 
-#ifndef MAP_HASSEMAPHORE
-#  define MAP_HASSEMAPHORE 0 /* XXX Linux */
-#endif
-
-#ifndef MAP_NOSYNC
-#  define MAP_NOSYNC 0 /* XXX Linux */
-#endif
-
 #endif /* VDEF_H_INCLUDED */
