@@ -1,0 +1,66 @@
+varnishtest "VMOD blob IDENTITY decode_n()"
+
+varnish v1 -vcl {
+	import blob;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_recv {
+	  return(synth(200));
+	}
+
+	sub vcl_synth {
+	    set resp.http.id =
+	      blob.encode(IDENTITY, blob.decode_n(5, IDENTITY,
+			      "The quick brown fox jumps over the lazy dog"));
+
+	    set resp.http.hobbes =
+	      blob.encode(IDENTITY, blob.decode_n(5, IDENTITY,
+{"Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure."}));
+
+	    set resp.http.list =
+	      blob.encode(IDENTITY, blob.decode_n(6, IDENTITY,
+			      "" + req.http.unset + req.url +
+			      "The quick brown fox jumps over " +
+			      req.http.unset + "" + req.http.unset + "" +
+			      "the lazy dog" + req.url + req.http.unset + ""));
+
+	    set resp.http.empty =
+	      blob.encode(IDENTITY, blob.decode_n(5, IDENTITY, ""));
+
+	    set resp.http.undef =
+	      blob.encode(IDENTITY, blob.decode_n(5, IDENTITY,
+						      req.http.unset));
+
+	    set resp.http.emptylist =
+	      blob.encode(IDENTITY, blob.decode_n(5, IDENTITY,
+			      req.http.unset + "" + req.http.unset + ""));
+
+	    set resp.http.param =
+	      blob.encode(blob=
+			      blob.decode_n(encoded=
+				 "The quick brown fox jumps over the lazy dog",
+					    n=7, decoding=IDENTITY),
+			      encoding=IDENTITY);
+
+	    set resp.http.paramlist =
+	      blob.encode(IDENTITY, blob.decode_n(encoded=
+			      "" + req.http.unset + req.url +
+			      "The quick brown fox jumps over " +
+			      req.http.unset + "" + req.http.unset + "" +
+			      "the lazy dog" + req.url + req.http.unset + "",
+			      decoding=IDENTITY, n=37));
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.id == "The q"
+	expect resp.http.hobbes == "Man i"
+	expect resp.http.list == "/The q"
+	expect resp.http.empty == ""
+	expect resp.http.undef == ""
+	expect resp.http.emptylist == ""
+	expect resp.http.param == "The qui"
+	expect resp.http.paramlist == "/The quick brown fox jumps over the l"
+} -run

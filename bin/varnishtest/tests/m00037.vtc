@@ -1,0 +1,302 @@
+varnishtest "VMOD blob base64 encode and decode"
+
+varnish v1 -vcl {
+	import blob;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_recv {
+	  return(synth(200));
+	}
+
+	sub vcl_synth {
+	    set req.http.pangram
+	      = "The quick brown fox jumps over the lazy dog";
+	    set req.http.hobbes =
+{"Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure."};
+	    # hex encoding of all 256 byte values in descending order
+	    set req.http.hexall =
+{"fffefdfcfbfaf9f8f7f6f5f4f3f2f1f0efeeedecebeae9e8e7e6e5e4e3e2e1e0dfdedddcdbdad9d8d7d6d5d4d3d2d1d0cfcecdcccbcac9c8c7c6c5c4c3c2c1c0bfbebdbcbbbab9b8b7b6b5b4b3b2b1b0afaeadacabaaa9a8a7a6a5a4a3a2a1a09f9e9d9c9b9a999897969594939291908f8e8d8c8b8a898887868584838281807f7e7d7c7b7a797877767574737271706f6e6d6c6b6a696867666564636261605f5e5d5c5b5a595857565554535251504f4e4d4c4b4a494847464544434241403f3e3d3c3b3a393837363534333231302f2e2d2c2b2a292827262524232221201f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100"};
+
+	    set resp.http.b64 =
+              blob.encode(BASE64, blob.decode(IDENTITY,
+						      req.http.pangram));
+
+	    set resp.http.b64hobbes =
+              blob.encode(BASE64, blob.decode(IDENTITY,
+						      req.http.hobbes));
+
+	    set resp.http.b64all =
+	      blob.encode(BASE64, blob.decode(HEX, req.http.hexall));
+
+	    set resp.http.b64url =
+              blob.encode(BASE64URL,
+			      blob.decode(IDENTITY, req.http.pangram));
+
+	    set resp.http.b64urlhobbes =
+              blob.encode(BASE64URL,
+			      blob.decode(IDENTITY, req.http.hobbes));
+
+	    set resp.http.b64urlall =
+	      blob.encode(BASE64URL, blob.decode(HEX, req.http.hexall));
+
+	    set resp.http.b64urlnopad =
+              blob.encode(BASE64URLNOPAD,
+			      blob.decode(IDENTITY, req.http.pangram));
+
+	    set resp.http.b64nopadhobbes =
+              blob.encode(BASE64URLNOPAD,
+			      blob.decode(IDENTITY, req.http.hobbes));
+
+	    set resp.http.b64nopadall =
+              blob.encode(BASE64URLNOPAD,
+			      blob.decode(HEX, req.http.hexall));
+
+	    set resp.http.b64empty =
+	      blob.encode(BASE64, blob.decode(IDENTITY, ""));
+	    set resp.http.urlempty =
+	      blob.encode(BASE64URL, blob.decode(IDENTITY, ""));
+	    set resp.http.nopadempty =
+	      blob.encode(BASE64URLNOPAD, blob.decode(IDENTITY, ""));
+
+	    set resp.http.b64param =
+	      blob.encode(blob=blob.decode(IDENTITY, req.http.pangram),
+			      encoding=BASE64);
+
+	    set resp.http.b64urlparam =
+	      blob.encode(blob=blob.decode(IDENTITY, req.http.pangram),
+			      encoding=BASE64URL);
+
+	    set resp.http.b64urlnopadparam =
+	      blob.encode(blob=blob.decode(IDENTITY, req.http.pangram),
+			      encoding=BASE64URLNOPAD);
+
+	    set resp.http.b64xcode =
+		blob.transcode(IDENTITY, BASE64, req.url + "Hello world" +
+				   req.url);
+
+	    set resp.http.b64urlxcode =
+		blob.transcode(IDENTITY, BASE64URL, req.url + "Hello world" +
+				   req.url);
+
+	    set resp.http.b64urlnopadxcode =
+	      blob.transcode(IDENTITY, BASE64URLNOPAD,
+				 req.url + "Hello world" + req.url);
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.b64 == "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw=="
+	expect resp.http.b64hobbes == "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
+	expect resp.http.b64all == "//79/Pv6+fj39vX08/Lx8O/u7ezr6uno5+bl5OPi4eDf3t3c29rZ2NfW1dTT0tHQz87NzMvKycjHxsXEw8LBwL++vby7urm4t7a1tLOysbCvrq2sq6qpqKempaSjoqGgn56dnJuamZiXlpWUk5KRkI+OjYyLiomIh4aFhIOCgYB/fn18e3p5eHd2dXRzcnFwb25tbGtqaWhnZmVkY2JhYF9eXVxbWllYV1ZVVFNSUVBPTk1MS0pJSEdGRURDQkFAPz49PDs6OTg3NjU0MzIxMC8uLSwrKikoJyYlJCMiISAfHh0cGxoZGBcWFRQTEhEQDw4NDAsKCQgHBgUEAwIBAA=="
+	expect resp.http.b64url == "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw=="
+	expect resp.http.b64urlhobbes == "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
+	expect resp.http.b64urlall == "__79_Pv6-fj39vX08_Lx8O_u7ezr6uno5-bl5OPi4eDf3t3c29rZ2NfW1dTT0tHQz87NzMvKycjHxsXEw8LBwL--vby7urm4t7a1tLOysbCvrq2sq6qpqKempaSjoqGgn56dnJuamZiXlpWUk5KRkI-OjYyLiomIh4aFhIOCgYB_fn18e3p5eHd2dXRzcnFwb25tbGtqaWhnZmVkY2JhYF9eXVxbWllYV1ZVVFNSUVBPTk1MS0pJSEdGRURDQkFAPz49PDs6OTg3NjU0MzIxMC8uLSwrKikoJyYlJCMiISAfHh0cGxoZGBcWFRQTEhEQDw4NDAsKCQgHBgUEAwIBAA=="
+	expect resp.http.b64urlnopad == "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw"
+	expect resp.http.b64nopadhobbes == "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4"
+	expect resp.http.b64nopadall == "__79_Pv6-fj39vX08_Lx8O_u7ezr6uno5-bl5OPi4eDf3t3c29rZ2NfW1dTT0tHQz87NzMvKycjHxsXEw8LBwL--vby7urm4t7a1tLOysbCvrq2sq6qpqKempaSjoqGgn56dnJuamZiXlpWUk5KRkI-OjYyLiomIh4aFhIOCgYB_fn18e3p5eHd2dXRzcnFwb25tbGtqaWhnZmVkY2JhYF9eXVxbWllYV1ZVVFNSUVBPTk1MS0pJSEdGRURDQkFAPz49PDs6OTg3NjU0MzIxMC8uLSwrKikoJyYlJCMiISAfHh0cGxoZGBcWFRQTEhEQDw4NDAsKCQgHBgUEAwIBAA"
+	expect resp.http.b64empty == ""
+	expect resp.http.urlempty == ""
+	expect resp.http.nopadempty == ""
+	expect resp.http.b64urlparam == "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw=="
+	expect resp.http.b64urlnopadparam == "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw"
+	expect resp.http.b64xcode == "L0hlbGxvIHdvcmxkLw=="
+	expect resp.http.b64urlxcode == "L0hlbGxvIHdvcmxkLw=="
+	expect resp.http.b64urlnopadxcode == "L0hlbGxvIHdvcmxkLw"
+} -run
+
+varnish v1 -vcl {
+	import blob;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_recv {
+	  return(synth(200));
+	}
+
+	sub vcl_synth {
+	    set req.http.foobarbazquux = "L0hlbGxvIHdvcmxkLw==";
+	    set req.http.pangram
+	      = "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw==";
+	    set req.http.hobbes =
+{"TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="};
+	    set req.http.hobbesnopad = regsuball(req.http.hobbes, "=", "");
+	    set req.http.all =
+{"AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHHIIIIJJJJKKKKLLLLMMMMNNNNOOOOPPPPQQQQRRRRSSSSTTTTUUUUVVVVWWWWXXXXYYYYZZZZaaaabbbbccccddddeeeeffffgggghhhhiiiijjjjkkkkllllmmmmnnnnooooppppqqqqrrrrssssttttuuuuvvvvwwwwxxxxyyyyzzzz0000111122223333444455556666777788889999++++////"};
+	    set req.http.allurl =
+{"AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHHIIIIJJJJKKKKLLLLMMMMNNNNOOOOPPPPQQQQRRRRSSSSTTTTUUUUVVVVWWWWXXXXYYYYZZZZaaaabbbbccccddddeeeeffffgggghhhhiiiijjjjkkkkllllmmmmnnnnooooppppqqqqrrrrssssttttuuuuvvvvwwwwxxxxyyyyzzzz0000111122223333444455556666777788889999----____"};
+
+	    set resp.http.dec = blob.encode(IDENTITY,
+				blob.decode(BASE64, req.http.foobarbazquux));
+
+	    set resp.http.dec2
+	      = blob.encode(IDENTITY,
+				blob.decode(BASE64, req.http.pangram));
+
+	    set resp.http.b64dechobbes =
+              blob.encode(IDENTITY,
+			      blob.decode(BASE64, req.http.hobbes));
+
+	    set resp.http.b64decall =
+	      blob.encode(HEXLC, blob.decode(BASE64, req.http.all));
+
+	    set resp.http.urldechobbes =
+              blob.encode(IDENTITY, blob.decode(BASE64URL,
+						      req.http.hobbes));
+
+	    set resp.http.urldecall =
+              blob.encode(HEXLC,
+			      blob.decode(BASE64URL, req.http.allurl));
+
+	    set resp.http.nopaddechobbes =
+              blob.encode(IDENTITY, blob.decode(BASE64URLNOPAD,
+						      req.http.hobbesnopad));
+
+	    set resp.http.nopaddecall =
+              blob.encode(HEXLC,
+			      blob.decode(BASE64URLNOPAD, req.http.allurl));
+
+	    set resp.http.b64empty =
+	      blob.encode(IDENTITY, blob.decode(BASE64, ""));
+	    set resp.http.urlempty =
+	      blob.encode(IDENTITY, blob.decode(BASE64URL, ""));
+	    set resp.http.nopadempty =
+	      blob.encode(IDENTITY, blob.decode(BASE64URLNOPAD, ""));
+	    set resp.http.emptypieces =
+	      blob.encode(IDENTITY,
+	      blob.decode(BASE64, req.http.unset + "" + req.http.unset
+				      + "" + req.http.unset + ""));
+
+            set resp.http.decenc
+	      = blob.encode(BASE64,
+				blob.decode(BASE64, req.http.foobarbazquux));
+
+	    set resp.http.l = "L";
+	    set resp.http.dec2pieces
+	      = blob.encode(IDENTITY, blob.decode(BASE64,
+			        resp.http.l + "0hlbGxvIHdvcmxkLw=="));
+
+	    set resp.http.pad = "==";
+	    set resp.http.dec3pieces
+	      = blob.encode(IDENTITY, blob.decode(BASE64,
+			        resp.http.l + "0hlbGxvIHdvcmxkLw"
+			        + resp.http.pad));
+
+	    set resp.http.mid1 = "GxvI";
+	    set resp.http.mid2 = "dvcmx";
+	    set resp.http.dec7pieces
+	      = blob.encode(IDENTITY, blob.decode(BASE64,
+			        resp.http.l + "0hlb" + resp.http.mid1
+			        + "H" + resp.http.mid2 + "kLw"
+			        + resp.http.pad));
+
+	    set resp.http.dec7param
+	      = blob.encode(blob=blob.decode(encoded=resp.http.l + "0hlb"
+			        + resp.http.mid1 + "H" + resp.http.mid2 + "kLw"
+			        + resp.http.pad, decoding=BASE64),
+			        encoding=IDENTITY);
+
+	    set resp.http.decnopad = blob.encode(IDENTITY,
+				     blob.decode(BASE64URLNOPAD,
+						     "L0hlbGxvIHdvcmxkLw"));
+
+	    set resp.http.decnopad2pieces
+	      = blob.encode(IDENTITY, blob.decode(BASE64URLNOPAD,
+			        resp.http.l + "0hlbGxvIHdvcmxkLw"));
+
+	    set resp.http.decnopad6pieces
+	      = blob.encode(IDENTITY, blob.decode(BASE64URLNOPAD,
+			        resp.http.l + "0hlb" + resp.http.mid1
+			        + "H" + resp.http.mid2 + "kLw"));
+
+	    set resp.http.decnopadlong
+	      = blob.encode(IDENTITY,
+		blob.decode(BASE64URLNOPAD,
+	        "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw"
+			       ));
+
+	}
+}
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.dec == "/Hello world/"
+	expect resp.http.dec2 == "The quick brown fox jumps over the lazy dog"
+	expect resp.http.b64dechobbes == "Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure."
+	expect resp.http.b64decall == "0000000410410820820c30c31041041451451861861c71c720820824924928a28a2cb2cb30c30c34d34d38e38e3cf3cf4104104514514924924d34d35145145555555965965d75d761861865965969a69a6db6db71c71c75d75d79e79e7df7df8208208618618a28a28e38e39249249659659a69a69e79e7a28a28a69a69aaaaaaaebaebb2cb2cb6db6dbaebaebefbefc30c30c71c71cb2cb2cf3cf3d34d34d75d75db6db6df7df7e38e38e79e79ebaebaefbefbf3cf3cf7df7dfbefbeffffff"
+	expect resp.http.urldechobbes == "Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure."
+	expect resp.http.urldecall == "0000000410410820820c30c31041041451451861861c71c720820824924928a28a2cb2cb30c30c34d34d38e38e3cf3cf4104104514514924924d34d35145145555555965965d75d761861865965969a69a6db6db71c71c75d75d79e79e7df7df8208208618618a28a28e38e39249249659659a69a69e79e7a28a28a69a69aaaaaaaebaebb2cb2cb6db6dbaebaebefbefc30c30c71c71cb2cb2cf3cf3d34d34d75d75db6db6df7df7e38e38e79e79ebaebaefbefbf3cf3cf7df7dfbefbeffffff"
+	expect resp.http.nopaddechobbes == "Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure."
+	expect resp.http.nopaddecall == "0000000410410820820c30c31041041451451861861c71c720820824924928a28a2cb2cb30c30c34d34d38e38e3cf3cf4104104514514924924d34d35145145555555965965d75d761861865965969a69a6db6db71c71c75d75d79e79e7df7df8208208618618a28a28e38e39249249659659a69a69e79e7a28a28a69a69aaaaaaaebaebb2cb2cb6db6dbaebaebefbefc30c30c71c71cb2cb2cf3cf3d34d34d75d75db6db6df7df7e38e38e79e79ebaebaefbefbf3cf3cf7df7dfbefbeffffff"
+	expect resp.http.b64empty == ""
+	expect resp.http.urlempty == ""
+	expect resp.http.nopadempty == ""
+	expect resp.http.emptypieces == ""
+	expect resp.http.decenc == "L0hlbGxvIHdvcmxkLw=="
+	expect resp.http.dec2pieces == "/Hello world/"
+	expect resp.http.dec3pieces == "/Hello world/"
+	expect resp.http.dec7pieces == "/Hello world/"
+	expect resp.http.dec7param == "/Hello world/"
+	expect resp.http.decnopad == "/Hello world/"
+	expect resp.http.decnopad2pieces == "/Hello world/"
+	expect resp.http.decnopad6pieces == "/Hello world/"
+	expect resp.http.decnopadlong == "The quick brown fox jumps over the lazy dog"
+} -run
+
+# Decode failures
+
+server s1 -repeat 3 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import blob;
+
+	sub vcl_deliver {
+          set req.http.foo = "AAA=";
+          if (req.url == "/base64") {
+	        set resp.http.bad64 = blob.encode(IDENTITY,
+                    blob.decode(BASE64, "-_-_" + req.http.foo));
+          }
+          elsif (req.url == "/base64url") {
+	        set resp.http.badurl = blob.encode(IDENTITY,
+                    blob.decode(BASE64URL, "+/+/" + req.http.foo));
+          }
+          elsif (req.url == "/base64urlnopad") {
+	        set resp.http.badpad = blob.encode(IDENTITY,
+                    blob.decode(BASE64URLNOPAD, "TWFu" + req.http.foo));
+          }
+	}
+}
+
+client c1 {
+	txreq -url /base64
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.bad64 == <undef>
+} -run
+
+client c1 {
+	txreq -url /base64url
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.badurl == <undef>
+} -run
+
+client c1 {
+	txreq -url /base64urlnopad
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.badpad == <undef>
+} -run
+
+logexpect l1 -v v1 -d 1 -g vxid -q "VCL_Error" {
+	expect * * VCL_Error {^vmod blob error: cannot decode, illegal encoding beginning with "-_-_"$}
+	expect * * VCL_Error {^vmod blob error: cannot decode, illegal encoding beginning with "././"$}
+	expect * * VCL_Error {^vmod blob error: cannot decode, illegal encoding beginning with "TWFu"$}
+} -run

@@ -8,4 +8,5 @@ SUBDIRS = \
 	libvmod_debug \
 	libvmod_std \
 	libvmod_directors \
-	libvmod_vtc
+	libvmod_vtc \
+	libvmod_blob
