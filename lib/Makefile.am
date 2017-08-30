@@ -9,4 +9,5 @@ SUBDIRS = \
 	libvmod_std \
 	libvmod_directors \
 	libvmod_purge \
-	libvmod_vtc
+	libvmod_vtc \
+	libvmod_blob

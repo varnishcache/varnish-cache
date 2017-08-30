@@ -213,6 +213,10 @@ reference/vmod_vtc.generated.rst: reference $(top_builddir)/lib/libvmod_vtc/vmod
 	cp $(top_builddir)/lib/libvmod_vtc/vmod_vtc.rst $@ || true
 BUILT_SOURCES += reference/vmod_vtc.generated.rst
 
+reference/vmod_blob.generated.rst: reference $(top_builddir)/lib/libvmod_blob/vmod_blob.rst
+	cp $(top_builddir)/lib/libvmod_blob/vmod_blob.rst $@ || true
+BUILT_SOURCES += reference/vmod_blob.generated.rst
+
 EXTRA_DIST += $(BUILT_SOURCES)
 MAINTAINERCLEANFILES = $(EXTRA_DIST)
 

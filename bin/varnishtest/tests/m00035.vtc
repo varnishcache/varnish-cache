@@ -1,0 +1,196 @@
+varnishtest "VMOD blob hex encode and decode"
+
+varnish v1 -vcl {
+	import blob;
+	import std;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_recv {
+	  return(synth(200));
+	}
+
+	sub vcl_synth {
+	    set req.http.pangram = "The quick brown fox jumps over the lazy dog";
+	    set req.http.hobbes =
+{"Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure."};
+	    # base64 encoding of all 256 byte values in ascending order
+	    set req.http.b64all =
+{"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w=="};
+
+	    set resp.http.hexlc =
+              blob.encode(HEXLC,
+			      blob.decode(IDENTITY, req.http.pangram));
+
+	    set resp.http.hexuc =
+              blob.encode(HEXUC,
+			      blob.decode(IDENTITY, req.http.pangram));
+
+            set resp.http.hobbeslc =
+	      blob.encode(HEXLC, blob.decode(IDENTITY, req.http.hobbes));
+
+	    set resp.http.hobbesuc =
+	      blob.encode(HEXUC, blob.decode(IDENTITY, req.http.hobbes));
+
+            set resp.http.all-lc =
+	      blob.encode(HEXLC, blob.decode(BASE64, req.http.b64all));
+
+	    set resp.http.all-uc =
+	      blob.encode(HEXUC, blob.decode(BASE64, req.http.b64all));
+
+            set resp.http.empty-lc =
+	      blob.encode(HEXLC, blob.decode(IDENTITY, ""));
+
+	    set resp.http.empty-uc =
+	      blob.encode(HEXUC, blob.decode(IDENTITY, ""));
+
+	    set resp.http.hexlcparam =
+	      blob.encode(blob=blob.decode(IDENTITY, req.http.pangram),
+			     encoding=HEXLC);
+
+	    set resp.http.hexucparam =
+	      blob.encode(blob=blob.decode(IDENTITY, req.http.pangram),
+			     encoding=HEXUC);
+
+	    set req.http.hexucfoobar = "666F6F206261722062617A2071757578";
+	    set req.http.hexlcfoobar = std.tolower(req.http.hexucfoobar);
+	    # Hobbes quotation in hex
+            set req.http.hexhobbeslc = "4d616e2069732064697374696e677569736865642c206e6f74206f6e6c792062792068697320726561736f6e2c2062757420627920746869732073696e67756c61722070617373696f6e2066726f6d206f7468657220616e696d616c732c2077686963682069732061206c757374206f6620746865206d696e642c20746861742062792061207065727365766572616e6365206f662064656c6967687420696e2074686520636f6e74696e75656420616e6420696e6465666174696761626c652067656e65726174696f6e206f66206b6e6f776c656467652c2065786365656473207468652073686f727420766568656d656e6365206f6620616e79206361726e616c20706c6561737572652e";
+	    set req.http.hexhobbesuc = std.toupper(req.http.hexhobbeslc);
+            set req.http.hexalluc = "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F202122232425262728292A2B2C2D2E2F303132333435363738393A3B3C3D3E3F404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C5D5E5F606162636465666768696A6B6C6D6E6F707172737475767778797A7B7C7D7E7F808182838485868788898A8B8C8D8E8F909192939495969798999A9B9C9D9E9FA0A1A2A3A4A5A6A7A8A9AAABACADAEAFB0B1B2B3B4B5B6B7B8B9BABBBCBDBEBFC0C1C2C3C4C5C6C7C8C9CACBCCCDCECFD0D1D2D3D4D5D6D7D8D9DADBDCDDDEDFE0E1E2E3E4E5E6E7E8E9EAEBECEDEEEFF0F1F2F3F4F5F6F7F8F9FAFBFCFDFEFF";
+	    set req.http.hexalllc = std.tolower(req.http.hexalluc);
+            set req.http.hexallucodd = regsub(req.http.hexalluc, "^0", "");
+            set req.http.hexalllcodd = regsub(req.http.hexalllc, "^0", "");
+
+	    set resp.http.decuc =
+              blob.encode(IDENTITY,
+			     blob.decode(HEX, req.http.hexucfoobar));
+
+	    set resp.http.declc =
+              blob.encode(IDENTITY,
+			     blob.decode(HEX, req.http.hexlcfoobar));
+
+	    set resp.http.dechobbesuc =
+              blob.encode(IDENTITY,
+			     blob.decode(HEX, req.http.hexhobbesuc));
+
+	    set resp.http.dechobbeslc =
+              blob.encode(IDENTITY,
+			     blob.decode(HEX, req.http.hexhobbeslc));
+
+	    set resp.http.decalluc =
+              blob.encode(BASE64, blob.decode(HEX, req.http.hexalluc));
+
+	    set resp.http.decalllc =
+              blob.encode(BASE64, blob.decode(HEX, req.http.hexalllc));
+
+	    set resp.http.decallucodd =
+              blob.encode(BASE64, blob.decode(HEX,
+						      req.http.hexallucodd));
+
+	    set resp.http.decalllcodd =
+              blob.encode(BASE64, blob.decode(HEX,
+						      req.http.hexalllcodd));
+
+	    set resp.http.decempty =
+	      blob.encode(IDENTITY, blob.decode(HEX, ""));
+
+	    set resp.http.decemptybyte =
+	      blob.encode(IDENTITY, blob.decode(HEX, "00"));
+
+	    set resp.http.decemptynibble =
+	      blob.encode(IDENTITY, blob.decode(HEX, "0"));
+
+	    set resp.http.decemptypieces =
+              blob.encode(IDENTITY,
+			     blob.decode(HEX, req.http.unset + ""
+					    + req.http.unset + ""));
+
+	    set req.http.part1 = "666";
+	    set resp.http.dec2pieces =
+	      blob.encode(IDENTITY, blob.decode(HEX, req.http.part1 +
+			     "F6F206261722062617A2071757578"));
+
+	    set req.http.part2 = "57578";
+	    set resp.http.dec3param =
+	      blob.encode(blob=blob.decode(encoded=req.http.part1 +
+			     "F6F206261722062617A20717" + req.http.part2,
+			     decoding=HEX),
+			     encoding=IDENTITY);
+
+	    set resp.http.dec3pieces =
+	      blob.encode(IDENTITY, blob.decode(HEX, req.http.part1 +
+			     "F6F206261722062617A20717" + req.http.part2));
+
+	    set resp.http.decmanypieces =
+              blob.encode(IDENTITY, blob.decode(HEX, "" + req.http.unset
+			     + req.http.part1 + req.http.unset + ""
+			     + req.http.unset + "" + "F6F206261722062617A20717"
+			     + "" + req.http.unset + req.http.part2
+			     + req.http.unset + "" + req.http.unset));
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.hexlc == "54686520717569636b2062726f776e20666f78206a756d7073206f76657220746865206c617a7920646f67"
+	expect resp.http.hexuc == "54686520717569636B2062726F776E20666F78206A756D7073206F76657220746865206C617A7920646F67"
+	expect resp.http.hobbeslc == "4d616e2069732064697374696e677569736865642c206e6f74206f6e6c792062792068697320726561736f6e2c2062757420627920746869732073696e67756c61722070617373696f6e2066726f6d206f7468657220616e696d616c732c2077686963682069732061206c757374206f6620746865206d696e642c20746861742062792061207065727365766572616e6365206f662064656c6967687420696e2074686520636f6e74696e75656420616e6420696e6465666174696761626c652067656e65726174696f6e206f66206b6e6f776c656467652c2065786365656473207468652073686f727420766568656d656e6365206f6620616e79206361726e616c20706c6561737572652e"
+	expect resp.http.hobbesuc == "4D616E2069732064697374696E677569736865642C206E6F74206F6E6C792062792068697320726561736F6E2C2062757420627920746869732073696E67756C61722070617373696F6E2066726F6D206F7468657220616E696D616C732C2077686963682069732061206C757374206F6620746865206D696E642C20746861742062792061207065727365766572616E6365206F662064656C6967687420696E2074686520636F6E74696E75656420616E6420696E6465666174696761626C652067656E65726174696F6E206F66206B6E6F776C656467652C2065786365656473207468652073686F727420766568656D656E6365206F6620616E79206361726E616C20706C6561737572652E"
+	expect resp.http.all-uc == "000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F202122232425262728292A2B2C2D2E2F303132333435363738393A3B3C3D3E3F404142434445464748494A4B4C4D4E4F505152535455565758595A5B5C5D5E5F606162636465666768696A6B6C6D6E6F707172737475767778797A7B7C7D7E7F808182838485868788898A8B8C8D8E8F909192939495969798999A9B9C9D9E9FA0A1A2A3A4A5A6A7A8A9AAABACADAEAFB0B1B2B3B4B5B6B7B8B9BABBBCBDBEBFC0C1C2C3C4C5C6C7C8C9CACBCCCDCECFD0D1D2D3D4D5D6D7D8D9DADBDCDDDEDFE0E1E2E3E4E5E6E7E8E9EAEBECEDEEEFF0F1F2F3F4F5F6F7F8F9FAFBFCFDFEFF"
+	expect resp.http.all-lc == "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff"
+	expect resp.http.empty-uc == ""
+	expect resp.http.empty-lc == ""
+	expect resp.http.hexlcparam == "54686520717569636b2062726f776e20666f78206a756d7073206f76657220746865206c617a7920646f67"
+	expect resp.http.hexucparam == "54686520717569636B2062726F776E20666F78206A756D7073206F76657220746865206C617A7920646F67"
+	expect resp.http.decuc == "foo bar baz quux"
+	expect resp.http.declc == "foo bar baz quux"
+	expect resp.http.dechobbesuc == "Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure."
+	expect resp.http.dechobbeslc == "Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure."
+	expect resp.http.decalluc == "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w=="
+	expect resp.http.decalllc == "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w=="
+	expect resp.http.decallucodd == "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w=="
+	expect resp.http.decalllcodd == "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w=="
+	expect resp.http.decempty == ""
+	expect resp.http.decemptybyte == ""
+	expect resp.http.decemptynibble == ""
+	expect resp.http.decemptypieces == ""
+	expect resp.http.dec2pieces == "foo bar baz quux"
+	expect resp.http.dec3pieces == "foo bar baz quux"
+	expect resp.http.dec3param == "foo bar baz quux"
+	expect resp.http.decmanypieces == "foo bar baz quux"
+} -run
+
+# Decode failure
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import blob;
+
+	sub vcl_deliver {
+	  set req.http.foo = "123";
+	  set resp.http.badhex = blob.encode(HEXUC,
+				 blob.decode(HEX, "g" + req.http.foo));
+	}
+}
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.badhex == <undef>
+} -run
+
+logexpect l1 -v v1 -d 1 -g vxid -q "VCL_Error" {
+        expect 0 * Begin req
+        expect * = VCL_Error "^vmod blob error: cannot decode, illegal encoding beginning with \"g\"$"
+#"
+	expect * = End
+} -start
+
+logexpect l1 -wait
