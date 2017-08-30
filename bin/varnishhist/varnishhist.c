@@ -134,8 +134,8 @@ static void
 update(void)
 {
 	char t[VTIM_FORMAT_SIZE];
-	unsigned w = COLS / hist_range;
-	unsigned n = w * hist_range;
+	const unsigned w = COLS / hist_range;
+	const unsigned n = w * hist_range;
 	unsigned bm[n], bh[n];
 	unsigned max;
 	unsigned i, j, scale;
@@ -176,14 +176,14 @@ update(void)
 	if (vsl_t0 > 0) {
 		VTIM_format(vsl_ts, t);
 
-		mvprintw(0, 0, "1:%d, n = %d, d = %g @ %s x %g",
+		mvprintw(0, 0, "1:%u, n = %u, d = %g @ %s x %g",
 		    scale, nhist, delay, t, timebend);
 	} else
-		mvprintw(0, 0, "1:%d, n = %d, d = %g",
+		mvprintw(0, 0, "1:%u, n = %u, d = %g",
 		    scale, nhist, delay);
 
 	for (j = 2; j < LINES - 3; j += 5)
-		mvprintw(j, 0, "%d_", (LINES - 3 - j) * scale);
+		mvprintw(j, 0, "%u_", (LINES - 3 - j) * scale);
 
 	/* show them */
 	for (i = 0; i < n; ++i) {
@@ -215,7 +215,7 @@ upd_vsl_ts(const char *p)
 		vsl_ts = t;
 }
 
-static int /*__match_proto__ (VSLQ_dispatch_f)*/
+static int __match_proto__ (VSLQ_dispatch_f)
 accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
     void *priv)
 {
@@ -371,7 +371,7 @@ sighup(void)
 	return (1);
 }
 
-static void *
+static void * __match_proto__(pthread_t)
 do_curses(void *arg)
 {
 	int ch;

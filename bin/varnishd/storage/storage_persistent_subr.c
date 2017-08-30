@@ -49,6 +49,8 @@
 
 #include "storage/storage_persistent.h"
 
+static void smp_msync(void *addr, size_t length);
+
 /*--------------------------------------------------------------------
  * SIGNATURE functions
  * The signature is SHA256 over:
@@ -114,7 +116,7 @@ smp_chk_sign(struct smp_signctx *ctx)
 /*--------------------------------------------------------------------
  * Append data to a signature
  */
-void
+static void
 smp_append_sign(struct smp_signctx *ctx, const void *ptr, uint32_t len)
 {
 	struct SHA256Context cx;
@@ -176,7 +178,7 @@ smp_new_sign(const struct smp_sc *sc, struct smp_signctx *ctx,
  * Define a signature space by location, size and identifier
  */
 
-void
+static void
 smp_def_signspace(const struct smp_sc *sc, struct smp_signspace *spc,
 		  uint64_t off, uint64_t size, const char *id)
 {
@@ -233,22 +235,6 @@ smp_copy_signspace(struct smp_signspace *dst, const struct smp_signspace *src)
 }
 
 /*--------------------------------------------------------------------
- * Reapplies the sign over the len first bytes of the
- * signspace. Prepares for appending.
- */
-
-void
-smp_trunc_signspace(struct smp_signspace *spc, uint32_t len)
-{
-	assert(len <= SIGNSPACE_LEN(spc));
-	spc->ctx.ss->length = 0;
-	SHA256_Init(&spc->ctx.ctx);
-	SHA256_Update(&spc->ctx.ctx, spc->ctx.ss,
-		      offsetof(struct smp_sign, length));
-	smp_append_signspace(spc, len);
-}
-
-/*--------------------------------------------------------------------
  * Create a new signature space and force the signature to backing store.
  */
 
@@ -266,7 +252,7 @@ smp_new_signspace(const struct smp_sc *sc, struct smp_signspace *spc,
  * the backing store.
  */
 
-void
+static void
 smp_msync(void *addr, size_t length)
 {
 	uintptr_t start, end, pagesize;

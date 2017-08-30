@@ -62,7 +62,6 @@ tweak_t tweak_poolparam;
 tweak_t tweak_string;
 tweak_t tweak_timeout;
 tweak_t tweak_uint;
-tweak_t tweak_waiter;
 tweak_t tweak_vsl_buffer;
 tweak_t tweak_vsl_reclen;
 
