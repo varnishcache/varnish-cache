@@ -1,0 +1,19 @@
+varnishtest "Long vcl/backend names"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+# 64 chars vlc name, 64 chars backend name
+varnish v1 -cliok { vcl.inline abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789 "vcl 4.0; backend abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789 {.host = \"127.0.0.1\"; .port = \"${s1_port}\";} " }
+
+# 127 chars vlc name, 1 char backend name
+varnish v1 -cliok { vcl.inline abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef012345678 "vcl 4.0; backend a {.host = \"127.0.0.1\"; .port = \"${s1_port}\";} " }
+
+client c1 {
+	txreq
+	rxresp
+} -run
