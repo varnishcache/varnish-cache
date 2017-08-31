@@ -251,11 +251,13 @@ SLTM(VCL_call, 0, "VCL method called",
 SLTM(VCL_trace, 0, "VCL trace data",
 	"Logs VCL execution trace data.\n\n"
 	"The format is::\n\n"
-	"\t%u %u.%u\n"
-	"\t|  |  |\n"
-	"\t|  |  +- VCL program line position\n"
-	"\t|  +---- VCL program line number\n"
-	"\t+------- VCL trace point index\n"
+	"\t%s %u %u.%u.%u\n"
+	"\t|  |  |  |  |\n"
+	"\t|  |  |  |  +- VCL program line position\n"
+	"\t|  |  |  +---- VCL program line number\n"
+	"\t|  |  +------- VCL program source index\n"
+	"\t|  +---------- VCL trace point index\n"
+	"\t+------------- VCL configname\n"
 	"\n"
 	NODEF_NOTICE
 )
