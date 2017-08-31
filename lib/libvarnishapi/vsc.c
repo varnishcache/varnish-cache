@@ -315,11 +315,7 @@ vsc_iter_fantom(struct vsm *vd, const struct vsm_fantom *fantom,
 	p = (char*)fantom->b + 8 + vbe64dec(fantom->b);
 	assert (p < (char*)fantom->e);
 	vj = vjsn_parse(p, &e);
-	if (e != NULL) {
-		fprintf(stderr, "%s\n", p);
-		fprintf(stderr, "JSON ERROR %s\n", e);
-		exit(2);
-	}
+	XXXAZ(e);
 	AN(vj);
 	vve = vjsn_child(vj->value, "elem");
 	AN(vve);
@@ -328,7 +324,7 @@ vsc_iter_fantom(struct vsm *vd, const struct vsm_fantom *fantom,
 		if (i)
 			break;
 	}
-	// XXX: destroy vj
+	vjsn_delete(&vj);
 	return (i);
 }
 

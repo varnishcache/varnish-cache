@@ -90,7 +90,7 @@ vjsn_val_delete(struct vjsn_val *jsv)
 	FREE_OBJ(jsv);
 }
 
-static void
+void
 vjsn_delete(struct vjsn **jp)
 {
 	struct vjsn *js;
