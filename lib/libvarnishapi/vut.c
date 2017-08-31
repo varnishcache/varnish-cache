@@ -287,8 +287,10 @@ VUT_Fini(void)
 	AN(VUT.progname);
 
 	free(VUT.n_arg);
-	free(VUT.r_arg);
 	free(VUT.P_arg);
+	free(VUT.q_arg);
+	free(VUT.r_arg);
+	free(VUT.t_arg);
 
 	vut_vpf_remove();
 	AZ(VUT.pfh);
