@@ -10,6 +10,7 @@ $Module blob 3 utilities for the VCL blob type
 
 ::
 
+  # binary-to-text encodings
   STRING blob.encode(ENUM encoding, BLOB blob)
   BLOB blob.decode(ENUM decoding, STRING_LIST encoded)
   BLOB blob.decode_n(INT n, ENUM decoding, STRING_LIST encoded)
@@ -18,6 +19,13 @@ $Module blob 3 utilities for the VCL blob type
   STRING blob.transcode_n(INT n, ENUM decoding, ENUM encoding,
                           STRING_LIST encoded)
 
+  # other utilities
+  BOOL blob.same(BLOB, BLOB)
+  BOOL blob.equal(BLOB, BLOB)
+  INT blob.length(BLOB)
+  BLOB blob.subblob(BLOB, BYTES length [, BYTES offset])
+
+  # blob object
   new OBJ = blob.blob(ENUM decoding, STRING_LIST encoded)
   BLOB <obj>.get()
   STRING <obj>.encode(ENUM encoding)
@@ -264,6 +272,38 @@ $Function STRING transcode_n(INT n,
 Same as ``transcode()``, but only from the first ``n`` characters of
 the encoded string.
 
+$Function BOOL same(BLOB, BLOB)
+
+Returns true if and only if the two BLOB arguments are the same
+object, i.e. they specify exactly the same region of memory.
+
+If the BLOBs are both empty (length is 0 and/or the internal pointer
+is NULL), then ``same()`` returns ``true``. If any non-empty BLOB
+is compared to an empty BLOB, then ``same()`` returns ``false``.
+
+$Function BOOL equal(BLOB, BLOB)
+
+Returns true if and only if the two BLOB arguments have equal contents
+(possibly in different memory regions).
+
+As with ``same()``: If the BLOBs are both empty, then ``equal()``
+returns ``true``. If any non-empty BLOB is compared to an empty BLOB,
+then ``equal()`` returns ``false``.
+
+$Function INT length(BLOB)
+
+Returns the length of the BLOB.
+
+$Function BLOB subblob(BLOB, BYTES length, BYTES offset = 0)
+
+Returns a new BLOB formed from ``length`` bytes of the BLOB argument
+starting at ``offset`` bytes from the start of its memory region. The
+default value of ``offset`` is 0B.
+
+``subblob()`` fails and returns NULL if the BLOB argument is empty, or
+if ``offset + length`` requires more bytes than are available in the
+BLOB.
+
 $Object blob(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD, HEX,
                    URL} decoding="IDENTITY",
              STRING_LIST encoded)
@@ -330,9 +370,10 @@ not known until runtime.
 ERRORS
 ======
 
-The encoders and decoders may fail if there is insufficient space to
-create the new blob or string. Decoders may also fail if the encoded
-string is an illegal format for the decoding scheme.
+The encoders, decoders and ``subblob()`` may fail if there is
+insufficient space to create the new blob or string. Decoders may also
+fail if the encoded string is an illegal format for the decoding
+scheme.
 
 If any of the VMOD's methods, functions or constructor fail, then VCL
 failure is invoked, just as if ``return(fail)`` had been called in the
@@ -360,10 +401,11 @@ strings. The ``blob`` object and its methods allocate memory from the
 heap, and hence they are only limited by available virtual memory.
 
 The ``encode()``, ``decode()`` and ``transcode()`` functions allocate
-Varnish workspace.  If these functions are failing, as indicated by
-"out of space" messages in the Varnish log (with the ``VCL_Error``
-tag), then you will need to increase the varnishd parameters
-``workspace_client`` and/or ``workspace_backend``.
+Varnish workspace, as does ``subblob()`` for the newly created BLOB.
+If these functions are failing, as indicated by "out of space"
+messages in the Varnish log (with the ``VCL_Error`` tag), then you
+will need to increase the varnishd parameters ``workspace_client``
+and/or ``workspace_backend``.
 
 The ``transcode()`` function also allocates space on the stack for a
 temporary BLOB. If this function causes stack overflow, you may need

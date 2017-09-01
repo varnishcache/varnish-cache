@@ -1,0 +1,323 @@
+varnishtest "VMOD blob same(), equal(), length() and subblob()"
+
+varnish v1 -vcl {
+	import blob;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_init {
+		new foo1 = blob.blob(IDENTITY, "foobarbazquux");
+		new foo2 = blob.blob(IDENTITY, "foobarbazquux");
+
+		new hobbes1 = blob.blob(IDENTITY,
+{"Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure."});
+		new hobbes2 = blob.blob(IDENTITY,
+{"Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure."});
+
+		new empty1 = blob.blob(IDENTITY, "");
+		new empty2 = blob.blob(IDENTITY, "");
+	}
+
+	sub vcl_recv {
+		return(synth(200));
+	}
+
+	sub vcl_synth {
+		if (blob.same(foo1.get(), foo1.get())) {
+			set resp.http.foo1same = "true";
+		}
+		if (blob.same(foo2.get(), foo2.get())) {
+			set resp.http.foo2same = "true";
+		}
+		if (blob.same(foo1.get(), foo2.get())) {
+			set resp.http.foo12same = "true";
+		}
+		if (blob.same(foo2.get(), foo1.get())) {
+			set resp.http.foo21same = "true";
+		}
+		if (blob.same(foo1.get(), hobbes1.get())) {
+			set resp.http.foohobbessame = "true";
+		}
+		if (blob.same(foo1.get(), empty1.get())) {
+			set resp.http.fooemptysame = "true";
+		}
+
+		if (blob.equal(foo1.get(), foo1.get())) {
+			set resp.http.foo1equal = "true";
+		}
+		if (blob.equal(foo1.get(), foo2.get())) {
+			set resp.http.foo12equal = "true";
+		}
+		if (blob.equal(foo2.get(), foo1.get())) {
+			set resp.http.foo21equal = "true";
+		}
+		if (blob.equal(foo1.get(), hobbes1.get())) {
+			set resp.http.foohobbesequal = "true";
+		}
+		if (blob.equal(foo1.get(), empty1.get())) {
+			set resp.http.fooemptyequal = "true";
+		}
+
+		set resp.http.foo1len = blob.length(foo1.get());
+		set resp.http.foo2len = blob.length(foo2.get());
+
+		if (blob.same(hobbes1.get(), hobbes1.get())) {
+			set resp.http.hobbes1same = "true";
+		}
+		if (blob.same(hobbes2.get(), hobbes2.get())) {
+			set resp.http.hobbes2same = "true";
+		}
+		if (blob.same(hobbes1.get(), hobbes2.get())) {
+			set resp.http.hobbes12same = "true";
+		}
+		if (blob.same(hobbes2.get(), hobbes1.get())) {
+			set resp.http.hobbes21same = "true";
+		}
+		if (blob.same(hobbes1.get(), empty1.get())) {
+			set resp.http.hobbesemptysame = "true";
+		}
+
+		if (blob.equal(hobbes1.get(), hobbes1.get())) {
+			set resp.http.hobbes1equal = "true";
+		}
+		if (blob.equal(hobbes1.get(), hobbes2.get())) {
+			set resp.http.hobbes12equal = "true";
+		}
+		if (blob.equal(hobbes2.get(), hobbes1.get())) {
+			set resp.http.hobbes21equal = "true";
+		}
+		if (blob.equal(hobbes1.get(), empty1.get())) {
+			set resp.http.hobbesemptyequal = "true";
+		}
+
+		set resp.http.hobbes1len = blob.length(hobbes1.get());
+		set resp.http.hobbes2len = blob.length(hobbes2.get());
+
+		if (blob.same(empty1.get(), empty1.get())) {
+			set resp.http.empty1same = "true";
+		}
+		if (blob.same(empty2.get(), empty2.get())) {
+			set resp.http.empty2same = "true";
+		}
+		if (blob.same(empty1.get(), empty2.get())) {
+			set resp.http.empty12same = "true";
+		}
+		if (blob.same(empty2.get(), empty1.get())) {
+			set resp.http.empty21same = "true";
+		}
+
+		if (blob.equal(empty1.get(), empty1.get())) {
+			set resp.http.empty1equal = "true";
+		}
+		if (blob.equal(empty1.get(), empty2.get())) {
+			set resp.http.empty12equal = "true";
+		}
+		if (blob.equal(empty2.get(), empty1.get())) {
+			set resp.http.empty21equal = "true";
+		}
+
+		set resp.http.empty1len = blob.length(empty1.get());
+		set resp.http.empty2len = blob.length(empty2.get());
+		return(deliver);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.foo1same == "true"
+	expect resp.http.foo2same == "true"
+	expect resp.http.foo12same == <undef>
+	expect resp.http.foo21same == <undef>
+	expect resp.http.foohobbessame == <undef>
+	expect resp.http.fooemptysame == <undef>
+	expect resp.http.foo1equal == "true"
+	expect resp.http.foo12equal == "true"
+	expect resp.http.foo21equal == "true"
+	expect resp.http.foohobbesequal == <undef>
+	expect resp.http.fooemptyequal == <undef>
+	expect resp.http.foo1len == "13"
+	expect resp.http.foo2len == "13"
+	expect resp.http.hobbes1same == "true"
+	expect resp.http.hobbes2same == "true"
+	expect resp.http.hobbes12same == <undef>
+	expect resp.http.hobbes21same == <undef>
+	expect resp.http.hobbesemptysame == <undef>
+	expect resp.http.hobbes1equal == "true"
+	expect resp.http.hobbes12equal == "true"
+	expect resp.http.hobbes21equal == "true"
+	expect resp.http.hobbesemptyequal == <undef>
+	expect resp.http.hobbes1len == "269"
+	expect resp.http.hobbes2len == "269"
+	expect resp.http.empty1same == "true"
+	expect resp.http.empty2same == "true"
+
+	# VMOD blob uses a statically allocated empty blob for empty
+	# decodings. So the empty blobs from different objects
+	# evaluate as true for same().
+	expect resp.http.empty12same == "true"
+	expect resp.http.empty21same == "true"
+
+	expect resp.http.empty1equal == "true"
+	expect resp.http.empty12equal == "true"
+	expect resp.http.empty21equal == "true"
+	expect resp.http.empty1len == "0"
+	expect resp.http.empty2len == "0"
+} -run
+
+# subblob()
+varnish v1 -vcl {
+	import blob;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_init {
+		# Byte values 0 up to 7
+		new up07 = blob.blob(BASE64, "AAECAwQFBgc=");
+		# Byte values 7 down to 0
+		new down07 = blob.blob(BASE64, "BwYFBAMCAQA=");
+	}
+
+	sub vcl_recv {
+		return(synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.up03
+		    = blob.encode(BASE64, blob.subblob(up07.get(), 4B));
+		set resp.http.down07060504
+		    = blob.encode(BASE64, blob.subblob(down07.get(), 4B));
+		set resp.http.up04050607
+		    = blob.encode(BASE64, blob.subblob(up07.get(), 4B, 4B));
+		set resp.http.down03
+		    = blob.encode(BASE64, blob.subblob(down07.get(), 4B, 4B));
+		set resp.http.up07
+		    = blob.encode(BASE64, blob.subblob(up07.get(), 8B));
+		set resp.http.down07
+		    = blob.encode(BASE64, blob.subblob(down07.get(), 8B));
+		set resp.http.zerobytes
+		    = blob.encode(BASE64, blob.subblob(down07.get(), 0B));
+		set resp.http.zerolen
+		    = blob.length(blob.subblob(down07.get(), 0B));
+	}
+}
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.up03 == "AAECAw=="
+	expect resp.http.down07060504 == "BwYFBA=="
+	expect resp.http.up04050607 == "BAUGBw=="
+	expect resp.http.down03 == "AwIBAA=="
+	expect resp.http.up07 == "AAECAwQFBgc="
+	expect resp.http.down07 == "BwYFBAMCAQA="
+	expect resp.http.zerobytes == ""
+	expect resp.http.zerolen == "0"
+} -run
+
+# subblob() failures
+server s1 -repeat 3 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import blob;
+
+	sub vcl_init {
+		new up07 = blob.blob(BASE64, "AAECAwQFBgc=");
+		new empty = blob.blob(IDENTITY, "");
+	}
+
+	sub vcl_deliver {
+		if (req.url == "/empty") {
+			set resp.http.empty = blob.encode(BASE64,
+			    blob.subblob(empty.get(), 1B));
+		}
+		elsif (req.url == "/toolong") {
+			set resp.http.toolong
+			    = blob.encode(BASE64, blob.subblob(up07.get(), 9B));
+		}
+		elsif (req.url == "/badoffset") {
+			set resp.http.badoffset = blob.encode(BASE64,
+			    blob.subblob(up07.get(), 4B, 5B));
+		}
+	}
+}
+
+logexpect l1 -v v1 -d 0 -g vxid -q "VCL_Error" {
+	expect 0 * Begin req
+	expect * = VCL_Error "^vmod blob error: blob is empty in blob.subblob..$"
+	expect * = End
+} -start
+
+client c1 {
+	txreq -url /empty
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.empty == <undef>
+} -run
+
+logexpect l1 -wait
+
+client c1 {
+	txreq -url /toolong
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.toolong == <undef>
+} -run
+
+logexpect l1 -v v1 -d 1 -g vxid -q "VCL_Error" {
+	expect * * VCL_Error "^vmod blob error: size 9 from offset 0 requires more bytes than blob length 8 in blob.subblob..$"
+} -run
+
+client c1 {
+	txreq -url /badoffset
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.badoffset == <undef>
+} -run
+
+logexpect l1 -v v1 -d 1 -g vxid -q "VCL_Error" {
+	expect * * VCL_Error "^vmod blob error: size 4 from offset 5 requires more bytes than blob length 8 in blob.subblob..$"
+} -run
+
+# VCL load failures from subblob()
+varnish v1 -errvcl {vmod blob error: blob is empty in blob.subblob()} {
+	import blob;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_init {
+		new empty = blob.blob(IDENTITY, "");
+		if (blob.same(empty.get(), blob.subblob(empty.get(), 0B))) {
+			new B = blob.blob(IDENTITY, "b");
+		}
+	}
+}
+
+varnish v1 -errvcl {vmod blob error: size 9 from offset 0 requires more bytes than blob length 8 in blob.subblob()} {
+	import blob;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_init {
+		new up07 = blob.blob(BASE64, "AAECAwQFBgc=");
+		if (blob.same(up07.get(), blob.subblob(up07.get(), 9B))) {
+			new B = blob.blob(IDENTITY, "b");
+		}
+	}
+}
+
+varnish v1 -errvcl {vmod blob error: size 4 from offset 5 requires more bytes than blob length 8 in blob.subblob()} {
+	import blob;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_init {
+		new up07 = blob.blob(BASE64, "AAECAwQFBgc=");
+		if (blob.same(up07.get(), blob.subblob(up07.get(), 4B, 5B))) {
+			new B = blob.blob(IDENTITY, "b");
+		}
+	}
+}
