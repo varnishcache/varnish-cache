@@ -244,7 +244,7 @@ vmod_blob_get(VRT_CTX, struct vmod_blob_blob *b)
 	return &b->blob;
 }
 
-VCL_STRING
+VCL_STRING __match_proto__(td_blob_blob_encode)
 vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs)
 {
 	enum encoding enc = parse_encoding(encs);
@@ -606,4 +606,83 @@ vmod_transcode_n(VRT_CTX, VCL_INT n, VCL_ENUM decs, VCL_ENUM encs,
 	va_end(ap);
 
 	return (r);
+}
+
+VCL_BOOL __match_proto__(td_blob_same)
+vmod_same(VRT_CTX, VCL_BLOB b1, VCL_BLOB b2)
+{
+	(void) ctx;
+
+	if (b1 == NULL && b2 == NULL)
+		return 1;
+	if (b1 == NULL || b2 == NULL)
+		return 0;
+	return (b1->len == b2->len && b1->priv == b2->priv);
+}
+
+VCL_BOOL __match_proto__(td_blob_equal)
+vmod_equal(VRT_CTX, VCL_BLOB b1, VCL_BLOB b2)
+{
+	(void) ctx;
+
+	if (b1 == NULL && b2 == NULL)
+		return 1;
+	if (b1 == NULL || b2 == NULL)
+		return 0;
+	if (b1->len != b2->len)
+		return 0;
+	if (b1->priv == b2->priv)
+		return 1;
+	if (b1->priv == NULL || b2->priv == NULL)
+		return 0;
+	return (memcmp(b1->priv, b2->priv, b1->len) == 0);
+}
+
+VCL_INT __match_proto__(td_blob_length)
+vmod_length(VRT_CTX, VCL_BLOB b)
+{
+	(void) ctx;
+
+	if (b == NULL)
+		return 0;
+	return b->len;
+}
+
+VCL_BLOB __match_proto__(td_blob_subblob)
+vmod_subblob(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
+{
+	uintptr_t snap;
+	struct vmod_priv *sub;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	assert(n >= 0);
+	assert(off >= 0);
+
+	if (b == NULL || b->len == 0 || b->priv == NULL) {
+		ERR(ctx, "blob is empty in blob.subblob()");
+		return NULL;
+	}
+	assert(b->len >= 0);
+	if (off + n > b->len) {
+		VERR(ctx, "size %lld from offset %lld requires more bytes than "
+		     "blob length %d in blob.subblob()", n, off, b->len);
+		return NULL;
+	}
+
+	if (n == 0)
+		return null_blob;
+
+	snap = WS_Snapshot(ctx->ws);
+	if ((sub = WS_Alloc(ctx->ws, sizeof(*sub))) == NULL) {
+		ERRNOMEM(ctx, "Allocating BLOB result in blob.subblob()");
+		return NULL;
+	}
+	if ((sub->priv = WS_Alloc(ctx->ws, n)) == NULL) {
+		VERRNOMEM(ctx, "Allocating %lld bytes in blob.subblob()", n);
+		WS_Reset(ctx->ws, snap);
+		return NULL;
+	}
+	memcpy(sub->priv, (char *)b->priv + off, n);
+	sub->len = n;
+	return sub;
 }
