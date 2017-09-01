@@ -414,5 +414,5 @@ to increase the varnishd parameter ``thread_pool_stack``.
 SEE ALSO
 ========
 
-* varnishd(1)
-* vcl(7)
+* :ref:`varnishd(1)`
+* :ref:`vcl(7)`
