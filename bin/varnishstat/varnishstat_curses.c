@@ -1048,7 +1048,7 @@ do_curses(struct vsm *vd, double delay)
 {
 	struct pollfd pollfd;
 	long t;
-	int ch;
+	int ch, initial = 1;
 	double now;
 	struct vsm_fantom f_iter = VSM_FANTOM_NULL;
 
@@ -1068,14 +1068,13 @@ do_curses(struct vsm *vd, double delay)
 	make_windows();
 	doupdate();
 
-	init_hitrate();
 	while (keep_running) {
-		if (VSM_Status(vd) & (VSM_MGT_CHANGED|VSM_WRK_CHANGED)) {
+		if (initial ||
+		    (VSM_Status(vd) & (VSM_MGT_CHANGED|VSM_WRK_CHANGED))) {
 			init_hitrate();
 			delete_pt_list();
 			build_pt_list(vd, &f_iter);
-			rebuild = 1;
-			redraw = 1;
+			initial = 0;
 		}
 
 		now = VTIM_mono();
