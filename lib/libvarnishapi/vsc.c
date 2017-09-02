@@ -291,7 +291,19 @@ vsc_iter_elem(struct vsm *vd, const struct vsm_fantom *fantom,
 		point.format = '?';
 	}
 
-	point.level = &level_info;
+	vt = vjsn_child(vv, "level");
+	AN(vt);
+	assert(vt->type == VJSN_STRING);
+
+	if (!strcmp(vt->value, "info"))  {
+		point.level = &level_info;
+	} else if (!strcmp(vt->value, "diag")) {
+		point.level = &level_diag;
+	} else if (!strcmp(vt->value, "debug")) {
+		point.level = &level_debug;
+	} else {
+		WRONG("Illegal level");
+	}
 
 	vt = vjsn_child(vv, "index");
 	AN(vt);
