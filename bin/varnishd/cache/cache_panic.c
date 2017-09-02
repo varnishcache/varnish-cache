@@ -700,5 +700,6 @@ PAN_Init(void)
 	VSB_printf(pan_vsb, "This is a test\n");
 	AZ(VSB_finish(pan_vsb));
 	VSB_clear(pan_vsb);
+	heritage.panic_str[0] = '\0';
 	CLI_AddFuncs(debug_cmds);
 }

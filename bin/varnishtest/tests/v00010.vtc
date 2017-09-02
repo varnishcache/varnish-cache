@@ -39,6 +39,9 @@ varnish v1 -arg "-smalloc,1m" -vcl+backend {
 	}
 } -start
 
+varnish v1 -cliok "stop"
+varnish v1 -cliok "start"
+varnish v1 -expect MGT.child_panic == 0
 varnish v1 -cliok "param.set feature +no_coredump"
 
 client c1 {
