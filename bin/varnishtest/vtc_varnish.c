@@ -76,7 +76,8 @@ struct varnish {
 	char			*jail;
 	char			*proto;
 
-	struct vsm		*vd;
+	struct vsm		*vsm_vsl;
+	struct vsm		*vsm_vsc;
 	int			has_a_arg;
 
 	unsigned		vsl_tag_count[256];
@@ -210,7 +211,7 @@ varnishlog_thread(void *priv)
 
 	vsl = VSL_New();
 	AN(vsl);
-	vsm = v->vd;
+	vsm = v->vsm_vsl;
 
 	c = NULL;
 	opt = 0;
@@ -330,8 +331,8 @@ varnish_delete(struct varnish *v)
 	vtc_logclose(v->vl);
 	free(v->name);
 	free(v->workdir);
-	if (v->vd != NULL)
-		VSM_Destroy(&v->vd);
+	if (v->vsm_vsl != NULL)
+		VSM_Destroy(&v->vsm_vsl);
 
 	/*
 	 * We do not delete the workdir, it may contain stuff people
@@ -519,9 +520,13 @@ varnish_launch(struct varnish *v)
 		vtc_fatal(v->vl, "CLI auth command failed: %u %s", u, r);
 	free(r);
 
-	v->vd = VSM_New();
-	(void)VSM_Arg(v->vd, 'n', v->workdir);
-	AZ(VSM_Attach(v->vd, -1));
+	v->vsm_vsc = VSM_New();
+	(void)VSM_Arg(v->vsm_vsc, 'n', v->workdir);
+	AZ(VSM_Attach(v->vsm_vsc, -1));
+
+	v->vsm_vsl = VSM_New();
+	(void)VSM_Arg(v->vsm_vsl, 'n', v->workdir);
+	AZ(VSM_Attach(v->vsm_vsl, -1));
 
 	AZ(pthread_create(&v->tp_vsl, NULL, varnishlog_thread, v));
 }
@@ -839,9 +844,9 @@ varnish_vsc(const struct varnish *v, const char *arg)
 	memset(&dp, 0, sizeof dp);
 	dp.v = v;
 	dp.arg = arg;
-	(void)VSM_Status(v->vd);
+	(void)VSM_Status(v->vsm_vsc);
 
-	(void)VSC_Iter(v->vd, NULL, do_stat_dump_cb, &dp);
+	(void)VSC_Iter(v->vsm_vsc, NULL, do_stat_dump_cb, &dp);
 }
 
 /**********************************************************************
@@ -905,9 +910,9 @@ varnish_expect(const struct varnish *v, char * const *av)
 	ref = 0;
 	good = 0;
 	for (i = 0; i < 50; i++, (void)usleep(100000)) {
-		(void)VSM_Status(v->vd);
+		(void)VSM_Status(v->vsm_vsc);
 
-		good = VSC_Iter(v->vd, NULL, do_expect_cb, &sp);
+		good = VSC_Iter(v->vsm_vsc, NULL, do_expect_cb, &sp);
 		if (!good) {
 			good = -2;
 			continue;
@@ -932,7 +937,7 @@ varnish_expect(const struct varnish *v, char * const *av)
 			break;
 	}
 	if (good == -1) {
-		vtc_fatal(v->vl, "VSM error: %s", VSM_Error(v->vd));
+		vtc_fatal(v->vl, "VSM error: %s", VSM_Error(v->vsm_vsc));
 	}
 	if (good == -2) {
 		if (not) {
