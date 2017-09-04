@@ -223,7 +223,6 @@ vmod_blob__init(VRT_CTX, struct vmod_blob_blob **blobp, const char *vcl_name,
 		assert(errno == EINVAL);
 		free(b->blob.priv);
 		b->blob.priv = NULL;
-		AZ(pthread_mutex_destroy(&b->lock));
 		VERR(ctx, "cannot create blob %s, illegal encoding beginning "
 		    "with \"%s\"", vcl_name, p);
 		return;
