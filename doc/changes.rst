@@ -29,6 +29,8 @@ VCL
 
 * Added ``bereq.is_bgfetch`` which is true for background fetches.
 
+* Added VMOD blob (#2407)
+
 C APIs (for vmod and utility authors)
 -------------------------------------
 
