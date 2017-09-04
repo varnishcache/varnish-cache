@@ -41,6 +41,11 @@
 
 #include "hash/hash_slinger.h"
 
+#ifdef HAVE_SIGALTSTACK
+#include <signal.h>
+extern stack_t altstack;
+#endif
+
 static void Pool_Work_Thread(struct pool *pp, struct worker *wrk);
 
 /*--------------------------------------------------------------------
@@ -401,6 +406,9 @@ pool_thread(void *priv)
 	struct pool_info *pi;
 
 	CAST_OBJ_NOTNULL(pi, priv, POOL_INFO_MAGIC);
+#ifdef HAVE_SIGALTSTACK
+	AZ(sigaltstack(&altstack, NULL));
+#endif
 	WRK_Thread(pi->qp, pi->stacksize, cache_param->workspace_thread);
 	FREE_OBJ(pi);
 	return (NULL);
