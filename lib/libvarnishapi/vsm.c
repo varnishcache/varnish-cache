@@ -531,7 +531,7 @@ VSM_Attach(struct vsm *vd, int progress)
 {
 	double t0;
 	unsigned u;
-	int n = 0;
+	int i, n = 0;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 
@@ -539,6 +539,14 @@ VSM_Attach(struct vsm *vd, int progress)
 		t0 = DBL_MAX;
 	else
 		t0 = VTIM_mono() + vd->patience;
+
+	if (vd->dname == NULL) {
+		/* Use default (hostname) */
+		i = VSM_Arg(vd, 'n', "");
+		if (i < 0)
+			return (i);
+		AN(vd->dname);
+	}
 
 	AZ(vd->attached);
 	while (1) {
