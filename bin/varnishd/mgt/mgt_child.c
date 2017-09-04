@@ -88,6 +88,7 @@ static struct vsb *child_panic = NULL;
 static double mgt_uptime_t0 = 0.;
 
 #ifdef HAVE_SIGALTSTACK
+#include <sys/mman.h>
 stack_t altstack;
 #endif
 
@@ -403,7 +404,10 @@ mgt_launch_child(struct cli *cli)
 			size_t sz = SIGSTKSZ + 4096;
 			if (sz < mgt_param.wthread_stacksize)
 				sz = mgt_param.wthread_stacksize;
-			altstack.ss_sp = malloc(sz);
+			altstack.ss_sp = mmap(NULL, sz,  PROT_READ | PROT_WRITE,
+					      MAP_PRIVATE | MAP_ANONYMOUS,
+					      -1, 0);
+			AN(altstack.ss_sp != MAP_FAILED);
 			AN(altstack.ss_sp);
 			altstack.ss_size = sz;
 			altstack.ss_flags = 0;
