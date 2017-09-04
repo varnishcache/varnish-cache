@@ -1,6 +1,7 @@
 varnishtest "VMOD blob test transcode()"
 
-varnish v1 -vcl {
+# Some platforms need larger workspaces for this test
+varnish v1 -arg "-p workspace_client=256k" -vcl {
 	import blob;
 	import std;
 	backend b { .host = "${bad_ip}"; }
