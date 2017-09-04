@@ -427,7 +427,8 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 		p = e + 1;
 
 		if (av[0] != NULL || ac < 4 || ac > 5) {
-			(void)(vsm_diag(vd, "VSM_Open: bad index (%d/%s)",
+			(void)(vsm_diag(vd,
+			    "vsm_refresh_set2: bad index (%d/%s)",
 			    ac, av[0]));
 			VAV_Free(av);
 			break;
@@ -506,7 +507,8 @@ VSM_Status(struct vsm *vd)
 	if (vd->dfd < 0) {
 		vd->dfd = open(vd->dname, O_RDONLY);
 		if (vd->dfd < 0)
-			(void)vsm_diag(vd, "VSM_Open: Cannot open workdir");
+			(void)vsm_diag(vd,
+			    "VSM_Status: Cannot open workdir");
 		else
 			AZ(fstat(vd->dfd, &vd->dst));
 	}
@@ -710,7 +712,7 @@ VSM_Unmap(struct vsm *vd, struct vsm_fantom *vf)
 	AN(vf->b);
 	vg = vsm_findseg(vd, vf);
 	if (vg == NULL)
-		return (vsm_diag(vd, "VSM_Map: bad fantom"));
+		return (vsm_diag(vd, "VSM_Unmap: bad fantom"));
 	assert(vg->refs > 0);
 	vg->refs--;
 	vf->b = NULL;
