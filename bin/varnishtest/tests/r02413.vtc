@@ -1,0 +1,43 @@
+varnishtest "Test vcl_trace"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-p vsl_mask=+VCL_trace" -vcl+backend {
+	sub vcl_deliver {
+		set resp.http.vcl = "vclA";
+	}
+} -start
+
+varnish v1 -cliok "vcl.label vclA vcl1"
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.http.vcl == "vcl1") {
+			return (vcl(vclA));
+		}
+	}
+	sub vcl_deliver {
+		set resp.http.vcl = "vcl2";
+	}
+}
+
+varnish v1 -cliok "vcl.label vclB vcl2"
+varnish v1 -cliok "vcl.list"
+
+logexpect l1 -v v1 -g raw {
+	expect * 1001	VCL_call	"RECV"
+	expect 0 1001	VCL_trace	{^vcl2 \d+ \d+\.\d+\.\d+$}
+	expect * 1001	VCL_call	"RECV"
+	expect 0 1001	VCL_trace	{^vcl1 \d+ \d+\.\d+\.\d+$}
+} -start
+
+client c1 {
+	txreq -hdr "vcl: vcl1"
+	rxresp
+	expect resp.http.vcl == vclA
+} -run
+
+logexpect l1 -wait
