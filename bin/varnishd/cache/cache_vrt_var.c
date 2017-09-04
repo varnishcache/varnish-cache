@@ -769,19 +769,19 @@ VRT_BODY_L(resp)
 /*--------------------------------------------------------------------*/
 
 static struct vmod_priv *
-vrt_hash_blob(VRT_CTX, uint8_t *digest)
+vrt_do_blob(VRT_CTX, const char *err, uint8_t *src, size_t len)
 {
 	struct vmod_priv *p;
 	void *d;
 
 	p = (void *)WS_Alloc(ctx->ws, sizeof *p);
-	d = WS_Copy(ctx->ws, digest, DIGEST_LEN);
+	d = WS_Copy(ctx->ws, src, len);
 	if (p == NULL || d == NULL) {
-		VRT_fail(ctx, "Workspace overflow ((be)req.hash)");
+		VRT_fail(ctx, "Workspace overflow (%s)", err);
 		return (NULL);
 	}
 	memset(p, 0, sizeof *p);
-	p->len = DIGEST_LEN;
+	p->len = len;
 	p->priv = d;
 	return (p);
 }
@@ -791,7 +791,8 @@ VRT_r_req_hash(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	return (vrt_hash_blob(ctx, ctx->req->digest));
+	return (vrt_do_blob(ctx, "req.hash", ctx->req->digest,
+	    DIGEST_LEN));
 }
 
 VCL_BLOB
@@ -799,7 +800,8 @@ VRT_r_bereq_hash(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	return (vrt_hash_blob(ctx, ctx->bo->digest));
+	return (vrt_do_blob(ctx, "bereq.hash", ctx->bo->digest,
+	    DIGEST_LEN));
 }
 
 /*--------------------------------------------------------------------*/
