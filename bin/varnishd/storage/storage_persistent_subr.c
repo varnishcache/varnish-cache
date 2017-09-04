@@ -49,7 +49,7 @@
 
 #include "storage/storage_persistent.h"
 
-static void smp_msync(void *addr, size_t length);
+static void smp_msync(const void *addr, size_t length);
 
 /*--------------------------------------------------------------------
  * SIGNATURE functions
@@ -253,7 +253,7 @@ smp_new_signspace(const struct smp_sc *sc, struct smp_signspace *spc,
  */
 
 static void
-smp_msync(void *addr, size_t length)
+smp_msync(const void *addr, size_t length)
 {
 	uintptr_t start, end, pagesize;
 

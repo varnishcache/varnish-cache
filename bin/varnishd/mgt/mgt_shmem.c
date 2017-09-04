@@ -46,7 +46,6 @@
 #include "vsmw.h"
 
 struct vsmw	*mgt_vsmw;
-struct vsmw	*child_vsmw;
 
 /*--------------------------------------------------------------------
  */
