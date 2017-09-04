@@ -234,7 +234,7 @@ sp_variables = [
 		"""
 	),
 	('req.hash',
-		'STRING',
+		'BLOB',
 		('hit', 'miss', 'pass', 'purge', 'deliver', ),
 		(), """
 		The hash key of this request.
@@ -428,7 +428,7 @@ sp_variables = [
 		"""
 	),
 	('bereq.hash',
-		'STRING',
+		'BLOB',
 		('pipe', 'backend', ),
 		(), """
 		The hash key of this request.

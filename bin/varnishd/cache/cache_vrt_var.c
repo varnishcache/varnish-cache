@@ -768,34 +768,32 @@ VRT_BODY_L(resp)
 
 /*--------------------------------------------------------------------*/
 
-static const char *
-vrt_hash(VRT_CTX, uint8_t *digest)
+static struct vmod_priv *
+vrt_do_blob(VRT_CTX, uint8_t *digest)
 {
-	char *p;
-	int i;
-
-	p = WS_Alloc(ctx->ws, SHA256_LEN * 2 + 1);
-	if (p == NULL)
-		return (NULL);
-	for (i = 0; i < SHA256_LEN; i++)
-		sprintf(&p[i * 2], "%02x", digest[i]);
+	struct vmod_priv *p;
+	p = (void *)WS_Alloc(ctx->ws, sizeof *p);
+	AN(p);
+	memset(p, 0, sizeof *p);
+	p->len = DIGEST_LEN;
+	p->priv = WS_Copy(ctx->ws, digest, DIGEST_LEN);
 	return (p);
 }
 
-const char *
+VCL_BLOB
 VRT_r_req_hash(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	return (vrt_hash(ctx, ctx->req->digest));
+	return (vrt_do_blob(ctx, ctx->req->digest));
 }
 
-const char *
+VCL_BLOB
 VRT_r_bereq_hash(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	return (vrt_hash(ctx, ctx->bo->digest));
+	return (vrt_do_blob(ctx, ctx->bo->digest));
 }
 
 /*--------------------------------------------------------------------*/

@@ -220,15 +220,17 @@ varnish v1 -errvcl {Function returns VOID} {
 
 varnish v1 -errvcl {'req.hash': Not available in method 'vcl_recv'.} {
 	backend b { .host = "127.0.0.1"; }
+	import vtc;
 	sub vcl_recv {
-		set req.http.foo = req.hash;
+		set req.http.foo = vtc.blob2hex(req.hash);
 	}
 }
 
 varnish v1 -errvcl {'req.hash': Not available in method 'vcl_hash'.} {
 	backend b { .host = "127.0.0.1"; }
+	import vtc;
 	sub vcl_hash {
-		set req.http.foo = req.hash;
+		set req.http.foo = vtc.blob2hex(req.hash);
 	}
 }
 
