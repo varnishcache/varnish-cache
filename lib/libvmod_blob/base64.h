@@ -28,8 +28,8 @@
 
 #include "vmod_blob.h"
 
-#define ILL ((int8_t) -1)
-#define PAD ((int8_t) -2)
+#define ILL ((int8_t) 127)
+#define PAD ((int8_t) 126)
 
 static const struct b64_alphabet {
 	const char b64[64];
