@@ -64,7 +64,7 @@ size_t  len_f(size_t);
  * otherwise, the number of bytes written (note that this does not
  *            include any terminating null byte)
  */
-typedef 
+typedef
 ssize_t encode_f(const enum encoding enc, char *restrict const buf,
 		 const size_t buflen, const char *restrict const in,
 		 const size_t inlen);

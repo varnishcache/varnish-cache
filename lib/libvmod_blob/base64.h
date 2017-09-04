@@ -47,7 +47,7 @@ static const struct b64_alphabet {
 			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
 			ILL, ILL, ILL,  62, ILL, ILL, ILL,  63, /* +, -    */
 			 52,  53,  54,  55,  56,  57,  58,  59, /* 0 - 7   */
-			 60,  61, ILL, ILL, ILL, PAD, ILL, ILL, /* 8, 9, = */ 
+			 60,  61, ILL, ILL, ILL, PAD, ILL, ILL, /* 8, 9, = */
 			ILL,   0,   1,   2,   3,   4,   5,   6, /* A - G   */
 			  7,   8,   9,  10,  11,  12,  13,  14, /* H - O   */
 			 15,  16,  17,  18,  19,  20,  21,  22, /* P - W   */
@@ -86,7 +86,7 @@ static const struct b64_alphabet {
 			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
 			ILL, ILL, ILL, ILL, ILL,  62, ILL, ILL, /* -       */
 			 52,  53,  54,  55,  56,  57,  58,  59, /* 0 - 7   */
-			 60,  61, ILL, ILL, ILL, PAD, ILL, ILL, /* 8, 9, = */ 
+			 60,  61, ILL, ILL, ILL, PAD, ILL, ILL, /* 8, 9, = */
 			ILL,   0,   1,   2,   3,   4,   5,   6, /* A - G   */
 			  7,   8,   9,  10,  11,  12,  13,  14, /* H - O   */
 			 15,  16,  17,  18,  19,  20,  21,  22, /* P - W   */
@@ -125,7 +125,7 @@ static const struct b64_alphabet {
 			ILL, ILL, ILL, ILL, ILL, ILL, ILL, ILL,
 			ILL, ILL, ILL, ILL, ILL,  62, ILL, ILL, /* -       */
 			 52,  53,  54,  55,  56,  57,  58,  59, /* 0 - 7   */
-			 60,  61, ILL, ILL, ILL, ILL, ILL, ILL, /* 8, 9    */ 
+			 60,  61, ILL, ILL, ILL, ILL, ILL, ILL, /* 8, 9    */
 			ILL,   0,   1,   2,   3,   4,   5,   6, /* A - G   */
 			  7,   8,   9,  10,  11,  12,  13,  14, /* H - O   */
 			 15,  16,  17,  18,  19,  20,  21,  22, /* P - W   */
