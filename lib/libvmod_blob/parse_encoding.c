@@ -175,5 +175,4 @@ parse_encoding (const char *m) {
 	return r;
   invalid:
     return _INVALID;
-    (void)p;
 }
