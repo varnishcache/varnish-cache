@@ -367,6 +367,103 @@ News for Vmod Authors
 
 * PRIV_* now also work for object methods with unchanged scope.
 
+================================
+Varnish Cache 4.1.8 (2017-08-02)
+================================
+
+Changes since 4.1.7:
+
+* Update in the documentation of timestamps
+
+Bugs fixed
+----------
+
+* 2379_ - Correctly handle bogusly large chunk sizes (VSV00001)
+
+.. _2379: https://github.com/varnishcache/varnish-cache/issues/2379
+
+================================
+Varnish Cache 4.1.7 (2017-06-28)
+================================
+
+Changes since 4.1.7-beta1:
+
+* Add extra locking to protect the pools list and refcounts
+* Don't panic on a null ban
+
+Bugs fixed
+----------
+
+* 2321_ - Prevent storage backends name collisions
+
+.. _2321: https://github.com/varnishcache/varnish-cache/issues/2321
+
+======================================
+Varnish Cache 4.1.7-beta1 (2017-06-15)
+======================================
+
+Changes since 4.1.6:
+
+* Add -vsl_catchup to varnishtest
+* Add record-prefix support to varnishncsa
+
+Bugs fixed
+----------
+* 1764_ - Correctly honor nuke_limit parameter
+* 2022_ - varnishstat -1 -f field inclusion glob doesn't allow VBE
+  backend fields
+* 2069_ - Health probes fail when HTTP response does not contain
+  reason phrase
+* 2118_ - "varnishstat -f MAIN.sess_conn -1" produces empty output
+* 2219_ - Remember to reset workspace
+* 2320_ - Rework and fix varnishstat counter filtering
+* 2329_ - Docfix: Only root can jail
+
+.. _1764: https://github.com/varnishcache/varnish-cache/issues/1764
+.. _2022: https://github.com/varnishcache/varnish-cache/issues/2022
+.. _2069: https://github.com/varnishcache/varnish-cache/issues/2069
+.. _2118: https://github.com/varnishcache/varnish-cache/issues/2118
+.. _2219: https://github.com/varnishcache/varnish-cache/issues/2219
+.. _2320: https://github.com/varnishcache/varnish-cache/issues/2320
+.. _2329: https://github.com/varnishcache/varnish-cache/issues/2329
+
+================================
+Varnish Cache 4.1.6 (2017-04-26)
+================================
+
+* Introduce a vxid left hand side for VSL queries. This allows
+  matching on records matching a known vxid.
+* Environment variables are now available in the stdandard VMOD;
+  std.getenv()
+* Add setenv command to varnishtest
+
+
+Bugs fixed
+----------
+* 2200_ - Dramatically simplify VEV, fix assert in vev.c
+* 2216_ - Make sure Age is always less than max-age
+* 2233_ - Correct check when parsing the query string
+* 2241_ - VSL fails to get hold of SHM
+* 2270_ - Newly loaded auto VCLs don't get their go_cold timer set
+* 2273_ - Master cooling problem
+* 2275_ - If the client workspace is almost, but not quite exhaused, we may
+  not be able to get enough iovec's to do Chunked transmission.
+* 2295_ - Spinning loop in VBE_Poll causes master to kill child on
+  CLI timeout
+* 2301_ - Don't attempt to check if varnishd is still running if we have
+  already failed.
+* 2313_ - Cannot link to varnishapi, symbols missing
+
+.. _2200: https://github.com/varnishcache/varnish-cache/issues/2200
+.. _2216: https://github.com/varnishcache/varnish-cache/pull/2216
+.. _2233: https://github.com/varnishcache/varnish-cache/issues/2233
+.. _2241: https://github.com/varnishcache/varnish-cache/issues/2241
+.. _2270: https://github.com/varnishcache/varnish-cache/issues/2270
+.. _2273: https://github.com/varnishcache/varnish-cache/pull/2273
+.. _2275: https://github.com/varnishcache/varnish-cache/issues/2275
+.. _2295: https://github.com/varnishcache/varnish-cache/issues/2295
+.. _2301: https://github.com/varnishcache/varnish-cache/issues/2301
+.. _2313: https://github.com/varnishcache/varnish-cache/issues/2313
 
 ================================
 Varnish Cache 4.1.5 (2017-02-09)
@@ -493,7 +590,7 @@ Bugs fixed
 * 2024_ - panic vmod_rr_resolve() round_robin.c line 75 (be) != NULL
 * 2011_ - VBE.*.conn (concurrent connections to backend) not working as expected
 * 2008_ - Assert error in VBE_Delete()
-* 2007_ - Update documentation part about CLI/management port authentication paramater
+* 2007_ - Update documentation part about CLI/management port authentication parameter
 * 1881_ - std.cache_req_body() w/ return(pipe) is broken
 
 .. _2027: https://github.com/varnishcache/varnish-cache/issues/2027
