@@ -42,7 +42,7 @@ struct vmod_blob_blob {
 	unsigned magic;
 #define VMOD_BLOB_MAGIC 0xfade4fa9
 	struct vmod_priv blob;
-	const char *encoding[__MAX_ENCODING];
+	char *encoding[__MAX_ENCODING];
 	pthread_mutex_t lock;
 };
 
@@ -264,25 +264,25 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs)
 
 			assert(len >= 0);
 			if (len == 0)
-				b->encoding[enc] = "";
+				b->encoding[enc] = empty;
 			else {
 				b->encoding[enc] = malloc(len);
 				if (b->encoding[enc] == NULL)
 					ERRNOMEM(ctx, "cannot encode");
 				else {
-					const char *s = b->encoding[enc];
+					char *s = b->encoding[enc];
 					len =
 						func[enc].encode(
-							enc, (void *) s, len,
+							enc, s, len,
 							b->blob.priv,
 							b->blob.len);
 					assert(len >= 0);
 					if (len == 0) {
-						free((void *) s);
-						b->encoding[enc] = "";
+						free(s);
+						b->encoding[enc] = empty;
 					}
 					else
-						*((char *)s + len) = '\0';
+						s[len] = '\0';
 				}
 			}
 		}
@@ -323,7 +323,7 @@ find_nonempty_va(const char *restrict *p, va_list ap) {
 
 	/* find first non-empty vararg */
 	for (; *p == vrt_magic_string_end || *p == NULL || **p == '\0';
-	     *p = va_arg(ap, const char *))
+	     *p = va_arg(ap, char *))
 		if (*p == vrt_magic_string_end)
 			return (vrt_magic_string_end);
 
@@ -336,51 +336,10 @@ find_nonempty_va(const char *restrict *p, va_list ap) {
 	return (q);
 }
 
-/*
- * special case: we can avoid copying for identity decode if we need to
- * deal with a single vararg only - in which case we just have the blob
- * point to the input string
- */
 static VCL_BLOB
-decode_id_inplace(struct vmod_priv *b, VCL_INT n, const char *restrict p,
-		  va_list ap) {
-	const char *q;
-	int l;
-
-	if (n == 0)
-		return null_blob;
-
-	q = find_nonempty_va(&p, ap);
-
-	if (p == vrt_magic_string_end)
-		return null_blob;
-
-	if (q == vrt_magic_string_end) {
-		/* can use in-place decode */
-		l = strlen(p);
-		if (n > 0 && n < l)
-			l = n;
-		b->priv = (char *)p;
-		b->len = l;
-		b->free = NULL;
-		return (b);
-	}
-
-	if (n == -1)
-		return NULL;
-	l = strlen(p);
-	if (n > l)
-		return NULL;
-	b->priv = (char *)p;
-	b->len = n;
-	b->free = NULL;
-
-	return (b);
-}
-
-static VCL_BLOB
-decode(VRT_CTX, VCL_INT n, VCL_ENUM decs,
-       const char *restrict const p, va_list ap) {
+decode(VRT_CTX, VCL_INT n, VCL_ENUM decs, const char *restrict const p,
+       va_list ap)
+{
 	enum encoding dec = parse_encoding(decs);
 	struct wb_s wb;
 	struct vmod_priv *b;
@@ -396,17 +355,6 @@ decode(VRT_CTX, VCL_INT n, VCL_ENUM decs,
 	if ((b = WS_Alloc(ctx->ws, sizeof(struct vmod_priv))) == NULL) {
 		ERRNOMEM(ctx, "cannot decode");
 		return NULL;
-	}
-
-	if (dec == IDENTITY) {
-		va_list aq;
-		va_copy(aq, ap);
-		const struct vmod_priv *bb = decode_id_inplace(b, n, p, aq);
-		va_end(aq);
-		if (bb == null_blob)
-			WS_Reset(ctx->ws, snap);
-		if (bb == b)
-			return bb;
 	}
 
 	if (wb_create(ctx->ws, &wb) == NULL) {
@@ -515,16 +463,6 @@ transcode(VRT_CTX, VCL_INT n, VCL_ENUM decs, VCL_ENUM encs,
 
 	AENC(dec);
 	AENC(enc);
-
-	if (dec == IDENTITY) {
-		va_copy(aq, ap);
-		const struct vmod_priv *bb = decode_id_inplace(&b, n, p, aq);
-		va_end(aq);
-		if (bb != NULL) {
-			r = encode(ctx, enc, bb);
-			return (r);
-		}
-	}
 
 	/*
 	 * Allocate space for the decoded blob on the stack
