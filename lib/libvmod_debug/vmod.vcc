@@ -39,10 +39,6 @@ $Event event_function
 
 You are not supposed to be able to see this text in the .RST
 
-$Function VOID panic(STRING_LIST)
-
-Don't.
-
 $Function STRING author(ENUM { phk, des, kristian, mithrandir } person="phk",
 			ENUM { phk, slink, geoff } someone="phk")
 
@@ -63,22 +59,6 @@ Test function for TASK private pointers
 $Function STRING test_priv_top(PRIV_TOP, STRING)
 
 Test function for TOP private pointers
-
-$Function BLOB str2blob(STRING src="foo")
-
-Turn a string into a blob
-
-$Function STRING blob2hex(BLOB src)
-
-Hexdump a blob
-
-$Function BACKEND no_backend()
-
-Fails at backend selection
-
-$Function STEVEDORE no_stevedore()
-
-Fails at storage selection.
 
 $Object obj(STRING string="default", ENUM { one, two, three } number="one")
 
@@ -148,10 +128,6 @@ $Function VOID fail()
 
 Function to fail vcl code.  (See also: RFC748)
 
-$Function VOID sleep(DURATION)
-
-Sleep the current worker thread.
-
 $Object dyn(STRING addr, STRING port)
 
 Dynamically create a single-backend director, addr and port must not be empty.
@@ -164,33 +140,6 @@ $Method VOID .refresh(STRING addr, STRING port)
 
 Dynamically refresh & (always!) replace the backend by a new one.
 
-$Function VOID workspace_allocate(ENUM { client, backend, session, thread },
-	  INT size)
-
-Allocate and zero out SIZE bytes from a workspace.
-If SIZE is negative, all but that many bytes are allocated from the workspace.
-(NB: Beware of the alignment imposed on workspace allocations.)
-
-$Function BOOL workspace_overflowed(ENUM { client, backend, session, thread })
-
-Return if the workspace overflow mark is set or not.
-
-$Function VOID workspace_overflow(ENUM { client, backend, session, thread })
-
-Mark a workspace as overflowed.
-
-$Function INT workspace_free(ENUM { client, backend, session, thread })
-
-Find how much unallocated space there is left in a workspace.
-
-$Function VOID workspace_snap(ENUM { client, backend, session, thread})
-
-Snapshot the named workspace. Only one snapshot may be active at a time.
-
-$Function VOID workspace_reset(ENUM { client, backend, session, thread })
-
-Reset to the previous snapshot of a workspace, taken from debug.workspace_snap.
-
 $Function VOID vcl_release_delay(DURATION)
 
 Hold a reference to the VCL when it goes cold for the given delay.
@@ -199,27 +148,9 @@ $Function BOOL match_acl(ACL acl, IP ip)
 
 Perform an IP match against a named ACL.
 
-$Function BOOL barrier_sync(STRING)
-
-Synchronize with a varnishtest shared barrier.
-
 $Function VOID test_probe(PROBE probe, PROBE same = 0)
 
 Only here to make sure probe definitions are passed properly.
-
-$Function INT typesize(STRING)
-
-Returns the size in bytes of a collection of C-datatypes.
-
-* 'p' = pointer
-* 'i' = int
-* 'd' = double
-* 'f' = float
-* 'l' = long
-* 's' = short
-* 'z' = size_t
-* 'o' = off_t
-* 'j' = intmax_t
 
 $Function VOID purge(DURATION ttl = 0, DURATION grace = 0, DURATION keep = 0)
 

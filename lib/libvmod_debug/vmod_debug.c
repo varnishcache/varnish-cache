@@ -37,18 +37,8 @@
 #include "vcl.h"
 #include "vrt.h"
 #include "vsa.h"
-#include "vsb.h"
-#include "vtcp.h"
 #include "vtim.h"
 #include "vcc_if.h"
-
-#define WARN_RETIRED()							\
-	do {								\
-		VSL(SLT_Error, 0,					\
-		    "debug.%s is deprecated, use vmod-vtc instead.",	\
-		    __func__);						\
-	} while (0)
-
 
 struct priv_vcl {
 	unsigned		magic;
@@ -60,20 +50,6 @@ struct priv_vcl {
 };
 
 static VCL_DURATION vcl_release_delay = 0.0;
-
-VCL_VOID __match_proto__(td_debug_panic)
-vmod_panic(VRT_CTX, const char *str, ...)
-{
-	va_list ap;
-	const char *b;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	WARN_RETIRED();
-	va_start(ap, str);
-	b = VRT_String(ctx->ws, "PANIC: ", str, ap);
-	va_end(ap);
-	VAS_Fail("VCL", "", 0, b, VAS_VCL);
-}
 
 VCL_STRING __match_proto__(td_debug_author)
 vmod_author(VRT_CTX, VCL_ENUM person, VCL_ENUM someone)
@@ -149,60 +125,6 @@ vmod_test_priv_vcl(VRT_CTX, struct vmod_priv *priv)
 	CAST_OBJ_NOTNULL(priv_vcl, priv->priv, PRIV_VCL_MAGIC);
 	AN(priv_vcl->foo);
 	assert(!strcmp(priv_vcl->foo, "FOO"));
-}
-
-VCL_BLOB
-vmod_str2blob(VRT_CTX, VCL_STRING s)
-{
-	struct vmod_priv *p;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	WARN_RETIRED();
-	p = (void*)WS_Alloc(ctx->ws, sizeof *p);
-	AN(p);
-	memset(p, 0, sizeof *p);
-	p->len = strlen(s);
-	p->priv = WS_Copy(ctx->ws, s, -1);
-	return (p);
-}
-
-VCL_STRING
-vmod_blob2hex(VRT_CTX, VCL_BLOB b)
-{
-	char *s, *p;
-	uint8_t *q;
-	int i;
-
-	WARN_RETIRED();
-	s = WS_Alloc(ctx->ws, b->len * 2 + 2);
-	AN(s);
-	p = s;
-	q = b->priv;
-	for (i = 0; i < b->len; i++) {
-		assert(snprintf(p, 3, "%02x", *q) == 2);
-		p += 2;
-		q += 1;
-	}
-	VRT_priv_fini(b);
-	return (s);
-}
-
-VCL_BACKEND
-vmod_no_backend(VRT_CTX)
-{
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	WARN_RETIRED();
-	return (NULL);
-}
-
-VCL_STEVEDORE __match_proto__(td_debug_no_stevedore)
-vmod_no_stevedore(VRT_CTX)
-{
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	WARN_RETIRED();
-	return (NULL);
 }
 
 VCL_VOID __match_proto__(td_debug_rot52)
@@ -388,125 +310,6 @@ event_function(VRT_CTX, struct vmod_priv *priv, enum vcl_event_e e)
 	}
 }
 
-VCL_VOID __match_proto__(td_debug_sleep)
-vmod_sleep(VRT_CTX, VCL_DURATION t)
-{
-
-	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
-	WARN_RETIRED();
-	VTIM_sleep(t);
-}
-
-static struct ws *
-wsfind(VRT_CTX, VCL_ENUM which)
-{
-	if (!strcmp(which, "client"))
-		return (ctx->ws);
-	else if (!strcmp(which, "backend"))
-		return (ctx->bo->ws);
-	else if (!strcmp(which, "session"))
-		return (ctx->req->sp->ws);
-	else if (!strcmp(which, "thread"))
-		return (ctx->req->wrk->aws);
-	else
-		WRONG("No such workspace.");
-}
-
-void
-vmod_workspace_allocate(VRT_CTX, VCL_ENUM which, VCL_INT size)
-{
-	struct ws *ws;
-	char *s;
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	WARN_RETIRED();
-
-	ws = wsfind(ctx, which);
-
-	WS_Assert(ws);
-	AZ(ws->r);
-
-	if (size < 0) {
-		size += WS_Reserve(ws, 0);
-		WS_Release(ws, 0);
-	}
-	s = WS_Alloc(ws, size);
-	if (!s)
-		return;
-	memset(s, '\0', size);
-}
-
-VCL_INT
-vmod_workspace_free(VRT_CTX, VCL_ENUM which)
-{
-	struct ws *ws;
-	unsigned u;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	WARN_RETIRED();
-
-	ws = wsfind(ctx, which);
-
-	WS_Assert(ws);
-	u = WS_Reserve(ws, 0);
-	WS_Release(ws, 0);
-
-	return (u);
-}
-
-VCL_BOOL
-vmod_workspace_overflowed(VRT_CTX, VCL_ENUM which)
-{
-	struct ws *ws;
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	WARN_RETIRED();
-
-	ws = wsfind(ctx, which);
-	WS_Assert(ws);
-
-	return (WS_Overflowed(ws));
-}
-
-static uintptr_t debug_ws_snap;
-
-void
-vmod_workspace_snap(VRT_CTX, VCL_ENUM which)
-{
-	struct ws *ws;
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	WARN_RETIRED();
-
-	ws = wsfind(ctx, which);
-	WS_Assert(ws);
-
-	debug_ws_snap = WS_Snapshot(ws);
-}
-
-void
-vmod_workspace_reset(VRT_CTX, VCL_ENUM which)
-{
-	struct ws *ws;
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	WARN_RETIRED();
-
-	ws = wsfind(ctx, which);
-	WS_Assert(ws);
-
-	WS_Reset(ws, debug_ws_snap);
-}
-
-void
-vmod_workspace_overflow(VRT_CTX, VCL_ENUM which)
-{
-	struct ws *ws;
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	WARN_RETIRED();
-
-	ws = wsfind(ctx, which);
-	WS_Assert(ws);
-
-	WS_MarkOverflow(ws);
-}
-
 VCL_VOID __match_proto__(td_debug_vcl_release_delay)
 vmod_vcl_release_delay(VRT_CTX, VCL_DURATION delay)
 {
@@ -527,39 +330,6 @@ vmod_match_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip)
 	return (VRT_acl_match(ctx, acl, ip));
 }
 
-VCL_BOOL
-vmod_barrier_sync(VRT_CTX, VCL_STRING addr)
-{
-	const char *err;
-	char buf[32];
-	int sock, i;
-	ssize_t sz;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	WARN_RETIRED();
-	AN(addr);
-	AN(*addr);
-
-	VSLb(ctx->vsl, SLT_Debug, "barrier_sync(\"%s\")", addr);
-	sock = VTCP_open(addr, NULL, 0., &err);
-	if (sock < 0) {
-		VSLb(ctx->vsl, SLT_Error, "Barrier connection failed: %s", err);
-		return (0);
-	}
-
-	sz = read(sock, buf, sizeof buf);
-	i = errno;
-	closefd(&sock);
-	if (sz == 0)
-		return (1);
-	if (sz < 0)
-		VSLb(ctx->vsl, SLT_Error,
-		    "Barrier read failed: %s (errno=%d)", strerror(i), i);
-	if (sz > 0)
-		VSLb(ctx->vsl, SLT_Error, "Barrier unexpected data (%zdB)", sz);
-	return (0);
-}
-
 VCL_VOID __match_proto__(td_debug_test_probe)
 vmod_test_probe(VRT_CTX, VCL_PROBE probe, VCL_PROBE same)
 {
@@ -568,31 +338,6 @@ vmod_test_probe(VRT_CTX, VCL_PROBE probe, VCL_PROBE same)
 	CHECK_OBJ_NOTNULL(probe, VRT_BACKEND_PROBE_MAGIC);
 	CHECK_OBJ_ORNULL(same, VRT_BACKEND_PROBE_MAGIC);
 	AZ(same == NULL || probe == same);
-}
-
-VCL_INT
-vmod_typesize(VRT_CTX, VCL_STRING s)
-{
-	size_t i = 0;
-	const char *p;
-
-	WARN_RETIRED();
-	(void)ctx;
-	for (p = s; *p; p++) {
-		switch (*p) {
-		case 'p':	i += sizeof(void *); break;
-		case 'i':	i += sizeof(int); break;
-		case 'd':	i += sizeof(double); break;
-		case 'f':	i += sizeof(float); break;
-		case 'l':	i += sizeof(long); break;
-		case 's':	i += sizeof(short); break;
-		case 'z':	i += sizeof(size_t); break;
-		case 'o':	i += sizeof(off_t); break;
-		case 'j':	i += sizeof(intmax_t); break;
-		default:	return(-1);
-		}
-	}
-	return ((VCL_INT)i);
 }
 
 VCL_VOID __match_proto__(td_debug_purge)
