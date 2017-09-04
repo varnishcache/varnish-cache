@@ -21,6 +21,9 @@ Usage
   ``MAIN.client_req``. VSM consumers should be changed to use the
   latter if necessary.
 
+* A listen address can take a name in the -a argument. This name is used
+  in the logs and later will possibly be available in VCL.
+
 VCL
 ---
 
@@ -28,6 +31,8 @@ VCL
   ``vcl_miss`` (#2339)
 
 * Added ``bereq.is_bgfetch`` which is true for background fetches.
+
+* Added VMOD purge (#2404)
 
 * Added VMOD blob (#2407)
 
