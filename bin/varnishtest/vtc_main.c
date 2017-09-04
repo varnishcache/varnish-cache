@@ -130,7 +130,7 @@ usage(void)
 	fprintf(stderr, "usage: varnishtest [options] file ...\n");
 #define FMT "    %-28s # %s\n"
 	fprintf(stderr, FMT, "-b size",
-	    "Set internal buffer size (default: 512K)");
+	    "Set internal buffer size (default: 1M)");
 	fprintf(stderr, FMT, "-D name=val", "Define macro");
 	fprintf(stderr, FMT, "-i", "Find varnishd in build tree");
 	fprintf(stderr, FMT, "-j jobs", "Run this many tests in parallel");

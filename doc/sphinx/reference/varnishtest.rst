@@ -30,7 +30,7 @@ simulate a transaction to provoke a specific behavior.
 
 The following options are available:
 
--b size          Set internal buffer size (default: 512K)
+-b size          Set internal buffer size (default: 1M)
 
 -D name=val      Define macro for use in scripts
 
