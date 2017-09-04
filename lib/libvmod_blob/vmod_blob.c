@@ -318,7 +318,8 @@ vmod_blob__fini(struct vmod_blob_blob **blobp)
 /* Functions */
 
 static inline const char *
-find_nonempty_va(const char *restrict *p, va_list ap) {
+find_nonempty_va(const char *restrict *p, va_list ap)
+{
 	const char *q;
 
 	/* find first non-empty vararg */
@@ -387,7 +388,8 @@ decode(VRT_CTX, VCL_INT n, VCL_ENUM decs, const char *restrict const p,
 }
 
 VCL_BLOB __match_proto__(td_blob_decode)
-vmod_decode(VRT_CTX, VCL_ENUM decs, const char *p, ...) {
+vmod_decode(VRT_CTX, VCL_ENUM decs, const char *p, ...)
+{
 	va_list ap;
 	VCL_BLOB r;
 
@@ -399,7 +401,8 @@ vmod_decode(VRT_CTX, VCL_ENUM decs, const char *p, ...) {
 }
 
 VCL_BLOB __match_proto__(td_blob_decode_n)
-vmod_decode_n(VRT_CTX, VCL_INT n, VCL_ENUM decs, const char *p, ...) {
+vmod_decode_n(VRT_CTX, VCL_INT n, VCL_ENUM decs, const char *p, ...)
+{
 	va_list ap;
 	VCL_BLOB r;
 
@@ -411,7 +414,8 @@ vmod_decode_n(VRT_CTX, VCL_INT n, VCL_ENUM decs, const char *p, ...) {
 }
 
 static VCL_STRING
-encode(VRT_CTX, enum encoding enc, VCL_BLOB b) {
+encode(VRT_CTX, enum encoding enc, VCL_BLOB b)
+{
 	struct wb_s wb;
 	ssize_t len;
 
@@ -444,14 +448,16 @@ encode(VRT_CTX, enum encoding enc, VCL_BLOB b) {
 }
 
 VCL_STRING __match_proto__(td_blob_encode)
-vmod_encode(VRT_CTX, VCL_ENUM encs, VCL_BLOB b) {
+vmod_encode(VRT_CTX, VCL_ENUM encs, VCL_BLOB b)
+{
 	enum encoding enc = parse_encoding(encs);
 	return encode(ctx, enc, b);
 }
 
 static VCL_STRING
 transcode(VRT_CTX, VCL_INT n, VCL_ENUM decs, VCL_ENUM encs,
-	  const char *restrict const p, va_list ap) {
+	  const char *restrict const p, va_list ap)
+{
 	enum encoding dec = parse_encoding(decs);
 	enum encoding enc = parse_encoding(encs);
 	va_list aq;
@@ -515,7 +521,8 @@ transcode(VRT_CTX, VCL_INT n, VCL_ENUM decs, VCL_ENUM encs,
 
 VCL_STRING __match_proto__(td_blob_transcode)
 vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs,
-	       const char *p, ...) {
+	       const char *p, ...)
+{
 	va_list ap;
 	VCL_STRING r;
 
@@ -528,7 +535,8 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs,
 
 VCL_STRING __match_proto__(td_blob_transcode_n)
 vmod_transcode_n(VRT_CTX, VCL_INT n, VCL_ENUM decs, VCL_ENUM encs,
-		 const char *p, ...) {
+		 const char *p, ...)
+{
 	va_list ap;
 	VCL_STRING r;
 
