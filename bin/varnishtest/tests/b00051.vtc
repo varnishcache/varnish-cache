@@ -6,12 +6,13 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
-	import vtc;
+	import blob;
+
 	sub vcl_backend_response {
-		set beresp.http.bereq_hash = vtc.blob2hex(bereq.hash);
+		set beresp.http.bereq_hash = blob.encode(HEXLC, bereq.hash);
 	}
 	sub vcl_deliver {
-		set resp.http.req_hash = vtc.blob2hex(req.hash);
+		set resp.http.req_hash = blob.encode(HEXLC, req.hash);
 	}
 } -start
 
