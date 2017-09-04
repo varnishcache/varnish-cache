@@ -15,7 +15,7 @@ Usage
 * Where possible (on platforms with setproctitle(3)), the -i argument
   rather than the -n argument is used for process names
 
-* varnishd honors ``vcl_path`` (#2342)
+* varnishd -f honors ``vcl_path`` (#2342)
 
 * The ``MAIN.s_req`` statistic has been removed, as it was identical to
   ``MAIN.client_req``. VSM consumers should be changed to use the
