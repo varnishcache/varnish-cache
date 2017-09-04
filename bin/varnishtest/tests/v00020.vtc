@@ -219,18 +219,18 @@ varnish v1 -errvcl {Function returns VOID} {
 }
 
 varnish v1 -errvcl {'req.hash': Not available in method 'vcl_recv'.} {
+	import blob;
 	backend b { .host = "127.0.0.1"; }
-	import vtc;
 	sub vcl_recv {
-		set req.http.foo = vtc.blob2hex(req.hash);
+		blob.encode(HEXLC, req.hash);
 	}
 }
 
 varnish v1 -errvcl {'req.hash': Not available in method 'vcl_hash'.} {
+	import blob;
 	backend b { .host = "127.0.0.1"; }
-	import vtc;
 	sub vcl_hash {
-		set req.http.foo = vtc.blob2hex(req.hash);
+		blob.encode(HEXLC, req.hash);
 	}
 }
 
@@ -255,9 +255,9 @@ varnish v1 -errvcl {Expected 'from path ...'} {
 }
 
 varnish v1 -errvcl {INT * BLOB not possible.} {
-	import vtc;
+	import blob;
 	sub vcl_deliver {
-		set resp.status = 100 * vtc.str2blob("a");
+		set resp.status = 100 * blob.decode(HEX, "a");
 	}
 }
 

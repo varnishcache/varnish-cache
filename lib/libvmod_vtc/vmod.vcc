@@ -128,20 +128,6 @@ Returns the size in bytes of a collection of C-datatypes:
 
 This can be useful for VMOD authors in conjunction with workspace operations.
 
-BLOBS
-=====
-
-For VMODs dealing with BLOB arguments or return values, the following functions
-offer convenience conversions to and from STRING.
-
-$Function BLOB str2blob(STRING src)
-
-Turn a string into a blob.
-
-$Function STRING blob2hex(BLOB src)
-
-Hexdump a blob.
-
 SEE ALSO
 ========
 
