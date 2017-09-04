@@ -84,6 +84,10 @@ static struct vlu	*child_std_vlu;
 
 static struct vsb *child_panic = NULL;
 
+#ifdef HAVE_SIGALTSTACK
+stack_t altstack;
+#endif
+
 static void mgt_reap_child(void);
 
 /*=====================================================================
@@ -365,15 +369,14 @@ mgt_launch_child(struct cli *cli)
 			(void)sigaction(SIGABRT, &sa, NULL);
 
 #ifdef HAVE_SIGALTSTACK
-			stack_t ss;
 			size_t sz = SIGSTKSZ + 4096;
 			if (sz < mgt_param.wthread_stacksize)
 				sz = mgt_param.wthread_stacksize;
-			ss.ss_sp = malloc(sz);
-			AN(ss.ss_sp);
-			ss.ss_size = sz;
-			ss.ss_flags = 0;
-			AZ(sigaltstack(&ss, NULL));
+			altstack.ss_sp = malloc(sz);
+			AN(altstack.ss_sp);
+			altstack.ss_size = sz;
+			altstack.ss_flags = 0;
+			AZ(sigaltstack(&altstack, NULL));
 			sa.sa_flags |= SA_ONSTACK;
 #endif
 			(void)sigaction(SIGSEGV, &sa, NULL);
