@@ -769,7 +769,7 @@ VRT_BODY_L(resp)
 /*--------------------------------------------------------------------*/
 
 static struct vmod_priv *
-vrt_do_blob(VRT_CTX, uint8_t *digest)
+vrt_hash_blob(VRT_CTX, uint8_t *digest)
 {
 	struct vmod_priv *p;
 	p = (void *)WS_Alloc(ctx->ws, sizeof *p);
@@ -785,7 +785,7 @@ VRT_r_req_hash(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	return (vrt_do_blob(ctx, ctx->req->digest));
+	return (vrt_hash_blob(ctx, ctx->req->digest));
 }
 
 VCL_BLOB
@@ -793,7 +793,7 @@ VRT_r_bereq_hash(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	return (vrt_do_blob(ctx, ctx->bo->digest));
+	return (vrt_hash_blob(ctx, ctx->bo->digest));
 }
 
 /*--------------------------------------------------------------------*/
