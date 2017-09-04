@@ -86,7 +86,7 @@ base64_encode(const enum encoding enc, char *restrict const buf,
 {
 	const struct b64_alphabet *alpha = &b64_alphabet[enc];
 	char *p = buf;
-	const uint8_t *in = (uint8_t *)inbuf;
+	const uint8_t *in = (const uint8_t *)inbuf;
 	const uint8_t * const end = in + inlength;
 
 	AN(buf);
