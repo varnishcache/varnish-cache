@@ -1,0 +1,418 @@
+#-
+# This document is licensed under the same conditions as Varnish itself.
+# See LICENSE for details.
+#
+# Authors: Nils Goroll <nils.goroll@uplex.de>
+#          Geoffrey Simmons <geoffrey.simmons@uplex.de>
+#
+
+$Module blob 3 utilities for the VCL blob type
+
+::
+
+  # binary-to-text encodings
+  STRING blob.encode(ENUM encoding, BLOB blob)
+  BLOB blob.decode(ENUM decoding, STRING_LIST encoded)
+  BLOB blob.decode_n(INT n, ENUM decoding, STRING_LIST encoded)
+  STRING blob.transcode(ENUM decoding, ENUM encoding,
+                        STRING_LIST encoded)
+  STRING blob.transcode_n(INT n, ENUM decoding, ENUM encoding,
+                          STRING_LIST encoded)
+
+  # other utilities
+  BOOL blob.same(BLOB, BLOB)
+  BOOL blob.equal(BLOB, BLOB)
+  INT blob.length(BLOB)
+  BLOB blob.subblob(BLOB, BYTES length [, BYTES offset])
+
+  # blob object
+  new OBJ = blob.blob(ENUM decoding, STRING_LIST encoded)
+  BLOB <obj>.get()
+  STRING <obj>.encode(ENUM encoding)
+
+DESCRIPTION
+===========
+
+This VMOD provides utility functions and an object for the VCL data
+type BLOB, which may contain arbitrary data of any length.
+
+Examples::
+
+  sub vcl_init {
+      # Create blob objects from encodings such as base64 or hex.
+      new myblob   = blob.blob(BASE64, "Zm9vYmFy");
+      new yourblob = blob.blob(encoded="666F6F", decoding=HEX);
+  }
+
+  sub vcl_deliver {
+      # The .get() method retrieves the BLOB from an object.
+      set resp.http.MyBlob-As-Hex
+          = blob.encode(blob=myblob.get(), encoding=HEXLC);
+
+      # The .encode() method efficiently retrieves an encoding.
+      set resp.http.YourBlob-As-Base64 = yourblob.encode(BASE64);
+
+      # decode() and encode() functions convert blobs to text and
+      # vice versa at runtime.
+      set resp.http.Base64-Encoded
+          = blob.encode(BASE64,
+                            blob.decode(HEX, req.http.Hex-Encoded));
+  }
+
+  sub vcl_recv {
+      # transcode() converts from one encoding to another.
+      set req.http.Hex-Encoded
+          = blob.transcode(decoding=BASE64, encoding=HEXUC,
+                             encoded="YmF6");
+
+      # transcode() from URL to IDENTITY effects a URL decode.
+      set req.url = blob.transcode(encoded=req.url, decoding=URL);
+
+      # transcode() from IDENTITY to URL effects a URL encode.
+      set req.http.url_urlcoded
+          = blob.transcode(encoded=req.url, encoding=URLLC);
+  }
+
+ENCODING SCHEMES
+================
+
+Binary-to-text encoding schemes are specified by ENUMs in the VMOD's
+constructor, methods and functions. Decodings convert a (possibly
+concatenated) string into a blob, while encodings convert a blob into
+a string.
+
+ENUM values for a decoding can be one of:
+
+* ``IDENTITY``
+* ``BASE64``
+* ``BASE64URL``
+* ``BASE64URLNOPAD``
+* ``HEX``
+* ``URL``
+
+An encoding can be one of:
+
+* ``IDENTITY``
+* ``BASE64``
+* ``BASE64URL``
+* ``BASE64URLNOPAD``
+* ``HEXUC``
+* ``HEXLC``
+* ``URLUC``
+* ``URLLC``
+
+Empty strings are decoded into a "null blob" (of length 0),
+and conversely a null blob is encoded as the empty string.
+
+IDENTITY
+--------
+
+The simplest encoding converts between the BLOB and STRING data types,
+leaving the contents byte-identical.
+
+Note that a BLOB may contain a null byte at any position before its
+end; if such a BLOB is decoded with IDENTITY, the resulting STRING
+will have a null byte at that position. Since VCL strings, like C
+strings, are represented with a terminating null byte, the string will
+be truncated, appearing to contain less data than the original
+blob. For example::
+
+  # Decode from the hex encoding for "foo\0bar".
+  # The header will be seen as "foo".
+  set resp.http.Trunced-Foo1
+    = blob.encode(IDENTITY, blob.decode(HEX, "666f6f00626172"));
+
+IDENTITY is the default encoding and decoding. So the above can also
+be written as::
+
+  # Decode from the hex encoding for "foo\0bar".
+  # The header will be seen as "foo".
+  set resp.http.Trunced-Foo2
+    = blob.encode(blob=blob.decode(HEX, "666f6f00626172"));
+
+BASE64*
+-------
+
+The base64 encoding schemes use 4 characters to encode 3 bytes. There
+are no newlines or maximal line lengths -- whitespace is not
+permitted.
+
+The ``BASE64`` encoding uses the alphanumeric characters, ``+`` and
+``/``; and encoded strings are padded with the ``=`` character so that
+their length is always a multiple of four.
+
+The ``BASE64URL`` encoding also uses the alphanumeric characters, but
+``-`` and ``_`` instead of ``+`` and ``/``, so that an encoded string
+can be used safely in a URL. This scheme also uses the padding
+character ``=``.
+
+The ``BASE64URLNOPAD`` encoding uses the same alphabet as
+``BASE6URL``, but leaves out the padding. Thus the length of an
+encoding with this scheme is not necessarily a mutltiple of four.
+
+HEX*
+----
+
+The ``HEX`` decoding converts a hex string, which may contain upper-
+or lowercase characters for hex digits ``A`` through ``f``, into a
+blob. The ``HEXUC`` or ``HEXLC`` encodings convert a blob into a hex
+string with upper- and lowercase digits, respectively. A prefix such
+as ``0x`` is not used for any of these schemes.
+
+If a hex string to be decoded has an odd number of digits, it is
+decoded as if a ``0`` is prepended to it; that is, the first digit is
+interpreted as representing the least significant nibble of the first
+byte. For example::
+
+  # The concatenated string is "abcdef0", and is decoded as "0abcdef0".
+  set resp.http.First = "abc";
+  set resp.http.Second = "def0";
+  set resp.http.Hex-Decoded
+      = blob.encode(HEXLC, blob.decode(HEX,
+                        resp.http.First + resp.http.Second));
+
+URL*
+----
+
+The ``URL`` decoding replaces any ``%<2-hex-digits>`` substrings with
+the binary value of the hexadecimal number after the % sign.
+
+The ``URLLC`` and ``URLUC`` encodings implement "percent encoding" as per
+RFC3986, the hexadecimal characters A-F being output in lower- and
+uppercase, respectively.
+
+$Function BLOB decode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
+                            HEX, URL} decoding="IDENTITY", STRING_LIST encoded)
+
+Returns the BLOB derived from the string ``encoded`` according to the
+scheme specified by ``decoding``.
+
+``decoding`` defaults to IDENTITY
+
+Example::
+
+	blob.decode(BASE64, "Zm9vYmFyYmF6");
+
+	# same with named parameters
+	blob.decode(encoded="Zm9vYmFyYmF6", decoding=BASE64);
+
+	# convert string to blob
+	blob.decode(encoded="foo");
+
+$Function BLOB decode_n(INT n,
+			ENUM {IDENTITY, BASE64, BASE64URL,
+			BASE64URLNOPAD, HEX, URL} decoding="IDENTITY",
+			STRING_LIST encoded)
+
+Same as ``decode()``, but only decode the first ``n`` characters of
+the encoded string. If ``n`` is greater than the length of the string,
+then return the same result as ``decode()``.
+
+$Function STRING encode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
+                              HEXUC, HEXLC, URLUC, URLLC} encoding="IDENTITY",
+			      BLOB blob)
+
+Returns a string representation of the BLOB ``blob`` as specifed by
+``encoding``.
+
+``encoding`` defaults to IDENTITY
+
+Example::
+
+	set resp.http.encode1
+	    = blob.encode(HEXLC, blob.decode(BASE64, "Zm9vYmFyYmF6"));
+
+	# same with named parameters
+	set resp.http.encode2
+	    = blob.encode(blob=blob.decode(encoded="Zm9vYmFyYmF6",
+						   decoding=BASE64),
+			      encoding=HEXLC);
+
+	# convert blob to string
+	set resp.http.encode3
+	    = blob.encode(blob=blob.decode(encoded="foo"));
+
+$Function STRING transcode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
+                                 HEX, URL} decoding="IDENTITY",
+                           ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
+                                 HEXUC, HEXLC, URLUC, URLLC} encoding="IDENTITY",
+                           STRING_LIST encoded)
+
+Translates from one encoding to another, by first decoding the string
+``encoded`` according to the scheme ``decoding``, and then returning
+the encoding of the resulting blob according to the scheme
+``encoding``.
+
+``decoding`` and ``encoding`` default to IDENTITY
+
+Example::
+
+	set resp.http.Hex2Base64-1 = blob.transcode(HEX, BASE64, "666f6f");
+
+	# same with named parameters
+	set resp.http.Hex2Base64-2
+	    = blob.transcode(encoded="666f6f",
+				 encoding=BASE64, decoding=HEX);
+
+	# URL decode -- recall that IDENTITY is the default encoding.
+	set resp.http.urldecoded
+	    = blob.transcode(encoded="foo%20bar", decoding=URLLC);
+
+	# URL encode
+	set resp.http.urlencoded
+	    = blob.transcode(encoded="foo bar", encoding=URL);
+
+$Function STRING transcode_n(INT n,
+			     ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
+                                   HEX, URL} decoding="IDENTITY",
+                             ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
+                                   HEXUC, HEXLC, URLUC, URLLC} encoding="IDENTITY",
+                             STRING_LIST encoded)
+
+Same as ``transcode()``, but only from the first ``n`` characters of
+the encoded string.
+
+$Function BOOL same(BLOB, BLOB)
+
+Returns true if and only if the two BLOB arguments are the same
+object, i.e. they specify exactly the same region of memory.
+
+If the BLOBs are both empty (length is 0 and/or the internal pointer
+is NULL), then ``same()`` returns ``true``. If any non-empty BLOB
+is compared to an empty BLOB, then ``same()`` returns ``false``.
+
+$Function BOOL equal(BLOB, BLOB)
+
+Returns true if and only if the two BLOB arguments have equal contents
+(possibly in different memory regions).
+
+As with ``same()``: If the BLOBs are both empty, then ``equal()``
+returns ``true``. If any non-empty BLOB is compared to an empty BLOB,
+then ``equal()`` returns ``false``.
+
+$Function INT length(BLOB)
+
+Returns the length of the BLOB.
+
+$Function BLOB subblob(BLOB, BYTES length, BYTES offset = 0)
+
+Returns a new BLOB formed from ``length`` bytes of the BLOB argument
+starting at ``offset`` bytes from the start of its memory region. The
+default value of ``offset`` is 0B.
+
+``subblob()`` fails and returns NULL if the BLOB argument is empty, or
+if ``offset + length`` requires more bytes than are available in the
+BLOB.
+
+$Object blob(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD, HEX,
+                   URL} decoding="IDENTITY",
+             STRING_LIST encoded)
+
+Creates an object that contains the BLOB derived from the string
+``encoded`` according to the scheme ``decoding``.
+
+Example::
+
+	new theblob1 = blob.blob(BASE64, "YmxvYg==");
+
+	# same with named arguments
+	new theblob2 = blob.blob(encoded="YmxvYg==", decoding=BASE64);
+
+	# string as a blob
+	new stringblob = blob.blob(encoded="bazz");
+
+$Method BLOB .get()
+
+Returns the BLOB created by the constructor.
+
+Example::
+
+	set resp.http.The-Blob1 =
+	    blob.encode(blob=theblob1.get());
+
+	set resp.http.The-Blob2 =
+	    blob.encode(blob=theblob2.get());
+
+	set resp.http.The-Stringblob =
+	    blob.encode(blob=stringblob.get());
+
+$Method STRING .encode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD, HEXUC,
+                             HEXLC, URLUC, URLLC} encoding="IDENTITY")
+
+Returns an encoding of BLOB created by the constructor, according to
+the scheme ``encoding``.
+
+Example::
+
+	# blob as text
+	set resp.http.The-Blob = theblob1.encode();
+
+	# blob as base64
+	set resp.http.The-Blob-b64 = theblob1.encode(BASE64);
+
+For any ``blob`` object and encoding ``ENC``, encodings via the ``.encode()``
+method and the ``encode()`` function are equal::
+
+  # Always true:
+  blob.encode(ENC, blob.get()) == blob.encode(ENC)
+
+But the object method is more efficient -- the encoding is computed
+once and cached (with allocation in heap memory), and the cached
+encoding is retrieved on every subsequent call. The ``encode()``
+function computes the encoding on every call, allocating space for the
+string in Varnish workspaces.
+
+So if the data in a BLOB are fixed at VCL initialization time, so that
+its encodings will always be the same, it is better to create a
+``blob`` object. The VMOD's functions should be used for data that are
+not known until runtime.
+
+ERRORS
+======
+
+The encoders, decoders and ``subblob()`` may fail if there is
+insufficient space to create the new blob or string. Decoders may also
+fail if the encoded string is an illegal format for the decoding
+scheme.
+
+If any of the VMOD's methods, functions or constructor fail, then VCL
+failure is invoked, just as if ``return(fail)`` had been called in the
+VCL source. This means that:
+
+* If the ``blob`` object constructor fails, or if any methods or
+  functions fail during ``vcl_init``, then the VCL program will fail
+  to load, and the VCC compiler will emit an error message.
+
+* If a method or function fails in any other VCL subroutine besides
+  ``vcl_synth``, then control is directed to ``vcl_synth``. The
+  response status is set to 503 with the reason string ``"VCL
+  failed"``, and an error message will be written to the Varnish log
+  using the tag ``VCL_Error``.
+
+* If the failure occurs during ``vcl_synth``, then ``vcl_synth`` is
+  aborted. The response line ``"503 VCL failed"`` is returned, and
+  the ``VCL_Error`` message is written to the log.
+
+LIMITATIONS
+===========
+
+The VMOD allocates memory in various ways for new blobs and
+strings. The ``blob`` object and its methods allocate memory from the
+heap, and hence they are only limited by available virtual memory.
+
+The ``encode()``, ``decode()`` and ``transcode()`` functions allocate
+Varnish workspace, as does ``subblob()`` for the newly created BLOB.
+If these functions are failing, as indicated by "out of space"
+messages in the Varnish log (with the ``VCL_Error`` tag), then you
+will need to increase the varnishd parameters ``workspace_client``
+and/or ``workspace_backend``.
+
+The ``transcode()`` function also allocates space on the stack for a
+temporary BLOB. If this function causes stack overflow, you may need
+to increase the varnishd parameter ``thread_pool_stack``.
+
+SEE ALSO
+========
+
+* :ref:`varnishd(1)`
+* :ref:`vcl(7)`

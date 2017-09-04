@@ -1,0 +1,26 @@
+varnishtest "VMOD blob vcl.use and .discard"
+
+server s1 {
+} -start
+
+varnish v1 -vcl+backend {
+	import blob;
+} -start
+
+varnish v1 -vcl+backend {
+}
+
+varnish v1 -cli "vcl.list"
+varnish v1 -cli "vcl.use vcl1"
+
+varnish v1 -cli "vcl.use vcl2"
+varnish v1 -cli "vcl.use vcl1"
+
+varnish v1 -expect vmods == 1
+
+varnish v1 -cli "vcl.show vcl1"
+varnish v1 -cli "vcl.use vcl2"
+varnish v1 -cli "vcl.discard vcl1"
+varnish v1 -cli "vcl.list"
+
+varnish v1 -expect vmods == 0

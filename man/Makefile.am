@@ -17,7 +17,8 @@ dist_man_MANS = \
 	varnishtop.1 \
 	vmod_directors.3 \
 	vmod_std.3 \
-	vmod_vtc.3
+	vmod_vtc.3 \
+	vmod_blob.3
 
 CLEANFILES = $(dist_man_MANS)
 
@@ -91,6 +92,9 @@ vmod_std.3: $(top_builddir)/lib/libvmod_std/vmod_std.man.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $? $@
 
 vmod_vtc.3: $(top_builddir)/lib/libvmod_vtc/vmod_vtc.man.rst
+	${RST2MAN} $(RST2ANY_FLAGS) $? $@
+
+vmod_blob.3: $(top_builddir)/lib/libvmod_blob/vmod_blob.man.rst
 	${RST2MAN} $(RST2ANY_FLAGS) $? $@
 
 .NOPATH: $(dist_man_MANS)

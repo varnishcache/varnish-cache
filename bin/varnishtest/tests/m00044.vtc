@@ -1,0 +1,164 @@
+varnishtest "VMOD blob test all examples from the vcc/rst"
+
+server s1 {
+    rxreq
+    txresp
+} -start
+
+varnish v1 -arg "-p http_max_hdr=128" -vcl+backend {
+    import blob;
+    import std;
+
+    ############################################################
+    # top Usage section
+    sub vcl_init {
+	# Create blob objects from encodings such as base64 or hex.
+	new myblob   = blob.blob(BASE64, "Zm9vYmFy");
+	new yourblob = blob.blob(encoded="666F6F", decoding=HEX);
+    }
+
+    sub vcl_deliver {
+	# The .get() method retrieves the BLOB from an object.
+	set resp.http.MyBlob-As-Hex
+	    = blob.encode(blob=myblob.get(), encoding=HEXLC);
+
+	# The .encode() method efficiently retrieves an encoding.
+	set resp.http.YourBlob-As-Base64 = yourblob.encode(BASE64);
+
+	# decode() and encode() functions convert blobs to text and
+	# vice versa at runtime.
+	set resp.http.Base64-Encoded
+	    = blob.encode(BASE64,
+			      blob.decode(HEX, req.http.Hex-Encoded));
+    }
+
+    sub vcl_recv {
+	# transcode() converts from one encoding to another.
+	set req.http.Hex-Encoded
+	    = blob.transcode(decoding=BASE64, encoding=HEXUC, encoded="YmF6");
+
+	# transcode() can replace other specific encoding/deconding
+	# vmods - e.g. vmod_urlcode
+	set req.url = blob.transcode(encoded=req.url, decoding=URL);
+	set req.http.url_urlcoded
+	    = blob.transcode(encoded=req.url, encoding=URLLC);
+    }
+    # get output from recv
+    sub vcl_deliver {
+	set resp.http.url_urlcoded = req.http.url_urlcoded;
+    }
+
+    ############################################################
+    # IDENTITY
+    sub vcl_deliver {
+	set resp.http.Trunced-Foo1
+	    = blob.encode(IDENTITY, blob.decode(HEX, "666f6f00626172"));
+	set resp.http.Trunced-Foo2
+	    = blob.encode(blob=blob.decode(HEX, "666f6f00626172"));
+    }
+
+    ############################################################
+    # HEX
+    sub vcl_deliver {
+	set resp.http.First = "abc";
+	set resp.http.Second = "def0";
+	set resp.http.Hex-Decoded = blob.encode(
+	    HEXLC,
+	    blob.decode(HEX, resp.http.First + resp.http.Second));
+    }
+
+    ############################################################
+    # encode - also contains decode examples
+    sub vcl_deliver {
+	set resp.http.encode1
+	    = blob.encode(HEXLC, blob.decode(BASE64, "Zm9vYmFyYmF6"));
+
+	# same with named parameters
+	set resp.http.encode2
+	    = blob.encode(blob=blob.decode(encoded="Zm9vYmFyYmF6",
+						   decoding=BASE64),
+			      encoding=HEXLC);
+
+	# convert blob to string
+	set resp.http.encode3
+	    = blob.encode(blob=blob.decode(encoded="foo"));
+    }
+
+    ############################################################
+    # transcode
+    sub vcl_deliver {
+	set resp.http.Hex2Base64-1 = blob.transcode(HEX, BASE64, "666f6f");
+
+	# same with named parameters
+	set resp.http.Hex2Base64-2
+	    = blob.transcode(encoded="666f6f",
+				 encoding=BASE64, decoding=HEX);
+
+	# replacement for urlcode.decode("foo%20bar")
+	set resp.http.urldecoded
+	    = blob.transcode(encoded="foo%20bar", decoding=URL);
+
+	# replacement for urlcode.encode("foo bar")
+	set resp.http.urlencoded
+	    = blob.transcode(encoded="foo bar", encoding=URLLC);
+    }
+
+    ############################################################
+    # blob init + .get + .encode
+    sub vcl_init {
+	new theblob1 = blob.blob(BASE64, "YmxvYg==");
+
+	# same with named arguments
+	new theblob2 = blob.blob(encoded="YmxvYg==", decoding=BASE64);
+
+	# string as a blob
+	new stringblob = blob.blob(encoded="bazz");
+    }
+    sub vcl_deliver {
+	# .get
+	set resp.http.The-Blob1 =
+	    blob.encode(blob=theblob1.get());
+
+	set resp.http.The-Blob2 =
+	    blob.encode(blob=theblob2.get());
+
+	set resp.http.The-Stringblob =
+	    blob.encode(blob=stringblob.get());
+
+	# .encode
+
+	# blob as text
+	set resp.http.The-Blob = theblob1.encode();
+
+	# blob as base64
+	set resp.http.The-Blob-b64 = theblob1.encode(BASE64);
+    }
+
+} -start
+
+client c1 {
+	txreq -url "/foo%20bar"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.MyBlob-As-Hex == "666f6f626172"
+	expect resp.http.YourBlob-As-Base64 == "Zm9v"
+	expect resp.http.Base64-Encoded == "YmF6"
+	expect resp.http.url_urlcoded == "%2ffoo%20bar"
+	expect resp.http.Trunced-Foo1 == "foo"
+	expect resp.http.Trunced-Foo2 == "foo"
+	expect resp.http.First == "abc"
+	expect resp.http.Second == "def0"
+	expect resp.http.Hex-Decoded == "0abcdef0"
+	expect resp.http.encode1 == "666f6f62617262617a"
+	expect resp.http.encode2 == "666f6f62617262617a"
+	expect resp.http.encode3 == "foo"
+	expect resp.http.Hex2Base64-1 == "Zm9v"
+	expect resp.http.Hex2Base64-2 == "Zm9v"
+	expect resp.http.urldecoded == "foo bar"
+	expect resp.http.urlencoded == "foo%20bar"
+	expect resp.http.The-Blob1 == "blob"
+	expect resp.http.The-Blob2 == "blob"
+	expect resp.http.The-Stringblob == "bazz"
+	expect resp.http.The-Blob == "blob"
+	expect resp.http.The-Blob-b64 == "YmxvYg=="
+} -run
