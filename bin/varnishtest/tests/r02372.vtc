@@ -1,11 +1,11 @@
 varnishtest "Count purges when there are many variants"
 
-server s1 -repeat 40 {
+server s1 -repeat 72 {
 	rxreq
 	txresp -hdr "Vary: foo"
 } -start
 
-varnish v1 -arg "-p workspace_thread=256" -vcl+backend {
+varnish v1 -arg "-p workspace_thread=512" -vcl+backend {
 	import std;
 
 	sub vcl_recv {
@@ -16,7 +16,7 @@ varnish v1 -arg "-p workspace_thread=256" -vcl+backend {
 	}
 } -start
 
-client c1 -repeat 40 {
+client c1 -repeat 72 {
 	txreq
 	rxresp
 } -run
@@ -29,4 +29,4 @@ client c2 {
 varnish v1 -expect n_lru_nuked == 0
 varnish v1 -expect cache_hit == 0
 varnish v1 -expect n_purges == 1
-varnish v1 -expect n_obj_purged == 40
+varnish v1 -expect n_obj_purged == 72
