@@ -772,11 +772,17 @@ static struct vmod_priv *
 vrt_hash_blob(VRT_CTX, uint8_t *digest)
 {
 	struct vmod_priv *p;
+	void *d;
+
 	p = (void *)WS_Alloc(ctx->ws, sizeof *p);
-	AN(p);
+	d = WS_Copy(ctx->ws, digest, DIGEST_LEN);
+	if (p == NULL || d == NULL) {
+		VRT_fail(ctx, "Workspace overflow ((be)req.hash)");
+		return (NULL);
+	}
 	memset(p, 0, sizeof *p);
 	p->len = DIGEST_LEN;
-	p->priv = WS_Copy(ctx->ws, digest, DIGEST_LEN);
+	p->priv = d;
 	return (p);
 }
 
