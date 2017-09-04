@@ -5,6 +5,7 @@
  *
  * TODO: integrate in vmodtool.py or replace with something else
  * cf. the same TODO for the shard director in libvmod_directors
+ * make generation of the offset-pointer p optional
  */
 
 #include "parse_encoding.h"
@@ -12,7 +13,6 @@
 
 enum encoding
 parse_encoding (const char *m) {
-	int p;
 	enum encoding r;
 
 	switch (m[0]) {
@@ -51,7 +51,6 @@ parse_encoding (const char *m) {
 	//BASE64
 	if (term(m[6])) {
 	    r = BASE64;
-	    p = 6;
 	    goto ok;
 	}
 	switch (m[6]) {
@@ -72,7 +71,6 @@ parse_encoding (const char *m) {
 	//BASE64URL
 	if (term(m[9])) {
 	    r = BASE64URL;
-	    p = 9;
 	    goto ok;
 	}
 	switch (m[9]) {
@@ -83,7 +81,6 @@ parse_encoding (const char *m) {
 	//BASE64URLNOPAD
 	if ((m[10] == 'O') && (m[11] == 'P') && (m[12] == 'A') && (m[13] == 'D') && (term(m[14]))) {
 	    r = BASE64URLNOPAD;
-	    p = 14;
 	    goto ok;
 	}
 	goto invalid;
@@ -101,7 +98,6 @@ parse_encoding (const char *m) {
 	//HEX
 	if (term(m[3])) {
 	    r = HEX;
-	    p = 3;
 	    goto ok;
 	}
 	switch (m[3]) {
@@ -113,7 +109,6 @@ parse_encoding (const char *m) {
 	//HEXLC
 	if ((m[4] == 'C') && (term(m[5]))) {
 	    r = HEXLC;
-	    p = 5;
 	    goto ok;
 	}
 	goto invalid;
@@ -121,7 +116,6 @@ parse_encoding (const char *m) {
 	//HEXUC
 	if ((m[4] == 'C') && (term(m[5]))) {
 	    r = HEXUC;
-	    p = 5;
 	    goto ok;
 	}
 	goto invalid;
@@ -129,7 +123,6 @@ parse_encoding (const char *m) {
 	//IDENTITY
 	if ((m[1] == 'D') && (m[2] == 'E') && (m[3] == 'N') && (m[4] == 'T') && (m[5] == 'I') && (m[6] == 'T') && (m[7] == 'Y') && (term(m[8]))) {
 	    r = IDENTITY;
-	    p = 8;
 	    goto ok;
 	}
 	goto invalid;
@@ -147,7 +140,6 @@ parse_encoding (const char *m) {
 	//URL
 	if (term(m[3])) {
 	    r = URL;
-	    p = 3;
 	    goto ok;
 	}
 	switch (m[3]) {
@@ -159,7 +151,6 @@ parse_encoding (const char *m) {
 	//URLLC
 	if ((m[4] == 'C') && (term(m[5]))) {
 	    r = URLLC;
-	    p = 5;
 	    goto ok;
 	}
 	goto invalid;
@@ -167,7 +158,6 @@ parse_encoding (const char *m) {
 	//URLUC
 	if ((m[4] == 'C') && (term(m[5]))) {
 	    r = URLUC;
-	    p = 5;
 	    goto ok;
 	}
 	goto invalid;
