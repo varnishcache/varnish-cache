@@ -26,15 +26,9 @@
  * write buffer: utility functions to append-write on a varnish workspace
  */
 
-#include "config.h"
-
 #include <string.h>
-#include <stdio.h>
-#include <stdarg.h>
 
 #include "wb.h"
-#include "vdef.h"
-#include "vrt.h"
 
 char *
 wb_create(struct ws *ws, struct wb_s *wb)
@@ -57,39 +51,6 @@ wb_reset(struct wb_s *wb)
 	memset(wb, 0, sizeof(*wb));
 }
 
-bool
-wb_printf(struct wb_s *wb, const char *format, ...)
-{
-	int len;
-	va_list ap;
-	const ssize_t space = wb_space(wb);
-
-
-	va_start(ap, format);
-	len = vsnprintf(wb->w, space, format, ap);
-	va_end(ap);
-	if (len >= space) {
-		wb_reset(wb);
-		return false;
-	} else {
-		wb_advance(wb, len);
-	}
-
-	return true;
-}
-
-bool
-wb_append(struct wb_s *wb, const char *p, int len)
-{
-	if (len == -1)
-		len = strlen(p);
-	if (len >= wb_space(wb))
-		return false;
-	memcpy(wb->w, p, len);
-	wb_advance(wb, len);
-	return true;
-}
-
 /*
  * release varnish workspace
  *
@@ -110,16 +71,4 @@ wb_finish(struct wb_s *wb, ssize_t *l)
 	WS_ReleaseP(wb->ws, wb->w);
 
 	return r;
-}
-
-/*
- * finish into a blob
- */
-struct vmod_priv *
-wb_finish_blob(struct wb_s *wb, struct vmod_priv *blob) {
-	ssize_t l;
-	blob->priv = wb_finish(wb, &l);
-	blob->len = l;
-	blob->free = NULL;
-	return blob;
 }

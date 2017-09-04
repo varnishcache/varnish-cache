@@ -25,12 +25,7 @@
  *
  */
 
-#include <stdbool.h>
-#include <unistd.h>
-
 #include "cache/cache.h"
-
-struct ws;
 
 struct wb_s {
 	struct ws	*ws; // varnish workspace
@@ -70,16 +65,6 @@ wb_advance(struct wb_s *wb, ssize_t l) {
 	assert(wb->w < wb_end(wb));
 }
 
-static inline void
-wb_advanceP(struct wb_s *wb, char *w) {
-	assert(w > wb->w);
-	assert(w < wb_end(wb));	// final byte
-	wb->w = w;
-}
-
 char *wb_create(struct ws *ws, struct wb_s *wb);
 void wb_reset(struct wb_s *wb);
-bool wb_printf(struct wb_s *wb, const char *format, ...);
-bool wb_append(struct wb_s *wb, const char *p, int len);
 char *wb_finish(struct wb_s *wb, ssize_t *l);
-struct vmod_priv *wb_finish_blob(struct wb_s *wb, struct vmod_priv *blob);
