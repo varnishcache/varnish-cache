@@ -2,6 +2,10 @@
 Varnish Cache Trunk (ongoing)
 =============================
 
+==================================
+Varnish Cache 5.2-RC1 (2017-09-04)
+==================================
+
 Usage
 -----
 
@@ -28,9 +32,12 @@ VCL
 C APIs (for vmod and utility authors)
 -------------------------------------
 
-* ``VSM_Name()`` returns the -i argument name, rather than the -n name.
+* The VSM API for accessing the shared memory segment has been
+  totally rewritten.  Things should be simpler and more general.
 
-* ``VUT.name`` is gone, use ``VSM_Name(VUT.vsm)``
+* VSC shared memory layout has changed and the VSC API updated
+  to match it.  This paves the way for user defined VSC counters
+  in VMODS and later possibly also in VCL.
 
 * New vmod vtc for advanced varnishtest usage (#2276)
 
