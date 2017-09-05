@@ -15,9 +15,9 @@ $Module blob 3 utilities for the VCL blob type
   BLOB blob.decode(ENUM decoding, STRING_LIST encoded)
   BLOB blob.decode_n(INT n, ENUM decoding, STRING_LIST encoded)
   STRING blob.transcode(ENUM decoding, ENUM encoding,
-                        STRING_LIST encoded)
+			STRING_LIST encoded)
   STRING blob.transcode_n(INT n, ENUM decoding, ENUM encoding,
-                          STRING_LIST encoded)
+			  STRING_LIST encoded)
 
   # other utilities
   BOOL blob.same(BLOB, BLOB)
@@ -47,7 +47,7 @@ Examples::
   sub vcl_deliver {
       # The .get() method retrieves the BLOB from an object.
       set resp.http.MyBlob-As-Hex
-          = blob.encode(blob=myblob.get(), encoding=HEXLC);
+	  = blob.encode(blob=myblob.get(), encoding=HEXLC);
 
       # The .encode() method efficiently retrieves an encoding.
       set resp.http.YourBlob-As-Base64 = yourblob.encode(BASE64);
@@ -55,22 +55,22 @@ Examples::
       # decode() and encode() functions convert blobs to text and
       # vice versa at runtime.
       set resp.http.Base64-Encoded
-          = blob.encode(BASE64,
-                            blob.decode(HEX, req.http.Hex-Encoded));
+	  = blob.encode(BASE64,
+			    blob.decode(HEX, req.http.Hex-Encoded));
   }
 
   sub vcl_recv {
       # transcode() converts from one encoding to another.
       set req.http.Hex-Encoded
-          = blob.transcode(decoding=BASE64, encoding=HEXUC,
-                             encoded="YmF6");
+	  = blob.transcode(decoding=BASE64, encoding=HEXUC,
+			     encoded="YmF6");
 
       # transcode() from URL to IDENTITY effects a URL decode.
       set req.url = blob.transcode(encoded=req.url, decoding=URL);
 
       # transcode() from IDENTITY to URL effects a URL encode.
       set req.http.url_urlcoded
-          = blob.transcode(encoded=req.url, encoding=URLLC);
+	  = blob.transcode(encoded=req.url, encoding=URLLC);
   }
 
 ENCODING SCHEMES
@@ -169,7 +169,7 @@ byte. For example::
   set resp.http.Second = "def0";
   set resp.http.Hex-Decoded
       = blob.encode(HEXLC, blob.decode(HEX,
-                        resp.http.First + resp.http.Second));
+			resp.http.First + resp.http.Second));
 
 URL*
 ----
@@ -182,7 +182,7 @@ RFC3986, the hexadecimal characters A-F being output in lower- and
 uppercase, respectively.
 
 $Function BLOB decode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
-                            HEX, URL} decoding="IDENTITY", STRING_LIST encoded)
+			    HEX, URL} decoding="IDENTITY", STRING_LIST encoded)
 
 Returns the BLOB derived from the string ``encoded`` according to the
 scheme specified by ``decoding``.
@@ -209,7 +209,7 @@ the encoded string. If ``n`` is greater than the length of the string,
 then return the same result as ``decode()``.
 
 $Function STRING encode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
-                              HEXUC, HEXLC, URLUC, URLLC} encoding="IDENTITY",
+			      HEXUC, HEXLC, URLUC, URLLC} encoding="IDENTITY",
 			      BLOB blob)
 
 Returns a string representation of the BLOB ``blob`` as specifed by
@@ -233,10 +233,10 @@ Example::
 	    = blob.encode(blob=blob.decode(encoded="foo"));
 
 $Function STRING transcode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
-                                 HEX, URL} decoding="IDENTITY",
-                           ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
-                                 HEXUC, HEXLC, URLUC, URLLC} encoding="IDENTITY",
-                           STRING_LIST encoded)
+				 HEX, URL} decoding="IDENTITY",
+			   ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
+				 HEXUC, HEXLC, URLUC, URLLC} encoding="IDENTITY",
+			   STRING_LIST encoded)
 
 Translates from one encoding to another, by first decoding the string
 ``encoded`` according to the scheme ``decoding``, and then returning
@@ -264,10 +264,10 @@ Example::
 
 $Function STRING transcode_n(INT n,
 			     ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
-                                   HEX, URL} decoding="IDENTITY",
-                             ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
-                                   HEXUC, HEXLC, URLUC, URLLC} encoding="IDENTITY",
-                             STRING_LIST encoded)
+				   HEX, URL} decoding="IDENTITY",
+			     ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
+				   HEXUC, HEXLC, URLUC, URLLC} encoding="IDENTITY",
+			     STRING_LIST encoded)
 
 Same as ``transcode()``, but only from the first ``n`` characters of
 the encoded string.
@@ -305,8 +305,8 @@ if ``offset + length`` requires more bytes than are available in the
 BLOB.
 
 $Object blob(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD, HEX,
-                   URL} decoding="IDENTITY",
-             STRING_LIST encoded)
+		   URL} decoding="IDENTITY",
+	     STRING_LIST encoded)
 
 Creates an object that contains the BLOB derived from the string
 ``encoded`` according to the scheme ``decoding``.
@@ -337,7 +337,7 @@ Example::
 	    blob.encode(blob=stringblob.get());
 
 $Method STRING .encode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD, HEXUC,
-                             HEXLC, URLUC, URLLC} encoding="IDENTITY")
+			     HEXLC, URLUC, URLLC} encoding="IDENTITY")
 
 Returns an encoding of BLOB created by the constructor, according to
 the scheme ``encoding``.

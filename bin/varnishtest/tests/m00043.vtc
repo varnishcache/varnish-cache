@@ -10,7 +10,7 @@ varnish v1 -arg "-i serverid" -vcl+backend {
 				 "The quick brown fox jumps over the lazy dog");
 	  new idpieces
 	    = blob.blob(IDENTITY, "" + server.identity + " "
-			              + server.identity + "");
+				      + server.identity + "");
 	  new idempty = blob.blob(IDENTITY, "");
 	  new idparam
 	    = blob.blob(encoded="" + server.identity + " " + server.identity
