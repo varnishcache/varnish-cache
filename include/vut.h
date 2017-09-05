@@ -34,6 +34,7 @@ struct vopt_spec;
 
 typedef void VUT_sighandler_f(int);
 typedef int VUT_cb_f(struct VUT *);
+typedef void VUT_error_f(struct VUT *, int, const char *, va_list);
 
 struct VUT {
 	const char	*progname;
@@ -60,13 +61,13 @@ struct VUT {
 	/* Callback functions */
 	VUT_cb_f	*idle_f;
 	VUT_cb_f	*sighup_f;
+	VUT_error_f	*error_f;
 	VSLQ_dispatch_f	*dispatch_f;
 	void		*dispatch_priv;
 };
 
-//lint -sem(VUT_Error, r_no)
-void VUT_Error(int status, const char *fmt, ...)
-	__v_printflike(2, 3) __attribute__((__noreturn__));
+void VUT_Error(struct VUT *, int status, const char *fmt, ...)
+    __v_printflike(3, 4);
 
 int VUT_Arg(struct VUT *, int opt, const char *arg);
 

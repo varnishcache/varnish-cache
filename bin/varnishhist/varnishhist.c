@@ -516,7 +516,7 @@ main(int argc, char **argv)
 		case 'p':
 			delay = strtod(optarg, NULL);
 			if (delay <= 0)
-				VUT_Error(1, "-p: invalid '%s'", optarg);
+				VUT_Error(vut, 1, "-p: invalid '%s'", optarg);
 			break;
 		case 'P':
 			colon = strchr(optarg, ':');
@@ -545,7 +545,7 @@ main(int argc, char **argv)
 
 			match_tag = VSL_Name2Tag(ptag, colon - ptag);
 			if (match_tag < 0)
-				VUT_Error(1,
+				VUT_Error(vut, 1,
 				    "-P: '%s' is not a valid tag name",
 				    optarg);
 			cli_p.name = "custom";
@@ -557,12 +557,12 @@ main(int argc, char **argv)
 		case 'B':
 			timebend = strtod(optarg, NULL);
 			if (timebend == 0)
-				VUT_Error(1,
+				VUT_Error(vut, 1,
 				    "-B: being able to bend time does not"
 				    " mean we can stop it"
 				    " (invalid factor '%s')", optarg);
 			if (timebend < 0)
-				VUT_Error(1,
+				VUT_Error(vut, 1,
 				    "-B: being able to bend time does not"
 				    " mean we can make it go backwards"
 				    " (invalid factor '%s')", optarg);
@@ -579,7 +579,7 @@ main(int argc, char **argv)
 	/* Check for valid grouping mode */
 	assert(vut->g_arg < VSL_g__MAX);
 	if (vut->g_arg != VSL_g_vxid && vut->g_arg != VSL_g_request)
-		VUT_Error(1, "Invalid grouping mode: %s"
+		VUT_Error(vut, 1, "Invalid grouping mode: %s"
 		    " (only vxid and request are supported)",
 		    VSLQ_grouping[vut->g_arg]);
 
@@ -592,7 +592,7 @@ main(int argc, char **argv)
 	}
 	AN(active_profile);
 	if (!active_profile->name)
-		VUT_Error(1, "-P: No such profile '%s'", profile);
+		VUT_Error(vut, 1, "-P: No such profile '%s'", profile);
 
 	assert(active_profile->VSL_arg == 'b' ||
 	    active_profile->VSL_arg == 'c');
@@ -622,7 +622,7 @@ main(int argc, char **argv)
 	VUT_Setup(vut);
 	ident = VSM_Dup(vut->vsm, "Arg", "-i");
 	if (pthread_create(&thr, NULL, do_curses, NULL) != 0)
-		VUT_Error(1, "pthread_create(): %s", strerror(errno));
+		VUT_Error(vut, 1, "pthread_create(): %s", strerror(errno));
 	vut->dispatch_f = accumulate;
 	vut->dispatch_priv = NULL;
 	vut->sighup_f = sighup;

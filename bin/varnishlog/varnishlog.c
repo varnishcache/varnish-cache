@@ -83,7 +83,7 @@ openout(int append)
 	else
 		LOG.fo = VSL_WriteOpen(vut->vsl, LOG.w_arg, append, 0);
 	if (LOG.fo == NULL)
-		VUT_Error(2, "Cannot open output file (%s)",
+		VUT_Error(vut, 2, "Cannot open output file (%s)",
 		    LOG.A_opt ? strerror(errno) : VSL_Error(vut->vsl));
 	vut->dispatch_priv = LOG.fo;
 }
@@ -162,7 +162,7 @@ main(int argc, char * const *argv)
 		usage(1);
 
 	if (vut->D_opt && !LOG.w_arg)
-		VUT_Error(1, "Missing -w option");
+		VUT_Error(vut, 1, "Missing -w option");
 
 	/* Setup output */
 	if (LOG.A_opt || !LOG.w_arg)
