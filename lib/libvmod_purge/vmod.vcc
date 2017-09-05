@@ -42,61 +42,61 @@ EXAMPLE
 ::
 
     sub vcl_recv {
-        if (req.method == "PURGE") {
-            if (client.ip !~ purge_acl) {
-                return (synth(405));
-            }
-            return (hash);
-        }
+	if (req.method == "PURGE") {
+	    if (client.ip !~ purge_acl) {
+		return (synth(405));
+	    }
+	    return (hash);
+	}
     }
 
     sub my_purge {
-        set req.http.purged = purge.hard();
-        if (req.http.purged == "0") {
-            return (synth(404));
-        }
-        else {
-            return (synth(200));
-        }
+	set req.http.purged = purge.hard();
+	if (req.http.purged == "0") {
+	    return (synth(404));
+	}
+	else {
+	    return (synth(200));
+	}
     }
 
     sub vcl_hit {
-        if (req.method == "PURGE") {
-            call my_purge;
-        }
+	if (req.method == "PURGE") {
+	    call my_purge;
+	}
     }
 
     sub vcl_miss {
-        if (req.method == "PURGE") {
-            call my_purge;
-        }
+	if (req.method == "PURGE") {
+	    call my_purge;
+	}
     }
 
     sub vcl_synth {
-        if (req.method == "PURGE") {
-            if (req.http.purged) {
-                set resp.http.purged = req.http.purged;
-            }
-            return (deliver);
-        }
+	if (req.method == "PURGE") {
+	    if (req.http.purged) {
+		set resp.http.purged = req.http.purged;
+	    }
+	    return (deliver);
+	}
     }
 
 $Function INT hard()
 
 Description
 	This is equivalent to ``return(purge)`` but explicitly called from
-        ``vcl_hit`` and ``vcl_miss``. It returns the number of purged objects.
+	``vcl_hit`` and ``vcl_miss``. It returns the number of purged objects.
 Example
 	set req.http.purged = purge.hard();
 
 $Function INT soft(DURATION ttl = 0, DURATION grace = -1, DURATION keep = -1)
 
 Description
-        Sets the TTL, grace and keep. By default, TTL is set to 0 with grace
-        and keep periods left untouched. Setting a negative value for grace or
-        keep periods leaves them untouched. Setting all three parameters to
-        0 is equivalent to a hard purge. It can only be called from ``vcl_hit``
-        or ``vcl_miss``. It returns the number of soft-purged objects.
+	Sets the TTL, grace and keep. By default, TTL is set to 0 with grace
+	and keep periods left untouched. Setting a negative value for grace or
+	keep periods leaves them untouched. Setting all three parameters to
+	0 is equivalent to a hard purge. It can only be called from ``vcl_hit``
+	or ``vcl_miss``. It returns the number of soft-purged objects.
 
 SEE ALSO
 ========

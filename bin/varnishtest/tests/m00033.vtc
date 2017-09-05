@@ -51,7 +51,7 @@ varnish v1 -vcl {
 			      decoding=IDENTITY));
 
 	    set resp.http.truncated =
-              blob.encode(IDENTITY, blob.decode(HEX, "666f6f00626172"));
+	      blob.encode(IDENTITY, blob.decode(HEX, "666f6f00626172"));
 	}
 } -start
 
