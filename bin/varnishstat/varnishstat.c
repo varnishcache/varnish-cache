@@ -293,7 +293,7 @@ main(int argc, char * const *argv)
 		default:
 			i = VSM_Arg(vd, opt, optarg);
 			if (i < 0)
-				VUT_Error(1, "%s", VSM_Error(vd));
+				VUT_Error(vut, 1, "%s", VSM_Error(vd));
 			if (!i)
 				usage(1);
 		}
@@ -306,7 +306,7 @@ main(int argc, char * const *argv)
 		curses = 1;
 
 	if (VSM_Attach(vd, STDERR_FILENO))
-		VUT_Error(1, "%s", VSM_Error(vd));
+		VUT_Error(vut, 1, "%s", VSM_Error(vd));
 
 	if (curses)
 		do_curses(vd, vsc, 1.0);
