@@ -1,0 +1,12 @@
+varnishtest "Long backend and storage names"
+
+varnish v1 -arg "-s acme_example_com_static_assets_malloc_storage=malloc"
+
+varnish v1 -vcl {
+	backend be_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789 {
+		.host = "${bad_backend}";
+	}
+} -start
+
+varnish v1 -expect SMA.acme_example_com_static_assets_malloc_storage.c_req == 0
+varnish v1 -expect VBE.vcl1.be_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789.req == 0

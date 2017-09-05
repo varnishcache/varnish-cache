@@ -143,11 +143,11 @@ stv_check_ident(const char *spec, const char *ident)
 void
 STV_Config(const char *spec)
 {
-	char **av;
+	char **av, buf[8];
 	const char *name;
 	struct stevedore *stv;
 	const struct stevedore *stv2;
-	int ac, l;
+	int ac;
 	static unsigned seq = 0;
 
 	av = MGT_NamedArg(spec, &name, "-s");
@@ -174,16 +174,13 @@ STV_Config(const char *spec)
 	*stv = *stv2;
 	AN(stv->name);
 
-	if (name == NULL)
-		bprintf(stv->ident, "s%u", seq++);
-	else {
-		/* XXX: no need for truncation once VSM ident becomes dynamic */
-		l = strlen(name);
-		if (l > sizeof stv->ident - 1)
-			l = sizeof stv->ident - 1;
-		bprintf(stv->ident, "%.*s", l, name);
+	if (name == NULL) {
+		bprintf(buf, "s%u", seq++);
+		name = buf;
 	}
 
+	stv->ident = strdup(name);
+	AN(stv->ident);
 	stv_check_ident(spec, stv->ident);
 
 	if (stv->init != NULL)

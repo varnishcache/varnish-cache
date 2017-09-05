@@ -234,7 +234,6 @@ void vcc_Acl_Hack(struct vcc *tl, char *b, size_t bl);
 int vcc_ParseAction(struct vcc *tl);
 
 /* vcc_backend.c */
-#define MAX_BACKEND_NAME	64
 struct fld_spec;
 
 void vcc_ParseProbe(struct vcc *tl);
