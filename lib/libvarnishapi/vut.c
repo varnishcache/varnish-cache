@@ -61,12 +61,24 @@ struct VUT VUT;
 static int vut_synopsis(const struct vopt_spec *);
 static int vut_options(const struct vopt_spec *);
 
+static struct vpf_fh	*pfh;
+static unsigned		daemonized;
+
+static int
+vut_daemon(void)
+{
+	if (daemonized)
+		VUT_Error(1, "Already running as a daemon");
+	daemonized = 1;
+	return (varnish_daemon(0, 0));
+}
+
 static void
 vut_vpf_remove(void)
 {
-	if (VUT.pfh) {
-		AZ(VPF_Remove(VUT.pfh));
-		VUT.pfh = NULL;
+	if (pfh != NULL) {
+		AZ(VPF_Remove(pfh));
+		pfh = NULL;
 	}
 }
 
@@ -250,19 +262,21 @@ VUT_Setup(void)
 
 	/* Open PID file */
 	if (VUT.P_arg) {
-		AZ(VUT.pfh);
-		VUT.pfh = VPF_Open(VUT.P_arg, 0644, NULL);
-		if (VUT.pfh == NULL)
+		if (pfh != NULL)
+			VUT_Error(1, "PID file already created");
+		pfh = VPF_Open(VUT.P_arg, 0644, NULL);
+		if (pfh == NULL)
 			VUT_Error(1, "%s: %s", VUT.P_arg, strerror(errno));
 	}
 
 	/* Daemon mode */
-	if (VUT.D_opt && varnish_daemon(0, 0) == -1)
+	if (VUT.D_opt && vut_daemon() == -1)
 		VUT_Error(1, "Daemon mode: %s", strerror(errno));
 
 	/* Write PID and setup exit handler */
-	if (VUT.pfh != NULL) {
-		AZ(VPF_Write(VUT.pfh));
+	if (VUT.P_arg) {
+		AN(pfh);
+		AZ(VPF_Write(pfh));
 		AZ(atexit(vut_vpf_remove));
 	}
 }
@@ -279,7 +293,7 @@ VUT_Fini(void)
 	free(VUT.t_arg);
 
 	vut_vpf_remove();
-	AZ(VUT.pfh);
+	AZ(pfh);
 
 	if (VUT.vslq)
 		VSLQ_Delete(&VUT.vslq);

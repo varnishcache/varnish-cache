@@ -51,7 +51,6 @@ struct VUT {
 	struct VSL_data	*vsl;
 	struct vsm	*vsm;
 	struct VSLQ	*vslq;
-	struct vpf_fh	*pfh;
 	int		sighup;
 	int		sigint;
 	int		sigusr1;
