@@ -70,6 +70,8 @@
 #define TIME_FMT "[%d/%b/%Y:%T %z]"
 #define FORMAT "%h %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-agent}i\""
 
+static struct VUT *vut;
+
 struct format;
 
 enum e_frag {
@@ -164,7 +166,7 @@ usage(int status)
 {
 	const char **opt;
 
-	fprintf(stderr, "Usage: %s <options>\n\n", VUT.progname);
+	fprintf(stderr, "Usage: %s <options>\n\n", vut->progname);
 	fprintf(stderr, "Options:\n");
 	for (opt = vopt_spec.vopt_usage; *opt != NULL; opt += 2)
 		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
@@ -186,7 +188,7 @@ static int __match_proto__(VUT_cb_f)
 rotateout(struct VUT *v)
 {
 
-	assert(v == &VUT);
+	assert(v == vut);
 	AN(CTX.w_arg);
 	AN(CTX.fo);
 	fclose(CTX.fo);
@@ -199,7 +201,7 @@ static int __match_proto__(VUT_cb_f)
 flushout(struct VUT *v)
 {
 
-	assert(v == &VUT);
+	assert(v == vut);
 	AN(CTX.fo);
 	if (fflush(CTX.fo))
 		return (-5);
@@ -1108,14 +1110,15 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 static int __match_proto__(VUT_cb_f)
 sighup(struct VUT *v)
 {
-	assert(v == &VUT);
+	assert(v == vut);
 	return (1);
 }
 
 static void
 vut_sighandler(int sig)
 {
-	VUT_Signaled(&VUT, sig);
+	AN(vut);
+	VUT_Signaled(vut, sig);
 }
 
 static char *
@@ -1152,7 +1155,8 @@ main(int argc, char * const *argv)
 	signed char opt;
 	char *format = NULL;
 
-	VUT_InitProg(argc, argv, &vopt_spec);
+	vut = VUT_InitProg(argc, argv, &vopt_spec);
+	AN(vut);
 	memset(&CTX, 0, sizeof CTX);
 	VTAILQ_INIT(&CTX.format);
 	VTAILQ_INIT(&CTX.watch_vcl_log);
@@ -1200,7 +1204,7 @@ main(int argc, char * const *argv)
 			REPLACE(CTX.w_arg, optarg);
 			break;
 		default:
-			if (!VUT_Arg(opt, optarg))
+			if (!VUT_Arg(vut, opt, optarg))
 				usage(1);
 		}
 	}
@@ -1211,14 +1215,14 @@ main(int argc, char * const *argv)
 	if (optind != argc)
 		usage(1);
 
-	if (VUT.D_opt && !CTX.w_arg)
+	if (vut->D_opt && !CTX.w_arg)
 		VUT_Error(1, "Missing -w option");
 
 	/* Check for valid grouping mode */
-	assert(VUT.g_arg < VSL_g__MAX);
-	if (VUT.g_arg != VSL_g_vxid && VUT.g_arg != VSL_g_request)
+	assert(vut->g_arg < VSL_g__MAX);
+	if (vut->g_arg != VSL_g_vxid && vut->g_arg != VSL_g_request)
 		VUT_Error(1, "Invalid grouping mode: %s",
-		    VSLQ_grouping[VUT.g_arg]);
+		    VSLQ_grouping[vut->g_arg]);
 
 	/* Prepare output format */
 	parse_format(format);
@@ -1226,22 +1230,22 @@ main(int argc, char * const *argv)
 	format = NULL;
 
 	/* Setup output */
-	VUT.dispatch_f = dispatch_f;
-	VUT.dispatch_priv = NULL;
-	VUT.sighup_f = sighup;
+	vut->dispatch_f = dispatch_f;
+	vut->dispatch_priv = NULL;
+	vut->sighup_f = sighup;
 	if (CTX.w_arg) {
 		openout(CTX.a_opt);
 		AN(CTX.fo);
-		if (VUT.D_opt)
-			VUT.sighup_f = rotateout;
+		if (vut->D_opt)
+			vut->sighup_f = rotateout;
 	} else
 		CTX.fo = stdout;
-	VUT.idle_f = flushout;
+	vut->idle_f = flushout;
 
 	VUT_Signal(vut_sighandler);
-	VUT_Setup();
-	VUT_Main();
-	VUT_Fini();
+	VUT_Setup(vut);
+	VUT_Main(vut);
+	VUT_Fini(&vut);
 
 	exit(0);
 }

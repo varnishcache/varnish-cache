@@ -64,22 +64,20 @@ struct VUT {
 	void		*dispatch_priv;
 };
 
-extern struct VUT VUT;
-
 //lint -sem(VUT_Error, r_no)
 void VUT_Error(int status, const char *fmt, ...)
 	__v_printflike(2, 3) __attribute__((__noreturn__));
 
-int VUT_Arg(int opt, const char *arg);
+int VUT_Arg(struct VUT *, int opt, const char *arg);
 
 #define VUT_InitProg(argc, argv, spec) VUT_Init(argv[0], argc, argv, spec)
 
-void VUT_Init(const char *progname, int argc, char * const *argv,
+struct VUT * VUT_Init(const char *progname, int argc, char * const *argv,
     const struct vopt_spec *);
 
 void VUT_Signal(VUT_sighandler_f);
 void VUT_Signaled(struct VUT *, int);
 
-void VUT_Setup(void);
-int  VUT_Main(void);
-void VUT_Fini(void);
+void VUT_Setup(struct VUT *);
+int  VUT_Main(struct VUT *);
+void VUT_Fini(struct VUT **);

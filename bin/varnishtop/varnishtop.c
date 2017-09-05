@@ -60,6 +60,8 @@
 #define AC(x) x
 #endif
 
+static struct VUT *vut;
+
 struct top {
 	uint8_t			tag;
 	const char		*rec_data;
@@ -180,7 +182,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 static int __match_proto__(VUT_cb_f)
 sighup(struct VUT *v)
 {
-	assert(v == &VUT);
+	assert(v == vut);
 	quit = 1;
 	return (1);
 }
@@ -188,7 +190,8 @@ sighup(struct VUT *v)
 static void
 vut_sighandler(int sig)
 {
-	VUT_Signaled(&VUT, sig);
+	AN(vut);
+	VUT_Signaled(vut, sig);
 }
 
 static void
@@ -324,7 +327,7 @@ usage(int status)
 {
 	const char **opt;
 
-	fprintf(stderr, "Usage: %s <options>\n\n", VUT.progname);
+	fprintf(stderr, "Usage: %s <options>\n\n", vut->progname);
 	fprintf(stderr, "Options:\n");
 	for (opt = vopt_spec.vopt_usage; *opt != NULL; opt +=2)
 		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
@@ -337,12 +340,13 @@ main(int argc, char **argv)
 	int o, once = 0;
 	pthread_t thr;
 
-	VUT_InitProg(argc, argv, &vopt_spec);
+	vut = VUT_InitProg(argc, argv, &vopt_spec);
+	AN(vut);
 
 	while ((o = getopt(argc, argv, vopt_spec.vopt_optstring)) != -1) {
 		switch (o) {
 		case '1':
-			AN(VUT_Arg('d', NULL));
+			AN(VUT_Arg(vut, 'd', NULL));
 			once = 1;
 			break;
 		case 'f':
@@ -361,7 +365,7 @@ main(int argc, char **argv)
 			}
 			break;
 		default:
-			if (!VUT_Arg(o, optarg))
+			if (!VUT_Arg(vut, o, optarg))
 				usage(1);
 		}
 	}
@@ -370,8 +374,8 @@ main(int argc, char **argv)
 		usage(1);
 
 	VUT_Signal(vut_sighandler);
-	VUT_Setup();
-	ident = VSM_Dup(VUT.vsm, "Arg", "-i");
+	VUT_Setup(vut);
+	ident = VSM_Dup(vut->vsm, "Arg", "-i");
 	if (!once) {
 		if (pthread_create(&thr, NULL, do_curses, NULL) != 0) {
 			fprintf(stderr, "pthread_create(): %s\n",
@@ -379,15 +383,15 @@ main(int argc, char **argv)
 			exit(1);
 		}
 	}
-	VUT.dispatch_f = accumulate;
-	VUT.dispatch_priv = NULL;
-	VUT.sighup_f = sighup;
-	VUT_Main();
+	vut->dispatch_f = accumulate;
+	vut->dispatch_priv = NULL;
+	vut->sighup_f = sighup;
+	VUT_Main(vut);
 	end_of_file = 1;
 	if (once)
 		dump();
 	else
 		pthread_join(thr, NULL);
-	VUT_Fini();
+	VUT_Fini(&vut);
 	exit(0);
 }
