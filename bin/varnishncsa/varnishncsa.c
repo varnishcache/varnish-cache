@@ -183,9 +183,10 @@ openout(int append)
 }
 
 static int __match_proto__(VUT_cb_f)
-rotateout(void)
+rotateout(struct VUT *v)
 {
 
+	assert(v == &VUT);
 	AN(CTX.w_arg);
 	AN(CTX.fo);
 	fclose(CTX.fo);
@@ -195,9 +196,10 @@ rotateout(void)
 }
 
 static int __match_proto__(VUT_cb_f)
-flushout(void)
+flushout(struct VUT *v)
 {
 
+	assert(v == &VUT);
 	AN(CTX.fo);
 	if (fflush(CTX.fo))
 		return (-5);
@@ -1104,8 +1106,9 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 }
 
 static int __match_proto__(VUT_cb_f)
-sighup(void)
+sighup(struct VUT *v)
 {
+	assert(v == &VUT);
 	return (1);
 }
 

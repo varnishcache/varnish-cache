@@ -324,7 +324,7 @@ VUT_Main(void)
 		if (VUT.sighup && VUT.sighup_f) {
 			/* sighup callback */
 			VUT.sighup = 0;
-			i = VUT.sighup_f();
+			i = VUT.sighup_f(&VUT);
 			if (i)
 				break;
 		}
@@ -370,7 +370,7 @@ VUT_Main(void)
 		else if (i == 0) {
 			/* Nothing to do but wait */
 			if (VUT.idle_f) {
-				i = VUT.idle_f();
+				i = VUT.idle_f(&VUT);
 				if (i)
 					break;
 			}

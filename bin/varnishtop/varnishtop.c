@@ -178,8 +178,9 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 }
 
 static int __match_proto__(VUT_cb_f)
-sighup(void)
+sighup(struct VUT *v)
 {
+	assert(v == &VUT);
 	quit = 1;
 	return (1);
 }
