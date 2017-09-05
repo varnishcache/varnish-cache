@@ -39,6 +39,7 @@ import sys
 import gzip
 import StringIO
 import collections
+import struct
 
 TYPES = [ "counter", "gauge", "bitmap" ]
 CTYPES = [ "uint64_t" ]
@@ -55,7 +56,9 @@ PARAMS = {
 
 def gzip_str(s):
 	out = StringIO.StringIO()
-	gzip.GzipFile(fileobj=out, mode="w", mtime=0x12bfd58).write(s)
+	gzip.GzipFile(fileobj=out, mode="w").write(s)
+	out.seek(4)
+	out.write(struct.pack("<L", 0x12bfd58))
 	return out.getvalue()
 
 def genhdr(fo, name):
