@@ -57,6 +57,8 @@
 #define HIST_N 2000		/* how far back we remember */
 #define HIST_RES 100		/* bucket resolution */
 
+static struct VUT *vut;
+
 static int hist_low;
 static int hist_high;
 static int hist_range;
@@ -368,7 +370,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 static int __match_proto__(VUT_cb_f)
 sighup(struct VUT *v)
 {
-	assert(v == &VUT);
+	assert(v == vut);
 	quit = 1;
 	return (1);
 }
@@ -470,7 +472,7 @@ usage(int status)
 {
 	const char **opt;
 
-	fprintf(stderr, "Usage: %s <options>\n\n", VUT.progname);
+	fprintf(stderr, "Usage: %s <options>\n\n", vut->progname);
 	fprintf(stderr, "Options:\n");
 	for (opt = vopt_spec.vopt_usage; *opt != NULL; opt += 2)
 		fprintf(stderr, " %-25s %s\n", *opt, *(opt + 1));
@@ -488,7 +490,7 @@ profile_error(const char *s)
 static void
 vut_sighandler(int sig)
 {
-	VUT_Signaled(&VUT, sig);
+	VUT_Signaled(vut, sig);
 }
 
 int
@@ -502,7 +504,8 @@ main(int argc, char **argv)
 	struct profile cli_p = {0};
 	cli_p.name = 0;
 
-	VUT_InitProg(argc, argv, &vopt_spec);
+	vut = VUT_InitProg(argc, argv, &vopt_spec);
+	AN(vut);
 	AZ(pthread_cond_init(&timebend_cv, NULL));
 
 	while ((i = getopt(argc, argv, vopt_spec.vopt_optstring)) != -1) {
@@ -565,7 +568,7 @@ main(int argc, char **argv)
 				    " (invalid factor '%s')", optarg);
 			break;
 		default:
-			if (!VUT_Arg(i, optarg))
+			if (!VUT_Arg(vut, i, optarg))
 				usage(1);
 		}
 	}
@@ -574,11 +577,11 @@ main(int argc, char **argv)
 		usage(1);
 
 	/* Check for valid grouping mode */
-	assert(VUT.g_arg < VSL_g__MAX);
-	if (VUT.g_arg != VSL_g_vxid && VUT.g_arg != VSL_g_request)
+	assert(vut->g_arg < VSL_g__MAX);
+	if (vut->g_arg != VSL_g_vxid && vut->g_arg != VSL_g_request)
 		VUT_Error(1, "Invalid grouping mode: %s"
 		    " (only vxid and request are supported)",
-		    VSLQ_grouping[VUT.g_arg]);
+		    VSLQ_grouping[vut->g_arg]);
 
 	if (profile) {
 		for (active_profile = profiles; active_profile->name;
@@ -593,7 +596,7 @@ main(int argc, char **argv)
 
 	assert(active_profile->VSL_arg == 'b' ||
 	    active_profile->VSL_arg == 'c');
-	assert(VUT_Arg(active_profile->VSL_arg, NULL));
+	assert(VUT_Arg(vut, active_profile->VSL_arg, NULL));
 	match_tag = active_profile->tag;
 	fnum = active_profile->field;
 	hist_low = active_profile->hist_low;
@@ -616,16 +619,16 @@ main(int argc, char **argv)
 	log_ten = log(10.0);
 
 	VUT_Signal(vut_sighandler);
-	VUT_Setup();
-	ident = VSM_Dup(VUT.vsm, "Arg", "-i");
+	VUT_Setup(vut);
+	ident = VSM_Dup(vut->vsm, "Arg", "-i");
 	if (pthread_create(&thr, NULL, do_curses, NULL) != 0)
 		VUT_Error(1, "pthread_create(): %s", strerror(errno));
-	VUT.dispatch_f = accumulate;
-	VUT.dispatch_priv = NULL;
-	VUT.sighup_f = sighup;
-	VUT_Main();
+	vut->dispatch_f = accumulate;
+	vut->dispatch_priv = NULL;
+	vut->sighup_f = sighup;
+	VUT_Main(vut);
 	end_of_file = 1;
 	AZ(pthread_join(thr, NULL));
-	VUT_Fini();
+	VUT_Fini(&vut);
 	exit(0);
 }
