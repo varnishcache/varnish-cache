@@ -63,10 +63,10 @@ static struct vpf_fh	*pfh;
 static unsigned		daemonized;
 
 static int
-vut_daemon(void)
+vut_daemon(struct VUT *vut)
 {
 	if (daemonized)
-		VUT_Error(1, "Already running as a daemon");
+		VUT_Error(vut, 1, "Already running as a daemon");
 	daemonized = 1;
 	return (varnish_daemon(0, 0));
 }
@@ -100,19 +100,28 @@ vut_dispatch(struct VSL_data *vsl, struct VSL_transaction * const trans[],
 	return (i);
 }
 
+//lint -sem(vut_error, r_no)
+static void __attribute__((__noreturn__)) __match_proto__(VUT_error_f)
+vut_error(struct VUT *vut, int status, const char *fmt, va_list ap)
+{
+
+	AN(vut);
+	AN(fmt);
+	vfprintf(stderr, fmt, ap);
+	fprintf(stderr, "\n");
+
+	exit(status);
+}
+
 void
-VUT_Error(int status, const char *fmt, ...)
+VUT_Error(struct VUT *vut, int status, const char *fmt, ...)
 {
 	va_list ap;
 
 	assert(status != 0);
-	AN(fmt);
 	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
+	vut_error(vut, status, fmt, ap);
 	va_end(ap);
-	fprintf(stderr, "\n");
-
-	exit(status);
 }
 
 int
@@ -135,16 +144,16 @@ VUT_Arg(struct VUT *vut, int opt, const char *arg)
 		AN(arg);
 		vut->g_arg = VSLQ_Name2Grouping(arg, -1);
 		if (vut->g_arg == -2)
-			VUT_Error(1, "Ambiguous grouping type: %s", arg);
+			VUT_Error(vut, 1, "Ambiguous grouping type: %s", arg);
 		else if (vut->g_arg < 0)
-			VUT_Error(1, "Unknown grouping type: %s", arg);
+			VUT_Error(vut, 1, "Unknown grouping type: %s", arg);
 		return (1);
 	case 'k':
 		/* Log transaction limit */
 		AN(arg);
 		vut->k_arg = (int)strtol(arg, &p, 10);
 		if (*p != '\0' || vut->k_arg <= 0)
-			VUT_Error(1, "-k: Invalid number '%s'", arg);
+			VUT_Error(vut, 1, "-k: Invalid number '%s'", arg);
 		return (1);
 	case 'n':
 		/* Varnish instance name */
@@ -178,7 +187,7 @@ VUT_Arg(struct VUT *vut, int opt, const char *arg)
 		AN(vut->vsl);
 		i = VSL_Arg(vut->vsl, opt, arg);
 		if (i < 0)
-			VUT_Error(1, "%s", VSL_Error(vut->vsl));
+			VUT_Error(vut, 1, "%s", VSL_Error(vut->vsl));
 		return (i);
 	}
 }
@@ -203,10 +212,11 @@ VUT_Init(const char *progname, int argc, char * const *argv,
 
 	vut->progname = progname;
 	vut->g_arg = VSL_g_vxid;
+	vut->k_arg = -1;
+	vut->error_f = vut_error;
 	AZ(vut->vsl);
 	vut->vsl = VSL_New();
 	AN(vut->vsl);
-	vut->k_arg = -1;
 	return (vut);
 }
 
@@ -244,45 +254,45 @@ VUT_Setup(struct VUT *vut)
 	/* Check input arguments (2 used for bug in FlexeLint) */
 	if ((vut->n_arg == NULL ? 0 : 2) +
 	    (vut->r_arg == NULL ? 0 : 2) > 2)
-		VUT_Error(1, "Only one of -n and -r options may be used");
+		VUT_Error(vut, 1, "Only one of -n and -r options may be used");
 
 	/* Create and validate the query expression */
 	vut->vslq = VSLQ_New(vut->vsl, NULL, vut->g_arg, vut->q_arg);
 	if (vut->vslq == NULL)
-		VUT_Error(1, "Query expression error:\n%s",
+		VUT_Error(vut, 1, "Query expression error:\n%s",
 		    VSL_Error(vut->vsl));
 
 	/* Setup input */
 	if (vut->r_arg) {
 		c = VSL_CursorFile(vut->vsl, vut->r_arg, 0);
 		if (c == NULL)
-			VUT_Error(1, "%s", VSL_Error(vut->vsl));
+			VUT_Error(vut, 1, "%s", VSL_Error(vut->vsl));
 		VSLQ_SetCursor(vut->vslq, &c);
 		AZ(c);
 	} else {
 		vut->vsm = VSM_New();
 		AN(vut->vsm);
 		if (vut->n_arg && VSM_Arg(vut->vsm, 'n', vut->n_arg) <= 0)
-			VUT_Error(1, "%s", VSM_Error(vut->vsm));
+			VUT_Error(vut, 1, "%s", VSM_Error(vut->vsm));
 		if (vut->t_arg && VSM_Arg(vut->vsm, 't', vut->t_arg) <= 0)
-			VUT_Error(1, "%s", VSM_Error(vut->vsm));
+			VUT_Error(vut, 1, "%s", VSM_Error(vut->vsm));
 		if (VSM_Attach(vut->vsm, STDERR_FILENO))
-			VUT_Error(1, "VSM: %s", VSM_Error(vut->vsm));
+			VUT_Error(vut, 1, "VSM: %s", VSM_Error(vut->vsm));
 		// Cursor is handled in VUT_Main()
 	}
 
 	/* Open PID file */
 	if (vut->P_arg) {
 		if (pfh != NULL)
-			VUT_Error(1, "PID file already created");
+			VUT_Error(vut, 1, "PID file already created");
 		pfh = VPF_Open(vut->P_arg, 0644, NULL);
 		if (pfh == NULL)
-			VUT_Error(1, "%s: %s", vut->P_arg, strerror(errno));
+			VUT_Error(vut, 1, "%s: %s", vut->P_arg, strerror(errno));
 	}
 
 	/* Daemon mode */
-	if (vut->D_opt && vut_daemon() == -1)
-		VUT_Error(1, "Daemon mode: %s", strerror(errno));
+	if (vut->D_opt && vut_daemon(vut) == -1)
+		VUT_Error(vut, 1, "Daemon mode: %s", strerror(errno));
 
 	/* Write PID and setup exit handler */
 	if (vut->P_arg) {

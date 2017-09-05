@@ -180,7 +180,7 @@ openout(int append)
 	AN(CTX.w_arg);
 	CTX.fo = fopen(CTX.w_arg, append ? "a" : "w");
 	if (CTX.fo == NULL)
-		VUT_Error(1, "Can't open output file (%s)",
+		VUT_Error(vut, 1, "Can't open output file (%s)",
 		    strerror(errno));
 }
 
@@ -630,19 +630,19 @@ parse_x_format(char *buf)
 		while (*e != '\0')
 			e++;
 		if (e == buf)
-			VUT_Error(1, "Missing tag in VSL:");
+			VUT_Error(vut, 1, "Missing tag in VSL:");
 		if (e[-1] == ']') {
 			r = e - 1;
 			while (r > buf && *r != '[')
 				r--;
 			if (r == buf || r[1] == ']')
-				VUT_Error(1, "Syntax error: VSL:%s", buf);
+				VUT_Error(vut, 1, "Syntax error: VSL:%s", buf);
 			e[-1] = '\0';
 			lval = strtol(r + 1, &s, 10);
 			if (s != e - 1)
-				VUT_Error(1, "Syntax error: VSL:%s]", buf);
+				VUT_Error(vut, 1, "Syntax error: VSL:%s]", buf);
 			if (lval <= 0 || lval > 255) {
-				VUT_Error(1,
+				VUT_Error(vut, 1,
 				    "Syntax error. Field specifier must be"
 				    " between 1 and 255: %s]",
 				    buf);
@@ -661,15 +661,15 @@ parse_x_format(char *buf)
 			r = NULL;
 		}
 		if (slt == -2)
-			VUT_Error(1, "Tag not unique: %s", buf);
+			VUT_Error(vut, 1, "Tag not unique: %s", buf);
 		if (slt == -1)
-			VUT_Error(1, "Unknown log tag: %s", buf);
+			VUT_Error(vut, 1, "Unknown log tag: %s", buf);
 		assert(slt >= 0);
 
 		addf_vsl(slt, lval, r);
 		return;
 	}
-	VUT_Error(1, "Unknown formatting extension: %s", buf);
+	VUT_Error(vut, 1, "Unknown formatting extension: %s", buf);
 }
 
 static void
@@ -763,7 +763,7 @@ parse_format(const char *format)
 			while (*q && *q != '}')
 				q++;
 			if (!*q)
-				VUT_Error(1, "Unmatched bracket at: %s",
+				VUT_Error(vut, 1, "Unmatched bracket at: %s",
 				    p - 2);
 			assert(q - p < sizeof buf - 1);
 			strncpy(buf, p, q - p);
@@ -783,14 +783,14 @@ parse_format(const char *format)
 				parse_x_format(buf);
 				break;
 			default:
-				VUT_Error(1,
+				VUT_Error(vut, 1,
 				    "Unknown format specifier at: %s",
 				    p - 2);
 			}
 			p = q;
 			break;
 		default:
-			VUT_Error(1, "Unknown format specifier at: %s",
+			VUT_Error(vut, 1, "Unknown format specifier at: %s",
 			    p - 1);
 		}
 	}
@@ -1131,16 +1131,16 @@ read_format(const char *formatfile)
 
 	fmtfile = fopen(formatfile, "r");
 	if (fmtfile == NULL)
-		VUT_Error(1, "Can't open format file (%s)",
+		VUT_Error(vut, 1, "Can't open format file (%s)",
 		    strerror(errno));
 	AN(fmtfile);
 	fmtlen = getline(&fmt, &len, fmtfile);
 	if (fmtlen == -1) {
 		free(fmt);
 		if (feof(fmtfile))
-			VUT_Error(1, "Empty format file");
+			VUT_Error(vut, 1, "Empty format file");
 		else
-			VUT_Error(1, "Can't read format from file (%s)",
+			VUT_Error(vut, 1, "Can't read format from file (%s)",
 			    strerror(errno));
 	}
 	fclose(fmtfile);
@@ -1216,12 +1216,12 @@ main(int argc, char * const *argv)
 		usage(1);
 
 	if (vut->D_opt && !CTX.w_arg)
-		VUT_Error(1, "Missing -w option");
+		VUT_Error(vut, 1, "Missing -w option");
 
 	/* Check for valid grouping mode */
 	assert(vut->g_arg < VSL_g__MAX);
 	if (vut->g_arg != VSL_g_vxid && vut->g_arg != VSL_g_request)
-		VUT_Error(1, "Invalid grouping mode: %s",
+		VUT_Error(vut, 1, "Invalid grouping mode: %s",
 		    VSLQ_grouping[vut->g_arg]);
 
 	/* Prepare output format */
