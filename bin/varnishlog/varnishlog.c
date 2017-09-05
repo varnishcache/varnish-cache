@@ -87,9 +87,10 @@ openout(int append)
 }
 
 static int __match_proto__(VUT_cb_f)
-rotateout(void)
+rotateout(struct VUT *v)
 {
 
+	assert(v == &VUT);
 	AN(LOG.w_arg);
 	AN(LOG.fo);
 	fclose(LOG.fo);
@@ -99,9 +100,11 @@ rotateout(void)
 }
 
 static int __match_proto__(VUT_cb_f)
-flushout(void)
+flushout(struct VUT *v)
 {
 
+	if (v != NULL)
+		assert(v == &VUT);
 	AN(LOG.fo);
 	if (fflush(LOG.fo))
 		return (-5);
@@ -109,8 +112,9 @@ flushout(void)
 }
 
 static int __match_proto__(VUT_cb_f)
-sighup(void)
+sighup(struct VUT *v)
 {
+	assert(v == &VUT);
 	return (1);
 }
 
@@ -177,7 +181,7 @@ main(int argc, char * const *argv)
 	VUT_Main();
 	VUT_Fini();
 
-	(void)flushout();
+	(void)flushout(NULL);
 
 	exit(0);
 }

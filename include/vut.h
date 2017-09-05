@@ -29,10 +29,11 @@
  * Common functions for the utilities
  */
 
+struct VUT;
 struct vopt_spec;
 
 typedef void VUT_sighandler_f(int);
-typedef int VUT_cb_f(void);
+typedef int VUT_cb_f(struct VUT *);
 
 struct VUT {
 	const char	*progname;
