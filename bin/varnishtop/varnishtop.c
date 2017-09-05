@@ -185,6 +185,12 @@ sighup(void)
 }
 
 static void
+vut_sighandler(int sig)
+{
+	VUT_Signaled(&VUT, sig);
+}
+
+static void
 update(int p)
 {
 	struct top *tp, *tp2;
@@ -362,6 +368,7 @@ main(int argc, char **argv)
 	if (optind != argc)
 		usage(1);
 
+	VUT_Signal(vut_sighandler);
 	VUT_Setup();
 	ident = VSM_Dup(VUT.vsm, "Arg", "-i");
 	if (!once) {

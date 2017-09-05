@@ -31,6 +31,7 @@
 
 struct vopt_spec;
 
+typedef void VUT_sighandler_f(int);
 typedef int VUT_cb_f(void);
 
 struct VUT {
@@ -74,6 +75,9 @@ int VUT_Arg(int opt, const char *arg);
 
 void VUT_Init(const char *progname, int argc, char * const *argv,
     const struct vopt_spec *);
+
+void VUT_Signal(VUT_sighandler_f);
+void VUT_Signaled(struct VUT *, int);
 
 void VUT_Setup(void);
 int  VUT_Main(void);

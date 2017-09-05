@@ -114,6 +114,12 @@ sighup(void)
 	return (1);
 }
 
+static void
+vut_sighandler(int sig)
+{
+	VUT_Signaled(&VUT, sig);
+}
+
 int
 main(int argc, char * const *argv)
 {
@@ -166,6 +172,7 @@ main(int argc, char * const *argv)
 		LOG.fo = stdout;
 	VUT.idle_f = flushout;
 
+	VUT_Signal(vut_sighandler);
 	VUT_Setup();
 	VUT_Main();
 	VUT_Fini();
