@@ -274,9 +274,6 @@ main(int argc, char * const *argv)
 		case 'l':
 			f_list = 1;
 			break;
-		case 'V':
-			VCS_Message("varnishstat");
-			exit(0);
 		case 'x':
 			xml = 1;
 			break;
@@ -285,6 +282,9 @@ main(int argc, char * const *argv)
 			break;
 		case 'f':
 			AN(VSC_Arg(vsc, opt, optarg));
+			break;
+		case 'V':
+			AN(VUT_Arg(opt, optarg));
 			break;
 		default:
 			i = VSM_Arg(vd, opt, optarg);
