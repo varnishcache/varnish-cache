@@ -82,15 +82,6 @@ vut_vpf_remove(void)
 	}
 }
 
-static void
-vut_signal(int sig)
-{
-
-	VUT.sighup |= (sig == SIGHUP);
-	VUT.sigint |= (sig == SIGINT || sig == SIGTERM);
-	VUT.sigusr1 |= (sig == SIGUSR1);
-}
-
 static int __match_proto__(VSLQ_dispatch_f)
 vut_dispatch(struct VSL_data *vsl, struct VSL_transaction * const trans[],
     void *priv)
@@ -216,6 +207,27 @@ VUT_Init(const char *progname, int argc, char * const *argv,
 }
 
 void
+VUT_Signal(VUT_sighandler_f sig_cb)
+{
+
+	AN(sig_cb);
+	(void)signal(SIGHUP, sig_cb);
+	(void)signal(SIGINT, sig_cb);
+	(void)signal(SIGTERM, sig_cb);
+	(void)signal(SIGUSR1, sig_cb);
+}
+
+void
+VUT_Signaled(struct VUT *vut, int sig)
+{
+
+	AN(vut);
+	vut->sighup |= (sig == SIGHUP);
+	vut->sigint |= (sig == SIGINT || sig == SIGTERM);
+	vut->sigusr1 |= (sig == SIGUSR1);
+}
+
+void
 VUT_Setup(void)
 {
 	struct VSL_cursor *c;
@@ -253,12 +265,6 @@ VUT_Setup(void)
 			VUT_Error(1, "VSM: %s", VSM_Error(VUT.vsm));
 		// Cursor is handled in VUT_Main()
 	}
-
-	/* Signal handlers */
-	(void)signal(SIGHUP, vut_signal);
-	(void)signal(SIGINT, vut_signal);
-	(void)signal(SIGTERM, vut_signal);
-	(void)signal(SIGUSR1, vut_signal);
 
 	/* Open PID file */
 	if (VUT.P_arg) {

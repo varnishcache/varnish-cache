@@ -134,6 +134,8 @@ LIBVARNISHAPI_2.0 {
 		VUT_Init;
 		VUT_Main;
 		VUT_Setup;
+		VUT_Signal;
+		VUT_Signaled;
 
     local:
 	*;

@@ -484,6 +484,12 @@ profile_error(const char *s)
 	exit(1);
 }
 
+static void
+vut_sighandler(int sig)
+{
+	VUT_Signaled(&VUT, sig);
+}
+
 int
 main(int argc, char **argv)
 {
@@ -608,6 +614,7 @@ main(int argc, char **argv)
 
 	log_ten = log(10.0);
 
+	VUT_Signal(vut_sighandler);
 	VUT_Setup();
 	ident = VSM_Dup(VUT.vsm, "Arg", "-i");
 	if (pthread_create(&thr, NULL, do_curses, NULL) != 0)

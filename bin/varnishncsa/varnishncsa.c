@@ -46,6 +46,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <inttypes.h>
 #include <limits.h>
@@ -1108,6 +1109,12 @@ sighup(void)
 	return (1);
 }
 
+static void
+vut_sighandler(int sig)
+{
+	VUT_Signaled(&VUT, sig);
+}
+
 static char *
 read_format(const char *formatfile)
 {
@@ -1228,6 +1235,7 @@ main(int argc, char * const *argv)
 		CTX.fo = stdout;
 	VUT.idle_f = flushout;
 
+	VUT_Signal(vut_sighandler);
 	VUT_Setup();
 	VUT_Main();
 	VUT_Fini();
