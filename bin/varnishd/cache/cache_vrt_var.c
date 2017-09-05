@@ -38,7 +38,6 @@
 #include "cache_director.h"
 #include "vrt.h"
 #include "vrt_obj.h"
-#include "vsha256.h"
 
 static char vrt_hostname[255] = "";
 
@@ -769,7 +768,7 @@ VRT_BODY_L(resp)
 /*--------------------------------------------------------------------*/
 
 static struct vmod_priv *
-vrt_do_blob(VRT_CTX, const char *err, uint8_t *src, size_t len)
+vrt_do_blob(VRT_CTX, const char *err, const uint8_t *src, size_t len)
 {
 	struct vmod_priv *p;
 	void *d;
