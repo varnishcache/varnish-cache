@@ -125,18 +125,6 @@ VUT_Error(int status, const char *fmt, ...)
 }
 
 int
-VUT_g_Arg(const char *arg)
-{
-
-	VUT.g_arg = VSLQ_Name2Grouping(arg, -1);
-	if (VUT.g_arg == -2)
-		VUT_Error(1, "Ambiguous grouping type: %s", arg);
-	else if (VUT.g_arg < 0)
-		VUT_Error(1, "Unknown grouping type: %s", arg);
-	return (1);
-}
-
-int
 VUT_Arg(int opt, const char *arg)
 {
 	int i;
@@ -154,7 +142,12 @@ VUT_Arg(int opt, const char *arg)
 	case 'g':
 		/* Grouping */
 		AN(arg);
-		return (VUT_g_Arg(arg));
+		VUT.g_arg = VSLQ_Name2Grouping(arg, -1);
+		if (VUT.g_arg == -2)
+			VUT_Error(1, "Ambiguous grouping type: %s", arg);
+		else if (VUT.g_arg < 0)
+			VUT_Error(1, "Unknown grouping type: %s", arg);
+		return (1);
 	case 'k':
 		/* Log transaction limit */
 		AN(arg);

@@ -69,8 +69,6 @@ extern struct VUT VUT;
 void VUT_Error(int status, const char *fmt, ...)
 	__v_printflike(2, 3) __attribute__((__noreturn__));
 
-int VUT_g_Arg(const char *arg);
-
 int VUT_Arg(int opt, const char *arg);
 
 void VUT_Init(const char *progname, int argc, char * const *argv,
