@@ -56,8 +56,6 @@
 
 #include "vapi/voptget.h"
 
-struct VUT VUT;
-
 static int vut_synopsis(const struct vopt_spec *);
 static int vut_options(const struct vopt_spec *);
 
@@ -86,16 +84,18 @@ static int __match_proto__(VSLQ_dispatch_f)
 vut_dispatch(struct VSL_data *vsl, struct VSL_transaction * const trans[],
     void *priv)
 {
+	struct VUT *vut;
 	int i;
 
-	(void)priv;
-	if (VUT.k_arg == 0)
+	vut = priv;
+	AN(vut);
+	if (vut->k_arg == 0)
 		return (-1);	/* End of file */
-	AN(VUT.dispatch_f);
-	i = VUT.dispatch_f(vsl, trans, VUT.dispatch_priv);
-	if (VUT.k_arg > 0)
-		VUT.k_arg--;
-	if (i >= 0 && VUT.k_arg == 0)
+	AN(vut->dispatch_f);
+	i = vut->dispatch_f(vsl, trans, vut->dispatch_priv);
+	if (vut->k_arg > 0)
+		vut->k_arg--;
+	if (i >= 0 && vut->k_arg == 0)
 		return (-1);	/* End of file */
 	return (i);
 }
@@ -116,7 +116,7 @@ VUT_Error(int status, const char *fmt, ...)
 }
 
 int
-VUT_Arg(int opt, const char *arg)
+VUT_Arg(struct VUT *vut, int opt, const char *arg)
 {
 	int i;
 	char *p;
@@ -124,86 +124,90 @@ VUT_Arg(int opt, const char *arg)
 	switch (opt) {
 	case 'd':
 		/* Head */
-		VUT.d_opt = 1;
+		vut->d_opt = 1;
 		return (1);
 	case 'D':
 		/* Daemon mode */
-		VUT.D_opt = 1;
+		vut->D_opt = 1;
 		return (1);
 	case 'g':
 		/* Grouping */
 		AN(arg);
-		VUT.g_arg = VSLQ_Name2Grouping(arg, -1);
-		if (VUT.g_arg == -2)
+		vut->g_arg = VSLQ_Name2Grouping(arg, -1);
+		if (vut->g_arg == -2)
 			VUT_Error(1, "Ambiguous grouping type: %s", arg);
-		else if (VUT.g_arg < 0)
+		else if (vut->g_arg < 0)
 			VUT_Error(1, "Unknown grouping type: %s", arg);
 		return (1);
 	case 'k':
 		/* Log transaction limit */
 		AN(arg);
-		VUT.k_arg = (int)strtol(arg, &p, 10);
-		if (*p != '\0' || VUT.k_arg <= 0)
+		vut->k_arg = (int)strtol(arg, &p, 10);
+		if (*p != '\0' || vut->k_arg <= 0)
 			VUT_Error(1, "-k: Invalid number '%s'", arg);
 		return (1);
 	case 'n':
 		/* Varnish instance name */
 		AN(arg);
-		REPLACE(VUT.n_arg, arg);
+		REPLACE(vut->n_arg, arg);
 		return (1);
 	case 'P':
 		/* PID file */
 		AN(arg);
-		REPLACE(VUT.P_arg, arg);
+		REPLACE(vut->P_arg, arg);
 		return (1);
 	case 'q':
 		/* Query to use */
 		AN(arg);
-		REPLACE(VUT.q_arg, arg);
+		REPLACE(vut->q_arg, arg);
 		return (1);
 	case 'r':
 		/* Binary file input */
 		AN(arg);
-		REPLACE(VUT.r_arg, arg);
+		REPLACE(vut->r_arg, arg);
 		return (1);
 	case 't':
 		/* VSM connect timeout */
-		REPLACE(VUT.t_arg, arg);
+		REPLACE(vut->t_arg, arg);
 		return (1);
 	case 'V':
 		/* Print version number and exit */
-		VCS_Message(VUT.progname);
+		VCS_Message(vut->progname);
 		exit(0);
 	default:
-		AN(VUT.vsl);
-		i = VSL_Arg(VUT.vsl, opt, arg);
+		AN(vut->vsl);
+		i = VSL_Arg(vut->vsl, opt, arg);
 		if (i < 0)
-			VUT_Error(1, "%s", VSL_Error(VUT.vsl));
+			VUT_Error(1, "%s", VSL_Error(vut->vsl));
 		return (i);
 	}
 }
 
-void
+struct VUT *
 VUT_Init(const char *progname, int argc, char * const *argv,
     const struct vopt_spec *voc)
 {
+	struct VUT *vut;
 
 	AN(progname);
 	AN(argv);
 	AN(voc);
-	AZ(VUT.progname);
+
+	vut = calloc(1, sizeof *vut);
+	AN(vut);
 
 	if (argc == 2 && !strcmp(argv[1], "--synopsis"))
 		exit(vut_synopsis(voc));
 	if (argc == 2 && !strcmp(argv[1], "--options"))
 		exit(vut_options(voc));
 
-	VUT.progname = progname;
-	VUT.g_arg = VSL_g_vxid;
-	AZ(VUT.vsl);
-	VUT.vsl = VSL_New();
-	AN(VUT.vsl);
-	VUT.k_arg = -1;
+	vut->progname = progname;
+	vut->g_arg = VSL_g_vxid;
+	AZ(vut->vsl);
+	vut->vsl = VSL_New();
+	AN(vut->vsl);
+	vut->k_arg = -1;
+	return (vut);
 }
 
 void
@@ -228,59 +232,60 @@ VUT_Signaled(struct VUT *vut, int sig)
 }
 
 void
-VUT_Setup(void)
+VUT_Setup(struct VUT *vut)
 {
 	struct VSL_cursor *c;
 
-	AN(VUT.vsl);
-	AZ(VUT.vsm);
-	AZ(VUT.vslq);
+	AN(vut);
+	AN(vut->vsl);
+	AZ(vut->vsm);
+	AZ(vut->vslq);
 
 	/* Check input arguments (2 used for bug in FlexeLint) */
-	if ((VUT.n_arg == NULL ? 0 : 2) +
-	    (VUT.r_arg == NULL ? 0 : 2) > 2)
+	if ((vut->n_arg == NULL ? 0 : 2) +
+	    (vut->r_arg == NULL ? 0 : 2) > 2)
 		VUT_Error(1, "Only one of -n and -r options may be used");
 
 	/* Create and validate the query expression */
-	VUT.vslq = VSLQ_New(VUT.vsl, NULL, VUT.g_arg, VUT.q_arg);
-	if (VUT.vslq == NULL)
+	vut->vslq = VSLQ_New(vut->vsl, NULL, vut->g_arg, vut->q_arg);
+	if (vut->vslq == NULL)
 		VUT_Error(1, "Query expression error:\n%s",
-		    VSL_Error(VUT.vsl));
+		    VSL_Error(vut->vsl));
 
 	/* Setup input */
-	if (VUT.r_arg) {
-		c = VSL_CursorFile(VUT.vsl, VUT.r_arg, 0);
+	if (vut->r_arg) {
+		c = VSL_CursorFile(vut->vsl, vut->r_arg, 0);
 		if (c == NULL)
-			VUT_Error(1, "%s", VSL_Error(VUT.vsl));
-		VSLQ_SetCursor(VUT.vslq, &c);
+			VUT_Error(1, "%s", VSL_Error(vut->vsl));
+		VSLQ_SetCursor(vut->vslq, &c);
 		AZ(c);
 	} else {
-		VUT.vsm = VSM_New();
-		AN(VUT.vsm);
-		if (VUT.n_arg && VSM_Arg(VUT.vsm, 'n', VUT.n_arg) <= 0)
-			VUT_Error(1, "%s", VSM_Error(VUT.vsm));
-		if (VUT.t_arg && VSM_Arg(VUT.vsm, 't', VUT.t_arg) <= 0)
-			VUT_Error(1, "%s", VSM_Error(VUT.vsm));
-		if (VSM_Attach(VUT.vsm, STDERR_FILENO))
-			VUT_Error(1, "VSM: %s", VSM_Error(VUT.vsm));
+		vut->vsm = VSM_New();
+		AN(vut->vsm);
+		if (vut->n_arg && VSM_Arg(vut->vsm, 'n', vut->n_arg) <= 0)
+			VUT_Error(1, "%s", VSM_Error(vut->vsm));
+		if (vut->t_arg && VSM_Arg(vut->vsm, 't', vut->t_arg) <= 0)
+			VUT_Error(1, "%s", VSM_Error(vut->vsm));
+		if (VSM_Attach(vut->vsm, STDERR_FILENO))
+			VUT_Error(1, "VSM: %s", VSM_Error(vut->vsm));
 		// Cursor is handled in VUT_Main()
 	}
 
 	/* Open PID file */
-	if (VUT.P_arg) {
+	if (vut->P_arg) {
 		if (pfh != NULL)
 			VUT_Error(1, "PID file already created");
-		pfh = VPF_Open(VUT.P_arg, 0644, NULL);
+		pfh = VPF_Open(vut->P_arg, 0644, NULL);
 		if (pfh == NULL)
-			VUT_Error(1, "%s: %s", VUT.P_arg, strerror(errno));
+			VUT_Error(1, "%s: %s", vut->P_arg, strerror(errno));
 	}
 
 	/* Daemon mode */
-	if (VUT.D_opt && vut_daemon() == -1)
+	if (vut->D_opt && vut_daemon() == -1)
 		VUT_Error(1, "Daemon mode: %s", strerror(errno));
 
 	/* Write PID and setup exit handler */
-	if (VUT.P_arg) {
+	if (vut->P_arg) {
 		AN(pfh);
 		AZ(VPF_Write(pfh));
 		AZ(atexit(vut_vpf_remove));
@@ -288,89 +293,98 @@ VUT_Setup(void)
 }
 
 void
-VUT_Fini(void)
+VUT_Fini(struct VUT **vutp)
 {
-	AN(VUT.progname);
+	struct VUT *vut;
 
-	free(VUT.n_arg);
-	free(VUT.P_arg);
-	free(VUT.q_arg);
-	free(VUT.r_arg);
-	free(VUT.t_arg);
+	AN(vutp);
+	vut = *vutp;
+	*vutp = NULL;
+
+	AN(vut);
+	AN(vut->progname);
+
+	free(vut->n_arg);
+	free(vut->P_arg);
+	free(vut->q_arg);
+	free(vut->r_arg);
+	free(vut->t_arg);
 
 	vut_vpf_remove();
 	AZ(pfh);
 
-	if (VUT.vslq)
-		VSLQ_Delete(&VUT.vslq);
-	if (VUT.vsl)
-		VSL_Delete(VUT.vsl);
-	if (VUT.vsm)
-		VSM_Destroy(&VUT.vsm);
+	if (vut->vslq)
+		VSLQ_Delete(&vut->vslq);
+	if (vut->vsl)
+		VSL_Delete(vut->vsl);
+	if (vut->vsm)
+		VSM_Destroy(&vut->vsm);
 
-	memset(&VUT, 0, sizeof VUT);
+	memset(vut, 0, sizeof *vut);
+	free(vut);
 }
 
 int
-VUT_Main(void)
+VUT_Main(struct VUT *vut)
 {
 	struct VSL_cursor *c;
 	int i = -1;
 	int hascursor = -1;
 
-	AN(VUT.vslq);
+	AN(vut);
+	AN(vut->vslq);
 
-	while (!VUT.sigint) {
-		if (VUT.sighup && VUT.sighup_f) {
+	while (!vut->sigint) {
+		if (vut->sighup && vut->sighup_f) {
 			/* sighup callback */
-			VUT.sighup = 0;
-			i = VUT.sighup_f(&VUT);
+			vut->sighup = 0;
+			i = vut->sighup_f(vut);
 			if (i)
 				break;
 		}
 
-		if (VUT.sigusr1) {
+		if (vut->sigusr1) {
 			/* Flush and report any incomplete records */
-			VUT.sigusr1 = 0;
-			(void)VSLQ_Flush(VUT.vslq, vut_dispatch, NULL);
+			vut->sigusr1 = 0;
+			(void)VSLQ_Flush(vut->vslq, vut_dispatch, vut);
 		}
 
 		// We must repeatedly call VSM_Status() when !hascursor
 		// to make VSM discover our segment.
-		if (VUT.vsm != NULL &&
-		    (VSM_Status(VUT.vsm) & VSM_WRK_RESTARTED)) {
+		if (vut->vsm != NULL &&
+		    (VSM_Status(vut->vsm) & VSM_WRK_RESTARTED)) {
 			if (hascursor < 1) {
 				fprintf(stderr, "Log abandonned\n");
-				VSLQ_SetCursor(VUT.vslq, NULL);
+				VSLQ_SetCursor(vut->vslq, NULL);
 				hascursor = 0;
 			}
 		}
-		if (VUT.vsm != NULL && hascursor < 1) {
+		if (vut->vsm != NULL && hascursor < 1) {
 			/* Reconnect VSM */
-			AZ(VUT.r_arg);
+			AZ(vut->r_arg);
 			VTIM_sleep(0.1);
-			c = VSL_CursorVSM(VUT.vsl, VUT.vsm,
-			    (VUT.d_opt ? VSL_COPT_TAILSTOP : VSL_COPT_TAIL)
+			c = VSL_CursorVSM(vut->vsl, vut->vsm,
+			    (vut->d_opt ? VSL_COPT_TAILSTOP : VSL_COPT_TAIL)
 			    | VSL_COPT_BATCH);
 			if (c == NULL) {
-				VSL_ResetError(VUT.vsl);
+				VSL_ResetError(vut->vsl);
 				continue;
 			}
 			if (hascursor >= 0)
 				fprintf(stderr, "Log reacquired\n");
 			hascursor = 1;
-			VSLQ_SetCursor(VUT.vslq, &c);
+			VSLQ_SetCursor(vut->vslq, &c);
 			AZ(c);
 		}
 
-		i = VSLQ_Dispatch(VUT.vslq, vut_dispatch, NULL);
+		i = VSLQ_Dispatch(vut->vslq, vut_dispatch, vut);
 		if (i == 1)
 			/* Call again */
 			continue;
 		else if (i == 0) {
 			/* Nothing to do but wait */
-			if (VUT.idle_f) {
-				i = VUT.idle_f(&VUT);
+			if (vut->idle_f) {
+				i = vut->idle_f(vut);
 				if (i)
 					break;
 			}
@@ -381,17 +395,17 @@ VUT_Main(void)
 			break;
 		}
 
-		if (VUT.vsm == NULL)
+		if (vut->vsm == NULL)
 			break;
 
 		/* XXX: Make continuation optional */
 
-		(void)VSLQ_Flush(VUT.vslq, vut_dispatch, NULL);
+		(void)VSLQ_Flush(vut->vslq, vut_dispatch, vut);
 
 		if (i == -2) {
 			/* Abandoned */
 			fprintf(stderr, "Log abandoned\n");
-			VSLQ_SetCursor(VUT.vslq, NULL);
+			VSLQ_SetCursor(vut->vslq, NULL);
 			hascursor = 0;
 		} else if (i < -2)
 			/* Overrun */

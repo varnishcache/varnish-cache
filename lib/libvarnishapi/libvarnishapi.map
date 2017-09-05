@@ -127,7 +127,6 @@ LIBVARNISHAPI_2.0 {
 		VTIM_timeval;
 
 	# vut.c
-		VUT;
 		VUT_Arg;
 		VUT_Error;
 		VUT_Fini;
