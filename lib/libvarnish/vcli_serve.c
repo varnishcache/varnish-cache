@@ -607,9 +607,7 @@ VCLS_Destroy(struct VCLS **csp)
 	struct VCLS_fd *cfd, *cfd2;
 	struct cli_proto *clp;
 
-	cs = *csp;
-	*csp = NULL;
-	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	TAKE_OBJ_NOTNULL(cs, csp, VCLS_MAGIC);
 	VTAILQ_FOREACH_SAFE(cfd, &cs->fds, list, cfd2)
 		cls_close_fd(cs, cfd);
 

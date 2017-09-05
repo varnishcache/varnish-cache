@@ -237,11 +237,7 @@ VSM_Destroy(struct vsm **vdp)
 {
 	struct vsm *vd;
 
-	AN(vdp);
-	vd = *vdp;
-	*vdp = NULL;
-
-	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
+	TAKE_OBJ_NOTNULL(vd, vdp, VSM_MAGIC);
 
 	if (vd->vsc != NULL)
 		VSC_Delete(vd->vsc);
