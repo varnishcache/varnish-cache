@@ -469,16 +469,6 @@ vcc_ParseBackend(struct vcc *tl)
 	vcc_ExpectVid(tl, "backend");	/* ID: name */
 	ERRCHK(tl);
 
-	/* XXX: lift this limit once VSM ident becomes dynamic */
-	if (tl->t->e - tl->t->b > MAX_BACKEND_NAME) {
-		VSB_printf(tl->sb,
-		    "Name of %.*s too long (max %d, is %zu):\n",
-		    PF(t_first), MAX_BACKEND_NAME,
-		    (size_t)(tl->t->e - tl->t->b));
-		vcc_ErrWhere(tl, tl->t);
-		return;
-	}
-
 	t_be = tl->t;
 	vcc_NextToken(tl);
 

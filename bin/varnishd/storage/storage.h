@@ -119,7 +119,7 @@ struct stevedore {
 	void			*priv;
 
 	VTAILQ_ENTRY(stevedore)	list;
-	char			ident[16];	/* XXX: match VSM_chunk.ident */
+	char			*ident;
 	char			*vclname;
 };
 
