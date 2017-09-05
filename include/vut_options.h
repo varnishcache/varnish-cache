@@ -29,14 +29,24 @@
 
 /* VUT options */
 
+#define VUT_GLOBAL_OPT_D						\
+	VOPT("D", "[-D]", "Daemonize",					\
+	    "Daemonize."						\
+	)
+
+#define VUT_GLOBAL_OPT_P						\
+	VOPT("P:", "[-P <file>]", "PID file",				\
+		"Write the process' PID to the specified file."		\
+	)
+
+#define VUT_GLOBAL_OPT_V						\
+	VOPT("V", "[-V]", "Version",					\
+	    "Print version information and exit."			\
+	)
+
 #define VUT_OPT_d							\
 	VOPT("d", "[-d]", "Process old log entries and exit",		\
 	    "Process log records at the head of the log and exit."	\
-	)
-
-#define VUT_OPT_D							\
-	VOPT("D", "[-D]", "Daemonize",					\
-	    "Daemonize."						\
 	)
 
 #define VUT_OPT_g							\
@@ -63,11 +73,6 @@
 	    " the host name is used."					\
 	)
 
-#define VUT_OPT_P							\
-	VOPT("P:", "[-P <file>]", "PID file",				\
-		"Write the process' PID to the specified file."		\
-	)
-
 #define VUT_OPT_q							\
 	VOPT("q:", "[-q <query>]", "VSL query",				\
 		"Specifies the VSL query to use."			\
@@ -89,9 +94,4 @@
 	    " fail, allowing the utility to start and wait"		\
 	    " indefinetely for the Varnish instance to appear. "	\
 	    " Defaults to 5 seconds."					\
-	)
-
-#define VUT_OPT_V							\
-	VOPT("V", "[-V]", "Version",					\
-	    "Print version information and exit."			\
 	)
