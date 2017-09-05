@@ -301,11 +301,7 @@ VSMW_Destroy(struct vsmw **pp)
 	struct vsmw *vsmw;
 	struct vsmwseg *seg, *s2;
 
-	AN(pp);
-	AN(*pp);
-	vsmw = *pp;
-	*pp = NULL;
-	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
+	TAKE_OBJ_NOTNULL(vsmw, pp, VSMW_MAGIC);
 	AZ(unlinkat(vsmw->vdirfd, vsmw->idx, 0));
 	REPLACE(vsmw->idx, NULL);
 	VTAILQ_FOREACH_SAFE(seg, &vsmw->segs, list, s2)

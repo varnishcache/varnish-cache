@@ -397,10 +397,7 @@ VGZ_Destroy(struct vgz **vgp)
 	enum vgzret_e vr;
 	int i;
 
-	vg = *vgp;
-	CHECK_OBJ_NOTNULL(vg, VGZ_MAGIC);
-	*vgp = NULL;
-
+	TAKE_OBJ_NOTNULL(vg, vgp, VGZ_MAGIC);
 	AN(vg->id);
 	VSLb(vg->vsl, SLT_Gzip, "%s %jd %jd %jd %jd %jd",
 	    vg->id,
