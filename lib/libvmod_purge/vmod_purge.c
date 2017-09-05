@@ -49,8 +49,6 @@ vmod_soft(VRT_CTX, VCL_DURATION ttl, VCL_DURATION grace, VCL_DURATION keep)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (ttl < 0)
-		ttl = NAN;
 	if (grace < 0)
 		grace = NAN;
 	if (keep < 0)
