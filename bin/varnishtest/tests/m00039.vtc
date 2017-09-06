@@ -150,7 +150,7 @@ varnish v1 -vcl {
 	    set resp.http.decemptypieces =
 	      blob.encode(IDENTITY,
 			      blob.decode(URL, req.http.unset + ""
-					           + req.http.unset + ""));
+						   + req.http.unset + ""));
 
 	    set req.http.part1 = "foo%";
 	    set resp.http.dec2pieces =
@@ -235,11 +235,11 @@ varnish v1 -vcl+backend {
 		}
 		elsif (req.url == "/percent-two") {
 			set resp.http.bad = blob.encode(URLUC,
-				            blob.decode(URL, "%2"));
+					    blob.decode(URL, "%2"));
 		}
 		elsif (req.url == "/percent-q") {
 			set resp.http.bad = blob.encode(URLUC,
-				            blob.decode(URL, "%q"));
+					    blob.decode(URL, "%q"));
 		}
 		elsif (req.url == "/percent-two-q") {
 			set resp.http.bad = blob.encode(URLUC,
