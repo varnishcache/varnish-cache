@@ -333,38 +333,38 @@ varnish v1 -vcl+backend {
 		elsif (req.url == "/3") {
 			set resp.http.bad
 			    = blob.transcode_n(8, HEX, IDENTITY,
-				                   "0x123456");
+						   "0x123456");
 		}
 		elsif (req.url == "/4") {
 			set resp.http.bad
 			    = blob.transcode_n(4, BASE64, IDENTITY,
-				                   "-_-_" + req.http.foo);
+						   "-_-_" + req.http.foo);
 		}
 		elsif (req.url == "/5") {
 			set resp.http.bad
 			    = blob.transcode_n(4, BASE64URL, IDENTITY,
-				                   "+/+/" + req.http.foo);
+						   "+/+/" + req.http.foo);
 		}
 		elsif (req.url == "/6") {
 			set resp.http.bad
 			    = blob.transcode_n(8, BASE64URLNOPAD, IDENTITY,
-				                   "TWFu" + req.http.foo);
+						   "TWFu" + req.http.foo);
 		}
 		elsif (req.url == "/7") {
 			set resp.http.bad
 			    = blob.transcode_n(4, BASE64, BASE64,
-				                   "_-_-" + req.http.foo);
+						   "_-_-" + req.http.foo);
 		}
 		elsif (req.url == "/8") {
 			set resp.http.bad
 			    = blob.transcode_n(4, BASE64URL, BASE64URL,
-				                   "/+/+" + req.http.foo);
+						   "/+/+" + req.http.foo);
 		}
 		elsif (req.url == "/9") {
 			set resp.http.bad
 			    = blob.transcode_n(8, BASE64URLNOPAD,
-				                   BASE64URLNOPAD,
-				                   "Zm9v" + req.http.foo);
+						   BASE64URLNOPAD,
+						   "Zm9v" + req.http.foo);
 		}
 		elsif (req.url == "/10") {
 			set resp.http.bad

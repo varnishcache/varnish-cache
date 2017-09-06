@@ -45,11 +45,11 @@ varnish v1 -vcl {
 
 	    set resp.http.b64decall =
 	       blob.encode(HEXLC, blob.decode_n(128, BASE64,
-					                req.http.all));
+							req.http.all));
 
 	    set resp.http.urldechobbes =
 	      blob.encode(IDENTITY, blob.decode_n(180, BASE64URL,
-						          req.http.hobbes));
+							  req.http.hobbes));
 
 	    set resp.http.urldecall =
 	      blob.encode(HEXLC,
@@ -76,7 +76,7 @@ varnish v1 -vcl {
 	    set resp.http.emptypieces =
 	      blob.encode(IDENTITY,
 	      blob.decode_n(0, BASE64, req.http.unset + "" + req.http.unset
-				           + "" + req.http.unset + ""));
+					   + "" + req.http.unset + ""));
 
 	    set resp.http.decenc
 	      = blob.encode(BASE64,

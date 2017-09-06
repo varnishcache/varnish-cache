@@ -346,12 +346,12 @@ varnish v1 -vcl+backend {
 		elsif (req.url == "/6") {
 			set resp.http.bad
 			    = blob.transcode(BASE64URL, BASE64URL,
-				                 "/+/+" + req.http.foo);
+						 "/+/+" + req.http.foo);
 		}
 		elsif (req.url == "/7") {
 			set resp.http.bad
 			    = blob.transcode(BASE64URLNOPAD, BASE64URLNOPAD,
-				                 "Zm9v" + req.http.foo);
+						 "Zm9v" + req.http.foo);
 		}
 		elsif (req.url == "/8") {
 			set resp.http.bad

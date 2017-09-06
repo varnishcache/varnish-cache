@@ -82,13 +82,13 @@ varnish v1 -vcl {
 	    set resp.http.decemptypieces =
 	      blob.encode(IDENTITY,
 			      blob.decode_n(1, URL, req.http.unset + ""
-					                + req.http.unset + ""));
+							+ req.http.unset + ""));
 
 	    set req.http.part1 = "foo%";
 	    set resp.http.dec2pieces =
 	      blob.encode(IDENTITY,
 			      blob.decode_n(6, URL, req.http.part1 +
-				                        "20bar%20baz%20quux"));
+							"20bar%20baz%20quux"));
 
 	    set req.http.part2 = "0quux";
 	    set resp.http.dec3param =
@@ -150,19 +150,19 @@ varnish v1 -vcl+backend {
 	sub vcl_deliver {
 		if (req.url == "/percent") {
 			set resp.http.bad = blob.encode(URLUC,
-				            blob.decode_n(1, URL, "%20"));
+					    blob.decode_n(1, URL, "%20"));
 		}
 		elsif (req.url == "/percent-two") {
 			set resp.http.bad = blob.encode(URLUC,
-				            blob.decode_n(2, URL, "%20"));
+					    blob.decode_n(2, URL, "%20"));
 		}
 		elsif (req.url == "/comma") {
 			set resp.http.good = blob.encode(IDENTITY,
-				            blob.decode_n(3, URL, "%2c%q"));
+					    blob.decode_n(3, URL, "%2c%q"));
 		}
 		elsif (req.url == "/colon") {
 			set resp.http.good = blob.encode(IDENTITY,
-				           blob.decode_n(3, URL, "%3a%2q"));
+					   blob.decode_n(3, URL, "%3a%2q"));
 		}
 	}
 }
