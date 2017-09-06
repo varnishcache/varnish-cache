@@ -14,7 +14,6 @@ libvarnishapi_la_LDFLAGS = $(AM_LDFLAGS) -version-info 1:6:0
 libvarnishapi_la_SOURCES = \
 	vjsn.c \
 	vjsn.h \
-	vsc_priv.h \
 	vsl_api.h \
 	vxp.h \
 	vxp_tokens.h \

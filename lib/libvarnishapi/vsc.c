@@ -51,8 +51,6 @@
 #include "vapi/vsc.h"
 #include "vapi/vsm.h"
 
-#include "vsc_priv.h"
-
 struct vsc_sf {
 	unsigned		magic;
 #define VSC_SF_MAGIC		0x558478dd
@@ -65,6 +63,7 @@ struct vsc {
 	unsigned		magic;
 #define VSC_MAGIC		0x3373554a
 
+	struct vsm		*vsm;
 	struct vsc_sf_head	sf_list_include;
 	struct vsc_sf_head	sf_list_exclude;
 };
@@ -116,20 +115,18 @@ VSC_Destroy_Point(struct VSC_point **p)
 
 /*--------------------------------------------------------------------*/
 
-static struct vsc *
-vsc_setup(struct vsm *vd)
+struct vsc *
+VSC_New(struct vsm *vsm)
 {
 	struct vsc *vsc;
 
-	vsc = VSM_GetVSC(vd);
-	if (vsc == NULL) {
-		ALLOC_OBJ(vsc, VSC_MAGIC);
-		AN(vsc);
-		VTAILQ_INIT(&vsc->sf_list_include);
-		VTAILQ_INIT(&vsc->sf_list_exclude);
-		VSM_SetVSC(vd, vsc);
-	}
-	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
+	AN(vsm);
+	ALLOC_OBJ(vsc, VSC_MAGIC);
+	if (vsc == NULL)
+		return (vsc);
+	vsc->vsm = vsm;
+	VTAILQ_INIT(&vsc->sf_list_include);
+	VTAILQ_INIT(&vsc->sf_list_exclude);
 	return (vsc);
 }
 
@@ -150,10 +147,11 @@ vsc_delete_sf_list(struct vsc_sf_head *head)
 }
 
 void
-VSC_Delete(struct vsc *vsc)
+VSC_Destroy(struct vsc **vscp)
 {
+	struct vsc *vsc;
 
-	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
+	TAKE_OBJ_NOTNULL(vsc, vscp, VSC_MAGIC);
 	vsc_delete_sf_list(&vsc->sf_list_include);
 	vsc_delete_sf_list(&vsc->sf_list_exclude);
 	FREE_OBJ(vsc);
@@ -162,13 +160,11 @@ VSC_Delete(struct vsc *vsc)
 /*--------------------------------------------------------------------*/
 
 static int
-vsc_f_arg(struct vsm *vd, const char *opt)
+vsc_f_arg(struct vsc *vsc, const char *opt)
 {
-	struct vsc *vsc = vsc_setup(vd);
 	struct vsc_sf *sf;
 	unsigned exclude = 0;
 
-	AN(vd);
 	AN(opt);
 
 	ALLOC_OBJ(sf, VSC_SF_MAGIC);
@@ -193,14 +189,16 @@ vsc_f_arg(struct vsm *vd, const char *opt)
 /*--------------------------------------------------------------------*/
 
 int
-VSC_Arg(struct vsm *vd, char arg, const char *opt)
+VSC_Arg(struct vsc *vsc, char arg, const char *opt)
 {
 
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
+
 	switch (arg) {
-	case 'f': return (vsc_f_arg(vd, opt));
+	case 'f': return (vsc_f_arg(vsc, opt));
 	case 'n':
 	case 't':
-		return (VSM_Arg(vd, arg, opt));
+		return (VSM_Arg(vsc->vsm, arg, opt));
 	default:
 		return (0);
 	}
@@ -210,11 +208,11 @@ VSC_Arg(struct vsm *vd, char arg, const char *opt)
  */
 
 static int
-vsc_filter(struct vsm *vd, const char *nm)
+vsc_filter(const struct vsc *vsc, const char *nm)
 {
-	struct vsc *vsc = vsc_setup(vd);
 	struct vsc_sf *sf;
 
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 	VTAILQ_FOREACH(sf, &vsc->sf_list_exclude, list)
 		if (!fnmatch(sf->pattern, nm, 0))
 			return (1);
@@ -230,12 +228,13 @@ vsc_filter(struct vsm *vd, const char *nm)
  */
 
 static int
-vsc_iter_elem(struct vsm *vd, const struct vsm_fantom *fantom,
+vsc_iter_elem(const struct vsc *vsc, const struct vsm_fantom *fantom,
     const struct vjsn_val *vv, struct vsb *vsb, VSC_iter_f *func, void *priv)
 {
 	struct VSC_point	point;
 	struct vjsn_val *vt;
 
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 	memset(&point, 0, sizeof point);
 
 	vt = vjsn_child(vv, "name");
@@ -246,7 +245,7 @@ vsc_iter_elem(struct vsm *vd, const struct vsm_fantom *fantom,
 	VSB_printf(vsb, "%s.%s", fantom->ident, vt->value);
 	AZ(VSB_finish(vsb));
 
-	if (vsc_filter(vd, VSB_data(vsb)))
+	if (vsc_filter(vsc, VSB_data(vsb)))
 		return (0);
 
 	point.name = VSB_data(vsb);
@@ -315,7 +314,7 @@ vsc_iter_elem(struct vsm *vd, const struct vsm_fantom *fantom,
 }
 
 static int
-vsc_iter_fantom(struct vsm *vd, const struct vsm_fantom *fantom,
+vsc_iter_fantom(const struct vsc *vsc, const struct vsm_fantom *fantom,
     struct vsb *vsb, VSC_iter_f *func, void *priv)
 {
 	int i = 0;
@@ -323,6 +322,8 @@ vsc_iter_fantom(struct vsm *vd, const struct vsm_fantom *fantom,
 	const char *e;
 	struct vjsn *vj;
 	struct vjsn_val *vv, *vve;
+
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 
 	p = (char*)fantom->b + 8 + vbe64dec(fantom->b);
 	assert (p < (char*)fantom->e);
@@ -332,7 +333,7 @@ vsc_iter_fantom(struct vsm *vd, const struct vsm_fantom *fantom,
 	vve = vjsn_child(vj->value, "elem");
 	AN(vve);
 	VTAILQ_FOREACH(vv, &vve->children, list) {
-		i = vsc_iter_elem(vd, fantom, vv, vsb, func, priv);
+		i = vsc_iter_elem(vsc, fantom, vv, vsb, func, priv);
 		if (i)
 			break;
 	}
@@ -343,21 +344,21 @@ vsc_iter_fantom(struct vsm *vd, const struct vsm_fantom *fantom,
 /*--------------------------------------------------------------------
  */
 
-int
-VSC_Iter(struct vsm *vd, struct vsm_fantom *fantom, VSC_iter_f *func,
-    void *priv)
+int __match_proto__()	// We don't want vsc to be const
+VSC_Iter(struct vsc *vsc, struct vsm_fantom *f, VSC_iter_f *func, void *priv)
 {
 	struct vsm_fantom	ifantom;
 	uint64_t u;
 	int i = 0;
 	struct vsb *vsb;
 
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 	vsb = VSB_new_auto();
 	AN(vsb);
-	VSM_FOREACH(&ifantom, vd) {
+	VSM_FOREACH(&ifantom, vsc->vsm) {
 		if (strcmp(ifantom.class, VSC_CLASS))
 			continue;
-		AZ(VSM_Map(vd, &ifantom));
+		AZ(VSM_Map(vsc->vsm, &ifantom));
 		u = vbe64dec(ifantom.b);
 		if (u == 0) {
 			VRMB();
@@ -365,11 +366,12 @@ VSC_Iter(struct vsm *vd, struct vsm_fantom *fantom, VSC_iter_f *func,
 			u = vbe64dec(ifantom.b);
 		}
 		assert(u > 0);
-		if (fantom != NULL)
-			*fantom = ifantom;
-		i = vsc_iter_fantom(vd, &ifantom, vsb, func, priv);
-		if (fantom == NULL)
-			AZ(VSM_Unmap(vd, &ifantom));
+		i = vsc_iter_fantom(vsc, &ifantom, vsb, func, priv);
+		if (f != NULL) {
+			*f = ifantom;
+		} else {
+			AZ(VSM_Unmap(vsc->vsm, &ifantom));
+		}
 		if (i)
 			break;
 	}

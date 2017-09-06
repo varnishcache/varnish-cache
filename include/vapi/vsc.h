@@ -38,13 +38,17 @@
 #include "vapi/vsc_int.h"
 
 struct vsm;
+struct vsc;
 struct vsm_fantom;
 
 /*---------------------------------------------------------------------
  * VSC level access functions
  */
 
-int VSC_Arg(struct vsm *vd, char arg, const char *opt);
+struct vsc *VSC_New(struct vsm *);
+void VSC_Destroy(struct vsc **);
+
+int VSC_Arg(struct vsc *, char arg, const char *opt);
 	/*
 	 * Handle standard stat-presenter arguments
 	 * Return:
@@ -80,8 +84,7 @@ void VSC_Destroy_Point(struct VSC_point **);
 
 typedef int VSC_iter_f(void *priv, const struct VSC_point *const pt);
 
-int VSC_Iter(struct vsm *vd, struct vsm_fantom *fantom, VSC_iter_f *func,
-    void *priv);
+int VSC_Iter(struct vsc *, struct vsm_fantom *, VSC_iter_f *func, void *priv);
 	/*
 	 * Iterate over all statistics counters, calling "func" for
 	 * each counter not suppressed by any "-f" arguments.

@@ -78,6 +78,7 @@ struct varnish {
 
 	struct vsm		*vsm_vsl;
 	struct vsm		*vsm_vsc;
+	struct vsc		*vsc;
 	int			has_a_arg;
 
 	unsigned		vsl_tag_count[256];
@@ -521,7 +522,10 @@ varnish_launch(struct varnish *v)
 	free(r);
 
 	v->vsm_vsc = VSM_New();
-	(void)VSM_Arg(v->vsm_vsc, 'n', v->workdir);
+	AN(v->vsm_vsc);
+	v->vsc = VSC_New(v->vsm_vsc);
+	AN(v->vsc);
+	(void)VSC_Arg(v->vsc, 'n', v->workdir);
 	AZ(VSM_Attach(v->vsm_vsc, -1));
 
 	v->vsm_vsl = VSM_New();
@@ -846,7 +850,7 @@ varnish_vsc(const struct varnish *v, const char *arg)
 	dp.arg = arg;
 	(void)VSM_Status(v->vsm_vsc);
 
-	(void)VSC_Iter(v->vsm_vsc, NULL, do_stat_dump_cb, &dp);
+	(void)VSC_Iter(v->vsc, NULL, do_stat_dump_cb, &dp);
 }
 
 /**********************************************************************
@@ -912,7 +916,7 @@ varnish_expect(const struct varnish *v, char * const *av)
 	for (i = 0; i < 50; i++, (void)usleep(100000)) {
 		(void)VSM_Status(v->vsm_vsc);
 
-		good = VSC_Iter(v->vsm_vsc, NULL, do_expect_cb, &sp);
+		good = VSC_Iter(v->vsc, NULL, do_expect_cb, &sp);
 		if (!good) {
 			good = -2;
 			continue;
