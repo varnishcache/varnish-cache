@@ -52,7 +52,6 @@
 #include "vin.h"
 #include "vsb.h"
 #include "vsm_priv.h"
-#include "vsc_priv.h"
 #include "vqueue.h"
 #include "vtim.h"
 
@@ -115,7 +114,6 @@ struct vsm {
 	struct stat		dst;
 	char			*dname;
 
-	struct vsc		*vsc;
 	struct vsm_set		*mgt;
 	struct vsm_set		*child;
 
@@ -239,8 +237,6 @@ VSM_Destroy(struct vsm **vdp)
 
 	TAKE_OBJ_NOTNULL(vd, vdp, VSM_MAGIC);
 
-	if (vd->vsc != NULL)
-		VSC_Delete(vd->vsc);
 	VSM_ResetError(vd);
 	free(vd->dname);
 	vsm_delset(&vd->mgt);
@@ -248,24 +244,6 @@ VSM_Destroy(struct vsm **vdp)
 	if (vd->dfd >= 0)
 		closefd(&vd->dfd);
 	FREE_OBJ(vd);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-VSM_SetVSC(struct vsm *vd, struct vsc *vsc)
-{
-	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-
-	vd->vsc = vsc;
-}
-
-struct vsc *
-VSM_GetVSC(const struct vsm *vd)
-{
-	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
-
-	return (vd->vsc);
 }
 
 /*--------------------------------------------------------------------*/
