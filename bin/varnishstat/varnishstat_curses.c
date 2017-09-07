@@ -255,7 +255,7 @@ struct pt_priv {
 	unsigned		n_ptlist;
 };
 
-static int
+static int __match_proto__(VSC_iter_f)
 build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 {
 	struct pt_priv *pt_priv;

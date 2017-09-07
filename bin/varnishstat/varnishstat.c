@@ -52,7 +52,7 @@ static const char progname[] = "varnishstat";
 
 /*--------------------------------------------------------------------*/
 
-static int
+static int __match_proto__(VSC_iter_f)
 do_xml_cb(void *priv, const struct VSC_point * const pt)
 {
 	uint64_t val;
@@ -90,7 +90,7 @@ do_xml(struct vsm *vsm, struct vsc *vsc)
 
 /*--------------------------------------------------------------------*/
 
-static int
+static int __match_proto__(VSC_iter_f)
 do_json_cb(void *priv, const struct VSC_point * const pt)
 {
 	uint64_t val;
@@ -149,7 +149,7 @@ struct once_priv {
 	int pad;
 };
 
-static int
+static int __match_proto__(VSC_iter_f)
 do_once_cb_first(void *priv, const struct VSC_point * const pt)
 {
 	struct once_priv *op;
@@ -166,7 +166,7 @@ do_once_cb_first(void *priv, const struct VSC_point * const pt)
 	return (1);
 }
 
-static int
+static int __match_proto__(VSC_iter_f)
 do_once_cb(void *priv, const struct VSC_point * const pt)
 {
 	struct once_priv *op;
@@ -207,7 +207,7 @@ do_once(struct vsm *vsm, struct vsc *vsc)
 
 /*--------------------------------------------------------------------*/
 
-static int
+static int __match_proto__(VSC_iter_f)
 do_list_cb(void *priv, const struct VSC_point * const pt)
 {
 	int i;
