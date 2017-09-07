@@ -839,10 +839,8 @@ main(int argc, char * const *argv)
 
 	mgt_SHM_Init();
 
-	VJ_master(JAIL_MASTER_FILE);
 	mgt_SHM_static_alloc(i_arg, strlen(i_arg) + 1L, "Arg", "-i");
 	VSC_C_mgt = VSC_mgt_New("");
-	VJ_master(JAIL_MASTER_LOW);
 
 	if (M_arg != NULL)
 		mgt_cli_master(M_arg);

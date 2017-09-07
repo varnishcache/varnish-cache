@@ -166,7 +166,6 @@ void mgt_SHM_static_alloc(const void *, ssize_t size,
 void mgt_SHM_Create(void);
 void mgt_SHM_Destroy(int keep);
 
-extern struct vsmw *mgt_vsmw;
 void mgt_SHM_ChildNew(void);
 void mgt_SHM_ChildDestroy(void);
 

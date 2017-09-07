@@ -47,7 +47,7 @@
 #include "vsm_priv.h"
 #include "vsmw.h"
 
-struct vsmw	*mgt_vsmw;
+static struct vsmw *mgt_vsmw;
 
 /*--------------------------------------------------------------------
  */
@@ -90,13 +90,16 @@ mgt_shm_atexit(void)
 void
 mgt_SHM_Init(void)
 {
+	int fd;
 
 	VJ_master(JAIL_MASTER_FILE);
 	AZ(system("rm -rf " VSM_MGT_DIRNAME));
 	AZ(mkdir(VSM_MGT_DIRNAME, 0755));
-	mgt_vsmw = VSMW_New(open(VSM_MGT_DIRNAME, O_RDONLY), 0640, "_.index");
-	AN(mgt_vsmw);
+	fd = open(VSM_MGT_DIRNAME, O_RDONLY);
+	VJ_fix_vsm_dir(fd);
 	VJ_master(JAIL_MASTER_LOW);
+	mgt_vsmw = VSMW_New(fd, 0640, "_.index");
+	AN(mgt_vsmw);
 
 	proc_vsmw = mgt_vsmw;
 
@@ -119,7 +122,6 @@ mgt_SHM_ChildNew(void)
 
 	MCH_Fd_Inherit(heritage.vsm_fd, "VSMW");
 
-	VJ_master(JAIL_MASTER_FILE);
 	heritage.param = VSMW_Allocf(mgt_vsmw, VSM_CLASS_PARAM,
 	    sizeof *heritage.param, "");
 	AN(heritage.param);
@@ -129,7 +131,6 @@ mgt_SHM_ChildNew(void)
 	heritage.panic_str = VSMW_Allocf(mgt_vsmw, "Panic",
 	    heritage.panic_str_len, "");
 	AN(heritage.panic_str);
-	VJ_master(JAIL_MASTER_LOW);
 }
 
 void
