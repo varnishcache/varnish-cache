@@ -82,10 +82,11 @@ struct VSC_point *VSC_Clone_Point(const struct VSC_point * const);
 
 void VSC_Destroy_Point(struct VSC_point **);
 
+typedef void *VSC_new_f(void *priv, const struct VSC_point *const pt);
 typedef int VSC_iter_f(void *priv, const struct VSC_point *const pt);
+typedef int VSC_destroy_f(void *priv, const struct VSC_point *const pt);
 
-int VSC_Iter(struct vsc *, struct vsm *, struct vsm_fantom *,
-    VSC_iter_f *func, void *priv);
+int VSC_Iter(struct vsc *, struct vsm *, VSC_new_f *, VSC_iter_f *, VSC_destroy_f *, void *priv);
 	/*
 	 * Iterate over all statistics counters, calling "func" for
 	 * each counter not suppressed by any "-f" arguments.
