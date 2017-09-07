@@ -849,8 +849,7 @@ varnish_vsc(const struct varnish *v, const char *arg)
 	dp.v = v;
 	dp.arg = arg;
 	(void)VSM_Status(v->vsm_vsc);
-
-	(void)VSC_Iter(v->vsc, v->vsm_vsc, NULL, do_stat_dump_cb, &dp);
+	(void)VSC_Iter(v->vsc, v->vsm_vsc, NULL, do_stat_dump_cb, NULL, &dp);
 }
 
 /**********************************************************************
@@ -915,8 +914,8 @@ varnish_expect(const struct varnish *v, char * const *av)
 	good = 0;
 	for (i = 0; i < 50; i++, (void)usleep(100000)) {
 		(void)VSM_Status(v->vsm_vsc);
-
-		good = VSC_Iter(v->vsc, v->vsm_vsc, NULL, do_expect_cb, &sp);
+		good = VSC_Iter(v->vsc, v->vsm_vsc,
+		    NULL, do_expect_cb, NULL, &sp);
 		if (!good) {
 			good = -2;
 			continue;
