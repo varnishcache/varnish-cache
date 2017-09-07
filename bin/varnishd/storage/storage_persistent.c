@@ -72,7 +72,7 @@ static VTAILQ_HEAD(,smp_sc)	silos = VTAILQ_HEAD_INITIALIZER(silos);
  */
 
 static int
-smp_appendban(struct smp_sc *sc, struct smp_signspace *spc,
+smp_appendban(const struct smp_sc *sc, struct smp_signspace *spc,
     uint32_t len, const uint8_t *ban)
 {
 
@@ -135,7 +135,7 @@ smp_banexport(const struct stevedore *stv, const uint8_t *bans, unsigned len)
  */
 
 static int
-smp_open_bans(struct smp_sc *sc, struct smp_signspace *spc)
+smp_open_bans(const struct smp_sc *sc, struct smp_signspace *spc)
 {
 	uint8_t *ptr, *pe;
 	int i;
@@ -630,7 +630,7 @@ debug_report_silo(struct cli *cli, const struct smp_sc *sc)
 	}
 }
 
-static void
+static void __match_proto__(cli_func_t)
 debug_persistent(struct cli *cli, const char * const * av, void *priv)
 {
 	struct smp_sc *sc;

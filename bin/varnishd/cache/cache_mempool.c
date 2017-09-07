@@ -337,7 +337,7 @@ MPL_Free(struct mempool *mpl, void *item)
 }
 
 void
-MPL_AssertSane(void *item)
+MPL_AssertSane(const void *item)
 {
 	struct memitem *mi;
 	mi = (void*)((uintptr_t)item - sizeof(*mi));

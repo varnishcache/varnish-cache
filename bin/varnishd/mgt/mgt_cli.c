@@ -69,7 +69,7 @@ static const char	*secret_file;
 
 /*--------------------------------------------------------------------*/
 
-static void
+static void __match_proto__(cli_func_t)
 mcf_banner(struct cli *cli, const char *const *av, void *priv)
 {
 
@@ -97,7 +97,7 @@ static struct cli_proto cli_proto[] = {
 
 /*--------------------------------------------------------------------*/
 
-static void
+static void __match_proto__(cli_func_t)
 mcf_panic(struct cli *cli, const char * const *av, void *priv)
 {
 
@@ -114,7 +114,7 @@ static struct cli_proto cli_debug[] = {
 
 /*--------------------------------------------------------------------*/
 
-static void
+static void __match_proto__(cli_func_t)
 mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 {
 	int i;
@@ -596,7 +596,7 @@ static double M_poll = 0.1;
 static VTAILQ_HEAD(,m_addr)	m_addr_list =
     VTAILQ_HEAD_INITIALIZER(m_addr_list);
 
-static void
+static void __match_proto__(mgt_cli_close_f)
 Marg_closer(void *priv)
 {
 

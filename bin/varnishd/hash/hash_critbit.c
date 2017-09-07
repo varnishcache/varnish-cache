@@ -128,7 +128,7 @@ hcb_is_y(uintptr_t u)
 }
 
 static uintptr_t
-hcb_r_node(struct objhead *n)
+hcb_r_node(const struct objhead *n)
 {
 
 	AZ((uintptr_t)n & (HCB_BIT_NODE | HCB_BIT_Y));
@@ -145,7 +145,7 @@ hcb_l_node(uintptr_t u)
 }
 
 static uintptr_t
-hcb_r_y(struct hcb_y *y)
+hcb_r_y(const struct hcb_y *y)
 {
 
 	CHECK_OBJ_NOTNULL(y, HCB_Y_MAGIC);
@@ -273,7 +273,7 @@ hcb_insert(struct worker *wrk, struct hcb_root *root, const uint8_t *digest,
 /*--------------------------------------------------------------------*/
 
 static void
-hcb_delete(struct hcb_root *r, struct objhead *oh)
+hcb_delete(struct hcb_root *r, const struct objhead *oh)
 {
 	struct hcb_y *y;
 	volatile uintptr_t *p;

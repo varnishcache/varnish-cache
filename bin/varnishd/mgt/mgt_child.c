@@ -209,7 +209,7 @@ MCH_Fd_Inherit(int fd, const char *what)
  * Listen to stdout+stderr from the child
  */
 
-static int
+static int __match_proto__(vlu_f)
 child_line(void *priv, const char *p)
 {
 	(void)priv;
@@ -686,7 +686,7 @@ mch_cli_server_stop(struct cli *cli, const char * const *av, void *priv)
 	}
 }
 
-static void
+static void __match_proto__(cli_func_t)
 mch_cli_server_status(struct cli *cli, const char * const *av, void *priv)
 {
 	(void)av;

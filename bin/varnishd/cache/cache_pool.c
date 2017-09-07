@@ -178,7 +178,7 @@ pool_mkpool(unsigned pool_no)
  * NB: be maintained for params which require action.
  */
 
-static void *
+static void * __match_proto__()
 pool_poolherder(void *priv)
 {
 	unsigned nwq;

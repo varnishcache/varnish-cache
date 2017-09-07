@@ -223,7 +223,7 @@ VFP_Push(struct vfp_ctx *vc, const struct vfp *vfp, int top)
  * Debugging aids
  */
 
-static void
+static void __match_proto__(cli_func_t)
 debug_fragfetch(struct cli *cli, const char * const *av, void *priv)
 {
 	(void)priv;
