@@ -33,7 +33,6 @@
 #endif
 #define COMMON_COMMON_H
 
-#include <stdarg.h>
 #include <stdint.h>
 
 #include <sys/types.h>
