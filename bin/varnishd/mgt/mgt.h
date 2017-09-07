@@ -33,8 +33,6 @@
 #endif
 #define MGT_MGT_H
 
-#include <stdio.h>
-
 #include "common/common.h"
 #include "common/com_params.h"
 

@@ -38,6 +38,7 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <signal.h>
+#include <stdio.h>
 #include <string.h>
 #include <syslog.h>
 #include <unistd.h>
