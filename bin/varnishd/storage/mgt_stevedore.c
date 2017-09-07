@@ -88,7 +88,7 @@ static struct cli_proto cli_stv[] = {
 /*--------------------------------------------------------------------
  */
 
-static void
+static void __match_proto__(storage_init_f)
 smp_fake_init(struct stevedore *parent, int ac, char * const *av)
 {
 

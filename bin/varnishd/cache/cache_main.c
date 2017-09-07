@@ -154,7 +154,7 @@ VXID_Get(struct worker *wrk, uint32_t mask)
  * Dumb down the VXID allocation to make it predictable for
  * varnishtest cases
  */
-static void
+static void __match_proto__(cli_func_t)
 cli_debug_xid(struct cli *cli, const char * const *av, void *priv)
 {
 	(void)priv;

@@ -366,7 +366,7 @@ do_list(struct cli *cli, struct backend *b, void *priv)
 	return (0);
 }
 
-static void
+static void __match_proto__(cli_func_t)
 cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 {
 	int probes = 0;
@@ -412,7 +412,7 @@ do_set_health(struct cli *cli, struct backend *b, void *priv)
 	return (0);
 }
 
-static void
+static void __match_proto__()
 cli_backend_set_health(struct cli *cli, const char * const *av, void *priv)
 {
 	const char *ah;

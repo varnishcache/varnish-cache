@@ -849,7 +849,7 @@ void Lck_DestroyClass(struct VSC_lck **vsclck);
 #include "tbl/locks.h"
 
 /* cache_mempool.c */
-void MPL_AssertSane(void *item);
+void MPL_AssertSane(const void *item);
 struct mempool * MPL_New(const char *name, volatile struct poolparam *pp,
     volatile unsigned *cur_size);
 void MPL_Destroy(struct mempool **mpp);

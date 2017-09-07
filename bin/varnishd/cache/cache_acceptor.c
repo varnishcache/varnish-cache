@@ -517,7 +517,7 @@ VCA_DestroyPool(struct pool *pp)
 
 /*--------------------------------------------------------------------*/
 
-static void *
+static void * __match_proto__()
 vca_acct(void *arg)
 {
 	struct listen_sock *ls;
@@ -573,7 +573,7 @@ vca_acct(void *arg)
 
 /*--------------------------------------------------------------------*/
 
-static void
+static void __match_proto__(cli_func_t)
 ccf_start(struct cli *cli, const char * const *av, void *priv)
 {
 
@@ -586,7 +586,7 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static void
+static void __match_proto__(cli_func_t)
 ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 {
 	struct listen_sock *ls;

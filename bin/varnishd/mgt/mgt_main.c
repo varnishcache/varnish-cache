@@ -173,7 +173,7 @@ cli_check(const struct cli *cli)
  * This function is called when the CLI on stdin is closed.
  */
 
-static void
+static void __match_proto__(mgt_cli_close_f)
 mgt_stdin_close(void *priv)
 {
 
@@ -423,7 +423,7 @@ mgt_uptime(const struct vev *e, int what)
 
 /*--------------------------------------------------------------------*/
 
-static void
+static void __match_proto__(mgt_cli_close_f)
 mgt_I_close(void *priv)
 {
 	(void)priv;
