@@ -191,7 +191,7 @@ static struct cli_proto debug_cmds[] = {
  * XXX: Think more about which order we start things
  */
 
-#if defined(__FreeBSD__) && __FreeBSD__version >= 1000000
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1000000
 static void
 child_malloc_fail(void *p, const char *s)
 {
@@ -208,7 +208,7 @@ child_main(void)
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
 	printf("Child starts\n");
-#if defined(__FreeBSD__) && __FreeBSD__version >= 1000000
+#if defined(__FreeBSD__) && __FreeBSD_version >= 1000000
 	malloc_message = child_malloc_fail;
 #endif
 
