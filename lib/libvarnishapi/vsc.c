@@ -63,7 +63,6 @@ struct vsc {
 	unsigned		magic;
 #define VSC_MAGIC		0x3373554a
 
-	struct vsm		*vsm;
 	struct vsc_sf_head	sf_list_include;
 	struct vsc_sf_head	sf_list_exclude;
 };
@@ -116,15 +115,13 @@ VSC_Destroy_Point(struct VSC_point **p)
 /*--------------------------------------------------------------------*/
 
 struct vsc *
-VSC_New(struct vsm *vsm)
+VSC_New(void)
 {
 	struct vsc *vsc;
 
-	AN(vsm);
 	ALLOC_OBJ(vsc, VSC_MAGIC);
 	if (vsc == NULL)
 		return (vsc);
-	vsc->vsm = vsm;
 	VTAILQ_INIT(&vsc->sf_list_include);
 	VTAILQ_INIT(&vsc->sf_list_exclude);
 	return (vsc);
@@ -196,11 +193,7 @@ VSC_Arg(struct vsc *vsc, char arg, const char *opt)
 
 	switch (arg) {
 	case 'f': return (vsc_f_arg(vsc, opt));
-	case 'n':
-	case 't':
-		return (VSM_Arg(vsc->vsm, arg, opt));
-	default:
-		return (0);
+	default: return (0);
 	}
 }
 
@@ -345,7 +338,8 @@ vsc_iter_fantom(const struct vsc *vsc, const struct vsm_fantom *fantom,
  */
 
 int __match_proto__()	// We don't want vsc to be const
-VSC_Iter(struct vsc *vsc, struct vsm_fantom *f, VSC_iter_f *func, void *priv)
+VSC_Iter(struct vsc *vsc, struct vsm *vsm, struct vsm_fantom *f,
+    VSC_iter_f *func, void *priv)
 {
 	struct vsm_fantom	ifantom;
 	uint64_t u;
@@ -353,12 +347,13 @@ VSC_Iter(struct vsc *vsc, struct vsm_fantom *f, VSC_iter_f *func, void *priv)
 	struct vsb *vsb;
 
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
+	AN(vsm);
 	vsb = VSB_new_auto();
 	AN(vsb);
-	VSM_FOREACH(&ifantom, vsc->vsm) {
+	VSM_FOREACH(&ifantom, vsm) {
 		if (strcmp(ifantom.class, VSC_CLASS))
 			continue;
-		AZ(VSM_Map(vsc->vsm, &ifantom));
+		AZ(VSM_Map(vsm, &ifantom));
 		u = vbe64dec(ifantom.b);
 		if (u == 0) {
 			VRMB();
@@ -370,7 +365,7 @@ VSC_Iter(struct vsc *vsc, struct vsm_fantom *f, VSC_iter_f *func, void *priv)
 		if (f != NULL) {
 			*f = ifantom;
 		} else {
-			AZ(VSM_Unmap(vsc->vsm, &ifantom));
+			AZ(VSM_Unmap(vsm, &ifantom));
 		}
 		if (i)
 			break;

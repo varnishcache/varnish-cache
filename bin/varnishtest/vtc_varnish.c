@@ -523,13 +523,13 @@ varnish_launch(struct varnish *v)
 
 	v->vsm_vsc = VSM_New();
 	AN(v->vsm_vsc);
-	v->vsc = VSC_New(v->vsm_vsc);
+	v->vsc = VSC_New();
 	AN(v->vsc);
-	(void)VSC_Arg(v->vsc, 'n', v->workdir);
+	assert(VSM_Arg(v->vsm_vsc, 'n', v->workdir) > 0);
 	AZ(VSM_Attach(v->vsm_vsc, -1));
 
 	v->vsm_vsl = VSM_New();
-	(void)VSM_Arg(v->vsm_vsl, 'n', v->workdir);
+	assert(VSM_Arg(v->vsm_vsl, 'n', v->workdir) > 0);
 	AZ(VSM_Attach(v->vsm_vsl, -1));
 
 	AZ(pthread_create(&v->tp_vsl, NULL, varnishlog_thread, v));
@@ -850,7 +850,7 @@ varnish_vsc(const struct varnish *v, const char *arg)
 	dp.arg = arg;
 	(void)VSM_Status(v->vsm_vsc);
 
-	(void)VSC_Iter(v->vsc, NULL, do_stat_dump_cb, &dp);
+	(void)VSC_Iter(v->vsc, v->vsm_vsc, NULL, do_stat_dump_cb, &dp);
 }
 
 /**********************************************************************
@@ -916,7 +916,7 @@ varnish_expect(const struct varnish *v, char * const *av)
 	for (i = 0; i < 50; i++, (void)usleep(100000)) {
 		(void)VSM_Status(v->vsm_vsc);
 
-		good = VSC_Iter(v->vsc, NULL, do_expect_cb, &sp);
+		good = VSC_Iter(v->vsc, v->vsm_vsc, NULL, do_expect_cb, &sp);
 		if (!good) {
 			good = -2;
 			continue;
