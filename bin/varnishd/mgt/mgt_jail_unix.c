@@ -167,8 +167,10 @@ vju_init(char **args)
 
 	vju_mgr_gid = getgid();
 
-	if (vju_wrkuser == NULL)
-		(void)vju_getwrkuid(VCACHE_USER);
+	if (vju_wrkuser == NULL && vju_getwrkuid(VCACHE_USER)) {
+		vju_wrkuid = vju_uid;
+		vju_wrkgid = vju_gid;
+	}
 
 	if (vju_wrkuser != NULL && vju_wrkgid != vju_gid)
 		ARGV_ERR("Unix jail: user %s and %s have "
@@ -257,7 +259,7 @@ vju_vsm_dir(int fd)
 	/* Called under JAIL_MASTER_FILE */
 
 	AZ(fchmod(fd, 0750));
-	AZ(fchown(fd, vju_wrkuid, vju_gid));
+	AZ(fchown(fd, vju_wrkuid, vju_wrkgid));
 }
 
 static void __match_proto__(jail_fixfile_f)
