@@ -45,7 +45,7 @@ struct vsm_fantom;
  * VSC level access functions
  */
 
-struct vsc *VSC_New(struct vsm *);
+struct vsc *VSC_New(void);
 void VSC_Destroy(struct vsc **);
 
 int VSC_Arg(struct vsc *, char arg, const char *opt);
@@ -84,7 +84,8 @@ void VSC_Destroy_Point(struct VSC_point **);
 
 typedef int VSC_iter_f(void *priv, const struct VSC_point *const pt);
 
-int VSC_Iter(struct vsc *, struct vsm_fantom *, VSC_iter_f *func, void *priv);
+int VSC_Iter(struct vsc *, struct vsm *, struct vsm_fantom *,
+    VSC_iter_f *func, void *priv);
 	/*
 	 * Iterate over all statistics counters, calling "func" for
 	 * each counter not suppressed by any "-f" arguments.

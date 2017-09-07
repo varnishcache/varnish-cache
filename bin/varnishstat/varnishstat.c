@@ -74,7 +74,7 @@ do_xml_cb(void *priv, const struct VSC_point * const pt)
 }
 
 static void
-do_xml(struct vsc *vsc)
+do_xml(struct vsm *vsm, struct vsc *vsc)
 {
 	char time_stamp[20];
 	time_t now;
@@ -83,7 +83,7 @@ do_xml(struct vsc *vsc)
 	now = time(NULL);
 	(void)strftime(time_stamp, 20, "%Y-%m-%dT%H:%M:%S", localtime(&now));
 	printf("<varnishstat timestamp=\"%s\">\n", time_stamp);
-	(void)VSC_Iter(vsc, NULL, do_xml_cb, NULL);
+	(void)VSC_Iter(vsc, vsm, NULL, do_xml_cb, NULL);
 	printf("</varnishstat>\n");
 }
 
@@ -124,7 +124,7 @@ do_json_cb(void *priv, const struct VSC_point * const pt)
 }
 
 static void
-do_json(struct vsc *vsc)
+do_json(struct vsm *vsm, struct vsc *vsc)
 {
 	char time_stamp[20];
 	time_t now;
@@ -137,7 +137,7 @@ do_json(struct vsc *vsc)
 
 	(void)strftime(time_stamp, 20, "%Y-%m-%dT%H:%M:%S", localtime(&now));
 	printf("  \"timestamp\": \"%s\",\n", time_stamp);
-	(void)VSC_Iter(vsc, NULL, do_json_cb, &jp);
+	(void)VSC_Iter(vsc, vsm, NULL, do_json_cb, &jp);
 	printf("\n}\n");
 }
 
@@ -194,15 +194,15 @@ do_once_cb(void *priv, const struct VSC_point * const pt)
 }
 
 static void
-do_once(struct vsc *vsc)
+do_once(struct vsm *vsm, struct vsc *vsc)
 {
 	struct once_priv op;
 
 	memset(&op, 0, sizeof op);
 	op.pad = 18;
 
-	(void)VSC_Iter(vsc, NULL, do_once_cb_first, &op);
-	(void)VSC_Iter(vsc, NULL, do_once_cb, &op);
+	(void)VSC_Iter(vsc, vsm, NULL, do_once_cb_first, &op);
+	(void)VSC_Iter(vsc, vsm, NULL, do_once_cb, &op);
 }
 
 /*--------------------------------------------------------------------*/
@@ -226,13 +226,13 @@ do_list_cb(void *priv, const struct VSC_point * const pt)
 }
 
 static void
-list_fields(struct vsc *vsc)
+list_fields(struct vsm *vsm, struct vsc *vsc)
 {
 	printf("Varnishstat -f option fields:\n");
 	printf("Field name                     Description\n");
 	printf("----------                     -----------\n");
 
-	(void)VSC_Iter(vsc, NULL, do_list_cb, NULL);
+	(void)VSC_Iter(vsc, vsm, NULL, do_list_cb, NULL);
 }
 
 /*--------------------------------------------------------------------*/
@@ -261,7 +261,7 @@ main(int argc, char * const *argv)
 	VUT_Init(progname, argc, argv, &vopt_spec);
 	vd = VSM_New();
 	AN(vd);
-	vsc = VSC_New(vd);
+	vsc = VSC_New();
 	AN(vsc);
 
 	while ((opt = getopt(argc, argv, vopt_spec.vopt_optstring)) != -1) {
@@ -284,8 +284,11 @@ main(int argc, char * const *argv)
 		case 'j':
 			json = 1;
 			break;
+		case 'f':
+			AN(VSC_Arg(vsc, opt, optarg));
+			break;
 		default:
-			i = VSC_Arg(vsc, opt, optarg);
+			i = VSM_Arg(vd, opt, optarg);
 			if (i < 0)
 				VUT_Error(1, "%s", VSM_Error(vd));
 			if (!i)
@@ -305,13 +308,13 @@ main(int argc, char * const *argv)
 	if (curses)
 		do_curses(vd, vsc, 1.0);
 	else if (xml)
-		do_xml(vsc);
+		do_xml(vd, vsc);
 	else if (json)
-		do_json(vsc);
+		do_json(vd, vsc);
 	else if (once)
-		do_once(vsc);
+		do_once(vd, vsc);
 	else if (f_list)
-		list_fields(vsc);
+		list_fields(vd, vsc);
 	else
 		assert(0);
 

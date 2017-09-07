@@ -313,7 +313,7 @@ build_pt_list_cb(void *priv, const struct VSC_point *vpt)
 }
 
 static void
-build_pt_list(struct vsc *vsc, struct vsm_fantom *fantom)
+build_pt_list(struct vsc *vsc, struct vsm *vsm, struct vsm_fantom *fantom)
 {
 	struct pt_priv pt_priv;
 	int i;
@@ -334,7 +334,7 @@ build_pt_list(struct vsc *vsc, struct vsm_fantom *fantom)
 	main_cache_hit = NULL;
 	main_cache_miss = NULL;
 
-	(void)VSC_Iter(vsc, fantom, build_pt_list_cb, &pt_priv);
+	(void)VSC_Iter(vsc, vsm, fantom, build_pt_list_cb, &pt_priv);
 	delete_pt_list();
 	AN(VTAILQ_EMPTY(&ptlist));
 	AZ(n_ptlist);
@@ -1073,7 +1073,7 @@ do_curses(struct vsm *vd, struct vsc *vsc, double delay)
 		    (VSM_Status(vd) & (VSM_MGT_CHANGED|VSM_WRK_CHANGED))) {
 			init_hitrate();
 			delete_pt_list();
-			build_pt_list(vsc, &f_iter);
+			build_pt_list(vsc, vd, &f_iter);
 			initial = 0;
 		}
 
