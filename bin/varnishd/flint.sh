@@ -3,9 +3,9 @@
 FLOPS='
 	-I../../lib/libvgz
 	-DVARNISHD_IS_NOT_A_VMOD
-	-DVARNISH_STATE_DIR=\"foo\"
-	-DVARNISH_VMOD_DIR=\"foo\"
-	-DVARNISH_VCL_DIR=\"foo\"
+	-DVARNISH_STATE_DIR="foo"
+	-DVARNISH_VMOD_DIR="foo"
+	-DVARNISH_VCL_DIR="foo"
 	cache/*.c
 	common/*.c
 	hash/*.c
