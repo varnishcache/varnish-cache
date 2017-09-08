@@ -6,25 +6,19 @@ Varnish uses shared memory to export parameters, logging and
 statistics, because it is faster and much more efficient than
 regular files.
 
-"Varnish Shared Memory" or VSM, is the overall mechanism, which
-manages a number of allocated "chunks" inside the same shared
-memory file.
-
-Each Chunk is just a slap of memory, which has
-a three-part name (class, type, ident) and a length.
+"Varnish Shared Memory" or VSM, is the overall mechanism maintaining
+sets of shared memory files, each consisting a chunk of memory
+identified by a two-part name (class, ident).
 
 The Class indicates what type of data is stored in the chunk,
 for instance "Arg" for command line arguments useful for
 establishing an CLI connection to the varnishd, "Stat" for
 statistics counters (VSC) and "Log" for log records (VSL).
 
-The type and ident name parts are mostly used with stats
-counters, where they identify dynamic counters, such as:
+The ident name part is mostly used with stats counters, where they
+identify dynamic counters, such as:
 
 	SMA.Transient.c_bytes
-
-The size of the VSM is a parameter, but changes only take
-effect when the child process is restarted.
 
 Shared memory trickery
 ----------------------
@@ -67,13 +61,14 @@ off" period.
 The Varnish way:
 ----------------
 
-If varnishd starts, and finds a locked shared memory file, it will
-exit with a message about using different -n arguments if you want
-multiple instances of varnishd.
+.. XXX: not yet up to date with VSM new world order
 
-Otherwise, it will create a new shared memory file each time it
-starts a child process, since that marks a clean break in operation
-anyway.
+When varnishd starts, it opens locked shared memory files, advising to
+use different -n arguments if an attempt is made to run multiple
+varnishd instances with the same name.
+
+Child processes each use their own shared memory files, since a worker
+process restart marks a clean break in operation anyway.
 
 To the extent possible, old shared memory files are marked as
 abandoned by setting the alloc_seq field to zero, which should be
@@ -107,17 +102,17 @@ VSM and Containers
 ------------------
 
 The varnish way works great with single purpose containers. By sharing
-the varnish working directory read-only, vsm clients can be run in
+the varnish working directory read-only, vsm readers can be run in
 containers separate from those running varnishd instances on the same
 host.
 
-When running varnishd and vsm clients in the same process namespace,
-pid information can be used by vsm clients to determine if varnishd
+When running varnishd and vsm readers in the same process namespace,
+pid information can be used by vsm readers to determine if varnishd
 processes are alive.
 
-But, when running varnishd and vsm clients in different containers,
+But, when running varnishd and vsm readers in different containers,
 the pid information has no relevance and may even be ambiguous across
 name spaces.
 
 Thus, with such setups, the environment variable VSM_NOPID needs to be
-set for vsm clients to disable use of pid information.
+set for vsm readers to disable use of pid information.
