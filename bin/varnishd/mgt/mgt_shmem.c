@@ -96,7 +96,7 @@ mgt_SHM_Init(void)
 	AZ(system("rm -rf " VSM_MGT_DIRNAME));
 	AZ(mkdir(VSM_MGT_DIRNAME, 0755));
 	fd = open(VSM_MGT_DIRNAME, O_RDONLY);
-	VJ_fix_vsm_dir(fd);
+	VJ_fix_fd(fd, JAIL_FIXFD_VSMMGT);
 	VJ_master(JAIL_MASTER_LOW);
 	mgt_vsmw = VSMW_New(fd, 0640, "_.index");
 	AN(mgt_vsmw);
@@ -117,7 +117,7 @@ mgt_SHM_ChildNew(void)
 
 	heritage.vsm_fd = open(VSM_CHILD_DIRNAME, O_RDONLY);
 	assert(heritage.vsm_fd >= 0);
-	VJ_fix_vsm_dir(heritage.vsm_fd);
+	VJ_fix_fd(heritage.vsm_fd, JAIL_FIXFD_VSMWRK);
 	VJ_master(JAIL_MASTER_LOW);
 
 	MCH_Fd_Inherit(heritage.vsm_fd, "VSMW");
