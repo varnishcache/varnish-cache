@@ -1041,7 +1041,7 @@ do_curses(struct vsm *vsm, struct vsc *vsc, double delay)
 			break;
 		}
 	}
-	VSC_Destroy(&vsc);
+	VSC_Destroy(&vsc, vsm);
 	AN(VTAILQ_EMPTY(&ptlist));
 	VSM_Destroy(&vsm);
 	AZ(endwin());

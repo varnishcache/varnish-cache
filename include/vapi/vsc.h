@@ -103,7 +103,7 @@ struct vsc *VSC_New(void);
 	 * Create a new VSC instance
 	 */
 
-void VSC_Destroy(struct vsc **);
+void VSC_Destroy(struct vsc **, struct vsm *);
 	/*
 	 * Destroy a VSC instance
 	 *
