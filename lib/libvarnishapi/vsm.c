@@ -191,6 +191,8 @@ VSM_New(void)
 	vd->child = vsm_newset(VSM_CHILD_DIRNAME);
 	vd->dfd = -1;
 	vd->patience = 5;
+	if (getenv("VSM_NOPID") != NULL)
+		vd->couldkill = -1;
 	return (vd);
 }
 
@@ -350,7 +352,7 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 	}
 
 	if (vs->fd >= 0) {
-		if (!vd->couldkill || !kill(vs->id1, 0))
+		if (vd->couldkill < 1 || !kill(vs->id1, 0))
 			retval |= VSM_MGT_RUNNING;
 		return (retval);
 	}
@@ -385,9 +387,9 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 		retval |= VSM_MGT_RESTARTED | VSM_MGT_CHANGED;
 		return (retval);
 	}
-	if (!kill(id1, 0)) {
+	if (vd->couldkill >= 0 && !kill(id1, 0)) {
 		vd->couldkill = 1;
-	} else if (vd->couldkill && errno == ESRCH) {
+	} else if (vd->couldkill > 0 && errno == ESRCH) {
 		retval |= VSM_MGT_RESTARTED | VSM_MGT_CHANGED;
 		return (retval);
 	}
