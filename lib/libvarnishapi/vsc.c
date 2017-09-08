@@ -69,7 +69,7 @@ struct vsc_seg {
 #define VSC_SEG_MAGIC		0x801177d4
 	VTAILQ_ENTRY(vsc_seg)	list;
 	struct vsm_fantom	fantom[1];
-	struct vjsn 		*vj;
+	struct vjsn		*vj;
 	unsigned		npoints;
 	struct vsc_pt		*points;
 };
@@ -81,6 +81,10 @@ struct vsc {
 	struct vsc_sf_head	sf_list_include;
 	struct vsc_sf_head	sf_list_exclude;
 	VTAILQ_HEAD(,vsc_seg)	segs;
+
+	VSC_new_f		*fnew;
+	VSC_destroy_f		*fdestroy;
+	void			*priv;
 };
 
 /*--------------------------------------------------------------------
@@ -98,34 +102,6 @@ static const struct VSC_level_desc * const levels[] = {
 };
 
 static const size_t nlevels = sizeof(levels)/sizeof(*levels);
-
-/*--------------------------------------------------------------------*/
-
-struct VSC_point *
-VSC_Clone_Point(const struct VSC_point * const vp)
-{
-	struct VSC_point *pt;
-	char *p;
-
-	pt = calloc(sizeof *pt, 1);
-	AN(pt);
-	*pt = *vp;
-	p = strdup(pt->name); AN(p); pt->name = p;
-	p = strdup(pt->sdesc); AN(p); pt->sdesc = p;
-	p = strdup(pt->ldesc); AN(p); pt->ldesc = p;
-	return (pt);
-}
-
-void
-VSC_Destroy_Point(struct VSC_point **p)
-{
-	AN(p);
-	free(TRUST_ME((*p)->ldesc));
-	free(TRUST_ME((*p)->sdesc));
-	free(TRUST_ME((*p)->name));
-	free(*p);
-	*p = NULL;
-}
 
 /*--------------------------------------------------------------------*/
 
@@ -211,6 +187,18 @@ VSC_Arg(struct vsc *vsc, char arg, const char *opt)
 	case 'f': return (vsc_f_arg(vsc, opt));
 	default: return (0);
 	}
+}
+
+/*--------------------------------------------------------------------
+ */
+void
+VSC_State(struct vsc *vsc, VSC_new_f *fn, VSC_destroy_f *fd, void *priv)
+{
+
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
+	vsc->fnew = fn;
+	vsc->fdestroy = fd;
+	vsc->priv = priv;
 }
 
 /*--------------------------------------------------------------------
@@ -329,16 +317,22 @@ vsc_fill_point(const struct vsc *vsc, const struct vsm_fantom *fantom,
 }
 
 static void
-vsc_del_seg(struct vsm *vsm, struct vsc_seg *sp)
+vsc_del_seg(const struct vsc *vsc, struct vsm *vsm, struct vsc_seg *sp)
 {
 	unsigned u;
+	struct vsc_pt *pp;
 
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 	AN(vsm);
 	CHECK_OBJ_NOTNULL(sp, VSC_SEG_MAGIC);
 	AZ(VSM_Unmap(vsm, sp->fantom));
 	vjsn_delete(&sp->vj);
-	for(u = 0; u < sp->npoints; u++)
-		vsc_clean_point(&sp->points[u]);
+	pp = sp->points;
+	for(u = 0; u < sp->npoints; u++, pp++) {
+		if (vsc->fdestroy != NULL)
+			vsc->fdestroy(vsc->priv, &pp->point);
+		vsc_clean_point(pp);
+	}
 	free(sp->points);
 	FREE_OBJ(sp);
 }
@@ -348,11 +342,11 @@ vsc_add_seg(const struct vsc *vsc, struct vsm *vsm, const struct vsm_fantom *fp)
 {
 	struct vsc_seg *sp;
 	uint64_t u;
-	unsigned j;
 	const char *p;
 	const char *e;
 	struct vjsn_val *vv, *vve;
 	struct vsb *vsb;
+	struct vsc_pt *pp;
 
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 	AN(vsm);
@@ -380,37 +374,41 @@ vsc_add_seg(const struct vsc *vsc, struct vsm *vsm, const struct vsm_fantom *fp)
 	AN(sp->points);
 	vsb = VSB_new_auto();
 	AN(vsb);
-	j = 0;
 	vve = vjsn_child(sp->vj->value, "elem");
 	AN(vve);
-	VTAILQ_FOREACH(vv, &vve->children, list)
-		(void)vsc_fill_point(vsc, sp->fantom, vv, vsb, sp->points + j++);
+	pp = sp->points;
+	VTAILQ_FOREACH(vv, &vve->children, list) {
+		if (vsc_fill_point(vsc, sp->fantom, vv, vsb, pp) &&
+			vsc->fnew != NULL)
+			pp->point.priv = vsc->fnew(vsc->priv, &pp->point);
+		pp++;
+	}
 	VSB_destroy(&vsb);
 	AN(sp->vj);
 	return (sp);
 }
 
 static int
-vsc_iter_seg(const struct vsc_seg *sp, VSC_iter_f *fiter, void *priv)
+vsc_iter_seg(const struct vsc *vsc, const struct vsc_seg *sp,
+    VSC_iter_f *fiter, void *priv)
 {
 	unsigned u;
 	int i = 0;
+	struct vsc_pt *pp;
 
+	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 	CHECK_OBJ_NOTNULL(sp, VSC_SEG_MAGIC);
 	AN(fiter);
-	for(u = 0; u < sp->npoints; u++) {
-		if (sp->points[u].name != NULL) {
-			i = fiter(priv, &sp->points[u].point);
-			if (i)
-				break;
-		}
+	pp = sp->points;
+	for(u = 0; u < sp->npoints && i == 0; u++, pp++) {
+		if (pp->name != NULL)
+			i = fiter(priv, &pp->point);
 	}
 	return (i);
 }
 
 int
-VSC_Iter(struct vsc *vsc, struct vsm *vsm,
-    VSC_new_f *fnew, VSC_iter_f *fiter, VSC_destroy_f *fdestroy, void *priv)
+VSC_Iter(struct vsc *vsc, struct vsm *vsm, VSC_iter_f *fiter, void *priv)
 {
 	struct vsm_fantom ifantom;
 	struct vsc_seg *sp, *sp2;
@@ -418,8 +416,6 @@ VSC_Iter(struct vsc *vsc, struct vsm *vsm,
 
 	CHECK_OBJ_NOTNULL(vsc, VSC_MAGIC);
 	AN(vsm);
-	(void)fnew;
-	(void)fdestroy;
 	sp = VTAILQ_FIRST(&vsc->segs);
 	VSM_FOREACH(&ifantom, vsm) {
 		if (strcmp(ifantom.class, VSC_CLASS))
@@ -430,19 +426,27 @@ VSC_Iter(struct vsc *vsc, struct vsm *vsm,
 			sp2 = sp;
 			sp = VTAILQ_NEXT(sp, list);
 			VTAILQ_REMOVE(&vsc->segs, sp2, list);
-			vsc_del_seg(vsm, sp2);
+			vsc_del_seg(vsc, vsm, sp2);
 		}
 		if (sp != NULL) {
-			i = vsc_iter_seg(sp, fiter, priv);
+			if (fiter != NULL)
+				i = vsc_iter_seg(vsc, sp, fiter, priv);
 			sp = VTAILQ_NEXT(sp, list);
 		} else {
 			sp = vsc_add_seg(vsc, vsm, &ifantom);
 			VTAILQ_INSERT_TAIL(&vsc->segs, sp, list);
-			i = vsc_iter_seg(sp, fiter, priv);
+			if (fiter != NULL)
+				i = vsc_iter_seg(vsc, sp, fiter, priv);
 			sp = NULL;
 		}
 		if (i)
 			break;
+	}
+	while (sp != NULL) {
+		sp2 = sp;
+		sp = VTAILQ_NEXT(sp, list);
+		VTAILQ_REMOVE(&vsc->segs, sp2, list);
+		vsc_del_seg(vsc, vsm, sp2);
 	}
 	return (i);
 }
