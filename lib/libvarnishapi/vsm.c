@@ -377,7 +377,7 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 	 * XXX: be kill(pid,0)'ed for more rapid abandonment detection.
 	 */
 	i = sscanf(VSB_data(vsb), "# %ju %ju\n%n", &id1, &id2, &ac);
-	if (i != 2 || kill(id1, 0)) {
+	if (i != 2 || (kill(id1, 0) && errno == ESRCH)) {
 		retval |= VSM_MGT_RESTARTED | VSM_MGT_CHANGED;
 		return (retval);
 	}
