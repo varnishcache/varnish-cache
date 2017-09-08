@@ -254,22 +254,27 @@ vju_make_vcldir(const char *dname)
 }
 
 
-static void __match_proto__(jail_fixfile_f)
-vju_vsm_dir(int fd)
+static void __match_proto__(jail_fixfd_f)
+vju_fixfd(int fd, enum jail_fixfd_e what)
 {
 	/* Called under JAIL_MASTER_FILE */
 
-	AZ(fchmod(fd, 0750));
-	AZ(fchown(fd, vju_wrkuid, vju_wrkgid));
-}
-
-static void __match_proto__(jail_fixfile_f)
-vju_storage_file(int fd)
-{
-	/* Called under JAIL_MASTER_STORAGE */
-
-	AZ(fchmod(fd, 0600));
-	AZ(fchown(fd, vju_uid, vju_gid));
+	switch (what) {
+	case JAIL_FIXFD_FILE:
+		AZ(fchmod(fd, 0750));
+		AZ(fchown(fd, vju_wrkuid, vju_wrkgid));
+		break;
+	case JAIL_FIXFD_VSMMGT:
+		AZ(fchmod(fd, 0750));
+		AZ(fchown(fd, vju_uid, vju_gid));
+		break;
+	case JAIL_FIXFD_VSMWRK:
+		AZ(fchmod(fd, 0750));
+		AZ(fchown(fd, vju_wrkuid, vju_wrkgid));
+		break;
+	default:
+		WRONG("Ain't Fixin'");
+	}
 }
 
 const struct jail_tech jail_tech_unix = {
@@ -278,7 +283,6 @@ const struct jail_tech jail_tech_unix = {
 	.init =		vju_init,
 	.master =	vju_master,
 	.make_vcldir =	vju_make_vcldir,
-	.vsm_file =	vju_vsm_dir,
-	.storage_file =	vju_storage_file,
+	.fixfd =	vju_fixfd,
 	.subproc =	vju_subproc,
 };

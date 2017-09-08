@@ -99,11 +99,17 @@ enum jail_master_e {
 	JAIL_MASTER_KILL,
 };
 
+enum jail_fixfd_e {
+	JAIL_FIXFD_FILE,
+	JAIL_FIXFD_VSMMGT,
+	JAIL_FIXFD_VSMWRK,
+};
+
 typedef int jail_init_f(char **);
 typedef void jail_master_f(enum jail_master_e);
 typedef void jail_subproc_f(enum jail_subproc_e);
 typedef int jail_make_dir_f(const char *dname);
-typedef void jail_fixfile_f(int fd);
+typedef void jail_fixfd_f(int fd, enum jail_fixfd_e);
 
 struct jail_tech {
 	unsigned		magic;
@@ -114,8 +120,7 @@ struct jail_tech {
 	jail_subproc_f		*subproc;
 	jail_make_dir_f		*make_workdir;
 	jail_make_dir_f		*make_vcldir;
-	jail_fixfile_f		*vsm_file;
-	jail_fixfile_f		*storage_file;
+	jail_fixfd_f		*fixfd;
 };
 
 void VJ_Init(const char *j_arg);
@@ -123,8 +128,7 @@ void VJ_master(enum jail_master_e jme);
 void VJ_subproc(enum jail_subproc_e jse);
 int VJ_make_workdir(const char *dname);
 int VJ_make_vcldir(const char *dname);
-void VJ_fix_vsm_dir(int fd);
-void VJ_fix_storage_file(int fd);
+void VJ_fix_fd(int fd, enum jail_fixfd_e);
 
 extern const struct jail_tech jail_tech_unix;
 extern const struct jail_tech jail_tech_solaris;
