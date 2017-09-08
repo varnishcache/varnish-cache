@@ -173,6 +173,7 @@ vxp_Lexer(struct vxp *vxp)
 }
 
 #ifdef VXP_DEBUG
+#include <stdio.h>
 void
 vxp_PrintTokens(const struct vxp *vxp)
 {
