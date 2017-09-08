@@ -181,6 +181,7 @@ VSMW_Allocv(struct vsmw *vsmw, const char *class, size_t len,
 
 	AZ(close(fd));
 	assert(seg->ptr != MAP_FAILED);
+	(void)mlock(seg->ptr, len);
 
 	VTAILQ_INSERT_TAIL(&vsmw->segs, seg, list);
 	fd = openat(vsmw->vdirfd, vsmw->idx, O_APPEND | O_WRONLY);
