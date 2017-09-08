@@ -121,33 +121,6 @@ VSC_New(void)
 
 /*--------------------------------------------------------------------*/
 
-static void
-vsc_delete_sf_list(struct vsc_sf_head *head)
-{
-	struct vsc_sf *sf;
-
-	while (!VTAILQ_EMPTY(head)) {
-		sf = VTAILQ_FIRST(head);
-		CHECK_OBJ_NOTNULL(sf, VSC_SF_MAGIC);
-		VTAILQ_REMOVE(head, sf, list);
-		free(sf->pattern);
-		FREE_OBJ(sf);
-	}
-}
-
-void
-VSC_Destroy(struct vsc **vscp)
-{
-	struct vsc *vsc;
-
-	TAKE_OBJ_NOTNULL(vsc, vscp, VSC_MAGIC);
-	vsc_delete_sf_list(&vsc->sf_list_include);
-	vsc_delete_sf_list(&vsc->sf_list_exclude);
-	FREE_OBJ(vsc);
-}
-
-/*--------------------------------------------------------------------*/
-
 static int
 vsc_f_arg(struct vsc *vsc, const char *opt)
 {
@@ -475,3 +448,36 @@ VSC_ChangeLevel(const struct VSC_level_desc *old, int chg)
 		i = 0;
 	return (levels[i]);
 }
+
+/*--------------------------------------------------------------------*/
+
+static void
+vsc_delete_sf_list(struct vsc_sf_head *head)
+{
+	struct vsc_sf *sf;
+
+	while (!VTAILQ_EMPTY(head)) {
+		sf = VTAILQ_FIRST(head);
+		CHECK_OBJ_NOTNULL(sf, VSC_SF_MAGIC);
+		VTAILQ_REMOVE(head, sf, list);
+		free(sf->pattern);
+		FREE_OBJ(sf);
+	}
+}
+
+void
+VSC_Destroy(struct vsc **vscp, struct vsm *vsm)
+{
+	struct vsc *vsc;
+	struct vsc_seg *sp, *sp2;
+
+	TAKE_OBJ_NOTNULL(vsc, vscp, VSC_MAGIC);
+	vsc_delete_sf_list(&vsc->sf_list_include);
+	vsc_delete_sf_list(&vsc->sf_list_exclude);
+	VTAILQ_FOREACH_SAFE(sp, &vsc->segs, list, sp2) {
+		VTAILQ_REMOVE(&vsc->segs, sp, list);
+		vsc_del_seg(vsc, vsm, sp);
+	}
+	FREE_OBJ(vsc);
+}
+

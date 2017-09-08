@@ -332,6 +332,10 @@ varnish_delete(struct varnish *v)
 	vtc_logclose(v->vl);
 	free(v->name);
 	free(v->workdir);
+	if (v->vsc != NULL)
+		VSC_Destroy(&v->vsc, v->vsm_vsc);
+	if (v->vsm_vsc != NULL)
+		VSM_Destroy(&v->vsm_vsc);
 	if (v->vsm_vsl != NULL)
 		VSM_Destroy(&v->vsm_vsl);
 
