@@ -37,6 +37,7 @@
 #include <fcntl.h>
 #include <float.h>
 #include <math.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -353,7 +354,7 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 	retval |= VSM_MGT_CHANGED;
 	vs->fd = openat(vs->dfd, "_.index", O_RDONLY);
 	if (vs->fd < 0)
-		return (retval|VSM_NUKE_ALL);
+		return (retval|VSM_MGT_RESTARTED);
 
 	AZ(fstat(vs->fd, &vs->fst));
 
@@ -376,17 +377,17 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 	 * XXX: be kill(pid,0)'ed for more rapid abandonment detection.
 	 */
 	i = sscanf(VSB_data(vsb), "# %ju %ju\n%n", &id1, &id2, &ac);
-	if (i != 2) {
-		retval |= VSM_MGT_RESTARTED;
-		return (retval|VSM_NUKE_ALL);
+	if (i != 2 || kill(id1, 0)) {
+		retval |= VSM_MGT_RESTARTED | VSM_MGT_CHANGED;
+		return (retval);
 	}
+	retval |= VSM_MGT_RUNNING;
 	if (id1 != vs->id1 || id2 != vs->id2) {
-		retval |= VSM_MGT_RESTARTED;
+		retval |= VSM_MGT_RESTARTED | VSM_MGT_CHANGED;
 		vs->id1 = id1;
 		vs->id2 = id2;
 	}
 	p = VSB_data(vsb) + ac;
-	retval |= VSM_MGT_RUNNING;
 
 	VTAILQ_FOREACH(vg, &vs->segs, list)
 		vg->markscan = 0;

@@ -72,7 +72,7 @@ struct pt {
 #define PT_MAGIC		0x41698E4F
 	VTAILQ_ENTRY(pt)	list;
 
-	struct VSC_point	*vpt;
+	const struct VSC_point	*vpt;
 
 	char			seen;
 
@@ -119,6 +119,7 @@ static int sample = 0;
 static int scale = 1;
 static double t_sample = 0.;
 static double interval = 1.;
+static int vsm_status = 0;
 
 static void
 init_hitrate(void)
@@ -223,130 +224,6 @@ build_pt_array(void)
 
 	rebuild = 0;
 	redraw = 1;
-}
-
-static void
-delete_pt_list(void)
-{
-	struct pt *pt;
-	unsigned i = 0;
-
-	delete_pt_array();
-
-	while (!VTAILQ_EMPTY(&ptlist)) {
-		pt = VTAILQ_FIRST(&ptlist);
-		CHECK_OBJ_NOTNULL(pt, PT_MAGIC);
-		VTAILQ_REMOVE(&ptlist, pt, list);
-		VSC_Destroy_Point(&pt->vpt);
-		FREE_OBJ(pt);
-		i++;
-	}
-	assert(i == n_ptlist);
-	n_ptlist = 0;
-
-	update_position();
-}
-
-struct pt_priv {
-	unsigned		magic;
-#define PT_PRIV_MAGIC		0x34ACBAD6
-	VTAILQ_HEAD(, pt)	ptlist;
-	unsigned		n_ptlist;
-};
-
-static int __match_proto__(VSC_iter_f)
-build_pt_list_cb(void *priv, const struct VSC_point *vpt)
-{
-	struct pt_priv *pt_priv;
-	struct pt *pt;
-
-	if (vpt == NULL)
-		return (0);
-
-	CAST_OBJ_NOTNULL(pt_priv, priv, PT_PRIV_MAGIC);
-
-	AZ(strcmp(vpt->ctype, "uint64_t"));
-
-	if (!strcmp(vpt->name, "MGT.uptime"))
-		mgt_uptime = vpt->ptr;
-	if (!strcmp(vpt->name, "MAIN.uptime"))
-		main_uptime = vpt->ptr;
-	if (!strcmp(vpt->name, "MAIN.cache_hit"))
-		main_cache_hit = vpt->ptr;
-	if (!strcmp(vpt->name, "MAIN.cache_miss"))
-		main_cache_miss = vpt->ptr;
-
-	VTAILQ_FOREACH(pt, &ptlist, list) {
-		CHECK_OBJ_NOTNULL(pt, PT_MAGIC);
-		AN(pt->vpt->name);
-		if (strcmp(vpt->name, pt->vpt->name))
-			continue;
-		VTAILQ_REMOVE(&ptlist, pt, list);
-		AN(n_ptlist);
-		n_ptlist--;
-		VSC_Destroy_Point(&pt->vpt);
-		pt->vpt = VSC_Clone_Point(vpt);
-		AN(pt->vpt);
-		VTAILQ_INSERT_TAIL(&pt_priv->ptlist, pt, list);
-		pt_priv->n_ptlist++;
-		return (0);
-	}
-	AZ(pt);
-
-	ALLOC_OBJ(pt, PT_MAGIC);
-	AN(pt);
-
-	pt->vpt = VSC_Clone_Point(vpt);
-	AN(pt->vpt);
-
-	pt->last = *pt->vpt->ptr;
-
-	pt->ma_10.nmax = 10;
-	pt->ma_100.nmax = 100;
-	pt->ma_1000.nmax = 1000;
-
-	VTAILQ_INSERT_TAIL(&pt_priv->ptlist, pt, list);
-	pt_priv->n_ptlist++;
-
-	return (0);
-}
-
-static void
-build_pt_list(struct vsc *vsc, struct vsm *vsm)
-{
-	struct pt_priv pt_priv;
-	int i;
-	struct pt *pt_current = NULL;
-	int current_line = 0;
-
-	if (current < n_ptarray) {
-		pt_current = ptarray[current];
-		current_line = current - page_start;
-	}
-
-	pt_priv.magic = PT_PRIV_MAGIC;
-	VTAILQ_INIT(&pt_priv.ptlist);
-	pt_priv.n_ptlist = 0;
-
-	mgt_uptime = NULL;
-	main_uptime = NULL;
-	main_cache_hit = NULL;
-	main_cache_miss = NULL;
-
-	(void)VSC_Iter(vsc, vsm, NULL, build_pt_list_cb, NULL, &pt_priv);
-	delete_pt_list();
-	AN(VTAILQ_EMPTY(&ptlist));
-	AZ(n_ptlist);
-	VTAILQ_CONCAT(&ptlist, &pt_priv.ptlist, list);
-	n_ptlist = pt_priv.n_ptlist;
-	build_pt_array();
-
-	for (i = 0; pt_current != NULL && i < n_ptarray; i++)
-		if (ptarray[i] == pt_current)
-			break;
-	current = i;
-	page_start = current - current_line;
-	update_position();
 }
 
 static void
@@ -528,11 +405,22 @@ print_duration(WINDOW *w, time_t t)
 }
 
 static void
+running(WINDOW *w, time_t up, int flg)
+{
+	if (vsm_status & flg) {
+		print_duration(w_status, up);
+	} else {
+		wattron(w, A_STANDOUT);
+		wprintw(w, "  Not Running");
+		wattroff(w, A_STANDOUT);
+	}
+}
+
+static void
 draw_status(void)
 {
 	time_t up_mgt = 0;
 	time_t up_chld = 0;
-	static const char discon[] = "*** DISCONNECTED ***";
 
 	AN(w_status);
 
@@ -543,14 +431,12 @@ draw_status(void)
 	if (main_uptime != NULL)
 		up_chld = *main_uptime;
 
-	mvwprintw(w_status, 0, 0, "Uptime mgt:  ");
-	print_duration(w_status, up_mgt);
-	mvwprintw(w_status, 1, 0, "Uptime child:");
-	print_duration(w_status, up_chld);
+	mvwprintw(w_status, 0, 0, "Uptime mgt:   ");
+	running(w_status, up_mgt, VSM_MGT_RUNNING);
+	mvwprintw(w_status, 1, 0, "Uptime child: ");
+	running(w_status, up_chld, VSM_WRK_RUNNING);
 
-	if (mgt_uptime == NULL)
-		mvwprintw(w_status, 0, COLS - strlen(discon), discon);
-	else if (COLS > 70) {
+	if (COLS > 70) {
 		mvwprintw(w_status, 0, getmaxx(w_status) - 37,
 		    "Hitrate n: %8u %8u %8u", hitrate.hr_10.n, hitrate.hr_100.n,
 		    hitrate.hr_1000.n);
@@ -1042,12 +928,62 @@ handle_keypress(int ch)
 	redraw = 1;
 }
 
+static void * __match_proto__(VSC_new_f)
+newpt(void *priv, const struct VSC_point *const vpt)
+{
+	struct pt *pt;
+
+	ALLOC_OBJ(pt, PT_MAGIC);
+	AN(pt);
+	AZ(priv);
+	pt->vpt = vpt;
+	pt->last = *pt->vpt->ptr;
+	pt->ma_10.nmax = 10;
+	pt->ma_100.nmax = 100;
+	pt->ma_1000.nmax = 1000;
+
+	VTAILQ_INSERT_TAIL(&ptlist, pt, list);
+	n_ptlist++;
+
+	AZ(strcmp(vpt->ctype, "uint64_t"));
+
+	if (!strcmp(vpt->name, "MGT.uptime"))
+		mgt_uptime = vpt->ptr;
+	if (!strcmp(vpt->name, "MAIN.uptime"))
+		main_uptime = vpt->ptr;
+	if (!strcmp(vpt->name, "MAIN.cache_hit"))
+		main_cache_hit = vpt->ptr;
+	if (!strcmp(vpt->name, "MAIN.cache_miss"))
+		main_cache_miss = vpt->ptr;
+	return (pt);
+}
+
+static void __match_proto__(VSC_destroy_f)
+delpt(void *priv, const struct VSC_point *const vpt)
+{
+	struct pt *pt;
+
+	AZ(priv);
+	CAST_OBJ_NOTNULL(pt, vpt->priv, PT_MAGIC);
+	VTAILQ_REMOVE(&ptlist, pt, list);
+	n_ptlist--;
+	FREE_OBJ(pt);
+	if (vpt->ptr == mgt_uptime)
+		mgt_uptime = NULL;
+	if (vpt->ptr == main_uptime)
+		main_uptime = NULL;
+	if (vpt->ptr == main_cache_hit)
+		main_cache_hit = NULL;
+	if (vpt->ptr == main_cache_miss)
+		main_cache_miss = NULL;
+}
+
 void
-do_curses(struct vsm *vd, struct vsc *vsc, double delay)
+do_curses(struct vsm *vsm, struct vsc *vsc, double delay)
 {
 	struct pollfd pollfd;
 	long t;
-	int ch, initial = 1;
+	int ch;
 	double now;
 
 	interval = delay;
@@ -1066,13 +1002,17 @@ do_curses(struct vsm *vd, struct vsc *vsc, double delay)
 	make_windows();
 	doupdate();
 
+	VSC_State(vsc, newpt, delpt, NULL);
+
+	rebuild = 1;
 	while (keep_running) {
-		if (initial ||
-		    (VSM_Status(vd) & (VSM_MGT_CHANGED|VSM_WRK_CHANGED))) {
+		vsm_status = VSM_Status(vsm);
+		rebuild |= vsm_status & ~(VSM_MGT_RUNNING|VSM_WRK_RUNNING);
+		if (rebuild) {
+			(void)VSC_Iter(vsc, vsm, NULL, NULL);
 			init_hitrate();
-			delete_pt_list();
-			build_pt_list(vsc, vd);
-			initial = 0;
+			build_pt_array();
+			redraw = 1;
 		}
 
 		now = VTIM_mono();
@@ -1080,8 +1020,6 @@ do_curses(struct vsm *vd, struct vsc *vsc, double delay)
 			sample = 1;
 		if (sample)
 			sample_data();
-		if (rebuild)
-			build_pt_array();
 		if (redraw)
 			draw_screen();
 
@@ -1103,6 +1041,8 @@ do_curses(struct vsm *vd, struct vsc *vsc, double delay)
 			break;
 		}
 	}
-	VSM_Destroy(&vd);
+	VSC_Destroy(&vsc);
+	AN(VTAILQ_EMPTY(&ptlist));
+	VSM_Destroy(&vsm);
 	AZ(endwin());
 }

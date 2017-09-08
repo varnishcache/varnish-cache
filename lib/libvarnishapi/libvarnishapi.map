@@ -195,5 +195,5 @@ LIBVARNISHAPI_1.7 {
 	VSM_Dup;
 	VSC_New;
 	VSC_Destroy;
-	VSC_Iter2;
+	VSC_State;
 } LIBVARNISHAPI_1.0;
