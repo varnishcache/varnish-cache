@@ -71,24 +71,12 @@ vut_vpf_remove(void)
 }
 
 static void
-vut_sighup(int sig)
+vut_signal(int sig)
 {
-	(void)sig;
-	VUT.sighup = 1;
-}
 
-static void
-vut_sigint(int sig)
-{
-	(void)sig;
-	VUT.sigint = 1;
-}
-
-static void
-vut_sigusr1(int sig)
-{
-	(void)sig;
-	VUT.sigusr1 = 1;
+	VUT.sighup |= (sig == SIGHUP);
+	VUT.sigint |= (sig == SIGINT || sig == SIGTERM);
+	VUT.sigusr1 |= (sig == SIGUSR1);
 }
 
 static int __match_proto__(VSLQ_dispatch_f)
@@ -255,10 +243,10 @@ VUT_Setup(void)
 	}
 
 	/* Signal handlers */
-	(void)signal(SIGHUP, vut_sighup);
-	(void)signal(SIGINT, vut_sigint);
-	(void)signal(SIGTERM, vut_sigint);
-	(void)signal(SIGUSR1, vut_sigusr1);
+	(void)signal(SIGHUP, vut_signal);
+	(void)signal(SIGINT, vut_signal);
+	(void)signal(SIGTERM, vut_signal);
+	(void)signal(SIGUSR1, vut_signal);
 
 	/* Open PID file */
 	if (VUT.P_arg) {
