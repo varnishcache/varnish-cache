@@ -26,174 +26,115 @@
  * SUCH DAMAGE.
  */
 
-LIBVARNISHAPI_1.0 {
-  global:
-	# Functions
-	VSM_New;
-	VSM_Diag;
-	VSM_n_Arg;
-	VSM_Name;
-	VSM_Delete;
-	VSM_Open;
-	VSM_ReOpen;
-	VSM_Seq;
-	VSM_Head;
-	VSM_Find_Chunk;
-	VSM_Close;
-	VSM__iter0;
-	VSM__itern;
+LIBVARNISHAPI_2.0 {
+    global:
+	# vas.c
+		VAS_Fail;
 
-	VSC_Setup;
-	VSC_Arg;
-	VSC_Open;
-	VSC_Main;
-	VSC_Iter;
+	# vcli.c
+		VCLI_AuthResponse;
+		VCLI_ReadResult;
+		VCLI_WriteResult;
 
-	VSL_Setup;
-	VSL_Open;
-	VSL_Arg;
-	VSL_H_Print;
-	VSL_Select;
-	VSL_NonBlocking;
-	VSL_Dispatch;
-	VSL_NextLog;
-	VSL_Matched;
+	# vcs.c
+		VCS_Message;
 
-	VCLI_WriteResult;
-	VCLI_ReadResult;
-	VCLI_AuthResponse;
+	# vsb.c
+		VSB_bcat;
+		VSB_cat;
+		VSB_clear;
+		VSB_data;
+		VSB_delete;
+		VSB_destroy;
+		VSB_error;
+		VSB_finish;
+		VSB_indent;
+		VSB_len;
+		VSB_new;
+		VSB_printf;
+		VSB_putc;
+		VSB_quote;
+		VSB_quote_pfx;
+		VSB_vprintf;
 
-	# Variables
-	VSL_tags;
-  local:
+	# vsc.c
+		VSC_Arg;
+		VSC_ChangeLevel;
+		VSC_Destroy;
+		VSC_Iter;
+		VSC_New;
+		VSC_State;
+
+	# vsl*.c
+		VSLQ_Delete;
+		VSLQ_Dispatch;
+		VSLQ_Flush;
+		VSLQ_Name2Grouping;
+		VSLQ_New;
+		VSLQ_SetCursor;
+		VSLQ_grouping;
+		VSL_Arg;
+		VSL_Check;
+		VSL_CursorFile;
+		VSL_CursorVSM;
+		VSL_Delete;
+		VSL_DeleteCursor;
+		VSL_Error;
+		VSL_Glob2Tags;
+		VSL_List2Tags;
+		VSL_Match;
+		VSL_Name2Tag;
+		VSL_New;
+		VSL_Next;
+		VSL_Print;
+		VSL_PrintAll;
+		VSL_PrintTerse;
+		VSL_PrintTransactions;
+		VSL_ResetCursor;
+		VSL_ResetError;
+		VSL_Write;
+		VSL_WriteAll;
+		VSL_WriteOpen;
+		VSL_WriteTransactions;
+		VSL_tagflags;
+		VSL_tags;
+
+	# vsm.c
+		VSM_Arg;
+		VSM_Attach;
+		VSM_Destroy;
+		VSM_Dup;
+		VSM_Error;
+		VSM_Get;
+		VSM_Map;
+		VSM_New;
+		VSM_ResetError;
+		VSM_Status;
+		VSM_StillValid;
+		VSM_Unmap;
+		VSM__iter0;
+		VSM__itern;
+		VSM_invalid;
+		VSM_valid;
+	# vtim.c
+		VTIM_format;
+		VTIM_mono;
+		VTIM_parse;
+		VTIM_real;
+		VTIM_sleep;
+		VTIM_timespec;
+		VTIM_timeval;
+
+	# vut.c
+		VUT;
+		VUT_Arg;
+		VUT_Error;
+		VUT_Fini;
+		VUT_Init;
+		VUT_Main;
+		VUT_Setup;
+		VUT_g_Arg;
+
+    local:
 	*;
 };
-
-LIBVARNISHAPI_1.1 {
-  global:
-	# Functions:
-	VSL_Name2Tag;
-	# Variables:
-} LIBVARNISHAPI_1.0;
-
-LIBVARNISHAPI_1.2 {
-  global:
-	# Functions:
-	VSL_NextSLT;
-	VSM_Error;
-	VSM_Get;
-	# Variables:
-} LIBVARNISHAPI_1.0;
-
-LIBVARNISHAPI_1.3 {
-  global:
-	# Functions:
-	VSM_Abandoned;
-	VSM_ResetError;
-	VSM_StillValid;
-	VSC_Mgt;
-	VSC_LevelDesc;
-	VSL_New;
-	VSL_Delete;
-	VSL_Error;
-	VSL_ResetError;
-	VSL_CursorVSM;
-	VSL_CursorFile;
-	VSL_DeleteCursor;
-	VSL_Next;
-	VSL_Match;
-	VSL_Print;
-	VSL_PrintTerse;
-	VSL_PrintAll;
-	VSL_PrintTransactions;
-	VSL_WriteOpen;
-	VSL_Write;
-	VSL_WriteAll;
-	VSL_WriteTransactions;
-	VSLQ_New;
-	VSLQ_Delete;
-	VSLQ_Dispatch;
-	VSLQ_Flush;
-	VSLQ_Name2Grouping;
-	VSL_Glob2Tags;
-	VSL_List2Tags;
-	VSM_N_Arg;
-	VSL_Check;
-	VSL_ResetCursor;
-	# Variables:
-	VSLQ_grouping;
-	VSL_tagflags;
-} LIBVARNISHAPI_1.0;
-
-LIBVARNISHAPI_1.4 {
-  global:
-	VNUM;
-	VSLQ_SetCursor;
-	VSM_IsOpen;
-} LIBVARNISHAPI_1.0;
-
-LIBVARNISHAPI_1.5 {
-  global:
-	VUT_Error;
-	VUT_g_Arg;
-	VUT_Arg;
-	VUT_Setup;
-	VUT_Init;
-	VUT_Fini;
-	VUT_Main;
-	VUT;
-
-	VTIM_mono;
-	VTIM_real;
-	VTIM_sleep;
-
-	VSB_new;
-	VSB_destroy;
-	VSB_error;
-	VSB_cat;
-	VSB_putc;
-	VSB_printf;
-	VSB_clear;
-	VSB_finish;
-	VSB_len;
-	VSB_data;
-
-	VAS_Fail;
-
-	VCS_Message;
-} LIBVARNISHAPI_1.0;
-
-LIBVARNISHAPI_1.6 {
-  global:
-	VTIM_format;
-	VSB_bcat;
-	VSB_quote;
-	VSB_vprintf;
-	VSB_delete;
-	VSB_indent;
-	VTIM_parse;
-	VTIM_timespec;
-	VTIM_timeval;
-} LIBVARNISHAPI_1.0;
-
-LIBVARNISHAPI_1.7 {
-  global:
-	VSC_ChangeLevel;
-	VSM_invalid;
-	VSM_valid;
-	VSM_similar;
-	VSM_Start;
-	VSM_Destroy;
-	VSM_Map;
-	VSM_Unmap;
-	VSC_Destroy_Point;
-	VSC_Clone_Point;
-	VSM_Refresh;
-	VSM_Attach;
-	VSM_Status;
-	VSM_Arg;
-	VSM_Dup;
-	VSC_New;
-	VSC_Destroy;
-	VSC_State;
-} LIBVARNISHAPI_1.0;
