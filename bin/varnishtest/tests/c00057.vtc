@@ -38,4 +38,4 @@ client c1 {
 	expect_close
 } -run
 
-varnish v1 -cliok "panic.show"
+varnish v1 -cliok "panic.clear"
