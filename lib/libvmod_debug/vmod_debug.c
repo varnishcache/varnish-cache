@@ -151,42 +151,6 @@ vmod_test_priv_vcl(VRT_CTX, struct vmod_priv *priv)
 	assert(!strcmp(priv_vcl->foo, "FOO"));
 }
 
-VCL_BLOB
-vmod_str2blob(VRT_CTX, VCL_STRING s)
-{
-	struct vmod_priv *p;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	WARN_RETIRED();
-	p = (void*)WS_Alloc(ctx->ws, sizeof *p);
-	AN(p);
-	memset(p, 0, sizeof *p);
-	p->len = strlen(s);
-	p->priv = WS_Copy(ctx->ws, s, -1);
-	return (p);
-}
-
-VCL_STRING
-vmod_blob2hex(VRT_CTX, VCL_BLOB b)
-{
-	char *s, *p;
-	uint8_t *q;
-	int i;
-
-	WARN_RETIRED();
-	s = WS_Alloc(ctx->ws, b->len * 2 + 2);
-	AN(s);
-	p = s;
-	q = b->priv;
-	for (i = 0; i < b->len; i++) {
-		assert(snprintf(p, 3, "%02x", *q) == 2);
-		p += 2;
-		q += 1;
-	}
-	VRT_priv_fini(b);
-	return (s);
-}
-
 VCL_BACKEND
 vmod_no_backend(VRT_CTX)
 {
