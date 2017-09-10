@@ -1,6 +1,7 @@
 ---
 sudo: required
 language: c
+group: deprecated-2017Q3
 matrix:
   include:
   - os: linux
@@ -14,7 +15,7 @@ matrix:
     compiler: clang
     env: CLANG=4.0
   - os: osx
-    osx_image: xcode8.3
+    osx_image: xcode9
     compiler: clang
   allow_failures:
   - os: osx
@@ -28,16 +29,19 @@ before_install:
       brew update;
       brew install docutils nghttp2;
     fi
-  - if [[ "$CLANG" == "4.0" ]]; then
+  - if [[ -n "$CLANG" ]]; then
       wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key |
         sudo apt-key add -;
       sudo apt-add-repository -y
-        'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main';
+        "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-$CLANG main";
+      sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys BA9EF27F;
+      sudo apt-add-repository -y
+        "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu trusty main";
       sudo apt-get update;
-      sudo apt-get install -y clang-4.0 llvm-4.0;
-      export CC=clang-4.0;
-      export CONFIGURE_ARGS="--enable-developer-warnings --enable-debugging-symbols --enable-asan --enable-ubsan";
-      export ASAN_OPTIONS=abort_on_error=1,detect_odr_violation=1,detect_leaks=1,detect_stack_use_after_return=1,detect_invalid_pointer_pairs=1;
+      sudo apt-get install -y clang-$CLANG llvm-$CLANG;
+      export CC=clang-$CLANG;
+      export CONFIGURE_ARGS="--enable-developer-warnings --enable-debugging-symbols --disable-stack-protector --enable-asan --enable-ubsan";
+      export ASAN_OPTIONS=abort_on_error=1,detect_odr_violation=1,detect_leaks=1,detect_stack_use_after_return=1,detect_invalid_pointer_pairs=1,handle_segv=0,handle_sigbus=0;
       export LSAN_OPTIONS=suppressions=$(pwd)/tools/lsan.suppr;
       export UBSAN_OPTIONS=halt_on_error=1,print_stacktrace=1,suppressions=$(pwd)/tools/ubsan.suppr;
     fi
