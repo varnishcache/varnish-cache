@@ -24,4 +24,4 @@ client c1 {
 	expect_close
 } -run
 
-varnish v1 -wait-stopped
+varnish v1 -cliok "panic.clear"

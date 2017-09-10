@@ -137,8 +137,8 @@ wait_stopped(const struct varnish *v)
 	char *r = NULL;
 	enum VCLI_status_e st;
 
+	vtc_log(v->vl, 3, "wait-stopped");
 	while (1) {
-		vtc_log(v->vl, 3, "wait-stopped");
 		st = varnish_ask_cli(v, "status", &r);
 		if (st != CLIS_OK)
 			vtc_fatal(v->vl,
@@ -600,26 +600,13 @@ varnish_start(struct varnish *v)
 static void
 varnish_stop(struct varnish *v)
 {
-	char *r = NULL;
-
 	if (v->cli_fd < 0)
 		varnish_launch(v);
 	if (vtc_error)
 		return;
 	vtc_log(v->vl, 2, "Stop");
 	(void)varnish_ask_cli(v, "stop", NULL);
-	while (1) {
-		(void)varnish_ask_cli(v, "status", &r);
-		AN(r);
-		if (!strcmp(r, "Child in state stopped")) {
-			free(r);
-			break;
-		}
-		free(r);
-		r = NULL;
-		(void)sleep (1);
-		/* XXX: should fail eventually */
-	}
+	wait_stopped(v);
 }
 
 /**********************************************************************
@@ -684,6 +671,9 @@ varnish_wait(struct varnish *v)
 
 	/* Then stop it */
 	varnish_stop(v);
+
+	if (varnish_ask_cli(v, "panic.clear", NULL) != CLIS_CANT)
+		vtc_fatal(v->vl, "Unexpected panic");
 
 	varnish_cleanup(v);
 }
