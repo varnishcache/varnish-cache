@@ -67,7 +67,7 @@ static int		cli_i = -1, cli_o = -1;
 struct VCLS		*mgt_cls;
 static const char	*secret_file;
 
-struct vsb		*cli_buf = NULL;
+static struct vsb	*cli_buf = NULL;
 
 /*--------------------------------------------------------------------*/
 
