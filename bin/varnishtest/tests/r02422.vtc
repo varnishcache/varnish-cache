@@ -1,0 +1,125 @@
+varnishtest "long polling and low latency using req.ttl"
+
+server s1 {
+	# s1 uses the etag as a version
+	rxreq
+	txresp -hdr "Etag: 5"
+
+	rxreq
+	# wait until the new version is ready
+	delay 1
+	txresp -hdr "Etag: 6"
+} -start
+
+varnish v1 -cliok "param.set default_grace 0"
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		if (req.restarts > 0) {
+			set req.ttl = 1ms;
+		}
+	}
+
+	sub vcl_hit {
+		if (req.http.If-None-Match == obj.http.ETag) {
+			return (restart);
+		}
+	}
+
+	sub vcl_deliver {
+		set resp.http.Hit = obj.hits > 0;
+	}
+} -start
+
+# synchronizes the setup of all clients
+barrier b1 cond 2
+
+# makes c1..cN send their requests simultaneously-ish
+barrier b2 cond 7
+
+client c0 {
+	# wait for all clients to be ready
+	barrier b1 sync
+	# send a "new client" request (no INM)
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.ETag == 5
+	expect resp.http.Hit == false
+	# let all other clients send their requests
+	barrier b2 sync
+} -start
+
+client c1 {
+	# new client, immediate hit
+	barrier b2 sync
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.ETag == 5
+	expect resp.http.Hit == true
+} -start
+
+client c2 {
+	# late client, immediate hit
+	barrier b2 sync
+	txreq -hdr "If-None-Match: 2"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.ETag == 5
+	expect resp.http.Hit == true
+} -start
+
+client c3 {
+	# late client, immediate hit
+	barrier b2 sync
+	txreq -hdr "If-None-Match: 4"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.ETag == 5
+	expect resp.http.Hit == true
+} -start
+
+client c4 {
+	# up-to-date client, long polling
+	barrier b2 sync
+	txreq -hdr "If-None-Match: 5"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.ETag == 6
+	expect resp.http.Hit == false
+} -start
+
+client c5 {
+	# up-to-date client, long polling
+	barrier b2 sync
+	# wait to make sure c4 gets the miss
+	delay 0.2
+	txreq -hdr "If-None-Match: 5"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.ETag == 6
+	expect resp.http.Hit == true
+} -start
+
+client c6 {
+	# up-to-date client, long polling
+	barrier b2 sync
+	# wait to make sure c4 gets the miss
+	delay 0.2
+	txreq -hdr "If-None-Match: 5"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.ETag == 6
+	expect resp.http.Hit == true
+} -start
+
+# start c0
+barrier b1 sync
+
+client c0 -wait
+client c1 -wait
+client c2 -wait
+client c3 -wait
+client c4 -wait
+client c5 -wait
+client c6 -wait
