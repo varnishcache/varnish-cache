@@ -441,7 +441,8 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 			*ocp = oc;
 			return (HSH_HIT);
 		}
-		if (oc->exp.t_origin > exp_t_origin) {
+		if (EXP_Ttl(NULL, &oc->exp) < req->t_req && /* ignore req.ttl */
+		    oc->exp.t_origin > exp_t_origin) {
 			/* record the newest object */
 			exp_oc = oc;
 			exp_t_origin = oc->exp.t_origin;
