@@ -37,6 +37,8 @@ typedef int VUT_cb_f(struct VUT *);
 typedef void VUT_error_f(struct VUT *, int, const char *, va_list);
 
 struct VUT {
+	unsigned	magic;
+#define VUT_MAGIC	0xdf3b3de8
 	const char	*progname;
 
 	/* Options */
