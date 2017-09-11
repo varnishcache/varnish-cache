@@ -56,6 +56,8 @@ varnish v1 -cliok "debug.persistent s0 dump"
 # Panic worker so second segment does not get closed
 varnish v1 -clierr 400 "debug.panic.worker"
 
+delay 0.5
+
 varnish v1 -cliok "panic.clear"
 
 delay 0.5
