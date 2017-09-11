@@ -1,0 +1,21 @@
+varnishtest "Very very big cli_buffer"
+
+# If the cli_buffer is on the stack, setting it very big can crash varnish
+
+server s1 {
+       rxreq
+       expect req.url == "/1"
+       txresp
+} -start
+
+varnish v1 -arg "-p cli_buffer=32M" -vcl+backend {
+} -start
+
+varnish v1 -cliok "ping"
+
+delay .5
+
+client c1 {
+       txreq -url /1
+       rxresp
+} -run
