@@ -67,7 +67,7 @@ libvmod_XXX_la_CFLAGS = \\
 
 libvmod_XXX_la_LDFLAGS = \\
 	$(AM_LDFLAGS) \\
-	-module -export-dynamic -avoid-version -shared \\
+	$(VMOD_LDFLAGS) \\
 	@SAN_LDFLAGS@
 
 nodist_libvmod_XXX_la_SOURCES = vcc_if.c vcc_if.h
