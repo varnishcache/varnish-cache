@@ -307,7 +307,7 @@ vmod_blob__fini(struct vmod_blob_blob **blobp)
 	}
 	for (int i = 0; i < __MAX_ENCODING; i++)
 		if (b->encoding[i] != NULL && b->encoding[i][0] != '\0') {
-			free((void *) b->encoding[i]);
+			free(b->encoding[i]);
 			b->encoding[i] = NULL;
 		}
 	AZ(pthread_mutex_destroy(&b->lock));

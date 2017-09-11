@@ -269,6 +269,10 @@ client c3 {
 # run twice
 client c3 -run
 
+# Discard to test object finalization
+varnish v1 -cliok "vcl.discard vcl1"
+varnish v1 -cliok "vcl.discard vcl2"
+
 varnish v1 -errvcl {vmod blob error: cannot create blob err, illegal encoding beginning with "g"} {
 	import blob;
 	backend b { .host="${bad_ip}"; }
