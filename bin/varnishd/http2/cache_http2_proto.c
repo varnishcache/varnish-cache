@@ -209,8 +209,10 @@ h2_kill_req(struct worker *wrk, const struct h2_sess *h2,
 			AZ(pthread_cond_signal(r2->cond));
 		r2 = NULL;
 	} else {
-		if (r2->state == H2_S_OPEN)
+		if (r2->state == H2_S_OPEN) {
 			(void)h2h_decode_fini(h2, r2->decode);
+			FREE_OBJ(r2->decode);
+		}
 	}
 	Lck_Unlock(&h2->sess->mtx);
 	if (r2 != NULL)
@@ -596,6 +598,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		VSLb(h2->vsl, SLT_Debug, "HPACK(hdr) %s", h2e->name);
 		Lck_Unlock(&h2->sess->mtx);
 		(void)h2h_decode_fini(h2, r2->decode);
+		FREE_OBJ(r2->decode);
 		AZ(r2->req->ws->r);
 		h2_del_req(wrk, r2);
 		return (h2e);
@@ -630,6 +633,7 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		VSLb(h2->vsl, SLT_Debug, "HPACK(cont) %s", h2e->name);
 		Lck_Unlock(&h2->sess->mtx);
 		(void)h2h_decode_fini(h2, r2->decode);
+		FREE_OBJ(r2->decode);
 		AZ(r2->req->ws->r);
 		h2_del_req(wrk, r2);
 		return (h2e);
