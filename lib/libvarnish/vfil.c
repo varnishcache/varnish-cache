@@ -275,7 +275,7 @@ VFIL_allocate(int fd, off_t size, int insist)
 		bufsiz = 64 * 1024;
 	else
 		bufsiz = size;
-	buf = calloc(bufsiz, 1);
+	buf = calloc(1, bufsiz);
 	AN(buf);
 	assert(lseek(fd, 0, SEEK_SET) == 0);
 	for (l = 0; l < size; l += l2) {

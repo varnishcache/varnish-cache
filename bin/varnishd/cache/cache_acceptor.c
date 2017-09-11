@@ -150,7 +150,7 @@ vca_tcp_opt_init(void)
 	for (n = 0; n < n_tcp_opts; n++) {
 		to = &tcp_opts[n];
 		if (to->ptr == NULL)
-			to->ptr = calloc(to->sz, 1);
+			to->ptr = calloc(1, to->sz);
 		AN(to->ptr);
 		if (!strcmp(to->strname, "SO_LINGER")) {
 			assert(to->sz == sizeof linger);
@@ -212,7 +212,7 @@ vca_tcp_opt_test(int sock)
 	for (n = 0; n < n_tcp_opts; n++) {
 		to = &tcp_opts[n];
 		to->need = 1;
-		ptr = calloc(to->sz, 1);
+		ptr = calloc(1, to->sz);
 		AN(ptr);
 		l = to->sz;
 		i = getsockopt(sock, to->level, to->optname, ptr, &l);

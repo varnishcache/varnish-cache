@@ -596,8 +596,8 @@ main(int argc, char **argv)
 
 	hist_range = hist_high - hist_low;
 	hist_buckets = hist_range * HIST_RES;
-	bucket_hit = calloc(sizeof *bucket_hit, hist_buckets);
-	bucket_miss = calloc(sizeof *bucket_miss, hist_buckets);
+	bucket_hit = calloc(hist_buckets, sizeof *bucket_hit);
+	bucket_miss = calloc(hist_buckets, sizeof *bucket_miss);
 
 	if (timebend > 0)
 		t0 = VTIM_mono();

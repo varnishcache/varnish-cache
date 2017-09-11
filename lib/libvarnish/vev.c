@@ -156,7 +156,7 @@ vev_get_sig(int sig)
 	if (sig < vev_nsig)
 		return (0);
 
-	os = calloc(sizeof *os, (sig + 1L));
+	os = calloc((sig + 1L), sizeof *os);
 	if (os == NULL)
 		return (ENOMEM);
 
@@ -192,7 +192,7 @@ vev_new_base(void)
 {
 	struct vev_base *evb;
 
-	evb = calloc(sizeof *evb, 1);
+	evb = calloc(1, sizeof *evb);
 	if (evb == NULL)
 		return (evb);
 	evb->lpfd = BINHEAP_NOIDX + 1;
@@ -230,7 +230,7 @@ vev_new(void)
 {
 	struct vev *e;
 
-	e = calloc(sizeof *e, 1);
+	e = calloc(1, sizeof *e);
 	if (e != NULL) {
 		e->fd = -1;
 	}

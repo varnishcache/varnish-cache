@@ -78,7 +78,7 @@ mpl_alloc(const struct mempool *mpl)
 
 	CHECK_OBJ_NOTNULL(mpl, MEMPOOL_MAGIC);
 	tsz = *mpl->cur_size;
-	mi = calloc(tsz, 1);
+	mi = calloc(1, tsz);
 	AN(mi);
 	mi->magic = MEMITEM_MAGIC;
 	mi->size = tsz;

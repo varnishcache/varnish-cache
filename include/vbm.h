@@ -121,7 +121,7 @@ vbit_new(unsigned initial)
 {
 	struct vbitmap *vb;
 
-	vb = calloc(sizeof *vb, 1);
+	vb = calloc(1, sizeof *vb);
 	assert(vb != NULL);
 	vb->flags |= VBITMAP_FL_MALLOC;
 	if (initial == 0)

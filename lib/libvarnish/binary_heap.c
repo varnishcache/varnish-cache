@@ -207,7 +207,7 @@ binheap_new(void *priv, binheap_cmp_t *cmp_f, binheap_update_t *update_f)
 	struct binheap *bh;
 	unsigned u;
 
-	bh = calloc(sizeof *bh, 1);
+	bh = calloc(1, sizeof *bh);
 	if (bh == NULL)
 		return (bh);
 	bh->priv = priv;
@@ -224,7 +224,7 @@ binheap_new(void *priv, binheap_cmp_t *cmp_f, binheap_update_t *update_f)
 	bh->update = update_f;
 	bh->next = ROOT_IDX;
 	bh->rows = 16;		/* A tiny-ish number */
-	bh->array = calloc(sizeof *bh->array, bh->rows);
+	bh->array = calloc(bh->rows, sizeof *bh->array);
 	assert(bh->array != NULL);
 	binheap_addrow(bh);
 	A(bh, ROOT_IDX) = NULL;

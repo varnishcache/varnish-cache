@@ -77,7 +77,7 @@ TlAlloc(struct vcc *tl, unsigned len)
 	void *p;
 
 	(void)tl;
-	p = calloc(len, 1);
+	p = calloc(1, len);
 	assert(p != NULL);
 	return (p);
 }
@@ -418,7 +418,7 @@ vcc_new_source(const char *b, const char *e, const char *name)
 
 	if (e == NULL)
 		e = strchr(b, '\0');
-	sp = calloc(sizeof *sp, 1);
+	sp = calloc(1, sizeof *sp);
 	assert(sp != NULL);
 	sp->name = strdup(name);
 	AN(sp->name);
