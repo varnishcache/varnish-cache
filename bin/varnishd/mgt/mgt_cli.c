@@ -67,6 +67,8 @@ static int		cli_i = -1, cli_o = -1;
 struct VCLS		*mgt_cls;
 static const char	*secret_file;
 
+struct vsb		*cli_buf = NULL;
+
 /*--------------------------------------------------------------------*/
 
 static void __match_proto__(cli_func_t)
@@ -177,24 +179,30 @@ mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
 	int i, j;
 	va_list ap;
 	unsigned u;
-	char buf[mgt_param.cli_buffer], *p;
+
+	if (cli_buf == NULL) {
+		cli_buf = VSB_new_auto();
+		AN(cli_buf);
+	} else {
+		VSB_clear(cli_buf);
+	}
 
 	if (resp != NULL)
 		*resp = NULL;
 	if (status != NULL)
 		*status = 0;
-	if (cli_i < 0|| cli_o < 0) {
+	if (cli_i < 0 || cli_o < 0) {
 		if (status != NULL)
 			*status = CLIS_CANT;
 		return (CLIS_CANT);
 	}
 	va_start(ap, fmt);
-	vbprintf(buf, fmt, ap);
+	AZ(VSB_vprintf(cli_buf, fmt, ap));
 	va_end(ap);
-	p = strchr(buf, '\0');
-	assert(p != NULL && p > buf && p[-1] == '\n');
-	i = p - buf;
-	j = write(cli_o, buf, i);
+	AZ(VSB_finish(cli_buf));
+	i = VSB_len(cli_buf);
+	assert(i > 0 && VSB_data(cli_buf)[i - 1] == '\n');
+	j = write(cli_o, VSB_data(cli_buf), i);
 	if (j != i) {
 		if (status != NULL)
 			*status = CLIS_COMMS;
