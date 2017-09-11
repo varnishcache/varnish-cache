@@ -549,8 +549,8 @@ vmod_length(VRT_CTX, VCL_BLOB b)
 	return b->len;
 }
 
-VCL_BLOB __match_proto__(td_blob_subblob)
-vmod_subblob(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
+VCL_BLOB __match_proto__(td_blob_sub)
+vmod_sub(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 {
 	uintptr_t snap;
 	struct vmod_priv *sub;
@@ -560,13 +560,13 @@ vmod_subblob(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 	assert(off >= 0);
 
 	if (b == NULL || b->len == 0 || b->priv == NULL) {
-		ERR(ctx, "blob is empty in blob.subblob()");
+		ERR(ctx, "blob is empty in blob.sub()");
 		return NULL;
 	}
 	assert(b->len >= 0);
 	if (off + n > b->len) {
 		VERR(ctx, "size %lld from offset %lld requires more bytes than "
-		     "blob length %d in blob.subblob()", n, off, b->len);
+		     "blob length %d in blob.sub()", n, off, b->len);
 		return NULL;
 	}
 
@@ -575,11 +575,11 @@ vmod_subblob(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 
 	snap = WS_Snapshot(ctx->ws);
 	if ((sub = WS_Alloc(ctx->ws, sizeof(*sub))) == NULL) {
-		ERRNOMEM(ctx, "Allocating BLOB result in blob.subblob()");
+		ERRNOMEM(ctx, "Allocating BLOB result in blob.sub()");
 		return NULL;
 	}
 	if ((sub->priv = WS_Alloc(ctx->ws, n)) == NULL) {
-		VERRNOMEM(ctx, "Allocating %lld bytes in blob.subblob()", n);
+		VERRNOMEM(ctx, "Allocating %lld bytes in blob.sub()", n);
 		WS_Reset(ctx->ws, snap);
 		return NULL;
 	}

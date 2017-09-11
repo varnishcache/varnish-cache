@@ -1,4 +1,4 @@
-varnishtest "VMOD blob same(), equal(), length() and subblob()"
+varnishtest "VMOD blob same(), equal(), length() and sub()"
 
 varnish v1 -vcl {
 	import blob;
@@ -165,7 +165,7 @@ client c1 {
 	expect resp.http.empty2len == "0"
 } -run
 
-# subblob()
+# sub()
 varnish v1 -vcl {
 	import blob;
 	backend b { .host = "${bad_ip}"; }
@@ -183,23 +183,23 @@ varnish v1 -vcl {
 
 	sub vcl_synth {
 		set resp.http.up03
-		    = blob.encode(BASE64, blob=blob.subblob(up07.get(), 4B));
+		    = blob.encode(BASE64, blob=blob.sub(up07.get(), 4B));
 		set resp.http.down07060504
-		    = blob.encode(BASE64, blob=blob.subblob(down07.get(), 4B));
+		    = blob.encode(BASE64, blob=blob.sub(down07.get(), 4B));
 		set resp.http.up04050607
 		    = blob.encode(BASE64,
-		                  blob=blob.subblob(up07.get(), 4B, 4B));
+		                  blob=blob.sub(up07.get(), 4B, 4B));
 		set resp.http.down03
 		    = blob.encode(BASE64,
-		                  blob=blob.subblob(down07.get(), 4B, 4B));
+		                  blob=blob.sub(down07.get(), 4B, 4B));
 		set resp.http.up07
-		    = blob.encode(BASE64, blob=blob.subblob(up07.get(), 8B));
+		    = blob.encode(BASE64, blob=blob.sub(up07.get(), 8B));
 		set resp.http.down07
-		    = blob.encode(BASE64, blob=blob.subblob(down07.get(), 8B));
+		    = blob.encode(BASE64, blob=blob.sub(down07.get(), 8B));
 		set resp.http.zerobytes
-		    = blob.encode(BASE64, blob=blob.subblob(down07.get(), 0B));
+		    = blob.encode(BASE64, blob=blob.sub(down07.get(), 0B));
 		set resp.http.zerolen
-		    = blob.length(blob.subblob(down07.get(), 0B));
+		    = blob.length(blob.sub(down07.get(), 0B));
 	}
 }
 
@@ -217,7 +217,7 @@ client c1 {
 	expect resp.http.zerolen == "0"
 } -run
 
-# subblob() failures
+# sub() failures
 server s1 -repeat 3 {
 	rxreq
 	txresp
@@ -234,23 +234,23 @@ varnish v1 -vcl+backend {
 	sub vcl_deliver {
 		if (req.url == "/empty") {
 			set resp.http.empty = blob.encode(BASE64, blob=
-			    blob.subblob(empty.get(), 1B));
+			    blob.sub(empty.get(), 1B));
 		}
 		elsif (req.url == "/toolong") {
 			set resp.http.toolong
 			    = blob.encode(BASE64,
-			                  blob=blob.subblob(up07.get(), 9B));
+			                  blob=blob.sub(up07.get(), 9B));
 		}
 		elsif (req.url == "/badoffset") {
 			set resp.http.badoffset = blob.encode(BASE64,
-			    blob=blob.subblob(up07.get(), 4B, 5B));
+			    blob=blob.sub(up07.get(), 4B, 5B));
 		}
 	}
 }
 
 logexpect l1 -v v1 -d 0 -g vxid -q "VCL_Error" {
 	expect 0 * Begin req
-	expect * = VCL_Error "^vmod blob error: blob is empty in blob.subblob..$"
+	expect * = VCL_Error "^vmod blob error: blob is empty in blob.sub..$"
 	expect * = End
 } -start
 
@@ -273,7 +273,7 @@ client c1 {
 } -run
 
 logexpect l1 -v v1 -d 1 -g vxid -q "VCL_Error" {
-	expect * * VCL_Error "^vmod blob error: size 9 from offset 0 requires more bytes than blob length 8 in blob.subblob..$"
+	expect * * VCL_Error "^vmod blob error: size 9 from offset 0 requires more bytes than blob length 8 in blob.sub..$"
 } -run
 
 client c1 {
@@ -285,41 +285,41 @@ client c1 {
 } -run
 
 logexpect l1 -v v1 -d 1 -g vxid -q "VCL_Error" {
-	expect * * VCL_Error "^vmod blob error: size 4 from offset 5 requires more bytes than blob length 8 in blob.subblob..$"
+	expect * * VCL_Error "^vmod blob error: size 4 from offset 5 requires more bytes than blob length 8 in blob.sub..$"
 } -run
 
-# VCL load failures from subblob()
-varnish v1 -errvcl {vmod blob error: blob is empty in blob.subblob()} {
+# VCL load failures from sub()
+varnish v1 -errvcl {vmod blob error: blob is empty in blob.sub()} {
 	import blob;
 	backend b { .host = "${bad_ip}"; }
 
 	sub vcl_init {
 		new empty = blob.blob(IDENTITY, "");
-		if (blob.same(empty.get(), blob.subblob(empty.get(), 0B))) {
+		if (blob.same(empty.get(), blob.sub(empty.get(), 0B))) {
 			new B = blob.blob(IDENTITY, "b");
 		}
 	}
 }
 
-varnish v1 -errvcl {vmod blob error: size 9 from offset 0 requires more bytes than blob length 8 in blob.subblob()} {
+varnish v1 -errvcl {vmod blob error: size 9 from offset 0 requires more bytes than blob length 8 in blob.sub()} {
 	import blob;
 	backend b { .host = "${bad_ip}"; }
 
 	sub vcl_init {
 		new up07 = blob.blob(BASE64, "AAECAwQFBgc=");
-		if (blob.same(up07.get(), blob.subblob(up07.get(), 9B))) {
+		if (blob.same(up07.get(), blob.sub(up07.get(), 9B))) {
 			new B = blob.blob(IDENTITY, "b");
 		}
 	}
 }
 
-varnish v1 -errvcl {vmod blob error: size 4 from offset 5 requires more bytes than blob length 8 in blob.subblob()} {
+varnish v1 -errvcl {vmod blob error: size 4 from offset 5 requires more bytes than blob length 8 in blob.sub()} {
 	import blob;
 	backend b { .host = "${bad_ip}"; }
 
 	sub vcl_init {
 		new up07 = blob.blob(BASE64, "AAECAwQFBgc=");
-		if (blob.same(up07.get(), blob.subblob(up07.get(), 4B, 5B))) {
+		if (blob.same(up07.get(), blob.sub(up07.get(), 4B, 5B))) {
 			new B = blob.blob(IDENTITY, "b");
 		}
 	}
