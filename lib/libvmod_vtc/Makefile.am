@@ -1,4 +1,10 @@
 #
+
+libvmod_vtc_la_SOURCES = \
+	vmod_vtc.c
+
+# Boilerplate, do not change
+
 AM_LDFLAGS  = $(AM_LT_LDFLAGS)
 
 AM_CPPFLAGS = \
@@ -9,25 +15,29 @@ AM_CPPFLAGS = \
 vmoddir = $(pkglibdir)/vmods
 vmod_srcdir = $(top_srcdir)/lib/libvmod_vtc
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
-vmodtoolargs =
+vmodtoolargs = --strict
 
 vmod_LTLIBRARIES = libvmod_vtc.la
 
 libvmod_vtc_la_CFLAGS = \
 	@SAN_CFLAGS@
 
-libvmod_vtc_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version -shared -rpath /nowhere \
+libvmod_vtc_la_LDFLAGS = \
+	$(AM_LDFLAGS) \
+	-module \
+	-export-dynamic \
+	-avoid-version \
+	-shared \
+	-export-symbols-regex '^Vmod_std_Data' \
+	-rpath /nowhere \
 	@SAN_LDFLAGS@
-
-libvmod_vtc_la_SOURCES = \
-	vmod_vtc.c
 
 nodist_libvmod_vtc_la_SOURCES = \
 	vcc_if.c \
 	vcc_if.h
 
 # BUILT_SOURCES is only a hack and dependency tracking does not help for the first build
-$(libvmod_vtc_la_OBJECTS):vcc_if.h
+$(libvmod_vtc_la_OBJECTS): vcc_if.h
 
 vcc_if.h vmod_vtc.rst vmod_vtc.man.rst: vcc_if.c
 

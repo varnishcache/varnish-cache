@@ -1,5 +1,13 @@
 #
 
+libvmod_std_la_SOURCES = \
+	vmod_std.c \
+	vmod_std_conversions.c \
+	vmod_std_fileread.c \
+	vmod_std_querysort.c
+
+# Boilerplate, do not change
+
 AM_LDFLAGS  = $(AM_LT_LDFLAGS)
 
 AM_CPPFLAGS = \
@@ -11,19 +19,21 @@ vmoddir = $(pkglibdir)/vmods
 vmod_srcdir = $(top_srcdir)/lib/libvmod_std
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
 vmodtoolargs = --strict
+
 vmod_LTLIBRARIES = libvmod_std.la
 
 libvmod_std_la_CFLAGS = \
 	@SAN_CFLAGS@
 
-libvmod_std_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version -shared \
+libvmod_std_la_LDFLAGS = \
+	$(AM_LDFLAGS) \
+	-module \
+	-export-dynamic \
+	-avoid-version \
+	-shared \
+	-export-symbols-regex '^Vmod_std_Data' \
+	-rpath /nowhere \
 	@SAN_LDFLAGS@
-
-libvmod_std_la_SOURCES = \
-	vmod_std.c \
-	vmod_std_conversions.c \
-	vmod_std_fileread.c \
-	vmod_std_querysort.c
 
 nodist_libvmod_std_la_SOURCES = \
 	vcc_if.c \
