@@ -20,7 +20,7 @@ $Module blob 3 utilities for the VCL blob type
   BOOL blob.same(BLOB, BLOB)
   BOOL blob.equal(BLOB, BLOB)
   INT blob.length(BLOB)
-  BLOB blob.subblob(BLOB, BYTES length [, BYTES offset])
+  BLOB blob.sub(BLOB, BYTES length [, BYTES offset])
 
   # blob object
   new OBJ = blob.blob([ENUM decoding,] STRING_LIST encoded)
@@ -298,14 +298,14 @@ $Function INT length(BLOB)
 
 Returns the length of the BLOB.
 
-$Function BLOB subblob(BLOB, BYTES length, BYTES offset = 0)
+$Function BLOB sub(BLOB, BYTES length, BYTES offset = 0)
 
 Returns a new BLOB formed from ``length`` bytes of the BLOB argument
 starting at ``offset`` bytes from the start of its memory region. The
 default value of ``offset`` is 0B.
 
-``subblob()`` fails and returns NULL if the BLOB argument is empty, or
-if ``offset + length`` requires more bytes than are available in the
+``sub()`` fails and returns NULL if the BLOB argument is empty, or if
+``offset + length`` requires more bytes than are available in the
 BLOB.
 
 $Object blob(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD, HEX,
@@ -377,7 +377,7 @@ not known until runtime.
 ERRORS
 ======
 
-The encoders, decoders and ``subblob()`` may fail if there is
+The encoders, decoders and ``sub()`` may fail if there is
 insufficient space to create the new blob or string. Decoders may also
 fail if the encoded string is an illegal format for the decoding
 scheme.
@@ -408,11 +408,11 @@ strings. The ``blob`` object and its methods allocate memory from the
 heap, and hence they are only limited by available virtual memory.
 
 The ``encode()``, ``decode()`` and ``transcode()`` functions allocate
-Varnish workspace, as does ``subblob()`` for the newly created BLOB.
-If these functions are failing, as indicated by "out of space"
-messages in the Varnish log (with the ``VCL_Error`` tag), then you
-will need to increase the varnishd parameters ``workspace_client``
-and/or ``workspace_backend``.
+Varnish workspace, as does ``sub()`` for the newly created BLOB.  If
+these functions are failing, as indicated by "out of space" messages
+in the Varnish log (with the ``VCL_Error`` tag), then you will need to
+increase the varnishd parameters ``workspace_client`` and/or
+``workspace_backend``.
 
 The ``transcode()`` function also allocates space on the stack for a
 temporary BLOB. If this function causes stack overflow, you may need
