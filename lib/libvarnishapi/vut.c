@@ -87,8 +87,8 @@ vut_dispatch(struct VSL_data *vsl, struct VSL_transaction * const trans[],
 	struct VUT *vut;
 	int i;
 
-	vut = priv;
-	AN(vut);
+	CAST_OBJ_NOTNULL(vut, priv, VUT_MAGIC);
+
 	if (vut->k_arg == 0)
 		return (-1);	/* End of file */
 	AN(vut->dispatch_f);
@@ -105,7 +105,7 @@ static void __attribute__((__noreturn__)) __match_proto__(VUT_error_f)
 vut_error(struct VUT *vut, int status, const char *fmt, va_list ap)
 {
 
-	AN(vut);
+	CHECK_OBJ_NOTNULL(vut, VUT_MAGIC);
 	AN(fmt);
 	vfprintf(stderr, fmt, ap);
 	fprintf(stderr, "\n");
@@ -202,7 +202,7 @@ VUT_Init(const char *progname, int argc, char * const *argv,
 	AN(argv);
 	AN(voc);
 
-	vut = calloc(1, sizeof *vut);
+	ALLOC_OBJ(vut, VUT_MAGIC);
 	AN(vut);
 
 	if (argc == 2 && !strcmp(argv[1], "--synopsis"))
@@ -235,7 +235,7 @@ void
 VUT_Signaled(struct VUT *vut, int sig)
 {
 
-	AN(vut);
+	CHECK_OBJ_NOTNULL(vut, VUT_MAGIC);
 	vut->sighup |= (sig == SIGHUP);
 	vut->sigint |= (sig == SIGINT || sig == SIGTERM);
 	vut->sigusr1 |= (sig == SIGUSR1);
@@ -246,7 +246,7 @@ VUT_Setup(struct VUT *vut)
 {
 	struct VSL_cursor *c;
 
-	AN(vut);
+	CHECK_OBJ_NOTNULL(vut, VUT_MAGIC);
 	AN(vut->vsl);
 	AZ(vut->vsm);
 	AZ(vut->vslq);
@@ -307,11 +307,7 @@ VUT_Fini(struct VUT **vutp)
 {
 	struct VUT *vut;
 
-	AN(vutp);
-	vut = *vutp;
-	*vutp = NULL;
-
-	AN(vut);
+	TAKE_OBJ_NOTNULL(vut, vutp, VUT_MAGIC);
 	AN(vut->progname);
 
 	free(vut->n_arg);
@@ -331,7 +327,7 @@ VUT_Fini(struct VUT **vutp)
 		VSM_Destroy(&vut->vsm);
 
 	memset(vut, 0, sizeof *vut);
-	free(vut);
+	FREE_OBJ(vut);
 }
 
 int
@@ -341,7 +337,7 @@ VUT_Main(struct VUT *vut)
 	int i = -1;
 	int hascursor = -1;
 
-	AN(vut);
+	CHECK_OBJ_NOTNULL(vut, VUT_MAGIC);
 	AN(vut->vslq);
 
 	while (!vut->sigint) {
