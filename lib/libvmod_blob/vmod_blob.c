@@ -42,7 +42,7 @@ struct vmod_blob_blob {
 	unsigned magic;
 #define VMOD_BLOB_MAGIC 0xfade4fa9
 	struct vmod_priv blob;
-	char *encoding[__MAX_ENCODING];
+	char *encoding[__MAX_ENCODING][2];
 	pthread_mutex_t lock;
 };
 
@@ -50,18 +50,6 @@ struct vmod_blob_blob {
 		.decode_l	= base64_decode_l, \
 		.decode		= base64_decode,   \
 		.encode		= base64_encode
-
-#define HEX_FUNCS				\
-		.decode_l	= hex_decode_l, \
-		.decode		= hex_decode,	\
-		.encode_l	= hex_encode_l, \
-		.encode		= hex_encode
-
-#define URL_FUNCS				\
-		.decode_l	= url_decode_l, \
-		.decode		= url_decode,	\
-		.encode_l	= url_encode_l, \
-		.encode		= url_encode
 
 static const struct vmod_blob_fptr {
 	len_f		*const decode_l;
@@ -95,28 +83,20 @@ static const struct vmod_blob_fptr {
 		.encode_l	= base64nopad_encode_l
 	},
 	[HEX] = {
-		HEX_FUNCS
-	},
-	[HEXUC] = {
-		HEX_FUNCS
-	},
-	[HEXLC] = {
-		HEX_FUNCS
+		.decode_l	= hex_decode_l,
+		.decode		= hex_decode,
+		.encode_l	= hex_encode_l,
+		.encode		= hex_encode
 	},
 	[URL] = {
-		URL_FUNCS
+		.decode_l	= url_decode_l,
+		.decode		= url_decode,
+		.encode_l	= url_encode_l,
+		.encode		= url_encode
 	},
-	[URLUC] = {
-		URL_FUNCS
-	},
-	[URLLC] = {
-		URL_FUNCS
-	}
 };
 
 #undef B64_FUNCS
-#undef HEX_FUNCS
-#undef URL_FUNCS
 
 #define ERR(ctx, msg) \
 	VRT_fail((ctx), "vmod blob error: " msg)
@@ -172,6 +152,21 @@ err_decode(VRT_CTX, const char *enc)
 		break;
 	default:
 		WRONG("invalid errno");
+	}
+}
+
+static inline enum case_e
+parse_case(VCL_ENUM case_s)
+{
+	switch(*case_s) {
+	case 'L':
+		AZ(strcmp(case_s + 1, "OWER"));
+		return LOWER;
+	case 'U':
+		AZ(strcmp(case_s + 1, "PPER"));
+		return UPPER;
+	default:
+		WRONG("illegal case enum");
 	}
 }
 
@@ -245,10 +240,12 @@ vmod_blob_get(VRT_CTX, struct vmod_blob_blob *b)
 }
 
 VCL_STRING __match_proto__(td_blob_blob_encode)
-vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs)
+vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
+		 VCL_ENUM case_s)
 {
 	enum encoding enc = parse_encoding(encs);
 	AENC(enc);
+	enum case_e kase = parse_case(case_s);
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(b, VMOD_BLOB_MAGIC);
@@ -256,29 +253,29 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs)
 	if (b->blob.len == 0)
 		return "";
 
-	if (b->encoding[enc] == NULL) {
+	if (b->encoding[enc][kase] == NULL) {
 		AZ(pthread_mutex_lock(&b->lock));
-		if (b->encoding[enc] == NULL) {
+		if (b->encoding[enc][kase] == NULL) {
 			ssize_t len = func[enc].encode_l(b->blob.len);
 
 			assert(len >= 0);
 			if (len == 0)
-				b->encoding[enc] = empty;
+				b->encoding[enc][kase] = empty;
 			else {
-				b->encoding[enc] = malloc(len);
-				if (b->encoding[enc] == NULL)
+				b->encoding[enc][kase] = malloc(len);
+				if (b->encoding[enc][kase] == NULL)
 					ERRNOMEM(ctx, "cannot encode");
 				else {
-					char *s = b->encoding[enc];
+					char *s = b->encoding[enc][kase];
 					len =
 						func[enc].encode(
-							enc, s, len,
+							enc, kase, s, len,
 							b->blob.priv,
 							b->blob.len);
 					assert(len >= 0);
 					if (len == 0) {
 						free(s);
-						b->encoding[enc] = empty;
+						b->encoding[enc][kase] = empty;
 					}
 					else
 						s[len] = '\0';
@@ -287,7 +284,7 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs)
 		}
 		AZ(pthread_mutex_unlock(&b->lock));
 	}
-	return b->encoding[enc];
+	return b->encoding[enc][kase];
 }
 
 VCL_VOID __match_proto__(td_blob_blob__fini)
@@ -306,9 +303,12 @@ vmod_blob__fini(struct vmod_blob_blob **blobp)
 		b->blob.priv = NULL;
 	}
 	for (int i = 0; i < __MAX_ENCODING; i++)
-		if (b->encoding[i] != NULL && b->encoding[i] != empty) {
-			free(b->encoding[i]);
-			b->encoding[i] = NULL;
+		for (int j = 0; j < 2; j++) {
+			char *s = b->encoding[i][j];
+			if (s != NULL && s != empty) {
+				free(s);
+				b->encoding[i][j] = NULL;
+			}
 		}
 	AZ(pthread_mutex_destroy(&b->lock));
 	FREE_OBJ(b);
@@ -413,7 +413,7 @@ vmod_decode_n(VRT_CTX, VCL_INT n, VCL_ENUM decs, const char *p, ...)
 }
 
 static VCL_STRING
-encode(VRT_CTX, enum encoding enc, VCL_BLOB b)
+encode(VRT_CTX, enum encoding enc, enum case_e kase, VCL_BLOB b)
 {
 	struct wb_s wb;
 	ssize_t len;
@@ -430,7 +430,7 @@ encode(VRT_CTX, enum encoding enc, VCL_BLOB b)
 		return NULL;
 	}
 
-	len = func[enc].encode(enc,
+	len = func[enc].encode(enc, kase,
 			       wb_buf(&wb), wb_space(&wb), b->priv, b->len);
 
 	if (len == -1) {
@@ -447,18 +447,26 @@ encode(VRT_CTX, enum encoding enc, VCL_BLOB b)
 }
 
 VCL_STRING __match_proto__(td_blob_encode)
-vmod_encode(VRT_CTX, VCL_ENUM encs, VCL_BLOB b)
+vmod_encode(VRT_CTX, VCL_ENUM encs, VCL_ENUM case_s, VCL_BLOB b)
 {
 	enum encoding enc = parse_encoding(encs);
-	return encode(ctx, enc, b);
+	enum case_e kase = parse_case(case_s);
+	return encode(ctx, enc, kase, b);
+}
+
+static inline int
+encodes_hex(enum encoding enc)
+{
+	return (enc == HEX || enc == URL);
 }
 
 static VCL_STRING
-transcode(VRT_CTX, VCL_INT n, VCL_ENUM decs, VCL_ENUM encs,
+transcode(VRT_CTX, VCL_INT n, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	  const char *restrict const p, va_list ap)
 {
 	enum encoding dec = parse_encoding(decs);
 	enum encoding enc = parse_encoding(encs);
+	enum case_e kase = parse_case(case_s);
 	va_list aq;
 	struct vmod_priv b;
 	VCL_STRING r;
@@ -497,8 +505,11 @@ transcode(VRT_CTX, VCL_INT n, VCL_ENUM decs, VCL_ENUM encs,
 	 * If the encoding and decoding are the same, and the decoding was
 	 * legal, just return the string, if there was only one in the
 	 * STRING_LIST, or else the concatenated string.
+	 * For encodings with hex digits, we cannot assume the same result.
+	 * since the call may specify upper- or lower-case that differs
+	 * from the encoded string.
 	 */
-	if (n == -1 && enc == dec) {
+	if (n == -1 && enc == dec && !encodes_hex(enc)) {
 		const char *q, *pp = p;
 		va_copy(aq, ap);
 		q = find_nonempty_va(&pp, ap);
@@ -514,19 +525,19 @@ transcode(VRT_CTX, VCL_INT n, VCL_ENUM decs, VCL_ENUM encs,
 		return r;
 	}
 
-	r = encode(ctx, enc, &b);
+	r = encode(ctx, enc, kase, &b);
 	return (r);
 }
 
 VCL_STRING __match_proto__(td_blob_transcode)
-vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs,
+vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	       const char *p, ...)
 {
 	va_list ap;
 	VCL_STRING r;
 
 	va_start(ap, p);
-	r = transcode(ctx, -1, decs, encs, p, ap);
+	r = transcode(ctx, -1, decs, encs, case_s, p, ap);
 	va_end(ap);
 
 	return (r);
@@ -534,13 +545,13 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs,
 
 VCL_STRING __match_proto__(td_blob_transcode_n)
 vmod_transcode_n(VRT_CTX, VCL_INT n, VCL_ENUM decs, VCL_ENUM encs,
-		 const char *p, ...)
+		 VCL_ENUM case_s, const char *p, ...)
 {
 	va_list ap;
 	VCL_STRING r;
 
 	va_start(ap, p);
-	r = transcode(ctx, n, decs, encs, p, ap);
+	r = transcode(ctx, n, decs, encs, case_s, p, ap);
 	va_end(ap);
 
 	return (r);

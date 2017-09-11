@@ -79,20 +79,20 @@ isoutofrange(const uint8_t c)
 }
 
 ssize_t
-url_encode(const enum encoding enc, char *restrict const buf,
-	   const size_t buflen, const char *restrict const in,
-	   const size_t inlen)
+url_encode(const enum encoding enc, const enum case_e kase,
+	   char *restrict const buf, const size_t buflen,
+	   const char *restrict const in, const size_t inlen)
 {
 	char *p = buf;
 	const char * const end = buf + buflen;
 	const char *alphabet = hex_alphabet[0];
 
 	AN(buf);
-	assert(enc == URLUC || enc == URLLC);
+	assert(enc == URL);
 	if (in == NULL || inlen == 0)
 		return 0;
 
-	if (enc != URLLC)
+	if (kase == UPPER)
 		alphabet = hex_alphabet[1];
 
 	for (int i = 0; i < inlen; i++) {

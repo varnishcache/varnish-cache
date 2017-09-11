@@ -222,7 +222,7 @@ varnish v1 -errvcl {'req.hash': Not available in method 'vcl_recv'.} {
 	import blob;
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
-		blob.encode(HEXLC, req.hash);
+		blob.encode(HEX, LOWER, req.hash);
 	}
 }
 
@@ -230,7 +230,7 @@ varnish v1 -errvcl {'req.hash': Not available in method 'vcl_hash'.} {
 	import blob;
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_hash {
-		blob.encode(HEXLC, req.hash);
+		blob.encode(HEX, LOWER, req.hash);
 	}
 }
 

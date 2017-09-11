@@ -50,11 +50,12 @@ id_decode_l(size_t l)
 }
 
 ssize_t
-id_encode(const enum encoding enc, char *restrict const buf,
-	  const size_t buflen, const char *restrict const in,
-	  const size_t inlen)
+id_encode(const enum encoding enc, const enum case_e kase,
+	  char *restrict const buf, const size_t buflen,
+	  const char *restrict const in, const size_t inlen)
 {
 	(void) enc;
+	(void) kase;
 	AN(buf);
 
 	if (buflen < inlen + 1)

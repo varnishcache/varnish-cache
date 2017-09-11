@@ -14,11 +14,7 @@ enum encoding {
 	BASE64URL,
 	BASE64URLNOPAD,
 	HEX,
-	HEXUC,
-	HEXLC,
 	URL,
-	URLLC,
-	URLUC,
 	__MAX_ENCODING
 };
 

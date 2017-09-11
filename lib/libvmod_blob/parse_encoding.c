@@ -17,9 +17,9 @@ parse_encoding (const char *m) {
 
 	switch (m[0]) {
 	case 'B':	goto _0B;	// BASE64, BASE64URL, BASE64URLNOPAD
-	case 'H':	goto _0H;	// HEX, HEXLC, HEXUC
+	case 'H':	goto _0H;	// HEX
 	case 'I':	goto _0I;	// IDENTITY
-	case 'U':	goto _0U;	// URL, URLLC, URLUC
+	case 'U':	goto _0U;	// URL
 	default:	goto invalid;
 	}
 	 _0B:
@@ -85,37 +85,9 @@ parse_encoding (const char *m) {
 	}
 	goto invalid;
 	 _0H:
-	switch (m[1]) {
-	case 'E':	goto _1HE;	// HEX, HEXLC, HEXUC
-	default:	goto invalid;
-	}
-	 _1HE:
-	switch (m[2]) {
-	case 'X':	goto _2HEX;	// HEX, HEXLC, HEXUC
-	default:	goto invalid;
-	}
-	 _2HEX:
 	//HEX
-	if (term(m[3])) {
+	if ((m[1] == 'E') && (m[2] == 'X') && (term(m[3]))) {
 	    r = HEX;
-	    goto ok;
-	}
-	switch (m[3]) {
-	case 'L':	goto _3HEXL;	// HEXLC
-	case 'U':	goto _3HEXU;	// HEXUC
-	default:	goto invalid;
-	}
-	 _3HEXL:
-	//HEXLC
-	if ((m[4] == 'C') && (term(m[5]))) {
-	    r = HEXLC;
-	    goto ok;
-	}
-	goto invalid;
-	 _3HEXU:
-	//HEXUC
-	if ((m[4] == 'C') && (term(m[5]))) {
-	    r = HEXUC;
 	    goto ok;
 	}
 	goto invalid;
@@ -127,37 +99,9 @@ parse_encoding (const char *m) {
 	}
 	goto invalid;
 	 _0U:
-	switch (m[1]) {
-	case 'R':	goto _1UR;	// URL, URLLC, URLUC
-	default:	goto invalid;
-	}
-	 _1UR:
-	switch (m[2]) {
-	case 'L':	goto _2URL;	// URL, URLLC, URLUC
-	default:	goto invalid;
-	}
-	 _2URL:
 	//URL
-	if (term(m[3])) {
+	if ((m[1] == 'R') && (m[2] == 'L') && (term(m[3]))) {
 	    r = URL;
-	    goto ok;
-	}
-	switch (m[3]) {
-	case 'L':	goto _3URLL;	// URLLC
-	case 'U':	goto _3URLU;	// URLUC
-	default:	goto invalid;
-	}
-	 _3URLL:
-	//URLLC
-	if ((m[4] == 'C') && (term(m[5]))) {
-	    r = URLLC;
-	    goto ok;
-	}
-	goto invalid;
-	 _3URLU:
-	//URLUC
-	if ((m[4] == 'C') && (term(m[5]))) {
-	    r = URLUC;
 	    goto ok;
 	}
 	goto invalid;
