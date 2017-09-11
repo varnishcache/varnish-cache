@@ -224,6 +224,7 @@ $(varnishd_OBJECTS):	VSC_main.h
 
 EXTRA_DIST	+=	main.vsc
 DISTCLEANFILES	+=	VSC_main.c VSC_main.h
+BUILT_SOURCES	+=	VSC_main.c VSC_main.h
 nodist_varnishd_SOURCES +=	VSC_main.c
 
 #######################################################################
@@ -235,6 +236,7 @@ $(varnishd_OBJECTS):	VSC_lck.h
 
 EXTRA_DIST	+=	lck.vsc
 DISTCLEANFILES	+=	VSC_lck.c VSC_lck.h
+BUILT_SOURCES	+=	VSC_lck.c VSC_lck.h
 nodist_varnishd_SOURCES +=	VSC_lck.c
 
 #######################################################################
@@ -246,6 +248,7 @@ $(varnishd_OBJECTS):	VSC_vbe.h
 
 EXTRA_DIST	+=	vbe.vsc
 DISTCLEANFILES	+=	VSC_vbe.c VSC_vbe.h
+BUILT_SOURCES	+=	VSC_vbe.c VSC_vbe.h
 nodist_varnishd_SOURCES +=	VSC_vbe.c
 
 #######################################################################
@@ -257,6 +260,7 @@ $(varnishd_OBJECTS):	VSC_sma.h
 
 EXTRA_DIST	+=	sma.vsc
 DISTCLEANFILES	+=	VSC_sma.c VSC_sma.h
+BUILT_SOURCES	+=	VSC_sma.c VSC_sma.h
 nodist_varnishd_SOURCES +=	VSC_sma.c
 
 #######################################################################
@@ -268,6 +272,7 @@ $(varnishd_OBJECTS):	VSC_smf.h
 
 EXTRA_DIST	+=	smf.vsc
 DISTCLEANFILES	+=	VSC_smf.c VSC_smf.h
+BUILT_SOURCES	+=	VSC_smf.c VSC_smf.h
 nodist_varnishd_SOURCES +=	VSC_smf.c
 
 #######################################################################
@@ -279,6 +284,7 @@ $(varnishd_OBJECTS):	VSC_mempool.h
 
 EXTRA_DIST	+=	mempool.vsc
 DISTCLEANFILES	+=	VSC_mempool.c VSC_mempool.h
+BUILT_SOURCES	+=	VSC_mempool.c VSC_mempool.h
 nodist_varnishd_SOURCES +=	VSC_mempool.c
 
 #######################################################################
@@ -290,5 +296,5 @@ $(varnishd_OBJECTS):	VSC_mgt.h
 
 EXTRA_DIST	+=	mgt.vsc
 DISTCLEANFILES	+=	VSC_mgt.c VSC_mgt.h
+BUILT_SOURCES	+=	VSC_mgt.c VSC_mgt.h
 nodist_varnishd_SOURCES +=	VSC_mgt.c
-
