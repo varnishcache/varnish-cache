@@ -41,11 +41,6 @@
 
 #include "hash/hash_slinger.h"
 
-#ifdef HAVE_SIGALTSTACK
-#include <signal.h>
-extern stack_t altstack;
-#endif
-
 static void Pool_Work_Thread(struct pool *pp, struct worker *wrk);
 
 /*--------------------------------------------------------------------
@@ -70,6 +65,7 @@ wrk_bgthread(void *arg)
 
 	CAST_OBJ_NOTNULL(bt, arg, BGTHREAD_MAGIC);
 	THR_SetName(bt->name);
+	THR_Init();
 	INIT_OBJ(&wrk, WORKER_MAGIC);
 	memset(&ds, 0, sizeof ds);
 	wrk.stats = &ds;
@@ -406,9 +402,7 @@ pool_thread(void *priv)
 	struct pool_info *pi;
 
 	CAST_OBJ_NOTNULL(pi, priv, POOL_INFO_MAGIC);
-#ifdef HAVE_SIGALTSTACK
-	AZ(sigaltstack(&altstack, NULL));
-#endif
+	THR_Init();
 	WRK_Thread(pi->qp, pi->stacksize, cache_param->workspace_thread);
 	FREE_OBJ(pi);
 	return (NULL);
@@ -483,6 +477,7 @@ pool_herder(void *priv)
 	CAST_OBJ_NOTNULL(pp, priv, POOL_MAGIC);
 
 	THR_SetName("pool_herder");
+	THR_Init();
 
 	while (!pp->die || pp->nthr > 0) {
 		wthread_min = cache_param->wthread_min;

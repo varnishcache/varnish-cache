@@ -187,6 +187,7 @@ pool_poolherder(void *priv)
 	void *rvp;
 
 	THR_SetName("pool_poolherder");
+	THR_Init();
 	(void)priv;
 
 	nwq = 0;

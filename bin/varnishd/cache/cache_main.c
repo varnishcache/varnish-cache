@@ -113,6 +113,22 @@ THR_GetName(void)
 }
 
 /*--------------------------------------------------------------------
+ * Generic setup all our threads should call
+ */
+#ifdef HAVE_SIGALTSTACK
+#include <signal.h>
+extern stack_t altstack;
+#endif
+
+void
+THR_Init(void)
+{
+#ifdef HAVE_SIGALTSTACK
+       AZ(sigaltstack(&altstack, NULL));
+#endif
+}
+
+/*--------------------------------------------------------------------
  * VXID's are unique transaction numbers allocated with a minimum of
  * locking overhead via pools in the worker threads.
  *

@@ -161,6 +161,7 @@ vwp_main(void *priv)
 	int i;
 
 	THR_SetName("cache-poll");
+	THR_Init();
 	CAST_OBJ_NOTNULL(vwp, priv, VWP_MAGIC);
 	w = vwp->waiter;
 

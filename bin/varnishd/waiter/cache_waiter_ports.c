@@ -152,6 +152,7 @@ vws_thread(void *priv)
 	w = vws->waiter;
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	THR_SetName("cache-ports");
+	THR_Init();
 
 	now = VTIM_real();
 
