@@ -21,62 +21,117 @@ varnish v1 -vcl {
 	    set req.http.b64all =
 {"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w=="};
 
+	    set resp.http.url =
+	      blob.encode(URL, blob=blob.decode(IDENTITY, req.http.pangram));
+
 	    set resp.http.urllc =
-	      blob.encode(URLLC,
-			      blob.decode(IDENTITY, req.http.pangram));
+	      blob.encode(URL, LOWER, blob.decode(IDENTITY, req.http.pangram));
 
 	    set resp.http.urluc =
-	      blob.encode(URLUC,
-			      blob.decode(IDENTITY, req.http.pangram));
+	      blob.encode(URL, UPPER, blob.decode(IDENTITY, req.http.pangram));
+
+	    set resp.http.hobbes =
+	      blob.encode(URL, blob=blob.decode(IDENTITY, req.http.hobbes));
 
 	    set resp.http.hobbeslc =
-	      blob.encode(URLLC, blob.decode(IDENTITY, req.http.hobbes));
+	      blob.encode(URL, LOWER, blob.decode(IDENTITY, req.http.hobbes));
 
 	    set resp.http.hobbesuc =
-	      blob.encode(URLUC, blob.decode(IDENTITY, req.http.hobbes));
+	      blob.encode(URL, UPPER, blob.decode(IDENTITY, req.http.hobbes));
+
+	    set resp.http.umlauts =
+	      blob.encode(URL, blob=blob.decode(IDENTITY, req.http.umlauts));
 
 	    set resp.http.umlautslc =
-	      blob.encode(URLLC,
-			      blob.decode(IDENTITY, req.http.umlauts));
+	      blob.encode(URL, LOWER, blob.decode(IDENTITY, req.http.umlauts));
 
 	    set resp.http.umlautsuc =
-	      blob.encode(URLUC,
-			      blob.decode(IDENTITY, req.http.umlauts));
+	      blob.encode(URL, UPPER, blob.decode(IDENTITY, req.http.umlauts));
+
+	    set resp.http.phk =
+	      blob.encode(URL, blob=blob.decode(IDENTITY, req.http.phkspeak));
 
 	    set resp.http.phklc =
-	      blob.encode(URLLC,
-			     blob.decode(IDENTITY, req.http.phkspeak));
+	      blob.encode(URL, LOWER, blob.decode(IDENTITY, req.http.phkspeak));
 
 	    set resp.http.phkuc =
-	      blob.encode(URLUC,
-			     blob.decode(IDENTITY, req.http.phkspeak));
+	      blob.encode(URL, UPPER, blob.decode(IDENTITY, req.http.phkspeak));
+
+	    set resp.http.utf8 =
+	      blob.encode(URL, blob=blob.decode(IDENTITY, req.http.utf8));
 
 	    set resp.http.utf8lc =
-	      blob.encode(URLLC, blob.decode(IDENTITY, req.http.utf8));
+	      blob.encode(URL, LOWER, blob.decode(IDENTITY, req.http.utf8));
 
 	    set resp.http.utf8uc =
-	      blob.encode(URLUC, blob.decode(IDENTITY, req.http.utf8));
+	      blob.encode(URL, UPPER, blob.decode(IDENTITY, req.http.utf8));
+
+	    set resp.http.all =
+	      blob.encode(URL, blob=blob.decode(BASE64, req.http.b64all));
 
 	    set resp.http.all-lc =
-	      blob.encode(URLLC, blob.decode(BASE64, req.http.b64all));
+	      blob.encode(URL, LOWER, blob.decode(BASE64, req.http.b64all));
 
 	    set resp.http.all-uc =
-	      blob.encode(URLUC, blob.decode(BASE64, req.http.b64all));
+	      blob.encode(URL, UPPER, blob.decode(BASE64, req.http.b64all));
+
+	    set resp.http.empty =
+	      blob.encode(URL, blob=blob.decode(IDENTITY, ""));
 
 	    set resp.http.empty-lc =
-	      blob.encode(URLLC, blob.decode(IDENTITY, ""));
+	      blob.encode(URL, LOWER, blob.decode(IDENTITY, ""));
 
 	    set resp.http.empty-uc =
-	      blob.encode(URLUC, blob.decode(IDENTITY, ""));
+	      blob.encode(URL, UPPER, blob.decode(IDENTITY, ""));
 
 	    set resp.http.urllcparam =
 	      blob.encode(blob=blob.decode(IDENTITY, req.http.pangram),
-			      encoding=URLLC);
+			  encoding=URL, case=LOWER);
 
 	    set resp.http.urlucparam =
 	      blob.encode(blob=blob.decode(IDENTITY, req.http.pangram),
-			      encoding=URLUC);
+			  encoding=URL, case=UPPER);
+	}
+} -start
 
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.http.url == "The%20quick%20brown%20fox%20jumps%20over%20the%20lazy%20dog"
+	expect resp.http.urllc == "The%20quick%20brown%20fox%20jumps%20over%20the%20lazy%20dog"
+	expect resp.http.urluc == "The%20quick%20brown%20fox%20jumps%20over%20the%20lazy%20dog"
+	expect resp.http.hobbes == "Man%20is%20distinguished%2c%20not%20only%20by%20his%20reason%2c%20but%20by%20this%20singular%20passion%20from%20other%20animals%2c%20which%20is%20a%20lust%20of%20the%20mind%2c%20that%20by%20a%20perseverance%20of%20delight%20in%20the%20continued%20and%20indefatigable%20generation%20of%20knowledge%2c%20exceeds%20the%20short%20vehemence%20of%20any%20carnal%20pleasure."
+	expect resp.http.hobbeslc == "Man%20is%20distinguished%2c%20not%20only%20by%20his%20reason%2c%20but%20by%20this%20singular%20passion%20from%20other%20animals%2c%20which%20is%20a%20lust%20of%20the%20mind%2c%20that%20by%20a%20perseverance%20of%20delight%20in%20the%20continued%20and%20indefatigable%20generation%20of%20knowledge%2c%20exceeds%20the%20short%20vehemence%20of%20any%20carnal%20pleasure."
+	expect resp.http.hobbesuc == "Man%20is%20distinguished%2C%20not%20only%20by%20his%20reason%2C%20but%20by%20this%20singular%20passion%20from%20other%20animals%2C%20which%20is%20a%20lust%20of%20the%20mind%2C%20that%20by%20a%20perseverance%20of%20delight%20in%20the%20continued%20and%20indefatigable%20generation%20of%20knowledge%2C%20exceeds%20the%20short%20vehemence%20of%20any%20carnal%20pleasure."
+	expect resp.http.umlauts == "%c3%9cbergr%c3%b6%c3%9fentr%c3%a4ger"
+	expect resp.http.umlautslc == "%c3%9cbergr%c3%b6%c3%9fentr%c3%a4ger"
+	expect resp.http.umlautsuc == "%C3%9Cbergr%C3%B6%C3%9Fentr%C3%A4ger"
+	expect resp.http.phk == "sm%c3%a5b%c3%b8rnsp%c3%a6dagog"
+	expect resp.http.phklc == "sm%c3%a5b%c3%b8rnsp%c3%a6dagog"
+	expect resp.http.phkuc == "sm%C3%A5b%C3%B8rnsp%C3%A6dagog"
+	expect resp.http.utf8 == "%e6%97%a5%e6%89%bc%e8%aa%9e"
+	expect resp.http.utf8lc == "%e6%97%a5%e6%89%bc%e8%aa%9e"
+	expect resp.http.utf8uc == "%E6%97%A5%E6%89%BC%E8%AA%9E"
+	expect resp.http.all == "%00%01%02%03%04%05%06%07%08%09%0a%0b%0c%0d%0e%0f%10%11%12%13%14%15%16%17%18%19%1a%1b%1c%1d%1e%1f%20%21%22%23%24%25%26%27%28%29%2a%2b%2c-.%2f0123456789%3a%3b%3c%3d%3e%3f%40ABCDEFGHIJKLMNOPQRSTUVWXYZ%5b%5c%5d%5e_%60abcdefghijklmnopqrstuvwxyz%7b%7c%7d~%7f%80%81%82%83%84%85%86%87%88%89%8a%8b%8c%8d%8e%8f%90%91%92%93%94%95%96%97%98%99%9a%9b%9c%9d%9e%9f%a0%a1%a2%a3%a4%a5%a6%a7%a8%a9%aa%ab%ac%ad%ae%af%b0%b1%b2%b3%b4%b5%b6%b7%b8%b9%ba%bb%bc%bd%be%bf%c0%c1%c2%c3%c4%c5%c6%c7%c8%c9%ca%cb%cc%cd%ce%cf%d0%d1%d2%d3%d4%d5%d6%d7%d8%d9%da%db%dc%dd%de%df%e0%e1%e2%e3%e4%e5%e6%e7%e8%e9%ea%eb%ec%ed%ee%ef%f0%f1%f2%f3%f4%f5%f6%f7%f8%f9%fa%fb%fc%fd%fe%ff"
+	expect resp.http.all-lc == "%00%01%02%03%04%05%06%07%08%09%0a%0b%0c%0d%0e%0f%10%11%12%13%14%15%16%17%18%19%1a%1b%1c%1d%1e%1f%20%21%22%23%24%25%26%27%28%29%2a%2b%2c-.%2f0123456789%3a%3b%3c%3d%3e%3f%40ABCDEFGHIJKLMNOPQRSTUVWXYZ%5b%5c%5d%5e_%60abcdefghijklmnopqrstuvwxyz%7b%7c%7d~%7f%80%81%82%83%84%85%86%87%88%89%8a%8b%8c%8d%8e%8f%90%91%92%93%94%95%96%97%98%99%9a%9b%9c%9d%9e%9f%a0%a1%a2%a3%a4%a5%a6%a7%a8%a9%aa%ab%ac%ad%ae%af%b0%b1%b2%b3%b4%b5%b6%b7%b8%b9%ba%bb%bc%bd%be%bf%c0%c1%c2%c3%c4%c5%c6%c7%c8%c9%ca%cb%cc%cd%ce%cf%d0%d1%d2%d3%d4%d5%d6%d7%d8%d9%da%db%dc%dd%de%df%e0%e1%e2%e3%e4%e5%e6%e7%e8%e9%ea%eb%ec%ed%ee%ef%f0%f1%f2%f3%f4%f5%f6%f7%f8%f9%fa%fb%fc%fd%fe%ff"
+	expect resp.http.all-uc == "%00%01%02%03%04%05%06%07%08%09%0A%0B%0C%0D%0E%0F%10%11%12%13%14%15%16%17%18%19%1A%1B%1C%1D%1E%1F%20%21%22%23%24%25%26%27%28%29%2A%2B%2C-.%2F0123456789%3A%3B%3C%3D%3E%3F%40ABCDEFGHIJKLMNOPQRSTUVWXYZ%5B%5C%5D%5E_%60abcdefghijklmnopqrstuvwxyz%7B%7C%7D~%7F%80%81%82%83%84%85%86%87%88%89%8A%8B%8C%8D%8E%8F%90%91%92%93%94%95%96%97%98%99%9A%9B%9C%9D%9E%9F%A0%A1%A2%A3%A4%A5%A6%A7%A8%A9%AA%AB%AC%AD%AE%AF%B0%B1%B2%B3%B4%B5%B6%B7%B8%B9%BA%BB%BC%BD%BE%BF%C0%C1%C2%C3%C4%C5%C6%C7%C8%C9%CA%CB%CC%CD%CE%CF%D0%D1%D2%D3%D4%D5%D6%D7%D8%D9%DA%DB%DC%DD%DE%DF%E0%E1%E2%E3%E4%E5%E6%E7%E8%E9%EA%EB%EC%ED%EE%EF%F0%F1%F2%F3%F4%F5%F6%F7%F8%F9%FA%FB%FC%FD%FE%FF"
+	expect resp.http.empty == ""
+	expect resp.http.empty-uc == ""
+	expect resp.http.empty-lc == ""
+	expect resp.http.urllcparam == "The%20quick%20brown%20fox%20jumps%20over%20the%20lazy%20dog"
+	expect resp.http.urlucparam == "The%20quick%20brown%20fox%20jumps%20over%20the%20lazy%20dog"
+} -run
+
+varnish v1 -vcl {
+	import blob;
+	import std;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_recv {
+	  return(synth(200));
+	}
+
+	sub vcl_synth {
 	    set req.http.urllcfoobar = "foo%3abar%3abaz%3aquux";
 	    set req.http.urlucfoobar = "foo%3Abar%3Abaz%3Aquux";
 	    set req.http.urlmixedfoobar = "foo%3Abar%3abaz%3Aquux";
@@ -93,68 +148,68 @@ varnish v1 -vcl {
 
 	    set resp.http.decuc =
 	      blob.encode(IDENTITY,
-			      blob.decode(URL, req.http.urlucfoobar));
+			  blob=blob.decode(URL, req.http.urlucfoobar));
 
 	    set resp.http.declc =
 	      blob.encode(IDENTITY,
-			      blob.decode(URL, req.http.urllcfoobar));
+			  blob=blob.decode(URL, req.http.urllcfoobar));
 
 	    set resp.http.decmixed =
 	      blob.encode(IDENTITY,
-			      blob.decode(URL, req.http.urlmixedfoobar));
+			  blob=blob.decode(URL, req.http.urlmixedfoobar));
 
 	    set resp.http.dechobbesuc =
 	      blob.encode(IDENTITY,
-			      blob.decode(URL, req.http.urlhobbesuc));
+			  blob=blob.decode(URL, req.http.urlhobbesuc));
 
 	    set resp.http.dechobbeslc =
 	      blob.encode(IDENTITY,
-			      blob.decode(URL, req.http.urlhobbeslc));
+			  blob=blob.decode(URL, req.http.urlhobbeslc));
 
 	    set resp.http.decumlautsuc =
 	      blob.encode(IDENTITY,
-			      blob.decode(URL, req.http.urlucumlauts));
+			  blob=blob.decode(URL, req.http.urlucumlauts));
 
 	    set resp.http.decumlautslc =
 	      blob.encode(IDENTITY,
-			      blob.decode(URL, req.http.urllcumlauts));
+			  blob=blob.decode(URL, req.http.urllcumlauts));
 
 	    set resp.http.decphkuc =
 	      blob.encode(IDENTITY,
-			      blob.decode(URL, req.http.urlucphk));
+			  blob=blob.decode(URL, req.http.urlucphk));
 
 	    set resp.http.decphklc =
 	      blob.encode(IDENTITY,
-			      blob.decode(URL, req.http.urllcphk));
+			  blob=blob.decode(URL, req.http.urllcphk));
 
 	    set resp.http.decutf8uc =
 	      blob.encode(IDENTITY,
-			      blob.decode(URL, req.http.urlucutf8));
+			  blob=blob.decode(URL, req.http.urlucutf8));
 
 	    set resp.http.decutf8lc =
 	      blob.encode(IDENTITY,
-			      blob.decode(URL, req.http.urllcutf8));
+			  blob=blob.decode(URL, req.http.urllcutf8));
 
 	    set resp.http.decalluc =
-	      blob.encode(BASE64, blob.decode(URL, req.http.urlalluc));
+	      blob.encode(BASE64, blob=blob.decode(URL, req.http.urlalluc));
 
 	    set resp.http.decalllc =
-	      blob.encode(BASE64, blob.decode(URL, req.http.urlalllc));
+	      blob.encode(BASE64, blob=blob.decode(URL, req.http.urlalllc));
 
 	    set resp.http.decempty =
-	      blob.encode(IDENTITY, blob.decode(URL, ""));
+	      blob.encode(IDENTITY, blob=blob.decode(URL, ""));
 
 	    set resp.http.decemptybyte =
-	      blob.encode(IDENTITY, blob.decode(URL, "%00"));
+	      blob.encode(IDENTITY, blob=blob.decode(URL, "%00"));
 
 	    set resp.http.decemptypieces =
 	      blob.encode(IDENTITY,
-			      blob.decode(URL, req.http.unset + ""
+			  blob=blob.decode(URL, req.http.unset + ""
 						   + req.http.unset + ""));
 
 	    set req.http.part1 = "foo%";
 	    set resp.http.dec2pieces =
-	      blob.encode(IDENTITY, blob.decode(URL, req.http.part1 +
+	      blob.encode(IDENTITY, blob=blob.decode(URL, req.http.part1 +
 			     "20bar%20baz%20quux"));
 
 	    set req.http.part2 = "0quux";
@@ -165,37 +220,21 @@ varnish v1 -vcl {
 			      encoding=IDENTITY);
 
 	    set resp.http.dec3pieces =
-	      blob.encode(IDENTITY, blob.decode(URL, req.http.part1 +
+	      blob.encode(IDENTITY, blob=blob.decode(URL, req.http.part1 +
 			      "20bar%20baz%2" + req.http.part2));
 
 	    set resp.http.decmanypieces =
-	      blob.encode(IDENTITY, blob.decode(URL, "" + req.http.unset
+	      blob.encode(IDENTITY, blob=blob.decode(URL, "" + req.http.unset
 			     + req.http.part1 + req.http.unset + ""
 			     + req.http.unset + "" + "20bar%20baz%2"
 			     + "" + req.http.unset + req.http.part2
 			     + req.http.unset + "" + req.http.unset));
 	}
-} -start
+}
 
 client c1 {
 	txreq -url "/"
 	rxresp
-	expect resp.http.urllc == "The%20quick%20brown%20fox%20jumps%20over%20the%20lazy%20dog"
-	expect resp.http.urluc == "The%20quick%20brown%20fox%20jumps%20over%20the%20lazy%20dog"
-	expect resp.http.hobbeslc == "Man%20is%20distinguished%2c%20not%20only%20by%20his%20reason%2c%20but%20by%20this%20singular%20passion%20from%20other%20animals%2c%20which%20is%20a%20lust%20of%20the%20mind%2c%20that%20by%20a%20perseverance%20of%20delight%20in%20the%20continued%20and%20indefatigable%20generation%20of%20knowledge%2c%20exceeds%20the%20short%20vehemence%20of%20any%20carnal%20pleasure."
-	expect resp.http.hobbesuc == "Man%20is%20distinguished%2C%20not%20only%20by%20his%20reason%2C%20but%20by%20this%20singular%20passion%20from%20other%20animals%2C%20which%20is%20a%20lust%20of%20the%20mind%2C%20that%20by%20a%20perseverance%20of%20delight%20in%20the%20continued%20and%20indefatigable%20generation%20of%20knowledge%2C%20exceeds%20the%20short%20vehemence%20of%20any%20carnal%20pleasure."
-	expect resp.http.umlautslc == "%c3%9cbergr%c3%b6%c3%9fentr%c3%a4ger"
-	expect resp.http.umlautsuc == "%C3%9Cbergr%C3%B6%C3%9Fentr%C3%A4ger"
-	expect resp.http.phklc == "sm%c3%a5b%c3%b8rnsp%c3%a6dagog"
-	expect resp.http.phkuc == "sm%C3%A5b%C3%B8rnsp%C3%A6dagog"
-	expect resp.http.utf8lc == "%e6%97%a5%e6%89%bc%e8%aa%9e"
-	expect resp.http.utf8uc == "%E6%97%A5%E6%89%BC%E8%AA%9E"
-	expect resp.http.all-lc == "%00%01%02%03%04%05%06%07%08%09%0a%0b%0c%0d%0e%0f%10%11%12%13%14%15%16%17%18%19%1a%1b%1c%1d%1e%1f%20%21%22%23%24%25%26%27%28%29%2a%2b%2c-.%2f0123456789%3a%3b%3c%3d%3e%3f%40ABCDEFGHIJKLMNOPQRSTUVWXYZ%5b%5c%5d%5e_%60abcdefghijklmnopqrstuvwxyz%7b%7c%7d~%7f%80%81%82%83%84%85%86%87%88%89%8a%8b%8c%8d%8e%8f%90%91%92%93%94%95%96%97%98%99%9a%9b%9c%9d%9e%9f%a0%a1%a2%a3%a4%a5%a6%a7%a8%a9%aa%ab%ac%ad%ae%af%b0%b1%b2%b3%b4%b5%b6%b7%b8%b9%ba%bb%bc%bd%be%bf%c0%c1%c2%c3%c4%c5%c6%c7%c8%c9%ca%cb%cc%cd%ce%cf%d0%d1%d2%d3%d4%d5%d6%d7%d8%d9%da%db%dc%dd%de%df%e0%e1%e2%e3%e4%e5%e6%e7%e8%e9%ea%eb%ec%ed%ee%ef%f0%f1%f2%f3%f4%f5%f6%f7%f8%f9%fa%fb%fc%fd%fe%ff"
-	expect resp.http.all-uc == "%00%01%02%03%04%05%06%07%08%09%0A%0B%0C%0D%0E%0F%10%11%12%13%14%15%16%17%18%19%1A%1B%1C%1D%1E%1F%20%21%22%23%24%25%26%27%28%29%2A%2B%2C-.%2F0123456789%3A%3B%3C%3D%3E%3F%40ABCDEFGHIJKLMNOPQRSTUVWXYZ%5B%5C%5D%5E_%60abcdefghijklmnopqrstuvwxyz%7B%7C%7D~%7F%80%81%82%83%84%85%86%87%88%89%8A%8B%8C%8D%8E%8F%90%91%92%93%94%95%96%97%98%99%9A%9B%9C%9D%9E%9F%A0%A1%A2%A3%A4%A5%A6%A7%A8%A9%AA%AB%AC%AD%AE%AF%B0%B1%B2%B3%B4%B5%B6%B7%B8%B9%BA%BB%BC%BD%BE%BF%C0%C1%C2%C3%C4%C5%C6%C7%C8%C9%CA%CB%CC%CD%CE%CF%D0%D1%D2%D3%D4%D5%D6%D7%D8%D9%DA%DB%DC%DD%DE%DF%E0%E1%E2%E3%E4%E5%E6%E7%E8%E9%EA%EB%EC%ED%EE%EF%F0%F1%F2%F3%F4%F5%F6%F7%F8%F9%FA%FB%FC%FD%FE%FF"
-	expect resp.http.empty-uc == ""
-	expect resp.http.empty-lc == ""
-	expect resp.http.urllcparam == "The%20quick%20brown%20fox%20jumps%20over%20the%20lazy%20dog"
-	expect resp.http.urlucparam == "The%20quick%20brown%20fox%20jumps%20over%20the%20lazy%20dog"
 	expect resp.http.decuc == "foo:bar:baz:quux"
 	expect resp.http.declc == "foo:bar:baz:quux"
 	expect resp.http.decmixed == "foo:bar:baz:quux"
@@ -231,18 +270,18 @@ varnish v1 -vcl+backend {
 	sub vcl_deliver {
 		if (req.url == "/percent") {
 			set resp.http.bad
-			    = blob.encode(URLUC, blob.decode(URL, "%"));
+			    = blob.encode(URL, UPPER, blob.decode(URL, "%"));
 		}
 		elsif (req.url == "/percent-two") {
-			set resp.http.bad = blob.encode(URLUC,
+			set resp.http.bad = blob.encode(URL, UPPER,
 					    blob.decode(URL, "%2"));
 		}
 		elsif (req.url == "/percent-q") {
-			set resp.http.bad = blob.encode(URLUC,
+			set resp.http.bad = blob.encode(URL, UPPER,
 					    blob.decode(URL, "%q"));
 		}
 		elsif (req.url == "/percent-two-q") {
-			set resp.http.bad = blob.encode(URLUC,
+			set resp.http.bad = blob.encode(URL, UPPER,
 					    blob.decode(URL, "%2q"));
 		}
 	}

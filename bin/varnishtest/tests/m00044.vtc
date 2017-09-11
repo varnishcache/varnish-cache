@@ -20,7 +20,7 @@ varnish v1 -arg "-p http_max_hdr=128" -vcl+backend {
     sub vcl_deliver {
 	# The .get() method retrieves the BLOB from an object.
 	set resp.http.MyBlob-As-Hex
-	    = blob.encode(blob=myblob.get(), encoding=HEXLC);
+	    = blob.encode(blob=myblob.get(), encoding=HEX);
 
 	# The .encode() method efficiently retrieves an encoding.
 	set resp.http.YourBlob-As-Base64 = yourblob.encode(BASE64);
@@ -29,19 +29,20 @@ varnish v1 -arg "-p http_max_hdr=128" -vcl+backend {
 	# vice versa at runtime.
 	set resp.http.Base64-Encoded
 	    = blob.encode(BASE64,
-			      blob.decode(HEX, req.http.Hex-Encoded));
+			  blob=blob.decode(HEX, req.http.Hex-Encoded));
     }
 
     sub vcl_recv {
 	# transcode() converts from one encoding to another.
 	set req.http.Hex-Encoded
-	    = blob.transcode(decoding=BASE64, encoding=HEXUC, encoded="YmF6");
+	    = blob.transcode(decoding=BASE64, encoding=HEX, case=UPPER,
+	                     encoded="YmF6");
 
 	# transcode() can replace other specific encoding/deconding
 	# vmods - e.g. vmod_urlcode
 	set req.url = blob.transcode(encoded=req.url, decoding=URL);
 	set req.http.url_urlcoded
-	    = blob.transcode(encoded=req.url, encoding=URLLC);
+	    = blob.transcode(encoded=req.url, encoding=URL);
     }
     # get output from recv
     sub vcl_deliver {
@@ -52,7 +53,7 @@ varnish v1 -arg "-p http_max_hdr=128" -vcl+backend {
     # IDENTITY
     sub vcl_deliver {
 	set resp.http.Trunced-Foo1
-	    = blob.encode(IDENTITY, blob.decode(HEX, "666f6f00626172"));
+	    = blob.encode(IDENTITY, blob=blob.decode(HEX, "666f6f00626172"));
 	set resp.http.Trunced-Foo2
 	    = blob.encode(blob=blob.decode(HEX, "666f6f00626172"));
     }
@@ -63,21 +64,21 @@ varnish v1 -arg "-p http_max_hdr=128" -vcl+backend {
 	set resp.http.First = "abc";
 	set resp.http.Second = "def0";
 	set resp.http.Hex-Decoded = blob.encode(
-	    HEXLC,
-	    blob.decode(HEX, resp.http.First + resp.http.Second));
+	    HEX,
+	    blob=blob.decode(HEX, resp.http.First + resp.http.Second));
     }
 
     ############################################################
     # encode - also contains decode examples
     sub vcl_deliver {
 	set resp.http.encode1
-	    = blob.encode(HEXLC, blob.decode(BASE64, "Zm9vYmFyYmF6"));
+	    = blob.encode(HEX, blob=blob.decode(BASE64, "Zm9vYmFyYmF6"));
 
 	# same with named parameters
 	set resp.http.encode2
 	    = blob.encode(blob=blob.decode(encoded="Zm9vYmFyYmF6",
 						   decoding=BASE64),
-			      encoding=HEXLC);
+			      encoding=HEX);
 
 	# convert blob to string
 	set resp.http.encode3
@@ -87,7 +88,8 @@ varnish v1 -arg "-p http_max_hdr=128" -vcl+backend {
     ############################################################
     # transcode
     sub vcl_deliver {
-	set resp.http.Hex2Base64-1 = blob.transcode(HEX, BASE64, "666f6f");
+	set resp.http.Hex2Base64-1
+	    = blob.transcode(HEX, BASE64, encoded="666f6f");
 
 	# same with named parameters
 	set resp.http.Hex2Base64-2
@@ -100,7 +102,7 @@ varnish v1 -arg "-p http_max_hdr=128" -vcl+backend {
 
 	# replacement for urlcode.encode("foo bar")
 	set resp.http.urlencoded
-	    = blob.transcode(encoded="foo bar", encoding=URLLC);
+	    = blob.transcode(encoded="foo bar", encoding=URL);
     }
 
     ############################################################

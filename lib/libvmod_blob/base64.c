@@ -80,15 +80,16 @@ decode(char *restrict *restrict dest, char *restrict const buf,
 }
 
 ssize_t
-base64_encode(const enum encoding enc, char *restrict const buf,
-	      const size_t buflen, const char *restrict const inbuf,
-	      const size_t inlength)
+base64_encode(const enum encoding enc, const enum case_e kase,
+	      char *restrict const buf, const size_t buflen,
+	      const char *restrict const inbuf, const size_t inlength)
 {
 	const struct b64_alphabet *alpha = &b64_alphabet[enc];
 	char *p = buf;
 	const uint8_t *in = (const uint8_t *)inbuf;
 	const uint8_t * const end = in + inlength;
 
+	(void) kase;
 	AN(buf);
 	AN(alpha);
 	if (in == NULL || inlength == 0)

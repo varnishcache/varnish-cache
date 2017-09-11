@@ -11,13 +11,13 @@ $Module blob 3 utilities for the VCL blob type
 ::
 
   # binary-to-text encodings
-  STRING blob.encode(ENUM encoding, BLOB blob)
-  BLOB blob.decode(ENUM decoding, STRING_LIST encoded)
-  BLOB blob.decode_n(INT n, ENUM decoding, STRING_LIST encoded)
-  STRING blob.transcode(ENUM decoding, ENUM encoding,
+  STRING blob.encode([ENUM encoding,] [ENUM case,] BLOB blob)
+  BLOB blob.decode([ENUM decoding,] STRING_LIST encoded)
+  BLOB blob.decode_n(INT n, [ENUM decoding,] STRING_LIST encoded)
+  STRING blob.transcode([ENUM decoding,] [ENUM encoding,] [ENUM case,]
 			STRING_LIST encoded)
-  STRING blob.transcode_n(INT n, ENUM decoding, ENUM encoding,
-			  STRING_LIST encoded)
+  STRING blob.transcode_n(INT n, [ENUM decoding,] [ENUM encoding,]
+			  [ENUM case,] STRING_LIST encoded)
 
   # other utilities
   BOOL blob.same(BLOB, BLOB)
@@ -26,9 +26,9 @@ $Module blob 3 utilities for the VCL blob type
   BLOB blob.subblob(BLOB, BYTES length [, BYTES offset])
 
   # blob object
-  new OBJ = blob.blob(ENUM decoding, STRING_LIST encoded)
+  new OBJ = blob.blob([ENUM decoding,] STRING_LIST encoded)
   BLOB <obj>.get()
-  STRING <obj>.encode(ENUM encoding)
+  STRING <obj>.encode([ENUM encoding,] [ENUM case])
 
 DESCRIPTION
 ===========
@@ -47,7 +47,7 @@ Examples::
   sub vcl_deliver {
       # The .get() method retrieves the BLOB from an object.
       set resp.http.MyBlob-As-Hex
-	  = blob.encode(blob=myblob.get(), encoding=HEXLC);
+	  = blob.encode(blob=myblob.get(), encoding=HEX);
 
       # The .encode() method efficiently retrieves an encoding.
       set resp.http.YourBlob-As-Base64 = yourblob.encode(BASE64);
@@ -56,21 +56,22 @@ Examples::
       # vice versa at runtime.
       set resp.http.Base64-Encoded
 	  = blob.encode(BASE64,
-			    blob.decode(HEX, req.http.Hex-Encoded));
+			blob=blob.decode(HEX, req.http.Hex-Encoded));
   }
 
   sub vcl_recv {
       # transcode() converts from one encoding to another.
+      # case=UPPER specifies upper-case hex digits A-F.
       set req.http.Hex-Encoded
-	  = blob.transcode(decoding=BASE64, encoding=HEXUC,
-			     encoded="YmF6");
+	  = blob.transcode(decoding=BASE64, encoding=HEX,
+			   case=UPPER, encoded="YmF6");
 
       # transcode() from URL to IDENTITY effects a URL decode.
       set req.url = blob.transcode(encoded=req.url, decoding=URL);
 
       # transcode() from IDENTITY to URL effects a URL encode.
       set req.http.url_urlcoded
-	  = blob.transcode(encoded=req.url, encoding=URLLC);
+	  = blob.transcode(encoded=req.url, encoding=URL);
   }
 
 ENCODING SCHEMES
@@ -81,7 +82,7 @@ constructor, methods and functions. Decodings convert a (possibly
 concatenated) string into a blob, while encodings convert a blob into
 a string.
 
-ENUM values for a decoding can be one of:
+ENUM values for an encoding scheme can be one of:
 
 * ``IDENTITY``
 * ``BASE64``
@@ -90,19 +91,21 @@ ENUM values for a decoding can be one of:
 * ``HEX``
 * ``URL``
 
-An encoding can be one of:
-
-* ``IDENTITY``
-* ``BASE64``
-* ``BASE64URL``
-* ``BASE64URLNOPAD``
-* ``HEXUC``
-* ``HEXLC``
-* ``URLUC``
-* ``URLLC``
-
 Empty strings are decoded into a "null blob" (of length 0),
 and conversely a null blob is encoded as the empty string.
+
+For encodings with ``HEX`` or ``URL``, you may also specify a ``case``
+ENUM with one of the values ``LOWER`` or ``UPPER`` to produce a string
+with lower- or uppercase hex digits (in ``[a-f]`` or ``[A-F]``),
+respectively. The default value for ``case`` is ``LOWER``.
+
+The ``case`` ENUM is not relevant for decodings; ``HEX`` or ``URL``
+strings to be decoded as BLOBs may have hex digits in either case, or
+in mixed case. The ``case`` ENUM is also ignored for all other
+encodings.  You cannot, for example, produce an uppercase string by
+using the IDENTITY scheme with ``case=UPPER``. To change the case of a
+string, use the ``toupper`` or ``tolower`` functions from
+:ref:`vmod_std(3)`.
 
 IDENTITY
 --------
@@ -120,7 +123,7 @@ blob. For example::
   # Decode from the hex encoding for "foo\0bar".
   # The header will be seen as "foo".
   set resp.http.Trunced-Foo1
-    = blob.encode(IDENTITY, blob.decode(HEX, "666f6f00626172"));
+    = blob.encode(IDENTITY, blob=blob.decode(HEX, "666f6f00626172"));
 
 IDENTITY is the default encoding and decoding. So the above can also
 be written as::
@@ -129,6 +132,8 @@ be written as::
   # The header will be seen as "foo".
   set resp.http.Trunced-Foo2
     = blob.encode(blob=blob.decode(HEX, "666f6f00626172"));
+
+The ``case`` ENUM is ignored for ``IDENTITY`` encodings.
 
 BASE64*
 -------
@@ -150,14 +155,16 @@ The ``BASE64URLNOPAD`` encoding uses the same alphabet as
 ``BASE6URL``, but leaves out the padding. Thus the length of an
 encoding with this scheme is not necessarily a mutltiple of four.
 
-HEX*
-----
+The ``case`` ENUM is ignored for for all of the ``BASE64*`` encodings.
 
-The ``HEX`` decoding converts a hex string, which may contain upper-
-or lowercase characters for hex digits ``A`` through ``f``, into a
-blob. The ``HEXUC`` or ``HEXLC`` encodings convert a blob into a hex
-string with upper- and lowercase digits, respectively. A prefix such
-as ``0x`` is not used for any of these schemes.
+HEX
+---
+
+The ``HEX`` encoding scheme converts hex strings into blobs and vice
+versa. For encodings, you may use the ``case`` ENUM to specify upper-
+or lowercase hex digits ``A`` through ``f`` (default ``LOWER``).  A
+prefix such as ``0x`` is not used for an encoding and is illegal for a
+decoding.
 
 If a hex string to be decoded has an odd number of digits, it is
 decoded as if a ``0`` is prepended to it; that is, the first digit is
@@ -168,18 +175,18 @@ byte. For example::
   set resp.http.First = "abc";
   set resp.http.Second = "def0";
   set resp.http.Hex-Decoded
-      = blob.encode(HEXLC, blob.decode(HEX,
-			resp.http.First + resp.http.Second));
+      = blob.encode(HEX, blob=blob.decode(HEX,
+                         resp.http.First + resp.http.Second));
 
-URL*
-----
+URL
+---
 
 The ``URL`` decoding replaces any ``%<2-hex-digits>`` substrings with
 the binary value of the hexadecimal number after the % sign.
 
-The ``URLLC`` and ``URLUC`` encodings implement "percent encoding" as per
-RFC3986, the hexadecimal characters A-F being output in lower- and
-uppercase, respectively.
+The ``URL`` encoding implements "percent encoding" as per RFC3986. The
+``case`` ENUM determines the case of the hex digits, but does not
+affect alphabetic characters that are not percent-encoded.
 
 $Function BLOB decode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
 			    HEX, URL} decoding="IDENTITY", STRING_LIST encoded)
@@ -187,7 +194,7 @@ $Function BLOB decode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
 Returns the BLOB derived from the string ``encoded`` according to the
 scheme specified by ``decoding``.
 
-``decoding`` defaults to IDENTITY
+``decoding`` defaults to IDENTITY.
 
 Example::
 
@@ -209,24 +216,25 @@ the encoded string. If ``n`` is greater than the length of the string,
 then return the same result as ``decode()``.
 
 $Function STRING encode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
-			      HEXUC, HEXLC, URLUC, URLLC} encoding="IDENTITY",
-			      BLOB blob)
+			      HEX, URL} encoding="IDENTITY",
+			ENUM {LOWER, UPPER} case="LOWER", BLOB blob)
 
 Returns a string representation of the BLOB ``blob`` as specifed by
-``encoding``.
+``encoding``. ``case`` determines the case of hex digits for the
+``HEX`` and ``URL`` encodings, and is ignored for the other encodings.
 
-``encoding`` defaults to IDENTITY
+``encoding`` defaults to IDENTITY, and ``case`` defaults to LOWER.
 
 Example::
 
 	set resp.http.encode1
-	    = blob.encode(HEXLC, blob.decode(BASE64, "Zm9vYmFyYmF6"));
+	    = blob.encode(HEX, blob=blob.decode(BASE64, "Zm9vYmFyYmF6"));
 
 	# same with named parameters
 	set resp.http.encode2
 	    = blob.encode(blob=blob.decode(encoded="Zm9vYmFyYmF6",
 						   decoding=BASE64),
-			      encoding=HEXLC);
+			      encoding=HEX);
 
 	# convert blob to string
 	set resp.http.encode3
@@ -235,28 +243,32 @@ Example::
 $Function STRING transcode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
 				 HEX, URL} decoding="IDENTITY",
 			   ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
-				 HEXUC, HEXLC, URLUC, URLLC} encoding="IDENTITY",
+				 HEX, URL} encoding="IDENTITY",
+			   ENUM {LOWER, UPPER} case="LOWER",
 			   STRING_LIST encoded)
 
 Translates from one encoding to another, by first decoding the string
 ``encoded`` according to the scheme ``decoding``, and then returning
 the encoding of the resulting blob according to the scheme
-``encoding``.
+``encoding``. ``case`` determines the case of hex digits for the
+``HEX`` and ``URL`` encodings, and is ignored for other encodings.
 
-``decoding`` and ``encoding`` default to IDENTITY
+``decoding`` and ``encoding`` default to IDENTITY, and ``case``
+defaults to LOWER.
 
 Example::
 
-	set resp.http.Hex2Base64-1 = blob.transcode(HEX, BASE64, "666f6f");
+       set resp.http.Hex2Base64-1
+            = blob.transcode(HEX, BASE64, encoded="666f6f");
 
 	# same with named parameters
 	set resp.http.Hex2Base64-2
-	    = blob.transcode(encoded="666f6f",
+	   = blob.transcode(encoded="666f6f",
 				 encoding=BASE64, decoding=HEX);
 
 	# URL decode -- recall that IDENTITY is the default encoding.
 	set resp.http.urldecoded
-	    = blob.transcode(encoded="foo%20bar", decoding=URLLC);
+	   = blob.transcode(encoded="foo%20bar", decoding=URL);
 
 	# URL encode
 	set resp.http.urlencoded
@@ -266,7 +278,8 @@ $Function STRING transcode_n(INT n,
 			     ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
 				   HEX, URL} decoding="IDENTITY",
 			     ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
-				   HEXUC, HEXLC, URLUC, URLLC} encoding="IDENTITY",
+				   HEX, URL} encoding="IDENTITY",
+			     ENUM {LOWER, UPPER} case="LOWER",
 			     STRING_LIST encoded)
 
 Same as ``transcode()``, but only from the first ``n`` characters of
@@ -336,11 +349,14 @@ Example::
 	set resp.http.The-Stringblob =
 	    blob.encode(blob=stringblob.get());
 
-$Method STRING .encode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD, HEXUC,
-			     HEXLC, URLUC, URLLC} encoding="IDENTITY")
+$Method STRING .encode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD, HEX,
+			     URL} encoding="IDENTITY",
+		       ENUM {LOWER, UPPER} case="LOWER")
 
 Returns an encoding of BLOB created by the constructor, according to
-the scheme ``encoding``.
+the scheme ``encoding``. ``case`` determines the case of hex digits
+for the ``HEX`` and ``URL`` encodings, and is ignored for other
+encodings.
 
 Example::
 
@@ -350,11 +366,11 @@ Example::
 	# blob as base64
 	set resp.http.The-Blob-b64 = theblob1.encode(BASE64);
 
-For any ``blob`` object and encoding ``ENC``, encodings via the ``.encode()``
-method and the ``encode()`` function are equal::
+For any ``blob`` object, encoding ``ENC`` and case ``CASE``, encodings
+via the ``.encode()`` method and the ``encode()`` function are equal::
 
   # Always true:
-  blob.encode(ENC, blob.get()) == blob.encode(ENC)
+  blob.encode(ENC, CASE, blob.get()) == blob.encode(ENC, CASE)
 
 But the object method is more efficient -- the encoding is computed
 once and cached (with allocation in heap memory), and the cached
@@ -416,3 +432,4 @@ SEE ALSO
 
 * :ref:`varnishd(1)`
 * :ref:`vcl(7)`
+* :ref:`vmod_std(3)`

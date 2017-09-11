@@ -9,10 +9,10 @@ varnish v1 -vcl+backend {
 	import blob;
 
 	sub vcl_backend_response {
-		set beresp.http.bereq_hash = blob.encode(HEXLC, bereq.hash);
+		set beresp.http.bereq_hash = blob.encode(HEX, blob=bereq.hash);
 	}
 	sub vcl_deliver {
-		set resp.http.req_hash = blob.encode(HEXLC, req.hash);
+		set resp.http.req_hash = blob.encode(HEX, blob=req.hash);
 	}
 } -start
 

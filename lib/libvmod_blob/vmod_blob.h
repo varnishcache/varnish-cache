@@ -34,6 +34,11 @@
 
 #define AENC(enc) assert((enc) > _INVALID && (enc) < __MAX_ENCODING)
 
+enum case_e {
+	LOWER,
+	UPPER,
+};
+
 /*
  * Length estimate interface
  */
@@ -46,6 +51,7 @@ size_t  len_f(size_t);
  * encoding.
  *
  * enc: encoding enum (from parse_encoding.h)
+ * kase: case enum (for encodings with hex digits)
  * buf: destination of the encoded string
  * buflen: maximum length available at buf
  * in: source of data to be encoded
@@ -65,9 +71,9 @@ size_t  len_f(size_t);
  *            include any terminating null byte)
  */
 typedef
-ssize_t encode_f(const enum encoding enc, char *restrict const buf,
-		 const size_t buflen, const char *restrict const in,
-		 const size_t inlen);
+ssize_t encode_f(const enum encoding enc, const enum case_e kase,
+		 char *restrict const buf, const size_t buflen,
+		 const char *restrict const in, const size_t inlen);
 
 /*
  * General interface for a decoder: decode the concatenation of strings

@@ -20,133 +20,78 @@ varnish v1 -vcl {
 {"fffefdfcfbfaf9f8f7f6f5f4f3f2f1f0efeeedecebeae9e8e7e6e5e4e3e2e1e0dfdedddcdbdad9d8d7d6d5d4d3d2d1d0cfcecdcccbcac9c8c7c6c5c4c3c2c1c0bfbebdbcbbbab9b8b7b6b5b4b3b2b1b0afaeadacabaaa9a8a7a6a5a4a3a2a1a09f9e9d9c9b9a999897969594939291908f8e8d8c8b8a898887868584838281807f7e7d7c7b7a797877767574737271706f6e6d6c6b6a696867666564636261605f5e5d5c5b5a595857565554535251504f4e4d4c4b4a494847464544434241403f3e3d3c3b3a393837363534333231302f2e2d2c2b2a292827262524232221201f1e1d1c1b1a191817161514131211100f0e0d0c0b0a09080706050403020100"};
 	    set req.http.hexallup =
 {"000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff"};
-	    set req.http.b64all =
-{"AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHHIIIIJJJJKKKKLLLLMMMMNNNNOOOOPPPPQQQQRRRRSSSSTTTTUUUUVVVVWWWWXXXXYYYYZZZZaaaabbbbccccddddeeeeffffgggghhhhiiiijjjjkkkkllllmmmmnnnnooooppppqqqqrrrrssssttttuuuuvvvvwwwwxxxxyyyyzzzz0000111122223333444455556666777788889999++++////"};
-	    set req.http.b64allurl =
-{"AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHHIIIIJJJJKKKKLLLLMMMMNNNNOOOOPPPPQQQQRRRRSSSSTTTTUUUUVVVVWWWWXXXXYYYYZZZZaaaabbbbccccddddeeeeffffgggghhhhiiiijjjjkkkkllllmmmmnnnnooooppppqqqqrrrrssssttttuuuuvvvvwwwwxxxxyyyyzzzz0000111122223333444455556666777788889999----____"};
 
 	  set resp.http.id2id
-	    = blob.transcode_n(5, IDENTITY, IDENTITY, "Hello world");
+	    = blob.transcode_n(5, IDENTITY, IDENTITY, encoded="Hello world");
 
 	  set resp.http.id2b64
-	    = blob.transcode_n(5, IDENTITY, BASE64, req.http.hobbes);
+	    = blob.transcode_n(5, IDENTITY, BASE64, encoded=req.http.hobbes);
 
 	  set resp.http.id2b64nopad
-	    = blob.transcode_n(5, IDENTITY, BASE64URLNOPAD, req.http.hobbes);
+	    = blob.transcode_n(5, IDENTITY, BASE64URLNOPAD,
+	                       encoded=req.http.hobbes);
+
+	  set resp.http.id2hex
+	    = blob.transcode_n(5, IDENTITY, HEX, encoded=req.http.hobbes);
 
 	  set resp.http.id2hexuc
-	    = blob.transcode_n(5, IDENTITY, HEXUC, req.http.hobbes);
+	    = blob.transcode_n(5, IDENTITY, HEX, UPPER, req.http.hobbes);
 
 	  set resp.http.id2hexlc
-	    = blob.transcode_n(5, IDENTITY, HEXLC, req.http.hobbes);
+	    = blob.transcode_n(5, IDENTITY, HEX, LOWER, req.http.hobbes);
+
+	  set resp.http.id2url
+	    = blob.transcode_n(5, IDENTITY, URL, encoded=req.http.foobar);
 
 	  set resp.http.id2urluc
-	    = blob.transcode_n(5, IDENTITY, URLUC, req.http.foobar);
+	    = blob.transcode_n(5, IDENTITY, URL, UPPER, req.http.foobar);
 
 	  set resp.http.id2urllc
-	    = blob.transcode_n(5, IDENTITY, URLLC, req.http.foobar);
+	    = blob.transcode_n(5, IDENTITY, URL, LOWER, req.http.foobar);
 
 	  set resp.http.b642id
-	    = blob.transcode_n(8, BASE64, IDENTITY, req.http.hobbesb64);
+	    = blob.transcode_n(8, BASE64, IDENTITY, encoded=req.http.hobbesb64);
 
 	  set resp.http.hex2id
-	    = blob.transcode_n(12, HEX, IDENTITY, req.http.hexhobbes);
+	    = blob.transcode_n(12, HEX, IDENTITY, encoded=req.http.hexhobbes);
 
 	  set resp.http.hexalldown2b64
-	    = blob.transcode_n(12, HEX, BASE64, req.http.hexalldown);
+	    = blob.transcode_n(12, HEX, BASE64, encoded=req.http.hexalldown);
 
 	  set resp.http.hexalldown2b64url
-	    = blob.transcode_n(12, HEX, BASE64URL, req.http.hexalldown);
+	    = blob.transcode_n(12, HEX, BASE64URL, encoded=req.http.hexalldown);
 
 	  set resp.http.hexalldown2b64nopad
-	    = blob.transcode_n(10, HEX, BASE64URLNOPAD, req.http.hexalldown);
+	    = blob.transcode_n(10, HEX, BASE64URLNOPAD,
+	                       encoded=req.http.hexalldown);
 
 	  set resp.http.hexallup2b64
-	    = blob.transcode_n(12, HEX, BASE64, req.http.hexallup);
+	    = blob.transcode_n(12, HEX, BASE64, encoded=req.http.hexallup);
 
 	  set resp.http.hexallup2b64url
-	    = blob.transcode_n(10, HEX, BASE64URL, req.http.hexallup);
+	    = blob.transcode_n(10, HEX, BASE64URL, encoded=req.http.hexallup);
 
 	  set resp.http.hexallup2b64nopad
-	    = blob.transcode_n(10, HEX, BASE64URLNOPAD, req.http.hexallup);
+	    = blob.transcode_n(10, HEX, BASE64URLNOPAD,
+	                       encoded=req.http.hexallup);
+
+	  set resp.http.hexalldown2url
+	    = blob.transcode_n(12, HEX, URL, encoded=req.http.hexalldown);
 
 	  set resp.http.hexalldown2urluc
-	    = blob.transcode_n(12, HEX, URLUC, req.http.hexalldown);
+	    = blob.transcode_n(12, HEX, URL, UPPER, req.http.hexalldown);
 
 	  set resp.http.hexalldown2urllc
-	    = blob.transcode_n(12, HEX, URLLC, req.http.hexalldown);
+	    = blob.transcode_n(12, HEX, URL, LOWER, req.http.hexalldown);
+
+	  set resp.http.hexallup2url
+	    = blob.transcode_n(12, HEX, URL, encoded=req.http.hexallup);
 
 	  set resp.http.hexallup2urluc
-	    = blob.transcode_n(12, HEX, URLUC, req.http.hexallup);
+	    = blob.transcode_n(12, HEX, URL, UPPER, req.http.hexallup);
 
 	  set resp.http.hexallup2urllc
-	    = blob.transcode_n(12, HEX, URLLC, req.http.hexallup);
-
-	  set resp.http.b64all2hexuc
-	    = blob.transcode_n(8, BASE64, HEXUC, req.http.b64all);
-
-	  set resp.http.b64all2hexlc
-	    = blob.transcode_n(8, BASE64, HEXLC, req.http.b64all);
-
-	  set resp.http.b64allurl2hexuc
-	    = blob.transcode_n(8, BASE64URL, HEXUC, req.http.b64allurl);
-
-	  set resp.http.b64allurl2hexlc
-	    = blob.transcode_n(8, BASE64URL, HEXLC, req.http.b64allurl);
-
-	  set resp.http.b64all2urluc
-	    = blob.transcode_n(8, BASE64, URLUC, req.http.b64all);
-
-	  set resp.http.b64all2urllc
-	    = blob.transcode_n(8, BASE64, URLLC, req.http.b64all);
-
-	  set resp.http.b64allurl2urluc
-	    = blob.transcode_n(8, BASE64URL, URLUC, req.http.b64allurl);
-
-	  set resp.http.b64allurl2urllc
-	    = blob.transcode_n(8, BASE64URL, URLLC, req.http.b64allurl);
-
-	  set resp.http.hexuc2hexuc
-	    = blob.transcode_n(10, HEX, HEXUC, "0123456789ABCDEF");
-
-	  set resp.http.hexlc2hexlc
-	    = blob.transcode_n(10, HEX, HEXLC, "0123456789abcdef");
-
-	  set resp.http.hexuc2hexlc
-	    = blob.transcode_n(9, HEX, HEXLC, "0123456789ABCDEF");
-
-	  set resp.http.hexlc2hexuc
-	    = blob.transcode_n(9, HEX, HEXUC, "0123456789abcdef");
-
-	  set resp.http.hexmix2hexuc
-	    = blob.transcode_n(15, HEX, HEXUC, "0123456789ABCdef");
-
-	  set resp.http.hexmix2hexlc
-	    = blob.transcode_n(13, HEX, HEXLC, "0123456789abcDEF");
-
-	  set req.http.hexpart1 = "01234567";
-	  set req.http.hexpart2 = "89abcdef";
-	  set resp.http.hexparam
-	    = blob.transcode_n(encoded="" + req.http.unset + ""
-				   + req.http.unset + "" + req.http.hexpart1
-				   + "" + req.http.unset + "" + req.http.unset
-				   + req.http.hexpart2, decoding=HEX,
-				   encoding=HEXUC, n=10);
-
-	  set resp.http.b642b64
-	    = blob.transcode_n(36, BASE64, BASE64,
-				   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
-				   + "ghijklmnopqrstuvwxyz0123456789+/");
-
-	  set resp.http.b64url2b64url =
-	    blob.transcode_n(34, BASE64URL, BASE64URL,
-				 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
-				 + "ghijklmnopqrstuvwxyz0123456789-_");
-
-	  set resp.http.b64urlnopad2b64urlnopad =
-	    blob.transcode_n(34, BASE64URLNOPAD, BASE64URLNOPAD,
-				 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
-				 + "ghijklmnopqrstuvwxyz0123456789-_");
+	    = blob.transcode_n(12, HEX, URL, LOWER, req.http.hexallup);
 
 	}
 } -start
@@ -157,10 +102,12 @@ client c1 {
 	expect resp.http.id2id == "Hello"
 	expect resp.http.id2b64 == "TWFuIGk="
 	expect resp.http.id2b64nopad == "TWFuIGk"
+	expect resp.http.id2hex == "4d616e2069"
 	expect resp.http.id2hexuc == "4D616E2069"
-	expect resp.http.id2hexlc == "4d616e2069"
+	expect resp.http.id2hexlc == resp.http.id2hex
+	expect resp.http.id2url == "foo%3ab"
 	expect resp.http.id2urluc == "foo%3Ab"
-	expect resp.http.id2urllc == "foo%3ab"
+	expect resp.http.id2urllc == resp.http.id2url
 	expect resp.http.b642id == "Man is"
 	expect resp.http.hex2id == "Man is"
 	expect resp.http.hexalldown2b64 == "//79/Pv6"
@@ -169,24 +116,142 @@ client c1 {
 	expect resp.http.hexallup2b64 == "AAECAwQF"
 	expect resp.http.hexallup2b64url == "AAECAwQ="
 	expect resp.http.hexallup2b64nopad == "AAECAwQ"
+	expect resp.http.hexalldown2url == "%ff%fe%fd%fc%fb%fa"
 	expect resp.http.hexalldown2urluc == "%FF%FE%FD%FC%FB%FA"
-	expect resp.http.hexalldown2urllc == "%ff%fe%fd%fc%fb%fa"
-	expect resp.http.hexallup2urluc == "%00%01%02%03%04%05"
-	expect resp.http.hexallup2urllc == "%00%01%02%03%04%05"
-	expect resp.http.b64all2hexuc == "000000041041"
-	expect resp.http.b64all2hexlc == "000000041041"
-	expect resp.http.b64allurl2hexuc == "000000041041"
-	expect resp.http.b64allurl2hexlc == "000000041041"
-	expect resp.http.b64all2urluc == "%00%00%00%04%10A"
-	expect resp.http.b64all2urllc == "%00%00%00%04%10A"
-	expect resp.http.b64allurl2urluc == "%00%00%00%04%10A"
-	expect resp.http.b64allurl2urllc == "%00%00%00%04%10A"
-	expect resp.http.hexuc2hexuc == "0123456789"
-	expect resp.http.hexlc2hexlc == "0123456789"
+	expect resp.http.hexalldown2urllc == resp.http.hexalldown2url
+	expect resp.http.hexallup2url == "%00%01%02%03%04%05"
+	expect resp.http.hexallup2urllc == resp.http.hexallup2url
+	expect resp.http.hexallup2urllc == resp.http.hexallup2url
+} -run
+
+varnish v1 -vcl {
+	import blob;
+	import std;
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_recv {
+	  return(synth(200));
+	}
+
+	sub vcl_synth {
+	    set req.http.b64all =
+{"AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHHIIIIJJJJKKKKLLLLMMMMNNNNOOOOPPPPQQQQRRRRSSSSTTTTUUUUVVVVWWWWXXXXYYYYZZZZaaaabbbbccccddddeeeeffffgggghhhhiiiijjjjkkkkllllmmmmnnnnooooppppqqqqrrrrssssttttuuuuvvvvwwwwxxxxyyyyzzzz0000111122223333444455556666777788889999++++////"};
+	    set req.http.b64allurl =
+{"AAAABBBBCCCCDDDDEEEEFFFFGGGGHHHHIIIIJJJJKKKKLLLLMMMMNNNNOOOOPPPPQQQQRRRRSSSSTTTTUUUUVVVVWWWWXXXXYYYYZZZZaaaabbbbccccddddeeeeffffgggghhhhiiiijjjjkkkkllllmmmmnnnnooooppppqqqqrrrrssssttttuuuuvvvvwwwwxxxxyyyyzzzz0000111122223333444455556666777788889999----____"};
+
+	  set resp.http.b64all2hex
+	    = blob.transcode_n(8, BASE64, HEX, encoded=req.http.b64all);
+
+	  set resp.http.b64all2hexuc
+	    = blob.transcode_n(8, BASE64, HEX, UPPER, req.http.b64all);
+
+	  set resp.http.b64all2hexlc
+	    = blob.transcode_n(8, BASE64, HEX, LOWER, req.http.b64all);
+
+	  set resp.http.b64allurl2hex
+	    = blob.transcode_n(8, BASE64URL, HEX, encoded=req.http.b64allurl);
+
+	  set resp.http.b64allurl2hexuc
+	    = blob.transcode_n(8, BASE64URL, HEX, UPPER, req.http.b64allurl);
+
+	  set resp.http.b64allurl2hexlc
+	    = blob.transcode_n(8, BASE64URL, HEX, LOWER, req.http.b64allurl);
+
+	  set resp.http.b64all2url
+	    = blob.transcode_n(8, BASE64, URL, encoded=req.http.b64all);
+
+	  set resp.http.b64all2urluc
+	    = blob.transcode_n(8, BASE64, URL, UPPER, req.http.b64all);
+
+	  set resp.http.b64all2urllc
+	    = blob.transcode_n(8, BASE64, URL, LOWER, req.http.b64all);
+
+	  set resp.http.b64allurl2url
+	    = blob.transcode_n(8, BASE64URL, URL, encoded=req.http.b64allurl);
+
+	  set resp.http.b64allurl2urluc
+	    = blob.transcode_n(8, BASE64URL, URL, UPPER, req.http.b64allurl);
+
+	  set resp.http.b64allurl2urllc
+	    = blob.transcode_n(8, BASE64URL, URL, LOWER, req.http.b64allurl);
+
+	  set resp.http.hexuc2hex
+	    = blob.transcode_n(10, HEX, HEX, encoded="0123456789ABCDEF");
+
+	  set resp.http.hexuc2hexuc
+	    = blob.transcode_n(10, HEX, HEX, UPPER, "0123456789ABCDEF");
+
+	  set resp.http.hexlc2hex
+	    = blob.transcode_n(10, HEX, HEX, encoded="0123456789abcdef");
+
+	  set resp.http.hexlc2hexlc
+	    = blob.transcode_n(10, HEX, HEX, LOWER, "0123456789abcdef");
+
+	  set resp.http.hexuc2hexlc
+	    = blob.transcode_n(9, HEX, HEX, LOWER, "0123456789ABCDEF");
+
+	  set resp.http.hexlc2hexuc
+	    = blob.transcode_n(9, HEX, HEX, UPPER, "0123456789abcdef");
+
+	  set resp.http.hexmix2hex
+	    = blob.transcode_n(13, HEX, HEX, encoded="0123456789abcDEF");
+
+	  set resp.http.hexmix2hexuc
+	    = blob.transcode_n(15, HEX, HEX, UPPER, "0123456789ABCdef");
+
+	  set resp.http.hexmix2hexlc
+	    = blob.transcode_n(13, HEX, HEX, LOWER, "0123456789abcDEF");
+
+	  set req.http.hexpart1 = "01234567";
+	  set req.http.hexpart2 = "89abcdef";
+	  set resp.http.hexparam
+	    = blob.transcode_n(encoded="" + req.http.unset + ""
+				   + req.http.unset + "" + req.http.hexpart1
+				   + "" + req.http.unset + "" + req.http.unset
+				   + req.http.hexpart2, decoding=HEX,
+				   encoding=HEX, n=10, case=UPPER);
+
+	  set resp.http.b642b64
+	    = blob.transcode_n(36, BASE64, BASE64, encoded=
+				   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
+				   + "ghijklmnopqrstuvwxyz0123456789+/");
+
+	  set resp.http.b64url2b64url =
+	    blob.transcode_n(34, BASE64URL, BASE64URL, encoded=
+				 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
+				 + "ghijklmnopqrstuvwxyz0123456789-_");
+
+	  set resp.http.b64urlnopad2b64urlnopad =
+	    blob.transcode_n(34, BASE64URLNOPAD, BASE64URLNOPAD, encoded=
+				 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
+				 + "ghijklmnopqrstuvwxyz0123456789-_");
+
+	}
+}
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.b64all2hex == "000000041041"
+	expect resp.http.b64all2hexuc == resp.http.b64all2hex
+	expect resp.http.b64all2hexlc == resp.http.b64all2hex
+	expect resp.http.b64allurl2hex == "000000041041"
+	expect resp.http.b64allurl2hexuc == resp.http.b64allurl2hex
+	expect resp.http.b64allurl2hexlc == resp.http.b64allurl2hex
+	expect resp.http.b64all2url == "%00%00%00%04%10A"
+	expect resp.http.b64all2urluc == resp.http.b64all2url
+	expect resp.http.b64all2urllc == resp.http.b64all2url
+	expect resp.http.b64allurl2url == "%00%00%00%04%10A"
+	expect resp.http.b64allurl2urluc == resp.http.b64allurl2url
+	expect resp.http.b64allurl2urllc == resp.http.b64allurl2url
+	expect resp.http.hexuc2hex == "0123456789"
+	expect resp.http.hexlc2hex == resp.http.hexuc2hex
+	expect resp.http.hexlc2hexlc == resp.http.hexuc2hex
 	expect resp.http.hexuc2hexlc == "0012345678"
-	expect resp.http.hexlc2hexuc == "0012345678"
+	expect resp.http.hexlc2hexuc == resp.http.hexuc2hexlc
+	expect resp.http.hexmix2hex == "00123456789abc"
 	expect resp.http.hexmix2hexuc == "00123456789ABCDE"
-	expect resp.http.hexmix2hexlc == "00123456789abc"
+	expect resp.http.hexmix2hexlc == resp.http.hexmix2hex
 	expect resp.http.hexparam == "0123456789"
 	expect resp.http.b642b64 == "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghij"
 	expect resp.http.b64url2b64url == "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefeQ=="
@@ -211,74 +276,88 @@ varnish v1 -vcl {
 	    set req.http.urlalldownlc = "%ff%fe%fd%fc%fb%fa%f9%f8%f7%f6%f5%f4%f3%f2%f1%f0%ef%ee%ed%ec%eb%ea%e9%e8%e7%e6%e5%e4%e3%e2%e1%e0%df%de%dd%dc%db%da%d9%d8%d7%d6%d5%d4%d3%d2%d1%d0%cf%ce%cd%cc%cb%ca%c9%c8%c7%c6%c5%c4%c3%c2%c1%c0%bf%be%bd%bc%bb%ba%b9%b8%b7%b6%b5%b4%b3%b2%b1%b0%af%ae%ad%ac%ab%aa%a9%a8%a7%a6%a5%a4%a3%a2%a1%a0%9f%9e%9d%9c%9b%9a%99%98%97%96%95%94%93%92%91%90%8f%8e%8d%8c%8b%8a%89%88%87%86%85%84%83%82%81%80%7f~%7d%7c%7bzyxwvutsrqponmlkjihgfedcba%60_%5e%5d%5c%5bZYXWVUTSRQPONMLKJIHGFEDCBA%40%3f%3e%3d%3c%3b%3a9876543210%2f.-%2c%2b%2a%29%28%27%26%25%24%23%22%21%20%1f%1e%1d%1c%1b%1a%19%18%17%16%15%14%13%12%11%10%0f%0e%0d%0c%0b%0a%09%08%07%06%05%04%03%02%01%00";
 
 	  set resp.http.urluc2id
-	    = blob.transcode_n(27, URL, IDENTITY, req.http.urlhobbesuc);
+	    = blob.transcode_n(27, URL, IDENTITY, encoded=req.http.urlhobbesuc);
 
 	  set resp.http.urllc2id
-	    = blob.transcode_n(63, URL, IDENTITY, req.http.urlhobbeslc);
+	    = blob.transcode_n(63, URL, IDENTITY, encoded=req.http.urlhobbeslc);
 
 	  set resp.http.urlalldownuc2b64
-	    = blob.transcode_n(18, URL, BASE64, req.http.urlalldownuc);
+	    = blob.transcode_n(18, URL, BASE64, encoded=req.http.urlalldownuc);
 
 	  set resp.http.urlalldownuc2b64url
-	    = blob.transcode_n(15, URL, BASE64URL, req.http.urlalldownuc);
+	    = blob.transcode_n(15, URL, BASE64URL,
+	                       encoded=req.http.urlalldownuc);
 
 	  set resp.http.urlalldownuc2b64nopad
 	    = blob.transcode_n(15, URL, BASE64URLNOPAD,
-				   req.http.urlalldownuc);
+			       encoded=req.http.urlalldownuc);
 
 	  set resp.http.urlalldownlc2b64
-	    = blob.transcode_n(18, URL, BASE64, req.http.urlalldownlc);
+	    = blob.transcode_n(18, URL, BASE64, encoded=req.http.urlalldownlc);
 
 	  set resp.http.urlalldownlc2b64url
-	    = blob.transcode_n(15, URL, BASE64URL, req.http.urlalldownlc);
+	    = blob.transcode_n(15, URL, BASE64URL,
+	                       encoded=req.http.urlalldownlc);
 
 	  set resp.http.urlalldownlc2b64nopad
 	    = blob.transcode_n(15, URL, BASE64URLNOPAD,
-				   req.http.urlalldownlc);
+			       encoded=req.http.urlalldownlc);
 
 	  set resp.http.urlallupuc2b64
-	    = blob.transcode_n(36, URL, BASE64, req.http.urlallupuc);
+	    = blob.transcode_n(36, URL, BASE64, encoded=req.http.urlallupuc);
 
 	  set resp.http.urlallupuc2b64url
-	    = blob.transcode_n(33, URL, BASE64URL, req.http.urlallupuc);
+	    = blob.transcode_n(33, URL, BASE64URL, encoded=req.http.urlallupuc);
 
 	  set resp.http.urlallupuc2b64nopad
 	    = blob.transcode_n(33, URL, BASE64URLNOPAD,
-				   req.http.urlallupuc);
+			       encoded=req.http.urlallupuc);
 
 	  set resp.http.urlalluplc2b64
-	    = blob.transcode_n(36, URL, BASE64, req.http.urlalluplc);
+	    = blob.transcode_n(36, URL, BASE64, encoded=req.http.urlalluplc);
 
 	  set resp.http.urlalluplc2b64url
-	    = blob.transcode_n(33, URL, BASE64URL, req.http.urlalluplc);
+	    = blob.transcode_n(33, URL, BASE64URL, encoded=req.http.urlalluplc);
 
 	  set resp.http.urlalluplc2b64nopad
 	    = blob.transcode_n(33, URL, BASE64URLNOPAD,
-				   req.http.urlalluplc);
+			       encoded=req.http.urlalluplc);
+
+	  set resp.http.urlalldownuc2url
+	    = blob.transcode_n(423, URL, URL, encoded=req.http.urlalldownuc);
 
 	  set resp.http.urlalldownuc2urluc
-	    = blob.transcode_n(423, URL, URLUC, req.http.urlalldownuc);
+	    = blob.transcode_n(423, URL, URL, UPPER, req.http.urlalldownuc);
 
 	  set resp.http.urlalldownuc2urllc
-	    = blob.transcode_n(423, URL, URLLC, req.http.urlalldownuc);
+	    = blob.transcode_n(423, URL, URL, LOWER, req.http.urlalldownuc);
+
+	  set resp.http.urlalldownlc2url
+	    = blob.transcode_n(423, URL, URL, encoded=req.http.urlalldownlc);
 
 	  set resp.http.urlalldownlc2urluc
-	    = blob.transcode_n(423, URL, URLUC, req.http.urlalldownlc);
+	    = blob.transcode_n(423, URL, URL, UPPER, req.http.urlalldownlc);
 
 	  set resp.http.urlalldownlc2urllc
-	    = blob.transcode_n(423, URL, URLLC, req.http.urlalldownlc);
+	    = blob.transcode_n(423, URL, URL, LOWER, req.http.urlalldownlc);
+
+	  set resp.http.urlallupuc2url
+	    = blob.transcode_n(197, URL, URL, encoded=req.http.urlallupuc);
 
 	  set resp.http.urlallupuc2urluc
-	    = blob.transcode_n(197, URL, URLUC, req.http.urlallupuc);
+	    = blob.transcode_n(197, URL, URL, UPPER, req.http.urlallupuc);
 
 	  set resp.http.urlallupuc2urllc
-	    = blob.transcode_n(197, URL, URLLC, req.http.urlallupuc);
+	    = blob.transcode_n(197, URL, URL, LOWER, req.http.urlallupuc);
+
+	  set resp.http.urlalluplc2url
+	    = blob.transcode_n(197, URL, URL, encoded=req.http.urlalluplc);
 
 	  set resp.http.urlalluplc2urluc
-	    = blob.transcode_n(197, URL, URLUC, req.http.urlalluplc);
+	    = blob.transcode_n(197, URL, URL, UPPER, req.http.urlalluplc);
 
 	  set resp.http.urlalluplc2urllc
-	    = blob.transcode_n(197, URL, URLLC, req.http.urlalluplc);
+	    = blob.transcode_n(197, URL, URL, LOWER, req.http.urlalluplc);
 
 	  }
 }
@@ -300,14 +379,18 @@ client c1 {
 	expect resp.http.urlalluplc2b64 == "AAECAwQFBgcICQoL"
 	expect resp.http.urlalluplc2b64url == "AAECAwQFBgcICQo="
 	expect resp.http.urlalluplc2b64nopad == "AAECAwQFBgcICQo"
+	expect resp.http.urlalldownuc2url == "%ff%fe%fd%fc%fb%fa%f9%f8%f7%f6%f5%f4%f3%f2%f1%f0%ef%ee%ed%ec%eb%ea%e9%e8%e7%e6%e5%e4%e3%e2%e1%e0%df%de%dd%dc%db%da%d9%d8%d7%d6%d5%d4%d3%d2%d1%d0%cf%ce%cd%cc%cb%ca%c9%c8%c7%c6%c5%c4%c3%c2%c1%c0%bf%be%bd%bc%bb%ba%b9%b8%b7%b6%b5%b4%b3%b2%b1%b0%af%ae%ad%ac%ab%aa%a9%a8%a7%a6%a5%a4%a3%a2%a1%a0%9f%9e%9d%9c%9b%9a%99%98%97%96%95%94%93%92%91%90%8f%8e%8d%8c%8b%8a%89%88%87%86%85%84%83%82%81%80%7f~%7d%7c%7bzyxwvutsrqponmlkjihgfedcba"
 	expect resp.http.urlalldownuc2urluc == "%FF%FE%FD%FC%FB%FA%F9%F8%F7%F6%F5%F4%F3%F2%F1%F0%EF%EE%ED%EC%EB%EA%E9%E8%E7%E6%E5%E4%E3%E2%E1%E0%DF%DE%DD%DC%DB%DA%D9%D8%D7%D6%D5%D4%D3%D2%D1%D0%CF%CE%CD%CC%CB%CA%C9%C8%C7%C6%C5%C4%C3%C2%C1%C0%BF%BE%BD%BC%BB%BA%B9%B8%B7%B6%B5%B4%B3%B2%B1%B0%AF%AE%AD%AC%AB%AA%A9%A8%A7%A6%A5%A4%A3%A2%A1%A0%9F%9E%9D%9C%9B%9A%99%98%97%96%95%94%93%92%91%90%8F%8E%8D%8C%8B%8A%89%88%87%86%85%84%83%82%81%80%7F~%7D%7C%7Bzyxwvutsrqponmlkjihgfedcba"
-	expect resp.http.urlalldownuc2urllc == "%ff%fe%fd%fc%fb%fa%f9%f8%f7%f6%f5%f4%f3%f2%f1%f0%ef%ee%ed%ec%eb%ea%e9%e8%e7%e6%e5%e4%e3%e2%e1%e0%df%de%dd%dc%db%da%d9%d8%d7%d6%d5%d4%d3%d2%d1%d0%cf%ce%cd%cc%cb%ca%c9%c8%c7%c6%c5%c4%c3%c2%c1%c0%bf%be%bd%bc%bb%ba%b9%b8%b7%b6%b5%b4%b3%b2%b1%b0%af%ae%ad%ac%ab%aa%a9%a8%a7%a6%a5%a4%a3%a2%a1%a0%9f%9e%9d%9c%9b%9a%99%98%97%96%95%94%93%92%91%90%8f%8e%8d%8c%8b%8a%89%88%87%86%85%84%83%82%81%80%7f~%7d%7c%7bzyxwvutsrqponmlkjihgfedcba"
+	expect resp.http.urlalldownuc2urllc == resp.http.urlalldownuc2url
+	expect resp.http.urlalldownlc2url == "%ff%fe%fd%fc%fb%fa%f9%f8%f7%f6%f5%f4%f3%f2%f1%f0%ef%ee%ed%ec%eb%ea%e9%e8%e7%e6%e5%e4%e3%e2%e1%e0%df%de%dd%dc%db%da%d9%d8%d7%d6%d5%d4%d3%d2%d1%d0%cf%ce%cd%cc%cb%ca%c9%c8%c7%c6%c5%c4%c3%c2%c1%c0%bf%be%bd%bc%bb%ba%b9%b8%b7%b6%b5%b4%b3%b2%b1%b0%af%ae%ad%ac%ab%aa%a9%a8%a7%a6%a5%a4%a3%a2%a1%a0%9f%9e%9d%9c%9b%9a%99%98%97%96%95%94%93%92%91%90%8f%8e%8d%8c%8b%8a%89%88%87%86%85%84%83%82%81%80%7f~%7d%7c%7bzyxwvutsrqponmlkjihgfedcba"
 	expect resp.http.urlalldownlc2urluc == "%FF%FE%FD%FC%FB%FA%F9%F8%F7%F6%F5%F4%F3%F2%F1%F0%EF%EE%ED%EC%EB%EA%E9%E8%E7%E6%E5%E4%E3%E2%E1%E0%DF%DE%DD%DC%DB%DA%D9%D8%D7%D6%D5%D4%D3%D2%D1%D0%CF%CE%CD%CC%CB%CA%C9%C8%C7%C6%C5%C4%C3%C2%C1%C0%BF%BE%BD%BC%BB%BA%B9%B8%B7%B6%B5%B4%B3%B2%B1%B0%AF%AE%AD%AC%AB%AA%A9%A8%A7%A6%A5%A4%A3%A2%A1%A0%9F%9E%9D%9C%9B%9A%99%98%97%96%95%94%93%92%91%90%8F%8E%8D%8C%8B%8A%89%88%87%86%85%84%83%82%81%80%7F~%7D%7C%7Bzyxwvutsrqponmlkjihgfedcba"
-	expect resp.http.urlalldownlc2urllc == "%ff%fe%fd%fc%fb%fa%f9%f8%f7%f6%f5%f4%f3%f2%f1%f0%ef%ee%ed%ec%eb%ea%e9%e8%e7%e6%e5%e4%e3%e2%e1%e0%df%de%dd%dc%db%da%d9%d8%d7%d6%d5%d4%d3%d2%d1%d0%cf%ce%cd%cc%cb%ca%c9%c8%c7%c6%c5%c4%c3%c2%c1%c0%bf%be%bd%bc%bb%ba%b9%b8%b7%b6%b5%b4%b3%b2%b1%b0%af%ae%ad%ac%ab%aa%a9%a8%a7%a6%a5%a4%a3%a2%a1%a0%9f%9e%9d%9c%9b%9a%99%98%97%96%95%94%93%92%91%90%8f%8e%8d%8c%8b%8a%89%88%87%86%85%84%83%82%81%80%7f~%7d%7c%7bzyxwvutsrqponmlkjihgfedcba"
+	expect resp.http.urlalldownlc2urllc == resp.http.urlalldownlc2url
+	expect resp.http.urlallupuc2url == "%00%01%02%03%04%05%06%07%08%09%0a%0b%0c%0d%0e%0f%10%11%12%13%14%15%16%17%18%19%1a%1b%1c%1d%1e%1f%20%21%22%23%24%25%26%27%28%29%2a%2b%2c-.%2f0123456789%3a%3b%3c%3d%3e%3f%40ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	expect resp.http.urlalluplc2url == "%00%01%02%03%04%05%06%07%08%09%0a%0b%0c%0d%0e%0f%10%11%12%13%14%15%16%17%18%19%1a%1b%1c%1d%1e%1f%20%21%22%23%24%25%26%27%28%29%2a%2b%2c-.%2f0123456789%3a%3b%3c%3d%3e%3f%40ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	expect resp.http.urlallupuc2urluc == "%00%01%02%03%04%05%06%07%08%09%0A%0B%0C%0D%0E%0F%10%11%12%13%14%15%16%17%18%19%1A%1B%1C%1D%1E%1F%20%21%22%23%24%25%26%27%28%29%2A%2B%2C-.%2F0123456789%3A%3B%3C%3D%3E%3F%40ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	expect resp.http.urlalluplc2urluc == "%00%01%02%03%04%05%06%07%08%09%0A%0B%0C%0D%0E%0F%10%11%12%13%14%15%16%17%18%19%1A%1B%1C%1D%1E%1F%20%21%22%23%24%25%26%27%28%29%2A%2B%2C-.%2F0123456789%3A%3B%3C%3D%3E%3F%40ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	expect resp.http.urlallupuc2urllc == "%00%01%02%03%04%05%06%07%08%09%0a%0b%0c%0d%0e%0f%10%11%12%13%14%15%16%17%18%19%1a%1b%1c%1d%1e%1f%20%21%22%23%24%25%26%27%28%29%2a%2b%2c-.%2f0123456789%3a%3b%3c%3d%3e%3f%40ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	expect resp.http.urlalluplc2urllc == "%00%01%02%03%04%05%06%07%08%09%0a%0b%0c%0d%0e%0f%10%11%12%13%14%15%16%17%18%19%1a%1b%1c%1d%1e%1f%20%21%22%23%24%25%26%27%28%29%2a%2b%2c-.%2f0123456789%3a%3b%3c%3d%3e%3f%40ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	expect resp.http.urlallupuc2urllc == resp.http.urlallupuc2url
+	expect resp.http.urlalluplc2urllc == resp.http.urlalluplc2url
 } -run
 
 # Decode failures
@@ -324,55 +407,57 @@ varnish v1 -vcl+backend {
 		set req.http.foo = "AAA=";
 		if (req.url == "/1") {
 			set resp.http.good
-			    = blob.transcode_n(3, URL, IDENTITY, "%2c%q");
+			    = blob.transcode_n(3, URL, IDENTITY,
+			                       encoded="%2c%q");
 		}
 		elsif (req.url == "/2") {
 			set resp.http.good
-			    = blob.transcode_n(3, URL, IDENTITY, "%3a%2q");
+			    = blob.transcode_n(3, URL, IDENTITY,
+			                       encoded="%3a%2q");
 		}
 		elsif (req.url == "/3") {
 			set resp.http.bad
 			    = blob.transcode_n(8, HEX, IDENTITY,
-						   "0x123456");
+					       encoded="0x123456");
 		}
 		elsif (req.url == "/4") {
 			set resp.http.bad
 			    = blob.transcode_n(4, BASE64, IDENTITY,
-						   "-_-_" + req.http.foo);
+					       encoded="-_-_" + req.http.foo);
 		}
 		elsif (req.url == "/5") {
 			set resp.http.bad
 			    = blob.transcode_n(4, BASE64URL, IDENTITY,
-						   "+/+/" + req.http.foo);
+					       encoded="+/+/" + req.http.foo);
 		}
 		elsif (req.url == "/6") {
 			set resp.http.bad
 			    = blob.transcode_n(8, BASE64URLNOPAD, IDENTITY,
-						   "TWFu" + req.http.foo);
+					       encoded="TWFu" + req.http.foo);
 		}
 		elsif (req.url == "/7") {
 			set resp.http.bad
 			    = blob.transcode_n(4, BASE64, BASE64,
-						   "_-_-" + req.http.foo);
+					       encoded="_-_-" + req.http.foo);
 		}
 		elsif (req.url == "/8") {
 			set resp.http.bad
 			    = blob.transcode_n(4, BASE64URL, BASE64URL,
-						   "/+/+" + req.http.foo);
+					       encoded="/+/+" + req.http.foo);
 		}
 		elsif (req.url == "/9") {
 			set resp.http.bad
 			    = blob.transcode_n(8, BASE64URLNOPAD,
-						   BASE64URLNOPAD,
-						   "Zm9v" + req.http.foo);
+					       BASE64URLNOPAD,
+					       encoded="Zm9v" + req.http.foo);
 		}
 		elsif (req.url == "/10") {
 			set resp.http.bad
-			    = blob.transcode_n(1, URL, IDENTITY, "%20");
+			    = blob.transcode_n(1, URL, IDENTITY, encoded="%20");
 		}
 		elsif (req.url == "/11") {
 			set resp.http.bad
-			    = blob.transcode_n(2, URL, IDENTITY, "%20");
+			    = blob.transcode_n(2, URL, IDENTITY, encoded="%20");
 		}
 	}
 }

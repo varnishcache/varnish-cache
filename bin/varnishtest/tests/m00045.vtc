@@ -183,19 +183,21 @@ varnish v1 -vcl {
 
 	sub vcl_synth {
 		set resp.http.up03
-		    = blob.encode(BASE64, blob.subblob(up07.get(), 4B));
+		    = blob.encode(BASE64, blob=blob.subblob(up07.get(), 4B));
 		set resp.http.down07060504
-		    = blob.encode(BASE64, blob.subblob(down07.get(), 4B));
+		    = blob.encode(BASE64, blob=blob.subblob(down07.get(), 4B));
 		set resp.http.up04050607
-		    = blob.encode(BASE64, blob.subblob(up07.get(), 4B, 4B));
+		    = blob.encode(BASE64,
+		                  blob=blob.subblob(up07.get(), 4B, 4B));
 		set resp.http.down03
-		    = blob.encode(BASE64, blob.subblob(down07.get(), 4B, 4B));
+		    = blob.encode(BASE64,
+		                  blob=blob.subblob(down07.get(), 4B, 4B));
 		set resp.http.up07
-		    = blob.encode(BASE64, blob.subblob(up07.get(), 8B));
+		    = blob.encode(BASE64, blob=blob.subblob(up07.get(), 8B));
 		set resp.http.down07
-		    = blob.encode(BASE64, blob.subblob(down07.get(), 8B));
+		    = blob.encode(BASE64, blob=blob.subblob(down07.get(), 8B));
 		set resp.http.zerobytes
-		    = blob.encode(BASE64, blob.subblob(down07.get(), 0B));
+		    = blob.encode(BASE64, blob=blob.subblob(down07.get(), 0B));
 		set resp.http.zerolen
 		    = blob.length(blob.subblob(down07.get(), 0B));
 	}
@@ -231,16 +233,17 @@ varnish v1 -vcl+backend {
 
 	sub vcl_deliver {
 		if (req.url == "/empty") {
-			set resp.http.empty = blob.encode(BASE64,
+			set resp.http.empty = blob.encode(BASE64, blob=
 			    blob.subblob(empty.get(), 1B));
 		}
 		elsif (req.url == "/toolong") {
 			set resp.http.toolong
-			    = blob.encode(BASE64, blob.subblob(up07.get(), 9B));
+			    = blob.encode(BASE64,
+			                  blob=blob.subblob(up07.get(), 9B));
 		}
 		elsif (req.url == "/badoffset") {
 			set resp.http.badoffset = blob.encode(BASE64,
-			    blob.subblob(up07.get(), 4B, 5B));
+			    blob=blob.subblob(up07.get(), 4B, 5B));
 		}
 	}
 }

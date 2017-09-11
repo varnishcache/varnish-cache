@@ -33,50 +33,32 @@ varnish v1 -arg "-i serverid" -vcl+backend {
 	}
 
 	sub vcl_synth {
-	  set resp.http.id = blob.encode(IDENTITY, id.get());
-	  set resp.http.idpieces = blob.encode(IDENTITY, idpieces.get());
-	  set resp.http.idparam = blob.encode(IDENTITY, idparam.get());
-	  set resp.http.idempty = blob.encode(IDENTITY, idempty.get());
-	  set resp.http.hexuc = blob.encode(IDENTITY, hexuc.get());
-	  set resp.http.hexlc = blob.encode(IDENTITY, hexlc.get());
-	  set resp.http.hexmix = blob.encode(IDENTITY, hexmix.get());
-	  set resp.http.b64 = blob.encode(IDENTITY, b64.get());
-	  set resp.http.b64nopad = blob.encode(IDENTITY, b64nopad.get());
+	  set resp.http.id = blob.encode(IDENTITY, blob=id.get());
+	  set resp.http.idpieces = blob.encode(IDENTITY, blob=idpieces.get());
+	  set resp.http.idparam = blob.encode(IDENTITY, blob=idparam.get());
+	  set resp.http.idempty = blob.encode(IDENTITY, blob=idempty.get());
+	  set resp.http.hexuc = blob.encode(IDENTITY, blob=hexuc.get());
+	  set resp.http.hexlc = blob.encode(IDENTITY, blob=hexlc.get());
+	  set resp.http.hexmix = blob.encode(IDENTITY, blob=hexmix.get());
+	  set resp.http.b64 = blob.encode(IDENTITY, blob=b64.get());
+	  set resp.http.b64nopad = blob.encode(IDENTITY, blob=b64nopad.get());
 
 	  set resp.http.allhex2b64func = blob.encode(BASE64,
-							 hexall.get());
-	  set resp.http.allb642hexlcfunc = blob.encode(HEXLC,
-							   b64all.get());
+						     blob=hexall.get());
+	  set resp.http.allb642hexlcfunc = blob.encode(HEX,
+						       blob=b64all.get());
 	  set resp.http.allhex2b64meth = hexall.encode(BASE64);
-	  set resp.http.allb642hexlcmeth = b64all.encode(HEXLC);
+	  set resp.http.allb642hexmeth = b64all.encode(HEX);
+	  set resp.http.allb642hexlcmeth = b64all.encode(HEX, LOWER);
 
 	  set resp.http.id2id = id.encode(IDENTITY);
 	  set resp.http.id2b64 = id.encode(BASE64);
 	  set resp.http.id2b64url = id.encode(BASE64URL);
 	  set resp.http.id2b64urlnopad = id.encode(BASE64URLNOPAD);
-	  set resp.http.id2hexuc = id.encode(HEXUC);
-	  set resp.http.id2hexlc = id.encode(HEXLC);
+	  set resp.http.id2hex = id.encode(HEX);
+	  set resp.http.id2hexuc = id.encode(HEX, UPPER);
+	  set resp.http.id2hexlc = id.encode(HEX, LOWER);
 
-	  set resp.http.emptyid = idempty.encode(IDENTITY);
-	  set resp.http.emptyb64 = idempty.encode(BASE64);
-	  set resp.http.emptyb64url = idempty.encode(BASE64URL);
-	  set resp.http.emptyb64urlnopad = idempty.encode(BASE64URLNOPAD);
-	  set resp.http.emptyhexuc = idempty.encode(HEXUC);
-	  set resp.http.emptyhexlc = idempty.encode(HEXLC);
-
-	  set resp.http.hexuc2id = hexuc.encode(IDENTITY);
-	  set resp.http.hexuc2b64 = hexuc.encode(BASE64);
-	  set resp.http.hexuc2b64url = hexuc.encode(BASE64URL);
-	  set resp.http.hexuc2b64nopad = hexuc.encode(BASE64URLNOPAD);
-	  set resp.http.hexuc2hexuc = hexuc.encode(HEXUC);
-	  set resp.http.hexuc2hexlc = hexuc.encode(HEXLC);
-
-	  set resp.http.hexlc2id = hexlc.encode(IDENTITY);
-	  set resp.http.hexlc2b64 = hexlc.encode(BASE64);
-	  set resp.http.hexlc2b64url = hexlc.encode(BASE64URL);
-	  set resp.http.hexlc2b64nopad = hexlc.encode(BASE64URLNOPAD);
-	  set resp.http.hexlc2hexuc = hexlc.encode(HEXUC);
-	  set resp.http.hexlc2hexlc = hexlc.encode(HEXLC);
 	}
 } -start
 
@@ -96,35 +78,88 @@ client c1 {
 	expect resp.http.allhex2b64func == "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w=="
 	expect resp.http.allb642hexlcfunc == "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff"
 	expect resp.http.allhex2b64meth == "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w=="
-	expect resp.http.allb642hexlcmeth == "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff"
+	expect resp.http.allb642hexmeth == "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedfe0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff"
+	expect resp.http.allb642hexlcmeth == resp.http.allb642hexmeth
 
 	expect resp.http.id2id == "The quick brown fox jumps over the lazy dog"
 	expect resp.http.id2b64 == "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw=="
 	expect resp.http.id2b64url == "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw=="
 	expect resp.http.id2b64urlnopad == "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw"
+	expect resp.http.id2hex == "54686520717569636b2062726f776e20666f78206a756d7073206f76657220746865206c617a7920646f67"
 	expect resp.http.id2hexuc == "54686520717569636B2062726F776E20666F78206A756D7073206F76657220746865206C617A7920646F67"
-	expect resp.http.id2hexlc == "54686520717569636b2062726f776e20666f78206a756d7073206f76657220746865206c617a7920646f67"
+	expect resp.http.id2hexlc == resp.http.id2hex
+} -run
 
+# run twice to test retrieving cached encodings
+client c1 -run
+
+varnish v1 -vcl+backend {
+	import blob;
+
+	sub vcl_init {
+	  new idempty = blob.blob(IDENTITY, "");
+
+	  new hexuc = blob.blob(HEX, "666F6F206261722062617A2071757578");
+	  new hexlc = blob.blob(HEX, "666f6f206261722062617a2071757578");
+	}
+
+	sub vcl_recv {
+	  return(synth(200));
+	}
+
+	sub vcl_synth {
+	  set resp.http.emptyid = idempty.encode(IDENTITY);
+	  set resp.http.emptyb64 = idempty.encode(BASE64);
+	  set resp.http.emptyb64url = idempty.encode(BASE64URL);
+	  set resp.http.emptyb64urlnopad = idempty.encode(BASE64URLNOPAD);
+	  set resp.http.emptyhex = idempty.encode(HEX);
+	  set resp.http.emptyhexuc = idempty.encode(HEX, UPPER);
+	  set resp.http.emptyhexlc = idempty.encode(HEX, LOWER);
+
+	  set resp.http.hexuc2id = hexuc.encode(IDENTITY);
+	  set resp.http.hexuc2b64 = hexuc.encode(BASE64);
+	  set resp.http.hexuc2b64url = hexuc.encode(BASE64URL);
+	  set resp.http.hexuc2b64nopad = hexuc.encode(BASE64URLNOPAD);
+	  set resp.http.hexuc2hex = hexuc.encode(HEX);
+	  set resp.http.hexuc2hexuc = hexuc.encode(HEX, UPPER);
+	  set resp.http.hexuc2hexlc = hexuc.encode(HEX, LOWER);
+
+	  set resp.http.hexlc2id = hexlc.encode(IDENTITY);
+	  set resp.http.hexlc2b64 = hexlc.encode(BASE64);
+	  set resp.http.hexlc2b64url = hexlc.encode(BASE64URL);
+	  set resp.http.hexlc2b64nopad = hexlc.encode(BASE64URLNOPAD);
+	  set resp.http.hexlc2hex = hexlc.encode(HEX);
+	  set resp.http.hexlc2hexuc = hexlc.encode(HEX, UPPER);
+	  set resp.http.hexlc2hexlc = hexlc.encode(HEX, LOWER);
+	}
+}
+
+client c1 {
+	txreq
+	rxresp
 	expect resp.http.emptyid == ""
 	expect resp.http.emptyb64 == ""
 	expect resp.http.emptyb64url == ""
 	expect resp.http.emptyb64urlnopad == ""
+	expect resp.http.emptyhex == ""
 	expect resp.http.emptyhexuc == ""
-	expect resp.http.emptyhexlc == ""
+	expect resp.http.emptyhexlc == resp.http.emptyhex
 
 	expect resp.http.hexuc2id == "foo bar baz quux"
 	expect resp.http.hexuc2b64 == "Zm9vIGJhciBiYXogcXV1eA=="
 	expect resp.http.hexuc2b64url == "Zm9vIGJhciBiYXogcXV1eA=="
 	expect resp.http.hexuc2b64nopad == "Zm9vIGJhciBiYXogcXV1eA"
+	expect resp.http.hexuc2hex == "666f6f206261722062617a2071757578"
 	expect resp.http.hexuc2hexuc == "666F6F206261722062617A2071757578"
-	expect resp.http.hexuc2hexlc == "666f6f206261722062617a2071757578"
+	expect resp.http.hexuc2hexlc == resp.http.hexuc2hex
 
 	expect resp.http.hexlc2id == "foo bar baz quux"
 	expect resp.http.hexlc2b64 == "Zm9vIGJhciBiYXogcXV1eA=="
 	expect resp.http.hexlc2b64url == "Zm9vIGJhciBiYXogcXV1eA=="
 	expect resp.http.hexlc2b64nopad == "Zm9vIGJhciBiYXogcXV1eA"
+	expect resp.http.hexlc2hex == "666f6f206261722062617a2071757578"
 	expect resp.http.hexlc2hexuc == "666F6F206261722062617A2071757578"
-	expect resp.http.hexlc2hexlc == "666f6f206261722062617a2071757578"
+	expect resp.http.hexlc2hexlc == resp.http.hexlc2hex
 } -run
 
 # run twice to test retrieving cached encodings
@@ -148,28 +183,34 @@ varnish v1 -vcl+backend {
 	  set resp.http.b642b64 = b64.encode(BASE64);
 	  set resp.http.b642b64url = b64.encode(BASE64URL);
 	  set resp.http.b642b64nopad = b64.encode(BASE64URLNOPAD);
-	  set resp.http.b642hexuc = b64.encode(HEXUC);
-	  set resp.http.b642hexlc = b64.encode(HEXLC);
-	  set resp.http.b642urluc = b64.encode(URLUC);
-	  set resp.http.b642urllc = b64.encode(URLLC);
+	  set resp.http.b642hex = b64.encode(HEX);
+	  set resp.http.b642hexuc = b64.encode(HEX, UPPER);
+	  set resp.http.b642hexlc = b64.encode(HEX, LOWER);
+	  set resp.http.b642url = b64.encode(URL);
+	  set resp.http.b642urluc = b64.encode(URL, UPPER);
+	  set resp.http.b642urllc = b64.encode(URL, LOWER);
 
 	  set resp.http.b64url2id = b64url.encode(IDENTITY);
 	  set resp.http.b64url2b64 = b64url.encode(BASE64);
 	  set resp.http.b64url2b64url = b64url.encode(BASE64URL);
 	  set resp.http.b64url2b64nopad = b64url.encode(BASE64URLNOPAD);
-	  set resp.http.b64url2hexuc = b64url.encode(HEXUC);
-	  set resp.http.b64url2hexlc = b64url.encode(HEXLC);
-	  set resp.http.b64url2urluc = b64url.encode(URLUC);
-	  set resp.http.b64url2urllc = b64url.encode(URLLC);
+	  set resp.http.b64url2hex = b64url.encode(HEX);
+	  set resp.http.b64url2hexuc = b64url.encode(HEX, UPPER);
+	  set resp.http.b64url2hexlc = b64url.encode(HEX, LOWER);
+	  set resp.http.b64url2url = b64url.encode(URL);
+	  set resp.http.b64url2urluc = b64url.encode(URL, UPPER);
+	  set resp.http.b64url2urllc = b64url.encode(URL, LOWER);
 
 	  set resp.http.b64nopad2id = b64nopad.encode(IDENTITY);
 	  set resp.http.b64nopad2b64 = b64nopad.encode(BASE64);
 	  set resp.http.b64nopad2b64url = b64nopad.encode(BASE64URL);
 	  set resp.http.b64nopad2b64nopad = b64nopad.encode(BASE64URLNOPAD);
-	  set resp.http.b64nopad2hexuc = b64nopad.encode(HEXUC);
-	  set resp.http.b64nopad2hexlc = b64nopad.encode(HEXLC);
-	  set resp.http.b64nopad2urluc = b64nopad.encode(URLUC);
-	  set resp.http.b64nopad2urllc = b64nopad.encode(URLLC);
+	  set resp.http.b64nopad2hex = b64nopad.encode(HEX);
+	  set resp.http.b64nopad2hexuc = b64nopad.encode(HEX, UPPER);
+	  set resp.http.b64nopad2hexlc = b64nopad.encode(HEX, LOWER);
+	  set resp.http.b64nopad2url = b64nopad.encode(URL);
+	  set resp.http.b64nopad2urluc = b64nopad.encode(URL, UPPER);
+	  set resp.http.b64nopad2urllc = b64nopad.encode(URL, LOWER);
 	}
 }
 
@@ -180,28 +221,34 @@ client c2 {
 	expect resp.http.b642b64 == "L0hlbGxvIHdvcmxkLw=="
 	expect resp.http.b642b64url == "L0hlbGxvIHdvcmxkLw=="
 	expect resp.http.b642b64nopad == "L0hlbGxvIHdvcmxkLw"
+	expect resp.http.b642hex == "2f48656c6c6f20776f726c642f"
 	expect resp.http.b642hexuc == "2F48656C6C6F20776F726C642F"
-	expect resp.http.b642hexlc == "2f48656c6c6f20776f726c642f"
+	expect resp.http.b642hexlc == resp.http.b642hex
+	expect resp.http.b642url == "%2fHello%20world%2f"
 	expect resp.http.b642urluc == "%2FHello%20world%2F"
-	expect resp.http.b642urllc == "%2fHello%20world%2f"
+	expect resp.http.b642urllc == resp.http.b642url
 
 	expect resp.http.b64url2id == "/Hello world/"
 	expect resp.http.b64url2b64 == "L0hlbGxvIHdvcmxkLw=="
 	expect resp.http.b64url2b64url == "L0hlbGxvIHdvcmxkLw=="
 	expect resp.http.b64url2b64nopad == "L0hlbGxvIHdvcmxkLw"
+	expect resp.http.b64url2hex == "2f48656c6c6f20776f726c642f"
 	expect resp.http.b64url2hexuc == "2F48656C6C6F20776F726C642F"
-	expect resp.http.b64url2hexlc == "2f48656c6c6f20776f726c642f"
+	expect resp.http.b64url2hexlc == resp.http.b64url2hex
+	expect resp.http.b64url2url == "%2fHello%20world%2f"
 	expect resp.http.b64url2urluc == "%2FHello%20world%2F"
-	expect resp.http.b64url2urllc == "%2fHello%20world%2f"
+	expect resp.http.b64url2urllc == resp.http.b64url2url
 
 	expect resp.http.b64nopad2id == "/Hello world/"
 	expect resp.http.b64nopad2b64 == "L0hlbGxvIHdvcmxkLw=="
 	expect resp.http.b64nopad2b64url == "L0hlbGxvIHdvcmxkLw=="
 	expect resp.http.b64nopad2b64nopad == "L0hlbGxvIHdvcmxkLw"
+	expect resp.http.b64nopad2hex == "2f48656c6c6f20776f726c642f"
 	expect resp.http.b64nopad2hexuc == "2F48656C6C6F20776F726C642F"
-	expect resp.http.b64nopad2hexlc == "2f48656c6c6f20776f726c642f"
+	expect resp.http.b64nopad2hexlc == resp.http.b64nopad2hex
+	expect resp.http.b64nopad2url == "%2fHello%20world%2f"
 	expect resp.http.b64nopad2urluc == "%2FHello%20world%2F"
-	expect resp.http.b64nopad2urllc == "%2fHello%20world%2f"
+	expect resp.http.b64nopad2urllc == resp.http.b64nopad2url
 } -run
 
 # run twice
@@ -224,46 +271,58 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_synth {
-	  set resp.http.id2urluc = id.encode(URLUC);
-	  set resp.http.id2urllc = id.encode(URLLC);
-	  set resp.http.emptyurluc = idempty.encode(URLUC);
-	  set resp.http.emptyurllc = idempty.encode(URLLC);
-	  set resp.http.url = blob.encode(IDENTITY, url.get());
-	  set resp.http.hexuc2urluc = hexuc.encode(URLUC);
-	  set resp.http.hexuc2urllc = hexuc.encode(URLLC);
-	  set resp.http.hexlc2urluc = hexlc.encode(URLUC);
-	  set resp.http.hexlc2urllc = hexlc.encode(URLLC);
+	  set resp.http.id2url = id.encode(URL);
+	  set resp.http.id2urluc = id.encode(URL, UPPER);
+	  set resp.http.id2urllc = id.encode(URL, LOWER);
+	  set resp.http.emptyurl = idempty.encode(URL);
+	  set resp.http.emptyurluc = idempty.encode(URL, UPPER);
+	  set resp.http.emptyurllc = idempty.encode(URL, LOWER);
+	  set resp.http.url = blob.encode(IDENTITY, blob=url.get());
+	  set resp.http.hexuc2url = hexuc.encode(URL);
+	  set resp.http.hexuc2urluc = hexuc.encode(URL, UPPER);
+	  set resp.http.hexuc2urllc = hexuc.encode(URL, LOWER);
+	  set resp.http.hexlc2url = hexlc.encode(URL);
+	  set resp.http.hexlc2urluc = hexlc.encode(URL, UPPER);
+	  set resp.http.hexlc2urllc = hexlc.encode(URL, LOWER);
 	  set resp.http.url2id = url.encode(IDENTITY);
 	  set resp.http.url2b64 = url.encode(BASE64);
 	  set resp.http.url2b64url = url.encode(BASE64URL);
 	  set resp.http.url2b64nopad = url.encode(BASE64URLNOPAD);
-	  set resp.http.url2hexuc = url.encode(HEXUC);
-	  set resp.http.url2hexlc = url.encode(HEXLC);
-	  set resp.http.url2urluc = url.encode(URLUC);
-	  set resp.http.url2urllc = url.encode(URLLC);
+	  set resp.http.url2hex = url.encode(HEX);
+	  set resp.http.url2hexuc = url.encode(HEX, UPPER);
+	  set resp.http.url2hexlc = url.encode(HEX, LOWER);
+	  set resp.http.url2url = url.encode(URL);
+	  set resp.http.url2urluc = url.encode(URL, UPPER);
+	  set resp.http.url2urllc = url.encode(URL, LOWER);
 	}
 }
 
 client c3 {
 	txreq
 	rxresp
+	expect resp.http.id2url == "The%20quick%20brown%20fox%20jumps%20over%20the%20lazy%20dog"
 	expect resp.http.id2urluc == "The%20quick%20brown%20fox%20jumps%20over%20the%20lazy%20dog"
-	expect resp.http.id2urllc == "The%20quick%20brown%20fox%20jumps%20over%20the%20lazy%20dog"
+	expect resp.http.id2urllc == resp.http.id2url
+	expect resp.http.emptyurl == ""
 	expect resp.http.emptyurluc == ""
-	expect resp.http.emptyurllc == ""
+	expect resp.http.emptyurllc == resp.http.emptyurl
+	expect resp.http.hexuc2url == "foo%20bar%20baz%20quux"
 	expect resp.http.hexuc2urluc == "foo%20bar%20baz%20quux"
-	expect resp.http.hexuc2urllc == "foo%20bar%20baz%20quux"
+	expect resp.http.hexuc2urllc == resp.http.hexuc2url
+	expect resp.http.hexlc2url == "foo%20bar%20baz%20quux"
 	expect resp.http.hexlc2urluc == "foo%20bar%20baz%20quux"
-	expect resp.http.hexlc2urllc == "foo%20bar%20baz%20quux"
+	expect resp.http.hexlc2urllc == resp.http.hexlc2url
 	expect resp.http.url == "foo:bar:baz:quux"
 	expect resp.http.url2id == "foo:bar:baz:quux"
 	expect resp.http.url2b64 == "Zm9vOmJhcjpiYXo6cXV1eA=="
 	expect resp.http.url2b64url == "Zm9vOmJhcjpiYXo6cXV1eA=="
 	expect resp.http.url2b64nopad == "Zm9vOmJhcjpiYXo6cXV1eA"
+	expect resp.http.url2hex == "666f6f3a6261723a62617a3a71757578"
 	expect resp.http.url2hexuc == "666F6F3A6261723A62617A3A71757578"
-	expect resp.http.url2hexlc == "666f6f3a6261723a62617a3a71757578"
+	expect resp.http.url2hexlc == resp.http.url2hexlc
+	expect resp.http.url2url == "foo%3abar%3abaz%3aquux"
 	expect resp.http.url2urluc == "foo%3Abar%3Abaz%3Aquux"
-	expect resp.http.url2urllc == "foo%3abar%3abaz%3aquux"
+	expect resp.http.url2urllc == resp.http.url2url
 } -run
 
 # run twice

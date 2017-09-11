@@ -75,21 +75,21 @@ hex2byte(const unsigned char hi, const unsigned char lo)
 }
 
 ssize_t
-hex_encode(const enum encoding enc, char *restrict const buf,
-	   const size_t buflen, const char *restrict const in,
-	   const size_t inlen)
+hex_encode(const enum encoding enc, const enum case_e kase,
+	   char *restrict const buf, const size_t buflen,
+	   const char *restrict const in, const size_t inlen)
 {
 	char *p = buf;
 	const char *alphabet = hex_alphabet[0];
 
 	AN(buf);
-	assert(enc == HEXUC || enc == HEXLC);
+	assert(enc == HEX);
 	if (in == NULL || inlen == 0)
 		return 0;
 	if (buflen < hex_encode_l(inlen))
 		return -1;
 
-	if (enc != HEXLC)
+	if (kase == UPPER)
 		alphabet = hex_alphabet[1];
 
 	for (int i = 0; i < inlen; i++) {
