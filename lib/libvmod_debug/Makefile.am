@@ -17,7 +17,7 @@ AM_CPPFLAGS = \
 vmoddir = $(pkglibdir)/vmods
 vmod_srcdir = $(top_srcdir)/lib/libvmod_debug
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
-vmodtoolargs = --strict
+vmodtoolargs =
 
 
 noinst_LTLIBRARIES = libvmod_debug.la
@@ -27,10 +27,7 @@ libvmod_debug_la_CFLAGS = \
 
 libvmod_debug_la_LDFLAGS = \
 	$(AM_LDFLAGS) \
-	-module \
-	-export-dynamic \
-	-avoid-version \
-	-shared \
+	$(VMOD_LDFLAGS) \
 	-rpath /nowhere \
 	@SAN_LDFLAGS@
 
