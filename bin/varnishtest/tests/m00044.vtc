@@ -29,7 +29,7 @@ varnish v1 -arg "-p http_max_hdr=128" -vcl+backend {
 	# vice versa at runtime.
 	set resp.http.Base64-Encoded
 	    = blob.encode(BASE64,
-			  blob=blob.decode(HEX, req.http.Hex-Encoded));
+			  blob=blob.decode(HEX, encoded=req.http.Hex-Encoded));
     }
 
     sub vcl_recv {
@@ -53,9 +53,10 @@ varnish v1 -arg "-p http_max_hdr=128" -vcl+backend {
     # IDENTITY
     sub vcl_deliver {
 	set resp.http.Trunced-Foo1
-	    = blob.encode(IDENTITY, blob=blob.decode(HEX, "666f6f00626172"));
+	    = blob.encode(IDENTITY, blob=blob.decode(HEX,
+	                                             encoded="666f6f00626172"));
 	set resp.http.Trunced-Foo2
-	    = blob.encode(blob=blob.decode(HEX, "666f6f00626172"));
+	    = blob.encode(blob=blob.decode(HEX, encoded="666f6f00626172"));
     }
 
     ############################################################
@@ -65,14 +66,15 @@ varnish v1 -arg "-p http_max_hdr=128" -vcl+backend {
 	set resp.http.Second = "def0";
 	set resp.http.Hex-Decoded = blob.encode(
 	    HEX,
-	    blob=blob.decode(HEX, resp.http.First + resp.http.Second));
+	    blob=blob.decode(HEX, encoded=resp.http.First + resp.http.Second));
     }
 
     ############################################################
     # encode - also contains decode examples
     sub vcl_deliver {
 	set resp.http.encode1
-	    = blob.encode(HEX, blob=blob.decode(BASE64, "Zm9vYmFyYmF6"));
+	    = blob.encode(HEX, blob=blob.decode(BASE64,
+	                                        encoded="Zm9vYmFyYmF6"));
 
 	# same with named parameters
 	set resp.http.encode2
@@ -108,7 +110,7 @@ varnish v1 -arg "-p http_max_hdr=128" -vcl+backend {
     ############################################################
     # blob init + .get + .encode
     sub vcl_init {
-	new theblob1 = blob.blob(BASE64, "YmxvYg==");
+	new theblob1 = blob.blob(BASE64, encoded="YmxvYg==");
 
 	# same with named arguments
 	new theblob2 = blob.blob(encoded="YmxvYg==", decoding=BASE64);

@@ -257,7 +257,7 @@ varnish v1 -errvcl {Expected 'from path ...'} {
 varnish v1 -errvcl {INT * BLOB not possible.} {
 	import blob;
 	sub vcl_deliver {
-		set resp.status = 100 * blob.decode(HEX, "a");
+		set resp.status = 100 * blob.decode(HEX, encoded="a");
 	}
 }
 

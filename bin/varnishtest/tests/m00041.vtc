@@ -39,19 +39,19 @@ varnish v1 -arg "-p workspace_client=256k" -vcl {
 	    = blob.transcode(IDENTITY, HEX, encoded=req.http.hobbes);
 
 	  set resp.http.id2hexuc
-	    = blob.transcode(IDENTITY, HEX, UPPER, req.http.hobbes);
+	    = blob.transcode(IDENTITY, HEX, UPPER, encoded=req.http.hobbes);
 
 	  set resp.http.id2hexlc
-	    = blob.transcode(IDENTITY, HEX, LOWER, req.http.hobbes);
+	    = blob.transcode(IDENTITY, HEX, LOWER, encoded=req.http.hobbes);
 
 	  set resp.http.id2url
 	    = blob.transcode(IDENTITY, URL, encoded=req.http.foobar);
 
 	  set resp.http.id2urluc
-	    = blob.transcode(IDENTITY, URL, UPPER, req.http.foobar);
+	    = blob.transcode(IDENTITY, URL, UPPER, encoded=req.http.foobar);
 
 	  set resp.http.id2urllc
-	    = blob.transcode(IDENTITY, URL, LOWER, req.http.foobar);
+	    = blob.transcode(IDENTITY, URL, LOWER, encoded=req.http.foobar);
 
 	  set resp.http.b642id
 	    = blob.transcode(BASE64, IDENTITY, encoded=req.http.hobbesb64);
@@ -81,19 +81,19 @@ varnish v1 -arg "-p workspace_client=256k" -vcl {
 	    = blob.transcode(HEX, URL, encoded=req.http.hexalldown);
 
 	  set resp.http.hexalldown2urluc
-	    = blob.transcode(HEX, URL, UPPER, req.http.hexalldown);
+	    = blob.transcode(HEX, URL, UPPER, encoded=req.http.hexalldown);
 
 	  set resp.http.hexalldown2urllc
-	    = blob.transcode(HEX, URL, LOWER, req.http.hexalldown);
+	    = blob.transcode(HEX, URL, LOWER, encoded=req.http.hexalldown);
 
 	  set resp.http.hexallup2url
 	    = blob.transcode(HEX, URL, encoded=req.http.hexallup);
 
 	  set resp.http.hexallup2urluc
-	    = blob.transcode(HEX, URL, UPPER, req.http.hexallup);
+	    = blob.transcode(HEX, URL, UPPER, encoded=req.http.hexallup);
 
 	  set resp.http.hexallup2urllc
-	    = blob.transcode(HEX, URL, LOWER, req.http.hexallup);
+	    = blob.transcode(HEX, URL, LOWER, encoded=req.http.hexallup);
 
 	}
 } -start
@@ -155,64 +155,64 @@ varnish v1 -vcl {
 	    = blob.transcode(BASE64, HEX, encoded=req.http.b64all);
 
 	  set resp.http.b64all2hexuc
-	    = blob.transcode(BASE64, HEX, UPPER, req.http.b64all);
+	    = blob.transcode(BASE64, HEX, UPPER, encoded=req.http.b64all);
 
 	  set resp.http.b64all2hexlc
-	    = blob.transcode(BASE64, HEX, LOWER, req.http.b64all);
+	    = blob.transcode(BASE64, HEX, LOWER, encoded=req.http.b64all);
 
 	  set resp.http.b64allurl2hex
 	    = blob.transcode(BASE64URL, HEX, encoded=req.http.b64allurl);
 
 	  set resp.http.b64allurl2hexuc
-	    = blob.transcode(BASE64URL, HEX, UPPER, req.http.b64allurl);
+	    = blob.transcode(BASE64URL, HEX, UPPER, encoded=req.http.b64allurl);
 
 	  set resp.http.b64allurl2hexlc
-	    = blob.transcode(BASE64URL, HEX, LOWER, req.http.b64allurl);
+	    = blob.transcode(BASE64URL, HEX, LOWER, encoded=req.http.b64allurl);
 
 	  set resp.http.b64all2url
 	    = blob.transcode(BASE64, URL, encoded=req.http.b64all);
 
 	  set resp.http.b64all2urluc
-	    = blob.transcode(BASE64, URL, UPPER, req.http.b64all);
+	    = blob.transcode(BASE64, URL, UPPER, encoded=req.http.b64all);
 
 	  set resp.http.b64all2urllc
-	    = blob.transcode(BASE64, URL, LOWER, req.http.b64all);
+	    = blob.transcode(BASE64, URL, LOWER, encoded=req.http.b64all);
 
 	  set resp.http.b64allurl2url
 	    = blob.transcode(BASE64URL, URL, encoded=req.http.b64allurl);
 
 	  set resp.http.b64allurl2urluc
-	    = blob.transcode(BASE64URL, URL, UPPER, req.http.b64allurl);
+	    = blob.transcode(BASE64URL, URL, UPPER, encoded=req.http.b64allurl);
 
 	  set resp.http.b64allurl2urllc
-	    = blob.transcode(BASE64URL, URL, LOWER, req.http.b64allurl);
+	    = blob.transcode(BASE64URL, URL, LOWER, encoded=req.http.b64allurl);
 
 	  set resp.http.hexuc2hex
 	    = blob.transcode(HEX, HEX, encoded="0123456789ABCDEF");
 
 	  set resp.http.hexuc2hexuc
-	    = blob.transcode(HEX, HEX, UPPER, "0123456789ABCDEF");
+	    = blob.transcode(HEX, HEX, UPPER, encoded="0123456789ABCDEF");
 
 	  set resp.http.hexlc2hexlc
-	    = blob.transcode(HEX, HEX, LOWER, "0123456789abcdef");
+	    = blob.transcode(HEX, HEX, LOWER, encoded="0123456789abcdef");
 
 	  set resp.http.hexlc2hex
 	    = blob.transcode(HEX, HEX, encoded="0123456789abcdef");
 
 	  set resp.http.hexuc2hexlc
-	    = blob.transcode(HEX, HEX, LOWER, "0123456789ABCDEF");
+	    = blob.transcode(HEX, HEX, LOWER, encoded="0123456789ABCDEF");
 
 	  set resp.http.hexlc2hexuc
-	    = blob.transcode(HEX, HEX, UPPER, "0123456789abcdef");
+	    = blob.transcode(HEX, HEX, UPPER, encoded="0123456789abcdef");
 
 	  set resp.http.hexmix2hex
 	    = blob.transcode(HEX, HEX, encoded="0123456789ABCdef");
 
 	  set resp.http.hexmix2hexuc
-	    = blob.transcode(HEX, HEX, UPPER, "0123456789ABCdef");
+	    = blob.transcode(HEX, HEX, UPPER, encoded="0123456789ABCdef");
 
 	  set resp.http.hexmix2hexlc
-	    = blob.transcode(HEX, HEX, LOWER, "0123456789abcDEF");
+	    = blob.transcode(HEX, HEX, LOWER, encoded="0123456789abcDEF");
 
 	  set req.http.hexpart1 = "01234567";
 	  set req.http.hexpart2 = "89abcdef";
@@ -336,37 +336,37 @@ varnish v1 -vcl {
 	    = blob.transcode(URL, URL, encoded=req.http.urlalldownuc);
 
 	  set resp.http.urlalldownuc2urllc
-	    = blob.transcode(URL, URL, LOWER, req.http.urlalldownuc);
+	    = blob.transcode(URL, URL, LOWER, encoded=req.http.urlalldownuc);
 
 	  set resp.http.urlalldownuc2urluc
-	    = blob.transcode(URL, URL, UPPER, req.http.urlalldownuc);
+	    = blob.transcode(URL, URL, UPPER, encoded=req.http.urlalldownuc);
 
 	  set resp.http.urlalldownlc2url
 	    = blob.transcode(URL, URL, encoded=req.http.urlalldownlc);
 
 	  set resp.http.urlalldownlc2urllc
-	    = blob.transcode(URL, URL, LOWER, req.http.urlalldownlc);
+	    = blob.transcode(URL, URL, LOWER, encoded=req.http.urlalldownlc);
 
 	  set resp.http.urlalldownlc2urluc
-	    = blob.transcode(URL, URL, UPPER, req.http.urlalldownlc);
+	    = blob.transcode(URL, URL, UPPER, encoded=req.http.urlalldownlc);
 
 	  set resp.http.urlallupuc2url
 	    = blob.transcode(URL, URL, encoded=req.http.urlallupuc);
 
 	  set resp.http.urlallupuc2urluc
-	    = blob.transcode(URL, URL, UPPER, req.http.urlallupuc);
+	    = blob.transcode(URL, URL, UPPER, encoded=req.http.urlallupuc);
 
 	  set resp.http.urlallupuc2urllc
-	    = blob.transcode(URL, URL, LOWER, req.http.urlallupuc);
+	    = blob.transcode(URL, URL, LOWER, encoded=req.http.urlallupuc);
 
 	  set resp.http.urlalluplc2url
 	    = blob.transcode(URL, URL, encoded=req.http.urlalluplc);
 
 	  set resp.http.urlalluplc2urluc
-	    = blob.transcode(URL, URL, UPPER, req.http.urlalluplc);
+	    = blob.transcode(URL, URL, UPPER, encoded=req.http.urlalluplc);
 
 	  set resp.http.urlalluplc2urllc
-	    = blob.transcode(URL, URL, LOWER, req.http.urlalluplc);
+	    = blob.transcode(URL, URL, LOWER, encoded=req.http.urlalluplc);
 
 	  }
 }

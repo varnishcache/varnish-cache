@@ -1,4 +1,4 @@
-varnishtest "VMOD blob decode_n() with URL"
+varnishtest "VMOD blob decode() n chars with URL"
 
 varnish v1 -vcl {
 	import blob;
@@ -25,85 +25,85 @@ varnish v1 -vcl {
 
 	    set resp.http.decuc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode_n(9, URL, req.http.urlucfoobar));
+			  blob=blob.decode(URL, 9, req.http.urlucfoobar));
 
 	    set resp.http.declc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode_n(12, URL, req.http.urllcfoobar));
+			  blob=blob.decode(URL, 12, req.http.urllcfoobar));
 
 	    set resp.http.dechobbesuc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode_n(27, URL, req.http.urlhobbesuc));
+			  blob=blob.decode(URL, 27, req.http.urlhobbesuc));
 
 	    set resp.http.dechobbeslc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode_n(27, URL, req.http.urlhobbeslc));
+			  blob=blob.decode(URL, 27, req.http.urlhobbeslc));
 
 	    set resp.http.decumlautsuc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode_n(17, URL, req.http.urlucumlauts));
+			  blob=blob.decode(URL, 17, req.http.urlucumlauts));
 
 	    set resp.http.decumlautslc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode_n(25, URL, req.http.urllcumlauts));
+			  blob=blob.decode(URL, 25, req.http.urllcumlauts));
 
 	    set resp.http.decphkuc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode_n(18, URL, req.http.urlucphk));
+			  blob=blob.decode(URL, 18, req.http.urlucphk));
 
 	    set resp.http.decphklc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode_n(30, URL, req.http.urllcphk));
+			  blob=blob.decode(URL, 30, req.http.urllcphk));
 
 	    set resp.http.decutf8uc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode_n(9, URL, req.http.urlucutf8));
+			  blob=blob.decode(URL, 9, req.http.urlucutf8));
 
 	    set resp.http.decutf8lc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode_n(18, URL, req.http.urllcutf8));
+			  blob=blob.decode(URL, 18, req.http.urllcutf8));
 
 	    set resp.http.decalluc =
 	      blob.encode(HEX,
-			  blob=blob.decode_n(252, URL, req.http.urlalluc));
+			  blob=blob.decode(URL, 252, req.http.urlalluc));
 
 	    set resp.http.decalllc =
 	      blob.encode(HEX, UPPER,
-			  blob.decode_n(252, URL, req.http.urlalllc));
+			  blob.decode(URL, 252, req.http.urlalllc));
 
 	    set resp.http.decempty =
-	      blob.encode(IDENTITY, blob=blob.decode_n(10, URL, ""));
+	      blob.encode(IDENTITY, blob=blob.decode(URL, 10, ""));
 
 	    set resp.http.decemptybyte =
-	      blob.encode(IDENTITY, blob=blob.decode_n(3, URL, "%00"));
+	      blob.encode(IDENTITY, blob=blob.decode(URL, 3, "%00"));
 
 	    set resp.http.decemptypieces =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode_n(1, URL, req.http.unset + ""
-							+ req.http.unset + ""));
+			  blob=blob.decode(URL, 1, req.http.unset + ""
+						   + req.http.unset + ""));
 
 	    set req.http.part1 = "foo%";
 	    set resp.http.dec2pieces =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode_n(6, URL, req.http.part1 +
-							"20bar%20baz%20quux"));
+			  blob=blob.decode(URL, 6, req.http.part1 +
+						   "20bar%20baz%20quux"));
 
 	    set req.http.part2 = "0quux";
 	    set resp.http.dec3param =
-	      blob.encode(blob=blob.decode_n(encoded=req.http.part1 +
+	      blob.encode(blob=blob.decode(encoded=req.http.part1 +
 			      "20bar%20baz%2" + req.http.part2,
-			      decoding=URL, n=12),
+			      decoding=URL, length=12),
 			      encoding=IDENTITY);
 
 	    set resp.http.dec3pieces =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode_n(18, URL, req.http.part1
-						+ "20bar%20baz%2"
-						+ req.http.part2));
+			  blob=blob.decode(URL, 18, req.http.part1
+						    + "20bar%20baz%2"
+						    + req.http.part2));
 
 	    set resp.http.decmanypieces =
 	      blob.encode(IDENTITY,
-			      blob=blob.decode_n(24, URL, "" + req.http.unset
+			      blob=blob.decode(URL, 24, "" + req.http.unset
 			      + req.http.part1 + req.http.unset + ""
 			      + req.http.unset + "" + "20bar%20baz%2"
 			      + "" + req.http.unset + req.http.part2
@@ -148,19 +148,19 @@ varnish v1 -vcl+backend {
 	sub vcl_deliver {
 		if (req.url == "/percent") {
 			set resp.http.bad = blob.encode(URL, UPPER,
-					    blob.decode_n(1, URL, "%20"));
+					    blob.decode(URL, 1, "%20"));
 		}
 		elsif (req.url == "/percent-two") {
 			set resp.http.bad = blob.encode(URL, UPPER,
-					    blob.decode_n(2, URL, "%20"));
+					    blob.decode(URL, 2, "%20"));
 		}
 		elsif (req.url == "/comma") {
 			set resp.http.good = blob.encode(IDENTITY, blob=
-					     blob.decode_n(3, URL, "%2c%q"));
+					     blob.decode(URL, 3, "%2c%q"));
 		}
 		elsif (req.url == "/colon") {
 			set resp.http.good = blob.encode(IDENTITY, blob=
-					     blob.decode_n(3, URL, "%3a%2q"));
+					     blob.decode(URL, 3, "%3a%2q"));
 		}
 	}
 }

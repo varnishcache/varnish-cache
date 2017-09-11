@@ -336,11 +336,11 @@ find_nonempty_va(const char *restrict *p, va_list ap)
 	return (q);
 }
 
-static VCL_BLOB
-decode(VRT_CTX, VCL_INT n, VCL_ENUM decs, const char *restrict const p,
-       va_list ap)
+VCL_BLOB __match_proto__(td_blob_decode)
+vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, const char *p, ...)
 {
 	enum encoding dec = parse_encoding(decs);
+	va_list ap;
 	struct wb_s wb;
 	struct vmod_priv *b;
 	char *buf;
@@ -364,8 +364,12 @@ decode(VRT_CTX, VCL_INT n, VCL_ENUM decs, const char *restrict const p,
 	}
 	buf = wb_buf(&wb);
 
+	if (length <= 0)
+		length = -1;
+	va_start(ap, p);
 	errno = 0;
-	len = func[dec].decode(dec, buf, wb_space(&wb), n, p, ap);
+	len = func[dec].decode(dec, buf, wb_space(&wb), length, p, ap);
+	va_end(ap);
 
 	if (len == -1) {
 		err_decode(ctx, p);
@@ -383,33 +387,7 @@ decode(VRT_CTX, VCL_INT n, VCL_ENUM decs, const char *restrict const p,
 	b->priv = buf;
 	b->len = len;
 	b->free = NULL;
-	return b;
-}
-
-VCL_BLOB __match_proto__(td_blob_decode)
-vmod_decode(VRT_CTX, VCL_ENUM decs, const char *p, ...)
-{
-	va_list ap;
-	VCL_BLOB r;
-
-	va_start(ap, p);
-	r = decode(ctx, -1, decs, p, ap);
-	va_end(ap);
-
-	return (r);
-}
-
-VCL_BLOB __match_proto__(td_blob_decode_n)
-vmod_decode_n(VRT_CTX, VCL_INT n, VCL_ENUM decs, const char *p, ...)
-{
-	va_list ap;
-	VCL_BLOB r;
-
-	va_start(ap, p);
-	r = decode(ctx, n, decs, p, ap);
-	va_end(ap);
-
-	return (r);
+	return (b);
 }
 
 static VCL_STRING
@@ -460,14 +438,14 @@ encodes_hex(enum encoding enc)
 	return (enc == HEX || enc == URL);
 }
 
-static VCL_STRING
-transcode(VRT_CTX, VCL_INT n, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
-	  const char *restrict const p, va_list ap)
+VCL_STRING __match_proto__(td_blob_transcode)
+vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
+	       VCL_INT length, const char *p, ...)
 {
 	enum encoding dec = parse_encoding(decs);
 	enum encoding enc = parse_encoding(encs);
 	enum case_e kase = parse_case(case_s);
-	va_list aq;
+	va_list ap;
 	struct vmod_priv b;
 	VCL_STRING r;
 
@@ -481,9 +459,9 @@ transcode(VRT_CTX, VCL_INT n, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	 * Allocate space for the decoded blob on the stack
 	 * ignoring the limitation imposed by n
 	 */
-	va_copy(aq, ap);
-	size_t l = decode_l_va(dec, p, aq);
-	va_end(aq);
+	va_start(ap, p);
+	size_t l = decode_l_va(dec, p, ap);
+	va_end(ap);
 	if (l == 0)
 		return "";
 	/* XXX: handle stack overflow? */
@@ -491,10 +469,12 @@ transcode(VRT_CTX, VCL_INT n, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	b.free = NULL;
 	b.priv = buf;
 
+	if (length <= 0)
+		length = -1;
+	va_start(ap, p);
 	errno = 0;
-	va_copy(aq, ap);
-	b.len = func[dec].decode(dec, buf, l, n, p, aq);
-	va_end(aq);
+	b.len = func[dec].decode(dec, buf, l, length, p, ap);
+	va_end(ap);
 
 	if (b.len == -1) {
 		err_decode(ctx, p);
@@ -509,11 +489,11 @@ transcode(VRT_CTX, VCL_INT n, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	 * since the call may specify upper- or lower-case that differs
 	 * from the encoded string.
 	 */
-	if (n == -1 && enc == dec && !encodes_hex(enc)) {
+	if (length == -1 && enc == dec && !encodes_hex(enc)) {
 		const char *q, *pp = p;
-		va_copy(aq, ap);
+		va_start(ap, p);
 		q = find_nonempty_va(&pp, ap);
-		va_end(aq);
+		va_end(ap);
 
 		if (pp == vrt_magic_string_end)
 			return "";
@@ -526,34 +506,6 @@ transcode(VRT_CTX, VCL_INT n, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	}
 
 	r = encode(ctx, enc, kase, &b);
-	return (r);
-}
-
-VCL_STRING __match_proto__(td_blob_transcode)
-vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
-	       const char *p, ...)
-{
-	va_list ap;
-	VCL_STRING r;
-
-	va_start(ap, p);
-	r = transcode(ctx, -1, decs, encs, case_s, p, ap);
-	va_end(ap);
-
-	return (r);
-}
-
-VCL_STRING __match_proto__(td_blob_transcode_n)
-vmod_transcode_n(VRT_CTX, VCL_INT n, VCL_ENUM decs, VCL_ENUM encs,
-		 VCL_ENUM case_s, const char *p, ...)
-{
-	va_list ap;
-	VCL_STRING r;
-
-	va_start(ap, p);
-	r = transcode(ctx, n, decs, encs, case_s, p, ap);
-	va_end(ap);
-
 	return (r);
 }
 
