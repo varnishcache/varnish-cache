@@ -278,7 +278,8 @@ Example::
 $Function BOOL same(BLOB, BLOB)
 
 Returns true if and only if the two BLOB arguments are the same
-object, i.e. they specify exactly the same region of memory.
+object, i.e. they specify exactly the same region of memory, or both
+are empty.
 
 If the BLOBs are both empty (length is 0 and/or the internal pointer
 is NULL), then ``same()`` returns ``true``. If any non-empty BLOB
