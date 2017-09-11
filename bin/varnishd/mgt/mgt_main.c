@@ -243,6 +243,7 @@ mgt_Cflag_atexit(void)
 	if (getpid() != mgt_pid)
 		return;
 	(void)rmdir("vmod_cache");
+	(void)unlink("_.pid");
 	(void)rmdir(Cn_arg);
 }
 
