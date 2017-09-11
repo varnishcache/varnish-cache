@@ -19,49 +19,56 @@ varnish v1 -arg "-p workspace_client=256k" -vcl {
 {"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w=="};
 
 	    set resp.http.hex =
-	      blob.encode(HEX, blob=blob.decode(IDENTITY, req.http.pangram));
+	      blob.encode(HEX, blob=blob.decode(IDENTITY,
+	                                        encoded=req.http.pangram));
 
 	    set resp.http.hexlc =
 	      blob.encode(HEX, LOWER,
-	                  blob.decode(IDENTITY, req.http.pangram));
+	                  blob.decode(IDENTITY, encoded=req.http.pangram));
 
 	    set resp.http.hexuc =
 	      blob.encode(HEX, UPPER,
-			  blob.decode(IDENTITY, req.http.pangram));
+			  blob.decode(IDENTITY, encoded=req.http.pangram));
 
 	    set resp.http.hobbes =
-	      blob.encode(HEX, blob=blob.decode(IDENTITY, req.http.hobbes));
+	      blob.encode(HEX, blob=blob.decode(IDENTITY,
+	                                        encoded=req.http.hobbes));
 
 	    set resp.http.hobbeslc =
-	      blob.encode(HEX, LOWER, blob.decode(IDENTITY, req.http.hobbes));
+	      blob.encode(HEX, LOWER, blob.decode(IDENTITY,
+	                                          encoded=req.http.hobbes));
 
 	    set resp.http.hobbesuc =
-	      blob.encode(HEX, UPPER, blob.decode(IDENTITY, req.http.hobbes));
+	      blob.encode(HEX, UPPER, blob.decode(IDENTITY,
+	                                          encoded=req.http.hobbes));
 
 	    set resp.http.all =
-	      blob.encode(HEX, blob=blob.decode(BASE64, req.http.b64all));
+	      blob.encode(HEX, blob=blob.decode(BASE64,
+	                                        encoded=req.http.b64all));
 
 	    set resp.http.all-lc =
-	      blob.encode(HEX, LOWER, blob.decode(BASE64, req.http.b64all));
+	      blob.encode(HEX, LOWER, blob.decode(BASE64,
+	                                          encoded=req.http.b64all));
 
 	    set resp.http.all-uc =
-	      blob.encode(HEX, UPPER, blob.decode(BASE64, req.http.b64all));
+	      blob.encode(HEX, UPPER, blob.decode(BASE64,
+	                                          encoded=req.http.b64all));
 
 	    set resp.http.empty =
-	      blob.encode(HEX, blob=blob.decode(IDENTITY, ""));
+	      blob.encode(HEX, blob=blob.decode(IDENTITY, encoded=""));
 
 	    set resp.http.empty-lc =
-	      blob.encode(HEX, LOWER, blob.decode(IDENTITY, ""));
+	      blob.encode(HEX, LOWER, blob.decode(IDENTITY, encoded=""));
 
 	    set resp.http.empty-uc =
-	      blob.encode(HEX, UPPER, blob.decode(IDENTITY, ""));
+	      blob.encode(HEX, UPPER, blob.decode(IDENTITY, encoded=""));
 
 	    set resp.http.hexlcparam =
-	      blob.encode(blob=blob.decode(IDENTITY, req.http.pangram),
+	      blob.encode(blob=blob.decode(IDENTITY, encoded=req.http.pangram),
 			  case=LOWER, encoding=HEX);
 
 	    set resp.http.hexucparam =
-	      blob.encode(blob=blob.decode(IDENTITY, req.http.pangram),
+	      blob.encode(blob=blob.decode(IDENTITY, encoded=req.http.pangram),
 			  case=UPPER, encoding=HEX);
 
 	    set req.http.hexucfoobar = "666F6F206261722062617A2071757578";
@@ -76,52 +83,55 @@ varnish v1 -arg "-p workspace_client=256k" -vcl {
 
 	    set resp.http.decuc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode(HEX, req.http.hexucfoobar));
+			  blob=blob.decode(HEX, encoded=req.http.hexucfoobar));
 
 	    set resp.http.declc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode(HEX, req.http.hexlcfoobar));
+			  blob=blob.decode(HEX, encoded=req.http.hexlcfoobar));
 
 	    set resp.http.dechobbesuc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode(HEX, req.http.hexhobbesuc));
+			  blob=blob.decode(HEX, encoded=req.http.hexhobbesuc));
 
 	    set resp.http.dechobbeslc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode(HEX, req.http.hexhobbeslc));
+			  blob=blob.decode(HEX, encoded=req.http.hexhobbeslc));
 
 	    set resp.http.decalluc =
-	      blob.encode(BASE64, blob=blob.decode(HEX, req.http.hexalluc));
+	      blob.encode(BASE64, blob=blob.decode(HEX,
+	                                           encoded=req.http.hexalluc));
 
 	    set resp.http.decalllc =
-	      blob.encode(BASE64, blob=blob.decode(HEX, req.http.hexalllc));
+	      blob.encode(BASE64, blob=blob.decode(HEX,
+	                                           encoded=req.http.hexalllc));
 
 	    set resp.http.decallucodd =
-	      blob.encode(BASE64, blob=blob.decode(HEX,
-						   req.http.hexallucodd));
+	      blob.encode(BASE64,
+	                  blob=blob.decode(HEX, encoded=req.http.hexallucodd));
 
 	    set resp.http.decalllcodd =
-	      blob.encode(BASE64, blob=blob.decode(HEX,
-						   req.http.hexalllcodd));
+	      blob.encode(BASE64,
+	                  blob=blob.decode(HEX, encoded=req.http.hexalllcodd));
 
 	    set resp.http.decempty =
-	      blob.encode(IDENTITY, blob=blob.decode(HEX, ""));
+	      blob.encode(IDENTITY, blob=blob.decode(HEX, encoded=""));
 
 	    set resp.http.decemptybyte =
-	      blob.encode(IDENTITY, blob=blob.decode(HEX, "00"));
+	      blob.encode(IDENTITY, blob=blob.decode(HEX, encoded="00"));
 
 	    set resp.http.decemptynibble =
-	      blob.encode(IDENTITY, blob=blob.decode(HEX, "0"));
+	      blob.encode(IDENTITY, blob=blob.decode(HEX, encoded="0"));
 
 	    set resp.http.decemptypieces =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode(HEX, req.http.unset + ""
-					        + req.http.unset + ""));
+			  blob=blob.decode(HEX, encoded=req.http.unset + ""
+					                + req.http.unset + ""));
 
 	    set req.http.part1 = "666";
 	    set resp.http.dec2pieces =
-	      blob.encode(IDENTITY, blob=blob.decode(HEX, req.http.part1 +
-			     "F6F206261722062617A2071757578"));
+	      blob.encode(IDENTITY, blob=blob.decode(HEX,
+	                  encoded=req.http.part1 +
+			          "F6F206261722062617A2071757578"));
 
 	    set req.http.part2 = "57578";
 	    set resp.http.dec3param =
@@ -131,11 +141,13 @@ varnish v1 -arg "-p workspace_client=256k" -vcl {
 			     encoding=IDENTITY);
 
 	    set resp.http.dec3pieces =
-	      blob.encode(IDENTITY, blob=blob.decode(HEX, req.http.part1 +
+	      blob.encode(IDENTITY, blob=blob.decode(HEX,
+	                  encoded=req.http.part1 +
 			     "F6F206261722062617A20717" + req.http.part2));
 
 	    set resp.http.decmanypieces =
-	      blob.encode(IDENTITY, blob=blob.decode(HEX, "" + req.http.unset
+	      blob.encode(IDENTITY, blob=blob.decode(HEX, encoded=
+	                     "" + req.http.unset
 			     + req.http.part1 + req.http.unset + ""
 			     + req.http.unset + "" + "F6F206261722062617A20717"
 			     + "" + req.http.unset + req.http.part2
@@ -191,7 +203,7 @@ varnish v1 -vcl+backend {
 	sub vcl_deliver {
 	  set req.http.foo = "123";
 	  set resp.http.badhex = blob.encode(HEX, UPPER,
-				 blob.decode(HEX, "g" + req.http.foo));
+				 blob.decode(HEX, encoded="g" + req.http.foo));
 	}
 }
 

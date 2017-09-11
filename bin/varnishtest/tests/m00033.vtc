@@ -11,29 +11,29 @@ varnish v1 -vcl {
 	sub vcl_synth {
 	    set resp.http.id =
 	      blob.encode(IDENTITY, blob=blob.decode(IDENTITY,
-			      "The quick brown fox jumps over the lazy dog"));
+			encoded="The quick brown fox jumps over the lazy dog"));
 
 	    set resp.http.hobbes =
-	      blob.encode(IDENTITY, blob=blob.decode(IDENTITY,
+	      blob.encode(IDENTITY, blob=blob.decode(IDENTITY, encoded=
 {"Man is distinguished, not only by his reason, but by this singular passion from other animals, which is a lust of the mind, that by a perseverance of delight in the continued and indefatigable generation of knowledge, exceeds the short vehemence of any carnal pleasure."}));
 
 	    set resp.http.list =
-	      blob.encode(IDENTITY, blob=blob.decode(IDENTITY,
+	      blob.encode(IDENTITY, blob=blob.decode(IDENTITY, encoded=
 			      "" + req.http.unset + req.url +
 			      "The quick brown fox jumps over " +
 			      req.http.unset + "" + req.http.unset + "" +
 			      "the lazy dog" + req.url + req.http.unset + ""));
 
 	    set resp.http.empty =
-	      blob.encode(IDENTITY, blob=blob.decode(IDENTITY, ""));
+	      blob.encode(IDENTITY, blob=blob.decode(IDENTITY, encoded=""));
 
 	    set resp.http.undef =
 	      blob.encode(IDENTITY, blob=blob.decode(IDENTITY,
-						      req.http.unset));
+						     encoded=req.http.unset));
 
 	    set resp.http.emptylist =
 	      blob.encode(IDENTITY, blob=blob.decode(IDENTITY,
-			      req.http.unset + "" + req.http.unset + ""));
+			  encoded=req.http.unset + "" + req.http.unset + ""));
 
 	    set resp.http.param =
 	      blob.encode(blob=
@@ -51,13 +51,16 @@ varnish v1 -vcl {
 			      decoding=IDENTITY));
 
 	    set resp.http.truncated =
-	      blob.encode(IDENTITY, blob=blob.decode(HEX, "666f6f00626172"));
+	      blob.encode(IDENTITY,
+	                  blob=blob.decode(HEX, encoded="666f6f00626172"));
 
 	    set resp.http.lc =
-	      blob.encode(IDENTITY, LOWER, blob.decode(IDENTITY, "Don't care"));
+	      blob.encode(IDENTITY, LOWER, blob.decode(IDENTITY,
+	                                               encoded="Don't care"));
 
 	    set resp.http.uc =
-	      blob.encode(IDENTITY, UPPER, blob.decode(IDENTITY, "Don't care"));
+	      blob.encode(IDENTITY, UPPER, blob.decode(IDENTITY,
+	                                               encoded="Don't care"));
 	}
 } -start
 

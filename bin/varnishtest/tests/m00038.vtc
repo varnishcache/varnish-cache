@@ -1,4 +1,4 @@
-varnishtest "VMOD blob base64 decode_n()"
+varnishtest "VMOD blob base64 decode() n chars"
 
 varnish v1 -vcl {
 	import blob;
@@ -22,106 +22,105 @@ varnish v1 -vcl {
 
 	    set resp.http.dec
 	      = blob.encode(IDENTITY,
-			    blob=blob.decode_n(8, BASE64,
-						  req.http.foobarbazquux));
+			    blob=blob.decode(BASE64, 8,
+					     req.http.foobarbazquux));
 
 	    set resp.http.deceq
 	      = blob.encode(IDENTITY,
-			    blob=blob.decode_n(20, BASE64,
-						  req.http.foobarbazquux));
+			    blob=blob.decode(BASE64, 20,
+					     req.http.foobarbazquux));
 
 	    set resp.http.declong
 	      = blob.encode(IDENTITY,
-			    blob=blob.decode_n(30, BASE64,
-						  req.http.foobarbazquux));
+			    blob=blob.decode(BASE64, 30,
+					     req.http.foobarbazquux));
 
 	    set resp.http.dec2
 	      = blob.encode(IDENTITY,
-			    blob=blob.decode_n(12, BASE64, req.http.pangram));
+			    blob=blob.decode(BASE64, 12, req.http.pangram));
 
 	    set resp.http.b64dechobbes =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode_n(24, BASE64, req.http.hobbes));
+			  blob=blob.decode(BASE64, 24, req.http.hobbes));
 
 	    set resp.http.b64decall =
-	       blob.encode(HEX, blob=blob.decode_n(128, BASE64, req.http.all));
+	       blob.encode(HEX, blob=blob.decode(BASE64, 128, req.http.all));
 
 	    set resp.http.urldechobbes =
-	      blob.encode(IDENTITY, blob=blob.decode_n(180, BASE64URL,
-							  req.http.hobbes));
+	      blob.encode(IDENTITY, blob=blob.decode(BASE64URL, 180,
+						     req.http.hobbes));
 
 	    set resp.http.urldecall =
-	      blob.encode(HEX,
-			      blob=blob.decode_n(256, BASE64URL,
+	      blob.encode(HEX, blob=blob.decode(BASE64URL, 256,
 						req.http.allurl));
 
 	    set resp.http.nopaddechobbes =
 	      blob.encode(IDENTITY,
-			      blob=blob.decode_n(500, BASE64URLNOPAD,
-						req.http.hobbesnopad));
+			      blob=blob.decode(BASE64URLNOPAD, 500,
+					       req.http.hobbesnopad));
 
 	    set resp.http.nopaddecall =
-	      blob.encode(HEX, blob=blob.decode_n(256, BASE64URLNOPAD,
+	      blob.encode(HEX, blob=blob.decode(BASE64URLNOPAD, 256,
 						  req.http.allurl));
 
 	    set resp.http.b64empty =
-	      blob.encode(IDENTITY, blob=blob.decode_n(0, BASE64, ""));
+	      blob.encode(IDENTITY, blob=blob.decode(BASE64, 0, ""));
 	    set resp.http.urlempty =
-	      blob.encode(IDENTITY, blob=blob.decode_n(1, BASE64URL, ""));
+	      blob.encode(IDENTITY, blob=blob.decode(BASE64URL, 1, ""));
 	    set resp.http.nopadempty =
 		blob.encode(IDENTITY,
-			    blob=blob.decode_n(0, BASE64URLNOPAD, ""));
+			    blob=blob.decode(BASE64URLNOPAD, 0, ""));
 	    set resp.http.emptypieces =
 	      blob.encode(IDENTITY,
-	      blob=blob.decode_n(0, BASE64, req.http.unset + "" + req.http.unset
+	      blob=blob.decode(BASE64, 0, req.http.unset + "" + req.http.unset
 					   + "" + req.http.unset + ""));
 
 	    set resp.http.decenc
 	      = blob.encode(BASE64,
-			    blob=blob.decode_n(20, BASE64,
-						  req.http.foobarbazquux));
+			    blob=blob.decode(BASE64, 20,
+					     req.http.foobarbazquux));
 
 	    set resp.http.l = "L";
 	    set resp.http.dec2pieces
-	      = blob.encode(IDENTITY, blob=blob.decode_n(8, BASE64,
+	      = blob.encode(IDENTITY, blob=blob.decode(BASE64, 8,
 				resp.http.l + "0hlbGxvIHdvcmxkLw=="));
 
 	    set resp.http.pad = "==";
 	    set resp.http.dec3pieces
-	      = blob.encode(IDENTITY, blob=blob.decode_n(12, BASE64,
+	      = blob.encode(IDENTITY, blob=blob.decode(BASE64, 12,
 				resp.http.l + "0hlbGxvIHdvcmxkLw"
 				+ resp.http.pad));
 
 	    set resp.http.mid1 = "GxvI";
 	    set resp.http.mid2 = "dvcmx";
 	    set resp.http.dec7pieces
-	      = blob.encode(IDENTITY, blob=blob.decode_n(16, BASE64,
+	      = blob.encode(IDENTITY, blob=blob.decode(BASE64, 16,
 				resp.http.l + "0hlb" + resp.http.mid1
 				+ "H" + resp.http.mid2 + "kLw"
 				+ resp.http.pad));
 
 	    set resp.http.dec7param
-	      = blob.encode(blob=blob.decode_n(encoded=resp.http.l
+	      = blob.encode(blob=blob.decode(encoded=resp.http.l
 				+ "0hlb" + resp.http.mid1 + "H" + resp.http.mid2
-				+ "kLw" + resp.http.pad, decoding=BASE64, n=20),
-				encoding=IDENTITY);
+				+ "kLw" + resp.http.pad, decoding=BASE64,
+				length=20), encoding=IDENTITY);
 
 	    set resp.http.decnopad = blob.encode(IDENTITY,
-				     blob=blob.decode_n(18, BASE64URLNOPAD,
-						        "L0hlbGxvIHdvcmxkLw"));
+				     blob=blob.decode(BASE64URLNOPAD, 18,
+						      "L0hlbGxvIHdvcmxkLw"));
 
 	    set resp.http.decnopad2pieces
-	      = blob.encode(IDENTITY, blob=blob.decode_n(19, BASE64URLNOPAD,
+	      = blob.encode(IDENTITY, blob=blob.decode(BASE64URLNOPAD, 19,
 				resp.http.l + "0hlbGxvIHdvcmxkLw"));
 
 	    set resp.http.decnopad6pieces
-	      = blob.encode(IDENTITY, blob=blob.decode_n(18, BASE64URLNOPAD,
+	      = blob.encode(IDENTITY, blob=blob.decode(BASE64URLNOPAD, 18,
 				resp.http.l + "0hlb" + resp.http.mid1
 				+ "H" + resp.http.mid2 + "kLw"));
 
 	    set resp.http.decnopadlong
 	      = blob.encode(IDENTITY,
-		blob=blob.decode_n(60, BASE64URLNOPAD,
+		blob=blob.decode(BASE64URLNOPAD, 60,
 		"VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw"
 			       ));
 
@@ -170,16 +169,16 @@ varnish v1 -vcl+backend {
 	  set req.http.foo = "AAA=";
 	  if (req.url == "/base64") {
 		set resp.http.bad64 = blob.encode(IDENTITY,
-		    blob=blob.decode_n(8, BASE64, "-_-_" + req.http.foo));
+		    blob=blob.decode(BASE64, 8, "-_-_" + req.http.foo));
 	  }
 	  elsif (req.url == "/base64url") {
 		set resp.http.badurl = blob.encode(IDENTITY,
-		    blob=blob.decode_n(8, BASE64URL, "+/+/" + req.http.foo));
+		    blob=blob.decode(BASE64URL, 8, "+/+/" + req.http.foo));
 	  }
 	  elsif (req.url == "/base64urlnopad") {
 		set resp.http.badpad = blob.encode(IDENTITY,
-		    blob=blob.decode_n(8, BASE64URLNOPAD,
-				       "TWFu" + req.http.foo));
+		    blob=blob.decode(BASE64URLNOPAD, 8,
+				     "TWFu" + req.http.foo));
 	  }
 	}
 }

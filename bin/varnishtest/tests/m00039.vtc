@@ -22,74 +22,92 @@ varnish v1 -vcl {
 {"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygpKissLS4vMDEyMzQ1Njc4OTo7PD0+P0BBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWltcXV5fYGFiY2RlZmdoaWprbG1ub3BxcnN0dXZ3eHl6e3x9fn+AgYKDhIWGh4iJiouMjY6PkJGSk5SVlpeYmZqbnJ2en6ChoqOkpaanqKmqq6ytrq+wsbKztLW2t7i5uru8vb6/wMHCw8TFxsfIycrLzM3Oz9DR0tPU1dbX2Nna29zd3t/g4eLj5OXm5+jp6uvs7e7v8PHy8/T19vf4+fr7/P3+/w=="};
 
 	    set resp.http.url =
-	      blob.encode(URL, blob=blob.decode(IDENTITY, req.http.pangram));
+	      blob.encode(URL, blob=blob.decode(IDENTITY,
+	                                        encoded=req.http.pangram));
 
 	    set resp.http.urllc =
-	      blob.encode(URL, LOWER, blob.decode(IDENTITY, req.http.pangram));
+	      blob.encode(URL, LOWER, blob.decode(IDENTITY,
+	                                          encoded=req.http.pangram));
 
 	    set resp.http.urluc =
-	      blob.encode(URL, UPPER, blob.decode(IDENTITY, req.http.pangram));
+	      blob.encode(URL, UPPER, blob.decode(IDENTITY,
+	                                          encoded=req.http.pangram));
 
 	    set resp.http.hobbes =
-	      blob.encode(URL, blob=blob.decode(IDENTITY, req.http.hobbes));
+	      blob.encode(URL, blob=blob.decode(IDENTITY,
+	                                        encoded=req.http.hobbes));
 
 	    set resp.http.hobbeslc =
-	      blob.encode(URL, LOWER, blob.decode(IDENTITY, req.http.hobbes));
+	      blob.encode(URL, LOWER, blob.decode(IDENTITY,
+	                                          encoded=req.http.hobbes));
 
 	    set resp.http.hobbesuc =
-	      blob.encode(URL, UPPER, blob.decode(IDENTITY, req.http.hobbes));
+	      blob.encode(URL, UPPER, blob.decode(IDENTITY,
+	                                          encoded=req.http.hobbes));
 
 	    set resp.http.umlauts =
-	      blob.encode(URL, blob=blob.decode(IDENTITY, req.http.umlauts));
+	      blob.encode(URL, blob=blob.decode(IDENTITY,
+	                                        encoded=req.http.umlauts));
 
 	    set resp.http.umlautslc =
-	      blob.encode(URL, LOWER, blob.decode(IDENTITY, req.http.umlauts));
+	      blob.encode(URL, LOWER, blob.decode(IDENTITY,
+	                                          encoded=req.http.umlauts));
 
 	    set resp.http.umlautsuc =
-	      blob.encode(URL, UPPER, blob.decode(IDENTITY, req.http.umlauts));
+	      blob.encode(URL, UPPER, blob.decode(IDENTITY,
+	                                          encoded=req.http.umlauts));
 
 	    set resp.http.phk =
-	      blob.encode(URL, blob=blob.decode(IDENTITY, req.http.phkspeak));
+	      blob.encode(URL, blob=blob.decode(IDENTITY,
+	                                        encoded=req.http.phkspeak));
 
 	    set resp.http.phklc =
-	      blob.encode(URL, LOWER, blob.decode(IDENTITY, req.http.phkspeak));
+	      blob.encode(URL, LOWER, blob.decode(IDENTITY,
+	                                          encoded=req.http.phkspeak));
 
 	    set resp.http.phkuc =
-	      blob.encode(URL, UPPER, blob.decode(IDENTITY, req.http.phkspeak));
+	      blob.encode(URL, UPPER, blob.decode(IDENTITY,
+	                                          encoded=req.http.phkspeak));
 
 	    set resp.http.utf8 =
-	      blob.encode(URL, blob=blob.decode(IDENTITY, req.http.utf8));
+	      blob.encode(URL, blob=blob.decode(IDENTITY,
+	                                        encoded=req.http.utf8));
 
 	    set resp.http.utf8lc =
-	      blob.encode(URL, LOWER, blob.decode(IDENTITY, req.http.utf8));
+	      blob.encode(URL, LOWER, blob.decode(IDENTITY,
+	                                          encoded=req.http.utf8));
 
 	    set resp.http.utf8uc =
-	      blob.encode(URL, UPPER, blob.decode(IDENTITY, req.http.utf8));
+	      blob.encode(URL, UPPER, blob.decode(IDENTITY,
+	                                          encoded=req.http.utf8));
 
 	    set resp.http.all =
-	      blob.encode(URL, blob=blob.decode(BASE64, req.http.b64all));
+	      blob.encode(URL, blob=blob.decode(BASE64,
+	                                        encoded=req.http.b64all));
 
 	    set resp.http.all-lc =
-	      blob.encode(URL, LOWER, blob.decode(BASE64, req.http.b64all));
+	      blob.encode(URL, LOWER, blob.decode(BASE64,
+	                                          encoded=req.http.b64all));
 
 	    set resp.http.all-uc =
-	      blob.encode(URL, UPPER, blob.decode(BASE64, req.http.b64all));
+	      blob.encode(URL, UPPER, blob.decode(BASE64,
+	                                          encoded=req.http.b64all));
 
 	    set resp.http.empty =
-	      blob.encode(URL, blob=blob.decode(IDENTITY, ""));
+	      blob.encode(URL, blob=blob.decode(IDENTITY, encoded=""));
 
 	    set resp.http.empty-lc =
-	      blob.encode(URL, LOWER, blob.decode(IDENTITY, ""));
+	      blob.encode(URL, LOWER, blob.decode(IDENTITY, encoded=""));
 
 	    set resp.http.empty-uc =
-	      blob.encode(URL, UPPER, blob.decode(IDENTITY, ""));
+	      blob.encode(URL, UPPER, blob.decode(IDENTITY, encoded=""));
 
 	    set resp.http.urllcparam =
-	      blob.encode(blob=blob.decode(IDENTITY, req.http.pangram),
+	      blob.encode(blob=blob.decode(IDENTITY, encoded=req.http.pangram),
 			  encoding=URL, case=LOWER);
 
 	    set resp.http.urlucparam =
-	      blob.encode(blob=blob.decode(IDENTITY, req.http.pangram),
+	      blob.encode(blob=blob.decode(IDENTITY, encoded=req.http.pangram),
 			  encoding=URL, case=UPPER);
 	}
 } -start
@@ -148,69 +166,73 @@ varnish v1 -vcl {
 
 	    set resp.http.decuc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode(URL, req.http.urlucfoobar));
+			  blob=blob.decode(URL, encoded=req.http.urlucfoobar));
 
 	    set resp.http.declc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode(URL, req.http.urllcfoobar));
+			  blob=blob.decode(URL, encoded=req.http.urllcfoobar));
 
 	    set resp.http.decmixed =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode(URL, req.http.urlmixedfoobar));
+			  blob=blob.decode(URL,
+			                   encoded=req.http.urlmixedfoobar));
 
 	    set resp.http.dechobbesuc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode(URL, req.http.urlhobbesuc));
+			  blob=blob.decode(URL, encoded=req.http.urlhobbesuc));
 
 	    set resp.http.dechobbeslc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode(URL, req.http.urlhobbeslc));
+			  blob=blob.decode(URL, encoded=req.http.urlhobbeslc));
 
 	    set resp.http.decumlautsuc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode(URL, req.http.urlucumlauts));
+			  blob=blob.decode(URL, encoded=req.http.urlucumlauts));
 
 	    set resp.http.decumlautslc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode(URL, req.http.urllcumlauts));
+			  blob=blob.decode(URL, encoded=req.http.urllcumlauts));
 
 	    set resp.http.decphkuc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode(URL, req.http.urlucphk));
+			  blob=blob.decode(URL, encoded=req.http.urlucphk));
 
 	    set resp.http.decphklc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode(URL, req.http.urllcphk));
+			  blob=blob.decode(URL, encoded=req.http.urllcphk));
 
 	    set resp.http.decutf8uc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode(URL, req.http.urlucutf8));
+			  blob=blob.decode(URL, encoded=req.http.urlucutf8));
 
 	    set resp.http.decutf8lc =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode(URL, req.http.urllcutf8));
+			  blob=blob.decode(URL, encoded=req.http.urllcutf8));
 
 	    set resp.http.decalluc =
-	      blob.encode(BASE64, blob=blob.decode(URL, req.http.urlalluc));
+	      blob.encode(BASE64, blob=blob.decode(URL,
+	                                           encoded=req.http.urlalluc));
 
 	    set resp.http.decalllc =
-	      blob.encode(BASE64, blob=blob.decode(URL, req.http.urlalllc));
+	      blob.encode(BASE64, blob=blob.decode(URL,
+	                                           encoded=req.http.urlalllc));
 
 	    set resp.http.decempty =
-	      blob.encode(IDENTITY, blob=blob.decode(URL, ""));
+	      blob.encode(IDENTITY, blob=blob.decode(URL, encoded=""));
 
 	    set resp.http.decemptybyte =
-	      blob.encode(IDENTITY, blob=blob.decode(URL, "%00"));
+	      blob.encode(IDENTITY, blob=blob.decode(URL, encoded="%00"));
 
 	    set resp.http.decemptypieces =
 	      blob.encode(IDENTITY,
-			  blob=blob.decode(URL, req.http.unset + ""
+			  blob=blob.decode(URL, encoded=req.http.unset + ""
 						   + req.http.unset + ""));
 
 	    set req.http.part1 = "foo%";
 	    set resp.http.dec2pieces =
-	      blob.encode(IDENTITY, blob=blob.decode(URL, req.http.part1 +
-			     "20bar%20baz%20quux"));
+	      blob.encode(IDENTITY, blob=blob.decode(URL,
+	                                             encoded=req.http.part1 +
+			                                 "20bar%20baz%20quux"));
 
 	    set req.http.part2 = "0quux";
 	    set resp.http.dec3param =
@@ -220,11 +242,12 @@ varnish v1 -vcl {
 			      encoding=IDENTITY);
 
 	    set resp.http.dec3pieces =
-	      blob.encode(IDENTITY, blob=blob.decode(URL, req.http.part1 +
-			      "20bar%20baz%2" + req.http.part2));
+	      blob.encode(IDENTITY, blob=blob.decode(URL, encoded=
+	                  req.http.part1 + "20bar%20baz%2" + req.http.part2));
 
 	    set resp.http.decmanypieces =
-	      blob.encode(IDENTITY, blob=blob.decode(URL, "" + req.http.unset
+	      blob.encode(IDENTITY, blob=blob.decode(URL, encoded=
+	                     "" + req.http.unset
 			     + req.http.part1 + req.http.unset + ""
 			     + req.http.unset + "" + "20bar%20baz%2"
 			     + "" + req.http.unset + req.http.part2
@@ -270,19 +293,20 @@ varnish v1 -vcl+backend {
 	sub vcl_deliver {
 		if (req.url == "/percent") {
 			set resp.http.bad
-			    = blob.encode(URL, UPPER, blob.decode(URL, "%"));
+			    = blob.encode(URL, UPPER, blob.decode(URL,
+			                                          encoded="%"));
 		}
 		elsif (req.url == "/percent-two") {
 			set resp.http.bad = blob.encode(URL, UPPER,
-					    blob.decode(URL, "%2"));
+					    blob.decode(URL, encoded="%2"));
 		}
 		elsif (req.url == "/percent-q") {
 			set resp.http.bad = blob.encode(URL, UPPER,
-					    blob.decode(URL, "%q"));
+					    blob.decode(URL, encoded="%q"));
 		}
 		elsif (req.url == "/percent-two-q") {
 			set resp.http.bad = blob.encode(URL, UPPER,
-					    blob.decode(URL, "%2q"));
+					    blob.decode(URL, encoded="%2q"));
 		}
 	}
 }
