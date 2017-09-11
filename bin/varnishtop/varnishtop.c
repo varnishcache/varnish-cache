@@ -45,6 +45,7 @@
 #define VOPT_DEFINITION
 #define VOPT_INC "varnishtop_options.h"
 
+#include "miniobj.h"
 #include "vcurses.h"
 #include "vapi/vsl.h"
 #include "vapi/vsm.h"
@@ -190,7 +191,7 @@ sighup(struct VUT *v)
 static void
 vut_sighandler(int sig)
 {
-	AN(vut);
+	CHECK_OBJ_NOTNULL(vut, VUT_MAGIC);
 	VUT_Signaled(vut, sig);
 }
 

@@ -122,7 +122,7 @@ sighup(struct VUT *v)
 static void
 vut_sighandler(int sig)
 {
-	AN(vut);
+	CHECK_OBJ_NOTNULL(vut, VUT_MAGIC);
 	VUT_Signaled(vut, sig);
 }
 
