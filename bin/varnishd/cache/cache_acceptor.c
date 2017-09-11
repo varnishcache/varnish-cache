@@ -524,6 +524,7 @@ vca_acct(void *arg)
 	double t0, now;
 
 	THR_SetName("cache-acceptor");
+	THR_Init();
 	(void)arg;
 
 	(void)vca_tcp_opt_init();

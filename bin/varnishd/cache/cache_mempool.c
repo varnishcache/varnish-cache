@@ -104,6 +104,7 @@ mpl_guard(void *priv)
 
 	CAST_OBJ_NOTNULL(mpl, priv, MEMPOOL_MAGIC);
 	THR_SetName(mpl->name);
+	THR_Init();
 	mpl_slp = 0.15;	// random
 	while (1) {
 		VTIM_sleep(mpl_slp);

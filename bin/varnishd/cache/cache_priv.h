@@ -88,6 +88,7 @@ void THR_SetBusyobj(const struct busyobj *);
 struct busyobj * THR_GetBusyobj(void);
 void THR_SetRequest(const struct req *);
 struct req * THR_GetRequest(void);
+void THR_Init(void);
 
 /* cache_lck.c */
 void LCK_Init(void);
