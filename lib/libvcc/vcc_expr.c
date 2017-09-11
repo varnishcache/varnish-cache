@@ -608,7 +608,7 @@ vcc_func(struct vcc *tl, struct expr **e, const char *spec,
 	AN(rfmt);
 	VTAILQ_INIT(&head);
 	while (*p != '\0') {
-		fa = calloc(sizeof *fa, 1);
+		fa = calloc(1, sizeof *fa);
 		AN(fa);
 		VTAILQ_INSERT_TAIL(&head, fa, list);
 		if (!memcmp(p, "PRIV_", 5)) {

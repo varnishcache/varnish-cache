@@ -143,7 +143,7 @@ vxp_DoFree(struct vxp *vxp, void *p)
 {
 	struct membit *mb;
 
-	mb = calloc(sizeof *mb, 1);
+	mb = calloc(1, sizeof *mb);
 	AN(mb);
 	mb->ptr = p;
 	VTAILQ_INSERT_TAIL(&vxp->membits, mb, list);
@@ -154,7 +154,7 @@ vxp_Alloc(struct vxp *vxp, unsigned len)
 {
 	void *p;
 
-	p = calloc(len, 1);
+	p = calloc(1, len);
 	AN(p);
 	vxp_DoFree(vxp, p);
 	return (p);

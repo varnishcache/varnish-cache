@@ -745,7 +745,7 @@ cmd_http_gunzip(CMD_ARGS)
 	vz.avail_in = hp->bodyl;
 
 	l = hp->bodyl * 10;
-	p = calloc(l, 1);
+	p = calloc(1, l);
 	AN(p);
 
 	vz.next_out = TRUST_ME(p);
@@ -790,7 +790,7 @@ gzip_body(const struct http *hp, const char *txt, char **body, int *bodylen)
 	memset(&vz, 0, sizeof vz);
 
 	l = strlen(txt);
-	*body = calloc(l + OVERHEAD, 1);
+	*body = calloc(1, l + OVERHEAD);
 	AN(*body);
 
 	vz.next_in = TRUST_ME(txt);

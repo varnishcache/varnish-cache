@@ -158,7 +158,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				VRB_INSERT(t_order, &h_order, tp);
 			} else {
 				ntop++;
-				tp = calloc(sizeof *tp, 1);
+				tp = calloc(1, sizeof *tp);
 				assert(tp != NULL);
 				tp->hash = u;
 				tp->count = 1.0;

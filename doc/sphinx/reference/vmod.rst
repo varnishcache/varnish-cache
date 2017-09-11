@@ -386,7 +386,7 @@ In the common case where a private data structure is allocated with
 malloc would look like this::
 
 	if (priv->priv == NULL) {
-		priv->priv = calloc(sizeof(struct myfoo), 1);
+		priv->priv = calloc(1, sizeof(struct myfoo));
 		AN(priv->priv);
 		priv->free = free;	/* free(3) */
 		mystate = priv->priv;

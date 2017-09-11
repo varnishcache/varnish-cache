@@ -93,7 +93,7 @@ hcl_start(void)
 	unsigned u;
 
 	lck_hcl = Lck_CreateClass("hcl");
-	hcl_head = calloc(sizeof *hcl_head, hcl_nhash);
+	hcl_head = calloc(hcl_nhash, sizeof *hcl_head);
 	XXXAN(hcl_head);
 
 	for (u = 0; u < hcl_nhash; u++) {
