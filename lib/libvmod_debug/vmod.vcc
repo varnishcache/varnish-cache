@@ -37,8 +37,6 @@ of VMOD handling in Varnish.
 
 $Event event_function
 
-You are not supposed to be able to see this text in the .RST
-
 $Function VOID panic(STRING_LIST)
 
 Don't.

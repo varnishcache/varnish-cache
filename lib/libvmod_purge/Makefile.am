@@ -1,5 +1,10 @@
 #
 
+libvmod_purge_la_SOURCES = \
+	vmod_purge.c
+
+# Boilerplate, do not change
+
 AM_LDFLAGS  = $(AM_LT_LDFLAGS)
 
 AM_CPPFLAGS = \
@@ -11,15 +16,21 @@ vmoddir = $(pkglibdir)/vmods
 vmod_srcdir = $(top_srcdir)/lib/libvmod_purge
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
 vmodtoolargs = --strict
+
 vmod_LTLIBRARIES = libvmod_purge.la
 
 libvmod_purge_la_CFLAGS = \
 	@SAN_CFLAGS@
 
-libvmod_purge_la_LDFLAGS = $(AM_LDFLAGS) -module -export-dynamic -avoid-version -shared \
+libvmod_purge_la_LDFLAGS = \
+	$(AM_LDFLAGS) \
+	-module \
+	-export-dynamic \
+	-avoid-version \
+	-shared \
+	-export-symbols-regex '^Vmod_std_Data' \
+	-rpath /nowhere \
 	@SAN_LDFLAGS@
-
-libvmod_purge_la_SOURCES = vmod_purge.c
 
 nodist_libvmod_purge_la_SOURCES = \
 	vcc_if.c \
