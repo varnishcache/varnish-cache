@@ -28,7 +28,6 @@ libvmod_vtc_la_LDFLAGS = \
 	-export-dynamic \
 	-avoid-version \
 	-shared \
-	-export-symbols-regex '^Vmod_std_Data' \
 	-rpath /nowhere \
 	@SAN_LDFLAGS@
 
