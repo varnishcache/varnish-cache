@@ -67,7 +67,7 @@ libvmod_XXX_la_CFLAGS = \\
 
 libvmod_XXX_la_LDFLAGS = \\
 	$(AM_LDFLAGS) \\
-	$(VMOD_LDFLAGS) \\
+	-module -export-dynamic -avoid-version -shared \\
 	-export-symbols-regex '^Vmod_XXX_Data' \\
 	@SAN_LDFLAGS@
 

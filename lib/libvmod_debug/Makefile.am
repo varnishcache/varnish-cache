@@ -27,8 +27,9 @@ libvmod_debug_la_CFLAGS = \
 
 libvmod_debug_la_LDFLAGS = \
 	$(AM_LDFLAGS) \
-	$(VMOD_LDFLAGS) \
+	-module -export-dynamic -avoid-version -shared \
 	-rpath /nowhere \
+	-export-symbols-regex '^Vmod_debug_Data' \
 	@SAN_LDFLAGS@
 
 nodist_libvmod_debug_la_SOURCES = \
