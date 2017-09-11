@@ -135,12 +135,22 @@ AC_DEFUN([_VARNISH_CHECK_PYTHON], [
 
 ])
 
+# _VARNISH_VMOD_LDFLAGS
+# ---------------------
+AC_DEFUN([_VARNISH_VMOD_LDFLAGS], [
+
+	AC_SUBST([VMOD_LDFLAGS],
+		"-module -export-dynamic -avoid-version -shared")
+
+])
+
 # _VARNISH_VMOD_CONFIG
 # --------------------
 AC_DEFUN([_VARNISH_VMOD_CONFIG], [
 
 	AC_REQUIRE([_VARNISH_PKG_CONFIG])
 	AC_REQUIRE([_VARNISH_CHECK_DEVEL])
+	AC_REQUIRE([_VARNISH_VMOD_LDFLAGS])
 
 	dnl Check the VMOD toolchain
 	AC_REQUIRE([AC_LANG_C])
@@ -174,10 +184,6 @@ AC_DEFUN([_VARNISH_VMOD_CONFIG], [
 	AC_SUBST([am__v_VMODTOOL_1])
 	AC_SUBST([am__v_VMODTOOL_])
 	AC_SUBST([AM_V_VMODTOOL])
-
-	dnl Define VMODs LDFLAGS
-	AC_SUBST([VMOD_LDFLAGS],
-		"-module -export-dynamic -avoid-version -shared")
 
 	dnl Substitute an alias for compatibility reasons
 	AC_SUBST([VMOD_TEST_PATH], [$VARNISH_TEST_PATH])

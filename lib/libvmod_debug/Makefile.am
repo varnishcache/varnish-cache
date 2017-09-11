@@ -27,7 +27,7 @@ libvmod_debug_la_CFLAGS = \
 
 libvmod_debug_la_LDFLAGS = \
 	$(AM_LDFLAGS) \
-	-module -export-dynamic -avoid-version -shared \
+	$(VMOD_LDFLAGS) \
 	-rpath /nowhere
 	@SAN_LDFLAGS@
 

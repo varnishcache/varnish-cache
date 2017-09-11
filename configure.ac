@@ -67,6 +67,9 @@ AC_ARG_WITH([dot],
    fi])
 AM_CONDITIONAL(HAVE_DOT,[test "x$DOT" != "xno"])
 
+# Define VMOD flags
+_VARNISH_VMOD_LDFLAGS
+
 # Check for python.
 _VARNISH_CHECK_PYTHON
 
