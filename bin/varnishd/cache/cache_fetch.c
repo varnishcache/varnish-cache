@@ -544,6 +544,7 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 	if (vfc->failed) {
 		(void)VFP_Error(vfc, "Fetch pipeline failed to process");
 		bo->htc->doclose = SC_RX_BODY;
+		VFP_Close(vfc);
 		VDI_Finish(wrk, bo);
 		if (!bo->do_stream) {
 			assert(bo->fetch_objcore->boc->state < BOS_STREAM);
