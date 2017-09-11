@@ -20,6 +20,7 @@ libvmod_purge_la_CFLAGS = \
 libvmod_purge_la_LDFLAGS = \
 	$(AM_LDFLAGS) \
 	$(VMOD_LDFLAGS) \
+	-export-symbols-regex '^Vmod_purge_Data' \
 	@SAN_LDFLAGS@
 
 nodist_libvmod_purge_la_SOURCES = vcc_if.c vcc_if.h
