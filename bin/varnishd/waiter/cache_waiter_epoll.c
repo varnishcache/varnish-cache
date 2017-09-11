@@ -86,6 +86,7 @@ vwe_thread(void *priv)
 	w = vwe->waiter;
 	CHECK_OBJ_NOTNULL(w, WAITER_MAGIC);
 	THR_SetName("cache-epoll");
+	THR_Init();
 
 	now = VTIM_real();
 	while (1) {
