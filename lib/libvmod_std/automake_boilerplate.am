@@ -20,7 +20,6 @@ libvmod_std_la_CFLAGS = \
 libvmod_std_la_LDFLAGS = \
 	$(AM_LDFLAGS) \
 	-module -export-dynamic -avoid-version -shared \
-	-export-symbols-regex '^Vmod_std_Data' \
 	@SAN_LDFLAGS@
 
 nodist_libvmod_std_la_SOURCES = vcc_if.c vcc_if.h
