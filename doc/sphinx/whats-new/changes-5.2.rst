@@ -10,7 +10,7 @@ Varnish statistics
 
 The export of statistics counters via shared memory has been
 overhauled to get rid of limitations which made sense 11 years
-ago but no so much now.
+ago but not so much now.
 
 Statistics counters are now self-describing in shared memory,
 paving the way so that VMODs or maybe even VCL can define
