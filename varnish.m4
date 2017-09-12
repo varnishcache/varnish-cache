@@ -28,8 +28,8 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# varnish.m4 - Macros to define VMOD builds.            -*- Autoconf -*-
-# serial 7 (varnish-5.1.2)
+# varnish.m4 - Macros to build against Varnish.         -*- Autoconf -*-
+# serial 8 (varnish-5.2.0)
 #
 # This collection of macros helps create VMODs or tools interacting with
 # Varnish Cache using the GNU build system (autotools). In order to work
@@ -85,6 +85,7 @@ AC_DEFUN([_VARNISH_PKG_CONFIG], [
 	PKG_CHECK_VAR([VARNISHAPI_VMODDIR], [varnishapi], [vmoddir])
 
 	PKG_CHECK_VAR([VMODTOOL], [varnishapi], [vmodtool])
+	PKG_CHECK_VAR([VCSTOOL], [varnishapi], [vcstool])
 
 	AC_SUBST([VARNISH_LIBRARY_PATH],
 		[$VARNISHAPI_LIBDIR:$VARNISHAPI_LIBDIR/varnish])
@@ -384,6 +385,9 @@ AC_DEFUN([VARNISH_VMODS], [
 # - vcldir added
 # - pkgvcldir added
 #
+# Since Varnish 5.2.0:
+# - VCSTOOL added
+#
 # Verify that the version of Varnish Cache found by pkg-config is at least
 # MINIMUM-VERSION. If MAXIMUM-VERSION is specified, verify that the version
 # is strictly below MAXIMUM-VERSION.
@@ -408,6 +412,7 @@ AC_DEFUN([VARNISH_VMODS], [
 # - VARNISHAPI_VCLDIR
 # - VARNISHAPI_VMODDIR
 # - VMODTOOL
+# - VCSTOOL
 #
 # In addition, two directories are set up for installation in automake:
 #
