@@ -13,7 +13,7 @@ Official packages
 -----------------
 
 The official Debian and Redhat packages are built by the Varnish Cache team
-and made available on https://repo.varnish-cache.org/ .
+and made available on https://packagecloud.io/varnishcache/ .
 
 Packaging files and scripts for Debian and Redhat:
 

@@ -25,7 +25,7 @@ stuff in two separate documents:
 How to get Varnish 5.0
 ----------------------
 
-`Source download <https://repo.varnish-cache.org/source/varnish-5.0.0.tar.gz>`_
+`Source download <https://varnish-cache.org/_downloads/varnish-5.0.0.tgz>`_
 
 Packages for mainstream operating systems should appear in as
 soon as they trickle through the machinery.

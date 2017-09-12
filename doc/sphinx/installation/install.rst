@@ -31,7 +31,7 @@ Red Hat / CentOS
 ----------------
 
 We try to keep the latest version available as prebuilt RPMs (el5 and el6)
-on `repo.varnish-cache.org <http://repo.varnish-cache.org/>`_.  See the online
+on `packagecloud.io/varnishcache <https://packagecloud.io/varnishcache/>`_.  See the online
 `Red Hat installation instructions
 <https://www.varnish-cache.org/installation/redhat>`_ for more information.
 
@@ -62,7 +62,7 @@ want to compile Varnish from source for other reasons, follow these
 steps:
 
 Download the appropriate release tarball, which you can find on
-http://repo.varnish-cache.org/source/ .
+https://varnish-cache.org/releases/ .
 
 Alternatively, if you want to hack on Varnish, you should clone our
 git repository by doing.
