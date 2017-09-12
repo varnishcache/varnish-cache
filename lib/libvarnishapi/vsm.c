@@ -147,6 +147,44 @@ vsm_diag(struct vsm *vd, const char *fmt, ...)
 
 /*--------------------------------------------------------------------*/
 
+static void
+vsm_unmapseg(struct vsm_seg *vg)
+{
+	size_t sz, ps, len;
+
+	CHECK_OBJ_NOTNULL(vg, VSM_SEG_MAGIC);
+
+	AN(vg->b);
+	AN(vg->e);
+	sz = strtoul(vg->av[2], NULL, 10);
+	assert(sz > 0);
+	ps = getpagesize();
+	len = RUP2(sz, ps);
+	AZ(munmap(vg->b, len));
+	vg->b = vg->e = NULL;
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+vsm_delseg(struct vsm_seg *vg)
+{
+
+	CHECK_OBJ_NOTNULL(vg, VSM_SEG_MAGIC);
+
+	if (vg->b != NULL)
+		vsm_unmapseg(vg);
+
+	if (vg->stale)
+		VTAILQ_REMOVE(&vg->set->stale, vg, list);
+	else
+		VTAILQ_REMOVE(&vg->set->segs, vg, list);
+	VAV_Free(vg->av);
+	FREE_OBJ(vg);
+}
+
+/*--------------------------------------------------------------------*/
+
 static struct vsm_set *
 vsm_newset(const char *dirname)
 {
@@ -173,7 +211,10 @@ vsm_delset(struct vsm_set **p)
 		closefd(&vs->fd);
 	if (vs->dfd >= 0)
 		closefd(&vs->dfd);
-	// XXX: delete segments
+	while (!VTAILQ_EMPTY(&vs->stale))
+		vsm_delseg(VTAILQ_FIRST(&vs->stale));
+	while (!VTAILQ_EMPTY(&vs->segs))
+		vsm_delseg(VTAILQ_FIRST(&vs->segs));
 	FREE_OBJ(vs);
 }
 
@@ -243,11 +284,13 @@ VSM_Destroy(struct vsm **vdp)
 	TAKE_OBJ_NOTNULL(vd, vdp, VSM_MAGIC);
 
 	VSM_ResetError(vd);
-	free(vd->dname);
-	vsm_delset(&vd->mgt);
-	vsm_delset(&vd->child);
+	REPLACE(vd->dname, NULL);
+	if (vd->diag != NULL)
+		VSB_destroy(&vd->diag);
 	if (vd->dfd >= 0)
 		closefd(&vd->dfd);
+	vsm_delset(&vd->mgt);
+	vsm_delset(&vd->child);
 	FREE_OBJ(vd);
 }
 
@@ -699,7 +742,6 @@ int
 VSM_Unmap(struct vsm *vd, struct vsm_fantom *vf)
 {
 	struct vsm_seg *vg;
-	size_t sz, ps, len;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AN(vd->attached);
@@ -714,19 +756,9 @@ VSM_Unmap(struct vsm *vd, struct vsm_fantom *vf)
 	vf->e = NULL;
 	if (vg->refs > 0)
 		return(0);
-	AN(vg->b);
-	AN(vg->e);
-	sz = strtoul(vg->av[2], NULL, 10);
-	assert(sz > 0);
-	ps = getpagesize();
-	len = RUP2(sz, ps);
-	AZ(munmap(vg->b, len));
-	vg->b = vg->e = NULL;
-	if (vg->stale) {
-		VTAILQ_REMOVE(&vg->set->stale, vg, list);
-		VAV_Free(vg->av);
-		FREE_OBJ(vg);
-	}
+	vsm_unmapseg(vg);
+	if (vg->stale)
+		vsm_delseg(vg);
 	return (0);
 }
 
