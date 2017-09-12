@@ -373,6 +373,123 @@ AC_DEFUN([VARNISH_VMODS], [
 		[_VARNISH_VMOD(_vmod_name)])
 ])
 
+# _VARNISH_UTILITY(NAME)
+# ----------------------
+AC_DEFUN([_VARNISH_UTILITY], [
+
+	VUT_RULES="
+
+$1_synopsis.rst: $1
+	\$(A""M_V_GEN) ./$1 --synopsis >$1_synopsis.rst
+
+$1_options.rst: $1
+	\$(A""M_V_GEN) ./$1 --options >$1_options.rst
+
+$1.rst: $1_synopsis.rst $1_options.rst
+
+"
+
+	AC_SUBST(m4_toupper(GENERATE_$1_DOCS), [$VUT_RULES])
+	m4_ifdef([_AM_SUBST_NOTMAKE],
+		[_AM_SUBST_NOTMAKE(m4_toupper(GENERATE_$1_DOCS))])
+
+	AC_SUBST(m4_toupper(GENERATED_$1_DOCS),
+		["$1_synopsis.rst $1_options.rst"])
+])
+
+# VARNISH_UTILITIES(NAMES)
+# ------------------------
+# Since: Varnish 5.2.0
+#
+# To write programs that consume the VSM, and in particular the VSL, it is
+# possible since Varnish 5.2.0 to use the VUT (Varnish UTility) API already
+# used by varnishlog, varnishstat and the other utilities from the standard
+# Varnish distribution.
+#
+# This API can optionally be used to generate part of the manual: the synopsis
+# and the list of options. The generated RST files can then be included from
+# the main RST file that is written manually.
+#
+# For example, if you define the following in configure.ac:
+#
+#     VARNISH_UTILITIES([foo bar])
+#
+# Two build rules will be available for use in Makefile.am for the programs
+# foo and bar:
+#
+#     bin_PROGRAMS = foo bar
+#
+#     [...]
+#
+#     @GENERATE_FOO_DOCS@
+#     @GENERATE_BAR_DOCS@
+#
+# If the API is used in a way that enables the generation of the synopsis and
+# the list of options, they will automatically be regenerated whenever the foo
+# and bar programs are rebuilt, and marked as dependencies for RST manuals
+# named foo.rst and bar.rst.
+#
+# In the manual you can then include the generated documentation in the
+# relevant sections:
+#
+#     SYNOPSIS
+#     ========
+#
+#     .. include:: foo_synopsis.rst
+#     foo |synopsis|
+#
+#     DESCRIPTION
+#     ===========
+#
+#     [...]
+#
+#     The following options are available:
+#
+#     .. include:: foo_options.rst
+#
+# This however won't work in a VPATH build, so instead of authoring foo.rst
+# and bar.rst, a better solution is to create foo.rst.in and bar.rst.in files
+# and add them to the AC_CONFIG_FILES macro in configure.ac. For example, if
+# foo.rst.in and bar.rst.in are located in the src/ directory:
+#
+#    AC_CONFIG_FILES([
+#    	[...]
+#    	src/foo.rst
+#    	src/bar.rst
+#    ])
+#
+# Then you can include the build directory, either relative or absolute, to
+# the include directives:
+#
+#     SYNOPSIS
+#     ========
+#
+#     .. include:: @builddir@/foo_synopsis.rst
+#     foo |synopsis|
+#
+#     DESCRIPTION
+#     ===========
+#
+#     [...]
+#
+#     The following options are available:
+#
+#     .. include:: @builddir@/foo_options.rst
+#
+# This will ensure that foo.rst and bar.rst always find the generated files
+# when the source directory is different from the build directory. Finally,
+# the generated files are exposed in a variable to help clean them:
+#
+#     CLEANFILES += $(GENERATED_FOO_DOCS) $(GENERATED_BAR_DOCS)
+#
+# It is the maintainer's responsibility to build the actual manuals.
+#
+AC_DEFUN([VARNISH_UTILITIES], [
+	m4_foreach([_vut_name],
+		m4_split(m4_normalize([$1])),
+		[_VARNISH_UTILITY(_vut_name)])
+])
+
 # VARNISH_PREREQ(MINIMUM-VERSION, [MAXIMUM-VERSION])
 # --------------------------------------------------
 # Since: Varnish 4.1.4
