@@ -187,7 +187,7 @@ vmod_workspace_##name(VRT_CTX, VCL_ENUM which)		\
 							\
 	op;						\
 }
-VTC_WS_OP(VOID, snapshot, vtc_ws_snapshot = WS_Snapshot(ws))
+VTC_WS_OP(VOID, snapshot, (vtc_ws_snapshot = WS_Snapshot(ws)))
 VTC_WS_OP(VOID, reset, WS_Reset(ws, vtc_ws_snapshot))
 VTC_WS_OP(VOID, overflow, WS_MarkOverflow(ws))
 VTC_WS_OP(BOOL, overflowed, return (WS_Overflowed(ws)))
@@ -198,7 +198,7 @@ VTC_WS_OP(BOOL, overflowed, return (WS_Overflowed(ws)))
 VCL_INT __match_proto__(td_vtc_typesize)
 vmod_typesize(VRT_CTX, VCL_STRING s)
 {
-	VCL_INT i = 0;
+	size_t i = 0;
 	const char *p;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -219,5 +219,5 @@ vmod_typesize(VRT_CTX, VCL_STRING s)
 		default:	return (-1);
 		}
 	}
-	return (i);
+	return ((VCL_INT)i);
 }
