@@ -16,7 +16,7 @@ varnishd parameters
 * *XXX: -p params that are new, modified, deprecated or removed*
 
 * *XXX: use rst refs to keep it short*
-    
+
 * *XXX: ...*
 
 Changes to VCL
@@ -59,9 +59,9 @@ vmod_std
 New VMODs in the standard distribution
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-See :ref:`vmod_purge(3)`, :ref:`vmod_vtc(3)`, :ref:`vmod_blob(3)` and
+See :ref:`vmod_blob(3)`, :ref:`vmod_purge(3)`, :ref:`vmod_vtc(3)` and
 :ref:`whatsnew_new_vmods`.
-  
+
 Other changes
 =============
 
