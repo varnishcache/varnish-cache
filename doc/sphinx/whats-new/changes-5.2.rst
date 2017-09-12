@@ -37,7 +37,19 @@ VMOD vtc
 VMOD blob
 ---------
 
-*XXX: about VMOD blob*
+We have added the variables ``req.hash`` and ``bereq.hash`` to VCL,
+which contain the hash value computed by Varnish for the current
+request, for use in cache lookup. Their data type is BLOB, which
+represents arbitrary data of any length -- the new variables contain
+the raw binary hashes.
+
+This is the first time that an element of standard VCL has the BLOB
+type (BLOBs have only been used in third-party VMODs until now). So we
+have added VMOD blob to facilitate their use. In particular, the VMOD
+implements binary-to-text encodings, for example so that you can
+assign the hash to a header as a base64 or hex string. It also
+provides some other utilities such as getting the length of a BLOB or
+testing BLOBs for equality. See :ref:`vmod_blob(3)`.
 
 XXX: Any other headline changes ...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
