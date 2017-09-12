@@ -39,6 +39,8 @@
 -e785		// Too few initializers for aggregate
 -e786		// String concatenation within initializer
 
+-e788		// enum constant '___' not used within defaulted switch
+
 -esym(818, argv)	// Pointer parameter '...' could be declared as pointing to const
 
 /*
@@ -74,6 +76,8 @@
 
 -esym(534, sleep)
 -esym(534, usleep)
+
+-esym(768, vmod_priv)	// global struct member '___' (___) not referenced
 
 ///////////////////////////////////////////////////////////////////////
 // <vas.h>
