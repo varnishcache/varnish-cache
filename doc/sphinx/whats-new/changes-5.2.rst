@@ -24,16 +24,6 @@ New VMODs in the standard distribution
 
 *XXX: introductory paragraphs about new VMODs*
 
-VMOD purge
-----------
-
-*XXX: about VMOD purge*
-
-VMOD vtc
---------
-
-*XXX: about VMOD vtc*
-
 VMOD blob
 ---------
 
@@ -50,6 +40,16 @@ implements binary-to-text encodings, for example so that you can
 assign the hash to a header as a base64 or hex string. It also
 provides some other utilities such as getting the length of a BLOB or
 testing BLOBs for equality. See :ref:`vmod_blob(3)`.
+
+VMOD purge
+----------
+
+*XXX: about VMOD purge*
+
+VMOD vtc
+--------
+
+*XXX: about VMOD vtc*
 
 XXX: Any other headline changes ...
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
