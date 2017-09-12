@@ -8,7 +8,14 @@ Changes in Varnish 5.2
 Varnish statistics
 ~~~~~~~~~~~~~~~~~~
 
-*XXX: changes and new features of VSC/VSM*
+The export of statistics counters via shared memory has been
+overhauled to get rid of limitations which made sense 11 years
+ago but no so much now.
+
+Statistics counters are now self-describing in shared memory,
+paving the way so that VMODs or maybe even VCL can define
+counters in the future, and have them show up in varnishstat
+and other VSC-API based programs.
 
 .. _whatsnew_new_vmods:
 
@@ -42,9 +49,33 @@ News for authors of VMODs and Varnish API client applications
 
 *XXX: such news may include:*
 
-* *XXX: effects of new VSC/VSM on VMODs*
+VSM/VSC API changes
+-------------------
 
-* *XXX: effects of new VSC/VSM on API client apps*
+The rewrite of the VSM/VSC code has similified the API and
+made it much more robust, and code calling into these APIs
+will have to be updated to match.
+
+The necessary changes mostly center around detecting if the
+varnishd management/worker process has restarted.
+
+In the new VSM-api once setup is done, VSM_Attach() latches
+on to a running varnishd master process and stays there.
+
+VSM_Status() returns information about the master and worker
+process, if they are running, if they have been restarted
+(since the previous call to VSM_Status()) and updates the
+in-memory list of VSM segments.
+
+Each VSM segment is now a separate piece of shared memory
+and the name of the segment can be much longer now.
+
+Before the actual shared memory can be accessed, the
+applicaiton must call VSM_Map() and when VSM_StillValid()
+indicates that the segment is no longer valid, VSM_Unmap()
+should be called to release the segment again.
+
+All in all, this should be simpler and more robust now.
 
 * *XXX: changes in VRT*
 
