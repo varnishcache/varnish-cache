@@ -8,6 +8,15 @@ This section describes the changes and improvements between different
 versions of Varnish, and what upgrading between the different versions
 entail.
 
+Varnish 5.2
+-----------
+
+.. toctree::
+   :maxdepth: 2
+
+   changes-5.2
+   upgrading-5.2
+
 Varnish 5.1
 -----------
 
