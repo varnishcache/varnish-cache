@@ -149,14 +149,6 @@ Other changes
 
 * ``varnishd(1)``:
 
-  * Listen addresses specified with ``-a`` may now be given a name on
-    the command line, for example ``-a admin=127.0.0.1:88`` to
-    identify an address used for administrative requests but not
-    regular client traffic. If you don't specify a name, then ``a0``,
-    ``a1`` and so forth are used. The endpoint names are used in the
-    log output, for example with the ``SessOpen`` tag. See
-    :ref:`varnishd(1)`.
-
   * The default value of ``server.identity`` when the ``-i`` option is
     not set has been changed as noted above.
 
