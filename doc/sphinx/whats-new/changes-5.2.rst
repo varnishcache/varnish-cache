@@ -73,6 +73,7 @@ News for authors of VMODs and Varnish API client applications
 
 *XXX: such news may include:*
 
+.. _whatsnew_abi:
 
 $ABI [strict|vrt]
 -----------------
@@ -92,6 +93,8 @@ and only needs to be rebuilt when breaking changes are introduced
 by adding ``$ABI vrt`` to their VCC descriptor. The default value
 is ``$ABI strict`` when omitted, and all VMODs from the standard
 Varnish distribution have a strict requirement.
+
+.. _whatsnew_vsm_vsc_5.2:
 
 VSM/VSC API changes
 -------------------
@@ -138,6 +141,8 @@ should be called to release the segment again.
 
 All in all, this should be simpler and more robust now.
 
+.. _whatsnew_vrt_5.2:
+
 VRT API changes
 ---------------
 
@@ -148,6 +153,8 @@ of purged objects.
 New ``http_CollectHdrSep`` function, ``http_*`` symbols and associated
 data structures are part of the curated Varnish RunTime. Using them
 does not require strict ABI compliance.
+
+.. _whatsnew_vut_5.2:
 
 New VUT API
 -----------

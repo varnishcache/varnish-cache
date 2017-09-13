@@ -120,9 +120,23 @@ This should again be useful for troubleshooting.
 
   * *XXX: ...*
 
-* *XXX: changes for developers?*
+* Changes for developers:
 
-  * *XXX: such as sanitizer flags?*
+  * The VSM and VSC APIs for shared memory and statistics have
+    changed, and may necessitate changes in client applications, see
+    :ref:`whatsnew_vsm_vsc_5.2`.
+
+  * Added the ``$ABI`` directive for VMOD vcc declarations, see
+    :ref:`whatsnew_abi`.
+
+  * There have been some minor changes in the VRT API, which may be
+    used for VMODs and client apps, see :ref:`whatsnew_vrt_5.2`.
+
+  * The VUT API (for Varnish UTilities), which facilitates the
+    development of client apps, is now publicly available, see
+    :ref:`whatsnew_vut_5.2`.
+
+  * *XXX: anything else, such as sanitizer flags?*
 
   * *XXX: ...*
 
