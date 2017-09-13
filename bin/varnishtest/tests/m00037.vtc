@@ -35,7 +35,7 @@ varnish v1 -vcl {
 
 	    set resp.http.b64all =
 	      blob.encode(BASE64, blob=blob.decode(HEX,
-	                                           encoded=req.http.hexall));
+						   encoded=req.http.hexall));
 
 	    set resp.http.b64url =
 	      blob.encode(BASE64URL,
@@ -55,7 +55,7 @@ varnish v1 -vcl {
 
 	    set resp.http.b64urlall =
 	      blob.encode(BASE64URL, blob=blob.decode(HEX,
-	                                              encoded=req.http.hexall));
+						      encoded=req.http.hexall));
 
 	    set resp.http.b64urlnopad =
 	      blob.encode(BASE64URLNOPAD,
@@ -83,7 +83,7 @@ varnish v1 -vcl {
 	      blob.encode(BASE64URL, blob=blob.decode(IDENTITY, encoded=""));
 	    set resp.http.nopadempty =
 	      blob.encode(BASE64URLNOPAD,
-	                  blob=blob.decode(IDENTITY, encoded=""));
+			  blob=blob.decode(IDENTITY, encoded=""));
 
 	    set resp.http.b64param =
 	      blob.encode(blob=blob.decode(IDENTITY, encoded=req.http.pangram),
@@ -99,11 +99,11 @@ varnish v1 -vcl {
 
 	    set resp.http.b64xcode =
 		blob.transcode(IDENTITY, BASE64,
-		               encoded=req.url + "Hello world" + req.url);
+			       encoded=req.url + "Hello world" + req.url);
 
 	    set resp.http.b64urlxcode =
 		blob.transcode(IDENTITY, BASE64URL,
-		               encoded=req.url + "Hello world" + req.url);
+			       encoded=req.url + "Hello world" + req.url);
 
 	    set resp.http.b64urlnopadxcode =
 	      blob.transcode(IDENTITY, BASE64URLNOPAD,
@@ -161,7 +161,7 @@ varnish v1 -vcl {
 
 	    set resp.http.dec = blob.encode(IDENTITY, blob=
 				blob.decode(BASE64,
-				            encoded=req.http.foobarbazquux));
+					    encoded=req.http.foobarbazquux));
 
 	    set resp.http.dec2
 	      = blob.encode(IDENTITY,
@@ -184,13 +184,13 @@ varnish v1 -vcl {
 
 	    set resp.http.nopaddechobbes =
 	      blob.encode(IDENTITY,
-	                  blob=blob.decode(BASE64URLNOPAD,
+			  blob=blob.decode(BASE64URLNOPAD,
 					   encoded=req.http.hobbesnopad));
 
 	    set resp.http.nopaddecall =
 	      blob.encode(HEX,
 			  blob=blob.decode(BASE64URLNOPAD,
-			                   encoded=req.http.allurl));
+					   encoded=req.http.allurl));
 
 	    set resp.http.b64empty =
 	      blob.encode(IDENTITY, blob=blob.decode(BASE64, encoded=""));
@@ -198,7 +198,7 @@ varnish v1 -vcl {
 	      blob.encode(IDENTITY, blob=blob.decode(BASE64URL, encoded=""));
 	    set resp.http.nopadempty =
 	      blob.encode(IDENTITY,
-	                  blob=blob.decode(BASE64URLNOPAD, encoded=""));
+			  blob=blob.decode(BASE64URLNOPAD, encoded=""));
 	    set resp.http.emptypieces =
 	      blob.encode(IDENTITY, blob=
 	      blob.decode(BASE64, encoded=req.http.unset + "" + req.http.unset
@@ -207,7 +207,7 @@ varnish v1 -vcl {
 	    set resp.http.decenc
 	      = blob.encode(BASE64,
 			    blob=blob.decode(BASE64,
-			                     encoded=req.http.foobarbazquux));
+					     encoded=req.http.foobarbazquux));
 
 	    set resp.http.l = "L";
 	    set resp.http.dec2pieces
@@ -305,7 +305,7 @@ varnish v1 -vcl+backend {
 	  elsif (req.url == "/base64urlnopad") {
 		set resp.http.badpad = blob.encode(IDENTITY,
 		    blob=blob.decode(BASE64URLNOPAD,
-		                     encoded="TWFu" + req.http.foo));
+				     encoded="TWFu" + req.http.foo));
 	  }
 	}
 }
