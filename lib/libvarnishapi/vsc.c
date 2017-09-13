@@ -327,7 +327,15 @@ vsc_add_seg(const struct vsc *vsc, struct vsm *vsm, const struct vsm_fantom *fp)
 	ALLOC_OBJ(sp, VSC_SEG_MAGIC);
 	AN(sp);
 	*sp->fantom = *fp;
-	AZ(VSM_Map(vsm, sp->fantom));
+	if (VSM_Map(vsm, sp->fantom)) {
+		/*
+		 * If the seg was removed between our call to VSM_Status()
+		 * and now, we won't be able to map it.
+		 */
+		FREE_OBJ(sp);
+		return (NULL);
+	}
+	// AZ(VSM_Map(vsm, sp->fantom));
 
 	u = vbe64dec(sp->fantom->b);
 	if (u == 0) {
@@ -407,10 +415,12 @@ VSC_Iter(struct vsc *vsc, struct vsm *vsm, VSC_iter_f *fiter, void *priv)
 			sp = VTAILQ_NEXT(sp, list);
 		} else {
 			sp = vsc_add_seg(vsc, vsm, &ifantom);
-			VTAILQ_INSERT_TAIL(&vsc->segs, sp, list);
-			if (fiter != NULL)
-				i = vsc_iter_seg(vsc, sp, fiter, priv);
-			sp = NULL;
+			if (sp != NULL) {
+				VTAILQ_INSERT_TAIL(&vsc->segs, sp, list);
+				if (fiter != NULL)
+					i = vsc_iter_seg(vsc, sp, fiter, priv);
+				sp = NULL;
+			}
 		}
 		if (i)
 			break;
