@@ -121,6 +121,11 @@ Other changes
 
   * *XXX: ...*
 
+* The ``-N`` command-line option, which was previously availabe for
+  ``varnishlog(1)``, ``varnishstat(1)``, ``varnishncsa(1)`` and
+  ``varnishhist(1)``, is not comaptible with the changed internal
+  logging API, and has been retired.
+
 * *XXX: any other changes in the standard VUT tools*
 
   * *XXX: ...*
