@@ -21,6 +21,9 @@ We have updated the documentation for :ref:`ref_param_send_timeout`,
 :ref:`ref_param_idle_send_timeout`, :ref:`ref_param_timeout_idle` and
 :ref:`ref_param_ban_cutoff`.
 
+Added the debug bit ``vmod_so_keep``, see :ref:`ref_param_debug` and
+the notes about changes for developers below.
+
 Changes to VCL
 ==============
 
@@ -136,6 +139,11 @@ Other changes
   * The VUT API (for Varnish UTilities), which facilitates the
     development of client apps, is now publicly available, see
     :ref:`whatsnew_vut_5.2`.
+
+  * The debug bit ``vmod_so_keep`` instructs Varnish not to clean
+    up its copies of VMOD shared objects when it stops. This makes
+    it possible for VMOD authors to load their code into a debugger
+    after a varnishd crash. See :ref:`ref_param_debug`.
 
   * *XXX: anything else, such as sanitizer flags?*
 
