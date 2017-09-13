@@ -74,11 +74,11 @@ field with the remaining TTL of the object at the time of the lookup.
 While this should greatly help troubleshooting, this might break tools
 relying on those records to get the VXID of the object hit during lookup.
 
-Instead of using ``Hit``, such tools should now use ``Hit[1]`` instead,
-and the same applies to ``HitMiss`` and ``HitPass``.
+Instead of using ``Hit``, such tools should now use ``Hit[1]``, and the
+same applies to ``HitMiss`` and ``HitPass``.
 
-The ``Hit`` record also grew two additional fields for the grace and
-keep periods. This should again be useful for troubleshooting.
+The ``Hit`` record also grew two more fields for the grace and keep periods.
+This should again be useful for troubleshooting.
 
 * ``varnishstat(1)``:
 
