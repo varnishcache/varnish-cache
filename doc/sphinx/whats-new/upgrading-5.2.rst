@@ -40,6 +40,11 @@ XXX: headline changes ...
 
 *XXX: the most important changes or additions first*
 
+Stricter checking of VCL symbol names
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*XXX: TBD by DB*
+
 ``req.hash`` and ``bereq.hash``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
