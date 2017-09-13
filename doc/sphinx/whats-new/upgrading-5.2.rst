@@ -168,6 +168,11 @@ Other changes
 
   * *XXX: ...*
 
+* ``varnishncsa(1)``
+
+  * Field specifiers (such as the 1 in ``Hit[1]``) are now limited to
+    to 255, see :ref:`varnishncsa(1)`.
+
 * The ``-N`` command-line option, which was previously availabe for
   ``varnishlog(1)``, ``varnishstat(1)``, ``varnishncsa(1)`` and
   ``varnishhist(1)``, is not comaptible with the changed internal
