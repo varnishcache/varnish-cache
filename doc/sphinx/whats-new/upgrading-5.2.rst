@@ -40,10 +40,37 @@ XXX: headline changes ...
 
 *XXX: the most important changes or additions first*
 
-Stricter checking of VCL symbol names
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Consistent symbol names
+~~~~~~~~~~~~~~~~~~~~~~~
 
-*XXX: TBD by DB*
+VCL symbols originate from various parts of Varnish: there are built-in
+variables, subroutines, functions, and the free-form headers. Symbols
+may live in a namespace denoted by the ``'.'`` (dot) character as in
+``req.http.Cache-Control``. When you create a VCL label, a new symbol
+becomes available, named after the label. Storage backends always have
+a name, even if you don't specify one, and they can also be accessed in
+VCL: for example ``storage.Transient``.
+
+Because headers and VCL names could contain dashes, while subroutines or
+VMOD objects couldn't, this created an inconsistency. All symbols follow
+the same rules now and must follow the same (case-insensitive) pattern:
+``[a-z][a-z0-9_-]*``.
+
+You can now write code like::
+
+  sub my-sub {
+      new my-obj = my_vmod.my_constuctor(storage.my-store);
+  }
+
+  sub vcl_init {
+      call my-sub;
+  }
+
+As you may notice in the example above, it is not possible yet to have
+dashes in a vmod symbol.
+
+Long storage backend names used to be truncated due to a limitation in
+the VSC subsystem, this is no longer the case.
 
 ``req.hash`` and ``bereq.hash``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -127,6 +154,10 @@ Other changes
     ``vcl_path`` parameter if a relative file name is used, see
     :ref:`varnishd(1)` and :ref:`ref_param_vcl_path`.
 
+  * The ``-a`` option can now take a name, otherwise a default one
+    is selected to name the listen address. It may become accessible
+    in VCL in the future.
+
 * ``varnishstat(1)``:
 
   * In curses mode, the top two lines showing uptimes for the
@@ -157,6 +188,11 @@ Other changes
 
     The ``Hit`` record also grew two more fields for the grace and
     keep periods.  This should again be useful for troubleshooting.
+
+    See :ref:`vsl(7)`.
+
+  * The ``SessOpen`` log record displays the name of the listen address
+    instead of the endpoint in its 3rd field.
 
     See :ref:`vsl(7)`.
 
