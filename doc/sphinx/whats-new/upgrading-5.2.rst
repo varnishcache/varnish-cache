@@ -56,7 +56,7 @@ XXX: more VCL changes ...
 vmod_std
 ~~~~~~~~
 
-* *XXX: any changes in VMOD std?*
+Added :ref:`func_file_exists`.
 
 New VMODs in the standard distribution
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
