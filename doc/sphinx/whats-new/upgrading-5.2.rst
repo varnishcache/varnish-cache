@@ -113,7 +113,7 @@ Other changes
 
   * On a system that supports ``setproctitle(3)``, the Varnish
     management process will appear in the output of ``ps(1)`` as
-    ``Varnish-Mgr``, and the child process as ``Varnish-Child``. If
+    ``Varnish-Mgt``, and the child process as ``Varnish-Child``. If
     the ``-i`` option has been set, then these strings in the ps
     output are followed by ``-i`` and the identity string set by the
     option.
