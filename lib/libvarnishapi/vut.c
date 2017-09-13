@@ -118,9 +118,12 @@ VUT_Error(struct VUT *vut, int status, const char *fmt, ...)
 {
 	va_list ap;
 
-	assert(status != 0);
+	CHECK_OBJ_NOTNULL(vut, VUT_MAGIC);
+	AN(vut->error_f);
+	AN(status);
+
 	va_start(ap, fmt);
-	vut_error(vut, status, fmt, ap);
+	vut->error_f(vut, status, fmt, ap);
 	va_end(ap);
 }
 
