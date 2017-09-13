@@ -114,9 +114,12 @@ Other changes
 
 * ``varnishtest(1)`` and ``vtc(7)``:
 
-  * *XXX: changes in test code*
+  * *XXX: changes in test scripting or test code, for example due to VMOD vtc?*
 
-  * *XXX: for example due to VMOD vtc*
+  * When varnishtest is invoked with ``-L`` or ``-l``, Varnish
+    instances started by a test do not clean up their copies of VMOD
+    shared objects when they stop. See the note about ``vmod_so_keep``
+    below.
 
   * *XXX: ...*
 
