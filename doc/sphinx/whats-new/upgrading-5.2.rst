@@ -83,19 +83,6 @@ See :ref:`vmod_blob(3)`, :ref:`vmod_purge(3)` and
 Other changes
 =============
 
-* VSL
-
-The ``Hit``, ``HitMiss`` and ``HitPass`` log records grew an additional
-field with the remaining TTL of the object at the time of the lookup.
-While this should greatly help troubleshooting, this might break tools
-relying on those records to get the VXID of the object hit during lookup.
-
-Instead of using ``Hit``, such tools should now use ``Hit[1]``, and the
-same applies to ``HitMiss`` and ``HitPass``.
-
-The ``Hit`` record also grew two more fields for the grace and keep periods.
-This should again be useful for troubleshooting.
-
 * ``varnishstat(1)``:
 
   * *XXX: changes due to new VSC/VSM*
@@ -103,6 +90,20 @@ This should again be useful for troubleshooting.
   * *XXX: ...*
 
 * ``varnishlog(1)``:
+
+  * The ``Hit``, ``HitMiss`` and ``HitPass`` log records grew an
+    additional field with the remaining TTL of the object at the time
+    of the lookup.  While this should greatly help troubleshooting,
+    this might break tools relying on those records to get the VXID of
+    the object hit during lookup.
+
+    Instead of using ``Hit``, such tools should now use ``Hit[1]``,
+    and the same applies to ``HitMiss`` and ``HitPass``.
+
+    The ``Hit`` record also grew two more fields for the grace and
+    keep periods.  This should again be useful for troubleshooting.
+
+    See :ref:`vsl(7)`.
 
   * *XXX: changes due to new VSC/VSM*
 
