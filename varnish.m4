@@ -85,7 +85,7 @@ AC_DEFUN([_VARNISH_PKG_CONFIG], [
 	PKG_CHECK_VAR([VARNISHAPI_VMODDIR], [varnishapi], [vmoddir])
 
 	PKG_CHECK_VAR([VMODTOOL], [varnishapi], [vmodtool])
-	PKG_CHECK_VAR([VCSTOOL], [varnishapi], [vcstool])
+	PKG_CHECK_VAR([VSCTOOL], [varnishapi], [vsctool])
 
 	AC_SUBST([VARNISH_LIBRARY_PATH],
 		[$VARNISHAPI_LIBDIR:$VARNISHAPI_LIBDIR/varnish])
@@ -386,7 +386,7 @@ AC_DEFUN([VARNISH_VMODS], [
 # - pkgvcldir added
 #
 # Since Varnish 5.2.0:
-# - VCSTOOL added
+# - VSCTOOL added
 #
 # Verify that the version of Varnish Cache found by pkg-config is at least
 # MINIMUM-VERSION. If MAXIMUM-VERSION is specified, verify that the version
@@ -412,7 +412,7 @@ AC_DEFUN([VARNISH_VMODS], [
 # - VARNISHAPI_VCLDIR
 # - VARNISHAPI_VMODDIR
 # - VMODTOOL
-# - VCSTOOL
+# - VSCTOOL
 #
 # In addition, two directories are set up for installation in automake:
 #
