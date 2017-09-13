@@ -163,6 +163,9 @@ Other changes
     shared objects when they stop. See the note about ``vmod_so_keep``
     below.
 
+  * Added the feature switch ``ignore_unknown_macro`` for test cases,
+    see :ref:`vtc(7)`.
+
   * *XXX: ...*
 
 * The ``-N`` command-line option, which was previously availabe for
