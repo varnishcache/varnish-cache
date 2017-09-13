@@ -62,6 +62,15 @@ You can use :ref:`vmod_blob(3)` to work with the hashes::
       set resp.http.Hash = blob.encode(BASE64, blob=req.hash);
   }
 
+``server.identity``
+~~~~~~~~~~~~~~~~~~~
+
+If the ``-i`` option is not set in the invocation of ``varnishd``,
+then ``server.identity`` is set to the host name (as returned by
+``gethostname(3)``). Previously, ``server.identity`` was set to the
+value of the ``-n`` option (or the default instance name if ``-n`` was
+not set). See :ref:`varnishd(1)`.
+
 XXX: vcl_sub_XXX ...
 ~~~~~~~~~~~~~~~~~~~~
 
