@@ -180,12 +180,11 @@ Tuning options
   files. Name is referenced in logs, VCL, statistics, etc. If name
   is not specified, "s0", "s1" and so forth is used.
 
--l <vsl[,vsm]>
+-l <vsl>
 
-  Specifies size of shmlog file. vsl is the space for the VSL records
-  [80M] and vsm is the space for stats counters [1M]. Scaling suffixes
-  like 'K' and 'M' can be used up to (G)igabytes.
-  Default is 81 Megabytes.
+  Specifies size of the space for the VSL records.
+  Scaling suffixes like 'K' and 'M' can be used up to (G)igabytes.
+  Default is 80 Megabytes.
 
 Security options
 ----------------

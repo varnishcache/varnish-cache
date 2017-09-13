@@ -1605,11 +1605,10 @@ PARAM(
 	/* max */	"4G",
 	/* default */	"1M",
 	/* units */	"bytes",
-	/* flags */	MUST_RESTART,
+	/* flags */	0,
 	/* s-text */
-	"The amount of space to allocate for stats counters in the VSM "
-	"memory segment.  If you make this too small, some counters will "
-	"be invisible.  Making it too large just costs memory resources.",
+	"DEPRECATED: This parameter is ignored.\n"
+	"There is no global limit on amount of shared memory now.",
 	/* l-text */	"",
 	/* func */	NULL
 )
