@@ -61,8 +61,8 @@ vmod_std
 New VMODs in the standard distribution
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-See :ref:`vmod_blob(3)`, :ref:`vmod_purge(3)`, :ref:`vmod_vtc(3)` and
-:ref:`whatsnew_new_vmods`.
+See :ref:`vmod_blob(3)`, :ref:`vmod_purge(3)` and
+:ref:`vmod_vtc(3)`. See :ref:`whatsnew_new_vmods`.
 
 Other changes
 =============
