@@ -1,4 +1,4 @@
-varnishtest "Test -I argument"
+varnishtest "Test -I and -l arguments"
 
 shell -err -expect {Only one -I allowed} {
 	touch foo bar
@@ -9,5 +9,17 @@ shell -err -expect {Error: -I file CLI command failed (104)} {
 	echo "vcl.list" > foo
 	echo "-foobar" >> foo
 	echo "vcl.load" >> foo
-	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2m,1m
+	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2m
+}
+
+shell -err -expect {Error: -l ...: Missing '"'} {
+	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l '2m,"'
+}
+
+shell -err -expect {Error: Too many sub arguments} {
+	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2m,2m,2m
+}
+
+shell -err -expect {Warning: Ignoring deprecated second subargument} {
+	varnishd -f '' -I foo -n ${tmpdir}/v0 -a :0 -l 2m,2m
 }

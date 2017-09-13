@@ -129,9 +129,8 @@ usage(void)
 	printf(FMT, "", "  -s malloc");
 	printf(FMT, "", "  -s file");
 
-	printf(FMT, "-l vsl[,vsm]", "Size of shared memory file");
+	printf(FMT, "-l vsl", "Size of shared memory log");
 	printf(FMT, "", "  vsl: space for VSL records [80m]");
-	printf(FMT, "", "  vsm: space for stats counters [1m]");
 
 	printf("\nSecurity options:\n");
 
@@ -269,7 +268,6 @@ init_params(struct cli *cli)
 		MCF_ParamConf(MCF_DEFAULT, "http_req_size", "12k");
 		MCF_ParamConf(MCF_DEFAULT, "gzip_buffer", "4k");
 		MCF_ParamConf(MCF_MAXIMUM, "vsl_space", "1G");
-		MCF_ParamConf(MCF_MAXIMUM, "vsm_space", "1G");
 	}
 
 #if !defined(HAVE_ACCEPT_FILTERS) || defined(__linux)
@@ -661,14 +659,17 @@ main(int argc, char * const *argv)
 			av = VAV_Parse(optarg, NULL, ARGV_COMMA);
 			AN(av);
 			if (av[0] != NULL)
-				ARGV_ERR("\t-l ...: %s\n", av[0]);
+				ARGV_ERR("-l ...: %s\n", av[0]);
+			if (av[1] != NULL && av[2] != NULL && av[3] != NULL)
+				ARGV_ERR("Too many sub arguments to -l\n");
 			if (av[1] != NULL) {
 				MCF_ParamSet(cli, "vsl_space", av[1]);
 				cli_check(cli);
 			}
 			if (av[1] != NULL && av[2] != NULL) {
-				MCF_ParamSet(cli, "vsm_space", av[2]);
-				cli_check(cli);
+				fprintf(stderr,
+				    "Warning: Ignoring deprecated second"
+				    " subargument to -l\n");
 			}
 			VAV_Free(av);
 			break;

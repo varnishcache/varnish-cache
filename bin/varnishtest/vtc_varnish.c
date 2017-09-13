@@ -422,7 +422,7 @@ varnish_launch(struct varnish *v)
 		VSB_cat(vsb, " -p debug=+vsm_keep");
 		VSB_cat(vsb, " -p debug=+vmod_so_keep");
 	}
-	VSB_printf(vsb, " -l 2m,1m,-");
+	VSB_printf(vsb, " -l 2m");
 	VSB_printf(vsb, " -p auto_restart=off");
 	VSB_printf(vsb, " -p syslog_cli_traffic=off");
 	VSB_printf(vsb, " -p sigsegv_handler=on");
