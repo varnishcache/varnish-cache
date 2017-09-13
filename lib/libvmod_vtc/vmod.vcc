@@ -26,6 +26,7 @@
 # SUCH DAMAGE.
 
 $Module vtc 3 Utility module for varnishtest
+$ABI strict
 
 DESCRIPTION
 ===========
