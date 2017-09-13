@@ -136,6 +136,9 @@ Other changes
   * The interpretation of multiple ``-f`` options in the command line
     has changed slightly, see :ref:`varnishstat(1)`.
 
+  * The ``type`` and ``ident`` fields have been removed from the XML
+    and JSON output formats, see :ref:`varnishstat(1)`.
+
   * *XXX: anything else? stats added, removed or changed?*
 
 * ``varnishlog(1)``:
