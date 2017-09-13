@@ -156,9 +156,26 @@ does not require strict ABI compliance.
 
 .. _whatsnew_vut_5.2:
 
-New VUT API
------------
+Added VUT API
+-------------
 
-XXX: document once merged
+One way to extend Varnish is to write VSM clients, programs that tap
+into the Varnish Shared Memory (VSM) usually via ``libvarnishapi`` or
+community bindings for other languages than C. Varnish already ships
+with VUTs (Varnish UTilities) that either process the Varnish Shared
+Log (VSL) like ``varnishlog`` or ``varnishncsa`` or the Varnish Shared
+Counters (VSC) like ``varnishstat``.
+
+Most of the setup for these programs is similar, and so they shared an
+API that is now available outside of the Varnish source tree. The VUT
+API has been cleaned up to remove assumptions made for our utilities.
+It hides most of the complexity and redundancy of setting up a log
+processor and helps you focus on your functionality. If you use
+autotools for building, a new macro in ``varnish.m4`` removes some of
+the boilerplate to generate part of the documentation.
+
+We hope that much like VMODs we will see new tools that take advantage
+of this API to extend Varnish in new ways much like VMODs made it easy
+to add new functionality to VCL.
 
 *EOF*
