@@ -72,8 +72,11 @@ dashes in a vmod symbol.
 Long storage backend names used to be truncated due to a limitation in
 the VSC subsystem, this is no longer the case.
 
+New VCL variables
+~~~~~~~~~~~~~~~~~
+
 ``req.hash`` and ``bereq.hash``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------
 
 Added ``req.hash`` and ``bereq.hash``, which contain the hash value
 computed by Varnish for cache lookup in the current transaction, to
@@ -95,13 +98,23 @@ You can use :ref:`vmod_blob(3)` to work with the hashes::
   }
 
 ``server.identity``
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 If the ``-i`` option is not set in the invocation of ``varnishd``,
 then ``server.identity`` is set to the host name (as returned by
 ``gethostname(3)``). Previously, ``server.identity`` was set to the
 value of the ``-n`` option (or the default instance name if ``-n`` was
 not set). See :ref:`varnishd(1)`.
+
+``bereq.is_bgfetch``
+--------------------
+
+``bereq.is_bgfetch`` is readable in backend contexts, and is true if
+the fetch takes place in the background. That is, it is true if
+Varnish found a response in the cache whose TTL was expired, but was
+still in grace time. Varnish returns the stale cached response to the
+client, and initiates the background fetch to refresh the cache
+object.
 
 XXX: vcl_sub_XXX ...
 ~~~~~~~~~~~~~~~~~~~~
