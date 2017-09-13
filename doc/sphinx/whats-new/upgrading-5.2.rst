@@ -95,6 +95,22 @@ See :ref:`vmod_blob(3)`, :ref:`vmod_purge(3)` and
 Other changes
 =============
 
+* ``varnishd(1)``:
+
+  * The default value of ``server.identity`` when the ``-i`` option is
+    not set has been changed as noted above.
+
+  * Also, ``-i`` no longer determines the ``ident`` field used by
+    ``syslog(3)``; now Varnish is always identified by the string
+    ``varnishd`` in the syslog.
+
+  * On a system that supports ``setproctitle(3)``, the Varnish
+    management process will appear in the output of ``ps(1)`` as
+    ``Varnish-Mgr``, and the child process as ``Varnish-Child``. If
+    the ``-i`` option has been set, then these strings in the ps
+    output are followed by ``-i`` and the identity string set by the
+    option.
+
 * ``varnishstat(1)``:
 
   * In curses mode, the top two lines showing uptimes for the
