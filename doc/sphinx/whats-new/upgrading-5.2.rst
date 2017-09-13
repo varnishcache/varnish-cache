@@ -40,8 +40,24 @@ XXX: headline changes ...
 ``req.hash`` and ``bereq.hash``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*XXX: about {be}req.hash, mention data type BLOB, advise about*
-*:ref:`vmod_blob(3)`*
+Added ``req.hash`` and ``bereq.hash``, which contain the hash value
+computed by Varnish for cache lookup in the current transaction, to
+be used in client or backend context, respectively. Their data type
+is BLOB, and they contain the raw binary hash.
+
+You can use :ref:`vmod_blob(3)` to work with the hashes::
+
+  import blob;
+
+  sub vcl_backend_fetch {
+      # Send the transaction hash to the backend as a hex string
+      set bereq.http.Hash = blob.encode(HEX, blob=bereq.hash);
+  }
+
+  sub vcl_deliver {
+      # Send the hash in a response header as a base64 string
+      set resp.http.Hash = blob.encode(BASE64, blob=req.hash);
+  }
 
 XXX: vcl_sub_XXX ...
 ~~~~~~~~~~~~~~~~~~~~
