@@ -167,9 +167,12 @@ Other changes
     ``vcl_path`` parameter if a relative file name is used, see
     :ref:`varnishd(1)` and :ref:`ref_param_vcl_path`.
 
-  * The ``-a`` option can now take a name, otherwise a default one
-    is selected to name the listen address. It may become accessible
-    in VCL in the future.
+  * The ``-a`` option can now take a name, for example ``-a
+    admin=127.0.0.1:88`` to identify an address used for
+    administrative requests but not regular client traffic. Otherwise,
+    a default name is selected for the listen address (``a0``, ``a1``
+    and so forth). Endpoint names appear in the log output, as noted
+    below, and may become accessible in VCL in the future.
 
 * ``varnishstat(1)``:
 
