@@ -758,7 +758,7 @@ main(int argc, char * const *argv)
 		i_arg = mgt_HostName();
 	heritage.identity = i_arg;
 
-	mgt_ProcTitle("Mgr");
+	mgt_ProcTitle("Mgt");
 
 	openlog("varnishd", LOG_PID, LOG_LOCAL0);
 
