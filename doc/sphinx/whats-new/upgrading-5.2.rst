@@ -7,8 +7,8 @@ Upgrading to Varnish 5.2
 Varnish statistics and logging
 ==============================
 
-*XXX: anything new for users or admins concerning statistics,*
-*varnishstat, logging etc*
+There are extensive changes under the hood with respect to statistics
+counters, but these should all be transparent at the user-level.
 
 varnishd parameters
 ===================
