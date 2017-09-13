@@ -308,13 +308,13 @@ mgt_launch_child(struct cli *cli)
 
 	child_state = CH_STARTING;
 
-	/* Open pipe for mgr->child CLI */
+	/* Open pipe for mgt->child CLI */
 	AZ(pipe(cp));
 	heritage.cli_in = cp[0];
 	MCH_Fd_Inherit(heritage.cli_in, "cli_in");
 	child_cli_out = cp[1];
 
-	/* Open pipe for child->mgr CLI */
+	/* Open pipe for child->mgt CLI */
 	AZ(pipe(cp));
 	heritage.cli_out = cp[1];
 	MCH_Fd_Inherit(heritage.cli_out, "cli_out");

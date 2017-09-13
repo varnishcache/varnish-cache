@@ -46,7 +46,7 @@
 #include <sys/prctl.h>
 #endif
 
-static gid_t vju_mgr_gid;
+static gid_t vju_mgt_gid;
 static uid_t vju_uid;
 static gid_t vju_gid;
 static const char *vju_user;
@@ -166,7 +166,7 @@ vju_init(char **args)
 
 	AN(vju_user);
 
-	vju_mgr_gid = getgid();
+	vju_mgt_gid = getgid();
 
 	if (vju_wrkuser == NULL && vju_getwrkuid(VCACHE_USER)) {
 		vju_wrkuid = vju_uid;
@@ -191,7 +191,7 @@ vju_master(enum jail_master_e jme)
 		AZ(seteuid(vju_uid));
 	} else {
 		AZ(seteuid(0));
-		AZ(setegid(vju_mgr_gid));
+		AZ(setegid(vju_mgt_gid));
 	}
 }
 
