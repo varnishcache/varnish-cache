@@ -35,7 +35,11 @@ See :ref:`vmod_blob(3)`.
 VMOD purge
 ----------
 
-*XXX: DRIDI ?  about VMOD purge*
+Before the introduction of ``vcl 4.0`` there used to be a ``purge`` function
+instead of a ``return(purge)`` transition. This module works like old-style
+VCL purges (which should be used from both ``vcl_hit`` and ``vcl_miss``) and
+provides more capabilities than regular purges, and lets you know how many
+objects were affected.
 
 See :ref:`vmod_purge(3)`.
 
@@ -53,7 +57,9 @@ pretty evil functionality, for instance ``debug.panic()``.
 We have split the non-suicidal test-writing stuff from ``vmod_debug``
 into a new ``vmod_vtc``, which is included in binary releases from
 now on, in order to make it easier for people to use ``varnishtest``
-to test local configurations, VMODs etc.
+to test local configurations, VMODs etc. The main highlight is that you
+can now synchronize barriers with VCL code thanks to ``vmod_vtc``, other
+conveniences were added like workspace manipulations.
 
 See :ref:`vmod_vtc(3)`.
 
@@ -71,7 +77,21 @@ News for authors of VMODs and Varnish API client applications
 $ABI [strict|vrt]
 -----------------
 
-*XXX: DRIDI ?*
+VMOD authors have the option of only integrating with the blessed
+interface provided by ``varnishd`` or go deeper in the stack. As
+a general rule of thumb you are considered "on your own" if your
+VMOD uses more than the VRT (Varnish RunTime) and it is supposed
+to be built for the exact Varnish version.
+
+Varnish was already capable of checking the major/minor VRT version
+a VMOD was built against, or require the exact version, but picking
+one or the other depended on how Varnish was built.
+
+VMOD authors can now specify whether a module complies to the VRT
+and only needs to be rebuilt when breaking changes are introduced
+by adding ``$ABI vrt`` to their VCC descriptor. The default value
+is ``$ABI strict`` when omitted, and all VMODs from the standard
+Varnish distribution have a strict requirement.
 
 VSM/VSC API changes
 -------------------
@@ -93,7 +113,7 @@ This paves the way for VMODs or maybe even VCL to define
 custom counters, and have them show up in varnishstat and
 other VSC-API based programs just like the rest of the counters.
 
-The rewrite of the VSM/VSC code similified both APIs and
+The rewrite of the VSM/VSC code simplified both APIs and
 made them much more robust but code calling into these APIs
 will have to be updated to match.
 
@@ -112,12 +132,26 @@ Each VSM segment is now a separate piece of shared memory
 and the name of the segment can be much longer now.
 
 Before the actual shared memory can be accessed, the
-applicaiton must call VSM_Map() and when VSM_StillValid()
+application must call VSM_Map() and when VSM_StillValid()
 indicates that the segment is no longer valid, VSM_Unmap()
 should be called to release the segment again.
 
 All in all, this should be simpler and more robust now.
 
-*XXX: changes in VRT*
+VRT API changes
+---------------
+
+``VRT_purge`` now fails a transaction instead of panicking when used
+outside of ``vcl_hit`` or ``vcl_miss``. It also returns the number
+of purged objects.
+
+New ``http_CollectHdrSep`` function, ``http_*`` symbols and associated
+data structures are part of the curated Varnish RunTime. Using them
+does not require strict ABI compliance.
+
+New VUT API
+-----------
+
+XXX: document once merged
 
 *EOF*
