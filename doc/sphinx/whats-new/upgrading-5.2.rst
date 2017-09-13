@@ -92,6 +92,13 @@ New VMODs in the standard distribution
 See :ref:`vmod_blob(3)`, :ref:`vmod_purge(3)` and
 :ref:`vmod_vtc(3)`. See :ref:`whatsnew_new_vmods`.
 
+Bans
+~~~~
+
+We have clarified the interpretation of a ban when a comparison in the
+ban expression is attempted against an unset field, see
+:ref:`vcl(7)_ban` in :ref:`vcl(7)`.
+
 Other changes
 =============
 
