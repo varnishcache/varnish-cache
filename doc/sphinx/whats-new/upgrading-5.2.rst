@@ -111,6 +111,10 @@ Other changes
     output are followed by ``-i`` and the identity string set by the
     option.
 
+  * The ``-f`` option for a VCL source file now honors the
+    ``vcl_path`` parameter if a relative file name is used, see
+    :ref:`varnishd(1)` and :ref:`ref_param_vcl_path`.
+
 * ``varnishstat(1)``:
 
   * In curses mode, the top two lines showing uptimes for the
