@@ -88,9 +88,11 @@ Other changes
 
 * ``varnishstat(1)``:
 
-  * *XXX: changes due to new VSC/VSM*
+  * In curses mode, the top two lines showing uptimes for the
+    management and child processes show the text ``Not Running`` if
+    either or both of the processes are down.
 
-  * *XXX: ...*
+  * *XXX: anything else? stats added, removed or changed?*
 
 * ``varnishlog(1)``:
 
@@ -107,10 +109,6 @@ Other changes
     keep periods.  This should again be useful for troubleshooting.
 
     See :ref:`vsl(7)`.
-
-  * *XXX: changes due to new VSC/VSM*
-
-  * *XXX: ...*
 
 * ``varnishtest(1)`` and ``vtc(7)``:
 
