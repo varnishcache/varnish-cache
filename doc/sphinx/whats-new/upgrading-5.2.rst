@@ -13,11 +13,13 @@ counters, but these should all be transparent at the user-level.
 varnishd parameters
 ===================
 
-* *XXX: -p params that are new, modified, deprecated or removed*
+The :ref:`ref_param_cli_buffer` parameter is deprecated and
+ignored. Memory for the CLI command buffer is now dynamically
+allocated.
 
-* *XXX: use rst refs to keep it short*
-
-* *XXX: ...*
+We have updated the documentation for :ref:`ref_param_send_timeout`,
+:ref:`ref_param_idle_send_timeout`, :ref:`ref_param_timeout_idle` and
+:ref:`ref_param_ban_cutoff`.
 
 Changes to VCL
 ==============
