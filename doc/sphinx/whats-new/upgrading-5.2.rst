@@ -139,6 +139,9 @@ Other changes
   * The ``type`` and ``ident`` fields have been removed from the XML
     and JSON output formats, see :ref:`varnishstat(1)`.
 
+  * The ``MAIN.s_req`` statistic has been removed, as it was identical
+    to ``MAIN.client_req``.
+
   * *XXX: anything else? stats added, removed or changed?*
 
 * ``varnishlog(1)``:
