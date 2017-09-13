@@ -2,9 +2,6 @@
 	This is *NOT* a RST file but the syntax has been chosen so
 	that it may become an RST file at some later date.
 
-	XXX: For now this file must be kept in 100% agreement with
-	XXX: include/tbl/vsc_fields.h
-
 .. varnish_vsc_begin::	mempool
 	:oneliner:	Memory Pool Counters
 	:order:		30
