@@ -52,15 +52,15 @@ varnish v1 -vcl {
 
 	    set resp.http.truncated =
 	      blob.encode(IDENTITY,
-	                  blob=blob.decode(HEX, encoded="666f6f00626172"));
+			  blob=blob.decode(HEX, encoded="666f6f00626172"));
 
 	    set resp.http.lc =
 	      blob.encode(IDENTITY, LOWER, blob.decode(IDENTITY,
-	                                               encoded="Don't care"));
+						       encoded="Don't care"));
 
 	    set resp.http.uc =
 	      blob.encode(IDENTITY, UPPER, blob.decode(IDENTITY,
-	                                               encoded="Don't care"));
+						       encoded="Don't care"));
 	}
 } -start
 

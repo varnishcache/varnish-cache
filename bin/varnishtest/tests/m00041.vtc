@@ -302,7 +302,7 @@ varnish v1 -vcl {
 
 	  set resp.http.urlalldownuc2b64nopad
 	    = blob.transcode(URL, BASE64URLNOPAD,
-	                     encoded=req.http.urlalldownuc);
+			     encoded=req.http.urlalldownuc);
 
 	  set resp.http.urlalldownlc2b64
 	    = blob.transcode(URL, BASE64, encoded=req.http.urlalldownlc);
@@ -312,7 +312,7 @@ varnish v1 -vcl {
 
 	  set resp.http.urlalldownlc2b64nopad
 	    = blob.transcode(URL, BASE64URLNOPAD,
-	                     encoded=req.http.urlalldownlc);
+			     encoded=req.http.urlalldownlc);
 
 	  set resp.http.urlallupuc2b64
 	    = blob.transcode(URL, BASE64, encoded=req.http.urlallupuc);

@@ -36,7 +36,7 @@ varnish v1 -arg "-p http_max_hdr=128" -vcl+backend {
 	# transcode() converts from one encoding to another.
 	set req.http.Hex-Encoded
 	    = blob.transcode(decoding=BASE64, encoding=HEX, case=UPPER,
-	                     encoded="YmF6");
+			     encoded="YmF6");
 
 	# transcode() can replace other specific encoding/deconding
 	# vmods - e.g. vmod_urlcode
@@ -54,7 +54,7 @@ varnish v1 -arg "-p http_max_hdr=128" -vcl+backend {
     sub vcl_deliver {
 	set resp.http.Trunced-Foo1
 	    = blob.encode(IDENTITY, blob=blob.decode(HEX,
-	                                             encoded="666f6f00626172"));
+						     encoded="666f6f00626172"));
 	set resp.http.Trunced-Foo2
 	    = blob.encode(blob=blob.decode(HEX, encoded="666f6f00626172"));
     }
@@ -74,7 +74,7 @@ varnish v1 -arg "-p http_max_hdr=128" -vcl+backend {
     sub vcl_deliver {
 	set resp.http.encode1
 	    = blob.encode(HEX, blob=blob.decode(BASE64,
-	                                        encoded="Zm9vYmFyYmF6"));
+						encoded="Zm9vYmFyYmF6"));
 
 	# same with named parameters
 	set resp.http.encode2

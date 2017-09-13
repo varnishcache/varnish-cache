@@ -52,9 +52,9 @@ Examples::
       # decode() and encode() functions convert blobs to text and
       # vice versa at runtime.
       set resp.http.Base64-Encoded
-          = blob.encode(BASE64,
-                        blob=blob.decode(HEX,
-                                         encoded=req.http.Hex-Encoded));
+	  = blob.encode(BASE64,
+			blob=blob.decode(HEX,
+					 encoded=req.http.Hex-Encoded));
   }
 
   sub vcl_recv {
@@ -122,7 +122,7 @@ blob. For example::
   # The header will be seen as "foo".
   set resp.http.Trunced-Foo1
       = blob.encode(IDENTITY, blob=blob.decode(HEX,
-                                               encoded="666f6f00626172"));
+					       encoded="666f6f00626172"));
 
 IDENTITY is the default encoding and decoding. So the above can also
 be written as::
@@ -175,7 +175,7 @@ byte. For example::
   set resp.http.Second = "def0";
   set resp.http.Hex-Decoded
       = blob.encode(HEX, blob=blob.decode(HEX,
-                         encoded=resp.http.First + resp.http.Second));
+			 encoded=resp.http.First + resp.http.Second));
 
 URL
 ---
@@ -188,8 +188,8 @@ The ``URL`` encoding implements "percent encoding" as per RFC3986. The
 affect alphabetic characters that are not percent-encoded.
 
 $Function BLOB decode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
-                            HEX, URL} decoding="IDENTITY", INT length=0,
-                      STRING_LIST encoded)
+			    HEX, URL} decoding="IDENTITY", INT length=0,
+		      STRING_LIST encoded)
 
 Returns the BLOB derived from the string ``encoded`` according to the
 scheme specified by ``decoding``.
@@ -225,7 +225,7 @@ Example::
 
 	set resp.http.encode1
 	    = blob.encode(HEX,
-                          blob=blob.decode(BASE64, encoded="Zm9vYmFyYmF6"));
+			  blob=blob.decode(BASE64, encoded="Zm9vYmFyYmF6"));
 
 	# same with named parameters
 	set resp.http.encode2
@@ -260,7 +260,7 @@ defaults to LOWER.
 Example::
 
        set resp.http.Hex2Base64-1
-            = blob.transcode(HEX, BASE64, encoded="666f6f");
+	    = blob.transcode(HEX, BASE64, encoded="666f6f");
 
 	# same with named parameters
 	set resp.http.Hex2Base64-2

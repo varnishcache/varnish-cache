@@ -23,15 +23,15 @@ varnish v1 -vcl {
 
 	  set resp.http.id2id
 	    = blob.transcode(IDENTITY, IDENTITY, length=5,
-	                     encoded="Hello world");
+			     encoded="Hello world");
 
 	  set resp.http.id2b64
 	    = blob.transcode(IDENTITY, BASE64, length=5,
-	                     encoded=req.http.hobbes);
+			     encoded=req.http.hobbes);
 
 	  set resp.http.id2b64nopad
 	    = blob.transcode(IDENTITY, BASE64URLNOPAD, length=5,
-	                     encoded=req.http.hobbes);
+			     encoded=req.http.hobbes);
 
 	  set resp.http.id2hex
 	    = blob.transcode(IDENTITY, HEX, length=5, encoded=req.http.hobbes);
@@ -53,34 +53,34 @@ varnish v1 -vcl {
 
 	  set resp.http.b642id
 	    = blob.transcode(BASE64, IDENTITY, length=8,
-	                     encoded=req.http.hobbesb64);
+			     encoded=req.http.hobbesb64);
 
 	  set resp.http.hex2id
 	    = blob.transcode(HEX, IDENTITY, length=12,
-	                     encoded=req.http.hexhobbes);
+			     encoded=req.http.hexhobbes);
 
 	  set resp.http.hexalldown2b64
 	    = blob.transcode(HEX, BASE64, length=12,
-	                     encoded=req.http.hexalldown);
+			     encoded=req.http.hexalldown);
 
 	  set resp.http.hexalldown2b64url
 	    = blob.transcode(HEX, BASE64URL, length=12,
-	                     encoded=req.http.hexalldown);
+			     encoded=req.http.hexalldown);
 
 	  set resp.http.hexalldown2b64nopad
 	    = blob.transcode(HEX, BASE64URLNOPAD, length=10,
-	                     encoded=req.http.hexalldown);
+			     encoded=req.http.hexalldown);
 
 	  set resp.http.hexallup2b64
 	    = blob.transcode(HEX, BASE64, length=12, encoded=req.http.hexallup);
 
 	  set resp.http.hexallup2b64url
 	    = blob.transcode(HEX, BASE64URL, length=10,
-	                     encoded=req.http.hexallup);
+			     encoded=req.http.hexallup);
 
 	  set resp.http.hexallup2b64nopad
 	    = blob.transcode(HEX, BASE64URLNOPAD, length=10,
-	                     encoded=req.http.hexallup);
+			     encoded=req.http.hexallup);
 
 	  set resp.http.hexalldown2url
 	    = blob.transcode(HEX, URL, length=12, encoded=req.http.hexalldown);
@@ -157,7 +157,7 @@ varnish v1 -vcl {
 
 	  set resp.http.b64allurl2hex
 	    = blob.transcode(BASE64URL, HEX, length=8,
-	                     encoded=req.http.b64allurl);
+			     encoded=req.http.b64allurl);
 
 	  set resp.http.b64allurl2hexuc
 	    = blob.transcode(BASE64URL, HEX, UPPER, 8, req.http.b64allurl);
@@ -176,7 +176,7 @@ varnish v1 -vcl {
 
 	  set resp.http.b64allurl2url
 	    = blob.transcode(BASE64URL, URL, length=8,
-	                     encoded=req.http.b64allurl);
+			     encoded=req.http.b64allurl);
 
 	  set resp.http.b64allurl2urluc
 	    = blob.transcode(BASE64URL, URL, UPPER, 8, req.http.b64allurl);
@@ -286,19 +286,19 @@ varnish v1 -vcl {
 
 	  set resp.http.urluc2id
 	    = blob.transcode(URL, IDENTITY, length=27,
-	                     encoded=req.http.urlhobbesuc);
+			     encoded=req.http.urlhobbesuc);
 
 	  set resp.http.urllc2id
 	    = blob.transcode(URL, IDENTITY, length=63,
-	                     encoded=req.http.urlhobbeslc);
+			     encoded=req.http.urlhobbeslc);
 
 	  set resp.http.urlalldownuc2b64
 	    = blob.transcode(URL, BASE64, length=18,
-	                     encoded=req.http.urlalldownuc);
+			     encoded=req.http.urlalldownuc);
 
 	  set resp.http.urlalldownuc2b64url
 	    = blob.transcode(URL, BASE64URL, length=15,
-	                     encoded=req.http.urlalldownuc);
+			     encoded=req.http.urlalldownuc);
 
 	  set resp.http.urlalldownuc2b64nopad
 	    = blob.transcode(URL, BASE64URLNOPAD, length=15,
@@ -306,11 +306,11 @@ varnish v1 -vcl {
 
 	  set resp.http.urlalldownlc2b64
 	    = blob.transcode(URL, BASE64, length=18,
-	                     encoded=req.http.urlalldownlc);
+			     encoded=req.http.urlalldownlc);
 
 	  set resp.http.urlalldownlc2b64url
 	    = blob.transcode(URL, BASE64URL, length=15,
-	                     encoded=req.http.urlalldownlc);
+			     encoded=req.http.urlalldownlc);
 
 	  set resp.http.urlalldownlc2b64nopad
 	    = blob.transcode(URL, BASE64URLNOPAD, length=15,
@@ -318,11 +318,11 @@ varnish v1 -vcl {
 
 	  set resp.http.urlallupuc2b64
 	    = blob.transcode(URL, BASE64, length=36,
-	                     encoded=req.http.urlallupuc);
+			     encoded=req.http.urlallupuc);
 
 	  set resp.http.urlallupuc2b64url
 	    = blob.transcode(URL, BASE64URL, length=33,
-	                     encoded=req.http.urlallupuc);
+			     encoded=req.http.urlallupuc);
 
 	  set resp.http.urlallupuc2b64nopad
 	    = blob.transcode(URL, BASE64URLNOPAD, length=33,
@@ -330,11 +330,11 @@ varnish v1 -vcl {
 
 	  set resp.http.urlalluplc2b64
 	    = blob.transcode(URL, BASE64, length=36,
-	                     encoded=req.http.urlalluplc);
+			     encoded=req.http.urlalluplc);
 
 	  set resp.http.urlalluplc2b64url
 	    = blob.transcode(URL, BASE64URL, length=33,
-	                     encoded=req.http.urlalluplc);
+			     encoded=req.http.urlalluplc);
 
 	  set resp.http.urlalluplc2b64nopad
 	    = blob.transcode(URL, BASE64URLNOPAD, length=33,
@@ -342,7 +342,7 @@ varnish v1 -vcl {
 
 	  set resp.http.urlalldownuc2url
 	    = blob.transcode(URL, URL, length=423,
-	                     encoded=req.http.urlalldownuc);
+			     encoded=req.http.urlalldownuc);
 
 	  set resp.http.urlalldownuc2urluc
 	    = blob.transcode(URL, URL, UPPER, 423, req.http.urlalldownuc);
@@ -352,7 +352,7 @@ varnish v1 -vcl {
 
 	  set resp.http.urlalldownlc2url
 	    = blob.transcode(URL, URL, length=423,
-	                     encoded=req.http.urlalldownlc);
+			     encoded=req.http.urlalldownlc);
 
 	  set resp.http.urlalldownlc2urluc
 	    = blob.transcode(URL, URL, UPPER, 423, req.http.urlalldownlc);
@@ -427,12 +427,12 @@ varnish v1 -vcl+backend {
 		if (req.url == "/1") {
 			set resp.http.good
 			    = blob.transcode(URL, IDENTITY, length=3,
-			                     encoded="%2c%q");
+					     encoded="%2c%q");
 		}
 		elsif (req.url == "/2") {
 			set resp.http.good
 			    = blob.transcode(URL, IDENTITY, length=3,
-			                     encoded="%3a%2q");
+					     encoded="%3a%2q");
 		}
 		elsif (req.url == "/3") {
 			set resp.http.bad
@@ -473,12 +473,12 @@ varnish v1 -vcl+backend {
 		elsif (req.url == "/10") {
 			set resp.http.bad
 			    = blob.transcode(URL, IDENTITY, length=1,
-			                     encoded="%20");
+					     encoded="%20");
 		}
 		elsif (req.url == "/11") {
 			set resp.http.bad
 			    = blob.transcode(URL, IDENTITY, length=2,
-			                     encoded="%20");
+					     encoded="%20");
 		}
 	}
 }

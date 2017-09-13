@@ -188,10 +188,10 @@ varnish v1 -vcl {
 		    = blob.encode(BASE64, blob=blob.sub(down07.get(), 4B));
 		set resp.http.up04050607
 		    = blob.encode(BASE64,
-		                  blob=blob.sub(up07.get(), 4B, 4B));
+				  blob=blob.sub(up07.get(), 4B, 4B));
 		set resp.http.down03
 		    = blob.encode(BASE64,
-		                  blob=blob.sub(down07.get(), 4B, 4B));
+				  blob=blob.sub(down07.get(), 4B, 4B));
 		set resp.http.up07
 		    = blob.encode(BASE64, blob=blob.sub(up07.get(), 8B));
 		set resp.http.down07
@@ -239,7 +239,7 @@ varnish v1 -vcl+backend {
 		elsif (req.url == "/toolong") {
 			set resp.http.toolong
 			    = blob.encode(BASE64,
-			                  blob=blob.sub(up07.get(), 9B));
+					  blob=blob.sub(up07.get(), 9B));
 		}
 		elsif (req.url == "/badoffset") {
 			set resp.http.badoffset = blob.encode(BASE64,
