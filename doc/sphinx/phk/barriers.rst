@@ -22,7 +22,7 @@ barriers between the various components::
          |                          |                      |            |
          |runs                      |                      |            |
          |      .-<- create -<-.    |    .->- fork ->-.    v            |
-         v      |->- check -->-|-- MGR --|            |-- VCC <- loads -|
+         v      |->- check -->-|-- MGT --|            |-- VCC <- loads -|
         VSM     |-<- write --<-'    |    '-<- wait -<-'    |            |
        TOOLS    |                   |                      |            |
          ^      |     .-------------'                      |            |
@@ -48,7 +48,7 @@ barriers between the various components::
 The really Important Barrier
 ============================
 
-The central actor in Varnish is the Manager process, "MGR", which is the
+The central actor in Varnish is the Manager process, "MGT", which is the
 process the administrator "(ADMIN)" starts to get web-cache service.
 
 Having been there myself, I do not subscribe to the "I feel cool and important
