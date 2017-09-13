@@ -1602,7 +1602,7 @@ PARAM(
 	/* name */	vsm_space,
 	/* typ */	bytes,
 	/* min */	"1M",
-	/* max */	"4G",
+	/* max */	"1G",
 	/* default */	"1M",
 	/* units */	"bytes",
 	/* flags */	0,
