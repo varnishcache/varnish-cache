@@ -92,6 +92,9 @@ Other changes
     management and child processes show the text ``Not Running`` if
     either or both of the processes are down.
 
+  * The interpretation of multiple ``-f`` options in the command line
+    has changed slightly, see :ref:`varnishstat(1)`.
+
   * *XXX: anything else? stats added, removed or changed?*
 
 * ``varnishlog(1)``:
