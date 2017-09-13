@@ -13,7 +13,7 @@ pkgdatadir=${datadir}/@PACKAGE@
 vcldir=${pkgdatadir}/vcl
 vmoddir=${libdir}/@PACKAGE@/vmods
 vmodtool=${pkgdatadir}/vmodtool.py
-vcstool=${pkgdatadir}/vcstool.py
+vsctool=${pkgdatadir}/vsctool.py
 
 Name: VarnishAPI
 Description: Varnish API
