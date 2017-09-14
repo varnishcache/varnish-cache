@@ -13,9 +13,11 @@ counters, but these should all be transparent at the user-level.
 varnishd parameters
 ===================
 
-The :ref:`ref_param_cli_buffer` parameter is deprecated and
-ignored. Memory for the CLI command buffer is now dynamically
-allocated.
+The :ref:`ref_param_vsm_space` and :ref:`ref_param_cli_buffer`
+parameters are now deprecated and ignored. The updated logging
+implementation manages space automatically, so it no longer needs
+:ref:`ref_param_vsm_space`. Memory for the CLI command buffer is now
+dynamically allocated.
 
 We have updated the documentation for :ref:`ref_param_send_timeout`,
 :ref:`ref_param_idle_send_timeout`, :ref:`ref_param_timeout_idle` and
