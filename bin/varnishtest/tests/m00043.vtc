@@ -1,9 +1,8 @@
 varnishtest "VMOD blob blob object interface"
 
-server s1 {} -start
-
-varnish v1 -arg "-i serverid" -vcl+backend {
+varnish v1 -arg "-i serverid" -vcl {
 	import blob;
+	backend b { .host = "${bad_ip}"; }
 
 	sub vcl_init {
 	  new id = blob.blob(IDENTITY,
@@ -93,8 +92,9 @@ client c1 {
 # run twice to test retrieving cached encodings
 client c1 -run
 
-varnish v1 -vcl+backend {
+varnish v1 -vcl {
 	import blob;
+	backend b { .host = "${bad_ip}"; }
 
 	sub vcl_init {
 	  new idempty = blob.blob(IDENTITY, "");
@@ -165,8 +165,9 @@ client c1 {
 # run twice to test retrieving cached encodings
 client c1 -run
 
-varnish v1 -vcl+backend {
+varnish v1 -vcl {
 	import blob;
+	backend b { .host = "${bad_ip}"; }
 
 	sub vcl_init {
 	  new b64 = blob.blob(BASE64, "L0hlbGxvIHdvcmxkLw==");
@@ -254,8 +255,9 @@ client c2 {
 # run twice
 client c2 -run
 
-varnish v1 -vcl+backend {
+varnish v1 -vcl {
 	import blob;
+	backend b { .host = "${bad_ip}"; }
 
 	sub vcl_init {
 	  new id = blob.blob(IDENTITY,
@@ -331,6 +333,125 @@ client c3 -run
 # Discard to test object finalization
 varnish v1 -cliok "vcl.discard vcl1"
 varnish v1 -cliok "vcl.discard vcl2"
+
+# Require case=DEFAULT in the .encode() method where necessary
+
+server s1 -repeat 8 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import blob;
+
+	sub vcl_init {
+	  new b = blob.blob(IDENTITY, "");
+	}
+
+	sub vcl_deliver {
+	  if (req.url == "/idlc") {
+	    set resp.http.idlc = b.encode(IDENTITY, LOWER);
+	  }
+	  elsif (req.url == "/iduc") {
+	    set resp.http.iduc = b.encode(IDENTITY, UPPER);
+	  }
+	  if (req.url == "/b64lc") {
+	    set resp.http.b64lc = b.encode(BASE64, LOWER);
+	  }
+	  elsif (req.url == "/b64uc") {
+	    set resp.http.b64uc = b.encode(BASE64, UPPER);
+	  }
+	  elsif (req.url == "/b64urllc") {
+	    set resp.http.b64urllc = b.encode(BASE64URL, LOWER);
+	  }
+	  elsif (req.url == "/b64urluc") {
+	    set resp.http.b64urluc = b.encode(BASE64URL, UPPER);
+	  }
+	  elsif (req.url == "/b64urlnopadlc") {
+	    set resp.http.b64urlnopadlc = b.encode(BASE64URLNOPAD, LOWER);
+	  }
+	  elsif (req.url == "/b64urlnopaduc") {
+	    set resp.http.b64urlnopaduc = b.encode(BASE64URLNOPAD, UPPER);
+	  }
+	}
+}
+
+client c1 {
+	txreq -url "/idlc"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.idlc == <undef>
+} -run
+
+client c1 {
+	txreq -url "/iduc"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.iduc == <undef>
+} -run
+
+client c1 {
+	txreq -url "/b64lc"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.b64lc == <undef>
+} -run
+
+client c1 {
+	txreq -url "/b64uc"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.b64uc == <undef>
+} -run
+
+client c1 {
+	txreq -url "/b64urllc"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.b64urllc == <undef>
+} -run
+
+client c1 {
+	txreq -url "/b64urluc"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.b64urluc == <undef>
+} -run
+
+client c1 {
+	txreq -url "/b64urlnopadlc"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.b64urlnopadlc == <undef>
+} -run
+
+client c1 {
+	txreq -url "/b64urlnopaduc"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.b64urlnopaduc == <undef>
+} -run
+
+logexpect l1 -v v1 -d 1 -g vxid -q "VCL_Error" {
+	expect * * VCL_Error "^vmod blob error: case LOWER is illegal with encoding IDENTITY$"
+	expect * * VCL_Error "^vmod blob error: case UPPER is illegal with encoding IDENTITY$"
+	expect * * VCL_Error "^vmod blob error: case LOWER is illegal with encoding BASE64$"
+	expect * * VCL_Error "^vmod blob error: case UPPER is illegal with encoding BASE64$"
+	expect * * VCL_Error "^vmod blob error: case LOWER is illegal with encoding BASE64URL$"
+	expect * * VCL_Error "^vmod blob error: case UPPER is illegal with encoding BASE64URL$"
+	expect * * VCL_Error "^vmod blob error: case LOWER is illegal with encoding BASE64URLNOPAD$"
+	expect * * VCL_Error "^vmod blob error: case UPPER is illegal with encoding BASE64URLNOPAD$"
+} -start
+
+logexpect l1 -wait
 
 varnish v1 -errvcl {vmod blob error: cannot create blob err, illegal encoding beginning with "g"} {
 	import blob;

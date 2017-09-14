@@ -94,16 +94,19 @@ Empty strings are decoded into a "null blob" (of length 0),
 and conversely a null blob is encoded as the empty string.
 
 For encodings with ``HEX`` or ``URL``, you may also specify a ``case``
-ENUM with one of the values ``LOWER`` or ``UPPER`` to produce a string
-with lower- or uppercase hex digits (in ``[a-f]`` or ``[A-F]``),
-respectively. The default value for ``case`` is ``LOWER``.
+ENUM with one of the values ``LOWER``, ``UPPER`` or ``DEFAULT`` to
+produce a string with lower- or uppercase hex digits (in ``[a-f]`` or
+``[A-F]``). The default value for ``case`` is ``DEFAULT``, which for
+``HEX`` and ``URL`` means the same as ``LOWER``.
 
 The ``case`` ENUM is not relevant for decodings; ``HEX`` or ``URL``
 strings to be decoded as BLOBs may have hex digits in either case, or
-in mixed case. The ``case`` ENUM is also ignored for all other
-encodings.  You cannot, for example, produce an uppercase string by
-using the IDENTITY scheme with ``case=UPPER``. To change the case of a
-string, use the ``toupper`` or ``tolower`` functions from
+in mixed case.
+
+The ``case`` ENUM MUST be set to ``DEFAULT`` for the other encodings
+(BASE64* and IDENTITY).  You cannot, for example, produce an uppercase
+string by using the IDENTITY scheme with ``case=UPPER``. To change the
+case of a string, use the ``toupper`` or ``tolower`` functions from
 :ref:`vmod_std(3)`.
 
 IDENTITY
@@ -133,7 +136,7 @@ be written as::
   set resp.http.Trunced-Foo2
     = blob.encode(blob=blob.decode(HEX, encoded="666f6f00626172"));
 
-The ``case`` ENUM is ignored for ``IDENTITY`` encodings.
+The ``case`` ENUM MUST be set to ``DEFAULT`` for ``IDENTITY`` encodings.
 
 BASE64*
 -------
@@ -155,16 +158,17 @@ The ``BASE64URLNOPAD`` encoding uses the same alphabet as
 ``BASE6URL``, but leaves out the padding. Thus the length of an
 encoding with this scheme is not necessarily a mutltiple of four.
 
-The ``case`` ENUM is ignored for for all of the ``BASE64*`` encodings.
+The ``case`` ENUM MUST be set to ``DEFAULT`` for for all of the
+``BASE64*`` encodings.
 
 HEX
 ---
 
 The ``HEX`` encoding scheme converts hex strings into blobs and vice
 versa. For encodings, you may use the ``case`` ENUM to specify upper-
-or lowercase hex digits ``A`` through ``f`` (default ``LOWER``).  A
-prefix such as ``0x`` is not used for an encoding and is illegal for a
-decoding.
+or lowercase hex digits ``A`` through ``f`` (default ``DEFAULT``,
+which means the same as ``LOWER``).  A prefix such as ``0x`` is not
+used for an encoding and is illegal for a decoding.
 
 If a hex string to be decoded has an odd number of digits, it is
 decoded as if a ``0`` is prepended to it; that is, the first digit is
@@ -214,13 +218,15 @@ Example::
 
 $Function STRING encode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
 			      HEX, URL} encoding="IDENTITY",
-			ENUM {LOWER, UPPER} case="LOWER", BLOB blob)
+			ENUM {LOWER, UPPER, DEFAULT} case="DEFAULT", BLOB blob)
 
 Returns a string representation of the BLOB ``blob`` as specifed by
 ``encoding``. ``case`` determines the case of hex digits for the
 ``HEX`` and ``URL`` encodings, and is ignored for the other encodings.
 
-``encoding`` defaults to IDENTITY, and ``case`` defaults to LOWER.
+``encoding`` defaults to IDENTITY, and ``case`` defaults to DEFAULT.
+DEFAULT is interpreted as LOWER for the HEX and URL encodings, and is
+the required value for the other encodings.
 
 Example::
 
@@ -242,8 +248,8 @@ $Function STRING transcode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
 				 HEX, URL} decoding="IDENTITY",
 			   ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD,
 				 HEX, URL} encoding="IDENTITY",
-			   ENUM {LOWER, UPPER} case="LOWER", INT length=0,
-			   STRING_LIST encoded)
+			   ENUM {LOWER, UPPER, DEFAULT} case="DEFAULT",
+			   INT length=0, STRING_LIST encoded)
 
 Translates from one encoding to another, by first decoding the string
 ``encoded`` according to the scheme ``decoding``, and then returning
@@ -256,7 +262,8 @@ As with ``decode()``: If ``length`` > 0, only decode the first
 entire string. The default value of ``length`` is 0.
 
 ``decoding`` and ``encoding`` default to IDENTITY, and ``case``
-defaults to LOWER.
+defaults to DEFAULT. DEFAULT is interpreted as LOWER for the HEX and
+URL encodings, and is the required value for the other encodings.
 
 Example::
 
@@ -343,12 +350,12 @@ Example::
 
 $Method STRING .encode(ENUM {IDENTITY, BASE64, BASE64URL, BASE64URLNOPAD, HEX,
 			     URL} encoding="IDENTITY",
-		       ENUM {LOWER, UPPER} case="LOWER")
+		       ENUM {LOWER, UPPER, DEFAULT} case="DEFAULT")
 
 Returns an encoding of BLOB created by the constructor, according to
 the scheme ``encoding``. ``case`` determines the case of hex digits
-for the ``HEX`` and ``URL`` encodings, and is ignored for other
-encodings.
+for the ``HEX`` and ``URL`` encodings, and MUST be set to ``DEFAULT``
+for the other encodings.
 
 Example::
 
@@ -378,10 +385,11 @@ not known until runtime.
 ERRORS
 ======
 
-The encoders, decoders and ``sub()`` may fail if there is
-insufficient space to create the new blob or string. Decoders may also
-fail if the encoded string is an illegal format for the decoding
-scheme.
+The encoders, decoders and ``sub()`` may fail if there is insufficient
+space to create the new blob or string. Decoders may also fail if the
+encoded string is an illegal format for the decoding scheme. Encoders
+will fail for the ``IDENTITY`` and ``BASE64*`` encoding schemes if the
+``case`` ENUM is not set to ``DEFAULT``.
 
 If any of the VMOD's methods, functions or constructor fail, then VCL
 failure is invoked, just as if ``return(fail)`` had been called in the

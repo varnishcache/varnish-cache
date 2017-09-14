@@ -21,13 +21,9 @@ varnish v1 -vcl {
 	      blob.encode(BASE64, blob=blob.decode(IDENTITY, encoded=
 						      req.http.pangram));
 
-	    set resp.http.b64lc =
-	      blob.encode(BASE64, LOWER, blob.decode(IDENTITY, encoded=
-						      req.http.pangram));
-
-	    set resp.http.b64uc =
-	      blob.encode(BASE64, UPPER, blob.decode(IDENTITY, encoded=
-						      req.http.pangram));
+	    set resp.http.b64pos =
+	      blob.encode(BASE64, DEFAULT, blob.decode(IDENTITY, encoded=
+						       req.http.pangram));
 
 	    set resp.http.b64hobbes =
 	      blob.encode(BASE64, blob=blob.decode(IDENTITY, encoded=
@@ -41,12 +37,8 @@ varnish v1 -vcl {
 	      blob.encode(BASE64URL,
 			  blob=blob.decode(IDENTITY, encoded=req.http.pangram));
 
-	    set resp.http.b64urllc =
-	      blob.encode(BASE64URL, LOWER,
-			  blob.decode(IDENTITY, encoded=req.http.pangram));
-
-	    set resp.http.b64urluc =
-	      blob.encode(BASE64URL, UPPER,
+	    set resp.http.b64urlpos =
+	      blob.encode(BASE64URL, DEFAULT,
 			  blob.decode(IDENTITY, encoded=req.http.pangram));
 
 	    set resp.http.b64urlhobbes =
@@ -61,12 +53,8 @@ varnish v1 -vcl {
 	      blob.encode(BASE64URLNOPAD,
 			  blob=blob.decode(IDENTITY, encoded=req.http.pangram));
 
-	    set resp.http.b64urlnopadlc =
-	      blob.encode(BASE64URLNOPAD, LOWER,
-			  blob.decode(IDENTITY, encoded=req.http.pangram));
-
-	    set resp.http.b64urlnopaduc =
-	      blob.encode(BASE64URLNOPAD, UPPER,
+	    set resp.http.b64urlnopadpos =
+	      blob.encode(BASE64URLNOPAD, DEFAULT,
 			  blob.decode(IDENTITY, encoded=req.http.pangram));
 
 	    set resp.http.b64nopadhobbes =
@@ -87,15 +75,15 @@ varnish v1 -vcl {
 
 	    set resp.http.b64param =
 	      blob.encode(blob=blob.decode(IDENTITY, encoded=req.http.pangram),
-			  encoding=BASE64, case=LOWER);
+			  encoding=BASE64, case=DEFAULT);
 
 	    set resp.http.b64urlparam =
 	      blob.encode(blob=blob.decode(IDENTITY, encoded=req.http.pangram),
-			  encoding=BASE64URL, case=UPPER);
+			  encoding=BASE64URL, case=DEFAULT);
 
 	    set resp.http.b64urlnopadparam =
 	      blob.encode(blob=blob.decode(IDENTITY, encoded=req.http.pangram),
-			  encoding=BASE64URLNOPAD, case=LOWER);
+			  encoding=BASE64URLNOPAD, case=DEFAULT);
 
 	    set resp.http.b64xcode =
 		blob.transcode(IDENTITY, BASE64,
@@ -115,18 +103,15 @@ client c1 {
 	txreq -url "/"
 	rxresp
 	expect resp.http.b64 == "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw=="
-	expect resp.http.b64lc == resp.http.b64
-	expect resp.http.b64uc == resp.http.b64
+	expect resp.http.b64pos == resp.http.b64
 	expect resp.http.b64hobbes == "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 	expect resp.http.b64all == "//79/Pv6+fj39vX08/Lx8O/u7ezr6uno5+bl5OPi4eDf3t3c29rZ2NfW1dTT0tHQz87NzMvKycjHxsXEw8LBwL++vby7urm4t7a1tLOysbCvrq2sq6qpqKempaSjoqGgn56dnJuamZiXlpWUk5KRkI+OjYyLiomIh4aFhIOCgYB/fn18e3p5eHd2dXRzcnFwb25tbGtqaWhnZmVkY2JhYF9eXVxbWllYV1ZVVFNSUVBPTk1MS0pJSEdGRURDQkFAPz49PDs6OTg3NjU0MzIxMC8uLSwrKikoJyYlJCMiISAfHh0cGxoZGBcWFRQTEhEQDw4NDAsKCQgHBgUEAwIBAA=="
 	expect resp.http.b64url == "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw=="
-	expect resp.http.b64urllc == resp.http.b64url
-	expect resp.http.b64urluc == resp.http.b64url
+	expect resp.http.b64urlpos == resp.http.b64url
 	expect resp.http.b64urlhobbes == "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4="
 	expect resp.http.b64urlall == "__79_Pv6-fj39vX08_Lx8O_u7ezr6uno5-bl5OPi4eDf3t3c29rZ2NfW1dTT0tHQz87NzMvKycjHxsXEw8LBwL--vby7urm4t7a1tLOysbCvrq2sq6qpqKempaSjoqGgn56dnJuamZiXlpWUk5KRkI-OjYyLiomIh4aFhIOCgYB_fn18e3p5eHd2dXRzcnFwb25tbGtqaWhnZmVkY2JhYF9eXVxbWllYV1ZVVFNSUVBPTk1MS0pJSEdGRURDQkFAPz49PDs6OTg3NjU0MzIxMC8uLSwrKikoJyYlJCMiISAfHh0cGxoZGBcWFRQTEhEQDw4NDAsKCQgHBgUEAwIBAA=="
 	expect resp.http.b64urlnopad == "VGhlIHF1aWNrIGJyb3duIGZveCBqdW1wcyBvdmVyIHRoZSBsYXp5IGRvZw"
-	expect resp.http.b64urlnopadlc == resp.http.b64urlnopad
-	expect resp.http.b64urlnopaduc == resp.http.b64urlnopad
+	expect resp.http.b64urlnopadpos == resp.http.b64urlnopad
 	expect resp.http.b64nopadhobbes == "TWFuIGlzIGRpc3Rpbmd1aXNoZWQsIG5vdCBvbmx5IGJ5IGhpcyByZWFzb24sIGJ1dCBieSB0aGlzIHNpbmd1bGFyIHBhc3Npb24gZnJvbSBvdGhlciBhbmltYWxzLCB3aGljaCBpcyBhIGx1c3Qgb2YgdGhlIG1pbmQsIHRoYXQgYnkgYSBwZXJzZXZlcmFuY2Ugb2YgZGVsaWdodCBpbiB0aGUgY29udGludWVkIGFuZCBpbmRlZmF0aWdhYmxlIGdlbmVyYXRpb24gb2Yga25vd2xlZGdlLCBleGNlZWRzIHRoZSBzaG9ydCB2ZWhlbWVuY2Ugb2YgYW55IGNhcm5hbCBwbGVhc3VyZS4"
 	expect resp.http.b64nopadall == "__79_Pv6-fj39vX08_Lx8O_u7ezr6uno5-bl5OPi4eDf3t3c29rZ2NfW1dTT0tHQz87NzMvKycjHxsXEw8LBwL--vby7urm4t7a1tLOysbCvrq2sq6qpqKempaSjoqGgn56dnJuamZiXlpWUk5KRkI-OjYyLiomIh4aFhIOCgYB_fn18e3p5eHd2dXRzcnFwb25tbGtqaWhnZmVkY2JhYF9eXVxbWllYV1ZVVFNSUVBPTk1MS0pJSEdGRURDQkFAPz49PDs6OTg3NjU0MzIxMC8uLSwrKikoJyYlJCMiISAfHh0cGxoZGBcWFRQTEhEQDw4NDAsKCQgHBgUEAwIBAA"
 	expect resp.http.b64empty == ""
@@ -339,3 +324,102 @@ logexpect l1 -v v1 -d 1 -g vxid -q "VCL_Error" {
 	expect * * VCL_Error {^vmod blob error: cannot decode, illegal encoding beginning with "././"$}
 	expect * * VCL_Error {^vmod blob error: cannot decode, illegal encoding beginning with "TWFu"$}
 } -run
+
+# Require case=DEFAULT
+
+server s1 -repeat 6 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import blob;
+
+	sub vcl_deliver {
+	  if (req.url == "/b64lc") {
+	    set resp.http.b64lc =
+	      blob.encode(BASE64, LOWER, blob.decode(IDENTITY, encoded=""));
+	  }
+	  elsif (req.url == "/b64uc") {
+	    set resp.http.b64uc =
+	      blob.encode(BASE64, UPPER, blob.decode(IDENTITY, encoded=""));
+	  }
+	  elsif (req.url == "/b64urllc") {
+	    set resp.http.b64urllc =
+	      blob.encode(BASE64URL, LOWER, blob.decode(IDENTITY, encoded=""));
+	  }
+	  elsif (req.url == "/b64urluc") {
+	    set resp.http.b64urluc =
+	      blob.encode(BASE64URL, UPPER, blob.decode(IDENTITY, encoded=""));
+	  }
+	  elsif (req.url == "/b64urlnopadlc") {
+	    set resp.http.b64urlnopadlc =
+	      blob.encode(BASE64URLNOPAD, LOWER, blob.decode(IDENTITY,
+							     encoded=""));
+	  }
+	  elsif (req.url == "/b64urlnopaduc") {
+	    set resp.http.b64urlnopaduc =
+	      blob.encode(BASE64URLNOPAD, UPPER, blob.decode(IDENTITY,
+							     encoded=""));
+	  }
+	}
+}
+
+client c1 {
+	txreq -url "/b64lc"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.b64lc == <undef>
+} -run
+
+client c1 {
+	txreq -url "/b64uc"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.b64uc == <undef>
+} -run
+
+client c1 {
+	txreq -url "/b64urllc"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.b64urllc == <undef>
+} -run
+
+client c1 {
+	txreq -url "/b64urluc"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.b64urluc == <undef>
+} -run
+
+client c1 {
+	txreq -url "/b64urlnopadlc"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.b64urlnopadlc == <undef>
+} -run
+
+client c1 {
+	txreq -url "/b64urlnopaduc"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.b64urlnopaduc == <undef>
+} -run
+
+logexpect l1 -v v1 -d 1 -g vxid -q "VCL_Error" {
+	expect * * VCL_Error "^vmod blob error: case LOWER is illegal with encoding BASE64"
+	expect * * VCL_Error "^vmod blob error: case UPPER is illegal with encoding BASE64"
+	expect * * VCL_Error "^vmod blob error: case LOWER is illegal with encoding BASE64URL"
+	expect * * VCL_Error "^vmod blob error: case UPPER is illegal with encoding BASE64URL"
+	expect * * VCL_Error "^vmod blob error: case LOWER is illegal with encoding BASE64URLNOPAD"
+	expect * * VCL_Error "^vmod blob error: case UPPER is illegal with encoding BASE64URLNOPAD"
+} -start
+
+logexpect l1 -wait
