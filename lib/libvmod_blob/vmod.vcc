@@ -7,7 +7,6 @@
 #
 
 $Module blob 3 utilities for the VCL blob type
-$ABI strict
 
 ::
 
@@ -27,6 +26,8 @@ $ABI strict
   new OBJ = blob.blob([ENUM decoding,] STRING_LIST encoded)
   BLOB <obj>.get()
   STRING <obj>.encode([ENUM encoding,] [ENUM case])
+
+$ABI strict
 
 DESCRIPTION
 ===========
