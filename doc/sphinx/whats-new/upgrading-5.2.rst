@@ -144,9 +144,9 @@ Other changes
 
 * ``varnishd(1)``:
 
-  .. XXX phk, a word on -l changes and the implications on how the
-         working directory may grow in size? This may be a problem
-         when /var/lib/varnish is mounted in RAM.
+  * The total size of the shared memory space for logs and counters
+    no longer needs to be configured explicitly and therefore the
+    second subargument to ``-l`` is now ignored.
 
   * The default value of ``server.identity`` when the ``-i`` option is
     not set has been changed as noted above.
