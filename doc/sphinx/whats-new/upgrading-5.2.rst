@@ -116,6 +116,14 @@ but was still in grace time. Varnish returns the stale cached response
 to the client, and initiates the background fetch to refresh the cache
 object.
 
+``req.backend_hint``
+--------------------
+
+We have clarified what happens to ``req.backend_hint`` on a client
+restart -- it gets reset to the default backend. So you might want to
+make sure that the backend hint gets set the way you want in that
+situation.
+
 XXX: vcl_sub_XXX ...
 ~~~~~~~~~~~~~~~~~~~~
 
