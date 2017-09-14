@@ -38,15 +38,17 @@
 /* Safe printf into a fixed-size buffer */
 #define bprintf(buf, fmt, ...)						\
 	do {								\
-		assert(snprintf(buf, sizeof buf, fmt, __VA_ARGS__)	\
-		    < sizeof buf);					\
+		int ibprintf;						\
+		ibprintf = snprintf(buf, sizeof buf, fmt, __VA_ARGS__);	\
+		assert(ibprintf >= 0 && ibprintf < sizeof buf);		\
 	} while (0)
 
 /* Safe printf into a fixed-size buffer */
 #define vbprintf(buf, fmt, ap)						\
 	do {								\
-		assert(vsnprintf(buf, sizeof buf, fmt, ap)		\
-		    < sizeof buf);					\
+		int ivbprintf;						\
+		ivbprintf = vsnprintf(buf, sizeof buf, fmt, ap);	\
+		assert(ivbprintf >= 0 && ivbprintf < sizeof buf);	\
 	} while (0)
 
 /* Close and discard filedescriptor */
