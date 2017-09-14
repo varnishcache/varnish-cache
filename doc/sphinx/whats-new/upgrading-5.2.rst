@@ -94,7 +94,7 @@ You can use :ref:`vmod_blob(3)` to work with the hashes::
 
 If the ``-i`` option is not set in the invocation of ``varnishd``,
 then ``server.identity`` is set to the host name (as returned by
-``gethostname(3)``). Previously, ``server.identity`` was set to the
+``gethostname(3)``). Previously, ``server.identity`` defaulted to the
 value of the ``-n`` option (or the default instance name if ``-n`` was
 not set). See :ref:`varnishd(1)`.
 
@@ -125,7 +125,7 @@ New VMODs in the standard distribution
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 See :ref:`vmod_blob(3)`, :ref:`vmod_purge(3)` and
-:ref:`vmod_vtc(3)`. See :ref:`whatsnew_new_vmods`.
+:ref:`vmod_vtc(3)`. Read about them in :ref:`whatsnew_new_vmods`.
 
 Bans
 ~~~~
@@ -172,7 +172,7 @@ Other changes
 
   * In curses mode, the top two lines showing uptimes for the
     management and child processes show the text ``Not Running`` if
-    either or both of the processes are down.
+    one or both of the processes are down.
 
   * The interpretation of multiple ``-f`` options in the command line
     has changed slightly, see :ref:`varnishstat(1)`.
@@ -193,7 +193,7 @@ Other changes
   * The ``Hit``, ``HitMiss`` and ``HitPass`` log records grew an
     additional field with the remaining TTL of the object at the time
     of the lookup.  While this should greatly help troubleshooting,
-    this might break tools relying on those records to get the VXID of
+    it might break tools relying on those records to get the VXID of
     the object hit during lookup.
 
     Instead of using ``Hit``, such tools should now use ``Hit[1]``,
