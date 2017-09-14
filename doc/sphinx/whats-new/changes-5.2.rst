@@ -63,15 +63,8 @@ conveniences were added like workspace manipulations.
 
 See :ref:`vmod_vtc(3)`.
 
-XXX: Any other headline changes ...
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-*XXX: ...*
-
 News for authors of VMODs and Varnish API client applications
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-*XXX: such news may include:*
 
 .. _whatsnew_abi:
 
