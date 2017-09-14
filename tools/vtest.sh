@@ -283,5 +283,9 @@ do
 	fi
 	echo "VTEST END" >> ${VTEST_REPORT}
 	pack > ${TMPDIR}/_report.tgz
-	submit ${TMPDIR}/_report.tgz
+
+	submit ${TMPDIR}/_report.tgz || \
+		sleep 300 || \
+		submit ${TMPDIR}/_report.tgz || \
+		true
 done
