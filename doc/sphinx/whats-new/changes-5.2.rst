@@ -47,7 +47,7 @@ VMOD vtc
 --------
 
 As long as we have had VMODs, we had an internal vmod called ``vmod_debug`` 
-which were used with ``varnishtest`` to exercise the VMOD related parts of
+which was used with ``varnishtest`` to exercise the VMOD related parts of
 ``varnishd``.  Over time this vmod grew other useful functions for writing
 test-cases.
 
@@ -167,8 +167,6 @@ processor and helps you focus on your functionality. If you use
 autotools for building, a new macro in ``varnish.m4`` removes some of
 the boilerplate to generate part of the documentation.
 
-We hope that much like VMODs we will see new tools that take advantage
-of this API to extend Varnish in new ways much like VMODs made it easy
-to add new functionality to VCL.
-
-*EOF*
+We hope that we will see new tools that take advantage of this API to
+extend Varnish in new ways, much like VMODs made it easy to add new
+functionality to VCL.
