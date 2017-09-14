@@ -235,9 +235,9 @@ Other changes
   * Field specifiers (such as the 1 in ``Hit[1]``) are now limited to
     to 255, see :ref:`varnishncsa(1)`.
 
-* The ``-N`` command-line option, which was previously availabe for
+* The ``-N`` command-line option, which was previously available for
   ``varnishlog(1)``, ``varnishstat(1)``, ``varnishncsa(1)`` and
-  ``varnishhist(1)``, is not comaptible with the changed internal
+  ``varnishhist(1)``, is not compatible with the changed internal
   logging API, and has been retired.
 
 * *XXX: any other changes in the standard VUT tools*
