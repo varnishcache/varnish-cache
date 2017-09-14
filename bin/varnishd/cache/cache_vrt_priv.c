@@ -150,7 +150,7 @@ VRTPRIV_dynamic_kill(struct vrt_privs *privs, uintptr_t id)
 }
 
 struct vmod_priv *
-VRT_priv_task(VRT_CTX, void *vmod_id)
+VRT_priv_task(VRT_CTX, const void *vmod_id)
 {
 	uintptr_t id;
 
@@ -169,7 +169,7 @@ VRT_priv_task(VRT_CTX, void *vmod_id)
 }
 
 struct vmod_priv *
-VRT_priv_top(VRT_CTX, void *vmod_id)
+VRT_priv_top(VRT_CTX, const void *vmod_id)
 {
 	uintptr_t id;
 
