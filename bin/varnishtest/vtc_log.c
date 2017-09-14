@@ -292,7 +292,7 @@ void
 vtc_loginit(char *buf, unsigned buflen)
 {
 
-	VAS_Fail = vtc_log_VAS_Fail;
+	VAS_Fail_Func = vtc_log_VAS_Fail;
 	t0 = VTIM_mono();
 	vtclog_buf = buf;
 	vtclog_left = buflen;
