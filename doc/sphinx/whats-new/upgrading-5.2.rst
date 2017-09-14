@@ -37,11 +37,6 @@ Changes to VCL
 *XXX: ... or reassure that you probably don't have to do anything*
 *to migrate from 5.1 to 5.2*
 
-XXX: headline changes ...
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-*XXX: the most important changes or additions first*
-
 Consistent symbol names
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -126,16 +121,6 @@ restart -- it gets reset to the default backend. So you might want to
 make sure that the backend hint gets set the way you want in that
 situation.
 
-XXX: vcl_sub_XXX ...
-~~~~~~~~~~~~~~~~~~~~
-
-*XXX: list changes by VCL sub*
-
-XXX: more VCL changes ...
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-*XXX: any more details and new features that VCL authors have to know*
-
 vmod_std
 ~~~~~~~~
 
@@ -208,8 +193,6 @@ Other changes
     the internal queue is full. See :ref:`varnish-counters(7)` and
     :ref:`ref_param_thread_queue_limit`.
 
-  * *XXX: anything else? stats added, removed or changed?*
-
 * ``varnishlog(1)``:
 
   * The ``Hit``, ``HitMiss`` and ``HitPass`` log records grew an
@@ -248,8 +231,6 @@ Other changes
   * Added the feature switch ``ignore_unknown_macro`` for test cases,
     see :ref:`vtc(7)`.
 
-  * *XXX: ...*
-
 * ``varnishncsa(1)``
 
   * Field specifiers (such as the 1 in ``Hit[1]``) are now limited to
@@ -259,10 +240,6 @@ Other changes
   ``varnishlog(1)``, ``varnishstat(1)``, ``varnishncsa(1)`` and
   ``varnishhist(1)``, is not compatible with the changed internal
   logging API, and has been retired.
-
-* *XXX: any other changes in the standard VUT tools*
-
-  * *XXX: ...*
 
 * Changes for developers:
 
@@ -284,12 +261,3 @@ Other changes
     up its copies of VMOD shared objects when it stops. This makes
     it possible for VMOD authors to load their code into a debugger
     after a varnishd crash. See :ref:`ref_param_debug`.
-
-  * *XXX: ...*
-
-* *XXX: other changes in tools and infrastructure in and around
-  Varnish ...*
-
-  * *XXX: anything new about project tools, VTEST & GCOV, etc?*
-
-  * *XXX: ...*
