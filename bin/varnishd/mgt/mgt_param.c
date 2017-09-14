@@ -624,6 +624,7 @@ MCF_DumpRstParam(void)
 			t1 = strchr(p, '\t');
 			if (t1 != NULL && t1 < q) {
 				t2 = strchr(t1 + 1, '\t');
+				AN(t2);
 				printf("\n\t*");
 				(void)fwrite(t1 + 1, (t2 - 1) - t1, 1, stdout);
 				printf("*\n\t\t");
