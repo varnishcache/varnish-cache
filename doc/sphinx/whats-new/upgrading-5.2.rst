@@ -29,13 +29,8 @@ the notes about changes for developers below.
 Changes to VCL
 ==============
 
-*XXX: intro paragraph*
-
-*XXX: emphasize what most likely needs to be done, if anything,*
-*to migrate from 5.1 to 5.2*
-
-*XXX: ... or reassure that you probably don't have to do anything*
-*to migrate from 5.1 to 5.2*
+We have added a few new variables and clarified some matters. VCL
+written for Varnish 5.1 should run without changes on 5.2.
 
 Consistent symbol names
 ~~~~~~~~~~~~~~~~~~~~~~~
