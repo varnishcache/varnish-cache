@@ -54,13 +54,9 @@ varnish v1 -vcl {
 	      blob.encode(IDENTITY,
 			  blob=blob.decode(HEX, encoded="666f6f00626172"));
 
-	    set resp.http.lc =
-	      blob.encode(IDENTITY, LOWER, blob.decode(IDENTITY,
-						       encoded="Don't care"));
-
-	    set resp.http.uc =
-	      blob.encode(IDENTITY, UPPER, blob.decode(IDENTITY,
-						       encoded="Don't care"));
+	    set resp.http.pos =
+	      blob.encode(IDENTITY, DEFAULT, blob.decode(IDENTITY,
+						         encoded="foobar"));
 	}
 } -start
 
@@ -76,6 +72,52 @@ client c1 {
 	expect resp.http.param == "The quick brown fox jumps over the lazy dog"
 	expect resp.http.paramlist == "/The quick brown fox jumps over the lazy dog/"
 	expect resp.http.truncated == "foo"
-	expect resp.http.lc == "Don't care"
-	expect resp.http.uc == "Don't care"
+	expect resp.http.pos == "foobar"
 } -run
+
+# Require case=DEFAULT
+
+server s1 -repeat 2 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import blob;
+
+	sub vcl_deliver {
+	  if (req.url == "/lc") {
+	    set resp.http.lc =
+	      blob.encode(IDENTITY, LOWER, blob.decode(IDENTITY,
+						       encoded="foobar"));
+	  }
+	  elsif (req.url == "/uc") {
+	    set resp.http.uc =
+	      blob.encode(IDENTITY, UPPER, blob.decode(IDENTITY,
+						       encoded="foobar"));
+	  }
+	}
+}
+
+client c1 {
+	txreq -url "/lc"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.lc == <undef>
+} -run
+
+client c1 {
+	txreq -url "/uc"
+	rxresp
+	expect resp.status == 503
+	expect resp.reason == "VCL failed"
+	expect resp.http.uc == <undef>
+} -run
+
+logexpect l1 -v v1 -d 1 -g vxid -q "VCL_Error" {
+	expect * * VCL_Error "^vmod blob error: case LOWER is illegal with encoding IDENTITY$"
+	expect * * VCL_Error "^vmod blob error: case UPPER is illegal with encoding IDENTITY$"
+} -start
+
+logexpect l1 -wait
