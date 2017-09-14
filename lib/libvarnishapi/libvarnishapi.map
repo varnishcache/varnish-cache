@@ -30,6 +30,7 @@ LIBVARNISHAPI_2.0 {
     global:
 	# vas.c
 		VAS_Fail;
+		VAS_Fail_Func;
 
 	# vcli.c
 		VCLI_AuthResponse;

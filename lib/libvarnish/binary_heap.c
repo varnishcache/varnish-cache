@@ -470,7 +470,7 @@ vasfail(const char *func, const char *file, int line,
 	abort();
 }
 
-vas_f *VAS_Fail = vasfail;
+vas_f *VAS_Fail_Func = vasfail;
 
 struct foo {
 	unsigned	magic;
