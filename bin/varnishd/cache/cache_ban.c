@@ -566,6 +566,8 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
 	if (b0 == bn)
 		return (0);
 
+	AN(b0);
+	AN(bn);
 
 	/*
 	 * This loop is safe without locks, because we know we hold
