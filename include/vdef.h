@@ -40,7 +40,7 @@
 	do {								\
 		int ibprintf;						\
 		ibprintf = snprintf(buf, sizeof buf, fmt, __VA_ARGS__);	\
-		assert(ibprintf >= 0 && ibprintf < sizeof buf);		\
+		assert(ibprintf >= 0 && ibprintf < (int)sizeof buf);	\
 	} while (0)
 
 /* Safe printf into a fixed-size buffer */
@@ -48,7 +48,7 @@
 	do {								\
 		int ivbprintf;						\
 		ivbprintf = vsnprintf(buf, sizeof buf, fmt, ap);	\
-		assert(ivbprintf >= 0 && ivbprintf < sizeof buf);	\
+		assert(ivbprintf >= 0 && ivbprintf < (int)sizeof buf);	\
 	} while (0)
 
 /* Close and discard filedescriptor */
