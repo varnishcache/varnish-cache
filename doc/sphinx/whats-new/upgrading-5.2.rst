@@ -201,6 +201,11 @@ Other changes
   * The ``MAIN.s_req`` statistic has been removed, as it was identical
     to ``MAIN.client_req``.
 
+  * Added the counter ``req_dropped``. Similar to ``sess_dropped``,
+    this is the number of times an HTTP/2 stream was refused because
+    the internal queue is full. See :ref:`varnish-counters(7)` and
+    :ref:`ref_param_thread_queue_limit`.
+
   * *XXX: anything else? stats added, removed or changed?*
 
 * ``varnishlog(1)``:
