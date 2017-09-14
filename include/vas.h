@@ -46,8 +46,7 @@ enum vas_e {
 	VAS_VCL,
 };
 
-typedef void vas_f(const char *, const char *, int, const char *, enum vas_e)
-    __attribute__((__noreturn__));
+typedef void vas_f(const char *, const char *, int, const char *, enum vas_e);
 
 extern vas_f *VAS_Fail_Func __attribute__((__noreturn__));
 extern vas_f VAS_Fail __attribute__((__noreturn__));
