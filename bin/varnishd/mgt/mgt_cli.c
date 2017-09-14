@@ -622,7 +622,8 @@ Marg_connect(const struct vev *e, int what)
 
 	M_fd = VTCP_connected(M_fd);
 	if (M_fd < 0) {
-		MGT_Complain(C_INFO, "Could not connect to CLI-master: %m");
+		MGT_Complain(C_INFO, "Could not connect to CLI-master: %s",
+			strerror(errno));
 		ma = VTAILQ_FIRST(&m_addr_list);
 		AN(ma);
 		VTAILQ_REMOVE(&m_addr_list, ma, list);
