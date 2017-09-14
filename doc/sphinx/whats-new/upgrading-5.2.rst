@@ -229,6 +229,11 @@ Other changes
 
     See :ref:`vsl(7)`.
 
+  * The output format of ``VCL_trace`` log records, which appear if
+    you have switched on the ``VCL_trace`` flag in the VSL mask, has
+    changed to include the VCL configuration name. See :ref:`vsl(7)`
+    and :ref:`ref_param_vsl_mask`.
+
 * ``varnishtest(1)`` and ``vtc(7)``:
 
   * *XXX: changes in test scripting or test code, for example due to VMOD vtc?*
