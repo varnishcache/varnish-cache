@@ -484,6 +484,7 @@ class s_abi(stanza):
 			err("Valid ABI types are 'strict' or 'vrt', got '%s'\n" %
 			    self.line[1])
 		strict_abi = self.line[1] == 'strict'
+		self.vcc.contents.append(self)
 
 class s_event(stanza):
 	def parse(self):

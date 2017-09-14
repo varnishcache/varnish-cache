@@ -7,6 +7,7 @@
 #
 
 $Module blob 3 utilities for the VCL blob type
+$ABI strict
 
 ::
 
@@ -424,5 +425,3 @@ SEE ALSO
 * :ref:`varnishd(1)`
 * :ref:`vcl(7)`
 * :ref:`vmod_std(3)`
-
-$ABI strict
