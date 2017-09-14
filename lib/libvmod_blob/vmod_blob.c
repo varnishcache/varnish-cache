@@ -159,6 +159,9 @@ static inline enum case_e
 parse_case(VCL_ENUM case_s)
 {
 	switch(*case_s) {
+	case 'D':
+		AZ(strcmp(case_s + 1, "EFAULT"));
+		return DEFAULT;
 	case 'L':
 		AZ(strcmp(case_s + 1, "OWER"));
 		return LOWER;
@@ -168,6 +171,25 @@ parse_case(VCL_ENUM case_s)
 	default:
 		WRONG("illegal case enum");
 	}
+}
+
+static inline int
+encodes_hex(enum encoding enc)
+{
+	return (enc == HEX || enc == URL);
+}
+
+/* Require case DEFAULT for all encodings besides HEX and URL. */
+
+static inline int
+check_enc_case(VRT_CTX, VCL_ENUM encs, VCL_ENUM case_s, enum encoding enc,
+	       enum case_e kase)
+{
+	if (!encodes_hex(enc) && kase != DEFAULT) {
+		VERR(ctx, "case %s is illegal with encoding %s", case_s, encs);
+		return 0;
+	}
+	return 1;
 }
 
 /* Objects */
@@ -250,8 +272,12 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(b, VMOD_BLOB_MAGIC);
 
+	if (!check_enc_case(ctx, encs, case_s, enc, kase))
+		return NULL;
 	if (b->blob.len == 0)
 		return "";
+	if (kase == DEFAULT)
+		kase = LOWER;
 
 	if (b->encoding[enc][kase] == NULL) {
 		AZ(pthread_mutex_lock(&b->lock));
@@ -396,7 +422,6 @@ encode(VRT_CTX, enum encoding enc, enum case_e kase, VCL_BLOB b)
 	struct wb_s wb;
 	ssize_t len;
 
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AENC(enc);
 
 	if (b == NULL)
@@ -429,13 +454,11 @@ vmod_encode(VRT_CTX, VCL_ENUM encs, VCL_ENUM case_s, VCL_BLOB b)
 {
 	enum encoding enc = parse_encoding(encs);
 	enum case_e kase = parse_case(case_s);
-	return encode(ctx, enc, kase, b);
-}
 
-static inline int
-encodes_hex(enum encoding enc)
-{
-	return (enc == HEX || enc == URL);
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (!check_enc_case(ctx, encs, case_s, enc, kase))
+		return NULL;
+	return encode(ctx, enc, kase, b);
 }
 
 VCL_STRING __match_proto__(td_blob_transcode)
@@ -454,6 +477,9 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 
 	AENC(dec);
 	AENC(enc);
+
+	if (!check_enc_case(ctx, encs, case_s, enc, kase))
+		return NULL;
 
 	/*
 	 * Allocate space for the decoded blob on the stack

@@ -34,9 +34,14 @@
 
 #define AENC(enc) assert((enc) > _INVALID && (enc) < __MAX_ENCODING)
 
+/*
+ * The enums MUST appear in this order, since LOWER and UPPER are used to
+ * index the array of cached encodings for the blob object.
+ */
 enum case_e {
 	LOWER,
 	UPPER,
+	DEFAULT,
 };
 
 /*
