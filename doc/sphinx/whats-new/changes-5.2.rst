@@ -54,12 +54,14 @@ test-cases.
 We only distribute ``vmod_debug`` in source releases, because it has some
 pretty evil functionality, for instance ``debug.panic()``.
 
-We have split the non-suicidal test-writing stuff from ``vmod_debug``
-into a new ``vmod_vtc``, which is included in binary releases from
-now on, in order to make it easier for people to use ``varnishtest``
-to test local configurations, VMODs etc. The main highlight is that you
-can now synchronize barriers with VCL code thanks to ``vmod_vtc``, other
-conveniences were added like workspace manipulations.
+We have taken the non-suicidal test-writing goodies out of
+``vmod_debug`` and put them into a new ``vmod_vtc``, to make them
+available to people using ``varnishtest`` to test local configurations,
+VMODs etc.
+
+The hottest trick in ``vmod_vtc`` is that VTC-barriers can be
+accessed from the VCL code, but there are other conveniences like
+workspace manipulations etc.
 
 See :ref:`vmod_vtc(3)`.
 
@@ -84,8 +86,7 @@ one or the other depended on how Varnish was built.
 VMOD authors can now specify whether a module complies to the VRT
 and only needs to be rebuilt when breaking changes are introduced
 by adding ``$ABI vrt`` to their VCC descriptor. The default value
-is ``$ABI strict`` when omitted, and all VMODs from the standard
-Varnish distribution have a strict requirement.
+is ``$ABI strict`` when omitted.
 
 .. _whatsnew_vsm_vsc_5.2:
 
@@ -102,8 +103,8 @@ file which is processed by the ``vsctool.py`` script into a .c and
 
 This means that statistics counters are now self-describing in
 shared memory, and ``varnishstat`` or other VSC-API using programs
-have no compiled in knowledge about which counters exist or how
-to treat them.
+no longer have a compiled in list of which counters exist or how
+to handle them.
 
 This paves the way for VMODs or maybe even VCL to define
 custom counters, and have them show up in varnishstat and
@@ -120,7 +121,7 @@ In the new VSM-api once setup is done, VSM_Attach() latches
 on to a running varnishd master process and stays there.
 
 VSM_Status() updates the in-memory list of VSM segments, and
-returns information about the master and worker proces:
+returns status information about the master and worker proces:
 Are they running?  Have they been restarted?  Have VSM segments
 been added/deleted?
 
@@ -142,10 +143,6 @@ VRT API changes
 ``VRT_purge`` now fails a transaction instead of panicking when used
 outside of ``vcl_hit`` or ``vcl_miss``. It also returns the number
 of purged objects.
-
-New ``http_CollectHdrSep`` function, ``http_*`` symbols and associated
-data structures are part of the curated Varnish RunTime. Using them
-does not require strict ABI compliance.
 
 .. _whatsnew_vut_5.2:
 
@@ -170,3 +167,5 @@ the boilerplate to generate part of the documentation.
 We hope that we will see new tools that take advantage of this API to
 extend Varnish in new ways, much like VMODs made it easy to add new
 functionality to VCL.
+
+*eof*
