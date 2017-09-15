@@ -117,23 +117,23 @@ will have to be updated to match.
 The necessary changes mostly center around detecting if the
 varnishd management/worker process has restarted.
 
-In the new VSM-api once setup is done, VSM_Attach() latches
+In the new VSM-API once setup is done, VSM_Attach() latches
 on to a running varnishd master process and stays there.
 
 VSM_Status() updates the in-memory list of VSM segments, and
-returns status information about the master and worker proces:
+returns status information about the master and worker processes:
 Are they running?  Have they been restarted?  Have VSM segments
 been added/deleted?
 
 Each VSM segment is now a separate piece of shared memory
-and the name of the segment can be much longer now.
+and the name of the segment can be much longer.
 
 Before the actual shared memory can be accessed, the
 application must call VSM_Map() and when VSM_StillValid()
 indicates that the segment is no longer valid, VSM_Unmap()
 should be called to release the segment again.
 
-All in all, this should be simpler and more robust now.
+All in all, this should be simpler and more robust.
 
 .. _whatsnew_vrt_5.2:
 
