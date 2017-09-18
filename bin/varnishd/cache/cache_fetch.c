@@ -899,6 +899,8 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 		l = ll;
 		if (VFP_GetStorage(bo->vfc, &l, &ptr) != VFP_OK)
 			break;
+		if (l > ll)
+			l = ll;
 		memcpy(ptr, VSB_data(synth_body) + o, l);
 		VFP_Extend(bo->vfc, l);
 		ll -= l;
