@@ -157,9 +157,9 @@ $Method VOID .add_backend(BACKEND, REAL)
 Description
 	Add a backend to the director with a given weight.
 
-	Each backend backend will receive approximately
-	100 * (weight / (sum(all_added_weights))) per cent of the traffic sent
-	to this director.
+	Each backend will receive approximately 100 * (weight /
+	(sum(all_added_weights))) per cent of the traffic sent to this
+	director.
 
 Example
 	# 2/3 to backend1, 1/3 to backend2.
