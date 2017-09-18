@@ -1,6 +1,10 @@
-=============================
-Varnish Cache Trunk (ongoing)
-=============================
+================================
+Varnish Cache 5.2.0 (2017-09-15)
+================================
+
+* The cli_buffer parameter has been deprecated (2382_)
+
+.. _2382: https://github.com/varnishcache/varnish-cache/pull/2382
 
 ================================
 Varnish Cache 5.2.0 (2017-09-15)
