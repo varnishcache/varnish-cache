@@ -13,9 +13,6 @@ shell -err -expect "Too many sub-arguments" {
 shell -err -expect "Too many sub-arguments" {
 	varnishd -a 127.0.0.1:80000,HTTP,FOO -d
 }
-shell -err -expect "Got no socket" {
-	varnishd -a 239.255.255.255:0,HTTP -d
-}
 
 # This requires non-local binds to be disabled.  If you see this fail
 # and are on Linux, ensure /proc/net/ipv4/ip_nonlocal_bind is set to 0.
