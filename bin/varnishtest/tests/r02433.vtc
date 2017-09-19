@@ -1,0 +1,23 @@
+varnishtest "label a cold vcl"
+
+server s1 { } -start
+
+varnish v1 -vcl+backend {
+        import debug; # can fail a VCL warmup
+
+        sub vcl_recv {
+                return (synth(200));
+        }
+} -start
+
+# a dummy vcl to freely use vcl1
+varnish v1 -vcl+backend { }
+
+# the magic parameter that fails a VCL warmup
+varnish v1 -cliok "param.set max_esi_depth 42"
+
+varnish v1 -cliok "vcl.state vcl1 cold"
+varnish v1 -clierr 300 "vcl.label label1 vcl1"
+
+# check that creating the label actually failed
+varnish v1 -clierr 106 "vcl.discard label1"

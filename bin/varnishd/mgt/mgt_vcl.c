@@ -838,16 +838,23 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 			    vpt->name);
 			return;
 		}
+	}
+
+	if (mgt_vcl_setstate(cli, vpt, VCL_STATE_WARM))
+		return;
+	vpt->state = VCL_STATE_WARM; /* XXX: race with the poker? */
+
+	if (vpl != NULL) {
 		mgt_vcl_dep_del(VTAILQ_FIRST(&vpl->dfrom));
 		AN(VTAILQ_EMPTY(&vpl->dfrom));
 	} else {
 		vpl = mgt_vcl_add(av[2], VCL_STATE_LABEL);
 	}
+
 	AN(vpl);
 	vpl->warm = 1;
-	vpt->state = VCL_STATE_WARM;
 	mgt_vcl_dep_add(vpl, vpt);
-	(void)mgt_vcl_setstate(cli, vpt, VCL_STATE_WARM);
+
 	if (!MCH_Running())
 		return;
 
