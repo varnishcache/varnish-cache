@@ -53,7 +53,7 @@ static const char * const VCL_TEMP_LABEL = "label";
 
 /*
  * NB: The COOLING temperature is neither COLD nor WARM.
- * And LABEL is not a temperature, it's a state.
+ * And LABEL is not a temperature, it's a different kind of VCL.
  */
 #define VCL_WARM(v) ((v)->temp == VCL_TEMP_WARM || (v)->temp == VCL_TEMP_BUSY)
 #define VCL_COLD(v) ((v)->temp == VCL_TEMP_INIT || (v)->temp == VCL_TEMP_COLD)
