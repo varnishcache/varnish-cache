@@ -368,11 +368,28 @@ mgt_has_vcl(void)
 	return (!VTAILQ_EMPTY(&vclhead));
 }
 
+static unsigned
+mgt_vcl_cooldown(struct vclprog *vp)
+{
+	double now;
+
+	if (vp->state != VCL_STATE_AUTO)
+		return (0);
+
+	now = VTIM_mono();
+	if (vp->go_cold > 0 && vp->go_cold + mgt_param.vcl_cooldown < now)
+		return (1);
+
+	if (vp->go_cold == 0 && vp != active_vcl)
+		vp->go_cold = now;
+
+	return (0);
+}
+
 static int
 mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 {
 	unsigned status, warm;
-	double now;
 	char *p;
 	int i;
 
@@ -380,19 +397,17 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 
 	if (vp == active_vcl || mcf_is_label(vp)) {
 		AN(vp->warm);
-		assert(vs != VCL_STATE_COLD);
+		/* Only the poker sends COLD indiscriminately, ignore it */
+		if (vs == VCL_STATE_COLD)
+			AZ(cli);
 		return (0);
 	}
 
-	if (vs == VCL_STATE_AUTO) {
-		now = VTIM_mono();
-		vs = (vp->warm ? VCL_STATE_WARM : VCL_STATE_COLD);
-		if (vp->go_cold > 0 && vp->state == VCL_STATE_AUTO &&
-		    vp->go_cold + mgt_param.vcl_cooldown < now)
-			vs = VCL_STATE_COLD;
-	}
+	if (vs == VCL_STATE_AUTO)
+		vs = (mgt_vcl_cooldown(vp) ? VCL_STATE_COLD : VCL_STATE_WARM);
+	else
+		vp->go_cold = 0;
 
-	assert(vs != VCL_STATE_AUTO);
 	warm = (vs == VCL_STATE_WARM ? 1 : 0);
 
 	if (vp->warm == warm)
@@ -400,8 +415,6 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 
 	if (!MCH_Running()) {
 		vp->warm = warm;
-		if (vp->warm == 0)
-			vp->go_cold = 0;
 		return (0);
 	}
 
@@ -419,8 +432,6 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 		/* Success, update mgt's VCL state to reflect child's
 		   state */
 		vp->warm = warm;
-		if (vp->warm == 0)
-			vp->go_cold = 0;
 	}
 
 	free(p);
@@ -634,10 +645,7 @@ mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 
 	if (!strcmp(av[3], VCL_STATE_AUTO)) {
 		vp->state = VCL_STATE_AUTO;
-		if (vp != active_vcl) {
-			vp->go_cold = VTIM_mono();
-			(void)mgt_vcl_setstate(cli, vp, VCL_STATE_AUTO);
-		}
+		(void)mgt_vcl_setstate(cli, vp, VCL_STATE_AUTO);
 	} else if (!strcmp(av[3], VCL_STATE_COLD)) {
 		if (vp == active_vcl) {
 			VCLI_Out(cli, "Cannot set the active VCL cold.");
@@ -674,14 +682,14 @@ mcf_vcl_use(struct cli *cli, const char * const *av, void *priv)
 	    mgt_cli_askchild(&status, &p, "vcl.use %s\n", av[2])) {
 		VCLI_SetResult(cli, status);
 		VCLI_Out(cli, "%s", p);
-		vp->go_cold = VTIM_mono();
+		AZ(vp->go_cold);
 		(void)mgt_vcl_setstate(cli, vp, VCL_STATE_AUTO);
 	} else {
 		VCLI_Out(cli, "VCL '%s' now active", av[2]);
 		vp2 = active_vcl;
 		active_vcl = vp;
 		if (vp2 != NULL) {
-			vp2->go_cold = VTIM_mono();
+			AZ(vp2->go_cold);
 			(void)mgt_vcl_setstate(cli, vp2, VCL_STATE_AUTO);
 		}
 	}
@@ -853,7 +861,8 @@ mgt_vcl_poker(const struct vev *e, int what)
 	(void)what;
 	e_poker->timeout = mgt_param.vcl_cooldown * .45;
 	VTAILQ_FOREACH(vp, &vclhead, list)
-		(void)mgt_vcl_setstate(NULL, vp, VCL_STATE_AUTO);
+		if (mgt_vcl_cooldown(vp))
+			(void)mgt_vcl_setstate(NULL, vp, VCL_STATE_COLD);
 	return (0);
 }
 
