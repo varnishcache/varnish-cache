@@ -380,8 +380,10 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 
 	if (vp == active_vcl || mcf_is_label(vp)) {
 		AN(vp->warm);
+		assert(vs != VCL_STATE_COLD);
 		return (0);
 	}
+
 	if (vs == VCL_STATE_AUTO) {
 		now = VTIM_mono();
 		vs = (vp->warm ? VCL_STATE_WARM : VCL_STATE_COLD);
