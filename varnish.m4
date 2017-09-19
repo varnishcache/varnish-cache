@@ -29,7 +29,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # varnish.m4 - Macros to build against Varnish.         -*- Autoconf -*-
-# serial 8 (varnish-5.2.0)
+# serial 9 (varnish-5.2.1)
 #
 # This collection of macros helps create VMODs or tools interacting with
 # Varnish Cache using the GNU build system (autotools). In order to work
@@ -151,6 +151,7 @@ AC_DEFUN([_VARNISH_VMOD_CONFIG], [
 
 	AC_REQUIRE([_VARNISH_PKG_CONFIG])
 	AC_REQUIRE([_VARNISH_CHECK_DEVEL])
+	AC_REQUIRE([_VARNISH_CHECK_PYTHON])
 	AC_REQUIRE([_VARNISH_VMOD_LDFLAGS])
 
 	dnl Check the VMOD toolchain
@@ -158,8 +159,6 @@ AC_DEFUN([_VARNISH_VMOD_CONFIG], [
 	AC_REQUIRE([AC_PROG_CC_C99])
 	AC_REQUIRE([AC_PROG_CPP])
 	AC_REQUIRE([AC_PROG_CPP_WERROR])
-
-	_VARNISH_CHECK_PYTHON
 
 	AS_IF([test -z "$RST2MAN"], [
 		AC_MSG_ERROR([rst2man is needed to build VMOD manuals.])
@@ -209,10 +208,12 @@ AC_DEFUN([_VARNISH_VMOD], [
 
 vmod_$1.lo: vcc_$1_if.c vcc_$1_if.h
 
+vmod_$1.lo: \$(nodist_libvmod_$1_la_SOURCES)
+
 vcc_$1_if.h vmod_$1.rst vmod_$1.man.rst: vcc_$1_if.c
 
 vcc_$1_if.c: vmod_$1.vcc
-	\$(AM_V_VMODTOOL) \$(PYTHON) \$(VMODTOOL) -o vcc_$1_if \$(srcdir)/vmod_$1.vcc
+	\$(A""M_V_VMODTOOL) \$(PYTHON) \$(VMODTOOL) -o vcc_$1_if \$(srcdir)/vmod_$1.vcc
 
 vmod_$1.3: vmod_$1.man.rst
 	\$(A""M_V_GEN) \$(RST2MAN) vmod_$1.man.rst vmod_$1.3
@@ -278,7 +279,8 @@ clean-vmod-$1:
 #
 # These two set of make rules are independent and may be used in separate
 # sub-directories. You still need to declare the generated VCC interfaces
-# in your library's sources. The generated files can be declared this way:
+# in your library's sources. The generated files should be declared this
+# way:
 #
 #     nodist_libvmod_foo_la_SOURCES = vcc_foo_if.c vcc_foo_if.h
 #     nodist_libvmod_bar_la_SOURCES = vcc_bar_if.c vcc_bar_if.h
@@ -387,14 +389,19 @@ $1_options.rst: $1
 
 $1.rst: $1_synopsis.rst $1_options.rst
 
+clean: clean-vut-$1
+
+distclean: clean-vut-$1
+
+clean-vut-$1:
+	rm -f $1_synopsis.rst $1_options.rst
+
 "
 
 	AC_SUBST(m4_toupper(GENERATE_$1_DOCS), [$VUT_RULES])
 	m4_ifdef([_AM_SUBST_NOTMAKE],
 		[_AM_SUBST_NOTMAKE(m4_toupper(GENERATE_$1_DOCS))])
 
-	AC_SUBST(m4_toupper(GENERATED_$1_DOCS),
-		["$1_synopsis.rst $1_options.rst"])
 ])
 
 # VARNISH_UTILITIES(NAMES)
@@ -477,12 +484,8 @@ $1.rst: $1_synopsis.rst $1_options.rst
 #     .. include:: @builddir@/foo_options.rst
 #
 # This will ensure that foo.rst and bar.rst always find the generated files
-# when the source directory is different from the build directory. Finally,
-# the generated files are exposed in a variable to help clean them:
-#
-#     CLEANFILES += $(GENERATED_FOO_DOCS) $(GENERATED_BAR_DOCS)
-#
-# It is the maintainer's responsibility to build the actual manuals.
+# when the source directory is different from the build directory. It is the
+# maintainer's responsibility to build the actual manuals.
 #
 AC_DEFUN([VARNISH_UTILITIES], [
 	m4_foreach([_vut_name],
