@@ -76,7 +76,7 @@ mac_opensocket(struct listen_sock *ls)
  */
 
 void
-MAC_reopen_sockets(struct cli *cli)
+MAC_reopen_sockets(void)
 {
 	struct listen_sock *ls;
 	int fail;
@@ -87,14 +87,9 @@ MAC_reopen_sockets(struct cli *cli)
 		VJ_master(JAIL_MASTER_LOW);
 		if (fail == 0)
 			continue;
-		if (cli == NULL)
-			MGT_Complain(C_ERR,
-			    "Could not reopen listen socket %s: %s",
-			    ls->endpoint, strerror(fail));
-		else
-			VCLI_Out(cli,
-			    "Could not reopen listen socket %s: %s\n",
-			    ls->endpoint, strerror(fail));
+		MGT_Complain(C_ERR,
+		    "Could not reopen listen socket %s: %s",
+		    ls->endpoint, strerror(fail));
 	}
 }
 
@@ -184,7 +179,7 @@ MAC_Arg(const char *spec)
 	la->name = name;
 
 	if (av[2] == NULL) {
-		xp = XPORT_Find("http/1");
+		xp = XPORT_Find("http");
 	} else {
 		xp = XPORT_Find(av[2]);
 		if (xp == NULL)

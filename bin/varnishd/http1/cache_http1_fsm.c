@@ -240,6 +240,7 @@ http1_minimal_response(struct req *req, uint16_t status)
 
 struct transport HTTP1_transport = {
 	.name =			"HTTP/1",
+	.proto_ident =		"HTTP",
 	.magic =		TRANSPORT_MAGIC,
 	.deliver =		V1D_Deliver,
 	.minimal_response =	http1_minimal_response,

@@ -91,7 +91,8 @@ usage(void)
 	printf(FMT, "-a address[:port][,proto]",
 	    "HTTP listen address and port");
 	printf(FMT, "", "Can be specified multiple times.");
-	printf(FMT, "", "  default: \":80,HTTP/1\"");
+	printf(FMT, "", "  default: \":80,HTTP\"");
+	printf(FMT, "", "Proto can be \"PROXY\" or \"HTTP\" (default)");
 	printf(FMT, "-b address[:port]", "Backend address and port");
 	printf(FMT, "", "  default: \":80\"");
 	printf(FMT, "-f vclfile", "VCL program");

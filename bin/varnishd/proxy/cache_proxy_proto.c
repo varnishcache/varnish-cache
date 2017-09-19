@@ -379,6 +379,7 @@ vpx_new_session(struct worker *wrk, void *arg)
 
 struct transport PROXY_transport = {
 	.name =			"PROXY",
+	.proto_ident =		"PROXY",
 	.magic =		TRANSPORT_MAGIC,
 	.new_session =		vpx_new_session,
 };

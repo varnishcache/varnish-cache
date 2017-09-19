@@ -674,7 +674,8 @@ XPORT_Find(const char *name)
 	ASSERT_MGT();
 
 	VTAILQ_FOREACH(xp, &transports, list)
-		if (!strcasecmp(xp->name, name))
+		if (xp->proto_ident != NULL &&
+		    !strcasecmp(xp->proto_ident, name))
 			return (xp);
 	return (NULL);
 }

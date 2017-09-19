@@ -50,6 +50,7 @@ struct transport {
 
 	uint16_t			number;
 
+	const char			*proto_ident;	// for -a args
 	const char			*name;
 
 	task_func_t			*new_session;

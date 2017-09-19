@@ -525,7 +525,7 @@ mgt_reap_child(void)
 		fprintf(stderr, "WAIT 0x%jx\n", (uintmax_t)r);
 	assert(r == child_pid);
 
-	MAC_reopen_sockets(NULL);
+	MAC_reopen_sockets();
 
 	VSB_printf(vsb, "Child (%jd) %s", (intmax_t)r,
 	    status ? "died" : "ended");
