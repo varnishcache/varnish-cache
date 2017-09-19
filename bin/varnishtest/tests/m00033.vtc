@@ -56,7 +56,7 @@ varnish v1 -vcl {
 
 	    set resp.http.pos =
 	      blob.encode(IDENTITY, DEFAULT, blob.decode(IDENTITY,
-						         encoded="foobar"));
+							 encoded="foobar"));
 	}
 } -start
 
