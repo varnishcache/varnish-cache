@@ -101,6 +101,8 @@ static VTAILQ_HEAD(, vmodfile)	vmodhead = VTAILQ_HEAD_INITIALIZER(vmodhead);
 static struct vclprog		*active_vcl;
 static struct vev *e_poker;
 
+static int mgt_vcl_setstate(struct cli *, struct vclprog *, const char *);
+
 /*--------------------------------------------------------------------*/
 
 static struct vclprog *
@@ -187,6 +189,8 @@ mgt_vcl_dep_add(struct vclprog *vp_from, struct vclprog *vp_to)
 	vd->to = vp_to;
 	VTAILQ_INSERT_TAIL(&vp_to->dto, vd, lto);
 	vp_to->nto++;
+	assert(vp_to->state == VCL_STATE_WARM ||	/* vcl.label ... */
+	    vp_to->state == VCL_STATE_LABEL);		/* return(vcl(...)) */
 }
 
 static void
@@ -197,6 +201,12 @@ mgt_vcl_dep_del(struct vcldep *vd)
 	VTAILQ_REMOVE(&vd->from->dfrom, vd, lfrom);
 	VTAILQ_REMOVE(&vd->to->dto, vd, lto);
 	vd->to->nto--;
+	if (vd->to->nto == 0 && vd->to->state == VCL_STATE_WARM) {
+		vd->to->state = VCL_STATE_AUTO;
+		AZ(vd->to->go_cold);
+		(void)mgt_vcl_setstate(NULL, vd->to, VCL_STATE_AUTO);
+		AN(vd->to->go_cold);
+	}
 	FREE_OBJ(vd);
 }
 
@@ -834,10 +844,9 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 		vpl = mgt_vcl_add(av[2], VCL_STATE_LABEL);
 	}
 	AN(vpl);
-	mgt_vcl_dep_add(vpl, vpt);
 	vpl->warm = 1;
-	if (vpt->state == VCL_STATE_COLD)
-		vpt->state = VCL_STATE_AUTO;
+	vpt->state = VCL_STATE_WARM;
+	mgt_vcl_dep_add(vpl, vpt);
 	(void)mgt_vcl_setstate(cli, vpt, VCL_STATE_WARM);
 	if (!MCH_Running())
 		return;

@@ -1,0 +1,29 @@
+varnishtest "label going cold"
+
+server s1 { } -start
+
+varnish v1 -cliok "param.set vcl_cooldown 1"
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (synth(200));
+	}
+} -start
+
+varnish v1 -cliok "vcl.label label1 vcl1"
+
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		return (vcl(label1));
+	}
+}
+
+# let the VCL poker trigger enough times to get
+# an occasion to update vcl1's state
+delay 3
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
