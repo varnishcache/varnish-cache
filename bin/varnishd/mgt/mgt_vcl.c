@@ -376,6 +376,8 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 	char *p;
 	int i;
 
+	assert(vs != VCL_STATE_LABEL);
+
 	if (vp == active_vcl || mcf_is_label(vp)) {
 		AN(vp->warm);
 		return (0);
