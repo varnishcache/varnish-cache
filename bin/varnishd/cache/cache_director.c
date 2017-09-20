@@ -99,10 +99,11 @@ VDI_GetBody(struct worker *wrk, struct busyobj *bo)
 	d = bo->director_resp;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	AZ(d->resolve);
-	AN(d->getbody);
 
 	assert(bo->director_state == DIR_S_HDRS);
 	bo->director_state = DIR_S_BODY;
+	if (d->getbody == NULL)
+		return (0);
 	return (d->getbody(d, wrk, bo));
 }
 
