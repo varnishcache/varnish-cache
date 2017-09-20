@@ -566,9 +566,6 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 #define vbf_vfp_push(bo, vfp, top)					\
 	do {								\
 		if (VFP_Push((bo)->vfc, (vfp), (top)) == NULL) {	\
-			assert (WS_Overflowed((bo)->vfc->http->ws));	\
-			(void)VFP_Error((bo)->vfc,			\
-			    "workspace_backend overflow");		\
 			(bo)->htc->doclose = SC_OVERLOAD;		\
 			VDI_Finish((bo)->wrk, bo);			\
 			return (F_STP_ERROR);				\

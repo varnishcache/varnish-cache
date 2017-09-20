@@ -203,8 +203,10 @@ VFP_Push(struct vfp_ctx *vc, const struct vfp *vfp, int top)
 	CHECK_OBJ_NOTNULL(vc->http, HTTP_MAGIC);
 
 	vfe = WS_Alloc(vc->http->ws, sizeof *vfe);
-	if (vfe == NULL)
+	if (vfe == NULL) {
+		(void)VFP_Error(vc, "Workspace overflow");
 		return (NULL);
+	}
 
 	INIT_OBJ(vfe, VFP_ENTRY_MAGIC);
 	vfe->vfp = vfp;
