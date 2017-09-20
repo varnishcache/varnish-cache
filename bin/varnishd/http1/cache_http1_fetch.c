@@ -201,6 +201,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 	}
 
 	htc->doclose = http_DoConnection(hp);
+	RFC2616_Response_Body(bo->wrk, bo);
 
 	return (0);
 }

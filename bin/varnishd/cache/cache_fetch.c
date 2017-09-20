@@ -304,7 +304,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	http_VSL_log(bo->beresp);
 
-	RFC2616_Response_Body(wrk, bo);
 	if (bo->htc->body_status == BS_ERROR) {
 		bo->htc->doclose = SC_RX_BODY;
 		VDI_Finish(bo->wrk, bo);
