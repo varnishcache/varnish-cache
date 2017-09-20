@@ -43,7 +43,7 @@ static unsigned fetchfrag;
  *
  * Other code is allowed to look at busyobj->fetch_failed to bail out
  *
- * For convenience, always return -1
+ * For convenience, always return VFP_ERROR
  */
 
 enum vfp_status
@@ -176,14 +176,13 @@ VFP_Suck(struct vfp_ctx *vc, void *p, ssize_t *lp)
 		vp = VFP_Suck(vc, p, lp);
 	} else if (vfe->closed == VFP_OK) {
 		vp = vfe->vfp->pull(vc, vfe, p, lp);
-		if (vp != VFP_OK && vp != VFP_END && vp != VFP_ERROR) {
-			(void)VFP_Error(vc, "Fetch filter %s returned %d",
+		if (vp != VFP_OK && vp != VFP_END && vp != VFP_ERROR)
+			vp = VFP_Error(vc, "Fetch filter %s returned %d",
 			    vfe->vfp->name, vp);
-			vp = VFP_ERROR;
-		}
+		else
+			vfe->bytes_out += *lp;
 		vfe->closed = vp;
 		vfe->calls++;
-		vfe->bytes_out += *lp;
 	} else {
 		/* Already closed filter */
 		*lp = 0;
