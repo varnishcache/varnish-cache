@@ -3,11 +3,11 @@ varnishtest "label a cold vcl"
 server s1 { } -start
 
 varnish v1 -vcl+backend {
-        import debug; # can fail a VCL warmup
+	import debug; # can fail a VCL warmup
 
-        sub vcl_recv {
-                return (synth(200));
-        }
+	sub vcl_recv {
+		return (synth(200));
+	}
 } -start
 
 # a dummy vcl to freely use vcl1
