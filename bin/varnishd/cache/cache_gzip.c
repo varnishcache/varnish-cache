@@ -659,7 +659,7 @@ vfp_gzip_fini(struct vfp_ctx *vc, struct vfp_entry *vfe)
 /*--------------------------------------------------------------------*/
 
 const struct vfp vfp_gunzip = {
-	.name = "GUNZIP",
+	.name = "gunzip",
 	.init = vfp_gzip_init,
 	.pull = vfp_gunzip_pull,
 	.fini = vfp_gzip_fini,
@@ -668,7 +668,7 @@ const struct vfp vfp_gunzip = {
 };
 
 const struct vfp vfp_gzip = {
-	.name = "GZIP",
+	.name = "gzip",
 	.init = vfp_gzip_init,
 	.pull = vfp_gzip_pull,
 	.fini = vfp_gzip_fini,
@@ -677,7 +677,7 @@ const struct vfp vfp_gzip = {
 };
 
 const struct vfp vfp_testgunzip = {
-	.name = "TESTGUNZIP",
+	.name = "testgunzip",
 	.init = vfp_gzip_init,
 	.pull = vfp_testgunzip_pull,
 	.fini = vfp_gzip_fini,

@@ -273,14 +273,14 @@ vfp_esi_fini(struct vfp_ctx *vc, struct vfp_entry *vfe)
 }
 
 const struct vfp vfp_esi = {
-	.name = "ESI",
+	.name = "esi",
 	.init = vfp_esi_init,
 	.pull = vfp_esi_pull,
 	.fini = vfp_esi_fini,
 };
 
 const struct vfp vfp_esi_gzip = {
-	.name = "ESI_GZIP",
+	.name = "esi_gzip",
 	.init = vfp_esi_gzip_init,
 	.pull = vfp_esi_gzip_pull,
 	.fini = vfp_esi_fini,
