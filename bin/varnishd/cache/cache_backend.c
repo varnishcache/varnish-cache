@@ -242,20 +242,6 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 	return (-1);
 }
 
-static int __match_proto__(vdi_getbody_f)
-vbe_dir_getbody(const struct director *d, struct worker *wrk,
-    struct busyobj *bo)
-{
-
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->vfc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
-
-	return (V1F_Setup_Fetch(bo->vfc, bo->htc));
-}
-
 static const struct suckaddr * __match_proto__(vdi_getip_f)
 vbe_dir_getip(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
@@ -355,7 +341,6 @@ VBE_fill_director(struct backend *be)
 	d->http1pipe = vbe_dir_http1pipe;
 	d->healthy = vbe_dir_healthy;
 	d->gethdrs = vbe_dir_gethdrs;
-	d->getbody = vbe_dir_getbody;
 	d->getip = vbe_dir_getip;
 	d->finish = vbe_dir_finish;
 	d->panic = vbe_panic;
