@@ -750,7 +750,7 @@ h2_req_body(struct req *req)
 
 	CHECK_OBJ(req, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
-	vfe = VFP_Push(req->vfc, &h2_body, 0);
+	vfe = VFP_Push(req->vfc, &h2_body);
 	AN(vfe);
 	vfe->priv1 = r2;
 }

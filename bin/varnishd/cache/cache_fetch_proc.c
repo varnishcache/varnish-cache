@@ -195,7 +195,7 @@ VFP_Suck(struct vfp_ctx *vc, void *p, ssize_t *lp)
 /*--------------------------------------------------------------------
  */
 struct vfp_entry *
-VFP_Push(struct vfp_ctx *vc, const struct vfp *vfp, int top)
+VFP_Push(struct vfp_ctx *vc, const struct vfp *vfp)
 {
 	struct vfp_entry *vfe;
 
@@ -211,12 +211,8 @@ VFP_Push(struct vfp_ctx *vc, const struct vfp *vfp, int top)
 	INIT_OBJ(vfe, VFP_ENTRY_MAGIC);
 	vfe->vfp = vfp;
 	vfe->closed = VFP_OK;
-	if (top)
-		VTAILQ_INSERT_HEAD(&vc->vfp, vfe, list);
-	else
-		VTAILQ_INSERT_TAIL(&vc->vfp, vfe, list);
-	if (VTAILQ_FIRST(&vc->vfp) == vfe)
-		vc->vfp_nxt = vfe;
+	VTAILQ_INSERT_HEAD(&vc->vfp, vfe, list);
+	vc->vfp_nxt = vfe;
 	return (vfe);
 }
 

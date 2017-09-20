@@ -74,7 +74,7 @@ extern const struct vfp vfp_testgunzip;
 extern const struct vfp vfp_esi;
 extern const struct vfp vfp_esi_gzip;
 
-struct vfp_entry *VFP_Push(struct vfp_ctx *, const struct vfp *, int top);
+struct vfp_entry *VFP_Push(struct vfp_ctx *, const struct vfp *);
 void VFP_Setup(struct vfp_ctx *vc);
 int VFP_Open(struct vfp_ctx *bo);
 void VFP_Close(struct vfp_ctx *bo);
