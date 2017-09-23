@@ -134,7 +134,7 @@ VCC_Symbol(struct vcc *tl, struct symbol *parent,
 	assert(l > 0);
 
 	VTAILQ_FOREACH(sym, &parent->children, list) {
-		i = strncmp(sym->name, b, l);
+		i = strncasecmp(sym->name, b, l);
 		if (i < 0)
 			continue;
 		if (i > 0 || l < sym->nlen) {
