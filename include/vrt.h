@@ -31,6 +31,11 @@
  * NB: When this file is changed, lib/libvcc/generate.py *MUST* be rerun.
  */
 
+#ifdef VRT_H_INCLUDED
+#  error "vrt.h included multiple times"
+#endif
+#define VRT_H_INCLUDED
+
 /***********************************************************************
  * Major and minor VRT API versions.
  *
@@ -73,11 +78,11 @@
 
 /***********************************************************************/
 
-#ifdef __v_printflike
-#  define __vrt_printflike(a,b) __v_printflike(a,b)
-#else
-#  define __vrt_printflike(a,b)
+#ifndef VDEF_H_INCLUDED
+#  error "include vdef.h before vrt.h"
 #endif
+
+/***********************************************************************/
 
 struct VCL_conf;
 struct vrt_acl;
@@ -310,7 +315,7 @@ struct http *VRT_selecthttp(VRT_CTX, enum gethdr_e);
 const char *VRT_GetHdr(VRT_CTX, const struct gethdr_s *);
 void VRT_SetHdr(VRT_CTX, const struct gethdr_s *, const char *, ...);
 void VRT_handling(VRT_CTX, unsigned hand);
-void VRT_fail(VRT_CTX, const char *fmt, ...) __vrt_printflike(2,3);
+void VRT_fail(VRT_CTX, const char *fmt, ...) __v_printflike(2,3);
 
 void VRT_hashdata(VRT_CTX, const char *str, ...);
 
