@@ -757,10 +757,9 @@ class vcc(object):
 		self.commit_files.append(fn)
 		fo = open(fn + ".tmp", "w")
 		write_c_file_warning(fo)
-		fo.write("struct vmod_priv;\n")
-		fo.write("\n")
-		fo.write("extern const struct vmod_data Vmod_%s_Data;\n" %
-			(self.modname))
+		fo.write("#ifndef VRT_H_INCLUDED\n")
+		fo.write('#  error "Include vrt.h first"\n')
+		fo.write("#endif\n")
 		fo.write("\n")
 
 		for j in self.contents:
@@ -793,7 +792,9 @@ class vcc(object):
 	def api(self, fo):
 		for i in (714, 759, 765):
 			fo.write("\n/*lint -esym(%d, Vmod_%s_Data) */\n" % (i, self.modname))
-		fo.write("const struct vmod_data Vmod_%s_Data = {\n" %
+		fo.write("\nextern const struct vmod_data Vmod_%s_Data;\n" %
+			(self.modname))
+		fo.write("\nconst struct vmod_data Vmod_%s_Data = {\n" %
 		    self.modname)
 		if strict_abi:
 			fo.write("\t.vrt_major =\t0,\n")

@@ -94,6 +94,7 @@ struct stevedore;
 struct suckaddr;
 struct vcl;
 struct vmod;
+struct vmod_priv;
 struct vsb;
 struct vsl_log;
 struct ws;
@@ -346,7 +347,6 @@ VCL_VCL VRT_vcl_get(VRT_CTX, const char *);
 void VRT_vcl_rel(VRT_CTX, VCL_VCL);
 void VRT_vcl_select(VRT_CTX, VCL_VCL);
 
-struct vmod_priv;
 typedef void vmod_priv_free_f(void *);
 struct vmod_priv {
 	void			*priv;
