@@ -127,8 +127,8 @@ noinst_PROGRAMS = vbm_test
 
 vbm_test_SOURCES = vbm_test.c vbm.h
 
-vrt.c: vrt.h
-	cp $(srcdir)/vrt.h $@
+vrt.c: Makefile.am vdef.h vrt.h
+	cat $(srcdir)/vdef.h $(srcdir)/vrt.h > $@
 
 vrt_test: vrt.c
 	echo "exec ${CC} -c -o _vrt_test vrt.c" > $@
