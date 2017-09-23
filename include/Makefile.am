@@ -119,7 +119,7 @@ CLEANFILES = \
 	$(GENERATED_H) \
 	vrt_test \
 	_vrt_test \
-	vrt.c
+	_vrt.c
 
 TESTS = vbm_test vrt_test
 
@@ -127,11 +127,11 @@ noinst_PROGRAMS = vbm_test
 
 vbm_test_SOURCES = vbm_test.c vbm.h
 
-vrt.c: Makefile.am vdef.h vrt.h
+_vrt.c: Makefile.am vdef.h vrt.h
 	cat $(srcdir)/vdef.h $(srcdir)/vrt.h > $@
 
-vrt_test: vrt.c
-	echo "exec ${CC} -c -o _vrt_test vrt.c" > $@
+vrt_test: _vrt.c
+	echo "exec ${CC} -c -o _vrt_test _vrt.c" > $@
 	chmod +x $@
 
 test: ${TESTS}

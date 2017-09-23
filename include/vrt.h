@@ -36,6 +36,10 @@
 #endif
 #define VRT_H_INCLUDED
 
+#ifndef VDEF_H_INCLUDED
+#  error "include vdef.h before vrt.h"
+#endif
+
 /***********************************************************************
  * Major and minor VRT API versions.
  *
@@ -74,13 +78,6 @@
 #define VRT_MAJOR_VERSION	6U
 
 #define VRT_MINOR_VERSION	1U
-
-
-/***********************************************************************/
-
-#ifndef VDEF_H_INCLUDED
-#  error "include vdef.h before vrt.h"
-#endif
 
 /***********************************************************************/
 
