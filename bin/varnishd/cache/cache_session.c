@@ -48,6 +48,7 @@
 #include "vsa.h"
 #include "vtcp.h"
 #include "vtim.h"
+#include "waiter/waiter.h"
 
 /*--------------------------------------------------------------------*/
 

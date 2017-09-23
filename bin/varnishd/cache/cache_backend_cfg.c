@@ -32,16 +32,17 @@
 
 #include "config.h"
 
-#include "cache.h"
-
 #include <fnmatch.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "cache.h"
 
 #include "vcli_serve.h"
 #include "vrt.h"
 #include "vcl.h"
 #include "vtim.h"
+#include "waiter/waiter.h"
 
 #include "cache_director.h"
 #include "cache_backend.h"

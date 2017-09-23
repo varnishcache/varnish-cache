@@ -42,6 +42,8 @@
 
 #include "cache_filter.h"
 #include "common/heritage.h"
+#include "waiter/waiter.h"
+
 
 #include "vrt.h"
 #include "cache_director.h"

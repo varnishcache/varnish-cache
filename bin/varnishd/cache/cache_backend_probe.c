@@ -37,11 +37,11 @@
 
 #include "config.h"
 
-#include "cache.h"
-
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "cache.h"
 
 #include "binary_heap.h"
 #include "vcli_serve.h"
@@ -49,6 +49,7 @@
 #include "vsa.h"
 #include "vtcp.h"
 #include "vtim.h"
+#include "waiter/waiter.h"
 
 #include "cache_director.h"
 #include "cache_backend.h"

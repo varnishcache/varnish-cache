@@ -40,8 +40,6 @@
 
 #include "vapi/vsl_int.h"
 
-#include "waiter/waiter.h"
-
 #include <sys/socket.h>
 
 #include <pthread.h>

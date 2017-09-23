@@ -36,6 +36,7 @@
 
 #include "binary_heap.h"
 
+#include "waiter/waiter.h"
 #include "waiter/waiter_priv.h"
 #include "waiter/mgt_waiter.h"
 
