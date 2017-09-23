@@ -296,7 +296,7 @@ varnish v1 -errvcl {vmod blob error: blob is empty in blob.sub()} {
 	sub vcl_init {
 		new empty = blob.blob(IDENTITY, "");
 		if (blob.same(empty.get(), blob.sub(empty.get(), 0B))) {
-			new B = blob.blob(IDENTITY, "b");
+			new bl = blob.blob(IDENTITY, "b");
 		}
 	}
 }
@@ -308,7 +308,7 @@ varnish v1 -errvcl {vmod blob error: size 9 from offset 0 requires more bytes th
 	sub vcl_init {
 		new up07 = blob.blob(BASE64, "AAECAwQFBgc=");
 		if (blob.same(up07.get(), blob.sub(up07.get(), 9B))) {
-			new B = blob.blob(IDENTITY, "b");
+			new bl = blob.blob(IDENTITY, "b");
 		}
 	}
 }
@@ -320,7 +320,7 @@ varnish v1 -errvcl {vmod blob error: size 4 from offset 5 requires more bytes th
 	sub vcl_init {
 		new up07 = blob.blob(BASE64, "AAECAwQFBgc=");
 		if (blob.same(up07.get(), blob.sub(up07.get(), 4B, 5B))) {
-			new B = blob.blob(IDENTITY, "b");
+			new bl = blob.blob(IDENTITY, "b");
 		}
 	}
 }
