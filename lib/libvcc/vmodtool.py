@@ -497,9 +497,7 @@ class s_event(stanza):
 			    self.event_func)
 
 	def hfile(self, fo):
-		fo.write("#ifdef VCL_MET_MAX\n")
 		fo.write("vmod_event_f %s;\n" % self.event_func)
-		fo.write("#endif\n")
 
 	def cstruct(self, fo):
 		fo.write("\tvmod_event_f\t\t\t*_event;\n")
@@ -828,7 +826,7 @@ class vcc(object):
 
 		fo.write('#include "config.h"\n')
 		fo.write('#include <stdio.h>\n')
-		for i in ["vdef", "vcl", "vrt", self.pfx, "vmod_abi"]:
+		for i in ["vdef", "vrt", self.pfx, "vmod_abi"]:
 			fo.write('#include "%s.h"\n' % i)
 
 		fo.write("\n")

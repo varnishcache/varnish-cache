@@ -32,9 +32,10 @@
 #include <stdint.h>
 
 #include "miniobj.h"
-#include "vas.h"
-#include "vcl.h"
 #include "vdef.h"
+#include "vas.h"
+#include "vrt.h"
+#include "vcl.h"
 #include "vqueue.h"
 #include "vsb.h"
 

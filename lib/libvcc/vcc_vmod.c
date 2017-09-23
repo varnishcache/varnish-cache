@@ -37,7 +37,6 @@
 #include "libvcc.h"
 #include "vfil.h"
 #include "vmod_abi.h"
-#include "vrt.h"
 
 static int
 vcc_path_dlopen(void *priv, const char *fn)

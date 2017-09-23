@@ -30,7 +30,6 @@
 #include <errno.h>
 #include <pthread.h>
 
-#include "vcl.h"
 #include "vdef.h"
 #include "vrt.h"
 

@@ -1108,25 +1108,14 @@ fo = open(join(buildroot, "include/vcl.h"), "w")
 file_header(fo)
 
 fo.write("""
-struct vrt_ctx;
-#define VRT_CTX const struct vrt_ctx *ctx
-struct req;
-struct busyobj;
-struct ws;
-struct cli;
-struct worker;
+#ifdef VCL_H_INCLUDED
+#  error "vcl.h included multiple times"
+#endif
+#define VCL_H_INCLUDED
 
-enum vcl_event_e {
-	VCL_EVENT_LOAD,
-	VCL_EVENT_WARM,
-	VCL_EVENT_COLD,
-	VCL_EVENT_DISCARD,
-};
-
-typedef int vcl_event_f(VRT_CTX, enum vcl_event_e);
-typedef int vcl_init_f(VRT_CTX);
-typedef void vcl_fini_f(VRT_CTX);
-typedef void vcl_func_f(VRT_CTX);
+#ifndef VRT_H_INCLUDED
+#  error "include vrt.h before vcl.h"
+#endif
 """)
 
 

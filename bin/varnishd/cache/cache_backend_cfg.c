@@ -38,9 +38,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "vcl.h"
 #include "vcli_serve.h"
 #include "vrt.h"
+#include "vcl.h"
 #include "vtim.h"
 
 #include "cache_director.h"

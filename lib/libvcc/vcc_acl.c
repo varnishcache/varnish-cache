@@ -39,8 +39,6 @@
 
 #include "vcc_compile.h"
 
-#include "vrt.h"
-
 struct acl_e {
 	VTAILQ_ENTRY(acl_e)	list;
 	unsigned char		data[VRT_ACL_MAXADDR + 1];

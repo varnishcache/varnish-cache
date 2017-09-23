@@ -33,7 +33,6 @@
 
 #include "cache/cache.h"
 
-#include "vcl.h"
 #include "vrt.h"
 
 #include "cache/cache_director.h"
@@ -121,8 +120,7 @@ vmod_dyn__init(VRT_CTX, struct vmod_debug_dyn **dynp,
 	if (*addr == '\0' || *port == '\0') {
 		AN(ctx->handling);
 		AZ(*ctx->handling);
-		VSB_printf(ctx->msg, "Missing dynamic backend address or port");
-		VRT_handling(ctx, VCL_RET_FAIL);
+		VRT_fail(ctx, "Missing dynamic backend address or port");
 		return;
 	}
 

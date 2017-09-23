@@ -85,7 +85,6 @@
 /***********************************************************************/
 
 struct VCL_conf;
-struct vrt_acl;
 struct busyobj;
 struct director;
 struct http;
@@ -95,6 +94,7 @@ struct suckaddr;
 struct vcl;
 struct vmod;
 struct vmod_priv;
+struct vrt_acl;
 struct vsb;
 struct vsl_log;
 struct ws;
@@ -166,7 +166,9 @@ struct vrt_ctx {
 
 #define VRT_CTX		const struct vrt_ctx *ctx
 
-/***********************************************************************/
+/***********************************************************************
+ * This is the interface structure to a compiled VMOD
+ */
 
 struct vmod_data {
 	/* The version/id fields must be first, they protect the rest */
@@ -182,15 +184,38 @@ struct vmod_data {
 	const char			*abi;
 };
 
-/***********************************************************************/
+/***********************************************************************
+ * Enum for which HTTP header-sets we can access
+ */
 
-enum gethdr_e { HDR_REQ, HDR_REQ_TOP, HDR_RESP, HDR_OBJ, HDR_BEREQ,
-		HDR_BERESP };
+enum gethdr_e {
+	HDR_REQ,
+	HDR_REQ_TOP,
+	HDR_RESP,
+	HDR_OBJ,
+	HDR_BEREQ,
+	HDR_BERESP
+};
+
+/***********************************************************************
+ * Enum for events sent to compiled VCL and from there to Vmods
+ */
+
+enum vcl_event_e {
+	VCL_EVENT_LOAD,
+	VCL_EVENT_WARM,
+	VCL_EVENT_COLD,
+	VCL_EVENT_DISCARD,
+};
+
+/***********************************************************************/
 
 struct gethdr_s {
 	enum gethdr_e	where;
 	const char	*what;
 };
+
+/***********************************************************************/
 
 extern const void * const vrt_magic_string_end;
 extern const void * const vrt_magic_string_unset;
@@ -354,10 +379,6 @@ struct vmod_priv {
 	vmod_priv_free_f	*free;
 };
 
-#ifdef VCL_RET_MAX
-typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
-#endif
-
 struct vclref;
 struct vclref * VRT_ref_vcl(VRT_CTX, const char *);
 void VRT_rel_vcl(VRT_CTX, struct vclref **);
@@ -380,3 +401,9 @@ const char *VRT_BOOL_string(VCL_BOOL);
 const char *VRT_BACKEND_string(VCL_BACKEND);
 const char *VRT_STEVEDORE_string(VCL_STEVEDORE);
 const char *VRT_CollectString(VRT_CTX, const char *p, ...);
+
+typedef int vcl_event_f(VRT_CTX, enum vcl_event_e);
+typedef int vcl_init_f(VRT_CTX);
+typedef void vcl_fini_f(VRT_CTX);
+typedef void vcl_func_f(VRT_CTX);
+typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
