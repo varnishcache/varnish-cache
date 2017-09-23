@@ -35,6 +35,7 @@
 
 #include "cache.h"
 #include "cache_filter.h"
+#include "cache_vgz.h"
 
 #include "cache_esi.h"
 

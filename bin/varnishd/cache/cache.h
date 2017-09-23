@@ -712,36 +712,6 @@ enum vbf_fetch_mode_e {
 void VBF_Fetch(struct worker *wrk, struct req *req,
     struct objcore *oc, struct objcore *oldoc, enum vbf_fetch_mode_e);
 
-/* cache_gzip.c */
-struct vgz;
-
-enum vgzret_e {
-	VGZ_ERROR = -1,
-	VGZ_OK = 0,
-	VGZ_END = 1,
-	VGZ_STUCK = 2,
-};
-
-enum vgz_flag { VGZ_NORMAL, VGZ_ALIGN, VGZ_RESET, VGZ_FINISH };
-// struct vgz *VGZ_NewUngzip(struct vsl_log *vsl, const char *id);
-struct vgz *VGZ_NewGzip(struct vsl_log *vsl, const char *id);
-void VGZ_Ibuf(struct vgz *, const void *, ssize_t len);
-int VGZ_IbufEmpty(const struct vgz *vg);
-void VGZ_Obuf(struct vgz *, void *, ssize_t len);
-int VGZ_ObufFull(const struct vgz *vg);
-enum vgzret_e VGZ_Gzip(struct vgz *, const void **, ssize_t *len,
-    enum vgz_flag);
-// enum vgzret_e VGZ_Gunzip(struct vgz *, const void **, ssize_t *len);
-enum vgzret_e VGZ_Destroy(struct vgz **);
-
-enum vgz_ua_e {
-	VUA_UPDATE,		// Update start/stop/last bits if changed
-	VUA_END_GZIP,		// Record uncompressed size
-	VUA_END_GUNZIP,		// Record uncompressed size
-};
-
-void VGZ_UpdateObj(const struct vfp_ctx *, struct vgz*, enum vgz_ua_e);
-
 /* cache_http.c */
 unsigned HTTP_estimate(unsigned nhttp);
 void HTTP_Copy(struct http *to, const struct http * const fm);

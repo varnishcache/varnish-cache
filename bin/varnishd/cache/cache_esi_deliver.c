@@ -36,6 +36,7 @@
 
 #include "cache_transport.h"
 #include "cache_filter.h"
+#include "cache_vgz.h"
 
 #include "vtim.h"
 #include "cache_esi.h"

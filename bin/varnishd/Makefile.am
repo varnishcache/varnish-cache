@@ -119,6 +119,7 @@ noinst_HEADERS = \
 	cache/cache_pool.h \
 	cache/cache_priv.h \
 	cache/cache_transport.h \
+	cache/cache_vgz.h \
 	common/heritage.h \
 	hash/hash_slinger.h \
 	hpack/vhp.h \
