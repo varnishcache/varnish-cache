@@ -43,7 +43,7 @@
 #include "vtim.h"
 
 void
-Req_AcctLogCharge(struct dstat *ds, struct req *req)
+Req_AcctLogCharge(struct VSC_main *ds, struct req *req)
 {
 	struct acct_req *a;
 

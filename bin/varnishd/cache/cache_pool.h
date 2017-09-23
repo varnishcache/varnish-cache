@@ -53,8 +53,8 @@ struct pool {
 	uintmax_t			sdropped;
 	uintmax_t			rdropped;
 	uintmax_t			nqueued;
-	struct dstat			*a_stat;
-	struct dstat			*b_stat;
+	struct VSC_main			*a_stat;
+	struct VSC_main			*b_stat;
 
 	struct mempool			*mpl_req;
 	struct mempool			*mpl_sess;

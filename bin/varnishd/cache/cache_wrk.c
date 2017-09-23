@@ -61,7 +61,7 @@ wrk_bgthread(void *arg)
 {
 	struct bgthread *bt;
 	struct worker wrk;
-	struct dstat ds;
+	struct VSC_main ds;
 
 	CAST_OBJ_NOTNULL(bt, arg, BGTHREAD_MAGIC);
 	THR_SetName(bt->name);
@@ -97,7 +97,7 @@ static void
 WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 {
 	struct worker *w, ww;
-	struct dstat ds;
+	struct VSC_main ds;
 	unsigned char ws[thread_workspace];
 	uintptr_t u;
 
@@ -141,7 +141,7 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
  */
 
 static void
-pool_addstat(struct dstat *dst, struct dstat *src)
+pool_addstat(struct VSC_main *dst, struct VSC_main *src)
 {
 
 	dst->summs++;

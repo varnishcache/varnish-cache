@@ -116,10 +116,7 @@ struct vrt_priv;
 struct vsb;
 struct worker;
 struct v1l;
-
 struct VSC_main;
-
-#define dstat VSC_main
 
 #define DIGEST_LEN		32
 
@@ -309,7 +306,7 @@ struct worker {
 	struct objhead		*nobjhead;
 	struct objcore		*nobjcore;
 	void			*nhashpriv;
-	struct dstat		*stats;
+	struct VSC_main		*stats;
 	struct vsl_log		*vsl;		// borrowed from req/bo
 
 	struct pool_task	task;
@@ -898,7 +895,7 @@ struct req *Req_New(const struct worker *, struct sess *);
 void Req_Release(struct req *);
 void Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req);
 void Req_Fail(struct req *req, enum sess_close reason);
-void Req_AcctLogCharge(struct dstat *, struct req *);
+void Req_AcctLogCharge(struct VSC_main *, struct req *);
 
 /* cache_req_body.c */
 int VRB_Ignore(struct req *);

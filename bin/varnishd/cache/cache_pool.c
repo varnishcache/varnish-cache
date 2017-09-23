@@ -51,7 +51,7 @@ static VTAILQ_HEAD(,pool)	pools = VTAILQ_HEAD_INITIALIZER(pools);
  */
 
 static void
-pool_sumstat(const struct dstat *src)
+pool_sumstat(const struct VSC_main *src)
 {
 
 	Lck_AssertHeld(&wstat_mtx);
@@ -121,7 +121,7 @@ Pool_PurgeStat(unsigned nobj)
 void __match_proto__(task_func_t)
 pool_stat_summ(struct worker *wrk, void *priv)
 {
-	struct dstat *src;
+	struct VSC_main *src;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk->pool, POOL_MAGIC);
