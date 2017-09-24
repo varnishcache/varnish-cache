@@ -39,4 +39,13 @@ client c1 {
 
 delay 7
 
-varnish v1 -cliok "panic.show"
+varnish v1 -cliok "panic.clear"
+
+# Also check without the handler
+varnish v1 -cliok "param.set sigsegv_handler off"
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
