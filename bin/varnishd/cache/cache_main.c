@@ -124,7 +124,8 @@ void
 THR_Init(void)
 {
 #ifdef HAVE_SIGALTSTACK
-       AZ(sigaltstack(&altstack, NULL));
+	if (altstack.ss_sp != NULL)
+		AZ(sigaltstack(&altstack, NULL));
 #endif
 }
 
