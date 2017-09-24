@@ -109,7 +109,7 @@ cscope.*out
 /bin/varnishtest/tests/*.log
 /bin/varnishtest/tests/*.log-t
 /include/*.log
-/include/vrt.c
+/include/_vrt.c
 /include/_vrt_test
 /include/vrt_test
 /include/vbm_test
