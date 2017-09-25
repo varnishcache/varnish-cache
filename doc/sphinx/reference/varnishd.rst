@@ -17,7 +17,7 @@ SYNOPSIS
 
 varnishd [-a [name=][address][:port][,PROTO]] [-b host[:port]] [-C] [-d] [-F] [-f config] [-h type[,options]] [-I clifile] [-i identity] [-j jail[,jailoptions]] [-l vsl[,vsm]] [-M address:port] [-n name] [-P file] [-p param=value] [-r param[,param...]] [-S secret-file] [-s [name=]kind[,options]] [-T address[:port]] [-t TTL] [-V] [-W waiter]
 
-varnishd [-x parameter|vsl|cli|builtin]
+varnishd [-x parameter|vsl|cli|builtin|optstring]
 
 varnishd [-?]
 
@@ -122,6 +122,11 @@ outputs documentation in reStructuredText, aka RST).
 -x builtin
 
   Print the contents of the default VCL program ``builtin.vcl``.
+
+-x optstring
+
+  Print the optstring parameter to ``getopt(3)`` to help writing
+  wrapper scripts.
 
 Operations options
 ------------------

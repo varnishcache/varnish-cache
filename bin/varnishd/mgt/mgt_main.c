@@ -74,6 +74,8 @@ static struct vpf_fh *pfh2 = NULL;
 static struct vfil_path *vcl_path = NULL;
 static VTAILQ_HEAD(,f_arg) f_args = VTAILQ_HEAD_INITIALIZER(f_args);
 
+static const char opt_spec[] = "a:b:Cdf:Fh:i:I:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
+
 int optreset;	// Some has it, some doesn't.  Cheaper than auto*
 
 /*--------------------------------------------------------------------*/
@@ -106,6 +108,7 @@ usage(void)
 	printf(FMT, "-x vsl", "VSL record documentation");
 	printf(FMT, "-x cli", "CLI command documentation");
 	printf(FMT, "-x builtin", "Builtin VCL program");
+	printf(FMT, "-x optstring", "List of getopt options");
 
 	printf("\nOperations options:\n");
 
@@ -297,6 +300,8 @@ mgt_x_arg(const char *x_arg)
 		mgt_DumpRstCli();
 	else if (!strcmp(x_arg, "builtin"))
 		mgt_DumpBuiltin();
+	else if (!strcmp(x_arg, "optstring"))
+		(void)printf("%s\n", opt_spec);
 	else
 		ARGV_ERR("Invalid -x argument\n");
 }
@@ -422,8 +427,6 @@ mgt_f_read(const char *fn)
 	fa->src = f;
 	VTAILQ_INSERT_TAIL(&f_args, fa, list);
 }
-
-static const char opt_spec[] = "a:b:Cdf:Fh:i:I:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
 
 int
 main(int argc, char * const *argv)
