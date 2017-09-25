@@ -78,6 +78,9 @@ void CLI_AddFuncs(struct cli_proto *p);
 void VDP_close(struct req *req);
 int VDP_DeliverObj(struct req *req);
 
+extern const struct vdp VDP_gunzip;
+extern const struct vdp VDP_esi;
+
 /* cache_expire.c */
 void EXP_Init(void);
 

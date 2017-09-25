@@ -47,12 +47,12 @@ typedef enum vfp_status
 typedef void vfp_fini_f(struct vfp_ctx *, struct vfp_entry *);
 
 struct vfp {
-	const char	*name;
-	vfp_init_f	*init;
-	vfp_pull_f	*pull;
-	vfp_fini_f	*fini;
-	const void	*priv1;
-	intptr_t	priv2;
+	const char		*name;
+	vfp_init_f		*init;
+	vfp_pull_f		*pull;
+	vfp_fini_f		*fini;
+	const void		*priv1;
+	intptr_t		priv2;
 };
 
 struct vfp_entry {
@@ -83,18 +83,18 @@ enum vdp_action {
 typedef int vdp_bytes(struct req *, enum vdp_action, void **priv,
     const void *ptr, ssize_t len);
 
+struct vdp {
+	const char		*name;
+	vdp_bytes		*func;
+};
+
 struct vdp_entry {
 	unsigned		magic;
 #define VDP_ENTRY_MAGIC		0x353eb781
-	vdp_bytes		*func;
+	const struct vdp	*vdp;
 	void			*priv;
-	const char		*id;
 	VTAILQ_ENTRY(vdp_entry)	list;
 };
 
 int VDP_bytes(struct req *, enum vdp_action act, const void *ptr, ssize_t len);
-void VDP_push(struct req *, vdp_bytes *func, void *priv, int bottom,
-    const char *id);
-
-vdp_bytes VDP_gunzip;
-vdp_bytes VDP_ESI;
+void VDP_push(struct req *, const struct vdp *, void *priv, int bottom);

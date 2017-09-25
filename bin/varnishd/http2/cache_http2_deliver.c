@@ -96,6 +96,11 @@ h2_bytes(struct req *req, enum vdp_action act, void **priv,
 	return (0);
 }
 
+static const struct vdp h2_vdp = {
+	.name =		"H2B",
+	.func =		h2_bytes,
+};
+
 static inline size_t
 h2_status(uint8_t *p, uint16_t status) {
 	size_t l = 1;
@@ -261,7 +266,7 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	WS_Release(req->ws, 0);
 
 	if (sendbody) {
-		VDP_push(req, h2_bytes, NULL, 1, "H2");
+		VDP_push(req, &h2_vdp, NULL, 1);
 		err = VDP_DeliverObj(req);
 		/*XXX*/(void)err;
 	}

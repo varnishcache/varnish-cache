@@ -84,6 +84,11 @@ vrg_range_bytes(struct req *req, enum vdp_action act, void **priv,
 	    vrg_priv->range_off >= vrg_priv->range_high ? 1 : 0);
 }
 
+static const struct vdp vrg_vdp = {
+	.name =		"RNG",
+	.func =		vrg_range_bytes,
+};
+
 /*--------------------------------------------------------------------*/
 
 static const char *
@@ -170,7 +175,7 @@ vrg_dorange(struct req *req, const char *r)
 	vrg_priv->range_off = 0;
 	vrg_priv->range_low = low;
 	vrg_priv->range_high = high + 1;
-	VDP_push(req, vrg_range_bytes, vrg_priv, 1, "RNG");
+	VDP_push(req, &vrg_vdp, vrg_priv, 1);
 	http_PutResponse(req->resp, "HTTP/1.1", 206, NULL);
 	return (NULL);
 }

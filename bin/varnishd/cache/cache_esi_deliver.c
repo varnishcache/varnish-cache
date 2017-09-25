@@ -254,8 +254,8 @@ ved_decode_len(struct req *req, const uint8_t **pp)
 /*---------------------------------------------------------------------
  */
 
-int __match_proto__(vdp_bytes)
-VDP_ESI(struct req *req, enum vdp_action act, void **priv,
+static int __match_proto__(vdp_bytes)
+ved_vdp(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	uint8_t *q, *r;
@@ -436,6 +436,11 @@ VDP_ESI(struct req *req, enum vdp_action act, void **priv,
 	}
 }
 
+const struct vdp VDP_esi = {
+	.name =		"esi",
+	.func =		ved_vdp,
+};
+
 /*
  * Account body bytes on req
  * Push bytes to preq
@@ -522,6 +527,11 @@ ved_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
 	/* buf2 is local, have to flush */
 	return (ved_bytes(req, preq, VDP_FLUSH, NULL, 0));
 }
+
+static const struct vdp ved_vdp_pgz = {
+	.name =		"PGZ",
+	.func =		ved_pretend_gzip,
+};
 
 /*---------------------------------------------------------------------
  * Include an object in a gzip'ed ESI object delivery
@@ -779,6 +789,11 @@ ved_vdp_bytes(struct req *req, enum vdp_action act, void **priv,
 	return (ved_bytes(req, preq, act, ptr, len));
 }
 
+static const struct vdp ved_ved = {
+	.name =		"VED",
+	.func =		ved_vdp_bytes,
+};
+
 /*--------------------------------------------------------------------*/
 
 static void __match_proto__(vtr_deliver_f)
@@ -805,9 +820,9 @@ ved_deliver(struct req *req, struct boc *boc, int wantbody)
 		ved_stripgzip(req, boc);
 	} else {
 		if (ecx->isgzip && !i)
-			VDP_push(req, ved_pretend_gzip, ecx, 1, "PGZ");
+			VDP_push(req, &ved_vdp_pgz, ecx, 1);
 		else
-			VDP_push(req, ved_vdp_bytes, ecx->preq, 1, "VED");
+			VDP_push(req, &ved_ved, ecx->preq, 1);
 		(void)VDP_DeliverObj(req);
 		(void)VDP_bytes(req, VDP_FLUSH, NULL, 0);
 	}

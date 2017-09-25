@@ -58,6 +58,11 @@ v1d_bytes(struct req *req, enum vdp_action act, void **priv,
 	return (0);
 }
 
+static const struct vdp v1d_vdp = {
+	.name =		"V1B",
+	.func =		v1d_bytes,
+};
+
 static void
 v1d_error(struct req *req, const char *msg)
 {
@@ -110,7 +115,7 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		http_SetHeader(req->resp, "Connection: keep-alive");
 
 	if (sendbody && req->resp_len != 0)
-		VDP_push(req, v1d_bytes, NULL, 1, "V1B");
+		VDP_push(req, &v1d_vdp, NULL, 1);
 
 	AZ(req->wrk->v1l);
 	V1L_Reserve(req->wrk, req->ws, &req->sp->fd, req->vsl, req->t_prev);

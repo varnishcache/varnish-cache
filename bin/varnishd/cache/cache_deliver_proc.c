@@ -64,7 +64,7 @@ VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 
 	assert(act > VDP_NULL || len > 0);
 	/* Call the present layer, while pointing to the next layer down */
-	retval = vdpe->func(req, act, &vdpe->priv, ptr, len);
+	retval = vdpe->vdp->func(req, act, &vdpe->priv, ptr, len);
 	if (retval && (req->vdpe_retval == 0 || retval < req->vdpe_retval))
 		req->vdpe_retval = retval; /* Latch error value */
 	req->vdpe_nxt = vdpe;
@@ -72,52 +72,44 @@ VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 }
 
 void
-VDP_push(struct req *req, vdp_bytes *func, void *priv, int bottom,
-    const char *id)
+VDP_push(struct req *req, const struct vdp *vdp, void *priv, int bottom)
 {
 	struct vdp_entry *vdpe;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	AN(func);
+	AN(vdp);
+	AN(vdp->name);
+	AN(vdp->func);
 
 	vdpe = WS_Alloc(req->ws, sizeof *vdpe);
 	if (vdpe == NULL)
 		return;
 	INIT_OBJ(vdpe, VDP_ENTRY_MAGIC);
-	vdpe->func = func;
+	vdpe->vdp = vdp;
 	vdpe->priv = priv;
-	vdpe->id = id;
 	if (bottom)
 		VTAILQ_INSERT_TAIL(&req->vdpe, vdpe, list);
 	else
 		VTAILQ_INSERT_HEAD(&req->vdpe, vdpe, list);
 	req->vdpe_nxt = VTAILQ_FIRST(&req->vdpe);
 
-	AZ(vdpe->func(req, VDP_INIT, &vdpe->priv, NULL, 0));
-}
-
-static void
-vdp_pop(struct req *req, vdp_bytes *func)
-{
-	struct vdp_entry *vdpe;
-	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-
-	vdpe = VTAILQ_FIRST(&req->vdpe);
-	CHECK_OBJ_NOTNULL(vdpe, VDP_ENTRY_MAGIC);
-	assert(vdpe->func == func);
-	VTAILQ_REMOVE(&req->vdpe, vdpe, list);
-	AZ(vdpe->func(req, VDP_FINI, &vdpe->priv, NULL, 0));
-	AZ(vdpe->priv);
-	req->vdpe_nxt = VTAILQ_FIRST(&req->vdpe);
+	AZ(vdpe->vdp->func(req, VDP_INIT, &vdpe->priv, NULL, 0));
 }
 
 void
 VDP_close(struct req *req)
 {
+	struct vdp_entry *vdpe;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	while (!VTAILQ_EMPTY(&req->vdpe))
-		vdp_pop(req, VTAILQ_FIRST(&req->vdpe)->func);
+	while (!VTAILQ_EMPTY(&req->vdpe)) {
+		vdpe = VTAILQ_FIRST(&req->vdpe);
+		CHECK_OBJ_NOTNULL(vdpe, VDP_ENTRY_MAGIC);
+		VTAILQ_REMOVE(&req->vdpe, vdpe, list);
+		AZ(vdpe->vdp->func(req, VDP_FINI, &vdpe->priv, NULL, 0));
+		AZ(vdpe->priv);
+		req->vdpe_nxt = VTAILQ_FIRST(&req->vdpe);
+	}
 }
 
 /*--------------------------------------------------------------------*/

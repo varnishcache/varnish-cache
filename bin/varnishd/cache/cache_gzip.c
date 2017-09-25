@@ -284,8 +284,8 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, ssize_t *plen, enum vgz_flag flags)
  * VDP for gunzip'ing
  */
 
-int __match_proto__(vdp_bytes)
-VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
+static int __match_proto__(vdp_bytes)
+vdp_gunzip(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
 	enum vgzret_e vr;
@@ -327,7 +327,7 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 		 * If the size is non-zero AND we are the top
 		 * VDP (ie: no ESI), we know what size the output will be.
 		 */
-		if (u != 0 && VTAILQ_FIRST(&req->vdpe)->func == VDP_gunzip)
+		if (u != 0 && VTAILQ_FIRST(&req->vdpe)->vdp == &VDP_gunzip)
 			req->resp_len = u;
 
 		return (0);
@@ -363,6 +363,11 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 	assert(vr == VGZ_STUCK || vr == VGZ_OK || vr == VGZ_END);
 	return (0);
 }
+
+const struct vdp VDP_gunzip = {
+	.name =		"gunzip",
+	.func =		vdp_gunzip,
+};
 
 /*--------------------------------------------------------------------*/
 
