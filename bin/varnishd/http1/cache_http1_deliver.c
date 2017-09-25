@@ -46,7 +46,7 @@ v1d_bytes(struct req *req, enum vdp_action act, void **priv,
 	if (act == VDP_INIT || act == VDP_FINI)
 		return (0);
 
-	AZ(req->vdp_nxt);		/* always at the bottom of the pile */
+	AZ(req->vdpe_nxt);		/* always at the bottom of the pile */
 
 	if (len > 0)
 		wl = V1L_Write(req->wrk, ptr, len);

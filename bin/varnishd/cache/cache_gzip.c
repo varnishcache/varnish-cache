@@ -327,7 +327,7 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 		 * If the size is non-zero AND we are the top
 		 * VDP (ie: no ESI), we know what size the output will be.
 		 */
-		if (u != 0 && VTAILQ_FIRST(&req->vdp)->func == VDP_gunzip)
+		if (u != 0 && VTAILQ_FIRST(&req->vdpe)->func == VDP_gunzip)
 			req->resp_len = u;
 
 		return (0);
@@ -355,7 +355,7 @@ VDP_gunzip(struct req *req, enum vdp_action act, void **priv,
 			return (-1);
 		if (vg->m_len == vg->m_sz || vr != VGZ_OK) {
 			if (VDP_bytes(req, VDP_FLUSH, vg->m_buf, vg->m_len))
-				return (req->vdp_retval);
+				return (req->vdpe_retval);
 			vg->m_len = 0;
 			VGZ_Obuf(vg, vg->m_buf, vg->m_sz);
 		}
