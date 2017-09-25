@@ -31,6 +31,8 @@
 
 #include "VSC_main.h"
 
+struct vfp;
+
 /* Prototypes etc ----------------------------------------------------*/
 
 /* cache_acceptor.c */
@@ -72,11 +74,27 @@ void CLI_Init(void);
 void CLI_Run(void);
 void CLI_AddFuncs(struct cli_proto *p);
 
+/* cache_deliver_proc.c */
+void VDP_close(struct req *req);
+int VDP_DeliverObj(struct req *req);
+
 /* cache_expire.c */
 void EXP_Init(void);
 
 /* cache_fetch_proc.c */
 void VFP_Init(void);
+enum vfp_status VFP_GetStorage(struct vfp_ctx *, ssize_t *sz, uint8_t **ptr);
+void VFP_Extend(const struct vfp_ctx *, ssize_t sz);
+struct vfp_entry *VFP_Push(struct vfp_ctx *, const struct vfp *);
+void VFP_Setup(struct vfp_ctx *vc);
+int VFP_Open(struct vfp_ctx *bo);
+void VFP_Close(struct vfp_ctx *bo);
+
+extern const struct vfp vfp_gunzip;
+extern const struct vfp vfp_gzip;
+extern const struct vfp vfp_testgunzip;
+extern const struct vfp vfp_esi;
+extern const struct vfp vfp_esi_gzip;
 
 /* cache_http.c */
 void HTTP_Init(void);

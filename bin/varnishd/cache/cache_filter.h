@@ -67,24 +67,9 @@ struct vfp_entry {
 	uint64_t		bytes_out;
 };
 
-
-extern const struct vfp vfp_gunzip;
-extern const struct vfp vfp_gzip;
-extern const struct vfp vfp_testgunzip;
-extern const struct vfp vfp_esi;
-extern const struct vfp vfp_esi_gzip;
-
-struct vfp_entry *VFP_Push(struct vfp_ctx *, const struct vfp *);
-void VFP_Setup(struct vfp_ctx *vc);
-int VFP_Open(struct vfp_ctx *bo);
-void VFP_Close(struct vfp_ctx *bo);
 enum vfp_status VFP_Suck(struct vfp_ctx *, void *p, ssize_t *lp);
 enum vfp_status VFP_Error(struct vfp_ctx *, const char *fmt, ...)
     __v_printflike(2, 3);
-
-/* cache_fetch_proc.c */
-enum vfp_status VFP_GetStorage(struct vfp_ctx *, ssize_t *sz, uint8_t **ptr);
-void VFP_Extend(const struct vfp_ctx *, ssize_t sz);
 
 /* Deliver processors ------------------------------------------------*/
 
@@ -110,8 +95,6 @@ struct vdp_entry {
 int VDP_bytes(struct req *, enum vdp_action act, const void *ptr, ssize_t len);
 void VDP_push(struct req *, vdp_bytes *func, void *priv, int bottom,
     const char *id);
-void VDP_close(struct req *req);
-int VDP_DeliverObj(struct req *req);
 
 vdp_bytes VDP_gunzip;
 vdp_bytes VDP_ESI;
