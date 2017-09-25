@@ -154,6 +154,11 @@ OPTIONS
 
   Specifies the waiter type to use.
 
+-x optstring
+
+  Print the optstring parameter to ``getopt(3)`` to help writing
+  wrapper scripts.
+
 .. _opt_h:
 
 Hash Algorithm

@@ -74,6 +74,8 @@ struct VSC_C_mgt	*VSC_C_mgt;
 
 static struct vpf_fh *pfh = NULL;
 
+static const char opt_spec[] = "a:b:Cdf:Fh:i:j:l:M:n:P:p:r:S:s:T:t:VW:x:";
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -255,6 +257,7 @@ usage(void)
 	fprintf(stderr, FMT, "", "  -W epoll");
 #endif
 	fprintf(stderr, FMT, "", "  -W poll");
+	fprintf(stderr, FMT, "-x optstring", "List of getopt options");
 
 #undef FMT
 	exit(1);
@@ -466,7 +469,6 @@ init_params(struct cli *cli)
 	MCF_InitParams(cli);
 }
 
-
 /*--------------------------------------------------------------------*/
 
 static void
@@ -571,8 +573,7 @@ main(int argc, char * const *argv)
 	init_params(cli);
 	cli_check(cli);
 
-	while ((o = getopt(argc, argv,
-	    "a:b:Cdf:Fh:i:j:l:M:n:P:p:r:S:s:T:t:VW:x:")) != -1) {
+	while ((o = getopt(argc, argv, opt_spec)) != -1) {
 		/*
 		 * -j must be the first argument if specified, because
 		 * it (may) affect subsequent argument processing.
@@ -679,6 +680,10 @@ main(int argc, char * const *argv)
 			}
 			if (!strcmp(optarg, "dumprstvsl")) {
 				mgt_DumpRstVsl();
+				exit(0);
+			}
+			if (!strcmp(optarg, "optstring")) {
+				printf("%s\n", opt_spec);
 				exit(0);
 			}
 			usage();
