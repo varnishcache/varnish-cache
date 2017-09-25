@@ -17,7 +17,7 @@ varnish v1 -vcl+backend {
 	sub vcl_deliver {
 		if (req.url == "/1") {
 			vtc.workspace_alloc(client,
-			    -1 * (40 + vtc.typesize("p") * 25));
+			    -1 * (32 + vtc.typesize("p") * 25));
 		} else {
 			vtc.workspace_alloc(client,
 			    -1 * (56 + vtc.typesize("p") * 25));
