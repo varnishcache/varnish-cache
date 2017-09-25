@@ -102,9 +102,19 @@ int PAN_already(struct vsb *, const void *);
 
 /* cache_pool.c */
 void Pool_Init(void);
+int Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio);
+int Pool_Task_Arg(struct worker *, enum task_prio, task_func_t *,
+    const void *arg, size_t arg_len);
+void Pool_Sumstat(const struct worker *w);
+int Pool_TrySumstat(const struct worker *wrk);
+void Pool_PurgeStat(unsigned nobj);
+int Pool_Task_Any(struct pool_task *task, enum task_prio prio);
 
 /* cache_proxy.c [VPX] */
 task_func_t VPX_Proto_Sess;
+
+/* cache_range.c [VRG] */
+void VRG_dorange(struct req *req, const char *r);
 
 /* cache_session.c */
 void SES_NewPool(struct pool *, unsigned pool_no);
@@ -118,12 +128,25 @@ void VSL_ChgId(struct vsl_log *vsl, const char *typ, const char *why,
     uint32_t vxid);
 void VSL_End(struct vsl_log *vsl);
 
+/* cache_vary.c */
+int VRY_Create(struct busyobj *bo, struct vsb **psb);
+int VRY_Match(struct req *, const uint8_t *vary);
+void VRY_Prep(struct req *);
+void VRY_Clear(struct req *);
+enum vry_finish_flag { KEEP, DISCARD };
+void VRY_Finish(struct req *req, enum vry_finish_flag);
+
 /* cache_vcl.c */
 struct director *VCL_DefaultDirector(const struct vcl *);
 const struct vrt_backend_probe *VCL_DefaultProbe(const struct vcl *);
 void VCL_Init(void);
 void VCL_Panic(struct vsb *, const struct vcl *);
 void VCL_Poll(void);
+void VCL_Ref(struct vcl *);
+void VCL_Refresh(struct vcl **);
+void VCL_Rel(struct vcl **);
+const char *VCL_Return_Name(unsigned);
+
 
 /* cache_vrt.c */
 void VRTPRIV_init(struct vrt_privs *privs);
@@ -136,6 +159,9 @@ void VMOD_Panic(struct vsb *);
 
 /* http1/cache_http1_pipe.c */
 void V1P_Init(void);
+
+/* cache_http2_deliver.c */
+void V2D_Init(void);
 
 /* stevedore.c */
 void STV_open(void);

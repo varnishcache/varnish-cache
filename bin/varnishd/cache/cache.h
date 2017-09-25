@@ -774,9 +774,6 @@ extern const char H__Status[];
 extern const char H__Proto[];
 extern const char H__Reason[];
 
-/* cache_http2_deliver.c */
-void V2D_Init(void);
-
 /* cache_main.c */
 #define VXID(u) ((u) & VSL_IDENTMASK)
 uint32_t VXID_Get(struct worker *, uint32_t marker);
@@ -878,18 +875,6 @@ void ObjSendEvent(struct worker *, struct objcore *oc, unsigned event);
 const char *body_status_2str(enum body_status e);
 const char *sess_close_2str(enum sess_close sc, int want_desc);
 
-/* cache_pool.c */
-int Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio);
-int Pool_Task_Arg(struct worker *, enum task_prio, task_func_t *,
-    const void *arg, size_t arg_len);
-void Pool_Sumstat(const struct worker *w);
-int Pool_TrySumstat(const struct worker *wrk);
-void Pool_PurgeStat(unsigned nobj);
-int Pool_Task_Any(struct pool_task *task, enum task_prio prio);
-
-/* cache_range.c [VRG] */
-void VRG_dorange(struct req *req, const char *r);
-
 /* cache_req.c */
 struct req *Req_New(const struct worker *, struct sess *);
 void Req_Release(struct req *);
@@ -939,7 +924,6 @@ void SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src);
 const char *SES_Get_String_Attr(const struct sess *sp, enum sess_attr a);
 
 /* cache_shmlog.c */
-#ifdef VSL_ENDMARKER
 void VSLv(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, va_list va);
 void VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
     __v_printflike(3, 4);
@@ -972,24 +956,9 @@ VSLb_ts_busyobj(struct busyobj *bo, const char *event, double now)
 
 void VSL_Flush(struct vsl_log *, int overflow);
 
-#endif
-
-/* cache_vary.c */
-int VRY_Create(struct busyobj *bo, struct vsb **psb);
-int VRY_Match(struct req *, const uint8_t *vary);
-void VRY_Prep(struct req *);
-void VRY_Clear(struct req *);
-enum vry_finish_flag { KEEP, DISCARD };
-void VRY_Finish(struct req *req, enum vry_finish_flag);
-
 /* cache_vcl.c */
-const char *VCL_Method_Name(unsigned);
 const char *VCL_Name(const struct vcl *);
-void VCL_Ref(struct vcl *);
-void VCL_Refresh(struct vcl **);
-void VCL_Rel(struct vcl **);
-const char *VCL_Return_Name(unsigned);
-
+const char *VCL_Method_Name(unsigned);
 #define VCL_MET_MAC(l,u,t,b) \
     void VCL_##l##_method(struct vcl *, struct worker *, struct req *, \
 	struct busyobj *bo, void *specific);
@@ -1116,4 +1085,3 @@ DO_DEBUG(enum debug_bits x)
 #ifdef VARNISHD_IS_NOT_A_VMOD
 #  include "cache/cache_priv.h"
 #endif
-
