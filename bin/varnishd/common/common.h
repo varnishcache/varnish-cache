@@ -76,6 +76,3 @@ const struct transport *XPORT_Find(const char *name);
 
 /* cache/cache_vcl.c */
 int VCL_TestLoad(const char *);
-
-/* mgt_cli.c */
-extern struct VCLS	*mgt_cls;

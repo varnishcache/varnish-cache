@@ -126,7 +126,7 @@ CLI_Init(void)
 	cls = VCLS_New(cli_cb_before, cli_cb_after,
 	    &cache_param->cli_buffer, &cache_param->cli_limit);
 	AN(cls);
-	VCLS_Clone(cls, mgt_cls);
+	VCLS_Clone(cls, heritage.cls);
 
 	CLI_AddFuncs(cli_cmds);
 }

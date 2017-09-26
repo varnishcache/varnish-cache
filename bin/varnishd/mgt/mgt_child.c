@@ -338,7 +338,6 @@ mgt_launch_child(struct cli *cli)
 	}
 	if (pid == 0) {
 
-
 		/* Redirect stdin/out/err */
 		VFIL_null_fd(STDIN_FILENO);
 		assert(dup2(heritage.std_fd, STDOUT_FILENO) == STDOUT_FILENO);
@@ -363,7 +362,11 @@ mgt_launch_child(struct cli *cli)
 			if (close(i) == 0)
 				VFIL_null_fd(i);
 		}
+
 		mgt_ProcTitle("Child");
+
+		heritage.cls = mgt_cls;
+
 		if (mgt_param.sigsegv_handler) {
 			memset(&sa, 0, sizeof sa);
 			sa.sa_sigaction = child_signal_handler;

@@ -65,6 +65,7 @@ void MCH_TrackHighFd(int fd);
 void MCH_Cli_Fail(void);
 
 /* mgt_cli.c */
+extern struct VCLS	*mgt_cls;
 
 typedef void mgt_cli_close_f(void *priv);
 void mgt_cli_setup(int fdi, int fdo, int auth, const char *ident,

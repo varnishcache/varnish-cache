@@ -33,6 +33,7 @@ struct vsmw;
 struct suckaddr;
 struct listen_sock;
 struct transport;
+struct VCLS;
 
 struct listen_arg {
 	unsigned			magic;
@@ -81,6 +82,8 @@ struct heritage {
 
 	char				*panic_str;
 	ssize_t				panic_str_len;
+
+	struct VCLS			*cls;
 };
 
 extern struct heritage heritage;
