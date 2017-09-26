@@ -212,6 +212,10 @@ VUT_Init(const char *progname, int argc, char * const *argv,
 		exit(vut_synopsis(voc));
 	if (argc == 2 && !strcmp(argv[1], "--options"))
 		exit(vut_options(voc));
+	if (argc == 2 && !strcmp(argv[1], "--optstring")) {
+		(void)printf("%s\n", voc->vopt_optstring);
+		exit(0);
+	}
 
 	vut->progname = progname;
 	vut->g_arg = VSL_g_vxid;
