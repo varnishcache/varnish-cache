@@ -9,7 +9,11 @@ server s1 {
 	txresp
 } -start
 
-varnish v1 -arg "-s malloc,1MB" -arg "-s malloc,1MB" -vcl+backend {
+varnish v1 \
+    -arg "-s default,1MB" \
+    -arg "-s default,1MB" \
+    -arg "-s Transient=default" \
+    -vcl+backend {
 	import std;
 	sub vcl_recv {
 		if (req.url == "/1") {

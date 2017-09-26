@@ -6,9 +6,10 @@ server s1 {
 } -start
 
 varnish v1 \
-	-arg "-smalloc,1m" \
-	-arg "-smalloc,1m" \
-	-arg "-smalloc,1m" \
+	-arg "-sdefault,1m" \
+	-arg "-sdefault,1m" \
+	-arg "-sdefault,1m" \
+	-arg "-sTransient=default" \
 	-vcl+backend {
 	sub vcl_backend_response {
 		set beresp.storage = storage.s0;

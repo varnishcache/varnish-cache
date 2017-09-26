@@ -1,6 +1,6 @@
 varnishtest "legal symbol names"
 
-varnish v1 -arg "-s my-store=malloc" -vcl {
+varnish v1 -arg "-s my-store=default" -vcl {
 	import directors;
 
 	acl my-acl { "127.0.0.1"; }

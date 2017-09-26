@@ -13,6 +13,14 @@ configuration is to use the malloc backend with a limited size. For a
 serious Varnish deployment you probably would want to adjust the storage
 settings.
 
+default
+~~~~~~~
+
+syntax: default[,size]
+
+The default storage backend is an alias to umem, where available, or
+malloc otherwise.
+
 malloc
 ~~~~~~
 
@@ -44,6 +52,14 @@ The default size is unlimited.
 malloc's performance is bound to memory speed so it is very fast. If
 the dataset is bigger than available memory performance will
 depend on the operating systems ability to page effectively.
+
+umem
+~~~~
+
+syntax: umem[,size]
+
+Umem is a better malloc backend where libumem is available. All other
+aspects are considered equal to malloc.
 
 file
 ~~~~

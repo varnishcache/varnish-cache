@@ -14,7 +14,7 @@ server s1 {
 	chunkedlen 0
 } -start
 
-varnish v1 -arg "-smalloc,1M" -arg "-pgzip_level=0" -vcl+backend {
+varnish v1 -arg "-sdefault,1M" -arg "-pgzip_level=0" -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_esi = true;
 		set beresp.do_gzip = true;
