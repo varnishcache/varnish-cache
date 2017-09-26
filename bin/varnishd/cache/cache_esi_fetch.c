@@ -273,14 +273,14 @@ vfp_esi_fini(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	vfe->priv1 = NULL;
 }
 
-const struct vfp vfp_esi = {
+const struct vfp VFP_esi = {
 	.name = "esi",
 	.init = vfp_esi_init,
 	.pull = vfp_esi_pull,
 	.fini = vfp_esi_fini,
 };
 
-const struct vfp vfp_esi_gzip = {
+const struct vfp VFP_esi_gzip = {
 	.name = "esi_gzip",
 	.init = vfp_esi_gzip_init,
 	.pull = vfp_esi_gzip_pull,

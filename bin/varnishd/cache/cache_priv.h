@@ -93,11 +93,11 @@ void VFP_Setup(struct vfp_ctx *vc);
 int VFP_Open(struct vfp_ctx *bo);
 void VFP_Close(struct vfp_ctx *bo);
 
-extern const struct vfp vfp_gunzip;
-extern const struct vfp vfp_gzip;
-extern const struct vfp vfp_testgunzip;
-extern const struct vfp vfp_esi;
-extern const struct vfp vfp_esi_gzip;
+extern const struct vfp VFP_gunzip;
+extern const struct vfp VFP_gzip;
+extern const struct vfp VFP_testgunzip;
+extern const struct vfp VFP_esi;
+extern const struct vfp VFP_esi_gzip;
 
 /* cache_http.c */
 void HTTP_Init(void);

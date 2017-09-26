@@ -574,19 +574,19 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
 
 	if (bo->do_gunzip || (bo->is_gzip && bo->do_esi))
-		vbf_vfp_push(bo, &vfp_gunzip);
+		vbf_vfp_push(bo, &VFP_gunzip);
 
 	if (bo->htc->content_length != 0) {
 		if (bo->do_esi && bo->do_gzip) {
-			vbf_vfp_push(bo, &vfp_esi_gzip);
+			vbf_vfp_push(bo, &VFP_esi_gzip);
 		} else if (bo->do_esi && bo->is_gzip && !bo->do_gunzip) {
-			vbf_vfp_push(bo, &vfp_esi_gzip);
+			vbf_vfp_push(bo, &VFP_esi_gzip);
 		} else if (bo->do_esi) {
-			vbf_vfp_push(bo, &vfp_esi);
+			vbf_vfp_push(bo, &VFP_esi);
 		} else if (bo->do_gzip) {
-			vbf_vfp_push(bo, &vfp_gzip);
+			vbf_vfp_push(bo, &VFP_gzip);
 		} else if (bo->is_gzip && !bo->do_gunzip) {
-			vbf_vfp_push(bo, &vfp_testgunzip);
+			vbf_vfp_push(bo, &VFP_testgunzip);
 		}
 	}
 
