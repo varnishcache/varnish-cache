@@ -39,31 +39,74 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <umem.h>
 
 #include "storage/storage.h"
 #include "storage/storage_simple.h"
 
 #include "vrt.h"
 #include "vnum.h"
+#include "common/heritage.h"
 
 #include "VSC_smu.h"
 
 struct smu_sc {
 	unsigned		magic;
-#define SMU_SC_MAGIC		0x1ac8a345
+#define SMU_SC_MAGIC		0x7695f68e
 	struct lock		smu_mtx;
 	size_t			smu_max;
 	size_t			smu_alloc;
 	struct VSC_smu		*stats;
+	umem_cache_t		*smu_cache;
 };
 
 struct smu {
 	unsigned		magic;
-#define SMU_MAGIC		0x69ae9bb9
+#define SMU_MAGIC		0x3773300c
 	struct storage		s;
 	size_t			sz;
 	struct smu_sc		*sc;
 };
+
+/* init required per cache get:
+   smu->sz = size
+   smu->s.ptr;
+   smu->s.space = size
+*/
+
+static inline void
+smu_smu_init(struct smu *smu, struct smu_sc *sc)
+{
+	INIT_OBJ(smu, SMU_MAGIC);
+	smu->s.magic = STORAGE_MAGIC;
+	smu->s.priv = smu;
+	smu->sc = sc;
+}
+
+static int __match_proto__(umem_constructor_t)
+smu_smu_constructor(void *buffer, void *callback_data, int flags)
+{
+	struct smu *smu = buffer;
+	struct smu_sc *sc;
+
+	(void) flags;
+	CAST_OBJ_NOTNULL(sc, callback_data, SMU_SC_MAGIC);
+	smu_smu_init(smu, sc);
+	return (0);
+}
+
+static void __match_proto__(umem_destructor_t)
+	smu_smu_destructor(void *buffer, void *callback_data)
+{
+	struct smu *smu;
+	struct smu_sc *sc;
+
+	CAST_OBJ_NOTNULL(smu, buffer, SMU_MAGIC);
+	CAST_OBJ_NOTNULL(sc, callback_data, SMU_SC_MAGIC);
+	CHECK_OBJ_NOTNULL(&(smu->s), STORAGE_MAGIC);
+	assert(smu->s.priv == smu);
+	assert(smu->sc == sc);
+}
 
 static struct VSC_lck *lck_smu;
 
@@ -100,13 +143,14 @@ smu_alloc(const struct stevedore *st, size_t size)
 	 * allocations growing another full page, just to accommodate the smu.
 	 */
 
-	p = malloc(size);
+	p = umem_alloc(size, UMEM_DEFAULT);
 	if (p != NULL) {
-		ALLOC_OBJ(smu, SMU_MAGIC);
+		AN(smu_sc->smu_cache);
+		smu = umem_cache_alloc(smu_sc->smu_cache, UMEM_DEFAULT);
 		if (smu != NULL)
 			smu->s.ptr = p;
 		else
-			free(p);
+			umem_free(p, size);
 	}
 	if (smu == NULL) {
 		Lck_Lock(&smu_sc->smu_mtx);
@@ -124,35 +168,33 @@ smu_alloc(const struct stevedore *st, size_t size)
 		Lck_Unlock(&smu_sc->smu_mtx);
 		return (NULL);
 	}
-	smu->sc = smu_sc;
 	smu->sz = size;
-	smu->s.priv = smu;
-	smu->s.len = 0;
 	smu->s.space = size;
-	smu->s.magic = STORAGE_MAGIC;
 	return (&smu->s);
 }
 
 static void __match_proto__(sml_free_f)
 smu_free(struct storage *s)
 {
-	struct smu_sc *smu_sc;
 	struct smu *smu;
+	struct smu_sc *sc;
 
 	CHECK_OBJ_NOTNULL(s, STORAGE_MAGIC);
 	CAST_OBJ_NOTNULL(smu, s->priv, SMU_MAGIC);
-	smu_sc = smu->sc;
-	assert(smu->sz == smu->s.space);
-	Lck_Lock(&smu_sc->smu_mtx);
-	smu_sc->smu_alloc -= smu->sz;
-	smu_sc->stats->g_alloc--;
-	smu_sc->stats->g_bytes -= smu->sz;
-	smu_sc->stats->c_freed += smu->sz;
-	if (smu_sc->smu_max != SIZE_MAX)
-		smu_sc->stats->g_space += smu->sz;
-	Lck_Unlock(&smu_sc->smu_mtx);
-	free(smu->s.ptr);
-	free(smu);
+	CAST_OBJ_NOTNULL(sc, smu->sc, SMU_SC_MAGIC);
+
+	Lck_Lock(&sc->smu_mtx);
+	sc->smu_alloc -= smu->sz;
+	sc->stats->g_alloc--;
+	sc->stats->g_bytes -= smu->sz;
+	sc->stats->c_freed += smu->sz;
+	if (sc->smu_max != SIZE_MAX)
+		sc->stats->g_space += smu->sz;
+	Lck_Unlock(&sc->smu_mtx);
+
+	umem_free(smu->s.ptr, smu->sz);
+	smu_smu_init(smu, sc);
+	umem_cache_free(sc->smu_cache, smu);
 }
 
 static VCL_BYTES __match_proto__(stv_var_used_space)
@@ -220,6 +262,38 @@ smu_open(struct stevedore *st)
 	smu_sc->stats = VSC_smu_New(st->ident);
 	if (smu_sc->smu_max != SIZE_MAX)
 		smu_sc->stats->g_space = smu_sc->smu_max;
+
+	smu_sc->smu_cache = umem_cache_create(st->ident,
+					  sizeof(struct smu),
+					  0,		// align
+					  smu_smu_constructor,
+					  smu_smu_destructor,
+					  NULL, 	// reclaim
+					  smu_sc,	// callback_data
+					  NULL, 	// source
+					  0		// cflags
+		);
+	AN(smu_sc->smu_cache);
+}
+
+static void __match_proto__(storage_close_f)
+smu_close(const struct stevedore *st, int warn)
+{
+	struct smu_sc *smu_sc;
+
+	ASSERT_CLI();
+
+	CAST_OBJ_NOTNULL(smu_sc, st->priv, SMU_SC_MAGIC);
+	if (warn)
+		return;
+	umem_cache_destroy(smu_sc->smu_cache);
+	smu_sc->smu_cache = NULL;
+
+	/*
+	   XXX TODO?
+	   - LRU_Free
+	   - Lck Destroy
+	*/
 }
 
 const struct stevedore smu_stevedore = {
@@ -227,6 +301,7 @@ const struct stevedore smu_stevedore = {
 	.name		=	"umem",
 	.init		=	smu_init,
 	.open		=	smu_open,
+	.close		=	smu_close,
 	.sml_alloc	=	smu_alloc,
 	.sml_free	=	smu_free,
 	.allocobj	=	SML_allocobj,
