@@ -46,10 +46,6 @@
 
 /**********************************************************************/
 
-#if !defined(MAX_THREAD_POOLS)
-#  define MAX_THREAD_POOLS 32
-#endif
-
 extern pid_t mgt_pid;
 #define ASSERT_MGT() do { assert(getpid() == mgt_pid);} while (0)
 
