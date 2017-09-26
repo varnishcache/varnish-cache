@@ -135,6 +135,7 @@ extern const struct jail_tech jail_tech_unix;
 extern const struct jail_tech jail_tech_solaris;
 
 /* mgt_main.c */
+extern struct vsb *vident;
 extern struct VSC_mgt	*VSC_C_mgt;
 struct choice {
 	const char      *name;

@@ -366,6 +366,7 @@ mgt_launch_child(struct cli *cli)
 		mgt_ProcTitle("Child");
 
 		heritage.cls = mgt_cls;
+		heritage.ident = VSB_data(vident) + 1;
 
 		if (mgt_param.sigsegv_handler) {
 			memset(&sa, 0, sizeof sa);

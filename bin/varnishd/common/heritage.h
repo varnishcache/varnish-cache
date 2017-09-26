@@ -84,6 +84,8 @@ struct heritage {
 	ssize_t				panic_str_len;
 
 	struct VCLS			*cls;
+
+	const char			*ident;
 };
 
 extern struct heritage heritage;

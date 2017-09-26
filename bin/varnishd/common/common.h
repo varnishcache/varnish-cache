@@ -50,14 +50,8 @@
 #  define MAX_THREAD_POOLS 32
 #endif
 
-/* Name of transient storage */
-#define TRANSIENT_STORAGE	"Transient"
-
 extern pid_t mgt_pid;
 #define ASSERT_MGT() do { assert(getpid() == mgt_pid);} while (0)
-
-/* varnishd.c */
-extern struct vsb *vident;		// XXX: -> heritage ?
 
 /* Really belongs in mgt.h, but storage_file chokes on both */
 void MCH_Fd_Inherit(int fd, const char *what);

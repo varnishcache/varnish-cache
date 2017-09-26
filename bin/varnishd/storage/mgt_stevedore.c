@@ -46,6 +46,9 @@
 static VTAILQ_HEAD(, stevedore) stevedores =
     VTAILQ_HEAD_INITIALIZER(stevedores);
 
+/* Name of transient storage */
+#define TRANSIENT_STORAGE	"Transient"
+
 struct stevedore *stv_transient;
 
 /*--------------------------------------------------------------------*/
