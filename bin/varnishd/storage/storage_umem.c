@@ -1,9 +1,11 @@
 /*-
  * Copyright (c) 2006 Verdens Gang AS
  * Copyright (c) 2006-2011 Varnish Software AS
+ * Copyright 2017 UPLEX - Nils Goroll Systemoptimierung
  * All rights reserved.
  *
- * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Authors: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ *	    Nils Goroll <nils.goroll@uplex.de>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -26,102 +28,149 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * Storage method based on umem_alloc(3MALLOC)
+ * Storage method based on libumem
  */
 
-//lint -e{766}
 #include "config.h"
 
-#if defined(HAVE_LIBUMEM) && 0
+#if defined(HAVE_LIBUMEM)
+
+#include "cache/cache.h"
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <umem.h>
 
-#include "cache/cache.h"
-#include "cache/cache_obj.h"
 #include "storage/storage.h"
 #include "storage/storage_simple.h"
 
-static size_t			smu_max = SIZE_MAX;
-static MTX			smu_mtx;
+#include "vrt.h"
+#include "vnum.h"
 
-struct smu {
-	struct storage		s;
-	size_t			sz;
+#include "VSC_smu.h"
+
+struct smu_sc {
+	unsigned		magic;
+#define SMU_SC_MAGIC		0x1ac8a345
+	struct lock		smu_mtx;
+	size_t			smu_max;
+	size_t			smu_alloc;
+	struct VSC_smu		*stats;
 };
 
-static struct storage *
+struct smu {
+	unsigned		magic;
+#define SMU_MAGIC		0x69ae9bb9
+	struct storage		s;
+	size_t			sz;
+	struct smu_sc		*sc;
+};
+
+static struct VSC_lck *lck_smu;
+
+static struct storage * __match_proto__(sml_alloc_f)
 smu_alloc(const struct stevedore *st, size_t size)
 {
-	struct smu *smu;
+	struct smu_sc *smu_sc;
+	struct smu *smu = NULL;
+	void *p;
 
-	Lck_Lock(&smu_mtx);
-	VSC_C_main->sma_nreq++;
-	if (VSC_C_main->sma_nbytes + size > smu_max)
+	CAST_OBJ_NOTNULL(smu_sc, st->priv, SMU_SC_MAGIC);
+	Lck_Lock(&smu_sc->smu_mtx);
+	smu_sc->stats->c_req++;
+	if (smu_sc->smu_alloc + size > smu_sc->smu_max) {
+		smu_sc->stats->c_fail++;
 		size = 0;
-	else {
-		VSC_C_main->sma_nobj++;
-		VSC_C_main->sma_nbytes += size;
-		VSC_C_main->sma_balloc += size;
+	} else {
+		smu_sc->smu_alloc += size;
+		smu_sc->stats->c_bytes += size;
+		smu_sc->stats->g_alloc++;
+		smu_sc->stats->g_bytes += size;
+		if (smu_sc->smu_max != SIZE_MAX)
+			smu_sc->stats->g_space -= size;
 	}
-	Lck_Unlock(&smu_mtx);
+	Lck_Unlock(&smu_sc->smu_mtx);
 
 	if (size == 0)
 		return (NULL);
 
-	smu = umem_zalloc(sizeof *smu, UMEM_DEFAULT);
-	if (smu == NULL)
+	/*
+	 * Do not collaps the smu allocation with smu->s.ptr: it is not
+	 * a good idea.  Not only would it make ->trim impossible,
+	 * performance-wise it would be a catastropy with chunksized
+	 * allocations growing another full page, just to accommodate the smu.
+	 */
+
+	p = malloc(size);
+	if (p != NULL) {
+		ALLOC_OBJ(smu, SMU_MAGIC);
+		if (smu != NULL)
+			smu->s.ptr = p;
+		else
+			free(p);
+	}
+	if (smu == NULL) {
+		Lck_Lock(&smu_sc->smu_mtx);
+		/*
+		 * XXX: Not nice to have counters go backwards, but we do
+		 * XXX: Not want to pick up the lock twice just for stats.
+		 */
+		smu_sc->stats->c_fail++;
+		smu_sc->smu_alloc -= size;
+		smu_sc->stats->c_bytes -= size;
+		smu_sc->stats->g_alloc--;
+		smu_sc->stats->g_bytes -= size;
+		if (smu_sc->smu_max != SIZE_MAX)
+			smu_sc->stats->g_space += size;
+		Lck_Unlock(&smu_sc->smu_mtx);
 		return (NULL);
+	}
+	smu->sc = smu_sc;
 	smu->sz = size;
 	smu->s.priv = smu;
-	smu->s.ptr = umem_alloc(size, UMEM_DEFAULT);
-	XXXAN(smu->s.ptr);
 	smu->s.len = 0;
 	smu->s.space = size;
-	smu->s.fd = -1;
-	smu->s.stevedore = st;
 	smu->s.magic = STORAGE_MAGIC;
 	return (&smu->s);
 }
 
-static void
+static void __match_proto__(sml_free_f)
 smu_free(struct storage *s)
 {
+	struct smu_sc *smu_sc;
 	struct smu *smu;
 
 	CHECK_OBJ_NOTNULL(s, STORAGE_MAGIC);
-	smu = s->priv;
+	CAST_OBJ_NOTNULL(smu, s->priv, SMU_MAGIC);
+	smu_sc = smu->sc;
 	assert(smu->sz == smu->s.space);
-	Lck_Lock(&smu_mtx);
-	VSC_C_main->sma_nobj--;
-	VSC_C_main->sma_nbytes -= smu->sz;
-	VSC_C_main->sma_bfree += smu->sz;
-	Lck_Unlock(&smu_mtx);
-	umem_free(smu->s.ptr, smu->s.space);
-	umem_free(smu, sizeof *smu);
+	Lck_Lock(&smu_sc->smu_mtx);
+	smu_sc->smu_alloc -= smu->sz;
+	smu_sc->stats->g_alloc--;
+	smu_sc->stats->g_bytes -= smu->sz;
+	smu_sc->stats->c_freed += smu->sz;
+	if (smu_sc->smu_max != SIZE_MAX)
+		smu_sc->stats->g_space += smu->sz;
+	Lck_Unlock(&smu_sc->smu_mtx);
+	free(smu->s.ptr);
+	free(smu);
 }
 
-static void
-smu_trim(const struct storage *s, size_t size)
+static VCL_BYTES __match_proto__(stv_var_used_space)
+smu_used_space(const struct stevedore *st)
 {
-	struct smu *smu;
-	void *p;
+	struct smu_sc *smu_sc;
 
-	CHECK_OBJ_NOTNULL(s, STORAGE_MAGIC);
-	smu = s->priv;
-	assert(smu->sz == smu->s.space);
-	if ((p = umem_alloc(size, UMEM_DEFAULT)) != NULL) {
-		memcpy(p, smu->s.ptr, size);
-		umem_free(smu->s.ptr, smu->s.space);
-		Lck_Lock(&smu_mtx);
-		VSC_C_main->sma_nbytes -= (smu->sz - size);
-		VSC_C_main->sma_bfree += smu->sz - size;
-		smu->sz = size;
-		Lck_Unlock(&smu_mtx);
-		smu->s.ptr = p;
-		smu->s.space = size;
-	}
+	CAST_OBJ_NOTNULL(smu_sc, st->priv, SMU_SC_MAGIC);
+	return (smu_sc->smu_alloc);
+}
+
+static VCL_BYTES __match_proto__(stv_var_free_space)
+smu_free_space(const struct stevedore *st)
+{
+	struct smu_sc *smu_sc;
+
+	CAST_OBJ_NOTNULL(smu_sc, st->priv, SMU_SC_MAGIC);
+	return (smu_sc->smu_max - smu_sc->smu_alloc);
 }
 
 static void
@@ -129,8 +178,14 @@ smu_init(struct stevedore *parent, int ac, char * const *av)
 {
 	const char *e;
 	uintmax_t u;
+	struct smu_sc *sc;
 
-	(void)parent;
+	ASSERT_MGT();
+	ALLOC_OBJ(sc, SMU_SC_MAGIC);
+	AN(sc);
+	sc->smu_max = SIZE_MAX;
+	assert(sc->smu_max == SIZE_MAX);
+	parent->priv = sc;
 
 	AZ(av[ac]);
 	if (ac > 1)
@@ -144,14 +199,27 @@ smu_init(struct stevedore *parent, int ac, char * const *av)
 		ARGV_ERR("(-sumem) size \"%s\": %s\n", av[0], e);
 	if ((u != (uintmax_t)(size_t)u))
 		ARGV_ERR("(-sumem) size \"%s\": too big\n", av[0]);
-	smu_max = u;
+	if (u < 1024*1024)
+		ARGV_ERR("(-sumem) size \"%s\": too smull, "
+			 "did you forget to specify M or G?\n", av[0]);
+
+	sc->smu_max = u;
 }
 
-static void
-smu_open(const struct stevedore *st)
+static void __match_proto__(storage_open_f)
+smu_open(struct stevedore *st)
 {
-	(void)st;
-	AZ(pthread_mutex_init(&smu_mtx, NULL));
+	struct smu_sc *smu_sc;
+
+	ASSERT_CLI();
+	st->lru = LRU_Alloc();
+	if (lck_smu == NULL)
+		lck_smu = Lck_CreateClass("smu");
+	CAST_OBJ_NOTNULL(smu_sc, st->priv, SMU_SC_MAGIC);
+	Lck_New(&smu_sc->smu_mtx, lck_smu);
+	smu_sc->stats = VSC_smu_New(st->ident);
+	if (smu_sc->smu_max != SIZE_MAX)
+		smu_sc->stats->g_space = smu_sc->smu_max;
 }
 
 const struct stevedore smu_stevedore = {
@@ -159,12 +227,13 @@ const struct stevedore smu_stevedore = {
 	.name		=	"umem",
 	.init		=	smu_init,
 	.open		=	smu_open,
-	.alloc		=	smu_alloc,
-	.free		=	smu_free,
-	.trim		=	smu_trim,
+	.sml_alloc	=	smu_alloc,
+	.sml_free	=	smu_free,
 	.allocobj	=	SML_allocobj,
 	.panic		=	SML_panic,
 	.methods	=	&SML_methods,
+	.var_free_space =	smu_free_space,
+	.var_used_space =	smu_used_space,
 };
 
 #endif /* HAVE_UMEM_H */
