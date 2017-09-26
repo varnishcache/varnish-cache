@@ -128,6 +128,7 @@ COUNTERS = \
 	$(top_srcdir)/bin/varnishd/mgt.vsc \
 	$(top_srcdir)/bin/varnishd/mempool.vsc \
 	$(top_srcdir)/bin/varnishd/sma.vsc \
+	$(top_srcdir)/bin/varnishd/smu.vsc \
 	$(top_srcdir)/bin/varnishd/smf.vsc \
 	$(top_srcdir)/bin/varnishd/vbe.vsc \
 	$(top_srcdir)/bin/varnishd/lck.vsc

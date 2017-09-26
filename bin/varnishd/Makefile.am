@@ -265,6 +265,18 @@ nodist_varnishd_SOURCES +=	VSC_sma.c
 
 #######################################################################
 
+VSC_smu.c VSC_smu.h: $(srcdir)/smu.vsc $(top_srcdir)/lib/libvcc/vsctool.py
+	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -ch $(srcdir)/smu.vsc
+
+$(varnishd_OBJECTS):	VSC_smu.h
+
+EXTRA_DIST	+=	smu.vsc
+DISTCLEANFILES	+=	VSC_smu.c VSC_smu.h
+BUILT_SOURCES	+=	VSC_smu.c VSC_smu.h
+nodist_varnishd_SOURCES +=	VSC_smu.c
+
+#######################################################################
+
 VSC_smf.c VSC_smf.h: $(srcdir)/smf.vsc $(top_srcdir)/lib/libvcc/vsctool.py
 	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -ch $(srcdir)/smf.vsc
 
