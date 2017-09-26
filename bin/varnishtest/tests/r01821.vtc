@@ -5,7 +5,7 @@ server s1 -repeat 2 {
 	txresp -bodylen 65535
 } -start
 
-varnish v1 -vcl+backend {
+varnish v1 -arg "-s Transient=default" -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.uncacheable = true;
 	}

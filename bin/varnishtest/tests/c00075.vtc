@@ -8,7 +8,7 @@ server s1 {
 } -start
 
 varnish v1 \
-	-arg "-s malloc,1m" -vcl+backend { } -start
+	-arg "-s default,1m" -vcl+backend { } -start
 
 varnish v1 -cliok "debug.fragfetch 1024"
 

@@ -6,9 +6,9 @@ server s1 -repeat 6 {
 } -start
 
 varnish v1 \
-    -arg "-ss1=malloc,1m" \
-    -arg "-ss2=malloc,1m" \
-    -arg "-ss0=malloc,1m" \
+    -arg "-ss1=default,1m" \
+    -arg "-ss2=default,1m" \
+    -arg "-ss0=default,1m" \
     -vcl+backend {
 	import vtc;
 	sub vcl_backend_response {

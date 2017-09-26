@@ -1,11 +1,11 @@
-varnishtest "-s Transient=malloc crash"
+varnishtest "-s Transient=default crash"
 
 server s1 {
 	rxreq
 	txresp
 } -start
 
-varnish v1 -arg "-s Transient=malloc" -vcl+backend {} -start
+varnish v1 -arg "-s Transient=default" -vcl+backend {} -start
 
 client c1 {
 	txreq

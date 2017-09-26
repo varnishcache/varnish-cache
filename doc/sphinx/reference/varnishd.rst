@@ -273,9 +273,19 @@ Storage Backend
 
 The following storage types are available:
 
+-s <default[,size]>
+
+  The default storage type resolves to umem where available and malloc
+  otherwise.
+
 -s <malloc[,size]>
 
   malloc is a memory based backend.
+
+-s <umem[,size]>
+
+  umem is a storage backend which is more efficient than malloc on
+  platforms where it is available.
 
 -s <file,path[,size[,granularity[,advice]]]>
 

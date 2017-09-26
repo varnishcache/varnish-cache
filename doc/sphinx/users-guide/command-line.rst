@@ -74,9 +74,9 @@ Other options
 
 Varnish comes with an abundance of useful command line arguments. We recommend that you study them but not necessary use them all, but to get started, the above will be sufficient.
 
-By default Varnish will use 100 megabytes of malloc(3) storage
-for caching objects, if you want to cache more than that, you
-should look at the '-s' argument.
+By default Varnish will use 100 megabytes of virtual memory (malloc(3)
+or libumem(3lib)) storage for caching objects, if you want to cache
+more than that, you should look at the '-s' argument.
 
 .. XXX: 3? benc
 

@@ -124,6 +124,9 @@ static const struct choice STV_choice[] = {
 	{ "persistent",			&smp_fake_stevedore },
 #if defined(HAVE_LIBUMEM)
 	{ "umem",			&smu_stevedore },
+	{ "default",			&smu_stevedore },
+#else
+	{ "default",			&sma_stevedore },
 #endif
 	{ NULL,		NULL }
 };
@@ -217,7 +220,7 @@ STV_Config_Transient(void)
 
 	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_stv);
 	if (stv_transient == NULL)
-		STV_Config(TRANSIENT_STORAGE "=malloc");
+		STV_Config(TRANSIENT_STORAGE "=default");
 	AN(stv_transient);
 	VTAILQ_INSERT_TAIL(&stevedores, stv_transient, list);
 }

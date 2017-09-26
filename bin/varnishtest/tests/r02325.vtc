@@ -1,7 +1,7 @@
 varnishtest "validate storage identifiers"
 
 shell -err -expect {Error: invalid -s name "///"=[...]} {
-	varnishd -a :0 -n ${tmpdir} -F -f '' -s ///=malloc
+	varnishd -a :0 -n ${tmpdir} -F -f '' -s ///=default
 }
 shell -err -expect {Error: Empty named -s argument "foo="} {
 	varnishd -a :0 -n ${tmpdir} -F -f '' -s foo=
