@@ -27,7 +27,6 @@
  *
  */
 
-struct busyobj;
 struct req;
 struct vfp_entry;
 struct vfp_ctx;
@@ -52,7 +51,6 @@ struct vfp {
 	vfp_pull_f		*pull;
 	vfp_fini_f		*fini;
 	const void		*priv1;
-	intptr_t		priv2;
 };
 
 struct vfp_entry {

@@ -437,10 +437,6 @@ VGZ_Destroy(struct vgz **vgp)
 
 /*--------------------------------------------------------------------*/
 
-#define VFP_GUNZIP	0
-#define VFP_GZIP	1
-#define VFP_TESTGUNZIP	2
-
 static enum vfp_status __match_proto__(vfp_init_f)
 vfp_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 {
@@ -454,14 +450,14 @@ vfp_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 		return (VFP_NULL);
 	}
 
-	if (vfe->vfp->priv2 == VFP_GZIP) {
+	if (vfe->vfp == &VFP_gzip) {
 		if (http_GetHdr(vc->http, H_Content_Encoding, NULL))
 			return (VFP_NULL);
 		vg = VGZ_NewGzip(vc->wrk->vsl, vfe->vfp->priv1);
 	} else {
 		if (!http_HdrIs(vc->http, H_Content_Encoding, "gzip"))
 			return (VFP_NULL);
-		if (vfe->vfp->priv2 == VFP_GUNZIP)
+		if (vfe->vfp == &VFP_gunzip)
 			vg = VGZ_NewGunzip(vc->wrk->vsl, vfe->vfp->priv1);
 		else
 			vg = VGZ_NewTestGunzip(vc->wrk->vsl, vfe->vfp->priv1);
@@ -474,16 +470,16 @@ vfp_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	VGZ_Ibuf(vg, vg->m_buf, 0);
 	AZ(vg->m_len);
 
-	if (vfe->vfp->priv2 == VFP_GUNZIP || vfe->vfp->priv2 == VFP_GZIP) {
+	if (vfe->vfp == &VFP_gunzip || vfe->vfp == &VFP_gzip) {
 		http_Unset(vc->http, H_Content_Encoding);
 		http_Unset(vc->http, H_Content_Length);
 		RFC2616_Weaken_Etag(vc->http);
 	}
 
-	if (vfe->vfp->priv2 == VFP_GZIP)
+	if (vfe->vfp == &VFP_gzip)
 		http_SetHeader(vc->http, "Content-Encoding: gzip");
 
-	if (vfe->vfp->priv2 == VFP_GZIP || vfe->vfp->priv2 == VFP_TESTGUNZIP)
+	if (vfe->vfp == &VFP_gzip || vfe->vfp == &VFP_testgunzip)
 		RFC2616_Vary_AE(vc->http);
 
 	return (VFP_OK);
@@ -670,7 +666,6 @@ const struct vfp VFP_gunzip = {
 	.pull = vfp_gunzip_pull,
 	.fini = vfp_gzip_fini,
 	.priv1 = "U F -",
-	.priv2 = VFP_GUNZIP,
 };
 
 const struct vfp VFP_gzip = {
@@ -679,7 +674,6 @@ const struct vfp VFP_gzip = {
 	.pull = vfp_gzip_pull,
 	.fini = vfp_gzip_fini,
 	.priv1 = "G F -",
-	.priv2 = VFP_GZIP,
 };
 
 const struct vfp VFP_testgunzip = {
@@ -688,5 +682,4 @@ const struct vfp VFP_testgunzip = {
 	.pull = vfp_testgunzip_pull,
 	.fini = vfp_gzip_fini,
 	.priv1 = "u F -",
-	.priv2 = VFP_TESTGUNZIP,
 };
