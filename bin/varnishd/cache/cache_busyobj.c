@@ -38,7 +38,6 @@
 #include "cache.h"
 
 #include "hash/hash_slinger.h"
-#include "cache/cache_filter.h"
 
 static struct mempool		*vbopool;
 

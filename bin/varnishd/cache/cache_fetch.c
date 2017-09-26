@@ -510,26 +510,9 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 /*--------------------------------------------------------------------
  */
 
-#define vbf_vfp_push(bo, vfp)						\
-	do {								\
-		if (VFP_Push((bo)->vfc, (vfp)) == NULL) {	\
-			(bo)->htc->doclose = SC_OVERLOAD;		\
-			VDI_Finish((bo)->wrk, bo);			\
-			return (F_STP_ERROR);				\
-		}							\
-	} while (0)
-
-static enum fetch_step
-vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
+static int
+vbf_figure_out_vfp(struct busyobj *bo)
 {
-	const char *p;
-
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
-
-	assert(wrk->handling == VCL_RET_DELIVER);
-
 	/*
 	 * The VCL variables beresp.do_g[un]zip tells us how we want the
 	 * object processed before it is stored.
@@ -543,59 +526,69 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	 *
 	 */
 
-	/* We do nothing unless the param is set */
-	if (!cache_param->http_gzip_support)
-		bo->do_gzip = bo->do_gunzip = 0;
-
-	if (bo->htc->content_length == 0)
+	/* No body or no GZIP supprt -> done */
+	if (bo->htc->body_status == BS_NONE ||
+	    bo->htc->content_length == 0 ||
+	    !cache_param->http_gzip_support) {
 		http_Unset(bo->beresp, H_Content_Encoding);
-
-	if (bo->htc->body_status != BS_NONE) {
-		bo->is_gzip =
-		    http_HdrIs(bo->beresp, H_Content_Encoding, "gzip");
-		bo->is_gunzip =
-		    !http_GetHdr(bo->beresp, H_Content_Encoding, NULL);
-		assert(bo->is_gzip == 0 || bo->is_gunzip == 0);
+		bo->do_gzip = bo->do_gunzip = 0;
+		bo->do_stream = 0;
+		return (0);
 	}
 
-	/* We won't gunzip unless it is non-empty and gzip'ed */
-	if (bo->htc->body_status == BS_NONE ||
-	    bo->htc->content_length == 0 ||
-	    (bo->do_gunzip && !bo->is_gzip))
+	bo->is_gzip = http_HdrIs(bo->beresp, H_Content_Encoding, "gzip");
+	bo->is_gunzip = !http_GetHdr(bo->beresp, H_Content_Encoding, NULL);
+	assert(bo->is_gzip == 0 || bo->is_gunzip == 0);
+
+	/* We won't gunzip unless it is gzip'ed */
+	if (bo->do_gunzip && !bo->is_gzip)
 		bo->do_gunzip = 0;
 
-	/* We wont gzip unless it is non-empty and ungzip'ed */
-	if (bo->htc->body_status == BS_NONE ||
-	    bo->htc->content_length == 0 ||
-	    (bo->do_gzip && !bo->is_gunzip))
+	/* We wont gzip unless if it already is gzip'ed */
+	if (bo->do_gzip && !bo->is_gunzip)
 		bo->do_gzip = 0;
 
 	/* But we can't do both at the same time */
 	assert(bo->do_gzip == 0 || bo->do_gunzip == 0);
 
 	if (bo->do_gunzip || (bo->is_gzip && bo->do_esi))
-		vbf_vfp_push(bo, &VFP_gunzip);
+		if (VFP_Push(bo->vfc, &VFP_gunzip) == NULL)
+			return (-1);
 
-	if (bo->htc->content_length != 0) {
-		if (bo->do_esi && bo->do_gzip) {
-			vbf_vfp_push(bo, &VFP_esi_gzip);
-		} else if (bo->do_esi && bo->is_gzip && !bo->do_gunzip) {
-			vbf_vfp_push(bo, &VFP_esi_gzip);
-		} else if (bo->do_esi) {
-			vbf_vfp_push(bo, &VFP_esi);
-		} else if (bo->do_gzip) {
-			vbf_vfp_push(bo, &VFP_gzip);
-		} else if (bo->is_gzip && !bo->do_gunzip) {
-			vbf_vfp_push(bo, &VFP_testgunzip);
-		}
+	if (bo->do_esi && (bo->do_gzip || (bo->is_gzip && !bo->do_gunzip)))
+		return (VFP_Push(bo->vfc, &VFP_esi_gzip) == NULL ? -1 : 0);
+
+	if (bo->do_esi)
+		return (VFP_Push(bo->vfc, &VFP_esi) == NULL ? -1 : 0);
+
+	if (bo->do_gzip)
+		return (VFP_Push(bo->vfc, &VFP_gzip) == NULL ? -1 : 0);
+
+	if (bo->is_gzip && !bo->do_gunzip)
+		return (VFP_Push(bo->vfc, &VFP_testgunzip) == NULL ? -1 : 0);
+
+	return (0);
+}
+
+static enum fetch_step
+vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
+{
+	const char *p;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
+
+	assert(wrk->handling == VCL_RET_DELIVER);
+
+	if (vbf_figure_out_vfp(bo)) {
+		(bo)->htc->doclose = SC_OVERLOAD;
+		VDI_Finish((bo)->wrk, bo);
+		return (F_STP_ERROR);
 	}
 
 	if (bo->fetch_objcore->flags & OC_F_PRIVATE)
 		AN(bo->uncacheable);
-
-	/* No reason to try streaming a non-existing body */
-	if (bo->htc->body_status == BS_NONE)
-		bo->do_stream = 0;
 
 	bo->fetch_objcore->boc->len_so_far = 0;
 
