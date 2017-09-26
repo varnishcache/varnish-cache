@@ -126,6 +126,9 @@ usage(void)
 
 	printf(FMT, "-s [name=]kind[,options]", "Storage specification");
 	printf(FMT, "", "Can be specified multiple times.");
+#ifdef HAVE_LIBUMEM
+	printf(FMT, "", "  -s umem");
+#endif
 	printf(FMT, "", "  -s malloc");
 	printf(FMT, "", "  -s file");
 
