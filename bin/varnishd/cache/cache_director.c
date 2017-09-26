@@ -39,6 +39,8 @@
 
 #include "cache_director.h"
 
+#include "vrt.h"
+
 /* Resolve director --------------------------------------------------*/
 
 static const struct director *
@@ -172,13 +174,16 @@ VDI_Http1Pipe(struct req *req, struct busyobj *bo)
  */
 
 int
-VDI_Healthy(const struct director *d, const struct busyobj *bo)
+VRT_Healthy(VRT_CTX, VCL_BACKEND be)
 {
 
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	if (d->healthy == NULL)
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (be == NULL)
+		return (0);
+	CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
+	if (be->healthy == NULL)
 		return (1);
-	return (d->healthy(d, bo, NULL));
+	return (be->healthy(be, ctx->bo, NULL));
 }
 
 /* Dump panic info -----------------------------------------------------

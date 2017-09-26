@@ -49,6 +49,14 @@ void VBT_Init(void);
 /* cache_backend_poll.c */
 void VBP_Init(void);
 
+/* cache_director.c */
+int VDI_GetHdr(struct worker *, struct busyobj *);
+int VDI_GetBody(struct worker *, struct busyobj *);
+const struct suckaddr *VDI_GetIP(struct worker *, struct busyobj *);
+void VDI_Finish(struct worker *wrk, struct busyobj *bo);
+enum sess_close VDI_Http1Pipe(struct req *, struct busyobj *);
+void VDI_Panic(const struct director *, struct vsb *, const char *nm);
+
 /* cache_exp.c */
 double EXP_Ttl(const struct req *, const struct objcore *);
 void EXP_Insert(struct worker *wrk, struct objcore *oc);

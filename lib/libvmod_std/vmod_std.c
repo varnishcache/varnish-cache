@@ -198,10 +198,8 @@ VCL_BOOL __match_proto__(td_std_healthy)
 vmod_healthy(VRT_CTX, VCL_BACKEND be)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (be == NULL)
-		return (0);
-	CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-	return (VDI_Healthy(be, ctx->bo));
+	CHECK_OBJ_ORNULL(be, DIRECTOR_MAGIC);
+	return (VRT_Healthy(ctx, be));
 }
 
 VCL_INT __match_proto__(td_std_port)

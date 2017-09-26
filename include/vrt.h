@@ -48,7 +48,9 @@
  * binary/load-time compatible, increment MAJOR version
  *
  *
- * 6.1 (unreleased):
+ * 6.2 (scheduled for: 2018-03-15)
+ *	VRT_Healthy() added
+ * 6.1 (2017-09-15 aka 5.2)
  *	http_CollectHdrSep added
  *	VRT_purge modified (may fail a transaction, signature changed)
  * 6.0 (2017-03-15):
@@ -77,7 +79,7 @@
 
 #define VRT_MAJOR_VERSION	6U
 
-#define VRT_MINOR_VERSION	1U
+#define VRT_MINOR_VERSION	2U
 
 /***********************************************************************/
 
@@ -355,6 +357,11 @@ void VRT_synth_page(VRT_CTX, const char *, ...);
 /* Backend related */
 struct director *VRT_new_backend(VRT_CTX, const struct vrt_backend *);
 void VRT_delete_backend(VRT_CTX, struct director **);
+int VRT_backend_healthy(VRT_CTX, struct director *);
+
+
+/* cache_director.c */
+int VRT_Healthy(VRT_CTX, VCL_BACKEND);
 
 /* Suckaddr related */
 int VRT_VSA_GetPtr(const struct suckaddr *sua, const unsigned char ** dst);

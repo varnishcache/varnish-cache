@@ -37,18 +37,10 @@
  *
  */
 
-/*--------------------------------------------------------------------
- * A director is a piece of code which selects one of possibly multiple
- * backends to use.
- */
-
-
 typedef unsigned vdi_healthy_f(const struct director *, const struct busyobj *,
     double *changed);
-
 typedef const struct director *vdi_resolve_f(const struct director *,
     struct worker *, struct busyobj *);
-
 typedef int vdi_gethdrs_f(const struct director *, struct worker *,
     struct busyobj *);
 typedef int vdi_getbody_f(const struct director *, struct worker *,
@@ -79,16 +71,3 @@ struct director {
 	void			*priv;
 	const void		*priv2;
 };
-
-/* cache_director.c */
-
-int VDI_GetHdr(struct worker *, struct busyobj *);
-int VDI_GetBody(struct worker *, struct busyobj *);
-const struct suckaddr *VDI_GetIP(struct worker *, struct busyobj *);
-
-void VDI_Finish(struct worker *wrk, struct busyobj *bo);
-
-enum sess_close VDI_Http1Pipe(struct req *, struct busyobj *);
-
-int VDI_Healthy(const struct director *, const struct busyobj *);
-void VDI_Panic(const struct director *, struct vsb *, const char *nm);
