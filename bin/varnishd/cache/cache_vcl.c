@@ -36,6 +36,7 @@
 #include <stdlib.h>
 
 #include "cache.h"
+#include "common/heritage.h"
 
 #include "vrt.h"
 #include "vcl.h"

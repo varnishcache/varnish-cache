@@ -58,11 +58,3 @@ void MCH_Fd_Inherit(int fd, const char *what);
 		fprintf(stderr, "(-? gives usage)\n");		\
 		exit(2);					\
 	} while (0)
-
-/* cache/cache_acceptor.c */
-struct transport;
-void XPORT_Init(void);
-const struct transport *XPORT_Find(const char *name);
-
-/* cache/cache_vcl.c */
-int VCL_TestLoad(const char *);

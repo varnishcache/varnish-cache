@@ -1,3 +1,4 @@
+
 /*-
  * Copyright (c) 2006 Verdens Gang AS
  * Copyright (c) 2006-2011 Varnish Software AS
@@ -90,4 +91,13 @@ struct heritage {
 
 extern struct heritage heritage;
 
+/* cache/cache_main.c */
 void child_main(void);
+
+/* cache/cache_vcl.c */
+int VCL_TestLoad(const char *);
+
+/* cache/cache_acceptor.c */
+struct transport;
+void XPORT_Init(void);
+const struct transport *XPORT_Find(const char *name);
