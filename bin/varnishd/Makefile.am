@@ -140,7 +140,7 @@ nobase_pkginclude_HEADERS = \
 	cache/cache_backend.h \
 	cache/cache_director.h \
 	common/common_vsm.h \
-	common/com_params.h \
+	common/common_param.h \
 	waiter/waiter.h
 
 pkgdatadir = ${datarootdir}/${PACKAGE}/vcl

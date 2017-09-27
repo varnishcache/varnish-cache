@@ -59,7 +59,7 @@
 #include <unistd.h>
 #include <math.h>
 
-#include "common/com_params.h"
+#include "common/common_param.h"
 
 /*--------------------------------------------------------------------*/
 

@@ -45,7 +45,7 @@
 #include "vqueue.h"
 #include "vsb.h"
 
-#include "common/com_params.h"
+#include "common/common_param.h"
 
 #include "VSC_mgt.h"
 
