@@ -22,9 +22,9 @@ client c1 {
 } -start
 
 barrier b1 sync
-varnish v1 -expect SMA.s0.g_bytes > 10000
+varnish v1 -expect SM?.s0.g_bytes > 10000
 
 barrier b2 sync
 
 client c1 -wait
-varnish v1 -expect SMA.s0.g_bytes < 6000
+varnish v1 -expect SM?.s0.g_bytes < 6000

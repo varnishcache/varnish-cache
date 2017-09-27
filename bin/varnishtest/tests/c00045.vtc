@@ -30,13 +30,13 @@ client c1 {
 	expect resp.bodylen == 1048288
 } -run
 
-varnish v1 -expect SMA.Transient.g_bytes == 0
-varnish v1 -expect SMA.s0.g_bytes > 1000000
-varnish v1 -expect SMA.s0.g_space < 193
-varnish v1 -expect SMA.s1.g_bytes == 0
-varnish v1 -expect SMA.s1.g_space > 1000000
-varnish v1 -expect SMA.s2.g_bytes == 0
-varnish v1 -expect SMA.s2.g_space > 1000000
+varnish v1 -expect SM?.Transient.g_bytes == 0
+varnish v1 -expect SM?.s0.g_bytes > 1000000
+varnish v1 -expect SM?.s0.g_space < 193
+varnish v1 -expect SM?.s1.g_bytes == 0
+varnish v1 -expect SM?.s1.g_space > 1000000
+varnish v1 -expect SM?.s2.g_bytes == 0
+varnish v1 -expect SM?.s2.g_space > 1000000
 
 client c1 {
 	txreq -url /bar
@@ -46,13 +46,13 @@ client c1 {
 } -run
 
 varnish v1 -expect n_lru_nuked == 1
-varnish v1 -expect SMA.Transient.g_bytes == 0
-varnish v1 -expect SMA.s0.g_bytes > 1000000
-varnish v1 -expect SMA.s0.g_space < 1192
-varnish v1 -expect SMA.s1.g_bytes == 0
-varnish v1 -expect SMA.s1.g_space > 1000000
-varnish v1 -expect SMA.s2.g_bytes == 0
-varnish v1 -expect SMA.s2.g_space > 1000000
+varnish v1 -expect SM?.Transient.g_bytes == 0
+varnish v1 -expect SM?.s0.g_bytes > 1000000
+varnish v1 -expect SM?.s0.g_space < 1192
+varnish v1 -expect SM?.s1.g_bytes == 0
+varnish v1 -expect SM?.s1.g_space > 1000000
+varnish v1 -expect SM?.s2.g_bytes == 0
+varnish v1 -expect SM?.s2.g_space > 1000000
 
 client c1 {
 	txreq -url /foo
@@ -62,10 +62,10 @@ client c1 {
 } -run
 
 varnish v1 -expect n_lru_nuked == 2
-varnish v1 -expect SMA.Transient.g_bytes == 0
-varnish v1 -expect SMA.s0.g_bytes > 1000000
-varnish v1 -expect SMA.s0.g_space < 1194
-varnish v1 -expect SMA.s1.g_bytes == 0
-varnish v1 -expect SMA.s1.g_space > 1000000
-varnish v1 -expect SMA.s2.g_bytes == 0
-varnish v1 -expect SMA.s2.g_space > 1000000
+varnish v1 -expect SM?.Transient.g_bytes == 0
+varnish v1 -expect SM?.s0.g_bytes > 1000000
+varnish v1 -expect SM?.s0.g_space < 1194
+varnish v1 -expect SM?.s1.g_bytes == 0
+varnish v1 -expect SM?.s1.g_space > 1000000
+varnish v1 -expect SM?.s2.g_bytes == 0
+varnish v1 -expect SM?.s2.g_space > 1000000

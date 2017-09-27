@@ -34,7 +34,7 @@ client c1 {
 } -run
 
 # If this fails, the multiple storage allocations did not happen
-varnish v1 -expect SMA.s0.c_req > 2
+varnish v1 -expect SM?.s0.c_req > 2
 
 client c1 {
 	# See varnish can gunzip it.

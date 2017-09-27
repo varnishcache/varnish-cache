@@ -851,7 +851,7 @@ varnish_vsc(const struct varnish *v, const char *arg)
  */
 
 struct stat_priv {
-	char target_name[256];
+	char target_pattern[256];
 	uintmax_t val;
 	const struct varnish *v;
 };
@@ -864,7 +864,7 @@ do_expect_cb(void *priv, const struct VSC_point * const pt)
 	if (pt == NULL)
 		return(0);
 
-	if (strcmp(pt->name, sp->target_name))
+	if (fnmatch(sp->target_pattern, pt->name, 0))
 		return(0);
 
 	AZ(strcmp(pt->ctype, "uint64_t"));
@@ -897,9 +897,9 @@ varnish_expect(const struct varnish *v, char * const *av)
 	}
 	p = strrchr(r, '.');
 	if (p == NULL) {
-		bprintf(sp.target_name, "MAIN.%s", r);
+		bprintf(sp.target_pattern, "MAIN.%s", r);
 	} else {
-		bprintf(sp.target_name, "%s", r);
+		bprintf(sp.target_pattern, "%s", r);
 	}
 
 	sp.val = 0;
@@ -965,7 +965,13 @@ varnish_expect(const struct varnish *v, char * const *av)
  * process in the background, waiting for the ``-start`` switch to actually
  * start the child.
  *
- * With:
+ * Types used in the description below:
+ *
+ * PATTERN
+ *         is a 'glob' style pattern (ie: fnmatch(3)) as used in shell filename
+ *         expansion.
+ *
+ * Arguments:
  *
  * vNAME
  *	   Identify the Varnish server with a string, it must starts with 'v'.
@@ -1030,17 +1036,15 @@ varnish_expect(const struct varnish *v, char * const *av)
  *         anything, -cliok expects 200, -clierr expects STATUS, and
  *         -cliexpect expects the REGEXP to match the returned response.
  *
- * \-expect STRING OP NUMBER
- *         Look into the VSM and make sure the counter identified by STRING has
- *         a correct value. OP can be ==, >, >=, <, <=. For example::
+ * \-expect PATTERN OP NUMBER
+ *         Look into the VSM and make sure the first VSC counter identified by
+ *         PATTERN has a correct value. OP can be ==, >, >=, <, <=. For
+ *         example::
  *
- *                 varnish v1 -expect SMA.s1.g_space > 1000000
+ *                 varnish v1 -expect SM?.s1.g_space > 1000000
  *
  * \-vsc PATTERN
- *         Dump VSC counters matching PATTERN.  The PATTERN is a 'glob'
- *         style pattern (ie: fnmatch(3)) as used in shell filename expansion.
- *         To see all counters use pattern "*", to see all counters about
- *         requests use "*req*".
+ *         Dump VSC counters matching PATTERN.
  *
  * \-vsl_catchup
  *         Wait until the logging thread has idled to make sure that all

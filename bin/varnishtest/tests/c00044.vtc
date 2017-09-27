@@ -37,13 +37,13 @@ client c1 {
 	expect resp.bodylen == 1048290
 } -run
 
-varnish v1 -expect SMA.Transient.g_bytes == 0
-varnish v1 -expect SMA.s0.g_bytes == 0
-varnish v1 -expect SMA.s0.g_space > 1000000
-varnish v1 -expect SMA.s1.g_bytes > 1000000
-varnish v1 -expect SMA.s1.g_space < 200
-varnish v1 -expect SMA.s2.g_bytes == 0
-varnish v1 -expect SMA.s2.g_space > 1000000
+varnish v1 -expect SM?.Transient.g_bytes == 0
+varnish v1 -expect SM?.s0.g_bytes == 0
+varnish v1 -expect SM?.s0.g_space > 1000000
+varnish v1 -expect SM?.s1.g_bytes > 1000000
+varnish v1 -expect SM?.s1.g_space < 200
+varnish v1 -expect SM?.s2.g_bytes == 0
+varnish v1 -expect SM?.s2.g_space > 1000000
 
 client c1 {
 	txreq -url /bar
@@ -52,13 +52,13 @@ client c1 {
 	expect resp.bodylen == 1048291
 } -run
 
-varnish v1 -expect SMA.Transient.g_bytes == 0
-varnish v1 -expect SMA.s0.g_bytes == 0
-varnish v1 -expect SMA.s0.g_space > 1000000
-varnish v1 -expect SMA.s1.g_bytes > 1000000
-varnish v1 -expect SMA.s1.g_space < 200
-varnish v1 -expect SMA.s2.g_bytes > 1000000
-varnish v1 -expect SMA.s2.g_space < 200
+varnish v1 -expect SM?.Transient.g_bytes == 0
+varnish v1 -expect SM?.s0.g_bytes == 0
+varnish v1 -expect SM?.s0.g_space > 1000000
+varnish v1 -expect SM?.s1.g_bytes > 1000000
+varnish v1 -expect SM?.s1.g_space < 200
+varnish v1 -expect SM?.s2.g_bytes > 1000000
+varnish v1 -expect SM?.s2.g_space < 200
 
 client c1 {
 	txreq -url /burp
@@ -67,13 +67,13 @@ client c1 {
 	expect resp.bodylen == 1048292
 } -run
 
-varnish v1 -expect SMA.Transient.g_bytes == 0
-varnish v1 -expect SMA.s0.g_bytes > 1000000
-varnish v1 -expect SMA.s0.g_space < 200
-varnish v1 -expect SMA.s1.g_bytes > 1000000
-varnish v1 -expect SMA.s1.g_space < 200
-varnish v1 -expect SMA.s2.g_bytes > 1000000
-varnish v1 -expect SMA.s2.g_space < 200
+varnish v1 -expect SM?.Transient.g_bytes == 0
+varnish v1 -expect SM?.s0.g_bytes > 1000000
+varnish v1 -expect SM?.s0.g_space < 200
+varnish v1 -expect SM?.s1.g_bytes > 1000000
+varnish v1 -expect SM?.s1.g_space < 200
+varnish v1 -expect SM?.s2.g_bytes > 1000000
+varnish v1 -expect SM?.s2.g_space < 200
 
 client c1 {
 	txreq -url /foo1

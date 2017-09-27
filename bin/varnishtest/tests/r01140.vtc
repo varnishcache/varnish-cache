@@ -36,7 +36,7 @@ client c1 {
 
 delay .1
 
-varnish v1 -expect SMA.s0.g_space < 1000
+varnish v1 -expect SM?.s0.g_space < 1000
 
 client c1 {
 	txreq -url /url2

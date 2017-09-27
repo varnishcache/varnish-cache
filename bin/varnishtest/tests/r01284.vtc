@@ -34,8 +34,8 @@ client c1 {
 
 delay .1
 
-varnish v1 -expect SMA.Transient.g_bytes > 1048000
-varnish v1 -expect SMA.Transient.g_space < 200
+varnish v1 -expect SM?.Transient.g_bytes > 1048000
+varnish v1 -expect SM?.Transient.g_space < 200
 
 client c1 {
 	# No space for this object (more than 256 bytes in headers). Don't wait
@@ -45,7 +45,7 @@ client c1 {
 } -run
 
 # Three failures, one for obj2, one for vcl_backend_error{}, one for synth objcore
-varnish v1 -expect SMA.Transient.c_fail == 3
+varnish v1 -expect SM?.Transient.c_fail == 3
 
 client c1 {
 	# Check that Varnish is still alive
