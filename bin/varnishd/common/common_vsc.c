@@ -36,19 +36,18 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "common/common_vsm.h"
-
 #include "vdef.h"
 #include "miniobj.h"
 #include "vas.h"
 #include "vend.h"
-#include "vsmw.h"
 #include "vgz.h"
 #include "vmb.h"
+#include "vrt.h"
+#include "vsmw.h"
 #include "vqueue.h"
 #include "vapi/vsc_int.h"
 
-struct vsmw *proc_vsmw;
+#include "common/heritage.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -69,7 +68,7 @@ vsc_callback_f *vsc_lock;
 vsc_callback_f *vsc_unlock;
 
 void *
-VSC_Alloc(const char *nm, size_t sd, size_t sj, const unsigned char *zj,
+VRT_VSC_Alloc(const char *nm, size_t sd, size_t sj, const unsigned char *zj,
     size_t szj, const char *fmt, va_list va)
 {
 	char *p;
@@ -85,8 +84,8 @@ VSC_Alloc(const char *nm, size_t sd, size_t sj, const unsigned char *zj,
 	else
 		bprintf(buf, "%s.%s", nm, fmt);
 
-	AN(proc_vsmw);
-	p = VSMW_Allocv(proc_vsmw, VSC_CLASS, 8 + sd + sj, buf, va);
+	AN(heritage.proc_vsmw);
+	p = VSMW_Allocv(heritage.proc_vsmw, VSC_CLASS, 8 + sd + sj, buf, va);
 	AN(p);
 
 	memset(&vz, 0, sizeof vz);
@@ -111,19 +110,19 @@ VSC_Alloc(const char *nm, size_t sd, size_t sj, const unsigned char *zj,
 }
 
 void
-VSC_Destroy(const char *nm, const void *p)
+VRT_VSC_Destroy(const char *nm, const void *p)
 {
 	struct vsc_segs *vsg;
 
 	if (vsc_lock != NULL)
 		vsc_lock();
 
-	AN(proc_vsmw);
+	AN(heritage.proc_vsmw);
 	VTAILQ_FOREACH(vsg, &vsc_seglist, list) {
 		if (vsg->ptr != p)
 			continue;
 		assert(vsg->nm == nm);
-		VSMW_Free(proc_vsmw, &vsg->seg);
+		VSMW_Free(heritage.proc_vsmw, &vsg->seg);
 		VTAILQ_REMOVE(&vsc_seglist, vsg, list);
 		FREE_OBJ(vsg);
 		break;

@@ -36,7 +36,6 @@
 #include <stdlib.h>
 
 #include "common/heritage.h"
-#include "common/common_vsm.h"
 
 #include "vend.h"
 #include "vgz.h"
@@ -501,8 +500,8 @@ VSM_Init(void)
 	VSC_C_main = VSC_main_New("");
 	AN(VSC_C_main);
 
-	AN(proc_vsmw);
-	vsl_head = VSMW_Allocf(proc_vsmw, VSL_CLASS,
+	AN(heritage.proc_vsmw);
+	vsl_head = VSMW_Allocf(heritage.proc_vsmw, VSL_CLASS,
 	    cache_param->vsl_space, VSL_CLASS);
 	AN(vsl_head);
 	vsl_segsize = ((cache_param->vsl_space - sizeof *vsl_head) /

@@ -89,6 +89,8 @@ struct heritage {
 	const char			*ident;
 
 	long				mgt_pid;
+
+	struct vsmw			*proc_vsmw;
 };
 
 extern struct heritage heritage;
@@ -116,3 +118,9 @@ int VCL_TestLoad(const char *);
 struct transport;
 void XPORT_Init(void);
 const struct transport *XPORT_Find(const char *name);
+
+/* common/common_vsc.c */
+typedef void vsc_callback_f(void);
+extern vsc_callback_f *vsc_lock;
+extern vsc_callback_f *vsc_unlock;
+

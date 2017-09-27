@@ -50,6 +50,8 @@
  *
  * 6.2 (scheduled for: 2018-03-15)
  *	VRT_Healthy() added
+ *	VRT_VSC_Alloc() added
+ *	VRT_VSC_Destroy() added
  * 6.1 (2017-09-15 aka 5.2)
  *	http_CollectHdrSep added
  *	VRT_purge modified (may fail a transaction, signature changed)
@@ -411,3 +413,9 @@ typedef int vcl_init_f(VRT_CTX);
 typedef void vcl_fini_f(VRT_CTX);
 typedef void vcl_func_f(VRT_CTX);
 typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
+
+#ifdef va_start	// XXX: hackish
+void *VRT_VSC_Alloc(const char *, size_t, size_t, const unsigned char *, size_t,
+    const char *, va_list);
+void VRT_VSC_Destroy(const char *, const void *);
+#endif

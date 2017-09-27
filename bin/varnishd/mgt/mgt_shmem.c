@@ -42,7 +42,6 @@
 
 #include "mgt/mgt.h"
 #include "common/heritage.h"
-#include "common/common_vsm.h"
 
 #include "vsm_priv.h"
 #include "vsmw.h"
@@ -101,7 +100,7 @@ mgt_SHM_Init(void)
 	mgt_vsmw = VSMW_New(fd, 0640, "_.index");
 	AN(mgt_vsmw);
 
-	proc_vsmw = mgt_vsmw;
+	heritage.proc_vsmw = mgt_vsmw;
 
 	/* Setup atexit handler */
 	AZ(atexit(mgt_shm_atexit));

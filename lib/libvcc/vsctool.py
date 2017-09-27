@@ -162,7 +162,7 @@ class vscset(object):
 		fo.write('#include <stdint.h>\n')
 		fo.write('#include "vdef.h"\n')
 		fo.write('#include "vas.h"\n')
-		fo.write('#include "common/common_vsm.h"\n')
+		fo.write('#include "vrt.h"\n')
 		fo.write('#include "VSC_%s.h"\n' % self.name)
 
 		fo.write("\n")
@@ -187,7 +187,7 @@ class vscset(object):
 		fo.write("\t" + self.struct + " *retval;\n")
 		fo.write("\n")
 		fo.write("\tva_start(ap, fmt);\n")
-		fo.write("\tretval = VSC_Alloc")
+		fo.write("\tretval = VRT_VSC_Alloc")
 		fo.write("(vsc_" + self.name + "_name, ")
 		fo.write("sizeof(" + self.struct + "),\n\t    ")
 		fo.write("vsc_" + self.name + "_jsonlen, ")
@@ -205,7 +205,7 @@ class vscset(object):
 		fo.write("{\n")
 		fo.write("\n")
 		fo.write("\tAN(pp);\n")
-		fo.write('\tVSC_Destroy(vsc_%s_name, *pp);\n' % self.name)
+		fo.write('\tVRT_VSC_Destroy(vsc_%s_name, *pp);\n' % self.name)
 		fo.write("\t*pp = NULL;\n")
 		fo.write("}\n")
 

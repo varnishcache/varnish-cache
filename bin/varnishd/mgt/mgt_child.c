@@ -46,7 +46,6 @@
 
 #include "mgt/mgt.h"
 #include "common/heritage.h"
-#include "common/common_vsm.h"
 
 #include "vbm.h"
 #include "vcli_serve.h"
@@ -397,8 +396,8 @@ mgt_launch_child(struct cli *cli)
 
 		VJ_subproc(JAIL_SUBPROC_WORKER);
 
-		proc_vsmw = VSMW_New(heritage.vsm_fd, 0640, "_.index");
-		AN(proc_vsmw);
+		heritage.proc_vsmw = VSMW_New(heritage.vsm_fd, 0640, "_.index");
+		AN(heritage.proc_vsmw);
 
 		child_main();
 
