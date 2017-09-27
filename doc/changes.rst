@@ -2,7 +2,35 @@
 Varnish Cache 4.1.9-beta1 (unreleased)
 ======================================
 
+Changes since 4.1.8:
+
 * Added ``bereq.is_bgfetch`` which is true for background fetches.
+* Add the vtc feature ignore_unknown_macro.
+* Expose to VCL whether or not a fetch is a background fetch (bgfetch)
+* Ignore req.ttl when keeping track of epired objects (see 2422_)
+* Move the cli buffer to VSB (from stack). This deprecates the parameter
+  cli_buffer.
+
+.. _2422: https://github.com/varnishcache/varnish-cache/pull/2422
+
+Bugs fixed
+----------
+
+* 2337_ and 2366_ - Both Upgrade and Connection headers are needed for
+  WebSocket now
+* 2372_ - Fix problem with purging and the n_obj_purged counter
+* 2373_ - VSC n_vcl, n_vcl_avail, n_vcl_discard are gauge
+* 2380_ - Correct regexp in examples.
+* 2390_ - Straighten locking wrt vcl_active
+* 2429_ - Avoid buffer read overflow on vcl_error and -sfile
+
+.. _2337: https://github.com/varnishcache/varnish-cache/issues/2337
+.. _2366: https://github.com/varnishcache/varnish-cache/issues/2366
+.. _2372: https://github.com/varnishcache/varnish-cache/pull/2372
+.. _2373: https://github.com/varnishcache/varnish-cache/issues/2373
+.. _2380: https://github.com/varnishcache/varnish-cache/issues/2380
+.. _2390: https://github.com/varnishcache/varnish-cache/issues/2390
+.. _2429: https://github.com/varnishcache/varnish-cache/pull/2429
 
 ================================
 Varnish Cache 4.1.8 (2017-08-02)
