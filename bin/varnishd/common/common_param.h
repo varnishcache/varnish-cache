@@ -45,7 +45,7 @@ enum debug_bits {
 };
 
 static inline int
-COM_DO_DEBUG(uint8_t volatile *p, enum debug_bits x)
+COM_DO_DEBUG(const volatile uint8_t *p, enum debug_bits x)
 {
 	return (p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7)));
 }
@@ -57,7 +57,7 @@ enum feature_bits {
 };
 
 static inline int
-COM_FEATURE(uint8_t volatile *p, enum feature_bits x)
+COM_FEATURE(const volatile uint8_t *p, enum feature_bits x)
 {
 	return (p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7)));
 }
