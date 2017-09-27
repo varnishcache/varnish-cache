@@ -227,4 +227,4 @@ extern unsigned mgt_vcc_unsafe_path;
 #endif
 
 #define MGT_FEATURE(x)	COM_FEATURE(mgt_param.feature_bits, x)
-#define MGT_DO_DEBUG(x)	COM_DO_DEBUG(mgt_param.feature_bits, x)
+#define MGT_DO_DEBUG(x)	COM_DO_DEBUG(mgt_param.debug_bits, x)
