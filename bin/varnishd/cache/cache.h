@@ -1062,19 +1062,8 @@ Tlen(const txt t)
  */
 #define W_TIM_real(w) ((w)->lastused = VTIM_real())
 
-static inline int
-FEATURE(enum feature_bits x)
-{
-	return (cache_param->feature_bits[(unsigned)x>>3] &
-	    (0x80U >> ((unsigned)x & 7)));
-}
-
-static inline int
-DO_DEBUG(enum debug_bits x)
-{
-	return (cache_param->debug_bits[(unsigned)x>>3] &
-	    (0x80U >> ((unsigned)x & 7)));
-}
+#define FEATURE(x)	COM_FEATURE(cache_param->feature_bits, x)
+#define DO_DEBUG(x)	COM_DO_DEBUG(cache_param->debug_bits, x)
 
 #define DSL(debug_bit, id, ...)					\
 	do {							\

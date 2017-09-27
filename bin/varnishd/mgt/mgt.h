@@ -226,16 +226,5 @@ extern unsigned mgt_vcc_unsafe_path;
 #error "Keep pthreads out of in manager process"
 #endif
 
-static inline int
-MGT_FEATURE(enum feature_bits x)
-{
-	return (mgt_param.feature_bits[(unsigned)x>>3] &
-	    (0x80U >> ((unsigned)x & 7)));
-}
-
-static inline int
-MGT_DO_DEBUG(enum debug_bits x)
-{
-	return (mgt_param.debug_bits[(unsigned)x>>3] &
-	    (0x80U >> ((unsigned)x & 7)));
-}
+#define MGT_FEATURE(x)	COM_FEATURE(mgt_param.feature_bits, x)
+#define MGT_DO_DEBUG(x)	COM_DO_DEBUG(mgt_param.feature_bits, x)

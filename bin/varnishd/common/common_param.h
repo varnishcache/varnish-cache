@@ -44,11 +44,24 @@ enum debug_bits {
        DBG_Reserved
 };
 
+static inline int
+COM_DO_DEBUG(uint8_t volatile *p, enum debug_bits x)
+{
+	return (p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7)));
+}
+
 enum feature_bits {
 #define FEATURE_BIT(U, l, d, ld) FEATURE_##U,
 #include "tbl/feature_bits.h"
        FEATURE_Reserved
 };
+
+static inline int
+COM_FEATURE(uint8_t volatile *p, enum feature_bits x)
+{
+	return (p[(unsigned)x>>3] & (0x80U >> ((unsigned)x & 7)));
+}
+
 
 struct poolparam {
 	unsigned		min_pool;
