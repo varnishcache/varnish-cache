@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "mgt/mgt.h"
 #include "common/heritage.h"
@@ -472,7 +473,7 @@ static struct cli_proto cli_params[] = {
 };
 
 /*--------------------------------------------------------------------
- * Wash the min/max/default values, and leave the default set.
+ * Configure the parameters
  */
 
 void
@@ -481,11 +482,54 @@ MCF_InitParams(struct cli *cli)
 	struct plist *pl;
 	struct parspec *pp;
 	struct vsb *vsb;
+	ssize_t def, low;
+
+	MCF_AddParams(mgt_parspec);
+	MCF_AddParams(WRK_parspec);
+	MCF_AddParams(VSL_parspec);
+
+	MCF_TcpParams();
+
+	if (sizeof(void *) < 8) {		/*lint !e506 !e774  */
+		/*
+		 * Adjust default parameters for 32 bit systems to conserve
+		 * VM space.
+		 */
+		MCF_ParamConf(MCF_DEFAULT, "workspace_client", "24k");
+		MCF_ParamConf(MCF_DEFAULT, "workspace_backend", "16k");
+		MCF_ParamConf(MCF_DEFAULT, "http_resp_size", "8k");
+		MCF_ParamConf(MCF_DEFAULT, "http_req_size", "12k");
+		MCF_ParamConf(MCF_DEFAULT, "gzip_buffer", "4k");
+		MCF_ParamConf(MCF_MAXIMUM, "vsl_space", "1G");
+	}
+
+#if !defined(HAVE_ACCEPT_FILTERS) || defined(__linux)
+	MCF_ParamConf(MCF_DEFAULT, "accept_filter", "off");
+#endif
+
+	low = sysconf(_SC_THREAD_STACK_MIN);
+	MCF_ParamConf(MCF_MINIMUM, "thread_pool_stack", "%jdb", (intmax_t)low);
+
+#if defined(WITH_SANITIZERS)
+	def = 92 * 1024;
+#else
+	def = 48 * 1024;
+#endif
+	if (def < low)
+		def = low;
+	MCF_ParamConf(MCF_DEFAULT, "thread_pool_stack", "%jdb", (intmax_t)def);
+
+#if !defined(MAX_THREAD_POOLS)
+#  define MAX_THREAD_POOLS 32
+#endif
+
+	MCF_ParamConf(MCF_MAXIMUM, "thread_pools", "%d", MAX_THREAD_POOLS);
 
 	VCLS_AddFunc(mgt_cls, MCF_AUTH, cli_params);
 
 	vsb = VSB_new_auto();
 	AN(vsb);
+
 	VTAILQ_FOREACH(pl, &phead, list) {
 		pp = pl->spec;
 
@@ -499,17 +543,6 @@ MCF_InitParams(struct cli *cli)
 		mcf_wash_param(cli, pp, &pp->def, "default", vsb);
 	}
 	VSB_destroy(&vsb);
-}
-
-/*--------------------------------------------------------------------*/
-
-void
-MCF_CollectParams(void)
-{
-
-	MCF_AddParams(mgt_parspec);
-	MCF_AddParams(WRK_parspec);
-	MCF_AddParams(VSL_parspec);
 }
 
 /*--------------------------------------------------------------------*/

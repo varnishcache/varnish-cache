@@ -161,7 +161,6 @@ extern const char C_CLI[];	// CLI traffic between master and child
 
 /* mgt_param.c */
 void MCF_InitParams(struct cli *);
-void MCF_CollectParams(void);
 enum mcf_which_e {
 	MCF_DEFAULT = 32,
 	MCF_MINIMUM = 33,

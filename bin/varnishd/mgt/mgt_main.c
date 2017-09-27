@@ -249,53 +249,6 @@ mgt_Cflag_atexit(void)
 /*--------------------------------------------------------------------*/
 
 static void
-init_params(struct cli *cli)
-{
-	ssize_t def, low;
-
-	MCF_CollectParams();
-
-	MCF_TcpParams();
-
-	if (sizeof(void *) < 8) {		/*lint !e506 !e774  */
-		/*
-		 * Adjust default parameters for 32 bit systems to conserve
-		 * VM space.
-		 */
-		MCF_ParamConf(MCF_DEFAULT, "workspace_client", "24k");
-		MCF_ParamConf(MCF_DEFAULT, "workspace_backend", "16k");
-		MCF_ParamConf(MCF_DEFAULT, "http_resp_size", "8k");
-		MCF_ParamConf(MCF_DEFAULT, "http_req_size", "12k");
-		MCF_ParamConf(MCF_DEFAULT, "gzip_buffer", "4k");
-		MCF_ParamConf(MCF_MAXIMUM, "vsl_space", "1G");
-	}
-
-#if !defined(HAVE_ACCEPT_FILTERS) || defined(__linux)
-	MCF_ParamConf(MCF_DEFAULT, "accept_filter", "off");
-#endif
-
-	low = sysconf(_SC_THREAD_STACK_MIN);
-	MCF_ParamConf(MCF_MINIMUM, "thread_pool_stack", "%jdb", (intmax_t)low);
-
-#if defined(WITH_SANITIZERS)
-	def = 92 * 1024;
-#else
-	def = 48 * 1024;
-#endif
-	if (def < low)
-		def = low;
-	MCF_ParamConf(MCF_DEFAULT, "thread_pool_stack", "%jdb", (intmax_t)def);
-
-#if !defined(MAX_THREAD_POOLS)
-#  define MAX_THREAD_POOLS 32
-#endif
-
-	MCF_ParamConf(MCF_MAXIMUM, "thread_pools", "%d", MAX_THREAD_POOLS);
-
-	MCF_InitParams(cli);
-}
-
-static void
 mgt_tests(void)
 {
 	assert(VTIM_parse("Sun, 06 Nov 1994 08:49:37 GMT") == 784111777);
@@ -323,7 +276,7 @@ mgt_initialize(struct cli *cli)
 
 	mgt_cli_init_cls();		// CLI commands can be registered
 
-	init_params(cli);
+	MCF_InitParams(cli);
 	cli_check(cli);
 }
 
