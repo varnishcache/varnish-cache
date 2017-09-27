@@ -32,6 +32,7 @@
 #include "config.h"
 
 #include "cache/cache.h"
+#include "common/heritage.h"
 
 #include <sys/mman.h>
 

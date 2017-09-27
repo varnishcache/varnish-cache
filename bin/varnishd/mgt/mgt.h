@@ -33,7 +33,18 @@
 #endif
 #define MGT_MGT_H
 
-#include "common/common.h"
+
+#include <stdint.h>
+
+#include <sys/types.h>
+
+#include "miniobj.h"
+#include "vas.h"
+#include "vcs.h"
+#include "vdef.h"
+#include "vqueue.h"
+#include "vsb.h"
+
 #include "common/com_params.h"
 
 #include "VSC_mgt.h"

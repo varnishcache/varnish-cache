@@ -31,17 +31,21 @@
 
 #include <errno.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-#include "common.h"
 #include "common/common_vsm.h"
 
+#include "vdef.h"
+#include "miniobj.h"
+#include "vas.h"
 #include "vend.h"
 #include "vsmw.h"
 #include "vgz.h"
 #include "vmb.h"
+#include "vqueue.h"
 #include "vapi/vsc_int.h"
 
 struct vsmw *proc_vsmw;

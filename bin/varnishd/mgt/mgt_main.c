@@ -61,7 +61,6 @@
 
 struct heritage		heritage;
 unsigned		d_flag = 0;
-pid_t			mgt_pid;
 struct vev_base		*mgt_evb;
 int			exit_status = 0;
 struct vsb		*vident;
@@ -202,7 +201,7 @@ mgt_secret_atexit(void)
 {
 
 	/* Only master process */
-	if (getpid() != mgt_pid)
+	if (getpid() != heritage.mgt_pid)
 		return;
 	VJ_master(JAIL_MASTER_FILE);
 	(void)unlink("_.secret");
@@ -240,7 +239,7 @@ mgt_Cflag_atexit(void)
 {
 
 	/* Only master process */
-	if (getpid() != mgt_pid)
+	if (getpid() != heritage.mgt_pid)
 		return;
 	(void)rmdir("vmod_cache");
 	(void)unlink("_.pid");
@@ -313,7 +312,7 @@ mgt_initialize(struct cli *cli)
 	static unsigned clilim = 32768;
 
 	/* for ASSERT_MGT() */
-	mgt_pid = getpid();
+	heritage.mgt_pid = getpid();
 
 	/* Create a cli for convenience in otherwise CLI functions */
 	INIT_OBJ(cli, CLI_MAGIC);
@@ -593,7 +592,7 @@ main(int argc, char * const *argv)
 	if (!C_flag && !d_flag && !F_flag) {
 		eric_fd = mgt_eric();
 		MCH_TrackHighFd(eric_fd);
-		mgt_pid = getpid();
+		heritage.mgt_pid = getpid();
 	}
 
 	VRND_SeedAll();

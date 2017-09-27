@@ -44,6 +44,7 @@
 #include <unistd.h>
 
 #include "mgt/mgt.h"
+#include "common/heritage.h"
 
 #include "vcli_serve.h"
 #include "vev.h"

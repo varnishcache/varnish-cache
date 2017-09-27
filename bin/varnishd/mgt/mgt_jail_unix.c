@@ -41,6 +41,7 @@
 #include <sys/stat.h>
 
 #include "mgt/mgt.h"
+#include "common/heritage.h"
 
 #ifdef __linux__
 #include <sys/prctl.h>

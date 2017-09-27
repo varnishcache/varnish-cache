@@ -41,6 +41,7 @@
 #include <unistd.h>
 
 #include "mgt/mgt.h"
+#include "common/heritage.h"
 
 #include "storage/storage.h"
 #include "vnum.h"

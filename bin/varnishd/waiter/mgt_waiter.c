@@ -33,6 +33,7 @@
 
 #include "mgt/mgt.h"
 #include "waiter/mgt_waiter.h"
+#include "common/heritage.h"
 
 static const struct choice waiter_choice[] = {
 #define WAITER(nm) { #nm, &waiter_##nm },

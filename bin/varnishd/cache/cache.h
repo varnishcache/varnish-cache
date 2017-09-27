@@ -35,8 +35,16 @@
 #define VARNISH_CACHE_CHILD	1
 
 #include <stdarg.h>
+#include <stdint.h>
 
-#include "common/common.h"
+#include <sys/types.h>
+
+#include "miniobj.h"
+#include "vas.h"
+#include "vcs.h"
+#include "vdef.h"
+#include "vqueue.h"
+#include "vsb.h"
 
 #include "vapi/vsl_int.h"
 

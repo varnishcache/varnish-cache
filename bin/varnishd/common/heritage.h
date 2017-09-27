@@ -87,9 +87,24 @@ struct heritage {
 	struct VCLS			*cls;
 
 	const char			*ident;
+
+	long				mgt_pid;
 };
 
 extern struct heritage heritage;
+
+#define ASSERT_MGT() do { assert(getpid() == heritage.mgt_pid);} while (0)
+
+/* Really belongs in mgt.h, but storage_file chokes on both */
+void MCH_Fd_Inherit(int fd, const char *what);
+
+#define ARGV_ERR(...)						\
+	do {							\
+		ASSERT_MGT();					\
+		fprintf(stderr, "Error: " __VA_ARGS__);		\
+		fprintf(stderr, "(-? gives usage)\n");		\
+		exit(2);					\
+	} while (0)
 
 /* cache/cache_main.c */
 void child_main(void);

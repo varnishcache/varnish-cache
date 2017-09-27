@@ -40,6 +40,7 @@
 #include <sys/stat.h>
 
 #include "mgt/mgt.h"
+#include "common/heritage.h"
 
 #include "libvcc.h"
 #include "vcli_serve.h"
@@ -902,7 +903,7 @@ mgt_vcl_atexit(void)
 {
 	struct vclprog *vp;
 
-	if (getpid() != mgt_pid)
+	if (getpid() != heritage.mgt_pid)
 		return;
 	active_vcl = NULL;
 	do {

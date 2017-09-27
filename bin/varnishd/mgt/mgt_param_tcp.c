@@ -43,6 +43,7 @@
 #include <unistd.h>
 
 #include "mgt/mgt.h"
+#include "common/heritage.h"
 
 #include "vtcp.h"
 

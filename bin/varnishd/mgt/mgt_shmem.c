@@ -72,7 +72,7 @@ mgt_shm_atexit(void)
 {
 
 	/* Do not let VCC kill our VSM */
-	if (getpid() != mgt_pid)
+	if (getpid() != heritage.mgt_pid)
 		return;
 	VJ_master(JAIL_MASTER_FILE);
 	VSMW_Destroy(&mgt_vsmw);
