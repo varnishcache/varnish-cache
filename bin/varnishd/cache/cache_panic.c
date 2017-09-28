@@ -36,6 +36,7 @@
 #include <signal.h>
 
 #include "vtim.h"
+#include "vcs.h"
 
 #include "cache.h"
 #include "cache_transport.h"

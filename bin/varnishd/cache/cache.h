@@ -41,7 +41,6 @@
 
 #include "miniobj.h"
 #include "vas.h"
-#include "vcs.h"
 #include "vdef.h"
 #include "vqueue.h"
 #include "vsb.h"
@@ -80,7 +79,7 @@ enum body_status {
 
 enum req_body_state_e {
 #define REQ_BODY(U)	REQ_BODY_##U,
-#include <tbl/req_body.h>
+#include "tbl/req_body.h"
 };
 
 /*--------------------------------------------------------------------*/
