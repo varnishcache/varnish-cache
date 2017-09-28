@@ -35,7 +35,7 @@
 
 #if defined(HAVE_LIBUMEM)
 
-#include "cache/cache.h"
+#include "cache/cache_varnishd.h"
 
 #include <stdio.h>
 #include <stdlib.h>
