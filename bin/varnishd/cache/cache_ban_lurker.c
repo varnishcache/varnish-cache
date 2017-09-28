@@ -31,9 +31,10 @@
 #include "config.h"
 
 #include "cache_varnishd.h"
-#include "cache_ban.h"
 
-#include "hash/hash_slinger.h"
+#include "cache_ban.h"
+#include "cache_objhead.h"
+
 #include "vtim.h"
 
 static struct objcore oc_mark_cnt = { .magic = OBJCORE_MAGIC, };

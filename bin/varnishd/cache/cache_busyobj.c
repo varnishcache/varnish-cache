@@ -37,7 +37,7 @@
 
 #include "cache_varnishd.h"
 
-#include "hash/hash_slinger.h"
+#include "cache_objhead.h"
 
 static struct mempool		*vbopool;
 

@@ -52,14 +52,16 @@
 
 #include "config.h"
 
-#include "cache_varnishd.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "cache_varnishd.h"
+
+#include "cache/cache_objhead.h"
 #include "cache/cache_transport.h"
 
 #include "hash/hash_slinger.h"
+
 #include "vsha256.h"
 #include "vtim.h"
 

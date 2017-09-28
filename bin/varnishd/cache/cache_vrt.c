@@ -34,7 +34,7 @@
 #include "cache_varnishd.h"
 
 #include "cache_director.h"
-#include "hash/hash_slinger.h"
+#include "cache_objhead.h"
 #include "vav.h"
 #include "vrt.h"
 #include "vcl.h"

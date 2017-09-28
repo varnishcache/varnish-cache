@@ -34,8 +34,8 @@
 
 #include "cache_varnishd.h"
 #include "cache_ban.h"
+#include "cache_objhead.h"
 
-#include "hash/hash_slinger.h"
 #include "vcli_serve.h"
 #include "vend.h"
 #include "vmb.h"

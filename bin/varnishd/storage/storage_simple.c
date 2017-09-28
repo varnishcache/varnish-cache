@@ -32,7 +32,7 @@
 #include "cache/cache_varnishd.h"
 
 #include "cache/cache_obj.h"
-#include "hash/hash_slinger.h"
+#include "cache/cache_objhead.h"
 
 #include "storage/storage.h"
 #include "storage/storage_simple.h"

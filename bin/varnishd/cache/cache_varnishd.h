@@ -44,13 +44,6 @@
 #include "VSC_main.h"
 
 /* -------------------------------------------------------------------*/
-/*
- * This macro can be used in .h files to isolate bits that the manager
- * should not (need to) see, such as pthread mutexes etc.
- */
-#define VARNISH_CACHE_CHILD	1
-
-/* -------------------------------------------------------------------*/
 
 struct vfp;
 

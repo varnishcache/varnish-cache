@@ -35,6 +35,7 @@
 #include <stdlib.h>
 
 #include "cache/cache_varnishd.h"
+#include "cache/cache_objhead.h"
 
 #include "hash/hash_slinger.h"
 #include "vmb.h"

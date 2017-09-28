@@ -28,17 +28,15 @@
  *
  */
 
-struct sess;
-struct req;
-struct objcore;
 struct worker;
+struct objhead;
 
 typedef void hash_init_f(int ac, char * const *av);
 typedef void hash_start_f(void);
 typedef void hash_prep_f(struct worker *);
-typedef struct objhead *hash_lookup_f(struct worker *wrk, const void *digest,
-    struct objhead **nobj);
-typedef int hash_deref_f(struct objhead *obj);
+typedef struct objhead *hash_lookup_f(struct worker *, const void *digest,
+    struct objhead **);
+typedef int hash_deref_f(struct objhead *);
 
 struct hash_slinger {
 	unsigned		magic;
@@ -59,60 +57,12 @@ enum lookup_e {
 	HSH_EXPBUSY
 };
 
+/* mgt_hash.c */
+void HSH_config(const char *);
+
 /* cache_hash.c */
-struct ban;
-void HSH_Cleanup(struct worker *w);
-enum lookup_e HSH_Lookup(struct req *, struct objcore **, struct objcore **,
-    int always_insert);
-void HSH_Ref(struct objcore *o);
-void HSH_Init(const struct hash_slinger *slinger);
-void HSH_AddString(struct req *, void *ctx, const char *str);
-void HSH_Insert(struct worker *, const void *hash, struct objcore *,
-    struct ban *);
-unsigned HSH_Purge(struct worker *, struct objhead *, double ttl, double grace,
-    double keep);
-void HSH_config(const char *h_arg);
-struct boc *HSH_RefBoc(const struct objcore *);
-void HSH_DerefBoc(struct worker *wrk, struct objcore *);
-struct objcore *HSH_Private(const struct worker *wrk);
-void HSH_Abandon(struct objcore *oc);
-int HSH_Snipe(const struct worker *, struct objcore *);
-void HSH_Kill(struct objcore *);
-
-#ifdef VARNISH_CACHE_CHILD
-
-struct objhead {
-	unsigned		magic;
-#define OBJHEAD_MAGIC		0x1b96615d
-
-	int			refcnt;
-	struct lock		mtx;
-	VTAILQ_HEAD(,objcore)	objcs;
-	uint8_t			digest[DIGEST_LEN];
-	VTAILQ_HEAD(, req)	waitinglist;
-
-	/*----------------------------------------------------
-	 * The fields below are for the sole private use of
-	 * the hash implementation(s).
-	 */
-	union {
-		struct {
-			VTAILQ_ENTRY(objhead)	u_n_hoh_list;
-			void			*u_n_hoh_head;
-		} n;
-	} _u;
-#define hoh_list _u.n.u_n_hoh_list
-#define hoh_head _u.n.u_n_hoh_head
-};
-
-void HSH_Fail(struct objcore *);
-void HSH_Unbusy(struct worker *, struct objcore *);
-void HSH_DeleteObjHead(const struct worker *, struct objhead *);
-int HSH_DerefObjHead(struct worker *, struct objhead **);
-int HSH_DerefObjCore(struct worker *, struct objcore **, int);
-#define HSH_RUSH_POLICY -1
-#define HSH_RUSH_ALL	INT_MAX
-#endif /* VARNISH_CACHE_CHILD */
+void HSH_Init(const struct hash_slinger *);
+void HSH_Cleanup(struct worker *);
 
 extern const struct hash_slinger hsl_slinger;
 extern const struct hash_slinger hcl_slinger;

@@ -41,6 +41,7 @@
 #include "cache_varnishd.h"
 #include "cache_director.h"
 #include "cache_filter.h"
+#include "cache_objhead.h"
 #include "cache_transport.h"
 
 #include "hash/hash_slinger.h"
