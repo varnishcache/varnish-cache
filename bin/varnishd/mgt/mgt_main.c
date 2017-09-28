@@ -126,6 +126,12 @@ usage(void)
 
 	printf(FMT, "-s [name=]kind[,options]", "Storage specification");
 	printf(FMT, "", "Can be specified multiple times.");
+#ifdef HAVE_LIBUMEM
+	printf(FMT, "", "  -s default (=umem)");
+	printf(FMT, "", "  -s umem");
+#else
+	printf(FMT, "", "  -s default (=malloc)");
+#endif
 	printf(FMT, "", "  -s malloc");
 	printf(FMT, "", "  -s file");
 
@@ -434,7 +440,7 @@ main(int argc, char * const *argv)
 	const char *n_arg = NULL;
 	const char *P_arg = NULL;
 	const char *S_arg = NULL;
-	const char *s_arg = "malloc,100m";
+	const char *s_arg = "default,100m";
 	const char *W_arg = NULL;
 	int s_arg_given = 0;
 	int novcl = 0;

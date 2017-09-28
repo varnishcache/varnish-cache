@@ -91,7 +91,7 @@ logexpect l1 -v v1 -g raw {
 	expect 0 1007	VCL_call        {^PASS$}
 	expect 0 1007	VCL_return      {^fetch$}
 	expect 0 1007	Link            {^bereq 1008 pass$}
-	expect 0 1007	Storage         {^malloc Transient$}
+	expect 0 1007	Storage         {^(malloc|umem) Transient$}
 	expect 0 1007	RespProtocol    {^HTTP/1.1$}
 	expect 0 1007	RespStatus      {^100$}
 	expect 0 1007	RespReason      {^Continue$}
@@ -107,7 +107,7 @@ logexpect l1 -v v1 -g raw {
 	expect 0 1009	ReqHeader       {^Content-Length: 20$}
 	expect 0 1009	ReqHeader       {^X-Forwarded-For:}
 	expect 0 1009	VCL_call        {^RECV$}
-	expect 0 1009	Storage         {^malloc Transient$}
+	expect 0 1009	Storage         {^(malloc|umem) Transient$}
 	expect 0 1009	RespProtocol    {^HTTP/1.1$}
 	expect 0 1009	RespStatus      {^100$}
 	expect 0 1009	RespReason      {^Continue$}

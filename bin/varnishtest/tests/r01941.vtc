@@ -24,7 +24,7 @@ server s1 {
 } -start
 
 varnish v1 -arg "-pfetch_chunksize=4k" \
-	-arg "-smalloc,1m" -vcl+backend {
+	-arg "-sdefault,1m" -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_esi = true;
 	}

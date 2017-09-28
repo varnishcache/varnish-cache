@@ -24,7 +24,7 @@ server s1 {
 	txresp -hdr "Foo: foo" -body "abcdef\n"
 } -start
 
-varnish v1 -arg "-smalloc,1m" -vcl+backend {
+varnish v1 -arg "-sdefault,1m" -vcl+backend {
 	import vtc;
 
 	sub vcl_backend_response {

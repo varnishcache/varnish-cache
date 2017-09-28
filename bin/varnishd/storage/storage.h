@@ -145,6 +145,7 @@ int LRU_NukeOne(struct worker *, struct lru *);
 void LRU_Touch(struct worker *, struct objcore *, double now);
 
 /*--------------------------------------------------------------------*/
+extern const struct stevedore smu_stevedore;
 extern const struct stevedore sma_stevedore;
 extern const struct stevedore smf_stevedore;
 extern const struct stevedore smp_stevedore;

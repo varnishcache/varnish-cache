@@ -101,6 +101,7 @@ varnishd_SOURCES = \
 	storage/storage_persistent_silo.c \
 	storage/storage_persistent_subr.c \
 	storage/storage_simple.c \
+	storage/storage_umem.c \
 	waiter/mgt_waiter.c \
 	waiter/cache_waiter.c \
 	waiter/cache_waiter_epoll.c \
@@ -161,7 +162,7 @@ varnishd_LDADD = \
 	@SAN_LDFLAGS@ \
 	@JEMALLOC_LDADD@ \
 	@PCRE_LIBS@ \
-	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${RT_LIBS} ${LIBM}
+	${DL_LIBS} ${PTHREAD_LIBS} ${NET_LIBS} ${RT_LIBS} ${LIBM} ${UMEM_LIBS}
 
 noinst_PROGRAMS = vhp_gen_hufdec
 vhp_gen_hufdec_SOURCES = hpack/vhp_gen_hufdec.c
@@ -261,6 +262,18 @@ EXTRA_DIST	+=	sma.vsc
 DISTCLEANFILES	+=	VSC_sma.c VSC_sma.h
 BUILT_SOURCES	+=	VSC_sma.c VSC_sma.h
 nodist_varnishd_SOURCES +=	VSC_sma.c
+
+#######################################################################
+
+VSC_smu.c VSC_smu.h: $(srcdir)/smu.vsc $(top_srcdir)/lib/libvcc/vsctool.py
+	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -ch $(srcdir)/smu.vsc
+
+$(varnishd_OBJECTS):	VSC_smu.h
+
+EXTRA_DIST	+=	smu.vsc
+DISTCLEANFILES	+=	VSC_smu.c VSC_smu.h
+BUILT_SOURCES	+=	VSC_smu.c VSC_smu.h
+nodist_varnishd_SOURCES +=	VSC_smu.c
 
 #######################################################################
 

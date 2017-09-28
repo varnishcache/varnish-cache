@@ -1,11 +1,11 @@
-varnishtest "Check that -s malloc works"
+varnishtest "Check that -s default works"
 
 server s1 {
 	rxreq
 	txresp -hdr "Connection: close" -body "012345\n"
 } -start
 
-varnish v1 -arg "-s malloc" -vcl+backend {} -start
+varnish v1 -arg "-s default" -vcl+backend {} -start
 
 client c1 {
 	txreq -url "/"

@@ -19,7 +19,7 @@ some text that looks like this::
                -T localhost:6082 \
                -f /etc/varnish/default.vcl \
                -S /etc/varnish/secret \
-               -s malloc,256m"
+               -s default,256m"
 
 Change it to::
 
@@ -27,7 +27,7 @@ Change it to::
                -T localhost:6082 \
                -f /etc/varnish/default.vcl \
                -S /etc/varnish/secret \
-               -s malloc,256m"
+               -s default,256m"
 
 Debian (v8+) / Ubuntu (v15.04+)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -40,7 +40,7 @@ Applying changes to the default service is best done by creating a new file
 
   [Service]
   ExecStart=
-  ExecStart=/usr/sbin/varnishd -a :80 -T localhost:6082 -f /etc/varnish/default.vcl -S /etc/varnish/secret -s malloc,256m
+  ExecStart=/usr/sbin/varnishd -a :80 -T localhost:6082 -f /etc/varnish/default.vcl -S /etc/varnish/secret -s default,256m
 
 This will override the ExecStart part of the default configuration shipped
 with Varnish Cache.
