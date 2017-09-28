@@ -29,8 +29,10 @@
 
 #include "config.h"
 
+#include <limits.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "cache/cache.h"
 #include "cache/cache_director.h"

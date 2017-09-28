@@ -83,7 +83,7 @@
 
 #include <stdlib.h>
 
-#include "cache.h"
+#include "cache_priv.h"
 #include "cache_obj.h"
 #include "vend.h"
 #include "storage/storage.h"

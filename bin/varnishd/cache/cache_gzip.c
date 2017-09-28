@@ -40,7 +40,7 @@
 
 #include <stdlib.h>
 
-#include "cache.h"
+#include "cache_priv.h"
 #include "cache_filter.h"
 #include "cache_vgz.h"
 #include "vend.h"

@@ -36,7 +36,7 @@
 
 #include "config.h"
 
-#include "cache.h"
+#include "cache_priv.h"
 #include "common/heritage.h"
 
 #include "vcli_serve.h"

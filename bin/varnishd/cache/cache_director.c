@@ -35,7 +35,7 @@
 
 #include "config.h"
 
-#include "cache.h"
+#include "cache_priv.h"
 
 #include "cache_director.h"
 

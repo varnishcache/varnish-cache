@@ -29,7 +29,7 @@
 
 #include "config.h"
 
-#include "cache/cache.h"
+#include "cache/cache_priv.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -92,7 +92,7 @@ h2h_checkhdr(const struct http *hp, const char *b, size_t namelen, size_t len)
 static h2_error
 h2h_addhdr(struct http *hp, char *b, size_t namelen, size_t len)
 {
-	/* XXX: This might belong in cache/cache_http.c */
+	/* XXX: This might belong in cache/cache_priv.http.c */
 	unsigned n;
 
 	CHECK_OBJ_NOTNULL(hp, HTTP_MAGIC);

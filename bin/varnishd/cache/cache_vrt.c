@@ -31,7 +31,7 @@
 
 #include "config.h"
 
-#include "cache.h"
+#include "cache_priv.h"
 
 #include "cache_director.h"
 #include "hash/hash_slinger.h"

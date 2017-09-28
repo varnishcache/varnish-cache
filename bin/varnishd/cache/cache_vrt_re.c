@@ -33,7 +33,7 @@
 
 #include <ctype.h>
 
-#include "cache.h"
+#include "cache_priv.h"
 
 #include "vrt.h"
 

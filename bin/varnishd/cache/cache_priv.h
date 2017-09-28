@@ -29,6 +29,18 @@
  * Stuff that should *never* be exposed to a VMOD
  */
 
+#include "cache.h"
+
+#include "vsb.h"
+
+#include <sys/socket.h>
+
+#include <string.h>
+#include <limits.h>
+#include <unistd.h>
+
+#include "common/common_param.h"
+
 #include "VSC_main.h"
 
 struct vfp;
@@ -138,9 +150,6 @@ void Pool_Sumstat(const struct worker *w);
 int Pool_TrySumstat(const struct worker *wrk);
 void Pool_PurgeStat(unsigned nobj);
 int Pool_Task_Any(struct pool_task *task, enum task_prio prio);
-
-/* cache_proxy.c [VPX] */
-task_func_t VPX_Proto_Sess;
 
 /* cache_range.c [VRG] */
 void VRG_dorange(struct req *req, const char *r);

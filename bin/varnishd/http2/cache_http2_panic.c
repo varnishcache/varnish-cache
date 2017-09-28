@@ -29,7 +29,7 @@
 
 #include "config.h"
 
-#include "cache/cache.h"
+#include "cache/cache_priv.h"
 
 #include "cache/cache_transport.h"
 #include "http2/cache_http2.h"

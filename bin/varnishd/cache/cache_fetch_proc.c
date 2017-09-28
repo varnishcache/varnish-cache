@@ -31,7 +31,7 @@
 
 #include <stdlib.h>
 
-#include "cache.h"
+#include "cache_priv.h"
 #include "cache_filter.h"
 #include "vcli_serve.h"
 

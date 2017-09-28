@@ -31,6 +31,9 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 #include "cache/cache.h"
 
@@ -40,6 +43,8 @@
 #include "vtcp.h"
 #include "vtim.h"
 #include "vcc_if.h"
+
+#include "common/common_param.h"
 
 #define WARN_RETIRED()							\
 	do {								\

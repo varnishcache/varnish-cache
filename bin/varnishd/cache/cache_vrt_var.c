@@ -32,7 +32,7 @@
 
 #include <stdio.h>
 
-#include "cache.h"
+#include "cache_priv.h"
 #include "common/heritage.h"
 
 #include "cache_director.h"

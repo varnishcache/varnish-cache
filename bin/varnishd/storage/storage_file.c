@@ -31,7 +31,7 @@
 
 #include "config.h"
 
-#include "cache/cache.h"
+#include "cache/cache_priv.h"
 #include "common/heritage.h"
 
 #include <sys/mman.h>

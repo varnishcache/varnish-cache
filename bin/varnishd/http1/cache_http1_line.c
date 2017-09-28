@@ -35,7 +35,7 @@
 #include "config.h"
 
 #include <sys/uio.h>
-#include "cache/cache.h"
+#include "cache/cache_priv.h"
 
 #include <errno.h>
 #include <stdio.h>

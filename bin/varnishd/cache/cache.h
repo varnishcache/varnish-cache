@@ -34,28 +34,19 @@
  */
 #define VARNISH_CACHE_CHILD	1
 
+#include <math.h>
+#include <pthread.h>
 #include <stdarg.h>
 #include <stdint.h>
-
 #include <sys/types.h>
+
+#include "vdef.h"
 
 #include "miniobj.h"
 #include "vas.h"
-#include "vdef.h"
 #include "vqueue.h"
-#include "vsb.h"
 
 #include "vapi/vsl_int.h"
-
-#include <sys/socket.h>
-
-#include <pthread.h>
-#include <string.h>
-#include <limits.h>
-#include <unistd.h>
-#include <math.h>
-
-#include "common/common_param.h"
 
 /*--------------------------------------------------------------------*/
 
@@ -1074,7 +1065,3 @@ Tlen(const txt t)
 			    "MAGIC 0x%08x (Should:%s/0x%08x)\n",	\
 			    (ptr)->magic, #exp, exp);			\
 	} while(0)
-
-#ifdef VARNISHD_IS_NOT_A_VMOD
-#  include "cache/cache_priv.h"
-#endif

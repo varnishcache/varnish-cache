@@ -58,7 +58,7 @@
 
 #include <stdlib.h>
 
-#include "cache.h"
+#include "cache_priv.h"
 
 #include "vct.h"
 #include "vend.h"

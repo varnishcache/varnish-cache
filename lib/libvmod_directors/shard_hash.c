@@ -30,6 +30,8 @@
 
 #include "config.h"
 
+#include <string.h>
+
 #include "cache/cache.h"
 
 #include "vrt.h"

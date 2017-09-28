@@ -29,7 +29,7 @@
 
 #include "config.h"
 
-#include "cache/cache.h"
+#include "cache/cache_priv.h"
 
 #include "cache/cache_obj.h"
 #include "hash/hash_slinger.h"

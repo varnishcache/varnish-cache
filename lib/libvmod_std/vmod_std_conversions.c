@@ -30,7 +30,10 @@
 #include "config.h"
 
 #include <ctype.h>
+#include <limits.h>
+#include <string.h>
 #include <stdlib.h>
+#include <sys/socket.h>
 
 #include <netdb.h>
 

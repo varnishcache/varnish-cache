@@ -30,7 +30,7 @@
 
 #include "config.h"
 
-#include "cache.h"
+#include "cache_priv.h"
 #include "cache_ban.h"
 
 #include "hash/hash_slinger.h"

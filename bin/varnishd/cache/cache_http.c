@@ -32,7 +32,7 @@
 #include "config.h"
 
 #include <stddef.h>
-#include "cache.h"
+#include "cache_priv.h"
 #include <stdio.h>
 
 #include "vend.h"

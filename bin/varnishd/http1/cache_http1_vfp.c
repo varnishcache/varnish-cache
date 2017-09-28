@@ -38,7 +38,7 @@
 #include <errno.h>
 #include <inttypes.h>
 
-#include "cache/cache.h"
+#include "cache/cache_priv.h"
 #include "cache/cache_filter.h"
 #include "cache_http1.h"
 
