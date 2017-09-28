@@ -29,7 +29,7 @@
 
 #include "config.h"
 
-#include "cache/cache_priv.h"
+#include "cache/cache_varnishd.h"
 
 #include <stdio.h>
 #include <stdlib.h>

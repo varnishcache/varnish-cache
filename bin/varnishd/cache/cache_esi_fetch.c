@@ -33,7 +33,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#include "cache_priv.h"
+#include "cache_varnishd.h"
 #include "cache_filter.h"
 #include "cache_vgz.h"
 

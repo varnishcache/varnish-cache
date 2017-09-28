@@ -32,7 +32,7 @@
 
 #include <pcre.h>
 
-#include "cache_priv.h"
+#include "cache_varnishd.h"
 #include "cache_ban.h"
 
 #include "hash/hash_slinger.h"

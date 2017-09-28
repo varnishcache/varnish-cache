@@ -34,7 +34,7 @@
 #include <poll.h>
 #include <stdlib.h>
 
-#include "cache/cache_priv.h"
+#include "cache/cache_varnishd.h"
 
 #include "waiter/waiter.h"
 #include "waiter/waiter_priv.h"

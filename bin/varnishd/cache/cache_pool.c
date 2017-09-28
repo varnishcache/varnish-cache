@@ -37,7 +37,7 @@
 
 #include <stdlib.h>
 
-#include "cache_priv.h"
+#include "cache_varnishd.h"
 #include "cache_pool.h"
 
 static pthread_t		thr_pool_herder;

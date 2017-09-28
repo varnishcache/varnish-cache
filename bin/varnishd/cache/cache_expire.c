@@ -34,7 +34,7 @@
 
 #include <stdlib.h>
 
-#include "cache_priv.h"
+#include "cache_varnishd.h"
 
 #include "binary_heap.h"
 #include "hash/hash_slinger.h"

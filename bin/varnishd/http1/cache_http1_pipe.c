@@ -31,7 +31,7 @@
 
 #include "config.h"
 
-#include "cache/cache_priv.h"
+#include "cache/cache_varnishd.h"
 
 #include <poll.h>
 #include <stdio.h>

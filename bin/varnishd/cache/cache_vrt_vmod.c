@@ -31,7 +31,7 @@
 
 #include "config.h"
 
-#include "cache_priv.h"
+#include "cache_varnishd.h"
 
 #include <dlfcn.h>
 #include <stdio.h>

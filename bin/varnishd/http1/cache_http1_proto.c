@@ -45,7 +45,7 @@
 
 #include "config.h"
 
-#include "cache/cache_priv.h"
+#include "cache/cache_varnishd.h"
 #include "cache/cache_transport.h"
 
 #include "cache_http1.h"

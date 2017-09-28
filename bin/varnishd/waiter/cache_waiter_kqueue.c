@@ -33,7 +33,7 @@
 
 #if defined(HAVE_KQUEUE)
 
-#include "cache/cache_priv.h"
+#include "cache/cache_varnishd.h"
 
 #include <sys/event.h>
 

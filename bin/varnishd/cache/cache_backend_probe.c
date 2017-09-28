@@ -41,7 +41,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "cache_priv.h"
+#include "cache_varnishd.h"
 
 #include "binary_heap.h"
 #include "vcli_serve.h"

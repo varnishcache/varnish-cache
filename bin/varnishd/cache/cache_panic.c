@@ -38,7 +38,7 @@
 #include "vtim.h"
 #include "vcs.h"
 
-#include "cache_priv.h"
+#include "cache_varnishd.h"
 #include "cache_transport.h"
 
 #include "cache_filter.h"
