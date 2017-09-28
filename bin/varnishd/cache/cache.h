@@ -50,9 +50,6 @@
 #include <sys/socket.h>
 
 #include <pthread.h>
-#ifdef HAVE_PTHREAD_NP_H
-#include <pthread_np.h>
-#endif
 #include <string.h>
 #include <limits.h>
 #include <unistd.h>

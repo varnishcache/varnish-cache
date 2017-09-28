@@ -34,6 +34,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef HAVE_PTHREAD_NP_H
+#  include <pthread_np.h>
+#endif
+
 #include "common/heritage.h"
 
 #include "vcli_serve.h"
