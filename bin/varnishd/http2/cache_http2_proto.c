@@ -508,7 +508,7 @@ h2_do_req(struct worker *wrk, void *priv)
 }
 
 static h2_error
-h2_end_headers(struct worker *wrk, const struct h2_sess *h2,
+h2_end_headers(struct worker *wrk, struct h2_sess *h2,
     struct req *req, struct h2_req *r2)
 {
 	h2_error h2e;
@@ -518,6 +518,7 @@ h2_end_headers(struct worker *wrk, const struct h2_sess *h2,
 	h2e = h2h_decode_fini(h2, r2->decode);
 	FREE_OBJ(r2->decode);
 	r2->state = H2_S_CLOS_REM;
+	h2->hdr_stream = 0;
 	if (h2e != NULL) {
 		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug, "HPACK/FINI %s", h2e->name);
@@ -549,6 +550,8 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	AN(r2);
 	if (r2->state != H2_S_IDLE)
 		return (H2CE_PROTOCOL_ERROR);	// XXX spec ?
+	AZ(h2->hdr_stream);
+	h2->hdr_stream = h2->rxf_stream;
 	r2->state = H2_S_OPEN;
 
 	req = r2->req;
@@ -612,9 +615,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	return (0);
 }
 
-/**********************************************************************
- * XXX: Check hard sequence req. for Cont.
- */
+/**********************************************************************/
 
 static h2_error __match_proto__(h2_frame_f)
 h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
@@ -828,6 +829,11 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2,
 		r2 = h2_new_req(wrk, h2, h2->rxf_stream, NULL);
 		AN(r2);
 	}
+
+	if (h2->hdr_stream != 0 &&
+	    !(h2->rxf_stream == h2->hdr_stream && h2f == H2_F_CONTINUATION))
+		return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1859,1863
+
 
 	h2e = h2f->rxfunc(wrk, h2, r2);
 	if (h2e == 0)

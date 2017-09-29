@@ -1,0 +1,36 @@
+varnishtest "2387: Crash on out of order header blocks"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set debug +syncvsl"
+
+
+barrier b1 cond 2
+barrier b2 cond 2
+
+client c1 {
+	stream 1 {
+		txreq -nohdrend
+		barrier b2 sync
+		barrier b1 sync
+		txcont -hdr "bar" "foo"
+	} -start
+	stream 3 {
+		barrier b2 sync
+		txreq -nohdrend
+		barrier b1 sync
+		txcont -hdr "bar" "foo"
+
+	} -run
+	stream 0 {
+		rxgoaway
+		expect goaway.laststream == "3"
+		expect goaway.err == PROTOCOL_ERROR
+	} -run
+} -run
