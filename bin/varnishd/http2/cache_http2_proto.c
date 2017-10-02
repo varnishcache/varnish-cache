@@ -532,8 +532,10 @@ h2_end_headers(struct worker *wrk, const struct h2_sess *h2,
 	req->task.func = h2_do_req;
 	req->task.priv = req;
 	r2->scheduled = 1;
-	if (Pool_Task(wrk->pool, &req->task, TASK_QUEUE_STR) != 0)
+	if (Pool_Task(wrk->pool, &req->task, TASK_QUEUE_STR) != 0) {
+		r2->scheduled = 0;
 		return (H2SE_REFUSED_STREAM); //rfc7540,l,3326,3329
+	}
 	return (0);
 }
 
