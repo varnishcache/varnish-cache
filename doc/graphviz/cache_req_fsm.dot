@@ -48,13 +48,13 @@ digraph cache_req_fsm {
 	*/
 
 	acceptor [shape=hexagon label="Request received"]
-	label_select [shape=hexagon label="Label selected"]
+	label_select [shape=hexagon label="LABEL"]
 	ESI_REQ [shape=hexagon label="ESI request"]
 	RESTART [shape=plaintext]
 
 	ESI_REQ -> recv
 	SYNTH [shape=plaintext]
-	LABEL [shape=plaintext]
+	FAIL [shape=plaintext]
 	acceptor -> recv [style=bold]
 	label_select -> recv [style=bold]
 
@@ -62,7 +62,7 @@ digraph cache_req_fsm {
 		/* cnt_deliver() */
 		deliver [
 			 shape=record
-			 label="{cnt_deliver:|Filter obj.-\>resp.|{vcl_deliver\{\}|{req.*|resp.*}}|{<restart>restart|<deliver>deliver|<synth>synth}}"
+			 label="{cnt_deliver:|Filter obj.-\>resp.|{vcl_deliver\{\}|{req.*|resp.*}}|{fail|<restart>restart|<deliver>deliver|<synth>synth}}"
 		]
 
 		deliver:deliver:s -> V1D_Deliver [style=bold,color=green]
@@ -79,9 +79,10 @@ digraph cache_req_fsm {
 	subgraph xcluster_synth {
 		synth [
 		       shape=record
-		       label="{cnt_synth:|{vcl_synth\{\}|{req.*|resp.*}}|{<del>deliver|<restart>restart}}"
+		       label="{cnt_synth:|{vcl_synth\{\}|{req.*|resp.*}}|{fail|<del>deliver|<restart>restart}}"
 		]
 
+		FAIL -> synth [color=purple]
 		SYNTH -> synth [color=purple]
 		synth:del:s -> V1D_Deliver [color=purple]
 	}
@@ -120,7 +121,7 @@ digraph cache_req_fsm {
 		]
 		lookup2 [
 			 shape=record
-			 label="{<top>cnt_lookup:|{vcl_hit\{\}|{req.*|obj.*}}|{<deliver>deliver|<miss>miss|restart|synth|<pass>pass}}"
+			 label="{<top>cnt_lookup:|{vcl_hit\{\}|{req.*|obj.*}}|{fail|<deliver>deliver|<miss>miss|restart|synth|<pass>pass}}"
 		]
 	}
 	lookup:busy:e -> lookup:top:e [label="(waitinglist)",
@@ -140,7 +141,7 @@ digraph cache_req_fsm {
 	subgraph xcluster_miss {
 		miss [
 		      shape=record
-		      label="{cnt_miss:|{vcl_miss\{\}|req.*}|{<fetch>fetch|<synth>synth|<rst>restart|<pass>pass}}"
+		      label="{cnt_miss:|{vcl_miss\{\}|req.*}|{fail|<fetch>fetch|<synth>synth|<rst>restart|<pass>pass}}"
 		]
 	}
 	miss:fetch:s -> FETCH [style=bold,color=blue]
@@ -150,7 +151,7 @@ digraph cache_req_fsm {
 	subgraph xcluster_pass {
 		pass [
 		      shape=record
-		      label="{cnt_pass:|{vcl_pass\{\}|req.*}|{<fetch>fetch|<synth>synth|<rst>restart}}"
+		      label="{cnt_pass:|{vcl_pass\{\}|req.*}|{fail|<fetch>fetch|<synth>synth|<rst>restart}}"
 		]
 	}
 	pass:fetch:s -> FETCH [style=bold, color=red]
@@ -159,7 +160,7 @@ digraph cache_req_fsm {
 	subgraph xcluster_pipe {
 		pipe [
 		      shape=record
-		      label="{cnt_pipe:|filter req.*-\>bereq.*|{vcl_pipe\{\}|{req.*|bereq.*}}|{<pipe>pipe|<synth>synth}}"
+		      label="{cnt_pipe:|filter req.*-\>bereq.*|{vcl_pipe\{\}|{req.*|bereq.*}}|{fail|<pipe>pipe|<synth>synth}}"
 		]
 		pipe_do [
 			 shape=ellipse
@@ -175,7 +176,7 @@ digraph cache_req_fsm {
 			shape=record
 			color=grey
 			fontcolor=grey
-			label="{cnt_restart:|{<ok>ok?|<max>max_restarts?}}"
+			label="{cnt_restart:|{fail|<ok>ok?|<max>max_restarts?}}"
 		]
 	}
 	RESTART -> restart [color=purple]
@@ -187,7 +188,7 @@ digraph cache_req_fsm {
 	subgraph xcluster_recv {
 		recv [
 		      shape=record
-		      label="{cnt_recv:|{vcl_recv\{\}|req.*}|{<hash>hash|<purge>purge|<pass>pass|<pipe>pipe|<synth>synth|<vcl>vcl}}"
+		      label="{cnt_recv:|{vcl_recv\{\}|req.*}|{fail|<hash>hash|<purge>purge|<pass>pass|<pipe>pipe|<synth>synth|<vcl>vcl}}"
 		      ]
 		recv:hash -> hash [style=bold,color=green]
 		hash [
@@ -205,13 +206,13 @@ digraph cache_req_fsm {
 	recv:purge:s -> hash [style=bold,color=purple]
 
 	recv:vcl:s -> vcl_label
-	vcl_label [label="LABEL",shape=plaintext]
+	vcl_label [label="switch to vcl\nLABEL",shape=plaintext]
 
 	/* cnt_purge */
 	subgraph xcluster_purge {
 		purge [
 		       shape=record
-		       label="{<top>cnt_purge:|{vcl_purge\{\}|req.*}|{<synth>synth|<restart>restart}}"
+		       label="{<top>cnt_purge:|{vcl_purge\{\}|req.*}|{fail|<synth>synth|<restart>restart}}"
 		]
 	}
 }
