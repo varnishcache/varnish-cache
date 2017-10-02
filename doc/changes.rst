@@ -6,6 +6,10 @@ Varnish Cache Trunk (ongoing)
   less than the number of allowed restarts, it now is the number of
   ``return(restart)`` calls per request.
 
+* Fix behaviour of restarts to how it was originally intended:
+  Restarts now leave all the request properties in place except for
+  ``req.restarts`` and ``req.xid``, which need to change by design.
+
 ================================
 Varnish Cache 5.2.0 (2017-09-15)
 ================================

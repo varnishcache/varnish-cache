@@ -722,7 +722,6 @@ cnt_restart(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-	req->director_hint = NULL;
 	if (++req->restarts > cache_param->max_restarts) {
 		VSLb(req->vsl, SLT_VCL_Error, "Too many restarts");
 		req->err_code = 503;
@@ -736,7 +735,6 @@ cnt_restart(struct worker *wrk, struct req *req)
 		req->err_code = 0;
 		req->req_step = R_STP_RECV;
 	}
-	req->is_hit = 0;
 	return (REQ_FSM_MORE);
 }
 
@@ -783,22 +781,23 @@ cnt_recv(struct worker *wrk, struct req *req)
 		} else {
 			http_PrintfHeader(req->http, "X-Forwarded-For: %s", ci);
 		}
+		http_CollectHdr(req->http, H_Cache_Control);
+
+		/* By default we use the first backend */
+		AZ(req->director_hint);
+		req->director_hint = VCL_DefaultDirector(req->vcl);
+		AN(req->director_hint);
+
+		req->d_ttl = -1;
+		req->disable_esi = 0;
+		req->hash_always_miss = 0;
+		req->hash_ignore_busy = 0;
+		req->client_identity = NULL;
+		req->storage = NULL;
 	}
 
-	/* By default we use the first backend */
-	AZ(req->director_hint);
-	req->director_hint = VCL_DefaultDirector(req->vcl);
-	AN(req->director_hint);
-
 	req->vdc->retval = 0;
-	req->d_ttl = -1;
-	req->disable_esi = 0;
-	req->hash_always_miss = 0;
-	req->hash_ignore_busy = 0;
-	req->client_identity = NULL;
-	req->storage = NULL;
-
-	http_CollectHdr(req->http, H_Cache_Control);
+	req->is_hit = 0;
 
 	if (req->req_body_status == REQ_BODY_FAIL) {
 		req->doclose = SC_OVERLOAD;
