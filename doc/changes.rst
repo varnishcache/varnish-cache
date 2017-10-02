@@ -4,7 +4,7 @@ Varnish Cache Trunk (ongoing)
 
 * Fixed implementation of the ``max_restarts`` limit: It used to be one
   less than the number of allowed restarts, it now is the number of
-  ``return(restart)``s per request.
+  ``return(restart)`` calls per request.
 
 ================================
 Varnish Cache 5.2.0 (2017-09-15)
