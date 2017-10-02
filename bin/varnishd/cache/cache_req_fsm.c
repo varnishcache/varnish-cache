@@ -160,9 +160,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	VCL_deliver_method(req->vcl, wrk, req, NULL, NULL);
 	VSLb_ts_req(req, "Process", W_TIM_real(wrk));
 
-	/* Stop the insanity before it turns "Hotel California" on us */
-	if (req->restarts >= cache_param->max_restarts)
-		wrk->handling = VCL_RET_DELIVER;
+	assert(req->restarts <= cache_param->max_restarts);
 
 	if (wrk->handling != VCL_RET_DELIVER) {
 		(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
