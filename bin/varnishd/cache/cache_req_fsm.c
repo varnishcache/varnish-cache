@@ -738,6 +738,46 @@ cnt_restart(struct worker *wrk, struct req *req)
 	return (REQ_FSM_MORE);
 }
 
+/*
+ * prepare the request for vcl_recv, either initially or after a reset
+ * e.g. due to vcl switching
+ */
+
+static void
+cnt_recv_prep(struct req *req, const char *ci)
+{
+	const char *xff;
+
+	if (req->restarts == 0) {
+		/*
+		 * This really should be done earlier, but we want to capture
+		 * it in the VSL log.
+		 */
+		http_CollectHdr(req->http, H_X_Forwarded_For);
+		if (http_GetHdr(req->http, H_X_Forwarded_For, &xff)) {
+			http_Unset(req->http, H_X_Forwarded_For);
+			http_PrintfHeader(req->http, "X-Forwarded-For: %s, %s",
+			    xff, ci);
+		} else {
+			http_PrintfHeader(req->http, "X-Forwarded-For: %s", ci);
+		}
+		http_CollectHdr(req->http, H_Cache_Control);
+
+		/* By default we use the first backend */
+		req->director_hint = VCL_DefaultDirector(req->vcl);
+		AN(req->director_hint);
+
+		req->d_ttl = -1;
+		req->disable_esi = 0;
+		req->hash_always_miss = 0;
+		req->hash_ignore_busy = 0;
+		req->client_identity = NULL;
+		req->storage = NULL;
+	}
+
+	req->vdc->retval = 0;
+	req->is_hit = 0;
+}
 /*--------------------------------------------------------------------
  * We have a complete request, set everything up and start it.
  * We can come here both with a request from the client and with
@@ -749,7 +789,6 @@ cnt_recv(struct worker *wrk, struct req *req)
 {
 	unsigned recv_handling;
 	struct VSHA256Context sha256ctx;
-	const char *xff;
 	const char *ci, *cp;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -768,36 +807,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	http_VSL_log(req->http);
 
-	if (req->restarts == 0) {
-		/*
-		 * This really should be done earlier, but we want to capture
-		 * it in the VSL log.
-		 */
-		http_CollectHdr(req->http, H_X_Forwarded_For);
-		if (http_GetHdr(req->http, H_X_Forwarded_For, &xff)) {
-			http_Unset(req->http, H_X_Forwarded_For);
-			http_PrintfHeader(req->http, "X-Forwarded-For: %s, %s",
-			    xff, ci);
-		} else {
-			http_PrintfHeader(req->http, "X-Forwarded-For: %s", ci);
-		}
-		http_CollectHdr(req->http, H_Cache_Control);
-
-		/* By default we use the first backend */
-		AZ(req->director_hint);
-		req->director_hint = VCL_DefaultDirector(req->vcl);
-		AN(req->director_hint);
-
-		req->d_ttl = -1;
-		req->disable_esi = 0;
-		req->hash_always_miss = 0;
-		req->hash_ignore_busy = 0;
-		req->client_identity = NULL;
-		req->storage = NULL;
-	}
-
-	req->vdc->retval = 0;
-	req->is_hit = 0;
+	cnt_recv_prep(req, ci);
 
 	if (req->req_body_status == REQ_BODY_FAIL) {
 		req->doclose = SC_OVERLOAD;
@@ -806,10 +816,9 @@ cnt_recv(struct worker *wrk, struct req *req)
 
 	VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 	if (wrk->handling == VCL_RET_VCL && req->restarts == 0) {
-		req->director_hint = VCL_DefaultDirector(req->vcl);
 		HTTP_Copy(req->http, req->http0);
 		WS_Reset(req->ws, req->ws_req);
-		AN(req->director_hint);
+		cnt_recv_prep(req, ci);
 		VCL_recv_method(req->vcl, wrk, req, NULL, NULL);
 	}
 
