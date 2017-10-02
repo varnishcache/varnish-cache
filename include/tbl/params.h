@@ -786,9 +786,7 @@ PARAM(
 	/* units */	"restarts",
 	/* flags */	0,
 	/* s-text */
-	"Upper limit on how many times a request can restart.\n"
-	"Be aware that restarts are likely to cause a hit against the "
-	"backend, so don't increase thoughtlessly.",
+	"Upper limit on how many times a request can restart.",
 	/* l-text */	"",
 	/* func */	NULL
 )
