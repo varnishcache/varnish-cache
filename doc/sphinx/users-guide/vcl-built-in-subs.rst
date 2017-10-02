@@ -7,8 +7,57 @@ Built in subroutines
 Various built-in subroutines are called during processing of client-
 and backend requests as well as upon ``vcl.load`` and ``vcl.discard``.
 
-See :ref:`reference-states` for a defailed graphical overview of the
+See :ref:`reference-states` for a detailed graphical overview of the
 states and how they relate to core code functions and VCL subroutines.
+
+Subroutines always terminate with a ``return()`` on a keyword, which
+determines how processing continues in the request processing state
+machine.
+
+The behaviour for ``return()`` keywords is identical or at least
+similar across subroutines, so differences are only documented where
+relevant.
+
+common return keywords
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. _fail:
+
+  ``fail``
+    Transition to :ref:`vcl_synth` on the client side as for
+    ``return(synth(503, "VCL Failed"))``, but with any request state
+    changes undone as if ``std.rollback()`` was called and forcing a
+    connection close.
+
+    Intended for fatal errors, for which only minimal error handling is
+    possible.
+
+.. _synth:
+
+  ``synth(status code, reason)``
+    Transition to :ref:`vcl_synth` with ``resp.status`` and
+    ``resp.reason`` being preset to the arguments of ``synth()``.
+
+.. _pass:
+
+  ``pass``
+    Switch to pass mode. Control will eventually pass to
+    :ref:`vcl_pass`.
+
+.. _pipe:
+
+  ``pipe``
+    Switch to pipe mode. Control will eventually pass to
+    :ref:`vcl_pipe`.
+
+.. _restart:
+
+  ``restart``
+    Restart the transaction. Increases the ``req.restarts`` counter.
+
+    If the number of restarts is higher than the *max_restarts*
+    parameter, control is passed to :ref:`vcl_synth` as for
+    ``return(synth(503, "Too many restarts"))``
 
 -----------
 client side
@@ -30,15 +79,17 @@ be set as a default for the backend processing side.
 The `vcl_recv` subroutine may terminate with calling ``return()`` on one
 of the following keywords:
 
+  ``fail``
+    see `fail`_
+
   ``synth(status code, reason)``
-    Transition to :ref:`vcl_synth` with ``resp.status`` and
-    ``resp.reason`` being preset to the arguments of ``synth()``.
+    see `synth`_
 
   ``pass``
-    Switch to pass mode. Control will eventually pass to :ref:`vcl_pass`.
+    see `pass`_
 
   ``pipe``
-    Switch to pipe mode. Control will eventually pass to :ref:`vcl_pipe`.
+    see `pipe`_
 
   ``hash``
     Continue processing the object as a potential candidate for
@@ -46,7 +97,13 @@ of the following keywords:
 
   ``purge``
     Purge the object and it's variants. Control passes through
-    vcl_hash to vcl_purge.
+    :ref:`vcl_hash` to :ref:`vcl_purge`.
+
+  ``vcl(label)``
+    Switch to vcl labelled *label*. This will continue vcl processing
+    in this vcl's :ref:`vcl_recv` as if it was the active vcl.
+
+    See the :ref:`varnishadm(1)` ``vcl.label`` command.
 
 .. _vcl_pipe:
 
@@ -63,9 +120,11 @@ other VCL subroutine will ever get called after `vcl_pipe`.
 The `vcl_pipe` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
+  ``fail``
+    see   `fail`_
+
   ``synth(status code, reason)``
-    Transition to :ref:`vcl_synth` with ``resp.status`` and
-    ``resp.reason`` being preset to the arguments of ``synth()``.
+    see  `synth`_
 
   ``pipe``
     Proceed with pipe mode.
@@ -83,14 +142,14 @@ submitted over the same client connection are handled normally.
 The `vcl_pass` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
+  ``fail``
+    see  `fail`_
+
   ``synth(status code, reason)``
-    Transition to :ref:`vcl_synth` with ``resp.status`` and
-    ``resp.reason`` being preset to the arguments of ``synth()``.
+    see  `synth`_
 
   ``restart``
-    Restart the transaction. Increases the restart counter. If the number
-    of restarts is higher than *max_restarts* Varnish emits a guru meditation
-    error.
+    see  `restart`_
 
   ``fetch``
     Proceed with pass mode - initiate a backend request.
@@ -103,14 +162,20 @@ vcl_hash
 Called after `vcl_recv` to create a hash value for the request. This is
 used as a key to look up the object in Varnish.
 
-The `vcl_hash` subroutine may only terminate with calling ``return(lookup)``:
+The `vcl_hash` subroutine may terminate with calling ``return()`` with one
+of the following keywords:
+
+  ``fail``
+    see  `fail`_
 
   ``lookup``
     Look up the object in cache.
+
     Control passes to :ref:`vcl_purge` when coming from a ``purge``
     return in `vcl_recv`.
-    Otherwise control passes to the next subroutine depending on the result of
-    the cache lookup:
+
+    Otherwise control passes to the next subroutine depending on the
+    result of the cache lookup:
 
     * a hit: pass to :ref:`vcl_hit`
 
@@ -126,19 +191,19 @@ The `vcl_hash` subroutine may only terminate with calling ``return(lookup)``:
 vcl_purge
 ~~~~~~~~~
 
-Called after the purge has been executed and all its variants have been evited.
+Called after the purge has been executed and all its variants have been evicted.
 
 The `vcl_purge` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
+  ``fail``
+    see  `fail`_
+
   ``synth(status code, reason)``
-    Transition to :ref:`vcl_synth` with ``resp.status`` and
-    ``resp.reason`` being preset to the arguments of ``synth()``.
+    see  `synth`_
 
   ``restart``
-    Restart the transaction. Increases the restart counter. If the number
-    of restarts is higher than *max_restarts* Varnish emits a guru meditation
-    error.
+    see  `restart`_
 
 .. _vcl_miss:
 
@@ -155,17 +220,17 @@ the backend processing side.
 The `vcl_miss` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
+  ``fail``
+    see  `fail`_
+
   ``synth(status code, reason)``
-    Transition to :ref:`vcl_synth` with ``resp.status`` and
-    ``resp.reason`` being preset to the arguments of ``synth()``.
+    see  `synth`_
 
   ``restart``
-    Restart the transaction. Increases the restart counter. If the number
-    of restarts is higher than *max_restarts* Varnish emits a guru meditation
-    error.
+    see  `restart`_
 
   ``pass``
-    Switch to pass mode. Control will eventually pass to :ref:`vcl_pass`.
+    see  `pass`_
 
   ``fetch``
     Retrieve the requested object from the backend. Control will
@@ -183,17 +248,17 @@ stale: It can have a zero or negative `ttl` with only `grace` or
 The `vcl_hit` subroutine may terminate with calling ``return()``
 with one of the following keywords:
 
+  ``fail``
+    see  `fail`_
+
   ``synth(status code, reason)``
-    Transition to :ref:`vcl_synth` with ``resp.status`` and
-    ``resp.reason`` being preset to the arguments of ``synth()``.
+    see  `synth`_
 
   ``restart``
-    Restart the transaction. Increases the restart counter. If the number
-    of restarts is higher than *max_restarts* Varnish emits a guru meditation
-    error.
+    see  `restart`_
 
   ``pass``
-    Switch to pass mode. Control will eventually pass to :ref:`vcl_pass`.
+    see  `pass`_
 
   ``miss``
     Synchronously refresh the object from the backend despite the
@@ -213,14 +278,14 @@ Called before any object except a `vcl_synth` result is delivered to the client.
 The `vcl_deliver` subroutine may terminate with calling ``return()`` with one
 of the following keywords:
 
+  ``fail``
+    see  `fail`_
+
   ``synth(status code, reason)``
-    Transition to :ref:`vcl_synth` with ``resp.status`` and
-    ``resp.reason`` being preset to the arguments of ``synth()``.
+    see  `synth`_
 
   ``restart``
-    Restart the transaction. Increases the restart counter. If the number
-    of restarts is higher than *max_restarts* Varnish emits a guru meditation
-    error.
+    see  `restart`_
 
   ``deliver``
     Deliver the object to the client.
@@ -240,14 +305,15 @@ A `vcl_synth` defined object never enters the cache, contrary to a
 The subroutine may terminate with calling ``return()`` with one of the
 following keywords:
 
+  ``fail``
+    see  `fail`_
+
   ``restart``
-    Restart the transaction. Increases the restart counter. If the number
-    of restarts is higher than *max_restarts* Varnish emits a guru meditation
-    error.
+    see  `restart`_
 
   ``deliver``
-    Directly deliver the object defined by `vcl_synth` to the
-    client without calling `vcl_deliver`.
+    Directly deliver the object defined by `vcl_synth` to the client
+    without calling `vcl_deliver`.
 
 ------------
 Backend Side
@@ -263,6 +329,9 @@ typically alter the request before it gets to the backend.
 
 The `vcl_backend_fetch` subroutine may terminate with calling
 ``return()`` with one of the following keywords:
+
+  ``fail``
+    see  `fail`_
 
   ``fetch``
     Fetch the object from the backend.
@@ -323,12 +392,15 @@ For a 304 response, varnish core code amends ``beresp`` before calling
 `beresp.was_304` marks that this conditional response processing has
 happened.
 
-Note: Backend conditional requests are independend of client
+Note: Backend conditional requests are independent of client
 conditional requests, so clients may receive 304 responses no matter
 if a backend request was conditional.
 
 The `vcl_backend_response` subroutine may terminate with calling
 ``return()`` with one of the following keywords:
+
+  ``fail``
+    see  `fail`_
 
   ``deliver``
     For a 304 response, create an updated cache object.
@@ -364,6 +436,9 @@ using the ``synthetic()`` function.
 
 The `vcl_backend_error` subroutine may terminate with calling ``return()``
 with one of the following keywords:
+
+  ``fail``
+    see  `fail`_
 
   ``deliver``
     Deliver and possibly cache the object defined in
