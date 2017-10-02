@@ -59,6 +59,10 @@ common return keywords
     parameter, control is passed to :ref:`vcl_synth` as for
     ``return(synth(503, "Too many restarts"))``
 
+    For a restart, all modifications to ``req`` attributes are
+    preserved except for ``req.restarts`` and ``req.xid``, which need
+    to change by design.
+
 -----------
 client side
 -----------
