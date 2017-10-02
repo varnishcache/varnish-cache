@@ -44,14 +44,6 @@
 
 /*--------------------------------------------------------------------*/
 
-enum req_fsm_nxt {
-	REQ_FSM_MORE,
-	REQ_FSM_DONE,
-	REQ_FSM_DISEMBARK,
-};
-
-/*--------------------------------------------------------------------*/
-
 enum body_status {
 #define BODYSTATUS(U,l)	BS_##U,
 #include "tbl/body_status.h"
@@ -877,26 +869,7 @@ ssize_t VRB_Cache(struct req *, ssize_t maxsize);
 ssize_t VRB_Iterate(struct req *, objiterate_f *func, void *priv);
 void VRB_Free(struct req *);
 
-/* cache_req_fsm.c [CNT] */
-enum req_fsm_nxt CNT_Request(struct worker *, struct req *);
-
 /* cache_session.c [SES] */
-void SES_Wait(struct sess *, const struct transport *);
-void SES_Ref(struct sess *sp);
-void SES_Rel(struct sess *sp);
-int SES_Reschedule_Req(struct req *);
-
-enum htc_status_e {
-	HTC_S_JUNK =		-5,
-	HTC_S_CLOSE =		-4,
-	HTC_S_TIMEOUT =		-3,
-	HTC_S_OVERFLOW =	-2,
-	HTC_S_EOF =		-1,
-	HTC_S_EMPTY =		 0,
-	HTC_S_MORE =		 1,
-	HTC_S_COMPLETE =	 2,
-	HTC_S_IDLE =		 3,
-};
 
 void HTC_RxInit(struct http_conn *htc, struct ws *ws);
 void HTC_RxPipeline(struct http_conn *htc, void *);

@@ -156,9 +156,35 @@ int Pool_Task_Any(struct pool_task *task, enum task_prio prio);
 /* cache_range.c [VRG] */
 void VRG_dorange(struct req *req, const char *r);
 
+/* cache_req_fsm.c [CNT] */
+
+enum req_fsm_nxt {
+	REQ_FSM_MORE,
+	REQ_FSM_DONE,
+	REQ_FSM_DISEMBARK,
+};
+
+enum req_fsm_nxt CNT_Request(struct worker *, struct req *);
+
 /* cache_session.c */
 void SES_NewPool(struct pool *, unsigned pool_no);
 void SES_DestroyPool(struct pool *);
+void SES_Wait(struct sess *, const struct transport *);
+void SES_Ref(struct sess *sp);
+void SES_Rel(struct sess *sp);
+int SES_Reschedule_Req(struct req *);
+
+enum htc_status_e {
+	HTC_S_JUNK =		-5,
+	HTC_S_CLOSE =		-4,
+	HTC_S_TIMEOUT =		-3,
+	HTC_S_OVERFLOW =	-2,
+	HTC_S_EOF =		-1,
+	HTC_S_EMPTY =		 0,
+	HTC_S_MORE =		 1,
+	HTC_S_COMPLETE =	 2,
+	HTC_S_IDLE =		 3,
+};
 
 /* cache_shmlog.c */
 extern struct VSC_main *VSC_C_main;
