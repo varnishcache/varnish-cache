@@ -270,7 +270,7 @@ sp_variables = [
 	),
 	('req.storage',
 		'STEVEDORE',
-		('recv',),
+		('client',),
 		('recv',), """
 		The storage backend to use to save this request body.
 		"""
@@ -336,7 +336,7 @@ sp_variables = [
 	),
 	('req.hash_ignore_busy',
 		'BOOL',
-		('recv',),
+		('client',),
 		('recv',), """
 		Ignore any busy object during cache lookup. You
 		would want to do this if you have two server looking
@@ -345,7 +345,7 @@ sp_variables = [
 	),
 	('req.hash_always_miss',
 		'BOOL',
-		('recv',),
+		('client',),
 		('recv',), """
 		Force a cache miss for this request. If set to true
 		Varnish will disregard any existing objects and
