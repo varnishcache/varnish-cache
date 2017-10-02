@@ -409,6 +409,8 @@ VSLbv(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, va_list ap)
 	const char *u, *f;
 	unsigned n, mlen;
 	txt t;
+	va_list ap2;
+	int first;
 
 	vsl_sanity(vsl);
 	AN(fmt);
@@ -437,14 +439,38 @@ VSLbv(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, va_list ap)
 		return;
 	}
 
-	mlen = cache_param->vsl_reclen;
+	assert(vsl->wlp <= vsl->wle);
 
-	/* Flush if we cannot fit a full size record */
-	if (VSL_END(vsl->wlp, mlen + 1) >= vsl->wle)
+	/* Flush if we can't fit any bytes */
+	if (vsl->wle - vsl->wlp <= VSL_OVERHEAD)
 		VSL_Flush(vsl, 1);
 
-	p = VSL_DATA(vsl->wlp);
-	n = vsnprintf(p, mlen, fmt, ap);
+	/* Do the vsnprintf formatting in one or two stages. If the first
+	   stage shows that we overflowed, and the available space to work
+	   with was less than vsl_reclen, flush and do the formatting
+	   again. */
+	first = 1;
+	while (1) {
+		assert(vsl->wle - vsl->wlp > VSL_OVERHEAD);
+		mlen = VSL_BYTES((vsl->wle - vsl->wlp) - VSL_OVERHEAD);
+		if (mlen > cache_param->vsl_reclen)
+			mlen = cache_param->vsl_reclen;
+		assert(mlen > 0);
+		assert(VSL_END(vsl->wlp, mlen) <= vsl->wle);
+		p = VSL_DATA(vsl->wlp);
+		va_copy(ap2, ap);
+		n = vsnprintf(p, mlen, fmt, ap2);
+		va_end(ap2);
+
+		if (first && n >= mlen && mlen < cache_param->vsl_reclen) {
+			first = 0;
+			VSL_Flush(vsl, 1);
+			continue;
+		}
+
+		break;
+	}
+
 	if (n > mlen - 1)
 		n = mlen - 1;	/* we truncate long fields */
 	p[n++] = '\0';		/* NUL-terminated */

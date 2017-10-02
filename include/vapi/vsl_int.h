@@ -67,19 +67,20 @@
 #define VSL_IDENTMASK		(~(3U<<30))
 
 #define VSL_LENMASK		0xffff
+#define VSL_OVERHEAD		2
 #define VSL_WORDS(len)		(((len) + 3) / 4)
 #define VSL_BYTES(words)	((words) * 4)
-#define VSL_END(ptr, len)	((ptr) + 2 + VSL_WORDS(len))
+#define VSL_END(ptr, len)	((ptr) + VSL_OVERHEAD + VSL_WORDS(len))
 #define VSL_NEXT(ptr)		VSL_END(ptr, VSL_LEN(ptr))
 #define VSL_LEN(ptr)		((ptr)[0] & VSL_LENMASK)
 #define VSL_TAG(ptr)		((enum VSL_tag_e)((ptr)[0] >> 24))
 #define VSL_ID(ptr)		(((ptr)[1]) & VSL_IDENTMASK)
 #define VSL_CLIENT(ptr)		(((ptr)[1]) & VSL_CLIENTMARKER)
 #define VSL_BACKEND(ptr)	(((ptr)[1]) & VSL_BACKENDMARKER)
-#define VSL_DATA(ptr)		((char*)((ptr)+2))
-#define VSL_CDATA(ptr)		((const char*)((ptr)+2))
+#define VSL_DATA(ptr)		((char*)((ptr)+VSL_OVERHEAD))
+#define VSL_CDATA(ptr)		((const char*)((ptr)+VSL_OVERHEAD))
 #define VSL_BATCHLEN(ptr)	((ptr)[1])
-#define VSL_BATCHID(ptr)	(VSL_ID((ptr) + 2))
+#define VSL_BATCHID(ptr)	(VSL_ID((ptr) + VSL_OVERHEAD))
 
 #define VSL_ENDMARKER	(((uint32_t)SLT__Reserved << 24) | 0x454545) /* "EEE" */
 #define VSL_WRAPMARKER	(((uint32_t)SLT__Reserved << 24) | 0x575757) /* "WWW" */
