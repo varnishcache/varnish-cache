@@ -340,8 +340,10 @@ vbp_poke(struct vbp_target *vt)
 			    sizeof vt->resp_buf - rlen);
 		else
 			i = read(s, buf, sizeof buf);
+		if (i <= 0)
+			break;
 		rlen += i;
-	} while (i > 0);
+	} while (1);
 
 	VTCP_close(&s);
 
