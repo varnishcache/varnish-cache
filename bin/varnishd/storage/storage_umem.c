@@ -268,9 +268,9 @@ smu_open(struct stevedore *st)
 					  0,		// align
 					  smu_smu_constructor,
 					  smu_smu_destructor,
-					  NULL, 	// reclaim
+					  NULL,		// reclaim
 					  smu_sc,	// callback_data
-					  NULL, 	// source
+					  NULL,		// source
 					  0		// cflags
 		);
 	AN(smu_sc->smu_cache);
