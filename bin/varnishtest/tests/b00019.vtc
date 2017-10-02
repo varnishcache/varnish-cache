@@ -26,15 +26,17 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_synth {
-		if (req.restarts == 2) {
+		# when we end up here, we have _exceeded_ the number
+		# allowed restarts
+		if (req.restarts == 3) {
 			set resp.status = 200;
-			set resp.reason = "restart=2";
-		} elsif (req.restarts > 2) {
+			set resp.reason = "restart=3";
+		} elsif (req.restarts > 3) {
 			set resp.status = 501;
-			set resp.reason = "restart>2";
-		} elsif (req.restarts < 2) {
+			set resp.reason = "restart>3";
+		} elsif (req.restarts < 3) {
 			set resp.status = 500;
-			set resp.reason = "restart<2";
+			set resp.reason = "restart<3";
 		}
 	}
 } -start

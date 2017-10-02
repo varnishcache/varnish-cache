@@ -727,7 +727,7 @@ cnt_restart(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
 	req->director_hint = NULL;
-	if (++req->restarts >= cache_param->max_restarts) {
+	if (++req->restarts > cache_param->max_restarts) {
 		VSLb(req->vsl, SLT_VCL_Error, "Too many restarts");
 		req->err_code = 503;
 		req->req_step = R_STP_SYNTH;
