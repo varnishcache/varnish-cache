@@ -882,7 +882,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	h2->sess->t_idle = VTIM_real();
 	hs = HTC_RxStuff(h2->htc, h2_frame_complete,
 	    NULL, NULL, NAN,
-	    h2->sess->t_idle + cache_param->timeout_idle + 100,
+	    h2->sess->t_idle + cache_param->timeout_idle,
 	    16384 + 9);					// rfc7540,l,4228,4228
 	if (hs != HTC_S_COMPLETE) {
 		Lck_Lock(&h2->sess->mtx);
