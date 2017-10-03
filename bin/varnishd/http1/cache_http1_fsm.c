@@ -188,7 +188,7 @@ http1_reembark(struct worker *wrk, struct req *req)
 
 	http1_setstate(sp, H1BUSY);
 
-	if (!SES_Reschedule_Req(req))
+	if (!SES_Reschedule_Req(req, TASK_QUEUE_REQ))
 		return;
 
 	/* Couldn't schedule, ditch */

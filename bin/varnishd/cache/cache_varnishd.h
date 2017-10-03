@@ -172,7 +172,7 @@ void SES_DestroyPool(struct pool *);
 void SES_Wait(struct sess *, const struct transport *);
 void SES_Ref(struct sess *sp);
 void SES_Rel(struct sess *sp);
-int SES_Reschedule_Req(struct req *);
+int SES_Reschedule_Req(struct req *, enum task_prio);
 
 enum htc_status_e {
 	HTC_S_JUNK =		-5,

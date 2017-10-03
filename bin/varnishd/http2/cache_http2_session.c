@@ -357,7 +357,7 @@ h2_reembark(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 	assert(req->transport == &H2_transport);
 
-	if (!SES_Reschedule_Req(req))
+	if (!SES_Reschedule_Req(req, TASK_QUEUE_STR))
 		return;
 
 	/* Couldn't schedule, ditch */
