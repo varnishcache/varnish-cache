@@ -127,7 +127,11 @@
 #endif
 
 #ifndef __unused
-#  define __unused __attribute__((__unused__))
+#  if __GNUC_PREREQ__(2, 7)
+#    define __unused __attribute__((__unused__))
+#  else
+#    define __unused
+#  endif
 #endif
 
 /*
@@ -136,9 +140,7 @@
 #ifndef __has_extension
 #  define __has_extension(x)	0
 #endif
-#ifndef __GNUC_PREREQ__
-#  define __GNUC_PREREQ__(x,y)	0
-#endif
+
 #if defined(_Static_assert)
     /* Nothing, somebody already did this for us */
 #elif __has_extension(c_static_assert)
