@@ -132,7 +132,7 @@
  * Most of this nightmare is stolen from FreeBSD's <cdefs.h>
  */
 #ifndef __has_extension
-#  define __has_extension	0
+#  define __has_extension(x)	0
 #endif
 #if defined(_Static_assert)
     /* Nothing, somebody already did this for us */
