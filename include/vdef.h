@@ -131,9 +131,12 @@
 /*
  * Most of this nightmare is stolen from FreeBSD's <cdefs.h>
  */
+#ifndef __has_extension
+#  define __has_extension	0
+#endif
 #if defined(_Static_assert)
     /* Nothing, somebody already did this for us */
-#elif defined(__has_extension) && __has_extension(c_static_assert)
+#elif __has_extension(c_static_assert)
     /* Nothing, we should be fine */
 #elif (defined(__cplusplus) && __cplusplus >= 201103L) || \
        __has_extension(cxx_static_assert)
