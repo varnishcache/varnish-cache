@@ -59,18 +59,18 @@
 		*(fdp) = -1;			\
 	} while (0)
 
-#ifndef __GNUC_PREREQ
+#ifndef __GNUC_PREREQ__
 # if defined __GNUC__ && defined __GNUC_MINOR__
-#  define __GNUC_PREREQ(maj, min) \
+#  define __GNUC_PREREQ__(maj, min) \
 	(__GNUC__ > (maj) || (__GNUC__ == (maj) && __GNUC_MINOR__ >= (min)))
 # else
-#  define __GNUC_PREREQ(maj, min) 0
+#  define __GNUC_PREREQ__(maj, min) 0
 # endif
 #endif
 
 #ifdef __printflike
 #  define __v_printflike(f,a) __printflike(f,a)
-#elif __GNUC_PREREQ(2, 95) || defined(__INTEL_COMPILER)
+#elif __GNUC_PREREQ__(2, 95) || defined(__INTEL_COMPILER)
 #  define __v_printflike(f,a) __attribute__((format(printf, f, a)))
 #else
 #  define __v_printflike(f,a)
