@@ -135,7 +135,7 @@
 #  define __has_extension(x)	0
 #endif
 #ifndef __GNUC_PREREQ__
-#  define __GNUC_PREREQ__(x)	0
+#  define __GNUC_PREREQ__(x,y)	0
 #endif
 #if defined(_Static_assert)
     /* Nothing, somebody already did this for us */
