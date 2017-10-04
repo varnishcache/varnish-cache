@@ -122,11 +122,13 @@
 
 #ifdef __SUNPRO_C
 #define NEEDLESS(s)		{}
-#define __unused
 #else
 #define NEEDLESS(s)		s
 #endif
 
+#ifndef __unused
+#  define __unused
+#endif
 
 /*
  * Most of this nightmare is stolen from FreeBSD's <cdefs.h>
