@@ -326,7 +326,7 @@ h2_new_session(struct worker *wrk, void *arg)
 		if (r2->cond != NULL)
 			AZ(pthread_cond_signal(r2->cond));
 	}
-	AZ(pthread_cond_signal(h2->cond));
+	AZ(pthread_cond_broadcast(h2->cond));
 	while (1) {
 		again = 0;
 		VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {

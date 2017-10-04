@@ -352,6 +352,10 @@ h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 		return (0);
 	Lck_Lock(&h2->sess->mtx);
 	r2->t_window += wu;
+	if (r2 == h2->req0)
+		AZ(pthread_cond_broadcast(h2->cond));
+	else if (r2->cond != NULL)
+		AZ(pthread_cond_signal(r2->cond));
 	Lck_Unlock(&h2->sess->mtx);
 	if (r2->t_window >= (1LLU << 31))
 		return (H2SE_FLOW_CONTROL_ERROR);
@@ -660,7 +664,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	Lck_Lock(&h2->sess->mtx);
 	AZ(h2->mailcall);
 	h2->mailcall = r2;
-	h2->r_window -= h2->rxf_len;
+	h2->req0->r_window -= h2->rxf_len;
 	r2->r_window -= h2->rxf_len;
 	// req_bodybytes accounted in CNT code.
 	if (r2->cond)
@@ -668,8 +672,8 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	while (h2->mailcall != NULL && h2->error == 0 && r2->error == 0)
 		AZ(Lck_CondWait(h2->cond, &h2->sess->mtx, 0));
 	wi = cache_param->h2_rx_window_increment;
-	if (h2->r_window < cache_param->h2_rx_window_low_water) {
-		h2->r_window += wi;
+	if (h2->req0->r_window < cache_param->h2_rx_window_low_water) {
+		h2->req0->r_window += wi;
 		w1 = 1;
 	}
 	if (r2->r_window < cache_param->h2_rx_window_low_water) {

@@ -144,9 +144,6 @@ struct h2_sess {
 	struct h2_req			*mailcall;
 	pthread_cond_t			*cond;
 
-	int64_t				r_window;
-	int64_t				t_window;
-
 	struct sess			*sess;
 	int				refcnt;
 	uint32_t			highest_stream;
@@ -220,7 +217,7 @@ h2_error H2_Send_Frame(struct worker *, const struct h2_sess *,
     h2_frame type, uint8_t flags, uint32_t len, uint32_t stream,
     const void *);
 
-h2_error H2_Send(struct worker *, const struct h2_req *,
+h2_error H2_Send(struct worker *, struct h2_req *,
     h2_frame type, uint8_t flags, uint32_t len, const void *);
 
 /* cache_http2_proto.c */
