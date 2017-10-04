@@ -154,7 +154,7 @@
 #   endif
 #   define __Static_assert(x, y)	___Static_assert(x, y)
 #   define ___Static_assert(x, y) \
-		typedef char __assert_ ## y[(x) ? 1 : -1] __unused
+		typedef char __assert_## y[(x) ? 1 : -1] __unused
 #endif
 
 #endif /* VDEF_H_INCLUDED */
