@@ -347,17 +347,17 @@ VSLbt(struct vsl_log *vsl, enum VSL_tag_e tag, txt t)
 	if (l > mlen - 1)
 		l = mlen - 1;
 
-	assert(vsl->wlp < vsl->wle);
+	assert(vsl->wlp <= vsl->wle);
 
 	/* Flush if necessary */
-	if (VSL_END(vsl->wlp, l + 1) >= vsl->wle)
+	if (VSL_END(vsl->wlp, l + 1) > vsl->wle)
 		VSL_Flush(vsl, 1);
-	assert(VSL_END(vsl->wlp, l + 1) < vsl->wle);
+	assert(VSL_END(vsl->wlp, l + 1) <= vsl->wle);
 	p = VSL_DATA(vsl->wlp);
 	memcpy(p, t.b, l);
 	p[l++] = '\0';		/* NUL-terminated */
 	vsl->wlp = vsl_hdr(tag, vsl->wlp, l, vsl->wid);
-	assert(vsl->wlp < vsl->wle);
+	assert(vsl->wlp <= vsl->wle);
 	vsl->wlr++;
 
 	if (DO_DEBUG(DBG_SYNCVSL))
@@ -531,16 +531,16 @@ VSLb_bin(struct vsl_log *vsl, enum VSL_tag_e tag, ssize_t len, const void *ptr)
 	/* Truncate */
 	len = vmin_t(ssize_t, len, mlen);
 
-	assert(vsl->wlp < vsl->wle);
+	assert(vsl->wlp <= vsl->wle);
 
 	/* Flush if necessary */
-	if (VSL_END(vsl->wlp, len) >= vsl->wle)
+	if (VSL_END(vsl->wlp, len) > vsl->wle)
 		VSL_Flush(vsl, 1);
-	assert(VSL_END(vsl->wlp, len) < vsl->wle);
+	assert(VSL_END(vsl->wlp, len) <= vsl->wle);
 	p = VSL_DATA(vsl->wlp);
 	memcpy(p, ptr, len);
 	vsl->wlp = vsl_hdr(tag, vsl->wlp, len, vsl->wid);
-	assert(vsl->wlp < vsl->wle);
+	assert(vsl->wlp <= vsl->wle);
 	vsl->wlr++;
 
 	if (DO_DEBUG(DBG_SYNCVSL))
