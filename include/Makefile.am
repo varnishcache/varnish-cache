@@ -99,18 +99,21 @@ nobase_noinst_HEADERS = \
 	vtcp.h \
 	vtree.h
 
-GENERATED_H = \
+vmod_abi.h: $(top_srcdir)/lib/libvcc/generate.py $(top_srcdir)/include/vrt.h
+	mkdir -p tbl
+	@PYTHON@ $(top_srcdir)/lib/libvcc/generate.py $(top_srcdir) $(top_builddir)
+
+GEN_H = \
 	tbl/vrt_stv_var.h \
 	tbl/vcl_returns.h \
 	tbl/vcc_types.h \
 	vrt_obj.h \
 	vcl.h \
-	vcs_version.h \
-	vmod_abi.h
+	vcs_version.h
 
-$(GENERATED_H): $(top_srcdir)/lib/libvcc/generate.py $(top_srcdir)/include/vrt.h
-	mkdir -p tbl
-	@PYTHON@ $(top_srcdir)/lib/libvcc/generate.py $(top_srcdir) $(top_builddir)
+$(GEN_H): vmod_abi.h
+
+GENERATED_H = vmod_abi.h $(GEN_H)
 
 BUILT_SOURCES = $(GENERATED_H)
 MAINTAINERCLEANFILES = vcs_version.h

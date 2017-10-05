@@ -81,7 +81,9 @@ vsl2rst_SOURCES = \
 	$(top_srcdir)/include/tbl/vsl_tags.h \
 	$(top_srcdir)/include/tbl/vsl_tags_http.h
 
-vxp_fixed_token.c vxp_tokens.h: \
+vxp_fixed_token.c: vxp_tokens.h
+
+vxp_tokens.h: \
 	$(srcdir)/generate.py
 	@PYTHON@ $(srcdir)/generate.py $(srcdir) $(top_builddir)
 
