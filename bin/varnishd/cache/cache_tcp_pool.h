@@ -55,6 +55,7 @@ struct vtp {
 
 /* cache_tcp_pool.c */
 struct tcp_pool *VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6);
+void VTP_AddRef(struct tcp_pool *);
 void VTP_Rel(struct tcp_pool **tpp);
 int VTP_Open(const struct tcp_pool *tp, double tmo, const struct suckaddr **sa);
 void VTP_Recycle(const struct worker *, struct tcp_pool *, struct vtp **);

@@ -71,7 +71,6 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 	struct director *d;
 	struct vsb *vsb;
 	struct vcl *vcl;
-	struct tcp_pool *tp = NULL;
 	const struct vrt_backend_probe *vbp;
 	int retval;
 
@@ -117,16 +116,14 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 	VTAILQ_INSERT_TAIL(&backends, b, list);
 	VSC_C_main->n_backend++;
 	b->tcp_pool = VTP_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr);
-	if (vbp != NULL) {
-		tp = VTP_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr);
-		assert(b->tcp_pool == tp);
-	}
 	Lck_Unlock(&backends_mtx);
 
 	VBE_fill_director(b);
 
-	if (vbp != NULL)
-		VBP_Insert(b, vbp, tp);
+	if (vbp != NULL) {
+		VTP_AddRef(b->tcp_pool);
+		VBP_Insert(b, vbp, b->tcp_pool);
+	}
 
 	retval = VCL_AddBackend(ctx->vcl, b);
 

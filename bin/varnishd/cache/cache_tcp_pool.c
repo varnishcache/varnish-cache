@@ -169,6 +169,21 @@ VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6)
 }
 
 /*--------------------------------------------------------------------
+ * Add a reference to a tcp_pool
+ */
+
+void
+VTP_AddRef(struct tcp_pool *tp)
+{
+	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
+
+	Lck_Lock(&pools_mtx);
+	assert(tp->refcnt > 0);
+	tp->refcnt++;
+	Lck_Unlock(&pools_mtx);
+}
+
+/*--------------------------------------------------------------------
  * Release TCP pool, destroy if last reference.
  */
 
