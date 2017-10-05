@@ -37,7 +37,10 @@ import getopt
 import json
 import sys
 import gzip
-import StringIO
+try:
+    import StringIO
+except ImportError:
+    import io
 import collections
 import struct
 
@@ -54,9 +57,22 @@ PARAMS = {
 	"format":	[ "integer", FORMATS],
 }
 
+# http://python3porting.com/problems.html#bytes-strings-and-unicode
+if sys.version_info < (3,):
+    def b(x):
+        return x
+else:
+    import codecs
+    def b(x):
+        return codecs.latin_1_encode(x)[0]
+
 def gzip_str(s):
-	out = StringIO.StringIO()
-	gzip.GzipFile(fileobj=out, mode="w").write(s)
+	try:
+		out = StringIO.StringIO()
+	except NameError:
+		out = io.BytesIO()
+
+	gzip.GzipFile(fileobj=out, mode="w").write(b(s))
 	out.seek(4)
 	out.write(struct.pack("<L", 0x12bfd58))
 	return out.getvalue()
@@ -285,7 +301,7 @@ class rst_vsc(directive):
 	def __init__(self, s):
 		super(rst_vsc, self).__init__(s)
 
-		for i,v in PARAMS.iteritems():
+		for i,v in PARAMS.items():
 			if v is not True:
 				self.do_default(i, v[0], v[1])
 
