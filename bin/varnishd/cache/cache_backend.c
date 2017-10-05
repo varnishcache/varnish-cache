@@ -63,10 +63,10 @@
  * Get a connection to the backend
  */
 
-static struct vbc *
+static struct vtp *
 vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 {
-	struct vbc *vbc;
+	struct vtp *vtp;
 	double tmod;
 	char abuf1[VTCP_ADDRBUFSIZE], abuf2[VTCP_ADDRBUFSIZE];
 	char pbuf1[VTCP_PORTBUFSIZE], pbuf2[VTCP_PORTBUFSIZE];
@@ -96,16 +96,16 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	bo->htc->doclose = SC_NULL;
 
 	FIND_TMO(connect_timeout, tmod, bo, bp);
-	vbc = VBT_Get(bp->tcp_pool, tmod, wrk);
-	if (vbc == NULL) {
+	vtp = VTP_Get(bp->tcp_pool, tmod, wrk);
+	if (vtp == NULL) {
 		// XXX: Per backend stats ?
 		VSC_C_main->backend_fail++;
 		bo->htc = NULL;
 		return (NULL);
 	}
 
-	assert(vbc->fd >= 0);
-	AN(vbc->addr);
+	assert(vtp->fd >= 0);
+	AN(vtp->addr);
 
 	Lck_Lock(&bp->mtx);
 	bp->n_conn++;
@@ -114,21 +114,21 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	Lck_Unlock(&bp->mtx);
 
 	if (bp->proxy_header != 0)
-		VPX_Send_Proxy(vbc->fd, bp->proxy_header, bo->sp);
+		VPX_Send_Proxy(vtp->fd, bp->proxy_header, bo->sp);
 
-	VTCP_myname(vbc->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-	VTCP_hisname(vbc->fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
+	VTCP_myname(vtp->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
+	VTCP_hisname(vtp->fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
 	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s",
-	    vbc->fd, bp->display_name, abuf2, pbuf2, abuf1, pbuf1);
+	    vtp->fd, bp->display_name, abuf2, pbuf2, abuf1, pbuf1);
 
 	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
-	bo->htc->priv = vbc;
-	bo->htc->rfd = &vbc->fd;
+	bo->htc->priv = vtp;
+	bo->htc->rfd = &vtp->fd;
 	FIND_TMO(first_byte_timeout,
 	    bo->htc->first_byte_timeout, bo, bp);
 	FIND_TMO(between_bytes_timeout,
 	    bo->htc->between_bytes_timeout, bo, bp);
-	return (vbc);
+	return (vtp);
 }
 
 static unsigned __match_proto__(vdi_healthy_f)
@@ -148,7 +148,7 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
 {
 	struct backend *bp;
-	struct vbc *vbc;
+	struct vtp *vtp;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -156,21 +156,21 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
-	CAST_OBJ_NOTNULL(vbc, bo->htc->priv, VBC_MAGIC);
+	CAST_OBJ_NOTNULL(vtp, bo->htc->priv, VTP_MAGIC);
 	bo->htc->priv = NULL;
-	if (vbc->state != VBC_STATE_USED)
-		VBT_Wait(wrk, vbc);
+	if (vtp->state != VTP_STATE_USED)
+		VTP_Wait(wrk, vtp);
 	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
-		VSLb(bo->vsl, SLT_BackendClose, "%d %s", vbc->fd,
+		VSLb(bo->vsl, SLT_BackendClose, "%d %s", vtp->fd,
 		    bp->display_name);
-		VBT_Close(bp->tcp_pool, &vbc);
+		VTP_Close(bp->tcp_pool, &vtp);
 		Lck_Lock(&bp->mtx);
 	} else {
-		VSLb(bo->vsl, SLT_BackendReuse, "%d %s", vbc->fd,
+		VSLb(bo->vsl, SLT_BackendReuse, "%d %s", vtp->fd,
 		    bp->display_name);
 		Lck_Lock(&bp->mtx);
 		VSC_C_main->backend_recycle++;
-		VBT_Recycle(wrk, bp->tcp_pool, &vbc);
+		VTP_Recycle(wrk, bp->tcp_pool, &vtp);
 	}
 	assert(bp->n_conn > 0);
 	bp->n_conn--;
@@ -187,7 +187,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 {
 	int i, extrachance = 1;
 	struct backend *bp;
-	struct vbc *vbc;
+	struct vtp *vtp;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -203,21 +203,21 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		http_PrintfHeader(bo->bereq, "Host: %s", bp->hosthdr);
 
 	do {
-		vbc = vbe_dir_getfd(wrk, bp, bo);
-		if (vbc == NULL) {
+		vtp = vbe_dir_getfd(wrk, bp, bo);
+		if (vtp == NULL) {
 			VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 			return (-1);
 		}
 		AN(bo->htc);
-		if (vbc->state != VBC_STATE_STOLEN)
+		if (vtp->state != VTP_STATE_STOLEN)
 			extrachance = 0;
 
 		i = V1F_SendReq(wrk, bo, &bo->acct.bereq_hdrbytes, 0);
 
-		if (vbc->state != VBC_STATE_USED)
-			VBT_Wait(wrk, vbc);
+		if (vtp->state != VTP_STATE_USED)
+			VTP_Wait(wrk, vtp);
 
-		assert(vbc->state == VBC_STATE_USED);
+		assert(vtp->state == VTP_STATE_USED);
 
 		if (i == 0)
 			i = V1F_FetchRespHdr(bo);
@@ -248,15 +248,15 @@ static const struct suckaddr * __match_proto__(vdi_getip_f)
 vbe_dir_getip(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
 {
-	struct vbc *vbc;
+	struct vtp *vtp;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
-	CAST_OBJ_NOTNULL(vbc, bo->htc->priv, VBC_MAGIC);
+	CAST_OBJ_NOTNULL(vtp, bo->htc->priv, VTP_MAGIC);
 
-	return (vbc->addr);
+	return (vtp->addr);
 }
 
 /*--------------------------------------------------------------------*/
@@ -268,7 +268,7 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 	enum sess_close retval;
 	struct backend *bp;
 	struct v1p_acct v1a;
-	struct vbc *vbc;
+	struct vtp *vtp;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -283,16 +283,16 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 
 	req->res_mode = RES_PIPE;
 
-	vbc = vbe_dir_getfd(req->wrk, bp, bo);
+	vtp = vbe_dir_getfd(req->wrk, bp, bo);
 
-	if (vbc == NULL) {
+	if (vtp == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 		retval = SC_TX_ERROR;
 	} else {
 		i = V1F_SendReq(req->wrk, bo, &v1a.bereq, 1);
 		VSLb_ts_req(req, "Pipe", W_TIM_real(req->wrk));
 		if (i == 0)
-			V1P_Process(req, vbc->fd, &v1a);
+			V1P_Process(req, vtp->fd, &v1a);
 		VSLb_ts_req(req, "PipeSess", W_TIM_real(req->wrk));
 		bo->htc->doclose = SC_TX_PIPE;
 		vbe_dir_finish(d, req->wrk, bo);

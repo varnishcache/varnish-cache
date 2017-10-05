@@ -104,7 +104,7 @@ vbp_delete(struct vbp_target *vt)
 #define DN(x)	/**/
 	VRT_BACKEND_PROBE_HANDLE();
 #undef DN
-	VBT_Rel(&vt->tcp_pool);
+	VTP_Rel(&vt->tcp_pool);
 	free(vt->req);
 	FREE_OBJ(vt);
 }
@@ -276,7 +276,7 @@ vbp_poke(struct vbp_target *vt)
 	t_start = t_now = VTIM_real();
 	t_end = t_start + vt->timeout;
 
-	s = VBT_Open(vt->tcp_pool, t_end - t_now, &sa);
+	s = VTP_Open(vt->tcp_pool, t_end - t_now, &sa);
 	if (s < 0) {
 		/* Got no connection: failed */
 		return;

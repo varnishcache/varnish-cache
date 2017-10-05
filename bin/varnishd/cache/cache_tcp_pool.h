@@ -32,17 +32,17 @@
 
 struct tcp_pool;
 
-struct vbc {
+struct vtp {
 	unsigned		magic;
-#define VBC_MAGIC		0x0c5e6592
+#define VTP_MAGIC		0x0c5e6592
 	int			fd;
-	VTAILQ_ENTRY(vbc)	list;
+	VTAILQ_ENTRY(vtp)	list;
 	const struct suckaddr	*addr;
 	uint8_t			state;
-#define VBC_STATE_AVAIL		(1<<0)
-#define VBC_STATE_USED		(1<<1)
-#define VBC_STATE_STOLEN	(1<<2)
-#define VBC_STATE_CLEANUP	(1<<3)
+#define VTP_STATE_AVAIL		(1<<0)
+#define VTP_STATE_USED		(1<<1)
+#define VTP_STATE_STOLEN	(1<<2)
+#define VTP_STATE_CLEANUP	(1<<3)
 	struct waited		waited[1];
 	struct tcp_pool		*tcp_pool;
 
@@ -54,10 +54,10 @@ struct vbc {
  */
 
 /* cache_tcp_pool.c */
-struct tcp_pool *VBT_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6);
-void VBT_Rel(struct tcp_pool **tpp);
-int VBT_Open(const struct tcp_pool *tp, double tmo, const struct suckaddr **sa);
-void VBT_Recycle(const struct worker *, struct tcp_pool *, struct vbc **);
-void VBT_Close(struct tcp_pool *tp, struct vbc **vbc);
-struct vbc *VBT_Get(struct tcp_pool *, double tmo, struct worker *);
-void VBT_Wait(struct worker *, struct vbc *);
+struct tcp_pool *VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6);
+void VTP_Rel(struct tcp_pool **tpp);
+int VTP_Open(const struct tcp_pool *tp, double tmo, const struct suckaddr **sa);
+void VTP_Recycle(const struct worker *, struct tcp_pool *, struct vtp **);
+void VTP_Close(struct tcp_pool *tp, struct vtp **);
+struct vtp *VTP_Get(struct tcp_pool *, double tmo, struct worker *);
+void VTP_Wait(struct worker *, struct vtp *);

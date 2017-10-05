@@ -116,9 +116,9 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 	Lck_Lock(&backends_mtx);
 	VTAILQ_INSERT_TAIL(&backends, b, list);
 	VSC_C_main->n_backend++;
-	b->tcp_pool = VBT_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr);
+	b->tcp_pool = VTP_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr);
 	if (vbp != NULL) {
-		tp = VBT_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr);
+		tp = VTP_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr);
 		assert(b->tcp_pool == tp);
 	}
 	Lck_Unlock(&backends_mtx);
@@ -222,7 +222,7 @@ VBE_Delete(struct backend *be)
 	else
 		VTAILQ_REMOVE(&backends, be, list);
 	VSC_C_main->n_backend--;
-	VBT_Rel(&be->tcp_pool);
+	VTP_Rel(&be->tcp_pool);
 	Lck_Unlock(&backends_mtx);
 
 #define DA(x)	do { if (be->x != NULL) free(be->x); } while (0)
