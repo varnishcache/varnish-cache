@@ -13,7 +13,6 @@ varnishd_SOURCES = \
 	cache/cache_backend.c \
 	cache/cache_backend_cfg.c \
 	cache/cache_backend_probe.c \
-	cache/cache_backend_tcp.c \
 	cache/cache_ban.c \
 	cache/cache_ban_build.c \
 	cache/cache_ban_lurker.c \
@@ -43,6 +42,7 @@ varnishd_SOURCES = \
 	cache/cache_range.c \
 	cache/cache_session.c \
 	cache/cache_shmlog.c \
+	cache/cache_tcp_pool.c \
 	cache/cache_vary.c \
 	cache/cache_vcl.c \
 	cache/cache_vrt.c \
