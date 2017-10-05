@@ -50,6 +50,8 @@
 
 #include "VSC_vbe.h"
 
+const char *vbe_proto_ident = "HTTP Backend";
+
 static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
 static VTAILQ_HEAD(, backend) cool_backends =
     VTAILQ_HEAD_INITIALIZER(cool_backends);
@@ -115,7 +117,8 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 	Lck_Lock(&backends_mtx);
 	VTAILQ_INSERT_TAIL(&backends, b, list);
 	VSC_C_main->n_backend++;
-	b->tcp_pool = VTP_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr);
+	b->tcp_pool = VTP_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr,
+	    vbe_proto_ident);
 	Lck_Unlock(&backends_mtx);
 
 	VBE_fill_director(b);

@@ -48,7 +48,7 @@ struct tcp_pool {
 	unsigned		magic;
 #define TCP_POOL_MAGIC		0x28b0e42a
 
-	char			*name;
+	const void		*id;
 	struct suckaddr		*ip4;
 	struct suckaddr		*ip6;
 
@@ -63,7 +63,6 @@ struct tcp_pool {
 	int			n_kill;
 
 	int			n_used;
-
 };
 
 static struct lock		tcp_pools_mtx;
@@ -119,7 +118,7 @@ tcp_handle(struct waited *w, enum wait_event ev, double now)
  */
 
 struct tcp_pool *
-VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6)
+VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const void *id)
 {
 	struct tcp_pool *tp;
 
@@ -127,6 +126,8 @@ VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6)
 	Lck_Lock(&tcp_pools_mtx);
 	VTAILQ_FOREACH(tp, &tcp_pools, list) {
 		assert(tp->refcnt > 0);
+		if (tp->id != id)
+			continue;
 		if (ip4 == NULL) {
 			if (tp->ip4 != NULL)
 				continue;
@@ -158,6 +159,7 @@ VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6)
 	if (ip6 != NULL)
 		tp->ip6 = VSA_Clone(ip6);
 	tp->refcnt = 1;
+	tp->id = id;
 	Lck_New(&tp->mtx, lck_tcp_pool);
 	VTAILQ_INIT(&tp->connlist);
 	VTAILQ_INIT(&tp->killlist);
@@ -206,7 +208,6 @@ VTP_Rel(struct tcp_pool **tpp)
 	VTAILQ_REMOVE(&tcp_pools, tp, list);
 	Lck_Unlock(&tcp_pools_mtx);
 
-	free(tp->name);
 	free(tp->ip4);
 	free(tp->ip6);
 	Lck_Lock(&tp->mtx);
@@ -254,7 +255,9 @@ VTP_Open(const struct tcp_pool *tp, double tmo, const struct suckaddr **sa)
 	}
 	*sa = tp->ip4;
 	s = VTCP_connect(tp->ip4, msec);
-	if (s < 0 && !cache_param->prefer_ipv6) {
+	if (s >= 0)
+		return (s);
+	if (!cache_param->prefer_ipv6) {
 		*sa = tp->ip6;
 		s = VTCP_connect(tp->ip6, msec);
 	}
@@ -266,16 +269,18 @@ VTP_Open(const struct tcp_pool *tp, double tmo, const struct suckaddr **sa)
  */
 
 void
-VTP_Recycle(const struct worker *wrk, struct tcp_pool *tp, struct vtp **vtpp)
+VTP_Recycle(const struct worker *wrk, struct vtp **vtpp)
 {
 	struct vtp *vtp;
+	struct tcp_pool *tp;
 	int i = 0;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
 	vtp = *vtpp;
 	*vtpp = NULL;
 	CHECK_OBJ_NOTNULL(vtp, VTP_MAGIC);
+	tp = vtp->tcp_pool;
+	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
 
 	assert(vtp->state == VTP_STATE_USED);
 	assert(vtp->fd > 0);
@@ -327,14 +332,16 @@ VTP_Recycle(const struct worker *wrk, struct tcp_pool *tp, struct vtp **vtpp)
  */
 
 void
-VTP_Close(struct tcp_pool *tp, struct vtp **vtpp)
+VTP_Close(struct vtp **vtpp)
 {
 	struct vtp *vtp;
+	struct tcp_pool *tp;
 
-	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
 	vtp = *vtpp;
 	*vtpp = NULL;
 	CHECK_OBJ_NOTNULL(vtp, VTP_MAGIC);
+	tp = vtp->tcp_pool;
+	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
 
 	assert(vtp->state == VTP_STATE_USED);
 	assert(vtp->fd > 0);

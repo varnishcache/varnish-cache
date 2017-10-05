@@ -26,7 +26,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * TCP connection pools
+ * Outgoing TCP connection pools
  *
  */
 
@@ -53,12 +53,45 @@ struct vtp {
  * Prototypes
  */
 
-/* cache_tcp_pool.c */
-struct tcp_pool *VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6);
+struct tcp_pool *VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const void *id);
+	/*
+	 * Get a reference to a TCP pool.  Either ip4 or ip6 arg must be non-NULL.
+	 * If recycling is to be used, the id pointer distinguishes the pool per protocol.
+	 */
+
 void VTP_AddRef(struct tcp_pool *);
-void VTP_Rel(struct tcp_pool **tpp);
-int VTP_Open(const struct tcp_pool *tp, double tmo, const struct suckaddr **sa);
-void VTP_Recycle(const struct worker *, struct tcp_pool *, struct vtp **);
-void VTP_Close(struct tcp_pool *tp, struct vtp **);
+	/*
+	 * Get another reference to an already referenced TCP pool.
+	 */
+
+void VTP_Rel(struct tcp_pool **);
+	/*
+	 * Release reference to a TCP pool.  When last reference is released
+	 * the pool is destroyed and all cached connections closed.
+	 */
+
+int VTP_Open(const struct tcp_pool *, double tmo, const struct suckaddr **);
+	/*
+	 * Open a new connection and return the adress used.
+	 */
+
+void VTP_Close(struct vtp **);
+	/*
+	 * Close a connection.
+	 */
+
+void VTP_Recycle(const struct worker *, struct vtp **);
+	/*
+	 * Recycle an open connection.
+	 */
+
 struct vtp *VTP_Get(struct tcp_pool *, double tmo, struct worker *);
+	/*
+	 * Get a (possibly) recycled connection.
+	 */
+
 void VTP_Wait(struct worker *, struct vtp *);
+	/*
+	 * If the connection was recycled (state != VTP_STATE_USED) call this
+	 * function before attempting to receive on the connection.
+	 */

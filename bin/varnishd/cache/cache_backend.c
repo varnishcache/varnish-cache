@@ -163,14 +163,14 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s", vtp->fd,
 		    bp->display_name);
-		VTP_Close(bp->tcp_pool, &vtp);
+		VTP_Close(&vtp);
 		Lck_Lock(&bp->mtx);
 	} else {
 		VSLb(bo->vsl, SLT_BackendReuse, "%d %s", vtp->fd,
 		    bp->display_name);
 		Lck_Lock(&bp->mtx);
 		VSC_C_main->backend_recycle++;
-		VTP_Recycle(wrk, bp->tcp_pool, &vtp);
+		VTP_Recycle(wrk, &vtp);
 	}
 	assert(bp->n_conn > 0);
 	bp->n_conn--;
