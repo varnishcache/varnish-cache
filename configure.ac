@@ -688,6 +688,14 @@ AC_DEFINE_UNQUOTED([VCC_CC],"$VCC_CC",[C compiler command line for VCL code])
 VTC_TESTS="$(cd $srcdir/bin/varnishtest && echo tests/*.vtc)"
 AC_SUBST(VTC_TESTS)
 
+VSC_SRC="$(cd $srcdir/bin/varnishd && echo *.vsc)"
+VSC_GEN_C="$(echo $VSC_SRC | sed 's:\.vsc:.c:g')"
+VSC_GEN_H="$(echo $VSC_SRC | sed 's:\.vsc:.h:g')"
+# automake does not allow to AC_SUBST _SOURCES files (for a good
+# reason), so we automate the cleanup at least
+AC_SUBST(VSC_GEN_C)
+AC_SUBST(VSC_GEN_H)
+
 # Make sure this include dir exists
 AC_CONFIG_COMMANDS([mkdir], [$MKDIR_P doc/sphinx/include])
 

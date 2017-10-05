@@ -124,14 +124,14 @@ include/params.rst: $(top_builddir)/bin/varnishd/varnishd
 BUILT_SOURCES += include/params.rst
 
 COUNTERS = \
-	$(top_srcdir)/bin/varnishd/main.vsc \
-	$(top_srcdir)/bin/varnishd/mgt.vsc \
-	$(top_srcdir)/bin/varnishd/mempool.vsc \
-	$(top_srcdir)/bin/varnishd/sma.vsc \
-	$(top_srcdir)/bin/varnishd/smu.vsc \
-	$(top_srcdir)/bin/varnishd/smf.vsc \
-	$(top_srcdir)/bin/varnishd/vbe.vsc \
-	$(top_srcdir)/bin/varnishd/lck.vsc
+	$(top_srcdir)/bin/varnishd/VSC_main.vsc \
+	$(top_srcdir)/bin/varnishd/VSC_mgt.vsc \
+	$(top_srcdir)/bin/varnishd/VSC_mempool.vsc \
+	$(top_srcdir)/bin/varnishd/VSC_sma.vsc \
+	$(top_srcdir)/bin/varnishd/VSC_smu.vsc \
+	$(top_srcdir)/bin/varnishd/VSC_smf.vsc \
+	$(top_srcdir)/bin/varnishd/VSC_vbe.vsc \
+	$(top_srcdir)/bin/varnishd/VSC_lck.vsc
 
 include/counters.rst: $(top_srcdir)/lib/libvcc/vsctool.py $(COUNTERS)
 	echo -n '' > $@
