@@ -113,7 +113,6 @@ nodist_varnishd_SOURCES = \
 	builtin_vcl.c
 
 noinst_HEADERS = \
-	VSC_main.h \
 	cache/cache_ban.h \
 	cache/cache_esi.h \
 	cache/cache_obj.h \
@@ -224,7 +223,7 @@ VSC_main.c: VSC_main.h
 VSC_main.h: $(srcdir)/main.vsc $(top_srcdir)/lib/libvcc/vsctool.py
 	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -ch $(srcdir)/main.vsc
 
-$(varnishd_OBJECTS):	VSC_main.h
+$(varnishd_OBJECTS):	VSC_main.c VSC_main.h
 
 EXTRA_DIST	+=	main.vsc
 DISTCLEANFILES	+=	VSC_main.c VSC_main.h
@@ -238,7 +237,7 @@ VSC_lck.c: VSC_lck.h
 VSC_lck.h: $(srcdir)/lck.vsc $(top_srcdir)/lib/libvcc/vsctool.py
 	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -ch $(srcdir)/lck.vsc
 
-$(varnishd_OBJECTS):	VSC_lck.h
+$(varnishd_OBJECTS):	VSC_lck.c VSC_lck.h
 
 EXTRA_DIST	+=	lck.vsc
 DISTCLEANFILES	+=	VSC_lck.c VSC_lck.h
@@ -252,7 +251,7 @@ VSC_vbe.c: VSC_vbe.h
 VSC_vbe.h: $(srcdir)/vbe.vsc $(top_srcdir)/lib/libvcc/vsctool.py
 	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -ch $(srcdir)/vbe.vsc
 
-$(varnishd_OBJECTS):	VSC_vbe.h
+$(varnishd_OBJECTS):	VSC_vbe.c VSC_vbe.h
 
 EXTRA_DIST	+=	vbe.vsc
 DISTCLEANFILES	+=	VSC_vbe.c VSC_vbe.h
@@ -266,7 +265,7 @@ VSC_sma.c: VSC_sma.h
 VSC_sma.h: $(srcdir)/sma.vsc $(top_srcdir)/lib/libvcc/vsctool.py
 	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -ch $(srcdir)/sma.vsc
 
-$(varnishd_OBJECTS):	VSC_sma.h
+$(varnishd_OBJECTS):	VSC_sma.c VSC_sma.h
 
 EXTRA_DIST	+=	sma.vsc
 DISTCLEANFILES	+=	VSC_sma.c VSC_sma.h
@@ -280,7 +279,7 @@ VSC_smu.c: VSC_smu.h
 VSC_smu.h: $(srcdir)/smu.vsc $(top_srcdir)/lib/libvcc/vsctool.py
 	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -ch $(srcdir)/smu.vsc
 
-$(varnishd_OBJECTS):	VSC_smu.h
+$(varnishd_OBJECTS):	VSC_smu.c VSC_smu.h
 
 EXTRA_DIST	+=	smu.vsc
 DISTCLEANFILES	+=	VSC_smu.c VSC_smu.h
@@ -294,7 +293,7 @@ VSC_smf.c: VSC_smf.h
 VSC_smf.h: $(srcdir)/smf.vsc $(top_srcdir)/lib/libvcc/vsctool.py
 	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -ch $(srcdir)/smf.vsc
 
-$(varnishd_OBJECTS):	VSC_smf.h
+$(varnishd_OBJECTS):	VSC_smf.c VSC_smf.h
 
 EXTRA_DIST	+=	smf.vsc
 DISTCLEANFILES	+=	VSC_smf.c VSC_smf.h
@@ -308,7 +307,7 @@ VSC_mempool.c: VSC_mempool.h
 VSC_mempool.h: $(srcdir)/mempool.vsc $(top_srcdir)/lib/libvcc/vsctool.py
 	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -ch $(srcdir)/mempool.vsc
 
-$(varnishd_OBJECTS):	VSC_mempool.h
+$(varnishd_OBJECTS):	VSC_mempool.c VSC_mempool.h
 
 EXTRA_DIST	+=	mempool.vsc
 DISTCLEANFILES	+=	VSC_mempool.c VSC_mempool.h
@@ -322,7 +321,7 @@ VSC_mgt.c: VSC_mgt.h
 VSC_mgt.h: $(srcdir)/mgt.vsc $(top_srcdir)/lib/libvcc/vsctool.py
 	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -ch $(srcdir)/mgt.vsc
 
-$(varnishd_OBJECTS):	VSC_mgt.h
+$(varnishd_OBJECTS):	VSC_mgt.c VSC_mgt.h
 
 EXTRA_DIST	+=	mgt.vsc
 DISTCLEANFILES	+=	VSC_mgt.c VSC_mgt.h
