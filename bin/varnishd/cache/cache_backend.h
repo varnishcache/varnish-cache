@@ -77,27 +77,6 @@ struct backend {
 };
 
 /*---------------------------------------------------------------------
- * Backend connection -- private to cache_backend*.c
- */
-
-struct vbc {
-	unsigned		magic;
-#define VBC_MAGIC		0x0c5e6592
-	int			fd;
-	VTAILQ_ENTRY(vbc)	list;
-	const struct suckaddr	*addr;
-	uint8_t			state;
-#define VBC_STATE_AVAIL		(1<<0)
-#define VBC_STATE_USED		(1<<1)
-#define VBC_STATE_STOLEN	(1<<2)
-#define VBC_STATE_CLEANUP	(1<<3)
-	struct waited		waited[1];
-	struct tcp_pool		*tcp_pool;
-
-	pthread_cond_t		*cond;
-};
-
-/*---------------------------------------------------------------------
  * Prototypes
  */
 
@@ -118,17 +97,6 @@ void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
 void VBP_Remove(struct backend *b);
 void VBP_Control(const struct backend *b, int stop);
 void VBP_Status(struct cli *cli, const struct backend *, int details);
-
-/* cache_backend_tcp.c */
-struct tcp_pool *VBT_Ref(const struct suckaddr *ip4,
-    const struct suckaddr *ip6);
-void VBT_Rel(struct tcp_pool **tpp);
-int VBT_Open(const struct tcp_pool *tp, double tmo, const struct suckaddr **sa);
-void VBT_Recycle(const struct worker *, struct tcp_pool *, struct vbc **);
-void VBT_Close(struct tcp_pool *tp, struct vbc **vbc);
-struct vbc *VBT_Get(struct tcp_pool *, double tmo, const struct backend *,
-    struct worker *);
-void VBT_Wait(struct worker *, struct vbc *);
 
 /* cache_vcl.c */
 int VCL_AddBackend(struct vcl *, struct backend *);

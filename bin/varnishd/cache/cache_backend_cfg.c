@@ -46,6 +46,7 @@
 
 #include "cache_director.h"
 #include "cache_backend.h"
+#include "cache_tcp_pool.h"
 
 #include "VSC_vbe.h"
 

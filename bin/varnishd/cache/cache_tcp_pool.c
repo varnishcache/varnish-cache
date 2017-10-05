@@ -27,9 +27,6 @@
  *
  * TCP connection pools.
  *
- * These are really a lot more general than just backends, but backends
- * are all we use them for, so they live here for now.
- *
  */
 
 #include "config.h"
@@ -44,8 +41,7 @@
 #include "vtim.h"
 #include "waiter/waiter.h"
 
-#include "cache_director.h"
-#include "cache_backend.h"
+#include "cache_tcp_pool.h"
 #include "cache_pool.h"
 
 struct tcp_pool {
@@ -348,13 +344,11 @@ VBT_Close(struct tcp_pool *tp, struct vbc **vbcp)
  */
 
 struct vbc *
-VBT_Get(struct tcp_pool *tp, double tmo, const struct backend *be,
-    struct worker *wrk)
+VBT_Get(struct tcp_pool *tp, double tmo, struct worker *wrk)
 {
 	struct vbc *vbc;
 
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
-	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	Lck_Lock(&tp->mtx);

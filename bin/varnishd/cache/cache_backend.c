@@ -43,6 +43,7 @@
 
 #include "cache_director.h"
 #include "cache_backend.h"
+#include "cache_tcp_pool.h"
 #include "cache_transport.h"
 #include "http1/cache_http1.h"
 
@@ -95,7 +96,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	bo->htc->doclose = SC_NULL;
 
 	FIND_TMO(connect_timeout, tmod, bo, bp);
-	vbc = VBT_Get(bp->tcp_pool, tmod, bp, wrk);
+	vbc = VBT_Get(bp->tcp_pool, tmod, wrk);
 	if (vbc == NULL) {
 		// XXX: Per backend stats ?
 		VSC_C_main->backend_fail++;

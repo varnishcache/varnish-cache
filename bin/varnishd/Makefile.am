@@ -119,6 +119,7 @@ noinst_HEADERS = \
 	cache/cache_obj.h \
 	cache/cache_objhead.h \
 	cache/cache_pool.h \
+	cache/cache_tcp_pool.h \
 	cache/cache_transport.h \
 	cache/cache_varnishd.h \
 	cache/cache_vgz.h \
