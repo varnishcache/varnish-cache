@@ -66,8 +66,8 @@ struct tcp_pool {
 
 };
 
-static struct lock		pools_mtx;
-static VTAILQ_HEAD(, tcp_pool)	pools = VTAILQ_HEAD_INITIALIZER(pools);
+static struct lock		tcp_pools_mtx;
+static VTAILQ_HEAD(, tcp_pool)	tcp_pools = VTAILQ_HEAD_INITIALIZER(tcp_pools);
 
 /*--------------------------------------------------------------------
  * Waiter-handler
@@ -123,8 +123,9 @@ VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6)
 {
 	struct tcp_pool *tp;
 
-	Lck_Lock(&pools_mtx);
-	VTAILQ_FOREACH(tp, &pools, list) {
+	assert(ip4 != NULL || ip6 != NULL);
+	Lck_Lock(&tcp_pools_mtx);
+	VTAILQ_FOREACH(tp, &tcp_pools, list) {
 		assert(tp->refcnt > 0);
 		if (ip4 == NULL) {
 			if (tp->ip4 != NULL)
@@ -145,10 +146,10 @@ VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6)
 				continue;
 		}
 		tp->refcnt++;
-		Lck_Unlock(&pools_mtx);
+		Lck_Unlock(&tcp_pools_mtx);
 		return (tp);
 	}
-	Lck_Unlock(&pools_mtx);
+	Lck_Unlock(&tcp_pools_mtx);
 
 	ALLOC_OBJ(tp, TCP_POOL_MAGIC);
 	AN(tp);
@@ -157,13 +158,13 @@ VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6)
 	if (ip6 != NULL)
 		tp->ip6 = VSA_Clone(ip6);
 	tp->refcnt = 1;
-	Lck_New(&tp->mtx, lck_backend_tcp);
+	Lck_New(&tp->mtx, lck_tcp_pool);
 	VTAILQ_INIT(&tp->connlist);
 	VTAILQ_INIT(&tp->killlist);
 
-	Lck_Lock(&pools_mtx);
-	VTAILQ_INSERT_HEAD(&pools, tp, list);
-	Lck_Unlock(&pools_mtx);
+	Lck_Lock(&tcp_pools_mtx);
+	VTAILQ_INSERT_HEAD(&tcp_pools, tp, list);
+	Lck_Unlock(&tcp_pools_mtx);
 
 	return (tp);
 }
@@ -177,10 +178,10 @@ VTP_AddRef(struct tcp_pool *tp)
 {
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
 
-	Lck_Lock(&pools_mtx);
+	Lck_Lock(&tcp_pools_mtx);
 	assert(tp->refcnt > 0);
 	tp->refcnt++;
-	Lck_Unlock(&pools_mtx);
+	Lck_Unlock(&tcp_pools_mtx);
 }
 
 /*--------------------------------------------------------------------
@@ -195,15 +196,15 @@ VTP_Rel(struct tcp_pool **tpp)
 
 	TAKE_OBJ_NOTNULL(tp, tpp, TCP_POOL_MAGIC);
 
-	Lck_Lock(&pools_mtx);
+	Lck_Lock(&tcp_pools_mtx);
 	assert(tp->refcnt > 0);
 	if (--tp->refcnt > 0) {
-		Lck_Unlock(&pools_mtx);
+		Lck_Unlock(&tcp_pools_mtx);
 		return;
 	}
 	AZ(tp->n_used);
-	VTAILQ_REMOVE(&pools, tp, list);
-	Lck_Unlock(&pools_mtx);
+	VTAILQ_REMOVE(&tcp_pools, tp, list);
+	Lck_Unlock(&tcp_pools_mtx);
 
 	free(tp->name);
 	free(tp->ip4);
@@ -430,5 +431,5 @@ VTP_Wait(struct worker *wrk, struct vtp *vtp)
 void
 VTP_Init(void)
 {
-	Lck_New(&pools_mtx, lck_backend);
+	Lck_New(&tcp_pools_mtx, lck_tcp_pool);
 }
