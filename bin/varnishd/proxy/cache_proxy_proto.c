@@ -29,12 +29,10 @@
 
 #include "config.h"
 
-#include "cache/cache_varnishd.h"
-
 #include <netinet/in.h>
-
 #include <netdb.h>
 
+#include "cache/cache_varnishd.h"
 #include "cache/cache_transport.h"
 
 #include "vend.h"
