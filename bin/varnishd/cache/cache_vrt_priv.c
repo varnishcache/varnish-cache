@@ -48,7 +48,7 @@ struct vrt_priv {
 	uintptr_t			vmod_id;
 };
 
-static struct vmod_priv cli_task_priv;
+struct vrt_privs cli_task_privs[1];
 
 /*--------------------------------------------------------------------
  */
@@ -105,9 +105,12 @@ vrt_priv_dynamic(VRT_CTX, uintptr_t id, uintptr_t vmod_id)
 		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(ctx->req->sp, SESS_MAGIC);
 		CAST_OBJ_NOTNULL(vps, ctx->req->sp->privs, VRT_PRIVS_MAGIC);
-	} else {
+	} else if (ctx->bo) {
 		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 		CAST_OBJ_NOTNULL(vps, ctx->bo->privs, VRT_PRIVS_MAGIC);
+	} else {
+		ASSERT_CLI();
+		CAST_OBJ_NOTNULL(vps, cli_task_privs, VRT_PRIVS_MAGIC);
 	}
 
 	VTAILQ_FOREACH(vp, &vps->privs, list) {
@@ -130,12 +133,6 @@ VRTPRIV_dynamic_kill(struct vrt_privs *privs, uintptr_t id)
 {
 	struct vrt_priv *vp, *vp1;
 
-	if (privs == NULL && id == 0) {
-		ASSERT_CLI();
-		VRT_priv_fini(&cli_task_priv);
-		memset(&cli_task_priv, 0, sizeof cli_task_priv);
-		return;
-	}
 	CHECK_OBJ_NOTNULL(privs, VRT_PRIVS_MAGIC);
 	AN(id);
 
@@ -163,7 +160,7 @@ VRT_priv_task(VRT_CTX, const void *vmod_id)
 		id = (uintptr_t)ctx->bo;
 	} else {
 		ASSERT_CLI();
-		return (&cli_task_priv);
+		id = (uintptr_t)cli_task_privs;
 	}
 	return (vrt_priv_dynamic(ctx, id, (uintptr_t)vmod_id));
 }

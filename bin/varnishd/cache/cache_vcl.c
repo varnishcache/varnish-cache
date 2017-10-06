@@ -101,6 +101,7 @@ static struct vrt_ctx ctx_cli;
 static unsigned handling_cli;
 static struct ws ws_cli;
 static uintptr_t ws_snapshot_cli;
+extern struct vrt_privs cli_task_privs[1];
 
 /*--------------------------------------------------------------------*/
 
@@ -118,6 +119,7 @@ vcl_get_ctx(unsigned method, int msg)
 	}
 	ctx_cli.ws = &ws_cli;
 	WS_Assert(ctx_cli.ws);
+	VRTPRIV_init(cli_task_privs);
 	return (&ctx_cli);
 }
 
@@ -132,7 +134,7 @@ vcl_rel_ctx(struct vrt_ctx **ctx)
 	WS_Reset(&ws_cli, ws_snapshot_cli);
 	INIT_OBJ(*ctx, VRT_CTX_MAGIC);
 	*ctx = NULL;
-	VRTPRIV_dynamic_kill(NULL, 0);
+	VRTPRIV_dynamic_kill(cli_task_privs, (uintptr_t)cli_task_privs);
 }
 
 /*--------------------------------------------------------------------*/
