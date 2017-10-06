@@ -77,12 +77,16 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	AN(bp->vsc);
 
 	if (!VBE_Healthy(bp, NULL)) {
+		VSLb(bo->vsl, SLT_FetchError,
+		     "backend %s: unhealthy", bp->display_name);
 		// XXX: per backend stats ?
 		VSC_C_main->backend_unhealthy++;
 		return (NULL);
 	}
 
 	if (bp->max_connections > 0 && bp->n_conn >= bp->max_connections) {
+		VSLb(bo->vsl, SLT_FetchError,
+		     "backend %s: busy", bp->display_name);
 		// XXX: per backend stats ?
 		VSC_C_main->backend_busy++;
 		return (NULL);
@@ -90,14 +94,18 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 
 	AZ(bo->htc);
 	bo->htc = WS_Alloc(bo->ws, sizeof *bo->htc);
-	if (bo->htc == NULL)
+	if (bo->htc == NULL) {
+		VSLb(bo->vsl, SLT_FetchError, "out of workspace");
 		/* XXX: counter ? */
 		return (NULL);
+	}
 	bo->htc->doclose = SC_NULL;
 
 	FIND_TMO(connect_timeout, tmod, bo, bp);
 	vtp = VTP_Get(bp->tcp_pool, tmod, wrk);
 	if (vtp == NULL) {
+		VSLb(bo->vsl, SLT_FetchError,
+		     "backend %s: fail", bp->display_name);
 		// XXX: Per backend stats ?
 		VSC_C_main->backend_fail++;
 		bo->htc = NULL;
@@ -204,10 +212,8 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 
 	do {
 		vtp = vbe_dir_getfd(wrk, bp, bo);
-		if (vtp == NULL) {
-			VSLb(bo->vsl, SLT_FetchError, "no backend connection");
+		if (vtp == NULL)
 			return (-1);
-		}
 		AN(bo->htc);
 		if (vtp->state != VTP_STATE_STOLEN)
 			extrachance = 0;
@@ -286,7 +292,6 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 	vtp = vbe_dir_getfd(req->wrk, bp, bo);
 
 	if (vtp == NULL) {
-		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 		retval = SC_TX_ERROR;
 	} else {
 		i = V1F_SendReq(req->wrk, bo, &v1a.bereq, 1);
