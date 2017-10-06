@@ -495,8 +495,8 @@ vbf_fetch_body_helper(struct busyobj *bo)
 			 * objects to be created.
 			 */
 			AN(vfc->oc->flags & OC_F_PASS);
-			VSLb(vfc->wrk->vsl, SLT_FetchError,
-			    "Pass delivery abandoned");
+			VSLb(vfc->wrk->vsl, SLT_Debug,
+			    "Fetch: Pass delivery abandoned");
 			vfps = VFP_END;
 			bo->htc->doclose = SC_RX_BODY;
 			break;

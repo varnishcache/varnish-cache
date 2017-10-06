@@ -21,6 +21,7 @@ Bugs fixed
 
 * 1772_ - Honor first_byte_timeout for recycled backend connections
 * 2135_ - Limit Backend Connection retries to a single retry
+* 2450_ - Pass delivery abandoned does not qualify as an error
 * 2495_ - Avoid leaking an OH ref on reembark failure
 * 2502_ - objcore reference count leak
 * 2530_ - Varnish shouldn't test gunzip for range responses
@@ -29,6 +30,7 @@ Bugs fixed
 
 .. _1772: https://github.com/varnishcache/varnish-cache/issues/1772
 .. _2135: https://github.com/varnishcache/varnish-cache/pull/2135
+.. _2450: https://github.com/varnishcache/varnish-cache/pull/2450
 .. _2495: https://github.com/varnishcache/varnish-cache/issues/2495
 .. _2502: https://github.com/varnishcache/varnish-cache/issues/2502
 .. _2530: https://github.com/varnishcache/varnish-cache/issues/2530
