@@ -89,10 +89,6 @@ Commands may not end with a newline when a shell-style *here document*
 naturally in the following *here document*. Traditionally EOF or END is
 used.
 
-When using the here document style of input there are no restrictions
-on length. When using newline-terminated commands maximum length is
-limited by the varnishd parameter *cli_buffer*.
-
 Quoting pitfalls
 ----------------
 
