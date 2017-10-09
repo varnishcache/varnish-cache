@@ -145,12 +145,10 @@ but they can also be examined and changed on the fly from the CLI::
 In general it is not a good idea to modify parameters unless you
 have a good reason, such as performance tuning or security configuration.
 
-Most parameters will take effect instantly, or with a natural delay
-of some duration,
-
 .. XXX: Natural delay of some duration sounds vague. benc
 
-but a few of them requires you to restart the
+Most parameters will take effect instantly, or with a natural delay
+of some duration, but a few of them requires you to restart the
 child process before they take effect. This is always noted in the
 description of the parameter.
 
