@@ -3,46 +3,46 @@
 CLI - bossing Varnish around
 ============================
 
-Once `varnishd` is started, you can control it using the command line
+Once ``varnishd`` is started, you can control it using the command line
 interface.
 
-The easiest way to do this, is using `varnishadm` on the
-same machine as `varnishd` is running::
+The easiest way to do this, is using ``varnishadm`` on the
+same machine as ``varnishd`` is running::
 
 	varnishadm help
 
-If you want to run `varnishadm` from a remote system, you can do it
+If you want to run ``varnishadm`` from a remote system, you can do it
 two ways.
 
-You can SSH into the `varnishd` computer and run `varnishadm`::
+You can SSH into the ``varnishd`` computer and run ``varnishadm``::
 
 	ssh $http_front_end varnishadm help
 
-But you can also configure `varnishd` to accept remote CLI connections
+But you can also configure ``varnishd`` to accept remote CLI connections
 (using the '-T' and '-S' arguments)::
 
 	varnishd -T :6082 -S /etc/varnish_secret
 
-And then on the remote system run `varnishadm`::
+And then on the remote system run ``varnishadm``::
 
 	varnishadm -T $http_front_end -S /etc/copy_of_varnish_secret help
 
 but as you can see, SSH is much more convenient.
 
-If you run `varnishadm` without arguments, it will read CLI commands from
-`stdin`, if you give it arguments, it will treat those as the single
+If you run ``varnishadm`` without arguments, it will read CLI commands from
+``stdin``, if you give it arguments, it will treat those as the single
 CLI command to execute.
 
 The CLI always returns a status code to tell how it went:  '200'
 means OK, anything else means there were some kind of trouble.
 
-`varnishadm` will exit with status 1 and print the status code on
+``varnishadm`` will exit with status 1 and print the status code on
 standard error if it is not 200.
 
 What can you do with the CLI
 ----------------------------
 
-The CLI gives you almost total control over `varnishd` some of the more important tasks you can perform are:
+The CLI gives you almost total control over ``varnishd`` some of the more important tasks you can perform are:
 
 * load/use/discard VCL programs
 * ban (invalidate) cache content
@@ -166,7 +166,7 @@ and::
 
 	varnish> start
 
-If you start `varnishd` with the '-d' (debugging) argument, you will
+If you start ``varnishd`` with the '-d' (debugging) argument, you will
 always need to start the child process explicitly.
 
 Should the child process die, the master process will automatically
