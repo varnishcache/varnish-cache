@@ -489,5 +489,8 @@ vut_options(const struct vopt_spec *voc)
 
 	for (i = 0; i < voc->vopt_list_n; i++)
 		print_opt(&voc->vopt_list[i]);
+	printf("--optstring\n"
+	    "\tPrint the optstring parameter to ``getopt(3)`` to help"
+	    " writing wrapper scripts.\n\n");
 	return (0);
 }
