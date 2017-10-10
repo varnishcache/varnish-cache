@@ -320,6 +320,7 @@ h2_new_session(struct worker *wrk, void *arg)
 
 	/* Delete all idle streams */
 	VSLb(h2->vsl, SLT_Debug, "H2 CLEANUP %s", h2->error->name);
+	Lck_Lock(&h2->sess->mtx);
 	VTAILQ_FOREACH(r2, &h2->streams, list) {
 		if (r2->error == 0)
 			r2->error = h2->error;
@@ -327,6 +328,7 @@ h2_new_session(struct worker *wrk, void *arg)
 			AZ(pthread_cond_signal(r2->cond));
 	}
 	AZ(pthread_cond_broadcast(h2->cond));
+	Lck_Unlock(&h2->sess->mtx);
 	while (1) {
 		again = 0;
 		VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
