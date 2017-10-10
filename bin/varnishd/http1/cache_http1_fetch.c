@@ -203,7 +203,7 @@ V1F_FetchRespHdr(struct busyobj *bo)
 	htc->doclose = http_DoConnection(hp);
 	RFC2616_Response_Body(bo->wrk, bo);
 
-	bo->vfc->http = bo->beresp;
+	assert(bo->vfc->http == bo->beresp);
 	if (bo->htc->body_status != BS_NONE &&
 	    bo->htc->body_status != BS_ERROR)
 		(void)V1F_Setup_Fetch(bo->vfc, bo->htc);

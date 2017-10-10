@@ -104,11 +104,12 @@ VFP_Extend(const struct vfp_ctx *vc, ssize_t sz)
  */
 
 void
-VFP_Setup(struct vfp_ctx *vc)
+VFP_Setup(struct vfp_ctx *vc, struct worker *wrk)
 {
 
 	INIT_OBJ(vc, VFP_CTX_MAGIC);
 	VTAILQ_INIT(&vc->vfp);
+	vc->wrk = wrk;
 }
 
 /**********************************************************************

@@ -227,12 +227,8 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 static enum fetch_step
 vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 {
-	struct vfp_ctx *vfc;
-
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-	vfc = bo->vfc;
-	CHECK_OBJ_NOTNULL(vfc, VFP_CTX_MAGIC);
 
 	assert(bo->fetch_objcore->boc->state <= BOS_REQ_DONE);
 
@@ -246,9 +242,6 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	bo->storage_hint = NULL;
 	bo->do_esi = 0;
 	bo->do_stream = 1;
-
-	/* reset fetch processors */
-	VFP_Setup(vfc);
 
 	// XXX: BereqEnd + BereqAcct ?
 	VSL_ChgId(bo->vsl, "bereq", "retry", VXID_Get(wrk, VSL_BACKENDMARKER));
@@ -294,6 +287,13 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	assert(bo->fetch_objcore->boc->state <= BOS_REQ_DONE);
 
 	AZ(bo->htc);
+
+	VFP_Setup(bo->vfc, wrk);
+	bo->vfc->bo = bo;
+	bo->vfc->oc = bo->fetch_objcore;
+	bo->vfc->http = bo->beresp;
+	bo->vfc->esi_req = bo->bereq;
+
 	i = VDI_GetHdr(wrk, bo);
 
 	now = W_TIM_real(wrk);
@@ -383,12 +383,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 			return (F_STP_ERROR);
 		}
 	}
-
-	bo->vfc->bo = bo;
-	bo->vfc->oc = bo->fetch_objcore;
-	bo->vfc->wrk = bo->wrk;
-	bo->vfc->http = bo->beresp;
-	bo->vfc->esi_req = bo->bereq;
 
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, NULL);
 
@@ -819,11 +813,11 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	assert(wrk->handling == VCL_RET_DELIVER);
 
-	bo->vfc->bo = bo;
-	bo->vfc->wrk = bo->wrk;
-	bo->vfc->oc = bo->fetch_objcore;
-	bo->vfc->http = bo->beresp;
-	bo->vfc->esi_req = bo->bereq;
+	assert(bo->vfc->bo == bo);
+	assert(bo->vfc->wrk == bo->wrk);
+	assert(bo->vfc->oc == bo->fetch_objcore);
+	assert(bo->vfc->http == bo->beresp);
+	assert(bo->vfc->esi_req == bo->bereq);
 
 	if (vbf_beresp2obj(bo)) {
 		(void)VFP_Error(bo->vfc, "Could not get storage");

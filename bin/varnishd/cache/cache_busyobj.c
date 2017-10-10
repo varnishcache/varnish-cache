@@ -136,8 +136,6 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 
 	VRTPRIV_init(bo->privs);
 
-	VFP_Setup(bo->vfc);
-
 	return (bo);
 }
 

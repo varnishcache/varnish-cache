@@ -92,9 +92,8 @@ cnt_transport(struct worker *wrk, struct req *req)
 
 	if (req->req_body_status < REQ_BODY_TAKEN) {
 		AN(req->transport->req_body != NULL);
-		VFP_Setup(req->vfc);
+		VFP_Setup(req->vfc, wrk);
 		req->vfc->http = req->http;
-		req->vfc->wrk = wrk;
 		req->transport->req_body(req);
 	}
 
@@ -979,6 +978,7 @@ CNT_Request(struct worker *wrk, struct req *req)
 
 	AN(req->vsl->wid & VSL_CLIENTMARKER);
 
+	/* wrk can have changed for restarts */
 	req->vfc->wrk = req->wrk = wrk;
 	wrk->vsl = req->vsl;
 	for (nxt = REQ_FSM_MORE; nxt == REQ_FSM_MORE; ) {
