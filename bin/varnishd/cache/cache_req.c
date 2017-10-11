@@ -190,8 +190,10 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 		req->vcl = NULL;
 	}
 
+	Lck_Lock(&sp->mtx);
 	VRTPRIV_dynamic_kill(sp->privs, (uintptr_t)req);
 	VRTPRIV_dynamic_kill(sp->privs, (uintptr_t)&req->top);
+	Lck_Unlock(&sp->mtx);
 
 	/* Charge and log byte counters */
 	if (req->vsl->wid) {

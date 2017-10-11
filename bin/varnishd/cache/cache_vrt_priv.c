@@ -98,12 +98,16 @@ vrt_priv_dynamic(VRT_CTX, uintptr_t id, uintptr_t vmod_id)
 {
 	struct vrt_privs *vps;
 	struct vrt_priv *vp;
+	struct lock *mtx;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(vmod_id);
+	mtx = NULL;
+
 	if (ctx->req) {
 		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(ctx->req->sp, SESS_MAGIC);
+		mtx = &ctx->req->sp->mtx;
 		CAST_OBJ_NOTNULL(vps, ctx->req->sp->privs, VRT_PRIVS_MAGIC);
 	} else if (ctx->bo) {
 		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
@@ -113,18 +117,29 @@ vrt_priv_dynamic(VRT_CTX, uintptr_t id, uintptr_t vmod_id)
 		CAST_OBJ_NOTNULL(vps, cli_task_privs, VRT_PRIVS_MAGIC);
 	}
 
+	if (mtx)
+		Lck_Lock(mtx);
 	VTAILQ_FOREACH(vp, &vps->privs, list) {
 		CHECK_OBJ_NOTNULL(vp, VRT_PRIV_MAGIC);
 		if (vp->vcl == ctx->vcl && vp->id == id
 		    && vp->vmod_id == vmod_id)
-			return (vp->priv);
+			break;
 	}
+	if (mtx)
+		Lck_Unlock(mtx);
+	if (vp)
+		return (vp->priv);
+
 	ALLOC_OBJ(vp, VRT_PRIV_MAGIC);
 	AN(vp);
 	vp->vcl = ctx->vcl;
 	vp->id = id;
 	vp->vmod_id = vmod_id;
+	if (mtx)
+		Lck_Lock(mtx);
 	VTAILQ_INSERT_TAIL(&vps->privs, vp, list);
+	if (mtx)
+		Lck_Unlock(mtx);
 	return (vp->priv);
 }
 
