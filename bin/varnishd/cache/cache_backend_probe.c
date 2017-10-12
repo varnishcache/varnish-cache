@@ -324,7 +324,7 @@ vbp_poke(struct vbp_target *vt)
 
 	pfd->fd = s;
 	rlen = 0;
-	do {
+	while (1) {
 		pfd->events = POLLIN;
 		pfd->revents = 0;
 		tmo = (int)round((t_end - t_now) * 1e3);
@@ -341,8 +341,10 @@ vbp_poke(struct vbp_target *vt)
 			    sizeof vt->resp_buf - rlen);
 		else
 			i = read(s, buf, sizeof buf);
+		if (i <= 0)
+			break;
 		rlen += i;
-	} while (i > 0);
+	}
 
 	VTCP_close(&s);
 
