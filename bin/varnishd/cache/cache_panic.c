@@ -486,6 +486,8 @@ pan_req(struct vsb *vsb, const struct req *req)
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
 
+	pan_privs(vsb, req->privs);
+
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
 }
@@ -522,8 +524,6 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 	ci = SES_Get_String_Attr(sp, SA_CLIENT_IP);
 	cp = SES_Get_String_Attr(sp, SA_CLIENT_PORT);
 	VSB_printf(vsb, "client = %s %s,\n", ci, cp);
-
-	pan_privs(vsb, sp->privs);
 
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
