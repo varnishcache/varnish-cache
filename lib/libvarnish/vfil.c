@@ -390,6 +390,8 @@ VFIL_searchpath(const struct vfil_path *vp, vfil_path_func_f *func, void *priv,
 		VSB_clear(vsb);
 		VSB_printf(vsb, "%s/%s", vd->dir, fni);
 		AZ(VSB_finish(vsb));
+		if (access(VSB_data(vsb), F_OK))
+			continue;
 		i = func(priv, VSB_data(vsb));
 		if (i <= 0) {
 			e = errno;
