@@ -134,6 +134,7 @@ Req_New(const struct worker *wrk, struct sess *sp)
 
 	req->vdpe_nxt = 0;
 	VTAILQ_INIT(&req->vdpe);
+	VRTPRIV_init(req->privs);
 
 	return (req);
 }
@@ -190,8 +191,9 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 		req->vcl = NULL;
 	}
 
-	VRTPRIV_dynamic_kill(sp->privs, (uintptr_t)req);
-	VRTPRIV_dynamic_kill(sp->privs, (uintptr_t)&req->top);
+	VRTPRIV_dynamic_kill(req->privs, (uintptr_t)req);
+	VRTPRIV_dynamic_kill(req->privs, (uintptr_t)&req->top);
+	assert(VTAILQ_EMPTY(&req->privs->privs));
 
 	/* Charge and log byte counters */
 	if (req->vsl->wid) {

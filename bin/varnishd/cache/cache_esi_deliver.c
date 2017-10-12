@@ -202,7 +202,7 @@ ved_include(struct req *preq, const char *src, const char *host,
 		AZ(req->wrk);
 	}
 
-	VRTPRIV_dynamic_kill(sp->privs, (uintptr_t)req);
+	VRTPRIV_dynamic_kill(req->privs, (uintptr_t)req);
 
 	AZ(preq->vcl);
 	preq->vcl = req->vcl;

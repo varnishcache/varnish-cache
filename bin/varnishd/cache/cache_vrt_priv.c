@@ -92,24 +92,14 @@ VRTPRIV_init(struct vrt_privs *privs)
 }
 
 static struct vmod_priv *
-vrt_priv_dynamic(VRT_CTX, uintptr_t id, uintptr_t vmod_id)
+vrt_priv_dynamic(VRT_CTX, struct vrt_privs *vps, uintptr_t id,
+    uintptr_t vmod_id)
 {
-	struct vrt_privs *vps;
 	struct vrt_priv *vp;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(vps, VRT_PRIVS_MAGIC);
 	AN(vmod_id);
-	if (ctx->req) {
-		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-		CHECK_OBJ_NOTNULL(ctx->req->sp, SESS_MAGIC);
-		CAST_OBJ_NOTNULL(vps, ctx->req->sp->privs, VRT_PRIVS_MAGIC);
-	} else if (ctx->bo) {
-		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-		CAST_OBJ_NOTNULL(vps, ctx->bo->privs, VRT_PRIVS_MAGIC);
-	} else {
-		ASSERT_CLI();
-		CAST_OBJ_NOTNULL(vps, cli_task_privs, VRT_PRIVS_MAGIC);
-	}
 
 	VTAILQ_FOREACH(vp, &vps->privs, list) {
 		CHECK_OBJ_NOTNULL(vp, VRT_PRIV_MAGIC);
@@ -148,32 +138,38 @@ struct vmod_priv *
 VRT_priv_task(VRT_CTX, const void *vmod_id)
 {
 	uintptr_t id;
+	struct vrt_privs *vps;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (ctx->req) {
 		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 		id = (uintptr_t)ctx->req;
+		CAST_OBJ_NOTNULL(vps, ctx->req->privs, VRT_PRIVS_MAGIC);
 	} else if (ctx->bo) {
 		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
 		id = (uintptr_t)ctx->bo;
+		CAST_OBJ_NOTNULL(vps, ctx->bo->privs, VRT_PRIVS_MAGIC);
 	} else {
 		ASSERT_CLI();
 		id = (uintptr_t)cli_task_privs;
+		CAST_OBJ_NOTNULL(vps, cli_task_privs, VRT_PRIVS_MAGIC);
 	}
-	return (vrt_priv_dynamic(ctx, id, (uintptr_t)vmod_id));
+	return (vrt_priv_dynamic(ctx, vps, id, (uintptr_t)vmod_id));
 }
 
 struct vmod_priv *
 VRT_priv_top(VRT_CTX, const void *vmod_id)
 {
 	uintptr_t id;
+	struct vrt_privs *vps;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (ctx->req) {
 		CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 		CHECK_OBJ_NOTNULL(ctx->req->top, REQ_MAGIC);
 		id = (uintptr_t)&ctx->req->top->top;
-		return (vrt_priv_dynamic(ctx, id, (uintptr_t)vmod_id));
+		CAST_OBJ_NOTNULL(vps, ctx->req->top->privs, VRT_PRIVS_MAGIC);
+		return (vrt_priv_dynamic(ctx, vps, id, (uintptr_t)vmod_id));
 	} else
 		WRONG("PRIV_TOP is only accessible in client VCL context");
 	NEEDLESS(return NULL);

@@ -586,6 +586,8 @@ struct req {
 
 	/* Temporary accounting */
 	struct acct_req		acct;
+
+	struct vrt_privs	privs[1];
 };
 
 /*--------------------------------------------------------------------
@@ -623,8 +625,6 @@ struct sess {
 	/* Timestamps, all on TIM_real() timescale */
 	double			t_open;		/* fd accepted */
 	double			t_idle;		/* fd accepted or resp sent */
-
-	struct vrt_privs	privs[1];
 
 };
 
