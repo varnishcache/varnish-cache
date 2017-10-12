@@ -48,7 +48,7 @@ vcc_path_dlopen(void *priv, const char *fn)
 
 	hdl = dlopen(fn, RTLD_NOW | RTLD_LOCAL);
 	if (hdl == NULL)
-		return (1);
+		return (-1);
 	pp = priv;
 	*pp = hdl;
 	return (0);
