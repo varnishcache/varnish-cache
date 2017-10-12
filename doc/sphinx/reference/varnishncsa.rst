@@ -151,9 +151,10 @@ Supported formatters are:
   Extended variables.  Supported variables are:
 
   Varnish:time_firstbyte
-    Time from when the request processing starts until the first byte
-    is sent to the client.  For backend mode: Time from the request was
-    sent to the backend to the entire header had been received.
+    Time from when the request processing starts until the first
+    byte is sent to the client, in seconds.  For backend mode: Time
+    from the request was sent to the backend to the entire header
+    had been received.
 
   Varnish:hitmiss
     One of the 'hit' or 'miss' strings, depending on whether the request
