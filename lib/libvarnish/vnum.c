@@ -108,6 +108,61 @@ VNUM(const char *p)
 
 /**********************************************************************/
 
+double
+VNUM_duration(const char *p)
+{
+	const char *t;
+	double r, sc = 1.0;
+
+	if (p == NULL)
+		return (nan(""));
+
+	r = VNUMpfx(p, &t);
+
+	if (isnan(r) || t == NULL)
+		return (nan(""));
+
+	while (isspace(*t))
+		t++;
+
+	// keep in sync with vcc_expr.c vcc_TimeUnit()
+	switch (*t++) {
+	case 's':
+		break;
+	case 'm':
+		if (*t == 's') {
+			sc = 1e-3;
+			t++;
+		} else
+			sc = 60.0;
+		break;
+	case 'h':
+		sc = 60.0 * 60.0;
+		break;
+	case 'd':
+		sc = 60.0 * 60.0 * 24.0;
+		break;
+	case 'w':
+		sc = 60.0 * 60.0 * 24.0 * 7.0;
+		break;
+	case 'y':
+		sc = 60.0 * 60.0 * 24.0 * 365.0;
+		break;
+	default:
+		return (nan(""));
+	}
+
+	while (isspace(*t))
+		t++;
+
+	if (*t != '\0')
+		return (nan(""));
+
+	return (r * sc);
+}
+
+/**********************************************************************/
+
 const char *
 VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 {

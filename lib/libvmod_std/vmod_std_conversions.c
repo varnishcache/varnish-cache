@@ -48,55 +48,11 @@
 VCL_DURATION __match_proto__(td_std_duration)
 vmod_duration(VRT_CTX, VCL_STRING p, VCL_DURATION d)
 {
-	const char *e;
-	double r;
+	double r = VNUM_duration(p);
 
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	(void) ctx;
 
-	if (p == NULL)
-		return (d);
-
-	while (isspace(*p))
-		p++;
-
-	if (*p != '+' && *p != '-' && !isdigit(*p))
-		return (d);
-
-	e = NULL;
-
-	r = VNUMpfx(p, &e);
-
-	if (isnan(r) || e == NULL)
-		return (d);
-
-	while (isspace(*e))
-		e++;
-
-	/* NB: Keep this list synchronized with VCC */
-	switch (*e++) {
-	case 's': break;
-	case 'm':
-		if (*e == 's') {
-			r *= 1e-3;
-			e++;
-		} else
-			r *= 60.;
-		break;
-	case 'h': r *= 60.*60.; break;
-	case 'd': r *= 60.*60.*24.; break;
-	case 'w': r *= 60.*60.*24.*7.; break;
-	case 'y': r *= 60.*60.*24.*365.; break;
-	default:
-		return (d);
-	}
-
-	while (isspace(*e))
-		e++;
-
-	if (*e != '\0')
-		return (d);
-
-	return (r);
+	return (isnan(r) ? d : r);
 }
 
 VCL_INT __match_proto__(td_std_integer)
