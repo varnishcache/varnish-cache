@@ -128,8 +128,12 @@ vslc_vsm_next(const struct VSL_cursor *cursor)
 
 	while (1) {
 		i = vslc_vsm_check(&c->cursor, &c->next);
-		if (i <= 0)
-			return (-3); /* Overrun */
+		if (i <= 0) {
+			if (VSM_StillValid(c->vsm, &c->vf) != VSM_valid)
+				return (-2); /* VSL abandoned */
+			else
+				return (-3); /* Overrun */
+		}
 
 		t = *(volatile const uint32_t *)c->next.ptr;
 		AN(t);
