@@ -480,25 +480,10 @@ h2_do_req(struct worker *wrk, void *priv)
 {
 	struct req *req;
 	struct h2_req *r2;
-	const char *b;
 
 	CAST_OBJ_NOTNULL(req, priv, REQ_MAGIC);
 	CAST_OBJ_NOTNULL(r2, req->transport_priv, H2_REQ_MAGIC);
 	THR_SetRequest(req);
-
-	// XXX: Smarter to do this already at HPACK time into tail end of
-	// XXX: WS, then copy back once all headers received.
-	// XXX: Have I mentioned H/2 Is hodge-podge ?
-	http_CollectHdrSep(req->http, H_Cookie, "; ");	// rfc7540,l,3114,3120
-
-	if (req->req_body_status == REQ_BODY_INIT) {
-		if (!http_GetHdr(req->http, H_Content_Length, &b))
-			req->req_body_status = REQ_BODY_WITHOUT_LEN;
-		else
-			req->req_body_status = REQ_BODY_WITH_LEN;
-	} else {
-		assert (req->req_body_status == REQ_BODY_NONE);
-	}
 
 	req->http->conds = 1;
 	if (CNT_Request(wrk, req) != REQ_FSM_DISEMBARK) {
@@ -516,6 +501,7 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
     struct req *req, struct h2_req *r2)
 {
 	h2_error h2e;
+	const char *b;
 
 	ASSERT_RXTHR(h2);
 	assert(r2->state == H2_S_OPEN);
@@ -532,6 +518,20 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 		return (h2e);
 	}
 	VSLb_ts_req(req, "Req", req->t_req);
+
+	// XXX: Smarter to do this already at HPACK time into tail end of
+	// XXX: WS, then copy back once all headers received.
+	// XXX: Have I mentioned H/2 Is hodge-podge ?
+	http_CollectHdrSep(req->http, H_Cookie, "; ");	// rfc7540,l,3114,3120
+
+	if (req->req_body_status == REQ_BODY_INIT) {
+		if (!http_GetHdr(req->http, H_Content_Length, &b))
+			req->req_body_status = REQ_BODY_WITHOUT_LEN;
+		else
+			req->req_body_status = REQ_BODY_WITH_LEN;
+	} else {
+		assert (req->req_body_status == REQ_BODY_NONE);
+	}
 
 	req->req_step = R_STP_TRANSPORT;
 	req->task.func = h2_do_req;
