@@ -101,7 +101,6 @@ static struct vrt_ctx ctx_cli;
 static unsigned handling_cli;
 static struct ws ws_cli;
 static uintptr_t ws_snapshot_cli;
-extern struct vrt_privs cli_task_privs[1];
 
 /*--------------------------------------------------------------------*/
 

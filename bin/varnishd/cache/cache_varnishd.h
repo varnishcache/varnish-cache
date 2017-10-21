@@ -219,6 +219,9 @@ void VRTPRIV_init(struct vrt_privs *privs);
 void VRTPRIV_dynamic_kill(struct vrt_privs *privs, uintptr_t id);
 void pan_privs(struct vsb *, const struct vrt_privs *);
 
+/* cache_vrt_priv.c */
+extern struct vrt_privs cli_task_privs[1];
+
 /* cache_vrt_vmod.c */
 void VMOD_Init(void);
 void VMOD_Panic(struct vsb *);
