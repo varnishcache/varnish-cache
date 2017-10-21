@@ -109,7 +109,7 @@ void MCH_Fd_Inherit(int fd, const char *what);
 	} while (0)
 
 /* cache/cache_main.c */
-void child_main(void);
+void child_main(int, size_t);
 
 /* cache/cache_vcl.c */
 int VCL_TestLoad(const char *);

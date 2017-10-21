@@ -85,11 +85,6 @@ static struct vlu	*child_std_vlu;
 
 static struct vsb *child_panic = NULL;
 
-#ifdef HAVE_SIGALTSTACK
-#include <sys/mman.h>
-stack_t altstack;
-#endif
-
 static void mgt_reap_child(void);
 
 /*=====================================================================
@@ -262,66 +257,6 @@ child_poker(const struct vev *e, int what)
 }
 
 /*=====================================================================
- * signal handler for child process
- */
-
-static void __match_proto__()
-child_signal_handler(int s, siginfo_t *si, void *c)
-{
-	char buf[1024];
-	struct sigaction sa;
-
-	(void)c;
-
-	/* Don't come back */
-	memset(&sa, 0, sizeof sa);
-	sa.sa_handler = SIG_DFL;
-	(void)sigaction(SIGSEGV, &sa, NULL);
-	(void)sigaction(SIGABRT, &sa, NULL);
-
-	bprintf(buf, "Signal %d (%s) received at %p si_code %d",
-		s, strsignal(s), si->si_addr, si->si_code);
-	VAS_Fail(__func__,
-		 __FILE__,
-		 __LINE__,
-		 buf,
-		 VAS_WRONG);
-}
-
-/*=====================================================================
- * Launch the child process
- */
-
-static void
-mgt_child_sigmagic(void)
-{
-	struct sigaction sa;
-
-	memset(&sa, 0, sizeof sa);
-	sa.sa_sigaction = child_signal_handler;
-	sa.sa_flags = SA_SIGINFO;
-	(void)sigaction(SIGBUS, &sa, NULL);
-	(void)sigaction(SIGABRT, &sa, NULL);
-
-#ifdef HAVE_SIGALTSTACK
-	size_t sz = SIGSTKSZ + 4096;
-	if (sz < mgt_param.wthread_stacksize)
-		sz = mgt_param.wthread_stacksize;
-	altstack.ss_sp = mmap(NULL, sz,  PROT_READ | PROT_WRITE,
-			      MAP_PRIVATE | MAP_ANONYMOUS,
-			      -1, 0);
-	AN(altstack.ss_sp != MAP_FAILED);
-	AN(altstack.ss_sp);
-	altstack.ss_size = sz;
-	altstack.ss_flags = 0;
-	AZ(sigaltstack(&altstack, NULL));
-	sa.sa_flags |= SA_ONSTACK;
-#endif
-	(void)sigaction(SIGSEGV, &sa, NULL);
-}
-
-
-/*=====================================================================
  * Launch the child process
  */
 
@@ -399,17 +334,17 @@ mgt_launch_child(struct cli *cli)
 		heritage.cls = mgt_cls;
 		heritage.ident = VSB_data(vident) + 1;
 
-		if (mgt_param.sigsegv_handler)
-			mgt_child_sigmagic();
-		(void)signal(SIGINT, SIG_DFL);
-		(void)signal(SIGTERM, SIG_DFL);
-
 		VJ_subproc(JAIL_SUBPROC_WORKER);
 
 		heritage.proc_vsmw = VSMW_New(heritage.vsm_fd, 0640, "_.index");
 		AN(heritage.proc_vsmw);
 
-		child_main();
+		/*
+		 * We pass these two params because child_main needs them
+		 * Well before it has found its own param struct.
+		 */
+		child_main(mgt_param.sigsegv_handler,
+		    mgt_param.wthread_stacksize);
 
 		exit(0);
 	}

@@ -33,6 +33,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef HAVE_SIGALTSTACK
+#  include <sys/mman.h>
+#endif
 
 #ifdef HAVE_PTHREAD_NP_H
 #  include <pthread_np.h>
@@ -121,7 +124,7 @@ THR_GetName(void)
  */
 #ifdef HAVE_SIGALTSTACK
 #include <signal.h>
-extern stack_t altstack;
+static stack_t altstack;
 #endif
 
 void
@@ -222,9 +225,80 @@ child_malloc_fail(void *p, const char *s)
 }
 #endif
 
-void
-child_main(void)
+/*=====================================================================
+ * signal handler for child process
+ */
+
+static void __match_proto__()
+child_signal_handler(int s, siginfo_t *si, void *c)
 {
+	char buf[1024];
+	struct sigaction sa;
+
+	(void)c;
+
+	/* Don't come back */
+	memset(&sa, 0, sizeof sa);
+	sa.sa_handler = SIG_DFL;
+	(void)sigaction(SIGSEGV, &sa, NULL);
+	(void)sigaction(SIGABRT, &sa, NULL);
+
+	bprintf(buf, "Signal %d (%s) received at %p si_code %d",
+		s, strsignal(s), si->si_addr, si->si_code);
+	VAS_Fail(__func__,
+		 __FILE__,
+		 __LINE__,
+		 buf,
+		 VAS_WRONG);
+}
+
+/*=====================================================================
+ * Magic for panicing properly on signals
+ */
+
+static void
+child_sigmagic(size_t altstksz)
+{
+	struct sigaction sa;
+
+	memset(&sa, 0, sizeof sa);
+
+#ifdef HAVE_SIGALTSTACK
+	size_t sz = SIGSTKSZ + 4096;
+	if (sz < altstksz)
+		sz = altstksz;
+	altstack.ss_sp = mmap(NULL, sz,  PROT_READ | PROT_WRITE,
+			      MAP_PRIVATE | MAP_ANONYMOUS,
+			      -1, 0);
+	AN(altstack.ss_sp != MAP_FAILED);
+	AN(altstack.ss_sp);
+	altstack.ss_size = sz;
+	altstack.ss_flags = 0;
+	sa.sa_flags |= SA_ONSTACK;
+#endif
+
+	THR_Init();
+
+	sa.sa_sigaction = child_signal_handler;
+	sa.sa_flags |= SA_SIGINFO;
+	(void)sigaction(SIGBUS, &sa, NULL);
+	(void)sigaction(SIGABRT, &sa, NULL);
+	(void)sigaction(SIGSEGV, &sa, NULL);
+}
+
+
+/*=====================================================================
+ * Run the child process
+ */
+
+void
+child_main(int sigmagic, size_t altstksz)
+{
+
+	if (sigmagic)
+		child_sigmagic(altstksz);
+	(void)signal(SIGINT, SIG_DFL);
+	(void)signal(SIGTERM, SIG_DFL);
 
 	setbuf(stdout, NULL);
 	setbuf(stderr, NULL);
