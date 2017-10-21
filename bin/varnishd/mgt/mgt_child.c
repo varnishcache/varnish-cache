@@ -293,6 +293,39 @@ child_signal_handler(int s, siginfo_t *si, void *c)
  */
 
 static void
+mgt_child_sigmagic(void)
+{
+	struct sigaction sa;
+
+	memset(&sa, 0, sizeof sa);
+	sa.sa_sigaction = child_signal_handler;
+	sa.sa_flags = SA_SIGINFO;
+	(void)sigaction(SIGBUS, &sa, NULL);
+	(void)sigaction(SIGABRT, &sa, NULL);
+
+#ifdef HAVE_SIGALTSTACK
+	size_t sz = SIGSTKSZ + 4096;
+	if (sz < mgt_param.wthread_stacksize)
+		sz = mgt_param.wthread_stacksize;
+	altstack.ss_sp = mmap(NULL, sz,  PROT_READ | PROT_WRITE,
+			      MAP_PRIVATE | MAP_ANONYMOUS,
+			      -1, 0);
+	AN(altstack.ss_sp != MAP_FAILED);
+	AN(altstack.ss_sp);
+	altstack.ss_size = sz;
+	altstack.ss_flags = 0;
+	AZ(sigaltstack(&altstack, NULL));
+	sa.sa_flags |= SA_ONSTACK;
+#endif
+	(void)sigaction(SIGSEGV, &sa, NULL);
+}
+
+
+/*=====================================================================
+ * Launch the child process
+ */
+
+static void
 mgt_launch_child(struct cli *cli)
 {
 	pid_t pid;
@@ -300,7 +333,6 @@ mgt_launch_child(struct cli *cli)
 	char *p;
 	struct vev *e;
 	int i, cp[2];
-	struct sigaction sa;
 
 	if (child_state != CH_STOPPED && child_state != CH_DIED)
 		return;
@@ -367,30 +399,8 @@ mgt_launch_child(struct cli *cli)
 		heritage.cls = mgt_cls;
 		heritage.ident = VSB_data(vident) + 1;
 
-		if (mgt_param.sigsegv_handler) {
-			memset(&sa, 0, sizeof sa);
-			sa.sa_sigaction = child_signal_handler;
-			sa.sa_flags = SA_SIGINFO;
-			(void)sigaction(SIGBUS, &sa, NULL);
-			(void)sigaction(SIGABRT, &sa, NULL);
-
-#ifdef HAVE_SIGALTSTACK
-			size_t sz = SIGSTKSZ + 4096;
-			if (sz < mgt_param.wthread_stacksize)
-				sz = mgt_param.wthread_stacksize;
-			altstack.ss_sp = mmap(NULL, sz,  PROT_READ | PROT_WRITE,
-					      MAP_PRIVATE | MAP_ANONYMOUS,
-					      -1, 0);
-			AN(altstack.ss_sp != MAP_FAILED);
-			AN(altstack.ss_sp);
-			altstack.ss_size = sz;
-			altstack.ss_flags = 0;
-			AZ(sigaltstack(&altstack, NULL));
-			sa.sa_flags |= SA_ONSTACK;
-#endif
-			(void)sigaction(SIGSEGV, &sa, NULL);
-
-		}
+		if (mgt_param.sigsegv_handler)
+			mgt_child_sigmagic();
 		(void)signal(SIGINT, SIG_DFL);
 		(void)signal(SIGTERM, SIG_DFL);
 
