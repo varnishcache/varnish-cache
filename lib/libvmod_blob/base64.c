@@ -57,7 +57,7 @@ base64_decode_l(size_t l)
 }
 
 static inline int
-decode(char *restrict *restrict dest, char *restrict const buf,
+decode(char *restrict *restrict dest, const char *restrict const buf,
        const size_t buflen, unsigned u, const int n)
 {
 	char *d;
@@ -184,7 +184,7 @@ base64_decode(const enum encoding dec, char *restrict const buf,
 	}
 	if (n) {
 		if (!alpha->padding)
-			u <<= 6 * (4 - n);
+			u <<= (6 * (4 - n));
 		if (decode(&dest, buf, buflen, u, n-term) < 0)
 			return -1;
 	}

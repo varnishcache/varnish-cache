@@ -34,26 +34,26 @@ struct wb_s {
 
 /* return one byte less for the final zero byte */
 static inline const char*
-wb_end(struct wb_s *wb) {
+wb_end(const struct wb_s *wb) {
 	return wb->ws->r - 1;
 }
 
 /* return the write position */
 static inline char*
-wb_buf(struct wb_s *wb) {
+wb_buf(const struct wb_s *wb) {
 	return wb->w;
 }
 
 /* return one byte less for the final zero byte */
 static inline ssize_t
-wb_space(struct wb_s *wb) {
+wb_space(const struct wb_s *wb) {
 	ssize_t f = wb->ws->r - wb->w;
 	assert(f > 0);
 	return f - 1;
 }
 
 static inline ssize_t
-wb_len(struct wb_s *wb) {
+wb_len(const struct wb_s *wb) {
 	ssize_t l = wb->w - wb->ws->f;
 	assert(l >= 0);
 	return l;
