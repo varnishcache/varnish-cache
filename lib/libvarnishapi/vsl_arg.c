@@ -83,40 +83,25 @@ VSL_Name2Tag(const char *name, int l)
 int
 VSL_Glob2Tags(const char *glob, int l, VSL_tagfind_f *func, void *priv)
 {
-	int i, r, l2;
-	int pre = 0;
-	int post = 0;
-	char buf[64];
+	const char *p1 = NULL;
+	const char *p2 = NULL;
+	const char *e, *p;
+	int i, l1 = 0, l2 = 0, r = 0;
 
 	AN(glob);
-	if (l < 0)
-		l = strlen(glob);
-	if (l == 0 || l > sizeof buf - 1)
-		return (-1);
-	if (strchr(glob, '*') != NULL) {
-		if (glob[0] == '*') {
-			/* Prefix wildcard */
-			pre = 1;
-			glob++;
-			l--;
-		}
-		if (l > 0 && glob[l - 1] == '*') {
-			/* Postfix wildcard */
-			post = 1;
-			l--;
-		}
-	}
-	if (pre && post)
-		/* Support only post or prefix wildcards */
-		return (-3);
-	memcpy(buf, glob, l);
-	buf[l] = '\0';
-	if (strchr(buf, '*') != NULL)
-		/* No multiple wildcards */
-		return (-3);
-	if (pre == 0 && post == 0) {
-		/* No wildcards, use VSL_Name2Tag */
-		i = VSL_Name2Tag(buf, l);
+	if (l >= 0)
+		e = glob + l;
+	else
+		e = strchr(glob, '\0');
+	if (glob == e)
+		return (-1);		// Empty pattern cannot match
+
+	for(p = glob; p < e; p++)
+		if (*p == '*')
+			break;
+
+	if (p == e) {			// No wildcard
+		i = VSL_Name2Tag(glob, l);
 		if (i < 0)
 			return (i);
 		if (func != NULL)
@@ -124,22 +109,31 @@ VSL_Glob2Tags(const char *glob, int l, VSL_tagfind_f *func, void *priv)
 		return (1);
 	}
 
-	r = 0;
+	if (p != glob) {		// Prefix match
+		p1 = glob;
+		l1 = p - p1;
+	}
+
+	if (p != e - 1) {		// Postfix match
+		p2 = p + 1;
+		l2 = e - p2;
+	}
+
+	for(p++; p < e; p++)
+		if (*p == '*')
+			return (-3);	// More than one wildcard
+
 	for (i = 0; i < SLT__MAX; i++) {
-		if (VSL_tags[i] == NULL)
+		p = VSL_tags[i];
+		if (p == NULL)
 			continue;
-		l2 = strlen(VSL_tags[i]);
-		if (l2 < l)
+		e = strchr(p, '\0');
+		if (e - p < l1 + l2)
 			continue;
-		if (pre) {
-			/* Prefix wildcard match */
-			if (strcasecmp(buf, VSL_tags[i] + l2 - l))
-				continue;
-		} else {
-			/* Postfix wildcard match */
-			if (strncasecmp(buf, VSL_tags[i], l))
-				continue;
-		}
+		if (p1 != NULL && strncasecmp(p, p1, l1))
+			continue;
+		if (p2 != NULL && strncasecmp(e - l2, p2, l2))
+			continue;
 		if (func != NULL)
 			(func)(i, priv);
 		r++;

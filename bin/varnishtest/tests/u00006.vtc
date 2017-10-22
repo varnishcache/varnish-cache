@@ -31,10 +31,16 @@ shell -err -expect "-k: Invalid number 'foo'" \
 	"varnishlog -k foo"
 shell -err -expect "-L: Range error" \
 	"varnishlog -L 0"
+
 shell -err -expect {-i: "foo" matches zero tags} \
 	"varnishlog -i foo"
 shell -err -expect {-i: "Resp" is ambiguous} \
 	"varnishlog -i Resp"
+shell -err -expect {-i: Syntax error in "Re**sp"} \
+	"varnishlog -i Re**sp"
+shell -err -expect {-i: "" matches zero tags} \
+	"varnishlog -i ''"
+
 shell -err -expect {-I: "foo" matches zero tags} \
 	"varnishlog -I foo:bar"
 shell -err -expect {-I: "Resp" is ambiguous} \
