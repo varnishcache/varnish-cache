@@ -50,7 +50,7 @@
 
 #include "VSC_vbe.h"
 
-const char *vbe_proto_ident = "HTTP Backend";
+static const char *vbe_proto_ident = "HTTP Backend";
 
 static VTAILQ_HEAD(, backend) backends = VTAILQ_HEAD_INITIALIZER(backends);
 static VTAILQ_HEAD(, backend) cool_backends =

@@ -118,15 +118,14 @@ VRT_VSC_Destroy(const char *nm, const void *p)
 		vsc_lock();
 
 	AN(heritage.proc_vsmw);
-	VTAILQ_FOREACH(vsg, &vsc_seglist, list) {
-		if (vsg->ptr != p)
-			continue;
-		assert(vsg->nm == nm);
-		VSMW_Free(heritage.proc_vsmw, &vsg->seg);
-		VTAILQ_REMOVE(&vsc_seglist, vsg, list);
-		FREE_OBJ(vsg);
-		break;
-	}
+	VTAILQ_FOREACH(vsg, &vsc_seglist, list)
+		if (vsg->ptr == p)
+			break;
+	AN(vsg);
+	assert(vsg->nm == nm);
+	VSMW_Free(heritage.proc_vsmw, &vsg->seg);
+	VTAILQ_REMOVE(&vsc_seglist, vsg, list);
+	FREE_OBJ(vsg);
 	if (vsc_unlock != NULL)
 		vsc_unlock();
 }
