@@ -33,7 +33,6 @@
 #include "cache/cache.h"
 #include "cache/cache_director.h"
 
-#include "vrt.h"
 #include "vbm.h"
 
 #include "vdir.h"

@@ -40,7 +40,6 @@
 #include "storage/storage.h"
 #include "storage/storage_simple.h"
 
-#include "vrt.h"
 #include "vnum.h"
 
 #include "VSC_sma.h"

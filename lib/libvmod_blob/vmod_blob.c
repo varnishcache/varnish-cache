@@ -32,7 +32,7 @@
 #include <string.h>
 
 #include "vdef.h"
-#include "vrt.h"
+#include "cache/cache.h"
 
 #include "vcc_if.h"
 #include "vmod_blob.h"

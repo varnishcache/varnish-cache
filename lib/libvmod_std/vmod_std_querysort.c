@@ -33,8 +33,6 @@
 
 #include "cache/cache.h"
 
-#include "vrt.h"
-
 #include "vcc_if.h"
 
 static int

@@ -33,7 +33,6 @@
 
 #include "cache/cache.h"
 
-#include "vrt.h"
 #include "vcc_if.h"
 
 struct vmod_debug_obj {

@@ -34,7 +34,6 @@
 #include "cache/cache.h"
 #include "cache/cache_director.h"
 
-#include "vrt.h"
 #include "vcc_if.h"
 
 #include "vdir.h"

@@ -28,10 +28,12 @@
 
 #include "config.h"
 
-#include "math.h"
+#include <math.h>
+#include <stdio.h>
 
-#include "cache/cache.h"
-
+#include "vdef.h"
+#include "vas.h"
+#include "miniobj.h"
 #include "vrt.h"
 
 #include "vcc_if.h"

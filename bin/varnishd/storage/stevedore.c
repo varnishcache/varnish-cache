@@ -39,7 +39,6 @@
 #include <stdlib.h>
 
 #include "storage/storage.h"
-#include "vrt.h"
 #include "vrt_obj.h"
 
 

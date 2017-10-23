@@ -35,7 +35,6 @@
 
 #include "vbm.h"
 #include "vrnd.h"
-#include "vrt.h"
 
 #include "vdir.h"
 

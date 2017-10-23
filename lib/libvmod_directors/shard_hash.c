@@ -34,7 +34,6 @@
 
 #include "cache/cache.h"
 
-#include "vrt.h"
 #include "vsha256.h"
 #include "vend.h"
 

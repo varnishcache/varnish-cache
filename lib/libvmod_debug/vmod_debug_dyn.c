@@ -34,9 +34,6 @@
 #include <sys/socket.h>
 
 #include "cache/cache.h"
-
-#include "vrt.h"
-
 #include "cache/cache_director.h"
 
 #include "vsa.h"

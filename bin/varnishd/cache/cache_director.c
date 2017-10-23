@@ -39,8 +39,6 @@
 
 #include "cache_director.h"
 
-#include "vrt.h"
-
 /* Resolve director --------------------------------------------------*/
 
 static const struct director *

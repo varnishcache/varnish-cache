@@ -46,7 +46,6 @@
 
 #include "hash/hash_slinger.h"
 #include "storage/storage.h"
-#include "vrt.h"
 #include "vcl.h"
 #include "vsha256.h"
 #include "vtim.h"

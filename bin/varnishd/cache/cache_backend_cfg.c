@@ -39,7 +39,6 @@
 #include "cache_varnishd.h"
 
 #include "vcli_serve.h"
-#include "vrt.h"
 #include "vcl.h"
 #include "vtim.h"
 #include "waiter/waiter.h"

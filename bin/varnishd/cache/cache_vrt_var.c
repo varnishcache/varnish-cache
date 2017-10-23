@@ -36,7 +36,6 @@
 #include "common/heritage.h"
 
 #include "cache_director.h"
-#include "vrt.h"
 #include "vrt_obj.h"
 
 static char vrt_hostname[255] = "";

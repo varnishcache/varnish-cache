@@ -40,7 +40,6 @@
 #include "cache/cache.h"
 
 #include "vnum.h"
-#include "vrt.h"
 #include "vsa.h"
 #include "vtim.h"
 #include "vcc_if.h"

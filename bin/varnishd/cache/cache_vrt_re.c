@@ -35,8 +35,6 @@
 
 #include "cache_varnishd.h"
 
-#include "vrt.h"
-
 static void
 Tadd(char **b, char *e, const char *p, int l)
 {

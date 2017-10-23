@@ -45,7 +45,6 @@
 
 #include "binary_heap.h"
 #include "vcli_serve.h"
-#include "vrt.h"
 #include "vsa.h"
 #include "vtcp.h"
 #include "vtim.h"

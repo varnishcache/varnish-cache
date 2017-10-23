@@ -37,7 +37,6 @@
 
 #include "cache/cache.h"
 
-#include "vrt.h"
 #include "vsa.h"
 #include "vsb.h"
 #include "vtcp.h"

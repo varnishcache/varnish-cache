@@ -45,8 +45,6 @@
 #include "common/heritage.h"
 #include "waiter/waiter.h"
 
-
-#include "vrt.h"
 #include "cache_director.h"
 #include "storage/storage.h"
 #include "vcli_serve.h"

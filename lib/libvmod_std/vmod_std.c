@@ -41,7 +41,6 @@
 #include "cache/cache.h"
 
 #include "vrnd.h"
-#include "vrt.h"
 #include "vtcp.h"
 #include "vsa.h"
 #include "vtim.h"

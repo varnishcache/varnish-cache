@@ -39,7 +39,6 @@
 
 #include "vcli_serve.h"
 #include "vmod_abi.h"
-#include "vrt.h"
 
 /*--------------------------------------------------------------------
  * Modules stuff

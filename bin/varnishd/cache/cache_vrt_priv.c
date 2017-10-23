@@ -36,8 +36,6 @@
 
 #include "cache_varnishd.h"
 
-#include "vrt.h"
-
 struct vrt_priv {
 	unsigned			magic;
 #define VRT_PRIV_MAGIC			0x24157a52

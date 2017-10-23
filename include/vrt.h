@@ -31,6 +31,10 @@
  * NB: When this file is changed, lib/libvcc/generate.py *MUST* be rerun.
  */
 
+#ifdef CACHE_H_INCLUDED
+#  error "vrt.h included after cache.h - they are inclusive"
+#endif
+
 #ifdef VRT_H_INCLUDED
 #  error "vrt.h included multiple times"
 #endif

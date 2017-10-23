@@ -36,7 +36,6 @@
 #include "cache_director.h"
 #include "cache_objhead.h"
 #include "vav.h"
-#include "vrt.h"
 #include "vcl.h"
 #include "vrt_obj.h"
 #include "vsa.h"

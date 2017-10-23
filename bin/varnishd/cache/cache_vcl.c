@@ -38,7 +38,6 @@
 #include "cache_varnishd.h"
 #include "common/heritage.h"
 
-#include "vrt.h"
 #include "vcl.h"
 #include "waiter/waiter.h"
 

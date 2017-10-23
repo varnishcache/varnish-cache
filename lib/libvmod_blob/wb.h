@@ -25,8 +25,6 @@
  *
  */
 
-#include "cache/cache.h"
-
 struct wb_s {
 	struct ws	*ws; // varnish workspace
 	char		*w;  // current write position

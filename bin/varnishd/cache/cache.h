@@ -28,6 +28,14 @@
  *
  */
 
+#ifdef VRT_H_INCLUDED
+#  error "vrt.h included before cache.h - they are exclusive"
+#endif
+
+#ifdef CACHE_H_INCLUDED
+#  error "cache.h included multiple times"
+#endif
+
 #include <math.h>
 #include <pthread.h>
 #include <stdarg.h>
@@ -35,6 +43,10 @@
 #include <sys/types.h>
 
 #include "vdef.h"
+
+#include "vrt.h"
+
+#define CACHE_H_INCLUDED
 
 #include "miniobj.h"
 #include "vas.h"

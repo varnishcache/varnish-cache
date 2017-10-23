@@ -37,8 +37,6 @@
 #include "cache/cache.h"
 #include "cache/cache_director.h"
 
-#include "vrt.h"
-
 #include "shard_dir.h"
 #include "shard_cfg.h"
 #include "shard_hash.h"

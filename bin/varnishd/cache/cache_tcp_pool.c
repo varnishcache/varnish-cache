@@ -35,7 +35,6 @@
 
 #include "cache_varnishd.h"
 
-#include "vrt.h"
 #include "vsa.h"
 #include "vtcp.h"
 #include "vtim.h"
