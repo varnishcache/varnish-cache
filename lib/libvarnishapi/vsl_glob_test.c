@@ -40,6 +40,10 @@
 #include "vdef.h"
 #include "vas.h"
 
+#ifndef FNM_CASEFOLD
+#define FNM_CASEFOLD FNM_IGNORECASE
+#endif
+
 static void
 cb(int tag, void *priv)
 {
