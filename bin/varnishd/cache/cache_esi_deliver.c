@@ -202,7 +202,9 @@ ved_include(struct req *preq, const char *src, const char *host,
 		AZ(req->wrk);
 	}
 
+	Lck_Lock(&sp->mtx);
 	VRTPRIV_dynamic_kill(sp->privs, (uintptr_t)req);
+	Lck_Unlock(&sp->mtx);
 
 	AZ(preq->vcl);
 	preq->vcl = req->vcl;
