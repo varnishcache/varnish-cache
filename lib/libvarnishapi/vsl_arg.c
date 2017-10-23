@@ -146,27 +146,26 @@ VSL_Glob2Tags(const char *glob, int l, VSL_tagfind_f *func, void *priv)
 int
 VSL_List2Tags(const char *list, int l, VSL_tagfind_f *func, void *priv)
 {
-	const char *p, *q, *e;
-	int r, t;
+	const char *p, *b, *e;
+	int r, t = 0;
 
-	if (l < 0)
-		l = strlen(list);
 	p = list;
-	e = p + l;
-	t = 0;
+	if (l >= 0)
+		e = p + l;
+	else
+		e = strchr(p, '\0');
 	while (p < e) {
 		while (p < e && *p == ',')
 			p++;
 		if (p == e)
 			break;
-		q = p;
-		while (q < e && *q != ',')
-			q++;
-		r = VSL_Glob2Tags(p, q - p, func, priv);
+		b = p;
+		while (p < e && *p != ',')
+			p++;
+		r = VSL_Glob2Tags(b, p - b, func, priv);
 		if (r < 0)
 			return (r);
 		t += r;
-		p = q;
 	}
 	if (t == 0)
 		return (-1);

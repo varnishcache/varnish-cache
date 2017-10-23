@@ -100,16 +100,17 @@ vxp_test_SOURCES = \
 	$(libvarnishapi_la_SOURCES) \
 	vxp_test.c
 
-vsl_glob_test_SOURCES = \
-	vsl_glob_test.c
 
 vsl_glob_test_LDADD = @PCRE_LIBS@ ${RT_LIBS} ${LIBM} libvarnishapi.la
 
 vsl_glob_test_CFLAGS = -I$(top_srcdir)/include
 
-TESTS = vjsn_test
+TESTS = vjsn_test vsl_glob_test
 
 noinst_PROGRAMS += ${TESTS}
+
+vsl_glob_test_SOURCES = vsl_glob_test.c
+vsl_glob_test_LDADD = libvarnishapi.la @SAN_LDFLAGS@
 
 vjsn_test_SOURCES = vjsn.c
 vjsn_test_CFLAGS = -DVJSN_TEST @SAN_CFLAGS@

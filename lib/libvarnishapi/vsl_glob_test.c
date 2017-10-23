@@ -30,26 +30,55 @@
 
 #ifndef __FLEXELINT__
 
+#include <fnmatch.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "vapi/vsl.h"
+#include "vdef.h"
+#include "vas.h"
 
 static void
 cb(int tag, void *priv)
 {
-	(void)priv;
-
 	printf("\t%d (%s)\n", tag, VSL_tags[tag]);
+	if (priv != NULL)
+		assert(!fnmatch(priv, VSL_tags[tag], FNM_CASEFOLD));
+}
+
+static int
+tst_one(const char *p)
+{
+	int i;
+
+	printf("Test <%s>\n", p);
+	i = VSL_Glob2Tags(p, -1, cb, TRUST_ME(p));
+	printf("  -> %d\n", i);
+	return (i);
 }
 
 int
 main(int argc, char * const *argv)
 {
-	int i;
+	int i, j;
 
+	if (argc == 1) {
+		i = tst_one("Req*");
+		assert(i == 10);
+		j = tst_one("reQ*");
+		assert(i == j);
+		assert(tst_one("*Header") > 0);
+		assert(tst_one("Req*eader") == 1);
+		assert(tst_one("*") > 0);
+		assert(tst_one("a*b*c") == -3);
+		assert(tst_one("**") == -3);
+		assert(tst_one("_") == -1);
+		assert(tst_one("") == -1);
+		assert(VSL_Glob2Tags("", 0, cb, NULL) == -1);
+		return (0);
+	}
 	if (argc != 2) {
 		fprintf(stderr, "vsl_glob_test <tagname/glob>\n");
 		exit(1);
