@@ -38,8 +38,6 @@ shell -err -expect {-i: "Resp" is ambiguous} \
 	"varnishlog -i Resp"
 shell -err -expect {-i: Syntax error in "Re**sp"} \
 	"varnishlog -i Re**sp"
-shell -err -expect {-i: "" matches zero tags} \
-	{varnishlog -i ""}
 
 shell -err -expect {-I: "foo" matches zero tags} \
 	"varnishlog -I foo:bar"
