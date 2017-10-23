@@ -267,8 +267,13 @@ AC_ARG_ENABLE(msan,
 	MSAN_FLAGS="-fsanitize=memory")
 
 if test "x$UBSAN_FLAGS$TSAN_FLAGS$ASAN_FLAGS$MSAN_FLAGS" != "x"; then
-	SAN_CFLAGS="-DWITH_SANITIZERS=1 ${UBSAN_FLAGS} ${TSAN_FLAGS} ${ASAN_FLAGS} ${MSAN_FLAGS} -fPIC -fPIE -fno-omit-frame-pointer"
+	SAN_CFLAGS="-D__SANITIZER=1 ${UBSAN_FLAGS} ${TSAN_FLAGS} ${ASAN_FLAGS} ${MSAN_FLAGS} -fPIC -fPIE -fno-omit-frame-pointer"
 	SAN_LDFLAGS="${UBSAN_FLAGS} ${TSAN_FLAGS} ${ASAN_FLAGS} ${MSAN_FLAGS} -pie"
+	case $CC in
+	gcc*)
+		SAN_CFLAGS="${SAN_CFLAGS} -fuse-ld=gold"
+		;;
+	esac
 fi
 AC_SUBST(SAN_CFLAGS)
 AC_SUBST(SAN_LDFLAGS)
