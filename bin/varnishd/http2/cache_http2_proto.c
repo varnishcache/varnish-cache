@@ -531,6 +531,8 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 			req->req_body_status = REQ_BODY_WITH_LEN;
 	} else {
 		assert (req->req_body_status == REQ_BODY_NONE);
+		if (http_GetContentLength(req->http) > 0)
+			return (H2CE_PROTOCOL_ERROR); //rfc7540,l,1838,1840
 	}
 
 	req->req_step = R_STP_TRANSPORT;
