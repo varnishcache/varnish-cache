@@ -629,7 +629,7 @@ pan_ic(const char *func, const char *file, int line, const char *cond,
 	VSB_printf(pan_vsb, "version = %s, vrt api = %u.%u\n",
 	    VCS_version, VRT_MAJOR_VERSION, VRT_MINOR_VERSION);
 	VSB_printf(pan_vsb, "ident = %s,%s\n",
-	    heritage.ident + 1, Waiter_GetName());
+	    heritage.ident, Waiter_GetName());
 	VSB_printf(pan_vsb, "now = %f (mono), %f (real)\n",
 	    VTIM_mono(), VTIM_real());
 
