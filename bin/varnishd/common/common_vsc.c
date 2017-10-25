@@ -31,18 +31,18 @@
 
 #include <errno.h>
 #include <stdarg.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
 #include "vdef.h"
+#include "vrt.h"
+
 #include "miniobj.h"
 #include "vas.h"
 #include "vend.h"
 #include "vgz.h"
 #include "vmb.h"
-#include "vrt.h"
 #include "vsmw.h"
 #include "vqueue.h"
 #include "vapi/vsc_int.h"

@@ -30,7 +30,6 @@
 
 #include "config.h"
 
-#include <stddef.h>
 #include "cache_varnishd.h"
 
 #include <stdio.h>

@@ -28,7 +28,6 @@
 
 #include <string.h>
 
-#include "vdef.h"
 #include "cache/cache.h"
 #include "wb.h"
 

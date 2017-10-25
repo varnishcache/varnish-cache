@@ -89,6 +89,9 @@
 
 /***********************************************************************/
 
+#include <stddef.h>		// NULL, size_t
+#include <stdint.h>		// [u]int%d_t
+
 struct VCL_conf;
 struct busyobj;
 struct director;

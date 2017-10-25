@@ -28,10 +28,8 @@
 
 #include "config.h"
 #include <errno.h>
-#include <pthread.h>
 #include <string.h>
 
-#include "vdef.h"
 #include "cache/cache.h"
 
 #include "vcc_if.h"

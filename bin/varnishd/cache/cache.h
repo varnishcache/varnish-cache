@@ -39,7 +39,6 @@
 #include <math.h>
 #include <pthread.h>
 #include <stdarg.h>
-#include <stdint.h>
 #include <sys/types.h>
 
 #include "vdef.h"

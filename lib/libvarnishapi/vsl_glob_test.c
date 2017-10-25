@@ -41,7 +41,7 @@
 #include "vas.h"
 
 #ifndef FNM_CASEFOLD
-#define FNM_CASEFOLD FNM_IGNORECASE
+#  define FNM_CASEFOLD FNM_IGNORECASE
 #endif
 
 static void
@@ -53,7 +53,7 @@ cb(int tag, void *priv)
 }
 
 static int
-tst_one(const char *p)
+tst_one_glob(const char *p)
 {
 	int i;
 
@@ -69,18 +69,23 @@ main(int argc, char * const *argv)
 	int i, j;
 
 	if (argc == 1) {
-		i = tst_one("Req*");
+		i = tst_one_glob("Req*");
 		assert(i == 10);
-		j = tst_one("reQ*");
+		j = tst_one_glob("reQ*");
 		assert(i == j);
-		assert(tst_one("*Header") > 0);
-		assert(tst_one("Req*eader") == 1);
-		assert(tst_one("*") > 0);
-		assert(tst_one("a*b*c") == -3);
-		assert(tst_one("**") == -3);
-		assert(tst_one("_") == -1);
-		assert(tst_one("") == -1);
+		assert(tst_one_glob("*Header") > 0);
+		assert(tst_one_glob("Req*eader") == 1);
+		assert(tst_one_glob("xyz*y") == -1);
+		assert(tst_one_glob("*") > 0);
+		assert(tst_one_glob("a*b*c") == -3);
+		assert(tst_one_glob("**") == -3);
+		assert(tst_one_glob("_") == -1);
+		assert(tst_one_glob("") == -1);
 		assert(VSL_Glob2Tags("", 0, cb, NULL) == -1);
+
+		assert(VSL_List2Tags("Req*,Resp*",-1,cb,NULL) > 0);
+		assert(VSL_List2Tags(",,,",-1,cb,NULL) == -1);
+		assert(VSL_List2Tags("xyzzy,,xyzzy",-1,cb,NULL) == -1);
 		return (0);
 	}
 	if (argc != 2) {

@@ -35,7 +35,6 @@
 
 #include "config.h"
 
-#include <stddef.h>
 #include "cache/cache_varnishd.h"
 #include "common/heritage.h"
 
