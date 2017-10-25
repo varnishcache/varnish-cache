@@ -252,11 +252,3 @@ main(int argc, const char **argv)
 
 	return (0);
 }
-
-#if defined(__SANITIZER)
-int __lsan_is_turned_off(void);
-int __lsan_is_turned_off()
-{
-       return (1);
-}
-#endif
