@@ -117,6 +117,7 @@ cscope.*out
 /lib/libvarnish/vnum_c_test
 /lib/libvarnishapi/*.log
 /lib/libvarnishapi/vjsn_test
+/lib/libvarnishapi/vsl_glob_test
 
 # vtest.sh droppings
 /tools/tmp/
