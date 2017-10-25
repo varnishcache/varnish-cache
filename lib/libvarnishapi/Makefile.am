@@ -87,29 +87,23 @@ vxp_tokens.h: \
 	$(srcdir)/generate.py
 	@PYTHON@ $(srcdir)/generate.py $(srcdir) $(top_builddir)
 
-EXTRA_PROGRAMS = vxp_test vsl_glob_test
-
-vxp_test_LDADD = @PCRE_LIBS@ \
-	${RT_LIBS} ${LIBM} ${PTHREAD_LIBS}
-
-vxp_test_CFLAGS = \
-	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
-	-DVXP_DEBUG
+EXTRA_PROGRAMS = vxp_test
 
 vxp_test_SOURCES = \
 	$(libvarnishapi_la_SOURCES) \
 	vxp_test.c
-
-
-vsl_glob_test_LDADD = @PCRE_LIBS@ ${RT_LIBS} ${LIBM} libvarnishapi.la
-
-vsl_glob_test_CFLAGS = -I$(top_srcdir)/include
+vxp_test_CFLAGS = \
+	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
+	-DVXP_DEBUG
+vxp_test_LDADD = @PCRE_LIBS@ \
+	${RT_LIBS} ${LIBM} ${PTHREAD_LIBS}
 
 TESTS = vjsn_test vsl_glob_test
 
 noinst_PROGRAMS += ${TESTS}
 
 vsl_glob_test_SOURCES = vsl_glob_test.c
+vsl_glob_test_CFLAGS = @SAN_CFLAGS@
 vsl_glob_test_LDADD = libvarnishapi.la @SAN_LDFLAGS@
 
 vjsn_test_SOURCES = vjsn.c
