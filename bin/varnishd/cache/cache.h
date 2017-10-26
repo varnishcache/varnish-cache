@@ -175,17 +175,14 @@ VTAILQ_HEAD(vfp_entry_s, vfp_entry);
 struct vfp_ctx {
 	unsigned		magic;
 #define VFP_CTX_MAGIC		0x61d9d3e5
-	struct busyobj		*bo;
+	int			failed;
+	struct http		*req;
+	struct http		*resp;
 	struct worker		*wrk;
 	struct objcore		*oc;
 
-	int			failed;
-
 	struct vfp_entry_s	vfp;
 	struct vfp_entry	*vfp_nxt;
-
-	struct http		*http;
-	struct http		*esi_req;
 };
 
 /*--------------------------------------------------------------------

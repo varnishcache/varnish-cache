@@ -134,7 +134,7 @@ VFP_Open(struct vfp_ctx *vc)
 	struct vfp_entry *vfe;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->http, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->resp, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(vc->wrk, WORKER_MAGIC);
 	AN(vc->wrk->vsl);
 
@@ -201,9 +201,9 @@ VFP_Push(struct vfp_ctx *vc, const struct vfp *vfp)
 	struct vfp_entry *vfe;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->http, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->resp, HTTP_MAGIC);
 
-	vfe = WS_Alloc(vc->http->ws, sizeof *vfe);
+	vfe = WS_Alloc(vc->resp->ws, sizeof *vfe);
 	if (vfe == NULL) {
 		(void)VFP_Error(vc, "Workspace overflow");
 		return (NULL);

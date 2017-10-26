@@ -1030,7 +1030,7 @@ VEP_Init(struct vfp_ctx *vc, const struct http *req, vep_callback_t *cb,
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(req, HTTP_MAGIC);
-	vep = WS_Alloc(vc->http->ws, sizeof *vep);
+	vep = WS_Alloc(vc->resp->ws, sizeof *vep);
 	AN(vep);
 
 	INIT_OBJ(vep, VEP_MAGIC);

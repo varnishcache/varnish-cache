@@ -84,7 +84,6 @@ vfp_vep_callback(struct vfp_ctx *vc, void *priv, ssize_t l, enum vgz_flag flg)
 	if (l == 0 && flg == VGZ_NORMAL)
 		return (vef->tot);
 
-	CHECK_OBJ_NOTNULL(vc->bo, BUSYOBJ_MAGIC);
 	VGZ_Ibuf(vef->vgz, vef->ibuf_o, l);
 	do {
 		dl = 0;
@@ -152,13 +151,13 @@ vfp_esi_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	struct vef_priv *vef;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->esi_req, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->req, HTTP_MAGIC);
 	CHECK_OBJ_NOTNULL(vfe, VFP_ENTRY_MAGIC);
 	ALLOC_OBJ(vef, VEF_MAGIC);
 	if (vef == NULL)
 		return (VFP_ERROR);
 	vef->vgz = VGZ_NewGzip(vc->wrk->vsl, "G F E");
-	vef->vep = VEP_Init(vc, vc->esi_req, vfp_vep_callback, vef);
+	vef->vep = VEP_Init(vc, vc->req, vfp_vep_callback, vef);
 	vef->ibuf_sz = cache_param->gzip_buffer;
 	vef->ibuf = calloc(1L, vef->ibuf_sz);
 	if (vef->ibuf == NULL)
@@ -167,12 +166,12 @@ vfp_esi_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	vef->ibuf_o = vef->ibuf;
 	vfe->priv1 = vef;
 
-	RFC2616_Weaken_Etag(vc->http);
-	http_Unset(vc->http, H_Content_Length);
-	http_Unset(vc->http, H_Content_Encoding);
-	http_SetHeader(vc->http, "Content-Encoding: gzip");
+	RFC2616_Weaken_Etag(vc->resp);
+	http_Unset(vc->resp, H_Content_Length);
+	http_Unset(vc->resp, H_Content_Encoding);
+	http_SetHeader(vc->resp, "Content-Encoding: gzip");
 
-	RFC2616_Vary_AE(vc->http);
+	RFC2616_Vary_AE(vc->resp);
 
 	return (VFP_OK);
 }
@@ -226,11 +225,11 @@ vfp_esi_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	struct vef_priv *vef;
 
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(vc->esi_req, HTTP_MAGIC);
+	CHECK_OBJ_NOTNULL(vc->req, HTTP_MAGIC);
 	ALLOC_OBJ(vef, VEF_MAGIC);
 	if (vef == NULL)
 		return (VFP_ERROR);
-	vef->vep = VEP_Init(vc, vc->esi_req, NULL, NULL);
+	vef->vep = VEP_Init(vc, vc->req, NULL, NULL);
 	vfe->priv1 = vef;
 	return (VFP_OK);
 }

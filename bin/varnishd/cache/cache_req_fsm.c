@@ -92,7 +92,7 @@ cnt_transport(struct worker *wrk, struct req *req)
 	if (req->req_body_status < REQ_BODY_TAKEN) {
 		AN(req->transport->req_body != NULL);
 		VFP_Setup(req->vfc, wrk);
-		req->vfc->http = req->http;
+		req->vfc->resp = req->http;		// XXX
 		req->transport->req_body(req);
 	}
 

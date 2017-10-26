@@ -288,10 +288,9 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	AZ(bo->htc);
 
 	VFP_Setup(bo->vfc, wrk);
-	bo->vfc->bo = bo;
 	bo->vfc->oc = bo->fetch_objcore;
-	bo->vfc->http = bo->beresp;
-	bo->vfc->esi_req = bo->bereq;
+	bo->vfc->resp = bo->beresp;
+	bo->vfc->req = bo->bereq;
 
 	i = VDI_GetHdr(wrk, bo);
 
@@ -812,11 +811,10 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 
 	assert(wrk->handling == VCL_RET_DELIVER);
 
-	assert(bo->vfc->bo == bo);
 	assert(bo->vfc->wrk == bo->wrk);
 	assert(bo->vfc->oc == bo->fetch_objcore);
-	assert(bo->vfc->http == bo->beresp);
-	assert(bo->vfc->esi_req == bo->bereq);
+	assert(bo->vfc->resp == bo->beresp);
+	assert(bo->vfc->req == bo->bereq);
 
 	if (vbf_beresp2obj(bo)) {
 		(void)VFP_Error(bo->vfc, "Could not get storage");
