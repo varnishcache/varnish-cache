@@ -288,9 +288,6 @@ struct worker {
 	unsigned		cur_method;
 	unsigned		seen_methods;
 	unsigned		handling;
-
-	uintptr_t		stack_start;
-	uintptr_t		stack_end;
 };
 
 /* Stored object -----------------------------------------------------

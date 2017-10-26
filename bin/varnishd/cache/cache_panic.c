@@ -318,8 +318,6 @@ pan_wrk(struct vsb *vsb, const struct worker *wrk)
 		return;
 	VSB_indent(vsb, 2);
 	PAN_CheckMagic(vsb, wrk, WORKER_MAGIC);
-	VSB_printf(vsb, "stack = {0x%jx -> 0x%jx},\n",
-	    (uintmax_t)wrk->stack_start, (uintmax_t)wrk->stack_end);
 	pan_ws(vsb, wrk->aws);
 
 	m = wrk->cur_method;

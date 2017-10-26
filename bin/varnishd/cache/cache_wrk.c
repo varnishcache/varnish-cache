@@ -99,7 +99,6 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 	struct worker *w, ww;
 	struct VSC_main ds;
 	unsigned char ws[thread_workspace];
-	uintptr_t u;
 
 	AN(qp);
 	AN(stacksize);
@@ -114,14 +113,6 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 	AZ(pthread_cond_init(&w->cond, NULL));
 
 	WS_Init(w->aws, "wrk", ws, thread_workspace);
-
-	u = getpagesize();
-	AN(u);
-	u -= 1U;
-	w->stack_start = (((uintptr_t)&qp) + u) & ~u;
-
-	/* XXX: assuming stack grows down. */
-	w->stack_end = w->stack_start - stacksize;
 
 	VSL(SLT_WorkThread, 0, "%p start", w);
 
