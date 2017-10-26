@@ -86,29 +86,20 @@ enum {
 /*--------------------------------------------------------------------*/
 
 struct VSC_lck;
+struct VSC_main;
+struct backend;
 struct ban;
 struct ban_proto;
-struct backend;
-struct busyobj;
 struct cli;
 struct cli_proto;
-struct director;
-struct iovec;
 struct mempool;
 struct objcore;
 struct objhead;
 struct pool;
 struct poolparam;
-struct transport;
-struct req;
 struct sess;
-struct stevedore;
-struct suckaddr;
-struct vrt_priv;
-struct vsb;
+struct transport;
 struct worker;
-struct v1l;
-struct VSC_main;
 
 #define DIGEST_LEN		32
 
