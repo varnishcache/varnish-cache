@@ -33,6 +33,7 @@
 #include "config.h"
 
 #include "cache_varnishd.h"
+#include "cache_filter.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -122,6 +123,10 @@ Req_New(const struct worker *wrk, struct sess *sp)
 	p += sz;
 	p = (void*)PRNDUP(p);
 
+	req->vfc = (void*)p;
+	p += sizeof (*req->vfc);
+	INIT_OBJ(req->vfc, VFP_CTX_MAGIC);
+
 	assert(p < e);
 
 	WS_Init(req->ws, "req", p, e - p);
@@ -135,6 +140,7 @@ Req_New(const struct worker *wrk, struct sess *sp)
 	req->vdpe_nxt = 0;
 	VTAILQ_INIT(&req->vdpe);
 	VRTPRIV_init(req->privs);
+
 
 	return (req);
 }

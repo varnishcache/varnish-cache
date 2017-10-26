@@ -167,25 +167,6 @@ struct http {
 };
 
 /*--------------------------------------------------------------------
- * VFP filter state
- */
-
-VTAILQ_HEAD(vfp_entry_s, vfp_entry);
-
-struct vfp_ctx {
-	unsigned		magic;
-#define VFP_CTX_MAGIC		0x61d9d3e5
-	int			failed;
-	struct http		*req;
-	struct http		*resp;
-	struct worker		*wrk;
-	struct objcore		*oc;
-
-	struct vfp_entry_s	vfp;
-	struct vfp_entry	*vfp_nxt;
-};
-
-/*--------------------------------------------------------------------
  * HTTP Protocol connection structure
  *
  * This is the protocol independent object for a HTTP connection, used
@@ -437,7 +418,7 @@ struct busyobj {
 	struct sess		*sp;
 	struct worker		*wrk;
 
-	struct vfp_ctx		vfc[1];
+	struct vfp_ctx		*vfc;
 
 	struct ws		ws[1];
 	uintptr_t		ws_bo;
@@ -538,7 +519,7 @@ struct req {
 	double			t_req;		/* Headers complete */
 
 	struct http_conn	htc[1];
-	struct vfp_ctx		vfc[1];
+	struct vfp_ctx		*vfc;
 	const char		*client_identity;
 
 	/* HTTP request */

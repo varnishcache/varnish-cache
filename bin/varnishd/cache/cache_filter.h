@@ -65,6 +65,25 @@ struct vfp_entry {
 	uint64_t		bytes_out;
 };
 
+/*--------------------------------------------------------------------
+ * VFP filter state
+ */
+
+VTAILQ_HEAD(vfp_entry_s, vfp_entry);
+
+struct vfp_ctx {
+	unsigned		magic;
+#define VFP_CTX_MAGIC		0x61d9d3e5
+	int			failed;
+	struct http		*req;
+	struct http		*resp;
+	struct worker		*wrk;
+	struct objcore		*oc;
+
+	struct vfp_entry_s	vfp;
+	struct vfp_entry	*vfp_nxt;
+};
+
 enum vfp_status VFP_Suck(struct vfp_ctx *, void *p, ssize_t *lp);
 enum vfp_status VFP_Error(struct vfp_ctx *, const char *fmt, ...)
     __v_printflike(2, 3);

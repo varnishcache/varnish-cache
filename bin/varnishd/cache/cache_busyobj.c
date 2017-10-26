@@ -35,7 +35,7 @@
 #include <stdlib.h>
 
 #include "cache_varnishd.h"
-
+#include "cache_filter.h"
 #include "cache_objhead.h"
 
 static struct mempool		*vbopool;
@@ -120,6 +120,11 @@ VBO_GetBusyObj(struct worker *wrk, const struct req *req)
 	p += sz;
 	p = (void*)PRNDUP(p);
 	assert(p < bo->end);
+
+	bo->vfc = (void*)p;
+	p += sizeof (*bo->vfc);
+	p = (void*)PRNDUP(p);
+	INIT_OBJ(bo->vfc, VFP_CTX_MAGIC);
 
 	WS_Init(bo->ws, "bo", p, bo->end - p);
 
