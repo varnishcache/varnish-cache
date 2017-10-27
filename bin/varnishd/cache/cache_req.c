@@ -124,8 +124,13 @@ Req_New(const struct worker *wrk, struct sess *sp)
 	p = (void*)PRNDUP(p);
 
 	req->vfc = (void*)p;
-	p += sizeof (*req->vfc);
 	INIT_OBJ(req->vfc, VFP_CTX_MAGIC);
+	p = (void*)PRNDUP(p + sizeof(*req->vfc));
+
+	req->vdc = (void*)p;
+	INIT_OBJ(req->vdc, VDP_CTX_MAGIC);
+	VTAILQ_INIT(&req->vdc->vdp);
+	p = (void*)PRNDUP(p + sizeof(*req->vdc));
 
 	assert(p < e);
 
@@ -137,10 +142,7 @@ Req_New(const struct worker *wrk, struct sess *sp)
 	req->t_prev = NAN;
 	req->t_req = NAN;
 
-	req->vdp->nxt = 0;
-	VTAILQ_INIT(&req->vdp->vdp);
 	VRTPRIV_init(req->privs);
-
 
 	return (req);
 }

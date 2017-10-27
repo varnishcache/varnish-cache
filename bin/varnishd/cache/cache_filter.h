@@ -113,5 +113,15 @@ struct vdp_entry {
 	VTAILQ_ENTRY(vdp_entry)	list;
 };
 
+VTAILQ_HEAD(vdp_entry_s, vdp_entry);
+
+struct vdp_ctx {
+	unsigned		magic;
+#define VDP_CTX_MAGIC		0xee501df7
+	struct vdp_entry_s	vdp;
+	struct vdp_entry	*nxt;
+	unsigned		retval;
+};
+
 int VDP_bytes(struct req *, enum vdp_action act, const void *ptr, ssize_t len);
 void VDP_push(struct req *, const struct vdp *, void *priv, int bottom);

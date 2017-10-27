@@ -460,8 +460,6 @@ struct busyobj {
 
 /*--------------------------------------------------------------------*/
 
-VTAILQ_HEAD(vdp_entry_s, vdp_entry);
-
 struct req {
 	unsigned		magic;
 #define REQ_MAGIC		0x2751aaa1
@@ -532,11 +530,7 @@ struct req {
 	struct objcore		*stale_oc;
 
 	/* Deliver pipeline */
-	struct vdp_ctx {
-		struct vdp_entry_s	vdp;
-		struct vdp_entry	*nxt;
-		unsigned		retval;
-	}			vdp[1];
+	struct vdp_ctx		*vdc;
 
 	/* Delivery mode */
 	unsigned		res_mode;

@@ -56,7 +56,7 @@ VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 	struct vdp_ctx *vdc;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	vdc = req->vdp;
+	vdc = req->vdc;
 	assert(act == VDP_NULL || act == VDP_FLUSH);
 	if (vdc->retval)
 		return (vdc->retval);
@@ -80,7 +80,7 @@ VDP_push(struct req *req, const struct vdp *vdp, void *priv, int bottom)
 	struct vdp_ctx *vdc;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	vdc = req->vdp;
+	vdc = req->vdc;
 	AN(vdp);
 	AN(vdp->name);
 	AN(vdp->func);
@@ -107,7 +107,7 @@ VDP_close(struct req *req)
 	struct vdp_ctx *vdc;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	vdc = req->vdp;
+	vdc = req->vdc;
 	while (!VTAILQ_EMPTY(&vdc->vdp)) {
 		vdpe = VTAILQ_FIRST(&vdc->vdp);
 		CHECK_OBJ_NOTNULL(vdpe, VDP_ENTRY_MAGIC);
