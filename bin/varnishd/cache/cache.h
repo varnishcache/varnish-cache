@@ -532,9 +532,11 @@ struct req {
 	struct objcore		*stale_oc;
 
 	/* Deliver pipeline */
-	struct vdp_entry_s	vdpe;
-	struct vdp_entry	*vdpe_nxt;
-	unsigned		vdpe_retval;
+	struct vdp_ctx {
+		struct vdp_entry_s	vdp;
+		struct vdp_entry	*nxt;
+		unsigned		retval;
+	}			vdp[1];
 
 	/* Delivery mode */
 	unsigned		res_mode;

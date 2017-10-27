@@ -39,7 +39,7 @@
  * This function picks and calls the next delivery processor from the
  * list. The return value is the return value of the delivery
  * processor. Upon seeing a non-zero return value, that lowest value
- * observed is latched in req->vdpe_retval and all subsequent calls to
+ * observed is latched in ->retval and all subsequent calls to
  * VDP_bytes will return that value directly without calling the next
  * processor.
  *
@@ -53,30 +53,34 @@ VDP_bytes(struct req *req, enum vdp_action act, const void *ptr, ssize_t len)
 {
 	int retval;
 	struct vdp_entry *vdpe;
+	struct vdp_ctx *vdc;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	vdc = req->vdp;
 	assert(act == VDP_NULL || act == VDP_FLUSH);
-	if (req->vdpe_retval)
-		return (req->vdpe_retval);
-	vdpe = req->vdpe_nxt;
+	if (vdc->retval)
+		return (vdc->retval);
+	vdpe = vdc->nxt;
 	CHECK_OBJ_NOTNULL(vdpe, VDP_ENTRY_MAGIC);
-	req->vdpe_nxt = VTAILQ_NEXT(vdpe, list);
+	vdc->nxt = VTAILQ_NEXT(vdpe, list);
 
 	assert(act > VDP_NULL || len > 0);
 	/* Call the present layer, while pointing to the next layer down */
 	retval = vdpe->vdp->func(req, act, &vdpe->priv, ptr, len);
-	if (retval && (req->vdpe_retval == 0 || retval < req->vdpe_retval))
-		req->vdpe_retval = retval; /* Latch error value */
-	req->vdpe_nxt = vdpe;
-	return (req->vdpe_retval);
+	if (retval && (vdc->retval == 0 || retval < vdc->retval))
+		vdc->retval = retval; /* Latch error value */
+	vdc->nxt = vdpe;
+	return (vdc->retval);
 }
 
 void
 VDP_push(struct req *req, const struct vdp *vdp, void *priv, int bottom)
 {
 	struct vdp_entry *vdpe;
+	struct vdp_ctx *vdc;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	vdc = req->vdp;
 	AN(vdp);
 	AN(vdp->name);
 	AN(vdp->func);
@@ -88,10 +92,10 @@ VDP_push(struct req *req, const struct vdp *vdp, void *priv, int bottom)
 	vdpe->vdp = vdp;
 	vdpe->priv = priv;
 	if (bottom)
-		VTAILQ_INSERT_TAIL(&req->vdpe, vdpe, list);
+		VTAILQ_INSERT_TAIL(&vdc->vdp, vdpe, list);
 	else
-		VTAILQ_INSERT_HEAD(&req->vdpe, vdpe, list);
-	req->vdpe_nxt = VTAILQ_FIRST(&req->vdpe);
+		VTAILQ_INSERT_HEAD(&vdc->vdp, vdpe, list);
+	vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
 
 	AZ(vdpe->vdp->func(req, VDP_INIT, &vdpe->priv, NULL, 0));
 }
@@ -100,15 +104,17 @@ void
 VDP_close(struct req *req)
 {
 	struct vdp_entry *vdpe;
+	struct vdp_ctx *vdc;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
-	while (!VTAILQ_EMPTY(&req->vdpe)) {
-		vdpe = VTAILQ_FIRST(&req->vdpe);
+	vdc = req->vdp;
+	while (!VTAILQ_EMPTY(&vdc->vdp)) {
+		vdpe = VTAILQ_FIRST(&vdc->vdp);
 		CHECK_OBJ_NOTNULL(vdpe, VDP_ENTRY_MAGIC);
-		VTAILQ_REMOVE(&req->vdpe, vdpe, list);
+		VTAILQ_REMOVE(&vdc->vdp, vdpe, list);
 		AZ(vdpe->vdp->func(req, VDP_FINI, &vdpe->priv, NULL, 0));
 		AZ(vdpe->priv);
-		req->vdpe_nxt = VTAILQ_FIRST(&req->vdpe);
+		vdc->nxt = VTAILQ_FIRST(&vdc->vdp);
 	}
 }
 
