@@ -82,11 +82,6 @@ _VARNISH_CHECK_LIB(nsl, getaddrinfo)
 
 AC_SUBST(NET_LIBS, "${SOCKET_LIBS} ${NSL_LIBS}")
 
-AX_WITH_CURSES
-if test "x$ax_cv_curses" != xyes; then
-   AC_MSG_ERROR([requires an X/Open-compatible Curses library])
-fi
-
 # Userland slab allocator from Solaris, ported to other systems
 AC_CHECK_HEADERS([umem.h], [_VARNISH_CHECK_LIB(umem, umem_alloc)])
 
@@ -186,6 +181,17 @@ AC_CHECK_HEADERS([edit/readline/readline.h],
 		 LIBEDIT_LIBS="$ax_cv_lib_readline"
 		])
 	])
+
+PKG_CHECK_MODULES([CURSES], [ncursesw], [], [
+		   PKG_CHECK_MODULES([CURSES], [ncsurses], [], [
+				      PKG_CHECK_MODULES([CURSES], [curses], [], [
+						      AC_MSG_ERROR(["ncursesw, ncurses, curses not found."])
+				      ])
+		   ])
+])
+AC_SUBST([CURSES_LIBS])
+
+AC_CHECK_HEADERS([ncursesw/curses.h ncursesw.h ncurses/curses.h ncurses.h curses.h])
 
 # Checks for header files.
 AC_HEADER_STDC
