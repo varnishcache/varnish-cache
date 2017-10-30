@@ -85,6 +85,9 @@ VDP_push(struct req *req, const struct vdp *vdp, void *priv, int bottom)
 	AN(vdp->name);
 	AN(vdp->func);
 
+	if (DO_DEBUG(DBG_PROCESSORS))
+		VSLb(req->vsl, SLT_Debug, "VDP_push(%s)", vdp->name);
+
 	vdpe = WS_Alloc(req->ws, sizeof *vdpe);
 	if (vdpe == NULL)
 		return;

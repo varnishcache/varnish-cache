@@ -141,6 +141,9 @@ VFP_Open(struct vfp_ctx *vc)
 	VTAILQ_FOREACH_REVERSE(vfe, &vc->vfp, vfp_entry_s, list) {
 		if (vfe->vfp->init == NULL)
 			continue;
+		if (DO_DEBUG(DBG_PROCESSORS))
+			VSLb(vc->wrk->vsl, SLT_Debug, "VFP_Open(%s)",
+			     vfe->vfp->name);
 		vfe->closed = vfe->vfp->init(vc, vfe);
 		if (vfe->closed != VFP_OK && vfe->closed != VFP_NULL) {
 			(void)VFP_Error(vc, "Fetch filter %s failed to open",
