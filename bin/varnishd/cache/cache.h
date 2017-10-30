@@ -42,7 +42,6 @@
 #include <sys/types.h>
 
 #include "vdef.h"
-
 #include "vrt.h"
 
 #define CACHE_H_INCLUDED

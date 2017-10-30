@@ -33,12 +33,12 @@
 
 #include "config.h"
 
-#include "cache_varnishd.h"
-
 #include <errno.h>
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+
+#include "cache_varnishd.h"
 
 #include "cache_transport.h"
 #include "cache_pool.h"
