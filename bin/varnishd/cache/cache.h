@@ -192,6 +192,8 @@ struct http_conn {
 	char			*rxbuf_e;
 	char			*pipeline_b;
 	char			*pipeline_e;
+	char			*rxra_b;
+	char			*rxra_e;
 	ssize_t			content_length;
 	void			*priv;
 

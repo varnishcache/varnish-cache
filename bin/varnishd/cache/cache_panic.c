@@ -194,6 +194,8 @@ pan_htc(struct vsb *vsb, const struct http_conn *htc)
 	    htc->rxbuf_b, htc->rxbuf_e);
 	VSB_printf(vsb, "{pipeline_b, pipeline_e} = {%p, %p},\n",
 	    htc->pipeline_b, htc->pipeline_e);
+	VSB_printf(vsb, "{rxra_b, rxra_e} = {%p, %p},\n",
+	    htc->rxra_b, htc->rxra_e);
 	VSB_printf(vsb, "content_length = %jd,\n",
 	    (intmax_t)htc->content_length);
 	VSB_printf(vsb, "body_status = %s,\n",

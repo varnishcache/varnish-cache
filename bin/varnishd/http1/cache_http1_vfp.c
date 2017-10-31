@@ -45,7 +45,8 @@
 #include "vct.h"
 
 /*--------------------------------------------------------------------
- * Read up to len bytes, returning pipelined data first.
+ * Read up to len bytes, returning pipelined data first,
+ * read ahead for very small reads if we got a buffer
  */
 
 static ssize_t
@@ -60,6 +61,14 @@ v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, ssize_t len)
 	assert(len > 0);
 	l = 0;
 	p = d;
+
+#ifdef DBG_V1F
+	VSLb(vc->wrk->vsl, SLT_Debug, "v1f_read rxra %p->%p = %u "
+	     "pipeline %p->%p = %u",
+	     htc->rxra_b, htc->rxra_e, pdiff(htc->rxra_b, htc->rxra_e),
+	     htc->pipeline_b, htc->pipeline_e,
+	     pdiff(htc->pipeline_b, htc->pipeline_e));
+#endif
 	if (htc->pipeline_b) {
 		l = htc->pipeline_e - htc->pipeline_b;
 		assert(l > 0);
@@ -73,6 +82,25 @@ v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, ssize_t len)
 			htc->pipeline_b = htc->pipeline_e = NULL;
 	}
 	if (len > 0) {
+		while (htc->pipeline_b == NULL) {
+			i = htc->rxra_e - htc->rxra_b;
+			if (i <= len)
+				break;
+
+			HTC_nonblocking(htc);
+			i = read(*htc->rfd, htc->rxra_b, i);
+			// on nonblocking error, fall through to blocking
+			if (i <= 0)
+				break;
+
+			htc->pipeline_b = htc->rxra_b;
+			htc->pipeline_e = htc->rxra_b + i;
+			i = v1f_read(vc, htc, p, len);
+			if (i < 0)
+				return i;
+			return (l + i);
+		}
+		HTC_blocking(htc);
 		i = read(*htc->rfd, p, len);
 		if (i < 0) {
 			// XXX: VTCP_Assert(i); // but also: EAGAIN
@@ -87,8 +115,6 @@ v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, ssize_t len)
 
 /*--------------------------------------------------------------------
  * Read a chunked HTTP object.
- *
- * XXX: Reading one byte at a time is pretty pessimal.
  */
 
 static enum vfp_status __match_proto__(vfp_pull_f)
