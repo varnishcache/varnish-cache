@@ -188,6 +188,7 @@ HTC_RxInit(struct http_conn *htc, struct ws *ws)
 	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	htc->blocking = _HTC_BLK_UNKNOWN;
 	htc->ws = ws;
 	(void)WS_Reserve(htc->ws, 0);
 	htc->rxbuf_b = ws->f;
@@ -317,6 +318,28 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 			}
 		}
 	}
+}
+
+int
+HTC_blocking(struct http_conn *htc) {
+	if (htc->blocking == HTC_BLOCKING)
+		return 0;
+
+	int i = VTCP_blocking(*htc->rfd);
+	if (i == 0)
+		htc->blocking = HTC_BLOCKING;
+	return (i);
+}
+
+int
+HTC_nonblocking(struct http_conn *htc) {
+	if (htc->blocking == HTC_NONBLOCKING)
+		return 0;
+
+	int i = VTCP_nonblocking(*htc->rfd);
+	if (i == 0)
+		htc->blocking = HTC_NONBLOCKING;
+	return (i);
 }
 
 /*--------------------------------------------------------------------

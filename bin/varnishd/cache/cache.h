@@ -173,6 +173,12 @@ struct http {
  *
  */
 
+enum htc_blocking {
+	_HTC_BLK_UNKNOWN = 0,
+	HTC_NONBLOCKING,
+	HTC_BLOCKING
+};
+
 struct http_conn {
 	unsigned		magic;
 #define HTTP_CONN_MAGIC		0x3e19edd1
@@ -180,6 +186,7 @@ struct http_conn {
 	int			*rfd;
 	enum sess_close		doclose;
 	enum body_status	body_status;
+	enum htc_blocking	blocking;
 	struct ws		*ws;
 	char			*rxbuf_b;
 	char			*rxbuf_e;
@@ -847,6 +854,8 @@ void HTC_RxInit(struct http_conn *htc, struct ws *ws);
 void HTC_RxPipeline(struct http_conn *htc, void *);
 enum htc_status_e HTC_RxStuff(struct http_conn *, htc_complete_f *,
     double *t1, double *t2, double ti, double tn, int maxbytes);
+int HTC_blocking(struct http_conn *);
+int HTC_nonblocking(struct http_conn *);
 
 #define SESS_ATTR(UP, low, typ, len)					\
 	int SES_Set_##low(const struct sess *sp, const typ *src);	\
