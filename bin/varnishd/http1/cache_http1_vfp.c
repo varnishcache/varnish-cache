@@ -114,6 +114,67 @@ v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, ssize_t len)
 
 
 /*--------------------------------------------------------------------
+ * Process chunked encoding trailer. Inherits buffer from caller, which
+ * is pre-filled up to lim
+ */
+
+static inline enum vfp_status
+v1f_chunked_trailer(struct vfp_ctx *vc, struct vfp_entry *vfe,
+    struct http_conn *htc,
+    char *buf, const size_t bufsz, char *lim)
+{
+	char *q;
+	unsigned u = 0;
+
+	assert (bufsz >= 4);
+
+	/*
+	 * Trailer: discard for now. Because the trailers are terminated by
+	 * CRLFCRLF, we try to read up to 4 characters, unless we have already
+	 * seen part of the termination sequence
+	 */
+
+	while (1) {
+#ifdef DBG_V1F
+		VSLb(vc->wrk->vsl, SLT_Debug, "trailer u=%d %.*s",
+		     u, (int)(lim - buf), buf);
+#endif
+		q = buf;
+		while (q < lim) {
+			switch (*q) {
+			case '\r': {
+				if (u & 1)
+					return(VFP_Error(vc,
+					    "chunked trailer CRCR"));
+				u++;
+				break;
+			}
+			case '\n': {
+				if ((u & 1) == 0)
+					return(VFP_Error(vc,
+					    "chunked trailer LF no CR"));
+				u++;
+				break;
+			}
+			default:
+				if (u & 1)
+					return(VFP_Error(vc,
+					    "chunked trailer CR no LF"));
+				u = 0;
+			}
+			q++;
+		}
+		if (u >= 4)
+			break;
+		if (v1f_read(vc, htc, buf, 4 - u) != 4 - u)
+			return (VFP_Error(vc, "chunked trailer read err"));
+		lim = buf + 4 - u;
+	}
+	assert(u == 4);
+	return (VFP_END);
+}
+
+/*--------------------------------------------------------------------
  * Read a chunked HTTP object.
  */
 
@@ -122,7 +183,8 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
     ssize_t *lp)
 {
 	struct http_conn *htc;
-	char buf[20];		/* XXX: 20 is arbitrary */
+	const size_t bufsz = 20;	/* XXX: arbitrary */
+	char buf[bufsz];
 	char *q;
 	unsigned u;
 	uintmax_t cll;
@@ -199,13 +261,15 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 		return (VFP_OK);
 	}
 	AZ(vfe->priv2);
-	if (v1f_read(vc, htc, buf, 1) <= 0)
+
+	if (v1f_read(vc, htc, buf, 2) != 2)
 		return (VFP_Error(vc, "chunked read err"));
-	if (buf[0] == '\r' && v1f_read(vc, htc, buf, 1) <= 0)
-		return (VFP_Error(vc, "chunked read err"));
-	if (buf[0] != '\n')
-		return (VFP_Error(vc, "chunked tail no NL"));
-	return (VFP_END);
+	if (buf[0] == '\r') {
+		if (buf[1] == '\n')
+			return (VFP_END);
+		return (VFP_Error(vc, "chunked tail CR no LF"));
+	}
+	return (v1f_chunked_trailer(vc, vfe, htc, buf, bufsz, buf + 2));
 }
 
 static const struct vfp v1f_chunked = {

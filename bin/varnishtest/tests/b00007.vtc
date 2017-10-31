@@ -18,10 +18,81 @@ server s1 {
 	send {00000004 extname="extval"; another=val; justname}
 	send "\r\n1234\r\n"
 	chunked "1234"
-	chunked ""
+	send "0\r\n"
+	send "Invalid: Trailer\r\n"
+	send "But: Ignored\r\n"
+	send "\r\n"
+
+	# intentionally varying the trailer slightly in the following tests
+	rxreq
+	expect req.url == "/bad/trailer/CRCR"
+	send "HTTP/1.1 200 OK\r\n"
+	send "Transfer-encoding: chunked\r\n"
+	send "\r\n"
+	send {00000004 foo=bar}
+	send "\r\n1234\r\n"
+	send "0\r\n"
+	send "Invalid: Trail\r\nBut: Ignored\r\r\n"
+
+	accept
+	rxreq
+	expect req.url == "/bad/trailer/LFnoCR"
+	send "HTTP/1.1 200 OK\r\n"
+	send "Transfer-encoding: chunked\r\n"
+	send "\r\n"
+	send {00000004 }
+	send "\r\n1234\r\n"
+	send "0\r\n"
+	send "Invalid: Traile\nBut: Ignored\r\n\r\n"
+
+	accept
+	rxreq
+	expect req.url == "/bad/trailer/CRnoLF"
+	send "HTTP/1.1 200 OK\r\n"
+	send "Transfer-encoding: chunked\r\n"
+	send "\r\n"
+	send {4}
+	send "\r\n1234\r\n"
+	send "0\r\n"
+	send "Invalid: Trailer\rBut: Ignored\r\n\r\n"
+
+	accept
+	rxreq
+	expect req.url == "/bad/trailer/short"
+	send "HTTP/1.1 200 OK\r\n"
+	send "Transfer-encoding: chunked\r\n"
+	send "\r\n"
+	send {00000004 extname="extval"; another=val; justname}
+	send "\r\n1234\r\n"
+	send "0\r\n"
+	send "Invalid: Trailer\r\nBut: Ignored\r\n\r"
 } -start
 
-varnish v1 -vcl+backend {} -start
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+	    if (bereq.url ~ "^/bad") {
+	       set beresp.do_stream = false;
+	    }
+	}
+} -start
+
+logexpect l1 -v v1 -g request {
+	expect * *	BereqURL	{^/bad/trailer/CRCR}
+	expect * =	Fetch_Body	{^2 chunked}
+	expect * =	FetchError	{^chunked trailer CRCR}
+
+	expect * *	BereqURL	{^/bad/trailer/LFnoCR}
+	expect * =	Fetch_Body	{^2 chunked}
+	expect * =	FetchError	{^chunked trailer LF no CR}
+
+	expect * *	BereqURL	{^/bad/trailer/CRnoLF}
+	expect * =	Fetch_Body	{^2 chunked}
+	expect * =	FetchError	{^chunked trailer CR no LF}
+
+	expect * *	BereqURL	{^/bad/trailer/short}
+	expect * =	Fetch_Body	{^2 chunked}
+	expect * =	FetchError	{^chunked trailer read err}
+} -start
 
 client c1 {
 	txreq -url "/bar"
@@ -32,4 +103,18 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == "8"
+	txreq -url "/bad/trailer/CRCR"
+	rxresp
+	expect resp.status == 503
+	txreq -url "/bad/trailer/LFnoCR"
+	rxresp
+	expect resp.status == 503
+	txreq -url "/bad/trailer/CRnoLF"
+	rxresp
+	expect resp.status == 503
+	txreq -url "/bad/trailer/short"
+	rxresp
+	expect resp.status == 503
 } -run
+
+logexpect l1 -wait
