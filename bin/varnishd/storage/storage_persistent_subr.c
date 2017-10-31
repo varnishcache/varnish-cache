@@ -84,8 +84,8 @@ smp_def_sign(const struct smp_sc *sc, struct smp_signctx *ctx,
 int
 smp_chk_sign(struct smp_signctx *ctx)
 {
-	struct SHA256Context cx;
-	unsigned char sign[SHA256_LEN];
+	struct VSHA256Context cx;
+	unsigned char sign[VSHA256_LEN];
 	int r = 0;
 
 	if (strncmp(ctx->id, ctx->ss->ident, sizeof ctx->ss->ident))
@@ -95,13 +95,13 @@ smp_chk_sign(struct smp_signctx *ctx)
 	else if ((uintptr_t)ctx->ss != ctx->ss->mapped)
 		r = 3;
 	else {
-		SHA256_Init(&ctx->ctx);
-		SHA256_Update(&ctx->ctx, ctx->ss,
+		VSHA256_Init(&ctx->ctx);
+		VSHA256_Update(&ctx->ctx, ctx->ss,
 		    offsetof(struct smp_sign, length));
-		SHA256_Update(&ctx->ctx, SIGN_DATA(ctx), ctx->ss->length);
+		VSHA256_Update(&ctx->ctx, SIGN_DATA(ctx), ctx->ss->length);
 		cx = ctx->ctx;
-		SHA256_Update(&cx, &ctx->ss->length, sizeof(ctx->ss->length));
-		SHA256_Final(sign, &cx);
+		VSHA256_Update(&cx, &ctx->ss->length, sizeof(ctx->ss->length));
+		VSHA256_Final(sign, &cx);
 		if (memcmp(sign, SIGN_END(ctx), sizeof sign))
 			r = 4;
 	}
@@ -119,16 +119,16 @@ smp_chk_sign(struct smp_signctx *ctx)
 static void
 smp_append_sign(struct smp_signctx *ctx, const void *ptr, uint32_t len)
 {
-	struct SHA256Context cx;
-	unsigned char sign[SHA256_LEN];
+	struct VSHA256Context cx;
+	unsigned char sign[VSHA256_LEN];
 
 	if (len != 0) {
-		SHA256_Update(&ctx->ctx, ptr, len);
+		VSHA256_Update(&ctx->ctx, ptr, len);
 		ctx->ss->length += len;
 	}
 	cx = ctx->ctx;
-	SHA256_Update(&cx, &ctx->ss->length, sizeof(ctx->ss->length));
-	SHA256_Final(sign, &cx);
+	VSHA256_Update(&cx, &ctx->ss->length, sizeof(ctx->ss->length));
+	VSHA256_Final(sign, &cx);
 	memcpy(SIGN_END(ctx), sign, sizeof sign);
 }
 
@@ -145,8 +145,8 @@ smp_reset_sign(struct smp_signctx *ctx)
 	strcpy(ctx->ss->ident, ctx->id);
 	ctx->ss->unique = ctx->unique;
 	ctx->ss->mapped = (uintptr_t)ctx->ss;
-	SHA256_Init(&ctx->ctx);
-	SHA256_Update(&ctx->ctx, ctx->ss,
+	VSHA256_Init(&ctx->ctx);
+	VSHA256_Update(&ctx->ctx, ctx->ss,
 	    offsetof(struct smp_sign, length));
 	smp_append_sign(ctx, NULL, 0);
 }
@@ -358,7 +358,7 @@ smp_valid_silo(struct smp_sc *sc)
 
 	/* XXX: Sanity check stuff[6] */
 
-	assert(si->stuff[SMP_BAN1_STUFF] > sizeof *si + SHA256_LEN);
+	assert(si->stuff[SMP_BAN1_STUFF] > sizeof *si + VSHA256_LEN);
 	assert(si->stuff[SMP_BAN2_STUFF] > si->stuff[SMP_BAN1_STUFF]);
 	assert(si->stuff[SMP_SEG1_STUFF] > si->stuff[SMP_BAN2_STUFF]);
 	assert(si->stuff[SMP_SEG2_STUFF] > si->stuff[SMP_SEG1_STUFF]);

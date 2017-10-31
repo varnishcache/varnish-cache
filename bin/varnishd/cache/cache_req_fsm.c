@@ -750,7 +750,7 @@ static enum req_fsm_nxt
 cnt_recv(struct worker *wrk, struct req *req)
 {
 	unsigned recv_handling;
-	struct SHA256Context sha256ctx;
+	struct VSHA256Context sha256ctx;
 	const char *xff;
 	const char *ci, *cp;
 
@@ -841,13 +841,13 @@ cnt_recv(struct worker *wrk, struct req *req)
 		}
 	}
 
-	SHA256_Init(&sha256ctx);
+	VSHA256_Init(&sha256ctx);
 	VCL_hash_method(req->vcl, wrk, req, NULL, &sha256ctx);
 	if (wrk->handling == VCL_RET_FAIL)
 		recv_handling = wrk->handling;
 	else
 		assert(wrk->handling == VCL_RET_LOOKUP);
-	SHA256_Final(req->digest, &sha256ctx);
+	VSHA256_Final(req->digest, &sha256ctx);
 
 	switch (recv_handling) {
 	case VCL_RET_VCL:

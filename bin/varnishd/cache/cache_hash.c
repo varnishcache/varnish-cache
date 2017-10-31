@@ -177,10 +177,10 @@ HSH_AddString(struct req *req, void *ctx, const char *str)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(ctx);
 	if (str != NULL) {
-		SHA256_Update(ctx, str, strlen(str));
+		VSHA256_Update(ctx, str, strlen(str));
 		VSLb(req->vsl, SLT_Hash, "%s", str);
 	} else
-		SHA256_Update(ctx, &str, 1);
+		VSHA256_Update(ctx, &str, 1);
 }
 
 /*---------------------------------------------------------------------
@@ -191,8 +191,8 @@ HSH_AddString(struct req *req, void *ctx, const char *str)
  */
 
 static struct hsh_magiclist {
-	unsigned char was[SHA256_LEN];
-	unsigned char now[SHA256_LEN];
+	unsigned char was[VSHA256_LEN];
+	unsigned char now[VSHA256_LEN];
 } hsh_magiclist[] = {
 	{ .now = {	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -241,19 +241,19 @@ hsh_testmagic(void *result)
 	static int nused = 0;
 
 	for (i = 0; i < nused; i++)
-		if (!memcmp(hsh_magiclist[i].was, result, SHA256_LEN))
+		if (!memcmp(hsh_magiclist[i].was, result, VSHA256_LEN))
 			break;
 	if (i == nused && i < HSH_NMAGIC)
-		memcpy(hsh_magiclist[nused++].was, result, SHA256_LEN);
+		memcpy(hsh_magiclist[nused++].was, result, VSHA256_LEN);
 	if (i == nused)
 		return;
 	assert(i < HSH_NMAGIC);
 	fprintf(stderr, "HASHMAGIC: <");
-	for (j = 0; j < SHA256_LEN; j++)
+	for (j = 0; j < VSHA256_LEN; j++)
 		fprintf(stderr, "%02x", ((unsigned char*)result)[j]);
 	fprintf(stderr, "> -> <");
-	memcpy(result, hsh_magiclist[i].now, SHA256_LEN);
-	for (j = 0; j < SHA256_LEN; j++)
+	memcpy(result, hsh_magiclist[i].now, VSHA256_LEN);
+	for (j = 0; j < VSHA256_LEN; j++)
 		fprintf(stderr, "%02x", ((unsigned char*)result)[j]);
 	fprintf(stderr, ">\n");
 }
@@ -978,7 +978,7 @@ void
 HSH_Init(const struct hash_slinger *slinger)
 {
 
-	assert(DIGEST_LEN == SHA256_LEN);	/* avoid #include pollution */
+	assert(DIGEST_LEN == VSHA256_LEN);	/* avoid #include pollution */
 	hash = slinger;
 	if (hash->start != NULL)
 		hash->start();

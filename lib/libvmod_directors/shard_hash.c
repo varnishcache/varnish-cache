@@ -59,16 +59,16 @@ shard_hash_crc32(VCL_STRING s)
 static uint32_t __match_proto__(hash_func)
 shard_hash_sha256(VCL_STRING s)
 {
-	struct SHA256Context sha256;
+	struct VSHA256Context sha256;
 	union {
 		unsigned char digest[32];
 		uint32_t uint32_digest[8];
 	} sha256_digest;
 	uint32_t r;
 
-	SHA256_Init(&sha256);
-	SHA256_Update(&sha256, s, strlen(s));
-	SHA256_Final(sha256_digest.digest, &sha256);
+	VSHA256_Init(&sha256);
+	VSHA256_Update(&sha256, s, strlen(s));
+	VSHA256_Final(sha256_digest.digest, &sha256);
 
 	/*
 	 * use low 32 bits only

@@ -26,21 +26,21 @@
  * $FreeBSD: head/lib/libmd/sha256.h 154479 2006-01-17 15:35:57Z phk $
  */
 
-#ifndef _SHA256_H_
-#define _SHA256_H_
+#ifndef _VSHA256_H_
+#define _VSHA256_H_
 
-#define SHA256_LEN		32
-#define SHA256_DIGEST_LENGTH	32
+#define VSHA256_LEN		32
+#define VSHA256_DIGEST_LENGTH	32
 
-typedef struct SHA256Context {
+typedef struct VSHA256Context {
 	uint32_t state[8];
 	uint64_t count;
 	unsigned char buf[64];
-} SHA256_CTX;
+} VSHA256_CTX;
 
-void	SHA256_Init(SHA256_CTX *);
-void	SHA256_Update(SHA256_CTX *, const void *, size_t);
-void	SHA256_Final(unsigned char [SHA256_LEN], SHA256_CTX *);
-void	SHA256_Test(void);
+void	VSHA256_Init(VSHA256_CTX *);
+void	VSHA256_Update(VSHA256_CTX *, const void *, size_t);
+void	VSHA256_Final(unsigned char [VSHA256_LEN], VSHA256_CTX *);
+void	VSHA256_Test(void);
 
-#endif /* !_SHA256_H_ */
+#endif /* !_VSHA256_H_ */

@@ -264,8 +264,8 @@ mgt_tests(void)
 	assert(VTIM_parse("Sunday, 06-Nov-94 08:49:37 GMT") == 784111777);
 	assert(VTIM_parse("Sun Nov  6 08:49:37 1994") == 784111777);
 
-	/* Check that our SHA256 works */
-	SHA256_Test();
+	/* Check that our VSHA256 works */
+	VSHA256_Test();
 }
 
 static void

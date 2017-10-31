@@ -146,7 +146,7 @@ static const uint32_t K[64] = {
  * the 512-bit input block to produce a new state.
  */
 static void
-SHA256_Transform(uint32_t * state, const unsigned char block[64])
+VSHA256_Transform(uint32_t * state, const unsigned char block[64])
 {
 	uint32_t W[64];
 	uint32_t S[8];
@@ -211,7 +211,7 @@ static const unsigned char PAD[64] = {
 
 /* Add padding and terminating bit-count. */
 static void
-SHA256_Pad(SHA256_CTX * ctx)
+VSHA256_Pad(VSHA256_CTX * ctx)
 {
 	size_t r;
 
@@ -225,7 +225,7 @@ SHA256_Pad(SHA256_CTX * ctx)
 	} else {
 		/* Finish the current block and mix. */
 		memcpy(&ctx->buf[r], PAD, 64 - r);
-		SHA256_Transform(ctx->state, ctx->buf);
+		VSHA256_Transform(ctx->state, ctx->buf);
 
 		/* The start of the final block is all zeroes. */
 		memset(&ctx->buf[0], 0, 56);
@@ -235,12 +235,12 @@ SHA256_Pad(SHA256_CTX * ctx)
 	vbe64enc(&ctx->buf[56], ctx->count);
 
 	/* Mix in the final block. */
-	SHA256_Transform(ctx->state, ctx->buf);
+	VSHA256_Transform(ctx->state, ctx->buf);
 }
 
 /* SHA-256 initialization.  Begins a SHA-256 operation. */
 void
-SHA256_Init(SHA256_CTX * ctx)
+VSHA256_Init(VSHA256_CTX * ctx)
 {
 
 	/* Zero bits processed so far */
@@ -259,7 +259,7 @@ SHA256_Init(SHA256_CTX * ctx)
 
 /* Add bytes into the hash */
 void
-SHA256_Update(SHA256_CTX * ctx, const void *in, size_t len)
+VSHA256_Update(VSHA256_CTX * ctx, const void *in, size_t len)
 {
 	uint64_t bitlen;
 	uint32_t r;
@@ -282,13 +282,13 @@ SHA256_Update(SHA256_CTX * ctx, const void *in, size_t len)
 
 	/* Finish the current block */
 	memcpy(&ctx->buf[r], src, 64 - r);
-	SHA256_Transform(ctx->state, ctx->buf);
+	VSHA256_Transform(ctx->state, ctx->buf);
 	src += 64 - r;
 	len -= 64 - r;
 
 	/* Perform complete blocks */
 	while (len >= 64) {
-		SHA256_Transform(ctx->state, src);
+		VSHA256_Transform(ctx->state, src);
 		src += 64;
 		len -= 64;
 	}
@@ -302,14 +302,15 @@ SHA256_Update(SHA256_CTX * ctx, const void *in, size_t len)
  * and clears the context state.
  */
 void
-SHA256_Final(unsigned char digest[static SHA256_DIGEST_LENGTH], SHA256_CTX *ctx)
+VSHA256_Final(unsigned char digest[static VSHA256_DIGEST_LENGTH],
+    VSHA256_CTX *ctx)
 {
 
 	/* Add padding */
-	SHA256_Pad(ctx);
+	VSHA256_Pad(ctx);
 
 	/* Write the hash */
-	be32enc_vect(digest, ctx->state, SHA256_DIGEST_LENGTH);
+	be32enc_vect(digest, ctx->state, VSHA256_DIGEST_LENGTH);
 
 	/* Clear the context state */
 	memset((void *)ctx, 0, sizeof(*ctx));
@@ -340,16 +341,16 @@ static const struct sha256test {
 
 
 void
-SHA256_Test(void)
+VSHA256_Test(void)
 {
-	struct SHA256Context c;
+	struct VSHA256Context c;
 	const struct sha256test *p;
 	unsigned char o[32];
 
 	for (p = sha256test; p->input != NULL; p++) {
-		SHA256_Init(&c);
-		SHA256_Update(&c, p->input, strlen(p->input));
-		SHA256_Final(o, &c);
+		VSHA256_Init(&c);
+		VSHA256_Update(&c, p->input, strlen(p->input));
+		VSHA256_Final(o, &c);
 		AZ(memcmp(o, p->output, 32));
 	}
 }

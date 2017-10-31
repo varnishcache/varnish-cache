@@ -122,7 +122,7 @@ struct smp_sign {
 	uint64_t		length;		/* NB: Must be last */
 };
 
-#define SMP_SIGN_SPACE		(sizeof(struct smp_sign) + SHA256_LEN)
+#define SMP_SIGN_SPACE		(sizeof(struct smp_sign) + VSHA256_LEN)
 
 /*
  * A segment pointer.
@@ -168,7 +168,7 @@ struct smp_object {
 
 struct smp_signctx {
 	struct smp_sign		*ss;
-	struct SHA256Context	ctx;
+	struct VSHA256Context	ctx;
 	uint32_t		unique;
 	const char		*id;
 };

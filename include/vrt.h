@@ -166,7 +166,7 @@ struct vrt_ctx {
 
 	/*
 	 * method specific argument:
-	 *    hash:		struct SHA256Context
+	 *    hash:		struct VSHA256Context
 	 *    synth+error:	struct vsb *
 	 */
 	void				*specific;

@@ -98,10 +98,10 @@ VCL_BACKEND __match_proto__()
 vmod_hash_backend(VRT_CTX, struct vmod_directors_hash *rr,
     const char *arg, ...)
 {
-	struct SHA256Context sha_ctx;
+	struct VSHA256Context sha_ctx;
 	va_list ap;
 	const char *p;
-	unsigned char sha256[SHA256_LEN];
+	unsigned char sha256[VSHA256_LEN];
 	VCL_BACKEND be;
 	double r;
 
@@ -109,16 +109,16 @@ vmod_hash_backend(VRT_CTX, struct vmod_directors_hash *rr,
 	CHECK_OBJ_ORNULL(ctx->bo, BUSYOBJ_MAGIC);
 
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_HASH_MAGIC);
-	SHA256_Init(&sha_ctx);
+	VSHA256_Init(&sha_ctx);
 	va_start(ap, arg);
 	p = arg;
 	while (p != vrt_magic_string_end) {
 		if (p != NULL && *p != '\0')
-			SHA256_Update(&sha_ctx, p, strlen(p));
+			VSHA256_Update(&sha_ctx, p, strlen(p));
 		p = va_arg(ap, const char *);
 	}
 	va_end(ap);
-	SHA256_Final(sha256, &sha_ctx);
+	VSHA256_Final(sha256, &sha_ctx);
 
 	r = vbe32dec(sha256);
 	r = scalbn(r, -32);
