@@ -1397,7 +1397,7 @@ fp_vclvar.close()
 if os.path.isdir(os.path.join(srcroot, ".git")):
 	v = subprocess.check_output([
 		"git --git-dir=" + os.path.join(srcroot, ".git") +
-		" show -s --pretty=format:%h"
+		" show -s --pretty=format:%H"
 	], shell=True, universal_newlines=True)
 	v = v.strip()
 	b = subprocess.check_output([
