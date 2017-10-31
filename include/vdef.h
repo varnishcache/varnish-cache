@@ -32,7 +32,9 @@
  *
  */
 
-#ifndef VDEF_H_INCLUDED
+#ifdef VDEF_H_INCLUDED
+#  error "vdef.h included multiple times"
+#endif
 #define VDEF_H_INCLUDED
 
 /* Safe printf into a fixed-size buffer */
@@ -160,5 +162,3 @@
 #   define ___Static_assert(x, y) \
 		typedef char __assert_## y[(x) ? 1 : -1] __unused
 #endif
-
-#endif /* VDEF_H_INCLUDED */

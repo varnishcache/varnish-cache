@@ -42,7 +42,6 @@
 
 #include "vtc.h"
 
-#include "vdef.h"
 #include "vev.h"
 #include "vfil.h"
 #include "vnum.h"
