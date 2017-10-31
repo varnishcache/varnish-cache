@@ -35,11 +35,11 @@ varnishd_SOURCES = \
 	cache/cache_obj.c \
 	cache/cache_panic.c \
 	cache/cache_pool.c \
+	cache/cache_range.c \
 	cache/cache_req.c \
 	cache/cache_req_body.c \
 	cache/cache_req_fsm.c \
 	cache/cache_rfc2616.c \
-	cache/cache_range.c \
 	cache/cache_session.c \
 	cache/cache_shmlog.c \
 	cache/cache_tcp_pool.c \
@@ -55,10 +55,10 @@ varnishd_SOURCES = \
 	common/common_vsc.c \
 	hash/hash_classic.c \
 	hash/hash_critbit.c \
-	hash/mgt_hash.c \
 	hash/hash_simple_list.c \
-	hpack/vhp_table.c \
+	hash/mgt_hash.c \
 	hpack/vhp_decode.c \
+	hpack/vhp_table.c \
 	http1/cache_http1_deliver.c \
 	http1/cache_http1_fetch.c \
 	http1/cache_http1_fsm.c \
@@ -70,18 +70,18 @@ varnishd_SOURCES = \
 	http2/cache_http2_hpack.c \
 	http2/cache_http2_panic.c \
 	http2/cache_http2_proto.c \
-	http2/cache_http2_session.c \
 	http2/cache_http2_send.c \
+	http2/cache_http2_session.c \
 	mgt/mgt_acceptor.c \
 	mgt/mgt_child.c \
 	mgt/mgt_cli.c \
 	mgt/mgt_jail.c \
-	mgt/mgt_jail_unix.c \
 	mgt/mgt_jail_solaris.c \
+	mgt/mgt_jail_unix.c \
 	mgt/mgt_main.c \
 	mgt/mgt_param.c \
-	mgt/mgt_param_tbl.c \
 	mgt/mgt_param_bits.c \
+	mgt/mgt_param_tbl.c \
 	mgt/mgt_param_tcp.c \
 	mgt/mgt_param_tweak.c \
 	mgt/mgt_pool.c \
@@ -90,24 +90,24 @@ varnishd_SOURCES = \
 	mgt/mgt_vcc.c \
 	mgt/mgt_vcl.c \
 	proxy/cache_proxy_proto.c \
-	storage/stevedore.c \
 	storage/mgt_stevedore.c \
+	storage/mgt_storage_persistent.c \
+	storage/stevedore.c \
 	storage/stevedore_utils.c \
 	storage/storage_file.c \
 	storage/storage_lru.c \
 	storage/storage_malloc.c \
 	storage/storage_persistent.c \
-	storage/mgt_storage_persistent.c \
 	storage/storage_persistent_silo.c \
 	storage/storage_persistent_subr.c \
 	storage/storage_simple.c \
 	storage/storage_umem.c \
-	waiter/mgt_waiter.c \
 	waiter/cache_waiter.c \
 	waiter/cache_waiter_epoll.c \
 	waiter/cache_waiter_kqueue.c \
 	waiter/cache_waiter_poll.c \
-	waiter/cache_waiter_ports.c
+	waiter/cache_waiter_ports.c \
+	waiter/mgt_waiter.c
 
 nodist_varnishd_SOURCES = \
 	builtin_vcl.c
@@ -122,6 +122,7 @@ noinst_HEADERS = \
 	cache/cache_transport.h \
 	cache/cache_varnishd.h \
 	cache/cache_vgz.h \
+	common/common_param.h \
 	common/heritage.h \
 	hash/hash_slinger.h \
 	hpack/vhp.h \
@@ -130,18 +131,17 @@ noinst_HEADERS = \
 	mgt/mgt.h \
 	mgt/mgt_param.h \
 	storage/storage.h \
-	storage/storage_simple.h \
 	storage/storage_persistent.h \
-	waiter/waiter_priv.h \
-	waiter/mgt_waiter.h
+	storage/storage_simple.h \
+	waiter/mgt_waiter.h \
+	waiter/waiter_priv.h
 
 # Headers for use with vmods
 nobase_pkginclude_HEADERS = \
 	cache/cache.h \
-	cache/cache_filter.h \
 	cache/cache_backend.h \
 	cache/cache_director.h \
-	common/common_param.h \
+	cache/cache_filter.h \
 	waiter/waiter.h
 
 pkgdatadir = ${datarootdir}/${PACKAGE}/vcl
@@ -222,14 +222,14 @@ DISTCLEANFILES	+=	vhp_hufdec.h
 	$(PYTHON) $(top_srcdir)/lib/libvcc/vsctool.py -ch $<
 
 VSC_SRC = \
-	VSC_main.vsc \
 	VSC_lck.vsc \
-	VSC_vbe.vsc \
-	VSC_sma.vsc \
-	VSC_smu.vsc \
-	VSC_smf.vsc \
+	VSC_main.vsc \
 	VSC_mempool.vsc \
-	VSC_mgt.vsc
+	VSC_mgt.vsc \
+	VSC_sma.vsc \
+	VSC_smf.vsc \
+	VSC_smu.vsc \
+	VSC_vbe.vsc
 
 VSC_GEN_C = @VSC_GEN_C@
 VSC_GEN_H = @VSC_GEN_H@
