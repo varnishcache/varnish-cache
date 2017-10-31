@@ -162,11 +162,14 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 		if (u >= sizeof buf)
 			return (VFP_Error(vc, "chunked header too long"));
 
-		/* Skip trailing white space */
-		while (vct_islws(buf[u]) && buf[u] != '\n') {
-			lr = v1f_read(vc, htc, buf + u, 1);
-			if (lr <= 0)
+		/* ignore extensions until newline (no strict CRLF check) */
+		if (vct_islws(buf[u])) {
+			while (buf[u] != '\n') {
+				lr = v1f_read(vc, htc, buf + u, 1);
+				if (lr == 1)
+					continue;
 				return (VFP_Error(vc, "chunked read err"));
+			}
 		}
 
 		if (buf[u] != '\n')
