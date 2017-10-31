@@ -43,4 +43,13 @@ void	VSHA256_Update(VSHA256_CTX *, const void *, size_t);
 void	VSHA256_Final(unsigned char [VSHA256_LEN], VSHA256_CTX *);
 void	VSHA256_Test(void);
 
+#define SHA256_LEN		VSHA256_LEN
+#define SHA256_DIGEST_LENGTH	VSHA256_DIGEST_LENGTH
+#define SHA256Context		VSHA256Context
+#define SHA256_CTX		VSHA256_CTX
+#define SHA256_Init		VSHA256_Init
+#define SHA256_Update		VSHA256_Update
+#define SHA256_Final		VSHA256_Final
+#define SHA256_Test		VSHA256_Test
+
 #endif /* !_VSHA256_H_ */
