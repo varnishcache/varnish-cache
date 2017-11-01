@@ -207,7 +207,7 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 	if (buf[0] == '\r') {
 		if (buf[1] == '\n')
 			return (VFP_END);
-		VFP_Error(vc, "chunked tail CR no LF");
+		return (VFP_Error(vc, "chunked tail CR no LF"));
 	}
 
 	/*
@@ -227,21 +227,22 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 			switch (*q) {
 			case '\r': {
 				if (u & 1)
-					VFP_Error(vc, "chunked trailer CRCR");
+					return(VFP_Error(vc,
+					    "chunked trailer CRCR"));
 				u++;
 				break;
 			}
 			case '\n': {
 				if ((u & 1) == 0)
-					VFP_Error(vc,
-						  "chunked trailer LF no CR");
+					return(VFP_Error(vc,
+					    "chunked trailer LF no CR"));
 				u++;
 				break;
 			}
 			default:
 				if (u & 1)
-					VFP_Error(vc,
-						  "chunked trailer CR no LF");
+					return(VFP_Error(vc,
+					    "chunked trailer CR no LF"));
 				u = 0;
 			}
 			q++;
