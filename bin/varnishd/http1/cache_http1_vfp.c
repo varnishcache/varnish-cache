@@ -45,7 +45,8 @@
 #include "vct.h"
 
 /*--------------------------------------------------------------------
- * Read up to len bytes, returning pipelined data first.
+ * Read up to len bytes, returning pipelined data first,
+ * read ahead for very small reads if we got a buffer
  */
 
 static ssize_t
@@ -60,6 +61,14 @@ v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, ssize_t len)
 	assert(len > 0);
 	l = 0;
 	p = d;
+
+#ifdef DBG_V1F
+	VSLb(vc->wrk->vsl, SLT_Debug, "v1f_read rxra %p->%p = %u "
+	     "pipeline %p->%p = %u",
+	     htc->rxra_b, htc->rxra_e, pdiff(htc->rxra_b, htc->rxra_e),
+	     htc->pipeline_b, htc->pipeline_e,
+	     pdiff(htc->pipeline_b, htc->pipeline_e));
+#endif
 	if (htc->pipeline_b) {
 		l = htc->pipeline_e - htc->pipeline_b;
 		assert(l > 0);
@@ -73,6 +82,25 @@ v1f_read(const struct vfp_ctx *vc, struct http_conn *htc, void *d, ssize_t len)
 			htc->pipeline_b = htc->pipeline_e = NULL;
 	}
 	if (len > 0) {
+		while (htc->pipeline_b == NULL) {
+			i = htc->rxra_e - htc->rxra_b;
+			if (i <= len)
+				break;
+
+			HTC_nonblocking(htc);
+			i = read(*htc->rfd, htc->rxra_b, i);
+			// on nonblocking error, fall through to blocking
+			if (i <= 0)
+				break;
+
+			htc->pipeline_b = htc->rxra_b;
+			htc->pipeline_e = htc->rxra_b + i;
+			i = v1f_read(vc, htc, p, len);
+			if (i < 0)
+				return i;
+			return (l + i);
+		}
+		HTC_blocking(htc);
 		i = read(*htc->rfd, p, len);
 		if (i < 0) {
 			// XXX: VTCP_Assert(i); // but also: EAGAIN
@@ -97,7 +125,7 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 {
 	struct http_conn *htc;
 	char buf[20];		/* XXX: 20 is arbitrary */
-	char *q;
+	char *q, *lim;
 	unsigned u;
 	uintmax_t cll;
 	ssize_t cl, l, lr;
@@ -136,11 +164,14 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 		if (u >= sizeof buf)
 			return (VFP_Error(vc, "chunked header too long"));
 
-		/* Skip trailing white space */
-		while (vct_islws(buf[u]) && buf[u] != '\n') {
-			lr = v1f_read(vc, htc, buf + u, 1);
-			if (lr <= 0)
+		/* ignore extensions until newline (no strict CRLF check) */
+		if (vct_islws(buf[u])) {
+			while (buf[u] != '\n') {
+				lr = v1f_read(vc, htc, buf + u, 1);
+				if (lr == 1)
+					continue;
 				return (VFP_Error(vc, "chunked read err"));
+			}
 		}
 
 		if (buf[u] != '\n')
@@ -170,12 +201,59 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 		return (VFP_OK);
 	}
 	AZ(vfe->priv2);
-	if (v1f_read(vc, htc, buf, 1) <= 0)
+
+	if (v1f_read(vc, htc, buf, 2) != 2)
 		return (VFP_Error(vc, "chunked read err"));
-	if (buf[0] == '\r' && v1f_read(vc, htc, buf, 1) <= 0)
-		return (VFP_Error(vc, "chunked read err"));
-	if (buf[0] != '\n')
-		return (VFP_Error(vc, "chunked tail no NL"));
+	if (buf[0] == '\r') {
+		if (buf[1] == '\n')
+			return (VFP_END);
+		return (VFP_Error(vc, "chunked tail CR no LF"));
+	}
+
+	/*
+	 * Trailer: discard for now. Because the trailers are terminated by
+	 * CRLFCRLF, we try to read up to 4 characters, unless we have already
+	 * seen part of the termination sequence
+	 */
+	u = 0;
+	lim = buf + 2;
+	while (1) {
+#ifdef DBG_V1F
+		VSLb(vc->wrk->vsl, SLT_Debug, "trailer u=%d %.*s",
+		     u, (int)(lim - buf), buf);
+#endif
+		q = buf;
+		while (q < lim) {
+			switch (*q) {
+			case '\r': {
+				if (u & 1)
+					return(VFP_Error(vc,
+					    "chunked trailer CRCR"));
+				u++;
+				break;
+			}
+			case '\n': {
+				if ((u & 1) == 0)
+					return(VFP_Error(vc,
+					    "chunked trailer LF no CR"));
+				u++;
+				break;
+			}
+			default:
+				if (u & 1)
+					return(VFP_Error(vc,
+					    "chunked trailer CR no LF"));
+				u = 0;
+			}
+			q++;
+		}
+		if (u >= 4)
+			break;
+		if (v1f_read(vc, htc, buf, 4 - u) != 4 - u)
+			return (VFP_Error(vc, "chunked trailer read err"));
+		lim = buf + 4 - u;
+	}
+	assert(u == 4);
 	return (VFP_END);
 }
 

@@ -188,6 +188,7 @@ HTC_RxInit(struct http_conn *htc, struct ws *ws)
 	ssize_t l;
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
+	htc->blocking = _HTC_BLK_UNKNOWN;
 	htc->ws = ws;
 	(void)WS_Reserve(htc->ws, 0);
 	htc->rxbuf_b = ws->f;
@@ -203,6 +204,8 @@ HTC_RxInit(struct http_conn *htc, struct ws *ws)
 		htc->pipeline_b = NULL;
 		htc->pipeline_e = NULL;
 	}
+	htc->rxra_b = NULL;
+	htc->rxra_e = NULL;
 }
 
 void
@@ -211,13 +214,13 @@ HTC_RxPipeline(struct http_conn *htc, void *p)
 
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
 	if (p == NULL || (char*)p == htc->rxbuf_e) {
-		htc->pipeline_b = NULL;
-		htc->pipeline_e = NULL;
+		htc->rxra_b = htc->pipeline_b = NULL;
+		htc->rxra_e = htc->pipeline_e = NULL;
 	} else {
 		assert((char*)p >= htc->rxbuf_b);
 		assert((char*)p < htc->rxbuf_e);
-		htc->pipeline_b = p;
-		htc->pipeline_e = htc->rxbuf_e;
+		htc->rxra_b = htc->pipeline_b = p;
+		htc->rxra_e = htc->pipeline_e = htc->rxbuf_e;
 	}
 }
 
@@ -317,6 +320,28 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 			}
 		}
 	}
+}
+
+int
+HTC_blocking(struct http_conn *htc) {
+	if (htc->blocking == HTC_BLOCKING)
+		return 0;
+
+	int i = VTCP_blocking(*htc->rfd);
+	if (i == 0)
+		htc->blocking = HTC_BLOCKING;
+	return (i);
+}
+
+int
+HTC_nonblocking(struct http_conn *htc) {
+	if (htc->blocking == HTC_NONBLOCKING)
+		return 0;
+
+	int i = VTCP_nonblocking(*htc->rfd);
+	if (i == 0)
+		htc->blocking = HTC_NONBLOCKING;
+	return (i);
 }
 
 /*--------------------------------------------------------------------

@@ -98,7 +98,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr,
 	VTCP_hisname(*htc->rfd, abuf, sizeof abuf, pbuf, sizeof pbuf);
 	VSLb(bo->vsl, SLT_BackendStart, "%s %s", abuf, pbuf);
 
-	(void)VTCP_blocking(*htc->rfd);	/* XXX: we should timeout instead */
+	(void)HTC_blocking(htc);	/* XXX: we should timeout instead */
 	V1L_Reserve(wrk, wrk->aws, htc->rfd, bo->vsl, bo->t_prev);
 	*ctr += HTTP1_Write(wrk, hp, HTTP1_Req);
 
