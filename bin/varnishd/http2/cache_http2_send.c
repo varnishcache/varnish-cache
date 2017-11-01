@@ -165,8 +165,7 @@ h2_win_limit(const struct h2_req *r2, const struct h2_sess *h2)
 }
 
 static void
-h2_win_charge(struct h2_req *r2, struct h2_sess *h2,
-    uint32_t w)
+h2_win_charge(struct h2_req *r2, const struct h2_sess *h2, uint32_t w)
 {
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);

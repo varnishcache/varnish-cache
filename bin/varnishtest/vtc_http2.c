@@ -931,7 +931,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 		CHECK_LAST_FRAME(PING);
 		return (f->md.ping.data);
 	}
-	else if (!strcmp(spec, "ping.ack")) {
+	if (!strcmp(spec, "ping.ack")) {
 		CHECK_LAST_FRAME(PING);
 		snprintf(buf, 20, (f->flags & ACK) ? "true" : "false");
 		return (buf);
@@ -940,7 +940,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	 * winup.size
 	 *	The size of the upgrade given by the WINDOW_UPDATE frame.
 	 */
-	else if (!strcmp(spec, "winup.size")) {
+	if (!strcmp(spec, "winup.size")) {
 		CHECK_LAST_FRAME(WINDOW_UPDATE);
 		RETURN_BUFFED(f->md.winup_size);
 	}
@@ -954,16 +954,16 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	 * prio.weight
 	 *	The dependency weight.
 	 */
-	else if (!strcmp(spec, "prio.stream")) {
+	if (!strcmp(spec, "prio.stream")) {
 		CHECK_LAST_FRAME(PRIORITY);
 		RETURN_BUFFED(f->md.prio.stream);
 	}
-	else if (!strcmp(spec, "prio.exclusive")) {
+	if (!strcmp(spec, "prio.exclusive")) {
 		CHECK_LAST_FRAME(PRIORITY);
 		snprintf(buf, 20, f->md.prio.exclusive ? "true" : "false");
 		return (buf);
 	}
-	else if (!strcmp(spec, "prio.weight")) {
+	if (!strcmp(spec, "prio.weight")) {
 		CHECK_LAST_FRAME(PRIORITY);
 		RETURN_BUFFED(f->md.prio.weight);
 	}
@@ -971,7 +971,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	 * rst.err
 	 *	The error code (as integer) of the RESET_STREAM frame.
 	 */
-	else if (!strcmp(spec, "rst.err")) {
+	if (!strcmp(spec, "rst.err")) {
 		CHECK_LAST_FRAME(RST_STREAM);
 		RETURN_BUFFED(f->md.rst_err);
 	}
@@ -999,14 +999,14 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	 * settings.hdrsize
 	 *	Value of MAX_HEADER_LIST_SIZE if set, <undef> otherwise.
 	 */
-	else if (!strncmp(spec, "settings.", 9)) {
+	if (!strncmp(spec, "settings.", 9)) {
 		CHECK_LAST_FRAME(SETTINGS);
 		spec += 9;
 		if (!strcmp(spec, "ack")) {
 			snprintf(buf, 20, (f->flags & ACK) ? "true" : "false");
 			return (buf);
 		}
-		else if (!strcmp(spec, "push")) {
+		if (!strcmp(spec, "push")) {
 			if (isnan(f->md.settings[2]))
 				return (NULL);
 			else if (f->md.settings[2] == 1)
@@ -1015,17 +1015,17 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 				snprintf(buf, 20, "false");
 			return (buf);
 		}
-		else if (!strcmp(spec, "hdrtbl"))     { RETURN_SETTINGS(1); }
-		else if (!strcmp(spec, "maxstreams")) { RETURN_SETTINGS(3); }
-		else if (!strcmp(spec, "winsize"))    { RETURN_SETTINGS(4); }
-		else if (!strcmp(spec, "framesize"))  { RETURN_SETTINGS(5); }
-		else if (!strcmp(spec, "hdrsize"))    { RETURN_SETTINGS(6); }
+		if (!strcmp(spec, "hdrtbl"))     { RETURN_SETTINGS(1); }
+		if (!strcmp(spec, "maxstreams")) { RETURN_SETTINGS(3); }
+		if (!strcmp(spec, "winsize"))    { RETURN_SETTINGS(4); }
+		if (!strcmp(spec, "framesize"))  { RETURN_SETTINGS(5); }
+		if (!strcmp(spec, "hdrsize"))    { RETURN_SETTINGS(6); }
 	}
 	/* SECTION: stream.spec.zexpect.push PUSH_PROMISE specific
 	 * push.id
 	 *	The id of the promised stream.
 	 */
-	else if (!strcmp(spec, "push.id")) {
+	if (!strcmp(spec, "push.id")) {
 		CHECK_LAST_FRAME(PUSH_PROMISE);
 		RETURN_BUFFED(f->md.promised);
 	}
@@ -1039,7 +1039,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	 * goaway.debug
 	 *	Debug data, if any.
 	 */
-	else if (!strncmp(spec, "goaway.", 7)) {
+	if (!strncmp(spec, "goaway.", 7)) {
 		spec += 7;
 		CHECK_LAST_FRAME(GOAWAY);
 
@@ -1067,7 +1067,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	 * frame.padding (for DATA, HEADERS, PUSH_PROMISE frames)
 	 *	Number of padded bytes.
 	 */
-	else if (!strncmp(spec, "frame.", 6)) {
+	if (!strncmp(spec, "frame.", 6)) {
 		spec += 6;
 		if (!f)
 			vtc_fatal(s->hp->vl, "No frame received yet.");
@@ -1096,19 +1096,19 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	 * stream.dependency
 	 *	Id of the stream this one depends on.
 	 */
-	else if (!strcmp(spec, "stream.window")) {
+	if (!strcmp(spec, "stream.window")) {
 		snprintf(buf, 20, "%jd",
 		    (intmax_t)(s->id ? s->ws : s->hp->ws));
 		return (buf);
 	}
-	else if (!strcmp(spec, "stream.weight")) {
+	if (!strcmp(spec, "stream.weight")) {
 		if (s->id) {
 			snprintf(buf, 20, "%d", s->weight);
 			return (buf);
 		} else
 			return (NULL);
 	}
-	else if (!strcmp(spec, "stream.dependency")) {
+	if (!strcmp(spec, "stream.dependency")) {
 		if (s->id) {
 			snprintf(buf, 20, "%d", s->dependency);
 			return (buf);
@@ -1133,7 +1133,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	 *	Value of the header at index INT of the decoding/encoding
 	 *	table.
 	 */
-	else if (!strncmp(spec, "tbl.dec", 7) || !strncmp(spec, "tbl.enc", 7)) {
+	if (!strncmp(spec, "tbl.dec", 7) || !strncmp(spec, "tbl.enc", 7)) {
 		if (spec[4] == 'd')
 			ctx = s->hp->decctx;
 		else
@@ -1186,7 +1186,7 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 	 * req.scheme / resp.scheme
 	 *	:method pseudo-header's value.
 	 */
-	else if (!strncmp(spec, "req.", 4) || !strncmp(spec, "resp.", 5)) {
+	if (!strncmp(spec, "req.", 4) || !strncmp(spec, "resp.", 5)) {
 		if (spec[2] == 'q') {
 			h = s->req;
 			spec += 4;
@@ -1214,11 +1214,9 @@ cmd_var_resolve(const struct stream *s, const char *spec, char *buf)
 			return (NULL);
 	}
 #define H2_ERROR(U,v,sc,t) \
-	else if (!strcmp(spec, #U)) { return (#v); }
+	if (!strcmp(spec, #U)) { return (#v); }
 #include "tbl/h2_error.h"
-	else
-		return (spec);
-	return (NULL);
+	return (spec);
 }
 
 /* SECTION: stream.spec.frame_sendhex sendhex

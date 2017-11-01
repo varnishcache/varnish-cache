@@ -16,6 +16,8 @@
 
 +libh(../../config.h)
 
+-esym(768, vmod_priv)	// global struct member '___' (___) not referenced
+
 ///////////////////////////////////////////////////////////////////////
 // Thread/locking, too many false positives still
 -e454		// A thread mutex has been locked but not unlocked___
@@ -77,7 +79,6 @@
 -esym(534, sleep)
 -esym(534, usleep)
 
--esym(768, vmod_priv)	// global struct member '___' (___) not referenced
 
 ///////////////////////////////////////////////////////////////////////
 // <vas.h>

@@ -39,7 +39,6 @@
 #include "common/heritage.h"
 
 #include "vcl.h"
-#include "waiter/waiter.h"
 
 #include "cache_director.h"
 #include "cache_backend.h"
