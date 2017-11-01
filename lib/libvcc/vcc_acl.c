@@ -39,9 +39,11 @@
 
 #include "vcc_compile.h"
 
+#define ACL_MAXADDR	(sizeof(struct in6_addr) + 1)
+
 struct acl_e {
 	VTAILQ_ENTRY(acl_e)	list;
-	unsigned char		data[VRT_ACL_MAXADDR + 1];
+	unsigned char		data[ACL_MAXADDR];
 	unsigned		mask;
 	unsigned		not;
 	unsigned		para;
@@ -121,7 +123,8 @@ vcc_acl_add_entry(struct vcc *tl, const struct acl_e *ae, int l,
 	aen->data[0] = fam & 0xff;
 	aen->mask += 8;
 
-	memcpy(aen->data + 1, u, l);
+	assert(l + 1L <= sizeof aen->data);
+	memcpy(aen->data + 1L, u, l);
 
 	VTAILQ_FOREACH(ae2, &tl->acl, list) {
 		i = vcl_acl_cmp(aen, ae2);
@@ -344,7 +347,7 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
 {
 	struct acl_e *ae;
 	int depth, l, m, i;
-	unsigned at[VRT_ACL_MAXADDR + 1];
+	unsigned at[ACL_MAXADDR];
 	struct token *t;
 	struct inifin *ifp;
 	struct vsb *func;

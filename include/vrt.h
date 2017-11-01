@@ -193,19 +193,6 @@ struct vmod_data {
 };
 
 /***********************************************************************
- * Enum for which HTTP header-sets we can access
- */
-
-enum gethdr_e {
-	HDR_REQ,
-	HDR_REQ_TOP,
-	HDR_RESP,
-	HDR_OBJ,
-	HDR_BEREQ,
-	HDR_BERESP
-};
-
-/***********************************************************************
  * Enum for events sent to compiled VCL and from there to Vmods
  */
 
@@ -214,13 +201,6 @@ enum vcl_event_e {
 	VCL_EVENT_WARM,
 	VCL_EVENT_COLD,
 	VCL_EVENT_DISCARD,
-};
-
-/***********************************************************************/
-
-struct gethdr_s {
-	enum gethdr_e	where;
-	const char	*what;
 };
 
 /***********************************************************************/
@@ -299,11 +279,8 @@ struct vrt_backend_probe {
 	VRT_BACKEND_PROBE_FIELDS(const)
 };
 
-/***********************************************************************/
-
-/*
- * other stuff.
- * XXX: document when bored
+/***********************************************************************
+ * VRT_count() refers to this structure for coordinates into the VCL source.
  */
 
 struct vrt_ref {
@@ -314,8 +291,11 @@ struct vrt_ref {
 	const char	*token;
 };
 
-/* ACL related */
-#define VRT_ACL_MAXADDR		16	/* max(IPv4, IPv6) */
+void VRT_count(VRT_CTX, unsigned);
+
+/***********************************************************************
+ * Implementation details of ACLs
+ */
 
 typedef int acl_match_f(VRT_CTX, const VCL_IP);
 
@@ -325,28 +305,53 @@ struct vrt_acl {
 	acl_match_f	*match;
 };
 
-void VRT_acl_log(VRT_CTX, const char *msg);
+void VRT_acl_log(VRT_CTX, const char *);
 int VRT_acl_match(VRT_CTX, VCL_ACL, VCL_IP);
 
-/* req related */
+/***********************************************************************
+ * Compile time regexp
+ */
+
+void VRT_re_init(void **, const char *);
+void VRT_re_fini(void *);
+int VRT_re_match(VRT_CTX, const char *, void *);
+
+/***********************************************************************
+ * Getting hold of the various struct http
+ */
+
+enum gethdr_e {
+	HDR_REQ,
+	HDR_REQ_TOP,
+	HDR_RESP,
+	HDR_OBJ,
+	HDR_BEREQ,
+	HDR_BERESP
+};
+
+struct gethdr_s {
+	enum gethdr_e	where;
+	const char	*what;
+};
+
+struct http *VRT_selecthttp(VRT_CTX, enum gethdr_e);
+const char *VRT_GetHdr(VRT_CTX, const struct gethdr_s *);
+
+/***********************************************************************
+ * req related
+ */
 
 VCL_BYTES VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize);
 
 /* Regexp related */
-void VRT_re_init(void **, const char *);
-void VRT_re_fini(void *);
-int VRT_re_match(VRT_CTX, const char *, void *re);
-const char *VRT_regsub(VRT_CTX, int all, const char *, void *, const char *);
 
+const char *VRT_regsub(VRT_CTX, int all, const char *, void *, const char *);
 void VRT_ban_string(VRT_CTX, const char *);
 unsigned VRT_purge(VRT_CTX, double ttl, double grace, double keep);
 
-void VRT_count(VRT_CTX, unsigned);
 void VRT_synth(VRT_CTX, unsigned, const char *);
 void VRT_hit_for_pass(VRT_CTX, VCL_DURATION);
 
-struct http *VRT_selecthttp(VRT_CTX, enum gethdr_e);
-const char *VRT_GetHdr(VRT_CTX, const struct gethdr_s *);
 void VRT_SetHdr(VRT_CTX, const struct gethdr_s *, const char *, ...);
 void VRT_handling(VRT_CTX, unsigned hand);
 void VRT_fail(VRT_CTX, const char *fmt, ...) __v_printflike(2,3);
@@ -385,6 +390,8 @@ VCL_VCL VRT_vcl_get(VRT_CTX, const char *);
 void VRT_vcl_rel(VRT_CTX, VCL_VCL);
 void VRT_vcl_select(VRT_CTX, VCL_VCL);
 
+typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
+
 typedef void vmod_priv_free_f(void *);
 struct vmod_priv {
 	void			*priv;
@@ -414,12 +421,6 @@ const char *VRT_BOOL_string(VCL_BOOL);
 const char *VRT_BACKEND_string(VCL_BACKEND);
 const char *VRT_STEVEDORE_string(VCL_STEVEDORE);
 const char *VRT_CollectString(VRT_CTX, const char *p, ...);
-
-typedef int vcl_event_f(VRT_CTX, enum vcl_event_e);
-typedef int vcl_init_f(VRT_CTX);
-typedef void vcl_fini_f(VRT_CTX);
-typedef void vcl_func_f(VRT_CTX);
-typedef int vmod_event_f(VRT_CTX, struct vmod_priv *, enum vcl_event_e);
 
 #ifdef va_start	// XXX: hackish
 void *VRT_VSC_Alloc(const char *, size_t, size_t, const unsigned char *, size_t,

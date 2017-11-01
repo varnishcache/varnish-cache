@@ -1144,6 +1144,12 @@ fo.write("\n" + tbl40("#define VCL_RET_MAX", "%d\n" % n))
 
 
 fo.write("""
+
+typedef int vcl_event_f(VRT_CTX, enum vcl_event_e);
+typedef int vcl_init_f(VRT_CTX);
+typedef void vcl_fini_f(VRT_CTX);
+typedef void vcl_func_f(VRT_CTX);
+
 struct VCL_conf {
 	unsigned			magic;
 #define VCL_CONF_MAGIC			0x7406c509	/* from /dev/random */
@@ -1151,7 +1157,7 @@ struct VCL_conf {
 	struct director			**default_director;
 	const struct vrt_backend_probe	*default_probe;
 	unsigned			nref;
-	struct vrt_ref			*ref;
+	const struct vrt_ref		*ref;
 
 	unsigned			nsrc;
 	const char			**srcname;
@@ -1161,7 +1167,7 @@ struct VCL_conf {
 """)
 
 for i in returns:
-	fo.write("\tvcl_func_f\t*" + i[0] + "_func;\n")
+	fo.write("\tvcl_func_f\t\t\t*" + i[0] + "_func;\n")
 
 fo.write("\n};\n")
 fo.close()

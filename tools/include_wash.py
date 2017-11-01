@@ -28,7 +28,7 @@ def check(fn):
 		for i in ("stddef.h", "stdint.h", "cache/cache.h", "cache.h"):
 			if i in l:
 				print(fn, i + " included with vrt.h")
-		
+
 	for i in ("cache/cache.h", "cache.h"):
 		if i in l:
 			for i in (
