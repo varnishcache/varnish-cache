@@ -40,6 +40,7 @@ BO_FLAG(is_gzip,	0, 0, "")
 BO_FLAG(is_gunzip,	0, 0, "")
 BO_FLAG(was_304,	1, 0, "")
 BO_FLAG(is_bgfetch,	0, 0, "")
+BO_FLAG(do_trailers,	0, 0, "")
 #undef BO_FLAG
 
 /*lint -restore */

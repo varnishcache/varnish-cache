@@ -23,6 +23,37 @@ server s1 {
 	send "But: Ignored\r\n"
 	send "\r\n"
 
+	rxreq
+	expect req.url == "/save"
+	expect req.http.TE == "trailers"
+	send "HTTP/1.1 200 OK\r\n"
+	send "Transfer-encoding: chunked\r\n"
+	send "Trailer: T-One, t-two\r\n"
+	send "\r\n"
+	send {00000004 extname="extval"; another=val; justname}
+	send "\r\n1234\r\n"
+	chunked "1234"
+	send "0\r\n"
+	send "Invalid: Trailer\r\n"
+	send "T-One: ready\r\n"
+	send "Also: Ignored\r\n"
+	send "T-Two: steady\r\n"
+	send "\r\n"
+
+	rxreq
+	expect req.url == "/save/wild"
+	expect req.http.TE == "trailers"
+	send "HTTP/1.1 200 OK\r\n"
+	send "Transfer-encoding: chunked\r\n"
+	send "Trailer: *\r\n"
+	send "\r\n"
+	send {00000004 extname="extval"; another=val; justname}
+	send "\r\n1234\r\n"
+	chunked "1234"
+	send "0\r\n"
+	send "No: matter\r\nThe: header\r\nIts: accepted\r\n"
+	send "\r\n"
+
 	# intentionally varying the trailer slightly in the following tests
 	rxreq
 	expect req.url == "/bad/trailer/CRCR"
@@ -69,9 +100,25 @@ server s1 {
 } -start
 
 varnish v1 -vcl+backend {
+	sub vcl_backend_fetch {
+	    if (bereq.url ~ "^/save") {
+		# we filter TE from the client, so trailers can only be
+		# enabled explicitly from vcl
+		set bereq.http.TE = "trailers";
+	    }
+	}
+
 	sub vcl_backend_response {
 	    if (bereq.url ~ "^/bad") {
-	       set beresp.do_stream = false;
+		# to get 503 for vtc instead of closed connection
+		set beresp.do_stream = false;
+	    }
+	    if (bereq.url ~ "^/save/wild") {
+		# Trailer: * removed by core code
+		if (beresp.http.Trailer) {
+		    return (abandon);
+		}
+		set beresp.http.Trailer = "*";
 	    }
 	}
 } -start
@@ -99,19 +146,43 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == "4"
+
 	txreq -url "/foo"
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == "8"
+	expect resp.http.Invalid == <undef>
+	expect resp.http.But == <undef>
+
+	txreq -url "/save"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == "8"
+	expect resp.http.Invalid == <undef>
+	expect resp.http.T-One == "ready"
+	expect resp.http.Also == <undef>
+	expect resp.http.T-Two == "steady"
+
+	txreq -url "/save/wild"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == "8"
+	expect resp.http.No == "matter"
+	expect resp.http.The == "header"
+	expect resp.http.Its == "accepted"
+
 	txreq -url "/bad/trailer/CRCR"
 	rxresp
 	expect resp.status == 503
+
 	txreq -url "/bad/trailer/LFnoCR"
 	rxresp
 	expect resp.status == 503
+
 	txreq -url "/bad/trailer/CRnoLF"
 	rxresp
 	expect resp.status == 503
+
 	txreq -url "/bad/trailer/short"
 	rxresp
 	expect resp.status == 503
