@@ -30,6 +30,11 @@
  * We try to use writev() if possible in order to minimize number of
  * syscalls made and packets sent.  It also just might allow the worker
  * thread to complete the request without holding stuff locked.
+ *
+ * XXX: chunked header (generated in Flush) and Tail (EndChunk)
+ *      are not accounted by means of the size_t returned. Obvious ideas:
+ *	- add size_t return value to Flush and EndChunk
+ *	- base accounting on (struct v1l).cnt
  */
 
 #include "config.h"
