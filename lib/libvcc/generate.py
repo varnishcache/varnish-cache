@@ -1125,13 +1125,22 @@ def tbl40(a, b):
 	return a + b
 
 fo.write("\n/* VCL Methods */\n")
+task = {}
 n = 1
 for i in returns:
 	fo.write(tbl40("#define VCL_MET_%s" % i[0].upper(), "(1U << %d)\n" % n))
+	if not i[1] in task:
+		task[i[1]] = []
+	task[i[1]].append("VCL_MET_" + i[0].upper())
 	n += 1
 
 fo.write("\n" + tbl40("#define VCL_MET_MAX", "%d\n" % n))
 fo.write("\n" + tbl40("#define VCL_MET_MASK", "0x%x\n" % ((1 << n) - 1)))
+
+fo.write("\n")
+for i in sorted(task.keys()):
+	fo.write(tbl40("#define VCL_MET_TASK_%s" % i.upper(),
+		       "( " + (" | \\\n%42s" % "").join(task[i]) + " )\n"))
 
 
 fo.write("\n/* VCL Returns */\n")
