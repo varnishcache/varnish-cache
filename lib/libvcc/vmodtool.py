@@ -434,7 +434,7 @@ class s_module(stanza):
 
 	def rsthead(self, fo, man):
 
-		write_rst_hdr(fo, "vmod_" + self.vcc.modname, "=", "=")
+		write_rst_hdr(fo, self.vcc.sympfx + self.vcc.modname, "=", "=")
 		fo.write("\n")
 
 		write_rst_hdr(fo, self.vcc.moddesc, "-", "-")
@@ -486,6 +486,11 @@ class s_abi(stanza):
 		strict_abi = self.line[1] == 'strict'
 		self.vcc.contents.append(self)
 
+class s_prefix(stanza):
+	def parse(self):
+		self.vcc.sympfx = self.line[1] + "_"
+		self.vcc.contents.append(self)
+
 class s_event(stanza):
 	def parse(self):
 		self.event_func = self.line[1]
@@ -516,7 +521,7 @@ class s_function(stanza):
 		self.vcc.contents.append(self)
 
 	def hfile(self, fo):
-		fn = "vmod_" + self.proto.name
+		fn = self.vcc.sympfx + self.proto.name
 		s = "%s %s(VRT_CTX" % (self.proto.c_ret(), fn)
 		s += self.proto.c_args() + ");"
 		for i in lwrap(s):
@@ -533,7 +538,7 @@ class s_function(stanza):
 		fmt_cstruct(fo, self.vcc.modname, self.proto.cname())
 
 	def cstruct_init(self, fo):
-		fo.write("\tvmod_" + self.proto.cname() + ",\n")
+		fo.write("\t" + self.vcc.sympfx + self.proto.cname() + ",\n")
 
 	def specstr(self, fo):
 		fo.write('\t"$FUNC\\0"\t"%s.%s\\0"\n\n' %
@@ -567,12 +572,12 @@ class s_object(stanza):
 		return
 
 	def chfile(self, fo, h):
-		sn = "vmod_" + self.vcc.modname + "_" + self.proto.name
+		sn = self.vcc.sympfx + self.vcc.modname + "_" + self.proto.name
 		fo.write("struct %s;\n" % sn)
 
 		if h:
 			def p(x):
-				return x + " vmod_"
+				return x + " " + self.vcc.sympfx
 		else:
 			def p(x):
 				return "typedef " + x + \
@@ -611,7 +616,7 @@ class s_object(stanza):
 			i.cstruct(fo)
 
 	def cstruct_init(self, fo):
-		p = "\tvmod_"
+		p = "\t" + self.vcc.sympfx
 		fo.write(p + self.proto.name + "__init,\n")
 		fo.write(p + self.proto.name + "__fini,\n")
 		for i in self.methods:
@@ -623,8 +628,8 @@ class s_object(stanza):
 		fo.write('\t"$OBJ\\0"\t"%s.%s\\0"\n\n' %
 		    (self.vcc.modname, self.proto.name))
 
-		fo.write('\t    "struct vmod_%s_%s\\0"\n' %
-		    (self.vcc.modname, self.proto.name))
+		fo.write('\t    "struct %s%s_%s\\0"\n' %
+		    (self.vcc.sympfx, self.vcc.modname, self.proto.name))
 		fo.write("\n")
 
 		self.proto.specstr(fo, 'Vmod_%s_Func.%s__init' %
@@ -659,7 +664,7 @@ class s_method(stanza):
 		fmt_cstruct(fo, self.vcc.modname, self.proto.cname())
 
 	def cstruct_init(self, fo):
-		fo.write('\t' + "vmod_" + self.proto.cname() + ",\n")
+		fo.write('\t' + self.vcc.sympfx + self.proto.cname() + ",\n")
 
 	def specstr(self, fo):
 		fo.write('\t    "%s.%s\\0"\n' %
@@ -675,6 +680,7 @@ class vcc(object):
 		self.inputfile = inputvcc
 		self.rstdir = rstdir
 		self.pfx = outputprefix
+		self.sympfx = "vmod_"
 		self.contents = []
 		self.commit_files = []
 		self.copyright = None
@@ -701,6 +707,8 @@ class vcc(object):
 					err("$Module must be first stanze")
 			if c[0] == "Module":
 				s_module(c, b[1:], self)
+			elif c[0] == "Prefix":
+				s_prefix(c, b[1:], self)
 			elif c[0] == "ABI":
 				s_abi(c, b[1:], self)
 			elif c[0] == "Event":
