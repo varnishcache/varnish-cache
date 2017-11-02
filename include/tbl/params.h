@@ -1667,13 +1667,18 @@ PARAM(
 	/* typ */	bytes_u,
 	/* min */	"0.25k",
 	/* max */	NULL,
-	/* default */	"0.50k",
+	/* default */	"2k",
 	/* units */	"bytes",
 	/* flags */	DELAYED_EFFECT,
 	/* s-text */
-	"Allocation size for session structure and workspace.    The "
-	"workspace is primarily used for TCP connection addresses.  If "
-	"larger than 4k, use a multiple of 4k for VM efficiency.",
+	"Allocation size for session structure and workspace.  This "
+	"workspace is primarily used for TCP connection addresses and "
+	"IO-vectors used during delivery. Setting this parameter too "
+	"low may increase the number of writev() syscalls. Setting it "
+	"to larger values than 0.25k + UIO_MAXIOV * sizeof(struct "
+	"iovec) (typically ~16k for 64bit) is likely a waste of "
+	"memory. For values >4k, use a multuple of 4k for VM "
+	"efficiency.",
 	/* l-text */	"",
 	/* func */	NULL
 )
