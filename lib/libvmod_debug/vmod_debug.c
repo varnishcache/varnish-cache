@@ -65,7 +65,7 @@ struct priv_vcl {
 static VCL_DURATION vcl_release_delay = 0.0;
 
 VCL_VOID __match_proto__(td_debug_panic)
-vmod_panic(VRT_CTX, const char *str, ...)
+xyzzy_panic(VRT_CTX, const char *str, ...)
 {
 	va_list ap;
 	const char *b;
@@ -79,7 +79,7 @@ vmod_panic(VRT_CTX, const char *str, ...)
 }
 
 VCL_STRING __match_proto__(td_debug_author)
-vmod_author(VRT_CTX, VCL_ENUM person, VCL_ENUM someone)
+xyzzy_author(VRT_CTX, VCL_ENUM person, VCL_ENUM someone)
 {
 	(void)someone;
 
@@ -96,7 +96,7 @@ vmod_author(VRT_CTX, VCL_ENUM person, VCL_ENUM someone)
 }
 
 VCL_VOID __match_proto__(td_debug_test_priv_call)
-vmod_test_priv_call(VRT_CTX, struct vmod_priv *priv)
+xyzzy_test_priv_call(VRT_CTX, struct vmod_priv *priv)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -109,7 +109,7 @@ vmod_test_priv_call(VRT_CTX, struct vmod_priv *priv)
 }
 
 VCL_STRING __match_proto__(td_debug_test_priv_task)
-vmod_test_priv_task(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
+xyzzy_test_priv_task(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -131,7 +131,7 @@ vmod_test_priv_task(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 }
 
 VCL_STRING __match_proto__(td_debug_test_priv_top)
-vmod_test_priv_top(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
+xyzzy_test_priv_top(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -143,7 +143,7 @@ vmod_test_priv_top(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 }
 
 VCL_VOID __match_proto__(td_debug_test_priv_vcl)
-vmod_test_priv_vcl(VRT_CTX, struct vmod_priv *priv)
+xyzzy_test_priv_vcl(VRT_CTX, struct vmod_priv *priv)
 {
 	struct priv_vcl *priv_vcl;
 
@@ -155,7 +155,7 @@ vmod_test_priv_vcl(VRT_CTX, struct vmod_priv *priv)
 }
 
 VCL_BACKEND
-vmod_no_backend(VRT_CTX)
+xyzzy_no_backend(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -164,7 +164,7 @@ vmod_no_backend(VRT_CTX)
 }
 
 VCL_STEVEDORE __match_proto__(td_debug_no_stevedore)
-vmod_no_stevedore(VRT_CTX)
+xyzzy_no_stevedore(VRT_CTX)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -173,7 +173,7 @@ vmod_no_stevedore(VRT_CTX)
 }
 
 VCL_VOID __match_proto__(td_debug_rot52)
-vmod_rot52(VRT_CTX, VCL_HTTP hp)
+xyzzy_rot52(VRT_CTX, VCL_HTTP hp)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -183,7 +183,7 @@ vmod_rot52(VRT_CTX, VCL_HTTP hp)
 }
 
 VCL_STRING __match_proto__(td_debug_argtest)
-vmod_argtest(VRT_CTX, VCL_STRING one, VCL_REAL two, VCL_STRING three,
+xyzzy_argtest(VRT_CTX, VCL_STRING one, VCL_REAL two, VCL_STRING three,
     VCL_STRING comma, VCL_INT four)
 {
 	char buf[100];
@@ -193,7 +193,7 @@ vmod_argtest(VRT_CTX, VCL_STRING one, VCL_REAL two, VCL_STRING three,
 }
 
 VCL_INT __match_proto__(td_debug_vre_limit)
-vmod_vre_limit(VRT_CTX)
+xyzzy_vre_limit(VRT_CTX)
 {
 	(void)ctx;
 	return (cache_param->vre_limits.match);
@@ -220,7 +220,7 @@ obj_cb(struct worker *wrk, void *priv, struct objcore *oc, unsigned event)
 }
 
 VCL_VOID __match_proto__(td_debug_register_obj_events)
-vmod_register_obj_events(VRT_CTX, struct vmod_priv *priv)
+xyzzy_register_obj_events(VRT_CTX, struct vmod_priv *priv)
 {
 	struct priv_vcl *priv_vcl;
 
@@ -233,7 +233,7 @@ vmod_register_obj_events(VRT_CTX, struct vmod_priv *priv)
 }
 
 VCL_VOID __match_proto__(td_debug_fail)
-vmod_fail(VRT_CTX)
+xyzzy_fail(VRT_CTX)
 {
 
 	VRT_fail(ctx, "Forced failure");
@@ -356,7 +356,7 @@ event_function(VRT_CTX, struct vmod_priv *priv, enum vcl_event_e e)
 }
 
 VCL_VOID __match_proto__(td_debug_sleep)
-vmod_sleep(VRT_CTX, VCL_DURATION t)
+xyzzy_sleep(VRT_CTX, VCL_DURATION t)
 {
 
 	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
@@ -380,7 +380,7 @@ wsfind(VRT_CTX, VCL_ENUM which)
 }
 
 void
-vmod_workspace_allocate(VRT_CTX, VCL_ENUM which, VCL_INT size)
+xyzzy_workspace_allocate(VRT_CTX, VCL_ENUM which, VCL_INT size)
 {
 	struct ws *ws;
 	char *s;
@@ -407,7 +407,7 @@ vmod_workspace_allocate(VRT_CTX, VCL_ENUM which, VCL_INT size)
 }
 
 VCL_INT
-vmod_workspace_free(VRT_CTX, VCL_ENUM which)
+xyzzy_workspace_free(VRT_CTX, VCL_ENUM which)
 {
 	struct ws *ws;
 	unsigned u;
@@ -425,7 +425,7 @@ vmod_workspace_free(VRT_CTX, VCL_ENUM which)
 }
 
 VCL_BOOL
-vmod_workspace_overflowed(VRT_CTX, VCL_ENUM which)
+xyzzy_workspace_overflowed(VRT_CTX, VCL_ENUM which)
 {
 	struct ws *ws;
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -440,7 +440,7 @@ vmod_workspace_overflowed(VRT_CTX, VCL_ENUM which)
 static uintptr_t debug_ws_snap;
 
 void
-vmod_workspace_snap(VRT_CTX, VCL_ENUM which)
+xyzzy_workspace_snap(VRT_CTX, VCL_ENUM which)
 {
 	struct ws *ws;
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -453,7 +453,7 @@ vmod_workspace_snap(VRT_CTX, VCL_ENUM which)
 }
 
 void
-vmod_workspace_reset(VRT_CTX, VCL_ENUM which)
+xyzzy_workspace_reset(VRT_CTX, VCL_ENUM which)
 {
 	struct ws *ws;
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -466,7 +466,7 @@ vmod_workspace_reset(VRT_CTX, VCL_ENUM which)
 }
 
 void
-vmod_workspace_overflow(VRT_CTX, VCL_ENUM which)
+xyzzy_workspace_overflow(VRT_CTX, VCL_ENUM which)
 {
 	struct ws *ws;
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -479,7 +479,7 @@ vmod_workspace_overflow(VRT_CTX, VCL_ENUM which)
 }
 
 VCL_VOID __match_proto__(td_debug_vcl_release_delay)
-vmod_vcl_release_delay(VRT_CTX, VCL_DURATION delay)
+xyzzy_vcl_release_delay(VRT_CTX, VCL_DURATION delay)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -488,7 +488,7 @@ vmod_vcl_release_delay(VRT_CTX, VCL_DURATION delay)
 }
 
 VCL_BOOL __match_proto__(td_debug_match_acl)
-vmod_match_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip)
+xyzzy_match_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip)
 {
 
 	CHECK_OBJ_ORNULL(ctx, VRT_CTX_MAGIC);
@@ -499,7 +499,7 @@ vmod_match_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip)
 }
 
 VCL_BOOL
-vmod_barrier_sync(VRT_CTX, VCL_STRING addr)
+xyzzy_barrier_sync(VRT_CTX, VCL_STRING addr)
 {
 	const char *err;
 	char buf[32];
@@ -532,7 +532,7 @@ vmod_barrier_sync(VRT_CTX, VCL_STRING addr)
 }
 
 VCL_VOID __match_proto__(td_debug_test_probe)
-vmod_test_probe(VRT_CTX, VCL_PROBE probe, VCL_PROBE same)
+xyzzy_test_probe(VRT_CTX, VCL_PROBE probe, VCL_PROBE same)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -542,7 +542,7 @@ vmod_test_probe(VRT_CTX, VCL_PROBE probe, VCL_PROBE same)
 }
 
 VCL_INT
-vmod_typesize(VRT_CTX, VCL_STRING s)
+xyzzy_typesize(VRT_CTX, VCL_STRING s)
 {
 	size_t i = 0;
 	const char *p;

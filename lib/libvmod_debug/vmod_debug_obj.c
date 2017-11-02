@@ -35,7 +35,7 @@
 
 #include "vcc_if.h"
 
-struct vmod_debug_obj {
+struct xyzzy_debug_obj {
 	unsigned		magic;
 #define VMOD_DEBUG_OBJ_MAGIC	0xccbd9b77
 	int foobar;
@@ -43,10 +43,10 @@ struct vmod_debug_obj {
 };
 
 VCL_VOID
-vmod_obj__init(VRT_CTX, struct vmod_debug_obj **op,
+xyzzy_obj__init(VRT_CTX, struct xyzzy_debug_obj **op,
     const char *vcl_name, VCL_STRING s, VCL_ENUM e)
 {
-	struct vmod_debug_obj *o;
+	struct xyzzy_debug_obj *o;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	(void)vcl_name;
@@ -62,7 +62,7 @@ vmod_obj__init(VRT_CTX, struct vmod_debug_obj **op,
 }
 
 VCL_VOID
-vmod_obj__fini(struct vmod_debug_obj **op)
+xyzzy_obj__fini(struct xyzzy_debug_obj **op)
 {
 
 	AN(op);
@@ -72,7 +72,7 @@ vmod_obj__fini(struct vmod_debug_obj **op)
 }
 
 VCL_VOID __match_proto__()
-vmod_obj_enum(VRT_CTX, struct vmod_debug_obj *o, VCL_ENUM e)
+xyzzy_obj_enum(VRT_CTX, struct xyzzy_debug_obj *o, VCL_ENUM e)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -81,7 +81,7 @@ vmod_obj_enum(VRT_CTX, struct vmod_debug_obj *o, VCL_ENUM e)
 }
 
 VCL_STRING __match_proto__()
-vmod_obj_foo(VRT_CTX, struct vmod_debug_obj *o, VCL_STRING s)
+xyzzy_obj_foo(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRING s)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -92,7 +92,7 @@ vmod_obj_foo(VRT_CTX, struct vmod_debug_obj *o, VCL_STRING s)
 }
 
 VCL_TIME __match_proto__()
-vmod_obj_date(VRT_CTX, struct vmod_debug_obj *o)
+xyzzy_obj_date(VRT_CTX, struct xyzzy_debug_obj *o)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -102,7 +102,7 @@ vmod_obj_date(VRT_CTX, struct vmod_debug_obj *o)
 }
 
 VCL_STRING __match_proto__()
-vmod_obj_string(VRT_CTX, struct vmod_debug_obj *o)
+xyzzy_obj_string(VRT_CTX, struct xyzzy_debug_obj *o)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -112,7 +112,7 @@ vmod_obj_string(VRT_CTX, struct vmod_debug_obj *o)
 }
 
 VCL_STRING __match_proto__()
-vmod_obj_number(VRT_CTX, struct vmod_debug_obj *o)
+xyzzy_obj_number(VRT_CTX, struct xyzzy_debug_obj *o)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -122,30 +122,30 @@ vmod_obj_number(VRT_CTX, struct vmod_debug_obj *o)
 }
 
 VCL_VOID __match_proto__()
-vmod_obj_test_priv_call(VRT_CTX,
-    struct vmod_debug_obj *o, struct vmod_priv *priv)
+xyzzy_obj_test_priv_call(VRT_CTX,
+    struct xyzzy_debug_obj *o, struct vmod_priv *priv)
 {
 	(void)o;
-	vmod_test_priv_call(ctx, priv);
+	xyzzy_test_priv_call(ctx, priv);
 }
 VCL_VOID __match_proto__()
-vmod_obj_test_priv_vcl(VRT_CTX,
-    struct vmod_debug_obj *o, struct vmod_priv *priv)
+xyzzy_obj_test_priv_vcl(VRT_CTX,
+    struct xyzzy_debug_obj *o, struct vmod_priv *priv)
 {
 	(void)o;
-	vmod_test_priv_vcl(ctx, priv);
+	xyzzy_test_priv_vcl(ctx, priv);
 }
 VCL_STRING __match_proto__()
-vmod_obj_test_priv_task(VRT_CTX,
-    struct vmod_debug_obj *o, struct vmod_priv *priv, VCL_STRING s)
+xyzzy_obj_test_priv_task(VRT_CTX,
+    struct xyzzy_debug_obj *o, struct vmod_priv *priv, VCL_STRING s)
 {
 	(void)o;
-	return (vmod_test_priv_task(ctx, priv, s));
+	return (xyzzy_test_priv_task(ctx, priv, s));
 }
 VCL_STRING __match_proto__()
-vmod_obj_test_priv_top(VRT_CTX,
-    struct vmod_debug_obj *o, struct vmod_priv *priv, VCL_STRING s)
+xyzzy_obj_test_priv_top(VRT_CTX,
+    struct xyzzy_debug_obj *o, struct vmod_priv *priv, VCL_STRING s)
 {
 	(void)o;
-	return (vmod_test_priv_top(ctx, priv, s));
+	return (xyzzy_test_priv_top(ctx, priv, s));
 }

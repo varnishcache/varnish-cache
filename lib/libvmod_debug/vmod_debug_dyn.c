@@ -39,7 +39,7 @@
 #include "vsa.h"
 #include "vcc_if.h"
 
-struct vmod_debug_dyn {
+struct xyzzy_debug_dyn {
 	unsigned		magic;
 #define VMOD_DEBUG_DYN_MAGIC	0x9b77ccbd
 	pthread_mutex_t		mtx;
@@ -48,7 +48,7 @@ struct vmod_debug_dyn {
 };
 
 static void
-dyn_dir_init(VRT_CTX, struct vmod_debug_dyn *dyn,
+dyn_dir_init(VRT_CTX, struct xyzzy_debug_dyn *dyn,
     VCL_STRING addr, VCL_STRING port)
 {
 	struct addrinfo hints, *res = NULL;
@@ -104,10 +104,10 @@ dyn_dir_init(VRT_CTX, struct vmod_debug_dyn *dyn,
 }
 
 VCL_VOID
-vmod_dyn__init(VRT_CTX, struct vmod_debug_dyn **dynp,
+xyzzy_dyn__init(VRT_CTX, struct xyzzy_debug_dyn **dynp,
     const char *vcl_name, VCL_STRING addr, VCL_STRING port)
 {
-	struct vmod_debug_dyn *dyn;
+	struct xyzzy_debug_dyn *dyn;
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -134,9 +134,9 @@ vmod_dyn__init(VRT_CTX, struct vmod_debug_dyn **dynp,
 }
 
 VCL_VOID
-vmod_dyn__fini(struct vmod_debug_dyn **dynp)
+xyzzy_dyn__fini(struct xyzzy_debug_dyn **dynp)
 {
-	struct vmod_debug_dyn *dyn;
+	struct xyzzy_debug_dyn *dyn;
 
 	AN(dynp);
 	if (*dynp == NULL)
@@ -151,7 +151,7 @@ vmod_dyn__fini(struct vmod_debug_dyn **dynp)
 }
 
 VCL_BACKEND __match_proto__()
-vmod_dyn_backend(VRT_CTX, struct vmod_debug_dyn *dyn)
+xyzzy_dyn_backend(VRT_CTX, struct xyzzy_debug_dyn *dyn)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(dyn, VMOD_DEBUG_DYN_MAGIC);
@@ -160,7 +160,7 @@ vmod_dyn_backend(VRT_CTX, struct vmod_debug_dyn *dyn)
 }
 
 VCL_VOID
-vmod_dyn_refresh(VRT_CTX, struct vmod_debug_dyn *dyn,
+xyzzy_dyn_refresh(VRT_CTX, struct xyzzy_debug_dyn *dyn,
     VCL_STRING addr, VCL_STRING port)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
