@@ -151,7 +151,10 @@ vmod_workspace_alloc(VRT_CTX, VCL_ENUM which, VCL_INT size)
 		size += WS_Reserve(ws, 0);
 		WS_Release(ws, 0);
 	}
-
+	if (size <= 0) {
+		VRT_fail(ctx, "Attempted negative WS allocation");
+		return;
+	}
 	p = WS_Alloc(ws, size);
 	if (p == NULL)
 		VRT_fail(ctx, "vtc.workspace_alloc");
