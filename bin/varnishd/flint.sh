@@ -19,12 +19,18 @@ FLOPS='
 	../../lib/libvarnish/*.c
 	../../lib/libvcc/flint.lnt
 	../../lib/libvcc/*.c
-	../../lib/libvmod_std/flint.lnt
-	../../lib/libvmod_std/*.c
+	../../lib/libvmod_blob/flint.lnt
+	../../lib/libvmod_blob/*.c
 	../../lib/libvmod_debug/flint.lnt
 	../../lib/libvmod_debug/*.c
 	../../lib/libvmod_directors/flint.lnt
 	../../lib/libvmod_directors/*.c
+	../../lib/libvmod_purge/flint.lnt
+	../../lib/libvmod_purge/*.c
+	../../lib/libvmod_std/flint.lnt
+	../../lib/libvmod_std/*.c
+	../../lib/libvmod_vtc/flint.lnt
+	../../lib/libvmod_vtc/*.c
 '
 
 . ../../tools/flint_skel.sh
