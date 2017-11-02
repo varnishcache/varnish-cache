@@ -106,6 +106,7 @@ hex_decode(const enum encoding dec, char *restrict const buf,
 	   const char *restrict const p, va_list ap)
 {
 	char *dest = buf;
+	const char *b;
 	unsigned char extranib = 0;
 	ssize_t len = 0;
 	va_list ap2;
@@ -116,13 +117,15 @@ hex_decode(const enum encoding dec, char *restrict const buf,
 	va_copy(ap2, ap);
 	for (const char *s = p; s != vrt_magic_string_end;
 	     s = va_arg(ap2, const char *)) {
-		const char *b = s;
-		if (s != NULL)
-			while (*s)
-				if (!isxdigit(*s++)) {
-					len = -1;
-					break;
-				}
+		if (s == NULL)
+			continue;
+		b = s;
+		while (*s) {
+			if (!isxdigit(*s++)) {
+				len = -1;
+				break;
+			}
+		}
 		if (len == -1)
 			break;
 		len += s - b;
