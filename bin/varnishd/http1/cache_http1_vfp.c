@@ -141,11 +141,11 @@ v1f_trailer_part_allowed(const struct http *hp, const char *hdr)
  * code analoguos to http_Unset()
  */
 void
-v1f_trailer_part_process(struct http *hp, uint16_t u, int filter)
+v1f_trailer_part_process(struct http *hp, int filter)
 {
-	uint16_t v;
+	uint16_t u, v;
 
-	for (v = u; u < hp->nhd; u++) {
+	for (v = u = hp->thd; u < hp->nhd; u++) {
 		Tcheck(hp->hd[u]);
 
 		if (filter && ! v1f_trailer_part_allowed(hp, hp->hd[u].b)) {
@@ -280,7 +280,7 @@ v1f_chunked_trailer(struct vfp_ctx *vc, struct vfp_entry *vfe,
 
 		lim -= 2;
 
-		const uint16_t ohd = hp->nhd;
+		hp->thd = hp->nhd;
 
 		// note: Could also change hp->conds - irrelevant here
 		if (HTTP1_DissectHdrs(hp, &hdrs_b, lim,
@@ -289,11 +289,12 @@ v1f_chunked_trailer(struct vfp_ctx *vc, struct vfp_entry *vfe,
 
 		assert(hdrs_b <= lim);
 
-		v1f_trailer_part_process(hp, ohd, save == SAVE_FILTER);
+		v1f_trailer_part_process(hp, save == SAVE_FILTER);
 
-		if (hp->nhd == ohd)
+		if (hp->thd == hp->nhd) {
+			hp->thd = 0;
 			WS_Release(ws, 0);
-		else
+		} else
 			WS_ReleaseP(ws, TRUST_ME(hp->hd[hp->nhd - 1].e + 1));
 	}
 	return (VFP_END);
