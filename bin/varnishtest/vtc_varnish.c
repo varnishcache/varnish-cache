@@ -952,6 +952,7 @@ varnish_expect(const struct varnish *v, char * const *av)
 		    av[0], (uintmax_t)sp.val, av[1], av[2], (uintmax_t)ref);
 	}
 }
+
 /* SECTION: varnish varnish
  *
  * Define and interact with varnish instances.

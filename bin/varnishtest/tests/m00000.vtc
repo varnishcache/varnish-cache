@@ -1,4 +1,4 @@
-varnishtest "Test std & debug vmod"
+varnishtest "Test std, vtc & debug vmod"
 
 server s1 {
 	rxreq
@@ -9,6 +9,7 @@ server s1 {
 varnish v1 -vcl+backend {
 	import std;
 	import debug;
+	import vtc;
 
 	sub vcl_init {
 		new obj = debug.obj();
@@ -22,6 +23,7 @@ varnish v1 -vcl+backend {
 		set resp.http.foo = std.toupper(resp.http.foo);
 		set resp.http.bar = std.tolower(resp.http.bar);
 		set resp.http.who = debug.author(phk);
+		set resp.http.what = vtc.typesize("dfijlopsz");
 		debug.test_priv_call();
 		debug.test_priv_vcl();
 		obj.test_priv_call();
@@ -40,6 +42,7 @@ client c1 {
 	expect resp.http.foo == "BAR"
 	expect resp.http.bar == "foo"
 	expect resp.http.encrypted == "ROT52"
+	expect resp.http.what >= 16
 } -run
 
 logexpect l1 -v v1 -g raw -d 1 {
@@ -49,6 +52,7 @@ logexpect l1 -v v1 -g raw -d 1 {
 	expect 0 =    RespUnset	{^bar: fOo}
 	expect 0 =    RespHeader	{^bar: foo}
 	expect 0 =    RespHeader	{^who: Poul-Henning}
+	expect 0 =    RespHeader	{^what: [1-9][0-9]}
 	expect 0 =    VCL_Log		{^VCL initiated log}
 	expect 0 =    RespHeader	{^Encrypted: ROT52}
 	expect 0 =    VCL_return	{^deliver}
