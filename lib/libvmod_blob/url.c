@@ -127,7 +127,7 @@ url_decode(const enum encoding dec, char *restrict const buf,
 	AN(buf);
 	assert(dec == URL);
 
-	if (n >= 0 && n < len)
+	if (n >= 0 && (size_t)n < len)
 		len = n;
 
 	for (const char *s = p; len > 0 && s != vrt_magic_string_end;
