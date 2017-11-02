@@ -145,6 +145,8 @@ vmod_workspace_alloc(VRT_CTX, VCL_ENUM which, VCL_INT size)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	ws = vtc_ws_find(ctx, which);
+	if (ws == NULL)
+		return;
 	WS_Assert(ws);
 
 	if (size < 0) {
@@ -171,6 +173,8 @@ vmod_workspace_free(VRT_CTX, VCL_ENUM which)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 
 	ws = vtc_ws_find(ctx, which);
+	if (ws == NULL)
+		return(-1);
 	WS_Assert(ws);
 
 	u = WS_Reserve(ws, 0);
@@ -178,7 +182,7 @@ vmod_workspace_free(VRT_CTX, VCL_ENUM which)
 	return (u);
 }
 
-#define VTC_WS_OP(type, name, op)			\
+#define VTC_WS_OP(type, def, name, op)			\
 VCL_##type __match_proto__(td_vtc_workspace_##name)	\
 vmod_workspace_##name(VRT_CTX, VCL_ENUM which)		\
 {							\
@@ -187,14 +191,16 @@ vmod_workspace_##name(VRT_CTX, VCL_ENUM which)		\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
 							\
 	ws = vtc_ws_find(ctx, which);			\
+	if (ws == NULL)					\
+		return def ;				\
 	WS_Assert(ws);					\
 							\
 	op;						\
 }
-VTC_WS_OP(VOID, snapshot, (vtc_ws_snapshot = WS_Snapshot(ws)))
-VTC_WS_OP(VOID, reset, WS_Reset(ws, vtc_ws_snapshot))
-VTC_WS_OP(VOID, overflow, WS_MarkOverflow(ws))
-VTC_WS_OP(BOOL, overflowed, return (WS_Overflowed(ws)))
+VTC_WS_OP(VOID, , snapshot, (vtc_ws_snapshot = WS_Snapshot(ws)))
+VTC_WS_OP(VOID, , reset, WS_Reset(ws, vtc_ws_snapshot))
+VTC_WS_OP(VOID, , overflow, WS_MarkOverflow(ws))
+VTC_WS_OP(BOOL, (0), overflowed, return (WS_Overflowed(ws)))
 #undef VTC_WS_OP
 
 /*--------------------------------------------------------------------*/
