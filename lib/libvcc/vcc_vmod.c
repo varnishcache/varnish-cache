@@ -310,6 +310,7 @@ vcc_ParseNew(struct vcc *tl)
 
 	bprintf(buf1, ", &%s, \"%s\"", sy1->rname, sy1->name);
 	vcc_Eval_Func(tl, p, buf1, sy2);
+	ERRCHK(tl);
 	ExpectErr(tl, ';');
 
 	while (p[0] != '\0' || p[1] != '\0' || p[2] != '\0')

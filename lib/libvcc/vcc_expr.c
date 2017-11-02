@@ -716,12 +716,9 @@ vcc_Eval_Func(struct vcc *tl, const char *spec,
 
 	t1 = tl->t;
 	vcc_func(tl, &e, spec, extra, sym);
-	if (!tl->err) {
-		vcc_expr_fmt(tl->fb, tl->indent, e);
-		VSB_cat(tl->fb, ";\n");
-	} else if (t1 != tl->t) {
-		vcc_ErrWhere2(tl, t1, tl->t);
-	}
+	ERRCHK(tl);
+	vcc_expr_fmt(tl->fb, tl->indent, e);
+	VSB_cat(tl->fb, ";\n");
 	vcc_delete_expr(e);
 }
 
