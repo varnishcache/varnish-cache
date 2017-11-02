@@ -169,8 +169,8 @@ v1f_trailer_part_process(struct http *hp, int filter)
 
 #define trail_err(vc, ws, str) do {					\
 		if (ws)						\
-			WS_Release(ws, 0);				\
-		return (VFP_Error(vc, str));				\
+			WS_Release((ws), 0);				\
+		return (VFP_Error((vc), (str)));			\
 	} while(0)
 
 static inline enum vfp_status
