@@ -155,6 +155,7 @@ struct http {
 
 	/* NB: ->nhd and below zeroed/initialized by http_Teardown */
 	uint16_t		nhd;		/* Next free hd */
+	uint16_t		thd;		/* First trailer hd 0 = none */
 
 	enum VSL_tag_e		logtag;		/* Must be SLT_*Method */
 	struct vsl_log		*vsl;
