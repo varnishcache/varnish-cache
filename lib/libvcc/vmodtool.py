@@ -52,9 +52,9 @@ AMBOILERPLATE = '''
 AM_LDFLAGS  = $(AM_LT_LDFLAGS)
 
 AM_CPPFLAGS = \\
-    -I$(top_srcdir)/include \\
-    -I$(top_srcdir)/bin/varnishd \\
-    -I$(top_builddir)/include
+\t-I$(top_srcdir)/include \\
+\t-I$(top_srcdir)/bin/varnishd \\
+\t-I$(top_builddir)/include
 
 vmoddir = $(pkglibdir)/vmods
 vmodtool = $(top_srcdir)/lib/libvcc/vmodtool.py
@@ -63,12 +63,12 @@ vmodtoolargs = --strict --boilerplate
 vmod_LTLIBRARIES = libvmod_XXX.la
 
 libvmod_XXX_la_CFLAGS = \\
-    @SAN_CFLAGS@
+\t@SAN_CFLAGS@
 
 libvmod_XXX_la_LDFLAGS = \\
-    $(AM_LDFLAGS) \\
-    $(VMOD_LDFLAGS) \\
-    @SAN_LDFLAGS@
+\t$(AM_LDFLAGS) \\
+\t$(VMOD_LDFLAGS) \\
+\t@SAN_LDFLAGS@
 
 nodist_libvmod_XXX_la_SOURCES = vcc_if.c vcc_if.h
 
@@ -79,13 +79,13 @@ $(libvmod_XXX_la_OBJECTS): vcc_if.h
 vcc_if.h vmod_XXX.rst vmod_XXX.man.rst: vcc_if.c
 
 vcc_if.c: $(vmodtool) $(srcdir)/vmod.vcc
-    @PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod.vcc
+\t@PYTHON@ $(vmodtool) $(vmodtoolargs) $(srcdir)/vmod.vcc
 
 EXTRA_DIST = vmod.vcc automake_boilerplate.am
 
 CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \\
-    $(builddir)/vmod_XXX.rst \\
-    $(builddir)/vmod_XXX.man.rst
+\t$(builddir)/vmod_XXX.rst \\
+\t$(builddir)/vmod_XXX.man.rst
 
 '''
 
@@ -695,6 +695,16 @@ class s_method(stanza):
 
 #######################################################################
 
+dispatch = {
+    "Module":	s_module,
+    "Prefix":	s_prefix,
+    "ABI":	s_abi,
+    "Event":	s_event,
+    "Function":	s_function,
+    "Object":	s_object,
+    "Method":	s_method,
+}
+
 
 class vcc(object):
     def __init__(self, inputvcc, rstdir, outputprefix):
@@ -704,44 +714,30 @@ class vcc(object):
         self.sympfx = "vmod_"
         self.contents = []
         self.commit_files = []
-        self.copyright = None
+        self.copyright = ""
+
+    def openfile(self, fn):
+        self.commit_files.append(fn)
+        return open(fn + ".tmp", "w")
 
     def commit(self):
         for i in self.commit_files:
             os.rename(i + ".tmp", i)
 
     def parse(self):
-        a = open(self.inputfile, "r").read()
-        a = a.split("\n$")
-        for i in range(len(a)):
-            b = a[i].split("\n", 1)
+        a = "\n" + open(self.inputfile, "r").read()
+        s = a.split("\n$")
+        self.copyright = s.pop(0).strip()
+        for i in range(len(s)):
+            b = s[i].split("\n", 1)
             c = b[0].split(None, 1)
 
-            if i == 0:
-                if c[0] == "$Module":
-                    s_module(c, b[1:], self)
-                else:
-                    self.copyright = a[0]
-                continue
-            if i == 1 and self.copyright is not None:
-                if c[0] != "Module":
-                    err("$Module must be first stanze")
-            if c[0] == "Module":
-                s_module(c, b[1:], self)
-            elif c[0] == "Prefix":
-                s_prefix(c, b[1:], self)
-            elif c[0] == "ABI":
-                s_abi(c, b[1:], self)
-            elif c[0] == "Event":
-                s_event(c, b[1:], self)
-            elif c[0] == "Function":
-                s_function(c, b[1:], self)
-            elif c[0] == "Object":
-                s_object(c, b[1:], self)
-            elif c[0] == "Method":
-                s_method(c, b[1:], self)
-            else:
+            if i == 0 and c[0] != "Module":
+                err("$Module must be first stanze", False)
+            m = dispatch.get(c[0])
+            if m is None:
                 err("Unknown stanze $%s" % c[0])
+            m(c, b[1:], self)
 
     def rst_copyright(self, fo):
         write_rst_hdr(fo, "COPYRIGHT", "=")
@@ -759,30 +755,27 @@ class vcc(object):
         if man:
             fn += ".man"
         fn += ".rst"
-        self.commit_files.append(fn)
-        fo = open(fn + ".tmp", "w")
+        fo = self.openfile(fn)
         write_rst_file_warning(fo)
         fo.write(".. role:: ref(emphasis)\n\n")
 
         for i in self.contents:
             i.rstfile(fo, man)
 
-        if self.copyright is not None:
+        if len(self.copyright):
             self.rst_copyright(fo)
 
         fo.close()
 
     def amboilerplate(self):
         fn = "automake_boilerplate.am"
-        self.commit_files.append(fn)
-        fo = open(fn + ".tmp", "w")
+        fo = self.openfile(fn)
         fo.write(AMBOILERPLATE.replace("XXX", self.modname))
         fo.close()
 
     def hfile(self):
         fn = self.pfx + ".h"
-        self.commit_files.append(fn)
-        fo = open(fn + ".tmp", "w")
+        fo = self.openfile(fn)
         write_c_file_warning(fo)
         fo.write("#ifndef VRT_H_INCLUDED\n")
         fo.write('#  error "Include vrt.h first"\n')
@@ -847,8 +840,7 @@ class vcc(object):
 
     def cfile(self):
         fn = self.pfx + ".c"
-        self.commit_files.append(fn)
-        fo = open(fn + ".tmp", "w")
+        fo = self.openfile(fn)
         write_c_file_warning(fo)
 
         fn2 = fn + ".tmp2"
