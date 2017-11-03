@@ -140,7 +140,7 @@ v1f_trailer_part_allowed(const struct http *hp, const char *hdr)
  *
  * code analoguos to http_Unset()
  */
-void
+static void
 v1f_trailer_part_process(struct http *hp, int filter)
 {
 	uint16_t u, v;
@@ -174,8 +174,7 @@ v1f_trailer_part_process(struct http *hp, int filter)
 	} while(0)
 
 static inline enum vfp_status
-v1f_chunked_trailer(struct vfp_ctx *vc, struct vfp_entry *vfe,
-    struct http_conn *htc,
+v1f_chunked_trailer(struct vfp_ctx *vc, struct http_conn *htc,
     char *buf, size_t bufsz, char *lim)
 {
 	const char *q;
@@ -397,7 +396,7 @@ v1f_pull_chunked(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr,
 			return (VFP_END);
 		return (VFP_Error(vc, "chunked tail CR no LF"));
 	}
-	return (v1f_chunked_trailer(vc, vfe, htc, buf, bufsz, buf + 2));
+	return (v1f_chunked_trailer(vc, htc, buf, bufsz, buf + 2));
 }
 
 static const struct vfp v1f_chunked = {
