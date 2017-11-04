@@ -196,12 +196,9 @@ static struct vep_match vep_match_bom[] = {
 static void
 vep_error(const struct vep_state *vep, const char *p)
 {
-	intmax_t l;
-
 	VSC_C_main->esi_errors++;
-	l = (intmax_t)(vep->ver_p - vep->hack_p);
-	VSLb(vep->vc->wrk->vsl, SLT_ESI_xmlerror, "ERR at %jd %s", l, p);
-
+	VSLb(vep->vc->wrk->vsl, SLT_ESI_xmlerror, "ERR after %zd %s",
+	     vep->o_last, p);
 }
 
 /*--------------------------------------------------------------------
@@ -211,12 +208,9 @@ vep_error(const struct vep_state *vep, const char *p)
 static void
 vep_warn(const struct vep_state *vep, const char *p)
 {
-	intmax_t l;
-
 	VSC_C_main->esi_warnings++;
-	l = (intmax_t)(vep->ver_p - vep->hack_p);
-	VSLb(vep->vc->wrk->vsl, SLT_ESI_xmlerror, "WARN at %jd %s", l, p);
-
+	VSLb(vep->vc->wrk->vsl, SLT_ESI_xmlerror, "WARN after %zd %s",
+	     vep->o_last, p);
 }
 
 /*---------------------------------------------------------------------
