@@ -55,7 +55,7 @@ varnish v1 -vcl+backend {
 varnish v1 -cliok "param.set debug +esi_chop"
 varnish v1 -cliok "param.set debug +syncvsl"
 
-logexpect l1 -v v1 -g raw {
+logexpect l1 -v v1 -g vxid {
 	expect * * Fetch_Body
 	expect 0 = ESI_xmlerror {^ERR after 3 ESI 1.0 </esi:comment> illegal end-tag$}
 	expect 0 = ESI_xmlerror {^ERR after 27 XML 1.0 '>' does not follow '/' in tag$}
