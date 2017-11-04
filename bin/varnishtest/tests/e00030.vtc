@@ -1,6 +1,7 @@
 varnishtest "Test req_top.* in an ESI context"
 
-varnish v1 -errvcl {Variable 'req_top.url' is read only.} {
+varnish v1 -arg "-p feature=+esi_disable_xml_check" \
+	   -errvcl {Variable 'req_top.url' is read only.} {
 	sub vcl_recv {
 		set req_top.url = "/foo";
 	}
@@ -37,7 +38,7 @@ server s1 {
 	expect req.http.top-method == "GET"
 	expect req.http.top-proto == "HTTP/1.1"
 	expect req.http.top-foo == "bar"
-	expect req.url == "/b1"
+	expect req.url == "/c2"
 	txresp
 
 	rxreq
@@ -45,7 +46,7 @@ server s1 {
 	expect req.http.top-method == "GET"
 	expect req.http.top-proto == "HTTP/1.1"
 	expect req.http.top-foo == "bar"
-	expect req.url == "/c2"
+	expect req.url == "/b1"
 	txresp
 } -start
 
@@ -71,6 +72,7 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.status == 200
+	expect resp.bodylen == 81
 } -run
 
 varnish v1 -expect esi_errors == 0

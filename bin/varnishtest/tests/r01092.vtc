@@ -24,6 +24,12 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+logexpect l1 -v v1 -g raw {
+	expect * * Fetch_Body
+	expect 0 * ESI_xmlerror {^ERR after 66 ESI 1.0 Nested <!--esi element in <esi:remove>$}
+	expect 0 = BackendReuse
+} -start
+
 client c1 {
 	txreq
 	rxresp
@@ -32,3 +38,4 @@ client c1 {
 
 client c1 -run
 varnish v1 -expect esi_errors == 1
+logexpect l1 -wait

@@ -29,45 +29,45 @@ server s1 {
 		After include
 	}
 	rxreq
-	txresp -body { Included file 00 }
+	txresp -body { <pre>Included file 00</pre> }
 	rxreq
-	txresp -body { Included file 01 }
+	txresp -body { <pre>Included file 01</pre> }
 	rxreq
-	txresp -body { Included file 02 }
+	txresp -body { <pre>Included file 02</pre> }
 	rxreq
-	txresp -body { Included file 03 }
+	txresp -body { <pre>Included file 03</pre> }
 	rxreq
-	txresp -body { Included file 04 }
+	txresp -body { <pre>Included file 04</pre> }
 	rxreq
-	txresp -body { Included file 05 }
+	txresp -body { <pre>Included file 05</pre> }
 	rxreq
-	txresp -body { Included file 06 }
+	txresp -body { <pre>Included file 06</pre> }
 	rxreq
-	txresp -body { Included file 07 }
+	txresp -body { <pre>Included file 07</pre> }
 	rxreq
-	txresp -body { Included file 08 }
+	txresp -body { <pre>Included file 08</pre> }
 	rxreq
-	txresp -body { Included file 09 }
+	txresp -body { <pre>Included file 09</pre> }
 	rxreq
-	txresp -body { Included file 10 }
+	txresp -body { <pre>Included file 10</pre> }
 	rxreq
-	txresp -body { Included file 11 }
+	txresp -body { <pre>Included file 11</pre> }
 	rxreq
-	txresp -body { Included file 12 }
+	txresp -body { <pre>Included file 12</pre> }
 	rxreq
-	txresp -body { Included file 13 }
+	txresp -body { <pre>Included file 13</pre> }
 	rxreq
-	txresp -body { Included file 14 }
+	txresp -body { <pre>Included file 14</pre> }
 	rxreq
-	txresp -body { Included file 15 }
+	txresp -body { <pre>Included file 15</pre> }
 	rxreq
-	txresp -body { Included file 16 }
+	txresp -body { <pre>Included file 16</pre> }
 	rxreq
-	txresp -body { Included file 17 }
+	txresp -body { <pre>Included file 17</pre> }
 	rxreq
-	txresp -body { Included file 18 }
+	txresp -body { <pre>Included file 18</pre> }
 	rxreq
-	txresp -body { Included file 19 }
+	txresp -body { <pre>Included file 19</pre> }
 } -start
 
 varnish v1 -vcl+backend {
@@ -80,6 +80,8 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.status == 200
+	# before 29, includes 20*(29+3), after 15
+	expect resp.bodylen == 684
 }
 
 client c1 -run

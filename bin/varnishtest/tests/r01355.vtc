@@ -21,12 +21,24 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+logexpect l1 -v v1 -g raw {
+	expect * * Fetch_Body
+	expect 0 = ESI_xmlerror {^No ESI processing, first char not '<' but BOM. .See feature esi_remove_bom.$}
+	expect 0 = BackendReuse
+# XXX another logexpect weirdness - why can't we catch the second occurrence?
+#	expect * * Fetch_Body
+#	expect 0 = ESI_xmlerror {^No ESI processing, first char not '<' but BOM. .See feature esi_remove_bom.$}
+#	expect 0 = BackendReuse
+} -start
+
 client c1 {
 	# No ESI processing
 	txreq -url /1
 	rxresp
 	expect resp.bodylen == 47
 } -run
+
+logexpect l1 -wait
 
 varnish v1 -cliok "param.set feature +esi_remove_bom"
 

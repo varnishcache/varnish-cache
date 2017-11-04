@@ -17,7 +17,7 @@ server s2 {
 	rxreq
 	expect req.url == "/body"
 	txresp -body {
-		Included file
+		<pre>Included file</pre>
 	}
 } -start
 
@@ -38,7 +38,7 @@ client c1 {
 	txreq -url /foo/bar -hdr "Host: froboz"
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 67
+	expect resp.bodylen == 78
 }
 
 client c1 -run
@@ -71,8 +71,6 @@ logexpect l1 -v v1 -g raw {
 	expect * * ESI_xmlerror "ERR after 0 ESI 1.0 <esi:include> invalid src= URL"
 	expect * * ESI_xmlerror "WARN after 0 ESI 1.0 <esi:include> https:// treated as http://"
 	expect * * ESI_xmlerror "ERR after 0 ESI 1.0 <esi:include> invalid src= URL"
-
-
 } -start
 
 client c1 {

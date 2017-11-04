@@ -18,7 +18,9 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
-		set beresp.do_esi = true;
+		if (bereq.url != "/body") {
+			set beresp.do_esi = true;
+		}
 	}
 } -start
 

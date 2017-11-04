@@ -3,7 +3,7 @@ varnishtest "zero length ESI include segments with chunked encoding"
 server s1 {
 	rxreq
 	expect req.url == "/"
-	txresp -body {<a><esi:include src="/bar"><b>\0c}
+	txresp -body {<a><esi:include src="/bar"/><b>\0c}
 	rxreq
 	expect req.url == "/bar"
 	txresp
@@ -12,7 +12,7 @@ server s1 {
 	txresp -body {<a><!--esi foo --><b>\0c}
 	rxreq
 	expect req.url == "/nullbefore"
-	txresp -body {<a>\0<esi:include src="/bar"><b>c}
+	txresp -body {<a>\0<esi:include src="/bar"/><b>c}
 } -start
 
 varnish v1 -vcl+backend {

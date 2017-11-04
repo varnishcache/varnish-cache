@@ -13,6 +13,7 @@ server s1 {
 
 varnish v1 \
 	-arg "-sdefault,2m" \
+	-arg "-p feature=+esi_disable_xml_check" \
 	-cliok "param.set http_gzip_support true" \
 	-cliok "param.set gzip_memlevel 1" \
 	-vcl+backend {

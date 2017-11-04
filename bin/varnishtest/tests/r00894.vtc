@@ -11,8 +11,16 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+logexpect l1 -v v1 -g raw {
+	expect * * Fetch_Body
+	expect 0 = ESI_xmlerror {^ERR after 5 ESI 1.0 <esi:include> has multiple src= attributes$}
+	expect 0 = BackendReuse
+} -start
+
 client c1 {
 	txreq
 	rxresp
 	expect resp.bodylen == 10
 } -run
+
+logexpect l1 -wait

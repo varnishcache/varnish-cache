@@ -61,7 +61,9 @@ varnish v1 -vcl+backend {
 		return (pass);
 	}
 	sub vcl_backend_response {
-		set beresp.do_esi = true;
+		if (bereq.url == "/") {
+			set beresp.do_esi = true;
+		}
 	}
 } -start
 

@@ -23,12 +23,18 @@ varnish v1 -vcl+backend {
 	}
 } -start
 
+logexpect l1 -v v1 -g raw {
+	expect * 1002 ESI_xmlerror esi_disable_xml_check
+} -start
+
 client c1 {
 	txreq
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 57
 } -run
+
+logexpect l1 -wait
 
 varnish v1  -cli "param.set feature +esi_disable_xml_check"
 

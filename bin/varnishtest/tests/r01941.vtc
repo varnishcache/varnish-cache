@@ -1,4 +1,3 @@
-
 varnishtest "ESI memory should only be fully allocated"
 
 # In this test case, the cache is almost filled. Then we force the
@@ -24,6 +23,7 @@ server s1 {
 } -start
 
 varnish v1 -arg "-pfetch_chunksize=4k" \
+	-arg "-p feature=+esi_disable_xml_check" \
 	-arg "-sdefault,1m" -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_esi = true;

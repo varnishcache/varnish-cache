@@ -18,7 +18,9 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	sub vcl_backend_response {
-		set beresp.do_esi = true;
+		if (bereq.url != "/foo/body") {
+			set beresp.do_esi = true;
+		}
 	}
 } -start
 
@@ -27,6 +29,7 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 67
+	expect resp.http.Transfer-Encoding == "chunked"
 } -run
 
 client c1 {
@@ -34,6 +37,9 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 	expect resp.bodylen == 67
+	expect resp.http.Transfer-Encoding == <undef>
+	expect resp.http.Content-Length == <undef>
+	expect resp.http.Connection == "close"
 } -run
 
 varnish v1 -expect esi_errors == 0

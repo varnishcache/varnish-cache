@@ -4,7 +4,7 @@ barrier b1 cond 2
 
 server s1 {
 	rxreq
-	txresp -body {<esi:include src="someurl">}
+	txresp -body {<esi:include src="someurl"/>}
 	rxreq
 	barrier b1 sync
 	delay 1

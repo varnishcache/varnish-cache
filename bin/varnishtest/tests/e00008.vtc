@@ -45,14 +45,14 @@ server s1 {
 	rxreq
 	expect req.url == "/body"
 	txresp -body {
-		Included file
+		<pre>Included file</pre>
 		<esi:remove>
 		<Aaa
 	}
 	rxreq
 	expect req.url == "/body2"
 	txresp -body {
-		Included file 2
+		<pre>Included file 2</pre>
 		<!--esi
 		<![CDATA[fooo
 	}
@@ -81,7 +81,20 @@ logexpect l1 -v v1 -g vxid {
 	expect 0 = ESI_xmlerror {^ERR after 636 XML 1.0 Illegal attribute delimiter$}
 	expect 0 = ESI_xmlerror {^ERR after 665 ESI 1.0 </esi:include> illegal end-tag$}
 	expect 0 = ESI_xmlerror {^ERR after 767 XML 1.0 Missing end attribute delimiter$}
-}
+	expect 0 = BackendReuse
+
+## XXX something is fishy about any of: logexpect, vsl, slink's brain:
+## despite syncvsl and the fact that the loggin is output by
+## varnishtest, these fail (time out) - feedback appreciated
+#
+#	expect * * BereqURL	{^/body$}
+#	expect * = ESI_xmlerror {^ERR after 39 VEP ended inside a tag$}
+#	expect 0 = BackendReuse
+#
+#	expect * * BereqURL	{^/body2$}
+#	expect * = ESI_xmlerror {^ERR after 39 VEP ended inside a tag$}
+#	expect 0 = BackendReuse
+} -start
 
 varnish v1 -cliok "param.set debug +esi_chop"
 
@@ -91,10 +104,9 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 464
+	expect resp.bodylen == 465
 }
 
-logexpect l1 -start
 client c1 -run
 logexpect l1 -wait
-varnish v1 -expect esi_errors == 15
+varnish v1 -expect esi_errors == 17
