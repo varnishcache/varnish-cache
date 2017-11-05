@@ -171,7 +171,7 @@ LRU_NukeOne(struct worker *wrk, struct lru *lru)
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 
 	if (wrk->strangelove-- <= 0) {
-		VSLb(wrk->vsl, SLT_ExpKill, "LRU_Exhausted");
+		VSLb(wrk->vsl, SLT_ExpKill, "LRU reached nuke_limit");
 		return (0);
 	}
 
