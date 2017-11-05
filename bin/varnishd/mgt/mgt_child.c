@@ -361,7 +361,7 @@ mgt_launch_child(struct cli *cli)
 	MCH_Fd_Inherit(heritage.cli_out, NULL);
 	closefd(&heritage.cli_out);
 
-	child_std_vlu = VLU_New(NULL, child_line, 0);
+	child_std_vlu = VLU_New(NULL, child_line);
 	AN(child_std_vlu);
 
 	AZ(ev_listen);
