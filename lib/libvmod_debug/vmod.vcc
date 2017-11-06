@@ -213,3 +213,11 @@ Returns the size in bytes of a collection of C-datatypes.
 * 'z' = size_t
 * 'o' = off_t
 * 'j' = intmax_t
+
+$Function VOID vsc_new()
+
+Add a vsc
+
+$Function VOID vsc_destroy()
+
+Remove a vsc

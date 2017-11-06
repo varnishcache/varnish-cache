@@ -1,0 +1,15 @@
+#
+.. varnish_vsc_begin::	debug
+	:oneliner:	Example Counters
+	:order:		70
+
+	Test counters from vmod_debug
+
+.. varnish_vsc:: foo
+	:type:		counter
+	:level:		debug
+	:oneliner:	arbitrary counter
+
+	Just counting something
+
+.. varnish_vsc_end::	debug

@@ -42,6 +42,7 @@
 #include "vtcp.h"
 #include "vtim.h"
 #include "vcc_if.h"
+#include "VSC_debug.h"
 
 #include "common/common_param.h"
 
@@ -63,6 +64,9 @@ struct priv_vcl {
 };
 
 static VCL_DURATION vcl_release_delay = 0.0;
+
+pthread_mutex_t vsc_mtx = PTHREAD_MUTEX_INITIALIZER;
+static struct VSC_debug *vsc;
 
 VCL_VOID __match_proto__(td_debug_panic)
 xyzzy_panic(VRT_CTX, const char *str, ...)
@@ -351,6 +355,10 @@ event_function(VRT_CTX, struct vmod_priv *priv, enum vcl_event_e e)
 	case VCL_EVENT_LOAD: return (event_load(ctx, priv));
 	case VCL_EVENT_WARM: return (event_warm(ctx, priv));
 	case VCL_EVENT_COLD: return (event_cold(ctx, priv));
+	case VCL_EVENT_DISCARD:
+		if (vsc)
+			VSC_debug_Destroy(&vsc);
+		return (0);
 	default: return (0);
 	}
 }
@@ -564,4 +572,26 @@ xyzzy_typesize(VRT_CTX, VCL_STRING s)
 		}
 	}
 	return ((VCL_INT)i);
+}
+
+VCL_VOID
+xyzzy_vsc_new(VRT_CTX)
+{
+	(void)ctx;
+	AZ(pthread_mutex_lock(&vsc_mtx));
+	if (vsc == NULL)
+		vsc = VSC_debug_New("");
+	AN(vsc);
+	AZ(pthread_mutex_unlock(&vsc_mtx));
+}
+
+VCL_VOID
+xyzzy_vsc_destroy(VRT_CTX)
+{
+	(void)ctx;
+	AZ(pthread_mutex_lock(&vsc_mtx));
+	if (vsc)
+		VSC_debug_Destroy(&vsc);
+	AZ(vsc);
+	AZ(pthread_mutex_unlock(&vsc_mtx));
 }
