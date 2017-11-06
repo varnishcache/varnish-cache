@@ -15,14 +15,19 @@ varnish v1 -vcl+backend {
 	import vtc;
 
 	sub vcl_deliver {
+		# struct v1l is 13 - 15 pointer-sizes,
+		# an iovec should be two pointer-sizes
+		#
+		# we want to hit the case where we got just not
+		# enough space for three iovecs
 		if (req.url == "/1") {
-			vtc.workspace_alloc(client,
-			    -1 * (32 + vtc.typesize("p") * 25));
+			vtc.workspace_alloc(session,
+			    -1 * vtc.typesize("p") * (13 + 4));
 		} else {
-			vtc.workspace_alloc(client,
-			    -1 * (56 + vtc.typesize("p") * 25));
+			vtc.workspace_alloc(session,
+			    -1 * vtc.typesize("p") * (15 + 6));
 		}
-		set resp.http.foo = vtc.workspace_free(client);
+		set resp.http.foo = vtc.workspace_free(session);
 	}
 } -start
 
