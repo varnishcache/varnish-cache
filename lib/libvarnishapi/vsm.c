@@ -449,9 +449,17 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 
 	/*
 	 * Efficient comparison walking the two lists side-by-side is ok because
-	 * segment inserts always happen at the tail (VSMW_Allocv)
+	 * segment inserts always happen at the tail (VSMW_Allocv()). So, as
+	 * soon as vg is exhausted, we only insert.
+	 *
+	 * For restarts, we require a tabula rasa
 	 */
-	vg = VTAILQ_FIRST(&vs->segs);
+
+	if (retval & VSM_MGT_RESTARTED)
+		vg = NULL;
+	else
+		vg = VTAILQ_FIRST(&vs->segs);
+
 	while (p != NULL && *p != '\0') {
 		e = strchr(p, '\n');
 		if (e == NULL)
@@ -467,14 +475,8 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 			VAV_Free(av);
 			break;
 		}
-		while (vg != NULL && !vsm_cmp_av(&vg->av[1], &av[1]))
-			vg = VTAILQ_NEXT(vg, list);
 
-		if (vg != NULL) {
-			VAV_Free(av);
-			vg->markscan = 1;
-			vg = VTAILQ_NEXT(vg, list);
-		} else {
+		if (vg == NULL) {
 			ALLOC_OBJ(vg2, VSM_SEG_MAGIC);
 			AN(vg2);
 			vg2->av = av;
@@ -482,9 +484,21 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 			vg2->markscan = 1;
 			vg2->serial = ++vd->serial;
 			VTAILQ_INSERT_TAIL(&vs->segs, vg2, list);
+			continue;
 		}
 
+		while (vg != NULL && vsm_cmp_av(&vg->av[1], &av[1])) {
+			vg = VTAILQ_NEXT(vg, list);
+		}
 
+		VAV_Free(av);
+
+		if (vg == NULL)
+			continue;
+
+		/* entry compared equal, so it survives */
+		vg->markscan = 1;
+		vg = VTAILQ_NEXT(vg, list);
 	}
 	return (retval);
 }
