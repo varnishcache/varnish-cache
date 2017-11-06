@@ -127,6 +127,7 @@ VSUB_run(struct vsb *sb, vsub_func_f *func, void *priv, const char *name,
 	}
 	closefd(&p[1]);
 	vlu = VLU_New(&sp, vsub_vlu, 0);
+	AN(vlu);
 	while (!VLU_Fd(p[0], vlu))
 		continue;
 	closefd(&p[0]);

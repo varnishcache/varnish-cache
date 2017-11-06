@@ -712,9 +712,7 @@ vcc_Eval_Func(struct vcc *tl, const char *spec,
     const char *extra, const struct symbol *sym)
 {
 	struct expr *e = NULL;
-	struct token *t1;
 
-	t1 = tl->t;
 	vcc_func(tl, &e, spec, extra, sym);
 	ERRCHK(tl);
 	vcc_expr_fmt(tl->fb, tl->indent, e);

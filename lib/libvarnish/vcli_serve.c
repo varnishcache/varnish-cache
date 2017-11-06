@@ -432,12 +432,13 @@ VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 	cfd->cli = &cfd->clis;
 	cfd->cli->magic = CLI_MAGIC;
 	cfd->cli->vlu = VLU_New(cfd, cls_vlu, *cs->maxlen);
+	AN(cfd->cli->vlu);
 	cfd->cli->sb = VSB_new_auto();
+	AN(cfd->cli->sb);
 	cfd->cli->limit = cs->limit;
 	cfd->cli->priv = priv;
 	cfd->closefunc = closefunc;
 	cfd->priv = priv;
-	AN(cfd->cli->sb);
 	VTAILQ_INSERT_TAIL(&cs->fds, cfd, list);
 	cs->nfd++;
 	return (cfd->cli);

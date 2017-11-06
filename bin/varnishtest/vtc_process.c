@@ -174,6 +174,7 @@ process_thread(void *priv)
 	CAST_OBJ_NOTNULL(p, priv, PROCESS_MAGIC);
 	if (p->fd_from > 0) {
 		vlu = VLU_New(p, process_vlu_func, 1024);
+		AN(vlu);
 		while (!VLU_Fd(p->fd_from, vlu))
 			continue;
 		VLU_Destroy(vlu);
