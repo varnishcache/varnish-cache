@@ -112,24 +112,21 @@ HTTP1_Complete(struct http_conn *htc)
  * Detect conditionals (headers which start with '^[Ii][Ff]-')
  */
 
-static uint16_t
-http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
-    unsigned maxhdr)
+uint16_t
+HTTP1_DissectHdrs(struct http *hp, char **pp, const char *e,
+    const unsigned maxhdr)
 {
-	char *q, *r;
+	char *p = *pp, *q, *r;
 
-	assert(p > htc->rxbuf_b);
-	assert(p <= htc->rxbuf_e);
-	hp->nhd = HTTP_HDR_FIRST;
-	hp->conds = 0;
+	assert(p <= e);
 	r = NULL;		/* For FlexeLint */
-	for (; p < htc->rxbuf_e; p = r) {
+	for (; p < e; p = r) {
 
 		/* Find end of next header */
 		q = r = p;
 		if (vct_iscrlf(p))
 			break;
-		while (r < htc->rxbuf_e) {
+		while (r < e) {
 			if (!vct_isctl(*r) || vct_issp(*r)) {
 				r++;
 				continue;
@@ -140,9 +137,9 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 				return (400);
 			}
 			q = r;
-			assert(r < htc->rxbuf_e);
+			assert(r < e);
 			r += vct_skipcrlf(r);
-			if (r >= htc->rxbuf_e)
+			if (r >= e)
 				break;
 			if (vct_iscrlf(r))
 				break;
@@ -210,10 +207,8 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 				break;
 		}
 	}
-	if (p < htc->rxbuf_e)
-		p += vct_skipcrlf(p);
-	HTC_RxPipeline(htc, p);
-	htc->rxbuf_e = p;
+
+	*pp = p;
 	return (0);
 }
 
@@ -223,10 +218,11 @@ http1_dissect_hdrs(struct http *hp, char *p, struct http_conn *htc,
 
 static uint16_t
 http1_splitline(struct http *hp, struct http_conn *htc, const int *hf,
-    unsigned maxhdr)
+    const unsigned maxhdr)
 {
 	char *p;
 	int i;
+	uint16_t ret;
 
 	assert(hf == HTTP1_Req || hf == HTTP1_Resp);
 	CHECK_OBJ_NOTNULL(htc, HTTP_CONN_MAGIC);
@@ -291,7 +287,20 @@ http1_splitline(struct http *hp, struct http_conn *htc, const int *hf,
 
 	http_Proto(hp);
 
-	return (http1_dissect_hdrs(hp, p, htc, maxhdr));
+	/* dissect_hdrs */
+	assert(p > htc->rxbuf_b);
+	hp->nhd = HTTP_HDR_FIRST;
+	hp->conds = 0;
+
+	ret = HTTP1_DissectHdrs(hp, &p, htc->rxbuf_e, maxhdr);
+	if (ret != 0)
+		return (ret);
+
+	if (p < htc->rxbuf_e)
+		p += vct_skipcrlf(p);
+	HTC_RxPipeline(htc, p);
+	htc->rxbuf_e = p;
+	return (ret);
 }
 
 /*--------------------------------------------------------------------*/

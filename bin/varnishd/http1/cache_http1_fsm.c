@@ -364,13 +364,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 	sp = req->sp;
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
-	/*
-	 * Whenever we come in from the acceptor or waiter, we need to set
-	 * blocking mode.  It would be simpler to do this in the acceptor
-	 * or waiter, but we'd rather do the syscall in the worker thread.
-	 * On systems which return errors for ioctl, we close early
-	 */
-	if (http1_getstate(sp) == H1NEWREQ && VTCP_blocking(sp->fd)) {
+	if (HTC_blocking(req->htc)) {
 		AN(req->htc->ws->r);
 		if (errno == ECONNRESET)
 			SES_Close(sp, SC_REM_CLOSE);

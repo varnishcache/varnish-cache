@@ -53,8 +53,8 @@ const char H__Reason[]	= "\010:reason:";
  * get the SLT_ to use.
  */
 
-static void
-http_VSLH(const struct http *hp, unsigned hdr)
+void
+http_VSLH(const struct http *hp, const unsigned hdr)
 {
 	int i;
 
@@ -68,8 +68,8 @@ http_VSLH(const struct http *hp, unsigned hdr)
 	}
 }
 
-static void
-http_VSLH_del(const struct http *hp, unsigned hdr)
+void
+http_VSLH_del(const struct http *hp, const unsigned hdr)
 {
 	int i;
 

@@ -87,6 +87,25 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 }
 
 /*--------------------------------------------------------------------
+ * save headeres in obj
+ */
+static void
+vbf_headers2obj(struct busyobj *bo, unsigned l2)
+{
+	uint8_t *bp;
+
+	/* for HTTP_Encode() VSLH call */
+	bo->beresp->logtag = SLT_ObjMethod;
+
+	/* Filter into object */
+	bp = ObjSetAttr(bo->wrk, bo->fetch_objcore, OA_HEADERS,
+			l2, NULL);
+	AN(bp);
+	HTTP_Encode(bo->beresp, bp, l2,
+		    bo->uncacheable ? HTTPH_A_PASS : HTTPH_A_INS);
+}
+
+/*--------------------------------------------------------------------
  * Turn the beresp into a obj
  */
 
@@ -95,7 +114,6 @@ vbf_beresp2obj(struct busyobj *bo)
 {
 	unsigned l, l2;
 	const char *b;
-	uint8_t *bp;
 	struct vsb *vary = NULL;
 	int varyl = 0;
 
@@ -123,12 +141,17 @@ vbf_beresp2obj(struct busyobj *bo)
 			AZ(vary);
 	}
 
-	l2 = http_EstimateWS(bo->beresp,
-	    bo->uncacheable ? HTTPH_A_PASS : HTTPH_A_INS);
-	l += l2;
-
 	if (bo->uncacheable)
 		bo->fetch_objcore->flags |= OC_F_PASS;
+
+	l2 = http_EstimateWS(bo->beresp,
+	    bo->uncacheable ? HTTPH_A_PASS : HTTPH_A_INS);
+
+	l += l2;
+
+	/* XXX estimate? beresp attribute? */
+	if (bo->do_trailers)
+		l += 1024;
 
 	if (!vbf_allocobj(bo, l))
 		return (-1);
@@ -141,14 +164,8 @@ vbf_beresp2obj(struct busyobj *bo)
 
 	AZ(ObjSetU32(bo->wrk, bo->fetch_objcore, OA_VXID, VXID(bo->vsl->wid)));
 
-	/* for HTTP_Encode() VSLH call */
-	bo->beresp->logtag = SLT_ObjMethod;
-
-	/* Filter into object */
-	bp = ObjSetAttr(bo->wrk, bo->fetch_objcore, OA_HEADERS, l2, NULL);
-	AN(bp);
-	HTTP_Encode(bo->beresp, bp, l2,
-	    bo->uncacheable ? HTTPH_A_PASS : HTTPH_A_INS);
+	if (! bo->do_trailers)
+		vbf_headers2obj(bo, l2);
 
 	if (http_GetHdr(bo->beresp, H_Last_Modified, &b))
 		AZ(ObjSetDouble(bo->wrk, bo->fetch_objcore, OA_LASTMODIFIED,
@@ -382,7 +399,29 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		}
 	}
 
+	if (bo->htc->body_status == BS_CHUNKED) {
+		const char *p;
+		/* wildcard is a varnish special and  can only be set in vcl */
+		if (http_GetHdr(bo->beresp, H_Trailer, &p) && *p == '*')
+			http_Unset(bo->beresp, H_Trailer);
+		/*
+		 * XXX pre-filter Trailer?
+		 *
+		 * Trailers must never contain certain headers, should
+		 * we blacklist those here?
+		 *
+		 *	https://tools.ietf.org/html/rfc7230#section-4.1.2
+		 */
+	} else
+		http_Unset(bo->beresp, H_Trailer);
+
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, NULL);
+
+	if (bo->htc->body_status == BS_CHUNKED &&
+	    http_GetHdr(bo->beresp, H_Trailer, NULL)) {
+		bo->do_trailers = 1;
+		bo->do_stream = 0;
+	}
 
 	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL) {
 		bo->htc->doclose = SC_RESP_CLOSE;
@@ -653,6 +692,13 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 
 	AZ(bo->vfc->failed);
 	VFP_Close(bo->vfc);
+
+	if (bo->do_trailers)
+		vbf_headers2obj(
+			bo,
+			http_EstimateWS(
+				bo->beresp,
+				bo->uncacheable ? HTTPH_A_PASS : HTTPH_A_INS));
 
 	AZ(ObjSetU64(wrk, bo->fetch_objcore, OA_LEN,
 	    bo->fetch_objcore->boc->len_so_far));
