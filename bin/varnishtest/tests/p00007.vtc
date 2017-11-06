@@ -28,6 +28,7 @@ server s1 {
 } -start
 
 varnish v1 -arg "-sdeprecated_persistent,${tmpdir}/_.per,5m" \
+	   -arg "-p feature=+no_coredump" \
 	-vcl+backend {} -start
 
 varnish v1 -cliok "debug.fragfetch 32"
