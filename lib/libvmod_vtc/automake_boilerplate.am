@@ -24,8 +24,6 @@ libvmod_vtc_la_LDFLAGS = \
 
 nodist_libvmod_vtc_la_SOURCES = vcc_if.c vcc_if.h
 
-# BUILT_SOURCES is only a hack
-# and dependency tracking does not help for the first build
 $(libvmod_vtc_la_OBJECTS): vcc_if.h
 
 vcc_if.h vmod_vtc.rst vmod_vtc.man.rst: vcc_if.c

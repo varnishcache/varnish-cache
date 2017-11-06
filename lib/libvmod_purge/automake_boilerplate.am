@@ -24,8 +24,6 @@ libvmod_purge_la_LDFLAGS = \
 
 nodist_libvmod_purge_la_SOURCES = vcc_if.c vcc_if.h
 
-# BUILT_SOURCES is only a hack
-# and dependency tracking does not help for the first build
 $(libvmod_purge_la_OBJECTS): vcc_if.h
 
 vcc_if.h vmod_purge.rst vmod_purge.man.rst: vcc_if.c
