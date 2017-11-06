@@ -123,8 +123,7 @@ CLI_Init(void)
 	Lck_New(&cli_mtx, lck_cli);
 	cli_thread = pthread_self();
 
-	cls = VCLS_New(cli_cb_before, cli_cb_after,
-	    &cache_param->cli_buffer, &cache_param->cli_limit);
+	cls = VCLS_New(cli_cb_before, cli_cb_after, &cache_param->cli_limit);
 	AN(cls);
 	VCLS_Clone(cls, heritage.cls);
 

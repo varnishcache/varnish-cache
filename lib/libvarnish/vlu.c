@@ -36,32 +36,29 @@
 
 #include "vas.h"	// XXX Flexelint "not used" - but req'ed for assert()
 #include "miniobj.h"
+#include "vdef.h"
+#include "vsb.h"
 
 #include "vlu.h"
 
 struct vlu {
 	unsigned	magic;
 #define LINEUP_MAGIC	0x8286661
-	char		*buf;
-	unsigned	bufl;
-	unsigned	bufp;
+	struct vsb	*buf;
 	void		*priv;
 	vlu_f	*func;
 };
 
 struct vlu *
-VLU_New(void *priv, vlu_f *func, unsigned bufsize)
+VLU_New(void *priv, vlu_f *func)
 {
 	struct vlu *l;
 
-	if (bufsize == 0)
-		bufsize = BUFSIZ;
 	ALLOC_OBJ(l, LINEUP_MAGIC);
 	if (l != NULL) {
 		l->func = func;
 		l->priv = priv;
-		l->bufl = bufsize - 1;
-		l->buf = malloc(l->bufl + 1L);
+		l->buf = VSB_new_auto();
 		if (l->buf == NULL) {
 			FREE_OBJ(l);
 			l = NULL;
@@ -75,7 +72,7 @@ VLU_Destroy(struct vlu *l)
 {
 
 	CHECK_OBJ_NOTNULL(l, LINEUP_MAGIC);
-	free(l->buf);
+	VSB_destroy(&l->buf);
 	FREE_OBJ(l);
 }
 
@@ -85,8 +82,8 @@ LineUpProcess(struct vlu *l)
 	char *p, *q;
 	int i;
 
-	l->buf[l->bufp] = '\0';
-	for (p = l->buf; *p != '\0'; p = q) {
+	VSB_finish(l->buf);
+	for (p = VSB_data(l->buf); *p != '\0'; p = q) {
 		/* Find first CR or NL */
 		for (q = p; *q != '\0'; q++) {
 			if (*q == '\n' || *q == '\r')
@@ -102,11 +99,9 @@ LineUpProcess(struct vlu *l)
 	if (*p != '\0') {
 		q = strchr(p, '\0');
 		assert(q != NULL);
-		l->bufp = (unsigned)(q - p);
-		memmove(l->buf, p, l->bufp);
-		l->buf[l->bufp] = '\0';
+		VSB_keepsome(l->buf, p, (q - p));
 	} else
-		l->bufp = 0;
+		VSB_clear(l->buf);
 	return (0);
 }
 
@@ -114,11 +109,12 @@ int
 VLU_Fd(int fd, struct vlu *l)
 {
 	int i;
+	char buf[BUFSIZ];
 
 	CHECK_OBJ_NOTNULL(l, LINEUP_MAGIC);
-	i = read(fd, l->buf + l->bufp, l->bufl - l->bufp);
+	i = read(fd, buf, sizeof(buf));
 	if (i <= 0)
 		return (-1);
-	l->bufp += i;
+	VSB_bcat(l->buf, buf, i);
 	return (LineUpProcess(l));
 }

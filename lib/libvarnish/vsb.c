@@ -251,6 +251,24 @@ VSB_clear(struct vsb *s)
 }
 
 /*
+ * Keep a bit of this VSB but clear the rest
+ */
+void
+VSB_keepsome(struct vsb *s, char *p, unsigned l)
+{
+
+	assert_VSB_integrity(s);
+	/* don't care if it's finished or not */
+
+	/* check that (p, l) represents a substring of this buffer */
+	assert(p >= s->s_buf);
+	assert(p + l <= s->s_buf + s->s_len);
+
+	memmove(s->s_buf, p, l);
+	VSB_CLEARFLAG(s, VSB_FINISHED);
+}
+
+/*
  * Append a byte to an vsb.  This is the core function for appending
  * to an vsb and is the main place that deals with extending the
  * buffer and marking overflow.

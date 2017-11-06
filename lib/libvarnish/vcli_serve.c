@@ -73,7 +73,6 @@ struct VCLS {
 	unsigned			nfd;
 	VTAILQ_HEAD(,cli_proto)		funcs;
 	cls_cbc_f			*before, *after;
-	volatile unsigned		*maxlen;
 	volatile unsigned		*limit;
 	struct cli_proto		*wildcard;
 };
@@ -400,8 +399,7 @@ cls_vlu(void *priv, const char *p)
 }
 
 struct VCLS *
-VCLS_New(cls_cbc_f *before, cls_cbc_f *after, volatile unsigned *maxlen,
-    volatile unsigned *limit)
+VCLS_New(cls_cbc_f *before, cls_cbc_f *after, volatile unsigned *limit)
 {
 	struct VCLS *cs;
 
@@ -411,7 +409,6 @@ VCLS_New(cls_cbc_f *before, cls_cbc_f *after, volatile unsigned *maxlen,
 	VTAILQ_INIT(&cs->funcs);
 	cs->before = before;
 	cs->after = after;
-	cs->maxlen = maxlen;
 	cs->limit = limit;
 	return (cs);
 }
@@ -431,7 +428,7 @@ VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 	cfd->fdo = fdo;
 	cfd->cli = &cfd->clis;
 	cfd->cli->magic = CLI_MAGIC;
-	cfd->cli->vlu = VLU_New(cfd, cls_vlu, *cs->maxlen);
+	cfd->cli->vlu = VLU_New(cfd, cls_vlu);
 	cfd->cli->sb = VSB_new_auto();
 	cfd->cli->limit = cs->limit;
 	cfd->cli->priv = priv;
