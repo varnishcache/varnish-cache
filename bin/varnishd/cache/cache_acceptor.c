@@ -53,6 +53,7 @@ static pthread_t	VCA_thread;
 static double vca_pace = 0.0;
 static struct lock pace_mtx;
 static unsigned pool_accepting;
+static pthread_mutex_t shut_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 struct wrk_accept {
 	unsigned		magic;
@@ -529,9 +530,12 @@ vca_acct(void *arg)
 
 	(void)vca_tcp_opt_init();
 
+	AZ(pthread_mutex_lock(&shut_mtx));
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		CHECK_OBJ_NOTNULL(ls->transport, TRANSPORT_MAGIC);
-		assert (ls->sock > 0);		// We know where stdin is
+		if (ls->sock == -2)
+			continue;	// VCA_Shutdown
+		assert (ls->sock > 0);	// We know where stdin is
 		if (cache_param->tcp_fastopen) {
 			int i;
 			i = VTCP_fastopen(ls->sock, cache_param->listen_depth);
@@ -551,6 +555,7 @@ vca_acct(void *arg)
 				    ls->sock, i, strerror(errno));
 		}
 	}
+	AZ(pthread_mutex_unlock(&shut_mtx));
 
 	need_test = 1;
 	pool_accepting = 1;
@@ -559,12 +564,14 @@ vca_acct(void *arg)
 	while (1) {
 		(void)sleep(1);
 		if (vca_tcp_opt_init()) {
+			AZ(pthread_mutex_lock(&shut_mtx));
 			VTAILQ_FOREACH(ls, &heritage.socks, list) {
 				if (ls->sock == -2)
-					continue;	// raced VCA_Shutdown
+					continue;	// VCA_Shutdown
 				assert (ls->sock > 0);
 				vca_tcp_opt_set(ls->sock, 1);
 			}
+			AZ(pthread_mutex_unlock(&shut_mtx));
 		}
 		now = VTIM_real();
 		VSC_C_main->uptime = (uint64_t)(now - t0);
@@ -606,10 +613,12 @@ ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 	while (!pool_accepting)
 		VTIM_sleep(.1);
 
+	AZ(pthread_mutex_lock(&shut_mtx));
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		VTCP_myname(ls->sock, h, sizeof h, p, sizeof p);
 		VCLI_Out(cli, "%s %s\n", h, p);
 	}
+	AZ(pthread_mutex_unlock(&shut_mtx));
 }
 
 /*--------------------------------------------------------------------*/
@@ -634,11 +643,13 @@ VCA_Shutdown(void)
 	struct listen_sock *ls;
 	int i;
 
+	AZ(pthread_mutex_lock(&shut_mtx));
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		i = ls->sock;
 		ls->sock = -2;
 		(void)close(i);
 	}
+	AZ(pthread_mutex_unlock(&shut_mtx));
 }
 
 /*--------------------------------------------------------------------
