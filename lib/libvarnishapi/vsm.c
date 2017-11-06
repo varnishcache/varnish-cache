@@ -447,6 +447,10 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 	VTAILQ_FOREACH(vg, &vs->segs, list)
 		vg->markscan = 0;
 
+	/*
+	 * Efficient comparison walking the two lists side-by-side is ok because
+	 * segment inserts always happen at the tail (VSMW_Allocv)
+	 */
 	vg = VTAILQ_FIRST(&vs->segs);
 	while (p != NULL && *p != '\0') {
 		e = strchr(p, '\n');
@@ -463,7 +467,7 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 			VAV_Free(av);
 			break;
 		}
-		while (vg != NULL && !vsm_cmp_av(vg->av, av))
+		while (vg != NULL && !vsm_cmp_av(&vg->av[1], &av[1]))
 			vg = VTAILQ_NEXT(vg, list);
 
 		if (vg != NULL) {
