@@ -393,6 +393,9 @@ startup::
   vcl.load main /etc/varnish_main.vcl
   vcl.use main
 
+Every line in the file, including the last line, must be terminated by
+a newline or carriage return.
+
 If a command in the file is prefixed with '-', failure will not abort
 the startup.
 
