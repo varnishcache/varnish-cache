@@ -35,7 +35,6 @@ nodist_libvmod_debug_la_SOURCES = \
 	vcc_if.c \
 	vcc_if.h
 
-# BUILT_SOURCES is only a hack and dependency tracking does not help for the first build
 $(libvmod_debug_la_OBJECTS): vcc_if.h
 
 vcc_if.h vmod_debug.rst vmod_debug.man.rst: vcc_if.c
