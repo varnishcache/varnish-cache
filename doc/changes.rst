@@ -8,8 +8,7 @@ Changes since 4.1.8:
 * Add the vtc feature ignore_unknown_macro.
 * Expose to VCL whether or not a fetch is a background fetch (bgfetch)
 * Ignore req.ttl when keeping track of expired objects (see 2422_)
-* Move the cli buffer to VSB (from stack). This deprecates the parameter
-  cli_buffer.
+* Move a cli buffer to VSB (from stack).
 * Use a separate stack for signals.
 
 .. _2422: https://github.com/varnishcache/varnish-cache/pull/2422

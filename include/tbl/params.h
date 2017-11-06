@@ -235,8 +235,10 @@ PARAM(
 	/* units */	"bytes",
 	/* flags */	0,
 	/* s-text */
-	"DEPRECATED: This parameter is ignored.\n"
-	"Memory for the CLI command buffer is now dynamically allocated.",
+	"Size of buffer for CLI command input.\n"
+	"You may need to increase this if you have big VCL files and use "
+	"the vcl.inline CLI command.\n"
+	"NB: Must be specified with -p to have effect.",
 	/* l-text */	"",
 	/* func */	NULL
 )
