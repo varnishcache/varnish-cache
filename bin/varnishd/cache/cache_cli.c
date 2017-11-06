@@ -44,7 +44,7 @@
 pthread_t		cli_thread;
 static struct lock	cli_mtx;
 static int		add_check;
-static struct VCLS	*cls;
+static struct VCLS	*cache_cls;
 
 /*
  * The CLI commandlist is split in three:
@@ -64,7 +64,7 @@ CLI_AddFuncs(struct cli_proto *p)
 
 	AZ(add_check);
 	Lck_Lock(&cli_mtx);
-	VCLS_AddFunc(cls, 0, p);
+	VCLS_AddFunc(cache_cls, 0, p);
 	Lck_Unlock(&cli_mtx);
 }
 
@@ -96,10 +96,10 @@ CLI_Run(void)
 
 	add_check = 1;
 
-	AN(VCLS_AddFd(cls, heritage.cli_in, heritage.cli_out, NULL, NULL));
+	AN(VCLS_AddFd(cache_cls, heritage.cli_in, heritage.cli_out, NULL, NULL));
 
 	do {
-		i = VCLS_PollFd(cls, heritage.cli_in, -1);
+		i = VCLS_PollFd(cache_cls, heritage.cli_in, -1);
 	} while (i == 0);
 	VSL(SLT_CLI, 0, "EOF on CLI connection, worker stops");
 }
@@ -123,10 +123,9 @@ CLI_Init(void)
 	Lck_New(&cli_mtx, lck_cli);
 	cli_thread = pthread_self();
 
-	cls = VCLS_New(cli_cb_before, cli_cb_after,
-	    &cache_param->cli_buffer, &cache_param->cli_limit);
-	AN(cls);
-	VCLS_Clone(cls, heritage.cls);
+	cache_cls = heritage.cls;
+	AN(cache_cls);
+	VCLS_SetHooks(cache_cls, cli_cb_before, cli_cb_after);
 
 	CLI_AddFuncs(cli_cmds);
 }

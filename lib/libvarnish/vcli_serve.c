@@ -400,8 +400,7 @@ cls_vlu(void *priv, const char *p)
 }
 
 struct VCLS *
-VCLS_New(cls_cbc_f *before, cls_cbc_f *after, volatile unsigned *maxlen,
-    volatile unsigned *limit)
+VCLS_New(volatile unsigned *maxlen, volatile unsigned *limit)
 {
 	struct VCLS *cs;
 
@@ -409,11 +408,18 @@ VCLS_New(cls_cbc_f *before, cls_cbc_f *after, volatile unsigned *maxlen,
 	AN(cs);
 	VTAILQ_INIT(&cs->fds);
 	VTAILQ_INIT(&cs->funcs);
-	cs->before = before;
-	cs->after = after;
 	cs->maxlen = maxlen;
 	cs->limit = limit;
 	return (cs);
+}
+
+void
+VCLS_SetHooks(struct VCLS *cs, cls_cbc_f *before, cls_cbc_f *after)
+{
+
+	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	cs->before = before;
+	cs->after = after;
 }
 
 struct cli *
@@ -496,26 +502,6 @@ VCLS_AddFunc(struct VCLS *cs, unsigned auth, struct cli_proto *clp)
 			else
 				VTAILQ_INSERT_TAIL(&cs->funcs, clp, list);
 		}
-	}
-}
-
-/*
- * This function has *very* special semantics, related to the mgt/worker
- * process Copy-On-Write memory relationship.
- */
-
-void
-VCLS_Clone(struct VCLS *cs, struct VCLS *cso)
-{
-	struct cli_proto *clp, *clp2;
-
-	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
-	CHECK_OBJ_NOTNULL(cso, VCLS_MAGIC);
-	VTAILQ_FOREACH_SAFE(clp, &cso->funcs, list, clp2) {
-		VTAILQ_REMOVE(&cso->funcs, clp, list);
-		VTAILQ_INSERT_TAIL(&cs->funcs, clp, list);
-		clp->auth = 0;
-		clp->func = NULL;
 	}
 }
 
