@@ -97,7 +97,6 @@ struct VCLS *VCLS_New(cls_cbc_f *before, cls_cbc_f *after,
 struct cli *VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc,
     void *priv);
 void VCLS_AddFunc(struct VCLS *cs, unsigned auth, struct cli_proto *clp);
-int VCLS_Poll(struct VCLS *cs, int timeout);
 int VCLS_PollFd(struct VCLS *cs, int fd, int timeout);
 void VCLS_Destroy(struct VCLS **);
 void VCLS_Clone(struct VCLS *cs, struct VCLS *cso);

@@ -99,8 +99,8 @@ CLI_Run(void)
 	AN(VCLS_AddFd(cls, heritage.cli_in, heritage.cli_out, NULL, NULL));
 
 	do {
-		i = VCLS_Poll(cls, -1);
-	} while (i > 0);
+		i = VCLS_PollFd(cls, heritage.cli_in, -1);
+	} while (i == 0);
 	VSL(SLT_CLI, 0, "EOF on CLI connection, worker stops");
 }
 

@@ -558,49 +558,6 @@ VCLS_PollFd(struct VCLS *cs, int fd, int timeout)
 	return (k);
 }
 
-int
-VCLS_Poll(struct VCLS *cs, int timeout)
-{
-	struct VCLS_fd *cfd, *cfd2;
-	int i, j, k;
-
-	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
-	if (cs->nfd == 0) {
-		errno = 0;
-		return (-1);
-	}
-	assert(cs->nfd > 0);
-	{
-		struct pollfd pfd[cs->nfd];
-
-		i = 0;
-		VTAILQ_FOREACH(cfd, &cs->fds, list) {
-			pfd[i].fd = cfd->fdi;
-			pfd[i].events = POLLIN;
-			pfd[i].revents = 0;
-			i++;
-		}
-		assert(i == cs->nfd);
-
-		j = poll(pfd, cs->nfd, timeout);
-		if (j <= 0)
-			return (j);
-		i = 0;
-		VTAILQ_FOREACH_SAFE(cfd, &cs->fds, list, cfd2) {
-			assert(pfd[i].fd == cfd->fdi);
-			if (pfd[i].revents & POLLHUP)
-				k = 1;
-			else
-				k = VLU_Fd(cfd->cli->vlu, cfd->fdi);
-			if (k)
-				cls_close_fd(cs, cfd);
-			i++;
-		}
-		assert(i == j);
-	}
-	return (j);
-}
-
 void
 VCLS_Destroy(struct VCLS **csp)
 {
