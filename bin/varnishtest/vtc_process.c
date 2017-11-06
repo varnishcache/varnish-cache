@@ -169,16 +169,10 @@ process_thread(void *priv)
 	struct process *p;
 	struct rusage ru;
 	int r;
-	struct vlu *vlu;
 
 	CAST_OBJ_NOTNULL(p, priv, PROCESS_MAGIC);
-	if (p->fd_from > 0) {
-		vlu = VLU_New(p, process_vlu_func, 1024);
-		AN(vlu);
-		while (!VLU_Fd(p->fd_from, vlu))
-			continue;
-		VLU_Destroy(vlu);
-	}
+	if (p->fd_from > 0)
+		(void)VLU_File(p->fd_from, process_vlu_func, p, 1024);
 	r = wait4(p->pid, &p->status, 0, &ru);
 
 	AZ(pthread_mutex_lock(&p->mtx));

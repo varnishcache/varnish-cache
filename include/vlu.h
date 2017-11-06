@@ -27,11 +27,13 @@
  * a function on each.
  */
 
-#ifndef VLU_H_INCLUDED
+#ifdef VLU_H_INCLUDED
+#  error "vlu.h included multiple times"
+#endif
 #define VLU_H_INCLUDED
 
 typedef int (vlu_f)(void *, const char *);
-struct vlu *VLU_New(void *priv, vlu_f *func, unsigned bufsize);
-int VLU_Fd(int fd, struct vlu *l);
-void VLU_Destroy(struct vlu *l);
-#endif
+struct vlu *VLU_New(vlu_f *, void *, unsigned);
+int VLU_Fd(struct vlu *, int);
+void VLU_Destroy(struct vlu **);
+int VLU_File(int, vlu_f *, void *, unsigned);

@@ -431,7 +431,7 @@ VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 	cfd->fdo = fdo;
 	cfd->cli = &cfd->clis;
 	cfd->cli->magic = CLI_MAGIC;
-	cfd->cli->vlu = VLU_New(cfd, cls_vlu, *cs->maxlen);
+	cfd->cli->vlu = VLU_New(cls_vlu, cfd, *cs->maxlen);
 	AN(cfd->cli->vlu);
 	cfd->cli->sb = VSB_new_auto();
 	AN(cfd->cli->sb);
@@ -453,7 +453,7 @@ cls_close_fd(struct VCLS *cs, struct VCLS_fd *cfd)
 
 	VTAILQ_REMOVE(&cs->fds, cfd, list);
 	cs->nfd--;
-	VLU_Destroy(cfd->cli->vlu);
+	VLU_Destroy(&cfd->cli->vlu);
 	VSB_destroy(&cfd->cli->sb);
 	if (cfd->closefunc == NULL) {
 		(void)close(cfd->fdi);
@@ -552,7 +552,7 @@ VCLS_PollFd(struct VCLS *cs, int fd, int timeout)
 	if (pfd[0].revents & POLLHUP)
 		k = 1;
 	else
-		k = VLU_Fd(cfd->fdi, cfd->cli->vlu);
+		k = VLU_Fd(cfd->cli->vlu, cfd->fdi);
 	if (k)
 		cls_close_fd(cs, cfd);
 	return (k);
@@ -591,7 +591,7 @@ VCLS_Poll(struct VCLS *cs, int timeout)
 			if (pfd[i].revents & POLLHUP)
 				k = 1;
 			else
-				k = VLU_Fd(cfd->fdi, cfd->cli->vlu);
+				k = VLU_Fd(cfd->cli->vlu, cfd->fdi);
 			if (k)
 				cls_close_fd(cs, cfd);
 			i++;

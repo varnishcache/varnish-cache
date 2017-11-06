@@ -221,7 +221,7 @@ static int __match_proto__(vev_cb_f)
 child_listener(const struct vev *e, int what)
 {
 
-	if ((what & ~EV_RD) || VLU_Fd(child_output, child_std_vlu)) {
+	if ((what & ~EV_RD) || VLU_Fd(child_std_vlu, child_output)) {
 		ev_listen = NULL;
 		if (e != NULL)
 			mgt_reap_child();
@@ -361,7 +361,7 @@ mgt_launch_child(struct cli *cli)
 	MCH_Fd_Inherit(heritage.cli_out, NULL);
 	closefd(&heritage.cli_out);
 
-	child_std_vlu = VLU_New(NULL, child_line, 0);
+	child_std_vlu = VLU_New(child_line, NULL, 0);
 	AN(child_std_vlu);
 
 	AZ(ev_listen);
@@ -515,7 +515,7 @@ mgt_reap_child(void)
 	/* Pick up any stuff lingering on stdout/stderr */
 	(void)child_listener(NULL, EV_RD);
 	closefd(&child_output);
-	VLU_Destroy(child_std_vlu);
+	VLU_Destroy(&child_std_vlu);
 
 	child_pid = -1;
 
