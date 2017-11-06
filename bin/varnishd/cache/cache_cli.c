@@ -93,13 +93,16 @@ void
 CLI_Run(void)
 {
 	int i;
+	struct cli *cli;
 
 	add_check = 1;
 
-	AN(VCLS_AddFd(cache_cls, heritage.cli_in, heritage.cli_out, NULL, NULL));
+	cli = VCLS_AddFd(cache_cls,
+	    heritage.cli_in, heritage.cli_out, NULL, NULL);
+	AN(cli);
 
 	do {
-		i = VCLS_PollFd(cache_cls, heritage.cli_in, -1);
+		i = VCLS_Poll(cache_cls, cli, -1);
 	} while (i == 0);
 	VSL(SLT_CLI, 0, "EOF on CLI connection, worker stops");
 }

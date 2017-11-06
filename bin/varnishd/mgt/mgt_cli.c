@@ -393,9 +393,8 @@ mgt_cli_callback2(const struct vev *e, int what)
 {
 	int i;
 
-	(void)e;
 	(void)what;
-	i = VCLS_PollFd(mgt_cls, e->fd, 0);
+	i = VCLS_Poll(mgt_cls, e->priv, 0);
 	return (i);
 }
 

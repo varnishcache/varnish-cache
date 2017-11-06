@@ -506,7 +506,7 @@ VCLS_AddFunc(struct VCLS *cs, unsigned auth, struct cli_proto *clp)
 }
 
 int
-VCLS_PollFd(struct VCLS *cs, int fd, int timeout)
+VCLS_Poll(struct VCLS *cs, const struct cli *cli, int timeout)
 {
 	struct VCLS_fd *cfd;
 	struct pollfd pfd[1];
@@ -521,7 +521,7 @@ VCLS_PollFd(struct VCLS *cs, int fd, int timeout)
 
 	i = 0;
 	VTAILQ_FOREACH(cfd, &cs->fds, list) {
-		if (cfd->fdi != fd)
+		if (cfd->cli != cli)
 			continue;
 		pfd[i].fd = cfd->fdi;
 		pfd[i].events = POLLIN;

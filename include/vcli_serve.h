@@ -97,7 +97,7 @@ void VCLS_SetHooks(struct VCLS *, cls_cbc_f *, cls_cbc_f *);
 struct cli *VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc,
     void *priv);
 void VCLS_AddFunc(struct VCLS *cs, unsigned auth, struct cli_proto *clp);
-int VCLS_PollFd(struct VCLS *cs, int fd, int timeout);
+int VCLS_Poll(struct VCLS *cs, const struct cli*, int timeout);
 void VCLS_Destroy(struct VCLS **);
 
 /* From libvarnish/cli.c */
