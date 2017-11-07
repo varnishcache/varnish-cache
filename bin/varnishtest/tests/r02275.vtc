@@ -1,5 +1,22 @@
 varnishtest "Chunked with no space for iov's on workspace"
 
+# For this test to work with iovecs on the thread workspace (where
+# they belong!), we would need to circumvent the very sensible vrt
+# check that vcl make no permanent reservations on the thread
+# workspace (see vcl_call_method()).
+#
+# One possible way would be to push a VDP just for this.
+#
+# For now, we consider this issue low priority because with v1l living
+# on the thread workspace, the case for hitting #2275 again is as
+# exotic as can be.
+#
+# The values used in this test have been carefully worked out and
+# tested with v1l on the session workspace, so they should work 1:1 on
+# the thread workspace.
+
+feature cmd false
+
 server s1 -repeat 2 {
 	rxreq
 	txresp -nolen -hdr "Transfer-encoding: chunked"
@@ -15,14 +32,19 @@ varnish v1 -vcl+backend {
 	import vtc;
 
 	sub vcl_deliver {
+		# struct v1l is 13 - 15 pointer-sizes,
+		# an iovec should be two pointer-sizes
+		#
+		# we want to hit the case where we got just not
+		# enough space for three iovecs
 		if (req.url == "/1") {
-			vtc.workspace_alloc(client,
-			    -1 * (32 + vtc.typesize("p") * 25));
+			vtc.workspace_alloc(thread,
+			    -1 * vtc.typesize("p") * (13 + 4));
 		} else {
-			vtc.workspace_alloc(client,
-			    -1 * (56 + vtc.typesize("p") * 25));
+			vtc.workspace_alloc(thread,
+			    -1 * vtc.typesize("p") * (15 + 6));
 		}
-		set resp.http.foo = vtc.workspace_free(client);
+		set resp.http.foo = vtc.workspace_free(thread);
 	}
 } -start
 
@@ -36,4 +58,3 @@ client c1 {
 	rxresp
 	expect resp.status == 200
 } -run
-

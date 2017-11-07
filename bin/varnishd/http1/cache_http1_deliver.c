@@ -117,11 +117,22 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 	if (sendbody && req->resp_len != 0)
 		VDP_push(req, &v1d_vdp, NULL, 1);
 
-	AZ(req->wrk->v1l);
-	V1L_Reserve(req->wrk, req->ws, &req->sp->fd, req->vsl, req->t_prev);
-
 	if (WS_Overflowed(req->ws)) {
 		v1d_error(req, "workspace_client overflow");
+		return;
+	}
+
+	if (WS_Overflowed(req->sp->ws)) {
+		v1d_error(req, "workspace_session overflow");
+		return;
+	}
+
+	AZ(req->wrk->v1l);
+	V1L_Reserve(req->wrk, req->wrk->aws,
+		    &req->sp->fd, req->vsl, req->t_prev);
+
+	if (WS_Overflowed(req->wrk->aws)) {
+		v1d_error(req, "workspace_thread overflow");
 		AZ(req->wrk->v1l);
 		return;
 	}

@@ -1690,9 +1690,12 @@ PARAM(
 	"Bytes of auxiliary workspace per thread.\n"
 	"This workspace is used for certain temporary data structures "
 	"during the operation of a worker thread.\n"
-	"One use is for the io-vectors for writing requests and responses "
-	"to sockets, having too little space will result in more writev(2) "
-	"system calls, having too much just wastes the space.",
+	"One use is for the IO-vectors used during delivery. Setting "
+	"this parameter too low may increase the number of writev() "
+	"syscalls, setting it too high just wastes space.  ~0.1k + "
+	"UIO_MAXIOV * sizeof(struct iovec) (typically = ~16k for 64bit) "
+	"is considered the maximum sensible value under any known "
+	"circumstances (excluding exotic vmod use).",
 	/* l-text */	"",
 	/* func */	NULL
 )
