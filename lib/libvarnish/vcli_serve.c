@@ -64,6 +64,7 @@ struct VCLS_fd {
 	struct vsb			*last_arg;
 	int				last_idx;
 	char				**argv;
+	struct vlu			*vlu;
 };
 
 struct VCLS {
@@ -342,8 +343,12 @@ cls_vlu(void *priv, const char *p)
 			continue;
 		if (*p == '\0')
 			return (0);
-		REPLACE(cli->cmd, p);
 		AN(p);	/* for FlexeLint */
+
+		cli->cmd = VSB_new(NULL, NULL, strlen(p) + 1, 0);
+		AN(cli->cmd);
+		VSB_cat(cli->cmd, p);
+		AZ(VSB_finish(cli->cmd));
 
 		/* We ignore a single leading '-' (for -I cli_file) */
 		if (p[0] == '-')
@@ -354,8 +359,7 @@ cls_vlu(void *priv, const char *p)
 		if (av[0] != NULL) {
 			i = cls_vlu2(priv, av);
 			VAV_Free(av);
-			free(cli->cmd);
-			cli->cmd = NULL;
+			VSB_destroy(&cli->cmd);
 			return (i);
 		}
 		for (i = 1; av[i] != NULL; i++)
@@ -363,8 +367,7 @@ cls_vlu(void *priv, const char *p)
 		if (i < 3 || cli->auth == 0 || strcmp(av[i - 2], "<<")) {
 			i = cls_vlu2(priv, av);
 			VAV_Free(av);
-			free(cli->cmd);
-			cli->cmd = NULL;
+			VSB_destroy(&cli->cmd);
 			return (i);
 		}
 		cfd->argv = av;
@@ -391,8 +394,7 @@ cls_vlu(void *priv, const char *p)
 		cfd->argv[cfd->last_idx] = NULL;
 		VAV_Free(cfd->argv);
 		cfd->argv = NULL;
-		free(cli->cmd);
-		cli->cmd = NULL;
+		VSB_destroy(&cli->cmd);
 		VSB_destroy(&cfd->last_arg);
 		cfd->last_idx = 0;
 		return (i);
@@ -437,8 +439,8 @@ VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 	cfd->fdo = fdo;
 	cfd->cli = &cfd->clis;
 	cfd->cli->magic = CLI_MAGIC;
-	cfd->cli->vlu = VLU_New(cls_vlu, cfd, *cs->maxlen);
-	AN(cfd->cli->vlu);
+	cfd->vlu = VLU_New(cls_vlu, cfd, *cs->maxlen);
+	AN(cfd->vlu);
 	cfd->cli->sb = VSB_new_auto();
 	AN(cfd->cli->sb);
 	cfd->cli->limit = cs->limit;
@@ -459,7 +461,7 @@ cls_close_fd(struct VCLS *cs, struct VCLS_fd *cfd)
 
 	VTAILQ_REMOVE(&cs->fds, cfd, list);
 	cs->nfd--;
-	VLU_Destroy(&cfd->cli->vlu);
+	VLU_Destroy(&cfd->vlu);
 	VSB_destroy(&cfd->cli->sb);
 	if (cfd->closefunc == NULL) {
 		(void)close(cfd->fdi);
@@ -538,7 +540,7 @@ VCLS_Poll(struct VCLS *cs, const struct cli *cli, int timeout)
 	if (pfd[0].revents & POLLHUP)
 		k = 1;
 	else
-		k = VLU_Fd(cfd->cli->vlu, cfd->fdi);
+		k = VLU_Fd(cfd->vlu, cfd->fdi);
 	if (k)
 		cls_close_fd(cs, cfd);
 	return (k);

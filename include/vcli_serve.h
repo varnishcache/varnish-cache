@@ -34,7 +34,6 @@
 #include "vcli.h"
 
 struct cli;	/* NB: struct cli is opaque at this level.  */
-struct vlu;
 struct VCLS;
 
 typedef void cli_func_t(struct cli*, const char * const *av, void *priv);
@@ -68,18 +67,17 @@ struct cli_proto {
 
 /* a CLI session */
 struct cli {
-	unsigned                magic;
+	unsigned		magic;
 #define CLI_MAGIC		0x4038d570
 	void			*priv;
-	struct vsb              *sb;
-	enum VCLI_status_e      result;
-	char                    *cmd;
-	unsigned                auth;
-	char                    challenge[34];
-	char                    *ident;
-	struct vlu              *vlu;
-	struct VCLS             *cls;
-	volatile unsigned       *limit;
+	struct vsb		*sb;
+	enum VCLI_status_e	result;
+	struct vsb		*cmd;
+	unsigned		auth;
+	char			challenge[34];
+	char			*ident;
+	struct VCLS		*cls;
+	volatile unsigned	*limit;
 };
 
 /* The implementation must provide these functions */
