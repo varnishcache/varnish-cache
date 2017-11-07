@@ -235,9 +235,8 @@ cls_dispatch(struct cli *cli, const struct cli_proto *cp,
  */
 
 static int
-cls_vlu2(void *priv, char * const *av)
+cls_exec(struct VCLS_fd *cfd, char * const *av)
 {
-	struct VCLS_fd *cfd;
 	struct VCLS *cs;
 	struct cli_proto *clp;
 	struct cli *cli;
@@ -247,7 +246,7 @@ cls_vlu2(void *priv, char * const *av)
 	unsigned lim;
 	const char *trunc = "!\n[response was truncated]\n";
 
-	CAST_OBJ_NOTNULL(cfd, priv, VCLS_FD_MAGIC);
+	CHECK_OBJ_NOTNULL(cfd, VCLS_FD_MAGIC);
 	cs = cfd->cls;
 	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
 
@@ -325,7 +324,7 @@ cls_vlu(void *priv, const char *p)
 {
 	struct VCLS_fd *cfd;
 	struct cli *cli;
-	int i;
+	int i, ac;
 	char **av;
 
 	CAST_OBJ_NOTNULL(cfd, priv, VCLS_FD_MAGIC);
@@ -352,26 +351,24 @@ cls_vlu(void *priv, const char *p)
 
 		/* We ignore a single leading '-' (for -I cli_file) */
 		if (p[0] == '-')
-			av = VAV_Parse(p + 1, NULL, 0);
+			av = VAV_Parse(p + 1, &ac, 0);
 		else
-			av = VAV_Parse(p, NULL, 0);
+			av = VAV_Parse(p, &ac, 0);
 		AN(av);
 		if (av[0] != NULL) {
-			i = cls_vlu2(priv, av);
+			i = cls_exec(cfd, av);
 			VAV_Free(av);
 			VSB_destroy(&cli->cmd);
 			return (i);
 		}
-		for (i = 1; av[i] != NULL; i++)
-			continue;
-		if (i < 3 || cli->auth == 0 || strcmp(av[i - 2], "<<")) {
-			i = cls_vlu2(priv, av);
+		if (ac < 3 || cli->auth == 0 || strcmp(av[ac - 2], "<<")) {
+			i = cls_exec(cfd, av);
 			VAV_Free(av);
 			VSB_destroy(&cli->cmd);
 			return (i);
 		}
 		cfd->argv = av;
-		cfd->last_idx = i - 2;
+		cfd->last_idx = ac - 2;
 		cfd->last_arg = VSB_new_auto();
 		AN(cfd->last_arg);
 		return (0);
@@ -390,7 +387,7 @@ cls_vlu(void *priv, const char *p)
 		free(cfd->argv[cfd->last_idx + 1]);
 		cfd->argv[cfd->last_idx + 1] = NULL;
 		cfd->argv[cfd->last_idx] = VSB_data(cfd->last_arg);
-		i = cls_vlu2(priv, cfd->argv);
+		i = cls_exec(cfd, cfd->argv);
 		cfd->argv[cfd->last_idx] = NULL;
 		VAV_Free(cfd->argv);
 		cfd->argv = NULL;
