@@ -10,11 +10,19 @@ varnish v1 -vcl+backend {
 	import vtc;
 
 	sub vcl_recv {
-		set req.http.ws-free = vtc.workspace_free(session);
-		vtc.workspace_alloc(session, std.integer(req.http.ws-free, 0));
+		set req.http.ws-free1 = vtc.workspace_free(session);
+		vtc.workspace_alloc(session, std.integer(req.http.ws-free1, 0));
+		set req.http.ws-free2 = vtc.workspace_free(session);
 		vtc.workspace_snapshot(session);
 		vtc.workspace_reset(session);
+		set req.http.ws-free3 = vtc.workspace_free(session);
 	}
+} -start
+
+logexpect l1 -v v1 -g request {
+	expect * * ReqHeader {^ws-free1:}
+	expect 0 = ReqHeader {^ws-free2: 0$}
+	expect 0 = ReqHeader {^ws-free3: 0$}
 } -start
 
 client c1 {
@@ -23,3 +31,4 @@ client c1 {
 	expect resp.status == 200
 } -run
 
+logexpect l1 -wait
