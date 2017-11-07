@@ -6,6 +6,10 @@ Varnish Cache Trunk (ongoing)
   less than the number of allowed restarts, it now is the number of
   ``return(restart)`` calls per request.
 
+* We have moved the allocation of ``workspace_thread`` from the stack
+  to the heap, so ``thread_pool_stack`` can now be reduced by
+  ``workspace_thread``. The default has been changed accordingly.
+
 ================================
 Varnish Cache 5.2.0 (2017-09-15)
 ================================
