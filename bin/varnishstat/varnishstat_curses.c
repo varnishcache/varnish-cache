@@ -1004,13 +1004,14 @@ do_curses(struct vsm *vsm, struct vsc *vsc, double delay)
 
 	VSC_State(vsc, newpt, delpt, NULL);
 
-	rebuild = 1;
+	rebuild = VSM_WRK_RESTARTED;
 	while (keep_running) {
 		vsm_status = VSM_Status(vsm);
 		rebuild |= vsm_status & ~(VSM_MGT_RUNNING|VSM_WRK_RUNNING);
 		if (rebuild) {
 			(void)VSC_Iter(vsc, vsm, NULL, NULL);
-			init_hitrate();
+			if (rebuild & (VSM_MGT_RESTARTED|VSM_WRK_RESTARTED))
+				init_hitrate();
 			build_pt_array();
 			redraw = 1;
 		}
