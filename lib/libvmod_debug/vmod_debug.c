@@ -65,7 +65,7 @@ struct priv_vcl {
 
 static VCL_DURATION vcl_release_delay = 0.0;
 
-pthread_mutex_t vsc_mtx = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t vsc_mtx = PTHREAD_MUTEX_INITIALIZER;
 static struct VSC_debug *vsc;
 
 VCL_VOID __match_proto__(td_debug_panic)
