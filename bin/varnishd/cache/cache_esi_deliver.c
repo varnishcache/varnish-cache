@@ -100,6 +100,8 @@ ved_include(struct req *preq, const char *src, const char *host,
 	struct worker *wrk;
 	struct sess *sp;
 	struct req *req;
+	struct ws ows;
+	size_t ows_sz = 0;
 	enum req_fsm_nxt s;
 
 	CHECK_OBJ_NOTNULL(preq, REQ_MAGIC);
@@ -173,6 +175,13 @@ ved_include(struct req *preq, const char *src, const char *host,
 	req->transport = &VED_transport;
 	req->transport_priv = ecx;
 
+	if (wrk->aws->r) {
+		AZ(ows_sz);
+		ows_sz = pdiff(wrk->aws->s, wrk->aws->e);
+		AN(ows_sz);
+		memcpy(&ows, wrk->aws, sizeof ows);
+		WS_Init(wrk->aws, "wrk", malloc(ows_sz), ows_sz);
+	}
 	THR_SetRequest(req);
 
 	VSLb_ts_req(req, "Start", W_TIM_real(wrk));
@@ -205,6 +214,11 @@ ved_include(struct req *preq, const char *src, const char *host,
 
 	req->wrk = NULL;
 	THR_SetRequest(preq);
+	if (ows_sz > 0) {
+		WS_Assert(wrk->aws);
+		free(wrk->aws->s);
+		memcpy(wrk->aws, &ows, sizeof ows);
+	}
 
 	Req_AcctLogCharge(wrk->stats, req);
 	Req_Release(req);

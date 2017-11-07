@@ -98,7 +98,6 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 {
 	struct worker *w, ww;
 	struct VSC_main ds;
-	unsigned char ws[thread_workspace];
 
 	AN(qp);
 	AN(stacksize);
@@ -112,7 +111,7 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 	w->stats = &ds;
 	AZ(pthread_cond_init(&w->cond, NULL));
 
-	WS_Init(w->aws, "wrk", ws, thread_workspace);
+	WS_Init(w->aws, "wrk", malloc(thread_workspace), thread_workspace);
 
 	VSL(SLT_WorkThread, 0, "%p start", w);
 
@@ -125,6 +124,8 @@ WRK_Thread(struct pool *qp, size_t stacksize, unsigned thread_workspace)
 	AZ(pthread_cond_destroy(&w->cond));
 	HSH_Cleanup(w);
 	Pool_Sumstat(w);
+	WS_Assert(w->aws);
+	free(w->aws->s);
 }
 
 /*--------------------------------------------------------------------

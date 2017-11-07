@@ -18,6 +18,7 @@ varnish v1 -vcl+backend {
 
 		if (req.url ~ "/bar") {
 			set resp.http.x-foo = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+			vtc.workspace_alloc(client, -10);
 		}
 		else if (req.url ~ "/baz") {
 			set resp.http.x-foo = regsub(req.url, "baz", "baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaz");
