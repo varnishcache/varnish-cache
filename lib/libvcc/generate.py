@@ -1138,7 +1138,7 @@ fo.write("\n" + tbl40("#define VCL_MET_MASK", "0x%x\n" % ((1 << n) - 1)))
 fo.write("\n")
 for i in sorted(task.keys()):
 	fo.write(tbl40("#define VCL_MET_TASK_%s" % i.upper(),
-		       "( " + (" | \\\n%42s" % "").join(task[i]) + " )\n"))
+		       "( " + (" | \\\n\t\t\t\t\t  ").join(task[i]) + " )\n"))
 
 
 fo.write("\n/* VCL Returns */\n")
