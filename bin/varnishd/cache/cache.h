@@ -448,6 +448,8 @@ struct busyobj {
 	const struct director	*director_req;
 	const struct director	*director_resp;
 	enum director_state_e	director_state;
+	void			*fsm_priv;
+
 	struct vcl		*vcl;
 
 	struct vsl_log		vsl[1];
@@ -659,6 +661,7 @@ enum vbf_fetch_mode_e {
 };
 void VBF_Fetch(struct worker *wrk, struct req *req,
     struct objcore *oc, struct objcore *oldoc, enum vbf_fetch_mode_e);
+void VBF_FetchBody(struct worker *wrk, struct busyobj *bo, int pass);
 
 /* cache_http.c */
 unsigned HTTP_estimate(unsigned nhttp);
