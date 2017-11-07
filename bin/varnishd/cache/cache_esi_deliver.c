@@ -165,11 +165,6 @@ ved_include(struct req *preq, const char *src, const char *host,
 	req->vcl = preq->vcl;
 	preq->vcl = NULL;
 
-	/*
-	 * XXX: We should decide if we should cache the director
-	 * XXX: or not (for session/backend coupling).  Until then
-	 * XXX: make sure we don't trip up the check in vcl_recv.
-	 */
 	req->req_step = R_STP_RECV;
 	req->t_req = preq->t_req;
 	assert(isnan(req->t_first));
