@@ -90,8 +90,9 @@ void VCLI_SetResult(struct cli *cli, unsigned r);
 
 typedef void cls_cb_f(void *priv);
 typedef void cls_cbc_f(const struct cli*);
-struct VCLS *VCLS_New(volatile unsigned *maxlen, volatile unsigned *limit);
+struct VCLS *VCLS_New(struct VCLS *);
 void VCLS_SetHooks(struct VCLS *, cls_cbc_f *, cls_cbc_f *);
+void VCLS_SetLimit(struct VCLS *, volatile unsigned *);
 struct cli *VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc,
     void *priv);
 void VCLS_AddFunc(struct VCLS *cs, unsigned auth, struct cli_proto *clp);

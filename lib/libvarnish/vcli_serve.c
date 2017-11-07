@@ -49,7 +49,6 @@
 
 #include "vav.h"
 #include "vcli_serve.h"
-#include "vlu.h"
 #include "vsb.h"
 
 struct VCLS_fd {
@@ -62,9 +61,9 @@ struct VCLS_fd {
 	cls_cb_f			*closefunc;
 	void				*priv;
 	struct vsb			*last_arg;
-	int				last_idx;
 	char				**argv;
-	struct vlu			*vlu;
+	int				argc;
+	char				*match;
 };
 
 struct VCLS {
@@ -74,7 +73,6 @@ struct VCLS {
 	unsigned			nfd;
 	VTAILQ_HEAD(,cli_proto)		funcs;
 	cls_cbc_f			*before, *after;
-	volatile unsigned		*maxlen;
 	volatile unsigned		*limit;
 	struct cli_proto		*wildcard;
 };
@@ -244,6 +242,7 @@ cls_exec(struct VCLS_fd *cfd, char * const *av)
 	ssize_t len;
 	char *s;
 	unsigned lim;
+	int retval = 0;
 	const char *trunc = "!\n[response was truncated]\n";
 
 	CHECK_OBJ_NOTNULL(cfd, VCLS_FD_MAGIC);
@@ -314,102 +313,137 @@ cls_exec(struct VCLS_fd *cfd, char * const *av)
 	}
 	if (VCLI_WriteResult(cfd->fdo, cli->result, s) ||
 	    cli->result == CLIS_CLOSE)
-		return (1);
+		retval = 1;
 
-	return (0);
+	/*
+	 * In unauthenticated mode we are very intolerant, and close the
+	 * connection at the least provocation.
+	 */
+	if (cli->auth == 0 && cli->result != CLIS_OK)
+		retval = 1;
+
+	return (retval);
 }
 
 static int
-cls_vlu(void *priv, const char *p)
+cls_feed(struct VCLS_fd *cfd, const char *p, const char *e)
 {
-	struct VCLS_fd *cfd;
 	struct cli *cli;
-	int i, ac;
-	char **av;
+	int i, retval = 0, ac;
+	char **av, *q;
 
-	CAST_OBJ_NOTNULL(cfd, priv, VCLS_FD_MAGIC);
+	CHECK_OBJ_NOTNULL(cfd, VCLS_FD_MAGIC);
 	AN(p);
+	assert(e > p);
 
 	cli = cfd->cli;
 	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
 
-	if (cfd->argv == NULL) {
-		/*
-		 * Lines with only whitespace are simply ignored, in order
-		 * to not complicate CLI-client side scripts and TELNET users
-		 */
-		for (; isspace(*p); p++)
+	for(;p < e; p++) {
+		if (cli->cmd == NULL && isspace(*p)) {
+			/* Ignore all leading space before cmd */
 			continue;
-		if (*p == '\0')
-			return (0);
-		AN(p);	/* for FlexeLint */
+		}
+		if (cfd->argv == NULL) {
 
-		cli->cmd = VSB_new(NULL, NULL, strlen(p) + 1, 0);
-		AN(cli->cmd);
-		VSB_cat(cli->cmd, p);
-		AZ(VSB_finish(cli->cmd));
+			/* Collect first line up to \n or \r */
+			if (cli->cmd == NULL) {
+				cli->cmd = VSB_new_auto();
+				AN(cli->cmd);
+			}
 
-		/* We ignore a single leading '-' (for -I cli_file) */
-		if (p[0] == '-')
-			av = VAV_Parse(p + 1, &ac, 0);
-		else
-			av = VAV_Parse(p, &ac, 0);
-		AN(av);
-		if (av[0] != NULL) {
-			i = cls_exec(cfd, av);
-			VAV_Free(av);
-			VSB_destroy(&cli->cmd);
-			return (i);
+			/* Until authenticated, limit length hard */
+			if (*p != '\n' && *p != '\r' &&
+			    (cli->auth > 0 || VSB_len(cli->cmd) < 80)) {
+				VSB_putc(cli->cmd, *p);
+				continue;
+			}
+
+			AZ(VSB_finish(cli->cmd));
+
+			/* Ignore leading '-' */
+			q = VSB_data(cli->cmd);
+			if (*q == '-')
+				q++;
+			av = VAV_Parse(q, &ac, 0);
+			AN(av);
+
+			if (cli->auth > 0 &&
+			    av[0] == NULL &&
+			    ac >= 3 &&
+			    !strcmp(av[ac-2], "<<") &&
+			    *av[ac - 1] != '\0') {
+				/* Go to "<< nonce" mode */
+				cfd->argv = av;
+				cfd->argc = ac;
+				cfd->match = av[ac - 1];
+				cfd->last_arg = VSB_new_auto();
+				AN(cfd->last_arg);
+			} else {
+				/* Plain command */
+				i = cls_exec(cfd, av);
+				VAV_Free(av);
+				VSB_destroy(&cli->cmd);
+				if (i)
+					return(i);
+			}
+		} else {
+			/* "<< nonce" mode */
+			AN(cfd->argv);
+			AN(cfd->argc);
+			AN(cfd->match);
+			AN(cfd->last_arg);
+			if (*cfd->match == '\0' && (*p == '\r' || *p == '\n')) {
+				AZ(VSB_finish(cfd->last_arg));
+				// NB: VAV lib internals trusted
+				REPLACE(cfd->argv[cfd->argc - 1], NULL);
+				REPLACE(cfd->argv[cfd->argc - 2], NULL);
+				cfd->argv[cfd->argc - 2] =
+				    VSB_data(cfd->last_arg);
+				i = cls_exec(cfd, cfd->argv);
+				cfd->argv[cfd->argc - 2] = NULL;
+				VAV_Free(cfd->argv);
+				cfd->argv = NULL;
+				VSB_destroy(&cfd->last_arg);
+				VSB_destroy(&cli->cmd);
+				if (i)
+					return (i);
+			} else if (*p == *cfd->match) {
+				cfd->match++;
+			} else if (cfd->match != cfd->argv[cfd->argc - 1]) {
+				q = cfd->argv[cfd->argc - 1];
+				VSB_bcat(cfd->last_arg, q, cfd->match - q);
+				cfd->match = q;
+				VSB_putc(cfd->last_arg, *p);
+			} else {
+				VSB_putc(cfd->last_arg, *p);
+			}
 		}
-		if (ac < 3 || cli->auth == 0 || strcmp(av[ac - 2], "<<")) {
-			i = cls_exec(cfd, av);
-			VAV_Free(av);
-			VSB_destroy(&cli->cmd);
-			return (i);
-		}
-		cfd->argv = av;
-		cfd->last_idx = ac - 2;
-		cfd->last_arg = VSB_new_auto();
-		AN(cfd->last_arg);
-		return (0);
-	} else {
-		AN(cfd->argv[cfd->last_idx]);
-		AZ(strcmp(cfd->argv[cfd->last_idx], "<<"));
-		AN(cfd->argv[cfd->last_idx + 1]);
-		if (strcmp(p, cfd->argv[cfd->last_idx + 1])) {
-			VSB_cat(cfd->last_arg, p);
-			VSB_cat(cfd->last_arg, "\n");
-			return (0);
-		}
-		AZ(VSB_finish(cfd->last_arg));
-		free(cfd->argv[cfd->last_idx]);
-		cfd->argv[cfd->last_idx] = NULL;
-		free(cfd->argv[cfd->last_idx + 1]);
-		cfd->argv[cfd->last_idx + 1] = NULL;
-		cfd->argv[cfd->last_idx] = VSB_data(cfd->last_arg);
-		i = cls_exec(cfd, cfd->argv);
-		cfd->argv[cfd->last_idx] = NULL;
-		VAV_Free(cfd->argv);
-		cfd->argv = NULL;
-		VSB_destroy(&cli->cmd);
-		VSB_destroy(&cfd->last_arg);
-		cfd->last_idx = 0;
-		return (i);
 	}
+	return (retval);
 }
 
 struct VCLS *
-VCLS_New(volatile unsigned *maxlen, volatile unsigned *limit)
+VCLS_New(struct VCLS *model)
 {
 	struct VCLS *cs;
+
+	CHECK_OBJ_ORNULL(model, VCLS_MAGIC);
 
 	ALLOC_OBJ(cs, VCLS_MAGIC);
 	AN(cs);
 	VTAILQ_INIT(&cs->fds);
 	VTAILQ_INIT(&cs->funcs);
-	cs->maxlen = maxlen;
-	cs->limit = limit;
+	if (model != NULL)
+		VTAILQ_CONCAT(&cs->funcs, &model->funcs, list);
 	return (cs);
+}
+
+void
+VCLS_SetLimit(struct VCLS *cs, volatile unsigned *limit)
+{
+	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
+	cs->limit = limit;
 }
 
 void
@@ -436,8 +470,6 @@ VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 	cfd->fdo = fdo;
 	cfd->cli = &cfd->clis;
 	cfd->cli->magic = CLI_MAGIC;
-	cfd->vlu = VLU_New(cls_vlu, cfd, *cs->maxlen);
-	AN(cfd->vlu);
 	cfd->cli->sb = VSB_new_auto();
 	AN(cfd->cli->sb);
 	cfd->cli->limit = cs->limit;
@@ -458,7 +490,6 @@ cls_close_fd(struct VCLS *cs, struct VCLS_fd *cfd)
 
 	VTAILQ_REMOVE(&cs->fds, cfd, list);
 	cs->nfd--;
-	VLU_Destroy(&cfd->vlu);
 	VSB_destroy(&cfd->cli->sb);
 	if (cfd->closefunc == NULL) {
 		(void)close(cfd->fdi);
@@ -510,6 +541,7 @@ VCLS_Poll(struct VCLS *cs, const struct cli *cli, int timeout)
 	struct VCLS_fd *cfd;
 	struct pollfd pfd[1];
 	int i, j, k;
+	char buf[BUFSIZ];
 
 	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
 	if (cs->nfd == 0) {
@@ -536,8 +568,13 @@ VCLS_Poll(struct VCLS *cs, const struct cli *cli, int timeout)
 		return (j);
 	if (pfd[0].revents & POLLHUP)
 		k = 1;
-	else
-		k = VLU_Fd(cfd->vlu, cfd->fdi);
+	else {
+		i = read(cfd->fdi, buf, sizeof buf);
+		if (i <= 0)
+			k = 1;
+		else
+			k = cls_feed(cfd, buf, buf + i);
+	}
 	if (k)
 		cls_close_fd(cs, cfd);
 	return (k);

@@ -100,6 +100,7 @@ CLI_Run(void)
 	cli = VCLS_AddFd(cache_cls,
 	    heritage.cli_in, heritage.cli_out, NULL, NULL);
 	AN(cli);
+	cli->auth = 1;	// Non-zero to disable paranoia in vcli_serve
 
 	do {
 		i = VCLS_Poll(cache_cls, cli, -1);
@@ -126,8 +127,9 @@ CLI_Init(void)
 	Lck_New(&cli_mtx, lck_cli);
 	cli_thread = pthread_self();
 
-	cache_cls = heritage.cls;
+	cache_cls = VCLS_New(heritage.cls);
 	AN(cache_cls);
+	VCLS_SetLimit(cache_cls, &cache_param->cli_limit);
 	VCLS_SetHooks(cache_cls, cli_cb_before, cli_cb_after);
 
 	CLI_AddFuncs(cli_cmds);
