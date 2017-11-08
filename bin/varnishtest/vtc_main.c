@@ -165,7 +165,7 @@ tst_cb(const struct vev *ve, int what)
 	// printf("CB %p %s %d\n", ve, jp->tst->filename, what);
 	if (what == 0) {
 		jp->killed = 1;
-		AZ(kill(jp->child, SIGKILL)); /* XXX: Timeout */
+		AZ(kill(-jp->child, SIGKILL)); /* XXX: Timeout */
 	} else {
 		assert(what & (EV_RD | EV_HUP));
 	}
@@ -298,6 +298,7 @@ start_test(void)
 	jp->child = fork();
 	assert(jp->child >= 0);
 	if (jp->child == 0) {
+		AZ(setpgrp(getpid(), 0));
 		VFIL_null_fd(STDIN_FILENO);
 		assert(dup2(p[1], STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(p[1], STDERR_FILENO) == STDERR_FILENO);
