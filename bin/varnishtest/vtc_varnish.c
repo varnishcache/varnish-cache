@@ -172,6 +172,11 @@ wait_running(const struct varnish *v)
 			vtc_fatal(v->vl,
 			    "Child stopped before running: %u %s", st, r);
 		if (!strcmp(r, "Child in state running")) {
+			st = varnish_ask_cli(v, "debug.listen_address", &r);
+			if (st != CLIS_OK)
+				vtc_fatal(v->vl,
+					  "CLI status command failed: %u %s",
+					  st, r);
 			free(r);
 			break;
 		}
