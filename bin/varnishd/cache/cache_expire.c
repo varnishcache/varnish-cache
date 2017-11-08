@@ -359,5 +359,5 @@ EXP_Init(void)
 	AZ(pthread_cond_init(&ep->condvar, NULL));
 	VSTAILQ_INIT(&ep->inbox);
 	exphdl = ep;
-	WRK_BgThread(&pt, "cache-timeout", exp_thread, ep);
+	WRK_BgThread(&pt, "cache-exp", exp_thread, ep);
 }
