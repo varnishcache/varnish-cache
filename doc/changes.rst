@@ -55,7 +55,7 @@ C APIs (for vmod and utility authors)
   for vmod function names (which was fixed to ``vmod`` before)
 
 * All varnish internal ``SHA256*`` symbols have been renamed to
-``VSHA256*``
+  ``VSHA256*``
 
 * libvarnish now has ``VNUM_duration()`` to convert from a VCL
   duration like 4h or 5s
