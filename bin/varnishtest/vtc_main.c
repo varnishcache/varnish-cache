@@ -298,7 +298,7 @@ start_test(void)
 	jp->child = fork();
 	assert(jp->child >= 0);
 	if (jp->child == 0) {
-		AZ(setpgrp(getpid(), 0));
+		AZ(setpgid(getpid(), 0));
 		VFIL_null_fd(STDIN_FILENO);
 		assert(dup2(p[1], STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(p[1], STDERR_FILENO) == STDERR_FILENO);
