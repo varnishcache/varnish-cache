@@ -43,14 +43,15 @@
 struct exp_priv {
 	unsigned			magic;
 #define EXP_PRIV_MAGIC			0x9db22482
+	/* shared */
 	struct lock			mtx;
+	VSTAILQ_HEAD(,objcore)		inbox;
+	pthread_cond_t			condvar;
 
+	/* owned by exp thread */
 	struct worker			*wrk;
 	struct vsl_log			vsl;
-
-	VSTAILQ_HEAD(,objcore)		inbox;
 	struct binheap			*heap;
-	pthread_cond_t			condvar;
 };
 
 static struct exp_priv *exphdl;
