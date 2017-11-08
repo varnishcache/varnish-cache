@@ -175,6 +175,7 @@ Req_Release(struct req *req)
 }
 
 /*----------------------------------------------------------------------
+ * TODO: remove code duplication with cnt_recv_prep
  */
 
 void

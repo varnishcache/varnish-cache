@@ -741,6 +741,10 @@ cnt_restart(struct worker *wrk, struct req *req)
 /*
  * prepare the request for vcl_recv, either initially or after a reset
  * e.g. due to vcl switching
+ *
+ * TODO
+ * - make restarts == 0 bit re-usable for rollback
+ * - remove duplicatation with Req_Cleanup()
  */
 
 static void
