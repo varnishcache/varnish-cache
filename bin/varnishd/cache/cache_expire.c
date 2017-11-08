@@ -51,8 +51,6 @@ struct exp_priv {
 	VSTAILQ_HEAD(,objcore)		inbox;
 	struct binheap			*heap;
 	pthread_cond_t			condvar;
-
-	pthread_rwlock_t		cb_rwl;
 };
 
 static struct exp_priv *exphdl;
@@ -360,7 +358,6 @@ EXP_Init(void)
 	Lck_New(&ep->mtx, lck_exp);
 	AZ(pthread_cond_init(&ep->condvar, NULL));
 	VSTAILQ_INIT(&ep->inbox);
-	AZ(pthread_rwlock_init(&ep->cb_rwl, NULL));
 	exphdl = ep;
 	WRK_BgThread(&pt, "cache-timeout", exp_thread, ep);
 }
