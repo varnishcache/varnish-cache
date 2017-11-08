@@ -10,6 +10,10 @@ Varnish Cache Trunk (ongoing)
   Restarts now leave all the request properties in place except for
   ``req.restarts`` and ``req.xid``, which need to change by design.
 
+* ``req.storage``, ``req.hash_ignore_busy`` and
+  ``req.hash_always_miss`` are now accessible from all of the client
+  side subs, not just ``vcl_recv{}``
+
 ================================
 Varnish Cache 5.2.0 (2017-09-15)
 ================================
