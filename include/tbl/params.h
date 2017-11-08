@@ -286,21 +286,6 @@ PARAM(
 )
 
 PARAM(
-	/* name */	cli_buffer,
-	/* typ */	bytes_u,
-	/* min */	"4k",
-	/* max */	NULL,
-	/* default */	"8k",
-	/* units */	"bytes",
-	/* flags */	0,
-	/* s-text */
-	"DEPRECATED: This parameter is ignored.\n"
-	"Memory for the CLI command buffer is now dynamically allocated.",
-	/* l-text */	"",
-	/* func */	NULL
-)
-
-PARAM(
 	/* name */	cli_limit,
 	/* typ */	bytes_u,
 	/* min */	"128b",

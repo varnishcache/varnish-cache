@@ -14,11 +14,13 @@ Varnish Cache Trunk (ongoing)
   ``req.hash_always_miss`` are now accessible from all of the client
   side subs, not just ``vcl_recv{}``
 
+* The ``cli_buffer`` parameter has been removed
+
 ================================
 Varnish Cache 5.2.0 (2017-09-15)
 ================================
 
-* The cli_buffer parameter has been deprecated (2382_)
+* The ``cli_buffer`` parameter has been deprecated (2382_)
 
 .. _2382: https://github.com/varnishcache/varnish-cache/pull/2382
 
