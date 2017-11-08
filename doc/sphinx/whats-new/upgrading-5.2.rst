@@ -13,7 +13,7 @@ counters, but these should all be transparent at the user-level.
 varnishd parameters
 ===================
 
-The :ref:`ref_param_vsm_space` and :ref:`ref_param_cli_buffer`
+The :ref:`ref_param_vsm_space` and ``cli_buffer``
 parameters are now deprecated and ignored.  They will be removed
 in a future major release.
 

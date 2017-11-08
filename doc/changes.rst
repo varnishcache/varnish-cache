@@ -2,9 +2,22 @@
 Varnish Cache Trunk (ongoing)
 =============================
 
+Usage
+-----
+
 * Fixed implementation of the ``max_restarts`` limit: It used to be one
   less than the number of allowed restarts, it now is the number of
   ``return(restart)`` calls per request.
+
+* The ``cli_buffer`` parameter has been removed
+
+* Added back ``umem`` storage for Solaris descendents
+
+* The new storage backend type (stevedore) ``default`` now resolves to
+  either ``umem`` (where available) or ``malloc``.
+
+VCL
+---
 
 * Fix behaviour of restarts to how it was originally intended:
   Restarts now leave all the request properties in place except for
@@ -14,7 +27,45 @@ Varnish Cache Trunk (ongoing)
   ``req.hash_always_miss`` are now accessible from all of the client
   side subs, not just ``vcl_recv{}``
 
-* The ``cli_buffer`` parameter has been removed
+C APIs (for vmod and utility authors)
+-------------------------------------
+
+* We have now defined three API Stability levels: ``VRT``,
+  ``PACKAGE``, ``SOURCE``. XXX: someone should write up an rst when
+  we've settled this.
+
+* New API namespace rules, see `phk_api_spaces_`
+
+* Rules for including API headers have been changed:
+  * many headers can now only be included once
+  * some headers require specific include ordering
+  * only ``cache.h`` _or_ ``vrt.h`` can be included
+
+  XXX: More details?
+
+* Signatures of functions in the VLU API for bytestream into text
+  serialization have been changed
+
+* vcl.h now contains convenience macros ``VCL_MET_TASK_B``,
+  ``VCL_MET_TASK_C`` and ``VCL_MET_TASK_H`` for checking
+  ``ctx->method`` for backend, client and housekeeping
+  (vcl_init/vcl_fini) task context
+
+* vcc files can now contain a ``$Prefix`` stanza to define the prefix
+  for vmod function names (which was fixed to ``vmod`` before)
+
+* All varnish internal ``SHA256*`` symbols have been renamed to
+``VSHA256*``
+
+* libvarnish now has ``VNUM_duration()`` to convert from a VCL
+  duration like 4h or 5s
+
+* director health state queries have been merged to ``VRT_Healthy()``
+
+Fixed bugs
+----------
+
+XXX TODO
 
 ================================
 Varnish Cache 5.2.0 (2017-09-15)
