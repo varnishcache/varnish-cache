@@ -27,6 +27,10 @@ shell {varnishadm -n ${tmpdir}/v1 start}
 
 shell {varnishadm -n ${tmpdir}/v1 debug.listen_address}
 
+shell -exit 1 -expect "Command failed with error code 500" {
+	varnishadm -n ${tmpdir}/v1 quit
+}
+
 process p1 -stop -wait
 
 # Test multiple -f options
