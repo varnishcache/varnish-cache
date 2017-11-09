@@ -132,7 +132,7 @@ cli_sock(const char *T_arg, const char *S_arg)
 		cli_write(sock, "\n");
 		(void)VCLI_ReadResult(sock, &status, &answer, timeout);
 	}
-	if (status != CLIS_OK) {
+	if (status != CLIS_OK && status != CLIS_TRUNCATED) {
 		fprintf(stderr, "Rejected %u\n%s\n", status, answer);
 		closefd(&sock);
 		free(answer);
@@ -174,9 +174,8 @@ do_args(int sock, int argc, char * const *argv)
 	(void)close(sock);
 
 	printf("%s\n", answer);
-	if (status == CLIS_OK) {
+	if (status == CLIS_OK || status == CLIS_TRUNCATED)
 		exit(0);
-	}
 	fprintf(stderr, "Command failed with error code %u\n", status);
 	exit(1);
 }
