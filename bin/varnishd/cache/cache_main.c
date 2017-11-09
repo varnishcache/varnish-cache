@@ -49,7 +49,9 @@
 #include "hash/hash_slinger.h"
 
 
-volatile struct params	*cache_param;
+volatile struct params		*cache_param;
+// XXX generic solution?
+volatile struct vre_limits	*vparam_vre_limits;
 
 /*--------------------------------------------------------------------
  * Per thread storage for the session currently being processed by
@@ -308,6 +310,8 @@ child_main(int sigmagic, size_t altstksz)
 #endif
 
 	cache_param = heritage.param;
+	// XXX TODO - generic solution?
+	vparam_vre_limits = &cache_param->vre_limits;
 
 	AZ(pthread_key_create(&req_key, NULL));
 	AZ(pthread_key_create(&bo_key, NULL));
