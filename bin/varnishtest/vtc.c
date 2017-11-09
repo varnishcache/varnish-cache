@@ -813,7 +813,12 @@ int
 fail_out(void)
 {
 	unsigned old_err;
+	static int once = 0;
 
+	if (once++) {
+		vtc_log(vltop, 1, "failure during reset");
+		return(vtc_error);
+	}
 	old_err = vtc_error;
 	if (!vtc_stop)
 		vtc_stop = 1;
