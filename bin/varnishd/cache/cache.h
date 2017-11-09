@@ -989,6 +989,10 @@ Tlen(const txt t)
  */
 #define W_TIM_real(w) ((w)->lastused = VTIM_real())
 
+/*
+ * XXX should cache.h refer to cache_param if common_param.h
+ * is not in $DIST ?
+ */
 #define FEATURE(x)	COM_FEATURE(cache_param->feature_bits, x)
 #define DO_DEBUG(x)	COM_DO_DEBUG(cache_param->debug_bits, x)
 
