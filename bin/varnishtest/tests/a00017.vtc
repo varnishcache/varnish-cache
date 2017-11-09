@@ -31,6 +31,17 @@ shell -exit 1 -expect "Command failed with error code 500" {
 	varnishadm -n ${tmpdir}/v1 quit
 }
 
+shell -exit 1 -expect "Command failed with error code 102" {
+	varnishadm -n ${tmpdir}/v1 debug.panic.master -j
+}
+
+shell -exit 1 -expect "Command failed with error code 101" {
+	varnishadm -n ${tmpdir}/v1 123
+}
+
+shell "varnishadm -n ${tmpdir}/v1 param.set cli_limit 128"
+shell -expect "[response was truncated]" "varnishadm -n ${tmpdir}/v1 help"
+
 process p1 -stop -wait
 
 # Test multiple -f options
