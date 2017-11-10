@@ -523,10 +523,12 @@ VRT_count(VRT_CTX, unsigned u)
 	assert(u < ctx->vcl->conf->nref);
 	if (ctx->vsl != NULL)
 		VSLb(ctx->vsl, SLT_VCL_trace, "%s %u %u.%u.%u",
-		    ctx->vcl->loaded_name, u, ctx->vcl->conf->ref[u].source, ctx->vcl->conf->ref[u].line, ctx->vcl->conf->ref[u].pos);
+		    ctx->vcl->loaded_name, u, ctx->vcl->conf->ref[u].source,
+		    ctx->vcl->conf->ref[u].line, ctx->vcl->conf->ref[u].pos);
 	else
 		VSL(SLT_VCL_trace, 0, "%s %u %u.%u.%u",
-		    ctx->vcl->loaded_name, u, ctx->vcl->conf->ref[u].source, ctx->vcl->conf->ref[u].line, ctx->vcl->conf->ref[u].pos);
+		    ctx->vcl->loaded_name, u, ctx->vcl->conf->ref[u].source,
+		    ctx->vcl->conf->ref[u].line, ctx->vcl->conf->ref[u].pos);
 }
 
 VCL_VCL
