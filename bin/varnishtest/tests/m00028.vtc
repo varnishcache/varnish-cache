@@ -3,7 +3,7 @@ varnishtest "Test setenv"
 setenv FOO "BAR BAZ"
 
 varnish v1 -vcl {
-	import std from "${topbuild}/lib/libvmod_std/.libs/";
+	import std;
 
 	backend dummy { .host = "${bad_ip}"; .port = "9080"; }
 
@@ -27,7 +27,7 @@ varnish v1 -stop
 setenv -ifunset FOO QUUX
 
 varnish v2 -vcl {
-	import std from "${topbuild}/lib/libvmod_std/.libs/";
+	import std;
 
 	backend dummy { .host = "${bad_ip}"; .port = "9080"; }
 
@@ -51,7 +51,7 @@ varnish v2 -stop
 setenv FOO QUUX
 
 varnish v3 -vcl {
-	import std from "${topbuild}/lib/libvmod_std/.libs/";
+	import std;
 
 	backend dummy { .host = "${bad_ip}"; .port = "9080"; }
 

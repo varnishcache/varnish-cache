@@ -3,7 +3,7 @@ varnishtest "debug bit vmod_so_keep"
 feature topbuild
 
 varnish v1 -vcl {
-	import std from "${topbuild}/lib/libvmod_std/.libs/";
+	import std;
 	backend b { .host = "${bad_backend}"; }
 } -start
 
