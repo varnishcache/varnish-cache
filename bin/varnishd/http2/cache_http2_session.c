@@ -240,6 +240,7 @@ h2_ou_session(struct worker *wrk, struct h2_sess *h2,
 	    sizeof H2_prism);
 	if (hs != HTC_S_COMPLETE) {
 		VSLb(h2->vsl, SLT_Debug, "H2: No/Bad OU PRISM (hs=%d)", hs);
+		r2->scheduled = 0;
 		h2_del_req(wrk, r2);
 		return (0);
 	}

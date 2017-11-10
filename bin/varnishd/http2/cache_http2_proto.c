@@ -169,6 +169,7 @@ h2_del_req(struct worker *wrk, const struct h2_req *r2)
 	int r;
 
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+	AZ(r2->scheduled);
 	h2 = r2->h2sess;
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
 	ASSERT_RXTHR(h2);
