@@ -1001,14 +1001,6 @@ CNT_Request(struct worker *wrk, struct req *req)
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
-		/*
-		 * We don't want the thread workspace to be used for
-		 * anything of long duration, so mandate that it be
-		 * empty on state-transitions.
-		 */
-		WS_Assert(wrk->aws);
-		AZ(WS_Snapshot(wrk->aws));
-
 		switch (req->req_step) {
 #define REQ_STEP(l,u,arg) \
 		    case R_STP_##u: \
@@ -1020,7 +1012,6 @@ CNT_Request(struct worker *wrk, struct req *req)
 		default:
 			WRONG("State engine misfire");
 		}
-		WS_Assert(wrk->aws);
 		CHECK_OBJ_ORNULL(wrk->nobjhead, OBJHEAD_MAGIC);
 	}
 	wrk->vsl = NULL;

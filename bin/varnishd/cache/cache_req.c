@@ -226,7 +226,6 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	req->is_hit = 0;
 
 	WS_Reset(req->ws, 0);
-	WS_Reset(wrk->aws, 0);
 }
 
 /*----------------------------------------------------------------------
