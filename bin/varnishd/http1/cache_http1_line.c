@@ -69,11 +69,13 @@ struct v1l {
 };
 
 /*--------------------------------------------------------------------
+ * for niov == 0, reserve the ws for max number of iovs
+ * otherwise, up to niov
  */
 
 void
-V1L_Reserve(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
-    double t0)
+V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
+    double t0, unsigned niov)
 {
 	struct v1l *v1l;
 	unsigned u;
@@ -84,7 +86,12 @@ V1L_Reserve(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 
 	if (WS_Overflowed(ws))
 		return;
+
+	if (niov != 0)
+		assert(niov >= 3);
+
 	res = WS_Snapshot(ws);
+
 	v1l = WS_Alloc(ws, sizeof *v1l);
 	if (v1l == NULL)
 		return;
@@ -102,6 +109,8 @@ V1L_Reserve(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	}
 	if (u > IOV_MAX)
 		u = IOV_MAX;
+	if (niov != 0 && u > niov)
+		u = niov;
 	v1l->iov = (void*)ws->f;
 	v1l->siov = u;
 	v1l->ciov = u;
@@ -112,10 +121,13 @@ V1L_Reserve(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	v1l->t0 = t0;
 	v1l->vsl = vsl;
 	wrk->v1l = v1l;
+
+	if (niov != 0)
+		WS_Release(ws, u * sizeof(struct iovec));
 }
 
 unsigned
-V1L_FlushRelease(struct worker *wrk)
+V1L_Close(struct worker *wrk)
 {
 	struct v1l *v1l;
 	unsigned u;
@@ -125,7 +137,8 @@ V1L_FlushRelease(struct worker *wrk)
 	v1l = wrk->v1l;
 	wrk->v1l = NULL;
 	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
-	WS_Release(v1l->ws, 0);
+	if (v1l->ws->r)
+		WS_Release(v1l->ws, 0);
 	WS_Reset(v1l->ws, v1l->res);
 	return (u);
 }

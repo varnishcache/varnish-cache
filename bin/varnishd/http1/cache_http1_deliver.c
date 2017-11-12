@@ -114,31 +114,71 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 	} else if (!http_GetHdr(req->resp, H_Connection, NULL))
 		http_SetHeader(req->resp, "Connection: keep-alive");
 
-	if (sendbody && req->resp_len != 0)
+	if (WS_Overflowed(req->ws)) {
+		v1d_error(req, "workspace_client overflow");
+		return;
+	}
+
+	if (WS_Overflowed(req->sp->ws)) {
+		v1d_error(req, "workspace_session overflow");
+		return;
+	}
+
+	if (req->resp_len == 0)
+		sendbody = 0;
+
+	if (sendbody)
 		VDP_push(req, &v1d_vdp, NULL, 1);
 
 	AZ(req->wrk->v1l);
-	V1L_Reserve(req->wrk, req->ws, &req->sp->fd, req->vsl, req->t_prev);
+	V1L_Open(req->wrk, req->wrk->aws,
+		 &req->sp->fd, req->vsl, req->t_prev, 0);
 
-	if (WS_Overflowed(req->ws)) {
-		v1d_error(req, "workspace_client overflow");
+	if (WS_Overflowed(req->wrk->aws)) {
+		v1d_error(req, "workspace_thread overflow");
 		AZ(req->wrk->v1l);
 		return;
 	}
 
 	req->acct.resp_hdrbytes += HTTP1_Write(req->wrk, req->resp, HTTP1_Resp);
+
 	if (DO_DEBUG(DBG_FLUSH_HEAD))
 		(void)V1L_Flush(req->wrk);
 
-	if (sendbody && req->resp_len != 0) {
-		if (req->res_mode & RES_CHUNKED)
-			V1L_Chunked(req->wrk);
-		err = VDP_DeliverObj(req);
-		if (!err && (req->res_mode & RES_CHUNKED))
-			V1L_EndChunk(req->wrk);
+	if (! sendbody || req->res_mode & RES_ESI)
+		if (V1L_Close(req->wrk) && req->sp->fd >= 0) {
+			Req_Fail(req, SC_REM_CLOSE);
+			sendbody = 0;
+		}
+
+	if (! sendbody) {
+		AZ(req->wrk->v1l);
+		VDP_close(req);
+		return;
 	}
 
-	if ((V1L_FlushRelease(req->wrk) || err) && req->sp->fd >= 0)
+	AN(sendbody);
+	if (req->res_mode & RES_ESI) {
+		AZ(req->wrk->v1l);
+
+		V1L_Open(req->wrk, req->wrk->aws,
+			 &req->sp->fd, req->vsl, req->t_prev,
+			 cache_param->esi_iovs);
+
+		if (WS_Overflowed(req->wrk->aws)) {
+			v1d_error(req, "workspace_thread overflow");
+			AZ(req->wrk->v1l);
+			return;
+		}
+	}
+
+	if (req->res_mode & RES_CHUNKED)
+		V1L_Chunked(req->wrk);
+	err = VDP_DeliverObj(req);
+	if (!err && (req->res_mode & RES_CHUNKED))
+		V1L_EndChunk(req->wrk);
+
+	if ((V1L_Close(req->wrk) || err) && req->sp->fd >= 0)
 		Req_Fail(req, SC_REM_CLOSE);
 	AZ(req->wrk->v1l);
 	VDP_close(req);
