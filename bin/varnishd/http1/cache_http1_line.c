@@ -87,11 +87,8 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	if (WS_Overflowed(ws))
 		return;
 
-	if (niov != 0) {
+	if (niov != 0)
 		assert(niov >= 3);
-		if (niov > IOV_MAX)
-			niov = IOV_MAX;
-	}
 
 	res = WS_Snapshot(ws);
 
@@ -112,6 +109,8 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	}
 	if (u > IOV_MAX)
 		u = IOV_MAX;
+	if (niov != 0 && u > niov)
+		u = niov;
 	v1l->iov = (void*)ws->f;
 	v1l->siov = u;
 	v1l->ciov = u;
@@ -124,7 +123,7 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 	wrk->v1l = v1l;
 
 	if (niov != 0)
-		WS_Release(ws, niov * sizeof(struct iovec));
+		WS_Release(ws, u * sizeof(struct iovec));
 }
 
 unsigned
