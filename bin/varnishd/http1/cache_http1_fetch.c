@@ -99,7 +99,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr,
 	VSLb(bo->vsl, SLT_BackendStart, "%s %s", abuf, pbuf);
 
 	(void)VTCP_blocking(*htc->rfd);	/* XXX: we should timeout instead */
-	V1L_Reserve(wrk, wrk->aws, htc->rfd, bo->vsl, bo->t_prev);
+	V1L_Open(wrk, wrk->aws, htc->rfd, bo->vsl, bo->t_prev, 0);
 	*ctr += HTTP1_Write(wrk, hp, HTTP1_Req);
 
 	/* Deal with any message-body the request might (still) have */
@@ -122,7 +122,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr,
 			V1L_EndChunk(wrk);
 	}
 
-	j = V1L_FlushRelease(wrk);
+	j = V1L_Close(wrk);
 	if (j != 0 || i < 0) {
 		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
 		    errno, strerror(errno));
