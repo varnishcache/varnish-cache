@@ -264,9 +264,7 @@ LCK_Init(void)
 {
 
 	AZ(pthread_mutexattr_init(&attr));
-#if !defined(__APPLE__) && !defined(__MACH__)
 	AZ(pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK));
-#endif
 #define LOCK(nam)	lck_##nam = Lck_CreateClass(#nam);
 #include "tbl/locks.h"
 }
