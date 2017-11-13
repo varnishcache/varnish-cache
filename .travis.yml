@@ -14,17 +14,12 @@ matrix:
     dist: trusty
     compiler: clang
     env: CLANG=5.0 SAN_FLAGS="--enable-asan --enable-ubsan"
-  - os: linux
-    dist: trusty
-    compiler: clang
-    env: CLANG=5.0 SAN_FLAGS="--enable-tsan"
   - os: osx
     osx_image: xcode9
     compiler: clang
   allow_failures:
   - os: osx
   - env: CLANG=5.0 SAN_FLAGS="--enable-asan --enable-ubsan"
-  - env: CLANG=5.0 SAN_FLAGS="--enable-tsan"
 addons:
   apt:
     packages:
