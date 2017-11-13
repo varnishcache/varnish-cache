@@ -16,6 +16,20 @@ Usage
 * The new storage backend type (stevedore) ``default`` now resolves to
   either ``umem`` (where available) or ``malloc``.
 
+* Since varnish 4.1, the thread workspace as configured by
+  ``workspace_thread`` was not used as documented, delivery also used
+  the client workspace.
+
+  We are now taking delivery IO vectors from the thread workspace, so
+  the parameter documemtation is in sync with reality again.
+
+  Users who need to minimize memory footprint might consider
+  decreasing ``workspace_client`` by ``workspace_thread``.
+
+* The new parameter ``esi_iovs`` configures the amount of IO vectors
+  used during ESI delivery. It should not be tuned unless advised by a
+  developer.
+
 VCL
 ---
 
