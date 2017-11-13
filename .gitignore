@@ -70,6 +70,8 @@ cscope.*out
 /bin/varnishd/VSC_*.h
 
 # Misc. generated files for included vmods.
+/lib/libvmod_*/VSC_*.c
+/lib/libvmod_*/VSC_*.h
 /lib/libvmod_*/vcc_if.c
 /lib/libvmod_*/vcc_if.h
 /lib/libvmod_*/vmod_*.rst
