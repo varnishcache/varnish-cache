@@ -93,6 +93,11 @@ Description
 	Logs the string *s* to syslog tagged with *priority*. *priority*
 	is formed by ORing the facility and level values. See your
 	system's syslog.h file for possible values.
+
+	Notice: Unlike VCL and other functions in the std vmod, this
+	function will not fail VCL processing for workspace overflows:
+	For an out of workspace condition, the ``syslog()`` function
+	has no effect.
 Example
 	std.syslog(9, "Something is wrong");
 

@@ -174,15 +174,8 @@ vmod_syslog(VRT_CTX, VCL_INT fac, const char *fmt, ...)
 	va_start(ap, fmt);
 	p = VRT_String(ctx->ws, NULL, fmt, ap);
 	va_end(ap);
-
-	if (p == NULL) {
-		WS_MarkOverflow(ctx->ws);
-		WS_Reset(ctx->ws, sn);
-		return;
-	}
-
-	AN(p);
-	syslog((int)fac, "%s", p);
+	if (p != NULL)
+		syslog((int)fac, "%s", p);
 	WS_Reset(ctx->ws, sn);
 }
 
