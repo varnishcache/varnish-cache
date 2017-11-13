@@ -13,13 +13,13 @@ matrix:
   - os: linux
     dist: trusty
     compiler: clang
-    env: CLANG=5.0
+    env: CLANG=5.0 SAN_FLAGS="--enable-asan --enable-ubsan"
   - os: osx
     osx_image: xcode9
     compiler: clang
   allow_failures:
   - os: osx
-  - env: CLANG=5.0
+  - env: CLANG=5.0 SAN_FLAGS="--enable-asan --enable-ubsan"
 addons:
   apt:
     packages:
@@ -43,10 +43,11 @@ before_install:
       export CONFIGURE_ARGS="--enable-developer-warnings --enable-debugging-symbols --disable-stack-protector --enable-asan --enable-ubsan";
       export ASAN_OPTIONS=abort_on_error=1,detect_odr_violation=1,detect_leaks=1,detect_stack_use_after_return=1,detect_invalid_pointer_pairs=1,handle_segv=0,handle_sigbus=0,use_sigaltstack=0;
       export LSAN_OPTIONS=abort_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/lsan.suppr;
+      export TSAN_OPTIONS=abort_on_error=1,halt_on_error=1,use_sigaltstack=0,suppressions=$(pwd)/tools/tsan.suppr;
       export UBSAN_OPTIONS=halt_on_error=1,print_stacktrace=1,use_sigaltstack=0,suppressions=$(pwd)/tools/ubsan.suppr;
     fi
   - ./autogen.sh
-  - ./configure ${CONFIGURE_ARGS}
+  - ./configure ${CONFIGURE_ARGS} ${SAN_FLAGS}
 script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       export PYTHONPATH=`brew --prefix`/lib/python2.7/site-packages; fi

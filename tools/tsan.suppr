@@ -1,0 +1,3 @@
+# varnishtest
+race:cmd_barrier
+race:vtc_log
