@@ -524,6 +524,8 @@ vca_acct(void *arg)
 	struct listen_sock *ls;
 	double t0, now;
 
+	// XXX Actually a mis-nomer now because the accept happens in a pool
+	// thread. Rename to accept-nanny or so?
 	THR_SetName("cache-acceptor");
 	THR_Init();
 	(void)arg;
