@@ -162,6 +162,7 @@ vmod_log(VRT_CTX, const char *fmt, ...)
 	WS_Reset(ctx->ws, sn);
 }
 
+/* XXX use vsyslog() ? */
 VCL_VOID __match_proto__(td_std_syslog)
 vmod_syslog(VRT_CTX, VCL_INT fac, const char *fmt, ...)
 {
