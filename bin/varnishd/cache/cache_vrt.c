@@ -207,6 +207,10 @@ VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
 	}
 	b = VRT_StringList(b, e > b ? e - b : 0, p, ap);
 	if (b == NULL || b == e) {
+		/*
+		 * NO WS_MarkOverflow here because the caller might have a
+		 * fallback
+		 */
 		WS_Release(ws, 0);
 		return (NULL);
 	}

@@ -86,6 +86,7 @@ vmod_updown(VRT_CTX, int up, const char *s, va_list ap)
 		*b = '\0';
 	b++;
 	if (b > e) {
+		WS_MarkOverflow(ctx->ws);
 		WS_Release(ctx->ws, 0);
 		return (NULL);
 	} else {
@@ -146,9 +147,17 @@ vmod_log(VRT_CTX, const char *fmt, ...)
 	va_start(ap, fmt);
 	p = VRT_String(ctx->ws, NULL, fmt, ap);
 	va_end(ap);
-	if (p != NULL && ctx->vsl != NULL)
+
+	if (p == NULL) {
+		WS_MarkOverflow(ctx->ws);
+		WS_Reset(ctx->ws, sn);
+		return;
+	}
+
+	AN(p);
+	if (ctx->vsl != NULL)
 		VSLb(ctx->vsl, SLT_VCL_Log, "%s", p);
-	else if (p != NULL)
+	else
 		VSL(SLT_VCL_Log, 0, "%s", p);
 	WS_Reset(ctx->ws, sn);
 }
@@ -165,8 +174,15 @@ vmod_syslog(VRT_CTX, VCL_INT fac, const char *fmt, ...)
 	va_start(ap, fmt);
 	p = VRT_String(ctx->ws, NULL, fmt, ap);
 	va_end(ap);
-	if (p != NULL)
-		syslog((int)fac, "%s", p);
+
+	if (p == NULL) {
+		WS_MarkOverflow(ctx->ws);
+		WS_Reset(ctx->ws, sn);
+		return;
+	}
+
+	AN(p);
+	syslog((int)fac, "%s", p);
 	WS_Reset(ctx->ws, sn);
 }
 
