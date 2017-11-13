@@ -456,21 +456,22 @@ binheap_reorder(const struct binheap *bh, unsigned idx)
 #ifdef TEST_DRIVER
 
 #include <stdio.h>
+#include <strings.h>
 
 #include "miniobj.h"
 
 /* Test driver -------------------------------------------------------*/
 
-static void
-vasfail(const char *func, const char *file, int line,
-    const char *cond, int err, int xxx)
+void __attribute__((__noreturn__))
+VAS_Fail(const char *func, const char *file, int line,
+    const char *cond, enum vas_e what)
 {
-	fprintf(stderr, "PANIC: %s %s %d %s %d %d\n",
-		func, file, line, cond, err, xxx);
+	fprintf(stderr, "PANIC: %s %s %d %s %d\n",
+		func, file, line, cond, what);
 	abort();
 }
 
-vas_f *VAS_Fail_Func = vasfail;
+vas_f *VAS_Fail_Func = VAS_Fail;
 
 struct foo {
 	unsigned	magic;
@@ -492,9 +493,9 @@ struct foo {
 struct foo *ff[N];
 
 static int
-cmp(void *priv, void *a, void *b)
+cmp(void *priv, const void *a, const void *b)
 {
-	struct foo *fa, *fb;
+	const struct foo *fa, *fb;
 
 	CAST_OBJ_NOTNULL(fa, a, FOO_MAGIC);
 	CAST_OBJ_NOTNULL(fb, b, FOO_MAGIC);
