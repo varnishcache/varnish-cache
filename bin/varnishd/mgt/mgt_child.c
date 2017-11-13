@@ -473,7 +473,16 @@ mgt_reap_child(void)
 		fprintf(stderr, "WAIT 0x%jd\n", (intmax_t)r);
 	assert(r == child_pid);
 
-	MAC_reopen_sockets();
+	/*
+	 * XXX exit mgr if we fail even with retries?
+	 * number of retries? interval?
+	 */
+	for (i = 0; i < 3; i++) {
+		if (MAC_reopen_sockets() == 0)
+			break;
+		/* error already logged */
+		(void)sleep(1);
+	}
 
 	VSB_printf(vsb, "Child (%jd) %s", (intmax_t)r,
 	    status ? "died" : "ended");

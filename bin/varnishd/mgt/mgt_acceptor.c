@@ -73,24 +73,28 @@ mac_opensocket(struct listen_sock *ls)
 
 /*=====================================================================
  * Reopen the accept sockets to get rid of listen status.
+ * returns the highest errno encountered, 0 for success
  */
 
-void
+int
 MAC_reopen_sockets(void)
 {
 	struct listen_sock *ls;
-	int fail;
+	int err, fail = 0;
 
 	VTAILQ_FOREACH(ls, &heritage.socks, list) {
 		VJ_master(JAIL_MASTER_PRIVPORT);
-		fail = mac_opensocket(ls);
+		err = mac_opensocket(ls);
 		VJ_master(JAIL_MASTER_LOW);
-		if (fail == 0)
+		if (err == 0)
 			continue;
+		if (err > fail)
+			fail = err;
 		MGT_Complain(C_ERR,
 		    "Could not reopen listen socket %s: %s",
-		    ls->endpoint, strerror(fail));
+		    ls->endpoint, strerror(err));
 	}
+	return fail;
 }
 
 /*--------------------------------------------------------------------*/
