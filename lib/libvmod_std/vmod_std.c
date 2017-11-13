@@ -135,45 +135,39 @@ vmod_random(VRT_CTX, VCL_REAL lo, VCL_REAL hi)
 }
 
 VCL_VOID __match_proto__(td_std_log)
-vmod_log(VRT_CTX, const char *s, ...)
+vmod_log(VRT_CTX, const char *fmt, ...)
 {
-	txt t;
-	unsigned u;
+	const char *p;
 	va_list ap;
+	uintptr_t sn;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	u = WS_Reserve(ctx->ws, 0);
-	t.b = ctx->ws->f;
-	va_start(ap, s);
-	t.e = VRT_StringList(ctx->ws->f, u, s, ap);
+	sn = WS_Snapshot(ctx->ws);
+	va_start(ap, fmt);
+	p = VRT_String(ctx->ws, NULL, fmt, ap);
 	va_end(ap);
-	if (t.e != NULL) {
-		assert(t.e > t.b);
-		t.e--;
-		if (ctx->vsl != NULL)
-			VSLbt(ctx->vsl, SLT_VCL_Log, t);
-		else
-			VSL(SLT_VCL_Log, 0, "%s", t.b);
-	}
-	WS_Release(ctx->ws, 0);
+	if (p != NULL && ctx->vsl != NULL)
+		VSLb(ctx->vsl, SLT_VCL_Log, "%s", p);
+	else if (p != NULL)
+		VSL(SLT_VCL_Log, 0, "%s", p);
+	WS_Reset(ctx->ws, sn);
 }
 
 VCL_VOID __match_proto__(td_std_syslog)
 vmod_syslog(VRT_CTX, VCL_INT fac, const char *fmt, ...)
 {
-	unsigned u;
+	const char *p;
 	va_list ap;
-	txt t;
+	uintptr_t sn;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	u = WS_Reserve(ctx->ws, 0);
-	t.b = ctx->ws->f;
+	sn = WS_Snapshot(ctx->ws);
 	va_start(ap, fmt);
-	t.e = VRT_StringList(ctx->ws->f, u, fmt, ap);
+	p = VRT_String(ctx->ws, NULL, fmt, ap);
 	va_end(ap);
-	if (t.e != NULL)
-		syslog((int)fac, "%s", t.b);
-	WS_Release(ctx->ws, 0);
+	if (p != NULL)
+		syslog((int)fac, "%s", p);
+	WS_Reset(ctx->ws, sn);
 }
 
 VCL_BOOL __match_proto__(td_std_file_exists)
