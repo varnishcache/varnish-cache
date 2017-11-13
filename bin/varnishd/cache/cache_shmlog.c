@@ -334,6 +334,14 @@ VSLbv(struct vsl_log *vsl, enum VSL_tag_e tag, const char *fmt, va_list ap)
 		return;
 	}
 
+	if (!strcmp(fmt, "%s")) {
+		p = va_arg(ap, char *);
+		t.b = p;
+		t.e = strchr(p, '\0');
+		VSLbt(vsl, tag, t);
+		return;
+	}
+
 	mlen = cache_param->vsl_reclen;
 
 	/* Flush if we cannot fit a full size record */
