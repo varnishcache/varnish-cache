@@ -54,7 +54,7 @@ struct parspec;
 struct vcc;
 struct vclprog;
 
-extern struct vev_base	*mgt_evb;
+extern struct vev_root	*mgt_evb;
 extern unsigned		d_flag;
 extern int		exit_status;
 

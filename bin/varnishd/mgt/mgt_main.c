@@ -61,7 +61,7 @@
 
 struct heritage		heritage;
 unsigned		d_flag = 0;
-struct vev_base		*mgt_evb;
+struct vev_root		*mgt_evb;
 int			exit_status = 0;
 struct vsb		*vident;
 struct VSC_mgt		*VSC_C_mgt;
@@ -563,7 +563,7 @@ main(int argc, char * const *argv)
 
 	/* Various initializations */
 	VTAILQ_INIT(&heritage.socks);
-	mgt_evb = vev_new_base();
+	mgt_evb = VEV_New();
 	AN(mgt_evb);
 
 	/* Initialize transport protocols */
@@ -845,10 +845,10 @@ main(int argc, char * const *argv)
 		fprintf(stderr, "BEGIN of -I file processing\n");
 		mgt_cli_setup(I_fd, 2, 1, "-I file", mgt_I_close, stderr);
 		while (I_fd >= 0) {
-			o = vev_schedule_one(mgt_evb);
+			o = VEV_Once(mgt_evb);
 			if (o != 1)
 				MGT_Complain(C_ERR,
-				    "vev_schedule_one() = %d", o);
+				    "VEV_Once() = %d", o);
 		}
 	}
 
@@ -871,30 +871,30 @@ main(int argc, char * const *argv)
 	if (F_flag)
 		VFIL_null_fd(STDIN_FILENO);
 
-	e = vev_new();
+	e = VEV_Alloc();
 	AN(e);
 	e->callback = mgt_uptime;
 	e->timeout = 1.0;
 	e->name = "mgt_uptime";
-	AZ(vev_add(mgt_evb, e));
+	AZ(VEV_Start(mgt_evb, e));
 
-	e = vev_new();
+	e = VEV_Alloc();
 	AN(e);
 	e->sig = SIGTERM;
 	e->callback = mgt_sigint;
 	e->name = "mgt_sigterm";
-	AZ(vev_add(mgt_evb, e));
+	AZ(VEV_Start(mgt_evb, e));
 
-	e = vev_new();
+	e = VEV_Alloc();
 	AN(e);
 	e->sig = SIGINT;
 	e->callback = mgt_sigint;
 	e->name = "mgt_sigint";
-	AZ(vev_add(mgt_evb, e));
+	AZ(VEV_Start(mgt_evb, e));
 
-	o = vev_schedule(mgt_evb);
+	o = VEV_Loop(mgt_evb);
 	if (o != 0)
-		MGT_Complain(C_ERR, "vev_schedule() = %d", o);
+		MGT_Complain(C_ERR, "VEV_Loop() = %d", o);
 
 	MGT_Complain(C_INFO, "manager dies");
 	(void)VPF_Remove(pfh1);

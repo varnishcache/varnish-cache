@@ -29,7 +29,7 @@
  */
 
 struct vev;
-struct vev_base;
+struct vev_root;
 
 typedef int vev_cb_f(const struct vev *, int what);
 
@@ -42,11 +42,11 @@ struct vev {
 	int			fd;
 	unsigned		fd_flags;
 	unsigned		fd_events;
-#define		EV_RD		POLLIN
-#define		EV_WR		POLLOUT
-#define		EV_ERR		POLLERR
-#define		EV_HUP		POLLHUP
-#define		EV_SIG		-1
+#define		VEV__RD		POLLIN
+#define		VEV__WR		POLLOUT
+#define		VEV__ERR	POLLERR
+#define		VEV__HUP	POLLHUP
+#define		VEV__SIG	-1
 	int			sig;
 	unsigned		sig_flags;
 	double			timeout;
@@ -57,16 +57,16 @@ struct vev {
 	double			__when;
 	unsigned		__binheap_idx;
 	unsigned		__privflags;
-	struct vev_base		*__vevb;
+	struct vev_root		*__vevb;
 };
 
-struct vev_base *vev_new_base(void);
-void vev_destroy_base(struct vev_base *evb);
+struct vev_root *VEV_New(void);
+void VEV_Destroy(struct vev_root *evb);
 
-struct vev *vev_new(void);
+struct vev *VEV_Alloc(void);
 
-int vev_add(struct vev_base *evb, struct vev *e);
-void vev_del(struct vev_base *evb, struct vev *e);
+int VEV_Start(struct vev_root *evb, struct vev *e);
+void VEV_Stop(struct vev_root *evb, struct vev *e);
 
-int vev_schedule_one(struct vev_base *evb);
-int vev_schedule(struct vev_base *evb);
+int VEV_Once(struct vev_root *evb);
+int VEV_Loop(struct vev_root *evb);

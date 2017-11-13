@@ -422,14 +422,14 @@ mgt_cli_setup(int fdi, int fdo, int auth, const char *ident,
 	AZ(VSB_finish(cli->sb));
 	(void)VCLI_WriteResult(fdo, cli->result, VSB_data(cli->sb));
 
-	ev = vev_new();
+	ev = VEV_Alloc();
 	AN(ev);
 	ev->name = cli->ident;
 	ev->fd = fdi;
-	ev->fd_flags = EV_RD;
+	ev->fd_flags = VEV__RD;
 	ev->callback = mgt_cli_callback2;
 	ev->priv = cli;
-	AZ(vev_add(mgt_evb, ev));
+	AZ(VEV_Start(mgt_evb, ev));
 }
 
 /*--------------------------------------------------------------------*/
@@ -554,13 +554,13 @@ mct_callback(void *priv, const struct suckaddr *sa)
 		VTCP_myname(sock, abuf, sizeof abuf, pbuf, sizeof pbuf);
 		VSB_printf(vsb, "%s %s\n", abuf, pbuf);
 		tn = telnet_new(sock);
-		tn->ev = vev_new();
+		tn->ev = VEV_Alloc();
 		AN(tn->ev);
 		tn->ev->fd = sock;
 		tn->ev->fd_flags = POLLIN;
 		tn->ev->callback = telnet_accept;
 		tn->ev->priv = tn;
-		AZ(vev_add(mgt_evb, tn->ev));
+		AZ(VEV_Start(mgt_evb, tn->ev));
 	}
 	return (0);
 }
@@ -663,14 +663,14 @@ Marg_poker(const struct vev *e, int what)
 
 	MCH_TrackHighFd(s);
 
-	M_conn = vev_new();
+	M_conn = VEV_Alloc();
 	AN(M_conn);
 	M_conn->callback = Marg_connect;
 	M_conn->name = "-M connector";
-	M_conn->fd_flags = EV_WR;
+	M_conn->fd_flags = VEV__WR;
 	M_conn->fd = s;
 	M_fd = s;
-	AZ(vev_add(mgt_evb, M_conn));
+	AZ(VEV_Start(mgt_evb, M_conn));
 	return (0);
 }
 
@@ -702,12 +702,12 @@ mgt_cli_master(const char *M_arg)
 	if (VTAILQ_EMPTY(&m_addr_list))
 		ARGV_ERR("Could not resolve -M argument to address\n");
 	AZ(M_poker);
-	M_poker = vev_new();
+	M_poker = VEV_Alloc();
 	AN(M_poker);
 	M_poker->timeout = M_poll;
 	M_poker->callback = Marg_poker;
 	M_poker->name = "-M poker";
-	AZ(vev_add(mgt_evb, M_poker));
+	AZ(VEV_Start(mgt_evb, M_poker));
 }
 
 static int

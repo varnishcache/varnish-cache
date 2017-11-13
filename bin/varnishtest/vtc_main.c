@@ -81,7 +81,7 @@ unsigned vtc_maxdur = 60;
 static unsigned vtc_bufsiz = 1024 * 1024;
 
 static VTAILQ_HEAD(, vtc_tst) tst_head = VTAILQ_HEAD_INITIALIZER(tst_head);
-static struct vev_base *vb;
+static struct vev_root *vb;
 static int njob = 0;
 static int npar = 1;			/* Number of parallel tests */
 static int vtc_continue;		/* Continue on error */
@@ -167,7 +167,7 @@ tst_cb(const struct vev *ve, int what)
 		jp->killed = 1;
 		AZ(kill(-jp->child, SIGKILL)); /* XXX: Timeout */
 	} else {
-		assert(what & (EV_RD | EV_HUP));
+		assert(what & (VEV__RD | VEV__HUP));
 	}
 
 	*buf = '\0';
@@ -241,7 +241,7 @@ tst_cb(const struct vev *ve, int what)
 			    ecode ? "skipped" : "passed", t);
 		}
 		if (jp->evt != NULL)
-			vev_del(vb, jp->evt);
+			VEV_Stop(vb, jp->evt);
 
 		FREE_OBJ(jp);
 		return (1);
@@ -309,21 +309,21 @@ start_test(void)
 	}
 	closefd(&p[1]);
 
-	jp->ev = vev_new();
+	jp->ev = VEV_Alloc();
 	AN(jp->ev);
-	jp->ev->fd_flags = EV_RD | EV_HUP | EV_ERR;
+	jp->ev->fd_flags = VEV__RD | VEV__HUP | VEV__ERR;
 	jp->ev->fd = p[0];
 	jp->ev->priv = jp;
 	jp->ev->callback = tst_cb;
-	AZ(vev_add(vb, jp->ev));
+	AZ(VEV_Start(vb, jp->ev));
 
-	jp->evt = vev_new();
+	jp->evt = VEV_Alloc();
 	AN(jp->evt);
 	jp->evt->fd = -1;
 	jp->evt->timeout = vtc_maxdur;
 	jp->evt->priv = jp;
 	jp->evt->callback = tst_cb;
-	AZ(vev_add(vb, jp->evt));
+	AZ(VEV_Start(vb, jp->evt));
 }
 
 /**********************************************************************
@@ -666,7 +666,7 @@ main(int argc, char * const *argv)
 	if (iflg)
 		i_mode();
 
-	vb = vev_new_base();
+	vb = VEV_New();
 
 	i = 0;
 	while (!VTAILQ_EMPTY(&tst_head) || i) {
@@ -679,7 +679,7 @@ main(int argc, char * const *argv)
 			i = 1;
 			continue;
 		}
-		i = vev_schedule_one(vb);
+		i = VEV_Once(vb);
 	}
 	if (vtc_continue)
 		fprintf(stderr,

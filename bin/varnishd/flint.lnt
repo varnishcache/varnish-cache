@@ -7,9 +7,6 @@
 -printf(2, VSB_printf)
 
 -esym(755, vct_*)
--esym(759, vev_*)
--esym(765, vev_*)
--esym(714, vev_*)
 -esym(759, vpf_*)
 -esym(765, vpf_*)
 -esym(714, vpf_*)

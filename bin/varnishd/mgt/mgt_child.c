@@ -221,7 +221,7 @@ static int __match_proto__(vev_cb_f)
 child_listener(const struct vev *e, int what)
 {
 
-	if ((what & ~EV_RD) || VLU_Fd(child_std_vlu, child_output)) {
+	if ((what & ~VEV__RD) || VLU_Fd(child_std_vlu, child_output)) {
 		ev_listen = NULL;
 		if (e != NULL)
 			mgt_reap_child();
@@ -365,22 +365,22 @@ mgt_launch_child(struct cli *cli)
 	AN(child_std_vlu);
 
 	AZ(ev_listen);
-	e = vev_new();
+	e = VEV_Alloc();
 	XXXAN(e);
 	e->fd = child_output;
-	e->fd_flags = EV_RD;
+	e->fd_flags = VEV__RD;
 	e->name = "Child listener";
 	e->callback = child_listener;
-	AZ(vev_add(mgt_evb, e));
+	AZ(VEV_Start(mgt_evb, e));
 	ev_listen = e;
 	AZ(ev_poker);
 	if (mgt_param.ping_interval > 0) {
-		e = vev_new();
+		e = VEV_Alloc();
 		XXXAN(e);
 		e->timeout = mgt_param.ping_interval;
 		e->callback = child_poker;
 		e->name = "child poker";
-		AZ(vev_add(mgt_evb, e));
+		AZ(VEV_Start(mgt_evb, e));
 		ev_poker = e;
 	}
 
@@ -439,14 +439,14 @@ mgt_reap_child(void)
 
 	/* Stop the poker */
 	if (ev_poker != NULL) {
-		vev_del(mgt_evb, ev_poker);
+		VEV_Stop(mgt_evb, ev_poker);
 		free(ev_poker);
 	}
 	ev_poker = NULL;
 
 	/* Stop the listener */
 	if (ev_listen != NULL) {
-		vev_del(mgt_evb, ev_listen);
+		VEV_Stop(mgt_evb, ev_listen);
 		free(ev_listen);
 		ev_listen = NULL;
 	}
@@ -522,7 +522,7 @@ mgt_reap_child(void)
 		child_state = CH_DIED;
 
 	/* Pick up any stuff lingering on stdout/stderr */
-	(void)child_listener(NULL, EV_RD);
+	(void)child_listener(NULL, VEV__RD);
 	closefd(&child_output);
 	VLU_Destroy(&child_std_vlu);
 

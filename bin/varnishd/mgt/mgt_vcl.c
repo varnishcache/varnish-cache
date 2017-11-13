@@ -917,13 +917,13 @@ void
 mgt_vcl_init(void)
 {
 
-	e_poker = vev_new();
+	e_poker = VEV_Alloc();
 	AN(e_poker);
 	e_poker->timeout = 3;		// random, prime
 
 	e_poker->callback = mgt_vcl_poker;
 	e_poker->name = "vcl poker";
-	AZ(vev_add(mgt_evb, e_poker));
+	AZ(VEV_Start(mgt_evb, e_poker));
 
 	AZ(atexit(mgt_vcl_atexit));
 
