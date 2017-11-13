@@ -112,7 +112,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	bo->htc->doclose = SC_NULL;
 
 	FIND_TMO(connect_timeout, tmod, bo, bp);
-	vtp = VTP_Get(bp->tcp_pool, tmod, wrk);
+	vtp = VTP_Get(bp->tcp_pool, tmod, wrk, 0);
 	if (vtp == NULL) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: fail", bp->director->display_name);

@@ -85,7 +85,8 @@ void VTP_Recycle(const struct worker *, struct vtp **);
 	 * Recycle an open connection.
 	 */
 
-struct vtp *VTP_Get(struct tcp_pool *, double tmo, struct worker *);
+struct vtp *VTP_Get(struct tcp_pool *, double tmo, struct worker *,
+    unsigned force_fresh);
 	/*
 	 * Get a (possibly) recycled connection.
 	 */

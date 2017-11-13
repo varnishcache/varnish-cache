@@ -366,7 +366,8 @@ VTP_Close(struct vtp **vtpp)
  */
 
 struct vtp *
-VTP_Get(struct tcp_pool *tp, double tmo, struct worker *wrk)
+VTP_Get(struct tcp_pool *tp, double tmo, struct worker *wrk,
+    unsigned force_fresh)
 {
 	struct vtp *vtp;
 
@@ -376,7 +377,7 @@ VTP_Get(struct tcp_pool *tp, double tmo, struct worker *wrk)
 	Lck_Lock(&tp->mtx);
 	vtp = VTAILQ_FIRST(&tp->connlist);
 	CHECK_OBJ_ORNULL(vtp, VTP_MAGIC);
-	if (vtp == NULL || vtp->state == VTP_STATE_STOLEN)
+	if (force_fresh || vtp == NULL || vtp->state == VTP_STATE_STOLEN)
 		vtp = NULL;
 	else {
 		assert(vtp->tcp_pool == tp);
