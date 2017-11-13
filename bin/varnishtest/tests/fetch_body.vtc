@@ -7,6 +7,14 @@ server s1 {
 	rxreq
 	expect req.url == "/body"
 	txresp -body "123"
+
+	rxreq
+	expect req.url == "/passnobody"
+	txresp
+
+	rxreq
+	expect req.url == "/pass"
+	txresp -body "123"
 } -start
 
 varnish v1 -vcl+backend {
@@ -16,7 +24,7 @@ varnish v1 -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.http.b4 = "foo";
 		std.log("b4");
-		set beresp.http.ok = debug.fetch_body(pass=false);
+		set beresp.http.ok = debug.fetch_body(bereq.url ~ "^/pass");
 		std.log("after");
 		set beresp.http.after = "bar";
 	}
@@ -31,6 +39,20 @@ client c1 {
 	expect resp.http.after == "bar"
 
 	txreq -url "/body"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.b4 == "foo"
+	expect resp.http.ok == "true"
+	expect resp.http.after == "bar"
+
+	txreq -url "/passnobody"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.b4 == "foo"
+	expect resp.http.ok == "false"
+	expect resp.http.after == "bar"
+
+	txreq -url "/pass"
 	rxresp
 	expect resp.status == 200
 	expect resp.http.b4 == "foo"
