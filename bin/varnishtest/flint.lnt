@@ -5,6 +5,9 @@
 -function(__assert(1), vtc_dump(2))
 -function(__assert(1), vtc_hexdump(2))
 
+-emacro({779}, ENC)		// String constant in comparison operator '!='
+-emacro({506}, CHKFRAME)	// Constant value Boolean
+
 -esym(850, av)
 
 -esym(534, snprintf)		// Only for varnishtest, and not really nice

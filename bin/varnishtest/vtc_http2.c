@@ -124,14 +124,14 @@ clean_headers(struct hpk_hdr *h)
 	}
 }
 
-#define ONLY_CLIENT(hp, av)						\
+#define ONLY_H2_CLIENT(hp, av)						\
 	do {								\
 		if (hp->sfd != NULL)					\
 			vtc_fatal(hp->vl,				\
 			    "\"%s\" only possible in client", av[0]);	\
 	} while (0)
 
-#define ONLY_SERVER(hp, av)						\
+#define ONLY_H2_SERVER(hp, av)						\
 	do {								\
 		if (hp->sfd == NULL)					\
 			vtc_fatal(hp->vl,				\
@@ -252,10 +252,7 @@ readFrameHeader(struct frame *f, const char *buf)
 
 	f->flags = (unsigned char)buf[4];
 
-	f->stid  = (0xff & (unsigned char)buf[5]) << 24;
-	f->stid += (0xff & (unsigned char)buf[6]) << 16;
-	f->stid += (0xff & (unsigned char)buf[7]) <<  8;
-	f->stid += (0xff & (unsigned char)buf[8]);
+	f->stid  = vbe32dec(buf+5);
 }
 
 static void
@@ -271,10 +268,7 @@ writeFrameHeader(char *buf, const struct frame *f)
 
 	buf[4] = f->flags;
 
-	buf[5] = (f->stid >> 24) & 0xff;
-	buf[6] = (f->stid >> 16) & 0xff;
-	buf[7] = (f->stid >>  8) & 0xff;
-	buf[8] = (f->stid      ) & 0xff;
+	vbe32enc(buf + 5, f->stid);
 }
 
 #define INIT_FRAME(f, ty, sz, id, fl) \
@@ -411,12 +405,7 @@ parse_data(struct stream *s, struct frame *f)
 		return;
 	}
 
-	if (s->body) {
-		s->body = realloc(s->body, s->bodylen + size + 1L);
-	} else {
-		AZ(s->bodylen);
-		s->body = malloc(size + 1L);
-	}
+	s->body = realloc(s->body, s->bodylen + size + 1L);
 	AN(s->body);
 	memcpy(s->body + s->bodylen, data, size);
 	s->bodylen += size;
@@ -791,7 +780,7 @@ receive_frame(void *priv)
 					else
 						hdrs = s->resp;
 				}
-				hdrs[0].t = 0;
+				hdrs[0].t = hpk_unset;
 				AZ(vsb);
 				vsb = VSB_new_auto();
 				/*FALLTHROUGH*/
@@ -1395,19 +1384,19 @@ cmd_tx11obj(CMD_ARGS)
 	AN(buf);
 
 	if (!strcmp(cmd_str, "txreq")) {
-		ONLY_CLIENT(s->hp, av);
+		ONLY_H2_CLIENT(s->hp, av);
 		f.type = TYPE_HEADERS;
 		f.flags |= END_STREAM;
 		method_done = 0;
 		path_done = 0;
 		scheme_done = 0;
 	} else if (!strcmp(cmd_str, "txresp")) {
-		ONLY_SERVER(s->hp, av);
+		ONLY_H2_SERVER(s->hp, av);
 		f.type = TYPE_HEADERS;
 		f.flags |= END_STREAM;
 		status_done = 0;
 	} else if (!strcmp(cmd_str, "txpush")) {
-		ONLY_SERVER(s->hp, av);
+		ONLY_H2_SERVER(s->hp, av);
 		f.type = TYPE_PUSH_PROMISE;
 		method_done = 0;
 		path_done = 0;
@@ -2248,9 +2237,9 @@ cmd_rxmsg(CMD_ARGS)
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
 
 	if (!strcmp(av[0], "rxreq"))
-		ONLY_SERVER(s->hp, av);
+		ONLY_H2_SERVER(s->hp, av);
 	else
-		ONLY_CLIENT(s->hp, av);
+		ONLY_H2_CLIENT(s->hp, av);
 
 	f = rxstuff(s);
 	if (!f)
@@ -2392,7 +2381,8 @@ cmd_rxframe(CMD_ARGS)
 	(void)vl;
 	(void)av;
 	CAST_OBJ_NOTNULL(s, priv, STREAM_MAGIC);
-	rxstuff(s);
+	if (rxstuff(s) == NULL)
+		vtc_fatal(s->hp->vl, "No frame received");
 }
 
 static void

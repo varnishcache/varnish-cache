@@ -65,7 +65,7 @@ huff_decode(char *str, int nm, struct hpk_iter *iter, int ilen)
 		if (pl < tbl->msk) {
 			if (ilen == 0) {
 				if (pl == 0 || (MASK(pack, pl) ==
-						(unsigned)((1 << pl) - 1))) {
+						(unsigned)((1U << pl) - 1U))) {
 					assert(tbl == &byte0);
 					return (l);
 				}
@@ -135,7 +135,7 @@ huff_encode(struct hpk_iter *iter, const char *str, int len)
 	if (pl) {
 		assert(pl < 8);
 		if (iter->buf == iter->end)
-			return (1);
+			return (hpk_done);
 		pl += 8;
 		pack |= (uint64_t)0xff << (64 - pl);
 		*iter->buf = (char)(pack >> 56);
@@ -169,7 +169,7 @@ num_decode(uint32_t *result, struct hpk_iter *iter, uint8_t prefix)
 
 	*result = 0;
 	*result = *iter->buf & (0xff >> (8-prefix));
-	if (*result < (1 << prefix) - 1) {
+	if (*result < (1U << prefix) - 1U) {
 		iter->buf++;
 		return (ITER_DONE(iter));
 	}
@@ -196,9 +196,9 @@ num_encode(struct hpk_iter *iter, uint8_t prefix, uint32_t num)
 	assert(prefix <= 8);
 	assert(iter->buf < iter->end);
 
-	uint8_t pmax = (1 << prefix) - 1;
+	uint8_t pmax = (1U << prefix) - 1U;
 
-	*iter->buf &= 0xff << prefix;
+	*iter->buf &= 0xffU << prefix;
 	if (num <=  pmax) {
 		*iter->buf++ |= num;
 		return (ITER_DONE(iter));
