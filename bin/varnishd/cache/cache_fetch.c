@@ -38,6 +38,11 @@
 #include "vcl.h"
 #include "vtim.h"
 
+static enum fetch_step vbf_advance_fsm(struct worker *wrk, struct busyobj *bo,
+    const enum fetch_step stp_from, const enum fetch_step stp_next);
+
+static enum fetch_step vbf_get_stp(const struct busyobj *bo);
+
 /*--------------------------------------------------------------------
  * Allocate an object, with fall-back to Transient.
  * XXX: This somewhat overlaps the stuff in stevedore.c
@@ -251,6 +256,44 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 }
 
 /*--------------------------------------------------------------------
+ * From F_STP_STARTFETCH, prep the body fetch and forward the FSM until
+ * F_STP_DONE
+ */
+
+void
+VBF_FetchBody(struct worker *wrk, struct busyobj *bo, int pass)
+{
+	enum fetch_step stp;
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	stp = vbf_get_stp(bo);
+	assert(stp == F_STP_STARTFETCH);
+
+	assert(bo->fetch_objcore->boc->state <= BOS_REQ_DONE);
+	if (bo->fetch_objcore->boc->state != BOS_REQ_DONE) {
+		bo->req = NULL;
+		ObjSetState(wrk, bo->fetch_objcore, BOS_REQ_DONE);
+	}
+
+	if (bo->do_esi)
+		bo->do_stream = 0;
+	if (pass) {
+		bo->fetch_objcore->flags |= OC_F_HFP;
+		bo->uncacheable = 1;
+	}
+	if (bo->do_pass || bo->uncacheable)
+		bo->fetch_objcore->flags |= OC_F_PASS;
+
+	stp = bo->was_304 ? F_STP_CONDFETCH : F_STP_FETCH;
+
+	while (stp != F_STP_DONE)
+		stp = vbf_advance_fsm(wrk, bo, vbf_get_stp(bo), stp);
+
+	assert(stp == vbf_get_stp(bo));
+	assert(stp == F_STP_DONE);
+}
+
+/*--------------------------------------------------------------------
  * Setup bereq from bereq0, run vcl_backend_fetch
  */
 
@@ -384,6 +427,10 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 
 	VCL_backend_response_method(bo->vcl, wrk, NULL, bo, NULL);
 
+
+	// XXX to check: OK go back to STP_FAIL / STP_ERROR
+	// even if in STP_DONE already?
+
 	if (wrk->handling == VCL_RET_ABANDON || wrk->handling == VCL_RET_FAIL) {
 		bo->htc->doclose = SC_RESP_CLOSE;
 		VDI_Finish(bo->wrk, bo);
@@ -405,25 +452,13 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_ERROR);
 	}
 
-	assert(bo->fetch_objcore->boc->state <= BOS_REQ_DONE);
-	if (bo->fetch_objcore->boc->state != BOS_REQ_DONE) {
-		bo->req = NULL;
-		ObjSetState(wrk, bo->fetch_objcore, BOS_REQ_DONE);
-	}
+	if (vbf_get_stp(bo) == F_STP_STARTFETCH)
+		VBF_FetchBody(wrk, bo, wrk->handling == VCL_RET_PASS);
 
-	if (bo->do_esi)
-		bo->do_stream = 0;
-	if (wrk->handling == VCL_RET_PASS) {
-		bo->fetch_objcore->flags |= OC_F_HFP;
-		bo->uncacheable = 1;
-		wrk->handling = VCL_RET_DELIVER;
-	}
-	if (bo->do_pass || bo->uncacheable)
-		bo->fetch_objcore->flags |= OC_F_PASS;
+	assert(vbf_get_stp(bo) == F_STP_DONE);
+	wrk->handling = VCL_RET_DELIVER;
 
-	assert(wrk->handling == VCL_RET_DELIVER);
-
-	return (bo->was_304 ? F_STP_CONDFETCH : F_STP_FETCH);
+	return (F_STP_DONE);
 }
 
 /*--------------------------------------------------------------------
@@ -571,8 +606,6 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
-
-	assert(wrk->handling == VCL_RET_DELIVER);
 
 	if (vbf_figure_out_vfp(bo)) {
 		(bo)->htc->doclose = SC_OVERLOAD;
@@ -870,6 +903,50 @@ vbf_stp_done(void)
 	NEEDLESS(return(F_STP_DONE));
 }
 
+/*--------------------------------------------------------------------
+ * the fsm can also be advanced from within a state, so the state is embdedded
+ * in bo. To avoid accidental changes of the state, we hide it in a priv
+ * pointer, which is only set by vbf_fetch_thread.
+ *
+ * the state is only to be modified by advance_fsm, but it can be read
+ */
+
+static enum fetch_step
+vbf_get_stp(const struct busyobj *bo)
+{
+	enum fetch_step *stp;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AN(bo->fsm_priv);
+	stp = (enum fetch_step *)bo->fsm_priv;
+	return (*stp);
+}
+
+static enum fetch_step
+vbf_advance_fsm(struct worker *wrk, struct busyobj *bo,
+		const enum fetch_step stp_from,
+		const enum fetch_step stp_next)
+{
+	enum fetch_step *stp;
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	AN(bo->fsm_priv);
+	assert(bo->fetch_objcore->boc->refcount >= 1);
+
+	stp = (enum fetch_step *)bo->fsm_priv;
+	assert(stp_from == *stp);
+	*stp = stp_next;
+
+	switch (*stp) {
+#define FETCH_STEP(l, U, arg)						\
+	case F_STP_##U:						\
+		*stp = vbf_stp_##l arg;					\
+		break;
+#include "tbl/steps.h"
+	default:
+		WRONG("Illegal fetch_step");
+	}
+	return (*stp);
+}
+
 static void __match_proto__(task_func_t)
 vbf_fetch_thread(struct worker *wrk, void *priv)
 {
@@ -899,19 +976,14 @@ vbf_fetch_thread(struct worker *wrk, void *priv)
 	}
 #endif
 
-	while (stp != F_STP_DONE) {
-		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
-		assert(bo->fetch_objcore->boc->refcount >= 1);
-		switch (stp) {
-#define FETCH_STEP(l, U, arg)						\
-		case F_STP_##U:						\
-			stp = vbf_stp_##l arg;				\
-			break;
-#include "tbl/steps.h"
-		default:
-			WRONG("Illegal fetch_step");
-		}
-	}
+	AZ(bo->fsm_priv);
+	bo->fsm_priv = &stp;
+
+	while (stp != F_STP_DONE)
+		assert(vbf_advance_fsm(wrk, bo, stp, stp) == stp);
+
+	AN(bo->fsm_priv);
+	bo->fsm_priv = NULL;
 
 	assert(bo->director_state == DIR_S_NULL);
 
