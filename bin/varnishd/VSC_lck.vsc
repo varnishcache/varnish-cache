@@ -9,6 +9,9 @@
 	Counters which track the activity in the different classes
 	of mutex-locks.
 
+	The counts may be slightly wrong if there are more than one
+	lock instantiated in each class (ie: .creat > 1)
+
 .. varnish_vsc:: creat
 	:type:	counter
 	:level:	debug
