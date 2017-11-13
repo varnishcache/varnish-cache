@@ -290,7 +290,7 @@ HTC_RxStuff(struct http_conn *htc, htc_complete_f *func,
 			WRONG("htc_status_e");
 
 		tmo = tn - now;
-		if (!isnan(ti) && ti < tn)
+		if (!isnan(ti) && ti < tn && hs == HTC_S_EMPTY)
 			tmo = ti - now;
 		z = maxbytes - (htc->rxbuf_e - htc->rxbuf_b);
 		assert(z >= 0);
