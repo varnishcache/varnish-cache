@@ -406,7 +406,7 @@ struct busyobj {
 	char			*end;
 
 	/*
-	 * All fields from refcount and down are zeroed when the busyobj
+	 * All fields from retries and down are zeroed when the busyobj
 	 * is recycled.
 	 */
 	int			retries;
