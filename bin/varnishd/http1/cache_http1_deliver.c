@@ -86,7 +86,7 @@ v1d_error(struct req *req, const char *msg)
 void __match_proto__(vtr_deliver_f)
 V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 {
-	int err = 0;
+	int err;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
