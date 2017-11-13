@@ -379,6 +379,7 @@ http_CollectHdrSep(struct http *hp, const char *hdr, const char *sep)
 			if (b + x >= e) {
 				http_fail(hp);
 				VSLb(hp->vsl, SLT_LostHeader, "%s", hdr + 1);
+				WS_MarkOverflow(hp->ws);
 				WS_Release(hp->ws, 0);
 				return;
 			}

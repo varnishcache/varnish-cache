@@ -86,6 +86,7 @@ vmod_updown(VRT_CTX, int up, const char *s, va_list ap)
 		*b = '\0';
 	b++;
 	if (b > e) {
+		WS_MarkOverflow(ctx->ws);
 		WS_Release(ctx->ws, 0);
 		return (NULL);
 	} else {
@@ -147,14 +148,18 @@ vmod_log(VRT_CTX, const char *s, ...)
 	va_start(ap, s);
 	t.e = VRT_StringList(ctx->ws->f, u, s, ap);
 	va_end(ap);
-	if (t.e != NULL) {
-		assert(t.e > t.b);
-		t.e--;
-		if (ctx->vsl != NULL)
-			VSLbt(ctx->vsl, SLT_VCL_Log, t);
-		else
-			VSL(SLT_VCL_Log, 0, "%s", t.b);
+	if (t.e == NULL) {
+		WS_MarkOverflow(ctx->ws);
+		WS_Release(ctx->ws, 0);
+		return;
 	}
+
+	assert(t.e > t.b);
+	t.e--;
+	if (ctx->vsl != NULL)
+		VSLbt(ctx->vsl, SLT_VCL_Log, t);
+	else
+		VSL(SLT_VCL_Log, 0, "%s", t.b);
 	WS_Release(ctx->ws, 0);
 }
 
@@ -171,7 +176,9 @@ vmod_syslog(VRT_CTX, VCL_INT fac, const char *fmt, ...)
 	va_start(ap, fmt);
 	t.e = VRT_StringList(ctx->ws->f, u, fmt, ap);
 	va_end(ap);
-	if (t.e != NULL)
+	if (t.e == NULL)
+		WS_MarkOverflow(ctx->ws);
+	else
 		syslog((int)fac, "%s", t.b);
 	WS_Release(ctx->ws, 0);
 }
