@@ -38,6 +38,8 @@
 #include "vcl.h"
 #include "vtim.h"
 
+static int vbf_figure_out_vfp(struct busyobj *bo);
+
 /*--------------------------------------------------------------------
  * Allocate an object, with fall-back to Transient.
  * XXX: This somewhat overlaps the stuff in stevedore.c
@@ -53,6 +55,7 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	oc = bo->fetch_objcore;
+
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 
 	lifetime = oc->ttl + oc->grace + oc->keep;
@@ -87,18 +90,57 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 }
 
 /*--------------------------------------------------------------------
+ * save headeres in obj
+ */
+static void
+vbf_headers2obj(struct busyobj *bo)
+{
+	uint8_t *bp;
+	const char *b;
+	unsigned sz;
+
+	sz = http_EstimateWS(bo->beresp,
+			     bo->uncacheable ? HTTPH_A_PASS : HTTPH_A_INS);
+
+	if (sz > bo->hdr_spc) {
+		(void)VFP_Error(bo->vfc, "Insufficient header space");
+		return;
+	} else if (sz < bo->hdr_spc)
+		VSLb(bo->vsl, SLT_Debug, "fetch_body %d bytes wasted",
+		     bo->hdr_spc - sz);
+
+	assert (sz <= bo->hdr_spc);
+
+	/* for HTTP_Encode() VSLH call */
+	bo->beresp->logtag = SLT_ObjMethod;
+
+	/* Filter into object */
+	bp = ObjSetAttr(bo->wrk, bo->fetch_objcore, OA_HEADERS,
+			bo->hdr_spc, NULL);
+	AN(bp);
+	HTTP_Encode(bo->beresp, bp, bo->hdr_spc,
+		    bo->uncacheable ? HTTPH_A_PASS : HTTPH_A_INS);
+
+	if (http_GetHdr(bo->beresp, H_Last_Modified, &b))
+		AZ(ObjSetDouble(bo->wrk, bo->fetch_objcore, OA_LASTMODIFIED,
+		    VTIM_parse(b)));
+	else
+		AZ(ObjSetDouble(bo->wrk, bo->fetch_objcore, OA_LASTMODIFIED,
+		    floor(bo->fetch_objcore->t_origin)));
+}
+
+/*--------------------------------------------------------------------
  * Turn the beresp into a obj
  */
 
 static int
-vbf_beresp2obj(struct busyobj *bo)
+vbf_newobj(struct busyobj *bo, unsigned hdr_spc)
 {
-	unsigned l, l2;
-	const char *b;
-	uint8_t *bp;
+	unsigned l;
 	struct vsb *vary = NULL;
 	int varyl = 0;
 
+	AZ(bo->hdr_spc);
 	l = 0;
 
 	/* Create Vary instructions */
@@ -123,15 +165,17 @@ vbf_beresp2obj(struct busyobj *bo)
 			AZ(vary);
 	}
 
-	l2 = http_EstimateWS(bo->beresp,
+	hdr_spc += http_EstimateWS(bo->beresp,
 	    bo->uncacheable ? HTTPH_A_PASS : HTTPH_A_INS);
-	l += l2;
+	l += hdr_spc;
 
 	if (bo->uncacheable)
 		bo->fetch_objcore->flags |= OC_F_PASS;
 
 	if (!vbf_allocobj(bo, l))
 		return (-1);
+
+	bo->hdr_spc = hdr_spc;
 
 	if (vary != NULL) {
 		AN(ObjSetAttr(bo->wrk, bo->fetch_objcore, OA_VARY, varyl,
@@ -140,22 +184,6 @@ vbf_beresp2obj(struct busyobj *bo)
 	}
 
 	AZ(ObjSetU32(bo->wrk, bo->fetch_objcore, OA_VXID, VXID(bo->vsl->wid)));
-
-	/* for HTTP_Encode() VSLH call */
-	bo->beresp->logtag = SLT_ObjMethod;
-
-	/* Filter into object */
-	bp = ObjSetAttr(bo->wrk, bo->fetch_objcore, OA_HEADERS, l2, NULL);
-	AN(bp);
-	HTTP_Encode(bo->beresp, bp, l2,
-	    bo->uncacheable ? HTTPH_A_PASS : HTTPH_A_INS);
-
-	if (http_GetHdr(bo->beresp, H_Last_Modified, &b))
-		AZ(ObjSetDouble(bo->wrk, bo->fetch_objcore, OA_LASTMODIFIED,
-		    VTIM_parse(b)));
-	else
-		AZ(ObjSetDouble(bo->wrk, bo->fetch_objcore, OA_LASTMODIFIED,
-		    floor(bo->fetch_objcore->t_origin)));
 
 	return (0);
 }
@@ -248,6 +276,43 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 	http_VSL_log(bo->bereq);
 
 	return (F_STP_STARTFETCH);
+}
+
+/*--------------------------------------------------------------------
+ * after startfetch, prep the bo
+ * before we allocate the object, we should have our headers complete.
+ * As the VFPs set beresp headers, push and open them here
+ */
+static int
+vbf_fetch_prep(struct worker *wrk, struct busyobj *bo, int pass)
+{
+	int r = 0;
+
+	assert(bo->fetch_objcore->boc->state <= BOS_REQ_DONE);
+	if (bo->fetch_objcore->boc->state != BOS_REQ_DONE) {
+		bo->req = NULL;
+		ObjSetState(wrk, bo->fetch_objcore, BOS_REQ_DONE);
+	}
+
+	if (bo->do_esi)
+		bo->do_stream = 0;
+	if (pass) {
+		bo->fetch_objcore->flags |= OC_F_HFP;
+		bo->uncacheable = 1;
+	}
+	if (bo->do_pass || bo->uncacheable)
+		bo->fetch_objcore->flags |= OC_F_PASS;
+
+	if (! bo->was_304)
+		r = vbf_figure_out_vfp(bo);
+	if (r)
+		return (r);
+
+	r = VFP_Open(bo->vfc);
+	if (r)
+		(void)VFP_Error(bo->vfc, "Fetch pipeline failed to open");
+
+	return (r);
 }
 
 /*--------------------------------------------------------------------
@@ -405,23 +470,29 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 		return (F_STP_ERROR);
 	}
 
-	assert(bo->fetch_objcore->boc->state <= BOS_REQ_DONE);
-	if (bo->fetch_objcore->boc->state != BOS_REQ_DONE) {
-		bo->req = NULL;
-		ObjSetState(wrk, bo->fetch_objcore, BOS_REQ_DONE);
+	assert(wrk->handling == VCL_RET_DELIVER ||
+	       wrk->handling == VCL_RET_PASS);
+
+	if (bo->fetch_step_next != F_STP_NONE) {
+		/* VBF_Fetchbody has run */
+		assert(wrk->handling == VCL_RET_DELIVER);
+		return (bo->fetch_step_next);
 	}
 
-	if (bo->do_esi)
-		bo->do_stream = 0;
-	if (wrk->handling == VCL_RET_PASS) {
-		bo->fetch_objcore->flags |= OC_F_HFP;
-		bo->uncacheable = 1;
-		wrk->handling = VCL_RET_DELIVER;
+	if (vbf_fetch_prep(wrk, bo, wrk->handling == VCL_RET_PASS)) {
+		(bo)->htc->doclose = SC_OVERLOAD;
+		VDI_Finish((bo)->wrk, bo);
+		return (F_STP_ERROR);
 	}
-	if (bo->do_pass || bo->uncacheable)
-		bo->fetch_objcore->flags |= OC_F_PASS;
 
-	assert(wrk->handling == VCL_RET_DELIVER);
+	if (vbf_newobj(bo, 0)) {
+		(void)VFP_Error(bo->vfc, "Could not get storage");
+		bo->htc->doclose = SC_OVERLOAD;
+		VDI_Finish(bo->wrk, bo);
+		return (F_STP_ERROR);
+	}
+
+	wrk->handling = VCL_RET_DELIVER;
 
 	return (bo->was_304 ? F_STP_CONDFETCH : F_STP_FETCH);
 }
@@ -572,33 +643,10 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->fetch_objcore, OBJCORE_MAGIC);
 
-	assert(wrk->handling == VCL_RET_DELIVER);
-
-	if (vbf_figure_out_vfp(bo)) {
-		(bo)->htc->doclose = SC_OVERLOAD;
-		VDI_Finish((bo)->wrk, bo);
-		return (F_STP_ERROR);
-	}
-
 	if (bo->fetch_objcore->flags & OC_F_PRIVATE)
 		AN(bo->uncacheable);
 
 	bo->fetch_objcore->boc->len_so_far = 0;
-
-	if (VFP_Open(bo->vfc)) {
-		(void)VFP_Error(bo->vfc, "Fetch pipeline failed to open");
-		bo->htc->doclose = SC_RX_BODY;
-		VDI_Finish(bo->wrk, bo);
-		return (F_STP_ERROR);
-	}
-
-	if (vbf_beresp2obj(bo)) {
-		(void)VFP_Error(bo->vfc, "Could not get storage");
-		bo->htc->doclose = SC_RX_BODY;
-		VFP_Close(bo->vfc);
-		VDI_Finish(bo->wrk, bo);
-		return (F_STP_ERROR);
-	}
 
 	if (bo->do_esi)
 		ObjSetFlag(bo->wrk, bo->fetch_objcore, OF_ESIPROC, 1);
@@ -630,6 +678,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	assert(bo->fetch_objcore->boc->state == BOS_REQ_DONE);
 
 	if (bo->do_stream) {
+		vbf_headers2obj(bo);	// counterpart in fetchend
 		ObjSetState(wrk, bo->fetch_objcore, BOS_PREP_STREAM);
 		HSH_Unbusy(wrk, bo->fetch_objcore);
 		ObjSetState(wrk, bo->fetch_objcore, BOS_STREAM);
@@ -660,6 +709,7 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 	if (bo->do_stream)
 		assert(bo->fetch_objcore->boc->state == BOS_STREAM);
 	else {
+		vbf_headers2obj(bo);	// counterpart in fetch
 		assert(bo->fetch_objcore->boc->state == BOS_REQ_DONE);
 		HSH_Unbusy(wrk, bo->fetch_objcore);
 	}
@@ -673,6 +723,59 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 	if (bo->stale_oc != NULL)
 		HSH_Kill(bo->stale_oc);
 	return (F_STP_DONE);
+}
+
+/*
+ * for use from VRT in vcl_backend_response
+ */
+int
+VBF_Fetchbody(struct busyobj *bo, int pass, unsigned bytes)
+{
+	struct worker *wrk;
+
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	wrk = bo->wrk;
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
+	if (bo->was_304) {
+		VSLb(bo->vsl, SLT_VCL_Error, "Not for 304");
+		return (0);
+	}
+	if (bo->fetch_step_next != F_STP_NONE) {
+		VSLb(bo->vsl, SLT_VCL_Error,
+		     "Fetchbody can only be called once");
+		return (0);
+	}
+
+	bo->do_stream = 0;
+
+	if (vbf_fetch_prep(wrk, bo, pass)) {
+		(bo)->htc->doclose = SC_OVERLOAD;
+		VDI_Finish((bo)->wrk, bo);
+		bo->fetch_step_next = F_STP_ERROR;
+		return (0);
+	}
+
+	if (vbf_newobj(bo, bytes)) {
+		VSLb(bo->vsl, SLT_VCL_Error, "No storage");
+		(void)VFP_Error(bo->vfc, "Could not get storage");
+		bo->htc->doclose = SC_OVERLOAD;
+		VDI_Finish(bo->wrk, bo);
+		bo->fetch_step_next = F_STP_ERROR;
+		return (0);
+	}
+
+	bo->fetch_step_next = vbf_stp_fetch(wrk, bo);
+	if (bo->fetch_step_next != F_STP_FETCHBODY) {
+		return (0);
+	}
+
+	bo->fetch_step_next = vbf_stp_fetchbody(wrk, bo);
+	if (bo->fetch_step_next != F_STP_FETCHEND) {
+		return (0);
+	}
+
+	return (1);
 }
 
 /*--------------------------------------------------------------------
@@ -710,7 +813,7 @@ vbf_stp_condfetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
-	AZ(vbf_beresp2obj(bo));
+	vbf_headers2obj(bo);
 
 	if (ObjHasAttr(bo->wrk, bo->stale_oc, OA_ESIDATA))
 		AZ(ObjCopyAttr(bo->wrk, bo->fetch_objcore, bo->stale_oc,
@@ -761,8 +864,10 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	now = W_TIM_real(wrk);
 	VSLb_ts_busyobj(bo, "Error", now);
 
-	if (bo->fetch_objcore->stobj->stevedore != NULL)
+	if (bo->fetch_objcore->stobj->stevedore != NULL) {
 		ObjFreeObj(bo->wrk, bo->fetch_objcore);
+		bo->hdr_spc = 0;
+	}
 
 	if (bo->storage == NULL)
 		bo->storage = STV_next();
@@ -819,11 +924,12 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	assert(bo->vfc->resp == bo->beresp);
 	assert(bo->vfc->req == bo->bereq);
 
-	if (vbf_beresp2obj(bo)) {
+	if (vbf_newobj(bo, 0)) {
 		(void)VFP_Error(bo->vfc, "Could not get storage");
 		VSB_destroy(&synth_body);
 		return (F_STP_FAIL);
 	}
+	vbf_headers2obj(bo);
 
 	ll = VSB_len(synth_body);
 	o = 0;

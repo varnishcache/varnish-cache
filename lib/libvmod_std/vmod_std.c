@@ -37,6 +37,7 @@
 #include <string.h>
 #include <syslog.h>
 #include <sys/socket.h>
+#include <limits.h>
 
 #include "cache/cache.h"
 
@@ -284,4 +285,27 @@ vmod_late_100_continue(VRT_CTX, VCL_BOOL late)
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	if (ctx->req->want100cont)
 		ctx->req->late100cont = late;
+}
+VCL_BOOL __match_proto__(td_std_fetch_body)
+vmod_fetch_body(VRT_CTX, VCL_ENUM disp_s, VCL_BYTES hdrspc)
+{
+	unsigned space;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(disp_s);
+
+	if (ctx->method != VCL_MET_BACKEND_RESPONSE) {
+		VRT_fail(ctx, "std.fetch_body() "
+			 "only valid in vcl_backend_response");
+		return (0);
+	}
+
+	if (hdrspc > UINT_MAX) {
+		VRT_fail(ctx, "std.fetch_body() "
+			 "header_space too large");
+		return (0);
+	}
+	space = hdrspc;
+
+	return (VBF_Fetchbody(ctx->bo, *disp_s == 'p', space));
 }
