@@ -1,0 +1,20 @@
+varnishtest "#2429 file stevedore error buffer regression test"
+
+server s1 {
+	accept
+} -start
+
+varnish v1 -arg "-s Transient=file,${tmpdir}/_.file,1m" -vcl+backend {
+	sub vcl_backend_error {
+		synthetic("foo");
+		return (deliver);
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 503
+	expect resp.http.content-length == 3
+	expect resp.body == "foo"
+} -run
