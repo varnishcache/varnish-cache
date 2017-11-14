@@ -79,6 +79,7 @@ struct director {
 
 	/* Internal Housekeeping fields */
 
+	char			*display_name;
 	VTAILQ_ENTRY(director)	list;
 	struct vcl		*vcl;
 
@@ -88,3 +89,7 @@ struct director {
 };
 
 unsigned VDI_Healthy(const struct director *, double *);
+
+/* cache_vcl.c */
+int VCL_AddDirector(struct vcl *, struct director *, const char *);
+void VCL_DelDirector(struct director *);

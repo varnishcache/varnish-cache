@@ -77,7 +77,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 
 	if (!VDI_Healthy(bp->director, NULL)) {
 		VSLb(bo->vsl, SLT_FetchError,
-		     "backend %s: unhealthy", bp->display_name);
+		     "backend %s: unhealthy", bp->director->display_name);
 		// XXX: per backend stats ?
 		VSC_C_main->backend_unhealthy++;
 		return (NULL);
@@ -85,7 +85,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 
 	if (bp->max_connections > 0 && bp->n_conn >= bp->max_connections) {
 		VSLb(bo->vsl, SLT_FetchError,
-		     "backend %s: busy", bp->display_name);
+		     "backend %s: busy", bp->director->display_name);
 		// XXX: per backend stats ?
 		VSC_C_main->backend_busy++;
 		return (NULL);
@@ -104,7 +104,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	vtp = VTP_Get(bp->tcp_pool, tmod, wrk);
 	if (vtp == NULL) {
 		VSLb(bo->vsl, SLT_FetchError,
-		     "backend %s: fail", bp->display_name);
+		     "backend %s: fail", bp->director->display_name);
 		// XXX: Per backend stats ?
 		VSC_C_main->backend_fail++;
 		bo->htc = NULL;
@@ -126,7 +126,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	VTCP_myname(vtp->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
 	VTCP_hisname(vtp->fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
 	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s",
-	    vtp->fd, bp->display_name, abuf2, pbuf2, abuf1, pbuf1);
+	    vtp->fd, bp->director->display_name, abuf2, pbuf2, abuf1, pbuf1);
 
 	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
 	bo->htc->priv = vtp;
@@ -169,12 +169,12 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 		VTP_Wait(wrk, vtp);
 	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s", vtp->fd,
-		    bp->display_name);
+		    bp->director->display_name);
 		VTP_Close(&vtp);
 		Lck_Lock(&bp->mtx);
 	} else {
 		VSLb(bo->vsl, SLT_BackendReuse, "%d %s", vtp->fd,
-		    bp->display_name);
+		    bp->director->display_name);
 		Lck_Lock(&bp->mtx);
 		VSC_C_main->backend_recycle++;
 		VTP_Recycle(wrk, &vtp);
@@ -318,7 +318,7 @@ vbe_dir_event(const struct director *d, enum vcl_event_e ev)
 
 	if (ev == VCL_EVENT_WARM) {
 		AZ(bp->vsc);
-		bp->vsc = VSC_vbe_New(bp->display_name);
+		bp->vsc = VSC_vbe_New(bp->director->display_name);
 		AN(bp->vsc);
 	}
 
@@ -345,7 +345,7 @@ vbe_panic(const struct director *d, struct vsb *vsb)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
-	VSB_printf(vsb, "display_name = %s,\n", bp->display_name);
+	VSB_printf(vsb, "display_name = %s,\n", bp->director->display_name);
 	if (bp->ipv4_addr != NULL)
 		VSB_printf(vsb, "ipv4 = %s,\n", bp->ipv4_addr);
 	if (bp->ipv6_addr != NULL)

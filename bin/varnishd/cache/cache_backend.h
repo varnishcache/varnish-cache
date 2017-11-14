@@ -58,9 +58,6 @@ struct backend {
 
 	VRT_BACKEND_FIELDS()
 
-	char			*display_name;
-
-
 	struct vbp_target	*probe;
 
 	struct VSC_vbe		*vsc;
@@ -90,7 +87,3 @@ void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
 void VBP_Remove(struct backend *b);
 void VBP_Control(const struct backend *b, int stop);
 void VBP_Status(struct cli *cli, const struct backend *, int details);
-
-/* cache_vcl.c */
-int VCL_AddBackend(struct vcl *, struct director *);
-void VCL_DelBackend(const struct director *);

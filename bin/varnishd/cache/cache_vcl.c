@@ -327,12 +327,20 @@ VCL_Rel(struct vcl **vcc)
 /*--------------------------------------------------------------------*/
 
 int
-VCL_AddBackend(struct vcl *vcl, struct director *d)
+VCL_AddDirector(struct vcl *vcl, struct director *d, const char *vcl_name)
 {
+	struct vsb *vsb;
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	AN(d->destroy);
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+	VSB_printf(vsb, "%s.%s", VCL_Name(vcl), vcl_name);
+	AZ(VSB_finish(vsb));
+	REPLACE((d->display_name), VSB_data(vsb));
+	VSB_destroy(&vsb);
 
 	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
 	if (vcl->temp == VCL_TEMP_COOLING) {
@@ -356,7 +364,7 @@ VCL_AddBackend(struct vcl *vcl, struct director *d)
 }
 
 void
-VCL_DelBackend(const struct director *d)
+VCL_DelDirector(struct director *d)
 {
 	struct vcl *vcl;
 
@@ -372,6 +380,7 @@ VCL_DelBackend(const struct director *d)
 		VDI_Event(d, VCL_EVENT_COLD);
 	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
 	AN(d->destroy);
+	REPLACE(d->display_name, NULL);
 	d->destroy(d);
 }
 

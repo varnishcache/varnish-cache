@@ -108,7 +108,6 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 {
 	struct backend *b;
 	struct director *d;
-	struct vsb *vsb;
 	struct vcl *vcl;
 	const struct vrt_backend_probe *vbp;
 	int retval;
@@ -132,15 +131,6 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 #undef DA
 #undef DN
 
-	vsb = VSB_new_auto();
-	AN(vsb);
-	VSB_printf(vsb, "%s.%s", VCL_Name(vcl), vrt->vcl_name);
-	AZ(VSB_finish(vsb));
-
-	b->display_name = strdup(VSB_data(vsb));
-	AN(b->display_name);
-	VSB_destroy(&vsb);
-
 	VBE_fill_director(b);
 
 	b->director->health = 1;
@@ -163,7 +153,7 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 		VBP_Insert(b, vbp, b->tcp_pool);
 	}
 
-	retval = VCL_AddBackend(ctx->vcl, b->director);
+	retval = VCL_AddDirector(ctx->vcl, b->director, vrt->vcl_name);
 
 	if (retval == 0)
 		return (b->director);
@@ -242,7 +232,6 @@ VBE_Delete(const struct director *d)
 #undef DA
 #undef DN
 
-	free(be->display_name);
 	AZ(be->vsc);
 	Lck_Delete(&be->mtx);
 	FREE_OBJ(be);
@@ -315,7 +304,7 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 	VTAILQ_FOREACH(b, &backends, list) {
 		if (b->director->admin_health == vbe_ah_deleted)
 			continue;
-		if (fnmatch(VSB_data(vsb), b->display_name, 0))
+		if (fnmatch(VSB_data(vsb), b->director->display_name, 0))
 			continue;
 		found++;
 		i = func(cli, b, priv);
@@ -342,7 +331,7 @@ do_list(struct cli *cli, struct backend *b, void *priv)
 	probes = priv;
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 
-	VCLI_Out(cli, "\n%-30s", b->display_name);
+	VCLI_Out(cli, "\n%-30s", b->director->display_name);
 
 	VCLI_Out(cli, " %-10s", VBE_AdminHealth(b->director->admin_health));
 
@@ -457,7 +446,7 @@ VBE_Poll(void)
 		if (be->n_conn > 0)
 			continue;
 		Lck_Unlock(&backends_mtx);
-		VCL_DelBackend(be->director);
+		VCL_DelDirector(be->director);
 		Lck_Lock(&backends_mtx);
 	}
 	Lck_Unlock(&backends_mtx);
