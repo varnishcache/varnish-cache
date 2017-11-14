@@ -22,7 +22,8 @@ Bugs fixed
 * 2373_ - VSC n_vcl, n_vcl_avail, n_vcl_discard are gauge
 * 2380_ - Correct regexp in examples.
 * 2390_ - Straighten locking wrt vcl_active
-* 2429_ - Avoid buffer read overflow on vcl_error and -sfile
+* 2429_ - Avoid buffer read overflow on vcl_backend_error and -sfile
+* 2492_ - Use the idle read timeout only on empty requests
 
 .. _2337: https://github.com/varnishcache/varnish-cache/issues/2337
 .. _2366: https://github.com/varnishcache/varnish-cache/issues/2366
@@ -31,6 +32,7 @@ Bugs fixed
 .. _2380: https://github.com/varnishcache/varnish-cache/issues/2380
 .. _2390: https://github.com/varnishcache/varnish-cache/issues/2390
 .. _2429: https://github.com/varnishcache/varnish-cache/pull/2429
+.. _2492: https://github.com/varnishcache/varnish-cache/issues/2492
 
 ================================
 Varnish Cache 4.1.8 (2017-08-02)
