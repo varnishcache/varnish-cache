@@ -72,12 +72,8 @@ struct backend {
  * Prototypes
  */
 
-/* cache_backend.c */
-void VBE_fill_director(struct backend *be);
-
 /* cache_backend_cfg.c */
 void VBE_SetHappy(const struct backend *, uint64_t);
-void VBE_Delete(const struct director *);
 
 /* cache_backend_probe.c */
 void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
