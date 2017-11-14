@@ -355,7 +355,7 @@ vbe_panic(const struct director *d, struct vsb *vsb)
 	VSB_printf(vsb, "health = %s,\n",
 	    bp->director->health ? "healthy" : "sick");
 	VSB_printf(vsb, "admin_health = %s, changed = %f,\n",
-	    VBE_AdminHealth(bp->director->admin_health),
+	    VDI_Ahealth(bp->director),
 	    bp->director->health_changed);
 	VSB_printf(vsb, "n_conn = %u,\n", bp->n_conn);
 }

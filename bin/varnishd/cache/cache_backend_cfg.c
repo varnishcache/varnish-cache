@@ -55,50 +55,6 @@ static VTAILQ_HEAD(, backend) cool_backends =
     VTAILQ_HEAD_INITIALIZER(cool_backends);
 static struct lock backends_mtx;
 
-/*--------------------------------------------------------------------*/
-
-#define AHEALTH_LIST		\
-	AHEALTH(healthy)	\
-	AHEALTH(sick)		\
-	AHEALTH(probe)		\
-	AHEALTH(deleted)
-
-struct vbe_ahealth {
-	const char		*state;
-};
-
-#define AHEALTH(x) static const struct vbe_ahealth vbe_ah_##x[1] = {{ #x }};
-AHEALTH_LIST
-#undef AHEALTH
-
-/*---------------------------------------------------------------------
- * String to admin_health
- */
-
-static const struct vbe_ahealth *
-vbe_str2adminhealth(const char *wstate)
-{
-
-#define FOO(x, y) if (strcasecmp(wstate, #x) == 0) return (vbe_ah_##y)
-	FOO(healthy,	healthy);
-	FOO(sick,	sick);
-	FOO(probe,	probe);
-	FOO(auto,	probe);
-	return (NULL);
-#undef FOO
-}
-
-const char *
-VBE_AdminHealth(const struct vbe_ahealth *ah)
-{
-#define AHEALTH(x) if (ah == vbe_ah_##x) return(ah->state);
-AHEALTH_LIST
-#undef AHEALTH
-	WRONG("Wrong Admin Health State");
-}
-
-#undef AHEALTH_LIST
-
 /*--------------------------------------------------------------------
  * Create a new static or dynamic director::backend instance.
  */
@@ -135,7 +91,7 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 
 	b->director->health = 1;
 	b->director->health_changed = VTIM_real();
-	b->director->admin_health = vbe_ah_probe;
+	b->director->admin_health = VDI_AH_PROBE;
 
 	vbp = vrt->probe;
 	if (vbp == NULL)
@@ -179,7 +135,7 @@ VRT_delete_backend(VRT_CTX, struct director **dp)
 	TAKE_OBJ_NOTNULL(d, dp, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
 	Lck_Lock(&be->mtx);
-	be->director->admin_health = vbe_ah_deleted;
+	be->director->admin_health = VDI_AH_DELETED;
 	be->director->health_changed = VTIM_real();
 	be->cooled = VTIM_real() + 60.;
 	Lck_Unlock(&be->mtx);
@@ -249,16 +205,16 @@ VDI_Healthy(const struct director *d, double *changed)
 	if (changed != NULL)
 		*changed = d->health_changed;
 
-	if (d->admin_health == vbe_ah_probe)
+	if (d->admin_health == VDI_AH_PROBE)
 		return (d->health);
 
-	if (d->admin_health == vbe_ah_sick)
+	if (d->admin_health == VDI_AH_SICK)
 		return (0);
 
-	if (d->admin_health == vbe_ah_deleted)
+	if (d->admin_health == VDI_AH_DELETED)
 		return (0);
 
-	if (d->admin_health == vbe_ah_healthy)
+	if (d->admin_health == VDI_AH_HEALTHY)
 		return (1);
 
 	WRONG("Wrong admin health");
@@ -277,12 +233,12 @@ do_list(struct cli *cli, struct director *d, void *priv)
 	probes = priv;
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
-	if (d->admin_health == vbe_ah_deleted)
+	if (d->admin_health == VDI_AH_DELETED)
 		return (0);
 
 	VCLI_Out(cli, "\n%-30s", d->display_name);
 
-	VCLI_Out(cli, " %-10s", VBE_AdminHealth(d->admin_health));
+	VCLI_Out(cli, " %-10s", VDI_Ahealth(d));
 
 	if (be->probe == NULL)
 		VCLI_Out(cli, " %-20s", "Healthy (no probe)");
@@ -329,19 +285,16 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 static int __match_proto__(vcl_be_func)
 do_set_health(struct cli *cli, struct director *d, void *priv)
 {
-	const struct vbe_ahealth *ah;
 	unsigned prev;
 
 	(void)cli;
 	AN(priv);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	if (d->admin_health == vbe_ah_deleted)
+	if (d->admin_health == VDI_AH_DELETED)
 		return (0);
-	ah = *(const struct vbe_ahealth **)priv;
-	AN(ah);
 	prev = VDI_Healthy(d, NULL);
-	if (d->admin_health != vbe_ah_deleted)
-		d->admin_health = ah;
+	d->admin_health = *(const struct vdi_ahealth **)priv;
+	(void)VDI_Ahealth(d);			// Acts like type-check
 	if (prev != VDI_Healthy(d, NULL))
 		d->health_changed = VTIM_real();
 
@@ -351,7 +304,7 @@ do_set_health(struct cli *cli, struct director *d, void *priv)
 static void __match_proto__()
 cli_backend_set_health(struct cli *cli, const char * const *av, void *priv)
 {
-	const struct vbe_ahealth *ah;
+	const struct vdi_ahealth *ah;
 	int n;
 
 	(void)av;
@@ -359,8 +312,8 @@ cli_backend_set_health(struct cli *cli, const char * const *av, void *priv)
 	ASSERT_CLI();
 	AN(av[2]);
 	AN(av[3]);
-	ah = vbe_str2adminhealth(av[3]);
-	if (ah == NULL) {
+	ah = VDI_Str2Ahealth(av[3]);
+	if (ah == NULL || ah == VDI_AH_DELETED) {
 		VCLI_Out(cli, "Invalid state %s", av[3]);
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;

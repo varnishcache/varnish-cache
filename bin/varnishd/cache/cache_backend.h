@@ -41,7 +41,6 @@ struct vbp_target;
 struct vrt_ctx;
 struct vrt_backend_probe;
 struct tcp_pool;
-struct vbe_ahealth;
 
 /*--------------------------------------------------------------------
  * An instance of a backend from a VCL program.
@@ -79,7 +78,6 @@ void VBE_fill_director(struct backend *be);
 /* cache_backend_cfg.c */
 void VBE_SetHappy(const struct backend *, uint64_t);
 void VBE_Delete(const struct director *);
-const char *VBE_AdminHealth(const struct vbe_ahealth *);
 
 /* cache_backend_probe.c */
 void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,

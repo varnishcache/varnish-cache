@@ -84,7 +84,7 @@ struct director {
 	struct vcl		*vcl;
 
 	unsigned		health;
-	const struct vbe_ahealth *admin_health;
+	const struct vdi_ahealth *admin_health;
 	double			health_changed;
 };
 
@@ -93,3 +93,18 @@ unsigned VDI_Healthy(const struct director *, double *);
 /* cache_vcl.c */
 int VCL_AddDirector(struct vcl *, struct director *, const char *);
 void VCL_DelDirector(struct director *);
+
+/* cache_director.c */
+
+#define VBE_AHEALTH_LIST			\
+	VBE_AHEALTH(healthy,	HEALTHY)	\
+	VBE_AHEALTH(sick,	SICK)		\
+	VBE_AHEALTH(probe,	PROBE)		\
+	VBE_AHEALTH(deleted,	DELETED)
+
+#define VBE_AHEALTH(l,u) extern const struct vdi_ahealth * const VDI_AH_##u;
+VBE_AHEALTH_LIST
+#undef VBE_AHEALTH
+
+const struct vdi_ahealth *VDI_Str2Ahealth(const char *t);
+const char *VDI_Ahealth(const struct director *d);

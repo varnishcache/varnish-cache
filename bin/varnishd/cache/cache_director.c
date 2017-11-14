@@ -39,6 +39,37 @@
 
 #include "cache_director.h"
 
+/* -------------------------------------------------------------------*/
+
+struct vdi_ahealth {
+	const char		*name;
+};
+
+#define VBE_AHEALTH(l,u)						\
+	static const struct vdi_ahealth vdi_ah_##l[1] = {{#l}};		\
+	const struct vdi_ahealth * const VDI_AH_##u = vdi_ah_##l;
+VBE_AHEALTH_LIST
+#undef VBE_AHEALTH
+
+const struct vdi_ahealth *
+VDI_Str2Ahealth(const char *t)
+{
+#define VBE_AHEALTH(l,u) if (!strcasecmp(t, #l)) return (VDI_AH_##u);
+VBE_AHEALTH_LIST
+#undef VBE_AHEALTH
+	if (!strcasecmp(t, "auto")) return (VDI_AH_PROBE);
+	return (NULL);
+}
+
+const char *
+VDI_Ahealth(const struct director *d)
+{
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	AN(d->admin_health);
+	return (d->admin_health->name);
+}
+
 /* Resolve director --------------------------------------------------*/
 
 static const struct director *
