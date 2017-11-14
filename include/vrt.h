@@ -56,6 +56,8 @@
  *	VRT_Healthy() added
  *	VRT_VSC_Alloc() added
  *	VRT_VSC_Destroy() added
+ *	struct director.event added
+ *	struct director.destroy added
  * 6.1 (2017-09-15 aka 5.2)
  *	http_CollectHdrSep added
  *	VRT_purge modified (may fail a transaction, signature changed)
