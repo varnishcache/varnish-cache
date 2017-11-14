@@ -196,10 +196,10 @@ void
 VBE_SetHappy(const struct backend *be, uint64_t happy)
 {
 
-		Lck_Lock(&backends_mtx);
-		if (be->vsc != NULL)
-			be->vsc->happy = happy;
-		Lck_Unlock(&backends_mtx);
+	Lck_Lock(&backends_mtx);
+	if (be->vsc != NULL)
+		be->vsc->happy = happy;
+	Lck_Unlock(&backends_mtx);
 }
 
 /*---------------------------------------------------------------------
@@ -264,88 +264,37 @@ VDI_Healthy(const struct director *d, double *changed)
 	WRONG("Wrong admin health");
 }
 
-/*---------------------------------------------------------------------
- * A general function for finding backends and doing things with them.
- *
- * Return -1 on match-argument parse errors.
- *
- * If the call-back function returns negative, the search is terminated
- * and we relay that return value.
- *
- * Otherwise we return the number of matches.
- */
-
-typedef int bf_func(struct cli *cli, struct backend *b, void *priv);
-
-static int
-backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
-{
-	int i, found = 0;
-	struct vsb *vsb;
-	struct vcl *vcc = NULL;
-	struct backend *b;
-
-	VCL_Refresh(&vcc);
-	AN(vcc);
-	vsb = VSB_new_auto();
-	AN(vsb);
-	if (matcher == NULL || *matcher == '\0' || !strcmp(matcher, "*")) {
-		// all backends in active VCL
-		VSB_printf(vsb, "%s.*", VCL_Name(vcc));
-	} else if (strchr(matcher, '.') != NULL) {
-		// use pattern as is
-		VSB_cat(vsb, matcher);
-	} else {
-		// pattern applies to active vcl
-		VSB_printf(vsb, "%s.%s", VCL_Name(vcc), matcher);
-	}
-	AZ(VSB_finish(vsb));
-	Lck_Lock(&backends_mtx);
-	VTAILQ_FOREACH(b, &backends, list) {
-		if (b->director->admin_health == vbe_ah_deleted)
-			continue;
-		if (fnmatch(VSB_data(vsb), b->director->display_name, 0))
-			continue;
-		found++;
-		i = func(cli, b, priv);
-		if (i < 0) {
-			found = i;
-			break;
-		}
-	}
-	Lck_Unlock(&backends_mtx);
-	VSB_destroy(&vsb);
-	VCL_Rel(&vcc);
-	return (found);
-}
-
 /*---------------------------------------------------------------------*/
 
-static int __match_proto__()
-do_list(struct cli *cli, struct backend *b, void *priv)
+static int __match_proto__(vcl_be_func)
+do_list(struct cli *cli, struct director *d, void *priv)
 {
 	int *probes;
 	char time_str[VTIM_FORMAT_SIZE];
+	struct backend *be;
 
 	AN(priv);
 	probes = priv;
-	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
+	if (d->admin_health == vbe_ah_deleted)
+		return (0);
 
-	VCLI_Out(cli, "\n%-30s", b->director->display_name);
+	VCLI_Out(cli, "\n%-30s", d->display_name);
 
-	VCLI_Out(cli, " %-10s", VBE_AdminHealth(b->director->admin_health));
+	VCLI_Out(cli, " %-10s", VBE_AdminHealth(d->admin_health));
 
-	if (b->probe == NULL)
+	if (be->probe == NULL)
 		VCLI_Out(cli, " %-20s", "Healthy (no probe)");
 	else {
-		if (b->director->health)
+		if (d->health)
 			VCLI_Out(cli, " %-20s", "Healthy ");
 		else
 			VCLI_Out(cli, " %-20s", "Sick ");
-		VBP_Status(cli, b, *probes);
+		VBP_Status(cli, be, *probes);
 	}
 
-	VTIM_format(b->director->health_changed, time_str);
+	VTIM_format(d->health_changed, time_str);
 	VCLI_Out(cli, " %s", time_str);
 
 	return (0);
@@ -372,27 +321,29 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 	}
 	VCLI_Out(cli, "%-30s %-10s %-20s %s", "Backend name", "Admin",
 	    "Probe", "Last updated");
-	(void)backend_find(cli, av[2], do_list, &probes);
+	(void)VCL_IterDirector(cli, av[2], do_list, &probes);
 }
 
 /*---------------------------------------------------------------------*/
 
-static int __match_proto__()
-do_set_health(struct cli *cli, struct backend *b, void *priv)
+static int __match_proto__(vcl_be_func)
+do_set_health(struct cli *cli, struct director *d, void *priv)
 {
 	const struct vbe_ahealth *ah;
 	unsigned prev;
 
 	(void)cli;
 	AN(priv);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	if (d->admin_health == vbe_ah_deleted)
+		return (0);
 	ah = *(const struct vbe_ahealth **)priv;
 	AN(ah);
-	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-	prev = VDI_Healthy(b->director, NULL);
-	if (b->director->admin_health != vbe_ah_deleted)
-		b->director->admin_health = ah;
-	if (prev != VDI_Healthy(b->director, NULL))
-		b->director->health_changed = VTIM_real();
+	prev = VDI_Healthy(d, NULL);
+	if (d->admin_health != vbe_ah_deleted)
+		d->admin_health = ah;
+	if (prev != VDI_Healthy(d, NULL))
+		d->health_changed = VTIM_real();
 
 	return (0);
 }
@@ -414,7 +365,7 @@ cli_backend_set_health(struct cli *cli, const char * const *av, void *priv)
 		VCLI_SetResult(cli, CLIS_PARAM);
 		return;
 	}
-	n = backend_find(cli, av[2], do_set_health, &ah);
+	n = VCL_IterDirector(cli, av[2], do_set_health, &ah);
 	if (n == 0) {
 		VCLI_Out(cli, "No Backends matches");
 		VCLI_SetResult(cli, CLIS_PARAM);

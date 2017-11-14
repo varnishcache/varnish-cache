@@ -32,6 +32,7 @@
 
 #include <errno.h>
 #include <dlfcn.h>
+#include <fnmatch.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -382,6 +383,69 @@ VCL_DelDirector(struct director *d)
 	AN(d->destroy);
 	REPLACE(d->display_name, NULL);
 	d->destroy(d);
+}
+
+static int
+vcl_iterdir(struct cli *cli, const char *pat, const struct vcl *vcl,
+    vcl_be_func *func, void *priv)
+{
+	int i, found = 0;
+	struct director *d;
+
+	VTAILQ_FOREACH(d, &vcl->director_list, vcl_list) {
+		if (fnmatch(pat, d->display_name, 0))
+			continue;
+		found++;
+		i = func(cli, d, priv);
+		if (i < 0)
+			return (i);
+		found += i;
+	}
+	return (found);
+}
+
+int
+VCL_IterDirector(struct cli *cli, const char *pat,
+    vcl_be_func *func, void *priv)
+{
+	int i, found = 0;
+	struct vsb *vsb;
+	struct vcl *vcl;
+
+	ASSERT_CLI();
+	vsb = VSB_new_auto();
+	AN(vsb);
+	if (pat == NULL || *pat == '\0' || !strcmp(pat, "*")) {
+		// all backends in active VCL
+		VSB_printf(vsb, "%s.*", VCL_Name(vcl_active));
+		vcl = vcl_active;
+	} else if (strchr(pat, '.') == NULL) {
+		// pattern applies to active vcl
+		VSB_printf(vsb, "%s.%s", VCL_Name(vcl_active), pat);
+		vcl = vcl_active;
+	} else {
+		// use pattern as is
+		VSB_cat(vsb, pat);
+		vcl = NULL;
+	}
+	AZ(VSB_finish(vsb));
+	Lck_Lock(&vcl_mtx);
+	if (vcl != NULL) {
+		found = vcl_iterdir(cli, VSB_data(vsb), vcl, func, priv);
+	} else {
+		VTAILQ_FOREACH(vcl, &vcl_head, list) {
+			i = vcl_iterdir(cli, VSB_data(vsb), vcl, func, priv);
+			if (i < 0) {
+				found = i;
+				break;
+			} else {
+				found += i;
+			}
+		}
+	}
+	Lck_Unlock(&vcl_mtx);
+	VSB_destroy(&vsb);
+	return (found);
 }
 
 static void

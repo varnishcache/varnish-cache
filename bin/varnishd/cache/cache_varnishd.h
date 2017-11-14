@@ -214,6 +214,9 @@ void VCL_Refresh(struct vcl **);
 void VCL_Rel(struct vcl **);
 const char *VCL_Return_Name(unsigned);
 
+typedef int vcl_be_func(struct cli *, struct director *, void *);
+
+int VCL_IterDirector(struct cli *, const char *, vcl_be_func *, void *);
 
 /* cache_vrt.c */
 void VRTPRIV_init(struct vrt_privs *privs);
