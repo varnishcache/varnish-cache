@@ -332,6 +332,7 @@ VCL_AddBackend(struct vcl *vcl, struct director *d)
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	AN(d->destroy);
 
 	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
 	if (vcl->temp == VCL_TEMP_COOLING) {
@@ -370,6 +371,8 @@ VCL_DelBackend(const struct director *d)
 	if (VCL_WARM(vcl))
 		VDI_Event(d, VCL_EVENT_COLD);
 	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
+	AN(d->destroy);
+	d->destroy(d);
 }
 
 static void
@@ -398,7 +401,8 @@ vcl_KillBackends(struct vcl *vcl)
 		if (d == NULL)
 			break;
 		VTAILQ_REMOVE(&vcl->director_list, d, list);
-		VBE_Delete(d);
+		AN(d->destroy);
+		d->destroy(d);
 	}
 }
 

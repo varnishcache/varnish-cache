@@ -458,7 +458,6 @@ VBE_Poll(void)
 			continue;
 		Lck_Unlock(&backends_mtx);
 		VCL_DelBackend(be->director);
-		VBE_Delete(be->director);
 		Lck_Lock(&backends_mtx);
 	}
 	Lck_Unlock(&backends_mtx);

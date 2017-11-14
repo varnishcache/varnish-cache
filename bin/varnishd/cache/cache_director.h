@@ -55,6 +55,8 @@ typedef enum sess_close vdi_http1pipe_f(const struct director *, struct req *,
 
 typedef void vdi_event_f(const struct director *, enum vcl_event_e);
 
+typedef void vdi_destroy_f(const struct director *);
+
 typedef void vdi_panic_f(const struct director *, struct vsb *);
 
 struct director {
@@ -70,6 +72,7 @@ struct director {
 	vdi_getip_f		*getip;
 	vdi_finish_f		*finish;
 	vdi_event_f		*event;
+	vdi_destroy_f		*destroy;
 	vdi_panic_f		*panic;
 	void			*priv;
 	const void		*priv2;
