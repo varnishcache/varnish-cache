@@ -141,8 +141,6 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 	AN(b->display_name);
 	VSB_destroy(&vsb);
 
-	b->vcl = vcl;
-
 	b->healthy = 1;
 	b->health_changed = VTIM_real();
 	b->admin_health = vbe_ah_probe;
@@ -165,7 +163,7 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 		VBP_Insert(b, vbp, b->tcp_pool);
 	}
 
-	retval = VCL_AddBackend(ctx->vcl, b);
+	retval = VCL_AddBackend(ctx->vcl, b->director);
 
 	if (retval == 0)
 		return (b->director);
@@ -219,10 +217,12 @@ VBE_SetHappy(const struct backend *be, uint64_t happy)
  */
 
 void
-VBE_Delete(struct backend *be)
+VBE_Delete(const struct director *d)
 {
+	struct backend *be;
+
 	ASSERT_CLI();
-	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
+	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
 
 	if (be->probe != NULL)
 		VBP_Remove(be);
@@ -457,8 +457,8 @@ VBE_Poll(void)
 		if (be->n_conn > 0)
 			continue;
 		Lck_Unlock(&backends_mtx);
-		VCL_DelBackend(be);
-		VBE_Delete(be);
+		VCL_DelBackend(be->director);
+		VBE_Delete(be->director);
 		Lck_Lock(&backends_mtx);
 	}
 	Lck_Unlock(&backends_mtx);

@@ -73,4 +73,8 @@ struct director {
 	vdi_panic_f		*panic;
 	void			*priv;
 	const void		*priv2;
+
+	/* Internal Housekeeping fields */
+	VTAILQ_ENTRY(director)	list;
+	struct vcl		*vcl;
 };

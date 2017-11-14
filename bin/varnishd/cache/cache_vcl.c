@@ -70,7 +70,7 @@ struct vcl {
 	unsigned		discard;
 	const char		*temp;
 	pthread_rwlock_t	temp_rwl;
-	VTAILQ_HEAD(,backend)	backend_list;
+	VTAILQ_HEAD(,director)	director_list;
 	VTAILQ_HEAD(,vclref)	ref_list;
 	int			nrefs;
 	struct vcl		*label;
@@ -327,11 +327,11 @@ VCL_Rel(struct vcl **vcc)
 /*--------------------------------------------------------------------*/
 
 int
-VCL_AddBackend(struct vcl *vcl, struct backend *be)
+VCL_AddBackend(struct vcl *vcl, struct director *d)
 {
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
-	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 
 	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
 	if (vcl->temp == VCL_TEMP_COOLING) {
@@ -340,12 +340,13 @@ VCL_AddBackend(struct vcl *vcl, struct backend *be)
 	}
 
 	Lck_Lock(&vcl_mtx);
-	VTAILQ_INSERT_TAIL(&vcl->backend_list, be, vcl_list);
+	VTAILQ_INSERT_TAIL(&vcl->director_list, d, list);
+	d->vcl = vcl;
 	Lck_Unlock(&vcl_mtx);
 
 	if (VCL_WARM(vcl))
 		/* Only when adding backend to already warm VCL */
-		VDI_Event(be->director, VCL_EVENT_WARM);
+		VDI_Event(d, VCL_EVENT_WARM);
 	else if (vcl->temp != VCL_TEMP_INIT)
 		WRONG("Dynamic Backends can only be added to warm VCLs");
 	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
@@ -354,50 +355,50 @@ VCL_AddBackend(struct vcl *vcl, struct backend *be)
 }
 
 void
-VCL_DelBackend(struct backend *be)
+VCL_DelBackend(const struct director *d)
 {
 	struct vcl *vcl;
 
-	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
-	vcl = be->vcl;
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	vcl = d->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	Lck_Lock(&vcl_mtx);
-	VTAILQ_REMOVE(&vcl->backend_list, be, vcl_list);
+	VTAILQ_REMOVE(&vcl->director_list, d, list);
 	Lck_Unlock(&vcl_mtx);
 
 	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
 	if (VCL_WARM(vcl))
-		VDI_Event(be->director, VCL_EVENT_COLD);
+		VDI_Event(d, VCL_EVENT_COLD);
 	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
 }
 
 static void
 vcl_BackendEvent(const struct vcl *vcl, enum vcl_event_e e)
 {
-	struct backend *be;
+	struct director *d;
 
 	ASSERT_CLI();
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	AZ(vcl->busy);
 
-	VTAILQ_FOREACH(be, &vcl->backend_list, vcl_list)
-		VDI_Event(be->director, e);
+	VTAILQ_FOREACH(d, &vcl->director_list, list)
+		VDI_Event(d, e);
 }
 
 static void
 vcl_KillBackends(struct vcl *vcl)
 {
-	struct backend *be;
+	struct director *d;
 
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	AZ(vcl->busy);
 	assert(VTAILQ_EMPTY(&vcl->ref_list));
 	while (1) {
-		be = VTAILQ_FIRST(&vcl->backend_list);
-		if (be == NULL)
+		d = VTAILQ_FIRST(&vcl->director_list);
+		if (d == NULL)
 			break;
-		VTAILQ_REMOVE(&vcl->backend_list, be, vcl_list);
-		VBE_Delete(be);
+		VTAILQ_REMOVE(&vcl->director_list, d, list);
+		VBE_Delete(d);
 	}
 }
 
@@ -752,7 +753,7 @@ vcl_load(struct cli *cli, struct vrt_ctx *ctx,
 
 	vcl->loaded_name = strdup(name);
 	XXXAN(vcl->loaded_name);
-	VTAILQ_INIT(&vcl->backend_list);
+	VTAILQ_INIT(&vcl->director_list);
 	VTAILQ_INIT(&vcl->ref_list);
 
 	vcl->temp = VCL_TEMP_INIT;

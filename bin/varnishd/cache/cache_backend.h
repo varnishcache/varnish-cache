@@ -54,12 +54,10 @@ struct backend {
 	unsigned		n_conn;
 
 	VTAILQ_ENTRY(backend)	list;
-	VTAILQ_ENTRY(backend)	vcl_list;
 	struct lock		mtx;
 
 	VRT_BACKEND_FIELDS()
 
-	struct vcl		*vcl;
 	char			*display_name;
 
 
@@ -87,9 +85,8 @@ void VBE_fill_director(struct backend *be);
 /* cache_backend_cfg.c */
 void VBE_SetHappy(const struct backend *, uint64_t);
 unsigned VBE_Healthy(const struct backend *b, double *changed);
-void VBE_Delete(struct backend *be);
-const char *
-VBE_AdminHealth(const struct vbe_ahealth *);
+void VBE_Delete(const struct director *);
+const char *VBE_AdminHealth(const struct vbe_ahealth *);
 
 /* cache_backend_probe.c */
 void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,
@@ -99,5 +96,5 @@ void VBP_Control(const struct backend *b, int stop);
 void VBP_Status(struct cli *cli, const struct backend *, int details);
 
 /* cache_vcl.c */
-int VCL_AddBackend(struct vcl *, struct backend *);
-void VCL_DelBackend(struct backend *);
+int VCL_AddBackend(struct vcl *, struct director *);
+void VCL_DelBackend(const struct director *);
