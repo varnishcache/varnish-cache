@@ -35,6 +35,7 @@ char *
 wb_create(struct ws *ws, struct wb_s *wb)
 {
 	if (WS_Reserve(ws, 0) == 0) {
+		WS_Release(ws, 0);
 		wb->w = NULL;
 		wb->ws = NULL;
 		return NULL;

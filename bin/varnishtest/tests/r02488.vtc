@@ -1,0 +1,41 @@
+varnishtest "Test vmod_blob wb_create for empty workspace"
+
+varnish v1 -vcl {
+	import blob;
+	import vtc;
+
+	backend b1 {.host = "${bad_backend}";}
+
+	sub vcl_init {
+		new bl = blob.blob(HEX, "deadbeef");
+	}
+	sub vcl_recv {
+		return (synth(200));
+	}
+	sub vcl_synth {
+		if (req.url == "/empty") {
+			vtc.workspace_alloc(client, -1);
+		}
+		set resp.http.foo = blob.encode(encoding=HEX, blob=bl.get());
+		set resp.http.bar = "bar";
+	}
+} -start
+
+logexpect l1 -v v1 -g raw {
+	expect * 1002 VCL_call	{^SYNTH$}
+	expect 0    = VCL_Error	{^vmod blob error: cannot encode, out of space$}
+	expect 0    = LostHeader	{^foo:$}
+	expect 0    = VCL_return	{^fail$}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.foo == "deadbeef"
+	expect resp.http.bar == "bar"
+
+	txreq -url "/empty"
+	expect_close
+} -run
+
+logexpect l1 -wait
