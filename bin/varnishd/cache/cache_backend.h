@@ -41,6 +41,7 @@ struct vbp_target;
 struct vrt_ctx;
 struct vrt_backend_probe;
 struct tcp_pool;
+struct vbe_ahealth;
 
 /*--------------------------------------------------------------------
  * An instance of a backend from a VCL program.
@@ -64,7 +65,7 @@ struct backend {
 
 	struct vbp_target	*probe;
 	unsigned		healthy;
-	const char		*admin_health;
+	const struct vbe_ahealth *admin_health;
 	double			health_changed;
 
 	struct VSC_vbe		*vsc;
@@ -90,6 +91,8 @@ unsigned VBE_Healthy(const struct backend *b, double *changed);
 void VBE_Event(struct backend *, enum vcl_event_e);
 #endif
 void VBE_Delete(struct backend *be);
+const char *
+VBE_AdminHealth(const struct vbe_ahealth *);
 
 /* cache_backend_probe.c */
 void VBP_Insert(struct backend *b, struct vrt_backend_probe const *p,

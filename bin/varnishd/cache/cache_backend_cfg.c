@@ -56,10 +56,49 @@ static VTAILQ_HEAD(, backend) cool_backends =
     VTAILQ_HEAD_INITIALIZER(cool_backends);
 static struct lock backends_mtx;
 
-static const char * const vbe_ah_healthy	= "healthy";
-static const char * const vbe_ah_sick		= "sick";
-static const char * const vbe_ah_probe		= "probe";
-static const char * const vbe_ah_deleted	= "deleted";
+/*--------------------------------------------------------------------*/
+
+#define AHEALTH_LIST		\
+	AHEALTH(healthy)	\
+	AHEALTH(sick)		\
+	AHEALTH(probe)		\
+	AHEALTH(deleted)
+
+struct vbe_ahealth {
+	const char		*state;
+};
+
+#define AHEALTH(x) static const struct vbe_ahealth vbe_ah_##x[1] = {{ #x }};
+AHEALTH_LIST
+#undef AHEALTH
+
+/*---------------------------------------------------------------------
+ * String to admin_health
+ */
+
+static const struct vbe_ahealth *
+vbe_str2adminhealth(const char *wstate)
+{
+
+#define FOO(x, y) if (strcasecmp(wstate, #x) == 0) return (vbe_ah_##y)
+	FOO(healthy,	healthy);
+	FOO(sick,	sick);
+	FOO(probe,	probe);
+	FOO(auto,	probe);
+	return (NULL);
+#undef FOO
+}
+
+const char *
+VBE_AdminHealth(const struct vbe_ahealth *ah)
+{
+#define AHEALTH(x) if (ah == vbe_ah_##x) return(ah->state);
+AHEALTH_LIST
+#undef AHEALTH
+	WRONG("Wrong Admin Health State");
+}
+
+#undef AHEALTH_LIST
 
 /*--------------------------------------------------------------------
  * Create a new static or dynamic director::backend instance.
@@ -236,23 +275,6 @@ VBE_Delete(struct backend *be)
 	FREE_OBJ(be);
 }
 
-/*---------------------------------------------------------------------
- * String to admin_health
- */
-
-static const char *
-vbe_str2adminhealth(const char *wstate)
-{
-
-#define FOO(x, y) if (strcasecmp(wstate, #x) == 0) return (vbe_ah_##y)
-	FOO(healthy,	healthy);
-	FOO(sick,	sick);
-	FOO(probe,	probe);
-	FOO(auto,	probe);
-	return (NULL);
-#undef FOO
-}
-
 /*--------------------------------------------------------------------
  * Test if backend is healthy and report when it last changed
  */
@@ -349,7 +371,7 @@ do_list(struct cli *cli, struct backend *b, void *priv)
 
 	VCLI_Out(cli, "\n%-30s", b->display_name);
 
-	VCLI_Out(cli, " %-10s", b->admin_health);
+	VCLI_Out(cli, " %-10s", VBE_AdminHealth(b->admin_health));
 
 	if (b->probe == NULL)
 		VCLI_Out(cli, " %-20s", "Healthy (no probe)");
@@ -396,17 +418,17 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 static int __match_proto__()
 do_set_health(struct cli *cli, struct backend *b, void *priv)
 {
-	const char **ah;
+	const struct vbe_ahealth *ah;
 	unsigned prev;
 
 	(void)cli;
 	AN(priv);
-	ah = priv;
-	AN(*ah);
+	ah = *(const struct vbe_ahealth **)priv;
+	AN(ah);
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
 	prev = VBE_Healthy(b, NULL);
 	if (b->admin_health != vbe_ah_deleted)
-		b->admin_health = *ah;
+		b->admin_health = ah;
 	if (prev != VBE_Healthy(b, NULL))
 		b->health_changed = VTIM_real();
 
@@ -416,7 +438,7 @@ do_set_health(struct cli *cli, struct backend *b, void *priv)
 static void __match_proto__()
 cli_backend_set_health(struct cli *cli, const char * const *av, void *priv)
 {
-	const char *ah;
+	const struct vbe_ahealth *ah;
 	int n;
 
 	(void)av;
