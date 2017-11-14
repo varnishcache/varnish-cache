@@ -87,9 +87,6 @@ void VBE_fill_director(struct backend *be);
 /* cache_backend_cfg.c */
 void VBE_SetHappy(const struct backend *, uint64_t);
 unsigned VBE_Healthy(const struct backend *b, double *changed);
-#ifdef VCL_MET_MAX
-void VBE_Event(struct backend *, enum vcl_event_e);
-#endif
 void VBE_Delete(struct backend *be);
 const char *
 VBE_AdminHealth(const struct vbe_ahealth *);

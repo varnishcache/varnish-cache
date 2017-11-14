@@ -345,7 +345,7 @@ VCL_AddBackend(struct vcl *vcl, struct backend *be)
 
 	if (VCL_WARM(vcl))
 		/* Only when adding backend to already warm VCL */
-		VBE_Event(be, VCL_EVENT_WARM);
+		VDI_Event(be->director, VCL_EVENT_WARM);
 	else if (vcl->temp != VCL_TEMP_INIT)
 		WRONG("Dynamic Backends can only be added to warm VCLs");
 	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
@@ -367,7 +367,7 @@ VCL_DelBackend(struct backend *be)
 
 	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
 	if (VCL_WARM(vcl))
-		VBE_Event(be, VCL_EVENT_COLD);
+		VDI_Event(be->director, VCL_EVENT_COLD);
 	AZ(errno=pthread_rwlock_unlock(&vcl->temp_rwl));
 }
 
@@ -381,7 +381,7 @@ vcl_BackendEvent(const struct vcl *vcl, enum vcl_event_e e)
 	AZ(vcl->busy);
 
 	VTAILQ_FOREACH(be, &vcl->backend_list, vcl_list)
-		VBE_Event(be, e);
+		VDI_Event(be->director, e);
 }
 
 static void

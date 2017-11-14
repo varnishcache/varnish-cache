@@ -309,6 +309,35 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 /*--------------------------------------------------------------------*/
 
 static void
+vbe_dir_event(const struct director *d, enum vcl_event_e ev)
+{
+	struct backend *bp;
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
+
+	if (ev == VCL_EVENT_WARM) {
+		AZ(bp->vsc);
+		bp->vsc = VSC_vbe_New(bp->display_name);
+		AN(bp->vsc);
+	}
+
+	if (bp->probe != NULL && ev == VCL_EVENT_WARM)
+		VBP_Control(bp, 1);
+
+	if (bp->probe != NULL && ev == VCL_EVENT_COLD)
+		VBP_Control(bp, 0);
+
+	if (ev == VCL_EVENT_COLD) {
+		AN(bp->vsc);
+		VSC_vbe_Destroy(&bp->vsc);
+		AZ(bp->vsc);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
 vbe_panic(const struct director *d, struct vsb *vsb)
 {
 	struct backend *bp;
@@ -349,5 +378,6 @@ VBE_fill_director(struct backend *be)
 	d->gethdrs = vbe_dir_gethdrs;
 	d->getip = vbe_dir_getip;
 	d->finish = vbe_dir_finish;
+	d->event = vbe_dir_event;
 	d->panic = vbe_panic;
 }

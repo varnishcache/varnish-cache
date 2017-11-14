@@ -184,6 +184,18 @@ VRT_Healthy(VRT_CTX, VCL_BACKEND be)
 	return (be->healthy(be, ctx->bo, NULL));
 }
 
+/* Send Event ----------------------------------------------------------
+ */
+
+void
+VDI_Event(const struct director *d, enum vcl_event_e ev)
+{
+
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	if (d->event != NULL)
+		d->event(d, ev);
+}
+
 /* Dump panic info -----------------------------------------------------
  */
 

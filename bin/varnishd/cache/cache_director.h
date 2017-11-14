@@ -53,6 +53,8 @@ typedef void vdi_finish_f(const struct director *, struct worker *,
 typedef enum sess_close vdi_http1pipe_f(const struct director *, struct req *,
     struct busyobj *);
 
+typedef void vdi_event_f(const struct director *, enum vcl_event_e);
+
 typedef void vdi_panic_f(const struct director *, struct vsb *);
 
 struct director {
@@ -67,6 +69,7 @@ struct director {
 	vdi_getbody_f		*getbody;
 	vdi_getip_f		*getip;
 	vdi_finish_f		*finish;
+	vdi_event_f		*event;
 	vdi_panic_f		*panic;
 	void			*priv;
 	const void		*priv2;

@@ -39,7 +39,6 @@
 #include "cache_varnishd.h"
 
 #include "vcli_serve.h"
-#include "vcl.h"
 #include "vtim.h"
 #include "waiter/waiter.h"
 
@@ -218,32 +217,6 @@ VBE_SetHappy(const struct backend *be, uint64_t happy)
 /*---------------------------------------------------------------------
  * These are for cross-calls with cache_vcl.c only.
  */
-
-void
-VBE_Event(struct backend *be, enum vcl_event_e ev)
-{
-
-	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
-
-	if (ev == VCL_EVENT_WARM) {
-		Lck_Lock(&backends_mtx);
-		be->vsc = VSC_vbe_New(be->display_name);
-		AN(be->vsc);
-		Lck_Unlock(&backends_mtx);
-	}
-
-	if (be->probe != NULL && ev == VCL_EVENT_WARM)
-		VBP_Control(be, 1);
-
-	if (be->probe != NULL && ev == VCL_EVENT_COLD)
-		VBP_Control(be, 0);
-
-	if (ev == VCL_EVENT_COLD) {
-		Lck_Lock(&backends_mtx);
-		VSC_vbe_Destroy(&be->vsc);
-		Lck_Unlock(&backends_mtx);
-	}
-}
 
 void
 VBE_Delete(struct backend *be)

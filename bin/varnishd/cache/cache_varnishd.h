@@ -70,6 +70,7 @@ const struct suckaddr *VDI_GetIP(struct worker *, struct busyobj *);
 void VDI_Finish(struct worker *wrk, struct busyobj *bo);
 enum sess_close VDI_Http1Pipe(struct req *, struct busyobj *);
 void VDI_Panic(const struct director *, struct vsb *, const char *nm);
+void VDI_Event(const struct director *d, enum vcl_event_e ev);
 
 /* cache_exp.c */
 double EXP_Ttl(const struct req *, const struct objcore *);
