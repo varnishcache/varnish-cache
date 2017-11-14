@@ -169,20 +169,22 @@ vbp_update_backend(struct vbp_target *vt)
 		assert(i < sizeof bits);
 
 		if (vt->good >= vt->threshold) {
-			if (vt->backend->healthy)
+			if (vt->backend->director->health)
 				logmsg = "Still healthy";
 			else {
 				logmsg = "Back healthy";
-				vt->backend->health_changed = VTIM_real();
+				vt->backend->director->health_changed =
+				     VTIM_real();
 			}
-			vt->backend->healthy = 1;
+			vt->backend->director->health = 1;
 		} else {
-			if (vt->backend->healthy) {
+			if (vt->backend->director->health) {
 				logmsg = "Went sick";
-				vt->backend->health_changed = VTIM_real();
+				vt->backend->director->health_changed =
+				     VTIM_real();
 			} else
 				logmsg = "Still sick";
-			vt->backend->healthy = 0;
+			vt->backend->director->health = 0;
 		}
 		VSL(SLT_Backend_health, 0, "%s %s %s %u %u %u %.6f %.6f %s",
 		    vt->backend->display_name, logmsg, bits,
@@ -635,7 +637,7 @@ VBP_Remove(struct backend *be)
 	CHECK_OBJ_NOTNULL(vt, VBP_TARGET_MAGIC);
 
 	Lck_Lock(&vbp_mtx);
-	be->healthy = 1;
+	be->director->health = 1;
 	be->probe = NULL;
 	vt->backend = NULL;
 	if (vt->running) {

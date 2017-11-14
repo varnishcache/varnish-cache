@@ -141,9 +141,11 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 	AN(b->display_name);
 	VSB_destroy(&vsb);
 
-	b->healthy = 1;
-	b->health_changed = VTIM_real();
-	b->admin_health = vbe_ah_probe;
+	VBE_fill_director(b);
+
+	b->director->health = 1;
+	b->director->health_changed = VTIM_real();
+	b->director->admin_health = vbe_ah_probe;
 
 	vbp = vrt->probe;
 	if (vbp == NULL)
@@ -155,8 +157,6 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 	b->tcp_pool = VTP_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr,
 	    vbe_proto_ident);
 	Lck_Unlock(&backends_mtx);
-
-	VBE_fill_director(b);
 
 	if (vbp != NULL) {
 		VTP_AddRef(b->tcp_pool);
@@ -189,8 +189,8 @@ VRT_delete_backend(VRT_CTX, struct director **dp)
 	TAKE_OBJ_NOTNULL(d, dp, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
 	Lck_Lock(&be->mtx);
-	be->admin_health = vbe_ah_deleted;
-	be->health_changed = VTIM_real();
+	be->director->admin_health = vbe_ah_deleted;
+	be->director->health_changed = VTIM_real();
 	be->cooled = VTIM_real() + 60.;
 	Lck_Unlock(&be->mtx);
 	Lck_Lock(&backends_mtx);
@@ -253,23 +253,23 @@ VBE_Delete(const struct director *d)
  */
 
 unsigned
-VBE_Healthy(const struct backend *backend, double *changed)
+VDI_Healthy(const struct director *d, double *changed)
 {
-	CHECK_OBJ_NOTNULL(backend, BACKEND_MAGIC);
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 
 	if (changed != NULL)
-		*changed = backend->health_changed;
+		*changed = d->health_changed;
 
-	if (backend->admin_health == vbe_ah_probe)
-		return (backend->healthy);
+	if (d->admin_health == vbe_ah_probe)
+		return (d->health);
 
-	if (backend->admin_health == vbe_ah_sick)
+	if (d->admin_health == vbe_ah_sick)
 		return (0);
 
-	if (backend->admin_health == vbe_ah_deleted)
+	if (d->admin_health == vbe_ah_deleted)
 		return (0);
 
-	if (backend->admin_health == vbe_ah_healthy)
+	if (d->admin_health == vbe_ah_healthy)
 		return (1);
 
 	WRONG("Wrong admin health");
@@ -313,7 +313,7 @@ backend_find(struct cli *cli, const char *matcher, bf_func *func, void *priv)
 	AZ(VSB_finish(vsb));
 	Lck_Lock(&backends_mtx);
 	VTAILQ_FOREACH(b, &backends, list) {
-		if (b->admin_health == vbe_ah_deleted)
+		if (b->director->admin_health == vbe_ah_deleted)
 			continue;
 		if (fnmatch(VSB_data(vsb), b->display_name, 0))
 			continue;
@@ -344,19 +344,19 @@ do_list(struct cli *cli, struct backend *b, void *priv)
 
 	VCLI_Out(cli, "\n%-30s", b->display_name);
 
-	VCLI_Out(cli, " %-10s", VBE_AdminHealth(b->admin_health));
+	VCLI_Out(cli, " %-10s", VBE_AdminHealth(b->director->admin_health));
 
 	if (b->probe == NULL)
 		VCLI_Out(cli, " %-20s", "Healthy (no probe)");
 	else {
-		if (b->healthy)
+		if (b->director->health)
 			VCLI_Out(cli, " %-20s", "Healthy ");
 		else
 			VCLI_Out(cli, " %-20s", "Sick ");
 		VBP_Status(cli, b, *probes);
 	}
 
-	VTIM_format(b->health_changed, time_str);
+	VTIM_format(b->director->health_changed, time_str);
 	VCLI_Out(cli, " %s", time_str);
 
 	return (0);
@@ -399,11 +399,11 @@ do_set_health(struct cli *cli, struct backend *b, void *priv)
 	ah = *(const struct vbe_ahealth **)priv;
 	AN(ah);
 	CHECK_OBJ_NOTNULL(b, BACKEND_MAGIC);
-	prev = VBE_Healthy(b, NULL);
-	if (b->admin_health != vbe_ah_deleted)
-		b->admin_health = ah;
-	if (prev != VBE_Healthy(b, NULL))
-		b->health_changed = VTIM_real();
+	prev = VDI_Healthy(b->director, NULL);
+	if (b->director->admin_health != vbe_ah_deleted)
+		b->director->admin_health = ah;
+	if (prev != VDI_Healthy(b->director, NULL))
+		b->director->health_changed = VTIM_real();
 
 	return (0);
 }

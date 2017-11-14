@@ -78,6 +78,13 @@ struct director {
 	const void		*priv2;
 
 	/* Internal Housekeeping fields */
+
 	VTAILQ_ENTRY(director)	list;
 	struct vcl		*vcl;
+
+	unsigned		health;
+	const struct vbe_ahealth *admin_health;
+	double			health_changed;
 };
+
+unsigned VDI_Healthy(const struct director *, double *);

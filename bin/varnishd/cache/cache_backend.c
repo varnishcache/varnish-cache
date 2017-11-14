@@ -75,7 +75,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bp, BACKEND_MAGIC);
 	AN(bp->vsc);
 
-	if (!VBE_Healthy(bp, NULL)) {
+	if (!VDI_Healthy(bp->director, NULL)) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: unhealthy", bp->display_name);
 		// XXX: per backend stats ?
@@ -147,7 +147,7 @@ vbe_dir_healthy(const struct director *d, const struct busyobj *bo,
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
 	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
-	return (VBE_Healthy(be, changed));
+	return (VDI_Healthy(be->director, changed));
 }
 
 static void __match_proto__(vdi_finish_f)
@@ -353,9 +353,10 @@ vbe_panic(const struct director *d, struct vsb *vsb)
 	VSB_printf(vsb, "port = %s,\n", bp->port);
 	VSB_printf(vsb, "hosthdr = %s,\n", bp->hosthdr);
 	VSB_printf(vsb, "health = %s,\n",
-	    bp->healthy ? "healthy" : "sick");
+	    bp->director->health ? "healthy" : "sick");
 	VSB_printf(vsb, "admin_health = %s, changed = %f,\n",
-	    VBE_AdminHealth(bp->admin_health), bp->health_changed);
+	    VBE_AdminHealth(bp->director->admin_health),
+	    bp->director->health_changed);
 	VSB_printf(vsb, "n_conn = %u,\n", bp->n_conn);
 }
 

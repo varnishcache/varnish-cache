@@ -62,9 +62,6 @@ struct backend {
 
 
 	struct vbp_target	*probe;
-	unsigned		healthy;
-	const struct vbe_ahealth *admin_health;
-	double			health_changed;
 
 	struct VSC_vbe		*vsc;
 
@@ -84,7 +81,6 @@ void VBE_fill_director(struct backend *be);
 
 /* cache_backend_cfg.c */
 void VBE_SetHappy(const struct backend *, uint64_t);
-unsigned VBE_Healthy(const struct backend *b, double *changed);
 void VBE_Delete(const struct director *);
 const char *VBE_AdminHealth(const struct vbe_ahealth *);
 
