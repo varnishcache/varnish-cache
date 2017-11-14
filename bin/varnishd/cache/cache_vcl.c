@@ -349,7 +349,7 @@ VCL_AddDirector(struct vcl *vcl, struct director *d, const char *vcl_name)
 	}
 
 	Lck_Lock(&vcl_mtx);
-	VTAILQ_INSERT_TAIL(&vcl->director_list, d, list);
+	VTAILQ_INSERT_TAIL(&vcl->director_list, d, vcl_list);
 	d->vcl = vcl;
 	Lck_Unlock(&vcl_mtx);
 
@@ -372,7 +372,7 @@ VCL_DelDirector(struct director *d)
 	vcl = d->vcl;
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	Lck_Lock(&vcl_mtx);
-	VTAILQ_REMOVE(&vcl->director_list, d, list);
+	VTAILQ_REMOVE(&vcl->director_list, d, vcl_list);
 	Lck_Unlock(&vcl_mtx);
 
 	AZ(errno=pthread_rwlock_rdlock(&vcl->temp_rwl));
@@ -393,7 +393,7 @@ vcl_BackendEvent(const struct vcl *vcl, enum vcl_event_e e)
 	CHECK_OBJ_NOTNULL(vcl, VCL_MAGIC);
 	AZ(vcl->busy);
 
-	VTAILQ_FOREACH(d, &vcl->director_list, list)
+	VTAILQ_FOREACH(d, &vcl->director_list, vcl_list)
 		VDI_Event(d, e);
 }
 
@@ -409,7 +409,7 @@ vcl_KillBackends(struct vcl *vcl)
 		d = VTAILQ_FIRST(&vcl->director_list);
 		if (d == NULL)
 			break;
-		VTAILQ_REMOVE(&vcl->director_list, d, list);
+		VTAILQ_REMOVE(&vcl->director_list, d, vcl_list);
 		AN(d->destroy);
 		d->destroy(d);
 	}

@@ -80,7 +80,7 @@ struct director {
 	/* Internal Housekeeping fields */
 
 	char			*display_name;
-	VTAILQ_ENTRY(director)	list;
+	VTAILQ_ENTRY(director)	vcl_list;
 	struct vcl		*vcl;
 
 	unsigned		health;
