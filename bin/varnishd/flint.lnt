@@ -6,6 +6,9 @@
 -printf(2, http_PrintfHeader)
 -printf(2, VSB_printf)
 
+-esym(759, VDI_AH_*)	// could be moved from header to module
+-esym(765, VDI_AH_*)	// could be made static
+
 -esym(755, vct_*)
 -esym(759, vpf_*)
 -esym(765, vpf_*)

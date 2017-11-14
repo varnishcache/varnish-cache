@@ -106,5 +106,4 @@ void VCL_DelDirector(struct director *);
 VBE_AHEALTH_LIST
 #undef VBE_AHEALTH
 
-const struct vdi_ahealth *VDI_Str2Ahealth(const char *t);
 const char *VDI_Ahealth(const struct director *d);

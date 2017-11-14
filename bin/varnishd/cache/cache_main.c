@@ -339,6 +339,7 @@ child_main(int sigmagic, size_t altstksz)
 	VBO_Init();
 	VTP_Init();
 	VBP_Init();
+	VDI_Init();
 	VBE_InitCfg();
 	Pool_Init();
 	V1P_Init();

@@ -32,13 +32,11 @@
 
 #include "config.h"
 
-#include <fnmatch.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "cache_varnishd.h"
 
-#include "vcli_serve.h"
 #include "vtim.h"
 #include "waiter/waiter.h"
 
@@ -193,146 +191,6 @@ VBE_Delete(const struct director *d)
 	FREE_OBJ(be);
 }
 
-/*--------------------------------------------------------------------
- * Test if backend is healthy and report when it last changed
- */
-
-unsigned
-VDI_Healthy(const struct director *d, double *changed)
-{
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-
-	if (changed != NULL)
-		*changed = d->health_changed;
-
-	if (d->admin_health == VDI_AH_PROBE)
-		return (d->health);
-
-	if (d->admin_health == VDI_AH_SICK)
-		return (0);
-
-	if (d->admin_health == VDI_AH_DELETED)
-		return (0);
-
-	if (d->admin_health == VDI_AH_HEALTHY)
-		return (1);
-
-	WRONG("Wrong admin health");
-}
-
-/*---------------------------------------------------------------------*/
-
-static int __match_proto__(vcl_be_func)
-do_list(struct cli *cli, struct director *d, void *priv)
-{
-	int *probes;
-	char time_str[VTIM_FORMAT_SIZE];
-	struct backend *be;
-
-	AN(priv);
-	probes = priv;
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	CAST_OBJ_NOTNULL(be, d->priv, BACKEND_MAGIC);
-	if (d->admin_health == VDI_AH_DELETED)
-		return (0);
-
-	VCLI_Out(cli, "\n%-30s", d->display_name);
-
-	VCLI_Out(cli, " %-10s", VDI_Ahealth(d));
-
-	if (be->probe == NULL)
-		VCLI_Out(cli, " %-20s", "Healthy (no probe)");
-	else {
-		if (d->health)
-			VCLI_Out(cli, " %-20s", "Healthy ");
-		else
-			VCLI_Out(cli, " %-20s", "Sick ");
-		VBP_Status(cli, be, *probes);
-	}
-
-	VTIM_format(d->health_changed, time_str);
-	VCLI_Out(cli, " %s", time_str);
-
-	return (0);
-}
-
-static void __match_proto__(cli_func_t)
-cli_backend_list(struct cli *cli, const char * const *av, void *priv)
-{
-	int probes = 0;
-
-	(void)priv;
-	ASSERT_CLI();
-	if (av[2] != NULL && !strcmp(av[2], "-p")) {
-		av++;
-		probes = 1;
-	} else if (av[2] != NULL && av[2][0] == '-') {
-		VCLI_Out(cli, "Invalid flags %s", av[2]);
-		VCLI_SetResult(cli, CLIS_PARAM);
-		return;
-	} else if (av[3] != NULL) {
-		VCLI_Out(cli, "Too many arguments");
-		VCLI_SetResult(cli, CLIS_PARAM);
-		return;
-	}
-	VCLI_Out(cli, "%-30s %-10s %-20s %s", "Backend name", "Admin",
-	    "Probe", "Last updated");
-	(void)VCL_IterDirector(cli, av[2], do_list, &probes);
-}
-
-/*---------------------------------------------------------------------*/
-
-static int __match_proto__(vcl_be_func)
-do_set_health(struct cli *cli, struct director *d, void *priv)
-{
-	unsigned prev;
-
-	(void)cli;
-	AN(priv);
-	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
-	if (d->admin_health == VDI_AH_DELETED)
-		return (0);
-	prev = VDI_Healthy(d, NULL);
-	d->admin_health = *(const struct vdi_ahealth **)priv;
-	(void)VDI_Ahealth(d);			// Acts like type-check
-	if (prev != VDI_Healthy(d, NULL))
-		d->health_changed = VTIM_real();
-
-	return (0);
-}
-
-static void __match_proto__()
-cli_backend_set_health(struct cli *cli, const char * const *av, void *priv)
-{
-	const struct vdi_ahealth *ah;
-	int n;
-
-	(void)av;
-	(void)priv;
-	ASSERT_CLI();
-	AN(av[2]);
-	AN(av[3]);
-	ah = VDI_Str2Ahealth(av[3]);
-	if (ah == NULL || ah == VDI_AH_DELETED) {
-		VCLI_Out(cli, "Invalid state %s", av[3]);
-		VCLI_SetResult(cli, CLIS_PARAM);
-		return;
-	}
-	n = VCL_IterDirector(cli, av[2], do_set_health, &ah);
-	if (n == 0) {
-		VCLI_Out(cli, "No Backends matches");
-		VCLI_SetResult(cli, CLIS_PARAM);
-	}
-}
-
-/*---------------------------------------------------------------------*/
-
-static struct cli_proto backend_cmds[] = {
-	{ CLICMD_BACKEND_LIST,		"", cli_backend_list },
-	{ CLICMD_BACKEND_SET_HEALTH,	"", cli_backend_set_health },
-	{ NULL }
-};
-
 /*---------------------------------------------------------------------*/
 
 void
@@ -362,6 +220,5 @@ void
 VBE_InitCfg(void)
 {
 
-	CLI_AddFuncs(backend_cmds);
 	Lck_New(&backends_mtx, lck_vbe);
 }
