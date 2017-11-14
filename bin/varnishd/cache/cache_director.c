@@ -172,16 +172,18 @@ VDI_Http1Pipe(struct req *req, struct busyobj *bo)
  */
 
 int
-VRT_Healthy(VRT_CTX, VCL_BACKEND be)
+VRT_Healthy(VRT_CTX, VCL_BACKEND d)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (be == NULL)
+	if (d == NULL)
 		return (0);
-	CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
-	if (be->healthy == NULL)
+	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
+	if (!VDI_Healthy(d, NULL))
+		return (0);
+	if (d->healthy == NULL)
 		return (1);
-	return (be->healthy(be, ctx->bo, NULL));
+	return (d->healthy(d, ctx->bo, NULL));
 }
 
 /* Send Event ----------------------------------------------------------
