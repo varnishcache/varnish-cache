@@ -56,6 +56,13 @@
 	Count of cache hits.  A cache hit indicates that an object has been
 	delivered to a client without fetching it from a backend server.
 
+.. varnish_vsc:: cache_hit_grace
+	:oneliner:	Cache grace hits
+
+	Count of cache hits with grace. A cache hit with grace is a cache
+	hit where the object is expired. Note that such hits are also
+	included in the cache_hit counter.
+
 .. varnish_vsc:: cache_hitpass
 	:oneliner:	Cache hits for pass.
 
