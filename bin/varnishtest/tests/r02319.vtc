@@ -6,9 +6,7 @@ server s1 {
 	       -body 1024
 } -start
 
-varnish v1 -arg "-p max_retries=1" -vcl+backend {
-	import vtc;
-
+varnish v1 -vcl+backend {
 	sub vcl_backend_fetch {
 		set bereq.between_bytes_timeout = 0.0001s;
 	}
@@ -16,10 +14,7 @@ varnish v1 -arg "-p max_retries=1" -vcl+backend {
 		set beresp.do_stream = false;
 	}
 	sub vcl_backend_error {
-		set beresp.storage = storage.Transient;
 		set beresp.status = 200;
-		set beresp.http.source = "vbe";
-		synthetic("synth");
 		set beresp.ttl = 1h;
 		return (deliver);
 	}
