@@ -221,7 +221,8 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg, int fixidx)
 	AZ(munmap(seg->ptr, len));
 
 	VTAILQ_REMOVE(&vsmw->segs, seg, list);
-	AZ(unlinkat(vsmw->vdirfd, seg->fn, 0));
+	if (unlinkat(vsmw->vdirfd, seg->fn, 0))
+		assert (errno == ENOENT);
 	REPLACE(seg->fn, NULL);
 	REPLACE(seg->class, NULL);
 	REPLACE(seg->id, NULL);
@@ -286,7 +287,8 @@ VSMW_New(int vdirfd, int mode, const char *idxname)
 	vsmw->pid = getpid();
 	vsmw->birth = time(NULL);
 
-	(void)unlinkat(vdirfd, vsmw->idx, 0);
+	if (unlinkat(vdirfd, vsmw->idx, 0))
+		assert (errno == ENOENT);
 	fd = openat(vdirfd,
 	    vsmw->idx, O_APPEND | O_WRONLY | O_CREAT, vsmw->mode);
 	assert(fd >= 0);
@@ -303,7 +305,8 @@ VSMW_Destroy(struct vsmw **pp)
 	struct vsmwseg *seg, *s2;
 
 	TAKE_OBJ_NOTNULL(vsmw, pp, VSMW_MAGIC);
-	AZ(unlinkat(vsmw->vdirfd, vsmw->idx, 0));
+	if (unlinkat(vsmw->vdirfd, vsmw->idx, 0))
+		assert (errno == ENOENT);
 	REPLACE(vsmw->idx, NULL);
 	VTAILQ_FOREACH_SAFE(seg, &vsmw->segs, list, s2)
 		vsmw_delseg(vsmw, seg, 0);
