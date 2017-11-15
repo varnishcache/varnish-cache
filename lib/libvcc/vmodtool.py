@@ -86,6 +86,12 @@ CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \\
 \t$(builddir)/vmod_XXX.man.rst
 
 '''
+privs = {
+    'PRIV_CALL':   "struct vmod_priv *",
+    'PRIV_VCL':    "struct vmod_priv *",
+    'PRIV_TASK':   "struct vmod_priv *",
+    'PRIV_TOP':    "struct vmod_priv *",
+}
 
 ctypes = {
     'ACL':         "VCL_ACL",
@@ -100,10 +106,6 @@ ctypes = {
     'HTTP':        "VCL_HTTP",
     'INT':         "VCL_INT",
     'IP':          "VCL_IP",
-    'PRIV_CALL':   "struct vmod_priv *",
-    'PRIV_VCL':    "struct vmod_priv *",
-    'PRIV_TASK':   "struct vmod_priv *",
-    'PRIV_TOP':    "struct vmod_priv *",
     'PROBE':       "VCL_PROBE",
     'REAL':        "VCL_REAL",
     'STEVEDORE':   "VCL_STEVEDORE",
@@ -112,6 +114,8 @@ ctypes = {
     'TIME':        "VCL_TIME",
     'VOID':        "VCL_VOID",
 }
+
+ctypes.update(privs)
 
 #######################################################################
 
@@ -342,6 +346,8 @@ class prototype(object):
         l = []
         for i in self.args:
             t = i.vcl()
+            if t in privs:
+                continue
             if not short:
                 if i.nm is not None:
                     t += " " + i.nm
