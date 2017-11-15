@@ -82,18 +82,18 @@ logexpect l1 -v v1 -g vxid {
 	expect 0 = ESI_xmlerror {^ERR after 665 ESI 1.0 </esi:include> illegal end-tag$}
 	expect 0 = ESI_xmlerror {^ERR after 767 XML 1.0 Missing end attribute delimiter$}
 	expect 0 = BackendReuse
+} -start
 
-## XXX something is fishy about any of: logexpect, vsl, slink's brain:
-## despite syncvsl and the fact that the loggin is output by
-## varnishtest, these fail (time out) - feedback appreciated
-#
-#	expect * * BereqURL	{^/body$}
-#	expect * = ESI_xmlerror {^ERR after 39 VEP ended inside a tag$}
-#	expect 0 = BackendReuse
-#
-#	expect * * BereqURL	{^/body2$}
-#	expect * = ESI_xmlerror {^ERR after 39 VEP ended inside a tag$}
-#	expect 0 = BackendReuse
+logexpect l2 -v v1 -g vxid {
+	expect * * BereqURL	{^/body$}
+	expect * = ESI_xmlerror {^ERR after 30 VEP ended inside a tag$}
+	expect 0 = BackendReuse
+} -start
+
+logexpect l3 -v v1 -g vxid {
+	expect * * BereqURL	{^/body2$}
+	expect * = ESI_xmlerror {^ERR after 39 VEP ended inside a tag$}
+	expect 0 = BackendReuse
 } -start
 
 varnish v1 -cliok "param.set debug +esi_chop"
@@ -109,4 +109,6 @@ client c1 {
 
 client c1 -run
 logexpect l1 -wait
+logexpect l2 -wait
+logexpect l3 -wait
 varnish v1 -expect esi_errors == 17
