@@ -81,7 +81,7 @@ vmod_hash_add_backend(VRT_CTX,
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_HASH_MAGIC);
-	(void)vdir_add_backend(rr->vd, be, w);
+	vdir_add_backend(ctx, rr->vd, be, w);
 }
 
 VCL_VOID __match_proto__()
@@ -91,7 +91,7 @@ vmod_hash_remove_backend(VRT_CTX,
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(rr, VMOD_DIRECTORS_HASH_MAGIC);
-	vdir_remove_backend(rr->vd, be, NULL);
+	vdir_remove_backend(ctx, rr->vd, be, NULL);
 }
 
 VCL_BACKEND __match_proto__()

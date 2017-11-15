@@ -122,7 +122,7 @@ vmod_fallback_add_backend(VRT_CTX,
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(fb, VMOD_DIRECTORS_FALLBACK_MAGIC);
-	(void)vdir_add_backend(fb->vd, be, 0.0);
+	vdir_add_backend(ctx, fb->vd, be, 0.0);
 }
 
 VCL_VOID __match_proto__()
@@ -131,7 +131,7 @@ vmod_fallback_remove_backend(VRT_CTX,
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(fb, VMOD_DIRECTORS_FALLBACK_MAGIC);
-	vdir_remove_backend(fb->vd, be, &fb->cur);
+	vdir_remove_backend(ctx, fb->vd, be, &fb->cur);
 }
 
 VCL_BACKEND __match_proto__()

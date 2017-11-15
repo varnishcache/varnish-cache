@@ -1,0 +1,29 @@
+varnishtest "NULL directors in vcl_init"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+varnish v1 -errvcl "NULL backend cannot be added" {
+	import directors;
+
+	probe cacheprobe {
+		.initial = 0;
+	}
+
+	backend b01 {
+		.host = "127.0.0.2";
+		.probe = cacheprobe;
+	}
+
+	sub vcl_init {
+		new hash = directors.hash();
+		hash.add_backend(b01,1.0);
+
+		new rr = directors.round_robin();
+		rr.add_backend(hash.backend("text"));
+	}
+}

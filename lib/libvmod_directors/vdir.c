@@ -113,12 +113,16 @@ vdir_unlock(struct vdir *vd)
 }
 
 
-unsigned
-vdir_add_backend(struct vdir *vd, VCL_BACKEND be, double weight)
+void
+vdir_add_backend(VRT_CTX, struct vdir *vd, VCL_BACKEND be, double weight)
 {
 	unsigned u;
 
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
+	if (be == NULL) {
+		VRT_fail(ctx, "NULL backend cannot be added");
+		return;
+	}
 	AN(be);
 	vdir_wrlock(vd);
 	if (vd->n_backend >= vd->l_backend)
@@ -129,17 +133,18 @@ vdir_add_backend(struct vdir *vd, VCL_BACKEND be, double weight)
 	vd->weight[u] = weight;
 	vd->total_weight += weight;
 	vdir_unlock(vd);
-	return (u);
 }
 
 void
-vdir_remove_backend(struct vdir *vd, VCL_BACKEND be, unsigned *cur)
+vdir_remove_backend(VRT_CTX, struct vdir *vd, VCL_BACKEND be, unsigned *cur)
 {
 	unsigned u, n;
 
 	CHECK_OBJ_NOTNULL(vd, VDIR_MAGIC);
-	if (be == NULL)
+	if (be == NULL) {
+		VRT_fail(ctx, "NULL backend cannot be removed");
 		return;
+	}
 	CHECK_OBJ(be, DIRECTOR_MAGIC);
 	vdir_wrlock(vd);
 	for (u = 0; u < vd->n_backend; u++)
