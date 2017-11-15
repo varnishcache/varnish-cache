@@ -764,6 +764,9 @@ vbf_stp_error(struct worker *wrk, struct busyobj *bo)
 	if (bo->fetch_objcore->stobj->stevedore != NULL)
 		ObjFreeObj(bo->wrk, bo->fetch_objcore);
 
+	if (bo->storage == NULL)
+		bo->storage = STV_next();
+
 	// XXX: reset all beresp flags ?
 
 	HTTP_Setup(bo->beresp, bo->ws, bo->vsl, SLT_BerespMethod);

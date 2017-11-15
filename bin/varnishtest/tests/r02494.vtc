@@ -1,0 +1,28 @@
+varnishtest "vcl_back_backend_error default storage"
+
+server s1 {
+	rxreq
+	txresp -nolen -hdr "Content-Length: 10240" -body 1024
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_stream = false;
+	}
+	sub vcl_backend_error {
+		set beresp.status = 200;
+		set beresp.ttl = 1h;
+		return (deliver);
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+} -run
+client c2 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+} -run
