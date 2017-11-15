@@ -50,12 +50,17 @@ varnish v1 -arg "-p thread_pools=1" -vcl+backend {
 	}
 } -start
 
+varnish v1 -cliok "param.set timeout_idle 2"
+
 logexpect l0 -v v1 -g raw {
 	expect * 0 ExpKill	"EXP_Expired x=1002"
 } -start
 
-logexpect l1 -v v1 {
+logexpect l2 -v v1 -g raw {
 	expect * 1002	Begin		"bereq 1001 fetch"
+} -start
+
+logexpect l1 -v v1 {
 
 	expect * 1003	VCL_call	HIT
 	expect * =	VCL_call	DELIVER
@@ -108,6 +113,7 @@ client c1 {
 } -run
 
 logexpect l0 -wait
+logexpect l2 -wait
 
 client c1 {
 	txreq -url recv
