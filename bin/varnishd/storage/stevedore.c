@@ -86,7 +86,7 @@ STV_NewObject(struct worker *wrk, struct objcore *oc,
 	AN(stv->allocobj);
 	if (stv->allocobj(wrk, stv, oc, wsl) == 0)
 		return (0);
-
+	oc->oa_present = 0;
 	wrk->stats->n_object++;
 	VSLb(wrk->vsl, SLT_Storage, "%s %s",
 	    oc->stobj->stevedore->name, oc->stobj->stevedore->ident);

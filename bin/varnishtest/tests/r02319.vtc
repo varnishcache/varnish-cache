@@ -1,0 +1,37 @@
+varnishtest "Test that oc->oa_present is cleared when we create a new object"
+
+server s1 {
+	rxreq
+	txresp -hdr "Vary: buzz" -nolen -hdr "Content-Length: 10240" \
+	       -body 1024
+} -start
+
+varnish v1 -arg "-p max_retries=1" -vcl+backend {
+	import vtc;
+
+	sub vcl_backend_fetch {
+		set bereq.between_bytes_timeout = 0.0001s;
+	}
+	sub vcl_backend_response {
+		set beresp.do_stream = false;
+	}
+	sub vcl_backend_error {
+		set beresp.storage = storage.Transient;
+		set beresp.status = 200;
+		set beresp.http.source = "vbe";
+		synthetic("synth");
+		set beresp.ttl = 1h;
+		return (deliver);
+	}
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+} -run
+client c2 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 200
+} -run
