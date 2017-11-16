@@ -374,10 +374,10 @@ local int deflateStateCheck (strm)
 #ifdef GZIP
                                            s->status != GZIP_STATE &&
 #endif
-                                           s->status != EXTRA_STATE &&
-                                           s->status != NAME_STATE &&
-                                           s->status != COMMENT_STATE &&
-                                           s->status != HCRC_STATE &&
+                                           // s->status != EXTRA_STATE &&
+                                           // s->status != NAME_STATE &&
+                                           // s->status != COMMENT_STATE &&
+                                           // s->status != HCRC_STATE &&
                                            s->status != BUSY_STATE &&
                                            s->status != FINISH_STATE))
         return 1;
@@ -893,6 +893,10 @@ int ZEXPORT deflate (strm, flush)
             }
         }
         else {
+		abort();
+	}
+    }
+#ifdef NOVGZ
             put_byte(s, (s->gzhead->text ? 1 : 0) +
                      (s->gzhead->hcrc ? 2 : 0) +
                      (s->gzhead->extra == Z_NULL ? 0 : 4) +
@@ -1010,6 +1014,7 @@ int ZEXPORT deflate (strm, flush)
             return Z_OK;
         }
     }
+#endif
 #endif
 
     if (strm->start_bit == 0)
