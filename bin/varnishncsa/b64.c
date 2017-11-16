@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "base64.h"
+#include "b64.h"
 
 static const char b64[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

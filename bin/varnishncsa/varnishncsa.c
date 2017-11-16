@@ -57,7 +57,7 @@
 #define VOPT_DEFINITION
 #define VOPT_INC "varnishncsa_options.h"
 
-#include "base64.h"
+#include "b64.h"
 #include "vapi/vsl.h"
 #include "vapi/voptget.h"
 #include "vas.h"
