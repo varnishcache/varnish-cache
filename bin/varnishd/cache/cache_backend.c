@@ -74,7 +74,8 @@ static struct lock backends_mtx;
  */
 
 static struct vtp *
-vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
+vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
+    unsigned force_fresh)
 {
 	struct vtp *vtp;
 	double tmod;
@@ -112,7 +113,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	bo->htc->doclose = SC_NULL;
 
 	FIND_TMO(connect_timeout, tmod, bo, bp);
-	vtp = VTP_Get(bp->tcp_pool, tmod, wrk, 0);
+	vtp = VTP_Get(bp->tcp_pool, tmod, wrk, force_fresh);
 	if (vtp == NULL) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: fail", bp->director->display_name);
@@ -221,7 +222,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		http_PrintfHeader(bo->bereq, "Host: %s", bp->hosthdr);
 
 	do {
-		vtp = vbe_dir_getfd(wrk, bp, bo);
+		vtp = vbe_dir_getfd(wrk, bp, bo, extrachance == 0);
 		if (vtp == NULL)
 			return (-1);
 		AN(bo->htc);
@@ -256,7 +257,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		    bo->req->req_body_status != REQ_BODY_CACHED)
 			break;
 		VSC_C_main->backend_retry++;
-	} while (extrachance);
+	} while (extrachance--);
 	return (-1);
 }
 
@@ -299,7 +300,7 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 
 	req->res_mode = RES_PIPE;
 
-	vtp = vbe_dir_getfd(req->wrk, bp, bo);
+	vtp = vbe_dir_getfd(req->wrk, bp, bo, 0);
 
 	if (vtp == NULL) {
 		retval = SC_TX_ERROR;
