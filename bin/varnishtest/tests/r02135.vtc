@@ -1,0 +1,40 @@
+varnishtest "#2135: fetch retry logic"
+
+barrier b1 cond 2
+
+server s1 {
+	rxreq
+	txresp
+	rxreq
+	expect req.url == "/foo"
+	delay 2.5
+	send " "
+	expect_close
+	accept
+	rxreq
+	expect req.url == "/foo"
+	barrier b1 sync
+	delay 2.5
+	send " "
+	expect_close
+} -start
+
+varnish v1 -cliok "param.set between_bytes_timeout 1"
+varnish v1 -cliok "param.set first_byte_timeout 1"
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_error {
+		set beresp.http.url = bereq.url;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == "200"
+	txreq -url "/foo"
+	barrier b1 sync
+	rxresp
+	expect resp.status == "503"
+	expect resp.http.url == "/foo"
+} -run

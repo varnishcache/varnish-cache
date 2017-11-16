@@ -59,7 +59,8 @@
  */
 
 static struct vbc *
-vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
+vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
+    unsigned force_fresh)
 {
 	struct vbc *vc;
 	double tmod;
@@ -91,7 +92,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	bo->htc->doclose = SC_NULL;
 
 	FIND_TMO(connect_timeout, tmod, bo, bp);
-	vc = VBT_Get(bp->tcp_pool, tmod, bp, wrk, 0);
+	vc = VBT_Get(bp->tcp_pool, tmod, bp, wrk, force_fresh);
 	if (vc == NULL) {
 		// XXX: Per backend stats ?
 		VSC_C_main->backend_fail++;
@@ -196,7 +197,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		http_PrintfHeader(bo->bereq, "Host: %s", bp->hosthdr);
 
 	do {
-		vbc = vbe_dir_getfd(wrk, bp, bo);
+		vbc = vbe_dir_getfd(wrk, bp, bo, extrachance == 0);
 		if (vbc == NULL) {
 			VSLb(bo->vsl, SLT_FetchError, "no backend connection");
 			return (-1);
@@ -233,7 +234,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		    bo->req->req_body_status != REQ_BODY_CACHED)
 			break;
 		VSC_C_main->backend_retry++;
-	} while (extrachance);
+	} while (extrachance--);
 	return (-1);
 }
 
@@ -289,7 +290,7 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 
 	req->res_mode = RES_PIPE;
 
-	vbc = vbe_dir_getfd(req->wrk, bp, bo);
+	vbc = vbe_dir_getfd(req->wrk, bp, bo, 0);
 
 	if (vbc == NULL) {
 		VSLb(bo->vsl, SLT_FetchError, "no backend connection");
