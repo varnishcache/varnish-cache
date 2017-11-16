@@ -4,7 +4,7 @@ server s1 {
 	accept
 } -start
 
-varnish v1 -arg "-s Transient=file,${tmpdir}/_.file,1m" -vcl+backend {
+varnish v1 -arg "-s Transient=file,${tmpdir}/_.file,10m" -vcl+backend {
 	sub vcl_backend_error {
 		synthetic("foo");
 		return (deliver);
