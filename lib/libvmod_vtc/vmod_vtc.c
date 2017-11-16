@@ -131,9 +131,7 @@ vtc_ws_find(VRT_CTX, VCL_ENUM which)
 		return (ctx->req->sp->ws);
 	if (!strcmp(which, "thread"))
 		return (ctx->req->wrk->aws);
-
-	VRT_fail(ctx, "Unknown workspace: '%s'", which);
-	return (NULL);
+	WRONG("vtc_ws_find Illegal enum");
 }
 
 VCL_VOID __match_proto__(td_vtc_workspace_alloc)

@@ -10,6 +10,11 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	import vtc;
+	sub vcl_recv {
+		if (req.url == "/overflow") {
+			vtc.workspace_alloc(client, 100000000);
+		}
+	}
 	sub vcl_backend_response {
 		set beresp.http.free_backend = vtc.workspace_free(backend);
 	}
@@ -29,7 +34,7 @@ varnish v1 -vcl+backend {
 
 logexpect l1 -v v1 -d 1 -g vxid -q "Error ~ 'overflow'" {
 	expect 0 *	Begin
-	expect * =	Error	"workspace_client overflow"
+	expect * =	Error		"workspace_client overflow"
 	expect * =	End
 } -start
 
@@ -43,10 +48,22 @@ client c1 {
 	expect resp.http.free_thread > 2000
 } -run
 
-client c2 {
+client c1 {
 	txreq -url /bar
 	rxresp
 	expect resp.status == 500
 } -run
 
 logexpect l1 -wait
+
+logexpect l2 -v v1 -d 1 -g vxid  {
+	expect * 1007	VCL_Error
+} -start
+
+client c1 {
+	txreq -url /overflow
+	rxresp
+	expect resp.status == 503
+} -run
+
+logexpect l2 -wait
