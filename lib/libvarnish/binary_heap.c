@@ -459,6 +459,7 @@ binheap_reorder(const struct binheap *bh, unsigned idx)
 #include <string.h>
 
 #include "vdef.h"
+#include "vrnd.h"
 #include "miniobj.h"
 
 /* Test driver -------------------------------------------------------*/
@@ -521,12 +522,7 @@ main(int argc, char **argv)
 
 	(void)argc;
 	(void)argv;
-	if (0) {
-		srandomdev();
-		u = random();
-		printf("Seed %u\n", u);
-		srandom(u);
-	}
+	VRND_SeedAll();
 	bh = binheap_new(NULL, cmp, update);
 	for (n = 2; n; n += n) {
 		child(bh, n - 1, &u, &v);
@@ -537,7 +533,7 @@ main(int argc, char **argv)
 	for(j = 0; j < 2; j++) {
 		/* First insert our N elements */
 		for (u = 0; u < N; u++) {
-			lr = random() % R;
+			lr = VRND_RandomTestable() % R;
 			ALLOC_OBJ(ff[u], FOO_MAGIC);
 			assert(ff[u] != NULL);
 			ff[u]->key = lr;
@@ -569,7 +565,7 @@ main(int argc, char **argv)
 			fp = ff[n];
 			fp->n = n;
 
-			lr = random() % R;
+			lr = VRND_RandomTestable() % R;
 			fp->key = lr;
 			binheap_insert(bh, fp);
 		}
@@ -589,7 +585,7 @@ main(int argc, char **argv)
 		fprintf(stderr, "%d removes OK\n", N);
 
 		for (u = 0; u < M; u++) {
-			v = random() % N;
+			v = VRND_RandomTestable() % N;
 			if (ff[v] != NULL) {
 				CHECK_OBJ_NOTNULL(ff[v], FOO_MAGIC);
 				AN(ff[v]->idx);
@@ -599,13 +595,13 @@ main(int argc, char **argv)
 					FREE_OBJ(ff[v]);
 					ff[v] = NULL;
 				} else {
-					ff[v]->key = random() % R;
+					ff[v]->key = VRND_RandomTestable() % R;
 					binheap_reorder(bh, ff[v]->idx);
 				}
 			} else {
 				ALLOC_OBJ(ff[v], FOO_MAGIC);
 				assert(ff[v] != NULL);
-				ff[v]->key = random() % R;
+				ff[v]->key = VRND_RandomTestable() % R;
 				binheap_insert(bh, ff[v]);
 				CHECK_OBJ_NOTNULL(ff[v], FOO_MAGIC);
 				AN(ff[v]->idx);
