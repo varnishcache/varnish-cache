@@ -211,10 +211,6 @@ VNUM_2bytes(const char *p, uintmax_t *r, uintmax_t rel)
 			fval *= (uintmax_t)1 << 50;
 			++end;
 			break;
-		case 'e': case 'E':
-			fval *= (uintmax_t)1 << 60;
-			++end;
-			break;
 		default:
 			break;
 		}
@@ -269,6 +265,11 @@ static struct test_case {
 	{ "1TB",		(uintmax_t)0,	(uintmax_t)1<<40 },
 	{ "1.3TB",		(uintmax_t)0,	(uintmax_t)1429365116109ULL },
 	{ "1.7TB",		(uintmax_t)0,	(uintmax_t)1869169767219ULL },
+
+	{ "1125899906842624",	(uintmax_t)0,	(uintmax_t)1125899906842624ULL},
+	{ "1P",			(uintmax_t)0,	(uintmax_t)1125899906842624ULL},
+	{ "1PB",		(uintmax_t)0,	(uintmax_t)1125899906842624ULL},
+	{ "1.3 PB",		(uintmax_t)0,	(uintmax_t)1463669878895411ULL},
 
 	{ "1%",			(uintmax_t)1024,	(uintmax_t)10 },
 	{ "2%",			(uintmax_t)1024,	(uintmax_t)20 },
@@ -354,6 +355,15 @@ main(int argc, char *argv[])
 			    *argv, tc->str, tc->rel, val, tc->val, e);
 			++ec;
 		}
+	}
+	if (!isnan(VNUM_duration(NULL))) {
+		printf("%s: VNUM_Duration(NULL) fail\n", *argv);
+		++ec;
+	}
+	d1 = VNUM_duration(" 365.24219d ");
+	if (d1 != 31556925.216) {
+		printf("%s: VNUM_Duration() wrong: %g\n", *argv, d1);
+		++ec;
 	}
 	/* TODO: test invalid strings */
 	if (!ec)
