@@ -463,17 +463,6 @@ binheap_reorder(const struct binheap *bh, unsigned idx)
 
 /* Test driver -------------------------------------------------------*/
 
-void __attribute__((__noreturn__))
-VAS_Fail(const char *func, const char *file, int line,
-    const char *cond, enum vas_e what)
-{
-	fprintf(stderr, "PANIC: %s %s %d %s %d\n",
-		func, file, line, cond, what);
-	abort();
-}
-
-vas_f *VAS_Fail_Func = VAS_Fail;
-
 struct foo {
 	unsigned	magic;
 #define FOO_MAGIC	0x23239823

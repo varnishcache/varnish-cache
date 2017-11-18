@@ -44,7 +44,7 @@ TESTS = vnum_c_test binheap
 
 noinst_PROGRAMS = ${TESTS}
 
-binheap_SOURCES = binary_heap.c
+binheap_SOURCES = binary_heap.c vas.c
 binheap_CFLAGS = -DTEST_DRIVER
 
 vnum_c_test_SOURCES = vnum.c vas.c
