@@ -40,9 +40,12 @@ libvarnish_a_SOURCES = \
 	vtcp.c \
 	vtim.c
 
-TESTS = vnum_c_test
+TESTS = vnum_c_test binheap
 
 noinst_PROGRAMS = ${TESTS}
+
+binheap_SOURCES = binary_heap.c
+binheap_CFLAGS = -DTEST_DRIVER
 
 vnum_c_test_SOURCES = vnum.c vas.c
 vnum_c_test_CFLAGS = -DNUM_C_TEST -include config.h

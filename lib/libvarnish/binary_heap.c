@@ -40,8 +40,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "binary_heap.h"
 #include "vas.h"
+#include "binary_heap.h"
 
 /* Parameters --------------------------------------------------------*/
 
@@ -458,6 +458,7 @@ binheap_reorder(const struct binheap *bh, unsigned idx)
 #include <stdio.h>
 #include <strings.h>
 
+#include "vdef.h"
 #include "miniobj.h"
 
 /* Test driver -------------------------------------------------------*/
@@ -481,37 +482,34 @@ struct foo {
 	unsigned	n;
 };
 
-#if 1
-#define M 31011091	/* Number of operations */
-#define N 17313102	/* Number of items */
-#else
-#define M 3401		/* Number of operations */
-#define N 1131		/* Number of items */
-#endif
+#define M 153557	/* Number of operations */
+#define N 43117		/* Number of items */
 #define R -1		/* Random modulus */
 
 struct foo *ff[N];
 
-static int
+static int __match_proto__(binheap_cmp_t)
 cmp(void *priv, const void *a, const void *b)
 {
 	const struct foo *fa, *fb;
 
+	(void)priv;
 	CAST_OBJ_NOTNULL(fa, a, FOO_MAGIC);
 	CAST_OBJ_NOTNULL(fb, b, FOO_MAGIC);
 	return (fa->key < fb->key);
 }
 
-void
+static void __match_proto__(binheap_update_t)
 update(void *priv, void *a, unsigned u)
 {
 	struct foo *fa;
 
+	(void)priv;
 	CAST_OBJ_NOTNULL(fa, a, FOO_MAGIC);
 	fa->idx = u;
 }
 
-void
+static void
 chk2(struct binheap *bh)
 {
 	unsigned u, v;
@@ -529,9 +527,11 @@ int
 main(int argc, char **argv)
 {
 	struct binheap *bh;
-	unsigned u, v, lr, n;
+	unsigned j, u, v, lr, n;
 	struct foo *fp;
 
+	(void)argc;
+	(void)argv;
 	if (0) {
 		srandomdev();
 		u = random();
@@ -545,7 +545,7 @@ main(int argc, char **argv)
 		child(bh, n + 1, &u, &v);
 	}
 
-	while (1) {
+	for(j = 0; j < 2; j++) {
 		/* First insert our N elements */
 		for (u = 0; u < N; u++) {
 			lr = random() % R;
