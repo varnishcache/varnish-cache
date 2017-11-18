@@ -456,7 +456,7 @@ binheap_reorder(const struct binheap *bh, unsigned idx)
 #ifdef TEST_DRIVER
 
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 
 #include "vdef.h"
 #include "miniobj.h"
