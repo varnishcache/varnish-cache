@@ -361,7 +361,7 @@ main(int argc, char *argv[])
 		++ec;
 	}
 	d1 = VNUM_duration(" 365.24219d ");
-	if (d1 != 31556925.216) {
+	if (d1 < 31556925.2159 || d1 > 31556925.216) {
 		printf("%s: VNUM_Duration() wrong: %g\n", *argv, d1);
 		++ec;
 	}
