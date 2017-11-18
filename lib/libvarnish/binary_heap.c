@@ -223,7 +223,11 @@ binheap_new(void *priv, binheap_cmp_t *cmp_f, binheap_update_t *update_f)
 	bh->cmp = cmp_f;
 	bh->update = update_f;
 	bh->next = ROOT_IDX;
+#ifdef TEST_DRIVER
+	bh->rows = 1;		/* A tiny-ish number */
+#else
 	bh->rows = 16;		/* A tiny-ish number */
+#endif
 	bh->array = calloc(bh->rows, sizeof *bh->array);
 	assert(bh->array != NULL);
 	binheap_addrow(bh);
@@ -472,8 +476,8 @@ struct foo {
 	unsigned	n;
 };
 
-#define M 153557	/* Number of operations */
-#define N 43117		/* Number of items */
+#define M 500083	/* Number of operations */
+#define N 131101	/* Number of items */
 #define R -1		/* Random modulus */
 
 struct foo *ff[N];
@@ -499,6 +503,7 @@ update(void *priv, void *a, unsigned u)
 	fa->idx = u;
 }
 
+#ifdef CHECK2
 static void
 chk2(struct binheap *bh)
 {
@@ -512,6 +517,7 @@ chk2(struct binheap *bh)
 		assert(fa->key >= fb->key);
 	}
 }
+#endif
 
 int
 main(int argc, char **argv)
@@ -523,6 +529,7 @@ main(int argc, char **argv)
 	(void)argc;
 	(void)argv;
 	VRND_SeedAll();
+	VRND_SeedTestable(1);
 	bh = binheap_new(NULL, cmp, update);
 	for (n = 2; n; n += n) {
 		child(bh, n - 1, &u, &v);
@@ -606,8 +613,9 @@ main(int argc, char **argv)
 				CHECK_OBJ_NOTNULL(ff[v], FOO_MAGIC);
 				AN(ff[v]->idx);
 			}
-			if (0)
+#ifdef CHECK2
 				chk2(bh);
+#endif
 		}
 		fprintf(stderr, "%d updates OK\n", M);
 	}
