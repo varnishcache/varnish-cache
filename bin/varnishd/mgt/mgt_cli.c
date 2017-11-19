@@ -453,41 +453,12 @@ sock_id(const char *pfx, int fd)
 
 /*--------------------------------------------------------------------*/
 
-struct telnet {
-	unsigned		magic;
-#define TELNET_MAGIC		0x53ec3ac0
-	int			fd;
-	struct vev		*ev;
-};
-
-static void
-telnet_close(void *priv)
-{
-	struct telnet *tn;
-
-	CAST_OBJ_NOTNULL(tn, priv, TELNET_MAGIC);
-	(void)close(tn->fd);
-	FREE_OBJ(tn);
-}
-
-static struct telnet *
-telnet_new(int fd)
-{
-	struct telnet *tn;
-
-	ALLOC_OBJ(tn, TELNET_MAGIC);
-	AN(tn);
-	tn->fd = fd;
-	return (tn);
-}
-
 static int
 telnet_accept(const struct vev *ev, int what)
 {
 	struct vsb *vsb;
 	struct sockaddr_storage addr;
 	socklen_t addrlen;
-	struct telnet *tn;
 	int i;
 
 	(void)what;
@@ -499,9 +470,8 @@ telnet_accept(const struct vev *ev, int what)
 		return (0);
 
 	MCH_TrackHighFd(i);
-	tn = telnet_new(i);
 	vsb = sock_id("telnet", i);
-	mgt_cli_setup(i, i, 0, VSB_data(vsb), telnet_close, tn);
+	mgt_cli_setup(i, i, 0, VSB_data(vsb), NULL, NULL);
 	VSB_destroy(&vsb);
 	return (0);
 }
@@ -544,7 +514,7 @@ mct_callback(void *priv, const struct suckaddr *sa)
 	const char *err;
 	char abuf[VTCP_ADDRBUFSIZE];
 	char pbuf[VTCP_PORTBUFSIZE];
-	struct telnet *tn;
+	struct vev *ev;
 
 	VJ_master(JAIL_MASTER_PRIVPORT);
 	sock = VTCP_listen(sa, 10, &err);
@@ -553,14 +523,12 @@ mct_callback(void *priv, const struct suckaddr *sa)
 	if (sock > 0) {
 		VTCP_myname(sock, abuf, sizeof abuf, pbuf, sizeof pbuf);
 		VSB_printf(vsb, "%s %s\n", abuf, pbuf);
-		tn = telnet_new(sock);
-		tn->ev = VEV_Alloc();
-		AN(tn->ev);
-		tn->ev->fd = sock;
-		tn->ev->fd_flags = POLLIN;
-		tn->ev->callback = telnet_accept;
-		tn->ev->priv = tn;
-		AZ(VEV_Start(mgt_evb, tn->ev));
+		ev = VEV_Alloc();
+		AN(ev);
+		ev->fd = sock;
+		ev->fd_flags = POLLIN;
+		ev->callback = telnet_accept;
+		AZ(VEV_Start(mgt_evb, ev));
 	}
 	return (0);
 }
@@ -577,7 +545,8 @@ mgt_cli_telnet(const char *T_arg)
 	AN(vsb);
 	error = VSS_resolver(T_arg, NULL, mct_callback, vsb, &err);
 	if (err != NULL)
-		ARGV_ERR("Could not resolve -T argument to address\n\t%s\n", err);
+		ARGV_ERR("Could not resolve -T argument to address\n\t%s\n",
+		    err);
 	AZ(error);
 	AZ(VSB_finish(vsb));
 	if (VSB_len(vsb) == 0)
