@@ -481,9 +481,10 @@ VCLS_AddFd(struct VCLS *cs, int fdi, int fdo, cls_cb_f *closefunc, void *priv)
 	return (cfd->cli);
 }
 
-static void
+static int
 cls_close_fd(struct VCLS *cs, struct VCLS_fd *cfd)
 {
+	int retval = 0;
 
 	CHECK_OBJ_NOTNULL(cs, VCLS_MAGIC);
 	CHECK_OBJ_NOTNULL(cfd, VCLS_FD_MAGIC);
@@ -491,16 +492,15 @@ cls_close_fd(struct VCLS *cs, struct VCLS_fd *cfd)
 	VTAILQ_REMOVE(&cs->fds, cfd, list);
 	cs->nfd--;
 	VSB_destroy(&cfd->cli->sb);
-	if (cfd->closefunc == NULL) {
-		(void)close(cfd->fdi);
-		if (cfd->fdo != cfd->fdi)
-			(void)close(cfd->fdo);
-	} else {
-		cfd->closefunc(cfd->priv);
-	}
+	if (cfd->closefunc != NULL)
+		retval = cfd->closefunc(cfd->priv);
+	(void)close(cfd->fdi);
+	if (cfd->fdo != cfd->fdi)
+		(void)close(cfd->fdo);
 	if (cfd->cli->ident != NULL)
 		free(cfd->cli->ident);
 	FREE_OBJ(cfd);
+	return (retval);
 }
 
 void
@@ -575,8 +575,11 @@ VCLS_Poll(struct VCLS *cs, const struct cli *cli, int timeout)
 		else
 			k = cls_feed(cfd, buf, buf + i);
 	}
-	if (k)
-		cls_close_fd(cs, cfd);
+	if (k) {
+		i = cls_close_fd(cs, cfd);
+		if (i < 0)
+			k = i;
+	}
 	return (k);
 }
 
@@ -589,7 +592,7 @@ VCLS_Destroy(struct VCLS **csp)
 
 	TAKE_OBJ_NOTNULL(cs, csp, VCLS_MAGIC);
 	VTAILQ_FOREACH_SAFE(cfd, &cs->fds, list, cfd2)
-		cls_close_fd(cs, cfd);
+		(void)cls_close_fd(cs, cfd);
 
 	while (!VTAILQ_EMPTY(&cs->funcs)) {
 		clp = VTAILQ_FIRST(&cs->funcs);

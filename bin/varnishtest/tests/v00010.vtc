@@ -84,3 +84,4 @@ client c1 {
 } -run
 
 varnish v1 -cliok "panic.clear -z"
+varnish v1 -expectexit 0x20

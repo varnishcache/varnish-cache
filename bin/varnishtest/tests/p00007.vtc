@@ -77,3 +77,5 @@ client c1 {
 	rxresp
 	expect resp.bodylen == 48
 } -run
+
+varnish v1 -expectexit 0x20

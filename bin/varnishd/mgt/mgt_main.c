@@ -181,25 +181,12 @@ cli_check(const struct cli *cli)
  * This function is called when the CLI on stdin is closed.
  */
 
-static void __match_proto__(mgt_cli_close_f)
+static int __match_proto__(mgt_cli_close_f)
 mgt_stdin_close(void *priv)
 {
 
 	(void)priv;
-
-	if (d_flag) {
-		MCH_Stop_Child();
-		mgt_cli_close_all();
-		VEV_Destroy(&mgt_evb);
-		(void)VPF_Remove(pfh1);
-		if (pfh2 != NULL)
-			(void)VPF_Remove(pfh2);
-		exit(0);
-	} else {
-		VFIL_null_fd(STDIN_FILENO);
-		VFIL_null_fd(STDOUT_FILENO);
-		VFIL_null_fd(STDERR_FILENO);
-	}
+	return (-42);
 }
 
 /*--------------------------------------------------------------------
@@ -391,12 +378,13 @@ mgt_uptime(const struct vev *e, int what)
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(mgt_cli_close_f)
+static int __match_proto__(mgt_cli_close_f)
 mgt_I_close(void *priv)
 {
 	(void)priv;
 	fprintf(stderr, "END of -I file processing\n");
-	closefd(&I_fd);
+	I_fd = -1;
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
@@ -897,7 +885,10 @@ main(int argc, char * const *argv)
 	if (o != 0 && o != -42)
 		MGT_Complain(C_ERR, "VEV_Loop() = %d", o);
 
+	MGT_Complain(C_INFO, "manager stopping child");
+	MCH_Stop_Child();
 	MGT_Complain(C_INFO, "manager dies");
+	mgt_cli_close_all();
 	VEV_Destroy(&mgt_evb);
 	(void)VPF_Remove(pfh1);
 	if (pfh2 != NULL)

@@ -88,7 +88,7 @@ void VCLI_JSON_str(struct cli *cli, const char *str);
 void VCLI_JSON_ver(struct cli *cli, unsigned ver, const char * const * av);
 void VCLI_SetResult(struct cli *cli, unsigned r);
 
-typedef void cls_cb_f(void *priv);
+typedef int cls_cb_f(void *priv);
 typedef void cls_cbc_f(const struct cli*);
 struct VCLS *VCLS_New(struct VCLS *);
 void VCLS_SetHooks(struct VCLS *, cls_cbc_f *, cls_cbc_f *);

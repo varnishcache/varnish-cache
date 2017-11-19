@@ -572,13 +572,13 @@ static double M_poll = 0.1;
 static VTAILQ_HEAD(,m_addr)	m_addr_list =
     VTAILQ_HEAD_INITIALIZER(m_addr_list);
 
-static void __match_proto__(mgt_cli_close_f)
+static int __match_proto__(mgt_cli_close_f)
 Marg_closer(void *priv)
 {
 
 	(void)priv;
-	(void)close(M_fd);
 	M_fd = -1;
+	return(0);
 }
 
 static int __match_proto__(vev_cb_f)

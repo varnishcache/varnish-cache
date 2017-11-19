@@ -49,3 +49,5 @@ client c1 {
 	txreq
 	rxresp
 } -run
+
+varnish v1 -expectexit 0x20
