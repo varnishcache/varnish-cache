@@ -190,6 +190,7 @@ mgt_stdin_close(void *priv)
 	if (d_flag) {
 		MCH_Stop_Child();
 		mgt_cli_close_all();
+		VEV_Destroy(&mgt_evb);
 		(void)VPF_Remove(pfh1);
 		if (pfh2 != NULL)
 			(void)VPF_Remove(pfh2);
@@ -365,11 +366,11 @@ mgt_sigint(const struct vev *e, int what)
 
 	(void)e;
 	(void)what;
-	MGT_Complain(C_ERR, "Manager got SIGINT");
+	MGT_Complain(C_ERR, "Manager got %s", e->name);
 	(void)fflush(stdout);
 	if (MCH_Running())
 		MCH_Stop_Child();
-	exit(0);
+	return (-42);
 }
 
 /*--------------------------------------------------------------------*/
@@ -882,21 +883,22 @@ main(int argc, char * const *argv)
 	AN(e);
 	e->sig = SIGTERM;
 	e->callback = mgt_sigint;
-	e->name = "mgt_sigterm";
+	e->name = "SIGTERM";
 	AZ(VEV_Start(mgt_evb, e));
 
 	e = VEV_Alloc();
 	AN(e);
 	e->sig = SIGINT;
 	e->callback = mgt_sigint;
-	e->name = "mgt_sigint";
+	e->name = "SIGINT";
 	AZ(VEV_Start(mgt_evb, e));
 
 	o = VEV_Loop(mgt_evb);
-	if (o != 0)
+	if (o != 0 && o != -42)
 		MGT_Complain(C_ERR, "VEV_Loop() = %d", o);
 
 	MGT_Complain(C_INFO, "manager dies");
+	VEV_Destroy(&mgt_evb);
 	(void)VPF_Remove(pfh1);
 	if (pfh2 != NULL)
 		(void)VPF_Remove(pfh2);

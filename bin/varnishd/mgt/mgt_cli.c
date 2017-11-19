@@ -666,7 +666,8 @@ mgt_cli_master(const char *M_arg)
 
 	error = VSS_resolver(M_arg, NULL, marg_cb, NULL, &err);
 	if (err != NULL)
-		ARGV_ERR("Could not resolve -M argument to address\n\t%s\n", err);
+		ARGV_ERR("Could not resolve -M argument to address\n\t%s\n",
+		    err);
 	AZ(error);
 	if (VTAILQ_EMPTY(&m_addr_list))
 		ARGV_ERR("Could not resolve -M argument to address\n");

@@ -61,12 +61,12 @@ struct vev {
 };
 
 struct vev_root *VEV_New(void);
-void VEV_Destroy(struct vev_root *evb);
+void VEV_Destroy(struct vev_root **);
 
 struct vev *VEV_Alloc(void);
 
-int VEV_Start(struct vev_root *evb, struct vev *e);
-void VEV_Stop(struct vev_root *evb, struct vev *e);
+int VEV_Start(struct vev_root *, struct vev *);
+void VEV_Stop(struct vev_root *, struct vev *);
 
-int VEV_Once(struct vev_root *evb);
-int VEV_Loop(struct vev_root *evb);
+int VEV_Once(struct vev_root *);
+int VEV_Loop(struct vev_root *);

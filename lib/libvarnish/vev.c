@@ -215,8 +215,13 @@ VEV_New(void)
 /*--------------------------------------------------------------------*/
 
 void
-VEV_Destroy(struct vev_root *evb)
+VEV_Destroy(struct vev_root **evbp)
 {
+	struct vev_root *evb;
+
+	AN(evbp);
+	evb = *evbp;
+	*evbp = NULL;
 	CHECK_OBJ_NOTNULL(evb, VEV_BASE_MAGIC);
 	assert(evb->thread == pthread_self());
 	evb->magic = 0;
@@ -369,7 +374,7 @@ vev_sched_timeout(struct vev_root *evb, struct vev *e, double t)
 static int
 vev_sched_signal(struct vev_root *evb)
 {
-	int i, j;
+	int i, j, retval = 1;
 	struct vevsig *es;
 	struct vev *e;
 
@@ -386,8 +391,10 @@ vev_sched_signal(struct vev_root *evb)
 			VEV_Stop(evb, e);
 			free(e);
 		}
+		if (i < 0)
+			retval = i;
 	}
-	return (1);
+	return (retval);
 }
 
 int
@@ -395,7 +402,7 @@ VEV_Once(struct vev_root *evb)
 {
 	double t;
 	struct vev *e;
-	int i, j, k, tmo;
+	int i, j, k, tmo, retval = 1;
 
 	CHECK_OBJ_NOTNULL(evb, VEV_BASE_MAGIC);
 	assert(evb->thread == pthread_self());
@@ -454,8 +461,10 @@ VEV_Once(struct vev_root *evb)
 				VEV_Stop(evb, e);
 				free(e);
 			}
+			if (k < 0)
+				retval = k;
 		}
 	}
 	AZ(i);
-	return (1);
+	return (retval);
 }
