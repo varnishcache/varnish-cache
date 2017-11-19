@@ -70,6 +70,8 @@ struct varnish {
 	pthread_t		tp;
 	pthread_t		tp_vsl;
 
+	int			expect_exit;
+
 	int			cli_fd;
 	int			vcl_nbr;
 	char			*workdir;
@@ -645,7 +647,7 @@ varnish_cleanup(struct varnish *v)
 	/* Pick up the VSL thread */
 	AZ(pthread_join(v->tp_vsl, &p));
 
-	if (WIFEXITED(status) && (WEXITSTATUS(status) == 0))
+	if (WIFEXITED(status) && (WEXITSTATUS(status) == v->expect_exit))
 		return;
 #ifdef WCOREDUMP
 	vtc_fatal(v->vl, "Bad exit code: %04x sig %x exit %x core %x",
@@ -1048,6 +1050,8 @@ varnish_expect(const struct varnish *v, char * const *av)
  *         example::
  *
  *                 varnish v1 -expect SM?.s1.g_space > 1000000
+ * \-expectexit NUMBER
+ *	   Expect varnishd to exit(3) with this value
  *
  * \-vsc PATTERN
  *         Dump VSC counters matching PATTERN.
@@ -1152,6 +1156,11 @@ cmd_varnish(CMD_ARGS)
 			av++;
 			varnish_expect(v, av);
 			av += 2;
+			continue;
+		}
+		if (!strcmp(*av, "-expectexit")) {
+			v->expect_exit = strtoul(av[1], NULL, 0);
+			av++;
 			continue;
 		}
 		if (!strcmp(*av, "-jail")) {
