@@ -23,6 +23,7 @@ z_const char * const z_errmsg[10] = {
     (z_const char *)""
 };
 
+#ifdef NOVGZ
 
 const char * ZEXPORT zlibVersion()
 {
@@ -180,6 +181,8 @@ void ZLIB_INTERNAL zmemzero(dest, len)
     } while (--len != 0);
 }
 #endif
+
+#endif /* NOVGZ */
 
 #ifndef Z_SOLO
 
