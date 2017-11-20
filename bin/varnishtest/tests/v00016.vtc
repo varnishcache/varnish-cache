@@ -88,3 +88,17 @@ varnish v1 -errvcl {resolves to too many addresses} {
 		if (remote.ip == "varnish-cache.org") {}
 	}
 }
+
+varnish v1 -errvcl {Undefined acl foo} {
+	import directors;
+	backend b { .host = "127.0.0.1"; }
+
+	sub vcl_init {
+		new foo = directors.shard();
+	}
+	sub vcl_recv {
+		if (client.ip ~ foo) {
+			return (synth(200));
+		}
+	}
+}
