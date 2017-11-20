@@ -203,7 +203,7 @@ static int __match_proto__(vdi_gethdrs_f)
 vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
 {
-	int i, extrachance = 1;
+	int i, extrachance = cache_param->gethdr_extrachance;
 	struct backend *bp;
 	struct vtp *vtp;
 
@@ -256,7 +256,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		    bo->req->req_body_status != REQ_BODY_CACHED)
 			break;
 		VSC_C_main->backend_retry++;
-	} while (extrachance);
+	} while (extrachance-- > 0);
 	return (-1);
 }
 
