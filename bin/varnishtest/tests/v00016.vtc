@@ -102,3 +102,14 @@ varnish v1 -errvcl {Undefined acl foo} {
 		}
 	}
 }
+
+varnish v1 -errvcl {Symbol not found: 'foo'} {
+	backend b { .host = "127.0.0.1"; }
+
+	acl foo {
+	    "127.0.0.1"/32;
+	}
+	sub vcl_init {
+		new bar = foo;
+	}
+}

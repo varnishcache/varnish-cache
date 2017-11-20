@@ -291,8 +291,12 @@ vcc_ParseNew(struct vcc *tl)
 
 	ExpectErr(tl, ID);
 	sy2 = VCC_SymbolTok(tl, NULL, tl->t, SYM_OBJECT, 0);
-	if (sy2 == NULL) {
-		VSB_printf(tl->sb, "Symbol not found: ");
+	if (sy2 == NULL || sy2->extra == NULL) {
+		if (sy2 == NULL)
+			p = "Symbol";
+		else if (sy2->extra == NULL)
+			p = "Constructor";
+		VSB_printf(tl->sb, "%s not found: ", p);
 		vcc_ErrToken(tl, tl->t);
 		VSB_printf(tl->sb, " at ");
 		vcc_ErrWhere(tl, tl->t);
@@ -301,6 +305,7 @@ vcc_ParseNew(struct vcc *tl)
 	vcc_NextToken(tl);
 
 	p = sy2->extra;
+	AN(p);
 
 	s_obj = p;
 	p += strlen(p) + 1;
