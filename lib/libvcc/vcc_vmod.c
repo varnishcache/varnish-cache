@@ -294,7 +294,7 @@ vcc_ParseNew(struct vcc *tl)
 	if (sy2 == NULL || sy2->extra == NULL) {
 		if (sy2 == NULL)
 			p = "Symbol";
-		else if (sy2->extra == NULL)
+		else
 			p = "Constructor";
 		VSB_printf(tl->sb, "%s not found: ", p);
 		vcc_ErrToken(tl, tl->t);
