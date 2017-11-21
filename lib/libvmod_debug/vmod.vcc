@@ -221,3 +221,5 @@ Add a vsc
 $Function VOID vsc_destroy()
 
 Remove a vsc
+
+$Function STRING truth(BOOL bool=2)
