@@ -595,3 +595,14 @@ xyzzy_vsc_destroy(VRT_CTX)
 	AZ(vsc);
 	AZ(pthread_mutex_unlock(&vsc_mtx));
 }
+
+VCL_STRING
+xyzzy_truth(VRT_CTX, VCL_BOOL b)
+{
+	(void)ctx;
+	switch (b) {
+	case 0: return ("false");
+	case 2: return ("dunno");
+	default: return ("true");
+	}
+}
