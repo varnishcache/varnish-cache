@@ -37,6 +37,7 @@ client c1 {
 	expect resp.http.b4 == "foo"
 	expect resp.http.body == "false"
 	expect resp.http.after == "bar"
+	expect resp.bodylen == 0
 
 	txreq -url "/body"
 	rxresp
@@ -44,6 +45,7 @@ client c1 {
 	expect resp.http.b4 == "foo"
 	expect resp.http.body == "true"
 	expect resp.http.after == "bar"
+	expect resp.bodylen == 3
 
 	txreq -url "/passnobody"
 	rxresp
@@ -51,6 +53,7 @@ client c1 {
 	expect resp.http.b4 == "foo"
 	expect resp.http.body == "false"
 	expect resp.http.after == "bar"
+	expect resp.bodylen == 0
 
 	txreq -url "/pass"
 	rxresp
@@ -58,4 +61,5 @@ client c1 {
 	expect resp.http.b4 == "foo"
 	expect resp.http.body == "true"
 	expect resp.http.after == "bar"
+	expect resp.bodylen == 3
 } -run
