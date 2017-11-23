@@ -7,20 +7,14 @@ server s1 {
 	txresp
 	rxreq
 	expect req.url == "/foo"
-	delay 2.5
-	send " "
-	expect_close
+	close
 	accept
 	rxreq
 	expect req.url == "/foo"
 	barrier b1 sync
-	delay 2.5
-	send " "
+	close
 	expect_close
 } -start
-
-varnish v1 -cliok "param.set between_bytes_timeout 1"
-varnish v1 -cliok "param.set first_byte_timeout 1"
 
 varnish v1 -vcl+backend {
 	sub vcl_backend_error {
