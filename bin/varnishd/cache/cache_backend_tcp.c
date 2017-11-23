@@ -329,13 +329,14 @@ VBT_Close(struct tcp_pool *tp, struct vbc **vbcp)
 	*vbcp = NULL;
 	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
 
-	assert(vbc->state == VBC_STATE_USED);
 	assert(vbc->fd > 0);
 
 	Lck_Lock(&tp->mtx);
+	assert(vbc->state == VBC_STATE_USED || vbc->state == VBC_STATE_STOLEN);
 	tp->n_used--;
 	if (vbc->state == VBC_STATE_STOLEN) {
-		(void)shutdown(vbc->fd, SHUT_WR);
+		(void)shutdown(vbc->fd, SHUT_RDWR);
+		VTAILQ_REMOVE(&tp->connlist, vbc, list);
 		vbc->state = VBC_STATE_CLEANUP;
 		VTAILQ_INSERT_HEAD(&tp->killlist, vbc, list);
 		tp->n_kill++;
