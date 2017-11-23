@@ -342,13 +342,14 @@ VTP_Close(struct vtp **vtpp)
 	tp = vtp->tcp_pool;
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
 
-	assert(vtp->state == VTP_STATE_USED);
 	assert(vtp->fd > 0);
 
 	Lck_Lock(&tp->mtx);
+	assert(vtp->state == VTP_STATE_USED || vtp->state == VTP_STATE_STOLEN);
 	tp->n_used--;
 	if (vtp->state == VTP_STATE_STOLEN) {
-		(void)shutdown(vtp->fd, SHUT_WR);
+		(void)shutdown(vtp->fd, SHUT_RDWR);
+		VTAILQ_REMOVE(&tp->connlist, vtp, list);
 		vtp->state = VTP_STATE_CLEANUP;
 		VTAILQ_INSERT_HEAD(&tp->killlist, vtp, list);
 		tp->n_kill++;
