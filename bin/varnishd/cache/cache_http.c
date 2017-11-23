@@ -931,7 +931,10 @@ HTTP_Decode(struct http *to, const uint8_t *fm)
 
 	CHECK_OBJ_NOTNULL(to, HTTP_MAGIC);
 	AN(to->vsl);
-	AN(fm);
+	if (fm == 0) {
+		VSLb(to->vsl, SLT_Error, "No headers in object");
+		return (-1);
+	}
 	if (vbe16dec(fm) <= to->shd) {
 		to->status = vbe16dec(fm + 2);
 		fm += 4;

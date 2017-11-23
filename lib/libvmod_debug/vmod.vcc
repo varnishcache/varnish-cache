@@ -221,3 +221,5 @@ Add a vsc
 $Function VOID vsc_destroy()
 
 Remove a vsc
+
+$Function BOOL fetch_body(BOOL pass=0)

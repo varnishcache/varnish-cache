@@ -43,6 +43,7 @@
 #include "vtim.h"
 #include "vcc_if.h"
 #include "VSC_debug.h"
+#include "vcl.h"	// fetch_body()
 
 #include "common/common_param.h"
 
@@ -594,4 +595,15 @@ xyzzy_vsc_destroy(VRT_CTX)
 		VSC_debug_Destroy(&vsc);
 	AZ(vsc);
 	AZ(pthread_mutex_unlock(&vsc_mtx));
+}
+
+VCL_BOOL __match_proto__(td_debug_fetch_body)
+xyzzy_fetch_body(VRT_CTX, VCL_BOOL pass)
+{
+	if (ctx->method != VCL_MET_BACKEND_RESPONSE) {
+		VRT_fail(ctx, "debug.detch_body() "
+			 "only valid in vcl_backend_response");
+		return (0);
+	}
+	return (VBF_Fetchbody(ctx->bo, pass));
 }

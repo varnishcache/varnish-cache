@@ -1,0 +1,65 @@
+varnishtest "Check fetch_body from vcl_backend_response{}"
+
+server s1 {
+	rxreq
+	txresp
+
+	rxreq
+	expect req.url == "/body"
+	txresp -body "123"
+
+	rxreq
+	expect req.url == "/passnobody"
+	txresp
+
+	rxreq
+	expect req.url == "/pass"
+	txresp -body "123"
+} -start
+
+varnish v1 -vcl+backend {
+	import debug;
+	import std;
+
+	sub vcl_backend_response {
+		set beresp.http.b4 = "foo";
+		std.log("b4");
+		set beresp.http.body = debug.fetch_body(bereq.url ~ "^/pass");
+		std.log("after");
+		set beresp.http.after = "bar";
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.b4 == "foo"
+	expect resp.http.body == "false"
+	expect resp.http.after == "bar"
+	expect resp.bodylen == 0
+
+	txreq -url "/body"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.b4 == "foo"
+	expect resp.http.body == "true"
+	expect resp.http.after == "bar"
+	expect resp.bodylen == 3
+
+	txreq -url "/passnobody"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.b4 == "foo"
+	expect resp.http.body == "false"
+	expect resp.http.after == "bar"
+	expect resp.bodylen == 0
+
+	txreq -url "/pass"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.b4 == "foo"
+	expect resp.http.body == "true"
+	expect resp.http.after == "bar"
+	expect resp.bodylen == 3
+} -run
