@@ -114,6 +114,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore->objhead, OBJHEAD_MAGIC);
+	AZ(req->stale_oc);
 	AN(req->vcl);
 
 	assert(req->objcore->refcnt > 0);
@@ -123,6 +124,7 @@ cnt_deliver(struct worker *wrk, struct req *req)
 	HTTP_Setup(req->resp, req->ws, req->vsl, SLT_RespMethod);
 	if (HTTP_Decode(req->resp,
 	    ObjGetAttr(req->wrk, req->objcore, OA_HEADERS, NULL))) {
+		(void)HSH_DerefObjCore(wrk, &req->objcore, HSH_RUSH_POLICY);
 		req->err_code = 500;
 		req->req_step = R_STP_SYNTH;
 		return (REQ_FSM_MORE);
@@ -203,6 +205,9 @@ cnt_vclfail(const struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 
+	AZ(req->objcore);
+	AZ(req->stale_oc);
+
 	HTTP_Copy(req->http, req->http0);
 	WS_Reset(req->ws, req->ws_req);
 	req->err_code = 503;
@@ -227,6 +232,9 @@ cnt_synth(struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+
+	AZ(req->objcore);
+	AZ(req->stale_oc);
 
 	wrk->stats->s_synth++;
 
@@ -339,6 +347,8 @@ cnt_transmit(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->transport, TRANSPORT_MAGIC);
+	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+	AZ(req->stale_oc);
 
 	/* Grab a ref to the bo if there is one */
 	boc = HSH_RefBoc(req->objcore);
@@ -426,6 +436,7 @@ cnt_fetch(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+	AZ(req->stale_oc);
 
 	wrk->stats->s_fetch++;
 	(void)VRB_Ignore(req);
@@ -457,6 +468,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AZ(req->objcore);
+	AZ(req->stale_oc);
 
 	AN(req->vcl);
 
@@ -586,6 +598,7 @@ cnt_miss(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(req->vcl);
 	CHECK_OBJ_NOTNULL(req->objcore, OBJCORE_MAGIC);
+	CHECK_OBJ_ORNULL(req->stale_oc, OBJCORE_MAGIC);
 
 	VCL_miss_method(req->vcl, wrk, req, NULL, NULL);
 	switch (wrk->handling) {
@@ -630,6 +643,7 @@ cnt_pass(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(req->vcl);
 	AZ(req->objcore);
+	AZ(req->stale_oc);
 
 	VCL_pass_method(req->vcl, wrk, req, NULL, NULL);
 	switch (wrk->handling) {
@@ -667,6 +681,8 @@ cnt_pipe(struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AZ(req->objcore);
+	AZ(req->stale_oc);
 	AN(req->vcl);
 
 	wrk->stats->s_pipe++;
@@ -723,6 +739,8 @@ cnt_restart(struct worker *wrk, struct req *req)
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	AZ(req->objcore);
+	AZ(req->stale_oc);
 
 	if (++req->restarts > cache_param->max_restarts) {
 		VSLb(req->vsl, SLT_VCL_Error, "Too many restarts");
@@ -801,6 +819,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AN(req->vcl);
 	AZ(req->objcore);
+	AZ(req->stale_oc);
 	AZ(req->err_code);
 
 	AZ(isnan(req->t_first));
@@ -922,6 +941,7 @@ cnt_purge(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	AZ(req->objcore);
+	AZ(req->stale_oc);
 
 	AN(req->vcl);
 
