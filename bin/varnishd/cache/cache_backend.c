@@ -178,13 +178,15 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	CAST_OBJ_NOTNULL(vtp, bo->htc->priv, VTP_MAGIC);
 	bo->htc->priv = NULL;
 	if (vtp->state != VTP_STATE_USED)
-		VTP_Wait(wrk, vtp);
+		assert(bo->htc->doclose == SC_TX_PIPE);
 	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s", vtp->fd,
 		    bp->director->display_name);
 		VTP_Close(&vtp);
+		AZ(vtp);
 		Lck_Lock(&bp->mtx);
 	} else {
+		assert (vtp->state == VTP_STATE_USED);
 		VSLb(bo->vsl, SLT_BackendReuse, "%d %s", vtp->fd,
 		    bp->director->display_name);
 		Lck_Lock(&bp->mtx);
