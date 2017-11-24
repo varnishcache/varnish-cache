@@ -1,0 +1,24 @@
+varnishtest "#1772: Honor first_byte_timeout on a recycled connection"
+
+server s1 {
+	rxreq
+	expect req.url == "/first"
+	txresp
+
+	rxreq
+	expect req.url == "/second"
+	delay 2
+	txresp
+} -start
+
+varnish v1 -arg "-p first_byte_timeout=1" -vcl+backend {} -start
+
+client c1 {
+	txreq -url "/first"
+	rxresp
+	expect resp.status == 200
+
+	txreq -url "/second"
+	rxresp
+	expect resp.status == 503
+} -run

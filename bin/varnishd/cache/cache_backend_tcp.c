@@ -34,6 +34,7 @@
 
 #include "config.h"
 
+#include <errno.h>
 #include <stdlib.h>
 
 #include "cache.h"
@@ -405,10 +406,11 @@ VBT_Get(struct tcp_pool *tp, double tmo, const struct backend *be,
 /*--------------------------------------------------------------------
  */
 
-void
-VBT_Wait(struct worker *wrk, struct vbc *vbc)
+int
+VBT_Wait(struct worker *wrk, struct vbc *vbc, double tmo)
 {
 	struct tcp_pool *tp;
+	int r;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(vbc, VBC_MAGIC);
@@ -416,11 +418,23 @@ VBT_Wait(struct worker *wrk, struct vbc *vbc)
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
 	assert(vbc->cond == &wrk->cond);
 	Lck_Lock(&tp->mtx);
-	while (vbc->state == VBC_STATE_STOLEN)
-		AZ(Lck_CondWait(&wrk->cond, &tp->mtx, 0));
+
+	while (vbc->state == VBC_STATE_STOLEN) {
+		r = Lck_CondWait(&wrk->cond, &tp->mtx, tmo);
+		if (r != 0) {
+			if (r == EINTR)
+				continue;
+			assert(r == ETIMEDOUT);
+			Lck_Unlock(&tp->mtx);
+			return (1);
+		}
+	}
+
 	assert(vbc->state == VBC_STATE_USED);
 	vbc->cond = NULL;
 	Lck_Unlock(&tp->mtx);
+
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/

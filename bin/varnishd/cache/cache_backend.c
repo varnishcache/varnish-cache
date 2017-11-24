@@ -152,7 +152,8 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	CAST_OBJ_NOTNULL(vbc, bo->htc->priv, VBC_MAGIC);
 	bo->htc->priv = NULL;
 	if (vbc->state != VBC_STATE_USED)
-		assert(bo->htc->doclose == SC_TX_PIPE);
+		assert(bo->htc->doclose == SC_TX_PIPE ||
+		    bo->htc->doclose == SC_RX_TIMEOUT);
 	if (bo->htc->doclose != SC_NULL) {
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s", vbc->fd,
 		    bp->display_name);
@@ -210,16 +211,24 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 
 		i = V1F_SendReq(wrk, bo, &bo->acct.bereq_hdrbytes, 0);
 
-		if (vbc->state != VBC_STATE_USED)
-			VBT_Wait(wrk, vbc);
+		if (vbc->state != VBC_STATE_USED) {
+			if (VBT_Wait(wrk, vbc, VTIM_real() +
+			    bo->htc->first_byte_timeout) != 0) {
+				bo->htc->doclose = SC_RX_TIMEOUT;
+				VSLb(bo->vsl, SLT_FetchError,
+				     "Timed out reusing backend connection");
+				extrachance = 0;
+			}
+		}
 
-		assert(vbc->state == VBC_STATE_USED);
-
-		if (i == 0)
-			i = V1F_FetchRespHdr(bo);
-		if (i == 0) {
-			AN(bo->htc->priv);
-			return (0);
+		if (bo->htc->doclose == SC_NULL) {
+			assert(vbc->state == VBC_STATE_USED);
+			if (i == 0)
+				i = V1F_FetchRespHdr(bo);
+			if (i == 0) {
+				AN(bo->htc->priv);
+				return (0);
+			}
 		}
 
 		/*
@@ -229,7 +238,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		 */
 		vbe_dir_finish(d, wrk, bo);
 		AZ(bo->htc);
-		if (i < 0)
+		if (i < 0 || extrachance == 0)
 			break;
 		if (bo->req != NULL &&
 		    bo->req->req_body_status != REQ_BODY_NONE &&
