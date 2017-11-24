@@ -152,13 +152,15 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	CAST_OBJ_NOTNULL(vbc, bo->htc->priv, VBC_MAGIC);
 	bo->htc->priv = NULL;
 	if (vbc->state != VBC_STATE_USED)
-		VBT_Wait(wrk, vbc);
+		assert(bo->htc->doclose == SC_TX_PIPE);
 	if (bo->htc->doclose != SC_NULL) {
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s", vbc->fd,
 		    bp->display_name);
 		VBT_Close(bp->tcp_pool, &vbc);
+		AZ(vbc);
 		Lck_Lock(&bp->mtx);
 	} else {
+		assert (vbc->state == VBC_STATE_USED);
 		VSLb(bo->vsl, SLT_BackendReuse, "%d %s", vbc->fd,
 		    bp->display_name);
 		Lck_Lock(&bp->mtx);
