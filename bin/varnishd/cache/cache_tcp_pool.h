@@ -91,7 +91,7 @@ struct vtp *VTP_Get(struct tcp_pool *, double tmo, struct worker *,
 	 * Get a (possibly) recycled connection.
 	 */
 
-void VTP_Wait(struct worker *, struct vtp *);
+int VTP_Wait(struct worker *, struct vtp *, double tmo);
 	/*
 	 * If the connection was recycled (state != VTP_STATE_USED) call this
 	 * function before attempting to receive on the connection.

@@ -31,6 +31,7 @@
 
 #include "config.h"
 
+#include <errno.h>
 #include <stdlib.h>
 
 #include "cache_varnishd.h"
@@ -416,10 +417,11 @@ VTP_Get(struct tcp_pool *tp, double tmo, struct worker *wrk,
 /*--------------------------------------------------------------------
  */
 
-void
-VTP_Wait(struct worker *wrk, struct vtp *vtp)
+int
+VTP_Wait(struct worker *wrk, struct vtp *vtp, double tmo)
 {
 	struct tcp_pool *tp;
+	int r;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(vtp, VTP_MAGIC);
@@ -427,11 +429,21 @@ VTP_Wait(struct worker *wrk, struct vtp *vtp)
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
 	assert(vtp->cond == &wrk->cond);
 	Lck_Lock(&tp->mtx);
-	while (vtp->state == VTP_STATE_STOLEN)
-		AZ(Lck_CondWait(&wrk->cond, &tp->mtx, 0));
+	while (vtp->state == VTP_STATE_STOLEN) {
+		r = Lck_CondWait(&wrk->cond, &tp->mtx, tmo);
+		if (r != 0) {
+			if (r == EINTR)
+				continue;
+			assert(r == ETIMEDOUT);
+			Lck_Unlock(&tp->mtx);
+			return (1);
+		}
+	}
 	assert(vtp->state == VTP_STATE_USED);
 	vtp->cond = NULL;
 	Lck_Unlock(&tp->mtx);
+
+	return (0);
 }
 
 /*--------------------------------------------------------------------*/
