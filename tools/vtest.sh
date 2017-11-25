@@ -151,6 +151,7 @@ makegcov () (
 
 	export CFLAGS="-fprofile-arcs -ftest-coverage -fstack-protector -DDONT_DLCLOSE_VMODS" CC=gcc49
 	export MAKEFLAGS=-j1
+	umask 0
 
 	find . -name '*.gc??' -print | xargs rm -f
 
