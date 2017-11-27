@@ -997,8 +997,10 @@ vcl_cli_discard(struct cli *cli, const char * const *av, void *priv)
 		free(vcl->loaded_name);
 		AZ(errno=pthread_rwlock_destroy(&vcl->temp_rwl));
 		FREE_OBJ(vcl);
-	} else if (vcl->temp == VCL_TEMP_COLD)
+	} else {
+		assert(vcl->temp == VCL_TEMP_COLD);
 		VCL_Poll();
+	}
 }
 
 static void __match_proto__(cli_func_t)

@@ -335,6 +335,7 @@ static void
 vbe_dir_event(const struct director *d, enum vcl_event_e ev)
 {
 	struct backend *bp;
+	struct VSC_vbe *vsc;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
@@ -353,7 +354,11 @@ vbe_dir_event(const struct director *d, enum vcl_event_e ev)
 
 	if (ev == VCL_EVENT_COLD) {
 		AN(bp->vsc);
-		VSC_vbe_Destroy(&bp->vsc);
+		Lck_Lock(&backends_mtx);
+		vsc = bp->vsc;
+		bp->vsc = NULL;
+		Lck_Unlock(&backends_mtx);
+		VSC_vbe_Destroy(&vsc);
 		AZ(bp->vsc);
 	}
 }
@@ -524,6 +529,7 @@ void
 VBE_SetHappy(const struct backend *be, uint64_t happy)
 {
 
+	CHECK_OBJ_NOTNULL(be, BACKEND_MAGIC);
 	Lck_Lock(&backends_mtx);
 	if (be->vsc != NULL)
 		be->vsc->happy = happy;
