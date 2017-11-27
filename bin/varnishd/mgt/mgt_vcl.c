@@ -430,7 +430,7 @@ mgt_vcl_setstate(struct cli *cli, struct vclprog *vp, const char *vs)
 	}
 
 	i = mgt_cli_askchild(&status, &p, "vcl.state %s %d%s\n",
-	    vp->name, warm, vp->state);
+	    vp->name, warm, vs);
 	if (i && cli != NULL) {
 		VCLI_SetResult(cli, status);
 		VCLI_Out(cli, "%s", p);
@@ -750,6 +750,7 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 		(void)mgt_vcl_setstate(cli, vp, VCL_STATE_COLD);
 	if (MCH_Running()) {
 		/* XXX If this fails the child is crashing, figure that later */
+		assert(!vp->warm);
 		(void)mgt_cli_askchild(&status, &p, "vcl.discard %s\n", av[2]);
 		free(p);
 	}
