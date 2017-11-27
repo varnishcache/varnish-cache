@@ -55,6 +55,8 @@ vmod_shard__init(VRT_CTX, struct vmod_directors_shard **vshardp,
 	VCL_INT t1;
 	uint32_t t2a, t2b;
 
+	/* XXX ADD cfg argument */
+
 	/* see vmod_key comment */
 	assert(sizeof(VCL_INT) >= sizeof(uint32_t));
 	t2a = UINT32_MAX;
@@ -224,7 +226,8 @@ get_key(VRT_CTX, enum by_e by, VCL_INT key_int, VCL_BLOB key_blob)
 VCL_BACKEND __match_proto__(td_directors_shard_backend)
 vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
     VCL_ENUM by_s, VCL_INT key_int, VCL_BLOB key_blob, VCL_INT alt,
-    VCL_REAL warmup, VCL_BOOL rampup, VCL_ENUM healthy_s)
+    VCL_REAL warmup, VCL_BOOL rampup, VCL_ENUM healthy_s,
+    VCL_BLOB cfg, VCL_ENUM resolve_s)
 {
 	enum by_e	by	= parse_by_e(by_s);
 	enum healthy_e	healthy = parse_healthy_e(healthy_s);
@@ -233,6 +236,9 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
+
+	/* XXX cfg */
+	/* XXX resolve_s */
 
 	if (key_int && by != BY_KEY) {
 		shard_err(ctx, vshard->shardd,

@@ -409,7 +409,9 @@ $Method BACKEND .backend(
 	INT alt=0,
 	REAL warmup=-1,
 	BOOL rampup=1,
-	ENUM {CHOSEN, IGNORE, ALL} healthy="CHOSEN")
+	ENUM {CHOSEN, IGNORE, ALL} healthy="CHOSEN",
+	BLOB cfg=0,
+	ENUM {NOW, LAZY} resolve="NOW")
 
 
 Lookup a backend on the consistent hashing ring.
@@ -513,9 +515,103 @@ is _not_ the order given when backends are added.
     For `alt > 0`, return the `alt`-th alternative backend of all
     those healthy, the last healthy backend found or none.
 
+* `cfg`
+
+  default: unset
+
+  This argument only has an effect when used in backend context.
+
+  Take the shard configuration parameters which would otherwise be
+  passed as parameters (see above) from a `obj_shard_cfg`_ object.
+
+  The value of the `cfg` argument must be a call to the
+  `func_shard_cfg_use`_ method.
+
+  When a `cfg` argument is given, other parameters have no effect.
+
+  For ``resolve=LAZY``, a `cfg` argument remains associated and any
+  changes to the associated configuration affect the sharding decision
+  once the director resolves to an actual backend.
+
+  A call to the `func_shard_backend`_ method without a `cfg` argument
+  clears the association for the current backend request.
+
 $Method VOID .debug(INT)
 
 `intentionally undocumented`
+
+$Object shard_cfg(
+	ENUM {HASH, URL, KEY, BLOB} by="HASH",
+	INT key=0,
+	BLOB key_blob=0,
+	INT alt=0,
+	REAL warmup=-1,
+	BOOL rampup=1,
+	ENUM {CHOSEN, IGNORE, ALL} healthy="CHOSEN")
+
+Create a shard configuration. All arguments and their semantics are as
+documented for `func_shard_backend`_. They may be overridden per
+backend request using the methods documented below.
+
+$Method VOID .reset(
+	ENUM {HASH, URL, KEY, BLOB} by="HASH",
+	INT key=0,
+	BLOB key_blob=0,
+	INT alt=0,
+	REAL warmup=-1,
+	BOOL rampup=1,
+	ENUM {CHOSEN, IGNORE, ALL} healthy="CHOSEN")
+
+This method may only be used in backend context.
+
+Set the configuration paramters of shard directors associated with
+this configuration to those given as arguments or reset them to their
+respective default values. All arguments and their semantics are as
+documented for `func_shard_backend`_.
+
+$Method VOID .set(
+	ENUM {keep, HASH, URL, KEY, BLOB} by="undef",
+	INT key=0,
+	BLOB key_blob=0,
+	INT alt=0,
+	REAL warmup=-2,
+	BOOL rampup=65535,
+	ENUM {undef, CHOSEN, IGNORE, ALL} healthy="undef")
+
+This method may only be used in backend context.
+
+Set the given configuration paramters, keeping all others at their
+current values for the default values.
+
+All arguments and their semantics are as documented for
+`func_shard_backend`_.
+
+$Method STRING .get_by()
+
+XXX
+
+$Method INT .get_key()
+
+XXX
+
+$Method INT .get_alt()
+
+XXX
+
+$Method BOOL .get_rampup()
+
+XXX
+
+$Method BOOL .get_helthy()
+
+XXX
+
+$Method BLOB .use()
+
+This method may only be used in backend context.
+
+For use with the `cfg` argument of `func_shard_backend`_ to associate
+this shard config with a shard director.
 
 ACKNOWLEDGEMENTS
 ================
