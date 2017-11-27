@@ -216,10 +216,12 @@ class vscset(object):
 		fo.write("VSC_" + self.name + "_Destroy")
 		fo.write("(" + self.struct + " **pp)\n")
 		fo.write("{\n")
+		fo.write("\t" + self.struct + "*p;\n")
 		fo.write("\n")
 		fo.write("\tAN(pp);\n")
-		fo.write('\tVRT_VSC_Destroy(vsc_%s_name, *pp);\n' % self.name)
+		fo.write("\tp = *pp;\n")
 		fo.write("\t*pp = NULL;\n")
+		fo.write('\tVRT_VSC_Destroy(vsc_%s_name, p);\n' % self.name)
 		fo.write("}\n")
 
 		if 'sumfunction' in self.head.param:
