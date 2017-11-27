@@ -750,7 +750,7 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 		(void)mgt_vcl_setstate(cli, vp, VCL_STATE_COLD);
 	if (MCH_Running()) {
 		/* XXX If this fails the child is crashing, figure that later */
-		assert(!vp->warm);
+		assert(vp->state != VCL_STATE_WARM);
 		(void)mgt_cli_askchild(&status, &p, "vcl.discard %s\n", av[2]);
 		free(p);
 	}
