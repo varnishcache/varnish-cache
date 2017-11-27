@@ -354,7 +354,7 @@ VBT_Close(struct tcp_pool *tp, struct vbc **vbcp)
 
 struct vbc *
 VBT_Get(struct tcp_pool *tp, double tmo, const struct backend *be,
-    struct worker *wrk)
+    struct worker *wrk, unsigned force_fresh)
 {
 	struct vbc *vbc;
 
@@ -365,7 +365,7 @@ VBT_Get(struct tcp_pool *tp, double tmo, const struct backend *be,
 	Lck_Lock(&tp->mtx);
 	vbc = VTAILQ_FIRST(&tp->connlist);
 	CHECK_OBJ_ORNULL(vbc, VBC_MAGIC);
-	if (vbc == NULL || vbc->state == VBC_STATE_STOLEN)
+	if (force_fresh || vbc == NULL || vbc->state == VBC_STATE_STOLEN)
 		vbc = NULL;
 	else {
 		assert(vbc->tcp_pool == tp);

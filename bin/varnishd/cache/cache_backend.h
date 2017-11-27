@@ -126,7 +126,7 @@ int VBT_Open(const struct tcp_pool *tp, double tmo, const struct suckaddr **sa);
 void VBT_Recycle(const struct worker *, struct tcp_pool *, struct vbc **);
 void VBT_Close(struct tcp_pool *tp, struct vbc **vbc);
 struct vbc *VBT_Get(struct tcp_pool *, double tmo, const struct backend *,
-    struct worker *);
+    struct worker *, unsigned force_fresh);
 void VBT_Wait(struct worker *, struct vbc *);
 
 /* cache_vcl.c */

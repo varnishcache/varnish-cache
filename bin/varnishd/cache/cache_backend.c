@@ -91,7 +91,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo)
 	bo->htc->doclose = SC_NULL;
 
 	FIND_TMO(connect_timeout, tmod, bo, bp);
-	vc = VBT_Get(bp->tcp_pool, tmod, bp, wrk);
+	vc = VBT_Get(bp->tcp_pool, tmod, bp, wrk, 0);
 	if (vc == NULL) {
 		// XXX: Per backend stats ?
 		VSC_C_main->backend_fail++;
