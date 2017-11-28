@@ -41,6 +41,8 @@ VCL
   ``req.hash_always_miss`` are now accessible from all of the client
   side subs, not just ``vcl_recv{}``
 
+* Removed ``beresp.storage_hint`` (was deprecated since Varnish 5.1)
+
 C APIs (for vmod and utility authors)
 -------------------------------------
 

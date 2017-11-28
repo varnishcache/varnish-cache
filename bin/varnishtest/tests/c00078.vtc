@@ -1,4 +1,4 @@
-varnishtest "Stevedores RR, beresp.storage and beresp.storage_hint"
+varnishtest "Stevedores RR, beresp.storage"
 
 server s1 -repeat 6 {
 	rxreq
@@ -12,10 +12,8 @@ varnish v1 \
     -vcl+backend {
 	import vtc;
 	sub vcl_backend_response {
-		if (bereq.url == "/1") {
-			set beresp.storage_hint = "invalid";
-		} else if (bereq.url == "/2") {
-			set beresp.storage_hint = "s1";
+		if (bereq.url == "/2") {
+			set beresp.storage = storage.s1;
 		} else if (bereq.url == "/6") {
 			set beresp.storage = vtc.no_stevedore();
 		}

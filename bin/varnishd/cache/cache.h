@@ -443,7 +443,6 @@ struct busyobj {
 	/* Acct */
 	struct acct_bereq	acct;
 
-	const char		*storage_hint;
 	const struct stevedore	*storage;
 	const struct director	*director_req;
 	const struct director	*director_resp;

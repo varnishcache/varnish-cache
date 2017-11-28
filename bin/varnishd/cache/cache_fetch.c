@@ -63,7 +63,6 @@ vbf_allocobj(struct busyobj *bo, unsigned l)
 		stv = bo->storage;
 
 	bo->storage = NULL;
-	bo->storage_hint = NULL;
 
 	if (stv == NULL)
 		return (0);
@@ -175,7 +174,6 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 
 	assert(bo->fetch_objcore->boc->state == BOS_INVALID);
 	AZ(bo->storage);
-	AZ(bo->storage_hint);
 
 	HTTP_Setup(bo->bereq0, bo->ws, bo->vsl, SLT_BereqMethod);
 	http_FilterReq(bo->bereq0, bo->req->http,
@@ -238,7 +236,6 @@ vbf_stp_retry(struct worker *wrk, struct busyobj *bo)
 
 	/* reset other bo attributes - See VBO_GetBusyObj */
 	bo->storage = NULL;
-	bo->storage_hint = NULL;
 	bo->do_esi = 0;
 	bo->do_stream = 1;
 
@@ -264,7 +261,6 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	AZ(bo->storage);
-	AZ(bo->storage_hint);
 
 	bo->storage = STV_next();
 

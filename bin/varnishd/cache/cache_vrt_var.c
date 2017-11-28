@@ -330,42 +330,6 @@ VRT_r_beresp_backend_ip(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
-const char *
-VRT_r_beresp_storage_hint(VRT_CTX)
-{
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	if (ctx->bo->storage_hint != NULL)
-		return (ctx->bo->storage_hint);
-	else
-		return (NULL);
-}
-
-void
-VRT_l_beresp_storage_hint(VRT_CTX, const char *str, ...)
-{
-	const struct stevedore *stv;
-	va_list ap;
-	const char *b;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	va_start(ap, str);
-	b = VRT_String(ctx->bo->ws, NULL, str, ap);	// XXX: ctx->ws ?
-	va_end(ap);
-	if (b == NULL) {
-		VSLb(ctx->vsl, SLT_LostHeader, "storage_hint");
-		WS_MarkOverflow(ctx->bo->beresp->ws);
-		return;
-	}
-	ctx->bo->storage_hint = b;
-	stv = STV_find(b);
-	if (stv != NULL)
-		ctx->bo->storage = stv;
-}
-
-/*--------------------------------------------------------------------*/
-
 VCL_STEVEDORE
 VRT_r_req_storage(VRT_CTX)
 {

@@ -670,15 +670,6 @@ sp_variables = [
 		The storage backend to use to save this object.
 		"""
 	),
-	('beresp.storage_hint',
-		'STRING',
-		('backend_response', 'backend_error'),
-		('backend_response', 'backend_error'), """
-		Deprecated. Hint to Varnish that you want to
-		save this object to a particular storage backend.
-		Use beresp.storage instead.
-		"""
-	),
 	('obj.proto',
 		'STRING',
 		('hit',),
