@@ -881,16 +881,40 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	enum htc_status_e hs;
 	h2_frame h2f;
 	h2_error h2e;
+	int again;
+	struct h2_req *r2, *r22;
 	char b[8];
 
 	ASSERT_RXTHR(h2);
 	(void)VTCP_blocking(*h2->htc->rfd);
-	h2->sess->t_idle = VTIM_real();
-	hs = HTC_RxStuff(h2->htc, h2_frame_complete,
-	    NULL, NULL, NAN,
-	    h2->sess->t_idle + cache_param->timeout_idle,
-	    16384 + 9);					// rfc7540,l,4228,4228
-	if (hs != HTC_S_COMPLETE) {
+	while (1) {
+		h2->sess->t_idle = VTIM_real();
+		hs = HTC_RxStuff(h2->htc, h2_frame_complete,
+		    NULL, NULL, NAN,
+		    h2->sess->t_idle + cache_param->timeout_idle,
+		    16384 + 9);		// rfc7540,l,4228,4228
+		if (hs == HTC_S_COMPLETE)
+			break;
+		else if (hs == HTC_S_TIMEOUT) {
+			again = 0;
+			VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
+				switch (r2->state) {
+				case H2_S_CLOSED:
+					if (!r2->scheduled)
+						h2_del_req(wrk, r2);
+					break;
+				case H2_S_OPEN:
+				case H2_S_CLOS_REM:
+				case H2_S_CLOS_LOC:
+					again = 1;
+					break;
+				default:
+					break;
+				}
+			}
+			if (again)
+				continue;
+		}
 		Lck_Lock(&h2->sess->mtx);
 		VSLb(h2->vsl, SLT_Debug, "H2: No frame (hs=%d)", hs);
 		h2->error = H2CE_NO_ERROR;
