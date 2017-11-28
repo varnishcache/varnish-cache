@@ -33,6 +33,7 @@
 #include <string.h>
 
 #include "cache/cache.h"
+#include "vcl.h"
 
 #include "vend.h"
 
@@ -233,6 +234,13 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
+
+	/* TODO #2500 */
+	if ((ctx->method & (VCL_MET_TASK_C | VCL_MET_TASK_B)) == 0) {
+		VRT_fail(ctx, "shard .backend() method may only be used "
+			 "in client and backend context");
+		return NULL;
+	}
 
 	if (key_int && by != BY_KEY) {
 		shard_err(ctx, vshard->shardd,
