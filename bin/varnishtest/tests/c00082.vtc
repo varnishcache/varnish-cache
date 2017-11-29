@@ -51,13 +51,19 @@ client c1 {
 	rxresp
 	expect resp.http.Obj-Hits == 0
 
+	delay .1
+
 	txreq
 	rxresp
 	expect resp.http.Obj-Hits == 0
 
+	delay .1
+
 	txreq -hdr "Hash: always-miss"
 	rxresp
 	expect resp.http.Obj-Hits == 0
+
+	delay .1
 
 	txreq
 	rxresp
