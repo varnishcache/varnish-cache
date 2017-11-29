@@ -6,7 +6,10 @@ server s1 {
 	expect req.http.range == <undef>
 	txresp \
 		-hdr "Foobar: _barf_" \
+		-hdr "Connection: close" \
 		-body "012345\n"
+
+	accept
 
 	rxreq
 	expect req.url == "/bar"
