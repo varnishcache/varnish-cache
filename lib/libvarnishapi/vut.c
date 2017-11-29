@@ -367,7 +367,7 @@ VUT_Main(struct VUT *vut)
 		if (vut->vsm != NULL &&
 		    (VSM_Status(vut->vsm) & VSM_WRK_RESTARTED)) {
 			if (hascursor < 1) {
-				fprintf(stderr, "Log abandonned (vsm)\n");
+				fprintf(stderr, "Log abandoned (vsm)\n");
 				VSLQ_SetCursor(vut->vslq, NULL);
 				hascursor = 0;
 			}
