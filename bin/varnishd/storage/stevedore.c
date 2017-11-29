@@ -179,8 +179,8 @@ STV_BanExport(const uint8_t *bans, unsigned len)
  * VRT functions for stevedores
  */
 
-const struct stevedore *
-STV_find(const char *nm)
+static const struct stevedore *
+stv_find(const char *nm)
 {
 	struct stevedore *stv;
 
@@ -194,7 +194,7 @@ int
 VRT_Stv(const char *nm)
 {
 
-	if (STV_find(nm) != NULL)
+	if (stv_find(nm) != NULL)
 		return (1);
 	return (0);
 }
@@ -211,7 +211,7 @@ VRT_STEVEDORE_string(VCL_STEVEDORE s)
 VCL_STEVEDORE
 VRT_stevedore(const char *nm)
 {
-	return (STV_find(nm));
+	return (stv_find(nm));
 }
 
 #define VRTSTVVAR(nm, vtype, ctype, dval)	\
@@ -220,7 +220,7 @@ VRT_Stv_##nm(const char *nm)			\
 {						\
 	const struct stevedore *stv;		\
 						\
-	stv = STV_find(nm);			\
+	stv = stv_find(nm);			\
 	if (stv == NULL)			\
 		return (dval);			\
 	if (stv->var_##nm == NULL)		\
