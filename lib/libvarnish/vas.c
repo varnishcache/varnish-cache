@@ -36,11 +36,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "vdef.h"
+
 #include "vas.h"
 
-vas_f *VAS_Fail_Func __attribute__((__noreturn__));
+vas_f *VAS_Fail_Func v_noreturn_;
 
-void __attribute__((__noreturn__))
+void v_noreturn_
 VAS_Fail(const char *func, const char *file, int line,
     const char *cond, enum vas_e kind)
 {

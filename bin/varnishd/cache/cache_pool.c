@@ -118,7 +118,7 @@ Pool_PurgeStat(unsigned nobj)
  * Special function to summ stats
  */
 
-void __match_proto__(task_func_t)
+void v_matchproto_(task_func_t)
 pool_stat_summ(struct worker *wrk, void *priv)
 {
 	struct VSC_main *src;
@@ -178,7 +178,7 @@ pool_mkpool(unsigned pool_no)
  * NB: be maintained for params which require action.
  */
 
-static void * __match_proto__()
+static void * v_matchproto_()
 pool_poolherder(void *priv)
 {
 	unsigned nwq;

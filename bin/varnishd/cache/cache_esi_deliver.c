@@ -77,7 +77,7 @@ static const struct transport VED_transport = {
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(vtr_reembark_f)
+static void v_matchproto_(vtr_reembark_f)
 ved_reembark(struct worker *wrk, struct req *req)
 {
 	struct ecx *ecx;
@@ -249,7 +249,7 @@ ved_decode_len(struct req *req, const uint8_t **pp)
 /*---------------------------------------------------------------------
  */
 
-static int __match_proto__(vdp_bytes)
+static int v_matchproto_(vdp_bytes)
 ved_vdp(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
@@ -466,7 +466,7 @@ ved_bytes(struct req *req, struct req *preq, enum vdp_action act,
  * the stream with a bit more overhead.
  */
 
-static int __match_proto__(vdp_bytes)
+static int v_matchproto_(vdp_bytes)
 ved_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
     const void *pv, ssize_t l)
 {
@@ -767,7 +767,7 @@ ved_stripgzip(struct req *req, const struct boc *boc)
 
 /*--------------------------------------------------------------------*/
 
-static int __match_proto__(vdp_bytes)
+static int v_matchproto_(vdp_bytes)
 ved_vdp_bytes(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
@@ -791,7 +791,7 @@ static const struct vdp ved_ved = {
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(vtr_deliver_f)
+static void v_matchproto_(vtr_deliver_f)
 ved_deliver(struct req *req, struct boc *boc, int wantbody)
 {
 	int i;

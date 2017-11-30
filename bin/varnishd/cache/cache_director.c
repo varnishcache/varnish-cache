@@ -283,7 +283,7 @@ VDI_Healthy(const struct director *d, double *changed)
 
 /*---------------------------------------------------------------------*/
 
-static int __match_proto__(vcl_be_func)
+static int v_matchproto_(vcl_be_func)
 do_list(struct cli *cli, struct director *d, void *priv)
 {
 	int *probes;
@@ -317,7 +317,7 @@ do_list(struct cli *cli, struct director *d, void *priv)
 	return (0);
 }
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 {
 	int probes = 0;
@@ -343,7 +343,7 @@ cli_backend_list(struct cli *cli, const char * const *av, void *priv)
 
 /*---------------------------------------------------------------------*/
 
-static int __match_proto__(vcl_be_func)
+static int v_matchproto_(vcl_be_func)
 do_set_health(struct cli *cli, struct director *d, void *priv)
 {
 	unsigned prev;
@@ -362,7 +362,7 @@ do_set_health(struct cli *cli, struct director *d, void *priv)
 	return (0);
 }
 
-static void __match_proto__()
+static void v_matchproto_()
 cli_backend_set_health(struct cli *cli, const char * const *av, void *priv)
 {
 	const struct vdi_ahealth *ah;

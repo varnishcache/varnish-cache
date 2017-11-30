@@ -86,7 +86,7 @@ struct vfp_ctx {
 
 enum vfp_status VFP_Suck(struct vfp_ctx *, void *p, ssize_t *lp);
 enum vfp_status VFP_Error(struct vfp_ctx *, const char *fmt, ...)
-    __v_printflike(2, 3);
+    v_printflike_(2, 3);
 
 /* Deliver processors ------------------------------------------------*/
 

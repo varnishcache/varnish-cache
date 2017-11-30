@@ -389,7 +389,7 @@ VRT_TIME_string(VRT_CTX, double t)
 	return (p);
 }
 
-const char * __match_proto__()
+const char * v_matchproto_()
 VRT_BACKEND_string(VCL_BACKEND d)
 {
 	if (d == NULL)

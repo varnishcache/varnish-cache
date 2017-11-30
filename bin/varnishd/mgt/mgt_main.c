@@ -181,7 +181,7 @@ cli_check(const struct cli *cli)
  * This function is called when the CLI on stdin is closed.
  */
 
-static int __match_proto__(mgt_cli_close_f)
+static int v_matchproto_(mgt_cli_close_f)
 mgt_stdin_close(void *priv)
 {
 
@@ -347,7 +347,7 @@ mgt_eric_im_done(int eric_fd, unsigned u)
 
 /*--------------------------------------------------------------------*/
 
-static int __match_proto__(vev_cb_f)
+static int v_matchproto_(vev_cb_f)
 mgt_sigint(const struct vev *e, int what)
 {
 
@@ -362,7 +362,7 @@ mgt_sigint(const struct vev *e, int what)
 
 /*--------------------------------------------------------------------*/
 
-static int __match_proto__(vev_cb_f)
+static int v_matchproto_(vev_cb_f)
 mgt_uptime(const struct vev *e, int what)
 {
 	static double mgt_uptime_t0 = 0;
@@ -378,7 +378,7 @@ mgt_uptime(const struct vev *e, int what)
 
 /*--------------------------------------------------------------------*/
 
-static int __match_proto__(mgt_cli_close_f)
+static int v_matchproto_(mgt_cli_close_f)
 mgt_I_close(void *priv)
 {
 	(void)priv;

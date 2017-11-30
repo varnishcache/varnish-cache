@@ -72,7 +72,7 @@ static struct vsb	*cli_buf = NULL;
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 mcf_banner(struct cli *cli, const char *const *av, void *priv)
 {
 
@@ -100,7 +100,7 @@ static struct cli_proto cli_proto[] = {
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 mcf_panic(struct cli *cli, const char * const *av, void *priv)
 {
 
@@ -117,7 +117,7 @@ static struct cli_proto cli_debug[] = {
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 mcf_askchild(struct cli *cli, const char * const *av, void *priv)
 {
 	int i;
@@ -307,7 +307,7 @@ mcf_auth(struct cli *cli, const char *const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 mcf_help(struct cli *cli, const char * const *av, void *priv)
 {
 	if (cli_o <= 0)
@@ -316,7 +316,7 @@ mcf_help(struct cli *cli, const char * const *av, void *priv)
 		mcf_askchild(cli, av, priv);
 }
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 mcf_help_json(struct cli *cli, const char * const *av, void *priv)
 {
 	if (cli_o <= 0)
@@ -506,7 +506,7 @@ mgt_cli_secret(const char *S_arg)
 	secret_file = S_arg;
 }
 
-static int __match_proto__(vss_resolved_f)
+static int v_matchproto_(vss_resolved_f)
 mct_callback(void *priv, const struct suckaddr *sa)
 {
 	int sock;
@@ -572,7 +572,7 @@ static double M_poll = 0.1;
 static VTAILQ_HEAD(,m_addr)	m_addr_list =
     VTAILQ_HEAD_INITIALIZER(m_addr_list);
 
-static int __match_proto__(mgt_cli_close_f)
+static int v_matchproto_(mgt_cli_close_f)
 Marg_closer(void *priv)
 {
 
@@ -581,7 +581,7 @@ Marg_closer(void *priv)
 	return(0);
 }
 
-static int __match_proto__(vev_cb_f)
+static int v_matchproto_(vev_cb_f)
 Marg_connect(const struct vev *e, int what)
 {
 	struct vsb *vsb;
@@ -609,7 +609,7 @@ Marg_connect(const struct vev *e, int what)
 	return (1);
 }
 
-static int __match_proto__(vev_cb_f)
+static int v_matchproto_(vev_cb_f)
 Marg_poker(const struct vev *e, int what)
 {
 	int s;
@@ -643,7 +643,7 @@ Marg_poker(const struct vev *e, int what)
 	return (0);
 }
 
-static int __match_proto__(vss_resolved_f)
+static int v_matchproto_(vss_resolved_f)
 marg_cb(void *priv, const struct suckaddr *sa)
 {
 	struct m_addr *ma;

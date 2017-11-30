@@ -432,7 +432,7 @@ i_mode(void)
  * DNS services.  This is a basic sanity check for those.
  */
 
-static int __match_proto__(vss_resolved_f)
+static int v_matchproto_(vss_resolved_f)
 dns_cb(void *priv, const struct suckaddr *sa)
 {
 	char abuf[VTCP_ADDRBUFSIZE];
@@ -464,7 +464,7 @@ dns_works(void)
  * Figure out what IP related magic
  */
 
-static int __match_proto__(vss_resolved_f)
+static int v_matchproto_(vss_resolved_f)
 bind_cb(void *priv, const struct suckaddr *sa)
 {
 	(void)priv;

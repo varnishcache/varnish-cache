@@ -39,6 +39,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "vdef.h"
+
 #include "vas.h"	// XXX Flexelint "not used" - but req'ed for assert()
 #include "vcli.h"
 #include "vsha256.h"

@@ -358,7 +358,7 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
 	VCC_PrintCName(func, name, NULL);
 	AZ(VSB_finish(func));
 
-	Fh(tl, 0, "\nstatic int __match_proto__(acl_match_f)\n");
+	Fh(tl, 0, "\nstatic int v_matchproto_(acl_match_f)\n");
 	Fh(tl, 0, "%s(VRT_CTX, const VCL_IP p)\n", VSB_data(func));
 	Fh(tl, 0, "{\n");
 	Fh(tl, 0, "\tconst unsigned char *a;\n");

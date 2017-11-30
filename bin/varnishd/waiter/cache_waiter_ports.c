@@ -233,7 +233,7 @@ vws_enter(void *priv, struct waited *wp)
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(waiter_init_f)
+static void v_matchproto_(waiter_init_f)
 vws_init(struct waiter *w)
 {
 	struct vws *vws;
@@ -250,7 +250,7 @@ vws_init(struct waiter *w)
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(waiter_fini_f)
+static void v_matchproto_(waiter_fini_f)
 vws_fini(struct waiter *w)
 {
 	struct vws *vws;

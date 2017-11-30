@@ -401,7 +401,7 @@ smf_open_chunk(struct smf_sc *sc, off_t sz, off_t off, off_t *fail, off_t *sum)
 	smf_open_chunk(sc, sz - h, off + h, fail, sum);
 }
 
-static void __match_proto__(storage_open_f)
+static void v_matchproto_(storage_open_f)
 smf_open(struct stevedore *st)
 {
 	struct smf_sc *sc;
@@ -430,7 +430,7 @@ smf_open(struct stevedore *st)
 
 /*--------------------------------------------------------------------*/
 
-static struct storage * __match_proto__(sml_alloc_f)
+static struct storage * v_matchproto_(sml_alloc_f)
 smf_alloc(const struct stevedore *st, size_t size)
 {
 	struct smf *smf;
@@ -466,7 +466,7 @@ smf_alloc(const struct stevedore *st, size_t size)
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(sml_free_f)
+static void v_matchproto_(sml_free_f)
 smf_free(struct storage *s)
 {
 	struct smf *smf;

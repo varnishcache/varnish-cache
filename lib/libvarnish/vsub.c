@@ -39,8 +39,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "vas.h"
 #include "vdef.h"
+
+#include "vas.h"
 #include "vfil.h"
 #include "vlu.h"
 #include "vsb.h"

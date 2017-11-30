@@ -201,7 +201,7 @@ VMOD_Panic(struct vsb *vsb)
 
 /*---------------------------------------------------------------------*/
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 ccf_debug_vmod(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vmod *v;

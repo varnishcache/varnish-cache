@@ -180,7 +180,7 @@ VXID_Get(struct worker *wrk, uint32_t mask)
  * Dumb down the VXID allocation to make it predictable for
  * varnishtest cases
  */
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 cli_debug_xid(struct cli *cli, const char * const *av, void *priv)
 {
 	(void)priv;
@@ -195,7 +195,7 @@ cli_debug_xid(struct cli *cli, const char * const *av, void *priv)
  * Default to seed=1, this is the only seed value POSIXl guarantees will
  * result in a reproducible random number sequence.
  */
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 cli_debug_srandom(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned seed = 1;
@@ -231,7 +231,7 @@ child_malloc_fail(void *p, const char *s)
  * signal handler for child process
  */
 
-static void __match_proto__()
+static void v_matchproto_()
 child_signal_handler(int s, siginfo_t *si, void *c)
 {
 	char buf[1024];

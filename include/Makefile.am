@@ -99,9 +99,13 @@ nobase_noinst_HEADERS = \
 	vtcp.h \
 	vtree.h
 
-vmod_abi.h: $(top_srcdir)/lib/libvcc/generate.py $(top_srcdir)/include/vrt.h
+vmod_abi.h: \
+	    $(top_srcdir)/lib/libvcc/generate.py \
+	    $(top_srcdir)/include/vdef.h \
+	    $(top_srcdir)/include/vrt.h
 	mkdir -p tbl
-	@PYTHON@ $(top_srcdir)/lib/libvcc/generate.py $(top_srcdir) $(top_builddir)
+	@PYTHON@ $(top_srcdir)/lib/libvcc/generate.py \
+	    $(top_srcdir) $(top_builddir)
 
 GEN_H = \
 	tbl/vrt_stv_var.h \

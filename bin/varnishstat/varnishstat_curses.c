@@ -928,7 +928,7 @@ handle_keypress(int ch)
 	redraw = 1;
 }
 
-static void * __match_proto__(VSC_new_f)
+static void * v_matchproto_(VSC_new_f)
 newpt(void *priv, const struct VSC_point *const vpt)
 {
 	struct pt *pt;
@@ -958,7 +958,7 @@ newpt(void *priv, const struct VSC_point *const vpt)
 	return (pt);
 }
 
-static void __match_proto__(VSC_destroy_f)
+static void v_matchproto_(VSC_destroy_f)
 delpt(void *priv, const struct VSC_point *const vpt)
 {
 	struct pt *pt;

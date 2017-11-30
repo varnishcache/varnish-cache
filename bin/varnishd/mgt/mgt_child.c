@@ -116,7 +116,7 @@ mgt_panic_clear(void)
 	VSB_destroy(&child_panic);
 }
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 mch_cli_panic_show(struct cli *cli, const char * const *av, void *priv)
 {
 	(void)av;
@@ -132,7 +132,7 @@ mch_cli_panic_show(struct cli *cli, const char * const *av, void *priv)
 	VCLI_Out(cli, "%s\n", VSB_data(child_panic));
 }
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 mch_cli_panic_clear(struct cli *cli, const char * const *av, void *priv)
 {
 	(void)priv;
@@ -204,7 +204,7 @@ MCH_Fd_Inherit(int fd, const char *what)
  * Listen to stdout+stderr from the child
  */
 
-static int __match_proto__(vlu_f)
+static int v_matchproto_(vlu_f)
 child_line(void *priv, const char *p)
 {
 	(void)priv;
@@ -217,7 +217,7 @@ child_line(void *priv, const char *p)
  * NB: Notice cleanup call from mgt_reap_child()
  */
 
-static int __match_proto__(vev_cb_f)
+static int v_matchproto_(vev_cb_f)
 child_listener(const struct vev *e, int what)
 {
 
@@ -234,7 +234,7 @@ child_listener(const struct vev *e, int what)
  * Periodically poke the child, to see that it still lives
  */
 
-static int __match_proto__(vev_cb_f)
+static int v_matchproto_(vev_cb_f)
 child_poker(const struct vev *e, int what)
 {
 	char *r = NULL;
@@ -611,7 +611,7 @@ MCH_Running(void)
  * CLI commands
  */
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 mch_cli_server_start(struct cli *cli, const char * const *av, void *priv)
 {
 
@@ -630,7 +630,7 @@ mch_cli_server_start(struct cli *cli, const char * const *av, void *priv)
 	}
 }
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 mch_cli_server_stop(struct cli *cli, const char * const *av, void *priv)
 {
 
@@ -644,7 +644,7 @@ mch_cli_server_stop(struct cli *cli, const char * const *av, void *priv)
 	}
 }
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 mch_cli_server_status(struct cli *cli, const char * const *av, void *priv)
 {
 	(void)av;

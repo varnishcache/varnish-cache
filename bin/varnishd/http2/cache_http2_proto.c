@@ -266,7 +266,7 @@ h2_vsl_frame(const struct h2_sess *h2, const void *ptr, size_t len)
 /**********************************************************************
  */
 
-static h2_error __match_proto__(h2_frame_f)
+static h2_error v_matchproto_(h2_frame_f)
 h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 
@@ -287,7 +287,7 @@ h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 /**********************************************************************
  */
 
-static h2_error __match_proto__(h2_frame_f)
+static h2_error v_matchproto_(h2_frame_f)
 h2_rx_push_promise(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 
@@ -301,7 +301,7 @@ h2_rx_push_promise(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 /**********************************************************************
  */
 
-static h2_error __match_proto__(h2_frame_f)
+static h2_error v_matchproto_(h2_frame_f)
 h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 
@@ -319,7 +319,7 @@ h2_rx_rst_stream(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 /**********************************************************************
  */
 
-static h2_error __match_proto__(h2_frame_f)
+static h2_error v_matchproto_(h2_frame_f)
 h2_rx_goaway(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 
@@ -337,7 +337,7 @@ h2_rx_goaway(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 /**********************************************************************
  */
 
-static h2_error __match_proto__(h2_frame_f)
+static h2_error v_matchproto_(h2_frame_f)
 h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	uint32_t wu;
@@ -367,7 +367,7 @@ h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
  * Incoming PRIORITY, possibly an ACK of one we sent.
  */
 
-static h2_error __match_proto__(h2_frame_f)
+static h2_error v_matchproto_(h2_frame_f)
 h2_rx_priority(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 
@@ -382,7 +382,7 @@ h2_rx_priority(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
  */
 
 #define H2_SETTING(U,l, ...)					\
-static void __match_proto__(h2_setsetting_f)			\
+static void v_matchproto_(h2_setsetting_f)			\
 h2_setting_##l(struct h2_settings* s, uint32_t v)		\
 {								\
 	s -> l = v;						\
@@ -440,7 +440,7 @@ h2_set_setting(struct h2_sess *h2, const uint8_t *d)
 	return (0);
 }
 
-static h2_error __match_proto__(h2_frame_f)
+static h2_error v_matchproto_(h2_frame_f)
 h2_rx_settings(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	const uint8_t *p;
@@ -476,7 +476,7 @@ h2_rx_settings(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
  * Incoming HEADERS, this is where the partys at...
  */
 
-void __match_proto__(task_func_t)
+void v_matchproto_(task_func_t)
 h2_do_req(struct worker *wrk, void *priv)
 {
 	struct req *req;
@@ -547,7 +547,7 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 	return (0);
 }
 
-static h2_error __match_proto__(h2_frame_f)
+static h2_error v_matchproto_(h2_frame_f)
 h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	struct req *req;
@@ -624,7 +624,7 @@ h2_rx_headers(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 
 /**********************************************************************/
 
-static h2_error __match_proto__(h2_frame_f)
+static h2_error v_matchproto_(h2_frame_f)
 h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	struct req *req;
@@ -653,7 +653,7 @@ h2_rx_continuation(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 
 /**********************************************************************/
 
-static h2_error __match_proto__(h2_frame_f)
+static h2_error v_matchproto_(h2_frame_f)
 h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 	int w1 = 0, w2 = 0;
@@ -699,7 +699,7 @@ h2_rx_data(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	return (0);
 }
 
-static enum vfp_status __match_proto__(vfp_pull_f)
+static enum vfp_status v_matchproto_(vfp_pull_f)
 h2_vfp_body(struct vfp_ctx *vc, struct vfp_entry *vfe, void *ptr, ssize_t *lp)
 {
 	struct h2_req *r2;
@@ -750,7 +750,7 @@ static const struct vfp h2_body = {
 	.pull = h2_vfp_body,
 };
 
-void __match_proto__(vtr_req_body_t)
+void v_matchproto_(vtr_req_body_t)
 h2_req_body(struct req *req)
 {
 	struct h2_req *r2;
@@ -765,7 +765,7 @@ h2_req_body(struct req *req)
 
 /**********************************************************************/
 
-void __match_proto__(vtr_req_fail_f)
+void v_matchproto_(vtr_req_fail_f)
 h2_req_fail(struct req *req, enum sess_close reason)
 {
 	assert(reason > 0);
@@ -775,7 +775,7 @@ h2_req_fail(struct req *req, enum sess_close reason)
 
 /**********************************************************************/
 
-static enum htc_status_e __match_proto__(htc_complete_f)
+static enum htc_status_e v_matchproto_(htc_complete_f)
 h2_frame_complete(struct http_conn *htc)
 {
 	int l;

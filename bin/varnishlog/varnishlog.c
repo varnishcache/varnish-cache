@@ -43,11 +43,12 @@
 #define VOPT_DEFINITION
 #define VOPT_INC "varnishlog_options.h"
 
+#include "vdef.h"
+
 #include "vapi/vsm.h"
 #include "vapi/vsl.h"
 #include "vapi/voptget.h"
 #include "vas.h"
-#include "vdef.h"
 #include "vut.h"
 #include "miniobj.h"
 
@@ -63,7 +64,7 @@ static struct log {
 	FILE		*fo;
 } LOG;
 
-static void __attribute__((__noreturn__))
+static void v_noreturn_
 usage(int status)
 {
 	const char **opt;
@@ -89,7 +90,7 @@ openout(int append)
 	vut->dispatch_priv = LOG.fo;
 }
 
-static int __match_proto__(VUT_cb_f)
+static int v_matchproto_(VUT_cb_f)
 rotateout(struct VUT *v)
 {
 
@@ -102,7 +103,7 @@ rotateout(struct VUT *v)
 	return (0);
 }
 
-static int __match_proto__(VUT_cb_f)
+static int v_matchproto_(VUT_cb_f)
 flushout(struct VUT *v)
 {
 
@@ -113,7 +114,7 @@ flushout(struct VUT *v)
 	return (0);
 }
 
-static int __match_proto__(VUT_cb_f)
+static int v_matchproto_(VUT_cb_f)
 sighup(struct VUT *v)
 {
 	assert(v == vut);

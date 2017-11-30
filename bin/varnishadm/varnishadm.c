@@ -58,10 +58,11 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "vdef.h"
+
 #include "vapi/vsm.h"
 #include "vas.h"
 #include "vcli.h"
-#include "vdef.h"
 #include "vnum.h"
 #include "vtcp.h"
 
@@ -184,7 +185,7 @@ do_args(int sock, int argc, char * const *argv)
  * to have a global variable.
  */
 static int _line_sock;
-static void __match_proto__()
+static void v_matchproto_()
 send_line(char *l)
 {
 	if (l) {

@@ -199,7 +199,7 @@ VRT_Stv(const char *nm)
 	return (0);
 }
 
-const char * __match_proto__()
+const char * v_matchproto_()
 VRT_STEVEDORE_string(VCL_STEVEDORE s)
 {
 	if (s == NULL)

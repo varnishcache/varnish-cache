@@ -150,7 +150,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	return (vtp);
 }
 
-static unsigned __match_proto__(vdi_healthy_f)
+static unsigned v_matchproto_(vdi_healthy_f)
 vbe_dir_healthy(const struct director *d, const struct busyobj *bo,
     double *changed)
 {
@@ -162,7 +162,7 @@ vbe_dir_healthy(const struct director *d, const struct busyobj *bo,
 	return (VDI_Healthy(be->director, changed));
 }
 
-static void __match_proto__(vdi_finish_f)
+static void v_matchproto_(vdi_finish_f)
 vbe_dir_finish(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
 {
@@ -203,7 +203,7 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	bo->htc = NULL;
 }
 
-static int __match_proto__(vdi_gethdrs_f)
+static int v_matchproto_(vdi_gethdrs_f)
 vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
 {
@@ -272,7 +272,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 	return (-1);
 }
 
-static const struct suckaddr * __match_proto__(vdi_getip_f)
+static const struct suckaddr * v_matchproto_(vdi_getip_f)
 vbe_dir_getip(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
 {
@@ -365,7 +365,7 @@ vbe_dir_event(const struct director *d, enum vcl_event_e ev)
 
 /*---------------------------------------------------------------------*/
 
-static void __match_proto__(vdi_destroy_f)
+static void v_matchproto_(vdi_destroy_f)
 vbe_destroy(const struct director *d)
 {
 	struct backend *be;

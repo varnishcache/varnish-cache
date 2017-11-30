@@ -364,7 +364,7 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 	return (dt);
 }
 
-void * __match_proto__(bgthread_t)
+void * v_matchproto_(bgthread_t)
 ban_lurker(struct worker *wrk, void *priv)
 {
 	struct vsl_log vsl;

@@ -36,7 +36,7 @@
 
 /*--------------------------------------------------------------------*/
 
-void __match_proto__(sym_wildcard_t)
+void v_matchproto_(sym_wildcard_t)
 vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent,
     const char *b, const char *e)
 {

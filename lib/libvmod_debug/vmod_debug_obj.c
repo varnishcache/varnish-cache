@@ -71,7 +71,7 @@ xyzzy_obj__fini(struct xyzzy_debug_obj **op)
 	*op = NULL;
 }
 
-VCL_VOID __match_proto__()
+VCL_VOID v_matchproto_()
 xyzzy_obj_enum(VRT_CTX, struct xyzzy_debug_obj *o, VCL_ENUM e)
 {
 
@@ -80,7 +80,7 @@ xyzzy_obj_enum(VRT_CTX, struct xyzzy_debug_obj *o, VCL_ENUM e)
 	assert(!strcmp(e, "martin"));
 }
 
-VCL_STRING __match_proto__()
+VCL_STRING v_matchproto_()
 xyzzy_obj_foo(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRING s)
 {
 
@@ -91,7 +91,7 @@ xyzzy_obj_foo(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRING s)
 	return ("BOO");
 }
 
-VCL_TIME __match_proto__()
+VCL_TIME v_matchproto_()
 xyzzy_obj_date(VRT_CTX, struct xyzzy_debug_obj *o)
 {
 
@@ -101,7 +101,7 @@ xyzzy_obj_date(VRT_CTX, struct xyzzy_debug_obj *o)
 	return (21.4);
 }
 
-VCL_STRING __match_proto__()
+VCL_STRING v_matchproto_()
 xyzzy_obj_string(VRT_CTX, struct xyzzy_debug_obj *o)
 {
 
@@ -111,7 +111,7 @@ xyzzy_obj_string(VRT_CTX, struct xyzzy_debug_obj *o)
 	return (o->string);
 }
 
-VCL_STRING __match_proto__()
+VCL_STRING v_matchproto_()
 xyzzy_obj_number(VRT_CTX, struct xyzzy_debug_obj *o)
 {
 
@@ -121,28 +121,28 @@ xyzzy_obj_number(VRT_CTX, struct xyzzy_debug_obj *o)
 	return (o->number);
 }
 
-VCL_VOID __match_proto__()
+VCL_VOID v_matchproto_()
 xyzzy_obj_test_priv_call(VRT_CTX,
     struct xyzzy_debug_obj *o, struct vmod_priv *priv)
 {
 	(void)o;
 	xyzzy_test_priv_call(ctx, priv);
 }
-VCL_VOID __match_proto__()
+VCL_VOID v_matchproto_()
 xyzzy_obj_test_priv_vcl(VRT_CTX,
     struct xyzzy_debug_obj *o, struct vmod_priv *priv)
 {
 	(void)o;
 	xyzzy_test_priv_vcl(ctx, priv);
 }
-VCL_STRING __match_proto__()
+VCL_STRING v_matchproto_()
 xyzzy_obj_test_priv_task(VRT_CTX,
     struct xyzzy_debug_obj *o, struct vmod_priv *priv, VCL_STRING s)
 {
 	(void)o;
 	return (xyzzy_test_priv_task(ctx, priv, s));
 }
-VCL_STRING __match_proto__()
+VCL_STRING v_matchproto_()
 xyzzy_obj_test_priv_top(VRT_CTX,
     struct xyzzy_debug_obj *o, struct vmod_priv *priv, VCL_STRING s)
 {

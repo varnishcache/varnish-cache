@@ -40,7 +40,7 @@
 #include "waiter/waiter_priv.h"
 #include "waiter/mgt_waiter.h"
 
-static int __match_proto__(binheap_cmp_t)
+static int v_matchproto_(binheap_cmp_t)
 waited_cmp(void *priv, const void *a, const void *b)
 {
 	const struct waiter *ww;
@@ -53,7 +53,7 @@ waited_cmp(void *priv, const void *a, const void *b)
 	return (Wait_When(aa) < Wait_When(bb));
 }
 
-static void __match_proto__(binheap_update_t)
+static void v_matchproto_(binheap_update_t)
 waited_update(void *priv, void *p, unsigned u)
 {
 	struct waited *pp;

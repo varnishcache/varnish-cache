@@ -98,7 +98,7 @@ mpl_guard(void *priv)
 {
 	struct mempool *mpl;
 	struct memitem *mi = NULL;
-	double __state_variable__(mpl_slp);
+	double v_statevariable_(mpl_slp);
 	double last = 0;
 
 	CAST_OBJ_NOTNULL(mpl, priv, MEMPOOL_MAGIC);

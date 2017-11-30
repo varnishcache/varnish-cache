@@ -72,7 +72,7 @@ V2D_Init(void)
 
 /**********************************************************************/
 
-static int __match_proto__(vdp_bytes)
+static int v_matchproto_(vdp_bytes)
 h2_bytes(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
@@ -126,7 +126,7 @@ h2_status(uint8_t *p, uint16_t status) {
 	return (l);
 }
 
-int __match_proto__(vtr_minimal_response_f)
+int v_matchproto_(vtr_minimal_response_f)
 h2_minimal_response(struct req *req, uint16_t status)
 {
 	struct h2_req *r2;
@@ -178,7 +178,7 @@ h2_enc_len(uint8_t *p, unsigned bits, unsigned val)
 	return (p);
 }
 
-void __match_proto__(vtr_deliver_f)
+void v_matchproto_(vtr_deliver_f)
 h2_deliver(struct req *req, struct boc *boc, int sendbody)
 {
 	ssize_t sz, sz1;

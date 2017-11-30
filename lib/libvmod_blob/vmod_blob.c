@@ -192,7 +192,7 @@ check_enc_case(VRT_CTX, VCL_ENUM encs, VCL_ENUM case_s, enum encoding enc,
 
 /* Objects */
 
-VCL_VOID __match_proto__(td_blob_blob__init)
+VCL_VOID v_matchproto_(td_blob_blob__init)
 vmod_blob__init(VRT_CTX, struct vmod_blob_blob **blobp, const char *vcl_name,
 		VCL_ENUM decs, const char *p, ...)
 {
@@ -251,7 +251,7 @@ vmod_blob__init(VRT_CTX, struct vmod_blob_blob **blobp, const char *vcl_name,
 	b->blob.len = len;
 }
 
-VCL_BLOB __match_proto__(td_blob_blob_get)
+VCL_BLOB v_matchproto_(td_blob_blob_get)
 vmod_blob_get(VRT_CTX, struct vmod_blob_blob *b)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -259,7 +259,7 @@ vmod_blob_get(VRT_CTX, struct vmod_blob_blob *b)
 	return &b->blob;
 }
 
-VCL_STRING __match_proto__(td_blob_blob_encode)
+VCL_STRING v_matchproto_(td_blob_blob_encode)
 vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 		 VCL_ENUM case_s)
 {
@@ -311,7 +311,7 @@ vmod_blob_encode(VRT_CTX, struct vmod_blob_blob *b, VCL_ENUM encs,
 	return b->encoding[enc][kase];
 }
 
-VCL_VOID __match_proto__(td_blob_blob__fini)
+VCL_VOID v_matchproto_(td_blob_blob__fini)
 vmod_blob__fini(struct vmod_blob_blob **blobp)
 {
 	struct vmod_blob_blob *b;
@@ -360,7 +360,7 @@ find_nonempty_va(const char *restrict *p, va_list ap)
 	return (q);
 }
 
-VCL_BLOB __match_proto__(td_blob_decode)
+VCL_BLOB v_matchproto_(td_blob_decode)
 vmod_decode(VRT_CTX, VCL_ENUM decs, VCL_INT length, const char *p, ...)
 {
 	enum encoding dec = parse_encoding(decs);
@@ -447,7 +447,7 @@ encode(VRT_CTX, enum encoding enc, enum case_e kase, VCL_BLOB b)
 	return wb_finish(&wb, NULL);
 }
 
-VCL_STRING __match_proto__(td_blob_encode)
+VCL_STRING v_matchproto_(td_blob_encode)
 vmod_encode(VRT_CTX, VCL_ENUM encs, VCL_ENUM case_s, VCL_BLOB b)
 {
 	enum encoding enc = parse_encoding(encs);
@@ -459,7 +459,7 @@ vmod_encode(VRT_CTX, VCL_ENUM encs, VCL_ENUM case_s, VCL_BLOB b)
 	return encode(ctx, enc, kase, b);
 }
 
-VCL_STRING __match_proto__(td_blob_transcode)
+VCL_STRING v_matchproto_(td_blob_transcode)
 vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	       VCL_INT length, const char *p, ...)
 {
@@ -533,7 +533,7 @@ vmod_transcode(VRT_CTX, VCL_ENUM decs, VCL_ENUM encs, VCL_ENUM case_s,
 	return (r);
 }
 
-VCL_BOOL __match_proto__(td_blob_same)
+VCL_BOOL v_matchproto_(td_blob_same)
 vmod_same(VRT_CTX, VCL_BLOB b1, VCL_BLOB b2)
 {
 	(void) ctx;
@@ -545,7 +545,7 @@ vmod_same(VRT_CTX, VCL_BLOB b1, VCL_BLOB b2)
 	return (b1->len == b2->len && b1->priv == b2->priv);
 }
 
-VCL_BOOL __match_proto__(td_blob_equal)
+VCL_BOOL v_matchproto_(td_blob_equal)
 vmod_equal(VRT_CTX, VCL_BLOB b1, VCL_BLOB b2)
 {
 	(void) ctx;
@@ -563,7 +563,7 @@ vmod_equal(VRT_CTX, VCL_BLOB b1, VCL_BLOB b2)
 	return (memcmp(b1->priv, b2->priv, b1->len) == 0);
 }
 
-VCL_INT __match_proto__(td_blob_length)
+VCL_INT v_matchproto_(td_blob_length)
 vmod_length(VRT_CTX, VCL_BLOB b)
 {
 	(void) ctx;
@@ -573,7 +573,7 @@ vmod_length(VRT_CTX, VCL_BLOB b)
 	return b->len;
 }
 
-VCL_BLOB __match_proto__(td_blob_sub)
+VCL_BLOB v_matchproto_(td_blob_sub)
 vmod_sub(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 {
 	uintptr_t snap;

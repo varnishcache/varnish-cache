@@ -252,7 +252,7 @@ jail_master_gen(enum jail_master_e e)
 	return (enum jail_gen_e)(e << JAILG_SHIFT);
 }
 
-static int __match_proto__(jail_init_f)
+static int v_matchproto_(jail_init_f)
 vjs_init(char **args)
 {
 	(void)args;
@@ -499,7 +499,7 @@ vjs_waive(enum jail_gen_e jge)
 	priv_freeset(inheritable);
 }
 
-static void __match_proto__(jail_subproc_f)
+static void v_matchproto_(jail_subproc_f)
 vjs_subproc(enum jail_subproc_e jse)
 {
 	enum jail_gen_e jge = jail_subproc_gen(jse);
@@ -508,7 +508,7 @@ vjs_subproc(enum jail_subproc_e jse)
 	vjs_waive(jge);
 }
 
-static void __match_proto__(jail_master_f)
+static void v_matchproto_(jail_master_f)
 vjs_master(enum jail_master_e jme)
 {
 	enum jail_gen_e jge = jail_master_gen(jme);

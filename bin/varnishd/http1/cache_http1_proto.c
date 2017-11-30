@@ -64,7 +64,7 @@ const int HTTP1_Resp[3] = {
  * Check if we have a complete HTTP request or response yet
  */
 
-enum htc_status_e __match_proto__(htc_complete_f)
+enum htc_status_e v_matchproto_(htc_complete_f)
 HTTP1_Complete(struct http_conn *htc)
 {
 	char *p;

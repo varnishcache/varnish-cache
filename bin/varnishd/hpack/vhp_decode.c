@@ -106,7 +106,7 @@ vhd_next_state(struct vhd_decode *d)
 }
 
 /* State functions */
-static enum vhd_ret_e __match_proto__(vhd_state_f)
+static enum vhd_ret_e v_matchproto_(vhd_state_f)
 vhd_skip(struct vhd_ctx *ctx, unsigned first)
 {
 	AN(ctx);
@@ -115,7 +115,7 @@ vhd_skip(struct vhd_ctx *ctx, unsigned first)
 	return (VHD_AGAIN);
 }
 
-static enum vhd_ret_e __match_proto__(vhd_state_f)
+static enum vhd_ret_e v_matchproto_(vhd_state_f)
 vhd_goto(struct vhd_ctx *ctx, unsigned first)
 {
 	const struct vhd_state *s;
@@ -129,7 +129,7 @@ vhd_goto(struct vhd_ctx *ctx, unsigned first)
 	return (VHD_AGAIN);
 }
 
-static enum vhd_ret_e __match_proto__(vhd_state_f)
+static enum vhd_ret_e v_matchproto_(vhd_state_f)
 vhd_idle(struct vhd_ctx *ctx, unsigned first)
 {
 	uint8_t c;
@@ -157,7 +157,7 @@ vhd_idle(struct vhd_ctx *ctx, unsigned first)
 	return (VHD_OK);
 }
 
-static enum vhd_ret_e __match_proto__(vhd_state_f)
+static enum vhd_ret_e v_matchproto_(vhd_state_f)
 vhd_integer(struct vhd_ctx *ctx, unsigned first)
 {
 	const struct vhd_state *s;
@@ -204,7 +204,7 @@ vhd_integer(struct vhd_ctx *ctx, unsigned first)
 	return (VHD_MORE);
 }
 
-static enum vhd_ret_e __match_proto__(vhd_state_f)
+static enum vhd_ret_e v_matchproto_(vhd_state_f)
 vhd_set_max(struct vhd_ctx *ctx, unsigned first)
 {
 	AN(ctx);
@@ -218,7 +218,7 @@ vhd_set_max(struct vhd_ctx *ctx, unsigned first)
 	return (VHD_AGAIN);
 }
 
-static enum vhd_ret_e __match_proto__(vhd_state_f)
+static enum vhd_ret_e v_matchproto_(vhd_state_f)
 vhd_set_idx(struct vhd_ctx *ctx, unsigned first)
 {
 	AN(ctx);
@@ -229,7 +229,7 @@ vhd_set_idx(struct vhd_ctx *ctx, unsigned first)
 	return (VHD_AGAIN);
 }
 
-static enum vhd_ret_e __match_proto__(vhd_state_f)
+static enum vhd_ret_e v_matchproto_(vhd_state_f)
 vhd_lookup(struct vhd_ctx *ctx, unsigned first)
 {
 	const struct vhd_state *s;
@@ -283,7 +283,7 @@ vhd_lookup(struct vhd_ctx *ctx, unsigned first)
 	return (VHD_BUF);
 }
 
-static enum vhd_ret_e __match_proto__(vhd_state_f)
+static enum vhd_ret_e v_matchproto_(vhd_state_f)
 vhd_new(struct vhd_ctx *ctx, unsigned first)
 {
 	AN(ctx);
@@ -294,7 +294,7 @@ vhd_new(struct vhd_ctx *ctx, unsigned first)
 	return (VHD_AGAIN);
 }
 
-static enum vhd_ret_e __match_proto__(vhd_state_f)
+static enum vhd_ret_e v_matchproto_(vhd_state_f)
 vhd_new_idx(struct vhd_ctx *ctx, unsigned first)
 {
 	AN(ctx);
@@ -307,7 +307,7 @@ vhd_new_idx(struct vhd_ctx *ctx, unsigned first)
 	return (VHD_AGAIN);
 }
 
-static enum vhd_ret_e __match_proto__(vhd_state_f)
+static enum vhd_ret_e v_matchproto_(vhd_state_f)
 vhd_branch_zidx(struct vhd_ctx *ctx, unsigned first)
 {
 	const struct vhd_state *s;
@@ -325,7 +325,7 @@ vhd_branch_zidx(struct vhd_ctx *ctx, unsigned first)
 	return (VHD_AGAIN);
 }
 
-static enum vhd_ret_e __match_proto__(vhd_state_f)
+static enum vhd_ret_e v_matchproto_(vhd_state_f)
 vhd_branch_bit0(struct vhd_ctx *ctx, unsigned first)
 {
 	const struct vhd_state *s;
@@ -346,7 +346,7 @@ vhd_branch_bit0(struct vhd_ctx *ctx, unsigned first)
 	return (VHD_AGAIN);
 }
 
-static enum vhd_ret_e __match_proto__(vhd_state_f)
+static enum vhd_ret_e v_matchproto_(vhd_state_f)
 vhd_raw(struct vhd_ctx *ctx, unsigned first)
 {
 	const struct vhd_state *s;
@@ -398,7 +398,7 @@ vhd_raw(struct vhd_ctx *ctx, unsigned first)
 	return (s->arg1);
 }
 
-static enum vhd_ret_e __match_proto__(vhd_state_f)
+static enum vhd_ret_e v_matchproto_(vhd_state_f)
 vhd_huffman(struct vhd_ctx *ctx, unsigned first)
 {
 	const struct vhd_state *s;

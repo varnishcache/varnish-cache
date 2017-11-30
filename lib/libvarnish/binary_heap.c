@@ -40,6 +40,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "vdef.h"
 #include "vas.h"
 #include "binary_heap.h"
 
@@ -462,7 +463,6 @@ binheap_reorder(const struct binheap *bh, unsigned idx)
 #include <stdio.h>
 #include <string.h>
 
-#include "vdef.h"
 #include "vrnd.h"
 #include "miniobj.h"
 
@@ -482,7 +482,7 @@ struct foo {
 
 struct foo *ff[N];
 
-static int __match_proto__(binheap_cmp_t)
+static int v_matchproto_(binheap_cmp_t)
 cmp(void *priv, const void *a, const void *b)
 {
 	const struct foo *fa, *fb;
@@ -493,7 +493,7 @@ cmp(void *priv, const void *a, const void *b)
 	return (fa->key < fb->key);
 }
 
-static void __match_proto__(binheap_update_t)
+static void v_matchproto_(binheap_update_t)
 update(void *priv, void *a, unsigned u)
 {
 	struct foo *fa;

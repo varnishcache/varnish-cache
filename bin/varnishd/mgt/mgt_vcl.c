@@ -603,7 +603,7 @@ mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 mcf_vcl_inline(struct cli *cli, const char * const *av, void *priv)
 {
 
@@ -615,7 +615,7 @@ mcf_vcl_inline(struct cli *cli, const char * const *av, void *priv)
 	mgt_new_vcl(cli, av[2], av[3], "<vcl.inline>", av[4], 0);
 }
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 mcf_vcl_load(struct cli *cli, const char * const *av, void *priv)
 {
 
@@ -627,7 +627,7 @@ mcf_vcl_load(struct cli *cli, const char * const *av, void *priv)
 }
 
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vclprog *vp;
@@ -674,7 +674,7 @@ mcf_vcl_state(struct cli *cli, const char * const *av, void *priv)
 	}
 }
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 mcf_vcl_use(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned status;
@@ -707,7 +707,7 @@ mcf_vcl_use(struct cli *cli, const char * const *av, void *priv)
 	free(p);
 }
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned status;
@@ -757,7 +757,7 @@ mcf_vcl_discard(struct cli *cli, const char * const *av, void *priv)
 	mgt_vcl_del(vp);
 }
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 {
 	unsigned status;
@@ -799,7 +799,7 @@ mcf_vcl_list(struct cli *cli, const char * const *av, void *priv)
 	}
 }
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vclprog *vpl;
@@ -870,7 +870,7 @@ mcf_vcl_label(struct cli *cli, const char * const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static int __match_proto__(vev_cb_f)
+static int v_matchproto_(vev_cb_f)
 mgt_vcl_poker(const struct vev *e, int what)
 {
 	struct vclprog *vp;

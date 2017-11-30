@@ -369,7 +369,7 @@ VTCP_set_read_timeout(int s, double seconds)
 /*--------------------------------------------------------------------
  */
 
-static int __match_proto__(vss_resolved_f)
+static int v_matchproto_(vss_resolved_f)
 vtcp_open_callback(void *priv, const struct suckaddr *sa)
 {
 	double *p = priv;
@@ -491,7 +491,7 @@ struct helper {
 	const char	**errp;
 };
 
-static int __match_proto__(vss_resolved_f)
+static int v_matchproto_(vss_resolved_f)
 vtcp_lo_cb(void *priv, const struct suckaddr *sa)
 {
 	int sock;

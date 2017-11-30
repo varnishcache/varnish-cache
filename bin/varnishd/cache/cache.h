@@ -672,7 +672,7 @@ void HTTP_Encode(const struct http *fm, uint8_t *, unsigned len, unsigned how);
 int HTTP_Decode(struct http *to, const uint8_t *fm);
 void http_ForceHeader(struct http *to, const char *hdr, const char *val);
 void http_PrintfHeader(struct http *to, const char *fmt, ...)
-    __v_printflike(2, 3);
+    v_printflike_(2, 3);
 void http_TimeHeader(struct http *to, const char *fmt, double now);
 void http_Proto(struct http *to);
 void http_SetHeader(struct http *to, const char *hdr);
@@ -860,10 +860,10 @@ const char *SES_Get_String_Attr(const struct sess *sp, enum sess_attr a);
 /* cache_shmlog.c */
 void VSLv(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, va_list va);
 void VSL(enum VSL_tag_e tag, uint32_t vxid, const char *fmt, ...)
-    __v_printflike(3, 4);
+    v_printflike_(3, 4);
 void VSLbv(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, va_list va);
 void VSLb(struct vsl_log *, enum VSL_tag_e tag, const char *fmt, ...)
-    __v_printflike(3, 4);
+    v_printflike_(3, 4);
 void VSLbt(struct vsl_log *, enum VSL_tag_e tag, txt t);
 void VSLb_ts(struct vsl_log *, const char *event, double first, double *pprev,
     double now);
@@ -927,7 +927,7 @@ void *WS_Alloc(struct ws *ws, unsigned bytes);
 void *WS_Copy(struct ws *ws, const void *str, int len);
 uintptr_t WS_Snapshot(struct ws *ws);
 int WS_Overflowed(const struct ws *ws);
-void *WS_Printf(struct ws *ws, const char *fmt, ...) __v_printflike(2, 3);
+void *WS_Printf(struct ws *ws, const char *fmt, ...) v_printflike_(2, 3);
 int WS_Inside(const struct ws *, const void *, const void *);
 void WS_Assert_Allocated(const struct ws *ws, const void *ptr, ssize_t len);
 

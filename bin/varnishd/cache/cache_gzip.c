@@ -284,7 +284,7 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, ssize_t *plen, enum vgz_flag flags)
  * VDP for gunzip'ing
  */
 
-static int __match_proto__(vdp_bytes)
+static int v_matchproto_(vdp_bytes)
 vdp_gunzip(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
@@ -437,7 +437,7 @@ VGZ_Destroy(struct vgz **vgp)
 
 /*--------------------------------------------------------------------*/
 
-static enum vfp_status __match_proto__(vfp_init_f)
+static enum vfp_status v_matchproto_(vfp_init_f)
 vfp_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 {
 	struct vgz *vg;
@@ -486,7 +486,7 @@ vfp_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
  * A VFP for gunzip'ing an object as we receive it from the backend
  */
 
-static enum vfp_status __match_proto__(vfp_pull_f)
+static enum vfp_status v_matchproto_(vfp_pull_f)
 vfp_gunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
     ssize_t *lp)
 {
@@ -540,7 +540,7 @@ vfp_gunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
  * A VFP for gzip'ing an object as we receive it from the backend
  */
 
-static enum vfp_status __match_proto__(vfp_pull_f)
+static enum vfp_status v_matchproto_(vfp_pull_f)
 vfp_gzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
     ssize_t *lp)
 {
@@ -596,7 +596,7 @@ vfp_gzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
  * collecting the magic bits while we're at it.
  */
 
-static enum vfp_status __match_proto__(vfp_pull_f)
+static enum vfp_status v_matchproto_(vfp_pull_f)
 vfp_testgunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
     ssize_t *lp)
 {
@@ -638,7 +638,7 @@ vfp_testgunzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(vfp_fini_f)
+static void v_matchproto_(vfp_fini_f)
 vfp_gzip_fini(struct vfp_ctx *vc, struct vfp_entry *vfe)
 {
 	struct vgz *vg;

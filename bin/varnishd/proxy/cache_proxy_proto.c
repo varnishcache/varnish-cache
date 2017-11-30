@@ -288,7 +288,7 @@ vpx_proto2(const struct worker *wrk, struct req *req)
  * HTC_Rx completion detector
  */
 
-static enum htc_status_e __match_proto__(htc_complete_f)
+static enum htc_status_e v_matchproto_(htc_complete_f)
 vpx_complete(struct http_conn *htc)
 {
 	int i, l, j;
@@ -331,7 +331,7 @@ vpx_complete(struct http_conn *htc)
 	return (HTC_S_MORE);
 }
 
-static void __match_proto__(task_func_t)
+static void v_matchproto_(task_func_t)
 vpx_new_session(struct worker *wrk, void *arg)
 {
 	struct req *req;

@@ -47,7 +47,7 @@
 
 unsigned long crc32(unsigned long, const unsigned char *buf, unsigned len);
 
-static uint32_t __match_proto__(hash_func)
+static uint32_t v_matchproto_(hash_func)
 shard_hash_crc32(VCL_STRING s)
 {
 	uint32_t crc;
@@ -56,7 +56,7 @@ shard_hash_crc32(VCL_STRING s)
 	return (crc);
 }
 
-static uint32_t __match_proto__(hash_func)
+static uint32_t v_matchproto_(hash_func)
 shard_hash_sha256(VCL_STRING s)
 {
 	struct VSHA256Context sha256;
@@ -78,7 +78,7 @@ shard_hash_sha256(VCL_STRING s)
 	return (r);
 }
 
-static uint32_t __match_proto__(hash_func)
+static uint32_t v_matchproto_(hash_func)
 shard_hash_rs(VCL_STRING s)
 {
 	uint32_t res = 0;
@@ -94,7 +94,7 @@ shard_hash_rs(VCL_STRING s)
 	return (res);
 }
 
-static uint32_t __match_proto__(hash_func)
+static uint32_t v_matchproto_(hash_func)
 _shard_hash_invalid(VCL_STRING s)
 {
 	(void)s;

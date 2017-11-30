@@ -48,7 +48,7 @@ struct vmod_directors_shard {
 	struct sharddir	*shardd;
 };
 
-VCL_VOID __match_proto__(td_directors_shard__init)
+VCL_VOID v_matchproto_(td_directors_shard__init)
 vmod_shard__init(VRT_CTX, struct vmod_directors_shard **vshardp,
     const char *vcl_name)
 {
@@ -73,7 +73,7 @@ vmod_shard__init(VRT_CTX, struct vmod_directors_shard **vshardp,
 	sharddir_new(&vshard->shardd, vcl_name);
 }
 
-VCL_VOID __match_proto__(td_directors_shard__fini)
+VCL_VOID v_matchproto_(td_directors_shard__fini)
 vmod_shard__fini(struct vmod_directors_shard **vshardp)
 {
 	struct vmod_directors_shard *vshard = *vshardp;
@@ -89,7 +89,7 @@ vmod_shard__fini(struct vmod_directors_shard **vshardp)
  * forth, asserting in vmod_shard__init() that VCL_INT is a large enough
  * container
  */
-VCL_INT __match_proto__(td_directors_shard_key)
+VCL_INT v_matchproto_(td_directors_shard_key)
     vmod_shard_key(VRT_CTX, struct vmod_directors_shard *vshard,
     VCL_STRING s, VCL_ENUM alg_s)
 {
@@ -102,7 +102,7 @@ VCL_INT __match_proto__(td_directors_shard_key)
 	return (VCL_INT)hash_fp(s ? s : "");
 }
 
-VCL_VOID __match_proto__(td_directors_set_warmup)
+VCL_VOID v_matchproto_(td_directors_set_warmup)
 vmod_shard_set_warmup(VRT_CTX, struct vmod_directors_shard *vshard,
     VCL_REAL probability)
 {
@@ -115,7 +115,7 @@ vmod_shard_set_warmup(VRT_CTX, struct vmod_directors_shard *vshard,
 	shardcfg_set_warmup(vshard->shardd, probability);
 }
 
-VCL_VOID __match_proto__(td_directors_set_rampup)
+VCL_VOID v_matchproto_(td_directors_set_rampup)
 vmod_shard_set_rampup(VRT_CTX, struct vmod_directors_shard *vshard,
     VCL_DURATION duration)
 {
@@ -124,7 +124,7 @@ vmod_shard_set_rampup(VRT_CTX, struct vmod_directors_shard *vshard,
 	shardcfg_set_rampup(vshard->shardd, duration);
 }
 
-VCL_BOOL __match_proto__(td_directors_shard_add_backend)
+VCL_BOOL v_matchproto_(td_directors_shard_add_backend)
 vmod_shard_add_backend(VRT_CTX, struct vmod_directors_shard *vshard,
     struct vmod_priv *priv,
     VCL_BACKEND be, VCL_STRING ident, VCL_DURATION rampup)
@@ -141,7 +141,7 @@ vmod_shard_add_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 	    be, ident, rampup);
 }
 
-VCL_BOOL __match_proto__(td_directors_shard_remove_backend)
+VCL_BOOL v_matchproto_(td_directors_shard_remove_backend)
 vmod_shard_remove_backend(VRT_CTX, struct vmod_directors_shard *vshard,
     struct vmod_priv *priv,
     VCL_BACKEND be, VCL_STRING ident)
@@ -159,7 +159,7 @@ vmod_shard_remove_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 	    be, ident);
 }
 
-VCL_BOOL __match_proto__(td_directors_shard_clear)
+VCL_BOOL v_matchproto_(td_directors_shard_clear)
 vmod_shard_clear(VRT_CTX, struct vmod_directors_shard *vshard,
     struct vmod_priv *priv)
 {
@@ -167,7 +167,7 @@ vmod_shard_clear(VRT_CTX, struct vmod_directors_shard *vshard,
 	return shardcfg_clear(ctx, priv, vshard->shardd);
 }
 
-VCL_BOOL __match_proto__(td_directors_shard_reconfigure)
+VCL_BOOL v_matchproto_(td_directors_shard_reconfigure)
 vmod_shard_reconfigure(VRT_CTX, struct vmod_directors_shard *vshard,
     struct vmod_priv *priv, VCL_INT replicas, VCL_ENUM alg_s)
 {
@@ -222,7 +222,7 @@ get_key(VRT_CTX, enum by_e by, VCL_INT key_int, VCL_BLOB key_blob)
 	}
 }
 
-VCL_BACKEND __match_proto__(td_directors_shard_backend)
+VCL_BACKEND v_matchproto_(td_directors_shard_backend)
 vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
     VCL_ENUM by_s, VCL_INT key_int, VCL_BLOB key_blob, VCL_INT alt,
     VCL_REAL warmup, VCL_BOOL rampup, VCL_ENUM healthy_s)
@@ -272,7 +272,7 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 		key, alt, warmup, rampup, healthy));
 }
 
-VCL_VOID __match_proto__(td_directors_shard_backend)
+VCL_VOID v_matchproto_(td_directors_shard_backend)
 vmod_shard_debug(VRT_CTX, struct vmod_directors_shard *vshard,
     VCL_INT i)
 {

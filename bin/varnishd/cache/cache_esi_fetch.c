@@ -145,7 +145,7 @@ vfp_esi_end(struct vfp_ctx *vc, struct vef_priv *vef,
 	return (retval);
 }
 
-static enum vfp_status __match_proto__(vfp_init_f)
+static enum vfp_status v_matchproto_(vfp_init_f)
 vfp_esi_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 {
 	struct vef_priv *vef;
@@ -176,7 +176,7 @@ vfp_esi_gzip_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	return (VFP_OK);
 }
 
-static enum vfp_status __match_proto__(vfp_pull_f)
+static enum vfp_status v_matchproto_(vfp_pull_f)
 vfp_esi_gzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
    ssize_t *lp)
 {
@@ -219,7 +219,7 @@ vfp_esi_gzip_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p,
 	return (vp);
 }
 
-static enum vfp_status __match_proto__(vfp_init_f)
+static enum vfp_status v_matchproto_(vfp_init_f)
 vfp_esi_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 {
 	struct vef_priv *vef;
@@ -234,7 +234,7 @@ vfp_esi_init(struct vfp_ctx *vc, struct vfp_entry *vfe)
 	return (VFP_OK);
 }
 
-static enum vfp_status __match_proto__(vfp_pull_f)
+static enum vfp_status v_matchproto_(vfp_pull_f)
 vfp_esi_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p, ssize_t *lp)
 {
 	enum vfp_status vp;
@@ -261,7 +261,7 @@ vfp_esi_pull(struct vfp_ctx *vc, struct vfp_entry *vfe, void *p, ssize_t *lp)
 	return (vp);
 }
 
-static void __match_proto__(vfp_fini_f)
+static void v_matchproto_(vfp_fini_f)
 vfp_esi_fini(struct vfp_ctx *vc, struct vfp_entry *vfe)
 {
 	CHECK_OBJ_NOTNULL(vc, VFP_CTX_MAGIC);

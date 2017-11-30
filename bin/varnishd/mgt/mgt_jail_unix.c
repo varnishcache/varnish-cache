@@ -120,7 +120,7 @@ vju_getccgid(const char *arg)
 /**********************************************************************
  */
 
-static int __match_proto__(jail_init_f)
+static int v_matchproto_(jail_init_f)
 vju_init(char **args)
 {
 	if (args == NULL) {
@@ -184,7 +184,7 @@ vju_init(char **args)
 	return (0);
 }
 
-static void __match_proto__(jail_master_f)
+static void v_matchproto_(jail_master_f)
 vju_master(enum jail_master_e jme)
 {
 	if (jme == JAIL_MASTER_LOW) {
@@ -196,7 +196,7 @@ vju_master(enum jail_master_e jme)
 	}
 }
 
-static void __match_proto__(jail_subproc_f)
+static void v_matchproto_(jail_subproc_f)
 vju_subproc(enum jail_subproc_e jse)
 {
 	int i;
@@ -239,7 +239,7 @@ vju_subproc(enum jail_subproc_e jse)
 #endif
 }
 
-static int __match_proto__(jail_make_dir_f)
+static int v_matchproto_(jail_make_dir_f)
 vju_make_vcldir(const char *dname)
 {
 	AZ(seteuid(0));
@@ -255,7 +255,7 @@ vju_make_vcldir(const char *dname)
 }
 
 
-static void __match_proto__(jail_fixfd_f)
+static void v_matchproto_(jail_fixfd_f)
 vju_fixfd(int fd, enum jail_fixfd_e what)
 {
 	/* Called under JAIL_MASTER_FILE */

@@ -120,7 +120,7 @@ LRU_Remove(struct objcore *oc)
 	Lck_Unlock(&lru->mtx);
 }
 
-void __match_proto__(objtouch_f)
+void v_matchproto_(objtouch_f)
 LRU_Touch(struct worker *wrk, struct objcore *oc, double now)
 {
 	struct lru *lru;

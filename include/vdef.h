@@ -30,6 +30,9 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * Names of the form "v_[a-z_]*_" is reserved for this file.
+ *
+ * This file should always be the first non <...> include in a .c file.
  */
 
 #ifdef VDEF_H_INCLUDED
@@ -71,12 +74,14 @@
 #endif
 
 #ifdef __printflike
-#  define __v_printflike(f,a) __printflike(f,a)
+#  define v_printflike_(f,a) __printflike(f,a)
 #elif __GNUC_PREREQ__(2, 95) || defined(__INTEL_COMPILER)
-#  define __v_printflike(f,a) __attribute__((format(printf, f, a)))
+#  define v_printflike_(f,a) __attribute__((format(printf, f, a)))
 #else
-#  define __v_printflike(f,a)
+#  define v_printflike_(f,a)
 #endif
+
+#define v_noreturn_ __attribute__((__noreturn__))
 
 /*********************************************************************
  * Pointer alignment magic
@@ -114,13 +119,13 @@
  * even if that means not const'ing a const'able argument.
  * The typedef should be specified as argument to the macro.
  */
-#define __match_proto__(xxx)		/*lint --e{818} */
+#define v_matchproto_(xxx)		/*lint --e{818} */
 
 /*
  * State variables may change value before we have considered the
  * previous value
  */
-#define __state_variable__(varname)	varname /*lint -esym(838,varname) */
+#define v_statevariable_(varname)	varname /*lint -esym(838,varname) */
 
 #ifdef __SUNPRO_C
 #define NEEDLESS(s)		{}
@@ -128,12 +133,10 @@
 #define NEEDLESS(s)		s
 #endif
 
-#ifndef __unused
-#  if __GNUC_PREREQ__(2, 7)
-#    define __unused __attribute__((__unused__))
-#  else
-#    define __unused
-#  endif
+#if __GNUC_PREREQ__(2, 7)
+#  define v_unused_ __attribute__((__unused__))
+#else
+#  define v_unused_
 #endif
 
 /*
@@ -160,5 +163,5 @@
 #   endif
 #   define __Static_assert(x, y)	___Static_assert(x, y)
 #   define ___Static_assert(x, y) \
-		typedef char __assert_## y[(x) ? 1 : -1] __unused
+		typedef char __assert_## y[(x) ? 1 : -1] v_unused_
 #endif

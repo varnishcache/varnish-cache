@@ -869,7 +869,7 @@ vbf_stp_done(void)
 	NEEDLESS(return(F_STP_DONE));
 }
 
-static void __match_proto__(task_func_t)
+static void v_matchproto_(task_func_t)
 vbf_fetch_thread(struct worker *wrk, void *priv)
 {
 	struct busyobj *bo;

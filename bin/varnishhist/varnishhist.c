@@ -219,7 +219,7 @@ upd_vsl_ts(const char *p)
 		vsl_ts = t;
 }
 
-static int __match_proto__ (VSLQ_dispatch_f)
+static int v_matchproto_ (VSLQ_dispatch_f)
 accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
     void *priv)
 {
@@ -368,7 +368,7 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	return (0);
 }
 
-static int __match_proto__(VUT_cb_f)
+static int v_matchproto_(VUT_cb_f)
 sighup(struct VUT *v)
 {
 	assert(v == vut);
@@ -376,7 +376,7 @@ sighup(struct VUT *v)
 	return (1);
 }
 
-static void * __match_proto__(pthread_t)
+static void * v_matchproto_(pthread_t)
 do_curses(void *arg)
 {
 	int ch;
@@ -468,7 +468,7 @@ do_curses(void *arg)
 
 /*--------------------------------------------------------------------*/
 
-static void __attribute__((__noreturn__))
+static void v_noreturn_
 usage(int status)
 {
 	const char **opt;

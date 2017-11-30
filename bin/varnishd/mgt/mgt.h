@@ -38,10 +38,11 @@
 
 #include <sys/types.h>
 
+#include "vdef.h"
+
 #include "miniobj.h"
 #include "vas.h"
 #include "vcs.h"
-#include "vdef.h"
 #include "vqueue.h"
 #include "vsb.h"
 
@@ -82,7 +83,7 @@ typedef int mgt_cli_close_f(void *priv);
 void mgt_cli_setup(int fdi, int fdo, int auth, const char *ident,
     mgt_cli_close_f *close_func, void *priv);
 int mgt_cli_askchild(unsigned *status, char **resp, const char *fmt, ...)
-    __v_printflike(3, 4);
+    v_printflike_(3, 4);
 void mgt_cli_start_child(int fdi, int fdo);
 void mgt_cli_stop_child(void);
 void mgt_cli_telnet(const char *T_arg);
@@ -167,7 +168,7 @@ enum mcf_which_e {
 	MCF_MAXIMUM = 34,
 };
 void MCF_ParamConf(enum mcf_which_e, const char *param, const char *, ...)
-    __v_printflike(3, 4);
+    v_printflike_(3, 4);
 
 void MCF_ParamSet(struct cli *, const char *param, const char *val);
 void MCF_ParamProtect(struct cli *, const char *arg);
@@ -193,7 +194,7 @@ char *mgt_HostName(void);
 void mgt_ProcTitle(const char *comp);
 void mgt_DumpRstVsl(void);
 struct vsb *mgt_BuildVident(void);
-void MGT_Complain(const char *, const char *, ...) __v_printflike(2, 3);
+void MGT_Complain(const char *, const char *, ...) v_printflike_(2, 3);
 const void *MGT_Pick(const struct choice *, const char *, const char *);
 char **MGT_NamedArg(const char *, const char **, const char *);
 

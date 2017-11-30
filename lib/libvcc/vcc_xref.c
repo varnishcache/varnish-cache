@@ -403,7 +403,7 @@ vcc_pnam(struct vcc *tl, const struct symbol *sym)
 	Fc(tl, 0, "%s", sym->name);
 }
 
-static void __match_proto__(symwalk_f)
+static void v_matchproto_(symwalk_f)
 vcc_xreftable(struct vcc *tl, const struct symbol *sym)
 {
 

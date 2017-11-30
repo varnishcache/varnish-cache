@@ -47,7 +47,7 @@
  * A "none" jail implementation which doesn't do anything.
  */
 
-static int __match_proto__(jail_init_f)
+static int v_matchproto_(jail_init_f)
 vjn_init(char **args)
 {
 	if (args != NULL && *args != NULL)
@@ -55,13 +55,13 @@ vjn_init(char **args)
 	return (0);
 }
 
-static void __match_proto__(jail_master_f)
+static void v_matchproto_(jail_master_f)
 vjn_master(enum jail_master_e jme)
 {
 	(void)jme;
 }
 
-static void __match_proto__(jail_subproc_f)
+static void v_matchproto_(jail_subproc_f)
 vjn_subproc(enum jail_subproc_e jse)
 {
 	(void)jse;

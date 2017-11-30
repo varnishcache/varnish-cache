@@ -71,7 +71,7 @@ struct method method_tab[] = {
 
 /*--------------------------------------------------------------------*/
 
-void * __match_proto__(TlAlloc)
+void * v_matchproto_(TlAlloc)
 TlAlloc(struct vcc *tl, unsigned len)
 {
 	void *p;
@@ -628,10 +628,10 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 	Fh(tl, 1, "\n");
 	for (i = 1; i < VCL_MET_MAX; i++) {
 		Fh(tl, 1,
-		    "void __match_proto__(vcl_func_f) "
+		    "void v_matchproto_(vcl_func_f) "
 		    "VGC_function_%s(VRT_CTX);\n",
 		    method_tab[i].name);
-		Fc(tl, 1, "\nvoid __match_proto__(vcl_func_f)\n");
+		Fc(tl, 1, "\nvoid v_matchproto_(vcl_func_f)\n");
 		Fc(tl, 1,
 		    "VGC_function_%s(VRT_CTX)\n",
 		    method_tab[i].name);

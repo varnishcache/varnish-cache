@@ -235,7 +235,7 @@ mcf_wrap(struct cli *cli, const char *text)
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 mcf_param_show(struct cli *cli, const char * const *av, void *priv)
 {
 	int n;
@@ -401,7 +401,7 @@ MCF_ParamSet(struct cli *cli, const char *param, const char *val)
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 mcf_param_set(struct cli *cli, const char * const *av, void *priv)
 {
 

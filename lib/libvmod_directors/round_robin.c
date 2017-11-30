@@ -45,7 +45,7 @@ struct vmod_directors_round_robin {
 	unsigned				nxt;
 };
 
-static unsigned __match_proto__(vdi_healthy)
+static unsigned v_matchproto_(vdi_healthy)
 vmod_rr_healthy(const struct director *dir, const struct busyobj *bo,
     double *changed)
 {
@@ -55,7 +55,7 @@ vmod_rr_healthy(const struct director *dir, const struct busyobj *bo,
 	return (vdir_any_healthy(rr->vd, bo, changed));
 }
 
-static const struct director * __match_proto__(vdi_resolve_f)
+static const struct director * v_matchproto_(vdi_resolve_f)
 vmod_rr_resolve(const struct director *dir, struct worker *wrk,
     struct busyobj *bo)
 {
@@ -83,7 +83,7 @@ vmod_rr_resolve(const struct director *dir, struct worker *wrk,
 	return (be);
 }
 
-VCL_VOID __match_proto__()
+VCL_VOID v_matchproto_()
 vmod_round_robin__init(VRT_CTX,
     struct vmod_directors_round_robin **rrp, const char *vcl_name)
 {
@@ -99,7 +99,7 @@ vmod_round_robin__init(VRT_CTX,
 	    vmod_rr_resolve, rr);
 }
 
-VCL_VOID __match_proto__()
+VCL_VOID v_matchproto_()
 vmod_round_robin__fini(struct vmod_directors_round_robin **rrp)
 {
 	struct vmod_directors_round_robin *rr;
@@ -111,7 +111,7 @@ vmod_round_robin__fini(struct vmod_directors_round_robin **rrp)
 	FREE_OBJ(rr);
 }
 
-VCL_VOID __match_proto__()
+VCL_VOID v_matchproto_()
 vmod_round_robin_add_backend(VRT_CTX,
     struct vmod_directors_round_robin *rr, VCL_BACKEND be)
 {
@@ -121,7 +121,7 @@ vmod_round_robin_add_backend(VRT_CTX,
 	vdir_add_backend(ctx, rr->vd, be, 0.0);
 }
 
-VCL_VOID __match_proto__()
+VCL_VOID v_matchproto_()
 vmod_round_robin_remove_backend(VRT_CTX,
     struct vmod_directors_round_robin *rr, VCL_BACKEND be)
 {
@@ -130,7 +130,7 @@ vmod_round_robin_remove_backend(VRT_CTX,
 	vdir_remove_backend(ctx, rr->vd, be, NULL);
 }
 
-VCL_BACKEND __match_proto__()
+VCL_BACKEND v_matchproto_()
 vmod_round_robin_backend(VRT_CTX,
     struct vmod_directors_round_robin *rr)
 {

@@ -150,7 +150,7 @@ xyzzy_dyn__fini(struct xyzzy_debug_dyn **dynp)
 	*dynp = NULL;
 }
 
-VCL_BACKEND __match_proto__()
+VCL_BACKEND v_matchproto_()
 xyzzy_dyn_backend(VRT_CTX, struct xyzzy_debug_dyn *dyn)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);

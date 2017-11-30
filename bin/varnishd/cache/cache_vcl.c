@@ -899,7 +899,7 @@ VCL_Poll(void)
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 vcl_cli_list(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcl *vcl;
@@ -932,7 +932,7 @@ vcl_cli_list(struct cli *cli, const char * const *av, void *priv)
 	}
 }
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 vcl_cli_load(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vrt_ctx *ctx;
@@ -944,7 +944,7 @@ vcl_cli_load(struct cli *cli, const char * const *av, void *priv)
 	vcl_rel_ctx(&ctx);
 }
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 vcl_cli_state(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vrt_ctx *ctx;
@@ -969,7 +969,7 @@ vcl_cli_state(struct cli *cli, const char * const *av, void *priv)
 	vcl_rel_ctx(&ctx);
 }
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 vcl_cli_discard(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcl *vcl;
@@ -1002,7 +1002,7 @@ vcl_cli_discard(struct cli *cli, const char * const *av, void *priv)
 	}
 }
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 vcl_cli_label(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcl *lbl;
@@ -1029,7 +1029,7 @@ vcl_cli_label(struct cli *cli, const char * const *av, void *priv)
 	vcl->nlabels++;
 }
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 vcl_cli_use(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcl *vcl;
@@ -1045,7 +1045,7 @@ vcl_cli_use(struct cli *cli, const char * const *av, void *priv)
 	Lck_Unlock(&vcl_mtx);
 }
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 vcl_cli_show(struct cli *cli, const char * const *av, void *priv)
 {
 	struct vcl *vcl;

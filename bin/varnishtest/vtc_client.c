@@ -68,7 +68,7 @@ static VTAILQ_HEAD(, client)	clients =
  * Send the proxy header
  */
 
-static int __match_proto__(vss_resolved_f)
+static int v_matchproto_(vss_resolved_f)
 proxy_cb(void *priv, const struct suckaddr *sa)
 {
 	struct suckaddr **addr = priv;

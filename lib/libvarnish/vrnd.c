@@ -40,8 +40,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "vas.h"
 #include "vdef.h"
+
+#include "vas.h"
 #include "vrnd.h"
 
 /**********************************************************************

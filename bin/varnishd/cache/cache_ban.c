@@ -618,7 +618,7 @@ BAN_CheckObject(struct worker *wrk, struct objcore *oc, struct req *req)
  * CLI functions to add bans
  */
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 ccf_ban(struct cli *cli, const char * const *av, void *priv)
 {
 	int narg, i;
@@ -707,7 +707,7 @@ ban_render(struct cli *cli, const uint8_t *bs)
 	}
 }
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 ccf_ban_list(struct cli *cli, const char * const *av, void *priv)
 {
 	struct ban *b, *bl;

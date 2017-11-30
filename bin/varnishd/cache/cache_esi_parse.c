@@ -395,7 +395,7 @@ vep_mark_pending(struct vep_state *vep, const char *p)
 /*---------------------------------------------------------------------
  */
 
-static void __match_proto__()
+static void v_matchproto_()
 vep_do_comment(struct vep_state *vep, enum dowhat what)
 {
 	Debug("DO_COMMENT(%d)\n", what);
@@ -407,7 +407,7 @@ vep_do_comment(struct vep_state *vep, enum dowhat what)
 /*---------------------------------------------------------------------
  */
 
-static void __match_proto__()
+static void v_matchproto_()
 vep_do_remove(struct vep_state *vep, enum dowhat what)
 {
 	Debug("DO_REMOVE(%d, end %d empty %d remove %d)\n",
@@ -426,7 +426,7 @@ vep_do_remove(struct vep_state *vep, enum dowhat what)
 /*---------------------------------------------------------------------
  */
 
-static void __match_proto__()
+static void v_matchproto_()
 vep_do_include(struct vep_state *vep, enum dowhat what)
 {
 	const char *p, *q, *h;
@@ -1001,7 +1001,7 @@ VEP_Parse(struct vep_state *vep, const char *p, size_t l)
 /*---------------------------------------------------------------------
  */
 
-static ssize_t __match_proto__(vep_callback_t)
+static ssize_t v_matchproto_(vep_callback_t)
 vep_default_cb(struct vfp_ctx *vc, void *priv, ssize_t l, enum vgz_flag flg)
 {
 	ssize_t *s;

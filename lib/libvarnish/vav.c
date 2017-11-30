@@ -43,6 +43,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "vdef.h"
+
 #include "vas.h"
 #include "vav.h"
 

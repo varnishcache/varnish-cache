@@ -38,8 +38,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "vas.h"	// XXX Flexelint "not used" - but req'ed for assert()
 #include "vdef.h"
+
+#include "vas.h"	// XXX Flexelint "not used" - but req'ed for assert()
 #include "vin.h"
 
 int

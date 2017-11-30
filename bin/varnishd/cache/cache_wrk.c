@@ -281,7 +281,7 @@ Pool_Task(struct pool *pp, struct pool_task *task, enum task_prio prio)
  * Empty function used as a pointer value for the thread exit condition.
  */
 
-static void __match_proto__(task_func_t)
+static void v_matchproto_(task_func_t)
 pool_kiss_of_death(struct worker *wrk, void *priv)
 {
 	(void)wrk;

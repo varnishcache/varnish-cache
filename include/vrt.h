@@ -356,7 +356,7 @@ void VRT_hit_for_pass(VRT_CTX, VCL_DURATION);
 
 void VRT_SetHdr(VRT_CTX, const struct gethdr_s *, const char *, ...);
 void VRT_handling(VRT_CTX, unsigned hand);
-void VRT_fail(VRT_CTX, const char *fmt, ...) __v_printflike(2,3);
+void VRT_fail(VRT_CTX, const char *fmt, ...) v_printflike_(2,3);
 
 void VRT_hashdata(VRT_CTX, const char *str, ...);
 

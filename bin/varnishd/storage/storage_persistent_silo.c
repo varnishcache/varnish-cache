@@ -390,7 +390,7 @@ smp_loaded_st(const struct smp_sc *sc, const struct smp_seg *sg,
  * objcore methods for persistent objects
  */
 
-struct object * __match_proto__(sml_getobj_f)
+struct object * v_matchproto_(sml_getobj_f)
 smp_sml_getobj(struct worker *wrk, struct objcore *oc)
 {
 	struct object *o;
@@ -454,7 +454,7 @@ smp_sml_getobj(struct worker *wrk, struct objcore *oc)
 	return (o);
 }
 
-void __match_proto__(objfree_f)
+void v_matchproto_(objfree_f)
 smp_oc_objfree(struct worker *wrk, struct objcore *oc)
 {
 	struct smp_seg *sg;
@@ -498,7 +498,7 @@ smp_init_oc(struct objcore *oc, struct smp_seg *sg, unsigned objidx)
 
 /*--------------------------------------------------------------------*/
 
-void __match_proto__(obj_event_f)
+void v_matchproto_(obj_event_f)
 smp_oc_event(struct worker *wrk, void *priv, struct objcore *oc, unsigned ev)
 {
 	struct stevedore *st;

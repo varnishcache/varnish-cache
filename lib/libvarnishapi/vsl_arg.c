@@ -203,14 +203,14 @@ VSLQ_Name2Grouping(const char *name, int l)
 	return (n);
 }
 
-void __match_proto__(VSL_tagfind_f)
+void v_matchproto_(VSL_tagfind_f)
 vsl_vbm_bitset(int bit, void *priv)
 {
 
 	vbit_set((struct vbitmap *)priv, bit);
 }
 
-void __match_proto__(VSL_tagfind_f)
+void v_matchproto_(VSL_tagfind_f)
 vsl_vbm_bitclr(int bit, void *priv)
 {
 

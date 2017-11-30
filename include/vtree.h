@@ -379,7 +379,7 @@ struct {								\
 #define	VRB_PROTOTYPE(name, type, field, cmp)				\
 	VRB_PROTOTYPE_INTERNAL(name, type, field, cmp,)
 #define	VRB_PROTOTYPE_STATIC(name, type, field, cmp)			\
-	VRB_PROTOTYPE_INTERNAL(name, type, field, cmp, __unused static)
+	VRB_PROTOTYPE_INTERNAL(name, type, field, cmp, v_unused_ static)
 #define VRB_PROTOTYPE_INTERNAL(name, type, field, cmp, attr)		\
 /*lint -esym(528, name##_VRB_*) */					\
 attr void name##_VRB_INSERT_COLOR(struct name *, struct type *);	\
@@ -399,7 +399,7 @@ attr struct type *name##_VRB_MINMAX(const struct name *, int);		\
 #define	VRB_GENERATE(name, type, field, cmp)				\
 	VRB_GENERATE_INTERNAL(name, type, field, cmp,)
 #define	VRB_GENERATE_STATIC(name, type, field, cmp)			\
-	VRB_GENERATE_INTERNAL(name, type, field, cmp, __unused static)
+	VRB_GENERATE_INTERNAL(name, type, field, cmp, v_unused_ static)
 #define VRB_GENERATE_INTERNAL(name, type, field, cmp, attr)		\
 attr void								\
 name##_VRB_INSERT_COLOR(struct name *head, struct type *elm)		\

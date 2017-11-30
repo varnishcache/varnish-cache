@@ -248,7 +248,7 @@ vcc_ParseFunction(struct vcc *tl)
 		}
 		tl->curproc = vcc_AddProc(tl, tl->t);
 		Fh(tl, 0, "void %s(VRT_CTX);\n", sym->rname);
-		Fc(tl, 1, "\nvoid __match_proto__(vcl_func_t)\n");
+		Fc(tl, 1, "\nvoid v_matchproto_(vcl_func_t)\n");
 		Fc(tl, 1, "%s(VRT_CTX)\n", sym->rname);
 	}
 	vcc_NextToken(tl);

@@ -380,7 +380,7 @@ vbp_poke(struct vbp_target *vt)
 /*--------------------------------------------------------------------
  */
 
-static void __match_proto__(task_func_t)
+static void v_matchproto_(task_func_t)
 vbp_task(struct worker *wrk, void *priv)
 {
 	struct vbp_target *vt;
@@ -415,7 +415,7 @@ vbp_task(struct worker *wrk, void *priv)
 /*--------------------------------------------------------------------
  */
 
-static void * __match_proto__()
+static void * v_matchproto_()
 vbp_thread(struct worker *wrk, void *priv)
 {
 	double now, nxt;
@@ -653,7 +653,7 @@ VBP_Remove(struct backend *be)
 
 /*-------------------------------------------------------------------*/
 
-static int __match_proto__(binheap_cmp_t)
+static int v_matchproto_(binheap_cmp_t)
 vbp_cmp(void *priv, const void *a, const void *b)
 {
 	const struct vbp_target *aa, *bb;
@@ -668,7 +668,7 @@ vbp_cmp(void *priv, const void *a, const void *b)
 	return (aa->due < bb->due);
 }
 
-static void __match_proto__(binheap_update_t)
+static void v_matchproto_(binheap_update_t)
 vbp_update(void *priv, void *p, unsigned u)
 {
 	struct vbp_target *vt;

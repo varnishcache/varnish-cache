@@ -69,7 +69,7 @@ STV__iter(struct stevedore ** const pp)
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 stv_cli_list(struct cli *cli, const char * const *av, void *priv)
 {
 	struct stevedore *stv;
@@ -92,7 +92,7 @@ static struct cli_proto cli_stv[] = {
 /*--------------------------------------------------------------------
  */
 
-static void __match_proto__(storage_init_f)
+static void v_matchproto_(storage_init_f)
 smp_fake_init(struct stevedore *parent, int ac, char * const *av)
 {
 

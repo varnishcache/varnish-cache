@@ -65,6 +65,8 @@
 #include <mach/mach_time.h>
 #endif
 
+#include "vdef.h"
+
 #include "vas.h"
 #include "vtim.h"
 

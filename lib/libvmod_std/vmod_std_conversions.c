@@ -44,7 +44,7 @@
 #include "vtim.h"
 #include "vcc_if.h"
 
-VCL_DURATION __match_proto__(td_std_duration)
+VCL_DURATION v_matchproto_(td_std_duration)
 vmod_duration(VRT_CTX, VCL_STRING p, VCL_DURATION d)
 {
 	double r = VNUM_duration(p);
@@ -54,7 +54,7 @@ vmod_duration(VRT_CTX, VCL_STRING p, VCL_DURATION d)
 	return (isnan(r) ? d : r);
 }
 
-VCL_INT __match_proto__(td_std_integer)
+VCL_INT v_matchproto_(td_std_integer)
 vmod_integer(VRT_CTX, VCL_STRING p, VCL_INT i)
 {
 	const char *e;
@@ -119,7 +119,7 @@ vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d)
 	return (r);
 }
 
-VCL_REAL __match_proto__(td_std_real)
+VCL_REAL v_matchproto_(td_std_real)
 vmod_real(VRT_CTX, VCL_STRING p, VCL_REAL d)
 {
 	double r;
@@ -137,7 +137,7 @@ vmod_real(VRT_CTX, VCL_STRING p, VCL_REAL d)
 	return (r);
 }
 
-VCL_INT __match_proto__(td_std_real2integer)
+VCL_INT v_matchproto_(td_std_real2integer)
 vmod_real2integer(VRT_CTX, VCL_REAL r, VCL_INT i)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -150,7 +150,7 @@ vmod_real2integer(VRT_CTX, VCL_REAL r, VCL_INT i)
 	return ((long)r);
 }
 
-VCL_TIME __match_proto__(td_std_real2time)
+VCL_TIME v_matchproto_(td_std_real2time)
 vmod_real2time(VRT_CTX, VCL_REAL r, VCL_TIME t)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -161,7 +161,7 @@ vmod_real2time(VRT_CTX, VCL_REAL r, VCL_TIME t)
 	return (r);
 }
 
-VCL_INT __match_proto__(td_std_time2integer)
+VCL_INT v_matchproto_(td_std_time2integer)
 vmod_time2integer(VRT_CTX, VCL_TIME t, VCL_INT i)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -174,7 +174,7 @@ vmod_time2integer(VRT_CTX, VCL_TIME t, VCL_INT i)
 	return ((long)t);
 }
 
-VCL_REAL __match_proto__(td_std_time2real)
+VCL_REAL v_matchproto_(td_std_time2real)
 vmod_time2real(VRT_CTX, VCL_TIME t, VCL_REAL r)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -185,7 +185,7 @@ vmod_time2real(VRT_CTX, VCL_TIME t, VCL_REAL r)
 	return (t);
 }
 
-VCL_TIME __match_proto__(td_std_time)
+VCL_TIME v_matchproto_(td_std_time)
 vmod_time(VRT_CTX, VCL_STRING p, VCL_TIME d)
 {
 	double r;

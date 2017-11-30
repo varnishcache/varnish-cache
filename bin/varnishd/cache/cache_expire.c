@@ -279,7 +279,7 @@ exp_expire(struct exp_priv *ep, double now)
  * object expires, accounting also for graceability, it is killed.
  */
 
-static int __match_proto__(binheap_cmp_t)
+static int v_matchproto_(binheap_cmp_t)
 object_cmp(void *priv, const void *a, const void *b)
 {
 	const struct objcore *aa, *bb;
@@ -290,7 +290,7 @@ object_cmp(void *priv, const void *a, const void *b)
 	return (aa->timer_when < bb->timer_when);
 }
 
-static void __match_proto__(binheap_update_t)
+static void v_matchproto_(binheap_update_t)
 object_update(void *priv, void *p, unsigned u)
 {
 	struct objcore *oc;
@@ -300,7 +300,7 @@ object_update(void *priv, void *p, unsigned u)
 	oc->timer_idx = u;
 }
 
-static void * __match_proto__(bgthread_t)
+static void * v_matchproto_(bgthread_t)
 exp_thread(struct worker *wrk, void *priv)
 {
 	struct objcore *oc;

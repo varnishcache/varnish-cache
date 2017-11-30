@@ -147,7 +147,7 @@ struct rss {
 	int			wrong;
 };
 
-static int __match_proto__(vss_resolved_f)
+static int v_matchproto_(vss_resolved_f)
 rs_callback(void *priv, const struct suckaddr *vsa)
 {
 	struct rss *rss;

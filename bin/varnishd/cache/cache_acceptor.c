@@ -289,7 +289,7 @@ vca_pace_good(void)
  * Called from assigned worker thread
  */
 
-static void __match_proto__(task_func_t)
+static void v_matchproto_(task_func_t)
 vca_make_session(struct worker *wrk, void *arg)
 {
 	struct sess *sp;
@@ -391,7 +391,7 @@ vca_make_session(struct worker *wrk, void *arg)
  * and handle the new connection ourselves.
  */
 
-static void __match_proto__(task_func_t)
+static void v_matchproto_(task_func_t)
 vca_accept_task(struct worker *wrk, void *arg)
 {
 	struct wrk_accept wa;
@@ -518,7 +518,7 @@ VCA_DestroyPool(struct pool *pp)
 
 /*--------------------------------------------------------------------*/
 
-static void * __match_proto__()
+static void * v_matchproto_()
 vca_acct(void *arg)
 {
 	struct listen_sock *ls;
@@ -583,7 +583,7 @@ vca_acct(void *arg)
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 ccf_start(struct cli *cli, const char * const *av, void *priv)
 {
 
@@ -596,7 +596,7 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 ccf_listen_address(struct cli *cli, const char * const *av, void *priv)
 {
 	struct listen_sock *ls;

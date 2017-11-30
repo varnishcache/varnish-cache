@@ -382,7 +382,7 @@ SES_Reschedule_Req(struct req *req, enum task_prio prio)
  * Handle a session (from waiter)
  */
 
-static void __match_proto__(waiter_handle_f)
+static void v_matchproto_(waiter_handle_f)
 ses_handle(struct waited *wp, enum wait_event ev, double now)
 {
 	struct sess *sp;

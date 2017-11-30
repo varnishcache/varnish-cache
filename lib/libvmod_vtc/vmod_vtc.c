@@ -41,7 +41,7 @@
 
 #include "vcc_if.h"
 
-VCL_VOID __match_proto__(td_vtc_barrier_sync)
+VCL_VOID v_matchproto_(td_vtc_barrier_sync)
 vmod_barrier_sync(VRT_CTX, VCL_STRING addr, VCL_DURATION tmo)
 {
 	const char *err;
@@ -73,7 +73,7 @@ vmod_barrier_sync(VRT_CTX, VCL_STRING addr, VCL_DURATION tmo)
 
 /*--------------------------------------------------------------------*/
 
-VCL_BACKEND __match_proto__(td_vtc_no_backend)
+VCL_BACKEND v_matchproto_(td_vtc_no_backend)
 vmod_no_backend(VRT_CTX)
 {
 
@@ -81,7 +81,7 @@ vmod_no_backend(VRT_CTX)
 	return (NULL);
 }
 
-VCL_STEVEDORE __match_proto__(td_vtc_no_stevedore)
+VCL_STEVEDORE v_matchproto_(td_vtc_no_stevedore)
 vmod_no_stevedore(VRT_CTX)
 {
 
@@ -91,7 +91,7 @@ vmod_no_stevedore(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
-VCL_VOID __match_proto__(td_vtc_panic)
+VCL_VOID v_matchproto_(td_vtc_panic)
 vmod_panic(VRT_CTX, const char *str, ...)
 {
 	va_list ap;
@@ -107,7 +107,7 @@ vmod_panic(VRT_CTX, const char *str, ...)
 
 /*--------------------------------------------------------------------*/
 
-VCL_VOID __match_proto__(td_vtc_sleep)
+VCL_VOID v_matchproto_(td_vtc_sleep)
 vmod_sleep(VRT_CTX, VCL_DURATION t)
 {
 
@@ -134,7 +134,7 @@ vtc_ws_find(VRT_CTX, VCL_ENUM which)
 	WRONG("vtc_ws_find Illegal enum");
 }
 
-VCL_VOID __match_proto__(td_vtc_workspace_alloc)
+VCL_VOID v_matchproto_(td_vtc_workspace_alloc)
 vmod_workspace_alloc(VRT_CTX, VCL_ENUM which, VCL_INT size)
 {
 	struct ws *ws;
@@ -162,7 +162,7 @@ vmod_workspace_alloc(VRT_CTX, VCL_ENUM which, VCL_INT size)
 		memset(p, '\0', size);
 }
 
-VCL_INT __match_proto__(td_vtc_workspace_free)
+VCL_INT v_matchproto_(td_vtc_workspace_free)
 vmod_workspace_free(VRT_CTX, VCL_ENUM which)
 {
 	struct ws *ws;
@@ -181,7 +181,7 @@ vmod_workspace_free(VRT_CTX, VCL_ENUM which)
 }
 
 #define VTC_WS_OP(type, def, name, op)			\
-VCL_##type __match_proto__(td_vtc_workspace_##name)	\
+VCL_##type v_matchproto_(td_vtc_workspace_##name)	\
 vmod_workspace_##name(VRT_CTX, VCL_ENUM which)		\
 {							\
 	struct ws *ws;					\
@@ -203,7 +203,7 @@ VTC_WS_OP(BOOL, (0), overflowed, return (WS_Overflowed(ws)))
 
 /*--------------------------------------------------------------------*/
 
-VCL_INT __match_proto__(td_vtc_typesize)
+VCL_INT v_matchproto_(td_vtc_typesize)
 vmod_typesize(VRT_CTX, VCL_STRING s)
 {
 	size_t i = 0;

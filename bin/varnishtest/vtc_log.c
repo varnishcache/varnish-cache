@@ -101,7 +101,7 @@ vtc_logclose(struct vtclog *vl)
 	FREE_OBJ(vl);
 }
 
-static void __attribute__((__noreturn__))
+static void v_noreturn_
 vtc_logfail(void)
 {
 
@@ -267,7 +267,7 @@ vtc_hexdump(struct vtclog *vl, int lvl, const char *pfx,
 
 /**********************************************************************/
 
-static void __attribute__((__noreturn__))
+static void v_noreturn_
 vtc_log_VAS_Fail(const char *func, const char *file, int line,
     const char *cond, enum vas_e why)
 {

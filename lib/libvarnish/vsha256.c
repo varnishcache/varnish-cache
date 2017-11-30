@@ -43,6 +43,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "vdef.h"
+
 #include "vas.h"
 #include "vend.h"
 #include "vsha256.h"

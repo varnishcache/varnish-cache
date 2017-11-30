@@ -31,7 +31,9 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#include <vas.h>
+#include "vdef.h"
+
+#include "vas.h"
 
 #include "hpack.h"
 #include "vtc_h2_priv.h"

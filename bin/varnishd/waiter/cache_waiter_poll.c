@@ -211,7 +211,7 @@ vwp_main(void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static int __match_proto__(waiter_enter_f)
+static int v_matchproto_(waiter_enter_f)
 vwp_enter(void *priv, struct waited *wp)
 {
 	struct vwp *vwp;
@@ -225,7 +225,7 @@ vwp_enter(void *priv, struct waited *wp)
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(waiter_init_f)
+static void v_matchproto_(waiter_init_f)
 vwp_init(struct waiter *w)
 {
 	struct vwp *vwp;
@@ -249,7 +249,7 @@ vwp_init(struct waiter *w)
  * fail somehow.
  */
 
-static void __match_proto__(waiter_fini_f)
+static void v_matchproto_(waiter_fini_f)
 vwp_fini(struct waiter *w)
 {
 	struct vwp *vwp;

@@ -38,7 +38,7 @@
 
 #include "vcc_if.h"
 
-VCL_INT __match_proto__(td_purge_hard)
+VCL_INT v_matchproto_(td_purge_hard)
 vmod_hard(VRT_CTX)
 {
 
@@ -46,7 +46,7 @@ vmod_hard(VRT_CTX)
 	return (VRT_purge(ctx, 0, 0, 0));
 }
 
-VCL_INT __match_proto__(td_purge_soft)
+VCL_INT v_matchproto_(td_purge_soft)
 vmod_soft(VRT_CTX, VCL_DURATION ttl, VCL_DURATION grace, VCL_DURATION keep)
 {
 

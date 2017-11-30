@@ -82,7 +82,7 @@ smu_smu_init(struct smu *smu, struct smu_sc *sc)
 	smu->sc = sc;
 }
 
-static int __match_proto__(umem_constructor_t)
+static int v_matchproto_(umem_constructor_t)
 smu_smu_constructor(void *buffer, void *callback_data, int flags)
 {
 	struct smu *smu = buffer;
@@ -94,7 +94,7 @@ smu_smu_constructor(void *buffer, void *callback_data, int flags)
 	return (0);
 }
 
-static void __match_proto__(umem_destructor_t)
+static void v_matchproto_(umem_destructor_t)
 	smu_smu_destructor(void *buffer, void *callback_data)
 {
 	struct smu *smu;
@@ -109,7 +109,7 @@ static void __match_proto__(umem_destructor_t)
 
 static struct VSC_lck *lck_smu;
 
-static struct storage * __match_proto__(sml_alloc_f)
+static struct storage * v_matchproto_(sml_alloc_f)
 smu_alloc(const struct stevedore *st, size_t size)
 {
 	struct smu_sc *smu_sc;
@@ -172,7 +172,7 @@ smu_alloc(const struct stevedore *st, size_t size)
 	return (&smu->s);
 }
 
-static void __match_proto__(sml_free_f)
+static void v_matchproto_(sml_free_f)
 smu_free(struct storage *s)
 {
 	struct smu *smu;
@@ -196,7 +196,7 @@ smu_free(struct storage *s)
 	umem_cache_free(sc->smu_cache, smu);
 }
 
-static VCL_BYTES __match_proto__(stv_var_used_space)
+static VCL_BYTES v_matchproto_(stv_var_used_space)
 smu_used_space(const struct stevedore *st)
 {
 	struct smu_sc *smu_sc;
@@ -205,7 +205,7 @@ smu_used_space(const struct stevedore *st)
 	return (smu_sc->smu_alloc);
 }
 
-static VCL_BYTES __match_proto__(stv_var_free_space)
+static VCL_BYTES v_matchproto_(stv_var_free_space)
 smu_free_space(const struct stevedore *st)
 {
 	struct smu_sc *smu_sc;
@@ -247,7 +247,7 @@ smu_init(struct stevedore *parent, int ac, char * const *av)
 	sc->smu_max = u;
 }
 
-static void __match_proto__(storage_open_f)
+static void v_matchproto_(storage_open_f)
 smu_open(struct stevedore *st)
 {
 	struct smu_sc *smu_sc;
@@ -275,7 +275,7 @@ smu_open(struct stevedore *st)
 	AN(smu_sc->smu_cache);
 }
 
-static void __match_proto__(storage_close_f)
+static void v_matchproto_(storage_close_f)
 smu_close(const struct stevedore *st, int warn)
 {
 	struct smu_sc *smu_sc;

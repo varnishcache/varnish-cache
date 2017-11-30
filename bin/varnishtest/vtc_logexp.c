@@ -252,7 +252,7 @@ logexp_next(struct logexp *le)
 		vtc_log(le->vl, 3, "expecting| %s", VSB_data(le->test->str));
 }
 
-static int __match_proto__(VSLQ_dispatch_f)
+static int v_matchproto_(VSLQ_dispatch_f)
 logexp_dispatch(struct VSL_data *vsl, struct VSL_transaction * const pt[],
     void *priv)
 {

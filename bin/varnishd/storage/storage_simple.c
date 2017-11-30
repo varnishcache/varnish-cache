@@ -125,7 +125,7 @@ SML_MkObject(const struct stevedore *stv, struct objcore *oc, void *ptr)
  * implement persistent storage can rely on.
  */
 
-int __match_proto__(storage_allocobj_f)
+int v_matchproto_(storage_allocobj_f)
 SML_allocobj(struct worker *wrk, const struct stevedore *stv,
     struct objcore *oc, unsigned wsl)
 {
@@ -180,7 +180,7 @@ sml_getobj(struct worker *wrk, struct objcore *oc)
 	return (o);
 }
 
-static void __match_proto__(objslim_f)
+static void v_matchproto_(objslim_f)
 sml_slim(struct worker *wrk, struct objcore *oc)
 {
 	const struct stevedore *stv;
@@ -208,7 +208,7 @@ sml_slim(struct worker *wrk, struct objcore *oc)
 	}
 }
 
-static void __match_proto__(objfree_f)
+static void v_matchproto_(objfree_f)
 sml_objfree(struct worker *wrk, struct objcore *oc)
 {
 	struct object *o;
@@ -229,7 +229,7 @@ sml_objfree(struct worker *wrk, struct objcore *oc)
 	wrk->stats->n_object--;
 }
 
-static int __match_proto__(objiterate_f)
+static int v_matchproto_(objiterate_f)
 sml_iterator(struct worker *wrk, struct objcore *oc,
     void *priv, objiterate_f *func, int final)
 {
@@ -365,7 +365,7 @@ objallocwithnuke(struct worker *wrk, const struct stevedore *stv, size_t size,
 	return (st);
 }
 
-static int __match_proto__(objgetspace_f)
+static int v_matchproto_(objgetspace_f)
 sml_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
     uint8_t **ptr)
 {
@@ -405,7 +405,7 @@ sml_getspace(struct worker *wrk, struct objcore *oc, ssize_t *sz,
 	return (1);
 }
 
-static void __match_proto__(objextend_f)
+static void v_matchproto_(objextend_f)
 sml_extend(struct worker *wrk, struct objcore *oc, ssize_t l)
 {
 	struct object *o;
@@ -422,7 +422,7 @@ sml_extend(struct worker *wrk, struct objcore *oc, ssize_t l)
 	st->len += l;
 }
 
-static void __match_proto__(objtrimstore_f)
+static void v_matchproto_(objtrimstore_f)
 sml_trimstore(struct worker *wrk, struct objcore *oc)
 {
 	const struct stevedore *stv;
@@ -473,7 +473,7 @@ sml_trimstore(struct worker *wrk, struct objcore *oc)
 	oc->boc->stevedore_priv = st;
 }
 
-static void __match_proto__(objbocdone_f)
+static void v_matchproto_(objbocdone_f)
 sml_bocdone(struct worker *wrk, struct objcore *oc, struct boc *boc)
 {
 	const struct stevedore *stv;
@@ -500,7 +500,7 @@ sml_bocdone(struct worker *wrk, struct objcore *oc, struct boc *boc)
 	}
 }
 
-static const void * __match_proto__(objgetattr_f)
+static const void * v_matchproto_(objgetattr_f)
 sml_getattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
    ssize_t *len)
 {
@@ -547,7 +547,7 @@ sml_getattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
 	WRONG("Unsupported OBJ_ATTR");
 }
 
-static void * __match_proto__(objsetattr_f)
+static void * v_matchproto_(objsetattr_f)
 sml_setattr(struct worker *wrk, struct objcore *oc, enum obj_attr attr,
     ssize_t len, const void *ptr)
 {

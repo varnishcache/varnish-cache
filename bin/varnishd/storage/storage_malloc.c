@@ -63,7 +63,7 @@ struct sma {
 
 static struct VSC_lck *lck_sma;
 
-static struct storage * __match_proto__(sml_alloc_f)
+static struct storage * v_matchproto_(sml_alloc_f)
 sma_alloc(const struct stevedore *st, size_t size)
 {
 	struct sma_sc *sma_sc;
@@ -129,7 +129,7 @@ sma_alloc(const struct stevedore *st, size_t size)
 	return (&sma->s);
 }
 
-static void __match_proto__(sml_free_f)
+static void v_matchproto_(sml_free_f)
 sma_free(struct storage *s)
 {
 	struct sma_sc *sma_sc;
@@ -151,7 +151,7 @@ sma_free(struct storage *s)
 	free(sma);
 }
 
-static VCL_BYTES __match_proto__(stv_var_used_space)
+static VCL_BYTES v_matchproto_(stv_var_used_space)
 sma_used_space(const struct stevedore *st)
 {
 	struct sma_sc *sma_sc;
@@ -160,7 +160,7 @@ sma_used_space(const struct stevedore *st)
 	return (sma_sc->sma_alloc);
 }
 
-static VCL_BYTES __match_proto__(stv_var_free_space)
+static VCL_BYTES v_matchproto_(stv_var_free_space)
 sma_free_space(const struct stevedore *st)
 {
 	struct sma_sc *sma_sc;
@@ -202,7 +202,7 @@ sma_init(struct stevedore *parent, int ac, char * const *av)
 	sc->sma_max = u;
 }
 
-static void __match_proto__(storage_open_f)
+static void v_matchproto_(storage_open_f)
 sma_open(struct stevedore *st)
 {
 	struct sma_sc *sma_sc;

@@ -104,7 +104,7 @@ Lck_Witness_Unlock(const struct ilck *il)
 
 /*--------------------------------------------------------------------*/
 
-void __match_proto__()
+void v_matchproto_()
 Lck__Lock(struct lock *lck, const char *p, int l)
 {
 	struct ilck *ilck;
@@ -119,7 +119,7 @@ Lck__Lock(struct lock *lck, const char *p, int l)
 	ilck->held = 1;
 }
 
-void __match_proto__()
+void v_matchproto_()
 Lck__Unlock(struct lock *lck, const char *p, int l)
 {
 	struct ilck *ilck;
@@ -147,7 +147,7 @@ Lck__Unlock(struct lock *lck, const char *p, int l)
 		Lck_Witness_Unlock(ilck);
 }
 
-int __match_proto__()
+int v_matchproto_()
 Lck__Trylock(struct lock *lck, const char *p, int l)
 {
 	struct ilck *ilck;
@@ -186,7 +186,7 @@ Lck__Owned(const struct lock *lck)
 	return (pthread_equal(ilck->owner, pthread_self()));
 }
 
-int __match_proto__()
+int v_matchproto_()
 Lck_CondWait(pthread_cond_t *cond, struct lock *lck, double when)
 {
 	struct ilck *ilck;

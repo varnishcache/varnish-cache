@@ -99,7 +99,7 @@ MAC_reopen_sockets(void)
 
 /*--------------------------------------------------------------------*/
 
-static int __match_proto__(vss_resolved_f)
+static int v_matchproto_(vss_resolved_f)
 mac_callback(void *priv, const struct suckaddr *sa)
 {
 	struct listen_arg *la;

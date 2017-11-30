@@ -68,7 +68,7 @@ static VCL_DURATION vcl_release_delay = 0.0;
 static pthread_mutex_t vsc_mtx = PTHREAD_MUTEX_INITIALIZER;
 static struct VSC_debug *vsc;
 
-VCL_VOID __match_proto__(td_debug_panic)
+VCL_VOID v_matchproto_(td_debug_panic)
 xyzzy_panic(VRT_CTX, const char *str, ...)
 {
 	va_list ap;
@@ -82,7 +82,7 @@ xyzzy_panic(VRT_CTX, const char *str, ...)
 	VAS_Fail("VCL", "", 0, b, VAS_VCL);
 }
 
-VCL_STRING __match_proto__(td_debug_author)
+VCL_STRING v_matchproto_(td_debug_author)
 xyzzy_author(VRT_CTX, VCL_ENUM person, VCL_ENUM someone)
 {
 	(void)someone;
@@ -99,7 +99,7 @@ xyzzy_author(VRT_CTX, VCL_ENUM person, VCL_ENUM someone)
 	WRONG("Illegal VMOD enum");
 }
 
-VCL_VOID __match_proto__(td_debug_test_priv_call)
+VCL_VOID v_matchproto_(td_debug_test_priv_call)
 xyzzy_test_priv_call(VRT_CTX, struct vmod_priv *priv)
 {
 
@@ -112,7 +112,7 @@ xyzzy_test_priv_call(VRT_CTX, struct vmod_priv *priv)
 	}
 }
 
-VCL_STRING __match_proto__(td_debug_test_priv_task)
+VCL_STRING v_matchproto_(td_debug_test_priv_task)
 xyzzy_test_priv_task(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 {
 
@@ -134,7 +134,7 @@ xyzzy_test_priv_task(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 	return (priv->priv);
 }
 
-VCL_STRING __match_proto__(td_debug_test_priv_top)
+VCL_STRING v_matchproto_(td_debug_test_priv_top)
 xyzzy_test_priv_top(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 {
 
@@ -146,7 +146,7 @@ xyzzy_test_priv_top(VRT_CTX, struct vmod_priv *priv, VCL_STRING s)
 	return (priv->priv);
 }
 
-VCL_VOID __match_proto__(td_debug_test_priv_vcl)
+VCL_VOID v_matchproto_(td_debug_test_priv_vcl)
 xyzzy_test_priv_vcl(VRT_CTX, struct vmod_priv *priv)
 {
 	struct priv_vcl *priv_vcl;
@@ -167,7 +167,7 @@ xyzzy_no_backend(VRT_CTX)
 	return (NULL);
 }
 
-VCL_STEVEDORE __match_proto__(td_debug_no_stevedore)
+VCL_STEVEDORE v_matchproto_(td_debug_no_stevedore)
 xyzzy_no_stevedore(VRT_CTX)
 {
 
@@ -176,7 +176,7 @@ xyzzy_no_stevedore(VRT_CTX)
 	return (NULL);
 }
 
-VCL_VOID __match_proto__(td_debug_rot52)
+VCL_VOID v_matchproto_(td_debug_rot52)
 xyzzy_rot52(VRT_CTX, VCL_HTTP hp)
 {
 
@@ -186,7 +186,7 @@ xyzzy_rot52(VRT_CTX, VCL_HTTP hp)
 	http_PrintfHeader(hp, "Encrypted: ROT52");
 }
 
-VCL_STRING __match_proto__(td_debug_argtest)
+VCL_STRING v_matchproto_(td_debug_argtest)
 xyzzy_argtest(VRT_CTX, VCL_STRING one, VCL_REAL two, VCL_STRING three,
     VCL_STRING comma, VCL_INT four)
 {
@@ -196,14 +196,14 @@ xyzzy_argtest(VRT_CTX, VCL_STRING one, VCL_REAL two, VCL_STRING three,
 	return (WS_Copy(ctx->ws, buf, -1));
 }
 
-VCL_INT __match_proto__(td_debug_vre_limit)
+VCL_INT v_matchproto_(td_debug_vre_limit)
 xyzzy_vre_limit(VRT_CTX)
 {
 	(void)ctx;
 	return (cache_param->vre_limits.match);
 }
 
-static void __match_proto__(obj_event_f)
+static void v_matchproto_(obj_event_f)
 obj_cb(struct worker *wrk, void *priv, struct objcore *oc, unsigned event)
 {
 	const struct priv_vcl *priv_vcl;
@@ -223,7 +223,7 @@ obj_cb(struct worker *wrk, void *priv, struct objcore *oc, unsigned event)
 	    (intmax_t)(uintptr_t)oc);
 }
 
-VCL_VOID __match_proto__(td_debug_register_obj_events)
+VCL_VOID v_matchproto_(td_debug_register_obj_events)
 xyzzy_register_obj_events(VRT_CTX, struct vmod_priv *priv)
 {
 	struct priv_vcl *priv_vcl;
@@ -236,14 +236,14 @@ xyzzy_register_obj_events(VRT_CTX, struct vmod_priv *priv)
 	VSL(SLT_Debug, 0, "Subscribed to Object Events");
 }
 
-VCL_VOID __match_proto__(td_debug_fail)
+VCL_VOID v_matchproto_(td_debug_fail)
 xyzzy_fail(VRT_CTX)
 {
 
 	VRT_fail(ctx, "Forced failure");
 }
 
-static void __match_proto__(vmod_priv_free_f)
+static void v_matchproto_(vmod_priv_free_f)
 priv_vcl_free(void *priv)
 {
 	struct priv_vcl *priv_vcl;
@@ -347,7 +347,7 @@ event_cold(VRT_CTX, const struct vmod_priv *priv)
 	return (0);
 }
 
-int __match_proto__(vmod_event_f)
+int v_matchproto_(vmod_event_f)
 event_function(VRT_CTX, struct vmod_priv *priv, enum vcl_event_e e)
 {
 
@@ -363,7 +363,7 @@ event_function(VRT_CTX, struct vmod_priv *priv, enum vcl_event_e e)
 	}
 }
 
-VCL_VOID __match_proto__(td_debug_sleep)
+VCL_VOID v_matchproto_(td_debug_sleep)
 xyzzy_sleep(VRT_CTX, VCL_DURATION t)
 {
 
@@ -486,7 +486,7 @@ xyzzy_workspace_overflow(VRT_CTX, VCL_ENUM which)
 	WS_MarkOverflow(ws);
 }
 
-VCL_VOID __match_proto__(td_debug_vcl_release_delay)
+VCL_VOID v_matchproto_(td_debug_vcl_release_delay)
 xyzzy_vcl_release_delay(VRT_CTX, VCL_DURATION delay)
 {
 
@@ -495,7 +495,7 @@ xyzzy_vcl_release_delay(VRT_CTX, VCL_DURATION delay)
 	vcl_release_delay = delay;
 }
 
-VCL_BOOL __match_proto__(td_debug_match_acl)
+VCL_BOOL v_matchproto_(td_debug_match_acl)
 xyzzy_match_acl(VRT_CTX, VCL_ACL acl, VCL_IP ip)
 {
 
@@ -539,7 +539,7 @@ xyzzy_barrier_sync(VRT_CTX, VCL_STRING addr)
 	return (0);
 }
 
-VCL_VOID __match_proto__(td_debug_test_probe)
+VCL_VOID v_matchproto_(td_debug_test_probe)
 xyzzy_test_probe(VRT_CTX, VCL_PROBE probe, VCL_PROBE same)
 {
 

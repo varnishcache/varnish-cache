@@ -231,7 +231,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 /*----------------------------------------------------------------------
  */
 
-void __match_proto__(vtr_req_fail_f)
+void v_matchproto_(vtr_req_fail_f)
 Req_Fail(struct req *req, enum sess_close reason)
 {
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);

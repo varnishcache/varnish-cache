@@ -276,7 +276,7 @@ smp_open_segs(struct smp_sc *sc, struct smp_signspace *spc)
  * Silo worker thread
  */
 
-static void * __match_proto__(bgthread_t)
+static void * v_matchproto_(bgthread_t)
 smp_thread(struct worker *wrk, void *priv)
 {
 	struct smp_sc	*sc;
@@ -319,7 +319,7 @@ smp_thread(struct worker *wrk, void *priv)
  * Open a silo in the worker process
  */
 
-static void __match_proto__(storage_open_f)
+static void v_matchproto_(storage_open_f)
 smp_open(struct stevedore *st)
 {
 	struct smp_sc	*sc;
@@ -388,7 +388,7 @@ smp_open(struct stevedore *st)
  * Close a silo
  */
 
-static void __match_proto__(storage_close_f)
+static void v_matchproto_(storage_close_f)
 smp_close(const struct stevedore *st, int warn)
 {
 	struct smp_sc	*sc;
@@ -502,7 +502,7 @@ smp_allocx(const struct stevedore *st, size_t min_size, size_t max_size,
  * Allocate an object
  */
 
-static int __match_proto__(storage_allocobj_f)
+static int v_matchproto_(storage_allocobj_f)
 smp_allocobj(struct worker *wrk, const struct stevedore *stv,
     struct objcore *oc, unsigned wsl)
 {
@@ -578,7 +578,7 @@ smp_allocobj(struct worker *wrk, const struct stevedore *stv,
  * Allocate a bite
  */
 
-static struct storage * __match_proto__(sml_alloc_f)
+static struct storage * v_matchproto_(sml_alloc_f)
 smp_alloc(const struct stevedore *st, size_t size)
 {
 
@@ -630,7 +630,7 @@ debug_report_silo(struct cli *cli, const struct smp_sc *sc)
 	}
 }
 
-static void __match_proto__(cli_func_t)
+static void v_matchproto_(cli_func_t)
 debug_persistent(struct cli *cli, const char * const * av, void *priv)
 {
 	struct smp_sc *sc;

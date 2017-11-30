@@ -82,7 +82,7 @@ struct cli {
 
 /* The implementation must provide these functions */
 int VCLI_Overflow(struct cli *cli);
-void VCLI_Out(struct cli *cli, const char *fmt, ...) __v_printflike(2, 3);
+void VCLI_Out(struct cli *cli, const char *fmt, ...) v_printflike_(2, 3);
 void VCLI_Quote(struct cli *cli, const char *str);
 void VCLI_JSON_str(struct cli *cli, const char *str);
 void VCLI_JSON_ver(struct cli *cli, unsigned ver, const char * const * av);

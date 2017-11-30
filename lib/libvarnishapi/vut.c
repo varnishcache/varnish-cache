@@ -80,7 +80,7 @@ vut_vpf_remove(void)
 	}
 }
 
-static int __match_proto__(VSLQ_dispatch_f)
+static int v_matchproto_(VSLQ_dispatch_f)
 vut_dispatch(struct VSL_data *vsl, struct VSL_transaction * const trans[],
     void *priv)
 {
@@ -101,7 +101,7 @@ vut_dispatch(struct VSL_data *vsl, struct VSL_transaction * const trans[],
 }
 
 //lint -sem(vut_error, r_no)
-static void __attribute__((__noreturn__)) __match_proto__(VUT_error_f)
+static void v_noreturn_ v_matchproto_(VUT_error_f)
 vut_error(struct VUT *vut, int status, const char *fmt, va_list ap)
 {
 

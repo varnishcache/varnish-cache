@@ -234,7 +234,7 @@ vcc_new_expr(void)
 
 static struct expr *
 vcc_mk_expr(vcc_type_t fmt, const char *str, ...)
-    __v_printflike(2, 3);
+    v_printflike_(2, 3);
 
 static struct expr *
 vcc_mk_expr(vcc_type_t fmt, const char *str, ...)
@@ -408,7 +408,7 @@ vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 /*--------------------------------------------------------------------
  */
 
-static void __match_proto__(sym_expr_t)
+static void v_matchproto_(sym_expr_t)
 vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym,
     vcc_type_t fmt)
 {
@@ -445,7 +445,7 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym,
 /*--------------------------------------------------------------------
  */
 
-static void __match_proto__(sym_expr_t)
+static void v_matchproto_(sym_expr_t)
 vcc_Eval_BoolConst(struct vcc *tl, struct expr **e, const struct symbol *sym,
     vcc_type_t fmt)
 {
@@ -459,7 +459,7 @@ vcc_Eval_BoolConst(struct vcc *tl, struct expr **e, const struct symbol *sym,
 /*--------------------------------------------------------------------
  */
 
-void __match_proto__(sym_expr_t)
+void v_matchproto_(sym_expr_t)
 vcc_Eval_Handle(struct vcc *tl, struct expr **e, const struct symbol *sym,
     vcc_type_t fmt)
 {
@@ -481,7 +481,7 @@ vcc_Eval_Handle(struct vcc *tl, struct expr **e, const struct symbol *sym,
 /*--------------------------------------------------------------------
  */
 
-void __match_proto__(sym_expr_t)
+void v_matchproto_(sym_expr_t)
 vcc_Eval_Var(struct vcc *tl, struct expr **e, const struct symbol *sym,
     vcc_type_t fmt)
 {
@@ -723,7 +723,7 @@ vcc_Eval_Func(struct vcc *tl, const char *spec,
 /*--------------------------------------------------------------------
  */
 
-void __match_proto__(sym_expr_t)
+void v_matchproto_(sym_expr_t)
 vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, const struct symbol *sym,
     vcc_type_t fmt)
 {

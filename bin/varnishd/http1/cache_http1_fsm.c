@@ -74,7 +74,7 @@ http1_getstate(const struct sess *sp)
  * Call protocol for this request
  */
 
-static void __match_proto__(task_func_t)
+static void v_matchproto_(task_func_t)
 http1_req(struct worker *wrk, void *arg)
 {
 	struct req *req;
@@ -101,7 +101,7 @@ http1_req(struct worker *wrk, void *arg)
  * must obey this calling convention with a dummy reservation.
  */
 
-static void __match_proto__(task_func_t)
+static void v_matchproto_(task_func_t)
 http1_new_session(struct worker *wrk, void *arg)
 {
 	struct sess *sp;
@@ -120,7 +120,7 @@ http1_new_session(struct worker *wrk, void *arg)
 	wrk->task.priv = req;
 }
 
-static void __match_proto__(task_func_t)
+static void v_matchproto_(task_func_t)
 http1_unwait(struct worker *wrk, void *arg)
 {
 	struct sess *sp;
@@ -138,7 +138,7 @@ http1_unwait(struct worker *wrk, void *arg)
 	wrk->task.priv = req;
 }
 
-static void __match_proto__(vtr_req_body_t)
+static void v_matchproto_(vtr_req_body_t)
 http1_req_body(struct req *req)
 {
 
@@ -169,7 +169,7 @@ http1_req_panic(struct vsb *vsb, const struct req *req)
 	VSB_printf(vsb, "state = %s\n", http1_getstate(req->sp));
 }
 
-static void __match_proto__(vtr_req_fail_f)
+static void v_matchproto_(vtr_req_fail_f)
 http1_req_fail(struct req *req, enum sess_close reason)
 {
 	assert(reason > 0);
@@ -178,7 +178,7 @@ http1_req_fail(struct req *req, enum sess_close reason)
 		SES_Close(req->sp, reason);
 }
 
-static void __match_proto__(vtr_reembark_f)
+static void v_matchproto_(vtr_reembark_f)
 http1_reembark(struct worker *wrk, struct req *req)
 {
 	struct sess *sp;
@@ -203,7 +203,7 @@ http1_reembark(struct worker *wrk, struct req *req)
 	usleep(10000);
 }
 
-static int __match_proto__(vtr_minimal_response_f)
+static int v_matchproto_(vtr_minimal_response_f)
 http1_minimal_response(struct req *req, uint16_t status)
 {
 	size_t wl, l;

@@ -116,7 +116,7 @@ h2_new_sess(const struct worker *wrk, struct sess *sp, struct req *srq)
 
 /**********************************************************************/
 
-enum htc_status_e __match_proto__(htc_complete_f)
+enum htc_status_e v_matchproto_(htc_complete_f)
 H2_prism_complete(struct http_conn *htc)
 {
 	int l;
@@ -270,7 +270,7 @@ H2_OU_Sess(struct worker *wrk, struct sess *sp, struct req *req)
 	SES_SetTransport(wrk, sp, req, &H2_transport);
 }
 
-static void __match_proto__(task_func_t)
+static void v_matchproto_(task_func_t)
 h2_new_session(struct worker *wrk, void *arg)
 {
 	struct req *req;
@@ -351,7 +351,7 @@ h2_new_session(struct worker *wrk, void *arg)
 	h2_del_req(wrk, h2->req0);
 }
 
-static void __match_proto__(vtr_reembark_f)
+static void v_matchproto_(vtr_reembark_f)
 h2_reembark(struct worker *wrk, struct req *req)
 {
 	struct sess *sp;

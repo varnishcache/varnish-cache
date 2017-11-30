@@ -34,6 +34,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "vdef.h"
+
 #include "vas.h"
 #include "vct.h"
 

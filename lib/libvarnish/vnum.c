@@ -36,6 +36,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "vdef.h"
+
 #include "vnum.h"
 #include "vas.h"
 

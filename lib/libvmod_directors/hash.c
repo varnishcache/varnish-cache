@@ -47,7 +47,7 @@ struct vmod_directors_hash {
 	struct vdir				*vd;
 };
 
-VCL_VOID __match_proto__()
+VCL_VOID v_matchproto_()
 vmod_hash__init(VRT_CTX, struct vmod_directors_hash **rrp,
     const char *vcl_name)
 {
@@ -62,7 +62,7 @@ vmod_hash__init(VRT_CTX, struct vmod_directors_hash **rrp,
 	vdir_new(&rr->vd, "hash", vcl_name, NULL, NULL, rr);
 }
 
-VCL_VOID __match_proto__()
+VCL_VOID v_matchproto_()
 vmod_hash__fini(struct vmod_directors_hash **rrp)
 {
 	struct vmod_directors_hash *rr;
@@ -74,7 +74,7 @@ vmod_hash__fini(struct vmod_directors_hash **rrp)
 	FREE_OBJ(rr);
 }
 
-VCL_VOID __match_proto__()
+VCL_VOID v_matchproto_()
 vmod_hash_add_backend(VRT_CTX,
     struct vmod_directors_hash *rr, VCL_BACKEND be, double w)
 {
@@ -84,7 +84,7 @@ vmod_hash_add_backend(VRT_CTX,
 	vdir_add_backend(ctx, rr->vd, be, w);
 }
 
-VCL_VOID __match_proto__()
+VCL_VOID v_matchproto_()
 vmod_hash_remove_backend(VRT_CTX,
     struct vmod_directors_hash *rr, VCL_BACKEND be)
 {
@@ -94,7 +94,7 @@ vmod_hash_remove_backend(VRT_CTX,
 	vdir_remove_backend(ctx, rr->vd, be, NULL);
 }
 
-VCL_BACKEND __match_proto__()
+VCL_BACKEND v_matchproto_()
 vmod_hash_backend(VRT_CTX, struct vmod_directors_hash *rr,
     const char *arg, ...)
 {

@@ -72,7 +72,7 @@ static VTAILQ_HEAD(, tcp_pool)	tcp_pools = VTAILQ_HEAD_INITIALIZER(tcp_pools);
  * Waiter-handler
  */
 
-static void  __match_proto__(waiter_handle_f)
+static void  v_matchproto_(waiter_handle_f)
 tcp_handle(struct waited *w, enum wait_event ev, double now)
 {
 	struct vtp *vtp;

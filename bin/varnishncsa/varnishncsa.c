@@ -57,11 +57,12 @@
 #define VOPT_DEFINITION
 #define VOPT_INC "varnishncsa_options.h"
 
+#include "vdef.h"
+
 #include "b64.h"
 #include "vapi/vsl.h"
 #include "vapi/voptget.h"
 #include "vas.h"
-#include "vdef.h"
 #include "vsb.h"
 #include "vut.h"
 #include "vqueue.h"
@@ -161,7 +162,7 @@ static struct ctx {
 	int32_t			vxid;
 } CTX;
 
-static void __attribute__((__noreturn__))
+static void v_noreturn_
 usage(int status)
 {
 	const char **opt;
@@ -184,7 +185,7 @@ openout(int append)
 		    strerror(errno));
 }
 
-static int __match_proto__(VUT_cb_f)
+static int v_matchproto_(VUT_cb_f)
 rotateout(struct VUT *v)
 {
 
@@ -197,7 +198,7 @@ rotateout(struct VUT *v)
 	return (0);
 }
 
-static int __match_proto__(VUT_cb_f)
+static int v_matchproto_(VUT_cb_f)
 flushout(struct VUT *v)
 {
 
@@ -266,7 +267,7 @@ vsb_fcat(struct vsb *vsb, const struct fragment *f, const char *dflt)
 	return (-1);
 }
 
-static int __match_proto__(format_f)
+static int v_matchproto_(format_f)
 format_string(const struct format *format)
 {
 
@@ -276,7 +277,7 @@ format_string(const struct format *format)
 	return (1);
 }
 
-static int __match_proto__(format_f)
+static int v_matchproto_(format_f)
 format_strptr(const struct format *format)
 {
 
@@ -287,7 +288,7 @@ format_strptr(const struct format *format)
 	return (1);
 }
 
-static int __match_proto__(format_f)
+static int v_matchproto_(format_f)
 format_int32(const struct format *format)
 {
 
@@ -296,7 +297,7 @@ format_int32(const struct format *format)
 	return (1);
 }
 
-static int __match_proto__(format_f)
+static int v_matchproto_(format_f)
 format_fragment(const struct format *format)
 {
 
@@ -314,7 +315,7 @@ format_fragment(const struct format *format)
 	return (1);
 }
 
-static int __match_proto__(format_f)
+static int v_matchproto_(format_f)
 format_time(const struct format *format)
 {
 	double t_start, t_end;
@@ -368,7 +369,7 @@ format_time(const struct format *format)
 	return (1);
 }
 
-static int __match_proto__(format_f)
+static int v_matchproto_(format_f)
 format_requestline(const struct format *format)
 {
 
@@ -388,7 +389,7 @@ format_requestline(const struct format *format)
 	return (1);
 }
 
-static int __match_proto__(format_f)
+static int v_matchproto_(format_f)
 format_auth(const struct format *format)
 {
 	char buf[128];
@@ -922,7 +923,7 @@ process_vsl(const struct vsl_watch_head *head, enum VSL_tag_e tag,
 	}
 }
 
-static int __match_proto__(VSLQ_dispatch_f)
+static int v_matchproto_(VSLQ_dispatch_f)
 dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
     void *priv)
 {
@@ -1107,7 +1108,7 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 	return (0);
 }
 
-static int __match_proto__(VUT_cb_f)
+static int v_matchproto_(VUT_cb_f)
 sighup(struct VUT *v)
 {
 	assert(v == vut);

@@ -58,7 +58,7 @@ static struct hcl_hd		*hcl_head;
  * The ->init method allows the management process to pass arguments
  */
 
-static void __match_proto__(hash_init_f)
+static void v_matchproto_(hash_init_f)
 hcl_init(int ac, char * const *av)
 {
 	int i;
@@ -89,7 +89,7 @@ hcl_init(int ac, char * const *av)
  * initialization to happen before the first lookup.
  */
 
-static void __match_proto__(hash_start_f)
+static void v_matchproto_(hash_start_f)
 hcl_start(void)
 {
 	unsigned u;
@@ -114,7 +114,7 @@ hcl_start(void)
  * rare and collisions even rarer.
  */
 
-static struct objhead * __match_proto__(hash_lookup_f)
+static struct objhead * v_matchproto_(hash_lookup_f)
 hcl_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
 {
 	struct objhead *oh;
@@ -171,7 +171,7 @@ hcl_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
  * Dereference and if no references are left, free.
  */
 
-static int __match_proto__(hash_deref_f)
+static int v_matchproto_(hash_deref_f)
 hcl_deref(struct objhead *oh)
 {
 	struct hcl_hd *hp;

@@ -79,7 +79,7 @@ struct VCLS {
 
 /*--------------------------------------------------------------------*/
 
-void __match_proto__(cli_func_t)
+void v_matchproto_(cli_func_t)
 VCLS_func_close(struct cli *cli, const char *const *av, void *priv)
 {
 
@@ -91,7 +91,7 @@ VCLS_func_close(struct cli *cli, const char *const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-void __match_proto__(cli_func_t)
+void v_matchproto_(cli_func_t)
 VCLS_func_ping(struct cli *cli, const char * const *av, void *priv)
 {
 	time_t t;
@@ -104,7 +104,7 @@ VCLS_func_ping(struct cli *cli, const char * const *av, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-void __match_proto__(cli_func_t)
+void v_matchproto_(cli_func_t)
 VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 {
 	struct cli_proto *clp;
@@ -149,7 +149,7 @@ VCLS_func_help(struct cli *cli, const char * const *av, void *priv)
 	}
 }
 
-void __match_proto__(cli_func_t)
+void v_matchproto_(cli_func_t)
 VCLS_func_help_json(struct cli *cli, const char * const *av, void *priv)
 {
 	struct cli_proto *clp;

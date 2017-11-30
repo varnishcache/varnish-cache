@@ -35,7 +35,7 @@
 
 /*--------------------------------------------------------------------*/
 
-static int __match_proto__(vdp_bytes)
+static int v_matchproto_(vdp_bytes)
 v1d_bytes(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
@@ -83,7 +83,7 @@ v1d_error(struct req *req, const char *msg)
 /*--------------------------------------------------------------------
  */
 
-void __match_proto__(vtr_deliver_f)
+void v_matchproto_(vtr_deliver_f)
 V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 {
 	int err;

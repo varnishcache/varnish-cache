@@ -80,7 +80,7 @@ free_frfile(void *ptr)
 	}
 }
 
-VCL_STRING __match_proto__(td_std_fileread)
+VCL_STRING v_matchproto_(td_std_fileread)
 vmod_fileread(VRT_CTX, struct vmod_priv *priv,
     VCL_STRING file_name)
 {

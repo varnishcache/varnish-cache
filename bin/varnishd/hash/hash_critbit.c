@@ -305,7 +305,7 @@ hcb_delete(struct hcb_root *r, const struct objhead *oh)
 
 /*--------------------------------------------------------------------*/
 
-static void * __match_proto__(bgthread_t)
+static void * v_matchproto_(bgthread_t)
 hcb_cleaner(struct worker *wrk, void *priv)
 {
 	struct hcb_y *y, *y2;
@@ -333,7 +333,7 @@ hcb_cleaner(struct worker *wrk, void *priv)
 
 /*--------------------------------------------------------------------*/
 
-static void __match_proto__(hash_start_f)
+static void v_matchproto_(hash_start_f)
 hcb_start(void)
 {
 	struct objhead *oh = NULL;
@@ -346,7 +346,7 @@ hcb_start(void)
 	hcb_build_bittbl();
 }
 
-static int __match_proto__(hash_deref_f)
+static int v_matchproto_(hash_deref_f)
 hcb_deref(struct objhead *oh)
 {
 
@@ -367,7 +367,7 @@ hcb_deref(struct objhead *oh)
 	return (1);
 }
 
-static struct objhead * __match_proto__(hash_lookup_f)
+static struct objhead * v_matchproto_(hash_lookup_f)
 hcb_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
 {
 	struct objhead *oh;
@@ -431,7 +431,7 @@ hcb_lookup(struct worker *wrk, const void *digest, struct objhead **noh)
 	}
 }
 
-static void __match_proto__(hash_prep_f)
+static void v_matchproto_(hash_prep_f)
 hcb_prep(struct worker *wrk)
 {
 	struct hcb_y *y;
