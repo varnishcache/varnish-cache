@@ -35,6 +35,8 @@
 #include <pthread.h>
 #include <unistd.h>
 
+#include "vdef.h"
+
 #include "vas.h"
 
 static pthread_mutex_t	mb_mtx;
