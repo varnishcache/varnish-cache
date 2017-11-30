@@ -59,12 +59,12 @@ PARAMS = {
 
 # http://python3porting.com/problems.html#bytes-strings-and-unicode
 if sys.version_info < (3,):
-    def b(x):
-	return x
+	def b(x):
+		return x
 else:
-    import codecs
-    def b(x):
-	return codecs.latin_1_encode(x)[0]
+	import codecs
+	def b(x):
+		return codecs.latin_1_encode(x)[0]
 
 def gzip_str(s):
 	try:
