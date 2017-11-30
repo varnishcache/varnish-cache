@@ -66,7 +66,7 @@ int			exit_status = 0;
 struct vsb		*vident;
 struct VSC_mgt		*VSC_C_mgt;
 static int		I_fd = -1;
-static char		Cn_arg[] = "/tmp/varnishd_C_XXXXXXX";
+static char 		*Cn_arg;
 
 static struct vpf_fh *pfh1 = NULL;
 static struct vpf_fh *pfh2 = NULL;
@@ -687,6 +687,17 @@ main(int argc, char * const *argv)
 
 	if (C_flag) {
 		if (n_arg == NULL) {
+			vsb = VSB_new_auto();
+			AN(vsb);
+			if (getenv("TMPDIR") != NULL)
+				VSB_printf(vsb, "%s", getenv("TMPDIR"));
+			else
+				VSB_printf(vsb, "/tmp");
+			VSB_printf(vsb, "/varnishd_C_XXXXXXX");
+			AZ(VSB_finish(vsb));
+			Cn_arg = strdup(VSB_data(vsb));
+			AN(Cn_arg);
+			VSB_destroy(&vsb);
 			AN(mkdtemp(Cn_arg));
 			AZ(chmod(Cn_arg, 0755));
 			AZ(atexit(mgt_Cflag_atexit));
