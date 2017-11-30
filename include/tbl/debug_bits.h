@@ -49,6 +49,7 @@ DEBUG_BIT(SLOW_ACCEPTOR,	slow_acceptor,	"Slow down Acceptor")
 DEBUG_BIT(H2_NOCHECK,		h2_nocheck,	"Disable various H2 checks")
 DEBUG_BIT(VMOD_SO_KEEP,		vmod_so_keep,	"Keep copied VMOD libraries")
 DEBUG_BIT(PROCESSORS,		processors,	"Fetch/Deliver processors")
+DEBUG_BIT(PROTOCOL,		protocol,	"Protocol debugging")
 #undef DEBUG_BIT
 
 /*lint -restore */
