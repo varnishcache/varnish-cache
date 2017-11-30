@@ -537,7 +537,7 @@ main(int argc, char **argv)
 		child(bh, n + 1, &u, &v);
 	}
 
-	for(j = 0; j < 2; j++) {
+	for (j = 0; j < 2; j++) {
 		/* First insert our N elements */
 		for (u = 0; u < N; u++) {
 			lr = VRND_RandomTestable() % R;

@@ -339,7 +339,7 @@ cls_feed(struct VCLS_fd *cfd, const char *p, const char *e)
 	cli = cfd->cli;
 	CHECK_OBJ_NOTNULL(cli, CLI_MAGIC);
 
-	for(;p < e; p++) {
+	for (;p < e; p++) {
 		if (cli->cmd == NULL && isspace(*p)) {
 			/* Ignore all leading space before cmd */
 			continue;

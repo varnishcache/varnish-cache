@@ -141,7 +141,7 @@ decode_l_va(enum encoding dec, const char * const p, va_list ap)
 static void
 err_decode(VRT_CTX, const char *enc)
 {
-	switch(errno) {
+	switch (errno) {
 	case EINVAL:
 		ERRINVAL(ctx, enc);
 		break;
@@ -156,7 +156,7 @@ err_decode(VRT_CTX, const char *enc)
 static inline enum case_e
 parse_case(VCL_ENUM case_s)
 {
-	switch(*case_s) {
+	switch (*case_s) {
 	case 'D':
 		AZ(strcmp(case_s + 1, "EFAULT"));
 		return DEFAULT;

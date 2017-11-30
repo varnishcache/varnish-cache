@@ -467,7 +467,7 @@ VPX_Send_Proxy(int fd, int version, const struct sess *sp)
 
 	AZ(VSB_finish(vsb));
 	(void)write(fd, VSB_data(vsb), VSB_len(vsb));
-	if (! DO_DEBUG(DBG_PROTOCOL)) {
+	if (!DO_DEBUG(DBG_PROTOCOL)) {
 		VSB_delete(vsb);
 		return;
 	}

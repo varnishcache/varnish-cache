@@ -137,7 +137,7 @@ url_decode(const enum encoding dec, char *restrict const buf,
 		while (*s && len) {
 			uint8_t nib2;
 
-			switch(state) {
+			switch (state) {
 			case NORMAL:
 				if (*s == '%')
 					state = PERCENT;

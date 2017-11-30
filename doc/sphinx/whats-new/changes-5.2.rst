@@ -46,7 +46,7 @@ See :ref:`vmod_purge(3)`.
 VMOD vtc
 --------
 
-As long as we have had VMODs, we had an internal vmod called ``vmod_debug`` 
+As long as we have had VMODs, we had an internal vmod called ``vmod_debug``
 which was used with ``varnishtest`` to exercise the VMOD related parts of
 ``varnishd``.  Over time this vmod grew other useful functions for writing
 test-cases.

@@ -96,7 +96,7 @@ VSL_Glob2Tags(const char *glob, int l, VSL_tagfind_f *func, void *priv)
 	if (glob == e)
 		return (-1);		// Empty pattern cannot match
 
-	for(p = glob; p < e; p++)
+	for (p = glob; p < e; p++)
 		if (*p == '*')
 			break;
 
@@ -119,7 +119,7 @@ VSL_Glob2Tags(const char *glob, int l, VSL_tagfind_f *func, void *priv)
 		l2 = e - p2;
 	}
 
-	for(p++; p < e; p++)
+	for (p++; p < e; p++)
 		if (*p == '*')
 			return (-3);	// More than one wildcard
 

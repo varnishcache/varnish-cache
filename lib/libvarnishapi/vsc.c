@@ -301,7 +301,7 @@ vsc_del_seg(const struct vsc *vsc, struct vsm *vsm, struct vsc_seg *sp)
 	AZ(VSM_Unmap(vsm, sp->fantom));
 	vjsn_delete(&sp->vj);
 	pp = sp->points;
-	for(u = 0; u < sp->npoints; u++, pp++) {
+	for (u = 0; u < sp->npoints; u++, pp++) {
 		if (vsc->fdestroy != NULL)
 			vsc->fdestroy(vsc->priv, &pp->point);
 		vsc_clean_point(pp);
@@ -381,7 +381,7 @@ vsc_iter_seg(const struct vsc *vsc, const struct vsc_seg *sp,
 	CHECK_OBJ_NOTNULL(sp, VSC_SEG_MAGIC);
 	AN(fiter);
 	pp = sp->points;
-	for(u = 0; u < sp->npoints && i == 0; u++, pp++) {
+	for (u = 0; u < sp->npoints && i == 0; u++, pp++) {
 		if (pp->name != NULL)
 			i = fiter(priv, &pp->point);
 	}

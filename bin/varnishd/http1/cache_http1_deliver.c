@@ -145,13 +145,13 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 	if (DO_DEBUG(DBG_FLUSH_HEAD))
 		(void)V1L_Flush(req->wrk);
 
-	if (! sendbody || req->res_mode & RES_ESI)
+	if (!sendbody || req->res_mode & RES_ESI)
 		if (V1L_Close(req->wrk) && req->sp->fd >= 0) {
 			Req_Fail(req, SC_REM_CLOSE);
 			sendbody = 0;
 		}
 
-	if (! sendbody) {
+	if (!sendbody) {
 		AZ(req->wrk->v1l);
 		VDP_close(req);
 		return;
