@@ -89,6 +89,13 @@ VSC_F(cache_hit,		uint64_t, 1, 'c', 'i', info,
 	"  client without fetching it from a backend server."
 )
 
+VSC_F(cache_hit_grace,		uint64_t, 1, 'c', 'i', info,
+    "Cache grace hits",
+	"Count of cache hits with grace. A cache hit with grace is a cache"
+	" hit where the object is expired. Note that such hits are also"
+	" ncluded in the cache_hit counter."
+)
+
 VSC_F(cache_hitpass,		uint64_t, 1, 'c', 'i', info,
     "Cache hits for pass",
 	"Count of hits for pass"

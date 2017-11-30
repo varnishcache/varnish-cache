@@ -1,0 +1,52 @@
+varnishtest "The cache_hit_grace counter"
+
+server s1 {
+	# normal fetch
+	rxreq
+	expect req.url == "/1"
+	txresp -hdr "Age: 1" -hdr "Cache-Control: max-age=2" -body "1"
+
+	# background fetch:
+	rxreq
+	expect req.url == "/1"
+	txresp -body "2"
+
+	# normal fetch
+	rxreq
+	expect req.url == "/2"
+	txresp
+} -start
+
+varnish v1 -vcl+backend { } -start
+
+client c1 {
+	txreq -url "/1"
+	rxresp
+	expect resp.body == "1"
+} -run
+
+delay 2
+
+# Get a grace hit, will trigger a background fetch
+
+client c2 {
+	txreq -url "/1"
+	rxresp
+	expect resp.body == "1"
+} -run
+
+delay 2
+
+client c3 {
+	txreq -url "/2"
+	rxresp
+	txreq -url "/1"
+	rxresp
+	expect resp.body == "2"
+} -run
+
+# Check that counters are correct:
+
+varnish v1 -expect cache_hit == 2
+varnish v1 -expect cache_hit_grace == 1
+varnish v1 -expect cache_miss == 2
