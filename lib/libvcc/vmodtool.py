@@ -499,6 +499,7 @@ class s_module(stanza):
 
 class s_abi(stanza):
     def parse(self):
+        global strict_abi
         if self.line[1] not in ('strict', 'vrt'):
             err("Valid ABI types are 'strict' or 'vrt', got '%s'\n" %
                 self.line[1])
