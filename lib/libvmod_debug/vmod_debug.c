@@ -88,14 +88,18 @@ xyzzy_author(VRT_CTX, VCL_ENUM person, VCL_ENUM someone)
 	(void)someone;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (!strcmp(person, "phk"))
+	if (person == xyzzy_enum_phk)
 		return ("Poul-Henning");
-	if (!strcmp(person, "des"))
+	assert(strcmp(person, "phk"));
+	if (person == xyzzy_enum_des)
 		return ("Dag-Erling");
-	if (!strcmp(person, "kristian"))
+	assert(strcmp(person, "des"));
+	if (person == xyzzy_enum_kristian)
 		return ("Kristian");
-	if (!strcmp(person, "mithrandir"))
+	assert(strcmp(person, "kristian"));
+	if (person == xyzzy_enum_mithrandir)
 		return ("Tollef");
+	assert(strcmp(person, "mithrandir"));
 	WRONG("Illegal VMOD enum");
 }
 

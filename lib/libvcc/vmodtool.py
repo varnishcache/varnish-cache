@@ -86,6 +86,7 @@ CLEANFILES = $(builddir)/vcc_if.c $(builddir)/vcc_if.h \\
 \t$(builddir)/vmod_XXX.man.rst
 
 '''
+
 privs = {
     'PRIV_CALL':   "struct vmod_priv *",
     'PRIV_VCL':    "struct vmod_priv *",
@@ -196,6 +197,9 @@ def fmt_cstruct(fo, mn, x):
 #######################################################################
 
 
+enum_values = {}
+
+
 class ctype(object):
     def __init__(self, vt, ct):
         self.vt = vt
@@ -259,7 +263,9 @@ def vtype(txt):
     e = e[0].split(',')
     ct.spec = []
     for i in e:
-        ct.spec.append(i.strip())
+        j = i.strip()
+        enum_values[j] = True
+        ct.spec.append(j)
     return ct, r
 
 
@@ -289,6 +295,8 @@ def arg(txt):
         if not m:
             err("Unbalanced quote")
         a.defval = s[:m.end()]
+        if a.vt == "ENUM":
+            a.defval = a.defval[1:-1]
         s = s[m.end():]
     else:
         i = s.find(',')
@@ -296,6 +304,8 @@ def arg(txt):
             i = len(s)
         a.defval = s[:i].rstrip()
         s = s[i:]
+    if a.vt == "ENUM" and a.defval not in a.spec:
+        err("ENUM default value <%s> not valid" % a.defval, warn=False)
 
     return a, s
 
@@ -701,13 +711,13 @@ class s_method(stanza):
 #######################################################################
 
 dispatch = {
-    "Module":	s_module,
-    "Prefix":	s_prefix,
-    "ABI":	s_abi,
-    "Event":	s_event,
-    "Function":	s_function,
-    "Object":	s_object,
-    "Method":	s_method,
+    "Module":   s_module,
+    "Prefix":   s_prefix,
+    "ABI":      s_abi,
+    "Event":    s_event,
+    "Function": s_function,
+    "Object":   s_object,
+    "Method":   s_method,
 }
 
 
@@ -782,9 +792,18 @@ class vcc(object):
         fn = self.pfx + ".h"
         fo = self.openfile(fn)
         write_c_file_warning(fo)
+        fo.write("#ifndef VDEF_H_INCLUDED\n")
+        fo.write('#  error "Include vdef.h first"\n')
+        fo.write("#endif\n")
         fo.write("#ifndef VRT_H_INCLUDED\n")
         fo.write('#  error "Include vrt.h first"\n')
         fo.write("#endif\n")
+        fo.write("\n")
+
+        l = enum_values.keys()
+        l.sort()
+        for j in l:
+            fo.write("extern VCL_ENUM %senum_%s;\n" % (self.sympfx, j))
         fo.write("\n")
 
         for j in self.contents:
@@ -796,12 +815,22 @@ class vcc(object):
         fo.write("\n%s {\n" % csn)
         for j in self.contents:
             j.cstruct(fo)
+        fo.write("\n")
+        l = enum_values.keys()
+        l.sort()
+        for j in l:
+            fo.write("\tVCL_ENUM\t\t\t*enum_%s;\n" % j)
         fo.write("};\n")
 
     def cstruct_init(self, fo, csn):
         fo.write("\nstatic const %s Vmod_Func = {\n" % csn)
         for j in self.contents:
             j.cstruct_init(fo)
+        fo.write("\n")
+        l = enum_values.keys()
+        l.sort()
+        for j in l:
+            fo.write("\t&%senum_%s,\n" % (self.sympfx, j))
         fo.write("};\n")
 
     def specstr(self, fo):
@@ -855,6 +884,12 @@ class vcc(object):
         for i in ["vdef", "vrt", self.pfx, "vmod_abi"]:
             fo.write('#include "%s.h"\n' % i)
 
+        fo.write("\n")
+
+        l = enum_values.keys()
+        l.sort()
+        for j in l:
+            fo.write('VCL_ENUM %senum_%s = "%s";\n' % (self.sympfx, j, j))
         fo.write("\n")
 
         fx = open(fn2, "w")

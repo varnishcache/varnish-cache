@@ -528,11 +528,24 @@ vcc_priv_arg(struct vcc *tl, const char *p, const char *name, const char *vmod)
 struct func_arg {
 	vcc_type_t		type;
 	const char		*enum_bits;
+	const char		*cname;
 	const char		*name;
 	const char		*val;
 	struct expr		*result;
 	VTAILQ_ENTRY(func_arg)	list;
 };
+
+static void
+vcc_do_enum(struct vcc *tl, struct func_arg *fa, int len, const char *ptr)
+{
+	const char *r;
+
+	(void)tl;
+	r = strchr(fa->cname, '.');
+	AN(r);
+	fa->result = vcc_mk_expr(VOID, "*%.*s.enum_%.*s",
+	    (int)(r - fa->cname), fa->cname, len, ptr);
+}
 
 static void
 vcc_do_arg(struct vcc *tl, struct func_arg *fa)
@@ -559,7 +572,7 @@ vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
-		fa->result = vcc_mk_expr(VOID, "\"%.*s\"", PF(tl->t));
+		vcc_do_enum(tl, fa, PF(tl->t));
 		SkipToken(tl, ID);
 	} else {
 		vcc_expr0(tl, &e2, fa->type);
@@ -610,6 +623,7 @@ vcc_func(struct vcc *tl, struct expr **e, const char *spec,
 	while (*p != '\0') {
 		fa = calloc(1, sizeof *fa);
 		AN(fa);
+		fa->cname = cfunc;
 		VTAILQ_INSERT_TAIL(&head, fa, list);
 		if (!memcmp(p, "PRIV_", 5)) {
 			fa->result = vcc_priv_arg(tl, p, sym->name, sym->vmod);
@@ -685,6 +699,8 @@ vcc_func(struct vcc *tl, struct expr **e, const char *spec,
 
 	e1 = vcc_mk_expr(rfmt, "%s(ctx%s\v+", cfunc, extra);
 	VTAILQ_FOREACH_SAFE(fa, &head, list, fa2) {
+		if (fa->result == NULL && fa->type == ENUM && fa->val != NULL)
+			vcc_do_enum(tl, fa, strlen(fa->val), fa->val);
 		if (fa->result == NULL && fa->val != NULL)
 			fa->result = vcc_mk_expr(fa->type, "%s", fa->val);
 		if (fa->result != NULL)

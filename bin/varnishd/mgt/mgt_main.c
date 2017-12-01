@@ -66,7 +66,7 @@ int			exit_status = 0;
 struct vsb		*vident;
 struct VSC_mgt		*VSC_C_mgt;
 static int		I_fd = -1;
-static char 		*Cn_arg;
+static char		*Cn_arg;
 
 static struct vpf_fh *pfh1 = NULL;
 static struct vpf_fh *pfh2 = NULL;

@@ -45,7 +45,7 @@ $Function VOID panic(STRING_LIST)
 Don't.
 
 $Function STRING author(ENUM { phk, des, kristian, mithrandir } person="phk",
-			ENUM { phk, slink, geoff } someone="phk")
+			ENUM { phk, slink, geoff } someone='phk')
 
 Test function for ENUM arguments
 
@@ -73,7 +73,7 @@ $Function STEVEDORE no_stevedore()
 
 Fails at storage selection.
 
-$Object obj(STRING string="default", ENUM { one, two, three } number="one")
+$Object obj(STRING string="default", ENUM { one, two, three } number=one)
 
 Test object
 

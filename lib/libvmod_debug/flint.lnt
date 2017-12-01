@@ -1,0 +1,3 @@
+-esym(759, xyzzy_enum_*)         // header declaration for symbol '___' defined at (___)
+-esym(765, xyzzy_enum_*)         // external '___' (___) could be made static
+
