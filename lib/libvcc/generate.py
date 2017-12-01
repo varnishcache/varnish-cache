@@ -52,6 +52,9 @@ buildroot = "../.."
 if len(sys.argv) == 3:
 	srcroot = sys.argv[1]
 	buildroot = sys.argv[2]
+elif len(sys.argv) != 1:
+	print("Two arguments or none")
+	exit(2)
 
 tokens = {
 	"T_INC":	"++",
