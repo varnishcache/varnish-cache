@@ -55,13 +55,6 @@ static const struct vmod_blob_fptr {
 	len_f		*const encode_l;
 	encode_f	*const encode;
 } func[__MAX_ENCODING] = {
-	[_INVALID] = {
-		/* make implicit null init explicit for clarity */
-		.decode_l	= NULL,
-		.decode		= NULL,
-		.encode_l	= NULL,
-		.encode		= NULL
-	},
 	[IDENTITY] = {
 		.decode_l	= id_decode_l,
 		.decode		= id_decode,
@@ -123,6 +116,19 @@ static const struct vmod_priv null_blob[1] =
 	}
 };
 
+#include <stdio.h>
+static enum encoding
+parse_encoding(VCL_ENUM e)
+{
+	if (e == vmod_enum_BASE64)		return(BASE64);
+	if (e == vmod_enum_BASE64URL)		return(BASE64URL);
+	if (e == vmod_enum_BASE64URLNOPAD)	return(BASE64URLNOPAD);
+	if (e == vmod_enum_HEX)			return(HEX);
+	if (e == vmod_enum_IDENTITY)		return(IDENTITY);
+	if (e == vmod_enum_URL)			return(URL);
+	WRONG("illegal encoding enum");
+}
+
 static inline size_t
 decode_l_va(enum encoding dec, const char * const p, va_list ap)
 {
@@ -156,19 +162,10 @@ err_decode(VRT_CTX, const char *enc)
 static inline enum case_e
 parse_case(VCL_ENUM case_s)
 {
-	switch (*case_s) {
-	case 'D':
-		AZ(strcmp(case_s + 1, "EFAULT"));
-		return DEFAULT;
-	case 'L':
-		AZ(strcmp(case_s + 1, "OWER"));
-		return LOWER;
-	case 'U':
-		AZ(strcmp(case_s + 1, "PPER"));
-		return UPPER;
-	default:
-		WRONG("illegal case enum");
-	}
+	if (case_s == vmod_enum_DEFAULT)	return(DEFAULT);
+	if (case_s == vmod_enum_LOWER)		return(LOWER);
+	if (case_s == vmod_enum_UPPER)		return(UPPER);
+	WRONG("illegal case enum");
 }
 
 static inline int

@@ -30,9 +30,17 @@
 #include <stdarg.h>
 #include <sys/types.h>
 
-#include "parse_encoding.h"
+enum encoding {
+	IDENTITY = 1,
+	BASE64,
+	BASE64URL,
+	BASE64URLNOPAD,
+	HEX,
+	URL,
+	__MAX_ENCODING
+};
 
-#define AENC(enc) assert((enc) > _INVALID && (enc) < __MAX_ENCODING)
+#define AENC(enc) assert((enc) >= IDENTITY && (enc) < __MAX_ENCODING)
 
 /*
  * The enums MUST appear in this order, since LOWER and UPPER are used to

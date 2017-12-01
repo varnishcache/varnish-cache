@@ -10,9 +10,7 @@ libvmod_blob_la_SOURCES = \
 	hex.c \
 	url.c \
 	wb.h \
-	wb.c \
-	parse_encoding.h \
-	parse_encoding.c
+	wb.c
 
 base64.o: base64.c base64.h
 
