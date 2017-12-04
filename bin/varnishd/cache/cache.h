@@ -410,6 +410,8 @@ struct busyobj {
 	 * is recycled.
 	 */
 	int			retries;
+	enum fetch_step		fetch_step_next;
+	unsigned		hdr_spc;
 	struct req		*req;
 	struct sess		*sp;
 	struct worker		*wrk;
@@ -658,6 +660,7 @@ enum vbf_fetch_mode_e {
 };
 void VBF_Fetch(struct worker *wrk, struct req *req,
     struct objcore *oc, struct objcore *oldoc, enum vbf_fetch_mode_e);
+int VBF_Fetchbody(struct busyobj *bo, int pass, unsigned hdrspc);
 
 /* cache_http.c */
 unsigned HTTP_estimate(unsigned nhttp);

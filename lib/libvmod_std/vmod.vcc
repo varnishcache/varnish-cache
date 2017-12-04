@@ -338,6 +338,48 @@ Example
 	|	...
 	| }
 
+$Function BOOL fetch_body(ENUM {deliver, pass}, BYTES header_space=1024)
+
+Description
+	Initiate an early body fetch from `vcl_backend_fetch`. This
+	function may only be called once per backend request and may
+	not be used outside this vcl sub.
+
+	Normally, the backend response body is fetched after a
+	``return(deliver)`` or ``return(pass)`` from
+	`vcl_backend_fetch`. This function allows to fetch it before
+	returning from vcl with streaming disabled implicitly.
+
+	Valid first arguments are ``deliver`` and ``pass`` with
+	semantics identical to those of the ``return()`` dispositions
+	by the same name.
+
+	The optional `header_space` argument (default 1KB) specifies
+	an amount of storage to reserve for ``beresp.http.*``
+	modifications or additions after `std.fetch_body()` returns.
+
+	This reserve _must_ be sufficient, otherwise the backend
+	request will fail later with an ``Insufficient header space``
+	FetchError.
+
+	The amount of storage reserved through the `header_space`
+	argument which remained unused is reported through a ``Debug``
+	log line (see :ref:`vsl(7)`) in the format ``fetch_body %d
+	bytes wasted``. The reported wastage may exceed the
+	`header_space` reservation if headers are unset after a call
+	to `std.fetch_body()`.
+
+	_Note:_ Changing ``beresp.http.Vary`` after a call to
+	`std.fetch_body()` has no effect on the cache object.
+
+Example
+	| vcl_backend_fetch {
+	|	std.fetch_body(deliver, 2K);
+	|	set beresp.http.Header = "value";
+	|	# ...
+	|	return (deliver);
+	| }
+
 SEE ALSO
 ========
 

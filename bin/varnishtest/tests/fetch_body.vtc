@@ -1,0 +1,93 @@
+varnishtest "Check fetch_body from vcl_backend_response{}"
+
+server s1 {
+	rxreq
+	txresp
+
+	rxreq
+	expect req.url == "/body"
+	txresp -body "123"
+
+	rxreq
+	expect req.url == "/passnobody"
+	txresp
+
+	rxreq
+	expect req.url == "/pass"
+	txresp -body "123"
+
+	rxreq
+	expect req.url == "/nospc"
+	txresp -body "123"
+
+	rxreq
+	expect req.url == "/twice"
+	txresp -body "123"
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+
+	sub vcl_backend_response {
+		set beresp.http.b4 = "foo";
+		std.log("b4");
+		if (bereq.url ~ "^/pass") {
+		    set beresp.http.body = std.fetch_body(pass);
+		} else if (bereq.url  ~ "^/nospc") {
+		    set beresp.http.body = std.fetch_body(deliver, 0B);
+		} else {
+		    set beresp.http.body = std.fetch_body(deliver);
+		}
+		std.log("after");
+		set beresp.http.after = "bar";
+		if (bereq.url ~ "^/twice") {
+		    set beresp.http.body = std.fetch_body(deliver);
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.b4 == "foo"
+	expect resp.http.body == "false"
+	expect resp.http.after == "bar"
+	expect resp.bodylen == 0
+
+	txreq -url "/body"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.b4 == "foo"
+	expect resp.http.body == "true"
+	expect resp.http.after == "bar"
+	expect resp.bodylen == 3
+
+	txreq -url "/passnobody"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.b4 == "foo"
+	expect resp.http.body == "false"
+	expect resp.http.after == "bar"
+	expect resp.bodylen == 0
+
+	txreq -url "/pass"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.b4 == "foo"
+	expect resp.http.body == "true"
+	expect resp.http.after == "bar"
+	expect resp.bodylen == 3
+
+	txreq -url "/nospc"
+	rxresp
+	expect resp.status == 500
+
+	txreq -url "/twice"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.b4 == "foo"
+	expect resp.http.body == "false"
+	expect resp.http.after == "bar"
+	expect resp.bodylen == 3
+} -run
