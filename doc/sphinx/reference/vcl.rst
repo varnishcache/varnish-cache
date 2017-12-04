@@ -273,8 +273,8 @@ There are no mandatory options. These are the options you can set:
 
   ``.request``
     Specify a full HTTP request using multiple strings. ``.request`` will
-    have ``\r\n`` automatically inserted after every string. If
-    specified, ``.request`` will take precedence over ``.url``.
+    have ``\r\n`` automatically inserted after every string. ``.request``
+    and ``.url``are mutually exclusive.
 
   ``.expected_response``
     The expected HTTP response code. Defaults to ``200``.
@@ -296,7 +296,7 @@ There are no mandatory options. These are the options you can set:
     Defaults to ``8``.
 
   ``.threshold``
-    How many of the polls in .window must have succeeded for us to
+    How many of the polls in ``.window`` must have succeeded for us to
     consider the backend healthy. Defaults to ``3``.
 
 
