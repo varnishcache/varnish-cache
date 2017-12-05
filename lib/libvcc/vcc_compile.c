@@ -62,7 +62,7 @@
 #include "libvcc.h"
 #include "vfil.h"
 
-struct method method_tab[] = {
+static const struct method method_tab[] = {
 	{ "none", 0U, 0},
 #define VCL_MET_MAC(l,U,t,b)	{ "vcl_"#l, b, VCL_MET_##U },
 #include "tbl/vcl_returns.h"
@@ -95,6 +95,24 @@ TlDup(struct vcc *tl, const char *s)
 
 /*--------------------------------------------------------------------*/
 
+struct proc *
+vcc_NewProc(struct vcc *tl, struct symbol *sym)
+{
+	struct proc *p;
+
+	ALLOC_OBJ(p, PROC_MAGIC);
+	AN(p);
+	VTAILQ_INIT(&p->calls);
+	VTAILQ_INIT(&p->uses);
+	VTAILQ_INSERT_TAIL(&tl->procs, p, list);
+	p->body = VSB_new_auto();
+	AN(p->body);
+	sym->proc = p;
+	return (p);
+}
+
+/*--------------------------------------------------------------------*/
+
 struct inifin *
 New_IniFin(struct vcc *tl)
 {
@@ -109,25 +127,6 @@ New_IniFin(struct vcc *tl)
 	p->n = ++tl->ninifin;
 	VTAILQ_INSERT_TAIL(&tl->inifin, p, list);
 	return (p);
-}
-
-/*--------------------------------------------------------------------*/
-
-int
-IsMethod(const struct token *t)
-{
-	int i;
-
-	assert(t->tok == ID);
-	for (i = 1; method_tab[i].name != NULL; i++) {
-		if (vcc_IdIs(t, method_tab[i].name))
-			return (i);
-	}
-	if ((t->b[0] == 'v'|| t->b[0] == 'V') &&
-	    (t->b[1] == 'c'|| t->b[1] == 'C') &&
-	    (t->b[2] == 'l'|| t->b[2] == 'L'))
-		return (-2);
-	return (-1);
 }
 
 /*--------------------------------------------------------------------
@@ -535,10 +534,10 @@ static struct vsb *
 vcc_CompileSource(struct vcc *tl, struct source *sp)
 {
 	struct symbol *sym;
+	struct proc *p;
 	const struct var *v;
 	struct vsb *vsb;
 	struct inifin *ifp;
-	int i;
 
 	vcc_Expr_Init(tl);
 
@@ -626,26 +625,19 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 
 	/* Emit method functions */
 	Fh(tl, 1, "\n");
-	for (i = 1; i < VCL_MET_MAX; i++) {
+	VTAILQ_FOREACH(p, &tl->procs, list) {
+		if (p->method == NULL)
+			continue;
 		Fh(tl, 1,
 		    "void v_matchproto_(vcl_func_f) "
 		    "VGC_function_%s(VRT_CTX);\n",
-		    method_tab[i].name);
+		    p->method->name);
 		Fc(tl, 1, "\nvoid v_matchproto_(vcl_func_f)\n");
-		Fc(tl, 1,
-		    "VGC_function_%s(VRT_CTX)\n",
-		    method_tab[i].name);
-		AZ(VSB_finish(tl->fm[i]));
-		Fc(tl, 1, "{\n");
-		/*
-		 * We want vmods to be able set a FAIL return value
-		 * in members called from vcl_init, so set OK up front
-		 * and return with whatever was set last.
-		 */
-		Fc(tl, 1, "%s", VSB_data(tl->fm[i]));
-		if (method_tab[i].bitval == VCL_MET_INIT)
-			Fc(tl, 1, "  return;\n");
-		Fc(tl, 1, "}\n");
+		Fc(tl, 1, "VGC_function_%s(VRT_CTX)\n",
+		    p->method->name);
+		AZ(VSB_finish(p->body));
+		Fc(tl, 1, "{\n%s}\n", VSB_data(p->body));
+		VSB_destroy(&p->body);
 	}
 
 	EmitInitFini(tl);
@@ -710,6 +702,8 @@ struct vcc *
 VCC_New(void)
 {
 	struct vcc *tl;
+	struct symbol *sym;
+	struct proc *p;
 	int i;
 
 	ALLOC_OBJ(tl, VCC_MAGIC);
@@ -717,6 +711,7 @@ VCC_New(void)
 	VTAILQ_INIT(&tl->inifin);
 	VTAILQ_INIT(&tl->tokens);
 	VTAILQ_INIT(&tl->sources);
+	VTAILQ_INIT(&tl->procs);
 
 	tl->nsources = 0;
 
@@ -729,9 +724,11 @@ VCC_New(void)
 	tl->fh = VSB_new_auto();
 	assert(tl->fh != NULL);
 
-	for (i = 0; i < VCL_MET_MAX; i++) {
-		tl->fm[i] = VSB_new_auto();
-		assert(tl->fm[i] != NULL);
+	for (i = 1; i < VCL_MET_MAX; i++) {
+		sym = VCC_Symbol(tl, NULL,
+		    method_tab[i].name, NULL, SYM_SUB, 1);
+		p = vcc_NewProc(tl, sym);
+		p->method = &method_tab[i];
 	}
 	tl->sb = VSB_new_auto();
 	AN(tl->sb);

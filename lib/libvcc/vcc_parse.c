@@ -209,48 +209,58 @@ static void
 vcc_ParseFunction(struct vcc *tl)
 {
 	struct symbol *sym;
-	int m, i;
+	struct proc *p;
 
 	vcc_NextToken(tl);
 	vcc_ExpectVid(tl, "function");
 	ERRCHK(tl);
 
-	m = IsMethod(tl->t);
-	if (m == -2) {
-		VSB_printf(tl->sb,
-		    "VCL sub's named 'vcl*' are reserved names.\n");
-		vcc_ErrWhere(tl, tl->t);
-		VSB_printf(tl->sb, "Valid vcl_* methods are:\n");
-		for (i = 1; method_tab[i].name != NULL; i++)
-			VSB_printf(tl->sb, "\t%s\n", method_tab[i].name);
-		return;
-	} else if (m != -1) {
-		assert(m < VCL_MET_MAX);
-		tl->fb = tl->fm[m];
-		if (tl->mprocs[m] == NULL) {
-			(void)vcc_AddDef(tl, tl->t, SYM_SUB);
-			(void)vcc_AddRef(tl, tl->t, SYM_SUB);
-			tl->mprocs[m] = vcc_AddProc(tl, tl->t);
-		}
-		tl->curproc = tl->mprocs[m];
-		Fb(tl, 1, "  /* ... from ");
-		vcc_Coord(tl, tl->fb, NULL);
-		Fb(tl, 0, " */\n");
-	} else {
-		tl->fb = tl->fc;
-		sym = vcc_AddDef(tl, tl->t, SYM_SUB);
-		VCC_GlobalSymbol(sym, SUB, "VGC_function");
-		if (sym->ndef > 1) {
+	sym = vcc_AddDef(tl, tl->t, SYM_SUB);
+	AN(sym);
+	p = sym->proc;
+	if (p == NULL) {
+		if ((tl->t->b[0] == 'v'|| tl->t->b[0] == 'V') &&
+		    (tl->t->b[1] == 'c'|| tl->t->b[1] == 'C') &&
+		    (tl->t->b[2] == 'l'|| tl->t->b[2] == 'L')) {
 			VSB_printf(tl->sb,
-			    "Function '%s' redefined\n", sym->name);
+			    "VCL sub's named 'vcl*' are reserved names.\n");
 			vcc_ErrWhere(tl, tl->t);
+			VSB_printf(tl->sb, "Valid vcl_* methods are:\n");
+			VTAILQ_FOREACH(p, &tl->procs, list) {
+				if (p->method != NULL)
+					VSB_printf(tl->sb, "\t%s\n",
+					    p->method->name);
+			}
 			return;
 		}
-		tl->curproc = vcc_AddProc(tl, tl->t);
+		VCC_GlobalSymbol(sym, SUB, "VGC_function");
+		p = vcc_NewProc(tl, sym);
+		p->name = tl->t;
+		tl->fb = tl->fc;
 		Fh(tl, 0, "void %s(VRT_CTX);\n", sym->rname);
 		Fc(tl, 1, "\nvoid v_matchproto_(vcl_func_t)\n");
 		Fc(tl, 1, "%s(VRT_CTX)\n", sym->rname);
+	} else if (p->method == NULL) {
+		VSB_printf(tl->sb, "Function '%s' redefined\n", sym->name);
+		vcc_ErrWhere(tl, tl->t);
+		VSB_printf(tl->sb, "Previously defined here:\n");
+		vcc_ErrWhere(tl, p->name);
+		return;
+	} else {
+		/* Add to VCL sub */
+		AN(p->method);
+		if (p->name == NULL) {
+			(void)vcc_AddDef(tl, tl->t, SYM_SUB);
+			(void)vcc_AddRef(tl, tl->t, SYM_SUB);
+			p->name = tl->t;
+		}
+		tl->fb = p->body;
+		Fb(tl, 1, "  /* ... from ");
+		vcc_Coord(tl, tl->fb, NULL);
+		Fb(tl, 0, " */\n");
 	}
+	CHECK_OBJ_NOTNULL(p, PROC_MAGIC);
+	tl->curproc = p;
 	vcc_NextToken(tl);
 	tl->indent += INDENT;
 	Fb(tl, 1, "{\n");

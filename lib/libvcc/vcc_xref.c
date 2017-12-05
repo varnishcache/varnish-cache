@@ -45,7 +45,7 @@
 
 struct proccall {
 	VTAILQ_ENTRY(proccall)	list;
-	struct proc		*p;
+	struct symbol		*sym;
 	struct token		*t;
 };
 
@@ -54,17 +54,6 @@ struct procuse {
 	const struct token	*t;
 	unsigned		mask;
 	const char		*use;
-};
-
-struct proc {
-	VTAILQ_HEAD(,proccall)	calls;
-	VTAILQ_HEAD(,procuse)	uses;
-	struct token		*name;
-	unsigned		ret_bitmap;
-	unsigned		exists;
-	unsigned		called;
-	unsigned		active;
-	struct token		*return_tok[VCL_RET_MAX];
 };
 
 /*--------------------------------------------------------------------
@@ -132,38 +121,6 @@ vcc_CheckReferences(struct vcc *tl)
  * Returns checks
  */
 
-static struct proc *
-vcc_findproc(struct vcc *tl, struct token *t)
-{
-	struct symbol *sym;
-	struct proc *p;
-
-
-	sym = VCC_SymbolTok(tl, NULL, t, SYM_SUB, 1);
-	AN(sym);
-	if (sym->proc != NULL)
-		return (sym->proc);
-
-	p = TlAlloc(tl, sizeof *p);
-	assert(p != NULL);
-	VTAILQ_INIT(&p->calls);
-	VTAILQ_INIT(&p->uses);
-	p->name = t;
-	sym->proc = p;
-	return (p);
-}
-
-struct proc *
-vcc_AddProc(struct vcc *tl, struct token *t)
-{
-	struct proc *p;
-
-	p = vcc_findproc(tl, t);
-	p->name = t;	/* make sure the name matches the definition */
-	p->exists++;
-	return (p);
-}
-
 void
 vcc_AddUses(struct vcc *tl, const struct token *t, unsigned mask,
     const char *use)
@@ -184,12 +141,11 @@ void
 vcc_AddCall(struct vcc *tl, struct token *t)
 {
 	struct proccall *pc;
-	struct proc *p;
 
-	p = vcc_findproc(tl, t);
 	pc = TlAlloc(tl, sizeof *pc);
 	assert(pc != NULL);
-	pc->p = p;
+	pc->sym = VCC_SymbolTok(tl, NULL, t, SYM_SUB, 1);
+	AN(pc->sym);
 	pc->t = t;
 	VTAILQ_INSERT_TAIL(&tl->curproc->calls, pc, list);
 }
@@ -211,11 +167,7 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 	unsigned u;
 	struct proccall *pc;
 
-	if (!p->exists) {
-		VSB_printf(tl->sb, "Function %.*s does not exist\n",
-		    PF(p->name));
-		return (1);
-	}
+	AN(p);
 	if (p->active) {
 		VSB_printf(tl->sb, "Function recurses on\n");
 		vcc_ErrWhere(tl, p->name);
@@ -238,9 +190,15 @@ vcc_CheckActionRecurse(struct vcc *tl, struct proc *p, unsigned bitmap)
 	}
 	p->active = 1;
 	VTAILQ_FOREACH(pc, &p->calls, list) {
-		if (vcc_CheckActionRecurse(tl, pc->p, bitmap)) {
-			VSB_printf(tl->sb, "\n...called from \"%.*s\"\n",
-			    PF(p->name));
+		if (pc->sym->proc == NULL) {
+			VSB_printf(tl->sb, "Function %s does not exist\n",
+			    pc->sym->name);
+			vcc_ErrWhere(tl, pc->t);
+			return (1);
+		}
+		if (vcc_CheckActionRecurse(tl, pc->sym->proc, bitmap)) {
+			VSB_printf(tl->sb, "\n...called from \"%s\"\n",
+			    pc->sym->name);
 			vcc_ErrWhere(tl, pc->t);
 			return (1);
 		}
@@ -256,21 +214,18 @@ static void
 vcc_checkaction1(struct vcc *tl, const struct symbol *sym)
 {
 	struct proc *p;
-	struct method *m;
-	int i;
 
 	p = sym->proc;
 	AN(p);
-	i = IsMethod(p->name);
-	if (i < 0)
+	AN(p->name);
+	if(p->method == NULL)
 		return;
-	m = method_tab + i;
-	if (vcc_CheckActionRecurse(tl, p, m->ret_bitmap)) {
+	if (vcc_CheckActionRecurse(tl, p, p->method->ret_bitmap)) {
 		VSB_printf(tl->sb,
-		    "\n...which is the \"%s\" method\n", m->name);
+		    "\n...which is the \"%s\" method\n", p->method->name);
 		VSB_printf(tl->sb, "Legal returns are:");
 #define VCL_RET_MAC(l, U, B)						\
-		if (m->ret_bitmap & ((1 << VCL_RET_##U)))	\
+		if (p->method->ret_bitmap & ((1 << VCL_RET_##U)))	\
 			VSB_printf(tl->sb, " \"%s\"", #l);
 
 #include "tbl/vcl_returns.h"
@@ -324,7 +279,7 @@ vcc_FindIllegalUse(const struct proc *p, const struct method *m)
 
 static int
 vcc_CheckUseRecurse(struct vcc *tl, const struct proc *p,
-    struct method *m)
+    const struct method *m)
 {
 	struct proccall *pc;
 	struct procuse *pu;
@@ -341,9 +296,9 @@ vcc_CheckUseRecurse(struct vcc *tl, const struct proc *p,
 		return (1);
 	}
 	VTAILQ_FOREACH(pc, &p->calls, list) {
-		if (vcc_CheckUseRecurse(tl, pc->p, m)) {
-			VSB_printf(tl->sb, "\n...called from \"%.*s\"\n",
-			    PF(p->name));
+		if (vcc_CheckUseRecurse(tl, pc->sym->proc, m)) {
+			VSB_printf(tl->sb, "\n...called from \"%s\"\n",
+			    pc->sym->name);
 			vcc_ErrWhere(tl, pc->t);
 			return (1);
 		}
@@ -355,29 +310,23 @@ static void
 vcc_checkuses(struct vcc *tl, const struct symbol *sym)
 {
 	struct proc *p;
-	struct method *m;
 	struct procuse *pu;
-	int i;
 
 	p = sym->proc;
 	AN(p);
-
-	i = IsMethod(p->name);
-	if (i < 0)
+	if (p->method == NULL)
 		return;
-	m = method_tab + i;
-	pu = vcc_FindIllegalUse(p, m);
+	pu = vcc_FindIllegalUse(p, p->method);
 	if (pu != NULL) {
-		VSB_printf(tl->sb,
-		    "'%.*s': %s in method '%.*s'.",
+		VSB_printf(tl->sb, "'%.*s': %s in method '%.*s'.",
 		    PF(pu->t), pu->use, PF(p->name));
 		VSB_cat(tl->sb, "\nAt: ");
 		vcc_ErrWhere(tl, pu->t);
 		return;
 	}
-	if (vcc_CheckUseRecurse(tl, p, m)) {
+	if (vcc_CheckUseRecurse(tl, p, p->method)) {
 		VSB_printf(tl->sb,
-		    "\n...which is the \"%s\" method\n", m->name);
+		    "\n...which is the \"%s\" method\n", p->method->name);
 		return;
 	}
 }

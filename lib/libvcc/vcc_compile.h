@@ -49,6 +49,7 @@
 struct vsb;
 struct token;
 struct sockaddr_storage;
+struct method;
 
 unsigned vcl_fixed_token(const char *p, const char **q);
 extern const char * const vcl_tnames[256];
@@ -146,6 +147,21 @@ struct symbol {
 
 VTAILQ_HEAD(tokenhead, token);
 
+struct proc {
+	unsigned		magic;
+#define PROC_MAGIC		0xd1d98499
+	const struct method	*method;
+	VTAILQ_HEAD(,proccall)	calls;
+	VTAILQ_HEAD(,procuse)	uses;
+	VTAILQ_ENTRY(proc)	list;
+	struct token		*name;
+	unsigned		ret_bitmap;
+	unsigned		called;
+	unsigned		active;
+	struct token		*return_tok[VCL_RET_MAX];
+	struct vsb		*body;
+};
+
 struct inifin {
 	unsigned		magic;
 #define INIFIN_MAGIC		0x583c274c
@@ -191,11 +207,10 @@ struct vcc {
 	struct vsb		*fb;		/* Body of current sub
 						 * NULL otherwise
 						 */
-	struct vsb		*fm[VCL_MET_MAX];	/* Method bodies */
 	struct vsb		*sb;
 	int			err;
 	struct proc		*curproc;
-	struct proc		*mprocs[VCL_MET_MAX];
+	VTAILQ_HEAD(, proc)	procs;
 
 	VTAILQ_HEAD(, acl_e)	acl;
 
@@ -244,8 +259,8 @@ void vcc_IsField(struct vcc *tl, struct token **t, struct fld_spec *fs);
 void vcc_FieldsOk(struct vcc *tl, const struct fld_spec *fs);
 
 /* vcc_compile.c */
-extern struct method method_tab[];
-struct inifin *New_IniFin(struct vcc *tl);
+struct inifin *New_IniFin(struct vcc *);
+struct proc *vcc_NewProc(struct vcc*, struct symbol*);
 
 /*
  * H -> Header, before the C code
@@ -261,7 +276,6 @@ void Fc(const struct vcc *tl, int indent, const char *fmt, ...)
 void Fb(const struct vcc *tl, int indent, const char *fmt, ...)
     v_printflike_(3, 4);
 void EncToken(struct vsb *sb, const struct token *t);
-int IsMethod(const struct token *t);
 void *TlAlloc(struct vcc *tl, unsigned len);
 char *TlDup(struct vcc *tl, const char *s);
 
@@ -346,7 +360,6 @@ int vcc_CheckReferences(struct vcc *tl);
 void VCC_XrefTable(struct vcc *);
 
 void vcc_AddCall(struct vcc *tl, struct token *t);
-struct proc *vcc_AddProc(struct vcc *tl, struct token *t);
 void vcc_ProcAction(struct proc *p, unsigned action, struct token *t);
 int vcc_CheckAction(struct vcc *tl);
 void vcc_AddUses(struct vcc *tl, const struct token *t, unsigned mask,
