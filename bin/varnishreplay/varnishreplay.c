@@ -118,7 +118,6 @@ static const struct hash_slinger *fd_hash;
 extern const struct hash_slinger hcl_slinger;
 
 extern struct objhead * create_objhead();
-extern void delete_objhead(struct objhead *);
 
 
 void
@@ -147,7 +146,6 @@ HSHR_Lookup(int fd, int* pval, struct objhead **or)
 	}
 
 	oh1 = fd_hash->lookup(NULL, buf, oh ? &oh : NULL);
-	if (oh) delete_objhead(oh); // object is found in hash, remove newly created
 	if (oh1) {
 		if (or) *or = oh1;
 		return oh1->refcnt;
@@ -163,10 +161,7 @@ HSHR_Deref(int fd)
 	int r;
 
 	HSHR_Lookup(fd, NULL, &oh);
-	if (oh) {
-		r = fd_hash->deref(oh);
-		delete_objhead(oh);
-	}
+	if (oh) r = fd_hash->deref(oh);
 }
 
 // hash //
@@ -447,7 +442,7 @@ thread_get(int fd, void *(*thread_main)(void *), bool newsess)
 			int i;
 			int *new_fd_map = fd_map;
 
-			if (newnfds > nfds && new_alg > 1) {
+			if (newnfds > nfds && new_alg < 2) {
 				new_fd_map = realloc(new_fd_map, newnfds * sizeof *new_fd_map);
 				XXXAN(new_fd_map != NULL);
 				fd_map = new_fd_map;
@@ -470,7 +465,7 @@ thread_get(int fd, void *(*thread_main)(void *), bool newsess)
 	}
 
 	if (new_alg) {
-		if (new_alg > 1) {
+		if (new_alg < 2) {
 			thr_ind = fd_map[fd];
 		} else {
 			thr_ind = HSHR_Lookup(fd, NULL, NULL);
@@ -483,7 +478,7 @@ thread_get(int fd, void *(*thread_main)(void *), bool newsess)
 //				VSTAILQ_INSERT_TAIL(&thread_free_ind_list, pind, list);
 			}
 
-			if (new_alg > 1) {
+			if (new_alg < 2) {
 				thr_ind = fd_map[fd] = -1;
 			} else {
 				HSHR_Deref(fd);
@@ -499,7 +494,7 @@ thread_get(int fd, void *(*thread_main)(void *), bool newsess)
 			pind = VSTAILQ_FIRST(&thread_free_ind_list);
 			thr_ind = pind->ind;
 			VSTAILQ_REMOVE_HEAD(&thread_free_ind_list, list);
-			if (new_alg > 1) {
+			if (new_alg < 2) {
 				fd_map[fd] = thr_ind;
 			} else {
 				HSHR_Lookup(fd, &thr_ind, NULL);
