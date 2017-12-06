@@ -236,10 +236,7 @@ vcc_ParseFunction(struct vcc *tl)
 		VCC_GlobalSymbol(sym, SUB, "VGC_function");
 		p = vcc_NewProc(tl, sym);
 		p->name = tl->t;
-		tl->fb = tl->fc;
-		Fh(tl, 0, "void %s(VRT_CTX);\n", sym->rname);
-		Fc(tl, 1, "\nvoid v_matchproto_(vcl_func_t)\n");
-		Fc(tl, 1, "%s(VRT_CTX)\n", sym->rname);
+		VSB_printf(p->cname, "%s", sym->rname);
 	} else if (p->method == NULL) {
 		VSB_printf(tl->sb, "Function '%s' redefined\n", sym->name);
 		vcc_ErrWhere(tl, tl->t);
@@ -254,12 +251,12 @@ vcc_ParseFunction(struct vcc *tl)
 			(void)vcc_AddRef(tl, tl->t, SYM_SUB);
 			p->name = tl->t;
 		}
-		tl->fb = p->body;
-		Fb(tl, 1, "  /* ... from ");
-		vcc_Coord(tl, tl->fb, NULL);
-		Fb(tl, 0, " */\n");
 	}
 	CHECK_OBJ_NOTNULL(p, PROC_MAGIC);
+	tl->fb = p->body;
+	Fb(tl, 1, "  /* ... from ");
+	vcc_Coord(tl, p->body, NULL);
+	Fb(tl, 0, " */\n");
 	tl->curproc = p;
 	vcc_NextToken(tl);
 	tl->indent += INDENT;

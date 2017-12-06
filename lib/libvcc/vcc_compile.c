@@ -107,8 +107,23 @@ vcc_NewProc(struct vcc *tl, struct symbol *sym)
 	VTAILQ_INSERT_TAIL(&tl->procs, p, list);
 	p->body = VSB_new_auto();
 	AN(p->body);
+	p->cname = VSB_new_auto();
+	AN(p->cname);
 	sym->proc = p;
 	return (p);
+}
+
+static void
+vcc_EmitProc(struct vcc *tl, struct proc *p)
+{
+	AZ(VSB_finish(p->cname));
+	AZ(VSB_finish(p->body));
+	Fh(tl, 1, "vcl_func_f %s;\n", VSB_data(p->cname));
+	Fc(tl, 1, "\nvoid v_matchproto_(vcl_func_f)\n");
+	Fc(tl, 1, "%s(VRT_CTX)\n", VSB_data(p->cname));
+	Fc(tl, 1, "{\n%s}\n", VSB_data(p->body));
+	VSB_destroy(&p->body);
+	VSB_destroy(&p->cname);
 }
 
 /*--------------------------------------------------------------------*/
@@ -625,20 +640,12 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 
 	/* Emit method functions */
 	Fh(tl, 1, "\n");
-	VTAILQ_FOREACH(p, &tl->procs, list) {
+	VTAILQ_FOREACH(p, &tl->procs, list)
 		if (p->method == NULL)
-			continue;
-		Fh(tl, 1,
-		    "void v_matchproto_(vcl_func_f) "
-		    "VGC_function_%s(VRT_CTX);\n",
-		    p->method->name);
-		Fc(tl, 1, "\nvoid v_matchproto_(vcl_func_f)\n");
-		Fc(tl, 1, "VGC_function_%s(VRT_CTX)\n",
-		    p->method->name);
-		AZ(VSB_finish(p->body));
-		Fc(tl, 1, "{\n%s}\n", VSB_data(p->body));
-		VSB_destroy(&p->body);
-	}
+			vcc_EmitProc(tl, p);
+	VTAILQ_FOREACH(p, &tl->procs, list)
+		if (p->method != NULL)
+			vcc_EmitProc(tl, p);
 
 	EmitInitFini(tl);
 
@@ -729,6 +736,7 @@ VCC_New(void)
 		    method_tab[i].name, NULL, SYM_SUB, 1);
 		p = vcc_NewProc(tl, sym);
 		p->method = &method_tab[i];
+		VSB_printf(p->cname, "VGC_function_%s", p->method->name);
 	}
 	tl->sb = VSB_new_auto();
 	AN(tl->sb);

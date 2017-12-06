@@ -286,8 +286,8 @@ parse_return(struct vcc *tl)
 	const char *h;
 
 	vcc_NextToken(tl);
-	if (tl->t->tok == ';' && tl->fb == tl->fc) {
-		/* fb == fc means we're in a subroutine */
+	AN(tl->curproc);
+	if (tl->t->tok == ';' && tl->curproc->method == NULL) {
 		Fb(tl, 1, "return;\n");
 		return;
 	}
