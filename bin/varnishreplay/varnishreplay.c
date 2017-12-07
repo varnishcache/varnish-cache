@@ -158,10 +158,9 @@ void
 HSHR_Deref(int fd)
 {
 	struct objhead *oh = NULL;
-	int r;
 
 	HSHR_Lookup(fd, NULL, &oh);
-	if (oh) r = fd_hash->deref(oh);
+	fd_hash->deref(oh);
 }
 
 // hash //

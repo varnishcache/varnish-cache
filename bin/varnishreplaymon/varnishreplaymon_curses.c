@@ -90,7 +90,7 @@ do_curses(struct replay_shm* rsmh,
     int delay)
 {
 	struct timeval tv;
-	double tt, lt, reqs, lreqs, rrate, up;
+	double tt, lt, reqs, lreqs, rrate;
 	double a0, a1, a2, a3;
 	unsigned n0, n1, n2, n3;
 
@@ -137,11 +137,10 @@ do_curses(struct replay_shm* rsmh,
 				break;
 
 			rt = rsmh->rsm_gen.uptime;
-			up = rt;
 
 			AC(mvprintw(0, 0, "%*s", COLS - 1, rsmh->rsm_gen.appname));
-			AC(mvprintw(0, 0, "%d+%02d:%02d:%02d", rt / 86400,
-			    (rt % 86400) / 3600, (rt % 3600) / 60, rt % 60));
+			AC(mvprintw(0, 0, "%d+%02d:%02d:%02d", (int)(rt / 86400),
+			    (int)((rt % 86400) / 3600), (int)((rt % 3600) / 60), (int)rt % 60));
 
 			reqs = rsmh->rsm_gen.nreqs;
 			rrate = (reqs - lreqs) / lt;

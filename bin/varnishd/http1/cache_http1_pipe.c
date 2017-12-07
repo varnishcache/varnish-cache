@@ -65,7 +65,6 @@ rdf(int fd0, int fd1, uint64_t *pcnt)
 {
 	int i, j;
 	char buf[BUFSIZ], *p;
-
 	i = read(fd0, buf, sizeof buf);
 	if (i <= 0)
 		return (1);
