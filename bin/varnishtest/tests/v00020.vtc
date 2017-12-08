@@ -31,7 +31,7 @@ varnish v1 -errvcl {Comparison of different types: INT '!=' STRING} {
 	}
 }
 
-varnish v1 -errvcl {Symbol not found: 'vcl_recv' (expected type STRING_LIST)} {
+varnish v1 -errvcl {Symbol not found: 'vcl_recv' (expected type STRING)} {
 	sub vcl_recv {
 		set req.http.foo = vcl_recv;
 	}
