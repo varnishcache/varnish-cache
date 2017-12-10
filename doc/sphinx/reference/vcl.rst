@@ -94,7 +94,7 @@ context some data types will evaluate to ``true`` or ``false`` depending on
 their value.
 
 String types will evaluate to ``false`` if they are empty; backend types
-will evalute to ``false`` if they don't have a backend assigned; integer
+will evaluate to ``false`` if they don't have a backend assigned; integer
 types will evaluate to ``false`` if their value is zero; duration types
 will evaluate to ``false`` if their value is equal or less than zero.
 
@@ -298,7 +298,7 @@ There are no mandatory options. These are the options you can set:
 
   ``.threshold``
     How many of the polls in ``.window`` must have succeeded to
-    for the backend to be healthy.
+    consider the backend to be healthy.
     Defaults to ``3``.
 
 
