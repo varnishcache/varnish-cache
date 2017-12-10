@@ -31,25 +31,21 @@
 #include <sys/types.h>
 
 enum encoding {
-	IDENTITY = 1,
-	BASE64,
-	BASE64URL,
-	BASE64URLNOPAD,
-	HEX,
-	URL,
+	_INVALID = 0,
+#define VMODENUM(x) x,
+#include "tbl_encodings.h"
 	__MAX_ENCODING
 };
 
-#define AENC(enc) assert((enc) >= IDENTITY && (enc) < __MAX_ENCODING)
+#define AENC(enc) assert((enc) > _INVALID && (enc) < __MAX_ENCODING)
 
 /*
  * The enums MUST appear in this order, since LOWER and UPPER are used to
  * index the array of cached encodings for the blob object.
  */
 enum case_e {
-	LOWER,
-	UPPER,
-	DEFAULT,
+#define VMODENUM(x) x,
+#include "tbl_case.h"
 };
 
 /*

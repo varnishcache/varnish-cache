@@ -124,6 +124,15 @@ parse_encoding(VCL_ENUM e)
 	WRONG("illegal encoding enum");
 }
 
+static enum case_e
+parse_case(VCL_ENUM e)
+{
+#define VMODENUM(n) if (e == vmod_enum_ ## n) return(n);
+#include "tbl_case.h"
+	WRONG("illegal case enum");
+}
+
+
 static inline size_t
 decode_l_va(enum encoding dec, const char * const p, va_list ap)
 {
@@ -152,15 +161,6 @@ err_decode(VRT_CTX, const char *enc)
 	default:
 		WRONG("invalid errno");
 	}
-}
-
-static inline enum case_e
-parse_case(VCL_ENUM case_s)
-{
-	if (case_s == vmod_enum_DEFAULT)	return(DEFAULT);
-	if (case_s == vmod_enum_LOWER)		return(LOWER);
-	if (case_s == vmod_enum_UPPER)		return(UPPER);
-	WRONG("illegal case enum");
 }
 
 static inline int

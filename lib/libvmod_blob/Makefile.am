@@ -11,7 +11,8 @@ libvmod_blob_la_SOURCES = \
 	url.c \
 	wb.h \
 	wb.c \
-	tbl_encodings.h
+	tbl_encodings.h \
+	tbl_case.h
 
 base64.o: base64.c base64.h
 
