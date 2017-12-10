@@ -281,9 +281,6 @@ void *TlAlloc(struct vcc *tl, unsigned len);
 char *TlDup(struct vcc *tl, const char *s);
 
 /* vcc_expr.c */
-double vcc_DoubleVal(struct vcc *tl);
-void vcc_Duration(struct vcc *tl, double *);
-unsigned vcc_UintVal(struct vcc *tl);
 void vcc_Expr(struct vcc *tl, vcc_type_t typ);
 void vcc_Expr_Call(struct vcc *tl, const struct symbol *sym);
 void vcc_Expr_Init(struct vcc *tl);
@@ -309,6 +306,12 @@ void Resolve_Sockaddr(struct vcc *tl, const char *host, const char *defport,
     const char **ipv4, const char **ipv4_ascii, const char **ipv6,
     const char **ipv6_ascii, const char **p_ascii, int maxips,
     const struct token *t_err, const char *errid);
+double vcc_TimeUnit(struct vcc *);
+void vcc_ByteVal(struct vcc *, double *);
+void vcc_NumVal(struct vcc *, double *, int *);
+double vcc_DoubleVal(struct vcc *tl);
+void vcc_Duration(struct vcc *tl, double *);
+unsigned vcc_UintVal(struct vcc *tl);
 
 /* vcc_storage.c */
 void vcc_stevedore(struct vcc *vcc, const char *stv_name);
