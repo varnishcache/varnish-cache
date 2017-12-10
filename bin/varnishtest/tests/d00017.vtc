@@ -25,6 +25,7 @@ server s3 {
 varnish v1 -vcl+backend {
 	import std;
 	import directors;
+	import blob;
 
 	sub vcl_init {
 		new vd = directors.shard();
@@ -44,8 +45,9 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_recv {
-		set req.backend_hint = vd.backend(by=KEY,
-		    key=vd.key(req.url, CRC32));
+		set req.backend_hint = vd.backend(by=BLOB,
+		    key_blob=blob.decode(HEX, encoded=
+			regsub(req.url, "^/", "")));
 		return(pass);
 	}
 
@@ -142,15 +144,15 @@ logexpect l1 -v v1 -g raw -d 1 {
 } -start
 
 client c1 {
-	txreq -url /eishoSu2
+	txreq -url /68b902f7
 	rxresp
 	expect resp.body == "ech3Ooj"
 
-	txreq -url /Zainao9d
+	txreq -url /39dc4613
 	rxresp
 	expect resp.body == "ieQu2qua"
 
-	txreq -url /Aunah3uo
+	txreq -url /c7793505
 	rxresp
 	expect resp.body == "xiuFi3Pe"
 } -run

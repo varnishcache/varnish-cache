@@ -39,7 +39,6 @@
 
 #include "shard_dir.h"
 #include "shard_cfg.h"
-#include "shard_hash.h"
 
 /*lint -esym(749,  shard_change_task_e::*) */
 enum shard_change_task_e {
@@ -232,11 +231,12 @@ circlepoint_compare(const struct shard_circlepoint *a,
 }
 
 static void
-shardcfg_hashcircle(struct sharddir *shardd, VCL_INT replicas, enum alg_e alg)
+shardcfg_hashcircle(struct sharddir *shardd, VCL_INT replicas)
 {
 	int i, j;
 	const char *ident;
-	int len;
+	const int len = 12; // log10(UINT32_MAX) + 2;
+	char s[len];
 
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
 	AZ(shardd->hashcircle);
@@ -259,14 +259,10 @@ shardcfg_hashcircle(struct sharddir *shardd, VCL_INT replicas, enum alg_e alg)
 
 		assert(ident[0] != '\0');
 
-		len = strlen(ident) + 12; // log10(UINT32_MAX) + 2;
-
-		char s[len];
-
 		for (j = 0; j < replicas; j++) {
-			assert(snprintf(s, len, "%s%d", ident, j) < len);
+			assert(snprintf(s, len, "%d", j) < len);
 			shardd->hashcircle[i * replicas + j].point =
-			    shard_hash_f[alg](s);
+				sharddir_sha256(ident, s, vrt_magic_string_end);
 			shardd->hashcircle[i * replicas + j].host = i;
 		}
 		/* not used in current interface */
@@ -574,7 +570,7 @@ shardcfg_apply_change(VRT_CTX, struct sharddir *shardd,
 
 VCL_BOOL
 shardcfg_reconfigure(VRT_CTX, struct vmod_priv *priv,
-    struct sharddir *shardd, VCL_INT replicas, enum alg_e alg)
+    struct sharddir *shardd, VCL_INT replicas)
 {
 	struct shard_change *change;
 
@@ -607,7 +603,7 @@ shardcfg_reconfigure(VRT_CTX, struct vmod_priv *priv,
 		return 0;
 	}
 
-	shardcfg_hashcircle(shardd, replicas, alg);
+	shardcfg_hashcircle(shardd, replicas);
 	sharddir_unlock(shardd);
 	return (1);
 }

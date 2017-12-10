@@ -1,8 +1,6 @@
 varnishtest "shard director Unhealthy"
 
 server s1 {
-	rxreq
-	txresp -body "ech3Ooj"
 } -start
 
 server s2 {
@@ -32,7 +30,7 @@ varnish v1 -vcl+backend {
 
 	sub vcl_recv {
 		set req.backend_hint = vd.backend(by=KEY,
-		    key=vd.key("/eishoSu2", CRC32));
+		    key=1756955383);
 		set req.http.healthy = std.healthy(req.backend_hint);
 		return(pass);
 	}

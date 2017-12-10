@@ -34,7 +34,7 @@ VCL_BOOL shardcfg_remove_backend(VRT_CTX, struct vmod_priv *priv,
 VCL_BOOL shardcfg_clear(VRT_CTX, struct vmod_priv *priv,
     const struct sharddir *shardd);
 VCL_BOOL shardcfg_reconfigure(VRT_CTX, struct vmod_priv *priv,
-    struct sharddir *shardd, VCL_INT replicas, enum alg_e alg_e);
+    struct sharddir *shardd, VCL_INT replicas);
 VCL_VOID shardcfg_set_warmup(struct sharddir *shardd, VCL_REAL ratio);
 VCL_VOID shardcfg_set_rampup(struct sharddir *shardd,
     VCL_DURATION duration);
