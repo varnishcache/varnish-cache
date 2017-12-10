@@ -119,12 +119,8 @@ static const struct vmod_priv null_blob[1] =
 static enum encoding
 parse_encoding(VCL_ENUM e)
 {
-	if (e == vmod_enum_BASE64)		return(BASE64);
-	if (e == vmod_enum_BASE64URL)		return(BASE64URL);
-	if (e == vmod_enum_BASE64URLNOPAD)	return(BASE64URLNOPAD);
-	if (e == vmod_enum_HEX)			return(HEX);
-	if (e == vmod_enum_IDENTITY)		return(IDENTITY);
-	if (e == vmod_enum_URL)			return(URL);
+#define VMODENUM(n) if (e == vmod_enum_ ## n) return(n);
+#include "tbl_encodings.h"
 	WRONG("illegal encoding enum");
 }
 
