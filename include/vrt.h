@@ -60,6 +60,7 @@
  *	struct director.destroy added
  *	VRT_r_beresp_storage_hint() removed - under discussion #2509
  *	VRT_l_beresp_storage_hint() removed - under discussion #2509
+ *	VRT_blob() added
  * 6.1 (2017-09-15 aka 5.2)
  *	http_CollectHdrSep added
  *	VRT_purge modified (may fail a transaction, signature changed)
@@ -368,6 +369,7 @@ void VRT_hashdata(VRT_CTX, const char *str, ...);
 int VRT_strcmp(const char *s1, const char *s2);
 void VRT_memmove(void *dst, const void *src, unsigned len);
 int VRT_ipcmp(const struct suckaddr *sua1, const struct suckaddr *sua2);
+struct vmod_priv *VRT_blob(VRT_CTX, const char *, const uint8_t *, size_t);
 
 void VRT_Rollback(VRT_CTX, const struct http *);
 

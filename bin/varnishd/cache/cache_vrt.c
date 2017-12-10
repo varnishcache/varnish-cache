@@ -590,3 +590,21 @@ VRT_ipcmp(const struct suckaddr *sua1, const struct suckaddr *sua2)
 		return(1);
 	return (VSA_Compare_IP(sua1, sua2));
 }
+
+struct vmod_priv *
+VRT_blob(VRT_CTX, const char *err, const uint8_t *src, size_t len)
+{
+	struct vmod_priv *p;
+	void *d;
+
+	p = (void *)WS_Alloc(ctx->ws, sizeof *p);
+	d = WS_Copy(ctx->ws, src, len);
+	if (p == NULL || d == NULL) {
+		VRT_fail(ctx, "Workspace overflow (%s)", err);
+		return (NULL);
+	}
+	memset(p, 0, sizeof *p);
+	p->len = len;
+	p->priv = d;
+	return (p);
+}
