@@ -116,7 +116,6 @@ static const struct vmod_priv null_blob[1] =
 	}
 };
 
-#include <stdio.h>
 static enum encoding
 parse_encoding(VCL_ENUM e)
 {
