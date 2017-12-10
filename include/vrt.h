@@ -58,6 +58,8 @@
  *	VRT_VSC_Destroy() added
  *	struct director.event added
  *	struct director.destroy added
+ *	VRT_r_beresp_storage_hint() removed - under discussion #2509
+ *	VRT_l_beresp_storage_hint() removed - under discussion #2509
  * 6.1 (2017-09-15 aka 5.2)
  *	http_CollectHdrSep added
  *	VRT_purge modified (may fail a transaction, signature changed)
