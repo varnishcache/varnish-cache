@@ -35,7 +35,7 @@ varnish v1 -vcl+backend {
 
 	sub vcl_recv {
 		set req.backend_hint = vd.backend(by=KEY,
-		    key=vd.key(alg=CRC32, string="/eishoSu2"));
+		    key=1756955383);
 		return(pass);
 	}
 } -start

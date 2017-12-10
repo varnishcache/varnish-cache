@@ -40,7 +40,6 @@
 #include "vcc_if.h"
 #include "shard_dir.h"
 #include "shard_cfg.h"
-#include "shard_hash.h"
 
 struct vmod_directors_shard {
 	unsigned		magic;
@@ -56,7 +55,7 @@ vmod_shard__init(VRT_CTX, struct vmod_directors_shard **vshardp,
 	VCL_INT t1;
 	uint32_t t2a, t2b;
 
-	/* see vmod_key comment */
+	/* we put our uint32 key in a VCL_INT container */
 	assert(sizeof(VCL_INT) >= sizeof(uint32_t));
 	t2a = UINT32_MAX;
 	t1 = (VCL_INT)t2a;
@@ -84,22 +83,20 @@ vmod_shard__fini(struct vmod_directors_shard **vshardp)
 	FREE_OBJ(vshard);
 }
 
-/*
- * our key is a uint32_t, but VCL_INT is a (signed) long.  We cast back and
- * forth, asserting in vmod_shard__init() that VCL_INT is a large enough
- * container
- */
 VCL_INT v_matchproto_(td_directors_shard_key)
-    vmod_shard_key(VRT_CTX, struct vmod_directors_shard *vshard,
-    VCL_STRING s, VCL_ENUM alg_s)
+vmod_shard_key(VRT_CTX, struct vmod_directors_shard *vshard, const char *s, ...)
 {
-	enum alg_e alg = parse_alg_e(alg_s);
-	hash_func hash_fp = shard_hash_f[alg];
+	va_list ap;
+	uint32_t r;
 
 	(void)ctx;
-	(void)vshard;;
+	(void)vshard;
 
-	return (VCL_INT)hash_fp(s ? s : "");
+	va_start(ap, s);
+	r = sharddir_sha256v(s, ap);
+	va_end(ap);
+
+	return ((VCL_INT)r);
 }
 
 VCL_VOID v_matchproto_(td_directors_set_warmup)
@@ -169,11 +166,9 @@ vmod_shard_clear(VRT_CTX, struct vmod_directors_shard *vshard,
 
 VCL_BOOL v_matchproto_(td_directors_shard_reconfigure)
 vmod_shard_reconfigure(VRT_CTX, struct vmod_directors_shard *vshard,
-    struct vmod_priv *priv, VCL_INT replicas, VCL_ENUM alg_s)
+    struct vmod_priv *priv, VCL_INT replicas)
 {
-	enum alg_e alg = parse_alg_e(alg_s);
-
-	return shardcfg_reconfigure(ctx, priv, vshard->shardd, replicas, alg);
+	return shardcfg_reconfigure(ctx, priv, vshard->shardd, replicas);
 }
 
 static inline uint32_t
@@ -198,7 +193,8 @@ get_key(VRT_CTX, enum by_e by, VCL_INT key_int, VCL_BLOB key_blob)
 			AN(ctx->http_bereq);
 			AN(http = ctx->http_bereq);
 		}
-		return (shard_hash_f[SHA256](http->hd[HTTP_HDR_URL].b));
+		return (sharddir_sha256(http->hd[HTTP_HDR_URL].b,
+					vrt_magic_string_end));
 	case BY_KEY:
 		return ((uint32_t)key_int);
 	case BY_BLOB:
