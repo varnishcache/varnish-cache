@@ -41,6 +41,8 @@
 
 #include "vbm.h"
 #include "vrnd.h"
+#include "vsha256.h"
+#include "vend.h"
 
 #include "shard_dir.h"
 
@@ -85,6 +87,47 @@ sharddir_err(VRT_CTX, enum VSL_tag_e tag,  const char *fmt, ...)
 	else
 		VSLv(tag, 0, fmt, ap);
 	va_end(ap);
+}
+
+uint32_t
+sharddir_sha256v(const char *s, va_list ap)
+{
+	struct VSHA256Context sha256;
+	union {
+		unsigned char digest[32];
+		uint32_t uint32_digest[8];
+	} sha256_digest;
+	uint32_t r;
+	const char *p;
+
+	VSHA256_Init(&sha256);
+	p = s;
+	while (p != vrt_magic_string_end) {
+		if (p != NULL && *p != '\0')
+			VSHA256_Update(&sha256, p, strlen(p));
+		p = va_arg(ap, const char *);
+	}
+	VSHA256_Final(sha256_digest.digest, &sha256);
+
+	/*
+	 * use low 32 bits only
+	 * XXX: Are these the best bits to pick?
+	 */
+	vle32enc(&r, sha256_digest.uint32_digest[7]);
+	return (r);
+}
+
+uint32_t
+sharddir_sha256(const char *s, ...)
+{
+	va_list ap;
+	uint32_t r;
+
+	va_start(ap, s);
+	r = sharddir_sha256v(s, ap);
+	va_end(ap);
+
+	return (r);
 }
 
 static int
