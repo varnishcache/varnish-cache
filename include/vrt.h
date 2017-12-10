@@ -61,6 +61,8 @@
  * 6.1 (2017-09-15 aka 5.2)
  *	http_CollectHdrSep added
  *	VRT_purge modified (may fail a transaction, signature changed)
+ *	VRT_r_req_hash() added
+ *	VRT_r_bereq_hash() added
  * 6.0 (2017-03-15):
  *	VRT_hit_for_pass added
  *	VRT_ipcmp added
