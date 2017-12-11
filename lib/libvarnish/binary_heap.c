@@ -520,14 +520,12 @@ chk2(struct binheap *bh)
 #endif
 
 int
-main(int argc, char **argv)
+main(void)
 {
 	struct binheap *bh;
 	unsigned j, u, v, lr, n;
 	struct foo *fp;
 
-	(void)argc;
-	(void)argv;
 	VRND_SeedAll();
 	VRND_SeedTestable(1);
 	bh = binheap_new(NULL, cmp, update);
@@ -536,6 +534,8 @@ main(int argc, char **argv)
 		child(bh, n, &u, &v);
 		child(bh, n + 1, &u, &v);
 	}
+
+	lr = 0; /* unconfuse some compilers... */
 
 	for (j = 0; j < 2; j++) {
 		/* First insert our N elements */
@@ -614,7 +614,7 @@ main(int argc, char **argv)
 				AN(ff[v]->idx);
 			}
 #ifdef CHECK2
-				chk2(bh);
+			chk2(bh);
 #endif
 		}
 		fprintf(stderr, "%d updates OK\n", M);
