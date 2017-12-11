@@ -409,13 +409,13 @@ To generate sharding keys using other hashes, use a custom vmod like
 .. _vmod blobdigest: https://code.uplex.de/uplex-varnish/libvmod-blobdigest/blob/master/README.rst
 
 $Method BACKEND .backend(
-	ENUM {HASH, URL, KEY, BLOB} by="HASH",
+	ENUM {HASH, URL, KEY, BLOB} by=HASH,
 	INT key=0,
 	BLOB key_blob=0,
 	INT alt=0,
 	REAL warmup=-1,
 	BOOL rampup=1,
-	ENUM {CHOSEN, IGNORE, ALL} healthy="CHOSEN")
+	ENUM {CHOSEN, IGNORE, ALL} healthy=CHOSEN)
 
 
 Lookup a backend on the consistent hashing ring.

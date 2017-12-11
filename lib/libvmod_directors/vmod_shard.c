@@ -218,6 +218,22 @@ get_key(VRT_CTX, enum by_e by, VCL_INT key_int, VCL_BLOB key_blob)
 	}
 }
 
+static enum by_e
+parse_by_e(VCL_ENUM e)
+{
+#define VMODENUM(n) if (e == vmod_enum_ ## n) return(BY_ ## n);
+#include "tbl_by.h"
+       WRONG("illegal by enum");
+}
+
+static enum healthy_e
+parse_healthy_e(VCL_ENUM e)
+{
+#define VMODENUM(n) if (e == vmod_enum_ ## n) return(n);
+#include "tbl_healthy.h"
+       WRONG("illegal healthy enum");
+}
+
 VCL_BACKEND v_matchproto_(td_directors_shard_backend)
 vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
     VCL_ENUM by_s, VCL_INT key_int, VCL_BLOB key_blob, VCL_INT alt,
