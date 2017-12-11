@@ -30,8 +30,8 @@ Usage
   used during ESI delivery. It should not be tuned unless advised by a
   developer.
 
-VCL
----
+VCL and bundled VMODs
+---------------------
 
 * Fix behaviour of restarts to how it was originally intended:
   Restarts now leave all the request properties in place except for
@@ -42,6 +42,18 @@ VCL
   side subs, not just ``vcl_recv{}``
 
 * Removed ``beresp.storage_hint`` (was deprecated since Varnish 5.1)
+
+* workspace overflows in ``std.log()`` now trigger a VCL failure
+
+* workspace overflows in ``std.syslog()`` are ignored
+
+Logging / statistics
+--------------------
+
+* Turned off PROXY protocol debugging by default, can be enabled with
+  the ``protocol`` debug flag
+
+* added ``cache_hit_grace`` statisctics counter
 
 C APIs (for vmod and utility authors)
 -------------------------------------
@@ -78,10 +90,37 @@ C APIs (for vmod and utility authors)
 
 * director health state queries have been merged to ``VRT_Healthy()``
 
+* Renamed macros:
+  * ``__match_proto__()`` -> ``v_matchproto_()``
+  * ``__v_printflike()`` -> ``v_printflike_()``
+  * ``__state_variable__()`` -> ``v_statevariable_()``
+  * ``__unused`` -> ``v_unused_``
+  * ``__attribute__((__noreturn__)`` -> ``v_noreturn_``
+
+    * ENUMs are now fixed pointers per vcl
+
+* Added ``VRT_blob()`` utility function to create a blob as a copy
+  of some chunk of data on the workspace.
+
+
+Other changes relevant for VMODs
+--------------------------------
+
+* ``PRIV_*`` function/method arguments are not excluded from
+  auto-generated vmod documentation
+
+Fixed bugs which may influence VCL behaviour
+--------------------------------------------
+
+* After reusing a backend connection fails once, a fresh connection
+  will be opened (2135)
+
+.. _2135: https://github.com/varnishcache/varnish-cache/pull/2135
+
 Fixed bugs
 ----------
 
-XXX TODO
+**TODO**
 
 ================================
 Varnish Cache 5.2.0 (2017-09-15)
