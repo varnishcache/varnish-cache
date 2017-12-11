@@ -27,7 +27,19 @@
  * SUCH DAMAGE.
  */
 
-#include "shard_parse_vcc_enums.h"
+enum by_e {
+	_BY_E_INVALID = 0,
+#define VMODENUM(x) BY_ ## x,
+#include "tbl_by.h"
+	_BY_E_MAX
+};
+
+enum healthy_e {
+	_HEALTHY_E_INVALID = 0,
+#define VMODENUM(x) x,
+#include "tbl_healthy.h"
+	_HEALTHY_E_MAX
+};
 
 struct vbitmap;
 
