@@ -245,7 +245,6 @@ struct method {
 /* vcc_acl.c */
 
 void vcc_ParseAcl(struct vcc *tl);
-void vcc_Acl_Hack(struct vcc *tl, char *b, size_t bl);
 
 /* vcc_action.c */
 int vcc_ParseAction(struct vcc *tl);

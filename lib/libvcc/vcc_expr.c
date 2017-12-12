@@ -939,23 +939,6 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 }
 
 /*--------------------------------------------------------------------
- * Fold the STRING types correctly
- */
-
-static void
-vcc_expr_strfold(struct vcc *tl, struct expr **e, vcc_type_t fmt)
-{
-
-	vcc_expr_add(tl, e, fmt);
-	ERRCHK(tl);
-
-	if (fmt != STRING_LIST && (*e)->fmt == STRING_LIST)
-		vcc_expr_tostring(tl, e, STRING);
-	else if (fmt == STRING_LIST && (*e)->fmt == STRING)
-		(*e)->fmt = STRING_LIST;
-}
-
-/*--------------------------------------------------------------------
  * SYNTAX:
  *    ExprCmp:
  *	ExprAdd
@@ -966,34 +949,113 @@ vcc_expr_strfold(struct vcc *tl, struct expr **e, vcc_type_t fmt)
  *	ExprAdd(IP) '!~' IP
  */
 
-#define NUM_REL(typ)					\
-	{typ,		T_EQ,	"(\v1 == \v2)" },	\
-	{typ,		T_NEQ,	"(\v1 != \v2)" },	\
-	{typ,		T_LEQ,	"(\v1 <= \v2)" },	\
-	{typ,		T_GEQ,	"(\v1 >= \v2)" },	\
-	{typ,		'<',	"(\v1 < \v2)" },	\
-	{typ,		'>',	"(\v1 > \v2)" }
+struct cmps;
 
-static const struct cmps {
+typedef void cmp_f(struct vcc *, struct expr **, const struct cmps *);
+
+struct cmps {
 	vcc_type_t		fmt;
 	unsigned		token;
 	const char		*emit;
-} vcc_cmps[] = {
+	cmp_f			*func;
+};
+
+static void v_matchproto_(cmp_f)
+cmp_simple(struct vcc *tl, struct expr **e, const struct cmps *cp)
+{
+	struct expr *e2;
+	struct token *tk;
+
+	tk = tl->t;
+	vcc_NextToken(tl);
+	if ((*e)->fmt == STRING_LIST)
+		vcc_expr_tostring(tl, e, STRING);
+	vcc_expr_add(tl, &e2, (*e)->fmt);
+	ERRCHK(tl);
+
+	if (e2->fmt != (*e)->fmt) { /* XXX */
+		VSB_printf(tl->sb, "Comparison of different types: ");
+		VSB_printf(tl->sb, "%s ", vcc_utype((*e)->fmt));
+		vcc_ErrToken(tl, tk);
+		VSB_printf(tl->sb, " %s\n", vcc_utype(e2->fmt));
+		vcc_ErrWhere(tl, tk);
+		return;
+	}
+	*e = vcc_expr_edit(BOOL, cp->emit, *e, e2);
+}
+
+static void v_matchproto_(cmp_f)
+cmp_regexp(struct vcc *tl, struct expr **e, const struct cmps *cp)
+{
+	char buf[128];
+	const char *re;
+
+	if ((*e)->fmt != STRING)
+		vcc_expr_tostring(tl, e, STRING);
+	vcc_NextToken(tl);
+	ExpectErr(tl, CSTR);
+	re = vcc_regexp(tl);
+	ERRCHK(tl);
+	vcc_NextToken(tl);
+	bprintf(buf, "%sVRT_re_match(ctx, \v1, %s)", cp->emit, re);
+	*e = vcc_expr_edit(BOOL, buf, *e, NULL);
+}
+
+static void v_matchproto_(cmp_f)
+cmp_acl(struct vcc *tl, struct expr **e, const struct cmps *cp)
+{
+	struct symbol *sym;
+	char buf[256];
+
+	vcc_NextToken(tl);
+	vcc_ExpectVid(tl, "ACL");
+	sym = vcc_AddRef(tl, tl->t, SYM_ACL);
+	vcc_NextToken(tl);
+	VCC_GlobalSymbol(sym, ACL, ACL_SYMBOL_PREFIX);
+	bprintf(buf, "%sVRT_acl_match(ctx, %s, \v1)", cp->emit, sym->rname);
+	*e = vcc_expr_edit(BOOL, buf, *e, NULL);
+}
+
+#define IDENT_REL(typ)						\
+	{typ,		T_EQ,	"(\v1 == \v2)",	cmp_simple },	\
+	{typ,		T_NEQ,	"(\v1 != \v2)",	cmp_simple }
+
+#define NUM_REL(typ)					\
+	{typ,		T_EQ,	"(\v1 == \v2)",	cmp_simple },	\
+	{typ,		T_NEQ,	"(\v1 != \v2)",	cmp_simple },	\
+	{typ,		T_LEQ,	"(\v1 <= \v2)",	cmp_simple },	\
+	{typ,		T_GEQ,	"(\v1 >= \v2)",	cmp_simple },	\
+	{typ,		'<',	"(\v1 < \v2)",	cmp_simple },	\
+	{typ,		'>',	"(\v1 > \v2)",	cmp_simple }
+
+static const struct cmps vcc_cmps[] = {
 	NUM_REL(INT),
 	NUM_REL(DURATION),
 	NUM_REL(BYTES),
 	NUM_REL(REAL),
 	NUM_REL(TIME),
+	IDENT_REL(BACKEND),
+	IDENT_REL(ACL),
+	IDENT_REL(PROBE),
+	IDENT_REL(STEVEDORE),
+	IDENT_REL(SUB),
+	IDENT_REL(INSTANCE),
 
-	{IP,		T_EQ,	"!VRT_ipcmp(\v1, \v2)" },
-	{IP,		T_NEQ,	"VRT_ipcmp(\v1, \v2)" },
+	{IP,		T_EQ,	"!VRT_ipcmp(\v1, \v2)",		cmp_simple },
+	{IP,		T_NEQ,	"VRT_ipcmp(\v1, \v2)",		cmp_simple },
+	{IP,		'~',	"",				cmp_acl },
+	{IP,		T_NOMATCH, "!",				cmp_acl },
 
-	{STRING,	T_EQ,	"!VRT_strcmp(\v1, \v2)" },
-	{STRING,	T_NEQ,	"VRT_strcmp(\v1, \v2)" },
-	{STRING_LIST,	T_EQ,	"!VRT_strcmp(\v1, \v2)" },
-	{STRING_LIST,	T_NEQ,	"VRT_strcmp(\v1, \v2)" },
+	{STRING,	T_EQ,	"!VRT_strcmp(\v1, \v2)",	cmp_simple },
+	{STRING_LIST,	T_EQ,	"!VRT_strcmp(\v1, \v2)",	cmp_simple },
+	{STRING,	T_NEQ,	"VRT_strcmp(\v1, \v2)",		cmp_simple },
+	{STRING_LIST,	T_NEQ,	"VRT_strcmp(\v1, \v2)",		cmp_simple },
+	{STRING,	'~',	"",				cmp_regexp },
+	{STRING_LIST,	'~',	"",				cmp_regexp },
+	{STRING,	T_NOMATCH, "!",				cmp_regexp },
+	{STRING_LIST,	T_NOMATCH, "!",				cmp_regexp },
 
-	{VOID, 0, NULL}
+	{VOID, 0, NULL, NULL}
 };
 
 #undef NUM_REL
@@ -1001,14 +1063,8 @@ static const struct cmps {
 static void
 vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
-	struct expr *e2;
 	const struct cmps *cp;
-	char buf[256];
-	const char *re;
-	const char *not;
 	struct token *tk;
-	struct symbol *sym;
-	enum symkind kind;
 
 	*e = NULL;
 
@@ -1022,76 +1078,11 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	for (cp = vcc_cmps; cp->fmt != VOID; cp++)
 		if ((*e)->fmt == cp->fmt && tl->t->tok == cp->token)
 			break;
-	if (cp->fmt != VOID) {
-		vcc_NextToken(tl);
-		if ((*e)->fmt == STRING_LIST) {
-			// XXX: This is not optimal, but we can't pass two
-			// STRING_LIST's to a function anyway...
-			vcc_expr_tostring(tl, e, STRING);
-		}
-		vcc_expr_strfold(tl, &e2, (*e)->fmt);
-		ERRCHK(tl);
-		if (e2->fmt != (*e)->fmt) { /* XXX */
-			VSB_printf(tl->sb, "Comparison of different types: ");
-			VSB_printf(tl->sb, "%s ", vcc_utype((*e)->fmt));
-			vcc_ErrToken(tl, tk);
-			VSB_printf(tl->sb, " %s\n", vcc_utype(e2->fmt));
-			vcc_ErrWhere(tl, tk);
-			return;
-		}
-		*e = vcc_expr_edit(BOOL, cp->emit, *e, e2);
+	if (cp->func != NULL) {
+		cp->func(tl, e, cp);
 		return;
 	}
-	if (((*e)->fmt == STRING || (*e)->fmt == STRING_LIST) &&
-	    (tl->t->tok == '~' || tl->t->tok == T_NOMATCH)) {
-		if ((*e)->fmt == STRING_LIST)
-			vcc_expr_tostring(tl, e, STRING);
-		not = tl->t->tok == '~' ? "" : "!";
-		vcc_NextToken(tl);
-		ExpectErr(tl, CSTR);
-		re = vcc_regexp(tl);
-		ERRCHK(tl);
-		vcc_NextToken(tl);
-		bprintf(buf, "%sVRT_re_match(ctx, \v1, %s)", not, re);
-		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
-		return;
-	}
-	if ((*e)->fmt == IP &&
-	    (tl->t->tok == '~' || tl->t->tok == T_NOMATCH)) {
-		not = tl->t->tok == '~' ? "" : "!";
-		vcc_NextToken(tl);
-		vcc_ExpectVid(tl, "ACL");
-		sym = vcc_AddRef(tl, tl->t, SYM_ACL);
-		VCC_GlobalSymbol(sym, ACL, ACL_SYMBOL_PREFIX);
-		bprintf(buf, "%sVRT_acl_match(ctx, %s, \v1)", not, sym->rname);
-		vcc_NextToken(tl);
-		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
-		return;
-	}
-	if ((*e)->fmt == IP && (tl->t->tok == T_EQ || tl->t->tok == T_NEQ)) {
-		vcc_Acl_Hack(tl, buf, sizeof buf);
-		*e = vcc_expr_edit(BOOL, buf, *e, NULL);
-		return;
-	}
-	kind = VCC_HandleKind((*e)->fmt);
-	if (kind != SYM_NONE && (tl->t->tok == T_EQ || tl->t->tok == T_NEQ)) {
-		bprintf(buf, "(\v1 %.*s \v2)", PF(tk));
-		vcc_NextToken(tl);
-		e2 = NULL;
-		vcc_expr0(tl, &e2, (*e)->fmt);
-		ERRCHK(tl);
-		if (e2->fmt != (*e)->fmt) {
-			VSB_printf(tl->sb, "Comparison of different types: ");
-			VSB_printf(tl->sb, "%s ", vcc_utype((*e)->fmt));
-			vcc_ErrToken(tl, tk);
-			VSB_printf(tl->sb, " %s\n", vcc_utype(e2->fmt));
-			vcc_ErrWhere(tl, tk);
-			return;
-		}
-		*e = vcc_expr_edit(BOOL, buf, *e, e2);
-		return;
-	}
-	switch (tl->t->tok) {
+	switch (tk->tok) {
 	case T_EQ:
 	case T_NEQ:
 	case '<':
@@ -1113,6 +1104,8 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		*e = vcc_expr_edit(BOOL, "(\v1 != 0)", *e, NULL);
 	else if ((*e)->fmt == DURATION)
 		*e = vcc_expr_edit(BOOL, "(\v1 > 0)", *e, NULL);
+	else
+		INCOMPL();
 }
 
 /*--------------------------------------------------------------------

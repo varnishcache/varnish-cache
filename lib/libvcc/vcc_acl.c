@@ -460,22 +460,6 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
 }
 
 void
-vcc_Acl_Hack(struct vcc *tl, char *b, size_t bl)
-{
-	char name[32];
-	unsigned tcond;
-
-	VTAILQ_INIT(&tl->acl);
-	tcond = tl->t->tok;
-	vcc_NextToken(tl);
-	bprintf(name, "%u", tl->unique++);
-	vcc_acl_entry(tl);
-	vcc_acl_emit(tl, name, name, 1);
-	assert(snprintf(b, bl - 1, "%smatch_acl_anon_%s(ctx, \v1)",
-	    (tcond == T_NEQ ? "!" : ""), name) < bl - 1);
-}
-
-void
 vcc_ParseAcl(struct vcc *tl)
 {
 	struct token *an;
