@@ -105,6 +105,8 @@ vcc_NewProc(struct vcc *tl, struct symbol *sym)
 	VTAILQ_INIT(&p->calls);
 	VTAILQ_INIT(&p->uses);
 	VTAILQ_INSERT_TAIL(&tl->procs, p, list);
+	p->prologue = VSB_new_auto();
+	AN(p->prologue);
 	p->body = VSB_new_auto();
 	AN(p->body);
 	p->cname = VSB_new_auto();
@@ -117,12 +119,14 @@ static void
 vcc_EmitProc(struct vcc *tl, struct proc *p)
 {
 	AZ(VSB_finish(p->cname));
+	AZ(VSB_finish(p->prologue));
 	AZ(VSB_finish(p->body));
 	Fh(tl, 1, "vcl_func_f %s;\n", VSB_data(p->cname));
 	Fc(tl, 1, "\nvoid v_matchproto_(vcl_func_f)\n");
 	Fc(tl, 1, "%s(VRT_CTX)\n", VSB_data(p->cname));
-	Fc(tl, 1, "{\n%s}\n", VSB_data(p->body));
+	Fc(tl, 1, "{\n%s\n%s}\n", VSB_data(p->prologue), VSB_data(p->body));
 	VSB_destroy(&p->body);
+	VSB_destroy(&p->prologue);
 	VSB_destroy(&p->cname);
 }
 
