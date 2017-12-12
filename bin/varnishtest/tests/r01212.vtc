@@ -1,6 +1,6 @@
 varnishtest "#1212 - Vmod with HEADER argument given a STRING asserts the VCL compiler"
 
-varnish v1 -errvcl {Wrong argument type.  Expected HEADER.  Got STRING.} {
+varnish v1 -errvcl {Expression has type STRING, expected HEADER} {
 	import std;
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {

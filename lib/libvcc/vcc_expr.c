@@ -276,8 +276,7 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym,
 	SkipToken(tl, '(');
 
 	vcc_expr0(tl, &e2, STRING);
-	if (e2 == NULL)
-		return;
+	ERRCHK(tl);
 
 	SkipToken(tl, ',');
 	ExpectErr(tl, CSTR);
@@ -289,8 +288,7 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym,
 
 	SkipToken(tl, ',');
 	vcc_expr0(tl, &e2, STRING);
-	if (e2 == NULL)
-		return;
+	ERRCHK(tl);
 	*e = vcc_expr_edit(STRING, "\v1,\n\v2)\v-", *e, e2);
 	SkipToken(tl, ')');
 }
@@ -430,20 +428,7 @@ vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 	} else {
 		vcc_expr0(tl, &e2, fa->type);
 		ERRCHK(tl);
-		if (e2->fmt != fa->type) {
-			VSB_printf(tl->sb, "Wrong argument type.");
-			VSB_printf(tl->sb,
-			    "  Expected %s.", vcc_utype(fa->type));
-			VSB_printf(tl->sb, "  Got %s.\n", vcc_utype(e2->fmt));
-			vcc_ErrWhere2(tl, e2->t1, tl->t);
-			return;
-		}
 		assert(e2->fmt == fa->type);
-		if (e2->fmt == STRING_LIST) {
-			e2 = vcc_expr_edit(STRING_LIST,
-			    "\v+\n\v1,\nvrt_magic_string_end\v-",
-			    e2, NULL);
-		}
 		fa->result = e2;
 	}
 }
@@ -1176,12 +1161,12 @@ vcc_expr_cand(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 
 /*--------------------------------------------------------------------
  * SYNTAX:
- *    Expr0:
+ *    Expr1:
  *      ExprCand { '||' ExprCand } *
  */
 
 static void
-vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
+vcc_expr1(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 	struct expr *e2;
 	struct token *tk;
@@ -1214,6 +1199,32 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 }
 
 /*--------------------------------------------------------------------
+ * This function is the entry-point for getting an expression with
+ * a particular type, ready for inclusion in the VGC.
+ */
+
+static void
+vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
+{
+	struct token *t1;
+
+	assert(fmt != VOID);
+	t1 = tl->t;
+	vcc_expr1(tl, e, fmt);
+	ERRCHK(tl);
+	if (fmt != (*e)->fmt)  {
+		VSB_printf(tl->sb, "Expression has type %s, expected %s\n",
+		    vcc_utype((*e)->fmt), vcc_utype(fmt));
+		tl->err = 1;
+	}
+	if ((*e)->fmt == STRING_LIST)
+		*e = vcc_expr_edit(STRING_LIST,
+		    "\v+\n\v1,\nvrt_magic_string_end\v-", *e, NULL);
+	if (tl->err)
+		vcc_ErrWhere2(tl, t1, tl->t);
+}
+
+/*--------------------------------------------------------------------
  * This function parses and emits the C-code to evaluate an expression
  *
  * We know up front what kind of type we want the expression to be,
@@ -1223,29 +1234,13 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 void
 vcc_Expr(struct vcc *tl, vcc_type_t fmt)
 {
-	struct expr *e;
-	struct token *t1;
+	struct expr *e = NULL;
 
 	assert(fmt != VOID);
-
-	t1 = tl->t;
 	vcc_expr0(tl, &e, fmt);
 	ERRCHK(tl);
-	e->t1 = t1;
-	if (!tl->err && fmt != e->fmt)  {
-		VSB_printf(tl->sb, "Expression has type %s, expected %s\n",
-		    vcc_utype(e->fmt), vcc_utype(fmt));
-		tl->err = 1;
-	}
-	if (!tl->err) {
-		if (e->fmt == STRING_LIST) {
-			e = vcc_expr_edit(STRING_LIST,
-			    "\v+\n\v1,\nvrt_magic_string_end\v-", e, NULL);
-		}
-		vcc_expr_fmt(tl->fb, tl->indent, e);
-		VSB_putc(tl->fb, '\n');
-	} else if (t1 != tl->t)
-		vcc_ErrWhere2(tl, t1, tl->t);
+	vcc_expr_fmt(tl->fb, tl->indent, e);
+	VSB_printf(tl->fb, "\n");
 	vcc_delete_expr(e);
 }
 

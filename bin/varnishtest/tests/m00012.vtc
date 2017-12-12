@@ -9,7 +9,7 @@ varnish v1 -errvcl {BLOBs can only be used as arguments to VMOD functions.} {
 	}
 }
 
-varnish v1 -errvcl {Wrong argument type.  Expected BLOB.  Got STRING.} {
+varnish v1 -errvcl {Expression has type STRING, expected BLOB} {
 
 	backend b1 {.host = "${bad_backend}";}
 

@@ -81,7 +81,7 @@ varnish v1 -errvcl {Wrong enum value.  Expected one of:} {
 	}
 }
 
-varnish v1 -errvcl {Wrong argument type.  Expected REAL.  Got STRING.} {
+varnish v1 -errvcl {Expression has type STRING, expected REAL} {
 	import std;
 	sub vcl_deliver {
 		set resp.http.who = std.random("foo", "bar");
