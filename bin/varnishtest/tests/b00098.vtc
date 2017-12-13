@@ -1,0 +1,69 @@
+varnishtest "Test that we properly wait for certain 304 cases"
+
+server s1 {
+	rxreq
+	txresp -hdr "Last-Modified: Wed, 11 Sep 2013 13:36:55 GMT" -body "Geoff Still Rules"
+
+	# The IMS request we will spend some time to process for the sake of
+	# this test.
+	rxreq
+	expect req.http.if-modified-since == "Wed, 11 Sep 2013 13:36:55 GMT"
+	delay 1
+	txresp -status 304
+
+	# Last request, to a different URL to catch it if varnish asks for "/" too many times
+	rxreq
+	expect req.url == "/2"
+	txresp -body "x"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.ttl = 1s;
+		set beresp.grace = 1s;
+		set beresp.keep = 1m;
+		set beresp.http.was-304 = beresp.was_304;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "Geoff Still Rules"
+} -run
+
+# let the object's ttl and grace expire
+delay 2.1
+
+# first client to ask for kept object - this should start the second request
+client c2 {
+	txreq
+	rxresp
+	# we did not disable grace in the request, so we should get the graced object here
+	expect resp.status == 200
+	expect resp.body == "Geoff Still Rules"
+} -start
+
+delay .1
+
+# second client to ask for the kept object. Here we want to wait until the backend fetch completes, not do a pass.
+client c3 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "Geoff Still Rules"
+} -start
+
+client c2 -wait
+client c3 -wait
+
+# Finally the request to "/2". The expect in the server block makes sure that
+# there were no extra requests to "/" from varnish.
+
+client c4 {
+	txreq -url "/2"
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "x"
+} -run

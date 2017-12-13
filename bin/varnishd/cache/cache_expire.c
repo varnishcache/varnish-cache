@@ -57,7 +57,7 @@ struct exp_priv {
 static struct exp_priv *exphdl;
 
 /*--------------------------------------------------------------------
- * Calculate an objects effective ttl time, taking req.ttl into account
+ * Calculate an object's effective ttl time, taking req.ttl into account
  * if it is available.
  */
 
