@@ -673,12 +673,12 @@ void Lck_DestroyClass(struct vsc_seg **);
 #include "tbl/locks.h"
 
 /* cache_obj.c */
-
 int ObjHasAttr(struct worker *, struct objcore *, enum obj_attr);
 const void *ObjGetAttr(struct worker *, struct objcore *, enum obj_attr,
     ssize_t *len);
 
-typedef int objiterate_f(void *priv, int flush, const void *ptr, ssize_t len);
+typedef int objiterate_f(void *priv, int flush, int last,
+    const void *ptr, ssize_t len);
 
 int ObjIterate(struct worker *, struct objcore *,
     void *priv, objiterate_f *func, int final);

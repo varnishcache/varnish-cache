@@ -229,23 +229,17 @@ sml_objfree(struct worker *wrk, struct objcore *oc)
 	wrk->stats->n_object--;
 }
 
-static int v_matchproto_(objiterate_f)
-sml_iterator(struct worker *wrk, struct objcore *oc,
-    void *priv, objiterate_f *func, int final)
+static int v_matchproto_(objiterator_f)
+sml_iterator(struct worker *wrk, struct objcore *oc, void *priv,
+    objiterate_f *func, int final)
 {
-	struct boc *boc;
-	struct object *obj;
-	struct storage *st;
-	struct storage *checkpoint = NULL;
 	const struct stevedore *stv;
-	ssize_t checkpoint_len = 0;
-	ssize_t len = 0;
-	int ret = 0;
-	ssize_t ol;
-	ssize_t nl;
-	ssize_t sl;
-	void *p;
-	ssize_t l;
+	struct object *obj;
+	struct boc *boc;
+	struct storage *st = NULL, *stnext;
+	int ret = 0, last = 0;
+	ssize_t off = 0, stoff = 0, stlen, l;
+	ssize_t maxoff = 0, oldmax;
 
 	obj = sml_getobj(wrk, oc);
 	CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
@@ -255,77 +249,115 @@ sml_iterator(struct worker *wrk, struct objcore *oc,
 	boc = HSH_RefBoc(oc);
 
 	if (boc == NULL) {
-		VTAILQ_FOREACH_SAFE(st, &obj->list, list, checkpoint) {
-			if (ret == 0 && st->len > 0)
-				ret = func(priv, 1, st->ptr, st->len);
+		VTAILQ_FOREACH_SAFE(st, &obj->list, list, stnext) {
+			CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+
+			AZ(last);
+			if (!ret && st->len > 0) {
+				if (!stnext)
+					last = 1;
+				/* XXX: For some reason func is always
+				 * called with the flush bit set. That is
+				 * not ideal, and not at all necessary, in
+				 * fact it should be 0 unless
+				 * final. Though some test cases will
+				 * break if this change is made, and the
+				 * test cases would likely become
+				 * racy. Consider adding a debug flag to
+				 * control behaviour. */
+				ret = func(priv, 1, last, st->ptr, st->len);
+				off += st->len;
+			}
+
 			if (final) {
 				VTAILQ_REMOVE(&obj->list, st, list);
 				sml_stv_free(stv, st);
-			} else if (ret)
+			} else if (ret || last)
 				break;
+		}
+		if (!ret && !last) {
+			/* Special case that can only happen for a zero
+			 * length body. Report an empty data set with the
+			 * last bit set. */
+			AZ(off);
+			ret = func(priv, 0, 1, NULL, 0);
 		}
 		return (ret);
 	}
 
-	p = NULL;
-	l = 0;
-
-	while (1) {
-		ol = len;
-		nl = ObjWaitExtend(wrk, oc, ol);
+	Lck_Lock(&boc->mtx);
+	while (!ret) {
+		oldmax = maxoff;
+		maxoff = ObjWaitExtend(wrk, oc, oldmax);
 		if (boc->state == BOS_FAILED) {
+			/* We break immediately upon registering a fetch
+			 * failure. (XXX: Alternately we could have
+			 * delivered up to the byte when the error
+			 * occured. */
 			ret = -1;
 			break;
 		}
-		if (nl == ol) {
-			if (boc->state == BOS_FINISHED)
-				break;
-			continue;
-		}
-		Lck_Lock(&boc->mtx);
-		AZ(VTAILQ_EMPTY(&obj->list));
-		if (checkpoint == NULL) {
-			st = VTAILQ_FIRST(&obj->list);
-			sl = 0;
-		} else {
-			st = checkpoint;
-			sl = checkpoint_len;
-			ol -= checkpoint_len;
-		}
-		while (st != NULL) {
-			if (st->len > ol) {
-				p = st->ptr + ol;
-				l = st->len - ol;
-				len += l;
-				break;
-			}
-			ol -= st->len;
-			assert(ol >= 0);
-			nl -= st->len;
-			assert(nl > 0);
-			sl += st->len;
-			st = VTAILQ_NEXT(st, list);
-			if (VTAILQ_NEXT(st, list) != NULL) {
-				if (final && checkpoint != NULL) {
-					VTAILQ_REMOVE(&obj->list,
-					    checkpoint, list);
-					sml_stv_free(stv, checkpoint);
-				}
-				checkpoint = st;
-				checkpoint_len = sl;
-			}
-		}
-		CHECK_OBJ_NOTNULL(obj, OBJECT_MAGIC);
-		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
-		st = VTAILQ_NEXT(st, list);
-		if (st != NULL && st->len == 0)
-			st = NULL;
-		Lck_Unlock(&boc->mtx);
-		assert(l > 0 || boc->state == BOS_FINISHED);
-		ret = func(priv, st != NULL ? final : 1, p, l);
-		if (ret)
+		if (maxoff == oldmax) {
+			assert(boc->state == BOS_FINISHED);
 			break;
+		}
+
+		assert(maxoff > 0);
+		AZ(VTAILQ_EMPTY(&obj->list));
+		if (st == NULL)
+			st = VTAILQ_FIRST(&obj->list);
+		CHECK_OBJ_NOTNULL(st, STORAGE_MAGIC);
+
+		while (!ret && off < maxoff) {
+			assert(stoff <= off);
+			stlen = st->len;
+			assert(off <= stoff + stlen);
+			stnext = VTAILQ_NEXT(st, list);
+
+			if (off == stoff + stlen) {
+				/* Jump to next chunk */
+				CHECK_OBJ_NOTNULL(stnext, STORAGE_MAGIC);
+				stoff += stlen;
+				if (final) {
+					VTAILQ_REMOVE(&obj->list, st, list);
+					sml_stv_free(stv, st);
+				}
+				st = stnext;
+				stlen = st->len;
+				stnext = VTAILQ_NEXT(st, list);
+			}
+
+			/* Make sure that we keep within maxoff as
+			 * returned by ObjWaitExtend() */
+			if (stoff + stlen > maxoff)
+				stlen = maxoff - stoff;
+			assert(stlen > 0);
+
+			l = stlen - (off - stoff);
+			assert(l > 0);
+
+			/* Check for last state */
+			if (oc->boc->state == BOS_FINISHED && !stnext)
+				last = 1;
+
+			Lck_Unlock(&boc->mtx);
+			ret = func(priv, stnext != NULL ? final : 1, last,
+			    st->ptr + (off - stoff), l);
+			Lck_Lock(&boc->mtx);
+
+			off += l;
+			assert(off <= maxoff);
+		}
 	}
+	Lck_Unlock(&boc->mtx);
+
+	if (!ret && !last) {
+		/* We finished without error, but have not sent the last
+		 * flag.  Report an empty data set with the last bit
+		 * set. */
+		ret = func(priv, 0, 1, NULL, 0);
+	}
+
 	HSH_DerefBoc(wrk, oc);
 	return (ret);
 }

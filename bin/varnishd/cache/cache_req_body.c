@@ -112,7 +112,7 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 			if (yet >= l)
 				yet -= l;
 			if (func != NULL) {
-				r = func(priv, 1, ptr, l);
+				r = func(priv, 1, 0, ptr, l);
 				if (r)
 					break;
 			} else {
@@ -124,6 +124,10 @@ vrb_pull(struct req *req, ssize_t maxsize, objiterate_f *func, void *priv)
 	VFP_Close(vfc);
 	VSLb_ts_req(req, "ReqBody", VTIM_real());
 	if (func != NULL) {
+		if (!r) {
+			/* Send the last event to the iterator func */
+			r = func(priv, 0, 1, NULL, 0);
+		}
 		HSH_DerefBoc(req->wrk, req->body_oc);
 		AZ(HSH_DerefObjCore(req->wrk, &req->body_oc, 0));
 		if (vfps != VFP_END) {
@@ -226,11 +230,13 @@ VRB_Iterate(struct req *req, objiterate_f *func, void *priv)
  */
 
 static int v_matchproto_(objiterate_f)
-httpq_req_body_discard(void *priv, int flush, const void *ptr, ssize_t len)
+httpq_req_body_discard(void *priv, int flush, int last,
+    const void *ptr, ssize_t len)
 {
 
 	(void)priv;
 	(void)flush;
+	(void)last;
 	(void)ptr;
 	(void)len;
 	return (0);

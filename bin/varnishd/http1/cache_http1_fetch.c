@@ -46,11 +46,12 @@
  */
 
 static int v_matchproto_(objiterate_f)
-vbf_iter_req_body(void *priv, int flush, const void *ptr, ssize_t l)
+vbf_iter_req_body(void *priv, int flush, int last, const void *ptr, ssize_t l)
 {
 	struct busyobj *bo;
 
 	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
+	(void)last;
 
 	if (l > 0) {
 		(void)V1L_Write(bo->wrk, ptr, l);

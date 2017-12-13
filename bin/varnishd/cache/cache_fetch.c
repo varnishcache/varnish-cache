@@ -699,8 +699,8 @@ vbf_stp_fetchend(struct worker *wrk, struct busyobj *bo)
 /*--------------------------------------------------------------------
  */
 
-static int
-vbf_objiterator(void *priv, int flush, const void *ptr, ssize_t len)
+static int v_matchproto_(objiterate_f)
+vbf_objiterator(void *priv, int flush, int last, const void *ptr, ssize_t len)
 {
 	struct busyobj *bo;
 	ssize_t l;
@@ -708,6 +708,7 @@ vbf_objiterator(void *priv, int flush, const void *ptr, ssize_t len)
 	uint8_t *pd;
 
 	(void)flush;
+	(void)last;
 	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 
 	while (len > 0) {

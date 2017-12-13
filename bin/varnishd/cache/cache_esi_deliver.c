@@ -559,8 +559,8 @@ struct ved_foo {
 	uint8_t tailbuf[8];
 };
 
-static int
-ved_objiterate(void *priv, int flush, const void *ptr, ssize_t len)
+static int v_matchproto_(objiterate_f)
+ved_objiterate(void *priv, int flush, int last, const void *ptr, ssize_t len)
 {
 	struct ved_foo *foo;
 	const uint8_t *pp;
@@ -569,6 +569,7 @@ ved_objiterate(void *priv, int flush, const void *ptr, ssize_t len)
 
 	CAST_OBJ_NOTNULL(foo, priv, VED_FOO_MAGIC);
 	(void)flush;
+	(void)last;
 	pp = ptr;
 	if (len > 0) {
 		/* Skip over the GZIP header */

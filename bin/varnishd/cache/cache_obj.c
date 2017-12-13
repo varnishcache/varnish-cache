@@ -173,8 +173,8 @@ ObjDestroy(const struct worker *wrk, struct objcore **p)
  */
 
 int
-ObjIterate(struct worker *wrk, struct objcore *oc,
-    void *priv, objiterate_f *func, int final)
+ObjIterate(struct worker *wrk, struct objcore *oc, void *priv,
+    objiterate_f *func, int final)
 {
 	const struct obj_methods *om = obj_getmethods(oc);
 
@@ -238,22 +238,21 @@ ObjExtend(struct worker *wrk, struct objcore *oc, ssize_t l)
 uint64_t
 ObjWaitExtend(const struct worker *wrk, const struct objcore *oc, uint64_t l)
 {
-	uint64_t rv;
-
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	CHECK_OBJ_NOTNULL(oc->boc, BOC_MAGIC);
-	Lck_Lock(&oc->boc->mtx);
+
+	Lck_AssertHeld(&oc->boc->mtx);
+
 	while (1) {
-		rv = oc->boc->len_so_far;
-		assert(l <= rv || oc->boc->state == BOS_FAILED);
-		if (rv > l || oc->boc->state >= BOS_FINISHED)
+		assert(l <= oc->boc->len_so_far ||
+		    oc->boc->state == BOS_FAILED);
+		if (oc->boc->len_so_far > l || oc->boc->state >= BOS_FINISHED)
 			break;
 		(void)Lck_CondWait(&oc->boc->cond, &oc->boc->mtx, 0);
 	}
-	rv = oc->boc->len_so_far;
-	Lck_Unlock(&oc->boc->mtx);
-	return (rv);
+
+	return (oc->boc->len_so_far);
 }
 
 /*====================================================================

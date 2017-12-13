@@ -137,8 +137,11 @@ VDP_close(struct req *req)
 /*--------------------------------------------------------------------*/
 
 static int v_matchproto_(objiterate_f)
-vdp_objiterator(void *priv, int flush, const void *ptr, ssize_t len)
+vdp_objiterator(void *priv, int flush, int last, const void *ptr, ssize_t len)
 {
+	if (last && len == 0)
+		return (0);	/* XXX: For now do not send empty last
+				 * events down the chain. */
 	return (VDP_bytes(priv, flush ? VDP_FLUSH : VDP_NULL, ptr, len));
 }
 
