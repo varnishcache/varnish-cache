@@ -834,7 +834,8 @@ stv_variables = (
 # VCL to C type conversion
 
 vcltypes = {
-	'STRING_LIST':	"void*",
+	'STRINGS':		"void",
+	'STRING_LIST':		"void*",
 	'SUB':			"void*",
 }
 

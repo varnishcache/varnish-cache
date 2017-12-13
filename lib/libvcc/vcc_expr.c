@@ -26,7 +26,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * XXX: add VRT_count()'s
  */
 
 #include "config.h"
@@ -48,7 +47,9 @@ struct expr {
 #define EXPR_CONST	(1<<1)
 #define EXPR_STR_CONST	(1<<2)		// Last STRING_LIST elem is "..."
 	struct token	*t1, *t2;
+	int		nstr;
 };
+
 /*--------------------------------------------------------------------
  * Facility for carrying expressions around and do text-processing on
  * them.
@@ -61,11 +62,18 @@ vcc_isconst(const struct expr *e)
 	return (e->constant & EXPR_CONST);
 }
 
+static inline int
+vcc_islit(const struct expr *e)
+{
+	AN(e->constant);
+	return (e->constant & EXPR_STR_CONST);
+}
+
 static const char *
 vcc_utype(vcc_type_t t)
 {
-	if (t == STRING_LIST)
-		return (STRING->name);
+	if (t == STRINGS || t == STRING_LIST)
+		t = STRING;
 	return (t->name);
 }
 
@@ -73,31 +81,25 @@ static void vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt);
 static void vcc_expr_cor(struct vcc *tl, struct expr **e, vcc_type_t fmt);
 
 static struct expr *
-vcc_new_expr(void)
+vcc_new_expr(vcc_type_t fmt)
 {
 	struct expr *e;
 
-	/* XXX: use TlAlloc() ? */
 	ALLOC_OBJ(e, EXPR_MAGIC);
 	AN(e);
 	e->vsb = VSB_new_auto();
-	e->fmt = VOID;
+	e->fmt = fmt;
 	e->constant = EXPR_VAR;
 	return (e);
 }
 
-static struct expr *
-vcc_mk_expr(vcc_type_t fmt, const char *str, ...)
-    v_printflike_(2, 3);
-
-static struct expr *
+static struct expr * v_printflike_(2, 3)
 vcc_mk_expr(vcc_type_t fmt, const char *str, ...)
 {
 	va_list ap;
 	struct expr *e;
 
-	e = vcc_new_expr();
-	e->fmt = fmt;
+	e = vcc_new_expr(fmt);
 	va_start(ap, str);
 	VSB_vprintf(e->vsb, str, ap);
 	va_end(ap);
@@ -126,6 +128,7 @@ vcc_delete_expr(struct expr *e)
  * We use '\v' as the magic escape character.
  *	\v1  insert subexpression 1
  *	\v2  insert subexpression 2
+ *	\vS  insert subexpression 1(STRINGS) as STRING
  *	\v+  increase indentation
  *	\v-  decrease indentation
  *	anything else is literal
@@ -144,7 +147,7 @@ vcc_expr_edit(vcc_type_t fmt, const char *p, struct expr *e1,
 	int nl = 1;
 
 	AN(e1);
-	e = vcc_new_expr();
+	e = vcc_new_expr(fmt);
 	while (*p != '\0') {
 		if (*p != '\v') {
 			if (*p != '\n' || !nl)
@@ -157,6 +160,16 @@ vcc_expr_edit(vcc_type_t fmt, const char *p, struct expr *e1,
 		switch (*++p) {
 		case '+': VSB_cat(e->vsb, "\v+"); break;
 		case '-': VSB_cat(e->vsb, "\v-"); break;
+		case 'S':
+			assert(e1->fmt == STRINGS);
+			if (e1->nstr > 1)
+				VSB_cat(e->vsb,
+				    "\nVRT_CollectString(ctx,\v+\n");
+			VSB_cat(e->vsb, VSB_data(e1->vsb));
+			if (e1->nstr > 1)
+				VSB_cat(e->vsb,
+				    ",\nvrt_magic_string_end)\v-\n");
+			break;
 		case '1':
 			VSB_cat(e->vsb, VSB_data(e1->vsb));
 			break;
@@ -176,7 +189,6 @@ vcc_expr_edit(vcc_type_t fmt, const char *p, struct expr *e1,
 		e->t2 = e2->t2;
 	vcc_delete_expr(e1);
 	vcc_delete_expr(e2);
-	e->fmt = fmt;
 	return (e);
 }
 
@@ -196,26 +208,20 @@ vcc_expr_fmt(struct vsb *d, int ind, const struct expr *e1)
 	while (*p != '\0') {
 		if (*p == '\n') {
 			VSB_putc(d, '\n');
-			if (p[1] != '\0') {
-				for (i = 0; i < ind; i++)
-					VSB_cat(d, " ");
+			if (++p == '\0')
+				break;
+			for (i = 0; i < ind; i++)
+				VSB_cat(d, " ");
+		} else if (*p != '\v') {
+			VSB_putc(d, *p++);
+		} else {
+			switch (*++p) {
+			case '+': ind += 2; break;
+			case '-': ind -= 2; break;
+			default:  WRONG("Illegal format in VCC expression");
 			}
 			p++;
-			continue;
 		}
-		if (*p != '\v') {
-			VSB_putc(d, *p);
-			p++;
-			continue;
-		}
-		p++;
-		switch (*p) {
-		case '+': ind += 2; break;
-		case '-': ind -= 2; break;
-		default:
-			WRONG("Illegal format in VCC expression");
-		}
-		p++;
 	}
 }
 
@@ -229,33 +235,26 @@ vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	uint8_t	constant = EXPR_VAR;
 
 	CHECK_OBJ_NOTNULL(*e, EXPR_MAGIC);
-	assert(fmt == STRING || fmt == STRING_LIST);
+	assert(fmt == STRINGS || fmt == STRING_LIST || fmt == STRING);
 	assert(fmt != (*e)->fmt);
 
-	if ((*e)->fmt == STRING ||
-	    ((*e)->fmt == STRING_LIST && vcc_isconst(*e))) {
-		(*e)->fmt = fmt;
-		return;
-	}
 	p = (*e)->fmt->tostring;
-	if (p == NULL && (*e)->fmt == BLOB) {
-		VSB_printf(tl->sb,
-		    "Wrong use of BLOB value.\n"
-		    "BLOBs can only be used as arguments to VMOD"
-		    " functions.\n");
-		vcc_ErrWhere2(tl, (*e)->t1, tl->t);
-		return;
-	}
-	if (p == NULL) {
-		VSB_printf(tl->sb,
-		    "Cannot convert %s to STRING.\n", vcc_utype((*e)->fmt));
-		vcc_ErrWhere2(tl, (*e)->t1, tl->t);
-		return;
-	}
-	AN(p);
-	if (*p != '\0') {
+	if (p != NULL) {
+		AN(*p);
 		*e = vcc_expr_edit(fmt, p, *e, NULL);
 		(*e)->constant = constant;
+		(*e)->nstr = 1;
+	} else {
+		if ((*e)->fmt == BLOB)
+			VSB_printf(tl->sb,
+			    "Wrong use of BLOB value.\n"
+			    "BLOBs can only be used as arguments to VMOD"
+			    " functions.\n");
+		else
+			VSB_printf(tl->sb,
+			    "Cannot convert %s to STRING.\n",
+			    vcc_utype((*e)->fmt));
+		vcc_ErrWhere2(tl, (*e)->t1, tl->t);
 	}
 }
 
@@ -272,25 +271,20 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym,
 	char buf[128];
 
 	(void)fmt;
-	vcc_delete_expr(*e);
 	SkipToken(tl, ID);
 	SkipToken(tl, '(');
-
 	vcc_expr0(tl, &e2, STRING);
 	ERRCHK(tl);
-
 	SkipToken(tl, ',');
 	ExpectErr(tl, CSTR);
 	p = vcc_regexp(tl);
-	vcc_NextToken(tl);
-
 	bprintf(buf, "VRT_regsub(ctx, %d,\v+\n\v1,\n%s", all, p);
 	*e = vcc_expr_edit(STRING, buf, e2, NULL);
-
 	SkipToken(tl, ',');
 	vcc_expr0(tl, &e2, STRING);
 	ERRCHK(tl);
-	*e = vcc_expr_edit(STRING, "\v1,\n\v2)\v-", *e, e2);
+	*e = vcc_expr_edit(STRINGS, "\v1,\n\v2)\v-", *e, e2);
+	(*e)->nstr = 1;
 	SkipToken(tl, ')');
 }
 
@@ -318,14 +312,19 @@ vcc_Eval_Handle(struct vcc *tl, struct expr **e, const struct symbol *sym,
 
 	AN(sym->rname);
 
-	if (sym->fmt != STRING && (fmt == STRING || fmt == STRING_LIST)) {
-		*e = vcc_mk_expr(STRING, "\"%s\"", sym->name);
+	if (sym->fmt != STRING && fmt == STRINGS) {
 		(void)vcc_AddRef(tl, tl->t, sym->kind);
+		*e = vcc_mk_expr(STRINGS, "\"%s\"", sym->name);
+		(*e)->nstr = 1;
+		(*e)->constant |= EXPR_CONST | EXPR_STR_CONST;
 	} else {
 		vcc_ExpectVid(tl, "handle");
 		(void)vcc_AddRef(tl, tl->t, sym->kind);
 		*e = vcc_mk_expr(sym->fmt, "%s", sym->rname);
-		(*e)->constant = EXPR_VAR;	/* XXX ? */
+		(*e)->constant = EXPR_VAR;
+		(*e)->nstr = 1;
+		if ((*e)->fmt == STRING)
+			(*e)->fmt = STRINGS;
 	}
 	vcc_NextToken(tl);
 }
@@ -343,6 +342,10 @@ vcc_Eval_Var(struct vcc *tl, struct expr **e, const struct symbol *sym,
 	vcc_AddUses(tl, tl->t, sym->r_methods, "Not available");
 	ERRCHK(tl);
 	*e = vcc_mk_expr(sym->fmt, "%s", sym->rname);
+	(*e)->constant = EXPR_VAR;
+	(*e)->nstr = 1;
+	if ((*e)->fmt == STRING)
+		(*e)->fmt = STRINGS;
 	vcc_NextToken(tl);
 }
 
@@ -551,11 +554,8 @@ vcc_func(struct vcc *tl, struct expr **e, const char *spec,
 		}
 		free(fa);
 	}
-	e1 = vcc_expr_edit(e1->fmt, "\v1\n)\v-", e1, NULL);
-	*e = e1;
-
+	*e = vcc_expr_edit(e1->fmt, "\v1\n)\v-", e1, NULL);
 	SkipToken(tl, ')');
-
 }
 
 /*--------------------------------------------------------------------
@@ -589,6 +589,11 @@ vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, const struct symbol *sym,
 	SkipToken(tl, ID);
 	assert(sym->fmt == VCC_Type(sym->eval_priv));
 	vcc_func(tl, e, sym->eval_priv, sym->extra, sym);
+	ERRCHK(tl);
+	if ((*e)->fmt == STRING) {
+		(*e)->fmt = STRINGS;
+		(*e)->nstr = 1;
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -617,13 +622,10 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		vcc_expr_cor(tl, &e2, fmt);
 		ERRCHK(tl);
 		SkipToken(tl, ')');
-		if (e2->fmt == STRING_LIST) {
+		if (e2->fmt == STRINGS)
 			*e = e2;
-			if (fmt == STRING)
-				vcc_expr_tostring(tl, e, STRING);
-		} else {
+		else
 			*e = vcc_expr_edit(e2->fmt, "(\v1)", e2, NULL);
-		}
 		return;
 	}
 	switch (tl->t->tok) {
@@ -665,7 +667,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			ERRCHK(tl);
 			/* Unless asked for a HEADER, fold to string here */
 			if (*e && fmt != HEADER && (*e)->fmt == HEADER) {
-				vcc_expr_tostring(tl, e, STRING);
+				vcc_expr_tostring(tl, e, STRINGS);
 				ERRCHK(tl);
 			}
 			return;
@@ -687,13 +689,11 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			e1 = vcc_mk_expr(IP, "%s", ip);
 			ERRCHK(tl);
 		} else {
-			e1 = vcc_new_expr();
+			e1 = vcc_new_expr(STRINGS);
 			EncToken(e1->vsb, tl->t);
-			e1->fmt = STRING;
 			AZ(VSB_finish(e1->vsb));
 			e1->constant |= EXPR_STR_CONST;
-			if (fmt == STRING_LIST)
-				e1->fmt = fmt;
+			e1->nstr = 1;
 		}
 		e1->t1 = tl->t;
 		e1->constant |= EXPR_CONST;
@@ -774,9 +774,8 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		vcc_expr4(tl, &e2, f2);
 		ERRCHK(tl);
 		if (e2->fmt != INT && e2->fmt != f2) {
-			VSB_printf(tl->sb,
-			    "%s %.*s %s not possible.\n",
-			    vcc_utype(f2), PF(tk), vcc_utype(e2->fmt));
+			VSB_printf(tl->sb, "%s %.*s %s not possible.\n",
+			    vcc_utype((*e)->fmt), PF(tk), vcc_utype(e2->fmt));
 			vcc_ErrWhere(tl, tk);
 			return;
 		}
@@ -791,44 +790,7 @@ vcc_expr_mul(struct vcc *tl, struct expr **e, vcc_type_t fmt)
  * SYNTAX:
  *    ExprAdd:
  *      ExprMul { {'+'|'-'} ExprMul } *
- *
- * For reasons of memory allocation/copying and general performance,
- * STRINGs in VCL are quite special.   Addition/concatenation is split
- * into it's own subfunction to encapsulate this.
  */
-
-static void
-vcc_expr_string_add(struct vcc *tl, struct expr **e, struct expr *e2)
-{
-	vcc_type_t f2;
-
-	AN(e);
-	AN(*e);
-	AN(e2);
-	f2 = (*e)->fmt;
-	assert (f2 == STRING || f2 == STRING_LIST);
-
-	while (e2 != NULL || tl->t->tok == '+') {
-		if (e2 == NULL) {
-			vcc_NextToken(tl);
-			vcc_expr_mul(tl, &e2, f2);
-		}
-		ERRCHK(tl);
-		if (e2->fmt != STRING && e2->fmt != STRING_LIST)
-			vcc_expr_tostring(tl, &e2, f2);
-		ERRCHK(tl);
-		assert(e2->fmt == STRING || e2->fmt == STRING_LIST);
-
-		if (((*e)->constant & EXPR_STR_CONST) && vcc_isconst(e2)) {
-			*e = vcc_expr_edit((*e)->fmt, "\v1\n\v2", *e, e2);
-			(*e)->constant = EXPR_CONST | EXPR_STR_CONST;
-		} else {
-			*e = vcc_expr_edit(STRING_LIST, "\v1,\n\v2", *e, e2);
-			(*e)->constant = EXPR_VAR;
-		}
-		e2 = NULL;
-	}
-}
 
 static const struct adds {
 	unsigned	op;
@@ -852,7 +814,7 @@ static const struct adds {
 	{ '+', TIME,		DURATION,	TIME },
 	{ '-', TIME,		DURATION,	TIME },
 
-	{ EOI, VOID, VOID, VOID }
+	{ EOI, VOID,		VOID,		VOID }
 };
 
 static void
@@ -860,66 +822,59 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 	const struct adds *ap;
 	struct expr  *e2;
-	vcc_type_t f2;
 	struct token *tk;
-	char buf[128];
+	int n;
 
 	*e = NULL;
 	vcc_expr_mul(tl, e, fmt);
 	ERRCHK(tl);
 
-	if (tl->t->tok != '+' && tl->t->tok != '-')
-		return;
-
-	f2 = (*e)->fmt;
-	for (ap = vcc_adds; ap->op != EOI; ap++)
-		if (ap->a == f2 && ap->op == tl->t->tok)
-			break;
-
-	if (ap->op == EOI &&
-	    (fmt == STRING || fmt == STRING_LIST) &&
-	    f2 != STRING && f2 != STRING_LIST) {
-		vcc_expr_tostring(tl, e, fmt);
-		f2 = (*e)->fmt;
-	}
-
 	while (tl->t->tok == '+' || tl->t->tok == '-') {
 		tk = tl->t;
+		for (ap = vcc_adds; ap->op != EOI; ap++)
+			if (tk->tok == ap->op && (*e)->fmt == ap->a)
+				break;
 		vcc_NextToken(tl);
-		vcc_expr_mul(tl, &e2, f2);
+		if (ap->op == EOI && fmt == STRINGS)
+			vcc_expr_mul(tl, &e2, STRINGS);
+		else
+			vcc_expr_mul(tl, &e2, (*e)->fmt);
 		ERRCHK(tl);
 
-		for (ap = vcc_adds; ap->op != EOI; ap++) {
+		for (ap = vcc_adds; ap->op != EOI; ap++)
 			if (tk->tok == ap->op && (*e)->fmt == ap->a &&
 			    e2->fmt == ap->b)
 				break;
-		}
 
-		if (ap->fmt != VOID) {
-			bprintf(buf, "(\v1 %c \v2)", ap->op);
-			*e = vcc_expr_edit(ap->fmt, buf, *e, e2);
-			continue;
-		}
-
-		if (tk->tok == '+' && ap->op == EOI) {
-			if ((*e)->fmt == STRING && e2->fmt == STRING) {
-				vcc_expr_string_add(tl, e, e2);
-				return;
+		if (ap->op == '+') {
+			*e = vcc_expr_edit(ap->fmt, "(\v1 + \v2)", *e, e2);
+		} else if (ap->op == '-') {
+			*e = vcc_expr_edit(ap->fmt, "(\v1 - \v2)", *e, e2);
+		} else if (tk->tok == '+' &&
+		    ((*e)->fmt == STRINGS || fmt == STRINGS)) {
+			if ((*e)->fmt != STRINGS)
+				vcc_expr_tostring(tl, e, STRINGS);
+			if (e2->fmt != STRINGS)
+				vcc_expr_tostring(tl, &e2, STRINGS);
+			if (vcc_islit(*e) && vcc_isconst(e2)) {
+				*e = vcc_expr_edit(STRINGS,
+				    "\v1\n\v2", *e, e2);
+				(*e)->constant = EXPR_CONST;
+				if (vcc_islit(e2))
+					(*e)->constant |= EXPR_STR_CONST;
+			} else {
+				n = (*e)->nstr + e2->nstr;
+				*e = vcc_expr_edit(STRINGS,
+				    "\v1,\n\v2", *e, e2);
+				(*e)->constant = EXPR_VAR;
+				(*e)->nstr = n;
 			}
-
-			if (fmt == STRING || fmt == STRING_LIST) {
-				/* Time to fold and add as string */
-				if ((*e)->fmt != fmt)
-					vcc_expr_tostring(tl, e, fmt);
-				vcc_expr_string_add(tl, e, e2);
-				return;
-			}
+		} else {
+			VSB_printf(tl->sb, "%s %.*s %s not possible.\n",
+			    vcc_utype((*e)->fmt), PF(tk), vcc_utype(e2->fmt));
+			vcc_ErrWhere2(tl, tk, tl->t);
+			return;
 		}
-
-		VSB_printf(tl->sb, "%s %.*s %s not possible.\n",
-		    vcc_utype((*e)->fmt), PF(tk), vcc_utype(e2->fmt));
-		vcc_ErrWhere2(tl, tk, tl->t);
-		return;
 	}
 }
 
@@ -955,22 +910,16 @@ cmp_simple(struct vcc *tl, struct expr **e, const struct cmps *cp)
 
 	tk = tl->t;
 	vcc_NextToken(tl);
-	if ((*e)->fmt == STRING_LIST)
-		vcc_expr_tostring(tl, e, STRING);
 	vcc_expr_add(tl, &e2, (*e)->fmt);
 	ERRCHK(tl);
-	if (e2->fmt == STRING_LIST)
-		vcc_expr_tostring(tl, &e2, STRING);
 
-	if (e2->fmt != (*e)->fmt) { /* XXX */
-		VSB_printf(tl->sb, "Comparison of different types: ");
-		VSB_printf(tl->sb, "%s ", vcc_utype((*e)->fmt));
-		vcc_ErrToken(tl, tk);
-		VSB_printf(tl->sb, " %s\n", vcc_utype(e2->fmt));
+	if (e2->fmt != (*e)->fmt) {
+		VSB_printf(tl->sb,
+		    "Comparison of different types: %s '%.*s' %s\n",
+		    vcc_utype((*e)->fmt), PF(tk), vcc_utype(e2->fmt));
 		vcc_ErrWhere(tl, tk);
-		return;
-	}
-	*e = vcc_expr_edit(BOOL, cp->emit, *e, e2);
+	} else
+		*e = vcc_expr_edit(BOOL, cp->emit, *e, e2);
 }
 
 static void v_matchproto_(cmp_f)
@@ -979,13 +928,11 @@ cmp_regexp(struct vcc *tl, struct expr **e, const struct cmps *cp)
 	char buf[128];
 	const char *re;
 
-	if ((*e)->fmt != STRING)
-		vcc_expr_tostring(tl, e, STRING);
+	*e = vcc_expr_edit(STRING, "\vS", *e, NULL);
 	vcc_NextToken(tl);
 	ExpectErr(tl, CSTR);
 	re = vcc_regexp(tl);
 	ERRCHK(tl);
-	vcc_NextToken(tl);
 	bprintf(buf, "%sVRT_re_match(ctx, \v1, %s)", cp->emit, re);
 	*e = vcc_expr_edit(BOOL, buf, *e, NULL);
 }
@@ -1003,6 +950,28 @@ cmp_acl(struct vcc *tl, struct expr **e, const struct cmps *cp)
 	VCC_GlobalSymbol(sym, ACL, ACL_SYMBOL_PREFIX);
 	bprintf(buf, "%sVRT_acl_match(ctx, %s, \v1)", cp->emit, sym->rname);
 	*e = vcc_expr_edit(BOOL, buf, *e, NULL);
+}
+
+static void v_matchproto_(cmp_f)
+cmp_string(struct vcc *tl, struct expr **e, const struct cmps *cp)
+{
+	struct expr *e2;
+	struct token *tk;
+
+	tk = tl->t;
+	vcc_NextToken(tl);
+	vcc_expr_add(tl, &e2, STRINGS);
+	ERRCHK(tl);
+	if (e2->fmt != STRINGS) {
+		VSB_printf(tl->sb,
+		    "Comparison of different types: %s '%.*s' %s\n",
+		    vcc_utype((*e)->fmt), PF(tk), vcc_utype(e2->fmt));
+		vcc_ErrWhere(tl, tk);
+	} else {
+		*e = vcc_expr_edit(STRING, "\vS", *e, NULL);
+		e2 = vcc_expr_edit(STRING, "\vS", e2, NULL);
+		*e = vcc_expr_edit(BOOL, cp->emit, *e, e2);
+	}
 }
 
 #define IDENT_REL(typ)							\
@@ -1035,17 +1004,13 @@ static const struct cmps vcc_cmps[] = {
 	{IP,		'~',		cmp_acl, "" },
 	{IP,		T_NOMATCH,	cmp_acl, "!" },
 
-	{STRING,	T_EQ,		cmp_simple, "!VRT_strcmp(\v1, \v2)" },
-	{STRING_LIST,	T_EQ,		cmp_simple, "!VRT_strcmp(\v1, \v2)" },
-	{STRING,	T_NEQ,		cmp_simple, "VRT_strcmp(\v1, \v2)" },
-	{STRING_LIST,	T_NEQ,		cmp_simple, "VRT_strcmp(\v1, \v2)" },
+	{STRINGS,	T_EQ,		cmp_string, "!VRT_strcmp(\v1, \v2)" },
+	{STRINGS,	T_NEQ,		cmp_string, "VRT_strcmp(\v1, \v2)" },
 
-	{STRING,	'~',		cmp_regexp, "" },
-	{STRING_LIST,	'~',		cmp_regexp, "" },
-	{STRING,	T_NOMATCH,	cmp_regexp, "!" },
-	{STRING_LIST,	T_NOMATCH,	cmp_regexp, "!" },
+	{STRINGS,	'~',		cmp_regexp, "" },
+	{STRINGS,	T_NOMATCH,	cmp_regexp, "!" },
 
-	{VOID, 0, NULL, NULL}
+	{VOID,		0,		NULL, NULL}
 };
 
 #undef IDENT_REL
@@ -1091,10 +1056,12 @@ vcc_expr_cmp(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	}
 	if (fmt != BOOL)
 		return;
-	if ((*e)->fmt == STRING || (*e)->fmt == BACKEND || (*e)->fmt == INT)
+	if ((*e)->fmt == BACKEND || (*e)->fmt == INT)
 		*e = vcc_expr_edit(BOOL, "(\v1 != 0)", *e, NULL);
 	else if ((*e)->fmt == DURATION)
 		*e = vcc_expr_edit(BOOL, "(\v1 > 0)", *e, NULL);
+	else if ((*e)->fmt == STRINGS)
+		*e = vcc_expr_edit(BOOL, "(\vS != 0)", *e, NULL);
 	else
 		INCOMPL();
 }
@@ -1210,25 +1177,34 @@ vcc_expr0(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 	struct token *t1;
 
-	*e = NULL;
 	assert(fmt != VOID);
+	assert(fmt != STRINGS);
+	*e = NULL;
 	t1 = tl->t;
-	vcc_expr_cor(tl, e, fmt);
+	if (fmt == STRING_LIST || fmt == STRING)
+		vcc_expr_cor(tl, e, STRINGS);
+	else
+		vcc_expr_cor(tl, e, fmt);
 	ERRCHK(tl);
-	if (fmt != (*e)->fmt && (fmt == STRING || fmt == STRING_LIST)) {
+	assert((*e)->fmt != STRING_LIST && (*e)->fmt != STRING);
+
+	if ((*e)->fmt == STRINGS && fmt == STRING_LIST)
+		(*e)->fmt = STRING_LIST;
+	else if ((*e)->fmt == STRINGS && fmt == STRING)
+		*e = vcc_expr_edit(STRING, "\vS", *e, NULL);
+	else if ((*e)->fmt != STRINGS && (fmt == STRING || fmt == STRING_LIST))
 		vcc_expr_tostring(tl, e, fmt);
-		ERRCHK(tl);
-	}
-	if (fmt != (*e)->fmt)  {
-		VSB_printf(tl->sb, "Expression has type %s, expected %s\n",
-		    vcc_utype((*e)->fmt), vcc_utype(fmt));
-		tl->err = 1;
-	}
+
 	if ((*e)->fmt == STRING_LIST)
 		*e = vcc_expr_edit(STRING_LIST,
 		    "\v+\n\v1,\nvrt_magic_string_end\v-", *e, NULL);
-	if (tl->err)
+
+	if (fmt != (*e)->fmt)  {
+		VSB_printf(tl->sb, "Expression has type %s, expected %s\n",
+		    vcc_utype((*e)->fmt), vcc_utype(fmt));
 		vcc_ErrWhere2(tl, t1, tl->t);
+		return;
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -1244,6 +1220,7 @@ vcc_Expr(struct vcc *tl, vcc_type_t fmt)
 	struct expr *e = NULL;
 
 	assert(fmt != VOID);
+	assert(fmt != STRINGS);
 	vcc_expr0(tl, &e, fmt);
 	ERRCHK(tl);
 	vcc_expr_fmt(tl->fb, tl->indent, e);

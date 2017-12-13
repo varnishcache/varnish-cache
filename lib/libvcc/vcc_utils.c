@@ -73,6 +73,7 @@ vcc_regexp(struct vcc *tl)
 	EncToken(ifp->ini, tl->t);
 	VSB_printf(ifp->ini, ");");
 	VSB_printf(ifp->fin, "\t\tVRT_re_fini(%s);", buf);
+	vcc_NextToken(tl);
 	return (p);
 }
 

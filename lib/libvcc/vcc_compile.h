@@ -39,7 +39,6 @@
 #include "vqueue.h"
 #include "vsb.h"
 
-
 #include "vcc_token_defs.h"
 
 #ifndef NULL
