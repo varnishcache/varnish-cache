@@ -72,7 +72,7 @@ V2D_Init(void)
 
 /**********************************************************************/
 
-static int v_matchproto_(vdp_bytes)
+static int v_matchproto_(vdp_bytes_f)
 h2_bytes(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {

@@ -100,12 +100,12 @@ enum vdp_action {
 	VDP_FLUSH,		/* Input buffer will be invalidated */
 };
 
-typedef int vdp_bytes(struct req *, enum vdp_action, void **priv,
+typedef int vdp_bytes_f(struct req *, enum vdp_action, void **priv,
     const void *ptr, ssize_t len);
 
 struct vdp {
 	const char		*name;
-	vdp_bytes		*func;
+	vdp_bytes_f		*func;
 };
 
 struct vdp_entry {

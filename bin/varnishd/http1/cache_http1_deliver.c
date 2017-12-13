@@ -35,7 +35,7 @@
 
 /*--------------------------------------------------------------------*/
 
-static int v_matchproto_(vdp_bytes)
+static int v_matchproto_(vdp_bytes_f)
 v1d_bytes(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {

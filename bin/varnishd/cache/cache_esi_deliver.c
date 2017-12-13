@@ -249,7 +249,7 @@ ved_decode_len(struct req *req, const uint8_t **pp)
 /*---------------------------------------------------------------------
  */
 
-static int v_matchproto_(vdp_bytes)
+static int v_matchproto_(vdp_bytes_f)
 ved_vdp(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
@@ -466,7 +466,7 @@ ved_bytes(struct req *req, struct req *preq, enum vdp_action act,
  * the stream with a bit more overhead.
  */
 
-static int v_matchproto_(vdp_bytes)
+static int v_matchproto_(vdp_bytes_f)
 ved_pretend_gzip(struct req *req, enum vdp_action act, void **priv,
     const void *pv, ssize_t l)
 {
@@ -768,7 +768,7 @@ ved_stripgzip(struct req *req, const struct boc *boc)
 
 /*--------------------------------------------------------------------*/
 
-static int v_matchproto_(vdp_bytes)
+static int v_matchproto_(vdp_bytes_f)
 ved_vdp_bytes(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {

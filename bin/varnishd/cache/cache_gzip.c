@@ -284,7 +284,7 @@ VGZ_Gzip(struct vgz *vg, const void **pptr, ssize_t *plen, enum vgz_flag flags)
  * VDP for gunzip'ing
  */
 
-static int v_matchproto_(vdp_bytes)
+static int v_matchproto_(vdp_bytes_f)
 vdp_gunzip(struct req *req, enum vdp_action act, void **priv,
     const void *ptr, ssize_t len)
 {
