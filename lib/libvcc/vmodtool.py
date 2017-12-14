@@ -801,8 +801,7 @@ class vcc(object):
         fo.write("#endif\n")
         fo.write("\n")
 
-        l = enum_values.keys()
-        l.sort()
+        l = sorted(enum_values)
         for j in l:
             fo.write("extern VCL_ENUM %senum_%s;\n" % (self.sympfx, j))
         fo.write("\n")
@@ -817,8 +816,7 @@ class vcc(object):
         for j in self.contents:
             j.cstruct(fo)
         fo.write("\n")
-        l = enum_values.keys()
-        l.sort()
+        l = sorted(enum_values)
         for j in l:
             fo.write("\tVCL_ENUM\t\t\t*enum_%s;\n" % j)
         fo.write("};\n")
@@ -828,8 +826,7 @@ class vcc(object):
         for j in self.contents:
             j.cstruct_init(fo)
         fo.write("\n")
-        l = enum_values.keys()
-        l.sort()
+        l = sorted(enum_values)
         for j in l:
             fo.write("\t&%senum_%s,\n" % (self.sympfx, j))
         fo.write("};\n")
@@ -887,8 +884,7 @@ class vcc(object):
 
         fo.write("\n")
 
-        l = enum_values.keys()
-        l.sort()
+        l = sorted(enum_values)
         for j in l:
             fo.write('VCL_ENUM %senum_%s = "%s";\n' % (self.sympfx, j, j))
         fo.write("\n")
