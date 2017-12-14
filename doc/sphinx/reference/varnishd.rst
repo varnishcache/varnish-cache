@@ -295,7 +295,8 @@ The following storage types are available:
 -s <file,path[,size[,granularity[,advice]]]>
 
   The file backend stores data in a file on disk. The file will be
-  accessed using mmap.
+  accessed using mmap. Note that this storage is reset every time ``varnishd``
+  starts.
 
   The path is mandatory. If path points to a directory, a temporary
   file will be created in that directory and immediately unlinked. If
@@ -322,6 +323,18 @@ The following storage types are available:
   of a planned or unplanned shutdown of Varnish. The persistent
   storage backend has multiple issues with it and will likely be
   removed from a future version of Varnish.
+
+
+You can also prefix the type with ``NAME=`` to explicitly name a storage::
+
+  -s myStorage=malloc,5G
+
+This allows to address it more easily in VCL::
+
+  set beresp.storage = storage.myStorage;
+
+If the name is omitted, Varnish will name storages ``sN``, starting with ``s0``
+and incrementing N for every new storage.
 
 .. _ref-varnishd-opt_j:
 
