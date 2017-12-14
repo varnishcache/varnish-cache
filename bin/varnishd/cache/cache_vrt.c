@@ -157,6 +157,64 @@ VRT_GetHdr(VRT_CTX, const struct gethdr_s *hs)
 }
 
 /*--------------------------------------------------------------------
+ * Build STRANDS from what is essentially a STRING_LIST
+ */
+
+VCL_STRANDS
+VRT_BundleStrands(int n, struct strands *s, char const **d, const char *f, ...)
+{
+	va_list ap;
+
+	s->n = n;
+	s->p = d;
+	*d++ = f;
+	va_start(ap, f);
+	while(--n)
+		*d++ = va_arg(ap, const char *);
+	assert(va_arg(ap, const char *) == vrt_magic_string_end);
+	va_end(ap);
+	return (s);
+}
+
+/*--------------------------------------------------------------------
+ * Compare two STRANDS
+ */
+
+int
+VRT_CompareStrands(VCL_STRANDS a, VCL_STRANDS b)
+{
+	const char *pa = NULL, *pb = NULL;
+	int na = 0, nb = 0;
+
+	while (1) {
+		if (pa != NULL && *pa == '\0')
+			pa = NULL;
+		if (pb != NULL && *pb == '\0')
+			pb = NULL;
+		if (pa == NULL && na < a->n)
+			pa = a->p[na++];
+		else if (pb == NULL && nb < b->n)
+			pb = b->p[nb++];
+		else if (pa == NULL && pb == NULL)
+			return (0);
+		else if (pa == NULL)
+			return (-1);
+		else if (pb == NULL)
+			return (1);
+		else if (*pa == '\0')
+			pa = NULL;
+		else if (*pb == '\0')
+			pb = NULL;
+		else if (*pa != *pb)
+			return (*pa - *pb);
+		else {
+			pa++;
+			pb++;
+		}
+	}
+}
+
+/*--------------------------------------------------------------------
  * Collapse a STRING_LIST in the space provided, or return NULL
  */
 
@@ -341,7 +399,7 @@ VRT_r_now(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
-char *
+VCL_STRING v_matchproto_()
 VRT_IP_string(VRT_CTX, VCL_IP ip)
 {
 	char *p;
@@ -361,7 +419,7 @@ VRT_IP_string(VRT_CTX, VCL_IP ip)
 	return (p);
 }
 
-char *
+VCL_STRING v_matchproto_()
 VRT_INT_string(VRT_CTX, long num)
 {
 
@@ -369,7 +427,7 @@ VRT_INT_string(VRT_CTX, long num)
 	return (WS_Printf(ctx->ws, "%ld", num));
 }
 
-char *
+VCL_STRING v_matchproto_()
 VRT_REAL_string(VRT_CTX, double num)
 {
 
@@ -377,7 +435,7 @@ VRT_REAL_string(VRT_CTX, double num)
 	return (WS_Printf(ctx->ws, "%.3f", num));
 }
 
-char *
+VCL_STRING v_matchproto_()
 VRT_TIME_string(VRT_CTX, double t)
 {
 	char *p;
@@ -389,7 +447,7 @@ VRT_TIME_string(VRT_CTX, double t)
 	return (p);
 }
 
-const char * v_matchproto_()
+VCL_STRING v_matchproto_()
 VRT_BACKEND_string(VCL_BACKEND d)
 {
 	if (d == NULL)
@@ -398,7 +456,7 @@ VRT_BACKEND_string(VCL_BACKEND d)
 	return (d->vcl_name);
 }
 
-const char *
+VCL_STRING v_matchproto_()
 VRT_BOOL_string(unsigned val)
 {
 

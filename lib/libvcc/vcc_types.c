@@ -131,7 +131,11 @@ const struct type STEVEDORE[1] = {{
 const struct type STRING[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"STRING",
-	.tostring =		"",
+}};
+
+const struct type STRANDS[1] = {{
+	.magic =		TYPE_MAGIC,
+	.name =			"STRANDS",
 }};
 
 const struct type STRINGS[1] = {{

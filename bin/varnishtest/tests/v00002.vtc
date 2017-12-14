@@ -1,0 +1,174 @@
+varnishtest "Test VCL STRINGS/STRANDS comparisons"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_deliver {
+		set resp.http.test = req.http.test;
+
+		set resp.http.eq =
+		    req.http.foo == req.http.bar;
+
+		set resp.http.neq =
+		    req.http.foo != req.http.bar;
+
+		set resp.http.lt =
+		    req.http.foo < req.http.bar;
+
+		set resp.http.le =
+		    req.http.foo <= req.http.bar;
+
+		set resp.http.gt =
+		    req.http.foo > req.http.bar;
+
+		set resp.http.ge =
+		    req.http.foo >= req.http.bar;
+	}
+} -start
+
+client c1 {
+	txreq -hdr "foo: 1" -hdr "bar: 1" -hdr "test: 1"
+	rxresp
+	expect resp.http.eq == true
+	expect resp.http.neq == false
+	expect resp.http.lt == false
+	expect resp.http.le == true
+	expect resp.http.gt == false
+	expect resp.http.ge == true
+
+	txreq -hdr "foo: 1" -hdr "bar: 2" -hdr "test: 2"
+	rxresp
+	expect resp.http.eq == false
+	expect resp.http.neq == true
+	expect resp.http.lt == true
+	expect resp.http.le == true
+	expect resp.http.gt == false
+	expect resp.http.ge == false
+
+	txreq -hdr "foo: 2" -hdr "bar: 1" -hdr "test: 3"
+	rxresp
+	expect resp.http.eq == false
+	expect resp.http.neq == true
+	expect resp.http.lt == false
+	expect resp.http.le == false
+	expect resp.http.gt == true
+	expect resp.http.ge == true
+
+	txreq -hdr "foo: 1" -hdr "bar: 11" -hdr "test: 4"
+	rxresp
+	expect resp.http.eq == false
+	expect resp.http.neq == true
+	expect resp.http.lt == true
+	expect resp.http.le == true
+	expect resp.http.gt == false
+	expect resp.http.ge == false
+
+	txreq -hdr "foo: 11" -hdr "bar: 1" -hdr "test: 5"
+	rxresp
+	expect resp.http.eq == false
+	expect resp.http.neq == true
+	expect resp.http.lt == false
+	expect resp.http.le == false
+	expect resp.http.gt == true
+	expect resp.http.ge == true
+
+	txreq -hdr "foo:" -hdr "bar:" -hdr "test: 6"
+	rxresp
+	expect resp.http.eq == true
+	expect resp.http.neq == false
+	expect resp.http.lt == false
+	expect resp.http.le == true
+	expect resp.http.gt == false
+	expect resp.http.ge == true
+
+	txreq -hdr "foo:" -hdr "bar: 1" -hdr "test: 7"
+	rxresp
+	expect resp.http.eq == false
+	expect resp.http.neq == true
+	expect resp.http.lt == true
+	expect resp.http.le == true
+	expect resp.http.gt == false
+	expect resp.http.ge == false
+
+} -run
+
+varnish v1 -vsl_catchup -vcl+backend {
+	sub vcl_deliver {
+		set resp.http.test = req.http.test;
+
+		set resp.http.eq =
+		    req.http.foo + " " == req.http.bar + " ";
+
+		set resp.http.neq =
+		    req.http.foo + " " != req.http.bar + " ";
+
+		set resp.http.lt =
+		    req.http.foo + " " < req.http.bar + " ";
+
+		set resp.http.le =
+		    req.http.foo + " " <= req.http.bar + " ";
+
+		set resp.http.gt =
+		    req.http.foo + " " > req.http.bar + " ";
+
+		set resp.http.ge =
+		    req.http.foo + " " >= req.http.bar + " ";
+	}
+}
+
+client c1 -run
+
+varnish v1 -vsl_catchup -vcl+backend {
+	sub vcl_deliver {
+		set resp.http.test = req.http.test;
+
+		set resp.http.eq =
+		    req.http.foo == req.http.bar + req.http.not;
+
+		set resp.http.neq =
+		    req.http.foo != req.http.bar + req.http.not;
+
+		set resp.http.lt =
+		    req.http.foo < req.http.bar + req.http.not;
+
+		set resp.http.le =
+		    req.http.foo <= req.http.bar + req.http.not;
+
+		set resp.http.gt =
+		    req.http.foo > req.http.bar + req.http.not;
+
+		set resp.http.ge =
+		    req.http.foo >= req.http.bar + req.http.not;
+	}
+}
+
+client c1 -run
+
+varnish v1 -vsl_catchup -vcl+backend {
+	sub vcl_deliver {
+		set resp.http.test = req.http.test;
+
+		set resp.http.eq =
+		    req.http.not + req.http.foo == req.http.bar + req.http.not;
+
+		set resp.http.neq =
+		    req.http.not + req.http.foo != req.http.bar + req.http.not;
+
+		set resp.http.lt =
+		    req.http.not + req.http.foo < req.http.bar + req.http.not;
+
+		set resp.http.le =
+		    req.http.not + req.http.foo <= req.http.bar + req.http.not;
+
+		set resp.http.gt =
+		    req.http.not + req.http.foo > req.http.bar + req.http.not;
+
+		set resp.http.ge =
+		    req.http.not + req.http.foo >= req.http.bar + req.http.not;
+	}
+}
+
+client c1 -run

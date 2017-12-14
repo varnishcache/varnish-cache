@@ -12,7 +12,7 @@ server s1 {
 	txresp -hdr "Content-Type: text/plain" -body response
 } -start
 
-varnish v1 -vcl+backend {} -start
+varnish v1 -vcl+backend {} -start -cliok "param.set debug +syncvsl"
 
 client c1 {
 	txreq -req POST -hdr "Content-Type: text/plain" -body request

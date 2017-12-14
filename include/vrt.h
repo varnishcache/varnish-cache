@@ -61,6 +61,7 @@
  *	VRT_r_beresp_storage_hint() removed - under discussion #2509
  *	VRT_l_beresp_storage_hint() removed - under discussion #2509
  *	VRT_blob() added
+ *	VCL_STRANDS added
  * 6.1 (2017-09-15 aka 5.2)
  *	http_CollectHdrSep added
  *	VRT_purge modified (may fail a transaction, signature changed)
@@ -114,6 +115,11 @@ struct vsb;
 struct vsl_log;
 struct ws;
 
+struct strands {
+	int		n;
+	const char	**p;
+};
+
 /***********************************************************************
  * This is the central definition of the mapping from VCL types to
  * C-types.  The python scripts read these from here.
@@ -136,6 +142,7 @@ typedef const struct suckaddr *			VCL_IP;
 typedef const struct vrt_backend_probe *	VCL_PROBE;
 typedef double					VCL_REAL;
 typedef const struct stevedore *		VCL_STEVEDORE;
+typedef const struct strands *			VCL_STRANDS;
 typedef const char *				VCL_STRING;
 typedef double					VCL_TIME;
 typedef struct vcl *				VCL_VCL;
@@ -421,14 +428,19 @@ VCL_STEVEDORE VRT_stevedore(const char *nm);
 
 /* Convert things to string */
 
-char *VRT_IP_string(VRT_CTX, VCL_IP);
-char *VRT_INT_string(VRT_CTX, VCL_INT);
-char *VRT_REAL_string(VRT_CTX, VCL_REAL);
-char *VRT_TIME_string(VRT_CTX, VCL_TIME);
-const char *VRT_BOOL_string(VCL_BOOL);
-const char *VRT_BACKEND_string(VCL_BACKEND);
-const char *VRT_STEVEDORE_string(VCL_STEVEDORE);
-const char *VRT_CollectString(VRT_CTX, const char *p, ...);
+VCL_STRANDS VRT_BundleStrands(int, struct strands *, char const **,
+    const char *f, ...);
+int VRT_CompareStrands(VCL_STRANDS a, VCL_STRANDS b);
+
+VCL_STRING VRT_BACKEND_string(VCL_BACKEND);
+VCL_STRING VRT_BOOL_string(VCL_BOOL);
+VCL_STRING VRT_CollectString(VRT_CTX, const char *p, ...);
+VCL_STRING VRT_INT_string(VRT_CTX, VCL_INT);
+VCL_STRING VRT_IP_string(VRT_CTX, VCL_IP);
+VCL_STRING VRT_REAL_string(VRT_CTX, VCL_REAL);
+VCL_STRING VRT_STEVEDORE_string(VCL_STEVEDORE);
+VCL_STRING VRT_STRANDS_string(VCL_STRANDS);
+VCL_STRING VRT_TIME_string(VRT_CTX, VCL_TIME);
 
 #ifdef va_start	// XXX: hackish
 void *VRT_VSC_Alloc(const char *, size_t, size_t, const unsigned char *, size_t,
