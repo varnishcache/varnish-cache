@@ -253,10 +253,11 @@ h2_vsl_frame(const struct h2_sess *h2, const void *ptr, size_t len)
 	}
 	AZ(VSB_finish(vsb));
 	Lck_Lock(&h2->sess->mtx);
-	VSLb_bin(h2->vsl, SLT_H2RxHdr, 9, b);
-	if (len > 9)
-		VSLb_bin(h2->vsl, SLT_H2RxBody, len - 9, b + 9);
-
+	if (DO_DEBUG(DBG_H2_RAW)) {
+		VSLb_bin(h2->vsl, SLT_H2RxHdr, 9, b);
+		if (len > 9)
+			VSLb_bin(h2->vsl, SLT_H2RxBody, len - 9, b + 9);
+	}
 	VSLb(h2->vsl, SLT_Debug, "H2RXF %s", VSB_data(vsb));
 	Lck_Unlock(&h2->sess->mtx);
 	VSB_destroy(&vsb);
