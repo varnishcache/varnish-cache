@@ -110,6 +110,7 @@ ctypes = {
     'PROBE':       "VCL_PROBE",
     'REAL':        "VCL_REAL",
     'STEVEDORE':   "VCL_STEVEDORE",
+    'STRANDS':     "VCL_STRANDS",
     'STRING':      "VCL_STRING",
     'STRING_LIST': "const char *, ...",
     'TIME':        "VCL_TIME",
