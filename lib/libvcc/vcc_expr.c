@@ -843,7 +843,7 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	const struct adds *ap;
 	struct expr  *e2;
 	struct token *tk;
-	int n;
+	int lit, n;
 
 	*e = NULL;
 	vcc_expr_mul(tl, e, fmt);
@@ -877,10 +877,11 @@ vcc_expr_add(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			if (e2->fmt != STRINGS)
 				vcc_expr_tostring(tl, &e2, STRINGS);
 			if (vcc_islit(*e) && vcc_isconst(e2)) {
+				lit = vcc_islit(e2);
 				*e = vcc_expr_edit(tl, STRINGS,
 				    "\v1\n\v2", *e, e2);
 				(*e)->constant = EXPR_CONST;
-				if (vcc_islit(e2))
+				if (lit)
 					(*e)->constant |= EXPR_STR_CONST;
 			} else {
 				n = (*e)->nstr + e2->nstr;
