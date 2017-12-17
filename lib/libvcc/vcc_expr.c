@@ -402,6 +402,7 @@ vcc_priv_arg(struct vcc *tl, const char *p, const char *name, const char *vmod)
 
 struct func_arg {
 	vcc_type_t		type;
+	int8_t			n;
 	const char		*enum_bits;
 	const char		*cname;
 	const char		*name;
@@ -469,6 +470,11 @@ vcc_func(struct vcc *tl, struct expr **e, const char *spec,
 	struct func_arg *fa, *fa2;
 	VTAILQ_HEAD(,func_arg) head;
 	struct token *t1;
+	int8_t n = 0;
+	uint32_t argmask = 0;
+	const int8_t masklim = 32;
+
+	assert(sizeof(argmask) * 8 <= masklim);
 
 	rfmt = VCC_Type(spec);
 	spec += strlen(spec) + 1;
@@ -494,6 +500,14 @@ vcc_func(struct vcc *tl, struct expr **e, const char *spec,
 		}
 		fa->type = VCC_Type(p);
 		AN(fa->type);
+		if (fa->type == ARGMASK) {
+			p += strlen(p) + 1;
+			continue;
+		}
+		if (n < masklim)
+			fa->n = n++;
+		else
+			fa->n = -1;
 		p += strlen(p) + 1;
 		if (*p == '\1') {
 			fa->enum_bits = ++p;
@@ -549,6 +563,9 @@ vcc_func(struct vcc *tl, struct expr **e, const char *spec,
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
+		assert(fa->n < masklim);
+		if (fa->n >= 0)
+			argmask |= 1<<fa->n;
 		vcc_NextToken(tl);
 		SkipToken(tl, '=');
 		vcc_do_arg(tl, fa);
@@ -560,6 +577,8 @@ vcc_func(struct vcc *tl, struct expr **e, const char *spec,
 
 	e1 = vcc_mk_expr(rfmt, "%s(ctx%s\v+", cfunc, extra);
 	VTAILQ_FOREACH_SAFE(fa, &head, list, fa2) {
+		if (fa->type == ARGMASK)
+			fa->result = vcc_mk_expr(fa->type, "0x%x", argmask);
 		if (fa->result == NULL && fa->type == ENUM && fa->val != NULL)
 			vcc_do_enum(tl, fa, strlen(fa->val), fa->val);
 		if (fa->result == NULL && fa->val != NULL)
