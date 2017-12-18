@@ -1,3 +1,26 @@
+=================================
+Varnish Cache 4.1.10 (unreleased)
+=================================
+
+Changes since 4.1.9:
+
+* New counter added: cache_hit_grace (see 2455_)
+* Doc: Specify that time_firstbyte is in seconds (see 2456_)
+
+.. _2455: https://github.com/varnishcache/varnish-cache/pull/2455
+.. _2456: https://github.com/varnishcache/varnish-cache/pull/2456
+
+Bugs fixed
+----------
+
+* 1772_ - Honor first_byte_timeout for recycled backend connections
+* 2135_ - Limit Backend Connection retries to a single retry
+* 2502_ - objcore reference count leak
+
+.. _1772: https://github.com/varnishcache/varnish-cache/issues/1772
+.. _2135: https://github.com/varnishcache/varnish-cache/pull/2135
+.. _2502: https://github.com/varnishcache/varnish-cache/issues/2502
+
 ================================
 Varnish Cache 4.1.9 (2017-11-14)
 ================================
