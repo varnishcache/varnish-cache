@@ -149,3 +149,27 @@ xyzzy_obj_test_priv_top(VRT_CTX,
 	(void)o;
 	return (xyzzy_test_priv_top(ctx, priv, s));
 }
+
+VCL_INT v_matchproto_()
+xyzzy_obj_m_poly_INT(VRT_CTX, struct xyzzy_debug_obj *o, VCL_INT i)
+{
+	(void)o;
+	VSLb(ctx->vsl, SLT_Debug, "m_poly_int(%ld)", i);
+	return (i);
+}
+
+VCL_INT v_matchproto_()
+xyzzy_obj_m_poly_REAL(VRT_CTX, struct xyzzy_debug_obj *o, VCL_REAL r)
+{
+	(void)o;
+	VSLb(ctx->vsl, SLT_Debug, "m_poly_real(%f)", r);
+	return ((int)r);
+}
+
+VCL_INT v_matchproto_()
+xyzzy_obj_m_poly_STRING(VRT_CTX, struct xyzzy_debug_obj *o, VCL_STRING s)
+{
+	(void)o;
+	VSLb(ctx->vsl, SLT_Debug, "m_poly_string(%s)", s);
+	return (atoi(s));
+}

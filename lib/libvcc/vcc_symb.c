@@ -153,6 +153,8 @@ VCC_Symbol(struct vcc *tl, struct symbol *parent,
 			continue;
 		break;
 	}
+	if (sym != NULL && create == 2 && q == e)
+		return (VCC_Symbol(tl, sym, b, e, kind, create));
 	if (sym == NULL && create == 0 && parent->wildcard != NULL) {
 		AN(parent->wildcard);
 		parent->wildcard(tl, parent, b, e);

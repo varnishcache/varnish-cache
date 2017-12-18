@@ -333,6 +333,7 @@ class prototype(object):
         assert i > 0
         self.name = prefix + s[:i].strip()
         s = s[i:].strip()
+
         assert s[0] == "("
         assert s[-1] == ")"
         s = s[1:-1].lstrip()
@@ -346,8 +347,20 @@ class prototype(object):
             assert s[0] == ','
             s = s[1:].lstrip()
 
+        s = self.name
+        i = s.find("{")
+        if (i >= 0):
+            assert i > 0
+            self.name = s[:i]
+            s = s[i+1:]
+            i = s.find("}")
+            assert i == len(s) - 1
+            self.poly = s[:i]
+        else:
+            self.poly = ""
+
     def cname(self):
-        return self.name.replace(".", "_")
+        return self.name.replace(".", "_") + self.poly
 
     def vcl_proto(self, short):
         s = ""
@@ -551,18 +564,18 @@ class s_event(stanza):
 class s_function(stanza):
     def parse(self):
         self.proto = prototype(self)
-        self.rstlbl = "func_" + self.proto.name
+        self.rstlbl = "func_" + self.proto.cname()
         self.vcc.contents.append(self)
 
     def hfile(self, fo):
-        fn = self.vcc.sympfx + self.proto.name
+        fn = self.vcc.sympfx + self.proto.cname()
         s = "%s %s(VRT_CTX" % (self.proto.c_ret(), fn)
         s += self.proto.c_args() + ");"
         for i in lwrap(s):
             fo.write(i + "\n")
 
     def cfile(self, fo):
-        fn = "td_" + self.vcc.modname + "_" + self.proto.name
+        fn = "td_" + self.vcc.modname + "_" + self.proto.cname()
         s = "typedef %s %s(VRT_CTX" % (self.proto.c_ret(), fn)
         s += self.proto.c_args() + ");"
         for i in lwrap(s):
@@ -585,7 +598,7 @@ class s_function(stanza):
 class s_object(stanza):
     def parse(self):
         self.proto = prototype(self, retval=False)
-        self.rstlbl = "obj_" + self.proto.name
+        self.rstlbl = "obj_" + self.proto.cname()
         self.vcc.contents.append(self)
         self.methods = []
 
@@ -693,7 +706,7 @@ class s_method(stanza):
         p = self.vcc.contents[-1]
         assert type(p) == s_object
         self.proto = prototype(self, prefix=p.proto.name)
-        self.rstlbl = "func_" + self.proto.name
+        self.rstlbl = "func_" + self.proto.cname()
         p.methods.append(self)
 
     def cstruct(self, fo):

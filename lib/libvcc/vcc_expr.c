@@ -598,22 +598,37 @@ vcc_Eval_Func(struct vcc *tl, const char *spec,
  */
 
 void v_matchproto_(sym_expr_t)
-vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, const struct symbol *sym,
+vcc_Eval_SymFunc(struct vcc *tl, struct expr **ee, const struct symbol *sym,
     vcc_type_t fmt)
 {
+	struct expr *e = NULL;
+	struct token *t1;
 
 	(void)fmt;
+
 	assert(sym->kind == SYM_FUNC);
 	AN(sym->eval_priv);
 
 	SkipToken(tl, ID);
+	t1 = tl->t;
 	assert(sym->fmt == VCC_Type(sym->eval_priv));
-	vcc_func(tl, e, sym->eval_priv, sym->extra, sym);
+	do {
+		if (e != NULL)
+			vcc_delete_expr(e);
+		e = NULL;
+		tl->t = t1;
+		tl->err = 0;
+		VSB_clear(tl->sb);
+		vcc_func(tl, &e, sym->eval_priv, sym->extra, sym);
+		if (! tl->err)
+			break;
+	} while ((sym = VTAILQ_FIRST(&sym->children)));
 	ERRCHK(tl);
-	if ((*e)->fmt == STRING) {
-		(*e)->fmt = STRINGS;
-		(*e)->nstr = 1;
+	if (e->fmt == STRING) {
+		e->fmt = STRINGS;
+		e->nstr = 1;
 	}
+	*ee = e;
 }
 
 /*--------------------------------------------------------------------

@@ -599,3 +599,24 @@ xyzzy_vsc_destroy(VRT_CTX)
 	AZ(vsc);
 	AZ(pthread_mutex_unlock(&vsc_mtx));
 }
+
+VCL_INT
+xyzzy_f_poly_INT(VRT_CTX, VCL_INT i)
+{
+	VSLb(ctx->vsl, SLT_Debug, "f_poly_int(%ld)", i);
+	return (i);
+}
+
+VCL_INT
+xyzzy_f_poly_REAL(VRT_CTX, VCL_REAL r)
+{
+	VSLb(ctx->vsl, SLT_Debug, "f_poly_real(%f)", r);
+	return ((int)r);
+}
+
+VCL_INT
+xyzzy_f_poly_STRING(VRT_CTX, VCL_STRING s)
+{
+	VSLb(ctx->vsl, SLT_Debug, "f_poly_string(%s)", s);
+	return (atoi(s));
+}

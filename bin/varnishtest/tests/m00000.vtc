@@ -33,6 +33,12 @@ varnish v1 -vcl+backend {
 		std.log("VCL" + " initiated " + "log");
 		std.syslog(8 + 7, "Somebody runs varnishtest");
 		debug.rot52(resp);
+		set resp.http.f_poly_int = debug.f_poly(42);
+		set resp.http.f_poly_real = debug.f_poly(30.12);
+		set resp.http.f_poly_string = debug.f_poly(33s + 3m);
+		set resp.http.m_poly_int = obj.m_poly(42);
+		set resp.http.m_poly_real = obj.m_poly(30.12);
+		set resp.http.m_poly_string = obj.m_poly(33s + 3m);
 	}
 } -start
 
@@ -62,6 +68,18 @@ logexpect l1 -v v1 -g raw -d 1 {
 	expect 0 =    RespHeader	{^not: -1}
 	expect 0 =    VCL_Log		{^VCL initiated log}
 	expect 0 =    RespHeader	{^Encrypted: ROT52}
+	expect 0 =    Debug		{^f_poly_int\(42\)}
+	expect 0 =    RespHeader	{^f_poly_int: 42$}
+	expect 0 =    Debug		{^f_poly_real\(30.120000\)}
+	expect 0 =    RespHeader	{^f_poly_real: 30$}
+	expect 0 =    Debug		{^f_poly_string\(213.000\)}
+	expect 0 =    RespHeader	{^f_poly_string: 213$}
+	expect 0 =    Debug		{^m_poly_int\(42\)}
+	expect 0 =    RespHeader	{^m_poly_int: 42$}
+	expect 0 =    Debug		{^m_poly_real\(30.120000\)}
+	expect 0 =    RespHeader	{^m_poly_real: 30$}
+	expect 0 =    Debug		{^m_poly_string\(213.000\)}
+	expect 0 =    RespHeader	{^m_poly_string: 213$}
 	expect 0 =    VCL_return	{^deliver}
 } -start
 

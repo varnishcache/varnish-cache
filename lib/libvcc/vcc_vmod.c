@@ -242,7 +242,7 @@ vcc_ParseImport(struct vcc *tl)
 			    p, PF(mod));
 		} else if (!strcmp(p, "$FUNC")) {
 			p += strlen(p) + 1;
-			sym = VCC_Symbol(tl, NULL, p, NULL, SYM_FUNC, 1);
+			sym = VCC_Symbol(tl, NULL, p, NULL, SYM_FUNC, 2);
 			ERRCHK(tl);
 			AN(sym);
 			sym->vmod = msym->name;
@@ -335,7 +335,7 @@ vcc_ParseNew(struct vcc *tl)
 	while (*p != '\0') {
 		p += strlen(s_obj);
 		bprintf(buf2, "%s%s", sy1->name, p);
-		sy3 = VCC_Symbol(tl, NULL, buf2, NULL, SYM_FUNC, 1);
+		sy3 = VCC_Symbol(tl, NULL, buf2, NULL, SYM_FUNC, 2);
 		AN(sy3);
 		sy3->eval = vcc_Eval_SymFunc;
 		p += strlen(p) + 1;

@@ -122,6 +122,10 @@ same vmod - IOW the PRIV_* state is per vmod, not per object.
 
 $Method STRING .test_priv_top(PRIV_TOP, STRING)
 
+$Method INT .m_poly{_INT}(INT)
+$Method INT .m_poly{_REAL}(REAL)
+$Method INT .m_poly{_STRING}(STRING)
+
 $Function VOID rot52(HTTP hdr)
 
 Encrypt the HTTP header with quad-ROT13 encryption,
@@ -221,3 +225,7 @@ Add a vsc
 $Function VOID vsc_destroy()
 
 Remove a vsc
+
+$Function INT f_poly{_INT}(INT)
+$Function INT f_poly{_REAL}(REAL)
+$Function INT f_poly{_STRING}(STRING)
