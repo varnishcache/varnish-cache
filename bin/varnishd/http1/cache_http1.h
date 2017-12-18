@@ -52,6 +52,7 @@ struct v1p_acct {
 typedef void vpi_start_f(struct req *, int fd);
 typedef void vpi_finish_f(struct req *, int fd);
 typedef void vpi_closetmo_f(struct req *, int fd);
+typedef void vpi_closedrop_f(struct req *, int fd);
 typedef void vpi_closeall_f();
 
 struct pipe_sess_handlers {
@@ -59,15 +60,17 @@ struct pipe_sess_handlers {
 	vpi_finish_f	*finish;
 	vpi_closetmo_f	*closetmo;
 	vpi_closeall_f	*closeall;
+  vpi_closedrop_f *closedrop;
 };
 
-void set_pipe_handlers(vpi_start_f , vpi_finish_f , vpi_closetmo_f , vpi_closeall_f);
+void set_pipe_handlers(vpi_start_f , vpi_finish_f , vpi_closetmo_f , vpi_closeall_f, vpi_closedrop_f);
 
 void V1P_Init(void);
 int V1P_Drop();
 enum sess_close V1P_Process(struct req *, int fd, struct v1p_acct *);
 void V1P_Charge(struct req *, const struct v1p_acct *, struct VSC_C_vbe *);
 void V1P_Shutdown();
+void SessionDropCB(struct req *, int fd);
 
 /* cache_http1_line.c */
 void V1L_Chunked(const struct worker *w);

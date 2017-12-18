@@ -281,6 +281,41 @@ vbe_dir_getip(const struct director *d, struct worker *wrk,
 /*--------------------------------------------------------------------*/
 
 static void
+log_ws_status_code(struct req *req, enum sess_close retval)
+{
+		static const char * throttling_status = "1013";
+		static const char * timeout_status = "1006";
+		static const char * max_session_timeout_status = "4001";
+		static const char * normal_closure = "1000";
+		txt t;
+		switch (retval)
+		{
+			case SC_PIPE_DROP:
+				t.b = throttling_status;
+				t.e = t.b + 4;
+				VSLbt(req->vsl, SLT_RespStatus, t);
+			break;
+			case SC_PIPE_TMO:
+				t.b = timeout_status;
+				t.e = t.b + 4;
+				VSLbt(req->vsl, SLT_RespStatus, t);
+			break;
+			case SC_PIPE_SESS_TMO:
+				t.b = max_session_timeout_status;
+				t.e = t.b + 4;
+				VSLbt(req->vsl, SLT_RespStatus, t);
+			break;
+			case SC_TX_PIPE:
+				t.b = normal_closure;
+				t.e = t.b + 4;
+				VSLbt(req->vsl, SLT_RespStatus, t);
+				break;
+			default:
+			break;
+		}
+}
+
+static void
 vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 {
 	int i;
@@ -310,6 +345,7 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 	} else {
 		if (V1P_Drop()) {
 			retval = SC_PIPE_DROP;
+      SessionDropCB(req, vbc->fd);
 		} else {
 			i = V1F_SendReq(req->wrk, bo, &v1a.bereq, 1);
 			VSLb_ts_req(req, "Pipe", W_TIM_real(req->wrk));
@@ -317,6 +353,9 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 				retval = V1P_Process(req, vbc->fd, &v1a);
 			VSLb_ts_req(req, "PipeSess", W_TIM_real(req->wrk));
 		}
+
+		log_ws_status_code(req, retval);
+
 		SES_Close(req->sp, retval);
 		bo->htc->doclose = retval;
 		vbe_dir_finish(d, req->wrk, bo);

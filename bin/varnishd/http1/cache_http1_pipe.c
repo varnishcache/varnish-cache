@@ -48,14 +48,15 @@ static struct lock pipestat_mtx;
 
 /*****************************************************************************/
 
-static struct pipe_sess_handlers pipe_sess_handler = {NULL, NULL, NULL, NULL};
+static struct pipe_sess_handlers pipe_sess_handler = {NULL, NULL, NULL, NULL, NULL};
 
-void set_pipe_handlers(vpi_start_f sf, vpi_finish_f ff, vpi_closetmo_f cf, vpi_closeall_f af)
+void set_pipe_handlers(vpi_start_f sf, vpi_finish_f ff, vpi_closetmo_f cf, vpi_closeall_f af, vpi_closedrop_f cd)
 {
 	pipe_sess_handler.start = sf;
 	pipe_sess_handler.finish = ff;
 	pipe_sess_handler.closetmo = cf;
 	pipe_sess_handler.closeall = af;
+  pipe_sess_handler.closedrop = cd;
 }
 
 /***************************************************************************/
@@ -96,6 +97,14 @@ V1P_Drop()
 		return 1;
 	}
 	return 0;
+}
+
+void
+SessionDropCB(struct req *req, int fd)
+{
+    if (pipe_sess_handler.closedrop) {
+      pipe_sess_handler.closedrop(req, fd);
+    }
 }
 
 void
