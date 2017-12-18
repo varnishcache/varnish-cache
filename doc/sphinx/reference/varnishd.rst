@@ -295,8 +295,7 @@ The following storage types are available:
 -s <file,path[,size[,granularity[,advice]]]>
 
   The file backend stores data in a file on disk. The file will be
-  accessed using mmap. Note that this storage is reset every time ``varnishd``
-  starts.
+  accessed using mmap. Note that this storage provide no cache persistence.
 
   The path is mandatory. If path points to a directory, a temporary
   file will be created in that directory and immediately unlinked. If
