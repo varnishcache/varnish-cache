@@ -4,22 +4,28 @@ server s1 {
 	rxreq
 	expect req.url == "/foo"
 	expect req.http.Foo == "bar"
+	expect req.http.FromVCL == "123"
 	txresp -hdr "Bar: foo" -body "foobar"
 
 	rxreq
 	expect req.url == "/bar"
 	expect req.http.Foo == <undef>
+	expect req.http.FromVCL == "123"
 	txresp -hdr "Bar: fnry,glyf, FOO ,brok" -hdr "Connection: bar" -body "foobar"
 } -start
 
-varnish v1 -vcl+backend { } -start
+varnish v1 -vcl+backend {
+	sub vcl_recv {
+		set req.http.FromVCL = "123";
+	}
+} -start
 
 client c1 {
 	txreq -url "/foo" -hdr "Foo: bar"
 	rxresp
 	expect resp.http.Bar == "foo"
 
-	txreq -url "/bar" -hdr "Foo: bar2" -hdr "Connection: foo, close"
+	txreq -url "/bar" -hdr "Foo: bar2" -hdr "Connection: FromVCL, foo, close"
 	rxresp
 	expect req.http.Bar == <undef>
 } -run
