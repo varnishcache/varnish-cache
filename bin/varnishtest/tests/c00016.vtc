@@ -11,7 +11,9 @@ server s1 {
 	expect req.url == "/bar"
 	expect req.http.Foo == <undef>
 	expect req.http.FromVCL == "123"
-	txresp -hdr "Bar: fnry,glyf, FOO ,brok" -hdr "Connection: bar" -body "foobar"
+	txresp	-hdr "Bar: fnry,glyf, FOO ,brok" \
+		-hdr "Connection: bar" \
+		-body "foobar"
 } -start
 
 varnish v1 -vcl+backend {
@@ -25,13 +27,18 @@ client c1 {
 	rxresp
 	expect resp.http.Bar == "foo"
 
-	txreq -url "/bar" -hdr "Foo: bar2" -hdr "Connection: FromVCL, foo, close"
+	txreq	-url "/bar" \
+		-hdr "Foo: bar2" \
+		-hdr "Connection: FromVCL, foo, close"
 	rxresp
 	expect req.http.Bar == <undef>
 } -run
 
 client c1 {
-	txreq -url "/bar" -hdr "foo: 1" -hdr "Age: 200" -hdr "Connection: Age"
+	txreq	-url "/bar" \
+		-hdr "foo: 1" \
+		-hdr "Age: 200" \
+		-hdr "Connection: Age"
 	rxresp
 	expect resp.status == 400
 } -run
