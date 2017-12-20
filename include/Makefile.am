@@ -43,7 +43,6 @@ nobase_pkginclude_HEADERS = \
 	tbl/waiters.h \
 	vapi/vsm.h \
 	vapi/vsc.h \
-	vapi/vsc_int.h \
 	vapi/vsl.h \
 	vapi/vsl_int.h \
 	vapi/voptget.h \

@@ -44,7 +44,6 @@
 #include "vmb.h"
 #include "vsmw.h"
 #include "vqueue.h"
-#include "vapi/vsc_int.h"
 
 #include "common/heritage.h"
 
@@ -83,7 +82,7 @@ VRT_VSC_Alloc(const char *nm, size_t sd, const unsigned char *jp,
 		bprintf(buf, "%s.%s", nm, fmt);
 
 	AN(heritage.proc_vsmw);
-	p = VSMW_Allocv(heritage.proc_vsmw, VSC_CLASS, 8 + sd + sj, buf, va);
+	p = VSMW_Allocv(heritage.proc_vsmw, "Stat", 8 + sd + sj, buf, va);
 	AN(p);
 
 	memcpy(p + 8 + sd, jp, sj);

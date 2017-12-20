@@ -35,8 +35,6 @@
 #ifndef VAPI_VSC_H_INCLUDED
 #define VAPI_VSC_H_INCLUDED
 
-#include "vapi/vsc_int.h"
-
 struct vsm;
 struct vsc;
 struct vsm_fantom;
