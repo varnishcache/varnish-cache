@@ -156,7 +156,7 @@ vsm_unmapseg(struct vsm_seg *vg)
 
 	AN(vg->b);
 	AN(vg->e);
-	sz = strtoul(vg->av[2], NULL, 10);
+	sz = strtoul(vg->av[3], NULL, 10);
 	assert(sz > 0);
 	ps = getpagesize();
 	len = RUP2(sz, ps);
@@ -468,13 +468,14 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 		av = VAV_Parse(p, &ac, 0);
 		p = e + 1;
 
-		if (av[0] != NULL || ac < 4 || ac > 5) {
+		if (av[0] != NULL || ac < 5 || ac > 6) {
 			(void)(vsm_diag(vd,
 			    "vsm_refresh_set2: bad index (%d/%s)",
 			    ac, av[0]));
 			VAV_Free(av);
 			break;
 		}
+		xxxassert(!strcmp(av[2], "0"));
 
 		if (vg == NULL) {
 			ALLOC_OBJ(vg2, VSM_SEG_MAGIC);
@@ -487,9 +488,8 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 			continue;
 		}
 
-		while (vg != NULL && vsm_cmp_av(&vg->av[1], &av[1])) {
+		while (vg != NULL && vsm_cmp_av(&vg->av[1], &av[1]))
 			vg = VTAILQ_NEXT(vg, list);
-		}
 
 		VAV_Free(av);
 
@@ -681,8 +681,8 @@ VSM__itern(struct vsm *vd, struct vsm_fantom *vf)
 		return (0);
 	memset(vf, 0, sizeof *vf);
 	vf->priv = vg2->serial;
-	vf->class = vg2->av[3];
-	vf->ident = vg2->av[4];
+	vf->class = vg2->av[4];
+	vf->ident = vg2->av[5];
 	return (1);
 }
 
@@ -704,8 +704,8 @@ VSM_Map(struct vsm *vd, struct vsm_fantom *vf)
 		return (vsm_diag(vd, "VSM_Map: bad fantom"));
 
 	assert(vg->serial == vf->priv);
-	assert(vg->av[3] == vf->class);
-	assert(vg->av[4] == vf->ident);
+	assert(vg->av[4] == vf->class);
+	assert(vg->av[5] == vf->ident);
 
 	if (vg->b != NULL) {
 		assert(vg->refs > 0);
@@ -716,7 +716,7 @@ VSM_Map(struct vsm *vd, struct vsm_fantom *vf)
 		return (0);
 	}
 
-	sz = strtoul(vg->av[2], NULL, 10);
+	sz = strtoul(vg->av[3], NULL, 10);
 	assert(sz > 0);
 	ps = getpagesize();
 	len = RUP2(sz, ps);

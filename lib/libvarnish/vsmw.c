@@ -109,7 +109,7 @@ vsmw_write_index(const struct vsmw *vsmw, int fd, const struct vsmwseg *seg)
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
 	CHECK_OBJ_NOTNULL(seg, VSMWSEG_MAGIC);
 	VSB_clear(vsmw->vsb);
-	VSB_printf(vsmw->vsb, "%s %zu %s %s\n",
+	VSB_printf(vsmw->vsb, "%s 0 %zu %s %s\n",
 	    seg->fn,
 	    seg->len,
 	    seg->class,
