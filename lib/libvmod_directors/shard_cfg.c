@@ -67,9 +67,9 @@ struct shard_change {
 
 struct backend_reconfig {
 	struct sharddir * const shardd;
-	int			hint;	// on number of backends after reconfig
-	int			hole_n; // number of holes in backends array
-	int			hole_i; // index hint on first hole
+	unsigned		hint;	// on number of backends after reconfig
+	unsigned		hole_n; // number of holes in backends array
+	unsigned		hole_i; // index hint on first hole
 };
 
 /*
@@ -350,7 +350,7 @@ static const struct shard_backend *
 shardcfg_backend_lookup(const struct backend_reconfig *re,
     const struct shard_backend *b)
 {
-	int i, max = re->shardd->n_backend + re->hole_n;
+	unsigned i, max = re->shardd->n_backend + re->hole_n;
 	const struct shard_backend *bb = re->shardd->backend;
 
 	for (i = 0; i < max; i++)
@@ -363,7 +363,7 @@ shardcfg_backend_lookup(const struct backend_reconfig *re,
 static void
 shardcfg_backend_expand(const struct backend_reconfig *re)
 {
-	int min = re->hint;
+	unsigned min = re->hint;
 
 	CHECK_OBJ_NOTNULL(re->shardd, SHARDDIR_MAGIC);
 
@@ -389,7 +389,7 @@ static void
 shardcfg_backend_add(struct backend_reconfig *re,
     const struct shard_backend *b)
 {
-	int i;
+	unsigned i;
 	struct shard_backend *bb = re->shardd->backend;
 
 	if (re->hole_n == 0) {
@@ -428,7 +428,7 @@ static void
 shardcfg_backend_del(struct backend_reconfig *re,
     const struct shard_backend *spec)
 {
-	int i, max = re->shardd->n_backend + re->hole_n;
+	unsigned i, max = re->shardd->n_backend + re->hole_n;
 	struct shard_backend * const bb = re->shardd->backend;
 
 	for (i = 0; i < max; i++) {
@@ -448,7 +448,7 @@ shardcfg_backend_del(struct backend_reconfig *re,
 static void
 shardcfg_backend_finalize(struct backend_reconfig *re)
 {
-	int i;
+	unsigned i;
 	struct shard_backend * const bb = re->shardd->backend;
 
 	while (re->hole_n > 0) {
