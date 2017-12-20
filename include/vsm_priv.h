@@ -34,6 +34,4 @@
 #define VSM_MGT_DIRNAME		"_.vsm_mgt"
 #define VSM_CHILD_DIRNAME	"_.vsm_child"
 
-#define VSM_MARKER_LEN	8
-
 #endif /* VSM_PRIV_H_INCLUDED */

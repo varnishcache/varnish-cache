@@ -59,7 +59,7 @@
 
 struct VSL_head {
 #define VSL_HEAD_MARKER		"VSLHEAD1"	/* Incr. as version# */
-	char			marker[VSM_MARKER_LEN];
+	char			marker[8];
 	ssize_t			segsize;
 	unsigned		segment_n;
 	ssize_t			offset[VSL_SEGMENTS];
