@@ -1,0 +1,88 @@
+varnishtest "shard director LAZY - d18.vtc"
+
+server s1 {
+	rxreq
+	txresp -body "ech3Ooj"
+} -start
+
+server s2 {
+	rxreq
+	txresp -body "ieQu2qua"
+} -start
+
+server s3 {
+	rxreq
+	txresp -body "xiuFi3Pe"
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+	import directors;
+
+	sub vcl_init {
+	    new vd = directors.shard();
+	    if (!vd.add_backend(s1)) {
+		std.log("add s1 failed");
+	    }
+	    if (!vd.add_backend(s2)) {
+		std.log("add s2 failed");
+	    }
+	    if (!vd.add_backend(s3)) {
+		std.log("add s3 failed");
+	    }
+	    if (!vd.reconfigure(replicas=25)) {
+		std.log("reconfigure failed");
+	    }
+
+	    vd.debug(1);
+
+	    new p = directors.shard_param();
+	    p.set(by=KEY, key=1);
+	    vd.associate(p.use());
+
+	    new p3 = directors.shard_param();
+	    p3.set(by=KEY, key=4294967295);
+	}
+
+	sub vcl_recv {
+	    return(pass);
+	}
+
+	sub vcl_backend_fetch {
+	    set bereq.backend=vd.backend(resolve=LAZY);
+
+	    if (bereq.url == "/1") {
+		# default
+	    } else
+	    if (bereq.url == "/2") {
+		# backend override parameter set
+		p.set(by=KEY, key=2147483647);
+	    } else
+	    if (bereq.url == "/3") {
+		# backend override association
+		vd.backend(resolve=LAZY, param=p3.use());
+	    }
+	}
+
+	sub vcl_backend_response {
+	    set beresp.http.backend = bereq.backend;
+	}
+} -start
+
+
+client c1 {
+	txreq -url /1
+	rxresp
+	expect resp.body == "ech3Ooj"
+	expect resp.http.backend == "vd"
+
+	txreq -url /2
+	rxresp
+	expect resp.body == "ieQu2qua"
+	expect resp.http.backend == "vd"
+
+	txreq -url /3
+	rxresp
+	expect resp.body == "xiuFi3Pe"
+	expect resp.http.backend == "vd"
+} -run

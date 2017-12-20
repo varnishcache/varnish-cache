@@ -1,0 +1,186 @@
+varnishtest "shard director error handling"
+
+varnish v1 -vcl {
+    import directors;
+    import blob;
+
+    backend dummy { .host = "${bad_backend}"; }
+
+    sub vcl_init {
+	new shard = directors.shard();
+	new p = directors.shard_param();
+	p.set(by=BLOB, key_blob=blob.decode(HEX, encoded=""));
+    }
+
+    sub vcl_recv {
+	if (req.url == "/1") {
+	    set req.backend_hint = shard.backend(
+	      param=blob.decode(HEX, encoded=""));
+	} else if (req.url == "/2") {
+	    p.set(by=HASH);
+	}
+    }
+} -start
+
+logexpect l1 -v v1 -g raw -d 1 {
+    expect 0 0    CLI       {^Rd vcl.load}
+    expect 0 0    Error     {by=BLOB but no or empty key_blob - using key 0}
+} -start -wait
+
+logexpect l2 -v v1 -g raw {
+    expect * 1001 VCL_Error {shard .backend param invalid}
+} -start
+logexpect l3 -v v1 -g raw {
+    expect * 1003 VCL_Error {shard_param.set.. may only be used in vcl_init and in backend context}
+} -start
+
+client c1 {
+    txreq -url "/1"
+    rxresp
+    expect resp.status == 503
+    expect_close
+} -run
+
+client c1 {
+    txreq -url "/2"
+    rxresp
+    expect resp.status == 503
+    expect_close
+} -run
+
+logexpect l2 -wait
+logexpect l3 -wait
+
+varnish v1 -errvcl {shard .associate param invalid} {
+    import directors;
+    import blob;
+
+    backend dummy { .host = "${bad_backend}"; }
+
+    sub vcl_init {
+	new shard = directors.shard();
+	shard.associate(blob.decode(encoded=""));
+    }
+}
+
+varnish v1 -errvcl {missing key argument with by=KEY} {
+    import directors;
+    import blob;
+
+    backend dummy { .host = "${bad_backend}"; }
+
+    sub vcl_init {
+	new p = directors.shard_param();
+	p.set(by=KEY);
+    }
+}
+
+varnish v1 -errvcl {invalid key argument -5 with by=KEY} {
+    import directors;
+    import blob;
+
+    backend dummy { .host = "${bad_backend}"; }
+
+    sub vcl_init {
+	new p = directors.shard_param();
+	p.set(by=KEY, key=-5);
+    }
+}
+
+varnish v1 -errvcl {missing key_blob argument with by=BLOB} {
+    import directors;
+    import blob;
+
+    backend dummy { .host = "${bad_backend}"; }
+
+    sub vcl_init {
+	new p = directors.shard_param();
+	p.set(by=BLOB);
+    }
+}
+
+varnish v1 -errvcl {key and key_blob arguments are invalid with by=URL} {
+    import directors;
+    import blob;
+
+    backend dummy { .host = "${bad_backend}"; }
+
+    sub vcl_init {
+	new p = directors.shard_param();
+	p.set(by=URL, key=0);
+    }
+}
+
+varnish v1 -errvcl {key and key_blob arguments are invalid with by=HASH (default)} {
+    import directors;
+    import blob;
+
+    backend dummy { .host = "${bad_backend}"; }
+
+    sub vcl_init {
+	new p = directors.shard_param();
+	p.set(key=0);
+    }
+}
+
+varnish v1 -errvcl {invalid alt argument -1} {
+    import directors;
+    import blob;
+
+    backend dummy { .host = "${bad_backend}"; }
+
+    sub vcl_init {
+	new p = directors.shard_param();
+	p.set(alt=-1);
+    }
+}
+
+varnish v1 -errvcl {invalid warmup argument -0.5} {
+    import directors;
+    import blob;
+
+    backend dummy { .host = "${bad_backend}"; }
+
+    sub vcl_init {
+	new p = directors.shard_param();
+	p.set(warmup=-0.5);
+    }
+}
+
+varnish v1 -errvcl {invalid warmup argument 1.1} {
+    import directors;
+    import blob;
+
+    backend dummy { .host = "${bad_backend}"; }
+
+    sub vcl_init {
+	new p = directors.shard_param();
+	p.set(warmup=1.1);
+    }
+}
+
+varnish v1 -errvcl {resolve=LAZY with other parameters can only be used in backend context} {
+    import directors;
+    import blob;
+
+    backend dummy { .host = "${bad_backend}"; }
+
+    sub vcl_init {
+	new shard = directors.shard();
+	new rr = directors.round_robin();
+	rr.add_backend(shard.backend(resolve=LAZY, by=KEY));
+    }
+}
+
+varnish v1 -errvcl {resolve=NOW can not be used in vcl_init} {
+    import directors;
+    import blob;
+
+    backend dummy { .host = "${bad_backend}"; }
+
+    sub vcl_init {
+	new shard = directors.shard();
+	new rr = directors.round_robin();
+	rr.add_backend(shard.backend());
+    }
+}

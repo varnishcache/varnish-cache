@@ -304,27 +304,35 @@ init_state(struct shard_state *state,
 	state->last.hostid = -1;
 }
 
+/* basically same as vdir_any_healthy -- XXX we should embed a vdir */
+unsigned
+sharddir_any_healthy(struct sharddir *shardd, const struct busyobj *bo,
+    double *changed)
+{
+	unsigned retval = 0;
+	VCL_BACKEND be;
+	unsigned u;
+	double c;
+
+	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
+	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
+	sharddir_rdlock(shardd);
+	if (changed != NULL)
+		*changed = 0;
+	for (u = 0; u < shardd->n_backend; u++) {
+		be = shardd->backend[u].backend;
+		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
+		retval = be->healthy(be, bo, &c);
+		if (changed != NULL && c > *changed)
+			*changed = c;
+		if (retval)
+			break;
+	}
+	sharddir_unlock(shardd);
+	return (retval);
+}
 /*
- * core function for the director backend method
- *
- * while other directors return a reference to their own backend object (on
- * which varnish will call the resolve method to resolve to a non-director
- * backend), this director immediately reolves in the backend method, to make
- * the director choice visible in VCL
- *
- * consequences:
- * - we need no own struct director
- * - we can only respect a busy object when being called on the backend side,
- *   which probably is, for all practical purposes, only relevant when the
- *   saintmode vmod is used
- *
- * if we wanted to offer delayed resolution, we'd need something like
- * per-request per-director state or we'd need to return a dynamically created
- * director object. That should be straight forward once we got director
- * refcounting #2072. Until then, we could create it on the workspace, but then
- * we'd need to keep other directors from storing any references to our dynamic
- * object for longer than the current task
- *
+ * core function for the director backend/resolve method
  */
 VCL_BACKEND
 sharddir_pick_be(VRT_CTX, struct sharddir *shardd,
