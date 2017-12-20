@@ -41,7 +41,6 @@
 #include "miniobj.h"
 #include "vas.h"
 #include "vend.h"
-#include "vgz.h"
 #include "vmb.h"
 #include "vsmw.h"
 #include "vqueue.h"
@@ -68,11 +67,10 @@ vsc_callback_f *vsc_lock;
 vsc_callback_f *vsc_unlock;
 
 void *
-VRT_VSC_Alloc(const char *nm, size_t sd, size_t sj, const unsigned char *zj,
-    size_t szj, const char *fmt, va_list va)
+VRT_VSC_Alloc(const char *nm, size_t sd, const unsigned char *jp,
+    size_t sj, const char *fmt, va_list va)
 {
 	char *p;
-	z_stream vz;
 	struct vsc_segs *vsg;
 	char buf[1024];
 
@@ -88,14 +86,7 @@ VRT_VSC_Alloc(const char *nm, size_t sd, size_t sj, const unsigned char *zj,
 	p = VSMW_Allocv(heritage.proc_vsmw, VSC_CLASS, 8 + sd + sj, buf, va);
 	AN(p);
 
-	memset(&vz, 0, sizeof vz);
-	assert(Z_OK == inflateInit2(&vz, 31));
-	vz.next_in = TRUST_ME(zj);
-	vz.avail_in = szj;
-	vz.next_out = (void*)(p + 8 + sd);
-	vz.avail_out = sj;
-	assert(Z_STREAM_END == inflate(&vz, Z_FINISH));
-	assert(Z_OK == inflateEnd(&vz));
+	memcpy(p + 8 + sd, jp, sj);
 	ALLOC_OBJ(vsg, VSC_SEGS_MAGIC);
 	AN(vsg);
 	vsg->seg = p;

@@ -36,11 +36,6 @@ from __future__ import print_function
 import getopt
 import json
 import sys
-import gzip
-try:
-    import StringIO
-except ImportError:
-    import io
 import collections
 import struct
 
@@ -66,22 +61,12 @@ else:
 	def b(x):
 		return codecs.latin_1_encode(x)[0]
 
-def gzip_str(s):
-	try:
-		out = StringIO.StringIO()
-	except NameError:
-		out = io.BytesIO()
-
-	gzip.GzipFile(fileobj=out, mode="w").write(b(s))
-	out.seek(4)
-	out.write(struct.pack("<L", 0x12bfd58))
-	return out.getvalue()
-
 def genhdr(fo, name):
 	fo.write('/*\n')
 	fo.write(' * NB:  This file is machine generated, DO NOT EDIT!\n')
 	fo.write(' *\n')
-	fo.write(' * Edit %s.vsc run lib/libvcc/vsctool.py instead.\n' % name)
+	fo.write(' * Edit ' + name + 
+	    '.vsc and run lib/libvcc/vsctool.py instead.\n')
 	fo.write(' */\n')
 	fo.write('\n')
 
@@ -125,16 +110,13 @@ class vscset(object):
 			ed["name"] = i.arg
 			ed["docs"] = "\n".join(i.getdoc())
 		s=json.dumps(dd, separators=(",",":")) + "\0"
-		fo.write("\nstatic const size_t vsc_%s_jsonlen = %dL;\n" %
-		    (self.name, len(s)))
-		z = gzip_str(s)
 		fo.write("\nstatic const unsigned char");
-		fo.write(" vsc_%s_zjson[%d] = {\n" % (self.name, len(z)))
-		bz = bytearray(z)
+		fo.write(" vsc_%s_json[%d] = {\n" % (self.name, len(s)))
+		bz = bytearray(s)
 		t = "\t"
 		for i in bz:
 			t += "%d," % i
-			if len(t) >= 70:
+			if len(t) >= 69:
 				fo.write(t + "\n")
 				t = "\t"
 		if len(t) > 1:
@@ -142,7 +124,12 @@ class vscset(object):
 		fo.write("\n};\n")
 		s = json.dumps(dd, indent=2, separators=(',', ': '))
 		fo.write("\n// ")
-		fo.write("\n// ".join(s.split("\n")))
+		for i in s.split("\n"):
+			j = "// " + i
+			if len(j) > 72:
+				fo.write(j[:72] + "[...]\n")
+			else:
+				fo.write(j + "\n")
 		fo.write("\n")
 
 
@@ -183,11 +170,16 @@ class vscset(object):
 		    (self.name, self.name.upper()))
 
 		fo.write("\n")
+		fo.write("#define PARANOIA(a,n)\t\t\t\t\\\n")
+		fo.write("    _Static_assert(\t\t\t\t\\\n")
+		fo.write("\toffsetof(" + self.struct + ", a) == n,\t\\\n")
+		fo.write("\t\"VSC element '\" #a \"' at wrong offset\")\n\n")
+		
 		for i in self.mbrs:
-			fo.write("_Static_assert(offsetof(" + self.struct)
-			fo.write(", " + i.arg + ")")
-			fo.write(" == %d,\n" % (i.param["index"] - 8))
-			fo.write('    "VSC element offset is wrong");\n')
+			fo.write("PARANOIA(" + i.arg)
+			fo.write(", %d);\n" % (i.param["index"] - 8))
+
+		fo.write("#undef PARANOIA\n")
 
 		self.emit_json(fo)
 
@@ -203,10 +195,8 @@ class vscset(object):
 		fo.write("\tretval = VRT_VSC_Alloc")
 		fo.write("(vsc_" + self.name + "_name, ")
 		fo.write("sizeof(" + self.struct + "),\n\t    ")
-		fo.write("vsc_" + self.name + "_jsonlen, ")
-		fo.write("vsc_" + self.name + "_zjson, ")
-		fo.write("sizeof vsc_" + self.name + "_zjson,\n")
-		fo.write("\t    fmt, ap);\n")
+		fo.write("vsc_" + self.name + "_json, ")
+		fo.write("sizeof vsc_" + self.name + "_json, fmt, ap);\n")
 		fo.write("\tva_end(ap);\n")
 		fo.write("\treturn(retval);\n")
 		fo.write("}\n")
@@ -235,8 +225,12 @@ class vscset(object):
 			fo.write("\tAN(dst);\n")
 			fo.write("\tAN(src);\n")
 			for i in self.mbrs:
-				fo.write("\tdst->" + i.arg)
-				fo.write(" += src->" + i.arg + ";\n")
+				s1 = "\tdst->" + i.arg + " +="
+				s2 = "src->" + i.arg + ";"
+				if len((s1 + " " + s2).expandtabs()) < 79:
+					fo.write(s1 + " " + s2 + "\n")
+				else:
+					fo.write(s1 + "\n\t    " + s2 + "\n")
 			fo.write("}\n")
 
 #######################################################################
