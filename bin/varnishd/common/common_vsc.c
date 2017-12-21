@@ -40,8 +40,8 @@
 
 #include "miniobj.h"
 #include "vas.h"
-#include "vend.h"
 #include "vmb.h"
+#include "vsc_priv.h"
 #include "vsmw.h"
 #include "vqueue.h"
 
@@ -56,6 +56,7 @@ struct vsc_segs {
 	const char		*nm;
 	VTAILQ_ENTRY(vsc_segs)	list;
 	void			*seg;
+	struct vsc_head		*head;
 	void			*ptr;
 };
 
@@ -72,6 +73,7 @@ VRT_VSC_Alloc(const char *nm, size_t sd, const unsigned char *jp,
 	char *p;
 	struct vsc_segs *vsg;
 	char buf[1024];
+	uint64_t co, jo;
 
 	if (vsc_lock != NULL)
 		vsc_lock();
@@ -81,22 +83,27 @@ VRT_VSC_Alloc(const char *nm, size_t sd, const unsigned char *jp,
 	else
 		bprintf(buf, "%s.%s", nm, fmt);
 
+	co = PRNDUP(sizeof(struct vsc_head));
+	jo = co + PRNDUP(sd);
 	AN(heritage.proc_vsmw);
-	p = VSMW_Allocv(heritage.proc_vsmw, "Stat", 8 + sd + sj, buf, va);
+	p = VSMW_Allocv(heritage.proc_vsmw, VSC_CLASS,
+	    jo + PRNDUP(sj), buf, va);
 	AN(p);
 
-	memcpy(p + 8 + sd, jp, sj);
 	ALLOC_OBJ(vsg, VSC_SEGS_MAGIC);
 	AN(vsg);
 	vsg->seg = p;
-	vsg->ptr = p + 8;
+	vsg->head = (void*)p;
+	vsg->head->ctr_offset = co;
+	vsg->ptr = p + co;
 	VTAILQ_INSERT_TAIL(&vsc_seglist, vsg, list);
+	memcpy(p + jo, jp, sj);
 	VWMB();
-	vbe64enc(p, sd);
+	vsg->head->json_offset = jo;
 	vsg->nm = nm;
 	if (vsc_unlock != NULL)
 		vsc_unlock();
-	return (p + 8);
+	return (vsg->ptr);
 }
 
 void

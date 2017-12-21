@@ -79,7 +79,7 @@ class vscset(object):
 		self.mbrs = []
 		self.head = m
 		self.completed = False
-		self.off = 8
+		self.off = 0
 
 	def addmbr(self, m):
 		assert not self.completed
@@ -177,7 +177,7 @@ class vscset(object):
 		
 		for i in self.mbrs:
 			fo.write("PARANOIA(" + i.arg)
-			fo.write(", %d);\n" % (i.param["index"] - 8))
+			fo.write(", %d);\n" % (i.param["index"]))
 
 		fo.write("#undef PARANOIA\n")
 

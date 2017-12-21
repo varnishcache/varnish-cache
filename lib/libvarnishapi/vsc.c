@@ -45,7 +45,7 @@
 #include "vqueue.h"
 #include "vjsn.h"
 #include "vsb.h"
-#include "vend.h"
+#include "vsc_priv.h"
 #include "vmb.h"
 
 #include "vapi/vsc.h"
@@ -70,6 +70,7 @@ struct vsc_seg {
 	VTAILQ_ENTRY(vsc_seg)	list;
 	struct vsm_fantom	fantom[1];
 	struct vjsn		*vj;
+	struct vsc_head		*head;
 	unsigned		npoints;
 	struct vsc_pt		*points;
 };
@@ -204,7 +205,7 @@ vsc_clean_point(struct vsc_pt *point)
 }
 
 static int
-vsc_fill_point(const struct vsc *vsc, const struct vsm_fantom *fantom,
+vsc_fill_point(const struct vsc *vsc, struct vsc_seg *seg,
     const struct vjsn_val *vv, struct vsb *vsb, struct vsc_pt *point)
 {
 	struct vjsn_val *vt;
@@ -217,7 +218,7 @@ vsc_fill_point(const struct vsc *vsc, const struct vsm_fantom *fantom,
 	assert(vt->type == VJSN_STRING);
 
 	VSB_clear(vsb);
-	VSB_printf(vsb, "%s.%s", fantom->ident, vt->value);
+	VSB_printf(vsb, "%s.%s", seg->fantom->ident, vt->value);
 	AZ(VSB_finish(vsb));
 
 	if (vsc_filter(vsc, VSB_data(vsb)))
@@ -285,7 +286,8 @@ vsc_fill_point(const struct vsc *vsc, const struct vsm_fantom *fantom,
 	AN(vt);
 
 	point->point.ptr = (volatile void*)
-	    ((volatile char*)fantom->b + atoi(vt->value));
+	    ((volatile char*)seg->fantom->b +
+		seg->head->ctr_offset + atoi(vt->value));
 	return (1);
 }
 
@@ -314,7 +316,6 @@ static struct vsc_seg *
 vsc_add_seg(const struct vsc *vsc, struct vsm *vsm, const struct vsm_fantom *fp)
 {
 	struct vsc_seg *sp;
-	uint64_t u;
 	const char *p;
 	const char *e;
 	struct vjsn_val *vv, *vve;
@@ -335,16 +336,14 @@ vsc_add_seg(const struct vsc *vsc, struct vsm *vsm, const struct vsm_fantom *fp)
 		FREE_OBJ(sp);
 		return (NULL);
 	}
-	// AZ(VSM_Map(vsm, sp->fantom));
 
-	u = vbe64dec(sp->fantom->b);
-	if (u == 0) {
+	sp->head = sp->fantom->b;
+	if (sp->head->json_offset == 0) {
 		VRMB();
 		usleep(100000);
-		u = vbe64dec(sp->fantom->b);
 	}
-	assert(u > 0);
-	p = (char*)sp->fantom->b + 8 + u;
+	assert(sp->head->json_offset > 0);
+	p = (char*)sp->fantom->b + sp->head->json_offset;
 	assert (p < (char*)sp->fantom->e);
 	sp->vj = vjsn_parse(p, &e);
 	XXXAZ(e);
@@ -359,7 +358,7 @@ vsc_add_seg(const struct vsc *vsc, struct vsm *vsm, const struct vsm_fantom *fp)
 	AN(vve);
 	pp = sp->points;
 	VTAILQ_FOREACH(vv, &vve->children, list) {
-		if (vsc_fill_point(vsc, sp->fantom, vv, vsb, pp) &&
+		if (vsc_fill_point(vsc, sp, vv, vsb, pp) &&
 			vsc->fnew != NULL)
 			pp->point.priv = vsc->fnew(vsc->priv, &pp->point);
 		pp++;
@@ -399,7 +398,7 @@ VSC_Iter(struct vsc *vsc, struct vsm *vsm, VSC_iter_f *fiter, void *priv)
 	AN(vsm);
 	sp = VTAILQ_FIRST(&vsc->segs);
 	VSM_FOREACH(&ifantom, vsm) {
-		if (strcmp(ifantom.class, "Stat"))
+		if (strcmp(ifantom.class, VSC_CLASS))
 			continue;
 		while (sp != NULL &&
 		    (strcmp(ifantom.ident, sp->fantom->ident) ||
