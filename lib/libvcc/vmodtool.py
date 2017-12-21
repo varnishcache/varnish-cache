@@ -42,6 +42,7 @@ import re
 import optparse
 import unittest
 import random
+import copy
 
 rstfmt = False
 strict_abi = True
@@ -334,6 +335,7 @@ class prototype(object):
         i = s.find("(")
         assert i > 0
         self.name = prefix + s[:i].strip()
+        self.vcc = st.vcc
         if not nmlegal(self.cname()):
             err("%s(): Illegal name\n" % self.name, warn=False)
         s = s[i:].strip()
@@ -359,8 +361,11 @@ class prototype(object):
             assert s[0] == ','
             s = s[1:].lstrip()
 
-    def cname(self):
-        return self.name.replace(".", "_")
+    def cname(self, pfx=False):
+        r = self.name.replace(".", "_")
+        if pfx:
+            return self.vcc.sympfx + r
+        return r
 
     def vcl_proto(self, short):
         s = ""
@@ -384,13 +389,20 @@ class prototype(object):
     def c_ret(self):
         return self.retval.ct
 
-    def c_args(self):
-        if len(self.args) == 0:
-            return ""
-        l = [""]
+    def c_args(self, a=[]):
+        l = list(a)
         for i in self.args:
             l.append(i.ct)
         return ", ".join(l)
+
+    def c_fn(self, args=[], h=False):
+        s = fn = ''
+        if not h:
+            s += 'typedef '
+            fn += 'td_' + self.vcc.modname + '_'
+        fn += self.cname(pfx=h)
+        s += '%s %s(%s);' % (self.c_ret(), fn, self.c_args(args))
+        return "\n".join(lwrap(s)) + "\n"
 
     def specstr(self, fo, cfunc, p):
         if self.retval is None:
@@ -568,24 +580,16 @@ class s_function(stanza):
         self.vcc.contents.append(self)
 
     def hfile(self, fo):
-        fn = self.vcc.sympfx + self.proto.name
-        s = "%s %s(VRT_CTX" % (self.proto.c_ret(), fn)
-        s += self.proto.c_args() + ");"
-        for i in lwrap(s):
-            fo.write(i + "\n")
+        fo.write(self.proto.c_fn(['VRT_CTX'], True))
 
     def cfile(self, fo):
-        fn = "td_" + self.vcc.modname + "_" + self.proto.name
-        s = "typedef %s %s(VRT_CTX" % (self.proto.c_ret(), fn)
-        s += self.proto.c_args() + ");"
-        for i in lwrap(s):
-            fo.write(i + "\n")
+        fo.write(self.proto.c_fn(['VRT_CTX']))
 
     def cstruct(self, fo):
         fmt_cstruct(fo, self.vcc.modname, self.proto.cname())
 
     def cstruct_init(self, fo):
-        fo.write("\t" + self.vcc.sympfx + self.proto.cname() + ",\n")
+        fo.write("\t" + self.proto.cname(pfx=True) + ",\n")
 
     def specstr(self, fo):
         fo.write('\t"$FUNC\\0"\t"%s.%s\\0"\n\n' %
@@ -598,6 +602,15 @@ class s_function(stanza):
 class s_object(stanza):
     def parse(self):
         self.proto = prototype(self, retval=False)
+        self.proto.retval = vtype('VOID')[0]
+
+        self.init = copy.copy(self.proto)
+        self.init.name += '__init'
+
+        self.fini = copy.copy(self.proto)
+        self.fini.name += '__fini'
+        self.fini.args = []
+
         self.rstlbl = "obj_" + self.proto.name
         self.vcc.contents.append(self)
         self.methods = []
@@ -623,32 +636,11 @@ class s_object(stanza):
         sn = self.vcc.sympfx + self.vcc.modname + "_" + self.proto.name
         fo.write("struct %s;\n" % sn)
 
-        if h:
-            def p(x):
-                return x + " " + self.vcc.sympfx
-        else:
-            def p(x):
-                return "typedef " + x + \
-                    " td_%s_" % self.vcc.modname
-
-        s = p("VCL_VOID") + "%s__init(VRT_CTX, " % self.proto.name
-        s += "struct %s **, const char *" % sn
-        s += self.proto.c_args() + ");"
-        for i in lwrap(s):
-            fo.write(i + "\n")
-
-        s = p("VCL_VOID")
-        s += "%s__fini(struct %s **);" % (self.proto.name, sn)
-        for i in lwrap(s):
-            fo.write(i + "\n")
-
+        fo.write(self.init.c_fn(
+            ['VRT_CTX', 'struct %s **' % sn, 'const char *'], h))
+        fo.write(self.fini.c_fn(['struct %s **' % sn], h))
         for i in self.methods:
-            cn = i.proto.cname()
-            s = p(i.proto.c_ret())
-            s += "%s(VRT_CTX, struct %s *" % (cn, sn)
-            s += i.proto.c_args() + ");"
-            for i in lwrap(s):
-                fo.write(i + "\n")
+            fo.write(i.proto.c_fn(['VRT_CTX', 'struct %s *' % sn], h));
         fo.write("\n")
 
     def hfile(self, fo):
@@ -658,15 +650,15 @@ class s_object(stanza):
         self.chfile(fo, False)
 
     def cstruct(self, fo):
-        fmt_cstruct(fo, self.vcc.modname, self.proto.name + "__init")
-        fmt_cstruct(fo, self.vcc.modname, self.proto.name + "__fini")
+        fmt_cstruct(fo, self.vcc.modname, self.init.name)
+        fmt_cstruct(fo, self.vcc.modname, self.fini.name)
         for i in self.methods:
             i.cstruct(fo)
 
     def cstruct_init(self, fo):
         p = "\t" + self.vcc.sympfx
-        fo.write(p + self.proto.name + "__init,\n")
-        fo.write(p + self.proto.name + "__fini,\n")
+        fo.write(p + self.init.name + ",\n")
+        fo.write(p + self.fini.name + ",\n")
         for i in self.methods:
             i.cstruct_init(fo)
         fo.write("\n")
@@ -680,13 +672,13 @@ class s_object(stanza):
                  (self.vcc.sympfx, self.vcc.modname, self.proto.name))
         fo.write("\n")
 
-        self.proto.specstr(fo, 'Vmod_%s_Func.%s__init' %
-                           (self.vcc.modname, self.proto.name), '\t    ')
+        self.proto.specstr(fo, 'Vmod_%s_Func.%s' %
+                           (self.vcc.modname, self.init.name), '\t    ')
         fo.write('\t    "\\0"\n\n')
 
         fo.write('\t    "VOID\\0"\n')
-        fo.write('\t    "Vmod_%s_Func.%s__fini\\0"\n' %
-                 (self.vcc.modname, self.proto.name))
+        fo.write('\t    "Vmod_%s_Func.%s\\0"\n' %
+                 (self.vcc.modname, self.fini.name))
         fo.write('\t\t"\\0"\n')
         fo.write('\t    "\\0"\n\n')
 
@@ -713,7 +705,7 @@ class s_method(stanza):
         fmt_cstruct(fo, self.vcc.modname, self.proto.cname())
 
     def cstruct_init(self, fo):
-        fo.write('\t' + self.vcc.sympfx + self.proto.cname() + ",\n")
+        fo.write('\t' + self.proto.cname(pfx=True) + ",\n")
 
     def specstr(self, fo):
         fo.write('\t    "%s.%s\\0"\n' %
