@@ -337,8 +337,13 @@ class prototype(object):
         assert s[-1] == ")"
         s = s[1:-1].lstrip()
         self.args = []
+        names = {}
         while len(s) > 0:
             a, s = arg(s)
+            if a.nm is not None and a.nm in names:
+                err("%s(): duplicate argument name '%s'\n" % (self.name, a.nm),
+                    warn=False)
+            names[a.nm] = True
             self.args.append(a)
             s = s.lstrip()
             if len(s) == 0:
