@@ -94,6 +94,7 @@ h2_new_sess(const struct worker *wrk, struct sess *sp, struct req *srq)
 		h2->htc = srq->htc;
 		h2->ws = srq->ws;
 		h2->vsl = srq->vsl;
+		VSL_Flush(h2->vsl, 0);
 		h2->vsl->wid = sp->vxid;
 		h2->htc->rfd = &sp->fd;
 		h2->sess = sp;
