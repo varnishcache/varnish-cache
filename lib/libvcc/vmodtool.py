@@ -310,6 +310,8 @@ def arg(txt):
 
     return a, s
 
+def nmlegal(nm):
+    return re.match('^[a-zA-Z0-9_]+$', nm)
 
 # XXX cant have ( or ) in an argument default value
 class prototype(object):
@@ -332,6 +334,8 @@ class prototype(object):
         i = s.find("(")
         assert i > 0
         self.name = prefix + s[:i].strip()
+        if not nmlegal(self.cname()):
+            err("%s(): Illegal name\n" % self.name, warn=False)
         s = s[i:].strip()
         assert s[0] == "("
         assert s[-1] == ")"
@@ -340,10 +344,14 @@ class prototype(object):
         names = {}
         while len(s) > 0:
             a, s = arg(s)
-            if a.nm is not None and a.nm in names:
-                err("%s(): duplicate argument name '%s'\n" % (self.name, a.nm),
-                    warn=False)
-            names[a.nm] = True
+            if a.nm is not None:
+                if not nmlegal(a.nm):
+                    err("%s(): illegal argument name '%s'\n"
+                        % (self.name, a.nm), warn=False)
+                if a.nm in names:
+                    err("%s(): duplicate argument name '%s'\n"
+                        % (self.name, a.nm), warn=False)
+                names[a.nm] = True
             self.args.append(a)
             s = s.lstrip()
             if len(s) == 0:
