@@ -32,11 +32,12 @@
  * NB: THIS IS NOT A PUBLIC API TO VARNISH!
  */
 
-#ifndef VSL_PRIV_H_INCLUDED
+#ifdef VSL_PRIV_H_INCLUDED
+#  error "vsl_priv.h included more than once"
+#endif
 #define VSL_PRIV_H_INCLUDED
 
 #include "vapi/vsl_int.h"
-#include "vsm_priv.h"
 
 #define VSL_CLASS		"Log"
 #define VSL_SEGMENTS		8U	// power of two
@@ -65,5 +66,3 @@ struct VSL_head {
 	ssize_t			offset[VSL_SEGMENTS];
 	uint32_t		log[];
 };
-
-#endif /* VSL_PRIV_H_INCLUDED */
