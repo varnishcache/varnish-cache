@@ -102,6 +102,8 @@ For the std VMOD, the compiled vcc_if.h file looks like this::
 Those are your C prototypes.  Notice the ``vmod_`` prefix on the
 function names.
 
+.. _ref-vmod-named-args:
+
 Named arguments and default values
 ----------------------------------
 
@@ -133,9 +135,16 @@ valid invocations from vcl::
 	debug.argtest("1", 2.5)
 	debug.argtest("1", four=6);
 
-The C interface does not change with named arguments and default
-values, arguments remain positional and defaul values appear no
-different to user specified values.
+The default C interface does not change with named arguments and
+default values, arguments remain positional and defaul values appear
+no different to user specified values.
+
+With the vmod.vcc function declaration argument ``ARGMASK``, a
+``VCC_ARGMASK == uint32_t`` argument gets added to the C interface
+containing a 32 bit mask with the `n-1`\ st bit set if the `n`\ th VCL
+argument was provided (that is, VCC/VRT private arguments like
+VRT_CTX, PRIV_* or object pointers do not count, first argument
+provided is is signified by least significant bit set).
 
 `Note` that default values have to be given in the native C-type
 syntax, see below. As a special case, ``NULL`` has to be given as ``0``.
@@ -149,13 +158,20 @@ VCL data types are targeted at the job, so for instance, we have data
 types like "DURATION" and "HEADER", but they all have some kind of C
 language representation.  Here is a description of them.
 
-All but the PRIV and STRING_LIST types have typedefs: VCL_INT, VCL_REAL,
-etc.
+All but ARGMASK, PRIV_* and STRING_LIST types have VCL_* typedefs:
+VCL_INT, VCL_REAL, etc.
 
 ACL
 	C-type: ``const struct vrt_acl *``
 
 	A type for named ACLs declared in VCL.
+
+ARGMASK
+	C typedef: ``VCC_ARGMASK``
+
+	C-type: ``uint32_t``
+
+	See :ref:`ref-vmod-named-args` above.
 
 BACKEND
 	C-type: ``const struct director *``
