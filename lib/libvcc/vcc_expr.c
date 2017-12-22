@@ -457,6 +457,14 @@ vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 	}
 }
 
+/*
+ * for now, 0 works for all the VCL_* types - we might want an array of better
+ * default values or even some randomization
+ */
+static const char * const val_undef = "0";
+
+#define TD_ARGS_PFX "td_Vmod_args"
+
 static void
 vcc_func(struct vcc *tl, struct expr **e, const char *spec,
     const char *extra, const struct symbol *sym)
@@ -469,6 +477,7 @@ vcc_func(struct vcc *tl, struct expr **e, const char *spec,
 	struct func_arg *fa, *fa2;
 	VTAILQ_HEAD(,func_arg) head;
 	struct token *t1;
+	int has_undef = 0;
 
 	rfmt = VCC_Type(spec);
 	spec += strlen(spec) + 1;
@@ -509,6 +518,10 @@ vcc_func(struct vcc *tl, struct expr **e, const char *spec,
 		}
 		if (*p == '\3') {
 			fa->val = p + 1;
+			if (*fa->val == '\0') {
+				has_undef = 1;
+				fa->val = val_undef;
+			}
 			p += strlen(p) + 1;
 		}
 		assert(*p == 0 || *p > ' ');
@@ -559,6 +572,23 @@ vcc_func(struct vcc *tl, struct expr **e, const char *spec,
 	}
 
 	e1 = vcc_mk_expr(rfmt, "%s(ctx%s\v+", cfunc, extra);
+	if (has_undef) {
+		struct expr *ee;
+
+		ee = vcc_new_expr(e1->fmt);
+		VSB_printf(ee->vsb, "(" TD_ARGS_PFX "_%s_%s) {",
+			   sym->vmod, sym->name);
+		VTAILQ_FOREACH_SAFE(fa, &head, list, fa2) {
+			if (fa->val == NULL || fa->val != val_undef)
+				continue;
+			VSB_printf(ee->vsb, ".%s=%d, ", fa->name,
+				   fa->result ? 1 : 0);
+		}
+		VSB_printf(ee->vsb, "}");
+		AZ(VSB_finish(ee->vsb));
+		e1 = vcc_expr_edit(tl, e1->fmt, "\v1,\n\v2",
+				   e1, ee);
+	}
 	VTAILQ_FOREACH_SAFE(fa, &head, list, fa2) {
 		if (fa->result == NULL && fa->type == ENUM && fa->val != NULL)
 			vcc_do_enum(tl, fa, strlen(fa->val), fa->val);

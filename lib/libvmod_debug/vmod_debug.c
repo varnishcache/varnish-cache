@@ -600,3 +600,34 @@ xyzzy_vsc_destroy(VRT_CTX)
 	AZ(vsc);
 	AZ(pthread_mutex_unlock(&vsc_mtx));
 }
+
+/* $Undef args: a, c, d */
+VCL_STRING
+xyzzy_argmask(VRT_CTX, struct Vmod_args_xyzzy_argmask got,
+    VCL_INT a, VCL_INT b, VCL_BOOL c, VCL_INT d)
+{
+	const int l = 5;
+	char *p = WS_Alloc(ctx->ws, l);
+	const char *r = p;
+
+	if (p == NULL) {
+		VRT_fail(ctx, "argmask alloc failed");
+		return NULL;
+	}
+	if (got.a)
+		*p++ = 'a';
+	if (got.c)
+		*p++ = 'c';
+	if (got.d)
+		*p++ = 'd';
+	*p = '\0';
+	assert (p - r < l);
+
+	if (got.c)
+		(void)c;
+	(void)a;
+	(void)b;
+	(void)d;
+
+	return (r);
+}
