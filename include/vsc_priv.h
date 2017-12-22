@@ -37,8 +37,10 @@
 #define VSC_PRIV_H_INCLUDED
 
 #define VSC_CLASS		"Stat"
+#define VSC_DOC_CLASS		"StatDoc"
 
 struct vsc_head {
-	volatile uint64_t	json_offset;
-	uint64_t		ctr_offset;
+	volatile int		ready;
+	uint64_t		body_offset;
+	uintptr_t		doc_id;
 };

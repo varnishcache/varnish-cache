@@ -53,11 +53,19 @@ struct vsc_seg {
 	unsigned		magic;
 #define VSC_SEG_MAGIC		0x9b355991
 
+	struct vsmw		*vsm;		// keep master/child sep.
 	const char		*nm;
 	VTAILQ_ENTRY(vsc_seg)	list;
 	void			*seg;
+
+	/* VSC segments */
 	struct vsc_head		*head;
 	void			*ptr;
+	struct vsc_seg		*doc;
+
+	/* DOC segments */
+	const unsigned char	*jp;
+	int			refs;
 };
 
 static VTAILQ_HEAD(,vsc_seg)	vsc_seglist =
@@ -66,41 +74,86 @@ static VTAILQ_HEAD(,vsc_seg)	vsc_seglist =
 vsc_callback_f *vsc_lock;
 vsc_callback_f *vsc_unlock;
 
+static struct vsc_seg *
+vrt_vsc_mksegv(const char *class, size_t payload, const char *fmt, va_list va)
+{
+	struct vsc_seg *vsg;
+	size_t co;
+
+	co = PRNDUP(sizeof(struct vsc_head));
+	ALLOC_OBJ(vsg, VSC_SEG_MAGIC);
+	AN(vsg);
+	vsg->seg = VSMW_Allocv(heritage.proc_vsmw, class,
+	    co + PRNDUP(payload), fmt, va);
+	AN(vsg->seg);
+	vsg->vsm = heritage.proc_vsmw;
+	vsg->head = (void*)vsg->seg;
+	vsg->head->body_offset = co;
+	vsg->ptr = (char*)vsg->seg + co;
+	return (vsg);
+}
+
+static struct vsc_seg *
+vrt_vsc_mksegf(const char *class, size_t payload, const char *fmt, ...)
+{
+	va_list ap;
+	struct vsc_seg *vsg;
+
+	va_start(ap, fmt);
+	vsg = vrt_vsc_mksegv(class, payload, fmt, ap);
+	va_end(ap);
+	return (vsg);
+}
+
 void *
 VRT_VSC_Alloc(struct vsc_seg **sg, const char *nm, size_t sd,
     const unsigned char *jp, size_t sj, const char *fmt, va_list va)
 {
-	char *p;
-	struct vsc_seg *vsg;
+	struct vsc_seg *vsg, *dvsg;
 	char buf[1024];
-	uint64_t co, jo;
+	uintptr_t jjp;
 
 	if (vsc_lock != NULL)
 		vsc_lock();
+
+	jjp = (uintptr_t)jp;
+
+	VTAILQ_FOREACH(dvsg, &vsc_seglist, list) {
+		if (dvsg->vsm != heritage.proc_vsmw)
+			continue;
+		if (dvsg->jp == NULL || dvsg->jp == jp)
+			break;
+	}
+	if (dvsg == NULL || dvsg->jp == NULL) {
+		/* Create a new documentation segment */
+		dvsg = vrt_vsc_mksegf(VSC_DOC_CLASS, sj,
+		    "%jx", (uintmax_t)jjp);
+		AN(dvsg);
+		dvsg->jp = jp;
+		dvsg->head->doc_id = jjp;
+		memcpy(dvsg->ptr, jp, sj);
+		VWMB();
+		dvsg->head->ready = 1;
+		VTAILQ_INSERT_HEAD(&vsc_seglist, dvsg, list);
+	}
+	AN(dvsg);
+	dvsg->refs++;
 
 	if (*fmt == '\0')
 		bprintf(buf, "%s", nm);
 	else
 		bprintf(buf, "%s.%s", nm, fmt);
 
-	co = PRNDUP(sizeof(struct vsc_head));
-	jo = co + PRNDUP(sd);
 	AN(heritage.proc_vsmw);
-	p = VSMW_Allocv(heritage.proc_vsmw, VSC_CLASS,
-	    jo + PRNDUP(sj), buf, va);
-	AN(p);
 
-	ALLOC_OBJ(vsg, VSC_SEG_MAGIC);
+	vsg = vrt_vsc_mksegv(VSC_CLASS, sd, buf, va);
 	AN(vsg);
-	vsg->seg = p;
-	vsg->head = (void*)p;
-	vsg->head->ctr_offset = co;
-	vsg->ptr = p + co;
-	VTAILQ_INSERT_TAIL(&vsc_seglist, vsg, list);
-	memcpy(p + jo, jp, sj);
-	VWMB();
-	vsg->head->json_offset = jo;
 	vsg->nm = nm;
+	vsg->doc = dvsg;
+	vsg->head->doc_id = jjp;
+	VTAILQ_INSERT_TAIL(&vsc_seglist, vsg, list);
+	VWMB();
+	vsg->head->ready = 1;
 	if (vsc_unlock != NULL)
 		vsc_unlock();
 	if (sg != NULL)
@@ -111,16 +164,27 @@ VRT_VSC_Alloc(struct vsc_seg **sg, const char *nm, size_t sd,
 void
 VRT_VSC_Destroy(const char *nm, struct vsc_seg *vsg)
 {
+	struct vsc_seg *dvsg;
 
 	if (vsc_lock != NULL)
 		vsc_lock();
 
 	AN(heritage.proc_vsmw);
 	CHECK_OBJ_NOTNULL(vsg, VSC_SEG_MAGIC);
+	AZ(vsg->jp);
+	CHECK_OBJ_NOTNULL(vsg->doc, VSC_SEG_MAGIC);
+	assert(vsg->vsm == heritage.proc_vsmw);
 	assert(vsg->nm == nm);
+
+	dvsg = vsg->doc;
 	VSMW_Free(heritage.proc_vsmw, &vsg->seg);
 	VTAILQ_REMOVE(&vsc_seglist, vsg, list);
 	FREE_OBJ(vsg);
+	if (--dvsg->refs == 0) {
+		VSMW_Free(heritage.proc_vsmw, &dvsg->seg);
+		VTAILQ_REMOVE(&vsc_seglist, dvsg, list);
+		FREE_OBJ(dvsg);
+	}
 	if (vsc_unlock != NULL)
 		vsc_unlock();
 }
