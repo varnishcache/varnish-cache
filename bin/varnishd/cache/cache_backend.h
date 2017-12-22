@@ -59,6 +59,7 @@ struct backend {
 
 	struct vbp_target	*probe;
 
+	struct vsc_seg		*vsc_seg;
 	struct VSC_vbe		*vsc;
 
 	struct tcp_pool		*tcp_pool;

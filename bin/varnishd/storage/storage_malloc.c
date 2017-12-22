@@ -210,10 +210,10 @@ sma_open(struct stevedore *st)
 	ASSERT_CLI();
 	st->lru = LRU_Alloc();
 	if (lck_sma == NULL)
-		lck_sma = Lck_CreateClass("sma");
+		lck_sma = Lck_CreateClass(NULL, "sma");
 	CAST_OBJ_NOTNULL(sma_sc, st->priv, SMA_SC_MAGIC);
 	Lck_New(&sma_sc->sma_mtx, lck_sma);
-	sma_sc->stats = VSC_sma_New(st->ident);
+	sma_sc->stats = VSC_sma_New(NULL, st->ident);
 	if (sma_sc->sma_max != SIZE_MAX)
 		sma_sc->stats->g_space = sma_sc->sma_max;
 }

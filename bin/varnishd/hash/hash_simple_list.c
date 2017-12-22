@@ -52,7 +52,7 @@ static void v_matchproto_(hash_start_f)
 hsl_start(void)
 {
 
-	lck_hsl = Lck_CreateClass("hsl");
+	lck_hsl = Lck_CreateClass(NULL, "hsl");
 	Lck_New(&hsl_mtx, lck_hsl);
 }
 

@@ -59,6 +59,7 @@ struct mempool {
 	volatile struct poolparam	*param;
 	volatile unsigned		*cur_size;
 	uint64_t			live;
+	struct vsc_seg			*vsc_seg;
 	struct VSC_mempool		*vsc;
 	unsigned			n_pool;
 	pthread_t			thread;
@@ -160,7 +161,7 @@ mpl_guard(void *priv)
 				FREE_OBJ(mi);
 				mi = NULL;
 			}
-			VSC_mempool_Destroy(&mpl->vsc);
+			VSC_mempool_Destroy(&mpl->vsc_seg);
 			Lck_Unlock(&mpl->mtx);
 			Lck_Delete(&mpl->mtx);
 			FREE_OBJ(mpl);
@@ -238,7 +239,7 @@ MPL_New(const char *name,
 	VTAILQ_INIT(&mpl->surplus);
 	Lck_New(&mpl->mtx, lck_mempool);
 	/* XXX: prealloc min_pool */
-	mpl->vsc = VSC_mempool_New(mpl->name + 4);
+	mpl->vsc = VSC_mempool_New(&mpl->vsc_seg, mpl->name + 4);
 	AN(mpl->vsc);
 	AZ(pthread_create(&mpl->thread, NULL, mpl_guard, mpl));
 	AZ(pthread_detach(mpl->thread));

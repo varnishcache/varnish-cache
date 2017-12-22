@@ -112,6 +112,7 @@ struct vmod;
 struct vmod_priv;
 struct vrt_acl;
 struct vsb;
+struct vsc_seg;
 struct vsl_log;
 struct ws;
 
@@ -443,7 +444,7 @@ VCL_STRING VRT_STRANDS_string(VCL_STRANDS);
 VCL_STRING VRT_TIME_string(VRT_CTX, VCL_TIME);
 
 #ifdef va_start	// XXX: hackish
-void *VRT_VSC_Alloc(const char *, size_t, const unsigned char *, size_t,
-    const char *, va_list);
-void VRT_VSC_Destroy(const char *, const void *);
+void *VRT_VSC_Alloc(struct vsc_seg **, const char *, size_t,
+    const unsigned char *, size_t, const char *, va_list);
+void VRT_VSC_Destroy(const char *, struct vsc_seg *);
 #endif

@@ -245,15 +245,9 @@ Lck_Delete(struct lock *lck)
 }
 
 struct VSC_lck *
-Lck_CreateClass(const char *name)
+Lck_CreateClass(struct vsc_seg **sg, const char *name)
 {
-	return(VSC_lck_New(name));
-}
-
-void
-Lck_DestroyClass(struct VSC_lck **vsclck)
-{
-	VSC_lck_Destroy(vsclck);
+	return(VSC_lck_New(sg, name));
 }
 
 #define LOCK(nam) struct VSC_lck *lck_##nam;
@@ -265,6 +259,6 @@ LCK_Init(void)
 
 	AZ(pthread_mutexattr_init(&attr));
 	AZ(pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK));
-#define LOCK(nam)	lck_##nam = Lck_CreateClass(#nam);
+#define LOCK(nam)	lck_##nam = Lck_CreateClass(NULL, #nam);
 #include "tbl/locks.h"
 }

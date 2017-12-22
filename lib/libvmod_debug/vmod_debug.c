@@ -66,6 +66,7 @@ struct priv_vcl {
 static VCL_DURATION vcl_release_delay = 0.0;
 
 static pthread_mutex_t vsc_mtx = PTHREAD_MUTEX_INITIALIZER;
+static struct vsc_seg *vsc_seg;
 static struct VSC_debug *vsc;
 
 VCL_VOID v_matchproto_(td_debug_panic)
@@ -361,7 +362,7 @@ event_function(VRT_CTX, struct vmod_priv *priv, enum vcl_event_e e)
 	case VCL_EVENT_COLD: return (event_cold(ctx, priv));
 	case VCL_EVENT_DISCARD:
 		if (vsc)
-			VSC_debug_Destroy(&vsc);
+			VSC_debug_Destroy(&vsc_seg);
 		return (0);
 	default: return (0);
 	}
@@ -584,7 +585,7 @@ xyzzy_vsc_new(VRT_CTX)
 	(void)ctx;
 	AZ(pthread_mutex_lock(&vsc_mtx));
 	if (vsc == NULL)
-		vsc = VSC_debug_New("");
+		vsc = VSC_debug_New(&vsc_seg, "");
 	AN(vsc);
 	AZ(pthread_mutex_unlock(&vsc_mtx));
 }
@@ -594,8 +595,8 @@ xyzzy_vsc_destroy(VRT_CTX)
 {
 	(void)ctx;
 	AZ(pthread_mutex_lock(&vsc_mtx));
-	if (vsc)
-		VSC_debug_Destroy(&vsc);
+	if (vsc != NULL)
+		VSC_debug_Destroy(&vsc_seg);
 	AZ(vsc);
 	AZ(pthread_mutex_unlock(&vsc_mtx));
 }

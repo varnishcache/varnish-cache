@@ -411,9 +411,9 @@ smf_open(struct stevedore *st)
 	ASSERT_CLI();
 	st->lru = LRU_Alloc();
 	if (lck_smf == NULL)
-		lck_smf = Lck_CreateClass("smf");
+		lck_smf = Lck_CreateClass(NULL, "smf");
 	CAST_OBJ_NOTNULL(sc, st->priv, SMF_SC_MAGIC);
-	sc->stats = VSC_smf_New(st->ident);
+	sc->stats = VSC_smf_New(NULL, st->ident);
 	Lck_New(&sc->mtx, lck_smf);
 	Lck_Lock(&sc->mtx);
 	smf_open_chunk(sc, sc->filesize, 0, &fail, &sum);

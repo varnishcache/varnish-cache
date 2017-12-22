@@ -808,7 +808,7 @@ main(int argc, char * const *argv)
 	mgt_SHM_Init();
 
 	mgt_SHM_static_alloc(i_arg, strlen(i_arg) + 1L, "Arg", "-i");
-	VSC_C_mgt = VSC_mgt_New("");
+	VSC_C_mgt = VSC_mgt_New(NULL, "");
 
 	if (M_arg != NULL)
 		mgt_cli_master(M_arg);

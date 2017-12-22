@@ -49,29 +49,29 @@
 
 /*--------------------------------------------------------------------*/
 
-struct vsc_segs {
+struct vsc_seg {
 	unsigned		magic;
-#define VSC_SEGS_MAGIC		0x9b355991
+#define VSC_SEG_MAGIC		0x9b355991
 
 	const char		*nm;
-	VTAILQ_ENTRY(vsc_segs)	list;
+	VTAILQ_ENTRY(vsc_seg)	list;
 	void			*seg;
 	struct vsc_head		*head;
 	void			*ptr;
 };
 
-static VTAILQ_HEAD(,vsc_segs)	vsc_seglist =
+static VTAILQ_HEAD(,vsc_seg)	vsc_seglist =
     VTAILQ_HEAD_INITIALIZER(vsc_seglist);
 
 vsc_callback_f *vsc_lock;
 vsc_callback_f *vsc_unlock;
 
 void *
-VRT_VSC_Alloc(const char *nm, size_t sd, const unsigned char *jp,
-    size_t sj, const char *fmt, va_list va)
+VRT_VSC_Alloc(struct vsc_seg **sg, const char *nm, size_t sd,
+    const unsigned char *jp, size_t sj, const char *fmt, va_list va)
 {
 	char *p;
-	struct vsc_segs *vsg;
+	struct vsc_seg *vsg;
 	char buf[1024];
 	uint64_t co, jo;
 
@@ -90,7 +90,7 @@ VRT_VSC_Alloc(const char *nm, size_t sd, const unsigned char *jp,
 	    jo + PRNDUP(sj), buf, va);
 	AN(p);
 
-	ALLOC_OBJ(vsg, VSC_SEGS_MAGIC);
+	ALLOC_OBJ(vsg, VSC_SEG_MAGIC);
 	AN(vsg);
 	vsg->seg = p;
 	vsg->head = (void*)p;
@@ -103,22 +103,20 @@ VRT_VSC_Alloc(const char *nm, size_t sd, const unsigned char *jp,
 	vsg->nm = nm;
 	if (vsc_unlock != NULL)
 		vsc_unlock();
+	if (sg != NULL)
+		*sg = vsg;
 	return (vsg->ptr);
 }
 
 void
-VRT_VSC_Destroy(const char *nm, const void *p)
+VRT_VSC_Destroy(const char *nm, struct vsc_seg *vsg)
 {
-	struct vsc_segs *vsg;
 
 	if (vsc_lock != NULL)
 		vsc_lock();
 
 	AN(heritage.proc_vsmw);
-	VTAILQ_FOREACH(vsg, &vsc_seglist, list)
-		if (vsg->ptr == p)
-			break;
-	AN(vsg);
+	CHECK_OBJ_NOTNULL(vsg, VSC_SEG_MAGIC);
 	assert(vsg->nm == nm);
 	VSMW_Free(heritage.proc_vsmw, &vsg->seg);
 	VTAILQ_REMOVE(&vsc_seglist, vsg, list);

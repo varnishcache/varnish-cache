@@ -679,7 +679,7 @@ static struct cli_proto debug_cmds[] = {
 static void
 smp_init(void)
 {
-	lck_smp = Lck_CreateClass("smp");
+	lck_smp = Lck_CreateClass(NULL, "smp");
 	CLI_AddFuncs(debug_cmds);
 	smp_oc_realmethods = SML_methods;
 	smp_oc_realmethods.objtouch = NULL;

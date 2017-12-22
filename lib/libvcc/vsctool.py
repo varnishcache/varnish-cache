@@ -144,10 +144,10 @@ class vscset(object):
 		fo.write("\n");
 
 		fo.write(self.struct + " *VSC_" + self.name + "_New")
-		fo.write("(const char *fmt, ...);\n");
+		fo.write("(struct vsc_seg **, const char *fmt, ...);\n");
 
 		fo.write("void VSC_" + self.name + "_Destroy")
-		fo.write("(" + self.struct + "**);\n")
+		fo.write("(struct vsc_seg **);\n")
 
 		if 'sumfunction' in self.head.param:
 			fo.write("void VSC_" + self.name + "_Summ")
@@ -186,14 +186,14 @@ class vscset(object):
 		fo.write("\n")
 		fo.write(self.struct + "*\n");
 		fo.write("VSC_" + self.name + "_New")
-		fo.write("(const char *fmt, ...)\n");
+		fo.write("(struct vsc_seg **sg, const char *fmt, ...)\n");
 		fo.write("{\n")
 		fo.write("\tva_list ap;\n")
 		fo.write("\t" + self.struct + " *retval;\n")
 		fo.write("\n")
 		fo.write("\tva_start(ap, fmt);\n")
 		fo.write("\tretval = VRT_VSC_Alloc")
-		fo.write("(vsc_" + self.name + "_name, ")
+		fo.write("(sg, vsc_" + self.name + "_name, ")
 		fo.write("sizeof(" + self.struct + "),\n\t    ")
 		fo.write("vsc_" + self.name + "_json, ")
 		fo.write("sizeof vsc_" + self.name + "_json, fmt, ap);\n")
@@ -204,13 +204,13 @@ class vscset(object):
 		fo.write("\n")
 		fo.write("void\n")
 		fo.write("VSC_" + self.name + "_Destroy")
-		fo.write("(" + self.struct + " **pp)\n")
+		fo.write("(struct vsc_seg **sg)\n")
 		fo.write("{\n")
-		fo.write("\t" + self.struct + "*p;\n")
+		fo.write("\tstruct vsc_seg *p;\n")
 		fo.write("\n")
-		fo.write("\tAN(pp);\n")
-		fo.write("\tp = *pp;\n")
-		fo.write("\t*pp = NULL;\n")
+		fo.write("\tAN(sg);\n")
+		fo.write("\tp = *sg;\n")
+		fo.write("\t*sg = NULL;\n")
 		fo.write('\tVRT_VSC_Destroy(vsc_%s_name, p);\n' % self.name)
 		fo.write("}\n")
 

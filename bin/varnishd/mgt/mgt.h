@@ -48,6 +48,7 @@
 
 #include "common/common_param.h"
 
+struct vsc_seg;
 #include "VSC_mgt.h"
 
 struct cli;

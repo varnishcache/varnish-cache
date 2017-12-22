@@ -94,7 +94,7 @@ hcl_start(void)
 {
 	unsigned u;
 
-	lck_hcl = Lck_CreateClass("hcl");
+	lck_hcl = Lck_CreateClass(NULL, "hcl");
 	hcl_head = calloc(hcl_nhash, sizeof *hcl_head);
 	XXXAN(hcl_head);
 
