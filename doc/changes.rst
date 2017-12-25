@@ -47,6 +47,52 @@ VCL and bundled VMODs
 
 * workspace overflows in ``std.syslog()`` are ignored
 
+* The ``alg`` argument of the ``shard`` director ``.reconfigure()``
+  method has been removed - the consistent hashing ring is now always
+  generated using the last 32 bits of a SHA256 hash of ``"ident%d"``
+  as with ``alg=SHA256`` or the default.
+
+  We believe that the other algorithms did not yield sufficiently
+  dispersed placement of backends on the consistent hashing ring and
+  thus retire this option without replacement.
+
+  Users of ``.reconfigure(alg=CRC32)`` or ``.reconfigure(alg=RS)`` be
+  advised that when upgrading and removing the ``alg`` argument,
+  consistent hashing values for all backends will change once and only
+  once.
+
+* The ``alg`` argument of the ``shard`` director ``.key()`` method has
+  been removed - it now always hashes its arguments using SHA256 and
+  returns the last 32 bits for use as a shard key.
+
+  Backwards compatibility is provided through `vmod blobdigest`_ with
+  the ``key_blob`` argument of the ``shard`` director ``.backend()``
+  method:
+
+  * for ``alg=CRC32``, replace::
+
+      <dir>.backend(by=KEY, key=<dir>.key(<string>, CRC32))
+
+    with::
+
+      <dir>.backend(by=BLOB, key_blob=blobdigest.hash(ICRC32,
+	blob.decode(encoded=<string>)))
+
+    `Note:` The `vmod blobdigest`_ hash method corresponding to the
+    shard director CRC32 method is called **I**\ CRC32
+
+.. _vmod blobdigest: https://code.uplex.de/uplex-varnish/libvmod-blobdigest/blob/master/README.rst
+
+  * for ``alg=RS``, replace::
+
+      <dir>.backend(by=KEY, key=<dir>.key(<string>, RS))
+
+    with::
+
+      <dir>.backend(by=BLOB, key_blob=blobdigest.hash(RS,
+	blob.decode(encoded=<string>)))
+
+
 Logging / statistics
 --------------------
 

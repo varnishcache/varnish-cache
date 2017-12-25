@@ -40,7 +40,7 @@ varnish v1 -vcl+backend {
 
 	sub vcl_recv {
 		set req.backend_hint = vd.backend(by=KEY,
-		    key=vd.key("/eishoSu2", CRC32),
+		    key=1756955383,
 		    alt=req.restarts,
 		    healthy=ALL);
 
