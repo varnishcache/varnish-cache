@@ -890,13 +890,13 @@ cnt_recv(struct worker *wrk, struct req *req)
 		    "Only from active VCL");
 		req->err_code = 503;
 		req->req_step = R_STP_SYNTH;
-		return (REQ_FSM_MORE);
+		break;
 	case VCL_RET_PURGE:
 		req->req_step = R_STP_PURGE;
-		return (REQ_FSM_MORE);
+		break;
 	case VCL_RET_HASH:
 		req->req_step = R_STP_LOOKUP;
-		return (REQ_FSM_MORE);
+		break;
 	case VCL_RET_PIPE:
 		if (req->esi_level > 0) {
 			VSLb(req->vsl, SLT_VCL_Error,
@@ -911,19 +911,20 @@ cnt_recv(struct worker *wrk, struct req *req)
 		} else {
 			req->req_step = R_STP_PIPE;
 		}
-		return (REQ_FSM_MORE);
+		break;
 	case VCL_RET_PASS:
 		req->req_step = R_STP_PASS;
-		return (REQ_FSM_MORE);
+		break;
 	case VCL_RET_SYNTH:
 		req->req_step = R_STP_SYNTH;
-		return (REQ_FSM_MORE);
+		break;
 	case VCL_RET_FAIL:
 		req->req_step = R_STP_VCLFAIL;
-		return (REQ_FSM_MORE);
+		break;
 	default:
 		WRONG("Illegal return from vcl_recv{}");
 	}
+	return (REQ_FSM_MORE);
 }
 
 /*--------------------------------------------------------------------
