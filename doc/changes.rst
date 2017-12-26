@@ -47,6 +47,8 @@ VCL and bundled VMODs
 
 * workspace overflows in ``std.syslog()`` are ignored
 
+* added ``return(restart)`` from ``vcl_recv{}``
+
 Logging / statistics
 --------------------
 

@@ -93,7 +93,7 @@ returns = (
 
 	('recv',
 		"C",
-		('fail', 'synth', 'pass', 'pipe', 'hash', 'purge', 'vcl')
+		('fail', 'synth', 'restart', 'pass', 'pipe', 'hash', 'purge', 'vcl')
 	),
 	('pipe',
 		"C",

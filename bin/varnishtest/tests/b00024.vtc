@@ -1,27 +1,9 @@
-varnishtest "Check that max_restarts outside vcl_recv works and that we don't fall over"
+varnishtest "Check that max_restarts from vcl_recv works and that we don't fall over"
 
-server s1 {
-	rxreq
-	txresp -body "012345\n"
-	accept
-	rxreq
-	txresp -body "012345\n"
-	accept
-	rxreq
-	txresp -body "012345\n"
-	accept
-	rxreq
-	txresp -body "012345\n"
-	accept
-	rxreq
-	txresp -body "012345\n"
-	accept
-	rxreq
-	txresp -body "012345\n"
-} -start
+varnish v1 -vcl {
+	backend dummy { .host = "${bad_backend}"; }
 
-varnish v1 -vcl+backend {
-	sub vcl_hit {
+	sub vcl_recv {
 	       return (restart);
 	}
 

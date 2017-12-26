@@ -918,6 +918,9 @@ cnt_recv(struct worker *wrk, struct req *req)
 	case VCL_RET_SYNTH:
 		req->req_step = R_STP_SYNTH;
 		break;
+	case VCL_RET_RESTART:
+		req->req_step = R_STP_RESTART;
+		break;
 	case VCL_RET_FAIL:
 		req->req_step = R_STP_VCLFAIL;
 		break;
