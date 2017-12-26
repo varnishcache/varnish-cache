@@ -25,7 +25,7 @@ server s3 {
 server s4 {} -start
 
 varnish v1 -vcl+backend {
-	import directors;
+	import ${vmod_directors};
 
 	sub vcl_init {
 		new vd = directors.fallback(sticky = true);
