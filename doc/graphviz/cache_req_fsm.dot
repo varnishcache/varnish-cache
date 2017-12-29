@@ -188,7 +188,7 @@ digraph cache_req_fsm {
 	subgraph xcluster_recv {
 		recv [
 		      shape=record
-		      label="{cnt_recv:|{vcl_recv\{\}|req.*}|{fail|<hash>hash|<purge>purge|<pass>pass|<pipe>pipe|<synth>synth|<vcl>vcl}}"
+		      label="{cnt_recv:|{vcl_recv\{\}|req.*}|{fail|<hash>hash|<purge>purge|<pass>pass|<pipe>pipe|<restart>restart|<synth>synth|<vcl>vcl}}"
 		      ]
 		recv:hash -> hash [style=bold,color=green]
 		hash [

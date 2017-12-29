@@ -89,6 +89,9 @@ of the following keywords:
   ``synth(status code, reason)``
     see `synth`_
 
+  ``restart``
+    see `restart`_
+
   ``pass``
     see `pass`_
 
