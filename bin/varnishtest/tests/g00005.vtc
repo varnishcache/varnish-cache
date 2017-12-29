@@ -1,17 +1,24 @@
 varnishtest "test gunzip for client + Range"
 
-server s1 {
+server s1 -repeat 3 {
 	rxreq
 	expect req.http.accept-encoding == "gzip"
 	txresp -gzipbody FOOBARBARF
 } -start
 
 varnish v1 -cliok "param.set http_gzip_support true" -vcl+backend {
+	sub vcl_backend_response {
+		if (bereq.url ~  "^/nostream") {
+			set beresp.do_stream = false;
+		}
+	}
 } -start
 
 client c1 {
-	txreq
+	# no range support with streaming cache miss and gunzip
+	txreq -hdr "Range: bytes=3-5"
 	rxresp
+	expect resp.status == 200
 	expect resp.bodylen == "10"
 	expect resp.http.content-encoding == <undef>
 
@@ -32,4 +39,17 @@ client c1 {
 	expect resp.bodylen == "3"
 	expect resp.body == "BAR"
 
+	txreq -url "/nostreamcachemiss" -hdr "Range: bytes=3-5"
+	rxresp
+	expect resp.status == 206
+	expect resp.http.content-encoding == "<undef>"
+	expect resp.bodylen == "3"
+	expect resp.body == "BAR"
+
+	# simple cache miss no gunzip
+	txreq -url "/2" -hdr "Range: bytes=3-5" -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.status == 206
+	expect resp.http.content-encoding == "gzip"
+	expect resp.bodylen == "3"
 } -run
