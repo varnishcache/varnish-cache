@@ -30,7 +30,7 @@ client c1 {
 
 	# This delay attempts to ensure that the busyobj
 	# is completed before we attempt the range request
-	delay .2
+	delay 1
 
 	txreq -hdr "Range: bytes=3-5"
 	rxresp
