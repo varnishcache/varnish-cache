@@ -211,7 +211,7 @@ Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req)
 	}
 	req->req_bodybytes = 0;
 
-	if (!isnan(req->t_prev) && req->t_prev > 0.)
+	if (!isnan(req->t_prev) && req->t_prev > 0. && req->t_prev > sp->t_idle)
 		sp->t_idle = req->t_prev;
 	else
 		sp->t_idle = W_TIM_real(wrk);
