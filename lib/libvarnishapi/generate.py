@@ -118,7 +118,7 @@ vxp_fixed_token(const char *p, const char **q)
 				(l - 1, l))
 			fo.write("\t\t\t*q = p + %d;\n" % l)
 			fo.write("\t\t\treturn (%s);\n" % emit[j])
-			fo.write("\t\t}\n");
+			fo.write("\t\t}\n")
 		fo.write("\t\treturn (0);\n")
 
 	fo.write("\tdefault:\n\t\treturn (0);\n\t}\n}\n")

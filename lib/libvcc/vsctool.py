@@ -110,7 +110,7 @@ class vscset(object):
 			ed["name"] = i.arg
 			ed["docs"] = "\n".join(i.getdoc())
 		s=json.dumps(dd, separators=(",",":")) + "\0"
-		fo.write("\nstatic const unsigned char");
+		fo.write("\nstatic const unsigned char")
 		fo.write(" vsc_%s_json[%d] = {\n" % (self.name, len(s)))
 		bz = bytearray(s)
 		t = "\t"
@@ -141,10 +141,10 @@ class vscset(object):
 		for i in self.mbrs:
 			fo.write("\tuint64_t\t%s;\n" % i.arg)
 		fo.write("};\n")
-		fo.write("\n");
+		fo.write("\n")
 
 		fo.write(self.struct + " *VSC_" + self.name + "_New")
-		fo.write("(struct vsc_seg **, const char *fmt, ...);\n");
+		fo.write("(struct vsc_seg **, const char *fmt, ...);\n")
 
 		fo.write("void VSC_" + self.name + "_Destroy")
 		fo.write("(struct vsc_seg **);\n")
@@ -184,9 +184,9 @@ class vscset(object):
 		self.emit_json(fo)
 
 		fo.write("\n")
-		fo.write(self.struct + "*\n");
+		fo.write(self.struct + "*\n")
 		fo.write("VSC_" + self.name + "_New")
-		fo.write("(struct vsc_seg **sg, const char *fmt, ...)\n");
+		fo.write("(struct vsc_seg **sg, const char *fmt, ...)\n")
 		fo.write("{\n")
 		fo.write("\tva_list ap;\n")
 		fo.write("\t" + self.struct + " *retval;\n")

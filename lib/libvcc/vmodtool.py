@@ -640,7 +640,7 @@ class s_object(stanza):
             ['VRT_CTX', 'struct %s **' % sn, 'const char *'], h))
         fo.write(self.fini.c_fn(['struct %s **' % sn], h))
         for i in self.methods:
-            fo.write(i.proto.c_fn(['VRT_CTX', 'struct %s *' % sn], h));
+            fo.write(i.proto.c_fn(['VRT_CTX', 'struct %s *' % sn], h))
         fo.write("\n")
 
     def hfile(self, fo):
