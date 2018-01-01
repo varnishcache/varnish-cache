@@ -378,7 +378,7 @@ pass(int sock)
 }
 
 
-static void
+static void v_noreturn_
 usage(int status)
 {
 	fprintf(stderr,
