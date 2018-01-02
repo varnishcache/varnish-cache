@@ -31,8 +31,10 @@
 
 #include "cache_varnishd.h"
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #ifdef HAVE_SIGALTSTACK
 #  include <sys/mman.h>
 #endif
@@ -125,7 +127,6 @@ THR_GetName(void)
  * Generic setup all our threads should call
  */
 #ifdef HAVE_SIGALTSTACK
-#include <signal.h>
 static stack_t altstack;
 #endif
 
@@ -277,6 +278,8 @@ child_sigmagic(size_t altstksz)
 	altstack.ss_size = sz;
 	altstack.ss_flags = 0;
 	sa.sa_flags |= SA_ONSTACK;
+#else
+	(void)altstksz;
 #endif
 
 	THR_Init();
