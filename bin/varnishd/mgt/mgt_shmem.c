@@ -41,10 +41,11 @@
 #include <unistd.h>
 
 #include "mgt/mgt.h"
-#include "common/heritage.h"
 
 #include "vsm_priv.h"
-#include "vsmw.h"
+
+#include "common/heritage.h"
+#include "common/vsmw.h"
 
 static struct vsmw *mgt_vsmw;
 

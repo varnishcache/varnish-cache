@@ -44,8 +44,7 @@
 #include <syslog.h>
 #include <unistd.h>
 
-#include "mgt/mgt.h"
-#include "common/heritage.h"
+#include "mgt.h"
 
 #include "vbm.h"
 #include "vcli_serve.h"
@@ -53,7 +52,9 @@
 #include "vfil.h"
 #include "vlu.h"
 #include "vtim.h"
-#include "vsmw.h"
+
+#include "common/heritage.h"
+#include "common/vsmw.h"
 
 static pid_t		child_pid = -1;
 

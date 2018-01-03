@@ -52,6 +52,7 @@ varnishd_SOURCES = \
 	cache/cache_wrk.c \
 	cache/cache_ws.c \
 	common/common_vsc.c \
+	common/common_vsmw.c \
 	hash/hash_classic.c \
 	hash/hash_critbit.c \
 	hash/hash_simple_list.c \
@@ -123,6 +124,7 @@ noinst_HEADERS = \
 	cache/cache_vgz.h \
 	common/common_param.h \
 	common/heritage.h \
+	common/vsmw.h \
 	hash/hash_slinger.h \
 	hpack/vhp.h \
 	http1/cache_http1.h \

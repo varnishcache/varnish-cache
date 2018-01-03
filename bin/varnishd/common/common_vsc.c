@@ -42,10 +42,10 @@
 #include "vas.h"
 #include "vmb.h"
 #include "vsc_priv.h"
-#include "vsmw.h"
 #include "vqueue.h"
 
-#include "common/heritage.h"
+#include "heritage.h"
+#include "vsmw.h"
 
 /*--------------------------------------------------------------------*/
 

@@ -92,7 +92,6 @@ nobase_noinst_HEADERS = \
 	vpf.h \
 	vsc_priv.h \
 	vsl_priv.h \
-	vsmw.h \
 	vsm_priv.h \
 	vsub.h \
 	vss.h \

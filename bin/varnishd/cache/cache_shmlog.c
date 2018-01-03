@@ -35,13 +35,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "common/heritage.h"
-
 #include "vend.h"
 #include "vgz.h"
 #include "vsl_priv.h"
 #include "vmb.h"
-#include "vsmw.h"
+
+#include "common/heritage.h"
+#include "common/vsmw.h"
 
 /* These cannot be struct lock, which depends on vsm/vsl working */
 static pthread_mutex_t vsl_mtx;

@@ -50,11 +50,12 @@
 #include "vas.h"
 #include "vsb.h"
 #include "miniobj.h"
-#include "vsmw.h"
 #include "vqueue.h"
 
 #include "vfil.h"
 #include "vrnd.h"
+
+#include "vsmw.h"
 
 #ifndef MAP_HASSEMAPHORE
 #  define MAP_HASSEMAPHORE 0 /* XXX Linux */
