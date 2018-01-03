@@ -250,6 +250,12 @@ Lck_CreateClass(struct vsc_seg **sg, const char *name)
 	return(VSC_lck_New(sg, name));
 }
 
+void
+Lck_DestroyClass(struct vsc_seg **sg)
+{
+	VSC_lck_Destroy(sg);
+}
+
 #define LOCK(nam) struct VSC_lck *lck_##nam;
 #include "tbl/locks.h"
 

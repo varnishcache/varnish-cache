@@ -757,7 +757,8 @@ int Lck_CondWait(pthread_cond_t *cond, struct lock *lck, double);
 		assert(Lck__Owned(a));	\
 	} while (0)
 
-struct VSC_lck *Lck_CreateClass(struct vsc_seg **, const char *name);
+struct VSC_lck *Lck_CreateClass(struct vsc_seg **, const char *);
+void Lck_DestroyClass(struct vsc_seg **);
 
 #define LOCK(nam) extern struct VSC_lck *lck_##nam;
 #include "tbl/locks.h"
