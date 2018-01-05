@@ -423,8 +423,16 @@ vbe_panic(const struct director *d, struct vsb *vsb)
  * Create a new static or dynamic director::backend instance.
  */
 
-struct director *
-VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
+size_t v_matchproto_()
+VRT_backend_vsm_need(VRT_CTX)
+{
+	(void)ctx;
+	return (VSC_vbe_size);
+}
+
+struct director * v_matchproto_()
+VRT_new_backend_clustered(VRT_CTX, struct vsm_cluster *vc,
+    const struct vrt_backend *vrt)
 {
 	struct backend *be;
 	struct director *d;
@@ -433,6 +441,7 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 	int retval;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	(void)vc;
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
 	assert(vrt->ipv4_suckaddr != NULL || vrt->ipv6_suckaddr != NULL);
 
@@ -493,6 +502,12 @@ VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
 	VRT_delete_backend(ctx, &d);
 	AZ(d);
 	return (NULL);
+}
+
+struct director * v_matchproto_()
+VRT_new_backend(VRT_CTX, const struct vrt_backend *vrt)
+{
+	return (VRT_new_backend_clustered(ctx, NULL, vrt));
 }
 
 /*--------------------------------------------------------------------

@@ -623,6 +623,16 @@ VRT_purge(VRT_CTX, double ttl, double grace, double keep)
 }
 
 /*--------------------------------------------------------------------
+ */
+
+struct vsm_cluster *
+VRT_VSM_Cluster(size_t sz)
+{
+	AN(sz);
+	return ((void*)VRT_VSM_Cluster);
+}
+
+/*--------------------------------------------------------------------
  * Simple stuff
  */
 

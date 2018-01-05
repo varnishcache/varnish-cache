@@ -387,9 +387,14 @@ void VRT_synth_page(VRT_CTX, const char *, ...);
 
 /* Backend related */
 struct director *VRT_new_backend(VRT_CTX, const struct vrt_backend *);
+struct director *VRT_new_backend_clustered(VRT_CTX,
+    struct vsm_cluster *, const struct vrt_backend *);
+size_t VRT_backend_vsm_need(VRT_CTX);
 void VRT_delete_backend(VRT_CTX, struct director **);
 int VRT_backend_healthy(VRT_CTX, struct director *);
 
+/* VSM related */
+struct vsm_cluster *VRT_VSM_Cluster(size_t);
 
 /* cache_director.c */
 int VRT_Healthy(VRT_CTX, VCL_BACKEND);

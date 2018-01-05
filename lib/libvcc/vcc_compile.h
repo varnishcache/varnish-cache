@@ -217,6 +217,7 @@ struct vcc {
 
 	int			nprobe;
 
+	int			ndirector;
 	const char		*default_director;
 	struct token		*t_default_director;
 	const char		*default_probe;
@@ -252,6 +253,7 @@ int vcc_ParseAction(struct vcc *tl);
 /* vcc_backend.c */
 struct fld_spec;
 
+void vcc_Backend_Init(struct vcc *tl);
 void vcc_ParseProbe(struct vcc *tl);
 void vcc_ParseBackend(struct vcc *tl);
 struct fld_spec * vcc_FldSpec(struct vcc *tl, const char *first, ...);

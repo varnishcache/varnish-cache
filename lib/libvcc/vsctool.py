@@ -143,6 +143,9 @@ class vscset(object):
 		fo.write("};\n")
 		fo.write("\n")
 
+		fo.write("#define VSC_" + self.name + 
+		    "_size PRNDUP(sizeof(" + self.struct + "))\n\n")
+
 		fo.write(self.struct + " *VSC_" + self.name + "_New")
 		fo.write("(struct vsm_cluster *,\n")
 		fo.write("    struct vsc_seg **, const char *fmt, ...);\n")

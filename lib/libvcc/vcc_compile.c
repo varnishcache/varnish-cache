@@ -298,7 +298,9 @@ EmitInitFini(const struct vcc *tl)
 	 * LOAD
 	 */
 	Fc(tl, 0, "\nstatic int\nVGC_Load(VRT_CTX)\n{\n\n");
-	Fc(tl, 0, "\tvgc_inistep = 0;\n\n");
+	Fc(tl, 0, "\tvgc_inistep = 0;\n");
+	Fc(tl, 0, "\tsize_t ndirector = %dUL;\n", tl->ndirector);
+	Fc(tl, 0, "\n");
 	VTAILQ_FOREACH(p, &tl->inifin, list) {
 		AZ(VSB_finish(p->ini));
 		assert(p->n > 0);
@@ -559,6 +561,8 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 	struct inifin *ifp;
 
 	vcc_Expr_Init(tl);
+
+	vcc_Backend_Init(tl);
 
 	for (v = vcc_vars; v->name != NULL; v++) {
 		if (v->fmt == HEADER) {

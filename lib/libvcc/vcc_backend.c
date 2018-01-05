@@ -449,7 +449,8 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->ini,
-	    "\t%s =\n\t    VRT_new_backend(ctx, &vgc_dir_priv_%s);",
+	    "\t%s =\n\t    VRT_new_backend_clustered(ctx, vc,\n"
+	    "\t\t&vgc_dir_priv_%s);",
 	    vgcname, vgcname);
 }
 
@@ -463,6 +464,7 @@ vcc_ParseBackend(struct vcc *tl)
 	struct token *t_first, *t_be;
 	struct symbol *sym;
 
+	tl->ndirector++;
 	t_first = tl->t;
 	vcc_NextToken(tl);		/* ID: backend */
 
@@ -491,4 +493,17 @@ vcc_ParseBackend(struct vcc *tl)
 		tl->default_director = sym->rname;
 		tl->t_default_director = t_be;
 	}
+}
+
+void
+vcc_Backend_Init(struct vcc *tl)
+{
+	struct inifin *ifp;
+
+	ifp = New_IniFin(tl);
+	VSB_printf(ifp->ini, "\tstruct vsm_cluster *vc;\n");
+	VSB_printf(ifp->ini, "\n");
+	VSB_printf(ifp->ini,
+	    "\tvc = VRT_VSM_Cluster(ndirector * VRT_backend_vsm_need(ctx));\n");
+	VSB_printf(ifp->ini, "\tif (vc == 0)\n\t\treturn(1);");
 }
