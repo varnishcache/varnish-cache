@@ -585,7 +585,7 @@ xyzzy_vsc_new(VRT_CTX)
 	(void)ctx;
 	AZ(pthread_mutex_lock(&vsc_mtx));
 	if (vsc == NULL)
-		vsc = VSC_debug_New(&vsc_seg, "");
+		vsc = VSC_debug_New(NULL, &vsc_seg, "");
 	AN(vsc);
 	AZ(pthread_mutex_unlock(&vsc_mtx));
 }

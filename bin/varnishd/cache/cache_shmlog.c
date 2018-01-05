@@ -505,7 +505,7 @@ VSM_Init(void)
 	vsc_lock = vsm_vsc_lock;
 	vsc_unlock = vsm_vsc_unlock;
 
-	VSC_C_main = VSC_main_New(NULL, "");
+	VSC_C_main = VSC_main_New(NULL, NULL, "");
 	AN(VSC_C_main);
 
 	AN(heritage.proc_vsmw);

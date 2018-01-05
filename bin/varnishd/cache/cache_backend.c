@@ -342,7 +342,8 @@ vbe_dir_event(const struct director *d, enum vcl_event_e ev)
 	if (ev == VCL_EVENT_WARM) {
 		AZ(bp->vsc);
 		bp->vsc =
-		    VSC_vbe_New(&bp->vsc_seg, bp->director->display_name);
+		    VSC_vbe_New(NULL, &bp->vsc_seg,
+			bp->director->display_name);
 		AN(bp->vsc);
 	}
 
