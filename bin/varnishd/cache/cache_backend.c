@@ -441,7 +441,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsm_cluster *vc,
 	int retval;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	(void)vc
+	(void)vc;
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
 	assert(vrt->ipv4_suckaddr != NULL || vrt->ipv6_suckaddr != NULL);
 
