@@ -258,7 +258,7 @@ smu_open(struct stevedore *st)
 		lck_smu = Lck_CreateClass(NULL, "smu");
 	CAST_OBJ_NOTNULL(smu_sc, st->priv, SMU_SC_MAGIC);
 	Lck_New(&smu_sc->smu_mtx, lck_smu);
-	smu_sc->stats = VSC_smu_New(NULL, st->ident);
+	smu_sc->stats = VSC_smu_New(NULL, NULL, st->ident);
 	if (smu_sc->smu_max != SIZE_MAX)
 		smu_sc->stats->g_space = smu_sc->smu_max;
 
