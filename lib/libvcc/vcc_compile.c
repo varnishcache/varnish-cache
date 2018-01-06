@@ -560,6 +560,9 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 	struct vsb *vsb;
 	struct inifin *ifp;
 
+	Fh(tl, 0, "/* ---===### VCC generated .h code ###===---*/\n");
+	Fc(tl, 0, "\n/* ---===### VCC generated .c code ###===---*/\n");
+
 	vcc_Expr_Init(tl);
 
 	vcc_Backend_Init(tl);
@@ -581,8 +584,6 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 		REPLACE(sym->rname, v->rname);
 	}
 
-	Fh(tl, 0, "/* ---===### VCC generated .h code ###===---*/\n");
-	Fc(tl, 0, "\n/* ---===### VCC generated .c code ###===---*/\n");
 	Fh(tl, 0, "\nextern const struct VCL_conf VCL_conf;\n");
 
 	/* Register and lex the main source */

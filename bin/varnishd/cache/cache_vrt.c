@@ -625,11 +625,23 @@ VRT_purge(VRT_CTX, double ttl, double grace, double keep)
 /*--------------------------------------------------------------------
  */
 
-struct vsm_cluster *
-VRT_VSM_Cluster(size_t sz)
+struct vsm_cluster * v_matchproto_()
+VRT_VSM_Cluster_New(VRT_CTX, size_t sz)
 {
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(sz);
-	return ((void*)VRT_VSM_Cluster);
+	return ((void*)VRT_VSM_Cluster_New);
+}
+
+void v_matchproto_()
+VRT_VSM_Cluster_Destroy(VRT_CTX, struct vsm_cluster **vcp)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AN(vcp);
+	AN(*vcp);
+	*vcp = NULL;
 }
 
 /*--------------------------------------------------------------------

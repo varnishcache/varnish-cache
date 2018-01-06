@@ -394,7 +394,8 @@ void VRT_delete_backend(VRT_CTX, struct director **);
 int VRT_backend_healthy(VRT_CTX, struct director *);
 
 /* VSM related */
-struct vsm_cluster *VRT_VSM_Cluster(size_t);
+struct vsm_cluster *VRT_VSM_Cluster_New(VRT_CTX, size_t);
+void VRT_VSM_Cluster_Destroy(VRT_CTX, struct vsm_cluster **);
 
 /* cache_director.c */
 int VRT_Healthy(VRT_CTX, VCL_BACKEND);

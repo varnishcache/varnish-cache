@@ -449,7 +449,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->ini,
-	    "\t%s =\n\t    VRT_new_backend_clustered(ctx, vc,\n"
+	    "\t%s =\n\t    VRT_new_backend_clustered(ctx, vsc_cluster,\n"
 	    "\t\t&vgc_dir_priv_%s);",
 	    vgcname, vgcname);
 }
@@ -500,10 +500,10 @@ vcc_Backend_Init(struct vcc *tl)
 {
 	struct inifin *ifp;
 
+	Fh(tl, 0, "\nstatic struct vsm_cluster *vsc_cluster;\n");
 	ifp = New_IniFin(tl);
-	VSB_printf(ifp->ini, "\tstruct vsm_cluster *vc;\n");
-	VSB_printf(ifp->ini, "\n");
-	VSB_printf(ifp->ini,
-	    "\tvc = VRT_VSM_Cluster(ndirector * VRT_backend_vsm_need(ctx));\n");
-	VSB_printf(ifp->ini, "\tif (vc == 0)\n\t\treturn(1);");
+	VSB_printf(ifp->ini, "\tvsc_cluster = VRT_VSM_Cluster_New(ctx,\n"
+	    "\t    ndirector * VRT_backend_vsm_need(ctx));\n");
+	VSB_printf(ifp->ini, "\tif (vsc_cluster == 0)\n\t\treturn(1);");
+	VSB_printf(ifp->fin, "\tVRT_VSM_Cluster_Destroy(ctx, &vsc_cluster);");
 }
