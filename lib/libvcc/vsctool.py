@@ -147,7 +147,7 @@ class vscset(object):
 		    "_size PRNDUP(sizeof(" + self.struct + "))\n\n")
 
 		fo.write(self.struct + " *VSC_" + self.name + "_New")
-		fo.write("(struct vsm_cluster *,\n")
+		fo.write("(struct vsmw_cluster *,\n")
 		fo.write("    struct vsc_seg **, const char *fmt, ...);\n")
 
 		fo.write("void VSC_" + self.name + "_Destroy")
@@ -190,7 +190,7 @@ class vscset(object):
 		fo.write("\n")
 		fo.write(self.struct + "*\n")
 		fo.write("VSC_" + self.name + "_New")
-		fo.write("(struct vsm_cluster *vc,\n")
+		fo.write("(struct vsmw_cluster *vc,\n")
 		fo.write("    struct vsc_seg **sg, const char *fmt, ...)\n")
 		fo.write("{\n")
 		fo.write("\tva_list ap;\n")
