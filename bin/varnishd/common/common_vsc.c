@@ -106,7 +106,7 @@ vrt_vsc_mksegf(const char *class, size_t payload, const char *fmt, ...)
 }
 
 void *
-VRT_VSC_Alloc(struct vsm_cluster *vc, struct vsc_seg **sg,
+VRT_VSC_Alloc(struct vsmw_cluster *vc, struct vsc_seg **sg,
     const char *nm, size_t sd,
     const unsigned char *jp, size_t sj, const char *fmt, va_list va)
 {

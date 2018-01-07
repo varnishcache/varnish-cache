@@ -500,7 +500,7 @@ vcc_Backend_Init(struct vcc *tl)
 {
 	struct inifin *ifp;
 
-	Fh(tl, 0, "\nstatic struct vsm_cluster *vsc_cluster;\n");
+	Fh(tl, 0, "\nstatic struct vsmw_cluster *vsc_cluster;\n");
 	ifp = New_IniFin(tl);
 	VSB_printf(ifp->ini, "\tvsc_cluster = VRT_VSM_Cluster_New(ctx,\n"
 	    "\t    ndirector * VRT_backend_vsm_need(ctx));\n");

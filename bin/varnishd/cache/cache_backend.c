@@ -431,7 +431,7 @@ VRT_backend_vsm_need(VRT_CTX)
 }
 
 struct director * v_matchproto_()
-VRT_new_backend_clustered(VRT_CTX, struct vsm_cluster *vc,
+VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
     const struct vrt_backend *vrt)
 {
 	struct backend *be;

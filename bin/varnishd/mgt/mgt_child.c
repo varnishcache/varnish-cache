@@ -347,6 +347,8 @@ mgt_launch_child(struct cli *cli)
 		child_main(mgt_param.sigsegv_handler,
 		    mgt_param.wthread_stacksize);
 
+		// VSMW_Destroy(&heritage.proc_vsmw);
+
 		exit(0);
 	}
 	assert(pid > 1);

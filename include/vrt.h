@@ -113,7 +113,7 @@ struct vmod_priv;
 struct vrt_acl;
 struct vsb;
 struct vsc_seg;
-struct vsm_cluster;
+struct vsmw_cluster;
 struct vsl_log;
 struct ws;
 
@@ -388,14 +388,14 @@ void VRT_synth_page(VRT_CTX, const char *, ...);
 /* Backend related */
 struct director *VRT_new_backend(VRT_CTX, const struct vrt_backend *);
 struct director *VRT_new_backend_clustered(VRT_CTX,
-    struct vsm_cluster *, const struct vrt_backend *);
+    struct vsmw_cluster *, const struct vrt_backend *);
 size_t VRT_backend_vsm_need(VRT_CTX);
 void VRT_delete_backend(VRT_CTX, struct director **);
 int VRT_backend_healthy(VRT_CTX, struct director *);
 
 /* VSM related */
-struct vsm_cluster *VRT_VSM_Cluster_New(VRT_CTX, size_t);
-void VRT_VSM_Cluster_Destroy(VRT_CTX, struct vsm_cluster **);
+struct vsmw_cluster *VRT_VSM_Cluster_New(VRT_CTX, size_t);
+void VRT_VSM_Cluster_Destroy(VRT_CTX, struct vsmw_cluster **);
 
 /* cache_director.c */
 int VRT_Healthy(VRT_CTX, VCL_BACKEND);
@@ -451,7 +451,7 @@ VCL_STRING VRT_STRANDS_string(VCL_STRANDS);
 VCL_STRING VRT_TIME_string(VRT_CTX, VCL_TIME);
 
 #ifdef va_start	// XXX: hackish
-void *VRT_VSC_Alloc(struct vsm_cluster *, struct vsc_seg **,
+void *VRT_VSC_Alloc(struct vsmw_cluster *, struct vsc_seg **,
     const char *, size_t, const unsigned char *, size_t, const char *, va_list);
 void VRT_VSC_Destroy(const char *, struct vsc_seg *);
 #endif
