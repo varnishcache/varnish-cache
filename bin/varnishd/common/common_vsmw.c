@@ -158,8 +158,8 @@ vsmw_mkent(const struct vsmw *vsmw, const char *pfx)
 
 /*--------------------------------------------------------------------*/
 
-static struct vsmw_cluster *
-vsmw_NewCluster(struct vsmw *vsmw, size_t len, const char *pfx)
+struct vsmw_cluster *
+VSMW_NewCluster(struct vsmw *vsmw, size_t len, const char *pfx)
 {
 	struct vsmw_cluster *vc;
 	int fd;
@@ -195,8 +195,8 @@ vsmw_NewCluster(struct vsmw *vsmw, size_t len, const char *pfx)
 	return (vc);
 }
 
-static void
-vsmw_DestroyCluster(struct vsmw *vsmw, struct vsmw_cluster **vcp)
+void
+VSMW_DestroyCluster(struct vsmw *vsmw, struct vsmw_cluster **vcp)
 {
 	struct vsmw_cluster *vc;
 
@@ -238,12 +238,13 @@ VSMW_Allocv(struct vsmw *vsmw, const char *class, size_t len,
 	AZ(VSB_finish(vsmw->vsb));
 	REPLACE(seg->id, VSB_data(vsmw->vsb));
 
-	vc = vsmw_NewCluster(vsmw, len, class);
+	vc = VSMW_NewCluster(vsmw, 64 + len, class);
 	AN(vc);
 	vc->refs++;
 
 	seg->cluster = vc;
-	seg->ptr = vc->ptr;
+	seg->off = 64;
+	seg->ptr = seg->off + (char*)vc->ptr;
 
 	VTAILQ_INSERT_TAIL(&vsmw->segs, seg, list);
 	fd = openat(vsmw->vdirfd, vsmw->idx, O_APPEND | O_WRONLY);
@@ -278,7 +279,7 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg, int fixidx)
 	CHECK_OBJ_NOTNULL(seg, VSMWSEG_MAGIC);
 
 	if (!--seg->cluster->refs)
-		vsmw_DestroyCluster(vsmw, &seg->cluster);
+		VSMW_DestroyCluster(vsmw, &seg->cluster);
 
 	VTAILQ_REMOVE(&vsmw->segs, seg, list);
 	REPLACE(seg->class, NULL);

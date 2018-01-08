@@ -32,6 +32,10 @@
 #define VSMW_H_INCLUDED
 
 struct vsmw;
+struct vsmw_cluster;
+
+struct vsmw_cluster *VSMW_NewCluster(struct vsmw *, size_t , const char *);
+void VSMW_DestroyCluster(struct vsmw *, struct vsmw_cluster **);
 
 void *VSMW_Allocv(struct vsmw *, const char *, size_t, const char *, va_list);
 void *VSMW_Allocf(struct vsmw *, const char *, size_t, const char *, ...);
