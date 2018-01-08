@@ -62,6 +62,16 @@ static const struct h2_settings H2_proto_settings = {
 #include "tbl/h2_settings.h"
 };
 
+static void
+h2_local_settings(struct h2_settings *h2s)
+{
+	*h2s = H2_proto_settings;
+#define H2_SETTINGS_PARAM_ONLY
+#define H2_SETTING(U, l, ...)			\
+	h2s->l = cache_param->h2_##l;
+#include "tbl/h2_settings.h"
+#undef H2_SETTINGS_PARAM_ONLY
+}
 
 /**********************************************************************
  * The h2_sess struct needs many of the same things as a request,
@@ -101,7 +111,7 @@ h2_new_sess(const struct worker *wrk, struct sess *sp, struct req *srq)
 		h2->rxthr = pthread_self();
 		VTAILQ_INIT(&h2->streams);
 		VTAILQ_INIT(&h2->txqueue);
-		h2->local_settings = H2_proto_settings;
+		h2_local_settings(&h2->local_settings);
 		h2->remote_settings = H2_proto_settings;
 
 		AZ(VHT_Init(h2->dectbl,
