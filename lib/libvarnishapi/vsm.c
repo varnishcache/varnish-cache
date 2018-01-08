@@ -714,7 +714,6 @@ VSM_Map(struct vsm *vd, struct vsm_fantom *vf)
 
 	ps = getpagesize();
 	of = strtoul(vg->av[2], NULL, 10);
-	assert(of >= 0);
 	off = RDN2(of, ps);
 
 	sz = strtoul(vg->av[3], NULL, 10);
