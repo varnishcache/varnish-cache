@@ -37,8 +37,10 @@ struct vsmw_cluster;
 struct vsmw_cluster *VSMW_NewCluster(struct vsmw *, size_t , const char *);
 void VSMW_DestroyCluster(struct vsmw *, struct vsmw_cluster **);
 
-void *VSMW_Allocv(struct vsmw *, const char *, size_t, const char *, va_list);
-void *VSMW_Allocf(struct vsmw *, const char *, size_t, const char *, ...);
+void *VSMW_Allocv(struct vsmw *, struct vsmw_cluster *,
+    const char *, size_t, const char *, va_list);
+void *VSMW_Allocf(struct vsmw *, struct vsmw_cluster *,
+    const char *, size_t, const char *, ...);
 void VSMW_Free(struct vsmw *, void **);
 
 struct vsmw *VSMW_New(int, int, const char *);

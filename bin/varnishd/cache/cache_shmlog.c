@@ -509,7 +509,7 @@ VSM_Init(void)
 	AN(VSC_C_main);
 
 	AN(heritage.proc_vsmw);
-	vsl_head = VSMW_Allocf(heritage.proc_vsmw, VSL_CLASS,
+	vsl_head = VSMW_Allocf(heritage.proc_vsmw, NULL, VSL_CLASS,
 	    cache_param->vsl_space, VSL_CLASS);
 	AN(vsl_head);
 	vsl_segsize = ((cache_param->vsl_space - sizeof *vsl_head) /

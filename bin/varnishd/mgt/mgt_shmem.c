@@ -58,7 +58,7 @@ mgt_SHM_static_alloc(const void *ptr, ssize_t size,
 {
 	void *p;
 
-	p = VSMW_Allocf(mgt_vsmw, class, size, "%s", ident);
+	p = VSMW_Allocf(mgt_vsmw, NULL, class, size, "%s", ident);
 	AN(p);
 	memcpy(p, ptr, size);
 }
@@ -122,13 +122,13 @@ mgt_SHM_ChildNew(void)
 
 	MCH_Fd_Inherit(heritage.vsm_fd, "VSMW");
 
-	heritage.param = VSMW_Allocf(mgt_vsmw, VSM_CLASS_PARAM,
+	heritage.param = VSMW_Allocf(mgt_vsmw, NULL, VSM_CLASS_PARAM,
 	    sizeof *heritage.param, "");
 	AN(heritage.param);
 	*heritage.param = mgt_param;
 
 	heritage.panic_str_len = 64 * 1024;
-	heritage.panic_str = VSMW_Allocf(mgt_vsmw, "Panic",
+	heritage.panic_str = VSMW_Allocf(mgt_vsmw, NULL, "Panic",
 	    heritage.panic_str_len, "");
 	AN(heritage.panic_str);
 }

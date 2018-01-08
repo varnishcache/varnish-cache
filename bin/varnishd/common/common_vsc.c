@@ -83,7 +83,7 @@ vrt_vsc_mksegv(const char *class, size_t payload, const char *fmt, va_list va)
 	co = PRNDUP(sizeof(struct vsc_head));
 	ALLOC_OBJ(vsg, VSC_SEG_MAGIC);
 	AN(vsg);
-	vsg->seg = VSMW_Allocv(heritage.proc_vsmw, class,
+	vsg->seg = VSMW_Allocv(heritage.proc_vsmw, NULL, class,
 	    co + PRNDUP(payload), fmt, va);
 	AN(vsg->seg);
 	vsg->vsm = heritage.proc_vsmw;

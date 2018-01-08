@@ -219,14 +219,15 @@ VSMW_DestroyCluster(struct vsmw *vsmw, struct vsmw_cluster **vcp)
 /*--------------------------------------------------------------------*/
 
 void *
-VSMW_Allocv(struct vsmw *vsmw, const char *class, size_t len,
+VSMW_Allocv(struct vsmw *vsmw, struct vsmw_cluster *vc,
+    const char *class, size_t len,
     const char *fmt, va_list va)
 {
 	struct vsmwseg *seg;
-	struct vsmw_cluster *vc;
 	int fd;
 
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
+	(void)vc;
 
 	ALLOC_OBJ(seg, VSMWSEG_MAGIC);
 	AN(seg);
@@ -256,14 +257,14 @@ VSMW_Allocv(struct vsmw *vsmw, const char *class, size_t len,
 }
 
 void *
-VSMW_Allocf(struct vsmw *vsmw, const char *class, size_t len,
-    const char *fmt, ...)
+VSMW_Allocf(struct vsmw *vsmw, struct vsmw_cluster *vc,
+    const char *class, size_t len, const char *fmt, ...)
 {
 	va_list ap;
 	void *p;
 
 	va_start(ap, fmt);
-	p = VSMW_Allocv(vsmw, class, len, fmt, ap);
+	p = VSMW_Allocv(vsmw, vc, class, len, fmt, ap);
 	va_end(ap);
 	return (p);
 }
