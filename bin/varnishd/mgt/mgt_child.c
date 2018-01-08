@@ -347,6 +347,12 @@ mgt_launch_child(struct cli *cli)
 		child_main(mgt_param.sigsegv_handler,
 		    mgt_param.wthread_stacksize);
 
+		/*
+		 * It would be natural to clean VSMW up here, but it is apt
+		 * to fail in some scenarios because of the fall-back
+		 * "rm -rf" in mgt_SHM_ChildDestroy() which is there to
+		 * catch the cases were we don't get here.
+		 */
 		// VSMW_Destroy(&heritage.proc_vsmw);
 
 		exit(0);
