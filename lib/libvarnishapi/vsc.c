@@ -431,7 +431,7 @@ VSC_Iter(struct vsc *vsc, struct vsm *vsm, VSC_iter_f *fiter, void *priv)
 		} else {
 			sp2 = VTAILQ_NEXT(sp, list);
 		}
-		if (sp != NULL && fiter != NULL)
+		if (sp != NULL && fiter != NULL && sp->head->ready < 2)
 			i = vsc_iter_seg(vsc, sp, fiter, priv);
 		sp = sp2;
 		if (i)

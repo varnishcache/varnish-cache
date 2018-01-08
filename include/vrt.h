@@ -56,6 +56,8 @@
  *	VRT_Healthy() added
  *	VRT_VSC_Alloc() added
  *	VRT_VSC_Destroy() added
+ *	VRT_VSC_Hide() added
+ *	VRT_VSC_Reveal() added
  *	struct director.event added
  *	struct director.destroy added
  *	VRT_r_beresp_storage_hint() removed - under discussion #2509
@@ -454,4 +456,6 @@ VCL_STRING VRT_TIME_string(VRT_CTX, VCL_TIME);
 void *VRT_VSC_Alloc(struct vsmw_cluster *, struct vsc_seg **,
     const char *, size_t, const unsigned char *, size_t, const char *, va_list);
 void VRT_VSC_Destroy(const char *, struct vsc_seg *);
+void VRT_VSC_Hide(struct vsc_seg *);
+void VRT_VSC_Reveal(struct vsc_seg *);
 #endif

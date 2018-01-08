@@ -105,6 +105,22 @@ vrt_vsc_mksegf(const char *class, size_t payload, const char *fmt, ...)
 	return (vsg);
 }
 
+void
+VRT_VSC_Hide(struct vsc_seg *vsg)
+{
+	CHECK_OBJ_NOTNULL(vsg, VSC_SEG_MAGIC);
+	assert(vsg->head->ready > 0);
+	vsg->head->ready = 2;
+}
+
+void
+VRT_VSC_Reveal(struct vsc_seg *vsg)
+{
+	CHECK_OBJ_NOTNULL(vsg, VSC_SEG_MAGIC);
+	assert(vsg->head->ready > 0);
+	vsg->head->ready = 1;
+}
+
 void *
 VRT_VSC_Alloc(struct vsmw_cluster *vc, struct vsc_seg **sg,
     const char *nm, size_t sd,

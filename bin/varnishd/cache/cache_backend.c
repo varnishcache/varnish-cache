@@ -196,6 +196,7 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	}
 	assert(bp->n_conn > 0);
 	bp->n_conn--;
+	AN(bp->vsc);
 	bp->vsc->conn--;
 #define ACCT(foo)	bp->vsc->foo += bo->acct.foo;
 #include "tbl/acct_fields_bereq.h"
@@ -339,13 +340,8 @@ vbe_dir_event(const struct director *d, enum vcl_event_e ev)
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
-	if (ev == VCL_EVENT_WARM) {
-		AZ(bp->vsc);
-		bp->vsc =
-		    VSC_vbe_New(NULL, &bp->vsc_seg,
-			bp->director->display_name);
-		AN(bp->vsc);
-	}
+	if (ev == VCL_EVENT_WARM)
+		VRT_VSC_Reveal(bp->vsc_seg);
 
 	if (bp->probe != NULL && ev == VCL_EVENT_WARM)
 		VBP_Control(bp, 1);
@@ -353,12 +349,8 @@ vbe_dir_event(const struct director *d, enum vcl_event_e ev)
 	if (bp->probe != NULL && ev == VCL_EVENT_COLD)
 		VBP_Control(bp, 0);
 
-	if (ev == VCL_EVENT_COLD) {
-		Lck_Lock(&backends_mtx);
-		bp->vsc = NULL;
-		Lck_Unlock(&backends_mtx);
-		VSC_vbe_Destroy(&bp->vsc_seg);
-	}
+	if (ev == VCL_EVENT_COLD)
+		VRT_VSC_Hide(bp->vsc_seg);
 }
 
 /*---------------------------------------------------------------------*/
@@ -374,6 +366,7 @@ vbe_destroy(const struct director *d)
 	if (be->probe != NULL)
 		VBP_Remove(be);
 
+	VSC_vbe_Destroy(&be->vsc_seg);
 	Lck_Lock(&backends_mtx);
 	if (be->cooled > 0)
 		VTAILQ_REMOVE(&cool_backends, be, list);
@@ -389,7 +382,6 @@ vbe_destroy(const struct director *d)
 #undef DA
 #undef DN
 
-	AZ(be->vsc);
 	Lck_Delete(&be->mtx);
 	FREE_OBJ(be);
 }
@@ -493,6 +485,10 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 		VTP_AddRef(be->tcp_pool);
 		VBP_Insert(be, vbp, be->tcp_pool);
 	}
+
+	be->vsc = VSC_vbe_New(NULL, &be->vsc_seg,
+	    "%s.%s", VCL_Name(ctx->vcl), vrt->vcl_name);
+	AN(be->vsc);
 
 	retval = VCL_AddDirector(ctx->vcl, d, vrt->vcl_name);
 
