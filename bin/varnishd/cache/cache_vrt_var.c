@@ -552,7 +552,7 @@ VRT_r_##which##_##fld(VRT_CTX)					\
 }
 
 VRT_DO_EXP_R(obj, ctx->req->objcore, ttl,
-    ctx->now - ctx->req->objcore->t_origin)
+    fmax(0, ctx->req->t_req - ctx->req->objcore->t_origin))
 VRT_DO_EXP_R(obj, ctx->req->objcore, grace, 0)
 VRT_DO_EXP_R(obj, ctx->req->objcore, keep, 0)
 
