@@ -160,7 +160,7 @@ vbf_beresp2obj(struct busyobj *bo)
 }
 
 /*--------------------------------------------------------------------
- * Copy req->bereq and release req if not pass fetch
+ * Copy req->bereq and release req if no body
  */
 
 static enum fetch_step
