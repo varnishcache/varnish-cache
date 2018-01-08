@@ -47,6 +47,7 @@ H2_SETTING(					// rfc7540,l,2097,2103
 	0xffffffff,
 	0
 )
+#ifndef H2_SETTINGS_PARAM_ONLY
 H2_SETTING(					// rfc7540,l,2105,2114
 	ENABLE_PUSH,
 	enable_push,
@@ -56,6 +57,7 @@ H2_SETTING(					// rfc7540,l,2105,2114
 	1,
 	H2CE_PROTOCOL_ERROR
 )
+#endif
 H2_SETTING(					// rfc7540,l,2116,2121
 	MAX_CONCURRENT_STREAMS,
 	max_concurrent_streams,
