@@ -376,7 +376,7 @@ struct objcore {
 	uint16_t		oa_present;
 
 	unsigned		timer_idx;	// XXX 4Gobj limit
-	float			last_lru;
+	double			last_lru;
 	VTAILQ_ENTRY(objcore)	hsh_list;
 	VTAILQ_ENTRY(objcore)	lru_list;
 	VTAILQ_ENTRY(objcore)	ban_list;
