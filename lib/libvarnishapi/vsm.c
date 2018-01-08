@@ -82,9 +82,10 @@ struct vsm_seg {
 	struct vsm_set		*set;
 	char			**av;
 	int			refs;
+	void			*s;
+	size_t			sz;
 	void			*b;
 	void			*e;
-	size_t			sz;
 	uintptr_t		serial;
 };
 
@@ -150,18 +151,14 @@ vsm_diag(struct vsm *vd, const char *fmt, ...)
 static void
 vsm_unmapseg(struct vsm_seg *vg)
 {
-	size_t sz, ps, len;
 
 	CHECK_OBJ_NOTNULL(vg, VSM_SEG_MAGIC);
 
 	AN(vg->b);
 	AN(vg->e);
-	sz = strtoul(vg->av[3], NULL, 10);
-	assert(sz > 0);
-	ps = getpagesize();
-	len = RUP2(sz, ps);
-	AZ(munmap(vg->b, len));
-	vg->b = vg->e = NULL;
+	AZ(munmap(vg->s, vg->sz));
+	vg->s = vg->b = vg->e = NULL;
+	vg->sz = 0;
 }
 
 /*--------------------------------------------------------------------*/
@@ -475,7 +472,6 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 			VAV_Free(av);
 			break;
 		}
-		xxxassert(!strcmp(av[2], "0"));
 
 		if (vg == NULL) {
 			ALLOC_OBJ(vg2, VSM_SEG_MAGIC);
@@ -692,7 +688,7 @@ int
 VSM_Map(struct vsm *vd, struct vsm_fantom *vf)
 {
 	struct vsm_seg *vg;
-	size_t sz, ps, len;
+	size_t of, off, sz, ps, len;
 	struct vsb *vsb;
 	int fd;
 
@@ -716,10 +712,14 @@ VSM_Map(struct vsm *vd, struct vsm_fantom *vf)
 		return (0);
 	}
 
+	ps = getpagesize();
+	of = strtoul(vg->av[2], NULL, 10);
+	assert(of >= 0);
+	off = RDN2(of, ps);
+
 	sz = strtoul(vg->av[3], NULL, 10);
 	assert(sz > 0);
-	ps = getpagesize();
-	len = RUP2(sz, ps);
+	len = RUP2(of + sz, ps);
 
 	vsb = VSB_new_auto();
 	AN(vsb);
@@ -732,17 +732,18 @@ VSM_Map(struct vsm *vd, struct vsm_fantom *vf)
 		return (vsm_diag(vd, "Could not open segment"));
 	}
 
-	vg->b = (void*)mmap(NULL, len,
+	vg->s = (void*)mmap(NULL, len,
 	    PROT_READ,
 	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
-	    fd, 0);
+	    fd, off);
 
 	VSB_destroy(&vsb);
 
-
 	closefd(&fd);
-	if (vg->b == MAP_FAILED)
+	if (vg->s == MAP_FAILED)
 		return (vsm_diag(vd, "Could not mmap segment"));
+
+	vg->b = (char*)(vg->s) + of;
 	vg->e = (char *)vg->b + sz;
 	vg->sz = len;
 
