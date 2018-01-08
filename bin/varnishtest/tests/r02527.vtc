@@ -1,0 +1,30 @@
+varnishtest "Test the n_lru_moved counter"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-p lru_interval=1" -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.do_stream = false;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -expect MAIN.n_lru_moved == 0
+
+delay 1
+
+client c1 {
+	txreq
+	rxresp
+	txreq
+	rxresp
+} -run
+
+varnish v1 -expect MAIN.n_lru_moved == 1
