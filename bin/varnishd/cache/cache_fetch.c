@@ -501,6 +501,8 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 static int
 vbf_figure_out_vfp(struct busyobj *bo)
 {
+	unsigned is_partial;
+
 	/*
 	 * The VCL variables beresp.do_g[un]zip tells us how we want the
 	 * object processed before it is stored.
@@ -514,7 +516,7 @@ vbf_figure_out_vfp(struct busyobj *bo)
 	 *
 	 */
 
-	/* No body or no GZIP supprt -> done */
+	/* No body or no GZIP support -> done */
 	if (bo->htc->body_status == BS_NONE ||
 	    bo->htc->content_length == 0 ||
 	    !cache_param->http_gzip_support) {
@@ -524,6 +526,7 @@ vbf_figure_out_vfp(struct busyobj *bo)
 		return (0);
 	}
 
+	is_partial = http_GetStatus(bo->beresp) == 206;
 	bo->is_gzip = http_HdrIs(bo->beresp, H_Content_Encoding, "gzip");
 	bo->is_gunzip = !http_GetHdr(bo->beresp, H_Content_Encoding, NULL);
 	assert(bo->is_gzip == 0 || bo->is_gunzip == 0);
@@ -552,7 +555,7 @@ vbf_figure_out_vfp(struct busyobj *bo)
 	if (bo->do_gzip)
 		return (VFP_Push(bo->vfc, &VFP_gzip) == NULL ? -1 : 0);
 
-	if (bo->is_gzip && !bo->do_gunzip)
+	if (bo->is_gzip && !bo->do_gunzip && !is_partial)
 		return (VFP_Push(bo->vfc, &VFP_testgunzip) == NULL ? -1 : 0);
 
 	return (0);
