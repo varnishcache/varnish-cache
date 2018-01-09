@@ -546,6 +546,7 @@ static enum fetch_step
 vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 {
 	const char *p;
+	unsigned is_partial;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -565,6 +566,8 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 	 *	anything else			--> do nothing wrt gzip
 	 *
 	 */
+
+	is_partial = http_GetStatus(bo->beresp) == 206;
 
 	/* We do nothing unless the param is set */
 	if (!cache_param->http_gzip_support)
@@ -608,7 +611,7 @@ vbf_stp_fetch(struct worker *wrk, struct busyobj *bo)
 			vbf_vfp_push(bo, &vfp_esi, 1);
 		} else if (bo->do_gzip) {
 			vbf_vfp_push(bo, &vfp_gzip, 1);
-		} else if (bo->is_gzip && !bo->do_gunzip) {
+		} else if (bo->is_gzip && !bo->do_gunzip && !is_partial) {
 			vbf_vfp_push(bo, &vfp_testgunzip, 1);
 		}
 	}
