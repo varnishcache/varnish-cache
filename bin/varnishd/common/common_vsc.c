@@ -75,7 +75,8 @@ vsc_callback_f *vsc_lock;
 vsc_callback_f *vsc_unlock;
 
 static struct vsc_seg *
-vrt_vsc_mksegv(const char *class, size_t payload, const char *fmt, va_list va)
+vrt_vsc_mksegv(struct vsmw_cluster *vc, const char *class,
+    size_t payload, const char *fmt, va_list va)
 {
 	struct vsc_seg *vsg;
 	size_t co;
@@ -83,7 +84,7 @@ vrt_vsc_mksegv(const char *class, size_t payload, const char *fmt, va_list va)
 	co = PRNDUP(sizeof(struct vsc_head));
 	ALLOC_OBJ(vsg, VSC_SEG_MAGIC);
 	AN(vsg);
-	vsg->seg = VSMW_Allocv(heritage.proc_vsmw, NULL, class,
+	vsg->seg = VSMW_Allocv(heritage.proc_vsmw, vc, class,
 	    co + PRNDUP(payload), fmt, va);
 	AN(vsg->seg);
 	vsg->vsm = heritage.proc_vsmw;
@@ -100,7 +101,7 @@ vrt_vsc_mksegf(const char *class, size_t payload, const char *fmt, ...)
 	struct vsc_seg *vsg;
 
 	va_start(ap, fmt);
-	vsg = vrt_vsc_mksegv(class, payload, fmt, ap);
+	vsg = vrt_vsc_mksegv(NULL, class, payload, fmt, ap);
 	va_end(ap);
 	return (vsg);
 }
@@ -130,7 +131,6 @@ VRT_VSC_Alloc(struct vsmw_cluster *vc, struct vsc_seg **sg,
 	char buf[1024];
 	uintptr_t jjp;
 
-	AZ(vc);
 	if (vsc_lock != NULL)
 		vsc_lock();
 
@@ -164,7 +164,7 @@ VRT_VSC_Alloc(struct vsmw_cluster *vc, struct vsc_seg **sg,
 
 	AN(heritage.proc_vsmw);
 
-	vsg = vrt_vsc_mksegv(VSC_CLASS, sd, buf, va);
+	vsg = vrt_vsc_mksegv(vc, VSC_CLASS, sd, buf, va);
 	AN(vsg);
 	vsg->nm = nm;
 	vsg->doc = dvsg;

@@ -433,7 +433,6 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	int retval;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	(void)vc;
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
 	assert(vrt->ipv4_suckaddr != NULL || vrt->ipv6_suckaddr != NULL);
 
@@ -486,7 +485,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 		VBP_Insert(be, vbp, be->tcp_pool);
 	}
 
-	be->vsc = VSC_vbe_New(NULL, &be->vsc_seg,
+	be->vsc = VSC_vbe_New(vc, &be->vsc_seg,
 	    "%s.%s", VCL_Name(ctx->vcl), vrt->vcl_name);
 	AN(be->vsc);
 
