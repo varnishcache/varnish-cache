@@ -75,6 +75,7 @@ struct vsmw_cluster {
 	char				*fn;
 	size_t				len;
 	void				*ptr;
+	size_t				next;
 	int				refs;
 };
 
@@ -239,12 +240,15 @@ VSMW_Allocv(struct vsmw *vsmw, struct vsmw_cluster *vc,
 	AZ(VSB_finish(vsmw->vsb));
 	REPLACE(seg->id, VSB_data(vsmw->vsb));
 
-	vc = VSMW_NewCluster(vsmw, 64 + len, class);
+	if (vc == NULL)
+		vc = VSMW_NewCluster(vsmw, len, class);
 	AN(vc);
 	vc->refs++;
 
 	seg->cluster = vc;
-	seg->off = 64;
+	seg->off = vc->next;
+	vc->next += len;
+	assert(vc->next <= vc->len);
 	seg->ptr = seg->off + (char*)vc->ptr;
 
 	VTAILQ_INSERT_TAIL(&vsmw->segs, seg, list);

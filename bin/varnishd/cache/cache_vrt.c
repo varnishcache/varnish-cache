@@ -42,6 +42,9 @@
 #include "vtcp.h"
 #include "vtim.h"
 
+#include "common/heritage.h"
+#include "common/vsmw.h"
+
 const void * const vrt_magic_string_end = &vrt_magic_string_end;
 const void * const vrt_magic_string_unset = &vrt_magic_string_unset;
 
@@ -628,10 +631,17 @@ VRT_purge(VRT_CTX, double ttl, double grace, double keep)
 struct vsmw_cluster * v_matchproto_()
 VRT_VSM_Cluster_New(VRT_CTX, size_t sz)
 {
+	struct vsmw_cluster *vc;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	AN(sz);
-	return ((void*)VRT_VSM_Cluster_New);
+	assert(sz > 0);
+	AN(vsc_lock);
+	AN(vsc_unlock);
+	AN(heritage.proc_vsmw);
+	vsc_lock();
+	vc = VSMW_NewCluster(heritage.proc_vsmw, sz, "VSC_cluster");
+	vsc_unlock();
+	return (vc);
 }
 
 void v_matchproto_()
