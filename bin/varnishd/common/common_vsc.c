@@ -106,7 +106,7 @@ vrt_vsc_mksegf(const char *class, size_t payload, const char *fmt, ...)
 }
 
 void
-VRT_VSC_Hide(struct vsc_seg *vsg)
+VRT_VSC_Hide(const struct vsc_seg *vsg)
 {
 	CHECK_OBJ_NOTNULL(vsg, VSC_SEG_MAGIC);
 	assert(vsg->head->ready > 0);
@@ -114,7 +114,7 @@ VRT_VSC_Hide(struct vsc_seg *vsg)
 }
 
 void
-VRT_VSC_Reveal(struct vsc_seg *vsg)
+VRT_VSC_Reveal(const struct vsc_seg *vsg)
 {
 	CHECK_OBJ_NOTNULL(vsg, VSC_SEG_MAGIC);
 	assert(vsg->head->ready > 0);
