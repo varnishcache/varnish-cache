@@ -174,15 +174,6 @@ process_vlu_func(void *priv, const char *l)
 }
 
 static int v_matchproto_(vev_cb_f)
-process_stdin(const struct vev *ev, int what)
-{
-	struct process *p;
-	CAST_OBJ_NOTNULL(p, ev->priv, PROCESS_MAGIC);
-	vtc_log(p->vl, 4, "stdin event 0x%x", what);
-	return (1);
-}
-
-static int v_matchproto_(vev_cb_f)
 process_stdout(const struct vev *ev, int what)
 {
 	struct process *p;
@@ -250,14 +241,6 @@ process_thread(void *priv)
 
 	evb = VEV_New();
 	AN(evb);
-
-	ev = VEV_Alloc();
-	AN(ev);
-	ev->fd = p->fd_stdin;
-	ev->fd_flags = VEV__HUP | VEV__ERR;
-	ev->priv = p;
-	ev->callback = process_stdin;
-	AZ(VEV_Start(evb, ev));
 
 	ev = VEV_Alloc();
 	AN(ev);
