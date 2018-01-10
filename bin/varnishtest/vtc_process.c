@@ -339,7 +339,8 @@ process_start(struct process *p)
 		assert(dup2(fd2[1], STDERR_FILENO) == STDERR_FILENO);
 		VSUB_closefrom(STDERR_FILENO + 1);
 		AZ(setpgid(0, 0));
-		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(cl), NULL));
+		// Not using NULL because GCC is now even more demented...
+		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(cl), (char*)0));
 		exit(1);
 	}
 	vtc_log(p->vl, 3, "PID: %ld", (long)p->pid);
