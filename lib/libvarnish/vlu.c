@@ -143,3 +143,26 @@ VLU_File(int fd, vlu_f *func, void *priv, unsigned bufsize)
 	VLU_Destroy(&vlu);
 	return (i);
 }
+
+int
+VLU_Feed(struct vlu *l, const char *ptr, int len)
+{
+	int i = 0, ll;
+
+	CHECK_OBJ_NOTNULL(l, LINEUP_MAGIC);
+	AN(ptr);
+	assert(len > 0);
+	while (len > 0) {
+		ll = len;
+		if (ll > l->bufl - l->bufp)
+			ll = l->bufl - l->bufp;
+		memcpy(l->buf + l->bufp, ptr, ll);
+		len -= ll;
+		ptr += ll;
+		l->bufp += ll;
+		i = LineUpProcess(l);
+		if (i)
+			return (i);
+	}
+	return (i);
+}
