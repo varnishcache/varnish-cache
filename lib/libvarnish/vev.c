@@ -411,6 +411,7 @@ VEV_Once(struct vev_root *evb)
 	if (evb->psig)
 		return (vev_sched_signal(evb));
 
+	tmo = INFTIM;
 	e = binheap_root(evb->binheap);
 	if (e != NULL) {
 		CHECK_OBJ_NOTNULL(e, VEV_MAGIC);
@@ -418,11 +419,11 @@ VEV_Once(struct vev_root *evb)
 		t = VTIM_mono();
 		if (e->__when <= t)
 			return (vev_sched_timeout(evb, e, t));
-		tmo = (int)((e->__when - t) * 1e3);
+		if (e->__when < 9e99)
+			tmo = (int)((e->__when - t) * 1e3);
 		if (tmo == 0)
 			tmo = 1;
-	} else
-		tmo = INFTIM;
+	}
 
 	if (tmo == INFTIM && evb->lpfd == BINHEAP_NOIDX + 1)
 		return (0);
@@ -430,6 +431,8 @@ VEV_Once(struct vev_root *evb)
 	i = poll(evb->pfd + 1, evb->lpfd - 1, tmo);
 	if (i == -1 && errno == EINTR)
 		return (vev_sched_signal(evb));
+	if (i == -1)
+		return (-1);
 
 	if (i == 0) {
 		assert(e != NULL);
