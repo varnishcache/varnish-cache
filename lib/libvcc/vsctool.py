@@ -112,7 +112,7 @@ class vscset(object):
 		s=json.dumps(dd, separators=(",",":")) + "\0"
 		fo.write("\nstatic const unsigned char")
 		fo.write(" vsc_%s_json[%d] = {\n" % (self.name, len(s)))
-		bz = bytearray(s)
+		bz = bytearray(s, encoding="ascii")
 		t = "\t"
 		for i in bz:
 			t += "%d," % i
