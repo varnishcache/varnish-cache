@@ -33,13 +33,17 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 #include "vtc.h"
+
+#include "vev.h"
 #include "vlu.h"
+#include "vsb.h"
 #include "vsub.h"
 
 struct process {
@@ -53,10 +57,17 @@ struct process {
 	char			*dir;
 	char			*out;
 	char			*err;
-	int			fd_to;
+	int			fd_stdin;
+	int			fd_stdout;
+	int			fd_stderr;
+	int			f_stdout;
+	int			f_stderr;
+	struct vlu		*vlu_stdout;
+	struct vlu		*vlu_stderr;
+	const char		*cur_fd;
 	int			log;
-	int			fd_from;
 	pid_t			pid;
+	int			expect_exit;
 
 	pthread_mutex_t		mtx;
 	pthread_t		tp;
@@ -103,8 +114,8 @@ process_new(const char *name)
 	    p->dir, p->dir, p->out, p->err);
 	AZ(system(buf));
 
-	p->fd_to = -1;
-	p->fd_from = -1;
+	p->fd_stdin = -1;
+	p->fd_stdout = -1;
 
 	VTAILQ_INSERT_TAIL(&processes, p, list);
 	return (p);
@@ -158,7 +169,66 @@ process_vlu_func(void *priv, const char *l)
 	struct process *p;
 
 	CAST_OBJ_NOTNULL(p, priv, PROCESS_MAGIC);
-	vtc_dump(p->vl, 4, "output", l, -1);
+	vtc_dump(p->vl, 4, p->cur_fd, l, -1);
+	return (0);
+}
+
+static int v_matchproto_(vev_cb_f)
+process_stdin(const struct vev *ev, int what)
+{
+	struct process *p;
+	CAST_OBJ_NOTNULL(p, ev->priv, PROCESS_MAGIC);
+	vtc_log(p->vl, 4, "stdin event 0x%x", what);
+	return (1);
+}
+
+static int v_matchproto_(vev_cb_f)
+process_stdout(const struct vev *ev, int what)
+{
+	struct process *p;
+	char buf[BUFSIZ];
+	int i;
+
+	CAST_OBJ_NOTNULL(p, ev->priv, PROCESS_MAGIC);
+	(void)what;
+	p->cur_fd = "stdout";
+	i = read(p->fd_stdout, buf, sizeof buf);
+	if (i <= 0) {
+		vtc_log(p->vl, 4, "stdout read %d", i);
+		return (1);
+	}
+	if (p->log == 1)
+		(void)VLU_Feed(p->vlu_stdout, buf, i);
+	else if (p->log == 2)
+		vtc_dump(p->vl, 4, "stdout", buf, i);
+	else if (p->log == 3)
+		vtc_hexdump(p->vl, 4, "stdout", buf, i);
+	(void)write(p->f_stdout, buf, i);
+	return (0);
+}
+
+static int v_matchproto_(vev_cb_f)
+process_stderr(const struct vev *ev, int what)
+{
+	struct process *p;
+	char buf[BUFSIZ];
+	int i;
+
+	CAST_OBJ_NOTNULL(p, ev->priv, PROCESS_MAGIC);
+	(void)what;
+	p->cur_fd = "stderr";
+	i = read(p->fd_stderr, buf, sizeof buf);
+	if (i <= 0) {
+		vtc_log(p->vl, 4, "stderr read %d", i);
+		return (1);
+	}
+	if (p->log == 1)
+		(void)VLU_Feed(p->vlu_stderr, buf, i);
+	else if (p->log == 2)
+		vtc_dump(p->vl, 4, "stderr", buf, i);
+	else if (p->log == 3)
+		vtc_hexdump(p->vl, 4, "stderr", buf, i);
+	(void)write(p->f_stderr, buf, i);
 	return (0);
 }
 
@@ -167,17 +237,65 @@ process_thread(void *priv)
 {
 	struct process *p;
 	struct rusage ru;
+	struct vev_root *evb;
+	struct vev *ev;
 	int r;
 
 	CAST_OBJ_NOTNULL(p, priv, PROCESS_MAGIC);
-	if (p->fd_from > 0)
-		(void)VLU_File(p->fd_from, process_vlu_func, p, 1024);
+
+	p->f_stdout = open(p->out, O_WRONLY|O_APPEND);
+	assert(p->f_stdout >= 0);
+	p->f_stderr = open(p->err, O_WRONLY|O_APPEND);
+	assert(p->f_stderr >= 0);
+
+	evb = VEV_New();
+	AN(evb);
+
+	ev = VEV_Alloc();
+	AN(ev);
+	ev->fd = p->fd_stdin;
+	ev->fd_flags = VEV__HUP | VEV__ERR;
+	ev->priv = p;
+	ev->callback = process_stdin;
+	AZ(VEV_Start(evb, ev));
+
+	ev = VEV_Alloc();
+	AN(ev);
+	ev->fd = p->fd_stdout;
+	ev->fd_flags = VEV__RD | VEV__HUP | VEV__ERR;
+	ev->callback = process_stdout;
+	ev->priv = p;
+	AZ(VEV_Start(evb, ev));
+
+	ev = VEV_Alloc();
+	AN(ev);
+	ev->fd = p->fd_stderr;
+	ev->fd_flags = VEV__RD | VEV__HUP | VEV__ERR;
+	ev->callback = process_stderr;
+	ev->priv = p;
+	AZ(VEV_Start(evb, ev));
+
+	if (p->log == 1) {
+		p->vlu_stdout = VLU_New(process_vlu_func, p, 1024);
+		AN(p->vlu_stdout);
+		p->vlu_stderr = VLU_New(process_vlu_func, p, 1024);
+		AN(p->vlu_stderr);
+	}
+
+	do {
+		r = VEV_Once(evb);
+	} while (r == 1);
+
+	if (r < 0)
+		vtc_fatal(p->vl, "VEV_Once() = %d, error %s", r,
+		    strerror(errno));
+
 	r = wait4(p->pid, &p->status, 0, &ru);
 
-	AZ(pthread_mutex_lock(&p->mtx));
+	closefd(&p->f_stdout);
+	closefd(&p->f_stderr);
 
-	if (p->fd_to >= 0)
-		closefd(&p->fd_to);
+	AZ(pthread_mutex_lock(&p->mtx));
 
 	/* NB: We keep the other macros around */
 	macro_undef(p->vl, p->name, "pid");
@@ -191,17 +309,23 @@ process_thread(void *priv)
 
 	AZ(pthread_mutex_unlock(&p->mtx));
 
-	if (WIFEXITED(p->status) && WEXITSTATUS(p->status) == 0)
-		return (NULL);
 #ifdef WCOREDUMP
-	vtc_log(p->vl, 2, "Bad exit code: %04x sig %d exit %d core %d",
+	vtc_log(p->vl, 2, "Exit code: %04x sig %d exit %d core %d",
 	    p->status, WTERMSIG(p->status), WEXITSTATUS(p->status),
 	    WCOREDUMP(p->status));
 #else
-	vtc_log(p->vl, 2, "Bad exit code: %04x sig %d exit %d",
+	vtc_log(p->vl, 2, "Exit code: %04x sig %d exit %d",
 	    p->status, WTERMSIG(p->status), WEXITSTATUS(p->status));
 #endif
+	if (WEXITSTATUS(p->status) != p->expect_exit)
+		vtc_fatal(p->vl, "Expected exit %d got %d",
+			p->expect_exit, WEXITSTATUS(p->status));
 
+	VEV_Destroy(&evb);
+	if (p->log == 1) {
+		VLU_Destroy(&p->vlu_stdout);
+		VLU_Destroy(&p->vlu_stderr);
+	}
 	return (NULL);
 }
 
@@ -209,9 +333,7 @@ static void
 process_start(struct process *p)
 {
 	struct vsb *cl;
-	int out_fd, err_fd;
-	int fds[2];
-	int fdt[2] = { -1, -1 };
+	int fd0[2], fd1[2], fd2[2];
 
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
 	if (p->hasthread)
@@ -221,44 +343,35 @@ process_start(struct process *p)
 
 	cl = macro_expand(p->vl, p->spec);
 	AN(cl);
-	AZ(pipe(fds));
-	if (p->log) {
-		AZ(pipe(fdt));
-		out_fd = fdt[1];
-		err_fd = fdt[1];
-	} else {
-		out_fd = open(p->out, O_WRONLY|O_APPEND);
-		assert(out_fd >= 0);
-		err_fd = open(p->err, O_WRONLY|O_APPEND);
-		assert(err_fd >= 0);
-	}
+
+	AZ(pipe(fd0));
+	AZ(pipe(fd1));
+	AZ(pipe(fd2));
+
 	p->pid = fork();
 	assert(p->pid >= 0);
 	if (p->pid == 0) {
-		assert(dup2(fds[0], 0) == 0);
-		assert(dup2(out_fd, 1) == 1);
-		assert(dup2(err_fd, 2) == 2);
+		assert(dup2(fd0[0], STDIN_FILENO) == STDIN_FILENO);
+		assert(dup2(fd1[1], STDOUT_FILENO) == STDOUT_FILENO);
+		assert(dup2(fd2[1], STDERR_FILENO) == STDERR_FILENO);
 		VSUB_closefrom(STDERR_FILENO + 1);
 		AZ(setpgid(0, 0));
-		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(cl),
-		    (char *)NULL));
+		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(cl), NULL));
 		exit(1);
 	}
 	vtc_log(p->vl, 3, "PID: %ld", (long)p->pid);
+	VSB_destroy(&cl);
+
+	closefd(&fd0[0]);
+	closefd(&fd1[1]);
+	closefd(&fd2[1]);
+	p->fd_stdin = fd0[1];
+	p->fd_stdout = fd1[0];
+	p->fd_stderr = fd2[0];
 	macro_def(p->vl, p->name, "pid", "%ld", (long)p->pid);
 	macro_def(p->vl, p->name, "dir", "%s", p->dir);
 	macro_def(p->vl, p->name, "out", "%s", p->out);
 	macro_def(p->vl, p->name, "err", "%s", p->err);
-	closefd(&fds[0]);
-	p->fd_to = fds[1];
-	if (p->log) {
-		closefd(&fdt[1]);
-		p->fd_from = fdt[0];
-	} else {
-		closefd(&out_fd);
-		closefd(&err_fd);
-	}
-	VSB_destroy(&cl);
 	p->hasthread = 1;
 	AZ(pthread_create(&p->tp, NULL, process_thread, p));
 }
@@ -330,7 +443,7 @@ process_write(const struct process *p, const char *text)
 
 	len = strlen(text);
 	vtc_log(p->vl, 4, "Writing %d bytes", len);
-	r = write(p->fd_to, text, len);
+	r = write(p->fd_stdin, text, len);
 	if (r < 0)
 		vtc_fatal(p->vl, "Failed to write: %s (%d)",
 		    strerror(errno), errno);
@@ -344,8 +457,8 @@ process_close(struct process *p)
 		vtc_fatal(p->vl, "Cannot close a non-running process");
 
 	AZ(pthread_mutex_lock(&p->mtx));
-	if (p->fd_to >= 0)
-		closefd(&p->fd_to);
+	if (p->fd_stdin >= 0)
+		closefd(&p->fd_stdin);
 	AZ(pthread_mutex_unlock(&p->mtx));
 }
 
@@ -354,8 +467,10 @@ process_close(struct process *p)
  * Run a process in the background with stdout and stderr redirected to
  * ${pNAME_out} and ${pNAME_err}, both located in ${pNAME_dir}::
  *
- *	process pNAME SPEC [-log] [-start] [-wait] [-run] [-kill STRING] \
- *		[-stop] [-write STRING] [-writeln STRING] [-close]
+ *	process pNAME SPEC [-log] [-dump] [-hexdump] [-expect-exit N]
+ *		[-start] [-run]
+ *		[-write STRING] [-writeln STRING]
+ *		[-kill STRING] [-stop] [-wait] [-close]
  *
  * pNAME
  *	Name of the process. It must start with 'p'.
@@ -363,11 +478,20 @@ process_close(struct process *p)
  * SPEC
  *	The command(s) to run in this process.
  *
- * \-log
+ * \-hexdump
+ *	Log stdout/stderr with vtc_hexdump(). Must be before -start/-run.
+ *
+ * \-dump
  *	Log stdout/stderr with vtc_dump(). Must be before -start/-run.
+ *
+ * \-log
+ *	Log stdout/stderr with VLU/vtc_log(). Must be before -start/-run.
  *
  * \-start
  *	Start the process.
+ *
+ * \-expect-exit N
+ *	Expect exit status N
  *
  * \-wait
  *	Wait for the process to finish.
@@ -461,11 +585,30 @@ cmd_process(CMD_ARGS)
 			process_start(p);
 			continue;
 		}
+		if (!strcmp(*av, "-hexdump")) {
+			if (p->hasthread)
+				vtc_fatal(p->vl,
+				    "Cannot dump a running process");
+			p->log = 3;
+			continue;
+		}
+		if (!strcmp(*av, "-dump")) {
+			if (p->hasthread)
+				vtc_fatal(p->vl,
+				    "Cannot dump a running process");
+			p->log = 2;
+			continue;
+		}
 		if (!strcmp(*av, "-log")) {
 			if (p->hasthread)
 				vtc_fatal(p->vl,
 				    "Cannot log a running process");
 			p->log = 1;
+			continue;
+		}
+		if (!strcmp(*av, "-expect-exit")) {
+			p->expect_exit = strtoul(av[1], NULL, 0);
+			av++;
 			continue;
 		}
 		if (!strcmp(*av, "-wait")) {

@@ -42,7 +42,7 @@ shell -exit 1 -expect "Command failed with error code 101" {
 shell "varnishadm -n ${tmpdir}/v1 param.set cli_limit 128"
 shell -expect "[response was truncated]" "varnishadm -n ${tmpdir}/v1 help"
 
-process p1 -stop -wait
+process p1 -expect-exit 64 -stop -wait
 
 # Test multiple -f options
 

@@ -2,13 +2,15 @@ varnishtest "Simple process tests"
 
 # new & start
 process p1 "cat" -start
-process p2 "cat" -start
-process p3 "cat" -start
+process p2 -log "cat" -start
+process p3 -dump "cat" -start
+process p4 -hexdump "cat" -start
 
 # write
 process p1 -writeln "foo"
 process p2 -writeln "bar"
 process p3 -writeln "baz"
+process p4 -writeln "b\001z"
 
 # give enough time for the writes
 delay 0.5
@@ -17,11 +19,13 @@ delay 0.5
 process p1 -stop
 process p2 -close
 process p3 -kill KILL
+process p4 -kill TERM
 
 # wait
 process p1 -wait
 process p2 -wait
 process p3 -wait
+process p4 -wait
 
 # check stdout
 shell "grep -q foo ${p1_out}"
