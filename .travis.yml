@@ -1,7 +1,6 @@
 ---
 sudo: required
 language: c
-group: deprecated-2017Q3
 matrix:
   include:
   - os: linux
@@ -15,7 +14,7 @@ matrix:
     compiler: clang
     env: CLANG=5.0 SAN_FLAGS="--enable-asan --enable-ubsan"
   - os: osx
-    osx_image: xcode9
+    osx_image: xcode9.2
     compiler: clang
   allow_failures:
   - os: osx
