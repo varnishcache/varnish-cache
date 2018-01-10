@@ -58,6 +58,7 @@
  *	VRT_VSC_Destroy() added
  *	VRT_VSC_Hide() added
  *	VRT_VSC_Reveal() added
+ *	VRT_VSC_Overhead() added
  *	struct director.event added
  *	struct director.destroy added
  *	VRT_r_beresp_storage_hint() removed - under discussion #2509
@@ -455,7 +456,8 @@ VCL_STRING VRT_TIME_string(VRT_CTX, VCL_TIME);
 #ifdef va_start	// XXX: hackish
 void *VRT_VSC_Alloc(struct vsmw_cluster *, struct vsc_seg **,
     const char *, size_t, const unsigned char *, size_t, const char *, va_list);
+#endif
 void VRT_VSC_Destroy(const char *, struct vsc_seg *);
 void VRT_VSC_Hide(const struct vsc_seg *);
 void VRT_VSC_Reveal(const struct vsc_seg *);
-#endif
+size_t VRT_VSC_Overhead(size_t);

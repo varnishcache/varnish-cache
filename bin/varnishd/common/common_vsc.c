@@ -74,23 +74,23 @@ static VTAILQ_HEAD(,vsc_seg)	vsc_seglist =
 vsc_callback_f *vsc_lock;
 vsc_callback_f *vsc_unlock;
 
+static const size_t vsc_overhead = PRNDUP(sizeof(struct vsc_head));
+
 static struct vsc_seg *
 vrt_vsc_mksegv(struct vsmw_cluster *vc, const char *class,
     size_t payload, const char *fmt, va_list va)
 {
 	struct vsc_seg *vsg;
-	size_t co;
 
-	co = PRNDUP(sizeof(struct vsc_head));
 	ALLOC_OBJ(vsg, VSC_SEG_MAGIC);
 	AN(vsg);
 	vsg->seg = VSMW_Allocv(heritage.proc_vsmw, vc, class,
-	    co + PRNDUP(payload), fmt, va);
+	    VRT_VSC_Overhead(payload), fmt, va);
 	AN(vsg->seg);
 	vsg->vsm = heritage.proc_vsmw;
 	vsg->head = (void*)vsg->seg;
-	vsg->head->body_offset = co;
-	vsg->ptr = (char*)vsg->seg + co;
+	vsg->head->body_offset = vsc_overhead;
+	vsg->ptr = (char*)vsg->seg + vsc_overhead;
 	return (vsg);
 }
 
@@ -104,6 +104,12 @@ vrt_vsc_mksegf(const char *class, size_t payload, const char *fmt, ...)
 	vsg = vrt_vsc_mksegv(NULL, class, payload, fmt, ap);
 	va_end(ap);
 	return (vsg);
+}
+
+size_t
+VRT_VSC_Overhead(size_t payload)
+{
+	return (vsc_overhead + PRNDUP(payload));
 }
 
 void

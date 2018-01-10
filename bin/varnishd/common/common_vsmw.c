@@ -221,7 +221,7 @@ VSMW_DestroyCluster(struct vsmw *vsmw, struct vsmw_cluster **vcp)
 
 void *
 VSMW_Allocv(struct vsmw *vsmw, struct vsmw_cluster *vc,
-    const char *class, size_t len,
+    const char *class, size_t payload,
     const char *fmt, va_list va)
 {
 	struct vsmwseg *seg;
@@ -233,7 +233,7 @@ VSMW_Allocv(struct vsmw *vsmw, struct vsmw_cluster *vc,
 	ALLOC_OBJ(seg, VSMWSEG_MAGIC);
 	AN(seg);
 	REPLACE(seg->class, class);
-	seg->len = len;
+	seg->len = PRNDUP(payload);
 
 	VSB_clear(vsmw->vsb);
 	VSB_vprintf(vsmw->vsb, fmt, va);
@@ -241,13 +241,13 @@ VSMW_Allocv(struct vsmw *vsmw, struct vsmw_cluster *vc,
 	REPLACE(seg->id, VSB_data(vsmw->vsb));
 
 	if (vc == NULL)
-		vc = VSMW_NewCluster(vsmw, len, class);
+		vc = VSMW_NewCluster(vsmw, seg->len, class);
 	AN(vc);
 	vc->refs++;
 
 	seg->cluster = vc;
 	seg->off = vc->next;
-	vc->next += len;
+	vc->next += seg->len;
 	assert(vc->next <= vc->len);
 	seg->ptr = seg->off + (char*)vc->ptr;
 

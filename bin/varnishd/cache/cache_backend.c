@@ -419,7 +419,7 @@ size_t v_matchproto_()
 VRT_backend_vsm_need(VRT_CTX)
 {
 	(void)ctx;
-	return (VSC_vbe_size);
+	return (VRT_VSC_Overhead(VSC_vbe_size));
 }
 
 struct director * v_matchproto_()
