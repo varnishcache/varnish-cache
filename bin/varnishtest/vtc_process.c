@@ -71,14 +71,13 @@ static VTAILQ_HEAD(, process)	processes =
  * Allocate and initialize a process
  */
 
-#define PROCESS_EXPAND(field, format, ...)		\
-	do {						\
-		bprintf(buf, format, __VA_ARGS__);	\
-		vsb = macro_expand(p->vl, buf);		\
-		AN(vsb);				\
-		p->field = strdup(VSB_data(vsb));	\
-		AN(p->field);				\
-		VSB_destroy(&vsb);			\
+#define PROCESS_EXPAND(field, format, ...)				\
+	do {								\
+		vsb = macro_expandf(p->vl, format, __VA_ARGS__);	\
+		AN(vsb);						\
+		p->field = strdup(VSB_data(vsb));			\
+		AN(p->field);						\
+		VSB_destroy(&vsb);					\
 	} while (0)
 
 static struct process *

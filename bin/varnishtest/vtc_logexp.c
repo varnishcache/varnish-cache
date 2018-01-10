@@ -200,7 +200,7 @@ static struct logexp *
 logexp_new(const char *name, const char *varg)
 {
 	struct logexp *le;
-	struct vsb *vsb, *n_arg;
+	struct vsb *n_arg;
 
 	ALLOC_OBJ(le, LOGEXP_MAGIC);
 	AN(le);
@@ -219,12 +219,7 @@ logexp_new(const char *name, const char *varg)
 
 	REPLACE(le->vname, varg);
 
-	vsb = VSB_new_auto();
-	AN(vsb);
-	AZ(VSB_printf(vsb, "${tmpdir}/%s", varg));
-	AZ(VSB_finish(vsb));
-	n_arg = macro_expand(le->vl, VSB_data(vsb));
-	VSB_destroy(&vsb);
+	n_arg = macro_expandf(le->vl, "${tmpdir}/%s", varg);
 	if (n_arg == NULL)
 		vtc_fatal(le->vl, "-v argument problems");
 	if (VSM_Arg(le->vsm, 'n', VSB_data(n_arg)) <= 0)

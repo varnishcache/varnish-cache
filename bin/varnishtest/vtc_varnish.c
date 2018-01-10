@@ -308,8 +308,7 @@ varnish_new(const char *name)
 	v->vl = vtc_logopen(name);
 	AN(v->vl);
 
-	bprintf(buf, "${tmpdir}/%s", name);
-	vsb = macro_expand(v->vl, buf);
+	vsb = macro_expandf(v->vl, "${tmpdir}/%s", name);
 	AN(vsb);
 	v->workdir = strdup(VSB_data(vsb));
 	AN(v->workdir);

@@ -211,6 +211,23 @@ macro_get(const char *b, const char *e)
 }
 
 struct vsb *
+macro_expandf(struct vtclog *vl, const char *fmt, ...)
+{
+	va_list ap;
+	struct vsb *vsb1, *vsb2;
+
+	vsb1 = VSB_new_auto();
+	AN(vsb1);
+	va_start(ap, fmt);
+	VSB_vprintf(vsb1, fmt, ap);
+	va_end(ap);
+	AZ(VSB_finish(vsb1));
+	vsb2 = macro_expand(vl, VSB_data(vsb1));
+	VSB_destroy(&vsb1);
+	return (vsb2);
+}
+
+struct vsb *
 macro_expand(struct vtclog *vl, const char *text)
 {
 	struct vsb *vsb;

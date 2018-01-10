@@ -299,9 +299,7 @@ barrier_sock_sync(struct barrier *b, struct vtclog *vl)
 	CHECK_OBJ_NOTNULL(b, BARRIER_MAGIC);
 	assert(b->type == BARRIER_SOCK);
 
-	i = snprintf(buf, sizeof buf, "${%s_sock}", b->name);
-	assert(i > 0 && i < sizeof buf);
-	vsb = macro_expand(vl, buf);
+	vsb = macro_expandf(vl, "${%s_sock}", b->name);
 	vtc_log(vl, 4, "Barrier(%s) sync with socket", b->name);
 
 	sock = VTCP_open(VSB_data(vsb), NULL, 0., &err);

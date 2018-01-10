@@ -117,7 +117,6 @@ client_thread(void *priv)
 	int fd;
 	unsigned u;
 	struct vsb *vsb;
-	char *p;
 	char mabuf[32], mpbuf[32];
 	const char *err;
 
@@ -126,9 +125,7 @@ client_thread(void *priv)
 
 	vl = vtc_logopen(c->name);
 
-	p = strdup(c->connect);
-	AN(p);
-	vsb = macro_expand(vl, p);
+	vsb = macro_expand(vl, c->connect);
 	AN(vsb);
 
 	if (c->repeat == 0)
@@ -155,7 +152,6 @@ client_thread(void *priv)
 	}
 	vtc_log(vl, 2, "Ending");
 	VSB_destroy(&vsb);
-	free(p);
 	return (NULL);
 }
 

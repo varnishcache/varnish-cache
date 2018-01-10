@@ -121,6 +121,8 @@ void macro_def(struct vtclog *vl, const char *instance, const char *name,
     const char *fmt, ...)
     v_printflike_(4, 5);
 struct vsb *macro_expand(struct vtclog *vl, const char *text);
+struct vsb *macro_expandf(struct vtclog *vl, const char *, ...)
+    v_printflike_(2, 3);
 
 void extmacro_def(const char *name, const char *fmt, ...)
     v_printflike_(2, 3);
