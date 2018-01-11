@@ -28,6 +28,7 @@
 
 #include "config.h"
 
+#include <sys/ioctl.h>		// Linux: struct winsize
 #include <sys/resource.h>
 #include <sys/wait.h>
 
@@ -37,6 +38,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <termios.h>
 #include <unistd.h>
 
 #include "vtc.h"
@@ -57,14 +59,12 @@ struct process {
 	char			*dir;
 	char			*out;
 	char			*err;
-	int			fd_stdin;
-	int			fd_stdout;
+	int			fd_term;
 	int			fd_stderr;
 	int			f_stdout;
 	int			f_stderr;
 	struct vlu		*vlu_stdout;
 	struct vlu		*vlu_stderr;
-	const char		*cur_fd;
 	int			log;
 	pid_t			pid;
 	int			expect_exit;
@@ -107,15 +107,14 @@ process_new(const char *name)
 	AN(p->vl);
 
 	PROCESS_EXPAND(dir, "${tmpdir}/%s", name);
-	PROCESS_EXPAND(out, "${tmpdir}/%s/stdout", name);
+	PROCESS_EXPAND(out, "${tmpdir}/%s/term", name);
 	PROCESS_EXPAND(err, "${tmpdir}/%s/stderr", name);
 
 	bprintf(buf, "rm -rf %s ; mkdir -p %s ; touch %s %s",
 	    p->dir, p->dir, p->out, p->err);
 	AZ(system(buf));
 
-	p->fd_stdin = -1;
-	p->fd_stdout = -1;
+	p->fd_term = -1;
 
 	VTAILQ_INSERT_TAIL(&processes, p, list);
 	return (p);
@@ -169,7 +168,7 @@ process_vlu_func(void *priv, const char *l)
 	struct process *p;
 
 	CAST_OBJ_NOTNULL(p, priv, PROCESS_MAGIC);
-	vtc_dump(p->vl, 4, p->cur_fd, l, -1);
+	vtc_dump(p->vl, 4, "output", l, -1);
 	return (0);
 }
 
@@ -182,8 +181,7 @@ process_stdout(const struct vev *ev, int what)
 
 	CAST_OBJ_NOTNULL(p, ev->priv, PROCESS_MAGIC);
 	(void)what;
-	p->cur_fd = "stdout";
-	i = read(p->fd_stdout, buf, sizeof buf);
+	i = read(p->fd_term, buf, sizeof buf);
 	if (i <= 0) {
 		vtc_log(p->vl, 4, "stdout read %d", i);
 		return (1);
@@ -207,18 +205,12 @@ process_stderr(const struct vev *ev, int what)
 
 	CAST_OBJ_NOTNULL(p, ev->priv, PROCESS_MAGIC);
 	(void)what;
-	p->cur_fd = "stderr";
 	i = read(p->fd_stderr, buf, sizeof buf);
 	if (i <= 0) {
 		vtc_log(p->vl, 4, "stderr read %d", i);
 		return (1);
 	}
-	if (p->log == 1)
-		(void)VLU_Feed(p->vlu_stderr, buf, i);
-	else if (p->log == 2)
-		vtc_dump(p->vl, 4, "stderr", buf, i);
-	else if (p->log == 3)
-		vtc_hexdump(p->vl, 4, "stderr", buf, i);
+	vtc_dump(p->vl, 4, "stderr", buf, i);
 	(void)write(p->f_stderr, buf, i);
 	return (0);
 }
@@ -244,7 +236,7 @@ process_thread(void *priv)
 
 	ev = VEV_Alloc();
 	AN(ev);
-	ev->fd = p->fd_stdout;
+	ev->fd = p->fd_term;
 	ev->fd_flags = VEV__RD | VEV__HUP | VEV__ERR;
 	ev->callback = process_stdout;
 	ev->priv = p;
@@ -313,10 +305,40 @@ process_thread(void *priv)
 }
 
 static void
+process_init_term(int fd)
+{
+	struct winsize ws;
+	struct termios tt;
+
+	memset(&ws, 0, sizeof ws);
+	ws.ws_row = 24;
+	ws.ws_col = 80;
+	AZ(ioctl(fd, TIOCSWINSZ, &ws));
+
+	memset(&tt, 0, sizeof tt);
+	tt.c_cflag = CREAD | CS8 | HUPCL;
+	tt.c_iflag = BRKINT | ICRNL | IMAXBEL | IXON | IXANY;
+	tt.c_lflag = ICANON | ISIG | IEXTEN;
+	tt.c_oflag = OPOST | ONLCR;
+	tt.c_ispeed = B9600;
+	tt.c_ospeed = B9600;
+	tt.c_cc[VEOF] = '\x04';			// CTRL-D
+	tt.c_cc[VERASE] = '\x08';		// CTRL-H (Backspace)
+	tt.c_cc[VKILL] = '\x15';		// CTRL-U
+	tt.c_cc[VINTR] = '\x03';		// CTRL-C
+	tt.c_cc[VQUIT] = '\x1c';		// CTRL-backslash
+	tt.c_cc[VMIN] = 1;
+
+	AZ(tcsetattr(fd, TCSAFLUSH, &tt));
+}
+
+static void
 process_start(struct process *p)
 {
 	struct vsb *cl;
-	int fd0[2], fd1[2], fd2[2];
+	int fd2[2];
+	int master, slave;
+	const char *slavename;
 
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
 	if (p->hasthread)
@@ -327,15 +349,25 @@ process_start(struct process *p)
 	cl = macro_expand(p->vl, p->spec);
 	AN(cl);
 
-	AZ(pipe(fd0));
-	AZ(pipe(fd1));
+	master = posix_openpt(O_RDWR|O_NOCTTY);
+	assert(master >= 0);
+	AZ(grantpt(master));
+	AZ(unlockpt(master));
+	slavename = ptsname(master);
+	AN(slavename);
+	slave = open(slavename, O_RDWR);
+	assert(slave >= 0);
+
+	process_init_term(slave);
+
 	AZ(pipe(fd2));
 
 	p->pid = fork();
 	assert(p->pid >= 0);
 	if (p->pid == 0) {
-		assert(dup2(fd0[0], STDIN_FILENO) == STDIN_FILENO);
-		assert(dup2(fd1[1], STDOUT_FILENO) == STDOUT_FILENO);
+		setenv("TERM", "adm3a", 1);
+		assert(dup2(slave, STDIN_FILENO) == STDIN_FILENO);
+		assert(dup2(slave, STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(fd2[1], STDERR_FILENO) == STDERR_FILENO);
 		VSUB_closefrom(STDERR_FILENO + 1);
 		AZ(setpgid(0, 0));
@@ -346,11 +378,9 @@ process_start(struct process *p)
 	vtc_log(p->vl, 3, "PID: %ld", (long)p->pid);
 	VSB_destroy(&cl);
 
-	closefd(&fd0[0]);
-	closefd(&fd1[1]);
+	closefd(&slave);
+	p->fd_term = master;
 	closefd(&fd2[1]);
-	p->fd_stdin = fd0[1];
-	p->fd_stdout = fd1[0];
 	p->fd_stderr = fd2[0];
 	macro_def(p->vl, p->name, "pid", "%ld", (long)p->pid);
 	macro_def(p->vl, p->name, "dir", "%s", p->dir);
@@ -401,6 +431,8 @@ process_kill(struct process *p, const char *sig)
 		j = SIGINT;
 	else if (!strcmp(sig, "KILL"))
 		j = SIGKILL;
+	else if (!strcmp(sig, "HUP"))
+		j = SIGHUP;
 	else if (*sig == '-')
 		j = strtoul(sig + 1, NULL, 10);
 	else
@@ -427,7 +459,7 @@ process_write(const struct process *p, const char *text)
 
 	len = strlen(text);
 	vtc_log(p->vl, 4, "Writing %d bytes", len);
-	r = write(p->fd_stdin, text, len);
+	r = write(p->fd_term, text, len);
 	if (r < 0)
 		vtc_fatal(p->vl, "Failed to write: %s (%d)",
 		    strerror(errno), errno);
@@ -440,16 +472,22 @@ process_close(struct process *p)
 	if (!p->hasthread)
 		vtc_fatal(p->vl, "Cannot close a non-running process");
 
-	AZ(pthread_mutex_lock(&p->mtx));
-	if (p->fd_stdin >= 0)
-		closefd(&p->fd_stdin);
-	AZ(pthread_mutex_unlock(&p->mtx));
+	process_kill(p, "HUP");
 }
 
 /* SECTION: process process
  *
- * Run a process in the background with stdout and stderr redirected to
- * ${pNAME_out} and ${pNAME_err}, both located in ${pNAME_dir}::
+ * Run a process with stdin+stdout on a pseudo-terminal and stderr on a pipe.
+ *
+ * Output from the pseudo-terminal is copied verbatim to ${pNAME_out},
+ * and the -log/-dump/-hexdump flags will also put it in the vtc-log.
+ *
+ * The pseudo-terminal is not in ECHO mode, but if the programs run set
+ * it to ECHO mode ("stty sane") any input sent to the process will also
+ * appear in this stream because of the ECHO.
+ *
+ * Output from the stderr-pipe is copied verbatim to ${pNAME_err}, and
+ * is always included in the vtc_log.
  *
  *	process pNAME SPEC [-log] [-dump] [-hexdump] [-expect-exit N]
  *		[-start] [-run]
@@ -463,13 +501,13 @@ process_close(struct process *p)
  *	The command(s) to run in this process.
  *
  * \-hexdump
- *	Log stdout/stderr with vtc_hexdump(). Must be before -start/-run.
+ *	Log output with vtc_hexdump(). Must be before -start/-run.
  *
  * \-dump
- *	Log stdout/stderr with vtc_dump(). Must be before -start/-run.
+ *	Log output with vtc_dump(). Must be before -start/-run.
  *
  * \-log
- *	Log stdout/stderr with VLU/vtc_log(). Must be before -start/-run.
+ *	Log output with VLU/vtc_log(). Must be before -start/-run.
  *
  * \-start
  *	Start the process.
@@ -520,7 +558,7 @@ process_close(struct process *p)
  *	Same as -write followed by a newline (\\n).
  *
  * \-close
- *	Close the process' stdin.
+ *	Alias for "-kill HUP"
  *
  */
 
