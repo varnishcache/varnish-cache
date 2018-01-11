@@ -712,11 +712,31 @@ cmd_delay(CMD_ARGS)
  * ignore_unknown_macro
  *        Do not fail the test if a string of the form ${...} is not
  *        recognized as a macro.
+ * term
+ *	  Support for ADM3A terminal
  *
  * Be careful with the last feature, because it may cause a test with a
  * misspelled macro to fail silently. You should only need it if you must
  * run a test with strings of the form "${...}".
  */
+
+static int
+test_term(struct vtclog *vl)
+{
+	FILE *p;
+	int a, b, c;
+
+	p = popen("tput -T adm3a clear 2>&1", "r");
+	if (p == NULL)
+		return (0);
+	a = fgetc(p);
+	b = fgetc(p);
+	c = pclose(p);
+	if (a == 0x1a && b == EOF && c == 0)
+		return (1);
+	vtc_log(vl, 3, "No adm3a terminfo entry. (insteall ncurses-term ?)");
+	return (0);
+}
 
 static void
 cmd_feature(CMD_ARGS)
@@ -766,6 +786,7 @@ cmd_feature(CMD_ARGS)
 		FEATURE("user_varnish", getpwnam("varnish") != NULL);
 		FEATURE("user_vcache", getpwnam("vcache") != NULL);
 		FEATURE("group_varnish", getgrnam("varnish") != NULL);
+		FEATURE("term", test_term(vl));
 
 		if (!strcmp(*av, "disable_aslr")) {
 			good = 1;

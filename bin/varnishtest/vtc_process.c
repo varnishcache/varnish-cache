@@ -320,8 +320,7 @@ process_init_term(int fd)
 	tt.c_iflag = BRKINT | ICRNL | IMAXBEL | IXON | IXANY;
 	tt.c_lflag = ICANON | ISIG | IEXTEN;
 	tt.c_oflag = OPOST | ONLCR;
-	cfsetispeed(&tt, B9600);
-	cfsetospeed(&tt, B9600);
+	AZ(cfsetspeed(&tt, B9600));
 	tt.c_cc[VEOF] = '\x04';			// CTRL-D
 	tt.c_cc[VERASE] = '\x08';		// CTRL-H (Backspace)
 	tt.c_cc[VKILL] = '\x15';		// CTRL-U
@@ -365,7 +364,7 @@ process_start(struct process *p)
 	p->pid = fork();
 	assert(p->pid >= 0);
 	if (p->pid == 0) {
-		setenv("TERM", "adm3a", 1);
+		AZ(setenv("TERM", "adm3a", 1));
 		assert(dup2(slave, STDIN_FILENO) == STDIN_FILENO);
 		assert(dup2(slave, STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(fd2[1], STDERR_FILENO) == STDERR_FILENO);
