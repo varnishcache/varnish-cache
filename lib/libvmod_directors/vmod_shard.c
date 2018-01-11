@@ -221,6 +221,7 @@ vmod_shard__init(VRT_CTX, struct vmod_directors_shard **vshardp,
 	vshard->dir->priv = vshard;
 	vshard->dir->resolve = vmod_shard_resolve;
 	vshard->dir->healthy = vmod_shard_healthy;
+	vshard->dir->admin_health = VDI_AH_HEALTHY;
 }
 
 VCL_VOID v_matchproto_(td_directors_shard__fini)

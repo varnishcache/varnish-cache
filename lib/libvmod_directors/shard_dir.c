@@ -304,7 +304,11 @@ init_state(struct shard_state *state,
 	state->last.hostid = -1;
 }
 
-/* basically same as vdir_any_healthy -- XXX we should embed a vdir */
+/* basically same as vdir_any_healthy
+ * - XXX we should embed a vdir
+ * - XXX should we return the health state of the actual backend
+ *   for healthy=IGNORE ?
+ */
 unsigned
 sharddir_any_healthy(struct sharddir *shardd, const struct busyobj *bo,
     double *changed)

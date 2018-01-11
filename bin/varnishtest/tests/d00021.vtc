@@ -42,7 +42,7 @@ varnish v1 -vcl+backend {
 	sub vcl_backend_fetch {
 	    if (bereq.url == "/1") {
 		set bereq.backend =
-		  vd.backend(resolve=LAZY, by=KEY, key=1);
+		    vd.backend(resolve=LAZY, by=KEY, key=1);
 	    }
 	    if (bereq.url == "/2") {
 		set bereq.backend =
@@ -55,7 +55,8 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_backend_response {
-	    vd.backend(resolve=LAZY, by=KEY, key=1);
+	    set beresp.http.healthy = std.healthy(
+	      vd.backend(resolve=LAZY, by=KEY, key=1));
 	}
 } -start
 
@@ -64,12 +65,15 @@ client c1 {
 	txreq -url /1
 	rxresp
 	expect resp.body == "ech3Ooj"
+	expect resp.http.healthy == "true"
 
 	txreq -url /2
 	rxresp
 	expect resp.body == "ieQu2qua"
+	expect resp.http.healthy == "true"
 
 	txreq -url /3
 	rxresp
 	expect resp.body == "xiuFi3Pe"
+	expect resp.http.healthy == "true"
 } -run
