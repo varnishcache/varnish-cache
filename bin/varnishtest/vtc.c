@@ -734,7 +734,7 @@ test_term(struct vtclog *vl)
 	c = pclose(p);
 	if (a == 0x1a && b == EOF && c == 0)
 		return (1);
-	vtc_log(vl, 3, "No adm3a terminfo entry. (insteall ncurses-term ?)");
+	vtc_log(vl, 3, "No adm3a terminfo entry. (install ncurses-term ?)");
 	return (0);
 }
 

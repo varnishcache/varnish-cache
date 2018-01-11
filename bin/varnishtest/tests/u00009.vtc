@@ -1,4 +1,4 @@
-varnishtest	"trivial run of varnihist in curses mode"
+varnishtest	"trivial run of varnishhist in curses mode"
 
 feature term
 
