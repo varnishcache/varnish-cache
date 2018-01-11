@@ -104,6 +104,11 @@ C APIs (for vmod and utility authors)
 * Added ``VRT_blob()`` utility function to create a blob as a copy
   of some chunk of data on the workspace.
 
+* Directors now have their own admin health information and always need to
+  have the ``(struct director).admin_health`` initialized to
+  ``VDI_AH_*`` (usually ``VDI_AH_HEALTHY``).
+
+  XXX improve / more details
 
 Other changes relevant for VMODs
 --------------------------------

@@ -71,6 +71,7 @@ vdir_new(struct vdir **vdp, const char *name, const char *vcl_name,
 	vd->dir->priv = priv;
 	vd->dir->healthy = healthy;
 	vd->dir->resolve = resolve;
+	vd->dir->admin_health = VDI_AH_HEALTHY;
 	vd->vbm = vbit_new(8);
 	AN(vd->vbm);
 }

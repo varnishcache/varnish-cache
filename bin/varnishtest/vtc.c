@@ -716,7 +716,7 @@ cmd_delay(CMD_ARGS)
  * term
  *	  Support for ADM3A terminal
  *
- * Be careful with the last feature, because it may cause a test with a
+ * Be careful with ignore_unknown_macro, because it may cause a test with a
  * misspelled macro to fail silently. You should only need it if you must
  * run a test with strings of the form "${...}".
  */
@@ -735,7 +735,7 @@ test_term(struct vtclog *vl)
 	c = pclose(p);
 	if (a == 0x1a && b == EOF && c == 0)
 		return (1);
-	vtc_log(vl, 3, "No adm3a terminfo entry. (insteall ncurses-term ?)");
+	vtc_log(vl, 3, "No adm3a terminfo entry. (install ncurses-term ?)");
 	return (0);
 }
 
