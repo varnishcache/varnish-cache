@@ -11,7 +11,7 @@ shell "test -f ${p1_err} -a ! -s ${p1_err}"
 process p2 -log "cat" -start
 process p2 -writeln "bar"
 delay 0.5
-process p2 -close
+process p2 -write "\x04"
 process p2 -wait
 shell "grep -q bar ${p2_out}"
 shell "test -f ${p2_err} -a ! -s ${p2_err}"

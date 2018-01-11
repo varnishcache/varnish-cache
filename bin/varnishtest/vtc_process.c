@@ -337,6 +337,7 @@ process_init_term(struct process *p, int fd)
 	tt.c_cc[VMIN] = 1;
 
 	i = tcsetattr(fd, TCSAFLUSH, &tt);
+	if (i)
 		vtc_log(p->vl, 4, "TCSAFLUSH %d %s", i, strerror(errno));
 }
 
