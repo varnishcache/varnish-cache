@@ -38,6 +38,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _sun
+#include <stropts.h>
+#endif
 #include <termios.h>
 #include <unistd.h>
 
@@ -334,7 +337,6 @@ process_init_term(struct process *p, int fd)
 	tt.c_cc[VKILL] = '\x15';		// CTRL-U
 	tt.c_cc[VINTR] = '\x03';		// CTRL-C
 	tt.c_cc[VQUIT] = '\x1c';		// CTRL-backslash
-	tt.c_cc[VMIN] = 1;
 
 	i = tcsetattr(fd, TCSAFLUSH, &tt);
 	if (i)
@@ -366,6 +368,12 @@ process_start(struct process *p)
 	AN(slavename);
 	slave = open(slavename, O_RDWR);
 	assert(slave >= 0);
+#ifdef __sun
+	if (ioctl(slave, I_PUSH, "ptem"))
+		vtc_log(p->vl, 4, "PUSH ptem: %s", strerror(errno));
+	if (ioctl(slave, I_PUSH, "ldterm"))
+		vtc_log(p->vl, 4, "PUSH ldterm: %s", strerror(errno));
+#endif
 
 	process_init_term(p, slave);
 
