@@ -320,7 +320,8 @@ process_init_term(int fd)
 	tt.c_iflag = BRKINT | ICRNL | IMAXBEL | IXON | IXANY;
 	tt.c_lflag = ICANON | ISIG | IEXTEN;
 	tt.c_oflag = OPOST | ONLCR;
-	AZ(cfsetspeed(&tt, B9600));
+	AZ(cfsetispeed(&tt, B9600));
+	AZ(cfsetospeed(&tt, B9600));
 	tt.c_cc[VEOF] = '\x04';			// CTRL-D
 	tt.c_cc[VERASE] = '\x08';		// CTRL-H (Backspace)
 	tt.c_cc[VKILL] = '\x15';		// CTRL-U
