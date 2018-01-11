@@ -305,23 +305,30 @@ process_thread(void *priv)
 }
 
 static void
-process_init_term(int fd)
+process_init_term(struct process *p, int fd)
 {
 	struct winsize ws;
 	struct termios tt;
+	int i;
 
 	memset(&ws, 0, sizeof ws);
 	ws.ws_row = 24;
 	ws.ws_col = 80;
-	(void)(ioctl(fd, TIOCSWINSZ, &ws));	// assert fails ?
+	i = ioctl(fd, TIOCSWINSZ, &ws);
+	if (i)
+		vtc_log(p->vl, 4, "TIOCWINSZ %d %s", i, strerror(errno));
 
 	memset(&tt, 0, sizeof tt);
 	tt.c_cflag = CREAD | CS8 | HUPCL;
 	tt.c_iflag = BRKINT | ICRNL | IMAXBEL | IXON | IXANY;
 	tt.c_lflag = ICANON | ISIG | IEXTEN;
 	tt.c_oflag = OPOST | ONLCR;
-	AZ(cfsetispeed(&tt, B9600));
-	AZ(cfsetospeed(&tt, B9600));
+	i = cfsetispeed(&tt, B9600);
+	if (i)
+		vtc_log(p->vl, 4, "cfsetispeed %d %s", i, strerror(errno));
+	i = cfsetospeed(&tt, B9600);
+	if (i)
+		vtc_log(p->vl, 4, "cfsetospeed %d %s", i, strerror(errno));
 	tt.c_cc[VEOF] = '\x04';			// CTRL-D
 	tt.c_cc[VERASE] = '\x08';		// CTRL-H (Backspace)
 	tt.c_cc[VKILL] = '\x15';		// CTRL-U
@@ -329,7 +336,8 @@ process_init_term(int fd)
 	tt.c_cc[VQUIT] = '\x1c';		// CTRL-backslash
 	tt.c_cc[VMIN] = 1;
 
-	AZ(tcsetattr(fd, TCSAFLUSH, &tt));
+	i = tcsetattr(fd, TCSAFLUSH, &tt);
+		vtc_log(p->vl, 4, "TCSAFLUSH %d %s", i, strerror(errno));
 }
 
 static void
@@ -358,7 +366,7 @@ process_start(struct process *p)
 	slave = open(slavename, O_RDWR);
 	assert(slave >= 0);
 
-	process_init_term(slave);
+	process_init_term(p, slave);
 
 	AZ(pipe(fd2));
 
