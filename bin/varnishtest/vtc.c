@@ -172,7 +172,8 @@ macro_undef(struct vtclog *vl, const char *instance, const char *name)
 		if (!strcmp(name, m->name))
 			break;
 	if (m != NULL) {
-		vtc_log(vl, 4, "macro undef %s", name);
+		if (!vtc_stop)
+			vtc_log(vl, 4, "macro undef %s", name);
 		VTAILQ_REMOVE(&macro_list, m, list);
 		free(m->name);
 		free(m->val);
