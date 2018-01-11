@@ -313,7 +313,7 @@ process_init_term(int fd)
 	memset(&ws, 0, sizeof ws);
 	ws.ws_row = 24;
 	ws.ws_col = 80;
-	AZ(ioctl(fd, TIOCSWINSZ, &ws));
+	(void)(ioctl(fd, TIOCSWINSZ, &ws));	// assert fails ?
 
 	memset(&tt, 0, sizeof tt);
 	tt.c_cflag = CREAD | CS8 | HUPCL;
