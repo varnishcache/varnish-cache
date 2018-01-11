@@ -1,0 +1,29 @@
+varnishtest	"trivial run of varnishadm in curses mode"
+
+feature term
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+process p1 -dump {varnishadm -n ${v1_name}} -start
+
+delay 2
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+delay 2
+
+process p1 -writeln {panic.show}
+
+delay 2
+
+process p1 -writeln {quit}
+
+process p1 -wait

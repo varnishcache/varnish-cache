@@ -365,6 +365,7 @@ process_start(struct process *p)
 	assert(p->pid >= 0);
 	if (p->pid == 0) {
 		AZ(setenv("TERM", "adm3a", 1));
+		AZ(unsetenv("TERMCAP"));
 		assert(dup2(slave, STDIN_FILENO) == STDIN_FILENO);
 		assert(dup2(slave, STDOUT_FILENO) == STDOUT_FILENO);
 		assert(dup2(fd2[1], STDERR_FILENO) == STDERR_FILENO);
