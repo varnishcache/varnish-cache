@@ -715,7 +715,7 @@ cmd_delay(CMD_ARGS)
  * term
  *	  Support for ADM3A terminal
  *
- * Be careful with the last feature, because it may cause a test with a
+ * Be careful with ignore_unknown_macro, because it may cause a test with a
  * misspelled macro to fail silently. You should only need it if you must
  * run a test with strings of the form "${...}".
  */
