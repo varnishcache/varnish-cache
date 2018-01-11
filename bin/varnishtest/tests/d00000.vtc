@@ -22,6 +22,7 @@ server s4 {
 
 varnish v1 -vcl+backend {
 	import directors;
+	import std;
 
 	sub vcl_init {
 		new rr = directors.round_robin();
@@ -40,6 +41,10 @@ varnish v1 -vcl+backend {
 		}
 	}
 
+	sub vcl_deliver {
+		set resp.http.healthy = std.healthy(rr.backend());
+	}
+
 	sub vcl_backend_fetch {
 		set bereq.backend = rr.backend();
 	}
@@ -50,15 +55,19 @@ client c1 {
 	txreq -url "/foo1"
 	rxresp
 	expect resp.bodylen == 1
+	expect resp.http.healthy == "true"
 	txreq -url "/foo2"
 	rxresp
 	expect resp.bodylen == 2
+	expect resp.http.healthy == "true"
 	txreq -url "/foo3"
 	rxresp
 	expect resp.bodylen == 3
+	expect resp.http.healthy == "true"
 	txreq -url "/foo4"
 	rxresp
 	expect resp.bodylen == 4
+	expect resp.http.healthy == "true"
 } -run
 
 server s1 -start
@@ -69,9 +78,11 @@ client c2 {
 	txreq -url "/foo11"
 	rxresp
 	expect resp.bodylen == 1
+	expect resp.http.healthy == "true"
 	txreq -url "/foo22"
 	rxresp
 	expect resp.bodylen == 2
+	expect resp.http.healthy == "true"
 } -run
 
 server s4 -start
@@ -83,4 +94,5 @@ client c3 {
 	txreq -url "/foo31"
 	rxresp
 	expect resp.bodylen == 4
+	expect resp.http.healthy == "true"
 } -run
