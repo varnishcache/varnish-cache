@@ -38,8 +38,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef _sun
-#include <stropts.h>
+#ifdef __sun
+#  include <stropts.h>
 #endif
 #include <termios.h>
 #include <unistd.h>
