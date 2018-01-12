@@ -271,14 +271,15 @@ do_curses(void *arg)
 	AC(intrflush(stdscr, FALSE));
 	(void)curs_set(0);
 	AC(erase());
+	timeout(1000);
 	while (!quit) {
 		AZ(pthread_mutex_lock(&mtx));
 		update(period);
 		AZ(pthread_mutex_unlock(&mtx));
 
-		timeout(1000);
 		switch (getch()) {
 		case ERR:
+			quit = 1;
 			break;
 #ifdef KEY_RESIZE
 		case KEY_RESIZE:

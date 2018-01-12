@@ -1030,6 +1030,7 @@ do_curses(struct vsm *vsm, struct vsc *vsc, double delay)
 
 		switch (ch = wgetch(w_status)) {
 		case ERR:
+			keep_running = 0;
 			break;
 #ifdef KEY_RESIZE /* sigh, Solaris lacks this.. */
 		case KEY_RESIZE:
