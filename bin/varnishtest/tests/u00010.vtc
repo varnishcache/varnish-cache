@@ -18,4 +18,4 @@ client c1 {
 	rxresp
 } -run
 
-process p1 -need-bytes 1000 -screen_dump -write {q} -wait
+process p1 -need-bytes 500 -screen_dump -write {q} -wait
