@@ -95,6 +95,7 @@ term_escape(struct term *tp, int c, int n)
 			tp->arg[i] = 1;
 	switch(c) {
 	case 'B':
+		// CUD - Cursor down
 		if (tp->arg[0] > tp->nlin)
 			vtc_fatal(tp->vl, "ANSI B[%d] outside vram",
 			    tp->arg[0]);
@@ -104,10 +105,18 @@ term_escape(struct term *tp, int c, int n)
 			tp->line--;
 		}
 		break;
+	case 'C':
+		// CUF - Cursor forward
+		tp->col += tp->arg[0];
+		if (tp->col >= tp->ncol)
+			vtc_fatal(tp->vl, "ANSI C[%d] outside vram",
+			    tp->arg[0]);
+		break;
 	case 'h':
-		// Ignore screen mode selection
+		// SM - Set Mode (ignored XXX?)
 		break;
 	case 'H':
+		// CUP - Cursor Position
 		if (tp->arg[0] > tp->nlin || tp->arg[1] > tp->ncol)
 			vtc_fatal(tp->vl, "ANSI H[%d,%d] outside vram",
 			    tp->arg[0], tp->arg[1]);
@@ -115,12 +124,17 @@ term_escape(struct term *tp, int c, int n)
 		tp->col = tp->arg[1] - 1;
 		break;
 	case 'J':
-		if (tp->arg[0] != 2)
+		// ED - Erase in Display (0=below, 1=above, 2=all)
+		switch(tp->arg[0]) {
+		case 2:
+			term_clear(tp);
+			break;
+		default:
 			vtc_fatal(tp->vl, "ANSI J[%d]", tp->arg[0]);
-		term_clear(tp);
+		}
 		break;
 	case 'K':
-		// erase in line 0=right, 1=left, 2=full line
+		// EL - Erase in line (0=right, 1=left, 2=full line)
 		switch (tp->arg[0]) {
 		case 0:
 			for (i = tp->col + 1; i < tp->ncol; i++)
@@ -139,7 +153,7 @@ term_escape(struct term *tp, int c, int n)
 		}
 		break;
 	case 'm':
-		// Ignore Graphic Rendition settings
+		// SGG - Character Attributes (ignored)
 		break;
 	default:
 		for (i = 0; i < n; i++)
