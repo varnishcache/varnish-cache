@@ -727,14 +727,14 @@ test_term(struct vtclog *vl)
 	FILE *p;
 	int a, b;
 
-	p = popen("tput -T ansi clear 2>&1", "r");
+	p = popen("tput -T ansi.sys clear 2>&1", "r");
 	if (p == NULL)
 		return (0);
 	a = fgetc(p);
 	b = fgetc(p);
 	if (a == 0x1b && b == '[')
 		return (1);
-	vtc_log(vl, 3, "No 'ansi' terminfo entry.");
+	vtc_log(vl, 3, "No 'ansi.sys' terminfo entry.");
 	return (0);
 }
 

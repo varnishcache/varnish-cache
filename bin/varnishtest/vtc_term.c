@@ -63,6 +63,19 @@ term_clear(const struct term *tp)
 	}
 }
 
+static void
+term_scroll(const struct term *tp)
+{
+	int i;
+	char *l;
+
+	l = tp->vram[0];
+	for(i = 0; i < tp->nlin -1; i++)
+		tp->vram[i] = tp->vram[i + 1];
+	tp->vram[i] = l;
+	memset(l, ' ', tp->ncol);
+}
+
 void
 Term_Dump(const struct term *tp)
 {
@@ -77,22 +90,37 @@ term_escape(struct term *tp, int c, int n)
 {
 	int i;
 
-	c = tolower(c);
 	for (i = 0; i < NTERMARG; i++)
 		if (!tp->arg[i])
 			tp->arg[i] = 1;
 	switch(c) {
+	case 'B':
+		if (tp->arg[0] > tp->nlin)
+			vtc_fatal(tp->vl, "ANSI B[%d] outside vram",
+			    tp->arg[0]);
+		tp->line += tp->arg[0];
+		while (tp->line >= tp->nlin) {
+			term_scroll(tp);
+			tp->line--;
+		}
+		break;
 	case 'h':
+		// Ignore screen mode selection
+		break;
+	case 'H':
 		if (tp->arg[0] > tp->nlin || tp->arg[1] > tp->ncol)
 			vtc_fatal(tp->vl, "ANSI H[%d,%d] outside vram",
 			    tp->arg[0], tp->arg[1]);
 		tp->line = tp->arg[0] - 1;
 		tp->col = tp->arg[1] - 1;
 		break;
-	case 'j':
+	case 'J':
 		if (tp->arg[0] != 2)
 			vtc_fatal(tp->vl, "ANSI J[%d]", tp->arg[0]);
 		term_clear(tp);
+		break;
+	case 'm':
+		// Ignore Graphic Rendition settings
 		break;
 	default:
 		for (i = 0; i < n; i++)
@@ -100,19 +128,6 @@ term_escape(struct term *tp, int c, int n)
 		vtc_fatal(tp->vl, "ANSI unknown (%c)", c);
 		break;
 	}
-}
-
-static void
-term_scroll(const struct term *tp)
-{
-	int i;
-	char *l;
-
-	l = tp->vram[0];
-	for(i = 0; i < tp->nlin -1; i++)
-		tp->vram[i] = tp->vram[i + 1];
-	tp->vram[i] = l;
-	memset(l, ' ', tp->ncol);
 }
 
 static void
@@ -186,6 +201,8 @@ Term_Feed(struct term *tp, const char *b, const char *e)
 			tp->argp = tp->arg;
 			memset(tp->arg, 0, sizeof tp->arg);
 			tp->state = 3;
+			if (*b == '?')
+				b++;
 			break;
 		case 3:
 			if (tp->argp - tp->arg >= NTERMARG)
@@ -202,17 +219,8 @@ Term_Feed(struct term *tp, const char *b, const char *e)
 				b++;
 				continue;
 			}
-			if (islower(*b)) {
-				term_escape(tp, *b++, tp->argp -  tp->arg);
-				tp->state = 2;
-			} else if (isupper(*b)) {
-				term_escape(tp, *b++, tp->argp -  tp->arg);
-				tp->argp = tp->arg;
-				tp->state = 0;
-			} else {
-				vtc_fatal(tp->vl, "ANSI non-letter (0x%02x)",
-				    *b & 0xff);
-			}
+			term_escape(tp, *b++, tp->argp -  tp->arg);
+			tp->state = 0;
 			break;
 		default:
 			WRONG("Wrong ansi state");
