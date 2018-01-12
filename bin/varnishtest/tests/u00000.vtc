@@ -28,6 +28,6 @@ process p4 -hexdump "cat" -start
 process p4 -writeln "b\001z"
 delay 0.5
 process p4 -kill TERM
-process p4 -wait
+process p4 -wait -screen_dump
 
 process p5 "stty -a ; sleep 1" -run -screen_dump

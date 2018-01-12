@@ -48,6 +48,7 @@ varnishtest_SOURCES = \
 		vtc_proxy.c \
 		vtc_server.c \
 		vtc_subr.c \
+		vtc_term.c \
 		vtc_varnish.c
 
 varnishtest_LDADD = \

@@ -137,3 +137,8 @@ void b64_settings(const struct http *hp, const char *s);
 struct vsb *vtc_hex_to_bin(struct vtclog *vl, const char *arg);
 void vtc_expect(struct vtclog *, const char *, const char *, const char *,
     const char *, const char *);
+
+/* vtc_term.c */
+struct term *Term_New(struct vtclog *);
+void Term_Feed(struct term *, const char *, const char *);
+void Term_Dump(const struct term *);
