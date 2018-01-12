@@ -119,6 +119,25 @@ term_escape(struct term *tp, int c, int n)
 			vtc_fatal(tp->vl, "ANSI J[%d]", tp->arg[0]);
 		term_clear(tp);
 		break;
+	case 'K':
+		// erase in line 0=right, 1=left, 2=full line
+		switch (tp->arg[0]) {
+		case 0:
+			for (i = tp->col + 1; i < tp->ncol; i++)
+				tp->vram[tp->line][i] = ' ';
+			break;
+		case 1:
+			for (i = 0; i < tp->col; i++)
+				tp->vram[tp->line][i] = ' ';
+			break;
+		case 2:
+			for (i = 0; i < tp->ncol; i++)
+				tp->vram[tp->line][i] = ' ';
+			break;
+		default:
+			vtc_fatal(tp->vl, "ANSI K[%d]", tp->arg[0]);
+		}
+		break;
 	case 'm':
 		// Ignore Graphic Rendition settings
 		break;

@@ -714,10 +714,11 @@ cmd_process(CMD_ARGS)
 			u = strtoumax(av[1], NULL, 0);
 			av++;
 			do {
-				usleep(100000);
+				usleep(500000);
 				AZ(pthread_mutex_lock(&p->mtx));
 				v = p->stdout_bytes;
 				AZ(pthread_mutex_unlock(&p->mtx));
+				vtc_log(p->vl, 4, "Have %ju bytes", v);
 			} while(v < u);
 			continue;
 		}
