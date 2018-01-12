@@ -11,15 +11,11 @@ varnish v1 -vcl+backend {} -start
 
 process p1 -dump {varnishtop -n ${v1_name}} -start
 
-delay 3
+process p1 -need-bytes 1
 
 client c1 {
 	txreq
 	rxresp
 } -run
 
-delay 10
-
-process p1 -write {q}
-
-process p1 -wait -screen_dump
+process p1 -need-bytes 2500 -screen_dump -write {q} -wait

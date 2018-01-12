@@ -1,0 +1,22 @@
+varnishtest	"trivial run of varnistat in curses mode"
+
+feature term
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+process p1 -dump {varnishstat -n ${v1_name}} -start
+
+process p1 -need-bytes 1
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+process p1 -need-bytes 2300 -screen_dump -write {q} -wait
+

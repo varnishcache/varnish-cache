@@ -11,19 +11,17 @@ varnish v1 -vcl+backend {} -start
 
 process p1 -dump {varnishadm -n ${v1_name}} -start
 
-delay 2
+process p1 -need-bytes 1
 
 client c1 {
 	txreq
 	rxresp
 } -run
 
-delay 2
-
 process p1 -writeln {panic.show}
 
 process p1 -writeln {quit}
 
-delay 10
+process p1 -need-bytes 400
 
-process p1 -wait -screen_dump
+process p1 -screen_dump -writeln {quit} -wait

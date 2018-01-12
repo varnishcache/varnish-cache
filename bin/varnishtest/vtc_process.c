@@ -38,6 +38,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <inttypes.h>
 #include <poll.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -75,6 +76,9 @@ struct process {
 	int			log;
 	pid_t			pid;
 	int			expect_exit;
+
+	uintmax_t		stdout_bytes;
+	uintmax_t		stderr_bytes;
 
 	pthread_mutex_t		mtx;
 	pthread_t		tp;
@@ -198,6 +202,9 @@ process_stdout(const struct vev *ev, int what)
 		vtc_log(p->vl, 4, "stdout read %d", i);
 		return (1);
 	}
+	AZ(pthread_mutex_lock(&p->mtx));
+	p->stdout_bytes += i;
+	AZ(pthread_mutex_unlock(&p->mtx));
 	if (p->log == 1)
 		(void)VLU_Feed(p->vlu_stdout, buf, i);
 	else if (p->log == 2)
@@ -223,6 +230,9 @@ process_stderr(const struct vev *ev, int what)
 		vtc_log(p->vl, 4, "stderr read %d", i);
 		return (1);
 	}
+	AZ(pthread_mutex_lock(&p->mtx));
+	p->stderr_bytes += i;
+	AZ(pthread_mutex_unlock(&p->mtx));
 	vtc_dump(p->vl, 4, "stderr", buf, i);
 	(void)write(p->f_stderr, buf, i);
 	return (0);
@@ -435,6 +445,8 @@ process_wait(struct process *p)
 		AZ(pthread_join(p->tp, &v));
 		p->hasthread = 0;
 	}
+	vtc_log(p->vl, 4, "stdout %ju bytes, stderr %ju bytes",
+	    p->stdout_bytes, p->stderr_bytes);
 }
 
 /**********************************************************************
@@ -601,6 +613,7 @@ void
 cmd_process(CMD_ARGS)
 {
 	struct process *p, *p2;
+	uintmax_t u, v;
 
 	(void)priv;
 	(void)cmd;
@@ -695,6 +708,17 @@ cmd_process(CMD_ARGS)
 			process_write(p, av[1]);
 			process_write(p, "\n");
 			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-need-bytes")) {
+			u = strtoumax(av[1], NULL, 0);
+			av++;
+			do {
+				usleep(100000);
+				AZ(pthread_mutex_lock(&p->mtx));
+				v = p->stdout_bytes;
+				AZ(pthread_mutex_unlock(&p->mtx));
+			} while(v < u);
 			continue;
 		}
 		if (!strcmp(*av, "-screen_dump")) {
