@@ -20,6 +20,6 @@ client c1 {
 
 process p1 -writeln {panic.show}
 
-process p1 -need-bytes 400
+process p1 -need-bytes 380
 
 process p1 -screen_dump -write "quit\r" -wait
