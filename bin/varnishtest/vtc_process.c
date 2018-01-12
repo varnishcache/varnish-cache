@@ -24,6 +24,9 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ * XXX:
+ *	-ignore-stderr (otherwise output to stderr is fail)
  */
 
 #include "config.h"
@@ -32,6 +35,7 @@
 #include <sys/resource.h>
 #include <sys/wait.h>
 
+#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -76,6 +80,15 @@ struct process {
 	pthread_t		tp;
 	unsigned		hasthread;
 	int			status;
+
+	unsigned		term_state;
+#define NTERMARG		10
+	int			term_arg[NTERMARG];
+	int			*term_ap;
+#define NLINES			24
+#define NCOLS			80
+	char			*term_c[NLINES];
+	int			term_x, term_y;
 };
 
 static VTAILQ_HEAD(, process)	processes =
@@ -100,6 +113,7 @@ process_new(const char *name)
 	struct process *p;
 	struct vsb *vsb;
 	char buf[1024];
+	int i;
 
 	ALLOC_OBJ(p, PROCESS_MAGIC);
 	AN(p);
@@ -120,6 +134,12 @@ process_new(const char *name)
 	p->fd_term = -1;
 
 	VTAILQ_INSERT_TAIL(&processes, p, list);
+	for (i = 0; i < NLINES; i++) {
+		p->term_c[i] = malloc(NCOLS + 1);
+		AN(p->term_c[i]);
+		memset(p->term_c[i], ' ', NCOLS);
+		p->term_c[i][NCOLS] = '\0';
+	}
 	return (p);
 }
 
@@ -162,7 +182,193 @@ process_undef(const struct process *p)
 }
 
 /**********************************************************************
- * Start the process thread
+ * Terminal emulation
+ */
+
+static void
+process_term_clear(const struct process *p)
+{
+	int i;
+
+	for (i = 0; i < NLINES; i++) {
+		memset(p->term_c[i], ' ', NCOLS);
+		p->term_c[i][NCOLS] = '\0';
+	}
+}
+
+static void
+process_screen_dump(const struct process *p)
+{
+	int i;
+
+	for (i = 0; i < NLINES; i++)
+		vtc_dump(p->vl, 3, "screen", p->term_c[i], NCOLS);
+}
+
+static void
+process_escape(struct process *p, int c, int n)
+{
+	int i;
+
+	for (i = 0; i < NTERMARG; i++)
+		if (!p->term_arg[i])
+			p->term_arg[i] = 1;
+	switch(c) {
+	case 'h':
+		if (p->term_arg[0] <= NLINES && p->term_arg[1] <= NCOLS) {
+			p->term_y = p->term_arg[0] - 1;
+			p->term_x = p->term_arg[1] - 1;
+		} else {
+			vtc_log(p->vl, 4, "ANSI H %d %d WRONG",
+			    p->term_arg[0], p->term_arg[1]);
+		}
+		break;
+	case 'j':
+		if (p->term_arg[0] == 2) {
+			process_term_clear(p);
+		} else {
+			vtc_log(p->vl, 4, "ANSI J %d", p->term_arg[0]);
+		}
+		break;
+	default:
+		for (i = 0; i < n; i++)
+			vtc_log(p->vl, 4, "ANSI arg %d",
+			    p->term_arg[i]);
+		vtc_log(p->vl, 4, "ANSI unk '%c'", c);
+		break;
+	}
+}
+
+static void
+process_scroll(struct process *p)
+{
+	int i;
+	char *l;
+
+	l = p->term_c[0];
+	for(i = 0; i < NLINES -1; i++)
+		p->term_c[i] = p->term_c[i + 1];
+	p->term_c[i] = l;
+	memset(l, ' ', NCOLS);
+}
+
+static void
+process_char(struct process *p, char c)
+{
+	assert(p->term_x < NCOLS);
+	assert(p->term_y < NLINES);
+	assert(p->term_state <= 3);
+	switch (c) {
+	case 0x00:
+		break;
+	case '\b':
+		if (p->term_x > 0)
+			p->term_x--;
+		break;
+	case '\t':
+		while(++p->term_x % 8)
+			continue;
+		if (p->term_x >= NCOLS) {
+			p->term_x = 0;
+			process_char(p, '\n');
+		}
+		break;
+	case '\n':
+		if (p->term_y == NLINES - 1)
+			process_scroll(p);
+		else
+			p->term_y++;
+		break;
+	case '\r':
+		p->term_x = 0;
+		break;
+	default:
+		if (c < ' ' || c > '~')
+			vtc_log(p->vl, 4, "ANSI CTRL 0x%02x", c);
+		else {
+			p->term_c[p->term_y][p->term_x] = c;
+			if (p->term_x == NCOLS - 1) {
+				p->term_x = 0;
+				process_char(p, '\n');
+			} else {
+				p->term_x++;
+			}
+		}
+	}
+}
+
+static void
+process_ansi(struct process *p, const char *b, const char *e)
+{
+
+	while (b < e) {
+		assert(p->term_x < NCOLS);
+		assert(p->term_y < NLINES);
+		assert(p->term_state <= 3);
+		switch (p->term_state) {
+		case 0:
+			if (*b == '\x1b')
+				p->term_state = 1;
+			else if (*(const uint8_t*)b == 0x9b)
+				p->term_state = 2;
+			else
+				process_char(p, *b);
+			b++;
+			break;
+		case 1:
+			if (*b++ == '[') {
+				p->term_state = 2;
+			} else {
+				vtc_log(p->vl, 4, "ANSI not [ 0x%x", b[-1]);
+				p->term_state = 0;
+			}
+			break;
+		case 2:
+			p->term_ap = p->term_arg;
+			memset(p->term_arg, 0, sizeof p->term_arg);
+			p->term_state = 3;
+			break;
+		case 3:
+			if (p->term_ap - p->term_arg >= NTERMARG) {
+				vtc_log(p->vl, 4, "ANSI too many ;");
+				p->term_state = 0;
+				b++;
+				continue;
+			}
+			if (isdigit(*b)) {
+				*p->term_ap *= 10;
+				*p->term_ap += *b++ - '0';
+				continue;
+			}
+			if (*b == ';') {
+				p->term_ap++;
+				p->term_state = 3;
+				b++;
+				continue;
+			}
+			if (islower(*b)) {
+				process_escape(p, *b++,
+				    p->term_ap -  p->term_arg);
+				p->term_state = 2;
+			} else if (isupper(*b)) {
+				process_escape(p, tolower(*b++),
+				    p->term_ap -  p->term_arg);
+				p->term_ap = p->term_arg;
+				p->term_state = 0;
+			} else {
+				vtc_log(p->vl, 4, "ANSI non-letter %c", *b);
+				p->term_state = 0;
+				b++;
+			}
+			break;
+		default:
+			WRONG("Wrong ansi state");
+		}
+	}
+}
+
+/**********************************************************************
+ * Data stream handling
  */
 
 static int
@@ -196,6 +402,7 @@ process_stdout(const struct vev *ev, int what)
 	else if (p->log == 3)
 		vtc_hexdump(p->vl, 4, "stdout", buf, i);
 	(void)write(p->f_stdout, buf, i);
+	process_ansi(p, buf, buf + i);
 	return (0);
 }
 
@@ -343,6 +550,10 @@ process_init_term(struct process *p, int fd)
 		vtc_log(p->vl, 4, "TCSAFLUSH %d %s", i, strerror(errno));
 }
 
+/**********************************************************************
+ * Start the process thread
+ */
+
 static void
 process_start(struct process *p)
 {
@@ -382,7 +593,7 @@ process_start(struct process *p)
 	p->pid = fork();
 	assert(p->pid >= 0);
 	if (p->pid == 0) {
-		AZ(setenv("TERM", "adm3a", 1));
+		AZ(setenv("TERM", "ansi", 1));
 		AZ(unsetenv("TERMCAP"));
 		assert(dup2(slave, STDIN_FILENO) == STDIN_FILENO);
 		assert(dup2(slave, STDOUT_FILENO) == STDOUT_FILENO);
@@ -578,6 +789,9 @@ process_close(struct process *p)
  * \-close
  *	Alias for "-kill HUP"
  *
+ * \-screen_dump
+ *	Dump the virtual screen into vtc_log
+ *
  */
 
 void
@@ -678,6 +892,10 @@ cmd_process(CMD_ARGS)
 			process_write(p, av[1]);
 			process_write(p, "\n");
 			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-screen_dump")) {
+			process_screen_dump(p);
 			continue;
 		}
 		if (!strcmp(*av, "-close")) {

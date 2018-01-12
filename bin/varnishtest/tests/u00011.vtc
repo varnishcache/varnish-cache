@@ -22,8 +22,8 @@ delay 2
 
 process p1 -writeln {panic.show}
 
-delay 2
-
 process p1 -writeln {quit}
 
-process p1 -wait
+delay 10
+
+process p1 -wait -screen_dump

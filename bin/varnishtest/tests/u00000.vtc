@@ -30,4 +30,4 @@ delay 0.5
 process p4 -kill TERM
 process p4 -wait
 
-process p5 -log "stty -a ; sleep 1" -run
+process p5 "stty -a ; sleep 1" -run -screen_dump

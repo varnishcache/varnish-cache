@@ -18,8 +18,8 @@ client c1 {
 	rxresp
 } -run
 
-delay 3
+delay 10
 
 process p1 -write {q}
 
-process p1 -wait
+process p1 -wait -screen_dump

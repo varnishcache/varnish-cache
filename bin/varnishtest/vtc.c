@@ -725,17 +725,16 @@ static int
 test_term(struct vtclog *vl)
 {
 	FILE *p;
-	int a, b, c;
+	int a, b;
 
-	p = popen("tput -T adm3a clear 2>&1", "r");
+	p = popen("tput -T ansi clear 2>&1", "r");
 	if (p == NULL)
 		return (0);
 	a = fgetc(p);
 	b = fgetc(p);
-	c = pclose(p);
-	if (a == 0x1a && b == EOF && c == 0)
+	if (a == 0x1b && b == '[')
 		return (1);
-	vtc_log(vl, 3, "No adm3a terminfo entry. (install ncurses-term ?)");
+	vtc_log(vl, 3, "No 'ansi' terminfo entry.");
 	return (0);
 }
 
