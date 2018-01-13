@@ -390,29 +390,31 @@ process_start(struct process *p)
 	AZ(unlockpt(master));
 	slavename = ptsname(master);
 	AN(slavename);
-	slave = open(slavename, O_RDWR);
-	assert(slave >= 0);
-#ifdef __sun
-	if (ioctl(slave, I_PUSH, "ptem"))
-		vtc_log(p->vl, 4, "PUSH ptem: %s", strerror(errno));
-	if (ioctl(slave, I_PUSH, "ldterm"))
-		vtc_log(p->vl, 4, "PUSH ldterm: %s", strerror(errno));
-#endif
-
-	process_init_term(p, slave);
 
 	AZ(pipe(fd2));
 
 	p->pid = fork();
 	assert(p->pid >= 0);
 	if (p->pid == 0) {
+		setsid();
+		assert(dup2(fd2[1], STDERR_FILENO) == STDERR_FILENO);
+		close(STDIN_FILENO);
+		slave = open(slavename, O_RDWR);
+		assert(slave == STDIN_FILENO);
+		AZ(ioctl(STDIN_FILENO, TIOCSCTTY, 0 ));
+		close(STDOUT_FILENO);
+		assert(dup2(slave, STDOUT_FILENO) == STDOUT_FILENO);
+		VSUB_closefrom(STDERR_FILENO + 1);
+#ifdef __sun
+		if (ioctl(slave, I_PUSH, "ptem"))
+			vtc_log(p->vl, 4, "PUSH ptem: %s", strerror(errno));
+		if (ioctl(slave, I_PUSH, "ldterm"))
+			vtc_log(p->vl, 4, "PUSH ldterm: %s", strerror(errno));
+#endif
+		process_init_term(p, slave);
+
 		AZ(setenv("TERM", "ansi.sys", 1));
 		AZ(unsetenv("TERMCAP"));
-		assert(dup2(slave, STDIN_FILENO) == STDIN_FILENO);
-		assert(dup2(slave, STDOUT_FILENO) == STDOUT_FILENO);
-		assert(dup2(fd2[1], STDERR_FILENO) == STDERR_FILENO);
-		VSUB_closefrom(STDERR_FILENO + 1);
-		AZ(setpgid(0, 0));
 		// Not using NULL because GCC is now even more demented...
 		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(cl), (char*)0));
 		exit(1);
@@ -420,7 +422,6 @@ process_start(struct process *p)
 	vtc_log(p->vl, 3, "PID: %ld", (long)p->pid);
 	VSB_destroy(&cl);
 
-	closefd(&slave);
 	p->fd_term = master;
 	closefd(&fd2[1]);
 	p->fd_stderr = fd2[0];
