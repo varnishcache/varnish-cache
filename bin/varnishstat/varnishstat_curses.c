@@ -37,7 +37,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
-#include <poll.h>
 #include <stdint.h>
 #include <math.h>
 
@@ -981,7 +980,6 @@ delpt(void *priv, const struct VSC_point *const vpt)
 void
 do_curses(struct vsm *vsm, struct vsc *vsc, double delay)
 {
-	struct pollfd pollfd;
 	long t;
 	int ch;
 	double now;
@@ -995,9 +993,6 @@ do_curses(struct vsm *vsm, struct vsc *vsc, double delay)
 	noecho();
 	nonl();
 	curs_set(0);
-
-	pollfd.fd = STDIN_FILENO;
-	pollfd.events = POLLIN;
 
 	make_windows();
 	doupdate();
@@ -1025,12 +1020,10 @@ do_curses(struct vsm *vsm, struct vsc *vsc, double delay)
 			draw_screen();
 
 		t = (t_sample + interval - now) * 1000;
-		if (t > 0)
-			(void)poll(&pollfd, 1, t);
+		timeout(t);
 
 		switch (ch = wgetch(w_status)) {
 		case ERR:
-			keep_running = 0;
 			break;
 #ifdef KEY_RESIZE /* sigh, Solaris lacks this.. */
 		case KEY_RESIZE:

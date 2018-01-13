@@ -397,7 +397,6 @@ do_curses(void *arg)
 		timeout(delay * 1000);
 		switch ((ch = getch())) {
 		case ERR:
-			quit = 1;
 			break;
 #ifdef KEY_RESIZE
 		case KEY_RESIZE:

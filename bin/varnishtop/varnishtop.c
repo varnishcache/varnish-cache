@@ -279,7 +279,6 @@ do_curses(void *arg)
 
 		switch (getch()) {
 		case ERR:
-			quit = 1;
 			break;
 #ifdef KEY_RESIZE
 		case KEY_RESIZE:
