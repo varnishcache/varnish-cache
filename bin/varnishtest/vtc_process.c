@@ -374,6 +374,7 @@ process_start(struct process *p)
 	int fd2[2];
 	int master, slave;
 	const char *slavename;
+	char c;
 
 	CHECK_OBJ_NOTNULL(p, PROCESS_MAGIC);
 	if (p->hasthread)
@@ -396,13 +397,13 @@ process_start(struct process *p)
 	p->pid = fork();
 	assert(p->pid >= 0);
 	if (p->pid == 0) {
-		setsid();
+		assert(setsid() == getpid());
 		assert(dup2(fd2[1], STDERR_FILENO) == STDERR_FILENO);
-		close(STDIN_FILENO);
+		AZ(close(STDIN_FILENO));
 		slave = open(slavename, O_RDWR);
 		assert(slave == STDIN_FILENO);
-		AZ(ioctl(STDIN_FILENO, TIOCSCTTY, 0 ));
-		close(STDOUT_FILENO);
+		AZ(ioctl(STDIN_FILENO, TIOCSCTTY, NULL));
+		AZ(close(STDOUT_FILENO));
 		assert(dup2(slave, STDOUT_FILENO) == STDOUT_FILENO);
 		VSUB_closefrom(STDERR_FILENO + 1);
 #ifdef __sun
@@ -416,12 +417,14 @@ process_start(struct process *p)
 		AZ(setenv("TERM", "ansi.sys", 1));
 		AZ(unsetenv("TERMCAP"));
 		// Not using NULL because GCC is now even more demented...
+		assert(write(STDERR_FILENO, "+", 1) == 1);
 		AZ(execl("/bin/sh", "/bin/sh", "-c", VSB_data(cl), (char*)0));
 		exit(1);
 	}
 	vtc_log(p->vl, 3, "PID: %ld", (long)p->pid);
 	VSB_destroy(&cl);
 
+	assert(read(fd2[0], &c, 1) == 1);
 	p->fd_term = master;
 	closefd(&fd2[1]);
 	p->fd_stderr = fd2[0];
