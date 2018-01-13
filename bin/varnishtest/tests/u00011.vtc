@@ -9,17 +9,27 @@ server s1 {
 
 varnish v1 -vcl+backend {} -start
 
-process p1 -dump {varnishadm -n ${v1_name}} -start
-
-process p1 -need-bytes 1
-
 client c1 {
 	txreq
 	rxresp
 } -run
 
-process p1 -writeln {panic.show}
+varnish v1 -vsl_catchup
 
-process p1 -need-bytes 380
+process p1 -log {varnishadm -n ${v1_name}} -start
+
+process p1 -need-bytes 1
+
+process p1 -write "pi\t\r"
+
+process p1 -need-bytes 100
+
+process p1 -write "vcl.li\t\r"
+
+process p1 -need-bytes 200
+
+process p1 -write "vcl.s\t\th\tvcl1\r"
+
+process p1 -need-bytes 600
 
 process p1 -screen_dump -write "quit\r" -wait
