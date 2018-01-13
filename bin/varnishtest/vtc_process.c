@@ -344,7 +344,7 @@ process_init_term(struct process *p, int fd)
 	memset(&tt, 0, sizeof tt);
 	tt.c_cflag = CREAD | CS8 | HUPCL;
 	tt.c_iflag = BRKINT | ICRNL | IMAXBEL | IXON | IXANY;
-	tt.c_lflag = ICANON | ISIG | IEXTEN;
+	tt.c_lflag = ICANON | ISIG | IEXTEN | ECHO | ECHOE | ECHOKE | ECHOCTL;
 	tt.c_oflag = OPOST | ONLCR;
 	i = cfsetispeed(&tt, B9600);
 	if (i)
@@ -512,9 +512,9 @@ process_write(const struct process *p, const char *text)
 	len = strlen(text);
 	vtc_log(p->vl, 4, "Writing %d bytes", len);
 	r = write(p->fd_term, text, len);
-	if (r < 0)
-		vtc_fatal(p->vl, "Failed to write: %s (%d)",
-		    strerror(errno), errno);
+	if (r != len)
+		vtc_fatal(p->vl, "Failed to write: len=%d %s (%d)",
+		    len, strerror(errno), errno);
 }
 
 static void
