@@ -1,5 +1,9 @@
 varnishtest "Simple process tests"
 
+process p6 "ps -lw | grep '[p][s]' ; tty ; sleep 1" -run -screen_dump
+
+process p5 "stty -a ; sleep 1" -run -screen_dump
+
 process p1 "cat" -start
 process p1 -writeln "foo"
 process p1 -need-bytes 3
@@ -30,4 +34,3 @@ process p4 -need-bytes 3
 process p4 -kill TERM
 process p4 -wait -screen_dump
 
-process p5 "stty -a ; sleep 1" -run -screen_dump

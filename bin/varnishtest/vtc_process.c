@@ -402,7 +402,11 @@ process_start(struct process *p)
 		AZ(close(STDIN_FILENO));
 		slave = open(slavename, O_RDWR);
 		assert(slave == STDIN_FILENO);
+#ifdef __sun
+		(void)ioctl(STDIN_FILENO, TIOCSCTTY, NULL);
+#else
 		AZ(ioctl(STDIN_FILENO, TIOCSCTTY, NULL));
+#endif
 		AZ(close(STDOUT_FILENO));
 		assert(dup2(slave, STDOUT_FILENO) == STDOUT_FILENO);
 		VSUB_closefrom(STDERR_FILENO + 1);
