@@ -1,0 +1,33 @@
+varnishtest	"trivial run of varnishadm in pass mode"
+
+feature term
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq
+	rxresp
+} -run
+
+varnish v1 -vsl_catchup
+
+process p1 -log {cat | varnishadm -n ${v1_name}} -start
+
+process p1 -write "ping\r"
+
+process p1 -need-bytes 30
+
+process p1 -write "vcl.list\r"
+
+process p1 -need-bytes 80
+
+process p1 -write "vcl.show vcl1\r"
+
+process p1 -need-bytes 100
+
+process p1 -screen_dump -write "\x04" -wait
