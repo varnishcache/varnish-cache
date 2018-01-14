@@ -90,12 +90,18 @@ term_escape(struct term *tp, int c, int n)
 {
 	int i;
 
-	for (i = 0; i < NTERMARG; i++)
-		if (!tp->arg[i])
-			tp->arg[i] = 1;
 	switch(c) {
+	case 'A':
+		// CUU - Cursor up
+		if (tp->arg[0] == -1) tp->arg[0] = 1;
+		tp->line -= tp->arg[0];
+		if (tp->line < 0)
+			vtc_fatal(tp->vl, "ANSI A[%d] outside vram",
+			    tp->arg[0]);
+		break;
 	case 'B':
 		// CUD - Cursor down
+		if (tp->arg[0] == -1) tp->arg[0] = 1;
 		if (tp->arg[0] > tp->nlin)
 			vtc_fatal(tp->vl, "ANSI B[%d] outside vram",
 			    tp->arg[0]);
@@ -107,6 +113,7 @@ term_escape(struct term *tp, int c, int n)
 		break;
 	case 'C':
 		// CUF - Cursor forward
+		if (tp->arg[0] == -1) tp->arg[0] = 1;
 		tp->col += tp->arg[0];
 		if (tp->col >= tp->ncol)
 			vtc_fatal(tp->vl, "ANSI C[%d] outside vram",
@@ -117,6 +124,8 @@ term_escape(struct term *tp, int c, int n)
 		break;
 	case 'H':
 		// CUP - Cursor Position
+		if (tp->arg[0] == -1) tp->arg[0] = 1;
+		if (tp->arg[1] == -1) tp->arg[1] = 1;
 		if (tp->arg[0] > tp->nlin || tp->arg[1] > tp->ncol)
 			vtc_fatal(tp->vl, "ANSI H[%d,%d] outside vram",
 			    tp->arg[0], tp->arg[1]);
@@ -135,9 +144,10 @@ term_escape(struct term *tp, int c, int n)
 		break;
 	case 'K':
 		// EL - Erase in line (0=right, 1=left, 2=full line)
+		if (tp->arg[0] == -1) tp->arg[0] = 0;
 		switch (tp->arg[0]) {
 		case 0:
-			for (i = tp->col + 1; i < tp->ncol; i++)
+			for (i = tp->col; i < tp->ncol; i++)
 				tp->vram[tp->line][i] = ' ';
 			break;
 		case 1:
@@ -209,6 +219,7 @@ term_char(struct term *tp, char c)
 void
 Term_Feed(struct term *tp, const char *b, const char *e)
 {
+	int i;
 
 	while (b < e) {
 		assert(tp->col < tp->ncol);
@@ -232,7 +243,8 @@ Term_Feed(struct term *tp, const char *b, const char *e)
 			break;
 		case 2:
 			tp->argp = tp->arg;
-			memset(tp->arg, 0, sizeof tp->arg);
+			for (i=0; i < NTERMARG; i++)
+				tp->arg[i] = -1;
 			tp->state = 3;
 			if (*b == '?')
 				b++;
@@ -242,6 +254,8 @@ Term_Feed(struct term *tp, const char *b, const char *e)
 				vtc_fatal(tp->vl, "ANSI too many args");
 
 			if (isdigit(*b)) {
+				if (*tp->argp == -1)
+					*tp->argp = 0;
 				*tp->argp *= 10;
 				*tp->argp += *b++ - '0';
 				continue;
@@ -270,7 +284,7 @@ Term_New(struct vtclog *vl)
 	ALLOC_OBJ(tp, TERM_MAGIC);
 	AN(tp);
 	tp->vl = vl;
-	tp->nlin = 24;
+	tp->nlin = 25;
 	tp->ncol = 80;
 	tp->vram = calloc(tp->nlin, sizeof *tp->vram);
 	AN(tp->vram);

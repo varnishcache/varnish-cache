@@ -335,7 +335,7 @@ process_init_term(struct process *p, int fd)
 	int i;
 
 	memset(&ws, 0, sizeof ws);
-	ws.ws_row = 24;
+	ws.ws_row = 25;
 	ws.ws_col = 80;
 	i = ioctl(fd, TIOCSWINSZ, &ws);
 	if (i)
