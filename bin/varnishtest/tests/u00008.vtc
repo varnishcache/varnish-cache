@@ -2,12 +2,16 @@ varnishtest	"trivial run of varnistat in curses mode"
 
 feature term
 
-server s1 {
+server s1 -repeat 4 {
 	rxreq
 	txresp
 } -start
 
-varnish v1 -vcl+backend {} -start
+varnish v1 -vcl+backend {
+	probe default {
+		.url = "/";
+	}
+} -start
 
 process p1 -dump {varnishstat -n ${v1_name}} -start
 
@@ -18,5 +22,15 @@ client c1 {
 	rxresp
 } -run
 
-process p1 -need-bytes 2300 -screen_dump -write {q} -wait
+process p1 -need-bytes 1000
+
+process p1 -write {vG}
+
+varnish v1 -stop
+
+process p1 -write {dek}
+
+delay 1
+
+process p1 -need-bytes 5000 -screen_dump -write {q} -wait
 
