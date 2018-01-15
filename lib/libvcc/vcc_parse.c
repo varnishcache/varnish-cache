@@ -274,29 +274,50 @@ vcc_ParseFunction(struct vcc *tl)
 static void
 vcc_ParseVcl(struct vcc *tl)
 {
-	struct token *tok;
+	struct token *tok0, *tok1, *tok2;
 
 	assert(vcc_IdIs(tl->t, "vcl"));
+	tok0 = tl->t;
 	vcc_NextToken(tl);
-	tok = tl->t;
-	tok->src->syntax = vcc_DoubleVal(tl);
-	ERRCHK(tl);
-	if (tl->t->e - tok->b > 4) {
+
+	tok1 = tl->t;
+	Expect(tl, CNUM);
+	tok1->src->syntax = *tl->t->b - '0';
+	vcc_NextToken(tl);
+	Expect(tl, '.');
+	vcc_NextToken(tl);
+
+	Expect(tl, CNUM);
+	tok2 = tl->t;
+	tok1->src->syntax += .1 * (*tl->t->b - '0');
+	vcc_NextToken(tl);
+
+	if (tok1->e - tok1->b != 1 || tok2->e - tok2->b != 1) {
 		VSB_printf(tl->sb,
 		    "Don't play silly buggers with VCL version numbers\n");
-		vcc_ErrWhere2(tl, tok, tl->t);
+		vcc_ErrWhere2(tl, tok0, tl->t);
 		ERRCHK(tl);
 	}
-	if (tl->syntax != 0.0 && tok->src->syntax > tl->syntax) {
+
+	if (tl->t->tok != ';') {
+		/* Special handling, because next token might be 'vcl'
+		 * in the built-in VCL, and that would give a very
+		 * confusing error message
+		 */
+		VSB_printf(tl->sb,
+		    "Expected 'vcl N.N;' found no semi-colon\n");
+		vcc_ErrWhere2(tl, tok0, tl->t);
+		ERRCHK(tl);
+	}
+	vcc_NextToken(tl);
+	if (tl->syntax != 0.0 && tok1->src->syntax > tl->syntax) {
 		VSB_printf(tl->sb,
 		    "VCL version %.1f higher than"
 		    " the top level version %.1f\n",
-		    tok->src->syntax, tl->syntax);
-		vcc_ErrWhere2(tl, tok, tl->t);
+		    tok1->src->syntax, tl->syntax);
+		vcc_ErrWhere2(tl, tok0, tl->t);
 		ERRCHK(tl);
 	}
-	ExpectErr(tl, ';');
-	vcc_NextToken(tl);
 }
 
 /*--------------------------------------------------------------------

@@ -310,7 +310,6 @@ void Resolve_Sockaddr(struct vcc *tl, const char *host, const char *defport,
 double vcc_TimeUnit(struct vcc *);
 void vcc_ByteVal(struct vcc *, double *);
 void vcc_NumVal(struct vcc *, double *, int *);
-double vcc_DoubleVal(struct vcc *tl);
 void vcc_Duration(struct vcc *tl, double *);
 unsigned vcc_UintVal(struct vcc *tl);
 

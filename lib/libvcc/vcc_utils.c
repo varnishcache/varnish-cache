@@ -344,7 +344,7 @@ vcc_NumVal(struct vcc *tl, double *d, int *frac)
 	vcc_NextToken(tl);
 }
 
-double
+static double
 vcc_DoubleVal(struct vcc *tl)
 {
 	double d;
