@@ -1,0 +1,113 @@
+varnishtest "more backends"
+
+varnish v1 -arg "-p vcc_err_unref=off" -vcl {
+	backend d0 { .host = "${bad_backend}"; }
+	backend d1 { .host = "${bad_backend}"; }
+	backend d2 { .host = "${bad_backend}"; }
+	backend d3 { .host = "${bad_backend}"; }
+	backend d4 { .host = "${bad_backend}"; }
+	backend d5 { .host = "${bad_backend}"; }
+	backend d6 { .host = "${bad_backend}"; }
+	backend d7 { .host = "${bad_backend}"; }
+	backend d8 { .host = "${bad_backend}"; }
+	backend d9 { .host = "${bad_backend}"; }
+	backend d10 { .host = "${bad_backend}"; }
+	backend d11 { .host = "${bad_backend}"; }
+	backend d12 { .host = "${bad_backend}"; }
+	backend d13 { .host = "${bad_backend}"; }
+	backend d14 { .host = "${bad_backend}"; }
+	backend d15 { .host = "${bad_backend}"; }
+	backend d16 { .host = "${bad_backend}"; }
+	backend d17 { .host = "${bad_backend}"; }
+	backend d18 { .host = "${bad_backend}"; }
+	backend d19 { .host = "${bad_backend}"; }
+	backend d20 { .host = "${bad_backend}"; }
+	backend d21 { .host = "${bad_backend}"; }
+	backend d22 { .host = "${bad_backend}"; }
+	backend d23 { .host = "${bad_backend}"; }
+	backend d24 { .host = "${bad_backend}"; }
+	backend d25 { .host = "${bad_backend}"; }
+	backend d26 { .host = "${bad_backend}"; }
+	backend d27 { .host = "${bad_backend}"; }
+	backend d28 { .host = "${bad_backend}"; }
+	backend d29 { .host = "${bad_backend}"; }
+	backend d30 { .host = "${bad_backend}"; }
+	backend d31 { .host = "${bad_backend}"; }
+	backend d32 { .host = "${bad_backend}"; }
+	backend d33 { .host = "${bad_backend}"; }
+	backend d34 { .host = "${bad_backend}"; }
+	backend d35 { .host = "${bad_backend}"; }
+	backend d36 { .host = "${bad_backend}"; }
+	backend d37 { .host = "${bad_backend}"; }
+	backend d38 { .host = "${bad_backend}"; }
+	backend d39 { .host = "${bad_backend}"; }
+	backend d40 { .host = "${bad_backend}"; }
+	backend d41 { .host = "${bad_backend}"; }
+	backend d42 { .host = "${bad_backend}"; }
+	backend d43 { .host = "${bad_backend}"; }
+	backend d44 { .host = "${bad_backend}"; }
+	backend d45 { .host = "${bad_backend}"; }
+	backend d46 { .host = "${bad_backend}"; }
+	backend d47 { .host = "${bad_backend}"; }
+	backend d48 { .host = "${bad_backend}"; }
+	backend d49 { .host = "${bad_backend}"; }
+	backend d50 { .host = "${bad_backend}"; }
+	backend d51 { .host = "${bad_backend}"; }
+	backend d52 { .host = "${bad_backend}"; }
+	backend d53 { .host = "${bad_backend}"; }
+	backend d54 { .host = "${bad_backend}"; }
+	backend d55 { .host = "${bad_backend}"; }
+	backend d56 { .host = "${bad_backend}"; }
+	backend d57 { .host = "${bad_backend}"; }
+	backend d58 { .host = "${bad_backend}"; }
+	backend d59 { .host = "${bad_backend}"; }
+	backend d60 { .host = "${bad_backend}"; }
+	backend d61 { .host = "${bad_backend}"; }
+	backend d62 { .host = "${bad_backend}"; }
+	backend d63 { .host = "${bad_backend}"; }
+	backend d64 { .host = "${bad_backend}"; }
+	backend d65 { .host = "${bad_backend}"; }
+	backend d66 { .host = "${bad_backend}"; }
+	backend d67 { .host = "${bad_backend}"; }
+	backend d68 { .host = "${bad_backend}"; }
+	backend d69 { .host = "${bad_backend}"; }
+	backend d70 { .host = "${bad_backend}"; }
+	backend d71 { .host = "${bad_backend}"; }
+	backend d72 { .host = "${bad_backend}"; }
+	backend d73 { .host = "${bad_backend}"; }
+	backend d74 { .host = "${bad_backend}"; }
+	backend d75 { .host = "${bad_backend}"; }
+	backend d76 { .host = "${bad_backend}"; }
+	backend d77 { .host = "${bad_backend}"; }
+	# end of 1st 8k VSMW cluster on 64bit
+	backend d78 { .host = "${bad_backend}"; }
+	backend d79 { .host = "${bad_backend}"; }
+	backend d80 { .host = "${bad_backend}"; }
+	backend d81 { .host = "${bad_backend}"; }
+	backend d82 { .host = "${bad_backend}"; }
+	backend d83 { .host = "${bad_backend}"; }
+	backend d84 { .host = "${bad_backend}"; }
+	backend d85 { .host = "${bad_backend}"; }
+	backend d86 { .host = "${bad_backend}"; }
+	backend d87 { .host = "${bad_backend}"; }
+	backend d88 { .host = "${bad_backend}"; }
+	backend d89 { .host = "${bad_backend}"; }
+	backend d90 { .host = "${bad_backend}"; }
+	backend d91 { .host = "${bad_backend}"; }
+	backend d92 { .host = "${bad_backend}"; }
+	backend d93 { .host = "${bad_backend}"; }
+	backend d94 { .host = "${bad_backend}"; }
+	backend d95 { .host = "${bad_backend}"; }
+	backend d96 { .host = "${bad_backend}"; }
+	backend d97 { .host = "${bad_backend}"; }
+	backend d98 { .host = "${bad_backend}"; }
+	backend d99 { .host = "${bad_backend}"; }
+} -start
+
+client c1 {
+	txreq -url "/"
+	rxresp
+	expect resp.status == 503
+} -run
+
+shell -match "d99" "varnishstat -1 -n ${v1_name}"

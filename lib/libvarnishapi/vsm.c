@@ -718,7 +718,7 @@ VSM_Map(struct vsm *vd, struct vsm_fantom *vf)
 
 	sz = strtoul(vg->av[3], NULL, 10);
 	assert(sz > 0);
-	len = RUP2(of + sz, ps);
+	len = RUP2(sz, ps);
 
 	vsb = VSB_new_auto();
 	AN(vsb);
@@ -742,7 +742,7 @@ VSM_Map(struct vsm *vd, struct vsm_fantom *vf)
 	if (vg->s == MAP_FAILED)
 		return (vsm_diag(vd, "Could not mmap segment"));
 
-	vg->b = (char*)(vg->s) + of;
+	vg->b = (char*)(vg->s) + of - off;
 	vg->e = (char *)vg->b + sz;
 	vg->sz = len;
 
