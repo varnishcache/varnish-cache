@@ -116,8 +116,14 @@ term_escape(struct term *tp, int c, int n)
 		if (tp->arg[0] == -1) tp->arg[0] = 1;
 		tp->col += tp->arg[0];
 		if (tp->col >= tp->ncol)
-			vtc_fatal(tp->vl, "ANSI C[%d] outside vram",
-			    tp->arg[0]);
+			tp->col = tp->ncol - 1;
+		break;
+	case 'D':
+		// CUB - Cursor backward
+		if (tp->arg[0] == -1) tp->arg[0] = 1;
+		tp->col -= tp->arg[0];
+		if (tp->col < 0)
+			tp->col = 0;
 		break;
 	case 'h':
 		// SM - Set Mode (ignored XXX?)
@@ -206,13 +212,9 @@ term_char(struct term *tp, char c)
 	default:
 		if (c < ' ' || c > '~')
 			c = '?';
-		tp->vram[tp->line][tp->col] = c;
-		if (tp->col == tp->ncol - 1) {
-			tp->col = 0;
-			term_char(tp, '\n');
-		} else {
-			tp->col++;
-		}
+		tp->vram[tp->line][tp->col++] = c;
+		if (tp->col >= tp->ncol)
+			tp->col = tp->ncol - 1;
 	}
 }
 
