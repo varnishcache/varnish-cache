@@ -36,6 +36,7 @@
 #include "cache/cache_transport.h"
 #include "http2/cache_http2.h"
 
+#include "vend.h"
 #include "vtim.h"
 
 static const char h2_resp_101[] =
@@ -50,12 +51,25 @@ static const char H2_prism[24] = {
 	0x0d, 0x0a, 0x53, 0x4d, 0x0d, 0x0a, 0x0d, 0x0a
 };
 
-static const uint8_t H2_settings[] = {
-	0x00, 0x03,
-	0x00, 0x00, 0x00, 0x64,
-	0x00, 0x04,
-	0x00, 0x00, 0xff, 0xff
-};
+static size_t
+h2_enc_settings(const struct h2_settings *h2s, uint8_t *buf, size_t n)
+{
+	uint8_t *b;
+	size_t len = 0;
+
+	b = buf;
+#define H2_SETTING(U,l,v,d,...)				\
+	if (h2s->l != d) {				\
+		len += 6;					\
+		assert(len <= n);			\
+		vbe16enc(b, v);				\
+		b += 2;					\
+		vbe32enc(b, h2s->l);			\
+		b += 4;					\
+	}
+#include "tbl/h2_settings.h"
+	return (len);
+}
 
 static const struct h2_settings H2_proto_settings = {
 #define H2_SETTING(U,l,v,d,...) . l = d,
@@ -289,6 +303,8 @@ h2_new_session(struct worker *wrk, void *arg)
 	struct h2_req *r2, *r22;
 	uintptr_t wsp;
 	int again;
+	uint8_t settings[48];
+	size_t l;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CAST_OBJ_NOTNULL(req, arg, REQ_MAGIC);
@@ -314,9 +330,10 @@ h2_new_session(struct worker *wrk, void *arg)
 
 	THR_SetRequest(h2->srq);
 
+	l = h2_enc_settings(&h2->local_settings, settings, sizeof (settings));
 	H2_Send_Get(wrk, h2, h2->req0);
 	H2_Send_Frame(wrk, h2,
-	    H2_F_SETTINGS, H2FF_NONE, sizeof H2_settings, 0, H2_settings);
+	    H2_F_SETTINGS, H2FF_NONE, l, 0, settings);
 	H2_Send_Rel(h2, h2->req0);
 
 	/* and off we go... */

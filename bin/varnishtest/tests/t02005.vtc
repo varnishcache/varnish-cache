@@ -15,7 +15,7 @@ varnish v1 -cliok "param.set debug +syncvsl"
 
 logexpect l1 -v v1 -g raw {
 	expect	* 1001 ReqAcct	"80 7 87 106 8 114"
-	expect	* 1000 ReqAcct	"45 8 53 72 28 100"
+	expect	* 1000 ReqAcct	"45 8 53 72 22 94"
 } -start
 
 client c1 {
