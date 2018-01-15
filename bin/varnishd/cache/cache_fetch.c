@@ -261,8 +261,7 @@ vbf_stp_startfetch(struct worker *wrk, struct busyobj *bo)
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 
 	AZ(bo->storage);
-
-	bo->storage = STV_next();
+	bo->storage = bo->do_pass ? stv_transient : STV_next();
 
 	if (bo->retries > 0)
 		http_Unset(bo->bereq, "\012X-Varnish:");

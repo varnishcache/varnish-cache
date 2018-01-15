@@ -366,6 +366,16 @@ VRT_l_beresp_storage(VRT_CTX, VCL_STEVEDORE stv)
 
 /*--------------------------------------------------------------------*/
 
+VCL_STEVEDORE
+VRT_r_obj_storage(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	return (ctx->req->objcore->stobj->stevedore);
+}
+
+/*--------------------------------------------------------------------*/
+
 #define REQ_VAR_L(nm, elem, type,extra)					\
 									\
 void									\

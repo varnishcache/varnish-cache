@@ -745,6 +745,13 @@ sp_variables = [
 		hit-for-miss).
 		"""
 	),
+	('obj.storage',
+		'STEVEDORE',
+		('hit', 'deliver'),
+		(), """
+		The storage backend used to save this object.
+		"""
+	),
 	('resp',
 		'HTTP',
 		('deliver', 'synth'),

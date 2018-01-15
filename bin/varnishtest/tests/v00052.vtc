@@ -1,0 +1,49 @@
+varnishtest "obj.storage coverage"
+
+server s1 {
+	rxreq
+	txresp
+
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_hit {
+		set req.http.Hit-Storage = obj.storage;
+	}
+
+	sub vcl_backend_response {
+		set beresp.http.Default-Storage = beresp.storage;
+		if (bereq.method == "GET") {
+			set beresp.storage = storage.Transient;
+		}
+	}
+
+	sub vcl_deliver {
+		set resp.http.Deliver-Storage = obj.storage;
+		if (req.http.Hit-Storage) {
+			set resp.http.Hit-Storage = req.http.Hit-Storage;
+		}
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.Default-Storage == storage.s0
+	expect resp.http.Deliver-Storage == storage.Transient
+	expect resp.http.Hit-Storage == <undef>
+
+	txreq
+	rxresp
+	expect resp.http.Default-Storage == storage.s0
+	expect resp.http.Deliver-Storage == storage.Transient
+	expect resp.http.Hit-Storage == storage.Transient
+
+	txreq -req POST
+	rxresp
+	expect resp.http.Default-Storage == storage.Transient
+	expect resp.http.Deliver-Storage == storage.Transient
+	expect resp.http.Hit-Storage == <undef>
+} -run
