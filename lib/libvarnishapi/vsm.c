@@ -718,7 +718,7 @@ VSM_Map(struct vsm *vd, struct vsm_fantom *vf)
 
 	sz = strtoul(vg->av[3], NULL, 10);
 	assert(sz > 0);
-	len = RUP2(sz, ps);
+	len = RUP2(of + sz, ps);
 
 	vsb = VSB_new_auto();
 	AN(vsb);
