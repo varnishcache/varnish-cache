@@ -1020,9 +1020,10 @@ do_curses(struct vsm *vsm, struct vsc *vsc, double delay)
 			draw_screen();
 
 		t = (t_sample + interval - now) * 1000;
-		timeout(t);
+		wtimeout(w_status, t);
 
-		switch (ch = wgetch(w_status)) {
+		ch = wgetch(w_status);
+		switch (ch) {
 		case ERR:
 			break;
 #ifdef KEY_RESIZE /* sigh, Solaris lacks this.. */
