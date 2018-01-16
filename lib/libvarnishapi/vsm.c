@@ -734,7 +734,7 @@ VSM_Map(struct vsm *vd, struct vsm_fantom *vf)
 	vg->s = (void*)mmap(NULL, len,
 	    PROT_READ,
 	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
-	    fd, off);
+	    fd, (off_t)off);
 
 	VSB_destroy(&vsb);
 
