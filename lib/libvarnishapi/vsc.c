@@ -106,7 +106,7 @@ static const struct VSC_level_desc * const levels[] = {
 #undef VSC_LEVEL_F
 };
 
-static const size_t nlevels = sizeof(levels)/sizeof(*levels);
+static const ssize_t nlevels = sizeof(levels)/sizeof(*levels);
 
 /*--------------------------------------------------------------------*/
 
@@ -496,8 +496,8 @@ VSC_ChangeLevel(const struct VSC_level_desc *old, int chg)
 			break;
 	if (i == nlevels)
 		i = 0;
-	else
-		i += chg;
+
+	i += chg;
 	if (i >= nlevels)
 		i = nlevels - 1;
 	if (i < 0)
