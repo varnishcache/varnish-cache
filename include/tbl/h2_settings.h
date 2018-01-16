@@ -89,7 +89,7 @@ H2_SETTING(					// rfc7540,l,2159,2167
 	MAX_HEADER_LIST_SIZE,
 	max_header_list_size,
 	0x6,
-	0xffffffff,				// rfc7540,l,4229,4229
+	0x7fffffff,				// rfc7540,l,4229,4229
 	0,
 	0xffffffff,
 	0

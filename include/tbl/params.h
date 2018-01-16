@@ -1735,7 +1735,7 @@ PARAM(
 PARAM(
 	/* name */      h2_header_table_size,
 	/* typ */       bytes_u,
-	/* min */       "0",
+	/* min */       "0b",
 	/* max */       NULL,
 	/* default */   "4k",
 	/* units */     "bytes",
@@ -1752,7 +1752,7 @@ PARAM(
        /* name */      h2_max_concurrent_streams,
        /* typ */       uint,
        /* min */       "0",
-       /* max */       "4294967294",
+       /* max */       NULL,
        /* default */   "100",
        /* units */     "streams",
        /* flags */     0,
@@ -1768,8 +1768,8 @@ PARAM(
 	/* name */      h2_initial_window_size,
 	/* typ */       bytes_u,
 	/* min */       "0",
-	/* max */       "2147483647",
-	/* default */   "65535",
+	/* max */       "2147483647b",
+	/* default */   "65535b",
 	/* units */     "bytes",
 	/* flags */     0,
 	/* s-text */
@@ -1781,9 +1781,9 @@ PARAM(
 PARAM(
 	/* name */      h2_max_frame_size,
 	/* typ */       bytes_u,
-	/* min */       "16384",
-	/* max */       "16777215",
-	/* default */   "16384",
+	/* min */       "16k",
+	/* max */       "16777215b",
+	/* default */   "16k",
 	/* units */     "bytes",
 	/* flags */     0,
 	/* s-text */
@@ -1795,9 +1795,9 @@ PARAM(
 PARAM(
 	/* name */      h2_max_header_list_size,
 	/* typ */       bytes_u,
-	/* min */       "0",
+	/* min */       "0b",
 	/* max */       NULL,
-	/* default */   "4294967295",
+	/* default */   "2147483647b",
 	/* units */     "bytes",
 	/* flags */     0,
 	/* s-text */
