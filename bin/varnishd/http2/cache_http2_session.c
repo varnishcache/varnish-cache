@@ -60,7 +60,7 @@ h2_enc_settings(const struct h2_settings *h2s, uint8_t *buf, size_t n)
 	b = buf;
 #define H2_SETTING(U,l,v,d,...)				\
 	if (h2s->l != d) {				\
-		len += 6;					\
+		len += 6;				\
 		assert(len <= n);			\
 		vbe16enc(b, v);				\
 		b += 2;					\
