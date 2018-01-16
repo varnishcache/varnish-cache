@@ -506,6 +506,7 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 	    sp->fd, VXID(sp->vxid));
 	VSB_printf(vsb, "t_open = %f,\n", sp->t_open);
 	VSB_printf(vsb, "t_idle = %f,\n", sp->t_idle);
+	pan_ws(vsb, sp->ws);
 	VSB_printf(vsb, "transport = %s",
 	    xp == NULL ? "<none>" : xp->name);
 	if (xp != NULL && xp->sess_panic != NULL) {
