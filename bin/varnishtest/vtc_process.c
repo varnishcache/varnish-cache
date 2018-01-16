@@ -76,6 +76,8 @@ struct process {
 	int			log;
 	pid_t			pid;
 	int			expect_exit;
+	int			expect_signal;
+	int			allow_core;
 
 	uintmax_t		stdout_bytes;
 	uintmax_t		stderr_bytes;
@@ -245,7 +247,7 @@ process_thread(void *priv)
 	struct rusage ru;
 	struct vev_root *evb;
 	struct vev *ev;
-	int r;
+	int core, sig, ext, r;
 
 	CAST_OBJ_NOTNULL(p, priv, PROCESS_MAGIC);
 
@@ -306,18 +308,28 @@ process_thread(void *priv)
 	);
 
 	AZ(pthread_mutex_unlock(&p->mtx));
-
+	sig = WTERMSIG(p->status);
+	ext = WEXITSTATUS(p->status);
 #ifdef WCOREDUMP
+	core = WCOREDUMP(p->status);
 	vtc_log(p->vl, 2, "Exit code: %04x sig %d exit %d core %d",
-	    p->status, WTERMSIG(p->status), WEXITSTATUS(p->status),
-	    WCOREDUMP(p->status));
+	    p->status, sig, ext, core);
 #else
+	core = 0;
 	vtc_log(p->vl, 2, "Exit code: %04x sig %d exit %d",
-	    p->status, WTERMSIG(p->status), WEXITSTATUS(p->status));
+	    p->status, sig, ext);
 #endif
-	if (WEXITSTATUS(p->status) != p->expect_exit)
+	if (core && !p->allow_core)
+		vtc_fatal(p->vl, "Core dump");
+	if (p->expect_signal >= 0 && sig != p->expect_signal)
+		vtc_fatal(p->vl, "Expected signal %d got %d",
+			p->expect_signal, sig);
+	else if (sig && sig != p->expect_signal)
+		vtc_fatal(p->vl, "Expected signal %d got %d",
+			-p->expect_signal, sig);
+	if (ext != p->expect_exit)
 		vtc_fatal(p->vl, "Expected exit %d got %d",
-			p->expect_exit, WEXITSTATUS(p->status));
+			p->expect_exit, ext);
 
 	VEV_Destroy(&evb);
 	if (p->log == 1) {
@@ -490,11 +502,14 @@ process_kill(struct process *p, const char *sig)
 	else
 		vtc_fatal(p->vl, "Could not grok signal (%s)", sig);
 
+	if (p->expect_signal == 0)
+		p->expect_signal = -j;
 	if (kill(-pid, j) < 0)
 		vtc_fatal(p->vl, "Failed to send signal %d (%s)",
 		    j, strerror(errno));
-	else
+	else {
 		vtc_log(p->vl, 4, "Sent signal %d", j);
+	}
 }
 
 /**********************************************************************
@@ -659,15 +674,12 @@ cmd_process(CMD_ARGS)
 		if (vtc_error)
 			break;
 
-		if (!strcmp(*av, "-start")) {
-			process_start(p);
+		if (!strcmp(*av, "-allow-core")) {
+			p->allow_core = 1;
 			continue;
 		}
-		if (!strcmp(*av, "-hexdump")) {
-			if (p->hasthread)
-				vtc_fatal(p->vl,
-				    "Cannot dump a running process");
-			p->log = 3;
+		if (!strcmp(*av, "-close")) {
+			process_close(p);
 			continue;
 		}
 		if (!strcmp(*av, "-dump")) {
@@ -677,25 +689,21 @@ cmd_process(CMD_ARGS)
 			p->log = 2;
 			continue;
 		}
-		if (!strcmp(*av, "-log")) {
-			if (p->hasthread)
-				vtc_fatal(p->vl,
-				    "Cannot log a running process");
-			p->log = 1;
-			continue;
-		}
 		if (!strcmp(*av, "-expect-exit")) {
 			p->expect_exit = strtoul(av[1], NULL, 0);
 			av++;
 			continue;
 		}
-		if (!strcmp(*av, "-wait")) {
-			process_wait(p);
+		if (!strcmp(*av, "-expect-signal")) {
+			p->expect_signal = strtoul(av[1], NULL, 0);
+			av++;
 			continue;
 		}
-		if (!strcmp(*av, "-run")) {
-			process_start(p);
-			process_wait(p);
+		if (!strcmp(*av, "-hexdump")) {
+			if (p->hasthread)
+				vtc_fatal(p->vl,
+				    "Cannot dump a running process");
+			p->log = 3;
 			continue;
 		}
 		if (!strcmp(*av, "-kill")) {
@@ -703,19 +711,11 @@ cmd_process(CMD_ARGS)
 			av++;
 			continue;
 		}
-		if (!strcmp(*av, "-stop")) {
-			process_kill(p, "TERM");
-			continue;
-		}
-		if (!strcmp(*av, "-write")) {
-			process_write(p, av[1]);
-			av++;
-			continue;
-		}
-		if (!strcmp(*av, "-writeln")) {
-			process_write(p, av[1]);
-			process_write(p, "\n");
-			av++;
+		if (!strcmp(*av, "-log")) {
+			if (p->hasthread)
+				vtc_fatal(p->vl,
+				    "Cannot log a running process");
+			p->log = 1;
 			continue;
 		}
 		if (!strcmp(*av, "-need-bytes")) {
@@ -730,12 +730,36 @@ cmd_process(CMD_ARGS)
 			} while(v < u);
 			continue;
 		}
+		if (!strcmp(*av, "-run")) {
+			process_start(p);
+			process_wait(p);
+			continue;
+		}
 		if (!strcmp(*av, "-screen_dump")) {
 			Term_Dump(p->term);
 			continue;
 		}
-		if (!strcmp(*av, "-close")) {
-			process_close(p);
+		if (!strcmp(*av, "-start")) {
+			process_start(p);
+			continue;
+		}
+		if (!strcmp(*av, "-stop")) {
+			process_kill(p, "TERM");
+			continue;
+		}
+		if (!strcmp(*av, "-wait")) {
+			process_wait(p);
+			continue;
+		}
+		if (!strcmp(*av, "-write")) {
+			process_write(p, av[1]);
+			av++;
+			continue;
+		}
+		if (!strcmp(*av, "-writeln")) {
+			process_write(p, av[1]);
+			process_write(p, "\n");
+			av++;
 			continue;
 		}
 		if (**av == '-')
