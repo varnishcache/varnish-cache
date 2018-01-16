@@ -45,10 +45,17 @@ process p1 "ps -lw | grep '[p][s]' ; tty ; sleep 1" -run -screen_dump
 
 process p2 "stty -a ; sleep 1" -run -screen_dump
 
-process p3 -hexdump {stty raw; echo "*" ; dd bs=254 count=1} -start
+process p3 -hexdump {stty raw; echo "*" ; cat} -start
 
 process p3 -need-bytes 2
 
-process p3 -write "\x1b[H\x1b[2J1\x1b[79C2\x08>\x1b[25;1H3\x1b[25;80H4\x08>\x1b[A\x1b[Cv\x1b[22A^\x1b[79D^\x1b[;2H<\x0a\x0a\x0a\x0a\x0a\x0a\x0a\x0a\x0a\x0a\x0a\x0a\x0a\x0a\x0a\x0a\x0a\x0a\x0a\x0a\x0a\x0a\x0a\x0a\x08<\x1b[24;Hv\x1b[12;1H111111112222222333333\x0d\x0a111111112222222333333\x0d\x0a111111112222222333333\x0d\x0a111111112222222333333\x0d\x0a\x1b[12;12H\x1b[K\x1b[13;12H\x1b[0K\x1b[14;12H\x1b[1K\x1b[15;12H\x1b[2K\x1b[3;1Hline3 <\x0d\x0a"
+process p3 -write "\x1b[H\x1b[2J1\x1b[79C2\x08>\x1b[25;1H3\x1b[25;80H"
+process p3 -write "4\x08>\x1b[A\x1b[Cv\x1b[22A^\x1b[79D^\x1b[;2H<\n\n\n\n"
+process p3 -write "\n\n\n\n\n\n\n\n\x1b[B\x1b[11B\x08<\x1b[24;Hv\x1b[12;1H"
+process p3 -write "111111112222222333333\x0d\x0a111111112"
+process p3 -write "222222333333\x0d\x0a111111112222222333"
+process p3 -write "333\x0d\x0a111111112222222333333\x0d\x0a\x1b[12"
+process p3 -write ";12H\x1b[K\x1b[13;12H\x1b[0K\x1b[14;12H\x1b[1K\x1b"
+process p3 -write "[15;12H\x1b[2K\x1b[3;1Hline3 <\x0d\x0a"
 
-process p3 -need-bytes 256 -screen_dump -wait
+process p3 -need-bytes 252 -screen_dump -stop
