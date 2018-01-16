@@ -324,7 +324,7 @@ process_thread(void *priv)
 	if (p->expect_signal >= 0 && sig != p->expect_signal)
 		vtc_fatal(p->vl, "Expected signal %d got %d",
 			p->expect_signal, sig);
-	else if (sig && sig != p->expect_signal)
+	else if (sig != 0 && sig != -p->expect_signal)
 		vtc_fatal(p->vl, "Expected signal %d got %d",
 			-p->expect_signal, sig);
 	if (ext != p->expect_exit)
