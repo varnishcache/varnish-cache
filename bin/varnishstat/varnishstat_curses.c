@@ -932,9 +932,10 @@ newpt(void *priv, const struct VSC_point *const vpt)
 {
 	struct pt *pt;
 
-	ALLOC_OBJ(pt, PT_MAGIC);
-	AN(pt);
 	AZ(priv);
+	ALLOC_OBJ(pt, PT_MAGIC);
+	rebuild |= 1;
+	AN(pt);
 	pt->vpt = vpt;
 	pt->last = *pt->vpt->ptr;
 	pt->ma_10.nmax = 10;
@@ -964,6 +965,7 @@ delpt(void *priv, const struct VSC_point *const vpt)
 
 	AZ(priv);
 	CAST_OBJ_NOTNULL(pt, vpt->priv, PT_MAGIC);
+	rebuild |= 2;
 	VTAILQ_REMOVE(&ptlist, pt, list);
 	n_ptlist--;
 	FREE_OBJ(pt);
@@ -999,17 +1001,17 @@ do_curses(struct vsm *vsm, struct vsc *vsc, double delay)
 
 	VSC_State(vsc, newpt, delpt, NULL);
 
-	rebuild = VSM_WRK_RESTARTED;
+	(void)VSC_Iter(vsc, vsm, NULL, NULL);
+	build_pt_array();
+	init_hitrate();
+
 	while (keep_running) {
+		(void)VSC_Iter(vsc, vsm, NULL, NULL);
 		vsm_status = VSM_Status(vsm);
-		rebuild |= vsm_status & ~(VSM_MGT_RUNNING|VSM_WRK_RUNNING);
-		if (rebuild) {
-			(void)VSC_Iter(vsc, vsm, NULL, NULL);
-			if (rebuild & (VSM_MGT_RESTARTED|VSM_WRK_RESTARTED))
-				init_hitrate();
+		if (vsm_status & (VSM_MGT_RESTARTED|VSM_WRK_RESTARTED))
+			init_hitrate();
+		if (rebuild)
 			build_pt_array();
-			redraw = 1;
-		}
 
 		now = VTIM_mono();
 		if (now - t_sample > interval)
