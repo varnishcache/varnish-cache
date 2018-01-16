@@ -45,7 +45,7 @@ process p1 "ps -lw | grep '[p][s]' ; tty ; sleep 1" -run -screen_dump
 
 process p2 "stty -a ; sleep 1" -run -screen_dump
 
-process p3 -hexdump {stty raw; echo "*" ; dd bs=254 count=1 | tee /tmp/_1} -start
+process p3 -hexdump {stty raw; echo "*" ; dd bs=254 count=1} -start
 
 process p3 -need-bytes 2
 
