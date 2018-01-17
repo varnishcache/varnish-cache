@@ -1,0 +1,63 @@
+varnishtest "Test max_concurrent_streams"
+
+barrier b1 sock 5
+barrier b2 sock 3
+barrier b3 cond 2
+barrier b4 cond 2
+
+server s1 {
+       rxreq
+       txresp
+} -start
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -cliok "param.set h2_max_concurrent_streams 3"
+
+varnish v1 -vcl+backend {
+	import vtc;
+	sub vcl_deliver {
+		if (req.http.sync) {
+			vtc.barrier_sync("${b1_sock}");
+			vtc.barrier_sync("${b2_sock}");
+		}
+	}
+} -start
+
+client c1 {
+	stream 1 {
+		txreq -hdr "sync" "1"
+		barrier b3 sync
+		barrier b1 sync
+		rxresp
+		expect resp.status == 200
+	} -start
+
+	stream 3 {
+		barrier b3 sync
+		txreq -hdr "sync" "1"
+		barrier b4 sync
+		barrier b1 sync
+		rxresp
+		expect resp.status == 200
+	} -start
+
+	stream 5 {
+		barrier b4 sync
+		barrier b1 sync
+		txreq
+		rxrst
+		expect rst.err == REFUSED_STREAM
+		barrier b2 sync
+	} -run
+
+	stream 1 -wait
+	stream 3 -wait
+
+	stream 7 {
+		txreq
+		rxresp
+		expect resp.status == 200
+	} -run
+
+} -run
