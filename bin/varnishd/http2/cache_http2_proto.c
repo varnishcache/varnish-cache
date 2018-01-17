@@ -804,12 +804,34 @@ h2_frame_complete(struct http_conn *htc)
 /**********************************************************************/
 
 static h2_error
+h2_tx_rst(struct worker *wrk, struct h2_sess *h2, h2_error h2e)
+{
+	h2_error ret;
+	char b[4];
+
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+
+	Lck_Lock(&h2->sess->mtx);
+	VSLb(h2->vsl, SLT_Debug, "H2: stream %u: %s", h2->rxf_stream, h2e->txt);
+	Lck_Unlock(&h2->sess->mtx);
+	vbe32enc(b, h2e->val);
+
+	H2_Send_Get(wrk, h2, h2->req0);
+	ret = H2_Send_Frame(wrk, h2, H2_F_RST_STREAM,
+	    0, sizeof b, h2->rxf_stream, b);
+	H2_Send_Rel(h2, h2->req0);
+
+	return (ret);
+}
+
+/**********************************************************************/
+
+static h2_error
 h2_procframe(struct worker *wrk, struct h2_sess *h2,
     h2_frame h2f)
 {
 	struct h2_req *r2 = NULL, *r22;
 	h2_error h2e;
-	char b[4];
 
 	ASSERT_RXTHR(h2);
 	if (h2->rxf_stream == 0 && h2f->act_szero != 0)
@@ -857,17 +879,7 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2,
 	if (h2->rxf_stream == 0 || h2e->connection)
 		return (h2e);	// Connection errors one level up
 
-	Lck_Lock(&h2->sess->mtx);
-	VSLb(h2->vsl, SLT_Debug, "H2: stream %u: %s", h2->rxf_stream, h2e->txt);
-	Lck_Unlock(&h2->sess->mtx);
-	vbe32enc(b, h2e->val);
-
-	H2_Send_Get(wrk, h2, h2->req0);
-	(void)H2_Send_Frame(wrk, h2, H2_F_RST_STREAM,
-	    0, sizeof b, h2->rxf_stream, b);
-	H2_Send_Rel(h2, h2->req0);
-
-	return (0);
+	return (h2_tx_rst(wrk, h2, h2e));
 }
 
 /***********************************************************************
