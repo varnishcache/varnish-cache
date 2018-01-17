@@ -159,6 +159,55 @@ vsmw_mkent(const struct vsmw *vsmw, const char *pfx)
 
 /*--------------------------------------------------------------------*/
 
+static void
+vsmw_addseg(struct vsmw *vsmw, struct vsmwseg *seg)
+{
+	int fd;
+
+	VTAILQ_INSERT_TAIL(&vsmw->segs, seg, list);
+	fd = openat(vsmw->vdirfd, vsmw->idx, O_APPEND | O_WRONLY);
+	assert(fd >= 0);
+	vsmw_write_index(vsmw, fd, seg);
+	AZ(close(fd));
+}
+
+/*--------------------------------------------------------------------*/
+
+static void
+vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg, int fixidx)
+{
+	char *t = NULL;
+	int fd;
+
+	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
+	CHECK_OBJ_NOTNULL(seg, VSMWSEG_MAGIC);
+
+	if (!--seg->cluster->refs)
+		VSMW_DestroyCluster(vsmw, &seg->cluster);
+
+	VTAILQ_REMOVE(&vsmw->segs, seg, list);
+	REPLACE(seg->class, NULL);
+	REPLACE(seg->id, NULL);
+	FREE_OBJ(seg);
+
+	if (fixidx) {
+		vsmw_mkent(vsmw, vsmw->idx);
+		REPLACE(t, VSB_data(vsmw->vsb));
+		AN(t);
+		fd = openat(vsmw->vdirfd,
+		    t, O_WRONLY|O_CREAT|O_EXCL, vsmw->mode);
+		assert(fd >= 0);
+		vsmw_idx_head(vsmw, fd);
+		VTAILQ_FOREACH(seg, &vsmw->segs, list)
+			vsmw_write_index(vsmw, fd, seg);
+		AZ(close(fd));
+		AZ(renameat(vsmw->vdirfd, t, vsmw->vdirfd, vsmw->idx));
+		REPLACE(t, NULL);
+	}
+}
+
+/*--------------------------------------------------------------------*/
+
 struct vsmw_cluster *
 VSMW_NewCluster(struct vsmw *vsmw, size_t len, const char *pfx)
 {
@@ -225,7 +274,6 @@ VSMW_Allocv(struct vsmw *vsmw, struct vsmw_cluster *vc,
     const char *fmt, va_list va)
 {
 	struct vsmwseg *seg;
-	int fd;
 
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
 	(void)vc;
@@ -251,11 +299,7 @@ VSMW_Allocv(struct vsmw *vsmw, struct vsmw_cluster *vc,
 	assert(vc->next <= vc->len);
 	seg->ptr = seg->off + (char*)vc->ptr;
 
-	VTAILQ_INSERT_TAIL(&vsmw->segs, seg, list);
-	fd = openat(vsmw->vdirfd, vsmw->idx, O_APPEND | O_WRONLY);
-	assert(fd >= 0);
-	vsmw_write_index(vsmw, fd, seg);
-	AZ(close(fd));
+	vsmw_addseg(vsmw, seg);
 
 	return (seg->ptr);
 }
@@ -271,40 +315,6 @@ VSMW_Allocf(struct vsmw *vsmw, struct vsmw_cluster *vc,
 	p = VSMW_Allocv(vsmw, vc, class, len, fmt, ap);
 	va_end(ap);
 	return (p);
-}
-
-/*--------------------------------------------------------------------*/
-static void
-vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg, int fixidx)
-{
-	char *t = NULL;
-	int fd;
-
-	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
-	CHECK_OBJ_NOTNULL(seg, VSMWSEG_MAGIC);
-
-	if (!--seg->cluster->refs)
-		VSMW_DestroyCluster(vsmw, &seg->cluster);
-
-	VTAILQ_REMOVE(&vsmw->segs, seg, list);
-	REPLACE(seg->class, NULL);
-	REPLACE(seg->id, NULL);
-	FREE_OBJ(seg);
-
-	if (fixidx) {
-		vsmw_mkent(vsmw, vsmw->idx);
-		REPLACE(t, VSB_data(vsmw->vsb));
-		AN(t);
-		fd = openat(vsmw->vdirfd,
-		    t, O_WRONLY|O_CREAT|O_EXCL, vsmw->mode);
-		assert(fd >= 0);
-		vsmw_idx_head(vsmw, fd);
-		VTAILQ_FOREACH(seg, &vsmw->segs, list)
-			vsmw_write_index(vsmw, fd, seg);
-		AZ(close(fd));
-		AZ(renameat(vsmw->vdirfd, t, vsmw->vdirfd, vsmw->idx));
-		REPLACE(t, NULL);
-	}
 }
 
 /*--------------------------------------------------------------------*/
