@@ -274,8 +274,13 @@ There are no mandatory options. These are the options you can set:
 
   ``.request``
     Specify a full HTTP request using multiple strings. ``.request`` will
-    have ``\r\n`` automatically inserted after every string. 
+    have ``\r\n`` automatically inserted after every string.
     Mutually exclusive with ``.url``.
+
+    *Note* that probes require the backend to complete sending the
+    response and close the connection within the specified timeout, so
+    ``.request`` will, for ``HTTP/1.1``, most likely need to contain a
+    ``"Connection: close"`` string.
 
   ``.expected_response``
     The expected HTTP response code. Defaults to ``200``.
