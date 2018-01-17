@@ -88,7 +88,8 @@ struct process {
 	int			status;
 
 	struct term		*term;
-
+	int			lin;
+	int			col;
 };
 
 static VTAILQ_HEAD(, process)	processes =
@@ -133,7 +134,9 @@ process_new(const char *name)
 	p->fd_term = -1;
 
 	VTAILQ_INSERT_TAIL(&processes, p, list);
-	p->term = Term_New(p->vl);
+	p->lin = 25;
+	p->col = 80;
+	p->term = Term_New(p->vl, p->lin, p->col);
 	AN(p->term);
 	return (p);
 }
@@ -340,18 +343,26 @@ process_thread(void *priv)
 }
 
 static void
-process_init_term(struct process *p, int fd)
+process_winsz(struct process *p, int fd, int lin, int col)
 {
 	struct winsize ws;
-	struct termios tt;
 	int i;
 
 	memset(&ws, 0, sizeof ws);
-	ws.ws_row = 25;
-	ws.ws_col = 80;
+	ws.ws_row = (short)lin;
+	ws.ws_col = (short)col;
 	i = ioctl(fd, TIOCSWINSZ, &ws);
 	if (i)
 		vtc_log(p->vl, 4, "TIOCWINSZ %d %s", i, strerror(errno));
+}
+
+static void
+process_init_term(struct process *p, int fd)
+{
+	struct termios tt;
+	int i;
+
+	process_winsz(p, fd, p->lin, p->col);
 
 	memset(&tt, 0, sizeof tt);
 	tt.c_cflag = CREAD | CS8 | HUPCL;
@@ -750,6 +761,15 @@ cmd_process(CMD_ARGS)
 		if (!strcmp(*av, "-wait")) {
 			process_wait(p);
 			continue;
+		}
+		if (!strcmp(*av, "-winsz")) {
+			p->lin = atoi(av[1]);
+			assert(p->lin > 1);
+			p->col = atoi(av[2]);
+			assert(p->col > 1);
+			av += 2;
+			Term_SetSize(p->term, p->lin, p->col);
+			process_winsz(p, p->fd_term, p->lin, p->col);
 		}
 		if (!strcmp(*av, "-write")) {
 			process_write(p, av[1]);

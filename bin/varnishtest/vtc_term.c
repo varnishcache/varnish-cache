@@ -53,13 +53,13 @@ struct term {
 };
 
 static void
-term_clear(const struct term *tp)
+term_clear(char * const *vram, int lin, int col)
 {
 	int i;
 
-	for (i = 0; i < tp->nlin; i++) {
-		memset(tp->vram[i], ' ', tp->ncol);
-		tp->vram[i][tp->ncol] = '\0';
+	for (i = 0; i < lin; i++) {
+		memset(vram[i], ' ', col);
+		vram[i][col] = '\0';
 	}
 }
 
@@ -126,7 +126,9 @@ term_escape(struct term *tp, int c, int n)
 			tp->col = 0;
 		break;
 	case 'h':
-		// SM - Set Mode (ignored XXX?)
+		// SM - Set Mode (mostly ignored XXX?)
+		tp->col = 0;
+		tp->line = 0;
 		break;
 	case 'H':
 		// CUP - Cursor Position
@@ -142,7 +144,7 @@ term_escape(struct term *tp, int c, int n)
 		// ED - Erase in Display (0=below, 1=above, 2=all)
 		switch(tp->arg[0]) {
 		case 2:
-			term_clear(tp);
+			term_clear(tp->vram, tp->nlin, tp->ncol);
 			break;
 		default:
 			vtc_fatal(tp->vl, "ANSI J[%d]", tp->arg[0]);
@@ -213,8 +215,10 @@ term_char(struct term *tp, char c)
 		if (c < ' ' || c > '~')
 			c = '?';
 		tp->vram[tp->line][tp->col++] = c;
-		if (tp->col >= tp->ncol)
-			tp->col = tp->ncol - 1;
+		if (tp->col >= tp->ncol) {
+			tp->col = 0;
+			term_char(tp, '\n');
+		}
 	}
 }
 
@@ -277,24 +281,46 @@ Term_Feed(struct term *tp, const char *b, const char *e)
 	}
 }
 
+void
+Term_SetSize(struct term *tp, int lin, int col)
+{
+	char **vram;
+	int i, j;
+
+	vram = calloc(lin, sizeof *tp->vram);
+	AN(vram);
+	for (i = 0; i < lin; i++) {
+		vram[i] = malloc(col + 1L);
+		AN(vram[i]);
+	}
+	term_clear(vram, lin, col);
+	if (tp->vram != NULL) {
+		for (i = 0; i < lin; i++) {
+			if (i >= tp->nlin)
+				break;
+			j = col;
+			if (j > tp->ncol)
+				j = tp->ncol;
+			memcpy(vram[i], tp->vram[i], j);
+		}
+		for (i = 0; i < tp->nlin; i++)
+			free(tp->vram[i]);
+		free(tp->vram);
+	}
+	tp->vram = vram;
+	tp->nlin = lin;
+	tp->ncol = col;
+}
+
 struct term *
-Term_New(struct vtclog *vl)
+Term_New(struct vtclog *vl, int lin, int col)
 {
 	struct term *tp;
-	int i;
 
 	ALLOC_OBJ(tp, TERM_MAGIC);
 	AN(tp);
 	tp->vl = vl;
-	tp->nlin = 25;
-	tp->ncol = 80;
-	tp->vram = calloc(tp->nlin, sizeof *tp->vram);
-	AN(tp->vram);
-	for (i = 0; i < tp->nlin; i++) {
-		tp->vram[i] = malloc(tp->ncol + 1L);
-		AN(tp->vram[i]);
-	}
-	term_clear(tp);
+	Term_SetSize(tp, lin, col);
 	tp->line = tp->nlin - 1;
 	return (tp);
 }
