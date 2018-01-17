@@ -73,50 +73,60 @@ git repository by doing.
 Build dependencies on Debian / Ubuntu
 --------------------------------------
 
-In order to build Varnish from source you need a number of packages
-installed. On a Debian or Ubuntu system these are:
-
 ..  grep-dctrl -n -sBuild-Depends -r ^ ../../../../varnish-cache-debian/control | tr -d '\n' | awk -F,\  '{ for (i = 0; ++i <= NF;) { sub (/ .*/, "", $i); print "* `" $i "`"; }}' | egrep -v '(debhelper)'
 
-* `make`
-* `automake`
-* `autotools-dev`
-* `libedit-dev`
-* `libjemalloc-dev`
-* `libncurses-dev`
-* `libpcre3-dev`
-* `libtool`
-* `pkg-config`
-* `python-docutils`
-* `python-sphinx`
+In order to build Varnish from source you need a number of packages
+installed. On a Debian or Ubuntu system, use this command to install
+them (replace ``sudo apt-get install`` if needed)::
 
-Optionally, to rebuild the svg files:
+    sudo apt-get install \
+	make \
+	automake \
+	autotools-dev \
+	libedit-dev \
+	libjemalloc-dev \
+	libncurses-dev \
+	libpcre3-dev \
+	libtool \
+	pkg-config \
+	python-docutils \
+	python-sphinx
 
-* `graphviz`
+Optionally, to rebuild the svg files::
+
+    sudo apt-get install graphviz
+
+Recommended, in particular if you plan on building custom vmods::
+
+    sudo apt-get install autoconf-archive
 
 Build dependencies on Red Hat / CentOS
 --------------------------------------
 
-To build Varnish on a Red Hat or CentOS system you need the following
-packages installed:
-
 .. gawk '/^BuildRequires/ {print "* `" $2 "`"}' ../../../redhat/varnish.spec | sort | uniq | egrep -v '(systemd)'
 
-* `make`
-* `autoconf`
-* `automake`
-* `jemalloc-devel`
-* `libedit-devel`
-* `libtool`
-* `ncurses-devel`
-* `pcre-devel`
-* `pkgconfig`
-* `python-docutils`
-* `python-sphinx`
+To build Varnish on a Red Hat or CentOS system, this command should
+install required packages (replace ``sudo yum install`` if needed)::
 
-Optionally, to rebuild the svg files:
+    sudo yum install \
+	make \
+	autoconf \
+	automake \
+	jemalloc-devel \
+	libedit-devel \
+	libtool \
+	ncurses-devel \
+	pcre-devel \
+	pkgconfig \
+	python-docutils \
+	python-sphinx
 
-* `graphviz`
+Optionally, to rebuild the svg files::
+
+    yum install graphviz
+
+.. XXX autoconf-archive ? is this any helpful on the notoriously
+   outdated Redhats?
 
 Build dependencies on a SmartOS Zone
 ------------------------------------
