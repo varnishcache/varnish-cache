@@ -418,9 +418,7 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 		return (retval|VSM_NUKE_ALL);
 
 	/*
-	 * Examine the ident line
-	 * XXX: for now ignore that one of the ID's is a pid which could
-	 * XXX: be kill(pid,0)'ed for more rapid abandonment detection.
+	 * First line is ident comment
 	 */
 	i = sscanf(VSB_data(vsb), "# %ju %ju\n%n", &id1, &id2, &ac);
 	if (i != 2) {
@@ -445,7 +443,7 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 		vg->markscan = 0;
 
 	/*
-	 * Efficient comparison walking the two lists side-by-side is ok because
+	 * Efficient comparison by walking the two lists side-by-side because
 	 * segment inserts always happen at the tail (VSMW_Allocv()). So, as
 	 * soon as vg is exhausted, we only insert.
 	 *
@@ -465,12 +463,16 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 		av = VAV_Parse(p, &ac, 0);
 		p = e + 1;
 
-		if (av[0] != NULL || ac < 5 || ac > 6) {
+		if (av[0] != NULL || ac < 4 || ac > 6) {
 			(void)(vsm_diag(vd,
 			    "vsm_refresh_set2: bad index (%d/%s)",
 			    ac, av[0]));
 			VAV_Free(av);
 			break;
+		}
+		if (ac == 4) {
+			VAV_Free(av);
+			continue;
 		}
 
 		if (vg == NULL) {

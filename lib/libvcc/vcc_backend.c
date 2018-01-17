@@ -506,5 +506,5 @@ vcc_Backend_Init(struct vcc *tl)
 	VSB_printf(ifp->ini, "\tvsc_cluster = VRT_VSM_Cluster_New(ctx,\n"
 	    "\t    ndirector * VRT_backend_vsm_need(ctx));\n");
 	VSB_printf(ifp->ini, "\tif (vsc_cluster == 0)\n\t\treturn(1);");
-	VSB_printf(ifp->fin, "\tVRT_VSM_Cluster_Destroy(ctx, &vsc_cluster);");
+	VSB_printf(ifp->fin, "\t\tVRT_VSM_Cluster_Destroy(ctx, &vsc_cluster);");
 }

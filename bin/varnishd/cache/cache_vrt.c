@@ -650,8 +650,7 @@ VRT_VSM_Cluster_Destroy(VRT_CTX, struct vsmw_cluster **vcp)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	AN(vcp);
-	AN(*vcp);
-	*vcp = NULL;
+	VSMW_DestroyCluster(heritage.proc_vsmw, vcp);
 }
 
 /*--------------------------------------------------------------------

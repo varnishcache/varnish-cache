@@ -72,6 +72,7 @@ struct vsmw_cluster {
 #define VSMW_CLUSTER_MAGIC		0x28b74c00
 
 	VTAILQ_ENTRY(vsmw_cluster)	list;
+	struct vsmwseg			*cseg;
 	char				*fn;
 	size_t				len;
 	void				*ptr;
@@ -182,9 +183,6 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg, int fixidx)
 	CHECK_OBJ_NOTNULL(vsmw, VSMW_MAGIC);
 	CHECK_OBJ_NOTNULL(seg, VSMWSEG_MAGIC);
 
-	if (!--seg->cluster->refs)
-		VSMW_DestroyCluster(vsmw, &seg->cluster);
-
 	VTAILQ_REMOVE(&vsmw->segs, seg, list);
 	REPLACE(seg->class, NULL);
 	REPLACE(seg->id, NULL);
@@ -208,8 +206,8 @@ vsmw_delseg(struct vsmw *vsmw, struct vsmwseg *seg, int fixidx)
 
 /*--------------------------------------------------------------------*/
 
-struct vsmw_cluster *
-VSMW_NewCluster(struct vsmw *vsmw, size_t len, const char *pfx)
+static struct vsmw_cluster *
+vsmw_newcluster(struct vsmw *vsmw, size_t len, const char *pfx)
 {
 	struct vsmw_cluster *vc;
 	int fd;
@@ -245,6 +243,26 @@ VSMW_NewCluster(struct vsmw *vsmw, size_t len, const char *pfx)
 	return (vc);
 }
 
+struct vsmw_cluster *
+VSMW_NewCluster(struct vsmw *vsmw, size_t len, const char *pfx)
+{
+	struct vsmw_cluster *vc;
+	struct vsmwseg *seg;
+
+	vc = vsmw_newcluster(vsmw, len, pfx);
+
+	ALLOC_OBJ(seg, VSMWSEG_MAGIC);
+	AN(seg);
+	vc->cseg = seg;
+	seg->len = len;
+	seg->cluster = vc;
+	REPLACE(seg->class, "");
+	REPLACE(seg->id, "");
+	vsmw_addseg(vsmw, seg);
+
+	return (vc);
+}
+
 void
 VSMW_DestroyCluster(struct vsmw *vsmw, struct vsmw_cluster **vcp)
 {
@@ -255,10 +273,22 @@ VSMW_DestroyCluster(struct vsmw *vsmw, struct vsmw_cluster **vcp)
 	vc = *vcp;
 	*vcp = NULL;
 	CHECK_OBJ_NOTNULL(vc, VSMW_CLUSTER_MAGIC);
-	AZ(vc->refs);
 
+	if (vc->cseg != NULL) {
+		/*
+		 * Backends go on the cool list, so the VGC cluster is
+		 * destroyed before they are.  Solve this by turning the
+		 * cluster into an anonymous cluster which dies with the
+		 * refcount on it.
+		 */
+		vsmw_delseg(vsmw, vc->cseg, 1);
+		vc->cseg = NULL;
+		if (vc->refs > 0)
+			return;
+	}
 	AZ(munmap(vc->ptr, vc->len));
 
+	AZ(vc->refs);
 	VTAILQ_REMOVE(&vsmw->clusters, vc, list);
 	if (unlinkat(vsmw->vdirfd, vc->fn, 0))
 		assert (errno == ENOENT);
@@ -289,7 +319,7 @@ VSMW_Allocv(struct vsmw *vsmw, struct vsmw_cluster *vc,
 	REPLACE(seg->id, VSB_data(vsmw->vsb));
 
 	if (vc == NULL)
-		vc = VSMW_NewCluster(vsmw, seg->len, class);
+		vc = vsmw_newcluster(vsmw, seg->len, class);
 	AN(vc);
 	vc->refs++;
 
@@ -334,6 +364,10 @@ VSMW_Free(struct vsmw *vsmw, void **pp)
 		if (seg->ptr == p)
 			break;
 	AN(seg);
+
+	if (!--seg->cluster->refs && seg->cluster->cseg == NULL)
+		VSMW_DestroyCluster(vsmw, &seg->cluster);
+
 	vsmw_delseg(vsmw, seg, 1);
 }
 
