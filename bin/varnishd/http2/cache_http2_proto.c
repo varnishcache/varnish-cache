@@ -864,6 +864,13 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2,
 	if (r2 == NULL && h2f->act_sidle == 0) {
 		if (h2->rxf_stream <= h2->highest_stream)
 			return (H2CE_PROTOCOL_ERROR);	// rfc7540,l,1153,1158
+		if (h2->refcnt >= h2->local_settings.max_concurrent_streams) {
+			VSLb(h2->vsl, SLT_Debug,
+			     "H2: stream %u: Hit maximum number of "
+			     "concurrent streams", h2->rxf_stream);
+			// rfc7540,l,1200,1205
+			return (h2_tx_rst(wrk, h2, H2SE_REFUSED_STREAM));
+		}
 		h2->highest_stream = h2->rxf_stream;
 		r2 = h2_new_req(wrk, h2, h2->rxf_stream, NULL);
 		AN(r2);
