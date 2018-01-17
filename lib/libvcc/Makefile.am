@@ -39,9 +39,23 @@ dist_pkgdata_SCRIPTS = \
 	vmodtool.py \
 	vsctool.py
 
-vcc_obj.c vcc_fixed_token.c vcc_token_defs.h: \
-	$(top_builddir)/include/vcl.h
+## keep in sync with include/Makefile.am
+vcc_obj.c: \
+	    $(top_srcdir)/lib/libvcc/generate.py \
+	    $(top_srcdir)/include/vdef.h \
+	    $(top_srcdir)/include/vrt.h
+	mkdir -p $(top_builddir)/include/tbl
+	@PYTHON@ $(top_srcdir)/lib/libvcc/generate.py \
+	    $(top_srcdir) $(top_builddir)
 
-CLEANFILES = $(builddir)/vcc_token_defs.h \
-	$(builddir)/vcc_fixed_token.c \
-	$(builddir)/vcc_obj.c
+GEN_H = \
+	vcc_fixed_token.c \
+	vcc_token_defs.h
+
+$(GEN_H): vcc_obj.c
+
+GENERATED_H = vcc_obj.c $(GEN_H)
+
+BUILT_SOURCES = $(GENERATED_H)
+
+MAINTAINERCLEANFILES = $(GENERATED_H)

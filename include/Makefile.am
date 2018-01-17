@@ -98,11 +98,12 @@ nobase_noinst_HEADERS = \
 	vtcp.h \
 	vtree.h
 
+## keep in sync with lib/libvcc/Makefile.am
 vmod_abi.h: \
 	    $(top_srcdir)/lib/libvcc/generate.py \
 	    $(top_srcdir)/include/vdef.h \
 	    $(top_srcdir)/include/vrt.h
-	mkdir -p tbl
+	mkdir -p $(top_builddir)/include/tbl
 	@PYTHON@ $(top_srcdir)/lib/libvcc/generate.py \
 	    $(top_srcdir) $(top_builddir)
 
