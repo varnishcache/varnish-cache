@@ -119,10 +119,10 @@ $(GEN_H): vmod_abi.h
 GENERATED_H = vmod_abi.h $(GEN_H)
 
 BUILT_SOURCES = $(GENERATED_H)
-MAINTAINERCLEANFILES = vcs_version.h
+
+MAINTAINERCLEANFILES = $(GENERATED_H)
 
 CLEANFILES = \
-	$(GENERATED_H) \
 	vrt_test \
 	_vrt_test \
 	_vrt.c
