@@ -326,15 +326,21 @@ h2_new_session(struct worker *wrk, void *arg)
 	assert(HTC_S_COMPLETE == H2_prism_complete(h2->htc));
 	HTC_RxPipeline(h2->htc, h2->htc->rxbuf_b + sizeof(H2_prism));
 	HTC_RxInit(h2->htc, h2->ws);
+	AN(h2->ws->r);
 	VSLb(h2->vsl, SLT_Debug, "H2: Got pu PRISM");
 
 	THR_SetRequest(h2->srq);
+	AN(h2->ws->r);
 
 	l = h2_enc_settings(&h2->local_settings, settings, sizeof (settings));
+	AN(h2->ws->r);
 	H2_Send_Get(wrk, h2, h2->req0);
+	AN(h2->ws->r);
 	H2_Send_Frame(wrk, h2,
 	    H2_F_SETTINGS, H2FF_NONE, l, 0, settings);
+	AN(h2->ws->r);
 	H2_Send_Rel(h2, h2->req0);
+	AN(h2->ws->r);
 
 	/* and off we go... */
 	h2->cond = &wrk->cond;
@@ -347,6 +353,7 @@ h2_new_session(struct worker *wrk, void *arg)
 			h2->error = H2CE_INTERNAL_ERROR;
 			break;
 		}
+		AN(h2->ws->r);
 	}
 
 	AN(h2->error);
