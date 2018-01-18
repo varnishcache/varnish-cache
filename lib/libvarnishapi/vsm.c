@@ -79,8 +79,10 @@ struct vsm_seg {
 	unsigned		flags;
 #define VSM_FLAG_MARKSCAN	(1U<<0)
 #define VSM_FLAG_STALE		(1U<<1)
+#define VSM_FLAG_CLUSTER	(1U<<2)
 	VTAILQ_ENTRY(vsm_seg)	list;
 	struct vsm_set		*set;
+	struct vsm_seg		*cluster;
 	char			**av;
 	int			refs;
 	void			*s;
@@ -96,6 +98,7 @@ struct vsm_set {
 	const char		*dname;
 	VTAILQ_HEAD(,vsm_seg)	segs;
 	VTAILQ_HEAD(,vsm_seg)	stale;
+	VTAILQ_HEAD(,vsm_seg)	clusters;
 
 	int			dfd;
 	struct stat		dst;
@@ -158,9 +161,17 @@ vsm_mapseg(struct vsm *vd, struct vsm_seg *vg)
 
 	CHECK_OBJ_NOTNULL(vg, VSM_SEG_MAGIC);
 
+	if (vg->s != NULL)
+		return (0);
+
 	ps = getpagesize();
+
 	of = strtoul(vg->av[2], NULL, 10);
 	off = RDN2(of, ps);
+
+	if (vg->flags & VSM_FLAG_CLUSTER)
+		assert(of == 0);
+	assert(vg->cluster == NULL);
 
 	sz = strtoul(vg->av[3], NULL, 10);
 	assert(sz > 0);
@@ -217,11 +228,13 @@ vsm_delseg(struct vsm_seg *vg)
 
 	CHECK_OBJ_NOTNULL(vg, VSM_SEG_MAGIC);
 
-	if (vg->b != NULL)
+	if (vg->s != NULL)
 		vsm_unmapseg(vg);
 
 	if (vg->flags & VSM_FLAG_STALE)
 		VTAILQ_REMOVE(&vg->set->stale, vg, list);
+	else if (vg->flags & VSM_FLAG_CLUSTER)
+		VTAILQ_REMOVE(&vg->set->clusters, vg, list);
 	else
 		VTAILQ_REMOVE(&vg->set->segs, vg, list);
 	VAV_Free(vg->av);
@@ -239,6 +252,7 @@ vsm_newset(const char *dirname)
 	AN(vs);
 	VTAILQ_INIT(&vs->segs);
 	VTAILQ_INIT(&vs->stale);
+	VTAILQ_INIT(&vs->clusters);
 	vs->dname = dirname;
 	vs->dfd = vs->fd = -1;
 	return (vs);
@@ -260,6 +274,8 @@ vsm_delset(struct vsm_set **p)
 		vsm_delseg(VTAILQ_FIRST(&vs->stale));
 	while (!VTAILQ_EMPTY(&vs->segs))
 		vsm_delseg(VTAILQ_FIRST(&vs->segs));
+	while (!VTAILQ_EMPTY(&vs->clusters))
+		vsm_delseg(VTAILQ_FIRST(&vs->clusters));
 	FREE_OBJ(vs);
 }
 
@@ -385,6 +401,21 @@ vsm_cmp_av(char * const *a1, char * const *a2)
 		a1++;
 		a2++;
 	}
+}
+
+static struct vsm_seg *
+vsm_findcluster(const struct vsm_seg *vga)
+{
+	const struct vsm_set *vs = vga->set;
+	struct vsm_seg *vg;
+	AN(vs);
+	AN(vga->av[1]);
+	VTAILQ_FOREACH(vg, &vs->clusters, list) {
+		AN(vg->av[1]);
+		if (! strcmp(vga->av[1], vg->av[1]))
+			return (vg);
+	}
+	return (NULL);
 }
 
 static unsigned
@@ -518,10 +549,6 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 			VAV_Free(av);
 			break;
 		}
-		if (ac == 4) {
-			VAV_Free(av);
-			continue;
-		}
 
 		if (vg == NULL) {
 			ALLOC_OBJ(vg2, VSM_SEG_MAGIC);
@@ -530,7 +557,13 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 			vg2->set = vs;
 			vg2->flags = VSM_FLAG_MARKSCAN;
 			vg2->serial = ++vd->serial;
-			VTAILQ_INSERT_TAIL(&vs->segs, vg2, list);
+			if (ac == 4) {
+				vg2->flags |= VSM_FLAG_CLUSTER;
+				VTAILQ_INSERT_TAIL(&vs->clusters, vg2, list);
+			} else {
+				VTAILQ_INSERT_TAIL(&vs->segs, vg2, list);
+				vg2->cluster = vsm_findcluster(vg2);
+			}
 			continue;
 		}
 
@@ -738,7 +771,8 @@ VSM__itern(struct vsm *vd, struct vsm_fantom *vf)
 int
 VSM_Map(struct vsm *vd, struct vsm_fantom *vf)
 {
-	struct vsm_seg *vg;
+	struct vsm_seg *vg, *vgc;
+	size_t of, sz;
 	int r;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
@@ -761,10 +795,39 @@ VSM_Map(struct vsm *vd, struct vsm_fantom *vf)
 		return (0);
 	}
 
-	r = vsm_mapseg(vd, vg);
+	assert(vg->refs == 0);
 
+	vgc = vg->cluster;
+
+	if (vgc == NULL) {
+		r = vsm_mapseg(vd, vg);
+		if (r)
+			return (r);
+		vf->b = vg->b;
+		vf->e = vg->e;
+
+		vg->refs++;
+
+		return (0);
+	}
+
+	assert(vgc->flags & VSM_FLAG_CLUSTER);
+	assert(vg->s == NULL);
+	assert(vg->sz == 0);
+
+	r = vsm_mapseg(vd, vgc);
 	if (r)
 		return (r);
+	vgc->refs++;
+
+	of = strtoul(vg->av[2], NULL, 10);
+	sz = strtoul(vg->av[3], NULL, 10);
+	assert(sz > 0);
+
+	assert(vgc->sz >= of + sz);
+	assert(vgc->s == vgc->b);
+	vg->b = (char *)vgc->b + of;
+	vg->e = (char *)vg->b + sz;
 
 	vf->b = vg->b;
 	vf->e = vg->e;
@@ -794,7 +857,17 @@ VSM_Unmap(struct vsm *vd, struct vsm_fantom *vf)
 	vf->e = NULL;
 	if (vg->refs > 0)
 		return(0);
-	vsm_unmapseg(vg);
+
+	if (vg->cluster) {
+		assert(vg->s == NULL);
+		assert(vg->sz == 0);
+		assert(vg->cluster->refs > 0);
+		if (--vg->cluster->refs == 0)
+			vsm_unmapseg(vg->cluster);
+		vg->b = vg->e = NULL;
+	} else {
+		vsm_unmapseg(vg);
+	}
 	if (vg->flags & VSM_FLAG_STALE)
 		vsm_delseg(vg);
 	return (0);
