@@ -40,7 +40,6 @@
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
-#include <math.h>
 
 #include "compat/daemon.h"
 #include "vdef.h"
