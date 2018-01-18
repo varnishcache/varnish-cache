@@ -378,7 +378,10 @@ main(int argc, char **argv)
 
 	VUT_Signal(vut_sighandler);
 	VUT_Setup(vut);
-	ident = VSM_Dup(vut->vsm, "Arg", "-i");
+	if (vut->vsm)
+		ident = VSM_Dup(vut->vsm, "Arg", "-i");
+	else
+		ident = strdup("");
 	if (!once) {
 		if (pthread_create(&thr, NULL, do_curses, NULL) != 0) {
 			fprintf(stderr, "pthread_create(): %s\n",

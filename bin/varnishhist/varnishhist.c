@@ -621,7 +621,10 @@ main(int argc, char **argv)
 
 	VUT_Signal(vut_sighandler);
 	VUT_Setup(vut);
-	ident = VSM_Dup(vut->vsm, "Arg", "-i");
+	if (vut->vsm)
+		ident = VSM_Dup(vut->vsm, "Arg", "-i");
+	else
+		ident = strdup("");
 	if (pthread_create(&thr, NULL, do_curses, NULL) != 0)
 		VUT_Error(vut, 1, "pthread_create(): %s", strerror(errno));
 	vut->dispatch_f = accumulate;
