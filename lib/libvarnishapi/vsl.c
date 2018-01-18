@@ -40,7 +40,6 @@
 #include "miniobj.h"
 
 #include "vbm.h"
-#include "vmb.h"
 #include "vqueue.h"
 #include "vre.h"
 #include "vsb.h"
