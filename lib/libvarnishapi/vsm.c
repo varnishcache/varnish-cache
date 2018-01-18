@@ -76,9 +76,10 @@ struct vsm_set;
 struct vsm_seg {
 	unsigned		magic;
 #define VSM_SEG_MAGIC		0xeb6c6dfd
+	unsigned		flags;
+#define VSM_FLAG_MARKSCAN	(1U<<0)
+#define VSM_FLAG_STALE		(1U<<1)
 	VTAILQ_ENTRY(vsm_seg)	list;
-	int			markscan;
-	int			stale;
 	struct vsm_set		*set;
 	char			**av;
 	int			refs;
@@ -219,7 +220,7 @@ vsm_delseg(struct vsm_seg *vg)
 	if (vg->b != NULL)
 		vsm_unmapseg(vg);
 
-	if (vg->stale)
+	if (vg->flags & VSM_FLAG_STALE)
 		VTAILQ_REMOVE(&vg->set->stale, vg, list);
 	else
 		VTAILQ_REMOVE(&vg->set->segs, vg, list);
@@ -487,7 +488,7 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 	p = VSB_data(vsb) + ac;
 
 	VTAILQ_FOREACH(vg, &vs->segs, list)
-		vg->markscan = 0;
+		vg->flags &= ~VSM_FLAG_MARKSCAN;
 
 	/*
 	 * Efficient comparison by walking the two lists side-by-side because
@@ -527,7 +528,7 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 			AN(vg2);
 			vg2->av = av;
 			vg2->set = vs;
-			vg2->markscan = 1;
+			vg2->flags = VSM_FLAG_MARKSCAN;
 			vg2->serial = ++vd->serial;
 			VTAILQ_INSERT_TAIL(&vs->segs, vg2, list);
 			continue;
@@ -542,7 +543,7 @@ vsm_refresh_set2(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 			continue;
 
 		/* entry compared equal, so it survives */
-		vg->markscan = 1;
+		vg->flags |= VSM_FLAG_MARKSCAN;
 		vg = VTAILQ_NEXT(vg, list);
 	}
 	return (retval);
@@ -558,10 +559,11 @@ vsm_refresh_set(struct vsm *vd, struct vsm_set *vs, struct vsb *vsb)
 	if (retval & VSM_NUKE_ALL)
 		retval |= VSM_MGT_CHANGED;
 	VTAILQ_FOREACH_SAFE(vg, &vs->segs, list, vg2) {
-		if (!vg->markscan || (retval & VSM_NUKE_ALL)) {
+		if ((vg->flags & VSM_FLAG_MARKSCAN) == 0 ||
+		    (retval & VSM_NUKE_ALL)) {
 			VTAILQ_REMOVE(&vs->segs, vg, list);
 			if (vg->refs) {
-				vg->stale = 1;
+				vg->flags |= VSM_FLAG_STALE;
 				VTAILQ_INSERT_TAIL(&vs->stale, vg, list);
 			} else {
 				VAV_Free(vg->av);
@@ -793,7 +795,7 @@ VSM_Unmap(struct vsm *vd, struct vsm_fantom *vf)
 	if (vg->refs > 0)
 		return(0);
 	vsm_unmapseg(vg);
-	if (vg->stale)
+	if (vg->flags & VSM_FLAG_STALE)
 		vsm_delseg(vg);
 	return (0);
 }
@@ -808,7 +810,7 @@ VSM_StillValid(const struct vsm *vd, const struct vsm_fantom *vf)
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AN(vf);
 	vg = vsm_findseg(vd, vf);
-	if (vg == NULL || vg->stale)
+	if (vg == NULL || vg->flags & VSM_FLAG_STALE)
 		return (VSM_invalid);
 	return (VSM_valid);
 }
