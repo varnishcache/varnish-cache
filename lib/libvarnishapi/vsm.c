@@ -148,6 +148,53 @@ vsm_diag(struct vsm *vd, const char *fmt, ...)
 
 /*--------------------------------------------------------------------*/
 
+static int
+vsm_mapseg(struct vsm *vd, struct vsm_seg *vg)
+{
+	size_t of, off, sz, ps, len;
+	struct vsb *vsb;
+	int fd;
+
+	CHECK_OBJ_NOTNULL(vg, VSM_SEG_MAGIC);
+
+	ps = getpagesize();
+	of = strtoul(vg->av[2], NULL, 10);
+	off = RDN2(of, ps);
+
+	sz = strtoul(vg->av[3], NULL, 10);
+	assert(sz > 0);
+	assert(of >= off);
+	len = RUP2(of - off + sz, ps);
+
+	vsb = VSB_new_auto();
+	AN(vsb);
+	VSB_printf(vsb, "%s/%s/%s", vd->dname, vg->set->dname, vg->av[1]);
+	AZ(VSB_finish(vsb));
+
+	fd = open(VSB_data(vsb), O_RDONLY);	// XXX: openat
+	if (fd < 0) {
+		VSB_destroy(&vsb);
+		return (vsm_diag(vd, "Could not open segment"));
+	}
+
+	vg->s = (void*)mmap(NULL, len,
+	    PROT_READ,
+	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
+	    fd, (off_t)off);
+
+	VSB_destroy(&vsb);
+
+	closefd(&fd);
+	if (vg->s == MAP_FAILED)
+		return (vsm_diag(vd, "Could not mmap segment"));
+
+	vg->b = (char*)(vg->s) + of - off;
+	vg->e = (char *)vg->b + sz;
+	vg->sz = len;
+
+	return (0);
+}
+
 static void
 vsm_unmapseg(struct vsm_seg *vg)
 {
@@ -690,9 +737,7 @@ int
 VSM_Map(struct vsm *vd, struct vsm_fantom *vf)
 {
 	struct vsm_seg *vg;
-	size_t of, off, sz, ps, len;
-	struct vsb *vsb;
-	int fd;
+	int r;
 
 	CHECK_OBJ_NOTNULL(vd, VSM_MAGIC);
 	AN(vd->attached);
@@ -714,40 +759,10 @@ VSM_Map(struct vsm *vd, struct vsm_fantom *vf)
 		return (0);
 	}
 
-	ps = getpagesize();
-	of = strtoul(vg->av[2], NULL, 10);
-	off = RDN2(of, ps);
+	r = vsm_mapseg(vd, vg);
 
-	sz = strtoul(vg->av[3], NULL, 10);
-	assert(sz > 0);
-	assert(of >= off);
-	len = RUP2(of - off + sz, ps);
-
-	vsb = VSB_new_auto();
-	AN(vsb);
-	VSB_printf(vsb, "%s/%s/%s", vd->dname, vg->set->dname, vg->av[1]);
-	AZ(VSB_finish(vsb));
-
-	fd = open(VSB_data(vsb), O_RDONLY);	// XXX: openat
-	if (fd < 0) {
-		VSB_destroy(&vsb);
-		return (vsm_diag(vd, "Could not open segment"));
-	}
-
-	vg->s = (void*)mmap(NULL, len,
-	    PROT_READ,
-	    MAP_HASSEMAPHORE | MAP_NOSYNC | MAP_SHARED,
-	    fd, (off_t)off);
-
-	VSB_destroy(&vsb);
-
-	closefd(&fd);
-	if (vg->s == MAP_FAILED)
-		return (vsm_diag(vd, "Could not mmap segment"));
-
-	vg->b = (char*)(vg->s) + of - off;
-	vg->e = (char *)vg->b + sz;
-	vg->sz = len;
+	if (r)
+		return (r);
 
 	vf->b = vg->b;
 	vf->e = vg->e;
