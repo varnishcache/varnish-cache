@@ -1,0 +1,31 @@
+varnishtest "2359: H/2 Avoid RxStuff with a non-reserved WS"
+
+barrier b1 sock 2
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -cliok "param.set feature +http2"
+varnish v1 -cliok "param.set timeout_idle 1"
+
+varnish v1 -vcl+backend {
+	import vtc;
+
+	sub vcl_deliver {
+		vtc.barrier_sync("${b1_sock}");
+	}
+} -start
+
+client c1 {
+	stream 1 {
+		txreq
+		rxresp
+		expect resp.status == 200
+	} -start
+
+	delay 3
+	barrier b1 sync
+	stream 1 -wait
+} -run
