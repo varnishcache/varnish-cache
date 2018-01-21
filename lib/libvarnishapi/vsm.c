@@ -412,7 +412,7 @@ vsm_findcluster(const struct vsm_seg *vga)
 	AN(vga->av[1]);
 	VTAILQ_FOREACH(vg, &vs->clusters, list) {
 		AN(vg->av[1]);
-		if (! strcmp(vga->av[1], vg->av[1]))
+		if (!strcmp(vga->av[1], vg->av[1]))
 			return (vg);
 	}
 	return (NULL);

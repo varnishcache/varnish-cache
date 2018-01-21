@@ -65,7 +65,7 @@ def genhdr(fo, name):
 	fo.write('/*\n')
 	fo.write(' * NB:  This file is machine generated, DO NOT EDIT!\n')
 	fo.write(' *\n')
-	fo.write(' * Edit ' + name + 
+	fo.write(' * Edit ' + name +
 	    '.vsc and run lib/libvcc/vsctool.py instead.\n')
 	fo.write(' */\n')
 	fo.write('\n')
@@ -143,7 +143,7 @@ class vscset(object):
 		fo.write("};\n")
 		fo.write("\n")
 
-		fo.write("#define VSC_" + self.name + 
+		fo.write("#define VSC_" + self.name +
 		    "_size PRNDUP(sizeof(" + self.struct + "))\n\n")
 
 		fo.write(self.struct + " *VSC_" + self.name + "_New")
@@ -178,7 +178,7 @@ class vscset(object):
 		fo.write("    _Static_assert(\t\t\t\t\\\n")
 		fo.write("\toffsetof(" + self.struct + ", a) == n,\t\\\n")
 		fo.write("\t\"VSC element '\" #a \"' at wrong offset\")\n\n")
-		
+
 		for i in self.mbrs:
 			fo.write("PARANOIA(" + i.arg)
 			fo.write(", %d);\n" % (i.param["index"]))
