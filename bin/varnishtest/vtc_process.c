@@ -756,6 +756,7 @@ cmd_process(CMD_ARGS)
 		}
 		if (!strcmp(*av, "-stop")) {
 			process_kill(p, "TERM");
+			sleep(1);
 			continue;
 		}
 		if (!strcmp(*av, "-wait")) {
