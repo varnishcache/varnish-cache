@@ -251,8 +251,6 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 
 	AZ(req->wrk->v1l);
 
-	/* XXX: Optimize !sendbody case */
-
 	if (sendbody && req->resp_len == 0)
 		sendbody = 0;
 
