@@ -12,13 +12,13 @@ matrix:
   - os: linux
     dist: trusty
     compiler: clang
-    env: CLANG=5.0 SAN_FLAGS="--enable-asan --enable-ubsan"
+    env: CLANG=6.0 SAN_FLAGS="--enable-asan --enable-ubsan"
   - os: osx
     osx_image: xcode9.2
     compiler: clang
   allow_failures:
   - os: osx
-  - env: CLANG=5.0 SAN_FLAGS="--enable-asan --enable-ubsan"
+  - env: CLANG=6.0 SAN_FLAGS="--enable-asan --enable-ubsan"
 addons:
   apt:
     packages:
