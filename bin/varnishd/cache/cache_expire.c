@@ -164,7 +164,9 @@ EXP_Rearm(struct objcore *oc, double now, double ttl, double grace, double keep)
 	VSL(SLT_ExpKill, 0, "EXP_Rearm p=%p E=%.9f e=%.9f f=0x%x", oc,
 	    oc->timer_when, when, oc->flags);
 
-	if (when < oc->t_origin || when < oc->timer_when)
+	if (ttl == 0. && grace == 0. && keep == 0.)
+		HSH_Kill(oc);
+	else if (when < oc->t_origin || when < oc->timer_when)
 		exp_mail_it(oc, OC_EF_MOVE);
 }
 
