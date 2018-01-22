@@ -475,6 +475,7 @@ vcl_KillBackends(struct vcl *vcl)
 			break;
 		VTAILQ_REMOVE(&vcl->director_list, d, vcl_list);
 		AN(d->destroy);
+		REPLACE(d->display_name, NULL);
 		d->destroy(d);
 	}
 }
