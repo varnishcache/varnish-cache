@@ -889,6 +889,37 @@ h2_procframe(struct worker *wrk, struct h2_sess *h2,
 	return (h2_tx_rst(wrk, h2, h2e));
 }
 
+static int
+h2_stream_tmo(struct h2_sess *h2, const struct h2_req *r2)
+{
+	int r = 0;
+
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+
+	if (r2->t_winupd != 0 || r2->t_send != 0) {
+		Lck_Lock(&h2->sess->mtx);
+		if (r2->t_winupd != 0 &&
+		    h2->sess->t_idle - r2->t_winupd >
+		    cache_param->idle_send_timeout) {
+			VSLb(h2->vsl, SLT_Debug,
+			     "H2: stream %u: Hit idle_send_timeout waiting "
+			     "for WINDOW_UPDATE", r2->stream);
+			r = 1;
+		}
+
+		if (r == 0 && r2->t_send != 0 &&
+		    h2->sess->t_idle - r2->t_send > cache_param->send_timeout) {
+			VSLb(h2->vsl, SLT_Debug,
+			     "H2: stream %u: Hit send_timeout", r2->stream);
+			r = 1;
+		}
+		Lck_Unlock(&h2->sess->mtx);
+	}
+
+	return (r);
+}
+
 /***********************************************************************
  * Called in loop from h2_new_session()
  */
@@ -912,6 +943,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	h2_error h2e;
 	struct h2_req *r2, *r22;
 	char b[8];
+	int abort = 0;
 
 	ASSERT_RXTHR(h2);
 	(void)VTCP_blocking(*h2->htc->rfd);
@@ -925,6 +957,8 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		break;
 	case HTC_S_TIMEOUT:
 		VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
+			if (abort)
+				break;
 			switch (r2->state) {
 			case H2_S_CLOSED:
 				if (!r2->scheduled)
@@ -933,6 +967,10 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 			case H2_S_OPEN:
 			case H2_S_CLOS_REM:
 			case H2_S_CLOS_LOC:
+				if (h2_stream_tmo(h2, r2)) {
+					abort = 1;
+					continue;
+				}
 				return (1);
 			default:
 				break;
