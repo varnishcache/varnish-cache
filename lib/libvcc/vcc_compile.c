@@ -556,9 +556,7 @@ vcc_resolve_includes(struct vcc *tl)
 static struct vsb *
 vcc_CompileSource(struct vcc *tl, struct source *sp)
 {
-	struct symbol *sym;
 	struct proc *p;
-	const struct var *v;
 	struct vsb *vsb;
 	struct inifin *ifp;
 
@@ -569,22 +567,7 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 
 	vcc_Backend_Init(tl);
 
-	for (v = vcc_vars; v->name != NULL; v++) {
-		if (v->fmt == HEADER) {
-			sym = VCC_Symbol(tl, NULL, v->name, NULL,
-			    SYM_NONE, 1);
-			sym->wildcard = vcc_Var_Wildcard;
-			sym->wildcard_priv = v;
-		} else {
-			sym = VCC_Symbol(tl, NULL, v->name, NULL, SYM_VAR, 1);
-		}
-		sym->fmt = v->fmt;
-		sym->eval = vcc_Eval_Var;
-		sym->r_methods = v->r_methods;
-		sym->w_methods = v->w_methods;
-		sym->lname = v->lname;
-		REPLACE(sym->rname, v->rname);
-	}
+	vcc_Var_Init(tl);
 
 	Fh(tl, 0, "\nextern const struct VCL_conf VCL_conf;\n");
 

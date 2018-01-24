@@ -1229,7 +1229,6 @@ def restrict(fo, spec):
 		p = " | "
 	if len(d) == 0:
 		fo.write("0")
-	fo.write(",\n")
 
 #######################################################################
 
@@ -1244,46 +1243,68 @@ fo.write("""
 
 #include "vcc_compile.h"
 
-const struct var vcc_vars[] = {
+void
+vcc_Var_Init(struct vcc *tl)
+{
+	struct symbol *sym;
 """)
 
 
 def one_var(nm, spec):
 	fh.write("\n")
+	fo.write("\n")
 	cnam = spec.nam.replace(".", "_")
 	ctyp = vcltypes[spec.typ]
 
-	fo.write("\t{ \"%s\", %s,\n" % (nm, spec.typ))
+	# fo.write("\t{ \"%s\", %s,\n" % (nm, spec.typ))
+	fo.write("\tsym = VCC_Symbol(tl, NULL, \"%s\", NULL," % nm)
+	if (spec.typ == "HEADER"):
+		fo.write(" SYM_NONE, 1);\n")
+		fo.write("\tAN(sym);\n");
+		fo.write("\tsym->wildcard = vcc_Var_Wildcard;\n")
+	else:
+		fo.write(" SYM_VAR, 1);\n")
+	fo.write("\tAN(sym);\n")
+	fo.write("\tsym->fmt = %s;\n" % spec.typ)
+	fo.write("\tsym->eval = vcc_Eval_Var;\n")
 
 	if len(spec.rd) == 0:
-		fo.write('\t    NULL,\t/* No reads allowed */\n')
+		fo.write('\t/* No reads allowed */\n')
 	elif spec.typ == "HEADER":
-		fo.write('\t    "HDR_')
+		fo.write('\tsym->rname = "HDR_')
 		fo.write(nm.split(".")[0].upper())
-		fo.write('",\n')
+		fo.write('";\n')
+		fo.write("\tsym->r_methods =\n")
+		restrict(fo, spec.rd)
+		fo.write(";\n")
 	else:
-		fo.write('\t    "VRT_r_%s(ctx)",\n' % cnam)
+		fo.write('\tsym->rname = "VRT_r_%s(ctx)";\n' % cnam)
 		if nm == spec.nam:
 			fh.write("VCL_" + spec.typ + " VRT_r_%s(VRT_CTX);\n" % cnam)
-	restrict(fo, spec.rd)
+		fo.write("\tsym->r_methods =\n")
+		restrict(fo, spec.rd)
+		fo.write(";\n")
 
 	if len(spec.wr) == 0:
-		fo.write('\t    NULL,\t/* No writes allowed */\n')
+		fo.write('\t/* No writes allowed */\n')
 	elif spec.typ == "HEADER":
-		fo.write('\t    "HDR_')
+		fo.write('\tsym->lname = "HDR_')
 		fo.write(nm.split(".")[0].upper())
-		fo.write('",\n')
+		fo.write('";\n')
+		fo.write("\tsym->w_methods =\n")
+		restrict(fo, spec.wr)
+		fo.write(";\n")
 	else:
-		fo.write('\t    "VRT_l_%s(ctx, ",\n' % cnam)
+		fo.write('\tsym->lname = "VRT_l_%s(ctx, ";\n' % cnam)
 		if nm == spec.nam:
 			fh.write("void VRT_l_%s(VRT_CTX, " % cnam)
 			if spec.typ != "STRING" and spec.typ != "BODY":
 				fh.write("VCL_" + spec.typ + ");\n")
 			else:
 				fh.write(ctyp + ", ...);\n")
-	restrict(fo, spec.wr)
-
-	fo.write("\t},\n")
+		fo.write("\tsym->w_methods =\n")
+		restrict(fo, spec.wr)
+		fo.write(";\n")
 
 aliases.sort()
 for i in sp_variables:
@@ -1292,7 +1313,8 @@ for i in sp_variables:
 		if j[1] == i[0]:
 			one_var(j[0], sp_variables[i])
 
-fo.write("\t{ NULL }\n};\n\n")
+# fo.write("\t{ NULL }\n};\n\n")
+fo.write("}\n")
 
 for i in stv_variables:
 	fh.write(vcltypes[i[1]] + " VRT_Stv_" + i[0] + "(const char *);\n")

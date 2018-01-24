@@ -220,7 +220,7 @@ VCC_GlobalSymbol(struct symbol *sym, vcc_type_t fmt, const char *pfx)
 	VSB_printf(vsb, "%s_", pfx);
 	VCC_PrintCName(vsb, sym->name, NULL);
 	AZ(VSB_finish(vsb));
-	REPLACE(sym->rname, VSB_data(vsb));
+	sym->rname = strdup(VSB_data(vsb));
 	AN(sym->rname);
 	VSB_destroy(&vsb);
 

@@ -41,13 +41,10 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent,
     const char *b, const char *e)
 {
 	struct symbol *sym;
-	struct var *v;
-	const struct var *vh;
 	struct vsb *vsb;
 	unsigned len;
 
-	vh = parent->wildcard_priv;
-	assert(vh->fmt == HEADER);
+	assert(parent->fmt == HEADER);
 
 	if (b + 127 <= e) {
 		VSB_printf(tl->sb, "HTTP header (%.20s..) is too long.\n", b);
@@ -56,16 +53,17 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent,
 		return;
 	}
 
-	v = TlAlloc(tl, sizeof *v);
-	AN(v);
-	v->r_methods = vh->r_methods;
-	v->w_methods = vh->w_methods;
-	v->fmt = vh->fmt;
+	sym = VCC_Symbol(tl, parent, b, e, SYM_VAR, 1);
+	AN(sym);
+	sym->fmt = parent->fmt;
+	sym->eval = vcc_Eval_Var;
+	sym->r_methods = parent->r_methods;
+	sym->w_methods = parent->w_methods;
 
 	/* Create a C-name version of the header name */
 	vsb = VSB_new_auto();
 	AN(vsb);
-	VSB_printf(vsb, "&VGC_%s_", vh->rname);
+	VSB_printf(vsb, "&VGC_%s_", parent->rname);
 	VCC_PrintCName(vsb, b, e);
 	AZ(VSB_finish(vsb));
 
@@ -73,24 +71,15 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent,
 	len = (unsigned)(e - b);
 	Fh(tl, 0, "static const struct gethdr_s %s =\n", VSB_data(vsb) + 1);
 	Fh(tl, 0, "    { %s, \"\\%03o%.*s:\"};\n",
-	    vh->rname, len + 1, len, b);
+	    parent->rname, len + 1, len, b);
 
 	/* Create the symbol r/l values */
-	v->rname = TlDup(tl, VSB_data(vsb));
+	sym->rname = TlDup(tl, VSB_data(vsb));
 	VSB_clear(vsb);
-	VSB_printf(vsb, "VRT_SetHdr(ctx, %s,", v->rname);
+	VSB_printf(vsb, "VRT_SetHdr(ctx, %s,", sym->rname);
 	AZ(VSB_finish(vsb));
-	v->lname = TlDup(tl, VSB_data(vsb));
+	sym->lname = TlDup(tl, VSB_data(vsb));
 	VSB_destroy(&vsb);
-
-	sym = VCC_Symbol(tl, parent, b, e, SYM_VAR, 1);
-	AN(sym);
-	sym->fmt = v->fmt;
-	sym->eval = vcc_Eval_Var;
-	sym->r_methods = v->r_methods;
-	sym->w_methods = v->w_methods;
-	sym->lname = v->lname;
-	REPLACE(sym->rname, v->rname);
 }
 
 /*--------------------------------------------------------------------*/

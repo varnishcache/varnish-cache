@@ -121,7 +121,6 @@ struct symbol {
 	char				*name;
 	unsigned			nlen;
 	sym_wildcard_t			*wildcard;
-	const void			*wildcard_priv;
 	enum symkind			kind;
 
 	const struct token		*def_b, *def_e, *ref_b;
@@ -138,7 +137,7 @@ struct symbol {
 	const char			*extra;
 
 	/* SYM_VAR */
-	char				*rname;
+	const char			*rname;
 	unsigned			r_methods;
 	const char			*lname;
 	unsigned			w_methods;
@@ -225,15 +224,6 @@ struct vcc {
 
 };
 
-struct var {
-	const char		*name;
-	vcc_type_t		fmt;
-	const char		*rname;
-	unsigned		r_methods;
-	const char		*lname;
-	unsigned		w_methods;
-};
-
 struct method {
 	const char		*name;
 	unsigned		ret_bitmap;
@@ -294,7 +284,7 @@ void VCC_GlobalSymbol(struct symbol *, vcc_type_t fmt, const char *pfx);
 struct symbol *VCC_HandleSymbol(struct vcc *, vcc_type_t , const char *);
 
 /* vcc_obj.c */
-extern const struct var vcc_vars[];
+void vcc_Var_Init(struct vcc *);
 
 /* vcc_parse.c */
 void vcc_Parse(struct vcc *tl);
