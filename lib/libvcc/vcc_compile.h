@@ -345,7 +345,7 @@ vcc_type_t VCC_Type(const char *p);
 
 /* vcc_var.c */
 sym_wildcard_t vcc_Var_Wildcard;
-const struct symbol *vcc_FindVar(struct vcc *, int, const char *);
+const struct symbol *vcc_FindVar(struct vcc *, const char *);
 
 /* vcc_vmod.c */
 void vcc_ParseImport(struct vcc *tl);

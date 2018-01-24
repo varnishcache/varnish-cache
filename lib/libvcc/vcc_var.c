@@ -96,7 +96,7 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent,
 /*--------------------------------------------------------------------*/
 
 const struct symbol *
-vcc_FindVar(struct vcc *tl, int wr_access, const char *use)
+vcc_FindVar(struct vcc *tl, const char *use)
 {
 	const struct symbol *sym;
 
@@ -104,25 +104,15 @@ vcc_FindVar(struct vcc *tl, int wr_access, const char *use)
 	if (tl->err)
 		return (NULL);
 	if (sym != NULL) {
-		if (wr_access && sym->w_methods == 0) {
+		if (sym->w_methods == 0) {
 			VSB_printf(tl->sb, "Variable ");
 			vcc_ErrToken(tl, tl->t);
 			VSB_printf(tl->sb, " is read only.");
 			VSB_cat(tl->sb, "\nAt: ");
 			vcc_ErrWhere(tl, tl->t);
 			return (NULL);
-		} else if (wr_access) {
-			vcc_AddUses(tl, tl->t, sym->w_methods, use);
-		} else if (sym->r_methods == 0) {
-			VSB_printf(tl->sb, "Variable ");
-			vcc_ErrToken(tl, tl->t);
-			VSB_printf(tl->sb, " is write only.");
-			VSB_cat(tl->sb, "\nAt: ");
-			vcc_ErrWhere(tl, tl->t);
-			return (NULL);
-		} else {
-			vcc_AddUses(tl, tl->t, sym->r_methods, use);
 		}
+		vcc_AddUses(tl, tl->t, sym->w_methods, use);
 		return (sym);
 	}
 	VSB_printf(tl->sb, "Unknown variable ");

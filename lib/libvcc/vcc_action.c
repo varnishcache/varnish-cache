@@ -90,7 +90,7 @@ parse_set(struct vcc *tl)
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	sym = vcc_FindVar(tl, 1, "cannot be set");
+	sym = vcc_FindVar(tl, "cannot be set");
 	ERRCHK(tl);
 	assert(sym != NULL);
 	if (vcc_IdIs(tl->t, "bereq.body")) {
@@ -138,7 +138,7 @@ parse_unset(struct vcc *tl)
 	/* XXX: Wrong, should use VCC_Expr(HEADER) */
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	sym = vcc_FindVar(tl, 1, "cannot be unset");
+	sym = vcc_FindVar(tl, "cannot be unset");
 	ERRCHK(tl);
 	assert(sym != NULL);
 	if (sym->fmt != HEADER && !vcc_IdIs(tl->t, "bereq.body")) {
