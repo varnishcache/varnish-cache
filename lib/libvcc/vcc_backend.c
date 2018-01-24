@@ -258,9 +258,9 @@ vcc_ParseProbe(struct vcc *tl)
 	vcc_ExpectVid(tl, "backend probe");	/* ID: name */
 	ERRCHK(tl);
 	t_probe = tl->t;
+	sym = VCC_HandleSymbol(tl, PROBE, "vgc_probe");
 	vcc_NextToken(tl);
 
-	sym = VCC_HandleSymbol(tl, t_probe, PROBE, "vgc_probe");
 	ERRCHK(tl);
 	AN(sym);
 
@@ -473,9 +473,9 @@ vcc_ParseBackend(struct vcc *tl)
 	ERRCHK(tl);
 
 	t_be = tl->t;
+	sym = VCC_HandleSymbol(tl, BACKEND, "vgc_backend");
 	vcc_NextToken(tl);
 
-	sym = VCC_HandleSymbol(tl, t_be, BACKEND, "vgc_backend");
 	ERRCHK(tl);
 
 	Fh(tl, 0, "\nstatic struct director *%s;\n", sym->rname);

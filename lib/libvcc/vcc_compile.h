@@ -292,8 +292,7 @@ void vcc_Eval_Func(struct vcc *tl, const char *spec,
     const char *extra, const struct symbol *sym);
 enum symkind VCC_HandleKind(vcc_type_t fmt);
 void VCC_GlobalSymbol(struct symbol *, vcc_type_t fmt, const char *pfx);
-struct symbol *VCC_HandleSymbol(struct vcc *, const struct token *,
-    vcc_type_t fmt, const char *pfx);
+struct symbol *VCC_HandleSymbol(struct vcc *, vcc_type_t , const char *);
 
 /* vcc_obj.c */
 extern const struct var vcc_vars[];
@@ -348,8 +347,7 @@ vcc_type_t VCC_Type(const char *p);
 
 /* vcc_var.c */
 sym_wildcard_t vcc_Var_Wildcard;
-const struct symbol *vcc_FindVar(struct vcc *tl, const struct token *t,
-    int wr_access, const char *use);
+const struct symbol *vcc_FindVar(struct vcc *, int, const char *);
 
 /* vcc_vmod.c */
 void vcc_ParseImport(struct vcc *tl);

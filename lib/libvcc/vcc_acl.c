@@ -462,7 +462,6 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
 void
 vcc_ParseAcl(struct vcc *tl)
 {
-	struct token *an;
 	struct symbol *sym;
 
 	vcc_NextToken(tl);
@@ -470,10 +469,9 @@ vcc_ParseAcl(struct vcc *tl)
 
 	vcc_ExpectVid(tl, "ACL");
 	ERRCHK(tl);
-	an = tl->t;
+	sym = VCC_HandleSymbol(tl, ACL, ACL_SYMBOL_PREFIX);
 	vcc_NextToken(tl);
 
-	sym = VCC_HandleSymbol(tl, an, ACL, ACL_SYMBOL_PREFIX);
 	ERRCHK(tl);
 	AN(sym);
 

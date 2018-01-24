@@ -75,9 +75,9 @@ vcc_ParseImport(struct vcc *tl)
 
 	ExpectErr(tl, ID);
 	mod = tl->t;
+	osym = VCC_SymbolTok(tl, NULL, tl->t, SYM_NONE, 0);
 	vcc_NextToken(tl);
 
-	osym = VCC_SymbolTok(tl, NULL, mod, SYM_NONE, 0);
 	if (osym != NULL && osym->kind != SYM_VMOD) {
 		VSB_printf(tl->sb, "Module %.*s conflicts with other symbol.\n",
 		    PF(mod));
@@ -278,7 +278,7 @@ vcc_ParseNew(struct vcc *tl)
 	ExpectErr(tl, ID);
 	vcc_ExpectVid(tl, "VCL object");
 	ERRCHK(tl);
-	sy1 = VCC_HandleSymbol(tl, tl->t, INSTANCE, "vo");
+	sy1 = VCC_HandleSymbol(tl, INSTANCE, "vo");
 	ERRCHK(tl);
 
 	/* We allow implicit use of VMOD objects:  Pretend it's ref'ed */

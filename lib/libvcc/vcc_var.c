@@ -96,39 +96,38 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent,
 /*--------------------------------------------------------------------*/
 
 const struct symbol *
-vcc_FindVar(struct vcc *tl, const struct token *t, int wr_access,
-    const char *use)
+vcc_FindVar(struct vcc *tl, int wr_access, const char *use)
 {
 	const struct symbol *sym;
 
-	sym = VCC_SymbolTok(tl, NULL, t, SYM_VAR, 0);
+	sym = VCC_SymbolTok(tl, NULL, tl->t, SYM_VAR, 0);
 	if (tl->err)
 		return (NULL);
 	if (sym != NULL) {
 		if (wr_access && sym->w_methods == 0) {
 			VSB_printf(tl->sb, "Variable ");
-			vcc_ErrToken(tl, t);
+			vcc_ErrToken(tl, tl->t);
 			VSB_printf(tl->sb, " is read only.");
 			VSB_cat(tl->sb, "\nAt: ");
-			vcc_ErrWhere(tl, t);
+			vcc_ErrWhere(tl, tl->t);
 			return (NULL);
 		} else if (wr_access) {
-			vcc_AddUses(tl, t, sym->w_methods, use);
+			vcc_AddUses(tl, tl->t, sym->w_methods, use);
 		} else if (sym->r_methods == 0) {
 			VSB_printf(tl->sb, "Variable ");
-			vcc_ErrToken(tl, t);
+			vcc_ErrToken(tl, tl->t);
 			VSB_printf(tl->sb, " is write only.");
 			VSB_cat(tl->sb, "\nAt: ");
-			vcc_ErrWhere(tl, t);
+			vcc_ErrWhere(tl, tl->t);
 			return (NULL);
 		} else {
-			vcc_AddUses(tl, t, sym->r_methods, use);
+			vcc_AddUses(tl, tl->t, sym->r_methods, use);
 		}
 		return (sym);
 	}
 	VSB_printf(tl->sb, "Unknown variable ");
-	vcc_ErrToken(tl, t);
+	vcc_ErrToken(tl, tl->t);
 	VSB_cat(tl->sb, "\nAt: ");
-	vcc_ErrWhere(tl, t);
+	vcc_ErrWhere(tl, tl->t);
 	return (NULL);
 }
