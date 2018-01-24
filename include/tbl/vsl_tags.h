@@ -140,6 +140,8 @@ SLTM(Proxy, 0, "PROXY protocol information",
 	"\t|  |  +------- client port\n"
 	"\t|  +---------- client ip\n"
 	"\t+------------- PROXY protocol version\n"
+	"\t\n"
+	"\tAll fields are \"local\" for PROXY local connections (command 0x0)\n"
 	"\n"
 )
 

@@ -193,7 +193,7 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	/* Command @12 bottom half */
 	switch (p[12] & 0x0f) {
 	case 0x0:
-		/* Local connection from proxy, ignore addresses */
+		VSL(SLT_Proxy, req->sp->vxid, "2 local local local local");
 		return (0);
 	case 0x1:
 		/* Proxied connection */
