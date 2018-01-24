@@ -141,6 +141,8 @@ struct symbol {
 	unsigned			r_methods;
 	const char			*lname;
 	unsigned			w_methods;
+	const char			*uname;
+	unsigned			u_methods;
 };
 
 VTAILQ_HEAD(tokenhead, token);
@@ -335,7 +337,6 @@ vcc_type_t VCC_Type(const char *p);
 
 /* vcc_var.c */
 sym_wildcard_t vcc_Var_Wildcard;
-const struct symbol *vcc_FindVar(struct vcc *, const char *);
 
 /* vcc_vmod.c */
 void vcc_ParseImport(struct vcc *tl);

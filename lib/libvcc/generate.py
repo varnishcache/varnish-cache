@@ -169,13 +169,14 @@ returns = (
 sp_variables = collections.OrderedDict()
 
 class vardef(object):
-	def __init__(self, nam, typ, rd, wr, doc):
+	def __init__(self, nam, typ, rd, wr, doc, uns = None):
 		sp_variables[nam] = self
 		self.nam = nam
 		self.typ = typ
 		self.rd = rd
 		self.wr = wr
 		self.doc = doc
+		self.uns = uns
 
 vardef('remote.ip',
 	'IP',
@@ -273,7 +274,8 @@ vardef('req.http.',
 	('client',),
 	('client',), """
 	The corresponding HTTP header.
-	"""
+	""",
+	uns = ('client',)
 )
 vardef('req.restarts',
 	'INT',
@@ -435,9 +437,10 @@ vardef('bereq.backend',
 vardef('bereq.body',
 	'BODY',
 	(),
-	('backend_fetch',), """
+	(), """
 	The request body.
-	"""
+	""",
+	uns = ('backend_fetch',)
 )
 vardef('bereq.hash',
 	'BLOB',
@@ -472,7 +475,8 @@ vardef('bereq.http.',
 	('pipe', 'backend', ),
 	('pipe', 'backend', ), """
 	The corresponding HTTP header.
-	"""
+	""",
+	uns = ('pipe', 'backend', )
 )
 vardef('bereq.uncacheable',
 	'BOOL',
@@ -556,7 +560,8 @@ vardef('beresp.http.',
 	('backend_response', 'backend_error'),
 	('backend_response', 'backend_error'), """
 	The corresponding HTTP header.
-	"""
+	""",
+	uns = ('backend_response', 'backend_error')
 )
 vardef('beresp.do_esi',
 	'BOOL',
@@ -810,7 +815,8 @@ vardef('resp.http.',
 	('deliver', 'synth'),
 	('deliver', 'synth'), """
 	The corresponding HTTP header.
-	"""
+	""",
+	uns = ('deliver', 'synth')
 )
 vardef('resp.is_streaming',
 	'BOOL',
@@ -1304,6 +1310,15 @@ def one_var(nm, spec):
 				fh.write(ctyp + ", ...);\n")
 		fo.write("\tsym->w_methods =\n")
 		restrict(fo, spec.wr)
+		fo.write(";\n")
+
+	if spec.uns is None or len(spec.uns) == 0:
+		fo.write('\t/* No unsets allowed */\n')
+	else:
+		fh.write("void VRT_u_%s(VRT_CTX);\n" % cnam)
+		fo.write('\tsym->uname = "VRT_u_%s(ctx)";\n' % cnam)
+		fo.write('\tsym->u_methods =\n')
+		restrict(fo, spec.uns)
 		fo.write(";\n")
 
 aliases.sort()

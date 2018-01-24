@@ -81,6 +81,9 @@ static const struct arith {
 	{ VOID,		'=',		VOID }
 };
 
+
+/*--------------------------------------------------------------------*/
+
 static void
 parse_set(struct vcc *tl)
 {
@@ -90,14 +93,27 @@ parse_set(struct vcc *tl)
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	sym = vcc_FindVar(tl, "cannot be set");
+	sym = VCC_SymbolTok(tl, NULL, SYM_VAR, 0);
 	ERRCHK(tl);
-	assert(sym != NULL);
-	if (vcc_IdIs(tl->t, "bereq.body")) {
-		VSB_printf(tl->sb, "bereq.body cannot be set.\n");
+	if (sym == NULL) {
+		VSB_printf(tl->sb, "Unknown variable ");
+		vcc_ErrToken(tl, tl->t);
+		VSB_cat(tl->sb, "\nAt: ");
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
+	if (sym->w_methods == 0) {
+		VSB_printf(tl->sb, "Variable ");
+		vcc_ErrToken(tl, tl->t);
+		if (sym->r_methods != 0)
+			VSB_printf(tl->sb, " is read only.");
+		else
+			VSB_printf(tl->sb, " cannot be set.");
+		VSB_cat(tl->sb, "\nAt: ");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+	vcc_AddUses(tl, tl->t, sym->w_methods, "cannot be set");
 	Fb(tl, 1, "%s\n", sym->lname);
 	tl->indent += INDENT;
 	vcc_NextToken(tl);
@@ -138,18 +154,25 @@ parse_unset(struct vcc *tl)
 	/* XXX: Wrong, should use VCC_Expr(HEADER) */
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	sym = vcc_FindVar(tl, "cannot be unset");
+	sym = VCC_SymbolTok(tl, NULL, SYM_VAR, 0);
 	ERRCHK(tl);
-	assert(sym != NULL);
-	if (sym->fmt != HEADER && !vcc_IdIs(tl->t, "bereq.body")) {
-		VSB_printf(tl->sb,
-		    "Only bereq.body and HTTP header variables can"
-		    " be unset.\n");
+	if (sym == NULL) {
+		VSB_printf(tl->sb, "Unknown variable ");
+		vcc_ErrToken(tl, tl->t);
+		VSB_cat(tl->sb, "\nAt: ");
 		vcc_ErrWhere(tl, tl->t);
 		return;
 	}
-	ERRCHK(tl);
-	Fb(tl, 1, "%svrt_magic_string_unset);\n", sym->lname);
+	if (sym->u_methods == 0) {
+		VSB_printf(tl->sb, "Variable ");
+		vcc_ErrToken(tl, tl->t);
+		VSB_printf(tl->sb, " cannot be unset.");
+		VSB_cat(tl->sb, "\nAt: ");
+		vcc_ErrWhere(tl, tl->t);
+		return;
+	}
+	vcc_AddUses(tl, tl->t, sym->u_methods, "cannot be unset.");
+	Fb(tl, 1, "%s;\n", sym->uname);
 	vcc_NextToken(tl);
 }
 

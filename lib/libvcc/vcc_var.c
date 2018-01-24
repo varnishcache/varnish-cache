@@ -59,6 +59,7 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent,
 	sym->eval = vcc_Eval_Var;
 	sym->r_methods = parent->r_methods;
 	sym->w_methods = parent->w_methods;
+	sym->u_methods = parent->u_methods;
 
 	/* Create a C-name version of the header name */
 	vsb = VSB_new_auto();
@@ -79,34 +80,10 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent,
 	VSB_printf(vsb, "VRT_SetHdr(ctx, %s,", sym->rname);
 	AZ(VSB_finish(vsb));
 	sym->lname = TlDup(tl, VSB_data(vsb));
+	VSB_clear(vsb);
+	VSB_printf(vsb, "VRT_SetHdr(ctx, %s, vrt_magic_string_unset)",
+	    sym->rname);
+	AZ(VSB_finish(vsb));
+	sym->uname = TlDup(tl, VSB_data(vsb));
 	VSB_destroy(&vsb);
-}
-
-/*--------------------------------------------------------------------*/
-
-const struct symbol *
-vcc_FindVar(struct vcc *tl, const char *use)
-{
-	const struct symbol *sym;
-
-	sym = VCC_SymbolTok(tl, NULL, SYM_VAR, 0);
-	if (tl->err)
-		return (NULL);
-	if (sym != NULL) {
-		if (sym->w_methods == 0) {
-			VSB_printf(tl->sb, "Variable ");
-			vcc_ErrToken(tl, tl->t);
-			VSB_printf(tl->sb, " is read only.");
-			VSB_cat(tl->sb, "\nAt: ");
-			vcc_ErrWhere(tl, tl->t);
-			return (NULL);
-		}
-		vcc_AddUses(tl, tl->t, sym->w_methods, use);
-		return (sym);
-	}
-	VSB_printf(tl->sb, "Unknown variable ");
-	vcc_ErrToken(tl, tl->t);
-	VSB_cat(tl->sb, "\nAt: ");
-	vcc_ErrWhere(tl, tl->t);
-	return (NULL);
 }
