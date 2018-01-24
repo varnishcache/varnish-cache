@@ -105,6 +105,21 @@ vcc_new_symbol(struct vcc *tl, const char *b, const char *e)
 }
 
 struct symbol *
+VCC_SymbolGet(struct vcc *tl, enum symkind kind, const char *err)
+{
+	struct symbol *sym;
+
+	sym = VCC_Symbol(tl, NULL, tl->t->b, tl->t->e, kind, 0);
+	if (sym != NULL && sym->kind == kind)
+		return (sym);
+	VSB_printf(tl->sb, "%s: ", err);
+	vcc_ErrToken(tl, tl->t);
+	VSB_cat(tl->sb, "\nAt: ");
+	vcc_ErrWhere(tl, tl->t);
+	return (NULL);
+}
+
+struct symbol *
 VCC_SymbolTok(struct vcc *tl, enum symkind kind, int create)
 {
 

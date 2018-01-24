@@ -389,13 +389,9 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			Fb(tl, 0, "\t.probe = %s,\n", p);
 			ERRCHK(tl);
 		} else if (vcc_IdIs(t_field, "probe") && tl->t->tok == ID) {
-			pb = VCC_SymbolTok(tl, SYM_PROBE, 0);
-			if (pb == NULL) {
-				VSB_printf(tl->sb, "Probe %.*s not found\n",
-				    PF(tl->t));
-				vcc_ErrWhere(tl, tl->t);
-				return;
-			}
+			pb = VCC_SymbolGet(tl, SYM_PROBE, "Probe not found");
+			ERRCHK(tl);
+			AN(pb);
 			Fb(tl, 0, "\t.probe = %s,\n", pb->rname);
 			(void)vcc_AddRef(tl, SYM_PROBE);
 			vcc_NextToken(tl);

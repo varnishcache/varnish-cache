@@ -1,6 +1,6 @@
 varnishtest "Test VCC errors out if probe is used before it is defined"
 
-varnish v1 -errvcl "Probe p not found" {
+varnish v1 -errvcl "Probe not found: 'p'" {
 	backend b {
 		.host = "127.0.0.1";
 		.probe = p;

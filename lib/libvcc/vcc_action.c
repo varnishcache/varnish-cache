@@ -93,15 +93,9 @@ parse_set(struct vcc *tl)
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	sym = VCC_SymbolTok(tl, SYM_VAR, 0);
+	sym = VCC_SymbolGet(tl, SYM_VAR, "Unknown variable");
 	ERRCHK(tl);
-	if (sym == NULL) {
-		VSB_printf(tl->sb, "Unknown variable ");
-		vcc_ErrToken(tl, tl->t);
-		VSB_cat(tl->sb, "\nAt: ");
-		vcc_ErrWhere(tl, tl->t);
-		return;
-	}
+	AN(sym);
 	if (sym->w_methods == 0) {
 		VSB_printf(tl->sb, "Variable ");
 		vcc_ErrToken(tl, tl->t);
@@ -154,15 +148,9 @@ parse_unset(struct vcc *tl)
 	/* XXX: Wrong, should use VCC_Expr(HEADER) */
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	sym = VCC_SymbolTok(tl, SYM_VAR, 0);
+	sym = VCC_SymbolGet(tl, SYM_VAR, "Unknown variable");
 	ERRCHK(tl);
-	if (sym == NULL) {
-		VSB_printf(tl->sb, "Unknown variable ");
-		vcc_ErrToken(tl, tl->t);
-		VSB_cat(tl->sb, "\nAt: ");
-		vcc_ErrWhere(tl, tl->t);
-		return;
-	}
+	AN(sym);
 	if (sym->u_methods == 0) {
 		VSB_printf(tl->sb, "Variable ");
 		vcc_ErrToken(tl, tl->t);

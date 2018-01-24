@@ -288,13 +288,11 @@ vcc_ParseNew(struct vcc *tl)
 	vcc_NextToken(tl);
 
 	ExpectErr(tl, ID);
-	sy2 = VCC_SymbolTok(tl, SYM_OBJECT, 0);
-	if (sy2 == NULL || sy2->extra == NULL) {
-		if (sy2 == NULL)
-			p = "Symbol";
-		else
-			p = "Constructor";
-		VSB_printf(tl->sb, "%s not found: ", p);
+	sy2 = VCC_SymbolGet(tl, SYM_OBJECT, "Symbol not found");
+	ERRCHK(tl);
+	AN(sy2);
+	if (sy2->extra == NULL) {
+		VSB_printf(tl->sb, "Constructor not found: ");
 		vcc_ErrToken(tl, tl->t);
 		VSB_printf(tl->sb, " at ");
 		vcc_ErrWhere(tl, tl->t);

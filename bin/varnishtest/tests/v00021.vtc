@@ -91,7 +91,7 @@ varnish v1 -vcl {
 	}
 }
 
-varnish v1 -errvcl {Unknown variable 'req.foobar'} {
+varnish v1 -errvcl {Unknown variable: 'req.foobar'} {
 	backend foo { .host = "127.0.0.1"; }
 	sub vcl_recv { set req.foobar = 3; }
 }
