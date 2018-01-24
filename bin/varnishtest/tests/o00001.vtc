@@ -40,6 +40,17 @@ varnish v1 -proto "PROXY" -vcl+backend {
 	}
 } -start
 
+logexpect l1 -v v1 -g raw {
+	expect * 1000	Proxy		"2 local local local local"
+	expect * 1003	ProxyGarbage	"PROXY2: bad command \\(2\\)"
+	expect * 1004	ProxyGarbage	"PROXY2: Ignoring UNSPEC\\|UNSPEC addresses"
+	expect * 1006	ProxyGarbage	"PROXY2: Ignoring unsupported protocol \\(0x99\\)"
+	expect * 1008	ProxyGarbage	"PROXY2: Ignoring short IPv4 addresses \\(11\\)"
+	expect * 1010	ProxyGarbage	"PROXY2: Ignoring short IPv6 addresses \\(35\\)"
+	expect * 1012	Proxy		"2 1.2.3.4 2314 5.6.7.8 2828"
+	expect * 1015	Proxy		"2 102:304:506::d0e:f10 2314 8182:8384:8586::8d8e:8f80 2828"
+} -start
+
 client c1 {
 	# LOCAL command
 	sendhex "0d 0a 0d 0a 00 0d 0a 51 55 49 54 0a"
@@ -51,6 +62,7 @@ client c1 {
 	expect resp.http.sp == "${v1_port}"
 	expect resp.http.ci == "${localhost}"
 } -run
+
 delay .1
 
 client c1 {
@@ -60,6 +72,7 @@ client c1 {
 	timeout 8
 	expect_close
 } -run
+
 delay .1
 
 client c1 {
@@ -73,6 +86,7 @@ client c1 {
 	expect resp.http.sp == "${v1_port}"
 	expect resp.http.ci == "${localhost}"
 } -run
+
 delay .1
 
 client c1 {
@@ -86,6 +100,7 @@ client c1 {
 	expect resp.http.sp == "${v1_port}"
 	expect resp.http.ci == "${localhost}"
 } -run
+
 delay .1
 
 client c1 {
@@ -100,6 +115,7 @@ client c1 {
 	expect resp.http.sp == "${v1_port}"
 	expect resp.http.ci == "${localhost}"
 } -run
+
 delay .1
 
 client c1 {
@@ -136,6 +152,7 @@ client c1 -proxy2 "1.2.3.4:2314 5.6.7.8:2828" {
 	expect resp.http.lp == "${v1_port}"
 	expect resp.http.ri != "1.2.3.4"
 } -run
+
 delay .1
 
 # good IPv6
@@ -155,4 +172,7 @@ client c1 \
 	expect resp.http.lp == "${v1_port}"
 	expect resp.http.ri != "102:304:506::d0e:f10"
 } -run
+
 delay .1
+
+logexpect l1 -wait

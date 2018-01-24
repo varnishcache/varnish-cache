@@ -30,10 +30,26 @@ varnish v1 -proto "PROXY" -vcl+backend {
 	}
 } -start
 
+logexpect l1 -v v1 {
+	expect * 1002	ProxyGarbage	"PROXY1: Too few fields"
+	expect * 1003	ProxyGarbage	"PROXY1: Too many fields"
+	expect * 1004	ProxyGarbage	"PROXY1: Wrong TCP\\[46\\] field"
+	expect * 1005	ProxyGarbage	"PROXY1: Cannot resolve source address \\(nodename nor servname provided, or not known\\)"
+	expect * 1007	ProxyGarbage	"PROXY1: Cannot resolve destination address \\(nodename nor servname provided, or not known\\)"
+	expect * 1013	ProxyGarbage	"PROXY1: TCP4 got wrong protocol \\(30\\)"
+	expect * 1014	ProxyGarbage	"PROXY1: TCP6 got wrong protocol \\(2\\)"
+	expect * 1015	Proxy		"1 1.2.3.4 1234 5.6.7.8 5678"
+	expect * 1018	Proxy		"1 1:f::2 1234 5:a::8 5678"
+	expect * 1021	Proxy		"1 1:f::3 1234 5:a::8 5678"
+	expect * 1025	ProxyGarbage	"PROXY1: Too many fields"
+	expect * 1026	ProxyGarbage	"PROXY1: Too many fields"
+} -start
+
 client c1 {
 	send "XYZ\r\n"
 	expect_close
 } -run
+
 delay .1
 
 client c1 {
@@ -41,6 +57,7 @@ client c1 {
 	timeout 8
 	expect_close
 } -run
+
 delay .1
 
 client c1 {
@@ -48,6 +65,7 @@ client c1 {
 	timeout 8
 	expect_close
 } -run
+
 delay .1
 
 client c1 {
@@ -55,6 +73,7 @@ client c1 {
 	timeout 8
 	expect_close
 } -run
+
 delay .1
 
 client c1 {
@@ -62,6 +81,7 @@ client c1 {
 	timeout 8
 	expect_close
 } -run
+
 delay .1
 
 client c1 {
@@ -69,6 +89,7 @@ client c1 {
 	timeout 8
 	expect_close
 } -run
+
 delay .1
 
 client c1 {
@@ -76,6 +97,7 @@ client c1 {
 	timeout 8
 	expect_close
 } -run
+
 delay .1
 
 client c1 {
@@ -83,6 +105,7 @@ client c1 {
 	timeout 8
 	expect_close
 } -run
+
 delay .1
 
 client c1 {
@@ -90,6 +113,7 @@ client c1 {
 	timeout 8
 	expect_close
 } -run
+
 delay .1
 
 client c1 {
@@ -97,6 +121,7 @@ client c1 {
 	timeout 8
 	expect_close
 } -run
+
 delay .1
 
 client c1 {
@@ -104,6 +129,7 @@ client c1 {
 	timeout 8
 	expect_close
 } -run
+
 delay .1
 
 client c1 {
@@ -111,6 +137,7 @@ client c1 {
 	timeout 8
 	expect_close
 } -run
+
 delay .1
 
 client c1 {
@@ -118,6 +145,7 @@ client c1 {
 	timeout 8
 	expect_close
 } -run
+
 delay .1
 
 client c1 {
@@ -125,6 +153,7 @@ client c1 {
 	timeout 8
 	expect_close
 } -run
+
 delay .1
 
 client c1 {
@@ -132,12 +161,8 @@ client c1 {
 	timeout 8
 	expect_close
 } -run
-delay .1
 
-logexpect l1 -v v1 {
-	expect * *	ReqStart	"1.2.3.4 1234"
-	expect * *	ReqStart	"1:f::2 1234"
-} -start
+delay .1
 
 # Finally try something which works...
 client c1 -proxy1 "1.2.3.4:1234 5.6.7.8:5678" {
@@ -153,6 +178,7 @@ client c1 -proxy1 "1.2.3.4:1234 5.6.7.8:5678" {
 	expect resp.http.ri != "1.2.3.4"
 	expect resp.http.rp != "1234"
 } -run
+
 delay .1
 
 client c1 -proxy1 "[1:f::2]:1234 [5:a::8]:5678" {
@@ -168,9 +194,8 @@ client c1 -proxy1 "[1:f::2]:1234 [5:a::8]:5678" {
 	expect resp.http.ri != "1:f::2"
 	expect resp.http.rp != "1234"
 } -run
-delay .1
 
-logexpect l1 -wait
+delay .1
 
 # Try with appended request (See also: #1728)
 client c2 {
@@ -184,6 +209,7 @@ client c2 {
 	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678\n"
 	expect_close
 } -run
+
 delay .1
 
 # Malformed, too long (106)
@@ -192,6 +218,7 @@ client c2 {
 	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678                                                                     \r\n"
 	expect_close
 } -run
+
 delay .1
 
 # Malformed, too long (107)
@@ -200,6 +227,7 @@ client c2 {
 	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678                                                                      \r\n"
 	expect_close
 } -run
+
 delay .1
 
 # Malformed, too long (108)
@@ -208,4 +236,7 @@ client c2 {
 	send "PROXY TCP4 1.2.3.4 5.6.7.8 1234 5678                                                                       \r\n"
 	expect_close
 } -run
+
 delay .1
+
+logexpect l1 -wait
