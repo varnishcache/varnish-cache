@@ -75,7 +75,7 @@ vcc_ParseImport(struct vcc *tl)
 
 	ExpectErr(tl, ID);
 	mod = tl->t;
-	osym = VCC_SymbolTok(tl, NULL, SYM_NONE, 0);
+	osym = VCC_SymbolTok(tl, SYM_NONE, 0);
 	vcc_NextToken(tl);
 
 	if (osym != NULL && osym->kind != SYM_VMOD) {
@@ -288,7 +288,7 @@ vcc_ParseNew(struct vcc *tl)
 	vcc_NextToken(tl);
 
 	ExpectErr(tl, ID);
-	sy2 = VCC_SymbolTok(tl, NULL, SYM_OBJECT, 0);
+	sy2 = VCC_SymbolTok(tl, SYM_OBJECT, 0);
 	if (sy2 == NULL || sy2->extra == NULL) {
 		if (sy2 == NULL)
 			p = "Symbol";

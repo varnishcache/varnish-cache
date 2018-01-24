@@ -657,9 +657,9 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		sym = NULL;
 		kind = VCC_HandleKind(fmt);
 		if (kind != SYM_NONE)
-			sym = VCC_SymbolTok(tl, NULL, kind, 0);
+			sym = VCC_SymbolTok(tl, kind, 0);
 		if (sym == NULL)
-			sym = VCC_SymbolTok(tl, NULL, SYM_NONE, 0);
+			sym = VCC_SymbolTok(tl, SYM_NONE, 0);
 		if (sym == NULL || sym->eval == NULL) {
 			VSB_printf(tl->sb, "Symbol not found: ");
 			vcc_ErrToken(tl, tl->t);

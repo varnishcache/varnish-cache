@@ -93,7 +93,7 @@ parse_set(struct vcc *tl)
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	sym = VCC_SymbolTok(tl, NULL, SYM_VAR, 0);
+	sym = VCC_SymbolTok(tl, SYM_VAR, 0);
 	ERRCHK(tl);
 	if (sym == NULL) {
 		VSB_printf(tl->sb, "Unknown variable ");
@@ -154,7 +154,7 @@ parse_unset(struct vcc *tl)
 	/* XXX: Wrong, should use VCC_Expr(HEADER) */
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	sym = VCC_SymbolTok(tl, NULL, SYM_VAR, 0);
+	sym = VCC_SymbolTok(tl, SYM_VAR, 0);
 	ERRCHK(tl);
 	if (sym == NULL) {
 		VSB_printf(tl->sb, "Unknown variable ");
@@ -268,7 +268,7 @@ parse_return_vcl(struct vcc *tl)
 	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	sym = VCC_SymbolTok(tl, NULL, SYM_VCL, 0);
+	sym = VCC_SymbolTok(tl, SYM_VCL, 0);
 	ERRCHK(tl);
 	if (sym == NULL) {
 		VSB_printf(tl->sb, "Not a VCL label:\n");
@@ -419,7 +419,7 @@ vcc_ParseAction(struct vcc *tl)
 			return (1);
 		}
 	}
-	sym = VCC_SymbolTok(tl, NULL, SYM_NONE, 0);
+	sym = VCC_SymbolTok(tl, SYM_NONE, 0);
 	if (sym != NULL && sym->kind == SYM_FUNC) {
 		vcc_Expr_Call(tl, sym);
 		return (1);

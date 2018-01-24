@@ -105,11 +105,10 @@ vcc_new_symbol(struct vcc *tl, const char *b, const char *e)
 }
 
 struct symbol *
-VCC_SymbolTok(struct vcc *tl, struct symbol *parent,
-    enum symkind kind, int create)
+VCC_SymbolTok(struct vcc *tl, enum symkind kind, int create)
 {
 
-	return (VCC_Symbol(tl, parent, tl->t->b, tl->t->e, kind, create));
+	return (VCC_Symbol(tl, NULL, tl->t->b, tl->t->e, kind, create));
 }
 
 struct symbol *
@@ -245,7 +244,7 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
 	kind = VCC_HandleKind(fmt);
 	assert(kind != SYM_NONE);
 
-	sym = VCC_SymbolTok(tl, NULL, SYM_NONE, 0);
+	sym = VCC_SymbolTok(tl, SYM_NONE, 0);
 	if (sym != NULL && sym->def_b != NULL && kind == sym->kind) {
 		p = VCC_SymKind(tl, sym);
 		VSB_printf(tl->sb, "%c%s '%.*s' redefined.\n",
@@ -270,7 +269,7 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
 		return (sym);
 	}
 	if (sym == NULL)
-		sym = VCC_SymbolTok(tl, NULL, kind, 1);
+		sym = VCC_SymbolTok(tl, kind, 1);
 	AN(sym);
 	AZ(sym->ndef);
 	VCC_GlobalSymbol(sym, fmt, pfx);

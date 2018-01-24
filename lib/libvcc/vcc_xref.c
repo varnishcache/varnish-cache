@@ -65,7 +65,7 @@ vcc_AddRef(struct vcc *tl, enum symkind kind)
 {
 	struct symbol *sym;
 
-	sym = VCC_SymbolTok(tl, NULL, kind, 1);
+	sym = VCC_SymbolTok(tl, kind, 1);
 	if (sym->ref_b == NULL)
 		sym->ref_b = tl->t;
 	AN(sym);
@@ -78,7 +78,7 @@ vcc_AddDef(struct vcc *tl, enum symkind kind)
 {
 	struct symbol *sym;
 
-	sym = VCC_SymbolTok(tl, NULL, kind, 1);
+	sym = VCC_SymbolTok(tl, kind, 1);
 	if (sym->def_b == NULL)
 		sym->def_b = tl->t;
 	AN(sym);
@@ -144,7 +144,7 @@ vcc_AddCall(struct vcc *tl)
 
 	pc = TlAlloc(tl, sizeof *pc);
 	assert(pc != NULL);
-	pc->sym = VCC_SymbolTok(tl, NULL, SYM_SUB, 1);
+	pc->sym = VCC_SymbolTok(tl, SYM_SUB, 1);
 	AN(pc->sym);
 	pc->t = tl->t;
 	VTAILQ_INSERT_TAIL(&tl->curproc->calls, pc, list);
