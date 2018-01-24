@@ -284,8 +284,6 @@ vcc_ParseNew(struct vcc *tl)
 	/* We allow implicit use of VMOD objects:  Pretend it's ref'ed */
 	sy1->nref++;
 
-	vcc_NextToken(tl);
-
 	ExpectErr(tl, '=');
 	vcc_NextToken(tl);
 

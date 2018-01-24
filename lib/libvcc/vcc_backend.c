@@ -259,7 +259,6 @@ vcc_ParseProbe(struct vcc *tl)
 	ERRCHK(tl);
 	t_probe = tl->t;
 	sym = VCC_HandleSymbol(tl, PROBE, "vgc_probe");
-	vcc_NextToken(tl);
 
 	ERRCHK(tl);
 	AN(sym);
@@ -472,7 +471,6 @@ vcc_ParseBackend(struct vcc *tl)
 
 	t_be = tl->t;
 	sym = VCC_HandleSymbol(tl, BACKEND, "vgc_backend");
-	vcc_NextToken(tl);
 
 	ERRCHK(tl);
 

@@ -318,8 +318,7 @@ void vcc_stevedore(struct vcc *vcc, const char *stv_name);
 void VCC_PrintCName(struct vsb *vsb, const char *b, const char *e);
 struct symbol *VCC_Symbol(struct vcc *, struct symbol *,
     const char *, const char *, enum symkind, int);
-#define VCC_SymbolTok(vcc, sym, kind, create) \
-    VCC_Symbol(vcc, sym, (vcc)->t->b, (vcc)->t->e, kind, create)
+struct symbol *VCC_SymbolTok(struct vcc *, struct symbol *, enum symkind, int);
 const char * VCC_SymKind(struct vcc *tl, const struct symbol *s);
 typedef void symwalk_f(struct vcc *tl, const struct symbol *s);
 void VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, enum symkind kind);

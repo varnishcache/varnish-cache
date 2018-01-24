@@ -105,6 +105,14 @@ vcc_new_symbol(struct vcc *tl, const char *b, const char *e)
 }
 
 struct symbol *
+VCC_SymbolTok(struct vcc *tl, struct symbol *parent,
+    enum symkind kind, int create)
+{
+
+	return (VCC_Symbol(tl, parent, tl->t->b, tl->t->e, kind, create));
+}
+
+struct symbol *
 VCC_Symbol(struct vcc *tl, struct symbol *parent,
     const char *b, const char *e, enum symkind kind, int create)
 {
@@ -269,5 +277,6 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
 	sym->ndef = 1;
 	if (sym->def_b == NULL)
 		sym->def_b = tl->t;
+	vcc_NextToken(tl);
 	return (sym);
 }
