@@ -104,7 +104,10 @@ vcc_icoord(struct vsb *vsb, const struct token *t, int tail)
 		} else
 			pos++;
 	}
-	VSB_printf(vsb, "('%s' Line %u Pos %u)", t->src->name, lin, pos + 1);
+	VSB_printf(vsb, "(");
+	if (tail < 2)
+		VSB_printf(vsb, "'%s' Line %u ", t->src->name, lin);
+	VSB_printf(vsb, "Pos %u)", pos + 1);
 }
 
 /*--------------------------------------------------------------------*/
@@ -200,7 +203,7 @@ vcc_ErrWhere2(struct vcc *tl, const struct token *t, const struct token *t2)
 	if (l1 == l2) {
 		vcc_icoord(tl->sb, t, 0);
 		VSB_cat(tl->sb, " -- ");
-		vcc_icoord(tl->sb, t2, 1);
+		vcc_icoord(tl->sb, t2, 2);
 		VSB_putc(tl->sb, '\n');
 		/* Two tokens on same line */
 		vcc_quoteline(tl, l1, t->src->e);

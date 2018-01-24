@@ -52,14 +52,14 @@ varnish v1 -errvcl {Symbol not found: 'foo.bar'} {
 	}
 }
 
-varnish v1 -errvcl {'bereq.first_byte_timeout': cannot be set} {
+varnish v1 -errvcl {Cannot be set in method 'vcl_pipe'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_pipe {
 		set bereq.first_byte_timeout = 10s;
 	}
 }
 
-varnish v1 -errvcl {'bereq.between_bytes_timeout': cannot be set} {
+varnish v1 -errvcl {Cannot be set in method 'vcl_pipe'.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_pipe {
 		set bereq.between_bytes_timeout = 10s;

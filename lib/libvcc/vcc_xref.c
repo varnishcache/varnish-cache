@@ -47,13 +47,16 @@ struct proccall {
 	VTAILQ_ENTRY(proccall)	list;
 	struct symbol		*sym;
 	struct token		*t;
+	struct proc		*fm;
 };
 
 struct procuse {
 	VTAILQ_ENTRY(procuse)	list;
-	const struct token	*t;
+	const struct token	*t1;
+	const struct token	*t2;
 	unsigned		mask;
 	const char		*use;
+	struct proc		*fm;
 };
 
 /*--------------------------------------------------------------------
@@ -122,8 +125,8 @@ vcc_CheckReferences(struct vcc *tl)
  */
 
 void
-vcc_AddUses(struct vcc *tl, const struct token *t, unsigned mask,
-    const char *use)
+vcc_AddUses(struct vcc *tl, const struct token *t1, const struct token *t2,
+    unsigned mask, const char *use)
 {
 	struct procuse *pu;
 
@@ -131,9 +134,13 @@ vcc_AddUses(struct vcc *tl, const struct token *t, unsigned mask,
 		return;
 	pu = TlAlloc(tl, sizeof *pu);
 	assert(pu != NULL);
-	pu->t = t;
+	pu->t1 = t1;
+	pu->t2 = t2;
+	if (pu->t2 == NULL)
+		pu->t2 = VTAILQ_NEXT(t1, list);
 	pu->mask = mask;
 	pu->use = use;
+	pu->fm = tl->curproc;
 	VTAILQ_INSERT_TAIL(&tl->curproc->uses, pu, list);
 }
 
@@ -147,6 +154,7 @@ vcc_AddCall(struct vcc *tl)
 	pc->sym = VCC_SymbolTok(tl, SYM_SUB, 1);
 	AN(pc->sym);
 	pc->t = tl->t;
+	pc->fm = tl->curproc;
 	VTAILQ_INSERT_TAIL(&tl->curproc->calls, pc, list);
 }
 
@@ -286,19 +294,18 @@ vcc_CheckUseRecurse(struct vcc *tl, const struct proc *p,
 
 	pu = vcc_FindIllegalUse(p, m);
 	if (pu != NULL) {
-		VSB_printf(tl->sb,
-		    "'%.*s': %s from method '%.*s'.\n",
-		    PF(pu->t), pu->use, PF(p->name));
-		vcc_ErrWhere(tl, pu->t);
+		vcc_ErrWhere2(tl, pu->t1, pu->t2);
+		VSB_printf(tl->sb, "%s from method '%s'.\n",
+		    pu->use, m->name);
 		VSB_printf(tl->sb, "\n...in subroutine \"%.*s\"\n",
-		    PF(p->name));
+		    PF(pu->fm->name));
 		vcc_ErrWhere(tl, p->name);
 		return (1);
 	}
 	VTAILQ_FOREACH(pc, &p->calls, list) {
 		if (vcc_CheckUseRecurse(tl, pc->sym->proc, m)) {
-			VSB_printf(tl->sb, "\n...called from \"%s\"\n",
-			    pc->sym->name);
+			VSB_printf(tl->sb, "\n...called from \"%.*s\"\n",
+			    PF(pc->fm->name));
 			vcc_ErrWhere(tl, pc->t);
 			return (1);
 		}
@@ -318,10 +325,10 @@ vcc_checkuses(struct vcc *tl, const struct symbol *sym)
 		return;
 	pu = vcc_FindIllegalUse(p, p->method);
 	if (pu != NULL) {
-		VSB_printf(tl->sb, "'%.*s': %s in method '%.*s'.",
-		    PF(pu->t), pu->use, PF(p->name));
+		vcc_ErrWhere2(tl, pu->t1, pu->t2);
+		VSB_printf(tl->sb, "%s in method '%.*s'.",
+		    pu->use, PF(p->name));
 		VSB_cat(tl->sb, "\nAt: ");
-		vcc_ErrWhere(tl, pu->t);
 		return;
 	}
 	if (vcc_CheckUseRecurse(tl, p, p->method)) {

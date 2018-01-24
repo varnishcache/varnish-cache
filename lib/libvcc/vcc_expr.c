@@ -359,7 +359,7 @@ vcc_Eval_Var(struct vcc *tl, struct expr **e, const struct symbol *sym,
 
 	(void)fmt;
 	assert(sym->kind == SYM_VAR);
-	vcc_AddUses(tl, tl->t, sym->r_methods, "Not available");
+	vcc_AddUses(tl, tl->t, NULL, sym->r_methods, "Not available");
 	ERRCHK(tl);
 	*e = vcc_mk_expr(sym->fmt, "%s", sym->rname);
 	(*e)->constant = EXPR_VAR;

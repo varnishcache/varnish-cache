@@ -89,28 +89,27 @@ parse_set(struct vcc *tl)
 {
 	const struct symbol *sym;
 	const struct arith *ap;
+	const struct token *t;
 	vcc_type_t fmt;
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
+	t = tl->t;
 	sym = VCC_SymbolGet(tl, SYM_VAR, "Unknown variable");
 	ERRCHK(tl);
+	vcc_NextToken(tl);
 	AN(sym);
 	if (sym->w_methods == 0) {
-		VSB_printf(tl->sb, "Variable ");
-		vcc_ErrToken(tl, tl->t);
+		vcc_ErrWhere2(tl, t, tl->t);
 		if (sym->r_methods != 0)
-			VSB_printf(tl->sb, " is read only.");
+			VSB_printf(tl->sb, "Variable is read only.\n");
 		else
-			VSB_printf(tl->sb, " cannot be set.");
-		VSB_cat(tl->sb, "\nAt: ");
-		vcc_ErrWhere(tl, tl->t);
+			VSB_printf(tl->sb, "Variable cannot be set.\n");
 		return;
 	}
-	vcc_AddUses(tl, tl->t, sym->w_methods, "cannot be set");
+	vcc_AddUses(tl, t, tl->t, sym->w_methods, "Cannot be set");
 	Fb(tl, 1, "%s\n", sym->lname);
 	tl->indent += INDENT;
-	vcc_NextToken(tl);
 	fmt = sym->fmt;
 	for (ap = arith; ap->type != VOID; ap++) {
 		if (ap->type != fmt)
@@ -144,24 +143,23 @@ static void
 parse_unset(struct vcc *tl)
 {
 	const struct symbol *sym;
+	const struct token *t;
 
 	/* XXX: Wrong, should use VCC_Expr(HEADER) */
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
+	t = tl->t;
 	sym = VCC_SymbolGet(tl, SYM_VAR, "Unknown variable");
 	ERRCHK(tl);
+	vcc_NextToken(tl);
 	AN(sym);
 	if (sym->u_methods == 0) {
-		VSB_printf(tl->sb, "Variable ");
-		vcc_ErrToken(tl, tl->t);
-		VSB_printf(tl->sb, " cannot be unset.");
-		VSB_cat(tl->sb, "\nAt: ");
-		vcc_ErrWhere(tl, tl->t);
+		vcc_ErrWhere2(tl, t, tl->t);
+		VSB_printf(tl->sb, "Variable cannot be unset.\n");
 		return;
 	}
-	vcc_AddUses(tl, tl->t, sym->u_methods, "cannot be unset.");
+	vcc_AddUses(tl, t, tl->t, sym->u_methods, "Cannot be unset");
 	Fb(tl, 1, "%s;\n", sym->uname);
-	vcc_NextToken(tl);
 }
 
 /*--------------------------------------------------------------------*/
@@ -401,8 +399,8 @@ vcc_ParseAction(struct vcc *tl)
 	for (atp = action_table; atp->name != NULL; atp++) {
 		if (vcc_IdIs(at, atp->name)) {
 			if (atp->bitmask != 0)
-				vcc_AddUses(tl, at, atp->bitmask,
-				    "not a valid action");
+				vcc_AddUses(tl, at, NULL, atp->bitmask,
+				    "Not a valid action");
 			atp->func(tl);
 			return (1);
 		}

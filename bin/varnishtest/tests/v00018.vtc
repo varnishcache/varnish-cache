@@ -7,7 +7,7 @@ varnish v1 -vcl {
 	sub vcl_deliver { return(synth(resp.status, resp.reason)); }
 }
 
-varnish v1 -errvcl {Variable 'now' is read only.} {
+varnish v1 -errvcl {Variable is read only.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_miss { set now = 1000; }
 }
@@ -68,12 +68,12 @@ varnish v1 -errvcl {Symbol not found: 'mu' (expected type BOOL):} {
 	sub vcl_backend_response { set beresp.do_gzip = mu; }
 }
 
-varnish v1 -errvcl {Variable 'beresp.do_gzip' cannot be unset} {
+varnish v1 -errvcl {Variable cannot be unset} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_backend_response { unset beresp.do_gzip; }
 }
 
-varnish v1 -errvcl {Variable 'bereq.body' cannot be set.} {
+varnish v1 -errvcl {Variable cannot be set.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_backend_fetch { set bereq.body = "foo"; }
 }
@@ -119,7 +119,7 @@ varnish v1 -errvcl {Expected return action name.} {
 }
 
 # issue #936
-varnish v1 -errvcl {'synthetic': not a valid action in method 'vcl_recv'} {
+varnish v1 -errvcl {Not a valid action in method 'vcl_recv'} {
 	backend foo { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		synthetic("XXX");

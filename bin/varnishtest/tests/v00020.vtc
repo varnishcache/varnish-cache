@@ -218,7 +218,7 @@ varnish v1 -errvcl {Function returns VOID} {
 	}
 }
 
-varnish v1 -errvcl {'req.hash': Not available in method 'vcl_recv'.} {
+varnish v1 -errvcl {Not available in method 'vcl_recv'.} {
 	import blob;
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
@@ -226,7 +226,7 @@ varnish v1 -errvcl {'req.hash': Not available in method 'vcl_recv'.} {
 	}
 }
 
-varnish v1 -errvcl {'req.hash': Not available in method 'vcl_hash'.} {
+varnish v1 -errvcl {Not available in method 'vcl_hash'.} {
 	import blob;
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_hash {
@@ -234,7 +234,7 @@ varnish v1 -errvcl {'req.hash': Not available in method 'vcl_hash'.} {
 	}
 }
 
-varnish v1 -errvcl {'beresp.status': Not available in method 'vcl_recv'.} {
+varnish v1 -errvcl {Not available in method 'vcl_recv'.} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_recv {
 		set req.http.foo = 100 + beresp.status;

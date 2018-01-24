@@ -352,8 +352,8 @@ void VCC_XrefTable(struct vcc *);
 void vcc_AddCall(struct vcc *);
 void vcc_ProcAction(struct proc *p, unsigned action, struct token *t);
 int vcc_CheckAction(struct vcc *tl);
-void vcc_AddUses(struct vcc *tl, const struct token *t, unsigned mask,
-    const char *use);
+void vcc_AddUses(struct vcc *, const struct token *, const struct token *,
+     unsigned mask, const char *use);
 int vcc_CheckUses(struct vcc *tl);
 
 #define ERRCHK(tl)      do { if ((tl)->err) return; } while (0)
