@@ -265,10 +265,8 @@ vcc_ParseProbe(struct vcc *tl)
 	AN(sym);
 
 	vcc_ParseProbeSpec(tl, sym, &p);
-	if (vcc_IdIs(t_probe, "default")) {
-		(void)vcc_AddRef(tl, t_probe, SYM_PROBE);
-		tl->default_probe = p;
-	}
+	if (vcc_IdIs(t_probe, "default"))
+		tl->default_probe = sym;
 }
 
 /*--------------------------------------------------------------------
@@ -392,7 +390,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			Fb(tl, 0, "\t.probe = %s,\n", p);
 			ERRCHK(tl);
 		} else if (vcc_IdIs(t_field, "probe") && tl->t->tok == ID) {
-			pb = VCC_SymbolTok(tl, NULL, tl->t, SYM_PROBE, 0);
+			pb = VCC_SymbolTok(tl, NULL, SYM_PROBE, 0);
 			if (pb == NULL) {
 				VSB_printf(tl->sb, "Probe %.*s not found\n",
 				    PF(tl->t));
@@ -400,7 +398,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 				return;
 			}
 			Fb(tl, 0, "\t.probe = %s,\n", pb->rname);
-			(void)vcc_AddRef(tl, tl->t, SYM_PROBE);
+			(void)vcc_AddRef(tl, SYM_PROBE);
 			vcc_NextToken(tl);
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "probe")) {
@@ -490,10 +488,8 @@ vcc_ParseBackend(struct vcc *tl)
 		return;
 	}
 
-	if (tl->default_director == NULL || vcc_IdIs(t_be, "default")) {
-		tl->default_director = sym->rname;
-		tl->t_default_director = t_be;
-	}
+	if (tl->default_director == NULL || vcc_IdIs(t_be, "default"))
+		tl->default_director = sym;
 }
 
 void

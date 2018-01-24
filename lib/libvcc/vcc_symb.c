@@ -237,7 +237,7 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
 	kind = VCC_HandleKind(fmt);
 	assert(kind != SYM_NONE);
 
-	sym = VCC_SymbolTok(tl, NULL, tl->t, SYM_NONE, 0);
+	sym = VCC_SymbolTok(tl, NULL, SYM_NONE, 0);
 	if (sym != NULL && sym->def_b != NULL && kind == sym->kind) {
 		p = VCC_SymKind(tl, sym);
 		VSB_printf(tl->sb, "%c%s '%.*s' redefined.\n",
@@ -262,7 +262,7 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
 		return (sym);
 	}
 	if (sym == NULL)
-		sym = VCC_SymbolTok(tl, NULL, tl->t, kind, 1);
+		sym = VCC_SymbolTok(tl, NULL, kind, 1);
 	AN(sym);
 	AZ(sym->ndef);
 	VCC_GlobalSymbol(sym, fmt, pfx);

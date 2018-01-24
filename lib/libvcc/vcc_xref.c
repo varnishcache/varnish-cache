@@ -61,26 +61,26 @@ struct procuse {
  */
 
 struct symbol *
-vcc_AddRef(struct vcc *tl, const struct token *t, enum symkind kind)
+vcc_AddRef(struct vcc *tl, enum symkind kind)
 {
 	struct symbol *sym;
 
-	sym = VCC_SymbolTok(tl, NULL, t, kind, 1);
+	sym = VCC_SymbolTok(tl, NULL, kind, 1);
 	if (sym->ref_b == NULL)
-		sym->ref_b = t;
+		sym->ref_b = tl->t;
 	AN(sym);
 	sym->nref++;
 	return (sym);
 }
 
 struct symbol *
-vcc_AddDef(struct vcc *tl, const struct token *t, enum symkind kind)
+vcc_AddDef(struct vcc *tl, enum symkind kind)
 {
 	struct symbol *sym;
 
-	sym = VCC_SymbolTok(tl, NULL, t, kind, 1);
+	sym = VCC_SymbolTok(tl, NULL, kind, 1);
 	if (sym->def_b == NULL)
-		sym->def_b = t;
+		sym->def_b = tl->t;
 	AN(sym);
 	sym->ndef++;
 	return (sym);
@@ -138,15 +138,15 @@ vcc_AddUses(struct vcc *tl, const struct token *t, unsigned mask,
 }
 
 void
-vcc_AddCall(struct vcc *tl, struct token *t)
+vcc_AddCall(struct vcc *tl)
 {
 	struct proccall *pc;
 
 	pc = TlAlloc(tl, sizeof *pc);
 	assert(pc != NULL);
-	pc->sym = VCC_SymbolTok(tl, NULL, t, SYM_SUB, 1);
+	pc->sym = VCC_SymbolTok(tl, NULL, SYM_SUB, 1);
 	AN(pc->sym);
-	pc->t = t;
+	pc->t = tl->t;
 	VTAILQ_INSERT_TAIL(&tl->curproc->calls, pc, list);
 }
 

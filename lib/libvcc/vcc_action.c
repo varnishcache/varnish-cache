@@ -46,8 +46,8 @@ parse_call(struct vcc *tl)
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	vcc_AddCall(tl, tl->t);
-	sym = vcc_AddRef(tl, tl->t, SYM_SUB);
+	vcc_AddCall(tl);
+	sym = vcc_AddRef(tl, SYM_SUB);
 	VCC_GlobalSymbol(sym, SUB, "VGC_function");
 	Fb(tl, 1, "%s(ctx);\n", sym->rname);
 	vcc_NextToken(tl);
@@ -245,7 +245,7 @@ parse_return_vcl(struct vcc *tl)
 	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	sym = VCC_SymbolTok(tl, NULL, tl->t, SYM_VCL, 0);
+	sym = VCC_SymbolTok(tl, NULL, SYM_VCL, 0);
 	ERRCHK(tl);
 	if (sym == NULL) {
 		VSB_printf(tl->sb, "Not a VCL label:\n");
@@ -396,7 +396,7 @@ vcc_ParseAction(struct vcc *tl)
 			return (1);
 		}
 	}
-	sym = VCC_SymbolTok(tl, NULL, tl->t, SYM_NONE, 0);
+	sym = VCC_SymbolTok(tl, NULL, SYM_NONE, 0);
 	if (sym != NULL && sym->kind == SYM_FUNC) {
 		vcc_Expr_Call(tl, sym);
 		return (1);

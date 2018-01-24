@@ -100,7 +100,7 @@ vcc_FindVar(struct vcc *tl, int wr_access, const char *use)
 {
 	const struct symbol *sym;
 
-	sym = VCC_SymbolTok(tl, NULL, tl->t, SYM_VAR, 0);
+	sym = VCC_SymbolTok(tl, NULL, SYM_VAR, 0);
 	if (tl->err)
 		return (NULL);
 	if (sym != NULL) {

@@ -218,9 +218,8 @@ struct vcc {
 	int			nprobe;
 
 	int			ndirector;
-	const char		*default_director;
-	struct token		*t_default_director;
-	const char		*default_probe;
+	struct symbol		*default_director;
+	struct symbol		*default_probe;
 
 	unsigned		unique;
 
@@ -319,8 +318,8 @@ void vcc_stevedore(struct vcc *vcc, const char *stv_name);
 void VCC_PrintCName(struct vsb *vsb, const char *b, const char *e);
 struct symbol *VCC_Symbol(struct vcc *, struct symbol *,
     const char *, const char *, enum symkind, int);
-#define VCC_SymbolTok(vcc, sym, tok, kind, create) \
-    VCC_Symbol(vcc, sym, (tok)->b, (tok)->e, kind, create)
+#define VCC_SymbolTok(vcc, sym, kind, create) \
+    VCC_Symbol(vcc, sym, (vcc)->t->b, (vcc)->t->e, kind, create)
 const char * VCC_SymKind(struct vcc *tl, const struct symbol *s);
 typedef void symwalk_f(struct vcc *tl, const struct symbol *s);
 void VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, enum symkind kind);
@@ -354,14 +353,12 @@ void vcc_ParseImport(struct vcc *tl);
 void vcc_ParseNew(struct vcc *tl);
 
 /* vcc_xref.c */
-struct symbol *vcc_AddDef(struct vcc *tl, const struct token *t,
-    enum symkind type);
-struct symbol *vcc_AddRef(struct vcc *tl, const struct token *t,
-    enum symkind type);
+struct symbol *vcc_AddDef(struct vcc *, enum symkind);
+struct symbol *vcc_AddRef(struct vcc *, enum symkind);
 int vcc_CheckReferences(struct vcc *tl);
 void VCC_XrefTable(struct vcc *);
 
-void vcc_AddCall(struct vcc *tl, struct token *t);
+void vcc_AddCall(struct vcc *);
 void vcc_ProcAction(struct proc *p, unsigned action, struct token *t);
 int vcc_CheckAction(struct vcc *tl);
 void vcc_AddUses(struct vcc *tl, const struct token *t, unsigned mask,

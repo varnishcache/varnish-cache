@@ -333,13 +333,13 @@ vcc_Eval_Handle(struct vcc *tl, struct expr **e, const struct symbol *sym,
 	AN(sym->rname);
 
 	if (sym->fmt != STRING && fmt == STRINGS) {
-		(void)vcc_AddRef(tl, tl->t, sym->kind);
+		(void)vcc_AddRef(tl, sym->kind);
 		*e = vcc_mk_expr(STRINGS, "\"%s\"", sym->name);
 		(*e)->nstr = 1;
 		(*e)->constant |= EXPR_CONST | EXPR_STR_CONST;
 	} else {
 		vcc_ExpectVid(tl, "handle");
-		(void)vcc_AddRef(tl, tl->t, sym->kind);
+		(void)vcc_AddRef(tl, sym->kind);
 		*e = vcc_mk_expr(sym->fmt, "%s", sym->rname);
 		(*e)->constant = EXPR_VAR;
 		(*e)->nstr = 1;
@@ -657,9 +657,9 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		sym = NULL;
 		kind = VCC_HandleKind(fmt);
 		if (kind != SYM_NONE)
-			sym = VCC_SymbolTok(tl, NULL, tl->t, kind, 0);
+			sym = VCC_SymbolTok(tl, NULL, kind, 0);
 		if (sym == NULL)
-			sym = VCC_SymbolTok(tl, NULL, tl->t, SYM_NONE, 0);
+			sym = VCC_SymbolTok(tl, NULL, SYM_NONE, 0);
 		if (sym == NULL || sym->eval == NULL) {
 			VSB_printf(tl->sb, "Symbol not found: ");
 			vcc_ErrToken(tl, tl->t);
@@ -966,7 +966,7 @@ cmp_acl(struct vcc *tl, struct expr **e, const struct cmps *cp)
 
 	vcc_NextToken(tl);
 	vcc_ExpectVid(tl, "ACL");
-	sym = vcc_AddRef(tl, tl->t, SYM_ACL);
+	sym = vcc_AddRef(tl, SYM_ACL);
 	vcc_NextToken(tl);
 	VCC_GlobalSymbol(sym, ACL, ACL_SYMBOL_PREFIX);
 	bprintf(buf, "%sVRT_acl_match(ctx, %s, \v1)", cp->emit, sym->rname);
