@@ -310,7 +310,9 @@ void vcc_stevedore(struct vcc *vcc, const char *stv_name);
 void VCC_PrintCName(struct vsb *vsb, const char *b, const char *e);
 struct symbol *VCC_Symbol(struct vcc *, struct symbol *,
     const char *, const char *, enum symkind, int);
-struct symbol *VCC_SymbolGet(struct vcc *, enum symkind, const char *);
+enum xref_e {XREF_NONE, XREF_DEF, XREF_REF};
+struct symbol *VCC_SymbolGet(struct vcc *, enum symkind, const char *,
+    enum xref_e);
 struct symbol *VCC_SymbolTok(struct vcc *, enum symkind, int);
 const char * VCC_SymKind(struct vcc *tl, const struct symbol *s);
 typedef void symwalk_f(struct vcc *tl, const struct symbol *s);
@@ -344,7 +346,6 @@ void vcc_ParseImport(struct vcc *tl);
 void vcc_ParseNew(struct vcc *tl);
 
 /* vcc_xref.c */
-struct symbol *vcc_AddDef(struct vcc *, enum symkind);
 struct symbol *vcc_AddRef(struct vcc *, enum symkind);
 int vcc_CheckReferences(struct vcc *tl);
 void VCC_XrefTable(struct vcc *);

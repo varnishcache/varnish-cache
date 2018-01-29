@@ -966,7 +966,8 @@ cmp_acl(struct vcc *tl, struct expr **e, const struct cmps *cp)
 
 	vcc_NextToken(tl);
 	vcc_ExpectVid(tl, "ACL");
-	sym = vcc_AddRef(tl, SYM_ACL);
+	sym = VCC_SymbolGet(tl, SYM_ACL, NULL, XREF_REF);
+	AN(sym);
 	vcc_NextToken(tl);
 	VCC_GlobalSymbol(sym, ACL, ACL_SYMBOL_PREFIX);
 	bprintf(buf, "%sVRT_acl_match(ctx, %s, \v1)", cp->emit, sym->rname);

@@ -76,19 +76,6 @@ vcc_AddRef(struct vcc *tl, enum symkind kind)
 	return (sym);
 }
 
-struct symbol *
-vcc_AddDef(struct vcc *tl, enum symkind kind)
-{
-	struct symbol *sym;
-
-	sym = VCC_SymbolTok(tl, kind, 1);
-	if (sym->def_b == NULL)
-		sym->def_b = tl->t;
-	AN(sym);
-	sym->ndef++;
-	return (sym);
-}
-
 /*--------------------------------------------------------------------*/
 
 static void

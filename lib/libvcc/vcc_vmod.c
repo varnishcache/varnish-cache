@@ -270,6 +270,7 @@ vcc_ParseNew(struct vcc *tl)
 {
 	struct symbol *sy1, *sy2, *sy3;
 	struct inifin *ifp;
+	struct token *t;
 	const char *p, *s_obj;
 	char buf1[128];
 	char buf2[128];
@@ -288,17 +289,18 @@ vcc_ParseNew(struct vcc *tl)
 	vcc_NextToken(tl);
 
 	ExpectErr(tl, ID);
-	sy2 = VCC_SymbolGet(tl, SYM_OBJECT, "Symbol not found");
+	t = tl->t;
+	sy2 = VCC_SymbolGet(tl, SYM_OBJECT, "Symbol not found", XREF_NONE);
 	ERRCHK(tl);
+	vcc_NextToken(tl);
 	AN(sy2);
 	if (sy2->extra == NULL) {
 		VSB_printf(tl->sb, "Constructor not found: ");
-		vcc_ErrToken(tl, tl->t);
+		vcc_ErrToken(tl, t);
 		VSB_printf(tl->sb, " at ");
-		vcc_ErrWhere(tl, tl->t);
+		vcc_ErrWhere(tl, t);
 		return;
 	}
-	vcc_NextToken(tl);
 
 	p = sy2->extra;
 	AN(p);

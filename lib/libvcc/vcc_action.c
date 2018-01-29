@@ -47,7 +47,8 @@ parse_call(struct vcc *tl)
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 	vcc_AddCall(tl);
-	sym = vcc_AddRef(tl, SYM_SUB);
+	sym = VCC_SymbolGet(tl, SYM_SUB, NULL, XREF_REF);
+	AN(sym);
 	VCC_GlobalSymbol(sym, SUB, "VGC_function");
 	Fb(tl, 1, "%s(ctx);\n", sym->rname);
 	vcc_NextToken(tl);
@@ -95,7 +96,7 @@ parse_set(struct vcc *tl)
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 	t = tl->t;
-	sym = VCC_SymbolGet(tl, SYM_VAR, "Unknown variable");
+	sym = VCC_SymbolGet(tl, SYM_VAR, "Unknown variable", XREF_NONE);
 	ERRCHK(tl);
 	vcc_NextToken(tl);
 	AN(sym);
@@ -149,7 +150,7 @@ parse_unset(struct vcc *tl)
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 	t = tl->t;
-	sym = VCC_SymbolGet(tl, SYM_VAR, "Unknown variable");
+	sym = VCC_SymbolGet(tl, SYM_VAR, "Unknown variable", XREF_NONE);
 	ERRCHK(tl);
 	vcc_NextToken(tl);
 	AN(sym);

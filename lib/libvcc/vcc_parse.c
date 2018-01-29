@@ -215,7 +215,7 @@ vcc_ParseFunction(struct vcc *tl)
 	vcc_ExpectVid(tl, "function");
 	ERRCHK(tl);
 
-	sym = vcc_AddDef(tl, SYM_SUB);
+	sym = VCC_SymbolGet(tl, SYM_SUB, NULL, XREF_DEF);
 	AN(sym);
 	p = sym->proc;
 	if (p == NULL) {
@@ -247,7 +247,6 @@ vcc_ParseFunction(struct vcc *tl)
 		/* Add to VCL sub */
 		AN(p->method);
 		if (p->name == NULL) {
-			(void)vcc_AddDef(tl, SYM_SUB);
 			(void)vcc_AddRef(tl, SYM_SUB);
 			p->name = tl->t;
 		}
