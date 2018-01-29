@@ -430,8 +430,10 @@ process_start(struct process *p)
 			vtc_log(p->vl, 4, "PUSH ptem: %s", strerror(errno));
 		if (ioctl(slave, I_PUSH, "ldterm"))
 			vtc_log(p->vl, 4, "PUSH ldterm: %s", strerror(errno));
-#endif
+		(void)ioctl(STDIN_FILENO, TIOCSCTTY, NULL);
+#else
 		AZ(ioctl(STDIN_FILENO, TIOCSCTTY, NULL));
+#endif
 		AZ(close(STDOUT_FILENO));
 		assert(dup2(slave, STDOUT_FILENO) == STDOUT_FILENO);
 		VSUB_closefrom(STDERR_FILENO + 1);
