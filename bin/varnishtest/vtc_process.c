@@ -426,19 +426,15 @@ process_start(struct process *p)
 		slave = open(slavename, O_RDWR);
 		assert(slave == STDIN_FILENO);
 #ifdef __sun
-		(void)ioctl(STDIN_FILENO, TIOCSCTTY, NULL);
-#else
-		AZ(ioctl(STDIN_FILENO, TIOCSCTTY, NULL));
-#endif
-		AZ(close(STDOUT_FILENO));
-		assert(dup2(slave, STDOUT_FILENO) == STDOUT_FILENO);
-		VSUB_closefrom(STDERR_FILENO + 1);
-#ifdef __sun
 		if (ioctl(slave, I_PUSH, "ptem"))
 			vtc_log(p->vl, 4, "PUSH ptem: %s", strerror(errno));
 		if (ioctl(slave, I_PUSH, "ldterm"))
 			vtc_log(p->vl, 4, "PUSH ldterm: %s", strerror(errno));
 #endif
+		AZ(ioctl(STDIN_FILENO, TIOCSCTTY, NULL));
+		AZ(close(STDOUT_FILENO));
+		assert(dup2(slave, STDOUT_FILENO) == STDOUT_FILENO);
+		VSUB_closefrom(STDERR_FILENO + 1);
 		process_init_term(p, slave);
 
 		AZ(setenv("TERM", "ansi.sys", 1));
