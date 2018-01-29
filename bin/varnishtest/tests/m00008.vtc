@@ -6,6 +6,10 @@ varnish v1 -errvcl {Module debug conflicts with other symbol.} {
 	backend b { .host = "127.0.0.1"; }
 	sub debug {}
 	import debug;
+
+	sub vcl_recv {
+		call debug;
+	}
 }
 
 server s1 {

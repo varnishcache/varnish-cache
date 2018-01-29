@@ -255,13 +255,9 @@ parse_return_vcl(struct vcc *tl)
 	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	sym = VCC_SymbolTok(tl, SYM_VCL, 0);
+	sym = VCC_SymbolGet(tl, SYM_VCL, "Not a VCL label", XREF_NONE);
 	ERRCHK(tl);
-	if (sym == NULL) {
-		VSB_printf(tl->sb, "Not a VCL label:\n");
-		vcc_ErrWhere(tl, tl->t);
-		return;
-	}
+	AN(sym);
 	if (sym->eval_priv == NULL) {
 		VSB_printf(tl->fi, "%s VCL %s */\n", VCC_INFO_PREFIX,
 		    sym->name);

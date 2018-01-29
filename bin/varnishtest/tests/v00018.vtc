@@ -126,3 +126,9 @@ varnish v1 -errvcl {Not a valid action in method 'vcl_recv'} {
 		return (synth(503));
 	}
 }
+
+varnish v1 -errvcl {Not a VCL label:} {
+	sub vcl_recv {
+		return (vcl(vcl_recv));
+	}
+}
