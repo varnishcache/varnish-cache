@@ -63,17 +63,13 @@ struct procuse {
  * Keep track of definitions and references
  */
 
-struct symbol *
-vcc_AddRef(struct vcc *tl, enum symkind kind)
+void
+vcc_AddRef(struct vcc *tl, struct symbol *sym)
 {
-	struct symbol *sym;
 
-	sym = VCC_SymbolTok(tl, kind, 1);
 	if (sym->ref_b == NULL)
 		sym->ref_b = tl->t;
-	AN(sym);
 	sym->nref++;
-	return (sym);
 }
 
 /*--------------------------------------------------------------------*/

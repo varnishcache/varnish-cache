@@ -282,7 +282,7 @@ vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
  */
 
 static void v_matchproto_(sym_expr_t)
-vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym,
+vcc_Eval_Regsub(struct vcc *tl, struct expr **e, struct symbol *sym,
     vcc_type_t fmt)
 {
 	struct expr *e2;
@@ -312,7 +312,7 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, const struct symbol *sym,
  */
 
 static void v_matchproto_(sym_expr_t)
-vcc_Eval_BoolConst(struct vcc *tl, struct expr **e, const struct symbol *sym,
+vcc_Eval_BoolConst(struct vcc *tl, struct expr **e, struct symbol *sym,
     vcc_type_t fmt)
 {
 
@@ -326,20 +326,19 @@ vcc_Eval_BoolConst(struct vcc *tl, struct expr **e, const struct symbol *sym,
  */
 
 void v_matchproto_(sym_expr_t)
-vcc_Eval_Handle(struct vcc *tl, struct expr **e, const struct symbol *sym,
+vcc_Eval_Handle(struct vcc *tl, struct expr **e, struct symbol *sym,
     vcc_type_t fmt)
 {
 
 	AN(sym->rname);
 
+	vcc_AddRef(tl, sym);
 	if (sym->fmt != STRING && fmt == STRINGS) {
-		(void)vcc_AddRef(tl, sym->kind);
 		*e = vcc_mk_expr(STRINGS, "\"%s\"", sym->name);
 		(*e)->nstr = 1;
 		(*e)->constant |= EXPR_CONST | EXPR_STR_CONST;
 	} else {
 		vcc_ExpectVid(tl, "handle");
-		(void)vcc_AddRef(tl, sym->kind);
 		*e = vcc_mk_expr(sym->fmt, "%s", sym->rname);
 		(*e)->constant = EXPR_VAR;
 		(*e)->nstr = 1;
@@ -353,7 +352,7 @@ vcc_Eval_Handle(struct vcc *tl, struct expr **e, const struct symbol *sym,
  */
 
 void v_matchproto_(sym_expr_t)
-vcc_Eval_Var(struct vcc *tl, struct expr **e, const struct symbol *sym,
+vcc_Eval_Var(struct vcc *tl, struct expr **e, struct symbol *sym,
     vcc_type_t fmt)
 {
 
@@ -598,7 +597,7 @@ vcc_Eval_Func(struct vcc *tl, const char *spec,
  */
 
 void v_matchproto_(sym_expr_t)
-vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, const struct symbol *sym,
+vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, struct symbol *sym,
     vcc_type_t fmt)
 {
 
@@ -630,7 +629,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 	struct expr *e1, *e2;
 	const char *ip, *sign;
-	const struct symbol *sym;
+	struct symbol *sym;
 	enum symkind kind;
 	double d;
 	int i;
@@ -1264,7 +1263,7 @@ vcc_Expr(struct vcc *tl, vcc_type_t fmt)
  */
 
 void
-vcc_Expr_Call(struct vcc *tl, const struct symbol *sym)
+vcc_Expr_Call(struct vcc *tl, struct symbol *sym)
 {
 
 	struct expr *e;

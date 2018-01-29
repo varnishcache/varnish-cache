@@ -105,7 +105,7 @@ enum symkind {
 };
 
 typedef void sym_expr_t(struct vcc *tl, struct expr **,
-    const struct symbol *sym, vcc_type_t);
+    struct symbol *sym, vcc_type_t);
 typedef void sym_wildcard_t(struct vcc *, struct symbol *,
     const char *, const char *);
 
@@ -274,7 +274,7 @@ char *TlDup(struct vcc *tl, const char *s);
 
 /* vcc_expr.c */
 void vcc_Expr(struct vcc *tl, vcc_type_t typ);
-void vcc_Expr_Call(struct vcc *tl, const struct symbol *sym);
+void vcc_Expr_Call(struct vcc *tl, struct symbol *sym);
 void vcc_Expr_Init(struct vcc *tl);
 sym_expr_t vcc_Eval_Var;
 sym_expr_t vcc_Eval_Handle;
@@ -346,7 +346,7 @@ void vcc_ParseImport(struct vcc *tl);
 void vcc_ParseNew(struct vcc *tl);
 
 /* vcc_xref.c */
-struct symbol *vcc_AddRef(struct vcc *, enum symkind);
+void vcc_AddRef(struct vcc *, struct symbol *);
 int vcc_CheckReferences(struct vcc *tl);
 void VCC_XrefTable(struct vcc *);
 

@@ -393,7 +393,7 @@ vcc_ParseAction(struct vcc *tl)
 {
 	struct token *at;
 	struct action_table *atp;
-	const struct symbol *sym;
+	struct symbol *sym;
 
 	at = tl->t;
 	assert(at->tok == ID);

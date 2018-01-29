@@ -247,7 +247,7 @@ vcc_ParseFunction(struct vcc *tl)
 		/* Add to VCL sub */
 		AN(p->method);
 		if (p->name == NULL) {
-			(void)vcc_AddRef(tl, SYM_SUB);
+			vcc_AddRef(tl, sym);
 			p->name = tl->t;
 		}
 	}
