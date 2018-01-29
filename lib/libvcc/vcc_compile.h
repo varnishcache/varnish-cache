@@ -220,7 +220,7 @@ struct vcc {
 
 	int			ndirector;
 	struct symbol		*default_director;
-	struct symbol		*default_probe;
+	char			*default_probe;
 
 	unsigned		unique;
 

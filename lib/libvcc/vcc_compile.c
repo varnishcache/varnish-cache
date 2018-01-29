@@ -418,8 +418,7 @@ EmitStruct(const struct vcc *tl)
 	Fc(tl, 0, "\t.default_director = &%s,\n",
 	   tl->default_director->rname);
 	if (tl->default_probe != NULL)
-		Fc(tl, 0, "\t.default_probe = %s,\n",
-		    tl->default_probe->rname);
+		Fc(tl, 0, "\t.default_probe = %s,\n", tl->default_probe);
 	Fc(tl, 0, "\t.ref = VGC_ref,\n");
 	Fc(tl, 0, "\t.nref = VGC_NREFS,\n");
 	Fc(tl, 0, "\t.nsrc = VGC_NSRCS,\n");
@@ -614,8 +613,6 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 
 	/* Refcount the default director & probe*/
 	tl->default_director->nref++;
-	if (tl->default_probe != NULL)
-		tl->default_probe->nref++;
 
 	/* Check for orphans */
 	if (vcc_CheckReferences(tl))

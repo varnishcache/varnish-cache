@@ -249,7 +249,6 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **name)
 void
 vcc_ParseProbe(struct vcc *tl)
 {
-	struct token *t_probe;
 	struct symbol *sym;
 	char *p;
 
@@ -257,15 +256,16 @@ vcc_ParseProbe(struct vcc *tl)
 
 	vcc_ExpectVid(tl, "backend probe");	/* ID: name */
 	ERRCHK(tl);
-	t_probe = tl->t;
-	sym = VCC_HandleSymbol(tl, PROBE, "vgc_probe");
-
-	ERRCHK(tl);
-	AN(sym);
-
-	vcc_ParseProbeSpec(tl, sym, &p);
-	if (vcc_IdIs(t_probe, "default"))
-		tl->default_probe = sym;
+	if (vcc_IdIs(tl->t, "default")) {
+		vcc_NextToken(tl);
+		vcc_ParseProbeSpec(tl, NULL, &p);
+		tl->default_probe = p;
+	} else {
+		sym = VCC_HandleSymbol(tl, PROBE, "vgc_probe");
+		ERRCHK(tl);
+		AN(sym);
+		vcc_ParseProbeSpec(tl, sym, &p);
+	}
 }
 
 /*--------------------------------------------------------------------
@@ -389,11 +389,21 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			Fb(tl, 0, "\t.probe = %s,\n", p);
 			ERRCHK(tl);
 		} else if (vcc_IdIs(t_field, "probe") && tl->t->tok == ID) {
-			pb = VCC_SymbolGet(tl, SYM_PROBE, "Probe not found",
-			    XREF_REF);
-			ERRCHK(tl);
-			AN(pb);
-			Fb(tl, 0, "\t.probe = %s,\n", pb->rname);
+			if (vcc_IdIs(tl->t, "default")) {
+				if (tl->default_probe == NULL) {
+					VSB_printf(tl->sb,
+					    "No default probe defined\n");
+					vcc_ErrToken(tl, tl->t);
+					VSB_printf(tl->sb, " at\n");
+					vcc_ErrWhere(tl, tl->t);
+				}
+			} else {
+				pb = VCC_SymbolGet(tl, SYM_PROBE,
+				    "Probe not found", XREF_REF);
+				ERRCHK(tl);
+				AN(pb);
+				Fb(tl, 0, "\t.probe = %s,\n", pb->rname);
+			}
 			vcc_NextToken(tl);
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "probe")) {
