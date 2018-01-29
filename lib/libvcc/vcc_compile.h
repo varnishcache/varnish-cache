@@ -281,7 +281,6 @@ sym_expr_t vcc_Eval_Handle;
 sym_expr_t vcc_Eval_SymFunc;
 void vcc_Eval_Func(struct vcc *tl, const char *spec,
     const char *extra, const struct symbol *sym);
-enum symkind VCC_HandleKind(vcc_type_t fmt);
 void VCC_GlobalSymbol(struct symbol *, vcc_type_t fmt, const char *pfx);
 struct symbol *VCC_HandleSymbol(struct vcc *, vcc_type_t , const char *);
 

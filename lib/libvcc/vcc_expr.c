@@ -630,7 +630,6 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	struct expr *e1, *e2;
 	const char *ip, *sign;
 	struct symbol *sym;
-	enum symkind kind;
 	double d;
 	int i;
 
@@ -649,24 +648,9 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	}
 	switch (tl->t->tok) {
 	case ID:
-		/*
-		 * XXX: what if var and func/proc had same name ?
-		 * XXX: look for SYM_VAR first for consistency ?
-		 */
-		sym = NULL;
-		kind = VCC_HandleKind(fmt);
-		if (kind != SYM_NONE)
-			sym = VCC_SymbolTok(tl, kind, 0);
-		if (sym == NULL)
-			sym = VCC_SymbolTok(tl, SYM_NONE, 0);
-		if (sym == NULL || sym->eval == NULL) {
-			VSB_printf(tl->sb, "Symbol not found: ");
-			vcc_ErrToken(tl, tl->t);
-			VSB_printf(tl->sb, " (expected type %s):\n",
-			    vcc_utype(fmt));
-			vcc_ErrWhere(tl, tl->t);
-			return;
-		}
+		sym = VCC_SymbolGet(tl, SYM_NONE, "Symbol not found",
+		    XREF_NONE);
+		ERRCHK(tl);
 		AN(sym);
 		if (sym->kind == SYM_FUNC && sym->fmt == VOID) {
 			VSB_printf(tl->sb, "Function returns VOID:\n");

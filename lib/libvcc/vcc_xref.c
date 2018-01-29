@@ -67,6 +67,7 @@ void
 vcc_AddRef(struct vcc *tl, struct symbol *sym)
 {
 
+	(void)tl;
 	if (sym->ref_b == NULL)
 		sym->ref_b = tl->t;
 	sym->nref++;

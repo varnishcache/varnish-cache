@@ -41,7 +41,7 @@ varnish v1 -errvcl {Operator > not possible on BACKEND} {
 	sub vcl_recv { if (a > b) { } }
 }
 
-varnish v1 -errvcl {Symbol not found: 'req.foo' (expected type BOOL):} {
+varnish v1 -errvcl {Symbol not found: 'req.foo'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_hash { if (req.foo != "bar") { } }
 }
@@ -66,7 +66,7 @@ varnish v1 -errvcl {Cannot be set in method 'vcl_pipe'.} {
 	}
 }
 
-varnish v1 -errvcl {Symbol not found: 'c' (expected type BACKEND):} {
+varnish v1 -errvcl {Symbol not found: 'c'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_backend_response {
 		if (beresp.backend == c) {

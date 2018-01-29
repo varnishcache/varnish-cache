@@ -31,7 +31,7 @@ varnish v1 -errvcl {Comparison of different types: INT '!=' STRING} {
 	}
 }
 
-varnish v1 -errvcl {Symbol not found: 'vcl_recv' (expected type STRING)} {
+varnish v1 -errvcl {Symbol type (sub) can not be used in expression.} {
 	sub vcl_recv {
 		set req.http.foo = vcl_recv;
 	}
@@ -262,7 +262,7 @@ varnish v1 -errvcl {INT * BLOB not possible.} {
 }
 
 # XXX: should spot nonexistent storage
-varnish v1 -errvcl {Symbol not found: 'storage.foo' (expected type STEVEDORE):} {
+varnish v1 -errvcl {Symbol not found: 'storage.foo'} {
 	sub vcl_backend_response {
 		set beresp.storage = storage.foo;
 	}

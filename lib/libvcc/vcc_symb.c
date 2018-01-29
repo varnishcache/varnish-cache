@@ -39,7 +39,7 @@
 
 /*--------------------------------------------------------------------*/
 
-enum symkind
+static enum symkind
 VCC_HandleKind(vcc_type_t fmt)
 {
 	if (fmt == ACL)		return(SYM_ACL);
@@ -111,7 +111,7 @@ VCC_SymbolGet(struct vcc *tl, enum symkind kind, const char *err,
 	struct symbol *sym;
 
 	sym = VCC_Symbol(tl, NULL, tl->t->b, tl->t->e, kind, err == NULL);
-	if (sym == NULL || sym->kind != kind) {
+	if (sym == NULL || (kind != SYM_NONE && sym->kind != kind)) {
 		VSB_printf(tl->sb, "%s: ", err);
 		vcc_ErrToken(tl, tl->t);
 		VSB_cat(tl->sb, "\nAt: ");

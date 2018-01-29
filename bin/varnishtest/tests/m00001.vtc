@@ -52,7 +52,7 @@ varnish v1 -errvcl {Module std already imported.} {
 	import std;
 }
 
-varnish v1 -errvcl {Symbol not found: 'std' (expected type BOOL):} {
+varnish v1 -errvcl {Symbol type (vmod) can not be used in expression.} {
 	import std;
 
 	sub vcl_recv {

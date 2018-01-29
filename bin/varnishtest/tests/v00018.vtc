@@ -38,7 +38,7 @@ varnish v1 -errvcl {Expected ';' got 'if'} {
 	sub vcl_recv { set req.url = "foo" if "bar"; }
 }
 
-varnish v1 -errvcl {Symbol not found: 'req.foo' (expected type STRING):} {
+varnish v1 -errvcl {Symbol not found: 'req.foo'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_hash { hash_data(req.foo); }
 }
@@ -63,7 +63,7 @@ varnish v1 -vcl {
 	sub vcl_backend_response { set beresp.do_gzip = false; }
 }
 
-varnish v1 -errvcl {Symbol not found: 'mu' (expected type BOOL):} {
+varnish v1 -errvcl {Symbol not found: 'mu'} {
 	backend b { .host = "127.0.0.1"; }
 	sub vcl_backend_response { set beresp.do_gzip = mu; }
 }
