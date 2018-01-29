@@ -129,14 +129,14 @@ vcc_AddUses(struct vcc *tl, const struct token *t1, const struct token *t2,
 }
 
 void
-vcc_AddCall(struct vcc *tl)
+vcc_AddCall(struct vcc *tl, struct symbol *sym)
 {
 	struct proccall *pc;
 
+	AN(sym);
 	pc = TlAlloc(tl, sizeof *pc);
 	assert(pc != NULL);
-	pc->sym = VCC_SymbolTok(tl, SYM_SUB, 1);
-	AN(pc->sym);
+	pc->sym = sym;
 	pc->t = tl->t;
 	pc->fm = tl->curproc;
 	VTAILQ_INSERT_TAIL(&tl->curproc->calls, pc, list);

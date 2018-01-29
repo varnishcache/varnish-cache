@@ -349,7 +349,7 @@ void vcc_AddRef(struct vcc *, struct symbol *);
 int vcc_CheckReferences(struct vcc *tl);
 void VCC_XrefTable(struct vcc *);
 
-void vcc_AddCall(struct vcc *);
+void vcc_AddCall(struct vcc *, struct symbol *);
 void vcc_ProcAction(struct proc *p, unsigned action, struct token *t);
 int vcc_CheckAction(struct vcc *tl);
 void vcc_AddUses(struct vcc *, const struct token *, const struct token *,
