@@ -31,6 +31,7 @@
 
 VCC_SYMB(NONE,		none)
 VCC_SYMB(ACL,		acl)
+VCC_SYMB(ACTION,	action)
 VCC_SYMB(BACKEND,	backend)
 VCC_SYMB(FUNC,		func)
 VCC_SYMB(INSTANCE,	instance)

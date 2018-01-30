@@ -1263,13 +1263,13 @@ def one_var(nm, spec):
 	ctyp = vcltypes[spec.typ]
 
 	# fo.write("\t{ \"%s\", %s,\n" % (nm, spec.typ))
-	fo.write("\tsym = VCC_Symbol(tl, NULL, \"%s\", NULL," % nm)
+	fo.write("\tsym = VCC_MkSym(tl, \"%s\", " % nm)
 	if (spec.typ == "HEADER"):
-		fo.write(" SYM_NONE, 1);\n")
+		fo.write(" SYM_NONE);\n")
 		fo.write("\tAN(sym);\n");
 		fo.write("\tsym->wildcard = vcc_Var_Wildcard;\n")
 	else:
-		fo.write(" SYM_VAR, 1);\n")
+		fo.write(" SYM_VAR);\n")
 	fo.write("\tAN(sym);\n")
 	fo.write("\tsym->fmt = %s;\n" % spec.typ)
 	fo.write("\tsym->eval = vcc_Eval_Var;\n")

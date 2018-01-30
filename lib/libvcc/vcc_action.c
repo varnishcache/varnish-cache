@@ -46,7 +46,7 @@ parse_call(struct vcc *tl)
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
-	sym = VCC_SymbolGet(tl, SYM_SUB, NULL, XREF_REF);
+	sym = VCC_SymbolGet(tl, SYM_SUB, SYMTAB_CREATE, XREF_REF);
 	AN(sym);
 	vcc_AddCall(tl, sym);
 	VCC_GlobalSymbol(sym, SUB, "VGC_function");
@@ -368,7 +368,7 @@ parse_synthetic(struct vcc *tl)
 #define ACT(name, func, mask)						\
 	do {								\
 		const char pp[] = #name;				\
-		sym = VCC_Symbol(tl, NULL, pp, NULL, SYM_ACTION, 1);	\
+		sym = VCC_MkSym(tl, pp, SYM_ACTION);			\
 		AN(sym);						\
 		sym->action = func;					\
 		sym->action_mask = (mask);				\

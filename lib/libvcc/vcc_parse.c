@@ -178,7 +178,7 @@ vcc_Compound(struct vcc *tl)
 			tl->err = 1;
 			return;
 		case ID:
-			sym = VCC_SymbolTok(tl, SYM_NONE, 0);
+			sym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_NOERR, XREF_NONE);
 			if (sym != NULL && sym->action != NULL) {
 				if (sym->action_mask != 0)
 					vcc_AddUses(tl, t, NULL,
@@ -220,7 +220,7 @@ vcc_ParseFunction(struct vcc *tl)
 	vcc_ExpectVid(tl, "function");
 	ERRCHK(tl);
 
-	sym = VCC_SymbolGet(tl, SYM_SUB, NULL, XREF_DEF);
+	sym = VCC_SymbolGet(tl, SYM_SUB, SYMTAB_CREATE, XREF_DEF);
 	AN(sym);
 	p = sym->proc;
 	if (p == NULL) {

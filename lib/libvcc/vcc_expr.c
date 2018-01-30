@@ -960,7 +960,7 @@ cmp_acl(struct vcc *tl, struct expr **e, const struct cmps *cp)
 
 	vcc_NextToken(tl);
 	vcc_ExpectVid(tl, "ACL");
-	sym = VCC_SymbolGet(tl, SYM_ACL, NULL, XREF_REF);
+	sym = VCC_SymbolGet(tl, SYM_ACL, SYMTAB_CREATE, XREF_REF);
 	AN(sym);
 	vcc_NextToken(tl);
 	VCC_GlobalSymbol(sym, ACL, ACL_SYMBOL_PREFIX);
@@ -1284,22 +1284,22 @@ vcc_Expr_Init(struct vcc *tl)
 {
 	struct symbol *sym;
 
-	sym = VCC_Symbol(tl, NULL, "regsub", NULL, SYM_FUNC, 1);
+	sym = VCC_MkSym(tl, "regsub", SYM_FUNC);
 	AN(sym);
 	sym->eval = vcc_Eval_Regsub;
 	sym->eval_priv = NULL;
 
-	sym = VCC_Symbol(tl, NULL, "regsuball", NULL, SYM_FUNC, 1);
+	sym = VCC_MkSym(tl, "regsuball", SYM_FUNC);
 	AN(sym);
 	sym->eval = vcc_Eval_Regsub;
 	sym->eval_priv = sym;
 
-	sym = VCC_Symbol(tl, NULL, "true", NULL, SYM_FUNC, 1);
+	sym = VCC_MkSym(tl, "true", SYM_FUNC);
 	AN(sym);
 	sym->eval = vcc_Eval_BoolConst;
 	sym->eval_priv = sym;
 
-	sym = VCC_Symbol(tl, NULL, "false", NULL, SYM_FUNC, 1);
+	sym = VCC_MkSym(tl, "false", SYM_FUNC);
 	AN(sym);
 	sym->eval = vcc_Eval_BoolConst;
 	sym->eval_priv = NULL;

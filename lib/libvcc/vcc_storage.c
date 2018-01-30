@@ -84,7 +84,7 @@ vcc_stevedore(struct vcc *vcc, const char *stv_name)
 
 	CHECK_OBJ_NOTNULL(vcc, VCC_MAGIC);
 	bprintf(buf, "storage.%s", stv_name);
-	sym = VCC_Symbol(vcc, NULL, buf, NULL, SYM_VAR, 1);
+	sym = VCC_MkSym(vcc, buf, SYM_VAR);
 	AN(sym);
 	sym->fmt = STEVEDORE;
 	sym->eval = vcc_Eval_Var;
@@ -94,7 +94,7 @@ vcc_stevedore(struct vcc *vcc, const char *stv_name)
 
 	for (sv = stvars; sv->name != NULL; sv++) {
 		bprintf(buf, "storage.%s.%s", stv_name, sv->name);
-		sym = VCC_Symbol(vcc, NULL, buf, NULL, SYM_VAR, 1);
+		sym = VCC_MkSym(vcc, buf, SYM_VAR);
 		AN(sym);
 		sym->fmt = sv->fmt;
 		sym->eval = vcc_Eval_Var;

@@ -104,42 +104,47 @@ vcc_new_symbol(struct vcc *tl, const char *b, const char *e)
 	return (sym);
 }
 
+const char XREF_NONE[] = "xref_none";
+const char XREF_DEF[] = "xref_def";
+const char XREF_REF[] = "xref_ref";
+const char SYMTAB_NOERR[] = "sym_noerror";
+const char SYMTAB_CREATE[] = "sym_create";
+
 struct symbol *
-VCC_SymbolGet(struct vcc *tl, enum symkind kind, const char *err,
-    enum xref_e xrf)
+VCC_SymbolGet(struct vcc *tl, enum symkind kind, const char *e, const char *x)
 {
 	struct symbol *sym;
 
-	sym = VCC_Symbol(tl, NULL, tl->t->b, tl->t->e, kind, err == NULL);
+	AN(e);
+	sym = VCC_Symbol(tl, NULL, tl->t->b, tl->t->e, kind,
+	    e == SYMTAB_CREATE ? 1 : 0);
+	if (sym == NULL && e == SYMTAB_NOERR)
+		return (sym);
 	if (sym == NULL || (kind != SYM_NONE && sym->kind != kind)) {
-		VSB_printf(tl->sb, "%s: ", err);
+		VSB_printf(tl->sb, "%s: ", e);
 		vcc_ErrToken(tl, tl->t);
 		VSB_cat(tl->sb, "\nAt: ");
 		vcc_ErrWhere(tl, tl->t);
 		return (NULL);
 	}
-	switch (xrf) {
-	case XREF_DEF:
+	if (x == XREF_DEF) {
 		if (sym->def_b == NULL)
 			sym->def_b = tl->t;
 		sym->ndef++;
-		break;
-	case XREF_REF:
+	} else if (x == XREF_REF) {
 		if (sym->ref_b == NULL)
 			sym->ref_b = tl->t;
 		sym->nref++;
-		break;
-	default:
-		break;
+	} else {
+		assert (x == XREF_NONE);
 	}
 	return (sym);
 }
 
 struct symbol *
-VCC_SymbolTok(struct vcc *tl, enum symkind kind, int create)
+VCC_MkSym(struct vcc *tl, const char *b, enum symkind kind)
 {
-
-	return (VCC_Symbol(tl, NULL, tl->t->b, tl->t->e, kind, create));
+	return (VCC_Symbol(tl, NULL, b, NULL, kind, 1));
 }
 
 struct symbol *
@@ -273,7 +278,7 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
 	kind = VCC_HandleKind(fmt);
 	assert(kind != SYM_NONE);
 
-	sym = VCC_SymbolTok(tl, SYM_NONE, 0);
+	sym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_NOERR, XREF_NONE);
 	if (sym != NULL && sym->def_b != NULL && kind == sym->kind) {
 		p = VCC_SymKind(tl, sym);
 		VSB_printf(tl->sb, "%c%s '%.*s' redefined.\n",
@@ -298,7 +303,7 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
 		return (sym);
 	}
 	if (sym == NULL)
-		sym = VCC_SymbolTok(tl, kind, 1);
+		sym = VCC_SymbolGet(tl, kind, SYMTAB_CREATE, XREF_NONE);
 	AN(sym);
 	AZ(sym->ndef);
 	VCC_GlobalSymbol(sym, fmt, pfx);

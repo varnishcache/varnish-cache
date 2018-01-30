@@ -314,12 +314,16 @@ void vcc_stevedore(struct vcc *vcc, const char *stv_name);
 
 /* vcc_symb.c */
 void VCC_PrintCName(struct vsb *vsb, const char *b, const char *e);
+struct symbol *VCC_MkSym(struct vcc *tl, const char *b, enum symkind kind);
 struct symbol *VCC_Symbol(struct vcc *, struct symbol *,
     const char *, const char *, enum symkind, int);
-enum xref_e {XREF_NONE, XREF_DEF, XREF_REF};
+extern const char XREF_NONE[];
+extern const char XREF_DEF[];
+extern const char XREF_REF[];
+extern const char SYMTAB_NOERR[];
+extern const char SYMTAB_CREATE[];
 struct symbol *VCC_SymbolGet(struct vcc *, enum symkind, const char *,
-    enum xref_e);
-struct symbol *VCC_SymbolTok(struct vcc *, enum symkind, int);
+    const char *);
 const char * VCC_SymKind(struct vcc *tl, const struct symbol *s);
 typedef void symwalk_f(struct vcc *tl, const struct symbol *s);
 void VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, enum symkind kind);
