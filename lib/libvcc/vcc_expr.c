@@ -648,6 +648,17 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	}
 	switch (tl->t->tok) {
 	case ID:
+		if (vcc_IdIs(tl->t, "default") && fmt == PROBE) {
+			vcc_NextToken(tl);
+			*e = vcc_mk_expr(PROBE, "%s", vcc_default_probe(tl));
+			return;
+		}
+		if (vcc_IdIs(tl->t, "default") && fmt == BACKEND) {
+			vcc_NextToken(tl);
+			*e = vcc_mk_expr(BACKEND,
+			    "*(VCL_conf.default_director)");
+			return;
+		}
 		sym = VCC_SymbolGet(tl, SYM_NONE, "Symbol not found",
 		    XREF_NONE);
 		ERRCHK(tl);

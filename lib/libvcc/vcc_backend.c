@@ -35,6 +35,19 @@
 
 #include "vcc_compile.h"
 
+const char *
+vcc_default_probe(struct vcc *tl)
+{
+
+	if (tl->default_probe != NULL)
+		return (tl->default_probe);
+	VSB_printf(tl->sb, "No default probe defined\n");
+	vcc_ErrToken(tl, tl->t);
+	VSB_printf(tl->sb, " at\n");
+	vcc_ErrWhere(tl, tl->t);
+	return ("");
+}
+
 /*--------------------------------------------------------------------
  * Struct sockaddr is not really designed to be a compile time
  * initialized data structure, so we encode it as a byte-string
@@ -390,13 +403,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			ERRCHK(tl);
 		} else if (vcc_IdIs(t_field, "probe") && tl->t->tok == ID) {
 			if (vcc_IdIs(tl->t, "default")) {
-				if (tl->default_probe == NULL) {
-					VSB_printf(tl->sb,
-					    "No default probe defined\n");
-					vcc_ErrToken(tl, tl->t);
-					VSB_printf(tl->sb, " at\n");
-					vcc_ErrWhere(tl, tl->t);
-				}
+				(void)vcc_default_probe(tl);
 			} else {
 				pb = VCC_SymbolGet(tl, SYM_PROBE,
 				    "Probe not found", XREF_REF);
@@ -467,6 +474,7 @@ vcc_ParseBackend(struct vcc *tl)
 {
 	struct token *t_first, *t_be;
 	struct symbol *sym;
+	const char *dn;
 
 	tl->ndirector++;
 	t_first = tl->t;
@@ -476,24 +484,27 @@ vcc_ParseBackend(struct vcc *tl)
 	ERRCHK(tl);
 
 	t_be = tl->t;
-	sym = VCC_HandleSymbol(tl, BACKEND, "vgc_backend");
-
-	ERRCHK(tl);
-
-	Fh(tl, 0, "\nstatic struct director *%s;\n", sym->rname);
-
-	vcc_ParseHostDef(tl, t_be, sym->rname);
-	ERRCHK(tl);
-
+	if (vcc_IdIs(tl->t, "default")) {
+		vcc_NextToken(tl);
+		dn = "vgc_backend_default";
+		tl->default_director = dn;
+	} else {
+		sym = VCC_HandleSymbol(tl, BACKEND, "vgc_backend");
+		ERRCHK(tl);
+		dn = sym->rname;
+		if (tl->default_director == NULL) {
+			tl->default_director = dn;
+			sym->nref++;
+		}
+	}
+	Fh(tl, 0, "\nstatic struct director *%s;\n", dn);
+	vcc_ParseHostDef(tl, t_be, dn);
 	if (tl->err) {
 		VSB_printf(tl->sb,
 		    "\nIn %.*s specification starting at:\n", PF(t_first));
 		vcc_ErrWhere(tl, t_first);
 		return;
 	}
-
-	if (tl->default_director == NULL || vcc_IdIs(t_be, "default"))
-		tl->default_director = sym;
 }
 
 void

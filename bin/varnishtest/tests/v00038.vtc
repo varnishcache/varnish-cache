@@ -92,3 +92,8 @@ varnish v1 -errvcl "Mandatory field 'host' missing." {
 		.port = "NONE";
 	}
 }
+varnish v1 -errvcl "No default probe defined" {
+	backend b1 {
+		.probe = default;
+	}
+}

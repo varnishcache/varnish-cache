@@ -415,8 +415,7 @@ EmitStruct(const struct vcc *tl)
 	Fc(tl, 0, "\nconst struct VCL_conf VCL_conf = {\n");
 	Fc(tl, 0, "\t.magic = VCL_CONF_MAGIC,\n");
 	Fc(tl, 0, "\t.event_vcl = VGC_Event,\n");
-	Fc(tl, 0, "\t.default_director = &%s,\n",
-	   tl->default_director->rname);
+	Fc(tl, 0, "\t.default_director = &%s,\n", tl->default_director);
 	if (tl->default_probe != NULL)
 		Fc(tl, 0, "\t.default_probe = %s,\n", tl->default_probe);
 	Fc(tl, 0, "\t.ref = VGC_ref,\n");
@@ -610,9 +609,6 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 		tl->err = 1;
 		return (NULL);
 	}
-
-	/* Refcount the default director & probe*/
-	tl->default_director->nref++;
 
 	/* Check for orphans */
 	if (vcc_CheckReferences(tl))

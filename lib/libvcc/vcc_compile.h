@@ -219,8 +219,8 @@ struct vcc {
 	int			nprobe;
 
 	int			ndirector;
-	struct symbol		*default_director;
-	char			*default_probe;
+	const char		*default_director;
+	const char		*default_probe;
 
 	unsigned		unique;
 
@@ -244,6 +244,7 @@ int vcc_ParseAction(struct vcc *tl);
 /* vcc_backend.c */
 struct fld_spec;
 
+const char *vcc_default_probe(struct vcc *);
 void vcc_Backend_Init(struct vcc *tl);
 void vcc_ParseProbe(struct vcc *tl);
 void vcc_ParseBackend(struct vcc *tl);
