@@ -104,50 +104,7 @@ vcc_new_symbol(struct vcc *tl, const char *b, const char *e)
 	return (sym);
 }
 
-const char XREF_NONE[] = "xref_none";
-const char XREF_DEF[] = "xref_def";
-const char XREF_REF[] = "xref_ref";
-const char SYMTAB_NOERR[] = "sym_noerror";
-const char SYMTAB_CREATE[] = "sym_create";
-
-struct symbol *
-VCC_SymbolGet(struct vcc *tl, enum symkind kind, const char *e, const char *x)
-{
-	struct symbol *sym;
-
-	AN(e);
-	sym = VCC_Symbol(tl, NULL, tl->t->b, tl->t->e, kind,
-	    e == SYMTAB_CREATE ? 1 : 0);
-	if (sym == NULL && e == SYMTAB_NOERR)
-		return (sym);
-	if (sym == NULL || (kind != SYM_NONE && sym->kind != kind)) {
-		VSB_printf(tl->sb, "%s: ", e);
-		vcc_ErrToken(tl, tl->t);
-		VSB_cat(tl->sb, "\nAt: ");
-		vcc_ErrWhere(tl, tl->t);
-		return (NULL);
-	}
-	if (x == XREF_DEF) {
-		if (sym->def_b == NULL)
-			sym->def_b = tl->t;
-		sym->ndef++;
-	} else if (x == XREF_REF) {
-		if (sym->ref_b == NULL)
-			sym->ref_b = tl->t;
-		sym->nref++;
-	} else {
-		assert (x == XREF_NONE);
-	}
-	return (sym);
-}
-
-struct symbol *
-VCC_MkSym(struct vcc *tl, const char *b, enum symkind kind)
-{
-	return (VCC_Symbol(tl, NULL, b, NULL, kind, 1));
-}
-
-struct symbol *
+static struct symbol *
 VCC_Symbol(struct vcc *tl, struct symbol *parent,
     const char *b, const char *e, enum symkind kind, int create)
 {
@@ -196,9 +153,20 @@ VCC_Symbol(struct vcc *tl, struct symbol *parent,
 	}
 	if (sym == NULL && create == 0 && parent->wildcard != NULL) {
 		AN(parent->wildcard);
-		parent->wildcard(tl, parent, b, e);
+		sym2 = vcc_new_symbol(tl, b, e);
+		sym2->parent = parent;
+		parent->wildcard(tl, parent, sym2);
 		if (tl->err)
 			return (NULL);
+		VTAILQ_FOREACH(sym, &parent->children, list) {
+			i = strncasecmp(sym->name, b, l);
+			if (i > 0 || (i == 0 && l < sym->nlen))
+				break;
+		}
+		if (sym == NULL)
+			VTAILQ_INSERT_TAIL(&parent->children, sym2, list);
+		else
+			VTAILQ_INSERT_BEFORE(sym, sym2, list);
 		return (VCC_Symbol(tl, parent, b, e, kind, -1));
 	}
 	if (sym == NULL && create < 1)
@@ -218,6 +186,50 @@ VCC_Symbol(struct vcc *tl, struct symbol *parent,
 	assert(*q == '.');
 	return (VCC_Symbol(tl, sym, ++q, e, kind, create));
 }
+
+const char XREF_NONE[] = "xref_none";
+const char XREF_DEF[] = "xref_def";
+const char XREF_REF[] = "xref_ref";
+const char SYMTAB_NOERR[] = "sym_noerror";
+const char SYMTAB_CREATE[] = "sym_create";
+
+struct symbol *
+VCC_SymbolGet(struct vcc *tl, enum symkind kind, const char *e, const char *x)
+{
+	struct symbol *sym;
+
+	AN(e);
+	sym = VCC_Symbol(tl, NULL, tl->t->b, tl->t->e, kind,
+	    e == SYMTAB_CREATE ? 1 : 0);
+	if (sym == NULL && e == SYMTAB_NOERR)
+		return (sym);
+	if (sym == NULL || (kind != SYM_NONE && sym->kind != kind)) {
+		VSB_printf(tl->sb, "%s: ", e);
+		vcc_ErrToken(tl, tl->t);
+		VSB_cat(tl->sb, "\nAt: ");
+		vcc_ErrWhere(tl, tl->t);
+		return (NULL);
+	}
+	if (x == XREF_DEF) {
+		if (sym->def_b == NULL)
+			sym->def_b = tl->t;
+		sym->ndef++;
+	} else if (x == XREF_REF) {
+		if (sym->ref_b == NULL)
+			sym->ref_b = tl->t;
+		sym->nref++;
+	} else {
+		assert (x == XREF_NONE);
+	}
+	return (sym);
+}
+
+struct symbol *
+VCC_MkSym(struct vcc *tl, const char *b, enum symkind kind)
+{
+	return (VCC_Symbol(tl, NULL, b, NULL, kind, 1));
+}
+
 
 static void
 vcc_walksymbols(struct vcc *tl, const struct symbol *root,

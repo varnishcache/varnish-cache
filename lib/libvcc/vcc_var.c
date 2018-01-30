@@ -37,24 +37,21 @@
 /*--------------------------------------------------------------------*/
 
 void v_matchproto_(sym_wildcard_t)
-vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent,
-    const char *b, const char *e)
+vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent, struct symbol *sym)
 {
-	struct symbol *sym;
 	struct vsb *vsb;
-	unsigned len;
 
 	assert(parent->fmt == HEADER);
 
-	if (b + 127 <= e) {
-		VSB_printf(tl->sb, "HTTP header (%.20s..) is too long.\n", b);
+	if (sym->nlen >= 127) {
+		VSB_printf(tl->sb, "HTTP header (%.20s..) is too long.\n",
+		    sym->name);
 		VSB_cat(tl->sb, "\nAt: ");
 		vcc_ErrWhere(tl, tl->t);
-		return;
 	}
 
-	sym = VCC_Symbol(tl, parent, b, e, SYM_VAR, 1);
 	AN(sym);
+	sym->kind = SYM_VAR;
 	sym->fmt = parent->fmt;
 	sym->eval = vcc_Eval_Var;
 	sym->r_methods = parent->r_methods;
@@ -65,14 +62,13 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent,
 	vsb = VSB_new_auto();
 	AN(vsb);
 	VSB_printf(vsb, "&VGC_%s_", parent->rname);
-	VCC_PrintCName(vsb, b, e);
+	VCC_PrintCName(vsb, sym->name, NULL);
 	AZ(VSB_finish(vsb));
 
 	/* Create the static identifier */
-	len = (unsigned)(e - b);
 	Fh(tl, 0, "static const struct gethdr_s %s =\n", VSB_data(vsb) + 1);
-	Fh(tl, 0, "    { %s, \"\\%03o%.*s:\"};\n",
-	    parent->rname, len + 1, len, b);
+	Fh(tl, 0, "    { %s, \"\\%03o%s:\"};\n",
+	    parent->rname, sym->nlen + 1, sym->name);
 
 	/* Create the symbol r/l values */
 	sym->rname = TlDup(tl, VSB_data(vsb));

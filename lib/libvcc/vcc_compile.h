@@ -106,8 +106,7 @@ enum symkind {
 
 typedef void sym_expr_t(struct vcc *tl, struct expr **,
     struct symbol *sym, vcc_type_t);
-typedef void sym_wildcard_t(struct vcc *, struct symbol *,
-    const char *, const char *);
+typedef void sym_wildcard_t(struct vcc *, struct symbol *, struct symbol *);
 
 typedef void sym_act_f(struct vcc *tl);
 
@@ -315,8 +314,6 @@ void vcc_stevedore(struct vcc *vcc, const char *stv_name);
 /* vcc_symb.c */
 void VCC_PrintCName(struct vsb *vsb, const char *b, const char *e);
 struct symbol *VCC_MkSym(struct vcc *tl, const char *b, enum symkind kind);
-struct symbol *VCC_Symbol(struct vcc *, struct symbol *,
-    const char *, const char *, enum symkind, int);
 extern const char XREF_NONE[];
 extern const char XREF_DEF[];
 extern const char XREF_REF[];
