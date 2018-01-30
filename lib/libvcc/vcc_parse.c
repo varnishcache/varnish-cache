@@ -79,8 +79,8 @@ vcc_Conditional(struct vcc *tl)
  *	null
  */
 
-static void
-vcc_IfStmt(struct vcc *tl)
+void
+vcc_ParseIf(struct vcc *tl)
 {
 
 	SkipToken(tl, ID);
@@ -141,7 +141,8 @@ vcc_IfStmt(struct vcc *tl)
 static void
 vcc_Compound(struct vcc *tl)
 {
-	int i;
+	struct symbol *sym;
+	struct token *t;
 
 	SkipToken(tl, '{');
 	Fb(tl, 1, "{\n");
@@ -149,6 +150,7 @@ vcc_Compound(struct vcc *tl)
 	C(tl, ";");
 	while (1) {
 		ERRCHK(tl);
+		t = tl->t;
 		switch (tl->t->tok) {
 		case '{':
 			vcc_Compound(tl);
@@ -176,16 +178,19 @@ vcc_Compound(struct vcc *tl)
 			tl->err = 1;
 			return;
 		case ID:
-			if (vcc_IdIs(tl->t, "if")) {
-				vcc_IfStmt(tl);
+			sym = VCC_SymbolTok(tl, SYM_NONE, 0);
+			if (sym != NULL && sym->action != NULL) {
+				if (sym->action_mask != 0)
+					vcc_AddUses(tl, t, NULL,
+					    sym->action_mask,
+					    "Not a valid action");
+				sym->action(tl);
 				break;
-			} else {
-				i = vcc_ParseAction(tl);
-				ERRCHK(tl);
-				if (i) {
-					SkipToken(tl, ';');
-					break;
-				}
+			}
+			if (sym != NULL && sym->kind == SYM_FUNC) {
+				vcc_Expr_Call(tl, sym);
+				SkipToken(tl, ';');
+				break;
 			}
 			/* FALLTHROUGH */
 		default:

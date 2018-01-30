@@ -184,10 +184,8 @@ VCC_Symbol(struct vcc *tl, struct symbol *parent,
 			continue;
 		if (q < e)
 			break;
-		if (kind != SYM_NONE && sym->kind != SYM_NONE &&
-		    kind != sym->kind)
-			continue;
-		if (kind == SYM_NONE && sym->kind == kind)
+		if ((kind == SYM_NONE && kind == sym->kind) ||
+		    (kind != SYM_NONE && kind != sym->kind))
 			continue;
 		break;
 	}

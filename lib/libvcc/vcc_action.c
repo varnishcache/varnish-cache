@@ -52,6 +52,7 @@ parse_call(struct vcc *tl)
 	VCC_GlobalSymbol(sym, SUB, "VGC_function");
 	Fb(tl, 1, "%s(ctx);\n", sym->rname);
 	vcc_NextToken(tl);
+	SkipToken(tl, ';');
 }
 
 /*--------------------------------------------------------------------*/
@@ -136,6 +137,7 @@ parse_set(struct vcc *tl)
 	}
 	tl->indent -= INDENT;
 	Fb(tl, 1, ");\n");
+	SkipToken(tl, ';');
 }
 
 /*--------------------------------------------------------------------*/
@@ -161,6 +163,7 @@ parse_unset(struct vcc *tl)
 	}
 	vcc_AddUses(tl, t, tl->t, sym->u_methods, "Cannot be unset");
 	Fb(tl, 1, "%s;\n", sym->uname);
+	SkipToken(tl, ';');
 }
 
 /*--------------------------------------------------------------------*/
@@ -181,8 +184,8 @@ parse_ban(struct vcc *tl)
 	ERRCHK(tl);
 	Fb(tl, 1, ");\n");
 
-	ExpectErr(tl, ')');
-	vcc_NextToken(tl);
+	SkipToken(tl, ')');
+	SkipToken(tl, ';');
 }
 
 /*--------------------------------------------------------------------*/
@@ -198,6 +201,7 @@ parse_hash_data(struct vcc *tl)
 	ERRCHK(tl);
 	Fb(tl, 1, ");\n");
 	SkipToken(tl, ')');
+	SkipToken(tl, ';');
 }
 
 /*--------------------------------------------------------------------*/
@@ -212,8 +216,7 @@ parse_return_pass(struct vcc *tl)
 	tl->indent += INDENT;
 	vcc_Expr(tl, DURATION);
 	ERRCHK(tl);
-	ExpectErr(tl, ')');
-	vcc_NextToken(tl);
+	SkipToken(tl, ')');
 	Fb(tl, 1, ");\n");
 	tl->indent -= INDENT;
 }
@@ -238,8 +241,7 @@ parse_return_synth(struct vcc *tl)
 		Fb(tl, 1, "(const char*)0\n");
 	}
 	tl->indent -= INDENT;
-	ExpectErr(tl, ')');
-	vcc_NextToken(tl);
+	SkipToken(tl, ')');
 	Fb(tl, 1, ");\n");
 }
 
@@ -279,8 +281,7 @@ parse_return_vcl(struct vcc *tl)
 	Fb(tl, 1, "VRT_vcl_select(ctx, %s);\t/* %s */\n",
 	    (const char*)sym->eval_priv, sym->name);
 	vcc_NextToken(tl);
-	ExpectErr(tl, ')');
-	vcc_NextToken(tl);
+	SkipToken(tl, ')');
 }
 
 /*--------------------------------------------------------------------*/
@@ -294,11 +295,11 @@ parse_return(struct vcc *tl)
 	vcc_NextToken(tl);
 	AN(tl->curproc);
 	if (tl->t->tok == ';' && tl->curproc->method == NULL) {
+		SkipToken(tl, ';');
 		Fb(tl, 1, "return;\n");
 		return;
 	}
-	ExpectErr(tl, '(');
-	vcc_NextToken(tl);
+	SkipToken(tl, '(');
 	ExpectErr(tl, ID);
 
 	hand = VCL_RET_MAX;
@@ -337,8 +338,8 @@ parse_return(struct vcc *tl)
 	}
 	ERRCHK(tl);
 	Fb(tl, 1, "VRT_handling(ctx, VCL_RET_%s);\n", h);
-	ExpectErr(tl, ')');
-	vcc_NextToken(tl);
+	SkipToken(tl, ')');
+	SkipToken(tl, ';');
 }
 
 /*--------------------------------------------------------------------*/
@@ -357,55 +358,37 @@ parse_synthetic(struct vcc *tl)
 	ERRCHK(tl);
 	Fb(tl, 1, ");\n");
 
-	ExpectErr(tl, ')');
-	vcc_NextToken(tl);
-	ERRCHK(tl);
+	SkipToken(tl, ')');
+	SkipToken(tl, ';');
 }
 
 /*--------------------------------------------------------------------*/
 
-typedef void action_f(struct vcc *tl);
+// The pp[] trick is to make the length of #name visible to flexelint.
+#define ACT(name, func, mask)						\
+	do {								\
+		const char pp[] = #name;				\
+		sym = VCC_Symbol(tl, NULL, pp, NULL, SYM_ACTION, 1);	\
+		AN(sym);						\
+		sym->action = func;					\
+		sym->action_mask = (mask);				\
+	} while (0)
 
-static struct action_table {
-	const char		*name;
-	action_f		*func;
-	unsigned		bitmask;
-} action_table[] = {
-	/* Keep list sorted from here */
-	{ "ban",		parse_ban },
-	{ "call",		parse_call },
-	{ "hash_data",		parse_hash_data, VCL_MET_HASH },
-	{ "new",		vcc_ParseNew, VCL_MET_INIT},
-	{ "return",		parse_return },
-	{ "set",		parse_set },
-	{ "synthetic",		parse_synthetic,
-		VCL_MET_SYNTH | VCL_MET_BACKEND_ERROR },
-	{ "unset",		parse_unset },
-	{ NULL,			NULL }
-};
-
-int
-vcc_ParseAction(struct vcc *tl)
+void
+vcc_Action_Init(struct vcc *tl)
 {
-	struct token *at;
-	struct action_table *atp;
 	struct symbol *sym;
 
-	at = tl->t;
-	assert(at->tok == ID);
-	for (atp = action_table; atp->name != NULL; atp++) {
-		if (vcc_IdIs(at, atp->name)) {
-			if (atp->bitmask != 0)
-				vcc_AddUses(tl, at, NULL, atp->bitmask,
-				    "Not a valid action");
-			atp->func(tl);
-			return (1);
-		}
-	}
-	sym = VCC_SymbolTok(tl, SYM_NONE, 0);
-	if (sym != NULL && sym->kind == SYM_FUNC) {
-		vcc_Expr_Call(tl, sym);
-		return (1);
-	}
-	return (0);
+	ACT(ban,	parse_ban,	0);
+	ACT(call,	parse_call,	0);
+	ACT(hash_data,	parse_hash_data,
+		VCL_MET_HASH);
+	ACT(if,		vcc_ParseIf,	0);
+	ACT(new,	vcc_ParseNew,
+		VCL_MET_INIT);
+	ACT(return,	parse_return,	0);
+	ACT(set,	parse_set,	0);
+	ACT(synthetic,	parse_synthetic,
+		VCL_MET_SYNTH | VCL_MET_BACKEND_ERROR);
+	ACT(unset,	parse_unset,	0);
 }

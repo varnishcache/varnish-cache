@@ -563,6 +563,8 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 
 	vcc_Expr_Init(tl);
 
+	vcc_Action_Init(tl);
+
 	vcc_Backend_Init(tl);
 
 	vcc_Var_Init(tl);

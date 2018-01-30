@@ -109,6 +109,8 @@ typedef void sym_expr_t(struct vcc *tl, struct expr **,
 typedef void sym_wildcard_t(struct vcc *, struct symbol *,
     const char *, const char *);
 
+typedef void sym_act_f(struct vcc *tl);
+
 struct symbol {
 	unsigned			magic;
 #define SYMBOL_MAGIC			0x3368c9fb
@@ -122,6 +124,9 @@ struct symbol {
 	unsigned			nlen;
 	sym_wildcard_t			*wildcard;
 	enum symkind			kind;
+
+	sym_act_f			*action;
+	unsigned			action_mask;
 
 	const struct token		*def_b, *def_e, *ref_b;
 
@@ -239,7 +244,7 @@ struct method {
 void vcc_ParseAcl(struct vcc *tl);
 
 /* vcc_action.c */
-int vcc_ParseAction(struct vcc *tl);
+void vcc_Action_Init(struct vcc *);
 
 /* vcc_backend.c */
 struct fld_spec;
@@ -290,6 +295,7 @@ void vcc_Var_Init(struct vcc *);
 
 /* vcc_parse.c */
 void vcc_Parse(struct vcc *tl);
+void vcc_ParseIf(struct vcc *tl);
 
 /* vcc_utils.c */
 const char *vcc_regexp(struct vcc *tl);
