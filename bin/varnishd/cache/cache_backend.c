@@ -179,7 +179,7 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	bo->htc->priv = NULL;
 	if (vtp->state != VTP_STATE_USED)
 		assert(bo->htc->doclose == SC_TX_PIPE ||
-			bo->htc->doclose == SC_RX_TIMEOUT);
+		    bo->htc->doclose == SC_RX_TIMEOUT);
 	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
 		VSLb(bo->vsl, SLT_BackendClose, "%d %s", vtp->fd,
 		    bp->director->display_name);
