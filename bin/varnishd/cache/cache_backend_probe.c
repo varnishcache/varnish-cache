@@ -415,7 +415,7 @@ vbp_task(struct worker *wrk, void *priv)
 /*--------------------------------------------------------------------
  */
 
-static void * v_matchproto_()
+static void * v_matchproto_(bgthread_t)
 vbp_thread(struct worker *wrk, void *priv)
 {
 	double now, nxt;
