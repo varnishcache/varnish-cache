@@ -468,7 +468,6 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 		vfps = VFP_Suck(vfc, ptr, &l);
 		if (l > 0 && vfps != VFP_ERROR) {
 			bo->acct.beresp_bodybytes += l;
-			bo->acct.beresp_protobytes += l;
 			VFP_Extend(vfc, l);
 			if (est >= l)
 				est -= l;

@@ -233,8 +233,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		if (vtp->state != VTP_STATE_STOLEN)
 			extrachance = 0;
 
-		i = V1F_SendReq(wrk, bo, &bo->acct.bereq_hdrbytes,
-		    &bo->acct.bereq_protobytes, 0);
+		i = V1F_SendReq(wrk, bo, &bo->acct.bereq_hdrbytes, 0);
 
 		if (vtp->state != VTP_STATE_USED) {
 			if (VTP_Wait(wrk, vtp, VTIM_real() +
@@ -310,7 +309,6 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 	/* This is hackish... */
 	v1a.req = req->acct.req_hdrbytes;
 	req->acct.req_hdrbytes = 0;
-	v1a.in = v1a.req;
 
 	req->res_mode = RES_PIPE;
 
@@ -319,8 +317,7 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 	if (vtp == NULL) {
 		retval = SC_TX_ERROR;
 	} else {
-		CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
-		i = V1F_SendReq(req->wrk, bo, &v1a.bereq, &v1a.out, 1);
+		i = V1F_SendReq(req->wrk, bo, &v1a.bereq, 1);
 		VSLb_ts_req(req, "Pipe", W_TIM_real(req->wrk));
 		if (i == 0)
 			V1P_Process(req, vtp->fd, &v1a);

@@ -158,15 +158,13 @@ VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **pbo)
 	VRTPRIV_dynamic_kill(bo->privs, (uintptr_t)bo);
 	assert(VTAILQ_EMPTY(&bo->privs->privs));
 
-	VSLb(bo->vsl, SLT_BereqAcct, "%ju %ju %ju %ju %ju %ju %ju %ju",
+	VSLb(bo->vsl, SLT_BereqAcct, "%ju %ju %ju %ju %ju %ju",
 	    (uintmax_t)bo->acct.bereq_hdrbytes,
 	    (uintmax_t)bo->acct.bereq_bodybytes,
 	    (uintmax_t)(bo->acct.bereq_hdrbytes + bo->acct.bereq_bodybytes),
 	    (uintmax_t)bo->acct.beresp_hdrbytes,
 	    (uintmax_t)bo->acct.beresp_bodybytes,
-	    (uintmax_t)(bo->acct.beresp_hdrbytes + bo->acct.beresp_bodybytes),
-	    (uintmax_t)bo->acct.bereq_protobytes,
-	    (uintmax_t)bo->acct.beresp_protobytes);
+	    (uintmax_t)(bo->acct.beresp_hdrbytes + bo->acct.beresp_bodybytes));
 
 	VSL_End(bo->vsl);
 

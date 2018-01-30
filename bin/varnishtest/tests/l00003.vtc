@@ -49,17 +49,17 @@ varnish v1 -vcl+backend {
 # Total:				15 bytes
 
 logexpect l1 -v v1 -g request {
-	expect 0 1001	Begin		{^req .* rxreq}
-	expect * =	ReqAcct		{^18 0 18 93 15 108 \d+ \d+$}
+	expect 0 1001	Begin	"^req .* rxreq"
+	expect * =	ReqAcct		"^18 0 18 93 15 108$"
 	expect 0 =	End
-	expect * 1003	Begin		{^req .* esi}
-	expect * =	ReqAcct		{^0 0 0 0 12 12 0 0$}
+	expect * 1003	Begin		"^req .* esi"
+	expect * =	ReqAcct		"^0 0 0 0 12 12$"
 	expect 0 =	End
-	expect * 1005	Begin		{^req .* esi}
-	expect * =	ReqAcct		{^0 0 0 0 3 3 0 0$}
+	expect * 1005	Begin		"^req .* esi"
+	expect * =	ReqAcct		"^0 0 0 0 3 3$"
 	expect 0 =	End
-	expect * 1007	Begin		{^req .* esi}
-	expect * =	ReqAcct		{^0 0 0 0 3 3 0 0$}
+	expect * 1007	Begin		"^req .* esi"
+	expect * =	ReqAcct		"^0 0 0 0 3 3$"
 	expect 0 =	End
 } -start
 

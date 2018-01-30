@@ -87,8 +87,6 @@ void v_matchproto_(vtr_deliver_f)
 V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 {
 	int err;
-	unsigned u;
-	uint64_t protobytes;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
@@ -148,7 +146,7 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		(void)V1L_Flush(req->wrk);
 
 	if (!sendbody || req->res_mode & RES_ESI)
-		if (V1L_Close(req->wrk, &protobytes) && req->sp->fd >= 0) {
+		if (V1L_Close(req->wrk) && req->sp->fd >= 0) {
 			Req_Fail(req, SC_REM_CLOSE);
 			sendbody = 0;
 		}
@@ -180,9 +178,7 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 	if (!err && (req->res_mode & RES_CHUNKED))
 		V1L_EndChunk(req->wrk);
 
-	u = V1L_Close(req->wrk, &protobytes);
-	req->acct.resp_protobytes += protobytes;
-	if ((u || err) && req->sp->fd >= 0)
+	if ((V1L_Close(req->wrk) || err) && req->sp->fd >= 0)
 		Req_Fail(req, SC_REM_CLOSE);
 	AZ(req->wrk->v1l);
 	VDP_close(req);

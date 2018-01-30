@@ -31,30 +31,30 @@ varnish v1 -vcl+backend {
 } -start
 
 logexpect l1 -v v1 -g request {
-	expect 0 1001   Begin   {^req .* rxreq}
-	expect * =	ReqAcct	{^18 0 18 187 75 262 \d+ \d+$}
+	expect 0 1001   Begin   "^req .* rxreq"
+	expect * =	ReqAcct	"^18 0 18 187 75 262$"
 	expect 0 =      End
 } -start
 
 logexpect l2 -v v1 -g request {
-	expect * 1002   Begin   {^bereq }
+	expect * 1002   Begin   "^bereq "
 	expect * =      End
 } -start
 
 logexpect l3 -v v1 -g request {
-	expect * 1003   Begin   {^req .* esi}
-	expect * =	ReqAcct	{^0 0 0 0 18 18 0 0$}
+	expect * 1003   Begin   "^req .* esi"
+	expect * =	ReqAcct	"^0 0 0 0 18 18$"
 	expect 0 =      End
 } -start
 
 logexpect l4 -v v1 -g request {
-	expect * 1004   Begin   {^bereq }
+	expect * 1004   Begin   "^bereq "
 	expect * =      End
 } -start
 
 logexpect l5 -v v1 -g request {
-	expect * 1005   Begin   {^req .* rxreq}
-	expect * =	ReqAcct	{^18 0 18 192 75 267 \d+ \d+$}
+	expect * 1005   Begin   "^req .* rxreq"
+	expect * =	ReqAcct	"^18 0 18 192 75 267$"
 	expect 0 =      End
 } -start
 

@@ -79,17 +79,17 @@ enum e_frag {
 	F_H,			/* %H Proto */
 	F_U,			/* %U URL path */
 	F_q,			/* %q Query string */
+	F_b,			/* %b Body bytes sent */
 	F_h,			/* %h Host name / IP Address */
 	F_m,			/* %m Method */
 	F_s,			/* %s Status */
+	F_I,			/* %I Bytes received */
+	F_O,			/* %O Bytes sent */
 	F_tstart,		/* Time start */
 	F_tend,			/* Time end */
 	F_ttfb,			/* %{Varnish:time_firstbyte}x */
 	F_host,			/* Host header */
 	F_auth,			/* Authorization header */
-	F_req_protobytes,
-	F_resp_bodybytes,
-	F_resp_protobytes,
 	F__MAX,
 };
 
@@ -105,7 +105,6 @@ struct format {
 #define FORMAT_MAGIC		0xC3119CDA
 
 	char			time_type;
-	char			bytecount_type;
 	VTAILQ_ENTRY(format)	list;
 	format_f		*func;
 	struct fragment		*frag;
@@ -317,52 +316,6 @@ format_fragment(const struct format *format)
 }
 
 static int v_matchproto_(format_f)
-format_bytecount(const struct format *format)
-{
-	long body = 0, resp = 0;
-	char *p;
-
-	switch (format->bytecount_type) {
-	case 'b':		/* %b Body bytes sent */
-		if (CTX.frag[F_resp_bodybytes].gen == CTX.gen) {
-			body = strtol(CTX.frag[F_resp_bodybytes].b, &p, 10);
-			if (p != CTX.frag[F_resp_bodybytes].e)
-				body = 0;
-		}
-		if (CTX.frag[F_resp_protobytes].gen == CTX.gen) {
-			resp = strtol(CTX.frag[F_resp_protobytes].b, &p, 10);
-			if (p != CTX.frag[F_resp_protobytes].e)
-				resp = 0;
-		}
-		if (resp > body)
-			/* We cap the response bytes at the body byte count */
-			AZ(VSB_printf(CTX.vsb, "%ld", body));
-		else
-			/* Report only the bytes that we have actually sent */
-			AZ(VSB_printf(CTX.vsb, "%ld", resp));
-		break;
-	case 'I':		/* %I Bytes received */
-		if (CTX.frag[F_req_protobytes].gen == CTX.gen)
-			vsb_esc_cat(CTX.vsb, CTX.frag[F_req_protobytes].b,
-			    CTX.frag[F_req_protobytes].e);
-		else
-			AZ(VSB_printf(CTX.vsb, "-"));
-		break;
-	case 'O':		/* %O Bytes sent */
-		if (CTX.frag[F_resp_protobytes].gen == CTX.gen)
-			vsb_esc_cat(CTX.vsb, CTX.frag[F_resp_protobytes].b,
-			    CTX.frag[F_resp_protobytes].e);
-		else
-			AZ(VSB_printf(CTX.vsb, "-"));
-		break;
-	default:
-		WRONG("Byte count type");
-	}
-
-	return (1);
-}
-
-static int v_matchproto_(format_f)
 format_time(const struct format *format)
 {
 	double t_start, t_end;
@@ -551,18 +504,6 @@ addf_time(char type, const char *fmt)
 		f->time_fmt = strdup(fmt);
 		AN(f->time_fmt);
 	}
-	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
-}
-
-static void
-addf_bytecount(char type)
-{
-	struct format *f;
-
-	ALLOC_OBJ(f, FORMAT_MAGIC);
-	AN(f);
-	f->func = &format_bytecount;
-	f->bytecount_type = type;
 	VTAILQ_INSERT_TAIL(&CTX.format, f, list);
 }
 
@@ -773,9 +714,7 @@ parse_format(const char *format)
 		p++;
 		switch (*p) {
 		case 'b':	/* Body bytes sent */
-		case 'I':	/* Bytes received */
-		case 'O':	/* Bytes sent */
-			addf_bytecount(*p);
+			addf_fragment(&CTX.frag[F_b], "-");
 			break;
 		case 'D':	/* Float request time */
 			addf_time(*p, NULL);
@@ -786,11 +725,17 @@ parse_format(const char *format)
 		case 'H':	/* Protocol */
 			addf_fragment(&CTX.frag[F_H], "HTTP/1.0");
 			break;
+		case 'I':	/* Bytes received */
+			addf_fragment(&CTX.frag[F_I], "-");
+			break;
 		case 'l':	/* Client user ID (identd) always '-' */
 			AZ(VSB_putc(vsb, '-'));
 			break;
 		case 'm':	/* Method */
 			addf_fragment(&CTX.frag[F_m], "-");
+			break;
+		case 'O':	/* Bytes sent */
+			addf_fragment(&CTX.frag[F_O], "-");
 			break;
 		case 'q':	/* Query string */
 			addf_fragment(&CTX.frag[F_q], "");
@@ -1028,8 +973,8 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 				break;
 			case SLT_PipeAcct:
 				frag_fields(0, b, e,
-				    3, &CTX.frag[F_req_protobytes],
-				    4, &CTX.frag[F_resp_protobytes],
+				    3, &CTX.frag[F_I],
+				    4, &CTX.frag[F_O],
 				    0, NULL);
 				break;
 			case (SLT_BackendStart + BACKEND_MARKER):
@@ -1065,9 +1010,9 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			case (SLT_BereqAcct + BACKEND_MARKER):
 			case SLT_ReqAcct:
 				frag_fields(0, b, e,
-				    5, &CTX.frag[F_resp_bodybytes],
-				    7, &CTX.frag[F_req_protobytes],
-				    8, &CTX.frag[F_resp_protobytes],
+				    3, &CTX.frag[F_I],
+				    5, &CTX.frag[F_b],
+				    6, &CTX.frag[F_O],
 				    0, NULL);
 				break;
 			case (SLT_Timestamp + BACKEND_MARKER):

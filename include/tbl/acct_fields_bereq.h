@@ -35,8 +35,6 @@ ACCT(bereq_hdrbytes)
 ACCT(bereq_bodybytes)
 ACCT(beresp_hdrbytes)
 ACCT(beresp_bodybytes)
-ACCT(bereq_protobytes)
-ACCT(beresp_protobytes)
 #undef ACCT
 
 /*lint -restore */

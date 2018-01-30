@@ -69,13 +69,12 @@ vbf_iter_req_body(void *priv, int flush, const void *ptr, ssize_t l)
  */
 
 int
-V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
-    uint64_t *ctr_protobytes, int onlycached)
+V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr,
+    int onlycached)
 {
 	struct http *hp;
 	int j;
 	ssize_t i;
-	uint64_t protobytes;
 	struct http_conn *htc;
 	int do_chunked = 0;
 	char abuf[VTCP_ADDRBUFSIZE];
@@ -101,7 +100,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 
 	(void)VTCP_blocking(*htc->rfd);	/* XXX: we should timeout instead */
 	V1L_Open(wrk, wrk->aws, htc->rfd, bo->vsl, bo->t_prev, 0);
-	*ctr_hdrbytes += HTTP1_Write(wrk, hp, HTTP1_Req);
+	*ctr += HTTP1_Write(wrk, hp, HTTP1_Req);
 
 	/* Deal with any message-body the request might (still) have */
 	i = 0;
@@ -123,8 +122,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 			V1L_EndChunk(wrk);
 	}
 
-	j = V1L_Close(wrk, &protobytes);
-	*ctr_protobytes += protobytes;
+	j = V1L_Close(wrk);
 	if (j != 0 || i < 0) {
 		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
 		    errno, strerror(errno));
@@ -167,8 +165,6 @@ V1F_FetchRespHdr(struct busyobj *bo)
 	if (hs != HTC_S_COMPLETE) {
 		bo->acct.beresp_hdrbytes +=
 		    htc->rxbuf_e - htc->rxbuf_b;
-		bo->acct.beresp_protobytes +=
-		    htc->rxbuf_e - htc->rxbuf_b;
 		switch (hs) {
 		case HTC_S_JUNK:
 			VSLb(bo->vsl, SLT_FetchError, "Received junk");
@@ -199,7 +195,6 @@ V1F_FetchRespHdr(struct busyobj *bo)
 
 	i = HTTP1_DissectResponse(htc, hp, bo->bereq);
 	bo->acct.beresp_hdrbytes += htc->rxbuf_e - htc->rxbuf_b;
-	bo->acct.beresp_protobytes += htc->rxbuf_e - htc->rxbuf_b;
 	if (i) {
 		VSLb(bo->vsl, SLT_FetchError, "http format error");
 		htc->doclose = SC_RX_JUNK;
