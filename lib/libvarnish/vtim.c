@@ -70,6 +70,9 @@
 #include "vas.h"
 #include "vtim.h"
 
+/* relax vtim parsing */
+unsigned VTIM_postel = 0;
+
 static const char * const weekday_name[] = {
 	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 };
@@ -264,8 +267,12 @@ VTIM_parse(const char *p)
 			/* RFC822 & RFC1123 - "Sun, 06 Nov 1994 08:49:37 GMT" */
 			p++;
 			MUSTBE(' ');
-			DIGIT(10, mday);
-			DIGIT(1, mday);
+			if (VTIM_postel && *p && p[1] == ' ')
+				DIGIT(1, mday);
+			else {
+				DIGIT(10, mday);
+				DIGIT(1, mday);
+			}
 			MUSTBE(' ');
 			MONTH();
 			MUSTBE(' ');

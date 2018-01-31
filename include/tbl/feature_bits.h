@@ -77,6 +77,12 @@ FEATURE_BIT(HTTP2,		http2,
     "Enable HTTP/2 protocol support."
 )
 
+FEATURE_BIT(HTTP_DATE_POSTEL,	http_date_postel,
+    "Relax parsing of timestamps in HTTP headers",
+    "Tolerate non standards conforming variations of timestamp headers"
+    "like Date:, Last-Modified:, Expires: etc."
+)
+
 #undef FEATURE_BIT
 
 /*lint -restore */

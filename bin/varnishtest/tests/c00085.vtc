@@ -1,0 +1,25 @@
+varnishtest "relaxed date parsing"
+
+server s1 {
+	rxreq
+	txresp \
+	    -hdr "Date: Wed, 31 Jan 2018 14:26:02 GMT" \
+	    -hdr "Last-Modified: Thu, 4 Jan 2018 06:26:29 GMT" \
+	    -hdr "Expires: Fri, 2 Mar 2018 14:26:02 GMT"
+} -start
+
+varnish v1 -arg "-p feature=+http_date_postel" -vcl+backend {
+	import std;
+
+	sub vcl_backend_response {
+		set beresp.http.ttl = beresp.ttl;
+		set beresp.http.lm = std.time(beresp.http.last-modified, now);
+	}
+ } -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.http.ttl == "2592000.000"
+	expect resp.http.lm == "Thu, 04 Jan 2018 06:26:29 GMT"
+} -run

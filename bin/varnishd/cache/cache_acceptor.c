@@ -130,6 +130,21 @@ static const struct linger linger = {
 static unsigned		need_test;
 
 /*--------------------------------------------------------------------
+ * lacking a better place, we put some generic periodic updates
+ * into the vca_acct() loop which we are running anyway
+ */
+static void
+vca_periodic(double t0)
+{
+	double now;
+
+	now = VTIM_real();
+	VSC_C_main->uptime = (uint64_t)(now - t0);
+
+	VTIM_postel = FEATURE(FEATURE_HTTP_DATE_POSTEL);
+}
+
+/*--------------------------------------------------------------------
  * Some kernels have bugs/limitations with respect to which options are
  * inherited from the accept/listen socket, so we have to keep track of
  * which, if any, sockopts we have to set on the accepted socket.
@@ -522,7 +537,7 @@ static void * v_matchproto_()
 vca_acct(void *arg)
 {
 	struct listen_sock *ls;
-	double t0, now;
+	double t0;
 
 	// XXX Actually a mis-nomer now because the accept happens in a pool
 	// thread. Rename to accept-nanny or so?
@@ -530,6 +545,9 @@ vca_acct(void *arg)
 	THR_Init();
 	(void)arg;
 
+	t0 = VTIM_real();
+
+	vca_periodic(t0);
 	(void)vca_tcp_opt_init();
 
 	AZ(pthread_mutex_lock(&shut_mtx));
@@ -562,7 +580,6 @@ vca_acct(void *arg)
 	need_test = 1;
 	pool_accepting = 1;
 
-	t0 = VTIM_real();
 	while (1) {
 		(void)sleep(1);
 		if (vca_tcp_opt_init()) {
@@ -575,8 +592,7 @@ vca_acct(void *arg)
 			}
 			AZ(pthread_mutex_unlock(&shut_mtx));
 		}
-		now = VTIM_real();
-		VSC_C_main->uptime = (uint64_t)(now - t0);
+		vca_periodic(t0);
 	}
 	NEEDLESS(return NULL);
 }
