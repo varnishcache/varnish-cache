@@ -51,6 +51,7 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent, struct symbol *sym)
 	}
 
 	AN(sym);
+	sym->noref = 1;
 	sym->kind = SYM_VAR;
 	sym->fmt = parent->fmt;
 	sym->eval = vcc_Eval_Var;

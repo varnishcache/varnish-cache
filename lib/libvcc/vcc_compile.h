@@ -136,7 +136,7 @@ struct symbol {
 
 	/* xref.c */
 	struct proc			*proc;
-	unsigned			nref, ndef;
+	unsigned			noref, nref, ndef;
 
 	const char			*extra;
 
@@ -223,6 +223,7 @@ struct vcc {
 	int			nprobe;
 
 	int			ndirector;
+	struct symbol		*first_director;
 	const char		*default_director;
 	const char		*default_probe;
 
@@ -279,7 +280,7 @@ char *TlDup(struct vcc *tl, const char *s);
 
 /* vcc_expr.c */
 void vcc_Expr(struct vcc *tl, vcc_type_t typ);
-sym_act_f vcc_ParseCall;
+sym_act_f vcc_Act_Call;
 void vcc_Expr_Init(struct vcc *tl);
 sym_expr_t vcc_Eval_Var;
 sym_expr_t vcc_Eval_Handle;
@@ -353,7 +354,6 @@ void vcc_ParseImport(struct vcc *tl);
 sym_act_f vcc_Act_New;
 
 /* vcc_xref.c */
-void vcc_AddRef(struct vcc *, struct symbol *);
 int vcc_CheckReferences(struct vcc *tl);
 void VCC_XrefTable(struct vcc *);
 

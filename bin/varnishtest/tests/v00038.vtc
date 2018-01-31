@@ -92,8 +92,20 @@ varnish v1 -errvcl "Mandatory field 'host' missing." {
 		.port = "NONE";
 	}
 }
+
 varnish v1 -errvcl "No default probe defined" {
 	backend b1 {
 		.probe = default;
 	}
+}
+
+varnish v1 -errvcl "Only one default director possible." {
+	backend b1 { .host = "127.0.0.1"; }
+	backend default { .host = "127.0.0.1"; }
+	backend default { .host = "127.0.0.1"; }
+}
+
+varnish v1 -errvcl "Unused backend b1, defined:" {
+	backend b1 { .host = "127.0.0.1"; }
+	backend default { .host = "127.0.0.1"; }
 }

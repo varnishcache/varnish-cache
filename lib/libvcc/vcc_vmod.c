@@ -245,7 +245,7 @@ vcc_ParseImport(struct vcc *tl)
 			sym = VCC_MkSym(tl, p, SYM_FUNC);
 			ERRCHK(tl);
 			AN(sym);
-			sym->action = vcc_ParseCall;
+			sym->action = vcc_Act_Call;
 			sym->vmod = msym->name;
 			sym->eval = vcc_Eval_SymFunc;
 			p += strlen(p) + 1;
@@ -281,9 +281,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	ERRCHK(tl);
 	sy1 = VCC_HandleSymbol(tl, INSTANCE, "vo");
 	ERRCHK(tl);
-
-	/* We allow implicit use of VMOD objects:  Pretend it's ref'ed */
-	sy1->nref++;
+	sy1->noref = 1;
 
 	ExpectErr(tl, '=');
 	vcc_NextToken(tl);
@@ -335,7 +333,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 		bprintf(buf2, "%s%s", sy1->name, p);
 		sy3 = VCC_MkSym(tl, buf2, SYM_FUNC);
 		AN(sy3);
-		sy3->action = vcc_ParseCall;
+		sy3->action = vcc_Act_Call;
 		sy3->eval = vcc_Eval_SymFunc;
 		p += strlen(p) + 1;
 		sy3->eval_priv = p;

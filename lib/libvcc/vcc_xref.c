@@ -59,26 +59,14 @@ struct procuse {
 	struct proc		*fm;
 };
 
-/*--------------------------------------------------------------------
- * Keep track of definitions and references
- */
-
-void
-vcc_AddRef(struct vcc *tl, struct symbol *sym)
-{
-
-	(void)tl;
-	if (sym->ref_b == NULL)
-		sym->ref_b = tl->t;
-	sym->nref++;
-}
-
 /*--------------------------------------------------------------------*/
 
 static void
 vcc_checkref(struct vcc *tl, const struct symbol *sym)
 {
 
+	if (sym->noref)
+		return;
 	if (sym->ndef == 0 && sym->nref != 0) {
 		AN(sym->ref_b);
 		VSB_printf(tl->sb, "Undefined %s %.*s, first reference:\n",

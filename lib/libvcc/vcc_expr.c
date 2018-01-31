@@ -332,9 +332,9 @@ vcc_Eval_Handle(struct vcc *tl, struct expr **e, struct token *t,
 {
 
 	(void)t;
+	(void)tl;
 	AN(sym->rname);
 
-	vcc_AddRef(tl, sym);
 	if (sym->fmt != STRING && fmt == STRINGS) {
 		*e = vcc_mk_expr(STRINGS, "\"%s\"", sym->name);
 		(*e)->nstr = 1;
@@ -660,7 +660,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			return;
 		}
 		sym = VCC_SymbolGet(tl, SYM_NONE, "Symbol not found",
-		    XREF_NONE);
+		    XREF_REF);
 		ERRCHK(tl);
 		AN(sym);
 		if (sym->kind == SYM_FUNC && sym->fmt == VOID) {
@@ -688,6 +688,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			}
 			return;
 		default:
+			AZ(sym->eval);
 			break;
 		}
 		VSB_printf(tl->sb,
@@ -1264,7 +1265,7 @@ vcc_Expr(struct vcc *tl, vcc_type_t fmt)
  */
 
 void v_matchproto_(sym_act_f)
-vcc_ParseCall(struct vcc *tl, struct token *t, struct symbol *sym)
+vcc_Act_Call(struct vcc *tl, struct token *t, struct symbol *sym)
 {
 
 	struct expr *e;

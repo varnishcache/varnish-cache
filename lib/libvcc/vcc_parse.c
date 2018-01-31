@@ -212,12 +212,14 @@ static void
 vcc_ParseFunction(struct vcc *tl)
 {
 	struct symbol *sym;
+	struct token *t;
 	struct proc *p;
 
 	vcc_NextToken(tl);
 	vcc_ExpectVid(tl, "function");
 	ERRCHK(tl);
 
+	t = tl->t;
 	sym = VCC_SymbolGet(tl, SYM_SUB, SYMTAB_CREATE, XREF_DEF);
 	AN(sym);
 	p = sym->proc;
@@ -249,10 +251,8 @@ vcc_ParseFunction(struct vcc *tl)
 	} else {
 		/* Add to VCL sub */
 		AN(p->method);
-		if (p->name == NULL) {
-			vcc_AddRef(tl, sym);
-			p->name = tl->t;
-		}
+		if (p->name == NULL)
+			p->name = t;
 	}
 	CHECK_OBJ_NOTNULL(p, PROC_MAGIC);
 	tl->fb = p->body;

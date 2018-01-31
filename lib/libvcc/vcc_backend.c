@@ -485,6 +485,17 @@ vcc_ParseBackend(struct vcc *tl)
 
 	t_be = tl->t;
 	if (vcc_IdIs(tl->t, "default")) {
+		if (tl->first_director != NULL) {
+			tl->first_director->noref = 0;
+			tl->first_director = NULL;
+			tl->default_director = NULL;
+		}
+		if (tl->default_director != NULL) {
+			VSB_printf(tl->sb,
+			    "Only one default director possible.\n");
+			vcc_ErrWhere(tl, t_first);
+			return;
+		}
 		vcc_NextToken(tl);
 		dn = "vgc_backend_default";
 		tl->default_director = dn;
@@ -493,8 +504,9 @@ vcc_ParseBackend(struct vcc *tl)
 		ERRCHK(tl);
 		dn = sym->rname;
 		if (tl->default_director == NULL) {
+			tl->first_director = sym;
 			tl->default_director = dn;
-			sym->nref++;
+			sym->noref = 1;
 		}
 	}
 	Fh(tl, 0, "\nstatic struct director *%s;\n", dn);

@@ -227,7 +227,11 @@ VCC_SymbolGet(struct vcc *tl, enum symkind kind, const char *e, const char *x)
 struct symbol *
 VCC_MkSym(struct vcc *tl, const char *b, enum symkind kind)
 {
-	return (VCC_Symbol(tl, NULL, b, NULL, kind, 1));
+	struct symbol *sym;
+
+	sym = VCC_Symbol(tl, NULL, b, NULL, kind, 1);
+	sym->noref = 1;
+	return (sym);
 }
 
 
