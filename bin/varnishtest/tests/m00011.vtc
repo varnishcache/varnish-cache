@@ -15,6 +15,8 @@ varnish v1 -vcl+backend {
 		set resp.http.foo3 = std.ip("1.2.3.5", "127.0.0.3");
 		set resp.http.foo4 = std.ip("2001:db8::", "[::1]");
 		set resp.http.foo5 = std.ip("2001::db8::", "[::1]");
+		set resp.http.foo6 = std.ip("localhost", "0.0.0.0", resolve = false);
+		set resp.http.foo7 = std.ip("1.2.3.4", "0.0.0.0", resolve = false);
 	}
 } -start
 
@@ -29,4 +31,6 @@ client c1 {
 	expect resp.http.foo3 == "1.2.3.5"
 	expect resp.http.foo4 == "2001:db8::"
 	expect resp.http.foo5 == "::1"
+	expect resp.http.foo6 == "0.0.0.0"
+	expect resp.http.foo7 == "1.2.3.4"
 } -run
