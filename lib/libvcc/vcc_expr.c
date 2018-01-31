@@ -282,16 +282,16 @@ vcc_expr_tostring(struct vcc *tl, struct expr **e, vcc_type_t fmt)
  */
 
 static void v_matchproto_(sym_expr_t)
-vcc_Eval_Regsub(struct vcc *tl, struct expr **e, struct symbol *sym,
-    vcc_type_t fmt)
+vcc_Eval_Regsub(struct vcc *tl, struct expr **e, struct token *t,
+    struct symbol *sym, vcc_type_t fmt)
 {
 	struct expr *e2;
 	int all = sym->eval_priv == NULL ? 0 : 1;
 	const char *p;
 	char buf[128];
 
+	(void)t;
 	(void)fmt;
-	SkipToken(tl, ID);
 	SkipToken(tl, '(');
 	vcc_expr0(tl, &e2, STRING);
 	ERRCHK(tl);
@@ -312,12 +312,13 @@ vcc_Eval_Regsub(struct vcc *tl, struct expr **e, struct symbol *sym,
  */
 
 static void v_matchproto_(sym_expr_t)
-vcc_Eval_BoolConst(struct vcc *tl, struct expr **e, struct symbol *sym,
-    vcc_type_t fmt)
+vcc_Eval_BoolConst(struct vcc *tl, struct expr **e, struct token *t,
+    struct symbol *sym, vcc_type_t fmt)
 {
 
+	(void)t;
+	(void)tl;
 	(void)fmt;
-	vcc_NextToken(tl);
 	*e = vcc_mk_expr(BOOL, "(0==%d)", sym->eval_priv == NULL ? 1 : 0);
 	(*e)->constant = EXPR_CONST;
 }
@@ -326,10 +327,11 @@ vcc_Eval_BoolConst(struct vcc *tl, struct expr **e, struct symbol *sym,
  */
 
 void v_matchproto_(sym_expr_t)
-vcc_Eval_Handle(struct vcc *tl, struct expr **e, struct symbol *sym,
-    vcc_type_t fmt)
+vcc_Eval_Handle(struct vcc *tl, struct expr **e, struct token *t,
+    struct symbol *sym, vcc_type_t fmt)
 {
 
+	(void)t;
 	AN(sym->rname);
 
 	vcc_AddRef(tl, sym);
@@ -338,34 +340,31 @@ vcc_Eval_Handle(struct vcc *tl, struct expr **e, struct symbol *sym,
 		(*e)->nstr = 1;
 		(*e)->constant |= EXPR_CONST | EXPR_STR_CONST;
 	} else {
-		vcc_ExpectVid(tl, "handle");
 		*e = vcc_mk_expr(sym->fmt, "%s", sym->rname);
 		(*e)->constant = EXPR_VAR;
 		(*e)->nstr = 1;
 		if ((*e)->fmt == STRING)
 			(*e)->fmt = STRINGS;
 	}
-	vcc_NextToken(tl);
 }
 
 /*--------------------------------------------------------------------
  */
 
 void v_matchproto_(sym_expr_t)
-vcc_Eval_Var(struct vcc *tl, struct expr **e, struct symbol *sym,
-    vcc_type_t fmt)
+vcc_Eval_Var(struct vcc *tl, struct expr **e, struct token *t,
+    struct symbol *sym, vcc_type_t fmt)
 {
 
 	(void)fmt;
 	assert(sym->kind == SYM_VAR);
-	vcc_AddUses(tl, tl->t, NULL, sym->r_methods, "Not available");
+	vcc_AddUses(tl, t, NULL, sym->r_methods, "Not available");
 	ERRCHK(tl);
 	*e = vcc_mk_expr(sym->fmt, "%s", sym->rname);
 	(*e)->constant = EXPR_VAR;
 	(*e)->nstr = 1;
 	if ((*e)->fmt == STRING)
 		(*e)->fmt = STRINGS;
-	vcc_NextToken(tl);
 }
 
 /*--------------------------------------------------------------------
@@ -597,16 +596,16 @@ vcc_Eval_Func(struct vcc *tl, const char *spec,
  */
 
 void v_matchproto_(sym_expr_t)
-vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, struct symbol *sym,
-    vcc_type_t fmt)
+vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, struct token *t,
+    struct symbol *sym, vcc_type_t fmt)
 {
 
+	(void)t;
 	(void)fmt;
 	assert(sym->kind == SYM_FUNC);
 	AN(sym->eval_priv);
 
-	SkipToken(tl, ID);
-	assert(sym->fmt == VCC_Type(sym->eval_priv));
+	// assert(sym->fmt == VCC_Type(sym->eval_priv));
 	vcc_func(tl, e, sym->eval_priv, sym->extra, sym);
 	ERRCHK(tl);
 	if ((*e)->fmt == STRING) {
@@ -629,6 +628,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 {
 	struct expr *e1, *e2;
 	const char *ip, *sign;
+	struct token *t;
 	struct symbol *sym;
 	double d;
 	int i;
@@ -677,7 +677,9 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		case SYM_PROBE:
 			AN(sym->eval);
 			AZ(*e);
-			sym->eval(tl, e, sym, fmt);
+			t = tl->t;
+			vcc_NextToken(tl);
+			sym->eval(tl, e, t, sym, fmt);
 			ERRCHK(tl);
 			/* Unless asked for a HEADER, fold to string here */
 			if (*e && fmt != HEADER && (*e)->fmt == HEADER) {
@@ -1270,7 +1272,8 @@ vcc_ParseCall(struct vcc *tl, struct symbol *sym)
 
 	t1 = tl->t;
 	e = NULL;
-	vcc_Eval_SymFunc(tl, &e, sym, VOID);
+	vcc_NextToken(tl);
+	vcc_Eval_SymFunc(tl, &e, t1, sym, VOID);
 	if (!tl->err) {
 		vcc_expr_fmt(tl->fb, tl->indent, e);
 		SkipToken(tl, ';');
@@ -1291,13 +1294,11 @@ vcc_Expr_Init(struct vcc *tl)
 
 	sym = VCC_MkSym(tl, "regsub", SYM_FUNC);
 	AN(sym);
-	sym->action = vcc_ParseCall;
 	sym->eval = vcc_Eval_Regsub;
 	sym->eval_priv = NULL;
 
 	sym = VCC_MkSym(tl, "regsuball", SYM_FUNC);
 	AN(sym);
-	sym->action = vcc_ParseCall;
 	sym->eval = vcc_Eval_Regsub;
 	sym->eval_priv = sym;
 

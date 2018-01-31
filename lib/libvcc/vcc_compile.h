@@ -105,7 +105,7 @@ enum symkind {
 };
 
 typedef void sym_expr_t(struct vcc *tl, struct expr **,
-    struct symbol *sym, vcc_type_t);
+    struct token *, struct symbol *sym, vcc_type_t);
 typedef void sym_wildcard_t(struct vcc *, struct symbol *, struct symbol *);
 
 typedef void sym_act_f(struct vcc *, struct symbol *);

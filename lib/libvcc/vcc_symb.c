@@ -271,10 +271,12 @@ VCC_GlobalSymbol(struct symbol *sym, vcc_type_t fmt, const char *pfx)
 
 	sym->fmt = fmt;
 	sym->kind = VCC_HandleKind(sym->fmt);
-	if (sym->kind != SYM_NONE)
+	if (sym->kind != SYM_NONE) {
+		AZ(VCT_invalid_name(sym->rname, NULL));
 		sym->eval = vcc_Eval_Handle;
-	else
+	} else {
 		WRONG("Wrong kind of global symbol");
+	}
 
 #define VCL_MET_MAC(l,u,t,b)   sym->r_methods |= VCL_MET_##u;
 #include "tbl/vcl_returns.h"
