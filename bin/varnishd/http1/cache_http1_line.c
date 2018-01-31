@@ -127,16 +127,18 @@ V1L_Open(struct worker *wrk, struct ws *ws, int *fd, struct vsl_log *vsl,
 }
 
 unsigned
-V1L_Close(struct worker *wrk)
+V1L_Close(struct worker *wrk, uint64_t *cnt)
 {
 	struct v1l *v1l;
 	unsigned u;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	AN(cnt);
 	u = V1L_Flush(wrk);
 	v1l = wrk->v1l;
 	wrk->v1l = NULL;
 	CHECK_OBJ_NOTNULL(v1l, V1L_MAGIC);
+	*cnt = v1l->cnt;
 	if (v1l->ws->r)
 		WS_Release(v1l->ws, 0);
 	WS_Reset(v1l->ws, v1l->res);
