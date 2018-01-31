@@ -40,10 +40,10 @@
 /*--------------------------------------------------------------------*/
 
 static void v_matchproto_(sym_act_f)
-parse_call(struct vcc *tl, struct symbol *sym)
+vcc_act_call(struct vcc *tl, struct token *t, struct symbol *sym)
 {
 
-	vcc_NextToken(tl);
+	(void)t;
 	ExpectErr(tl, ID);
 	sym = VCC_SymbolGet(tl, SYM_SUB, SYMTAB_CREATE, XREF_REF);
 	AN(sym);
@@ -86,13 +86,12 @@ static const struct arith {
 /*--------------------------------------------------------------------*/
 
 static void v_matchproto_(sym_act_f)
-parse_set(struct vcc *tl, struct symbol *sym)
+vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 {
 	const struct arith *ap;
-	const struct token *t;
 	vcc_type_t fmt;
 
-	vcc_NextToken(tl);
+	(void)t;
 	ExpectErr(tl, ID);
 	t = tl->t;
 	sym = VCC_SymbolGet(tl, SYM_VAR, "Unknown variable", XREF_NONE);
@@ -142,12 +141,10 @@ parse_set(struct vcc *tl, struct symbol *sym)
 /*--------------------------------------------------------------------*/
 
 static void v_matchproto_(sym_act_f)
-parse_unset(struct vcc *tl, struct symbol *sym)
+vcc_act_unset(struct vcc *tl, struct token *t, struct symbol *sym)
 {
-	const struct token *t;
 
 	/* XXX: Wrong, should use VCC_Expr(HEADER) */
-	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 	t = tl->t;
 	sym = VCC_SymbolGet(tl, SYM_VAR, "Unknown variable", XREF_NONE);
@@ -167,11 +164,11 @@ parse_unset(struct vcc *tl, struct symbol *sym)
 /*--------------------------------------------------------------------*/
 
 static void v_matchproto_(sym_act_f)
-parse_ban(struct vcc *tl, struct symbol *sym)
+vcc_act_ban(struct vcc *tl, struct token *t, struct symbol *sym)
 {
 
+	(void)t;
 	(void)sym;
-	vcc_NextToken(tl);
 
 	ExpectErr(tl, '(');
 	vcc_NextToken(tl);
@@ -190,11 +187,11 @@ parse_ban(struct vcc *tl, struct symbol *sym)
 /*--------------------------------------------------------------------*/
 
 static void v_matchproto_(sym_act_f)
-parse_hash_data(struct vcc *tl, struct symbol *sym)
+vcc_act_hash_data(struct vcc *tl, struct token *t, struct symbol *sym)
 {
 
+	(void)t;
 	(void)sym;
-	vcc_NextToken(tl);
 	SkipToken(tl, '(');
 
 	Fb(tl, 1, "VRT_hashdata(ctx,\n  ");
@@ -208,7 +205,7 @@ parse_hash_data(struct vcc *tl, struct symbol *sym)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_return_pass(struct vcc *tl)
+vcc_act_return_pass(struct vcc *tl)
 {
 
 	ExpectErr(tl, '(');
@@ -224,7 +221,7 @@ parse_return_pass(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_return_synth(struct vcc *tl)
+vcc_act_return_synth(struct vcc *tl)
 {
 
 	ExpectErr(tl, '(');
@@ -249,7 +246,7 @@ parse_return_synth(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static void
-parse_return_vcl(struct vcc *tl)
+vcc_act_return_vcl(struct vcc *tl)
 {
 	struct symbol *sym;
 	struct inifin *p;
@@ -288,13 +285,13 @@ parse_return_vcl(struct vcc *tl)
 /*--------------------------------------------------------------------*/
 
 static void v_matchproto_(sym_act_f)
-parse_return(struct vcc *tl, struct symbol *sym)
+vcc_act_return(struct vcc *tl, struct token *t, struct symbol *sym)
 {
 	unsigned hand;
 	const char *h;
 
+	(void)t;
 	(void)sym;
-	vcc_NextToken(tl);
 	AN(tl->curproc);
 	if (tl->t->tok == ';' && tl->curproc->method == NULL) {
 		SkipToken(tl, ';');
@@ -323,11 +320,11 @@ parse_return(struct vcc *tl, struct symbol *sym)
 	vcc_NextToken(tl);
 	if (tl->t->tok == '(') {
 		if (hand == VCL_RET_SYNTH)
-			parse_return_synth(tl);
+			vcc_act_return_synth(tl);
 		else if (hand == VCL_RET_VCL)
-			parse_return_vcl(tl);
+			vcc_act_return_vcl(tl);
 		else if (hand == VCL_RET_PASS)
-			parse_return_pass(tl);
+			vcc_act_return_pass(tl);
 		else {
 			VSB_printf(tl->sb, "Arguments not allowed.\n");
 			vcc_ErrWhere(tl, tl->t);
@@ -347,10 +344,10 @@ parse_return(struct vcc *tl, struct symbol *sym)
 /*--------------------------------------------------------------------*/
 
 static void v_matchproto_(sym_act_f)
-parse_synthetic(struct vcc *tl, struct symbol *sym)
+vcc_act_synthetic(struct vcc *tl, struct token *t, struct symbol *sym)
 {
-	vcc_NextToken(tl);
 
+	(void)t;
 	(void)sym;
 	ExpectErr(tl, '(');
 	ERRCHK(tl);
@@ -382,16 +379,16 @@ vcc_Action_Init(struct vcc *tl)
 {
 	struct symbol *sym;
 
-	ACT(ban,	parse_ban,	0);
-	ACT(call,	parse_call,	0);
-	ACT(hash_data,	parse_hash_data,
+	ACT(ban,	vcc_act_ban,	0);
+	ACT(call,	vcc_act_call,	0);
+	ACT(hash_data,	vcc_act_hash_data,
 		VCL_MET_HASH);
-	ACT(if,		vcc_ParseIf,	0);
-	ACT(new,	vcc_ParseNew,
+	ACT(if,		vcc_Act_If,	0);
+	ACT(new,	vcc_Act_New,
 		VCL_MET_INIT);
-	ACT(return,	parse_return,	0);
-	ACT(set,	parse_set,	0);
-	ACT(synthetic,	parse_synthetic,
+	ACT(return,	vcc_act_return,	0);
+	ACT(set,	vcc_act_set,	0);
+	ACT(synthetic,	vcc_act_synthetic,
 		VCL_MET_SYNTH | VCL_MET_BACKEND_ERROR);
-	ACT(unset,	parse_unset,	0);
+	ACT(unset,	vcc_act_unset,	0);
 }

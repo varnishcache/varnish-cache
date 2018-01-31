@@ -80,11 +80,11 @@ vcc_Conditional(struct vcc *tl)
  */
 
 void v_matchproto_(sym_act_f)
-vcc_ParseIf(struct vcc *tl, struct symbol *sym)
+vcc_Act_If(struct vcc *tl, struct token *t, struct symbol *sym)
 {
 
+	(void)t;
 	(void)sym;
-	SkipToken(tl, ID);
 	Fb(tl, 1, "if ");
 	vcc_Conditional(tl);
 	ERRCHK(tl);
@@ -186,7 +186,8 @@ vcc_Compound(struct vcc *tl)
 					vcc_AddUses(tl, t, NULL,
 					    sym->action_mask,
 					    "Not a valid action");
-				sym->action(tl, sym);
+				vcc_NextToken(tl);
+				sym->action(tl, t, sym);
 				break;
 			}
 			/* FALLTHROUGH */

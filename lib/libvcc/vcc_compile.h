@@ -108,7 +108,7 @@ typedef void sym_expr_t(struct vcc *tl, struct expr **,
     struct token *, struct symbol *sym, vcc_type_t);
 typedef void sym_wildcard_t(struct vcc *, struct symbol *, struct symbol *);
 
-typedef void sym_act_f(struct vcc *, struct symbol *);
+typedef void sym_act_f(struct vcc *, struct token *, struct symbol *);
 
 struct symbol {
 	unsigned			magic;
@@ -294,7 +294,7 @@ void vcc_Var_Init(struct vcc *);
 
 /* vcc_parse.c */
 void vcc_Parse(struct vcc *tl);
-sym_act_f vcc_ParseIf;
+sym_act_f vcc_Act_If;
 
 /* vcc_utils.c */
 const char *vcc_regexp(struct vcc *tl);
@@ -350,7 +350,7 @@ sym_wildcard_t vcc_Var_Wildcard;
 
 /* vcc_vmod.c */
 void vcc_ParseImport(struct vcc *tl);
-sym_act_f vcc_ParseNew;
+sym_act_f vcc_Act_New;
 
 /* vcc_xref.c */
 void vcc_AddRef(struct vcc *, struct symbol *);

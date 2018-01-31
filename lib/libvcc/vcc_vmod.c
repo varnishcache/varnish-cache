@@ -267,17 +267,15 @@ vcc_ParseImport(struct vcc *tl)
 }
 
 void v_matchproto_(sym_act_f)
-vcc_ParseNew(struct vcc *tl, struct symbol *sym)
+vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 {
 	struct symbol *sy1, *sy2, *sy3;
 	struct inifin *ifp;
-	struct token *t;
 	const char *p, *s_obj;
 	char buf1[128];
 	char buf2[128];
 
 	(void)sym;
-	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 	vcc_ExpectVid(tl, "VCL object");
 	ERRCHK(tl);

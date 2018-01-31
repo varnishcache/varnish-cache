@@ -1264,22 +1264,19 @@ vcc_Expr(struct vcc *tl, vcc_type_t fmt)
  */
 
 void v_matchproto_(sym_act_f)
-vcc_ParseCall(struct vcc *tl, struct symbol *sym)
+vcc_ParseCall(struct vcc *tl, struct token *t, struct symbol *sym)
 {
 
 	struct expr *e;
-	struct token *t1;
 
-	t1 = tl->t;
 	e = NULL;
-	vcc_NextToken(tl);
-	vcc_Eval_SymFunc(tl, &e, t1, sym, VOID);
+	vcc_Eval_SymFunc(tl, &e, t, sym, VOID);
 	if (!tl->err) {
 		vcc_expr_fmt(tl->fb, tl->indent, e);
 		SkipToken(tl, ';');
 		VSB_cat(tl->fb, ";\n");
-	} else if (t1 != tl->t) {
-		vcc_ErrWhere2(tl, t1, tl->t);
+	} else if (t != tl->t) {
+		vcc_ErrWhere2(tl, t, tl->t);
 	}
 	vcc_delete_expr(e);
 }
