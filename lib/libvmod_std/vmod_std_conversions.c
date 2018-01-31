@@ -77,7 +77,7 @@ vmod_integer(VRT_CTX, VCL_STRING p, VCL_INT i)
 }
 
 VCL_IP
-vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d)
+vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d, VCL_BOOL n)
 {
 	struct addrinfo hints, *res0 = NULL;
 	const struct addrinfo *res;
@@ -101,6 +101,8 @@ vmod_ip(VRT_CTX, VCL_STRING s, VCL_IP d)
 		memset(&hints, 0, sizeof(hints));
 		hints.ai_family = PF_UNSPEC;
 		hints.ai_socktype = SOCK_STREAM;
+		if (!n)
+			hints.ai_flags |= AI_NUMERICHOST;
 		error = getaddrinfo(s, "80", &hints, &res0);
 		if (!error) {
 			for (res = res0; res != NULL; res = res->ai_next) {

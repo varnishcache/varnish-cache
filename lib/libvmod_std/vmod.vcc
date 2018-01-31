@@ -165,12 +165,17 @@ Example
 	|	...
 	| }
 
-$Function IP ip(STRING s, IP fallback)
+$Function IP ip(STRING s, IP fallback, BOOL resolve = 1)
 
 Description
 	Converts the string *s* to the first IP number returned by
 	the system library function getaddrinfo(3). If conversion
 	fails, *fallback* will be returned.
+
+	If *resolve* is true, getaddrinfo() is called using *AI_NUMERICHOST*
+	to avoid network lookups. This makes "pure" IP strings cheaper to
+	convert.
+
 Example
 	| if (std.ip(req.http.X-forwarded-for, "0.0.0.0") ~ my_acl) {
 	|	...
