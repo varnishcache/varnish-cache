@@ -39,10 +39,9 @@
 
 /*--------------------------------------------------------------------*/
 
-static void
-parse_call(struct vcc *tl)
+static void v_matchproto_(sym_act_f)
+parse_call(struct vcc *tl, struct symbol *sym)
 {
-	struct symbol *sym;
 
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
@@ -86,10 +85,9 @@ static const struct arith {
 
 /*--------------------------------------------------------------------*/
 
-static void
-parse_set(struct vcc *tl)
+static void v_matchproto_(sym_act_f)
+parse_set(struct vcc *tl, struct symbol *sym)
 {
-	const struct symbol *sym;
 	const struct arith *ap;
 	const struct token *t;
 	vcc_type_t fmt;
@@ -143,10 +141,9 @@ parse_set(struct vcc *tl)
 
 /*--------------------------------------------------------------------*/
 
-static void
-parse_unset(struct vcc *tl)
+static void v_matchproto_(sym_act_f)
+parse_unset(struct vcc *tl, struct symbol *sym)
 {
-	const struct symbol *sym;
 	const struct token *t;
 
 	/* XXX: Wrong, should use VCC_Expr(HEADER) */
@@ -169,10 +166,11 @@ parse_unset(struct vcc *tl)
 
 /*--------------------------------------------------------------------*/
 
-static void
-parse_ban(struct vcc *tl)
+static void v_matchproto_(sym_act_f)
+parse_ban(struct vcc *tl, struct symbol *sym)
 {
 
+	(void)sym;
 	vcc_NextToken(tl);
 
 	ExpectErr(tl, '(');
@@ -191,9 +189,11 @@ parse_ban(struct vcc *tl)
 
 /*--------------------------------------------------------------------*/
 
-static void
-parse_hash_data(struct vcc *tl)
+static void v_matchproto_(sym_act_f)
+parse_hash_data(struct vcc *tl, struct symbol *sym)
 {
+
+	(void)sym;
 	vcc_NextToken(tl);
 	SkipToken(tl, '(');
 
@@ -287,12 +287,13 @@ parse_return_vcl(struct vcc *tl)
 
 /*--------------------------------------------------------------------*/
 
-static void
-parse_return(struct vcc *tl)
+static void v_matchproto_(sym_act_f)
+parse_return(struct vcc *tl, struct symbol *sym)
 {
 	unsigned hand;
 	const char *h;
 
+	(void)sym;
 	vcc_NextToken(tl);
 	AN(tl->curproc);
 	if (tl->t->tok == ';' && tl->curproc->method == NULL) {
@@ -345,11 +346,12 @@ parse_return(struct vcc *tl)
 
 /*--------------------------------------------------------------------*/
 
-static void
-parse_synthetic(struct vcc *tl)
+static void v_matchproto_(sym_act_f)
+parse_synthetic(struct vcc *tl, struct symbol *sym)
 {
 	vcc_NextToken(tl);
 
+	(void)sym;
 	ExpectErr(tl, '(');
 	ERRCHK(tl);
 	vcc_NextToken(tl);

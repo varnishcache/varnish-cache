@@ -245,6 +245,7 @@ vcc_ParseImport(struct vcc *tl)
 			sym = VCC_MkSym(tl, p, SYM_FUNC);
 			ERRCHK(tl);
 			AN(sym);
+			sym->action = vcc_ParseCall;
 			sym->vmod = msym->name;
 			sym->eval = vcc_Eval_SymFunc;
 			p += strlen(p) + 1;
@@ -265,8 +266,8 @@ vcc_ParseImport(struct vcc *tl)
 	Fh(tl, 0, "\n/* --- END VMOD %.*s --- */\n\n", PF(mod));
 }
 
-void
-vcc_ParseNew(struct vcc *tl)
+void v_matchproto_(sym_act_f)
+vcc_ParseNew(struct vcc *tl, struct symbol *sym)
 {
 	struct symbol *sy1, *sy2, *sy3;
 	struct inifin *ifp;
@@ -275,6 +276,7 @@ vcc_ParseNew(struct vcc *tl)
 	char buf1[128];
 	char buf2[128];
 
+	(void)sym;
 	vcc_NextToken(tl);
 	ExpectErr(tl, ID);
 	vcc_ExpectVid(tl, "VCL object");
@@ -335,6 +337,7 @@ vcc_ParseNew(struct vcc *tl)
 		bprintf(buf2, "%s%s", sy1->name, p);
 		sy3 = VCC_MkSym(tl, buf2, SYM_FUNC);
 		AN(sy3);
+		sy3->action = vcc_ParseCall;
 		sy3->eval = vcc_Eval_SymFunc;
 		p += strlen(p) + 1;
 		sy3->eval_priv = p;

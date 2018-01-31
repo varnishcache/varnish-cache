@@ -1261,8 +1261,8 @@ vcc_Expr(struct vcc *tl, vcc_type_t fmt)
 /*--------------------------------------------------------------------
  */
 
-void
-vcc_Expr_Call(struct vcc *tl, struct symbol *sym)
+void v_matchproto_(sym_act_f)
+vcc_ParseCall(struct vcc *tl, struct symbol *sym)
 {
 
 	struct expr *e;
@@ -1273,6 +1273,7 @@ vcc_Expr_Call(struct vcc *tl, struct symbol *sym)
 	vcc_Eval_SymFunc(tl, &e, sym, VOID);
 	if (!tl->err) {
 		vcc_expr_fmt(tl->fb, tl->indent, e);
+		SkipToken(tl, ';');
 		VSB_cat(tl->fb, ";\n");
 	} else if (t1 != tl->t) {
 		vcc_ErrWhere2(tl, t1, tl->t);
@@ -1290,11 +1291,13 @@ vcc_Expr_Init(struct vcc *tl)
 
 	sym = VCC_MkSym(tl, "regsub", SYM_FUNC);
 	AN(sym);
+	sym->action = vcc_ParseCall;
 	sym->eval = vcc_Eval_Regsub;
 	sym->eval_priv = NULL;
 
 	sym = VCC_MkSym(tl, "regsuball", SYM_FUNC);
 	AN(sym);
+	sym->action = vcc_ParseCall;
 	sym->eval = vcc_Eval_Regsub;
 	sym->eval_priv = sym;
 

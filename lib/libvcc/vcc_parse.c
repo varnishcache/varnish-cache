@@ -79,10 +79,11 @@ vcc_Conditional(struct vcc *tl)
  *	null
  */
 
-void
-vcc_ParseIf(struct vcc *tl)
+void v_matchproto_(sym_act_f)
+vcc_ParseIf(struct vcc *tl, struct symbol *sym)
 {
 
+	(void)sym;
 	SkipToken(tl, ID);
 	Fb(tl, 1, "if ");
 	vcc_Conditional(tl);
@@ -178,18 +179,14 @@ vcc_Compound(struct vcc *tl)
 			tl->err = 1;
 			return;
 		case ID:
-			sym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_NOERR, XREF_NONE);
+			sym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_NOERR,
+			    XREF_NONE);
 			if (sym != NULL && sym->action != NULL) {
 				if (sym->action_mask != 0)
 					vcc_AddUses(tl, t, NULL,
 					    sym->action_mask,
 					    "Not a valid action");
-				sym->action(tl);
-				break;
-			}
-			if (sym != NULL && sym->kind == SYM_FUNC) {
-				vcc_Expr_Call(tl, sym);
-				SkipToken(tl, ';');
+				sym->action(tl, sym);
 				break;
 			}
 			/* FALLTHROUGH */
