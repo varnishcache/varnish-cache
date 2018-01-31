@@ -186,7 +186,6 @@ vcc_Compound(struct vcc *tl)
 					vcc_AddUses(tl, t, NULL,
 					    sym->action_mask,
 					    "Not a valid action");
-				vcc_NextToken(tl);
 				sym->action(tl, t, sym);
 				break;
 			}
@@ -224,12 +223,12 @@ vcc_ParseFunction(struct vcc *tl)
 	AN(sym);
 	p = sym->proc;
 	if (p == NULL) {
-		if ((tl->t->b[0] == 'v'|| tl->t->b[0] == 'V') &&
-		    (tl->t->b[1] == 'c'|| tl->t->b[1] == 'C') &&
-		    (tl->t->b[2] == 'l'|| tl->t->b[2] == 'L')) {
+		if ((t->b[0] == 'v'|| t->b[0] == 'V') &&
+		    (t->b[1] == 'c'|| t->b[1] == 'C') &&
+		    (t->b[2] == 'l'|| t->b[2] == 'L')) {
 			VSB_printf(tl->sb,
 			    "VCL sub's named 'vcl*' are reserved names.\n");
-			vcc_ErrWhere(tl, tl->t);
+			vcc_ErrWhere(tl, t);
 			VSB_printf(tl->sb, "Valid vcl_* methods are:\n");
 			VTAILQ_FOREACH(p, &tl->procs, list) {
 				if (p->method != NULL)
@@ -240,11 +239,11 @@ vcc_ParseFunction(struct vcc *tl)
 		}
 		VCC_GlobalSymbol(sym, SUB, "VGC_function");
 		p = vcc_NewProc(tl, sym);
-		p->name = tl->t;
+		p->name = t;
 		VSB_printf(p->cname, "%s", sym->rname);
 	} else if (p->method == NULL) {
 		VSB_printf(tl->sb, "Function '%s' redefined\n", sym->name);
-		vcc_ErrWhere(tl, tl->t);
+		vcc_ErrWhere(tl, t);
 		VSB_printf(tl->sb, "Previously defined here:\n");
 		vcc_ErrWhere(tl, p->name);
 		return;
@@ -260,7 +259,6 @@ vcc_ParseFunction(struct vcc *tl)
 	vcc_Coord(tl, p->body, NULL);
 	Fb(tl, 0, " */\n");
 	tl->curproc = p;
-	vcc_NextToken(tl);
 	tl->indent += INDENT;
 	Fb(tl, 1, "{\n");
 	L(tl, vcc_Compound(tl));

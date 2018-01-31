@@ -221,6 +221,7 @@ VCC_SymbolGet(struct vcc *tl, enum symkind kind, const char *e, const char *x)
 	} else {
 		assert (x == XREF_NONE);
 	}
+	vcc_NextToken(tl);
 	return (sym);
 }
 
@@ -291,24 +292,26 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
 {
 	struct symbol *sym;
 	enum symkind kind;
+	struct token *t;
 	const char *p;
 
 	kind = VCC_HandleKind(fmt);
 	assert(kind != SYM_NONE);
 
+	t = tl->t;
 	sym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_NOERR, XREF_NONE);
 	if (sym != NULL && sym->def_b != NULL && kind == sym->kind) {
 		p = VCC_SymKind(tl, sym);
 		VSB_printf(tl->sb, "%c%s '%.*s' redefined.\n",
-		    toupper(*p), p + 1, PF(tl->t));
-		vcc_ErrWhere(tl, tl->t);
+		    toupper(*p), p + 1, PF(t));
+		vcc_ErrWhere(tl, t);
 		VSB_printf(tl->sb, "First definition:\n");
 		AN(sym->def_b);
 		vcc_ErrWhere(tl, sym->def_b);
 		return (sym);
 	} else if (sym != NULL && sym->def_b != NULL) {
-		VSB_printf(tl->sb, "Name '%.*s' already defined.\n", PF(tl->t));
-		vcc_ErrWhere(tl, tl->t);
+		VSB_printf(tl->sb, "Name '%.*s' already defined.\n", PF(t));
+		vcc_ErrWhere(tl, t);
 		VSB_printf(tl->sb, "First definition:\n");
 		AN(sym->def_b);
 		vcc_ErrWhere(tl, sym->def_b);
@@ -316,8 +319,8 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
 	} else if (sym != NULL && sym->kind != kind) {
 		VSB_printf(tl->sb,
 		    "Name %.*s must have type '%s'.\n",
-		    PF(tl->t), VCC_SymKind(tl, sym));
-		vcc_ErrWhere(tl, tl->t);
+		    PF(t), VCC_SymKind(tl, sym));
+		vcc_ErrWhere(tl, t);
 		return (sym);
 	}
 	if (sym == NULL)
@@ -327,7 +330,6 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
 	VCC_GlobalSymbol(sym, fmt, pfx);
 	sym->ndef = 1;
 	if (sym->def_b == NULL)
-		sym->def_b = tl->t;
-	vcc_NextToken(tl);
+		sym->def_b = t;
 	return (sym);
 }

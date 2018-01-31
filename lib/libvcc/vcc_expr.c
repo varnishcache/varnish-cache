@@ -659,6 +659,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 			    "*(VCL_conf.default_director)");
 			return;
 		}
+		t = tl->t;
 		sym = VCC_SymbolGet(tl, SYM_NONE, "Symbol not found",
 		    XREF_REF);
 		ERRCHK(tl);
@@ -677,8 +678,6 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		case SYM_PROBE:
 			AN(sym->eval);
 			AZ(*e);
-			t = tl->t;
-			vcc_NextToken(tl);
 			sym->eval(tl, e, t, sym, fmt);
 			ERRCHK(tl);
 			/* Unless asked for a HEADER, fold to string here */
@@ -969,7 +968,6 @@ cmp_acl(struct vcc *tl, struct expr **e, const struct cmps *cp)
 	vcc_ExpectVid(tl, "ACL");
 	sym = VCC_SymbolGet(tl, SYM_ACL, SYMTAB_CREATE, XREF_REF);
 	AN(sym);
-	vcc_NextToken(tl);
 	VCC_GlobalSymbol(sym, ACL, ACL_SYMBOL_PREFIX);
 	bprintf(buf, "%sVRT_acl_match(ctx, %s, \v1)", cp->emit, sym->rname);
 	*e = vcc_expr_edit(tl, BOOL, buf, *e, NULL);

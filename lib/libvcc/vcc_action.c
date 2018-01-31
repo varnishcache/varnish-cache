@@ -50,7 +50,6 @@ vcc_act_call(struct vcc *tl, struct token *t, struct symbol *sym)
 	vcc_AddCall(tl, sym);
 	VCC_GlobalSymbol(sym, SUB, "VGC_function");
 	Fb(tl, 1, "%s(ctx);\n", sym->rname);
-	vcc_NextToken(tl);
 	SkipToken(tl, ';');
 }
 
@@ -96,7 +95,6 @@ vcc_act_set(struct vcc *tl, struct token *t, struct symbol *sym)
 	t = tl->t;
 	sym = VCC_SymbolGet(tl, SYM_VAR, "Unknown variable", XREF_NONE);
 	ERRCHK(tl);
-	vcc_NextToken(tl);
 	AN(sym);
 	if (sym->w_methods == 0) {
 		vcc_ErrWhere2(tl, t, tl->t);
@@ -149,7 +147,6 @@ vcc_act_unset(struct vcc *tl, struct token *t, struct symbol *sym)
 	t = tl->t;
 	sym = VCC_SymbolGet(tl, SYM_VAR, "Unknown variable", XREF_NONE);
 	ERRCHK(tl);
-	vcc_NextToken(tl);
 	AN(sym);
 	if (sym->u_methods == 0) {
 		vcc_ErrWhere2(tl, t, tl->t);
@@ -278,7 +275,6 @@ vcc_act_return_vcl(struct vcc *tl)
 	}
 	Fb(tl, 1, "VRT_vcl_select(ctx, %s);\t/* %s */\n",
 	    (const char*)sym->eval_priv, sym->name);
-	vcc_NextToken(tl);
 	SkipToken(tl, ')');
 }
 

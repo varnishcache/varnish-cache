@@ -290,7 +290,6 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	t = tl->t;
 	sy2 = VCC_SymbolGet(tl, SYM_OBJECT, "Symbol not found", XREF_NONE);
 	ERRCHK(tl);
-	vcc_NextToken(tl);
 	AN(sy2);
 	if (sy2->extra == NULL) {
 		VSB_printf(tl->sb, "Constructor not found: ");

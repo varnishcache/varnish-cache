@@ -403,6 +403,7 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			ERRCHK(tl);
 		} else if (vcc_IdIs(t_field, "probe") && tl->t->tok == ID) {
 			if (vcc_IdIs(tl->t, "default")) {
+				vcc_NextToken(tl);
 				(void)vcc_default_probe(tl);
 			} else {
 				pb = VCC_SymbolGet(tl, SYM_PROBE,
@@ -411,7 +412,6 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 				AN(pb);
 				Fb(tl, 0, "\t.probe = %s,\n", pb->rname);
 			}
-			vcc_NextToken(tl);
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "probe")) {
 			VSB_printf(tl->sb,
@@ -478,7 +478,7 @@ vcc_ParseBackend(struct vcc *tl)
 
 	tl->ndirector++;
 	t_first = tl->t;
-	vcc_NextToken(tl);		/* ID: backend */
+	SkipToken(tl, ID);		/* ID: backend */
 
 	vcc_ExpectVid(tl, "backend");	/* ID: name */
 	ERRCHK(tl);
