@@ -135,6 +135,7 @@ parse_set(struct vcc *tl)
 	} else {
 		vcc_Expr(tl, fmt);
 	}
+	ERRCHK(tl);
 	tl->indent -= INDENT;
 	Fb(tl, 1, ");\n");
 	SkipToken(tl, ';');
