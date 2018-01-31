@@ -527,6 +527,11 @@ vbf_figure_out_vfp(struct busyobj *bo)
 	/* Don't mess with a partial body */
 	if (http_GetStatus(bo->beresp) == 206) {
 		AN(bo->uncacheable);
+		if (bo->do_esi) {
+			VSLb(bo->vsl, SLT_FetchError,
+			    "ESI enabled on partial response");
+			return (-1);
+		}
 		return (0);
 	}
 

@@ -51,24 +51,25 @@ Now, lets have an HTML file that has an ESI include statement::
 For ESI to work you need to activate ESI processing in VCL, like this::
 
     sub vcl_backend_response {
-    	if (bereq.url == "/test.html") {
-           set beresp.do_esi = true; // Do ESI processing
-           set beresp.ttl = 24 h;    // Sets the TTL on the HTML above
-    	} elseif (bereq.url == "/cgi-bin/date.cgi") {
-           set beresp.ttl = 1m;      // Sets a one minute TTL on
-	       	       	 	     // the included object
+        if (bereq.url == "/test.html") {
+            set beresp.do_esi = true; // Do ESI processing
+            set beresp.ttl = 24 h;    // Sets the TTL on the HTML above
+        } elseif (bereq.url == "/cgi-bin/date.cgi") {
+            set beresp.ttl = 1m;      // Sets a one minute TTL on
+                                      // the included object
         }
     }
 
 Example: esi:remove and <!--esi ... -->
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The `<esi:remove>` and `<!--esi ... -->` constructs can be used to present
+
+The ``<esi:remove>`` and ``<!--esi ... -->`` constructs can be used to present
 appropriate content whether or not ESI is available, for example you can
 include content when ESI is available or link to it when it is not.
 ESI processors will remove the start ("<!--esi") and the end ("-->") when
 the page is processed, while still processing the contents. If the page
 is not processed, it will remain intact, becoming a HTML/XML comment tag.
-ESI processors will remove `<esi:remove>` tags and all content contained
+ESI processors will remove ``<esi:remove>`` tags and all content contained
 in them, allowing you to only render the content when the page is not
 being ESI-processed.
 For example::
@@ -88,3 +89,24 @@ Please note that Varnish will peek at the included content. If it
 doesn't start with a "<" Varnish assumes you didn't really mean to
 include it and disregard it. You can alter this behaviour by setting
 the 'esi_syntax' parameter (see ref:`ref-varnishd`).
+
+Doing ESI on partial responses
+------------------------------
+
+Varnish can't reliably process ESI tags if the backend sends a partial
+response, which may happen for passed transactions. In this case the
+transaction fails and logged with the appropriate ``FetchError``.
+
+This can be worked around in VCL, after setting up ESI::
+
+    sub vcl_backend_response {
+        # [... beresp setup ...]
+        if (beresp.do_esi && beresp.status == 206) {
+            unset bereq.http.Range;
+            return (retry);
+        }
+    }
+
+In ``vcl_backend_fetch`` it's too early to know whether the backend
+response will process ESI tags, so handling of a partial ESI response
+costs an extra backend request.

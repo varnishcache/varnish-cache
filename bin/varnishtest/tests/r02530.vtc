@@ -1,4 +1,4 @@
-varnishtest "Don't test gunzip for partial responses"
+varnishtest "Don't push VFPs for partial responses"
 
 # The use of ETags is only here to ensure they aren't accidentally weakened.
 
@@ -28,12 +28,58 @@ server s1 {
 		-hdr "Content-Length: 2" \
 		-hdr "Content-Range: bytes 0-1/*"
 	sendhex 1f8b
+
+	# ESI'd range request, will fail
+	rxreq
+	expect req.url == "/pass/esi"
+	expect req.http.Accept-Encoding == gzip
+	expect req.http.Range == bytes=0-1
+	txresp -status 206 -nolen \
+		-hdr {ETag: "1a2b3c"} \
+		-hdr "Accept-Ranges: bytes" \
+		-hdr "Content-Encoding: gzip" \
+		-hdr "Content-Length: 2" \
+		-hdr "Content-Range: bytes 0-1/*"
+	sendhex 1f8b
+
+	# ESI'd range request, before workaround
+	accept
+	rxreq
+	expect req.url == "/pass/esi/workaround"
+	expect req.http.Accept-Encoding == gzip
+	expect req.http.Range == bytes=0-1
+	txresp -status 206 -nolen \
+		-hdr {ETag: "a1b2c3"} \
+		-hdr "Accept-Ranges: bytes" \
+		-hdr "Content-Encoding: gzip" \
+		-hdr "Content-Length: 2" \
+		-hdr "Content-Range: bytes 0-1/*"
+	sendhex 1f8b
+
+	# ESI'd range request, after workaround
+	accept
+	rxreq
+	expect req.url == "/pass/esi/workaround"
+	expect req.http.Accept-Encoding == gzip
+	expect req.http.Range == <undef>
+	txresp -nolen \
+		-hdr {ETag: "a1b2c3"} \
+		-hdr "Accept-Ranges: bytes" \
+		-hdr "Content-Encoding: gzip" \
+		-gzipbody full-response-body
 } -start
 
 varnish v1 -vcl+backend {
 	sub vcl_recv {
-		if (req.url == "/pass") {
+		if (req.url ~ "pass") {
 			return (pass);
+		}
+	}
+	sub vcl_backend_response {
+		set beresp.do_esi = (bereq.url ~ "esi");
+		if (bereq.url ~ "workaround" && beresp.status == 206) {
+			unset bereq.http.Range;
+			return (retry);
 		}
 	}
 } -start
@@ -46,6 +92,7 @@ client c1 {
 	expect resp.http.Accept-Ranges == bytes
 	expect resp.http.Content-Range ~ "^bytes 0-1/"
 	expect resp.http.Content-Length == 2
+	expect resp.http.Content-Encoding == gzip
 	expect resp.bodylen == 2
 } -run
 
@@ -64,6 +111,7 @@ client c1 {
 	expect resp.http.Accept-Ranges == bytes
 	expect resp.http.Content-Range ~ "^bytes 0-1/"
 	expect resp.http.Content-Length == 2
+	expect resp.http.Content-Encoding == gzip
 	expect resp.bodylen == 2
 } -run
 
@@ -72,3 +120,27 @@ varnish v1 -expect n_gunzip == 0
 varnish v1 -expect n_test_gunzip == 0
 varnish v1 -expect SMA.s0.c_req == 0
 varnish v1 -expect SMA.Transient.c_req == 4
+
+# ESI on a parial response, will fail
+client c1 {
+	txreq -url "/pass/esi" \
+		-hdr "Accept-Encoding: gzip" \
+		-hdr "Range: bytes=0-1"
+	rxresp
+	expect resp.status == 503
+} -run
+
+# ESI on a parial response, VCL workaround
+client c1 {
+	txreq -url "/pass/esi/workaround" \
+		-hdr "Accept-Encoding: gzip" \
+		-hdr "Range: bytes=0-1"
+	rxresp
+	expect resp.status == 206
+	expect resp.http.Etag == {W/"a1b2c3"}
+	expect resp.http.Accept-Ranges == bytes
+	expect resp.http.Content-Range ~ "^bytes 0-1/"
+	expect resp.http.Content-Length == 2
+	expect resp.http.Content-Encoding == gzip
+	expect resp.bodylen == 2
+} -run
