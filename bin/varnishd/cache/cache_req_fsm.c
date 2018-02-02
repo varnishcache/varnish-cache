@@ -747,8 +747,10 @@ cnt_restart(struct worker *wrk, struct req *req)
 		req->err_code = 503;
 		req->req_step = R_STP_SYNTH;
 	} else {
+		double now = W_TIM_real(wrk);
+		req->t_req = now;
 		// XXX: ReqEnd + ReqAcct ?
-		VSLb_ts_req(req, "Restart", W_TIM_real(wrk));
+		VSLb_ts_req(req, "Restart", now);
 		VSL_ChgId(req->vsl, "req", "restart",
 		    VXID_Get(wrk, VSL_CLIENTMARKER));
 		VSLb_ts_req(req, "Start", req->t_prev);
