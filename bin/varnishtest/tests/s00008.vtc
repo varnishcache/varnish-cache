@@ -1,0 +1,28 @@
+varnishtest "setting ttl in vcl_backend_response for slow backends"
+
+server s1 {
+	rxreq
+	delay 2
+	txresp -body "foo"
+	# The second request is never used
+	rxreq
+	txresp -body "bar"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.ttl = 10s;
+	}
+	sub vcl_deliver {
+		set resp.http.X-ttl = obj.ttl;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "foo"
+	expect resp.http.X-ttl <= 10
+	expect resp.http.X-ttl >= 9
+} -run

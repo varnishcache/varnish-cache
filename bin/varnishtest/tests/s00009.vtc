@@ -1,0 +1,46 @@
+varnishtest "Correct obj.ttl is when backend and processing are slow"
+
+barrier b1 sock 2
+barrier b2 sock 2
+
+server s1 {
+	rxreq
+	delay 2
+	txresp -body "foo"
+	# The second request is never used
+	rxreq
+	txresp -body "bar"
+} -start
+
+varnish v1 -vcl+backend {
+	import vtc;
+	sub vcl_backend_response {
+		# Simulate processing for 1.5 sec
+		vtc.barrier_sync("${b1_sock}");
+		vtc.barrier_sync("${b2_sock}");
+
+		# Moving this above the processing should not change
+		# anything.
+
+		set beresp.ttl = 10s;
+	}
+	sub vcl_deliver {
+		set resp.http.X-ttl = obj.ttl;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "foo"
+	expect resp.http.X-ttl <= 9
+	expect resp.http.X-ttl >= 8
+} -start
+
+# help for sleeping inside of vcl
+barrier b1 sync
+delay 1.5
+barrier b2 sync
+
+client c1 -wait

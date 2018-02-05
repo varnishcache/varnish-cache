@@ -661,7 +661,7 @@ VRT_purge(VRT_CTX, double ttl, double grace, double keep)
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req->wrk, WORKER_MAGIC);
 	return (HSH_Purge(ctx->req->wrk, ctx->req->objcore->objhead,
-	    ttl, grace, keep));
+	    ctx->req->t_req, ttl, grace, keep));
 }
 
 /*--------------------------------------------------------------------

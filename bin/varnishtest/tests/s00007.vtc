@@ -1,0 +1,42 @@
+varnishtest "Effective TTL for for a slow backend"
+
+server s1 {
+	rxreq
+	delay 2
+	txresp -body "foo"
+
+	# The second request is never used, but is here to give a
+	# better error if varnish decides to fetch the object the
+	# second time
+
+	rxreq
+	txresp -body "bar"
+} -start
+
+varnish v1 -arg "-p default_ttl=3 -p default_grace=0" -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.http.X-ttl = beresp.ttl;
+	}
+} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "foo"
+	expect resp.http.x-ttl <= 3
+	expect resp.http.x-ttl >= 2
+	delay 2
+
+	# It is now 2 seconds since the first response was received
+	# from the backend, but 4 seconds since the first request was
+	# sent to the backend. Timeout is 3 seconds, and here we
+	# consider the object _not_ expired, and thus do not want a
+	# refetch.
+
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "foo"
+} -run
+
