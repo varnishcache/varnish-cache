@@ -282,14 +282,14 @@ vcc_ParseVcl(struct vcc *tl)
 
 	tok1 = tl->t;
 	Expect(tl, CNUM);
-	tok1->src->syntax = *tl->t->b - '0';
+	tok1->src->syntax = (*tl->t->b - '0') * 10;
 	vcc_NextToken(tl);
 	Expect(tl, '.');
 	vcc_NextToken(tl);
 
 	Expect(tl, CNUM);
 	tok2 = tl->t;
-	tok1->src->syntax += .1 * (*tl->t->b - '0');
+	tok1->src->syntax += (*tl->t->b - '0');
 	vcc_NextToken(tl);
 
 	if (tok1->e - tok1->b != 1 || tok2->e - tok2->b != 1) {
@@ -314,7 +314,7 @@ vcc_ParseVcl(struct vcc *tl)
 		VSB_printf(tl->sb,
 		    "VCL version %.1f higher than"
 		    " the top level version %.1f\n",
-		    tok1->src->syntax, tl->syntax);
+		    .1 * tok1->src->syntax, .1 * tl->syntax);
 		vcc_ErrWhere2(tl, tok0, tl->t);
 		ERRCHK(tl);
 	}
@@ -357,7 +357,7 @@ vcc_Parse(struct vcc *tl)
 		VSB_printf(tl->sb,
 		    "VCL version declaration missing\n"
 		    "Update your VCL to Version 4 syntax, and add\n"
-		    "\tvcl 4.0;\n"
+		    "\tvcl 4.1;\n"
 		    "on the first line of the VCL files.\n"
 		);
 		vcc_ErrWhere(tl, tl->t);
@@ -367,7 +367,7 @@ vcc_Parse(struct vcc *tl)
 	vcc_ParseVcl(tl);
 	if (tok->src->syntax != 4.0) {
 		VSB_printf(tl->sb, "VCL version %.1f not supported.\n",
-		    tok->src->syntax);
+		    .1 * tok->src->syntax);
 		vcc_ErrWhere2(tl, tok, tl->t);
 		ERRCHK(tl);
 	}

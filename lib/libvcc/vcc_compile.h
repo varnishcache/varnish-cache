@@ -66,7 +66,7 @@ struct symbol;
 
 struct source {
 	VTAILQ_ENTRY(source)	list;
-	float			syntax;
+	int			syntax;
 	char			*name;
 	const char		*b;
 	const char		*e;
@@ -183,7 +183,7 @@ VTAILQ_HEAD(inifinhead, inifin);
 struct vcc {
 	unsigned		magic;
 #define VCC_MAGIC		0x24ad719d
-	float			syntax;
+	int			syntax;
 
 	char			*builtin_vcl;
 	struct vfil_path	*vcl_path;
