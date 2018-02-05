@@ -15,14 +15,14 @@ varnish v1 -arg "-p debug=+vclrel" -vcl+backend {
 	import std;
 
 	sub vcl_init {
-		new obj = debug.obj();
+		new objx = debug.obj();
 	}
 
 	sub vcl_init {
 		debug.test_priv_task("something");
 		debug.test_priv_task("to remember");
 		std.log("func " + debug.test_priv_task());
-		std.log("obj "  + obj.test_priv_task());
+		std.log("obj "  + objx.test_priv_task());
 	}
 
 	sub vcl_recv {
@@ -34,11 +34,11 @@ varnish v1 -arg "-p debug=+vclrel" -vcl+backend {
 	sub vcl_deliver {
 		set resp.http.x0 = req.http.x0;
 		set resp.http.x1 = debug.test_priv_task();
-		set resp.http.o1 = obj.test_priv_task();
+		set resp.http.o1 = objx.test_priv_task();
 	}
 
 	sub vcl_backend_fetch {
-		obj.test_priv_task("b");
+		objx.test_priv_task("b");
 		std.log("foo");
 		set bereq.http.bx0 = debug.test_priv_task(bereq.url);
 		std.log("bar");
@@ -47,14 +47,14 @@ varnish v1 -arg "-p debug=+vclrel" -vcl+backend {
 	sub vcl_backend_response {
 		set beresp.http.bx0 = bereq.http.bx0;
 		set beresp.http.bx1 = debug.test_priv_task("");
-		set beresp.http.bo1 = obj.test_priv_task("");
+		set beresp.http.bo1 = objx.test_priv_task("");
 	}
 
 	sub vcl_fini {
 		debug.test_priv_task("cleaning");
 		debug.test_priv_task("up");
 		std.log("func " + debug.test_priv_task());
-		std.log("obj "  + obj.test_priv_task());
+		std.log("obj "  + objx.test_priv_task());
 	}
 
 } -start

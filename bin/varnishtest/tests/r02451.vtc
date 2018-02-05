@@ -21,7 +21,7 @@ varnish v1 -vcl+backend {
 	import std;
 
 	sub vcl_init {
-		new obj = debug.obj();
+		new objx = debug.obj();
 		new vd = directors.shard();
 		debug.test_priv_task("something");
 		debug.test_priv_task("to remember");
@@ -32,7 +32,7 @@ varnish v1 -vcl+backend {
 		vd.reconfigure(replicas=25);
 
 		std.log("func " + debug.test_priv_task());
-		std.log("obj "	+ obj.test_priv_task());
+		std.log("obj "	+ objx.test_priv_task());
 	}
 
 	sub vcl_recv {

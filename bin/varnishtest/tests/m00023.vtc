@@ -12,7 +12,7 @@ varnish v1 -vcl+backend {
 		"127"/24;
 	}
 
-	acl local {
+	acl locals {
 		// We assume c1 and s1 comes from same address
 		"${s1_addr}"/24;
 	}
@@ -24,7 +24,7 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_recv {
-		if (debug.match_acl(ip=client.ip, acl=local)) {
+		if (debug.match_acl(ip=client.ip, acl=locals)) {
 			return (hash);
 		}
 		return (synth(500));

@@ -13,7 +13,7 @@ varnish v1 -errvcl "Missing dynamic backend address or port" {
 	}
 
 	sub vcl_init {
-		new obj = debug.dyn("", "");
+		new objx = debug.dyn("", "");
 		std.log("Should not happen");
 	}
 }

@@ -12,7 +12,7 @@ varnish v1 -vcl+backend {
 	import vtc;
 
 	sub vcl_init {
-		new obj = debug.obj();
+		new objx = debug.obj();
 	}
 
 	sub vcl_recv {
@@ -28,8 +28,8 @@ varnish v1 -vcl+backend {
 		set resp.http.not = vtc.typesize("*");
 		debug.test_priv_call();
 		debug.test_priv_vcl();
-		obj.test_priv_call();
-		obj.test_priv_vcl();
+		objx.test_priv_call();
+		objx.test_priv_vcl();
 		std.log("VCL" + " initiated " + "log");
 		std.syslog(8 + 7, "Somebody runs varnishtest");
 		debug.rot52(resp);
