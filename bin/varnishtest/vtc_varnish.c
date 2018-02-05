@@ -1014,7 +1014,7 @@ varnish_expect(const struct varnish *v, char * const *av)
  *         Stop the child process.
  *
  * \-syntax
- *         Set the VCL syntax level for this command (default: 4.0)
+ *         Set the VCL syntax level for this command (default: 4.1)
  *
  * \-wait
  *         Wait for that instance to terminate.
@@ -1087,7 +1087,7 @@ cmd_varnish(CMD_ARGS)
 	if (v == NULL)
 		v = varnish_new(av[0]);
 	av++;
-	v->syntax = 4.0;
+	v->syntax = 4.1;
 
 	for (; *av != NULL; av++) {
 		if (vtc_error)
