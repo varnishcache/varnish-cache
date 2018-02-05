@@ -281,6 +281,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	ERRCHK(tl);
 	sy1 = VCC_HandleSymbol(tl, INSTANCE, "vo");
 	ERRCHK(tl);
+	AN(sy1);
 	sy1->noref = 1;
 
 	ExpectErr(tl, '=');

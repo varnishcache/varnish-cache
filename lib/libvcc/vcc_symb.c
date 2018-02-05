@@ -146,8 +146,9 @@ VCC_Symbol(struct vcc *tl, struct symbol *parent,
 			continue;
 		if (q < e)
 			break;
-		if ((kind == SYM_NONE && kind == sym->kind) ||
-		    (kind != SYM_NONE && kind != sym->kind))
+		if ((kind == SYM_NONE && kind == sym->kind))
+			continue;
+		if (tl->syntax < 41 && (kind != SYM_NONE && kind != sym->kind))
 			continue;
 		break;
 	}
@@ -203,11 +204,29 @@ VCC_SymbolGet(struct vcc *tl, enum symkind kind, const char *e, const char *x)
 	    e == SYMTAB_CREATE ? 1 : 0);
 	if (sym == NULL && e == SYMTAB_NOERR)
 		return (sym);
-	if (sym == NULL || (kind != SYM_NONE && sym->kind != kind)) {
+	if (sym == NULL) {
 		VSB_printf(tl->sb, "%s: ", e);
 		vcc_ErrToken(tl, tl->t);
 		VSB_cat(tl->sb, "\nAt: ");
 		vcc_ErrWhere(tl, tl->t);
+		return (NULL);
+	}
+	if (kind != SYM_NONE && kind != sym->kind) {
+		VSB_printf(tl->sb, "Symbol ");
+		vcc_ErrToken(tl, tl->t);
+		VSB_printf(tl->sb, " has wrong type (%s): ",
+			VCC_SymKind(tl, sym));
+		VSB_cat(tl->sb, "\nAt: ");
+		vcc_ErrWhere(tl, tl->t);
+		if (sym->def_b != NULL) {
+			VSB_printf(tl->sb, "Symbol was defined here: ");
+			vcc_ErrWhere(tl, sym->def_b);
+		} else if (sym->ref_b != NULL) {
+			VSB_printf(tl->sb, "Symbol was declared here: ");
+			vcc_ErrWhere(tl, sym->ref_b);
+		} else {
+			VSB_printf(tl->sb, "Symbol was builtin\n");
+		}
 		return (NULL);
 	}
 	if (x == XREF_DEF) {
@@ -325,6 +344,8 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
 	}
 	if (sym == NULL)
 		sym = VCC_SymbolGet(tl, kind, SYMTAB_CREATE, XREF_NONE);
+	if (sym == NULL)
+		return (NULL);
 	AN(sym);
 	AZ(sym->ndef);
 	VCC_GlobalSymbol(sym, fmt, pfx);

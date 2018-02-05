@@ -365,7 +365,7 @@ vcc_Parse(struct vcc *tl)
 	}
 	tok = tl->t;
 	vcc_ParseVcl(tl);
-	if (tok->src->syntax != 4.0) {
+	if (tok->src->syntax < 40 || tok->src->syntax > 41) {
 		VSB_printf(tl->sb, "VCL version %.1f not supported.\n",
 		    .1 * tok->src->syntax);
 		vcc_ErrWhere2(tl, tok, tl->t);
