@@ -50,7 +50,6 @@ v1d_bytes(struct req *req, enum vdp_action act, void **priv,
 
 	if (len > 0)
 		wl = V1L_Write(req->wrk, ptr, len);
-	req->acct.resp_bodybytes += len;
 	if (act > VDP_NULL && V1L_Flush(req->wrk))
 		return (-1);
 	if (len != wl)
@@ -87,6 +86,8 @@ void v_matchproto_(vtr_deliver_f)
 V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 {
 	int err;
+	unsigned u;
+	uint64_t hdrbytes, bytes;
 
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
 	CHECK_OBJ_ORNULL(boc, BOC_MAGIC);
@@ -140,16 +141,22 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 		return;
 	}
 
-	req->acct.resp_hdrbytes += HTTP1_Write(req->wrk, req->resp, HTTP1_Resp);
+	hdrbytes = HTTP1_Write(req->wrk, req->resp, HTTP1_Resp);
 
 	if (DO_DEBUG(DBG_FLUSH_HEAD))
 		(void)V1L_Flush(req->wrk);
 
-	if (!sendbody || req->res_mode & RES_ESI)
-		if (V1L_Close(req->wrk) && req->sp->fd >= 0) {
+	if (!sendbody || req->res_mode & RES_ESI) {
+		if (V1L_Close(req->wrk, &bytes) && req->sp->fd >= 0) {
 			Req_Fail(req, SC_REM_CLOSE);
 			sendbody = 0;
 		}
+
+		/* Charge bytes sent as reported from V1L_Close. Only
+		 * header-bytes have been attempted sent. */
+		req->acct.resp_hdrbytes += bytes;
+		hdrbytes = 0;
+	}
 
 	if (!sendbody) {
 		AZ(req->wrk->v1l);
@@ -178,7 +185,17 @@ V1D_Deliver(struct req *req, struct boc *boc, int sendbody)
 	if (!err && (req->res_mode & RES_CHUNKED))
 		V1L_EndChunk(req->wrk);
 
-	if ((V1L_Close(req->wrk) || err) && req->sp->fd >= 0)
+	u = V1L_Close(req->wrk, &bytes);
+
+	/* Bytes accounting */
+	if (bytes < hdrbytes)
+		req->acct.resp_hdrbytes += bytes;
+	else {
+		req->acct.resp_hdrbytes += hdrbytes;
+		req->acct.resp_bodybytes += bytes - hdrbytes;
+	}
+
+	if ((u || err) && req->sp->fd >= 0)
 		Req_Fail(req, SC_REM_CLOSE);
 	AZ(req->wrk->v1l);
 	VDP_close(req);

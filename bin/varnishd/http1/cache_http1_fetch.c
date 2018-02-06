@@ -53,7 +53,7 @@ vbf_iter_req_body(void *priv, int flush, const void *ptr, ssize_t l)
 	CAST_OBJ_NOTNULL(bo, priv, BUSYOBJ_MAGIC);
 
 	if (l > 0) {
-		bo->acct.bereq_bodybytes += V1L_Write(bo->wrk, ptr, l);
+		(void)V1L_Write(bo->wrk, ptr, l);
 		if (flush && V1L_Flush(bo->wrk))
 			return (-1);
 	}
@@ -69,12 +69,13 @@ vbf_iter_req_body(void *priv, int flush, const void *ptr, ssize_t l)
  */
 
 int
-V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr,
-    int onlycached)
+V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
+    uint64_t *ctr_bodybytes, int onlycached)
 {
 	struct http *hp;
 	int j;
 	ssize_t i;
+	uint64_t bytes, hdrbytes;
 	struct http_conn *htc;
 	int do_chunked = 0;
 	char abuf[VTCP_ADDRBUFSIZE];
@@ -84,6 +85,8 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr,
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
 	CHECK_OBJ_ORNULL(bo->req, REQ_MAGIC);
+	AN(ctr_hdrbytes);
+	AN(ctr_bodybytes);
 
 	htc = bo->htc;
 	assert(*htc->rfd > 0);
@@ -100,7 +103,7 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr,
 
 	(void)VTCP_blocking(*htc->rfd);	/* XXX: we should timeout instead */
 	V1L_Open(wrk, wrk->aws, htc->rfd, bo->vsl, bo->t_prev, 0);
-	*ctr += HTTP1_Write(wrk, hp, HTTP1_Req);
+	hdrbytes = HTTP1_Write(wrk, hp, HTTP1_Req);
 
 	/* Deal with any message-body the request might (still) have */
 	i = 0;
@@ -122,7 +125,16 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr,
 			V1L_EndChunk(wrk);
 	}
 
-	j = V1L_Close(wrk);
+	j = V1L_Close(wrk, &bytes);
+
+	/* Bytes accounting */
+	if (bytes < hdrbytes)
+		*ctr_hdrbytes += bytes;
+	else {
+		*ctr_hdrbytes += hdrbytes;
+		*ctr_bodybytes += bytes - hdrbytes;
+	}
+
 	if (j != 0 || i < 0) {
 		VSLb(bo->vsl, SLT_FetchError, "backend write error: %d (%s)",
 		    errno, strerror(errno));

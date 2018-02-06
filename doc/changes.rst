@@ -57,6 +57,13 @@ Logging / statistics
 
 * added ``cache_hit_grace`` statistics counter
 
+* The byte counters in ReqAcct now show the numbers reported from the
+  operating system rather than what we anticipated to send. This will give
+  more accurate numbers when e.g. the client hung up early without
+  receiving the entire response. Also these counters now show how many
+  bytes was attributed to the body, including any protocol overhead (ie
+  chunked encoding).
+
 C APIs (for vmod and utility authors)
 -------------------------------------
 
