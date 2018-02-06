@@ -63,8 +63,10 @@ Req_AcctLogCharge(struct VSC_main *ds, struct req *req)
 		    (uintmax_t)(a->resp_hdrbytes + a->resp_bodybytes));
 	}
 
+	/* Charge to main byte counters (except for ESI subrequests) */
 #define ACCT(foo)			\
-	ds->s_##foo += a->foo;		\
+	if (req->esi_level == 0)	\
+		ds->s_##foo += a->foo;	\
 	a->foo = 0;
 #include "tbl/acct_fields_req.h"
 }

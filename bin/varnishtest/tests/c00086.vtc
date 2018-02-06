@@ -1,0 +1,34 @@
+varnishtest "Accuratish bytes sent counters"
+
+server s1 {
+	rxreq
+	txresp -bodylen 1048576
+} -start
+
+varnish v1 -vcl+backend {
+	import vtc;
+	sub vcl_hit {
+		vtc.sleep(1s);
+	}
+} -start
+
+# Prime the cache with a larger than socket buffer object
+client c1 {
+	txreq
+	rxresp
+	expect resp.bodylen == 1048576
+} -run
+
+varnish v1 -expect s_resp_bodybytes == 1048576
+
+# Send a request and hang up immediately. Varnish will not notice the hang
+# up immediately due to the slow 1s hit, and start writing the response.
+# The write call will fail without having written the entire body.
+client c1 {
+	txreq
+} -run
+
+# Make sure that only parts of the 2nd request was counted. Exactly how
+# many bytes would show up as sent is hard to predict across platforms.
+varnish v1 -expect s_resp_bodybytes > 1048576
+varnish v1 -expect s_resp_bodybytes < 2097152
