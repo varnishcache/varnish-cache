@@ -162,8 +162,10 @@ struct vrt_ctx {
 	unsigned			magic;
 #define VRT_CTX_MAGIC			0x6bb8f0db
 
+	unsigned			syntax;
 	unsigned			method;
 	unsigned			*handling;
+	unsigned			vclver;
 
 	struct vsb			*msg;	// Only in ...init()
 	struct vsl_log			*vsl;

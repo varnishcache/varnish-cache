@@ -203,7 +203,7 @@ varnish v1 -errvcl {Name of function, 'foo.bar', contains illegal character '.'}
 	}
 }
 
-varnish v1 -errvcl {VCL sub's named 'vcl*' are reserved names.} {
+varnish v1 -errvcl {The names 'vcl*' are reserved for methods.} {
 	sub vcl_bar {
 	}
 	sub vcl_recv {

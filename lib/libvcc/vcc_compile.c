@@ -414,6 +414,7 @@ EmitStruct(const struct vcc *tl)
 {
 	Fc(tl, 0, "\nconst struct VCL_conf VCL_conf = {\n");
 	Fc(tl, 0, "\t.magic = VCL_CONF_MAGIC,\n");
+	Fc(tl, 0, "\t.syntax = %u,\n", tl->syntax);
 	Fc(tl, 0, "\t.event_vcl = VGC_Event,\n");
 	Fc(tl, 0, "\t.default_director = &%s,\n", tl->default_director);
 	if (tl->default_probe != NULL)
@@ -560,6 +561,8 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 
 	Fh(tl, 0, "/* ---===### VCC generated .h code ###===---*/\n");
 	Fc(tl, 0, "\n/* ---===### VCC generated .c code ###===---*/\n");
+
+	vcc_Parse_Init(tl);
 
 	vcc_Expr_Init(tl);
 

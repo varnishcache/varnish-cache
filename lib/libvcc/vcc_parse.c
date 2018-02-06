@@ -220,6 +220,7 @@ vcc_ParseFunction(struct vcc *tl)
 
 	t = tl->t;
 	sym = VCC_SymbolGet(tl, SYM_SUB, SYMTAB_CREATE, XREF_DEF);
+	ERRCHK(tl);
 	AN(sym);
 	p = sym->proc;
 	if (p == NULL) {
@@ -227,7 +228,7 @@ vcc_ParseFunction(struct vcc *tl)
 		    (t->b[1] == 'c'|| t->b[1] == 'C') &&
 		    (t->b[2] == 'l'|| t->b[2] == 'L')) {
 			VSB_printf(tl->sb,
-			    "VCL sub's named 'vcl*' are reserved names.\n");
+			    "The names 'vcl*' are reserved for methods.\n");
 			vcc_ErrWhere(tl, t);
 			VSB_printf(tl->sb, "Valid vcl_* methods are:\n");
 			VTAILQ_FOREACH(p, &tl->procs, list) {
@@ -343,6 +344,7 @@ static struct toplev {
 	{ "probe",		vcc_ParseProbe },
 	{ "import",		vcc_ParseImport },
 	{ "vcl",		vcc_ParseVcl },
+	{ "default",		NULL },
 	{ NULL, NULL }
 };
 
@@ -392,6 +394,8 @@ vcc_Parse(struct vcc *tl)
 			break;
 		case ID:
 			for (tp = toplev; tp->name != NULL; tp++) {
+				if (tp->func == NULL)
+					continue;
 				if (!vcc_IdIs(tl->t, tp->name))
 					continue;
 				tp->func(tl);
@@ -418,4 +422,13 @@ vcc_Parse(struct vcc *tl)
 		}
 	}
 	AZ(tl->indent);
+}
+
+void
+vcc_Parse_Init(struct vcc *tl)
+{
+	struct toplev *tp;
+
+	for (tp = toplev; tp->name != NULL; tp++)
+		VCC_MkSym(tl, tp->name, SYM_NONE);
 }

@@ -1179,6 +1179,7 @@ struct VCL_conf {
 	unsigned			magic;
 #define VCL_CONF_MAGIC			0x7406c509	/* from /dev/random */
 
+	unsigned			syntax;
 	struct director			**default_director;
 	const struct vrt_backend_probe	*default_probe;
 	unsigned			nref;

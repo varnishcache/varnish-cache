@@ -200,6 +200,16 @@ VCC_SymbolGet(struct vcc *tl, enum symkind kind, const char *e, const char *x)
 	struct symbol *sym;
 
 	AN(e);
+	if (tl->syntax >= 41 && e == SYMTAB_CREATE && kind != SYM_SUB &&
+	    (tl->t->b[0] == 'v'|| tl->t->b[0] == 'V') &&
+	    (tl->t->b[1] == 'c'|| tl->t->b[1] == 'C') &&
+	    (tl->t->b[2] == 'l'|| tl->t->b[2] == 'L')) {
+		VSB_printf(tl->sb,
+		    "Symbols named 'vcl_*' are reserved.\nAt:");
+		vcc_ErrWhere(tl, tl->t);
+		return (NULL);
+	}
+
 	sym = VCC_Symbol(tl, NULL, tl->t->b, tl->t->e, kind,
 	    e == SYMTAB_CREATE ? 1 : 0);
 	if (sym == NULL && e == SYMTAB_NOERR)
@@ -214,8 +224,11 @@ VCC_SymbolGet(struct vcc *tl, enum symkind kind, const char *e, const char *x)
 	if (kind != SYM_NONE && kind != sym->kind) {
 		VSB_printf(tl->sb, "Symbol ");
 		vcc_ErrToken(tl, tl->t);
-		VSB_printf(tl->sb, " has wrong type (%s): ",
-			VCC_SymKind(tl, sym));
+		if (sym->kind == SYM_NONE)
+			VSB_printf(tl->sb, " is a reserved word.");
+		else
+			VSB_printf(tl->sb, " has wrong type (%s): ",
+				VCC_SymKind(tl, sym));
 		VSB_cat(tl->sb, "\nAt: ");
 		vcc_ErrWhere(tl, tl->t);
 		if (sym->def_b != NULL) {

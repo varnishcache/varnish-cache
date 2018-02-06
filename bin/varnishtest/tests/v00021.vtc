@@ -95,3 +95,29 @@ varnish v1 -errvcl {Unknown variable: 'req.foobar'} {
 	backend foo { .host = "127.0.0.1"; }
 	sub vcl_recv { set req.foobar = 3; }
 }
+
+varnish v1 -errvcl {Symbol 'anacl' has wrong type (acl):} {
+	sub vcl_recv {
+		if (client.ip ~ anacl) { }
+	}
+	sub anacl { }
+}
+
+varnish v1 -errvcl {Symbols named 'vcl_*' are reserved.} {
+	sub vcl_recv {
+		if (client.ip ~ vcl_foo) { }
+	}
+}
+
+varnish v1 -errvcl {Symbol 'true' has wrong type (func):} {
+	sub vcl_recv {
+		if (client.ip ~ true) { }
+	}
+}
+
+varnish v1 -errvcl {Symbol 'default' is a reserved word.} {
+	sub vcl_recv {
+		if (client.ip ~ default) { }
+	}
+}
+

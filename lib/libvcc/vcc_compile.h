@@ -294,7 +294,8 @@ struct symbol *VCC_HandleSymbol(struct vcc *, vcc_type_t , const char *);
 void vcc_Var_Init(struct vcc *);
 
 /* vcc_parse.c */
-void vcc_Parse(struct vcc *tl);
+void vcc_Parse(struct vcc *);
+void vcc_Parse_Init(struct vcc *);
 sym_act_f vcc_Act_If;
 
 /* vcc_utils.c */

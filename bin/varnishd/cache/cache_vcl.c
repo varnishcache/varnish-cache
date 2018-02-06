@@ -106,6 +106,8 @@ static uintptr_t ws_snapshot_cli;
 static struct vrt_ctx *
 vcl_get_ctx(unsigned method, int msg)
 {
+
+	ASSERT_CLI();
 	AZ(ctx_cli.handling);
 	INIT_OBJ(&ctx_cli, VRT_CTX_MAGIC);
 	handling_cli = 0;
@@ -124,6 +126,8 @@ vcl_get_ctx(unsigned method, int msg)
 static void
 vcl_rel_ctx(struct vrt_ctx **ctx)
 {
+
+	ASSERT_CLI();
 	assert(*ctx == &ctx_cli);
 	AN((*ctx)->handling);
 	if (ctx_cli.msg)
@@ -877,6 +881,7 @@ VCL_Poll(void)
 		if (vcl->temp == VCL_TEMP_BUSY ||
 		    vcl->temp == VCL_TEMP_COOLING) {
 			ctx->vcl = vcl;
+			ctx->syntax = ctx->vcl->conf->syntax;
 			ctx->method = 0;
 			(void)vcl_set_state(ctx, "0");
 		}
@@ -887,6 +892,7 @@ VCL_Poll(void)
 			VTAILQ_REMOVE(&vcl_head, vcl, list);
 			ctx->method = VCL_MET_FINI;
 			ctx->vcl = vcl;
+			ctx->syntax = ctx->vcl->conf->syntax;
 			AZ(vcl_send_event(ctx, VCL_EVENT_DISCARD));
 			vcl_KillBackends(vcl);
 			free(vcl->loaded_name);
@@ -1132,6 +1138,7 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		ctx.ws = bo->ws;
 	}
 	assert(ctx.now != 0);
+	ctx.syntax = ctx.vcl->conf->syntax;
 	ctx.vsl = vsl;
 	ctx.specific = specific;
 	ctx.method = method;
