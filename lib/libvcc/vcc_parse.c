@@ -228,9 +228,9 @@ vcc_ParseFunction(struct vcc *tl)
 		    (t->b[1] == 'c'|| t->b[1] == 'C') &&
 		    (t->b[2] == 'l'|| t->b[2] == 'L')) {
 			VSB_printf(tl->sb,
-			    "The names 'vcl*' are reserved for methods.\n");
+			    "The names 'vcl*' are reserved for subroutines.\n");
 			vcc_ErrWhere(tl, t);
-			VSB_printf(tl->sb, "Valid vcl_* methods are:\n");
+			VSB_printf(tl->sb, "Valid vcl_* subroutines are:\n");
 			VTAILQ_FOREACH(p, &tl->procs, list) {
 				if (p->method != NULL)
 					VSB_printf(tl->sb, "\t%s\n",
