@@ -1,0 +1,97 @@
+varnishtest "test that strings are only copied when necessary"
+
+server s1 {
+	rxreq
+	txresp -hdr "Connection: close" -body "012345\n"
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+	import debug;
+
+	sub vcl_recv {
+	    # we try to make this work for 32 and 64 bit by having
+	    # all strings round up to a multiple of 8
+	    # 6 bytes: stringifying the 5-digit free integer
+	    # 14 bytes: wssnap: 12345 + null
+	    # we exploit the implementation detail that std.log does
+	    # not keep a reference to the passed string
+	    set req.http.wssnap = debug.workspace_free(client) - 24;
+	    debug.workspace_snap(client);
+	    std.log(std.integer(req.http.wssnap, 0) - debug.workspace_free(client));
+	    debug.workspace_reset(client);
+
+	    set req.url = req.url;
+	    debug.workspace_snap(client);
+	    std.log(std.integer(req.http.wssnap, 0) - debug.workspace_free(client));
+	    debug.workspace_reset(client);
+
+	    set req.url = "" + "" + req.url;
+	    debug.workspace_snap(client);
+	    std.log(std.integer(req.http.wssnap, 0) - debug.workspace_free(client));
+	    debug.workspace_reset(client);
+
+	    set req.url = "" + "" + req.url + "" + "";
+	    debug.workspace_snap(client);
+	    std.log(std.integer(req.http.wssnap, 0) - debug.workspace_free(client));
+	    debug.workspace_reset(client);
+
+	    set req.url = "/" + "new" + "/st";
+	    debug.workspace_snap(client);
+	    std.log(std.integer(req.http.wssnap, 0) - debug.workspace_free(client));
+	    debug.workspace_reset(client);
+
+	    set req.url = req.url;
+	    debug.workspace_snap(client);
+	    std.log(std.integer(req.http.wssnap, 0) - debug.workspace_free(client));
+	    debug.workspace_reset(client);
+
+	    set req.url = "" + "" + req.url;
+	    debug.workspace_snap(client);
+	    std.log(std.integer(req.http.wssnap, 0) - debug.workspace_free(client));
+	    debug.workspace_reset(client);
+
+	    set req.url = "" + req.url + "";
+	    debug.workspace_snap(client);
+	    std.log(std.integer(req.http.wssnap, 0) - debug.workspace_free(client));
+	    debug.workspace_reset(client);
+
+	    set req.url = req.url + req.url;
+	    debug.workspace_snap(client);
+	    std.log(std.integer(req.http.wssnap, 0) - debug.workspace_free(client));
+	    debug.workspace_reset(client);
+	}
+} -start
+
+logexpect l1 -v v1 -g raw -d 1 {
+	expect * 1001		VCL_call	{^RECV$}
+	expect 0 =		ReqHeader	{^wssnap: \d{5}$}
+	expect 0 =		VCL_Log	{^0$}
+	expect 0 =		ReqURL		{^/2345$}
+	expect 0 =		VCL_Log	{^0$}
+	expect 0 =		ReqURL		{^/2345$}
+	expect 0 =		VCL_Log	{^0$}
+	expect 0 =		ReqURL		{^/2345$}
+	expect 0 =		VCL_Log	{^0$}
+	expect 0 =		ReqURL		{^/new/st$}
+	expect 0 =		VCL_Log	{^8$}
+	expect 0 =		ReqURL		{^/new/st$}
+	expect 0 =		VCL_Log	{^8$}
+	expect 0 =		ReqURL		{^/new/st$}
+	expect 0 =		VCL_Log	{^8$}
+	expect 0 =		ReqURL		{^/new/st$}
+	expect 0 =		VCL_Log	{^8$}
+	expect 0 =		ReqURL		{^/new/st/new/st$}
+	expect 0 =		VCL_Log	{^24$}
+	expect 0 =		VCL_return	{^hash$}
+}
+
+logexpect l1 -start
+
+client c1 {
+	txreq -url "/2345"
+	rxresp
+	expect resp.status == 200
+} -run
+
+logexpect l1 -wait
