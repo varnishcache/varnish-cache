@@ -338,7 +338,7 @@ Example
 	|	...
 	| }
 
-$Function BOOL issyntax(REAL)
+$Function BOOL syntax(REAL)
 
 Description
 	Returns the true if VCL version is at least REAL.
