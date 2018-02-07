@@ -5,12 +5,15 @@ server s1 {
 	txresp -hdr "foo: bAr" -hdr "bar: fOo" -bodylen 4
 } -start
 
-varnish v1 -vcl+backend {
+varnish v1 -syntax 4.1 -vcl+backend {
 	import std;
 
 	sub vcl_deliver {
 		set resp.http.foo = std.toupper(resp.http.foo);
 		set resp.http.bar = std.tolower(resp.http.bar);
+		set resp.http.vcl40 = std.syntax(4.0);
+		set resp.http.vcl41 = std.syntax(4.1);
+		set resp.http.vcl42 = std.syntax(4.2);
 		std.set_ip_tos(32);
 	}
 } -start
@@ -24,9 +27,19 @@ client c1 {
 	expect resp.bodylen == "4"
 	expect resp.http.foo == "BAR"
 	expect resp.http.bar == "foo"
+	expect resp.http.vcl40 == "true"
+	expect resp.http.vcl41 == "true"
+	expect resp.http.vcl42 == "false"
 } -run
 
-varnish v1 -vcl+backend {
+varnish v1 -syntax 4.0 -vcl+backend {
+	import std;
+
+	sub vcl_deliver {
+		set resp.http.vcl40 = std.syntax(4.0);
+		set resp.http.vcl41 = std.syntax(4.1);
+		set resp.http.vcl42 = std.syntax(4.2);
+	}
 }
 
 client c1 {
@@ -36,7 +49,12 @@ client c1 {
 	expect resp.bodylen == "4"
 	expect resp.http.foo == "bAr"
 	expect resp.http.bar == "fOo"
+	expect resp.http.vcl40 == "true"
+	expect resp.http.vcl41 == "false"
+	expect resp.http.vcl42 == "false"
 } -run
+
+varnish v1 -vcl+backend { }
 
 varnish v1 -cliok "debug.vmod"
 varnish v1 -cliok "vcl.list"
@@ -44,6 +62,7 @@ varnish v1 -cliok "vcl.list"
 varnish v1 -expect vmods == 1
 
 varnish v1 -cliok "vcl.discard vcl1"
+varnish v1 -cliok "vcl.discard vcl2"
 varnish v1 -cliok "vcl.list"
 varnish v1 -cliok "debug.vmod"
 
