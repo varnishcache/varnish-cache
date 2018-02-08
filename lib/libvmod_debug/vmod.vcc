@@ -221,3 +221,8 @@ Add a vsc
 $Function VOID vsc_destroy()
 
 Remove a vsc
+
+$Function STRING argmask(INT a=$Undef, INT b=1, BOOL c=$Undef,
+	INT d=$Undef)
+
+test

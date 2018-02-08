@@ -33,6 +33,13 @@ varnish v1 -vcl+backend {
 		std.log("VCL" + " initiated " + "log");
 		std.syslog(8 + 7, "Somebody runs varnishtest");
 		debug.rot52(resp);
+		# INT a=$Undef, INT b=1, BOOL c=$Undef, INT d=$Undef
+		set resp.http.m0 = debug.argmask();
+		set resp.http.ma = debug.argmask(a=0);
+		set resp.http.mc = debug.argmask(c=false);
+		set resp.http.md = debug.argmask(d=42);
+		set resp.http.mac = debug.argmask(c=false, a=1);
+		set resp.http.mad = debug.argmask(d=4711, a=1);
 	}
 } -start
 
@@ -48,6 +55,12 @@ client c1 {
 	expect resp.http.encrypted == "ROT52"
 	expect resp.http.what >= 16
 	expect resp.http.not == -1
+	expect resp.http.m0 == ""
+	expect resp.http.ma == "a"
+	expect resp.http.mc == "c"
+	expect resp.http.md == "d"
+	expect resp.http.mac == "ac"
+	expect resp.http.mad == "ad"
 } -run
 
 logexpect l1 -v v1 -g raw -d 1 {
@@ -62,7 +75,7 @@ logexpect l1 -v v1 -g raw -d 1 {
 	expect 0 =    RespHeader	{^not: -1}
 	expect 0 =    VCL_Log		{^VCL initiated log}
 	expect 0 =    RespHeader	{^Encrypted: ROT52}
-	expect 0 =    VCL_return	{^deliver}
+	expect 6 =    VCL_return	{^deliver}
 } -start
 
 logexpect l1 -wait
