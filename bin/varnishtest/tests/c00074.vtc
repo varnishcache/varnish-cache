@@ -16,6 +16,10 @@ varnish v1 -vcl+backend {
 		vtc.workspace_snapshot(session);
 		vtc.workspace_reset(session);
 		set req.http.ws-free3 = vtc.workspace_free(session);
+
+		# Cover an obscure case in VRT_String() while here
+		set req.http.bar = vtc.typesize(
+			req.http.h1 + req.http.h2 + req.http.h3);
 	}
 } -start
 
@@ -26,7 +30,7 @@ logexpect l1 -v v1 -g request {
 } -start
 
 client c1 {
-	txreq -url /foo
+	txreq -url /foo -hdr "h3: dd"
 	rxresp
 	expect resp.status == 200
 } -run
