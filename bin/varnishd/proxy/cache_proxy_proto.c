@@ -153,6 +153,30 @@ vpx_proto1(const struct worker *wrk, struct req *req)
  * PROXY 2 protocol
  */
 
+#define PP2_TYPE_ALPN           0x01
+#define PP2_TYPE_AUTHORITY      0x02
+#define PP2_TYPE_CRC32C         0x03
+#define PP2_TYPE_NOOP           0x04
+#define PP2_TYPE_SSL            0x20
+#define PP2_SUBTYPE_SSL_VERSION 0x21
+#define PP2_SUBTYPE_SSL_CN      0x22
+#define PP2_SUBTYPE_SSL_CIPHER  0x23
+#define PP2_SUBTYPE_SSL_SIG_ALG 0x24
+#define PP2_SUBTYPE_SSL_KEY_ALG 0x25
+
+struct pp2_tlv {
+	uint8_t type;
+	uint8_t length_hi;
+	uint8_t length_lo;
+	uint8_t value[0];
+}__attribute__((packed));
+
+struct pp2_tlv_ssl {
+	uint8_t  client;
+	uint32_t verify;
+	struct pp2_tlv sub_tlv[0];
+}__attribute__((packed));
+
 static const char vpx2_sig[] = {
 	'\r', '\n', '\r', '\n', '\0', '\r', '\n',
 	'Q', 'U', 'I', 'T', '\n',
@@ -161,8 +185,9 @@ static const char vpx2_sig[] = {
 static int
 vpx_proto2(const struct worker *wrk, struct req *req)
 {
-	int l;
+	int l, hdr_len;
 	const uint8_t *p;
+	const char *d;
 	sa_family_t pfam = 0xff;
 	struct sockaddr_in sin4;
 	struct sockaddr_in6 sin6;
@@ -178,10 +203,12 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 
 	assert(req->htc->rxbuf_e - req->htc->rxbuf_b >= 16L);
 	l = vbe16dec(req->htc->rxbuf_b + 14);
-	assert(req->htc->rxbuf_e - req->htc->rxbuf_b >= 16L + l);
-	HTC_RxPipeline(req->htc, req->htc->rxbuf_b + 16L + l);
+	hdr_len = l + 16L;
+	assert(req->htc->rxbuf_e - req->htc->rxbuf_b >= hdr_len);
+	HTC_RxPipeline(req->htc, req->htc->rxbuf_b + hdr_len);
 	WS_Reset(req->ws, 0);
 	p = (const void *)req->htc->rxbuf_b;
+	d = req->htc->rxbuf_b + 16L;
 
 	/* Version @12 top half */
 	if ((p[12] >> 4) != 2) {
@@ -219,6 +246,8 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 			    "PROXY2: Ignoring short IPv4 addresses (%d)", l);
 			return (0);
 		}
+		l -= 12;
+		d += 12;
 		break;
 	case 0x21:
 		/* IPv6|TCP */
@@ -228,6 +257,8 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 			    "PROXY2: Ignoring short IPv6 addresses (%d)", l);
 			return (0);
 		}
+		l -= 36;
+		d += 36;
 		break;
 	default:
 		/* Ignore proxy header */
@@ -281,6 +312,35 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	SES_Set_String_Attr(req->sp, SA_CLIENT_PORT, pb);
 
 	VSL(SLT_Proxy, req->sp->vxid, "2 %s %s %s %s", hb, pb, ha, pa);
+
+	while (l > sizeof(struct pp2_tlv)) {
+		int el = vbe16dec(d + 1) + 3;
+		if (el > l) {
+			VSL(SLT_ProxyGarbage, req->sp->vxid, "PROXY2: Ignoring TLV");
+			return (0);
+		}
+		switch(d[0]) {
+		case PP2_TYPE_SSL:
+	        {
+			const char *sd;
+			int sl;
+			sd = d + sizeof(struct pp2_tlv) + sizeof(struct pp2_tlv_ssl);
+			sl = l - sizeof(struct pp2_tlv) - sizeof(struct pp2_tlv_ssl);
+			while (sl > sizeof(struct pp2_tlv)) {
+				int esl = vbe16dec(sd + 1) + 3;
+				if (esl > sl) {
+					VSL(SLT_ProxyGarbage, req->sp->vxid, "PROXY2: Ignoring SSL TLV");
+					return (0);
+				}
+				sd += esl;
+				sl -= esl;
+			}
+			break;
+		        }
+		}
+		d += el;
+		l -= el;
+	}
 	return (0);
 }
 
