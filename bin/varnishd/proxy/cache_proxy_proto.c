@@ -1,8 +1,10 @@
 /*-
  * Copyright (c) 2015 Varnish Software AS
+ * Copyright (c) 2018 GANDI SAS
  * All rights reserved.
  *
- * Author: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ * Authors: Poul-Henning Kamp <phk@phk.freebsd.dk>
+ *          Emmanuel Hocdet <manu@gandi.net>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,6 +36,7 @@
 
 #include "cache/cache_varnishd.h"
 #include "cache/cache_transport.h"
+#include "proxy/cache_proxy.h"
 
 #include "vend.h"
 #include "vsa.h"
@@ -153,6 +156,19 @@ vpx_proto1(const struct worker *wrk, const struct req *req)
  * PROXY 2 protocol
  */
 
+struct pp2_tlv {
+	uint8_t type;
+	uint8_t length_hi;
+	uint8_t length_lo;
+	uint8_t value[0];
+}__attribute__((packed));
+
+struct pp2_tlv_ssl {
+	uint8_t  client;
+	uint32_t verify;
+	struct pp2_tlv sub_tlv[0];
+}__attribute__((packed));
+
 static const char vpx2_sig[] = {
 	'\r', '\n', '\r', '\n', '\0', '\r', '\n',
 	'Q', 'U', 'I', 'T', '\n',
@@ -161,8 +177,9 @@ static const char vpx2_sig[] = {
 static int
 vpx_proto2(const struct worker *wrk, struct req *req)
 {
-	int l;
+	int l, hdr_len;
 	const uint8_t *p;
+	char *d;
 	sa_family_t pfam = 0xff;
 	struct sockaddr_in sin4;
 	struct sockaddr_in6 sin6;
@@ -178,10 +195,12 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 
 	assert(req->htc->rxbuf_e - req->htc->rxbuf_b >= 16L);
 	l = vbe16dec(req->htc->rxbuf_b + 14);
-	assert(req->htc->rxbuf_e - req->htc->rxbuf_b >= 16L + l);
-	HTC_RxPipeline(req->htc, req->htc->rxbuf_b + 16L + l);
+	hdr_len = l + 16L;
+	assert(req->htc->rxbuf_e - req->htc->rxbuf_b >= hdr_len);
+	HTC_RxPipeline(req->htc, req->htc->rxbuf_b + hdr_len);
 	WS_Reset(req->ws, 0);
 	p = (const void *)req->htc->rxbuf_b;
+	d = req->htc->rxbuf_b + 16L;
 
 	/* Version @12 top half */
 	if ((p[12] >> 4) != 2) {
@@ -219,6 +238,8 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 			    "PROXY2: Ignoring short IPv4 addresses (%d)", l);
 			return (0);
 		}
+		l -= 12;
+		d += 12;
 		break;
 	case 0x21:
 		/* IPv6|TCP */
@@ -228,6 +249,8 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 			    "PROXY2: Ignoring short IPv6 addresses (%d)", l);
 			return (0);
 		}
+		l -= 36;
+		d += 36;
 		break;
 	default:
 		/* Ignore proxy header */
@@ -281,6 +304,39 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	SES_Set_String_Attr(req->sp, SA_CLIENT_PORT, pb);
 
 	VSL(SLT_Proxy, req->sp->vxid, "2 %s %s %s %s", hb, pb, ha, pa);
+
+	while (l > sizeof(struct pp2_tlv)) {
+		int el = vbe16dec(d + 1) + 3;
+		if (el > l) {
+			VSL(SLT_ProxyGarbage, req->sp->vxid, "PROXY2: Ignoring TLV");
+			return (0);
+		}
+		switch(d[0]) {
+		case PP2_TYPE_SSL:
+	        {
+			const char *sd;
+			int sl;
+			sd = d + sizeof(struct pp2_tlv) + sizeof(struct pp2_tlv_ssl);
+			sl = l - sizeof(struct pp2_tlv) - sizeof(struct pp2_tlv_ssl);
+			while (sl > sizeof(struct pp2_tlv)) {
+				int esl = vbe16dec(sd + 1) + 3;
+				if (esl > sl) {
+					VSL(SLT_ProxyGarbage, req->sp->vxid, "PROXY2: Ignoring SSL TLV");
+					return (0);
+				}
+				sd += esl;
+				sl -= esl;
+			}
+			break;
+		}
+		}
+		d += el;
+		l -= el;
+	}
+	if (l) {
+		VSL(SLT_ProxyGarbage, req->sp->vxid, "PROXY2: header length mismatch");
+		return (0);
+	}
 	return (0);
 }
 
