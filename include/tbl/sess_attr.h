@@ -41,6 +41,7 @@ SESS_ATTR(CLIENT_IP,	    client_ip,	      char,	       -1)
 SESS_ATTR(CLIENT_PORT,	    client_port,      char,	       -1)
 SESS_ATTR(XPORT_PRIV,	    xport_priv,	      uintptr_t,       sizeof(uintptr_t))
 SESS_ATTR(PROXY_ALPN,	    proxy_alpn,	      char,	       -1)
+SESS_ATTR(PROXY_SSL,	    proxy_ssl,	      char,	       -1)
 #undef SESS_ATTR
 
 /*lint -restore */

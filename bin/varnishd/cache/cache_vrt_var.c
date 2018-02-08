@@ -666,6 +666,7 @@ GIP(server)
 		return SES_Get_String_Attr(ctx->sp, SA_PROXY_##TLV); \
 	}
 GPROXY(alpn, ALPN)
+GPROXY(ssl, SSL)
 #undef GPROXY
 
 /*--------------------------------------------------------------------*/

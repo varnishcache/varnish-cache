@@ -210,6 +210,13 @@ vardef('proxy.alpn',
 	The alpn from tls connection.
 	"""
 )
+vardef('proxy.ssl',
+	'STRING',
+	('both',),
+	(), """
+	The ssl version from tls connection.
+	"""
+)
 vardef('local.ip',
 	'IP',
 	('both',),

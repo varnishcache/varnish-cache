@@ -421,6 +421,11 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 					VSL(SLT_ProxyGarbage, req->sp->vxid, "PROXY2: Ignoring SSL TLV");
 					return (0);
 				}
+				switch(sd[0]) {
+				case PP2_SUBTYPE_SSL_VERSION:
+					SES_Set_String_Attr(req->sp, SA_PROXY_SSL, sd + 3);
+					break;
+				}
 				sd += esl;
 				sl -= esl;
 			}
