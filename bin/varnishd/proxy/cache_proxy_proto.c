@@ -406,6 +406,9 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 			}
 			break;
 		}
+		case PP2_TYPE_ALPN:
+			SES_Set_String_Attr(req->sp, SA_PROXY_ALPN, d + 3);
+			break;
 		case PP2_TYPE_SSL:
 	        {
 			const char *sd;

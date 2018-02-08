@@ -203,6 +203,13 @@ vardef('client.identity',
 	address.
 	"""
 )
+vardef('proxy.alpn',
+	'STRING',
+	('both',),
+	(), """
+	The alpn from tls connection.
+	"""
+)
 vardef('local.ip',
 	'IP',
 	('both',),
