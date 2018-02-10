@@ -4,10 +4,11 @@ shell {
 	printf "File One" > "${tmpdir}/m00004_file_one"
 	printf "File Two" > "${tmpdir}/m00004_file_two"
 	printf "File Three" > "${tmpdir}/m00004_file_three"
+	printf "File Four\n" > "${tmpdir}/m00004_file_four"
 }
 
 server s1 {
-	loop 3 {
+	loop 4 {
 		rxreq
 		txresp -hdr "foo: bar" -bodylen 4
 	}
@@ -15,6 +16,20 @@ server s1 {
 
 varnish v1 -vcl+backend {
 	import std;
+
+	sub vcl_recv {
+		if (req.url == "/five") {
+			return(synth(200));
+		}
+	}
+
+	sub vcl_backend_response {
+		if (bereq.url == "/four") {
+			set beresp.http.served-by
+			    = regsub(std.fileread("${tmpdir}/m00004_file_four"),
+			             "\R$", "");
+		}
+	}
 
 	sub vcl_deliver {
 		if (req.url == "/one") {
@@ -24,6 +39,12 @@ varnish v1 -vcl+backend {
 		} else if (req.url == "/three") {
 			set resp.http.three = std.fileread("${tmpdir}/m00004_file_three");
 		}
+	}
+
+	sub vcl_synth {
+		synthetic("Response was served by "
+		          + std.fileread("${tmpdir}/m00004_file_four"));
+		return(deliver);
 	}
 } -start
 
@@ -48,10 +69,36 @@ client c1 {
 	expect resp.bodylen == "4"
 	expect resp.http.foo == "bar"
 	expect resp.http.three == "File Three"
+
+	txreq -url "/four"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == "4"
+	expect resp.http.foo == "bar"
+	expect resp.http.served-by == "File Four"
+
+	txreq -url "/five"
+	rxresp
+	expect resp.status == 200
+	expect resp.body == "Response was served by File Four\n"
 } -run
 
 varnish v1 -vcl+backend {
 	import std;
+
+	sub vcl_recv {
+		if (req.url == "/five") {
+			return(synth(200));
+		}
+	}
+
+	sub vcl_backend_response {
+		if (bereq.url == "/four") {
+			set beresp.http.served-by
+			    = regsub(std.fileread("${tmpdir}/m00004_file_four"),
+			             "\R$", "");
+		}
+	}
 
 	sub vcl_deliver {
 		if (req.url == "/one") {
@@ -61,6 +108,12 @@ varnish v1 -vcl+backend {
 		} else if (req.url == "/three") {
 			set resp.http.three = std.fileread("${tmpdir}/m00004_file_three");
 		}
+	}
+
+	sub vcl_synth {
+		synthetic("Response was served by "
+		          + std.fileread("${tmpdir}/m00004_file_four"));
+		return(deliver);
 	}
 }
 
