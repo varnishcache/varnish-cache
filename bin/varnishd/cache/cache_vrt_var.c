@@ -657,6 +657,20 @@ GIP(server)
 
 /*--------------------------------------------------------------------*/
 
+#define GPROXY(tlv, TLV)					\
+	const char*						\
+	VRT_r_proxy_##tlv(VRT_CTX)				\
+	{							\
+		CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
+		CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);		\
+		return SES_Get_String_Attr(ctx->sp, SA_PROXY_##TLV); \
+	}
+GPROXY(alpn, ALPN)
+GPROXY(ssl, SSL)
+#undef GPROXY
+
+/*--------------------------------------------------------------------*/
+
 const char*
 VRT_r_server_identity(VRT_CTX)
 {
