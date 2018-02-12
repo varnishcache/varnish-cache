@@ -55,7 +55,7 @@ Logging / statistics
 * Turned off PROXY protocol debugging by default, can be enabled with
   the ``protocol`` debug flag
 
-* added ``cache_hit_grace`` statisctics counter
+* added ``cache_hit_grace`` statistics counter
 
 C APIs (for vmod and utility authors)
 -------------------------------------
