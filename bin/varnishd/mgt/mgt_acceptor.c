@@ -48,6 +48,16 @@
 #include "vss.h"
 #include "vtcp.h"
 
+struct listen_arg {
+	unsigned			magic;
+#define LISTEN_ARG_MAGIC		0xbb2fc333
+	VTAILQ_ENTRY(listen_arg)	list;
+	const char			*endpoint;
+	const char			*name;
+	VTAILQ_HEAD(,listen_sock)	socks;
+	const struct transport		*transport;
+};
+
 static VTAILQ_HEAD(,listen_arg) listen_args =
     VTAILQ_HEAD_INITIALIZER(listen_args);
 
