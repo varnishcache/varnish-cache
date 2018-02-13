@@ -445,6 +445,19 @@ vep_do_include(struct vep_state *vep, enum dowhat what)
 			VSB_destroy(&vep->include_src);
 			return;
 		}
+		for (p = VSB_data(vep->attr_vsb); *p != '\0'; p++)
+			if (vct_islws(*p))
+				break;
+		if (*p != '\0') {
+			vep_error(vep,
+			    "ESI 1.0 <esi:include> "
+			    "has whitespace in src= attribute");
+			vep->state = VEP_TAGERROR;
+			VSB_destroy(&vep->attr_vsb);
+			if (vep->include_src != NULL)
+				VSB_destroy(&vep->include_src);
+			return;
+		}
 		vep->include_src = vep->attr_vsb;
 		vep->attr_vsb = NULL;
 		return;

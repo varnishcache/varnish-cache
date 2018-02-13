@@ -41,6 +41,7 @@ server s1 {
 		</![CDATA[ bogo-cdata ]]>		35
 		<esi:include  src="foofof />		36
 		<esi:include  foo=bar src=/body2 />	37
+		<esi:include  src="/body 2" />		38
 	}
 	rxreq
 	expect req.url == "/body"
@@ -81,6 +82,7 @@ logexpect l1 -v v1 -g vxid {
 	expect 0 = ESI_xmlerror {^ERR after 636 XML 1.0 Illegal attribute delimiter$}
 	expect 0 = ESI_xmlerror {^ERR after 665 ESI 1.0 </esi:include> illegal end-tag$}
 	expect 0 = ESI_xmlerror {^ERR after 767 XML 1.0 Missing end attribute delimiter$}
+	expect 0 = ESI_xmlerror {^ERR after 843 ESI 1.0 <esi:include> has whitespace in src= attribute$}
 	expect 0 = BackendReuse
 } -start
 
@@ -104,11 +106,11 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.status == 200
-	expect resp.bodylen == 465
+	expect resp.bodylen == 472
 }
 
 client c1 -run
 logexpect l1 -wait
 logexpect l2 -wait
 logexpect l3 -wait
-varnish v1 -expect esi_errors == 17
+varnish v1 -expect esi_errors == 18
