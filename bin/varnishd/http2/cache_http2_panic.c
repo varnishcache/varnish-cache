@@ -41,7 +41,7 @@ h2_sess_panic(struct vsb *vsb, const struct sess *sp)
 	struct h2_sess *h2;
 	struct h2_req *r2;
 
-	AZ(SES_Get_xport_priv(sp, &up));
+	AZ(SES_Get_proto_priv(sp, &up));
 
 	h2 = (void*)*up;
 	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);

@@ -102,9 +102,9 @@ h2_new_sess(const struct worker *wrk, struct sess *sp, struct req *srq)
 	uintptr_t *up;
 	struct h2_sess *h2;
 
-	if (SES_Get_xport_priv(sp, &up)) {
+	if (SES_Get_proto_priv(sp, &up)) {
 		/* Already reserved if we came via H1 */
-		SES_Reserve_xport_priv(sp, &up);
+		SES_Reserve_proto_priv(sp, &up);
 		*up = 0;
 	}
 	if (*up == 0) {
@@ -131,7 +131,7 @@ h2_new_sess(const struct worker *wrk, struct sess *sp, struct req *srq)
 		AZ(VHT_Init(h2->dectbl,
 			h2->local_settings.header_table_size));
 
-		SES_Reserve_xport_priv(sp, &up);
+		SES_Reserve_proto_priv(sp, &up);
 		*up = (uintptr_t)h2;
 	}
 	AN(up);

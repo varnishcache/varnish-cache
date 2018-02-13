@@ -58,7 +58,7 @@ http1_setstate(const struct sess *sp, const char *s)
 	uintptr_t p;
 
 	p = (uintptr_t)s;
-	AZ(SES_Set_xport_priv(sp, &p));
+	AZ(SES_Set_proto_priv(sp, &p));
 }
 
 static const char *
@@ -66,7 +66,7 @@ http1_getstate(const struct sess *sp)
 {
 	uintptr_t *p;
 
-	AZ(SES_Get_xport_priv(sp, &p));
+	AZ(SES_Get_proto_priv(sp, &p));
 	return (const char *)*p;
 }
 
@@ -114,7 +114,7 @@ http1_new_session(struct worker *wrk, void *arg)
 	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
 
 	HTC_RxInit(req->htc, req->ws);
-	SES_Reserve_xport_priv(sp, &u);
+	SES_Reserve_proto_priv(sp, &u);
 	http1_setstate(sp, H1NEWREQ);
 	wrk->task.func = http1_req;
 	wrk->task.priv = req;
