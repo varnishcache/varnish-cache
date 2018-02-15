@@ -1,0 +1,42 @@
+varnishtest "Listen at a Unix domain socket while in jail"
+
+feature user_varnish
+feature group_varnish
+feature root
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-a ${tmpdir}/v1.sock" \
+	-jail "-junix,user=varnish,ccgroup=varnish" \
+	-vcl+backend {
+} -start
+
+# Socket is created as management owner before the child goes to jail
+shell -match "root" { ls -l ${tmpdir}/v1.sock }
+
+client c1 -connect "${tmpdir}/v1.sock" {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v2 -arg "-a ${tmpdir}/v2.sock,user=varnish,group=varnish,mode=666" \
+	-jail "-junix,user=varnish,ccgroup=varnish" \
+	-vcl+backend {
+} -start
+
+shell -match "rw-rw-rw-.+varnish.+varnish" { ls -l ${tmpdir}/v2.sock }
+
+client c1 -connect "${tmpdir}/v2.sock" {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run

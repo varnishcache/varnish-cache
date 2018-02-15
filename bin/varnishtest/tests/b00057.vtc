@@ -1,0 +1,22 @@
+varnishtest "Test orderly connection closure of a UDS listen socket"
+
+
+server s1 -listen "${tmpdir}/s1.sock" {
+	rxreq
+	txresp -nolen -hdr "Transfer-encoding: chunked"
+	delay .2
+	chunkedlen 30000
+	delay .2
+	chunkedlen 100000
+	delay .2
+	chunkedlen 0
+} -start
+
+varnish v1 -arg "-a ${tmpdir}/v1.sock" -vcl+backend { } -start
+
+client c1 -connect "${tmpdir}/v1.sock" {
+	txreq -hdr "Connection: close"
+	delay 3
+	rxresp
+	expect resp.bodylen == 130000
+} -run

@@ -31,6 +31,7 @@
 #include "config.h"
 
 #include <sys/socket.h>
+#include <sys/un.h>
 
 #include <netdb.h>
 #include <stdlib.h>
@@ -145,4 +146,32 @@ VSS_resolver(const char *addr, const char *def_port, vss_resolved_f *func,
 	}
 	freeaddrinfo(res0);
 	return (ret);
+}
+
+int
+VSS_unix(const char *path, vss_resolved_f *func, void *priv, const char **err)
+{
+	struct sockaddr_un uds;
+	struct suckaddr *vsa;
+	void *p;
+	int ret = 0;
+
+	AN(path);
+	assert(path[0] == '/');
+
+	*err = NULL;
+	if (strlen(path) + 1 > sizeof(uds.sun_path)/sizeof(uds.sun_path[0])) {
+		*err = "Path too long for a Unix domain socket";
+		return(-1);
+	}
+	strcpy(uds.sun_path, path);
+	uds.sun_family = PF_UNIX;
+	p = malloc(vsa_suckaddr_len);
+	AN(p);
+	vsa = VSA_Build_UDS(p, &uds);
+	AN(vsa);
+	if (func != NULL)
+		ret = func(priv, vsa);
+	free(p);
+	return(ret);
 }

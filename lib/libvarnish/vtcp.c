@@ -31,6 +31,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <sys/ioctl.h>
 #ifdef HAVE_SYS_FILIO_H
 #  include <sys/filio.h>
@@ -58,10 +59,22 @@ static void
 vtcp_sa_to_ascii(const void *sa, socklen_t l, char *abuf, unsigned alen,
     char *pbuf, unsigned plen)
 {
+	const struct sockaddr *soa;
 	int i;
 
+	AN(sa);
 	assert(abuf == NULL || alen > 0);
 	assert(pbuf == NULL || plen > 0);
+
+	soa = sa;					//lint !e826
+	if (soa->sa_family == PF_UNIX) {
+		const struct sockaddr_un *suds = sa;	//lint !e826
+
+		(void)snprintf(abuf, alen, "%s", suds->sun_path);
+		(void)snprintf(pbuf, plen, "-");
+		return;
+	}
+
 	i = getnameinfo(sa, l, abuf, alen, pbuf, plen,
 	   NI_NUMERICHOST | NI_NUMERICSERV);
 	if (i) {
@@ -93,6 +106,11 @@ VTCP_name(const struct suckaddr *addr, char *abuf, unsigned alen,
 	const struct sockaddr *sa;
 	socklen_t sl;
 
+	if (VSA_Get_Proto(addr) == PF_UNIX) {
+		(void)snprintf(abuf, alen, "%s", VSA_Path(addr));
+		(void)snprintf(pbuf, plen, "-");
+		return;
+	}
 	sa = VSA_Get_Sockaddr(addr, &sl);
 	vtcp_sa_to_ascii(sa, sl, abuf, alen, pbuf, plen);
 }
@@ -294,7 +312,8 @@ VTCP_connect(const struct suckaddr *name, int msec)
 		(void)VTCP_nonblocking(s);
 
 	val = 1;
-	AZ(setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &val, sizeof val));
+	if (VSA_Get_Proto(name) != PF_UNIX)
+		AZ(setsockopt(s, IPPROTO_TCP, TCP_NODELAY, &val, sizeof val));
 
 	i = connect(s, sa, sl);
 	if (i == 0)
@@ -387,8 +406,11 @@ VTCP_open(const char *addr, const char *def_port, double timeout,
 	if (errp != NULL)
 		*errp = NULL;
 	assert(timeout >= 0);
-	error = VSS_resolver(addr, def_port, vtcp_open_callback,
-	    &timeout, &err);
+	if (addr[0] != '/')
+		error = VSS_resolver(addr, def_port, vtcp_open_callback,
+				     &timeout, &err);
+	else
+		error = VSS_unix(addr, vtcp_open_callback, &timeout, &err);
 	if (err != NULL) {
 		if (errp != NULL)
 			*errp = err;
@@ -445,6 +467,15 @@ VTCP_bind(const struct suckaddr *sa, const char **errp)
 		return (-1);
 	}
 #endif
+	if (proto == PF_UNIX && unlink(VSA_Path(sa)) != 0 && errno != ENOENT) {
+		if (errp != NULL)
+			*errp = "unlink(2)";
+		e = errno;
+		closefd(&sd);
+		errno = e;
+		return (-1);
+	}
+
 	so = VSA_Get_Sockaddr(sa, &sl);
 	if (bind(sd, so, sl) != 0) {
 		if (errp != NULL)
@@ -516,7 +547,10 @@ VTCP_listen_on(const char *addr, const char *def_port, int depth,
 	h.depth = depth;
 	h.errp = errp;
 
-	sock = VSS_resolver(addr, def_port, vtcp_lo_cb, &h, errp);
+	if (addr[0] != '/')
+		sock = VSS_resolver(addr, def_port, vtcp_lo_cb, &h, errp);
+	else
+		sock = VSS_unix(addr, vtcp_lo_cb, &h, errp);
 	if (*errp != NULL)
 		return (-1);
 	return(sock);

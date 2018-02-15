@@ -1,0 +1,36 @@
+varnishtest "Check read-head / partial pipelining over a UDS listen address"
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	txresp -body "foo"
+	rxreq
+	expect req.url == "/bar"
+	txresp -body "foobar"
+} -start
+
+varnish v1 -arg "-a ${tmpdir}/v1.sock" -vcl+backend {}
+
+# NB: The accept_filter param may not exist.
+varnish v1 -cli "param.set accept_filter false"
+varnish v1 -start
+
+client c1 -connect "${tmpdir}/v1.sock" {
+	send "GET /foo HTTP/1.1\r\n\r\nGET "
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 3
+	expect resp.http.x-varnish == "1001"
+	send "/bar HTTP/1.1\n\nGET /bar "
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 6
+	expect resp.http.x-varnish == "1003"
+	send "HTTP/1.1\n\n"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 6
+	expect resp.http.x-varnish == "1005 1004"
+} -run
+
+varnish v1 -expect sess_readahead == 2

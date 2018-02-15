@@ -37,6 +37,7 @@
 
 #include "cache_director.h"
 #include "vrt_obj.h"
+#include "vsa.h"
 
 static char vrt_hostname[255] = "";
 
@@ -248,12 +249,17 @@ VRT_r_beresp_uncacheable(VRT_CTX)
 const char *
 VRT_r_client_identity(VRT_CTX)
 {
+	const char *id;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	if (ctx->req->client_identity != NULL)
 		return (ctx->req->client_identity);
-	return (SES_Get_String_Attr(ctx->req->sp, SA_CLIENT_IP));
+	id = SES_Get_String_Attr(ctx->req->sp, SA_CLIENT_IP);
+	if (id != NULL)
+		return id;
+	VRT_fail(ctx, "client.identity not set and there is no client IP");
+	return (NULL);
 }
 
 void
@@ -322,10 +328,29 @@ VRT_r_beresp_backend_name(VRT_CTX)
 VCL_IP
 VRT_r_beresp_backend_ip(VRT_CTX)
 {
+	VCL_IP ip;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-	return (VDI_GetIP(ctx->bo->wrk, ctx->bo));
+	ip = VDI_GetIP(ctx->bo->wrk, ctx->bo);
+	if (VSA_Get_Proto(ip) == PF_UNIX)
+		return NULL;
+	return (ip);
+}
+
+/*--------------------------------------------------------------------*/
+
+const char*
+VRT_r_beresp_backend_path(VRT_CTX)
+{
+	VCL_IP ip;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	ip = VDI_GetIP(ctx->bo->wrk, ctx->bo);
+	if (VSA_Get_Proto(ip) == PF_UNIX)
+		return VSA_Path(ip);
+	return (NULL);
 }
 
 /*--------------------------------------------------------------------*/
@@ -646,6 +671,8 @@ VRT_r_req_##field(VRT_CTX)						\
 		CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);		\
 		CHECK_OBJ_NOTNULL(ctx->sp, SESS_MAGIC);		\
 		AZ(SES_Get_##fld##_addr(ctx->sp, &sa));		\
+		if (VSA_Get_Proto(sa) == PF_UNIX)		\
+			return (NULL);				\
 		return (sa);					\
 	}
 
@@ -654,6 +681,18 @@ GIP(remote)
 GIP(client)
 GIP(server)
 #undef GIP
+
+/*--------------------------------------------------------------------*/
+
+const char*
+VRT_r_local_path(VRT_CTX)
+{
+	struct suckaddr *sa;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AZ(SES_Get_local_addr(ctx->sp, &sa));
+	return(VSA_Path(sa));
+}
 
 /*--------------------------------------------------------------------*/
 

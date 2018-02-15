@@ -43,14 +43,34 @@ const void *VSA_Get_Sockaddr(const struct suckaddr *, socklen_t *sl);
 int VSA_Get_Proto(const struct suckaddr *);
 
 /*
- * 's' is a sockaddr of some kind, 'sal' is its length
+ * 's' is a PF_INET* sockaddr, 'sal' is its length
  */
 struct suckaddr *VSA_Malloc(const void *s, unsigned  sal);
 
 /*
+ * 'uds' is a PF_UNIX suckaddr. '*uds_sockaddr' will point to storage for
+ * the sockaddr_un that will be "owned" by the caller -- the caller is
+ * responsible for freeing it.
+ * Allocate the sockaddr_un in *uds_sockaddr, and return a dup of uds that
+ * points to the newly allocated sockaddr_un.
+ */
+struct suckaddr *VSA_Malloc_UDS(const struct suckaddr *uds, void **uds_sockaddr);
+
+/*
  * 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage,
- * 's' is a sockaddr of some kind, 'sal' is its length.
+ * 's' is a PF_INET* sockaddr, 'sal' is its length.
  */
 struct suckaddr *VSA_Build(void *d, const void *s, unsigned sal);
+
+/*
+ * 'd' SHALL point to vsa_suckaddr_len aligned bytes of storage,
+ * 's' is a sockaddr_un whose storage is "owned" by the caller, who is
+ * responsible for freeing it.
+ * Store the suckaddr in d that points to the sockaddr_un storage, and
+ * return a pointer to the suckaddr.
+ */
+struct suckaddr *VSA_Build_UDS(void *d, const void *s);
+
+const char * VSA_Path(const struct suckaddr *sua);
 
 #endif

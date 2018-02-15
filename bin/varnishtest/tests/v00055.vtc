@@ -1,0 +1,54 @@
+varnishtest "VCL *.ip variables when the address is a UDS"
+
+server s1 -listen "${tmpdir}/s1.sock" {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-a ${tmpdir}/v1.sock" -vcl+backend {
+
+	sub vcl_backend_response {
+	    set beresp.http.b-client = client.ip;
+	    set beresp.http.b-server = server.ip;
+	    set beresp.http.b-local = local.ip;
+	    set beresp.http.b-remote = remote.ip;
+	    set beresp.http.b-backend = beresp.backend.ip;
+	    set beresp.http.b-compare = beresp.backend.ip == beresp.backend.ip;
+	}
+
+	sub vcl_deliver {
+	    set resp.http.c-client = client.ip;
+	    set resp.http.c-server = server.ip;
+	    set resp.http.c-local = local.ip;
+	    set resp.http.c-remote = remote.ip;
+	    set resp.http.c-compare = client.ip == client.ip;
+	}
+}-start
+
+client c1 -connect "${tmpdir}/v1.sock" {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.c-client == ""
+	expect resp.http.c-server == ""
+	expect resp.http.c-local == ""
+	expect resp.http.c-remote == ""
+	expect resp.http.c-compare == "false"
+	expect resp.http.b-client == ""
+	expect resp.http.b-server == ""
+	expect resp.http.b-local == ""
+	expect resp.http.b-remote == ""
+	expect resp.http.b-backend == ""
+	expect resp.http.b-compare == "false"
+} -run
+
+# To compare a string with IP, VCC attempts to resolve the string as
+# an address. We make no attempt to convert a path to a UDS suckaddr.
+
+varnish v1 -errvcl {Cannot convert to an IP address} {
+
+	sub vcl_backend_response {
+	    set beresp.http.compare = beresp.backend.ip == "${s1_addr}";
+	}
+
+}

@@ -693,6 +693,13 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 	case CSTR:
 		assert(fmt != VOID);
 		if (fmt == IP) {
+			if (tl->t->dec[0] == '/') {
+				VSB_printf(tl->sb,
+					"Cannot convert to an IP address: ");
+				vcc_ErrToken(tl, tl->t);
+				vcc_ErrWhere(tl, tl->t);
+				return;
+			}
 			Resolve_Sockaddr(tl, tl->t->dec, "80",
 			    &ip, NULL, &ip, NULL, NULL, 1,
 			    tl->t, "IP constant");

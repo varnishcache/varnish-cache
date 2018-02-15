@@ -39,6 +39,8 @@
 #include "vtcp.h"
 #include "vtim.h"
 #include "waiter/waiter.h"
+#include "vsa.h"
+#include "vss.h"
 
 #include "cache_director.h"
 #include "cache_backend.h"
@@ -135,10 +137,16 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	if (bp->proxy_header != 0)
 		VPX_Send_Proxy(vtp->fd, bp->proxy_header, bo->sp);
 
-	VTCP_myname(vtp->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-	VTCP_hisname(vtp->fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
-	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s",
-	    vtp->fd, bp->director->display_name, abuf2, pbuf2, abuf1, pbuf1);
+	if (VSA_Get_Proto(vtp->addr) == PF_UNIX)
+		VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s - - -", vtp->fd,
+		     bp->director->display_name, VSA_Path(vtp->addr));
+	else {
+		VTCP_myname(vtp->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
+		VTCP_hisname(vtp->fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
+		VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s",
+		     vtp->fd, bp->director-> display_name, abuf2, pbuf2,
+		     abuf1, pbuf1);
+	}
 
 	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
 	bo->htc->priv = vtp;
@@ -382,6 +390,10 @@ vbe_destroy(const struct director *d)
 #undef DA
 #undef DN
 
+	free(be->uds_addr);
+	free(be->uds_suckaddr);
+	be->uds_addr = NULL;
+	be->uds_suckaddr = NULL;
 	Lck_Delete(&be->mtx);
 	FREE_OBJ(be);
 }
@@ -411,6 +423,21 @@ vbe_panic(const struct director *d, struct vsb *vsb)
 	VSB_printf(vsb, "n_conn = %u,\n", bp->n_conn);
 }
 
+/*--------------------------------------------------------------------*/
+
+static int v_matchproto_(vss_resolved_f)
+uds_callback(void *priv, const struct suckaddr *sa)
+{
+	struct backend *b;
+
+	CAST_OBJ_NOTNULL(b, priv, BACKEND_MAGIC);
+	AN(sa);
+	b->uds_suckaddr = VSA_Malloc_UDS(sa, &b->uds_addr);
+	AN(b->uds_suckaddr);
+	AN(b->uds_addr);
+	return(0);
+}
+
 /*--------------------------------------------------------------------
  * Create a new static or dynamic director::backend instance.
  */
@@ -434,7 +461,12 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vrt, VRT_BACKEND_MAGIC);
-	assert(vrt->ipv4_suckaddr != NULL || vrt->ipv6_suckaddr != NULL);
+	if (vrt->path == NULL)
+		assert(vrt->ipv4_suckaddr != NULL
+		       || vrt->ipv6_suckaddr != NULL);
+	else
+		assert(vrt->ipv4_suckaddr == NULL
+		       && vrt->ipv6_suckaddr == NULL);
 
 	vcl = ctx->vcl;
 	AN(vcl);
@@ -443,6 +475,19 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	/* Create new backend */
 	ALLOC_OBJ(be, BACKEND_MAGIC);
 	XXXAN(be);
+	if (vrt->path != NULL) {
+		int error;
+		const char *err = NULL;
+
+		error = VSS_unix(vrt->path, uds_callback, be, &err);
+		if (error) {
+			AN(error);
+			VRT_fail(ctx, "%s: %s", vrt->path, err);
+			FREE_OBJ(be);
+			return (NULL);
+		}
+	}
+
 	Lck_New(&be->mtx, lck_backend);
 
 #define DA(x)	do { if (vrt->x != NULL) REPLACE((be->x), (vrt->x)); } while (0)
@@ -477,7 +522,7 @@ VRT_new_backend_clustered(VRT_CTX, struct vsmw_cluster *vc,
 	VTAILQ_INSERT_TAIL(&backends, be, list);
 	VSC_C_main->n_backend++;
 	be->tcp_pool = VTP_Ref(vrt->ipv4_suckaddr, vrt->ipv6_suckaddr,
-	    vbe_proto_ident);
+	    be->uds_suckaddr, vbe_proto_ident);
 	Lck_Unlock(&backends_mtx);
 
 	if (vbp != NULL) {

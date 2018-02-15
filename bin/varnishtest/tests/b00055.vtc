@@ -1,0 +1,30 @@
+varnishtest "Check pipelining over a UDS listen address"
+
+server s1 {
+	rxreq
+	expect req.url == "/foo"
+	txresp -body "foo"
+	rxreq
+	expect req.url == "/bar"
+	txresp -body "foobar"
+} -start
+
+varnish v1 -arg "-a ${tmpdir}/v1.sock" -vcl+backend {} -start
+
+client c1 -connect "${tmpdir}/v1.sock" {
+	send "GET /foo HTTP/1.1\n\nGET /bar HTTP/1.1\n\nGET /bar HTTP/1.1\n\n"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 3
+	expect resp.http.x-varnish == "1001"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 6
+	expect resp.http.x-varnish == "1003"
+	rxresp
+	expect resp.status == 200
+	expect resp.bodylen == 6
+	expect resp.http.x-varnish == "1005 1004"
+} -run
+
+varnish v1 -expect sess_readahead == 2

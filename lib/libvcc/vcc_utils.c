@@ -33,6 +33,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <errno.h>
 
 #include "vcc_compile.h"
 
@@ -161,6 +165,7 @@ rs_callback(void *priv, const struct suckaddr *vsa)
 	assert(VSA_Sane(vsa));
 
 	v = VSA_Get_Proto(vsa);
+	assert(v != AF_UNIX);
 	VTCP_name(vsa, a, sizeof a, p, sizeof p);
 	VSB_printf(rss->vsb, "\t%s:%s\n", a, p);
 	if (v == AF_INET) {
@@ -250,6 +255,42 @@ Resolve_Sockaddr(struct vcc *tl,
 	}
 	VSB_destroy(&rss->vsb);
 	FREE_OBJ(rss);
+}
+
+/*
+ * For UDS, we defer creation of the VSA until VRT_new_backend is called.
+ * Check if it's an absolute path, can be accessed, and is a socket. If
+ * so, just emit the path field and set the IP suckaddrs to NULL.
+ */
+void
+Emit_Sockaddr_Un(struct vcc *tl, const struct token *t_path, const char *errid)
+{
+	struct stat st;
+
+	AN(t_path);
+	AN(t_path->dec);
+
+	if (t_path->dec[0] != '/') {
+		VSB_printf(tl->sb,
+			   "%s: Must be an absolute path:\n", errid);
+		vcc_ErrWhere(tl, t_path);
+		return;
+	}
+	errno = 0;
+	if (stat(t_path->dec, &st) != 0) {
+		VSB_printf(tl->sb, "%s: Cannot stat: %s\n", errid,
+			   strerror(errno));
+		vcc_ErrWhere(tl, t_path);
+		return;
+	}
+	if (! S_ISSOCK(st.st_mode)) {
+		VSB_printf(tl->sb, "%s: Not a socket:\n", errid);
+		vcc_ErrWhere(tl, t_path);
+		return;
+	}
+	Fb(tl, 0, "\t.path = \"%s\",\n", t_path->dec);
+	Fb(tl, 0, "\t.ipv4_suckaddr = (void *) 0,\n");
+	Fb(tl, 0, "\t.ipv6_suckaddr = (void *) 0,\n");
 }
 
 /*--------------------------------------------------------------------
@@ -405,4 +446,3 @@ vcc_ByteVal(struct vcc *tl, double *d)
 	vcc_NextToken(tl);
 	*d = v * sc;
 }
-

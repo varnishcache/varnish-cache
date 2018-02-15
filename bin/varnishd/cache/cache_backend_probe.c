@@ -95,6 +95,8 @@ static const unsigned char vbp_proxy_local[] = {
 	0x55, 0x49, 0x54, 0x0a, 0x20, 0x00, 0x00, 0x00,
 };
 
+static const char vbp_proxy_unknown[] = "PROXY UNKNOWN\r\n";
+
 /*--------------------------------------------------------------------*/
 
 static void
@@ -256,6 +258,9 @@ vbp_write_proxy_v1(struct vbp_target *vt, int *sock)
 		VSB_printf(&vsb, " TCP6 ");
 	else if (ss.ss_family == AF_INET)
 		VSB_printf(&vsb, " TCP4 ");
+	else if (ss.ss_family == AF_UNIX)
+		return(vbp_write(vt, sock, vbp_proxy_unknown,
+				 sizeof(vbp_proxy_unknown)));
 	else
 		WRONG("Unknown family");
 	VSB_printf(&vsb, "%s %s %s %s\r\n", addr, addr, port, port);
@@ -288,6 +293,8 @@ vbp_poke(struct vbp_target *vt)
 		vt->good_ipv4 |= 1;
 	else if (i == AF_INET6)
 		vt->good_ipv6 |= 1;
+	else if (i == AF_UNIX)
+		vt->good_unix |= 1;
 	else
 		WRONG("Wrong probe protocol family");
 

@@ -1,0 +1,20 @@
+varnishtest "Test X-Forward-For headers with a UDS listen address"
+
+server s1 {
+	rxreq
+	expect req.http.X-Forwarded-For == <undef>
+	txresp
+	rxreq
+	expect req.http.X-Forwarded-For == "1.2.3.4"
+	txresp
+} -start
+
+varnish v1 -arg "-a ${tmpdir}/v1.sock" -vcl+backend {
+} -start
+
+client c1 -connect "${tmpdir}/v1.sock" {
+	txreq -url /1
+	rxresp
+	txreq -url /2 -hdr "X-forwarded-for: 1.2.3.4"
+	rxresp
+} -run

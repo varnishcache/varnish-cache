@@ -54,7 +54,7 @@ struct vtp {
  */
 
 struct tcp_pool *VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6,
-    const void *id);
+    const struct suckaddr *uds, const void *id);
 	/*
 	 * Get a reference to a TCP pool.  Either ip4 or ip6 arg must be
 	 * non-NULL. If recycling is to be used, the id pointer distinguishes

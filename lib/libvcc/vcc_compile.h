@@ -314,6 +314,8 @@ void Resolve_Sockaddr(struct vcc *tl, const char *host, const char *defport,
     const char **ipv4, const char **ipv4_ascii, const char **ipv6,
     const char **ipv6_ascii, const char **p_ascii, int maxips,
     const struct token *t_err, const char *errid);
+void Emit_Sockaddr_Un(struct vcc *tl, const struct token *t_path,
+		      const char *errid);
 double vcc_TimeUnit(struct vcc *);
 void vcc_ByteVal(struct vcc *, double *);
 void vcc_NumVal(struct vcc *, double *, int *);

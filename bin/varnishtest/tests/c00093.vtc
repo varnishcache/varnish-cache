@@ -1,0 +1,53 @@
+varnishtest "-a sub-args user, group and mode"
+
+feature user_vcache
+feature group_varnish
+feature root
+
+shell -err -expect "Too many user sub-args" {
+	varnishd -a ${tmpdir}/vtc.sock,user=vcache,user=vcache -d
+}
+
+shell -err -expect "Too many group sub-args" {
+	varnishd -a ${tmpdir}/vtc.sock,group=varnish,group=varnish -d
+}
+
+# Assuming that empty user and group names always fail getpwnam and getgrnam
+shell -err -expect "Unknown user " {
+	varnishd -a ${tmpdir}/vtc.sock,user= -d
+}
+
+shell -err -expect "Unknown group " {
+	varnishd -a ${tmpdir}/vtc.sock,group= -d
+}
+
+server s1 {} -start
+
+varnish v1 -arg "-a ${tmpdir}/v1.sock,user=vcache,group=varnish,mode=660" \
+	-vcl+backend {}
+
+shell -match "rw-rw----.+vcache.+varnish" { ls -l ${tmpdir}/v1.sock }
+
+varnish v2 -arg "-a ${tmpdir}/v2.sock,user=vcache,mode=600" -vcl+backend {}
+
+shell -match "rw-------.+vcache" { ls -l ${tmpdir}/v2.sock }
+
+varnish v3 -arg "-a ${tmpdir}/v3.sock,group=varnish,mode=660" -vcl+backend {}
+
+shell -match "rw---- .+root.+varnish" { ls -l ${tmpdir}/v3.sock }
+
+varnish v4 -arg "-a ${tmpdir}/v4.sock,mode=666" -vcl+backend {}
+
+shell -match "rw-rw-rw-.+root" { ls -l ${tmpdir}/v4.sock }
+
+varnish v5 -arg "-a ${tmpdir}/v5.sock,user=vcache,group=varnish" -vcl+backend {}
+
+shell -match "vcache.+varnish" { ls -l ${tmpdir}/v5.sock }
+
+varnish v6 -arg "-a ${tmpdir}/v6.sock,user=vcache" -vcl+backend {}
+
+shell -match "vcache" { ls -l ${tmpdir}/v6.sock }
+
+varnish v7 -arg "-a ${tmpdir}/v7.sock,group=varnish" -vcl+backend {}
+
+shell -match "root.+varnish" { ls -l ${tmpdir}/v7.sock }

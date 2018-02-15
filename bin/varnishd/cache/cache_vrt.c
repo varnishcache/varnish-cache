@@ -83,6 +83,8 @@ VRT_acl_match(VRT_CTX, VCL_ACL acl, VCL_IP ip)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(acl, VRT_ACL_MAGIC);
+	if (ip == NULL)
+		return (acl->match(ctx, NULL));
 	assert(VSA_Sane(ip));
 	return (acl->match(ctx, ip));
 }
@@ -450,6 +452,8 @@ VRT_IP_string(VRT_CTX, VCL_IP ip)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	if (ip == NULL)
 		return (NULL);
+	if (VSA_Get_Proto(ip) == PF_UNIX)
+		return NULL;
 	len = WS_Reserve(ctx->ws, 0);
 	if (len == 0) {
 		WS_Release(ctx->ws, 0);

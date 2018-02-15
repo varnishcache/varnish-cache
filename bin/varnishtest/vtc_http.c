@@ -277,6 +277,7 @@ http_count_header(char * const *hh, const char *hdr)
  *
  *         - remote.ip
  *         - remote.port
+ *         - remote.path
  *         - req.method
  *         - req.url
  *         - req.proto
@@ -300,6 +301,8 @@ cmd_var_resolve(struct http *hp, char *spec)
 		return(hp->rem_ip);
 	if (!strcmp(spec, "remote.port"))
 		return(hp->rem_port);
+	if (!strcmp(spec, "remote.path"))
+		return(hp->rem_path);
 	if (!strcmp(spec, "req.method"))
 		return(hp->req[0]);
 	if (!strcmp(spec, "req.url"))
@@ -1840,7 +1843,8 @@ const struct cmds http_cmds[] = {
 };
 
 int
-http_process(struct vtclog *vl, const char *spec, int sock, int *sfd)
+http_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
+	     enum sock_e stype)
 {
 	struct http *hp;
 	int retval;
@@ -1870,8 +1874,29 @@ http_process(struct vtclog *vl, const char *spec, int sock, int *sfd)
 	hp->gziplevel = 0;
 	hp->gzipresidual = -1;
 
-	VTCP_hisname(sock,
-	    hp->rem_ip, VTCP_ADDRBUFSIZE, hp->rem_port, VTCP_PORTBUFSIZE);
+	switch(stype) {
+	case IP:
+		VTCP_hisname(sock, hp->rem_ip, VTCP_ADDRBUFSIZE, hp->rem_port,
+			     VTCP_PORTBUFSIZE);
+		hp->rem_path = NULL;
+		break;
+	case UDS_CONNECT:
+	case UDS_LISTEN:
+		hp->rem_path = malloc(VTCP_ADDRBUFSIZE);
+		if (stype == UDS_CONNECT)
+			VTCP_hisname(sock, hp->rem_path, VTCP_ADDRBUFSIZE,
+				     hp->rem_port, VTCP_PORTBUFSIZE);
+		else
+			VTCP_myname(sock, hp->rem_path, VTCP_ADDRBUFSIZE,
+				    hp->rem_port, VTCP_PORTBUFSIZE);
+		free(hp->rem_ip);
+		free(hp->rem_port);
+		hp->rem_ip = NULL;
+		hp->rem_port = NULL;
+		break;
+	default:
+		WRONG("socket type enum");
+	}
 	parse_string(spec, http_cmds, hp, vl);
 	if (hp->h2)
 		stop_h2(hp);
