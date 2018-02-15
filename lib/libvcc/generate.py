@@ -182,6 +182,8 @@ def parse_var(ln):
 	vn = ln.pop(0).split()
 	assert len(vn) == 1
 	vn = vn[0]
+	if vn[-1] == '*':
+		vn = vn[:-1]
 	vr = []
 	vw = []
 	vu = []

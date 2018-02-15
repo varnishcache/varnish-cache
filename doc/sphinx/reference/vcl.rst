@@ -385,12 +385,6 @@ The built-in VCL distributed with Varnish will be implicitly concatenated
 when the VCL is compiled.
 
 
-Variables
----------
-
-In VCL you have access to certain variable objects. These contain
-requests and responses currently being worked on. What variables are
-available depends on context.
 
 .. include:: vcl_var.rst
 

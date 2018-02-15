@@ -1,6 +1,92 @@
+Variables
+---------
 
-remote
-~~~~~~
+Variables provide read, write and delete access to almost all aspects
+of the work at hand.
+
+Reading a variable is done simply by using its name in VCL::
+
+    if (client.ip ~ bad_guys) {
+	return (synth(400));
+    }
+
+Writing a variable, where this is possible, is done with a `set`
+statement::
+
+    set resp.http.never = "Let You Down";
+
+Similarly, deleting a variable, for the few variables where this is
+possible, is done with a `unset` statement::
+
+    unset req.http.cookie;
+
+Which operations are possible on each variable is described below,
+often with the shorthand "backend" which covers the `vcl_backend_*`
+methods and "client" which covers the rest, except `vcl_init` and
+`vcl_fini`.
+
+When setting a variable, the right hand side of the equalsign
+must have the variables type, you cannot assign a STRING to
+a variable of type NUMBER, even if the string is `"42"`.
+(Explicit conversion functions can be found in
+:ref:`vmod_std(3)` .
+
+local, server, remote and client
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These variables describe the network connection between the
+client and varnishd.
+
+Without PROXY protocol::
+
+	     client    server
+	     remote    local
+	       v          v 
+	CLIENT ------------ VARNISHD
+
+
+With PROXY protocol::
+
+	     client    server   remote     local
+	       v          v       v          v
+	CLIENT ------------ PROXY ------------ VARNISHD
+
+
+local.endpoint
+
+	Type: STRING
+
+	Readable from: client
+	
+	The address of the '-a' socket the session was accepted on.
+
+	If the argument was `-a foo=:81` this would be ":81"
+	
+
+local.socket
+
+	Type: STRING
+
+	Readable from: client
+	
+	The name of the '-a' socket the session was accepted on.
+
+	If the argument was `-a foo=:81` this would be "foo".
+
+	Note that all '-a' gets a default name on the form `a%d`
+	if no name is provided.
+
+local.ip
+
+	Type: IP
+
+	Readable from: client, backend
+
+	The IP address (and port number) of the local end of the
+	TCP connection, for instance `192.168.1.1:81`
+
+	If the connection is a UNIX domain socket, the value
+	will be `0.0.0.0:0`
 
 remote.ip
 
@@ -8,14 +94,12 @@ remote.ip
 
 	Readable from: client, backend
 
-	
 	The IP address of the other end of the TCP connection.
 	This can either be the clients IP, or the outgoing IP
 	of a proxy server.
 	
-
-client
-~~~~~~
+	If the connection is a UNIX domain socket, the value
+	will be `0.0.0.0:0`
 
 client.ip
 
@@ -24,8 +108,8 @@ client.ip
 	Readable from: client, backend
 
 	
-	The client's IP address.
-	
+	The client's IP address, either the same as `local.ip`
+	or what the PROXY protocol told us.
 
 client.identity
 
@@ -37,46 +121,12 @@ client.identity
 
 	
 	Identification of the client, used to load balance
-	in the client director. Defaults to the client's IP
-	address.
-	
+	in the client director.  Defaults to `client.ip`
 
-local
-~~~~~
+	This variable can be overwritten with more precise
+	information, for instance extracted from a `Cookie:`
+	header.
 
-local.endpoint
-
-	Type: STRING
-
-	Readable from: client
-
-	
-	The transport address of the '-a' socket the session was
-	accepted on.
-	
-
-local.socket
-
-	Type: STRING
-
-	Readable from: client
-
-	
-	The name of the '-a' socket the session was accepted on.
-	
-
-local.ip
-
-	Type: IP
-
-	Readable from: client, backend
-
-	
-	The IP address of the local end of the TCP connection.
-	
-
-server
-~~~~~~
 
 server.ip
 
@@ -86,7 +136,8 @@ server.ip
 
 	
 	The IP address of the socket on which the client
-	connection was received.
+	connection was received, either the same as `server.ip`
+	or what the PROXY protocol told us.
 	
 
 server.hostname
@@ -94,9 +145,9 @@ server.hostname
 	Type: STRING
 
 	Readable from: all
-
 	
-	The host name of the server.
+	The host name of the server, as returned by the
+	`gethostname(3)` system function.
 	
 
 server.identity
@@ -104,15 +155,18 @@ server.identity
 	Type: STRING
 
 	Readable from: all
-
 	
-	The identity of the server, as set by the -i
-	parameter.  If the -i parameter is not passed to varnishd,
-	server.identity will be set to the hostname of the machine.
-	
+	The identity of the server, as set by the `-i` parameter.
 
-req
-~~~
+	If an `-i` parameter is not passed to varnishd, the return
+	value from `gethostname(3)` system function will be used.
+
+req and req_top
+~~~~~~~~~~~~~~~
+
+These variables describe the present request, and when ESI:include
+requests are being processed, req_top points to the request received
+from the client.
 
 req
 
@@ -121,7 +175,8 @@ req
 	Readable from: client
 
 	
-	The entire request HTTP data structure
+	The entire request HTTP data structure.
+	Mostly useful for passing to VMODs.
 	
 
 req.method
@@ -133,7 +188,7 @@ req.method
 	Writable from: client
 
 	
-	The request type (e.g. "GET", "HEAD").
+	The request method (e.g. "GET", "HEAD", ...)
 	
 
 req.hash
@@ -144,6 +199,8 @@ req.hash
 
 	
 	The hash key of this request.
+	Mostly useful for passing to VMODs, but can also be useful
+	for debugging hit/miss status.
 	
 
 req.url
@@ -155,7 +212,7 @@ req.url
 	Writable from: client
 
 	
-	The requested URL.
+	The requested URL, for instance "/robots.txt".
 	
 
 req.proto
@@ -167,10 +224,11 @@ req.proto
 	Writable from: client
 
 	
-	The HTTP protocol version used by the client.
+	The HTTP protocol version used by the client, usually "HTTP/1.1"
+	or "HTTP/2.0".
 	
 
-req.http.
+req.http.*
 
 	Type: HEADER
 
@@ -181,7 +239,10 @@ req.http.
 	Unsetable from: client
 
 	
-	The corresponding HTTP header.
+	The headers of request, things like `req.http.date`.
+
+	The RFCs allow multipl headers with the same name, and both
+	`set` and `unset` will remove *all* headers with the name given.
 	
 
 req.restarts
@@ -211,10 +272,8 @@ req.esi_level
 	Type: INT
 
 	Readable from: client
-
 	
 	A count of how many levels of ESI requests we're currently at.
-	
 
 req.ttl
 
@@ -241,9 +300,7 @@ req.xid
 
 	Readable from: client
 
-	
 	Unique ID of this request.
-	
 
 req.esi
 
@@ -253,10 +310,9 @@ req.esi
 
 	Writable from: client
 
-	
-	Boolean. Set to false to disable ESI processing
+	Set to `false` to disable ESI processing
 	regardless of any value in beresp.do_esi. Defaults
-	to true. This variable is subject to change in
+	to `true`. This variable is subject to change in
 	future versions, you should avoid using it.
 	
 
@@ -265,9 +321,9 @@ req.can_gzip
 	Type: BOOL
 
 	Readable from: client
-
 	
-	Does the client accept the gzip transfer encoding.
+	True if the client provided `gzip` or `x-gzip` in the
+	`Accept-Encoding` header.
 	
 
 req.backend_hint
@@ -278,7 +334,6 @@ req.backend_hint
 
 	Writable from: client
 
-	
 	Set bereq.backend to this if we attempt to fetch.
 	When set to a director, reading this variable returns
 	an actual backend if the director has resolved immediately,
@@ -295,10 +350,12 @@ req.hash_ignore_busy
 
 	Writable from: client
 
-	
-	Ignore any busy object during cache lookup. You
-	would want to do this if you have two server looking
-	up content from each other to avoid potential deadlocks.
+	Default: `false`
+
+	Ignore any busy object during cache lookup.
+
+	You only want to do this when you have two server looking
+	up content sideways from each other to avoid deadlocks.
 	
 
 req.hash_always_miss
@@ -309,14 +366,14 @@ req.hash_always_miss
 
 	Writable from: client
 
-	
-	Force a cache miss for this request. If set to true
-	Varnish will disregard any existing objects and
-	always (re)fetch from the backend.
-	
+	Default: `false`
 
-req_top
-~~~~~~~
+	Force a cache miss for this request, even if perfectly
+	good matching objects are in the cache.
+
+	This is useful to force-update the cache without invalidating
+	existing entries in case the fetch fails.
+	
 
 req_top.method
 
@@ -342,7 +399,7 @@ req_top.url
 	Identical to req.url in non-ESI requests.
 	
 
-req_top.http.
+req_top.http.*
 
 	Type: HEADER
 
@@ -368,14 +425,21 @@ req_top.proto
 bereq
 ~~~~~
 
+This is the request we send to the backend, it is built from the
+clients `req.*` fields by filtering out "per-hop" fields which
+should not be passed along (`Connection:`, `Range:` and similar).
+
+Slightly more fields are allowed through for `pass` fetches
+than for `miss` fetches, for instance `Range`.
+
 bereq
 
 	Type: HTTP
 
 	Readable from: backend
 
-	
-	The entire backend request HTTP data structure
+	The entire backend request HTTP data structure.
+	Mostly useful as argument to VMODs.
 	
 
 bereq.xid
@@ -471,7 +535,7 @@ bereq.proto
 	The HTTP protocol version used to talk to the server.
 	
 
-bereq.http.
+bereq.http.*
 
 	Type: HEADER
 
@@ -607,7 +671,7 @@ beresp.reason
 	The HTTP status message returned by the server.
 	
 
-beresp.http.
+beresp.http.*
 
 	Type: HEADER
 
@@ -851,7 +915,7 @@ obj.hits
 	cache miss.
 	
 
-obj.http.
+obj.http.*
 
 	Type: HEADER
 
@@ -988,7 +1052,7 @@ resp.reason
 	The HTTP status message that will be returned.
 	
 
-resp.http.
+resp.http.*
 
 	Type: HEADER
 
