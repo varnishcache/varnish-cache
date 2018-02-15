@@ -683,7 +683,7 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		}
 		VSB_printf(tl->sb,
 		    "Symbol type (%s) can not be used in expression.\n",
-		    VCC_SymKind(tl, sym));
+		    sym->kind->name);
 		vcc_ErrWhere(tl, tl->t);
 		if (sym->def_b != NULL) {
 			VSB_printf(tl->sb, "That symbol was defined here:\n");

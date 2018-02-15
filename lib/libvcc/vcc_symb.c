@@ -38,8 +38,11 @@
 #include "vct.h"
 
 /*--------------------------------------------------------------------*/
+#define VCC_KIND(U,l) const struct kind SYM_##U[1] = {{ KIND_MAGIC, #l}};
+#include "tbl/symbol_kind.h"
+/*--------------------------------------------------------------------*/
 
-static enum symkind
+static vcc_kind_t
 VCC_HandleKind(vcc_type_t fmt)
 {
 	if (fmt == ACL)		return(SYM_ACL);
@@ -49,19 +52,6 @@ VCC_HandleKind(vcc_type_t fmt)
 	if (fmt == SUB)		return(SYM_SUB);
 	if (fmt == INSTANCE)	return(SYM_INSTANCE);
 	return(SYM_NONE);
-}
-
-const char *
-VCC_SymKind(struct vcc *tl, const struct symbol *s)
-{
-	switch (s->kind) {
-#define VCC_SYMB(uu, ll)	case SYM_##uu: return(#ll);
-#include "tbl/symbol_kind.h"
-	default:
-		ErrInternal(tl);
-		VSB_printf(tl->sb, "Symbol Kind 0x%x\n", s->kind);
-		return("INTERNALERROR");
-	}
 }
 
 void
@@ -101,13 +91,14 @@ vcc_new_symbol(struct vcc *tl, const char *b, const char *e)
 	sym->name[e - b] = '\0';
 	sym->nlen = e - b;
 	VTAILQ_INIT(&sym->children);
+	sym->kind = SYM_NONE;
 	sym->type = VOID;
 	return (sym);
 }
 
 static struct symbol *
 VCC_Symbol(struct vcc *tl, struct symbol *parent,
-    const char *b, const char *e, enum symkind kind, int create)
+    const char *b, const char *e, vcc_kind_t kind, int create)
 {
 	const char *q;
 	struct symbol *sym, *sym2 = NULL;
@@ -196,7 +187,7 @@ const char SYMTAB_NOERR[] = "sym_noerror";
 const char SYMTAB_CREATE[] = "sym_create";
 
 struct symbol *
-VCC_SymbolGet(struct vcc *tl, enum symkind kind, const char *e, const char *x)
+VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x)
 {
 	struct symbol *sym;
 
@@ -229,7 +220,7 @@ VCC_SymbolGet(struct vcc *tl, enum symkind kind, const char *e, const char *x)
 			VSB_printf(tl->sb, " is a reserved word.");
 		else
 			VSB_printf(tl->sb, " has wrong type (%s): ",
-				VCC_SymKind(tl, sym));
+				sym->kind->name);
 		VSB_cat(tl->sb, "\nAt: ");
 		vcc_ErrWhere(tl, tl->t);
 		if (sym->def_b != NULL) {
@@ -259,7 +250,7 @@ VCC_SymbolGet(struct vcc *tl, enum symkind kind, const char *e, const char *x)
 }
 
 struct symbol *
-VCC_MkSym(struct vcc *tl, const char *b, enum symkind kind)
+VCC_MkSym(struct vcc *tl, const char *b, vcc_kind_t kind)
 {
 	struct symbol *sym;
 
@@ -271,7 +262,7 @@ VCC_MkSym(struct vcc *tl, const char *b, enum symkind kind)
 
 static void
 vcc_walksymbols(struct vcc *tl, const struct symbol *root,
-    symwalk_f *func, enum symkind kind)
+    symwalk_f *func, vcc_kind_t kind)
 {
 	struct symbol *sym;
 
@@ -284,7 +275,7 @@ vcc_walksymbols(struct vcc *tl, const struct symbol *root,
 }
 
 void
-VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, enum symkind kind)
+VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, vcc_kind_t kind)
 {
 
 	vcc_walksymbols(tl, tl->symbols, func, kind);
@@ -324,7 +315,7 @@ struct symbol *
 VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
 {
 	struct symbol *sym;
-	enum symkind kind;
+	vcc_kind_t kind;
 	struct token *t;
 	const char *p;
 
@@ -334,7 +325,7 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
 	t = tl->t;
 	sym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_NOERR, XREF_NONE);
 	if (sym != NULL && sym->def_b != NULL && kind == sym->kind) {
-		p = VCC_SymKind(tl, sym);
+		p = sym->kind->name;
 		VSB_printf(tl->sb, "%c%s '%.*s' redefined.\n",
 		    toupper(*p), p + 1, PF(t));
 		vcc_ErrWhere(tl, t);
@@ -352,7 +343,7 @@ VCC_HandleSymbol(struct vcc *tl, vcc_type_t fmt, const char *pfx)
 	} else if (sym != NULL && sym->kind != kind) {
 		VSB_printf(tl->sb,
 		    "Name %.*s must have type '%s'.\n",
-		    PF(t), VCC_SymKind(tl, sym));
+		    PF(t), sym->kind->name);
 		vcc_ErrWhere(tl, t);
 		return (sym);
 	}

@@ -84,6 +84,7 @@ struct token {
 	char			*dec;
 };
 
+/*---------------------------------------------------------------------*/
 typedef const struct type	*vcc_type_t;
 
 struct type {
@@ -98,11 +99,20 @@ struct type {
 #define VCC_TYPE(foo)		extern const struct type foo[1];
 #include "tbl/vcc_types.h"
 
+/*---------------------------------------------------------------------*/
+typedef const struct kind	*vcc_kind_t;
 
-enum symkind {
-#define VCC_SYMB(uu, ll)	SYM_##uu,
-#include "tbl/symbol_kind.h"
+struct kind {
+	unsigned		magic;
+#define KIND_MAGIC		0xfad72443
+
+	const char		*name;
 };
+
+#define VCC_KIND(U,l)	extern const struct kind SYM_##U[1];
+#include "tbl/symbol_kind.h"
+
+/*---------------------------------------------------------------------*/
 
 typedef void sym_expr_t(struct vcc *tl, struct expr **,
     struct token *, struct symbol *sym, vcc_type_t);
@@ -122,7 +132,7 @@ struct symbol {
 	char				*name;
 	unsigned			nlen;
 	sym_wildcard_t			*wildcard;
-	enum symkind			kind;
+	vcc_kind_t			kind;
 
 	sym_act_f			*action;
 	unsigned			action_mask;
@@ -315,17 +325,16 @@ void vcc_stevedore(struct vcc *vcc, const char *stv_name);
 
 /* vcc_symb.c */
 void VCC_PrintCName(struct vsb *vsb, const char *b, const char *e);
-struct symbol *VCC_MkSym(struct vcc *tl, const char *b, enum symkind kind);
+struct symbol *VCC_MkSym(struct vcc *tl, const char *b, vcc_kind_t);
 extern const char XREF_NONE[];
 extern const char XREF_DEF[];
 extern const char XREF_REF[];
 extern const char SYMTAB_NOERR[];
 extern const char SYMTAB_CREATE[];
-struct symbol *VCC_SymbolGet(struct vcc *, enum symkind, const char *,
+struct symbol *VCC_SymbolGet(struct vcc *, vcc_kind_t, const char *,
     const char *);
-const char * VCC_SymKind(struct vcc *tl, const struct symbol *s);
 typedef void symwalk_f(struct vcc *tl, const struct symbol *s);
-void VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, enum symkind kind);
+void VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, vcc_kind_t);
 
 /* vcc_token.c */
 void vcc_Coord(const struct vcc *tl, struct vsb *vsb,

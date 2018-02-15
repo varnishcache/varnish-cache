@@ -70,12 +70,12 @@ vcc_checkref(struct vcc *tl, const struct symbol *sym)
 	if (sym->ndef == 0 && sym->nref != 0) {
 		AN(sym->ref_b);
 		VSB_printf(tl->sb, "Undefined %s %.*s, first reference:\n",
-		    VCC_SymKind(tl, sym), PF(sym->ref_b));
+		    sym->kind->name, PF(sym->ref_b));
 		vcc_ErrWhere(tl, sym->ref_b);
 	} else if (sym->ndef != 0 && sym->nref == 0) {
 		AN(sym->def_b);
 		VSB_printf(tl->sb, "Unused %s %.*s, defined:\n",
-		    VCC_SymKind(tl, sym), PF(sym->def_b));
+		    sym->kind->name, PF(sym->def_b));
 		vcc_ErrWhere(tl, sym->def_b);
 		if (!tl->err_unref) {
 			VSB_printf(tl->sb, "(That was just a warning)\n");
@@ -335,7 +335,10 @@ static void v_matchproto_(symwalk_f)
 vcc_xreftable(struct vcc *tl, const struct symbol *sym)
 {
 
-	Fc(tl, 0, " * %-7s ", VCC_SymKind(tl, sym));
+	CHECK_OBJ_NOTNULL(sym, SYMBOL_MAGIC);
+	CHECK_OBJ_NOTNULL(sym->kind, KIND_MAGIC);
+	CHECK_OBJ_NOTNULL(sym->type, TYPE_MAGIC);
+	Fc(tl, 0, " * %-7s ", sym->kind->name);
 	Fc(tl, 0, " %-9s ", sym->type->name);
 	vcc_pnam(tl, sym);
 	if (sym->wildcard != NULL)

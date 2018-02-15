@@ -29,20 +29,20 @@
 
 /*lint -save -e525 -e539 */
 
-VCC_SYMB(NONE,		none)
-VCC_SYMB(ACL,		acl)
-VCC_SYMB(ACTION,	action)
-VCC_SYMB(BACKEND,	backend)
-VCC_SYMB(FUNC,		func)
-VCC_SYMB(INSTANCE,	instance)
-VCC_SYMB(METHOD,	method)
-VCC_SYMB(OBJECT,	object)
-VCC_SYMB(PROBE,		probe)
-VCC_SYMB(STEVEDORE,	stevedore)
-VCC_SYMB(SUB,		sub)
-VCC_SYMB(VAR,		var)
-VCC_SYMB(VCL,		vcl)
-VCC_SYMB(VMOD,		vmod)
-#undef VCC_SYMB
+VCC_KIND(NONE,		none)
+VCC_KIND(ACL,		acl)
+VCC_KIND(ACTION,	action)
+VCC_KIND(BACKEND,	backend)
+VCC_KIND(FUNC,		func)
+VCC_KIND(INSTANCE,	instance)
+VCC_KIND(METHOD,	method)
+VCC_KIND(OBJECT,	object)
+VCC_KIND(PROBE,		probe)
+VCC_KIND(STEVEDORE,	stevedore)
+VCC_KIND(SUB,		sub)
+VCC_KIND(VAR,		var)
+VCC_KIND(VCL,		vcl)
+VCC_KIND(VMOD,		vmod)
+#undef VCC_KIND
 
 /*lint -restore */
