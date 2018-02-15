@@ -41,7 +41,7 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent, struct symbol *sym)
 {
 	struct vsb *vsb;
 
-	assert(parent->fmt == HEADER);
+	assert(parent->type == HEADER);
 
 	if (sym->nlen >= 127) {
 		VSB_printf(tl->sb, "HTTP header (%.20s..) is too long.\n",
@@ -53,7 +53,7 @@ vcc_Var_Wildcard(struct vcc *tl, struct symbol *parent, struct symbol *sym)
 	AN(sym);
 	sym->noref = 1;
 	sym->kind = SYM_VAR;
-	sym->fmt = parent->fmt;
+	sym->type = parent->type;
 	sym->eval = vcc_Eval_Var;
 	sym->r_methods = parent->r_methods;
 	sym->w_methods = parent->w_methods;

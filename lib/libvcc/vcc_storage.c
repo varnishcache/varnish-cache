@@ -67,7 +67,7 @@
 
 static struct stvars {
 	const char	*name;
-	vcc_type_t	fmt;
+	vcc_type_t	type;
 } stvars[] = {
 #define VRTSTVVAR(nm, vtype, ctype, dval)	{ #nm, vtype },
 #include "tbl/vrt_stv_var.h"
@@ -86,7 +86,7 @@ vcc_stevedore(struct vcc *vcc, const char *stv_name)
 	bprintf(buf, "storage.%s", stv_name);
 	sym = VCC_MkSym(vcc, buf, SYM_VAR);
 	AN(sym);
-	sym->fmt = STEVEDORE;
+	sym->type = STEVEDORE;
 	sym->eval = vcc_Eval_Var;
 	bprintf(buf, "VRT_stevedore(\"%s\")", stv_name);
 	sym->rname = TlDup(vcc, buf);
@@ -96,7 +96,7 @@ vcc_stevedore(struct vcc *vcc, const char *stv_name)
 		bprintf(buf, "storage.%s.%s", stv_name, sv->name);
 		sym = VCC_MkSym(vcc, buf, SYM_VAR);
 		AN(sym);
-		sym->fmt = sv->fmt;
+		sym->type = sv->type;
 		sym->eval = vcc_Eval_Var;
 		bprintf(buf, "VRT_Stv_%s(\"%s\")", sv->name, stv_name);
 		sym->rname = TlDup(vcc, buf);

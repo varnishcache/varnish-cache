@@ -811,7 +811,7 @@ vcc_predef_vcl(struct vcc *vcc, const char *name)
 
 	sym = VCC_MkSym(vcc, name, SYM_VCL);
 	AN(sym);
-	sym->fmt = VCL;
+	sym->type = VCL;
 	sym->r_methods = VCL_MET_RECV;
 }
 

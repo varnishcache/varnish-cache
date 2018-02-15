@@ -250,8 +250,8 @@ vcc_ParseImport(struct vcc *tl)
 			sym->eval = vcc_Eval_SymFunc;
 			p += strlen(p) + 1;
 			sym->eval_priv = p;
-			sym->fmt = VCC_Type(p);
-			AN(sym->fmt);
+			sym->type = VCC_Type(p);
+			AN(sym->type);
 		} else {
 			VSB_printf(tl->sb, "Internal spec error (%s)\n", p);
 			vcc_ErrWhere(tl, mod);
@@ -337,7 +337,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 		sy3->eval = vcc_Eval_SymFunc;
 		p += strlen(p) + 1;
 		sy3->eval_priv = p;
-		sy3->fmt = VCC_Type(p);
+		sy3->type = VCC_Type(p);
 		sy3->extra = TlDup(tl, buf1);
 		sy3->vmod = sy2->vmod;
 		while (p[0] != '\0' || p[1] != '\0' || p[2] != '\0')

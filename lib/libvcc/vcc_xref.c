@@ -336,7 +336,7 @@ vcc_xreftable(struct vcc *tl, const struct symbol *sym)
 {
 
 	Fc(tl, 0, " * %-7s ", VCC_SymKind(tl, sym));
-	Fc(tl, 0, " %-9s ", sym->fmt != NULL ? sym->fmt->name : "");
+	Fc(tl, 0, " %-9s ", sym->type->name);
 	vcc_pnam(tl, sym);
 	if (sym->wildcard != NULL)
 		Fc(tl, 0, "*");

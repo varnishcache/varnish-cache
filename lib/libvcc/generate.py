@@ -1272,7 +1272,7 @@ def one_var(nm, spec):
 	else:
 		fo.write(" SYM_VAR);\n")
 	fo.write("\tAN(sym);\n")
-	fo.write("\tsym->fmt = %s;\n" % spec.typ)
+	fo.write("\tsym->type = %s;\n" % spec.typ)
 	fo.write("\tsym->eval = vcc_Eval_Var;\n")
 
 	if len(spec.rd) == 0:

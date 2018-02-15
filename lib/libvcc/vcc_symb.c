@@ -101,6 +101,7 @@ vcc_new_symbol(struct vcc *tl, const char *b, const char *e)
 	sym->name[e - b] = '\0';
 	sym->nlen = e - b;
 	VTAILQ_INIT(&sym->children);
+	sym->type = VOID;
 	return (sym);
 }
 
@@ -290,7 +291,7 @@ VCC_WalkSymbols(struct vcc *tl, symwalk_f *func, enum symkind kind)
 }
 
 void
-VCC_GlobalSymbol(struct symbol *sym, vcc_type_t fmt, const char *pfx)
+VCC_GlobalSymbol(struct symbol *sym, vcc_type_t type, const char *pfx)
 {
 	struct vsb *vsb;
 
@@ -306,8 +307,8 @@ VCC_GlobalSymbol(struct symbol *sym, vcc_type_t fmt, const char *pfx)
 	AN(sym->rname);
 	VSB_destroy(&vsb);
 
-	sym->fmt = fmt;
-	sym->kind = VCC_HandleKind(sym->fmt);
+	sym->type = type;
+	sym->kind = VCC_HandleKind(sym->type);
 	if (sym->kind != SYM_NONE) {
 		AZ(VCT_invalid_name(sym->rname, NULL));
 		sym->eval = vcc_Eval_Handle;

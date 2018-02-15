@@ -328,19 +328,19 @@ vcc_Eval_BoolConst(struct vcc *tl, struct expr **e, struct token *t,
 
 void v_matchproto_(sym_expr_t)
 vcc_Eval_Handle(struct vcc *tl, struct expr **e, struct token *t,
-    struct symbol *sym, vcc_type_t fmt)
+    struct symbol *sym, vcc_type_t type)
 {
 
 	(void)t;
 	(void)tl;
 	AN(sym->rname);
 
-	if (sym->fmt != STRING && fmt == STRINGS) {
+	if (sym->type != STRING && type == STRINGS) {
 		*e = vcc_mk_expr(STRINGS, "\"%s\"", sym->name);
 		(*e)->nstr = 1;
 		(*e)->constant |= EXPR_CONST | EXPR_STR_CONST;
 	} else {
-		*e = vcc_mk_expr(sym->fmt, "%s", sym->rname);
+		*e = vcc_mk_expr(sym->type, "%s", sym->rname);
 		(*e)->constant = EXPR_VAR;
 		(*e)->nstr = 1;
 		if ((*e)->fmt == STRING)
@@ -353,14 +353,14 @@ vcc_Eval_Handle(struct vcc *tl, struct expr **e, struct token *t,
 
 void v_matchproto_(sym_expr_t)
 vcc_Eval_Var(struct vcc *tl, struct expr **e, struct token *t,
-    struct symbol *sym, vcc_type_t fmt)
+    struct symbol *sym, vcc_type_t type)
 {
 
-	(void)fmt;
+	(void)type;
 	assert(sym->kind == SYM_VAR);
 	vcc_AddUses(tl, t, NULL, sym->r_methods, "Not available");
 	ERRCHK(tl);
-	*e = vcc_mk_expr(sym->fmt, "%s", sym->rname);
+	*e = vcc_mk_expr(sym->type, "%s", sym->rname);
 	(*e)->constant = EXPR_VAR;
 	(*e)->nstr = 1;
 	if ((*e)->fmt == STRING)
@@ -664,18 +664,12 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 		    XREF_REF);
 		ERRCHK(tl);
 		AN(sym);
-		if (sym->kind == SYM_FUNC && sym->fmt == VOID) {
+		if (sym->kind == SYM_FUNC && sym->type == VOID) {
 			VSB_printf(tl->sb, "Function returns VOID:\n");
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
-		switch (sym->kind) {
-		case SYM_VAR:
-		case SYM_FUNC:
-		case SYM_ACL:
-		case SYM_BACKEND:
-		case SYM_STEVEDORE:
-		case SYM_PROBE:
+		if (sym->eval != NULL) {
 			AN(sym->eval);
 			AZ(*e);
 			sym->eval(tl, e, t, sym, fmt);
@@ -686,9 +680,6 @@ vcc_expr4(struct vcc *tl, struct expr **e, vcc_type_t fmt)
 				ERRCHK(tl);
 			}
 			return;
-		default:
-			AZ(sym->eval);
-			break;
 		}
 		VSB_printf(tl->sb,
 		    "Symbol type (%s) can not be used in expression.\n",
@@ -1291,21 +1282,25 @@ vcc_Expr_Init(struct vcc *tl)
 
 	sym = VCC_MkSym(tl, "regsub", SYM_FUNC);
 	AN(sym);
+	sym->type = STRING;
 	sym->eval = vcc_Eval_Regsub;
 	sym->eval_priv = NULL;
 
 	sym = VCC_MkSym(tl, "regsuball", SYM_FUNC);
 	AN(sym);
+	sym->type = STRING;
 	sym->eval = vcc_Eval_Regsub;
 	sym->eval_priv = sym;
 
 	sym = VCC_MkSym(tl, "true", SYM_FUNC);
 	AN(sym);
+	sym->type = BOOL;
 	sym->eval = vcc_Eval_BoolConst;
 	sym->eval_priv = sym;
 
 	sym = VCC_MkSym(tl, "false", SYM_FUNC);
 	AN(sym);
+	sym->type = BOOL;
 	sym->eval = vcc_Eval_BoolConst;
 	sym->eval_priv = NULL;
 }

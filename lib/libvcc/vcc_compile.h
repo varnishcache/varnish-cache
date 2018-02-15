@@ -129,7 +129,7 @@ struct symbol {
 
 	const struct token		*def_b, *def_e, *ref_b;
 
-	vcc_type_t			fmt;
+	vcc_type_t			type;
 
 	sym_expr_t			*eval;
 	const void			*eval_priv;
