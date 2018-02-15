@@ -37,7 +37,8 @@ libvarnish_a_SOURCES = \
 	vss.c \
 	vsub.c \
 	vtcp.c \
-	vtim.c
+	vtim.c \
+	vus.c
 
 TESTS = vnum_c_test binheap
 

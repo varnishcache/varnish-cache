@@ -93,7 +93,8 @@ extern int feature_dns;
 
 void init_server(void);
 
-int http_process(struct vtclog *vl, const char *spec, int sock, int *sfd);
+int http_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
+		 const char *addr);
 
 char * synth_body(const char *len, int rnd);
 

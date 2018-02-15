@@ -1840,7 +1840,8 @@ const struct cmds http_cmds[] = {
 };
 
 int
-http_process(struct vtclog *vl, const char *spec, int sock, int *sfd)
+http_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
+	     const char *addr)
 {
 	struct http *hp;
 	int retval;
@@ -1870,8 +1871,13 @@ http_process(struct vtclog *vl, const char *spec, int sock, int *sfd)
 	hp->gziplevel = 0;
 	hp->gzipresidual = -1;
 
-	VTCP_hisname(sock,
-	    hp->rem_ip, VTCP_ADDRBUFSIZE, hp->rem_port, VTCP_PORTBUFSIZE);
+	if (*addr != '/')
+		VTCP_hisname(sock, hp->rem_ip, VTCP_ADDRBUFSIZE, hp->rem_port,
+			     VTCP_PORTBUFSIZE);
+	else {
+		strcpy(hp->rem_ip, "0.0.0.0");
+		strcpy(hp->rem_port, "0");
+	}
 	parse_string(spec, http_cmds, hp, vl);
 	if (hp->h2)
 		stop_h2(hp);

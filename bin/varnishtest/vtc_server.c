@@ -29,15 +29,19 @@
 #include "config.h"
 
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "vtc.h"
 
 #include "vtcp.h"
+#include "vus.h"
 
 struct server {
 	unsigned		magic;
@@ -114,6 +118,81 @@ server_delete(struct server *s)
  * Server listen
  */
 
+struct helper {
+	int		depth;
+	const char	**errp;
+};
+
+/* cf. VTCP_listen_on() */
+static int v_matchproto_(vus_resolved_f)
+uds_listen(void *priv, const struct sockaddr_un *uds)
+{
+	int sock, e;
+	struct helper *hp = priv;
+
+	sock = VUS_bind(uds, hp->errp);
+	if (sock >= 0)   {
+		if (listen(sock, hp->depth) != 0) {
+			e = errno;
+			closefd(&sock);
+			errno = e;
+			if (hp->errp != NULL)
+				*hp->errp = "listen(2)";
+			return (-1);
+		}
+	}
+	if (sock > 0) {
+		*hp->errp = NULL;
+		return (sock);
+	}
+	AN(*hp->errp);
+	return (0);
+}
+
+static void
+server_listen_uds(struct server *s, const char **errp)
+{
+	mode_t m;
+	struct helper h;
+
+	h.depth = s->depth;
+	h.errp = errp;
+
+	errno = 0;
+	if (unlink(s->listen) != 0 && errno != ENOENT)
+		vtc_fatal(s->vl, "Could not unlink %s before bind: %s",
+			  s->listen, strerror(errno));
+	/*
+	 * Temporarily set the umask to 0 to avoid issues with
+	 * permissions.
+	 */
+	m = umask(0);
+	s->sock = VUS_resolver(s->listen, uds_listen, &h, errp);
+	umask(m);
+	if (*errp != NULL)
+		return;
+	assert(s->sock > 0);
+	macro_def(s->vl, s->name, "addr", "0.0.0.0");
+	macro_def(s->vl, s->name, "port", "0");
+	macro_def(s->vl, s->name, "sock", "%s", s->listen);
+}
+
+static void
+server_listen_tcp(struct server *s, const char **errp)
+{
+	s->sock = VTCP_listen_on(s->listen, "0", s->depth, errp);
+	if (*errp != NULL)
+		return;
+	assert(s->sock > 0);
+	VTCP_myname(s->sock, s->aaddr, sizeof s->aaddr,
+	    s->aport, sizeof s->aport);
+	macro_def(s->vl, s->name, "addr", "%s", s->aaddr);
+	macro_def(s->vl, s->name, "port", "%s", s->aport);
+	macro_def(s->vl, s->name, "sock", "%s %s", s->aaddr, s->aport);
+	/* Record the actual port, and reuse it on subsequent starts */
+	bprintf(s->listen, "%s %s", s->aaddr, s->aport);
+}
+
 static void
 server_listen(struct server *s)
 {
@@ -123,19 +202,14 @@ server_listen(struct server *s)
 
 	if (s->sock >= 0)
 		VTCP_close(&s->sock);
-	s->sock = VTCP_listen_on(s->listen, "0", s->depth, &err);
+	if (*s->listen != '/')
+		server_listen_tcp(s, &err);
+	else
+		server_listen_uds(s, &err);
 	if (err != NULL)
 		vtc_fatal(s->vl,
 		    "Server listen address (%s) cannot be resolved: %s",
 		    s->listen, err);
-	assert(s->sock > 0);
-	VTCP_myname(s->sock, s->aaddr, sizeof s->aaddr,
-	    s->aport, sizeof s->aport);
-	macro_def(s->vl, s->name, "addr", "%s", s->aaddr);
-	macro_def(s->vl, s->name, "port", "%s", s->aport);
-	macro_def(s->vl, s->name, "sock", "%s %s", s->aaddr, s->aport);
-	/* Record the actual port, and reuse it on subsequent starts */
-	bprintf(s->listen, "%s %s", s->aaddr, s->aport);
 }
 
 /**********************************************************************
@@ -170,7 +244,7 @@ server_thread(void *priv)
 			vtc_fatal(vl, "Accept failed: %s", strerror(errno));
 		VTCP_hisname(fd, abuf, sizeof abuf, pbuf, sizeof pbuf);
 		vtc_log(vl, 3, "accepted fd %d %s %s", fd, abuf, pbuf);
-		fd = http_process(vl, s->spec, fd, &s->sock);
+		fd = http_process(vl, s->spec, fd, &s->sock, s->listen);
 		vtc_log(vl, 3, "shutting fd %d", fd);
 		j = shutdown(fd, SHUT_WR);
 		if (!VTCP_Check(j))
@@ -215,7 +289,7 @@ server_dispatch_wrk(void *priv)
 	fd = s->fd;
 
 	vtc_log(vl, 3, "start with fd %d", fd);
-	fd = http_process(vl, s->spec, fd, &s->sock);
+	fd = http_process(vl, s->spec, fd, &s->sock, s->listen);
 	vtc_log(vl, 3, "shutting fd %d", fd);
 	j = shutdown(fd, SHUT_WR);
 	if (!VTCP_Check(j))
