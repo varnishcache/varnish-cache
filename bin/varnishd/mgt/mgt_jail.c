@@ -137,28 +137,32 @@ VJ_subproc(enum jail_subproc_e jse)
 int
 VJ_make_workdir(const char *dname)
 {
-	int fd;
+	int i;
 
 	AN(dname);
 	CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);
-	if (vjt->make_workdir != NULL)
-		return (vjt->make_workdir(dname));
-
-	VJ_master(JAIL_MASTER_FILE);
-	if (mkdir(dname, 0755) < 0 && errno != EEXIST)
-		ARGV_ERR("Cannot create working directory '%s': %s\n",
-		    dname, strerror(errno));
+	if (vjt->make_workdir != NULL) {
+		i = vjt->make_workdir(dname);
+		if (i)
+			return (i);
+		VJ_master(JAIL_MASTER_FILE);
+	} else {
+		VJ_master(JAIL_MASTER_FILE);
+		if (mkdir(dname, 0755) < 0 && errno != EEXIST)
+			ARGV_ERR("Cannot create working directory '%s': %s\n",
+				 dname, strerror(errno));
+	}
 
 	if (chdir(dname) < 0)
 		ARGV_ERR("Cannot change to working directory '%s': %s\n",
 		    dname, strerror(errno));
 
-	fd = open("_.testfile", O_RDWR|O_CREAT|O_EXCL, 0600);
-	if (fd < 0)
+	i = open("_.testfile", O_RDWR|O_CREAT|O_EXCL, 0600);
+	if (i < 0)
 		ARGV_ERR("Cannot create test-file in %s (%s)\n"
 		    "Check permissions (or delete old directory)\n",
 		    dname, strerror(errno));
-	closefd(&fd);
+	closefd(&i);
 	AZ(unlink("_.testfile"));
 	VJ_master(JAIL_MASTER_LOW);
 	return (0);
