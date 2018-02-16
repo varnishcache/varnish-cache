@@ -322,6 +322,12 @@ VSC_F(n_lru_moved,		uint64_t, 0, 'g', 'i', diag,
 	"Number of move operations done on the LRU list."
 )
 
+VSC_F(n_lru_limited,		uint64_t, 0, 'c', 'i', info,
+    "Reached nuke_limit",
+	"Number of times more storage space were needed, but limit"
+	" was reached in a nuke_limit. See also parameter nuke_limit."
+)
+
 VSC_F(losthdr,			uint64_t, 0, 'c', 'i', info,
     "HTTP header overflows",
 	""

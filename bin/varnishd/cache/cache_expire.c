@@ -331,6 +331,7 @@ EXP_NukeOne(struct worker *wrk, struct lru *lru)
 	CHECK_OBJ_NOTNULL(lru, LRU_MAGIC);
 	if (wrk->strangelove-- <= 0) {
 		VSLb(wrk->vsl, SLT_ExpKill, "LRU_Exhausted");
+		VSC_C_main->n_lru_limited++;
 		return (0);
 	}
 	/* Find the first currently unused object on the LRU.  */
