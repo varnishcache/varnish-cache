@@ -172,7 +172,7 @@ LRU_NukeOne(struct worker *wrk, struct lru *lru)
 
 	if (wrk->strangelove-- <= 0) {
 		VSLb(wrk->vsl, SLT_ExpKill, "LRU reached nuke_limit");
-		VSC_C_main->nuke_limited++;
+		VSC_C_main->n_lru_limited++;
 		return (0);
 	}
 
