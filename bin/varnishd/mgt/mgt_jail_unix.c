@@ -254,6 +254,20 @@ vju_make_vcldir(const char *dname)
 	return (0);
 }
 
+static int v_matchproto_(jail_make_dir_f)
+vju_make_workdir(const char *dname)
+{
+	AZ(seteuid(0));
+
+	if (mkdir(dname, 0755) < 0 && errno != EEXIST) {
+		MGT_Complain(C_ERR, "Cannot create working directory '%s': %s",
+		    dname, strerror(errno));
+		return (1);
+	}
+	AZ(chown(dname, -1, vju_gid));
+	AZ(seteuid(vju_uid));
+	return (0);
+}
 
 static void v_matchproto_(jail_fixfd_f)
 vju_fixfd(int fd, enum jail_fixfd_e what)
@@ -284,6 +298,7 @@ const struct jail_tech jail_tech_unix = {
 	.init =		vju_init,
 	.master =	vju_master,
 	.make_vcldir =	vju_make_vcldir,
+	.make_workdir =	vju_make_workdir,
 	.fixfd =	vju_fixfd,
 	.subproc =	vju_subproc,
 };
