@@ -6,12 +6,106 @@ shell -err -match "have same address|already in use" {
 	varnishd -d -a 127.0.0.1:38484 -a 127.0.0.1:38484 -b localhost:80
 }
 
+shell -err -match "have same address|already in use" {
+	varnishd -d -a ${tmpdir}/vtc.sock -a ${tmpdir}/vtc.sock -b localhost:80
+}
+
 # -a bad protocol specs
-shell -err -expect "Too many sub-arguments" {
+shell -err -expect "Too many protocol sub-args" {
 	varnishd -a 127.0.0.1:80000,PROXY,FOO -d
 }
-shell -err -expect "Too many sub-arguments" {
+shell -err -expect "Too many protocol sub-args" {
 	varnishd -a 127.0.0.1:80000,HTTP,FOO -d
+}
+
+# -a relative path for a UDS address not permitted
+shell -err -expect "Unix domain socket addresses must be absolute paths" {
+	varnishd -a foo/bar.sock -d
+}
+
+# -a args for UDS permissions not permitted with IP addresses
+shell -err -expect "Invalid sub-arg user=u for IP addresses" {
+	varnishd -a 127.0.0.1:80000,user=u -d
+}
+
+shell -err -expect "Invalid sub-arg group=g for IP addresses" {
+	varnishd -a 127.0.0.1:80000,group=g -d
+}
+
+shell -err -expect "Invalid sub-arg mode=660 for IP addresses" {
+	varnishd -a 127.0.0.1:80000,mode=660 -d
+}
+
+# Illegal mode sub-args
+shell -err -expect "Too many mode sub-args" {
+	varnishd -a ${tmpdir}/vtc.sock,mode=660,mode=600 -d
+}
+
+shell -err -expect "Empty mode sub-arg" {
+	varnishd -a ${tmpdir}/vtc.sock,mode= -d
+}
+
+shell -err -expect "Invalid mode sub-arg 666devilish" {
+	varnishd -a ${tmpdir}/vtc.sock,mode=666devilish -d
+}
+
+shell -err -expect "Invalid mode sub-arg devilish" {
+	varnishd -a ${tmpdir}/vtc.sock,mode=devilish -d
+}
+
+shell -err -expect "Invalid mode sub-arg 999" {
+	varnishd -a ${tmpdir}/vtc.sock,mode=999 -d
+}
+
+shell -err -expect "Cannot parse mode sub-arg 7" {
+	varnishd -a ${tmpdir}/vtc.sock,mode=77777777777777777777777777777777 -d
+}
+
+shell -err -expect "Cannot parse mode sub-arg -7" {
+	varnishd -a ${tmpdir}/vtc.sock,mode=-77777777777777777777777777777777 -d
+}
+
+shell -err -expect "Mode sub-arg 1666 out of range" {
+	varnishd -a ${tmpdir}/vtc.sock,mode=1666 -d
+}
+
+shell -err -expect "Mode sub-arg 0 out of range" {
+	varnishd -a ${tmpdir}/vtc.sock,mode=0 -d
+}
+
+shell -err -expect "Mode sub-arg -1 out of range" {
+	varnishd -a ${tmpdir}/vtc.sock,mode=-1 -d
+}
+
+##
+## user and group sub-args tested in c00086.vtc, where the user and group
+## features are enabled.
+##
+
+# Invalid sub-arg
+shell -err -expect "Invalid sub-arg foo=bar" {
+	varnishd -a ${tmpdir}/vtc.sock,foo=bar -d
+}
+
+# A sub-arg without '=' is interpreted as a protocol name.
+shell -err -expect "Unknown protocol" {
+	varnishd -a ${tmpdir}/vtc.sock,foobar -d
+}
+
+shell -err -expect "Invalid sub-arg userfoo=u" {
+	varnishd -a ${tmpdir}/vtc.sock,userfoo=u -d
+}
+
+shell -err -expect "Invalid sub-arg groupfoo=g" {
+	varnishd -a ${tmpdir}/vtc.sock,groupfoo=g -d
+}
+
+shell -err -expect "Invalid sub-arg modefoo=666" {
+	varnishd -a ${tmpdir}/vtc.sock,modefoo=666 -d
+}
+
+shell -err -expect "Invalid sub-arg =foo" {
+	varnishd -a ${tmpdir}/vtc.sock,=foo -d
 }
 
 # This requires non-local binds to be disabled.  If you see this fail

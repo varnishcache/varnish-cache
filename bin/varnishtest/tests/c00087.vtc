@@ -1,0 +1,116 @@
+varnishtest "VCL *.ip vars as bogo-IPs when -a is UDS, and test ACL matches"
+
+server s1 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -arg "-a ${tmpdir}/v1.sock" -vcl+backend {
+	acl acl1 {
+		"${localhost}";
+	}
+
+	sub vcl_backend_response {
+		set beresp.http.b-client = client.ip;
+		set beresp.http.b-server = server.ip;
+		set beresp.http.b-local = local.ip;
+		set beresp.http.b-remote = remote.ip;
+		set beresp.http.b-compare = local.ip == remote.ip;
+	}
+
+	sub vcl_deliver {
+		set resp.http.c-client = client.ip;
+		set resp.http.c-server = server.ip;
+		set resp.http.c-local = local.ip;
+		set resp.http.c-remote = remote.ip;
+		set resp.http.c-compare = local.ip == remote.ip;
+		set resp.http.client_acl = client.ip ~ acl1;
+		set resp.http.server_acl = server.ip ~ acl1;
+		set resp.http.local_acl = local.ip ~ acl1;
+		set resp.http.remote_acl = remote.ip ~ acl1;
+	}
+} -start
+
+client c1 -connect "${tmpdir}/v1.sock" {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.c-client == "0.0.0.0"
+	expect resp.http.c-server == "0.0.0.0"
+	expect resp.http.c-local == "0.0.0.0"
+	expect resp.http.c-remote == "0.0.0.0"
+	expect resp.http.c-compare == "true"
+	expect resp.http.b-client == "0.0.0.0"
+	expect resp.http.b-server == "0.0.0.0"
+	expect resp.http.b-local == "0.0.0.0"
+	expect resp.http.b-remote == "0.0.0.0"
+	expect resp.http.b-compare == "true"
+	expect resp.http.client_acl == "false"
+	expect resp.http.server_acl == "false"
+	expect resp.http.local_acl == "false"
+	expect resp.http.remote_acl == "false"
+} -run
+
+logexpect l1 -v v1 -d 1 -g vxid -q "VCL_acl" {
+	expect 0 * Begin req
+	expect * = VCL_acl "^NO_MATCH acl1$"
+	expect * = VCL_acl "^NO_MATCH acl1$"
+	expect * = VCL_acl "^NO_MATCH acl1$"
+	expect * = VCL_acl "^NO_MATCH acl1$"
+	expect * = End
+} -run
+
+varnish v1 -vcl {
+	backend b { .host = "${bad_ip}"; }
+
+	acl acl1 {
+		"0.0.0.0";
+	}
+
+	sub vcl_recv {
+		return(synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.client = client.ip ~ acl1;
+		set resp.http.server = server.ip ~ acl1;
+		set resp.http.local = local.ip ~ acl1;
+		set resp.http.remote = remote.ip ~ acl1;
+	}
+}
+
+client c1 -connect "${tmpdir}/v1.sock" {
+	txreq -url "foo"
+	rxresp
+	expect resp.http.client == "true"
+	expect resp.http.server == "true"
+	expect resp.http.local == "true"
+	expect resp.http.remote == "true"
+} -run
+
+varnish v1 -errvcl {.../mask is not numeric.} {
+	backend b { .host = "${bad_ip}"; }
+
+	acl acl1 {
+		"${tmpdir}/v1.sock";
+	}
+}
+
+# client.ip == 0.0.0.0 appears in X-Forwarded-For
+server s1 {
+	rxreq
+	expect req.http.X-Forwarded-For == "0.0.0.0"
+	txresp
+	rxreq
+	expect req.http.X-Forwarded-For == "1.2.3.4, 0.0.0.0"
+	txresp
+} -start
+
+varnish v1 -vcl+backend {}
+
+client c1 -connect "${tmpdir}/v1.sock" {
+	txreq -url /1
+	rxresp
+	txreq -url /2 -hdr "X-forwarded-for: 1.2.3.4"
+	rxresp
+} -run

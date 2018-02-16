@@ -248,7 +248,6 @@ VRT_r_beresp_uncacheable(VRT_CTX)
 const char *
 VRT_r_client_identity(VRT_CTX)
 {
-
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	if (ctx->req->client_identity != NULL)

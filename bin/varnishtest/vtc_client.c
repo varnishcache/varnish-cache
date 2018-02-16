@@ -179,9 +179,12 @@ client_uds_connect(struct vtclog *vl, const char *path, double tmo,
 
 	assert(tmo >= 0);
 
+	errno = 0;
 	fd = VUS_resolver(path, uds_open, &tmo, errp);
-	if (fd < 0)
+	if (fd < 0) {
+		*errp = strerror(errno);
 		return fd;
+	}
 	vtc_log(vl, 3, "connected fd %d to %s", fd, path);
 	return fd;
 }

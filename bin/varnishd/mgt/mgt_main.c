@@ -41,6 +41,7 @@
 #include <syslog.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
 
 #include "mgt/mgt.h"
 #include "common/heritage.h"
@@ -58,6 +59,7 @@
 #include "vsub.h"
 #include "vtim.h"
 #include "waiter/mgt_waiter.h"
+#include "vsa.h"
 
 struct heritage		heritage;
 unsigned		d_flag = 0;
@@ -559,6 +561,9 @@ main(int argc, char * const *argv)
 	XPORT_Init();
 
 	VJ_Init(j_arg);
+
+	/* Initialize the bogo-IP VSA */
+	VSA_Init();
 
 	optind = 1;
 	optreset = 1;

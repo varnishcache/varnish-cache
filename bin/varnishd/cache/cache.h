@@ -99,6 +99,7 @@ struct poolparam;
 struct sess;
 struct transport;
 struct worker;
+struct listen_sock;
 
 #define DIGEST_LEN		32
 
@@ -571,6 +572,7 @@ struct sess {
 #define SESS_MAGIC		0x2c2f9c5a
 
 	uint16_t		sattr[SA_LAST];
+	struct listen_sock	*listen_sock;
 	int			refcnt;
 	int			fd;
 	uint32_t		vxid;
