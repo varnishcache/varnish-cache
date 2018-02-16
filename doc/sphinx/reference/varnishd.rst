@@ -86,6 +86,8 @@ Basic options
   could later be accessed remotely, starting `varnishd` requires
   local privileges.
 
+.. _opt_n:
+
 -n name
 
   Specify the name for this instance.  This name is used to construct
@@ -205,8 +207,16 @@ Security options
 -S secret-file
 
   Path to a file containing a secret used for authorizing access to
-  the management port. If not provided a new secret will be drawn
-  from the system PRNG.  To disable authentication use ``none``.
+  the management port. To disable authentication use ``none``.
+
+  If this argument is not provided, a secret drawn from the system
+  PRNG will be written to a file called ``_.secret`` in the working
+  directory (see `opt_n`_) with default ownership and permissions of
+  the user having started varnish.
+
+  Thus, users wishing to delegate control over varnish will probably
+  want to create a custom secret file with appropriate permissions
+  (ie. readable by a unix group to delegate control to).
 
 -j <jail[,jailoptions]>
 
