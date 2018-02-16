@@ -253,6 +253,12 @@
 	Number of times an HTTP/2 stream was refused because the queue was
 	too long already. See also parameter thread_queue_limit.
 
+.. varnish_vsc:: nuke_limited
+	:oneliner:	Reached nuke_limit
+
+	Number of times more storage space were needed, but limit was reached in
+	a nuke_limit. See also parameter nuke_limit.
+
 .. varnish_vsc:: n_object
 	:type:	gauge
 	:oneliner:	object structs made

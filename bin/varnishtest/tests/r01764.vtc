@@ -52,3 +52,5 @@ client c1 {
 	rxresp
 	expect resp.status == 503
 } -run
+
+varnish v1 -expect nuke_limited == 1
