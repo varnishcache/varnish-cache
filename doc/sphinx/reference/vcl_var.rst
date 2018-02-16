@@ -381,7 +381,6 @@ req_top.method
 
 	Readable from: client
 
-	
 	The request method of the top-level request in a tree
 	of ESI requests. (e.g. "GET", "HEAD").
 	Identical to req.method in non-ESI requests.
@@ -392,7 +391,6 @@ req_top.url
 	Type: STRING
 
 	Readable from: client
-
 	
 	The requested URL of the top-level request in a tree
 	of ESI requests.
@@ -404,7 +402,6 @@ req_top.http.*
 	Type: HEADER
 
 	Readable from: client
-
 	
 	HTTP headers of the top-level request in a tree of ESI requests.
 	Identical to req.http. in non-ESI requests.
@@ -415,7 +412,6 @@ req_top.proto
 	Type: STRING
 
 	Readable from: client
-
 	
 	HTTP protocol version of the top-level request in a tree of
 	ESI requests.
@@ -447,7 +443,6 @@ bereq.xid
 	Type: STRING
 
 	Readable from: backend
-
 	
 	Unique ID of this request.
 	
@@ -457,7 +452,6 @@ bereq.retries
 	Type: INT
 
 	Readable from: backend
-
 	
 	A count of how many times this request has been retried.
 	
@@ -469,7 +463,6 @@ bereq.backend
 	Readable from: vcl_pipe, backend
 
 	Writable from: vcl_pipe, backend
-
 	
 	This is the backend or director we attempt to fetch from.
 	When set to a director, reading this variable returns
@@ -484,19 +477,18 @@ bereq.body
 	Type: BODY
 
 	Unsetable from: vcl_backend_fetch
+	
+	The request body, only present on `pass` requests.
 
-	
-	The request body.
-	
+	Unset will also remove `bereq.http.Content-Length`.
 
 bereq.hash
 
 	Type: BLOB
 
 	Readable from: vcl_pipe, backend
-
 	
-	The hash key of this request.
+	The hash key of this request, a copy of `req.hash`.
 	
 
 bereq.method
@@ -506,9 +498,10 @@ bereq.method
 	Readable from: vcl_pipe, backend
 
 	Writable from: vcl_pipe, backend
-
 	
 	The request type (e.g. "GET", "HEAD").
+
+	Regular (non-pipe, non-pass) fetches are always "GET"
 	
 
 bereq.url
@@ -519,8 +512,7 @@ bereq.url
 
 	Writable from: vcl_pipe, backend
 
-	
-	The requested URL.
+	The requested URL, copied from `req.url`
 	
 
 bereq.proto
@@ -530,9 +522,9 @@ bereq.proto
 	Readable from: vcl_pipe, backend
 
 	Writable from: vcl_pipe, backend
-
 	
-	The HTTP protocol version used to talk to the server.
+	The HTTP protocol version, "HTTP/1.1" unless a pass or pipe
+	request has "HTTP/1.0" in `req.proto`
 	
 
 bereq.http.*
@@ -545,8 +537,7 @@ bereq.http.*
 
 	Unsetable from: vcl_pipe, backend
 
-	
-	The corresponding HTTP header.
+	The headers to be sent to the backend.
 	
 
 bereq.uncacheable
@@ -556,9 +547,8 @@ bereq.uncacheable
 	Readable from: backend
 
 	
-	Indicates whether this request is uncacheable due
-	to a pass in the client side or a hit on an hit-for-pass
-	object.
+	Indicates whether this request is uncacheable due to a
+	`pass` in the client side or a hit on an hit-for-pass object.
 	
 
 bereq.connect_timeout
@@ -568,9 +558,9 @@ bereq.connect_timeout
 	Readable from: vcl_pipe, backend
 
 	Writable from: vcl_pipe, backend
-
 	
-	The time in seconds to wait for a backend connection.
+	The time in seconds to wait for a backend connection to be
+	established.
 	
 
 bereq.first_byte_timeout
@@ -580,10 +570,9 @@ bereq.first_byte_timeout
 	Readable from: backend
 
 	Writable from: backend
-
 	
-	The time in seconds to wait for the first byte from
-	the backend.  Not available in pipe mode.
+	The time in seconds to wait getting the first byte back
+	from the backend.  Not available in pipe mode.
 	
 
 bereq.between_bytes_timeout
@@ -593,7 +582,6 @@ bereq.between_bytes_timeout
 	Readable from: backend
 
 	Writable from: backend
-
 	
 	The time in seconds to wait between each received byte from the
 	backend.  Not available in pipe mode.
@@ -604,13 +592,16 @@ bereq.is_bgfetch
 	Type: BOOL
 
 	Readable from: backend
-
 	
-	True for background fetches.
-	
+	True for fetches where the client got a hit on an object in
+	grace, and this fetch was kicked of in the background to get
+	a fresh copy.
 
 beresp
 ~~~~~~
+
+The response received from the backend, one cache misses, the
+store object is built from `beresp`.
 
 beresp
 
@@ -618,19 +609,16 @@ beresp
 
 	Readable from: vcl_backend_response, vcl_backend_error
 
-	
-	The entire backend response HTTP data structure
-	
+	The entire backend response HTTP data structure, useful as
+	argument to VMOD functions.
 
 beresp.body
 
 	Type: BODY
 
 	Writable from: vcl_backend_error
-
 	
-	The response body.
-	
+	For producing a synthetic body.
 
 beresp.proto
 
@@ -640,8 +628,7 @@ beresp.proto
 
 	Writable from: vcl_backend_response, vcl_backend_error
 
-	
-	The HTTP protocol version used the backend replied with.
+	The HTTP protocol version the backend replied with.
 	
 
 beresp.status
@@ -652,12 +639,15 @@ beresp.status
 
 	Writable from: vcl_backend_response, vcl_backend_error
 
-	
 	The HTTP status code returned by the server.
 	
-	Status codes >1000 can be set for vcl-internal
-	purposes and will be taken modulo 1000 on delivery.
-	
+	Status codes on the form XXYZZ can be set where
+	XXYZZ is less than 65536 and Y is [1...9].
+	Only YZZ will be sent back to clients.
+
+	XX can be therefore be used to pass information
+	around inside VCL, for instance `return(synth(22404))`
+	from `vcl_recv{}` to `vcl_synth{}`
 
 beresp.reason
 
@@ -667,9 +657,7 @@ beresp.reason
 
 	Writable from: vcl_backend_response, vcl_backend_error
 
-	
 	The HTTP status message returned by the server.
-	
 
 beresp.http.*
 
@@ -681,9 +669,7 @@ beresp.http.*
 
 	Unsetable from: vcl_backend_response, vcl_backend_error
 
-	
-	The corresponding HTTP header.
-	
+	The HTTP headers returned from the server.
 
 beresp.do_esi
 
@@ -693,11 +679,10 @@ beresp.do_esi
 
 	Writable from: vcl_backend_response, vcl_backend_error
 
-	
-	Boolean. ESI-process the object after fetching it.
-	Defaults to false. Set it to true to parse the
-	object for ESI directives. Will only be honored if
-	req.esi is true.
+	Default: false
+
+	Set it to true to parse the object for ESI directives.
+	Will only be honored if req.esi is true.
 	
 
 beresp.do_stream
@@ -708,11 +693,12 @@ beresp.do_stream
 
 	Writable from: vcl_backend_response, vcl_backend_error
 
-	
 	Deliver the object to the client while fetching the whole
-	object into varnish. For uncacheable objects, storage for
-	parts of the body which have been sent to the client may
-	get freed early, depending on the storage engine used.
+	object into varnish.
+
+	For uncacheable objects, storage for parts of the body which
+	have been sent to the client may get freed early, depending
+	on the storage engine used.
 	
 
 beresp.do_gzip
@@ -723,12 +709,9 @@ beresp.do_gzip
 
 	Writable from: vcl_backend_response, vcl_backend_error
 
-	
-	Boolean. Gzip the object before storing it. Defaults
-	to false. When http_gzip_support is on Varnish will
-	request already compressed content from the backend
-	and as such compression in Varnish is not needed.
-	
+	Default: false
+
+	Set to `true` to gzip the object while storing it.
 
 beresp.do_gunzip
 
@@ -738,10 +721,10 @@ beresp.do_gunzip
 
 	Writable from: vcl_backend_response, vcl_backend_error
 
-	
-	Boolean. Unzip the object before storing it in the
-	cache.  Defaults to false.
-	
+	Default: false
+
+	Set to `true` to unzip the object while storing it in the
+	cache.
 
 beresp.was_304
 
@@ -750,10 +733,9 @@ beresp.was_304
 	Readable from: vcl_backend_response, vcl_backend_error
 
 	
-	Boolean. If this is a successful 304 response to a
-	backend conditional request refreshing an existing
-	cache object.
-	
+	When `true` this indicates that we got a 304 response
+	to our conditional fetch from the backend and turned
+	that into `beresp.status = 200`
 
 beresp.uncacheable
 
@@ -763,11 +745,11 @@ beresp.uncacheable
 
 	Writable from: vcl_backend_response, vcl_backend_error
 
-	
 	Inherited from bereq.uncacheable, see there.
 	
-	Setting this variable makes the object uncacheable, which may
-	get stored as a hit-for-miss object in the cache.
+	Setting this variable makes the object uncacheable.
+
+	This may may produce a hit-for-miss object in the cache.
 	
 	Clearing the variable has no effect and will log the warning
 	"Ignoring attempt to reset beresp.uncacheable".
@@ -781,7 +763,6 @@ beresp.ttl
 
 	Writable from: vcl_backend_response, vcl_backend_error
 
-	
 	The object's remaining time to live, in seconds.
 	
 
@@ -791,7 +772,6 @@ beresp.age
 
 	Readable from: vcl_backend_response, vcl_backend_error
 
-	
 	The age of the object.
 	
 
@@ -803,7 +783,6 @@ beresp.grace
 
 	Writable from: vcl_backend_response, vcl_backend_error
 
-	
 	Set to a period to enable grace.
 	
 
@@ -815,7 +794,6 @@ beresp.keep
 
 	Writable from: vcl_backend_response, vcl_backend_error
 
-	
 	Set to a period to enable conditional backend requests.
 	
 	The keep time is cache lifetime in addition to the ttl.
@@ -831,7 +809,6 @@ beresp.backend
 
 	Readable from: vcl_backend_response, vcl_backend_error
 
-	
 	This is the backend we fetched from.  If bereq.backend
 	was set to a director, this will be the backend selected
 	by the director.
@@ -844,7 +821,6 @@ beresp.backend.name
 
 	Readable from: vcl_backend_response, vcl_backend_error
 
-	
 	Name of the backend this response was fetched from.
 	Same as beresp.backend.
 	
@@ -855,9 +831,7 @@ beresp.backend.ip
 
 	Readable from: vcl_backend_response
 
-	
 	IP of the backend this response was fetched from.
-	
 
 beresp.storage
 
@@ -869,10 +843,11 @@ beresp.storage
 
 	
 	The storage backend to use to save this object.
-	
 
 obj
 ~~~
+
+This is the object we found in cache.  It cannot be modified.
 
 obj.proto
 
@@ -881,7 +856,7 @@ obj.proto
 	Readable from: vcl_hit
 
 	
-	The HTTP protocol version stored with the object.
+	The HTTP protocol version stored in the object.
 	
 
 obj.status
@@ -891,7 +866,7 @@ obj.status
 	Readable from: vcl_hit
 
 	
-	The HTTP status code stored with the object.
+	The HTTP status code stored in the object.
 	
 
 obj.reason
@@ -901,7 +876,7 @@ obj.reason
 	Readable from: vcl_hit
 
 	
-	The HTTP reason phrase stored with the object.
+	The HTTP reason phrase stored in the object.
 	
 
 obj.hits
@@ -911,8 +886,9 @@ obj.hits
 	Readable from: vcl_hit, vcl_deliver
 
 	
-	The count of cache-hits on this object. A value of 0 indicates a
-	cache miss.
+	The count of cache-hits on this object.
+
+	In `vcl_deliver` a value of 0 indicates a cache miss.
 	
 
 obj.http.*
@@ -921,8 +897,7 @@ obj.http.*
 
 	Readable from: vcl_hit
 
-	
-	The corresponding HTTP header.
+	The HTTP headers stored in the object.
 	
 
 obj.ttl
@@ -931,7 +906,6 @@ obj.ttl
 
 	Readable from: vcl_hit, vcl_deliver
 
-	
 	The object's remaining time to live, in seconds.
 	
 
@@ -941,7 +915,6 @@ obj.age
 
 	Readable from: vcl_hit, vcl_deliver
 
-	
 	The age of the object.
 	
 
@@ -951,7 +924,6 @@ obj.grace
 
 	Readable from: vcl_hit, vcl_deliver
 
-	
 	The object's remaining grace period in seconds.
 	
 
@@ -961,7 +933,6 @@ obj.keep
 
 	Readable from: vcl_hit, vcl_deliver
 
-	
 	The object's remaining keep period in seconds.
 	
 
@@ -971,7 +942,6 @@ obj.uncacheable
 
 	Readable from: vcl_deliver
 
-	
 	Whether the object is uncacheable (pass, hit-for-pass or
 	hit-for-miss).
 	
@@ -982,12 +952,14 @@ obj.storage
 
 	Readable from: vcl_hit, vcl_deliver
 
-	
-	The storage backend used to save this object.
+	The storage backend where this object is stored.
 	
 
 resp
 ~~~~
+
+This is the response we send to the client, it is built from either
+`beresp` (pass/miss) or `obj` (hits).
 
 resp
 
@@ -995,9 +967,8 @@ resp
 
 	Readable from: vcl_deliver, vcl_synth
 
-	
-	The entire response HTTP data structure.
-	
+	The entire response HTTP data structure, useful as argument
+	to VMODs.
 
 resp.body
 
@@ -1005,9 +976,7 @@ resp.body
 
 	Writable from: vcl_synth
 
-	
-	The response body.
-	
+	To produce a synthetic response body, for instance for errors.
 
 resp.proto
 
@@ -1017,9 +986,7 @@ resp.proto
 
 	Writable from: vcl_deliver, vcl_synth
 
-	
 	The HTTP protocol version to use for the response.
-	
 
 resp.status
 
@@ -1029,7 +996,6 @@ resp.status
 
 	Writable from: vcl_deliver, vcl_synth
 
-	
 	The HTTP status code that will be returned.
 	
 	Assigning a HTTP standardized code to resp.status will also
@@ -1048,7 +1014,6 @@ resp.reason
 
 	Writable from: vcl_deliver, vcl_synth
 
-	
 	The HTTP status message that will be returned.
 	
 
@@ -1063,7 +1028,7 @@ resp.http.*
 	Unsetable from: vcl_deliver, vcl_synth
 
 	
-	The corresponding HTTP header.
+	The HTTP headers that will be returned.
 	
 
 resp.is_streaming
@@ -1072,13 +1037,12 @@ resp.is_streaming
 
 	Readable from: vcl_deliver, vcl_synth
 
-	
 	Returns true when the response will be streamed
-	from the backend.
+	while being fetched from the backend.
 	
 
-now
-~~~
+Special variables
+~~~~~~~~~~~~~~~~~
 
 now
 
@@ -1087,8 +1051,10 @@ now
 	Readable from: all
 
 	
-	The current time, in seconds since the epoch. When
-	used in string context it returns a formatted string.
+	The current time, in seconds since the UNIX epoch.
+
+	When converted to STRING in expressions it returns
+	a formatted timestamp like `Tue, 20 Feb 2018 09:30:31 GMT`
 	
 
 storage
