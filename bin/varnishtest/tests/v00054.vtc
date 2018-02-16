@@ -1,0 +1,28 @@
+varnishtest "client.identity is 0.0.0.0 if unset & client addr is UDS"
+
+varnish v1 -arg "-a ${tmpdir}/v1.sock" -vcl {
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_recv {
+		if (req.url == "/nobody") {
+			set client.identity = "Samuel B. Nobody";
+		}
+		set req.http.id = client.identity;
+		return(synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.id = req.http.id;
+	}
+} -start
+
+client c1 -connect "${tmpdir}/v1.sock" {
+	txreq -url "/nobody"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.id == "Samuel B. Nobody"
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.id == "0.0.0.0"
+} -run

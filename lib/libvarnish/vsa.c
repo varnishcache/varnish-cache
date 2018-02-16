@@ -36,7 +36,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <netinet/in.h>
+#include <netdb.h>
 
 #include "vdef.h"
 #include "vas.h"
@@ -173,6 +175,27 @@ struct suckaddr {
 };
 
 const int vsa_suckaddr_len = sizeof(struct suckaddr);
+
+/*
+ * Bogus IPv4 address 0.0.0.0:0 to be used for VCL *.ip variables when the
+ * "real" address is not IP (such as UDS addresses).
+ */
+static struct suckaddr bogo_ip_vsa;
+const struct suckaddr *bogo_ip = &bogo_ip_vsa;
+
+void
+VSA_Init()
+{
+	struct addrinfo hints, *res = NULL;
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV;
+	AZ(getaddrinfo("0.0.0.0", "0", &hints, &res));
+	AN(VSA_Build(&bogo_ip_vsa, res->ai_addr, res->ai_addrlen));
+	assert(VSA_Sane(bogo_ip));
+	freeaddrinfo(res);
+}
 
 /*
  * This VRT interface is for the VCC generated ACL code, which needs

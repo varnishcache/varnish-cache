@@ -1,0 +1,22 @@
+varnishtest "VSL tags affected by the use of UDS addresses"
+
+varnish v1 -arg "-a foo=${tmpdir}/v1.sock" -vcl {
+	backend b { .host = "${bad_ip}"; }
+
+	sub vcl_recv { return(synth(200)); }
+} -start
+
+client c1 -connect "${tmpdir}/v1.sock" {
+	txreq
+	rxresp
+} -run
+
+logexpect l1 -v v1 -d 1 -g session {
+	expect 0 1000	Begin
+	expect 0 =	SessOpen	"^0.0.0.0 0 foo 0.0.0.0 0"
+} -run
+
+logexpect l2 -v v1 -d 1 -g vxid {
+	expect 0 1001	Begin
+	expect * =	ReqStart	"^0.0.0.0 0$"
+} -run
