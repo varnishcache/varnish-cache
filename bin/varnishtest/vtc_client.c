@@ -149,7 +149,7 @@ uds_open(void *priv, const struct sockaddr_un *uds)
 		return (s);
 
 	(void) VTCP_nonblocking(s);
-	i = connect(s, uds, sl);
+	i = connect(s, (const struct sockaddr *)uds, sl);
 	if (i == 0)
 		return(s);
 	if (errno != EINPROGRESS) {
