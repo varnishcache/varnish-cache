@@ -540,7 +540,7 @@ h2_end_headers(struct worker *wrk, struct h2_sess *h2,
 		VSLb(h2->vsl, SLT_Debug, "Missing :method");
 		return (H2SE_PROTOCOL_ERROR); //rfc7540,l,3087,3090
 	}
-	if(req->http->hd[HTTP_HDR_URL].b == NULL) {
+	if (req->http->hd[HTTP_HDR_URL].b == NULL) {
 		VSLb(h2->vsl, SLT_Debug, "Missing :path");
 		return (H2SE_PROTOCOL_ERROR); //rfc7540,l,3087,3090
 	}

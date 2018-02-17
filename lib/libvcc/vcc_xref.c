@@ -198,7 +198,7 @@ vcc_checkaction1(struct vcc *tl, const struct symbol *sym)
 	p = sym->proc;
 	AN(p);
 	AN(p->name);
-	if(p->method == NULL)
+	if (p->method == NULL)
 		return;
 	if (vcc_CheckActionRecurse(tl, p, p->method->ret_bitmap)) {
 		VSB_printf(tl->sb,

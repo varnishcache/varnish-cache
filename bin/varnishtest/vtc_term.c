@@ -70,7 +70,7 @@ term_scroll(const struct term *tp)
 	char *l;
 
 	l = tp->vram[0];
-	for(i = 0; i < tp->nlin -1; i++)
+	for (i = 0; i < tp->nlin -1; i++)
 		tp->vram[i] = tp->vram[i + 1];
 	tp->vram[i] = l;
 	memset(l, ' ', tp->ncol);
@@ -90,7 +90,7 @@ term_escape(struct term *tp, int c, int n)
 {
 	int i;
 
-	switch(c) {
+	switch (c) {
 	case 'A':
 		// CUU - Cursor up
 		if (tp->arg[0] == -1) tp->arg[0] = 1;
@@ -142,7 +142,7 @@ term_escape(struct term *tp, int c, int n)
 		break;
 	case 'J':
 		// ED - Erase in Display (0=below, 1=above, 2=all)
-		switch(tp->arg[0]) {
+		switch (tp->arg[0]) {
 		case 2:
 			term_clear(tp->vram, tp->nlin, tp->ncol);
 			break;
@@ -195,7 +195,7 @@ term_char(struct term *tp, char c)
 			tp->col--;
 		break;
 	case '\t':
-		while(++tp->col % 8)
+		while (++tp->col % 8)
 			continue;
 		if (tp->col >= tp->ncol) {
 			tp->col = 0;
