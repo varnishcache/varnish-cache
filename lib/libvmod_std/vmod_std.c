@@ -53,9 +53,14 @@
 VCL_VOID v_matchproto_(td_std_set_ip_tos)
 vmod_set_ip_tos(VRT_CTX, VCL_INT tos)
 {
+	struct suckaddr *sa;
 	int itos = tos;
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	AZ(SES_Get_local_addr(ctx->req->sp, &sa));
+	/* Silently ignore for non-IP addresses. */
+	if (VSA_Compare(sa, bogo_ip) == 0)
+		return;
 	VTCP_Assert(setsockopt(ctx->req->sp->fd,
 	    IPPROTO_IP, IP_TOS, &itos, sizeof(itos)));
 }
