@@ -1,0 +1,47 @@
+varnishtest "std.ip(), .port() and .set_ip_tos() don't work for UDS addresses"
+
+varnish v1 -arg "-a ${tmpdir}/v1.sock -b '${bad_backend}'" -start
+
+varnish v2 -arg "-a ${tmpdir}/v2.sock" -vcl {
+	import std;
+	backend default { .host = "${bad_ip}"; }
+
+	sub vcl_recv {
+		return(synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.v1_addr = std.ip("${v1_addr}", client.ip);
+	}
+} -start
+
+client c1 -connect "${tmpdir}/v2.sock" {
+	txreq
+	rxresp
+	expect resp.http.v1_addr == "0.0.0.0"
+} -run
+
+varnish v2 -errvcl {IP constant '"${v1_addr}"' could not be resolved to an IP address:} {
+	import std;
+
+	sub vcl_recv {
+		set resp.http.v1_port = std.port("${v1_addr}");
+	}
+}
+
+varnish v2 -vcl {
+	import std;
+	backend default { .host = "${bad_ip}"; }
+
+	sub vcl_recv {
+	    # Silently ignored for a UDS
+	    std.set_ip_tos(0);
+	    return(synth(200));
+	}
+}
+
+client c1 -connect "${tmpdir}/v2.sock" {
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run
