@@ -1,0 +1,25 @@
+varnishtest "vtc v_* macros when the listen address is UDS"
+
+varnish v1 -arg "-a ${tmpdir}/v1.sock -b '${bad_backend}'" -start
+
+varnish v2 -vcl {
+	backend default { .host = "${bad_ip}"; }
+
+	sub vcl_recv {
+		return(synth(200));
+	}
+
+	sub vcl_synth {
+		set resp.http.addr = "${v1_addr}";
+		set resp.http.port = "${v1_port}";
+		set resp.http.sock = "${v1_sock}";
+	}
+} -start
+
+client c1 -connect ${v2_sock} {
+	txreq
+	rxresp
+	expect resp.http.addr == "${tmpdir}/v1.sock"
+	expect resp.http.port == "-"
+	expect resp.http.sock == "${tmpdir}/v1.sock -"
+} -run
