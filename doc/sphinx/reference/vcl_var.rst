@@ -924,7 +924,7 @@ obj.grace
 
 	Readable from: vcl_hit, vcl_deliver
 
-	The object's remaining grace period in seconds.
+	The object's grace period in seconds.
 	
 
 obj.keep
@@ -933,7 +933,7 @@ obj.keep
 
 	Readable from: vcl_hit, vcl_deliver
 
-	The object's remaining keep period in seconds.
+	The object's keep period in seconds.
 	
 
 obj.uncacheable
