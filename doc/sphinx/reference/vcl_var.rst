@@ -25,7 +25,7 @@ often with the shorthand "backend" which covers the `vcl_backend_*`
 methods and "client" which covers the rest, except `vcl_init` and
 `vcl_fini`.
 
-When setting a variable, the right hand side of the equalsign
+When setting a variable, the right hand side of the equal sign
 must have the variables type, you cannot assign a STRING to
 a variable of type NUMBER, even if the string is `"42"`.
 (Explicit conversion functions can be found in
@@ -241,7 +241,7 @@ req.http.*
 	
 	The headers of request, things like `req.http.date`.
 
-	The RFCs allow multipl headers with the same name, and both
+	The RFCs allow multiple headers with the same name, and both
 	`set` and `unset` will remove *all* headers with the name given.
 	
 
@@ -723,7 +723,7 @@ beresp.do_gunzip
 
 	Default: false
 
-	Set to `true` to unzip the object while storing it in the
+	Set to `true` to gunzip the object while storing it in the
 	cache.
 
 beresp.was_304
