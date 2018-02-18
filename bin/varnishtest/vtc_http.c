@@ -277,6 +277,7 @@ http_count_header(char * const *hh, const char *hdr)
  *
  *         - remote.ip
  *         - remote.port
+ *         - remote.path
  *         - req.method
  *         - req.url
  *         - req.proto
@@ -300,6 +301,8 @@ cmd_var_resolve(struct http *hp, char *spec)
 		return(hp->rem_ip);
 	if (!strcmp(spec, "remote.port"))
 		return(hp->rem_port);
+	if (!strcmp(spec, "remote.path"))
+		return(hp->rem_path);
 	if (!strcmp(spec, "req.method"))
 		return(hp->req[0]);
 	if (!strcmp(spec, "req.url"))
@@ -1871,12 +1874,15 @@ http_process(struct vtclog *vl, const char *spec, int sock, int *sfd,
 	hp->gziplevel = 0;
 	hp->gzipresidual = -1;
 
-	if (*addr != '/')
+	if (*addr != '/') {
 		VTCP_hisname(sock, hp->rem_ip, VTCP_ADDRBUFSIZE, hp->rem_port,
 			     VTCP_PORTBUFSIZE);
+		hp->rem_path = NULL;
+	}
 	else {
 		strcpy(hp->rem_ip, "0.0.0.0");
 		strcpy(hp->rem_port, "0");
+		hp->rem_path = strdup(addr);
 	}
 	parse_string(spec, http_cmds, hp, vl);
 	if (hp->h2)
