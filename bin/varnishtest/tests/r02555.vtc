@@ -1,0 +1,68 @@
+varnishtest "Expiry during processing"
+
+# When a object runs out of ttl+grace during processing of a
+# request, we want the calculation in the builtin VCL to match
+# the calculation of hit+grace in the C code.
+
+barrier b1 sock 2
+barrier b2 sock 2
+
+server s1 {
+	rxreq
+	expect req.url == "/1"
+	txresp
+
+	# If we get a second request to /1 here, it will be because a
+	# hit was became a miss in the builtin sub vcl_hit or because
+	# we never got to vcl_hit. We want a hit and a deliver.
+
+	rxreq
+	expect req.url == "/2"
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+	import vtc;
+
+	sub vcl_recv {
+		if (req.http.Sleep) {
+			# This will make the object expire while inside this VCL sub
+			vtc.barrier_sync("${b1_sock}");
+			vtc.barrier_sync("${b2_sock}");
+		}
+		# Update the last timestamp inside varnish
+		std.timestamp("T");
+	}
+	sub vcl_hit {
+		set req.http.X-was-hit = "true";
+		# no return here. Will the builtin VCL take us to vcl_miss?
+	}
+	sub vcl_miss {
+		set req.http.X-was-miss = "true";
+	}
+	sub vcl_backend_response {
+		# Very little ttl, a lot of keep
+		set beresp.ttl = 1s;
+		set beresp.grace = 0s;
+		set beresp.keep = 1w;
+	}
+} -start
+
+client c1 {
+	delay .5
+	txreq -url "/1"
+	rxresp
+	txreq -url "/1" -hdr "Sleep: true"
+	rxresp
+	# Final request to verify that the right amount of requests got to the backend
+	txreq -url "/2"
+	rxresp
+} -start
+
+# help for sleeping inside of vcl
+barrier b1 sync
+delay 1.5
+barrier b2 sync
+
+client c1 -wait

@@ -1126,6 +1126,8 @@ vcl_call_method(struct worker *wrk, struct req *req, struct busyobj *bo,
 		ctx.ws = req->ws;
 	}
 	if (bo != NULL) {
+		if(req)
+			assert(method == VCL_MET_PIPE);
 		CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 		CHECK_OBJ_NOTNULL(bo->vcl, VCL_MAGIC);
 		vsl = bo->vsl;
