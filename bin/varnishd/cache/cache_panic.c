@@ -519,7 +519,11 @@ pan_sess(struct vsb *vsb, const struct sess *sp)
 	VSB_printf(vsb, "\n");
 	ci = SES_Get_String_Attr(sp, SA_CLIENT_IP);
 	cp = SES_Get_String_Attr(sp, SA_CLIENT_PORT);
-	VSB_printf(vsb, "client = %s %s,\n", ci, cp);
+	if (VALID_OBJ(sp->listen_sock, LISTEN_SOCK_MAGIC))
+		VSB_printf(vsb, "client = %s %s %s,\n", ci, cp,
+			   sp->listen_sock->endpoint);
+	else
+		VSB_printf(vsb, "client = %s %s <unknown>\n", ci, cp);
 
 	VSB_indent(vsb, -2);
 	VSB_printf(vsb, "},\n");
