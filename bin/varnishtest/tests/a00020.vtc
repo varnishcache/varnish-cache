@@ -1,0 +1,34 @@
+varnishtest "vtc remote.ip, remote.port and remote.path"
+
+server s1 {
+	rxreq
+	expect remote.ip == "${localhost}"
+	expect remote.port > 0
+	expect remote.path == <undef>
+	txresp
+} -start
+
+varnish v1 -vcl+backend {} -start
+
+client c1 {
+	txreq
+	rxresp
+	expect remote.ip == "${v1_addr}"
+	expect remote.port == "${v1_port}"
+	expect remote.path == <undef>
+} -run
+
+varnish v1 -stop
+
+server s1 -wait
+server s1 -start
+
+varnish v2 -arg "-a ${tmpdir}/v2.sock" -vcl+backend {} -start
+
+client c1 -connect "${tmpdir}/v2.sock" {
+	txreq
+	rxresp
+	expect remote.ip == "0.0.0.0"
+	expect remote.port == 0
+	expect remote.path == "${tmpdir}/v2.sock"
+} -run
