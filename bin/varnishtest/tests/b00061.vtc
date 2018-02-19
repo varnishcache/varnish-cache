@@ -1,0 +1,15 @@
+varnishtest "-b arg with a Unix domain socket"
+
+server s1 -listen "${tmpdir}/s1.sock" {
+	rxreq
+	txresp -hdr "s1: got it"
+} -start
+
+varnish v1 -arg "-b ${s1_sock}" -start
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 200
+	expect resp.http.s1 == "got it"
+} -run
