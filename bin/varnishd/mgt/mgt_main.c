@@ -593,7 +593,12 @@ main(int argc, char * const *argv)
 			AN(vsb);
 			VSB_printf(vsb, "vcl 4.0;\n");
 			VSB_printf(vsb, "backend default {\n");
-			VSB_printf(vsb, "    .host = \"%s\";\n", optarg);
+			if (*optarg != '/')
+				VSB_printf(vsb, "    .host = \"%s\";\n",
+					   optarg);
+			else
+				VSB_printf(vsb, "    .path = \"%s\";\n",
+					   optarg);
 			VSB_printf(vsb, "}\n");
 			AZ(VSB_finish(vsb));
 			fa->src = strdup(VSB_data(vsb));
