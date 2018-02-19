@@ -63,3 +63,10 @@ varnish v1 -errvcl {Comparison of different types: STRING '==' INT} {
 		}
 	}
 }
+
+varnish v1 -errvcl {Unknown variable: 'req.http.req.http.foo'} {
+	backend b { .host = "127.0.0.1"; }
+	sub vcl_recv {
+		set req.http.req.http.foo = "bar";
+	}
+}
