@@ -137,6 +137,19 @@ Fixed bugs
 **TODO**
 
 ================================
+Varnish Cache 5.2.1 (2017-11-14)
+================================
+
+Bugs fixed
+----------
+
+* 2429_ - Avoid buffer read overflow on vcl_backend_error and -sfile
+* 2492_ - Use the idle read timeout only on empty requests.
+
+.. _2429: https://github.com/varnishcache/varnish-cache/pull/2429
+.. _2492: https://github.com/varnishcache/varnish-cache/issues/2492
+
+================================
 Varnish Cache 5.2.0 (2017-09-15)
 ================================
 
