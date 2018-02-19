@@ -178,6 +178,51 @@ http1_req_fail(struct req *req, enum sess_close reason)
 		SES_Close(req->sp, reason);
 }
 
+/*----------------------------------------------------------------------
+ */
+
+static int
+http1_req_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
+{
+	AZ(wrk->aws->r);
+	AZ(req->ws->r);
+	Req_Cleanup(sp, wrk, req);
+
+	if (sp->fd >= 0 && req->doclose != SC_NULL)
+		SES_Close(sp, req->doclose);
+
+	if (sp->fd < 0) {
+		wrk->stats->sess_closed++;
+		AZ(req->vcl);
+		Req_Release(req);
+		SES_Delete(sp, SC_NULL, NAN);
+		return (1);
+	}
+
+	return (0);
+}
+
+/*----------------------------------------------------------------------
+ * Clean up a req from waiting list which cannot complete
+ */
+
+static void
+http1_cleanup_waiting(struct worker *wrk, struct req *req,
+    enum sess_close reason)
+{
+	struct sess *sp;
+
+	sp = req->sp;
+	CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+	AN(req->ws->r);
+	WS_Release(req->ws, 0);
+	AN(req->hash_objhead);
+	(void)HSH_DerefObjHead(wrk, &req->hash_objhead);
+	AZ(req->hash_objhead);
+	SES_Close(sp, reason);
+	AN(http1_req_cleanup(sp, wrk, req));
+}
+
 static void v_matchproto_(vtr_reembark_f)
 http1_reembark(struct worker *wrk, struct req *req)
 {
@@ -188,19 +233,15 @@ http1_reembark(struct worker *wrk, struct req *req)
 
 	http1_setstate(sp, H1BUSY);
 
-	if (!SES_Reschedule_Req(req, TASK_QUEUE_REQ))
+	if (!DO_DEBUG(DBG_FAILRESCHED) &&
+	    !SES_Reschedule_Req(req, TASK_QUEUE_REQ))
 		return;
 
 	/* Couldn't schedule, ditch */
 	wrk->stats->busy_wakeup--;
 	wrk->stats->busy_killed++;
-	AN (req->vcl);
-	VCL_Rel(&req->vcl);
-	Req_AcctLogCharge(wrk->stats, req);
-	Req_Release(req);
-	SES_Delete(sp, SC_OVERLOAD, NAN);
-	DSL(DBG_WAITINGLIST, req->vsl->wid, "kill from waiting list");
-	usleep(10000);
+	VSLb(req->vsl, SLT_Error, "Fail to reschedule req from waiting list");
+	http1_cleanup_waiting(wrk, req, SC_OVERLOAD);
 }
 
 static int v_matchproto_(vtr_minimal_response_f)
@@ -321,30 +362,6 @@ http1_dissect(struct worker *wrk, struct req *req)
 	default:
 		WRONG("Unknown req_body_status situation");
 	}
-	return (0);
-}
-
-/*----------------------------------------------------------------------
- */
-
-static int
-http1_req_cleanup(struct sess *sp, struct worker *wrk, struct req *req)
-{
-	AZ(wrk->aws->r);
-	AZ(req->ws->r);
-	Req_Cleanup(sp, wrk, req);
-
-	if (sp->fd >= 0 && req->doclose != SC_NULL)
-		SES_Close(sp, req->doclose);
-
-	if (sp->fd < 0) {
-		wrk->stats->sess_closed++;
-		AZ(req->vcl);
-		Req_Release(req);
-		SES_Delete(sp, SC_NULL, NAN);
-		return (1);
-	}
-
 	return (0);
 }
 
@@ -477,13 +494,7 @@ HTTP1_Session(struct worker *wrk, struct req *req)
 			 * Check to see if the remote has left.
 			 */
 			if (VTCP_check_hup(sp->fd)) {
-				AN(req->ws->r);
-				WS_Release(req->ws, 0);
-				AN(req->hash_objhead);
-				(void)HSH_DerefObjHead(wrk, &req->hash_objhead);
-				AZ(req->hash_objhead);
-				SES_Close(sp, SC_REM_CLOSE);
-				AN(http1_req_cleanup(sp, wrk, req));
+				http1_cleanup_waiting(wrk, req, SC_REM_CLOSE);
 				return;
 			}
 			http1_setstate(sp, H1PROC);
