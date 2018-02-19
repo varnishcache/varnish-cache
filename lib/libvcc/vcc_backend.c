@@ -81,20 +81,19 @@ Emit_Sockaddr(struct vcc *tl, const struct token *t_host,
 		Fb(tl, 0, "\t.ipv6_addr = \"%s\",\n", ipv6a);
 	}
 	Fb(tl, 0, "\t.port = \"%s\",\n", pa);
+	Fb(tl, 0, "\t.path = (void *) 0,\n");
 }
 
 /*--------------------------------------------------------------------
- * Parse a backend probe specification
+ * Disallow mutually exclusive field definitions
  */
 
 static void
-vcc_ProbeRedef(struct vcc *tl, struct token **t_did,
+vcc_Redef(struct vcc *tl, const char *redef, struct token **t_did,
     struct token *t_field)
 {
-	/* .url and .request are mutually exclusive */
-
 	if (*t_did != NULL) {
-		VSB_printf(tl->sb, "Probe request redefinition at:\n");
+		VSB_printf(tl->sb, "%s redefinition at:\n", redef);
 		vcc_ErrWhere(tl, t_field);
 		VSB_printf(tl->sb, "Previous definition:\n");
 		vcc_ErrWhere(tl, *t_did);
@@ -102,6 +101,10 @@ vcc_ProbeRedef(struct vcc *tl, struct token **t_did,
 	}
 	*t_did = t_field;
 }
+
+/*--------------------------------------------------------------------
+ * Parse a backend probe specification
+ */
 
 static void
 vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **name)
@@ -152,7 +155,7 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **name)
 		vcc_IsField(tl, &t_field, fs);
 		ERRCHK(tl);
 		if (vcc_IdIs(t_field, "url")) {
-			vcc_ProbeRedef(tl, &t_did, t_field);
+			vcc_Redef(tl, "Probe request", &t_did, t_field);
 			ERRCHK(tl);
 			ExpectErr(tl, CSTR);
 			Fh(tl, 0, "\t.url = ");
@@ -160,7 +163,7 @@ vcc_ParseProbeSpec(struct vcc *tl, const struct symbol *sym, char **name)
 			Fh(tl, 0, ",\n");
 			vcc_NextToken(tl);
 		} else if (vcc_IdIs(t_field, "request")) {
-			vcc_ProbeRedef(tl, &t_did, t_field);
+			vcc_Redef(tl, "Probe request", &t_did, t_field);
 			ERRCHK(tl);
 			ExpectErr(tl, CSTR);
 			Fh(tl, 0, "\t.request =\n");
@@ -294,8 +297,10 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	struct token *t_val;
 	struct token *t_host = NULL;
 	struct token *t_port = NULL;
+	struct token *t_path = NULL;
 	struct token *t_hosthdr = NULL;
 	struct symbol *pb;
+	struct token *t_did = NULL;
 	struct fld_spec *fs;
 	struct inifin *ifp;
 	struct vsb *vsb;
@@ -304,8 +309,9 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	double t;
 
 	fs = vcc_FldSpec(tl,
-	    "!host",
+	    "?host",
 	    "?port",
+	    "?path",
 	    "?host_header",
 	    "?connect_timeout",
 	    "?first_byte_timeout",
@@ -345,6 +351,8 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 		vcc_IsField(tl, &t_field, fs);
 		ERRCHK(tl);
 		if (vcc_IdIs(t_field, "host")) {
+			vcc_Redef(tl, "Address", &t_did, t_field);
+			ERRCHK(tl);
 			ExpectErr(tl, CSTR);
 			assert(tl->t->dec != NULL);
 			t_host = tl->t;
@@ -354,6 +362,14 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 			ExpectErr(tl, CSTR);
 			assert(tl->t->dec != NULL);
 			t_port = tl->t;
+			vcc_NextToken(tl);
+			SkipToken(tl, ';');
+		} else if (vcc_IdIs(t_field, "path")) {
+			vcc_Redef(tl, "Address", &t_did, t_field);
+			ERRCHK(tl);
+			ExpectErr(tl, CSTR);
+			assert(tl->t->dec != NULL);
+			t_path = tl->t;
 			vcc_NextToken(tl);
 			SkipToken(tl, ';');
 		} else if (vcc_IdIs(t_field, "host_header")) {
@@ -430,9 +446,19 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	vcc_FieldsOk(tl, fs);
 	ERRCHK(tl);
 
-	/* Check that the hostname makes sense */
-	assert(t_host != NULL);
-	Emit_Sockaddr(tl, t_host, t_port);
+	if (t_host == NULL && t_path == NULL) {
+		VSB_printf(tl->sb, "Expected .host or .path.\n");
+		vcc_ErrWhere(tl, t_be);
+		return;
+	}
+
+	assert(t_host != NULL || t_path != NULL);
+	if (t_host != NULL)
+		/* Check that the hostname makes sense */
+		Emit_Sockaddr(tl, t_host, t_port);
+	else
+		/* Check that the path can be a legal UDS */
+		Emit_UDS_Path(tl, t_path, "Backend path");
 	ERRCHK(tl);
 
 	ExpectErr(tl, '}');
@@ -440,11 +466,14 @@ vcc_ParseHostDef(struct vcc *tl, const struct token *t_be, const char *vgcname)
 	/* We have parsed it all, emit the ident string */
 
 	/* Emit the hosthdr field, fall back to .host if not specified */
+	/* If .path is specified, set "0.0.0.0". */
 	Fb(tl, 0, "\t.hosthdr = ");
 	if (t_hosthdr != NULL)
 		EncToken(tl->fb, t_hosthdr);
-	else
+	else if (t_host != NULL)
 		EncToken(tl->fb, t_host);
+	else
+		Fb(tl, 0, "\"0.0.0.0\"");
 	Fb(tl, 0, ",\n");
 
 	/* Close the struct */

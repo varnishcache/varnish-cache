@@ -283,7 +283,9 @@ vbp_poke(struct vbp_target *vt)
 	}
 
 	i = VSA_Get_Proto(sa);
-	if (i == AF_INET)
+	if (VSA_Compare(sa, bogo_ip) == 0)
+		vt->good_unix |= 1;
+	else if (i == AF_INET)
 		vt->good_ipv4 |= 1;
 	else if (i == AF_INET6)
 		vt->good_ipv6 |= 1;

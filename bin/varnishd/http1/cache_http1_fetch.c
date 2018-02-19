@@ -70,7 +70,7 @@ vbf_iter_req_body(void *priv, int flush, const void *ptr, ssize_t l)
 
 int
 V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
-    uint64_t *ctr_bodybytes, int onlycached)
+    uint64_t *ctr_bodybytes, int onlycached, char *abuf, char *pbuf)
 {
 	struct http *hp;
 	int j;
@@ -78,8 +78,6 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 	uint64_t bytes, hdrbytes;
 	struct http_conn *htc;
 	int do_chunked = 0;
-	char abuf[VTCP_ADDRBUFSIZE];
-	char pbuf[VTCP_PORTBUFSIZE];
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
@@ -98,7 +96,6 @@ V1F_SendReq(struct worker *wrk, struct busyobj *bo, uint64_t *ctr_hdrbytes,
 		do_chunked = 1;
 	}
 
-	VTCP_hisname(*htc->rfd, abuf, sizeof abuf, pbuf, sizeof pbuf);
 	VSLb(bo->vsl, SLT_BackendStart, "%s %s", abuf, pbuf);
 
 	(void)VTCP_blocking(*htc->rfd);	/* XXX: we should timeout instead */

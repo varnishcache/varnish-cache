@@ -1,0 +1,70 @@
+varnishtest "Check req.backend.healthy with UDS backends"
+
+barrier b1 cond 2
+barrier b2 cond 2
+barrier b3 cond 2
+barrier b4 cond 2
+
+server s1 -listen "${tmpdir}/s1.sock" {
+	rxreq
+	barrier b1 sync
+	expect req.url == "/"
+	txresp -body "slash"
+	accept
+	rxreq
+	barrier b2 sync
+	barrier b3 sync
+	expect req.url == "/"
+	txresp -body "slash"
+	accept
+	barrier b4 sync
+} -start
+
+varnish v1 -vcl {
+
+	import std;
+
+	probe foo {
+		.url = "/";
+		.timeout = 1s;
+		.interval = 1s;
+		.window = 3;
+		.threshold = 2;
+		.initial = 0;
+	}
+
+	backend default {
+		.path = "${s1_sock}";
+		.max_connections = 1;
+		.probe = foo;
+	}
+
+	sub vcl_recv {
+		if (std.healthy(default)) {
+			return(synth(200,"Backend healthy"));
+		} else {
+			return(synth(500,"Backend sick"));
+		}
+	}
+} -start
+
+varnish v1 -cliok "backend.list -p"
+
+client c1 {
+	txreq
+	rxresp
+	expect resp.status == 500
+
+	barrier b1 sync
+
+	barrier b2 sync
+	txreq
+	rxresp
+	expect resp.status == 500
+
+	barrier b3 sync
+	barrier b4 sync
+	txreq
+	rxresp
+	expect resp.status == 200
+} -run

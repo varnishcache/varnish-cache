@@ -1,6 +1,6 @@
 varnishtest "Does anything get through Unix domain sockets at all ?"
 
-server s1 {
+server s1 -listen "${tmpdir}/s1.sock" {
 	rxreq
 	txresp -body "012345\n"
 } -start

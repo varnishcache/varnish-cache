@@ -53,6 +53,7 @@
  *
  *
  * 6.2 (scheduled for: 2018-03-15)
+ *	path field added to struct vrt_backend
  *	VRT_Healthy() added
  *	VRT_VSC_Alloc() added
  *	VRT_VSC_Destroy() added
@@ -253,6 +254,7 @@ extern const void * const vrt_magic_string_unset;
 	rigid char			*ipv4_addr;		\
 	rigid char			*ipv6_addr;		\
 	rigid char			*port;			\
+	rigid char			*path;			\
 	rigid char			*hosthdr;		\
 	double				connect_timeout;	\
 	double				first_byte_timeout;	\
@@ -266,6 +268,7 @@ extern const void * const vrt_magic_string_unset;
 		DA(ipv4_addr);			\
 		DA(ipv6_addr);			\
 		DA(port);			\
+		DA(path);			\
 		DA(hosthdr);			\
 		DN(connect_timeout);		\
 		DN(first_byte_timeout);		\

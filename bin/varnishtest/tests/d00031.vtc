@@ -1,0 +1,86 @@
+varnishtest "Test round robin director with UDS backends"
+
+server s1 -listen "${tmpdir}/s1.sock" {
+	rxreq
+	txresp -body "1"
+} -start
+
+server s2 -listen "${tmpdir}/s2.sock" {
+	rxreq
+	txresp -body "22"
+} -start
+
+server s3 -listen "${tmpdir}/s3.sock" {
+	rxreq
+	txresp -body "333"
+} -start
+
+server s4 -listen "${tmpdir}/s4.sock" {
+	rxreq
+	txresp -body "4444"
+} -start
+
+varnish v1 -vcl+backend {
+	import directors;
+
+	sub vcl_init {
+		new rr = directors.round_robin();
+		rr.add_backend(s1);
+		rr.add_backend(s2);
+		rr.add_backend(s3);
+		rr.add_backend(s4);
+	}
+
+	sub vcl_recv {
+		if (req.method == "DELETE") {
+			rr.remove_backend(s1);
+			rr.remove_backend(s2);
+			rr.remove_backend(s3);
+			return(synth(204));
+		}
+	}
+
+	sub vcl_backend_fetch {
+		set bereq.backend = rr.backend();
+	}
+} -start
+
+client c1 {
+	timeout 3
+	txreq -url "/foo1"
+	rxresp
+	expect resp.bodylen == 1
+	txreq -url "/foo2"
+	rxresp
+	expect resp.bodylen == 2
+	txreq -url "/foo3"
+	rxresp
+	expect resp.bodylen == 3
+	txreq -url "/foo4"
+	rxresp
+	expect resp.bodylen == 4
+} -run
+
+server s1 -start
+server s2 -start
+
+client c2 {
+	timeout 3
+	txreq -url "/foo11"
+	rxresp
+	expect resp.bodylen == 1
+	txreq -url "/foo22"
+	rxresp
+	expect resp.bodylen == 2
+} -run
+
+server s4 -start
+
+client c3 {
+	txreq -req "DELETE"
+	rxresp
+	expect resp.status == 204
+	txreq -url "/foo31"
+	rxresp
+	expect resp.bodylen == 4
+} -run

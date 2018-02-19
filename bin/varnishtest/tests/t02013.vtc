@@ -1,6 +1,6 @@
 varnishtest	"Direct H2 start over Unix domain sockets"
 
-server s1 {
+server s1 -listen "${tmpdir}/s1.sock" {
 	rxreq
 	expect req.http.host == foo.bar
 	txresp \
