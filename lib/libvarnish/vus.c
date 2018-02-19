@@ -85,7 +85,7 @@ VUS_bind(const struct sockaddr_un *uds, const char **errp)
 		return (-1);
 	}
 
-	if (bind(sd, (const struct sockaddr *)uds, sl) != 0) {
+	if (bind(sd, (const void*)uds, sl) != 0) {
 		if (errp != NULL)
 			*errp = "bind(2)";
 		e = errno;
