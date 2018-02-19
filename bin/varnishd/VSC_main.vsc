@@ -307,6 +307,12 @@
 
 	Number of move operations done on the LRU list.
 
+.. varnish_vsc:: n_lru_limited
+	:oneliner:	Reached nuke_limit
+
+	Number of times more storage space were needed, but limit was reached in
+	a nuke_limit. See also parameter nuke_limit.
+
 .. varnish_vsc:: losthdr
 	:oneliner:	HTTP header overflows
 
