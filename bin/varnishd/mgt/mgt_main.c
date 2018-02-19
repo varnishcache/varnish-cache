@@ -46,6 +46,7 @@
 #include "common/heritage.h"
 
 #include "hash/hash_slinger.h"
+#include "libvcc.h"
 #include "vav.h"
 #include "vcli_serve.h"
 #include "vend.h"
@@ -274,6 +275,9 @@ mgt_initialize(struct cli *cli)
 	mgt_cli_init_cls();		// CLI commands can be registered
 
 	MCF_InitParams(cli);
+
+	VCC_VCL_Range(&heritage.min_vcl, &heritage.max_vcl);
+
 	cli_check(cli);
 }
 

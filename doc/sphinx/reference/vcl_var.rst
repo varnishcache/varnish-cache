@@ -29,7 +29,7 @@ When setting a variable, the right hand side of the equal sign
 must have the variables type, you cannot assign a STRING to
 a variable of type NUMBER, even if the string is `"42"`.
 (Explicit conversion functions can be found in
-:ref:`vmod_std(3)` .
+:ref:`vmod_std(3)`).
 
 local, server, remote and client
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

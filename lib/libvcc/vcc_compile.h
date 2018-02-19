@@ -41,9 +41,18 @@
 
 #include "vcc_token_defs.h"
 
-#ifndef NULL
-#define NULL ((void*)0)
-#endif
+/*---------------------------------------------------------------------
+ * VCL version stuff
+ */
+
+#define VCL_LOW		40		// Lowest VCC supports
+#define VCL_HIGH	41		// Highest VCC supports
+
+// Specific VCL versions
+#define	VCL_40		40
+#define	VCL_41		41
+
+/*---------------------------------------------------------------------*/
 
 struct vsb;
 struct token;
@@ -126,11 +135,15 @@ struct symbol {
 	VTAILQ_ENTRY(symbol)		list;
 	VTAILQ_HEAD(,symbol)		children;
 
+	char				*name;
+	unsigned			nlen;
+
+	unsigned			lorev;
+	unsigned			hirev;
+
 	struct symbol			*parent;
 	const char			*vmod;
 
-	char				*name;
-	unsigned			nlen;
 	sym_wildcard_t			*wildcard;
 	vcc_kind_t			kind;
 

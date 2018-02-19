@@ -93,6 +93,8 @@ vcc_new_symbol(struct vcc *tl, const char *b, const char *e)
 	VTAILQ_INIT(&sym->children);
 	sym->kind = SYM_NONE;
 	sym->type = VOID;
+	sym->lorev = VCL_LOW;
+	sym->hirev = VCL_HIGH;
 	return (sym);
 }
 
@@ -140,7 +142,8 @@ VCC_Symbol(struct vcc *tl, struct symbol *parent,
 			break;
 		if ((kind == SYM_NONE && kind == sym->kind))
 			continue;
-		if (tl->syntax < 41 && (kind != SYM_NONE && kind != sym->kind))
+		if (tl->syntax < VCL_41 &&
+		     (kind != SYM_NONE && kind != sym->kind))
 			continue;
 		break;
 	}
@@ -192,7 +195,7 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x)
 	struct symbol *sym;
 
 	AN(e);
-	if (tl->syntax >= 41 && e == SYMTAB_CREATE && kind != SYM_SUB &&
+	if (tl->syntax >= VCL_41 && e == SYMTAB_CREATE && kind != SYM_SUB &&
 	    (tl->t->b[0] == 'v'|| tl->t->b[0] == 'V') &&
 	    (tl->t->b[1] == 'c'|| tl->t->b[1] == 'C') &&
 	    (tl->t->b[2] == 'l'|| tl->t->b[2] == 'L')) {
@@ -212,6 +215,20 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x)
 		VSB_cat(tl->sb, "\nAt: ");
 		vcc_ErrWhere(tl, tl->t);
 		return (NULL);
+	}
+	if (sym->lorev > tl->syntax || sym->hirev < tl->syntax) {
+		VSB_printf(tl->sb, "Symbol ");
+		vcc_ErrToken(tl, tl->t);
+		if (sym->lorev > tl->syntax)
+			VSB_printf(tl->sb, " needs vcl %.1f or higher.",
+			    .1 * sym->lorev);
+		else
+			VSB_printf(tl->sb,
+			    " is discontinued after vcl %.1f.",
+			    .1 * sym->hirev);
+		VSB_cat(tl->sb, "\nAt: ");
+		vcc_ErrWhere(tl, tl->t);
+		return(NULL);
 	}
 	if (kind != SYM_NONE && kind != sym->kind) {
 		VSB_printf(tl->sb, "Symbol ");

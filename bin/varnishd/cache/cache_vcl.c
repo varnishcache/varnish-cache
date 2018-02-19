@@ -518,6 +518,12 @@ VCL_Open(const char *fn, struct vsb *msg)
 		(void)dlclose(dlh);
 		return (NULL);
 	}
+	if (cnf->syntax < heritage.min_vcl || cnf->syntax > heritage.max_vcl) {
+		VSB_printf(msg, "Compiled VCL version (%.1f) not supported.\n",
+		    .1 * cnf->syntax);
+		(void)dlclose(dlh);
+		return (NULL);
+	}
 	ALLOC_OBJ(vcl, VCL_MAGIC);
 	AN(vcl);
 	AZ(errno=pthread_rwlock_init(&vcl->temp_rwl, NULL));

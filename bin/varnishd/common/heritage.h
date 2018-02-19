@@ -81,6 +81,9 @@ struct heritage {
 	long				mgt_pid;
 
 	struct vsmw			*proc_vsmw;
+
+	unsigned			min_vcl;
+	unsigned			max_vcl;
 };
 
 extern struct heritage heritage;

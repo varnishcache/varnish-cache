@@ -670,6 +670,19 @@ vcc_CompileSource(struct vcc *tl, struct source *sp)
 }
 
 /*--------------------------------------------------------------------
+ * Report the range of VCL language we support
+ */
+void
+VCC_VCL_Range(unsigned *lo, unsigned *hi)
+{
+
+	AN(lo);
+	*lo = VCL_LOW;
+	AN(hi);
+	*hi = VCL_HIGH;
+}
+
+/*--------------------------------------------------------------------
  * Compile the VCL code in the argument.  Error messages, if any are
  * formatted into the vsb.
  */

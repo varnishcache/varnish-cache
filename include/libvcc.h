@@ -40,6 +40,7 @@ void VCC_Unsafe_Path(struct vcc *, unsigned);
 void VCC_VCL_path(struct vcc *, const char *);
 void VCC_VMOD_path(struct vcc *, const char *);
 void VCC_Predef(struct vcc *, const char *type, const char *name);
+void VCC_VCL_Range(unsigned *, unsigned *);
 
 struct vsb *VCC_Compile(struct vcc *, struct vsb **,
     const char *vclsrc, const char *vclsrcfile);
