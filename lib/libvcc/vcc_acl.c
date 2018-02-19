@@ -391,9 +391,9 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
 			depth--;
 		}
 
-		m = ae->mask;
+		m = (int)ae->mask;
+		assert(m >= l*8);
 		m -= l * 8;
-		assert(m >= 0);
 
 		/* Do whole byte compares */
 		for (i = l; m >= 8; m -= 8, i++) {
@@ -416,7 +416,7 @@ vcc_acl_emit(struct vcc *tl, const char *name, const char *rname, int anon)
 			depth = i;
 		}
 
-		i = (ae->mask + 7) / 8;
+		i = ((int)ae->mask + 7) / 8;
 
 		if (!anon) {
 			Fh(tl, 0, "\t%*sVRT_acl_log(ctx, \"%sMATCH %s \" ",
