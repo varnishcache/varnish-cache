@@ -1,12 +1,13 @@
 varnishtest "VSL tags affected by the use of UDS addresses"
 
-varnish v1 -arg "-a foo=${tmpdir}/foo.sock -a bar=${tmpdir}/bar.sock" -vcl {
-	backend b { .host = "${bad_ip}"; }
-
-	sub vcl_recv { return(synth(200)); }
+server s1 -listen "${tmpdir}/s1.sock" {
+	rxreq
+	txresp
 } -start
 
-client c1 -connect "${tmpdir}/foo.sock" {
+varnish v1 -arg "-a foo=${tmpdir}/v1.sock" -vcl+backend {} -start
+
+client c1 -connect "${tmpdir}/v1.sock" {
 	txreq
 	rxresp
 } -run
@@ -16,45 +17,12 @@ logexpect l1 -v v1 -d 1 -g session {
 	expect 0 =	SessOpen	"^0.0.0.0 0 foo 0.0.0.0 0"
 } -run
 
-logexpect l2 -v v1 -d 1 -g vxid {
+logexpect l2 -v v1 -d 1 -g vxid -c {
 	expect 0 1001	Begin
-	expect * =	ReqStart	"^0.0.0.0 0 foo$"
+	expect * =	ReqStart	"^0.0.0.0 0$"
 } -run
 
-logexpect l1 -v v1 -d 0 -g session {
-	expect 0 *	Begin
-	expect 0 =	SessOpen	"^0.0.0.0 0 bar 0.0.0.0 0"
-} -start
-
-logexpect l2 -v v1 -d 0 -g vxid {
-	expect 0 *	Begin
-	expect * =	ReqStart	"^0.0.0.0 0 bar"
-} -start
-
-client c1 -connect "${tmpdir}/bar.sock" {
-	txreq
-	rxresp
-} -run
-
-logexpect l1 -wait
-logexpect l2 -wait
-
-varnish v1 -stop
-
-# For completeness, also test the endpoint name field in ReqStart when
-# Varnish listens at an IP address.
-varnish v2 -vcl {
-	backend b { .host = "${bad_ip}"; }
-
-	sub vcl_recv { return(synth(200)); }
-} -start
-
-client c2 -connect ${v2_sock} {
-	txreq
-	rxresp
-} -run
-
-logexpect l3 -v v2 -d 1 -g vxid {
-	expect 0 1001	Begin
-	expect * =	ReqStart	"^${v2_addr} [0-9]+ a0$"
+logexpect l2 -v v1 -d 1 -g vxid -b {
+	expect 0 1002	Begin
+	expect * =	BackendOpen	"${s1_sock} - - -$"
 } -run

@@ -87,7 +87,7 @@ varnish v1 -errvcl "Unknown field:" {
 	}
 }
 
-varnish v1 -errvcl "Mandatory field 'host' missing." {
+varnish v1 -errvcl "Expected .host or .path." {
 	backend b1 {
 		.port = "NONE";
 	}
@@ -108,4 +108,31 @@ varnish v1 -errvcl "Only one default director possible." {
 varnish v1 -errvcl "Unused backend b1, defined:" {
 	backend b1 { .host = "127.0.0.1"; }
 	backend default { .host = "127.0.0.1"; }
+}
+
+varnish v1 -errvcl "Address redefinition at:" {
+	backend b1 {
+		.host = "127.0.0.1";
+		.path = "/path/to/uds";
+	}
+}
+
+varnish v1 -errvcl "Must be an absolute path:" {
+	backend b1 {
+		.path = "server.sock";
+	}
+}
+
+shell { rm -f ${tmpdir}/foo }
+
+varnish v1 -errvcl "Cannot stat:" {
+	backend b1 {
+		.path = "${tmpdir}/foo";
+	}
+}
+
+varnish v1 -errvcl "Not a socket:" {
+	backend b1 {
+		.path = "${tmpdir}";
+	}
 }

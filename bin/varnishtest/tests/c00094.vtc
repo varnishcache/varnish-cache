@@ -1,0 +1,51 @@
+varnishtest "Test Backend Polling with a backend listening at a UDS"
+
+barrier b1 cond 2
+
+server s1 -listen "${tmpdir}/s1.sock" {
+	# Probes
+	loop 8 {
+		rxreq
+		expect req.url == "/"
+		txresp -hdr "Bar: foo" -body "foobar"
+		accept
+	}
+
+	loop 3 {
+		rxreq
+		expect req.url == "/"
+		txresp -status 404 -hdr "Bar: foo" -body "foobar"
+		accept
+	}
+	loop 2 {
+		rxreq
+		expect req.url == "/"
+		txresp -proto "FROBOZ" -status 200 -hdr "Bar: foo" -body "foobar"
+		accept
+	}
+	loop 2 {
+		rxreq
+		expect req.url == "/"
+		send "HTTP/1.1 200 \r\n"
+		accept
+	}
+
+	barrier b1 sync
+} -start
+
+varnish v1 -vcl {
+
+	backend foo {
+		.path = "${s1_sock}";
+		.probe = {
+			.timeout = 1 s;
+			.interval = 0.1 s;
+		}
+	}
+
+} -start
+
+barrier b1 sync
+
+varnish v1 -cliexpect "^CLI RX|  -+U+ Good UNIX" "backend.list -p"
+varnish v1 -cliexpect "^CLI RX|  -+H{10}-{5}H{2}-{0,5} Happy" "backend.list -p"

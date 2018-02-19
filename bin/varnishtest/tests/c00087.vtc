@@ -1,6 +1,6 @@
 varnishtest "VCL *.ip vars as bogo-IPs when -a is UDS, and test ACL matches"
 
-server s1 {
+server s1 -listen "${tmpdir}/s1.sock" {
 	rxreq
 	txresp
 } -start

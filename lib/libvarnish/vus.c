@@ -32,10 +32,12 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <poll.h>
 
 #include "vdef.h"
 #include "vas.h"
 #include "vus.h"
+#include "vtcp.h"
 
 int
 VUS_resolver(const char *path, vus_resolved_f *func, void *priv,
@@ -94,4 +96,61 @@ VUS_bind(const struct sockaddr_un *uds, const char **errp)
 		return (-1);
 	}
 	return (sd);
+}
+
+int
+VUS_connect(const char *path, int msec)
+{
+	int s, i;
+	struct pollfd fds[1];
+	struct sockaddr_un uds;
+	socklen_t sl = (socklen_t) sizeof(uds);
+
+	if (path == NULL)
+		return (-1);
+	/* Attempt the connect */
+	assert(strlen(path) + 1 <= sizeof(uds.sun_path));
+	uds.sun_family = PF_UNIX;
+	strcpy(uds.sun_path, path);
+	AN(sl);
+
+	s = socket(PF_UNIX, SOCK_STREAM, 0);
+	if (s < 0)
+		return (s);
+
+	/* Set the socket non-blocking */
+	if (msec != 0)
+		(void)VTCP_nonblocking(s);
+
+	i = connect(s, (const struct sockaddr *)&uds, sl);
+	if (i == 0)
+		return (s);
+	if (errno != EINPROGRESS) {
+		closefd(&s);
+		return (-1);
+	}
+
+	if (msec < 0) {
+		/*
+		 * Caller is responsible for waiting and
+		 * calling VTCP_connected
+		 */
+		return (s);
+	}
+
+	assert(msec > 0);
+	/* Exercise our patience, polling for write */
+	fds[0].fd = s;
+	fds[0].events = POLLWRNORM;
+	fds[0].revents = 0;
+	i = poll(fds, 1, msec);
+
+	if (i == 0) {
+		/* Timeout, close and give up */
+		closefd(&s);
+		errno = ETIMEDOUT;
+		return (-1);
+	}
+
+	return (VTCP_connected(s));
 }
