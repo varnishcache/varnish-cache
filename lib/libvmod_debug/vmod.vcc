@@ -221,3 +221,12 @@ Add a vsc
 $Function VOID vsc_destroy()
 
 Remove a vsc
+
+$Function BLOB args(ARGMASK,
+	INT a=0, INT b=1, INT c=2, INT d=3, INT e=4, INT f=5, INT g=6, INT h=7,
+	INT i=8, INT j=9, INT k=10, INT l=11, INT m=12, INT n=13, INT o=14,
+	INT p=15, INT q=16, INT r=17, INT s=18, INT t=19, INT u=20, INT v=21,
+	INT w=22, INT x=23, INT y=24, INT z=25, INT aa=26, INT ab=27,
+	INT ac=28, INT ad=29, INT ae=30, INT af=31, INT ag=32)
+
+Test VCC_ARGMASK

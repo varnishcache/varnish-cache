@@ -10,6 +10,7 @@ varnish v1 -vcl+backend {
 	import std;
 	import debug;
 	import vtc;
+	import blob;
 
 	sub vcl_init {
 		new objx = debug.obj();
@@ -33,6 +34,10 @@ varnish v1 -vcl+backend {
 		std.log("VCL" + " initiated " + "log");
 		std.syslog(8 + 7, "Somebody runs varnishtest");
 		debug.rot52(resp);
+		set resp.http.a0 = blob.encode(HEX, blob=debug.args());
+		set resp.http.a2 = blob.encode(HEX, blob=debug.args(b=1,ag=32));
+		set resp.http.a5 = blob.encode(HEX, blob=debug.args(a=0,c=2));
+		set resp.http.aX = blob.encode(HEX, blob=debug.args(af=31));
 	}
 } -start
 
@@ -48,6 +53,10 @@ client c1 {
 	expect resp.http.encrypted == "ROT52"
 	expect resp.http.what >= 16
 	expect resp.http.not == -1
+	expect resp.http.a0 == "00000000"
+	expect resp.http.a2 == "00000002"
+	expect resp.http.a5 == "00000005"
+	expect resp.http.aX == "80000000"
 } -run
 
 logexpect l1 -v v1 -g raw -d 1 {
@@ -62,6 +71,10 @@ logexpect l1 -v v1 -g raw -d 1 {
 	expect 0 =    RespHeader	{^not: -1}
 	expect 0 =    VCL_Log		{^VCL initiated log}
 	expect 0 =    RespHeader	{^Encrypted: ROT52}
+	expect 0 =    RespHeader	{^a0: 00000000}
+	expect 0 =    RespHeader	{^a2: 00000002}
+	expect 0 =    RespHeader	{^a5: 00000005}
+	expect 0 =    RespHeader	{^aX: 80000000}
 	expect 0 =    VCL_return	{^deliver}
 } -start
 

@@ -41,6 +41,8 @@
 
 #include "vbm.h"
 #include "vrnd.h"
+#include "vsha256.h"
+#include "vend.h"
 
 #include "shard_dir.h"
 
@@ -85,6 +87,47 @@ sharddir_err(VRT_CTX, enum VSL_tag_e tag,  const char *fmt, ...)
 	else
 		VSLv(tag, 0, fmt, ap);
 	va_end(ap);
+}
+
+uint32_t
+sharddir_sha256v(const char *s, va_list ap)
+{
+	struct VSHA256Context sha256;
+	union {
+		unsigned char digest[32];
+		uint32_t uint32_digest[8];
+	} sha256_digest;
+	uint32_t r;
+	const char *p;
+
+	VSHA256_Init(&sha256);
+	p = s;
+	while (p != vrt_magic_string_end) {
+		if (p != NULL && *p != '\0')
+			VSHA256_Update(&sha256, p, strlen(p));
+		p = va_arg(ap, const char *);
+	}
+	VSHA256_Final(sha256_digest.digest, &sha256);
+
+	/*
+	 * use low 32 bits only
+	 * XXX: Are these the best bits to pick?
+	 */
+	vle32enc(&r, sha256_digest.uint32_digest[7]);
+	return (r);
+}
+
+uint32_t
+sharddir_sha256(const char *s, ...)
+{
+	va_list ap;
+	uint32_t r;
+
+	va_start(ap, s);
+	r = sharddir_sha256v(s, ap);
+	va_end(ap);
+
+	return (r);
 }
 
 static int
@@ -261,27 +304,39 @@ init_state(struct shard_state *state,
 	state->last.hostid = -1;
 }
 
+/* basically same as vdir_any_healthy
+ * - XXX we should embed a vdir
+ * - XXX should we return the health state of the actual backend
+ *   for healthy=IGNORE ?
+ */
+unsigned
+sharddir_any_healthy(struct sharddir *shardd, const struct busyobj *bo,
+    double *changed)
+{
+	unsigned retval = 0;
+	VCL_BACKEND be;
+	unsigned u;
+	double c;
+
+	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
+	CHECK_OBJ_ORNULL(bo, BUSYOBJ_MAGIC);
+	sharddir_rdlock(shardd);
+	if (changed != NULL)
+		*changed = 0;
+	for (u = 0; u < shardd->n_backend; u++) {
+		be = shardd->backend[u].backend;
+		CHECK_OBJ_NOTNULL(be, DIRECTOR_MAGIC);
+		retval = be->healthy(be, bo, &c);
+		if (changed != NULL && c > *changed)
+			*changed = c;
+		if (retval)
+			break;
+	}
+	sharddir_unlock(shardd);
+	return (retval);
+}
 /*
- * core function for the director backend method
- *
- * while other directors return a reference to their own backend object (on
- * which varnish will call the resolve method to resolve to a non-director
- * backend), this director immediately reolves in the backend method, to make
- * the director choice visible in VCL
- *
- * consequences:
- * - we need no own struct director
- * - we can only respect a busy object when being called on the backend side,
- *   which probably is, for all practical purposes, only relevant when the
- *   saintmode vmod is used
- *
- * if we wanted to offer delayed resolution, we'd need something like
- * per-request per-director state or we'd need to return a dynamically created
- * director object. That should be straight forward once we got director
- * refcounting #2072. Until then, we could create it on the workspace, but then
- * we'd need to keep other directors from storing any references to our dynamic
- * object for longer than the current task
- *
+ * core function for the director backend/resolve method
  */
 VCL_BACKEND
 sharddir_pick_be(VRT_CTX, struct sharddir *shardd,

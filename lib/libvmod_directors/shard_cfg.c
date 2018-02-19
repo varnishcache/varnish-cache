@@ -39,7 +39,6 @@
 
 #include "shard_dir.h"
 #include "shard_cfg.h"
-#include "shard_hash.h"
 
 /*lint -esym(749,  shard_change_task_e::*) */
 enum shard_change_task_e {
@@ -68,9 +67,9 @@ struct shard_change {
 
 struct backend_reconfig {
 	struct sharddir * const shardd;
-	int			hint;	// on number of backends after reconfig
-	int			hole_n; // number of holes in backends array
-	int			hole_i; // index hint on first hole
+	unsigned		hint;	// on number of backends after reconfig
+	unsigned		hole_n; // number of holes in backends array
+	unsigned		hole_i; // index hint on first hole
 };
 
 /*
@@ -232,11 +231,12 @@ circlepoint_compare(const struct shard_circlepoint *a,
 }
 
 static void
-shardcfg_hashcircle(struct sharddir *shardd, VCL_INT replicas, enum alg_e alg)
+shardcfg_hashcircle(struct sharddir *shardd, VCL_INT replicas)
 {
 	int i, j;
 	const char *ident;
-	int len;
+	const int len = 12; // log10(UINT32_MAX) + 2;
+	char s[len];
 
 	CHECK_OBJ_NOTNULL(shardd, SHARDDIR_MAGIC);
 	AZ(shardd->hashcircle);
@@ -259,14 +259,10 @@ shardcfg_hashcircle(struct sharddir *shardd, VCL_INT replicas, enum alg_e alg)
 
 		assert(ident[0] != '\0');
 
-		len = strlen(ident) + 12; // log10(UINT32_MAX) + 2;
-
-		char s[len];
-
 		for (j = 0; j < replicas; j++) {
-			assert(snprintf(s, len, "%s%d", ident, j) < len);
+			assert(snprintf(s, len, "%d", j) < len);
 			shardd->hashcircle[i * replicas + j].point =
-			    shard_hash_f[alg](s);
+				sharddir_sha256(ident, s, vrt_magic_string_end);
 			shardd->hashcircle[i * replicas + j].host = i;
 		}
 		/* not used in current interface */
@@ -354,7 +350,7 @@ static const struct shard_backend *
 shardcfg_backend_lookup(const struct backend_reconfig *re,
     const struct shard_backend *b)
 {
-	int i, max = re->shardd->n_backend + re->hole_n;
+	unsigned i, max = re->shardd->n_backend + re->hole_n;
 	const struct shard_backend *bb = re->shardd->backend;
 
 	for (i = 0; i < max; i++)
@@ -367,7 +363,7 @@ shardcfg_backend_lookup(const struct backend_reconfig *re,
 static void
 shardcfg_backend_expand(const struct backend_reconfig *re)
 {
-	int min = re->hint;
+	unsigned min = re->hint;
 
 	CHECK_OBJ_NOTNULL(re->shardd, SHARDDIR_MAGIC);
 
@@ -393,7 +389,7 @@ static void
 shardcfg_backend_add(struct backend_reconfig *re,
     const struct shard_backend *b)
 {
-	int i;
+	unsigned i;
 	struct shard_backend *bb = re->shardd->backend;
 
 	if (re->hole_n == 0) {
@@ -432,7 +428,7 @@ static void
 shardcfg_backend_del(struct backend_reconfig *re,
     const struct shard_backend *spec)
 {
-	int i, max = re->shardd->n_backend + re->hole_n;
+	unsigned i, max = re->shardd->n_backend + re->hole_n;
 	struct shard_backend * const bb = re->shardd->backend;
 
 	for (i = 0; i < max; i++) {
@@ -452,7 +448,7 @@ shardcfg_backend_del(struct backend_reconfig *re,
 static void
 shardcfg_backend_finalize(struct backend_reconfig *re)
 {
-	int i;
+	unsigned i;
 	struct shard_backend * const bb = re->shardd->backend;
 
 	while (re->hole_n > 0) {
@@ -574,7 +570,7 @@ shardcfg_apply_change(VRT_CTX, struct sharddir *shardd,
 
 VCL_BOOL
 shardcfg_reconfigure(VRT_CTX, struct vmod_priv *priv,
-    struct sharddir *shardd, VCL_INT replicas, enum alg_e alg)
+    struct sharddir *shardd, VCL_INT replicas)
 {
 	struct shard_change *change;
 
@@ -607,7 +603,7 @@ shardcfg_reconfigure(VRT_CTX, struct vmod_priv *priv,
 		return 0;
 	}
 
-	shardcfg_hashcircle(shardd, replicas, alg);
+	shardcfg_hashcircle(shardd, replicas);
 	sharddir_unlock(shardd);
 	return (1);
 }

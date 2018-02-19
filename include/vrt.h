@@ -120,10 +120,16 @@ struct vsmw_cluster;
 struct vsl_log;
 struct ws;
 
+/***********************************************************************
+ * vcc/vmod interface
+ */
+
 struct strands {
 	int		n;
 	const char	**p;
 };
+
+typedef uint32_t				VCC_ARGMASK;
 
 /***********************************************************************
  * This is the central definition of the mapping from VCL types to

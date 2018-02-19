@@ -1,4 +1,4 @@
-varnishtest "shard director LAZY"
+varnishtest "shard director LAZY - d18.vtc"
 
 server s1 {
 	rxreq
@@ -33,6 +33,15 @@ varnish v1 -vcl+backend {
 	    if (!vd.reconfigure(replicas=25)) {
 		std.log("reconfigure failed");
 	    }
+
+	    vd.debug(1);
+
+	    new p = directors.shard_param();
+	    p.set(by=KEY, key=1);
+	    vd.associate(p.use());
+
+	    new p3 = directors.shard_param();
+	    p3.set(by=KEY, key=4294967295);
 	}
 
 	sub vcl_recv {
@@ -40,23 +49,23 @@ varnish v1 -vcl+backend {
 	}
 
 	sub vcl_backend_fetch {
+	    set bereq.backend=vd.backend(resolve=LAZY);
+
 	    if (bereq.url == "/1") {
-		set bereq.backend =
-		    vd.backend(resolve=LAZY, by=KEY, key=1);
-	    }
+		# default
+	    } else
 	    if (bereq.url == "/2") {
-		set bereq.backend =
-		  vd.backend(resolve=LAZY, by=KEY, key=2147483647);
-	    }
+		# backend override parameter set
+		p.set(by=KEY, key=2147483647);
+	    } else
 	    if (bereq.url == "/3") {
-		set bereq.backend =
-		  vd.backend(resolve=LAZY, by=KEY, key=4294967295);
+		# backend override association
+		vd.backend(resolve=LAZY, param=p3.use());
 	    }
 	}
 
 	sub vcl_backend_response {
-	    set beresp.http.healthy = std.healthy(
-	      vd.backend(resolve=LAZY, by=KEY, key=1));
+	    set beresp.http.backend = bereq.backend;
 	}
 } -start
 
@@ -65,15 +74,15 @@ client c1 {
 	txreq -url /1
 	rxresp
 	expect resp.body == "ech3Ooj"
-	expect resp.http.healthy == "true"
+	expect resp.http.backend == "vd"
 
 	txreq -url /2
 	rxresp
 	expect resp.body == "ieQu2qua"
-	expect resp.http.healthy == "true"
+	expect resp.http.backend == "vd"
 
 	txreq -url /3
 	rxresp
 	expect resp.body == "xiuFi3Pe"
-	expect resp.http.healthy == "true"
+	expect resp.http.backend == "vd"
 } -run

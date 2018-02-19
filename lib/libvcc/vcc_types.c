@@ -39,6 +39,11 @@ const struct type ACL[1] = {{
 	.name =			"ACL",
 }};
 
+const struct type ARGMASK[1] = {{
+	.magic =		TYPE_MAGIC,
+	.name =			"VCC_ARGMASK",
+}};
+
 const struct type BACKEND[1] = {{
 	.magic =		TYPE_MAGIC,
 	.name =			"BACKEND",

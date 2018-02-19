@@ -43,6 +43,7 @@
 #include "vtim.h"
 #include "vcc_if.h"
 #include "VSC_debug.h"
+#include "vend.h"
 
 #include "common/common_param.h"
 
@@ -599,4 +600,27 @@ xyzzy_vsc_destroy(VRT_CTX)
 		VSC_debug_Destroy(&vsc_seg);
 	AZ(vsc);
 	AZ(pthread_mutex_unlock(&vsc_mtx));
+}
+
+VCL_BLOB
+xyzzy_args(VRT_CTX, VCC_ARGMASK args,
+    VCL_INT a, VCL_INT b, VCL_INT c, VCL_INT d, VCL_INT e, VCL_INT f, VCL_INT g,
+    VCL_INT h, VCL_INT i, VCL_INT j, VCL_INT k, VCL_INT l, VCL_INT m, VCL_INT n,
+    VCL_INT o, VCL_INT p, VCL_INT q, VCL_INT r, VCL_INT s, VCL_INT t, VCL_INT u,
+    VCL_INT v, VCL_INT w, VCL_INT x, VCL_INT y, VCL_INT z, VCL_INT aa,
+    VCL_INT ab, VCL_INT ac, VCL_INT ad, VCL_INT ae, VCL_INT af, VCL_INT ag)
+{
+	uint8_t eargs[sizeof(args)];
+
+	(void) a; (void) b; (void) c; (void) d; (void) e; (void) f; (void) g;
+	(void) h; (void) i; (void) j; (void) k; (void) l; (void) m; (void) n;
+	(void) o; (void) p; (void) q; (void) r; (void) s; (void) t; (void) u;
+	(void) v; (void) w; (void) x; (void) y; (void) z; (void) aa;
+	(void) ab; (void) ac; (void) ad; (void) ae; (void) af; (void) ag;
+
+	assert(sizeof(args) == 4);
+	assert(sizeof(eargs) == sizeof(args));
+	vbe32enc(eargs, args);
+
+	return (VRT_blob(ctx, "debug.args", eargs, sizeof(eargs)));
 }

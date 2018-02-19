@@ -1,4 +1,4 @@
-varnishtest "shard director SHA256 (default)"
+varnishtest "shard director by req.url (default)"
 
 server s1 {
 	rxreq
