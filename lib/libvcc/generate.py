@@ -181,6 +181,57 @@ class vardef(object):
 		self.vlo = vlo
 		self.vhi = vhi
 
+	def emit(self):
+		fh.write("\n")
+		fo.write("\n")
+		cnam = self.nam.replace(".", "_")
+		ctyp = vcltypes[self.typ]
+
+		# fo.write("\t{ \"%s\", %s,\n" % (nm, self.typ))
+		fo.write("\tsym = VCC_MkSym(tl, \"%s\", " % self.nam)
+		if (self.typ == "HEADER"):
+			fo.write(" SYM_NONE);\n")
+			fo.write("\tAN(sym);\n");
+			fo.write("\tsym->wildcard = vcc_Var_Wildcard;\n")
+		else:
+			fo.write(" SYM_VAR);\n")
+		fo.write("\tAN(sym);\n")
+		fo.write("\tsym->type = %s;\n" % self.typ)
+		fo.write("\tsym->eval = vcc_Eval_Var;\n")
+
+		if self.typ == "HEADER":
+			fo.write('\tsym->rname = "HDR_')
+			fo.write(self.nam.split(".")[0].upper())
+			fo.write('";\n')
+		elif len(self.rd):
+			fo.write('\tsym->rname = "VRT_r_%s(ctx)";\n' % cnam)
+			fh.write("VCL_" + self.typ + " VRT_r_%s(VRT_CTX);\n" % cnam)
+		fo.write("\tsym->r_methods =\n")
+		restrict(fo, self.rd)
+		fo.write(";\n")
+
+		if self.typ == "HEADER":
+			fo.write('\tsym->lname = "HDR_')
+			fo.write(self.nam.split(".")[0].upper())
+			fo.write('";\n')
+		elif len(self.wr):
+			fo.write('\tsym->lname = "VRT_l_%s(ctx, ";\n' % cnam)
+			fh.write("void VRT_l_%s(VRT_CTX, " % cnam)
+			if self.typ != "STRING" and self.typ != "BODY":
+				fh.write("VCL_" + self.typ + ");\n")
+			else:
+				fh.write(ctyp + ", ...);\n")
+		fo.write("\tsym->w_methods =\n")
+		restrict(fo, self.wr)
+		fo.write(";\n")
+
+		if len(self.uns):
+			fh.write("void VRT_u_%s(VRT_CTX);\n" % cnam)
+			fo.write('\tsym->uname = "VRT_u_%s(ctx)";\n' % cnam)
+		fo.write('\tsym->u_methods =\n')
+		restrict(fo, self.uns)
+		fo.write(";\n")
+
 def parse_vcl(x):
 	vlo,vhi = (0,99)
 	x = x.split()
@@ -671,61 +722,9 @@ vcc_Var_Init(struct vcc *tl)
 """)
 
 
-def one_var(nm, spec):
-	fh.write("\n")
-	fo.write("\n")
-	cnam = spec.nam.replace(".", "_")
-	ctyp = vcltypes[spec.typ]
 
-	# fo.write("\t{ \"%s\", %s,\n" % (nm, spec.typ))
-	fo.write("\tsym = VCC_MkSym(tl, \"%s\", " % nm)
-	if (spec.typ == "HEADER"):
-		fo.write(" SYM_NONE);\n")
-		fo.write("\tAN(sym);\n");
-		fo.write("\tsym->wildcard = vcc_Var_Wildcard;\n")
-	else:
-		fo.write(" SYM_VAR);\n")
-	fo.write("\tAN(sym);\n")
-	fo.write("\tsym->type = %s;\n" % spec.typ)
-	fo.write("\tsym->eval = vcc_Eval_Var;\n")
-
-	if spec.typ == "HEADER":
-		fo.write('\tsym->rname = "HDR_')
-		fo.write(nm.split(".")[0].upper())
-		fo.write('";\n')
-	elif len(spec.rd):
-		fo.write('\tsym->rname = "VRT_r_%s(ctx)";\n' % cnam)
-		if nm == spec.nam:
-			fh.write("VCL_" + spec.typ + " VRT_r_%s(VRT_CTX);\n" % cnam)
-	fo.write("\tsym->r_methods =\n")
-	restrict(fo, spec.rd)
-	fo.write(";\n")
-
-	if spec.typ == "HEADER":
-		fo.write('\tsym->lname = "HDR_')
-		fo.write(nm.split(".")[0].upper())
-		fo.write('";\n')
-	elif len(spec.wr):
-		fo.write('\tsym->lname = "VRT_l_%s(ctx, ";\n' % cnam)
-		if nm == spec.nam:
-			fh.write("void VRT_l_%s(VRT_CTX, " % cnam)
-			if spec.typ != "STRING" and spec.typ != "BODY":
-				fh.write("VCL_" + spec.typ + ");\n")
-			else:
-				fh.write(ctyp + ", ...);\n")
-	fo.write("\tsym->w_methods =\n")
-	restrict(fo, spec.wr)
-	fo.write(";\n")
-
-	if len(spec.uns):
-		fh.write("void VRT_u_%s(VRT_CTX);\n" % cnam)
-		fo.write('\tsym->uname = "VRT_u_%s(ctx)";\n' % cnam)
-	fo.write('\tsym->u_methods =\n')
-	restrict(fo, spec.uns)
-	fo.write(";\n")
-
-for i in sp_variables:
-	one_var(i, sp_variables[i])
+for i in sp_variables.values():
+	i.emit()
 
 # fo.write("\t{ NULL }\n};\n\n")
 fo.write("}\n")
