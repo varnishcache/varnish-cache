@@ -94,7 +94,7 @@ vcc_ParseImport(struct vcc *tl)
 	}
 
 	bprintf(fn, "%.*s", PF(mod));
-	msym = VCC_MkSym(tl, fn, SYM_VMOD);
+	msym = VCC_MkSym(tl, fn, SYM_VMOD, VCL_LOW, VCL_HIGH);
 	ERRCHK(tl);
 	AN(msym);
 	msym->def_b = t1;
@@ -223,7 +223,7 @@ vcc_ParseImport(struct vcc *tl)
 		p = *spec;
 		if (!strcmp(p, "$OBJ")) {
 			p += strlen(p) + 1;
-			sym = VCC_MkSym(tl, p, SYM_OBJECT);
+			sym = VCC_MkSym(tl, p, SYM_OBJECT, VCL_LOW, VCL_HIGH);
 			XXXAN(sym);
 			sym->extra = p;
 			sym->vmod = msym->name;
@@ -242,7 +242,7 @@ vcc_ParseImport(struct vcc *tl)
 			    p, PF(mod));
 		} else if (!strcmp(p, "$FUNC")) {
 			p += strlen(p) + 1;
-			sym = VCC_MkSym(tl, p, SYM_FUNC);
+			sym = VCC_MkSym(tl, p, SYM_FUNC, VCL_LOW, VCL_HIGH);
 			ERRCHK(tl);
 			AN(sym);
 			sym->action = vcc_Act_Call;
@@ -331,7 +331,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 	while (*p != '\0') {
 		p += strlen(s_obj);
 		bprintf(buf2, "%s%s", sy1->name, p);
-		sy3 = VCC_MkSym(tl, buf2, SYM_FUNC);
+		sy3 = VCC_MkSym(tl, buf2, SYM_FUNC, VCL_LOW, VCL_HIGH);
 		AN(sy3);
 		sy3->action = vcc_Act_Call;
 		sy3->eval = vcc_Eval_SymFunc;

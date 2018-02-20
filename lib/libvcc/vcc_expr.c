@@ -1280,25 +1280,25 @@ vcc_Expr_Init(struct vcc *tl)
 {
 	struct symbol *sym;
 
-	sym = VCC_MkSym(tl, "regsub", SYM_FUNC);
+	sym = VCC_MkSym(tl, "regsub", SYM_FUNC, VCL_LOW, VCL_HIGH);
 	AN(sym);
 	sym->type = STRING;
 	sym->eval = vcc_Eval_Regsub;
 	sym->eval_priv = NULL;
 
-	sym = VCC_MkSym(tl, "regsuball", SYM_FUNC);
+	sym = VCC_MkSym(tl, "regsuball", SYM_FUNC, VCL_LOW, VCL_HIGH);
 	AN(sym);
 	sym->type = STRING;
 	sym->eval = vcc_Eval_Regsub;
 	sym->eval_priv = sym;
 
-	sym = VCC_MkSym(tl, "true", SYM_FUNC);
+	sym = VCC_MkSym(tl, "true", SYM_FUNC, VCL_LOW, VCL_HIGH);
 	AN(sym);
 	sym->type = BOOL;
 	sym->eval = vcc_Eval_BoolConst;
 	sym->eval_priv = sym;
 
-	sym = VCC_MkSym(tl, "false", SYM_FUNC);
+	sym = VCC_MkSym(tl, "false", SYM_FUNC, VCL_LOW, VCL_HIGH);
 	AN(sym);
 	sym->type = BOOL;
 	sym->eval = vcc_Eval_BoolConst;

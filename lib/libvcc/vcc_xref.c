@@ -338,8 +338,9 @@ vcc_xreftable(struct vcc *tl, const struct symbol *sym)
 	CHECK_OBJ_NOTNULL(sym, SYMBOL_MAGIC);
 	CHECK_OBJ_NOTNULL(sym->kind, KIND_MAGIC);
 	CHECK_OBJ_NOTNULL(sym->type, TYPE_MAGIC);
-	Fc(tl, 0, " * %-7s ", sym->kind->name);
+	Fc(tl, 0, " * %-8s ", sym->kind->name);
 	Fc(tl, 0, " %-9s ", sym->type->name);
+	Fc(tl, 0, " %2u %2u ", sym->lorev, sym->hirev);
 	vcc_pnam(tl, sym);
 	if (sym->wildcard != NULL)
 		Fc(tl, 0, "*");

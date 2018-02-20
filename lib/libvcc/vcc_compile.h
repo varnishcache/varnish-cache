@@ -338,7 +338,8 @@ void vcc_stevedore(struct vcc *vcc, const char *stv_name);
 
 /* vcc_symb.c */
 void VCC_PrintCName(struct vsb *vsb, const char *b, const char *e);
-struct symbol *VCC_MkSym(struct vcc *tl, const char *b, vcc_kind_t);
+struct symbol *VCC_MkSym(struct vcc *tl, const char *b, vcc_kind_t,
+    unsigned, unsigned);
 extern const char XREF_NONE[];
 extern const char XREF_DEF[];
 extern const char XREF_REF[];

@@ -166,13 +166,15 @@ returns = (
 # 'backend' means all methods tagged "B"
 # 'both' means all methods tagged "B" or "C"
 
-sp_variables = collections.OrderedDict()
+varprotos = {}
+
+def varproto(s):
+	if not s in varprotos:
+		fh.write(s + ";\n")
+		varprotos[s] = True
 
 class vardef(object):
 	def __init__(self, nam, typ, rd, wr, wu, vlo, vhi):
-		if nam in sp_variables:
-			return
-		sp_variables[nam] = self
 		self.nam = nam
 		self.typ = typ
 		self.rd = rd
@@ -180,6 +182,8 @@ class vardef(object):
 		self.uns = wu
 		self.vlo = vlo
 		self.vhi = vhi
+
+		self.emit()
 
 	def emit(self):
 		fh.write("\n")
@@ -190,11 +194,11 @@ class vardef(object):
 		# fo.write("\t{ \"%s\", %s,\n" % (nm, self.typ))
 		fo.write("\tsym = VCC_MkSym(tl, \"%s\", " % self.nam)
 		if (self.typ == "HEADER"):
-			fo.write(" SYM_NONE);\n")
+			fo.write(" SYM_NONE, %d, %d);\n" % (self.vlo, self.vhi))
 			fo.write("\tAN(sym);\n");
 			fo.write("\tsym->wildcard = vcc_Var_Wildcard;\n")
 		else:
-			fo.write(" SYM_VAR);\n")
+			fo.write(" SYM_VAR, %d, %d);\n" % (self.vlo, self.vhi))
 		fo.write("\tAN(sym);\n")
 		fo.write("\tsym->type = %s;\n" % self.typ)
 		fo.write("\tsym->eval = vcc_Eval_Var;\n")
@@ -205,7 +209,7 @@ class vardef(object):
 			fo.write('";\n')
 		elif len(self.rd):
 			fo.write('\tsym->rname = "VRT_r_%s(ctx)";\n' % cnam)
-			fh.write("VCL_" + self.typ + " VRT_r_%s(VRT_CTX);\n" % cnam)
+			varproto("VCL_" + self.typ + " VRT_r_%s(VRT_CTX)" % cnam)
 		fo.write("\tsym->r_methods =\n")
 		restrict(fo, self.rd)
 		fo.write(";\n")
@@ -216,17 +220,18 @@ class vardef(object):
 			fo.write('";\n')
 		elif len(self.wr):
 			fo.write('\tsym->lname = "VRT_l_%s(ctx, ";\n' % cnam)
-			fh.write("void VRT_l_%s(VRT_CTX, " % cnam)
+			s = "void VRT_l_%s(VRT_CTX, " % cnam
 			if self.typ != "STRING" and self.typ != "BODY":
-				fh.write("VCL_" + self.typ + ");\n")
+				s += "VCL_" + self.typ + ")"
 			else:
-				fh.write(ctyp + ", ...);\n")
+				s += ctyp + ", ...)"
+			varproto(s);
 		fo.write("\tsym->w_methods =\n")
 		restrict(fo, self.wr)
 		fo.write(";\n")
 
 		if len(self.uns):
-			fh.write("void VRT_u_%s(VRT_CTX);\n" % cnam)
+			varproto("void VRT_u_%s(VRT_CTX)" % cnam)
 			fo.write('\tsym->uname = "VRT_u_%s(ctx)";\n' % cnam)
 		fo.write('\tsym->u_methods =\n')
 		restrict(fo, self.uns)
@@ -296,8 +301,6 @@ def parse_var_doc(fn):
 		while m < len(l) and ( l[m] == "" or l[m][0].isspace() ):
 			m += 1
 		parse_var(l[n-2:m-1])
-
-parse_var_doc(join(buildroot, "doc/sphinx/reference/vcl_var.rst"))
 
 stv_variables = (
 	('free_space',	'BYTES',	"0.", 'storage.<name>.free_space', """
@@ -722,11 +725,7 @@ vcc_Var_Init(struct vcc *tl)
 """)
 
 
-
-for i in sp_variables.values():
-	i.emit()
-
-# fo.write("\t{ NULL }\n};\n\n")
+parse_var_doc(join(buildroot, "doc/sphinx/reference/vcl_var.rst"))
 fo.write("}\n")
 
 for i in stv_variables:

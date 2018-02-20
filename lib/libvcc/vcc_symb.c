@@ -100,13 +100,15 @@ vcc_new_symbol(struct vcc *tl, const char *b, const char *e)
 
 static struct symbol *
 VCC_Symbol(struct vcc *tl, struct symbol *parent,
-    const char *b, const char *e, vcc_kind_t kind, int create)
+    const char *b, const char *e, vcc_kind_t kind,
+    int create, unsigned vlo, unsigned vhi)
 {
 	const char *q;
 	struct symbol *sym, *sym2 = NULL;
 	size_t l;
 	int i;
 
+	assert(vlo <= vhi);
 	if (tl->symbols == NULL)
 		tl->symbols = vcc_new_symbol(tl, "<root>", NULL);
 	if (parent == NULL)
@@ -128,6 +130,8 @@ VCC_Symbol(struct vcc *tl, struct symbol *parent,
 	assert(l > 0);
 
 	VTAILQ_FOREACH(sym, &parent->children, list) {
+		if (sym->lorev > vhi || sym->hirev < vlo)
+			continue;
 		i = strncasecmp(sym->name, b, l);
 		if (i < 0)
 			continue;
@@ -159,17 +163,21 @@ VCC_Symbol(struct vcc *tl, struct symbol *parent,
 			if (i > 0 || (i == 0 && l < sym->nlen))
 				break;
 		}
+		sym2->lorev = vlo;
+		sym2->hirev = vhi;
 		if (sym == NULL)
 			VTAILQ_INSERT_TAIL(&parent->children, sym2, list);
 		else
 			VTAILQ_INSERT_BEFORE(sym, sym2, list);
-		return (VCC_Symbol(tl, parent, b, e, kind, -1));
+		return (VCC_Symbol(tl, parent, b, e, kind, -1, vlo, vhi));
 	}
 	if (sym == NULL && create < 1)
 		return (sym);
 	if (sym == NULL) {
 		sym = vcc_new_symbol(tl, b, q);
 		sym->parent = parent;
+		sym->lorev = vlo;
+		sym->hirev = vhi;
 		if (sym2 != NULL)
 			VTAILQ_INSERT_BEFORE(sym2, sym, list);
 		else
@@ -180,7 +188,7 @@ VCC_Symbol(struct vcc *tl, struct symbol *parent,
 	if (q == e)
 		return (sym);
 	assert(*q == '.');
-	return (VCC_Symbol(tl, sym, ++q, e, kind, create));
+	return (VCC_Symbol(tl, sym, ++q, e, kind, create, vlo, vhi));
 }
 
 const char XREF_NONE[] = "xref_none";
@@ -206,7 +214,7 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x)
 	}
 
 	sym = VCC_Symbol(tl, NULL, tl->t->b, tl->t->e, kind,
-	    e == SYMTAB_CREATE ? 1 : 0);
+	    e == SYMTAB_CREATE ? 1 : 0, tl->syntax, tl->syntax);
 	if (sym == NULL && e == SYMTAB_NOERR)
 		return (sym);
 	if (sym == NULL) {
@@ -267,11 +275,12 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x)
 }
 
 struct symbol *
-VCC_MkSym(struct vcc *tl, const char *b, vcc_kind_t kind)
+VCC_MkSym(struct vcc *tl, const char *b, vcc_kind_t kind,
+    unsigned vlo, unsigned vhi)
 {
 	struct symbol *sym;
 
-	sym = VCC_Symbol(tl, NULL, b, NULL, kind, 1);
+	sym = VCC_Symbol(tl, NULL, b, NULL, kind, 1, vlo, vhi);
 	sym->noref = 1;
 	return (sym);
 }

@@ -364,7 +364,7 @@ vcc_act_synthetic(struct vcc *tl, struct token *t, struct symbol *sym)
 #define ACT(name, func, mask)						\
 	do {								\
 		const char pp[] = #name;				\
-		sym = VCC_MkSym(tl, pp, SYM_ACTION);			\
+		sym = VCC_MkSym(tl, pp, SYM_ACTION, VCL_LOW, VCL_HIGH);	\
 		AN(sym);						\
 		sym->action = func;					\
 		sym->action_mask = (mask);				\
