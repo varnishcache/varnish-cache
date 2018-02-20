@@ -5,7 +5,7 @@ server s1 {
 	txresp
 } -start
 
-varnish v1 -arg "-i J.F.Nobody" -vcl+backend {
+varnish v1 -syntax 4.0 -arg "-i J.F.Nobody" -vcl+backend {
 
 	import std;
 	import directors;

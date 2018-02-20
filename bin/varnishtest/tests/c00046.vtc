@@ -10,6 +10,7 @@ varnish v1 \
 	-arg "-sdefault,1m" \
 	-arg "-sdefault,1m" \
 	-arg "-sTransient=default" \
+	-syntax 4.0 \
 	-vcl+backend {
 	sub vcl_backend_response {
 		set beresp.storage = storage.s0;

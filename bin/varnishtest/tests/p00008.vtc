@@ -18,6 +18,7 @@ varnish v1 \
 	-arg "-pban_lurker_sleep=0" \
 	-arg "-sper1=deprecated_persistent,${tmpdir}/_.per1,5m" \
 	-arg "-sper2=deprecated_persistent,${tmpdir}/_.per2,5m" \
+	-syntax 4.0 \
 	-vcl+backend {
 		sub vcl_backend_response {
 			set beresp.storage = storage.per1;

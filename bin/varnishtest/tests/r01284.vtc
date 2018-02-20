@@ -12,6 +12,7 @@ server s1 {
 varnish v1 \
 	-arg "-p nuke_limit=0" \
 	-arg "-sTransient=default,1m" \
+	-syntax 4.0 \
 	-vcl+backend {
 	sub vcl_backend_response {
 		set beresp.do_stream = false;
