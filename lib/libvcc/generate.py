@@ -169,21 +169,41 @@ returns = (
 sp_variables = collections.OrderedDict()
 
 class vardef(object):
-	def __init__(self, nam, typ, rd, wr, doc, uns):
+	def __init__(self, nam, typ, rd, wr, wu, vlo, vhi):
+		if nam in sp_variables:
+			return
 		sp_variables[nam] = self
 		self.nam = nam
 		self.typ = typ
 		self.rd = rd
 		self.wr = wr
-		self.doc = doc
-		self.uns = uns
+		self.uns = wu
+		self.vlo = vlo
+		self.vhi = vhi
+
+def parse_vcl(x):
+	vlo,vhi = (0,99)
+	x = x.split()
+	if x[0] == "VCL" and x[1] == "<=":
+		vhi = int(float(x[2]) * 10)
+	elif x[0] == "VCL" and x[1] == ">=":
+		vlo = int(float(x[2]) * 10)
+	else:
+		print("Unknown variable version spec")
+		print("XXX", x, vlo, vhi)
+		exit(2)
+	return vlo,vhi
 
 def parse_var(ln):
-	vn = ln.pop(0).split()
-	assert len(vn) == 1
-	vn = vn[0]
+	l1 = ln.pop(0).split("``")
+	assert len(l1) in (1,3)
+	vn = l1[0].strip()
 	if vn[-1] == '*':
 		vn = vn[:-1]
+	if len(l1) == 3:
+		vlo,vhi = parse_vcl(l1[1])
+	else:
+		vlo,vhi = 0,99
 	vr = []
 	vw = []
 	vu = []
@@ -209,9 +229,8 @@ def parse_var(ln):
 				vu.append(i.strip(",."))
 			continue
 		break
-	doc = "\n" + l + "\n" + "\n".join(ln)
 	if vn[:8] != "storage.":
-		vardef(vn, vt, vr, vw, doc, uns=vu)
+		vardef(vn, vt, vr, vw, vu, vlo, vhi)
 
 def parse_var_doc(fn):
 	s = 0

@@ -215,7 +215,7 @@ req.url
 	The requested URL, for instance "/robots.txt".
 	
 
-req.proto
+req.proto	``VCL <= 4.0``
 
 	Type: STRING
 
@@ -223,7 +223,15 @@ req.proto
 
 	Writable from: client
 
+	The HTTP protocol version used by the client, usually "HTTP/1.1"
+	or "HTTP/2.0".
 	
+req.proto	``VCL >= 4.1``
+
+	Type: STRING
+
+	Readable from: client
+
 	The HTTP protocol version used by the client, usually "HTTP/1.1"
 	or "HTTP/2.0".
 	
@@ -302,7 +310,7 @@ req.xid
 
 	Unique ID of this request.
 
-req.esi
+req.esi	``VCL <= 4.0``
 
 	Type: BOOL
 
@@ -312,9 +320,8 @@ req.esi
 
 	Set to `false` to disable ESI processing
 	regardless of any value in beresp.do_esi. Defaults
-	to `true`. This variable is subject to change in
-	future versions, you should avoid using it.
-	
+	to `true`. This variable is replaced by `resp.do_esi`
+	in VCL 4.1.
 
 req.can_gzip
 
@@ -515,13 +522,22 @@ bereq.url
 	The requested URL, copied from `req.url`
 	
 
-bereq.proto
+bereq.proto	``VCL <= 4.0``
 
 	Type: STRING
 
 	Readable from: vcl_pipe, backend
 
 	Writable from: vcl_pipe, backend
+	
+	The HTTP protocol version, "HTTP/1.1" unless a pass or pipe
+	request has "HTTP/1.0" in `req.proto`
+	
+bereq.proto	``VCL >= 4.1``
+
+	Type: STRING
+
+	Readable from: vcl_pipe, backend
 	
 	The HTTP protocol version, "HTTP/1.1" unless a pass or pipe
 	request has "HTTP/1.0" in `req.proto`
@@ -620,13 +636,21 @@ beresp.body
 	
 	For producing a synthetic body.
 
-beresp.proto
+beresp.proto	``VCL <= 4.0``
 
 	Type: STRING
 
 	Readable from: vcl_backend_response, vcl_backend_error
 
 	Writable from: vcl_backend_response, vcl_backend_error
+
+	The HTTP protocol version the backend replied with.
+	
+beresp.proto	``VCL >= 4.1``
+
+	Type: STRING
+
+	Readable from: vcl_backend_response, vcl_backend_error
 
 	The HTTP protocol version the backend replied with.
 	
@@ -855,7 +879,6 @@ obj.proto
 
 	Readable from: vcl_hit
 
-	
 	The HTTP protocol version stored in the object.
 	
 
@@ -959,7 +982,10 @@ resp
 ~~~~
 
 This is the response we send to the client, it is built from either
-`beresp` (pass/miss) or `obj` (hits).
+`beresp` (pass/miss), `obj` (hits) or created from whole cloth (synth).
+
+With the exception of `resp.body` all `resp.*` variables available
+in both `vcl_deliver{}` and `vcl_synth{}` as a matter of symmetry.
 
 resp
 
@@ -978,7 +1004,17 @@ resp.body
 
 	To produce a synthetic response body, for instance for errors.
 
-resp.proto
+resp.proto	``VCL <= 4.0``
+
+	Type: STRING
+
+	Readable from: vcl_deliver, vcl_synth
+
+	Writable from: vcl_deliver, vcl_synth
+
+	The HTTP protocol version to use for the response.
+
+resp.proto	``VCL >= 4.1``
 
 	Type: STRING
 
