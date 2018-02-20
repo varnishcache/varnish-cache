@@ -766,7 +766,7 @@ cnt_recv(struct worker *wrk, struct req *req)
 /*--------------------------------------------------------------------
  * Find the objhead, purge it.
  *
- * XXX: We should ask VCL if we should fetch a new copy of the object.
+ * In VCL, a restart is necessary to get a new object
  */
 
 static enum req_fsm_nxt
@@ -791,7 +791,7 @@ cnt_purge(struct worker *wrk, struct req *req)
 	CHECK_OBJ_NOTNULL(boc, OBJCORE_MAGIC);
 	VRY_Finish(req, DISCARD);
 
-	HSH_Purge(wrk, boc->objhead, 0, 0, 0);
+	HSH_Purge(wrk, boc->objhead, req->t_req, 0, 0, 0);
 
 	AZ(HSH_DerefObjCore(wrk, &boc));
 

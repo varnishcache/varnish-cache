@@ -429,7 +429,7 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
 		if (vary != NULL && !VRY_Match(req, vary))
 			continue;
 
-		if (EXP_Ttl(req, &oc->exp) >= req->t_req) {
+		if (EXP_Ttl(req, &oc->exp) > req->t_req) {
 			/* If still valid, use it */
 			assert(oh->refcnt > 1);
 			assert(oc->objhead == oh);
@@ -574,13 +574,12 @@ hsh_rush(struct worker *wrk, struct objhead *oh)
  */
 
 void
-HSH_Purge(struct worker *wrk, struct objhead *oh, double ttl, double grace,
+HSH_Purge(struct worker *wrk, struct objhead *oh, double ttl_now, double ttl, double grace,
 double keep)
 {
 	struct objcore *oc, **ocp;
 	unsigned spc, ospc, nobj, n, n_tot = 0;
 	int more = 0;
-	double now;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
@@ -607,7 +606,6 @@ double keep)
 		ocp = (void*)wrk->aws->f;
 		Lck_Lock(&oh->mtx);
 		assert(oh->refcnt > 0);
-		now = VTIM_real();
 		VTAILQ_FOREACH(oc, &oh->objcs, list) {
 			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 			assert(oc->objhead == oh);
@@ -647,7 +645,7 @@ double keep)
 		for (n = 0; n < nobj; n++) {
 			oc = ocp[n];
 			CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
-			EXP_Rearm(oc, now, ttl, grace, keep);
+			EXP_Rearm(oc, ttl_now, ttl, grace, keep);
 			(void)HSH_DerefObjCore(wrk, &oc);
 		}
 		n_tot += nobj;

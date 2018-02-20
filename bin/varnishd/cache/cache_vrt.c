@@ -510,13 +510,12 @@ VRT_purge(VRT_CTX, double ttl, double grace, double keep)
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req->wrk, WORKER_MAGIC);
-	if (ctx->method == VCL_MET_HIT)
+
+	if (ctx->method == VCL_MET_HIT || ctx->method == VCL_MET_MISS)
 		HSH_Purge(ctx->req->wrk, ctx->req->objcore->objhead,
-		    ttl, grace, keep);
-	else if (ctx->method == VCL_MET_MISS)
-		HSH_Purge(ctx->req->wrk, ctx->req->objcore->objhead,
-		    ttl, grace, keep);
+		    ctx->req->t_req, ttl, grace, keep);
 }
+
 
 /*--------------------------------------------------------------------
  * Simple stuff

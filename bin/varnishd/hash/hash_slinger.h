@@ -69,8 +69,8 @@ void HSH_Ref(struct objcore *o);
 void HSH_Init(const struct hash_slinger *slinger);
 void HSH_AddString(struct req *, void *ctx, const char *str);
 void HSH_Insert(struct worker *, const void *hash, struct objcore *);
-void HSH_Purge(struct worker *, struct objhead *, double ttl, double grace,
-    double keep);
+void HSH_Purge(struct worker *, struct objhead *, double ttl_now, double ttl,
+    double grace, double keep);
 void HSH_config(const char *h_arg);
 struct busyobj *HSH_RefBusy(const struct objcore *oc);
 struct objcore *HSH_Private(struct worker *wrk);

@@ -34,6 +34,8 @@
 #include "common/heritage.h"
 #include "hash/hash_slinger.h"
 
+#include "vcl.h"
+
 #include "cache_director.h"
 #include "vrt.h"
 #include "vrt_obj.h"
@@ -485,9 +487,22 @@ VRT_r_bereq_retries(VRT_CTX)
  *	ttl is relative to t_origin
  *	grace&keep are relative to ttl
  * In VCL:
- *	ttl is relative to now
+ *	ttl is relative to "ttl_now", which is t_req on the client
+ *	side, except in vcl_deliver, where it is ctx->now. On the
+ *	fetch side "ttl_now" is ctx->now (which is bo->t_prev).
  *	grace&keep are relative to ttl
  */
+
+static double ttl_now(VRT_CTX)
+{
+	if (ctx->bo) {
+		return (ctx->now);
+	} else {
+		CHECK_OBJ(ctx->req, REQ_MAGIC);
+		return (ctx->method == VCL_MET_DELIVER
+		    ? ctx->now : ctx->req->t_req);
+	}
+}
 
 #define VRT_DO_EXP_L(which, sexp, fld, offset)			\
 								\
@@ -520,14 +535,14 @@ VRT_r_##which##_##fld(VRT_CTX)		\
 }
 
 VRT_DO_EXP_R(obj, ctx->req->objcore->exp, ttl,
-    ctx->now - ctx->req->objcore->exp.t_origin)
+    ttl_now(ctx) - ctx->req->objcore->exp.t_origin)
 VRT_DO_EXP_R(obj, ctx->req->objcore->exp, grace, 0)
 VRT_DO_EXP_R(obj, ctx->req->objcore->exp, keep, 0)
 
 VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore->exp, ttl,
-    ctx->now - ctx->bo->fetch_objcore->exp.t_origin)
+    ttl_now(ctx) - ctx->bo->fetch_objcore->exp.t_origin)
 VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore->exp, ttl,
-    ctx->now - ctx->bo->fetch_objcore->exp.t_origin)
+    ttl_now(ctx) - ctx->bo->fetch_objcore->exp.t_origin)
 VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore->exp, grace, 0)
 VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore->exp, grace, 0)
 VRT_DO_EXP_L(beresp, ctx->bo->fetch_objcore->exp, keep, 0)
@@ -543,7 +558,7 @@ VRT_r_##which##_##age(VRT_CTX)		\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
-	return(ctx->now - sexp.t_origin);			\
+	return(ttl_now(ctx) - sexp.t_origin);			\
 }
 
 VRT_DO_AGE_R(obj, ctx->req->objcore->exp)
