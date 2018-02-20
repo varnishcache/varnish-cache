@@ -248,9 +248,6 @@ def parse_var_doc(fn):
 
 parse_var_doc(join(buildroot, "doc/sphinx/reference/vcl_var.rst"))
 
-# Backwards compatibility:
-aliases = []
-
 stv_variables = (
 	('free_space',	'BYTES',	"0.", 'storage.<name>.free_space', """
 	Free space available in the named stevedore. Only available for
@@ -692,33 +689,23 @@ def one_var(nm, spec):
 	fo.write("\tsym->type = %s;\n" % spec.typ)
 	fo.write("\tsym->eval = vcc_Eval_Var;\n")
 
-	if len(spec.rd) == 0:
-		fo.write('\t/* No reads allowed */\n')
-	elif spec.typ == "HEADER":
+	if spec.typ == "HEADER":
 		fo.write('\tsym->rname = "HDR_')
 		fo.write(nm.split(".")[0].upper())
 		fo.write('";\n')
-		fo.write("\tsym->r_methods =\n")
-		restrict(fo, spec.rd)
-		fo.write(";\n")
-	else:
+	elif len(spec.rd):
 		fo.write('\tsym->rname = "VRT_r_%s(ctx)";\n' % cnam)
 		if nm == spec.nam:
 			fh.write("VCL_" + spec.typ + " VRT_r_%s(VRT_CTX);\n" % cnam)
-		fo.write("\tsym->r_methods =\n")
-		restrict(fo, spec.rd)
-		fo.write(";\n")
+	fo.write("\tsym->r_methods =\n")
+	restrict(fo, spec.rd)
+	fo.write(";\n")
 
-	if len(spec.wr) == 0:
-		fo.write('\t/* No writes allowed */\n')
-	elif spec.typ == "HEADER":
+	if spec.typ == "HEADER":
 		fo.write('\tsym->lname = "HDR_')
 		fo.write(nm.split(".")[0].upper())
 		fo.write('";\n')
-		fo.write("\tsym->w_methods =\n")
-		restrict(fo, spec.wr)
-		fo.write(";\n")
-	else:
+	elif len(spec.wr):
 		fo.write('\tsym->lname = "VRT_l_%s(ctx, ";\n' % cnam)
 		if nm == spec.nam:
 			fh.write("void VRT_l_%s(VRT_CTX, " % cnam)
@@ -726,25 +713,19 @@ def one_var(nm, spec):
 				fh.write("VCL_" + spec.typ + ");\n")
 			else:
 				fh.write(ctyp + ", ...);\n")
-		fo.write("\tsym->w_methods =\n")
-		restrict(fo, spec.wr)
-		fo.write(";\n")
+	fo.write("\tsym->w_methods =\n")
+	restrict(fo, spec.wr)
+	fo.write(";\n")
 
-	if spec.uns is None or len(spec.uns) == 0:
-		fo.write('\t/* No unsets allowed */\n')
-	else:
+	if len(spec.uns):
 		fh.write("void VRT_u_%s(VRT_CTX);\n" % cnam)
 		fo.write('\tsym->uname = "VRT_u_%s(ctx)";\n' % cnam)
-		fo.write('\tsym->u_methods =\n')
-		restrict(fo, spec.uns)
-		fo.write(";\n")
+	fo.write('\tsym->u_methods =\n')
+	restrict(fo, spec.uns)
+	fo.write(";\n")
 
-aliases.sort()
 for i in sp_variables:
 	one_var(i, sp_variables[i])
-	for j in aliases:
-		if j[1] == i[0]:
-			one_var(j[0], sp_variables[i])
 
 # fo.write("\t{ NULL }\n};\n\n")
 fo.write("}\n")
