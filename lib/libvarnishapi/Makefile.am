@@ -12,8 +12,6 @@ lib_LTLIBRARIES = libvarnishapi.la
 libvarnishapi_la_LDFLAGS = $(AM_LDFLAGS) -version-info 1:6:0
 
 libvarnishapi_la_SOURCES = \
-	vjsn.c \
-	vjsn.h \
 	vsl_api.h \
 	vxp.h \
 	vxp_tokens.h \
@@ -25,6 +23,7 @@ libvarnishapi_la_SOURCES = \
 	../libvarnish/vfil.c \
 	../libvarnish/vfl.c \
 	../libvarnish/vin.c \
+	../libvarnish/vjsn.c \
 	../libvarnish/vmb.c \
 	../libvarnish/vpf.c \
 	../libvarnish/vre.c \
@@ -98,14 +97,10 @@ vxp_test_CFLAGS = \
 vxp_test_LDADD = @PCRE_LIBS@ \
 	${RT_LIBS} ${LIBM} ${PTHREAD_LIBS}
 
-TESTS = vjsn_test vsl_glob_test
+TESTS = vsl_glob_test
 
 noinst_PROGRAMS += ${TESTS}
 
 vsl_glob_test_SOURCES = vsl_glob_test.c
 vsl_glob_test_CFLAGS = @SAN_CFLAGS@
 vsl_glob_test_LDADD = libvarnishapi.la @SAN_LDFLAGS@
-
-vjsn_test_SOURCES = vjsn.c
-vjsn_test_CFLAGS = -DVJSN_TEST @SAN_CFLAGS@
-vjsn_test_LDADD = libvarnishapi.la @SAN_LDFLAGS@
