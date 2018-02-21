@@ -1,9 +1,12 @@
 varnishtest "varnishncsa outputs when UDS addresses are in use"
 
-# The -c %h formatter gets its value from ReqStart, which now may be
-# 0.0.0.0 for a UDS address.
+# The %h formatter gets its value from ReqStart or BackendStart,
+# which now may be a UDS address.
 
-server s1 {
+# For UDS backends without a .hosthdr setting, the Host header is
+# set to "localhost", which may appear in %r output.
+
+server s1 -listen "${tmpdir}/s1.sock" {
 	rxreq
 	txresp
 } -start
@@ -21,4 +24,12 @@ shell -expect "0.0.0.0" {
 
 shell -expect "http://localhost/" {
 	varnishncsa -n ${v1_name} -d -c -F "%r"
+}
+
+shell -expect "0.0.0.0" {
+	varnishncsa -n ${v1_name} -d -b -F "%h"
+}
+
+shell -expect "http://localhost/" {
+	varnishncsa -n ${v1_name} -d -b -F "%r"
 }
