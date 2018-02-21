@@ -123,7 +123,7 @@ class vscset(object):
 			fo.write(t[:-1])
 		fo.write("\n};\n")
 		s = json.dumps(dd, indent=2, separators=(',', ': '))
-		fo.write("\n// ")
+		fo.write("\n")
 		for i in s.split("\n"):
 			j = "// " + i
 			if len(j) > 72:
