@@ -182,6 +182,21 @@ SES_Get_String_Attr(const struct sess *sp, enum sess_attr a)
 
 /*--------------------------------------------------------------------*/
 
+const char *
+HTC_Status(enum htc_status_e e)
+{
+	switch (e) {
+#define HTC_STATUS(e, n, s, l)				\
+		case HTC_S_ ## e:	return (s);
+#include "tbl/htc.h"
+	default:
+		WRONG("HTC_Status");
+	}
+	NEEDLESS(return (NULL));
+}
+
+/*--------------------------------------------------------------------*/
+
 void
 HTC_RxInit(struct http_conn *htc, struct ws *ws)
 {
