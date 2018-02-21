@@ -43,6 +43,7 @@ import optparse
 import unittest
 import random
 import copy
+import json
 
 rstfmt = False
 strict_abi = True
@@ -227,24 +228,10 @@ class ctype(object):
             return self.vt
         return self.vt + " {" + ",".join(self.spec) + "}"
 
-    def specstr(self, fo, p):
-        fo.write(p + '"' + self.vt)
-        fo.write('\\0"\n')
-        p = indent(p, 4)
-        if self.spec is not None:
-            fo.write(p + '"\\1"\n')
-            p = indent(p, 4)
-            for i in self.spec:
-                fo.write(p + '"' + i + '\\0"\n')
-            p = indent(p, -4)
-            # This terminating \1 is necessary to ensure that
-            # a prototype always ends with three \0's
-            fo.write(p + '"\\1\\0"\n')
-        if self.nm is not None:
-            fo.write(p + '"\\2" "' + self.nm + '\\0"\n')
-        if self.defval is not None:
-            fo.write(p + '"\\3" "' + quote(self.defval) + '\\0"\n')
-
+    def json(self, jl):
+        jl.append([self.vt, self.nm, self.defval, self.spec])
+        while jl[-1][-1] is None:
+                jl[-1].pop(-1)
 
 def vtype(txt):
     j = len(txt)
@@ -404,17 +391,13 @@ class prototype(object):
         s += '%s %s(%s);' % (self.c_ret(), fn, self.c_args(args))
         return "\n".join(lwrap(s)) + "\n"
 
-    def specstr(self, fo, cfunc, p):
-        if self.retval is None:
-            fo.write(p + '"VOID\\0"\n')
-        else:
-            self.retval.specstr(fo, p)
-        fo.write(p + '"' + cfunc + '\\0"\n')
-        p = indent(p, 4)
-        if self.args is not None:
-            for i in self.args:
-                i.specstr(fo, p)
-        fo.write(p + '"\\0"\n')
+    def json(self, jl, cfunc):
+        ll = []
+        self.retval.json(ll)
+        ll.append(cfunc)
+        for i in self.args:
+                i.json(ll)
+        jl.append(ll)
 
 #######################################################################
 
@@ -469,7 +452,7 @@ class stanza(object):
     def cstruct_init(self, fo):
         return
 
-    def specstr(self, fo):
+    def json(self, jl):
         return
 
 #######################################################################
@@ -568,10 +551,11 @@ class s_event(stanza):
     def cstruct_init(self, fo):
         fo.write("\t%s,\n" % self.event_func)
 
-    def specstr(self, fo):
-        fo.write('\t"$EVENT\\0"\n\t    "Vmod_%s_Func._event",\n\n' %
-                 self.vcc.modname)
-
+    def json(self, jl):
+        jl.append([
+                "$EVENT",
+                "Vmod_%s_Func._event" % self.vcc.modname
+        ])
 
 class s_function(stanza):
     def parse(self):
@@ -591,12 +575,13 @@ class s_function(stanza):
     def cstruct_init(self, fo):
         fo.write("\t" + self.proto.cname(pfx=True) + ",\n")
 
-    def specstr(self, fo):
-        fo.write('\t"$FUNC\\0"\t"%s.%s\\0"\n\n' %
-                 (self.vcc.modname, self.proto.name))
-        self.proto.specstr(fo, 'Vmod_%s_Func.%s' %
-                           (self.vcc.modname, self.proto.cname()), "\t    ")
-        fo.write('\t    "\\0",\n\n')
+    def json(self,jl):
+        jl.append([
+                "$FUNC",
+                "%s.%s" % (self.vcc.modname, self.proto.name),
+        ])
+        self.proto.json(jl[-1], 'Vmod_%s_Func.%s' %
+                           (self.vcc.modname, self.proto.cname()))
 
 
 class s_object(stanza):
@@ -663,29 +648,29 @@ class s_object(stanza):
             i.cstruct_init(fo)
         fo.write("\n")
 
-    def specstr(self, fo):
+    def json(self, jl):
+        ll = [
+                "$OBJ",
+                self.vcc.modname + "." + self.proto.name,
+                "struct %s%s_%s" %
+                    (self.vcc.sympfx, self.vcc.modname, self.proto.name),
+        ]
 
-        fo.write('\t"$OBJ\\0"\t"%s.%s\\0"\n\n' %
-                 (self.vcc.modname, self.proto.name))
+        l2 = [ "$INIT" ]
+        ll.append(l2)
+        self.init.json(l2,
+            'Vmod_%s_Func.%s' % (self.vcc.modname, self.init.name))
 
-        fo.write('\t    "struct %s%s_%s\\0"\n' %
-                 (self.vcc.sympfx, self.vcc.modname, self.proto.name))
-        fo.write("\n")
-
-        self.proto.specstr(fo, 'Vmod_%s_Func.%s' %
-                           (self.vcc.modname, self.init.name), '\t    ')
-        fo.write('\t    "\\0"\n\n')
-
-        fo.write('\t    "VOID\\0"\n')
-        fo.write('\t    "Vmod_%s_Func.%s\\0"\n' %
-                 (self.vcc.modname, self.fini.name))
-        fo.write('\t\t"\\0"\n')
-        fo.write('\t    "\\0"\n\n')
+        l2 = [ "$FINI" ]
+        ll.append(l2)
+        self.fini.json(l2,
+            'Vmod_%s_Func.%s' % (self.vcc.modname, self.fini.name))
 
         for i in self.methods:
-            i.specstr(fo)
+                i.json(ll)
 
-        fo.write('\t    "\\0",\n\n')
+        jl.append(ll)
+
 
     def dump(self):
         super(s_object, self).dump()
@@ -707,12 +692,14 @@ class s_method(stanza):
     def cstruct_init(self, fo):
         fo.write('\t' + self.proto.cname(pfx=True) + ",\n")
 
-    def specstr(self, fo):
-        fo.write('\t    "%s.%s\\0"\n' %
-                 (self.vcc.modname, self.proto.name))
-        self.proto.specstr(fo, 'Vmod_%s_Func.%s' %
-                           (self.vcc.modname, self.proto.cname()), '\t\t')
-        fo.write('\t\t"\\0"\n\n')
+    def json(self, jl):
+        jl.append([
+                "$METHOD",
+                self.vcc.modname + "." + self.proto.name
+        ])
+        self.proto.json(jl[-1],
+            'Vmod_%s_Func.%s' % (self.vcc.modname, self.proto.cname()))
+
 
 #######################################################################
 
@@ -836,15 +823,29 @@ class vcc(object):
             fo.write("\t&%senum_%s,\n" % (self.sympfx, j))
         fo.write("};\n")
 
-    def specstr(self, fo):
-        fo.write("\n/*lint -save -e786 -e840 */\n")
-        fo.write("static const char * const Vmod_Spec[] = {\n")
-
+    def json(self, fo):
+        jl = [ ["$VMOD", "1.0" ] ]
         for j in self.contents:
-            j.specstr(fo)
-        fo.write("\t0\n")
-        fo.write("};\n")
-        fo.write("/*lint -restore */\n")
+                j.json(jl)
+
+        bz = bytearray(json.dumps(jl, separators=(",",":"))) + "\0"
+        fo.write("\nstatic const char Vmod_Json[%d] = {\n" % len(bz))
+        t = "\t"
+        for i in bz:
+                t += "%d," % i
+                if len(t) >= 69:
+                        fo.write(t + "\n")
+                        t = "\t"
+        if len(t) > 1:
+                fo.write(t[:-1])
+        fo.write("\n};\n\n")
+        for i in json.dumps(jl, indent=2, separators=(',', ': ')).split("\n"):
+                j = "// " + i
+                if len(j) > 72:
+                        fo.write(j[:72] + "[...]\n")
+                else:
+                        fo.write(j + "\n")
+        fo.write("\n")
 
     def api(self, fo):
         for i in (714, 759, 765):
@@ -863,7 +864,7 @@ class vcc(object):
         fo.write('\t.func =\t\t&Vmod_Func,\n')
         fo.write('\t.func_len =\tsizeof(Vmod_Func),\n')
         fo.write('\t.proto =\tVmod_Proto,\n')
-        fo.write('\t.spec =\t\tVmod_Spec,\n')
+        fo.write('\t.json =\t\tVmod_Json,\n')
         fo.write('\t.abi =\t\tVMOD_ABI_Version,\n')
         # NB: Sort of hackish:
         # Fill file_id with random stuff, so we can tell if
@@ -927,7 +928,7 @@ class vcc(object):
 
         os.remove(fn2)
 
-        self.specstr(fo)
+        self.json(fo)
 
         self.api(fo)
 

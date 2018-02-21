@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include "vcc_compile.h"
+#include "vjsn.h"
 
 struct expr {
 	unsigned	magic;
@@ -400,7 +401,7 @@ vcc_priv_arg(struct vcc *tl, const char *p, const char *name, const char *vmod)
 
 struct func_arg {
 	vcc_type_t		type;
-	const char		*enum_bits;
+	const struct vjsn_val	*enums;
 	const char		*cname;
 	const char		*name;
 	const char		*val;
@@ -423,25 +424,20 @@ vcc_do_enum(struct vcc *tl, struct func_arg *fa, int len, const char *ptr)
 static void
 vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 {
-	const char *p, *r;
 	struct expr *e2;
+	struct vjsn_val *vv;
 
 	if (fa->type == ENUM) {
 		ExpectErr(tl, ID);
 		ERRCHK(tl);
-		r = p = fa->enum_bits;
-		do {
-			if (vcc_IdIs(tl->t, p))
+		VTAILQ_FOREACH(vv, &fa->enums->children, list)
+			if (vcc_IdIs(tl->t, vv->value))
 				break;
-			p += strlen(p) + 1;
-		} while (*p != '\1');
-		if (*p == '\1') {
+		if (vv == NULL) {
 			VSB_printf(tl->sb, "Wrong enum value.");
 			VSB_printf(tl->sb, "  Expected one of:\n");
-			do {
-				VSB_printf(tl->sb, "\t%s\n", r);
-				r += strlen(r) + 1;
-			} while (*r != '\0' && *r != '\1');
+			VTAILQ_FOREACH(vv, &fa->enums->children, list)
+				VSB_printf(tl->sb, "\t%s\n", vv->value);
 			vcc_ErrWhere(tl, tl->t);
 			return;
 		}
@@ -456,60 +452,59 @@ vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 }
 
 static void
-vcc_func(struct vcc *tl, struct expr **e, const char *spec,
+vcc_func(struct vcc *tl, struct expr **e, const void *priv,
     const char *extra, const struct symbol *sym)
 {
 	vcc_type_t rfmt;
-	const char *args;
 	const char *cfunc;
-	const char *p;
 	struct expr *e1;
 	struct func_arg *fa, *fa2;
 	VTAILQ_HEAD(,func_arg) head;
 	struct token *t1;
+	const struct vjsn_val *vv, *vvp;
 
-	rfmt = VCC_Type(spec);
-	spec += strlen(spec) + 1;
-	cfunc = spec;
-	spec += strlen(spec) + 1;
-	args = spec;
+	CAST_OBJ_NOTNULL(vv, priv, VJSN_VAL_MAGIC);
+	assert(vv->type == VJSN_ARRAY);
+	vv = VTAILQ_FIRST(&vv->children);
+	rfmt = VCC_Type(VTAILQ_FIRST(&vv->children)->value);
+	AN(rfmt);
+	vv = VTAILQ_NEXT(vv, list);
+	cfunc = vv->value;
+	vv = VTAILQ_NEXT(vv, list);
 	SkipToken(tl, '(');
-	p = args;
 	if (extra == NULL)
 		extra = "";
-	AN(rfmt);
 	VTAILQ_INIT(&head);
-	while (*p != '\0') {
+	for(;vv != NULL; vv = VTAILQ_NEXT(vv, list)) {
+		assert(vv->type == VJSN_ARRAY);
 		fa = calloc(1, sizeof *fa);
 		AN(fa);
 		fa->cname = cfunc;
 		VTAILQ_INSERT_TAIL(&head, fa, list);
-		if (!memcmp(p, "PRIV_", 5)) {
-			fa->result = vcc_priv_arg(tl, p, sym->name, sym->vmod);
+
+		vvp = VTAILQ_FIRST(&vv->children);
+		if (!memcmp(vvp->value, "PRIV_", 5)) {
+			fa->result = vcc_priv_arg(tl, vvp->value,
+			    sym->name, sym->vmod);
 			fa->name = "";
-			p += strlen(p) + 1;
 			continue;
 		}
-		fa->type = VCC_Type(p);
+		fa->type = VCC_Type(vvp->value);
 		AN(fa->type);
-		p += strlen(p) + 1;
-		if (*p == '\1') {
-			fa->enum_bits = ++p;
-			while (*p != '\1')
-				p += strlen(p) + 1;
-			p++;
-			assert(*p == '\0');
-			p++;
+		vvp = VTAILQ_NEXT(vvp, list);
+		if (vvp != NULL) {
+			fa->name = vvp->value;
+			vvp = VTAILQ_NEXT(vvp, list);
+			if (vvp != NULL) {
+				fa->val = vvp->value;
+				vvp = VTAILQ_NEXT(vvp, list);
+				if (vvp != NULL) {
+					fa->enums = vvp;
+					vvp = VTAILQ_NEXT(vvp, list);
+				}
+			}
 		}
-		if (*p == '\2') {
-			fa->name = p + 1;
-			p += strlen(p) + 1;
-		}
-		if (*p == '\3') {
-			fa->val = p + 1;
-			p += strlen(p) + 1;
-		}
-		assert(*p == 0 || *p > ' ');
+		AZ(vvp);
 	}
 
 	VTAILQ_FOREACH(fa, &head, list) {
@@ -576,11 +571,12 @@ vcc_func(struct vcc *tl, struct expr **e, const char *spec,
 	SkipToken(tl, ')');
 }
 
+
 /*--------------------------------------------------------------------
  */
 
 void
-vcc_Eval_Func(struct vcc *tl, const char *spec,
+vcc_Eval_Func(struct vcc *tl, const struct vjsn_val *spec,
     const char *extra, const struct symbol *sym)
 {
 	struct expr *e = NULL;
@@ -605,7 +601,6 @@ vcc_Eval_SymFunc(struct vcc *tl, struct expr **e, struct token *t,
 	assert(sym->kind == SYM_FUNC);
 	AN(sym->eval_priv);
 
-	// assert(sym->fmt == VCC_Type(sym->eval_priv));
 	vcc_func(tl, e, sym->eval_priv, sym->extra, sym);
 	ERRCHK(tl);
 	if ((*e)->fmt == STRING) {
@@ -1261,7 +1256,7 @@ vcc_Act_Call(struct vcc *tl, struct token *t, struct symbol *sym)
 	struct expr *e;
 
 	e = NULL;
-	vcc_Eval_SymFunc(tl, &e, t, sym, VOID);
+	vcc_func(tl, &e, sym->eval_priv, sym->extra, sym);
 	if (!tl->err) {
 		vcc_expr_fmt(tl->fb, tl->indent, e);
 		SkipToken(tl, ';');

@@ -209,7 +209,7 @@ struct vmod_data {
 	const void			*func;
 	int				func_len;
 	const char			*proto;
-	const char			* const *spec;
+	const char			*json;
 	const char			*abi;
 };
 

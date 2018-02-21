@@ -128,7 +128,7 @@ VRT_Vmod_Init(VRT_CTX, struct vmod **hdl, void *ptr, int len, const char *nm,
 		    d->func == NULL ||
 		    d->func_len <= 0 ||
 		    d->proto == NULL ||
-		    d->spec == NULL) {
+		    d->json == NULL) {
 			VSB_printf(ctx->msg,
 			    "Loading VMOD %s from %s:\n", nm, path);
 			VSB_printf(ctx->msg, "VMOD data is mangled.\n");

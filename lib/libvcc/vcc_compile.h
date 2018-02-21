@@ -71,6 +71,7 @@ struct acl_e;
 struct proc;
 struct expr;
 struct vcc;
+struct vjsn_val;
 struct symbol;
 
 struct source {
@@ -308,8 +309,8 @@ void vcc_Expr_Init(struct vcc *tl);
 sym_expr_t vcc_Eval_Var;
 sym_expr_t vcc_Eval_Handle;
 sym_expr_t vcc_Eval_SymFunc;
-void vcc_Eval_Func(struct vcc *tl, const char *spec,
-    const char *extra, const struct symbol *sym);
+void vcc_Eval_Func(struct vcc *, const struct vjsn_val *,
+    const char *, const struct symbol *);
 void VCC_GlobalSymbol(struct symbol *, vcc_type_t fmt, const char *pfx);
 struct symbol *VCC_HandleSymbol(struct vcc *, vcc_type_t , const char *);
 
