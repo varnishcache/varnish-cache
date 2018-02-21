@@ -65,36 +65,36 @@ vcc_ParseImport(struct vcc *tl)
 	const char * const *spec;
 	struct symbol *sym;
 	struct symbol *msym;
-	const struct symbol *osym;
 	const char *p;
-	// int *modlen;
 	const struct vmod_data *vmd;
 
 	t1 = tl->t;
 	SkipToken(tl, ID);		/* "import" */
 
+
 	ExpectErr(tl, ID);
 	mod = tl->t;
-	osym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_NOERR, XREF_NONE);
-	vcc_NextToken(tl);
+	msym = VCC_SymbolGet(tl, SYM_NONE, SYMTAB_NOERR, XREF_NONE);
 
-	if (osym != NULL && osym->kind != SYM_VMOD) {
+	if (msym != NULL && msym->kind != SYM_VMOD) {
+		/*
+		 * We need to make sure the entire std.* namespace is empty
+		 */
 		VSB_printf(tl->sb, "Module %.*s conflicts with other symbol.\n",
 		    PF(mod));
 		vcc_ErrWhere2(tl, t1, tl->t);
 		return;
 	}
-	if (osym != NULL) {
+	if (msym != NULL) {
 		VSB_printf(tl->sb, "Module %.*s already imported.\n",
 		    PF(mod));
 		vcc_ErrWhere2(tl, t1, tl->t);
 		VSB_printf(tl->sb, "Previous import was here:\n");
-		vcc_ErrWhere2(tl, osym->def_b, osym->def_e);
+		vcc_ErrWhere2(tl, msym->def_b, msym->def_e);
 		return;
 	}
 
-	bprintf(fn, "%.*s", PF(mod));
-	msym = VCC_MkSym(tl, fn, SYM_VMOD, VCL_LOW, VCL_HIGH);
+	msym = VCC_SymbolGet(tl, SYM_VMOD, SYMTAB_CREATE, XREF_NONE);
 	ERRCHK(tl);
 	AN(msym);
 	msym->def_b = t1;
