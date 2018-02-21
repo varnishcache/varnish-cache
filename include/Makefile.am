@@ -98,7 +98,8 @@ nobase_noinst_HEADERS = \
 	vss.h \
 	vtcp.h \
 	vtree.h \
-	vus.h
+	vus.h \
+	tbl/htc.h
 
 ## keep in sync with lib/libvcc/Makefile.am
 vcl.h: \

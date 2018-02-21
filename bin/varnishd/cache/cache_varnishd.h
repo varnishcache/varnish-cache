@@ -343,6 +343,7 @@ void SES_Ref(struct sess *sp);
 void SES_Rel(struct sess *sp);
 int SES_Reschedule_Req(struct req *, enum task_prio);
 
+const char * HTC_Status(enum htc_status_e);
 void HTC_RxInit(struct http_conn *htc, struct ws *ws);
 void HTC_RxPipeline(struct http_conn *htc, void *);
 enum htc_status_e HTC_RxStuff(struct http_conn *, htc_complete_f *,
@@ -356,15 +357,8 @@ void SES_Set_String_Attr(struct sess *sp, enum sess_attr a, const char *src);
 
 
 enum htc_status_e {
-	HTC_S_JUNK =		-5,
-	HTC_S_CLOSE =		-4,
-	HTC_S_TIMEOUT =		-3,
-	HTC_S_OVERFLOW =	-2,
-	HTC_S_EOF =		-1,
-	HTC_S_EMPTY =		 0,
-	HTC_S_MORE =		 1,
-	HTC_S_COMPLETE =	 2,
-	HTC_S_IDLE =		 3,
+#define HTC_STATUS(e, n, s, l) HTC_S_ ## e = n,
+#include "tbl/htc.h"
 };
 
 /* cache_shmlog.c */

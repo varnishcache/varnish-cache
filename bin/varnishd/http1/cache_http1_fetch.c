@@ -192,7 +192,8 @@ V1F_FetchRespHdr(struct busyobj *bo)
 			htc->doclose = SC_RX_OVERFLOW;
 			break;
 		default:
-			VSLb(bo->vsl, SLT_FetchError, "HTC status %d", hs);
+			VSLb(bo->vsl, SLT_FetchError, "HTC %s (%d)",
+			     HTC_Status(hs), hs);
 			htc->doclose = SC_RX_BAD;
 			break;
 		}
