@@ -18,6 +18,7 @@ server s1 {
 	expect req.url == /url4
 	txresp -bodylen 200000
 
+	non-fatal
 	rxreq
 	expect req.url == /url5
 	txresp -bodylen 1000000
