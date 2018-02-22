@@ -514,13 +514,24 @@ vbf_figure_out_vfp(struct busyobj *bo)
 	 *
 	 */
 
-	/* No body or no GZIP supprt -> done */
+	/* No body or no GZIP support -> done */
 	if (bo->htc->body_status == BS_NONE ||
 	    bo->htc->content_length == 0 ||
 	    !cache_param->http_gzip_support) {
 		http_Unset(bo->beresp, H_Content_Encoding);
 		bo->do_gzip = bo->do_gunzip = 0;
 		bo->do_stream = 0;
+		return (0);
+	}
+
+	/* Don't mess with a partial body */
+	if (http_GetStatus(bo->beresp) == 206) {
+		AN(bo->uncacheable);
+		if (bo->do_esi) {
+			VSLb(bo->vsl, SLT_FetchError,
+			    "ESI enabled on partial response");
+			return (-1);
+		}
 		return (0);
 	}
 
