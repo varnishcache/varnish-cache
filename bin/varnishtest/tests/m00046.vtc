@@ -21,7 +21,7 @@ client c1 -connect "${tmpdir}/v2.sock" {
 	expect resp.http.v1_addr == "0.0.0.0"
 } -run
 
-varnish v2 -errvcl {IP constant '"${v1_addr}"' could not be resolved to an IP address:} {
+varnish v2 -errvcl {IP constant '"${v1_addr}"'} {
 	import std;
 
 	sub vcl_recv {
