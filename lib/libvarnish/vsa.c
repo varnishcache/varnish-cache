@@ -191,6 +191,7 @@ VSA_Init()
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV;
+	hints.ai_socktype = SOCK_STREAM;
 	AZ(getaddrinfo("0.0.0.0", "0", &hints, &res));
 	AN(VSA_Build(&bogo_ip_vsa, res->ai_addr, res->ai_addrlen));
 	assert(VSA_Sane(bogo_ip));
