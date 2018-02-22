@@ -65,6 +65,12 @@
 static const struct hash_slinger *hash;
 static struct objhead *private_oh;
 
+struct rush {
+	unsigned		magic;
+#define RUSH_MAGIC		0xa1af5f01
+	VTAILQ_HEAD(,req)	reqs;
+};
+
 /*---------------------------------------------------------------------*/
 
 static struct objcore *
@@ -524,15 +530,16 @@ HSH_Lookup(struct req *req, struct objcore **ocp, struct objcore **bocp,
  */
 
 static void
-hsh_rush(struct worker *wrk, struct objhead *oh)
+hsh_rush(struct worker *wrk, struct objhead *oh, struct rush *r)
 {
 	unsigned u;
 	struct req *req;
-	struct sess *sp;
 	struct waitinglist *wl;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	CHECK_OBJ_NOTNULL(r, RUSH_MAGIC);
+	assert(VTAILQ_EMPTY(&r->reqs));
 	Lck_AssertHeld(&oh->mtx);
 	wl = oh->waitinglist;
 	CHECK_OBJ_ORNULL(wl, WAITINGLIST_MAGIC);
@@ -547,21 +554,14 @@ hsh_rush(struct worker *wrk, struct objhead *oh)
 		AZ(req->wrk);
 		VTAILQ_REMOVE(&wl->list, req, w_list);
 		DSL(DBG_WAITINGLIST, req->vsl->wid, "off waiting list");
-		if (SES_Reschedule_Req(req)) {
+		if (DO_DEBUG(DBG_FAILRESCHED) || SES_Reschedule_Req(req)) {
 			/*
 			 * In case of overloads, we ditch the entire
 			 * waiting list.
 			 */
 			wrk->stats->busy_wakeup--;
 			while (1) {
-				wrk->stats->busy_killed++;
-				AN (req->vcl);
-				VCL_Rel(&req->vcl);
-				sp = req->sp;
-				CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
-				CNT_AcctLogCharge(wrk->stats, req);
-				Req_Release(req);
-				SES_Delete(sp, SC_OVERLOAD, NAN);
+				VTAILQ_INSERT_TAIL(&r->reqs, req, w_list);
 				req = VTAILQ_FIRST(&wl->list);
 				if (req == NULL)
 					break;
@@ -578,6 +578,36 @@ hsh_rush(struct worker *wrk, struct objhead *oh)
 		FREE_OBJ(wl);
 		wrk->stats->n_waitinglist--;
 	}
+}
+
+static void
+hsh_rush_clean(struct worker *wrk, struct rush *r)
+{
+	struct req *req;
+	struct sess *sp;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(r, RUSH_MAGIC);
+
+	while (!VTAILQ_EMPTY(&r->reqs)) {
+		req = VTAILQ_FIRST(&r->reqs);
+		CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+		VTAILQ_REMOVE(&r->reqs, req, w_list);
+		wrk->stats->busy_killed++;
+		AN (req->vcl);
+		VCL_Rel(&req->vcl);
+		sp = req->sp;
+		CHECK_OBJ_NOTNULL(sp, SESS_MAGIC);
+		CNT_AcctLogCharge(wrk->stats, req);
+		CHECK_OBJ_NOTNULL(req->hash_objhead, OBJHEAD_MAGIC);
+		AN(HSH_DerefObjHead(wrk, &req->hash_objhead));
+		AZ(req->hash_objhead);
+		Req_Release(req);
+		SES_Delete(sp, SC_OVERLOAD, NAN);
+		DSL(DBG_WAITINGLIST, req->vsl->wid,
+		    "kill from waiting list");
+	}
+
 }
 
 /*---------------------------------------------------------------------
@@ -719,11 +749,14 @@ void
 HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 {
 	struct objhead *oh;
+	struct rush rush;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(oc, OBJCORE_MAGIC);
 	oh = oc->objhead;
 	CHECK_OBJ(oh, OBJHEAD_MAGIC);
+	INIT_OBJ(&rush, RUSH_MAGIC);
+	VTAILQ_INIT(&rush.reqs);
 
 	AN(oc->stobj->stevedore);
 	AN(oc->flags & OC_F_BUSY);
@@ -744,8 +777,9 @@ HSH_Unbusy(struct worker *wrk, struct objcore *oc)
 	VTAILQ_INSERT_HEAD(&oh->objcs, oc, list);
 	oc->flags &= ~OC_F_BUSY;
 	if (oh->waitinglist != NULL)
-		hsh_rush(wrk, oh);
+		hsh_rush(wrk, oh, &rush);
 	Lck_Unlock(&oh->mtx);
+	hsh_rush_clean(wrk, &rush);
 }
 
 /*---------------------------------------------------------------------
@@ -800,6 +834,7 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
 {
 	struct objcore *oc;
 	struct objhead *oh;
+	struct rush rush;
 	unsigned r;
 
 	AN(ocp);
@@ -812,6 +847,8 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
 
 	oh = oc->objhead;
 	CHECK_OBJ_NOTNULL(oh, OBJHEAD_MAGIC);
+	INIT_OBJ(&rush, RUSH_MAGIC);
+	VTAILQ_INIT(&rush.reqs);
 
 	Lck_Lock(&oh->mtx);
 	assert(oh->refcnt > 0);
@@ -819,8 +856,9 @@ HSH_DerefObjCore(struct worker *wrk, struct objcore **ocp)
 	if (!r)
 		VTAILQ_REMOVE(&oh->objcs, oc, list);
 	if (oh->waitinglist != NULL)
-		hsh_rush(wrk, oh);
+		hsh_rush(wrk, oh, &rush);
 	Lck_Unlock(&oh->mtx);
+	hsh_rush_clean(wrk, &rush);
 	if (r != 0)
 		return (r);
 
@@ -842,6 +880,7 @@ int
 HSH_DerefObjHead(struct worker *wrk, struct objhead **poh)
 {
 	struct objhead *oh;
+	struct rush rush;
 	int r;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -867,12 +906,15 @@ HSH_DerefObjHead(struct worker *wrk, struct objhead **poh)
 	 * just make the hold the same ref's as objcore, that would
 	 * confuse hashers.
 	 */
+	INIT_OBJ(&rush, RUSH_MAGIC);
+	VTAILQ_INIT(&rush.reqs);
 	while (oh->waitinglist != NULL) {
 		Lck_Lock(&oh->mtx);
 		assert(oh->refcnt > 0);
 		r = oh->refcnt;
-		hsh_rush(wrk, oh);
+		hsh_rush(wrk, oh, &rush);
 		Lck_Unlock(&oh->mtx);
+		hsh_rush_clean(wrk, &rush);
 		if (r > 1)
 			break;
 		usleep(100000);
