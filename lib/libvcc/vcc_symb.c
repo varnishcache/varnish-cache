@@ -220,24 +220,22 @@ VCC_SymbolGet(struct vcc *tl, vcc_kind_t kind, const char *e, const char *x)
 	if (sym == NULL) {
 		VSB_printf(tl->sb, "%s: ", e);
 		vcc_ErrToken(tl, tl->t);
+		sym = VCC_Symbol(tl, NULL, tl->t->b, tl->t->e, kind, 0,
+			VCL_LOW, VCL_HIGH);
+		if (sym != NULL) {
+			VSB_printf(tl->sb, " (Only available when");
+			if (sym->lorev >= VCL_LOW)
+				VSB_printf(tl->sb, " %.1f <=", .1 * sym->lorev);
+			VSB_printf(tl->sb, " VCL syntax");
+			if (sym->hirev <= VCL_HIGH)
+				VSB_printf(tl->sb, " <= %.1f", .1 * sym->hirev);
+			VSB_printf(tl->sb, ")");
+		}
 		VSB_cat(tl->sb, "\nAt: ");
 		vcc_ErrWhere(tl, tl->t);
 		return (NULL);
 	}
-	if (sym->lorev > tl->syntax || sym->hirev < tl->syntax) {
-		VSB_printf(tl->sb, "Symbol ");
-		vcc_ErrToken(tl, tl->t);
-		if (sym->lorev > tl->syntax)
-			VSB_printf(tl->sb, " needs vcl %.1f or higher.",
-			    .1 * sym->lorev);
-		else
-			VSB_printf(tl->sb,
-			    " is discontinued after vcl %.1f.",
-			    .1 * sym->hirev);
-		VSB_cat(tl->sb, "\nAt: ");
-		vcc_ErrWhere(tl, tl->t);
-		return(NULL);
-	}
+	assert (sym->lorev <= tl->syntax && sym->hirev >= tl->syntax);
 	if (kind != SYM_NONE && kind != sym->kind) {
 		VSB_printf(tl->sb, "Symbol ");
 		vcc_ErrToken(tl, tl->t);
