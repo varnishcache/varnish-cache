@@ -94,9 +94,12 @@ usage(void)
 
 	printf(FMT, "-a address[:port][,proto]",
 	    "HTTP listen address and port");
-	printf(FMT, "", "Can be specified multiple times.");
-	printf(FMT, "", "  default: \":80,HTTP\"");
+	printf(FMT, "   [,user=<u>][,group=<g>]",
+	    "Can be specified multiple times.");
+	printf(FMT, "   [,mode=<m>]", "  default: \":80,HTTP\"");
 	printf(FMT, "", "Proto can be \"PROXY\" or \"HTTP\" (default)");
+	printf(FMT, "", "user, group and mode set permissions for");
+	printf(FMT, "", "  a Unix domain socket.");
 	printf(FMT, "-b address[:port]", "Backend address and port");
 	printf(FMT, "", "  default: \":80\"");
 	printf(FMT, "-f vclfile", "VCL program");
