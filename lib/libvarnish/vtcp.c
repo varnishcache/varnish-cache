@@ -569,7 +569,7 @@ VTCP_Check(int a)
 {
 	if (a == 0)
 		return (1);
-	if (errno == ECONNRESET || errno == ENOTCONN)
+	if (errno == ECONNRESET || errno == ENOTCONN || errno == EPIPE)
 		return (1);
 #if (defined (__SVR4) && defined (__sun)) || defined (__NetBSD__)
 	/*
