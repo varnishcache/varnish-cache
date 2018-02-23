@@ -454,6 +454,7 @@ VRT_l_req_esi(VRT_CTX, unsigned process_esi)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	assert(ctx->syntax <= 40);
 	/*
 	 * Only allow you to turn of esi in the main request
 	 * else everything gets confused
@@ -468,6 +469,7 @@ VRT_r_req_esi(VRT_CTX)
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	assert(ctx->syntax <= 40);
 	return (!ctx->req->disable_esi);
 }
 
@@ -724,6 +726,32 @@ VRT_r_resp_is_streaming(VRT_CTX)
 		return (0);	/* When called from vcl_synth */
 	CHECK_OBJ_NOTNULL(ctx->req->objcore, OBJCORE_MAGIC);
 	return (ctx->req->objcore->boc == NULL ? 0 : 1);
+}
+
+/*--------------------------------------------------------------------*/
+
+void
+VRT_l_resp_do_esi(VRT_CTX, unsigned process_esi)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	assert(ctx->syntax >= 41);
+	/*
+	 * Only allow you to turn of esi in the main request
+	 * else everything gets confused
+	 */
+	ctx->req->disable_esi = !process_esi;
+}
+
+unsigned
+VRT_r_resp_do_esi(VRT_CTX)
+{
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
+	assert(ctx->syntax >= 41);
+	return (!ctx->req->disable_esi);
 }
 
 /*--------------------------------------------------------------------*/

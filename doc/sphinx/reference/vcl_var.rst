@@ -1065,6 +1065,20 @@ resp.http.*
 
 	
 	The HTTP headers that will be returned.
+
+resp.do_esi	``VCL >= 4.1``
+
+	Type: BOOL
+
+	Readable from: vcl_deliver, vcl_synth
+
+	Writable from: vcl_deliver, vcl_synth
+
+	Default: Set if ESI parsing has happened.
+
+	This can be used to selectively disable ESI processing,
+	even though ESI parsing happened during fetch.
+	This is useful when Varnish caches peer with each other.
 	
 
 resp.is_streaming
