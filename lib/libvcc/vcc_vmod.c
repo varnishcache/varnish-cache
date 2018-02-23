@@ -73,20 +73,16 @@ func_sym(struct symbol *sym, const char *vmod, const struct vjsn_val *v)
 }
 
 static void
-parse_json(struct vcc * tl, const char *vmod, const char *json)
+vcc_json_always(struct vcc *tl, const struct symbol *msym)
 {
 	struct inifin *ifp;
-	struct vjsn *vj;
-	struct vjsn_val *vv, *vv2;
+	const struct vjsn *vj;
+	const struct vjsn_val *vv, *vv2;
 	double vmod_syntax = 0.0;
-	const char *p;
-	struct symbol *sym;
 
 	ifp = NULL;
 
-	vj = vjsn_parse(json, &p);
-	XXXAZ(p);
-	AN(vj);
+	CAST_OBJ_NOTNULL(vj, msym->eval_priv, VJSN_MAGIC);
 
 	VTAILQ_FOREACH(vv, &vj->value->children, list) {
 		assert(vv->type == VJSN_ARRAY);
@@ -106,27 +102,15 @@ parse_json(struct vcc * tl, const char *vmod, const char *json)
 			VSB_printf(ifp->ini,
 			    "\tif (%s(ctx, &vmod_priv_%s, VCL_EVENT_LOAD))\n"
 			    "\t\treturn(1);",
-			    vv2->value, vmod);
+			    vv2->value, msym->name);
 			VSB_printf(ifp->fin,
 			    "\t\t(void)%s(ctx, &vmod_priv_%s,\n"
 			    "\t\t\t    VCL_EVENT_DISCARD);\n",
-			    vv2->value, vmod);
+			    vv2->value, msym->name);
 			VSB_printf(ifp->event, "%s(ctx, &vmod_priv_%s, ev)",
-			    vv2->value, vmod);
+			    vv2->value, msym->name);
 		} else if (!strcmp(vv2->value, "$FUNC")) {
-			vv2 = VTAILQ_NEXT(vv2, list);
-			sym = VCC_MkSym(tl,
-			    vv2->value, SYM_FUNC, VCL_LOW, VCL_HIGH);
-			ERRCHK(tl);
-			AN(sym);
-			func_sym(sym, vmod, VTAILQ_NEXT(vv2, list));
 		} else if (!strcmp(vv2->value, "$OBJ")) {
-			vv2 = VTAILQ_NEXT(vv2, list);
-			sym = VCC_MkSym(tl, vv2->value,
-			    SYM_OBJECT, VCL_LOW, VCL_HIGH);
-			XXXAN(sym);
-			sym->eval_priv = vv2;
-			sym->vmod = vmod;
 		} else {
 			VTAILQ_FOREACH(vv2, &vv->children, list)
 				fprintf(stderr, "\tt %s n %s v %s\n",
@@ -134,6 +118,37 @@ parse_json(struct vcc * tl, const char *vmod, const char *json)
 			WRONG("Vmod JSON syntax error");
 		}
 	}
+}
+
+static void v_matchproto_(sym_wildcard_t)
+vcc_json_wildcard(struct vcc *tl, struct symbol *msym, struct symbol *tsym)
+{
+	const struct vjsn *vj;
+	const struct vjsn_val *vv, *vv1, *vv2;
+
+	assert(msym->kind == SYM_VMOD);
+	CAST_OBJ_NOTNULL(vj, msym->eval_priv, VJSN_MAGIC);
+	VTAILQ_FOREACH(vv, &vj->value->children, list) {
+		assert(vv->type == VJSN_ARRAY);
+		vv1 = VTAILQ_FIRST(&vv->children);
+		assert(vv1->type == VJSN_STRING);
+		vv2 = VTAILQ_NEXT(vv1, list);
+		assert(vv2->type == VJSN_STRING);
+		if (!strcmp(vv1->value, "$FUNC") &&
+		    !strcmp(vv2->value, tsym->name)) {
+			tsym->kind = SYM_FUNC;
+			tsym->noref = 1;
+			func_sym(tsym, msym->name, VTAILQ_NEXT(vv2, list));
+			return;
+		} else if (!strcmp(vv1->value, "$OBJ") &&
+			   !strcmp(vv2->value, tsym->name)) {
+			tsym->kind = SYM_OBJECT;
+			tsym->eval_priv = vv2;
+			tsym->vmod = msym->name;
+			return;
+		}
+	}
+	tl->err = 1;
 }
 
 void
@@ -147,6 +162,7 @@ vcc_ParseImport(struct vcc *tl)
 	struct inifin *ifp;
 	struct symbol *msym;
 	const struct vmod_data *vmd;
+	struct vjsn *vj;
 
 	t1 = tl->t;
 	SkipToken(tl, ID);		/* "import" */
@@ -296,7 +312,13 @@ vcc_ParseImport(struct vcc *tl)
 	VSB_printf(ifp->fin, "\t\tVRT_priv_fini(&vmod_priv_%.*s);\n", PF(mod));
 	VSB_printf(ifp->fin, "\t\t\tVRT_Vmod_Fini(&VGC_vmod_%.*s);", PF(mod));
 
-	parse_json(tl, msym->name, vmd->json);
+	vj = vjsn_parse(vmd->json, &p);
+	XXXAZ(p);
+	AN(vj);
+	msym->eval_priv = vj;
+	msym->wildcard = vcc_json_wildcard;
+
+	vcc_json_always(tl, msym);
 
 	Fh(tl, 0, "\n/* --- BEGIN VMOD %.*s --- */\n\n", PF(mod));
 	Fh(tl, 0, "static struct vmod *VGC_vmod_%.*s;\n", PF(mod));
@@ -310,7 +332,6 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 {
 	struct symbol *sy1, *sy2, *sy3;
 	struct inifin *ifp;
-	const char *s_obj;
 	char buf1[128];
 	char buf2[128];
 	const struct vjsn_val *vv, *vf;
@@ -343,7 +364,6 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 
 	CAST_OBJ_NOTNULL(vv, sy2->eval_priv, VJSN_VAL_MAGIC);
 
-	s_obj = vv->value;
 	vv = VTAILQ_NEXT(vv, list);
 
 	Fh(tl, 0, "static %s *%s;\n\n", vv->value, sy1->rname);
@@ -383,7 +403,7 @@ vcc_Act_New(struct vcc *tl, struct token *t, struct symbol *sym)
 		vf = VTAILQ_NEXT(vf, list);
 		assert(vf->type == VJSN_STRING);
 
-		bprintf(buf2, "%s%s", sy1->name, vf->value + strlen(s_obj));
+		bprintf(buf2, "%s.%s", sy1->name, vf->value);
 		sy3 = VCC_MkSym(tl, buf2, SYM_FUNC, VCL_LOW, VCL_HIGH);
 		AN(sy3);
 		func_sym(sy3, sy2->vmod, VTAILQ_NEXT(vf, list));

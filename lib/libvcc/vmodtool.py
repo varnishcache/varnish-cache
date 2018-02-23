@@ -578,7 +578,7 @@ class s_function(stanza):
     def json(self,jl):
         jl.append([
                 "$FUNC",
-                "%s.%s" % (self.vcc.modname, self.proto.name),
+                "%s" % self.proto.name,
         ])
         self.proto.json(jl[-1], 'Vmod_%s_Func.%s' %
                            (self.vcc.modname, self.proto.cname()))
@@ -651,7 +651,7 @@ class s_object(stanza):
     def json(self, jl):
         ll = [
                 "$OBJ",
-                self.vcc.modname + "." + self.proto.name,
+                self.proto.name,
                 "struct %s%s_%s" %
                     (self.vcc.sympfx, self.vcc.modname, self.proto.name),
         ]
@@ -682,7 +682,8 @@ class s_method(stanza):
     def parse(self):
         p = self.vcc.contents[-1]
         assert type(p) == s_object
-        self.proto = prototype(self, prefix=p.proto.name)
+        self.pfx = p.proto.name
+        self.proto = prototype(self, prefix=self.pfx)
         self.rstlbl = "func_" + self.proto.name
         p.methods.append(self)
 
@@ -695,7 +696,7 @@ class s_method(stanza):
     def json(self, jl):
         jl.append([
                 "$METHOD",
-                self.vcc.modname + "." + self.proto.name
+                self.proto.name[len(self.pfx)+1:]
         ])
         self.proto.json(jl[-1],
             'Vmod_%s_Func.%s' % (self.vcc.modname, self.proto.cname()))
