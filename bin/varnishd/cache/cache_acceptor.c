@@ -221,7 +221,7 @@ vca_tcp_opt_init(void)
 }
 
 static void
-vca_tcp_opt_test(struct listen_sock *ls)
+vca_tcp_opt_test(const struct listen_sock *ls)
 {
 	int i, n, sock;
 	struct tcp_opt *to;
@@ -247,7 +247,7 @@ vca_tcp_opt_test(struct listen_sock *ls)
 }
 
 static void
-vca_tcp_opt_set(struct listen_sock *ls, int force)
+vca_tcp_opt_set(const struct listen_sock *ls, int force)
 {
 	int n, sock;
 	struct tcp_opt *to;
@@ -314,8 +314,8 @@ vca_pace_good(void)
  */
 
 static void
-vca_mk_tcp(struct wrk_accept *wa, struct sess *sp, char *laddr, char *lport,
-	   char *raddr, char *rport)
+vca_mk_tcp(const struct wrk_accept *wa,
+    struct sess *sp, char *laddr, char *lport, char *raddr, char *rport)
 {
 	struct suckaddr *sa;
 	struct sockaddr_storage ss;
@@ -345,7 +345,7 @@ vca_mk_uds(struct wrk_accept *wa, struct sess *sp, char *laddr, char *lport,
 
 	(void) wa;
 	SES_Reserve_remote_addr(sp, &sa);
-	SES_Set_remote_addr(sp, bogo_ip);
+	AZ(SES_Set_remote_addr(sp, bogo_ip));
 	sp->sattr[SA_CLIENT_ADDR] = sp->sattr[SA_REMOTE_ADDR];
 	sp->sattr[SA_LOCAL_ADDR] = sp->sattr[SA_REMOTE_ADDR];
 	sp->sattr[SA_SERVER_ADDR] = sp->sattr[SA_REMOTE_ADDR];
