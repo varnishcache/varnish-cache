@@ -28,7 +28,7 @@
 
 #include <stdint.h>
 
-#define ILL (0xff)
+#define ILL ((int8_t) 127)
 
 /* These are defined in hex.c */
 

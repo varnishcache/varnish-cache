@@ -5,9 +5,6 @@
 -efunc(662, VSHA256_Update)	// Possible creation of out-of-bounds pointer
 -efunc(662, be32dec_vect)	// Possible creation of out-of-bounds pointer
 -efunc(670, VSHA256_Update)	// Possible access beyond array for function '___',
-+fan			// Allow anon unions
-
--e713	// Loss of precision (assignment) (unsigned long long to long long)
 
 -dVARNISH_STATE_DIR="foo"
 

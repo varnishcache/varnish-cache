@@ -26,6 +26,8 @@
  * write buffer: utility functions to append-write on a varnish workspace
  */
 
+#include "config.h"
+
 #include <string.h>
 
 #include "cache/cache.h"
