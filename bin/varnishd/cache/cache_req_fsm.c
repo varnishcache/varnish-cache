@@ -529,6 +529,7 @@ cnt_lookup(struct worker *wrk, struct req *req)
 		if (busy != NULL) {
 			AZ(oc->flags & OC_F_PASS);
 			CHECK_OBJ_NOTNULL(busy->boc, BOC_MAGIC);
+			// XXX: shouldn't we go to miss?
 			VBF_Fetch(wrk, req, busy, oc, VBF_BACKGROUND);
 		} else {
 			(void)VRB_Ignore(req);// XXX: handle err
