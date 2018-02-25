@@ -6,20 +6,32 @@ Changes since 4.1.9:
 
 * New counter added: cache_hit_grace (see 2455_)
 * Doc: Specify that time_firstbyte is in seconds (see 2456_)
+* Fix issue #1799 for keep (2519_)
+* New way of calculating TTLs in VCL (2555_)
+* Added n_lru_limited counter (see 2569_)
 
 .. _2455: https://github.com/varnishcache/varnish-cache/pull/2455
 .. _2456: https://github.com/varnishcache/varnish-cache/pull/2456
+.. _2519: https://github.com/varnishcache/varnish-cache/pull/2519
+.. _2555: https://github.com/varnishcache/varnish-cache/pull/2555
+.. _2569: https://github.com/varnishcache/varnish-cache/pull/2569
 
 Bugs fixed
 ----------
 
 * 1772_ - Honor first_byte_timeout for recycled backend connections
 * 2135_ - Limit Backend Connection retries to a single retry
+* 2495_ - Avoid leaking an OH ref on reembark failure
 * 2502_ - objcore reference count leak
+* 2530_ - Varnish shouldn't test gunzip for range responses
+* 2582_ - Assert error in http1_minimal_response()
 
 .. _1772: https://github.com/varnishcache/varnish-cache/issues/1772
 .. _2135: https://github.com/varnishcache/varnish-cache/pull/2135
+.. _2495: https://github.com/varnishcache/varnish-cache/issues/2495
 .. _2502: https://github.com/varnishcache/varnish-cache/issues/2502
+.. _2530: https://github.com/varnishcache/varnish-cache/issues/2530
+.. _2582: https://github.com/varnishcache/varnish-cache/issues/2582
 
 ================================
 Varnish Cache 4.1.9 (2017-11-14)
