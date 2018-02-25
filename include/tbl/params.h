@@ -1091,7 +1091,8 @@ PARAM(
 	/* units */	"seconds",
 	/* flags */	XYZZY,
 	/* s-text */
-	"The number of seconds between TCP keep-alive probes.",
+	"The number of seconds between TCP keep-alive probes. "
+	"Ignored for Unix domain sockets.",
 	/* l-text */	"",
 	/* func */	NULL
 )
@@ -1107,7 +1108,7 @@ PARAM(
 	/* s-text */
 	"The maximum number of TCP keep-alive probes to send before giving "
 	"up and killing the connection if no response is obtained from the "
-	"other end.",
+	"other end. Ignored for Unix domain sockets.",
 	/* l-text */	"",
 	/* func */	NULL
 )
@@ -1122,7 +1123,8 @@ PARAM(
 	/* flags */	XYZZY,
 	/* s-text */
 	"The number of seconds a connection needs to be idle before TCP "
-	"begins sending out keep-alive probes.",
+	"begins sending out keep-alive probes. "
+	"Ignored for Unix domain sockets.",
 	/* l-text */	"",
 	/* func */	NULL
 )
