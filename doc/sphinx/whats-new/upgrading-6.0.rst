@@ -17,7 +17,7 @@ XXX: ...
 The parameters :ref:`ref_param_tcp_keepalive_intvl`,
 :ref:`ref_param_tcp_keepalive_probes` and
 :ref:`ref_param_tcp_keepalive_time` are silently ignored for listen
-address that are Unix domain sockets. The parameters
+addresses that are Unix domain sockets. The parameters
 :ref:`ref_param_accept_filter` and :ref:`ref_param_tcp_fastopen`
 (which your platform may or may not support in the first place) almost
 certainly have no effect on a UDS. It is not an error to use any of
