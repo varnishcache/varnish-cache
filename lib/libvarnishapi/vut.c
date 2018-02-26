@@ -390,11 +390,9 @@ VUT_Main(struct VUT *vut)
 		}
 
 		i = VSLQ_Dispatch(vut->vslq, vut_dispatch, vut);
-		if (i == 1)
-			/* Call again */
+		if (i == vsl_more)
 			continue;
-		else if (i == 0) {
-			/* Nothing to do but wait */
+		else if (i == vsl_end) {
 			if (vut->idle_f) {
 				i = vut->idle_f(vut);
 				if (i)
@@ -402,10 +400,8 @@ VUT_Main(struct VUT *vut)
 			}
 			VTIM_sleep(0.01);
 			continue;
-		} else if (i == -1) {
-			/* EOF */
+		} else if (i == vsl_e_eof)
 			break;
-		}
 
 		if (vut->vsm == NULL)
 			break;
@@ -414,14 +410,14 @@ VUT_Main(struct VUT *vut)
 
 		(void)VSLQ_Flush(vut->vslq, vut_dispatch, vut);
 
-		if (i == -2) {
-			/* Abandoned */
+		if (i == vsl_e_abandon) {
 			fprintf(stderr, "Log abandoned (vsl)\n");
 			VSLQ_SetCursor(vut->vslq, NULL);
 			hascursor = 0;
-		} else if (i < -2)
-			/* Overrun */
+		} else if (i == vsl_e_overrun)
 			fprintf(stderr, "Log overrun\n");
+		else
+			fprintf(stderr, "Error %d from VSLQ_Dispatch()", i);
 	}
 
 	return (i);
