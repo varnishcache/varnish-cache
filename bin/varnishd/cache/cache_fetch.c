@@ -501,7 +501,6 @@ vbf_stp_fetchbody(struct worker *wrk, struct busyobj *bo)
 static int
 vbf_figure_out_vfp(struct busyobj *bo)
 {
-	unsigned is_partial;
 
 	/*
 	 * The VCL variables beresp.do_g[un]zip tells us how we want the
@@ -514,7 +513,21 @@ vbf_figure_out_vfp(struct busyobj *bo)
 	 *	no Content-Encoding		--> object is not gzip'ed.
 	 *	anything else			--> do nothing wrt gzip
 	 *
+	 * On partial responses (206 on pass), we fail if do_esi is
+	 * requested because it could leak partial esi-directives, and
+	 * ignore gzipery, because it makes no sense.
+	 *
 	 */
+
+	if (http_GetStatus(bo->beresp) == 206) {
+		if (bo->do_esi) {
+			VSLb(bo->vsl, SLT_VCL_Error,
+			    "beresp.do_esi on partial response");
+			return (-1);
+		}
+		bo->do_gzip = bo->do_gunzip = 0;
+		return (0);
+	}
 
 	/* No body or no GZIP support -> done */
 	if (bo->htc->body_status == BS_NONE ||
@@ -526,7 +539,6 @@ vbf_figure_out_vfp(struct busyobj *bo)
 		return (0);
 	}
 
-	is_partial = http_GetStatus(bo->beresp) == 206;
 	bo->is_gzip = http_HdrIs(bo->beresp, H_Content_Encoding, "gzip");
 	bo->is_gunzip = !http_GetHdr(bo->beresp, H_Content_Encoding, NULL);
 	assert(bo->is_gzip == 0 || bo->is_gunzip == 0);
@@ -555,7 +567,7 @@ vbf_figure_out_vfp(struct busyobj *bo)
 	if (bo->do_gzip)
 		return (VFP_Push(bo->vfc, &VFP_gzip) == NULL ? -1 : 0);
 
-	if (bo->is_gzip && !bo->do_gunzip && !is_partial)
+	if (bo->is_gzip && !bo->do_gunzip)
 		return (VFP_Push(bo->vfc, &VFP_testgunzip) == NULL ? -1 : 0);
 
 	return (0);

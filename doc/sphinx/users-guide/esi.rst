@@ -4,8 +4,8 @@ Content composition with Edge Side Includes
 -------------------------------------------
 
 Varnish can create web pages by assembling different pages, called `fragments`,
-together into one page. These `fragments` can have individual cache policies. If you
-have a web site with a list showing the five most popular articles on
+together into one page. These `fragments` can have individual cache policies.
+If you have a web site with a list showing the five most popular articles on
 your site, this list can probably be cached as a `fragment` and included
 in all the other pages.
 
@@ -14,8 +14,9 @@ in all the other pages.
 Used properly this strategy can dramatically increase
 your hit rate and reduce the load on your servers.
 
-In Varnish we've only so far implemented a small subset of ESI. As of version 2.1 we
-have three ESI statements::
+In Varnish we've only implemented a small subset of ESI, because most of
+the rest of the ESI specifications facilities are easier and better done
+with VCL::
 
  esi:include
  esi:remove
@@ -81,10 +82,55 @@ For example::
   <esi:include src="http://example.com/LICENSE" />
   -->
 
-Doing ESI on JSON and other non-XML'ish content
------------------------------------------------
+Footnotes about ESI
+-------------------
 
-Please note that Varnish will peek at the included content. If it
-doesn't start with a "<" Varnish assumes you didn't really mean to
-include it and disregard it. You can alter this behaviour by setting
-the 'esi_syntax' parameter (see ref:`ref-varnishd`).
+Doing ESI on JSON and other non-XML'ish content
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Varnish will peek at the first byte of an object and if it is not
+a "<" Varnish assumes you didn't really mean to ESI process.
+You can alter this behaviour by::
+
+   param.set feature +esi_disable_xml_check
+
+Ignoring BOM in ESI objects
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you backend spits out a Unicode Byte-Order-Mark as the first
+bytes of the reponse, the "<" check will fail unless you set::
+
+   param.set feature +esi_remove_bom
+
+ESI on invalid XML
+~~~~~~~~~~~~~~~~~~
+
+The ESI parser expects the XML to be reasonably well formed, but
+this may fail if you are ESI including non-XML files.  You can
+make the ESI parser disrecard anything but ESI tags by setting:
+
+   param.set feature +esi_ignore_other_elements
+
+ESI includes with HTTPS protocol
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If ESI:include tags specify HTTPS protocol, it will be ignored
+by default, because varnish has no way to fetch it encryption
+enabled.  If you want to treat HTTPS in ESI:include tags as if
+it were HTTP, set::
+
+   param.set feature +esi_ignore_https
+
+ESI on partial responses (206)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Varnish can ``pass`` range requests but it is ESI processing a partial
+response makes no sense, so the fetch fails if you do ask for that.
+If you really know what you are doing, you can use this workaround::
+
+   sub vcl_backend_response {
+       if (beresp.status == 206 && beresp.http.secret == "swordfish") {
+           set beresp.do_esi = True;
+           set beresp.status = 1206;
+       }
+   }

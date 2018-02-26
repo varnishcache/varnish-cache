@@ -1,0 +1,58 @@
+varnishtest "VFP'ing partial responses"
+
+server s1 -repeat 4 {
+	rxreq
+	txresp -status 206 -body "<A><esi:remove>foobar</esi:remove>"
+} -start
+
+varnish v1 -vcl+backend {
+	sub vcl_recv { return(pass); }
+	sub vcl_backend_response {
+		if (bereq.url == "/a") {
+			set beresp.do_esi = True;
+		}
+		if (bereq.url == "/b") {
+			set beresp.do_gzip = True;
+		}
+		if (bereq.url == "/c") {
+			set beresp.do_esi = True;
+			set beresp.do_gzip = True;
+			set beresp.status = 1206;
+		}
+	}
+} -start
+
+client c1 {
+	txreq -url /a
+	rxresp
+	expect resp.status == 503
+} -run
+
+varnish v1 -vsl_catchup
+
+client c1 {
+	txreq -url /b -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.bodylen == 34
+	expect resp.status == 206
+} -run
+
+varnish v1 -vsl_catchup
+
+client c1 {
+	txreq -url /b
+	rxresp
+	expect resp.bodylen == 34
+	expect resp.status == 206
+} -run
+
+varnish v1 -vsl_catchup
+
+client c1 {
+	txreq -url /c -hdr "Accept-Encoding: gzip"
+	rxresp
+	expect resp.status == 206
+	expect resp.bodylen == 32
+	gunzip
+	expect resp.bodylen == 3
+} -run
