@@ -429,14 +429,15 @@ vtx_append(struct VSLQ *vslq, struct vtx *vtx, const struct VSLC_ptr *start,
     size_t len)
 {
 	struct chunk *chunk;
+	enum vsl_check i;
 
 	AN(vtx);
 	if (len == 0)
 		return;
 	AN(start);
 
-	if (VSL_Check(vslq->c, start) == vsl_check_valid &&
-	    !VTAILQ_EMPTY(&vtx->shmchunks_free)) {
+	i = VSL_Check(vslq->c, start);
+	if (i == vsl_check_valid && !VTAILQ_EMPTY(&vtx->shmchunks_free)) {
 		/* Shmref it */
 		chunk = VTAILQ_FIRST(&vtx->shmchunks_free);
 		CHECK_OBJ_NOTNULL(chunk, CHUNK_MAGIC);
@@ -450,6 +451,7 @@ vtx_append(struct VSLQ *vslq, struct vtx *vtx, const struct VSLC_ptr *start,
 		/* Append to shmref list */
 		VTAILQ_INSERT_TAIL(&vslq->shmrefs, chunk, shm.shmref);
 	} else {
+		assert(i != vsl_check_e_inval);
 		/* Buffer it */
 		chunk = VTAILQ_LAST(&vtx->chunks, chunkhead);
 		CHECK_OBJ_ORNULL(chunk, CHUNK_MAGIC);
