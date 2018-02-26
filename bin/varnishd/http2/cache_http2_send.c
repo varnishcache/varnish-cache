@@ -35,6 +35,7 @@
 #include "http2/cache_http2.h"
 
 #include "vend.h"
+#include "vtim.h"
 
 static void
 h2_send_get(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
@@ -204,15 +205,14 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 
 	Lck_Lock(&h2->sess->mtx);
 	if (r2->t_window <= 0 || h2->req0->t_window <= 0) {
+		r2->t_winupd = VTIM_real();
 		h2_send_rel(h2, r2);
 		while (r2->t_window <= 0 && h2_errcheck(r2, h2) == 0) {
 			r2->cond = &wrk->cond;
-			// XXX: timeout handling (subject to send_timeout?)
 			AZ(Lck_CondWait(r2->cond, &h2->sess->mtx, 0));
 			r2->cond = NULL;
 		}
 		while (h2->req0->t_window <= 0 && h2_errcheck(r2, h2) == 0) {
-			// XXX: timeout handling
 			AZ(Lck_CondWait(h2->cond, &h2->sess->mtx, 0));
 		}
 
@@ -235,6 +235,7 @@ h2_do_window(struct worker *wrk, struct h2_req *r2,
 		h2_win_charge(r2, h2, w);
 		assert (w > 0);
 	}
+	r2->t_winupd = 0;
 	Lck_Unlock(&h2->sess->mtx);
 	return (w);
 }

@@ -121,6 +121,8 @@ struct h2_req {
 	enum h2_stream_e		state;
 	struct h2_sess			*h2sess;
 	struct req			*req;
+	double				t_send;
+	double				t_winupd;
 	pthread_cond_t			*cond;
 	VTAILQ_ENTRY(h2_req)		list;
 	int64_t				t_window;

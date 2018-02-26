@@ -254,6 +254,8 @@ h2_deliver(struct req *req, struct boc *boc, int sendbody)
 	if (sendbody && req->resp_len == 0)
 		sendbody = 0;
 
+	r2->t_send = req->t_prev;
+
 	H2_Send_Get(req->wrk, r2->h2sess, r2);
 	H2_Send(req->wrk, r2, H2_F_HEADERS,
 	    (sendbody ? 0 : H2FF_HEADERS_END_STREAM) | H2FF_HEADERS_END_HEADERS,
