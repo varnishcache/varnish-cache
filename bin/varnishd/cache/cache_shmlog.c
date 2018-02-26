@@ -45,6 +45,7 @@
 
 /* These cannot be struct lock, which depends on vsm/vsl working */
 static pthread_mutex_t vsl_mtx;
+static pthread_mutex_t vsc_mtx;
 static pthread_mutex_t vsm_mtx;
 
 static struct VSL_head		*vsl_head;
@@ -478,14 +479,26 @@ VSL_End(struct vsl_log *vsl)
 	vsl->wid = 0;
 }
 
-static void
+static void v_matchproto_(vsm_lock_f)
 vsm_vsc_lock(void)
+{
+	AZ(pthread_mutex_lock(&vsc_mtx));
+}
+
+static void v_matchproto_(vsm_lock_f)
+vsm_vsc_unlock(void)
+{
+	AZ(pthread_mutex_unlock(&vsc_mtx));
+}
+
+static void v_matchproto_(vsm_lock_f)
+vsm_vsmw_lock(void)
 {
 	AZ(pthread_mutex_lock(&vsm_mtx));
 }
 
-static void
-vsm_vsc_unlock(void)
+static void v_matchproto_(vsm_lock_f)
+vsm_vsmw_unlock(void)
 {
 	AZ(pthread_mutex_unlock(&vsm_mtx));
 }
@@ -500,10 +513,13 @@ VSM_Init(void)
 	assert(UINT_MAX % VSL_SEGMENTS == VSL_SEGMENTS - 1);
 
 	AZ(pthread_mutex_init(&vsl_mtx, NULL));
+	AZ(pthread_mutex_init(&vsc_mtx, NULL));
 	AZ(pthread_mutex_init(&vsm_mtx, NULL));
 
 	vsc_lock = vsm_vsc_lock;
 	vsc_unlock = vsm_vsc_unlock;
+	vsmw_lock = vsm_vsmw_lock;
+	vsmw_unlock = vsm_vsmw_unlock;
 
 	VSC_C_main = VSC_main_New(NULL, NULL, "");
 	AN(VSC_C_main);

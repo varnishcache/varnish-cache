@@ -71,8 +71,13 @@ struct vsc_seg {
 static VTAILQ_HEAD(,vsc_seg)	vsc_seglist =
     VTAILQ_HEAD_INITIALIZER(vsc_seglist);
 
-vsc_callback_f *vsc_lock;
-vsc_callback_f *vsc_unlock;
+static void v_matchproto_(vsm_lock_f)
+vsc_dummy_lock(void)
+{
+}
+
+vsm_lock_f *vsc_lock = vsc_dummy_lock;
+vsm_lock_f *vsc_unlock = vsc_dummy_lock;
 
 static const size_t vsc_overhead = PRNDUP(sizeof(struct vsc_head));
 
@@ -137,8 +142,7 @@ VRT_VSC_Alloc(struct vsmw_cluster *vc, struct vsc_seg **sg,
 	char buf[1024];
 	uintptr_t jjp;
 
-	if (vsc_lock != NULL)
-		vsc_lock();
+	vsc_lock();
 
 	jjp = (uintptr_t)jp;
 
@@ -178,8 +182,7 @@ VRT_VSC_Alloc(struct vsmw_cluster *vc, struct vsc_seg **sg,
 	VTAILQ_INSERT_TAIL(&vsc_seglist, vsg, list);
 	VWMB();
 	vsg->head->ready = 1;
-	if (vsc_unlock != NULL)
-		vsc_unlock();
+	vsc_unlock();
 	if (sg != NULL)
 		*sg = vsg;
 	return (vsg->ptr);
@@ -190,8 +193,7 @@ VRT_VSC_Destroy(const char *nm, struct vsc_seg *vsg)
 {
 	struct vsc_seg *dvsg;
 
-	if (vsc_lock != NULL)
-		vsc_lock();
+	vsc_lock();
 
 	AN(heritage.proc_vsmw);
 	CHECK_OBJ_NOTNULL(vsg, VSC_SEG_MAGIC);
@@ -209,6 +211,5 @@ VRT_VSC_Destroy(const char *nm, struct vsc_seg *vsg)
 		VTAILQ_REMOVE(&vsc_seglist, dvsg, list);
 		FREE_OBJ(dvsg);
 	}
-	if (vsc_unlock != NULL)
-		vsc_unlock();
+	vsc_unlock();
 }

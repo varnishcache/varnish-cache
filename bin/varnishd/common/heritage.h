@@ -115,8 +115,10 @@ struct transport;
 void XPORT_Init(void);
 const struct transport *XPORT_Find(const char *name);
 
-/* common/common_vsc.c */
-typedef void vsc_callback_f(void);
-extern vsc_callback_f *vsc_lock;
-extern vsc_callback_f *vsc_unlock;
+/* common/common_vsc.c & common/common_vsmw.c */
+typedef void vsm_lock_f(void);
+extern vsm_lock_f *vsc_lock;
+extern vsm_lock_f *vsc_unlock;
+extern vsm_lock_f *vsmw_lock;
+extern vsm_lock_f *vsmw_unlock;
 
