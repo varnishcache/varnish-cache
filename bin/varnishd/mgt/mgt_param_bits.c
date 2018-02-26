@@ -127,6 +127,10 @@ tweak_vsl_mask(struct vsb *vsb, const struct parspec *par, const char *arg)
 			(void)bit(mgt_param.vsl_mask, SLT_WorkThread, BSET);
 			(void)bit(mgt_param.vsl_mask, SLT_Hash, BSET);
 			(void)bit(mgt_param.vsl_mask, SLT_VfpAcct, BSET);
+			(void)bit(mgt_param.vsl_mask, SLT_H2TxBody, BSET);
+			(void)bit(mgt_param.vsl_mask, SLT_H2TxHdr, BSET);
+			(void)bit(mgt_param.vsl_mask, SLT_H2RxBody, BSET);
+			(void)bit(mgt_param.vsl_mask, SLT_H2RxHdr, BSET);
 		} else {
 			return (bit_tweak(vsb, mgt_param.vsl_mask,
 			    SLT__Reserved, arg, VSL_tags,
