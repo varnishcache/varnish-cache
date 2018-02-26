@@ -14,7 +14,7 @@ logexpect l1 -v v1 -g request {
 	expect * 1001	ReqMethod	"HEAD"
 	expect * =	ReqProtocol	"HTTP/1.0"
 	expect * 1002	BereqMethod	"GET"
-	expect 0 =	BereqProtocol	"HTTP/1.1"
+	expect 1 =	BereqProtocol	"HTTP/1.1"
 } -start
 
 client c1 {

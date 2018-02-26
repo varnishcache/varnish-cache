@@ -2,6 +2,7 @@ varnishtest "Check that a pass transaction works"
 
 server s1 {
 	rxreq
+	expect req.proto == HTTP/1.1
 	txresp -hdr "Cache-Control: max-age=120" -hdr "Connection: close" -body "012345\n"
 } -start
 
@@ -25,9 +26,11 @@ logexpect l1 -v v1 -g request {
 } -start
 
 client c1 {
-	txreq -url "/"
+	txreq -proto HTTP/1.0 -url "/"
 	rxresp
+	expect resp.proto == HTTP/1.1
 	expect resp.status == 200
+	expect resp.http.connection == close
 	expect resp.http.x-ttl == 0.000
 } -run
 

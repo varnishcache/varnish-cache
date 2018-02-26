@@ -179,16 +179,14 @@ vbf_stp_mkbereq(struct worker *wrk, struct busyobj *bo)
 	http_FilterReq(bo->bereq0, bo->req->http,
 	    bo->do_pass ? HTTPH_R_PASS : HTTPH_R_FETCH);
 
-	if (!bo->do_pass) {
+	if (bo->do_pass)
+		AZ(bo->stale_oc);
+	else {
 		http_ForceField(bo->bereq0, HTTP_HDR_METHOD, "GET");
-		http_ForceField(bo->bereq0, HTTP_HDR_PROTO, "HTTP/1.1");
 		if (cache_param->http_gzip_support)
 			http_ForceHeader(bo->bereq0, H_Accept_Encoding, "gzip");
-	} else {
-		AZ(bo->stale_oc);
-		if (bo->bereq0->protover > 11)
-			http_ForceField(bo->bereq0, HTTP_HDR_PROTO, "HTTP/1.1");
 	}
+	http_ForceField(bo->bereq0, HTTP_HDR_PROTO, "HTTP/1.1");
 	http_CopyHome(bo->bereq0);
 
 	if (bo->stale_oc != NULL &&

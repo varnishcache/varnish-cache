@@ -2,9 +2,11 @@ varnishtest "Check that a pipe transaction works"
 
 server s1 -repeat 1 {
 	rxreq
+	expect req.proto == "HTTP/1.0"
 	expect req.http.connection == "close"
 	txresp
 	rxreq
+	expect req.proto == "nonsense"
 	expect req.http.connection == "keep-alive"
 	txresp
 } -start
@@ -22,10 +24,10 @@ varnish v1 -vcl+backend {
 } -start
 
 client c1 {
-	txreq -url /1 -hdr "Connection: keep-alive"
+	txreq -proto HTTP/1.0 -url /1 -hdr "Connection: keep-alive"
 	rxresp
 	expect resp.status == 200
-	txreq -url /2 -hdr "Connection: keep-alive"
+	txreq -proto nonsense -url /2 -hdr "Connection: keep-alive"
 	rxresp
 	expect resp.status == 200
 } -run
