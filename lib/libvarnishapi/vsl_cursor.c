@@ -298,7 +298,6 @@ struct vslc_file {
 	unsigned			magic;
 #define VSLC_FILE_MAGIC			0x1D65FFEF
 
-	int				error;
 	int				fd;
 	int				close_fd;
 	ssize_t				buflen;
@@ -347,9 +346,6 @@ vslc_file_next(const struct VSL_cursor *cursor)
 
 	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_FILE_MAGIC);
 	assert(&c->cursor == cursor);
-
-	if (c->error)
-		return (c->error);
 
 	do {
 		c->cursor.rec.ptr = NULL;
