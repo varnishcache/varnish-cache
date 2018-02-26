@@ -68,9 +68,11 @@ Other changes
 
   * XXX ...
 
-* XXX: etc. ...
+* ``varnishlog(1)``:
 
-  * XXX ...
+  * Added a third field to the ``ReqStart`` log record that contains the
+    name of the listener address over which the request was received, see
+    :ref:`vsl(7)`.
 
   * XXX ...
 
