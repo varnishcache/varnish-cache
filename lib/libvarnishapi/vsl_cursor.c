@@ -91,7 +91,7 @@ vslc_vsm_delete(const struct VSL_cursor *cursor)
  * written
  */
 
-static int
+static enum vsl_check v_matchproto_(vslc_check_f)
 vslc_vsm_check(const struct VSL_cursor *cursor, const struct VSLC_ptr *ptr)
 {
 	const struct vslc_vsm *c;
@@ -101,25 +101,25 @@ vslc_vsm_check(const struct VSL_cursor *cursor, const struct VSLC_ptr *ptr)
 	assert(&c->cursor == cursor);
 
 	if (ptr->ptr == NULL)
-		return (0);
+		return (vsl_check_e_inval);
 
 	dist = c->head->segment_n - ptr->priv;
 
 	if (dist >= VSL_SEGMENTS - 2)
 		/* Too close to continue */
-		return (0);
+		return (vsl_check_e_inval);
 	if (dist >= VSL_SEGMENTS - 4)
 		/* Warning level */
-		return (1);
+		return (vsl_check_warn);
 	/* Safe */
-	return (2);
+	return (vsl_check_valid);
 }
 
 static int
 vslc_vsm_next(const struct VSL_cursor *cursor)
 {
 	struct vslc_vsm *c;
-	int i;
+	enum vsl_check i;
 	uint32_t t;
 
 	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_VSM_MAGIC);
@@ -127,7 +127,7 @@ vslc_vsm_next(const struct VSL_cursor *cursor)
 
 	while (1) {
 		i = vslc_vsm_check(&c->cursor, &c->next);
-		if (i <= 0) {
+		if (i < vsl_check_warn) {
 			if (VSM_StillValid(c->vsm, &c->vf) != VSM_valid)
 				return (-2); /* VSL abandoned */
 			else
@@ -489,13 +489,13 @@ VSL_Next(const struct VSL_cursor *cursor)
 	return ((tbl->next)(cursor));
 }
 
-int
+enum vsl_check
 VSL_Check(const struct VSL_cursor *cursor, const struct VSLC_ptr *ptr)
 {
 	const struct vslc_tbl *tbl;
 
 	CAST_OBJ_NOTNULL(tbl, cursor->priv_tbl, VSLC_TBL_MAGIC);
 	if (tbl->check == NULL)
-		return (-1);
+		return (vsl_check_e_notsupp);
 	return ((tbl->check)(cursor, ptr));
 }

@@ -312,7 +312,15 @@ int VSL_ResetCursor(const struct VSL_cursor *c);
 	 *    -1: Operation not supported
 	 */
 
-int VSL_Check(const struct VSL_cursor *c, const struct VSLC_ptr *ptr);
+enum vsl_check {
+	vsl_check_e_notsupp	= -1,
+	vsl_check_e_inval	=  0,
+	vsl_check_warn		=  1,
+	vsl_check_valid	=  2
+};
+
+enum vsl_check
+VSL_Check(const struct VSL_cursor *c, const struct VSLC_ptr *ptr);
 	/*
 	 * Check if the VSLC_ptr structure points to a value that is still
 	 * valid:

@@ -435,7 +435,7 @@ vtx_append(struct VSLQ *vslq, struct vtx *vtx, const struct VSLC_ptr *start,
 		return;
 	AN(start);
 
-	if (VSL_Check(vslq->c, start) == 2 &&
+	if (VSL_Check(vslq->c, start) == vsl_check_valid &&
 	    !VTAILQ_EMPTY(&vtx->shmchunks_free)) {
 		/* Shmref it */
 		chunk = VTAILQ_FIRST(&vtx->shmchunks_free);

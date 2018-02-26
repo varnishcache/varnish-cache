@@ -39,7 +39,8 @@ void vsl_vbm_bitclr(int bit, void *priv);
 typedef void vslc_delete_f(const struct VSL_cursor *);
 typedef int vslc_next_f(const struct VSL_cursor *);
 typedef int vslc_reset_f(const struct VSL_cursor *);
-typedef int vslc_check_f(const struct VSL_cursor *, const struct VSLC_ptr *);
+typedef enum vsl_check vslc_check_f(const struct VSL_cursor *,
+    const struct VSLC_ptr *);
 
 struct vslc_tbl {
 	unsigned			magic;
