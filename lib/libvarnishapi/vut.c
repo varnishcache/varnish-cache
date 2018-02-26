@@ -414,9 +414,11 @@ VUT_Main(struct VUT *vut)
 			fprintf(stderr, "Log abandoned (vsl)\n");
 			VSLQ_SetCursor(vut->vslq, NULL);
 			hascursor = 0;
-		} else if (i == vsl_e_overrun)
+		} else if (i == vsl_e_overrun) {
 			fprintf(stderr, "Log overrun\n");
-		else
+			VSLQ_SetCursor(vut->vslq, NULL);
+			hascursor = 0;
+		} else
 			fprintf(stderr, "Error %d from VSLQ_Dispatch()", i);
 	}
 
