@@ -361,8 +361,22 @@ VUT_Main(struct VUT *vut)
 			(void)VSLQ_Flush(vut->vslq, vut_dispatch, vut);
 		}
 
-		// We must repeatedly call VSM_Status() when !hascursor
-		// to make VSM discover our segment.
+		/* We must repeatedly call VSM_Status() when !hascursor
+		 * to make VSM discover our segment.
+		 *
+		 * XXX consider moving the error handling to VSLQ_Dispatch.
+		 * or some other VSL utility function
+		 * Reasons:
+		 *
+		 * - it does not seem to make much sense to call VSM_StillValid
+		 *   in vsl if that can only detect invalid segments after
+		 *   VSM_Status has run, so it appears both should be
+		 *   consolidated
+		 *
+		 * - not all VSL Clients will use VUT, yet the log abandoned/
+		 *   overrun situation will be occur for all of them.
+		 */
+
 		if (vut->vsm != NULL &&
 		    (VSM_Status(vut->vsm) & VSM_WRK_RESTARTED)) {
 			if (hascursor < 1) {
