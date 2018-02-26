@@ -190,8 +190,8 @@ vslc_vsm_reset(const struct VSL_cursor *cursor)
 	c->cursor.rec.ptr = NULL;
 
 	segment_n = c->head->segment_n;
-	VRMB();			/* Make sure offset table is not stale
-				   compared to segment_n */
+	/* Make sure offset table is not stale compared to segment_n */
+	VRMB();
 
 	if (c->options & VSL_COPT_TAIL) {
 		/* Start in the same segment varnishd currently is in and
