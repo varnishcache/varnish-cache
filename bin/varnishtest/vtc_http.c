@@ -99,11 +99,14 @@ extern const struct cmds http_cmds[];
  *
  * \-listen STRING (server only)
  *        Dictate the listening socket for the server. STRING is of the form
- *        "IP PORT".
+ *        "IP PORT", or "/PATH/TO/SOCKET" for a Unix domain socket. In the
+ *        latter case, the path must begin with '/', and the server must be
+ *        able to create it.
  *
  * \-connect STRING (client only)
  *        Indicate the server to connect to. STRING is also of the form
- *        "IP PORT".
+ *        "IP PORT", or "/PATH/TO/SOCKET". As with "server -listen", a
+ *        Unix domain socket is recognized when STRING begins with a '/'.
  *
  * \-dispatch (server only, s0 only)
  *        Normally, to keep things simple, server threads only handle one
