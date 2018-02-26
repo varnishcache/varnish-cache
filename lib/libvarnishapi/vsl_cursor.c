@@ -115,7 +115,7 @@ vslc_vsm_check(const struct VSL_cursor *cursor, const struct VSLC_ptr *ptr)
 	return (vsl_check_valid);
 }
 
-static int
+static enum vsl_status v_matchproto_(vslc_next_f)
 vslc_vsm_next(const struct VSL_cursor *cursor)
 {
 	struct vslc_vsm *c;
@@ -129,9 +129,9 @@ vslc_vsm_next(const struct VSL_cursor *cursor)
 		i = vslc_vsm_check(&c->cursor, &c->next);
 		if (i < vsl_check_warn) {
 			if (VSM_StillValid(c->vsm, &c->vf) != VSM_valid)
-				return (-2); /* VSL abandoned */
+				return (vsl_e_abandon);
 			else
-				return (-3); /* Overrun */
+				return (vsl_e_overrun);
 		}
 
 		t = *(volatile const uint32_t *)c->next.ptr;
@@ -148,10 +148,11 @@ vslc_vsm_next(const struct VSL_cursor *cursor)
 
 		if (t == VSL_ENDMARKER) {
 			if (VSM_StillValid(c->vsm, &c->vf) != VSM_valid)
-				return (-2); /* VSL abandoned */
+				return (vsl_e_abandon);
 			if (c->options & VSL_COPT_TAILSTOP)
-				return (-1); /* EOF */
-			return (0);	/* No new records available */
+				return (vsl_e_eof);
+			/* No new records available */
+			return (vsl_end);
 		}
 
 		c->cursor.rec = c->next;
@@ -174,16 +175,16 @@ vslc_vsm_next(const struct VSL_cursor *cursor)
 		assert(c->next.ptr >= c->head->log);
 		assert(c->next.ptr < c->end);
 
-		return (1);
+		return (vsl_more);
 	}
 }
 
-static int
+static enum vsl_status v_matchproto_(vslc_reset_f)
 vslc_vsm_reset(const struct VSL_cursor *cursor)
 {
 	struct vslc_vsm *c;
 	unsigned u, segment_n;
-	int i;
+	enum vsl_status r;
 
 	CAST_OBJ_NOTNULL(c, cursor->priv_data, VSLC_VSM_MAGIC);
 	assert(&c->cursor == cursor);
@@ -204,12 +205,12 @@ vslc_vsm_reset(const struct VSL_cursor *cursor)
 			if (c->head->segment_n - u > 1) {
 				/* Give up if varnishd is moving faster
 				   than us */
-				return (-3); /* overrun */
+				return (vsl_e_overrun);
 			}
-			i = vslc_vsm_next(&c->cursor);
-		} while (i == 1);
-		if (i)
-			return (i);
+			r = vslc_vsm_next(&c->cursor);
+		} while (r == vsl_more);
+		if (r != vsl_end)
+			return (r);
 	} else {
 		/* Starting (VSL_SEGMENTS - 3) behind varnishd. This way
 		 * even if varnishd advances segment_n immediately, we'll
@@ -229,7 +230,7 @@ vslc_vsm_reset(const struct VSL_cursor *cursor)
 	}
 	assert(c->next.ptr >= c->head->log);
 	assert(c->next.ptr < c->end);
-	return (0);
+	return (vsl_end);
 }
 
 static const struct vslc_tbl vslc_vsm_tbl = {
@@ -246,7 +247,7 @@ VSL_CursorVSM(struct VSL_data *vsl, struct vsm *vsm, unsigned options)
 	struct vslc_vsm *c;
 	struct vsm_fantom vf;
 	struct VSL_head *head;
-	int i;
+	enum vsl_status r;
 
 	CHECK_OBJ_NOTNULL(vsl, VSL_MAGIC);
 
@@ -284,9 +285,9 @@ VSL_CursorVSM(struct VSL_data *vsl, struct vsm *vsm, unsigned options)
 	c->end = c->head->log + c->head->segsize * VSL_SEGMENTS;
 	assert(c->end <= (const uint32_t *)vf.e);
 
-	i = vslc_vsm_reset(&c->cursor);
-	if (i) {
-		(void)vsl_diag(vsl, "Cursor initialization failure (%d)", i);
+	r = vslc_vsm_reset(&c->cursor);
+	if (r != vsl_end) {
+		(void)vsl_diag(vsl, "Cursor initialization failure (%d)", r);
 		FREE_OBJ(c);
 		return (NULL);
 	}
@@ -337,7 +338,7 @@ vslc_file_readn(int fd, void *buf, size_t n)
 	return (t);
 }
 
-static int
+static enum vsl_status v_matchproto_(vslc_next_f)
 vslc_file_next(const struct VSL_cursor *cursor)
 {
 	struct vslc_file *c;
@@ -352,9 +353,9 @@ vslc_file_next(const struct VSL_cursor *cursor)
 		assert(c->buflen >= 2);
 		i = vslc_file_readn(c->fd, c->buf, VSL_BYTES(2));
 		if (i < 0)
-			return (-4);	/* I/O error */
+			return (vsl_e_io);
 		if (i == 0)
-			return (-1);	/* EOF */
+			return (vsl_e_eof);
 		assert(i == VSL_BYTES(2));
 		l = 2 + VSL_WORDS(VSL_LEN(c->buf));
 		if (c->buflen < l) {
@@ -367,22 +368,22 @@ vslc_file_next(const struct VSL_cursor *cursor)
 			i = vslc_file_readn(c->fd, c->buf + 2,
 			    VSL_BYTES(l - 2));
 			if (i < 0)
-				return (-4);	/* I/O error */
+				return (vsl_e_io);
 			if (i == 0)
-				return (-1);	/* EOF */
+				return (vsl_e_eof);
 			assert(i == VSL_BYTES(l - 2));
 		}
 		c->cursor.rec.ptr = c->buf;
 	} while (VSL_TAG(c->cursor.rec.ptr) == SLT__Batch);
-	return (1);
+	return (vsl_more);
 }
 
-static int
+static enum vsl_status v_matchproto_(vslc_reset_f)
 vslc_file_reset(const struct VSL_cursor *cursor)
 {
 	(void)cursor;
 	/* XXX: Implement me */
-	return (-1);
+	return (vsl_e_eof);
 }
 
 static const struct vslc_tbl vslc_file_tbl = {
@@ -464,18 +465,18 @@ VSL_DeleteCursor(const struct VSL_cursor *cursor)
 	(tbl->delete)(cursor);
 }
 
-int
+enum vsl_status
 VSL_ResetCursor(const struct VSL_cursor *cursor)
 {
 	const struct vslc_tbl *tbl;
 
 	CAST_OBJ_NOTNULL(tbl, cursor->priv_tbl, VSLC_TBL_MAGIC);
 	if (tbl->reset == NULL)
-		return (-1);
+		return (vsl_e_eof);
 	return ((tbl->reset)(cursor));
 }
 
-int
+enum vsl_status
 VSL_Next(const struct VSL_cursor *cursor)
 {
 	const struct vslc_tbl *tbl;

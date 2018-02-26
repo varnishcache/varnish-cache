@@ -138,6 +138,9 @@ typedef int VSLQ_dispatch_f(struct VSL_data *vsl,
 	 * Return value:
 	 *     0: OK - continue
 	 *   !=0: Makes VSLQ_Dispatch return with this return value immediatly
+	 *
+	 * Return values of the callback function should be distinct from the
+	 * values of enum vsl_status except for 0
 	 */
 
 typedef void VSL_tagfind_f(int tag, void *priv);
@@ -301,7 +304,8 @@ void VSL_DeleteCursor(const struct VSL_cursor *c);
 	 * Delete the cursor pointed to by c
 	 */
 
-int VSL_ResetCursor(const struct VSL_cursor *c);
+enum vsl_status
+VSL_ResetCursor(const struct VSL_cursor *c);
 	/*
 	 * Reset the cursor position to the head, so that the next call to
 	 * VSL_Next returns the first record. For VSM cursor, it will
@@ -309,7 +313,9 @@ int VSL_ResetCursor(const struct VSL_cursor *c);
 	 * from the tail.
 	 *
 	 * Return values:
-	 *    -1: Operation not supported
+	 * - vsl_end == success
+	 * - and see enum vsl_status
+	 *
 	 */
 
 enum vsl_check {
@@ -332,17 +338,21 @@ VSL_Check(const struct VSL_cursor *c, const struct VSLC_ptr *ptr);
 	 *     2: Valid
 	 */
 
-int VSL_Next(const struct VSL_cursor *c);
+enum vsl_status {
+	vsl_e_io	= -4,	// I/O read error - see errno
+	vsl_e_overrun	= -3,	// Overrun
+	vsl_e_abandon	= -2,	// Remote abandoned or closed
+	vsl_e_eof	= -1,	// End of file
+	vsl_end		=  0,	// End of log/cursor
+	vsl_more	=  1	// Cursor points to next log record
+};
+
+enum vsl_status
+VSL_Next(const struct VSL_cursor *c);
 	/*
 	 * Return raw pointer to next VSL record.
 	 *
-	 * Return values:
-	 *	1:	Cursor points to next log record
-	 *	0:	End of log
-	 *     -1:	End of file
-	 *     -2:	Remote abandoned or closed
-	 *     -3:	Overrun
-	 *     -4:	I/O read error - see errno
+	 * Return values: see enum vsl_status
 	 */
 
 int VSL_Match(struct VSL_data *vsl, const struct VSL_cursor *c);
@@ -521,7 +531,7 @@ int VSLQ_Dispatch(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv);
 	 * Return values:
 	 *     1: Call again
 	 *     0: No more log records available
-	 *   !=0: The error code from VSL_Next() or func returned non-zero
+	 *   !=0: func returned non-zero or enum vsl_status
 	 */
 
 int VSLQ_Flush(struct VSLQ *vslq, VSLQ_dispatch_f *func, void *priv);
