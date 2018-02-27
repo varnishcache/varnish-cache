@@ -77,9 +77,9 @@ struct vsm_seg {
 	unsigned		magic;
 #define VSM_SEG_MAGIC		0xeb6c6dfd
 	unsigned		flags;
-#define VSM_FLAG_MARKSCAN	(1U<<0)
-#define VSM_FLAG_STALE		(1U<<1)
-#define VSM_FLAG_CLUSTER	(1U<<2)
+#define VSM_FLAG_MARKSCAN	(1U<<1)
+#define VSM_FLAG_STALE		(1U<<2)
+#define VSM_FLAG_CLUSTER	(1U<<3)
 	VTAILQ_ENTRY(vsm_seg)	list;
 	struct vsm_set		*set;
 	struct vsm_seg		*cluster;
