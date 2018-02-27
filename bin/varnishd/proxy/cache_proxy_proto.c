@@ -254,8 +254,11 @@ static int
 vpx_proto2(const struct worker *wrk, struct req *req)
 {
 	int l, hdr_len;
+	uintptr_t *up;
+	uint16_t *tlv_len_p;
+	uint16_t tlv_len = 0;
 	const uint8_t *p;
-	char *d;
+	char *d, *tlv_start;
 	sa_family_t pfam = 0xff;
 	struct sockaddr_in sin4;
 	struct sockaddr_in6 sin6;
@@ -381,6 +384,9 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 
 	VSL(SLT_Proxy, req->sp->vxid, "2 %s %s %s %s", hb, pb, ha, pa);
 
+	tlv_start = d;
+	tlv_len = l;
+
 	while (l > sizeof(struct pp2_tlv)) {
 		int el = vbe16dec(d + 1) + 3;
 		if (el > l) {
@@ -422,6 +428,14 @@ vpx_proto2(const struct worker *wrk, struct req *req)
 	if (l) {
 		VSL(SLT_ProxyGarbage, req->sp->vxid, "PROXY2: header length mismatch");
 		return (0);
+	}
+	if (tlv_len && WS_Reserve(req->sp->ws, 2 + tlv_len)) {
+		tlv_len_p = (uint16_t *)req->sp->ws->f;
+		*tlv_len_p = tlv_len;
+		memcpy(req->sp->ws->f + 2, tlv_start, tlv_len);
+		WS_Release(req->sp->ws, 2 + tlv_len);
+		SES_Reserve_xport_priv(req->sp, &up);
+		*up = (uintptr_t)tlv_len_p;
 	}
 	return (0);
 }
