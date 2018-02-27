@@ -745,7 +745,7 @@ main(int argc, char * const *argv)
 		ARGV_ERR("Cannot create working directory (%s): %s\n",
 		    dirname, strerror(errno));
 
-	if (VJ_make_vcldir("vmod_cache")) {
+	if (VJ_make_subdir("vmod_cache", "VMOD cache", NULL)) {
 		ARGV_ERR(
 		    "Cannot create vmod directory (%s/vmod_cache): %s\n",
 		    dirname, strerror(errno));

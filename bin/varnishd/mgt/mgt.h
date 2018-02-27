@@ -123,8 +123,8 @@ enum jail_fixfd_e {
 typedef int jail_init_f(char **);
 typedef void jail_master_f(enum jail_master_e);
 typedef void jail_subproc_f(enum jail_subproc_e);
-typedef int jail_make_dir_f(const char *dname);
-typedef void jail_fixfd_f(int fd, enum jail_fixfd_e);
+typedef int jail_make_dir_f(const char *, const char *, struct vsb *);
+typedef void jail_fixfd_f(int, enum jail_fixfd_e);
 
 struct jail_tech {
 	unsigned		magic;
@@ -134,16 +134,16 @@ struct jail_tech {
 	jail_master_f		*master;
 	jail_subproc_f		*subproc;
 	jail_make_dir_f		*make_workdir;
-	jail_make_dir_f		*make_vcldir;
+	jail_make_dir_f		*make_subdir;
 	jail_fixfd_f		*fixfd;
 };
 
-void VJ_Init(const char *j_arg);
-void VJ_master(enum jail_master_e jme);
-void VJ_subproc(enum jail_subproc_e jse);
-int VJ_make_workdir(const char *dname);
-int VJ_make_vcldir(const char *dname);
-void VJ_fix_fd(int fd, enum jail_fixfd_e);
+void VJ_Init(const char *);
+void VJ_master(enum jail_master_e);
+void VJ_subproc(enum jail_subproc_e);
+int VJ_make_workdir(const char *);
+int VJ_make_subdir(const char *, const char *, struct vsb *);
+void VJ_fix_fd(int, enum jail_fixfd_e);
 
 extern const struct jail_tech jail_tech_unix;
 extern const struct jail_tech jail_tech_solaris;

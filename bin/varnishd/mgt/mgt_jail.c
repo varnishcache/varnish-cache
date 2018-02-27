@@ -142,7 +142,7 @@ VJ_make_workdir(const char *dname)
 	AN(dname);
 	CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);
 	if (vjt->make_workdir != NULL) {
-		i = vjt->make_workdir(dname);
+		i = vjt->make_workdir(dname, NULL, NULL);
 		if (i)
 			return (i);
 		VJ_master(JAIL_MASTER_FILE);
@@ -169,17 +169,27 @@ VJ_make_workdir(const char *dname)
 }
 
 int
-VJ_make_vcldir(const char *dname)
+VJ_make_subdir(const char *dname, const char *what, struct vsb *vsb)
 {
+	int e;
 
 	AN(dname);
+	AN(what);
 	CHECK_OBJ_NOTNULL(vjt, JAIL_TECH_MAGIC);
-	if (vjt->make_vcldir != NULL)
-		return (vjt->make_vcldir(dname));
+	if (vjt->make_subdir != NULL)
+		return (vjt->make_subdir(dname, what, vsb));
 
 	if (mkdir(dname, 0755) < 0 && errno != EEXIST) {
-		MGT_Complain(C_ERR, "Cannot create VCL directory '%s': %s",
-		    dname, strerror(errno));
+		e = errno;
+		if (vsb != NULL) {
+			VSB_printf(vsb,
+			    "Cannot create %s directory '%s': %s\n",
+			    what, dname, strerror(e));
+		} else {
+			MGT_Complain(C_ERR,
+			    "Cannot create %s directory '%s': %s",
+			    what, dname, strerror(e));
+		}
 		return (1);
 	}
 	return (0);

@@ -523,8 +523,8 @@ vjs_master(enum jail_master_e jme)
 
 const struct jail_tech jail_tech_solaris = {
 	.magic =	JAIL_TECH_MAGIC,
-	.name =	"solaris",
-	.init =	vjs_init,
+	.name =		"solaris",
+	.init =		vjs_init,
 	.master =	vjs_master,
 //	.make_workdir =	vjs_make_workdir,
 //	.storage_file =	vjs_storage_file,

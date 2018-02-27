@@ -317,7 +317,7 @@ mgt_VccCompile(struct cli *cli, struct vclprog *vcl, const char *vclname,
 	vp.dir = strdup(VSB_data(sb));
 	AN(vp.dir);
 
-	if (VJ_make_vcldir(vp.dir)) {
+	if (VJ_make_subdir(vp.dir, "VCL", cli->sb)) {
 		free(vp.dir);
 		VSB_destroy(&sb);
 		VCLI_Out(cli, "VCL compilation failed");

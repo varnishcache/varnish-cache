@@ -240,13 +240,25 @@ vju_subproc(enum jail_subproc_e jse)
 }
 
 static int v_matchproto_(jail_make_dir_f)
-vju_make_vcldir(const char *dname)
+vju_make_subdir(const char *dname, const char *what, struct vsb *vsb)
 {
+	int e;
+
+	AN(dname);
+	AN(what);
 	AZ(seteuid(0));
 
 	if (mkdir(dname, 0755) < 0 && errno != EEXIST) {
-		MGT_Complain(C_ERR, "Cannot create VCL directory '%s': %s",
-		    dname, strerror(errno));
+		e = errno;
+		if (vsb != NULL) {
+			VSB_printf(vsb,
+			    "Cannot create %s directory '%s': %s\n",
+			    what, dname, strerror(e));
+		} else {
+			MGT_Complain(C_ERR,
+			    "Cannot create %s directory '%s': %s",
+			    what, dname, strerror(e));
+		}
 		return (1);
 	}
 	AZ(chown(dname, vju_uid, vju_gid));
@@ -255,8 +267,12 @@ vju_make_vcldir(const char *dname)
 }
 
 static int v_matchproto_(jail_make_dir_f)
-vju_make_workdir(const char *dname)
+vju_make_workdir(const char *dname, const char *what, struct vsb *vsb)
 {
+
+	AN(dname);
+	AZ(what);
+	AZ(vsb);
 	AZ(seteuid(0));
 
 	if (mkdir(dname, 0755) < 0 && errno != EEXIST) {
@@ -297,7 +313,7 @@ const struct jail_tech jail_tech_unix = {
 	.name =		"unix",
 	.init =		vju_init,
 	.master =	vju_master,
-	.make_vcldir =	vju_make_vcldir,
+	.make_subdir =	vju_make_subdir,
 	.make_workdir =	vju_make_workdir,
 	.fixfd =	vju_fixfd,
 	.subproc =	vju_subproc,
