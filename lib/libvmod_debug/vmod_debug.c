@@ -46,14 +46,6 @@
 
 #include "common/common_param.h"
 
-#define WARN_RETIRED()							\
-	do {								\
-		VSL(SLT_Error, 0,					\
-		    "debug.%s is deprecated, use vmod-vtc instead.",	\
-		    __func__);						\
-	} while (0)
-
-
 struct priv_vcl {
 	unsigned		magic;
 #define PRIV_VCL_MAGIC		0x8E62FA9D
