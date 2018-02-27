@@ -198,6 +198,7 @@ builtin_vcl.c:	builtin.vcl
 	echo ' * Edit builtin.vcl instead and run make' >> $@
 	echo ' *' >> $@
 	echo ' */' >> $@
+	echo '#include "config.h"' >> $@
 	echo '#include "mgt/mgt.h"' >> $@
 	echo '' >> $@
 	echo 'const char * const builtin_vcl =' >> $@
