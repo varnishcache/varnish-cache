@@ -382,22 +382,22 @@ main(int argc, char **argv)
 		ident = VSM_Dup(vut->vsm, "Arg", "-i");
 	else
 		ident = strdup("");
-	if (!once) {
+	vut->dispatch_f = accumulate;
+	vut->dispatch_priv = NULL;
+	vut->sighup_f = sighup;
+	if (once) {
+		VUT_Main(vut);
+		dump();
+	} else {
 		if (pthread_create(&thr, NULL, do_curses, NULL) != 0) {
 			fprintf(stderr, "pthread_create(): %s\n",
 			    strerror(errno));
 			exit(1);
 		}
+		VUT_Main(vut);
+		end_of_file = 1;
+		AZ(pthread_join(thr, NULL));
 	}
-	vut->dispatch_f = accumulate;
-	vut->dispatch_priv = NULL;
-	vut->sighup_f = sighup;
-	VUT_Main(vut);
-	end_of_file = 1;
-	if (once)
-		dump();
-	else
-		pthread_join(thr, NULL);
 	VUT_Fini(&vut);
 	exit(0);
 }
