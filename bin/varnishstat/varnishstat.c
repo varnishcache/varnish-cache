@@ -276,6 +276,7 @@ main(int argc, char * const *argv)
 		case 'h':
 			/* Usage help */
 			usage(0);
+			break;
 		case 'l':
 			f_list = 1;
 			break;

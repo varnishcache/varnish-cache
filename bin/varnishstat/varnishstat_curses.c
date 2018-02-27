@@ -257,7 +257,7 @@ sample_points(void)
 			update_ma(&pt->ma_1000, (int64_t)pt->cur);
 		} else if (pt->vpt->semantics == 'c') {
 			if (main_uptime != NULL && *main_uptime)
-				pt->avg = pt->cur / *main_uptime;
+				pt->avg = pt->cur / (double)*main_uptime;
 			else
 				pt->avg = 0.;
 			if (pt->t_last) {
@@ -471,7 +471,7 @@ draw_bar_t(void)
 	x += 4;
 	mvwprintw(w_bar_t, 0, x, "%.*s", colw_name - 4, "NAME");
 	x += colw_name - 4;
-	col = 0;
+	col = COL_CUR;
 	while (col < COL_LAST) {
 		if (X - x < COLW)
 			break;
@@ -520,7 +520,7 @@ draw_line_default(WINDOW *w, int y, int x, int X, const struct pt *pt)
 	AN(w);
 	AN(pt);
 
-	col = 0;
+	col = COL_CUR;
 	while (col < COL_LAST) {
 		if (X - x < COLW)
 			break;
@@ -608,7 +608,7 @@ draw_line_bytes(WINDOW *w, int y, int x, int X, const struct pt *pt)
 	AN(w);
 	AN(pt);
 
-	col = 0;
+	col = COL_CUR;
 	while (col < COL_LAST) {
 		if (X - x < COLW)
 			break;
@@ -652,7 +652,7 @@ draw_line_bytes(WINDOW *w, int y, int x, int X, const struct pt *pt)
 static void
 draw_line_bitmap(WINDOW *w, int y, int x, int X, const struct pt *pt)
 {
-	int ch;
+	unsigned ch;
 	enum {
 		COL_VAL,
 		COL_MAP,
@@ -663,7 +663,7 @@ draw_line_bitmap(WINDOW *w, int y, int x, int X, const struct pt *pt)
 	AN(pt);
 	assert(pt->vpt->format == 'b');
 
-	col = 0;
+	col = COL_VAL;
 	while (col < COL_LAST) {
 		switch (col) {
 		case COL_VAL:
@@ -703,7 +703,7 @@ draw_line_duration(WINDOW *w, int y, int x, int X, const struct pt *pt)
 	AN(w);
 	AN(pt);
 
-	col = 0;
+	col = COL_DUR;
 	while (col < COL_LAST) {
 		if (X - x < COLW)
 			break;
@@ -1021,7 +1021,7 @@ do_curses(struct vsm *vsm, struct vsc *vsc, double delay)
 		if (redraw)
 			draw_screen();
 
-		t = (t_sample + interval - now) * 1000;
+		t = (long)((t_sample + interval - now) * 1000);
 		wtimeout(w_status, t);
 
 		ch = wgetch(w_status);
