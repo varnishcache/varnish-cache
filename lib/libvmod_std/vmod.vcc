@@ -172,7 +172,7 @@ Description
 	the system library function getaddrinfo(3). If conversion
 	fails, *fallback* will be returned.
 
-	If *resolve* is true, getaddrinfo() is called using *AI_NUMERICHOST*
+	If *resolve* is false, getaddrinfo() is called using *AI_NUMERICHOST*
 	to avoid network lookups. This makes "pure" IP strings cheaper to
 	convert.
 
