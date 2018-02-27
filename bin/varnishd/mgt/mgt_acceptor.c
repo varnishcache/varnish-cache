@@ -141,7 +141,7 @@ MAC_reopen_sockets(void)
 /*--------------------------------------------------------------------*/
 
 static struct listen_sock *
-mk_listen_sock(struct listen_arg *la, const struct suckaddr *sa)
+mk_listen_sock(const struct listen_arg *la, const struct suckaddr *sa)
 {
 	struct listen_sock *ls;
 	int fail;

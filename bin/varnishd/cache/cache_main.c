@@ -52,8 +52,7 @@
 
 
 volatile struct params		*cache_param;
-// XXX generic solution?
-volatile struct vre_limits	*vparam_vre_limits;
+static volatile struct vre_limits	*vparam_vre_limits;
 
 /*--------------------------------------------------------------------
  * Per thread storage for the session currently being processed by

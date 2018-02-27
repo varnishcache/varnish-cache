@@ -732,7 +732,6 @@ extern const char H__Reason[];
 #define VXID(u) ((u) & VSL_IDENTMASK)
 uint32_t VXID_Get(struct worker *, uint32_t marker);
 extern volatile struct params * cache_param;
-extern volatile struct vre_limits *vparam_vre_limits;
 extern pthread_key_t witness_key;
 
 /* cache_lck.c */
