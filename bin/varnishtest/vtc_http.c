@@ -836,7 +836,7 @@ http_tx_parse_args(char * const *av, struct vtclog *vl, struct http *hp,
 {
 	int bodylen = 0;
 	char *b, *c;
-	char *nullbody = NULL;
+	char *nullbody;
 	int nolen = 0;
 	int l;
 
@@ -1727,7 +1727,7 @@ cmd_http_settings(CMD_ARGS)
 			if (*p != '\0')
 				vtc_fatal(hp->vl, "-dectbl takes an integer as "
 				    "argument (found %s)", av[1]);
-			HPK_ResizeTbl(hp->decctx, n);
+			assert(HPK_ResizeTbl(hp->decctx, n) != hpk_err);
 			av++;
 		} else
 			vtc_fatal(vl, "Unknown settings spec: %s\n", *av);

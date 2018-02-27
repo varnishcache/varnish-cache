@@ -395,7 +395,7 @@ HPK_EncHdr(struct hpk_iter *iter, const struct hpk_hdr *h)
 	switch (h->t) {
 		case hpk_idx:
 			*iter->buf = 0x80;
-			num_encode(iter, 7, h->i);
+			assert(num_encode(iter, 7, h->i) != hpk_err);
 			return (ITER_DONE(iter));
 		case hpk_inc:
 			*iter->buf = 0x40;

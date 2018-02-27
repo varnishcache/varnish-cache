@@ -65,7 +65,7 @@ struct varnish {
 	int			fds[4];
 	pid_t			pid;
 
-	float			syntax;
+	double			syntax;
 
 	pthread_t		tp;
 	pthread_t		tp_vsl;

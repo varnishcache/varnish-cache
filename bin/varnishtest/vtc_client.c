@@ -133,8 +133,8 @@ client_tcp_connect(struct vtclog *vl, const char *addr, double tmo,
 static int v_matchproto_(vus_resolved_f)
 uds_open(void *priv, const struct sockaddr_un *uds)
 {
-	double *p, tmo;
-	int s, i;
+	double *p;
+	int s, i, tmo;
 	struct pollfd fds[1];
 	socklen_t sl = sizeof(*uds);
 
@@ -142,14 +142,14 @@ uds_open(void *priv, const struct sockaddr_un *uds)
 	AN(uds);
 	p = priv;
 	assert(*p > 0.);
-	tmo = *p * 1e3;
+	tmo = (int)(*p * 1e3);
 
 	s = socket(uds->sun_family, SOCK_STREAM, 0);
 	if (s < 0)
 		return (s);
 
 	(void) VTCP_nonblocking(s);
-	i = connect(s, (const struct sockaddr *)uds, sl);
+	i = connect(s, (const void*)uds, sl);
 	if (i == 0)
 		return(s);
 	if (errno != EINPROGRESS) {

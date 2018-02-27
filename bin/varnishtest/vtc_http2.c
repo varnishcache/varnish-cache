@@ -829,8 +829,8 @@ receive_frame(void *priv)
 		continue;
 	}
 	AZ(pthread_mutex_unlock(&hp->mtx));
-	if (!vtc_error)
-		AZ(vsb);
+	if (vsb != NULL)
+		VSB_destroy(&vsb);
 	return (NULL);
 }
 
@@ -1238,19 +1238,19 @@ cmd_sendhex(CMD_ARGS)
 	VSB_destroy(&vsb);
 }
 
-#define ENC(hdr, k, v)			\
-{					\
-	AN(k);				\
-	hdr.key.ptr = strdup(k);	\
-	AN(hdr.key.ptr);		\
-	hdr.key.len = strlen(k);	\
-	AN(v);				\
-	hdr.value.ptr = strdup(v);	\
-	AN(hdr.value.ptr);		\
-	hdr.value.len = strlen(v);	\
-	(void)HPK_EncHdr(iter, &hdr);	\
-	free(hdr.key.ptr);		\
-	free(hdr.value.ptr);		\
+#define ENC(hdr, k, v)					\
+{							\
+	AN(k);						\
+	hdr.key.ptr = strdup(k);			\
+	AN(hdr.key.ptr);				\
+	hdr.key.len = strlen(k);			\
+	AN(v);						\
+	hdr.value.ptr = strdup(v);			\
+	AN(hdr.value.ptr);				\
+	hdr.value.len = strlen(v);			\
+	assert(HPK_EncHdr(iter, &hdr) != hpk_err);	\
+	free(hdr.key.ptr);				\
+	free(hdr.value.ptr);				\
 }
 
 #define STR_ENC(av, field, str)						       \
@@ -1452,7 +1452,7 @@ cmd_tx11obj(CMD_ARGS)
 		else if (AV_IS("-idxHdr")) {
 			hdr.t = hpk_idx;
 			STRTOU32_CHECK(hdr.i, av, p, vl, "-idxHdr", 0);
-			HPK_EncHdr(iter, &hdr);
+			assert(HPK_EncHdr(iter, &hdr) != hpk_err);
 		}
 		else if (AV_IS("-litIdxHdr")) {
 			av++;
@@ -1469,7 +1469,7 @@ cmd_tx11obj(CMD_ARGS)
 			hdr.key.ptr = NULL;
 			hdr.key.len = 0;
 			STR_ENC(av, value,   "third -litHdr");
-			HPK_EncHdr(iter, &hdr);
+			assert(HPK_EncHdr(iter, &hdr) != hpk_err);
 		}
 		else if (AV_IS("-litHdr")) {
 			av++;
@@ -1482,7 +1482,7 @@ cmd_tx11obj(CMD_ARGS)
 
 			STR_ENC(av, key,   "second -litHdr");
 			STR_ENC(av, value, "fourth -litHdr");
-			HPK_EncHdr(iter, &hdr);
+			assert(HPK_EncHdr(iter, &hdr) != hpk_err);
 		}
 		else if (AV_IS("-nostrend")) {
 			f.flags &= ~END_STREAM;
@@ -1852,7 +1852,7 @@ cmd_txsettings(CMD_ARGS)
 		}
 		else if (!strcmp(*av, "-hdrtbl")) {
 			PUT_KV(av, vl, hdrtbl, val, 0x1);
-			HPK_ResizeTbl(s->hp->decctx, val);
+			assert(HPK_ResizeTbl(s->hp->decctx, val) != hpk_err);
 		}
 		else if (!strcmp(*av, "-maxstreams"))
 			PUT_KV(av, vl, maxstreams, val, 0x3);
@@ -2726,9 +2726,9 @@ b64_settings(const struct http *hp, const char *s)
 
 		if (v == 1) {
 			if (hp->sfd)
-				HPK_ResizeTbl(hp->encctx, v);
+				assert(HPK_ResizeTbl(hp->encctx, v) != hpk_err);
 			else
-				HPK_ResizeTbl(hp->decctx, v);
+				assert(HPK_ResizeTbl(hp->decctx, v) != hpk_err);
 		}
 
 		vtc_log(hp->vl, 4, "Upgrade: %s (%d): %ju",

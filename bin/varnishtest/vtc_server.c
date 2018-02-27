@@ -168,7 +168,7 @@ server_listen_uds(struct server *s, const char **errp)
 	 */
 	m = umask(0);
 	s->sock = VUS_resolver(s->listen, uds_listen, &h, errp);
-	umask(m);
+	(void)umask(m);
 	if (*errp != NULL)
 		return;
 	assert(s->sock > 0);
