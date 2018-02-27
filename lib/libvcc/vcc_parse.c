@@ -276,6 +276,7 @@ static void
 vcc_ParseVcl(struct vcc *tl)
 {
 	struct token *tok0, *tok1, *tok2;
+	int syntax;
 
 	assert(vcc_IdIs(tl->t, "vcl"));
 	tok0 = tl->t;
@@ -283,19 +284,26 @@ vcc_ParseVcl(struct vcc *tl)
 
 	tok1 = tl->t;
 	Expect(tl, CNUM);
-	tok1->src->syntax = (*tl->t->b - '0') * 10;
+	syntax = (*tl->t->b - '0') * 10;
 	vcc_NextToken(tl);
 	Expect(tl, '.');
 	vcc_NextToken(tl);
 
 	Expect(tl, CNUM);
 	tok2 = tl->t;
-	tok1->src->syntax += (*tl->t->b - '0');
+	syntax += (*tl->t->b - '0');
 	vcc_NextToken(tl);
 
 	if (tok1->e - tok1->b != 1 || tok2->e - tok2->b != 1) {
 		VSB_printf(tl->sb,
 		    "Don't play silly buggers with VCL version numbers\n");
+		vcc_ErrWhere2(tl, tok0, tl->t);
+		ERRCHK(tl);
+	}
+
+	if (syntax < VCL_LOW || syntax > VCL_HIGH) {
+		VSB_printf(tl->sb, "VCL version %.1f not supported.\n",
+		    .1 * syntax);
 		vcc_ErrWhere2(tl, tok0, tl->t);
 		ERRCHK(tl);
 	}
@@ -311,11 +319,13 @@ vcc_ParseVcl(struct vcc *tl)
 		ERRCHK(tl);
 	}
 	vcc_NextToken(tl);
-	if (tl->syntax != 0.0 && tok1->src->syntax > tl->syntax) {
+	if (tl->syntax == 0)
+		tl->syntax = syntax;
+	if (syntax > tl->syntax) {
 		VSB_printf(tl->sb,
 		    "VCL version %.1f higher than"
 		    " the top level version %.1f\n",
-		    .1 * tok1->src->syntax, .1 * tl->syntax);
+		    .1 * syntax, .1 * tl->syntax);
 		vcc_ErrWhere2(tl, tok0, tl->t);
 		ERRCHK(tl);
 	}
@@ -352,7 +362,6 @@ void
 vcc_Parse(struct vcc *tl)
 {
 	struct toplev *tp;
-	struct token *tok;
 
 	AZ(tl->indent);
 	if (tl->t->tok != ID || !vcc_IdIs(tl->t, "vcl")) {
@@ -365,16 +374,9 @@ vcc_Parse(struct vcc *tl)
 		vcc_ErrWhere(tl, tl->t);
 		ERRCHK(tl);
 	}
-	tok = tl->t;
 	vcc_ParseVcl(tl);
-	if (tok->src->syntax < VCL_LOW || tok->src->syntax > VCL_HIGH) {
-		VSB_printf(tl->sb, "VCL version %.1f not supported.\n",
-		    .1 * tok->src->syntax);
-		vcc_ErrWhere2(tl, tok, tl->t);
-		ERRCHK(tl);
-	}
-	tl->syntax = tl->t->src->syntax;
 	ERRCHK(tl);
+	AN(tl->syntax);
 	while (tl->t->tok != EOI) {
 		ERRCHK(tl);
 		switch (tl->t->tok) {
