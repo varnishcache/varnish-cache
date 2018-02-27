@@ -154,7 +154,7 @@ def lwrap(s, width=64):
     """
     Wrap a C-prototype like string into a number of lines.
     """
-    l = []
+    ll = []
     p = ""
     while len(s) > width:
         y = s[:width].rfind(',')
@@ -162,12 +162,12 @@ def lwrap(s, width=64):
             y = s[:width].rfind('(')
         if y == -1:
             break
-        l.append(p + s[:y + 1])
+        ll.append(p + s[:y + 1])
         s = s[y + 1:].lstrip()
         p = "    "
     if len(s) > 0:
-        l.append(p + s)
-    return l
+        ll.append(p + s)
+    return ll
 
 
 def quote(s):
@@ -232,6 +232,7 @@ class ctype(object):
         jl.append([self.vt, self.nm, self.defval, self.spec])
         while jl[-1][-1] is None:
                 jl[-1].pop(-1)
+
 
 def vtype(txt):
     j = len(txt)
@@ -298,27 +299,29 @@ def arg(txt):
 
     return a, s
 
+
 def nmlegal(nm):
     return re.match('^[a-zA-Z0-9_]+$', nm)
+
 
 # XXX cant have ( or ) in an argument default value
 class prototype(object):
     def __init__(self, st, retval=True, prefix=""):
-        l = st.line[1]
+        ll = st.line[1]
         while True:
-            a1 = l.count("(")
-            a2 = l.count(")")
+            a1 = ll.count("(")
+            a2 = ll.count(")")
             if a1 > 0 and a1 == a2:
                 break
             n = st.doc.split("\n", 1)
-            l += n[0]
+            ll += n[0]
             st.doc = n[1]
 
         if retval:
-            self.retval, s = vtype(l)
+            self.retval, s = vtype(ll)
         else:
             self.retval = None
-            s = l
+            s = ll
         i = s.find("(")
         assert i > 0
         self.name = prefix + s[:i].strip()
@@ -359,7 +362,7 @@ class prototype(object):
         if self.retval is not None:
             s += self.retval.vcl() + " "
         s += self.name + "("
-        l = []
+        ll = []
         for i in self.args:
             t = i.vcl()
             if t in privs:
@@ -369,18 +372,18 @@ class prototype(object):
                     t += " " + i.nm
                 if i.defval is not None:
                     t += "=" + i.defval
-            l.append(t)
-        s += ", ".join(l) + ")"
+            ll.append(t)
+        s += ", ".join(ll) + ")"
         return s
 
     def c_ret(self):
         return self.retval.ct
 
     def c_args(self, a=[]):
-        l = list(a)
+        ll = list(a)
         for i in self.args:
-            l.append(i.ct)
-        return ", ".join(l)
+            ll.append(i.ct)
+        return ", ".join(ll)
 
     def c_fn(self, args=[], h=False):
         s = fn = ''
@@ -499,19 +502,19 @@ class s_module(stanza):
             fo.write("\n")
             return
 
-        l = []
+        ll = []
         for i in self.vcc.contents[1:]:
             j = i.rstlbl
             if j is not None:
-                l.append([j.split("_", 1)[1], j])
+                ll.append([j.split("_", 1)[1], j])
             if i.methods is None:
                 continue
             for x in i.methods:
                 j = x.rstlbl
-                l.append([j.split("_", 1)[1], j])
+                ll.append([j.split("_", 1)[1], j])
 
-        l.sort()
-        for i in l:
+        ll.sort()
+        for i in ll:
             fo.write("* :ref:`%s`\n" % i[1])
         fo.write("\n")
 
@@ -557,6 +560,7 @@ class s_event(stanza):
                 "Vmod_%s_Func._event" % self.vcc.modname
         ])
 
+
 class s_function(stanza):
     def parse(self):
         self.proto = prototype(self)
@@ -575,13 +579,13 @@ class s_function(stanza):
     def cstruct_init(self, fo):
         fo.write("\t" + self.proto.cname(pfx=True) + ",\n")
 
-    def json(self,jl):
+    def json(self, jl):
         jl.append([
                 "$FUNC",
                 "%s" % self.proto.name,
         ])
         self.proto.json(jl[-1], 'Vmod_%s_Func.%s' %
-                           (self.vcc.modname, self.proto.cname()))
+                        (self.vcc.modname, self.proto.cname()))
 
 
 class s_object(stanza):
@@ -653,24 +657,23 @@ class s_object(stanza):
                 "$OBJ",
                 self.proto.name,
                 "struct %s%s_%s" %
-                    (self.vcc.sympfx, self.vcc.modname, self.proto.name),
+                (self.vcc.sympfx, self.vcc.modname, self.proto.name),
         ]
 
-        l2 = [ "$INIT" ]
+        l2 = ["$INIT"]
         ll.append(l2)
         self.init.json(l2,
-            'Vmod_%s_Func.%s' % (self.vcc.modname, self.init.name))
+                       'Vmod_%s_Func.%s' % (self.vcc.modname, self.init.name))
 
-        l2 = [ "$FINI" ]
+        l2 = ["$FINI"]
         ll.append(l2)
         self.fini.json(l2,
-            'Vmod_%s_Func.%s' % (self.vcc.modname, self.fini.name))
+                       'Vmod_%s_Func.%s' % (self.vcc.modname, self.fini.name))
 
         for i in self.methods:
                 i.json(ll)
 
         jl.append(ll)
-
 
     def dump(self):
         super(s_object, self).dump()
@@ -699,7 +702,8 @@ class s_method(stanza):
                 self.proto.name[len(self.pfx)+1:]
         ])
         self.proto.json(jl[-1],
-            'Vmod_%s_Func.%s' % (self.vcc.modname, self.proto.cname()))
+                        'Vmod_%s_Func.%s' %
+                        (self.vcc.modname, self.proto.cname()))
 
 
 #######################################################################
@@ -794,8 +798,7 @@ class vcc(object):
         fo.write("#endif\n")
         fo.write("\n")
 
-        l = sorted(enum_values)
-        for j in l:
+        for j in sorted(enum_values):
             fo.write("extern VCL_ENUM %senum_%s;\n" % (self.sympfx, j))
         fo.write("\n")
 
@@ -809,8 +812,7 @@ class vcc(object):
         for j in self.contents:
             j.cstruct(fo)
         fo.write("\n")
-        l = sorted(enum_values)
-        for j in l:
+        for j in sorted(enum_values):
             fo.write("\tVCL_ENUM\t\t\t*enum_%s;\n" % j)
         fo.write("};\n")
 
@@ -819,17 +821,16 @@ class vcc(object):
         for j in self.contents:
             j.cstruct_init(fo)
         fo.write("\n")
-        l = sorted(enum_values)
-        for j in l:
+        for j in sorted(enum_values):
             fo.write("\t&%senum_%s,\n" % (self.sympfx, j))
         fo.write("};\n")
 
     def json(self, fo):
-        jl = [ ["$VMOD", "1.0" ] ]
+        jl = [["$VMOD", "1.0"]]
         for j in self.contents:
                 j.json(jl)
 
-        bz = bytearray(json.dumps(jl, separators=(",",":"))) + "\0"
+        bz = bytearray(json.dumps(jl, separators=(",", ":"))) + "\0"
         fo.write("\nstatic const char Vmod_Json[%d] = {\n" % len(bz))
         t = "\t"
         for i in bz:
@@ -891,8 +892,7 @@ class vcc(object):
 
         fo.write("\n")
 
-        l = sorted(enum_values)
-        for j in l:
+        for j in sorted(enum_values):
             fo.write('VCL_ENUM %senum_%s = "%s";\n' % (self.sympfx, j, j))
         fo.write("\n")
 
@@ -951,6 +951,7 @@ def runmain(inputvcc, rstdir, outputprefix):
         v.amboilerplate()
 
     v.commit()
+
 
 if __name__ == "__main__":
     usagetext = "Usage: %prog [options] <vmod.vcc>"
