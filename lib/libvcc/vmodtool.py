@@ -307,6 +307,7 @@ def nmlegal(nm):
 # XXX cant have ( or ) in an argument default value
 class prototype(object):
     def __init__(self, st, retval=True, prefix=""):
+        self.st = st
         ll = st.line[1]
         while True:
             a1 = ll.count("(")
@@ -359,7 +360,7 @@ class prototype(object):
 
     def vcl_proto(self, short):
         s = ""
-        if self.retval is not None:
+        if self.retval is not None and type(self.st) != s_object:
             s += self.retval.vcl() + " "
         s += self.name + "("
         ll = []
