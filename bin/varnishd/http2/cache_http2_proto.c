@@ -943,7 +943,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 	h2_error h2e;
 	struct h2_req *r2, *r22;
 	char b[8];
-	int abort = 0;
+	int abandon = 0;
 
 	ASSERT_RXTHR(h2);
 	(void)VTCP_blocking(*h2->htc->rfd);
@@ -957,7 +957,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 		break;
 	case HTC_S_TIMEOUT:
 		VTAILQ_FOREACH_SAFE(r2, &h2->streams, list, r22) {
-			if (abort)
+			if (abandon)
 				break;
 			switch (r2->state) {
 			case H2_S_CLOSED:
@@ -968,7 +968,7 @@ h2_rxframe(struct worker *wrk, struct h2_sess *h2)
 			case H2_S_CLOS_REM:
 			case H2_S_CLOS_LOC:
 				if (h2_stream_tmo(h2, r2)) {
-					abort = 1;
+					abandon = 1;
 					continue;
 				}
 				return (1);
