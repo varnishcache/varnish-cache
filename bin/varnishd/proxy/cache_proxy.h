@@ -37,3 +37,5 @@
 #define PP2_SUBTYPE_SSL_SIG_ALG 0x24
 #define PP2_SUBTYPE_SSL_KEY_ALG 0x25
 #define PP2_SUBTYPE_SSL_MAX     0x25
+
+int VPX_tlv(const struct req *req, int tlv, void **dst, int *len);

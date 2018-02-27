@@ -250,6 +250,60 @@ static uint32_t crc32c(const uint8_t *buf, int len)
 	return (crc ^ 0xffffffff);
 }
 
+int
+VPX_tlv(const struct req *req, int tlv, void **dst, int *len)
+{
+	uintptr_t *p;
+	uint16_t l;
+	char *d;
+	int ssltlv = 0;
+
+	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
+	CHECK_OBJ_NOTNULL(req->sp, SESS_MAGIC);
+
+	if (SES_Get_xport_priv(req->sp, &p) != 0) {
+		*dst = NULL;
+		return (-1);
+	}
+	d = (char *)*p;
+	l = *(uint16_t *)d;
+	d += 2;
+
+	if (tlv > PP2_TYPE_SSL && tlv <= PP2_SUBTYPE_SSL_MAX) {
+		ssltlv = tlv;
+		tlv = PP2_TYPE_SSL;
+	}
+	while (l > sizeof(struct pp2_tlv)) {
+		uint16_t v_len = vbe16dec(d + 1);
+		if (d[0] == tlv) {
+			if (ssltlv) {
+				char *sd;
+				int sl;
+				sd = d + sizeof(struct pp2_tlv) + sizeof(struct pp2_tlv_ssl);
+				sl = l - sizeof(struct pp2_tlv) - sizeof(struct pp2_tlv_ssl);
+				while (sl > sizeof(struct pp2_tlv)) {
+					uint16_t subv_len = vbe16dec(sd + 1);
+					if (sd[0] == ssltlv) {
+						*dst = sd + 3;
+						*len = subv_len;
+						return (0);
+					}
+					sd += (subv_len + 3);
+					sl -= (subv_len + 3);
+				}
+			} else {
+				*dst = d + 3;
+				*len = v_len;
+				return (0);
+			}
+		}
+		d += (v_len + 3);
+		l -= (v_len + 3);
+	}
+	*dst = NULL;
+	return (-1);
+}
+
 static int
 vpx_proto2(const struct worker *wrk, struct req *req)
 {
