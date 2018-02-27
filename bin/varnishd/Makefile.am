@@ -145,14 +145,14 @@ nobase_pkginclude_HEADERS = \
 	cache/cache_filter.h \
 	waiter/waiter.h
 
-pkgdatadir = ${datarootdir}/${PACKAGE}/vcl
+vcldir=$(datarootdir)/$(PACKAGE)/vcl
 
 varnishd_CFLAGS = \
 	@PCRE_CFLAGS@ \
 	@SAN_CFLAGS@ \
 	-DVARNISH_STATE_DIR='"${VARNISH_STATE_DIR}"' \
 	-DVARNISH_VMOD_DIR='"${pkglibdir}/vmods"' \
-	-DVARNISH_VCL_DIR='"${pkgsysconfdir}:${pkgdatadir}"'
+	-DVARNISH_VCL_DIR='"${pkgsysconfdir}:${vcldir}"'
 
 varnishd_LDFLAGS = -export-dynamic
 

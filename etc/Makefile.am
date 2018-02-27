@@ -11,6 +11,6 @@ New users is recommended to use the example.vcl file as a starting point.\n\n";\
 	sed -n '/vcl_recv/,$$p' $(top_srcdir)/bin/varnishd/builtin.vcl ) | \
 	sed 's/^\(.*\)$$/# \1/' > builtin.vcl
 
-vcldir=$(datarootdir)/varnish/vcl
+vcldir=$(datarootdir)/$(PACKAGE)/vcl
 
 dist_vcl_DATA = devicedetect.vcl
