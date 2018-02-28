@@ -627,7 +627,7 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 			int i;
 			i = VTCP_fastopen(ls->sock, cache_param->listen_depth);
 			if (i)
-				VSL(SLT_Error, ls->sock,
+				VSL(SLT_Error, 0,
 				    "Kernel TCP Fast Open: sock=%d, ret=%d %s",
 				    ls->sock, i, strerror(errno));
 		}
@@ -637,7 +637,7 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 			int i;
 			i = VTCP_filter_http(ls->sock);
 			if (i)
-				VSL(SLT_Error, ls->sock,
+				VSL(SLT_Error, 0,
 				    "Kernel filtering: sock=%d, ret=%d %s",
 				    ls->sock, i, strerror(errno));
 		}
