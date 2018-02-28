@@ -134,6 +134,12 @@ Fixed bugs which may influence VCL behaviour
 Fixed bugs
 ----------
 
+* Problems during late socket initialization performed by the Varnish
+  child process can now be reported back to the management process with an
+  error message. (2551_)
+
+.. _2551: https://github.com/varnishcache/varnish-cache/issues/2551
+
 **TODO**
 
 ================================
