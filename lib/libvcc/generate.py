@@ -224,7 +224,7 @@ class vardef(object):
 			if self.typ != "STRING" and self.typ != "BODY":
 				s += "VCL_" + self.typ + ")"
 			else:
-				s += ctyp + ", ...)"
+				s += ctyp.c + ", ...)"
 			varproto(s);
 		fo.write("\tsym->w_methods =\n")
 		restrict(fo, self.wr)
@@ -320,11 +320,19 @@ stv_variables = (
 #######################################################################
 # VCL to C type conversion
 
-vcltypes = {
-	'STRINGS':		"void",
-	'STRING_LIST':		"void*",
-	'SUB':			"void*",
-}
+vcltypes = {}
+
+class vcltype(object):
+	def __init__(self, name, ctype, internal=False):
+		self.name = name
+		self.c = ctype
+		self.internal = internal
+		vcltypes[name] = self
+		
+
+vcltype("STRINGS", "void", True)
+vcltype("STRING_LIST", "void*", True)
+vcltype("SUB", "void*", True)
 
 fi = open(join(srcroot, "include/vrt.h"))
 
@@ -341,7 +349,7 @@ for i in fi:
 	if j[-1][:4] != "VCL_":
 		continue
 	d = " ".join(j[1:-1])
-	vcltypes[j[-1][4:-1]] = d
+	vcltype(j[-1][4:-1], d)
 fi.close()
 
 #######################################################################
@@ -631,9 +639,13 @@ for i in sorted(rets.keys()):
 
 fo.write("\n" + tbl40("#define VCL_RET_MAX", "%d\n" % n))
 
+fo.write("\n/* VCL Types */\n")
+for vcltype in sorted(vcltypes.keys()):
+	fo.write("extern const struct vrt_type VCL_TYPE_%s[1];\n" % vcltype)
+
 
 fo.write("""
-
+/* Compiled VCL Interface */
 typedef int vcl_event_f(VRT_CTX, enum vcl_event_e);
 typedef int vcl_init_f(VRT_CTX);
 typedef void vcl_fini_f(VRT_CTX);
@@ -729,7 +741,22 @@ parse_var_doc(join(buildroot, "doc/sphinx/reference/vcl_var.rst"))
 fo.write("}\n")
 
 for i in stv_variables:
-	fh.write(vcltypes[i[1]] + " VRT_Stv_" + i[0] + "(const char *);\n")
+	fh.write(vcltypes[i[1]].c + " VRT_Stv_" + i[0] + "(const char *);\n")
+
+fo.write("\n/* VCL type identifiers */\n")
+
+for vn in sorted(vcltypes.keys()):
+	v = vcltypes[vn]
+	if v.internal:
+		continue
+	fo.write("const struct vrt_type VCL_TYPE_%s[1] = { {\n" % v.name)
+	fo.write("\t.magic = VRT_TYPE_MAGIC,\n")
+	fo.write('\t.lname = "%s",\n' % v.name.lower())
+	fo.write('\t.uname = "%s",\n' % v.name)
+	fo.write('\t.ctype = "%s",\n' % v.c)
+	if v.c != "void":
+		fo.write('\t.szof = sizeof(VCL_%s),\n' % v.name)
+	fo.write("}};\n")
 
 fo.close()
 fh.close()
@@ -785,7 +812,7 @@ lint_start(fo)
 for i in stv_variables:
 	ct = vcltypes[i[1]]
 	fo.write("VRTSTVVAR(" + i[0] + ",\t" + i[1] + ",\t")
-	fo.write(ct + ",\t" + i[2] + ")")
+	fo.write(ct.c + ",\t" + i[2] + ")")
 	fo.write("\n")
 
 fo.write("#undef VRTSTVVAR\n")

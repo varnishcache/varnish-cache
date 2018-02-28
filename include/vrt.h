@@ -153,6 +153,15 @@ typedef double					VCL_TIME;
 typedef struct vcl *				VCL_VCL;
 typedef void					VCL_VOID;
 
+struct vrt_type {
+	unsigned			magic;
+#define VRT_TYPE_MAGIC			0xa943bc32
+	const char			*lname;
+	const char			*uname;
+	const char			*ctype;
+	size_t				szof;
+};
+
 /***********************************************************************
  * This is the composite argument we pass to compiled VCL and VRT
  * functions.
