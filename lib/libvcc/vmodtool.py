@@ -831,7 +831,8 @@ class vcc(object):
         for j in self.contents:
                 j.json(jl)
 
-        bz = bytearray(json.dumps(jl, separators=(",", ":"))) + "\0"
+        bz = bytearray(json.dumps(jl, separators=(",", ":")),
+                       encoding = "ascii") + b"\0"
         fo.write("\nstatic const char Vmod_Json[%d] = {\n" % len(bz))
         t = "\t"
         for i in bz:
