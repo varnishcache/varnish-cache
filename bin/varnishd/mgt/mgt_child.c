@@ -538,15 +538,19 @@ mgt_reap_child(void)
 
 	MGT_Complain(C_DEBUG, "Child cleanup complete");
 
-	/*
-	 * XXX exit mgr if we fail even with retries?
-	 * number of retries? interval?
-	 */
+	/* XXX number of retries? interval? */
 	for (i = 0; i < 3; i++) {
 		if (MAC_reopen_sockets() == 0)
 			break;
 		/* error already logged */
 		(void)sleep(1);
+	}
+	if (i == 3) {
+		/* We failed to reopen our listening sockets. No choice
+		 * but to exit. */
+		MGT_Complain(C_ERR,
+		    "Could not reopen listening sockets. Exiting.");
+		exit(1);
 	}
 
 	if (child_state == CH_DIED && mgt_param.auto_restart)
