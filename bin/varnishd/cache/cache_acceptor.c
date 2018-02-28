@@ -631,7 +631,12 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 			    ls->endpoint, strerror(errno));
 			return;
 		}
-		AZ(listen(ls->sock, cache_param->listen_depth));
+		if (listen(ls->sock, cache_param->listen_depth)) {
+			VCLI_SetResult(cli, CLIS_CANT);
+			VCLI_Out(cli, "Listen failed on socket '%s': %s",
+			    ls->endpoint, strerror(errno));
+			return;
+		}
 		vca_tcp_opt_set(ls, 1);
 		if (cache_param->accept_filter && VTCP_filter_http(ls->sock)) {
 			VCLI_SetResult(cli, CLIS_CANT);
