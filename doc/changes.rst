@@ -134,6 +134,14 @@ Fixed bugs which may influence VCL behaviour
 Fixed bugs
 ----------
 
+* Problems during late socket initialization performed by the Varnish
+  child process are now reported back to the management process with an
+  error message, including errors experienced when executing the listen()
+  system call and failures on executing on the ``accept_filter`` and
+  ``tcp_fastopen`` parameters. (2551_)
+
+.. _2551: https://github.com/varnishcache/varnish-cache/issues/2551
+
 **TODO**
 
 ================================
