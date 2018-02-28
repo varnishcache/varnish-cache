@@ -45,7 +45,6 @@ import random
 import copy
 import json
 
-rstfmt = False
 strict_abi = True
 
 AMBOILERPLATE = '''
@@ -226,7 +225,12 @@ class ctype(object):
             return "STRING"
         if self.spec is None:
             return self.vt
-        return self.vt + " {" + ",".join(self.spec) + "}"
+        return self.vt + " {" + ", ".join(self.spec) + "}"
+
+    def synopsis(self):
+        if self.vt == "STRING_LIST":
+            return "STRING"
+        return self.vt
 
     def json(self, jl):
         jl.append([self.vt, self.nm, self.defval, self.spec])
@@ -308,15 +312,8 @@ def nmlegal(nm):
 class prototype(object):
     def __init__(self, st, retval=True, prefix=""):
         self.st = st
+        self.obj = None
         ll = st.line[1]
-        while True:
-            a1 = ll.count("(")
-            a2 = ll.count(")")
-            if a1 > 0 and a1 == a2:
-                break
-            n = st.doc.split("\n", 1)
-            ll += n[0]
-            st.doc = n[1]
 
         if retval:
             self.retval, s = vtype(ll)
@@ -325,7 +322,9 @@ class prototype(object):
             s = ll
         i = s.find("(")
         assert i > 0
-        self.name = prefix + s[:i].strip()
+        self.prefix = prefix
+        self.bname = s[:i].strip()
+        self.name = self.prefix + self.bname
         self.vcc = st.vcc
         if not nmlegal(self.cname()):
             err("%s(): Illegal name\n" % self.name, warn=False)
@@ -358,14 +357,25 @@ class prototype(object):
             return self.vcc.sympfx + r
         return r
 
-    def vcl_proto(self, short):
-        s = ""
-        if self.retval is not None and type(self.st) != s_object:
+    def vcl_proto(self, short, pfx=""):
+        if type(self.st) == s_method:
+            pfx += pfx
+        s = pfx
+        if type(self.st) == s_object:
+            s += "new x" + self.bname + " = "
+        elif self.retval is not None:
             s += self.retval.vcl() + " "
-        s += self.name + "("
+
+        if type(self.st) == s_method:
+            s += self.obj + self.bname + "("
+        else:
+            s += self.name + "("
         ll = []
         for i in self.args:
-            t = i.vcl()
+            if short:
+                t = i.synopsis()
+            else:
+                t = i.vcl()
             if t in privs:
                 continue
             if not short:
@@ -374,8 +384,29 @@ class prototype(object):
                 if i.defval is not None:
                     t += "=" + i.defval
             ll.append(t)
-        s += ", ".join(ll) + ")"
+        t = ",@".join(ll)
+        if len(s + t) > 68 and not short:
+            s += "\n" + pfx + pfx
+            s += t.replace("@", "\n" + pfx + pfx)
+            s += "\n" + pfx + ")"
+        else:
+            s += t.replace("@", " ") + ")"
         return s
+
+    def rsthead(self, fo):
+        s = self.vcl_proto(False)
+        if len(s) < 60:
+            write_rst_hdr(fo, s, '-')
+        else:
+            s = self.vcl_proto(True)
+            if len(s) > 60:
+                s = self.name + "(...)"
+            write_rst_hdr(fo, s, '-')
+            fo.write("\n::\n\n" + self.vcl_proto(False, pfx="   ") + "\n")
+
+    def synopsis(self, fo, man):
+        fo.write(self.vcl_proto(True, pfx="   ") + "\n")
+        fo.write("  \n")
 
     def c_ret(self):
         return self.retval.ct
@@ -400,7 +431,7 @@ class prototype(object):
         self.retval.json(ll)
         ll.append(cfunc)
         for i in self.args:
-                i.json(ll)
+            i.json(ll)
         jl.append(ll)
 
 #######################################################################
@@ -409,10 +440,11 @@ class prototype(object):
 class stanza(object):
     def __init__(self, l0, doc, vcc):
         self.line = l0
-        if len(doc) == 1:
-            self.doc = doc[0]
-        else:
-            self.doc = ""
+        while len(doc) > 0 and doc[0] == '':
+            doc.pop(0)
+        while len(doc) > 0 and doc[-1] == '':
+            doc.pop(-1)
+        self.doc = doc
         self.vcc = vcc
         self.rstlbl = None
         self.methods = None
@@ -427,25 +459,26 @@ class stanza(object):
             fo.write(".. _" + self.rstlbl + ":\n\n")
 
         self.rsthead(fo, man)
+        fo.write("\n")
         self.rstmid(fo, man)
+        fo.write("\n")
         self.rsttail(fo, man)
+        fo.write("\n")
 
     def rsthead(self, fo, man):
         if self.proto is None:
             return
-        if rstfmt:
-            s = self.proto.vcl_proto(short=False)
-            write_rst_hdr(fo, s, '-')
-        else:
-            write_rst_hdr(fo, self.proto.name, '-')
-            s = self.proto.vcl_proto(short=False)
-            fo.write("\n::\n\n\t%s\n" % s)
+        self.proto.rsthead(fo)
 
     def rstmid(self, fo, man):
-        fo.write(self.doc + "\n")
+        fo.write("\n".join(self.doc) + "\n")
 
     def rsttail(self, fo, man):
         return
+
+    def synopsis(self, fo, man):
+        if self.proto is not None:
+            self.proto.synopsis(fo, man)
 
     def hfile(self, fo):
         return
@@ -487,21 +520,20 @@ class s_module(stanza):
         fo.write("\n")
         write_rst_hdr(fo, "SYNOPSIS", "=")
         fo.write("\n")
-        fo.write('import %s [from "path"] ;\n' % self.vcc.modname)
+        fo.write("\n::\n\n")
+        fo.write('   import %s [from "path"] ;\n' % self.vcc.modname)
+        fo.write("   \n")
+        for c in self.vcc.contents:
+            c.synopsis(fo, man)
         fo.write("\n")
 
     def rsttail(self, fo, man):
 
+        if man:
+            return
+
         write_rst_hdr(fo, "CONTENTS", "=")
         fo.write("\n")
-
-        if man:
-            for i in self.vcc.contents[1:]:
-                if i.rstlbl is None:
-                    continue
-                fo.write("* %s\n" % i.proto.vcl_proto(short=True))
-            fo.write("\n")
-            return
 
         ll = []
         for i in self.vcc.contents[1:]:
@@ -593,6 +625,7 @@ class s_object(stanza):
     def parse(self):
         self.proto = prototype(self, retval=False)
         self.proto.retval = vtype('VOID')[0]
+        self.proto.obj = "x" + self.proto.name
 
         self.init = copy.copy(self.proto)
         self.init.name += '__init'
@@ -606,21 +639,20 @@ class s_object(stanza):
         self.methods = []
 
     def rsthead(self, fo, man):
-        if rstfmt:
-            s = self.proto.vcl_proto(short=False)
-            write_rst_hdr(fo, "new OBJ = " + s, '=')
-        else:
-            write_rst_hdr(fo, self.proto.name, '-')
-            s = "new OBJ = " + self.proto.vcl_proto(short=False)
-            fo.write("\n::\n\n\t%s\n" % s)
+        self.proto.rsthead(fo)
 
-        fo.write(self.doc + "\n")
+        fo.write("\n" + "\n".join(self.doc) + "\n\n")
 
         for i in self.methods:
             i.rstfile(fo, man)
 
     def rstmid(self, fo, man):
         return
+
+    def synopsis(self, fo, man):
+        self.proto.synopsis(fo, man)
+        for i in self.methods:
+            i.proto.synopsis(fo, man)
 
     def chfile(self, fo, h):
         sn = self.vcc.sympfx + self.vcc.modname + "_" + self.proto.name
@@ -688,6 +720,7 @@ class s_method(stanza):
         assert type(p) == s_object
         self.pfx = p.proto.name
         self.proto = prototype(self, prefix=self.pfx)
+        self.proto.obj = "x" + self.pfx
         self.rstlbl = "func_" + self.proto.name
         p.methods.append(self)
 
@@ -742,16 +775,18 @@ class vcc(object):
         a = "\n" + open(self.inputfile, "r").read()
         s = a.split("\n$")
         self.copyright = s.pop(0).strip()
-        for i in range(len(s)):
-            b = s[i].split("\n", 1)
-            c = b[0].split(None, 1)
-
-            if i == 0 and c[0] != "Module":
-                err("$Module must be first stanze", False)
+        while len(s):
+            ss = s.pop(0)
+            i = ss.find("\n\n")
+            if i > -1:
+                i += 1
+            else:
+                i = len(ss)
+            c = ss[:i].split()
             m = dispatch.get(c[0])
             if m is None:
-                err("Unknown stanze $%s" % c[0])
-            m(c, b[1:], self)
+                err("Unknown stanze $%s" % ss[:i])
+            m([c[0], " ".join(c[1:])], ss[i:].split('\n'), self)
 
     def rst_copyright(self, fo):
         write_rst_hdr(fo, "COPYRIGHT", "=")

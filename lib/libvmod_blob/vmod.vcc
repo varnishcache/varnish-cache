@@ -8,25 +8,6 @@
 
 $Module blob 3 utilities for the VCL blob type
 
-::
-
-  # binary-to-text encodings
-  STRING blob.encode([ENUM encoding,] [ENUM case,] BLOB blob)
-  BLOB blob.decode([ENUM decoding,] [INT length,] STRING_LIST encoded)
-  STRING blob.transcode([ENUM decoding,] [ENUM encoding,] [ENUM case,]
-			[INT length,] STRING_LIST encoded)
-
-  # other utilities
-  BOOL blob.same(BLOB, BLOB)
-  BOOL blob.equal(BLOB, BLOB)
-  INT blob.length(BLOB)
-  BLOB blob.sub(BLOB, BYTES length [, BYTES offset])
-
-  # blob object
-  new OBJ = blob.blob([ENUM decoding,] STRING_LIST encoded)
-  BLOB <obj>.get()
-  STRING <obj>.encode([ENUM encoding,] [ENUM case])
-
 $ABI strict
 
 DESCRIPTION
