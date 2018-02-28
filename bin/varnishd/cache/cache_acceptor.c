@@ -631,7 +631,12 @@ ccf_start(struct cli *cli, const char * const *av, void *priv)
 				    "Kernel TCP Fast Open: sock=%d, ret=%d %s",
 				    ls->sock, i, strerror(errno));
 		}
-		AZ(listen(ls->sock, cache_param->listen_depth));
+		if (listen(ls->sock, cache_param->listen_depth)) {
+			VCLI_SetResult(cli, CLIS_CANT);
+			VCLI_Out(cli, "Listen failed on socket '%s': %s",
+			    ls->endpoint, strerror(errno));
+			return;
+		}
 		vca_tcp_opt_set(ls, 1);
 		if (cache_param->accept_filter) {
 			int i;
