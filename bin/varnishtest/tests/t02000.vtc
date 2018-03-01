@@ -17,7 +17,7 @@ varnish v1 -vcl+backend {
 
 varnish v1 -cliok "param.set debug +syncvsl"
 
-varnish v1 -cliok "param.set feature -http2"
+varnish v1 -cliok "param.set vsl_mask +H2RxHdr,+H2RxBody,+H2TxHdr,+H2TxBody"
 
 client c1 {
 	txpri
