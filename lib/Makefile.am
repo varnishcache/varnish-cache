@@ -11,4 +11,5 @@ SUBDIRS = \
 	libvmod_purge \
 	libvmod_vtc \
 	libvmod_blob \
-	libvmod_unix
+	libvmod_unix \
+	libvmod_proxy

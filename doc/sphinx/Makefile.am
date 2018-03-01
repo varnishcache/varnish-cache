@@ -222,6 +222,10 @@ reference/vmod_unix.generated.rst: reference $(top_builddir)/lib/libvmod_unix/vm
 	cp $(top_builddir)/lib/libvmod_unix/vmod_unix.rst $@ || true
 BUILT_SOURCES += reference/vmod_unix.generated.rst
 
+reference/vmod_proxy.generated.rst: reference $(top_builddir)/lib/libvmod_proxy/vmod_proxy.rst
+	cp $(top_builddir)/lib/libvmod_proxy/vmod_proxy.rst $@ || true
+BUILT_SOURCES += reference/vmod_proxy.generated.rst
+
 EXTRA_DIST += $(BUILT_SOURCES)
 MAINTAINERCLEANFILES = $(EXTRA_DIST)
 
