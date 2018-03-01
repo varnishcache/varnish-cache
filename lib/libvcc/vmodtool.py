@@ -169,20 +169,15 @@ def lwrap(s, width=64):
     return ll
 
 
-def quote(s):
-    return s.replace("\"", "\\\"")
-
-
-def indent(p, n):
-    n = len(p.expandtabs()) + n
-    p = "\t" * int(n / 8)
-    p += " " * int(n % 8)
-    return p
-
 #######################################################################
 
 
+inputline = None
+
+
 def err(str, warn=True):
+    if inputline is not None:
+        print("While parsing line:\n\t", inputline)
     if opts.strict or not warn:
         print("ERROR: " + str, file=sys.stderr)
         exit(1)
@@ -203,12 +198,19 @@ enum_values = {}
 
 
 class ctype(object):
-    def __init__(self, vt, ct):
-        self.vt = vt
-        self.ct = ct
+    def __init__(self, wl):
         self.nm = None
         self.defval = None
         self.spec = None
+
+        self.vt = wl.pop(0)
+        self.ct = ctypes.get(self.vt)
+        if self.ct is None:
+            err("Expected type got '%s'" % self.vt, warn=False)
+        if len(wl) > 0 and wl[0] == "{":
+            if self.vt != "ENUM":
+                err("Only ENUMs take {...} specs", warn=False)
+            self.add_spec(wl)
 
     def __str__(self):
         s = "<" + self.vt
@@ -219,6 +221,32 @@ class ctype(object):
         if self.spec is not None:
             s += " SPEC=" + str(self.spec)
         return s + ">"
+
+    def set_defval(self, x):
+        if self.vt == "ENUM":
+            if x[0] == '"' and x[-1] == '"':
+                x = x[1:-1]
+            elif x[0] == "'" and x[-1] == "'":
+                x = x[1:-1]
+        self.defval = x
+
+    def add_spec(self, wl):
+        assert self.vt == "ENUM"
+        assert wl.pop(0) == "{"
+        self.spec = []
+        while True:
+            x = wl.pop(0)
+            if x[0] == '"' and x[-1] == '"':
+                x = x[1:-1]
+            elif x[0] == "'" and x[-1] == "'":
+                x = x[1:-1]
+            assert len(x) > 0
+            self.spec.append(x)
+            enum_values[x] = True
+            w = wl.pop(0)
+            if w == "}":
+                break
+            assert w == ","
 
     def vcl(self):
         if self.vt == "STRING_LIST":
@@ -238,118 +266,102 @@ class ctype(object):
                 jl[-1].pop(-1)
 
 
-def vtype(txt):
-    j = len(txt)
-    for i in (',', ' ', '\n', '\t'):
-        x = txt.find(i)
-        if x > 0:
-            j = min(j, x)
-    t = txt[:j]
-    r = txt[j:].lstrip()
-    if t not in ctypes:
-        err("Did not recognize type <%s>" % txt)
-    ct = ctype(t, ctypes[t])
-    if t != "ENUM":
-        return ct, r
-    assert r[0] == '{'
-    e = r[1:].split('}', 1)
-    r = e[1].lstrip()
-    e = e[0].split(',')
-    ct.spec = []
-    for i in e:
-        j = i.strip()
-        enum_values[j] = True
-        ct.spec.append(j)
-    return ct, r
+def lex(l):
+    wl = []
+    s = 0
+    for i in range(len(l)):
+        c = l[i]
+
+        if s == 0 and re.match('[0-9a-zA-Z_.-]', c):
+            wl.append(c)
+            s = 3
+            continue
+
+        if s == 3:
+            if re.match('[0-9a-zA-Z_.-]', c):
+                wl[-1] += c
+                continue
+            s = 0
+
+        if s == 0 and c in (' ', '\t', '\n', '\r'):
+            continue
+
+        if s == 0 and c in ('(', '{', '}', ')', ',', '='):
+            wl.append(c)
+        elif s == 0 and c in ('"', "'"):
+            sep = c
+            s = 1
+            wl.append(c)
+        elif s == 1:
+            if c == '\\':
+                s = 2
+            else:
+                wl[-1] += c
+            if c == sep:
+                s = 0
+        elif s == 2:
+            wl[-1] += c
+            s = 1
+        else:
+            err("Syntax error at char", i, "'%s'" % c, warn=False)
+
+    if s != 0:
+        err("Syntax error at char", i, "'%s'" % c, warn=False)
+    return wl
 
 
-def arg(txt):
-    a, s = vtype(txt)
-    if len(s) == 0 or s[0] == ',':
-        return a, s
-
-    i = s.find('=')
-    j = s.find(',')
-    if j < 0:
-        j = len(s)
-    if j < i:
-        i = -1
-    if i < 0:
-        i = s.find(',')
-        if i < 0:
-            i = len(s)
-        a.nm = s[:i].rstrip()
-        s = s[i:]
-        return a, s
-
-    a.nm = s[:i].rstrip()
-    s = s[i + 1:].lstrip()
-    if s[0] == '"' or s[0] == "'":
-        m = re.match("(['\"]).*?(\\1)", s)
-        if not m:
-            err("Unbalanced quote")
-        a.defval = s[:m.end()]
-        if a.vt == "ENUM":
-            a.defval = a.defval[1:-1]
-        s = s[m.end():]
-    else:
-        i = s.find(',')
-        if i < 0:
-            i = len(s)
-        a.defval = s[:i].rstrip()
-        s = s[i:]
-    if a.vt == "ENUM" and a.defval not in a.spec:
-        err("ENUM default value <%s> not valid" % a.defval, warn=False)
-
-    return a, s
-
-
-def nmlegal(nm):
-    return re.match('^[a-zA-Z0-9_]+$', nm)
-
-
-# XXX cant have ( or ) in an argument default value
 class prototype(object):
     def __init__(self, st, retval=True, prefix=""):
+        global inputline
         self.st = st
         self.obj = None
-        ll = st.line[1]
+        inputline = st.line[1]
+        wl = lex(st.line[1])
 
         if retval:
-            self.retval, s = vtype(ll)
-        else:
-            self.retval = None
-            s = ll
-        i = s.find("(")
-        assert i > 0
+            self.retval = ctype(wl)
+
+        self.bname = wl.pop(0)
+        if not re.match("^[a-zA-Z.][a-zA-Z0-9_]*$", self.bname):
+            err("%s(): Illegal name\n" % self.nname, warn=False)
+
         self.prefix = prefix
-        self.bname = s[:i].strip()
         self.name = self.prefix + self.bname
         self.vcc = st.vcc
-        if not nmlegal(self.cname()):
-            err("%s(): Illegal name\n" % self.name, warn=False)
-        s = s[i:].strip()
-        assert s[0] == "("
-        assert s[-1] == ")"
-        s = s[1:-1].lstrip()
-        self.args = []
+        if not re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', self.cname()):
+            err("%s(): Illegal C-name\n" % self.cname(), warn=False)
+
+        x = wl.pop(0)
+        if x != "(":
+            err("Syntax error: Expected '(', got '%s'" % x, warn=False)
+
+        x = wl.pop(-1)
+        if x != ")":
+            err("Syntax error: Expected ')', got '%s'" % x, warn=False)
+
         names = {}
-        while len(s) > 0:
-            a, s = arg(s)
-            if a.nm is not None:
-                if not nmlegal(a.nm):
-                    err("%s(): illegal argument name '%s'\n"
-                        % (self.name, a.nm), warn=False)
-                if a.nm in names:
-                    err("%s(): duplicate argument name '%s'\n"
-                        % (self.name, a.nm), warn=False)
-                names[a.nm] = True
-            self.args.append(a)
-            s = s.lstrip()
-            if len(s) == 0:
+        self.args = []
+        while len(wl) > 0:
+            t = ctype(wl)
+            self.args.append(t)
+            if not len(wl):
                 break
-            assert s[0] == ','
-            s = s[1:].lstrip()
+            x = wl.pop(0)
+            if x == ",":
+                continue
+            if x in names:
+                err("%s(): Duplicate argument name" % x, warn=False)
+            names[x] = True
+            t.nm = x
+            if not len(wl):
+                break
+            if wl[0] == "=":
+                wl.pop(0)
+                t.set_defval(wl.pop(0))
+            if not len(wl):
+                break
+            assert wl.pop(0) == ","
+        inputline = None
 
     def cname(self, pfx=False):
         r = self.name.replace(".", "_")
@@ -429,7 +441,7 @@ class prototype(object):
     def json(self, jl, cfunc):
         ll = []
         self.retval.json(ll)
-        ll.append(cfunc)
+        ll.append('Vmod_%s_Func.%s' % (self.vcc.modname, cfunc))
         for i in self.args:
             i.json(ll)
         jl.append(ll)
@@ -613,18 +625,14 @@ class s_function(stanza):
         fo.write("\t" + self.proto.cname(pfx=True) + ",\n")
 
     def json(self, jl):
-        jl.append([
-                "$FUNC",
-                "%s" % self.proto.name,
-        ])
-        self.proto.json(jl[-1], 'Vmod_%s_Func.%s' %
-                        (self.vcc.modname, self.proto.cname()))
+        jl.append(["$FUNC", "%s" % self.proto.name])
+        self.proto.json(jl[-1], self.proto.cname())
 
 
 class s_object(stanza):
     def parse(self):
         self.proto = prototype(self, retval=False)
-        self.proto.retval = vtype('VOID')[0]
+        self.proto.retval = ctype(['VOID'])
         self.proto.obj = "x" + self.proto.name
 
         self.init = copy.copy(self.proto)
@@ -687,24 +695,22 @@ class s_object(stanza):
 
     def json(self, jl):
         ll = [
-                "$OBJ",
-                self.proto.name,
-                "struct %s%s_%s" %
-                (self.vcc.sympfx, self.vcc.modname, self.proto.name),
+            "$OBJ",
+            self.proto.name,
+            "struct %s%s_%s" %
+            (self.vcc.sympfx, self.vcc.modname, self.proto.name),
         ]
 
         l2 = ["$INIT"]
         ll.append(l2)
-        self.init.json(l2,
-                       'Vmod_%s_Func.%s' % (self.vcc.modname, self.init.name))
+        self.init.json(l2, self.init.name)
 
         l2 = ["$FINI"]
         ll.append(l2)
-        self.fini.json(l2,
-                       'Vmod_%s_Func.%s' % (self.vcc.modname, self.fini.name))
+        self.fini.json(l2, self.fini.name)
 
         for i in self.methods:
-                i.json(ll)
+            i.json(ll)
 
         jl.append(ll)
 
@@ -731,13 +737,8 @@ class s_method(stanza):
         fo.write('\t' + self.proto.cname(pfx=True) + ",\n")
 
     def json(self, jl):
-        jl.append([
-                "$METHOD",
-                self.proto.name[len(self.pfx)+1:]
-        ])
-        self.proto.json(jl[-1],
-                        'Vmod_%s_Func.%s' %
-                        (self.vcc.modname, self.proto.cname()))
+        jl.append(["$METHOD", self.proto.name[len(self.pfx)+1:]])
+        self.proto.json(jl[-1], self.proto.cname())
 
 
 #######################################################################
@@ -864,26 +865,26 @@ class vcc(object):
     def json(self, fo):
         jl = [["$VMOD", "1.0"]]
         for j in self.contents:
-                j.json(jl)
+            j.json(jl)
 
         bz = bytearray(json.dumps(jl, separators=(",", ":")),
-                       encoding = "ascii") + b"\0"
+                       encoding="ascii") + b"\0"
         fo.write("\nstatic const char Vmod_Json[%d] = {\n" % len(bz))
         t = "\t"
         for i in bz:
-                t += "%d," % i
-                if len(t) >= 69:
-                        fo.write(t + "\n")
-                        t = "\t"
+            t += "%d," % i
+            if len(t) >= 69:
+                fo.write(t + "\n")
+                t = "\t"
         if len(t) > 1:
-                fo.write(t[:-1])
+            fo.write(t[:-1])
         fo.write("\n};\n\n")
         for i in json.dumps(jl, indent=2, separators=(',', ': ')).split("\n"):
-                j = "// " + i
-                if len(j) > 72:
-                        fo.write(j[:72] + "[...]\n")
-                else:
-                        fo.write(j + "\n")
+            j = "// " + i
+            if len(j) > 72:
+                fo.write(j[:72] + "[...]\n")
+            else:
+                fo.write(j + "\n")
         fo.write("\n")
 
     def api(self, fo):
