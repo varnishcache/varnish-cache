@@ -303,10 +303,10 @@ def lex(l):
             wl[-1] += c
             s = 1
         else:
-            err("Syntax error at char", i, "'%s'" % c, warn=False)
+            err("Syntax error at char %i, '%s'" % (i, c), warn=False)
 
     if s != 0:
-        err("Syntax error at char", i, "'%s'" % c, warn=False)
+        err("Syntax error at char %i, '%s'" % (i, c), warn=False)
     return wl
 
 
