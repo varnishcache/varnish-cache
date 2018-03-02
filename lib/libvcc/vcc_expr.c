@@ -406,6 +406,8 @@ struct func_arg {
 	const char		*name;
 	const char		*val;
 	struct expr		*result;
+	int			avail;
+	int			optional;
 	VTAILQ_ENTRY(func_arg)	list;
 };
 
@@ -449,6 +451,7 @@ vcc_do_arg(struct vcc *tl, struct func_arg *fa)
 		assert(e2->fmt == fa->type);
 		fa->result = e2;
 	}
+	fa->avail = 1;
 }
 
 static void
@@ -462,6 +465,9 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 	VTAILQ_HEAD(,func_arg) head;
 	struct token *t1;
 	const struct vjsn_val *vv, *vvp;
+	const char *sa;
+	char ssa[64];
+	char ssa2[64];
 
 	CAST_OBJ_NOTNULL(vv, priv, VJSN_VAL_MAGIC);
 	assert(vv->type == VJSN_ARRAY);
@@ -470,6 +476,15 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 	AN(rfmt);
 	vv = VTAILQ_NEXT(vv, list);
 	cfunc = vv->value;
+	vv = VTAILQ_NEXT(vv, list);
+	sa = vv->value;
+	if (*sa == '\0') {
+		sa = NULL;
+	} else {
+		bprintf(ssa, "args_%u", tl->unique++);
+		VSB_printf(tl->curproc->prologue, "  %s %s;\n", sa, ssa);
+		sa = ssa;
+	}
 	vv = VTAILQ_NEXT(vv, list);
 	SkipToken(tl, '(');
 	if (extra == NULL)
@@ -503,6 +518,10 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 					vvp = VTAILQ_NEXT(vvp, list);
 				}
 			}
+		}
+		if (sa != NULL && vvp != NULL && vvp->type == VJSN_TRUE) {
+			fa->optional = 1;
+			vvp = VTAILQ_NEXT(vvp, list);
 		}
 		AZ(vvp);
 	}
@@ -551,23 +570,37 @@ vcc_func(struct vcc *tl, struct expr **e, const void *priv,
 		SkipToken(tl, ',');
 	}
 
-	e1 = vcc_mk_expr(rfmt, "%s(ctx%s\v+", cfunc, extra);
+	if (sa != NULL)
+		e1 = vcc_mk_expr(rfmt, "%s(ctx%s,\v+(\n", cfunc, extra);
+	else
+		e1 = vcc_mk_expr(rfmt, "%s(ctx%s\v+", cfunc, extra);
 	VTAILQ_FOREACH_SAFE(fa, &head, list, fa2) {
+		if (fa->optional)
+			VSB_printf(tl->curproc->prologue,
+			    "  %s.valid_%s = %d;\n", sa, fa->name, fa->avail);
 		if (fa->result == NULL && fa->type == ENUM && fa->val != NULL)
 			vcc_do_enum(tl, fa, strlen(fa->val), fa->val);
 		if (fa->result == NULL && fa->val != NULL)
 			fa->result = vcc_mk_expr(fa->type, "%s", fa->val);
-		if (fa->result != NULL)
+		if (fa->result != NULL && sa != NULL) {
+			bprintf(ssa2, "\v1%s.%s = \v2,\n", sa, fa->name);
+			e1 = vcc_expr_edit(tl, e1->fmt, ssa2, e1, fa->result);
+		} else if (fa->result != NULL) {
 			e1 = vcc_expr_edit(tl, e1->fmt, "\v1,\n\v2",
 			    e1, fa->result);
-		else {
+		} else if (!fa->optional) {
 			VSB_printf(tl->sb, "Argument '%s' missing\n",
 			    fa->name);
 			vcc_ErrWhere(tl, tl->t);
 		}
 		free(fa);
 	}
-	*e = vcc_expr_edit(tl, e1->fmt, "\v1\n)\v-", e1, NULL);
+	if (sa != NULL) {
+		bprintf(ssa2, "\v1&%s\v-\n))", sa);
+		*e = vcc_expr_edit(tl, e1->fmt, ssa2, e1, NULL);
+	} else {
+		*e = vcc_expr_edit(tl, e1->fmt, "\v1\n)\v-", e1, NULL);
+	}
 	SkipToken(tl, ')');
 }
 

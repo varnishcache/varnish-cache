@@ -199,6 +199,7 @@ class ctype(object):
         self.nm = None
         self.defval = None
         self.spec = None
+        self.opt = False
 
         self.vt = wl.pop(0)
         self.ct = ctypes.get(self.vt)
@@ -287,6 +288,8 @@ class arg(ctype):
 
     def json(self, jl):
         jl.append([self.vt, self.nm, self.defval, self.spec])
+        if self.opt:
+                jl[-1].append(True)
         while jl[-1][-1] is None:
             jl[-1].pop(-1)
 
@@ -313,7 +316,7 @@ def lex(l):
         if s == 0 and c in (' ', '\t', '\n', '\r'):
             continue
 
-        if s == 0 and c in ('(', '{', '}', ')', ',', '='):
+        if s == 0 and c in ('[', '(', '{', '}', ')', ']', ',', '='):
             wl.append(c)
         elif s == 0 and c in ('"', "'"):
             sep = c
@@ -330,10 +333,10 @@ def lex(l):
             wl[-1] += c
             s = 1
         else:
-            err("Syntax error at char", i, "'%s'" % c, warn=False)
+            err("Syntax error at char %d '%s'" % (i, c), warn=False)
 
     if s != 0:
-        err("Syntax error at char", i, "'%s'" % c, warn=False)
+        err("Syntax error at char %d '%s'" % (i, c), warn=False)
     return wl
 
 #######################################################################
@@ -344,6 +347,7 @@ class prototype(object):
         self.st = st
         self.obj = None
         self.args = []
+        self.argstruct = False
         wl = lex(st.line[1])
 
         if retval:
@@ -371,13 +375,30 @@ class prototype(object):
         wl[-1] = ','
 
         names = {}
+        n = 0
         while len(wl) > 0:
+            n += 1
             x = wl.pop(0)
             if x != ',':
                 err("Expected ',' found '%s'" % x, warn=False)
             if len(wl) == 0:
                 break
-            t = arg(wl, names, st.vcc.enums, ',')
+            if wl[0] == '[':
+                    wl.pop(0)
+                    t = arg(wl, names, st.vcc.enums, ']')
+                    if t.nm is None:
+                        err("Optional arguments must have names", warn=False)
+                    t.opt = True
+                    x = wl.pop(0)
+                    if x != ']':
+                        err("Expected ']' found '%s'" % x, warn=False)
+                    self.argstruct = True
+            else:
+                    t = arg(wl, names, st.vcc.enums, ',')
+            if t.nm is None:
+                t.nm2 = "arg%d" % n
+            else:
+                t.nm2 = t.nm
             self.args.append(t)
 
     def vcl_proto(self, short, pfx=""):
@@ -406,6 +427,8 @@ class prototype(object):
                     t += " " + i.nm
                 if i.defval is not None:
                     t += "=" + i.defval
+            if i.opt:
+                t = "[" + t + "]"
             ll.append(t)
         t = ",@".join(ll)
         if len(s + t) > 68 and not short:
@@ -440,8 +463,11 @@ class prototype(object):
     def proto(self, args, name):
         s = self.retval.ct + " " + name + '('
         ll = args
-        for i in self.args:
-            ll.append(i.ct)
+        if self.argstruct:
+                ll.append(self.argstructname() + "*")
+        else:
+                for i in self.args:
+                    ll.append(i.ct)
         s += ", ".join(ll)
         return s + ');'
 
@@ -449,21 +475,49 @@ class prototype(object):
         tn = 'td_' + self.st.vcc.modname + '_' + self.cname()
         return "typedef " + self.proto(args, name=tn)
 
+    def argstructname(self):
+        return "struct %s_arg" % self.cname(True)
+
+    def argstructure(self):
+        s = "\n" + self.argstructname() + " {\n"
+        for i in self.args:
+                if i.opt:
+                        assert i.nm is not None
+                        s += "\tchar\t\t\tvalid_%s;\n" % i.nm
+        for i in self.args:
+                s += "\t" + i.ct
+                if len(i.ct) < 8:
+                        s += "\t"
+                if len(i.ct) < 16:
+                        s += "\t"
+                s += "\t" + i.nm2 + ";\n"
+        s += "};\n"
+        return s
+
     def cstuff(self, args, where):
+        s = ""
         if where == 'h':
-                s = self.proto(args, self.cname(True))
+                if self.argstruct:
+                        s += self.argstructure()
+                s += lwrap(self.proto(args, self.cname(True)))
         elif where == 'c':
-                s = self.typedef(args)
+                s += lwrap(self.typedef(args))
         elif where == 'o':
-                s = self.typedef(args)
+                if self.argstruct:
+                        s += self.argstructure()
+                s += lwrap(self.typedef(args))
         else:
             assert False
-        return lwrap(s)
+        return s
 
     def json(self, jl, cfunc):
         ll = []
         self.retval.json(ll)
         ll.append('Vmod_%s_Func.%s' % (self.st.vcc.modname, cfunc))
+        if self.argstruct:
+                ll.append(self.argstructname())
+        else:
+                ll.append("")
         for i in self.args:
             i.json(ll)
         jl.append(ll)
@@ -632,8 +686,7 @@ class s_function(stanza):
         self.vcc.contents.append(self)
 
     def cstuff(self, fo, where):
-        if where in ('h', 'c'):
-            fo.write(self.proto.cstuff(['VRT_CTX'], where))
+        fo.write(self.proto.cstuff(['VRT_CTX'], where))
 
     def cstruct(self, fo, define):
         if define:
@@ -948,13 +1001,13 @@ class vcc(object):
         for i in self.contents:
             if type(i) == s_object:
                 i.cstuff(fo, 'c')
-                i.cstuff(fx, 'c')
+                i.cstuff(fx, 'o')
 
         fx.write("/* Functions */\n")
         for i in self.contents:
             if type(i) == s_function:
                 i.cstuff(fo, 'c')
-                i.cstuff(fx, 'c')
+                i.cstuff(fx, 'o')
 
         csn = "Vmod_%s_Func" % self.modname
         scsn = "struct " + csn
