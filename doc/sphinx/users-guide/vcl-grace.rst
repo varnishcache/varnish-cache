@@ -207,7 +207,7 @@ instead of the more desirable stale objects.
 Summary
 ~~~~~~~
 
-Grace mode allows Varnish delivered slightly stale content to clients while
+Grace mode allows Varnish to deliver slightly stale content to clients while
 getting a fresh version from the backend. The result is faster load times
 with a low cost.
 
