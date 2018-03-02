@@ -151,12 +151,14 @@ xyzzy_rot52(VRT_CTX, VCL_HTTP hp)
 }
 
 VCL_STRING v_matchproto_(td_debug_argtest)
-xyzzy_argtest(VRT_CTX, VCL_STRING one, VCL_REAL two, VCL_STRING three,
-    VCL_STRING comma, VCL_INT four)
+xyzzy_argtest(VRT_CTX, struct xyzzy_argtest_arg *arg)
 {
 	char buf[100];
 
-	bprintf(buf, "%s %g %s %s %ld", one, two, three, comma, four);
+	AN(arg);
+	bprintf(buf, "%s %g %s %s %ld %d %s",
+	    arg->one, arg->two, arg->three, arg->comma, arg->four,
+	    arg->valid_opt, arg->valid_opt ? arg->opt : "<undef>");
 	return (WS_Copy(ctx->ws, buf, -1));
 }
 

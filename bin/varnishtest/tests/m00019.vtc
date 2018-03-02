@@ -24,6 +24,7 @@ varnish v1 -vcl+backend {
 		set resp.http.foo4 = debug.argtest("1", 2.4, three="3d", four=-1);
 		set resp.http.foo5 = debug.argtest("1", 2.5);
 		set resp.http.foo6 = debug.argtest("1", four=6);
+		set resp.http.foo7 = debug.argtest("1", opt="7");
 
 		set resp.http.obj0 = obj0.string() + ", " + obj0.number();
 		set resp.http.obj1 = obj1.string() + ", " + obj1.number();
@@ -38,12 +39,13 @@ client c1 {
 	txreq
 	rxresp
 	expect resp.bodylen == "6"
-	expect resp.http.foo1 == "1 2.1 3a , 4"
-	expect resp.http.foo2 == "1 -2.2 3b , 4"
-	expect resp.http.foo3 == "1 2.3 3c , 4"
-	expect resp.http.foo4 == "1 2.4 3d , -1"
-	expect resp.http.foo5 == "1 2.5 3 , 4"
-	expect resp.http.foo6 == "1 2 3 , 6"
+	expect resp.http.foo1 == "1 2.1 3a , 4 0 <undef>"
+	expect resp.http.foo2 == "1 -2.2 3b , 4 0 <undef>"
+	expect resp.http.foo3 == "1 2.3 3c , 4 0 <undef>"
+	expect resp.http.foo4 == "1 2.4 3d , -1 0 <undef>"
+	expect resp.http.foo5 == "1 2.5 3 , 4 0 <undef>"
+	expect resp.http.foo6 == "1 2 3 , 6 0 <undef>"
+	expect resp.http.foo7 == "1 2 3 , 4 1 7"
 
 	expect resp.http.obj0 == "default, one"
 	expect resp.http.obj1 == "only_argument, one"

@@ -117,7 +117,9 @@ Encrypt the HTTP header with quad-ROT13 encryption,
 
 $Function STRING argtest(
 	  STRING one, REAL two =2, STRING three= "3",
-	  STRING comma="," , INT four = 4 )
+	  STRING comma=",", INT four = 4,
+	  [ STRING opt]
+)
 
 $Function INT vre_limit()
 
