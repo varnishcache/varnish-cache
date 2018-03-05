@@ -357,7 +357,7 @@ class prototype(object):
 
         self.bname = wl.pop(0)
         if not re.match("^[a-zA-Z.][a-zA-Z0-9_]*$", self.bname):
-            err("%s(): Illegal name\n" % self.nname, warn=False)
+            err("%s(): Illegal name\n" % self.bname, warn=False)
 
         self.name = prefix + self.bname
         if not re.match('^[a-zA-Z_][a-zA-Z0-9_]*$', self.cname()):
