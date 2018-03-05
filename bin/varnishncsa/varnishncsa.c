@@ -570,6 +570,9 @@ addf_vsl(enum VSL_tag_e tag, long i, const char *prefix)
 
 	ALLOC_OBJ(w, VSL_WATCH_MAGIC);
 	AN(w);
+	if (VSL_tagflags[tag])
+		VUT_Error(vut, 1, "Tag %s can contain control characters",
+		    VSL_tags[tag]);
 	w->tag = tag;
 	assert(i <= INT_MAX);
 	w->idx = i;
@@ -961,6 +964,9 @@ dispatch_f(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 		skip = 0;
 		while (skip == 0 && 1 == VSL_Next(t->c)) {
 			tag = VSL_TAG(t->c->rec.ptr);
+			if (VSL_tagflags[tag])
+				continue;
+
 			b = VSL_CDATA(t->c->rec.ptr);
 			e = b + VSL_LEN(t->c->rec.ptr);
 			while (e > b && e[-1] == '\0')

@@ -131,9 +131,11 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 
 	for (tr = pt[0]; tr != NULL; tr = *++pt) {
 		while ((1 == VSL_Next(tr->c))) {
+			tag = VSL_TAG(tr->c->rec.ptr);
+			if (VSL_tagflags[tag])
+				continue;
 			if (!VSL_Match(vsl, tr->c))
 				continue;
-			tag = VSL_TAG(tr->c->rec.ptr);
 			b = VSL_CDATA(tr->c->rec.ptr);
 			e = b + VSL_LEN(tr->c->rec.ptr);
 			u = 0;

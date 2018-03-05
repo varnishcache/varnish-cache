@@ -258,6 +258,9 @@ accumulate(struct VSL_data *vsl, struct VSL_transaction * const pt[],
 			/* get the value we want and register if it's a hit */
 			tag = VSL_TAG(tr->c->rec.ptr);
 
+			if (VSL_tagflags[tag])
+				continue;
+
 			switch (tag) {
 			case SLT_Hit:
 				hit = 1;
@@ -549,6 +552,11 @@ main(int argc, char **argv)
 				VUT_Error(vut, 1,
 				    "-P: '%s' is not a valid tag name",
 				    optarg);
+			if (VSL_tagflags[match_tag])
+				VUT_Error(vut, 1,
+				    "-P: '%s' is an unsafe or binary record",
+				    optarg);
+
 			cli_p.name = "custom";
 			cli_p.tag = match_tag;
 			profile = NULL;

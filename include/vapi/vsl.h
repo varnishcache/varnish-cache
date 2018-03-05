@@ -163,6 +163,9 @@ extern const unsigned VSL_tagflags[SLT__MAX];
 	 * Tag flags array.
 	 * Use these macros with VSL_tagflags (included from vsl_int.h):
 	 *
+	 * VSL_tagflags[tag] & SLT_F_BINARY
+	 *   Non-zero if the payload is binary data
+	 *
 	 * VSL_tagflags[tag] & SLT_F_UNSAFE
 	 *   Non-zero if the payload with this tag may include
 	 *   non-printable characters
