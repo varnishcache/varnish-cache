@@ -392,37 +392,33 @@ VSLb_ts(struct vsl_log *vsl, const char *event, double first, double *pprev,
 void
 VSLb_bin(struct vsl_log *vsl, enum VSL_tag_e tag, ssize_t len, const void *ptr)
 {
+	unsigned mlen;
 	char *p;
-	const uint8_t *pp = ptr;
-	int suff = 0;
-	size_t tl, ll;
 
-	assert(len >= 0);
-	AN(pp);
+	vsl_sanity(vsl);
+	AN(ptr);
 	if (vsl_tag_is_masked(tag))
 		return;
-	vsl_sanity(vsl);
-	tl = len * 2 + 1;
-	if (tl > cache_param->vsl_reclen) {
-		len = (cache_param->vsl_reclen - 2) / 2;
-		tl = len * 2 + 2;
-		suff = 1;
-	}
-	if (VSL_END(vsl->wlp, tl) >= vsl->wle)
+	mlen = cache_param->vsl_reclen;
+
+	/* Truncate */
+	if (len > mlen)
+		len = mlen;
+
+	assert(vsl->wlp < vsl->wle);
+
+	/* Flush if necessary */
+	if (VSL_END(vsl->wlp, len) >= vsl->wle)
 		VSL_Flush(vsl, 1);
-	assert(VSL_END(vsl->wlp, tl) < vsl->wle);
+	assert(VSL_END(vsl->wlp, len) < vsl->wle);
 	p = VSL_DATA(vsl->wlp);
-	for (ll = 0; ll < len; ll++) {
-		assert(snprintf(p, 3, "%02x", *pp) == 2);
-		pp++;
-		p += 2;
-	}
-	if (suff)
-		*p++ = '-';
-	*p = '\0';
-	vsl->wlp = vsl_hdr(tag, vsl->wlp, tl, vsl->wid);
+	memcpy(p, ptr, len);
+	vsl->wlp = vsl_hdr(tag, vsl->wlp, len, vsl->wid);
 	assert(vsl->wlp < vsl->wle);
 	vsl->wlr++;
+
+	if (DO_DEBUG(DBG_SYNCVSL))
+		VSL_Flush(vsl, 0);
 }
 
 /*--------------------------------------------------------------------

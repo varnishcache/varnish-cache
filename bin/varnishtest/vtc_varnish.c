@@ -214,6 +214,7 @@ varnishlog_thread(void *priv)
 	unsigned len;
 	const char *tagname, *data;
 	int type, i, opt;
+	struct vsb *vsb = NULL;
 
 	CAST_OBJ_NOTNULL(v, priv, VARNISH_MAGIC);
 
@@ -258,8 +259,19 @@ varnishlog_thread(void *priv)
 			    'b' : '-';
 			data = VSL_CDATA(c->rec.ptr);
 			v->vsl_tag_count[tag]++;
-			vtc_log(v->vl, 4, "vsl| %10u %-15s %c %.*s",
-			    vxid, tagname, type, (int)len, data);
+			if (VSL_tagflags[tag] & SLT_F_BINARY) {
+				if (vsb == NULL)
+					vsb = VSB_new_auto();
+				VSB_clear(vsb);
+				VSB_quote(vsb, data, len, VSB_QUOTE_HEX);
+				AZ(VSB_finish(vsb));
+				/* +2 to skip "0x" */
+				vtc_log(v->vl, 4, "vsl| %10u %-15s %c [%s]",
+				    vxid, tagname, type, VSB_data(vsb) + 2);
+			} else {
+				vtc_log(v->vl, 4, "vsl| %10u %-15s %c %.*s",
+				    vxid, tagname, type, (int)len, data);
+			}
 		}
 		if (i == 0) {
 			/* Nothing to do but wait */
@@ -282,6 +294,8 @@ varnishlog_thread(void *priv)
 	if (c)
 		VSL_DeleteCursor(c);
 	VSL_Delete(vsl);
+	if (vsb != NULL)
+		VSB_destroy(&vsb);
 
 	return (NULL);
 }

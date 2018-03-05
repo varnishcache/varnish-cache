@@ -98,5 +98,6 @@ enum VSL_tag_e {
 /* VSL tag flags */
 #define SLT_F_UNUSED		(1 << 0)
 #define SLT_F_UNSAFE		(1 << 1)
+#define SLT_F_BINARY		(1 << 2)
 
 #endif /* VAPI_VSL_INT_H_INCLUDED */

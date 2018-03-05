@@ -19,6 +19,8 @@ varnish v1 -cliok "param.set debug +syncvsl"
 
 varnish v1 -cliok "param.set vsl_mask +H2RxHdr,+H2RxBody,+H2TxHdr,+H2TxBody"
 
+process p1 {exec varnishlog -n ${v1_name} -g raw -w ${tmpdir}/vlog -A} -start
+
 client c1 {
 	txpri
 	expect_close
@@ -56,3 +58,8 @@ varnish v1 -expect MEMPOOL.req0.live == 0
 varnish v1 -expect MEMPOOL.req1.live == 0
 varnish v1 -expect MEMPOOL.sess0.live == 0
 varnish v1 -expect MEMPOOL.sess1.live == 0
+
+process p1 -stop
+# shell {cat ${tmpdir}/vlog}
+shell -match {1001 H2TxHdr        c \[000006040000000000\]} \
+	{cat ${tmpdir}/vlog}

@@ -545,19 +545,19 @@ SLTM(BackendStart, 0, "Backend request start",
 	"\n"
 )
 
-SLTM(H2RxHdr, 0, "Received HTTP2 frame header",
+SLTM(H2RxHdr, SLT_F_BINARY, "Received HTTP2 frame header",
 	"Binary data"
 )
 
-SLTM(H2RxBody, 0, "Received HTTP2 frame body",
+SLTM(H2RxBody, SLT_F_BINARY, "Received HTTP2 frame body",
 	"Binary data"
 )
 
-SLTM(H2TxHdr, 0, "Transmitted HTTP2 frame header",
+SLTM(H2TxHdr, SLT_F_BINARY, "Transmitted HTTP2 frame header",
 	"Binary data"
 )
 
-SLTM(H2TxBody, 0, "Transmitted HTTP2 frame body",
+SLTM(H2TxBody, SLT_F_BINARY, "Transmitted HTTP2 frame body",
 	"Binary data"
 )
 
