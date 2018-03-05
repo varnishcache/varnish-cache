@@ -545,7 +545,7 @@ mgt_vcl_export_labels(struct vcc *vcc)
 /*--------------------------------------------------------------------*/
 
 int
-mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
+mgt_push_vcls(struct cli *cli, unsigned *status, char **p)
 {
 	struct vclprog *vp;
 	struct vcldep *vd;
@@ -591,10 +591,6 @@ mgt_push_vcls_and_start(struct cli *cli, unsigned *status, char **p)
 	} while (!done);
 
 	if (mgt_cli_askchild(status, p, "vcl.use \"%s\"\n", active_vcl->name))
-		return (1);
-	free(*p);
-	*p = NULL;
-	if (mgt_cli_askchild(status, p, "start\n"))
 		return (1);
 	free(*p);
 	*p = NULL;

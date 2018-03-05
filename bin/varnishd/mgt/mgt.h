@@ -213,7 +213,7 @@ char *mgt_VccCompile(struct cli *, struct vclprog *, const char *vclname,
 void mgt_vcl_init(void);
 void mgt_vcl_startup(struct cli *, const char *vclsrc, const char *origin,
     const char *vclname, int Cflag);
-int mgt_push_vcls_and_start(struct cli *, unsigned *status, char **p);
+int mgt_push_vcls(struct cli *, unsigned *status, char **p);
 void mgt_vcl_export_labels(struct vcc *);
 int mgt_has_vcl(void);
 void mgt_vcl_depends(struct vclprog *vp1, const char *name);

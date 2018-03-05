@@ -395,15 +395,25 @@ mgt_launch_child(struct cli *cli)
 
 	mgt_cli_start_child(child_cli_in, child_cli_out);
 	child_pid = pid;
-	if (mgt_push_vcls_and_start(cli, &u, &p)) {
+	child_state = CH_RUNNING;
+
+	if (mgt_push_vcls(cli, &u, &p)) {
 		VCLI_SetResult(cli, u);
 		MGT_Complain(C_ERR, "Child (%jd) Pushing vcls failed:\n%s",
 		    (intmax_t)child_pid, p);
 		free(p);
-		child_state = CH_RUNNING;
 		MCH_Stop_Child();
-	} else
-		child_state = CH_RUNNING;
+		return;
+	}
+
+	if (mgt_cli_askchild(&u, &p, "start\n")) {
+		VCLI_SetResult(cli, u);
+		MGT_Complain(C_ERR, "Child (%jd) Acceptor start failed:\n%s",
+		    (intmax_t)child_pid, p);
+		free(p);
+		MCH_Stop_Child();
+		return;
+	}
 }
 
 /*=====================================================================
@@ -482,17 +492,6 @@ mgt_reap_child(void)
 		fprintf(stderr, "WAIT 0x%jd\n", (intmax_t)r);
 	assert(r == child_pid);
 
-	/*
-	 * XXX exit mgr if we fail even with retries?
-	 * number of retries? interval?
-	 */
-	for (i = 0; i < 3; i++) {
-		if (MAC_reopen_sockets() == 0)
-			break;
-		/* error already logged */
-		(void)sleep(1);
-	}
-
 	VSB_printf(vsb, "Child (%jd) %s", (intmax_t)r,
 	    status ? "died" : "ended");
 	if (WIFEXITED(status) && WEXITSTATUS(status)) {
@@ -538,6 +537,21 @@ mgt_reap_child(void)
 	child_pid = -1;
 
 	MGT_Complain(C_DEBUG, "Child cleanup complete");
+
+	/* XXX number of retries? interval? */
+	for (i = 0; i < 3; i++) {
+		if (MAC_reopen_sockets() == 0)
+			break;
+		/* error already logged */
+		(void)sleep(1);
+	}
+	if (i == 3) {
+		/* We failed to reopen our listening sockets. No choice
+		 * but to exit. */
+		MGT_Complain(C_ERR,
+		    "Could not reopen listening sockets. Exiting.");
+		exit(1);
+	}
 
 	if (child_state == CH_DIED && mgt_param.auto_restart)
 		mgt_launch_child(NULL);

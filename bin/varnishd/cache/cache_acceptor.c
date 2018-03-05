@@ -586,38 +586,8 @@ vca_acct(void *arg)
 	(void)arg;
 
 	t0 = VTIM_real();
-
 	vca_periodic(t0);
-	(void)vca_tcp_opt_init();
 
-	AZ(pthread_mutex_lock(&shut_mtx));
-	VTAILQ_FOREACH(ls, &heritage.socks, list) {
-		CHECK_OBJ_NOTNULL(ls->transport, TRANSPORT_MAGIC);
-		if (ls->sock == -2)
-			continue;	// VCA_Shutdown
-		assert (ls->sock > 0);	// We know where stdin is
-		if (cache_param->tcp_fastopen) {
-			int i;
-			i = VTCP_fastopen(ls->sock, cache_param->listen_depth);
-			if (i)
-				VSL(SLT_Error, ls->sock,
-				    "Kernel TCP Fast Open: sock=%d, ret=%d %s",
-				    ls->sock, i, strerror(errno));
-		}
-		AZ(listen(ls->sock, cache_param->listen_depth));
-		vca_tcp_opt_set(ls, 1);
-		if (cache_param->accept_filter) {
-			int i;
-			i = VTCP_filter_http(ls->sock);
-			if (i)
-				VSL(SLT_Error, ls->sock,
-				    "Kernel filtering: sock=%d, ret=%d %s",
-				    ls->sock, i, strerror(errno));
-		}
-	}
-	AZ(pthread_mutex_unlock(&shut_mtx));
-
-	need_test = 1;
 	pool_accepting = 1;
 
 	while (1) {
@@ -642,10 +612,42 @@ vca_acct(void *arg)
 static void v_matchproto_(cli_func_t)
 ccf_start(struct cli *cli, const char * const *av, void *priv)
 {
+	struct listen_sock *ls;
 
 	(void)cli;
 	(void)av;
 	(void)priv;
+
+	(void)vca_tcp_opt_init();
+
+	VTAILQ_FOREACH(ls, &heritage.socks, list) {
+		CHECK_OBJ_NOTNULL(ls->transport, TRANSPORT_MAGIC);
+		assert (ls->sock > 0);	// We know where stdin is
+		if (cache_param->tcp_fastopen &&
+		    VTCP_fastopen(ls->sock, cache_param->listen_depth)) {
+			VCLI_SetResult(cli, CLIS_CANT);
+			VCLI_Out(cli,
+			    "Kernel TCP Fast Open failed on socket '%s': %s",
+			    ls->endpoint, strerror(errno));
+			return;
+		}
+		if (listen(ls->sock, cache_param->listen_depth)) {
+			VCLI_SetResult(cli, CLIS_CANT);
+			VCLI_Out(cli, "Listen failed on socket '%s': %s",
+			    ls->endpoint, strerror(errno));
+			return;
+		}
+		vca_tcp_opt_set(ls, 1);
+		if (cache_param->accept_filter && VTCP_filter_http(ls->sock)) {
+			VCLI_SetResult(cli, CLIS_CANT);
+			VCLI_Out(cli,
+			    "Kernel filtering failed on socket '%s': %s",
+			    ls->endpoint, strerror(errno));
+			return;
+		}
+	}
+
+	need_test = 1;
 
 	AZ(pthread_create(&VCA_thread, NULL, vca_acct, NULL));
 }
