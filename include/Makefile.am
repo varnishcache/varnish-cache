@@ -101,7 +101,7 @@ nobase_noinst_HEADERS = \
 	vus.h
 
 ## keep in sync with lib/libvcc/Makefile.am
-vmod_abi.h: \
+vcl.h: \
 	    $(top_srcdir)/lib/libvcc/generate.py \
 	    $(top_srcdir)/include/vdef.h \
 	    $(top_srcdir)/include/vrt.h \
@@ -114,15 +114,31 @@ GEN_H = \
 	tbl/vrt_stv_var.h \
 	tbl/vcl_returns.h \
 	tbl/vcc_types.h \
-	vrt_obj.h \
-	vcl.h \
-	vcs_version.h
+	vrt_obj.h
 
-$(GEN_H): vmod_abi.h
+$(GEN_H): vcl.h
 
-GENERATED_H = vmod_abi.h $(GEN_H)
+GENERATED_H = vcl.h $(GEN_H)
 
-BUILT_SOURCES = $(GENERATED_H)
+## vcs_version.h / vmod_abi.h need to be up-to-date with every build
+## except when building from a distribution
+
+vcs_version.h:
+	if test -d $(top_srcdir)/.git ; then \
+	    @PYTHON@ $(srcdir)/generate.py \
+		$(top_srcdir) $(top_builddir) ; \
+	fi
+
+vmod_abi.h: vcs_version.h
+
+.PHONY: vcs_version.h
+
+##
+
+BUILT_SOURCES = \
+	$(GENERATED_H) \
+	vcs_version.h \
+	vmod_abi.h
 
 MAINTAINERCLEANFILES = $(GENERATED_H)
 
