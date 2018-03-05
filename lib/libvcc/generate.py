@@ -837,8 +837,11 @@ try:
 except IOError:
 	i = ""
 
-if i != "/* " + v + " */":
+ident = "/* " + v + " */\n"
+
+if i != ident:
 	fo = open(vcsfn, "w")
+	fo.write(ident)
 	file_header(fo)
 	fo.write('#define VCS_Version "%s"\n' % v)
 	fo.close()
