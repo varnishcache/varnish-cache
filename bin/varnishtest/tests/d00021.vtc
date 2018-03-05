@@ -1,0 +1,79 @@
+varnishtest "shard director LAZY"
+
+server s1 {
+	rxreq
+	txresp -body "ech3Ooj"
+} -start
+
+server s2 {
+	rxreq
+	txresp -body "ieQu2qua"
+} -start
+
+server s3 {
+	rxreq
+	txresp -body "xiuFi3Pe"
+} -start
+
+varnish v1 -vcl+backend {
+	import std;
+	import directors;
+
+	sub vcl_init {
+	    new vd = directors.shard();
+	    if (!vd.add_backend(s1)) {
+		std.log("add s1 failed");
+	    }
+	    if (!vd.add_backend(s2)) {
+		std.log("add s2 failed");
+	    }
+	    if (!vd.add_backend(s3)) {
+		std.log("add s3 failed");
+	    }
+	    if (!vd.reconfigure(replicas=25)) {
+		std.log("reconfigure failed");
+	    }
+	}
+
+	sub vcl_recv {
+	    return(pass);
+	}
+
+	sub vcl_backend_fetch {
+	    if (bereq.url == "/1") {
+		set bereq.backend =
+		    vd.backend(resolve=LAZY, by=KEY, key=1);
+	    }
+	    if (bereq.url == "/2") {
+		set bereq.backend =
+		  vd.backend(resolve=LAZY, by=KEY, key=2147483647);
+	    }
+	    if (bereq.url == "/3") {
+		set bereq.backend =
+		  vd.backend(resolve=LAZY, by=KEY, key=4294967295);
+	    }
+	}
+
+	sub vcl_backend_response {
+	    set beresp.http.healthy = std.healthy(
+	      vd.backend(resolve=LAZY, by=KEY, key=1));
+	}
+} -start
+
+
+client c1 {
+	txreq -url /1
+	rxresp
+	expect resp.body == "ech3Ooj"
+	expect resp.http.healthy == "true"
+
+	txreq -url /2
+	rxresp
+	expect resp.body == "ieQu2qua"
+	expect resp.http.healthy == "true"
+
+	txreq -url /3
+	rxresp
+	expect resp.body == "xiuFi3Pe"
+	expect resp.http.healthy == "true"
+} -run

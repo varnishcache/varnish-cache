@@ -1,5 +1,5 @@
 /*-
- * Copyright 2009-2016 UPLEX - Nils Goroll Systemoptimierung
+ * Copyright 2009-2018 UPLEX - Nils Goroll Systemoptimierung
  * All rights reserved.
  *
  * Authors: Julian Wiesener <jw@uplex.de>
@@ -33,6 +33,7 @@
 #include <string.h>
 
 #include "cache/cache.h"
+#include "cache/cache_director.h"
 #include "vcl.h"
 
 #include "vend.h"
@@ -41,17 +42,149 @@
 #include "shard_dir.h"
 #include "shard_cfg.h"
 
-struct vmod_directors_shard {
-	unsigned		magic;
-#define VMOD_SHARD_SHARD_MAGIC	0x6e63e1bf
-	struct sharddir	*shardd;
+/* -------------------------------------------------------------------------
+ * method arguments and set parameters bitmask in vmod_directors_shard_param
+ */
+
+#define arg_by		((uint32_t)1)
+#define arg_key	((uint32_t)1 << 1)
+#define arg_key_blob	((uint32_t)1 << 2)
+#define arg_alt	((uint32_t)1 << 3)
+#define arg_warmup	((uint32_t)1 << 4)
+#define arg_rampup	((uint32_t)1 << 5)
+#define arg_healthy	((uint32_t)1 << 6)
+#define arg_param	((uint32_t)1 << 7)
+#define arg_resolve	((uint32_t)1 << 8)
+#define _arg_mask	((arg_resolve << 1) - 1)
+/* allowed in shard_param.set */
+#define _arg_mask_set	(arg_param - 1)
+/* allowed in shard_param */
+#define _arg_mask_param ( _arg_mask_set		\
+			  & ~arg_key			\
+			  & ~arg_key_blob )
+
+/* -------------------------------------------------------------------------
+ * shard parameters - declaration & defaults
+ */
+enum vmod_directors_shard_param_scope {
+	_SCOPE_INVALID = 0,
+	VMOD,
+	VCL,
+	TASK,
+	STACK
 };
 
-VCL_VOID v_matchproto_(td_directors_shard__init)
-vmod_shard__init(VRT_CTX, struct vmod_directors_shard **vshardp,
-    const char *vcl_name)
+struct vmod_directors_shard_param;
+
+struct vmod_directors_shard_param {
+	unsigned				magic;
+#define VMOD_SHARD_SHARD_PARAM_MAGIC		0xdf5ca117
+
+	/* internals */
+	uint32_t				key;
+	const char				*vcl_name;
+	const struct vmod_directors_shard_param *defaults;
+	enum vmod_directors_shard_param_scope	scope;
+
+	/* paramters */
+	enum by_e				by;
+	enum healthy_e				healthy;
+	uint32_t				mask;
+	VCL_BOOL				rampup;
+	VCL_INT				alt;
+	VCL_REAL				warmup;
+};
+
+static const struct vmod_directors_shard_param shard_param_default = {
+	.magic		= VMOD_SHARD_SHARD_PARAM_MAGIC,
+
+	.key		= 0,
+	.vcl_name	= "builtin defaults",
+	.defaults	= NULL,
+	.scope		= VMOD,
+
+	.mask		= _arg_mask_param,
+	.by		= BY_HASH,
+	.healthy	= CHOSEN,
+	.rampup	= 1,
+	.alt		= 0,
+	.warmup		= -1,
+};
+
+static struct vmod_directors_shard_param *
+shard_param_stack(struct vmod_directors_shard_param *p,
+    const struct vmod_directors_shard_param *pa, const char *who);
+
+static struct vmod_directors_shard_param *
+shard_param_task(VRT_CTX, const void *id,
+    const struct vmod_directors_shard_param *pa);
+
+static const struct vmod_directors_shard_param *
+shard_param_blob(const VCL_BLOB blob);
+
+static const struct vmod_directors_shard_param *
+vmod_shard_param_read(VRT_CTX, const void *id,
+    const struct vmod_directors_shard_param *p,
+    struct vmod_directors_shard_param *pstk, const char *who);
+
+/* -------------------------------------------------------------------------
+ * shard vmod interface
+ */
+static unsigned v_matchproto_(vdi_healthy)
+vmod_shard_healthy(const struct director *dir, const struct busyobj *bo,
+   double *changed);
+
+static const struct director * v_matchproto_(vdi_resolve_f)
+vmod_shard_resolve(const struct director *dir, struct worker *wrk,
+    struct busyobj *bo);
+
+struct vmod_directors_shard {
+	unsigned				magic;
+#define VMOD_SHARD_SHARD_MAGIC			0x6e63e1bf
+	struct sharddir				*shardd;
+	struct director				*dir;
+	const struct vmod_directors_shard_param	*param;
+};
+
+static enum by_e
+parse_by_e(VCL_ENUM e)
 {
-	struct vmod_directors_shard *vshard;
+#define VMODENUM(n) if (e == vmod_enum_ ## n) return(BY_ ## n);
+#include "tbl_by.h"
+       WRONG("illegal by enum");
+}
+
+static enum healthy_e
+parse_healthy_e(VCL_ENUM e)
+{
+#define VMODENUM(n) if (e == vmod_enum_ ## n) return(n);
+#include "tbl_healthy.h"
+       WRONG("illegal healthy enum");
+}
+
+static enum resolve_e
+parse_resolve_e(VCL_ENUM e)
+{
+#define VMODENUM(n) if (e == vmod_enum_ ## n) return(n);
+#include "tbl_resolve.h"
+       WRONG("illegal resolve enum");
+}
+
+static const char * const by_str[_BY_E_MAX] = {
+	[_BY_E_INVALID] = "*INVALID*",
+#define VMODENUM(n) [BY_ ## n] = #n,
+#include "tbl_by.h"
+};
+
+static const char * const healthy_str[_HEALTHY_E_MAX] = {
+	[_HEALTHY_E_INVALID] = "*INVALID*",
+#define VMODENUM(n) [n] = #n,
+#include "tbl_healthy.h"
+};
+
+static void
+shard__assert(void)
+{
 	VCL_INT t1;
 	uint32_t t2a, t2b;
 
@@ -61,7 +194,15 @@ vmod_shard__init(VRT_CTX, struct vmod_directors_shard **vshardp,
 	t1 = (VCL_INT)t2a;
 	t2b = (uint32_t)t1;
 	assert(t2a == t2b);
+}
 
+VCL_VOID v_matchproto_(td_directors_shard__init)
+vmod_shard__init(VRT_CTX, struct vmod_directors_shard **vshardp,
+    const char *vcl_name)
+{
+	struct vmod_directors_shard *vshard;
+
+	shard__assert();
 	(void)ctx;
 	AN(vshardp);
 	AZ(*vshardp);
@@ -70,6 +211,15 @@ vmod_shard__init(VRT_CTX, struct vmod_directors_shard **vshardp,
 
 	*vshardp = vshard;
 	sharddir_new(&vshard->shardd, vcl_name);
+
+	vshard->param = &shard_param_default;
+	ALLOC_OBJ(vshard->dir, DIRECTOR_MAGIC);
+	AN(vshard->dir);
+	REPLACE(vshard->dir->vcl_name, vcl_name);
+	vshard->dir->priv = vshard;
+	vshard->dir->resolve = vmod_shard_resolve;
+	vshard->dir->healthy = vmod_shard_healthy;
+	vshard->dir->admin_health = VDI_AH_HEALTHY;
 }
 
 VCL_VOID v_matchproto_(td_directors_shard__fini)
@@ -80,6 +230,8 @@ vmod_shard__fini(struct vmod_directors_shard **vshardp)
 	*vshardp = NULL;
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 	sharddir_delete(&vshard->shardd);
+	free(vshard->dir->vcl_name);
+	FREE_OBJ(vshard->dir);
 	FREE_OBJ(vshard);
 }
 
@@ -119,6 +271,28 @@ vmod_shard_set_rampup(VRT_CTX, struct vmod_directors_shard *vshard,
 	(void)ctx;
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 	shardcfg_set_rampup(vshard->shardd, duration);
+}
+
+VCL_VOID v_matchproto_(td_directors_shard_associate)
+vmod_shard_associate(VRT_CTX,
+    struct vmod_directors_shard *vshard, VCL_BLOB b)
+{
+	const struct vmod_directors_shard_param *ppt;
+	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
+
+	if (b == NULL) {
+		vshard->param = &shard_param_default;
+		return;
+	}
+
+	ppt = shard_param_blob(b);
+
+	if (ppt == NULL) {
+		VRT_fail(ctx, "shard .associate param invalid");
+		return;
+	}
+
+	vshard->param = ppt;
 }
 
 VCL_BOOL v_matchproto_(td_directors_shard_add_backend)
@@ -172,14 +346,11 @@ vmod_shard_reconfigure(VRT_CTX, struct vmod_directors_shard *vshard,
 }
 
 static inline uint32_t
-get_key(VRT_CTX, enum by_e by, VCL_INT key_int, VCL_BLOB key_blob)
+shard_get_key(VRT_CTX, const struct vmod_directors_shard_param *p)
 {
 	struct http *http;
-	uint8_t k[4] = { 0 };
-	uint8_t *b;
-	int i, ki;
 
-	switch (by) {
+	switch (p->by) {
 	case BY_HASH:
 		if (ctx->bo) {
 			CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
@@ -196,92 +367,355 @@ get_key(VRT_CTX, enum by_e by, VCL_INT key_int, VCL_BLOB key_blob)
 		return (sharddir_sha256(http->hd[HTTP_HDR_URL].b,
 					vrt_magic_string_end));
 	case BY_KEY:
-		return ((uint32_t)key_int);
 	case BY_BLOB:
-		assert(key_blob);
-		assert(key_blob->len > 0);
-		assert(key_blob->priv != NULL);
-
-		if (key_blob->len >= 4)
-			ki = 0;
-		else
-			ki = 4 - key_blob->len;
-
-		b = key_blob->priv;
-		for (i = 0; ki < 4; i++, ki++)
-			k[ki] = b[i];
-		assert(i <= key_blob->len);
-
-		return (vbe32dec(k));
+		return (p->key);
 	default:
-		WRONG("by value");
+		WRONG("by enum");
 	}
 }
 
-static enum by_e
-parse_by_e(VCL_ENUM e)
+/*
+ * merge parameters to resolve all undef values
+ * key is to be calculated after merging
+ */
+static void
+shard_param_merge(struct vmod_directors_shard_param *to,
+		  const struct vmod_directors_shard_param *from)
 {
-#define VMODENUM(n) if (e == vmod_enum_ ## n) return(BY_ ## n);
-#include "tbl_by.h"
-       WRONG("illegal by enum");
+	CHECK_OBJ_NOTNULL(to, VMOD_SHARD_SHARD_PARAM_MAGIC);
+	assert((to->mask & ~_arg_mask_param) == 0);
+
+	if (to->mask == _arg_mask_param)
+		return;
+
+	CHECK_OBJ_NOTNULL(from, VMOD_SHARD_SHARD_PARAM_MAGIC);
+	assert((from->mask & ~_arg_mask_param) == 0);
+
+	if ((to->mask & arg_by) == 0 && (from->mask & arg_by) != 0) {
+		to->by = from->by;
+		if (from->by == BY_KEY || from->by == BY_BLOB)
+			to->key = from->key;
+	}
+
+#define mrg(to, from, field) do {					\
+		if (((to)->mask & arg_ ## field) == 0 &&		\
+		    ((from)->mask & arg_ ## field) != 0)		\
+			(to)->field = (from)->field;			\
+	} while(0)
+
+	mrg(to, from, healthy);
+	mrg(to, from, rampup);
+	mrg(to, from, alt);
+	mrg(to, from, warmup);
+#undef mrg
+
+	to->mask |= from->mask;
+
+	if (to->mask == _arg_mask_param)
+		return;
+
+	AN(from->defaults);
+	shard_param_merge(to, from->defaults);
 }
 
-static enum healthy_e
-parse_healthy_e(VCL_ENUM e)
+static uint32_t
+shard_blob_key(VCL_BLOB key_blob)
 {
-#define VMODENUM(n) if (e == vmod_enum_ ## n) return(n);
-#include "tbl_healthy.h"
-       WRONG("illegal healthy enum");
+	uint8_t k[4] = { 0 };
+	uint8_t *b;
+	int i, ki;
+
+	assert(key_blob);
+	assert(key_blob->len > 0);
+	assert(key_blob->priv != NULL);
+
+	if (key_blob->len >= 4)
+		ki = 0;
+	else
+		ki = 4 - key_blob->len;
+
+	b = key_blob->priv;
+	for (i = 0; ki < 4; i++, ki++)
+		k[ki] = b[i];
+	assert(i <= key_blob->len);
+
+	return (vbe32dec(k));
+}
+
+/*
+ * convert vmod interface valid_* to our bitmask
+ */
+
+#define tobit(args, name) ((args)->valid_##name ? arg_##name : 0)
+
+static uint32_t
+shard_backend_arg_mask(const struct vmod_shard_backend_arg * const a)
+{
+	return (tobit(a, by)		|
+		tobit(a, key)		|
+		tobit(a, key_blob)	|
+		tobit(a, alt)		|
+		tobit(a, warmup)	|
+		tobit(a, rampup)	|
+		tobit(a, healthy)	|
+		tobit(a, param)		|
+		tobit(a, resolve));
+}
+static uint32_t
+shard_param_set_mask(const struct vmod_shard_param_set_arg * const a)
+{
+	return (tobit(a, by)		|
+		tobit(a, key)		|
+		tobit(a, key_blob)	|
+		tobit(a, alt)		|
+		tobit(a, warmup)	|
+		tobit(a, rampup)	|
+		tobit(a, healthy));
+}
+#undef tobit
+
+/*
+ * check arguments and return in a struct param
+ */
+static struct vmod_directors_shard_param *
+shard_param_args(VRT_CTX,
+    struct vmod_directors_shard_param *p, const char *who,
+    uint32_t args, VCL_ENUM by_s, VCL_INT key_int, VCL_BLOB key_blob,
+    VCL_INT alt, VCL_REAL warmup, VCL_BOOL rampup, VCL_ENUM healthy_s)
+{
+	enum by_e	by;
+	enum healthy_e	healthy;
+
+	CHECK_OBJ_NOTNULL(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
+	AN(p->vcl_name);
+
+	assert((args & ~_arg_mask_set) == 0);
+
+	by = (args & arg_by) ? parse_by_e(by_s) : BY_HASH;
+	healthy = (args & arg_healthy) ? parse_healthy_e(healthy_s) : CHOSEN;
+
+	/* by_s / key_int / key_blob */
+	if (args & arg_by) {
+		switch (by) {
+		case BY_KEY:
+			if ((args & arg_key) == 0) {
+				VRT_fail(ctx, "%s %s: "
+					 "missing key argument with by=%s",
+					 who, p->vcl_name, by_s);
+				return (NULL);
+			}
+			if (key_int < 0 || key_int > UINT32_MAX) {
+				VRT_fail(ctx, "%s %s: "
+					 "invalid key argument %ld with by=%s",
+					 who, p->vcl_name, key_int, by_s);
+				return (NULL);
+			}
+			assert(key_int >= 0);
+			assert(key_int <= UINT32_MAX);
+			p->key = (uint32_t)key_int;
+			break;
+		case BY_BLOB:
+			if ((args & arg_key_blob) == 0) {
+				VRT_fail(ctx, "%s %s: "
+					 "missing key_blob argument with by=%s",
+					 who, p->vcl_name, by_s);
+				return (NULL);
+			}
+			if (key_blob == NULL || key_blob->len <= 0 ||
+			    key_blob->priv == NULL) {
+				sharddir_err(ctx, SLT_Error, "%s %s: "
+					     "by=BLOB but no or empty key_blob "
+					     "- using key 0",
+					     who, p->vcl_name);
+				p->key = 0;
+			} else
+				p->key = shard_blob_key(key_blob);
+			break;
+		case BY_HASH:
+		case BY_URL:
+			if (args & (arg_key|arg_key_blob)) {
+				VRT_fail(ctx, "%s %s: "
+					 "key and key_blob arguments are "
+					 "invalid with by=%s",
+					 who, p->vcl_name, by_s);
+				return (NULL);
+			}
+			break;
+		default:
+			WRONG("by enum");
+		}
+		p->by = by;
+	} else {
+		/* (args & arg_by) == 0 */
+		p->by = BY_HASH;
+
+		if (args & (arg_key|arg_key_blob)) {
+			VRT_fail(ctx, "%s %s: "
+				 "key and key_blob arguments are "
+				 "invalid with by=HASH (default)",
+				 who, p->vcl_name);
+			return (NULL);
+		}
+	}
+
+	if (args & arg_alt) {
+		if (alt < 0) {
+			VRT_fail(ctx, "%s %s: "
+				 "invalid alt argument %ld",
+				 who, p->vcl_name, alt);
+			return (NULL);
+		}
+		p->alt = alt;
+	}
+
+	if (args & arg_warmup) {
+		if ((warmup < 0 && warmup != -1) || warmup > 1) {
+			VRT_fail(ctx, "%s %s: "
+				 "invalid warmup argument %f",
+				 who, p->vcl_name, warmup);
+			return (NULL);
+		}
+		p->warmup = warmup;
+	}
+
+	if (args & arg_rampup)
+		p->rampup = !!rampup;
+
+	if (args & arg_healthy)
+		p->healthy = healthy;
+
+	p->mask = args & _arg_mask_param;
+	return (p);
 }
 
 VCL_BACKEND v_matchproto_(td_directors_shard_backend)
 vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
-    VCL_ENUM by_s, VCL_INT key_int, VCL_BLOB key_blob, VCL_INT alt,
-    VCL_REAL warmup, VCL_BOOL rampup, VCL_ENUM healthy_s)
+		   struct vmod_shard_backend_arg *a)
 {
-	enum by_e	by	= parse_by_e(by_s);
-	enum healthy_e	healthy = parse_healthy_e(healthy_s);
-
-	uint32_t	key;
+	struct vmod_directors_shard_param pstk;
+	struct vmod_directors_shard_param *pp = NULL;
+	const struct vmod_directors_shard_param *ppt;
+	enum resolve_e resolve;
+	uint32_t args = shard_backend_arg_mask(a);
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
+	assert((args & ~_arg_mask) == 0);
+	resolve = (args & arg_resolve) ? parse_resolve_e(a->resolve) : NOW;
 
-	/* TODO #2500 */
-	if ((ctx->method & (VCL_MET_TASK_C | VCL_MET_TASK_B)) == 0) {
-		VRT_fail(ctx, "shard .backend() method may only be used "
-			 "in client and backend context");
-		return NULL;
-	}
-
-	if (key_int && by != BY_KEY) {
-		shard_err(ctx, vshard->shardd,
-		    "by=%s but key argument used", by_s);
-		return NULL;
-	}
-
-	if (key_blob && by != BY_BLOB) {
-		shard_err(ctx, vshard->shardd,
-		    "by=%s but key_blob argument used", by_s);
-		return NULL;
-	}
-
-	if (by == BY_BLOB) {
-		if (key_blob == NULL ||
-		    key_blob->len <= 0 ||
-		    key_blob->priv == NULL) {
-			shard_err0(ctx, vshard->shardd,
-			    "by=BLOB but no or empty key_blob "
-			    "- using key 0");
-			by = BY_KEY;
-			key_int = 0;
+	switch (resolve) {
+	case LAZY:
+		if ((ctx->method & VCL_MET_TASK_B) == 0) {
+			if ((args & ~arg_resolve) != 0) {
+				VRT_fail(ctx,
+					 "shard .backend resolve=LAZY "
+					 "with other parameters can "
+					 "only be used in backend "
+					 "context");
+				return (NULL);
+			}
+			AN(vshard->dir);
+			return (vshard->dir);
 		}
+
+		assert(ctx->method & VCL_MET_TASK_B);
+
+		if ((args & ~arg_resolve) == 0) {
+			/* no other parameters - shortcut */
+			AN(vshard->dir);
+			return (vshard->dir);
+		}
+
+		pp = shard_param_task(ctx, vshard, vshard->param);
+		if (pp == NULL)
+			return (NULL);
+		pp->vcl_name = vshard->shardd->name;
+		break;
+	case NOW:
+		if (ctx->method & VCL_MET_TASK_H) {
+			VRT_fail(ctx,
+				 "shard .backend resolve=NOW can not be "
+				 "used in vcl_init{}/vcl_fini{}");
+			return (NULL);
+		}
+		pp = shard_param_stack(&pstk, vshard->param,
+				       vshard->shardd->name);
+		break;
+	default:
+		WRONG("resolve enum");
 	}
 
-	key = get_key(ctx, by, key_int, key_blob);
+	AN(pp);
+	if (args & arg_param) {
+		ppt = shard_param_blob(a->param);
+		if (ppt == NULL) {
+			VRT_fail(ctx, "shard .backend param invalid");
+			return (NULL);
+		}
+		pp->defaults = ppt;
+	}
+
+	pp = shard_param_args(ctx, pp, "shard.backend()",
+			      args & _arg_mask_set,
+			      a->by, a->key, a->key_blob, a->alt, a->warmup,
+			      a->rampup, a->healthy);
+	if (pp == NULL)
+		return (NULL);
+
+	if (resolve == LAZY)
+		return (vshard->dir);
+
+	assert(resolve == NOW);
+	shard_param_merge(pp, pp->defaults);
+	return (sharddir_pick_be(ctx, vshard->shardd,
+				 shard_get_key(ctx, pp), pp->alt, pp->warmup,
+				 pp->rampup, pp->healthy));
+}
+
+static unsigned v_matchproto_(vdi_healthy)
+vmod_shard_healthy(const struct director *dir, const struct busyobj *bo,
+    double *changed)
+{
+	struct vmod_directors_shard *vshard;
+
+	CAST_OBJ_NOTNULL(vshard, dir->priv, VMOD_SHARD_SHARD_MAGIC);
+	return (sharddir_any_healthy(vshard->shardd, bo, changed));
+}
+
+static const struct director * v_matchproto_(vdi_resolve_f)
+vmod_shard_resolve(const struct director *dir, struct worker *wrk,
+    struct busyobj *bo)
+{
+	struct vmod_directors_shard *vshard;
+	struct vmod_directors_shard_param pstk[1];
+	const struct vmod_directors_shard_param *pp;
+	struct vrt_ctx ctx[1];
+
+	CHECK_OBJ_NOTNULL(dir, DIRECTOR_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
+	CAST_OBJ_NOTNULL(vshard, dir->priv, VMOD_SHARD_SHARD_MAGIC);
+
+	// Ref: vcl_call_method()
+	INIT_OBJ(ctx, VRT_CTX_MAGIC);
+	ctx->vsl = bo->vsl;
+	ctx->vcl = bo->vcl;
+	ctx->http_bereq = bo->bereq;
+	ctx->http_beresp = bo->beresp;
+	ctx->bo = bo;
+	ctx->sp = bo->sp;
+	ctx->now = bo->t_prev;
+	ctx->ws = bo->ws;
+	ctx->method	= VCL_MET_BACKEND_FETCH;
+
+	pp = vmod_shard_param_read(ctx, vshard,
+				   vshard->param, pstk, "shard_resolve");
+	if (pp == NULL)
+		return (NULL);
 
 	return (sharddir_pick_be(ctx, vshard->shardd,
-		key, alt, warmup, rampup, healthy));
+				 shard_get_key(ctx, pp), pp->alt, pp->warmup,
+				 pp->rampup, pp->healthy));
 }
 
 VCL_VOID v_matchproto_(td_directors_shard_backend)
@@ -292,4 +726,297 @@ vmod_shard_debug(VRT_CTX, struct vmod_directors_shard *vshard,
 
 	(void)ctx;
 	sharddir_debug(vshard->shardd, i & UINT32_MAX);
+}
+
+/* =============================================================
+ * shard_param
+ */
+
+VCL_VOID v_matchproto_(td_directors_shard_param__init)
+vmod_shard_param__init(VRT_CTX,
+    struct vmod_directors_shard_param **pp, const char *vcl_name)
+{
+	struct vmod_directors_shard_param *p;
+
+	(void) ctx;
+	AN(pp);
+	AZ(*pp);
+	ALLOC_OBJ(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
+	AN(p);
+	p->vcl_name = vcl_name;
+	p->scope = VCL;
+	p->defaults = &shard_param_default;
+
+	*pp = p;
+}
+
+VCL_VOID v_matchproto_(td_directors_shard_param__fini)
+vmod_shard_param__fini(struct vmod_directors_shard_param **pp)
+{
+	struct vmod_directors_shard_param *p = *pp;
+
+	if (p == NULL)
+		return;
+	*pp = NULL;
+	CHECK_OBJ_NOTNULL(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
+	FREE_OBJ(p);
+}
+
+/*
+ * init a stack param struct defaulting to pa with the given name
+ */
+static struct vmod_directors_shard_param *
+shard_param_stack(struct vmod_directors_shard_param *p,
+    const struct vmod_directors_shard_param *pa, const char *who)
+{
+	CHECK_OBJ_NOTNULL(pa, VMOD_SHARD_SHARD_PARAM_MAGIC);
+	assert(pa->scope > _SCOPE_INVALID);
+
+	AN(p);
+	INIT_OBJ(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
+	p->vcl_name = who;
+	p->scope = STACK;
+	p->defaults = pa;
+
+	return (p);
+}
+/*
+ * get a task scoped param struct for id defaulting to pa
+ * if id != pa and pa has VCL scope, also get a task scoped param struct for pa
+ */
+static struct vmod_directors_shard_param *
+shard_param_task(VRT_CTX, const void *id,
+   const struct vmod_directors_shard_param *pa)
+{
+	struct vmod_directors_shard_param *p;
+	struct vmod_priv *task;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(pa, VMOD_SHARD_SHARD_PARAM_MAGIC);
+	assert(pa->scope > _SCOPE_INVALID);
+
+	task = VRT_priv_task(ctx, id);
+
+	if (task == NULL) {
+		VRT_fail(ctx, "no priv_task");
+		return (NULL);
+	}
+
+	if (task->priv) {
+		p = task->priv;
+		CHECK_OBJ_NOTNULL(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
+		assert(p->scope == TASK);
+		/* XXX
+		VSL(SLT_Debug, 0,
+		    "shard_param_task(id %p, pa %p) = %p (found, ws=%p)",
+		    id, pa, p, ctx->ws);
+		*/
+		return (p);
+	}
+
+	p = WS_Alloc(ctx->ws, sizeof *p);
+	if (p == NULL) {
+		VRT_fail(ctx, "shard_param_task WS_Alloc failed");
+		return (NULL);
+	}
+	task->priv = p;
+	INIT_OBJ(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
+	p->vcl_name = pa->vcl_name;
+	p->scope = TASK;
+
+	if (id == pa || pa->scope != VCL)
+		p->defaults = pa;
+	else
+		p->defaults = shard_param_task(ctx, pa, pa);
+
+	/* XXX
+	VSL(SLT_Debug, 0,
+	    "shard_param_task(id %p, pa %p) = %p (new, defaults = %p, ws=%p)",
+	    id, pa, p, p->defaults, ctx->ws);
+	*/
+	return (p);
+}
+
+static struct vmod_directors_shard_param *
+shard_param_prep(VRT_CTX, struct vmod_directors_shard_param *p,
+    const char *who)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
+
+	if (ctx->method & VCL_MET_TASK_C) {
+		VRT_fail(ctx, "%s may only be used "
+			 "in vcl_init and in backend context", who);
+		return (NULL);
+	} else if (ctx->method & VCL_MET_TASK_B)
+		p = shard_param_task(ctx, p, p);
+	else
+		assert(ctx->method & VCL_MET_TASK_H);
+
+	return (p);
+}
+
+VCL_VOID v_matchproto_(td_directors_shard_param_set)
+vmod_shard_param_set(VRT_CTX, struct vmod_directors_shard_param *p,
+		     struct vmod_shard_param_set_arg *a)
+{
+	uint32_t args = shard_param_set_mask(a);
+
+	assert((args & ~_arg_mask_set) == 0);
+
+	p = shard_param_prep(ctx, p, "shard_param.set()");
+	if (p == NULL)
+		return;
+	(void) shard_param_args(ctx, p, "shard_param.set()", args,
+				a->by, a->key, a->key_blob, a->alt, a->warmup,
+				a->rampup, a->healthy);
+}
+
+VCL_VOID v_matchproto_(td_directors_shard_param_clear)
+vmod_shard_param_clear(VRT_CTX,
+    struct vmod_directors_shard_param *p)
+{
+	p = shard_param_prep(ctx, p, "shard_param.clear()");
+	if (p == NULL)
+		return;
+	p->mask = 0;
+}
+
+static const struct vmod_directors_shard_param *
+vmod_shard_param_read(VRT_CTX, const void *id,
+    const struct vmod_directors_shard_param *p,
+    struct vmod_directors_shard_param *pstk, const char *who)
+{
+	struct vmod_directors_shard_param *pp;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
+	(void) who; // XXX
+
+	if (ctx->method & VCL_MET_TASK_B)
+		p = shard_param_task(ctx, id, p);
+
+	if (p == NULL)
+		return (NULL);
+
+	pp = shard_param_stack(pstk, p, p->vcl_name);
+	AN(pp);
+	shard_param_merge(pp, p);
+	return (pp);
+}
+
+VCL_STRING v_matchproto_(td_directors_shard_param_get_by)
+vmod_shard_param_get_by(VRT_CTX,
+    struct vmod_directors_shard_param *p)
+{
+	struct vmod_directors_shard_param pstk;
+	const struct vmod_directors_shard_param *pp;
+
+	pp = vmod_shard_param_read(ctx, p, p, &pstk, "shard_param.get_by()");
+	if (pp == NULL)
+		return (NULL);
+	assert(pp->by > _BY_E_INVALID);
+	return (by_str[pp->by]);
+}
+
+VCL_INT v_matchproto_(td_directors_shard_param_get_key)
+vmod_shard_param_get_key(VRT_CTX,
+    struct vmod_directors_shard_param *p)
+{
+	struct vmod_directors_shard_param pstk;
+	const struct vmod_directors_shard_param *pp;
+
+	pp = vmod_shard_param_read(ctx, p, p, &pstk, "shard_param.get_key()");
+	if (pp == NULL)
+		return (-1);
+	return ((VCL_INT)shard_get_key(ctx, pp));
+}
+VCL_INT v_matchproto_(td_directors_shard_param_get_alt)
+vmod_shard_param_get_alt(VRT_CTX,
+    struct vmod_directors_shard_param *p)
+{
+	struct vmod_directors_shard_param pstk;
+	const struct vmod_directors_shard_param *pp;
+
+	pp = vmod_shard_param_read(ctx, p, p, &pstk,
+				   "shard_param.get_alt()");
+	if (pp == NULL)
+		return (-1);
+	return (pp->alt);
+}
+
+VCL_REAL v_matchproto_(td_directors_shard_param_get_warmup)
+vmod_shard_param_get_warmup(VRT_CTX,
+    struct vmod_directors_shard_param *p)
+{
+	struct vmod_directors_shard_param pstk;
+	const struct vmod_directors_shard_param *pp;
+
+	pp = vmod_shard_param_read(ctx, p, p, &pstk,
+				   "shard_param.get_warmup()");
+	if (pp == NULL)
+		return (-2);
+	return (pp->warmup);
+}
+
+VCL_BOOL v_matchproto_(td_directors_shard_param_get_rampup)
+vmod_shard_param_get_rampup(VRT_CTX,
+    struct vmod_directors_shard_param *p)
+{
+	struct vmod_directors_shard_param pstk;
+	const struct vmod_directors_shard_param *pp;
+
+	pp = vmod_shard_param_read(ctx, p, p, &pstk,
+				   "shard_param.get_rampup()");
+	if (pp == NULL)
+		return (0);
+	return (pp->rampup);
+}
+
+VCL_STRING v_matchproto_(td_directors_shard_param_get_healthy)
+vmod_shard_param_get_healthy(VRT_CTX,
+    struct vmod_directors_shard_param *p)
+{
+	struct vmod_directors_shard_param pstk;
+	const struct vmod_directors_shard_param *pp;
+
+	pp = vmod_shard_param_read(ctx, p, p, &pstk,
+				   "shard_param.get_healthy()");
+	if (pp == NULL)
+		return (NULL);
+	assert(pp->healthy > _HEALTHY_E_INVALID);
+	return (healthy_str[pp->healthy]);
+
+}
+
+static const struct vmod_directors_shard_param *
+shard_param_blob(const VCL_BLOB blob)
+{
+	if (blob && blob->priv &&
+	    blob->len == sizeof(struct vmod_directors_shard_param) &&
+	    *(unsigned *)blob->priv == VMOD_SHARD_SHARD_PARAM_MAGIC)
+		return (blob->priv);
+	return (NULL);
+}
+
+VCL_BLOB v_matchproto_(td_directors_shard_param_use)
+vmod_shard_param_use(VRT_CTX,
+    struct vmod_directors_shard_param *p)
+{
+	struct vmod_priv *blob;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(p, VMOD_SHARD_SHARD_PARAM_MAGIC);
+
+	blob = (void *)WS_Alloc(ctx->ws, sizeof *blob);
+	if (blob == NULL) {
+		VRT_fail(ctx, "Workspace overflow (param.use())");
+		return (NULL);
+	}
+
+	memset(blob, 0, sizeof *blob);
+	blob->len = sizeof *p;
+	blob->priv = p;
+
+	return (blob);
 }

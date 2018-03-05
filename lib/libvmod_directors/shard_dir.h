@@ -41,6 +41,13 @@ enum healthy_e {
 	_HEALTHY_E_MAX
 };
 
+enum resolve_e {
+	_RESOLVE_E_INVALID = 0,
+#define VMODENUM(x) x,
+#include "tbl_resolve.h"
+	_RESOLVE_E_MAX
+};
+
 struct vbitmap;
 
 struct shard_circlepoint {
@@ -121,6 +128,8 @@ void sharddir_new(struct sharddir **sharddp, const char *vcl_name);
 void sharddir_delete(struct sharddir **sharddp);
 void sharddir_wrlock(struct sharddir *shardd);
 void sharddir_unlock(struct sharddir *shardd);
+unsigned sharddir_any_healthy(struct sharddir *shardd, const struct busyobj *bo,
+    double *changed);
 VCL_BACKEND sharddir_pick_be(VRT_CTX, struct sharddir *, uint32_t, VCL_INT,
    VCL_REAL, VCL_BOOL, enum healthy_e);
 

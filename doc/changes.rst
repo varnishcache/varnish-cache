@@ -104,6 +104,31 @@ VCL and bundled VMODs
       <dir>.backend(by=BLOB, key_blob=blobdigest.hash(RS,
 	blob.decode(encoded=<string>)))
 
+* The ``shard`` director now offers resolution at the time the actual
+  backend connection is made, which is how all other bundled directors
+  work as well: With the ``resolve=LAZY`` argument, other shard
+  parameters are saved for later reference and a director object is
+  returned.
+
+  This enables layering the shard director below other directors.
+
+* The ``shard`` director now also supports getting other parameters
+  from a parameter set object: Rather than passing the required
+  parameters with each ``.backend()`` call, an object can be
+  associated with a shard director defining the parameters. The
+  association can be changed in ``vcl_backend_fetch()`` and individual
+  parameters can be overridden in each ``.backend()`` call.
+
+  The main use case is to segregate shard parameters from director
+  selection: By associating a parameter object with many directors,
+  the same load balancing decision can easily be applied independent
+  of which set of backends is to be used.
+
+* To support parameter overriding, support for positional arguments of
+  the shard director ``.backend()`` method had to be removed. In other
+  words, all parameters to the shard director ``.backend()`` method
+  now need to be named.
+
 Logging / statistics
 --------------------
 

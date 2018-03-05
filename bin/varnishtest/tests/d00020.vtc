@@ -1,0 +1,412 @@
+varnishtest "shard director parameters"
+
+server s1 -repeat 20 {
+	rxreq
+	txresp
+} -start
+
+varnish v1 -vcl+backend {
+	import directors;
+	import blob;
+
+	sub vcl_init {
+	    new shard = directors.shard();
+
+	    new p_def = directors.shard_param();
+
+	    new p_hash = directors.shard_param();
+	    p_hash.set(by=HASH, alt=1);
+
+	    new p_url = directors.shard_param();
+	    p_url.set(by=URL, warmup=0.5);
+
+	    new p_key = directors.shard_param();
+	    p_key.set(by=KEY, key=5, rampup=false);
+
+	    new p_blob = directors.shard_param();
+	    p_blob.set(by=BLOB, healthy=IGNORE,
+		key_blob=blob.decode(HEX, encoded="ffffffff00"));
+	}
+
+	sub vcl_synth {
+	    if (req.url == "/def") {
+		set resp.http.sha256	= shard.key(req.url);
+		set resp.http.by	= p_def.get_by();
+		set resp.http.key	= p_def.get_key();
+		set resp.http.alt	= p_def.get_alt();
+		set resp.http.warmup	= p_def.get_warmup();
+		set resp.http.rampup	= p_def.get_rampup();
+		set resp.http.healthy	= p_def.get_healthy();
+	    } else
+	    if (req.url == "/hash") {
+		set resp.http.sha256	= shard.key(req.url);
+		set resp.http.by	= p_hash.get_by();
+		set resp.http.key	= p_hash.get_key();
+		set resp.http.alt	= p_hash.get_alt();
+		set resp.http.warmup	= p_hash.get_warmup();
+		set resp.http.rampup	= p_hash.get_rampup();
+		set resp.http.healthy	= p_hash.get_healthy();
+	    } else
+	    if (req.url == "/url") {
+		set resp.http.sha256	= shard.key(req.url);
+		set resp.http.by	= p_url.get_by();
+		set resp.http.key	= p_url.get_key();
+		set resp.http.alt	= p_url.get_alt();
+		set resp.http.warmup	= p_url.get_warmup();
+		set resp.http.rampup	= p_url.get_rampup();
+		set resp.http.healthy	= p_url.get_healthy();
+	    } else
+	    if (req.url == "/key") {
+		set resp.http.by	= p_key.get_by();
+		set resp.http.key	= p_key.get_key();
+		set resp.http.alt	= p_key.get_alt();
+		set resp.http.warmup	= p_key.get_warmup();
+		set resp.http.rampup	= p_key.get_rampup();
+		set resp.http.healthy	= p_key.get_healthy();
+	    } else
+	    if (req.url == "/blob") {
+		set resp.http.by	= p_blob.get_by();
+		set resp.http.key	= p_blob.get_key();
+		set resp.http.alt	= p_blob.get_alt();
+		set resp.http.warmup	= p_blob.get_warmup();
+		set resp.http.rampup	= p_blob.get_rampup();
+		set resp.http.healthy	= p_blob.get_healthy();
+	    }
+	}
+
+	sub vcl_backend_response {
+	    # overriding things
+	    if (bereq.url ~ "^/b/c/hash/") {
+		set beresp.http.override = bereq.url;
+		p_def.set(by=HASH, alt=7);
+		p_hash.set(by=HASH, alt=8);
+		p_url.set(by=HASH, alt=9);
+		p_key.set(by=HASH, alt=10);
+		p_blob.set(by=HASH, alt=11);
+	    }
+	    if (bereq.url ~ "^/b/c/url/") {
+		set beresp.http.override = bereq.url;
+		p_def.set(by=URL, warmup=0.7);
+		p_hash.set(by=URL, warmup=0.8);
+		p_url.set(by=URL, rampup=false);
+		p_key.set(by=URL, healthy=ALL);
+		p_blob.set(by=URL, warmup=0.9);
+	    }
+	    if (bereq.url ~ "^/b/c/key/") {
+		set beresp.http.override = bereq.url;
+		p_def.set(by=KEY, key=7);
+		p_hash.set(by=KEY, key=8);
+		p_url.set(by=KEY, key=9);
+		p_key.set(by=KEY, key=10);
+		p_blob.set(by=KEY, key=11);
+	    }
+	    if (bereq.url ~ "/hash|/def") {
+		set beresp.http.hash	= blob.encode(HEX, blob=bereq.hash);
+	    }
+	    if (bereq.url ~ "/url") {
+		set beresp.http.sha256	= shard.key(bereq.url);
+	    }
+	    if (bereq.url ~ "/def$") {
+		set beresp.http.by	= p_def.get_by();
+		set beresp.http.key	= p_def.get_key();
+		set beresp.http.alt	= p_def.get_alt();
+		set beresp.http.warmup	= p_def.get_warmup();
+		set beresp.http.rampup	= p_def.get_rampup();
+		set beresp.http.healthy	= p_def.get_healthy();
+	    } else
+	    if (bereq.url ~ "/hash$") {
+		set beresp.http.by	= p_hash.get_by();
+		set beresp.http.key	= p_hash.get_key();
+		set beresp.http.alt	= p_hash.get_alt();
+		set beresp.http.warmup	= p_hash.get_warmup();
+		set beresp.http.rampup	= p_hash.get_rampup();
+		set beresp.http.healthy	= p_hash.get_healthy();
+	    } else
+	    if (bereq.url ~ "/url$") {
+		set beresp.http.by	= p_url.get_by();
+		set beresp.http.key	= p_url.get_key();
+		set beresp.http.alt	= p_url.get_alt();
+		set beresp.http.warmup	= p_url.get_warmup();
+		set beresp.http.rampup	= p_url.get_rampup();
+		set beresp.http.healthy	= p_url.get_healthy();
+	    } else
+	    if (bereq.url ~ "/key$") {
+		set beresp.http.by	= p_key.get_by();
+		set beresp.http.key	= p_key.get_key();
+		set beresp.http.alt	= p_key.get_alt();
+		set beresp.http.warmup	= p_key.get_warmup();
+		set beresp.http.rampup	= p_key.get_rampup();
+		set beresp.http.healthy	= p_key.get_healthy();
+	    } else
+	    if (bereq.url ~ "/blob$") {
+		set beresp.http.by	= p_blob.get_by();
+		set beresp.http.key	= p_blob.get_key();
+		set beresp.http.alt	= p_blob.get_alt();
+		set beresp.http.warmup	= p_blob.get_warmup();
+		set beresp.http.rampup	= p_blob.get_rampup();
+		set beresp.http.healthy	= p_blob.get_healthy();
+	    }
+	}
+
+	sub vcl_recv {
+	    if (req.url ~ "^/b/") {
+		return (pass);
+	    }
+	    return (synth(200));
+	}
+} -start
+
+
+client c1 {
+	txreq -url /def
+	rxresp
+	expect resp.http.sha256		== 2002449278
+	expect resp.http.by		== "HASH"
+	expect resp.http.key		== resp.http.sha256
+	expect resp.http.alt		== 0
+	expect resp.http.warmup	== "-1.000"
+	expect resp.http.rampup	== "true"
+	expect resp.http.healthy	== "CHOSEN"
+
+	txreq -url /hash
+	rxresp
+	expect resp.http.sha256		== 2439792896
+	expect resp.http.by		== "HASH"
+	expect resp.http.key		== resp.http.sha256
+	expect resp.http.alt		== 1
+	expect resp.http.warmup	== "-1.000"
+	expect resp.http.rampup	== "true"
+	expect resp.http.healthy	== "CHOSEN"
+
+	# for client side, HASH = URL
+	txreq -url /url
+	rxresp
+	expect resp.http.sha256		== 3281611639
+	expect resp.http.by		== "URL"
+	expect resp.http.key		== resp.http.sha256
+	expect resp.http.alt		== 0
+	expect resp.http.warmup	== "0.500"
+	expect resp.http.rampup	== "true"
+	expect resp.http.healthy	== "CHOSEN"
+
+	txreq -url /key
+	rxresp
+	expect resp.http.by		== "KEY"
+	expect resp.http.key		== 5
+	expect resp.http.alt		== 0
+	expect resp.http.warmup	== "-1.000"
+	expect resp.http.rampup	== "false"
+	expect resp.http.healthy	== "CHOSEN"
+
+	txreq -url /blob
+	rxresp
+	expect resp.http.by		== "BLOB"
+	expect resp.http.key		== 4294967295
+	expect resp.http.alt		== 0
+	expect resp.http.warmup	== "-1.000"
+	expect resp.http.rampup	== "true"
+	expect resp.http.healthy	== "IGNORE"
+} -run
+
+client c2 {
+	txreq -url /b/def
+	rxresp
+	expect resp.http.hash		== "93d1c4ad76396c91dd97fa310f7f26445332662c89393dbeeb77fe49f9111ee4"
+	expect resp.http.by		== "HASH"
+	# == 0x93d1c4ad
+	expect resp.http.key		== 2479998125
+	expect resp.http.alt		== 0
+	expect resp.http.warmup	== "-1.000"
+	expect resp.http.rampup	== "true"
+	expect resp.http.healthy	== "CHOSEN"
+
+	txreq -url /b/hash
+	rxresp
+	expect resp.http.hash		== "e47da20ea4db49d4f22acdadc69f02f445002be520a2865cd3351272add62540"
+	expect resp.http.by		== "HASH"
+	# == 0xe47da20e
+	expect resp.http.key		== 3833438734
+	expect resp.http.alt		== 1
+	expect resp.http.warmup	== "-1.000"
+	expect resp.http.rampup	== "true"
+	expect resp.http.healthy	== "CHOSEN"
+
+	txreq -url /b/url
+	rxresp
+	expect resp.http.sha256		== 108501858
+	expect resp.http.by		== "URL"
+	expect resp.http.key		== resp.http.sha256
+	expect resp.http.alt		== 0
+	expect resp.http.warmup	== "0.500"
+	expect resp.http.rampup	== "true"
+	expect resp.http.healthy	== "CHOSEN"
+
+	txreq -url /b/key
+	rxresp
+	expect resp.http.by		== "KEY"
+	expect resp.http.key		== 5
+	expect resp.http.alt		== 0
+	expect resp.http.warmup	== "-1.000"
+	expect resp.http.rampup	== "false"
+	expect resp.http.healthy	== "CHOSEN"
+
+	txreq -url /b/blob
+	rxresp
+	expect resp.http.by		== "BLOB"
+	expect resp.http.key		== 4294967295
+	expect resp.http.alt		== 0
+	expect resp.http.warmup	== "-1.000"
+	expect resp.http.rampup	== "true"
+	expect resp.http.healthy	== "IGNORE"
+} -run
+
+client c3 {
+	txreq -url /b/c/hash/def
+	rxresp
+	expect resp.http.hash		== "df9a465f8a0455c334b24c1638d3adda0f6e64fbe759029ab83602e3b9138884"
+	expect resp.http.by		== "HASH"
+	# == 0xdf9a465f
+	expect resp.http.key		== 3751429727
+	expect resp.http.alt		== 7
+	expect resp.http.warmup	== "-1.000"
+	expect resp.http.rampup	== "true"
+	expect resp.http.healthy	== "CHOSEN"
+
+	txreq -url /b/c/hash/hash
+	rxresp
+	expect resp.http.hash		== "0eb35bc1fab5aad5902fd1bac86540bd13d43aa31c6c46f54e776b43392e66e6"
+	expect resp.http.by		== "HASH"
+	# == 0x0eb35bc1
+	expect resp.http.key		== 246635457
+	expect resp.http.alt		== 8
+	expect resp.http.warmup	== "-1.000"
+	expect resp.http.rampup	== "true"
+	expect resp.http.healthy	== "CHOSEN"
+
+	txreq -url /b/c/hash/url
+	rxresp
+	expect resp.http.hash		== "1eb67b701ea07151cac5bea1f11b6267b9de15a3ff83cec995590480cbc2c750"
+	expect resp.http.by		== "HASH"
+	# == 0x1eb67b70
+	expect resp.http.key		== 515275632
+	expect resp.http.alt		== 9
+	expect resp.http.warmup	== "0.500"
+	expect resp.http.rampup	== "true"
+	expect resp.http.healthy	== "CHOSEN"
+
+	txreq -url /b/c/hash/key
+	rxresp
+	expect resp.http.hash		== "a11b617e21aa7db22b6205d7612002e595b1b00d8c11602017f65456a1be3a35"
+	expect resp.http.by		== "HASH"
+	# == 0xa11b617e
+	expect resp.http.key		== 2702926206
+	expect resp.http.alt		== 10
+	expect resp.http.warmup	== "-1.000"
+	expect resp.http.rampup	== "false"
+	expect resp.http.healthy	== "CHOSEN"
+
+	txreq -url /b/c/hash/blob
+	rxresp
+	expect resp.http.hash		== "d7eecc0ac83e1727332dcd8c7c8ae9f3114123abb2bf7e3fb15ecea8c84bb239"
+	expect resp.http.by		== "HASH"
+	# == 0xd7eecc0a
+	expect resp.http.key		== 3622751242
+	expect resp.http.alt		== 11
+	expect resp.http.warmup	== "-1.000"
+	expect resp.http.rampup	== "true"
+	expect resp.http.healthy	== "IGNORE"
+} -run
+
+client c3 {
+	txreq -url /b/c/url/def
+	rxresp
+	expect resp.http.by		== "URL"
+	expect resp.http.key		== resp.http.sha256
+	expect resp.http.alt		== 0
+	expect resp.http.warmup	== "0.700"
+	expect resp.http.rampup	== "true"
+	expect resp.http.healthy	== "CHOSEN"
+
+	txreq -url /b/c/url/hash
+	rxresp
+	expect resp.http.by		== "URL"
+	expect resp.http.key		== resp.http.sha256
+	expect resp.http.alt		== 1
+	expect resp.http.warmup	== "0.800"
+	expect resp.http.rampup	== "true"
+	expect resp.http.healthy	== "CHOSEN"
+
+	txreq -url /b/c/url/url
+	rxresp
+	expect resp.http.by		== "URL"
+	expect resp.http.key		== resp.http.sha256
+	expect resp.http.alt		== 0
+	expect resp.http.warmup	== "0.500"
+	expect resp.http.rampup	== "false"
+	expect resp.http.healthy	== "CHOSEN"
+
+	txreq -url /b/c/url/key
+	rxresp
+	expect resp.http.by		== "URL"
+	expect resp.http.key		== resp.http.sha256
+	expect resp.http.alt		== 0
+	expect resp.http.warmup	== "-1.000"
+	expect resp.http.rampup	== "false"
+	expect resp.http.healthy	== "ALL"
+
+	txreq -url /b/c/url/blob
+	rxresp
+	expect resp.http.by		== "URL"
+	expect resp.http.key		== resp.http.sha256
+	expect resp.http.alt		== 0
+	expect resp.http.warmup	== "0.900"
+	expect resp.http.rampup	== "true"
+	expect resp.http.healthy	== "IGNORE"
+} -run
+
+client c4 {
+	txreq -url /b/c/key/def
+	rxresp
+	expect resp.http.by		== "KEY"
+	expect resp.http.key		== 7
+	expect resp.http.alt		== 0
+	expect resp.http.warmup	== "-1.000"
+	expect resp.http.rampup	== "true"
+	expect resp.http.healthy	== "CHOSEN"
+
+	txreq -url /b/c/key/hash
+	rxresp
+	expect resp.http.by		== "KEY"
+	expect resp.http.key		== 8
+	expect resp.http.alt		== 1
+	expect resp.http.warmup	== "-1.000"
+	expect resp.http.rampup	== "true"
+	expect resp.http.healthy	== "CHOSEN"
+
+	txreq -url /b/c/key/url
+	rxresp
+	expect resp.http.by		== "KEY"
+	expect resp.http.key		== 9
+	expect resp.http.alt		== 0
+	expect resp.http.warmup	== "0.500"
+	expect resp.http.rampup	== "true"
+	expect resp.http.healthy	== "CHOSEN"
+
+	txreq -url /b/c/key/key
+	rxresp
+	expect resp.http.by		== "KEY"
+	expect resp.http.key		== 10
+	expect resp.http.alt		== 0
+	expect resp.http.warmup	== "-1.000"
+	expect resp.http.rampup	== "false"
+	expect resp.http.healthy	== "CHOSEN"
+
+	txreq -url /b/c/key/blob
+	rxresp
+	expect resp.http.by		== "KEY"
+	expect resp.http.key		== 11
+	expect resp.http.alt		== 0
+	expect resp.http.warmup	== "-1.000"
+	expect resp.http.rampup	== "true"
+	expect resp.http.healthy	== "IGNORE"
+} -run
