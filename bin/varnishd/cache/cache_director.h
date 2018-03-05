@@ -39,6 +39,7 @@
 
 typedef unsigned vdi_healthy_f(const struct director *, const struct busyobj *,
     double *changed);
+/* XXX need a VRT_CTX argument */
 typedef const struct director *vdi_resolve_f(const struct director *,
     struct worker *, struct busyobj *);
 typedef int vdi_gethdrs_f(const struct director *, struct worker *,
