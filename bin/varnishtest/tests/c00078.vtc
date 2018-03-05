@@ -9,7 +9,7 @@ varnish v1 \
     -arg "-ss1=default,1m" \
     -arg "-ss2=default,1m" \
     -arg "-ss0=default,1m" \
-    -syntax 4.1 \
+    -syntax 4.0 \
     -vcl+backend {
 	import vtc;
 	sub vcl_backend_response {
