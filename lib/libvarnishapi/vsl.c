@@ -244,7 +244,7 @@ VSL_Print(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
 	    'b' : '-';
 	data = VSL_CDATA(c->rec.ptr);
 
-	if (VSL_tagflags[tag] & SLT_F_BINARY) {
+	if (VSL_tagflags[tag] & SLT_F_UNSAFE) {
 		VSL_PRINT(fo, "%10u %-14s %c \"", vxid, VSL_tags[tag], type);
 		while (len-- > 0) {
 			if (len == 0 && tag == SLT_Debug && *data == '\0')
@@ -279,7 +279,7 @@ VSL_PrintTerse(const struct VSL_data *vsl, const struct VSL_cursor *c, void *fo)
 	len = VSL_LEN(c->rec.ptr);
 	data = VSL_CDATA(c->rec.ptr);
 
-	if (VSL_tagflags[tag] & SLT_F_BINARY) {
+	if (VSL_tagflags[tag] & SLT_F_UNSAFE) {
 		VSL_PRINT(fo, "%-14s \"", VSL_tags[tag]);
 		while (len-- > 0) {
 			if (len == 0 && tag == SLT_Debug && *data == '\0')

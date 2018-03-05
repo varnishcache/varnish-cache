@@ -47,7 +47,7 @@
 #define NODEF_NOTICE \
     "NB: This log record is masked by default.\n\n"
 
-SLTM(Debug, SLT_F_BINARY, "Debug messages",
+SLTM(Debug, SLT_F_UNSAFE, "Debug messages",
 	"Debug messages can normally be ignored, but are sometimes"
 	" helpful during trouble-shooting.  Most debug messages must"
 	" be explicitly enabled with parameters.\n\n"
@@ -126,7 +126,7 @@ SLTM(BackendClose, 0, "Backend connection closed",
 	"\n"
 )
 
-SLTM(HttpGarbage, SLT_F_BINARY, "Unparseable HTTP request",
+SLTM(HttpGarbage, SLT_F_UNSAFE, "Unparseable HTTP request",
 	"Logs the content of unparseable HTTP requests.\n\n"
 )
 
@@ -363,7 +363,7 @@ SLTM(ESI_xmlerror, 0, "ESI parser error or warning message",
 	" The log record describes the problem encountered."
 )
 
-SLTM(Hash, SLT_F_BINARY, "Value added to hash",
+SLTM(Hash, SLT_F_UNSAFE, "Value added to hash",
 	"This value was added to the object lookup hash.\n\n"
 	NODEF_NOTICE
 )
