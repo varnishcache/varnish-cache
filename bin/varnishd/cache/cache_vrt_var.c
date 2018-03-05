@@ -365,6 +365,53 @@ VRT_l_beresp_storage(VRT_CTX, VCL_STEVEDORE stv)
 	ctx->bo->storage = stv;
 }
 
+/*--------------------------------------------------------------------
+ * VCL <= 4.0 ONLY
+ */
+
+#include "storage/storage.h"
+
+const char *
+VRT_r_beresp_storage_hint(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	if (ctx->bo->storage == NULL)
+		return (NULL);
+	CHECK_OBJ_NOTNULL(ctx->bo->storage, STEVEDORE_MAGIC);
+	return (ctx->bo->storage->vclname);
+}
+
+void
+VRT_l_beresp_storage_hint(VRT_CTX, const char *str, ...)
+{
+	const char *p;
+	va_list ap;
+	uintptr_t sn;
+	VCL_STEVEDORE stv;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+
+	sn = WS_Snapshot(ctx->ws);
+	va_start(ap, str);
+	p = VRT_String(ctx->ws, NULL, str, ap);
+	va_end(ap);
+
+	if (p == NULL) {
+		VSLb(ctx->vsl, SLT_LostHeader, "storage_hint");
+		WS_MarkOverflow(ctx->ws);
+		WS_Reset(ctx->ws, sn);
+		return;
+	}
+
+	stv = VRT_stevedore(p);
+	if (stv != NULL)
+		ctx->bo->storage = stv;
+
+	WS_Reset(ctx->ws, sn);
+}
+
 /*--------------------------------------------------------------------*/
 
 VCL_STEVEDORE

@@ -1,6 +1,6 @@
 varnishtest "Stevedores RR, beresp.storage"
 
-server s1 -repeat 6 {
+server s1 -repeat 7 {
 	rxreq
 	txresp
 } -start
@@ -17,8 +17,11 @@ varnish v1 \
 			set beresp.storage = storage.s1;
 		} else if (bereq.url == "/6") {
 			set beresp.storage = vtc.no_stevedore();
+		} else if (bereq.url == "/deprecated") {
+			set beresp.storage_hint = "s1";
 		}
 		set beresp.http.storage = beresp.storage;
+		set beresp.http.storage-hint = beresp.storage_hint;
 	}
 } -start
 
@@ -26,19 +29,38 @@ client c1 {
 	txreq -url /1
 	rxresp
 	expect resp.http.storage == "storage.s1"
+	expect resp.http.storage == resp.http.storage-hint
 	txreq -url /2
 	rxresp
 	expect resp.http.storage == "storage.s1"
+	expect resp.http.storage == resp.http.storage-hint
 	txreq -url /3
 	rxresp
 	expect resp.http.storage == "storage.s0"
+	expect resp.http.storage == resp.http.storage-hint
 	txreq -url /4
 	rxresp
 	expect resp.http.storage == "storage.s1"
+	expect resp.http.storage == resp.http.storage-hint
 	txreq -url /5
 	rxresp
 	expect resp.http.storage == "storage.s2"
+	expect resp.http.storage == resp.http.storage-hint
 	txreq -url /6
 	rxresp
 	expect resp.http.storage == <undef>
+	expect resp.http.storage == resp.http.storage-hint
+	txreq -url /deprecated
+	rxresp
+	expect resp.http.storage == "storage.s1"
+	expect resp.http.storage == resp.http.storage-hint
 } -run
+
+varnish v1 \
+    -syntax 4.1 \
+    -errvcl "Only available when VCL syntax <= 4.0" {
+	import vtc;
+	sub vcl_backend_response {
+		set beresp.storage_hint = "foo";
+	}
+}

@@ -41,7 +41,17 @@ VCL and bundled VMODs
   ``req.hash_always_miss`` are now accessible from all of the client
   side subs, not just ``vcl_recv{}``
 
-* Removed ``beresp.storage_hint`` (was deprecated since Varnish 5.1)
+* Removed ``beresp.storage_hint`` for VCL 4.1 (was deprecated since
+  Varnish 5.1)
+
+  For VCL 4.0, compatibility is preserved, but the implementation is
+  changed slightly: ``beresp.storage_hint`` is now referring to the
+  same internal data structure as ``beresp.storage``.
+
+  In particular, it was previously possible to set
+  ``beresp.storage_hint`` to an invalid storage name and later
+  retrieve it back. Doing so will now yield the last successfully set
+  stevedore or the undefined (``NULL``) string.
 
 * workspace overflows in ``std.log()`` now trigger a VCL failure
 

@@ -868,6 +868,21 @@ beresp.storage
 	
 	The storage backend to use to save this object.
 
+beresp.storage_hint	``VCL <= 4.0``
+
+	Type: STRING
+
+	Readable from: vcl_backend_response, vcl_backend_error
+
+	Writable from: vcl_backend_response, vcl_backend_error
+
+	
+	Deprecated since varnish 5.1 and discontinued since VCL
+	4.1 (varnish 6.0). Use beresp.storage instead.
+	
+	Hint to Varnish that you want to save this object to a
+	particular storage backend.
+
 obj
 ~~~
 

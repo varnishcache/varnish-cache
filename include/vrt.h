@@ -61,8 +61,8 @@
  *	VRT_VSC_Overhead() added
  *	struct director.event added
  *	struct director.destroy added
- *	VRT_r_beresp_storage_hint() removed - under discussion #2509
- *	VRT_l_beresp_storage_hint() removed - under discussion #2509
+ *	VRT_r_beresp_storage_hint() VCL <= 4.0  #2509
+ *	VRT_l_beresp_storage_hint() VCL <= 4.0  #2509
  *	VRT_blob() added
  *	VCL_STRANDS added
  * 6.1 (2017-09-15 aka 5.2)
