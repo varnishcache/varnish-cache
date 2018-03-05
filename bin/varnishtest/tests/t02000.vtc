@@ -21,6 +21,8 @@ varnish v1 -cliok "param.set vsl_mask +H2RxHdr,+H2RxBody,+H2TxHdr,+H2TxBody"
 
 process p1 {exec varnishlog -n ${v1_name} -g raw -w ${tmpdir}/vlog -A} -start
 
+delay 1
+
 client c1 {
 	txpri
 	expect_close
