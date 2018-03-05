@@ -245,6 +245,8 @@ int STV_BanInfoDrop(const uint8_t *ban, unsigned len);
 int STV_BanInfoNew(const uint8_t *ban, unsigned len);
 void STV_BanExport(const uint8_t *banlist, unsigned len);
 
+#if WITH_PERSISTENT_STORAGE
 /* storage_persistent.c */
 void SMP_Ready(void);
+#endif
 
