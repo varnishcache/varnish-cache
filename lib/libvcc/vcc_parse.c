@@ -347,14 +347,16 @@ typedef void parse_f(struct vcc *tl);
 static struct toplev {
 	const char	*name;
 	parse_f		*func;
+	unsigned	vcllo;
+	unsigned	vclhi;
 } toplev[] = {
-	{ "acl",		vcc_ParseAcl },
-	{ "sub",		vcc_ParseFunction },
-	{ "backend",		vcc_ParseBackend },
-	{ "probe",		vcc_ParseProbe },
-	{ "import",		vcc_ParseImport },
-	{ "vcl",		vcc_ParseVcl },
-	{ "default",		NULL },
+	{ "acl",		vcc_ParseAcl,		VCL_41,	VCL_HIGH },
+	{ "sub",		vcc_ParseFunction,	VCL_41,	VCL_HIGH },
+	{ "backend",		vcc_ParseBackend,	VCL_41,	VCL_HIGH },
+	{ "probe",		vcc_ParseProbe,		VCL_41,	VCL_HIGH },
+	{ "import",		vcc_ParseImport,	VCL_41,	VCL_HIGH },
+	{ "vcl",		vcc_ParseVcl,		VCL_41,	VCL_HIGH },
+	{ "default",		NULL,			VCL_41, VCL_HIGH },
 	{ NULL, NULL }
 };
 
@@ -432,5 +434,5 @@ vcc_Parse_Init(struct vcc *tl)
 	struct toplev *tp;
 
 	for (tp = toplev; tp->name != NULL; tp++)
-		AN(VCC_MkSym(tl, tp->name, SYM_NONE, VCL_LOW, VCL_HIGH));
+		AN(VCC_MkSym(tl, tp->name, SYM_NONE, tp->vcllo, tp->vclhi));
 }
