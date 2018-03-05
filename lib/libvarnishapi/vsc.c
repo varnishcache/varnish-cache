@@ -96,14 +96,14 @@ struct vsc {
  * Build the static level, type and point descriptions
  */
 
-#define VSC_LEVEL_F(v,l,e,d) \
-    static const struct VSC_level_desc level_##v = {#v, l, e, d};
+enum vsc_levels {
+#define VSC_LEVEL_F(v,l,e,d) v,
 #include "tbl/vsc_levels.h"
+};
 
-static const struct VSC_level_desc * const levels[] = {
-#define VSC_LEVEL_F(v,l,e,d) &level_##v,
+static const struct VSC_level_desc levels[] = {
+#define VSC_LEVEL_F(v,l,e,d) [v] = {#v, l, e, d},
 #include "tbl/vsc_levels.h"
-#undef VSC_LEVEL_F
 };
 
 static const ssize_t nlevels = sizeof(levels)/sizeof(*levels);
@@ -266,11 +266,11 @@ vsc_fill_point(const struct vsc *vsc, const struct vsc_seg *seg,
 	assert(vt->type == VJSN_STRING);
 
 	if (!strcmp(vt->value, "info"))  {
-		point->point.level = &level_info;
+		point->point.level = &levels[info];
 	} else if (!strcmp(vt->value, "diag")) {
-		point->point.level = &level_diag;
+		point->point.level = &levels[diag];
 	} else if (!strcmp(vt->value, "debug")) {
-		point->point.level = &level_debug;
+		point->point.level = &levels[debug];
 	} else {
 		WRONG("Illegal level");
 	}
@@ -490,9 +490,9 @@ VSC_ChangeLevel(const struct VSC_level_desc *old, int chg)
 	int i;
 
 	if (old == NULL)
-		old = levels[0];
+		old = &levels[0];
 	for (i = 0; i < nlevels; i++)
-		if (old == levels[i])
+		if (old == &levels[i])
 			break;
 	if (i == nlevels)
 		i = 0;
@@ -502,7 +502,7 @@ VSC_ChangeLevel(const struct VSC_level_desc *old, int chg)
 		i = nlevels - 1;
 	if (i < 0)
 		i = 0;
-	return (levels[i]);
+	return (&levels[i]);
 }
 
 /*--------------------------------------------------------------------*/
