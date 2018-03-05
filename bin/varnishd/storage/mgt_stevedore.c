@@ -92,6 +92,7 @@ static struct cli_proto cli_stv[] = {
 /*--------------------------------------------------------------------
  */
 
+#ifdef WITH_PERSISTENT_STORAGE
 static void v_matchproto_(storage_init_f)
 smp_fake_init(struct stevedore *parent, int ac, char * const *av)
 {
@@ -111,6 +112,7 @@ static const struct stevedore smp_fake_stevedore = {
 	.name = "deprecated_persistent",
 	.init = smp_fake_init,
 };
+#endif
 
 /*--------------------------------------------------------------------
  * Parse a stevedore argument on the form:
@@ -120,8 +122,10 @@ static const struct stevedore smp_fake_stevedore = {
 static const struct choice STV_choice[] = {
 	{ "file",			&smf_stevedore },
 	{ "malloc",			&sma_stevedore },
+#ifdef WITH_PERSISTENT_STORAGE
 	{ "deprecated_persistent",	&smp_stevedore },
 	{ "persistent",			&smp_fake_stevedore },
+#endif
 #if defined(HAVE_LIBUMEM)
 	{ "umem",			&smu_stevedore },
 	{ "default",			&smu_stevedore },

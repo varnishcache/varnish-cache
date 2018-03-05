@@ -1,5 +1,7 @@
 varnishtest "Check expiry of non-instantiated object"
 
+feature persistent_storage
+
 shell "rm -f ${tmpdir}/_.per"
 
 server s1 {

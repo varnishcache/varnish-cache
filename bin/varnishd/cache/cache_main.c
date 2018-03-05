@@ -360,9 +360,11 @@ child_main(int sigmagic, size_t altstksz)
 
 	CLI_AddFuncs(debug_cmds);
 
+#if WITH_PERSISTENT_STORAGE
 	/* Wait for persistent storage to load if asked to */
 	if (FEATURE(FEATURE_WAIT_SILO))
 		SMP_Ready();
+#endif
 
 	CLI_Run();
 

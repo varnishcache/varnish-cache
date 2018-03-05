@@ -23,10 +23,6 @@ shell "varnishd -x vsl > ${tmpdir}/_.vsl"
 shell "varnishd -x cli > ${tmpdir}/_.cli"
 shell "varnishd -x builtin > ${tmpdir}/_.builtin"
 
-shell -err -expect {-spersistent has been deprecated} {
-	varnishd -spersistent -f ''
-}
-
 shell -err -expect {-C needs either -b <backend> or -f <vcl_file>} {
 	varnishd -C
 }
@@ -50,3 +46,10 @@ shell -err -expect {-d makes no sense with -C} "varnishd -C -b 127.0.0.1:80 -d "
 shell -err -expect {-F makes no sense with -C} "varnishd -C -b 127.0.0.1:80 -F "
 shell -err -expect {Neither -b nor -f given} { varnishd -n ${tmpdir}/v0  }
 
+# This check is kept last because it may be skipped
+
+feature persistent_storage
+
+shell -err -expect {-spersistent has been deprecated} {
+	varnishd -spersistent -f ''
+}

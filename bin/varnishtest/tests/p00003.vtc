@@ -1,5 +1,7 @@
 varnishtest "Ban a persistent object"
 
+feature persistent_storage
+
 shell "rm -f ${tmpdir}/_.per"
 
 server s1 {

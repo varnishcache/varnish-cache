@@ -1,5 +1,7 @@
 varnishtest "error object allocation with persistent"
 
+feature persistent_storage
+
 server s1 {
 	rxreq
 	txresp

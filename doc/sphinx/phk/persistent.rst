@@ -5,7 +5,8 @@ A persistent message
 ====================
 
 This message is about -spersistent and why you should not use it,
-even though it is still present in Varnish 4.x.
+even though it is still present in Varnish 4.x. Starting with Varnish
+6 it is only present when explicitly enabled at compile time.
 
 TL;DR:
 ------

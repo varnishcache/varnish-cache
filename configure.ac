@@ -372,6 +372,21 @@ else
 	ac_cv_func_port_create=no
 fi
 
+# --with-persistent-storage
+AC_ARG_WITH(persistent-storage,
+    AS_HELP_STRING([--with-persistent-storage],
+	[use deprecated persistent storage (default is NO)]),
+    [],
+    [with_persistent_storage=no])
+
+if test "$with_persistent_storage" = yes; then
+	AC_DEFINE([WITH_PERSISTENT_STORAGE], [1],
+		[Define to 1 to build the deprecated peristent storage.])
+fi
+
+AM_CONDITIONAL([WITH_PERSISTENT_STORAGE],
+	[test "$with_persistent_storage" = yes])
+
 AM_MISSING_HAS_RUN
 
 AC_CHECK_DECL([SO_ACCEPTFILTER],

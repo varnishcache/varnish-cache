@@ -714,12 +714,21 @@ cmd_delay(CMD_ARGS)
  *        Do not fail the test if a string of the form ${...} is not
  *        recognized as a macro.
  * term
- *	  Support for ADM3A terminal
+ *        Support for ADM3A terminal
+ *
+ * persistent_storage
+ *        Varnish was built with the deprecated persistent storage.
  *
  * Be careful with ignore_unknown_macro, because it may cause a test with a
  * misspelled macro to fail silently. You should only need it if you must
  * run a test with strings of the form "${...}".
  */
+
+#if WITH_PERSISTENT_STORAGE
+static const unsigned with_persistent_storage = 1;
+#else
+static const unsigned with_persistent_storage = 0;
+#endif
 
 static int
 test_term(struct vtclog *vl)
@@ -787,6 +796,7 @@ cmd_feature(CMD_ARGS)
 		FEATURE("user_vcache", getpwnam("vcache") != NULL);
 		FEATURE("group_varnish", getgrnam("varnish") != NULL);
 		FEATURE("term", test_term(vl));
+		FEATURE("persistent_storage", with_persistent_storage);
 
 		if (!strcmp(*av, "disable_aslr")) {
 			good = 1;

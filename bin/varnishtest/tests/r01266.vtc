@@ -1,5 +1,7 @@
 varnishtest "#1266 - Check persisted truncated completed bans"
 
+feature persistent_storage
+
 # Test that bans which has been completed, truncated and persisted works
 
 shell "rm -f ${tmpdir}/_.per1"

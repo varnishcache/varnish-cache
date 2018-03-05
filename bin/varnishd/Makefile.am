@@ -91,15 +91,11 @@ varnishd_SOURCES = \
 	mgt/mgt_vcl.c \
 	proxy/cache_proxy_proto.c \
 	storage/mgt_stevedore.c \
-	storage/mgt_storage_persistent.c \
 	storage/stevedore.c \
 	storage/stevedore_utils.c \
 	storage/storage_file.c \
 	storage/storage_lru.c \
 	storage/storage_malloc.c \
-	storage/storage_persistent.c \
-	storage/storage_persistent_silo.c \
-	storage/storage_persistent_subr.c \
 	storage/storage_simple.c \
 	storage/storage_umem.c \
 	waiter/cache_waiter.c \
@@ -108,6 +104,14 @@ varnishd_SOURCES = \
 	waiter/cache_waiter_poll.c \
 	waiter/cache_waiter_ports.c \
 	waiter/mgt_waiter.c
+
+if WITH_PERSISTENT_STORAGE
+varnishd_SOURCES += \
+	storage/mgt_storage_persistent.c \
+	storage/storage_persistent.c \
+	storage/storage_persistent_silo.c \
+	storage/storage_persistent_subr.c
+endif
 
 nodist_varnishd_SOURCES = \
 	builtin_vcl.c
