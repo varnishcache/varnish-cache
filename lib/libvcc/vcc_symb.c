@@ -130,8 +130,6 @@ VCC_Symbol(struct vcc *tl, struct symbol *parent,
 	assert(l > 0);
 
 	VTAILQ_FOREACH(sym, &parent->children, list) {
-		if (sym->lorev > vhi || sym->hirev < vlo)
-			continue;
 		i = strncasecmp(sym->name, b, l);
 		if (i < 0)
 			continue;
@@ -141,6 +139,8 @@ VCC_Symbol(struct vcc *tl, struct symbol *parent,
 			break;
 		}
 		if (l > sym->nlen)
+			continue;
+		if (sym->lorev > vhi || sym->hirev < vlo)
 			continue;
 		if (q < e)
 			break;
@@ -288,9 +288,12 @@ static void
 vcc_walksymbols(struct vcc *tl, const struct symbol *root,
     symwalk_f *func, vcc_kind_t kind)
 {
-	struct symbol *sym;
+	struct symbol *sym, *sym2 = NULL;
 
 	VTAILQ_FOREACH(sym, &root->children, list) {
+		if (sym2 != NULL)
+			assert(strcasecmp(sym->name, sym2->name) >= 0);
+		sym2 = sym;
 		if (kind == SYM_NONE || kind == sym->kind)
 			func(tl, sym);
 		ERRCHK(tl);
