@@ -124,7 +124,7 @@ GENERATED_H = vcl.h $(GEN_H)
 ## except when building from a distribution
 
 vcs_version.h:
-	if test -d $(top_srcdir)/.git ; then \
+	$(AM_V_GEN) if test -d $(top_srcdir)/.git ; then \
 	    @PYTHON@ $(srcdir)/generate.py \
 		$(top_srcdir) $(top_builddir) ; \
 	fi
