@@ -833,6 +833,8 @@ int ZEXPORT deflate (strm, flush)
 
     /* Write the header */
     if (s->status == INIT_STATE) {
+#ifdef NOVGZ
+	abort();
         /* zlib header */
         uInt header = (Z_DEFLATED + ((s->w_bits-8)<<4)) << 8;
         uInt level_flags;
@@ -865,6 +867,7 @@ int ZEXPORT deflate (strm, flush)
             s->last_flush = -1;
             return Z_OK;
         }
+#endif
     }
 #ifdef GZIP
     if (s->status == GZIP_STATE) {
