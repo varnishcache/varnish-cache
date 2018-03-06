@@ -73,7 +73,7 @@ vmod_integer(VRT_CTX, VCL_STRING p, VCL_INT i)
 	if (r > LONG_MAX || r < LONG_MIN)
 		return (i);
 
-	return ((long)r);
+	return ((VCL_INT)r);
 }
 
 VCL_IP
@@ -149,7 +149,7 @@ vmod_real2integer(VRT_CTX, VCL_REAL r, VCL_INT i)
 	r = round(r);
 	if (r > LONG_MAX || r < LONG_MIN)
 		return(i);
-	return ((long)r);
+	return ((VCL_INT)r);
 }
 
 VCL_TIME v_matchproto_(td_std_real2time)
@@ -173,7 +173,7 @@ vmod_time2integer(VRT_CTX, VCL_TIME t, VCL_INT i)
 	t = round(t);
 	if (t > LONG_MAX || t < LONG_MIN)
 		return(i);
-	return ((long)t);
+	return ((VCL_INT)t);
 }
 
 VCL_REAL v_matchproto_(td_std_time2real)
