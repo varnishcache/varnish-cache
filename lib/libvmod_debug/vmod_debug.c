@@ -156,8 +156,8 @@ xyzzy_argtest(VRT_CTX, struct xyzzy_argtest_arg *arg)
 	char buf[100];
 
 	AN(arg);
-	bprintf(buf, "%s %g %s %s %ld %d %s",
-	    arg->one, arg->two, arg->three, arg->comma, arg->four,
+	bprintf(buf, "%s %g %s %s %jd %d %s",
+	    arg->one, arg->two, arg->three, arg->comma, (intmax_t)arg->four,
 	    arg->valid_opt, arg->valid_opt ? arg->opt : "<undef>");
 	return (WS_Copy(ctx->ws, buf, -1));
 }
