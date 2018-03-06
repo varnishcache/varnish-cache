@@ -349,12 +349,30 @@ ban_lurker_work(struct worker *wrk, struct vsl_log *vsl)
 	if (ban_cleantail(VTAILQ_FIRST(&obans)))
 		return (dt);
 
+	if (VTAILQ_FIRST(&obans) == NULL)
+		return (dt);
+
 	/*
 	 * Mark remaining bans completed: the tail of the obans list is now
-	 * removed, but iterating over it is safe until we hit the new tail ban
+	 * removed, but iterating over it is safe until we hit the new ban list
+	 * tail
+	 *
+	 * bans at the tail of the list may have been completed by other means
+	 * and, consequently, may have been removed from obans, so we skip all
+	 * already completed bans at the tail.
+	 *
+	 * While traversing the ban list backwards, we check if we pass by the
+	 * first oban, in which case we're done.
 	 */
-	Lck_Lock(&ban_mtx);
 	bd = VTAILQ_LAST(&ban_head, banhead_s);
+	while (bd->flags & BANS_FLAG_COMPLETED) {
+		if (bd == VTAILQ_FIRST(&ban_head) ||
+		    bd == VTAILQ_FIRST(&obans))
+			return (dt);
+		bd = VTAILQ_PREV(bd, banhead_s, list);
+	}
+
+	Lck_Lock(&ban_mtx);
 	VTAILQ_FOREACH(b, &obans, l_list) {
 		ban_mark_completed(b);
 		if (b == bd)
