@@ -729,6 +729,9 @@ AC_SUBST(VSC_GEN_H)
 # Make sure this include dir exists
 AC_CONFIG_COMMANDS([mkdir], [$MKDIR_P doc/sphinx/include])
 
+# In order to reliably generate vcs_version.h
+AM_CONDITIONAL([REFRESH_VCS], [test -e ${srcdir}/.git])
+
 # Generate output
 AC_CONFIG_FILES([
     Makefile

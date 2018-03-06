@@ -123,15 +123,23 @@ GENERATED_H = vcl.h $(GEN_H)
 ## vcs_version.h / vmod_abi.h need to be up-to-date with every build
 ## except when building from a distribution
 
-vcs_version.h:
-	$(AM_V_GEN) if test -d $(top_srcdir)/.git ; then \
-	    @PYTHON@ $(srcdir)/generate.py \
-		$(top_srcdir) $(top_builddir) ; \
-	fi
+if REFRESH_VCS
+.git_head:
+	@git rev-parse HEAD >.git_head_new 2>/dev/null || :
+	@diff .git_head .git_head_new >/dev/null 2>&1 || \
+	       touch $(srcdir)/generate.py
+	@mv .git_head_new .git_head
+
+.PHONY: .git_head
+
+$(srcdir)/generate.py: .git_head
+endif
+
+vcs_version.h: generate.py
+	$(AM_V_GEN) $(PYTHON) $(srcdir)/generate.py \
+		$(top_srcdir) $(top_builddir)
 
 vmod_abi.h: vcs_version.h
-
-.PHONY: vcs_version.h
 
 ##
 
@@ -139,6 +147,8 @@ BUILT_SOURCES = \
 	$(GENERATED_H) \
 	vcs_version.h \
 	vmod_abi.h
+
+EXTRA_DIST = generate.py
 
 MAINTAINERCLEANFILES = $(GENERATED_H)
 
