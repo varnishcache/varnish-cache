@@ -395,7 +395,6 @@ mgt_launch_child(struct cli *cli)
 
 	mgt_cli_start_child(child_cli_in, child_cli_out);
 	child_pid = pid;
-	child_state = CH_RUNNING;
 
 	if (mgt_push_vcls(cli, &u, &p)) {
 		VCLI_SetResult(cli, u);
@@ -414,6 +413,8 @@ mgt_launch_child(struct cli *cli)
 		MCH_Stop_Child();
 		return;
 	}
+
+	child_state = CH_RUNNING;
 }
 
 /*=====================================================================
@@ -575,7 +576,7 @@ void
 MCH_Cli_Fail(void)
 {
 
-	if (child_state != CH_RUNNING)
+	if (child_state != CH_RUNNING && child_state != CH_STARTING)
 		return;
 	if (child_pid < 0)
 		return;
@@ -597,7 +598,7 @@ void
 MCH_Stop_Child(void)
 {
 
-	if (child_state != CH_RUNNING)
+	if (child_state != CH_RUNNING && child_state != CH_STARTING)
 		return;
 
 	child_state = CH_STOPPING;
