@@ -68,7 +68,7 @@ vrt_do_string(VRT_CTX, struct http *hp, int fld,
 }
 
 #define VRT_HDR_L(obj, hdr, fld)					\
-void									\
+VCL_VOID								\
 VRT_l_##obj##_##hdr(VRT_CTX, const char *p, ...)			\
 {									\
 	va_list ap;							\
@@ -80,7 +80,7 @@ VRT_l_##obj##_##hdr(VRT_CTX, const char *p, ...)			\
 }
 
 #define VRT_HDR_R(obj, hdr, fld)					\
-const char *								\
+VCL_STRING								\
 VRT_r_##obj##_##hdr(VRT_CTX)						\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
@@ -93,24 +93,27 @@ VRT_r_##obj##_##hdr(VRT_CTX)						\
 	VRT_HDR_R(obj, hdr, fld)
 
 #define VRT_STATUS_L(obj)						\
-void									\
-VRT_l_##obj##_status(VRT_CTX, long num)					\
+VCL_VOID								\
+VRT_l_##obj##_status(VRT_CTX, VCL_INT num)				\
 {									\
 									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->http_##obj, HTTP_MAGIC);			\
 	if (num < 0)							\
-		VRT_fail(ctx, "%s.status (%ld) is negative", #obj, num); \
+		VRT_fail(ctx, "%s.status (%jd) is negative",		\
+		    #obj, (intmax_t)num);				\
 	else if (num > 65535)						\
-		VRT_fail(ctx, "%s.status (%ld) > 65535", #obj, num);	\
+		VRT_fail(ctx, "%s.status (%jd) > 65535",		\
+		    #obj, (intmax_t)num);				\
 	else if ((num % 1000) < 100)					\
-		VRT_fail(ctx, "illegal %s.status (%ld) (..0##)", #obj, num); \
+		VRT_fail(ctx, "illegal %s.status (%jd) (..0##)",	\
+		    #obj, (intmax_t)num);				\
 	else								\
 		http_SetStatus(ctx->http_##obj, (uint16_t)num);		\
 }
 
 #define VRT_STATUS_R(obj)						\
-long									\
+VCL_INT									\
 VRT_r_##obj##_status(VRT_CTX)						\
 {									\
 									\
@@ -144,7 +147,7 @@ VRT_STATUS_R(beresp)
  * Pulling things out of the packed object->http
  */
 
-long
+VCL_INT
 VRT_r_obj_status(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -154,7 +157,7 @@ VRT_r_obj_status(VRT_CTX)
 	return (HTTP_GetStatusPack(ctx->req->wrk, ctx->req->objcore));
 }
 
-const char *
+VCL_STRING
 VRT_r_obj_proto(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -165,7 +168,7 @@ VRT_r_obj_proto(VRT_CTX)
 	    H__Proto));
 }
 
-const char *
+VCL_STRING
 VRT_r_obj_reason(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -183,7 +186,7 @@ VRT_r_obj_reason(VRT_CTX)
 #define VBERESPW0(field)
 #define VBERESPW1(field)						\
 void									\
-VRT_l_beresp_##field(VRT_CTX, unsigned a)				\
+VRT_l_beresp_##field(VRT_CTX, VCL_BOOL a)				\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);			\
@@ -192,7 +195,7 @@ VRT_l_beresp_##field(VRT_CTX, unsigned a)				\
 
 #define VBERESPR0(field)
 #define VBERESPR1(field)						\
-unsigned								\
+VCL_BOOL								\
 VRT_r_beresp_##field(VRT_CTX)						\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
@@ -207,7 +210,7 @@ VRT_r_beresp_##field(VRT_CTX)						\
 
 /*--------------------------------------------------------------------*/
 
-unsigned
+VCL_BOOL
 VRT_r_bereq_is_bgfetch(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -215,7 +218,7 @@ VRT_r_bereq_is_bgfetch(VRT_CTX)
 	return (ctx->bo->is_bgfetch);
 }
 
-unsigned
+VCL_BOOL
 VRT_r_bereq_uncacheable(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -223,8 +226,8 @@ VRT_r_bereq_uncacheable(VRT_CTX)
 	return (ctx->bo->do_pass);
 }
 
-void
-VRT_l_beresp_uncacheable(VRT_CTX, unsigned a)
+VCL_VOID
+VRT_l_beresp_uncacheable(VRT_CTX, VCL_BOOL a)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
@@ -237,7 +240,7 @@ VRT_l_beresp_uncacheable(VRT_CTX, unsigned a)
 	}
 }
 
-unsigned
+VCL_BOOL
 VRT_r_beresp_uncacheable(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -247,7 +250,7 @@ VRT_r_beresp_uncacheable(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
-const char *
+VCL_STRING
 VRT_r_client_identity(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -257,7 +260,7 @@ VRT_r_client_identity(VRT_CTX)
 	return (SES_Get_String_Attr(ctx->req->sp, SA_CLIENT_IP));
 }
 
-void
+VCL_VOID
 VRT_l_client_identity(VRT_CTX, const char *str, ...)
 {
 	va_list ap;
@@ -279,8 +282,8 @@ VRT_l_client_identity(VRT_CTX, const char *str, ...)
 /*--------------------------------------------------------------------*/
 
 #define BEREQ_TIMEOUT(which)					\
-void								\
-VRT_l_bereq_##which(VRT_CTX, double num)			\
+VCL_VOID							\
+VRT_l_bereq_##which(VRT_CTX, VCL_DURATION num)			\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
@@ -288,7 +291,7 @@ VRT_l_bereq_##which(VRT_CTX, double num)			\
 	ctx->bo->which = (num > 0.0 ? num : 0.0);		\
 }								\
 								\
-double								\
+VCL_DURATION							\
 VRT_r_bereq_##which(VRT_CTX)					\
 {								\
 								\
@@ -303,7 +306,7 @@ BEREQ_TIMEOUT(between_bytes_timeout)
 
 /*--------------------------------------------------------------------*/
 
-const char *
+VCL_STRING
 VRT_r_beresp_backend_name(VRT_CTX)
 {
 
@@ -339,7 +342,7 @@ VRT_r_req_storage(VRT_CTX)
 	return (ctx->req->storage);
 }
 
-void
+VCL_VOID
 VRT_l_req_storage(VRT_CTX, VCL_STEVEDORE stv)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -357,7 +360,7 @@ VRT_r_beresp_storage(VRT_CTX)
 	return (ctx->bo->storage);
 }
 
-void
+VCL_VOID
 VRT_l_beresp_storage(VRT_CTX, VCL_STEVEDORE stv)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -371,7 +374,7 @@ VRT_l_beresp_storage(VRT_CTX, VCL_STEVEDORE stv)
 
 #include "storage/storage.h"
 
-const char *
+VCL_STRING
 VRT_r_beresp_storage_hint(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -382,7 +385,7 @@ VRT_r_beresp_storage_hint(VRT_CTX)
 	return (ctx->bo->storage->vclname);
 }
 
-void
+VCL_VOID
 VRT_l_beresp_storage_hint(VRT_CTX, const char *str, ...)
 {
 	const char *p;
@@ -426,7 +429,7 @@ VRT_r_obj_storage(VRT_CTX)
 
 #define REQ_VAR_L(nm, elem, type,extra)					\
 									\
-void									\
+VCL_VOID								\
 VRT_l_req_##nm(VRT_CTX, type arg)					\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
@@ -445,15 +448,15 @@ VRT_r_req_##nm(VRT_CTX)							\
 	return (ctx->req->elem);					\
 }
 
-REQ_VAR_L(backend_hint, director_hint, const struct director *,)
-REQ_VAR_R(backend_hint, director_hint, const struct director *)
-REQ_VAR_L(ttl, d_ttl, double, if (!(arg>0.0)) arg = 0;)
-REQ_VAR_R(ttl, d_ttl, double)
+REQ_VAR_L(backend_hint, director_hint, VCL_BACKEND,)
+REQ_VAR_R(backend_hint, director_hint, VCL_BACKEND)
+REQ_VAR_L(ttl, d_ttl, VCL_DURATION, if (!(arg>0.0)) arg = 0;)
+REQ_VAR_R(ttl, d_ttl, VCL_DURATION)
 
 /*--------------------------------------------------------------------*/
 
-void
-VRT_l_bereq_backend(VRT_CTX, const struct director *be)
+VCL_VOID
+VRT_l_bereq_backend(VRT_CTX, VCL_BACKEND be)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -461,7 +464,7 @@ VRT_l_bereq_backend(VRT_CTX, const struct director *be)
 	ctx->bo->director_req = be;
 }
 
-const struct director *
+VCL_BACKEND
 VRT_r_bereq_backend(VRT_CTX)
 {
 
@@ -470,7 +473,7 @@ VRT_r_bereq_backend(VRT_CTX)
 	return (ctx->bo->director_req);
 }
 
-const struct director *
+VCL_BACKEND
 VRT_r_beresp_backend(VRT_CTX)
 {
 
@@ -481,7 +484,7 @@ VRT_r_beresp_backend(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
-void
+VCL_VOID
 VRT_u_bereq_body(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -495,8 +498,8 @@ VRT_u_bereq_body(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
-void
-VRT_l_req_esi(VRT_CTX, unsigned process_esi)
+VCL_VOID
+VRT_l_req_esi(VRT_CTX, VCL_BOOL process_esi)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -510,7 +513,7 @@ VRT_l_req_esi(VRT_CTX, unsigned process_esi)
 		ctx->req->disable_esi = !process_esi;
 }
 
-unsigned
+VCL_BOOL
 VRT_r_req_esi(VRT_CTX)
 {
 
@@ -520,7 +523,7 @@ VRT_r_req_esi(VRT_CTX)
 	return (!ctx->req->disable_esi);
 }
 
-long
+VCL_INT
 VRT_r_req_esi_level(VRT_CTX)
 {
 
@@ -531,7 +534,7 @@ VRT_r_req_esi_level(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
-unsigned
+VCL_BOOL
 VRT_r_req_can_gzip(VRT_CTX)
 {
 
@@ -542,7 +545,7 @@ VRT_r_req_can_gzip(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
-long
+VCL_INT
 VRT_r_req_restarts(VRT_CTX)
 {
 
@@ -551,7 +554,7 @@ VRT_r_req_restarts(VRT_CTX)
 	return (ctx->req->restarts);
 }
 
-long
+VCL_INT
 VRT_r_bereq_retries(VRT_CTX)
 {
 
@@ -572,7 +575,8 @@ VRT_r_bereq_retries(VRT_CTX)
  *	grace&keep are relative to ttl
  */
 
-static double ttl_now(VRT_CTX)
+static double
+ttl_now(VRT_CTX)
 {
 	if (ctx->bo) {
 		return (ctx->now);
@@ -585,8 +589,8 @@ static double ttl_now(VRT_CTX)
 
 #define VRT_DO_EXP_L(which, oc, fld, offset)			\
 								\
-void								\
-VRT_l_##which##_##fld(VRT_CTX, double a)			\
+VCL_VOID							\
+VRT_l_##which##_##fld(VRT_CTX, VCL_DURATION a)			\
 {								\
 								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
@@ -600,7 +604,7 @@ VRT_l_##which##_##fld(VRT_CTX, double a)			\
 
 #define VRT_DO_EXP_R(which, oc, fld, offset)			\
 								\
-double								\
+VCL_DURATION							\
 VRT_r_##which##_##fld(VRT_CTX)					\
 {								\
 	double d;						\
@@ -632,7 +636,7 @@ VRT_DO_EXP_R(beresp, ctx->bo->fetch_objcore, keep, 0)
 
 #define VRT_DO_AGE_R(which, oc)					\
 								\
-double								\
+VCL_DURATION							\
 VRT_r_##which##_##age(VRT_CTX)					\
 {								\
 								\
@@ -647,7 +651,7 @@ VRT_DO_AGE_R(beresp, ctx->bo->fetch_objcore)
  * [be]req.xid
  */
 
-const char *
+VCL_STRING
 VRT_r_req_xid(VRT_CTX)
 {
 
@@ -658,7 +662,7 @@ VRT_r_req_xid(VRT_CTX)
 	    VXID(ctx->req->vsl->wid)));
 }
 
-const char *
+VCL_STRING
 VRT_r_bereq_xid(VRT_CTX)
 {
 
@@ -675,8 +679,8 @@ VRT_r_bereq_xid(VRT_CTX)
 
 #define VREQW0(field)
 #define VREQW1(field)							\
-void									\
-VRT_l_req_##field(VRT_CTX, unsigned a)					\
+VCL_VOID								\
+VRT_l_req_##field(VRT_CTX, VCL_BOOL a)					\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);				\
@@ -685,7 +689,7 @@ VRT_l_req_##field(VRT_CTX, unsigned a)					\
 
 #define VREQR0(field)
 #define VREQR1(field)							\
-unsigned								\
+VCL_BOOL								\
 VRT_r_req_##field(VRT_CTX)						\
 {									\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);				\
@@ -720,7 +724,7 @@ GIP(server)
 
 /*--------------------------------------------------------------------*/
 
-const char*
+VCL_STRING
 VRT_r_server_identity(VRT_CTX)
 {
 
@@ -731,7 +735,7 @@ VRT_r_server_identity(VRT_CTX)
 		return ("varnishd");
 }
 
-const char*
+VCL_STRING
 VRT_r_server_hostname(VRT_CTX)
 {
 
@@ -743,7 +747,7 @@ VRT_r_server_hostname(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
-long
+VCL_INT
 VRT_r_obj_hits(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -752,7 +756,7 @@ VRT_r_obj_hits(VRT_CTX)
 	return (ctx->req->is_hit ? ctx->req->objcore->hits : 0);
 }
 
-unsigned
+VCL_BOOL
 VRT_r_obj_uncacheable(VRT_CTX)
 {
 
@@ -764,7 +768,7 @@ VRT_r_obj_uncacheable(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
-unsigned
+VCL_BOOL
 VRT_r_resp_is_streaming(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -777,8 +781,8 @@ VRT_r_resp_is_streaming(VRT_CTX)
 
 /*--------------------------------------------------------------------*/
 
-void
-VRT_l_resp_do_esi(VRT_CTX, unsigned process_esi)
+VCL_VOID
+VRT_l_resp_do_esi(VRT_CTX, VCL_BOOL process_esi)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -791,7 +795,7 @@ VRT_l_resp_do_esi(VRT_CTX, unsigned process_esi)
 	ctx->req->disable_esi = !process_esi;
 }
 
-unsigned
+VCL_BOOL
 VRT_r_resp_do_esi(VRT_CTX)
 {
 
@@ -804,7 +808,7 @@ VRT_r_resp_do_esi(VRT_CTX)
 /*--------------------------------------------------------------------*/
 
 #define VRT_BODY_L(which)					\
-void								\
+VCL_VOID							\
 VRT_l_##which##_body(VRT_CTX, const char *str, ...)		\
 {								\
 	va_list ap;						\
@@ -847,7 +851,7 @@ VRT_r_bereq_hash(VRT_CTX)
 /*--------------------------------------------------------------------*/
 
 #define HTTP_VAR(x)						\
-struct http *							\
+VCL_HTTP							\
 VRT_r_##x(VRT_CTX)						\
 {								\
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
