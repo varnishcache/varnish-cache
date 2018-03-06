@@ -278,9 +278,9 @@ shardcfg_hashcircle(struct sharddir *shardd, VCL_INT replicas)
 	for (i = 0; i < shardd->n_backend; i++)
 		for (j = 0; j < replicas; j++)
 			SHDBG(SHDBG_CIRCLE, shardd,
-			    "hashcircle[%5ld] = "
+			    "hashcircle[%5jd] = "
 			    "{point = %8x, host = %2u}\n",
-			    i * replicas + j,
+			    (intmax_t)(i * replicas + j),
 			    shardd->hashcircle[i * replicas + j].point,
 			    shardd->hashcircle[i * replicas + j].host);
 }

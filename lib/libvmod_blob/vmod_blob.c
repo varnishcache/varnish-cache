@@ -581,8 +581,9 @@ vmod_sub(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 	}
 	assert(b->len >= 0);
 	if (off + n > b->len) {
-		VERR(ctx, "size %lld from offset %lld requires more bytes than "
-		     "blob length %d in blob.sub()", n, off, b->len);
+		VERR(ctx, "size %jd from offset %jd requires more bytes than "
+		     "blob length %d in blob.sub()",
+		     (intmax_t)n, (intmax_t)off, b->len);
 		return NULL;
 	}
 
@@ -595,7 +596,7 @@ vmod_sub(VRT_CTX, VCL_BLOB b, VCL_BYTES n, VCL_BYTES off)
 		return NULL;
 	}
 	if ((sub->priv = WS_Alloc(ctx->ws, n)) == NULL) {
-		VERRNOMEM(ctx, "Allocating %lld bytes in blob.sub()", n);
+		VERRNOMEM(ctx, "Allocating %jd bytes in blob.sub()", (intmax_t)n);
 		WS_Reset(ctx->ws, snap);
 		return NULL;
 	}

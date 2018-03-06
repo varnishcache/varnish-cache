@@ -506,8 +506,9 @@ shard_param_args(VRT_CTX,
 			}
 			if (key_int < 0 || key_int > UINT32_MAX) {
 				VRT_fail(ctx, "%s %s: "
-					 "invalid key argument %ld with by=%s",
-					 who, p->vcl_name, key_int, by_s);
+					 "invalid key argument %jd with by=%s",
+					 who, p->vcl_name,
+					 (intmax_t)key_int, by_s);
 				return (NULL);
 			}
 			assert(key_int >= 0);
@@ -561,8 +562,8 @@ shard_param_args(VRT_CTX,
 	if (args & arg_alt) {
 		if (alt < 0) {
 			VRT_fail(ctx, "%s %s: "
-				 "invalid alt argument %ld",
-				 who, p->vcl_name, alt);
+				 "invalid alt argument %jd",
+				 who, p->vcl_name, (intmax_t)alt);
 			return (NULL);
 		}
 		p->alt = alt;

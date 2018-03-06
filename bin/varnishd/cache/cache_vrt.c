@@ -462,11 +462,11 @@ VRT_IP_string(VRT_CTX, VCL_IP ip)
 }
 
 VCL_STRING v_matchproto_()
-VRT_INT_string(VRT_CTX, long num)
+VRT_INT_string(VRT_CTX, VCL_INT num)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	return (WS_Printf(ctx->ws, "%ld", num));
+	return (WS_Printf(ctx->ws, "%jd", (intmax_t)num));
 }
 
 VCL_STRING v_matchproto_()
@@ -499,7 +499,7 @@ VRT_BACKEND_string(VCL_BACKEND d)
 }
 
 VCL_STRING v_matchproto_()
-VRT_BOOL_string(unsigned val)
+VRT_BOOL_string(VCL_BOOL val)
 {
 
 	return (val ? "true" : "false");
