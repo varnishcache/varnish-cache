@@ -364,8 +364,8 @@ struct gethdr_s {
 	const char	*what;
 };
 
-struct http *VRT_selecthttp(VRT_CTX, enum gethdr_e);
-const char *VRT_GetHdr(VRT_CTX, const struct gethdr_s *);
+VCL_HTTP VRT_selecthttp(VRT_CTX, enum gethdr_e);
+VCL_STRING VRT_GetHdr(VRT_CTX, const struct gethdr_s *);
 
 /***********************************************************************
  * req related
@@ -376,28 +376,26 @@ VCL_BYTES VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize);
 /* Regexp related */
 
 const char *VRT_regsub(VRT_CTX, int all, const char *, void *, const char *);
-void VRT_ban_string(VRT_CTX, const char *);
-unsigned VRT_purge(VRT_CTX, double ttl, double grace, double keep);
+VCL_VOID VRT_ban_string(VRT_CTX, VCL_STRING);
+VCL_INT VRT_purge(VRT_CTX, VCL_DURATION, VCL_DURATION, VCL_DURATION);
+VCL_VOID VRT_synth(VRT_CTX, VCL_INT, VCL_STRING);
+VCL_VOID VRT_hit_for_pass(VRT_CTX, VCL_DURATION);
 
-void VRT_synth(VRT_CTX, unsigned, const char *);
-void VRT_hit_for_pass(VRT_CTX, VCL_DURATION);
-
-void VRT_SetHdr(VRT_CTX, const struct gethdr_s *, const char *, ...);
-void VRT_handling(VRT_CTX, unsigned hand);
-void VRT_fail(VRT_CTX, const char *fmt, ...) v_printflike_(2,3);
-
-void VRT_hashdata(VRT_CTX, const char *str, ...);
+VCL_VOID VRT_SetHdr(VRT_CTX, const struct gethdr_s *, const char *, ...);
+VCL_VOID VRT_handling(VRT_CTX, unsigned hand);
+VCL_VOID VRT_fail(VRT_CTX, const char *fmt, ...) v_printflike_(2,3);
+VCL_VOID VRT_hashdata(VRT_CTX, const char *str, ...);
 
 /* Simple stuff */
 int VRT_strcmp(const char *s1, const char *s2);
 void VRT_memmove(void *dst, const void *src, unsigned len);
-int VRT_ipcmp(const struct suckaddr *sua1, const struct suckaddr *sua2);
-struct vmod_priv *VRT_blob(VRT_CTX, const char *, const uint8_t *, size_t);
+VCL_BOOL VRT_ipcmp(VCL_IP, VCL_IP);
+VCL_BLOB VRT_blob(VRT_CTX, const char *, const void *, size_t);
 
-void VRT_Rollback(VRT_CTX, const struct http *);
+VCL_VOID VRT_Rollback(VRT_CTX, VCL_HTTP);
 
 /* Synthetic pages */
-void VRT_synth_page(VRT_CTX, const char *, ...);
+VCL_VOID VRT_synth_page(VRT_CTX, const char *, ...);
 
 /* Backend related */
 struct director *VRT_new_backend(VRT_CTX, const struct vrt_backend *);

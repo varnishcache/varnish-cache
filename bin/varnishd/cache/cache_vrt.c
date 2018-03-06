@@ -50,13 +50,13 @@ const void * const vrt_magic_string_unset = &vrt_magic_string_unset;
 
 /*--------------------------------------------------------------------*/
 
-void
-VRT_synth(VRT_CTX, unsigned code, const char *reason)
+VCL_VOID
+VRT_synth(VRT_CTX, VCL_INT code, VCL_STRING reason)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->req, REQ_MAGIC);
-	if (code < 100)
+	if (code < 100 || code > 65535)
 		code = 503;
 	ctx->req->err_code = (uint16_t)code;
 	ctx->req->err_reason = reason ? reason
@@ -87,7 +87,9 @@ VRT_acl_match(VRT_CTX, VCL_ACL acl, VCL_IP ip)
 	return (acl->match(ctx, ip));
 }
 
-void
+/*--------------------------------------------------------------------*/
+
+VCL_VOID
 VRT_hit_for_pass(VRT_CTX, VCL_DURATION d)
 {
 	struct objcore *oc;
@@ -109,7 +111,7 @@ VRT_hit_for_pass(VRT_CTX, VCL_DURATION d)
 
 /*--------------------------------------------------------------------*/
 
-struct http *
+VCL_HTTP
 VRT_selecthttp(VRT_CTX, enum gethdr_e where)
 {
 	struct http *hp;
@@ -139,7 +141,7 @@ VRT_selecthttp(VRT_CTX, enum gethdr_e where)
 
 /*--------------------------------------------------------------------*/
 
-const char *
+VCL_STRING
 VRT_GetHdr(VRT_CTX, const struct gethdr_s *hs)
 {
 	const char *p;
@@ -322,7 +324,7 @@ VRT_String(struct ws *ws, const char *h, const char *p, va_list ap)
  * Copy and merge a STRING_LIST on the current workspace
  */
 
-const char *
+VCL_STRING
 VRT_CollectString(VRT_CTX, const char *p, ...)
 {
 	va_list ap;
@@ -340,7 +342,7 @@ VRT_CollectString(VRT_CTX, const char *p, ...)
 
 /*--------------------------------------------------------------------*/
 
-void
+VCL_VOID
 VRT_SetHdr(VRT_CTX , const struct gethdr_s *hs,
     const char *p, ...)
 {
@@ -370,7 +372,7 @@ VRT_SetHdr(VRT_CTX , const struct gethdr_s *hs,
 
 /*--------------------------------------------------------------------*/
 
-void
+VCL_VOID
 VRT_handling(VRT_CTX, unsigned hand)
 {
 
@@ -383,7 +385,7 @@ VRT_handling(VRT_CTX, unsigned hand)
 
 /*--------------------------------------------------------------------*/
 
-void
+VCL_VOID
 VRT_fail(VRT_CTX, const char *fmt, ...)
 {
 	va_list ap;
@@ -405,7 +407,7 @@ VRT_fail(VRT_CTX, const char *fmt, ...)
  * Feed data into the hash calculation
  */
 
-void
+VCL_VOID
 VRT_hashdata(VRT_CTX, const char *str, ...)
 {
 	va_list ap;
@@ -432,7 +434,7 @@ VRT_hashdata(VRT_CTX, const char *str, ...)
 
 /*--------------------------------------------------------------------*/
 
-double
+VCL_TIME
 VRT_r_now(VRT_CTX)
 {
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -470,7 +472,7 @@ VRT_INT_string(VRT_CTX, VCL_INT num)
 }
 
 VCL_STRING v_matchproto_()
-VRT_REAL_string(VRT_CTX, double num)
+VRT_REAL_string(VRT_CTX, VCL_REAL num)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -478,7 +480,7 @@ VRT_REAL_string(VRT_CTX, double num)
 }
 
 VCL_STRING v_matchproto_()
-VRT_TIME_string(VRT_CTX, double t)
+VRT_TIME_string(VRT_CTX, VCL_TIME t)
 {
 	char *p;
 
@@ -507,8 +509,8 @@ VRT_BOOL_string(VCL_BOOL val)
 
 /*--------------------------------------------------------------------*/
 
-void
-VRT_Rollback(VRT_CTX, const struct http *hp)
+VCL_VOID
+VRT_Rollback(VRT_CTX, VCL_HTTP hp)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -528,7 +530,7 @@ VRT_Rollback(VRT_CTX, const struct http *hp)
 
 /*--------------------------------------------------------------------*/
 
-void
+VCL_VOID
 VRT_synth_page(VRT_CTX, const char *str, ...)
 {
 	va_list ap;
@@ -553,8 +555,8 @@ VRT_synth_page(VRT_CTX, const char *str, ...)
 
 /*--------------------------------------------------------------------*/
 
-void
-VRT_ban_string(VRT_CTX, const char *str)
+VCL_VOID
+VRT_ban_string(VRT_CTX, VCL_STRING str)
 {
 	char *a1, *a2, *a3;
 	char **av;
@@ -645,8 +647,8 @@ VRT_CacheReqBody(VRT_CTX, VCL_BYTES maxsize)
  * purges
  */
 
-unsigned
-VRT_purge(VRT_CTX, double ttl, double grace, double keep)
+VCL_INT
+VRT_purge(VRT_CTX, VCL_DURATION ttl, VCL_DURATION grace, VCL_DURATION keep)
 {
 
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
@@ -711,16 +713,16 @@ VRT_memmove(void *dst, const void *src, unsigned len)
 	(void)memmove(dst, src, len);
 }
 
-int
-VRT_ipcmp(const struct suckaddr *sua1, const struct suckaddr *sua2)
+VCL_BOOL
+VRT_ipcmp(VCL_IP sua1, VCL_IP sua2)
 {
 	if (sua1 == NULL || sua2 == NULL)
 		return(1);
 	return (VSA_Compare_IP(sua1, sua2));
 }
 
-struct vmod_priv *
-VRT_blob(VRT_CTX, const char *err, const uint8_t *src, size_t len)
+VCL_BLOB
+VRT_blob(VRT_CTX, const char *err, const void *src, size_t len)
 {
 	struct vmod_priv *p;
 	void *d;
