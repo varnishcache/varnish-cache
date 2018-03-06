@@ -1,6 +1,5 @@
 .. _vcl-built-in-subs:
 
-====================
 Built in subroutines
 ====================
 
@@ -19,7 +18,7 @@ similar across subroutines, so differences are only documented where
 relevant.
 
 common return keywords
-~~~~~~~~~~~~~~~~~~~~~~
+----------------------
 
 .. _fail:
 
@@ -63,7 +62,6 @@ common return keywords
     preserved except for ``req.restarts`` and ``req.xid``, which need
     to change by design.
 
------------
 client side
 -----------
 
@@ -322,7 +320,6 @@ following keywords:
     Directly deliver the object defined by `vcl_synth` to the client
     without calling `vcl_deliver`.
 
-------------
 Backend Side
 ------------
 
@@ -384,6 +381,36 @@ vcl_backend_response
 Called after the response headers have been successfully retrieved from
 the backend.
 
+The `vcl_backend_response` subroutine may terminate with calling
+``return()`` with one of the following keywords:
+
+  ``fail``
+    see  `fail`_
+
+  ``deliver``
+    For a 304 response, create an updated cache object.
+    Otherwise, fetch the object body from the backend and initiate
+    delivery to any waiting client requests, possibly in parallel
+    (streaming).
+
+  ``retry``
+    Retry the backend transaction. Increases the `retries` counter.
+    If the number of retries is higher than *max_retries*,
+    control will be passed to :ref:`vcl_backend_error`.
+
+  ``abandon``
+    Abandon the backend request. Unless the backend request was a
+    background fetch, control is passed to :ref:`vcl_synth` on the
+    client side with ``resp.status`` preset to 503.
+
+  ``pass(duration)``
+    Mark the object as a hit-for-pass for the given duration. Subsequent
+    lookups hitting this object will be turned into passed transactions,
+    as if ``vcl_recv`` had returned ``pass``.
+
+304 handling
+~~~~~~~~~~~~
+
 For a 304 response, varnish core code amends ``beresp`` before calling
 `vcl_backend_response`:
 
@@ -402,6 +429,9 @@ happened.
 Note: Backend conditional requests are independent of client
 conditional requests, so clients may receive 304 responses no matter
 if a backend request was conditional.
+
+beresp.ttl / beresp.grace / beresp.keep
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Before calling `vcl_backend_response`, core code sets ``beresp.ttl``
 based on the response status and the response headers ``Age``,
@@ -448,34 +478,6 @@ set to that value if non-negative or 0 otherwise.
 
 ``beresp.keep`` defaults to the `default_keep` parameter.
 
-
-The `vcl_backend_response` subroutine may terminate with calling
-``return()`` with one of the following keywords:
-
-  ``fail``
-    see  `fail`_
-
-  ``deliver``
-    For a 304 response, create an updated cache object.
-    Otherwise, fetch the object body from the backend and initiate
-    delivery to any waiting client requests, possibly in parallel
-    (streaming).
-
-  ``retry``
-    Retry the backend transaction. Increases the `retries` counter.
-    If the number of retries is higher than *max_retries*,
-    control will be passed to :ref:`vcl_backend_error`.
-
-  ``abandon``
-    Abandon the backend request. Unless the backend request was a
-    background fetch, control is passed to :ref:`vcl_synth` on the
-    client side with ``resp.status`` preset to 503.
-
-  ``pass(duration)``
-    Mark the object as a hit-for-pass for the given duration. Subsequent
-    lookups hitting this object will be turned into passed transactions,
-    as if ``vcl_recv`` had returned ``pass``.
-
 .. _vcl_backend_error:
 
 vcl_backend_error
@@ -504,7 +506,6 @@ with one of the following keywords:
     :ref:`vcl_synth` on the client side is called with ``resp.status``
     preset to 503.
 
-----------------------
 vcl.load / vcl.discard
 ----------------------
 
