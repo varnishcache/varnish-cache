@@ -229,8 +229,11 @@ VRT_r_bereq_uncacheable(VRT_CTX)
 VCL_VOID
 VRT_l_beresp_uncacheable(VRT_CTX, VCL_BOOL a)
 {
+	struct objcore *oc;
+
 	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
 	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	CHECK_OBJ_NOTNULL(ctx->bo->fetch_objcore, OBJCORE_MAGIC);
 
 	if (ctx->bo->uncacheable && !a) {
 		VSLb(ctx->vsl, SLT_VCL_Error,
@@ -238,6 +241,11 @@ VRT_l_beresp_uncacheable(VRT_CTX, VCL_BOOL a)
 	} else if (a) {
 		ctx->bo->uncacheable = 1;
 	}
+	oc = ctx->bo->fetch_objcore;
+
+	VSLb(ctx->vsl, SLT_TTL, "VCL %.0f %.0f %.0f %.0f %s",	\
+	    oc->ttl, oc->grace, oc->keep, oc->t_origin,		\
+	    ctx->bo->uncacheable ? "uncacheable" : "cacheable");\
 }
 
 VCL_BOOL
@@ -598,8 +606,9 @@ VRT_l_##which##_##fld(VRT_CTX, VCL_DURATION a)			\
 	if (a < 0.0)						\
 		a = 0.0;					\
 	oc->fld = a;						\
-	VSLb(ctx->vsl, SLT_TTL, "VCL %.0f %.0f %.0f %.0f",	\
-	    oc->ttl, oc->grace, oc->keep, oc->t_origin);	\
+	VSLb(ctx->vsl, SLT_TTL, "VCL %.0f %.0f %.0f %.0f %s",	\
+	    oc->ttl, oc->grace, oc->keep, oc->t_origin,		\
+	    ctx->bo->uncacheable ? "uncacheable" : "cacheable");\
 }
 
 #define VRT_DO_EXP_R(which, oc, fld, offset)			\

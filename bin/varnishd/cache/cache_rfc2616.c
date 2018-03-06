@@ -198,9 +198,10 @@ RFC2616_Ttl(struct busyobj *bo, double now, double *t_origin,
 	}
 
 	VSLb(bo->vsl, SLT_TTL,
-	    "RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u",
+	    "RFC %.0f %.0f %.0f %.0f %.0f %.0f %.0f %u %s",
 	    *ttl, *grace, *keep, now,
-	    *t_origin, h_date, h_expires, max_age);
+	    *t_origin, h_date, h_expires, max_age,
+	    bo->uncacheable ? "uncacheable" : "cacheable");
 }
 
 /*--------------------------------------------------------------------
