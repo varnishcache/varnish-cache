@@ -28,6 +28,12 @@ varnish v1 -vcl+backend {
 		key_blob=blob.decode(HEX, encoded="ffffffff00"));
 	}
 
+	sub vcl_hash {
+		hash_data(req.url);
+		hash_data("127.0.0.1");
+		return (lookup);
+	}
+
 	sub vcl_synth {
 	    if (req.url == "/def") {
 		set resp.http.sha256	= shard.key(req.url);
