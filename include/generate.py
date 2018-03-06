@@ -50,21 +50,17 @@ def file_header(fo):
 	fo.write("""/*
  * NB:  This file is machine generated, DO NOT EDIT!
  *
- * Edit and run lib/libvcc/generate.py instead.
+ * Edit and run include/generate.py instead.
  */
 
 """)
 
 #######################################################################
 
-if os.path.isdir(os.path.join(srcroot, ".git")):
-	v = subprocess.check_output([
-		"git --git-dir=" + os.path.join(srcroot, ".git") +
-		" show -s --pretty=format:%H"
-	], shell=True, universal_newlines=True)
-	v = v.strip()
-else:
-	v = "NOGIT"
+
+v = subprocess.check_output([
+    "git rev-parse HEAD 2>/dev/null || echo NOGIT"
+    ], shell=True, universal_newlines=True).strip()
 
 vcsfn = os.path.join(srcroot, "include", "vcs_version.h")
 
