@@ -47,9 +47,9 @@
  */
 
 #define arg_by		((uint32_t)1)
-#define arg_key	((uint32_t)1 << 1)
+#define arg_key		((uint32_t)1 << 1)
 #define arg_key_blob	((uint32_t)1 << 2)
-#define arg_alt	((uint32_t)1 << 3)
+#define arg_alt		((uint32_t)1 << 3)
 #define arg_warmup	((uint32_t)1 << 4)
 #define arg_rampup	((uint32_t)1 << 5)
 #define arg_healthy	((uint32_t)1 << 6)
