@@ -144,6 +144,15 @@ Logging / statistics
   bytes was attributed to the body, including any protocol overhead (ie
   chunked encoding).
 
+bundled tools
+-------------
+
+* ``varnishncsa`` refuses output formats (as defined with the ``-F``
+  command line argument) for tags which could contain control or
+  binary characters. At the time of writing, these are:
+  ``%{H2RxHdr}x``, ``%{H2RxBody}x``, ``%{H2TxHdr}x``, ``%{H2TxBody}x``,
+  ``%{Debug}x``, ``%{HttpGarbage}x`` and ``%{Hash}x``
+
 C APIs (for vmod and utility authors)
 -------------------------------------
 
