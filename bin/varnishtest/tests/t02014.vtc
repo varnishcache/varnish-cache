@@ -4,7 +4,7 @@ barrier b1 sock 3
 
 server s1 {
 	rxreq
-	txresp -bodylen 1000
+	txresp -bodylen 66300
 } -start
 
 varnish v1 -vcl+backend {
@@ -20,8 +20,6 @@ varnish v1 -cliok "param.set feature +http2"
 
 client c1 {
 	stream 0 {
-		txsettings -winsize 256
-		rxsettings
 		barrier b1 sync
 		delay .5
 		txwinup -size 256
@@ -42,7 +40,7 @@ client c1 {
 		txwinup -size 256
 		rxresp
 		expect resp.status == 200
-		expect resp.bodylen == 1000
+		expect resp.bodylen == 66300
 	} -run
 
 	stream 0 -wait
