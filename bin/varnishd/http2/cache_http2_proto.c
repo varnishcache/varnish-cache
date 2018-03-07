@@ -404,6 +404,32 @@ static const struct h2_setting_s * const h2_setting_tbl[] = {
 
 #define H2_SETTING_TBL_LEN (sizeof(h2_setting_tbl)/sizeof(h2_setting_tbl[0]))
 
+static void
+h2_win_adjust(struct h2_sess *h2, uint32_t oldval, uint32_t newval)
+{
+	struct h2_req *r2;
+
+	Lck_AssertHeld(&h2->sess->mtx);
+	// rfc7540,l,2668,2674
+	VTAILQ_FOREACH(r2, &h2->streams, list) {
+		CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
+		if (r2 == h2->req0)
+			continue; // rfc7540,l,2699,2699
+		switch (r2->state) {
+		case H2_S_IDLE:
+		case H2_S_OPEN:
+		case H2_S_CLOS_REM:
+			/*
+			 * We allow a window to go negative, as per
+			 * rfc7540,l,2676,2680
+			 */
+			r2->t_window += (int64_t)newval - oldval;
+		default:
+			break;
+		}
+	}
+}
+
 h2_error
 h2_set_setting(struct h2_sess *h2, const uint8_t *d)
 {
@@ -433,6 +459,8 @@ h2_set_setting(struct h2_sess *h2, const uint8_t *d)
 			return (s->range_error);
 	}
 	Lck_Lock(&h2->sess->mtx);
+	if (s == H2_SET_INITIAL_WINDOW_SIZE)
+		h2_win_adjust(h2, h2->remote_settings.initial_window_size, y);
 	VSLb(h2->vsl, SLT_Debug, "H2SETTING %s=0x%08x", s->name, y);
 	Lck_Unlock(&h2->sess->mtx);
 	AN(s->setfunc);
