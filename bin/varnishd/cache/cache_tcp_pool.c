@@ -44,29 +44,81 @@
 #include "cache_tcp_pool.h"
 #include "cache_pool.h"
 
+typedef int cp_open_f(const struct tcp_pool *, double tmo, const void **privp);
+typedef void cp_close_f(struct pfd *);
+
+struct cp_methods {
+	cp_open_f				*open;
+	cp_close_f				*close;
+};
+
 struct tcp_pool {
-	unsigned		magic;
-#define TCP_POOL_MAGIC		0x28b0e42a
+	unsigned				magic;
+#define TCP_POOL_MAGIC				0x28b0e42a
 
-	const void		*id;
-	struct suckaddr		*ip4;
-	struct suckaddr		*ip6;
+	const struct cp_methods			*methods;
 
-	VTAILQ_ENTRY(tcp_pool)	list;
-	int			refcnt;
-	struct lock		mtx;
+	const void				*id;
+	struct suckaddr				*ip4;
+	struct suckaddr				*ip6;
 
-	VTAILQ_HEAD(, pfd)	connlist;
-	int			n_conn;
+	VTAILQ_ENTRY(tcp_pool)			list;
+	int					refcnt;
+	struct lock				mtx;
 
-	VTAILQ_HEAD(, pfd)	killlist;
-	int			n_kill;
+	VTAILQ_HEAD(, pfd)			connlist;
+	int					n_conn;
 
-	int			n_used;
+	VTAILQ_HEAD(, pfd)			killlist;
+	int					n_kill;
+
+	int					n_used;
 };
 
 static struct lock		tcp_pools_mtx;
 static VTAILQ_HEAD(, tcp_pool)	tcp_pools = VTAILQ_HEAD_INITIALIZER(tcp_pools);
+
+/*--------------------------------------------------------------------
+ */
+
+static int v_matchproto_(cp_open_f)
+vtp_open(const struct tcp_pool *tp, double tmo, const void **privp)
+{
+	int s;
+	int msec;
+
+	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
+
+	msec = (int)floor(tmo * 1000.0);
+	if (cache_param->prefer_ipv6) {
+		*privp = tp->ip6;
+		s = VTCP_connect(tp->ip6, msec);
+		if (s >= 0)
+			return (s);
+	}
+	*privp = tp->ip4;
+	s = VTCP_connect(tp->ip4, msec);
+	if (s >= 0)
+		return (s);
+	if (!cache_param->prefer_ipv6) {
+		*privp = tp->ip6;
+		s = VTCP_connect(tp->ip6, msec);
+	}
+	return (s);
+}
+
+static void v_matchproto_(cp_close_f)
+vtp_close(struct pfd *pfd)
+{
+
+	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
+	VTCP_close(&pfd->fd);
+}
+
+static const struct cp_methods vtp_methods = {
+	.open = vtp_open,
+	.close = vtp_close,
+};
 
 /*--------------------------------------------------------------------
  * Waiter-handler
@@ -94,13 +146,13 @@ tcp_handle(struct waited *w, enum wait_event ev, double now)
 		AZ(pthread_cond_signal(pfd->cond));
 		break;
 	case PFD_STATE_AVAIL:
-		VTCP_close(&pfd->fd);
+		tp->methods->close(pfd);
 		VTAILQ_REMOVE(&tp->connlist, pfd, list);
 		tp->n_conn--;
 		FREE_OBJ(pfd);
 		break;
 	case PFD_STATE_CLEANUP:
-		VTCP_close(&pfd->fd);
+		tp->methods->close(pfd);
 		tp->n_kill--;
 		VTAILQ_REMOVE(&tp->killlist, pfd, list);
 		memset(pfd, 0x11, sizeof *pfd);
@@ -154,6 +206,7 @@ VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const void *id)
 
 	ALLOC_OBJ(tp, TCP_POOL_MAGIC);
 	AN(tp);
+	tp->methods = &vtp_methods;
 	if (ip4 != NULL)
 		tp->ip4 = VSA_Clone(ip4);
 	if (ip6 != NULL)
@@ -241,27 +294,8 @@ VTP_Rel(struct tcp_pool **tpp)
 int
 VTP_Open(const struct tcp_pool *tp, double tmo, const void **privp)
 {
-	int s;
-	int msec;
 
-	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
-
-	msec = (int)floor(tmo * 1000.0);
-	if (cache_param->prefer_ipv6) {
-		*privp = tp->ip6;
-		s = VTCP_connect(tp->ip6, msec);
-		if (s >= 0)
-			return (s);
-	}
-	*privp = tp->ip4;
-	s = VTCP_connect(tp->ip4, msec);
-	if (s >= 0)
-		return (s);
-	if (!cache_param->prefer_ipv6) {
-		*privp = tp->ip6;
-		s = VTCP_connect(tp->ip6, msec);
-	}
-	return (s);
+	return (vtp_open(tp, tmo, privp));
 }
 
 /*--------------------------------------------------------------------
@@ -295,7 +329,7 @@ VTP_Recycle(const struct worker *wrk, struct pfd **pfdp)
 	pfd->waited->func = tcp_handle;
 	pfd->waited->tmo = &cache_param->backend_idle_timeout;
 	if (Wait_Enter(wrk->pool->waiter, pfd->waited)) {
-		VTCP_close(&pfd->fd);
+		tp->methods->close(pfd);
 		memset(pfd, 0x33, sizeof *pfd);
 		free(pfd);
 		// XXX: stats
@@ -356,7 +390,7 @@ VTP_Close(struct pfd **pfdp)
 		tp->n_kill++;
 	} else {
 		assert(pfd->state == PFD_STATE_USED);
-		VTCP_close(&pfd->fd);
+		tp->methods->close(pfd);
 		memset(pfd, 0x44, sizeof *pfd);
 		free(pfd);
 	}
@@ -402,7 +436,7 @@ VTP_Get(struct tcp_pool *tp, double tmo, struct worker *wrk,
 	INIT_OBJ(pfd->waited, WAITED_MAGIC);
 	pfd->state = PFD_STATE_USED;
 	pfd->tcp_pool = tp;
-	pfd->fd = VTP_Open(tp, tmo, &pfd->priv);
+	pfd->fd = tp->methods->open(tp, tmo, &pfd->priv);
 	if (pfd->fd < 0) {
 		FREE_OBJ(pfd);
 		Lck_Lock(&tp->mtx);
