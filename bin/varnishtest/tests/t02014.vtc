@@ -1,0 +1,49 @@
+varnishtest "Exercise h/2 sender flow control code"
+
+barrier b1 sock 3
+
+server s1 {
+	rxreq
+	txresp -bodylen 1000
+} -start
+
+varnish v1 -vcl+backend {
+	import vtc;
+
+	sub vcl_deliver {
+		vtc.barrier_sync("${b1_sock}");
+	}
+} -start
+
+varnish v1 -cliok "param.set debug +syncvsl"
+varnish v1 -cliok "param.set feature +http2"
+
+client c1 {
+	stream 0 {
+		txsettings -winsize 256
+		rxsettings
+		barrier b1 sync
+		delay .5
+		txwinup -size 256
+		delay .5
+		txwinup -size 256
+		delay .5
+		txwinup -size 256
+	} -start
+
+	stream 1 {
+		txreq
+		barrier b1 sync
+		delay .5
+		txwinup -size 256
+		delay .5
+		txwinup -size 256
+		delay .5
+		txwinup -size 256
+		rxresp
+		expect resp.status == 200
+		expect resp.bodylen == 1000
+	} -run
+
+	stream 0 -wait
+} -run
