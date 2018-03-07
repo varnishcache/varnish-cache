@@ -73,11 +73,11 @@ static struct lock backends_mtx;
  * Get a connection to the backend
  */
 
-static struct vtp *
+static struct pfd *
 vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
     unsigned force_fresh)
 {
-	struct vtp *vtp;
+	struct pfd *pfd;
 	double tmod;
 	char abuf1[VTCP_ADDRBUFSIZE], abuf2[VTCP_ADDRBUFSIZE];
 	char pbuf1[VTCP_PORTBUFSIZE], pbuf2[VTCP_PORTBUFSIZE];
@@ -113,8 +113,8 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	bo->htc->doclose = SC_NULL;
 
 	FIND_TMO(connect_timeout, tmod, bo, bp);
-	vtp = VTP_Get(bp->tcp_pool, tmod, wrk, force_fresh);
-	if (vtp == NULL) {
+	pfd = VTP_Get(bp->tcp_pool, tmod, wrk, force_fresh);
+	if (pfd == NULL) {
 		VSLb(bo->vsl, SLT_FetchError,
 		     "backend %s: fail", bp->director->display_name);
 		// XXX: Per backend stats ?
@@ -123,8 +123,8 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 		return (NULL);
 	}
 
-	assert(vtp->fd >= 0);
-	AN(vtp->addr);
+	assert(pfd->fd >= 0);
+	AN(pfd->priv);
 
 	Lck_Lock(&bp->mtx);
 	bp->n_conn++;
@@ -133,21 +133,21 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	Lck_Unlock(&bp->mtx);
 
 	if (bp->proxy_header != 0)
-		VPX_Send_Proxy(vtp->fd, bp->proxy_header, bo->sp);
+		VPX_Send_Proxy(pfd->fd, bp->proxy_header, bo->sp);
 
-	VTCP_myname(vtp->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-	VTCP_hisname(vtp->fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
+	VTCP_myname(pfd->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
+	VTCP_hisname(pfd->fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
 	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s",
-	    vtp->fd, bp->director->display_name, abuf2, pbuf2, abuf1, pbuf1);
+	    pfd->fd, bp->director->display_name, abuf2, pbuf2, abuf1, pbuf1);
 
 	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
-	bo->htc->priv = vtp;
-	bo->htc->rfd = &vtp->fd;
+	bo->htc->priv = pfd;
+	bo->htc->rfd = &pfd->fd;
 	FIND_TMO(first_byte_timeout,
 	    bo->htc->first_byte_timeout, bo, bp);
 	FIND_TMO(between_bytes_timeout,
 	    bo->htc->between_bytes_timeout, bo, bp);
-	return (vtp);
+	return (pfd);
 }
 
 static unsigned v_matchproto_(vdi_healthy_f)
@@ -167,7 +167,7 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
 {
 	struct backend *bp;
-	struct vtp *vtp;
+	struct pfd *pfd;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -175,24 +175,24 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
-	CAST_OBJ_NOTNULL(vtp, bo->htc->priv, VTP_MAGIC);
+	CAST_OBJ_NOTNULL(pfd, bo->htc->priv, PFD_MAGIC);
 	bo->htc->priv = NULL;
-	if (vtp->state != VTP_STATE_USED)
+	if (pfd->state != PFD_STATE_USED)
 		assert(bo->htc->doclose == SC_TX_PIPE ||
 		    bo->htc->doclose == SC_RX_TIMEOUT);
 	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
-		VSLb(bo->vsl, SLT_BackendClose, "%d %s", vtp->fd,
+		VSLb(bo->vsl, SLT_BackendClose, "%d %s", pfd->fd,
 		    bp->director->display_name);
-		VTP_Close(&vtp);
-		AZ(vtp);
+		VTP_Close(&pfd);
+		AZ(pfd);
 		Lck_Lock(&bp->mtx);
 	} else {
-		assert (vtp->state == VTP_STATE_USED);
-		VSLb(bo->vsl, SLT_BackendReuse, "%d %s", vtp->fd,
+		assert (pfd->state == PFD_STATE_USED);
+		VSLb(bo->vsl, SLT_BackendReuse, "%d %s", pfd->fd,
 		    bp->director->display_name);
 		Lck_Lock(&bp->mtx);
 		VSC_C_main->backend_recycle++;
-		VTP_Recycle(wrk, &vtp);
+		VTP_Recycle(wrk, &pfd);
 	}
 	assert(bp->n_conn > 0);
 	bp->n_conn--;
@@ -210,7 +210,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 {
 	int i, extrachance = 1;
 	struct backend *bp;
-	struct vtp *vtp;
+	struct pfd *pfd;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
@@ -226,18 +226,18 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		http_PrintfHeader(bo->bereq, "Host: %s", bp->hosthdr);
 
 	do {
-		vtp = vbe_dir_getfd(wrk, bp, bo, extrachance == 0);
-		if (vtp == NULL)
+		pfd = vbe_dir_getfd(wrk, bp, bo, extrachance == 0);
+		if (pfd == NULL)
 			return (-1);
 		AN(bo->htc);
-		if (vtp->state != VTP_STATE_STOLEN)
+		if (pfd->state != PFD_STATE_STOLEN)
 			extrachance = 0;
 
 		i = V1F_SendReq(wrk, bo, &bo->acct.bereq_hdrbytes,
 				&bo->acct.bereq_bodybytes, 0);
 
-		if (vtp->state != VTP_STATE_USED) {
-			if (VTP_Wait(wrk, vtp, VTIM_real() +
+		if (pfd->state != PFD_STATE_USED) {
+			if (VTP_Wait(wrk, pfd, VTIM_real() +
 			    bo->htc->first_byte_timeout) != 0) {
 				bo->htc->doclose = SC_RX_TIMEOUT;
 				VSLb(bo->vsl, SLT_FetchError,
@@ -247,7 +247,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		}
 
 		if (bo->htc->doclose == SC_NULL) {
-			assert(vtp->state == VTP_STATE_USED);
+			assert(pfd->state == PFD_STATE_USED);
 			if (i == 0)
 				i = V1F_FetchRespHdr(bo);
 			if (i == 0) {
@@ -278,15 +278,15 @@ static const struct suckaddr * v_matchproto_(vdi_getip_f)
 vbe_dir_getip(const struct director *d, struct worker *wrk,
     struct busyobj *bo)
 {
-	struct vtp *vtp;
+	struct pfd *pfd;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
-	CAST_OBJ_NOTNULL(vtp, bo->htc->priv, VTP_MAGIC);
+	CAST_OBJ_NOTNULL(pfd, bo->htc->priv, PFD_MAGIC);
 
-	return (vtp->addr);
+	return (pfd->priv);
 }
 
 /*--------------------------------------------------------------------*/
@@ -298,7 +298,7 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 	enum sess_close retval;
 	struct backend *bp;
 	struct v1p_acct v1a;
-	struct vtp *vtp;
+	struct pfd *pfd;
 
 	CHECK_OBJ_NOTNULL(d, DIRECTOR_MAGIC);
 	CHECK_OBJ_NOTNULL(req, REQ_MAGIC);
@@ -313,16 +313,16 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 
 	req->res_mode = RES_PIPE;
 
-	vtp = vbe_dir_getfd(req->wrk, bp, bo, 0);
+	pfd = vbe_dir_getfd(req->wrk, bp, bo, 0);
 
-	if (vtp == NULL) {
+	if (pfd == NULL) {
 		retval = SC_TX_ERROR;
 	} else {
 		CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
 		i = V1F_SendReq(req->wrk, bo, &v1a.bereq, &v1a.out, 1);
 		VSLb_ts_req(req, "Pipe", W_TIM_real(req->wrk));
 		if (i == 0)
-			V1P_Process(req, vtp->fd, &v1a);
+			V1P_Process(req, pfd->fd, &v1a);
 		VSLb_ts_req(req, "PipeSess", W_TIM_real(req->wrk));
 		bo->htc->doclose = SC_TX_PIPE;
 		vbe_dir_finish(d, req->wrk, bo);

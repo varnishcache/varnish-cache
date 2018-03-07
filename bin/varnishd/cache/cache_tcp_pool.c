@@ -56,10 +56,10 @@ struct tcp_pool {
 	int			refcnt;
 	struct lock		mtx;
 
-	VTAILQ_HEAD(, vtp)	connlist;
+	VTAILQ_HEAD(, pfd)	connlist;
 	int			n_conn;
 
-	VTAILQ_HEAD(, vtp)	killlist;
+	VTAILQ_HEAD(, pfd)	killlist;
 	int			n_kill;
 
 	int			n_used;
@@ -75,39 +75,39 @@ static VTAILQ_HEAD(, tcp_pool)	tcp_pools = VTAILQ_HEAD_INITIALIZER(tcp_pools);
 static void  v_matchproto_(waiter_handle_f)
 tcp_handle(struct waited *w, enum wait_event ev, double now)
 {
-	struct vtp *vtp;
+	struct pfd *pfd;
 	struct tcp_pool *tp;
 
-	CAST_OBJ_NOTNULL(vtp, w->priv1, VTP_MAGIC);
+	CAST_OBJ_NOTNULL(pfd, w->priv1, PFD_MAGIC);
 	(void)ev;
 	(void)now;
-	CHECK_OBJ_NOTNULL(vtp->tcp_pool, TCP_POOL_MAGIC);
-	tp = vtp->tcp_pool;
+	CHECK_OBJ_NOTNULL(pfd->tcp_pool, TCP_POOL_MAGIC);
+	tp = pfd->tcp_pool;
 
 	Lck_Lock(&tp->mtx);
 
-	switch (vtp->state) {
-	case VTP_STATE_STOLEN:
-		vtp->state = VTP_STATE_USED;
-		VTAILQ_REMOVE(&tp->connlist, vtp, list);
-		AN(vtp->cond);
-		AZ(pthread_cond_signal(vtp->cond));
+	switch (pfd->state) {
+	case PFD_STATE_STOLEN:
+		pfd->state = PFD_STATE_USED;
+		VTAILQ_REMOVE(&tp->connlist, pfd, list);
+		AN(pfd->cond);
+		AZ(pthread_cond_signal(pfd->cond));
 		break;
-	case VTP_STATE_AVAIL:
-		VTCP_close(&vtp->fd);
-		VTAILQ_REMOVE(&tp->connlist, vtp, list);
+	case PFD_STATE_AVAIL:
+		VTCP_close(&pfd->fd);
+		VTAILQ_REMOVE(&tp->connlist, pfd, list);
 		tp->n_conn--;
-		FREE_OBJ(vtp);
+		FREE_OBJ(pfd);
 		break;
-	case VTP_STATE_CLEANUP:
-		VTCP_close(&vtp->fd);
+	case PFD_STATE_CLEANUP:
+		VTCP_close(&pfd->fd);
 		tp->n_kill--;
-		VTAILQ_REMOVE(&tp->killlist, vtp, list);
-		memset(vtp, 0x11, sizeof *vtp);
-		free(vtp);
+		VTAILQ_REMOVE(&tp->killlist, pfd, list);
+		memset(pfd, 0x11, sizeof *pfd);
+		free(pfd);
 		break;
 	default:
-		WRONG("Wrong vtp state");
+		WRONG("Wrong pfd state");
 	}
 	Lck_Unlock(&tp->mtx);
 }
@@ -194,7 +194,7 @@ void
 VTP_Rel(struct tcp_pool **tpp)
 {
 	struct tcp_pool *tp;
-	struct vtp *vtp, *vtp2;
+	struct pfd *pfd, *pfd2;
 
 	TAKE_OBJ_NOTNULL(tp, tpp, TCP_POOL_MAGIC);
 
@@ -211,13 +211,13 @@ VTP_Rel(struct tcp_pool **tpp)
 	free(tp->ip4);
 	free(tp->ip6);
 	Lck_Lock(&tp->mtx);
-	VTAILQ_FOREACH_SAFE(vtp, &tp->connlist, list, vtp2) {
-		VTAILQ_REMOVE(&tp->connlist, vtp, list);
+	VTAILQ_FOREACH_SAFE(pfd, &tp->connlist, list, pfd2) {
+		VTAILQ_REMOVE(&tp->connlist, pfd, list);
 		tp->n_conn--;
-		assert(vtp->state == VTP_STATE_AVAIL);
-		vtp->state = VTP_STATE_CLEANUP;
-		(void)shutdown(vtp->fd, SHUT_WR);
-		VTAILQ_INSERT_TAIL(&tp->killlist, vtp, list);
+		assert(pfd->state == PFD_STATE_AVAIL);
+		pfd->state = PFD_STATE_CLEANUP;
+		(void)shutdown(pfd->fd, SHUT_WR);
+		VTAILQ_INSERT_TAIL(&tp->killlist, pfd, list);
 		tp->n_kill++;
 	}
 	while (tp->n_kill) {
@@ -239,7 +239,7 @@ VTP_Rel(struct tcp_pool **tpp)
  */
 
 int
-VTP_Open(const struct tcp_pool *tp, double tmo, const struct suckaddr **sa)
+VTP_Open(const struct tcp_pool *tp, double tmo, const void **privp)
 {
 	int s;
 	int msec;
@@ -248,17 +248,17 @@ VTP_Open(const struct tcp_pool *tp, double tmo, const struct suckaddr **sa)
 
 	msec = (int)floor(tmo * 1000.0);
 	if (cache_param->prefer_ipv6) {
-		*sa = tp->ip6;
+		*privp = tp->ip6;
 		s = VTCP_connect(tp->ip6, msec);
 		if (s >= 0)
 			return (s);
 	}
-	*sa = tp->ip4;
+	*privp = tp->ip4;
 	s = VTCP_connect(tp->ip4, msec);
 	if (s >= 0)
 		return (s);
 	if (!cache_param->prefer_ipv6) {
-		*sa = tp->ip6;
+		*privp = tp->ip6;
 		s = VTCP_connect(tp->ip6, msec);
 	}
 	return (s);
@@ -269,43 +269,43 @@ VTP_Open(const struct tcp_pool *tp, double tmo, const struct suckaddr **sa)
  */
 
 void
-VTP_Recycle(const struct worker *wrk, struct vtp **vtpp)
+VTP_Recycle(const struct worker *wrk, struct pfd **pfdp)
 {
-	struct vtp *vtp;
+	struct pfd *pfd;
 	struct tcp_pool *tp;
 	int i = 0;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	vtp = *vtpp;
-	*vtpp = NULL;
-	CHECK_OBJ_NOTNULL(vtp, VTP_MAGIC);
-	tp = vtp->tcp_pool;
+	pfd = *pfdp;
+	*pfdp = NULL;
+	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
+	tp = pfd->tcp_pool;
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
 
-	assert(vtp->state == VTP_STATE_USED);
-	assert(vtp->fd > 0);
+	assert(pfd->state == PFD_STATE_USED);
+	assert(pfd->fd > 0);
 
 	Lck_Lock(&tp->mtx);
 	tp->n_used--;
 
-	vtp->waited->priv1 = vtp;
-	vtp->waited->fd = vtp->fd;
-	vtp->waited->idle = VTIM_real();
-	vtp->state = VTP_STATE_AVAIL;
-	vtp->waited->func = tcp_handle;
-	vtp->waited->tmo = &cache_param->backend_idle_timeout;
-	if (Wait_Enter(wrk->pool->waiter, vtp->waited)) {
-		VTCP_close(&vtp->fd);
-		memset(vtp, 0x33, sizeof *vtp);
-		free(vtp);
+	pfd->waited->priv1 = pfd;
+	pfd->waited->fd = pfd->fd;
+	pfd->waited->idle = VTIM_real();
+	pfd->state = PFD_STATE_AVAIL;
+	pfd->waited->func = tcp_handle;
+	pfd->waited->tmo = &cache_param->backend_idle_timeout;
+	if (Wait_Enter(wrk->pool->waiter, pfd->waited)) {
+		VTCP_close(&pfd->fd);
+		memset(pfd, 0x33, sizeof *pfd);
+		free(pfd);
 		// XXX: stats
-		vtp = NULL;
+		pfd = NULL;
 	} else {
-		VTAILQ_INSERT_HEAD(&tp->connlist, vtp, list);
+		VTAILQ_INSERT_HEAD(&tp->connlist, pfd, list);
 		i++;
 	}
 
-	if (vtp != NULL)
+	if (pfd != NULL)
 		tp->n_conn++;
 	Lck_Unlock(&tp->mtx);
 
@@ -314,7 +314,7 @@ VTP_Recycle(const struct worker *wrk, struct vtp **vtpp)
 		 * In varnishtest we do not have the luxury of using
 		 * multiple backend connections, so whenever we end up
 		 * in the "pending" case, take a short nap to let the
-		 * waiter catch up and put the vtp back into circulations.
+		 * waiter catch up and put the pfd back into circulations.
 		 *
 		 * In particular ESI:include related tests suffer random
 		 * failures without this.
@@ -332,33 +332,33 @@ VTP_Recycle(const struct worker *wrk, struct vtp **vtpp)
  */
 
 void
-VTP_Close(struct vtp **vtpp)
+VTP_Close(struct pfd **pfdp)
 {
-	struct vtp *vtp;
+	struct pfd *pfd;
 	struct tcp_pool *tp;
 
-	vtp = *vtpp;
-	*vtpp = NULL;
-	CHECK_OBJ_NOTNULL(vtp, VTP_MAGIC);
-	tp = vtp->tcp_pool;
+	pfd = *pfdp;
+	*pfdp = NULL;
+	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
+	tp = pfd->tcp_pool;
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
 
-	assert(vtp->fd > 0);
+	assert(pfd->fd > 0);
 
 	Lck_Lock(&tp->mtx);
-	assert(vtp->state == VTP_STATE_USED || vtp->state == VTP_STATE_STOLEN);
+	assert(pfd->state == PFD_STATE_USED || pfd->state == PFD_STATE_STOLEN);
 	tp->n_used--;
-	if (vtp->state == VTP_STATE_STOLEN) {
-		(void)shutdown(vtp->fd, SHUT_RDWR);
-		VTAILQ_REMOVE(&tp->connlist, vtp, list);
-		vtp->state = VTP_STATE_CLEANUP;
-		VTAILQ_INSERT_HEAD(&tp->killlist, vtp, list);
+	if (pfd->state == PFD_STATE_STOLEN) {
+		(void)shutdown(pfd->fd, SHUT_RDWR);
+		VTAILQ_REMOVE(&tp->connlist, pfd, list);
+		pfd->state = PFD_STATE_CLEANUP;
+		VTAILQ_INSERT_HEAD(&tp->killlist, pfd, list);
 		tp->n_kill++;
 	} else {
-		assert(vtp->state == VTP_STATE_USED);
-		VTCP_close(&vtp->fd);
-		memset(vtp, 0x44, sizeof *vtp);
-		free(vtp);
+		assert(pfd->state == PFD_STATE_USED);
+		VTCP_close(&pfd->fd);
+		memset(pfd, 0x44, sizeof *pfd);
+		free(pfd);
 	}
 	Lck_Unlock(&tp->mtx);
 }
@@ -367,69 +367,69 @@ VTP_Close(struct vtp **vtpp)
  * Get a connection
  */
 
-struct vtp *
+struct pfd *
 VTP_Get(struct tcp_pool *tp, double tmo, struct worker *wrk,
     unsigned force_fresh)
 {
-	struct vtp *vtp;
+	struct pfd *pfd;
 
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 
 	Lck_Lock(&tp->mtx);
-	vtp = VTAILQ_FIRST(&tp->connlist);
-	CHECK_OBJ_ORNULL(vtp, VTP_MAGIC);
-	if (force_fresh || vtp == NULL || vtp->state == VTP_STATE_STOLEN)
-		vtp = NULL;
+	pfd = VTAILQ_FIRST(&tp->connlist);
+	CHECK_OBJ_ORNULL(pfd, PFD_MAGIC);
+	if (force_fresh || pfd == NULL || pfd->state == PFD_STATE_STOLEN)
+		pfd = NULL;
 	else {
-		assert(vtp->tcp_pool == tp);
-		assert(vtp->state == VTP_STATE_AVAIL);
-		VTAILQ_REMOVE(&tp->connlist, vtp, list);
-		VTAILQ_INSERT_TAIL(&tp->connlist, vtp, list);
+		assert(pfd->tcp_pool == tp);
+		assert(pfd->state == PFD_STATE_AVAIL);
+		VTAILQ_REMOVE(&tp->connlist, pfd, list);
+		VTAILQ_INSERT_TAIL(&tp->connlist, pfd, list);
 		tp->n_conn--;
 		VSC_C_main->backend_reuse++;
-		vtp->state = VTP_STATE_STOLEN;
-		vtp->cond = &wrk->cond;
+		pfd->state = PFD_STATE_STOLEN;
+		pfd->cond = &wrk->cond;
 	}
 	tp->n_used++;			// Opening mostly works
 	Lck_Unlock(&tp->mtx);
 
-	if (vtp != NULL)
-		return (vtp);
+	if (pfd != NULL)
+		return (pfd);
 
-	ALLOC_OBJ(vtp, VTP_MAGIC);
-	AN(vtp);
-	INIT_OBJ(vtp->waited, WAITED_MAGIC);
-	vtp->state = VTP_STATE_USED;
-	vtp->tcp_pool = tp;
-	vtp->fd = VTP_Open(tp, tmo, &vtp->addr);
-	if (vtp->fd < 0) {
-		FREE_OBJ(vtp);
+	ALLOC_OBJ(pfd, PFD_MAGIC);
+	AN(pfd);
+	INIT_OBJ(pfd->waited, WAITED_MAGIC);
+	pfd->state = PFD_STATE_USED;
+	pfd->tcp_pool = tp;
+	pfd->fd = VTP_Open(tp, tmo, &pfd->priv);
+	if (pfd->fd < 0) {
+		FREE_OBJ(pfd);
 		Lck_Lock(&tp->mtx);
 		tp->n_used--;		// Nope, didn't work after all.
 		Lck_Unlock(&tp->mtx);
 	} else
 		VSC_C_main->backend_conn++;
 
-	return (vtp);
+	return (pfd);
 }
 
 /*--------------------------------------------------------------------
  */
 
 int
-VTP_Wait(struct worker *wrk, struct vtp *vtp, double tmo)
+VTP_Wait(struct worker *wrk, struct pfd *pfd, double tmo)
 {
 	struct tcp_pool *tp;
 	int r;
 
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	CHECK_OBJ_NOTNULL(vtp, VTP_MAGIC);
-	tp = vtp->tcp_pool;
+	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
+	tp = pfd->tcp_pool;
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
-	assert(vtp->cond == &wrk->cond);
+	assert(pfd->cond == &wrk->cond);
 	Lck_Lock(&tp->mtx);
-	while (vtp->state == VTP_STATE_STOLEN) {
+	while (pfd->state == PFD_STATE_STOLEN) {
 		r = Lck_CondWait(&wrk->cond, &tp->mtx, tmo);
 		if (r != 0) {
 			if (r == EINTR)
@@ -439,8 +439,8 @@ VTP_Wait(struct worker *wrk, struct vtp *vtp, double tmo)
 			return (1);
 		}
 	}
-	assert(vtp->state == VTP_STATE_USED);
-	vtp->cond = NULL;
+	assert(pfd->state == PFD_STATE_USED);
+	pfd->cond = NULL;
 	Lck_Unlock(&tp->mtx);
 
 	return (0);

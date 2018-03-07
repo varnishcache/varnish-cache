@@ -32,17 +32,17 @@
 
 struct tcp_pool;
 
-struct vtp {
+struct pfd {
 	unsigned		magic;
-#define VTP_MAGIC		0x0c5e6592
+#define PFD_MAGIC		0x0c5e6593
 	int			fd;
-	VTAILQ_ENTRY(vtp)	list;
-	const struct suckaddr	*addr;
+	VTAILQ_ENTRY(pfd)	list;
+	const void		*priv;
 	uint8_t			state;
-#define VTP_STATE_AVAIL		(1<<0)
-#define VTP_STATE_USED		(1<<1)
-#define VTP_STATE_STOLEN	(1<<2)
-#define VTP_STATE_CLEANUP	(1<<3)
+#define PFD_STATE_AVAIL		(1<<0)
+#define PFD_STATE_USED		(1<<1)
+#define PFD_STATE_STOLEN	(1<<2)
+#define PFD_STATE_CLEANUP	(1<<3)
 	struct waited		waited[1];
 	struct tcp_pool		*tcp_pool;
 
@@ -72,28 +72,28 @@ void VTP_Rel(struct tcp_pool **);
 	 * the pool is destroyed and all cached connections closed.
 	 */
 
-int VTP_Open(const struct tcp_pool *, double tmo, const struct suckaddr **);
+int VTP_Open(const struct tcp_pool *, double tmo, const void **);
 	/*
 	 * Open a new connection and return the adress used.
 	 */
 
-void VTP_Close(struct vtp **);
+void VTP_Close(struct pfd **);
 	/*
 	 * Close a connection.
 	 */
 
-void VTP_Recycle(const struct worker *, struct vtp **);
+void VTP_Recycle(const struct worker *, struct pfd **);
 	/*
 	 * Recycle an open connection.
 	 */
 
-struct vtp *VTP_Get(struct tcp_pool *, double tmo, struct worker *,
+struct pfd *VTP_Get(struct tcp_pool *, double tmo, struct worker *,
     unsigned force_fresh);
 	/*
 	 * Get a (possibly) recycled connection.
 	 */
 
-int VTP_Wait(struct worker *, struct vtp *, double tmo);
+int VTP_Wait(struct worker *, struct pfd *, double tmo);
 	/*
 	 * If the connection was recycled (state != VTP_STATE_USED) call this
 	 * function before attempting to receive on the connection.
