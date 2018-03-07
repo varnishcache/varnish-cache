@@ -736,25 +736,32 @@ GIP(client)
 GIP(server)
 #undef GIP
 
-/*--------------------------------------------------------------------*/
+/*--------------------------------------------------------------------
+ * local.[endpoint|socket]
+ */
 
-VCL_STRING
-VRT_r_local_endpoint(VRT_CTX)
-{
-	struct sess *sp;
-
-	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
-	if (VALID_OBJ(ctx->req, REQ_MAGIC))
-		sp = ctx->req->sp;
-	else {
-		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
-		sp = ctx->bo->sp;
-	}
-
-	CHECK_OBJ_NOTNULL(sp->listen_sock, LISTEN_SOCK_MAGIC);
-	AN(sp->listen_sock->endpoint);
-	return (sp->listen_sock->endpoint);
+#define LOC(var,fld)						\
+VCL_STRING							\
+VRT_r_local_##var(VRT_CTX)					\
+{								\
+	struct sess *sp;					\
+								\
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);			\
+	if (VALID_OBJ(ctx->req, REQ_MAGIC))			\
+		sp = ctx->req->sp;				\
+	else {							\
+		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);	\
+		sp = ctx->bo->sp;				\
+	}							\
+								\
+	CHECK_OBJ_NOTNULL(sp->listen_sock, LISTEN_SOCK_MAGIC);	\
+	AN(sp->listen_sock->fld);				\
+	return (sp->listen_sock->fld);				\
 }
+
+LOC(endpoint, endpoint)
+LOC(socket, name)
+#undef LOC
 
 /*--------------------------------------------------------------------*/
 
