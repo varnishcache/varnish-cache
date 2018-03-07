@@ -849,7 +849,7 @@ beresp.backend.name
 	Same as beresp.backend.
 	
 
-beresp.backend.ip
+beresp.backend.ip	``VCL <= 4.0``
 
 	Type: IP
 
