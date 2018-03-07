@@ -1120,7 +1120,23 @@ now
 
 	When converted to STRING in expressions it returns
 	a formatted timestamp like `Tue, 20 Feb 2018 09:30:31 GMT`
-	
+
+sess
+~~~~
+
+A session corresponds to the "conversation" that Varnish has with a
+single client connection, over which one or more request/response
+transactions may take place. It may comprise the traffic over an
+HTTP/1 keep-alive connection, or the multiplexed traffic over an
+HTTP/2 connection.
+
+sess.xid	``VCL >= 4.1``
+
+	Type: STRING
+
+	Readable from: client, backend
+
+	Unique ID of this session.
 
 storage
 ~~~~~~~

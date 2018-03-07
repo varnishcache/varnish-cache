@@ -3,6 +3,8 @@ varnishtest "More VCL coverage"
 server s1 {
 	rxreq
 	txresp
+	rxreq
+	txresp
 } -start
 
 varnish v1 -syntax 4.0 -arg "-i J.F.Nobody" -vcl+backend {
@@ -90,4 +92,35 @@ client c1 {
 
 	txreq
 	rxresp
+} -run
+
+varnish v1 -syntax 4.0 -errvcl {Symbol not found: 'sess.xid' (Only available when 4.1 <= VCL syntax)} {
+	sub vcl_recv {
+		set req.http.Sess-XID = sess.xid;
+	}
+}
+
+varnish v1 -syntax 4.0 -errvcl {Symbol not found: 'sess.xid' (Only available when 4.1 <= VCL syntax)} {
+	sub vcl_backend_fetch {
+		set bereq.http.Sess-XID = sess.xid;
+	}
+}
+
+varnish v1 -syntax 4.1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.http.B-Sess-XID = sess.xid;
+	}
+
+	sub vcl_deliver {
+		set resp.http.C-Sess-XID = sess.xid;
+	}
+}
+
+client c1 {
+	txreq -url "/uncached"
+	rxresp
+	expect resp.status == 200
+	expect resp.http.C-Sess-XID ~ "^[0-9]+$"
+	expect resp.http.B-Sess-XID ~ "^[0-9]+$"
+	expect resp.http.C-Sess-XID == resp.http.B-Sess-XID
 } -run

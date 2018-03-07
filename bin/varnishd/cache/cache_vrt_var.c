@@ -648,7 +648,7 @@ VRT_DO_AGE_R(obj, ctx->req->objcore)
 VRT_DO_AGE_R(beresp, ctx->bo->fetch_objcore)
 
 /*--------------------------------------------------------------------
- * [be]req.xid
+ * [[be]req|sess].xid
  */
 
 VCL_STRING
@@ -671,6 +671,20 @@ VRT_r_bereq_xid(VRT_CTX)
 
 	return (WS_Printf(ctx->bo->bereq->ws, "%u",
 	    VXID(ctx->bo->vsl->wid)));
+}
+
+VCL_STRING
+VRT_r_sess_xid(VRT_CTX)
+{
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+
+	if (VALID_OBJ(ctx->req, REQ_MAGIC))
+		return (WS_Printf(ctx->req->http->ws, "%u",
+		    VXID(ctx->req->sp->vxid)));
+
+	CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+	return (WS_Printf(ctx->bo->bereq->ws, "%u",
+	    VXID(ctx->bo->sp->vxid)));
 }
 
 /*--------------------------------------------------------------------

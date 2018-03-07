@@ -7,6 +7,10 @@ server s1 {
 		-hdr "H234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789I: foo" \
 		-hdr "Foo: H234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789I" \
 		-bodylen 10
+	rxreq
+	txresp
+	rxreq
+	txresp
 } -start
 
 varnish v1 -vcl+backend {
@@ -65,3 +69,34 @@ process p1 -stop
 # shell {cat ${tmpdir}/vlog}
 shell -match {1001 H2TxHdr        c \[000006040000000000\]} \
 	{cat ${tmpdir}/vlog}
+
+# While we're here, test sess.xid over H2 as well
+
+varnish v1 -syntax 4.1 -vcl+backend {
+	sub vcl_backend_response {
+		set beresp.http.B-Sess-XID = sess.xid;
+	}
+
+	sub vcl_deliver {
+		set resp.http.C-Sess-XID = sess.xid;
+	}
+}
+
+client c1 {
+	stream 7 {
+		txreq -url "/uncached"
+		rxresp
+		expect resp.status == 200
+		expect resp.http.C-Sess-XID ~ "^[0-9]+$"
+		expect resp.http.B-Sess-XID ~ "^[0-9]+$"
+		expect resp.http.C-Sess-XID == resp.http.B-Sess-XID
+	} -run
+	stream 9 {
+		txreq -url "/still_not_cached"
+		rxresp
+		expect resp.status == 200
+		expect resp.http.C-Sess-XID ~ "^[0-9]+$"
+		expect resp.http.B-Sess-XID ~ "^[0-9]+$"
+		expect resp.http.C-Sess-XID == resp.http.B-Sess-XID
+	} -run
+} -run
