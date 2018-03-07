@@ -739,6 +739,26 @@ GIP(server)
 /*--------------------------------------------------------------------*/
 
 VCL_STRING
+VRT_r_local_endpoint(VRT_CTX)
+{
+	struct sess *sp;
+
+	CHECK_OBJ_NOTNULL(ctx, VRT_CTX_MAGIC);
+	if (VALID_OBJ(ctx->req, REQ_MAGIC))
+		sp = ctx->req->sp;
+	else {
+		CHECK_OBJ_NOTNULL(ctx->bo, BUSYOBJ_MAGIC);
+		sp = ctx->bo->sp;
+	}
+
+	CHECK_OBJ_NOTNULL(sp->listen_sock, LISTEN_SOCK_MAGIC);
+	AN(sp->listen_sock->endpoint);
+	return (sp->listen_sock->endpoint);
+}
+
+/*--------------------------------------------------------------------*/
+
+VCL_STRING
 VRT_r_server_identity(VRT_CTX)
 {
 

@@ -52,30 +52,6 @@ With PROXY protocol::
 	CLIENT ------------ PROXY ------------ VARNISHD
 
 
-local.endpoint
-
-	Type: STRING
-
-	Readable from: client
-	
-	The address of the '-a' socket the session was accepted on.
-
-	If the argument was `-a foo=:81` this would be ":81"
-	
-
-local.socket
-
-	Type: STRING
-
-	Readable from: client
-	
-	The name of the '-a' socket the session was accepted on.
-
-	If the argument was `-a foo=:81` this would be "foo".
-
-	Note that all '-a' gets a default name on the form `a%d`
-	if no name is provided.
-
 local.ip
 
 	Type: IP
@@ -87,6 +63,30 @@ local.ip
 
 	If the connection is a UNIX domain socket, the value
 	will be `0.0.0.0:0`
+
+local.endpoint	``VCL >= 4.1``
+
+	Type: STRING
+
+	Readable from: client, backend
+	
+	The address of the '-a' socket the session was accepted on.
+
+	If the argument was `-a foo=:81` this would be ":81"
+	
+
+local.socket	``VCL >= 4.1``
+
+	Type: STRING
+
+	Readable from: client, backend
+	
+	The name of the '-a' socket the session was accepted on.
+
+	If the argument was `-a foo=:81` this would be "foo".
+
+	Note that all '-a' gets a default name on the form `a%d`
+	if no name is provided.
 
 remote.ip
 
