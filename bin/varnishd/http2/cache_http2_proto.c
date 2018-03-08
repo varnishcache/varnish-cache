@@ -271,7 +271,7 @@ h2_rx_ping(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 {
 
 	ASSERT_RXTHR(h2);
-	(void)r2;
+
 	if (h2->rxf_len != 8)				// rfc7540,l,2364,2366
 		return (H2CE_FRAME_SIZE_ERROR);
 	AZ(h2->rxf_stream);				// rfc7540,l,2359,2362
