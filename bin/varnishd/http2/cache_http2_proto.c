@@ -358,7 +358,7 @@ h2_rx_window_update(struct worker *wrk, struct h2_sess *h2, struct h2_req *r2)
 	else if (r2->cond != NULL)
 		AZ(pthread_cond_signal(r2->cond));
 	Lck_Unlock(&h2->sess->mtx);
-	if (r2->t_window >= (1LLU << 31))
+	if (r2->t_window >= (1LL << 31))
 		return (H2SE_FLOW_CONTROL_ERROR);
 	return (0);
 }
