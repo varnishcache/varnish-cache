@@ -100,9 +100,10 @@ against ACLs can only be run against IP-valued elements.
 This means that if a ``*.ip`` variable whose value is ``0.0.0.0`` due
 to the use of UDS is matched against an ACL, the match can only
 succeed if the ACL includes ``0.0.0.0``. If you currently have a
-security requirement that depends on an ACL matching a range of IP
-addresses, then that will continue to work with a UDS listener (since
-you almost certainly have not included ``0.0.0.0`` in that range).
+security requirement that depends on IP addresses *not* matching an
+ACL unless they belong to a specified range, then that will continue
+to work with a UDS listener (since you almost certainly have not
+included ``0.0.0.0`` in that range).
 
 Recall again that ``client.ip`` and ``server.ip`` are set by the PROXY
 protocol. So if you have a UDS listener configured to use PROXY and
@@ -257,7 +258,7 @@ Other changes
     file when it executes ``bind(2)``. To make it easier for other
     processes to connect to the socket, the server's umask is
     temporarily set to 0 before the listen is attempted, to minimize
-    issues with permissions. No further attempted is made to set the
+    issues with permissions. No further attempt is made to set the
     socket's permissions.
 
     To test a Varnish instance listening at a UDS, just use the
