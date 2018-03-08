@@ -405,7 +405,7 @@ static const struct h2_setting_s * const h2_setting_tbl[] = {
 #define H2_SETTING_TBL_LEN (sizeof(h2_setting_tbl)/sizeof(h2_setting_tbl[0]))
 
 static void
-h2_win_adjust(struct h2_sess *h2, uint32_t oldval, uint32_t newval)
+h2_win_adjust(const struct h2_sess *h2, uint32_t oldval, uint32_t newval)
 {
 	struct h2_req *r2;
 
