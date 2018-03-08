@@ -206,6 +206,14 @@ protocol is not used, then ``0.0.0.0`` will be added to
 Again, this is probably not a concern if ``client.ip`` is set via the
 PROXY protocol.
 
+VMOD std
+--------
+
+The VMOD std function :ref:`func_port` always returns 0 when applied
+to a ``*.ip`` variable whose value is set to ``0.0.0.0`` because the
+listener is UDS.  :ref:`func_set_ip_tos` is silently ignored when the
+listener is UDS.
+
 VCL variables
 ~~~~~~~~~~~~~
 
