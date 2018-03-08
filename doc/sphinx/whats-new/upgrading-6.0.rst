@@ -183,6 +183,29 @@ of these changes:
 * Set ``req.http.Host`` to a distinct value if it is absent before
   ``vcl_hash`` is entered.
 
+X-Forwarded-For
+---------------
+
+Varnish automatically appends the value of ``client.ip`` to the
+``X-Forwarded-For`` request header that is passed on to backends, or
+it creates the header with that value if it is not already present in
+the client request.
+
+If the client request is received over a UDS listener and the PROXY
+protocol is not used, then ``0.0.0.0`` will be added to
+``X-Forwarded-For``.  If you prefer, you can change that in VCL::
+
+  sub vcl_backend_fetch {
+  	# Assuming that server.identity has been set to an IP
+	# address with the -i command-line argument.
+	set bereq.http.X-Forwarded-For
+	    = regsub(bereq.http-X-Forwarded-For, "0.0.0.0$", server.identity);
+	# ...
+  }
+
+Again, this is probably not a concern if ``client.ip`` is set via the
+PROXY protocol.
+
 VCL variables
 ~~~~~~~~~~~~~
 
