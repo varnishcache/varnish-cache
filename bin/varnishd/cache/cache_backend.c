@@ -136,8 +136,8 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	if (bp->proxy_header != 0)
 		VPX_Send_Proxy(*fdp, bp->proxy_header, bo->sp);
 
-	VTCP_myname(*fdp, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-	VTCP_hisname(*fdp, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
+	PFD_LocalName(pfd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
+	PFD_RemoteName(pfd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
 	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s",
 	    *fdp, bp->director->display_name, abuf2, pbuf2, abuf1, pbuf1);
 

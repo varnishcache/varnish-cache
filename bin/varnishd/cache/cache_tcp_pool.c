@@ -62,31 +62,20 @@ struct pfd {
 	pthread_cond_t		*cond;
 };
 
-unsigned
-PFD_State(const struct pfd *p)
-{
-	CHECK_OBJ_NOTNULL(p, PFD_MAGIC);
-	return (p->state);
-}
-
-int *
-PFD_Fd(struct pfd *p)
-{
-	CHECK_OBJ_NOTNULL(p, PFD_MAGIC);
-	return (&(p->fd));
-}
-
 /*--------------------------------------------------------------------
  */
 
 typedef int cp_open_f(const struct conn_pool *, double tmo, const void **privp);
 typedef void cp_close_f(struct pfd *);
 typedef int cp_cmp_f(const struct conn_pool *, const void *priv);
+typedef void cp_name_f(const struct pfd *, char *, unsigned, char *, unsigned);
 
 struct cp_methods {
 	cp_open_f				*open;
 	cp_close_f				*close;
 	cp_cmp_f				*cmp;
+	cp_name_f				*local_name;
+	cp_name_f				*remote_name;
 };
 
 struct conn_pool {
@@ -123,6 +112,41 @@ struct tcp_pool {
 static struct lock		conn_pools_mtx;
 static VTAILQ_HEAD(, conn_pool)	conn_pools =
     VTAILQ_HEAD_INITIALIZER(conn_pools);
+
+/*--------------------------------------------------------------------
+ */
+
+unsigned
+PFD_State(const struct pfd *p)
+{
+	CHECK_OBJ_NOTNULL(p, PFD_MAGIC);
+	return (p->state);
+}
+
+int *
+PFD_Fd(struct pfd *p)
+{
+	CHECK_OBJ_NOTNULL(p, PFD_MAGIC);
+	return (&(p->fd));
+}
+
+void
+PFD_LocalName(const struct pfd *p, char *abuf, unsigned alen, char *pbuf,
+	      unsigned plen)
+{
+	CHECK_OBJ_NOTNULL(p, PFD_MAGIC);
+	CHECK_OBJ_NOTNULL(p->conn_pool, CONN_POOL_MAGIC);
+	p->conn_pool->methods->local_name(p, abuf, alen, pbuf, plen);
+}
+
+void
+PFD_RemoteName(const struct pfd *p, char *abuf, unsigned alen, char *pbuf,
+	       unsigned plen)
+{
+	CHECK_OBJ_NOTNULL(p, PFD_MAGIC);
+	CHECK_OBJ_NOTNULL(p->conn_pool, CONN_POOL_MAGIC);
+	p->conn_pool->methods->remote_name(p, abuf, alen, pbuf, plen);
+}
 
 /*--------------------------------------------------------------------
  * Waiter-handler
@@ -533,10 +557,28 @@ vtp_cmp(const struct conn_pool *cp, const void *priv)
 	return (0);
 }
 
+static void v_matchproto_(cp_name_f)
+vtp_local_name(const struct pfd *pfd, char *addr, unsigned alen, char *pbuf,
+	       unsigned plen)
+{
+	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
+	VTCP_myname(pfd->fd, addr, alen, pbuf, plen);
+}
+
+static void v_matchproto_(cp_name_f)
+vtp_remote_name(const struct pfd *pfd, char *addr, unsigned alen, char *pbuf,
+		unsigned plen)
+{
+	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
+	VTCP_hisname(pfd->fd, addr, alen, pbuf, plen);
+}
+
 static const struct cp_methods vtp_methods = {
 	.open = vtp_open,
 	.close = vtp_close,
 	.cmp = vtp_cmp,
+	.local_name = vtp_local_name,
+	.remote_name = vtp_remote_name,
 };
 
 
