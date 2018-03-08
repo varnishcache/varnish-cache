@@ -284,3 +284,9 @@ void SMP_Ready(void);
 #define FEATURE(x)	COM_FEATURE(cache_param->feature_bits, x)
 #define DO_DEBUG(x)	COM_DO_DEBUG(cache_param->debug_bits, x)
 
+#define DSL(debug_bit, id, ...)					\
+	do {							\
+		if (DO_DEBUG(debug_bit))			\
+			VSL(SLT_Debug, (id), __VA_ARGS__);	\
+	} while (0)
+

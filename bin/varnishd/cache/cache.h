@@ -958,12 +958,6 @@ Tlen(const txt t)
  */
 #define W_TIM_real(w) ((w)->lastused = VTIM_real())
 
-#define DSL(debug_bit, id, ...)					\
-	do {							\
-		if (DO_DEBUG(debug_bit))			\
-			VSL(SLT_Debug, (id), __VA_ARGS__);	\
-	} while (0)
-
 #define PAN_CheckMagic(vsb, ptr, exp)					\
 	do {								\
 		if ((ptr)->magic != (exp))				\
