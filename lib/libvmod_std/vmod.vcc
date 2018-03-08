@@ -60,7 +60,8 @@ $Function VOID set_ip_tos(INT tos)
 
 Description
 	Sets the IP type-of-service (TOS) field for the current session
-	to *tos*.
+	to *tos*. Silently ignored if the listen address is a Unix
+	domain socket.
 	Please note that the TOS field is not removed by the end of the
 	request so probably want to set it on every request should you
 	utilize it.
@@ -231,7 +232,9 @@ Description
 $Function INT port(IP ip)
 
 Description
-	Returns the port number of the IP address *ip*.
+	Returns the port number of the IP address *ip*. Always returns
+	0 for a ``*.ip`` variable whose value is ``0.0.0.0`` because
+	the listen address is a Unix domain socket.
 
 $Function VOID rollback(HTTP h)
 
