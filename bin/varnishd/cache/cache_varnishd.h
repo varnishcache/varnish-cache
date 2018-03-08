@@ -63,6 +63,20 @@ void VTP_Init(void);
 /* cache_backend_poll.c */
 void VBP_Init(void);
 
+/* cache_ban.c */
+
+/* for stevedoes resurrecting bans */
+void BAN_Hold(void);
+void BAN_Release(void);
+void BAN_Reload(const uint8_t *ban, unsigned len);
+struct ban *BAN_FindBan(double t0);
+void BAN_RefBan(struct objcore *oc, struct ban *);
+double BAN_Time(const struct ban *ban);
+
+/* cache_busyobj.c */
+struct busyobj *VBO_GetBusyObj(struct worker *, const struct req *);
+void VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **busyobj);
+
 /* cache_director.c */
 int VDI_GetHdr(struct worker *, struct busyobj *);
 int VDI_GetBody(struct worker *, struct busyobj *);
@@ -158,6 +172,13 @@ int Pool_Task_Any(struct pool_task *task, enum task_prio prio);
 /* cache_range.c [VRG] */
 void VRG_dorange(struct req *req, const char *r);
 
+/* cache_req.c */
+struct req *Req_New(const struct worker *, struct sess *);
+void Req_Release(struct req *);
+void Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req);
+void Req_Fail(struct req *req, enum sess_close reason);
+void Req_AcctLogCharge(struct VSC_main *, struct req *);
+
 /* cache_req_fsm.c [CNT] */
 
 enum req_fsm_nxt {
@@ -195,6 +216,7 @@ void VSL_Setup(struct vsl_log *vsl, void *ptr, size_t len);
 void VSL_ChgId(struct vsl_log *vsl, const char *typ, const char *why,
     uint32_t vxid);
 void VSL_End(struct vsl_log *vsl);
+void VSL_Flush(struct vsl_log *, int overflow);
 
 /* cache_vary.c */
 int VRY_Create(struct busyobj *bo, struct vsb **psb);
@@ -214,6 +236,12 @@ void VCL_Ref(struct vcl *);
 void VCL_Refresh(struct vcl **);
 void VCL_Rel(struct vcl **);
 const char *VCL_Return_Name(unsigned);
+const char *VCL_Method_Name(unsigned);
+#define VCL_MET_MAC(l,u,t,b) \
+    void VCL_##l##_method(struct vcl *, struct worker *, struct req *, \
+	struct busyobj *bo, void *specific);
+#include "tbl/vcl_returns.h"
+
 
 typedef int vcl_be_func(struct cli *, struct director *, void *);
 
@@ -244,9 +272,15 @@ const struct stevedore *STV_next(void);
 int STV_BanInfoDrop(const uint8_t *ban, unsigned len);
 int STV_BanInfoNew(const uint8_t *ban, unsigned len);
 void STV_BanExport(const uint8_t *banlist, unsigned len);
+int STV_NewObject(struct worker *, struct objcore *,
+    const struct stevedore *, unsigned len);
+
 
 #if WITH_PERSISTENT_STORAGE
 /* storage_persistent.c */
 void SMP_Ready(void);
 #endif
+
+#define FEATURE(x)	COM_FEATURE(cache_param->feature_bits, x)
+#define DO_DEBUG(x)	COM_DO_DEBUG(cache_param->debug_bits, x)
 

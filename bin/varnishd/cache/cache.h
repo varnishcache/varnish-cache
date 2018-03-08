@@ -604,18 +604,6 @@ const char *BAN_AddTest(struct ban_proto *,
 const char *BAN_Commit(struct ban_proto *b);
 void BAN_Abandon(struct ban_proto *b);
 
-/* for stevedoes resurrecting bans */
-void BAN_Hold(void);
-void BAN_Release(void);
-void BAN_Reload(const uint8_t *ban, unsigned len);
-struct ban *BAN_FindBan(double t0);
-void BAN_RefBan(struct objcore *oc, struct ban *);
-double BAN_Time(const struct ban *ban);
-
-/* cache_busyobj.c */
-struct busyobj *VBO_GetBusyObj(struct worker *, const struct req *);
-void VBO_ReleaseBusyObj(struct worker *wrk, struct busyobj **busyobj);
-
 /* cache_cli.c [CLI] */
 extern pthread_t cli_thread;
 #define ASSERT_CLI() do {assert(pthread_self() == cli_thread);} while (0)
@@ -829,13 +817,6 @@ void ObjSendEvent(struct worker *, struct objcore *oc, unsigned event);
 const char *body_status_2str(enum body_status e);
 const char *sess_close_2str(enum sess_close sc, int want_desc);
 
-/* cache_req.c */
-struct req *Req_New(const struct worker *, struct sess *);
-void Req_Release(struct req *);
-void Req_Cleanup(struct sess *sp, struct worker *wrk, struct req *req);
-void Req_Fail(struct req *req, enum sess_close reason);
-void Req_AcctLogCharge(struct VSC_main *, struct req *);
-
 /* cache_req_body.c */
 int VRB_Ignore(struct req *);
 ssize_t VRB_Cache(struct req *, ssize_t maxsize);
@@ -888,22 +869,14 @@ VSLb_ts_busyobj(struct busyobj *bo, const char *event, double now)
 	VSLb_ts(bo->vsl, event, bo->t_first, &bo->t_prev, now);
 }
 
-
-void VSL_Flush(struct vsl_log *, int overflow);
-
 /* cache_vcl.c */
 const char *VCL_Name(const struct vcl *);
-const char *VCL_Method_Name(unsigned);
-#define VCL_MET_MAC(l,u,t,b) \
-    void VCL_##l##_method(struct vcl *, struct worker *, struct req *, \
-	struct busyobj *bo, void *specific);
-#include "tbl/vcl_returns.h"
 
 /* cache_vrt.c */
-
 /*
  * These prototypes go here, because we do not want to pollute vrt.h
  * with va_list.  VCC never generates direct calls to them.
+ * XXX: We should deprecate these (ref: STRANDS)
  */
 const char *VRT_String(struct ws *ws, const char *h, const char *p, va_list ap);
 char *VRT_StringList(char *d, unsigned dl, const char *p, va_list ap);
@@ -947,10 +920,6 @@ void RFC2616_Weaken_Etag(struct http *hp);
 void RFC2616_Vary_AE(struct http *hp);
 void RFC2616_Response_Body(const struct worker *, const struct busyobj *);
 
-/* stevedore.c */
-int STV_NewObject(struct worker *, struct objcore *,
-    const struct stevedore *, unsigned len);
-
 /*
  * A normal pointer difference is signed, but we never want a negative value
  * so this little tool will make sure we don't get that.
@@ -988,13 +957,6 @@ Tlen(const txt t)
  * extra timestamps in cache_pool.c.  Hide this detail with a macro
  */
 #define W_TIM_real(w) ((w)->lastused = VTIM_real())
-
-/*
- * XXX should cache.h refer to cache_param if common_param.h
- * is not in $DIST ?
- */
-#define FEATURE(x)	COM_FEATURE(cache_param->feature_bits, x)
-#define DO_DEBUG(x)	COM_DO_DEBUG(cache_param->debug_bits, x)
 
 #define DSL(debug_bit, id, ...)					\
 	do {							\
