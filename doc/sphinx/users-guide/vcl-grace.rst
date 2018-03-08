@@ -36,7 +36,10 @@ Keep
 Setting an object's `keep` tells Varnish that it should keep an object
 in the cache for some additional time. There are two reasons to do this:
 
-* To use the object as a candidate for ``304 NOT MODIFIED`` from the server.
+* To use the object to construct a conditional GET backend request (with
+  If-Modified-Since: and/or Ìf-None-Match: headers), allowing the backend
+  to reply with a 304 Not Modified response, which may be more efficient
+  on the backend and saves re-transmitting the unchanged body.
 * To be able to serve the object when grace has expired but we have a
   problem with getting a fresh object from the backend. This will require
   a change in ``sub vcl_hit``, as described below.
@@ -65,8 +68,10 @@ behave as described above. However, if you want to customize how varnish
 behaves by changing ``sub vcl_hit``, then you should know some of the
 details on how this works. 
 
-When a request is made for a resource where an object is found, but TTL
-has run out, Varnish considers the following:
+When ``sub vcl_recv`` ends with ``return (lookup)`` (which is the
+default behavior), Varnish will look for a matching object in its
+cache. Then, if it only found an object whose TTL has run out, Varnish
+will consider the following:
 
 * Is there already an ongoing backend request for the object?
 * Is the object within the `grace period`?
@@ -163,7 +168,7 @@ request has completed, then the second request will be turned into a
 `pass`.
 
 In practice this method works well in most cases, but if you
-experience excessive `pass` behavior, this translates to a reduced the
+experience excessive `pass` behavior, this translates to a reduced
 hit rate and higher load on the backend. When this happens you will
 see the error message `vcl_hit{} returns miss without busy object` in
 the log.
