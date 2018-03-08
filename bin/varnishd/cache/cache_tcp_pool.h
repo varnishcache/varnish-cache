@@ -31,25 +31,20 @@
  */
 
 struct tcp_pool;
-
-struct pfd {
-	unsigned		magic;
-#define PFD_MAGIC		0x0c5e6593
-	int			fd;
-	VTAILQ_ENTRY(pfd)	list;
-	const void		*priv;
-	uint8_t			state;
+struct pfd;
 #define PFD_STATE_AVAIL		(1<<0)
 #define PFD_STATE_USED		(1<<1)
 #define PFD_STATE_STOLEN	(1<<2)
 #define PFD_STATE_CLEANUP	(1<<3)
-	struct waited		waited[1];
-	struct tcp_pool		*tcp_pool;
-
-	pthread_cond_t		*cond;
-};
 
 /*---------------------------------------------------------------------
+ */
+
+unsigned PFD_State(const struct pfd *);
+int *PFD_Fd(struct pfd *);
+
+/*---------------------------------------------------------------------
+
  * Prototypes
  */
 
@@ -98,3 +93,6 @@ int VTP_Wait(struct worker *, struct pfd *, double tmo);
 	 * If the connection was recycled (state != VTP_STATE_USED) call this
 	 * function before attempting to receive on the connection.
 	 */
+
+const struct suckaddr *VTP_getip(struct pfd *);
+

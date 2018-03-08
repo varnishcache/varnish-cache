@@ -38,7 +38,6 @@
 
 #include "vtcp.h"
 #include "vtim.h"
-#include "waiter/waiter.h"
 
 #include "cache_director.h"
 #include "cache_backend.h"
@@ -78,6 +77,7 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
     unsigned force_fresh)
 {
 	struct pfd *pfd;
+	int *fdp;
 	double tmod;
 	char abuf1[VTCP_ADDRBUFSIZE], abuf2[VTCP_ADDRBUFSIZE];
 	char pbuf1[VTCP_PORTBUFSIZE], pbuf2[VTCP_PORTBUFSIZE];
@@ -123,8 +123,9 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 		return (NULL);
 	}
 
-	assert(pfd->fd >= 0);
-	AN(pfd->priv);
+	fdp = PFD_Fd(pfd);
+	AN(fdp);
+	assert(*fdp >= 0);
 
 	Lck_Lock(&bp->mtx);
 	bp->n_conn++;
@@ -133,16 +134,16 @@ vbe_dir_getfd(struct worker *wrk, struct backend *bp, struct busyobj *bo,
 	Lck_Unlock(&bp->mtx);
 
 	if (bp->proxy_header != 0)
-		VPX_Send_Proxy(pfd->fd, bp->proxy_header, bo->sp);
+		VPX_Send_Proxy(*fdp, bp->proxy_header, bo->sp);
 
-	VTCP_myname(pfd->fd, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
-	VTCP_hisname(pfd->fd, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
+	VTCP_myname(*fdp, abuf1, sizeof abuf1, pbuf1, sizeof pbuf1);
+	VTCP_hisname(*fdp, abuf2, sizeof abuf2, pbuf2, sizeof pbuf2);
 	VSLb(bo->vsl, SLT_BackendOpen, "%d %s %s %s %s %s",
-	    pfd->fd, bp->director->display_name, abuf2, pbuf2, abuf1, pbuf1);
+	    *fdp, bp->director->display_name, abuf2, pbuf2, abuf1, pbuf1);
 
 	INIT_OBJ(bo->htc, HTTP_CONN_MAGIC);
 	bo->htc->priv = pfd;
-	bo->htc->rfd = &pfd->fd;
+	bo->htc->rfd = fdp;
 	FIND_TMO(first_byte_timeout,
 	    bo->htc->first_byte_timeout, bo, bp);
 	FIND_TMO(between_bytes_timeout,
@@ -175,20 +176,20 @@ vbe_dir_finish(const struct director *d, struct worker *wrk,
 	CAST_OBJ_NOTNULL(bp, d->priv, BACKEND_MAGIC);
 
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
-	CAST_OBJ_NOTNULL(pfd, bo->htc->priv, PFD_MAGIC);
+	pfd = bo->htc->priv;
 	bo->htc->priv = NULL;
-	if (pfd->state != PFD_STATE_USED)
+	if (PFD_State(pfd) != PFD_STATE_USED)
 		assert(bo->htc->doclose == SC_TX_PIPE ||
 		    bo->htc->doclose == SC_RX_TIMEOUT);
 	if (bo->htc->doclose != SC_NULL || bp->proxy_header != 0) {
-		VSLb(bo->vsl, SLT_BackendClose, "%d %s", pfd->fd,
+		VSLb(bo->vsl, SLT_BackendClose, "%d %s", *PFD_Fd(pfd),
 		    bp->director->display_name);
 		VTP_Close(&pfd);
 		AZ(pfd);
 		Lck_Lock(&bp->mtx);
 	} else {
-		assert (pfd->state == PFD_STATE_USED);
-		VSLb(bo->vsl, SLT_BackendReuse, "%d %s", pfd->fd,
+		assert (PFD_State(pfd) == PFD_STATE_USED);
+		VSLb(bo->vsl, SLT_BackendReuse, "%d %s", *PFD_Fd(pfd),
 		    bp->director->display_name);
 		Lck_Lock(&bp->mtx);
 		VSC_C_main->backend_recycle++;
@@ -230,13 +231,13 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		if (pfd == NULL)
 			return (-1);
 		AN(bo->htc);
-		if (pfd->state != PFD_STATE_STOLEN)
+		if (PFD_State(pfd) != PFD_STATE_STOLEN)
 			extrachance = 0;
 
 		i = V1F_SendReq(wrk, bo, &bo->acct.bereq_hdrbytes,
 				&bo->acct.bereq_bodybytes, 0);
 
-		if (pfd->state != PFD_STATE_USED) {
+		if (PFD_State(pfd) != PFD_STATE_USED) {
 			if (VTP_Wait(wrk, pfd, VTIM_real() +
 			    bo->htc->first_byte_timeout) != 0) {
 				bo->htc->doclose = SC_RX_TIMEOUT;
@@ -247,7 +248,7 @@ vbe_dir_gethdrs(const struct director *d, struct worker *wrk,
 		}
 
 		if (bo->htc->doclose == SC_NULL) {
-			assert(pfd->state == PFD_STATE_USED);
+			assert(PFD_State(pfd) == PFD_STATE_USED);
 			if (i == 0)
 				i = V1F_FetchRespHdr(bo);
 			if (i == 0) {
@@ -284,9 +285,9 @@ vbe_dir_getip(const struct director *d, struct worker *wrk,
 	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(bo, BUSYOBJ_MAGIC);
 	CHECK_OBJ_NOTNULL(bo->htc, HTTP_CONN_MAGIC);
-	CAST_OBJ_NOTNULL(pfd, bo->htc->priv, PFD_MAGIC);
+	pfd = bo->htc->priv;
 
-	return (pfd->priv);
+	return (VTP_getip(pfd));
 }
 
 /*--------------------------------------------------------------------*/
@@ -322,7 +323,7 @@ vbe_dir_http1pipe(const struct director *d, struct req *req, struct busyobj *bo)
 		i = V1F_SendReq(req->wrk, bo, &v1a.bereq, &v1a.out, 1);
 		VSLb_ts_req(req, "Pipe", W_TIM_real(req->wrk));
 		if (i == 0)
-			V1P_Process(req, pfd->fd, &v1a);
+			V1P_Process(req, *PFD_Fd(pfd), &v1a);
 		VSLb_ts_req(req, "PipeSess", W_TIM_real(req->wrk));
 		bo->htc->doclose = SC_TX_PIPE;
 		vbe_dir_finish(d, req->wrk, bo);

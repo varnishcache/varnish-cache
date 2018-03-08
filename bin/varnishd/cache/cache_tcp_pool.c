@@ -44,25 +44,61 @@
 #include "cache_tcp_pool.h"
 #include "cache_pool.h"
 
-typedef int cp_open_f(const struct tcp_pool *, double tmo, const void **privp);
+struct conn_pool;
+
+/*--------------------------------------------------------------------
+ */
+
+struct pfd {
+	unsigned		magic;
+#define PFD_MAGIC		0x0c5e6593
+	int			fd;
+	VTAILQ_ENTRY(pfd)	list;
+	const void		*priv;
+	uint8_t			state;
+	struct waited		waited[1];
+	struct conn_pool	*conn_pool;
+
+	pthread_cond_t		*cond;
+};
+
+unsigned
+PFD_State(const struct pfd *p)
+{
+	CHECK_OBJ_NOTNULL(p, PFD_MAGIC);
+	return (p->state);
+}
+
+int *
+PFD_Fd(struct pfd *p)
+{
+	CHECK_OBJ_NOTNULL(p, PFD_MAGIC);
+	return (&(p->fd));
+}
+
+/*--------------------------------------------------------------------
+ */
+
+typedef int cp_open_f(const struct conn_pool *, double tmo, const void **privp);
 typedef void cp_close_f(struct pfd *);
+typedef int cp_cmp_f(const struct conn_pool *, const void *priv);
 
 struct cp_methods {
 	cp_open_f				*open;
 	cp_close_f				*close;
+	cp_cmp_f				*cmp;
 };
 
-struct tcp_pool {
+struct conn_pool {
 	unsigned				magic;
-#define TCP_POOL_MAGIC				0x28b0e42a
+#define CONN_POOL_MAGIC				0x85099bc3
 
 	const struct cp_methods			*methods;
 
 	const void				*id;
-	struct suckaddr				*ip4;
-	struct suckaddr				*ip6;
+	void					*priv;
 
-	VTAILQ_ENTRY(tcp_pool)			list;
+	VTAILQ_ENTRY(conn_pool)			list;
 	int					refcnt;
 	struct lock				mtx;
 
@@ -75,19 +111,369 @@ struct tcp_pool {
 	int					n_used;
 };
 
-static struct lock		tcp_pools_mtx;
-static VTAILQ_HEAD(, tcp_pool)	tcp_pools = VTAILQ_HEAD_INITIALIZER(tcp_pools);
+struct tcp_pool {
+	unsigned				magic;
+#define TCP_POOL_MAGIC				0x28b0e42a
+
+	struct suckaddr				*ip4;
+	struct suckaddr				*ip6;
+	struct conn_pool			cp[1];
+};
+
+static struct lock		conn_pools_mtx;
+static VTAILQ_HEAD(, conn_pool)	conn_pools =
+    VTAILQ_HEAD_INITIALIZER(conn_pools);
+
+/*--------------------------------------------------------------------
+ * Waiter-handler
+ */
+
+static void  v_matchproto_(waiter_handle_f)
+vcp_handle(struct waited *w, enum wait_event ev, double now)
+{
+	struct pfd *pfd;
+	struct conn_pool *cp;
+
+	CAST_OBJ_NOTNULL(pfd, w->priv1, PFD_MAGIC);
+	(void)ev;
+	(void)now;
+	CHECK_OBJ_NOTNULL(pfd->conn_pool, CONN_POOL_MAGIC);
+	cp = pfd->conn_pool;
+
+	Lck_Lock(&cp->mtx);
+
+	switch (pfd->state) {
+	case PFD_STATE_STOLEN:
+		pfd->state = PFD_STATE_USED;
+		VTAILQ_REMOVE(&cp->connlist, pfd, list);
+		AN(pfd->cond);
+		AZ(pthread_cond_signal(pfd->cond));
+		break;
+	case PFD_STATE_AVAIL:
+		cp->methods->close(pfd);
+		VTAILQ_REMOVE(&cp->connlist, pfd, list);
+		cp->n_conn--;
+		FREE_OBJ(pfd);
+		break;
+	case PFD_STATE_CLEANUP:
+		cp->methods->close(pfd);
+		cp->n_kill--;
+		VTAILQ_REMOVE(&cp->killlist, pfd, list);
+		memset(pfd, 0x11, sizeof *pfd);
+		free(pfd);
+		break;
+	default:
+		WRONG("Wrong pfd state");
+	}
+	Lck_Unlock(&cp->mtx);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static struct conn_pool *
+VCP_Ref(const void *id, const void *priv)
+{
+	struct conn_pool *cp;
+
+	Lck_Lock(&conn_pools_mtx);
+	VTAILQ_FOREACH(cp, &conn_pools, list) {
+		assert(cp->refcnt > 0);
+		if (cp->id != id)
+			continue;
+		if (cp->methods->cmp(cp, priv))
+			continue;
+		cp->refcnt++;
+		Lck_Unlock(&conn_pools_mtx);
+		return (cp);
+	}
+	Lck_Unlock(&conn_pools_mtx);
+	return (NULL);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static void *
+VCP_New(struct conn_pool *cp, const void *id, void *priv,
+    const struct cp_methods *cm)
+{
+
+	AN(cp);
+	AN(cm);
+	AN(cm->open);
+	AN(cm->close);
+	AN(cm->cmp);
+
+	INIT_OBJ(cp, CONN_POOL_MAGIC);
+	cp->id = id;
+	cp->priv = priv;
+	cp->methods = cm;
+	cp->refcnt = 1;
+	Lck_New(&cp->mtx, lck_tcp_pool);
+	VTAILQ_INIT(&cp->connlist);
+	VTAILQ_INIT(&cp->killlist);
+
+	Lck_Lock(&conn_pools_mtx);
+	VTAILQ_INSERT_HEAD(&conn_pools, cp, list);
+	Lck_Unlock(&conn_pools_mtx);
+
+	return (priv);
+}
+
+
+/*--------------------------------------------------------------------
+ */
+
+static void
+VCP_AddRef(struct conn_pool *cp)
+{
+	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
+
+	Lck_Lock(&conn_pools_mtx);
+	assert(cp->refcnt > 0);
+	cp->refcnt++;
+	Lck_Unlock(&conn_pools_mtx);
+}
+
+/*--------------------------------------------------------------------
+ * Release Conn pool, destroy if last reference.
+ */
+
+static int
+VCP_Rel(struct conn_pool *cp)
+{
+	struct pfd *pfd, *pfd2;
+
+	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
+
+	Lck_Lock(&conn_pools_mtx);
+	assert(cp->refcnt > 0);
+	if (--cp->refcnt > 0) {
+		Lck_Unlock(&conn_pools_mtx);
+		return (1);
+	}
+	AZ(cp->n_used);
+	VTAILQ_REMOVE(&conn_pools, cp, list);
+	Lck_Unlock(&conn_pools_mtx);
+
+	Lck_Lock(&cp->mtx);
+	VTAILQ_FOREACH_SAFE(pfd, &cp->connlist, list, pfd2) {
+		VTAILQ_REMOVE(&cp->connlist, pfd, list);
+		cp->n_conn--;
+		assert(pfd->state == PFD_STATE_AVAIL);
+		pfd->state = PFD_STATE_CLEANUP;
+		(void)shutdown(pfd->fd, SHUT_WR);
+		VTAILQ_INSERT_TAIL(&cp->killlist, pfd, list);
+		cp->n_kill++;
+	}
+	while (cp->n_kill) {
+		Lck_Unlock(&cp->mtx);
+		(void)usleep(20000);
+		Lck_Lock(&cp->mtx);
+	}
+	Lck_Unlock(&cp->mtx);
+	Lck_Delete(&cp->mtx);
+	AZ(cp->n_conn);
+	AZ(cp->n_kill);
+	return (0);
+}
+
+/*--------------------------------------------------------------------
+ * Recycle a connection.
+ */
+
+static void
+VCP_Recycle(const struct worker *wrk, struct pfd **pfdp)
+{
+	struct pfd *pfd;
+	struct conn_pool *cp;
+	int i = 0;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	pfd = *pfdp;
+	*pfdp = NULL;
+	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
+	cp = pfd->conn_pool;
+	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
+
+	assert(pfd->state == PFD_STATE_USED);
+	assert(pfd->fd > 0);
+
+	Lck_Lock(&cp->mtx);
+	cp->n_used--;
+
+	pfd->waited->priv1 = pfd;
+	pfd->waited->fd = pfd->fd;
+	pfd->waited->idle = VTIM_real();
+	pfd->state = PFD_STATE_AVAIL;
+	pfd->waited->func = vcp_handle;
+	pfd->waited->tmo = &cache_param->backend_idle_timeout;
+	if (Wait_Enter(wrk->pool->waiter, pfd->waited)) {
+		cp->methods->close(pfd);
+		memset(pfd, 0x33, sizeof *pfd);
+		free(pfd);
+		// XXX: stats
+		pfd = NULL;
+	} else {
+		VTAILQ_INSERT_HEAD(&cp->connlist, pfd, list);
+		i++;
+	}
+
+	if (pfd != NULL)
+		cp->n_conn++;
+	Lck_Unlock(&cp->mtx);
+
+	if (i && DO_DEBUG(DBG_VTC_MODE)) {
+		/*
+		 * In varnishtest we do not have the luxury of using
+		 * multiple backend connections, so whenever we end up
+		 * in the "pending" case, take a short nap to let the
+		 * waiter catch up and put the pfd back into circulations.
+		 *
+		 * In particular ESI:include related tests suffer random
+		 * failures without this.
+		 *
+		 * In normal operation, the only effect is that we will
+		 * have N+1 backend connections rather than N, which is
+		 * entirely harmless.
+		 */
+		(void)usleep(10000);
+	}
+}
+
+
+/*--------------------------------------------------------------------
+ * Close a connection.
+ */
+
+static void
+VCP_Close(struct pfd **pfdp)
+{
+	struct pfd *pfd;
+	struct conn_pool *cp;
+
+	pfd = *pfdp;
+	*pfdp = NULL;
+	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
+	cp = pfd->conn_pool;
+	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
+
+	assert(pfd->fd > 0);
+
+	Lck_Lock(&cp->mtx);
+	assert(pfd->state == PFD_STATE_USED || pfd->state == PFD_STATE_STOLEN);
+	cp->n_used--;
+	if (pfd->state == PFD_STATE_STOLEN) {
+		(void)shutdown(pfd->fd, SHUT_RDWR);
+		VTAILQ_REMOVE(&cp->connlist, pfd, list);
+		pfd->state = PFD_STATE_CLEANUP;
+		VTAILQ_INSERT_HEAD(&cp->killlist, pfd, list);
+		cp->n_kill++;
+	} else {
+		assert(pfd->state == PFD_STATE_USED);
+		cp->methods->close(pfd);
+		memset(pfd, 0x44, sizeof *pfd);
+		free(pfd);
+	}
+	Lck_Unlock(&cp->mtx);
+}
+
+/*--------------------------------------------------------------------
+ * Get a connection
+ */
+
+static struct pfd *
+VCP_Get(struct conn_pool *cp, double tmo, struct worker *wrk,
+    unsigned force_fresh)
+{
+	struct pfd *pfd;
+
+	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+
+	Lck_Lock(&cp->mtx);
+	pfd = VTAILQ_FIRST(&cp->connlist);
+	CHECK_OBJ_ORNULL(pfd, PFD_MAGIC);
+	if (force_fresh || pfd == NULL || pfd->state == PFD_STATE_STOLEN)
+		pfd = NULL;
+	else {
+		assert(pfd->conn_pool == cp);
+		assert(pfd->state == PFD_STATE_AVAIL);
+		VTAILQ_REMOVE(&cp->connlist, pfd, list);
+		VTAILQ_INSERT_TAIL(&cp->connlist, pfd, list);
+		cp->n_conn--;
+		VSC_C_main->backend_reuse++;
+		pfd->state = PFD_STATE_STOLEN;
+		pfd->cond = &wrk->cond;
+	}
+	cp->n_used++;			// Opening mostly works
+	Lck_Unlock(&cp->mtx);
+
+	if (pfd != NULL)
+		return (pfd);
+
+	ALLOC_OBJ(pfd, PFD_MAGIC);
+	AN(pfd);
+	INIT_OBJ(pfd->waited, WAITED_MAGIC);
+	pfd->state = PFD_STATE_USED;
+	pfd->conn_pool = cp;
+	pfd->fd = cp->methods->open(cp, tmo, &pfd->priv);
+	if (pfd->fd < 0) {
+		FREE_OBJ(pfd);
+		Lck_Lock(&cp->mtx);
+		cp->n_used--;		// Nope, didn't work after all.
+		Lck_Unlock(&cp->mtx);
+	} else
+		VSC_C_main->backend_conn++;
+
+	return (pfd);
+}
+
+/*--------------------------------------------------------------------
+ */
+
+static int
+VCP_Wait(struct worker *wrk, struct pfd *pfd, double tmo)
+{
+	struct conn_pool *cp;
+	int r;
+
+	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
+	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
+	cp = pfd->conn_pool;
+	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
+	assert(pfd->cond == &wrk->cond);
+	Lck_Lock(&cp->mtx);
+	while (pfd->state == PFD_STATE_STOLEN) {
+		r = Lck_CondWait(&wrk->cond, &cp->mtx, tmo);
+		if (r != 0) {
+			if (r == EINTR)
+				continue;
+			assert(r == ETIMEDOUT);
+			Lck_Unlock(&cp->mtx);
+			return (1);
+		}
+	}
+	assert(pfd->state == PFD_STATE_USED);
+	pfd->cond = NULL;
+	Lck_Unlock(&cp->mtx);
+
+	return (0);
+}
 
 /*--------------------------------------------------------------------
  */
 
 static int v_matchproto_(cp_open_f)
-vtp_open(const struct tcp_pool *tp, double tmo, const void **privp)
+vtp_open(const struct conn_pool *cp, double tmo, const void **privp)
 {
 	int s;
 	int msec;
+	struct tcp_pool *tp;
 
-	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
+	CHECK_OBJ_NOTNULL(cp, CONN_POOL_MAGIC);
+	CAST_OBJ_NOTNULL(tp, cp->priv, TCP_POOL_MAGIC);
 
 	msec = (int)floor(tmo * 1000.0);
 	if (cache_param->prefer_ipv6) {
@@ -115,54 +501,44 @@ vtp_close(struct pfd *pfd)
 	VTCP_close(&pfd->fd);
 }
 
+struct vtp_cs {
+	unsigned			magic;
+#define VTP_CS_MAGIC			0xc1e40447
+	const struct suckaddr		*ip4;
+	const struct suckaddr		*ip6;
+};
+
+static int v_matchproto_(cp_cmp_f)
+vtp_cmp(const struct conn_pool *cp, const void *priv)
+{
+	const struct vtp_cs *vcs;
+	const struct tcp_pool *tp;
+
+	CAST_OBJ_NOTNULL(vcs, priv, VTP_CS_MAGIC);
+	CAST_OBJ_NOTNULL(tp, cp->priv, TCP_POOL_MAGIC);
+	if (tp->ip4 == NULL && vcs->ip4 != NULL)
+		return (1);
+	if (tp->ip4 != NULL && vcs->ip4 == NULL)
+		return (1);
+	if (tp->ip6 == NULL && vcs->ip6 != NULL)
+		return (1);
+	if (tp->ip6 != NULL && vcs->ip6 == NULL)
+		return (1);
+	if (tp->ip4 != NULL && vcs->ip4 != NULL &&
+	    VSA_Compare(tp->ip4, vcs->ip4))
+		return (1);
+	if (tp->ip6 != NULL && vcs->ip6 != NULL &&
+	    VSA_Compare(tp->ip6, vcs->ip6))
+		return (1);
+	return (0);
+}
+
 static const struct cp_methods vtp_methods = {
 	.open = vtp_open,
 	.close = vtp_close,
+	.cmp = vtp_cmp,
 };
 
-/*--------------------------------------------------------------------
- * Waiter-handler
- */
-
-static void  v_matchproto_(waiter_handle_f)
-tcp_handle(struct waited *w, enum wait_event ev, double now)
-{
-	struct pfd *pfd;
-	struct tcp_pool *tp;
-
-	CAST_OBJ_NOTNULL(pfd, w->priv1, PFD_MAGIC);
-	(void)ev;
-	(void)now;
-	CHECK_OBJ_NOTNULL(pfd->tcp_pool, TCP_POOL_MAGIC);
-	tp = pfd->tcp_pool;
-
-	Lck_Lock(&tp->mtx);
-
-	switch (pfd->state) {
-	case PFD_STATE_STOLEN:
-		pfd->state = PFD_STATE_USED;
-		VTAILQ_REMOVE(&tp->connlist, pfd, list);
-		AN(pfd->cond);
-		AZ(pthread_cond_signal(pfd->cond));
-		break;
-	case PFD_STATE_AVAIL:
-		tp->methods->close(pfd);
-		VTAILQ_REMOVE(&tp->connlist, pfd, list);
-		tp->n_conn--;
-		FREE_OBJ(pfd);
-		break;
-	case PFD_STATE_CLEANUP:
-		tp->methods->close(pfd);
-		tp->n_kill--;
-		VTAILQ_REMOVE(&tp->killlist, pfd, list);
-		memset(pfd, 0x11, sizeof *pfd);
-		free(pfd);
-		break;
-	default:
-		WRONG("Wrong pfd state");
-	}
-	Lck_Unlock(&tp->mtx);
-}
 
 /*--------------------------------------------------------------------
  * Reference a TCP pool given by {ip4, ip6} pair.  Create if it
@@ -173,55 +549,25 @@ struct tcp_pool *
 VTP_Ref(const struct suckaddr *ip4, const struct suckaddr *ip6, const void *id)
 {
 	struct tcp_pool *tp;
+	struct conn_pool *cp;
+	struct vtp_cs vcs;
 
 	assert(ip4 != NULL || ip6 != NULL);
-	Lck_Lock(&tcp_pools_mtx);
-	VTAILQ_FOREACH(tp, &tcp_pools, list) {
-		assert(tp->refcnt > 0);
-		if (tp->id != id)
-			continue;
-		if (ip4 == NULL) {
-			if (tp->ip4 != NULL)
-				continue;
-		} else {
-			if (tp->ip4 == NULL)
-				continue;
-			if (VSA_Compare(ip4, tp->ip4))
-				continue;
-		}
-		if (ip6 == NULL) {
-			if (tp->ip6 != NULL)
-				continue;
-		} else {
-			if (tp->ip6 == NULL)
-				continue;
-			if (VSA_Compare(ip6, tp->ip6))
-				continue;
-		}
-		tp->refcnt++;
-		Lck_Unlock(&tcp_pools_mtx);
-		return (tp);
-	}
-	Lck_Unlock(&tcp_pools_mtx);
+	INIT_OBJ(&vcs, VTP_CS_MAGIC);
+	vcs.ip4 = ip4;
+	vcs.ip6 = ip6;
+
+	cp = VCP_Ref(id, &vcs);
+	if (cp != NULL)
+		return (cp->priv);
 
 	ALLOC_OBJ(tp, TCP_POOL_MAGIC);
 	AN(tp);
-	tp->methods = &vtp_methods;
 	if (ip4 != NULL)
 		tp->ip4 = VSA_Clone(ip4);
 	if (ip6 != NULL)
 		tp->ip6 = VSA_Clone(ip6);
-	tp->refcnt = 1;
-	tp->id = id;
-	Lck_New(&tp->mtx, lck_tcp_pool);
-	VTAILQ_INIT(&tp->connlist);
-	VTAILQ_INIT(&tp->killlist);
-
-	Lck_Lock(&tcp_pools_mtx);
-	VTAILQ_INSERT_HEAD(&tcp_pools, tp, list);
-	Lck_Unlock(&tcp_pools_mtx);
-
-	return (tp);
+	return(VCP_New(tp->cp, id, tp, &vtp_methods));
 }
 
 /*--------------------------------------------------------------------
@@ -232,11 +578,7 @@ void
 VTP_AddRef(struct tcp_pool *tp)
 {
 	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
-
-	Lck_Lock(&tcp_pools_mtx);
-	assert(tp->refcnt > 0);
-	tp->refcnt++;
-	Lck_Unlock(&tcp_pools_mtx);
+	VCP_AddRef(tp->cp);
 }
 
 /*--------------------------------------------------------------------
@@ -247,42 +589,13 @@ void
 VTP_Rel(struct tcp_pool **tpp)
 {
 	struct tcp_pool *tp;
-	struct pfd *pfd, *pfd2;
 
 	TAKE_OBJ_NOTNULL(tp, tpp, TCP_POOL_MAGIC);
-
-	Lck_Lock(&tcp_pools_mtx);
-	assert(tp->refcnt > 0);
-	if (--tp->refcnt > 0) {
-		Lck_Unlock(&tcp_pools_mtx);
+	if (VCP_Rel(tp->cp))
 		return;
-	}
-	AZ(tp->n_used);
-	VTAILQ_REMOVE(&tcp_pools, tp, list);
-	Lck_Unlock(&tcp_pools_mtx);
 
 	free(tp->ip4);
 	free(tp->ip6);
-	Lck_Lock(&tp->mtx);
-	VTAILQ_FOREACH_SAFE(pfd, &tp->connlist, list, pfd2) {
-		VTAILQ_REMOVE(&tp->connlist, pfd, list);
-		tp->n_conn--;
-		assert(pfd->state == PFD_STATE_AVAIL);
-		pfd->state = PFD_STATE_CLEANUP;
-		(void)shutdown(pfd->fd, SHUT_WR);
-		VTAILQ_INSERT_TAIL(&tp->killlist, pfd, list);
-		tp->n_kill++;
-	}
-	while (tp->n_kill) {
-		Lck_Unlock(&tp->mtx);
-		(void)usleep(20000);
-		Lck_Lock(&tp->mtx);
-	}
-	Lck_Unlock(&tp->mtx);
-	Lck_Delete(&tp->mtx);
-	AZ(tp->n_conn);
-	AZ(tp->n_kill);
-
 	FREE_OBJ(tp);
 }
 
@@ -295,7 +608,7 @@ int
 VTP_Open(const struct tcp_pool *tp, double tmo, const void **privp)
 {
 
-	return (vtp_open(tp, tmo, privp));
+	return (vtp_open(tp->cp, tmo, privp));
 }
 
 /*--------------------------------------------------------------------
@@ -305,60 +618,8 @@ VTP_Open(const struct tcp_pool *tp, double tmo, const void **privp)
 void
 VTP_Recycle(const struct worker *wrk, struct pfd **pfdp)
 {
-	struct pfd *pfd;
-	struct tcp_pool *tp;
-	int i = 0;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-	pfd = *pfdp;
-	*pfdp = NULL;
-	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
-	tp = pfd->tcp_pool;
-	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
-
-	assert(pfd->state == PFD_STATE_USED);
-	assert(pfd->fd > 0);
-
-	Lck_Lock(&tp->mtx);
-	tp->n_used--;
-
-	pfd->waited->priv1 = pfd;
-	pfd->waited->fd = pfd->fd;
-	pfd->waited->idle = VTIM_real();
-	pfd->state = PFD_STATE_AVAIL;
-	pfd->waited->func = tcp_handle;
-	pfd->waited->tmo = &cache_param->backend_idle_timeout;
-	if (Wait_Enter(wrk->pool->waiter, pfd->waited)) {
-		tp->methods->close(pfd);
-		memset(pfd, 0x33, sizeof *pfd);
-		free(pfd);
-		// XXX: stats
-		pfd = NULL;
-	} else {
-		VTAILQ_INSERT_HEAD(&tp->connlist, pfd, list);
-		i++;
-	}
-
-	if (pfd != NULL)
-		tp->n_conn++;
-	Lck_Unlock(&tp->mtx);
-
-	if (i && DO_DEBUG(DBG_VTC_MODE)) {
-		/*
-		 * In varnishtest we do not have the luxury of using
-		 * multiple backend connections, so whenever we end up
-		 * in the "pending" case, take a short nap to let the
-		 * waiter catch up and put the pfd back into circulations.
-		 *
-		 * In particular ESI:include related tests suffer random
-		 * failures without this.
-		 *
-		 * In normal operation, the only effect is that we will
-		 * have N+1 backend connections rather than N, which is
-		 * entirely harmless.
-		 */
-		(void)usleep(10000);
-	}
+	VCP_Recycle(wrk, pfdp);
 }
 
 /*--------------------------------------------------------------------
@@ -368,33 +629,8 @@ VTP_Recycle(const struct worker *wrk, struct pfd **pfdp)
 void
 VTP_Close(struct pfd **pfdp)
 {
-	struct pfd *pfd;
-	struct tcp_pool *tp;
 
-	pfd = *pfdp;
-	*pfdp = NULL;
-	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
-	tp = pfd->tcp_pool;
-	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
-
-	assert(pfd->fd > 0);
-
-	Lck_Lock(&tp->mtx);
-	assert(pfd->state == PFD_STATE_USED || pfd->state == PFD_STATE_STOLEN);
-	tp->n_used--;
-	if (pfd->state == PFD_STATE_STOLEN) {
-		(void)shutdown(pfd->fd, SHUT_RDWR);
-		VTAILQ_REMOVE(&tp->connlist, pfd, list);
-		pfd->state = PFD_STATE_CLEANUP;
-		VTAILQ_INSERT_HEAD(&tp->killlist, pfd, list);
-		tp->n_kill++;
-	} else {
-		assert(pfd->state == PFD_STATE_USED);
-		tp->methods->close(pfd);
-		memset(pfd, 0x44, sizeof *pfd);
-		free(pfd);
-	}
-	Lck_Unlock(&tp->mtx);
+	VCP_Close(pfdp);
 }
 
 /*--------------------------------------------------------------------
@@ -405,47 +641,8 @@ struct pfd *
 VTP_Get(struct tcp_pool *tp, double tmo, struct worker *wrk,
     unsigned force_fresh)
 {
-	struct pfd *pfd;
 
-	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
-
-	Lck_Lock(&tp->mtx);
-	pfd = VTAILQ_FIRST(&tp->connlist);
-	CHECK_OBJ_ORNULL(pfd, PFD_MAGIC);
-	if (force_fresh || pfd == NULL || pfd->state == PFD_STATE_STOLEN)
-		pfd = NULL;
-	else {
-		assert(pfd->tcp_pool == tp);
-		assert(pfd->state == PFD_STATE_AVAIL);
-		VTAILQ_REMOVE(&tp->connlist, pfd, list);
-		VTAILQ_INSERT_TAIL(&tp->connlist, pfd, list);
-		tp->n_conn--;
-		VSC_C_main->backend_reuse++;
-		pfd->state = PFD_STATE_STOLEN;
-		pfd->cond = &wrk->cond;
-	}
-	tp->n_used++;			// Opening mostly works
-	Lck_Unlock(&tp->mtx);
-
-	if (pfd != NULL)
-		return (pfd);
-
-	ALLOC_OBJ(pfd, PFD_MAGIC);
-	AN(pfd);
-	INIT_OBJ(pfd->waited, WAITED_MAGIC);
-	pfd->state = PFD_STATE_USED;
-	pfd->tcp_pool = tp;
-	pfd->fd = tp->methods->open(tp, tmo, &pfd->priv);
-	if (pfd->fd < 0) {
-		FREE_OBJ(pfd);
-		Lck_Lock(&tp->mtx);
-		tp->n_used--;		// Nope, didn't work after all.
-		Lck_Unlock(&tp->mtx);
-	} else
-		VSC_C_main->backend_conn++;
-
-	return (pfd);
+	return VCP_Get(tp->cp, tmo, wrk, force_fresh);
 }
 
 /*--------------------------------------------------------------------
@@ -454,30 +651,20 @@ VTP_Get(struct tcp_pool *tp, double tmo, struct worker *wrk,
 int
 VTP_Wait(struct worker *wrk, struct pfd *pfd, double tmo)
 {
+	return (VCP_Wait(wrk, pfd, tmo));
+}
+
+/*--------------------------------------------------------------------
+ */
+
+const struct suckaddr *
+VTP_getip(struct pfd *pfd)
+{
 	struct tcp_pool *tp;
-	int r;
 
-	CHECK_OBJ_NOTNULL(wrk, WORKER_MAGIC);
 	CHECK_OBJ_NOTNULL(pfd, PFD_MAGIC);
-	tp = pfd->tcp_pool;
-	CHECK_OBJ_NOTNULL(tp, TCP_POOL_MAGIC);
-	assert(pfd->cond == &wrk->cond);
-	Lck_Lock(&tp->mtx);
-	while (pfd->state == PFD_STATE_STOLEN) {
-		r = Lck_CondWait(&wrk->cond, &tp->mtx, tmo);
-		if (r != 0) {
-			if (r == EINTR)
-				continue;
-			assert(r == ETIMEDOUT);
-			Lck_Unlock(&tp->mtx);
-			return (1);
-		}
-	}
-	assert(pfd->state == PFD_STATE_USED);
-	pfd->cond = NULL;
-	Lck_Unlock(&tp->mtx);
-
-	return (0);
+	CAST_OBJ_NOTNULL(tp, pfd->conn_pool->priv, TCP_POOL_MAGIC);
+	return (pfd->priv);
 }
 
 /*--------------------------------------------------------------------*/
@@ -485,5 +672,5 @@ VTP_Wait(struct worker *wrk, struct pfd *pfd, double tmo)
 void
 VTP_Init(void)
 {
-	Lck_New(&tcp_pools_mtx, lck_tcp_pool);
+	Lck_New(&conn_pools_mtx, lck_tcp_pool);
 }
