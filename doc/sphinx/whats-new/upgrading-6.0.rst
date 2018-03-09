@@ -9,6 +9,49 @@ XXX: Most important change first
 
 XXX ...
 
+Unix domain sockets as listen addresses
+=======================================
+
+The ``varnishd -a`` command-line argument now has this form, where the
+``address`` may be a Unix domain socket, identified as such when it
+begins with ``/`` (see varnishd :ref:`ref-varnishd-options`)::
+
+  -a [name=][address][:port][,PROTO][,user=<user>][,group=<group>][,mode=<mode>]
+
+That means that an absolute path must always be specified for the
+socket file.  The socket file is created when Varnish starts, and any
+file that may exist at that path is unlinked first. You can use the
+optional ``user``, ``group`` and ``mode`` sub-arguments to set
+permissions of the new socket file; use names for ``user`` and
+``group`` (not numeric IDs), and a 3-digit octal number for
+``mode``. This is done by the management process, so creating the
+socket file and setting permissions are done with the privileges of
+the management process owner.
+
+There are some platform-specific restrictions on the use of UDSen to
+which you will have to conform. Here are some things we know of, but
+this list is by no means authoritative or exhaustive; always consult
+your platform documentation (usually in ``man unix``):
+
+* There is a maximum permitted length of the path for a socket file,
+  considerably shorter than the maximum for the file system; usually a
+  bit over 100 bytes.
+
+* On FreeBSD and other BSD-derived systems, the permissions of the
+  socket file do not restrict which processes can connect to the
+  socket.
+
+* On Linux, a process connecting to the socket must have write
+  permissions on the socket file.
+
+On any system, a process connecting to the socket must be able to
+access the socket file. So you can reliably restrict access by
+restricting permissions on the directory containing the socket (but
+that must be done outside of the Varnish configuration).
+
+If you continue using only IP addresses in your ``-a`` arguments, you
+won't have to change them.
+
 varnishd parameters
 ===================
 
