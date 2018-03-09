@@ -63,7 +63,6 @@
 #include "vapi/vsm.h"
 #include "vas.h"
 #include "vcli.h"
-#include "vnum.h"
 #include "vtcp.h"
 
 #define RL_EXIT(status) \
