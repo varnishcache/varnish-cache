@@ -78,9 +78,13 @@ Unix domain sockets and VCL
 
 We have made an effort to adapt the support of Unix domain sockets in
 VCL so that you may not have to change anything in your VCL deployment
-at all, other than changing the version to 4.1. Most importantly, this
-affects the meaning of the ``*.ip`` variables and the use of ACLs; and
-there are a number of other details you should consider.
+at all, other than changing the version to 4.1.
+
+The short story is that where VCL requires an IP value, the value is
+``0.0.0.0:0`` for a connection that was addressed as a UDS -- the "any
+IPv4" address with port 0. So your use of IP-valued elements in VCL
+will continue to work and may not have to change, but there are some
+consequences that you should consider, covered in the following.
 
 If you don't use UDSen, then nothing about VCL changes. UDS support
 requires version 4.1, so if you are keeping your VCL level at 4.0 (and
@@ -90,9 +94,8 @@ concern.
 ``client.ip``, ``server.ip``, ``local.ip`` and ``remote.ip``
 ------------------------------------------------------------
 
-When referring to a connection that was in fact addressed as a UDS,
-the ``*.ip`` variables always have a value equivalent to the IPv4
-address ``0.0.0.0:0`` -- the "any IPv4" address with port 0.
+These variables have the value ``0.0.0.0`` for a connection that was
+addressed as a UDS.
 
 Remember that if you are using the PROXY protocol, then ``client.ip``
 and ``server.ip`` are set to the addresses sent in the PROXY header by
@@ -105,9 +108,9 @@ If you have more than one UDS listener (more than one ``-a``
 command-line argument specifying a socket path), then you may not be
 able to use the ``*.ip`` variables to tell them apart, especially
 since ``local.ip`` will be ``0.0.0.0`` for all of them. If you need to
-distinguish such addresses in VCL, you can use ``local.socket`` (which
-is the name given for the ``-a`` argument; ``a0``, ``a1`` etc. by
-default) or ``local.endpoint``, which in the case of UDS is the path
+distinguish such addresses in VCL, you can use ``local.socket``, which
+is the name given for the ``-a`` argument (``a0``, ``a1`` etc. by
+default), or ``local.endpoint``, which in the case of UDS is the path
 given in the ``-a`` argument. You can, for example, use string
 operations such as regex matching on ``local.endpoint`` to determine
 properties of the path address::
