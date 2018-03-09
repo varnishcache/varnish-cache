@@ -165,8 +165,6 @@ h2_del_req(struct worker *wrk, const struct h2_req *r2)
 {
 	struct h2_sess *h2;
 	struct sess *sp;
-	struct req *req;
-	int r;
 
 	CHECK_OBJ_NOTNULL(r2, H2_REQ_MAGIC);
 	AZ(r2->scheduled);
@@ -176,22 +174,13 @@ h2_del_req(struct worker *wrk, const struct h2_req *r2)
 	sp = h2->sess;
 	Lck_Lock(&sp->mtx);
 	assert(h2->refcnt > 0);
-	r = --h2->refcnt;
+	--h2->refcnt;
 	/* XXX: PRIORITY reshuffle */
 	VTAILQ_REMOVE(&h2->streams, r2, list);
 	Lck_Unlock(&sp->mtx);
 	AZ(r2->req->ws->r);
 	Req_Cleanup(sp, wrk, r2->req);
 	Req_Release(r2->req);
-	if (r)
-		return;
-	/* All streams gone, including stream #0, clean up */
-	VHT_Fini(h2->dectbl);
-	req = h2->srq;
-	AZ(req->ws->r);
-	Req_Cleanup(sp, wrk, req);
-	Req_Release(req);
-	SES_Delete(sp, SC_RX_JUNK, NAN);
 }
 
 void

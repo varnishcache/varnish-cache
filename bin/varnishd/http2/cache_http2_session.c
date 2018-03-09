@@ -139,6 +139,25 @@ h2_new_sess(const struct worker *wrk, struct sess *sp, struct req *srq)
 	return (h2);
 }
 
+static void
+h2_del_sess(struct worker *wrk, struct h2_sess *h2, enum sess_close reason)
+{
+	struct sess *sp;
+	struct req *req;
+
+	CHECK_OBJ_NOTNULL(h2, H2_SESS_MAGIC);
+	AZ(h2->refcnt);
+	assert(VTAILQ_EMPTY(&h2->streams));
+
+	VHT_Fini(h2->dectbl);
+	req = h2->srq;
+	AZ(req->ws->r);
+	sp = h2->sess;
+	Req_Cleanup(sp, wrk, req);
+	Req_Release(req);
+	SES_Delete(sp, reason, NAN);
+}
+
 /**********************************************************************/
 
 enum htc_status_e v_matchproto_(htc_complete_f)
@@ -320,7 +339,9 @@ h2_new_session(struct worker *wrk, void *arg)
 	h2->req0 = h2_new_req(wrk, h2, 0, NULL);
 
 	if (req->err_code == H2_OU_MARKER && !h2_ou_session(wrk, h2, req)) {
+		assert(h2->refcnt == 1);
 		h2_del_req(wrk, h2->req0);
+		h2_del_sess(wrk, h2, SC_RX_JUNK);
 		return;
 	}
 	assert(HTC_S_COMPLETE == H2_prism_complete(h2->htc));
@@ -387,7 +408,10 @@ h2_new_session(struct worker *wrk, void *arg)
 		Lck_Unlock(&h2->sess->mtx);
 	}
 	h2->cond = NULL;
+	assert(h2->refcnt == 1);
 	h2_del_req(wrk, h2->req0);
+	/* TODO: proper sess close reason */
+	h2_del_sess(wrk, h2, SC_RX_JUNK);
 }
 
 static void v_matchproto_(vtr_reembark_f)
