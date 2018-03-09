@@ -216,6 +216,8 @@ AC_CHECK_FUNCS([setppriv])
 AC_CHECK_FUNCS([fallocate])
 AC_CHECK_FUNCS([closefrom])
 AC_CHECK_FUNCS([sigaltstack])
+AC_CHECK_FUNCS([getpeereid])
+AC_CHECK_FUNCS([getpeerucred])
 
 save_LIBS="${LIBS}"
 LIBS="${PTHREAD_LIBS}"
@@ -758,6 +760,7 @@ AC_CONFIG_FILES([
     lib/libvmod_purge/Makefile
     lib/libvmod_vtc/Makefile
     lib/libvmod_blob/Makefile
+    lib/libvmod_uds/Makefile
     man/Makefile
     varnishapi.pc
     varnishapi-uninstalled.pc
