@@ -86,6 +86,11 @@ IPv4" address with port 0. So your use of IP-valued elements in VCL
 will continue to work and may not have to change, but there are some
 consequences that you should consider, covered in the following.
 
+As we shall see, for a variety of reasons you get the best results if
+the component forwarding to Varnish via UDS uses the PROXY protocol,
+which sets ``client.ip`` and ``server.ip`` to the addresses sent in
+the PROXY header.
+
 If you don't use UDSen, then nothing about VCL changes. UDS support
 requires version 4.1, so if you are keeping your VCL level at 4.0 (and
 hence are staying with IP addresses), then none of the following is of
@@ -95,14 +100,10 @@ concern.
 ------------------------------------------------------------
 
 These variables have the value ``0.0.0.0`` for a connection that was
-addressed as a UDS.
-
-Remember that if you are using the PROXY protocol, then ``client.ip``
-and ``server.ip`` are set to the addresses sent in the PROXY header by
-the forwarding component. So these two variables may have "real" IP
-address values, even when the Varnish listener address is a UDS, if
-PROXY was specified. ``local.ip`` and ``remote.ip``, however, are
-always ``0.0.0.0`` for a UDS listener.
+addressed as a UDS. If you are using the PROXY protocol, then
+``client.ip`` and ``server.ip`` have the "real" IP address values sent
+via PROXY, but ``local.ip`` and ``remote.ip`` are always ``0.0.0.0``
+for a UDS listener.
 
 If you have more than one UDS listener (more than one ``-a``
 command-line argument specifying a socket path), then you may not be
