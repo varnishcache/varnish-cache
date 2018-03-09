@@ -118,7 +118,7 @@ static int sample = 0;
 static int scale = 1;
 static double t_sample = 0.;
 static double interval = 1.;
-static int vsm_status = 0;
+static unsigned vsm_status = 0;
 
 static void
 init_hitrate(void)
@@ -395,16 +395,16 @@ make_windows(void)
 }
 
 static void
-print_duration(WINDOW *w, time_t t)
+print_duration(WINDOW *w, uint64_t t)
 {
 
-	wprintw(w, "%4jd+%02jd:%02jd:%02jd",
-	    (intmax_t)t / 86400, (intmax_t)(t % 86400) / 3600,
-	    (intmax_t)(t % 3600) / 60, (intmax_t)t % 60);
+	wprintw(w, "%4ju+%02ju:%02ju:%02ju",
+	    (uintmax_t)t / 86400, (uintmax_t)(t % 86400) / 3600,
+	    (uintmax_t)(t % 3600) / 60, (uintmax_t)t % 60);
 }
 
 static void
-running(WINDOW *w, time_t up, int flg)
+running(WINDOW *w, uint64_t up, int flg)
 {
 	if (vsm_status & flg) {
 		print_duration(w_status, up);
@@ -418,8 +418,8 @@ running(WINDOW *w, time_t up, int flg)
 static void
 draw_status(void)
 {
-	time_t up_mgt = 0;
-	time_t up_chld = 0;
+	uint64_t up_mgt = 0;
+	uint64_t up_chld = 0;
 
 	AN(w_status);
 

@@ -124,6 +124,7 @@ VUT_Error(struct VUT *vut, int status, const char *fmt, ...)
 	va_start(ap, fmt);
 	vut->error_f(vut, status, fmt, ap);
 	va_end(ap);
+	exit(2);
 }
 
 int

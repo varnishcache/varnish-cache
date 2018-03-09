@@ -69,7 +69,7 @@ struct VUT {
 };
 
 void VUT_Error(struct VUT *, int status, const char *fmt, ...)
-    v_printflike_(3, 4);
+    v_noreturn_ v_printflike_(3, 4);
 
 int VUT_Arg(struct VUT *, int opt, const char *arg);
 

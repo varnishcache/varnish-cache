@@ -3,22 +3,4 @@
 
 -efile(451, varnishstat_options.h)
 
--esym(850, av)
-
--e712	// 14      Info    712     Loss of precision (___) (___ to ___)
--e747	// 16      Info    747     Significant prototype coercion (___) ___ to ___
-
--e763	// Redundant declaration for symbol '...' previously declared
-
--e732   // Loss of sign (arg. no. 2) (int to unsigned
--e713	// Loss of precision (assignment) (unsigned long long to long long)
-
-///////////////////////////////////////////////////////////////////////
-// Varnishstat specific
-
--emacro(774, MAC_STAT)
--emacro(506, MAC_STAT)
--emacro(525, MAC_STAT)
--efile(451, "*/include/stat_field.h")
--e850 // for loop index variable '___' whose type category is '___' is modified in body of the for loop that began at '___'
-
+-sem(usage, r_no)

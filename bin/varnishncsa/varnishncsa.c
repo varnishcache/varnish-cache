@@ -1146,9 +1146,8 @@ read_format(const char *formatfile)
 		free(fmt);
 		if (feof(fmtfile))
 			VUT_Error(vut, 1, "Empty format file");
-		else
-			VUT_Error(vut, 1, "Can't read format from file (%s)",
-			    strerror(errno));
+		VUT_Error(vut, 1, "Can't read format from file (%s)",
+		    strerror(errno));
 	}
 	fclose(fmtfile);
 	if (fmt[fmtlen - 1] == '\n')
