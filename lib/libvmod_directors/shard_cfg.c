@@ -656,8 +656,7 @@ shardcfg_get_rampup(const struct sharddir *shardd, int host)
 	// assert sharddir_rdlock_held(shardd);
 	assert (host < shardd->n_backend);
 
-	// magic value for default
-	if (shardd->backend[host].rampup == 973279260)
+	if (isnan(shardd->backend[host].rampup))
 		r = shardd->rampup_duration;
 	else
 		r = shardd->backend[host].rampup;

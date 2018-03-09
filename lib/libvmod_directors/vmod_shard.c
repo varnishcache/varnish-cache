@@ -297,26 +297,29 @@ vmod_shard_associate(VRT_CTX,
 
 VCL_BOOL v_matchproto_(td_directors_shard_add_backend)
 vmod_shard_add_backend(VRT_CTX, struct vmod_directors_shard *vshard,
-    struct vmod_priv *priv,
-    VCL_BACKEND be, VCL_STRING ident, VCL_DURATION rampup)
+    struct vmod_shard_add_backend_arg *args)
 {
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 
-	if (be == NULL) {
+	if (args->backend == NULL) {
 		shard_err0(ctx, vshard->shardd,
 		    ".backend_add() NULL backend given");
-		return 0;
+		return (0);
 	}
 
-	return shardcfg_add_backend(ctx, priv, vshard->shardd,
-	    be, ident, rampup);
+	return shardcfg_add_backend(ctx, args->arg1,
+	    vshard->shardd, args->backend,
+	    args->valid_ident ? args->ident : NULL,
+	    args->valid_rampup ? args->rampup : nan(""));
 }
 
 VCL_BOOL v_matchproto_(td_directors_shard_remove_backend)
 vmod_shard_remove_backend(VRT_CTX, struct vmod_directors_shard *vshard,
-    struct vmod_priv *priv,
-    VCL_BACKEND be, VCL_STRING ident)
+    struct vmod_shard_remove_backend_arg *args)
 {
+	VCL_BACKEND be = args->valid_backend ? args->backend : NULL;
+	VCL_STRING ident = args->ident ? args->ident : NULL;
+
 	CHECK_OBJ_NOTNULL(vshard, VMOD_SHARD_SHARD_MAGIC);
 
 	if (be == NULL && ident == NULL) {
@@ -326,7 +329,7 @@ vmod_shard_remove_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 		return 0;
 	}
 
-	return shardcfg_remove_backend(ctx, priv, vshard->shardd,
+	return shardcfg_remove_backend(ctx, args->arg1, vshard->shardd,
 	    be, ident);
 }
 
