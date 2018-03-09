@@ -606,26 +606,19 @@ vmod_shard_backend(VRT_CTX, struct vmod_directors_shard *vshard,
 
 	switch (resolve) {
 	case LAZY:
-		if ((ctx->method & VCL_MET_TASK_B) == 0) {
-			if ((args & ~arg_resolve) != 0) {
-				VRT_fail(ctx,
-					 "shard .backend resolve=LAZY "
-					 "with other parameters can "
-					 "only be used in backend "
-					 "context");
-				return (NULL);
-			}
+		if ((args & ~arg_resolve) == 0) {
 			AN(vshard->dir);
 			return (vshard->dir);
+		}
+
+		if ((ctx->method & VCL_MET_TASK_B) == 0) {
+			VRT_fail(ctx, "shard .backend resolve=LAZY with other "
+				 "parameters can only be used in backend "
+				 "context");
+			return (NULL);
 		}
 
 		assert(ctx->method & VCL_MET_TASK_B);
-
-		if ((args & ~arg_resolve) == 0) {
-			/* no other parameters - shortcut */
-			AN(vshard->dir);
-			return (vshard->dir);
-		}
 
 		pp = shard_param_task(ctx, vshard, vshard->param);
 		if (pp == NULL)
