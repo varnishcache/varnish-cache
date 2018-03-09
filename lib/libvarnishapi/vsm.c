@@ -176,7 +176,7 @@ vsm_mapseg(struct vsm *vd, struct vsm_seg *vg)
 	sz = strtoul(vg->av[3], NULL, 10);
 	assert(sz > 0);
 	assert(of >= off);
-	len = RUP2(of - off + sz, ps);
+	len = RUP2((of - off) + sz, ps);
 
 	vsb = VSB_new_auto();
 	AN(vsb);

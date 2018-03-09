@@ -187,14 +187,14 @@ update(void)
 		    scale, nhist, delay);
 
 	for (j = 2; j < LINES - 3; j += 5)
-		mvprintw(j, 0, "%u_", (LINES - 3 - j) * scale);
+		mvprintw(j, 0, "%u_", ((LINES - 3) - j) * scale);
 
 	/* show them */
 	for (i = 0; i < n; ++i) {
 		for (j = 0; j < bm[i] / scale; ++j)
-			(void)mvaddch(LINES - 3 - j, i, '#');
+			(void)mvaddch((LINES - 3) - j, i, '#');
 		for (; j < (bm[i] + bh[i]) / scale; ++j)
-			(void)mvaddch(LINES - 3 - j, i, '|');
+			(void)mvaddch((LINES - 3) - j, i, '|');
 	}
 
 	refresh();

@@ -2704,9 +2704,9 @@ b64_settings(const struct http *hp, const char *s)
 			if (*s >= 'A' && *s <= 'Z')
 				v |= (uint64_t)(*s - 'A') << shift;
 			else if (*s >= 'a' && *s <= 'z')
-				v |= (uint64_t)(*s - 'a' + 26) << shift;
+				v |= (uint64_t)((*s - 'a') + 26) << shift;
 			else if (*s >= '0' && *s <= '9')
-				v |= (uint64_t)(*s - '0' + 52) << shift;
+				v |= (uint64_t)((*s - '0') + 52) << shift;
 			else if (*s == '-')
 				v |= (uint64_t)62 << shift;
 			else if (*s == '_')

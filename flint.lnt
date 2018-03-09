@@ -215,5 +215,7 @@
 -e459	// unlocked access from func-ptr
 -e679	// Suspicious Truncation in arithmetic expression combining with pointer
 -e712	// Loss of precision (___) (___ to ___)
+-e713	// Loss of precision (___) (___ to ___)
 -e732	// Loss of sign (___) (___ to ___)
+-e734	// Loss of precision (___) (___ bits to ___ bits)
 -e747	// Significant prototype coercion (___) ___ to ___
